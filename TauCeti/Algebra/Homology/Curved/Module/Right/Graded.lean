@@ -61,7 +61,6 @@ end Objects
 
 -- The closed category keeps the original module objects.
 attribute [local implicit_reducible] ForgetEnrichment EnrichedFunctor.ofDGMap
-  GradedModuleCat.toModuleCat
 
 variable {R A : Type u} [CommRing R] [Ring A] [Algebra R A]
   {𝒜 : ℤ → Submodule R A} [GradedAlgebra 𝒜] {d : A →ₗ[R] A} {w : A}
@@ -104,29 +103,24 @@ noncomputable def closedIsoOfGradedIso {M N : CurvedDGRightModuleCat.{u, u, u} h
     (hd : ∀ x, N.differential (g.hom.hom x) = g.hom.hom (M.differential x)) :
     ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) M ≅
       ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) N := by
-  let e : M ≃ₗ[Aᵐᵒᵖ] N := (GradedModuleCat.toModuleCat.mapIso g).toLinearEquiv
-  have heMap : e.toLinearMap = g.hom.hom := by
-    -- `toModuleCat.map` wraps the same map with `ModuleCat.ofHom`; `toLinearEquiv`
-    -- retains it as the forward map, so unfolding the local abbreviation suffices.
-    dsimp only [e]
-    rfl
-  have heInv : e.symm.toLinearMap = g.inv.hom := by
-    -- The inverse field of `mapIso` and `toLinearEquiv` likewise retains `g.inv.hom`.
-    dsimp only [e]
-    rfl
-  have he_apply (x : M) : e x = g.hom.hom x := LinearMap.congr_fun heMap x
-  have he_inv_apply (x : N) : e.symm x = g.inv.hom x := LinearMap.congr_fun heInv x
+  let e : M ≃ₗ[Aᵐᵒᵖ] N := LinearEquiv.ofLinearMap g.hom.hom g.inv.hom
+    (by simpa only [GradedModuleCat.hom_comp, GradedModuleCat.hom_id] using
+      congrArg GradedModuleCat.Hom.hom g.inv_hom_id)
+    (by simpa only [GradedModuleCat.hom_comp, GradedModuleCat.hom_id] using
+      congrArg GradedModuleCat.Hom.hom g.hom_inv_id)
   refine closedIsoOf e (fun p x ↦ ?_) (fun x ↦ ?_)
   · constructor
     · intro hx
-      simpa only [he_apply, toGradedModuleCat_piece, add_zero] using
+      simpa only [e, LinearEquiv.coe_ofLinearMap, toGradedModuleCat_piece, add_zero] using
         g.hom.isHomogeneous.map_mem (by simpa only [toGradedModuleCat_piece] using hx)
     · intro hx
-      have hx' := g.inv.isHomogeneous.map_mem
-        (show e x ∈ (toGradedModuleCat N).grading.piece p from
-          by simpa only [toGradedModuleCat_piece] using hx)
-      simpa only [← he_inv_apply, e.symm_apply_apply, toGradedModuleCat_piece, add_zero] using hx'
-  · simpa only [he_apply] using hd x
+      have hx' : e.symm (e x) ∈ M.grading (p + 0) := by
+        simpa only [e, LinearEquiv.symm_ofLinearMap, LinearEquiv.coe_ofLinearMap,
+          toGradedModuleCat_piece] using g.inv.isHomogeneous.map_mem
+          (show e x ∈ (toGradedModuleCat N).grading.piece p from
+            by simpa only [toGradedModuleCat_piece] using hx)
+      simpa only [e.symm_apply_apply, add_zero] using hx'
+  · simpa only [e, LinearEquiv.coe_ofLinearMap] using hd x
 
 /-- The lifted graded isomorphism retains its forward underlying linear map. -/
 @[simp]
@@ -134,9 +128,8 @@ theorem closedHom_closedIsoOfGradedIso_hom {M N : CurvedDGRightModuleCat.{u, u, 
     (g : toGradedModuleCat M ≅ toGradedModuleCat N)
     (hd : ∀ x, N.differential (g.hom.hom x) = g.hom.hom (M.differential x)) :
     closedHom (closedIsoOfGradedIso g hd).hom = g.hom.hom := by
-  -- The lift uses the underlying equivalence of `toModuleCat.mapIso g`.
-  simp only [closedIsoOfGradedIso, closedHom_closedIsoOf_hom]
-  rfl
+  simp only [closedIsoOfGradedIso, closedHom_closedIsoOf_hom,
+    LinearEquiv.toLinearMap_ofLinearMap]
 
 /-- The lifted graded isomorphism retains its inverse underlying linear map. -/
 @[simp]
@@ -144,9 +137,8 @@ theorem closedHom_closedIsoOfGradedIso_inv {M N : CurvedDGRightModuleCat.{u, u, 
     (g : toGradedModuleCat M ≅ toGradedModuleCat N)
     (hd : ∀ x, N.differential (g.hom.hom x) = g.hom.hom (M.differential x)) :
     closedHom (closedIsoOfGradedIso g hd).inv = g.inv.hom := by
-  -- Its inverse is the same inverse linear map supplied by the graded isomorphism.
-  simp only [closedIsoOfGradedIso, closedHom_closedIsoOf_inv]
-  rfl
+  simp only [closedIsoOfGradedIso, closedHom_closedIsoOf_inv,
+    LinearEquiv.symm_ofLinearMap, LinearEquiv.toLinearMap_ofLinearMap]
 
 instance : (forgetDifferential (h := h)).ReflectsIsomorphisms where
   reflects {M N} f _ := by
@@ -181,27 +173,22 @@ noncomputable def closedShiftFunctorCompForgetDifferentialIso (n : ℤ) :
         toGradedModuleCat_piece, sub_neg_eq_add])
     (fun f ↦ by
       apply GradedModuleCat.hom_ext
-      -- Composition projects to composition of the underlying maps of `isoMk`;
-      -- its identity equivalence supplies `LinearMap.id` on both sides.
-      change LinearMap.id.comp (closedHom ((closedShiftFunctor n).map f)) =
-        (closedHom f).comp LinearMap.id
-      rw [LinearMap.id_comp, LinearMap.comp_id]
-      exact closedHom_closedShiftFunctor_map n f)
+      rw [GradedModuleCat.hom_comp, GradedModuleCat.hom_comp]
+      simp [closedHom_closedShiftFunctor_map])
 
 /-- The shift comparison acts by the identity on underlying right modules. -/
 @[simp]
 theorem closedShiftFunctorCompForgetDifferentialIso_hom_app_hom (n : ℤ)
     (M : ForgetEnrichment (CochainComplex (ModuleCat R) ℤ) (CurvedDGRightModuleCat.{u, u, u} h)) :
     ((closedShiftFunctorCompForgetDifferentialIso (h := h) n).hom.app M).hom = LinearMap.id := by
-  -- `isoMk` uses the identity linear equivalence as its forward underlying map.
-  rfl
+  simp [closedShiftFunctorCompForgetDifferentialIso]
 
 /-- The inverse shift comparison acts by the identity on underlying right modules. -/
 @[simp]
 theorem closedShiftFunctorCompForgetDifferentialIso_inv_app_hom (n : ℤ)
     (M : ForgetEnrichment (CochainComplex (ModuleCat R) ℤ) (CurvedDGRightModuleCat.{u, u, u} h)) :
     ((closedShiftFunctorCompForgetDifferentialIso (h := h) n).inv.app M).hom = LinearMap.id := by
-  -- The inverse of the identity equivalence used by `isoMk` is definitionally the identity.
-  rfl
+  ext x
+  simp [closedShiftFunctorCompForgetDifferentialIso, LinearEquiv.refl]
 
 end TauCeti.CurvedDGRightModuleCat
