@@ -26,7 +26,7 @@ on `U`: the classical chain rule survives the passage to weak derivatives. No bo
 derivative of `Φ` and no integrability of `u` beyond local integrability is needed, because weak
 derivatives are detected on relatively compact subdomains.
 
-The typical change of variables of this kind is a shear `(t, y) ↦ (t + φ y, y)` of a product,
+The typical change of variables of this kind is a shear `(t, y) ↦ (t - φ y, y)` of a product,
 which flattens the region above the graph of a `C¹` function `φ` onto a half-space; it is
 measure-preserving by Fubini's theorem.
 
@@ -46,8 +46,6 @@ bound for `fderiv ℝ Φ` on `closure W`, and these tend to zero
 
 ## Main declarations
 
-* `TauCeti.HasWeakFDerivOn.locallyIntegrableOn_deriv`: in finite dimension, a weak derivative is
-  locally integrable as an operator-valued function.
 * `TauCeti.HasWeakFDerivOn.comp_measurePreserving`: the weak chain rule.
 
 ## References
@@ -66,29 +64,6 @@ open scoped ENNReal Topology Convolution
 
 variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [NormedAddCommGroup F] [NormedSpace ℝ F] {μ : Measure E}
-
-/-- In finite dimension, a weak derivative `U` of `u` on `Ω` is locally integrable on `Ω` as an
-operator-valued function: it is a finite sum of its values on a basis, each locally integrable by
-definition. -/
-theorem HasWeakFDerivOn.locallyIntegrableOn_deriv {Ω : Opens E} {u : E → F}
-    {U : E → E →L[ℝ] F} (h : HasWeakFDerivOn μ Ω u U) : LocallyIntegrableOn U Ω μ := by
-  obtain ⟨n, b, -⟩ : ∃ n, ∃ b : Module.Basis (Fin n) ℝ E, True :=
-    ⟨_, Module.finBasis ℝ E, trivial⟩
-  -- The `i`-th term `x ↦ (b.coord i).smulRight (U x (b i))` of the expansion of `U` in `b`.
-  let g : Fin n → E → E →L[ℝ] F := fun i x =>
-    ContinuousLinearMap.smulRightL ℝ E F (LinearMap.toContinuousLinearMap (b.coord i)) (U x (b i))
-  have hU : U = fun x => ∑ i, g i x := by
-    funext x
-    ext v
-    calc U x v = U x (∑ i, b.repr v i • b i) := by rw [b.sum_repr]
-      _ = _ := by rw [map_sum]; simp [g]
-  have hg : ∀ i, LocallyIntegrableOn (g i) Ω μ := fun i =>
-    (ContinuousLinearMap.smulRightL ℝ E F _).locallyIntegrableOn_comp
-      (h.hasWeakLineDerivOn (b i)).locallyIntegrableOn_deriv
-  have hsum : LocallyIntegrableOn (fun x => ∑ i, g i x) Ω μ :=
-    (locallyIntegrableOn_iff Ω.isOpen.isLocallyClosed).2 fun k hk hkc =>
-      integrable_finsetSum (f := g) _ fun i _ => (hg i).integrableOn_compact_subset hk hkc
-  rwa [hU]
 
 variable [BorelSpace E] [μ.IsAddHaarMeasure]
 
