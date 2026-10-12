@@ -19,18 +19,18 @@ nonnegative weights summing to `1`. The quadratic Wasserstein barycenter problem
 
 `ν ↦ ∑ i, w i * W₂(ν, μ i) ^ 2`
 
-over probability laws `ν`. Writing `x̄ = ∑ j, w j • x j` for the weighted mean of a configuration
+over probability laws `ν`. Writing `m x = ∑ j, w j • x j` for the weighted mean of a configuration
 `x : ι → E`, the multi-marginal problem minimizes
 
-`γ ↦ ∫ ∑ i, w i * ‖x̄ - x i‖ ^ 2 dγ(x)`
+`γ ↦ ∫ ∑ i, w i * ‖m x - x i‖ ^ 2 dγ(x)`
 
 over the multi-marginal couplings `γ` of the family `μ`. The two problems are equivalent.
 
-* Every multi-coupling `γ` yields the candidate law `γ.map x̄`, whose barycentric cost is at most
-  the multi-marginal cost of `γ`: the plan `(x̄, x i)_# γ` couples `γ.map x̄` with `μ i`.
+* Every multi-coupling `γ` yields the candidate law `γ.map m`, whose barycentric cost is at most
+  the multi-marginal cost of `γ`: the plan `(m x, x i)_# γ` couples `γ.map m` with `μ i`.
 * Conversely, for every probability law `ν`, gluing optimal plans from `ν` to each `μ i` along
   their common marginal `ν` gives a multi-coupling `γ` with
-  `∫ ∑ i, w i * ‖x̄ - x i‖ ^ 2 dγ + W₂(ν, γ.map x̄) ^ 2 ≤ ∑ i, w i * W₂(ν, μ i) ^ 2`.
+  `∫ ∑ i, w i * ‖m x - x i‖ ^ 2 dγ + W₂(ν, γ.map m) ^ 2 ≤ ∑ i, w i * W₂(ν, μ i) ^ 2`.
   This is the weighted variance decomposition `Finset.sum_mul_edist_sq_eq` integrated against the
   glued plan.
 
@@ -102,8 +102,8 @@ private theorem wassersteinEDist_two_sq_le_lintegral {μ ν : Measure E} {π : M
 
 /-- **The weighted mean of a multi-coupling is a competitor for the barycenter.** For every
 multi-marginal coupling `γ` of the laws `μ i`, the weighted quadratic Wasserstein cost of the law
-of the weighted mean `x̄ = ∑ j, w j • x j` under `γ` is at most the multi-marginal cost
-`∫ ∑ i, w i * ‖x̄ - x i‖ ^ 2 dγ`. This needs neither an inner product nor normalized weights. -/
+of the weighted mean `m x = ∑ j, w j • x j` under `γ` is at most the multi-marginal cost
+`∫ ∑ i, w i * ‖m x - x i‖ ^ 2 dγ`. This needs neither an inner product nor normalized weights. -/
 theorem sum_mul_wassersteinEDist_sq_map_le {μ : ι → Measure E} {γ : Measure (ι → E)}
     (hγ : Measure.IsMultiCoupling γ μ) :
     ∑ i, (w i : ℝ≥0∞) * wassersteinEDist 2 (γ.map fun x ↦ ∑ j, (w j : ℝ) • x j) (μ i) ^ 2 ≤
@@ -113,7 +113,7 @@ theorem sum_mul_wassersteinEDist_sq_map_le {μ : ι → Measure E} {γ : Measure
   refine Finset.sum_le_sum fun i _ ↦ ?_
   rw [lintegral_const_mul _ (by fun_prop)]
   refine mul_le_mul_right ?_ _
-  -- The law of `(x̄, x i)` under `γ` couples the law of `x̄` with `μ i`.
+  -- The law of `(m x, x i)` under `γ` couples the law of `m x` with `μ i`.
   have hc : IsCoupling (γ.map fun x ↦ (∑ j, (w j : ℝ) • x j, x i))
       (γ.map fun x ↦ ∑ j, (w j : ℝ) • x j) (μ i) :=
     ⟨Measure.fst_map_prodMk hm (measurable_pi_apply i),
@@ -128,7 +128,7 @@ variable {ι E : Type*} [Fintype ι] [NormedAddCommGroup E] [InnerProductSpace �
 
 /-- The weighted variance decomposition, integrated against a joint law `Γ` of a point `y` and a
 configuration `x`: the weighted quadratic cost from `y` to the `x i` splits as the quadratic cost
-from `y` to the weighted mean `x̄` plus the multi-marginal cost of the law of `x`. -/
+from `y` to the weighted mean `m x` plus the multi-marginal cost of the law of `x`. -/
 private theorem sum_mul_lintegral_edist_sq_eq_add (hw : ∑ i, w i = 1) (Γ : Measure (E × (ι → E))) :
     ∑ i, (w i : ℝ≥0∞) * ∫⁻ q, edist q.1 (q.2 i) ^ 2 ∂Γ =
       ∫⁻ q, edist q.1 (∑ j, (w j : ℝ) • q.2 j) ^ 2 ∂Γ +
@@ -144,10 +144,10 @@ variable [CompleteSpace E]
 /-- **Every law is dominated by the weighted mean of a multi-coupling.** For weights summing to
 `1` and every probability law `ν`, there is a multi-marginal coupling `γ` of the laws `μ i` whose
 multi-marginal cost, plus the squared `W₂` distance from `ν` to the law of the weighted mean
-`x̄ = ∑ j, w j • x j` under `γ`, is at most the weighted quadratic Wasserstein cost of `ν`.
+`m x = ∑ j, w j • x j` under `γ`, is at most the weighted quadratic Wasserstein cost of `ν`.
 
 The coupling glues optimal plans from `ν` to each `μ i` along `ν`; the inequality is the weighted
-variance decomposition `∑ i, w i * ‖y - x i‖ ^ 2 = ‖y - x̄‖ ^ 2 + ∑ i, w i * ‖x̄ - x i‖ ^ 2`
+variance decomposition `∑ i, w i * ‖y - x i‖ ^ 2 = ‖y - m x‖ ^ 2 + ∑ i, w i * ‖m x - x i‖ ^ 2`
 integrated against the glued plan. -/
 theorem exists_isMultiCoupling_lintegral_add_wassersteinEDist_sq_le (hw : ∑ i, w i = 1)
     (μ : ι → Measure E) [∀ i, IsProbabilityMeasure (μ i)] (ν : Measure E)
@@ -176,7 +176,7 @@ theorem exists_isMultiCoupling_lintegral_add_wassersteinEDist_sq_le (hw : ∑ i,
     simp only [ENNReal.toReal_ofNat, ENNReal.rpow_ofNat, hπW i] at h
     rw [h, ← hΓ i, lintegral_map (by fun_prop) (he i)]
     rfl
-  -- The law of `(y, x̄)` under the glued plan couples `ν` with the law of `x̄`.
+  -- The law of `(y, m x)` under the glued plan couples `ν` with the law of `m x`.
   have hc : IsCoupling (Γ.map fun q ↦ (q.1, ∑ j, (w j : ℝ) • q.2 j)) ν
       (Γ.snd.map fun x ↦ ∑ j, (w j : ℝ) • x j) := by
     refine ⟨(Measure.fst_map_prodMk measurable_fst hm₂).trans hΓfst, ?_⟩
@@ -193,7 +193,7 @@ theorem exists_isMultiCoupling_lintegral_add_wassersteinEDist_sq_le (hw : ∑ i,
 /-- **The barycentric and multi-marginal problems have the same value.** For weights summing to
 `1`, the infimum over probability laws `ν` of the weighted quadratic Wasserstein cost
 `∑ i, w i * W₂(ν, μ i) ^ 2` equals the infimum over multi-marginal couplings `γ` of the laws `μ i`
-of the multi-marginal cost `∫ ∑ i, w i * ‖x̄ - x i‖ ^ 2 dγ`, where `x̄ = ∑ j, w j • x j`. -/
+of the multi-marginal cost `∫ ∑ i, w i * ‖m x - x i‖ ^ 2 dγ`, where `m x = ∑ j, w j • x j`. -/
 theorem iInf_sum_mul_wassersteinEDist_sq_eq (hw : ∑ i, w i = 1) (μ : ι → Measure E)
     [∀ i, IsProbabilityMeasure (μ i)] :
     ⨅ (ν : Measure E) (_ : IsProbabilityMeasure ν),
@@ -208,8 +208,8 @@ theorem iInf_sum_mul_wassersteinEDist_sq_eq (hw : ∑ i, w i = 1) (μ : ι → M
 
 /-- **The weighted mean of an optimal multi-coupling is a barycenter.** For weights summing to
 `1`, if a multi-marginal coupling `γ` of the laws `μ i` minimizes the multi-marginal cost
-`∫ ∑ i, w i * ‖x̄ - x i‖ ^ 2 dγ`, then the law of the weighted mean `x̄ = ∑ j, w j • x j` under `γ`
-minimizes the weighted quadratic Wasserstein cost `ν ↦ ∑ i, w i * W₂(ν, μ i) ^ 2` among
+`∫ ∑ i, w i * ‖m x - x i‖ ^ 2 dγ`, then the law of the weighted mean `m x = ∑ j, w j • x j`
+under `γ` minimizes the weighted quadratic Wasserstein cost `ν ↦ ∑ i, w i * W₂(ν, μ i) ^ 2` among
 probability laws. -/
 theorem isMinOn_sum_mul_wassersteinEDist_sq_map (hw : ∑ i, w i = 1) {μ : ι → Measure E}
     [∀ i, IsProbabilityMeasure (μ i)] {γ : Measure (ι → E)} (hγ : Measure.IsMultiCoupling γ μ)
@@ -226,8 +226,8 @@ theorem isMinOn_sum_mul_wassersteinEDist_sq_map (hw : ∑ i, w i = 1) {μ : ι �
 /-- **A barycenter of finite cost is the weighted mean of an optimal multi-coupling.** For weights
 summing to `1`, if a probability law `ν` minimizes the weighted quadratic Wasserstein cost
 `∑ i, w i * W₂(ν, μ i) ^ 2` among probability laws, and that minimum is finite, then `ν` is the
-law of the weighted mean `x̄ = ∑ j, w j • x j` under some multi-marginal coupling `γ` of the laws
-`μ i` that minimizes the multi-marginal cost `∫ ∑ i, w i * ‖x̄ - x i‖ ^ 2 dγ`. -/
+law of the weighted mean `m x = ∑ j, w j • x j` under some multi-marginal coupling `γ` of the laws
+`μ i` that minimizes the multi-marginal cost `∫ ∑ i, w i * ‖m x - x i‖ ^ 2 dγ`. -/
 theorem exists_isMinOn_lintegral_map_eq (hw : ∑ i, w i = 1) {μ : ι → Measure E}
     [∀ i, IsProbabilityMeasure (μ i)] {ν : Measure E} [IsProbabilityMeasure ν]
     (hν : IsMinOn (fun ν' ↦ ∑ i, (w i : ℝ≥0∞) * wassersteinEDist 2 ν' (μ i) ^ 2)
@@ -248,7 +248,7 @@ theorem exists_isMinOn_lintegral_map_eq (hw : ∑ i, w i = 1) {μ : ι → Measu
   refine ⟨γ, hγ, fun γ' (hγ' : Measure.IsMultiCoupling γ' μ) ↦ ?_, ?_⟩
   · exact (le_self_add.trans hle).trans ((isMinOn_iff.1 hν _
       (isProbabilityMeasure_map_sum_smul hw hγ')).trans (sum_mul_wassersteinEDist_sq_map_le hγ'))
-  · -- Squeezing `c + W₂(ν, γ.map x̄) ^ 2 ≤ c` forces `W₂(ν, γ.map x̄) = 0`.
+  · -- Squeezing `c + W₂(ν, γ.map m) ^ 2 ≤ c` forces `W₂(ν, γ.map m) = 0`.
     have h0 : wassersteinEDist 2 ν (γ.map fun x ↦ ∑ j, (w j : ℝ) • x j) ^ 2 = 0 := by
       refine nonpos_iff_eq_zero.1 (ENNReal.le_of_add_le_add_left hcfin ?_)
       rw [add_zero]
@@ -279,8 +279,8 @@ private theorem hasFiniteMoment_of_sum_mul_wassersteinEDist_sq_ne_top (hw : ∑ 
 /-- **Quadratic Wasserstein barycenters are weighted means of optimal multi-couplings.** For
 weights summing to `1` and laws `μ i` of finite second moment, a law `ν` of finite second moment
 is a quadratic Fréchet barycenter in `P₂ (E)` of the finitely supported law `∑ i, w i • δ_{μ i}`
-exactly when it is the law of the weighted mean `x̄ = ∑ j, w j • x j` under a multi-marginal
-coupling `γ` of the laws `μ i` minimizing the multi-marginal cost `∫ ∑ i, w i * ‖x̄ - x i‖ ^ 2 dγ`.
+exactly when it is the law of the weighted mean `m x = ∑ j, w j • x j` under a multi-marginal
+coupling `γ` of the laws `μ i` minimizing the multi-marginal cost `∫ ∑ i, w i * ‖m x - x i‖ ^ 2 dγ`.
 -/
 theorem isFrechetBarycenter_two_iff_exists_isMinOn_lintegral_map_eq (hw : ∑ i, w i = 1)
     (μ : ι → WassersteinSpace 2 E) (ν : WassersteinSpace 2 E) :
