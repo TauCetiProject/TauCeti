@@ -29,8 +29,6 @@ functions `TauCeti.hermiteSchwartzMap n`.
 * `TauCeti.hermiteOscillatorCLM_apply_hermiteSchwartzMap` — `H ψₙ = (n + 1/2) • ψₙ`.
 
 ## Reference
-
-Roadmap: `OrthogonalL2Bases`, Part A2 (ladder operators on Schwartz space / L²).
 -/
 
 public section
