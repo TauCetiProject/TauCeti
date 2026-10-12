@@ -7,15 +7,14 @@ module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.VariableChange.Basic
 public import TauCeti.FieldTheory.KrullTopology
-public import Mathlib.FieldTheory.Galois.Infinite
 
 /-!
 # Galois conjugation of changes of variables
 
 An admissible change of variables with algebraic coefficients has a locally constant orbit
-under the Krull topology. Over a Galois extension, it is defined over the base field exactly
-when every automorphism fixes it. These two facts give continuity and descent for the
-cocycles attached to pointed twists of Weierstrass curves.
+under the Krull topology. This gives continuity for the cocycles attached to pointed twists
+of Weierstrass curves. Descent is developed in
+`TauCeti/AlgebraicGeometry/EllipticCurve/GaloisDescent.lean`.
 -/
 
 public section
@@ -38,27 +37,10 @@ theorem isLocallyConstant_map (C : VariableChange L)
     with σ hu hr hs ht
   exact VariableChange.ext (Units.ext hu) hr hs ht
 
-/-- Over a possibly infinite Galois extension, a change of variables descends precisely
-when all its Galois conjugates agree with it. -/
-theorem mem_range_baseChange_iff_fixed [IsGalois K L] (C : VariableChange L) :
-    C ∈ Set.range (fun D : VariableChange K ↦ D.baseChange L) ↔
-      ∀ σ : Gal(L/K), C.map (σ : L →+* L) = C := by
-  constructor
-  · rintro ⟨D, rfl⟩ σ
-    ext <;> simp [VariableChange.baseChange, VariableChange.map, AlgEquiv.commutes]
-  · intro h
-    have fixed (f : VariableChange L → L)
-        (hf : ∀ σ : Gal(L/K), f (C.map σ) = σ (f C)) :
-        f C ∈ Set.range (algebraMap K L) :=
-      (InfiniteGalois.mem_range_algebraMap_iff_fixed _).2 fun σ ↦ by rw [← hf, h]
-    obtain ⟨u, hu⟩ := fixed (fun D ↦ (D.u : L)) fun _ ↦ rfl
-    obtain ⟨r, hr⟩ := fixed VariableChange.r fun _ ↦ rfl
-    obtain ⟨s, hs⟩ := fixed VariableChange.s fun _ ↦ rfl
-    obtain ⟨t, ht⟩ := fixed VariableChange.t fun _ ↦ rfl
-    have hu₀ : u ≠ 0 := by
-      rintro rfl
-      exact C.u.ne_zero (hu.symm.trans (map_zero _))
-    refine ⟨⟨Units.mk0 u hu₀, r, s, t⟩, ?_⟩
-    exact VariableChange.ext (Units.ext hu) hr hs ht
+/-- Over an algebraic extension, every change of variables has a locally constant Galois orbit. -/
+theorem isLocallyConstant_map_of_isAlgebraic [Algebra.IsAlgebraic K L] (C : VariableChange L) :
+    IsLocallyConstant fun σ : Gal(L/K) ↦ C.map (σ : L →+* L) :=
+  C.isLocallyConstant_map (Algebra.IsIntegral.isIntegral _) (Algebra.IsIntegral.isIntegral _)
+    (Algebra.IsIntegral.isIntegral _) (Algebra.IsIntegral.isIntegral _)
 
 end WeierstrassCurve.VariableChange

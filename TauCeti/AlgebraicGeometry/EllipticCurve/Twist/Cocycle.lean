@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Aut
+public import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisDescent
 public import TauCeti.AlgebraicGeometry.EllipticCurve.VariableChange.Galois
+public import TauCeti.GroupTheory.GroupAction.Stabilizer
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Nonabelian.Basic
 
 /-!
@@ -71,15 +73,21 @@ theorem autCoeffEquiv_symm_smul (σ : Gal(L/K)) (a : W.AutCoeff L) :
     ((W.autCoeffEquiv L).symm (σ • a)).val =
       ((W.autCoeffEquiv L).symm a).val.map (σ : L →+* L) := (rfl)
 
+/-- Galois conjugation commutes with the identification of the automorphism coefficient group. -/
+@[simp]
+theorem smul_autCoeffEquiv (σ : Gal(L/K)) (a : (W.baseChange L).autGroup) :
+    σ • W.autCoeffEquiv L a = W.autCoeffEquiv L
+      ⟨a.val.map (σ : L →+* L), map_smul_baseChange_eq L σ.toAlgHom a.property⟩ := (rfl)
+
 instance : MulDistribMulAction Gal(L/K) (W.AutCoeff L) where
   one_smul a := by
     apply (W.autCoeffEquiv L).symm.injective
     apply Subtype.ext
-    ext <;> rfl
+    simp [AlgEquiv.aut_one]
   mul_smul σ τ a := by
     apply (W.autCoeffEquiv L).symm.injective
     apply Subtype.ext
-    ext <;> rfl
+    simp [AlgEquiv.aut_mul, VariableChange.map_map]
   smul_one σ := by
     apply (W.autCoeffEquiv L).symm.injective
     apply Subtype.ext
@@ -95,9 +103,7 @@ instance AutCoeff.instContinuousSMul [Algebra.IsAlgebraic K L] :
     ContinuousSMul Gal(L/K) (W.AutCoeff L) := by
   refine continuousSMul_iff_stabilizer_isOpen.2 fun a ↦ ?_
   let C := ((W.autCoeffEquiv L).symm a).val
-  have h := (C.isLocallyConstant_map (K := K) (Algebra.IsIntegral.isIntegral _)
-    (Algebra.IsIntegral.isIntegral _) (Algebra.IsIntegral.isIntegral _)
-    (Algebra.IsIntegral.isIntegral _)).isOpen_fiber C
+  have h := (C.isLocallyConstant_map_of_isAlgebraic (K := K)).isOpen_fiber C
   convert h using 1
   ext σ
   simp only [SetLike.mem_coe, MulAction.mem_stabilizer_iff, Set.mem_ofPred_eq,
@@ -114,29 +120,34 @@ variable [Algebra.IsAlgebraic K L] (C : VariableChange L) (hC : C • V.baseChan
 /-- The continuous cocycle of a pointed trivialisation `C : V_L ≅ W_L`:
 `σ ↦ C (σ C)⁻¹`. -/
 def twistCocycle : NonabelianH1.Cocycle Gal(L/K) (W.AutCoeff L) where
-  toFun σ := W.autCoeffEquiv L ⟨C * (C.map (σ : L →+* L))⁻¹, by
-    have hσ : C.map (σ : L →+* L) • V.baseChange L = W.baseChange L :=
-      map_smul_baseChange_eq L σ.toAlgHom hC
-    rw [MulAction.mem_stabilizer_iff, mul_smul, inv_smul_eq_iff.mpr hσ.symm, hC]⟩
+  toFun σ := W.autCoeffEquiv L ⟨C * (C.map (σ : L →+* L))⁻¹,
+    mul_inv_mem_stabilizer_of_smul_eq C (C.map (σ : L →+* L)) hC
+      (map_smul_baseChange_eq L σ.toAlgHom hC)⟩
   continuous_toFun := by
     apply IsLocallyConstant.continuous
-    refine (IsLocallyConstant.iff_eventually_eq _).2 fun σ₀ ↦ ?_
-    have h := C.isLocallyConstant_map (K := K) (Algebra.IsIntegral.isIntegral _)
-      (Algebra.IsIntegral.isIntegral _) (Algebra.IsIntegral.isIntegral _)
-      (Algebra.IsIntegral.isIntegral _)
-    filter_upwards [(IsLocallyConstant.iff_eventually_eq _).1 h σ₀] with σ hσ
-    congr 2
-    rw [hσ]
+    rw [IsLocallyConstant.iff_isOpen_fiber]
+    intro a
+    convert ((C.isLocallyConstant_map_of_isAlgebraic (K := K)).comp
+      (fun D ↦ C * D⁻¹)).isOpen_fiber (((W.autCoeffEquiv L).symm a).val) using 1
+    ext σ
+    simp only [Set.mem_preimage, Set.mem_singleton_iff, Function.comp_apply,
+      ← (W.autCoeffEquiv L).symm.injective.eq_iff, Subtype.ext_iff,
+      MulEquiv.symm_apply_apply, Set.mem_ofPred_eq]
   map_mul' σ τ := by
     apply (W.autCoeffEquiv L).symm.injective
     apply Subtype.ext
     simp only [_root_.map_mul, Subgroup.coe_mul, autCoeffEquiv_symm_smul,
       MulEquiv.symm_apply_apply, VariableChange.map_mul, VariableChange.map_inv,
       VariableChange.map_map]
-    -- Conjugating first by `τ` and then by `σ` is conjugation by `σ * τ`.
-    have hcomp : ((σ * τ : Gal(L/K)) : L →+* L) = (σ : L →+* L).comp (τ : L →+* L) := rfl
-    rw [hcomp]
+    rw [AlgEquiv.aut_mul, AlgEquiv.toRingHom_trans]
     group
+
+/-- The cocycle of a trivialisation, expressed in the automorphism coefficient group. -/
+theorem twistCocycle_apply (σ : Gal(L/K)) :
+    twistCocycle C hC σ = W.autCoeffEquiv L
+      ⟨C * (C.map (σ : L →+* L))⁻¹,
+        mul_inv_mem_stabilizer_of_smul_eq C (C.map (σ : L →+* L)) hC
+          (map_smul_baseChange_eq L σ.toAlgHom hC)⟩ := (rfl)
 
 /-- The coefficient formula for the cocycle of a trivialisation. -/
 @[simp]
@@ -158,8 +169,7 @@ theorem twistCohomologyClass_eq (D : VariableChange L)
     twistCohomologyClass C hC = twistCohomologyClass D hD := by
   rw [twistCohomologyClass_def, twistCohomologyClass_def]
   refine NonabelianH1.mk_eq_mk_iff.2
-    ⟨W.autCoeffEquiv L ⟨C * D⁻¹, by
-      rw [MulAction.mem_stabilizer_iff, mul_smul, inv_smul_eq_iff.mpr hD.symm, hC]⟩,
+    ⟨W.autCoeffEquiv L ⟨C * D⁻¹, mul_inv_mem_stabilizer_of_smul_eq C D hC hD⟩,
       fun σ ↦ ?_⟩
   apply (W.autCoeffEquiv L).symm.injective
   apply Subtype.ext
@@ -229,8 +239,8 @@ theorem twistCohomologyClass_eq_iff {U : WeierstrassCurve K} (D : VariableChange
       (mem_range_baseChange_iff_fixed (B.baseChange L)).1 ⟨B, rfl⟩ σ]
     group
 
-/-- A twist has trivial Galois cohomology class exactly when its pointed isomorphism
-can be defined over the base field. -/
+/-- A twist has trivial Galois cohomology class exactly when `V` is isomorphic to `W`
+by a change of variables defined over the base field. -/
 @[simp]
 theorem twistCohomologyClass_eq_one_iff :
     twistCohomologyClass C hC = 1 ↔ ∃ B : VariableChange K, B • V = W := by
