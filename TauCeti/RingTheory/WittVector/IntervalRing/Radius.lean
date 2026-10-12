@@ -60,14 +60,6 @@ def toIntervalLocalization : A₀ →ₐ[𝕎 O] B₀ :=
     (f := Algebra.ofId (𝕎 O) B₀)
     (IntervalLocalization.isUnit_algebraMap_teichmuller p hv hϖ hϖ' hρ₁ hρ₂)
 
-omit [CharP O p] [PerfectRing O p] in
-/-- The localisation map respects the maps from Witt vectors. -/
-@[simp]
-theorem toIntervalLocalization_algebraMap (x : 𝕎 O) :
-    toIntervalLocalization p hv hϖ hϖ' hρ₁ hρ₂ (algebraMap (𝕎 O) A₀ x) =
-      algebraMap (𝕎 O) B₀ x :=
-  (toIntervalLocalization p hv hϖ hϖ' hρ₁ hρ₂).commutes x
-
 private theorem gaussValuationAway_toIntervalLocalization_mk'
     {ρ : ℝ≥0} (hρ : ρ ∈ Set.Ioo 0 1) (x : 𝕎 O)
     (s : Submonoid.powers (teichmuller p ϖ)) :
@@ -83,7 +75,7 @@ private theorem gaussValuationAway_toIntervalLocalization_mk'
   have h := congrArg (gaussValuationAway p hv hϖ ρ hρ B₀)
     (congrArg (toIntervalLocalization p hv hϖ hϖ' hρ₁ hρ₂)
       (IsLocalization.mk'_spec A₀ x s))
-  simpa only [map_mul, toIntervalLocalization_algebraMap,
+  simpa only [map_mul, AlgHom.commutes,
     gaussValuationAway_algebraMap] using h
 
 /-- For ordered radii, inverting `[ϖ]` preserves the radius norm in the interval norm. -/
@@ -161,7 +153,7 @@ theorem exists_natCast_pow_mul_coe_eq_toIntervalRing (hρ : ρ₁ ≤ ρ₂) (x 
   let a := IsLocalization.mk' A₀ y t
   have ha : RadiusLocalization.toIntervalLocalization p hv hϖ hϖ' hρ₁ hρ₂ a *
       algebraMap (𝕎 O) B₀ (teichmuller p ϖ) ^ n = algebraMap (𝕎 O) B₀ y := by
-    simpa only [t, map_mul, map_pow, RadiusLocalization.toIntervalLocalization_algebraMap] using
+    simpa only [t, map_mul, map_pow, AlgHom.commutes] using
       congrArg (RadiusLocalization.toIntervalLocalization p hv hϖ hϖ' hρ₁ hρ₂)
         (IsLocalization.mk'_spec A₀ y t)
   have hx : x * (p : B₀) ^ n =
