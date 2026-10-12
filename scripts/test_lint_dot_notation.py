@@ -422,6 +422,19 @@ end TauCeti
         self.assertNotIn("Hidden", cleaned)
         self.assertNotIn("hidden", cleaned)
 
+    def test_quoted_namespace_is_not_truncated_to_an_unquoted_prefix(self):
+        self.assertEqual(lint.scopes("namespace Foo.«bar»\nend Foo.«bar»\n"), [])
+
+    def test_interpolated_expressions_remain_code(self):
+        source = ('def text := s!"literal set_option {"set_option"} '
+                  '{set_option maxRecDepth 4000 in 1}"\n'
+                  'def next := 1\n')
+        cleaned = lint.strip_comments_and_strings(source)
+        self.assertEqual(len(cleaned), len(source))
+        self.assertEqual(cleaned.count("set_option"), 1)
+        self.assertIn("set_option maxRecDepth 4000 in 1", cleaned)
+        self.assertIn("def next := 1", cleaned)
+
     def test_main_rejects_new_and_reports_ratchetable_findings(self):
         with tempfile.TemporaryDirectory() as directory:
             root = pathlib.Path(directory)

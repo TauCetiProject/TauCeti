@@ -53,6 +53,46 @@ class SourceOptionsTests(unittest.TestCase):
             'def primed\' := 3\n'
             'set_option hygiene false in\n'), [5])
 
+    def test_identifier_boundaries_match_lean_names(self):
+        self.assertEqual(option_lines(
+            "def set_option' := 1\n"
+            'def Foo.set_option := 2\n'
+            'def set_option? := 3\n'
+            'def set_option! := 4\n'
+            'set_option hygiene false in\n'), [5])
+
+    def test_interpolation_scans_code_and_preserves_following_commands(self):
+        sources = [
+            'def text := s!"{\'"\'}"\nset_option hygiene false in\n',
+            'def text := s!"{"\\\""}"\nset_option hygiene false in\n',
+            'def text := s!"{s!"{1}"}"\nset_option hygiene false in\n',
+        ]
+        for source in sources:
+            with self.subTest(source=source):
+                self.assertEqual(option_lines(source), [2])
+        self.assertEqual(option_lines(
+            'def text := s!"{set_option maxRecDepth 4000 in (1 : Nat)}"\n'), [1])
+        self.assertEqual(option_lines(
+            'def text := s!"{({value := set_option maxRecDepth 4000 in 1} : Foo).value}"\n'),
+            [1])
+        self.assertEqual(option_lines(
+            'def text := s!"literal set_option {"set_option hygiene false"}"\n'), [])
+
+    def test_escaped_character_cannot_hide_following_commands(self):
+        self.assertEqual(option_lines(
+            'def chars : List Char := [\'\\\'\',\'"\']\n'
+            'set_option hygiene false in\n'), [2])
+
+    def test_rejects_heartbeat_helpers_that_disable_limits(self):
+        self.assertEqual(option_lines(
+            'guard_min_heartbeats 0 in\n'
+            'theorem heavy : True := by trivial\n'
+            '#count_heartbeats in\n'
+            'theorem other : True := by trivial\n'), [1, 3])
+        self.assertEqual(option_lines(
+            '-- guard_min_heartbeats 0 in\n'
+            'def message := "count_heartbeats"\n'), [])
+
     def test_cli_checks_nested_files_and_root_and_fails_on_missing_input(self):
         checker = Path(__file__).with_name("check_source_options.py")
         with tempfile.TemporaryDirectory() as directory:

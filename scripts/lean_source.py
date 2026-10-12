@@ -168,12 +168,14 @@ class VariableBinding:
 
 
 def strip_comments_and_strings(text: str) -> str:
-    """Blank comments, literals and quoted identifiers, preserving offsets and newlines."""
+    """Blank comments and literal text, preserving offsets, newlines and interpolation code."""
     chars = list(text)
     i = 0
     block_depth = 0
     in_string = False
     raw_end = None
+    strings = []
+    interpolations = []
     while i < len(chars):
         if block_depth:
             if text.startswith("/-", i):
@@ -204,9 +206,16 @@ def strip_comments_and_strings(text: str) -> str:
                 if chars[i + 1] != "\n":
                     chars[i + 1] = " "
                 i += 2
+            elif strings[-1] and chars[i] == "{":
+                chars[i] = " "
+                i += 1
+                # Interpolated expressions are code, and can contain nested strings.
+                interpolations.append(1)
+                in_string = False
             else:
                 if chars[i] == '"':
                     in_string = False
+                    strings.pop()
                 if chars[i] != "\n":
                     chars[i] = " "
                 i += 1
@@ -221,7 +230,8 @@ def strip_comments_and_strings(text: str) -> str:
         elif chars[i] == "«":
             while i < len(chars):
                 closing = chars[i] == "»"
-                if chars[i] != "\n":
+                # Keep delimiters so command parsers do not mistake Foo.«bar» for Foo.
+                if chars[i] not in "\n«»":
                     chars[i] = " "
                 i += 1
                 if closing:
@@ -234,21 +244,29 @@ def strip_comments_and_strings(text: str) -> str:
                 chars[j] = " "
             i = raw_match.end()
         elif chars[i] == '"':
+            strings.append(i > 0 and text[i - 1] == "!")
             chars[i] = " "
             in_string = True
             i += 1
         elif chars[i] == "'" and (i == 0 or not (
                 chars[i - 1].isalnum() or chars[i - 1] in "_'")) and i + 2 < len(chars) and (
                 chars[i + 1] == "\\" or chars[i + 2] == "'"):
-            end = i + 2
+            end = i + 1
             while end < len(chars) and chars[end] not in "'\n":
-                end += 1
+                end += 2 if chars[end] == "\\" and end + 1 < len(chars) else 1
             if end < len(chars) and chars[end] == "'":
                 while i <= end:
                     chars[i] = " "
                     i += 1
             else:
                 i += 1
+        elif interpolations and chars[i] in "{}":
+            interpolations[-1] += 1 if chars[i] == "{" else -1
+            if interpolations[-1] == 0:
+                interpolations.pop()
+                chars[i] = " "
+                in_string = True
+            i += 1
         else:
             i += 1
     return "".join(chars)

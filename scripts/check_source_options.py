@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Reject set_option anywhere in library code, ignoring comments and strings."""
+"""Reject option overrides in library code, ignoring comments and literal text."""
 
 from __future__ import annotations
 
@@ -10,16 +10,19 @@ import re
 from lean_source import strip_comments_and_strings
 
 
-SET_OPTION = re.compile(r"\bset_option\b")
+# Mathlib's heartbeat-measurement commands disable maxHeartbeats internally.
+OPTION_OVERRIDES = ("set_option", "guard_min_heartbeats", "count_heartbeats")
+# Lean identifiers may be qualified or end in primes, question marks or exclamation marks.
+OPTION_PATTERN = re.compile(r"(?<![\w'.!?])(?:" + "|".join(OPTION_OVERRIDES) + r")(?![\w'.!?])")
 
 
 def option_lines(source: str) -> list[int]:
     # Most files contain no candidate token. Avoid lexing them at all.
-    if "set_option" not in source:
+    if not any(token in source for token in OPTION_OVERRIDES):
         return []
     code = strip_comments_and_strings(source)
     return [number for number, line in enumerate(code.splitlines(), 1)
-            if SET_OPTION.search(line)]
+            if OPTION_PATTERN.search(line)]
 
 
 def main() -> int:
@@ -33,7 +36,7 @@ def main() -> int:
         paths = sorted(root.rglob("*.lean")) if root.is_dir() else [root]
         for path in paths:
             for line in option_lines(path.read_text(encoding="utf-8")):
-                print(f"{path}:{line}: set_option is forbidden in library code; remove it")
+                print(f"{path}:{line}: option overrides are forbidden in library code; remove them")
                 failed = True
     return int(failed)
 

@@ -48,8 +48,10 @@ scope do not coincide.
 - Prefer named definitions, abbreviations, and lemmas to custom term syntax. Local tactic
   macros should remove substantial repeated proof machinery, rather than just shorten a
   couple of small proofs. Keep macro hygiene enabled: `set_option`, including
-  `set_option hygiene false`, is forbidden anywhere in library code. A local syntax rule
-  needed for elaboration performance should document the concrete need at its declaration.
+  `set_option hygiene false`, is forbidden anywhere in library code. Heartbeat-measurement
+  commands (`guard_min_heartbeats` and `#count_heartbeats`) also disable limits and belong in
+  tooling rather than library code. A local syntax rule needed for elaboration performance
+  should document the concrete need at its declaration.
 - One topic per PR. Ship a prerequisite refactor as its own PR.
 - Tau Ceti does not preserve backwards compatibility. When declarations or modules are moved,
   renamed, replaced, or deleted — including when Mathlib supersedes them — update every
