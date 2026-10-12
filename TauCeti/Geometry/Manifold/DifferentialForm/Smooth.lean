@@ -180,8 +180,7 @@ theorem isAlt_bilinFormAt (φ : SmoothForm I M ℝ 2) (x : M) :
 /-- Evaluation on two equal tangent vectors vanishes by alternation. -/
 theorem eval₂_self (φ : SmoothForm I M F 2) (x : M) (v : TangentSpace I x) :
     φ.eval₂ x v v = 0 := by
-  change (φ.1 x) ![v, v] = 0
-  exact (φ.1 x).map_eq_zero_of_eq _ (by simp) Fin.zero_ne_one
+  simpa only [eval₂_apply] using (φ.1 x).map_eq_zero_of_eq ![v, v] (by simp) Fin.zero_ne_one
 
 /-- Swapping the inputs of a degree-two smooth form negates its value. -/
 theorem eval₂_swap (φ : SmoothForm I M F 2) (x : M)
@@ -209,7 +208,7 @@ theorem ext {φ ψ : SmoothForm I M F 2}
   intro v
   have hv : v = ![v 0, v 1] := (FinVec.etaExpand_eq v).symm
   rw [hv]
-  exact h x (v 0) (v 1)
+  simpa only [eval₂_apply] using h x (v 0) (v 1)
 
 end SmoothForm
 
