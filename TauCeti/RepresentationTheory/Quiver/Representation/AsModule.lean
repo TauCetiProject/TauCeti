@@ -236,7 +236,7 @@ theorem toEnd_single (x : Quiver.TotalPath Q) (c : k) :
 `TauCeti.QuiverRep.mapₗ_nil` is the projection onto that summand. -/
 theorem toEnd_vertexIdempotent (v : Q) :
     toEnd k Q M (vertexIdempotent k v) = pathEnd k Q M ⟨v, v, _root_.Quiver.Path.nil⟩ := by
-  rw [vertexIdempotent_eq_single, toEnd_single, one_smul]
+  rw [vertexIdempotent_eq_ofPath, toEnd_ofPath]
 
 /-- The module over the path algebra carried by a representation of `Q`.
 
@@ -379,10 +379,7 @@ vertex component of `TauCeti.QuiverRep.asModule` is read off. -/
 @[simp]
 theorem vertexIdempotent_smul (v : Q) (x : asModule k Q M) :
     (vertexIdempotent k v : pathAlgebra k Q) • x = ofVertex k Q M v (toVertex k Q M v x) := by
-  have h : (vertexIdempotent k v : pathAlgebra k Q)
-      = ofPath ⟨v, v, _root_.Quiver.Path.nil⟩ := by
-    rw [vertexIdempotent_eq_single, ofPath_eq_single]
-  rw [h, ofPath_smul, mapₗ_nil, LinearMap.id_coe, id_eq]
+  rw [vertexIdempotent_eq_ofPath, ofPath_smul, mapₗ_nil, LinearMap.id_coe, id_eq]
 
 /-- **The vertex component is the image of the vertex space**: the piece of
 `TauCeti.QuiverRep.asModule` that the vertex idempotent fixes is the summand `Mᵥ`. -/

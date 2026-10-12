@@ -16,7 +16,7 @@ import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Addition.BaseChange
 import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.MulBy.Finite
 import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Integral
 import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Smooth
-import TauCeti.AlgebraicGeometry.Morphisms.FiniteFlatDegree
+import TauCeti.AlgebraicGeometry.Morphisms.Finite.FlatDegree
 import TauCeti.AlgebraicGeometry.Morphisms.Flat.Dominant
 import TauCeti.AlgebraicGeometry.Morphisms.Syntomic.Smooth
 
