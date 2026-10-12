@@ -23,7 +23,7 @@ It is all that is needed for the generic basis API -- `Module.Basis.coe_sumCoord
 
 * `MonoidAlgebra.basis_repr`: the coordinates of `k[X]` in the standard basis are the
   coefficients.
-* `MonoidAlgebra.coeff_basis_toDualEquiv_symm_apply`: the coefficients under the
+* `Module.Dual.coeff_basis_toDualEquiv_symm_apply`: the coefficients under the
   standard-basis dual equivalence are evaluations on basis vectors.
 * `MonoidAlgebra.sumCoords_basis_surjective`: the coefficient sum is surjective when the
   index type is nonempty.
@@ -43,7 +43,7 @@ open scoped Classical in
 /-- The coefficients of the vector corresponding to a functional under the standard-basis
 identification `k[X] ≃ Hom_k(k[X], k)` are the values of the functional on the basis. -/
 @[simp]
-theorem MonoidAlgebra.coeff_basis_toDualEquiv_symm_apply {k : Type*} [CommSemiring k]
+theorem Module.Dual.coeff_basis_toDualEquiv_symm_apply {k : Type*} [CommSemiring k]
     {X : Type*} [Finite X] (f : Module.Dual k (MonoidAlgebra k X)) (x : X) :
     ((MonoidAlgebra.basis X k).toDualEquiv.symm f).coeff x =
       f (MonoidAlgebra.single x 1) :=
