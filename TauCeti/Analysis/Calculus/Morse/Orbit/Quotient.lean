@@ -48,7 +48,7 @@ def connectingOrbitSetoid (φ : _root_.Flow ℝ E) (p q : E) :
 
 /-- Connecting points are related exactly when one is a time translate of the other. -/
 @[simp]
-theorem connectingOrbitSetoid_iff
+theorem connectingOrbitSetoid_apply
     (x y : ↥(unstableSet φ p ∩ stableSet φ q)) :
     connectingOrbitSetoid φ p q x y ↔ ∃ t : ℝ, φ t y.1 = x.1 :=
   Iff.rfl
@@ -77,7 +77,7 @@ private theorem exists_homeomorph_levelSlice
       connectingOrbitSetoid φ p q x y ↔ Setoid.ker s' x y := by
     constructor
     · intro h
-      obtain ⟨t, ht⟩ := connectingOrbitSetoid_iff x y |>.mp h
+      obtain ⟨t, ht⟩ := connectingOrbitSetoid_apply x y |>.mp h
       have hxy : x = ⟨φ t y.1, ⟨isInvariant_unstableSet φ p t y.2.1,
           isInvariant_stableSet φ q t y.2.2⟩⟩ := Subtype.ext ht.symm
       rw [hxy]
@@ -85,7 +85,7 @@ private theorem exists_homeomorph_levelSlice
     · intro h
       have horbit' (z : ↥(unstableSet φ p ∩ stableSet φ q)) :
           connectingOrbitSetoid φ p q (i (s' z)) z :=
-        (connectingOrbitSetoid_iff _ _).mpr (φ.mem_orbit_iff.mp (horbit z))
+        (connectingOrbitSetoid_apply _ _).mpr (φ.mem_orbit_iff.mp (horbit z))
       rw [Setoid.ker_def] at h
       exact (connectingOrbitSetoid φ p q).trans'
         ((connectingOrbitSetoid φ p q).symm' (horbit' x)) (h.symm ▸ horbit' y)
@@ -132,6 +132,6 @@ theorem orbitQuotientHomeomorphLevelSlice_mk_eq_iff
     orbitQuotientHomeomorphLevelSlice hφ hf hfp hfq hc (Quotient.mk _ x) = y ↔
       ∃ t : ℝ, φ t y.1 = x.1 := by
   rw [← Homeomorph.eq_symm_apply, orbitQuotientHomeomorphLevelSlice_symm_apply, Quotient.eq]
-  exact connectingOrbitSetoid_iff _ _
+  exact connectingOrbitSetoid_apply _ _
 
 end TauCeti
