@@ -40,7 +40,7 @@ and the triangulated `K₀` of its bounded homotopy category, which sends a boun
 alternating sum of the classes of its terms: homotopy invariance makes that assignment well
 defined on the objects of the homotopy category, and the mapping-cone formula makes it additive
 on distinguished triangles. The comparison itself is proved in
-`TauCeti.CategoryTheory.GrothendieckGroup.BoundedHomotopy`.
+`TauCeti.CategoryTheory.GrothendieckGroup.BoundedHomotopy.Basic`.
 
 ## Main definitions
 
