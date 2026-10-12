@@ -65,7 +65,10 @@ theorem isUpperTriangular_genericMatrix_of_geometricallySolvable
     let _ := GeneralLinear.standardComodule k 7
     apply Comodule.ext
     rw [Comodule.corestrict_coact]
-    -- The right-hand coaction is the single corestriction of the standard GL₇ comodule.
+    -- `corestrict_coact` exposes the outer `Corestrict f`, but the right-hand coaction
+    -- remains behind `GeneralLinear.corestrictStandardComodule`. Unfold that wrapper
+    -- via definitional equality to expose `corestrictCoact`; the left-hand source instance
+    -- similarly uses `corestrictStandardComodule` for π, giving the iterated corestriction.
     change Comodule.corestrictCoact (M := Fin 7 → k) f.hom.toCoalgHom =
       Comodule.corestrictCoact (M := Fin 7 → k) (standardCoordinateMap k).hom.toCoalgHom
     rw [← Comodule.corestrictCoact_comp]
@@ -103,10 +106,9 @@ theorem upperTriangular_le_of_geometricallySolvable
   let f := CommHopfAlgCat.liftQuotient J (standardCoordinateMap k) hJ
   have htri := isUpperTriangular_genericMatrix_of_geometricallySolvable k hconn hsolv π f
     (CommHopfAlgCat.mkQuotient_comp_liftQuotient J (standardCoordinateMap k) hJ)
-  have hker := GeneralLinear.UpperTriangular.definingHopfIdeal_toIdeal_le_ker k 7
-    π.hom.toAlgHom (fun i j hji => by
-      simpa only [Matrix.map_apply, GeneralLinear.genericMatrix_apply,
-        BialgHom.coe_toAlgHom] using htri hji)
+  have hker := GeneralLinear.UpperTriangular.definingHopfIdeal_toIdeal_le_ker_of_isUpperTriangular
+    k 7 π.hom.toAlgHom (by
+      rwa [← GeneralLinear.map_genericMatrix_eq_coe_pointToGeneralLinear])
   rw [CommHopfAlgCat.mkQuotient_ker] at hker
   exact HopfIdeal.toIdeal_le_toIdeal.mp hker
 
