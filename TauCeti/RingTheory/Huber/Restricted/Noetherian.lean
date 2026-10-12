@@ -87,17 +87,11 @@ over the Banach algebra `K⟨X₁, …, Xₙ⟩` of unit-radius restricted serie
 noetherian. -/
 instance IsStronglyNoetherian.isRestricted_subring (n : ℕ) :
     IsStronglyNoetherian (MvPowerSeries.IsRestricted.subring (R := K) fun _ : Fin n ↦ (1 : ℝ)) := by
-  -- `K` is Huber: Tate if some nonzero element has norm `< 1`, and discrete otherwise
+  -- `K` is Huber: discrete if its norm is trivial, and Tate if it is nontrivially normed
   have : IsHuberRing K := by
-    by_cases h : ∃ ϖ : K, ϖ ≠ 0 ∧ ‖ϖ‖ < 1
-    · obtain ⟨ϖ, h0, h1⟩ := h
-      exact (IsTateRing.of_isUnit_norm_lt_one (isUnit_iff_ne_zero.mpr h0) h1).toIsHuberRing
-    · push Not at h
-      have : DiscreteTopology K := discreteTopology_of_isOpen_singleton_zero <| by
-        convert Metric.isOpen_ball (x := (0 : K)) (ε := 1)
-        ext x
-        simpa using ⟨fun hx ↦ hx ▸ by simp, fun hx ↦ by_contra fun h0 ↦ (h x h0).not_gt hx⟩
-      infer_instance
+    rcases NormedField.discreteTopology_or_nontriviallyNormedField K with _ | ⟨_, rfl⟩
+    · infer_instance
+    · exact (IsTateRing.of_nontriviallyNormedField K).toIsHuberRing
   -- `K⟨X₁, …, Xₙ⟩` is the completed Huber algebra `restrictedMvPowerSeriesCompletion n K`, up to
   -- an isomorphism continuous in both directions, and that algebra is strongly noetherian
   exact (isStronglyNoetherian_congr restrictedMvPowerSeriesCompletionGaussEquiv
