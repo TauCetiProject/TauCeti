@@ -10,6 +10,8 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Frobenius.Subring
 import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Hom.Ordinary
 -- Proof-only: `2f - t` is anti-self-dual and squares to an integer, where `t` is the trace of `f`.
 import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Dual.Degree
+-- Proof-only: a finitely generated torsion abelian group is finite.
+import Mathlib.GroupTheory.FiniteAbelian.Basic
 
 /-!
 # The endomorphism ring of an ordinary elliptic curve over a finite field
@@ -34,6 +36,8 @@ is an integer `e`, using that `u` and `v` commute. Multiplying by `v` gives
 
 * `WeierstrassCurve.exists_zsmul_mem_adjoin_ofIsogeny_frobeniusIsogeny_of_isOrdinary`: a fixed
   nonzero integer multiplies every endomorphism of an ordinary curve into `ℤ[π]`.
+* `WeierstrassCurve.finiteIndex_adjoin_ofIsogeny_frobeniusIsogeny_of_isOrdinary`: `ℤ[π]` has
+  finite index in the endomorphism ring of an ordinary curve.
 * `WeierstrassCurve.module_finite_hom_of_isOrdinary` and
   `WeierstrassCurve.finrank_hom_of_isOrdinary`: the endomorphism ring of an ordinary curve is a
   finitely generated `ℤ`-module of rank `2`.
@@ -126,6 +130,20 @@ theorem module_finite_hom_of_isOrdinary (hW : W.IsOrdinary p) :
     rw [toSubmodule_adjoin_ofIsogeny_frobeniusIsogeny]
     exact Module.Finite.span_of_finite ℤ (Set.toFinite _)
   exact Module.Finite.of_injective g hg
+
+/-- **`ℤ[π]` has finite index in the endomorphism ring of an ordinary curve** (Silverman V.3.1,
+III.9.4): the quotient is a finitely generated `ℤ`-module killed by a nonzero integer. -/
+theorem finiteIndex_adjoin_ofIsogeny_frobeniusIsogeny_of_isOrdinary (hW : W.IsOrdinary p) :
+    (Subalgebra.toSubmodule (Algebra.adjoin ℤ
+      {Hom.ofIsogeny (frobeniusIsogeny W.toAffine)})).toAddSubgroup.FiniteIndex := by
+  have := module_finite_hom_of_isOrdinary hW
+  obtain ⟨N, hN, h⟩ := exists_zsmul_mem_adjoin_ofIsogeny_frobeniusIsogeny_of_isOrdinary hW
+  -- the quotient is a finitely generated `ℤ`-module killed by `N`, hence finite
+  have := Module.finite_of_fg_torsion _ fun x : _ ⧸ Subalgebra.toSubmodule
+      (Algebra.adjoin ℤ {Hom.ofIsogeny (frobeniusIsogeny W.toAffine)}) ↦
+    Submodule.Quotient.induction_on _ x fun f ↦
+      ⟨⟨N, mem_nonZeroDivisors_of_ne_zero hN⟩, (Submodule.Quotient.mk_eq_zero _).2 (h f)⟩
+  exact @AddSubgroup.finiteIndex_of_finite_quotient _ _ _ this
 
 /-- **The endomorphism ring of an ordinary curve over a finite field has rank `2`** (Silverman
 V.3.1, III.9.4): it contains `ℤ[π]`, of rank `2`, and embeds into it. With
