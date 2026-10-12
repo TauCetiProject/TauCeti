@@ -17,6 +17,8 @@ For each test scheme over `S`, pairs of relative effective Cartier divisors on t
 equalizer of the projection maps using Mathlib's general equalizer construction for subfunctors.
 This is the moduli-level equality locus whose representability and scheme structure can be
 studied when the divisor functor is represented. The incidence locus is a separate construction.
+The inclusion satisfies equality of the projections, and every family satisfying that equality
+factors uniquely through the locus.
 -/
 
 public section
@@ -35,7 +37,7 @@ variable {S X : Scheme.{u}} (f : X ⟶ S)
 
 /-- The equality locus of pairs of relative effective Cartier divisors, constructed as the
 equalizer of the two projections from the pair functor. -/
-abbrev relativeEffectiveCartierEqualitySubfunctor :
+def relativeEffectiveCartierEqualitySubfunctor :
     Subfunctor (FunctorToTypes.prod (relativeEffectiveCartierSubfunctor f).toFunctor
       (relativeEffectiveCartierSubfunctor f).toFunctor) :=
   Subfunctor.equalizer ((⊤ : Subfunctor (FunctorToTypes.prod
@@ -57,6 +59,43 @@ lemma mem_relativeEffectiveCartierEqualitySubfunctor_obj_iff
       (A.ι ≫ FunctorToTypes.prod.fst)
       (A.ι ≫ FunctorToTypes.prod.snd)
       (⟨p, trivial⟩ : A.toFunctor.obj T))
+
+namespace relativeEffectiveCartierEqualitySubfunctor
+
+/-- The two divisor projections agree on the equality locus. -/
+@[reassoc]
+lemma condition :
+    (relativeEffectiveCartierEqualitySubfunctor f).ι ≫ FunctorToTypes.prod.fst =
+      (relativeEffectiveCartierEqualitySubfunctor f).ι ≫ FunctorToTypes.prod.snd := by
+  ext T p
+  exact (mem_relativeEffectiveCartierEqualitySubfunctor_obj_iff f).mp p.property
+
+variable {G : (Over S)ᵒᵖ ⥤ Type u}
+  (φ : G ⟶ FunctorToTypes.prod (relativeEffectiveCartierSubfunctor f).toFunctor
+    (relativeEffectiveCartierSubfunctor f).toFunctor)
+  (h : φ ≫ FunctorToTypes.prod.fst = φ ≫ FunctorToTypes.prod.snd)
+
+/-- A family of pairs with equal divisors factors through the equality locus. -/
+def lift : G ⟶ (relativeEffectiveCartierEqualitySubfunctor f).toFunctor :=
+  Subfunctor.lift φ (by
+    intro T p hp
+    obtain ⟨x, rfl⟩ := hp
+    apply (mem_relativeEffectiveCartierEqualitySubfunctor_obj_iff f).mpr
+    simpa using ConcreteCategory.congr_hom (congr_app h T) x)
+
+/-- Composing the lift with the inclusion recovers the original family of pairs. -/
+@[reassoc (attr := simp)]
+lemma lift_ι : lift f φ h ≫ (relativeEffectiveCartierEqualitySubfunctor f).ι = φ := by
+  exact Subfunctor.lift_ι _ _
+
+/-- The lift is the unique factorization of the family through the equality locus. -/
+lemma lift_unique (ψ : G ⟶ (relativeEffectiveCartierEqualitySubfunctor f).toFunctor)
+    (hψ : ψ ≫ (relativeEffectiveCartierEqualitySubfunctor f).ι = φ) :
+    ψ = lift f φ h := by
+  exact (cancel_mono (relativeEffectiveCartierEqualitySubfunctor f).ι).mp
+    (hψ.trans (lift_ι f φ h).symm)
+
+end relativeEffectiveCartierEqualitySubfunctor
 
 end
 
