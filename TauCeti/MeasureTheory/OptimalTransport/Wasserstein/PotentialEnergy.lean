@@ -314,8 +314,8 @@ theorem _root_.StrongConvexOn.geodesicallyConvex_potentialEnergy (hV : StrongCon
 /-- **Convexity of the potential energy along generalized geodesics.** On a separable Banach space
 `E`, the potential energy of an `m`-strongly convex measurable potential `V` whose negative part
 grows at most quadratically is `m`-convex along generalized geodesics based at every `μ ∈ P₂(E)`:
-along the generalized geodesic `ν_t` of any quadratic generalized-geodesic plan `γ` from `ν₀` to
-`ν₁` based at `μ`,
+any two laws `ν₀` and `ν₁` of `P₂(E)` carry some quadratic generalized-geodesic plan `γ` from `ν₀`
+to `ν₁` based at `μ` along whose generalized geodesic `ν_t`, for `t ∈ [0, 1]`,
 `∫ V dν_t ≤ (1 - t) ∫ V dν₀ + t ∫ V dν₁ - (m / 2) t (1 - t) ∫ ‖y₀ - y₁‖² dγ`. -/
 theorem _root_.StrongConvexOn.generalizedGeodesicallyConvex_potentialEnergy
     (hV : StrongConvexOn univ m V) (hVm : Measurable V) {A B : ℝ}

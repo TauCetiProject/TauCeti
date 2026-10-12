@@ -8,8 +8,10 @@ module
 public import TauCeti.Analysis.InnerProductSpace.CompleteSquare
 public import TauCeti.MeasureTheory.OptimalTransport.Gluing
 public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Basic
+public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Space
 import TauCeti.MeasureTheory.Function.Lp.LIntegralRpow
 import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Infinity.Basic
+import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Pushforward
 
 /-!
 # Generalized geodesics in the Wasserstein space
@@ -58,6 +60,9 @@ uniqueness of the step and the discrete energy estimates.
 * `TauCeti.IsGeneralizedGeodesicPlan.generalizedGeodesic_zero` and
   `TauCeti.IsGeneralizedGeodesicPlan.generalizedGeodesic_one`: the generalized geodesic runs from
   `ν₀` to `ν₁`.
+* `TauCeti.hasFiniteMoment_generalizedGeodesic` and `TauCeti.exists_coe_eq_generalizedGeodesic`:
+  generalized geodesics between laws of finite `q`-th moment stay in laws of finite `q`-th moment,
+  so those between laws of `P₂(E)` run in `P₂(E)`.
 * `TauCeti.wassersteinEDist_generalizedGeodesic_sq_add_le`: the convexity inequality for an
   arbitrary three-plan with first marginal `μ`, against the three transport integrals of the plan.
 * `TauCeti.IsGeneralizedGeodesicPlan.wassersteinEDist_sq_add_le` and
@@ -295,5 +300,45 @@ theorem wassersteinEDist_sq_add_wassersteinEDist_sq_le (hγ : IsGeneralizedGeode
 end IsGeneralizedGeodesicPlan
 
 end InnerProductSpace
+
+section Moment
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [MeasurableSpace E] [BorelSpace E]
+  [SecondCountableTopology E] {q : ℝ≥0∞}
+
+/-- **Generalized geodesics stay in `P_q`.** If the last two marginals of a finite measure `γ` on
+`E × E × E` have finite `q`-th moment, then so does the law of `(1 - t) • y₀ + t • y₁` under `γ`,
+for every `t`. -/
+theorem hasFiniteMoment_generalizedGeodesic {γ : Measure (E × E × E)} [IsFiniteMeasure γ]
+    (h₀ : HasFiniteMoment q γ.snd.fst) (h₁ : HasFiniteMoment q γ.snd.snd) (t : ℝ) :
+    HasFiniteMoment q (generalizedGeodesic γ t) := by
+  rw [Measure.fst, Measure.snd, Measure.map_map measurable_fst measurable_snd] at h₀
+  rw [Measure.snd, Measure.snd, Measure.map_map measurable_snd measurable_snd] at h₁
+  have h := ((memLp_of_hasFiniteMoment_map (measurable_fst.comp measurable_snd) h₀).const_smul
+    (1 - t)).add ((memLp_of_hasFiniteMoment_map (measurable_snd.comp measurable_snd) h₁).const_smul
+    t)
+  rw [generalizedGeodesic_def, hasFiniteMoment_map_iff_memLp_edist (by fun_prop) 0]
+  exact (memLp_congr_enorm h.aestronglyMeasurable (by fun_prop) (.of_forall fun w ↦ by simp)).1 h
+
+/-- A measure on `E × E × E` whose last two coordinates are coupled as two laws of `P₂(E)`, for
+instance a generalized-geodesic plan between them, has its generalized geodesic in `P₂(E)`: at every
+time, `generalizedGeodesic γ t` is the law of an element of `P₂(E)`. -/
+theorem exists_coe_eq_generalizedGeodesic {γ : Measure (E × E × E)}
+    {ν₀ ν₁ : WassersteinSpace 2 E}
+    (hγ : IsCoupling γ.snd ((ν₀ : ProbabilityMeasure E) : Measure E)
+      ((ν₁ : ProbabilityMeasure E) : Measure E)) (t : ℝ) :
+    ∃ ν : WassersteinSpace 2 E,
+      ((ν : ProbabilityMeasure E) : Measure E) = generalizedGeodesic γ t := by
+  have h₀ := hγ.fst_eq
+  have h₁ := hγ.snd_eq
+  have : IsProbabilityMeasure γ := ⟨by rw [← Measure.snd_univ, ← Measure.fst_univ, h₀,
+    measure_univ]⟩
+  have hm : HasFiniteMoment 2 (generalizedGeodesic γ t) := hasFiniteMoment_generalizedGeodesic
+    (by rw [h₀]; exact ν₀.hasFiniteMoment) (by rw [h₁]; exact ν₁.hasFiniteMoment) t
+  let P : ProbabilityMeasure E := ⟨generalizedGeodesic γ t, inferInstance⟩
+  have hP : (P : Measure E) = generalizedGeodesic γ t := ProbabilityMeasure.coe_mk _ _
+  exact ⟨WassersteinSpace.mk P (hP ▸ hm), by rw [WassersteinSpace.coe_mk, hP]⟩
+
+end Moment
 
 end TauCeti

@@ -9,7 +9,6 @@ public import TauCeti.Analysis.GradientFlow.MoreauYosida.Basic
 public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.GeneralizedGeodesic.Basic
 public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Space
 import TauCeti.Data.EReal.Operations
-import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Pushforward
 
 /-!
 # Convexity along generalized geodesics and the Jordan–Kinderlehrer–Otto step
@@ -49,8 +48,6 @@ midpoint of the generalized geodesic joining two minimizers would otherwise do s
 
 ## Main results
 
-* `TauCeti.hasFiniteMoment_generalizedGeodesic`: generalized geodesics between laws of finite
-  `q`-th moment stay in laws of finite `q`-th moment.
 * `TauCeti.IsGeneralizedGeodesicPlan.dist_sq_add_le`: the convexity of the squared Wasserstein
   distance from the base point along a generalized geodesic, as an inequality of real numbers.
 * `TauCeti.GeneralizedGeodesicallyConvex.add_edist_sq_div`: the penalized functional
@@ -88,75 +85,6 @@ open scoped ENNReal NNReal
 namespace TauCeti
 
 variable {E : Type*} [NormedAddCommGroup E] [MeasurableSpace E]
-
-section Moment
-
-variable {q : ℝ≥0∞}
-
-/-- For an integrable quadratic cost, the transport integral of the squared extended distance is
-the real transport integral of the squared norm of the displacement. -/
-theorem lintegral_edist_sq_eq_ofReal_integral {π : Measure (E × E)}
-    (hπ : Integrable (fun z : E × E ↦ ‖z.1 - z.2‖ ^ 2) π) :
-    ∫⁻ z, edist z.1 z.2 ^ 2 ∂π = ENNReal.ofReal (∫ z, ‖z.1 - z.2‖ ^ 2 ∂π) := by
-  rw [ofReal_integral_eq_lintegral_ofReal hπ (.of_forall fun z ↦ by positivity)]
-  refine lintegral_congr fun z ↦ ?_
-  rw [edist_dist, dist_eq_norm, ENNReal.ofReal_pow (norm_nonneg _)]
-
-variable [BorelSpace E] [SecondCountableTopology E]
-
-/-- A function whose law under a finite measure has finite `q`-th moment lies in `Lq`. -/
-private theorem memLp_of_hasFiniteMoment_map {α : Type*} [MeasurableSpace α] {π : Measure α}
-    [IsFiniteMeasure π] {f : α → E} (hf : Measurable f) (h : HasFiniteMoment q (π.map f)) :
-    MemLp f q π :=
-  (memLp_map_measure_iff aestronglyMeasurable_id hf.aemeasurable).1 h.memLp_id
-
-/-- The quadratic cost `‖x - y‖²` is integrable against a finite measure on `E × E` whose two
-marginals have finite second moment. -/
-theorem integrable_norm_sub_sq_of_hasFiniteMoment {π : Measure (E × E)} [IsFiniteMeasure π]
-    (h₁ : HasFiniteMoment 2 π.fst) (h₂ : HasFiniteMoment 2 π.snd) :
-    Integrable (fun z : E × E ↦ ‖z.1 - z.2‖ ^ 2) π := by
-  rw [Measure.fst] at h₁
-  rw [Measure.snd] at h₂
-  exact (memLp_two_iff_integrable_sq_norm (by fun_prop)).1 <|
-    (memLp_of_hasFiniteMoment_map measurable_fst h₁).sub
-      (memLp_of_hasFiniteMoment_map measurable_snd h₂)
-
-variable [NormedSpace ℝ E]
-
-/-- **Generalized geodesics stay in `P_q`.** If the last two marginals of a finite measure `γ` on
-`E × E × E` have finite `q`-th moment, then so does the law of `(1 - t) • y₀ + t • y₁` under `γ`,
-for every `t`. -/
-theorem hasFiniteMoment_generalizedGeodesic {γ : Measure (E × E × E)} [IsFiniteMeasure γ]
-    (h₀ : HasFiniteMoment q γ.snd.fst) (h₁ : HasFiniteMoment q γ.snd.snd) (t : ℝ) :
-    HasFiniteMoment q (generalizedGeodesic γ t) := by
-  rw [Measure.fst, Measure.snd, Measure.map_map measurable_fst measurable_snd] at h₀
-  rw [Measure.snd, Measure.snd, Measure.map_map measurable_snd measurable_snd] at h₁
-  have h := ((memLp_of_hasFiniteMoment_map (measurable_fst.comp measurable_snd) h₀).const_smul
-    (1 - t)).add ((memLp_of_hasFiniteMoment_map (measurable_snd.comp measurable_snd) h₁).const_smul
-    t)
-  rw [generalizedGeodesic_def, hasFiniteMoment_map_iff_memLp_edist (by fun_prop) 0]
-  exact (memLp_congr_enorm h.aestronglyMeasurable (by fun_prop) (.of_forall fun w ↦ by simp)).1 h
-
-/-- A measure on `E × E × E` whose last two coordinates are coupled as two laws of `P₂(E)`, for
-instance a generalized-geodesic plan between them, has its generalized geodesic in `P₂(E)`: at every
-time, `generalizedGeodesic γ t` is the law of an element of `P₂(E)`. -/
-theorem exists_coe_eq_generalizedGeodesic {γ : Measure (E × E × E)}
-    {ν₀ ν₁ : WassersteinSpace 2 E}
-    (hγ : IsCoupling γ.snd ((ν₀ : ProbabilityMeasure E) : Measure E)
-      ((ν₁ : ProbabilityMeasure E) : Measure E)) (t : ℝ) :
-    ∃ ν : WassersteinSpace 2 E,
-      ((ν : ProbabilityMeasure E) : Measure E) = generalizedGeodesic γ t := by
-  have h₀ := hγ.fst_eq
-  have h₁ := hγ.snd_eq
-  have : IsProbabilityMeasure γ := ⟨by rw [← Measure.snd_univ, ← Measure.fst_univ, h₀,
-    measure_univ]⟩
-  have hm : HasFiniteMoment 2 (generalizedGeodesic γ t) := hasFiniteMoment_generalizedGeodesic
-    (by rw [h₀]; exact ν₀.hasFiniteMoment) (by rw [h₁]; exact ν₁.hasFiniteMoment) t
-  let P : ProbabilityMeasure E := ⟨generalizedGeodesic γ t, inferInstance⟩
-  have hP : (P : Measure E) = generalizedGeodesic γ t := ProbabilityMeasure.coe_mk _ _
-  exact ⟨WassersteinSpace.mk P (hP ▸ hm), by rw [WassersteinSpace.coe_mk, hP]⟩
-
-end Moment
 
 section Convexity
 
@@ -207,22 +135,6 @@ end Convexity
 section Hilbert
 
 variable [BorelSpace E] [SecondCountableTopology E] [CompleteSpace E]
-
-/-- The squared quadratic Wasserstein distance between two laws of `P₂(E)` is at most the
-quadratic cost `∫ ‖x - y‖² dπ` of any of their couplings `π`. -/
-theorem WassersteinSpace.dist_sq_le_integral {ν₀ ν₁ : WassersteinSpace 2 E}
-    {π : Measure (E × E)}
-    (hπ : IsCoupling π ((ν₀ : ProbabilityMeasure E) : Measure E)
-      ((ν₁ : ProbabilityMeasure E) : Measure E)) :
-    dist ν₀ ν₁ ^ 2 ≤ ∫ z, ‖z.1 - z.2‖ ^ 2 ∂π := by
-  have : IsProbabilityMeasure π := hπ.isProbabilityMeasure
-  have hi := integrable_norm_sub_sq_of_hasFiniteMoment (hπ.fst_eq ▸ ν₀.hasFiniteMoment)
-    (hπ.snd_eq ▸ ν₁.hasFiniteMoment)
-  have hW := wassersteinEDist_rpow_le_lintegral measurable_edist two_ne_zero ENNReal.ofNat_ne_top hπ
-  simp only [ENNReal.toReal_ofNat, ENNReal.rpow_two] at hW
-  rw [lintegral_edist_sq_eq_ofReal_integral hi, ← WassersteinSpace.edist_def, edist_dist,
-    ← ENNReal.ofReal_pow dist_nonneg] at hW
-  exact (ENNReal.ofReal_le_ofReal_iff (integral_nonneg fun _ ↦ by positivity)).1 hW
 
 variable [InnerProductSpace ℝ E] {γ : Measure (E × E × E)} {t : ℝ}
 
