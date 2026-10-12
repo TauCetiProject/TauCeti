@@ -60,6 +60,9 @@ local data on the preimage cover.
 * `AlgebraicGeometry.Scheme.Modules.isMonoidal_pushforwardComp_hom` and
   `AlgebraicGeometry.Scheme.Modules.pullback_comp_δ`: the composition isomorphisms of pushforward
   and pullback respect the lax and oplax monoidal structures;
+* `TauCeti.AlgebraicGeometry.pullbackComp_hom_app_comp_δ`: the tensor compatibility of
+  `AlgebraicGeometry.Scheme.Modules.pullbackComp` with the composition isomorphism on the left,
+  without its inverse;
 * `AlgebraicGeometry.Scheme.Modules.restrictPullbackObjIso` identifies these two restricted
   pullbacks;
 * `AlgebraicGeometry.Scheme.Modules.isIso_iff_of_isOpenCover`: a morphism of modules is an
