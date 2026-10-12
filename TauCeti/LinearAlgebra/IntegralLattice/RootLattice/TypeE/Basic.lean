@@ -668,11 +668,7 @@ Cartan norm. -/
 theorem norm_typeE₈RootLattice_intCast (v : Fin 8 → ℤ) :
     typeE₈RootLattice.norm (fun j ↦ (v j : ℚ)) =
       (((v ᵥ* CartanMatrix.E 8) ⬝ᵥ v : ℤ) : ℚ) := by
-  rw [norm_apply, typeE₈RootLattice, form_ofGramMatrix_basisFun_apply]
-  simp only [vecMul, dotProduct]
-  push_cast
-  simp_rw [Finset.sum_mul, Finset.mul_sum, mul_assoc]
-  exact Finset.sum_comm
+  exact norm_ofGramMatrix_basisFun_intCast _ _ v
 
 /-- The `i`-th simple root of the type `E₈` root lattice, as a vector of the ambient space. -/
 -- This is sealed so `Pi.basisFun_apply` does not rewrite beneath it and destabilize the simp API.
