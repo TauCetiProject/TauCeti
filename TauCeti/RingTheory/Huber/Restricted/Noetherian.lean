@@ -23,6 +23,10 @@ completed Huber algebra. In one variable it is moreover a principal ideal ring, 
 Mathlib's univariate restricted-series ring along
 `TauCeti.Huber.restrictedMvPowerSeriesCompletionOneEquiv`.
 
+Conversely, over a complete nontrivially normed field, strong noetherianness of the completed
+Huber algebras transfers back to the Gauss-normed ring `K⟨X₁, …, Xₙ⟩`, which is therefore a
+complete strongly noetherian Tate ring; for instance `ℚ_p⟨T₁, …, Tₙ⟩`.
+
 ## Main results
 
 * `TauCeti.Huber.isPrincipalIdealRing_restrictedMvPowerSeriesCompletion_one`: every ideal of the
@@ -31,6 +35,9 @@ Mathlib's univariate restricted-series ring along
   in `n` variables over a complete nonarchimedean field is noetherian.
 * `TauCeti.Huber.IsStronglyNoetherian.of_normedField`: a complete nonarchimedean normed field is
   strongly noetherian.
+* `TauCeti.Huber.IsStronglyNoetherian.isRestricted_subring`: the Gauss-normed Tate algebra
+  `K⟨X₁, …, Xₙ⟩` over a complete nontrivially normed field with an ultrametric norm is strongly
+  noetherian.
 
 ## References
 
@@ -69,5 +76,23 @@ theorem isNoetherianRing_restrictedMvPowerSeriesCompletion (n : ℕ) :
 every completed Tate algebra `K⟨X₁, …, Xₙ⟩` is noetherian. -/
 instance IsStronglyNoetherian.of_normedField : IsStronglyNoetherian K :=
   ⟨isNoetherianRing_restrictedMvPowerSeriesCompletion⟩
+
+section GaussNorm
+
+variable {K : Type*} [NontriviallyNormedField K] [IsUltrametricDist K] [CompleteSpace K]
+
+/-- **The Gauss-normed Tate algebra over a complete rank-one field is strongly noetherian.**
+Over a complete nontrivially normed field `K` with an ultrametric norm, every restricted
+power-series algebra over the Banach algebra `K⟨X₁, …, Xₙ⟩` of unit-radius restricted series with
+its Gauss norm is noetherian. -/
+instance IsStronglyNoetherian.isRestricted_subring (n : ℕ) :
+    IsStronglyNoetherian (MvPowerSeries.IsRestricted.subring (R := K) fun _ : Fin n ↦ (1 : ℝ)) :=
+  -- `K⟨X₁, …, Xₙ⟩` is the completed Huber algebra `restrictedMvPowerSeriesCompletion n K`, up to
+  -- an isomorphism continuous in both directions, and that algebra is strongly noetherian
+  (isStronglyNoetherian_congr restrictedMvPowerSeriesCompletionGaussEquiv
+    continuous_restrictedMvPowerSeriesCompletionGaussEquiv
+    continuous_restrictedMvPowerSeriesCompletionGaussEquiv_symm).mp inferInstance
+
+end GaussNorm
 
 end TauCeti.Huber
