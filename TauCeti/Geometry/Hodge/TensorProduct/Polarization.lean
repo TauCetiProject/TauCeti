@@ -57,6 +57,33 @@ variable [AddCommGroup V'ℂ] [Module ℂ V'ℂ]
 variable {ιℂ : V →ₗ[ℤ] Vℂ} {ι'ℂ : V' →ₗ[ℤ] V'ℂ}
 variable {hℂ : IsBaseChange ℂ ιℂ} {h'ℂ : IsBaseChange ℂ ι'ℂ} {n n' : ℤ}
 
+-- The lattice uses the canonical integer action; the generic tensor map uses the action
+-- induced from a factor. Compare values on lattice tensors to transport the generic rule.
+private theorem bilinForm_tmul_on_lattices (hℂ : IsBaseChange ℂ ιℂ)
+    (h'ℂ : IsBaseChange ℂ ι'ℂ) (Q : LinearMap.BilinForm ℤ V)
+    (Q' : LinearMap.BilinForm ℤ V') :
+    bilinForm (isBaseChange_tensorLatticeMap hℂ h'ℂ) (Q.tmul Q') =
+      (bilinForm hℂ Q).tmul (bilinForm h'ℂ Q') := by
+  rw [← IsBaseChange.bilinForm_tmul hℂ h'ℂ Q Q']
+  refine (bilinForm_unique _ _ _ fun x y ↦ ?_).symm
+  induction x with
+  | tmul v w =>
+    induction y with
+    | tmul v' w' =>
+      rw [tensorLatticeMap_tmul, tensorLatticeMap_tmul]
+      have hp := (hℂ.tensorProduct h'ℂ).bilinForm_apply (Q.tmul Q')
+        (v ⊗ₜ[ℤ] w) (v' ⊗ₜ[ℤ] w')
+      rw [LinearMap.comp_apply, LinearMap.comp_apply, TensorProduct.map_tmul,
+        TensorProduct.map_tmul, TensorProduct.mapOfCompatibleSMul_tmul,
+        TensorProduct.mapOfCompatibleSMul_tmul, LinearMap.BilinForm.tensorDistrib_tmul,
+        smul_eq_mul] at hp
+      exact hp.trans (congrArg _
+        (LinearMap.BilinForm.tensorDistrib_tmul ℤ ℤ Q Q' v w v' w').symm)
+    | add y y' hy hy' => rw [map_add, map_add, map_add, hy, hy', map_add]
+  | add x x' hx hx' =>
+    rw [map_add, map_add, LinearMap.add_apply, hx, hx', ← map_add]
+    exact congrArg _ (LinearMap.map_add₂ (Q.tmul Q') x x' y).symm
+
 /-! ### The tensor product of two polarizations -/
 
 namespace IsPolarization
@@ -137,7 +164,7 @@ theorem tensorProduct (h : IsPolarization hℂ hs Q) (h' : IsPolarization h'ℂ 
   set B : LinearMap.BilinForm ℤ (V ⊗[ℤ] V') := Q.tmul Q'
   have hBℂ : bilinForm (isBaseChange_tensorLatticeMap hℂ h'ℂ) B =
       (bilinForm hℂ Q).tmul (bilinForm h'ℂ Q') :=
-    bilinForm_tmul hℂ h'ℂ Q Q'
+    bilinForm_tmul_on_lattices hℂ h'ℂ Q Q'
   have hsymm : ∀ x y, B y x = ((n + n').negOnePow : ℤ) * B x y := by
     intro x y
     apply FaithfulSMul.algebraMap_injective ℤ ℂ
@@ -208,7 +235,7 @@ theorem Polarization.tensorProduct_Qint (P : Polarization hℂ hs) (P' : Polariz
 theorem Polarization.tensorProduct_Q (P : Polarization hℂ hs) (P' : Polarization h'ℂ hs') :
     (P.tensorProduct P').Q = P.Q.tmul P'.Q := by
   rw [Polarization.Q_def, Polarization.Q_def, Polarization.Q_def, Polarization.tensorProduct_Qint,
-    bilinForm_tmul]
+    bilinForm_tmul_on_lattices]
 
 /-- The Hodge form of a tensor product of polarizations is the product of their Hodge forms on
 pure tensors. -/

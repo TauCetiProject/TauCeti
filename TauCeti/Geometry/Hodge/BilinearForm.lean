@@ -26,8 +26,6 @@ localization from `ℤ` to `ℚ` and then by scalar extension from `ℚ` to `ℂ
   conjugation.
 * `TauCeti.Hodge.nondegenerate_bilinForm_complex`: the complex extension inherits
   nondegeneracy from the integral form.
-* `TauCeti.Hodge.bilinForm_tmul`: complexification of the tensor product of two
-  integral forms is the tensor product of their complexifications.
 * `TauCeti.Hodge.bilinForm_rationalToComplexLinearEquiv_one_tmul`: the complexified
   form computes the rationalified one on purely rational vectors.
 -/
@@ -132,36 +130,5 @@ theorem bilinForm_rationalToComplexLinearEquiv_one_tmul (hℚ : IsBaseChange ℚ
 
 end Rational
 
-/-! ### Tensor products -/
-
-section TensorProduct
-
-variable {V' : Type*} {V'ℂ : Type*} [AddCommGroup V'] [AddCommGroup V'ℂ] [Module ℂ V'ℂ]
-variable {ι'ℂ : V' →ₗ[ℤ] V'ℂ}
-
-/-- The complexification of the tensor product of two integral forms, along the tensor product of
-two complexifications, is the tensor product of the two complexified forms. -/
-@[simp]
-theorem bilinForm_tmul (hℂ : IsBaseChange ℂ ιℂ)
-    (h'ℂ : IsBaseChange ℂ ι'ℂ)
-    (Q : LinearMap.BilinForm ℤ V) (Q' : LinearMap.BilinForm ℤ V') :
-    bilinForm (isBaseChange_tensorLatticeMap hℂ h'ℂ) (Q.tmul Q') =
-      (bilinForm hℂ Q).tmul (bilinForm h'ℂ Q') := by
-  refine (bilinForm_unique _ _ _ fun x y ↦ ?_).symm
-  induction x with
-  | tmul v w =>
-    induction y with
-    | tmul v' w' =>
-      rw [tensorLatticeMap_tmul, tensorLatticeMap_tmul, LinearMap.BilinForm.tensorDistrib_tmul,
-        bilinForm_apply, bilinForm_apply, smul_eq_mul, ← map_mul]
-      -- The integral form is applied through the canonical `ℤ`-module structure of `V ⊗[ℤ] V'`,
-      -- which is only defeq, not reducibly, to the one `tensorDistrib_tmul` is stated for.
-      exact congrArg _ (LinearMap.BilinForm.tensorDistrib_tmul ℤ ℤ Q Q' v w v' w').symm
-    | add y y' hy hy' => rw [map_add, map_add, map_add, hy, hy', map_add]
-  | add x x' hx hx' =>
-    rw [map_add, map_add, LinearMap.add_apply, hx, hx', ← map_add]
-    exact congrArg _ (LinearMap.map_add₂ (Q.tmul Q') x x' y).symm
-
-end TensorProduct
 
 end TauCeti.Hodge

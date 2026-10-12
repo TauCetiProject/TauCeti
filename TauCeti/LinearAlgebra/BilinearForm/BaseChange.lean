@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.BilinearForm.Prod
+public import TauCeti.RingTheory.TensorProduct.IsBaseChange
 public import Mathlib.LinearAlgebra.TensorProduct.Prod
 public import Mathlib.LinearAlgebra.BilinearForm.IsometryEquiv
 public import Mathlib.LinearAlgebra.BilinearForm.TensorProduct
@@ -38,6 +39,7 @@ module carrying the form.
 
 * `IsBaseChange.bilinForm`: extension to an abstract base change, characterized by its values
   on the original module.
+* `IsBaseChange.bilinForm_tmul`: extension commutes with tensor products of bilinear forms.
 * `LinearMap.SeparatingLeft.baseChange`: a free scalar extension preserves left separation.
 * `LinearMap.BilinForm.Nondegenerate.baseChange`: a free scalar extension preserves
   nondegeneracy, without a finite-dimensionality assumption.
@@ -249,6 +251,29 @@ theorem bilinForm_prod {M' N' : Type*} [AddCommMonoid M'] [Module R M']
     (IsBaseChange.prodMap f f' h h').bilinForm (B.prod B') =
       (h.bilinForm B).prod (h'.bilinForm B') :=
   (bilinForm_unique _ _ _ fun x y ↦ by simp [LinearMap.prodMap_apply]).symm
+
+/-- Scalar extension of a tensor product form is the tensor product of the extended forms. -/
+@[simp]
+theorem bilinForm_tmul {M' N' : Type*} [AddCommMonoid M'] [Module R M']
+    [AddCommMonoid N'] [Module R N'] [Module A N'] [IsScalarTower R A N']
+    {f' : M' →ₗ[R] N'} (h : IsBaseChange A f) (h' : IsBaseChange A f')
+    (B : LinearMap.BilinForm R M) (B' : LinearMap.BilinForm R M') :
+    (h.tensorProduct h').bilinForm (B.tmul B') =
+      (h.bilinForm B).tmul (h'.bilinForm B') := by
+  refine (bilinForm_unique _ _ _ fun x y ↦ ?_).symm
+  induction x with
+  | tmul v w =>
+    induction y with
+    | tmul v' w' =>
+      rw [LinearMap.comp_apply, LinearMap.comp_apply, TensorProduct.map_tmul,
+        TensorProduct.map_tmul, TensorProduct.mapOfCompatibleSMul_tmul,
+        TensorProduct.mapOfCompatibleSMul_tmul, LinearMap.BilinForm.tensorDistrib_tmul,
+        bilinForm_apply, bilinForm_apply, smul_eq_mul, ← map_mul]
+      exact congrArg _ (LinearMap.BilinForm.tensorDistrib_tmul R R B B' v w v' w').symm
+    | add y y' hy hy' => rw [map_add, map_add, map_add, hy, hy', map_add]
+  | add x x' hx hx' =>
+    rw [map_add, map_add, LinearMap.add_apply, hx, hx', ← map_add]
+    exact congrArg _ (LinearMap.map_add₂ (B.tmul B') x x' y).symm
 
 end BilinForm
 
