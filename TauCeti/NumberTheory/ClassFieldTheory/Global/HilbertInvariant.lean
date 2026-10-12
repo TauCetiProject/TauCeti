@@ -163,6 +163,8 @@ theorem infiniteInvAt_kummerBrauerClass (w : InfinitePlace K) (a b : Kˣ) :
           (algebraMap K w.Completion).injective)
         (Units.map (algebraMap K w.Completion : K →* w.Completion) a)
         (Units.map (algebraMap K w.Completion : K →* w.Completion) b))
+    -- `change` unfolds only the local `let x`; no rewrite lemma names this abbreviation.
+    -- The invariant normalization uses `realInv_apply` below, not unfolding of `realInv`.
     change realInv x = ZMod.toRatAddCircle 2 (realInvEquiv x)
     by_cases hx : x = 0
     · simp [realInv_apply, hx]
