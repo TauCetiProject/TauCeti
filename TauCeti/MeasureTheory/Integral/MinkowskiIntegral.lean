@@ -105,8 +105,7 @@ private lemma ae_lintegral_ne_top [SigmaFinite μ] [SFinite ν] {f : α → β �
     by_contra hne
     exact (ENNReal.top_mul hne ▸ hlt).ne rfl
   refine measure_mono_null (fun x hx ↦ ?_) (measure_iUnion_null hk)
-  obtain ⟨k, hk⟩ := mem_iUnion.1 ((iUnion_spanningSets μ).symm ▸ mem_univ x : x ∈ ⋃ k, _)
-  exact mem_iUnion.2 ⟨k, not_not.1 hx, hk⟩
+  exact mem_iUnion.2 ⟨spanningSetsIndex μ x, not_not.1 hx, mem_spanningSetsIndex μ x⟩
 
 /-- Testing against `(∫⁻ y, f x y ∂ν) ^ (p - 1)` on a measurable set `A`: if the integral of
 `(∫⁻ y, f x y ∂ν) ^ p` over `A` is finite, it is at most the `p`-th power of the right-hand side
@@ -183,7 +182,7 @@ private lemma lintegral_Lp_lintegral_le_of_measurable [SigmaFinite μ] [SFinite 
     filter_upwards [ae_lintegral_ne_top hf hpq hR] with x hx
     refine le_antisymm (iSup_le fun n ↦ indicator_le_self _ _ x) ?_
     obtain ⟨n₁, hn₁⟩ := ENNReal.exists_nat_gt hx
-    obtain ⟨n₂, hn₂⟩ := mem_iUnion.1 ((iUnion_spanningSets μ).symm ▸ mem_univ x : x ∈ ⋃ k, _)
+    obtain ⟨n₂, hn₂⟩ : ∃ n, x ∈ spanningSets μ n := ⟨_, mem_spanningSetsIndex μ x⟩
     refine le_iSup_of_le (max n₁ n₂) (le_of_eq ?_)
     rw [indicator_of_mem]
     exact ⟨hn₁.le.trans (by exact_mod_cast le_max_left n₁ n₂),

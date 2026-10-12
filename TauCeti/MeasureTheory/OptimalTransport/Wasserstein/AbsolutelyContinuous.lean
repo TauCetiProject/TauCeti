@@ -71,12 +71,6 @@ namespace TauCeti
 
 variable {X : Type*} [PseudoMetricSpace X] {a b : ℝ} {p : ℝ≥0∞}
 
-/-- The speed at a fixed time of a path, extended by constants outside `[a, b]`, is a measurable
-function of the path. -/
-private lemma measurable_metricDerivative_IccExtend_apply (hab : a ≤ b) (r : ℝ) :
-    Measurable fun γ : C(Icc a b, X) ↦ metricDerivative (IccExtend hab γ) r :=
-  (measurable_metricDerivative_IccExtend hab).comp measurable_prodMk_right
-
 /-- The averaged speed `r ↦ ‖|γ'|(r)‖_{Lᵖ(η)}` of a law on paths is measurable. -/
 private lemma measurable_eLpNorm_metricDerivative (hab : a ≤ b) (η : Measure C(Icc a b, X))
     [SFinite η] (hp0 : p ≠ 0) (hp : p ≠ ∞) :
@@ -87,9 +81,8 @@ private lemma measurable_eLpNorm_metricDerivative (hab : a ≤ b) (η : Measure 
       eLpNorm (fun γ : C(Icc a b, X) ↦ metricDerivative (IccExtend hab γ) r) p η) =
       fun r ↦ (∫⁻ γ, metricDerivative (IccExtend hab γ) r ^ p.toReal ∂η) ^ (1 / p.toReal) := by
     funext r
-    rw [eLpNorm_eq_lintegral_rpow_enorm_toReal hp0 hp
-      (measurable_metricDerivative_IccExtend_apply hab r).aestronglyMeasurable]
-    simp only [enorm_eq_self]
+    exact eLpNorm_eq_lintegral_rpow hp0 hp
+      (measurable_metricDerivative_IccExtend_apply hab r).aemeasurable
   rw [h]
   exact ((hM.pow_const p.toReal).lintegral_prod_left' (μ := η)).pow_const _
 
@@ -126,13 +119,6 @@ private lemma lintegral_eLpNorm_metricDerivative_ne_top (hab : a ≤ b)
     hA.lt_top
 
 variable [MeasurableSpace X] [BorelSpace X]
-
-/-- The evaluation of a path, extended by constants outside `[a, b]`, at a fixed time is a
-measurable function of the path. -/
-private lemma measurable_IccExtend_apply (hab : a ≤ b) (t : ℝ) :
-    Measurable fun γ : C(Icc a b, X) ↦ IccExtend hab γ t := by
-  simp only [IccExtend_apply]
-  exact (continuous_eval_const _).measurable
 
 /-- A curve of probability measures whose values on `[a, b]` are the time marginals of `η` forces
 `η` to be a probability measure. -/
@@ -183,14 +169,13 @@ theorem wassersteinEDist_map_IccExtend_le_lintegral_eLpNorm (hab : a ≤ b)
     _ ≤ ∫⁻ r in Ι s u,
           eLpNorm (fun γ : C(Icc a b, X) ↦ metricDerivative (IccExtend hab γ) r) p η := by
         -- Minkowski's integral inequality moves the `Lᵖ(η)` seminorm inside the time integral.
-        rw [eLpNorm_eq_lintegral_rpow_enorm_toReal hp0 hp
-          (hM.lintegral_prod_right' (ν := volume.restrict (Ι s u))).aestronglyMeasurable]
+        rw [eLpNorm_eq_lintegral_rpow hp0 hp
+          (hM.lintegral_prod_right' (ν := volume.restrict (Ι s u))).aemeasurable]
         refine (lintegral_Lp_lintegral_le (μ := η) (ν := volume.restrict (Ι s u))
           (f := fun γ r ↦ metricDerivative (IccExtend hab γ) r) hM.aemeasurable hr).trans_eq
           (setLIntegral_congr_fun measurableSet_uIoc fun r _ ↦ ?_)
-        rw [eLpNorm_eq_lintegral_rpow_enorm_toReal hp0 hp
-          (measurable_metricDerivative_IccExtend_apply hab r).aestronglyMeasurable]
-        simp only [enorm_eq_self]
+        exact (eLpNorm_eq_lintegral_rpow hp0 hp
+          (measurable_metricDerivative_IccExtend_apply hab r).aemeasurable).symm
 
 /-- **Finite moments propagate along a law on paths of finite expected action.** Let `η` be a
 probability measure on `C([a, b], X)` concentrated on paths absolutely continuous on `[a, b]`
@@ -207,7 +192,8 @@ theorem hasFiniteMoment_map_IccExtend (hab : a ≤ b) {η : Measure C(Icc a b, X
   have hproj : (fun γ : C(Icc a b, X) ↦ IccExtend hab γ t) =
       fun γ : C(Icc a b, X) ↦ IccExtend hab γ (projIcc a b hab t) := by
     funext γ
-    rw [IccExtend_val, IccExtend, Function.comp_apply]
+    rw [IccExtend_val]
+    exact IccExtend_apply hab γ t
   have ht : (projIcc a b hab t : ℝ) ∈ uIcc a b := by
     rw [uIcc_of_le hab]
     exact (projIcc a b hab t).2
