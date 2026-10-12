@@ -65,9 +65,6 @@ and the whole of `𝔫⁺` annihilates (`TauCeti.isGlHighestWeightVector_iff_for
   translated tuple is prescribed.
 * `TauCeti.isGlDominantIntegral_glStaircase` and `TauCeti.glStaircase_ne_intCast`: the staircase is
   dominant and no entry of it is an integer, so dominance genuinely does not force integrality.
-* `TauCeti.isGlDominantIntegral_sub_single_iff`: lowering one coordinate preserves dominance
-  exactly when its following consecutive difference is positive; the final coordinate is always
-  allowed. This characterizes the indices of the dual-standard Pieri rule.
 * `TauCeti.isGlDominantIntegral_glHalfStaircase`: the field-valued half-staircase is dominant in
   characteristic zero.
 * `TauCeti.sum_glStaircase`: the sum of the staircase entries after mapping to a
@@ -283,65 +280,6 @@ dominant. -/
 theorem isGlDominantIntegral_of_le_one (hn : n ≤ 1) (mu : Fin n → R) : IsGlDominantIntegral mu :=
   fun _ j hij => absurd (j.isLt) (by omega)
 
-omit [CharZero R] in
-private theorem sub_single_adjacent_diff (t i j : Fin n) :
-    (mu - (Pi.single t (1 : R) : Fin n → R)) i -
-        (mu - (Pi.single t (1 : R) : Fin n → R)) j =
-      (mu i - mu j) - (if i = t then 1 else 0) + (if j = t then 1 else 0) := by
-  simp only [Pi.sub_apply, Pi.single_apply]
-  ring
-
-/-- **Dominance after lowering one coordinate.** For a dominant integral weight `μ`, the weight
-`μ - εₜ` is dominant exactly when, if `t` has a successor, the difference `μₜ - μₜ₊₁` is a
-positive natural number. The final coordinate is always allowed. This is the precise index
-condition for the summands of the `gl n` dual-standard Pieri rule. -/
-theorem isGlDominantIntegral_sub_single_iff
-    (hmu : IsGlDominantIntegral mu) (t : Fin n) :
-    IsGlDominantIntegral (mu - (Pi.single t (1 : R) : Fin n → R)) ↔
-      ∀ j : Fin n, (t : ℕ) + 1 = (j : ℕ) →
-        ∃ k : ℕ, mu t - mu j = ((k + 1 : ℕ) : R) := by
-  constructor
-  · intro h j hj
-    have hjne : j ≠ t := by
-      intro hEq
-      subst j
-      omega
-    obtain ⟨k, hk⟩ := (isGlDominantIntegral_iff.mp h) t j hj
-    rw [sub_single_adjacent_diff (mu := mu) t t j] at hk
-    simp only [↓reduceIte, ite_eq_right hjne, add_zero] at hk
-    refine ⟨k, ?_⟩
-    have hgap : mu t - mu j = ((k + 1 : ℕ) : R) := by
-      push_cast at hk ⊢
-      linear_combination hk
-    exact hgap
-  · intro h
-    rw [isGlDominantIntegral_iff]
-    intro i j hij
-    by_cases hi : i = t
-    · subst i
-      have hjne : j ≠ t := by
-        intro hEq
-        subst j
-        omega
-      obtain ⟨k, hk⟩ := h j hij
-      refine ⟨k, ?_⟩
-      rw [sub_single_adjacent_diff (mu := mu) t t j]
-      simp only [↓reduceIte, ite_eq_right hjne]
-      push_cast at hk ⊢
-      linear_combination hk
-    · by_cases hj : j = t
-      · subst j
-        obtain ⟨k, hk⟩ := (isGlDominantIntegral_iff.mp hmu) i t hij
-        refine ⟨k + 1, ?_⟩
-        rw [sub_single_adjacent_diff (mu := mu) t i t]
-        simp only [↓reduceIte, ite_eq_right hi]
-        push_cast at hk ⊢
-        linear_combination hk
-      · obtain ⟨k, hk⟩ := (isGlDominantIntegral_iff.mp hmu) i j hij
-        refine ⟨k, ?_⟩
-        rw [sub_single_adjacent_diff (mu := mu) t i j]
-        simp only [ite_eq_right hi, ite_eq_right hj, sub_zero, add_zero, hk]
-
 /-! ### The staircase weight -/
 
 /-- The **staircase** weight `(N - 1/2, N - 3/2, …, 1/2) : Fin N → ℚ`, the standard witness that
@@ -455,10 +393,16 @@ theorem isGlDominantIntegral_glHalfStaircase {F : Type*} [Field F] [CharZero F] 
 theorem isGlDominantIntegral_glHalfStaircase_sub_single {F : Type*} [Field F] [CharZero F]
     (N : ℕ) (t : Fin N) :
     IsGlDominantIntegral (glHalfStaircase F N - (Pi.single t (1 : F) : Fin N → F)) := by
-  apply (isGlDominantIntegral_sub_single_iff (isGlDominantIntegral_glHalfStaircase N) t).mpr
-  intro j htj
-  have hjt : ((j : ℕ) : F) = ((t : ℕ) : F) + 1 := by exact_mod_cast htj.symm
-  exact ⟨0, by rw [glHalfStaircase_apply, glHalfStaircase_apply, hjt]; push_cast; ring⟩
+  rw [isGlDominantIntegral_iff]
+  intro i j hij
+  have hji : ((j : ℕ) : F) = ((i : ℕ) : F) + 1 := by exact_mod_cast hij.symm
+  refine ⟨if i = t then 0 else if j = t then 2 else 1, ?_⟩
+  simp only [Pi.sub_apply, Pi.single_apply, glHalfStaircase_apply, hji]
+  by_cases hi : i = t <;> by_cases hj : j = t
+  · subst i
+    subst j
+    omega
+  all_goals simp [hi, hj] <;> ring
 
 /-- **No entry of the staircase weight is an integer.** Together with
 `TauCeti.isGlDominantIntegral_glStaircase` this pins the difference between dominance for `gl n`
