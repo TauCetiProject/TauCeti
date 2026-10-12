@@ -26,11 +26,10 @@ to carry the dilation `u = x√2`, because the Hermite functions are built on a 
 Chebyshev `Tₙ` are not, so here the identification is exact and can be stated at the level of bases
 rather than of individual vectors.
 
-The one thing standing in the way was that `Polynomial.Chebyshev.measureT` is not reducible outside
-the module defining it, so the identity `measureT = w · (volume|_{(-1,1]})` was not available and
-`TauCeti.weightL2Isometry` could not be pointed at it. That identity is
-`TauCeti.chebyshevMeasureT_eq_withDensity`, recorded with the rest of the Chebyshev measure API in
-`TauCeti.Analysis.SpecialFunctions.Trigonometric.Chebyshev.Measure`.
+The isometry rests on the measure identity `measureT = w · (volume|_{(-1,1]})`, recorded as
+`TauCeti.chebyshevMeasureT_eq_withDensity` with the rest of the Chebyshev measure API in
+`TauCeti.Analysis.SpecialFunctions.Trigonometric.Chebyshev.Measure`: transporting `L²(measureT)`
+along it and then applying `TauCeti.weightL2Isometry` gives `TauCeti.chebyshevWeightL2Isometry`.
 
 ## Main statements
 
