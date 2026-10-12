@@ -61,6 +61,8 @@ namespace LinearMap.BilinForm
 open LinearMap (BilinForm)
 open Module Matrix
 
+section Division
+
 variable {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M] {B : BilinForm R M} {a : R}
 
 /-- If `a` is a non-zero-divisor dividing every value of `B`, then `B` is `a` times a bilinear
@@ -77,6 +79,13 @@ theorem exists_smul_eq_of_forall_dvd (ha : a ∈ nonZeroDivisors R) (h : ∀ x y
   · rw [← hc, smul_eq_mul, mul_left_comm, ← hc, map_smul, smul_eq_mul]
   · ext x y
     simp [hc]
+
+end Division
+
+section Basic
+
+variable {R M : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M]
+  {B : BilinForm R M} {a : R}
 
 /-- A bilinear form `B` is **`a`-modular** when it is `a` times a perfect pairing: `B = a • C`
 for a form `C` identifying `M` with its dual on both sides. Over a discrete valuation ring with
@@ -127,7 +136,7 @@ theorem isModular_of_subsingleton [Subsingleton M] : B.IsModular a := by
     exact ⟨fun x y _ ↦ Subsingleton.elim x y, fun f ↦ ⟨0, Subsingleton.elim _ _⟩⟩
 
 /-- Modularity is transported along a linear equivalence of the underlying modules. -/
-theorem IsModular.congr {M' : Type*} [AddCommGroup M'] [Module R M'] (h : B.IsModular a)
+theorem IsModular.congr {M' : Type*} [AddCommMonoid M'] [Module R M'] (h : B.IsModular a)
     (e : M ≃ₗ[R] M') : (congr e B).IsModular a := by
   obtain ⟨C, rfl, hC⟩ := h
   refine ⟨congr e C, (map_smul (congr e) a C).symm, ?_⟩
@@ -135,7 +144,7 @@ theorem IsModular.congr {M' : Type*} [AddCommGroup M'] [Module R M'] (h : B.IsMo
 
 /-- Modularity is invariant under a linear equivalence of the underlying modules. -/
 @[simp]
-theorem isModular_congr_iff {M' : Type*} [AddCommGroup M'] [Module R M'] (e : M ≃ₗ[R] M') :
+theorem isModular_congr_iff {M' : Type*} [AddCommMonoid M'] [Module R M'] (e : M ≃ₗ[R] M') :
     (congr e B).IsModular a ↔ B.IsModular a :=
   ⟨fun h ↦ by
     simpa only [congr_congr, e.self_trans_symm, congr_refl, LinearEquiv.refl_apply] using
@@ -152,6 +161,10 @@ theorem isModular_restrict_map_subtype_iff {P : Submodule R M} {K : Submodule R 
   obtain ⟨x, rfl⟩ := e.surjective x
   obtain ⟨y, rfl⟩ := e.surjective y
   simp [e]
+
+end Basic
+
+variable {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M] {B : BilinForm R M} {a : R}
 
 /-- **Characterization of modular symmetric forms.** For a non-zero-divisor `a`, a symmetric form
 is `a`-modular exactly when `a` divides all of its values, it is left-separating, and `a f` is

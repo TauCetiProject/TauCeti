@@ -6,8 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.DirectSum.Module
+public import Mathlib.RingTheory.Finiteness.Basic
 public import Mathlib.RingTheory.DiscreteValuationRing.Basic
 public import TauCeti.LinearAlgebra.BilinearForm.Modular
+import Mathlib.Order.CompactlyGenerated.Basic
 import Mathlib.LinearAlgebra.Dimension.Localization
 import Mathlib.LinearAlgebra.FreeModule.PID
 import TauCeti.LinearAlgebra.BilinearForm.Diagonalization
@@ -37,6 +39,8 @@ instance `R = ℤ_2`, where Jordan constituents need not be diagonalizable.
 
 ## Main results
 
+* `LinearMap.BilinForm.IsJordanSplitting.finite_support`: a finitely generated module has only
+  finitely many nonzero Jordan constituents.
 * `LinearMap.BilinForm.IsSymm.exists_isJordanSplitting`: Jordan splittings exist.
 
 ## References
@@ -52,7 +56,9 @@ namespace LinearMap.BilinForm
 open LinearMap (BilinForm)
 open Module
 
-variable {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M] {B : BilinForm R M}
+section Basic
+
+variable {R M : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M] {B : BilinForm R M}
 
 /-- A family `N` of submodules is a **Jordan splitting** of `B` with respect to `π` when `M` is
 the internal direct sum of the `N i`, these are pairwise orthogonal, and the restriction of `B`
@@ -64,6 +70,27 @@ structure IsJordanSplitting (B : BilinForm R M) (π : R) (N : ℕ → Submodule 
   apply_eq_zero : ∀ i j, i ≠ j → ∀ x ∈ N i, ∀ y ∈ N j, B x y = 0
   /-- The `i`-th constituent is `π ^ i`-modular. -/
   isModular : ∀ i, (B.restrict (N i)).IsModular (π ^ i)
+
+/-- A Jordan splitting of a finitely generated module has finitely many nonzero constituents. -/
+theorem IsJordanSplitting.finite_support [Module.Finite R M] {π : R}
+    {N : ℕ → Submodule R M} (h : B.IsJordanSplitting π N) : {i | N i ≠ ⊥}.Finite := by
+  classical
+  have hcompact : IsCompactElement (⊤ : Submodule R M) :=
+    (Submodule.fg_iff_compact _).mp Module.Finite.fg_top
+  obtain ⟨s, hs⟩ := hcompact.exists_finset_of_le_iSup N
+    (by rw [h.isInternal.submodule_iSup_eq_top])
+  refine s.finite_toSet.subset fun i hi => ?_
+  by_contra his
+  have hsum : (⨆ j ∈ s, N j) ≤ ⨆ j, ⨆ (_ : j ≠ i), N j :=
+    iSup_le fun j => iSup_le fun hj =>
+      le_iSup_of_le j (le_iSup_of_le (ne_of_mem_of_not_mem hj his) le_rfl)
+  have hd := (h.isInternal.submodule_iSupIndep i).mono_right hsum
+  have hn : N i ≤ ⨆ j ∈ s, N j := le_top.trans hs
+  exact hi (disjoint_self.mp (hd.mono_right hn))
+
+end Basic
+
+variable {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M] {B : BilinForm R M}
 
 variable [IsDomain R] [IsDiscreteValuationRing R]
 
