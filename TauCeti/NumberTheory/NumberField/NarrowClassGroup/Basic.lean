@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.NumberField.TotallyPositive
 public import TauCeti.RingTheory.ClassGroup.Basic
+import TauCeti.RingTheory.FractionalIdeal.Operations
 
 /-!
 # The narrow class group of a number field

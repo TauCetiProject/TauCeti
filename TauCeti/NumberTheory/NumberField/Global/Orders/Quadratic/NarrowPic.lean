@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.NumberField.Global.Orders.NarrowPic
 import TauCeti.NumberTheory.NumberField.Quadratic.Conjugation.InfinitePlace
+import TauCeti.RingTheory.FractionalIdeal.Operations
 
 /-!
 # Positive-norm generators for quadratic narrow ideal classes
