@@ -41,14 +41,12 @@ variable {C₁ : Type u₁} {C₂ : Type u₂} {C₃ : Type u₃}
   (associator : bifunctorComp₁₂ F₁₂ G ≅ bifunctorComp₂₃ F G₂₃)
   {K₁ L₁ : CochainComplex C₁ ℤ} {K₂ L₂ : CochainComplex C₂ ℤ}
   {K₃ L₃ : CochainComplex C₃ ℤ}
-  [∀ (K : CochainComplex C₁ ℤ) (L : CochainComplex C₂ ℤ),
-    HasMapBifunctor K L F₁₂ (.up ℤ)]
-  [∀ (K : CochainComplex C₁₂ ℤ) (L : CochainComplex C₃ ℤ),
-    HasMapBifunctor K L G (.up ℤ)]
-  [∀ (K : CochainComplex C₂ ℤ) (L : CochainComplex C₃ ℤ),
-    HasMapBifunctor K L G₂₃ (.up ℤ)]
-  [∀ (K : CochainComplex C₁ ℤ) (L : CochainComplex C₂₃ ℤ),
-    HasMapBifunctor K L F (.up ℤ)]
+  [HasMapBifunctor K₁ K₂ F₁₂ (.up ℤ)] [HasMapBifunctor L₁ L₂ F₁₂ (.up ℤ)]
+  [HasMapBifunctor K₂ K₃ G₂₃ (.up ℤ)] [HasMapBifunctor L₂ L₃ G₂₃ (.up ℤ)]
+  [HasMapBifunctor (mapBifunctor K₁ K₂ F₁₂ (.up ℤ)) K₃ G (.up ℤ)]
+  [HasMapBifunctor (mapBifunctor L₁ L₂ F₁₂ (.up ℤ)) L₃ G (.up ℤ)]
+  [HasMapBifunctor K₁ (mapBifunctor K₂ K₃ G₂₃ (.up ℤ)) F (.up ℤ)]
+  [HasMapBifunctor L₁ (mapBifunctor L₂ L₃ G₂₃ (.up ℤ)) F (.up ℤ)]
 
 private theorem ι_map₁₂ (f₁ : K₁ ⟶ L₁) (f₂ : K₂ ⟶ L₂) (f₃ : K₃ ⟶ L₃)
     (p q r j : ℤ) (h : ComplexShape.r (.up ℤ) (.up ℤ) (.up ℤ) (.up ℤ) (.up ℤ)
@@ -93,7 +91,7 @@ variable
 
 /-- The totalized cochain associator is natural in all three complexes. -/
 @[reassoc]
-theorem mapCochainBifunctorAssociator_naturality
+theorem mapBifunctorAssociator_naturality
     (f₁ : K₁ ⟶ L₁) (f₂ : K₂ ⟶ L₂) (f₃ : K₃ ⟶ L₃) :
     mapBifunctorMap (mapBifunctorMap f₁ f₂ F₁₂ (.up ℤ)) f₃ G (.up ℤ) ≫
         (mapBifunctorAssociator associator L₁ L₂ L₃ (.up ℤ) (.up ℤ) (.up ℤ)).hom =
@@ -115,7 +113,7 @@ theorem mapCochainBifunctorAssociator_naturality
 
 /-- The inverse totalized cochain associator is natural in all three complexes. -/
 @[reassoc]
-theorem mapCochainBifunctorAssociator_inv_naturality
+theorem mapBifunctorAssociator_inv_naturality
     (f₁ : K₁ ⟶ L₁) (f₂ : K₂ ⟶ L₂) (f₃ : K₃ ⟶ L₃) :
     mapBifunctorMap f₁ (mapBifunctorMap f₂ f₃ G₂₃ (.up ℤ)) F (.up ℤ) ≫
         (mapBifunctorAssociator associator L₁ L₂ L₃ (.up ℤ) (.up ℤ) (.up ℤ)).inv =
@@ -124,6 +122,6 @@ theorem mapCochainBifunctorAssociator_inv_naturality
   rw [← cancel_mono
     (mapBifunctorAssociator associator L₁ L₂ L₃ (.up ℤ) (.up ℤ) (.up ℤ)).hom]
   simp only [Category.assoc, Iso.inv_hom_id, Category.comp_id,
-    mapCochainBifunctorAssociator_naturality, Iso.inv_hom_id_assoc]
+    mapBifunctorAssociator_naturality, Iso.inv_hom_id_assoc]
 
 end TauCeti.HomologicalComplex
