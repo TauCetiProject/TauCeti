@@ -187,6 +187,7 @@ def heckeTDiamondCuspNewIntegralCharacter (f : Newform N k) :
     (heckeTDiamondCuspNewIntegralAlgebraToComplex N k)
 
 /-- Evaluation of the integral character through the inclusion into the complex algebra. -/
+@[simp low]
 theorem heckeTDiamondCuspNewIntegralCharacter_apply (f : Newform N k)
     (T : heckeTDiamondCuspNewIntegralAlgebra N k) :
     heckeTDiamondCuspNewIntegralCharacter f T = heckeTDiamondCuspNewCharacter f
