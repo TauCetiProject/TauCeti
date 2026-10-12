@@ -130,6 +130,19 @@ noncomputable def laurentEvalEquiv : Aˣ ≃ (R[T;T⁻¹] →ₐ[R] A) where
 lemma laurentEvalEquiv_apply (u : Aˣ) : laurentEvalEquiv (R := R) u = laurentEval u :=
   (rfl)
 
+/-- Reading the unit from its Laurent evaluation recovers that unit. -/
+@[simp]
+lemma laurentEvalEquiv_symm_laurentEval (u : Aˣ) :
+    laurentEvalEquiv.symm (laurentEval (R := R) u) = u := by
+  simpa only [laurentEvalEquiv_apply] using (laurentEvalEquiv (R := R)).symm_apply_apply u
+
+/-- Evaluating at the unit represented by a Laurent algebra map recovers that map. -/
+-- Cancel before `laurentEvalEquiv_symm_comp` rewrites a composed map inside the unit.
+@[simp↓]
+lemma laurentEval_laurentEvalEquiv_symm (f : R[T;T⁻¹] →ₐ[R] A) :
+    laurentEval (laurentEvalEquiv.symm f) = f := by
+  simpa only [laurentEvalEquiv_apply] using (laurentEvalEquiv (R := R)).apply_symm_apply f
+
 @[simp]
 lemma laurentEvalEquiv_symm_apply (f : R[T;T⁻¹] →ₐ[R] A) :
     ((laurentEvalEquiv.symm f : Aˣ) : A) = f (T 1) :=
@@ -145,7 +158,7 @@ lemma laurentEvalEquiv_symm_apply_inv (f : R[T;T⁻¹] →ₐ[R] A) :
 @[simp]
 theorem laurentEvalEquiv_symm_comp {B : Type*} [Semiring B] [Algebra R B]
     (g : A →ₐ[R] B) (f : R[T;T⁻¹] →ₐ[R] A) :
-    laurentEvalEquiv.symm (g.comp f) = Units.map g.toMonoidHom (laurentEvalEquiv.symm f) := by
+    laurentEvalEquiv.symm (g.comp f) = Units.map (g : A →* B) (laurentEvalEquiv.symm f) := by
   ext
   simp
 

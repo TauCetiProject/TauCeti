@@ -162,7 +162,8 @@ private theorem map_presentationPoint :
       presentationUnit_val, laurentEval_T] using hinv
 
 private theorem map_tautologicalUnit :
-    Units.map (coordinateToPresentation R).toMonoidHom (diagonalUnit R) =
+    Units.map (coordinateToPresentation R : coordinateHopfAlgebra R →* presentationRing R)
+      (diagonalUnit R) =
       presentationUnit R := by
   apply Units.ext
   have h := congrArg
@@ -207,9 +208,7 @@ private theorem coordinateToPresentation_comp_presentationToCoordinate :
       ext
       simp only [Units.coe_map, MultiplicativeGroup.genericUnit_val, MonoidHom.coe_ofClass,
         Polynomial.CAlgHom_apply, presentationUnit_val]
-    simpa only [presentationCoefficientToCoordinate,
-      MultiplicativeGroup.pointsMulEquiv_symm_apply, WithConv.ofConv_toConv,
-      ← laurentEvalEquiv_apply, Equiv.symm_apply_apply,
+    simpa only [presentationCoefficientToCoordinate, laurentEvalEquiv_symm_laurentEval,
       AlgHom.id_comp, hunit] using map_tautologicalUnit R
   · have h := congrArg
       (fun g : SL2Borel (presentationRing R) ↦

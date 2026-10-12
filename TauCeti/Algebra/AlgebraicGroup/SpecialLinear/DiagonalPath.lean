@@ -42,9 +42,8 @@ theorem map_diag2nUnit_genericUnit
       Matrix.SpecialLinearGroup.diag2n hij (b : K) (Units.ne_zero b) := by
   rw [Matrix.SpecialLinearGroup.map_diag2nUnit]
   have hunit : Units.map (laurentEval (R := K) b).toRingHom
-      (MultiplicativeGroup.genericUnit K) = b := by
-    ext
-    simp
+      (MultiplicativeGroup.genericUnit K) = b :=
+    (MultiplicativeGroup.map_genericUnit K _).trans (laurentEvalEquiv_symm_laurentEval b)
   calc
     Matrix.SpecialLinearGroup.diag2nUnit hij
         (Units.map (laurentEval (R := K) b).toRingHom

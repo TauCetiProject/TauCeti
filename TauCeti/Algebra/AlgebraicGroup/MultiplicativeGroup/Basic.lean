@@ -86,14 +86,14 @@ theorem pointsMulEquiv_mapValue (φ : A →ₐ[R] B)
     (f : WithConv (R[T;T⁻¹] →ₐ[R] A)) :
     pointsMulEquiv (R := R) (A := B)
         (AlgHom.mapValue (H := R[T;T⁻¹]) φ f) =
-      Units.map φ.toMonoidHom (pointsMulEquiv f) := by
+      Units.map (φ : A →* B) (pointsMulEquiv f) := by
   simp [pointsMulEquiv_apply, AlgHom.mapValue_apply]
 
 /-- Naturality of the inverse `𝔾ₘ` points equivalence in the value algebra. -/
 theorem mapValue_pointsMulEquiv_symm_apply (φ : A →ₐ[R] B) (u : Aˣ) :
     AlgHom.mapValue (H := R[T;T⁻¹]) φ
         ((pointsMulEquiv (R := R) (A := A)).symm u) =
-      (pointsMulEquiv (R := R) (A := B)).symm (Units.map φ.toMonoidHom u) := by
+      (pointsMulEquiv (R := R) (A := B)).symm (Units.map (φ : A →* B) u) := by
   simp [pointsMulEquiv_symm_apply, AlgHom.mapValue_apply]
 
 end Naturality
@@ -121,12 +121,8 @@ theorem genericUnit_inv : (((genericUnit A)⁻¹ : (LaurentPolynomial A)ˣ) :
 theorem genericUnit_zpow_val (n : ℤ) :
     ((genericUnit A ^ n : (LaurentPolynomial A)ˣ) : LaurentPolynomial A) =
       LaurentPolynomial.T n := by
-  let f : LaurentPolynomial A →ₐ[A] LaurentPolynomial A := AlgHom.id A _
-  have hunit : genericUnit A = laurentEvalEquiv.symm f := by
-    apply Units.ext
-    simp [f]
-  rw [hunit, ← laurentEval_T (R := A), ← laurentEvalEquiv_apply,
-    Equiv.apply_symm_apply, AlgHom.id_apply]
+  have h := laurentEval_unique (genericUnit A) (AlgHom.id A _) (by simp)
+  simpa using (DFunLike.congr_fun h (LaurentPolynomial.T n)).symm
 
 /-- Mapping the generic unit along a Laurent-polynomial point gives the unit represented by
 that point. -/
