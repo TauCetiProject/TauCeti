@@ -30,7 +30,8 @@ components of `[-1]` at each use. The negation automorphism of `C • E` is that
 by `C` (`negVariableChange_smul`).
 
 Similarly, the components of `C * D⁻¹`, the change of variables carrying `D • W` to `C • W`, are
-recorded as `VariableChange.mul_inv_u/_r/_s/_t`.
+recorded as `VariableChange.mul_inv_u/_r/_s/_t`. A translation `x ↦ x + r`, `y ↦ y + t` leaves the
+discriminant and `c₄` alone (`variableChange_translate_Δ`, `variableChange_translate_c₄`).
 
 The negation is the nontrivial automorphism in the `Aut (E, O)`
 milestone of `TauCetiRoadmap/EllipticCurves/README.md` §Layer 1, proved in
@@ -196,6 +197,20 @@ lemma negVariableChange_smul : (C • E).negVariableChange = C * E.negVariableCh
   · have hu : (↑C.u⁻¹ : R) ^ 3 * (C.u : R) ^ 3 = 1 := by rw [← mul_pow, Units.inv_mul, one_pow]
     simp [VariableChange.mul_def, variableChange_a₃]
     linear_combination (-E.a₃ - C.r * E.a₁ - 2 * C.t) * hu
+
+section Translate
+
+variable (W : WeierstrassCurve R) (x y : R)
+
+/-- **A translation does not change the discriminant.** -/
+theorem variableChange_translate_Δ : (VariableChange.mk 1 x 0 y • W).Δ = W.Δ := by
+  simp [variableChange_Δ]
+
+/-- **A translation does not change `c₄`.** -/
+theorem variableChange_translate_c₄ : (VariableChange.mk 1 x 0 y • W).c₄ = W.c₄ := by
+  simp [variableChange_c₄]
+
+end Translate
 
 section BaseChange
 

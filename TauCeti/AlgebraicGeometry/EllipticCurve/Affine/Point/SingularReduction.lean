@@ -9,6 +9,8 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.NonsingularRe
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Singular
 public import TauCeti.AlgebraicGeometry.EllipticCurve.NodePolynomial
 
+import TauCeti.AlgebraicGeometry.EllipticCurve.VariableChange
+
 /-!
 # Points reducing to the singular point
 
@@ -35,9 +37,10 @@ singular point is a nonsplit node, the tangent form `a₄² + a₁ a₃ a₄ −
 modulo `𝔪`, so its value is a unit times the square of `a₃` or of `a₄`; the remaining terms are of
 higher order, so `Δ` is a unit times a square. This gives three criteria for `E₀(F) = W(F)`:
 
-* `Δ ∉ 𝔪²`; for a discrete valuation this is `v(Δ) ≤ 1`, the reduction symbols `I₀` and `I₁`;
+* `Δ ∉ 𝔪²`; for a discrete valuation with normalized additive valuation `ord` this is
+  `ord(Δ) ≤ 1`, the reduction symbols `I₀` and `I₁`;
 * the reduction is a nonsplit node and `v(Δ)` is not the valuation of a square; for a discrete
-  valuation this is nonsplit multiplicative reduction of type `Iₙ` with `n` odd;
+  valuation this is nonsplit multiplicative reduction of type `Iₙ` with `n = ord(Δ)` odd;
 * the reduction is singular at the origin and `a₆ ∉ 𝔪²`; on such an equation with `b₂ ∈ 𝔪` this
   is Tate's test for the reduction symbol `II`.
 
@@ -75,19 +78,6 @@ namespace WeierstrassCurve
 
 variable {R : Type*} [CommRing R] [IsLocalRing R]
 
-/-- At a solution reducing to a singular point of the reduced curve, both partial derivatives of
-the Weierstrass polynomial take values in the maximal ideal. -/
-private theorem evalEval_polynomialX_mem_and_evalEval_polynomialY_mem (W : WeierstrassCurve R)
-    {x y : R} (hs : (W.map (residue R)).toAffine.IsSingular (residue R x) (residue R y)) :
-    W.toAffine.polynomialX.evalEval x y ∈ maximalIdeal R ∧
-      W.toAffine.polynomialY.evalEval x y ∈ maximalIdeal R := by
-  obtain ⟨-, hX, hY⟩ := (Affine.isSingular_iff' _ _ _).mp hs
-  refine ⟨(residue_eq_zero_iff _).mp ?_, (residue_eq_zero_iff _).mp ?_⟩
-  · rw [Affine.evalEval_polynomialX]
-    simpa [map_ofNat] using hX
-  · rw [Affine.evalEval_polynomialY]
-    simpa [map_ofNat] using hY
-
 /-- **A solution reducing to a singular point forces `Δ ∈ 𝔪²`.** Over a local ring, if an integral
 solution `(x, y)` of the Weierstrass equation reduces to a singular point of the reduced curve,
 then the discriminant lies in the square of the maximal ideal. -/
@@ -95,9 +85,8 @@ theorem Δ_mem_maximalIdeal_sq_of_isSingular (W : WeierstrassCurve R) {x y : R}
     (h : W.toAffine.Equation x y)
     (hs : (W.map (residue R)).toAffine.IsSingular (residue R x) (residue R y)) :
     W.Δ ∈ maximalIdeal R ^ 2 :=
-  W.toAffine.Δ_mem_sq_of_equation h
-    (W.evalEval_polynomialX_mem_and_evalEval_polynomialY_mem hs).1
-    (W.evalEval_polynomialX_mem_and_evalEval_polynomialY_mem hs).2
+  W.toAffine.Δ_mem_sq_of_equation h hs.evalEval_polynomialX_mem_maximalIdeal
+    hs.evalEval_polynomialY_mem_maximalIdeal
 
 /-- **A solution reducing to the singular point at the origin forces `a₆ ∈ 𝔪²`.** Over a local
 ring, suppose that `a₃`, `a₄` and `a₆` lie in the maximal ideal, so that the reduced curve is
@@ -179,14 +168,15 @@ valuation ring, suppose that `c₄` is a unit and that the node polynomial
 (`WeierstrassCurve.nodePolynomial`) does not split over the residue field, so that a singular point
 of the reduced curve is a node whose tangent directions are not rational. If an integral solution
 `(x, y)` reduces to a singular point, then `Δ` is associated to the square of an element; for a
-discrete valuation, `v(Δ)` is even. -/
+discrete valuation with normalized additive valuation `ord`, `ord(Δ)` is even. -/
 theorem exists_associated_sq_Δ_of_isSingular (W : WeierstrassCurve R) {x y : R}
     (h : W.toAffine.Equation x y)
     (hs : (W.map (residue R)).toAffine.IsSingular (residue R x) (residue R y))
     (hc₄ : residue R W.c₄ ≠ 0) (hn : ¬ (W.nodePolynomial.map (residue R)).Splits) :
     ∃ m : R, Associated (m ^ 2) W.Δ := by
   set W' := VariableChange.mk 1 x 0 y • W
-  obtain ⟨hX, hY⟩ := W.evalEval_polynomialX_mem_and_evalEval_polynomialY_mem hs
+  have hX := hs.evalEval_polynomialX_mem_maximalIdeal
+  have hY := hs.evalEval_polynomialY_mem_maximalIdeal
   have h₆ : W'.a₆ = 0 := variableChange_translate_a₆_of_equation W h
   have h₃ : W'.a₃ ∈ maximalIdeal R := variableChange_translate_a₃ W x y ▸ hY
   have h₄ : W'.a₄ ∈ maximalIdeal R :=
@@ -251,8 +241,8 @@ theorem nonsingularReduction_eq_top_of_forall_not_isSingular
   · exact mem_nonsingularReduction_of_one_lt v (by rwa [Point.xCoord_some])
 
 /-- **If `Δ ∉ 𝔪²`, every point has nonsingular reduction**: `E₀(F) = W(F)`. For a discrete
-valuation the hypothesis is `v(Δ) ≤ 1`, which on a minimal equation is the reduction symbol `I₀`
-or `I₁`. -/
+valuation with normalized additive valuation `ord` the hypothesis is `ord(Δ) ≤ 1`, which on a
+minimal equation is the reduction symbol `I₀` or `I₁`. -/
 theorem nonsingularReduction_eq_top_of_Δ_notMem
     (h : (integralModel v.valuationSubring W).Δ ∉ maximalIdeal v.valuationSubring ^ 2) :
     W.nonsingularReduction v = ⊤ :=

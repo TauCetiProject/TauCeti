@@ -7,8 +7,11 @@ module
 
 public import Mathlib.AlgebraicGeometry.EllipticCurve.Affine.Basic
 public import Mathlib.FieldTheory.Perfect
+public import Mathlib.RingTheory.LocalRing.ResidueField.Defs
 
 import Mathlib.Algebra.CharP.Two
+import Mathlib.RingTheory.LocalRing.ResidueField.Basic
+import TauCeti.AlgebraicGeometry.EllipticCurve.VariableChange
 
 /-!
 # The singular points of a Weierstrass model
@@ -47,11 +50,14 @@ equality. Every statement here holds in any characteristic, including two and th
 * `WeierstrassCurve.Affine.IsSingular.map`, `map_isSingular`, `IsSingular.baseChange` and
   `baseChange_isSingular`: singularity is carried along a coefficient map or a base change, and
   reflected by an injective one.
+* `WeierstrassCurve.Affine.IsSingular.evalEval_polynomialX_mem_maximalIdeal` and
+  `IsSingular.evalEval_polynomialY_mem_maximalIdeal`: over a local ring, at a solution reducing to
+  a singular point both partial values lie in the maximal ideal.
 * `WeierstrassCurve.Δ_mem_sq_of_a₆_eq_zero`: if `a₆ = 0` and `a₃`, `a₄` lie in an ideal `I`,
   then `Δ ∈ I²`.
-* `WeierstrassCurve.variableChange_translate_a₃`, `variableChange_translate_a₄`,
-  `variableChange_translate_a₆_of_equation`, `variableChange_translate_Δ` and
-  `variableChange_translate_c₄`: the coefficients of the model translated to a point `(x, y)`.
+* `WeierstrassCurve.variableChange_translate_a₃`, `variableChange_translate_a₄` and
+  `variableChange_translate_a₆_of_equation`: the coefficients of the model translated to a point
+  `(x, y)`.
 * `WeierstrassCurve.Affine.Δ_mem_sq_of_equation`: at a solution `(x, y)` whose two partial
   values lie in `I`, `Δ ∈ I²`; for `I = 0` this is `IsSingular.Δ_eq_zero`.
 * `WeierstrassCurve.Affine.exists_isSingular_of_Δ_eq_zero`: over a perfect field, vanishing of the
@@ -209,6 +215,28 @@ theorem IsSingular.Δ_eq_zero {x y : R} (h : W.IsSingular x y) : W.Δ = 0 := by
   by_contra hΔ
   exact hn ((W.equation_iff_nonsingular_of_Δ_ne_zero hΔ).mp hE)
 
+open IsLocalRing in
+/-- **At a solution reducing to a singular point, the `X`-partial lies in `𝔪`.** Over a local ring,
+if `(x, y)` reduces to a singular point of the reduced curve, the `X`-partial derivative of the
+Weierstrass polynomial takes a value at `(x, y)` in the maximal ideal. -/
+theorem IsSingular.evalEval_polynomialX_mem_maximalIdeal [IsLocalRing R] {W : WeierstrassCurve R}
+    {x y : R} (h : (W.map (residue R)).toAffine.IsSingular (residue R x) (residue R y)) :
+    W.toAffine.polynomialX.evalEval x y ∈ maximalIdeal R := by
+  obtain ⟨-, hX, -⟩ := (isSingular_iff' _ _ _).mp h
+  rw [← residue_eq_zero_iff, evalEval_polynomialX]
+  simpa [map_ofNat] using hX
+
+open IsLocalRing in
+/-- **At a solution reducing to a singular point, the `Y`-partial lies in `𝔪`.** Over a local ring,
+if `(x, y)` reduces to a singular point of the reduced curve, the `Y`-partial derivative of the
+Weierstrass polynomial takes a value at `(x, y)` in the maximal ideal. -/
+theorem IsSingular.evalEval_polynomialY_mem_maximalIdeal [IsLocalRing R] {W : WeierstrassCurve R}
+    {x y : R} (h : (W.map (residue R)).toAffine.IsSingular (residue R x) (residue R y)) :
+    W.toAffine.polynomialY.evalEval x y ∈ maximalIdeal R := by
+  obtain ⟨-, -, hY⟩ := (isSingular_iff' _ _ _).mp h
+  rw [← residue_eq_zero_iff, evalEval_polynomialY]
+  simpa [map_ofNat] using hY
+
 end WeierstrassCurve.Affine
 
 /-! ### The discriminant at a point of the curve -/
@@ -259,14 +287,6 @@ theorem variableChange_translate_a₄ :
 theorem variableChange_translate_a₆_of_equation {x y : R} (h : W.toAffine.Equation x y) :
     (VariableChange.mk 1 x 0 y • W).a₆ = 0 :=
   Affine.equation_zero.mp ((W.toAffine.equation_iff_variableChange x y).mp h)
-
-/-- **A translation does not change the discriminant.** -/
-theorem variableChange_translate_Δ : (VariableChange.mk 1 x 0 y • W).Δ = W.Δ := by
-  simp [variableChange_Δ]
-
-/-- **A translation does not change `c₄`.** -/
-theorem variableChange_translate_c₄ : (VariableChange.mk 1 x 0 y • W).c₄ = W.c₄ := by
-  simp [variableChange_c₄]
 
 end Translate
 
