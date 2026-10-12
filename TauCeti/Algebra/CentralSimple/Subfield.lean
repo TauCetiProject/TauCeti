@@ -124,14 +124,18 @@ section Defs
 variable {K L A : Type*} [CommSemiring K] [CommSemiring L] [Algebra K L]
   [Semiring A] [Algebra K A]
 
+namespace BaseChangeModule
+
 /-- The opposite-valued algebra homomorphism induced by a map from commutative `L`. -/
-private abbrev rightAlgHom (f : L →ₐ[K] A) : L →ₐ[K] Aᵐᵒᵖ :=
+abbrev oppositeHom (f : L →ₐ[K] A) : L →ₐ[K] Aᵐᵒᵖ :=
   f.toOpposite fun x y ↦ by simp [commute_iff_eq, ← map_mul, mul_comm]
 
-/-- The tensor-product map identifying `A` with its double opposite. -/
 variable (K L A) in
-private abbrev opOpMap : L ⊗[K] A →ₐ[K] L ⊗[K] Aᵐᵒᵖᵐᵒᵖ :=
+/-- The tensor-product map identifying `A` with its double opposite. -/
+abbrev tensorOpOp : L ⊗[K] A →ₐ[K] L ⊗[K] Aᵐᵒᵖᵐᵒᵖ :=
   Algebra.TensorProduct.map (AlgHom.id K L) (AlgEquiv.opOp K A).toAlgHom
+
+end BaseChangeModule
 
 /-- `A` regarded as a module over the scalar extension `L ⊗[K] A`, along a `K`-algebra homomorphism
 `f : L →ₐ[K] A` out of a **commutative** algebra: the pure tensor `l ⊗ₜ a` acts by
@@ -141,41 +145,42 @@ Equivalently this is the `A`-`L`-bimodule `A`, with `A` acting on the left by mu
 `L` on the right through `f`; commutativity of `L` is what lets the right action be packaged as a
 left action of `L ⊗[K] A` with no opposite algebra. It is a type synonym for `A` so that `A` itself
 is left without an `L ⊗[K] A`-action, and so that different subfields can act at the same time. -/
-@[expose] def BaseChangeModule (f : L →ₐ[K] A) : Type _ := Bimodule (rightAlgHom f)
+@[expose] def BaseChangeModule (f : L →ₐ[K] A) : Type _ :=
+  Bimodule (BaseChangeModule.oppositeHom f)
 
 namespace BaseChangeModule
 
 variable (f : L →ₐ[K] A)
 
 instance : AddCommMonoid (BaseChangeModule f) :=
-  inferInstanceAs (AddCommMonoid (Bimodule (rightAlgHom f)))
+  inferInstanceAs (AddCommMonoid (Bimodule (oppositeHom f)))
 
 -- Conditional, so that the endomorphism ring of `BaseChangeModule f` is a ring and not merely a
 -- semiring when `A` is one; nothing in the construction itself needs the negation.
 instance {A : Type*} [Ring A] [Algebra K A] (f : L →ₐ[K] A) : AddCommGroup (BaseChangeModule f) :=
-  inferInstanceAs (AddCommGroup (Bimodule (rightAlgHom f)))
+  inferInstanceAs (AddCommGroup (Bimodule (oppositeHom f)))
 
 instance : Module K (BaseChangeModule f) :=
-  inferInstanceAs (Module K (Bimodule (rightAlgHom f)))
+  inferInstanceAs (Module K (Bimodule (oppositeHom f)))
 
 instance [Nontrivial A] : Nontrivial (BaseChangeModule f) :=
-  inferInstanceAs (Nontrivial (Bimodule (rightAlgHom f)))
+  inferInstanceAs (Nontrivial (Bimodule (oppositeHom f)))
 
 instance [Module.Finite K A] : Module.Finite K (BaseChangeModule f) :=
-  Module.Finite.equiv ((MulOpposite.opLinearEquiv K).trans (Bimodule.of (rightAlgHom f)))
+  Module.Finite.equiv ((MulOpposite.opLinearEquiv K).trans (Bimodule.of (oppositeHom f)))
 
 /-- `BaseChangeModule f` is `A` again as a `K`-module: only the `L ⊗[K] A`-action is new. -/
 def of : A ≃ₗ[K] BaseChangeModule f :=
-  (MulOpposite.opLinearEquiv K).trans (Bimodule.of (rightAlgHom f))
+  (MulOpposite.opLinearEquiv K).trans (Bimodule.of (oppositeHom f))
 
 noncomputable instance : Module (L ⊗[K] A) (BaseChangeModule f) :=
-  Module.compHom (M := Bimodule (rightAlgHom f)) (opOpMap K L A).toRingHom
+  Module.compHom (M := Bimodule (oppositeHom f)) (tensorOpOp K L A).toRingHom
 
 /-- The action of `L ⊗[K] A` on `A` defining `BaseChangeModule f`, as a `K`-algebra homomorphism
 into `Module.End K A`, transported from `TauCeti.Bimodule.toEnd`. -/
 noncomputable def toEnd : L ⊗[K] A →ₐ[K] Module.End K A :=
   ((MulOpposite.opLinearEquiv K).conjAlgEquiv K).symm.toAlgHom.comp
-    ((Bimodule.toEnd (rightAlgHom f)).comp (opOpMap K L A))
+    ((Bimodule.toEnd (oppositeHom f)).comp (tensorOpOp K L A))
 
 /-- A pure tensor `l ⊗ₜ a` acts on `x : A` through `toEnd f` by `x ↦ a * x * f l`. -/
 @[simp]
@@ -186,8 +191,8 @@ theorem toEnd_tmul_apply (l : L) (a x : A) : toEnd f (l ⊗ₜ a) x = a * x * f 
 equation of the module structure, and the single place it is unfolded: everything else rewrites
 with it instead of reasoning up to definitional equality. -/
 theorem smul_def (r : L ⊗[K] A) (x : A) : r • of f x = of f (toEnd f r x) := by
-  change opOpMap K L A r • Bimodule.of (rightAlgHom f) (MulOpposite.op x) =
-    Bimodule.of (rightAlgHom f) (MulOpposite.op (toEnd f r x))
+  change tensorOpOp K L A r • Bimodule.of (oppositeHom f) (MulOpposite.op x) =
+    Bimodule.of (oppositeHom f) (MulOpposite.op (toEnd f r x))
   rw [Bimodule.smul_def]
   rfl
 
