@@ -43,7 +43,8 @@ def coxeterMatrix : CoxeterMatrix V := by
           simp
         · by_cases h : G.Adj i j
           · simp [hij, Ne.symm hij, h, h.symm]
-          · simp [hij, Ne.symm hij, h, show ¬ G.Adj j i from fun h' ↦ h h'.symm]
+          · have hji : ¬ G.Adj j i := fun h' ↦ h h'.symm
+            simp [hij, Ne.symm hij, h, hji]
       diagonal := by simp
       off_diagonal := by
         intro i j hij
