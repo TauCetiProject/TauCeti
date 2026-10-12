@@ -52,8 +52,8 @@ noncomputable def wangConnecting (n : ℕ) :
       ((singularHomologyFunctor A n).obj R).obj (TopCat.of F) :=
   (fiberPair φ).singularHomologyπ R (n + 1) ≫ (singularHomologyFiberPairIso φ R n).hom
 
-/-- The Wang connecting map is the pair boundary followed by the relative homology
-identification. -/
+/-- The Wang connecting map is the ambient-to-relative homology map followed by the relative
+homology identification. -/
 theorem wangConnecting_def (n : ℕ) :
     wangConnecting φ R n =
       (fiberPair φ).singularHomologyπ R (n + 1) ≫ (singularHomologyFiberPairIso φ R n).hom :=
