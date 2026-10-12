@@ -52,10 +52,6 @@ instance : HasRingHomProperty @Unramified
   rw [unramified_eq]
   exact HasRingHomProperty.inf
 
-instance : IsZariskiLocalAtTarget @Unramified := by
-  rw [unramified_eq]
-  infer_instance
-
 /-- The affine criterion for an unramified morphism. -/
 theorem Spec_iff {R S : CommRingCat.{u}} {φ : R ⟶ S} :
     Unramified (Spec.map φ) ↔
@@ -107,8 +103,10 @@ instance (priority := 900) {X Y : Scheme} (f : X ⟶ Y)
 instance (priority := 900) {X Y : Scheme} (f : X ⟶ Y) [Etale f] : Unramified f := by
   exact ⟨⟩
 
-instance (f : X ⟶ Y) (V : Y.Opens) [Unramified f] : Unramified (f ∣_ V) :=
-  IsZariskiLocalAtTarget.restrict ‹_› V
+instance (f : X ⟶ Y) (V : Y.Opens) [Unramified f] : Unramified (f ∣_ V) where
+  toLocallyOfFiniteType := inferInstance
+  toFormallyUnramified :=
+    IsZariskiLocalAtTarget.restrict (P := @FormallyUnramified) ‹FormallyUnramified f› V
 
 instance (f : X ⟶ Y) (U : X.Opens) (V : Y.Opens) (e) [Unramified f] :
     Unramified (f.resLE V U e) := by
