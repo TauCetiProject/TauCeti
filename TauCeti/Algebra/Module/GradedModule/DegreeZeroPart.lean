@@ -118,9 +118,7 @@ theorem degreeZeroPart_eq_self_iff (f : M →ₗ[A] N) :
     rw [← hf]
     exact isHomogeneous_degreeZeroPart G H 𝒜 f
   · intro hf
-    apply (Submodule.linearMap_eq_iff_of_span_eq_top _ _
-      (G.span_setOf_exists_mem_piece_eq_top A)).2
-    rintro ⟨x, p, hx⟩
+    refine G.linearMap_ext fun p x hx ↦ ?_
     exact (degreeZeroPart_apply_of_mem G H 𝒜 f hx).trans
       (DirectSum.decompose_of_mem_same H.piece (by simpa using hf.map_mem hx))
 
@@ -132,9 +130,7 @@ part. This allows an ungraded factorization of a graded map to be made graded. -
 theorem comp_degreeZeroPart (f : M →ₗ[A] N) {g : N →ₗ[A] P}
     (hg : LinearMap.IsHomogeneous g H.piece I.piece 0) :
     g.comp (degreeZeroPart G H 𝒜 f) = degreeZeroPart G I 𝒜 (g.comp f) := by
-  apply (Submodule.linearMap_eq_iff_of_span_eq_top _ _
-    (G.span_setOf_exists_mem_piece_eq_top A)).2
-  rintro ⟨x, p, hx⟩
+  refine G.linearMap_ext fun p x hx ↦ ?_
   simp only [LinearMap.comp_apply]
   rw [degreeZeroPart_apply_of_mem G H 𝒜 f hx,
     degreeZeroPart_apply_of_mem G I 𝒜 (g.comp f) hx]
@@ -147,9 +143,7 @@ part. -/
 theorem degreeZeroPart_comp (f : N →ₗ[A] P) {g : M →ₗ[A] N}
     (hg : LinearMap.IsHomogeneous g G.piece H.piece 0) :
     degreeZeroPart G I 𝒜 (f.comp g) = (degreeZeroPart H I 𝒜 f).comp g := by
-  apply (Submodule.linearMap_eq_iff_of_span_eq_top _ _
-    (G.span_setOf_exists_mem_piece_eq_top A)).2
-  rintro ⟨x, p, hx⟩
+  refine G.linearMap_ext fun p x hx ↦ ?_
   simp only [LinearMap.comp_apply]
   rw [degreeZeroPart_apply_of_mem G I 𝒜 (f.comp g) hx,
     degreeZeroPart_apply_of_mem H I 𝒜 f (by simpa using hg.map_mem hx)]
