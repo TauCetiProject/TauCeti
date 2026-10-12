@@ -44,8 +44,11 @@ theorem coeff_sum_C_mul_X_pow {m : ℕ} (a : Fin m → R) (n : ℕ) :
   simp only [map_sum, coeff_C_mul_X_pow]
   split_ifs with h
   · rw [Fintype.sum_eq_single ⟨n, h⟩ fun i hi ↦ by
-      simp [show n ≠ (i : ℕ) from fun hn ↦ hi (Fin.ext hn.symm)]]
+      have hni : n ≠ (i : ℕ) := fun hn ↦ hi (Fin.ext hn.symm)
+      simp [hni]]
     simp
-  · exact Finset.sum_eq_zero fun i _ ↦ by simp [show n ≠ (i : ℕ) by have := i.2; omega]
+  · refine Finset.sum_eq_zero fun i _ ↦ ?_
+    have hni : n ≠ (i : ℕ) := (i.2.trans_le (not_lt.mp h)).ne'
+    simp [hni]
 
 end PowerSeries
