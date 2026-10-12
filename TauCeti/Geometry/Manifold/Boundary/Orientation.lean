@@ -130,6 +130,20 @@ variable {M : Type*} [TopologicalSpace M]
   [IsManifold (𝓡∂ (n + 1)) ∞ M]
   {V : ∀ x : M, TangentSpace (𝓡∂ (n + 1)) x}
 
+/-- Characterization of a smooth outward-pointing field by its smoothness and boundary values. -/
+theorem isOutwardPointingField_iff :
+    IsOutwardPointingField V ↔
+      ContMDiff (𝓡∂ (n + 1)) (𝓡∂ (n + 1)).tangent ∞ (T% V) ∧
+        ∀ x ∈ (𝓡∂ (n + 1)).boundary M, IsOutwardPointing x (V x) :=
+  Iff.rfl
+
+/-- Construct a smooth outward-pointing field from its smoothness and boundary values. -/
+theorem intro
+    (hV : ContMDiff (𝓡∂ (n + 1)) (𝓡∂ (n + 1)).tangent ∞ (T% V))
+    (hout : ∀ x ∈ (𝓡∂ (n + 1)).boundary M, IsOutwardPointing x (V x)) :
+    IsOutwardPointingField V :=
+  ⟨hV, hout⟩
+
 /-- The field component of an outward-pointing field is smooth. -/
 theorem contMDiff (hV : IsOutwardPointingField V) :
     ContMDiff (𝓡∂ (n + 1)) (𝓡∂ (n + 1)).tangent ∞ (T% V) :=
@@ -143,9 +157,10 @@ theorem isOutwardPointing (hV : IsOutwardPointingField V) {x : M}
 
 /-- Multiplication by a smooth positive scalar preserves an outward-pointing field. -/
 theorem smul {f : M → ℝ} (hV : IsOutwardPointingField V)
-    (hf : ContMDiff (𝓡∂ (n + 1)) 𝓘(ℝ) ∞ f) (hpos : ∀ x, 0 < f x) :
+    (hf : ContMDiff (𝓡∂ (n + 1)) 𝓘(ℝ) ∞ f)
+    (hpos : ∀ x ∈ (𝓡∂ (n + 1)).boundary M, 0 < f x) :
     IsOutwardPointingField (fun x ↦ f x • V x) := by
-  refine ⟨hf.smul_section hV.1, fun x hx ↦ (hV.2 x hx).smul_pos (hpos x)⟩
+  refine ⟨hf.smul_section hV.1, fun x hx ↦ (hV.2 x hx).smul_pos (hpos x hx)⟩
 
 end IsOutwardPointingField
 
@@ -169,6 +184,14 @@ private noncomputable instance standardPairChartedSpace (n : ℕ) :
         (EuclideanSpace ℝ (Fin (n + 1)))) :=
   chartedSpaceSelf _
 
+private theorem extChartAt_modelSpace_self (n : ℕ)
+    (x : EuclideanHalfSpace (n + 1)) :
+    ((extChartAt (𝓡∂ (n + 1)) x :
+      PartialEquiv (EuclideanHalfSpace (n + 1)) (EuclideanSpace ℝ (Fin (n + 1)))) x) =
+      x.1 := by
+  simp [extChartAt, chartAt_self_eq, OpenPartialHomeomorph.refl_partialEquiv,
+    PartialEquiv.refl_trans]
+
 private theorem contMDiff_standardOutwardVectorField (n : ℕ) :
     ContMDiff (𝓡∂ (n + 1)) (𝓡∂ (n + 1)).tangent ∞
       (T% (standardOutwardVectorField n)) := by
@@ -186,8 +209,9 @@ private theorem contMDiff_standardOutwardVectorField (n : ℕ) :
         (fun _ : EuclideanSpace ℝ (Fin (n + 1)) ↦ e) Set.univ := contDiffOn_const
     have hprod := contDiffOn_id.prodMk hconst
     have hprod' := hprod.mono (Set.subset_univ (Set.range (↑I)))
-    simpa [extChartAt, chartAt_self_eq, OpenPartialHomeomorph.refl_partialEquiv,
-      PartialEquiv.refl_trans] using hprod'.congr (fun p hp ↦ by
+    simpa [extChartAt_modelSpace_self, extChartAt, chartAt_self_eq,
+      OpenPartialHomeomorph.refl_partialEquiv, PartialEquiv.refl_trans] using
+      hprod'.congr (fun p hp ↦ by
         rcases hp with ⟨z, rfl⟩
         simp [pair, Function.comp_apply])
   have hsection : ContMDiff I.tangent I.tangent ∞
