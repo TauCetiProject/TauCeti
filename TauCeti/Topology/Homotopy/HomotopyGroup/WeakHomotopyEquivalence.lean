@@ -16,7 +16,8 @@ components and a bijection `π_n(X, x) → π_n(Y, f x)` for every `n ≥ 1` and
 (Hatcher, *Algebraic Topology*, Section 4.1). This file defines the predicate
 `ContinuousMap.IsWeakHomotopyEquivalence` on Mathlib's cubical homotopy groups and proves its
 closure properties: homotopy equivalences are weak homotopy equivalences, the predicate depends
-only on the homotopy class of the map, and it is closed under composition and left cancellation.
+only on the homotopy class of the map, and it is closed under composition and under left and
+right cancellation.
 
 Whitehead's theorem, that a weak homotopy equivalence between CW complexes is a homotopy
 equivalence, is `ContinuousMap.IsWeakHomotopyEquivalence.homotopyEquiv` in
@@ -33,8 +34,9 @@ equivalence, is `ContinuousMap.IsWeakHomotopyEquivalence.homotopyEquiv` in
   homotopy equivalence.
 * `ContinuousMap.IsWeakHomotopyEquivalence.of_homotopic`,
   `ContinuousMap.IsWeakHomotopyEquivalence.comp`,
-  `ContinuousMap.IsWeakHomotopyEquivalence.of_comp`: invariance under homotopy, composition, and
-  left cancellation.
+  `ContinuousMap.IsWeakHomotopyEquivalence.of_postcomp`,
+  `ContinuousMap.IsWeakHomotopyEquivalence.of_precomp`: invariance under homotopy, composition, and
+  left and right cancellation (two out of three).
 
 ## References
 
@@ -139,14 +141,42 @@ theorem comp (hg : g.IsWeakHomotopyEquivalence) (hf : f.IsWeakHomotopyEquivalenc
   bijective n x :=
     HomotopyGroup.map_comp_map g rfl f rfl ▸ (hg.bijective n (f x)).comp (hf.bijective n x)
 
-/-- **Two out of three.** If `g` and `g ∘ f` are weak homotopy equivalences, then so is `f`. -/
-theorem of_comp (hg : g.IsWeakHomotopyEquivalence) (hgf : (g.comp f).IsWeakHomotopyEquivalence) :
-    f.IsWeakHomotopyEquivalence where
+/-- **Two out of three, left cancellation.** If `g` and `g ∘ f` are weak homotopy equivalences,
+then so is `f`. -/
+theorem of_postcomp (hg : g.IsWeakHomotopyEquivalence)
+    (hgf : (g.comp f).IsWeakHomotopyEquivalence) : f.IsWeakHomotopyEquivalence where
   exists_joined y := by
     obtain ⟨x, hx⟩ := hgf.exists_joined (g y)
     exact ⟨x, hg.joined_iff.1 hx⟩
   bijective n x := (Function.Bijective.of_comp_iff' (hg.bijective n (f x)) _).1
     (HomotopyGroup.map_comp_map g rfl f rfl ▸ hgf.bijective n x)
+
+/-- **Two out of three, right cancellation.** If `f` and `g ∘ f` are weak homotopy equivalences,
+then so is `g`. At a point `y` of `Y`, the induced map on homotopy groups is compared, by
+base-point change along a path from a point `f x` to `y` and along its image under `g`, with the
+induced map at `f x`, which is bijective by cancellation on the right. -/
+theorem of_precomp (hf : f.IsWeakHomotopyEquivalence)
+    (hgf : (g.comp f).IsWeakHomotopyEquivalence) : g.IsWeakHomotopyEquivalence where
+  exists_joined z := by
+    obtain ⟨x, hx⟩ := hgf.exists_joined z
+    exact ⟨f x, hx⟩
+  bijective n y := by
+    obtain ⟨x, ⟨γ⟩⟩ := hf.exists_joined y
+    have hfx : Function.Bijective (HomotopyGroup.map (N := Fin n) g (rfl : g (f x) = g (f x))) :=
+      (Function.Bijective.of_comp_iff _ (hf.bijective n x)).1
+        (HomotopyGroup.map_comp_map g rfl f rfl ▸ hgf.bijective n x)
+    have hfun : HomotopyGroup.map (N := Fin n) g (rfl : g y = g y) =
+        TauCeti.homotopyGroupEquivOfPath (γ.map g.continuous) ∘ HomotopyGroup.map g rfl ∘
+          (TauCeti.homotopyGroupEquivOfPath γ).symm := by
+      funext a
+      obtain ⟨b, rfl⟩ := (TauCeti.homotopyGroupEquivOfPath (N := Fin n) γ).surjective a
+      rw [Function.comp_apply, Function.comp_apply, Equiv.symm_apply_apply]
+      induction b using Quotient.inductionOn with
+      | h p =>
+        rw [TauCeti.homotopyGroupEquivOfPath_mk, HomotopyGroup.map_mk, HomotopyGroup.map_mk,
+          TauCeti.homotopyGroupEquivOfPath_mk, TauCeti.GenLoop.map_transport]
+    rw [hfun]
+    exact (Equiv.bijective _).comp (hfx.comp (Equiv.bijective _))
 
 end IsWeakHomotopyEquivalence
 

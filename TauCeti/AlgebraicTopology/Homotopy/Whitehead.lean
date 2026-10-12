@@ -85,7 +85,7 @@ theorem subsingleton_relHomotopyGroup_mappingCylinder (hf : f.IsWeakHomotopyEqui
   have hproj : (homotopyEquiv f).toFun = proj f := ContinuousMap.ext homotopyEquiv_apply
   -- By two out of three `ι ∘ ψ` is a weak homotopy equivalence, hence so is `ι = ι ∘ ψ ∘ ψ⁻¹`.
   have hιψ : (ι.comp (ψ : C(X, range (incl f)))).IsWeakHomotopyEquivalence :=
-    (hproj ▸ (homotopyEquiv f).isWeakHomotopyEquivalence).of_comp (by rwa [hcomp])
+    (hproj ▸ (homotopyEquiv f).isWeakHomotopyEquivalence).of_postcomp (by rwa [hcomp])
   have hι : ι.IsWeakHomotopyEquivalence := by
     have h : (ι.comp (ψ : C(X, range (incl f)))).comp (ψ.symm : C(range (incl f), X)) = ι := by
       ext m
@@ -148,7 +148,7 @@ noncomputable def homotopyEquiv (hf : f.IsWeakHomotopyEquivalence) : C ≃ₕ D 
       -- The homotopy inverse `g` is a weak homotopy equivalence by two out of three, so it has a
       -- right homotopy inverse `h`; then `f ≃ f ∘ g ∘ h ≃ h` and `g ∘ f ≃ g ∘ h ≃ id`.
       set g := (hf.exists_comp_homotopic (ContinuousMap.id D)).choose
-      obtain ⟨h, hgh⟩ := (hf.of_comp (IsWeakHomotopyEquivalence.id.of_homotopic hfg.symm))
+      obtain ⟨h, hgh⟩ := (hf.of_postcomp (IsWeakHomotopyEquivalence.id.of_homotopic hfg.symm))
         |>.exists_comp_homotopic (ContinuousMap.id C)
       have hfh : f.Homotopic h := by
         have := (ContinuousMap.Homotopic.refl f).comp hgh.symm
