@@ -163,10 +163,12 @@ theorem integral_norm_fderiv_one_sq_ball_le_rpow
     (f' := fun t ↦ deriv (fun t ↦ ∫ z in ball z₀ t, ‖fderiv ℝ u z 1‖ ^ 2) t)
     (convex_Ioo 0 R) (fun t ht ↦ ht.1)
     (fun t ht ↦ (hasDerivAt_integral_norm_fderiv_one_sq_ball
-      (hu.of_le one_le_two) henergy ht).differentiableAt.hasDerivAt)
+      (hu.of_le one_le_two) henergy ht).continuousAt.continuousWithinAt)
+    (fun t ht ↦ (hasDerivAt_integral_norm_fderiv_one_sq_ball
+      (hu.of_le one_le_two) henergy (interior_subset ht)).differentiableAt.hasDerivAt)
     (fun t ht ↦ by
       have h := ω.mul_integral_norm_fderiv_one_sq_ball_le_mul_deriv hg hc hu hCR htame hJ
-        henergy ht
+        henergy (interior_subset ht)
       rw [div_mul_eq_mul_div, div_le_iff₀ hden]
       nlinarith)
   have h := hmono ⟨hr, hrb.trans_lt hb⟩ ⟨hr.trans_le hrb, hb⟩ hrb
