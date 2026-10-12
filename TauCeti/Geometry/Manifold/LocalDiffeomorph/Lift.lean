@@ -59,12 +59,13 @@ theorem contMDiffAt_of_comp_isLocalDiffeomorphAt (p : M → P)
   rw [← contMDiffWithinAt_univ] at hpf ⊢
   exact contMDiffWithinAt_of_comp_isLocalDiffeomorphAt p hp hf.continuousWithinAt hpf
 
-/-- A continuous lift on a set through a local diffeomorphism is `C^n` on the set
-whenever its composite is `C^n` there. -/
-theorem contMDiffOn_of_comp_isLocalDiffeomorph (p : M → P)
-    (hp : IsLocalDiffeomorph I K n p) (hf : ContinuousOn f s)
+/-- A continuous lift on a set is `C^n` there whenever its composite is `C^n` and the projection
+is a `C^n` local diffeomorphism on the image of the lift. -/
+theorem contMDiffOn_of_comp_isLocalDiffeomorphOn (p : M → P)
+    (hp : IsLocalDiffeomorphOn I K n p (f '' s)) (hf : ContinuousOn f s)
     (hpf : ContMDiffOn J K n (p ∘ f) s) : ContMDiffOn J I n f s :=
-  fun x hx ↦ contMDiffWithinAt_of_comp_isLocalDiffeomorphAt p (hp (f x)) (hf x hx) (hpf x hx)
+  fun x hx ↦ contMDiffWithinAt_of_comp_isLocalDiffeomorphAt p
+    (hp ⟨f x, ⟨x, hx, rfl⟩⟩) (hf x hx) (hpf x hx)
 
 /-- A continuous lift through a local diffeomorphism is `C^n` whenever its composite is `C^n`. -/
 theorem contMDiff_of_comp_isLocalDiffeomorph (p : M → P)
