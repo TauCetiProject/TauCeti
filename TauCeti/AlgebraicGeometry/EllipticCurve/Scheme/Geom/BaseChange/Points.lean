@@ -65,9 +65,9 @@ variable {S S' : Scheme.{u}} {E : EllipticCurveGeom S} {E' : EllipticCurveGeom S
   {g : E'.carrier ⟶ E.carrier} {f : S' ⟶ S} (hg : IsPullback g E'.structureMap E.structureMap f)
   (h0 : E'.zero ≫ g = f ≫ E.zero)
 
--- An `S`-point of an elliptic curve over `S` is a section of its structure morphism.
+/-- An `S`-point of an elliptic curve over `S` is a section of its structure morphism. -/
 @[reassoc (attr := simp)]
-private theorem left_comp_structureMap {T : Scheme.{u}} {C : EllipticCurveGeom T}
+theorem left_comp_structureMap {T : Scheme.{u}} {C : EllipticCurveGeom T}
     (P : 𝟙_ (Over T) ⟶ Over.mk C.structureMap) : P.left ≫ C.structureMap = 𝟙 T := by
   simpa using Over.w P
 
