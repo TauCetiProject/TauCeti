@@ -136,8 +136,7 @@ private theorem map_baseChange_of_map_one_tmul {e : (ℂ ⊗[ℝ] W) ≃ₗ[ℂ]
     (he : ∀ (g : G) (w : W), e (1 ⊗ₜ[ℝ] σ g w) = ρ g (e (1 ⊗ₜ[ℝ] w))) (g : G)
     (u : ℂ ⊗[ℝ] W) : e (Representation.baseChange ℂ σ g u) = ρ g (e u) := by
   simp only [Representation.baseChange_apply]
-  induction u using TensorProduct.induction_on with
-  | zero => simp
+  induction u using TensorProduct.inductionOn with
   | add u₁ u₂ h₁ h₂ => simp only [map_add, h₁, h₂]
   | tmul a w =>
     rw [LinearMap.baseChange_tmul, TensorProduct.tmul_eq_smul_one_tmul a (σ g w),

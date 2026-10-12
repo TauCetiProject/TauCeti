@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.WeilDivisor.Principal.Basic
 public import TauCeti.AlgebraicGeometry.WeilDivisor.Scheme.Order
+import TauCeti.AlgebraicGeometry.Scheme.GenericPoint
 
 /-!
 # Principal divisors on Noetherian integral schemes
@@ -28,11 +29,10 @@ The main results are:
 * `SchemeWeilDivisor.isEffective_add_principalDivisor_iff`: the coefficientwise criterion for a
   divisor plus a principal divisor to be effective.
 
-This advances `TauCetiRoadmap/JacobianChallenge/README.md`, Layer A, item "principal divisors" in
-"Divisors on a curve". It completes the global step explicitly left open by
+This file completes the global step left open by
 `TauCeti/AlgebraicGeometry/WeilDivisor/Scheme/Order.lean`. The proof reuses Mathlib's
-`exists_isUnit_germ_eq`, `Scheme.ord_of_isUnit`, and the decomposition of a closed subset
-of a Noetherian space into finitely many irreducible closed subsets. No formalization is vendored.
+`exists_isUnit_germ_eq`, `Scheme.ord_of_isUnit`, and the decomposition of a closed subset of a
+Noetherian space into finitely many irreducible closed subsets. No formalization is vendored.
 -/
 
 public section
@@ -50,12 +50,6 @@ namespace SchemeWeilDivisor
 variable {X : Scheme.{u}}
 
 noncomputable section
-
-/-- A maximal point of an irreducible space is its generic point. -/
-private lemma eq_genericPoint_of_isMax [IrreducibleSpace X] {y : X} (hy : IsMax y) :
-    y = genericPoint X :=
-  Inseparable.eq <| inseparable_iff_specializes_and.mpr
-    ⟨hy (genericPoint_specializes y), genericPoint_specializes y⟩
 
 /-- A codimension-one point lying in a set that avoids a nonempty open `U` equals that set's
 generic point. -/
@@ -77,7 +71,7 @@ private lemma eq_of_subset_compl_of_isGenericPoint [IrreducibleSpace X] {U : X.O
     (genericPoint_spec X).mem_open_set_iff U.isOpen |>.mpr <| by
       obtain ⟨u⟩ := (inferInstance : Nonempty U)
       exact ⟨u.1, Set.mem_univ _, u.property⟩
-  exact hTU hyGeneric.mem ((eq_genericPoint_of_isMax hyMax).symm ▸ hηU)
+  exact hTU hyGeneric.mem ((Scheme.eq_genericPoint_of_isMax hyMax).symm ▸ hηU)
 
 /-- A nonempty open subset of an irreducible scheme with Noetherian underlying space contains all
 but finitely many codimension-one points. -/

@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Category.ModuleCat.Topology.Homology
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.CochainComparison
 
 /-!
@@ -14,7 +15,9 @@ public import TauCeti.RepresentationTheory.Homological.ContCohomology.CochainCom
 Mathlib's homogeneous complex. Their forward formulas are `g • c (g⁻¹ * h)` and
 `g • c (g⁻¹ * h, h⁻¹ * k)`; their inverses evaluate at `(1, g)` and `(1, g, g * h)`. Each
 comparison identifies the explicit coboundaries with canonical boundaries, providing the
-cycle-level input to the comparison of cohomology classes.
+cycle-level input to the comparison of cohomology classes. In degree zero every element of
+`H⁰(G, M) = M^G` is a cocycle already, and `cocycle0` is its homogeneous form `g ↦ g • m`, a cycle
+of the homogeneous complex.
 
 This is an additive equivalence, with no assertion about the pointwise topology on explicit
 cocycles. Degree one holds for every topological group, while degree two assumes local compactness
@@ -38,6 +41,40 @@ variable (G M : Type u) [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
   [AddCommGroup M] [TopologicalSpace M] [DiscreteTopology M]
   [DistribMulAction G M] [ContinuousSMul G M]
 
+/-! ### Degree zero -/
+
+/-- **The homogeneous `0`-cocycle of an invariant element**: `g ↦ g • m`, which is the constant
+cochain `m` since `m` is invariant. -/
+noncomputable def cocycle0 (m : H0 G M) :
+    _root_.ContinuousCohomology.cocycles (ofDiscreteModule ℤ G M) 0 :=
+  (TopRep.homogeneousCochains (ofDiscreteModule ℤ G M)).cyclesMkOfEq (cochainEquiv0 G M m) 1
+    (CochainComplex.next ℕ 0) (by
+      rw [d_cochainEquiv0]
+      have h : (⟨d0 G M (m : M), mem_C1_iff.mpr (continuous_d0_apply (m : M))⟩ : C1 G M) = 0 :=
+        Subtype.ext (funext fun g ↦ by simp [d0_apply, m.2 g])
+      rw [h, map_zero])
+
+/-- The inclusion of the homogeneous `0`-cocycle `cocycle0 m` is the cochain `g ↦ g • m`, read
+through the short complex in degree zero as `iCycles_cocycleEquiv1` and `iCycles_cocycleEquiv2` do
+in degrees one and two. -/
+@[simp]
+theorem sc_iCycles_cocycle0 (m : H0 G M) :
+    ((TopRep.homogeneousCochains (ofDiscreteModule ℤ G M)).sc 0).iCycles.hom (cocycle0 G M m) =
+      cochainEquiv0 G M m :=
+  HomologicalComplex.iCycles_cyclesMkOfEq _ _ _ _ _
+
+/-- The underlying homogeneous cochain of `cocycle0 m` is `g ↦ g • m`, stated on the inclusion of
+the homogeneous complex itself. -/
+-- Not a `simp` lemma: `simp` rewrites the implicit carrier `(homogeneousCochains _).X 0` on the
+-- left-hand side through `CategoryTheory.Functor.mapHomologicalComplex_obj_X`, so the statement
+-- is not in `simp`-normal form; `sc_iCycles_cocycle0` is the `simp` spelling. This one is for
+-- `rw`: `HomologicalComplex.iCycles` is not unfolded to the short-complex inclusion by `rw`, so
+-- goals produced by `HomologicalComplex.iCycles_injective` are rewritten with this form.
+theorem iCycles_cocycle0 (m : H0 G M) :
+    (TopRep.homogeneousCochains (ofDiscreteModule ℤ G M)).iCycles 0 (cocycle0 G M m) =
+      cochainEquiv0 G M m :=
+  HomologicalComplex.iCycles_cyclesMkOfEq _ _ _ _ _
+
 /-! ### Degree one -/
 
 /-- Continuous one-cocycles in inhomogeneous coordinates are the cycles of the canonical
@@ -48,7 +85,9 @@ Unlike the degree-two comparison, this needs no local compactness: the degree-on
 comparison is a plain currying, whose inverse is evaluation. -/
 noncomputable def cocycleEquiv1 :
     Z1 G M ≃+ _root_.ContinuousCohomology.cocycles (ofDiscreteModule ℤ G M) 1 :=
-  ({ toFun c := ⟨cochainEquiv1 G M ⟨c.val, Z1_le_C1 G M c.property⟩,
+  -- Ascribed: typed on its own, the cochain meets the kernel's carrier in one cheap check.
+  -- (This follows the ascription idiom of #8346.)
+  ({ toFun c := ⟨(cochainEquiv1 G M ⟨c.val, Z1_le_C1 G M c.property⟩ :),
         (d_cochainEquiv1_eq_zero_iff G M _).mpr c.property⟩
      invFun c := ⟨((cochainEquiv1 G M).symm c.val).val,
         (d_cochainEquiv1_eq_zero_iff G M _).mp (by
@@ -67,9 +106,11 @@ noncomputable def cocycleEquiv1 :
          ⟨c.val, Z1_le_C1 G M c.property⟩ ⟨d.val, Z1_le_C1 G M d.property⟩ } :
       Z1 G M ≃+ TopModuleCat.ker
         ((TopRep.homogeneousCochains (ofDiscreteModule ℤ G M)).d 1 2)).trans
-    (Limits.IsLimit.conePointUniqueUpToIso (TopModuleCat.isLimitKer _)
+    -- Ascribed: elaborated alone, the `_` is read off `cyclesIsKernel`, not unified via the kernel.
+    -- (This follows the ascription idiom of #8346.)
+    ((Limits.IsLimit.conePointUniqueUpToIso (TopModuleCat.isLimitKer _)
       ((TopRep.homogeneousCochains (ofDiscreteModule ℤ G M)).cyclesIsKernel 1 2
-        (by simp))).toContinuousLinearEquiv.toAddEquiv
+        (by simp))).toContinuousLinearEquiv.toAddEquiv :)
 
 /-- The inclusion of a compared one-cocycle is the existing cochain comparison. -/
 @[simp]
@@ -101,7 +142,9 @@ with the same primitive under the degree-zero cochain comparison. -/
 theorem cocycleEquiv1_d0 (m : M) :
     cocycleEquiv1 G M ⟨d0 G M m, B1_le_Z1 G M (d0_mem_B1 m)⟩ =
       (TopRep.homogeneousCochains (ofDiscreteModule ℤ G M)).toCycles 0 1
-        (cochainEquiv0 G M m) := by
+        -- Ascribed: typed on its own, the argument meets the cochain carrier in one cheap check.
+        -- (This follows the ascription idiom of #8346.)
+        (cochainEquiv0 G M m :) := by
   apply (cocycleEquiv1 G M).symm.injective
   apply Subtype.ext
   funext g
@@ -170,7 +213,9 @@ variable [LocallyCompactSpace G]
 homogeneous cochain complex. -/
 noncomputable def cocycleEquiv2 :
     Z2 G M ≃+ _root_.ContinuousCohomology.cocycles (ofDiscreteModule ℤ G M) 2 :=
-  ({ toFun c := ⟨cochainEquiv2 G M ⟨c.val, Z2_le_C2 G M c.property⟩,
+  -- Ascribed: typed on its own, the cochain meets the kernel's carrier in one cheap check.
+  -- (This follows the ascription idiom of #8346.)
+  ({ toFun c := ⟨(cochainEquiv2 G M ⟨c.val, Z2_le_C2 G M c.property⟩ :),
         (d_cochainEquiv2_eq_zero_iff G M _).mpr c.property⟩
      invFun c := ⟨((cochainEquiv2 G M).symm c.val).val,
         (d_cochainEquiv2_eq_zero_iff G M _).mp (by
@@ -189,9 +234,11 @@ noncomputable def cocycleEquiv2 :
          ⟨c.val, Z2_le_C2 G M c.property⟩ ⟨d.val, Z2_le_C2 G M d.property⟩ } :
       Z2 G M ≃+ TopModuleCat.ker
         ((TopRep.homogeneousCochains (ofDiscreteModule ℤ G M)).d 2 3)).trans
-    (Limits.IsLimit.conePointUniqueUpToIso (TopModuleCat.isLimitKer _)
+    -- Ascribed: elaborated alone, the `_` is read off `cyclesIsKernel`, not unified via the kernel.
+    -- (This follows the ascription idiom of #8346.)
+    ((Limits.IsLimit.conePointUniqueUpToIso (TopModuleCat.isLimitKer _)
       ((TopRep.homogeneousCochains (ofDiscreteModule ℤ G M)).cyclesIsKernel 2 3
-        (by simp))).toContinuousLinearEquiv.toAddEquiv
+        (by simp))).toContinuousLinearEquiv.toAddEquiv :)
 
 /-- The inclusion of a compared cocycle is the existing cochain comparison. -/
 @[simp]
@@ -225,7 +272,9 @@ theorem cocycleEquiv2_d1 (c : C1 G M) :
         ⟨d1 G M c.val, B2_le_Z2 G M
           (mem_B2_iff.mpr ⟨c.val, mem_C1_iff.mp c.property, rfl⟩)⟩ =
       (TopRep.homogeneousCochains (ofDiscreteModule ℤ G M)).toCycles 1 2
-        (cochainEquiv1 G M c) := by
+        -- Ascribed: typed on its own, the argument meets the cochain carrier in one cheap check.
+        -- (This follows the ascription idiom of #8346.)
+        (cochainEquiv1 G M c :) := by
   apply (cocycleEquiv2 G M).symm.injective
   apply Subtype.ext
   funext ⟨g, h⟩

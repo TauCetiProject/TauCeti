@@ -29,8 +29,11 @@ poles.
 
 * `TauCeti.Divisor.principal_irreducible`: `div p = P_(p) - (deg p) · P_∞` for `p` irreducible,
   and its special case `TauCeti.Divisor.principal_X`: `div x = P_(X) - P_∞`.
+* `TauCeti.Divisor.poles_X`: the pole divisor of `x` is `P_∞`.
 * `TauCeti.Divisor.degree_poles_eq_max_natDegree`: the pole divisor of `z ∈ k(x)ˣ` has degree
   `max (deg z.num) (deg z.denom)`, which for nonconstant `z` is the degree of `k(x) / k(z)`.
+* `TauCeti.Divisor.degree_zeros_algebraMap`: the zero divisor of a nonzero polynomial has
+  degree equal to its polynomial degree.
 
 ## References
 
@@ -86,6 +89,25 @@ theorem Divisor.principal_X :
     Units.ext RatFunc.algebraMap_X.symm
   rw [hX, Divisor.principal_irreducible, natDegree_X, one_nsmul]
 
+/-- **The pole divisor of `x`**: `(x)_∞ = P_∞`.  The function `x` has a simple pole at infinity
+and is regular at every other place. -/
+@[simp]
+theorem Divisor.poles_X :
+    Divisor.poles (IsFunctionField.ratFunc k)
+        (Units.mk0 (RatFunc.X : RatFunc k) RatFunc.X_ne_zero) =
+      WeilDivisor.ofPoint (Place.infty k) := by
+  have hne := Place.adicOfIrreducible_ne_infty (irreducible_X (R := k))
+  refine WeilDivisor.ext fun P ↦ ?_
+  rw [Divisor.coeff_poles, ← Divisor.coeff_principal (IsFunctionField.ratFunc k),
+    Divisor.principal_X, WeilDivisor.coeff_sub]
+  by_cases hP : P = Place.infty k
+  · subst hP
+    simp [WeilDivisor.coeff_ofPoint_of_ne hne.symm]
+  · by_cases hP' : P = Place.adicOfIrreducible (irreducible_X (R := k))
+    · subst hP'
+      simp [WeilDivisor.coeff_ofPoint_of_ne hne]
+    · simp [WeilDivisor.coeff_ofPoint_of_ne hP, WeilDivisor.coeff_ofPoint_of_ne hP']
+
 /-! ### The degree of a rational map -/
 
 /-- **Stichtenoth, Theorem 1.4.11 on `ℙ¹`**: the pole divisor of a nonzero rational function
@@ -103,5 +125,20 @@ theorem Divisor.degree_poles_eq_max_natDegree (z : (RatFunc k)ˣ) :
     rw [hpoles, hc]
     simp
   · rw [Divisor.degree_poles _ _ hz, RatFunc.finrank_eq_max_natDegree]
+
+/-- The zero divisor of a nonzero polynomial in `k(x)` has degree equal to the degree of the
+polynomial. By the product formula its zeros and poles have equal degrees. -/
+theorem Divisor.degree_zeros_algebraMap {f : k[X]} (hf : f ≠ 0) :
+    Divisor.degree (Divisor.zeros (IsFunctionField.ratFunc k)
+      (Units.mk0 (algebraMap k[X] (RatFunc k) f) (RatFunc.algebraMap_ne_zero hf))) =
+        (f.natDegree : ℤ) := by
+  set z := Units.mk0 (algebraMap k[X] (RatFunc k) f) (RatFunc.algebraMap_ne_zero hf)
+  have hzp : Divisor.degree (Divisor.zeros (IsFunctionField.ratFunc k) z) =
+      Divisor.degree (Divisor.poles (IsFunctionField.ratFunc k) z) := by
+    have := Divisor.degree_principal (IsFunctionField.ratFunc k) z
+    rw [← Divisor.zeros_sub_poles, Divisor.degree_sub] at this
+    omega
+  rw [hzp, Divisor.degree_poles_eq_max_natDegree]
+  simp [z, RatFunc.num_algebraMap, RatFunc.denom_algebraMap]
 
 end TauCeti

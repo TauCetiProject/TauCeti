@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Complex.Conformal.Reflection.Basic
 public import TauCeti.Analysis.Complex.Conformal.Reflection.Circle.Basic
 import Mathlib.Analysis.Calculus.Deriv.Inv
+import Mathlib.Analysis.Calculus.FDeriv.Add
 
 /-!
 # Conjugating a holomorphic map by circle reflections
@@ -144,7 +145,7 @@ theorem differentiableOn_circleReflectionConjugate {c : ℂ} {r : ℝ} {d : ℂ}
     simpa [g, q, sub_eq_zero, conj_circleReflectionCoord] using hzero
   have hformula : EqOn (circleReflectionConjugate c r d s f)
       (fun z => d + (s : ℂ) ^ 2 / (g (q z) - (starRingEnd ℂ) d)) S := by
-    intro z hz
+    intro z _
     rw [circleReflectionConjugate_apply, inversion_eq_conj_reciprocal,
       map_sub]
     simp only [g, q, conj_circleReflectionCoord]

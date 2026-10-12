@@ -12,10 +12,7 @@ public import Mathlib.RingTheory.Norm.Defs
 -- Non-public: the matrix of multiplication by `x` in the basis `(1, x)` is the companion matrix
 -- `TauCeti.companionFinTwo`, whose trace and determinant are already known; used in proofs only.
 import TauCeti.LinearAlgebra.Matrix.RationalCanonicalFormFinTwo
--- Non-public: `basisOfLinearIndependentOfCardEqFinrank` builds that basis, inside a proof only.
-import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
--- Non-public: `TauCeti.linearIndependent_one_of_notMem_range_algebraMap` gives the
--- independence of `1` and `x` that the basis rests on; used in a proof only.
+-- Non-public: the shared basis `(1, x)` is used in the matrix calculations below.
 import TauCeti.LinearAlgebra.Dimension.IsQuadraticExtension
 -- Non-public: the extension theory of finite fields supplies the root of an irreducible quadratic,
 -- inside a proof only.
@@ -24,7 +21,6 @@ import Mathlib.FieldTheory.Finite.Extension
 import Mathlib.Algebra.Polynomial.SpecificDegree
 -- Non-public: `AdjoinRoot` and its power basis are the source of that root.
 import Mathlib.RingTheory.AdjoinRoot
-
 /-!
 # The trace and the norm of a quadratic irrationality
 
@@ -38,6 +34,12 @@ norm of `x` are the trace and the determinant of that matrix, and both are basis
 These are what pin the elliptic normal form of `GL₂` in
 `TauCeti/LinearAlgebra/Matrix/GeneralLinearGroup/NormalForm.lean`, where the quadratic is the
 characteristic polynomial of a matrix and `x` is the eigenvalue it acquires in `E`.
+
+Read in the other direction, every `x : E` satisfies the quadratic built from its own trace and
+norm, `x² = Tr_{E/F}(x) · x - N_{E/F}(x)`, with no hypothesis on `x`: what the `x ∉ F` hypothesis
+buys the two theorems above is not the equation but the *uniqueness* of its coefficients. This is
+what separates the elliptic conjugacy classes of `GL₂(F)` from the split ones, an eigenvalue in `E`
+outside `F` being exactly what a split class does not have.
 
 Over a *finite* base field such an `x` always exists as soon as the quadratic has no root in `F`:
 the quadratic is then irreducible, so `AdjoinRoot` of it is a degree-`2` extension of `F`, and any
@@ -69,32 +71,24 @@ variable {F : Type*} [Field F]
 
 section Basis
 
-variable {E : Type*} [Field E] [Algebra F E]
-
-/-- The `F`-basis `(1, x)` of a degree-`2` extension `E/F` attached to an element `x` outside `F`.
-It is used only to compute the trace and the norm of `x`, both of which are basis independent. -/
-private noncomputable def oneRootBasis (hE : Module.finrank F E = 2) {x : E}
-    (hx : x ∉ Set.range (algebraMap F E)) : Module.Basis (Fin 2) F E :=
-  have : FiniteDimensional F E := Module.finite_of_finrank_eq_succ (n := 1) hE
-  basisOfLinearIndependentOfCardEqFinrank (b := ![1, x])
-    (TauCeti.linearIndependent_one_of_notMem_range_algebraMap F E hx) (by simp [hE])
-
-private theorem coe_oneRootBasis (hE : Module.finrank F E = 2) {x : E}
-    (hx : x ∉ Set.range (algebraMap F E)) : ⇑(oneRootBasis hE hx) = ![1, x] := by
-  simp only [oneRootBasis, coe_basisOfLinearIndependentOfCardEqFinrank]
+variable {E : Type*} [Field E] [Algebra F E] [Algebra.IsQuadraticExtension F E]
 
 /-- In the basis `(1, x)`, multiplication by `x` **is** the companion matrix of the monic quadratic
 that `x` satisfies. -/
-private theorem leftMulMatrix_oneRootBasis (hE : Module.finrank F E = 2) {x : E}
+private theorem leftMulMatrix_quadraticExtensionBasis {x : E}
     (hx : x ∉ Set.range (algebraMap F E)) {t d : F}
     (hx2 : x * x = algebraMap F E t * x - algebraMap F E d) :
-    Algebra.leftMulMatrix (oneRootBasis hE hx) x = companionFinTwo t d := by
-  have hb := coe_oneRootBasis hE hx
-  have e0 : x * oneRootBasis hE hx 0 = oneRootBasis hE hx 1 := by
-    simp [hb]
-  have e1 : x * oneRootBasis hE hx 1
-      = (-d) • oneRootBasis hE hx 0 + t • oneRootBasis hE hx 1 := by
-    simp only [hb, Matrix.cons_val_zero, Matrix.cons_val_one, Algebra.smul_def, mul_one, map_neg]
+    Algebra.leftMulMatrix
+      (quadraticExtensionBasis F E hx (Algebra.IsQuadraticExtension.finrank_eq_two F E)) x =
+      companionFinTwo t d := by
+  let b := quadraticExtensionBasis F E hx (Algebra.IsQuadraticExtension.finrank_eq_two F E)
+  -- Use the shared basis under a short name for the two column calculations.
+  change Algebra.leftMulMatrix b x = companionFinTwo t d
+  have e0 : x * b 0 = b 1 := by
+    simp [b]
+  have e1 : x * b 1 = (-d) • b 0 + t • b 1 := by
+    simp only [b, quadraticExtensionBasis_zero, quadraticExtensionBasis_one, Algebra.smul_def,
+      mul_one, map_neg]
     linear_combination hx2
   rw [companionFinTwo_def]
   ext i j
@@ -107,24 +101,28 @@ end Basis
 
 namespace Algebra
 
-variable {E : Type*} [Field E] [Algebra F E]
+variable {E : Type*} [Field E] [Algebra F E] [Algebra.IsQuadraticExtension F E]
 
 /-- **The trace of a quadratic irrationality.** If `E/F` has degree `2` and `x : E` lies outside
 `F` and satisfies `x² = t x - d`, then `Tr_{E/F} x = t`. -/
-theorem trace_eq_of_mul_self_eq (hE : Module.finrank F E = 2) {x : E}
+theorem trace_eq_of_mul_self_eq {x : E}
     (hx : x ∉ Set.range (algebraMap F E)) {t d : F}
     (hx2 : x * x = algebraMap F E t * x - algebraMap F E d) :
     Algebra.trace F E x = t := by
-  rw [Algebra.trace_eq_matrix_trace (oneRootBasis hE hx), leftMulMatrix_oneRootBasis hE hx hx2,
+  rw [Algebra.trace_eq_matrix_trace
+      (quadraticExtensionBasis F E hx (Algebra.IsQuadraticExtension.finrank_eq_two F E)),
+    leftMulMatrix_quadraticExtensionBasis hx hx2,
     trace_companionFinTwo]
 
 /-- **The norm of a quadratic irrationality.** If `E/F` has degree `2` and `x : E` lies outside `F`
 and satisfies `x² = t x - d`, then `N_{E/F} x = d`. -/
-theorem norm_eq_of_mul_self_eq (hE : Module.finrank F E = 2) {x : E}
+theorem norm_eq_of_mul_self_eq {x : E}
     (hx : x ∉ Set.range (algebraMap F E)) {t d : F}
     (hx2 : x * x = algebraMap F E t * x - algebraMap F E d) :
     Algebra.norm F x = d := by
-  rw [Algebra.norm_eq_matrix_det (oneRootBasis hE hx), leftMulMatrix_oneRootBasis hE hx hx2,
+  rw [Algebra.norm_eq_matrix_det
+      (quadraticExtensionBasis F E hx (Algebra.IsQuadraticExtension.finrank_eq_two F E)),
+    leftMulMatrix_quadraticExtensionBasis hx hx2,
     det_companionFinTwo]
 
 end Algebra
@@ -136,7 +134,7 @@ A quadratic with no root in `F` is irreducible, so `AdjoinRoot` of it is a degre
 `F`; over a finite field any two extensions of the same degree are isomorphic, so the supplied `E`
 already contains a root. -/
 theorem exists_mul_self_eq_of_finite [Finite F] (E : Type*) [Field E] [Algebra F E]
-    (hE : Module.finrank F E = 2) {t d : F} (hroot : ∀ a : F, a * a ≠ t * a - d) :
+    [Algebra.IsQuadraticExtension F E] {t d : F} (hroot : ∀ a : F, a * a ≠ t * a - d) :
     ∃ x : E, x * x = algebraMap F E t * x - algebraMap F E d := by
   classical
   have key : ∃ y : E, (Polynomial.aeval y) (X ^ 2 - C t * X + C d : F[X]) = 0 := by
@@ -157,7 +155,8 @@ theorem exists_mul_self_eq_of_finite [Finite F] (E : Type*) [Field E] [Algebra F
     have : Fact q.Prime := ⟨CharP.char_is_prime F q⟩
     let e : AdjoinRoot p ≃ₐ[F] E :=
       (FiniteField.algEquivExtension F q 2 (AdjoinRoot p) hfr).trans
-        (FiniteField.algEquivExtension F q 2 E hE).symm
+        (FiniteField.algEquivExtension F q 2 E
+          (Algebra.IsQuadraticExtension.finrank_eq_two F E)).symm
     refine ⟨e (AdjoinRoot.root p), ?_⟩
     rw [Polynomial.aeval_algHom_apply e, AdjoinRoot.aeval_eq, AdjoinRoot.mk_self, map_zero]
   obtain ⟨y, hy⟩ := key

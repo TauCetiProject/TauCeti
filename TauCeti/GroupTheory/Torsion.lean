@@ -1,0 +1,302 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import Mathlib.GroupTheory.Torsion
+public import Mathlib.GroupTheory.QuotientGroup.Basic
+public import Mathlib.Algebra.Group.Equiv.TypeTags
+import TauCeti.Algebra.Group.Coprime
+
+/-!
+# The torsion subgroup under a product decomposition
+
+Let `A` be an abelian group isomorphic to `Multiplicative (M × T)`, where `M` is a torsion-free
+additive group and `T` is a torsion additive group. Then the torsion subgroup of `A` is exactly the
+preimage of the factor `T`, and the quotient `A ⧸ torsion A` is identified with `M`.
+The torsion-factor identification needs only additive monoid structures on the factors; the
+quotient construction additionally uses an additive group structure on `M`.
+
+These are the statements behind the uniqueness clauses of the structure theorems for finitely
+generated abelian groups and for topologically finitely generated abelian pro-`p` groups: in a
+decomposition `A ≅ M × T` of this shape the factor `T` is the torsion subgroup and `M` is the
+torsion-free quotient, so both are determined by `A` up to isomorphism. The topological version
+of the quotient identification is `TauCeti.quotientTorsionContinuousMulEquiv` in
+`TauCeti.Topology.Algebra.Group.Torsion`.
+
+## Main definitions
+
+* `TauCeti.subsingleton_of_mulEquiv`: if `A` is torsion-free, the factor `T` is trivial (this
+  needs no torsion-freeness hypothesis on `M`).
+* `TauCeti.mem_torsion_iff_of_mulEquiv`: an element is torsion exactly when its `M`-coordinate
+  vanishes.
+* `TauCeti.torsionMulEquiv`: the torsion subgroup of `A` is isomorphic to `T`.
+* `TauCeti.natCard_torsion_of_mulEquiv`, `TauCeti.finite_torsion_of_mulEquiv`,
+  `TauCeti.isCyclic_torsion_of_mulEquiv`: the torsion subgroup of `A` has the cardinality of `T`,
+  and it is finite, respectively cyclic, when `T` is.
+* `TauCeti.torsionFactorAddEquiv`: two decompositions of `A` have isomorphic torsion factors.
+* `TauCeti.quotientTorsionMulEquiv`: the quotient of `A` by its torsion subgroup is isomorphic to
+  `M`.
+-/
+
+/-!
+# `p`-primary torsion abelian groups
+
+An additive commutative group `M` is `p`-primary torsion when every element is annihilated by
+some power of `p`, that is, when Mathlib's `p`-primary component `AddCommGroup.primaryComponent M p`
+is all of `M`. This is the additive counterpart of Mathlib's `IsPGroup`, and it is the class of
+coefficient modules that cohomological dimension at `p` is tested on.
+
+Unlike a bound on the exponent, the condition is elementwise: for prime `p`,
+`⨁ₖ ZMod (p ^ k)` is `p`-primary torsion but is killed by no single power of `p`.
+
+## Main results
+
+* `TauCeti.IsPPrimaryTorsion`: every element of `M` lies in the `p`-primary component.
+* `TauCeti.isPPrimaryTorsion_iff`: every element is killed by some power of `p`.
+* `TauCeti.primaryComponent_eq_bot_of_injective_nsmul`: injective multiplication by `p`
+  makes the `p`-primary component trivial.
+* `TauCeti.isPPrimaryTorsion_additive_iff`: for a multiplicative group `M`, `Additive M` is
+  `p`-primary torsion exactly when `M` is a `p`-group.
+* `TauCeti.IsPPrimaryTorsion.of_injective`, `TauCeti.IsPPrimaryTorsion.of_surjective`: the
+  condition passes to subgroups and to quotients.
+* `TauCeti.IsPPrimaryTorsion.isAddTorsion`: a `p`-primary torsion group is torsion when `p ≠ 0`.
+* `TauCeti.IsPPrimaryTorsion.exists_pow_smul_eq_zero`: a finite `p`-primary torsion group is
+  annihilated by one power of `p`.
+* `TauCeti.exists_mem_primaryComponent_apply_eq`: for prime `p`, a `p`-primary image of an element
+  of finite order is already the image of a `p`-primary element.
+-/
+
+public section
+
+namespace TauCeti
+
+open CommGroup (torsion)
+open Multiplicative
+
+variable {A M T : Type*}
+
+section Monoid
+
+variable [AddMonoid M] [AddMonoid T]
+
+/-- Under an isomorphism `A ≃* Multiplicative (M × T)` with `T` torsion, if `A` is torsion-free
+then the factor `T` is trivial: every element of `T` embeds as a torsion element of `A`. -/
+theorem subsingleton_of_mulEquiv [Monoid A] [IsMulTorsionFree A] (hT : IsAddTorsion T)
+    (e : A ≃* Multiplicative (M × T)) : Subsingleton T :=
+  subsingleton_of_forall_eq 0 fun t ↦ by
+    have h := e.symm.toMonoidHom.isOfFinOrder
+      (isOfFinOrder_ofAdd_iff.2 ((IsOfFinAddOrder.zero (G := M)).prod_mk (hT t)))
+    simpa using (isOfFinOrder_iff_eq_one _).1 h
+
+variable [CommGroup A] [IsAddTorsionFree M]
+
+/-- Under an isomorphism `A ≃* Multiplicative (M × T)` with `M` torsion-free and `T` torsion, an
+element of `A` is torsion exactly when its `M`-coordinate vanishes. -/
+theorem mem_torsion_iff_of_mulEquiv (hT : IsAddTorsion T) (e : A ≃* Multiplicative (M × T))
+    {x : A} : x ∈ torsion A ↔ (e x).toAdd.1 = 0 := by
+  rw [CommGroup.mem_torsion, ← e.injective.isOfFinOrder_iff (f := e.toMonoidHom),
+    MulEquiv.coe_toMonoidHom, ← ofAdd_toAdd (e x), isOfFinOrder_ofAdd_iff]
+  simp [IsOfFinAddOrder.prod_iff, isOfFinAddOrder_iff_eq_zero, hT (e x).toAdd.2]
+
+/-- Under an isomorphism `A ≃* Multiplicative (M × T)` with `M` torsion-free and `T` torsion, the
+torsion subgroup of `A` is the factor `T`. -/
+def torsionMulEquiv (hT : IsAddTorsion T) (e : A ≃* Multiplicative (M × T)) :
+    torsion A ≃* Multiplicative T where
+  toFun x := ofAdd (e x).toAdd.2
+  invFun t := ⟨e.symm (ofAdd (0, t.toAdd)), (mem_torsion_iff_of_mulEquiv hT e).2 (by simp)⟩
+  left_inv x :=
+    Subtype.ext (e.symm_apply_eq.2 (Multiplicative.ext
+      (Prod.ext ((mem_torsion_iff_of_mulEquiv hT e).1 x.2).symm rfl)))
+  right_inv t := by simp
+  map_mul' x y := by simp
+
+@[simp]
+theorem torsionMulEquiv_apply (hT : IsAddTorsion T) (e : A ≃* Multiplicative (M × T))
+    (x : torsion A) : torsionMulEquiv hT e x = ofAdd (e x).toAdd.2 :=
+  (rfl)
+
+@[simp]
+theorem coe_torsionMulEquiv_symm_apply (hT : IsAddTorsion T) (e : A ≃* Multiplicative (M × T))
+    (t : Multiplicative T) : ((torsionMulEquiv hT e).symm t : A) = e.symm (ofAdd (0, t.toAdd)) :=
+  (rfl)
+
+/-- Two decompositions of `A` as torsion-free times torsion have isomorphic torsion factors: both
+are the torsion subgroup of `A`. -/
+def torsionFactorAddEquiv {M' T' : Type*} [AddMonoid M'] [IsAddTorsionFree M']
+    [AddMonoid T'] (hT : IsAddTorsion T) (hT' : IsAddTorsion T')
+    (e : A ≃* Multiplicative (M × T)) (e' : A ≃* Multiplicative (M' × T')) : T ≃+ T' :=
+  AddEquiv.toMultiplicative.symm ((torsionMulEquiv hT e).symm.trans (torsionMulEquiv hT' e'))
+
+@[simp]
+theorem torsionFactorAddEquiv_apply {M' T' : Type*} [AddMonoid M'] [IsAddTorsionFree M']
+    [AddMonoid T'] (hT : IsAddTorsion T) (hT' : IsAddTorsion T')
+    (e : A ≃* Multiplicative (M × T)) (e' : A ≃* Multiplicative (M' × T')) (t : T) :
+    torsionFactorAddEquiv hT hT' e e' t = (e' (e.symm (ofAdd (0, t)))).toAdd.2 :=
+  (rfl)
+
+@[simp]
+theorem torsionFactorAddEquiv_symm_apply {M' T' : Type*} [AddMonoid M'] [IsAddTorsionFree M']
+    [AddMonoid T'] (hT : IsAddTorsion T) (hT' : IsAddTorsion T')
+    (e : A ≃* Multiplicative (M × T)) (e' : A ≃* Multiplicative (M' × T')) (t' : T') :
+    (torsionFactorAddEquiv hT hT' e e').symm t' = (e (e'.symm (ofAdd (0, t')))).toAdd.2 :=
+  (rfl)
+
+/-- Under an isomorphism `A ≃* Multiplicative (M × T)` with `M` torsion-free and `T` torsion, the
+torsion subgroup of `A` has the cardinality of `T`. -/
+theorem natCard_torsion_of_mulEquiv (hT : IsAddTorsion T) (e : A ≃* Multiplicative (M × T)) :
+    Nat.card (torsion A) = Nat.card T := by
+  rw [Nat.card_congr (torsionMulEquiv hT e).toEquiv, Nat.card_congr toAdd]
+
+end Monoid
+
+section AddGroup
+
+variable [CommGroup A] [AddMonoid M] [AddGroup T] [IsAddTorsionFree M]
+
+/-- Under an isomorphism `A ≃* Multiplicative (M × T)` with `M` torsion-free and `T` finite, the
+torsion subgroup of `A` is finite. -/
+theorem finite_torsion_of_mulEquiv [Finite T] (e : A ≃* Multiplicative (M × T)) :
+    Finite (torsion A) :=
+  Finite.of_equiv _ (torsionMulEquiv isAddTorsion_of_finite e).symm.toEquiv
+
+/-- Under an isomorphism `A ≃* Multiplicative (M × T)` with `M` torsion-free and `T` a cyclic
+torsion group, the torsion subgroup of `A` is cyclic. -/
+theorem isCyclic_torsion_of_mulEquiv [IsAddCyclic T] (hT : IsAddTorsion T)
+    (e : A ≃* Multiplicative (M × T)) : IsCyclic (torsion A) :=
+  isCyclic_of_surjective (torsionMulEquiv hT e).symm (torsionMulEquiv hT e).symm.surjective
+
+end AddGroup
+
+section Quotient
+
+variable [CommGroup A] [AddGroup M] [AddMonoid T] [IsAddTorsionFree M]
+
+/-- Under an isomorphism `A ≃* Multiplicative (M × T)` with `M` torsion-free and `T` torsion, the
+quotient of `A` by its torsion subgroup is the factor `M`. -/
+noncomputable def quotientTorsionMulEquiv (hT : IsAddTorsion T)
+    (e : A ≃* Multiplicative (M × T)) : A ⧸ torsion A ≃* Multiplicative M :=
+  QuotientGroup.liftEquiv (torsion A)
+    (φ := (AddMonoidHom.fst M T).toMultiplicative.comp e.toMonoidHom)
+    (fun v ↦ ⟨e.symm (ofAdd (v.toAdd, 0)), by simp [AddMonoidHom.coe_toMultiplicative]⟩)
+    (by
+      ext x
+      rw [MonoidHom.mem_ker, mem_torsion_iff_of_mulEquiv hT e]
+      simp)
+
+@[simp]
+theorem quotientTorsionMulEquiv_mk (hT : IsAddTorsion T) (e : A ≃* Multiplicative (M × T))
+    (x : A) : quotientTorsionMulEquiv hT e (x : A ⧸ torsion A) = ofAdd (e x).toAdd.1 :=
+  (rfl)
+
+@[simp]
+theorem quotientTorsionMulEquiv_symm_apply (hT : IsAddTorsion T) (e : A ≃* Multiplicative (M × T))
+    (v : Multiplicative M) :
+    (quotientTorsionMulEquiv hT e).symm v = ((e.symm (ofAdd (v.toAdd, 0)) : A) : A ⧸ torsion A) :=
+  (quotientTorsionMulEquiv hT e).injective (by simp)
+
+end Quotient
+
+variable {p : ℕ} {M N : Type*} [AddCommGroup M] [AddCommGroup N]
+
+/-- An additive commutative group is `p`-primary torsion when every element lies in its
+`p`-primary component, that is, is annihilated by some power of `p`. -/
+def IsPPrimaryTorsion (p : ℕ) (M : Type*) [AddCommGroup M] : Prop :=
+  ∀ m : M, m ∈ AddCommGroup.primaryComponent M p
+
+/-- Every element of a `p`-primary torsion group lies in the `p`-primary component. -/
+theorem IsPPrimaryTorsion.mem (h : IsPPrimaryTorsion p M) (m : M) :
+    m ∈ AddCommGroup.primaryComponent M p :=
+  h m
+
+/-- A group is `p`-primary torsion exactly when every element is killed by some power of `p`. -/
+theorem isPPrimaryTorsion_iff : IsPPrimaryTorsion p M ↔ ∀ m : M, ∃ k : ℕ, p ^ k • m = 0 :=
+  Iff.rfl
+
+/-- A group is `p`-primary torsion exactly when its `p`-primary component is everything. -/
+theorem isPPrimaryTorsion_iff_primaryComponent_eq_top :
+    IsPPrimaryTorsion p M ↔ AddCommGroup.primaryComponent M p = ⊤ :=
+  (AddSubgroup.eq_top_iff' _).symm
+
+/-- If multiplication by `p` is injective, the `p`-primary component is trivial. -/
+theorem primaryComponent_eq_bot_of_injective_nsmul
+    (hp : Function.Injective fun x : M => p • x) :
+    AddCommGroup.primaryComponent M p = ⊥ := by
+  rw [AddSubgroup.eq_bot_iff_forall]
+  intro x hx
+  obtain ⟨m, hm⟩ := AddCommGroup.mem_primaryComponent.mp hx
+  have hpPow : Function.Injective fun y : M => p ^ m • y := by
+    rw [← smul_iterate]
+    exact hp.iterate m
+  exact hpPow (by simpa using hm)
+
+/-- For a multiplicative commutative group `M`, `Additive M` is `p`-primary torsion exactly when
+`M` is a `p`-group. -/
+theorem isPPrimaryTorsion_additive_iff {M : Type*} [CommGroup M] :
+    IsPPrimaryTorsion p (Additive M) ↔ IsPGroup p M := by
+  simp [isPPrimaryTorsion_iff, IsPGroup, Additive.forall, ← ofMul_pow]
+
+/-- A group of order `p ^ k` is `p`-primary torsion: the additive form of `IsPGroup.of_card`. -/
+theorem isPPrimaryTorsion_of_natCard_eq_pow {k : ℕ} (h : Nat.card M = p ^ k) :
+    IsPPrimaryTorsion p M :=
+  (isPPrimaryTorsion_additive_iff (M := Multiplicative M)).2 (IsPGroup.of_card h)
+
+namespace IsPPrimaryTorsion
+
+variable {F : Type*} [FunLike F M N] [AddMonoidHomClass F M N]
+
+/-- A group embedding into a `p`-primary torsion group is `p`-primary torsion. -/
+theorem of_injective (h : IsPPrimaryTorsion p N) (f : F) (hf : Function.Injective f) :
+    IsPPrimaryTorsion p M :=
+  (isPPrimaryTorsion_additive_iff (M := Multiplicative M)).2
+    (((isPPrimaryTorsion_additive_iff (M := Multiplicative N)).1 h).of_injective
+      (AddMonoidHom.toMultiplicative (f : M →+ N)) hf)
+
+/-- The image of a `p`-primary torsion group under a surjective homomorphism is `p`-primary
+torsion. -/
+theorem of_surjective (h : IsPPrimaryTorsion p M) (f : F) (hf : Function.Surjective f) :
+    IsPPrimaryTorsion p N :=
+  (isPPrimaryTorsion_additive_iff (M := Multiplicative N)).2
+    (((isPPrimaryTorsion_additive_iff (M := Multiplicative M)).1 h).of_surjective
+      (AddMonoidHom.toMultiplicative (f : M →+ N)) hf)
+
+/-- A `p`-primary torsion group is torsion, for `p ≠ 0`: the power of `p` killing an element is a
+positive natural number. The hypothesis is used, since `0 ^ k • m = 0` holds for `k = 1` and
+every `m`. -/
+theorem isAddTorsion (h : IsPPrimaryTorsion p M) (hp : p ≠ 0) : IsAddTorsion M := fun m ↦ by
+  obtain ⟨k, hk⟩ := isPPrimaryTorsion_iff.1 h m
+  exact isOfFinAddOrder_iff_nsmul_eq_zero.2 ⟨p ^ k, pow_pos (Nat.pos_of_ne_zero hp) k, hk⟩
+
+/-- A finite `p`-primary torsion group is annihilated by one power of `p`. -/
+theorem exists_pow_smul_eq_zero [Finite M] (h : IsPPrimaryTorsion p M) :
+    ∃ k : ℕ, ∀ m : M, p ^ k • m = 0 := by
+  have hp : IsPGroup p (Multiplicative M) :=
+    (isPPrimaryTorsion_additive_iff (M := Multiplicative M)).1 h
+  obtain ⟨k, hk⟩ := isPGroup_iff_exists_pow_pow_eq_one.mp hp
+  exact ⟨k, fun m ↦ by
+    have hm := congrArg Multiplicative.toAdd (hk (Multiplicative.ofAdd m))
+    simpa using hm⟩
+
+end IsPPrimaryTorsion
+
+/-- **A `p`-primary image of an element of finite order has a `p`-primary preimage.** For prime
+`p`, an additive homomorphism `f` and an element `m` of finite order with `f m` in the `p`-primary
+component, some element of the `p`-primary component has the same image. -/
+theorem exists_mem_primaryComponent_apply_eq {F : Type*} [FunLike F M N] [AddMonoidHomClass F M N]
+    (f : F) (hp : p.Prime) {m : M} (hm : IsOfFinAddOrder m)
+    (hfm : f m ∈ AddCommGroup.primaryComponent N p) :
+    ∃ m' ∈ AddCommGroup.primaryComponent M p, f m' = f m := by
+  obtain ⟨k, hk⟩ := hfm
+  obtain ⟨b, c, hc, hord⟩ :=
+    Nat.exists_eq_pow_mul_and_not_dvd hm.addOrderOf_pos.ne' p hp.ne_one
+  -- Bézout for the coprime `c` and `p ^ k`: `i • c • y + j • p ^ k • y = y` for every `y`
+  obtain ⟨i, j, hij⟩ := exists_zsmul_add_zsmul_eq_of_coprime (G := N)
+    (((hp.coprime_iff_not_dvd.2 hc).symm).pow_right k)
+  refine ⟨i • c • m, ⟨b, ?_⟩, ?_⟩
+  · rw [smul_comm, smul_smul, ← hord, addOrderOf_nsmul_eq_zero, smul_zero]
+  · rw [map_zsmul, map_nsmul]
+    simpa [hk] using hij (f m)
+
+end TauCeti

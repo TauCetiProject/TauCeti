@@ -6,8 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.Gradient.Basic
--- Private: the derivative sum and scalar rules are used only inside the proofs below.
+public import Mathlib.Analysis.Calculus.ContDiff.Comp
+public import Mathlib.Analysis.Calculus.FDeriv.Measurable
+public import Mathlib.Analysis.InnerProductSpace.Symmetric
+-- Private: the derivative sum and scalar rules and the symmetry of second derivatives are used
+-- only inside the proofs below.
 import Mathlib.Analysis.Calculus.FDeriv.Add
+import Mathlib.Analysis.Calculus.FDeriv.Symmetric
 
 /-!
 # The gradient is an isometric conjugate-linear image of the Fréchet derivative
@@ -17,7 +22,8 @@ Mathlib defines `gradient f x`, written `∇ f x`, as the Riesz representative
 function on an inner product space, and develops its differential calculus. This file records the
 three consequences of the defining formula that come from `toDual` being a *conjugate-linear
 isometric equivalence*: the gradient has the same norm as the derivative, it is additive, and it
-is conjugate-homogeneous.
+is conjugate-homogeneous. Since `toDual` is moreover continuous, the gradient of an arbitrary
+function is Borel measurable, as the Fréchet derivative is.
 
 These are exactly what is needed to see a family of gradients as a conjugate-linear,
 norm-preserving image of the corresponding family of derivatives. Over `ℝ` it is linear; for
@@ -29,6 +35,13 @@ theorem about `‖Dφ‖`.
 * `TauCeti.norm_gradient_eq_norm_fderiv`: `‖∇ f x‖ = ‖fderiv 𝕜 f x‖`.
 * `TauCeti.gradient_add`: additivity of the gradient at a point of differentiability.
 * `TauCeti.gradient_const_smul`: `∇ (c • f) x = conj c • ∇ f x`.
+* `TauCeti.gradient_of_notMem_tsupport`: the gradient vanishes off the topological support.
+* `TauCeti.measurable_gradient`: the gradient of any function is measurable.
+* `ContDiff.gradient_right`: over `ℝ`, where `toDual` is linear, the gradient of a `C^{m+1}`
+  function is `Cᵐ`.
+* `TauCeti.isSymmetric_of_hasFDerivAt_gradient`: over `ℝ`, the derivative of the gradient (the
+  Hessian as an endomorphism of `E`) is a symmetric operator wherever it exists, provided the
+  function is differentiable nearby.
 -/
 
 public section
@@ -37,7 +50,8 @@ namespace TauCeti
 
 open InnerProductSpace
 
-open scoped ComplexConjugate Gradient
+open Filter
+open scoped ComplexConjugate Gradient Topology
 
 variable {𝕜 F : Type*} [RCLike 𝕜] [NormedAddCommGroup F] [InnerProductSpace 𝕜 F]
   [CompleteSpace F] {f g : F → 𝕜} {x : F}
@@ -60,5 +74,44 @@ theorem gradient_const_smul (c : 𝕜) :
   apply (toDual 𝕜 F).injective
   simp only [toDual_gradient, map_smulₛₗ, RingHomCompTriple.comp_apply, RingHom.id_apply,
     fderiv_const_smul_field, Pi.smul_apply]
+
+/-- The gradient vanishes off the topological support of the function, as the Fréchet derivative
+does. -/
+@[simp]
+theorem gradient_of_notMem_tsupport (h : x ∉ tsupport f) : ∇ f x = 0 := by
+  rw [gradient, fderiv_of_notMem_tsupport 𝕜 h, map_zero]
+
+/-- The gradient of an arbitrary function is Borel measurable, as is its Fréchet derivative
+(`measurable_fderiv`); no differentiability is assumed, the gradient being `0` where `f` is not
+differentiable. -/
+@[fun_prop]
+theorem measurable_gradient [MeasurableSpace F] [BorelSpace F] (f : F → 𝕜) : Measurable (∇ f) := by
+  have h : ∇ f = (toDual 𝕜 F).symm ∘ fderiv 𝕜 f := by
+    ext1 x
+    rw [Function.comp_apply, ← toDual_gradient, LinearIsometryEquiv.symm_apply_apply]
+  rw [h]
+  exact (toDual 𝕜 F).symm.continuous.measurable.comp (measurable_fderiv 𝕜 f)
+
+/-- Over `ℝ` the Riesz isomorphism is a linear isometry, so the gradient of a `C^{m+1}` function
+is `Cᵐ`, just as its Fréchet derivative is. -/
+theorem _root_.ContDiff.gradient_right {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+    [CompleteSpace E] {m n : WithTop ℕ∞} {f : E → ℝ} (hf : ContDiff ℝ n f) (hmn : m + 1 ≤ n) :
+    ContDiff ℝ m (∇ f) :=
+  (toDual ℝ E).symm.contDiff.comp (hf.fderiv_right hmn)
+
+/-- **The Hessian is symmetric.** If a real function `f` is differentiable near `x` and its
+gradient has derivative `H` at `x`, then `H` is a symmetric operator:
+`⟪H v, w⟫ = ⟪v, H w⟫`. This is Schwarz's theorem for the second derivative, read through the
+Riesz isomorphism. -/
+theorem isSymmetric_of_hasFDerivAt_gradient {E : Type*} [NormedAddCommGroup E]
+    [InnerProductSpace ℝ E] [CompleteSpace E] {f : E → ℝ} {x : E} {H : E →L[ℝ] E}
+    (hf : ∀ᶠ y in 𝓝 x, DifferentiableAt ℝ f y) (hH : HasFDerivAt (∇ f) H x) :
+    (H : E →ₗ[ℝ] E).IsSymmetric := by
+  set L : E →L[ℝ] StrongDual ℝ E := (toDual ℝ E).toContinuousLinearEquiv.toContinuousLinearMap
+  have h₁ : ∀ᶠ y in 𝓝 x, HasFDerivAt f (L (∇ f y)) y := hf.mono fun y hy => by
+    simpa [L, toDual_gradient] using hy.hasFDerivAt
+  intro v w
+  simpa [L, real_inner_comm] using
+    second_derivative_symmetric_of_eventually h₁ (L.hasFDerivAt.comp x hH) v w
 
 end TauCeti

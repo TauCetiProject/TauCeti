@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Data.Matrix.Basic
+public import TauCeti.MeasureTheory.OptimalTransport.Coupling
 public import TauCeti.Probability.ProbabilityMassFunction.Finite
 
 /-!
@@ -19,7 +20,8 @@ This file packages that correspondence. `TauCeti.TransportMatrix μ ν` is the t
 `ℝ≥0∞`-valued matrices with row sums `μ` and column sums `ν`, and
 `TauCeti.transportMatrixEquiv` identifies it with the subtype of product PMFs whose two
 pushforwards are `μ` and `ν`. The codomain `ℝ≥0∞` makes nonnegativity intrinsic, rather than
-a separate side condition.
+a separate side condition. `TauCeti.TransportMatrix.isCoupling_toPMF_toMeasure` identifies the
+associated measure as a coupling of the marginal measures.
 
 The entries are also read as a real-valued function `TauCeti.TransportMatrix.toRealFun` on the
 product, whose row and column sums are the real marginal masses, and the total
@@ -57,7 +59,24 @@ structure TransportMatrix (μ : PMF ι) (ν : PMF κ) where
   /-- Every column has the mass prescribed by the target distribution. -/
   col_sum : ∀ j, ∑ i, matrix i j = ν j
 
+/-- Nonnegative real arrays with the row and column sums prescribed by `μ` and `ν`. -/
+abbrev RealPlans (μ : PMF ι) (ν : PMF κ) : Set (ι × κ → ℝ) :=
+  {f | (∀ q, 0 ≤ f q) ∧ (∀ i, ∑ j, f (i, j) = (μ i).toReal) ∧
+    ∀ j, ∑ i, f (i, j) = (ν j).toReal}
+
 attribute [simp] TransportMatrix.row_sum TransportMatrix.col_sum
+
+/-- An entry of a real plan is at most the mass of its row. -/
+theorem le_toReal_fst_of_mem_realPlans {μ : PMF ι} {ν : PMF κ} {f : ι × κ → ℝ}
+    (hf : f ∈ RealPlans μ ν) (q : ι × κ) : f q ≤ (μ q.1).toReal := by
+  rw [← hf.2.1 q.1]
+  exact Finset.single_le_sum (fun j _ ↦ hf.1 (q.1, j)) (Finset.mem_univ q.2)
+
+/-- An entry of a real plan is at most the mass of its column. -/
+theorem le_toReal_snd_of_mem_realPlans {μ : PMF ι} {ν : PMF κ} {f : ι × κ → ℝ}
+    (hf : f ∈ RealPlans μ ν) (q : ι × κ) : f q ≤ (ν q.2).toReal := by
+  rw [← hf.2.2 q.2]
+  exact Finset.single_le_sum (fun i _ ↦ hf.1 (i, q.2)) (Finset.mem_univ q.1)
 
 namespace TransportMatrix
 
@@ -146,6 +165,43 @@ theorem sum_toRealFun_col (A : TransportMatrix μ ν) (j : κ) :
   simp only [toRealFun_apply]
   rw [← ENNReal.toReal_sum fun i _ ↦ A.apply_ne_top i j, A.col_sum]
 
+/-- The real entries of a transportation matrix form a real plan. -/
+theorem toRealFun_mem_realPlans (A : TransportMatrix μ ν) :
+    A.toRealFun ∈ RealPlans μ ν :=
+  ⟨A.toRealFun_nonneg, A.sum_toRealFun_row, A.sum_toRealFun_col⟩
+
+/-- Convert a nonnegative real plan with prescribed marginals to a transportation matrix. -/
+def ofRealFun {f : ι × κ → ℝ} (hf : f ∈ RealPlans μ ν) : TransportMatrix μ ν where
+  matrix i j := ENNReal.ofReal (f (i, j))
+  row_sum i := by
+    rw [← ENNReal.ofReal_sum_of_nonneg fun j _ ↦ hf.1 (i, j), hf.2.1 i,
+      ENNReal.ofReal_toReal (μ.apply_ne_top i)]
+  col_sum j := by
+    rw [← ENNReal.ofReal_sum_of_nonneg fun i _ ↦ hf.1 (i, j), hf.2.2 j,
+      ENNReal.ofReal_toReal (ν.apply_ne_top j)]
+
+/-- The entries of a matrix converted from a real plan. -/
+@[simp]
+theorem ofRealFun_apply {f : ι × κ → ℝ} (hf : f ∈ RealPlans μ ν) (i : ι) (j : κ) :
+    ofRealFun hf i j = ENNReal.ofReal (f (i, j)) := by
+  rfl
+
+/-- Converting a real plan to a matrix preserves every real entry. -/
+@[simp]
+theorem toRealFun_ofRealFun {f : ι × κ → ℝ} (hf : f ∈ RealPlans μ ν) :
+    (ofRealFun hf).toRealFun = f := by
+  funext q
+  rw [toRealFun_apply]
+  exact ENNReal.toReal_ofReal (hf.1 q)
+
+/-- Converting the real entries of a transportation matrix back recovers the matrix. -/
+@[simp]
+theorem ofRealFun_toRealFun (A : TransportMatrix μ ν) :
+    ofRealFun A.toRealFun_mem_realPlans = A := by
+  apply ext
+  intro i j
+  rw [ofRealFun_apply, toRealFun_apply, ENNReal.ofReal_toReal (A.apply_ne_top i j)]
+
 /-- The real-valued entries of a transportation matrix have total mass one. -/
 theorem sum_toRealFun (A : TransportMatrix μ ν) : ∑ p, A.toRealFun p = 1 := by
   simpa only [toRealFun_apply, toPMF_apply] using PMF.sum_toReal_eq_one A.toPMF
@@ -158,6 +214,11 @@ def cost (c : ι × κ → ℝ) (A : TransportMatrix μ ν) : ℝ := ∑ q, c q 
 the lemma downstream modules should rewrite with. -/
 theorem cost_def (c : ι × κ → ℝ) (A : TransportMatrix μ ν) :
     A.cost c = ∑ q, c q * A.toRealFun q := (rfl)
+
+/-- The cost of a matrix converted from a real plan is the cost of that plan. -/
+theorem cost_ofRealFun (c : ι × κ → ℝ) {f : ι × κ → ℝ} (hf : f ∈ RealPlans μ ν) :
+    (ofRealFun hf).cost c = ∑ q, c q * f q := by
+  rw [cost_def, toRealFun_ofRealFun]
 
 /-- Adding a constant to every entry of a cost adds that constant to the matrix cost. -/
 @[simp]
@@ -239,5 +300,38 @@ theorem transportMatrixEquiv_symm_apply (μ : PMF ι) (ν : PMF κ)
     (A : TransportMatrix μ ν) (p : ι × κ) :
     ((transportMatrixEquiv μ ν).symm A).1 p = A p.1 p.2 := by
   rfl
+
+section Measure
+
+variable [MeasurableSpace ι] [MeasurableSpace κ] {μ : PMF ι} {ν : PMF κ}
+
+/-- The measure a finite transportation matrix defines is a coupling of the two marginals. -/
+theorem TransportMatrix.isCoupling_toPMF_toMeasure (A : TransportMatrix μ ν) :
+    IsCoupling A.toPMF.toMeasure μ.toMeasure ν.toMeasure where
+  fst_eq := by
+    rw [MeasureTheory.Measure.fst,
+      PMF.toMeasure_map Prod.fst A.toPMF measurable_fst, A.map_fst_toPMF]
+  snd_eq := by
+    rw [MeasureTheory.Measure.snd,
+      PMF.toMeasure_map Prod.snd A.toPMF measurable_snd, A.map_snd_toPMF]
+
+variable [MeasurableSingletonClass ι] [MeasurableSingletonClass κ]
+
+/-- Every coupling of finite probability laws is represented by a transportation matrix. -/
+theorem IsCoupling.exists_transportMatrix {π : MeasureTheory.Measure (ι × κ)}
+    (hπ : IsCoupling π μ.toMeasure ν.toMeasure) :
+    ∃ A : TransportMatrix μ ν, A.toPMF.toMeasure = π := by
+  have : MeasureTheory.IsProbabilityMeasure π := hπ.isProbabilityMeasure
+  have hμ : π.toPMF.map Prod.fst = μ := by
+    apply PMF.toMeasure_injective
+    rw [← PMF.toMeasure_map _ _ measurable_fst, MeasureTheory.Measure.toPMF_toMeasure]
+    exact hπ.fst_eq
+  have hν : π.toPMF.map Prod.snd = ν := by
+    apply PMF.toMeasure_injective
+    rw [← PMF.toMeasure_map _ _ measurable_snd, MeasureTheory.Measure.toPMF_toMeasure]
+    exact hπ.snd_eq
+  exact ⟨TransportMatrix.ofPMF π.toPMF hμ hν, by simp⟩
+
+end Measure
 
 end TauCeti

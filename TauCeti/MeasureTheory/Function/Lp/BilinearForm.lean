@@ -68,12 +68,14 @@ scalar-valued function. -/
 theorem integrable_bilinear_apply_of_memLp {μ : Measure X}
     {B : X → J →L[ℝ] J →L[ℝ] ℝ} (hB : MemLp B ⊤ μ) (U V : Lp J 2 μ) :
     Integrable (fun x => B x (U x) (V x)) μ := by
-  have hBU : MemLp (fun x => B x (U x)) 2 μ :=
-    (ContinuousLinearMap.apply ℝ (J →L[ℝ] ℝ) (E := J)).flip.memLp_of_bilin
-      (f := B) (g := fun x => U x) 2 hB (Lp.memLp U)
+  -- The Hölder exponents are pinned explicitly, and the application goes through `exact`:
+  -- elaborating it against the expected type in term mode unfolds `MemLp` and loops.
+  have hBU : MemLp (fun x => B x (U x)) 2 μ := by
+    exact (ContinuousLinearMap.apply ℝ (J →L[ℝ] ℝ) (E := J)).flip.memLp_of_bilin
+      (p := ⊤) (q := 2) (f := B) (g := fun x => U x) 2 hB (Lp.memLp U)
   exact memLp_one_iff_integrable.mp
     ((ContinuousLinearMap.apply ℝ ℝ (E := J)).flip.memLp_of_bilin
-      (f := fun x => B x (U x)) (g := fun x => V x) 1 hBU (Lp.memLp V))
+      (p := 2) (q := 2) (f := fun x => B x (U x)) (g := fun x => V x) 1 hBU (Lp.memLp V))
 
 end TauCeti
 

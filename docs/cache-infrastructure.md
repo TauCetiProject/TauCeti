@@ -116,7 +116,7 @@ went unnoticed for as long as it did. CI keeps passing the endpoints explicitly 
 never decide what CI does.
 
 Anything else reading this cache, including the worker exemplar in
-[`kim-em/TauCetiWorker`](https://github.com/kim-em/TauCetiWorker), must use the custom domain rather
+[`TauCetiProject/TauCetiWorker`](https://github.com/TauCetiProject/TauCetiWorker), must use the custom domain rather
 than the bucket's `pub-<id>.r2.dev` development URL. Public access on that development URL is off and
 it answers 401 for every path, which a caller whose cache miss is non-fatal cannot tell from a cold
 revision.

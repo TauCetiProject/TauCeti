@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.Exchangeability.ConditionallyIID.Basic
-public import TauCeti.Probability.Exchangeability.FiniteMarginals
+public import TauCeti.Probability.Process.PathLaw.FiniteMarginals
 -- Public: `iIndepFun` appears in the hypothesis of the degeneracy theorem.
 public import Mathlib.Probability.Independence.Basic
 -- Non-public: the mixture representation and its uniqueness are used only inside the
@@ -15,6 +15,7 @@ import TauCeti.Probability.Exchangeability.MixedIID.Mixture
 import TauCeti.Probability.Exchangeability.Contractability
 import TauCeti.Probability.Exchangeability.IID
 import TauCeti.MeasureTheory.Measure.GiryMonad
+import TauCeti.MeasureTheory.Measure.Measurability
 
 /-!
 # The canonical conditionally i.i.d. process
@@ -54,6 +55,8 @@ difference the roadmap insists on
   `exchangeable_iidMixtureLaw`, `contractable_iidMixtureLaw`.
 * `iidMixtureLaw_map_directing` — the directing measure has the prescribed law `π.map P`, and
   `pathLaw_iidMixtureLaw` reads the path law as the `π.map P`-mixture of infinite powers.
+* `map_prod_infinitePi_eq_iidMixtureLaw` — the canonical law is realized by a parameter and
+  independent i.i.d. noise pushed through a family of maps carrying the noise law to `P t`.
 * `exists_map_eq_dirac_of_iIndepFun_iidMixtureLaw` — the construction is genuinely richer than
   i.i.d.: independent coordinates force the mixing law `π.map P` to be a point mass.
 
@@ -123,6 +126,37 @@ theorem iidMixtureLaw_map_directing (hP : Measurable P) :
   have hcomp : (fun ω : T × (ℕ → α) => P ω.1) = P ∘ Prod.fst := rfl
   rw [hcomp, ← Measure.map_map hP measurable_fst, iidMixtureLaw_map_fst hP]
 
+/-- **The canonical law from a parameter and i.i.d. noise.** Draw a parameter `t` from `π` and an
+independent i.i.d. sequence `r` from `ρ`, and apply a jointly measurable `h t` to each noise
+variable. If `h t` pushes `ρ` forward to `P t`, the resulting pair `(t, (h t (r i))ᵢ)` has the
+canonical law `iidMixtureLaw π P`: given the parameter, the coordinates are i.i.d. `P t`. -/
+theorem map_prod_infinitePi_eq_iidMixtureLaw {R : Type*} [MeasurableSpace R]
+    (ρ : Measure R) [IsProbabilityMeasure ρ] {h : T → R → α}
+    (hh : Measurable (Function.uncurry h)) (hP : ∀ t, ρ.map (h t) = P t) :
+    (π.prod (Measure.infinitePi fun _ : ℕ => ρ)).map (fun q => (q.1, fun i => h q.1 (q.2 i)))
+      = iidMixtureLaw π P := by
+  have hht (t : T) : Measurable (h t) := hh.comp measurable_prodMk_left
+  have hPm : Measurable P := by
+    have hPm' : Measurable fun t => (P t : Measure α) := by
+      simpa only [hP] using TauCeti.MeasureTheory.measurable_map_of_measurable_uncurry (ν := ρ) hh
+    exact hPm'.subtype_mk
+  have hG : Measurable fun q : T × (ℕ → R) => (q.1, fun i => h q.1 (q.2 i)) :=
+    measurable_fst.prodMk <| Measurable.of_eval fun i =>
+      hh.comp (measurable_fst.prodMk ((measurable_pi_apply i).comp measurable_snd))
+  have hpath (t : T) : Measurable fun (r : ℕ → R) i => h t (r i) :=
+    Measurable.of_eval fun i => (hht t).comp (measurable_pi_apply i)
+  refine Measure.ext fun s hs => ?_
+  rw [Measure.map_apply hG hs, Measure.prod_apply (hG hs), iidMixtureLaw_def,
+    Measure.bind_apply hs
+      (TauCeti.MeasureTheory.measurable_dirac_prod_infinitePi_const P hPm).aemeasurable]
+  refine lintegral_congr fun t => ?_
+  rw [Measure.dirac_prod, Measure.map_apply measurable_prodMk_left hs]
+  simp_rw [← hP]
+  rw [← Measure.infinitePi_map_pi _ fun _ => hht t,
+    Measure.map_apply (hpath t) (measurable_prodMk_left hs)]
+  -- Both preimages are `{r | (t, fun i => h t (r i)) ∈ s}`.
+  rfl
+
 /-- **The canonical process is conditionally i.i.d.** For a measurable family `P`, the coordinate
 process of `iidMixtureLaw π P` is conditionally i.i.d. with directing measure `ω ↦ P ω.1`: along
 every finite selection of distinct coordinates, the joint law of the directing measure and the
@@ -141,7 +175,7 @@ theorem conditionallyIIDWith_iidMixtureLaw (hP : Measurable P) :
     (hP.comp measurable_fst) fun m k hk => ?_
   -- the joint kernel `Q ↦ δ_Q ⊗ Q^{⊗ Fin m}`, through which both sides factor
   set g : ProbabilityMeasure α → Measure (ProbabilityMeasure α × (Fin m → α)) := fun Q =>
-    (Measure.dirac Q).prod (ProbabilityMeasure.pi fun _ : Fin m => Q).toMeasure with hg
+    (Measure.dirac Q).prod (ProbabilityMeasure.pi fun _ : Fin m => Q).toMeasure
   have hgmeas : Measurable g :=
     TauCeti.MeasureTheory.measurable_dirac_prod_probabilityMeasure_pi_const_toMeasure
       (fun Q : ProbabilityMeasure α => Q) measurable_id

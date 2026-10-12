@@ -26,6 +26,7 @@ map into a `ZMod 2`-space of dimension `#ι`, and lets such a family be compared
 
 ## Main results
 
+* `TauCeti.hilbertSign`: the sign dictionary `ZMod 2 → ℤˣ`, sending `0` to `1` and `1` to `-1`.
 * `TauCeti.additiveIntUnitsLinearEquiv`: the linear equivalence `Additive ℤˣ ≃ₗ[ZMod 2] ZMod 2`.
 * `TauCeti.finrank_zmod_two_additive_intUnits`: `Module.finrank (ZMod 2) (Additive ℤˣ) = 1`.
 -/
@@ -49,6 +50,34 @@ def additiveIntUnitsAddEquiv : Additive ℤˣ ≃+ ZMod 2 where
 @[simp] theorem additiveIntUnitsAddEquiv_apply (u : Additive ℤˣ) :
     additiveIntUnitsAddEquiv u = if Additive.toMul u = 1 then 0 else 1 :=
   (rfl)
+
+/-- Translate an additive `ZMod 2` normalization, such as that of the cohomological local symbol,
+to the classical sign normalization, sending `0` to `+1` and `1` to `-1`. -/
+def hilbertSign (x : ZMod 2) : ℤˣ :=
+  ((AddEquiv.toMultiplicativeRight additiveIntUnitsAddEquiv).symm
+    (Multiplicative.ofAdd x))
+
+/-- The zero class has positive sign. -/
+@[simp]
+theorem hilbertSign_zero : hilbertSign 0 = 1 := by
+  apply (AddEquiv.toMultiplicativeRight additiveIntUnitsAddEquiv).injective
+  simp [hilbertSign, additiveIntUnitsAddEquiv_apply]
+
+/-- The nonzero class in `ZMod 2` has negative sign. -/
+@[simp]
+theorem hilbertSign_one : hilbertSign 1 = -1 := by
+  apply (AddEquiv.toMultiplicativeRight additiveIntUnitsAddEquiv).injective
+  simp [hilbertSign, additiveIntUnitsAddEquiv_apply]
+
+/-- The sign is `+1` exactly at the zero class. -/
+@[simp]
+theorem hilbertSign_eq_one_iff (x : ZMod 2) : hilbertSign x = 1 ↔ x = 0 := by
+  rcases (by decide : ∀ y : ZMod 2, y = 0 ∨ y = 1) x with rfl | rfl <;> simp
+
+/-- The sign dictionary turns addition of mod-two invariants into multiplication of signs. -/
+theorem hilbertSign_add (x y : ZMod 2) : hilbertSign (x + y) = hilbertSign x * hilbertSign y :=
+  ((AddEquiv.toMultiplicativeRight additiveIntUnitsAddEquiv).symm.map_mul
+    (Multiplicative.ofAdd x) (Multiplicative.ofAdd y))
 
 /-- **The sign group is the line `ZMod 2`, linearly.** `TauCeti.additiveIntUnitsAddEquiv` is
 automatically `ZMod 2`-linear, every additive map between `ZMod 2`-modules being so. -/

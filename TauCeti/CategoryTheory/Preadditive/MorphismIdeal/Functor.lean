@@ -32,6 +32,9 @@ a functor between stable categories.
   same ideal.
 * `TauCeti.MorphismIdeal.map_id` and `TauCeti.MorphismIdeal.map_comp`: quotient functors preserve
   identities and composition.
+* `TauCeti.MorphismIdeal.kerIdeal_comp_quotientFunctor` and
+  `TauCeti.MorphismIdeal.map_eq_lift`: the kernel of the composite with a quotient functor and
+  the expression of `map` as a lift.
 * `TauCeti.MorphismIdeal.mapNatTrans_id` and
   `TauCeti.MorphismIdeal.comp_mapNatTrans`: descent of natural transformations preserves
   identities and vertical composition.
@@ -123,6 +126,15 @@ theorem le_comap_comp (I : MorphismIdeal C) (J : MorphismIdeal D) (K : MorphismI
 
 /-! ### Functors between quotients -/
 
+/-- The kernel ideal of a functor followed by a quotient functor is the pullback of the
+quotient ideal. -/
+@[simp]
+theorem kerIdeal_comp_quotientFunctor (J : MorphismIdeal D) (F : C ⥤ D) [F.Additive] :
+    (F ⋙ J.quotientFunctor).kerIdeal = J.comap F := by
+  ext X Y f
+  simp only [Functor.mem_kerIdeal_hom, Functor.comp_map, J.quotientFunctor_map_eq_zero_iff,
+    mem_comap_hom]
+
 /-- An additive functor carrying `I` into `J` induces a functor from `C/I` to `D/J`. -/
 noncomputable def map (I : MorphismIdeal C) (J : MorphismIdeal D) (F : C ⥤ D) [F.Additive]
     (hF : I ≤ J.comap F) : I.Quotient ⥤ J.Quotient :=
@@ -147,6 +159,14 @@ theorem quotientFunctor_comp_map (I : MorphismIdeal C) (J : MorphismIdeal D) (F 
   by
     unfold map
     exact CategoryTheory.Quotient.lift_spec _ _ _
+
+/-- The functor induced on ideal quotients is the lift of the composite with the target
+quotient functor. -/
+theorem map_eq_lift (I : MorphismIdeal C) (J : MorphismIdeal D) (F : C ⥤ D) [F.Additive]
+    (hF : I ≤ J.comap F) :
+    I.map J F hF = I.lift (F ⋙ J.quotientFunctor)
+      (by simpa only [kerIdeal_comp_quotientFunctor] using hF) :=
+  Quotient.lift_unique' I.rel _ _ (by rw [I.quotientFunctor_comp_map, Quotient.lift_spec])
 
 /-- On objects from the original category, the induced functor applies the original functor and
 then passes to the target quotient. -/

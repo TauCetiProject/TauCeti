@@ -8,9 +8,9 @@ module
 public import Mathlib.Analysis.ODE.Basic
 public import Mathlib.Analysis.ODE.ExistUnique
 public import Mathlib.Analysis.ODE.Transform
-public import Mathlib.Analysis.SpecialFunctions.Trigonometric.DerivHyp
-public import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 public import Mathlib.Topology.ContinuousMap.Bounded.Normed
+public import TauCeti.MeasureTheory.Integral.Cosh
+import Mathlib.Analysis.ODE.Gronwall
 
 /-!
 # The global solution of a globally Lipschitz autonomous ODE
@@ -31,8 +31,8 @@ Since `∫ s in 0..t, w s = sinh (2 k t) / (2 k)` and `|sinh| ≤ cosh`, the ope
 `ℝ →ᵇ E` to itself and halves distances, for either sign of `t`, so there is no need to glue local
 solutions: `P` has a unique fixed point on the whole line. The associated curve
 satisfies `γ t = x + ∫ s in 0..t, v (γ s)`, hence solves the differential equation. Uniqueness is
-Mathlib's `ODE_solution_unique_univ`, and the fixed point depends on the initial condition
-`1`-Lipschitzly, which gives joint continuity in time and initial condition.
+Mathlib's `ODE_solution_unique_univ`. Grönwall's inequality bounds the distance between solutions
+exponentially in both time directions, giving joint continuity in time and initial condition.
 
 ## Main declarations
 
@@ -59,44 +59,11 @@ open scoped BoundedContinuousFunction NNReal
 
 namespace ODE
 
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+variable {E : Type*}
 
-/-- The estimate that drives the whole construction: an integrand dominated by `C * cosh (2 k ·)`
-has a primitive dominated by `C * cosh (2 k ·) / (2 k)`, with no restriction on the sign of the
-upper limit. -/
-private theorem norm_integral_le_cosh {k C : ℝ} (hk : 0 < k) (hC : 0 ≤ C) {F : ℝ → E}
-    (hF : ∀ s, ‖F s‖ ≤ C * Real.cosh (2 * k * s)) (t : ℝ) :
-    ‖∫ s in (0 : ℝ)..t, F s‖ ≤ C * Real.cosh (2 * k * t) / (2 * k) := by
-  have hk2 : (0 : ℝ) < 2 * k := by linarith
-  have hg : Continuous fun s : ℝ ↦ C * Real.cosh (2 * k * s) := by fun_prop
-  have hderiv : ∀ s : ℝ, HasDerivAt (fun s : ℝ ↦ C * Real.sinh (2 * k * s) / (2 * k))
-      (C * Real.cosh (2 * k * s)) s := by
-    intro s
-    have h1 : HasDerivAt (fun s : ℝ ↦ 2 * k * s) (2 * k) s := by
-      simpa using (hasDerivAt_id s).const_mul (2 * k)
-    have h2 : HasDerivAt (fun s : ℝ ↦ Real.sinh (2 * k * s))
-        (Real.cosh (2 * k * s) * (2 * k)) s := (Real.hasDerivAt_sinh (2 * k * s)).comp s h1
-    have h3 : HasDerivAt (fun s : ℝ ↦ C * Real.sinh (2 * k * s) / (2 * k))
-        (C * (Real.cosh (2 * k * s) * (2 * k)) / (2 * k)) s := (h2.const_mul C).div_const (2 * k)
-    have hval : C * (Real.cosh (2 * k * s) * (2 * k)) / (2 * k) = C * Real.cosh (2 * k * s) := by
-      rw [div_eq_iff hk2.ne']
-      ring
-    rwa [hval] at h3
-  have hcalc : ∫ s in (0 : ℝ)..t, C * Real.cosh (2 * k * s) =
-      C * Real.sinh (2 * k * t) / (2 * k) := by
-    rw [intervalIntegral.integral_eq_sub_of_hasDerivAt (fun s _ ↦ hderiv s)
-      (hg.intervalIntegrable _ _)]
-    simp
-  calc ‖∫ s in (0 : ℝ)..t, F s‖
-      ≤ |∫ s in (0 : ℝ)..t, C * Real.cosh (2 * k * s)| :=
-        intervalIntegral.norm_integral_le_abs_of_norm_le (.of_forall fun s ↦ hF s)
-          (hg.intervalIntegrable _ _)
-    _ = C * |Real.sinh (2 * k * t)| / (2 * k) := by
-        rw [hcalc, abs_div, abs_mul, abs_of_nonneg hC, abs_of_pos hk2]
-    _ ≤ C * Real.cosh (2 * k * t) / (2 * k) := by
-        gcongr
-        rw [Real.abs_sinh, ← Real.cosh_abs (2 * k * t)]
-        exact (Real.sinh_lt_cosh _).le
+section Seminormed
+
+variable [SeminormedAddCommGroup E] [NormedSpace ℝ E]
 
 /-- The curve carried by a bounded continuous profile `u`, weighted so that the Picard operator
 below is a contraction on the whole line. -/
@@ -111,18 +78,17 @@ private theorem continuous_picardCurve (k : ℝ) (x : E) (u : ℝ →ᵇ E) :
 
 private theorem norm_picardCurve_sub_le (k : ℝ) (x : E) (u : ℝ →ᵇ E) (t : ℝ) :
     ‖picardCurve k x u t - x‖ ≤ Real.cosh (2 * k * t) * ‖u‖ := by
-  have h : picardCurve k x u t - x = Real.cosh (2 * k * t) • u t := by
-    simp [picardCurve]
-  rw [h, norm_smul, Real.norm_eq_abs, abs_of_pos (Real.cosh_pos _)]
+  simp only [picardCurve, add_sub_cancel_left, norm_smul,
+    Real.norm_of_nonneg (Real.cosh_pos _).le]
   exact mul_le_mul_of_nonneg_left (u.norm_coe_le_norm t) (Real.cosh_pos _).le
 
 private theorem picardCurve_sub (k : ℝ) (x : E) (u₁ u₂ : ℝ →ᵇ E) (t : ℝ) :
     picardCurve k x u₁ t - picardCurve k x u₂ t = Real.cosh (2 * k * t) • (u₁ t - u₂ t) := by
   simp [picardCurve, smul_sub]
 
-private theorem picardCurve_sub_const (k : ℝ) (x y : E) (u : ℝ →ᵇ E) (t : ℝ) :
-    picardCurve k x u t - picardCurve k y u t = x - y := by
-  simp [picardCurve]
+end Seminormed
+
+variable [NormedAddCommGroup E] [NormedSpace ℝ E]
 
 /-- The Picard operator, as a plain function; it is packaged as a self-map of `ℝ →ᵇ E` below. -/
 private noncomputable def picardMap (v : E → E) (k : ℝ) (x : E) (u : ℝ →ᵇ E) (t : ℝ) : E :=
@@ -153,7 +119,7 @@ private theorem norm_picardMap_le {v : E → E} {k : ℝ} (hk : 0 < k)
     nlinarith [norm_nonneg (v x), norm_nonneg u, hk.le, mul_nonneg hk.le (norm_nonneg u)]
   have hstep : ‖∫ s in (0 : ℝ)..t, v (picardCurve k x u s)‖ ≤
       (‖v x‖ + k * ‖u‖) * Real.cosh (2 * k * t) / (2 * k) :=
-    norm_integral_le_cosh hk hCnn hbound t
+    TauCeti.norm_intervalIntegral_le_cosh (by positivity) hCnn t (.of_forall hbound)
   have hcosh : (0 : ℝ) < Real.cosh (2 * k * t) := Real.cosh_pos _
   rw [picardMap, norm_smul, Real.norm_eq_abs, abs_of_pos (inv_pos.2 hcosh)]
   rw [inv_mul_le_iff₀ hcosh]
@@ -170,8 +136,8 @@ private theorem picardOp_apply {v : E → E} (hvc : Continuous v) {k : ℝ} (hk 
     (hv : ∀ y z, ‖v y - v z‖ ≤ k * ‖y - z‖) (x : E) (u : ℝ →ᵇ E) (t : ℝ) :
     picardOp hvc hk hv x u t = picardMap v k x u t := rfl
 
-/-- The single estimate behind both contraction properties of the Picard operator: a bound on the
-carried curves, in the weight `cosh (2 k ·)`, halves to a bound on the values of the operator. -/
+/-- A bound on the carried curves, in the weight `cosh (2 k ·)`, halves to a bound on the
+values of the Picard operator. -/
 private theorem dist_picardOp_le {v : E → E} (hvc : Continuous v) {k : ℝ} (hk : 0 < k)
     (hv : ∀ y z, ‖v y - v z‖ ≤ k * ‖y - z‖) {x y : E} {u₁ u₂ : ℝ →ᵇ E} {D : ℝ} (hD : 0 ≤ D)
     (hb : ∀ s, ‖picardCurve k x u₁ s - picardCurve k y u₂ s‖ ≤ D * Real.cosh (2 * k * s)) :
@@ -193,8 +159,9 @@ private theorem dist_picardOp_le {v : E → E} (hvc : Continuous v) {k : ℝ} (h
       (∫ s in (0 : ℝ)..t, v (picardCurve k x u₁ s)) -
         ∫ s in (0 : ℝ)..t, v (picardCurve k y u₂ s) :=
     intervalIntegral.integral_sub (hi₁ 0 t) (hi₂ 0 t)
-  have hint := norm_integral_le_cosh (F := fun s ↦
-    v (picardCurve k x u₁ s) - v (picardCurve k y u₂ s)) hk (mul_nonneg hk.le hD) hbound t
+  have hint := TauCeti.norm_intervalIntegral_le_cosh (F := fun s ↦
+    v (picardCurve k x u₁ s) - v (picardCurve k y u₂ s))
+    (by positivity) (mul_nonneg hk.le hD) t (.of_forall hbound)
   rw [hsub] at hint
   rw [dist_eq_norm, picardOp_apply, picardOp_apply, picardMap, picardMap, ← smul_sub, norm_smul,
     Real.norm_eq_abs, abs_of_pos (inv_pos.2 hcosh), inv_mul_le_iff₀ hcosh]
@@ -234,21 +201,13 @@ private theorem picardCurve_fixedPoint {v : E → E} (hvc : Continuous v) {k : �
   simp only [picardOp_apply, picardMap] at hpt
   rw [picardCurve, ← hpt, smul_inv_smul₀ (Real.cosh_pos (2 * k * t)).ne']
 
-private theorem k_pos (K : ℝ≥0) : (0 : ℝ) < (K : ℝ) + 1 := by positivity
-
-omit [NormedSpace ℝ E] [CompleteSpace E] in
-private theorem norm_sub_le_of_lipschitzWith {v : E → E} {K : ℝ≥0} (hv : LipschitzWith K v)
-    (y z : E) : ‖v y - v z‖ ≤ ((K : ℝ) + 1) * ‖y - z‖ := by
-  have h := hv.dist_le_mul y z
-  rw [dist_eq_norm, dist_eq_norm] at h
-  nlinarith [norm_nonneg (y - z)]
-
 /-- **The global solution of a globally Lipschitz autonomous ODE.** For a Lipschitz vector field
 `v` on a Banach space, `ODE.globalSolution v hv x` is the unique curve `γ : ℝ → E` defined on the
 whole line with `γ 0 = x` and `γ' t = v (γ t)` for every `t`. -/
 noncomputable def globalSolution (v : E → E) {K : ℝ≥0} (hv : LipschitzWith K v) (x : E) : ℝ → E :=
   picardCurve ((K : ℝ) + 1) x
-    (picardFixedPoint hv.continuous (k_pos K) (norm_sub_le_of_lipschitzWith hv) x)
+    (picardFixedPoint hv.continuous (by positivity)
+      (hv.weaken (le_add_of_nonneg_right zero_le_one)).norm_sub_le x)
 
 /-- The global solution satisfies the integral equation of the initial value problem. -/
 theorem globalSolution_eq_integral (v : E → E) {K : ℝ≥0} (hv : LipschitzWith K v) (x : E) (t : ℝ) :
@@ -308,29 +267,13 @@ theorem globalSolution_add (v : E → E) {K : ℝ≥0} (hv : LipschitzWith K v) 
     simpa [Function.comp_def, add_comm] using (isIntegralCurve_globalSolution v hv x).comp_add t
   simpa using congrFun (eq_globalSolution v hv hγ) s
 
-/-- The Picard fixed point depends on the initial condition `1`-Lipschitzly. -/
-private theorem dist_picardFixedPoint_le {v : E → E} (hvc : Continuous v) {k : ℝ} (hk : 0 < k)
-    (hv : ∀ y z, ‖v y - v z‖ ≤ k * ‖y - z‖) (x y : E) :
-    dist (picardFixedPoint hvc hk hv x) (picardFixedPoint hvc hk hv y) ≤ ‖x - y‖ := by
-  have hC : ∀ u : ℝ →ᵇ E,
-      dist (picardOp hvc hk hv x u) (picardOp hvc hk hv y u) ≤ ‖x - y‖ / 2 := fun u ↦
-    dist_picardOp_le hvc hk hv (norm_nonneg _) fun s ↦ by
-      rw [picardCurve_sub_const]
-      exact le_mul_of_one_le_right (norm_nonneg _) (Real.one_le_cosh _)
-  have h := ContractingWith.fixedPoint_lipschitz_in_map (contractingWith_picardOp hvc hk hv x)
-    (contractingWith_picardOp hvc hk hv y) hC
-  have hcast : (1 : ℝ) - ((1 / 2 : ℝ≥0) : ℝ) = 1 / 2 := by norm_num
-  rw [hcast] at h
-  simpa [picardFixedPoint] using h.trans_eq (by ring)
-
 /-- **Reversing time** turns the global solution of `v` into the global solution of `-v`. -/
 theorem globalSolution_neg (v : E → E) {K : ℝ≥0} (hv : LipschitzWith K v) (x : E) (t : ℝ) :
     globalSolution v hv x (-t) = globalSolution (fun z ↦ -v z) hv.neg x t := by
-  have hγ : ∀ s : ℝ, HasDerivAt (fun s : ℝ ↦ globalSolution v hv x (-s))
-      (-v (globalSolution v hv x (-s))) s := by
-    intro s
-    have h1 : HasDerivAt (fun s : ℝ ↦ -s) (-1 : ℝ) s := by simpa using hasDerivAt_neg s
-    simpa [Function.comp_def] using (hasDerivAt_globalSolution v hv x (-s)).scomp s h1
+  have hγ : IsIntegralCurve (fun s : ℝ ↦ globalSolution v hv x (-s))
+      (fun _ z ↦ -v z) := by
+    simpa only [Function.comp_def, Pi.smul_def, mul_neg_one, neg_one_smul, Pi.neg_def] using
+      (isIntegralCurve_globalSolution v hv x).comp_mul (-1)
   simpa using congrFun (eq_globalSolution (fun z ↦ -v z) hv.neg hγ) t
 
 private theorem dist_globalSolution_le_of_nonneg (v : E → E) {K : ℝ≥0} (hv : LipschitzWith K v)
@@ -360,19 +303,16 @@ theorem dist_globalSolution_le (v : E → E) {K : ℝ≥0} (hv : LipschitzWith K
 /-- **Joint continuity** of the global solution in time and initial condition. -/
 theorem continuous_globalSolution (v : E → E) {K : ℝ≥0} (hv : LipschitzWith K v) :
     Continuous fun p : ℝ × E ↦ globalSolution v hv p.2 p.1 := by
-  have hΦ : Continuous fun x : E ↦
-      picardFixedPoint hv.continuous (k_pos K) (norm_sub_le_of_lipschitzWith hv) x := by
-    refine LipschitzWith.continuous (K := 1) (LipschitzWith.of_dist_le_mul fun x y ↦ ?_)
-    simpa [dist_eq_norm] using dist_picardFixedPoint_le hv.continuous (k_pos K)
-      (norm_sub_le_of_lipschitzWith hv) x y
-  have heval : Continuous fun p : ℝ × E ↦
-      (picardFixedPoint hv.continuous (k_pos K) (norm_sub_le_of_lipschitzWith hv) p.2) p.1 :=
-    (hΦ.comp continuous_snd).eval continuous_fst
-  have hcosh : Continuous fun p : ℝ × E ↦ Real.cosh (2 * ((K : ℝ) + 1) * p.1) := by fun_prop
-  have hmain : Continuous fun p : ℝ × E ↦
-      p.2 + Real.cosh (2 * ((K : ℝ) + 1) * p.1) •
-        (picardFixedPoint hv.continuous (k_pos K) (norm_sub_le_of_lipschitzWith hv) p.2) p.1 :=
-    continuous_snd.add (hcosh.smul heval)
-  simpa [globalSolution, picardCurve] using hmain
+  rw [continuous_iff_continuousAt]
+  rintro ⟨t, x⟩
+  have hbound : Tendsto (fun p : ℝ × E ↦ dist x p.2 * Real.exp (K * |p.1|))
+      (𝓝 (t, x)) (𝓝 0) := by
+    have hc : Continuous fun p : ℝ × E ↦ dist x p.2 * Real.exp (K * |p.1|) := by
+      fun_prop
+    simpa using (hc.continuousAt (x := (t, x))).tendsto
+  exact ((continuous_globalSolution_apply v hv x).continuousAt.comp
+    continuous_fst.continuousAt).congr_dist
+      (squeeze_zero (fun _ ↦ dist_nonneg)
+        (fun p ↦ dist_globalSolution_le v hv x p.2 p.1) hbound)
 
 end ODE

@@ -19,6 +19,9 @@ point meets none of its nontrivial translates.
 On the free locus, the orbit projection is a quotient covering map. In particular it is both a
 covering map and a local homeomorphism. This separates the unramified part of a quotient from
 points with nontrivial stabilizer, where the full orbit projection need not be a covering map.
+The free locus is locally compact and the action on it is free and properly discontinuous, so
+the generic constructions for free properly discontinuous quotients apply to it by instance
+search.
 -/
 
 public section
@@ -41,6 +44,17 @@ def freeLocus : SubMulAction G X where
 theorem mem_freeLocus {x : X} : x ∈ freeLocus G X ↔ MulAction.stabilizer G x = ⊥ :=
   Iff.rfl
 
+/-- Representatives of the same orbit have equivalent free-locus membership. -/
+theorem mem_freeLocus_iff_of_quotientMk_eq {x y : X}
+    (h : (Quotient.mk (MulAction.orbitRel G X) x : MulAction.orbitRel.Quotient G X) =
+      Quotient.mk (MulAction.orbitRel G X) y) :
+    x ∈ freeLocus G X ↔ y ∈ freeLocus G X := by
+  have hrel : MulAction.orbitRel G X x y := Quotient.exact h
+  rw [MulAction.orbitRel_apply, MulAction.mem_orbit_iff] at hrel
+  obtain ⟨g, hg⟩ := hrel
+  rw [← hg]
+  exact (freeLocus G X).smul_mem_iff' g
+
 /-- The action restricted to the free locus is free. -/
 instance freeLocus.instIsCancelSMul : IsCancelSMul G (freeLocus G X) := by
   rw [isCancelSMul_iff_stabilizer_eq_bot]
@@ -51,6 +65,20 @@ instance freeLocus.instIsCancelSMul : IsCancelSMul G (freeLocus G X) := by
 instance freeLocus.instContinuousConstSMul [TopologicalSpace X] [ContinuousConstSMul G X] :
     ContinuousConstSMul G (freeLocus G X) :=
   Topology.IsInducing.subtypeVal.continuousConstSMul id rfl
+
+/-- A properly discontinuous action remains properly discontinuous on its free locus. -/
+instance freeLocus.instProperlyDiscontinuousSMul [TopologicalSpace X]
+    [ProperlyDiscontinuousSMul G X] : ProperlyDiscontinuousSMul G (freeLocus G X) :=
+  SubMulAction.properlyDiscontinuousSMul (freeLocus G X)
+
+/-- The orbit space of the free locus of a continuous action on a second countable space is
+second countable. -/
+instance freeLocus.instSecondCountableTopologyQuotient [TopologicalSpace X]
+    [SecondCountableTopology X] [ContinuousConstSMul G X] :
+    SecondCountableTopology (MulAction.orbitRel.Quotient G (freeLocus G X)) :=
+  have : SecondCountableTopology (freeLocus G X) :=
+    inferInstanceAs (SecondCountableTopology (freeLocus G X : Set X))
+  ContinuousConstSMul.secondCountableTopology
 
 section Topology
 
@@ -71,15 +99,17 @@ theorem isOpen_freeLocus : IsOpen (freeLocus G X : Set X) := by
     MulAction.mem_stabilizer_iff]
   exact hdisjoint g ⟨y, ⟨y, hy, hg⟩, hy⟩
 
+/-- The free locus of a properly discontinuous action on a locally compact Hausdorff space is
+locally compact, being open. -/
+instance freeLocus.instLocallyCompactSpace : LocallyCompactSpace (freeLocus G X) :=
+  (isOpen_freeLocus G X).locallyCompactSpace
+
 /-- On the free locus of a properly discontinuous action, the ordinary orbit projection is a
 quotient covering map. -/
 theorem isQuotientCoveringMap_quotientMk_freeLocus :
     IsQuotientCoveringMap
-      (Quotient.mk (MulAction.orbitRel G (freeLocus G X))) G := by
-  let _ : ProperlyDiscontinuousSMul G (freeLocus G X) :=
-    SubMulAction.properlyDiscontinuousSMul (freeLocus G X)
-  let _ : LocallyCompactSpace (freeLocus G X) := (isOpen_freeLocus G X).locallyCompactSpace
-  exact isQuotientCoveringMap_quotientMk_of_properlyDiscontinuousSMul
+      (Quotient.mk (MulAction.orbitRel G (freeLocus G X))) G :=
+  isQuotientCoveringMap_quotientMk_of_properlyDiscontinuousSMul
 
 /-- The orbit projection from the free locus of a properly discontinuous action is a covering
 map. -/

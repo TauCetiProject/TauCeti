@@ -182,6 +182,14 @@ theorem defectExponent_eq_top_iff {a : Kˣ} : defectExponent a = ⊤ ↔ IsSquar
   unfold defectExponent
   split_ifs with h <;> simp [h]
 
+/-- A unit with finite defect exponent is not a square. -/
+theorem not_isSquare_of_defectExponent_eq {a : Kˣ} {d : ℤ}
+    (hd : defectExponent a = d) : ¬IsSquare a := by
+  intro hsq
+  have htop := defectExponent_eq_top_iff.mpr hsq
+  rw [hd] at htop
+  exact WithTop.coe_ne_top htop
+
 /-- Every approximation order `v_K(a - ξ²)` is at most the defect exponent. -/
 theorem le_defectExponent (a : Kˣ) (ξ : K) (x : Kˣ) (hx : (x : K) = a - ξ ^ 2) :
     ((normalizedValuation K x).toAdd : WithTop ℤ) ≤ defectExponent a := by
@@ -350,8 +358,7 @@ private theorem valuation_le_valuation_sub_sq {a : Kˣ}
 theorem defectExponent_of_odd {a : Kˣ} (ha : Odd (normalizedValuation K a).toAdd) :
     defectExponent a = (normalizedValuation K a).toAdd := by
   have ha' : ¬Even (normalizedValuation K a).toAdd := Int.not_even_iff_odd.mpr ha
-  have hsq : ¬IsSquare a := fun ⟨r, hr⟩ => ha' ⟨(normalizedValuation K r).toAdd, by
-    rw [hr, map_mul, toAdd_mul]⟩
+  have hsq : ¬IsSquare a := fun ha => ha' (even_toAdd_normalizedValuation_of_isSquare ha)
   refine le_antisymm ?_ (toAdd_normalizedValuation_le_defectExponent a)
   obtain ⟨ξ, x, hx, hxd⟩ := exists_defectExponent_eq hsq
   rw [← hxd, WithTop.coe_le_coe, toAdd_normalizedValuation_le_iff_valuation_le, hx]
@@ -369,7 +376,7 @@ theorem quadraticDefect_eq_maximalIdeal_zpow {a : Kˣ} {n : ℤ} (h : defectExpo
     quadraticDefect a =
       ((IsLocalRing.maximalIdeal 𝒪[K] : Ideal 𝒪[K]) : FractionalIdeal (nonZeroDivisors 𝒪[K]) K) ^
         n := by
-  have ha : ¬IsSquare a := fun hsq => by simp [defectExponent_eq_top_iff.mpr hsq] at h
+  have ha : ¬IsSquare a := not_isSquare_of_defectExponent_eq h
   obtain ⟨ξ, x, hx, hxd⟩ := exists_defectExponent_eq ha
   have hle := valuation_le_valuation_sub_sq_of_eq ha hxd
   rw [h, WithTop.coe_inj] at hxd
@@ -382,27 +389,26 @@ section UnitDefect
 variable {π : 𝒪[K]}
 
 /-- **The improvement step of O'Meara 63:2.** In residue characteristic two, an approximation
-`u - ξ²` of an integral element `u` of `Kˣ` of order exactly `2k` with `k < v_K(2)` is not
-optimal: writing `(u - ξ²)/π^{2k} ≡ s² mod 𝓂[K]`, which is possible because the residue field is
-perfect of characteristic two, the correction `ξ + π^k s` approximates `u` to order at least
-`2k + 1`. The hypothesis `k < v_K(2)` is what makes the cross term `2 ξ π^k s` negligible. -/
+`u - ξ²` of an integral element `u : K` of order at least `2k` with `k < v_K(2)` can be
+improved to order at least `2k + 1`: writing `(u - ξ²)/π^{2k} ≡ s² mod 𝓂[K]`, which is
+possible because the residue field is perfect of characteristic two, gives the correction
+`ξ + π^k s`. The hypothesis `k < v_K(2)` makes the cross term `2 ξ π^k s` negligible. -/
 theorem exists_valuation_sub_sq_le_of_lt_natCastValuation (h2 : (2 : K) ≠ 0)
-    (hπ : Irreducible π) {u : Kˣ} (hu : valuation K (u : K) ≤ 1) {ξ : K} {k : ℕ}
+    (hπ : Irreducible π) {u : K} (hu : valuation K u ≤ 1) {ξ : K} {k : ℕ}
     (hk : k < natCastValuation K 2 h2)
-    (hξ : valuation K ((u : K) - ξ ^ 2) = valuation K (π : K) ^ (2 * k)) :
-    ∃ η : K, valuation K ((u : K) - η ^ 2) ≤ valuation K (π : K) ^ (2 * k + 1) := by
+    (hξ : valuation K (u - ξ ^ 2) ≤ valuation K (π : K) ^ (2 * k)) :
+    ∃ η : K, valuation K (u - η ^ 2) ≤ valuation K (π : K) ^ (2 * k + 1) := by
   have hπ0 : (π : K) ≠ 0 := fun h => hπ.ne_zero (Subtype.ext h)
   have hπ1 : valuation K (π : K) < 1 :=
     Valuation.integer.v_irreducible_lt_one (v := valuation K) hπ
-  have hπv : valuation K (π : K) ≠ 0 := by simpa using hπ0
   -- The residue field has characteristic two, so every residue is a square.
   have hchar : ringChar 𝓀[K] = 2 :=
     (natCastValuation_ne_zero_iff_ringChar_eq K Nat.prime_two h2).mp (by omega)
-  -- `c = (u - ξ²)/π^{2k}` is a unit of `𝒪[K]`.
-  set c : K := ((u : K) - ξ ^ 2) / (π : K) ^ (2 * k) with hc
-  have hcv : valuation K c = 1 := by
-    rw [hc, map_div₀, hξ, map_pow, div_self (pow_ne_zero _ hπv)]
-  have hcO : c ∈ 𝒪[K] := (Valuation.mem_integer_iff _ _).mpr hcv.le
+  -- `c = (u - ξ²)/π^{2k}` is integral.
+  set c : K := (u - ξ ^ 2) / (π : K) ^ (2 * k) with hc
+  have hcO : c ∈ 𝒪[K] := by
+    rw [Valuation.mem_integer_iff, hc, map_div₀, map_pow]
+    exact div_le_one_of_le₀ hξ zero_le
   obtain ⟨t, ht⟩ := FiniteField.isSquare_of_char_two hchar
     (IsLocalRing.residue 𝒪[K] ⟨c, hcO⟩)
   obtain ⟨s, rfl⟩ := IsLocalRing.residue_surjective t
@@ -417,9 +423,9 @@ theorem exists_valuation_sub_sq_le_of_lt_natCastValuation (h2 : (2 : K) ≠ 0)
     simp
   -- The corrected approximation.
   refine ⟨ξ + (π : K) ^ k * (s : K), ?_⟩
-  have hcmul : ((π : K) ^ k) ^ 2 * c = (u : K) - ξ ^ 2 := by
+  have hcmul : ((π : K) ^ k) ^ 2 * c = u - ξ ^ 2 := by
     rw [hc, ← pow_mul, mul_comm k 2, mul_div_cancel₀ _ (pow_ne_zero _ hπ0)]
-  have hid : (u : K) - (ξ + (π : K) ^ k * (s : K)) ^ 2
+  have hid : u - (ξ + (π : K) ^ k * (s : K)) ^ 2
       = ((π : K) ^ k) ^ 2 * (c - (s : K) ^ 2) - 2 * ξ * ((π : K) ^ k * (s : K)) := by
     linear_combination -hcmul
   -- Both terms have valuation at most `v(π)^{2k+1}`.
@@ -434,7 +440,7 @@ theorem exists_valuation_sub_sq_le_of_lt_natCastValuation (h2 : (2 : K) ≠ 0)
       (valuation_natCast_eq_pow hπ 2 h2).le
     have hξ1 : valuation K ξ ≤ 1 :=
       valuation_le_one_of_sub_sq_le_one hu
-        (hξ ▸ pow_le_one₀ zero_le hπ1.le)
+        (hξ.trans (pow_le_one₀ zero_le hπ1.le))
     have hs1 : valuation K (s : K) ≤ 1 := (Valuation.mem_integer_iff _ _).mp s.2
     calc valuation K (2 * ξ * ((π : K) ^ k * (s : K)))
         = valuation K (2 : K) * valuation K ξ *
@@ -503,8 +509,8 @@ theorem defectExponent_eq_two_mul_natCastValuation_or_odd (h2 : (2 : K) ≠ 0) {
       ∃ k < natCastValuation K 2 h2, defectExponent u = ((2 * k + 1 : ℕ) : ℤ) := by
   obtain ⟨π, hπ⟩ := IsDiscreteValuationRing.exists_irreducible (R := 𝒪[K])
   obtain ⟨ξ, x, hx, hxd⟩ := exists_defectExponent_eq hsq
-  set e := natCastValuation K 2 h2 with he
-  set d := (normalizedValuation K x).toAdd with hd
+  set e := natCastValuation K 2 h2
+  set d := (normalizedValuation K x).toAdd
   -- The valuation of `u` is one of the approximation orders, so `0 ≤ δ(u)`.
   have hd0 : 0 ≤ d := by
     have h := toAdd_normalizedValuation_le_defectExponent u
@@ -526,7 +532,7 @@ theorem defectExponent_eq_two_mul_natCastValuation_or_odd (h2 : (2 : K) ≠ 0) {
       rw [hx] at h
       simpa only [zpow_natCast, Units.val_mk0] using h
     obtain ⟨η, hη⟩ := exists_valuation_sub_sq_le_of_lt_natCastValuation h2 hπ hu.le
-      (k := k) (by omega) hξv
+      (k := k) (by omega) hξv.le
     have hle := (valuation_le_valuation_sub_sq_of_eq hsq hxd η).trans hη
     have h := (le_toAdd_normalizedValuation_iff_valuation_le_zpow
       (normalizedValuation_irreducible hπ) ((2 * k + 1 : ℕ) : ℤ) x).mpr
@@ -551,11 +557,8 @@ theorem exists_unit_defectExponent_eq_two_mul_natCastValuation (h2 : (2 : K) ≠
     ∃ u : Kˣ, valuation K (u : K) = 1 ∧ ¬IsSquare u ∧
       defectExponent u = ((2 * natCastValuation K 2 h2 : ℕ) : ℤ) := by
   obtain ⟨π, hπ⟩ := IsDiscreteValuationRing.exists_irreducible (R := 𝒪[K])
-  obtain ⟨u, hu, hsq⟩ := SetLike.not_le_iff_exists.mp
-    (not_unitFiltration_le_range_powMonoidHom_two (K := K) h2)
+  obtain ⟨u, hu, hnsq⟩ := exists_mem_unitFiltration_not_isSquare h2
   have huval : valuation K (u : K) = 1 := ((mem_unitFiltration_iff_valuation_le hπ).mp hu).1
-  have hnsq : ¬IsSquare u := by
-    simpa only [MonoidHom.mem_range, powMonoidHom_apply, isSquare_iff_exists_sq, eq_comm] using hsq
   refine ⟨u, huval, hnsq, le_antisymm
     (defectExponent_le_two_mul_natCastValuation h2 huval hnsq) ?_⟩
   have hu1 : valuation K ((u : K) - 1) ≤

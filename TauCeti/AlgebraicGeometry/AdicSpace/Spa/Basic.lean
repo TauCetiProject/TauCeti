@@ -5,8 +5,8 @@ Authors: Chris Birkbeck
 -/
 module
 
-public import Mathlib.RingTheory.Valuation.Integral
 public import TauCeti.AlgebraicGeometry.AdicSpace.Cont.Basic
+import TauCeti.RingTheory.Valuation.Integral.Basic
 import Mathlib.Topology.Algebra.OpenSubgroup
 
 /-!
@@ -47,6 +47,8 @@ it; the subspace form here needs no such comparison.)
 * `TauCeti.ValuationSpectrum.spa_def` and `TauCeti.ValuationSpectrum.mem_spa_iff` : the
   set-level and membership-level characterizations — the definition is not exposed across the
   module boundary, so these two are the exported interface.
+* `TauCeti.ValuationSpectrum.valuation_le_one_of_mem_spa` : a point of `Spa (A, A⁺)` has
+  valuation at most `1` on `A⁺`.
 * `TauCeti.ValuationSpectrum.spa_antitone` : the spectrum shrinks as the plus ring grows. Its
   inclusion into `Cont A` is `spa_def ▸ Set.inter_subset_left`.
 * `TauCeti.ValuationSpectrum.spa_integralClosure` : replacing the plus ring by its integral
@@ -113,6 +115,13 @@ theorem mem_spa_iff (Aplus : Subring A) (v : Spv A) :
     v ∈ spa Aplus ↔ v.IsContinuous ∧ ∀ a ∈ Aplus, v.toValuativeRel.vle a 1 := by
   rw [spa_def, Set.mem_inter_iff, mem_cont_iff, Set.mem_ofPred_eq]
 
+/-- At a point of `Spa (A, A⁺)`, every element of the plus ring has valuation at most `1`: the
+sub-unit condition of `mem_spa_iff`, read through the valuation `v.valuation`. -/
+theorem valuation_le_one_of_mem_spa {Aplus : Subring A} {v : Spv A} (hv : v ∈ spa Aplus) {a : A}
+    (ha : a ∈ Aplus) : v.valuation a ≤ 1 := by
+  rw [← map_one v.valuation, valuation_le_iff]
+  exact ((mem_spa_iff Aplus v).mp hv).2 a ha
+
 /-- Enlarging the plus ring shrinks the adic spectrum. -/
 theorem spa_antitone : Antitone (spa (A := A)) := fun _ _ hle ↦ by
   rw [spa_def, spa_def]
@@ -120,22 +129,14 @@ theorem spa_antitone : Antitone (spa (A := A)) := fun _ _ hle ↦ by
 
 /-- Replacing a subring by its integral closure does not change the sub-unit valuation locus. -/
 @[simp]
-theorem spa_integralClosure (R : Subring A) :
-    spa (integralClosure R A).toSubring = spa R := by
+theorem spa_integralClosure (R : Subring A) : spa (integralClosure R A).toSubring = spa R := by
   ext v
-  rw [mem_spa_iff, mem_spa_iff]
-  refine and_congr_right fun _ ↦ ⟨fun h r hr ↦ ?_, fun h x hx ↦ ?_⟩
-  · exact h r (algebraMap_mem (integralClosure R A) ⟨r, hr⟩)
-  · let φ : R →+* v.valuation.integer :=
-      R.subtype.codRestrict v.valuation.integer fun r ↦ by
-        rw [Valuation.mem_integer_iff, ← map_one v.valuation, valuation_le_iff]
-        exact h r r.2
-    rw [Subalgebra.mem_toSubring, mem_integralClosure_iff] at hx
-    have hint : IsIntegral v.valuation.integer x :=
-      hx.map_of_comp_eq φ (RingHom.id A) (by ext r; rfl)
-    have hxint := (Valuation.integer.integers v.valuation).mem_of_integral hint
-    rw [Valuation.mem_integer_iff, ← map_one v.valuation, valuation_le_iff] at hxint
-    exact hxint
+  -- being sub-unit at `v` is membership of the valuation ring, which
+  -- `Valuation.integer.isIntegrallyClosedIn` makes integrally closed in `A`
+  have key (y : A) : v.toValuativeRel.vle y 1 ↔ y ∈ v.valuation.integer := by
+    rw [Valuation.mem_integer_iff, ← map_one v.valuation, valuation_le_iff]
+  simp only [mem_spa_iff, key, ← IsConcreteLE.le_iff]
+  exact and_congr_right fun _ ↦ Subring.integralClosure_subring_le_iff
 
 /-- Replacing a subring by its topological closure does not change the adic spectrum: every point
 of `Spa (A, A⁺)` is already sub-unit on the closure of `A⁺`. This is the topological counterpart of

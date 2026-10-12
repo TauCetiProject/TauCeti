@@ -21,8 +21,14 @@ For a positive width `w`, the usual local coordinate
 are exactly the orbits of the translation subgroup `w ℤ`. Consequently it identifies the orbit
 quotient of the upper half-plane by these translations with the punctured unit disc.
 
+A periodic function need only be holomorphic above some height for boundedness to make its
+q-extension analytic at zero. This permits applying the same coordinate to functions with
+interior poles.
+
 The construction reuses Mathlib's `Function.Periodic.qParam`; in particular, the normalization
-of `2 π i / w` agrees with the local parameter used for modular-form q-expansions.
+of `2 π i / w` agrees with the local parameter used for modular-form q-expansions. The analytic
+extension criterion uses `Function.Periodic.differentiableAt_cuspFunction_zero` and Mathlib's
+removable singularity theorem.
 
 ## Main declarations
 
@@ -34,6 +40,8 @@ of `2 π i / w` agrees with the local parameter used for modular-form q-expansio
   exactly when they differ by an integral multiple of the width.
 * `TauCeti.UpperHalfPlane.cuspTranslationQuotientHomeomorph`: the resulting homeomorphism from
   the translation-orbit quotient to the punctured unit disc.
+* `TauCeti.UpperHalfPlane.analyticAt_cuspFunction_zero_of_eventually_mdifferentiableAt`: bounded
+  functions holomorphic sufficiently high have a removable q-singularity.
 
 ## References
 
@@ -49,6 +57,24 @@ open scoped Complex.UnitDisc Manifold Real Topology
 namespace TauCeti.UpperHalfPlane
 
 local notation "𝔢" => Function.Periodic.qParam
+
+/-- A periodic function holomorphic at all sufficiently large heights and bounded at imaginary
+infinity has an analytic q-extension at zero. Interior poles below that height are allowed. -/
+theorem analyticAt_cuspFunction_zero_of_eventually_mdifferentiableAt {f : ℍ → ℂ} {w : ℝ}
+    (hw : 0 < w) (hper : Periodic (f ∘ ofComplex) w)
+    (hhol : ∀ᶠ z in atImInfty, MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ) f z)
+    (hbounded : IsBoundedAtImInfty f) :
+    AnalyticAt ℂ (Function.Periodic.cuspFunction w (f ∘ ofComplex)) 0 := by
+  have hdiff : ∀ᶠ z in Filter.comap Complex.im Filter.atTop,
+      DifferentiableAt ℂ (f ∘ ofComplex) z := by
+    filter_upwards [tendsto_comap_im_ofComplex.eventually hhol,
+      preimage_mem_comap (Ioi_mem_atTop 0)] with z hz him
+    simpa only [ofComplex_apply_of_im_pos him] using
+      _root_.UpperHalfPlane.mdifferentiableAt_iff.mp hz
+  exact Complex.analyticAt_of_differentiable_on_punctured_nhds_of_continuousAt
+    (Function.Periodic.eventually_differentiableAt_cuspFunction_nhds_ne_zero hw hper hdiff)
+    (Function.Periodic.differentiableAt_cuspFunction_zero hw hper hdiff
+      (hbounded.comp_tendsto tendsto_comap_im_ofComplex)).continuousAt
 
 /-- The q-parameter of positive width, regarded as a map from the upper half-plane to the
 punctured unit disc. -/

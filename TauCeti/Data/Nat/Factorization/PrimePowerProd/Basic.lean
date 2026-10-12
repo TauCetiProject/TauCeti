@@ -5,7 +5,7 @@ Authors: Chris Birkbeck
 -/
 module
 
-public import Mathlib.Data.Nat.Factorization.Basic
+public import TauCeti.Data.Nat.Factorization.Basic
 public import Mathlib.Data.Nat.Factorization.Induction
 public import Mathlib.Data.Nat.Prime.Pow
 
@@ -93,23 +93,6 @@ namespace TauCeti
 
 namespace Nat
 
-/-- For `1 < n` the least prime factor of `n` is one of its primes. -/
-private theorem minFac_mem_primeFactors {n : ℕ} (hn : 1 < n) : n.minFac ∈ n.primeFactors :=
-  Nat.mem_primeFactors.2 ⟨Nat.minFac_prime hn.ne', n.minFac_dvd, by omega⟩
-
-/-- Peeling the block at the least prime factor makes `n` strictly smaller. -/
-private theorem ordCompl_minFac_lt {n : ℕ} (hn : 1 < n) : ordCompl[n.minFac] n < n :=
-  Nat.div_lt_self (by omega) (Nat.one_lt_pow
-    ((Nat.minFac_prime hn.ne').factorization_pos_of_dvd (by omega) n.minFac_dvd).ne'
-    (Nat.minFac_prime hn.ne').one_lt)
-
-/-- A block of `ordCompl[p] n` is a block of `n`, at a prime other than `p`. -/
-private theorem block_ordCompl {n p q : ℕ} (hq : q ∈ (ordCompl[p] n).primeFactors) :
-    q ∈ n.primeFactors ∧ (ordCompl[p] n).factorization q = n.factorization q := by
-  rw [← Nat.support_factorization, Nat.factorization_ordCompl, Finsupp.support_erase,
-    Finset.mem_erase, Nat.support_factorization] at hq
-  exact ⟨hq.2, by rw [Nat.factorization_ordCompl, Finsupp.erase_ne hq.1]⟩
-
 variable {M : Type*}
 
 section MulOne
@@ -146,6 +129,23 @@ theorem primePowerProd_of_one_lt (f : ℕ → ℕ → M) {n : ℕ} (hn : 1 < n) 
   unfold primePowerProd Nat.recOnPrimePow
   rw [Nat.strongRec_eq]
   rfl
+
+/-- The peeling step for a product `k = m * n` whose least prime `p` does not divide `n`: the
+block split off is the block of `m` at `p`, and what remains is the product over
+`ordCompl[p] m * n`. Stated with `k` free so that either factor of `m * n` can play `m`. -/
+private theorem primePowerProd_of_minFac_not_dvd (f : ℕ → ℕ → M) {k m n p : ℕ} (h1 : 1 < k)
+    (hp : k.minFac = p) (hk : k = m * n) (hn : ¬p ∣ n) :
+    primePowerProd f k = f p (m.factorization p) * primePowerProd f (ordCompl[p] m * n) := by
+  subst hk
+  have hm0 : m ≠ 0 := by rintro rfl; simp at h1
+  have hn0 : n ≠ 0 := by rintro rfl; simp at h1
+  have hblock : (m * n).factorization p = m.factorization p := by
+    rw [Nat.factorization_mul hm0 hn0, Finsupp.add_apply, Nat.factorization_eq_zero_of_not_dvd hn,
+      add_zero]
+  have hcompl : ordCompl[p] (m * n) = ordCompl[p] m * n := by
+    rw [Nat.ordCompl_mul,
+      (Nat.ordCompl_eq_self_iff_zero_or_not_dvd n (hp ▸ Nat.minFac_prime h1.ne')).2 (Or.inr hn)]
+  rw [primePowerProd_of_one_lt f h1, hp, hcompl, hblock]
 
 end MulOne
 
@@ -184,28 +184,11 @@ theorem _root_.Commute.primePowerProd_right (f : ℕ → ℕ → M) {x : M} {n :
   | _ n ih =>
     by_cases hn : 1 < n
     · rw [primePowerProd_of_one_lt f hn]
-      refine (h _ (minFac_mem_primeFactors hn)).mul_right (ih _ (ordCompl_minFac_lt hn) ?_)
+      refine (h _ (Nat.minFac_mem_primeFactors hn)).mul_right (ih _ (Nat.ordCompl_minFac_lt hn) ?_)
       intro q hq
-      rw [(block_ordCompl hq).2]
-      exact h q (block_ordCompl hq).1
+      rw [Nat.primeFactors_ordCompl, Finset.mem_erase] at hq
+      simpa only [Nat.factorization_ordCompl, Finsupp.erase_ne hq.1] using h q hq.2
     · rcases Nat.le_one_iff_eq_zero_or_eq_one.1 (not_lt.1 hn) with rfl | rfl <;> simp
-
-/-- The peeling step for a product `k = m * n` whose least prime `p` does not divide `n`: the
-block split off is the block of `m` at `p`, and what remains is the product over
-`ordCompl[p] m * n`. Stated with `k` free so that either factor of `m * n` can play `m`. -/
-private theorem primePowerProd_of_minFac_not_dvd (f : ℕ → ℕ → M) {k m n p : ℕ} (h1 : 1 < k)
-    (hp : k.minFac = p) (hk : k = m * n) (hn : ¬p ∣ n) :
-    primePowerProd f k = f p (m.factorization p) * primePowerProd f (ordCompl[p] m * n) := by
-  subst hk
-  have hm0 : m ≠ 0 := by rintro rfl; simp at h1
-  have hn0 : n ≠ 0 := by rintro rfl; simp at h1
-  have hblock : (m * n).factorization p = m.factorization p := by
-    rw [Nat.factorization_mul hm0 hn0, Finsupp.add_apply, Nat.factorization_eq_zero_of_not_dvd hn,
-      add_zero]
-  have hcompl : ordCompl[p] (m * n) = ordCompl[p] m * n := by
-    rw [Nat.ordCompl_mul,
-      (Nat.ordCompl_eq_self_iff_zero_or_not_dvd n (hp ▸ Nat.minFac_prime h1.ne')).2 (Or.inr hn)]
-  rw [primePowerProd_of_one_lt f h1, hp, hcompl, hblock]
 
 /-- The case of `primePowerProd_mul_of_coprime` in which the least prime `p` of `m * n` lies in
 `m`, given the induction hypothesis for smaller products: the peeling step splits off the block
@@ -230,9 +213,11 @@ private theorem primePowerProd_mul_of_minFac_dvd_left (f : ℕ → ℕ → M) {m
       (hp ▸ Nat.minFac_le_of_dvd (Nat.minFac_prime hm1.ne').two_le (m.minFac_dvd.mul_right n))
   have hih : primePowerProd f (ordCompl[p] m * n) =
       primePowerProd f (ordCompl[p] m) * primePowerProd f n :=
-    ih (Nat.mul_lt_mul_of_pos_right (hmin ▸ ordCompl_minFac_lt hm1) (Nat.pos_of_ne_zero hn0))
+    ih (Nat.mul_lt_mul_of_pos_right (hmin ▸ Nat.ordCompl_minFac_lt hm1) (Nat.pos_of_ne_zero hn0))
       (Nat.Coprime.coprime_dvd_left (Nat.ordCompl_dvd m p) hmn) fun q hq r hr hlt ↦ by
-        rw [(block_ordCompl hq).2]; exact hf q (block_ordCompl hq).1 r hr hlt
+        rw [Nat.primeFactors_ordCompl, Finset.mem_erase] at hq
+        simpa only [Nat.factorization_ordCompl, Finsupp.erase_ne hq.1] using
+          hf q hq.2 r hr hlt
   calc primePowerProd f (m * n)
       = f p (m.factorization p) * primePowerProd f (ordCompl[p] m * n) :=
         primePowerProd_of_minFac_not_dvd f h1 hp rfl hpn
@@ -266,9 +251,11 @@ private theorem primePowerProd_mul_of_minFac_dvd_right (f : ℕ → ℕ → M) {
       (hp ▸ Nat.minFac_le_of_dvd (Nat.minFac_prime hn1.ne').two_le (n.minFac_dvd.mul_left m))
   have hih : primePowerProd f (m * ordCompl[p] n) =
       primePowerProd f m * primePowerProd f (ordCompl[p] n) :=
-    ih (Nat.mul_lt_mul_of_pos_left (hmin ▸ ordCompl_minFac_lt hn1) (Nat.pos_of_ne_zero hm0))
+    ih (Nat.mul_lt_mul_of_pos_left (hmin ▸ Nat.ordCompl_minFac_lt hn1) (Nat.pos_of_ne_zero hm0))
       (hmn.coprime_dvd_right (Nat.ordCompl_dvd n p)) fun q hq r hr hlt ↦ by
-        rw [(block_ordCompl hr).2]; exact hf q hq r (block_ordCompl hr).1 hlt
+        rw [Nat.primeFactors_ordCompl, Finset.mem_erase] at hr
+        simpa only [Nat.factorization_ordCompl, Finsupp.erase_ne hr.1] using
+          hf q hq r hr.2 hlt
   -- `p` is the least prime of `m * n` and is prime to `m`, so it lies below every prime of `m`
   have hlt : ∀ q ∈ m.primeFactors, p < q := fun q hq ↦ by
     obtain ⟨hq, hqm, -⟩ := Nat.mem_primeFactors.1 hq
@@ -337,16 +324,21 @@ theorem primePowerProd_eq_factorization_prod (f : ℕ → ℕ → M) (n : ℕ) :
               primePowerProd f (ordCompl[n.minFac] n) := primePowerProd_of_one_lt f h1
         _ = f n.minFac (n.factorization n.minFac) *
               (n.factorization.erase n.minFac).prod f := by
-            rw [ih _ (ordCompl_minFac_lt h1), Nat.factorization_ordCompl]
-        _ = n.factorization.prod f := Finsupp.mul_prod_erase _ _ _ (minFac_mem_primeFactors h1)
+            rw [ih _ (Nat.ordCompl_minFac_lt h1), Nat.factorization_ordCompl]
+        _ = n.factorization.prod f := Finsupp.mul_prod_erase _ _ _ (Nat.minFac_mem_primeFactors h1)
     · rcases Nat.le_one_iff_eq_zero_or_eq_one.1 (not_lt.1 h1) with rfl | rfl <;> simp
 
-/-- **Splitting the assembly at a prime**: `primePowerProd f m` is its `p`-block
-`primePowerProd f (p ^ v_p(m))` times the assembly over the `p`-free part `ordCompl[p] m`. -/
-theorem primePowerProd_eq_ordProj_mul_ordCompl (f : ℕ → ℕ → M) {p m : ℕ} (hp : p.Prime)
-    (hm : m ≠ 0) :
+/-- **Splitting the assembly at a prime-power part**: `primePowerProd f m` is its `p`-block
+`primePowerProd f (p ^ v_p(m))` times the assembly over `ordCompl[p] m`. At `m = 0` all three
+products are `1`; for nonprime `p` its exponent is zero and the first factor is `1`. -/
+theorem primePowerProd_eq_ordProj_mul_ordCompl (f : ℕ → ℕ → M) (p : ℕ) {m : ℕ} :
     primePowerProd f m =
       primePowerProd f (p ^ m.factorization p) * primePowerProd f (ordCompl[p] m) := by
+  by_cases hp : p.Prime
+  swap
+  · simp [Nat.factorization_eq_zero_of_not_prime m hp]
+  by_cases hm : m = 0
+  · simp [hm]
   have hm_eq : m = p ^ m.factorization p * ordCompl[p] m :=
     (Nat.ordProj_mul_ordCompl_eq_self m p).symm
   conv_lhs => rw [hm_eq]

@@ -6,17 +6,24 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Ideal.Norm.AbsNorm
+import TauCeti.Data.ZMod.Divisibility
+import TauCeti.RingTheory.Norm.Congruence
 
 /-!
-# The absolute ideal norm under a ring isomorphism
+# The absolute ideal norm under a ring isomorphism, and congruences of norms
 
 Identifying two rings along an isomorphism identifies their ideals, and the absolute norm is
 insensitive to that identification.
+
+In a Dedekind domain that is free of finite rank over `ℤ`, congruent elements whose norms
+have nonnegative product generate principal ideals with congruent absolute norms.
 
 ## Main results
 
 * `Ideal.absNorm_comap_of_ringEquiv`, `Ideal.absNorm_map_of_ringEquiv`: the absolute norm of an
   ideal is unchanged by transporting it along a ring isomorphism, in either direction.
+* `Ideal.natCast_absNorm_span_singleton_eq_of_sub_mem`: congruent elements whose norms have
+  nonnegative product generate ideals with absolute norms congruent modulo `m`.
 -/
 
 public section
@@ -44,4 +51,19 @@ theorem absNorm_map_of_ringEquiv [Infinite R] [Infinite R'] (e : R ≃+* R') (I 
 
 end Ideal
 
+section AbsNormCongruence
 
+variable {S : Type*} [CommRing S] [Module.Free ℤ S] [Module.Finite ℤ S]
+
+/-- **Congruent elements with norms of nonnegative product generate ideals of congruent norms.**
+If `a ≡ b` modulo the ideal `(m)` of a Dedekind domain `S` that is free of finite rank over `ℤ`,
+and `N(a) N(b) ≥ 0`, then the absolute norms of `(a)` and `(b)` are congruent modulo `m`. -/
+theorem Ideal.natCast_absNorm_span_singleton_eq_of_sub_mem [IsDedekindDomain S] [Infinite S]
+    {m : ℕ}
+    {a b : S} (hab : 0 ≤ Algebra.norm ℤ a * Algebra.norm ℤ b)
+    (h : a - b ∈ Ideal.span {(m : S)}) :
+    (Ideal.absNorm (Ideal.span {a}) : ZMod m) = Ideal.absNorm (Ideal.span {b}) := by
+  rw [Ideal.absNorm_span_singleton, Ideal.absNorm_span_singleton]
+  exact ZMod.natCast_natAbs_eq_of_mul_nonneg hab (Algebra.intCast_norm_eq_of_sub_mem_span_natCast h)
+
+end AbsNormCongruence

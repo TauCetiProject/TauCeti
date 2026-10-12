@@ -69,10 +69,10 @@ open Filter MeasureTheory Set Topology
 private theorem eventually_intervalIntegrable_truncated_window {γ : ℝ → ℂ} {s : ℂ}
     {g : ℂ → ℂ} {a b r t : ℝ} (h_lo : a ≤ t - r) (h_hi : t + r ≤ b)
     (hr_nonneg : 0 ≤ r) (h_int_tr : ∀ ε : ℝ, 0 < ε →
-      IntervalIntegrable (fun u => if ‖γ u - s‖ > ε then g (γ u) * deriv γ u else 0)
+      IntervalIntegrable (fun u ↦ if ‖γ u - s‖ > ε then g (γ u) * deriv γ u else 0)
         MeasureTheory.volume a b) :
     ∀ᶠ ε in 𝓝[>] (0 : ℝ),
-      IntervalIntegrable (fun u => if ‖γ u - s‖ > ε then g (γ u) * deriv γ u else 0)
+      IntervalIntegrable (fun u ↦ if ‖γ u - s‖ > ε then g (γ u) * deriv γ u else 0)
         MeasureTheory.volume (t - r) (t + r) := by
   have h_window : t - r ≤ t + r := by linarith
   have hab : a ≤ b := h_lo.trans (h_window.trans h_hi)
@@ -86,7 +86,7 @@ private theorem eventually_intervalIntegrable_truncated_window {γ : ℝ → ℂ
 aggregations discharge their piece hypothesis through this. -/
 private theorem hasCauchyPVAt_plain_piece {γ : ℝ → ℂ} {s : ℂ} {g : ℂ → ℂ} {a b m : ℝ}
     (hm_pos : 0 < m) (h_int_tr : ∀ ε : ℝ, 0 < ε →
-      IntervalIntegrable (fun t => if ‖γ t - s‖ > ε then g (γ t) * deriv γ t else 0)
+      IntervalIntegrable (fun t ↦ if ‖γ t - s‖ > ε then g (γ t) * deriv γ t else 0)
         MeasureTheory.volume a b)
     {l u : ℝ} (hA : a ≤ l) (hlu : l ≤ u) (hu : u ≤ b)
     (h_far : ∀ t ∈ Icc l u, m ≤ ‖γ t - s‖) :
@@ -111,37 +111,37 @@ theorem exists_hasCauchyPVAt_re_eq_of_perWindow_tendsto_of_interiorDisjoint
     (h_lo : ∀ t ∈ crossings, a ≤ t - r) (h_hi : ∀ t ∈ crossings, t + r ≤ b)
     (h_pair : ∀ t ∈ crossings, ∀ t' ∈ crossings, t' ≠ t → 2 * r ≤ |t - t'|)
     (h_int_tr : ∀ ε : ℝ, 0 < ε →
-      IntervalIntegrable (fun t => if ‖γ t - s‖ > ε then g (γ t) * deriv γ t else 0)
+      IntervalIntegrable (fun t ↦ if ‖γ t - s‖ > ε then g (γ t) * deriv γ t else 0)
         MeasureTheory.volume a b)
     (h_piece_re : ∀ l u : ℝ, a ≤ l → l ≤ u → u ≤ b → (∀ t ∈ Icc l u, m ≤ ‖γ t - s‖) →
       (∫ t in l..u, g (γ t) * deriv γ t).re = Ψ u - Ψ l)
     (h_win : ∀ t ∈ crossings, ∃ v : ℂ, v.re = Ψ (t + r) - Ψ (t - r) ∧
-      Tendsto (fun ε : ℝ => ∫ u in (t - r)..(t + r),
+      Tendsto (fun ε : ℝ ↦ ∫ u in (t - r)..(t + r),
         if ‖γ u - s‖ > ε then g (γ u) * deriv γ u else 0) (𝓝[>] (0 : ℝ)) (𝓝 v))
     (h_far : 0 < m ∧ ∀ u ∈ Icc a b, (∀ t ∈ crossings, u ∉ Ioo (t - r) (t + r)) → m ≤ ‖γ u - s‖) :
     ∃ L : ℂ, HasCauchyPVAt γ a b g s L ∧ L.re = Ψ b - Ψ a := by
   classical
   obtain ⟨hm_pos, hm⟩ := h_far
   exact sorted_crossing_gluing_induction
-    (Q := fun l u => ∃ v : ℂ, HasCauchyPVAt γ l u g s v ∧ v.re = Ψ u - Ψ l)
-    (fun l u hA hlu hu h_far' => ⟨_,
+    (Q := fun l u ↦ ∃ v : ℂ, HasCauchyPVAt γ l u g s v ∧ v.re = Ψ u - Ψ l)
+    (fun l u hA hlu hu h_far' ↦ ⟨_,
       hasCauchyPVAt_plain_piece hm_pos h_int_tr hA hlu hu h_far',
       h_piece_re l u hA hlu hu h_far'⟩)
-    (fun _ _ _ _ _ ⟨v₁, h₁, r₁⟩ ⟨v₂, h₂, r₂⟩ =>
+    (fun _ _ _ _ _ ⟨v₁, h₁, r₁⟩ ⟨v₂, h₂, r₂⟩ ↦
       ⟨v₁ + v₂, h₁.concat h₂, by rw [Complex.add_re, r₁, r₂]; ring⟩)
     (crossings.sort (· ≤ ·)) (Finset.sortedLT_sort crossings)
-    (fun h => hr_nonneg (Finset.nonempty_iff_ne_empty.mpr fun he => h (by simp [he])))
+    (fun h ↦ hr_nonneg (Finset.nonempty_iff_ne_empty.mpr fun he ↦ h (by simp [he])))
     a le_rfl hab
-    (fun t ht => h_lo t ((Finset.mem_sort _).mp ht))
-    (fun t ht => h_hi t ((Finset.mem_sort _).mp ht))
-    (fun t ht t' ht' hne => h_pair t ((Finset.mem_sort _).mp ht)
+    (fun t ht ↦ h_lo t ((Finset.mem_sort _).mp ht))
+    (fun t ht ↦ h_hi t ((Finset.mem_sort _).mp ht))
+    (fun t ht t' ht' hne ↦ h_pair t ((Finset.mem_sort _).mp ht)
       t' ((Finset.mem_sort _).mp ht') hne)
-    (fun t ht => by
+    (fun t ht ↦ by
       have h_mem := (Finset.mem_sort (α := ℝ) (· ≤ ·)).mp ht
       obtain ⟨v, hv_re, hv_tendsto⟩ := h_win t h_mem
       exact ⟨v, hasCauchyPVAt_iff.mpr ⟨eventually_intervalIntegrable_truncated_window
         (h_lo t h_mem) (h_hi t h_mem) (hr_nonneg ⟨t, h_mem⟩) h_int_tr, hv_tendsto⟩, hv_re⟩)
-    (fun u hu h_avoid => hm u hu fun t ht => h_avoid t ((Finset.mem_sort _).mpr ht))
+    (fun u hu h_avoid ↦ hm u hu fun t ht ↦ h_avoid t ((Finset.mem_sort _).mpr ht))
 
 /-- **The single-point principal value from per-window convergence**: if the `ε`-truncated
 integral of `g (γ t) * deriv γ t` converges on each crossing window (disjoint interiors,
@@ -155,9 +155,9 @@ theorem cauchyPVExistsAt_of_perWindow_tendsto_of_interiorDisjoint {γ : ℝ → 
     (h_lo : ∀ t ∈ crossings, a ≤ t - r) (h_hi : ∀ t ∈ crossings, t + r ≤ b)
     (h_pair : ∀ t ∈ crossings, ∀ t' ∈ crossings, t' ≠ t → 2 * r ≤ |t - t'|)
     (h_int_tr : ∀ ε : ℝ, 0 < ε →
-      IntervalIntegrable (fun t => if ‖γ t - s‖ > ε then g (γ t) * deriv γ t else 0)
+      IntervalIntegrable (fun t ↦ if ‖γ t - s‖ > ε then g (γ t) * deriv γ t else 0)
         MeasureTheory.volume a b)
-    (h_win : ∀ t ∈ crossings, ∃ v : ℂ, Tendsto (fun ε : ℝ => ∫ u in (t - r)..(t + r),
+    (h_win : ∀ t ∈ crossings, ∃ v : ℂ, Tendsto (fun ε : ℝ ↦ ∫ u in (t - r)..(t + r),
         if ‖γ u - s‖ > ε then g (γ u) * deriv γ u else 0) (𝓝[>] (0 : ℝ)) (𝓝 v))
     (h_far : ∃ m : ℝ, 0 < m ∧ ∀ u ∈ Icc a b, (∀ t ∈ crossings, u ∉ Ioo (t - r) (t + r)) →
       m ≤ ‖γ u - s‖) :
@@ -165,23 +165,23 @@ theorem cauchyPVExistsAt_of_perWindow_tendsto_of_interiorDisjoint {γ : ℝ → 
   classical
   obtain ⟨m, hm_pos, hm⟩ := h_far
   obtain ⟨v, hv⟩ := sorted_crossing_gluing_induction
-    (Q := fun l u => ∃ v : ℂ, HasCauchyPVAt γ l u g s v)
-    (fun l u hA hlu hu h_far' =>
+    (Q := fun l u ↦ ∃ v : ℂ, HasCauchyPVAt γ l u g s v)
+    (fun l u hA hlu hu h_far' ↦
       ⟨_, hasCauchyPVAt_plain_piece hm_pos h_int_tr hA hlu hu h_far'⟩)
-    (fun _ _ _ _ _ ⟨v₁, h₁⟩ ⟨v₂, h₂⟩ => ⟨v₁ + v₂, h₁.concat h₂⟩)
+    (fun _ _ _ _ _ ⟨v₁, h₁⟩ ⟨v₂, h₂⟩ ↦ ⟨v₁ + v₂, h₁.concat h₂⟩)
     (crossings.sort (· ≤ ·)) (Finset.sortedLT_sort crossings)
-    (fun h => hr_nonneg (Finset.nonempty_iff_ne_empty.mpr fun he => h (by simp [he])))
+    (fun h ↦ hr_nonneg (Finset.nonempty_iff_ne_empty.mpr fun he ↦ h (by simp [he])))
     a le_rfl hab
-    (fun t ht => h_lo t ((Finset.mem_sort _).mp ht))
-    (fun t ht => h_hi t ((Finset.mem_sort _).mp ht))
-    (fun t ht t' ht' hne => h_pair t ((Finset.mem_sort _).mp ht)
+    (fun t ht ↦ h_lo t ((Finset.mem_sort _).mp ht))
+    (fun t ht ↦ h_hi t ((Finset.mem_sort _).mp ht))
+    (fun t ht t' ht' hne ↦ h_pair t ((Finset.mem_sort _).mp ht)
       t' ((Finset.mem_sort _).mp ht') hne)
-    (fun t ht => by
+    (fun t ht ↦ by
       have h_mem := (Finset.mem_sort (α := ℝ) (· ≤ ·)).mp ht
       obtain ⟨v, hv⟩ := h_win t h_mem
       exact ⟨v, hasCauchyPVAt_iff.mpr ⟨eventually_intervalIntegrable_truncated_window
         (h_lo t h_mem) (h_hi t h_mem) (hr_nonneg ⟨t, h_mem⟩) h_int_tr, hv⟩⟩)
-    (fun u hu h_avoid => hm u hu fun t ht => h_avoid t ((Finset.mem_sort _).mpr ht))
+    (fun u hu h_avoid ↦ hm u hu fun t ht ↦ h_avoid t ((Finset.mem_sort _).mpr ht))
   exact CauchyPVExistsAt.intro hv
 
 /-- **Telescoping per-window aggregation**: when the plain integrand has a curve-antiderivative
@@ -194,11 +194,11 @@ theorem hasCauchyPVAt_of_perWindow_boundary_tendsto_of_interiorDisjoint {γ : �
     (h_lo : ∀ t ∈ crossings, a ≤ t - r) (h_hi : ∀ t ∈ crossings, t + r ≤ b)
     (h_pair : ∀ t ∈ crossings, ∀ t' ∈ crossings, t' ≠ t → 2 * r ≤ |t - t'|)
     (h_int_tr : ∀ ε : ℝ, 0 < ε →
-      IntervalIntegrable (fun t => if ‖γ t - s‖ > ε then g (γ t) * deriv γ t else 0)
+      IntervalIntegrable (fun t ↦ if ‖γ t - s‖ > ε then g (γ t) * deriv γ t else 0)
         MeasureTheory.volume a b)
     (h_plain_eq : ∀ l u : ℝ, a ≤ l → l ≤ u → u ≤ b → (∀ t ∈ Icc l u, γ t ≠ s) →
       ∫ t in l..u, g (γ t) * deriv γ t = Φ (γ u) - Φ (γ l))
-    (h_win : ∀ t ∈ crossings, Tendsto (fun ε : ℝ => ∫ u in (t - r)..(t + r),
+    (h_win : ∀ t ∈ crossings, Tendsto (fun ε : ℝ ↦ ∫ u in (t - r)..(t + r),
         if ‖γ u - s‖ > ε then g (γ u) * deriv γ u else 0) (𝓝[>] (0 : ℝ))
         (𝓝 (Φ (γ (t + r)) - Φ (γ (t - r)))))
     (h_far : ∃ m : ℝ, 0 < m ∧ ∀ u ∈ Icc a b, (∀ t ∈ crossings, u ∉ Ioo (t - r) (t + r)) →
@@ -207,30 +207,30 @@ theorem hasCauchyPVAt_of_perWindow_boundary_tendsto_of_interiorDisjoint {γ : �
   classical
   obtain ⟨m, hm_pos, hm⟩ := h_far
   exact sorted_crossing_gluing_induction
-    (Q := fun l u => HasCauchyPVAt γ l u g s (Φ (γ u) - Φ (γ l)))
-    (fun l u hA hlu hu h_far' => by
-      have h_ne : ∀ t ∈ Icc l u, γ t ≠ s := fun t ht h_eq => by
+    (Q := fun l u ↦ HasCauchyPVAt γ l u g s (Φ (γ u) - Φ (γ l)))
+    (fun l u hA hlu hu h_far' ↦ by
+      have h_ne : ∀ t ∈ Icc l u, γ t ≠ s := fun t ht h_eq ↦ by
         have h_bd := h_far' t ht
         rw [h_eq, sub_self, norm_zero] at h_bd
         linarith
       have h0 := hasCauchyPVAt_plain_piece hm_pos h_int_tr hA hlu hu h_far'
       rwa [h_plain_eq l u hA hlu hu h_ne] at h0)
-    (fun l u₀ u _ _ h₁ h₂ => by
+    (fun l u₀ u _ _ h₁ h₂ ↦ by
       have h0 := h₁.concat h₂
       have h_tel : (Φ (γ u₀) - Φ (γ l)) + (Φ (γ u) - Φ (γ u₀)) = Φ (γ u) - Φ (γ l) := by ring
       rwa [h_tel] at h0)
     (crossings.sort (· ≤ ·)) (Finset.sortedLT_sort crossings)
-    (fun h => hr_nonneg (Finset.nonempty_iff_ne_empty.mpr fun he => h (by simp [he])))
+    (fun h ↦ hr_nonneg (Finset.nonempty_iff_ne_empty.mpr fun he ↦ h (by simp [he])))
     a le_rfl hab
-    (fun t ht => h_lo t ((Finset.mem_sort _).mp ht))
-    (fun t ht => h_hi t ((Finset.mem_sort _).mp ht))
-    (fun t ht t' ht' hne => h_pair t ((Finset.mem_sort _).mp ht)
+    (fun t ht ↦ h_lo t ((Finset.mem_sort _).mp ht))
+    (fun t ht ↦ h_hi t ((Finset.mem_sort _).mp ht))
+    (fun t ht t' ht' hne ↦ h_pair t ((Finset.mem_sort _).mp ht)
       t' ((Finset.mem_sort _).mp ht') hne)
-    (fun t ht => by
+    (fun t ht ↦ by
       have h_mem := (Finset.mem_sort (α := ℝ) (· ≤ ·)).mp ht
       exact hasCauchyPVAt_iff.mpr ⟨eventually_intervalIntegrable_truncated_window
         (h_lo t h_mem) (h_hi t h_mem) (hr_nonneg ⟨t, h_mem⟩) h_int_tr, h_win t h_mem⟩)
-    (fun u hu h_avoid => hm u hu fun t ht => h_avoid t ((Finset.mem_sort _).mpr ht))
+    (fun u hu h_avoid ↦ hm u hu fun t ht ↦ h_avoid t ((Finset.mem_sort _).mpr ht))
 
 end TauCeti.Contour
 

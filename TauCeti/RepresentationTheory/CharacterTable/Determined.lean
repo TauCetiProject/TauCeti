@@ -25,6 +25,8 @@ dimension of every intertwiner space. The reconstruction theorem in
 * `Representation.nonempty_equiv_of_character_eq`: equal characters determine
   equivalent finite-dimensional representations.
 * `FDRep.nonempty_iso_of_character_eq`: the bundled `FDRep` form.
+* `FDRep.finrank_hom_eq_sum_of_character_eq`: an identity `χ_X = ∑ᵢ aᵢ • χ_{Yᵢ}` with
+  natural-number coefficients gives `dim Hom(V, X) = ∑ᵢ aᵢ · dim Hom(V, Yᵢ)` for every `V`.
 
 ## References
 
@@ -117,5 +119,23 @@ theorem _root_.FDRep.nonempty_iso_of_character_eq {k : Type u} {G : Type v}
     (hchar : X.character = Y.character) : Nonempty (X ≅ Y) :=
   nonempty_fdRepIso_iff.mpr
     (Representation.nonempty_equiv_of_character_eq X.ρ Y.ρ hchar)
+
+/-- **A character identity determines multiplicities.** For a finite group over a field of
+characteristic zero, if the character of `X` is a combination `∑ᵢ aᵢ • χ_{Yᵢ}` of characters with
+natural-number coefficients, then for every `V` the dimension of `Hom(V, X)` is
+`∑ᵢ aᵢ · dim Hom(V, Yᵢ)`. -/
+theorem _root_.FDRep.finrank_hom_eq_sum_of_character_eq {k : Type u} {G : Type v} [Field k]
+    [Group G] [Finite G] [CharZero k] {ι : Type*} [Fintype ι] (V : FDRep k G) {X : FDRep k G}
+    {Y : ι → FDRep k G} {a : ι → ℕ} (hX : X.character = ∑ i, a i • (Y i).character) :
+    Module.finrank k (V ⟶ X) = ∑ i, a i * Module.finrank k (V ⟶ Y i) := by
+  let _ : Fintype G := Fintype.ofFinite G
+  let _ : Invertible (Nat.card G : k) := invertibleOfNonzero (by simp)
+  -- Pairing against the character of `V` is linear and turns each character into a dimension.
+  have hclass : ClassFunction.ofFDRep X = ∑ i, a i • ClassFunction.ofFDRep (Y i) :=
+    Subtype.ext <| funext fun g => by simp [hX]
+  have hpair := congrArg (ClassFunction.characterPairing · (ClassFunction.ofFDRep V)) hclass
+  simp only [map_sum, map_nsmul, LinearMap.sum_apply, LinearMap.smul_apply,
+    ClassFunction.characterPairing_ofFDRep_eq_finrank, nsmul_eq_mul] at hpair
+  exact_mod_cast hpair
 
 end TauCeti

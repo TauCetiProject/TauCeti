@@ -58,8 +58,6 @@ uniqueness theorem.
 
 ## References
 
-This implements the Layer 2 target "the presentation, named (choice-laden)" of the
-[semisimple algebras roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SemisimpleAlgebras/README.md).
 See T. Y. Lam, *A First Course in Noncommutative Rings*, GTM 131, §3, or C. W. Curtis and
 I. Reiner, *Representation Theory of Finite Groups and Associative Algebras*, §25.
 -/
@@ -364,7 +362,7 @@ variable {R : Type u} [Ring R]
 /-- The number of blocks of a Wedderburn presentation is an invariant of the ring. -/
 theorem blockCount_eq (P : WedderburnPresentation.{u, w} R)
     (Q : WedderburnPresentation.{u, w'} R) : P.blockCount = Q.blockCount :=
-  card_blocks_eq P.equiv Q.equiv
+  P.equiv.card_blocks_eq Q.equiv
 
 /-- A ring admitting a Wedderburn presentation is semisimple. -/
 theorem isSemisimpleRing (P : WedderburnPresentation R) : IsSemisimpleRing R :=

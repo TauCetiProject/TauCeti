@@ -52,17 +52,13 @@ def cancelBaseChange : A ⊗[S] (S ⊗[R] L) ≃ₗ⁅A⁆ A ⊗[R] L := by
         -- `LieEquiv.map_lie'` is stated through the inherited `LieHom`; unfold that wrapper to
         -- the local underlying linear equivalence before applying tensor-product induction.
         change e ⁅x, y⁆ = ⁅e x, e y⁆
-        induction x using TensorProduct.induction_on with
-        | zero => simp
+        induction x using TensorProduct.inductionOn with
         | tmul a sx =>
-          induction sx using TensorProduct.induction_on with
-          | zero => simp
+          induction sx using TensorProduct.inductionOn with
           | tmul s x =>
-            induction y using TensorProduct.induction_on with
-            | zero => simp
+            induction y using TensorProduct.inductionOn with
             | tmul b ty =>
-              induction ty using TensorProduct.induction_on with
-              | zero => simp
+              induction ty using TensorProduct.inductionOn with
               | tmul t y => exact map_lie_tmul a b s t x y
               | add u v hu hv =>
                   simpa only [TensorProduct.tmul_add, lie_add, map_add] using

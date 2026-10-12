@@ -29,7 +29,7 @@ commuting with every diagonal operator already lies in the image of the group al
 ## The argument
 
 The image `A` of `k[S_d]` in `End_k ((kⁿ)^{⊗d})` is a quotient of `k[S_d]`, which is semisimple by
-Maschke's theorem, so the double centralizer theorem `TauCeti.centralizer_centralizer_range`
+Maschke's theorem, so the double centralizer theorem `AlgHom.centralizer_centralizer_range`
 applies and gives `A'' = A`. The commutant `A'` is the span of the diagonal operators by the half
 already available, so `A` is the commutant of that span.
 
@@ -126,7 +126,7 @@ theorem centralizer_span_range_map_const_eq_range_permTensorActionAlgHom :
     rwa [Nat.card_eq_fintype_card, Fintype.card_perm, Fintype.card_fin]
   rw [← coe_centralizer_range_permTensorActionAlgHom_eq_span_range_map_const
     (isUnit_iff_ne_zero.2 (NeZero.ne _))]
-  exact centralizer_centralizer_range (permTensorActionAlgHom k n d)
+  exact AlgHom.centralizer_centralizer_range (permTensorActionAlgHom k n d)
 
 /-- **Schur-Weyl duality, as a membership criterion.** An endomorphism of `(kⁿ)^{⊗d}` is the action
 of an element of the group algebra `k[S_d]` exactly when it commutes with every diagonal operator

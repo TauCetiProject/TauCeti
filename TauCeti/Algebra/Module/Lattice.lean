@@ -267,8 +267,7 @@ instance isLattice_range_mk_one :
   span_eq_top := by
     rw [eq_top_iff]
     rintro x -
-    induction x using TensorProduct.induction_on with
-    | zero => exact zero_mem _
+    induction x using TensorProduct.inductionOn with
     | add x y hx hy => exact add_mem hx hy
     | tmul k m =>
       rw [tmul_eq_smul_one_tmul]
@@ -311,8 +310,7 @@ the unit-tensor equivalence and then rationalizing is the identity. -/
 theorem rationalizationEquiv_baseChange_unitTmulEquiv (x : K ⊗[R] M) :
     Submodule.rationalizationEquiv (LinearMap.range (TensorProduct.mk R K M 1))
         (LinearEquiv.baseChange R K M _ (unitTmulEquiv R K M) x) = x := by
-  induction x using TensorProduct.induction_on with
-  | zero => simp
+  induction x using TensorProduct.inductionOn with
   | add x y hx hy => simp only [map_add, hx, hy]
   | tmul k m =>
     rw [LinearEquiv.baseChange_tmul, Submodule.rationalizationEquiv_tmul,

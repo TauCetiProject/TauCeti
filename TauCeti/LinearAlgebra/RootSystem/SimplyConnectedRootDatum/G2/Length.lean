@@ -114,10 +114,7 @@ theorem g2Length_pos (k : Fin 12) : 0 < g2Length k := by
 theorem isLongSimpleRoot_iff_g2Length_eq_three (i : Fin 2) :
     G2.IsLongSimpleRoot i ↔ g2Length (Fin.castLE (by omega) i) = 3 := by
   rw [isLongSimpleRoot_G2]
-  fin_cases i
-  · norm_num [g2Length]
-  · norm_num [g2Length]
-    decide
+  fin_cases i <;> norm_num [g2Length]
 
 /-- **The short simple root is the one of length one.** This is the form in which a
 characteristic-three special isogeny states which of its two rescaling exponents it attaches to

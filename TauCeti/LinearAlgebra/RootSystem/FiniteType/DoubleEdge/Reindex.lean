@@ -83,8 +83,8 @@ private lemma doubleEdgeCartanMatrix_apply_eq_path (p q n : ℕ) (hp : 0 < p) (h
       Sum.inr.injEq, Sum.inl.injEq, Sum.inr.injEq, Sum.inl_ne_inr, Sum.inr_ne_inl,
       false_and, and_false, ite_false, doubleEdgePathEquiv_inl_val,
       doubleEdgePathEquiv_inr_val, Fin.ext_iff]
-  · have hx := x.isLt
-    have hy := y.isLt
+  · have _ := x.isLt
+    have _ := y.isLt
     rw [chainEntry_def]
     split_ifs <;> omega
   · have hx := x.isLt
@@ -95,8 +95,8 @@ private lemma doubleEdgeCartanMatrix_apply_eq_path (p q n : ℕ) (hp : 0 < p) (h
     split_ifs <;> omega
   · have hx := x.isLt
     have hy := y.isLt
-    have hxle : (x : ℕ) ≤ q - 1 := by omega
-    have hyle : (y : ℕ) ≤ q - 1 := by omega
+    have _ : (x : ℕ) ≤ q - 1 := by omega
+    have _ : (y : ℕ) ≤ q - 1 := by omega
     rw [chainEntry_def]
     split_ifs <;> omega
 
@@ -188,8 +188,8 @@ private theorem IsFiniteType.exists_equiv_forall_eq_doubleEdgeCartanMatrix_of_si
       iso.trans (pathGraphRevIso (Fintype.card B))
     have horder' : (iso' u : ℕ) + 1 = (iso' v : ℕ) := by
       simp only [iso', RelIso.trans_apply, pathGraphRevIso_apply, Fin.val_rev]
-      have hu := (iso u).isLt
-      have hv := (iso v).isLt
+      have _ := (iso u).isLt
+      have _ := (iso v).isLt
       omega
     exact exists_equiv_forall_eq_doubleEdgeCartanMatrix_of_pathEquiv h iso'.toEquiv
       (adj_iff_of_iso_pathGraph iso') horder' hvu hsimple

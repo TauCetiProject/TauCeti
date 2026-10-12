@@ -6,7 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Group.Subgroup.Map
+public import Mathlib.Algebra.Order.Antidiag.Pi
+public import Mathlib.Data.Fintype.Pi
+public import Mathlib.GroupTheory.GroupAction.Quotient
 public import Mathlib.GroupTheory.Perm.DomMulAct
+public import Mathlib.SetTheory.Cardinal.Finite
+public import TauCeti.GroupTheory.Perm.Basic
 
 /-!
 # Permutations preserving the fibers of a map
@@ -22,6 +27,20 @@ restricting a fiber-preserving permutation to each fiber,
 together with the two formulas reading that isomorphism, and its inverse, through a family of
 equivalences `{a // f a = i} ≃ β i` of the fibers, which is how a concrete description of the
 fibers is fed into it.
+
+For finite `α` the cosets of `fiberSubgroup f` are the rearrangements of `f`: the coset of `g`
+records the map `f ∘ g⁻¹`, and this identifies `Equiv.Perm α ⧸ fiberSubgroup f`, equivariantly,
+with the maps `α → ι` having fibers of the same sizes as those of `f`
+(`TauCeti.quotientFiberSubgroupEquiv`).  When the fibers of `f` are the rows of a tabloid this is
+the description of the tabloids as the row-colourings of `α`, and the fixed points of a
+permutation `π` on the cosets are the rearrangements `c` with `c ∘ π = c`
+(`TauCeti.card_fixedPoints_quotient_fiberSubgroup`).
+
+The order of `fiberSubgroup f` is the product of the factorials of the fiber sizes
+(`TauCeti.natCard_fiberSubgroup`).  Summing these orders over all colourings `α → ι`, each
+weighted by a function of its fiber sizes, therefore gives `(card α)!` times the sum of the weight
+over the fiber-size functions of total `card α` (`TauCeti.sum_natCard_fiberSubgroup_smul`), the
+orbit-stabilizer count that averages power sums over the symmetric group.
 
 Mathlib already studies these permutations, but through the domain action of `Equiv.Perm α` on
 `α → ι`: `DomMulAct.stabilizerMulEquiv` is the same isomorphism stated on
@@ -84,6 +103,13 @@ theorem fiberSubgroup_map_conj {f : α → ι} {g : α → κ} (e : Equiv.Perm �
     apply (h _ _).mpr
     simpa only [MulAut.conj_symm_apply, Equiv.Perm.coe_mul, Function.comp_apply,
       Equiv.Perm.coe_inv, Equiv.apply_symm_apply] using hσ (e a)
+
+/-- Composing with an injective map does not change the fibers of `f`, hence neither the
+permutations preserving them. -/
+theorem fiberSubgroup_comp_of_injective {g : ι → κ} (hg : Function.Injective g) (f : α → ι) :
+    fiberSubgroup (g ∘ f) = fiberSubgroup f := by
+  ext σ
+  simp only [mem_fiberSubgroup, Function.comp_apply, hg.eq_iff]
 
 /-- Preserving the fibers of two maps at once is preserving the fibers of the paired map. -/
 theorem fiberSubgroup_inf (f : α → ι) (g : α → κ) :
@@ -223,5 +249,164 @@ theorem fiberSubgroupMulEquivPiPerm_trans_piCongrRight_symm_apply (f : α → ι
     Equiv.permCongrHom_coe, Equiv.permCongr_apply, Equiv.symm_symm]
 
 end Transport
+
+section Quotient
+
+open Finset
+
+variable [Fintype α]
+
+/-- Local decidable equality for computing fiber cardinalities without an API constraint. -/
+noncomputable local instance instDecidableEqFiberColour : DecidableEq ι := Classical.decEq ι
+
+/-- **The cosets of the fiber subgroup of `f` are the rearrangements of `f`.**  The coset of `g`
+in `Equiv.Perm α ⧸ fiberSubgroup f` is sent to the map `f ∘ g⁻¹`
+(`TauCeti.quotientFiberSubgroupEquiv_mk`), and every map with fibers of the same sizes as those of
+`f` arises in exactly one way.  The equivalence intertwines the left action of `Equiv.Perm α` on
+the cosets with its action `c ↦ c ∘ π⁻¹` on maps (`TauCeti.quotientFiberSubgroupEquiv_smul`). -/
+noncomputable def quotientFiberSubgroupEquiv (f : α → ι) :
+    Equiv.Perm α ⧸ fiberSubgroup f ≃ {c : α → ι // ∀ i, #{a | c a = i} = #{a | f a = i}} :=
+  Equiv.ofBijective
+    (Quotient.lift (fun g : Equiv.Perm α => ⟨f ∘ ⇑g⁻¹, card_filter_comp_perm f g⁻¹⟩)
+      fun g h hgh => Subtype.ext <| funext fun a => by
+        have hk := mem_fiberSubgroup.mp (QuotientGroup.leftRel_apply.mp hgh)
+        simpa only [Equiv.Perm.coe_inv, Function.comp_apply, Equiv.Perm.mul_apply,
+          Equiv.apply_symm_apply] using hk (h⁻¹ a))
+    ⟨fun p q => Quotient.inductionOn₂ p q fun g h hgh => by
+      refine Quotient.sound (QuotientGroup.leftRel_apply.mpr (mem_fiberSubgroup.mpr fun a => ?_))
+      have := congrFun (congrArg Subtype.val hgh) (h a)
+      simpa only [Equiv.Perm.mul_apply, Equiv.Perm.coe_inv, Quotient.lift_mk, Function.comp_apply,
+        Equiv.symm_apply_apply] using this,
+    fun c => by
+      have hcard : ∀ i, Fintype.card {a // c.1 a = i} = Fintype.card {a // f a = i} := fun i => by
+        rw [Fintype.card_subtype, Fintype.card_subtype, c.2 i]
+      -- Matching the fibers of `c` with those of `f` produces `e` with `f ∘ e = c`.
+      let e : Equiv.Perm α := Equiv.ofFiberEquiv fun i => Fintype.equivOfCardEq (hcard i)
+      refine ⟨Quotient.mk _ e⁻¹, Subtype.ext (funext fun a => ?_)⟩
+      exact (inv_inv e).symm ▸ Equiv.ofFiberEquiv_map _ a⟩
+
+/-- The coset of `g` is sent to the rearrangement `f ∘ g⁻¹` of `f`. -/
+@[simp]
+theorem quotientFiberSubgroupEquiv_mk (f : α → ι) (g : Equiv.Perm α) :
+    (quotientFiberSubgroupEquiv f (g : Equiv.Perm α ⧸ fiberSubgroup f) : α → ι) = f ∘ ⇑g⁻¹ :=
+  (rfl)
+
+/-- **The rearrangement equivalence is equivariant**: moving a coset by `π` precomposes the
+corresponding rearrangement with `π⁻¹`. -/
+@[simp]
+theorem quotientFiberSubgroupEquiv_smul (f : α → ι) (π : Equiv.Perm α)
+    (q : Equiv.Perm α ⧸ fiberSubgroup f) :
+    (quotientFiberSubgroupEquiv f (π • q) : α → ι) = quotientFiberSubgroupEquiv f q ∘ ⇑π⁻¹ :=
+  QuotientGroup.induction_on q fun g => by
+    rw [MulAction.Quotient.smul_mk, quotientFiberSubgroupEquiv_mk, quotientFiberSubgroupEquiv_mk,
+      smul_eq_mul, mul_inv_rev, Equiv.Perm.coe_mul, Function.comp_assoc]
+
+/-- A coset is fixed by `π` exactly when the corresponding rearrangement of `f` is invariant
+under `π`. -/
+@[simp]
+theorem smul_eq_self_iff_quotientFiberSubgroupEquiv (f : α → ι) (π : Equiv.Perm α)
+    (q : Equiv.Perm α ⧸ fiberSubgroup f) :
+    π • q = q ↔ (quotientFiberSubgroupEquiv f q : α → ι) ∘ ⇑π = quotientFiberSubgroupEquiv f q := by
+  rw [← (quotientFiberSubgroupEquiv f).apply_eq_iff_eq, Subtype.ext_iff,
+    quotientFiberSubgroupEquiv_smul]
+  constructor
+  · intro h
+    conv_lhs => rw [← h]
+    rw [Function.comp_assoc, Equiv.Perm.coe_inv, Equiv.symm_comp_self, Function.comp_id]
+  · intro h
+    conv_lhs => rw [← h]
+    rw [Function.comp_assoc, Equiv.Perm.coe_inv, Equiv.self_comp_symm, Function.comp_id]
+
+/-- **The fixed cosets of `π` count the `π`-invariant rearrangements of `f`**: the number of cosets
+of the fiber subgroup of `f` fixed by `π` is the number of maps `c : α → ι` with fibers of the same
+sizes as those of `f` and with `c ∘ π = c`.  For the rows of a tabloid this is the value at `π` of
+the permutation character on the tabloids. -/
+theorem card_fixedPoints_quotient_fiberSubgroup [Fintype ι] (f : α → ι)
+    (π : Equiv.Perm α) :
+    Nat.card {q : Equiv.Perm α ⧸ fiberSubgroup f // π • q = q} =
+      #{c : α → ι | c ∘ π = c ∧ ∀ i, #{a | c a = i} = #{a | f a = i}} := by
+  classical
+  rw [← Fintype.card_subtype, ← Nat.card_eq_fintype_card]
+  refine Nat.card_congr (((quotientFiberSubgroupEquiv f).subtypeEquiv
+    (q := fun c : {c : α → ι // ∀ i, #{a | c a = i} = #{a | f a = i}} => c.1 ∘ π = c.1)
+    fun q =>
+      smul_eq_self_iff_quotientFiberSubgroupEquiv f π q).trans ?_)
+  exact (Equiv.subtypeSubtypeEquivSubtypeInter _ (fun c : α → ι => c ∘ π = c)).trans
+    (Equiv.subtypeEquivRight fun _ => and_comm)
+
+end Quotient
+
+section Count
+
+open Finset
+
+variable [Fintype α] [Fintype ι] [DecidableEq ι]
+
+/-- **The order of the fiber subgroup** is the product of the factorials of the fiber sizes: a
+fiber-preserving permutation is an independent permutation of each fiber. -/
+theorem natCard_fiberSubgroup (f : α → ι) :
+    Nat.card (fiberSubgroup f) = ∏ i, (#{a | f a = i}).factorial := by
+  classical
+  rw [Nat.card_congr (Equiv.subtypeEquivRight fun σ => by
+      rw [mem_fiberSubgroup, funext_iff]; rfl :
+      fiberSubgroup f ≃ {g : Equiv.Perm α // f ∘ g = f}),
+    Nat.card_eq_fintype_card, DomMulAct.stabilizer_card]
+  simp only [Fintype.card_subtype]
+
+/-- **Every distribution of the points of `α` among the colours is the fiber-size function of some
+colouring**: a function `d : ι → ℕ` with total `card α` is `i ↦ #{a | f a = i}` for some
+`f : α → ι`. -/
+theorem exists_forall_card_filter_eq {d : ι → ℕ} (hd : ∑ i, d i = Fintype.card α) :
+    ∃ f : α → ι, ∀ i, #{a | f a = i} = d i := by
+  -- label the points of `α` by the points of `Σ i, Fin (d i)` and colour each by its block
+  let e := Fintype.equivOfCardEq (show Fintype.card α = Fintype.card (Σ i, Fin (d i)) by
+    simp [hd])
+  refine ⟨fun a => (e a).1, fun i => ?_⟩
+  rw [← Fintype.card_subtype, Fintype.card_congr (e.subtypeEquiv fun a => Iff.rfl :
+      {a // (e a).1 = i} ≃ {x : Σ i, Fin (d i) // x.1 = i}),
+    Fintype.card_congr (Equiv.sigmaSubtype i), Fintype.card_fin]
+
+/-- **Summing the orders of the fiber subgroups over all colourings**, each colouring weighted by
+a function of its fiber sizes: the colourings with a given fiber-size function `d` form one orbit
+of `Equiv.Perm α`, whose stabilizers are their fiber subgroups, so together they contribute
+`(card α)!` times the weight of `d`, and every `d` of total `card α` occurs. -/
+theorem sum_natCard_fiberSubgroup_smul [DecidableEq α] {M : Type*} [AddCommMonoid M]
+    (F : (ι → ℕ) → M) :
+    ∑ f : α → ι, Nat.card (fiberSubgroup f) • F (fun i => #{a | f a = i}) =
+      (Fintype.card α).factorial • ∑ d ∈ piAntidiag univ (Fintype.card α), F d := by
+  set c : (α → ι) → ι → ℕ := fun f i => #{a | f a = i} with hc_def
+  have hc : ∀ f ∈ (univ : Finset (α → ι)), c f ∈ piAntidiag univ (Fintype.card α) :=
+    fun f _ => by
+      rw [mem_piAntidiag]
+      refine ⟨?_, fun i _ => mem_univ i⟩
+      rw [hc_def]
+      exact (card_eq_sum_card_fiberwise fun a _ => mem_univ (f a)).symm
+  -- group the colourings by their fiber-size functions
+  rw [← sum_fiberwise_of_maps_to hc, smul_sum]
+  refine sum_congr rfl fun d hd => ?_
+  rw [sum_congr rfl fun f hf => by
+    rw [show (fun i => #{a | f a = i}) = d from (mem_filter.1 hf).2], ← sum_smul]
+  congr 1
+  -- the colourings with fiber sizes `d` are the rearrangements of one of them, `f₀`
+  obtain ⟨f₀, hf₀⟩ := exists_forall_card_filter_eq (α := α) ((mem_piAntidiag.1 hd).1)
+  have hfib : ∀ f ∈ univ.filter fun f => c f = d,
+      Nat.card (fiberSubgroup f) = Nat.card (fiberSubgroup f₀) := fun f hf => by
+    rw [natCard_fiberSubgroup, natCard_fiberSubgroup]
+    exact prod_congr rfl fun i _ => by
+      rw [show #{a | f a = i} = d i from congrFun (mem_filter.1 hf).2 i, hf₀]
+  rw [sum_congr rfl hfib, sum_const, smul_eq_mul]
+  have hq : #(univ.filter fun f => c f = d) = Nat.card (Equiv.Perm α ⧸ fiberSubgroup f₀) := by
+    rw [Nat.card_congr (quotientFiberSubgroupEquiv f₀), ← Fintype.card_subtype,
+      Nat.card_eq_fintype_card]
+    refine Fintype.card_congr (Equiv.subtypeEquivRight fun f => ?_)
+    rw [hc_def, funext_iff]
+    refine forall_congr' fun i => ?_
+    rw [← hf₀ i]
+    -- the two sides differ only in the instance deciding equality of colours
+    convert Iff.rfl
+  rw [hq, ← Subgroup.card_eq_card_quotient_mul_card_subgroup, Nat.card_eq_fintype_card,
+    Fintype.card_perm]
+
+end Count
 
 end TauCeti

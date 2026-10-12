@@ -21,14 +21,15 @@ nonnegative at the ray indices and arbitrary at the complementary indices, that 
 This is the coordinate model `(ι →₀ ℕ) × (κ →₀ ℤ)` consumed by
 `TauCeti.Toric.regularAffinePointEquiv`, so for a regular cone it exhibits the complex points of
 the affine toric chart as `ℂ ^ k × (ℂ ^ *) ^ (n - k)`, with `k` the number of rays and `n` the
-rank of the lattice. As a consequence, the dual semigroup of a regular cone is finitely
-generated.
+rank of the lattice. Finite generation for all lattice-rational cones is proved in
+`TauCeti.Geometry.Toric.Algebraic.DualSemigroup.Finiteness`.
 
 ## Main declarations
 
 * `TauCeti.Toric.regularDualSemigroupEquiv`: the regular-coordinate equivalence of the dual
   semigroup attached to a basis extending the primitive ray generators, with
   `TauCeti.Toric.coe_regularDualSemigroupEquiv_fst_apply`,
+  `TauCeti.Toric.realCharacter_apply_primitiveGenerator`,
   `TauCeti.Toric.regularDualSemigroupEquiv_snd_apply`,
   `TauCeti.Toric.regularDualSemigroupEquiv_symm_apply_inl` and
   `TauCeti.Toric.regularDualSemigroupEquiv_symm_apply_inr` computing both directions.
@@ -40,8 +41,10 @@ generated.
   coordinates, with respect to one extending basis, of the dual basis characters of another.
 * `TauCeti.Toric.IsRegularCone.nonempty_dualSemigroup_addEquiv`: the dual semigroup of a regular
   cone with `k` rays in a lattice of rank `n` is isomorphic to `ℕ ^ k × ℤ ^ (n - k)`.
-* `TauCeti.Toric.IsRegularCone.fg_dualSemigroup`: the dual semigroup of a regular cone is
-  finitely generated.
+* `TauCeti.Toric.IsRegularCone.mem_iff_forall_realCharacter_nonneg`: a regular cone is the set of
+  points at which every character of its dual semigroup is nonnegative, and
+  `TauCeti.Toric.IsRegularCone.mem_iff_forall_realCharacter_nonneg_of_closure_range_eq_top`: it
+  suffices to test a generating family.
 
 ## References
 
@@ -98,6 +101,16 @@ theorem coe_regularDualSemigroupEquiv_fst_apply (m : dualSemigroup hi σ) (ρ : 
     ((regularDualSemigroupEquiv hi hσ hb m).1 ρ : ℤ) = (m : N →+ ℤ) (b (Sum.inl ρ)) := by
   have hm := (mem_dualSemigroup_iff_of_isPrimitiveGenerator hi hσ hb m).1 m.2 ρ
   simp [regularDualSemigroupEquiv, hm]
+
+/-- Evaluating the real character of a dual-semigroup element at a primitive ray generator gives
+the corresponding regular ray coordinate, viewed in `ℝ`. -/
+theorem realCharacter_apply_primitiveGenerator (m : dualSemigroup hi σ) (ρ : ToricRay σ) :
+    hi.realCharacter (m : N →+ ℤ) (i (primitiveGenerator hi hσ ρ)) =
+      ((regularDualSemigroupEquiv hi hσ hb m).1 ρ : ℝ) := by
+  rw [hi.realCharacter_apply,
+    ← (hb ρ).eq_primitiveGenerator hi hσ,
+    ← coe_regularDualSemigroupEquiv_fst_apply]
+  norm_cast
 
 /-- The complementary coordinates of a character in the dual semigroup are its values on the
 complementary basis vectors. -/
@@ -229,37 +242,77 @@ theorem nonempty_dualSemigroup_addEquiv (hi : IsIntegralLattice i) (hσ : IsRegu
     Nonempty (dualSemigroup hi σ ≃+
       (ToricRay σ →₀ ℕ) × (Fin (Module.finrank ℤ N - Nat.card (ToricRay σ)) →₀ ℤ)) := by
   classical
-  obtain ⟨b, r, hb⟩ := hσ.exists_basis_finrank
-  have _ : Fintype (ToricRay σ) := Fintype.ofInjective r r.injective
-  -- Split the basis indices into the rays and their complement.
-  let C := {j : Fin (Module.finrank ℤ N) // j ∉ Set.range r}
-  have hC : Fintype.card C = Module.finrank ℤ N - Nat.card (ToricRay σ) := by
-    rw [Fintype.card_subtype_compl, Fintype.card_fin, Set.card_range_of_injective r.injective,
-      Nat.card_eq_fintype_card]
-  let e : ToricRay σ ⊕ Fin (Module.finrank ℤ N - Nat.card (ToricRay σ)) ≃
-      Fin (Module.finrank ℤ N) :=
-    (Equiv.sumCongr (Equiv.ofInjective r r.injective) (Fintype.equivFinOfCardEq hC).symm).trans
-      (Equiv.sumCompl fun j ↦ j ∈ Set.range r)
-  -- By construction the splitting sends each ray to its own basis index.
-  have he : ∀ ρ, e (Sum.inl ρ) = r ρ := by
-    intro ρ
-    simp only [e, Equiv.trans_apply, Equiv.sumCongr_apply, Sum.map_inl]
-    rw [Equiv.sumCompl_apply_inl, Equiv.ofInjective_apply]
-  exact ⟨regularDualSemigroupEquiv hi hσ.toIsToricCone (b := b.reindex e.symm)
-    fun ρ ↦ by simpa [he] using hb.isPrimitiveGenerator_apply ρ⟩
+  obtain ⟨l, b, hb⟩ := hσ.exists_basis_sum
+  let _ := ToricRay.finite_of_fg hσ.fg
+  let _ := Fintype.ofFinite (ToricRay σ)
+  have hl : l = Module.finrank ℤ N - Nat.card (ToricRay σ) := by
+    have hrank : Module.finrank ℤ N = Nat.card (ToricRay σ) + l := by
+      simpa [Nat.card_sum] using Module.finrank_eq_card_basis b
+    omega
+  let e := Equiv.sumCongr (Equiv.refl (ToricRay σ)) (finCongr hl)
+  exact ⟨regularDualSemigroupEquiv hi hσ.toIsToricCone (b := b.reindex e)
+    fun ρ ↦ by simpa [e] using hb ρ⟩
 
-/-- The dual semigroup of a regular cone is finitely generated. -/
-theorem fg_dualSemigroup (hi : IsIntegralLattice i) (hσ : IsRegularCone i σ) :
-    AddMonoid.FG (dualSemigroup hi σ) := by
-  obtain ⟨e⟩ := hσ.nonempty_dualSemigroup_addEquiv hi
-  have := ToricRay.finite_of_fg hσ.fg
-  have : AddMonoid.FG (Fin (Module.finrank ℤ N - Nat.card (ToricRay σ)) →₀ ℤ) := by
-    rw [← AddGroup.fg_iff_addMonoid_fg, ← Module.Finite.iff_addGroup_fg]
-    infer_instance
-  have : AddMonoid.FG (ToricRay σ →₀ ℕ) := by
-    rw [← Module.Finite.iff_addMonoid_fg]
-    infer_instance
-  exact AddMonoid.fg_of_surjective e.symm.toAddMonoidHom e.symm.surjective
+/-- A regular cone is cut out by its dual semigroup: a point of the ambient real space lies in
+the cone exactly when the real extension of every character of the dual semigroup is nonnegative
+at it. -/
+theorem mem_iff_forall_realCharacter_nonneg (hi : IsIntegralLattice i) (hσ : IsRegularCone i σ)
+    {v : V} : v ∈ σ ↔ ∀ m ∈ dualSemigroup hi σ, 0 ≤ hi.realCharacter m v := by
+  refine ⟨fun hv m hm ↦ (mem_dualSemigroup hi m).1 hm hv, fun h ↦ ?_⟩
+  -- In the real basis given by a basis `b` extending the primitive ray generators, the
+  -- coordinates of `v` are the values of the dual basis characters. They are nonnegative at the
+  -- ray indices and, as both signs of a complementary character lie in the dual semigroup, zero
+  -- at the complementary indices.
+  obtain ⟨l, b, hb⟩ := hσ.exists_basis_sum
+  let _ := ToricRay.finite_of_fg hσ.fg
+  let _ := Fintype.ofFinite (ToricRay σ)
+  let B := hi.isBaseChange.basis b
+  have hB : ∀ c, B c = i (b c) := fun c ↦ by
+    simpa using hi.isBaseChange.basis_apply b c
+  have hcoord : ∀ c, hi.realCharacter (b.coord c).toAddMonoidHom v = B.repr v c := by
+    intro c
+    have : hi.realCharacter (b.coord c).toAddMonoidHom = B.coord c := by
+      refine B.ext fun c' ↦ ?_
+      rw [Module.Basis.coord_apply, B.repr_self, hB]
+      by_cases hc : c' = c <;> simp [Module.Basis.coord_apply, hc]
+    rw [this, Module.Basis.coord_apply]
+  have hmem : ∀ c, (b.coord c).toAddMonoidHom ∈ dualSemigroup hi σ := fun c ↦ by
+    simpa using (dualSemigroupCoord hi hσ.toIsToricCone hb c).2
+  have hinr : ∀ j, B.repr v (Sum.inr j) = 0 := by
+    intro j
+    have hneg : -(b.coord (Sum.inr j)).toAddMonoidHom ∈ dualSemigroup hi σ :=
+      (mem_dualSemigroup_iff_of_isPrimitiveGenerator hi hσ.toIsToricCone hb _).2 fun ρ ↦ by
+        simp [Module.Basis.coord_apply]
+    have h₁ := hcoord (Sum.inr j) ▸ h _ (hmem (Sum.inr j))
+    have h₂ := h _ hneg
+    rw [map_neg, LinearMap.neg_apply, hcoord] at h₂
+    linarith
+  rw [← B.sum_repr v, Fintype.sum_sum_type]
+  simp only [hinr, zero_smul, Finset.sum_const_zero, add_zero]
+  refine Submodule.sum_mem _ fun ρ _ ↦ ?_
+  rw [hB]
+  exact σ.smul_mem (hcoord (Sum.inl ρ) ▸ h _ (hmem (Sum.inl ρ)))
+    (ρ.1.isFaceOf.le (hb ρ).mem)
+
+/-- A regular cone is cut out by any generating family of its dual semigroup: a point lies in the
+cone exactly when the real extension of every character of the family is nonnegative at it. -/
+theorem mem_iff_forall_realCharacter_nonneg_of_closure_range_eq_top (hi : IsIntegralLattice i)
+    (hσ : IsRegularCone i σ) {ι : Type*} {s : ι → dualSemigroup hi σ}
+    (hs : AddSubmonoid.closure (Set.range s) = ⊤) {v : V} :
+    v ∈ σ ↔ ∀ j, 0 ≤ hi.realCharacter (s j) v := by
+  refine ⟨fun hv j ↦ (mem_dualSemigroup hi _).1 (s j).2 hv, fun h ↦ ?_⟩
+  -- Nonnegativity at `v` is preserved under sums, so it spreads from the family to its closure.
+  have key (x : dualSemigroup hi σ) : 0 ≤ hi.realCharacter x v := by
+    induction (hs ▸ AddSubmonoid.mem_top x : x ∈ AddSubmonoid.closure (Set.range s))
+      using AddSubmonoid.closure_induction with
+    | mem x hx =>
+      obtain ⟨j, rfl⟩ := hx
+      exact h j
+    | zero => simp
+    | add x y _ _ hx hy =>
+      rw [AddSubmonoid.coe_add, map_add, LinearMap.add_apply]
+      exact add_nonneg hx hy
+  exact (mem_iff_forall_realCharacter_nonneg hi hσ).2 fun m hm ↦ key ⟨m, hm⟩
 
 end IsRegularCone
 

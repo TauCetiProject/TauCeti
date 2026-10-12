@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Integral.Lebesgue.Countable
-public import TauCeti.MeasureTheory.OptimalTransport.GraphPlan
+public import TauCeti.MeasureTheory.OptimalTransport.GraphPlan.Basic
 
 /-!
 # The transport cost of two measures
@@ -73,7 +73,7 @@ none.
 
 The Monge-to-Kantorovich inequality is a statement about the transport cost, so it is stated
 here; the graph plan that witnesses it and the change of variables it uses come from
-`TauCeti/MeasureTheory/OptimalTransport/GraphPlan.lean`, which is below this module. Its
+`TauCeti/MeasureTheory/OptimalTransport/GraphPlan/Basic.lean`, which is below this module. Its
 inequality half needs no measurability of the cost at all, since only one half of the change of
 variables, `MeasureTheory.lintegral_map_le`, is used.
 
@@ -339,6 +339,15 @@ theorem isOptimalCoupling_iff :
       IsCoupling π μ ν ∧ ∀ σ, IsCoupling σ μ ν → ∫⁻ z, c z ∂π ≤ ∫⁻ z, c z ∂σ :=
   ⟨fun h ↦ ⟨h.toIsCoupling, fun _ hσ ↦ h.lintegral_le hσ⟩, fun ⟨hπ, h⟩ ↦
     ⟨hπ, le_antisymm (le_transportCost h) (transportCost_le_lintegral hπ c)⟩⟩
+
+/-- Scaling a cost by a finite nonnegative constant preserves optimality, including when the
+constant is zero or the optimal cost is infinite. No measurability of the cost is required. -/
+protected theorem IsOptimalCoupling.const_mul (h : IsOptimalCoupling c π μ ν)
+    {a : ℝ≥0∞} (ha : a ≠ ⊤) :
+    IsOptimalCoupling (fun z ↦ a * c z) π μ ν := by
+  refine isOptimalCoupling_iff.2 ⟨h.toIsCoupling, fun σ hσ ↦ ?_⟩
+  rw [lintegral_const_mul' a c ha, lintegral_const_mul' a c ha]
+  exact mul_le_mul_of_nonneg_left (h.lintegral_le hσ) (by positivity)
 
 /-- Every coupling out of a Dirac measure is optimal, because there is only one. -/
 theorem IsCoupling.isOptimalCoupling_dirac_left [IsProbabilityMeasure ν] (hc : Measurable c)

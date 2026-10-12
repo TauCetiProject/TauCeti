@@ -42,9 +42,7 @@ a group homomorphism from the product.
 
 The orientation follows J. S. Milne, *Algebraic Groups* (2017), §3.5 and §10.20, where
 `Ad(g)(x) = g x g⁻¹`. The adjoint-coaction action structure is also described in
-I. Heckenberger and H.-J. Schneider, *Hopf Algebras and Root Systems*, §3.7. This is the
-conjugation/adjoint-morphism prerequisite in Layer 3, “Normality and quotients”, of
-`TauCetiRoadmap/ReductiveGroups/README.md`.
+I. Heckenberger and H.-J. Schneider, *Hopf Algebras and Root Systems*, §3.7.
 -/
 
 public section
@@ -105,7 +103,8 @@ theorem productMap_comp_conjugationAlgHom
       Bialgebra.TensorProduct.includeLeft_toAlgHom,
       Bialgebra.TensorProduct.includeRight_toAlgHom,
       Algebra.TensorProduct.productMap_left, Algebra.TensorProduct.productMap_right]
-  exact congrArg WithConv.ofConv hmap
+  have h := congrArg WithConv.ofConv hmap
+  rwa [AlgHom.mapValue_apply, ofConv_toConv] at h
 
 /-- **Evaluation against an arbitrary algebra map out of the tensor square.** Every algebra map
 `φ : H ⊗[R] H →ₐ[R] A` is the product map of its two restrictions, so composing it with the
@@ -124,7 +123,7 @@ theorem comp_conjugationAlgHom {A : Type w} [CommSemiring A] [Algebra R A]
           (phi.comp Algebra.TensorProduct.includeRight)).comp
             (conjugationAlgHom (R := R) (H := H)) :=
       congrArg (fun psi : H ⊗[R] H →ₐ[R] A ↦ psi.comp (conjugationAlgHom (R := R) (H := H)))
-        (AffineGroup.Product.productMap_restrict phi).symm
+        (_root_.AlgHom.productMap_comp_includeLeft_includeRight phi).symm
     _ = _ := by
       simpa only [ofConv_toConv] using
         productMap_comp_conjugationAlgHom (R := R) (H := H)

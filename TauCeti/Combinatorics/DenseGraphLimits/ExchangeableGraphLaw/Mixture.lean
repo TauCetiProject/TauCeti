@@ -39,14 +39,17 @@ and the mixture of a Dirac mass at `⟦W⟧` is the sampling law of `W`.
 
 ## Main results
 
-* `TauCeti.DenseGraphLimits.sampleGraph_eq_of_cutDist_eq_zero` — graphons at cut distance zero,
-  on arbitrary carriers, have the same sampling laws;
+* `TauCeti.DenseGraphLimits.sampleGraph_eq_of_cutDist_eq_zero` and
+  `TauCeti.DenseGraphLimits.sampleExchangeableLaw_eq_of_cutDist_eq_zero` — graphons at cut distance
+  zero, on arbitrary carriers, have the same sampling laws;
 * `TauCeti.DenseGraphLimits.measurable_sampleGraphOnSpace` — the sampling law depends measurably
   on the graphon class;
 * `TauCeti.DenseGraphLimits.upperMass_mixtureExchangeableLaw` — the upper mass of a pattern under
   a mixture law is the average of its homomorphism density against the mixing measure;
 * `TauCeti.DenseGraphLimits.mixtureExchangeableLaw_diracProba` — the mixture of a Dirac mass at a
-  graphon class is that graphon's sampling law.
+  graphon class is that graphon's sampling law;
+* `TauCeti.DenseGraphLimits.mixtureExchangeableLaw_eq_iff` — two mixing measures have the same
+  mixture law exactly when they have the same homomorphism-density moments.
 
 ## References
 
@@ -75,10 +78,15 @@ variable {μ₁ : Measure Ω₁} {μ₂ : Measure Ω₂} [IsProbabilityMeasure �
 carriers, at cut distance zero have the same sampling laws: a law on the finite lattice of graphs is
 determined by its upper-ray masses, which are homomorphism densities. -/
 theorem sampleGraph_eq_of_cutDist_eq_zero (U : Graphon Ω₁ μ₁) (W : Graphon Ω₂ μ₂)
-    (h : cutDist U W = 0) (n : ℕ) : sampleGraph U n = sampleGraph W n := by
-  classical
-  refine Measure.ext_of_Ici_of_finite _ _ fun F => ?_
-  rw [sampleGraph_Ici, sampleGraph_Ici, forall_homDensity_eq_of_cutDist_eq_zero U W h n F]
+    (h : cutDist U W = 0) (n : ℕ) : sampleGraph U n = sampleGraph W n :=
+  sampleGraph_eq_of_forall_homDensity_eq U W n (forall_homDensity_eq_of_cutDist_eq_zero U W h n)
+
+/-- Two graphons, on arbitrary probability carriers, at cut distance zero have the same exchangeable
+sampling law. -/
+theorem sampleExchangeableLaw_eq_of_cutDist_eq_zero (U : Graphon Ω₁ μ₁) (W : Graphon Ω₂ μ₂)
+    (h : cutDist U W = 0) : sampleExchangeableLaw U = sampleExchangeableLaw W :=
+  ExchangeableGraphLaw.ext fun n => by
+    simp only [sampleExchangeableLaw_law, sampleGraph_eq_of_cutDist_eq_zero U W h]
 
 end CrossCarrier
 
@@ -181,6 +189,22 @@ theorem mixtureExchangeableLaw_diracProba (W : Graphon Ω μ) :
   ExchangeableGraphLaw.ext fun k => by
     rw [mixtureExchangeableLaw_law, sampleExchangeableLaw_law, ← sampleGraphOnSpace_mk]
     exact Measure.dirac_bind (measurable_sampleGraphOnSpace k) _
+
+/-- **The mixture law records exactly the homomorphism-density moments.** Two mixing measures on
+graphon space have the same mixture law iff they give the same integral to every member of the
+homomorphism-density submonoid, that is, to every `t(F, ·)`. -/
+theorem mixtureExchangeableLaw_eq_iff {P Q : ProbabilityMeasure (GraphonSpace Ω μ)} :
+    mixtureExchangeableLaw P = mixtureExchangeableLaw Q ↔
+      ∀ g ∈ homDensitySubmonoid, ∫ x, g x ∂(P : Measure (GraphonSpace Ω μ)) =
+        ∫ x, g x ∂(Q : Measure (GraphonSpace Ω μ)) := by
+  constructor
+  · intro h g hg
+    obtain ⟨n, F, _, rfl⟩ := mem_homDensitySubmonoid_iff.1 hg
+    simp_rw [homDensityBCF_apply, ← upperMass_mixtureExchangeableLaw, h]
+  · intro h
+    refine ExchangeableGraphLaw.ext_upperMass fun k F => ?_
+    classical
+    simpa using h _ (homDensityBCF_mem_homDensitySubmonoid F)
 
 end DenseGraphLimits
 

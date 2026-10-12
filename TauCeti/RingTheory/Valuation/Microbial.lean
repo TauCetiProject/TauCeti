@@ -49,12 +49,12 @@ Declared in the root `Valuation` namespace, not in `TauCeti.Valuation`, matching
 `TauCeti` shadows it and dot-notation on a valuation stops elaborating; the repository's
 dot-notation guard rejects that.
 
-The condition is stated over `(ValueGroup₀ (.ofClass v))ˣ`, the units of the value monoid `v`
+The condition is stated over `(v.ValueGroup₀)ˣ`, the units of the value monoid `v`
 actually attains, which is Wedhorn's `Γ_v`. It is deliberately *not* stated over the ambient
 `Γ₀ˣ`: that reading depends only on the codomain and not on `v`, so a trivial valuation into a
 large enough `Γ₀` would satisfy it while its own value group is trivial, hence not of height one.
 
-Spelling `Γ_v` as `(ValueGroup₀ (.ofClass v))ˣ` rather than as `valueGroup (.ofClass v)` is what
+Spelling `Γ_v` as `(v.ValueGroup₀)ˣ` rather than as `v.valueGroup` is what
 makes the witness directly usable. The two are identified by
 `OrderMonoidIso.unitsWithZero`, but only the former is a `LinearOrderedCommGroupWithZero`'s unit
 group, so only it carries the ordered-monoid instances that `ConvexSubgroup`'s quotient order
@@ -82,20 +82,20 @@ variable {R : Type*} [Ring R] {Γ₀ : Type*} [LinearOrderedCommGroupWithZero Γ
 group `Γ_v` has height-one quotient — nontrivial, and archimedean in the sense that `⊥` and `⊤`
 are its only convex subgroups.
 
-Stated over `(ValueGroup₀ (.ofClass v))ˣ`, the values `v` actually attains, and not over the
+Stated over `(v.ValueGroup₀)ˣ`, the values `v` actually attains, and not over the
 ambient `Γ₀ˣ`: the latter does not mention `v`, so a trivial valuation into a large enough `Γ₀`
 would satisfy it although its own value group is trivial, hence not of height one. -/
 def IsMicrobial (v : Valuation R Γ₀) : Prop :=
-  ∃ H : ConvexSubgroup (ValueGroup₀ (.ofClass v))ˣ,
-    Nontrivial ((ValueGroup₀ (.ofClass v))ˣ ⧸ H.toSubgroup) ∧
-      MulArchimedean ((ValueGroup₀ (.ofClass v))ˣ ⧸ H.toSubgroup)
+  ∃ H : ConvexSubgroup (v.ValueGroup₀)ˣ,
+    Nontrivial ((v.ValueGroup₀)ˣ ⧸ H.toSubgroup) ∧
+      MulArchimedean ((v.ValueGroup₀)ˣ ⧸ H.toSubgroup)
 
 /-- The `Iff.rfl` proof of `isMicrobial_iff`, kept private because it unfolds the sealed
 `IsMicrobial`, which an exported theorem may not do. -/
 private theorem isMicrobial_iff_aux {v : Valuation R Γ₀} :
-    v.IsMicrobial ↔ ∃ H : ConvexSubgroup (ValueGroup₀ (.ofClass v))ˣ,
-      Nontrivial ((ValueGroup₀ (.ofClass v))ˣ ⧸ H.toSubgroup) ∧
-        MulArchimedean ((ValueGroup₀ (.ofClass v))ˣ ⧸ H.toSubgroup) := Iff.rfl
+    v.IsMicrobial ↔ ∃ H : ConvexSubgroup (v.ValueGroup₀)ˣ,
+      Nontrivial ((v.ValueGroup₀)ˣ ⧸ H.toSubgroup) ∧
+        MulArchimedean ((v.ValueGroup₀)ˣ ⧸ H.toSubgroup) := Iff.rfl
 
 /-- **The characteristic lemma for `IsMicrobial`**: it is exactly its defining existential, so a
 consumer can obtain the convex subgroup from it, or supply one to build it, without unfolding the
@@ -105,32 +105,31 @@ interface outside this module.
 Deliberately not `@[simp]`: the right-hand side is the strictly larger term, so rewriting in this
 direction takes a named predicate out of normal form rather than into it. -/
 theorem isMicrobial_iff {v : Valuation R Γ₀} :
-    v.IsMicrobial ↔ ∃ H : ConvexSubgroup (ValueGroup₀ (.ofClass v))ˣ,
-      Nontrivial ((ValueGroup₀ (.ofClass v))ˣ ⧸ H.toSubgroup) ∧
-        MulArchimedean ((ValueGroup₀ (.ofClass v))ˣ ⧸ H.toSubgroup) := isMicrobial_iff_aux
+    v.IsMicrobial ↔ ∃ H : ConvexSubgroup (v.ValueGroup₀)ˣ,
+      Nontrivial ((v.ValueGroup₀)ˣ ⧸ H.toSubgroup) ∧
+        MulArchimedean ((v.ValueGroup₀)ˣ ⧸ H.toSubgroup) := isMicrobial_iff_aux
 
 /-- A valuation with a nonzero cofinal value is microbial: the largest convex subgroup avoiding
 the corresponding value-group unit has nontrivial archimedean quotient. -/
 theorem isMicrobial_of_cofinalValue {v : Valuation R Γ₀} {b : R} (hb0 : v b ≠ 0)
     (hcof : CofinalValue v b) : v.IsMicrobial := by
-  have hb0c : (MonoidWithZeroHom.ofClass v) b ≠ 0 := by simpa using hb0
   have hb0' : v.restrict b ≠ 0 := fun h ↦ hb0 (v.restrict_eq_zero_iff.mp h)
-  let u : (ValueGroup₀ (.ofClass v))ˣ := Units.mk0 (v.restrict b) hb0'
+  let u : (v.ValueGroup₀)ˣ := Units.mk0 (v.restrict b) hb0'
   have huImage : OrderMonoidIso.unitsWithZero u =
-      valueGroup.mk (.ofClass v) 1 b (by simp) hb0c := by
+      valueGroup.mk (v : R →*₀ Γ₀) 1 b (by simp) hb0 := by
     apply WithZero.coe_injective
     calc
-      ((OrderMonoidIso.unitsWithZero u : valueGroup (.ofClass v)) :
-          ValueGroup₀ (.ofClass v)) = ((u : (ValueGroup₀ (.ofClass v))ˣ) :
-            ValueGroup₀ (.ofClass v)) := WithZero.coe_unitsWithZeroEquiv_eq_units_val _
+      ((OrderMonoidIso.unitsWithZero u : v.valueGroup) :
+          v.ValueGroup₀) = ((u : (v.ValueGroup₀)ˣ) :
+            v.ValueGroup₀) := WithZero.coe_unitsWithZeroEquiv_eq_units_val _
       _ = v.restrict b := by simp only [u, Units.val_mk0]
-      _ = _ := v.restrict_eq_mk hb0c
+      _ = _ := v.restrict_eq_mk hb0
   have huCofImage : TauCeti.IsCofinalElement ⊤ (OrderMonoidIso.unitsWithZero u) := by
     rw [huImage]
-    exact (cofinalValueFor_iff_isCofinalElement hb0c).mp (cofinalValueFor_top_iff.mpr hcof)
+    exact (cofinalValueFor_iff_isCofinalElement hb0).mp (cofinalValueFor_top_iff.mpr hcof)
   have huCof : TauCeti.IsCofinalElement ⊤ u := by
     simpa only [Subgroup.comap_top] using
-      huCofImage.comap (e := OrderMonoidIso.unitsWithZero (α := valueGroup (.ofClass v)))
+      huCofImage.comap (e := OrderMonoidIso.unitsWithZero (α := v.valueGroup))
   have hult : u < 1 := huCof.lt_one
   have hu : u ≠ 1 := ne_of_lt hult
   have hclosure : TauCeti.ConvexSubgroup.closure ({u} : Set _) = ⊤ := by
@@ -147,7 +146,7 @@ vacuously satisfied: it genuinely constrains `v`.
 This is the degenerate case that distinguishes `IsMicrobial` from the condition read on the
 ambient `Γ₀ˣ`, which a trivial valuation into a large enough `Γ₀` would satisfy. -/
 theorem not_isMicrobial_of_subsingleton {v : Valuation R Γ₀}
-    (h : Subsingleton (ValueGroup₀ (.ofClass v))ˣ) : ¬ v.IsMicrobial := by
+    (h : Subsingleton (v.ValueGroup₀)ˣ) : ¬ v.IsMicrobial := by
   intro hv
   obtain ⟨H, hnt, -⟩ := isMicrobial_iff.mp hv
   exact (not_nontrivial_iff_subsingleton.mpr
@@ -160,7 +159,7 @@ height one and no proper convex subgroup is needed.
 With `not_isMicrobial_of_subsingleton` this pins the predicate from both sides: it holds of every
 rank-one valuation and fails of every trivial one. -/
 theorem isMicrobial_of_mulArchimedean {v : Valuation R Γ₀}
-    [Nontrivial (ValueGroup₀ (.ofClass v))ˣ] [MulArchimedean (ValueGroup₀ (.ofClass v))ˣ] :
+    [Nontrivial (v.ValueGroup₀)ˣ] [MulArchimedean (v.ValueGroup₀)ˣ] :
     v.IsMicrobial :=
   isMicrobial_iff.mpr
     ⟨⊥, Function.Surjective.nontrivial ConvexSubgroup.quotientBotOrderIso.surjective,

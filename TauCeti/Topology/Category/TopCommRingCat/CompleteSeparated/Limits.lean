@@ -13,8 +13,8 @@ public import Mathlib.CategoryTheory.Limits.FullSubcategory
 /-!
 # Limits of complete separated topological rings
 
-Roadmap Layer 3.2's second half: the full subcategory
-`TauCeti.CompleteSeparatedTopCommRingCat` has products and equalizers, and the inclusion into
+The full subcategory `TauCeti.CompleteSeparatedTopCommRingCat` has products and equalizers,
+and the inclusion into
 `TopCommRingCat` creates them. Both come from the closure instances proved here:
 `CategoryTheory.Limits.hasLimitsOfShape_of_closedUnderLimits` supplies the limits, and
 `CategoryTheory.Limits.createsLimitsOfShapeFullSubcategoryInclusion` their creation by the
@@ -27,6 +27,8 @@ separated ring is complete separated (`IsCompleteSeparated.of_isClosedEmbedding`
 
 * `HasLimits CompleteSeparatedTopCommRingCat`: all small limits, obtained from the products and
   equalizers below through `has_limits_of_hasEqualizers_and_products`.
+* The inclusion into `TopCommRingCat` preserves all small limits, so taking underlying sets
+  commutes with the limits defining a structure presheaf.
 * The `IsClosedUnderLimitsOfShape` instances for discrete shapes and parallel pairs. These are
   what the inclusion needs in order to create the limits, so
   `TauCeti.CompleteSeparatedTopCommRingCat` acquires products and equalizers, and its inclusion
@@ -110,5 +112,9 @@ structure presheaf of an adic space is a limit over a category of rational prese
 is neither. -/
 noncomputable instance : HasLimits CompleteSeparatedTopCommRingCat.{u} :=
   has_limits_of_hasEqualizers_and_products
+
+/-- The inclusion of complete separated topological rings preserves all small limits. -/
+noncomputable instance : PreservesLimits (TopCommRingCat.isCompleteSeparated.{u}).ι :=
+  preservesLimits_of_preservesEqualizers_and_products _
 
 end TauCeti.CompleteSeparatedTopCommRingCat

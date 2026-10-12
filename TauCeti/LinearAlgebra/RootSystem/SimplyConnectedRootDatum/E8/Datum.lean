@@ -7,6 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.Basic
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.E8.Lattice
+import TauCeti.Algebra.Group.Submonoid.Closure
 import TauCeti.LinearAlgebra.Matrix.Gram
 
 /-!

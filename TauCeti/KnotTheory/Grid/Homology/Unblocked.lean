@@ -8,6 +8,8 @@ module
 public import Mathlib.Algebra.Module.Torsion.Basic
 public import Mathlib.RingTheory.Ideal.Quotient.Operations
 public import TauCeti.Algebra.Homology.Linear
+public import TauCeti.Algebra.Homology.SquareZero
+public import TauCeti.Algebra.Module.Equiv.Basic
 public import TauCeti.Algebra.MvPolynomial.AevalConstX
 public import TauCeti.KnotTheory.Grid.XHomotopy.Complex
 
@@ -30,9 +32,20 @@ one of the variables `V_c` (`IsKnot.X_smul_unblockedHomology`). The construction
 choice of a distinguished column. This is the `𝔽[U]`-module structure on the grid homology of a
 knot through which the concordance invariant `τ` is defined.
 
+Concretely, `GH⁻(G)` is the quotient `ker ∂⁻ ⧸ im ∂⁻` of the cycles of `GC⁻(G)` by the boundaries
+(`unblockedHomologyIso`), so every class is the class of a cycle (`unblockedHomologyClass`), and a
+cycle has zero class exactly when it is a boundary. Structure on `GC⁻(G)` that the differential
+respects, such as the Alexander grading, descends to this quotient.
+
 ## Main definitions
 
 * `TauCeti.GridDiagram.unblockedHomology`: the unblocked grid homology `GH⁻`.
+* `TauCeti.GridDiagram.unblockedHomologyBaseModule`: the coefficient-ring action obtained by
+  restricting the polynomial action.
+* `TauCeti.GridDiagram.unblockedHomologyIso`: `GH⁻` is `ker ∂⁻ ⧸ im ∂⁻`.
+* `TauCeti.GridDiagram.unblockedHomologyClass`: the class in `GH⁻` of a cycle.
+* `TauCeti.GridDiagram.unblockedHomologyEquivOfIntertwining`: the equivalence of unblocked grid
+  homologies induced by a semilinear equivalence intertwining the differentials.
 * `TauCeti.GridDiagram.IsKnot.unblockedHomologyModule`: the `R[U]`-module structure on the
   unblocked grid homology of a knot grid.
 
@@ -42,11 +55,19 @@ knot through which the concordance invariant `τ` is defined.
   component act identically on `GH⁻`.
 * `TauCeti.GridDiagram.smul_unblockedHomology_eq_rename_smul`: renaming the variables within
   components does not change the action of a polynomial on `GH⁻`.
+* `TauCeti.GridDiagram.unblockedHomologyClass_surjective` and
+  `TauCeti.GridDiagram.unblockedHomologyClass_eq_zero_iff`: every class is the class of a cycle,
+  and a cycle has zero class exactly when it is a boundary.
+* `TauCeti.GridDiagram.unblockedHomologyEquivOfIntertwining_unblockedHomologyClass`: the
+  equivalence induced by an intertwining map sends the class of a cycle `z` to the class of its
+  image.
 * `TauCeti.GridDiagram.IsKnot.isTorsionBySet_unblockedHomology`: for a knot grid, `GH⁻` is
   annihilated by the kernel of `R[V₀, …, V_{n-1}] → R[U]`.
 * `TauCeti.GridDiagram.IsKnot.aeval_smul_unblockedHomology` and
   `TauCeti.GridDiagram.IsKnot.X_smul_unblockedHomology`: the action of `R[U]` on `GH⁻` of a knot
   grid.
+* `TauCeti.GridDiagram.IsKnot.isScalarTower_unblockedHomology`: the coefficient action agrees
+  with the `R[U]`-module structure.
 
 ## References
 
@@ -69,6 +90,16 @@ variable {n : ℕ} (G : GridDiagram n) (R : Type*) [CommRing R] [CharP R 2]
 the polynomial ring `R[V₀, …, V_{n-1}]`. -/
 noncomputable abbrev unblockedHomology : ModuleCat (MvPolynomial (Fin n) R) :=
   (G.unblockedComplex R).homology ()
+
+/-- Restriction of the polynomial action on grid homology along the coefficient embedding. -/
+noncomputable instance unblockedHomologyBaseModule : Module R (G.unblockedHomology R) :=
+  Module.compHom _ (MvPolynomial.C : R →+* MvPolynomial (Fin n) R)
+
+/-- The coefficient action on grid homology agrees with the polynomial action through the
+coefficient embedding. -/
+instance unblockedHomologyBaseScalarTower :
+    IsScalarTower R (MvPolynomial (Fin n) R) (G.unblockedHomology R) :=
+  IsScalarTower.of_compHom R (MvPolynomial (Fin n) R) _
 
 variable {G R}
 
@@ -95,6 +126,156 @@ theorem smul_unblockedHomology_eq_rename_smul (f : Fin n → Fin n)
   | mul_X p c hp =>
     rw [mul_smul, hp, X_smul_unblockedHomology_eq_of_sameCycle (hf c), map_mul,
       MvPolynomial.rename_X, mul_smul]
+
+/-! ### Cycles and boundaries -/
+
+section Quotient
+
+variable (G R)
+
+/-- The unblocked complex with its unique object and differential spelled out, so that its
+homology is the homology of the unblocked grid differential in the sense of
+`LinearMap.homology`. -/
+private noncomputable abbrev unblockedComplex' :
+    HomologicalComplex (ModuleCat (MvPolynomial (Fin n) R)) (ComplexShape.refl Unit) where
+  X _ := ModuleCat.of (MvPolynomial (Fin n) R) (GridChainMinus R n)
+  d _ _ := ModuleCat.ofHom (G.unblockedDifferential R)
+  d_comp_d' _ _ _ _ _ :=
+    ((G.unblockedDifferential R).shortComplex (G.unblockedDifferential_comp_self_eq_zero R)).zero
+
+/-- The unblocked complex is isomorphic to its spelled-out form `unblockedComplex'`. -/
+private noncomputable def unblockedComplexIso : G.unblockedComplex R ≅ G.unblockedComplex' R :=
+  HomologicalComplex.Hom.isoOfComponents (fun i ↦ eqToIso (G.unblockedComplex_X R i)) (by
+    rintro ⟨⟩ ⟨⟩ -
+    simp)
+
+/-- The unblocked grid homology `GH⁻` is the homology `ker ∂⁻ ⧸ im ∂⁻` of the unblocked grid
+differential: the cycles of `GC⁻` modulo the boundaries. -/
+noncomputable def unblockedHomologyIso :
+    G.unblockedHomology R ≅
+      ModuleCat.of (MvPolynomial (Fin n) R)
+        ((G.unblockedDifferential R).homology (G.unblockedDifferential_comp_self_eq_zero R)) :=
+  HomologicalComplex.homologyMapIso (G.unblockedComplexIso R) () ≪≫
+    (G.unblockedComplex' R).homologyIsoSc' () () () rfl rfl ≪≫
+      (G.unblockedDifferential R).homologyIso (G.unblockedDifferential_comp_self_eq_zero R)
+
+/-- The linear map sending a cycle of `GC⁻` to its class in `GH⁻`. -/
+noncomputable def unblockedHomologyClass :
+    LinearMap.ker (G.unblockedDifferential R) →ₗ[MvPolynomial (Fin n) R] G.unblockedHomology R :=
+  (G.unblockedHomologyIso R).inv.hom ∘ₗ
+    (G.unblockedDifferential R).homologyπ (G.unblockedDifferential_comp_self_eq_zero R)
+
+/-- Under `unblockedHomologyIso`, the class of a cycle is its class modulo the boundaries. -/
+@[simp]
+theorem unblockedHomologyIso_hom_unblockedHomologyClass
+    (z : LinearMap.ker (G.unblockedDifferential R)) :
+    (G.unblockedHomologyIso R).hom (G.unblockedHomologyClass R z) =
+      (G.unblockedDifferential R).homologyπ (G.unblockedDifferential_comp_self_eq_zero R) z := by
+  simp [unblockedHomologyClass]
+
+/-- Every class in `GH⁻` is represented by a cycle. -/
+theorem unblockedHomologyClass_surjective : Function.Surjective (G.unblockedHomologyClass R) := by
+  rw [unblockedHomologyClass, LinearMap.coe_comp]
+  exact ((ModuleCat.epi_iff_surjective (G.unblockedHomologyIso R).inv).mp inferInstance).comp
+    ((G.unblockedDifferential R).homologyπ_surjective
+      (G.unblockedDifferential_comp_self_eq_zero R))
+
+/-- A cycle represents zero in `GH⁻` exactly when it is a boundary. -/
+@[simp]
+theorem unblockedHomologyClass_eq_zero_iff (z : LinearMap.ker (G.unblockedDifferential R)) :
+    G.unblockedHomologyClass R z = 0 ↔ (z : GridChainMinus R n) ∈
+      LinearMap.range (G.unblockedDifferential R) := by
+  rw [← LinearMap.homologyπ_eq_zero_iff (G.unblockedDifferential R)
+    (G.unblockedDifferential_comp_self_eq_zero R),
+    ← unblockedHomologyIso_hom_unblockedHomologyClass,
+    ← map_zero (G.unblockedHomologyIso R).hom.hom]
+  exact ((ModuleCat.mono_iff_injective _).mp inferInstance).eq_iff.symm
+
+end Quotient
+
+/-! ### The equivalence induced by an intertwining map -/
+
+section Intertwining
+
+variable (G R) (G' : GridDiagram n)
+  {σ σ' : MvPolynomial (Fin n) R →+* MvPolynomial (Fin n) R} [RingHomInvPair σ σ']
+  [RingHomInvPair σ' σ] (e : GridChainMinus R n ≃ₛₗ[σ] GridChainMinus R n)
+  (he : ∀ c, G'.unblockedDifferential R (e c) = e (G.unblockedDifferential R c))
+
+include he
+
+omit [CharP R 2] in
+/-- A map intertwining two unblocked differentials sends cycles to cycles. -/
+theorem map_mem_ker_unblockedDifferential_of_intertwining {c : GridChainMinus R n}
+    (hc : c ∈ LinearMap.ker (G.unblockedDifferential R)) :
+    e c ∈ LinearMap.ker (G'.unblockedDifferential R) := by
+  rw [LinearMap.mem_ker] at hc ⊢
+  rw [he, hc, map_zero]
+
+/-- The semilinear equivalence of cycle submodules induced by an equivalence intertwining two
+unblocked differentials. -/
+private noncomputable def unblockedCyclesEquivOfIntertwining :
+    LinearMap.ker (G.unblockedDifferential R) ≃ₛₗ[σ] LinearMap.ker (G'.unblockedDifferential R) :=
+  e.ofSubmodules _ _ (e.map_ker_of_intertwine _ _ he)
+
+omit [CharP R 2] in
+/-- The cycle equivalence acts on underlying chains by `e`. -/
+@[simp]
+private theorem coe_unblockedCyclesEquivOfIntertwining_apply
+    (z : LinearMap.ker (G.unblockedDifferential R)) :
+    (G.unblockedCyclesEquivOfIntertwining R G' e he z : GridChainMinus R n) = e z :=
+  e.ofSubmodules_apply _ z
+
+/-- The cycle equivalence carries boundaries onto boundaries. -/
+private theorem map_boundariesInKer_unblockedCyclesEquivOfIntertwining :
+    (G.unblockedDifferential R).boundariesInKer.map
+        (G.unblockedCyclesEquivOfIntertwining R G' e he :
+          LinearMap.ker (G.unblockedDifferential R) →ₛₗ[σ]
+            LinearMap.ker (G'.unblockedDifferential R)) =
+      (G'.unblockedDifferential R).boundariesInKer := by
+  have hrange := e.map_range_of_intertwine _ _ he
+  ext z
+  simp only [Submodule.mem_map, LinearMap.mem_boundariesInKer, LinearEquiv.coe_coe]
+  constructor
+  · rintro ⟨w, hw, rfl⟩
+    rw [coe_unblockedCyclesEquivOfIntertwining_apply, ← hrange]
+    exact Submodule.mem_map_of_mem hw
+  · intro hz
+    rw [← hrange] at hz
+    obtain ⟨w, ⟨v, rfl⟩, hwz⟩ := hz
+    refine ⟨⟨G.unblockedDifferential R v, ?_⟩, ⟨v, rfl⟩, Subtype.ext ?_⟩
+    · rw [LinearMap.mem_ker, ← LinearMap.comp_apply, unblockedDifferential_comp_self_eq_zero,
+        LinearMap.zero_apply]
+    · rw [coe_unblockedCyclesEquivOfIntertwining_apply]
+      exact hwz
+
+/-- **The equivalence of unblocked grid homologies induced by an intertwining map.** A
+semilinear equivalence `e` of chain modules with `∂⁻' ∘ e = e ∘ ∂⁻` induces a semilinear
+equivalence `GH⁻(G) ≃ GH⁻(G')`, sending the class of a cycle `z` to the class of `e z`. -/
+noncomputable def unblockedHomologyEquivOfIntertwining :
+    G.unblockedHomology R ≃ₛₗ[σ] G'.unblockedHomology R :=
+  (G.unblockedHomologyIso R).toLinearEquiv.trans <|
+    (Submodule.Quotient.equiv _ _ (G.unblockedCyclesEquivOfIntertwining R G' e he)
+      (G.map_boundariesInKer_unblockedCyclesEquivOfIntertwining R G' e he)).trans
+        (G'.unblockedHomologyIso R).toLinearEquiv.symm
+
+/-- `unblockedHomologyEquivOfIntertwining` sends the class of a cycle `z` to the class of its
+image. -/
+@[simp]
+theorem unblockedHomologyEquivOfIntertwining_unblockedHomologyClass
+    (z : LinearMap.ker (G.unblockedDifferential R)) :
+    G.unblockedHomologyEquivOfIntertwining R G' e he (G.unblockedHomologyClass R z) =
+      G'.unblockedHomologyClass R
+        ⟨e z, G.map_mem_ker_unblockedDifferential_of_intertwining R G' e he z.2⟩ := by
+  simp only [unblockedHomologyEquivOfIntertwining, LinearEquiv.trans_apply,
+    LinearEquiv.symm_apply_eq]
+  rw [Iso.toLinearEquiv_apply, Iso.toLinearEquiv_apply,
+    unblockedHomologyIso_hom_unblockedHomologyClass,
+    unblockedHomologyIso_hom_unblockedHomologyClass]
+  simp only [LinearMap.homologyπ_apply, Submodule.Quotient.equiv_apply, Submodule.mapQ_apply]
+  exact congrArg _ (Subtype.ext (G.coe_unblockedCyclesEquivOfIntertwining_apply R G' e he z))
+
+end Intertwining
 
 namespace IsKnot
 
@@ -157,6 +338,19 @@ theorem X_smul_unblockedHomology (hG : G.IsKnot) (c : Fin n) (x : G.unblockedHom
     letI := unblockedHomologyModule R hG
     (Polynomial.X : Polynomial R) • x = (MvPolynomial.X c : MvPolynomial (Fin n) R) • x := by
   simpa using aeval_smul_unblockedHomology hG (MvPolynomial.X c) x
+
+/-- The coefficient action on knot grid homology agrees with the constant polynomials in the
+`R[U]`-module structure. -/
+theorem isScalarTower_unblockedHomology (hG : G.IsKnot) :
+    letI := hG.unblockedHomologyModule R
+    IsScalarTower R (Polynomial R) (G.unblockedHomology R) := by
+  let _ := hG.unblockedHomologyModule R
+  apply IsScalarTower.of_algebraMap_smul
+  intro r y
+  have h := hG.aeval_smul_unblockedHomology (MvPolynomial.C r) y
+  have hbase : r • y = (MvPolynomial.C r : MvPolynomial (Fin n) R) • y :=
+    IsScalarTower.algebraMap_smul (MvPolynomial (Fin n) R) r y
+  simpa only [MvPolynomial.aeval_C, hbase] using h
 
 end IsKnot
 

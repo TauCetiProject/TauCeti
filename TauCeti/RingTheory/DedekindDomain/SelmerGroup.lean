@@ -64,7 +64,7 @@ theorem valuationOfNeZeroMod_mk_eq_one_iff (v : HeightOneSpectrum R) (n : ℕ) (
   -- the two `MonoidHom`s are not syntactically composable. Mathlib's own
   -- `valuation_of_unit_mod_eq` unfolds it the same way.
   erw [valuationOfNeZeroMod, MonoidHom.comp_apply, MulEquiv.toMonoidHom_eq_coe,
-    MonoidHom.coe_coe, EmbeddingLike.map_eq_one_iff]
+    MonoidHom.coe_ofClass, EmbeddingLike.map_eq_one_iff]
   refine (QuotientGroup.eq_one_iff _).trans ?_
   rw [Multiplicative.mem_toSubgroup, AddSubgroup.mem_zmultiples_iff]
   exact ⟨fun ⟨k, hk⟩ ↦ ⟨k, by rw [← hk]; ring⟩, fun ⟨k, hk⟩ ↦ ⟨k, by rw [hk]; ring⟩⟩

@@ -49,7 +49,7 @@ image from `F`.** This decides an inclusion pointwise, with no `comap`. -/
 theorem extendRight_le_iff {F : IntermediateField K L} {E : IntermediateField K M} :
     F.extendRight M ≤ E ↔ ∀ x ∈ F, algebraMap L M x ∈ E := by
   rw [extendRight_eq_map]
-  simp only [SetLike.le_def, mem_map, forall_exists_index, and_imp]
+  simp only [IsConcreteLE.le_iff, mem_map, forall_exists_index, and_imp]
   exact ⟨fun h x hx => h x hx (congrFun (IsScalarTower.coe_toAlgHom' K L M) x),
     fun h _ x hx hxz => hxz ▸ h x hx⟩
 

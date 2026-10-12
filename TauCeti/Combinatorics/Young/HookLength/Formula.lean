@@ -69,6 +69,8 @@ lengths sum to `n` and the shifts `r - 1 - i` are a reflection of `0, 1, …, r 
 * `TauCeti.standardCount_eq_factorial_div_prod_hookLength` and
   `TauCeti.cast_standardCount_eq_factorial_div_prod_hookLength`: **the hook-length formula in
   quotient form**, over `ℕ` and over a semifield of characteristic zero.
+* `TauCeti.cast_factorial_div_standardCount_eq_prod_hookLength`: the same formula solved for the
+  hook product instead.
 
 ## References
 
@@ -97,18 +99,15 @@ private theorem betaNumber_succ_add_one_of_forall_ne (hr : μ.colLen 0 ≤ r) (h
   have hcase : μ.rowLen i = 0 ∨ μ.rowLen (i + 1) = μ.rowLen i := by
     by_contra hcon
     push Not at hcon
-    obtain ⟨h0, hne⟩ := hcon
     refine hno (i, μ.rowLen i - 1) (mem_corners.mpr ((isCorner_def μ _).mpr ⟨?_, ?_, ?_⟩)) rfl
     · exact mem_iff_lt_rowLen.mpr (by omega)
     · simp only [mem_iff_lt_rowLen]; omega
     · simp only [mem_iff_lt_rowLen]; omega
   simp only [betaNumber_def] at hβ ⊢
   rcases hcase with h0 | h1
-  · have h1 : μ.rowLen (i + 1) = 0 := by omega
-    omega
+  · omega
   · rcases Nat.eq_zero_or_pos (μ.rowLen i) with h0 | h0
-    · have h2 : μ.rowLen (i + 1) = 0 := by omega
-      omega
+    · omega
     · have hmem : (i + 1, 0) ∈ μ := mem_iff_lt_rowLen.mpr (by omega)
       have := mem_iff_lt_colLen.mp hmem
       omega
@@ -135,8 +134,6 @@ private theorem betaNumber_term_eq_zero {μ : YoungDiagram} {r i : ℕ} (hr : μ
   by_cases hβ : μ.betaNumber r i = 0
   · rw [hβ]; simp
   obtain ⟨hlt, hsucc⟩ := betaNumber_succ_add_one_of_forall_ne hr (mem_range.mp hi) hβ hno
-  have hcast : ((μ.betaNumber r (i + 1) : ℤ)) + 1 = (μ.betaNumber r i : ℤ) := by
-    exact_mod_cast hsucc
   have hinner : ∏ l ∈ Ico (i + 1) r,
       (Function.update (fun j => (μ.betaNumber r j : ℤ)) i ((μ.betaNumber r i : ℤ) - 1) i
         - Function.update (fun j => (μ.betaNumber r j : ℤ)) i
@@ -160,17 +157,17 @@ private theorem sum_corners_eq_sum_range {μ : YoungDiagram} {r : ℕ} (hr : μ.
     exact mem_range.mpr (((mem_corners.mp hc).fst_lt_colLen_zero).trans_le hr)
   · exact hF i hi fun c hc h => hni (Finset.mem_image.mpr ⟨c, hc, h⟩)
 
-/-- The beta-numbers overshoot the number of cells by exactly `0 + 1 + ⋯ + (r - 1)`: the row
-lengths sum to `μ.card`, and the shifts `r - 1 - i` are a reflection of `0, 1, …, r - 1`. -/
+/-- The beta-numbers overshoot the number of cells by exactly `0 + 1 + ⋯ + (r - 1)`: the shifts
+`r - 1 - i` of `YoungDiagram.sum_betaNumber` are a reflection of `0, 1, …, r - 1`. -/
 private theorem sum_betaNumber_sub_sum_range (μ : YoungDiagram) {r : ℕ} (hr : μ.colLen 0 ≤ r) :
     (∑ i ∈ range r, (μ.betaNumber r i : ℤ)) - ∑ i ∈ range r, (i : ℤ) = (μ.card : ℤ) := by
-  have hsplit : ∑ i ∈ range r, (μ.betaNumber r i : ℤ)
-      = (∑ i ∈ range r, (μ.rowLen i : ℤ)) + ∑ i ∈ range r, ((r - 1 - i : ℕ) : ℤ) := by
-    rw [← Finset.sum_add_distrib]
-    exact Finset.sum_congr rfl fun i _ => by rw [betaNumber_def]; push_cast; ring
-  have hrows : ∑ i ∈ range r, (μ.rowLen i : ℤ) = (μ.card : ℤ) := by
-    rw [← Nat.cast_sum, ← YoungDiagram.card_eq_sum_range_rowLen μ hr]
-  rw [hsplit, hrows, Finset.sum_range_reflect (fun j : ℕ => (j : ℤ)) r]
+  have hsum : ∑ i ∈ range r, μ.betaNumber r i = μ.card + ∑ i ∈ range r, i := by
+    rw [← Finset.sum_range_reflect (fun j : ℕ => j) r,
+      ← Fin.sum_univ_eq_sum_range (fun i => μ.betaNumber r i) r,
+      ← Fin.sum_univ_eq_sum_range (fun i => r - 1 - i) r]
+    exact μ.sum_betaNumber hr
+  rw [← Nat.cast_sum, ← Nat.cast_sum, hsum]
+  push_cast
   ring
 
 /-- The inductive form of the Frobenius determinant formula, with the number of cells fixed so
@@ -311,6 +308,19 @@ theorem cast_standardCount_eq_factorial_div_prod_hookLength {K : Type*} [Semifie
     rw [← Nat.cast_prod]
     exact_mod_cast μ.prod_hookLength_pos.ne'
   rw [eq_div_iff hp, ← Nat.cast_prod, ← Nat.cast_mul, standardCount_mul_prod_hookLength]
+
+/-- **The hook-length formula solved for the hook product**: dividing `n !` by the number `f^μ` of
+standard Young tableaux of shape `μ` returns the product of the hook lengths.  This is the
+companion of `TauCeti.cast_standardCount_eq_factorial_div_prod_hookLength`, dividing the
+multiplicative formula through by the other factor; the divisor `f^μ` is nonzero because every
+shape has a standard Young tableau. -/
+theorem cast_factorial_div_standardCount_eq_prod_hookLength {K : Type*} [Semifield K] [CharZero K]
+    (μ : YoungDiagram) :
+    (μ.card ! : K) / (standardCount μ : K)
+      = ∏ c ∈ μ.cells, (YoungDiagram.hookLength μ c : K) := by
+  have hne : (standardCount μ : K) ≠ 0 := Nat.cast_ne_zero.mpr (standardCount_ne_zero μ)
+  rw [div_eq_iff hne, ← Nat.cast_prod, ← Nat.cast_mul, mul_comm,
+    standardCount_mul_prod_hookLength]
 
 end TauCeti
 

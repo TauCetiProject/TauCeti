@@ -81,6 +81,21 @@ end Semiring
 variable {R : Type u} [CommRing R]
 variable {H K L : _root_.CommHopfAlgCat.{v} R}
 
+/-- An isomorphism of commutative Hopf algebras preserves the derived defining ideal. -/
+@[simp]
+theorem comapOfSurjective_derivedDefiningIdeal (e : H ≅ K) :
+    (derivedDefiningIdeal K).comapOfSurjective e.hom.hom
+        (ConcreteCategory.bijective_of_isIso e.hom).2 = derivedDefiningIdeal H := by
+  apply le_antisymm
+  · intro x hx
+    have hxK := HopfIdeal.mem_comapOfSurjective.mp hx
+    have hxH := derivedDefiningIdeal_map_le e.inv.hom
+      (HopfIdeal.mem_map_of_mem e.inv.hom hxK)
+    simpa using hxH
+  · exact (HopfIdeal.map_le_iff_le_comapOfSurjective
+      (ConcreteCategory.bijective_of_isIso e.hom).2).mp
+        (derivedDefiningIdeal_map_le e.hom.hom)
+
 /-- The coordinate morphism induced by a homomorphism on the coordinate algebras of the derived
 subgroups. After applying `Spec`, this is the restriction of the original group-scheme
 homomorphism to the derived subgroup schemes. -/

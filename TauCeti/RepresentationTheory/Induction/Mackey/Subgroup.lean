@@ -5,10 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.BigOperators.Ring.Finset
 public import Mathlib.Algebra.Group.Subgroup.Finite
 public import Mathlib.GroupTheory.Index
 public import Mathlib.GroupTheory.SpecificGroups.Cyclic.Basic
 public import TauCeti.Algebra.Group.Subgroup.Pointwise
+public import TauCeti.GroupTheory.DoubleCoset.Finite
 public import TauCeti.GroupTheory.DoubleCoset.Orbits
 public import TauCeti.GroupTheory.QuotientGroup.Basic
 
@@ -75,6 +77,8 @@ roadmap-specific subgroup the induction and restriction of that layer run along.
 * `TauCeti.relIndex_mackeySubgroup_conj`: that index depends only on the double coset.
 * `TauCeti.card_doubleCoset_mul_card_mackeySubgroup`: the double-coset size formula
   `|KsH| · |K ⊓ sHs⁻¹| = |K| · |H|`.
+* `TauCeti.card_doubleCoset_eq_card_mul_relIndex`: the same formula as an index,
+  `|KsH| = |K| · [sHs⁻¹ : K ⊓ sHs⁻¹]`.
 * `TauCeti.stabilizer_smul_eq_mackeySubgroup_subgroupOf`: the same stabilizer description for an
   arbitrary `G`-set, at a translate `s • p`.
 * `TauCeti.mackeySubgroup_eq_bot_or_conj_smul_le_of_prime_card`: for `H` of prime order the Mackey
@@ -342,6 +346,22 @@ theorem card_doubleCoset_mul_card_mackeySubgroup (s : G) (H K : Subgroup G) :
     exact Subgroup.card_mul_index _
   rw [hdc, card_orbit_eq_relIndex, mul_assoc, mul_comm ((mackeySubgroup s H K).relIndex K), hK,
     mul_comm]
+
+/-- **The double-coset size formula, as an index**: `|KsH| = |K| · [sHs⁻¹ : K ⊓ sHs⁻¹]`.
+
+Finiteness of `H` makes the conjugate subgroup `sHs⁻¹` finite, so the relative index
+`[sHs⁻¹ : K ⊓ sHs⁻¹]` is a finite count of cosets. -/
+theorem card_doubleCoset_eq_card_mul_relIndex (s : G) (H K : Subgroup G) [Finite H] :
+    Nat.card (DoubleCoset.doubleCoset s (K : Set G) (H : Set G)) =
+      Nat.card K * K.relIndex (MulAut.conj s • H) := by
+  -- `[sHs⁻¹ : K ⊓ sHs⁻¹] · |K ⊓ sHs⁻¹| = |sHs⁻¹| = |H|`, and `K ⊓ sHs⁻¹` is the Mackey subgroup.
+  have hrel : K.relIndex (MulAut.conj s • H) * Nat.card (mackeySubgroup s H K) = Nat.card H := by
+    rw [mackeySubgroup_def, Subgroup.relIndex_mul_card]
+    exact Nat.card_congr (Subgroup.equivSMul (MulAut.conj s) H).toEquiv.symm
+  have hpos : 0 < Nat.card (mackeySubgroup s H K) :=
+    Nat.pos_of_ne_zero fun h => Nat.card_pos.ne' (by rw [← hrel, h, mul_zero])
+  refine Nat.eq_of_mul_eq_mul_right hpos ?_
+  rw [card_doubleCoset_mul_card_mackeySubgroup, mul_assoc, hrel]
 
 /-- The index of the Mackey subgroup in `K` depends only on the double coset `KsH`, not on the
 representative `s` chosen inside it: the two subgroups are conjugate by an element of `K`

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Real.Sqrt
-public import TauCeti.LinearAlgebra.CliffordAlgebra.RealForm
+public import TauCeti.LinearAlgebra.CliffordAlgebra.RealForm.Basic
 public import TauCeti.LinearAlgebra.QuadraticForm.Real
 public import TauCeti.NumberTheory.HilbertSymbol.Basic
 
@@ -93,7 +93,10 @@ theorem hilbertSymbol_real_eq_one_iff (a b : ℝˣ) :
   · simp only [true_iff]
     grind
 
-/-- The real Hilbert symbol is multiplicative in its first parameter. -/
+/-- The real Hilbert symbol is multiplicative in its first parameter.  Being `[simp]`, it
+expands a product in the first parameter of any real symbol, in particular of a symbol read at a
+real place of a number field through `TauCeti.unitAtRealPlace`. -/
+@[simp]
 theorem hilbertSymbol_real_mul_left (a a' b : ℝˣ) :
     hilbertSymbol (a * a') b = hilbertSymbol a b * hilbertSymbol a' b := by
   simp only [hilbertSymbol_real, Units.val_mul, mul_neg_iff]
@@ -101,7 +104,10 @@ theorem hilbertSymbol_real_mul_left (a a' b : ℝˣ) :
   have := a'.ne_zero
   split_ifs <;> (try simp) <;> grind
 
-/-- The real Hilbert symbol is multiplicative in its second parameter. -/
+/-- The real Hilbert symbol is multiplicative in its second parameter.  Being `[simp]`, it
+expands a product in the second parameter of any real symbol, in particular of a symbol read at a
+real place of a number field through `TauCeti.unitAtRealPlace`. -/
+@[simp]
 theorem hilbertSymbol_real_mul_right (a b b' : ℝˣ) :
     hilbertSymbol a (b * b') = hilbertSymbol a b * hilbertSymbol a b' := by
   let _ : Invertible (2 : ℝ) := invertibleOfNonzero two_ne_zero
@@ -162,7 +168,7 @@ theorem prod_hilbertSymbol_realCliffordWeight (p q : ℕ) :
     simp only [Units.val_mk0, ← realCliffordForm_def]
     exact QuadraticMap.Equivalent.refl _
   rw [prod_hilbertSymbol_real_of_equiv_weightedSumSquares hdiag,
-    ← (_root_.QuadraticForm.equivalent_realSignatureForm_realCliffordForm p q).sigNeg_eq,
+    ← (TauCeti.equivalent_realSignatureForm_realCliffordForm p q).sigNeg_eq,
     _root_.QuadraticForm.sigNeg_realSignatureForm]
 
 end Real

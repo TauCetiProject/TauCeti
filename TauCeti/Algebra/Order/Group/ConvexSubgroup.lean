@@ -12,6 +12,7 @@ public import Mathlib.Algebra.Order.Hom.MonoidWithZero
 public import Mathlib.GroupTheory.QuotientGroup.Basic
 public import Mathlib.Order.Quotient
 public import TauCeti.Algebra.Order.Group.Subgroup
+import Mathlib.Algebra.Group.Subgroup.Order
 
 /-!
 # Convex subgroups of linearly ordered groups
@@ -157,7 +158,7 @@ theorem mem_top {x : Γ} : x ∈ (⊤ : ConvexSubgroup Γ) :=
 
 /-- Convex subgroups are ordered by inclusion. -/
 instance : PartialOrder (ConvexSubgroup Γ) :=
-  PartialOrder.ofSetLike (ConvexSubgroup Γ) Γ
+  PartialOrder.ofSetLike (ConvexSubgroup Γ)
 
 instance : OrderBot (ConvexSubgroup Γ) where
   bot_le H _ hx := mem_bot.mp hx ▸ one_mem H
@@ -293,7 +294,7 @@ value group. -/
 def comap {Δ F : Type*} [Group Δ] [LinearOrder Δ] [FunLike F Γ Δ]
     [MonoidHomClass F Γ Δ] [OrderHomClass F Γ Δ] (f : F)
     (K : ConvexSubgroup Δ) : ConvexSubgroup Γ where
-  toSubgroup := K.toSubgroup.comap (MonoidHomClass.toMonoidHom f)
+  toSubgroup := K.toSubgroup.comap (MonoidHom.ofClass f)
   ordConnected' := K.ordConnected'.preimage_mono (OrderHomClass.monotone f)
 
 @[simp]
@@ -351,10 +352,7 @@ noncomputable instance : LinearOrder (ConvexSubgroup Γ) :=
 /-- An element bounded in absolute value by a member of a convex subgroup is a member. -/
 theorem mem_of_mabs_le_mabs {H : ConvexSubgroup Γ} {x h : Γ} (hh : h ∈ H)
     (hx : |x|ₘ ≤ |h|ₘ) : x ∈ H := by
-  have habs : |h|ₘ ∈ H := by
-    rcases mabs_choice h with e | e <;> rw [e]
-    · exact hh
-    · exact inv_mem hh
+  have habs : |h|ₘ ∈ H := mabs_mem_iff.mpr hh
   exact H.convex (inv_mem habs) habs (by simpa using (mabs_le.mp hx).1) (mabs_le.mp hx).2
 
 /-- The largest convex subgroup avoiding an element `γ ≠ 1`: Mathlib's Archimedean open ball
@@ -379,7 +377,7 @@ theorem mem_maxAvoid_iff {γ : Γ} {hγ : γ ≠ 1} {x : Γ} :
     (fun h ↦ hγ (MulArchimedeanClass.mk_eq_top_iff.mp h))
 
 /-- The avoided element is not a member. -/
-theorem not_mem_maxAvoid {γ : Γ} (hγ : γ ≠ 1) : γ ∉ maxAvoid hγ := by
+theorem notMem_maxAvoid {γ : Γ} (hγ : γ ≠ 1) : γ ∉ maxAvoid hγ := by
   rw [mem_maxAvoid_iff (hγ := hγ)]
   exact lt_irrefl _
 
@@ -388,7 +386,7 @@ theorem not_mem_maxAvoid {γ : Γ} (hγ : γ ≠ 1) : γ ∉ maxAvoid hγ := by
 @[simp]
 theorem le_maxAvoid {γ : Γ} {hγ : γ ≠ 1} {H : ConvexSubgroup Γ} :
     H ≤ maxAvoid hγ ↔ γ ∉ H := by
-  refine ⟨fun h hγH ↦ not_mem_maxAvoid hγ (h hγH), fun h x hx ↦ ?_⟩
+  refine ⟨fun h hγH ↦ notMem_maxAvoid hγ (h hγH), fun h x hx ↦ ?_⟩
   rw [mem_maxAvoid_iff (hγ := hγ)]
   by_contra hle
   rw [not_lt, MulArchimedeanClass.mk_le_mk] at hle
@@ -423,7 +421,7 @@ theorem mem_closure_of_nonempty_of_mul_mem_of_one_le {S : Set Γ} (hne : S.Nonem
               ⟨g, hg, by simpa using inv_le_inv' hag, by simpa using inv_le_inv' hga⟩ }
         ordConnected' := by
           constructor
-          rintro p ⟨g, hg, hgp, hpg⟩ q ⟨h, hh, hhq, hqh⟩ z hz
+          rintro p ⟨g, hg, hgp, _⟩ q ⟨h, hh, _, hqh⟩ z hz
           refine ⟨g * h, hmul g hg h hh, ?_, ?_⟩
           · refine le_trans ?_ (hgp.trans hz.1)
             rw [mul_inv]
@@ -478,10 +476,7 @@ theorem mem_closure_singleton {y x : Γ} :
       (MulArchimedeanClass.mem_closedBallSubgroup_iff.mp hb)
   · rintro ⟨n, hn⟩
     have hy : y ∈ closure ({y} : Set Γ) := subset_closure _ rfl
-    have habs : |y|ₘ ∈ closure ({y} : Set Γ) := by
-      rcases mabs_choice y with h | h <;> rw [h]
-      · exact hy
-      · exact inv_mem hy
+    have habs : |y|ₘ ∈ closure ({y} : Set Γ) := mabs_mem_iff.mpr hy
     obtain ⟨hlo, hhi⟩ := mabs_le.mp hn
     exact (closure {y}).convex (inv_mem (pow_mem habs n)) (pow_mem habs n) hlo hhi
 
@@ -663,7 +658,7 @@ theorem nontrivial_quotient_maxAvoid {γ : Γ} (hγ : γ ≠ 1) :
     Nontrivial (Γ ⧸ (maxAvoid hγ).toSubgroup) := by
   apply QuotientGroup.nontrivial_iff.mpr
   intro htop
-  apply not_mem_maxAvoid hγ
+  apply notMem_maxAvoid hγ
   rw [← mem_toSubgroup, htop]
   exact Subgroup.mem_top γ
 

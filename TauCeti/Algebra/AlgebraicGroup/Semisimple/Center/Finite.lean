@@ -39,11 +39,6 @@ universe u
 
 variable {k : Type u} [Field k] {H : FiniteTypeCommHopfAlgCat.{u, u} k}
 
--- Reducedness of the nilradical quotient supplies the tensor-reducedness required to form
--- the reduced center over the algebraic closure.
-local instance (A : Type u) [CommRing A] : IsReduced (A ⧸ nilradical A) :=
-  (Ideal.isRadical_iff_quotient_reduced _).mp (Ideal.radical_isRadical ⊥)
-
 private theorem reducedCenter_identityComponent_eq_augmentation
     (hH : semisimpleCommHopfAlgProperty k H) :
     HopfAlgebra.identityComponentHopfIdeal

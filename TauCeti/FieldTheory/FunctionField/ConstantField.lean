@@ -7,6 +7,8 @@ module
 
 public import Mathlib.FieldTheory.AlgebraicClosure
 public import TauCeti.FieldTheory.FunctionField.Basic
+public import TauCeti.RingTheory.IntegralClosure.IntegrallyClosed
+import Mathlib.FieldTheory.RatFunc.IntermediateField
 
 /-!
 # The constant field of an algebraic function field
@@ -39,6 +41,8 @@ once `F' / F` is — a theorem, not a hypothesis, and the finiteness that makes 
   `TauCeti.isIntegrallyClosedIn_iff_forall_isAlgebraic`,
   `TauCeti.isIntegrallyClosedIn_iff_finrank_algebraicClosure_eq_one`: the three faces of the
   exactness hypothesis on the field of constants.
+* `TauCeti.isIntegrallyClosedIn_of_isAlgClosed`: an algebraically closed base field is exact in
+  every domain algebra.
 * `TauCeti.IsFunctionField.algebraicClosure` and
   `TauCeti.isIntegrallyClosedIn_algebraicClosure`: `F` is a function field over its field of
   constants, and there the field of constants is exact; the two are packaged as
@@ -121,14 +125,6 @@ theorem algebraicClosure_eq_bot_iff_isIntegrallyClosedIn :
     ← algebraicClosure_toSubalgebra, ← IntermediateField.bot_toSubalgebra,
     IntermediateField.toSubalgebra_inj]
 
-/-- The elementwise form of the exactness hypothesis on the field of constants: every element of
-`F` algebraic over `k` is already a constant. This is the field-extension reading of Mathlib's
-`isIntegrallyClosedIn_iff`, whose injectivity clause is automatic here. -/
-theorem isIntegrallyClosedIn_iff_forall_isAlgebraic :
-    IsIntegrallyClosedIn k F ↔ ∀ x : F, IsAlgebraic k x → ∃ c : k, algebraMap k F c = x := by
-  rw [← algebraicClosure_eq_bot_iff_isIntegrallyClosedIn, eq_bot_iff, SetLike.le_def]
-  simp [mem_algebraicClosure_iff, IntermediateField.mem_bot]
-
 /-- The exactness hypothesis on the field of constants, read off its degree. -/
 theorem isIntegrallyClosedIn_iff_finrank_algebraicClosure_eq_one :
     IsIntegrallyClosedIn k F ↔ Module.finrank k (algebraicClosure k F) = 1 := by
@@ -138,7 +134,7 @@ theorem isIntegrallyClosedIn_iff_finrank_algebraicClosure_eq_one :
 algebraic over `algebraicClosure k F`. -/
 instance isIntegrallyClosedIn_algebraicClosure :
     IsIntegrallyClosedIn (algebraicClosure k F) F :=
-  algebraicClosure_eq_bot_iff_isIntegrallyClosedIn.1 (algebraicClosure.algebraicClosure_eq_bot k F)
+  IsIntegrallyClosedIn.of_isIntegralClosure (R := k)
 
 /-! ### The normalization device -/
 

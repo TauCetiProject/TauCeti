@@ -138,6 +138,17 @@ theorem tangentMatrix_apply (d : Derivation R (H (R := R) n)
         (coordinateRingMap R n (MvPolynomial.X (i, j))))) = _
     rfl
 
+/-- Extending coefficients of a general-linear tangent vector maps its matrix entrywise. -/
+@[simp]
+theorem tangentMatrix_mapValue {C : Type*} [CommRing C] [Algebra R C]
+    (φ : B →ₐ[R] C)
+    (d : Derivation R (H (R := R) n)
+      (Bialgebra.CounitAlgebra R (H (R := R) n) B)) :
+    tangentMatrix n (Derivation.mapValue φ d) = (tangentMatrix n d).map φ := by
+  ext i j
+  rw [Matrix.map_apply, tangentMatrix_apply, tangentMatrix_apply, Derivation.mapValue_apply]
+  exact Bialgebra.CounitAlgebra.algEquivSelf_map φ _
+
 private theorem tangentPoint_matrix_snd (d : Derivation R (H (R := R) n)
     (Bialgebra.CounitAlgebra R (H (R := R) n) B)) (i j : Fin n) :
     snd ((pointsMulEquiv (R := R) n
@@ -369,6 +380,19 @@ def cotangentDualMatrixEquiv :
       Matrix (Fin n) (Fin n) k :=
   Derivation.cotangentLinearEquiv (R := k) (A := coordinateHopfAlgebra k n) (B := k) ≪≫ₗ
     tangentLinearEquivMatrix n
+
+/-- The cotangent-dual matrix equivalence evaluates a functional through the corresponding
+tangent derivation. -/
+-- This is not a simp lemma: the more specific matrix-unit computation should keep its
+-- normal form in proofs about adjoint root spaces.
+theorem cotangentDualMatrixEquiv_apply
+    (x : Module.Dual k (Bialgebra.CotangentSpace k (coordinateHopfAlgebra k n))) :
+    cotangentDualMatrixEquiv x =
+      tangentMatrix n
+        ((Derivation.cotangentLinearEquiv (R := k)
+          (A := coordinateHopfAlgebra k n) (B := k)) x) := by
+  simp only [cotangentDualMatrixEquiv, LinearEquiv.trans_apply,
+    tangentLinearEquivMatrix_apply]
 
 /-- Scalar extension of a cotangent-dual tangent vector applies the scalar map entrywise to its
 matrix.  This is the compatibility that lets computations on coefficient-valued derivations be

@@ -14,7 +14,7 @@ import Mathlib.FieldTheory.Perfect
 
 Let `f` be a monic integer polynomial which splits in a number field `M` and is squarefree modulo
 a prime `p`. The roots of `f` in `M` are algebraic integers, so any ring homomorphism
-`ρ : 𝓞 M →+* k` to a field `k` over `𝔽_p` can be applied to them. Their images are all the roots
+`ρ : 𝓞 M →+* k` to a domain `k` over `𝔽_p` can be applied to them. Their images are all the roots
 of `f mod p` in `k`, counted with multiplicity, and these are distinct because `f mod p` is
 squarefree over the perfect field `𝔽_p`. So `f mod p` splits in `k`, and reduction along `ρ` is
 a bijection between the root sets.
@@ -44,13 +44,13 @@ private theorem map_map_intCast_rat (f : ℤ[X]) :
       ((algebraMap (𝓞 M) M).comp (algebraMap ℤ (𝓞 M)))]
 
 /-- **Reducing the roots of `f` modulo a prime.** Let `f` be monic, split in `M`, and squarefree
-modulo `p`, and let `ρ : 𝓞 M →+* k` be a ring homomorphism to a field `k` over `𝔽_p`. Then
+modulo `p`, and let `ρ : 𝓞 M →+* k` be a ring homomorphism to a domain `k` over `𝔽_p`. Then
 `f mod p` splits in `k`, and reduction along `ρ` is a bijection from the roots of `f` in `M` onto
 the roots of `f mod p` in `k`. -/
 theorem splits_and_exists_rootSet_equiv_of_squarefree_map_zmod (hf : f.Monic)
     (hsq : Squarefree (f.map (Int.castRingHom (ZMod p))))
     (hsplit : ((f.map (Int.castRingHom ℚ)).map (algebraMap ℚ M)).Splits)
-    {k : Type*} [Field k] [Algebra (ZMod p) k] (ρ : 𝓞 M →+* k) :
+    {k : Type*} [CommRing k] [IsDomain k] [Algebra (ZMod p) k] (ρ : 𝓞 M →+* k) :
     ((f.map (Int.castRingHom (ZMod p))).map (algebraMap (ZMod p) k)).Splits ∧
       ∃ e : (f.map (Int.castRingHom ℚ)).rootSet M ≃
           (f.map (Int.castRingHom (ZMod p))).rootSet k,

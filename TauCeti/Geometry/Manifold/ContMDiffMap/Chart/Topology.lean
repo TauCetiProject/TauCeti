@@ -119,7 +119,7 @@ theorem tendsto_manifoldWeakWhitney_iff {P : Type*} {l : Filter P}
     exact h x y m hm K hK V hV hf
 
 /-- Evaluation at a fixed source point is continuous for the manifold weak Whitney topology. -/
-theorem continuous_eval_manifoldWeakWhitney (x : M) :
+theorem continuous_eval_const_manifoldWeakWhitney (x : M) :
     Continuous (fun f : C^n⟮I, M; J, N⟯ ↦ f x) := by
   apply continuous_def.mpr
   intro U hU
@@ -153,7 +153,7 @@ theorem continuous_eval_manifoldWeakWhitney (x : M) :
 /-- A Hausdorff target gives a Hausdorff weak Whitney map space. -/
 theorem t2Space_manifoldWeakWhitney [T2Space N] : T2Space C^n⟮I, M; J, N⟯ :=
   T2Space.of_injective_continuous DFunLike.coe_injective
-    (continuous_pi (fun x ↦ continuous_eval_manifoldWeakWhitney x))
+    (continuous_pi (fun x ↦ continuous_eval_const_manifoldWeakWhitney x))
 
 end Topology
 
@@ -204,7 +204,8 @@ theorem manifoldWeakWhitneyTopology_self :
     apply ContinuousMap.ext
     intro y
     simp only [Function.comp_apply, ContinuousMap.comp_apply]
-    convert (chartIteratedFDeriv_self_apply f 0 m hm (toTarget y)).symm using 1 <;> rfl
+    convert (chartIteratedFDeriv_self_apply f 0 m hm (toTarget y)).symm using 1
+    rfl
   · apply continuous_id_iff_le.mp
     let : TopologicalSpace C^n⟮𝓘(𝕜, E), E; 𝓘(𝕜, F), F⟯ :=
       ContMDiffMap.weakWhitneyTopology
@@ -216,7 +217,7 @@ theorem manifoldWeakWhitneyTopology_self :
         (E := E) (F := F) (n := n) m hm)
     have hchart : Continuous (fun f : C^n⟮𝓘(𝕜, E), E; 𝓘(𝕜, F), F⟯ ↦
         chartIteratedFDeriv f x m hm) := by
-      convert h using 1 <;> try rfl
+      convert h using 1
       funext f
       apply ContinuousMap.ext
       intro z

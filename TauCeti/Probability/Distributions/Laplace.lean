@@ -12,6 +12,7 @@ public import Mathlib.Probability.Moments.Basic
 public import Mathlib.Probability.Moments.IntegrableExpMul
 public import Mathlib.Probability.Moments.Variance
 import TauCeti.Analysis.Fourier.ExpNegAbs
+import TauCeti.MeasureTheory.Integral.Bochner.Basic
 import Mathlib.Analysis.SpecialFunctions.Gaussian.GaussianIntegral
 import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
 import TauCeti.MeasureTheory.Measure.WithDensity
@@ -367,20 +368,6 @@ theorem cdf_laplaceMeasure_eq (hb : 0 < b) (μ x : ℝ) :
 
 /-! ### Moments -/
 
-/-- An even function integrable on the positive half-line is integrable on the whole line. -/
-private lemma integrable_comp_abs {f : ℝ → ℝ} (hf : IntegrableOn f (Ioi 0)) :
-    Integrable fun y : ℝ => f |y| := by
-  have hIoi : IntegrableOn (fun y : ℝ => f |y|) (Ioi 0) :=
-    hf.congr_fun (fun y hy => by rw [abs_of_pos hy]) measurableSet_Ioi
-  have hIic : IntegrableOn (fun y : ℝ => f |y|) (Iic 0) := by
-    have hemb : MeasurableEmbedding fun y : ℝ => -y := (Homeomorph.neg ℝ).measurableEmbedding
-    have h := ((Measure.measurePreserving_neg (volume : Measure ℝ)).integrableOn_comp_preimage
-      hemb (f := fun u : ℝ => f |u|) (s := Ici (0 : ℝ))).2
-      (Iff.mpr integrableOn_Ici_iff_integrableOn_Ioi hIoi)
-    simpa [Function.comp_def, abs_neg] using h
-  rw [← integrableOn_univ, ← Iic_union_Ioi (a := (0 : ℝ))]
-  exact hIic.union hIoi
-
 /-- Algebraic normalization shared by the absolute-moment value and integrability proofs. -/
 private lemma neg_div_eq_neg_inv_mul (t b : ℝ) : -t / b = -b⁻¹ * t := by
   ring
@@ -421,7 +408,7 @@ theorem integral_pow_abs_sub_laplaceMeasure (hb : 0 < b) (μ : ℝ) (n : ℕ) :
 theorem integrable_pow_abs_sub_laplaceMeasure (μ : ℝ) (n : ℕ) :
     Integrable (fun y => |y - μ| ^ n) (laplaceMeasure μ b) := by
   by_cases hb : 0 < b
-  · have hb0 : b ≠ 0 := hb.ne'
+  · have _ : b ≠ 0 := hb.ne'
     rw [integrable_laplaceMeasure_iff]
     have hIoi : IntegrableOn
         (fun t : ℝ => (2 * b)⁻¹ * Real.exp (-t / b) * t ^ n) (Ioi 0) := by
@@ -431,7 +418,7 @@ theorem integrable_pow_abs_sub_laplaceMeasure (μ : ℝ) (n : ℕ) :
         (fun t _ => ?_) measurableSet_Ioi
       rw [neg_div_eq_neg_inv_mul]
       ring
-    have habs := integrable_comp_abs hIoi
+    have habs := TauCeti.MeasureTheory.integrable_comp_abs hIoi
     refine (habs.comp_sub_right μ).congr (ae_of_all _ fun y => ?_)
     simp only [laplacePDFReal_of_pos hb]
     ring
@@ -499,7 +486,7 @@ theorem integral_id_laplaceMeasure (hb : 0 < b) (μ : ℝ) :
 /-- **The variance of a Laplace law with scale `b` is `2 * b ^ 2`.** -/
 theorem variance_id_laplaceMeasure (hb : 0 < b) (μ : ℝ) :
     variance id (laplaceMeasure μ b) = 2 * b ^ 2 := by
-  have hp : IsProbabilityMeasure (laplaceMeasure μ b) := isProbabilityMeasure_laplaceMeasure hb μ
+  have _ : IsProbabilityMeasure (laplaceMeasure μ b) := isProbabilityMeasure_laplaceMeasure hb μ
   rw [variance_eq_integral (by fun_prop)]
   simp only [id_eq]
   rw [integral_id_laplaceMeasure hb μ]
@@ -623,8 +610,8 @@ theorem mgf_id_laplaceMeasure (hb : 0 < b) (μ : ℝ) {t : ℝ}
   have hden : 1 - b ^ 2 * t ^ 2 ≠ 0 := by
     have : 0 < (1 - b * t) * (1 + b * t) := mul_pos hminus hplus
     nlinarith
-  have hleft : t + b⁻¹ ≠ 0 := ne_of_gt (by linarith [ht.1])
-  have hright : t - b⁻¹ ≠ 0 := ne_of_lt (by linarith [ht.2])
+  have _ : t + b⁻¹ ≠ 0 := ne_of_gt (by linarith [ht.1])
+  have _ : t - b⁻¹ ≠ 0 := ne_of_lt (by linarith [ht.2])
   have hplus_ne : b * t + 1 ≠ 0 := by nlinarith
   have hminus_ne : b * t - 1 ≠ 0 := by nlinarith
   have hexp_left :
@@ -677,7 +664,7 @@ private theorem charFun_laplaceMeasure_zero_loc (hb : 0 < b) (t : ℝ) :
     _ = ((1 / (1 + b ^ 2 * t ^ 2) : ℝ) : ℂ) := by
       norm_cast
       have hb0 : b ≠ 0 := hb.ne'
-      have hden : b⁻¹ ^ 2 + t ^ 2 ≠ 0 := by positivity
+      have _ : b⁻¹ ^ 2 + t ^ 2 ≠ 0 := by positivity
       field_simp
 
 /-- **The characteristic function of a Laplace law** with location `μ` and positive scale `b` is

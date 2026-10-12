@@ -43,7 +43,7 @@ the unit `a`. On the one-crossing kink diagram `TauCeti.PDCode.kink` it takes th
 `-a ^ 3`, the framing factor of the first Reidemeister move. Whether the bracket descends from
 diagrams to knots is the question of its behaviour under the Reidemeister moves, which are
 separate constructions on PD-codes; the first move is in
-`TauCeti/KnotTheory/PDCode/ReidemeisterOne.lean`.
+`TauCeti/KnotTheory/PDCode/Reidemeister/One.lean`.
 
 For an oriented PD-code, `TauCeti.OrientedPDCode.normalizedKauffmanBracket` multiplies the bracket
 by the writhe correction `(-a ^ 3) ^ (-writhe)`. This is the normalization used to obtain the
@@ -51,14 +51,12 @@ Jones polynomial from the bracket.
 
 ## Main definitions
 
-* `TauCeti.PDCode.slotSmoothing`: the two smoothings of the four slots at a crossing.
 * `TauCeti.PDCode.smoothingTurn`: the reconnection of the half-edges smoothing every crossing.
 * `TauCeti.PDCode.smoothingChoice`: the over-pair indicator a state selects at each crossing.
 * `TauCeti.PDCode.statePerm`: the traversal of the smoothed diagram.
 * `TauCeti.PDCode.stateLoopCount`: the number of circles of the smoothed diagram.
 * `TauCeti.PDCode.stateWeight`: the weight `a ^ (A(s) - B(s))` of a state.
 * `TauCeti.PDCode.kauffmanBracket`: the Kauffman bracket state sum.
-* `TauCeti.PDCode.kink`: the one-crossing kink diagram.
 * `TauCeti.OrientedPDCode.normalizedKauffmanBracket`: the writhe-normalized bracket.
 
 ## Main results
@@ -73,8 +71,6 @@ Jones polynomial from the bracket.
 * `TauCeti.PDCode.stateLoopCount_kink_true`, `TauCeti.PDCode.stateLoopCount_kink_false`: the two
   smoothings of a kink leave two circles and one circle.
 * `TauCeti.PDCode.kauffmanBracket_kink`: the kink diagram has bracket `-a ^ 3`.
-* `TauCeti.PDCode.crossingComponentCount_kink`: the kink has one component, so it is a diagram of
-  a knot.
 
 ## References
 
@@ -95,35 +91,6 @@ namespace PDCode
 
 variable {n : ℕ}
 
-/-- The two smoothings of the four slots at a crossing, indexed by an over-pair indicator.
-`slotSmoothing false` pairs slot `0` with slot `3` and slot `1` with slot `2`, and
-`slotSmoothing true` pairs slot `0` with slot `1` and slot `2` with slot `3`: in both cases each
-slot of the pair indicated is joined to the slot preceding it in the counterclockwise order.
-Applied to `D.overPair i` it is therefore the `A`-smoothing at crossing `i`, the one turning left
-off the over-strand, and applied to `!D.overPair i` the `B`-smoothing. -/
-def slotSmoothing (b : Bool) : Equiv.Perm (Fin 4) :=
-  if b then Equiv.swap 0 1 * Equiv.swap 2 3 else Equiv.swap 0 3 * Equiv.swap 1 2
-
-/-- The `true` smoothing pairs slots `0`-`1` and `2`-`3`. -/
-@[simp] theorem slotSmoothing_true :
-    slotSmoothing true = Equiv.swap 0 1 * Equiv.swap 2 3 := (rfl)
-
-/-- The `false` smoothing pairs slots `0`-`3` and `1`-`2`. -/
-@[simp] theorem slotSmoothing_false :
-    slotSmoothing false = Equiv.swap 0 3 * Equiv.swap 1 2 := (rfl)
-
-/-- A local smoothing is an involution of the four slots. -/
-@[simp]
-theorem slotSmoothing_apply_apply (b : Bool) (slot : Fin 4) :
-    slotSmoothing b (slotSmoothing b slot) = slot := by
-  revert slot
-  cases b <;> decide
-
-/-- A local smoothing moves every slot: it pairs the four slots off into two arcs. -/
-theorem slotSmoothing_ne (b : Bool) (slot : Fin 4) : slotSmoothing b slot ≠ slot := by
-  revert slot
-  cases b <;> decide
-
 /-- A local smoothing never joins a slot to the opposite slot: the two arcs of a smoothing cut
 across the two local strands instead of following them, which is what distinguishes a smoothing
 from `TauCeti.PDCode.crossingTurn`. -/
@@ -131,20 +98,26 @@ theorem slotSmoothing_ne_oppositeCrossingSlot (b : Bool) (slot : Fin 4) :
     slotSmoothing b slot ≠ oppositeCrossingSlot slot := by
   have key : ∀ (c : Bool) (t : Fin 4), (slotSmoothing c t).val ≠ (t + 2).val := by
     intro c
-    cases c <;> decide
+    cases c <;> simp only [slotSmoothing_false, slotSmoothing_true] <;> decide
   intro h
   exact key b slot (by rw [h, oppositeCrossingSlot_apply])
 
 /-- The two local smoothings at a crossing are distinct. -/
 theorem slotSmoothing_ne_slotSmoothing_not (b : Bool) : slotSmoothing b ≠ slotSmoothing !b := by
-  cases b <;> decide
+  cases b <;> simp only [Bool.not_false, Bool.not_true, slotSmoothing_false, slotSmoothing_true] <;>
+    decide
 
 /-- Smooth every crossing of a PD-code, using at crossing `i` the local smoothing
 `slotSmoothing (b i)`. This is the smoothing counterpart of `TauCeti.PDCode.crossingTurn`, which
 instead follows a local strand through a crossing. -/
 def smoothingTurn (D : PDCode n) (b : Fin n → Bool) : Equiv.Perm (Fin (4 * n)) :=
   D.halfEdge.permCongr
-    ((crossingSlotEquiv n).permCongr (Equiv.prodCongrRight fun i => slotSmoothing (b i)))
+    ((crossingSlotEquiv n).permCongr (Equiv.prodCongrRight fun i ↦ slotSmoothing (b i)))
+
+/-- The defining equation for the smoothing traversal permutation. -/
+theorem smoothingTurn_def (D : PDCode n) (b : Fin n → Bool) :
+    D.smoothingTurn b = D.halfEdge.permCongr
+      ((crossingSlotEquiv n).permCongr (Equiv.prodCongrRight fun i ↦ slotSmoothing (b i))) := (rfl)
 
 /-- Smoothing reconnects the slots at a crossing by the chosen local smoothing. -/
 @[simp] theorem smoothingTurn_crossing (D : PDCode n) (b : Fin n → Bool) (i : Fin n)
@@ -166,20 +139,26 @@ half-edges; only which of them is the `A`-smoothing changes. -/
     D.mirror.smoothingTurn b = D.smoothingTurn b := by
   simp [smoothingTurn]
 
+/-- Reconnecting arcs does not change how the crossings are smoothed. -/
+@[simp] theorem smoothingTurn_reconnect (D : PDCode n) (p q : Fin (4 * n))
+    (c : Fin n → Bool) :
+    (D.reconnect p q).smoothingTurn c = D.smoothingTurn c := by
+  rw [smoothingTurn_def, smoothingTurn_def, reconnect_halfEdge]
+
 /-- Relabelling conjugates smoothing by the half-edge relabelling, after transporting the family
 of local smoothings along the crossing relabelling. -/
-@[simp] theorem smoothingTurn_relabel (D : PDCode n) (b : Fin n → Bool)
-    (half : Equiv.Perm (Fin (4 * n))) (cross : Equiv.Perm (Fin n)) :
+@[simp] theorem smoothingTurn_relabel {m : ℕ} (D : PDCode n) (b : Fin m → Bool)
+    (half : Fin (4 * n) ≃ Fin (4 * m)) (cross : Fin n ≃ Fin m) :
     (D.relabel half cross).smoothingTurn b = half.permCongr (D.smoothingTurn (b ∘ cross)) := by
   ext h
   obtain ⟨x, rfl⟩ := half.surjective h
   obtain ⟨x, rfl⟩ := D.halfEdge.surjective x
   obtain ⟨⟨i, slot⟩, rfl⟩ := (crossingSlotEquiv n).surjective x
   have he : half (D.halfEdge (crossingSlotEquiv n (i, slot))) =
-      (D.relabel half cross).halfEdge (crossingSlotEquiv n (cross i, slot)) := by
+      (D.relabel half cross).halfEdge (crossingSlotEquiv m (cross i, slot)) := by
     rw [← D.crossing_apply, ← (D.relabel half cross).crossing_apply]
-    simpa only [Equiv.symm_apply_apply] using (D.relabel_crossing half cross (cross i) slot).symm
-  rw [he, smoothingTurn_crossing, relabel_crossing]
+    simpa only [Equiv.symm_apply_apply] using (D.crossing_relabel half cross (cross i) slot).symm
+  rw [he, smoothingTurn_crossing, crossing_relabel]
   simp
 
 /-- The over-pair indicator of the local smoothing that a state selects at a crossing: the code's
@@ -202,13 +181,20 @@ over-pair indicator. -/
 
 /-- Mirroring a code exchanges the `A`- and `B`-smoothings, so it acts on states by negation. -/
 @[simp] theorem smoothingChoice_mirror (D : PDCode n) (s : Fin n → Bool) :
-    D.mirror.smoothingChoice s = D.smoothingChoice fun j => !(s j) := by
+    D.mirror.smoothingChoice s = D.smoothingChoice fun j ↦ !(s j) := by
   funext i
   cases hs : s i <;> simp [smoothingChoice, hs]
 
+/-- Reconnecting arcs does not change which smoothing a state selects. -/
+@[simp] theorem smoothingChoice_reconnect (D : PDCode n) (p q : Fin (4 * n))
+    (s : Fin n → Bool) :
+    (D.reconnect p q).smoothingChoice s = D.smoothingChoice s := by
+  funext i
+  cases hs : s i <;> simp [hs]
+
 /-- Relabelling reads a state's choice at the old crossing name. -/
-@[simp] theorem smoothingChoice_relabel (D : PDCode n) (s : Fin n → Bool)
-    (half : Equiv.Perm (Fin (4 * n))) (cross : Equiv.Perm (Fin n)) :
+@[simp] theorem smoothingChoice_relabel {m : ℕ} (D : PDCode n) (s : Fin m → Bool)
+    (half : Fin (4 * n) ≃ Fin (4 * m)) (cross : Fin n ≃ Fin m) :
     (D.relabel half cross).smoothingChoice s = D.smoothingChoice (s ∘ cross) ∘ cross.symm := by
   funext i
   simp [smoothingChoice]
@@ -230,12 +216,12 @@ theorem statePerm_def (D : PDCode n) (s : Fin n → Bool) :
 
 /-- Mirroring a code negates the state that produces a given smoothed diagram. -/
 @[simp] theorem statePerm_mirror (D : PDCode n) (s : Fin n → Bool) :
-    D.mirror.statePerm s = D.statePerm fun i => !(s i) := by
+    D.mirror.statePerm s = D.statePerm fun i ↦ !(s i) := by
   simp [statePerm]
 
 /-- Relabelling conjugates smoothed traversal by the half-edge relabelling. -/
-@[simp] theorem statePerm_relabel (D : PDCode n) (s : Fin n → Bool)
-    (half : Equiv.Perm (Fin (4 * n))) (cross : Equiv.Perm (Fin n)) :
+@[simp] theorem statePerm_relabel {m : ℕ} (D : PDCode n) (s : Fin m → Bool)
+    (half : Fin (4 * n) ≃ Fin (4 * m)) (cross : Fin n ≃ Fin m) :
     (D.relabel half cross).statePerm s = half.permCongr (D.statePerm (s ∘ cross)) := by
   have hcomp : (D.smoothingChoice (s ∘ cross) ∘ cross.symm) ∘ cross
       = D.smoothingChoice (s ∘ cross) := by
@@ -243,6 +229,47 @@ theorem statePerm_def (D : PDCode n) (s : Fin n → Bool) :
     simp
   rw [statePerm, statePerm, smoothingChoice_relabel, smoothingTurn_relabel, hcomp,
     relabel_edgePair, PerfectMatching.congr_val, ← Equiv.permCongr_mul]
+
+section AddCrossing
+
+/-! ### Codes with one crossing more
+
+Let `D'` be a code with one crossing more than `D`, whose first `n` crossings keep the half-edges
+and over-strands of `D`, and whose last crossing takes the four new half-edge positions and has
+over-pair indicator `b`. Crossing insertion and the first Reidemeister move build such codes. A
+state of `D'` is a state of `D` together with a choice at the new crossing, and the lemmas below
+split its smoothing accordingly. -/
+
+variable {D : PDCode n} {D' : PDCode (n + 1)}
+
+/-- Smoothing `D'` is smoothing `D` together with the chosen local smoothing of the new
+crossing. -/
+theorem smoothingTurn_eq_permCongr_sumCongr
+    (hD : D'.halfEdge = (halfEdgeSuccEquiv n).permCongr (Perm.sumCongr D.halfEdge 1))
+    (c : Fin (n + 1) → Bool) :
+    D'.smoothingTurn c = (halfEdgeSuccEquiv n).permCongr
+      (Perm.sumCongr (D.smoothingTurn (Fin.init c)) (slotSmoothing (c (Fin.last n)))) :=
+  eq_permCongr_sumCongr_of_halfEdge_eq hD (fun i => slotSmoothing (c i))
+    (fun i slot => by simpa only [Fin.init_def] using D.smoothingTurn_crossing (Fin.init c) i slot)
+    (D'.smoothingTurn_crossing c)
+
+variable {b : Bool} (hO : D'.overPair = Fin.snoc (α := fun _ => Bool) D.overPair b)
+include hO
+
+/-- At the old crossings, a state of `D'` selects the smoothings its restriction selects
+in `D`. -/
+theorem init_smoothingChoice_of_overPair_eq (s : Fin (n + 1) → Bool) :
+    Fin.init (D'.smoothingChoice s) = D.smoothingChoice (Fin.init s) := by
+  funext i
+  cases hs : s i.castSucc <;> simp [Fin.init, hs, hO]
+
+/-- At the new crossing, a state of `D'` selects the local smoothing `slotSmoothing true` exactly
+when its choice there is `b`. -/
+theorem smoothingChoice_last_of_overPair_eq (s : Fin (n + 1) → Bool) :
+    D'.smoothingChoice s (Fin.last n) = (s (Fin.last n) == b) := by
+  cases hs : s (Fin.last n) <;> cases b <;> simp [hs, hO]
+
+end AddCrossing
 
 /-- The number of circles of the diagram smoothed according to the state `s`, the crossing-free
 circles of the code included. Each circle meeting a crossing is represented by the two directed
@@ -259,7 +286,7 @@ theorem stateLoopCount_def (D : PDCode n) (s : Fin n → Bool) :
 /-- Smoothing every crossing of a code pairs off its half-edges. -/
 theorem isPerfectMatching_smoothingTurn (D : PDCode n) (b : Fin n → Bool) :
     IsPerfectMatching (D.smoothingTurn b) := by
-  refine isPerfectMatching_iff.mpr ⟨D.smoothingTurn_apply_apply b, fun h hh => ?_⟩
+  refine isPerfectMatching_iff.mpr ⟨D.smoothingTurn_apply_apply b, fun h hh ↦ ?_⟩
   obtain ⟨x, rfl⟩ := D.halfEdge.surjective h
   obtain ⟨⟨i, slot⟩, rfl⟩ := (crossingSlotEquiv n).surjective x
   rw [smoothingTurn_crossing, crossing_apply, D.halfEdge.apply_eq_iff_eq,
@@ -273,18 +300,6 @@ theorem even_orbitCount_statePerm (D : PDCode n) (s : Fin n → Bool) :
     Even (orbitCount (D.statePerm s)) :=
   (D.isPerfectMatching_smoothingTurn _).even_orbitCount_mul D.edgePair.prop
 
-/-- A code with a crossing leaves at least one circle in every state. -/
-theorem one_le_stateLoopCount (D : PDCode n) (hn : n ≠ 0) (s : Fin n → Bool) :
-    1 ≤ D.stateLoopCount s := by
-  have hpos : 0 < orbitCount (D.statePerm s) := by
-    have : Nonempty (Quotient (SameCycle.setoid (D.statePerm s))) :=
-      ⟨Quotient.mk _ ⟨0, by omega⟩⟩
-    rw [orbitCount_def]
-    exact Nat.card_pos
-  obtain ⟨k, hk⟩ := D.even_orbitCount_statePerm s
-  rw [stateLoopCount_def]
-  omega
-
 /-- A code with no crossings has one circle per crossing-free component, in every state. -/
 @[simp] theorem stateLoopCount_eq_crossinglessComponentCount (D : PDCode 0) (s : Fin 0 → Bool) :
     D.stateLoopCount s = D.crossinglessComponentCount := by
@@ -292,14 +307,35 @@ theorem one_le_stateLoopCount (D : PDCode n) (hn : n ≠ 0) (s : Fin n → Bool)
   simp at h
   simp [stateLoopCount_def, h]
 
+/-- Every smoothing of a diagram with a component has at least one circle. -/
+theorem one_le_stateLoopCount_of_componentCount_pos (D : PDCode n)
+    (h : 0 < D.componentCount) (s : Fin n → Bool) : 1 ≤ D.stateLoopCount s := by
+  by_cases hn : n = 0
+  · subst n
+    have hc : 0 < D.crossinglessComponentCount := by
+      simpa [componentCount_eq, crossingComponentCount_eq_zero] using h
+    rw [stateLoopCount_eq_crossinglessComponentCount]
+    omega
+  · have hpos : 0 < orbitCount (D.statePerm s) := by
+      let _ : Nonempty (Fin (4 * n)) := ⟨⟨0, by omega⟩⟩
+      exact Equiv.Perm.orbitCount_pos (D.statePerm s)
+    obtain ⟨k, hk⟩ := D.even_orbitCount_statePerm s
+    rw [stateLoopCount_def]
+    omega
+
+/-- A code with a crossing has at least one circle in every state. -/
+theorem one_le_stateLoopCount (D : PDCode n) (hn : n ≠ 0) (s : Fin n → Bool) :
+    1 ≤ D.stateLoopCount s :=
+  D.one_le_stateLoopCount_of_componentCount_pos (D.componentCount_pos hn) s
+
 /-- Mirroring a code negates the state producing a given circle count. -/
 @[simp] theorem stateLoopCount_mirror (D : PDCode n) (s : Fin n → Bool) :
-    D.mirror.stateLoopCount s = D.stateLoopCount fun i => !(s i) := by
+    D.mirror.stateLoopCount s = D.stateLoopCount fun i ↦ !(s i) := by
   simp [stateLoopCount_def]
 
 /-- Relabelling preserves the circle count of every state. -/
-@[simp] theorem stateLoopCount_relabel (D : PDCode n) (s : Fin n → Bool)
-    (half : Equiv.Perm (Fin (4 * n))) (cross : Equiv.Perm (Fin n)) :
+@[simp] theorem stateLoopCount_relabel {m : ℕ} (D : PDCode n) (s : Fin m → Bool)
+    (half : Fin (4 * n) ≃ Fin (4 * m)) (cross : Fin n ≃ Fin m) :
     (D.relabel half cross).stateLoopCount s = D.stateLoopCount (s ∘ cross) := by
   simp [stateLoopCount_def]
 
@@ -316,29 +352,36 @@ def stateWeight (s : Fin n → Bool) (a : Rˣ) : Rˣ :=
 theorem stateWeight_def (s : Fin n → Bool) (a : Rˣ) :
     stateWeight s a = ∏ i, bif s i then a else a⁻¹ := (rfl)
 
+/-- Concatenating states multiplies their weights. -/
+@[simp]
+theorem stateWeight_append {m : ℕ} (s : Fin n → Bool) (t : Fin m → Bool) (a : Rˣ) :
+    stateWeight (Fin.append s t) a = stateWeight s a * stateWeight t a := by
+  simp [stateWeight_def, Fin.prod_univ_add]
+
 /-- Negating a state inverts its weight, since it exchanges the `A`- and `B`-smoothings. -/
 @[simp] theorem stateWeight_not (s : Fin n → Bool) (a : Rˣ) :
-    stateWeight (fun i => !(s i)) a = (stateWeight s a)⁻¹ := by
+    stateWeight (fun i ↦ !(s i)) a = (stateWeight s a)⁻¹ := by
   rw [stateWeight, stateWeight, ← Finset.prod_inv_distrib]
-  refine Finset.prod_congr rfl fun i _ => ?_
+  refine Finset.prod_congr rfl fun i _ ↦ ?_
   cases hs : s i <;> simp
 
 /-- Inverting the unit inverts every state weight. -/
 @[simp] theorem stateWeight_inv (s : Fin n → Bool) (a : Rˣ) :
     stateWeight s a⁻¹ = (stateWeight s a)⁻¹ := by
   rw [stateWeight, stateWeight, ← Finset.prod_inv_distrib]
-  refine Finset.prod_congr rfl fun i _ => ?_
+  refine Finset.prod_congr rfl fun i _ ↦ ?_
   cases hs : s i <;> simp
 
 /-- Transporting a state along a relabelling of the crossings preserves its weight. -/
-@[simp] theorem stateWeight_comp (s : Fin n → Bool) (a : Rˣ) (cross : Equiv.Perm (Fin n)) :
+@[simp] theorem stateWeight_comp {m : ℕ} (s : Fin m → Bool) (a : Rˣ)
+    (cross : Fin n ≃ Fin m) :
     stateWeight (s ∘ cross) a = stateWeight s a :=
-  Equiv.prod_comp cross fun i => bif s i then a else a⁻¹
+  Equiv.prod_comp cross fun i ↦ bif s i then a else a⁻¹
 
 /-- Extending a state by a choice at a new last crossing multiplies its weight by the weight of
 that choice. -/
 @[simp] theorem stateWeight_snoc (s : Fin n → Bool) (c : Bool) (a : Rˣ) :
-    stateWeight (Fin.snoc (α := fun _ => Bool) s c) a =
+    stateWeight (Fin.snoc (α := fun _ ↦ Bool) s c) a =
       stateWeight s a * bif c then a else a⁻¹ := by
   simp [stateWeight_def, Fin.prod_univ_castSucc]
 
@@ -362,25 +405,25 @@ theorem kauffmanBracket_def (D : PDCode n) (a : Rˣ) :
     (rfl)
 
 /-- The Kauffman bracket depends on a PD-code only through its relabelling class. -/
-@[simp] theorem kauffmanBracket_relabel (D : PDCode n) (a : Rˣ)
-    (half : Equiv.Perm (Fin (4 * n))) (cross : Equiv.Perm (Fin n)) :
+@[simp] theorem kauffmanBracket_relabel {m : ℕ} (D : PDCode n) (a : Rˣ)
+    (half : Fin (4 * n) ≃ Fin (4 * m)) (cross : Fin n ≃ Fin m) :
     (D.relabel half cross).kauffmanBracket a = D.kauffmanBracket a := by
-  let e := Equiv.piCongrLeft (fun _ : Fin n => Bool) cross.symm
-  have he : (fun s : Fin n → Bool => s ∘ cross) = e := by
+  let e := Equiv.piCongrLeft (fun _ : Fin n ↦ Bool) cross.symm
+  have he : (fun s : Fin m → Bool ↦ s ∘ cross) = e := by
     funext s i
     simp [e, Equiv.piCongrLeft_apply]
-  have hbij : Function.Bijective (fun s : Fin n → Bool => s ∘ cross) := by
+  have hbij : Function.Bijective (fun s : Fin m → Bool ↦ s ∘ cross) := by
     rw [he]
     exact e.bijective
-  refine Fintype.sum_bijective (fun s => s ∘ cross)
-    hbij _ _ fun s => ?_
+  refine Fintype.sum_bijective (fun s ↦ s ∘ cross)
+    hbij _ _ fun s ↦ ?_
   rw [stateLoopCount_relabel, stateWeight_comp]
 
 /-- Mirroring a PD-code inverts the unit in its Kauffman bracket. -/
 @[simp] theorem kauffmanBracket_mirror (D : PDCode n) (a : Rˣ) :
     D.mirror.kauffmanBracket a = D.kauffmanBracket a⁻¹ := by
-  refine Fintype.sum_bijective (fun s i => !(s i))
-    (Function.Involutive.bijective fun s => by funext i; simp) _ _ fun s => ?_
+  refine Fintype.sum_bijective (fun s i ↦ !(s i))
+    (Function.Involutive.bijective fun s ↦ by funext i; simp) _ _ fun s ↦ ?_
   rw [stateLoopCount_mirror, stateWeight_inv, stateWeight_not, inv_inv, jonesDelta_inv]
 
 /-- A PD-code with no crossings and `c` crossing-free circles has Kauffman bracket `δ ^ (c - 1)`.
@@ -391,38 +434,6 @@ theorem kauffmanBracket_eq_jonesDelta_pow (D : PDCode 0) (a : Rˣ) :
   rw [kauffmanBracket, Fintype.sum_unique]
   simp [stateWeight]
 
-/-- The one-crossing knot diagram: a single kink. Its single crossing has the slot pair `1`-`3`
-as its over-strand, and its two arcs join slot `0` to slot `1` and slot `2` to slot `3`, so the
-strand doubles back on itself, as in the first Reidemeister move. -/
-def kink : PDCode 1 where
-  halfEdge := 1
-  edgePair := PerfectMatching.congr (crossingSlotEquiv 1)
-    (PerfectMatching.mk (Equiv.prodCongrRight fun _ => slotSmoothing true) (by decide) (by decide))
-  crossinglessComponentCount := 0
-  overPair := fun _ => true
-
-/-- The kink numbers its half-edges by their crossing slots. -/
-@[simp] theorem kink_halfEdge : kink.halfEdge = 1 := by simp [kink]
-
-/-- The kink has no crossing-free component. -/
-@[simp] theorem kink_crossinglessComponentCount : kink.crossinglessComponentCount = 0 := by
-  simp [kink]
-
-/-- The over-strand of the kink is the slot pair `1`-`3`. -/
-@[simp] theorem kink_overPair (i : Fin 1) : kink.overPair i = true := by simp [kink]
-
-/-- The half-edge of the kink in a given crossing slot is that slot. -/
-theorem kink_crossing (i : Fin 1) (t : Fin 4) :
-    kink.crossing i t = crossingSlotEquiv 1 (i, t) := by
-  rw [crossing_apply, kink_halfEdge]
-  simp
-
-/-- The two arcs of the kink join each slot of the over-pair to the slot preceding it. -/
-@[simp] theorem kink_edgePair_apply (i : Fin 1) (t : Fin 4) :
-    kink.edgePair.val (crossingSlotEquiv 1 (i, t))
-      = crossingSlotEquiv 1 (i, slotSmoothing true t) := by
-  simp [kink, PerfectMatching.congr_val, PerfectMatching.val_mk]
-
 /-- Smoothing the kink reconnects its slots by the chosen local smoothing. -/
 @[simp] theorem kink_smoothingTurn (b : Fin 1 → Bool) (i : Fin 1) (t : Fin 4) :
     kink.smoothingTurn b (crossingSlotEquiv 1 (i, t))
@@ -431,82 +442,36 @@ theorem kink_crossing (i : Fin 1) (t : Fin 4) :
   rw [kink_halfEdge] at h
   simpa using h
 
-/-- Following a strand of the kink through its crossing passes to the opposite slot. -/
-@[simp] theorem kink_crossingTurn (i : Fin 1) (t : Fin 4) :
-    kink.crossingTurn (crossingSlotEquiv 1 (i, t))
-      = crossingSlotEquiv 1 (i, oppositeCrossingSlot t) := by
-  have h := kink.crossingTurn_crossing i t
-  rw [kink_halfEdge] at h
-  simpa using h
-
-/-- Traversing the kink alternates its arcs with the passage to the opposite slot. -/
-private theorem kink_componentPerm : kink.componentPerm = (crossingSlotEquiv 1).permCongr
-    (Equiv.prodCongrRight fun _ : Fin 1 => oppositeCrossingSlot * slotSmoothing true) := by
-  refine Equiv.ext fun h => ?_
-  obtain ⟨⟨i, slot⟩, rfl⟩ := (crossingSlotEquiv 1).surjective h
-  rw [componentPerm_apply, kink_edgePair_apply, kink_crossingTurn]
-  simp [Equiv.Perm.mul_apply]
-
-/-- Following an arc of the kink and then passing to the opposite slot pairs slot `0` with slot
-`3` and slot `1` with slot `2`. -/
-private theorem oppositeCrossingSlot_mul_slotSmoothing_true :
-    oppositeCrossingSlot * slotSmoothing true = Equiv.swap (0 : Fin 4) 3 * Equiv.swap 1 2 := by
-  refine Equiv.ext fun t => ?_
-  rw [← Fin.val_inj]
-  simp only [Equiv.Perm.mul_apply, oppositeCrossingSlot_apply]
-  revert t
-  decide
-
-/-- **The kink is a diagram of a knot**: it has a single component. -/
-theorem crossingComponentCount_kink : kink.crossingComponentCount = 1 := by
-  have h : orbitCount kink.componentPerm = 2 := by
-    rw [kink_componentPerm, Equiv.orbitCount_permCongr,
-      oppositeCrossingSlot_mul_slotSmoothing_true]
-    have hperm : (Equiv.prodCongrRight fun _ : Fin 1 => Equiv.swap (0 : Fin 4) 3 * Equiv.swap 1 2)
-        = Equiv.swap ((0 : Fin 1), (0 : Fin 4)) (0, 3) * Equiv.swap ((0 : Fin 1), (1 : Fin 4))
-          (0, 2) := by
-      decide
-    have hcard : Nat.card (Fin 1 × Fin 4) = 4 := by simp
-    have h₁ := orbitCount_mul_swap_add_one
-      (τ := (1 : Equiv.Perm (Fin 1 × Fin 4))) (p := ((0 : Fin 1), (3 : Fin 4)))
-      (a := (0, 0)) rfl (by decide)
-    have h₂ := orbitCount_mul_swap_add_one
-      (τ := Equiv.swap ((0 : Fin 1), (0 : Fin 4)) (0, 3)) (p := ((0 : Fin 1), (2 : Fin 4)))
-      (a := (0, 1)) (by decide) (by decide)
-    rw [one_mul, orbitCount_one] at h₁
-    rw [hperm]
-    omega
-  rw [crossingComponentCount_def, h]
-
 /-- The `A`-smoothing of the kink undoes its arcs, separating the strand into two circles. -/
-private theorem kink_statePerm_true : kink.statePerm (fun _ => true) = 1 := by
-  refine Equiv.ext fun h => ?_
+private theorem kink_statePerm_true : kink.statePerm (fun _ ↦ true) = 1 := by
+  refine Equiv.ext fun h ↦ ?_
   obtain ⟨⟨i, slot⟩, rfl⟩ := (crossingSlotEquiv 1).surjective h
   rw [statePerm_apply, kink_edgePair_apply, kink_smoothingTurn]
   simp only [smoothingChoice, kink_overPair, Bool.cond_true, one_apply]
   exact congrArg (crossingSlotEquiv 1) (Prod.ext rfl (slotSmoothing_apply_apply true slot))
 
 /-- The `B`-smoothing of the kink leaves a single circle. -/
-private theorem kink_statePerm_false : kink.statePerm (fun _ => false) =
+private theorem kink_statePerm_false : kink.statePerm (fun _ ↦ false) =
     (crossingSlotEquiv 1).permCongr
-      (Equiv.prodCongrRight fun _ : Fin 1 => slotSmoothing false * slotSmoothing true) := by
-  refine Equiv.ext fun h => ?_
+      (Equiv.prodCongrRight fun _ : Fin 1 ↦ slotSmoothing false * slotSmoothing true) := by
+  refine Equiv.ext fun h ↦ ?_
   obtain ⟨⟨i, slot⟩, rfl⟩ := (crossingSlotEquiv 1).surjective h
   rw [statePerm_apply, kink_edgePair_apply, kink_smoothingTurn]
   simp [Equiv.Perm.mul_apply]
 
 /-- **The `A`-smoothing of the kink leaves two circles.** -/
-theorem stateLoopCount_kink_true : kink.stateLoopCount (fun _ => true) = 2 := by
+theorem stateLoopCount_kink_true : kink.stateLoopCount (fun _ ↦ true) = 2 := by
   rw [stateLoopCount_def, kink_statePerm_true, orbitCount_one, kink_crossinglessComponentCount]
   simp
 
 /-- **The `B`-smoothing of the kink leaves one circle.** -/
-theorem stateLoopCount_kink_false : kink.stateLoopCount (fun _ => false) = 1 := by
+theorem stateLoopCount_kink_false : kink.stateLoopCount (fun _ ↦ false) = 1 := by
   rw [stateLoopCount_def, kink_statePerm_false, Equiv.orbitCount_permCongr,
     kink_crossinglessComponentCount]
-  have hperm : (Equiv.prodCongrRight fun _ : Fin 1 => slotSmoothing false * slotSmoothing true)
+  have hperm : (Equiv.prodCongrRight fun _ : Fin 1 ↦ slotSmoothing false * slotSmoothing true)
       = Equiv.swap ((0 : Fin 1), (1 : Fin 4)) (0, 3) * Equiv.swap ((0 : Fin 1), (0 : Fin 4))
         (0, 2) := by
+    simp only [slotSmoothing_false, slotSmoothing_true]
     decide
   have hcard : Nat.card (Fin 1 × Fin 4) = 4 := by simp
   have h₁ := orbitCount_mul_swap_add_one
@@ -525,11 +490,11 @@ collapses their sum to `-a ^ 3`: this is the framing factor by which the bracket
 invariant under the first Reidemeister move. -/
 theorem kauffmanBracket_kink (a : Rˣ) :
     kink.kauffmanBracket a = -((a : R) ^ 3) := by
-  have hbij : Function.Bijective (fun (b : Bool) (_ : Fin 1) => b) :=
+  have hbij : Function.Bijective (fun (b : Bool) (_ : Fin 1) ↦ b) :=
     (Equiv.funUnique (Fin 1) Bool).symm.bijective
   rw [kauffmanBracket, ← Fintype.sum_bijective _ hbij
-    (fun b => (stateWeight (fun _ : Fin 1 => b) a : R) * jonesDelta a ^
-      (kink.stateLoopCount (fun _ => b) - 1)) _ fun b => rfl, Fintype.sum_bool]
+    (fun b ↦ (stateWeight (fun _ : Fin 1 ↦ b) a : R) * jonesDelta a ^
+      (kink.stateLoopCount (fun _ ↦ b) - 1)) _ fun b ↦ rfl, Fintype.sum_bool]
   simp only [stateLoopCount_kink_true, stateLoopCount_kink_false, stateWeight,
     Fin.prod_univ_one, Bool.cond_true, Bool.cond_false, Nat.add_one_sub_one, Nat.sub_self,
     pow_one, pow_zero, mul_one, jonesDelta_def]

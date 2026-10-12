@@ -7,6 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.Constructions.Polish.Basic
 public import Mathlib.MeasureTheory.Measure.Dirac.Basic
+public import Mathlib.MeasureTheory.Measure.Typeclasses.NullSingletonClass
 
 import TauCeti.MeasureTheory.Measure.ZeroOne
 
@@ -32,12 +33,19 @@ atom while vanishing on every singleton.
   Borel space is a.e. constant on every positive finite-mass measurable atom;
 * `AEMeasurable.exists_map_restrict_eq_smul_dirac_of_atom` — an a.e.-measurable map from a
   positive finite-mass measurable atom into a standard Borel space has the corresponding point
-  mass as its restricted pushforward.
+  mass as its restricted pushforward;
+* `MeasureTheory.Measure.exists_eq_smul_dirac_of_forall_restrict_eq_smul` — a finite measure on a
+  standard Borel space that is proportional to each of its restrictions is a multiple of a point
+  mass;
+* `MeasureTheory.Measure.nullSingletonClass_map_of_injective` — an injective measurable map
+  into a space whose singletons are measurable preserves the property that singletons have
+  measure zero.
 -/
 
 public section
 
-open MeasureTheory
+open MeasureTheory Set
+open scoped ENNReal
 
 namespace TauCeti
 
@@ -105,6 +113,57 @@ theorem _root_.AEMeasurable.exists_map_restrict_eq_smul_dirac_of_atom
       Measure.map_congr hy
     _ = μ.restrict A Set.univ • Measure.dirac y := Measure.map_const _ _
     _ = μ A • Measure.dirac y := by rw [Measure.restrict_apply_univ]
+
+/-- **A finite measure proportional to each of its restrictions is a point mass.** On a standard
+Borel space, if the restriction of a finite measure `ν` to every measurable set is a scalar
+multiple of `ν`, then `ν` is its total mass times a Dirac measure.
+
+This identifies the measures spanning extreme rays of the cone of finite measures as the positive
+multiples of point masses; it is used to show that the extreme rays of the completely monotone
+cone are exponentials. -/
+theorem _root_.MeasureTheory.Measure.exists_eq_smul_dirac_of_forall_restrict_eq_smul
+    {Z : Type*} [MeasurableSpace Z] [StandardBorelSpace Z] [Nonempty Z]
+    (ν : Measure Z) [IsFiniteMeasure ν]
+    (h : ∀ s, MeasurableSet s → ∃ c : ℝ≥0∞, ν.restrict s = c • ν) :
+    ∃ z : Z, ν = ν Set.univ • Measure.dirac z := by
+  rcases eq_or_ne ν 0 with rfl | hν
+  · exact ⟨Classical.arbitrary Z, by simp⟩
+  have hatom : ν.IsAtom Set.univ := by
+    refine ⟨MeasurableSet.univ, Measure.measure_univ_pos.mpr hν, fun s hs _ => ?_⟩
+    obtain ⟨c, hc⟩ := h s hs
+    -- The restriction to `s` vanishes on `sᶜ`, so `c` or `ν sᶜ` is zero.
+    have hcompl : c * ν sᶜ = 0 := by
+      simpa [Measure.restrict_apply hs.compl] using (congrArg (· sᶜ) hc).symm
+    rcases mul_eq_zero.mp hcompl with hc0 | hsc
+    · left
+      simpa [hc0] using congrArg (· Set.univ) hc
+    · right
+      rw [← measure_add_measure_compl hs, hsc, add_zero]
+  obtain ⟨z, hz⟩ := aemeasurable_id.exists_map_restrict_eq_smul_dirac_of_atom
+    (measure_ne_top ν Set.univ) hatom
+  exact ⟨z, by simpa using hz⟩
+
+/-- An injective measurable map into a space whose singletons are measurable sends a measure
+with null singletons to a measure with null singletons: each singleton has an at-most-singleton
+preimage, which is null.
+
+Adapted from Cameron Freer's private `noAtoms_map_of_injective` in `Graphon/MeasureIso.lean` at
+commit `9f7be59fa754d260a544b4cfd83d6a5b94f7552e`:
+<https://github.com/cameronfreer/graphon/commit/9f7be59fa754d260a544b4cfd83d6a5b94f7552e>; the
+original work is copyright Cameron Freer and licensed under Apache 2.0, and it assumes `f` to be
+a measurable embedding, where the measurability and injectivity of `f` are separated here. -/
+theorem _root_.MeasureTheory.Measure.nullSingletonClass_map_of_injective
+    {α β : Type*} [MeasurableSpace α] [MeasurableSpace β]
+    {μ : Measure α} [NullSingletonClass μ] {f : α → β}
+    [MeasurableSingletonClass β] (hf : Measurable f) (hInj : Function.Injective f) :
+    NullSingletonClass (Measure.map f μ) := by
+  refine ⟨fun y => ?_⟩
+  rw [Measure.map_apply hf (measurableSet_singleton y)]
+  have hsub : (f ⁻¹' {y}).Subsingleton := by
+    intro a ha b hb
+    simp only [mem_preimage, mem_singleton_iff] at ha hb
+    exact hInj (ha.trans hb.symm)
+  exact hsub.measure_zero μ
 
 end MeasureTheory
 

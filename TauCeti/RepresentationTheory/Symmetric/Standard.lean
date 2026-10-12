@@ -311,7 +311,7 @@ theorem isAtom_augmentationSubrepresentation (h2 : 2 ≤ Fintype.card α)
       intro w hw
       have hw' : w ∈ LinearMap.ker (MonoidAlgebra.basis α k).sumCoords :=
         mem_augmentationSubrepresentation_iff.mp hw
-      rw [ker_sumCoords_basis_eq_span k α x] at hw'
+      rw [MonoidAlgebra.ker_sumCoords_basis_eq_span k α x] at hw'
       exact Submodule.span_le.mpr (by
         rintro _ ⟨z, rfl⟩
         exact single_sub_single_mem_of_ne_of_single_sub_single_mem hxy hdiff z) hw'
@@ -328,5 +328,11 @@ theorem isIrreducible_standardRepresentation (h2 : 2 ≤ Fintype.card α)
     (isAtom_augmentationSubrepresentation h2 hchar)
 
 end Standard
+
+/-- The two-dimensional standard representation of S₃ is irreducible over a field in which
+`3` is nonzero. -/
+theorem isIrreducible_standardRepresentation_fin_three {k : Type*} [Field k]
+    (h : (3 : k) ≠ 0) : (standardRepresentation k (Fin 3)).IsIrreducible :=
+  isIrreducible_standardRepresentation (by decide) (Or.inr (by simpa using h))
 
 end TauCeti

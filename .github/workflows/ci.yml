@@ -8,14 +8,16 @@ on:
 
 permissions:
   contents: read
+  pull-requests: read  # scripts/lint-scope.sh reads the merged PRs' labels and branches
 
 # Keep the cache publisher live under a burst of main pushes. GitHub retains at
 # most one running and one pending run in this group: the running build is never
 # cancelled before it can publish, while superseded pending commits do not each
 # start an expensive cache-miss rebuild. In a burst, this deliberately coalesces
 # intermediate commits' post-merge checks too; the newest pending tip rechecks
-# the entire tree, though localizing a failure may then require bisection. No
-# merge decision consumes this post-merge workflow's per-commit conclusion.
+# the entire tree, though localizing a failure may then require bisection.
+# Dependency reconciliation uses conclusive runs as evidence for the current
+# pin, skipping coalesced commits without a completed build.
 concurrency:
   group: main-ci-cache-publisher
   cancel-in-progress: false
@@ -36,13 +38,7 @@ jobs:
         with:
           persist-credentials: false
       - name: Checkout the pinned merge policy (read-only)
-        uses: actions/checkout@v4
-        with:
-          repository: TauCetiProject/TauCetiReview
-          ref: 692ebde95eea2a6d9d9f21954ba912c49f675d9d
-          path: .tauceti-review
-          sparse-checkout: runner
-          persist-credentials: false
+        uses: ./.github/actions/checkout-merge-policy
 
       - run: python3 scripts/pr_status/test_readiness.py
 
@@ -90,6 +86,17 @@ jobs:
       staged: ${{ steps.stage.outputs.staged }}
       reported-toolchain: ${{ steps.stage.outputs.toolchain }}
     steps:
+      # We expect the 262k default to be relevant at around 10m LOC, and this raised limit to be relevant at around 40m LOC.
+      - name: Raise vm.max_map_count
+        run: |
+          target=1048576
+          if [ "$(cat /proc/sys/vm/max_map_count)" -lt "$target" ]; then
+            sudo -n sysctl -w vm.max_map_count="$target" >/dev/null 2>&1 \
+              || sysctl -w vm.max_map_count="$target" >/dev/null 2>&1 || true
+          fi
+          now="$(cat /proc/sys/vm/max_map_count)"
+          echo "vm.max_map_count=$now"
+          [ "$now" -ge "$target" ] || echo "::warning::vm.max_map_count is $now, below $target"
       - uses: actions/checkout@v4
         with:
           # This job elaborates every TauCeti module, and Lean runs code at elaboration time.
@@ -99,14 +106,15 @@ jobs:
           # Mathlib's own server, scripts/lake-cache-get.sh does anonymous GETs, and
           # `lake cache get` reads the local revision from .git without authenticating.
           persist-credentials: false
-          # Enough history for `lake cache get` to backtrack to a recently-published
-          # ancestor commit (its `--max-revs`) when the tip itself has no mapping yet.
-          # Harmless (just a slightly deeper fetch) when the cache is off.
-          fetch-depth: 100
+          # The immutable push base must be present for the complete local scope diff.
+          # Bors batches can contain 128 commits, already exceeding the old depth of
+          # 100. Full history also supports cache ancestor lookup without another fetch.
+          fetch-depth: 0
 
       - name: Infrastructure policy unit tests
         run: |
           PYTHONPATH=scripts python3 scripts/test_loc_graph.py
+          PYTHONPATH=scripts python3 scripts/test_roadmap_completion.py
           PYTHONPATH=scripts python3 scripts/test_loc_roadmap_graph.py
           PYTHONPATH=scripts python3 scripts/test_roadmap_progress.py
           PYTHONPATH=scripts python3 scripts/test_participant_graph.py
@@ -122,7 +130,13 @@ jobs:
           python3 scripts/test_structure_nudge.py
           python3 scripts/test_workflow_pins.py
           python3 scripts/test_queue_release.py
+          python3 scripts/test_pick_runner.py
           python3 scripts/test_bwrap_pin.py
+          PYTHONPATH=scripts python3 scripts/test_bump_manifest.py
+          python3 scripts/test_bump_report.py
+          python3 scripts/test_lint_scope.py
+          python3 scripts/test_bors_scope_approval.py
+          python3 scripts/test_build_lint_driver.py
           python3 scripts/test_elan_pin.py
           python3 scripts/test_duplicate_audit_workflow.py
           python3 scripts/test_web_pins.py
@@ -312,8 +326,8 @@ jobs:
           LAKE_NO_CACHE: "true"
         run: lake exe module-system
 
-      # Environment lint. Elaborates a generated driver importing every TauCeti/
-      # module and runs Mathlib's default `#lint` set minus docBlame (simpNF,
+      # Environment lint. A compiled driver (scripts/LintEnvDriver.lean) imports the TauCeti/
+      # modules in scope and runs Mathlib's default `#lint` set minus docBlame (simpNF,
       # checkType, synTaut, ...) plus a module-system-reliable docstring scan (the
       # docBlame linter is blind across module boundaries; see the script header),
       # comparing linter-qualified violations against the grandfathered baseline in
@@ -323,6 +337,20 @@ jobs:
       # PR-time enforcement runs inside the
       # bwrap sandbox in pr-build.yml (this lint executes the linted code); this
       # post-merge run is the health check on main, like the audits above.
+      # Like PR builds and the merge queue, this lints only the TauCeti modules the push changed
+      # (the whole library if a merged PR was labelled full-lint or was a lint repair PR); the
+      # daily lint-full.yml run lints everything. Superseded runs of this workflow are cancelled,
+      # so a push's scope can be skipped here, but its merge group already linted it.
+      - name: Decide the environment-lint scope
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          EVENT: push
+          BASE: ${{ github.event.before }}
+          HEAD: ${{ github.sha }}
+          SCOPE_REPO: .
+        run: bash scripts/lint-scope.sh "$RUNNER_TEMP/lint-scope"
+
       - name: Environment lint (default linters + docstring scan vs grandfathered baseline)
         env:
           LAKE_NO_CACHE: "true"
@@ -338,6 +366,13 @@ jobs:
       # checks; the empty root makes that command linter skip every library module at this pin.
       - name: Header audit equivalence tests
         run: lake env python3 scripts/test_header_style.py
+
+      # The meta-import guard's fixtures, plus the invariant itself over the whole checkout.
+      # pr-build.yml runs the guard on a change's files only, so this post-merge pass is where
+      # a `meta import` that reached main some other way would surface. Headers alone: nothing
+      # here builds or imports a TauCeti module, and the whole library costs about 5 seconds.
+      - name: Meta-import guard tests and whole-library invariant
+        run: python3 scripts/test_check_meta_imports.py
 
       - name: Source style lint (copyright headers + text linters)
         run: bash scripts/lint-style.sh

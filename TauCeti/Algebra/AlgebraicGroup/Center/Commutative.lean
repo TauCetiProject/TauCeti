@@ -34,9 +34,6 @@ registered here on the canonical `centerGroupScheme` and bundled as `centerCommG
 
 * J. S. Milne, *Algebraic Groups* (2017), Sections 1.k and 2.
 * W. C. Waterhouse, *Introduction to Affine Group Schemes*, Chapter 2.
-
-This supplies a structural property of the center required in Layer 6, "Reductive and semisimple
-groups", of the ReductiveGroups roadmap.
 -/
 
 public section

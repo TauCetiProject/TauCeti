@@ -1,0 +1,220 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import Mathlib.AlgebraicTopology.SingularHomology.Basic
+public import TauCeti.Algebra.Homology.LinearYoneda
+public import TauCeti.Algebra.Homology.ModuleCat
+
+/-!
+# Singular cochains and singular cohomology
+
+Let `C` be a `k`-linear abelian category with coproducts, and let `R` and `M` be objects of `C`.
+The singular cochain complex of a topological space `X` is obtained by applying the contravariant
+functor `Hom(-, M)` to the singular chain complex of `X` with coefficients in `R`: in degree `n`
+it is the `k`-module of morphisms `Cₙ(X; R) ⟶ M`, and its differential is precomposition with the
+singular boundary.  Its cohomology is the singular cohomology of `X`.  A continuous map
+`f : X ⟶ Y` induces a cochain map from the cochains of `Y` to those of `X`, precomposition with the
+chain map induced by `f`, so singular cohomology is a contravariant functor of the space.
+
+For the usual cohomology of `X` with coefficients in a module `M` over a commutative ring `k`,
+take `C := ModuleCat k` and `R := k`: then `Cₙ(X; k)` is the free `k`-module on the singular
+`n`-simplices, and a cochain is a `k`-valued, respectively `M`-valued, function on them.
+
+## Main declarations
+
+* `SSet.cochainComplexMap`: the cochain map induced by a map of simplicial sets.
+* `TopCat.singularCochainComplex`: the singular cochain complex of a space.
+* `TopCat.singularCochainComplexMap`: the cochain map induced by a continuous map, that of its
+  singular simplicial map.
+* `TopCat.singularCohomology` and `TopCat.singularCohomologyMap`: singular cohomology and the
+  maps induced on it by continuous maps, with `TauCeti.singularCohomologyFunctor` the resulting
+  functor `TopCatᵒᵖ ⥤ ModuleCat k`.
+* `SSet.constCochain`: the constant `0`-cochain with value `e : R ⟶ M` on every
+  vertex of a simplicial set. `TopCat.constSingularCocycle` is the cocycle it defines
+  for a space `X`. For `e` the unit of a ring of coefficients, its class is the unit of the
+  cup product.
+
+## References
+
+* A. Hatcher, [*Algebraic Topology*](https://pi.math.cornell.edu/~hatcher/AT/AT.pdf),
+  Section 3.1.
+-/
+
+public section
+
+noncomputable section
+
+open CategoryTheory Limits Opposite Simplicial
+
+universe w v u
+
+namespace SSet
+
+variable {C : Type u} [Category.{v} C] [HasCoproducts.{w} C] [Abelian C]
+  {R : C} {k : Type*} [Ring k] [Linear k C] {M : C}
+
+/-- The map of cochain complexes `Hom(C(Y; R), M) ⟶ Hom(C(X; R), M)` induced by a map
+`f : X ⟶ Y` of simplicial sets: precomposition with the chain map induced by `f`. -/
+abbrev cochainComplexMap {X Y : SSet.{w}} (f : X ⟶ Y) :
+    (Y.chainComplex R).linearYonedaObj k M ⟶ (X.chainComplex R).linearYonedaObj k M :=
+  (TauCeti.ChainComplex.linearYonedaFunctor k M).map (chainComplexMap f R).op
+
+/-- The degree-`n` component of the cochain map induced by `f` acts by precomposition with the
+degree-`n` component of the induced chain map. -/
+@[simp]
+lemma cochainComplexMap_f_apply {X Y : SSet.{w}} (f : X ⟶ Y) (n : ℕ)
+    (g : ((Y.chainComplex R).linearYonedaObj k M).X n) :
+    (cochainComplexMap (R := R) (k := k) (M := M) f).f n g = (chainComplexMap f R).f n ≫ g :=
+  rfl
+
+@[simp]
+lemma cochainComplexMap_id (X : SSet.{w}) :
+    cochainComplexMap (R := R) (k := k) (M := M) (𝟙 X) = 𝟙 _ := by
+  simp [cochainComplexMap]
+
+@[reassoc]
+lemma cochainComplexMap_comp {X Y Z : SSet.{w}} (f : X ⟶ Y) (g : Y ⟶ Z) :
+    cochainComplexMap (R := R) (k := k) (M := M) (f ≫ g) =
+      cochainComplexMap g ≫ cochainComplexMap f := by
+  simp [cochainComplexMap]
+
+end SSet
+
+namespace TopCat
+
+variable {C : Type u} [Category.{v} C] [HasCoproducts.{w} C] [Abelian C]
+  (R : C) (k : Type*) [Ring k] [Linear k C] (M : C)
+
+/-- The singular cochain complex of a space `X`: in degree `n`, the `k`-module of morphisms from
+the singular `n`-chains of `X` with coefficients in `R` to `M`. -/
+abbrev singularCochainComplex (X : TopCat.{w}) : CochainComplex (ModuleCat.{v} k) ℕ :=
+  ((toSSet.obj X).chainComplex R).linearYonedaObj k M
+
+variable {R k M}
+
+/-- The cochain map on singular cochains induced by a continuous map `f : X ⟶ Y`: the cochain map
+induced by its singular simplicial map, precomposition with the chain map induced by `f`. -/
+abbrev singularCochainComplexMap {X Y : TopCat.{w}} (f : X ⟶ Y) :
+    Y.singularCochainComplex R k M ⟶ X.singularCochainComplex R k M :=
+  SSet.cochainComplexMap (toSSet.map f)
+
+/-- The degree-`n` component of the cochain map induced by `f` acts by precomposition with the
+degree-`n` component of the induced singular chain map. -/
+@[simp]
+lemma singularCochainComplexMap_f_apply {X Y : TopCat.{w}} (f : X ⟶ Y) (n : ℕ)
+    (g : (Y.singularCochainComplex R k M).X n) :
+    (singularCochainComplexMap (R := R) (k := k) (M := M) f).f n g =
+      (SSet.chainComplexMap (toSSet.map f) R).f n ≫ g :=
+  SSet.cochainComplexMap_f_apply _ n g
+
+@[simp]
+lemma singularCochainComplexMap_id (X : TopCat.{w}) :
+    singularCochainComplexMap (R := R) (k := k) (M := M) (𝟙 X) = 𝟙 _ := by
+  simp [singularCochainComplexMap]
+
+@[reassoc]
+lemma singularCochainComplexMap_comp {X Y Z : TopCat.{w}} (f : X ⟶ Y) (g : Y ⟶ Z) :
+    singularCochainComplexMap (R := R) (k := k) (M := M) (f ≫ g) =
+      singularCochainComplexMap g ≫ singularCochainComplexMap f := by
+  simp [singularCochainComplexMap, SSet.cochainComplexMap_comp]
+
+variable (R k M)
+
+/-- The singular cohomology of a space `X` in degree `n`: the cohomology of the complex of
+morphisms from the singular chains of `X` with coefficients in `R` to `M`. -/
+protected abbrev singularCohomology (X : TopCat.{w}) (n : ℕ) : ModuleCat.{v} k :=
+  (X.singularCochainComplex R k M).homology n
+
+variable {R k M}
+
+/-- The map on singular cohomology induced by a continuous map `f : X ⟶ Y`. -/
+protected abbrev singularCohomologyMap {X Y : TopCat.{w}} (f : X ⟶ Y) (n : ℕ) :
+    Y.singularCohomology R k M n ⟶ X.singularCohomology R k M n :=
+  HomologicalComplex.homologyMap (singularCochainComplexMap f) n
+
+@[simp]
+lemma singularCohomologyMap_id (X : TopCat.{w}) (n : ℕ) :
+    TopCat.singularCohomologyMap (R := R) (k := k) (M := M) (𝟙 X) n = 𝟙 _ := by
+  simp [TopCat.singularCohomologyMap]
+
+@[reassoc]
+lemma singularCohomologyMap_comp {X Y Z : TopCat.{w}} (f : X ⟶ Y) (g : Y ⟶ Z) (n : ℕ) :
+    TopCat.singularCohomologyMap (R := R) (k := k) (M := M) (f ≫ g) n =
+      TopCat.singularCohomologyMap g n ≫ TopCat.singularCohomologyMap f n := by
+  simp [TopCat.singularCohomologyMap, singularCochainComplexMap_comp,
+    HomologicalComplex.homologyMap_comp]
+
+end TopCat
+
+namespace TauCeti
+
+variable {C : Type u} [Category.{v} C] [HasCoproducts.{w} C] [Abelian C]
+  (R : C) (k : Type*) [Ring k] [Linear k C] (M : C)
+
+/-- Singular cohomology in degree `n` as a contravariant functor from topological spaces to
+`k`-modules. -/
+-- `@[expose]` is mandated by the module system: without it `map` cannot be characterised at
+-- all, since the statement that `map f` is `singularCohomologyMap f.unop n` only typechecks once
+-- `obj` unfolds, and an exported statement may unfold only exposed definitions.
+@[expose, simps]
+def singularCohomologyFunctor (n : ℕ) : TopCat.{w}ᵒᵖ ⥤ ModuleCat.{v} k where
+  obj X := X.unop.singularCohomology R k M n
+  map f := TopCat.singularCohomologyMap f.unop n
+  map_comp f g := TopCat.singularCohomologyMap_comp g.unop f.unop n
+
+end TauCeti
+
+namespace SSet
+
+section ConstCochain
+
+variable {C : Type u} [Category.{v} C] [HasCoproducts.{w} C] [Preadditive C] {R M : C}
+
+/-- The `0`-cochain of a simplicial set `K` which takes the value `e : R ⟶ M` on every vertex. -/
+def constCochain (K : SSet.{w}) (e : R ⟶ M) :
+    (K.chainComplex R).X 0 ⟶ M :=
+  Cofan.IsColimit.desc (K.isColimitChainComplexXCofan R 0) fun _ ↦ e
+
+/-- The constant `0`-cochain with value `e` takes the value `e` on every vertex. -/
+@[reassoc (attr := simp)]
+lemma ιChainComplex_constCochain (K : SSet.{w}) (e : R ⟶ M)
+    (x : K _⦋0⦌) :
+    K.ιChainComplex x ≫ K.constCochain e = e :=
+  Cofan.IsColimit.fac _ _ x
+
+/-- The constant `0`-cochain is a cocycle: it takes the same value at both ends of an edge. -/
+@[reassoc (attr := simp)]
+lemma d_comp_constCochain (K : SSet.{w}) (e : R ⟶ M) :
+    (K.chainComplex R).d 1 0 ≫ K.constCochain e = 0 := by
+  ext σ
+  simp [Fin.sum_univ_two]
+
+end ConstCochain
+
+end SSet
+
+namespace TopCat
+
+variable {C : Type u} [Category.{v} C] [HasCoproducts.{w} C] [Abelian C] {R M : C}
+
+/-- The constant `0`-cochain `(toSSet.obj X).constCochain e`, as a cocycle. -/
+def constSingularCocycle (X : TopCat.{w}) (k : Type*) [Ring k] [Linear k C] (e : R ⟶ M) :
+    (X.singularCochainComplex R k M).cycles 0 :=
+  (X.singularCochainComplex R k M).moduleCatCyclesMk ((toSSet.obj X).constCochain e) 1
+    (by simp)
+    ((TauCeti.ChainComplex.linearYonedaObj_d_apply 0 1 _).trans
+      ((toSSet.obj X).d_comp_constCochain e))
+
+/-- The constant `0`-cocycle has underlying cochain the constant `0`-cochain. -/
+@[simp]
+lemma iCycles_constSingularCocycle (X : TopCat.{w}) (k : Type*) [Ring k] [Linear k C]
+    (e : R ⟶ M) :
+    (X.singularCochainComplex R k M).iCycles 0 (X.constSingularCocycle k e) =
+      (toSSet.obj X).constCochain e :=
+  HomologicalComplex.iCycles_moduleCatCyclesMk _ _ _ _ _ _
+
+end TopCat

@@ -64,7 +64,8 @@ involution, and it lives downstream in
   `TauCeti.coeff_schurPoly_partWeight` reads it at the exponent of a partition.
 * `TauCeti.eval_diagramSchurPoly`: evaluating a Schur polynomial sums the monomials of its
   tableaux.
-* `TauCeti.eval_one_diagramSchurPoly_eq_card_boundedSSYT`: evaluating at one counts the bounded
+* `TauCeti.eval_one_diagramSchurPoly_eq_card_boundedSSYT` and
+  `TauCeti.eval_one_schurPoly_eq_card_boundedSSYT`: evaluating at one counts the bounded
   tableaux.
 * `TauCeti.diagramSchurPoly_eq_zero_iff` and `TauCeti.schurPoly_eq_zero_iff`: a Schur polynomial
   vanishes exactly for a shape taller than its alphabet.
@@ -143,7 +144,7 @@ private theorem weight_eq_of_content_eq (T : BoundedSSYT N μ) {d : Fin N →₀
     (h : ⇑(SemistandardYoungTableau.content T.1) = ⇑(Finsupp.mapDomain Fin.val d)) :
     weight T = d := by
   ext i
-  rw [weight_apply, congrFun h i, Finsupp.mapDomain_apply Fin.val_injective]
+  rw [weight_apply, congrFun h i, Finsupp.mapDomain_apply_of_injective Fin.val_injective]
 
 /-- **The bounded tableaux of a given weight are the tableaux of the corresponding content.**
 Boundedness is not an extra condition on the right-hand side: a letter outside the alphabet would
@@ -263,7 +264,7 @@ theorem mapDomain_rowLenWeight (h : μ.colLen 0 ≤ N) :
     ⇑(Finsupp.mapDomain Fin.val (rowLenWeight N μ)) = μ.rowLen := by
   funext j
   by_cases hj : j < N
-  · exact Finsupp.mapDomain_apply Fin.val_injective _ (⟨j, hj⟩ : Fin N)
+  · exact Finsupp.mapDomain_apply_of_injective Fin.val_injective _ (⟨j, hj⟩ : Fin N)
   · have hzero : μ.rowLen j = 0 := by
       by_contra hne
       exact hj (lt_of_lt_of_le (YoungDiagram.mem_iff_lt_colLen.mp
@@ -377,6 +378,14 @@ theorem schurPoly_eq_rename (μ : n.Partition) :
       = rename (Fintype.equivFin σ).symm (diagramSchurPoly (Fintype.card σ) R (diagramOf μ)) :=
   (rfl)
 
+/-- **A Schur polynomial evaluated at one counts bounded semistandard tableaux**: the value of
+`s_μ` at the all-ones point of the alphabet `σ` is the number of semistandard tableaux of shape
+`μ` with entries below the number of letters of `σ`. -/
+@[simp] theorem eval_one_schurPoly_eq_card_boundedSSYT (μ : n.Partition) :
+    eval (fun _ : σ => (1 : R)) (schurPoly σ R μ) =
+      (Nat.card (BoundedSSYT (Fintype.card σ) (diagramOf μ)) : R) := by
+  simp [schurPoly_eq_rename, eval_rename, Function.comp_def]
+
 /-- The exponent vector on the alphabet `σ` recording the parts of `ν`, read through the ordering
 `Fintype.equivFin σ`: the image of `TauCeti.rowLenWeight` of the Young diagram of `ν`. -/
 noncomputable def partWeight (σ : Type*) [Fintype σ] {n : ℕ} (ν : n.Partition) : σ →₀ ℕ :=
@@ -386,7 +395,7 @@ noncomputable def partWeight (σ : Type*) [Fintype σ] {n : ℕ} (ν : n.Partiti
 theorem partWeight_apply (ν : n.Partition) (x : σ) :
     partWeight σ ν x = (diagramOf ν).rowLen (Fintype.equivFin σ x) := by
   conv_lhs => rw [partWeight, ← (Fintype.equivFin σ).symm_apply_apply x]
-  rw [Finsupp.mapDomain_apply (Fintype.equivFin σ).symm.injective, rowLenWeight_apply]
+  rw [Finsupp.mapDomain_apply_of_injective (Fintype.equivFin σ).symm.injective, rowLenWeight_apply]
 
 variable (μ ν : n.Partition)
 

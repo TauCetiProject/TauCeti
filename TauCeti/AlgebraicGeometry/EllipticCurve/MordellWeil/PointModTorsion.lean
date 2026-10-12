@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.EllipticCurve.CanonicalHeight
+public import TauCeti.AlgebraicGeometry.EllipticCurve.CanonicalHeight.Basic
 public import Mathlib.LinearAlgebra.Quotient.Bilinear
 public import Mathlib.Algebra.Module.Torsion.Basic
 

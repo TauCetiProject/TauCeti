@@ -144,8 +144,7 @@ theorem baseChange_lie (D E : LieDerivation R L L) :
 theorem baseChange_ad (x : L) :
     (ad R L x).baseChange A = ad A (A ⊗[R] L) ((1 : A) ⊗ₜ[R] x) := by
   ext z
-  induction z using TensorProduct.induction_on with
-  | zero => simp
+  induction z using TensorProduct.inductionOn with
   | tmul a y => simp [LieAlgebra.ExtendScalars.bracket_tmul]
   | add y z hy hz => simp [map_add, hy, hz]
 

@@ -25,8 +25,9 @@ harmonic near `Metric.ball x r`.
 
 ## Main declarations
 
-* `TauCeti.harmonicOnNhd_comp_add_right_ball_zero_iff`: translation-normalized harmonicity
-  on a ball.
+* `TauCeti.harmonicOnNhd_comp_add_right_ball_zero_iff`,
+  `TauCeti.harmonicOnNhd_comp_add_right_closedBall_zero_iff`: translation-normalized
+  harmonicity on a ball and on a closed ball.
 * `TauCeti.harmonicOnNhd_comp_const_add_smul_ball_radius_iff`: ball-level affine normalization
   by `y ↦ x + c • y` for nonzero scale `c`.
 * `TauCeti.harmonicOnNhd_comp_const_add_smul_ball_iff`: the unit-ball specialization.
@@ -60,6 +61,18 @@ theorem harmonicOnNhd_comp_add_right_ball_zero_iff (x : E) (r : ℝ) {f : E → 
       HarmonicOnNhd f (Metric.ball x r) := by
   simpa [one_smul, add_comm] using
     harmonicOnNhd_comp_const_add_smul_ball_radius_iff (x := x) (c := 1) one_ne_zero r (f := f)
+
+/-- Translation-normalized harmonicity on a closed ball. The function `y ↦ f (y + x)` is
+harmonic near the radius-`r` closed ball centered at `0` exactly when `f` is harmonic near the
+corresponding closed ball centered at `x`. -/
+theorem harmonicOnNhd_comp_add_right_closedBall_zero_iff (x : E) (r : ℝ) {f : E → F} :
+    HarmonicOnNhd (fun y ↦ f (y + x)) (Metric.closedBall 0 r) ↔
+      HarmonicOnNhd f (Metric.closedBall x r) := by
+  have hpre : Metric.closedBall (0 : E) r = (fun y ↦ y + x) ⁻¹' Metric.closedBall x r := by
+    ext y
+    simp [Metric.mem_closedBall, dist_eq_norm]
+  rw [hpre]
+  exact harmonicOnNhd_comp_add_right_iff x
 
 /-- Harmonicity on a neighbourhood of `Metric.ball x r` is equivalent to harmonicity of the
 normalized function `y ↦ f (x + r • y)` on a neighbourhood of the unit ball. -/

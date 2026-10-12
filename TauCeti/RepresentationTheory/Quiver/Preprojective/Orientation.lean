@@ -81,12 +81,8 @@ what the transposition step of the proof does; the equality does *not* hold hom 
 
 ## References
 
-This is the orientation-independence clause of Layer 4 of
-`TauCetiRoadmap/ZigzagPreprojective/README.md`, which asks to turn around a chosen arrow by an
-algebra isomorphism rescaling one of the exchanged arrows by `-1`, to check that it sends every
-local relation to the corresponding relation, and to compose these maps into independence under
-every explicit reorientation `Reorient Q σ`, including in characteristic two. See Crawley-Boevey,
-*Quiver algebras, weighted projective lines, and the Deligne--Simpson problem*, Section 1.
+See Crawley-Boevey, *Quiver algebras, weighted projective lines, and the Deligne--Simpson
+problem*, Section 1.
 -/
 
 public section
@@ -158,6 +154,26 @@ noncomputable def reorientDoubledEquiv :
   mapAlgEquiv k (reorientSymmetrify σ) (reorientSymmetrifyInv σ)
     (reorientSymmetrify_comp_reorientSymmetrifyInv σ)
     (reorientSymmetrifyInv_comp_reorientSymmetrify σ)
+
+/-- The doubled path-algebra comparison acts by the homomorphism induced by the reorientation
+comparison of quivers. -/
+theorem reorientDoubledEquiv_apply (x : pathAlgebra k (Symmetrify (Reorient Q σ))) :
+    reorientDoubledEquiv k σ x =
+      mapAlgHom k (reorientSymmetrify σ)
+        ((reorientSymmetrify σ).obj_bijective_of_comp_eq_id (reorientSymmetrifyInv σ)
+          (reorientSymmetrify_comp_reorientSymmetrifyInv σ)
+          (reorientSymmetrifyInv_comp_reorientSymmetrify σ)) x := by
+  rw [reorientDoubledEquiv, mapAlgEquiv_apply]
+
+/-- The inverse doubled path-algebra comparison acts by the homomorphism induced by the inverse
+reorientation comparison of quivers. -/
+theorem reorientDoubledEquiv_symm_apply (x : pathAlgebra k (Symmetrify Q)) :
+    (reorientDoubledEquiv k σ).symm x =
+      mapAlgHom k (reorientSymmetrifyInv σ)
+        ((reorientSymmetrifyInv σ).obj_bijective_of_comp_eq_id (reorientSymmetrify σ)
+          (reorientSymmetrifyInv_comp_reorientSymmetrify σ)
+          (reorientSymmetrify_comp_reorientSymmetrifyInv σ)) x := by
+  rw [reorientDoubledEquiv, mapAlgEquiv_symm_apply]
 
 /-- The doubled path-algebra comparison maps a path of two arrows by mapping each arrow. -/
 private theorem reorientDoubledEquiv_ofArrowComp {i j l : Symmetrify (Reorient Q σ)} (a : i ⟶ j)
@@ -394,8 +410,7 @@ theorem reorientPreprojectiveAlgebraEquivGauged_preprojectiveMk
 
 /-- **The orientation-independence isomorphism, computed on generators**: it identifies the two
 doubled path algebras and then rescales, by `-1`, exactly the arrows `σ` turns around, leaving
-every formal reverse alone. This is the explicit map the roadmap asks for, in the form which makes
-the sign visible. -/
+every formal reverse alone. This is the explicit map, in the form which makes the sign visible. -/
 @[simp]
 theorem reorientPreprojectiveAlgebraEquiv_preprojectiveMk
     (x : pathAlgebra k (Symmetrify (Reorient Q σ))) :

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.Representation.PointsAction
 public import TauCeti.Algebra.HopfAlgebra.Augmentation
+public import Mathlib.RingTheory.Ideal.Height
 
 /-!
 # Translations of an affine group
@@ -34,14 +35,13 @@ action laws, and identifies its action on the prime spectrum.
 * `TauCeti.HopfAlgebra.comap_rightTranslationAlgEquiv_augmentationPoint`: the translated counit
   point is the given point.
 * `TauCeti.HopfAlgebra.rightTranslationHomeomorph`: right translation on the prime spectrum.
+* `TauCeti.HopfAlgebra.height_kernel_eq_height_augmentation`: translation preserves the height
+  of the augmentation ideal.
 
 ## References
 
 * J. S. Milne, *Algebraic Groups* (2017), Proposition 2.37.
 * W. C. Waterhouse, *Introduction to Affine Group Schemes*, Section 6.7.
-
-This is translation infrastructure for Layer 3, "Identity component `G°` and component group
-`π₀(G)`", of the ReductiveGroups roadmap.
 -/
 
 public section
@@ -70,8 +70,7 @@ theorem rightTranslationAlgHom_apply (g : WithConv (H →ₐ[k] k)) (x : H) :
       TensorProduct.rid k H
         (TensorProduct.map LinearMap.id g.ofConv.toLinearMap (Coalgebra.comul x)) := by
   rw [rightTranslationAlgHom, AlgHom.convMul_apply]
-  induction Coalgebra.comul (R := k) x using TensorProduct.induction_on with
-  | zero => simp
+  induction Coalgebra.comul (R := k) x using TensorProduct.inductionOn with
   | add z w hz hw => simp [hz, hw]
   | tmul z w => simp [Algebra.smul_def, mul_comm]
 
@@ -84,8 +83,7 @@ theorem toConv_comp_rightTranslationAlgHom (f g : WithConv (H →ₐ[k] k)) :
   -- Composition must be exposed at application level before the translation formula rewrites.
   change f.ofConv (rightTranslationAlgHom g x) = (f * g).ofConv x
   rw [rightTranslationAlgHom_apply, AlgHom.convMul_apply]
-  induction Coalgebra.comul (R := k) x using TensorProduct.induction_on with
-  | zero => simp
+  induction Coalgebra.comul (R := k) x using TensorProduct.inductionOn with
   | add y z hy hz => simp [hy, hz]
   | tmul y z => simp [Algebra.smul_def, mul_comm]
 
@@ -138,6 +136,13 @@ homomorphism. -/
 theorem rightTranslationAlgEquiv_toAlgHom (g : WithConv (H →ₐ[k] k)) :
     (rightTranslationAlgEquiv g).toAlgHom = rightTranslationAlgHom g :=
   AlgEquiv.toAlgHom_ofBijective _ _
+
+/-- The coordinate map of right translation is convolution of the universal point
+with the constant translating point. -/
+theorem toConv_rightTranslationAlgEquiv (g : WithConv (H →ₐ[k] k)) :
+    WithConv.toConv (rightTranslationAlgEquiv g).toAlgHom =
+      WithConv.toConv (AlgHom.id k H) * AlgHom.mapValue (Algebra.ofId k H) g := by
+  rw [rightTranslationAlgEquiv_toAlgHom, rightTranslationAlgHom, AlgHom.mapValue_apply]
 
 private theorem rightTranslationAlgEquiv_toLinearEquiv
     (g : WithConv (H →ₐ[k] k)) :
@@ -280,6 +285,23 @@ theorem counitAlgHom_comp_rightTranslationAlgHom (g : WithConv (H →ₐ[k] k)) 
   change (1 * g).ofConv = g.ofConv
   rw [one_mul]
 
+/-- Translation identifies the height of the ideal of any rational point with the height of
+the augmentation ideal. -/
+@[simp]
+theorem height_kernel_eq_height_augmentation (g : WithConv (H →ₐ[k] k)) :
+    (RingHom.ker (g.ofConv : H →+* k)).height =
+      (RingHom.ker (_root_.Bialgebra.counitAlgHom k H : H →+* k)).height := by
+  have h : (RingHom.ker (_root_.Bialgebra.counitAlgHom k H : H →+* k)).comap
+      (rightTranslationAlgEquiv g).toRingEquiv = RingHom.ker (g.ofConv : H →+* k) := by
+    rw [← Ideal.comap_coe (f := (rightTranslationAlgEquiv g).toRingEquiv)]
+    simpa only [RingHom.comap_ker, AlgHom.comp_toRingHom,
+      ← rightTranslationAlgEquiv_toAlgHom, AlgEquiv.toAlgHom_toRingHom,
+      AlgEquiv.toRingEquiv_toRingHom] using
+      congrArg (fun f : H →ₐ[k] k ↦ RingHom.ker (f : H →+* k))
+        (counitAlgHom_comp_rightTranslationAlgHom g)
+  rw [← h]
+  exact (rightTranslationAlgEquiv g).toRingEquiv.height_comap _
+
 /-- Right translation on the prime spectrum. The inverse algebra equivalence occurs because
 `Spec` is contravariant. -/
 noncomputable def rightTranslationHomeomorph (g : WithConv (H →ₐ[k] k)) :
@@ -321,3 +343,21 @@ theorem comap_rightTranslationAlgEquiv_augmentationPoint
 end Field
 
 end TauCeti.HopfAlgebra
+
+namespace BialgHom
+
+open TauCeti WithConv
+
+variable {R H K : Type*} [CommRing R] [CommRing H] [CommRing K]
+  [HopfAlgebra R H] [HopfAlgebra R K]
+
+/-- A homomorphism of affine groups commutes with right translation by a point and its image. -/
+theorem comp_rightTranslationAlgHom (f : H →ₐc[R] K) (g : WithConv (K →ₐ[R] R)) :
+    f.toAlgHom.comp (TauCeti.HopfAlgebra.rightTranslationAlgHom (AlgHom.mapDomain f g)) =
+      (TauCeti.HopfAlgebra.rightTranslationAlgHom g).comp f.toAlgHom := by
+  simp only [TauCeti.HopfAlgebra.rightTranslationAlgHom,
+    _root_.AlgHom.comp_convMul_distrib, _root_.AlgHom.convMul_comp_bialgHom_distrib,
+    ofConv_toConv, _root_.AlgHom.comp_id, _root_.AlgHom.id_comp,
+    AlgHom.mapDomain_apply, ← _root_.AlgHom.comp_assoc, Algebra.comp_ofId]
+
+end BialgHom

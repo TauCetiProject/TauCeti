@@ -5,7 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 public import Mathlib.MeasureTheory.Function.LpSpace.Basic
+public import Mathlib.MeasureTheory.Integral.IntegrableOn
+import Mathlib.MeasureTheory.Function.LpSeminorm.LpNorm
+import Mathlib.MeasureTheory.Integral.Bochner.Set
 
 /-!
 # Norm inequalities in `Lᵖ` spaces
@@ -13,10 +17,18 @@ public import Mathlib.MeasureTheory.Function.LpSpace.Basic
 This file contains norm estimates for `Lᵖ` functions derived from almost-everywhere pointwise
 bounds.
 
-## Main declaration
+## Main declarations
 
 * `TauCeti.Lp.norm_le_add_of_ae_norm_le`: an `Lᵖ` norm bound from pointwise domination by a
   two-term linear combination.
+* `MeasureTheory.Lp.integral_norm_sq_eq_norm_sq`: the integral of the squared pointwise
+  norm of an `L²` function is its squared `L²` norm.
+* `MeasureTheory.Lp.setIntegral_norm_sq_le_norm_sq`: so its integral over a subset of the set it
+  lives on is at most its squared `L²` norm.
+* `MeasureTheory.MemLp.integrableOn_of_subset` and
+  `MeasureTheory.MemLp.integrableOn_norm_sub_sq_of_subset`: a function in `Lᵖ(t)`, `1 ≤ p`, is
+  integrable on every subset of `t` of finite measure, and for `p = 2` so is its squared distance
+  to any constant.
 -/
 
 public section
@@ -35,10 +47,12 @@ theorem Lp.norm_le_add_of_ae_norm_le {alpha F G H : Type*} [MeasurableSpace alph
     (hle : ∀ᵐ z ∂m, ‖f z‖ ≤ a * ‖g z‖ + b * ‖h z‖) :
     ‖f‖ ≤ a * ‖g‖ + b * ‖h‖ := by
   obtain ⟨A, hAnorm, hAcoe⟩ : ∃ A : Lp ℝ q m, ‖A‖ = ‖g‖ ∧ ∀ᵐ z ∂m, A z = ‖g z‖ :=
-    ⟨(Lp.memLp g).norm.toLp _, by rw [Lp.norm_toLp, eLpNorm_norm, ← Lp.norm_def],
+    ⟨(Lp.memLp g).norm.toLp _,
+      by rw [Lp.norm_toLp, eLpNorm_norm _ (Lp.aestronglyMeasurable g), ← Lp.norm_def],
       (Lp.memLp g).norm.coeFn_toLp⟩
   obtain ⟨B, hBnorm, hBcoe⟩ : ∃ B : Lp ℝ q m, ‖B‖ = ‖h‖ ∧ ∀ᵐ z ∂m, B z = ‖h z‖ :=
-    ⟨(Lp.memLp h).norm.toLp _, by rw [Lp.norm_toLp, eLpNorm_norm, ← Lp.norm_def],
+    ⟨(Lp.memLp h).norm.toLp _,
+      by rw [Lp.norm_toLp, eLpNorm_norm _ (Lp.aestronglyMeasurable h), ← Lp.norm_def],
       (Lp.memLp h).norm.coeFn_toLp⟩
   calc ‖f‖ ≤ ‖a • A + b • B‖ := by
         refine Lp.norm_le_norm_of_ae_le ?_
@@ -53,3 +67,62 @@ theorem Lp.norm_le_add_of_ae_norm_le {alpha F G H : Type*} [MeasurableSpace alph
         rw [norm_smul, norm_smul, Real.norm_of_nonneg ha, Real.norm_of_nonneg hb, hAnorm, hBnorm]
 
 end TauCeti
+
+namespace MeasureTheory
+
+open scoped ENNReal
+
+/-- The integral of the squared pointwise norm of an `L²` function is its squared `L²` norm. -/
+theorem Lp.integral_norm_sq_eq_norm_sq {alpha F : Type*} [MeasurableSpace alpha]
+    {m : Measure alpha} [NormedAddCommGroup F] (f : Lp F 2 m) :
+    ∫ x, ‖f x‖ ^ 2 ∂m = ‖f‖ ^ 2 := by
+  have hp0 : (2 : ℝ≥0∞) ≠ 0 := by norm_num
+  have hptop : (2 : ℝ≥0∞) ≠ ∞ := by norm_num
+  have h_lp := lpNorm_eq_integral_norm_rpow_toReal hp0 hptop (Lp.aestronglyMeasurable f)
+  rw [ENNReal.toReal_ofNat] at h_lp
+  have h_norm : ‖f‖ = lpNorm (⇑f) 2 m := by
+    rw [Lp.norm_def, toReal_eLpNorm]
+  have h_rpow : (fun x => ‖f x‖ ^ (2 : ℝ)) = fun x => ‖f x‖ ^ 2 := by
+    funext x
+    exact Real.rpow_two (‖f x‖)
+  rw [h_rpow] at h_lp
+  have h_nonneg : 0 ≤ ∫ x, ‖f x‖ ^ 2 ∂m := integral_nonneg fun x => sq_nonneg _
+  rw [h_norm, h_lp, ← Real.rpow_two, ← Real.rpow_mul h_nonneg, inv_mul_cancel₀ (by norm_num),
+    Real.rpow_one]
+
+/-- For an `L²` function `f` on `t`, the integral of `‖f‖²` over a subset `s ⊆ t` is at most the
+squared `L²` norm of `f`. -/
+theorem Lp.setIntegral_norm_sq_le_norm_sq {alpha F : Type*} [MeasurableSpace alpha]
+    {m : Measure alpha} [NormedAddCommGroup F] {s t : Set alpha} (f : Lp F 2 (m.restrict t))
+    (hst : s ⊆ t) : ∫ x in s, ‖f x‖ ^ 2 ∂m ≤ ‖f‖ ^ 2 := by
+  rw [← Lp.integral_norm_sq_eq_norm_sq]
+  exact setIntegral_mono_set ((Lp.memLp f).integrable_norm_pow two_ne_zero)
+    (ae_of_all _ fun _ => by positivity) hst.eventuallyLE
+
+section Restrict
+
+variable {X F : Type*} [MeasurableSpace X] {μ : Measure X} [NormedAddCommGroup F] {g : X → F}
+  {s t : Set X}
+
+/-- A function in `Lᵖ(t)`, `1 ≤ p`, is integrable on every subset `s ⊆ t` of finite measure. -/
+theorem MemLp.integrableOn_of_subset {p : ℝ≥0∞}
+    (hg : MemLp g p (μ.restrict t)) (hp : 1 ≤ p) (hst : s ⊆ t) (hs : μ s ≠ ⊤) :
+    IntegrableOn g s μ := by
+  have : IsFiniteMeasure (μ.restrict s) := isFiniteMeasure_restrict.2 hs
+  have hgs : MemLp g p (μ.restrict s) := by
+    simpa [Measure.restrict_restrict_of_subset hst] using hg.restrict s
+  exact hgs.integrable hp
+
+/-- For a function `g` in `L²(t)`, the squared distance `‖g - c‖²` to a constant `c` is integrable
+on every subset `s ⊆ t` of finite measure. -/
+theorem MemLp.integrableOn_norm_sub_sq_of_subset
+    (hg : MemLp g 2 (μ.restrict t)) (hst : s ⊆ t) (hs : μ s ≠ ⊤) (c : F) :
+    IntegrableOn (fun x ↦ ‖g x - c‖ ^ 2) s μ := by
+  have : IsFiniteMeasure (μ.restrict s) := isFiniteMeasure_restrict.2 hs
+  have hgs : MemLp g 2 (μ.restrict s) := by
+    simpa [Measure.restrict_restrict_of_subset hst] using hg.restrict s
+  exact (hgs.sub (memLp_const c)).integrable_norm_pow two_ne_zero
+
+end Restrict
+
+end MeasureTheory

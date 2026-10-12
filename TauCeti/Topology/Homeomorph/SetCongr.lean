@@ -11,11 +11,12 @@ public import Mathlib.Topology.Homeomorph.Lemmas
 # Evaluating the homeomorphism between equal sets
 
 This file records how Mathlib's `Homeomorph.setCongr`, the homeomorphism between the subtypes of
-two equal sets, acts on points.
+two equal sets, acts on points in both directions.
 
 ## Main results
 
 * `Homeomorph.setCongr_apply`: `setCongr` retypes a point without moving it.
+* `TauCeti.Homeomorph.setCongr_symm_apply`: its inverse also retypes a point without moving it.
 -/
 
 public section
@@ -32,3 +33,14 @@ theorem setCongr_apply {s t : Set X} (h : s = t) (x : s) :
   rfl
 
 end Homeomorph
+
+namespace TauCeti
+
+/-- The inverse of `Homeomorph.setCongr` retypes a point without moving it. -/
+@[simp]
+theorem Homeomorph.setCongr_symm_apply {X : Type*} [TopologicalSpace X]
+    {s t : Set X} (h : s = t) (x : t) :
+    (Homeomorph.setCongr h).symm x = ⟨x, h.symm ▸ x.2⟩ :=
+  rfl
+
+end TauCeti

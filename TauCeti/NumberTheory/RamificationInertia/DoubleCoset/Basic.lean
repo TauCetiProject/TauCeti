@@ -41,11 +41,15 @@ bijection is the dictionary that supplies one.
 
 * `Ideal.under_fixedField_eq_iff_mem_orbit`: two primes of `𝓞 M` contract to the same prime of
   `𝓞 E` exactly when one is an `H`-translate of the other.
+* `Ideal.primesOver_under_fixedField_eq_singleton_of_le_stabilizer`: for `H ≤ D`, `Q` is the only
+  prime of `𝓞 M` above `Q ∩ 𝓞 E`.
 * `Ideal.under_fixedField_smul_eq_iff_doubleCosetMk_eq`: the contractions of `σ Q` and `τ Q` to
   `𝓞 E` agree exactly when `σ` and `τ` lie in one `H`-`D` double coset.
 * `Ideal.exists_smul_under_fixedField_eq`: every prime of `𝓞 E` above `p` is such a contraction.
 * `Ideal.doubleCosetQuotientEquivPrimesOver_mk`: the bijection sends the class of `σ` to
   `σ Q ∩ 𝓞 E`.
+* `Ideal.doubleCosetQuotientEquivPrimesOver_smul_mk`: replacing `Q` by `τ Q` sends the class
+  of `σ` to the prime indexed through `Q` by the class of `σ τ`.
 * `Ideal.card_doubleCosetQuotient_eq_card_primesOver`: the resulting count.
 
 ## References
@@ -91,6 +95,19 @@ theorem under_fixedField_eq_iff_mem_orbit (R R' : Ideal (𝓞 M)) [R.IsPrime] [R
     -- An automorphism fixing `E` pointwise does not move contraction to `𝓞 E`.
     rw [Subgroup.smul_def, ← H.subgroupEquivAlgEquiv_smul_ideal h R']
     exact under_smul _ R' _
+
+/-- **A prime is alone above its contraction to a fixed field inside its decomposition group.**
+If `H` is contained in the decomposition group of `Q`, then `Q` is the only prime of `𝓞 M` above
+`Q ∩ 𝓞 (M ^ H)`: the other primes above it are the `H`-translates of `Q`, which all equal `Q`.
+
+This does not require `M / K` to be Galois. -/
+theorem primesOver_under_fixedField_eq_singleton_of_le_stabilizer (Q : Ideal (𝓞 M)) [Q.IsPrime]
+    {H : Subgroup (M ≃ₐ[K] M)} (hH : H ≤ stabilizer (M ≃ₐ[K] M) Q) :
+    (Q.under (𝓞 ↥(fixedField H))).primesOver (𝓞 M) = {Q} := by
+  refine Set.eq_singleton_iff_unique_mem.2 ⟨⟨inferInstance, inferInstance⟩, ?_⟩
+  rintro R ⟨_, hR⟩
+  obtain ⟨h, rfl⟩ := mem_orbit_iff.1 ((under_fixedField_eq_iff_mem_orbit R Q H).1 hR.over.symm)
+  exact mem_stabilizer_iff.1 (hH h.2)
 
 /-- **The fibres of `σ ↦ σ Q ∩ 𝓞 (M ^ H)` are the `H`-`D` double cosets.**  With `D` the
 decomposition group of `Q` in `Gal(M/K)`, the contractions of `σ Q` and `τ Q` to the fixed field
@@ -160,6 +177,16 @@ theorem doubleCosetQuotientEquivPrimesOver_mk [IsGalois K M] (p : Ideal (𝓞 K)
         Ideal (𝓞 ↥(fixedField H)))
       = (σ • Q).under (𝓞 ↥(fixedField H)) :=
   (rfl)
+
+/-- **The double coset law is compatible with the action of `G`.** Indexing the primes of
+`𝓞 (M ^ H)` above `p` through the translate `τ Q` instead of `Q` sends the class of `σ` to the
+prime that the indexing through `Q` attaches to the class of `σ τ`. -/
+theorem doubleCosetQuotientEquivPrimesOver_smul_mk [IsGalois K M] (p : Ideal (𝓞 K))
+    (Q : Ideal (𝓞 M)) [Q.IsPrime] [Q.LiesOver p] (H : Subgroup (M ≃ₐ[K] M))
+    (τ σ : M ≃ₐ[K] M) :
+    doubleCosetQuotientEquivPrimesOver p (τ • Q) H (DoubleCoset.mk H _ σ) =
+      doubleCosetQuotientEquivPrimesOver p Q H (DoubleCoset.mk H _ (σ * τ)) :=
+  Subtype.ext <| by simp only [doubleCosetQuotientEquivPrimesOver_mk, mul_smul]
 
 /-- **The number of primes above `p` in a subfield is a number of double cosets.** -/
 theorem card_doubleCosetQuotient_eq_card_primesOver [IsGalois K M] (p : Ideal (𝓞 K))

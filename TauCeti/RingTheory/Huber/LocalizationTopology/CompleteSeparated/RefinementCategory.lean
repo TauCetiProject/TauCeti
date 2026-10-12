@@ -29,6 +29,8 @@ needs no such hypothesis.
 
 * `TauCeti.Huber.PairOfDefinition.Presentation.completionLocObj` : the object `A⟨T/s⟩` of a
   presentation.
+* `TauCeti.Huber.PairOfDefinition.Presentation.completionLocObjCommRingCatIso` : identifies
+  its underlying ring with the completed localization.
 * `TauCeti.Huber.PairOfDefinition.Presentation.restrictionHom` : the restriction morphism of a
   refinement, from an arbitrary choice of cofactor.
 * `TauCeti.Huber.PairOfDefinition.presentationFunctor` : the functor into
@@ -92,6 +94,45 @@ noncomputable abbrev Presentation.completionLocObj (p : Presentation P) :
     CompleteSeparatedTopCommRingCat.{v} :=
   _root_.TauCeti.Huber.PairOfDefinition.completionLocObj P p.num p.den (Localization.Away p.den)
     p.hasDenominatorPower
+
+/-- The underlying commutative ring of `p.completionLocObj` is the completed rational localisation
+`A⟨p⟩ = UniformSpace.Completion (Localization.Away p.den)`: the transport along
+`completionLocObj_obj`, with its target stated as `CommRingCat.of` of the completion so that
+maps out of `A⟨p⟩` compose with it on the nose. -/
+noncomputable def Presentation.completionLocObjCommRingCatIso (p : Presentation P) :
+    letI := locUniformSpace P p.num p.den _ p.hasDenominatorPower
+    letI := isUniformAddGroup_locUniformSpace P p.num p.den _ p.hasDenominatorPower
+    letI := isTopologicalRing_locUniformSpace P p.num p.den _ p.hasDenominatorPower
+    (TopCommRingCat.isCompleteSeparated.ι ⋙ forget₂ TopCommRingCat CommRingCat).obj
+        p.completionLocObj ≅
+      CommRingCat.of (UniformSpace.Completion (Localization.Away p.den)) :=
+  letI := locUniformSpace P p.num p.den _ p.hasDenominatorPower
+  letI := isUniformAddGroup_locUniformSpace P p.num p.den _ p.hasDenominatorPower
+  letI := isTopologicalRing_locUniformSpace P p.num p.den _ p.hasDenominatorPower
+  (forget₂ TopCommRingCat CommRingCat).mapIso
+    (eqToIso (completionLocObj_obj P p.num p.den _ p.hasDenominatorPower))
+
+/-- The forward map identifying the underlying ring of a completed localization. -/
+@[simp]
+theorem Presentation.completionLocObjCommRingCatIso_hom (p : Presentation P) :
+    letI := locUniformSpace P p.num p.den _ p.hasDenominatorPower
+    letI := isUniformAddGroup_locUniformSpace P p.num p.den _ p.hasDenominatorPower
+    letI := isTopologicalRing_locUniformSpace P p.num p.den _ p.hasDenominatorPower
+    (Presentation.completionLocObjCommRingCatIso p).hom =
+      (forget₂ TopCommRingCat CommRingCat).map
+        (eqToHom (completionLocObj_obj P p.num p.den _ p.hasDenominatorPower)) :=
+  by rw [Presentation.completionLocObjCommRingCatIso, Functor.mapIso_hom, eqToIso.hom]
+
+/-- The inverse map identifying the underlying ring of a completed localization. -/
+@[simp]
+theorem Presentation.completionLocObjCommRingCatIso_inv (p : Presentation P) :
+    letI := locUniformSpace P p.num p.den _ p.hasDenominatorPower
+    letI := isUniformAddGroup_locUniformSpace P p.num p.den _ p.hasDenominatorPower
+    letI := isTopologicalRing_locUniformSpace P p.num p.den _ p.hasDenominatorPower
+    (Presentation.completionLocObjCommRingCatIso p).inv =
+      (forget₂ TopCommRingCat CommRingCat).map
+        (eqToHom (completionLocObj_obj P p.num p.den _ p.hasDenominatorPower).symm) :=
+  by rw [Presentation.completionLocObjCommRingCatIso, Functor.mapIso_inv, eqToIso.inv]
 
 /-- **The chosen cofactor of a refinement**, an implementation detail of
 `Presentation.restrictionHom`. Extraction from `h : p ≤ q` crosses the `≤`-to-existential

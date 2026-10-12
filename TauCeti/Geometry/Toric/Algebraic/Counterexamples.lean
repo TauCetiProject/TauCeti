@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Toric.Algebraic.Cone
+public import TauCeti.Geometry.Toric.Algebraic.Cone.Basic
 public import TauCeti.Geometry.Toric.Algebraic.Lattice
 public import Mathlib.Geometry.Convex.Cone.Dual
 public import Mathlib.NumberTheory.Real.Irrational
@@ -18,7 +18,8 @@ This file collects the negative examples that fix the content of `TauCeti.Toric.
 Toricity need not be preserved by arbitrary intersections when the additive map into the ambient
 real vector space is not discrete. The example uses an injective map `ℤ⁴ →+ ℝ³` whose intersection
 with the `z`-axis is dense. Two lattice-rational salient cones meet in an irrational ray
-containing no nonzero image of a lattice vector.
+containing no nonzero image of a lattice vector. For an integral lattice, intersections of toric
+cones are toric, by `TauCeti.Toric.IsToricCone.inf`.
 
 Salience is a genuinely independent condition: the full line of the rank-one lattice `ℤ ⊆ ℝ` is a
 finitely generated, lattice-rational pointed cone that is not toric.

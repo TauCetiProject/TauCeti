@@ -143,6 +143,19 @@ noncomputable def suspensionLoopIso (X : C) :
   inv_hom_id := by
     rw [← Functor.map_comp, hE.projectiveStableFunctor_map_connectingMap_comp_fromSuspensionLoop]
 
+/-- The comparison `ΣΩX ≅ X` is induced by `fromSuspensionLoop`. -/
+@[simp]
+theorem suspensionLoopIso_hom (X : C) :
+    (hE.suspensionLoopIso X).hom = E.projectiveStableFunctor.map (hE.fromSuspensionLoop X) :=
+  (rfl)
+
+/-- The inverse comparison `X ≅ ΣΩX` is induced by the connecting map of the loop conflation. -/
+@[simp]
+theorem suspensionLoopIso_inv (X : C) :
+    (hE.suspensionLoopIso X).inv = E.projectiveStableFunctor.map
+      (hE.connectingMap (hE.enoughProjectives.conflation_loopInflation_loopDeflation X)) :=
+  (rfl)
+
 /-- The comparison `ΣΩX ⟶ X` is natural in the stable category. -/
 theorem projectiveStableFunctor_map_fromSuspensionLoop_naturality {X Y : C} (f : X ⟶ Y) :
     E.projectiveStableFunctor.map

@@ -6,7 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Bialgebra.TensorProduct
-import TauCeti.Algebra.TensorProduct.BaseChange
+public import TauCeti.Algebra.TensorProduct.BaseChange
+import TauCeti.Algebra.Coalgebra.BaseChange
 
 /-!
 # Bialgebra maps and base change for tensor products
@@ -21,8 +22,7 @@ action on pure tensors in both directions.
 
 The underlying algebra equivalence upgrades Mathlib's
 `TensorProduct.AlgebraTensorModule.distribBaseChange`. The bialgebra comparison supplies the
-product/base-change identification needed for direct-product closure in Layer 6 of the
-ReductiveGroups roadmap.
+product/base-change identification for coordinate rings of direct products of affine group schemes.
 
 The tensor-product bialgebra structure and its unit isomorphisms are from Mathlib's
 `Mathlib.RingTheory.Bialgebra.TensorProduct`.
@@ -106,18 +106,14 @@ theorem projectRight_tmul (x : H₁) (y : H₂) :
 theorem projectLeft_comp_includeLeft :
     (projectLeft (R := R) (H₁ := H₁) (H₂ := H₂)).comp includeLeft = BialgHom.id R H₁ := by
   ext x
-  rw [BialgHom.comp_apply, includeLeft_apply, projectLeft_tmul,
-    Bialgebra.counit_one, one_smul]
-  rfl
+  simp
 
 /-- The right projection is a retraction of the right inclusion. -/
 @[simp]
 theorem projectRight_comp_includeRight :
     (projectRight (R := R) (H₁ := H₁) (H₂ := H₂)).comp includeRight = BialgHom.id R H₂ := by
   ext y
-  rw [BialgHom.comp_apply, includeRight_apply, projectRight_tmul,
-    Bialgebra.counit_one, one_smul]
-  rfl
+  simp
 
 section BaseChange
 
@@ -132,44 +128,10 @@ private theorem baseChangeTensorAlgEquiv_counit_comp :
     Bialgebra.counitAlgHom K (K ⊗[k] (H ⊗[k] L)) := by
   apply Algebra.TensorProduct.ext'
   intro s z
-  induction z using TensorProduct.induction_on with
-  | zero => simp
+  induction z using TensorProduct.inductionOn with
   | add x y hx hy =>
       simpa only [TensorProduct.tmul_add, map_add] using congrArg₂ (· + ·) hx hy
   | tmul h l => simp [smul_smul, mul_comm]
-
--- This is the comultiplication compatibility on pure tensors after rewriting by
--- `TensorProduct.comul_tmul` and `CommSemiring.comul_apply`, so it compares the two
--- `tensorTensorTensorComm` reorderings.
-private theorem _root_.TensorProduct.baseChangeTensorAlgEquiv_comul_aux
-    (s : K) (x : H ⊗[k] H) (y : L ⊗[k] L) :
-    (Algebra.TensorProduct.map
-        (Algebra.TensorProduct.baseChangeTensorAlgEquiv k K H L).toAlgHom
-        (Algebra.TensorProduct.baseChangeTensorAlgEquiv k K H L).toAlgHom)
-      (TensorProduct.AlgebraTensorModule.tensorTensorTensorComm
-        k K k K K K (H ⊗[k] L) (H ⊗[k] L)
-        (1 ⊗ₜ[K] s ⊗ₜ[k]
-          TensorProduct.AlgebraTensorModule.tensorTensorTensorComm
-            k k k k H H L L (x ⊗ₜ[k] y))) =
-    TensorProduct.AlgebraTensorModule.tensorTensorTensorComm
-      K K K K (K ⊗[k] H) (K ⊗[k] H) (K ⊗[k] L) (K ⊗[k] L)
-      (TensorProduct.AlgebraTensorModule.tensorTensorTensorComm
-          k K k K K K H H (1 ⊗ₜ[K] s ⊗ₜ[k] x) ⊗ₜ[K]
-        TensorProduct.AlgebraTensorModule.tensorTensorTensorComm
-          k K k K K K L L (1 ⊗ₜ[K] 1 ⊗ₜ[k] y)) := by
-  induction x using TensorProduct.induction_on with
-  | zero => simp
-  | add x₁ x₂ hx₁ hx₂ =>
-      simpa only [TensorProduct.add_tmul, TensorProduct.tmul_add, map_add] using
-        congrArg₂ (· + ·) hx₁ hx₂
-  | tmul h₁ h₂ =>
-    induction y using TensorProduct.induction_on with
-    | zero => simp
-    | add y₁ y₂ hy₁ hy₂ =>
-        simpa only [TensorProduct.add_tmul, TensorProduct.tmul_add, map_add] using
-          congrArg₂ (· + ·) hy₁ hy₂
-    | tmul l₁ l₂ =>
-        simp
 
 private theorem baseChangeTensorAlgEquiv_map_comp_comul :
     (Algebra.TensorProduct.map
@@ -180,23 +142,20 @@ private theorem baseChangeTensorAlgEquiv_map_comp_comul :
       (Algebra.TensorProduct.baseChangeTensorAlgEquiv k K H L).toAlgHom := by
   apply Algebra.TensorProduct.ext'
   intro s z
-  induction z using TensorProduct.induction_on with
-  | zero => simp
+  induction z using TensorProduct.inductionOn with
   | add x y hx hy =>
       simpa only [TensorProduct.tmul_add, map_add] using congrArg₂ (· + ·) hx hy
   | tmul h l =>
-      simp only [AlgHom.coe_comp, Function.comp_apply]
-      have he :
-          (Algebra.TensorProduct.baseChangeTensorAlgEquiv k K H L).toAlgHom
-              (s ⊗ₜ[k] (h ⊗ₜ[k] l)) =
-            (s ⊗ₜ[k] h) ⊗ₜ[K] (1 ⊗ₜ[k] l) := by
-        simpa only [AlgEquiv.coe_toAlgHom] using
-          Algebra.TensorProduct.baseChangeTensorAlgEquiv_tmul k K H L s h l
-      rw [he]
-      simpa only [Bialgebra.comulAlgHom_apply, TensorProduct.comul_tmul,
-        CommSemiring.comul_apply] using
-        _root_.TensorProduct.baseChangeTensorAlgEquiv_comul_aux k K H L s
-          (Coalgebra.comul (R := k) h) (Coalgebra.comul (R := k) l)
+      simpa only [AlgHom.comp_apply, AlgEquiv.coe_toAlgHom,
+        Algebra.TensorProduct.baseChangeTensorAlgEquiv_tmul, Bialgebra.comulAlgHom_apply,
+        TauCeti.Coalgebra.baseChange_comul_tmul, TensorProduct.comul_tmul,
+        Algebra.TensorProduct.map_tmul, AlgHom.id_apply, ← AlgEquiv.coe_toLinearEquiv,
+        Algebra.TensorProduct.baseChangeTensorAlgEquiv_toLinearEquiv,
+        Algebra.TensorProduct.tensorTensorTensorComm_toLinearEquiv] using
+        DFunLike.congr_fun
+          (Algebra.TensorProduct.map_baseChangeTensorAlgEquiv_comp_tensorTensorTensorComm
+            k K H H L L)
+          (s ⊗ₜ[k] (Coalgebra.comul (R := k) h ⊗ₜ[k] Coalgebra.comul (R := k) l))
 
 /-- **Base change commutes with tensor products of bialgebras.**
 
@@ -212,6 +171,14 @@ noncomputable def baseChangeTensorBialgEquiv :
     (B := (K ⊗[k] H) ⊗[K] (K ⊗[k] L))
     (baseChangeTensorAlgEquiv_counit_comp k K H L)
     (baseChangeTensorAlgEquiv_map_comp_comul k K H L)
+
+/-- The algebra equivalence underlying the product/base-change bialgebra equivalence. -/
+@[simp]
+theorem baseChangeTensorBialgEquiv_toAlgEquiv :
+    (baseChangeTensorBialgEquiv k K H L).toAlgEquiv =
+      Algebra.TensorProduct.baseChangeTensorAlgEquiv k K H L := by
+  ext x
+  rfl
 
 /-- On a pure tensor, the product/base-change equivalence puts the scalar in the first
 base-changed factor. -/

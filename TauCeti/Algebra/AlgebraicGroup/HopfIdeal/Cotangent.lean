@@ -8,7 +8,7 @@ module
 public import Mathlib.LinearAlgebra.Dual.Lemmas
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Tangent
 public import TauCeti.Algebra.AlgebraicGroup.Tangent.Cotangent
-public import TauCeti.Algebra.HopfAlgebra.Kernel
+public import TauCeti.Algebra.HopfAlgebra.HopfIdeal.Kernel
 import TauCeti.Algebra.AlgebraicGroup.Tangent.Dimension
 import TauCeti.Algebra.HopfAlgebra.HopfIdeal.Augmentation
 
@@ -318,17 +318,7 @@ theorem conormalSubspace_ker_eq_bot_of_surjective_of_derivationCompLieHom_surjec
     intro d
     obtain ⟨e, he⟩ := hdf d
     refine ⟨derivationCompLieHom (B := k) (kerLiftBialgHom f hf) e, ?_⟩
-    -- `quotientLieHom` is not exposed, so rewrite it through its public application lemma.
-    have hquotient :
-        quotientLieHom (B := k) (kerOfSurjective f hf) =
-          derivationCompLieHom (B := k)
-            (Bialgebra.Quotient.mkBialgHom (kerOfSurjective f hf).toIdeal) := by
-      ext d x
-      rw [quotientLieHom_apply_apply, derivationCompLieHom_apply, derivationComp_apply]
-      exact Bialgebra.CounitAlgebra.algEquivSelf_apply
-        k (H ⧸ (kerOfSurjective f hf).toIdeal) k
-        (d (Ideal.Quotient.mkₐ k (kerOfSurjective f hf).toIdeal x))
-    rw [hquotient]
+    rw [quotientLieHom_apply, ← derivationCompLieHom_apply]
     calc
       derivationCompLieHom (B := k)
           (Bialgebra.Quotient.mkBialgHom (kerOfSurjective f hf).toIdeal)

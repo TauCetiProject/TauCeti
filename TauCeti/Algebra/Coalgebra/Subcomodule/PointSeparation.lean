@@ -157,8 +157,7 @@ theorem endOfPoint_tmul_mem_baseChange (N : Subcomodule R C M) (g : C →ₐ[R] 
           (LinearMap.lTensor M g.toLinearMap
             (TensorProduct.map N.toSubmodule.subtype LinearMap.id t)) ∈
         N.toSubmodule.baseChange A := by
-    induction t using TensorProduct.induction_on with
-    | zero => simp
+    induction t using TensorProduct.inductionOn with
     | add s t hs ht => simpa only [map_add, smul_add] using add_mem hs ht
     | tmul n c =>
         simp only [TensorProduct.map_tmul, Submodule.coe_subtype, LinearMap.id_coe, id_eq,
@@ -175,8 +174,7 @@ theorem endOfPoint_mapsTo_baseChange (N : Subcomodule R C M) (g : C →ₐ[R] A)
   intro x hx
   rw [Submodule.baseChange] at hx
   obtain ⟨t, rfl⟩ := hx
-  induction t using TensorProduct.induction_on with
-  | zero => simp
+  induction t using TensorProduct.inductionOn with
   | add s t hs ht =>
       rw [map_add, map_add]
       exact (N.toSubmodule.baseChange A).add_mem hs ht

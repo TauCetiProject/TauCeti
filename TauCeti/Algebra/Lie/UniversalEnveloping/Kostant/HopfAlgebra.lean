@@ -101,8 +101,7 @@ private theorem kostantTripleMap_assoc_tmul (e : I → L) (h : J → L)
     kostantTripleMap e h
         (TensorProduct.assoc ℤ (K e h) (K e h) (K e h) (t ⊗ₜ[ℤ] z)) =
       TensorProduct.assoc ℚ U U U (kostantTensorMap e h t ⊗ₜ[ℚ] (z : U)) := by
-  induction t using TensorProduct.induction_on with
-  | zero => simp only [TensorProduct.zero_tmul, map_zero]
+  induction t using TensorProduct.inductionOn with
   | add x y hx hy =>
       simpa only [TensorProduct.add_tmul, map_add] using congrArg₂ (· + ·) hx hy
   | tmul x y =>
@@ -120,8 +119,7 @@ private theorem kostantTripleMap_comul_rTensor (e : I → L) (h : J → L)
           ((kostantFormComul e h).toLinearMap.rTensor (K e h) t)) =
       TensorProduct.assoc ℚ U U U
         (Coalgebra.comul.rTensor U (kostantTensorMap e h t)) := by
-  induction t using TensorProduct.induction_on with
-  | zero => simp only [map_zero]
+  induction t using TensorProduct.inductionOn with
   | add x y hx hy => simpa only [map_add] using congrArg₂ (· + ·) hx hy
   | tmul x y =>
       rw [LinearMap.rTensor_tmul, kostantTensorMap_tmul, LinearMap.rTensor_tmul,
@@ -132,8 +130,7 @@ private theorem kostantTripleMap_comul_lTensor (e : I → L) (h : J → L)
     (t : K e h ⊗[ℤ] K e h) :
     kostantTripleMap e h ((kostantFormComul e h).toLinearMap.lTensor (K e h) t) =
       Coalgebra.comul.lTensor U (kostantTensorMap e h t) := by
-  induction t using TensorProduct.induction_on with
-  | zero => simp only [map_zero]
+  induction t using TensorProduct.inductionOn with
   | add x y hx hy => simpa only [map_add] using congrArg₂ (· + ·) hx hy
   | tmul x y =>
       rw [LinearMap.lTensor_tmul, kostantTensorMap_tmul, LinearMap.lTensor_tmul,
@@ -145,8 +142,7 @@ private theorem coe_lid_counit_rTensor (e : I → L) (h : J → L)
     ((TensorProduct.lid ℤ (K e h))
         ((kostantFormCounit e h).toLinearMap.rTensor (K e h) t) : K e h) =
       TensorProduct.lid ℚ U (Coalgebra.counit.rTensor U (kostantTensorMap e h t)) := by
-  induction t using TensorProduct.induction_on with
-  | zero => simp
+  induction t using TensorProduct.inductionOn with
   | add x y hx hy =>
       simp only [map_add, Subring.coe_add, hx, hy]
   | tmul x y =>
@@ -162,8 +158,7 @@ private theorem coe_rid_counit_lTensor (e : I → L) (h : J → L)
     ((TensorProduct.rid ℤ (K e h))
         ((kostantFormCounit e h).toLinearMap.lTensor (K e h) t) : K e h) =
       TensorProduct.rid ℚ U (Coalgebra.counit.lTensor U (kostantTensorMap e h t)) := by
-  induction t using TensorProduct.induction_on with
-  | zero => simp
+  induction t using TensorProduct.inductionOn with
   | add x y hx hy =>
       simp only [map_add, Subring.coe_add, hx, hy]
   | tmul x y =>
@@ -237,8 +232,7 @@ private theorem kostantTensorMap_comm (e : I → L) (h : J → L)
     (t : K e h ⊗[ℤ] K e h) :
     kostantTensorMap e h (TensorProduct.comm ℤ (K e h) (K e h) t) =
       TensorProduct.comm ℚ U U (kostantTensorMap e h t) := by
-  induction t using TensorProduct.induction_on with
-  | zero => simp
+  induction t using TensorProduct.inductionOn with
   | add x y hx hy => simpa only [map_add] using congrArg₂ (· + ·) hx hy
   | tmul x y =>
       rw [TensorProduct.comm_tmul]
@@ -282,8 +276,7 @@ private theorem coe_mul_antipode_rTensor (e : I → L) (h : J → L)
         ((kostantFormAntipodeLinearMap e h).rTensor (K e h) t) : K e h) =
       LinearMap.mul' ℚ U
         ((HopfAlgebra.antipode ℚ (A := U)).rTensor U (kostantTensorMap e h t)) := by
-  induction t using TensorProduct.induction_on with
-  | zero => simp
+  induction t using TensorProduct.inductionOn with
   | add x y hx hy =>
       simp only [map_add, Subring.coe_add, hx, hy]
   | tmul x y =>
@@ -297,8 +290,7 @@ private theorem coe_mul_antipode_lTensor (e : I → L) (h : J → L)
         ((kostantFormAntipodeLinearMap e h).lTensor (K e h) t) : K e h) =
       LinearMap.mul' ℚ U
         ((HopfAlgebra.antipode ℚ (A := U)).lTensor U (kostantTensorMap e h t)) := by
-  induction t using TensorProduct.induction_on with
-  | zero => simp
+  induction t using TensorProduct.inductionOn with
   | add x y hx hy =>
       simp only [map_add, Subring.coe_add, hx, hy]
   | tmul x y =>

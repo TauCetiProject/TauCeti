@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Data.Fin.Tuple.Basic
+public import Mathlib.Data.Finset.Card
+public import Mathlib.Data.Fintype.Basic
 public import Mathlib.Data.Sym.Basic
 import Mathlib.Algebra.BigOperators.Fin
 import Mathlib.Data.Finset.NatAntidiagonal
@@ -34,6 +36,10 @@ orbits of the permutation action, by `TauCeti.Sym.ofFn_eq_ofFn_iff`. Nothing her
   `Sym.append`.
 * `TauCeti.Sym.ofFn_eq_ofFn_iff`: two ordered tuples have the same underlying unordered tuple
   exactly when one is a reindexing of the other by a permutation.
+* `TauCeti.Sym.count_coe_ofFn`: the multiplicity of a value in an unordered tuple is the number
+  of entries of the ordered tuple taking that value.
+* `TauCeti.Sym.basepointDivisor` is the set of unordered tuples containing a fixed point;
+  `TauCeti.Sym.range_cons` identifies it with the range of adjoining that point.
 * `TauCeti.symFinTwoEquiv`: an unordered `d`-tuple over `Fin 2` is determined by how many of its
   entries are `0`, so there are `d + 1` of them.
 -/
@@ -73,6 +79,14 @@ def ofFn (f : Fin n → α) : Sym α n :=
 @[simp]
 theorem coe_ofFn (f : Fin n → α) : (ofFn f : Multiset α) = ↑(List.ofFn f) :=
   congrArg _ (List.Vector.toList_ofFn f)
+
+/-- The multiplicity of a value in `ofFn f` is the number of entries of `f` equal to it. -/
+theorem count_coe_ofFn [DecidableEq α] (f : Fin n → α) (a : α) :
+    Multiset.count a (ofFn f : Multiset α) = (Finset.univ.filter fun i => f i = a).card := by
+  have hmap : (ofFn f : Multiset α) = Multiset.map f Finset.univ.val := by
+    simp [List.ofFn_eq_map, Finset.val_univ_fin]
+  rw [hmap, Multiset.count_map, ← Finset.filter_val, Finset.card_val]
+  simp only [eq_comm]
 
 /-- The points of `ofFn f` are exactly the values of `f`. -/
 @[simp]
@@ -143,19 +157,38 @@ theorem ofFn_eq_ofFn_iff {f g : Fin n → α} :
   classical
   refine ⟨fun h => ?_, ?_⟩
   · -- the two tuples take each value the same number of times, so their fibres are equinumerous
-    have key : ∀ (u : Fin n → α) (c : α),
-        Fintype.card {i // u i = c} = Multiset.count c (↑(List.ofFn u) : Multiset α) := by
-      intro u c
-      have hmap : (↑(List.ofFn u) : Multiset α) = Multiset.map u Finset.univ.val := by
-        rw [List.ofFn_eq_map]; rfl
-      rw [Fintype.card_subtype, hmap, Multiset.count_map, ← Finset.filter_val, Finset.card_def]
-      simp [eq_comm]
     have hcard : ∀ c : α, Fintype.card {i // g i = c} = Fintype.card {i // f i = c} := fun c => by
-      rw [key, key, ← coe_ofFn, ← coe_ofFn, h]
+      rw [Fintype.card_subtype, Fintype.card_subtype, ← count_coe_ofFn g c, ← count_coe_ofFn f c, h]
     exact ⟨Equiv.ofFiberEquiv fun c => Fintype.equivOfCardEq (hcard c),
       funext fun i => Equiv.ofFiberEquiv_map _ i⟩
   · rintro ⟨σ, rfl⟩
     exact (ofFn_comp_perm σ f).symm
+
+/-! ### Adjoining a fixed point -/
+
+/-- The divisor of unordered tuples containing the fixed point `a`. -/
+def basepointDivisor (a : α) : Set (Sym α n) := {s | a ∈ s}
+
+@[simp]
+theorem mem_basepointDivisor {a : α} {s : Sym α n} :
+    s ∈ basepointDivisor a ↔ a ∈ s := Iff.rfl
+
+/-- No unordered tuple of length zero contains a point. -/
+@[simp]
+theorem basepointDivisor_zero (a : α) : (basepointDivisor a : Set (Sym α 0)) = ∅ :=
+  Set.eq_empty_of_forall_notMem fun s => by simp [_root_.Sym.eq_nil_of_card_zero s]
+
+/-- The unordered `(n + 1)`-tuples obtained by adjoining the point `a` are exactly those that
+contain `a`. -/
+@[simp]
+theorem range_cons (a : α) :
+    Set.range (Sym.cons a : Sym α n → Sym α (n + 1)) = basepointDivisor a := by
+  ext s
+  refine ⟨?_, fun hs => ?_⟩
+  · rintro ⟨t, rfl⟩
+    exact Sym.mem_cons_self a t
+  · obtain ⟨t, rfl⟩ := Sym.exists_cons_of_mem hs
+    exact ⟨t, rfl⟩
 
 end Sym
 

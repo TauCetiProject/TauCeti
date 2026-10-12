@@ -14,7 +14,10 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.Weierstrass
 Material complementing `Mathlib/AlgebraicGeometry/EllipticCurve/VariableChange.lean`: the
 negation automorphism `[-1]` of a Weierstrass curve as an admissible change of variables, with
 its involution API, together with the compatibility of the action with base change
-(`baseChange_smul_baseChange`) and the three base-change facts that Galois descent runs on:
+(`baseChange_smul_baseChange`, whence the instance `isElliptic_baseChange_smul`: the base change of
+`C • V` is elliptic along with that of `V`, and `baseChange_smul_c₄` / `baseChange_smul_c₆`: a
+change of variables with `u = 1` leaves the `c`-invariants of a base change alone) and the three
+base-change facts that Galois descent runs on:
 `smul_eq_of_baseChange_smul_eq` (a relation between base changes descends when the change of
 variables does), `negVariableChange_baseChange_map` (`[-1]` is defined over the base, so a base
 automorphism fixes it) and `map_smul_baseChange_eq` (the conjugate of an isomorphism of base
@@ -23,7 +26,11 @@ produces the Galois cocycle used by the twist classification.
 
 That cocycle comparison lands on a product `C * [-1]`, whose four components are read off here as
 `mul_negVariableChange_u/_r/_s/_t` rather than by unfolding `VariableChange.mul_def` against the
-components of `[-1]` at each use.
+components of `[-1]` at each use. The negation automorphism of `C • E` is that of `E` conjugated
+by `C` (`negVariableChange_smul`).
+
+Similarly, the components of `C * D⁻¹`, the change of variables carrying `D • W` to `C • W`, are
+recorded as `VariableChange.mul_inv_u/_r/_s/_t`.
 
 The negation is the nontrivial automorphism in the `Aut (E, O)`
 milestone of `TauCetiRoadmap/EllipticCurves/README.md` §Layer 1, proved in
@@ -82,15 +89,12 @@ def negVariableChange : VariableChange R :=
 over a ring in which `2 = 0` cannot have `a₁ = a₃ = 0`. -/
 lemma negVariableChange_ne_one [Nontrivial R] [E.IsElliptic] : E.negVariableChange ≠ 1 := by
   intro h
-  rcases eq_or_ne (2 : R) 0 with h2 | h2
-  · have hs := congrArg VariableChange.s h
-    have ht := congrArg VariableChange.t h
-    simp only [negVariableChange, VariableChange.one_def, neg_eq_zero] at hs ht
-    grind [a₁_ne_zero_or_a₃_ne_zero_of_Δ_ne_zero_of_two_eq_zero E E.isUnit_Δ.ne_zero]
-  · contrapose h2
-    have hv : (-1 : R) = 1 := by
-      simpa [VariableChange.one_def] using congrArg (fun C : VariableChange R ↦ (C.u : R)) h
-    linear_combination -hv
+  have hv : (-1 : R) = 1 := by
+    simpa [VariableChange.one_def] using congrArg (fun C : VariableChange R ↦ (C.u : R)) h
+  have hs := congrArg VariableChange.s h
+  have ht := congrArg VariableChange.t h
+  simp only [negVariableChange, VariableChange.one_def, neg_eq_zero] at hs ht
+  grind [a₁_ne_zero_or_a₃_ne_zero_of_Δ_ne_zero_of_two_eq_zero E E.isUnit_Δ.ne_zero]
 
 namespace VariableChange
 
@@ -113,6 +117,31 @@ enough. -/
 @[simp] lemma map_mul (φ : R →+* A) (C D : VariableChange R) :
     (C * D).map φ = C.map φ * D.map φ :=
   _root_.map_mul (VariableChange.mapHom φ) C D
+
+/-! ### Components of `C * D⁻¹`
+
+`C * D⁻¹` is the change of variables carrying `D • W` to `C • W`. Its components are the
+differences of those of `C` and `D`, rescaled by powers of `D.u⁻¹`. -/
+
+/-- The scaling factor of `C * D⁻¹` is `C.u * D.u⁻¹`. -/
+@[simp] lemma mul_inv_u (C D : VariableChange R) : (C * D⁻¹).u = C.u * D.u⁻¹ :=
+  rfl
+
+/-- The translation `r` of `C * D⁻¹` is `(C.r - D.r) * D.u⁻¹ ^ 2`. -/
+@[simp] lemma mul_inv_r (C D : VariableChange R) : (C * D⁻¹).r = (C.r - D.r) * ↑D.u⁻¹ ^ 2 := by
+  simp only [mul_def, inv_def]
+  ring
+
+/-- The shear `s` of `C * D⁻¹` is `(C.s - D.s) * D.u⁻¹`. -/
+@[simp] lemma mul_inv_s (C D : VariableChange R) : (C * D⁻¹).s = (C.s - D.s) * ↑D.u⁻¹ := by
+  simp only [mul_def, inv_def]
+  ring
+
+/-- The translation `t` of `C * D⁻¹` is `(C.t - D.t - D.s * (C.r - D.r)) * D.u⁻¹ ^ 3`. -/
+@[simp] lemma mul_inv_t (C D : VariableChange R) :
+    (C * D⁻¹).t = (C.t - D.t - D.s * (C.r - D.r)) * ↑D.u⁻¹ ^ 3 := by
+  simp only [mul_def, inv_def]
+  ring
 
 end VariableChange
 
@@ -155,6 +184,19 @@ variable (C : VariableChange R)
 @[simp] lemma negVariableChange_inv : E.negVariableChange⁻¹ = E.negVariableChange :=
   inv_eq_of_mul_eq_one_left E.negVariableChange_mul_self
 
+/-- The negation automorphism of `C • E` is that of `E` conjugated by `C`: negating a point of
+`C • E` is carrying it to `E` by `C`, negating there, and carrying the result back by `C⁻¹`. -/
+lemma negVariableChange_smul : (C • E).negVariableChange = C * E.negVariableChange * C⁻¹ := by
+  rw [eq_mul_inv_iff_mul_eq]
+  ext
+  · simp [VariableChange.mul_def]
+  · simp [VariableChange.mul_def]
+  · simp [VariableChange.mul_def, variableChange_a₁]
+    ring
+  · have hu : (↑C.u⁻¹ : R) ^ 3 * (C.u : R) ^ 3 = 1 := by rw [← mul_pow, Units.inv_mul, one_pow]
+    simp [VariableChange.mul_def, variableChange_a₃]
+    linear_combination (-E.a₃ - C.r * E.a₁ - 2 * C.t) * hu
+
 section BaseChange
 
 variable (L : Type*) [CommRing L] [Algebra R L]
@@ -167,6 +209,30 @@ in the `baseChange` spelling, so it rewrites directly in goals phrased that way.
 lemma baseChange_smul_baseChange (C : VariableChange R) (V : WeierstrassCurve R) :
     (C.baseChange L) • V.baseChange L = (C • V).baseChange L :=
   map_variableChange (W := V) (C := C) (φ := algebraMap R L)
+
+variable {L} in
+/-- The base change of `C • V` to `L` is elliptic whenever that of `V` is, since it is
+`Cᴸ • Vᴸ`. -/
+instance isElliptic_baseChange_smul (V : WeierstrassCurve R) (C : VariableChange R)
+    [(V.baseChange L).IsElliptic] : ((C • V).baseChange L).IsElliptic := by
+  rw [← baseChange_smul_baseChange]
+  infer_instance
+
+/-- **A change of variables with `u = 1` leaves `c₄` alone**, and base change carries that along:
+the scaling factor `u⁻¹ ^ 4` of `WeierstrassCurve.variableChange_c₄` is `1`. -/
+@[simp] lemma baseChange_smul_c₄ {C : VariableChange R} (hu : C.u = 1) (V : WeierstrassCurve R) :
+    ((C • V).baseChange L).c₄ = (V.baseChange L).c₄ := by
+  rw [← baseChange_smul_baseChange, variableChange_c₄, VariableChange.baseChange,
+    VariableChange.map_u, hu]
+  simp
+
+/-- **A change of variables with `u = 1` leaves `c₆` alone**, and base change carries that along:
+the scaling factor `u⁻¹ ^ 6` of `WeierstrassCurve.variableChange_c₆` is `1`. -/
+@[simp] lemma baseChange_smul_c₆ {C : VariableChange R} (hu : C.u = 1) (V : WeierstrassCurve R) :
+    ((C • V).baseChange L).c₆ = (V.baseChange L).c₆ := by
+  rw [← baseChange_smul_baseChange, variableChange_c₆, VariableChange.baseChange,
+    VariableChange.map_u, hu]
+  simp
 
 /-- **A relation between base changes descends, provided the change of variables does.** If `C` is
 defined over `R` and `Cᴸ` carries `Vᴸ` to `Wᴸ`, then `C` already carries `V` to `W` over `R`. The

@@ -117,6 +117,16 @@ theorem ord_surjective (v : _root_.Valuation F ℤᵐ⁰) (hv : Function.Surject
   have hf0 : f ≠ 0 := v.ne_zero_iff.mp (by simp [hf])
   exact ⟨f, (ord_eq_iff_valuation_eq_exp_neg v hf0).mpr hf⟩
 
+/-- **A valuation that takes the value `exp (-1)` is surjective onto `ℤᵐ⁰`**: the integer powers
+of an element of value `exp (-1)` take every nonzero value. -/
+theorem surjective_of_map_eq_exp_neg_one (v : _root_.Valuation F ℤᵐ⁰) {t : F}
+    (ht : v t = WithZero.exp (-1)) : Function.Surjective v := by
+  intro x
+  induction x using WithZero.expRecOn with
+  | zero => exact ⟨0, map_zero v⟩
+  | exp n => exact ⟨t ^ (-n), by rw [map_zpow₀, ht, ← WithZero.exp_zsmul, smul_eq_mul, neg_mul_neg,
+      mul_one]⟩
+
 theorem mem_valuationSubring_iff_ord_nonneg (v : _root_.Valuation F ℤᵐ⁰) {f : F} :
     f ∈ v.valuationSubring ↔ 0 ≤ ord v f := by
   rcases eq_or_ne f 0 with rfl | hf
@@ -209,12 +219,12 @@ variable {F : Type*} [Ring F]
 
 /-- Surjectivity of `v` makes its value group the whole of `ℤᵐ⁰`. -/
 theorem valueGroup_eq_top_of_surjective (v : _root_.Valuation F ℤᵐ⁰)
-    (hv : Function.Surjective v) : valueGroup (.ofClass v) = ⊤ :=
+    (hv : Function.Surjective v) : v.valueGroup = ⊤ :=
   (Subgroup.eq_top_iff' _).mpr fun γ => mem_valueGroup _ (hv γ)
 
 /-- A surjective `ℤᵐ⁰`-valued valuation has nontrivial value group. -/
 theorem nontrivial_valueGroup_of_surjective (v : _root_.Valuation F ℤᵐ⁰)
-    (hv : Function.Surjective v) : Nontrivial (valueGroup (.ofClass v)) := by
+    (hv : Function.Surjective v) : Nontrivial v.valueGroup := by
   rw [valueGroup_eq_top_of_surjective v hv]
   exact (Subgroup.topEquiv (G := ℤᵐ⁰ˣ)).toEquiv.nontrivial
 
@@ -231,7 +241,7 @@ theorem valuationSubring_isDiscreteValuationRing_of_surjective
 
 /-- Uniformizers of a surjective `ℤᵐ⁰`-valuation are exactly the elements of order one. -/
 theorem isUniformizer_iff_ord_eq_one_of_surjective (v : _root_.Valuation F ℤᵐ⁰)
-    [Nontrivial (valueGroup (.ofClass v))] (hv : Function.Surjective v) {t : F} :
+    [Nontrivial v.valueGroup] (hv : Function.Surjective v) {t : F} :
     v.IsUniformizer t ↔ ord v t = 1 := by
   rcases eq_or_ne t 0 with rfl | ht
   · refine iff_of_false ?_ (by simp)
@@ -244,7 +254,7 @@ theorem isUniformizer_iff_ord_eq_one_of_surjective (v : _root_.Valuation F ℤ�
       Units.val_mk0, ord_eq_iff_valuation_eq_exp_neg v ht]
 
 theorem exists_isUniformizer_of_surjective (v : _root_.Valuation F ℤᵐ⁰)
-    [Nontrivial (valueGroup (.ofClass v))] (hv : Function.Surjective v) :
+    [Nontrivial v.valueGroup] (hv : Function.Surjective v) :
     ∃ t : F, v.IsUniformizer t := by
   obtain ⟨t, ht⟩ := ord_surjective v hv 1
   exact ⟨t, (isUniformizer_iff_ord_eq_one_of_surjective v hv).mpr ht⟩
@@ -258,7 +268,7 @@ theorem isUnit_iff_ord_eq_zero (v : _root_.Valuation F ℤᵐ⁰) {x : v.valuati
 
 /-- Existence half of the uniformizer expansion for a surjective valuation. -/
 theorem exists_eq_zpow_mul_unit_of_surjective (v : _root_.Valuation F ℤᵐ⁰)
-    [Nontrivial (valueGroup (.ofClass v))] (hv : Function.Surjective v)
+    [Nontrivial v.valueGroup] (hv : Function.Surjective v)
     {t : F} (ht : v.IsUniformizer t) {f : F} (hf : f ≠ 0) :
     ∃ u : v.valuationSubringˣ, f = t ^ ord v f * (u : F) := by
   have ht1 : ord v t = 1 := (isUniformizer_iff_ord_eq_one_of_surjective v hv).mp ht

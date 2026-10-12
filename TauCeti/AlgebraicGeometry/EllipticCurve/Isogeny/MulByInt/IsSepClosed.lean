@@ -5,9 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.MapAlong
 public import TauCeti.AlgebraicGeometry.EllipticCurve.DivisionPolynomial.Torsion.IsSepClosed
-public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.MulByInt.TorsionRank
-public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.MulByInt.TorsionSurjective
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.MulByInt.Torsion.Rank
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.MulByInt.Torsion.Surjective
 
 /-!
 # Torsion over a separably closed field
@@ -21,11 +22,20 @@ with the division-polynomial torsion theory in `DivisionPolynomial.Torsion.IsSep
 
 * `TauCeti.Isogeny.card_ker_mulByIntIsogeny` and `WeierstrassCurve.Affine.natCard_torsionBy`:
   `#E[n] = n ²`, in the kernel and the torsion-subgroup forms.
+* `WeierstrassCurve.natCard_torsionBy`: the same count read on `W.toAffine.Point` itself,
+  rather than on the trivial base change `W⁄K`.
+* `WeierstrassCurve.torsionMapAlong_bijective`: the `N`-torsion does not grow from one separably
+  closed field to another.
 * `TauCeti.Isogeny.card_ker_mulByPrimeIsogeny`,
   `TauCeti.Isogeny.finrank_ker_mulByPrimeIsogeny` and
   `TauCeti.Isogeny.nonempty_linearEquiv_ker_mulByPrimeIsogeny`: `E[ℓ] ≅ (ZMod ℓ) ²` at a prime.
 * `WeierstrassCurve.Affine.zsmulTorsionSqHom_surjective` and
   `WeierstrassCurve.Affine.exists_zsmul_eq_of_zsmul_eq_zero`: `[n]` carries `E[n ²]` onto `E[n]`.
+* `WeierstrassCurve.Affine.exists_point_zsmul_eq_of_zsmul_eq_zero` and
+  `WeierstrassCurve.Affine.natCard_setOf_zsmul_eq_zero`: the same two facts on the points of `W`
+  itself rather than of `W⁄F`.
+* `WeierstrassCurve.Affine.infinite_point`: the points of `W` are infinitely many, the torsion
+  alone being unbounded.
 
 ## References
 
@@ -108,6 +118,93 @@ theorem exists_zsmul_eq_of_zsmul_eq_zero {n : ℤ} (hchar : (n : F) ≠ 0)
     (fun _ hP ↦ W.mem_range_baseChange_of_zsmul_eq_zero_of_isSepClosed
       (by push_cast; exact pow_ne_zero 2 hchar) hP) hchar hT
 
+/-- **Every `n`-torsion point of `W` is `n` times a point of `W`**, over a separably closed field
+in which `n` is invertible. -/
+theorem exists_point_zsmul_eq_of_zsmul_eq_zero {n : ℤ} (hchar : (n : F) ≠ 0) {T : W.Point}
+    (hT : n • T = 0) : ∃ R : W.Point, n • R = T := by
+  obtain ⟨P, hP, -⟩ := W.exists_zsmul_eq_of_zsmul_eq_zero hchar
+    (T := Point.equivBaseChangeSelf W T) (by rw [← map_zsmul, hT, map_zero])
+  exact ⟨(Point.equivBaseChangeSelf W).symm P, by rw [← map_zsmul, hP, AddEquiv.symm_apply_apply]⟩
+
+open scoped Classical in
+/-- **`#E[n] = n ²`** over a separably closed field in which `n` is invertible, counted on the
+points of `W` themselves. -/
+theorem natCard_setOf_zsmul_eq_zero {n : ℤ} (hchar : (n : F) ≠ 0) :
+    Nat.card {R : W.Point | n • R = 0} = n.natAbs ^ 2 := by
+  rw [← W.natCard_torsionBy hchar]
+  refine Nat.card_congr ((Point.equivBaseChangeSelf W).toEquiv.subtypeEquiv fun R ↦ ?_)
+  simp only [Set.mem_ofPred_eq, AddEquiv.toEquiv_eq_coe, EquivLike.coe_coe]
+  refine ⟨fun h ↦ (Submodule.mem_torsionBy_iff _ _).mpr ?_, fun h ↦ ?_⟩
+  · rw [← map_zsmul, h, map_zero]
+  · have := (Submodule.mem_torsionBy_iff _ _).mp h
+    rwa [← map_zsmul, AddEquiv.map_eq_zero_iff] at this
+
 end WeierstrassCurve.Affine
+
+namespace WeierstrassCurve.Affine
+
+variable {F : Type*} [Field F] [IsSepClosed F] (W : Affine F) [W.IsElliptic]
+
+/-- **An elliptic curve has infinitely many points over a separably closed field**: for every prime
+`ℓ` other than the characteristic, its `ℓ`-torsion alone has `ℓ ²` points. -/
+instance infinite_point : Infinite W.Point := by
+  classical
+  refine not_finite_iff_infinite.mp fun _ ↦ ?_
+  obtain ⟨p, hp_le, hp⟩ := Nat.exists_infinite_primes (Nat.card W.Point + ringChar F + 1)
+  have hchar : ((p : ℤ) : F) ≠ 0 := fun h0 ↦ by
+    rw [Int.cast_natCast] at h0
+    have := CharP.ringChar_of_prime_eq_zero hp h0
+    omega
+  have hle : Nat.card {R : W.Point | (p : ℤ) • R = 0} ≤ Nat.card W.Point :=
+    Nat.card_le_card_of_injective _ Subtype.val_injective
+  rw [W.natCard_setOf_zsmul_eq_zero hchar, Int.natAbs_natCast] at hle
+  have := Nat.le_self_pow two_ne_zero p
+  omega
+
+end WeierstrassCurve.Affine
+
+namespace WeierstrassCurve
+
+variable {K : Type*} [Field K] [IsSepClosed K] (W : WeierstrassCurve K) [W.IsElliptic]
+
+open scoped Classical in
+/-- The `n`-torsion read on `W.toAffine.Point` itself, rather than on the trivial base change
+`W⁄K`, has order `n.natAbs ^ 2` when `n` is invertible in `K`. -/
+theorem natCard_torsionBy {n : ℤ} (hn : (n : K) ≠ 0) :
+    Nat.card (AddSubgroup.torsionBy W.toAffine.Point n) = n.natAbs ^ 2 := by
+  have h := W.toAffine.natCard_torsionBy hn
+  rwa [Affine.baseChange_self] at h
+
+section MapAlong
+
+variable {F : Type*} [Field F] [DecidableEq F] [IsSepClosed F] [DecidableEq K]
+  (W : WeierstrassCurve F) [W.IsElliptic] (f : F →+* K)
+
+/-- **The `N`-torsion does not grow from one separably closed field to another**: for `N`
+invertible, `E[N](F) → E[N](K)` is bijective, both groups having `N²` elements. -/
+theorem torsionMapAlong_bijective {N : ℤ} (hN : (N : F) ≠ 0) :
+    Function.Bijective (W.torsionMapAlong f N) := by
+  have hinj : Function.Injective (W.torsionMapAlong f N) := fun S T h ↦ by
+    have h' := congrArg Subtype.val h
+    rw [coe_torsionMapAlong_apply, coe_torsionMapAlong_apply] at h'
+    exact Subtype.ext (Affine.Point.mapAlong_injective f f.injective h')
+  -- both groups have `N²` elements
+  have hK : Nat.card (Submodule.torsionBy ℤ (W.map f).toAffine.Point N) = N.natAbs ^ 2 := by
+    convert (W.map f).natCard_torsionBy (by rwa [← map_intCast f, map_ne_zero] : (N : K) ≠ 0) with P
+    simp only [Submodule.mem_torsionBy_iff, AddSubgroup.torsionBy, Submodule.mem_toAddSubgroup]
+    convert Iff.rfl
+  have hF : Nat.card (Submodule.torsionBy ℤ W.toAffine.Point N) = N.natAbs ^ 2 := by
+    convert W.natCard_torsionBy hN with P
+    simp only [Submodule.mem_torsionBy_iff, AddSubgroup.torsionBy, Submodule.mem_toAddSubgroup]
+    convert Iff.rfl
+  have : Finite (Submodule.torsionBy ℤ (W.map f).toAffine.Point N) :=
+    Nat.finite_of_card_ne_zero (by
+      rw [hK]
+      exact pow_ne_zero 2 (Int.natAbs_ne_zero.mpr (by rintro rfl; exact hN Int.cast_zero)))
+  exact hinj.bijective_of_nat_card_le (hK.trans hF.symm).le
+
+end MapAlong
+
+end WeierstrassCurve
 
 end

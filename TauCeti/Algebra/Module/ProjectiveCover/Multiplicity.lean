@@ -34,7 +34,7 @@ lies in the radical of `P`, which every map into a simple module annihilates; pr
 `f` therefore identifies `Hom_A(S, T)` with `Hom_A(P, T)` for every simple `T`, and Schur's lemma
 evaluates the latter. Induction along a composition series of `M` adds up the factors.
 
-The identification is `TauCeti.IsProjectiveCover.homEquivOfIsSimpleModule` in
+The identification is `TauCeti.IsProjectiveCover.homEquivOfIsSemisimpleModule` in
 `TauCeti/Algebra/Module/ProjectiveCover/Basic.lean`, and the additivity is
 `TauCeti.finrank_linearMap_quotient_add_finrank_linearMap` in
 `TauCeti/Algebra/Module/Projective/LinearMap.lean`.
@@ -83,7 +83,7 @@ division algebra `End_A(S)`. -/
 theorem IsProjectiveCover.finrank_linearMap_eq_finrank_end {f : P →ₗ[A] S}
     (hf : IsProjectiveCover f) (e : T ≃ₗ[A] S) :
     Module.finrank k (P →ₗ[A] T) = Module.finrank k (Module.End A S) := by
-  rw [← (hf.homEquivOfIsSimpleModule k (T := T)).finrank_eq,
+  rw [← (hf.homEquivOfIsSemisimpleModule k (T := T)).finrank_eq,
     ← (homCongrRight k (S := S) e).finrank_eq]
 
 omit [Module k S] [IsScalarTower k A S] in
@@ -92,7 +92,7 @@ and a simple module not isomorphic to `S` the hom space vanishes, by Schur's lem
 theorem IsProjectiveCover.finrank_linearMap_eq_zero {f : P →ₗ[A] S}
     (hf : IsProjectiveCover f) (he : IsEmpty (T ≃ₗ[A] S)) :
     Module.finrank k (P →ₗ[A] T) = 0 := by
-  rw [← (hf.homEquivOfIsSimpleModule k (T := T)).finrank_eq]
+  rw [← (hf.homEquivOfIsSemisimpleModule k (T := T)).finrank_eq]
   exact finrank_linearMap_eq_zero_of_isEmpty_linearEquiv ⟨fun e => he.elim e.symm⟩
 
 /-- The simple case of the multiplicity formula, the step of the induction on a composition

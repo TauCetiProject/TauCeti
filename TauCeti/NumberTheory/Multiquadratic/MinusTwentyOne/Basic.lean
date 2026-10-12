@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Squarefree.Basic
-public import Mathlib.RingTheory.AdjoinRoot
+public import TauCeti.RingTheory.AdjoinRoot
 public import Mathlib.NumberTheory.NumberField.Basic
 import TauCeti.NumberTheory.NumberField.IntegralSqrt
 import Mathlib.FieldTheory.KummerPolynomial
@@ -64,9 +64,7 @@ theorem exists_minpoly_eq_X_sq_add_twenty_one_and_adjoin_eq_top :
   let K := AdjoinRoot (X ^ 2 - C (-21 : ℚ))
   let x : K := AdjoinRoot.root (X ^ 2 - C (-21 : ℚ))
   have hx : x ^ 2 = algebraMap ℤ K (-21 : ℤ) := by
-    have hroot := AdjoinRoot.eval₂_root (X ^ 2 - C (-21 : ℚ))
-    rw [eval₂_sub, eval₂_pow, eval₂_X, eval₂_C, ← AdjoinRoot.algebraMap_eq, sub_eq_zero] at hroot
-    rw [hroot, IsScalarTower.algebraMap_apply ℤ ℚ K]
+    rw [TauCeti.AdjoinRoot.root_sq, IsScalarTower.algebraMap_apply ℤ ℚ]
     norm_num
   refine ⟨integralSqrt hx, minpoly_integralSqrt hx (fun ⟨q, hq⟩ => by
       norm_num at hq

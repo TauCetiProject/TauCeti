@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Localization.UniversalProperty
 public import TauCeti.RingTheory.Huber.LocalizationTopology.CompleteSeparated.RefinementCategory
+public import TauCeti.Topology.Category.TopCommRingCat.Basic
 
 /-!
 # Comparison maps from a containment of rational subsets
@@ -256,6 +257,44 @@ theorem homOfRationalSubsetSubset_comp (Aplus : Subring A)
     (ringHomOfRationalSubsetSubset_comp_toCompletionLoc P Aplus hAplus _ _ _ _ _ _ _ _ h₂)
     (ringHomOfRationalSubsetSubset_comp_toCompletionLoc P Aplus hAplus _ _ _ _ _ _ _ _
       (h₂.trans h₁))).symm
+
+variable {P : PairOfDefinition A} {Aplus : Subring A}
+
+/-- **Comparison maps through the identification with `A⟨p⟩`**: under
+`Presentation.completionLocObjCommRingCatIso`, the underlying ring map of the comparison morphism of
+`R(q) ⊆ R(p)` is the comparison ring homomorphism `ringHomOfRationalSubsetSubset`. -/
+theorem map_homOfRationalSubsetSubset_comp_completionLocObjCommRingCatIso_hom
+    (hAplus : ∀ ⦃a⦄, a ∈ Aplus → IsPowerBounded a) {p q : Presentation P}
+    (h : rationalSubset Aplus q.num q.den ⊆ rationalSubset Aplus p.num p.den) :
+    letI := locUniformSpace P p.num p.den _ p.hasDenominatorPower
+    letI := isUniformAddGroup_locUniformSpace P p.num p.den _ p.hasDenominatorPower
+    letI := isTopologicalRing_locUniformSpace P p.num p.den _ p.hasDenominatorPower
+    letI := locUniformSpace P q.num q.den _ q.hasDenominatorPower
+    letI := isUniformAddGroup_locUniformSpace P q.num q.den _ q.hasDenominatorPower
+    letI := isTopologicalRing_locUniformSpace P q.num q.den _ q.hasDenominatorPower
+    (TopCommRingCat.isCompleteSeparated.ι ⋙ forget₂ TopCommRingCat CommRingCat).map
+        (homOfRationalSubsetSubset Aplus hAplus h) ≫
+          (Presentation.completionLocObjCommRingCatIso q).hom =
+      (Presentation.completionLocObjCommRingCatIso p).hom ≫
+        CommRingCat.ofHom (ringHomOfRationalSubsetSubset P Aplus hAplus p.num p.den _
+          p.hasDenominatorPower q.num q.den _ q.hasDenominatorPower h) := by
+  let _ := locUniformSpace P p.num p.den _ p.hasDenominatorPower
+  have _ := isUniformAddGroup_locUniformSpace P p.num p.den _ p.hasDenominatorPower
+  have _ := isTopologicalRing_locUniformSpace P p.num p.den _ p.hasDenominatorPower
+  let _ := locUniformSpace P q.num q.den _ q.hasDenominatorPower
+  have _ := isUniformAddGroup_locUniformSpace P q.num q.den _ q.hasDenominatorPower
+  have _ := isTopologicalRing_locUniformSpace P q.num q.den _ q.hasDenominatorPower
+  unfold homOfRationalSubsetSubset
+  rw [Functor.comp_map, ObjectProperty.ι_map, completionLocObjHom_hom,
+    Presentation.completionLocObjCommRingCatIso_hom,
+    Presentation.completionLocObjCommRingCatIso_hom]
+  -- `forget₂_map_eqToHom_comp_comp_eqToHom` cancels the endpoint transports and identifies
+  -- the forgotten morphism with its underlying ring homomorphism.
+  exact TauCeti.TopCommRingCat.forget₂_map_eqToHom_comp_comp_eqToHom
+    (completionLocObj_obj P p.num p.den _ p.hasDenominatorPower) _
+    (continuous_ringHomOfRationalSubsetSubset P Aplus hAplus p.num p.den _
+      p.hasDenominatorPower q.num q.den _ q.hasDenominatorPower h)
+    (completionLocObj_obj P q.num q.den _ q.hasDenominatorPower)
 
 /-! ### Presentation independence in `CompleteSeparatedTopCommRingCat` -/
 

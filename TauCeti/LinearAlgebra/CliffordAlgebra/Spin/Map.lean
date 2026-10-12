@@ -6,16 +6,17 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Action
-public import TauCeti.LinearAlgebra.CliffordAlgebra.Functoriality
+public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.SpecialOrthogonal
+public import TauCeti.LinearAlgebra.CliffordAlgebra.Lipschitz.Map
 
 /-!
 # Functoriality of Spin groups
 
 A linear isometry of quadratic spaces induces an algebra homomorphism of their Clifford algebras.
-This file proves that the homomorphism preserves the Spin group and packages the restriction as a
-group homomorphism. Isometry equivalences induce group equivalences, and these maps commute with
-the vector actions. The fixed-complement result specializes this naturality to an orthogonal
-summand.
+Using the induced Lipschitz-group homomorphism, this file proves that the Clifford homomorphism
+preserves the Spin group and packages its restriction as a group homomorphism. Isometry
+equivalences induce group equivalences, and these maps commute with the vector actions. The
+fixed-complement result specializes this naturality to an orthogonal summand.
 
 ## Main results
 
@@ -27,6 +28,10 @@ summand.
   isometry has an isometric left inverse.
 * `QuadraticMap.Isometry.spinGroupMap_spinVectorAction` proves naturality of the Spin vector
   action.
+* `QuadraticMap.IsometryEquiv.specialOrthogonalGroupCongr_spinToSpecialOrthogonal` proves
+  naturality of the Spin homomorphism to the special orthogonal group.
+* `TauCeti.QuadraticMap.spinToOrthogonal_spinGroupEquiv` proves naturality of the Spin
+  homomorphism to the orthogonal group.
 * `QuadraticMap.IsometryEquiv.spinGroupMap_fixed_of_prod` proves that the Spin group of one
   summand fixes the other summand.
 * `QuadraticMap.IsometryEquiv.spinGroupMap_spinVectorAction_prod` combines these facts into the
@@ -37,38 +42,6 @@ public section
 
 
 open QuadraticMap
-
-namespace QuadraticMap.Isometry
-
-universe u v w
-
-
-variable {R : Type u} [CommRing R]
-  {M₁ : Type v} [AddCommGroup M₁] [Module R M₁]
-  {M₂ : Type w} [AddCommGroup M₂] [Module R M₂]
-  {Q₁ : QuadraticForm R M₁} {Q₂ : QuadraticForm R M₂}
-
-/-- Mapping Clifford units along a quadratic isometry preserves the Lipschitz group. -/
-theorem map_mem_lipschitzGroup (f : Q₁ →qᵢ Q₂) {x : (CliffordAlgebra Q₁)ˣ}
-    (hx : x ∈ lipschitzGroup Q₁) :
-    Units.map (CliffordAlgebra.map f).toMonoidHom x ∈ lipschitzGroup Q₂ := by
-  induction hx using Subgroup.closure_induction with
-  | mem x hx =>
-      apply Subgroup.subset_closure
-      obtain ⟨m, hm⟩ := hx
-      -- Express the mapped unit as a Clifford generator in the target closure.
-      change ↑(Units.map (CliffordAlgebra.map f).toMonoidHom x) ∈
-        Set.range (CliffordAlgebra.ι Q₂)
-      refine ⟨f m, ?_⟩
-      change CliffordAlgebra.ι Q₂ (f m) =
-        CliffordAlgebra.map f (x : CliffordAlgebra Q₁)
-      rw [← hm, CliffordAlgebra.map_apply_ι]
-  | one => simp
-  | mul x y _ _ hx hy => simpa using mul_mem hx hy
-  | inv x _ hx => simpa using inv_mem hx
-
-end QuadraticMap.Isometry
-
 
 namespace QuadraticMap.Isometry
 
@@ -233,6 +206,27 @@ variable {R : Type u} [CommRing R]
   {N : Type x} [AddCommGroup N] [Module R N]
   {Q₁ : QuadraticForm R M₁} {Q₂ : QuadraticForm R M₂} {Q : QuadraticForm R N}
 
+/-- The homomorphism from the Spin group to the special orthogonal group is natural under
+isometric equivalences of quadratic forms. -/
+@[simp]
+theorem specialOrthogonalGroupCongr_spinToSpecialOrthogonal [Invertible (2 : R)]
+    (e : Q₁.IsometryEquiv Q₂) (x : spinGroup Q₁) :
+    e.specialOrthogonalGroupCongr (CliffordAlgebra.spinToSpecialOrthogonal Q₁ x) =
+      CliffordAlgebra.spinToSpecialOrthogonal Q₂ (e.spinGroupEquiv x) := by
+  ext m
+  rw [e.coe_specialOrthogonalGroupCongr_apply,
+    CliffordAlgebra.coe_spinToSpecialOrthogonal_apply,
+    CliffordAlgebra.coe_spinToSpecialOrthogonal_apply, spinGroupEquiv_apply]
+  calc
+    e.toIsometry (CliffordAlgebra.spinVectorAction Q₁ x (e.symm m)) =
+        CliffordAlgebra.spinVectorAction Q₂ (e.toIsometry.spinGroupMap x)
+          (e.toIsometry (e.symm m)) :=
+      (QuadraticMap.Isometry.spinGroupMap_spinVectorAction
+        e.toIsometry x (e.symm m)).symm
+    _ = CliffordAlgebra.spinVectorAction Q₂ (e.toIsometry.spinGroupMap x) m := by
+      have he : e.toIsometry (e.symm m) = m := e.apply_symm_apply m
+      rw [he]
+
 /-- Under an orthogonal-product isometry, the image of the Spin group of the first summand fixes
 every vector in the second summand. -/
 theorem spinGroupMap_fixed_of_prod (e : Q.IsometryEquiv (Q₁.prod Q₂)) [Invertible (2 : R)]
@@ -292,3 +286,25 @@ theorem spinGroupMap_spinVectorAction_prod
   · simpa [f₁, f₂] using e.spinGroupMap_fixed_of_prod x m₂
 
 end QuadraticMap.IsometryEquiv
+
+namespace TauCeti.QuadraticMap
+
+open _root_.CliffordAlgebra TauCeti.QuadraticMap
+
+variable {R M₁ M₂ : Type*} [CommRing R]
+  [AddCommGroup M₁] [Module R M₁] [AddCommGroup M₂] [Module R M₂]
+  {Q₁ : QuadraticForm R M₁} {Q₂ : QuadraticForm R M₂}
+
+/-- The Spin projection to the orthogonal group commutes with isometric equivalences of
+quadratic forms. -/
+@[simp↓]
+theorem spinToOrthogonal_spinGroupEquiv [Invertible (2 : R)]
+    (e : Q₁.IsometryEquiv Q₂) (x : spinGroup Q₁) :
+    spinToOrthogonal Q₂ (e.spinGroupEquiv x) =
+      e.orthogonalGroupCongr (spinToOrthogonal Q₁ x) := by
+  rw [← specialOrthogonalToOrthogonal_spinToSpecialOrthogonal,
+    ← e.specialOrthogonalGroupCongr_spinToSpecialOrthogonal,
+    e.specialOrthogonalToOrthogonal_specialOrthogonalGroupCongr,
+    specialOrthogonalToOrthogonal_spinToSpecialOrthogonal]
+
+end TauCeti.QuadraticMap

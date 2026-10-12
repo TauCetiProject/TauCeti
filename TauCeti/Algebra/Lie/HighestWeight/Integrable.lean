@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.Lie.HighestWeight.Integrability
 public import TauCeti.Algebra.Lie.Sl2.WeightString
 public import TauCeti.Algebra.Lie.Submodule.LocallyFinite
+import Mathlib.RingTheory.Finiteness.Nilpotent
 
 /-!
 # An irreducible highest weight module of dominant integral weight is integrable

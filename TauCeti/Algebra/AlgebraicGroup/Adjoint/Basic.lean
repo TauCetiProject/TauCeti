@@ -34,10 +34,6 @@ characteristic `p`.
 
 * J. S. Milne, *Algebraic Groups* (2017), §§1.k and 21.4.
 * T. A. Springer, *Linear Algebraic Groups*, §9.6.
-
-This supplies the adjoint-form definition in Layer 6, "Reductive and semisimple groups", of the
-ReductiveGroups roadmap.  Construction of the adjoint quotient and the classification of adjoint
-forms remain downstream.
 -/
 
 public section

@@ -44,6 +44,9 @@ loops that form there, by alternately following the caps of `D₁` (`capMatching
   points as cupped top points, hence as many caps as cups.
 * `TauCeti.BrauerDiagram.even_card_bottomCap`: a diagram has an even number of capped bottom
   points.
+* `TauCeti.BrauerDiagram.forall_isThrough_iff_bottomCap_eq_empty`,
+  `TauCeti.BrauerDiagram.exists_eq_permToBrauer_iff_bottomCap_eq_empty`: a diagram is a
+  permutation diagram exactly when it caps no bottom point.
 
 ## References
 
@@ -140,6 +143,28 @@ cups. -/
 theorem card_bottomCap_eq_card_topCup : D.bottomCap.card = D.topCup.card := by
   rw [bottomCap_eq_compl, topCup_eq_compl, Finset.card_compl, Finset.card_compl,
     card_bottomThrough_eq_card_topThrough]
+
+/-- **A diagram all of whose arcs go through is one that caps no bottom point**, and conversely. -/
+theorem forall_isThrough_iff_bottomCap_eq_empty :
+    (∀ x, D.IsThrough x) ↔ D.bottomCap = ∅ := by
+  refine ⟨fun h => Finset.eq_empty_of_forall_notMem fun i hi => ?_, fun h x => ?_⟩
+  · exact (D.isCap_inl_iff i).mp ((mem_bottomCap _).mp hi) (h _)
+  · have htop : D.topCup = ∅ := by
+      rw [← Finset.card_eq_zero, ← D.card_bottomCap_eq_card_topCup, h, Finset.card_empty]
+    rcases x with i | j
+    · exact not_not.mp fun hx => (Finset.eq_empty_iff_forall_notMem.mp h i)
+        ((mem_bottomCap _).mpr ((D.isCap_inl_iff i).mpr hx))
+    · exact not_not.mp fun hx => (Finset.eq_empty_iff_forall_notMem.mp htop j)
+        ((mem_topCup _).mpr ((D.isCup_inr_iff j).mpr hx))
+
+/-- **A diagram is a permutation diagram exactly when it caps no bottom point.** The permutation
+is then `TauCeti.BrauerDiagram.throughPerm`. -/
+theorem exists_eq_permToBrauer_iff_bottomCap_eq_empty :
+    (∃ σ : Equiv.Perm (Fin k), D = permToBrauer σ) ↔ D.bottomCap = ∅ := by
+  rw [← forall_isThrough_iff_bottomCap_eq_empty]
+  refine ⟨?_, fun h => ⟨throughPerm D h, (permToBrauer_throughPerm h).symm⟩⟩
+  rintro ⟨σ, rfl⟩
+  exact isThrough_permToBrauer σ
 
 /-- The map sending a capped bottom point to the other end of its cap. -/
 private def capFun (i : {i : Fin k // D.IsCap (Sum.inl i)}) : {i : Fin k // D.IsCap (Sum.inl i)} :=

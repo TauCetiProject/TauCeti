@@ -18,9 +18,11 @@ is the sum of `v x * w x` over the (finite) support of `v`.  Because the action 
 permutes the standard basis, this **permutation form** is invariant, and the orthogonal complement
 of an invariant submodule is again invariant.
 
-Over an ordered ring the form is positive definite, so its restriction to *any* submodule is
-nondegenerate, and over an ordered field the orthogonal complement of a subrepresentation is a
-genuine complement.  This exhibits a canonical invariant complement of a subrepresentation of a
+Over a linearly ordered commutative semiring with `ExistsAddOfLE` the form is positive definite,
+so its restriction to *any* submodule is nondegenerate. The `ExistsAddOfLE` assumption says that
+`a ≤ b` implies `b = a + c` for some `c`; it holds for ordered rings and for `ℕ`. Over an ordered
+field, when `X` is finite, the orthogonal complement of a subrepresentation is a genuine
+complement.  This exhibits a canonical invariant complement of a subrepresentation of a
 permutation representation: one that needs no averaging operator and no hypothesis on `G`, and
 whose orthogonality relation is a tool in its own right.  An ordered field has characteristic zero,
 so the complementation statements say nothing about positive characteristic; what they drop
@@ -36,14 +38,15 @@ relative to Maschke's theorem is finiteness of `G` and invertibility of `|G|`.
 
 * `TauCeti.permutationForm_single_single`: the standard basis is orthonormal.
 * `TauCeti.permutationForm_isSymm` and `TauCeti.permutationForm_nondegenerate`: the form is
-  symmetric and nondegenerate over any commutative ring.
+  symmetric and nondegenerate over any commutative semiring.
 * `TauCeti.permutationForm_ofMulAction_invariant`: the action of a group element preserves the
   form, and `TauCeti.permutationForm_ofMulAction_left` moves that action across the form by
   inverting it.
 * `TauCeti.orthogonal_mem_invtSubmodule`: the orthogonal complement of an invariant submodule of a
   permutation representation is invariant.
-* `TauCeti.permutationForm_self_pos` and `TauCeti.permutationForm_restrict_nondegenerate`: over an
-  ordered ring the form is positive definite, hence nondegenerate on every submodule.
+* `TauCeti.permutationForm_self_pos` and `TauCeti.permutationForm_restrict_nondegenerate`: over a
+  linearly ordered commutative semiring with `ExistsAddOfLE` the form is positive definite, hence
+  nondegenerate on every submodule.
 * `TauCeti.isCompl_orthogonalSubrepresentation`: over an ordered field, and for a finite `G`-set,
   a subrepresentation is complemented by its orthogonal complement.
 
@@ -89,7 +92,7 @@ open LinearMap (BilinForm)
 
 /-! ### The permutation form -/
 
-section Ring
+section Semiring
 
 variable (k : Type*) [CommSemiring k] (X : Type*)
 
@@ -166,22 +169,25 @@ theorem permutationForm_nondegenerate : (permutationForm k X).Nondegenerate :=
   ⟨permutationForm_separatingLeft, fun v hv =>
     permutationForm_separatingLeft v fun w => by rw [permutationForm_comm]; exact hv w⟩
 
-end Ring
+end Semiring
 
-/-! ### Positive definiteness over an ordered ring -/
+/-! ### Positive definiteness over an ordered semiring -/
 
 section Ordered
 
-variable {k : Type*} [CommRing k] [LinearOrder k] [IsStrictOrderedRing k] {X : Type*}
+variable {k : Type*} [CommSemiring k] [LinearOrder k] [IsStrictOrderedRing k]
+  [ExistsAddOfLE k] {X : Type*}
 
-/-- Over an ordered ring the permutation form is positive definite. -/
+/-- Over a linearly ordered commutative semiring with `ExistsAddOfLE`, the permutation form is
+positive definite. -/
 theorem permutationForm_self_pos {v : MonoidAlgebra k X} (hv : v ≠ 0) :
     0 < permutationForm k X v v := by
   rw [permutationForm_apply, Finsupp.sum]
   refine Finset.sum_pos (fun x hx => mul_self_pos.mpr (Finsupp.mem_support_iff.mp hx)) ?_
   exact Finsupp.support_nonempty_iff.mpr (by simpa using hv)
 
-/-- Over an ordered ring an element is isotropic for the permutation form only if it is zero. -/
+/-- Over a linearly ordered commutative semiring with `ExistsAddOfLE`, an element is isotropic
+for the permutation form only if it is zero. -/
 @[simp]
 theorem permutationForm_self_eq_zero_iff {v : MonoidAlgebra k X} :
     permutationForm k X v v = 0 ↔ v = 0 := by

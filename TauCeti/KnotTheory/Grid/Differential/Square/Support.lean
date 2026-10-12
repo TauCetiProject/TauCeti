@@ -82,7 +82,7 @@ theorem card_twoStepColumnSwapNeighbors_le (x : GridState n) :
   rw [twoStepColumnSwapNeighbors, sq]
   exact (Finset.card_biUnion_le_card_mul x.columnSwapNeighbors
       (fun y : GridState n => y.columnSwapNeighbors) (n.choose 2)
-      fun y _ => y.card_columnSwapNeighbors_le).trans
+      fun y _ => y.card_columnSwapNeighbors.le).trans
     (by rw [x.card_columnSwapNeighbors])
 
 /-- In grid size at most `1`, no state is reachable by two nontrivial column swaps. -/

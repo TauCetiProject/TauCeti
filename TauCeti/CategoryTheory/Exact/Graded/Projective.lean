@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.CategoryTheory.Exact.Graded.Resolution
-public import TauCeti.CategoryTheory.Exact.Projective
+public import TauCeti.CategoryTheory.Exact.Resolution.Comparison
 
 /-!
 # Projectives and projective resolutions in a graded exact category
@@ -21,6 +21,11 @@ term. In particular, the objects of finite projective dimension form a shift-sta
 These facts are the projective input to graded comparison and horseshoe constructions and to the
 graded resolution theorem.
 
+The comparison maps between finite projective resolutions are compatible with the shift: the
+complex of a shifted resolution is the shifted complex, and under this identification the lift of
+`f{1}` is homotopic to the shift of the lift of `f`. This is the graded comparison theorem; as in
+the ungraded case it holds only up to homotopy, since the lift itself is a choice.
+
 ## Main results
 
 * `TauCeti.GradedExactStructure.isProjective_shift_iff`: projectivity is invariant under the
@@ -31,6 +36,10 @@ graded resolution theorem.
   resolution term by term.
 * `TauCeti.GradedExactStructure.admitsFiniteProjectiveResolution_inverseImage_shift`: finite
   projective dimension is invariant under the grading shift.
+* `TauCeti.ExactStructure.FiniteResolution.toChainComplexShiftProjectiveIso`: the complex of a
+  shifted finite projective resolution is the shift of its complex.
+* `TauCeti.ExactStructure.FiniteResolution.liftShiftHomotopy`: **the graded comparison
+  theorem**, the comparison map commutes with the grading shift up to homotopy.
 
 ## References
 
@@ -224,6 +233,70 @@ def inverseShiftProjective
     (r : E.toExactStructure.FiniteResolution E.isProjective X) :
     r.inverseShiftProjective.length = r.length := by
   simp [inverseShiftProjective]
+
+/-- The complex of the shift of a finite projective resolution is the shift of its complex. -/
+noncomputable def toChainComplexShiftProjectiveIso
+    (r : E.toExactStructure.FiniteResolution E.isProjective X) :
+    r.shiftProjective.toChainComplex ≅
+      (E.shift.functor.mapHomologicalComplex _).obj r.toChainComplex :=
+  toChainComplexMapIso _ _ r
+
+/-- The complex of the inverse shift of a finite projective resolution is the inverse shift of
+its complex. -/
+noncomputable def toChainComplexInverseShiftProjectiveIso
+    (r : E.toExactStructure.FiniteResolution E.isProjective X) :
+    r.inverseShiftProjective.toChainComplex ≅
+      (E.shift.inverse.mapHomologicalComplex _).obj r.toChainComplex :=
+  let _ : E.shift.symm.functor.Additive := inferInstanceAs E.shift.inverse.Additive
+  toChainComplexMapIso _ _ r
+
+/-- The identification of the complex of a shifted resolution with the shifted complex is
+compatible with the augmentations. -/
+@[reassoc (attr := simp)]
+theorem toChainComplexShiftProjectiveIso_hom_f_zero_comp_map_aug
+    (r : E.toExactStructure.FiniteResolution E.isProjective X) :
+    (toChainComplexShiftProjectiveIso r).hom.f 0 ≫ E.shift.functor.map r.aug =
+      r.shiftProjective.aug := by
+  rw [toChainComplexShiftProjectiveIso, toChainComplexMapIso_hom_f]
+  -- `shiftProjective` is by definition the image of the resolution under the shift
+  exact (aug_map _ _ r).symm
+
+/-- The identification of the complex of an inversely shifted resolution with the inversely
+shifted complex is compatible with the augmentations. -/
+@[reassoc (attr := simp)]
+theorem toChainComplexInverseShiftProjectiveIso_hom_f_zero_comp_map_aug
+    (r : E.toExactStructure.FiniteResolution E.isProjective X) :
+    (toChainComplexInverseShiftProjectiveIso r).hom.f 0 ≫ E.shift.inverse.map r.aug =
+      r.inverseShiftProjective.aug := by
+  let _ : E.shift.symm.functor.Additive := inferInstanceAs E.shift.inverse.Additive
+  rw [toChainComplexInverseShiftProjectiveIso, toChainComplexMapIso_hom_f]
+  -- `inverseShiftProjective` is by definition the image of the resolution under the inverse shift
+  exact (aug_map _ _ r).symm
+
+/-- **The graded comparison theorem.** The comparison map between two finite projective
+resolutions commutes with the grading shift up to homotopy: the lift of `f{1}` between the
+shifted resolutions is homotopic to the shift of the lift of `f`. -/
+noncomputable def liftShiftHomotopy {Y : C} (f : X ⟶ Y)
+    (r : E.toExactStructure.FiniteResolution E.isProjective X)
+    (r' : E.toExactStructure.FiniteResolution E.isProjective Y) :
+    Homotopy (lift le_rfl (E.shift.functor.map f) r.shiftProjective r'.shiftProjective)
+      ((toChainComplexShiftProjectiveIso r).hom ≫
+        (E.shift.functor.mapHomologicalComplex _).map (lift le_rfl f r r') ≫
+          (toChainComplexShiftProjectiveIso r').inv) :=
+  liftMapHomotopy le_rfl le_rfl E.shift_exact _ _ f r r'
+
+/-- The comparison map between two finite projective resolutions commutes with the inverse
+grading shift up to homotopy. -/
+noncomputable def liftInverseShiftHomotopy {Y : C} (f : X ⟶ Y)
+    (r : E.toExactStructure.FiniteResolution E.isProjective X)
+    (r' : E.toExactStructure.FiniteResolution E.isProjective Y) :
+    Homotopy (lift le_rfl (E.shift.inverse.map f) r.inverseShiftProjective
+        r'.inverseShiftProjective)
+      ((toChainComplexInverseShiftProjectiveIso r).hom ≫
+        (E.shift.inverse.mapHomologicalComplex _).map (lift le_rfl f r r') ≫
+          (toChainComplexInverseShiftProjectiveIso r').inv) :=
+  let _ : E.shift.symm.functor.Additive := inferInstanceAs E.shift.inverse.Additive
+  liftMapHomotopy le_rfl le_rfl E.shift_inverse_exact _ _ f r r'
 
 end ExactStructure.FiniteResolution
 

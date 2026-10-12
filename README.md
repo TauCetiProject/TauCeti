@@ -4,7 +4,7 @@
 
 # Tau Ceti
 
-Tau Ceti is a repository of formal mathematics, directed by human-written roadmaps,
+Tau Ceti is a repository of formal mathematics with human-directed and human-reviewed roadmaps,
 implemented and maintained by AI contributors, subject to adversarial review.
 
 Tau Ceti is being incubated by the [Lean FRO](https://lean-lang.org/fro/) and the [Mathlib Initiative](https://https://mathlib-initiative.org/)
@@ -26,6 +26,8 @@ we hope that we can efficiently build a reusable library at significant scale. W
 Humans own the roadmap for Tau Ceti, which lives in the
 [TauCetiRoadmap](https://github.com/TauCetiProject/TauCetiRoadmap) repository (mostly in the form of markdown files, together with a
 small amount of Lean); changes are made via human-reviewed pull requests there.
+Roadmap authors and reviewers can use AI assistance; see the
+[contribution guide](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/CONTRIBUTING.md).
 
 AIs own the code in this repository, initiating pull requests and shepherding them through an
 AI-driven review process.
@@ -51,9 +53,9 @@ roadmaps and undergo review for coherence, reuse, and compatibility with Mathlib
 
 ## Review
 
-Review is entirely driven by AIs. These operate according to a fixed open source rubric. Humans write the rubric, and update it as the project evolves.
+Review of implementation PRs is entirely driven by AIs. These operate according to a fixed open source rubric. Humans write the rubric, and update it as the project evolves.
 
-When a PR is opened, we first let CI run, including the full Mathlib linter set. Once CI passes, a review can be run against the rubrics; its verdicts are posted as "block", "changes requested", or "approval".
+When a PR is opened, we first let CI run, including the full Mathlib linter set on the modules the PR changes; a daily run lints the whole library and opens a repair PR if a change broke lint elsewhere. Once CI passes, a review can be run against the rubrics; its verdicts are posted as "block", "changes requested", or "approval".
 
 PR contributors can push further commits, or respond to review comments, in order to solicit updated reviews.
 
@@ -73,6 +75,14 @@ It runs the identical engine and rubrics CI uses, in a clean room that ignores y
 The rubrics are **adversarial**, including instructions to find mis-formalizations, vacuous statements, and "pushing around the lump in the carpet". There are rubrics for many different aspects of review — scope, correctness, reuse, attribution, API design, generality, placement, naming, documentation, proof quality, and deprecation; see [the rubrics directory](https://github.com/TauCetiProject/TauCetiReview/tree/main/rubrics). We'll update these as we see what is most useful!
 
 We also have prototype systems for "meta review", using human and AI judges to do A/B testing of reviews, so that we can quantitatively evaluate review quality, and how models and rubrics feed into this quality.
+
+Human-owned infrastructure changes still require human review. After reviewing a PR,
+kim-em can issue `bors r+` or `bors merge`: bors records approval for the accepted
+head and merge base, requests trusted CI, and owns testing and landing the change.
+This approval waives only the restricted-path rule; builds, audits, Lake configuration
+attestation and pin/size guards still apply. A push, changed merge base or `bors r-`
+requires fresh approval. Other users follow the existing review policy. See the
+[bors rollout and behavior documentation](https://github.com/TauCetiProject/bors-ng/blob/master/deploy/manual-approval.md).
 
 ## Mathlib dependency
 
@@ -113,7 +123,7 @@ This will be an evolving process, and community input is welcome.
 To begin with, our plan is to use the "intentions registration" mechanism from [`leanprover-community/intentions`](https://github.com/leanprover-community/intentions),
 and the shared public registry of intentions at [`leanprover-community/project-intentions`](https://github.com/leanprover-community/project-intentions).
 
-We already use this mechanism internally so contributors to Tau Ceti can indicate they are actively working on and preparing pull requests for parts of a Tau Ceti roadmap. These intentions are then automatically fed to agents using the `./tauceti` worker exemplar from [`kim-em/TauCetiWorker`](https://github.com/kim-em/TauCetiWorker), instructing them to avoid working on roadmap items claimed by others. We hope that contributors implementing their own workers will also use this mechanism.
+We already use this mechanism internally so contributors to Tau Ceti can indicate they are actively working on and preparing pull requests for parts of a Tau Ceti roadmap. These intentions are then automatically fed to agents using the `./tauceti` worker exemplar from [`TauCetiProject/TauCetiWorker`](https://github.com/TauCetiProject/TauCetiWorker), instructing them to avoid working on roadmap items claimed by others. We hope that contributors implementing their own workers will also use this mechanism.
 
 We're working now on extending this mechanism to respect recorded intentions at the public `project-intentions` registry. Hopefully in future there will also be a federated system of registrations collected from individual downstream projects that Tau Ceti can hook into.
 
@@ -140,10 +150,10 @@ Finally, we understand that participating in AI-assisted mathematics research re
 
 Generated API documentation for every declaration in Tau Ceti, hyperlinked into its Mathlib
 dependencies, is published at
-[taucetiproject.github.io/TauCeti/docs](https://taucetiproject.github.io/TauCeti/docs/). It is
+[taucetiproject.org/docs](https://taucetiproject.org/docs/). It is
 scheduled for regeneration every three hours from `main` with
 [`doc-gen4`](https://github.com/leanprover/doc-gen4), alongside the
-[project website](https://taucetiproject.github.io/TauCeti/).
+[project website](https://taucetiproject.org/).
 
 The moving `docgen` branch points at the mainline commit whose generated API documentation is
 currently published — not necessarily the newest, since a deployment that serves older
@@ -155,7 +165,7 @@ atomically, so between the two the branch names documentation that has already b
 if the update fails, or the deployment came from a manually dispatched run on another branch, the
 branch stays wrong — in either direction — until the next deployment from `main`. Anything that
 needs certainty should instead read
-[`/docs/SOURCE_SHA`](https://taucetiproject.github.io/TauCeti/docs/SOURCE_SHA), which is published
+[`/docs/SOURCE_SHA`](https://taucetiproject.org/docs/SOURCE_SHA), which is published
 inside the documentation itself and therefore states, at the moment it is read, exactly which commit
 the live documentation describes.
 
@@ -193,11 +203,11 @@ don't collide with others; see [Coordinating work: intentions and claims](https:
 The reviews above can be run one PR at a time, but most contribution here happens through a
 *worker*. A single round picks one piece of work, does it, and stops; `--loop` runs rounds
 repeatedly until you interrupt it. The exemplar is
-[`kim-em/TauCetiWorker`](https://github.com/kim-em/TauCetiWorker). With
+[`TauCetiProject/TauCetiWorker`](https://github.com/TauCetiProject/TauCetiWorker). With
 [uv](https://docs.astral.sh/uv/):
 
 ```bash
-uv tool install git+https://github.com/kim-em/TauCetiWorker.git
+uv tool install git+https://github.com/TauCetiProject/TauCetiWorker
 gh auth login     # the worker acts as this account, and tends its PRs
 tauceti doctor    # checklist of everything it needs
 ```
@@ -208,7 +218,7 @@ credentials for whichever agent you run (Codex or Claude). The `bubble`, `incus`
 `kiro` rows can stay missing unless you want the sandbox or an alternative agent.
 
 By default, agents run with unrestricted host access; see
-[sandboxing with `--bubble`](https://github.com/kim-em/TauCetiWorker/blob/main/docs/sandbox.md)
+[sandboxing with `--bubble`](https://github.com/TauCetiProject/TauCetiWorker/blob/main/docs/sandbox.md)
 for isolation.
 
 Then survey before you act:
@@ -222,13 +232,13 @@ tauceti work --loop
 Run a bare `tauceti work` before ever using `--loop`, so you see one complete round end to end.
 
 Each round prioritizes maintenance and review before new formalization work; see
-[the cascade](https://github.com/kim-em/TauCetiWorker#what-a-round-does).
+[the cascade](https://github.com/TauCetiProject/TauCetiWorker#what-a-round-does).
 `tauceti work --dry-run` shows what a round would pick without acting.
 
 Subscription pacing can be controlled via
-[`--pace`](https://github.com/kim-em/TauCetiWorker#pacing-against-quota).
+[`--pace`](https://github.com/TauCetiProject/TauCetiWorker#pacing-against-quota).
 For running several workers, see
-[the worker documentation](https://github.com/kim-em/TauCetiWorker#persistent-workers).
+[the worker documentation](https://github.com/TauCetiProject/TauCetiWorker#persistent-workers).
 
 ### Only review
 

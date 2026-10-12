@@ -281,12 +281,19 @@ theorem of_fractionAlgebra (P : Ideal (_root_.integralClosure R L)) [P.IsPrime]
         (nonZeroDivisors _) P.primeCompl_le_nonZeroDivisors) := by
   rw [of]
 
-/-- The algebra-level refinement of `TauCeti.FiniteDVRExtension.of_extensionField`: the extension
-field of the package cut out by `P` is `L` itself as a `K`-algebra, not merely as a type. -/
-theorem nonempty_algEquiv_of_extensionField (P : Ideal (_root_.integralClosure R L)) [P.IsPrime]
-    [P.LiesOver (maximalIdeal R)] : Nonempty ((of R K L P).extensionField ≃ₐ[K] L) := by
+/-- The algebra-level refinement of `TauCeti.FiniteDVRExtension.of_extensionField` and
+`TauCeti.FiniteDVRExtension.of_prime`: the extension field of the package cut out by `P` is `L`
+itself as a `K`-algebra, not merely as a type, and along that identification the chosen prime of
+the package pulls back to `P`. -/
+theorem exists_algEquiv_comap_prime_eq (P : Ideal (_root_.integralClosure R L)) [P.IsPrime]
+    [P.LiesOver (maximalIdeal R)] :
+    ∃ e : (of R K L P).extensionField ≃ₐ[K] L,
+      (of R K L P).prime.comap
+        ((e.symm : L →ₐ[K] (of R K L P).extensionField).restrictScalars R).mapIntegralClosure =
+        P := by
   rw [of]
-  exact ⟨AlgEquiv.refl⟩
+  -- the restriction of the identity to the integral closure is the identity, by structure eta
+  exact ⟨AlgEquiv.refl, Ideal.comap_id P⟩
 
 /-- Every finite separable extension `L` of `K` underlies a `FiniteDVRExtension R K`: the integral
 closure of `R` in `L` is integral over `R`, so going up produces a maximal ideal above the maximal
@@ -302,7 +309,8 @@ theorem exists_algEquiv_extensionField :
   obtain ⟨P, _, _⟩ :=
     Ideal.exists_maximal_ideal_liesOver_of_isIntegral (R := R) (S := _root_.integralClosure R L)
       (maximalIdeal R)
-  exact ⟨of R K L P, nonempty_algEquiv_of_extensionField R K L P⟩
+  obtain ⟨e, -⟩ := exists_algEquiv_comap_prime_eq R K L P
+  exact ⟨of R K L P, ⟨e⟩⟩
 
 end Construction
 

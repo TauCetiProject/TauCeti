@@ -11,7 +11,7 @@ public import Mathlib.Topology.Algebra.Monoid.FunOnFinite
 public import TauCeti.MeasureTheory.Measure.PiWithDensity
 public import TauCeti.Probability.Distributions.Gamma.Basic
 public import TauCeti.Probability.Distributions.Gamma.Sum
-import TauCeti.Probability.Distributions.PDFInstances
+import TauCeti.Probability.Distributions.Gamma.PDF
 
 /-!
 # Finite products of Gamma distributions

@@ -20,7 +20,8 @@ a pole of `x` there (`Affine/ValuationIntegrality.lean`). This file shows that t
 pole, together with the point at infinity, form a subgroup of `W(K)`. These are the `K`-points
 lying in the kernel `E₁(K_P)` of reduction at `P` on the completion `K_P` (Silverman VII.2.2); no
 reduction map is constructed here, the subgroup being cut out by the valuation of the
-`x`-coordinate alone.
+`x`-coordinate alone (at a place of degree one, `Affine/Point/DegreeOneReduction.lean` builds one
+from it).
 
 The group law on the points of an affine Weierstrass curve depends definitionally on the chosen
 `DecidableEq K`, so that instance is a parameter of every declaration here rather than being fixed
@@ -37,6 +38,9 @@ particular to the function field of a curve with its own.
 * `WeierstrassCurve.Affine.one_lt_valuation_xCoord_add`: a pole of `x` at `P` is preserved by
   addition of points, as long as the sum is not the point at infinity.
 * `WeierstrassCurve.Affine.mem_polePoints_iff`: membership in `polePoints`.
+* `WeierstrassCurve.Affine.baseChange_mem_polePoints_iff`: a point of `W` over `F` lies in
+  `polePoints` only if it is the point at infinity, so a point of `W` over `K` is congruent to at
+  most one point of `W` over `F` modulo `polePoints` (`eq_of_sub_mem_polePoints`).
 
 ## References
 
@@ -136,6 +140,31 @@ at `P`. -/
 theorem mem_polePoints_iff (P : TauCeti.Place F K) (Q : (W⁄K).toAffine.Point) :
     Q ∈ polePoints W P ↔ Q = 0 ∨ 1 < P.valuation Q.xCoord :=
   Iff.rfl
+
+section Constant
+
+variable [DecidableEq F]
+
+/-- **A point of `W` over `F` lies in the kernel of reduction only if it is the point at
+infinity**: the `x`-coordinate of a constant point has no pole. -/
+-- not `@[simp]`: `mem_polePoints_iff` is, and it unfolds the membership on the left-hand side
+-- first, so this lemma would never fire and `simpNF` rejects it. Apply it, or `rw` with it.
+theorem baseChange_mem_polePoints_iff (P : TauCeti.Place F K) (Q : (W⁄F).toAffine.Point) :
+    Point.baseChange (W' := W) F K Q ∈ polePoints W P ↔ Q = 0 := by
+  rw [mem_polePoints_iff, map_eq_zero_iff _ (Point.map_injective (W' := W) _), or_iff_left_iff_imp]
+  intro h
+  rw [Point.xCoord_map, Algebra.ofId_apply] at h
+  exact absurd h (not_lt.mpr (Valuation.IsTrivialOn.valuation_algebraMap_le_one _ _))
+
+/-- **A point is congruent to at most one point of `W` over `F`** modulo the kernel of reduction. -/
+theorem eq_of_sub_mem_polePoints (P : TauCeti.Place F K) {A : (W⁄K).toAffine.Point}
+    {Q Q' : (W⁄F).toAffine.Point} (hQ : A - Point.baseChange (W' := W) F K Q ∈ polePoints W P)
+    (hQ' : A - Point.baseChange (W' := W) F K Q' ∈ polePoints W P) : Q = Q' := by
+  have := sub_mem hQ' hQ
+  rw [sub_sub_sub_cancel_left, ← map_sub, baseChange_mem_polePoints_iff] at this
+  exact sub_eq_zero.mp this
+
+end Constant
 
 end WeierstrassCurve.Affine
 

@@ -89,6 +89,7 @@ theorem isEilenbergMacLaneSpaceOne {G : Type*} [Group G] (e : FundamentalGroup X
 
 variable (H : Subgroup (FundamentalGroup X x₀))
 
+omit [PathConnectedSpace X] in
 /-- The cover of an aspherical space attached to a subgroup of its fundamental group is
 aspherical. -/
 theorem isAspherical_subgroupQuotient (h : IsAspherical X x₀) :
@@ -96,6 +97,7 @@ theorem isAspherical_subgroupQuotient (h : IsAspherical X x₀) :
   (isCoveringMap_subgroupQuotientProj x₀ H).isAspherical_totalSpace
     (subgroupQuotientProj_basepoint x₀ H) h
 
+omit [PathConnectedSpace X] in
 /-- **The cover attached to `H ≤ π₁(X, x₀)` over a `K(G, 1)` is a `K(H, 1)`.**
 
 So every subgroup of the fundamental group of an aspherical space is isomorphic to the

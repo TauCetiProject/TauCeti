@@ -5,9 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.NumberTheory.LocalField.Basic
 public import Mathlib.RingTheory.Ideal.Norm.AbsNorm
 
+public import TauCeti.NumberTheory.LocalField.NormalizedValuation
+public import TauCeti.NumberTheory.LocalField.UnitFiltration.Basic
 public import TauCeti.RingTheory.DedekindDomain.AdicValuation.Completion
 
 /-!
@@ -17,14 +18,23 @@ Let `R` be a Dedekind domain with fraction field `K` and let `v` be a height-one
 completion `K_v` already carries the adic valuation `Valued.v`, with values in `ℤᵐ⁰`. This file
 equips `K_v` with the valuative relation that valuation induces, checks that its existing topology
 is the valuative topology and that the relation is nontrivial, and identifies the ring of integers
-and the residue field of the valuative relation with the ones `K_v` already has.
+and the residue field of the valuative relation with the ones `K_v` already has. When `K_v` is a
+nonarchimedean local field, the steps of its unit filtration are read off from `Valued.v`.
 
 ## Main results
 
+* `IsDedekindDomain.HeightOneSpectrum.not_isSquare_adicCompletion_of_valuation_eq_exp_of_not_even`:
+  an element of odd order of vanishing at `v` is a nonsquare in the completion, which is the form a
+  prime of a prescribed modulus supplies; the value of an element in the multiplicative value group
+  of the adic valuation is read off through
+  `IsDedekindDomain.HeightOneSpectrum.neg_log_valuation_eq_one_iff` in
+  `TauCeti.RingTheory.DedekindDomain.AdicValuation.Basic`.
+
 * `IsDedekindDomain.HeightOneSpectrum.integer_eq_adicCompletionIntegers`: the ring of integers of
   the valuative relation is `𝒪_v`; `mem_adicCompletionIntegers_iff_valuation_le_one` is the
-  membership form and `valuation_integers_adicCompletionIntegers` packages it as
-  `Valuation.Integers`.
+  membership form, `valuation_integers_adicCompletionIntegers` packages it as
+  `Valuation.Integers`, and `mem_maximalIdeal_integer_pow_iff` reads the powers of its maximal
+  ideal as valuation bounds.
 * `IsDedekindDomain.HeightOneSpectrum.residueFieldEquivAdicCompletion`: the residue field of the
   valuative relation is `R ⧸ v`; `residueFieldEquivAdicCompletion_apply_mk` describes it on a
   quotient representative.
@@ -32,8 +42,14 @@ and the residue field of the valuative relation with the ones `K_v` already has.
   infinite, that residue field has `Ideal.absNorm v.asIdeal` elements.
 * `IsDedekindDomain.HeightOneSpectrum.isNonarchimedeanLocalField_adicCompletion`: an adic
   completion with finite residue field is a nonarchimedean local field.
+* `IsDedekindDomain.HeightOneSpectrum.normalizedValuationWithZero_adicCompletion`: the
+  zero-preserving normalized valuation of such a completion is the inverse of its adic valuation.
 * `IsDedekindDomain.HeightOneSpectrum.compactSpace_adicCompletionIntegers`: the local integer ring
   of an adic completion carrying a nonarchimedean local-field structure is compact.
+* `IsDedekindDomain.HeightOneSpectrum.mem_unitFiltration_adicCompletion_iff`: the unit filtration
+  `U(K_v, n)` consists of the units `u` of `𝒪_v` with `Valued.v (u - 1) ≤ exp (-n)`; its
+  depth-zero step is `Valued.v u = 1` (`mem_unitFiltration_zero_adicCompletion_iff`), which
+  `unitsMap_algebraMap_mem_unitFiltration_zero_iff` reads on the units of `K`.
 
 ## Implementation notes
 
@@ -109,6 +125,17 @@ theorem coe_integerEquivAdicCompletionIntegers (x : 𝒪[v.adicCompletion K]) :
 theorem coe_integerEquivAdicCompletionIntegers_symm (x : v.adicCompletionIntegers K) :
     ((v.integerEquivAdicCompletionIntegers (K := K)).symm x : v.adicCompletion K) =
       (x : v.adicCompletion K) := (rfl)
+
+/-- An element of the ring of integers of the valuative relation on `K_v` lies in the `n`-th power
+of its maximal ideal exactly when its valuation is at most `exp (-n)`. This is
+`mem_maximalIdeal_pow_iff`, read through `integerEquivAdicCompletionIntegers`. -/
+theorem mem_maximalIdeal_integer_pow_iff {x : 𝒪[v.adicCompletion K]} {n : ℕ} :
+    x ∈ IsLocalRing.maximalIdeal 𝒪[v.adicCompletion K] ^ n ↔
+      Valued.v (x : v.adicCompletion K) ≤ WithZero.exp (-(n : ℤ)) := by
+  let e := v.integerEquivAdicCompletionIntegers (K := K)
+  rw [← coe_integerEquivAdicCompletionIntegers v x, ← mem_maximalIdeal_pow_iff,
+    ← IsLocalRing.map_ringEquiv_maximalIdeal e, ← Ideal.map_pow, ← Ideal.mem_comap,
+    Ideal.comap_map_of_bijective _ e.bijective]
 
 /-- An element of `K_v` lies in `𝒪_v` exactly when the valuation of the valuative relation is at
 most `1`. This is Mathlib's `mem_adicCompletionIntegers`, which is stated for the adic valuation
@@ -207,6 +234,15 @@ instance isNonarchimedeanLocalField_adicCompletion [Finite (R ⧸ v.asIdeal)] :
         inferInstanceAs (Finite (IsLocalRing.ResidueField (v.adicCompletionIntegers K)))⟩
   exact ⟨⟩
 
+/-- The zero-preserving normalized valuation of the completion `K_v` is the inverse of its adic
+valuation `Valued.v`. -/
+@[simp]
+theorem normalizedValuationWithZero_adicCompletion [Finite (R ⧸ v.asIdeal)]
+    (x : v.adicCompletion K) :
+    TauCeti.normalizedValuationWithZero (v.adicCompletion K) x = (Valued.v x)⁻¹ :=
+  Valuation.normalizedValuationWithZero_eq_inv_of_surjective _
+    (v.valuedAdicCompletion_surjective K) x
+
 /-- The ring of integers in an adic completion that is a nonarchimedean local field is compact. -/
 instance compactSpace_adicCompletionIntegers
     [IsNonarchimedeanLocalField (v.adicCompletion K)] :
@@ -220,6 +256,87 @@ instance compactSpace_adicCompletionIntegers
       continuous_subtype_val.congr fun x ↦
         (v.coe_integerEquivAdicCompletionIntegers_symm (K := K) x).symm }
   exact f.compactSpace
+
+/-- **The unit filtration of `K_v` in terms of the adic valuation.** A unit `u` of `K_v` lies in
+the `n`-th step `U(K_v, n)` of the unit filtration exactly when it is a unit of `𝒪_v` and
+`u ≡ 1` to level `n`, that is, `Valued.v u = 1` and `Valued.v (u - 1) ≤ exp (-n)`. -/
+theorem mem_unitFiltration_adicCompletion_iff [IsNonarchimedeanLocalField (v.adicCompletion K)]
+    {n : ℕ} {u : (v.adicCompletion K)ˣ} :
+    u ∈ TauCeti.unitFiltration (v.adicCompletion K) n ↔
+      Valued.v (u : v.adicCompletion K) = 1 ∧
+        Valued.v ((u : v.adicCompletion K) - 1) ≤ WithZero.exp (-(n : ℤ)) := by
+  have hequiv := ValuativeRel.isEquiv (ValuativeRel.valuation (v.adicCompletion K))
+    (Valued.v : Valuation (v.adicCompletion K) ℤᵐ⁰)
+  rw [TauCeti.mem_unitFiltration_iff_exists]
+  constructor
+  · rintro ⟨w, hw, hwu⟩
+    rw [← hwu]
+    refine ⟨hequiv.eq_one_iff_eq_one.mp
+      ((Valuation.integer.integers (ValuativeRel.valuation _)).valuation_unit w), ?_⟩
+    simpa using (mem_maximalIdeal_integer_pow_iff v).mp hw
+  · rintro ⟨h1, h2⟩
+    have h1' := hequiv.eq_one_iff_eq_one.mpr h1
+    have hu : IsUnit (⟨u, (Valuation.mem_integer_iff _ _).mpr h1'.le⟩ : 𝒪[v.adicCompletion K]) :=
+      (Valuation.integer.integers (ValuativeRel.valuation _)).isUnit_of_one' h1'
+    refine ⟨hu.unit, (mem_maximalIdeal_integer_pow_iff v).mpr ?_, by rw [hu.unit_spec]⟩
+    simpa [hu.unit_spec] using h2
+
+/-- **The units of `𝒪_v` in terms of the adic valuation.** A unit `u` of `K_v` lies in the
+depth-zero step `U(K_v, 0)` of the unit filtration exactly when `Valued.v u = 1`. -/
+theorem mem_unitFiltration_zero_adicCompletion_iff
+    [IsNonarchimedeanLocalField (v.adicCompletion K)] {u : (v.adicCompletion K)ˣ} :
+    u ∈ TauCeti.unitFiltration (v.adicCompletion K) 0 ↔ Valued.v (u : v.adicCompletion K) = 1 := by
+  rw [mem_unitFiltration_adicCompletion_iff, Nat.cast_zero, neg_zero, WithZero.exp_zero]
+  refine ⟨And.left, fun hu ↦ ⟨hu, (Valuation.map_sub _ _ _).trans ?_⟩⟩
+  rw [hu, map_one, max_self]
+
+/-- **Units of `K` of valuation one in the completion.** The image in `K_v` of a unit `a` of `K`
+lies in the depth-zero step `U(K_v, 0)` of the unit filtration exactly when `a` has `v`-adic
+valuation one. -/
+theorem unitsMap_algebraMap_mem_unitFiltration_zero_iff
+    [IsNonarchimedeanLocalField (v.adicCompletion K)] (a : Kˣ) :
+    Units.map (algebraMap K (v.adicCompletion K) : K →* v.adicCompletion K) a ∈
+        TauCeti.unitFiltration (v.adicCompletion K) 0 ↔
+      v.valuation K a = 1 := by
+  rw [mem_unitFiltration_zero_adicCompletion_iff, Units.coe_map, MonoidHom.coe_ofClass,
+    algebraMap_adicCompletion, Function.comp_apply, valuedAdicCompletion_eq_valuation',
+    Algebra.algebraMap_self_apply]
+
+/-- **An element of odd order of vanishing at `v` is a nonsquare in the completion `K_v`.**
+
+The hypothesis `v.valuation K a = WithZero.exp n` with `¬ Even n` says that the valuation exponent
+of `a` at `v` is `n`, that is, that its order of vanishing is the odd integer `-n`.  This is the
+nonsquare criterion a finite place of a prescribed set needs: an element that vanishes there to odd
+order remains a nonsquare in the completion.
+
+The value group of `HeightOneSpectrum.valuation` is `WithZero (Multiplicative ℤ)`, whose
+multiplicative identity `1` is the value zero, that is, order of vanishing zero, so an order of
+vanishing `1` is written `WithZero.exp (-1)`, the value of a generator of `v.asIdeal`; the passage
+between the two conventions is `neg_log_valuation_eq_one_iff` in
+`TauCeti.RingTheory.DedekindDomain.AdicValuation.Basic`. -/
+theorem not_isSquare_adicCompletion_of_valuation_eq_exp_of_not_even
+    (v : HeightOneSpectrum R) (a : K) (n : ℤ) (hn : ¬ Even n)
+    (ha : v.valuation K a = (WithZero.exp n : WithZero (Multiplicative ℤ))) :
+    ¬IsSquare (algebraMap K (v.adicCompletion K) a) := by
+  rintro ⟨y, hy⟩
+  have hval : Valued.v (algebraMap K (v.adicCompletion K) a)
+      = (WithZero.exp n : WithZero (Multiplicative ℤ)) := by
+    rw [algebraMap_adicCompletion, Function.comp_apply, valuedAdicCompletion_eq_valuation']
+    exact ha
+  -- The adic value of a square is the square of the adic value of its root, and here it is nonzero.
+  have hprod : (Valued.v y : WithZero (Multiplicative ℤ)) * Valued.v y
+      = (WithZero.exp n : WithZero (Multiplicative ℤ)) := by
+    rw [← hval, hy, Valued.v.map_mul]
+  have hvy : (Valued.v y : WithZero (Multiplicative ℤ)) ≠ 0 := by
+    rintro h
+    rw [h, zero_mul] at hprod
+    exact (WithZero.exp_ne_zero : (WithZero.exp n) ≠ 0) hprod.symm
+  -- Taking logarithms, the order of vanishing is a sum of two equal integers, so it is even.
+  have hlog : n = WithZero.log (Valued.v y) + WithZero.log (Valued.v y) := by
+    have h := WithZero.log_mul hvy hvy
+    rw [hprod, WithZero.log_exp] at h
+    exact h
+  exact hn ⟨WithZero.log (Valued.v y), hlog⟩
 
 end IsDedekindDomain.HeightOneSpectrum
 

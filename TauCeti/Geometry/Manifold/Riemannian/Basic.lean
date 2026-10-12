@@ -6,21 +6,32 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.Riemannian.Basic
+public import TauCeti.Topology.VectorBundle.Riemannian
+import TauCeti.Geometry.Manifold.VectorField.Regularity
 
 /-!
 # Basic Riemannian bundle constructions
 
 This file provides conversions between Mathlib's Riemannian bundle classes and bundled
-Riemannian metrics.
+Riemannian metrics, and records that the Riemannian norm of the differential of a `C¹` map, applied
+to a fixed vector, depends continuously on the base point.
 
 ## Main definitions
 
 * `Bundle.ContMDiffRiemannianMetric.ofIsContMDiffRiemannianBundle`: package the metric of a
   `C^n` Riemannian bundle.
+* `Bundle.ContMDiffRiemannianMetric.InducesRiemannianDistance`: express that a smooth metric
+  induces the ambient Riemannian distance.
 * `Bundle.ContMDiffRiemannianMetric.ofIsContMDiffRiemannianBundle_inner`: the packaged metric is
   the bundle's inner product.
 * `Bundle.IsContinuousRiemannianBundle.toIsContMDiffZero`: view a continuous Riemannian bundle as
   a `C^0` Riemannian bundle.
+* `IsContMDiffRiemannianBundle.toIsContinuousRiemannianBundle`: conversely, view a `C^n`
+  Riemannian bundle as a continuous Riemannian bundle.
+* `ContMDiffOn.continuousOn_norm_mfderiv`: for a `C¹` map `f` from an open subset of a normed space
+  to a Riemannian manifold, `z ↦ ‖df_z ξ‖` is continuous.
+* `ContMDiffOn.contDiffOn_inner_mfderiv`: for a `C^(m+1)` map `f` from an open subset of a normed
+  space to a `C^m` Riemannian manifold, `z ↦ ⟪df_z ξ, df_z η⟫` is `C^m`.
 -/
 
 public section
@@ -89,3 +100,88 @@ theorem toIsContMDiffZero [IsContinuousRiemannianBundle F V] :
   exact ⟨g, contMDiff_zero_iff.mpr hg, hinner⟩
 
 end Bundle.IsContinuousRiemannianBundle
+
+namespace IsContMDiffRiemannianBundle
+
+variable
+  {EB : Type*} [NormedAddCommGroup EB] [NormedSpace ℝ EB]
+  {HB : Type*} [TopologicalSpace HB] {IB : ModelWithCorners ℝ EB HB} {n : ℕ∞ω}
+  {B : Type*} [TopologicalSpace B] [ChartedSpace HB B]
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+  {V : B → Type*} [TopologicalSpace (TotalSpace F V)]
+  [∀ b, NormedAddCommGroup (V b)] [∀ b, InnerProductSpace ℝ (V b)]
+  [FiberBundle F V] [VectorBundle ℝ F V]
+
+/-- A `C^n` Riemannian bundle is a continuous Riemannian bundle. Like
+`Bundle.IsContinuousRiemannianBundle.toIsContMDiffZero`, this is a theorem rather than an instance:
+the model `IB` and the smoothness `n` do not appear in its conclusion. -/
+theorem toIsContinuousRiemannianBundle [IsContMDiffRiemannianBundle IB n F V] :
+    IsContinuousRiemannianBundle F V := by
+  obtain ⟨g, hg, hinner⟩ :=
+    IsContMDiffRiemannianBundle.exists_contMDiff (IB := IB) (n := n) (F := F) (E := V)
+  exact ⟨⟨g, hg.continuous, hinner⟩⟩
+
+end IsContMDiffRiemannianBundle
+
+namespace Bundle.ContMDiffRiemannianMetric
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  {M : Type*} [MetricSpace M] [ChartedSpace H M]
+  [IsManifold I ∞ M]
+
+/-- The metric `g` induces the Riemannian distance on `M` through the ambient metric space. -/
+def InducesRiemannianDistance
+    (g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x)) : Prop :=
+  letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩
+  IsRiemannianManifold I M
+
+omit [FiniteDimensional ℝ E] in
+/-- The metric's induced-distance condition yields the corresponding Riemannian-manifold
+structure after installing its metric bundle. -/
+theorem InducesRiemannianDistance.toIsRiemannianManifold
+    (g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x))
+    (h : g.InducesRiemannianDistance (I := I) (M := M)) :
+    letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩
+    IsRiemannianManifold I M := by
+  simpa only [InducesRiemannianDistance] using h
+
+end Bundle.ContMDiffRiemannianMetric
+
+section NormMFDeriv
+
+variable
+  {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 1 M]
+  [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
+  [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)]
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+
+/-- Let `f` be a `C^n` map, `1 ≤ n`, from an open subset `U` of a real normed space to a manifold
+whose tangent spaces carry a continuous Riemannian metric. For each fixed vector `ξ`, the
+Riemannian norm of `df_z ξ` depends continuously on `z ∈ U`. -/
+theorem ContMDiffOn.continuousOn_norm_mfderiv {f : F → M} {U : Set F} {n : ℕ∞ω}
+    (hf : ContMDiffOn 𝓘(ℝ, F) I n f U) (hn : 1 ≤ n) (hU : IsOpen U) (ξ : F) :
+    ContinuousOn (fun z ↦ ‖mfderiv 𝓘(ℝ, F) I f z ξ‖) U :=
+  -- the lifted directional derivative `z ↦ (f z, df_z ξ)` is continuous into `TM`, and the
+  -- Riemannian norm is continuous on `TM`
+  (TauCeti.continuous_norm_bundle E (fun x : M ↦ TangentSpace I x)).comp_continuousOn
+    (hf.contMDiffOn_totalSpaceMk_mfderiv_apply (m := 0) (by simpa using hn) hU ξ).continuousOn
+
+omit [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)] in
+/-- Let `f` be a `C^n` map from an open subset `U` of a real normed space to a manifold whose
+tangent spaces carry a `C^m` Riemannian metric, with `m + 1 ≤ n`. For fixed vectors `ξ` and `η`,
+the Riemannian inner product `⟪df_z ξ, df_z η⟫` is a `C^m` function of `z ∈ U`. -/
+theorem ContMDiffOn.contDiffOn_inner_mfderiv {f : F → M} {U : Set F} {m n : ℕ∞ω}
+    [IsContMDiffRiemannianBundle I m E (fun x : M ↦ TangentSpace I x)]
+    (hf : ContMDiffOn 𝓘(ℝ, F) I n f U) (hmn : m + 1 ≤ n) (hU : IsOpen U) (ξ η : F) :
+    ContDiffOn ℝ m
+      (fun z ↦ inner ℝ (mfderiv 𝓘(ℝ, F) I f z ξ) (mfderiv 𝓘(ℝ, F) I f z η)) U := by
+  -- the two lifted directional derivatives `z ↦ (f z, df_z ξ)` are `C^m` into `TM`, and the
+  -- Riemannian inner product of two `C^m` sections over the same base map is `C^m`
+  rw [← contMDiffOn_iff_contDiffOn]
+  exact ContMDiffOn.inner_bundle (hf.contMDiffOn_totalSpaceMk_mfderiv_apply hmn hU ξ)
+    (hf.contMDiffOn_totalSpaceMk_mfderiv_apply hmn hU η)
+
+end NormMFDeriv

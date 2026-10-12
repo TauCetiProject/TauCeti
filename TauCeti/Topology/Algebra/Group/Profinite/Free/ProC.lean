@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Topology.Algebra.Group.Generation
 public import TauCeti.Topology.Algebra.Group.Profinite.Free.Basic
 public import TauCeti.Topology.Algebra.Group.Profinite.ProC
 
@@ -17,8 +18,9 @@ the free profinite group on `X`.
 The construction has the expected universal property: a map from `X` to a pro-`C` profinite
 group in the same universe extends uniquely to a continuous homomorphism. Extensionality for
 homomorphisms out of the free pro-`C` group only requires a Hausdorff group target, which may live
-in any universe. The file also records functoriality in `X` and the fact that a surjection of
-generating types induces a surjection of free groups.
+in any universe. The generators generate the free pro-`C` group topologically, so for finite `X`
+it is topologically finitely generated. The file also records functoriality in `X` and the fact
+that a surjection of generating types induces a surjection of free groups.
 
 ## Main definitions
 
@@ -30,6 +32,10 @@ generating types induces a surjection of free groups.
 ## Main results
 
 * `TauCeti.isProC_freeProC`: a free pro-`C` group is pro-`C`.
+* `TauCeti.freeProC.topologicalClosure_closure_range_of_eq_top`: the generators generate the
+  free pro-`C` group topologically.
+* `TauCeti.isTopologicallyFinitelyGenerated_freeProC`: for finite `X`, the free pro-`C` group on
+  `X` is topologically finitely generated.
 * `TauCeti.freeProC.hom_ext`: homomorphisms agreeing on the generators are equal.
 * `TauCeti.freeProC.existsUnique_lift`: the universal property.
 * `TauCeti.freeProC.lift_surjective`: a topologically generating map lifts to a surjection.
@@ -93,6 +99,32 @@ theorem fromFreeProfiniteGroup_of (x : X) :
 theorem fromFreeProfiniteGroup_surjective :
     Function.Surjective (fromFreeProfiniteGroup C X) :=
   proCCompletion.mk_surjective C (freeProfiniteGroup X)
+
+/-- The canonical generators of a free pro-`C` group generate it topologically. -/
+theorem topologicalClosure_closure_range_of_eq_top (C : FiniteGroupClass.{w}) (X : Type u) :
+    (Subgroup.closure (Set.range (of : X → freeProC C X))).topologicalClosure = ⊤ := by
+  have hfree : (Subgroup.closure
+      (Set.range (freeProfiniteGroup.of : X → freeProfiniteGroup X))).topologicalClosure = ⊤ := by
+    rw [← SetLike.coe_set_eq, Subgroup.topologicalClosure_coe, Subgroup.coe_top,
+      ← dense_iff_closure_eq]
+    exact freeProfiniteGroup.dense_closure_range_of X
+  have h := topologicalClosure_closure_image_eq_top hfree
+    (f := (fromFreeProfiniteGroup C X).toMonoidHom) (fromFreeProfiniteGroup C X).continuous
+    fromFreeProfiniteGroup_surjective.denseRange
+  rw [← Set.range_comp] at h
+  simpa [Function.comp_def] using h
+
+end freeProC
+
+/-- The free pro-`C` group on a finite type is topologically finitely generated. -/
+theorem isTopologicallyFinitelyGenerated_freeProC (C : FiniteGroupClass.{w}) (X : Type u)
+    [Finite X] : IsTopologicallyFinitelyGenerated (freeProC C X) :=
+  (Set.finite_range _).isTopologicallyFinitelyGenerated
+    (freeProC.topologicalClosure_closure_range_of_eq_top C X)
+
+namespace freeProC
+
+variable {C : FiniteGroupClass.{w}} {X Y Z : Type u}
 
 section HomExt
 

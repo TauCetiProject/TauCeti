@@ -16,7 +16,10 @@ of `F` pass to the induced functor:
 
 * the induced functor is faithful exactly when `I` contains every morphism that `F` sends into
   `J`, that is when `J.comap F ≤ I`; no faithfulness of `F` itself is needed;
-* it is full when `F` is full, and essentially surjective when `F` is;
+* it is full when `F ⋙ J.quotientFunctor` is full, and essentially surjective when this
+  composite is; in particular, these properties descend from `F` itself;
+* a full, essentially surjective `F ⋙ J.quotientFunctor` with `J.comap F ≤ I` induces an
+  equivalence of quotients, without requiring `F` to be faithful;
 * consequently an equivalence `e : C ≌ D` with `I = J.comap e.functor` induces an equivalence
   `C/I ≌ D/J`, whose inverse is the functor induced by `e.inverse`.
 
@@ -34,14 +37,17 @@ quotient categories.
 
 ## Main results
 
+* `TauCeti.MorphismIdeal.faithful_lift_iff`, `full_lift`, `essSurj_lift`, and
+  `isEquivalence_lift`: faithfulness, fullness, essential surjectivity, and equivalence for a
+  functor lifted through the quotient by an ideal in its kernel.
 * `TauCeti.MorphismIdeal.map_map_quotientFunctor_map_eq_iff`: two morphisms become equal under
   the induced functor exactly when `F` sends their difference into `J`.
 * `TauCeti.MorphismIdeal.faithful_map_iff`: the induced functor is faithful if and only if
   `J.comap F ≤ I`.
 * `TauCeti.MorphismIdeal.full_map` and `TauCeti.MorphismIdeal.essSurj_map`: fullness and
-  essential surjectivity descend to quotients.
-* `TauCeti.MorphismIdeal.isEquivalence_map`: an equivalence with `J.comap F ≤ I` induces an
-  equivalence of quotients.
+  essential surjectivity descend from the composite with the target quotient functor.
+* `TauCeti.MorphismIdeal.isEquivalence_map`: a full, essentially surjective composite with
+  the target quotient functor induces an equivalence when `J.comap F ≤ I`.
 * `TauCeti.MorphismIdeal.comap_inverse_comap_functor` and
   `TauCeti.MorphismIdeal.comap_functor_comap_inverse`: pullback along an equivalence and along
   its inverse are mutually inverse.
@@ -69,6 +75,54 @@ variable {D : Type u'} [Category.{v'} D] [Preadditive D]
 
 /-! ### Properties of induced functors -/
 
+section lift
+
+variable (I : MorphismIdeal C) (F : C ⥤ D) [F.Additive] (hF : I ≤ F.kerIdeal)
+
+/-- A functor lifted from a quotient is faithful exactly when its kernel is the quotient ideal. -/
+theorem faithful_lift_iff : (I.lift F hF).Faithful ↔ F.kerIdeal ≤ I := by
+  constructor
+  · intro _ X Y f hf
+    rw [← sub_zero f, ← I.quotientFunctor_map_eq_iff]
+    apply (I.lift F hF).map_injective
+    simpa only [Quotient.lift_map_functor_map, F.map_zero] using
+      (Functor.mem_kerIdeal_hom F).1 hf
+  · intro h
+    refine Functor.faithful_of_comp_essSurj _ I.quotientFunctor fun X Y f g hfg ↦ ?_
+    obtain ⟨f, rfl⟩ := I.quotientFunctor.map_surjective f
+    obtain ⟨g, rfl⟩ := I.quotientFunctor.map_surjective g
+    rw [I.quotientFunctor_map_eq_iff]
+    apply (le_def.1 h) _
+    rw [Functor.mem_kerIdeal_hom, F.map_sub]
+    simpa only [Quotient.lift_map_functor_map] using sub_eq_zero.mpr hfg
+
+/-- The lift of a full functor is full. -/
+instance full_lift [F.Full] : (I.lift F hF).Full := by
+  have : (I.quotientFunctor ⋙ I.lift F hF).Full := by
+    rw [Quotient.lift_spec]
+    infer_instance
+  exact Functor.full_of_comp_essSurj _ I.quotientFunctor fun X Y φ ↦
+    ⟨I.quotientFunctor.map ((I.quotientFunctor ⋙ I.lift F hF).preimage φ),
+      (I.quotientFunctor ⋙ I.lift F hF).map_preimage φ⟩
+
+/-- The lift of an essentially surjective functor is essentially surjective. -/
+instance essSurj_lift [F.EssSurj] : (I.lift F hF).EssSurj := by
+  have : (I.quotientFunctor ⋙ I.lift F hF).EssSurj := by
+    rw [Quotient.lift_spec]
+    infer_instance
+  exact ⟨fun Y ↦ Functor.essImage_comp_apply_of_essSurj.1
+    (Functor.EssSurj.mem_essImage (I.quotientFunctor ⋙ I.lift F hF) Y)⟩
+
+/-- A full, essentially surjective functor induces an equivalence after quotienting by its
+kernel ideal. -/
+theorem isEquivalence_lift [F.Full] [F.EssSurj] (h : F.kerIdeal ≤ I) :
+    (I.lift F hF).IsEquivalence where
+  faithful := (I.faithful_lift_iff F hF).2 h
+  full := inferInstance
+  essSurj := inferInstance
+
+end lift
+
 section map
 
 variable (I : MorphismIdeal C) (J : MorphismIdeal D) (F : C ⥤ D) [F.Additive]
@@ -91,42 +145,30 @@ theorem map_map_quotientFunctor_map_eq_iff {X Y : C} (f g : X ⟶ Y) :
 /-- The functor induced on quotients is faithful exactly when every morphism that `F` sends into
 `J` already lies in `I`. -/
 theorem faithful_map_iff : (I.map J F hF).Faithful ↔ J.comap F ≤ I := by
-  constructor
-  · intro _ X Y f hf
-    rw [← sub_zero f] at hf
-    rw [← sub_zero f, ← I.quotientFunctor_map_eq_iff]
-    exact (I.map J F hF).map_injective ((I.map_map_quotientFunctor_map_eq_iff J F hF f 0).2 hf)
-  · intro h
-    refine Functor.faithful_of_comp_essSurj _ I.quotientFunctor fun X Y f g hfg ↦ ?_
-    obtain ⟨f, rfl⟩ := I.quotientFunctor.map_surjective f
-    obtain ⟨g, rfl⟩ := I.quotientFunctor.map_surjective g
-    rw [I.quotientFunctor_map_eq_iff]
-    exact (le_def.1 h) _ ((I.map_map_quotientFunctor_map_eq_iff J F hF f g).1 hfg)
+  rw [map_eq_lift I J F hF]
+  rw [I.faithful_lift_iff, kerIdeal_comp_quotientFunctor]
 
-/-- The induced functor on quotients is full when `F` is full. -/
-instance full_map [F.Full] : (I.map J F hF).Full := by
-  have : (I.quotientFunctor ⋙ I.map J F hF).Full := by
-    rw [quotientFunctor_comp_map]
-    infer_instance
-  exact Functor.full_of_comp_essSurj _ I.quotientFunctor fun X Y φ ↦
-    ⟨I.quotientFunctor.map ((I.quotientFunctor ⋙ I.map J F hF).preimage φ),
-      (I.quotientFunctor ⋙ I.map J F hF).map_preimage φ⟩
+/-- The induced functor on quotients is full when the composite with the target quotient functor
+is full. In particular, this holds when `F` is full. -/
+instance full_map [(F ⋙ J.quotientFunctor).Full] : (I.map J F hF).Full := by
+  rw [map_eq_lift I J F hF]
+  infer_instance
 
-/-- The induced functor on quotients is essentially surjective when `F` is essentially
+/-- The induced functor on quotients is essentially surjective when the composite with the target
+quotient functor is essentially surjective. In particular, this holds when `F` is essentially
 surjective. -/
-instance essSurj_map [F.EssSurj] : (I.map J F hF).EssSurj := by
-  have : (I.quotientFunctor ⋙ I.map J F hF).EssSurj := by
-    rw [quotientFunctor_comp_map]
-    infer_instance
-  exact ⟨fun Y ↦ Functor.essImage_comp_apply_of_essSurj.1
-    (Functor.EssSurj.mem_essImage (I.quotientFunctor ⋙ I.map J F hF) Y)⟩
+instance essSurj_map [(F ⋙ J.quotientFunctor).EssSurj] : (I.map J F hF).EssSurj := by
+  rw [map_eq_lift I J F hF]
+  infer_instance
 
-/-- An equivalence `F` with `J.comap F ≤ I` induces an equivalence of quotients. -/
-theorem isEquivalence_map [F.IsEquivalence] (h : J.comap F ≤ I) :
-    (I.map J F hF).IsEquivalence where
-  faithful := (I.faithful_map_iff J F hF).2 h
-  full := inferInstance
-  essSurj := inferInstance
+/-- If the composite with the target quotient functor is full and essentially surjective, and
+`J.comap F ≤ I`, then `F` induces an equivalence of quotients. -/
+theorem isEquivalence_map [(F ⋙ J.quotientFunctor).Full]
+    [(F ⋙ J.quotientFunctor).EssSurj] (h : J.comap F ≤ I) :
+    (I.map J F hF).IsEquivalence := by
+  rw [map_eq_lift I J F hF]
+  apply I.isEquivalence_lift
+  simpa only [kerIdeal_comp_quotientFunctor] using h
 
 end map
 
@@ -174,6 +216,11 @@ noncomputable def mapEquivalence (h : I = J.comap e.functor) : I.Quotient ≌ J.
 theorem mapEquivalence_functor (h : I = J.comap e.functor) :
     (mapEquivalence e I J h).functor = I.map J e.functor h.le :=
   (rfl)
+
+/-- The functor of the induced equivalence is additive. -/
+instance mapEquivalence_functor_additive (h : I = J.comap e.functor) :
+    (mapEquivalence e I J h).functor.Additive :=
+  inferInstanceAs (I.map J e.functor h.le).Additive
 
 /-- The inverse of the induced equivalence is the functor induced by `e.inverse`. -/
 @[simp]

@@ -36,6 +36,8 @@ that line and the functional dual to it, and both are read off the identificatio
 
 * `TauCeti.epi_indecProjRepToSimpleRep`: `Pᵢ ↠ Sᵢ` is an epimorphism, and
   `TauCeti.mono_simpleRepToIndecInjRep`: `Sᵢ ↪ Iᵢ` is a monomorphism.
+* `TauCeti.indecProjRepToSimpleRep_app_self_apply`: at the vertex `i`, `Pᵢ ↠ Sᵢ` reads off the
+  coefficient of the trivial path.
 * `TauCeti.exists_eq_smul_indecProjRepToSimpleRep` and
   `TauCeti.exists_eq_smul_simpleRepToIndecInjRep`: every morphism `Pᵢ ⟶ Sᵢ`, respectively
   `Sᵢ ⟶ Iᵢ`, is a scalar multiple of the canonical one, so each comparison morphism is unique up
@@ -45,24 +47,20 @@ that line and the functional dual to it, and both are read off the identificatio
 
 Only the two comparison morphisms and their formal properties are proved here. That `Pᵢ ↠ Sᵢ` is a
 *projective cover* in the technical sense (a superfluous kernel) and `Sᵢ ↪ Iᵢ` an *injective
-envelope* (an essential extension) is neither proved nor true in this generality: for the quiver
+envelope* (an essential extension) is neither true nor claimed in this generality: for the quiver
 with one vertex and one loop the path algebra is `k[X]`, the kernel of `Pᵢ ↠ Sᵢ` is the ideal
 `(X)`, and `(X) + (X - 1) = k[X]` with `(X - 1)` proper, so that kernel is not superfluous. Ruling
-that loop out does repair the projective half:
-`TauCeti.RepresentationTheory.Quiver.Representation.Projective.Cover`, downstream of this file,
-proves `TauCeti.epi_of_epi_comp_indecProjRepToSimpleRep`, that `Pᵢ ↠ Sᵢ` is an essential
-epimorphism, under the local hypothesis `∀ p : Quiver.Path i i, p = Quiver.Path.nil`. What is
-recorded here instead is `TauCeti.indecProjRepToSimpleRep_app_basis_eq_zero_of_length_ne_zero`:
+that loop out repairs both halves. The downstream module
+`TauCeti.RepresentationTheory.Quiver.Representation.Projective.Cover` proves
+`TauCeti.epi_of_epi_comp_indecProjRepToSimpleRep`, that `Pᵢ ↠ Sᵢ` is an essential
+epimorphism, and `TauCeti.RepresentationTheory.Quiver.Representation.Injective.Envelope` proves
+that `Sᵢ ↪ Iᵢ` is an essential monomorphism, under the same local hypothesis
+`∀ p : Quiver.Path i i, p = Quiver.Path.nil`. What is recorded here instead is
+`TauCeti.indecProjRepToSimpleRep_app_basis_eq_zero_of_length_ne_zero`:
 the morphism kills the basis vector of every path of positive length, hence, by linearity, their
-whole span. That span is what the arrow ideal of the path algebra cuts out of `Pᵢ`, but no ideal
-of the path algebra is defined here and none is claimed: the statement quantifies over path basis
-vectors and nothing else. The technical vocabulary itself is available: `TauCeti.IsSuperfluous`
-defines a superfluous kernel and `TauCeti.IsProjectiveCover` a projective cover, and the
-counterexample above is exactly a failure of `TauCeti.IsSuperfluous` for `(X) ≤ k[X]`. What is
-still missing is the arrow ideal of a path algebra, the comparison of the subrepresentation above
-with the Jacobson radical — the two agree when the arrow ideal is nilpotent, for instance for a
-finite acyclic quiver, and not in general, since for the one-loop quiver the radical of `k[X]` is
-zero — existence of projective covers over a finite-dimensional algebra, and injective envelopes.
+whole span. The technical vocabulary is available as `TauCeti.IsProjectiveCover` on modules,
+`TauCeti.IsEssentialEpi` and `TauCeti.IsEssentialMono` categorically; the two downstream modules
+apply the categorical notions directly to these comparison morphisms.
 
 The field lives in the universe `max v w` of the vertices and the arrows here, where the three
 files building `Sᵢ`, `Pᵢ` and `Iᵢ` let its universe be independent. The reason is that the vertex
@@ -143,6 +141,27 @@ theorem indecProjRepToSimpleRep_app_basis_eq_zero_of_length_ne_zero {i j : Q} (p
     (indecProjRepToSimpleRep k i).app ((Paths.of Q).obj j) (indecProjRepBasis k i j p) = 0 := by
   rw [indecProjRepToSimpleRep_app_basis, simpleRep_map_eq_zero_of_length_ne_zero i p hp]
   rfl
+
+/-- **At the vertex `i`, the surjection `Pᵢ ↠ Sᵢ` reads off the coefficient of the trivial path**:
+an element of `(Pᵢ)ᵢ` goes to that coefficient times the generator of `(Sᵢ)ᵢ`. Every other path
+`i → i` is a cycle of positive length and is killed. -/
+@[simp]
+theorem indecProjRepToSimpleRep_app_self_apply (i : Q)
+    (x : (indecProjRep k Q i).obj ((Paths.of Q).obj i)) :
+    (indecProjRepToSimpleRep k i).app ((Paths.of Q).obj i) x
+      = (indecProjRepBasis k i i).repr x Quiver.Path.nil • simpleRepGenerator k i := by
+  have key : ((indecProjRepToSimpleRep k i).app ((Paths.of Q).obj i)).hom
+      = LinearMap.smulRight (Finsupp.lapply Quiver.Path.nil ∘ₗ
+          (indecProjRepBasis k i i).repr.toLinearMap) (simpleRepGenerator k i) := by
+    refine (indecProjRepBasis k i i).ext fun p ↦ ?_
+    by_cases hp : p.length = 0
+    · obtain rfl := Quiver.Path.eq_nil_of_length_zero p hp
+      refine (indecProjRepToSimpleRep_app_nil k i).trans ?_
+      simp
+    · have hne : p ≠ Quiver.Path.nil := fun h ↦ hp (h ▸ rfl)
+      refine (indecProjRepToSimpleRep_app_basis_eq_zero_of_length_ne_zero k p hp).trans ?_
+      simp [hne]
+  exact LinearMap.congr_fun key x
 
 -- Kept although the epimorphism instance below no longer goes through it: `Epi` in a functor
 -- category is not by definition componentwise, so this is the element-level statement, and it is

@@ -45,6 +45,8 @@ the normalized adic place of the maximal ideal `(X - x, Y - y)`.
   exactly when `x` has no pole there.
 * `TauCeti.Place.eq_infinity_or_existsUnique_eq_ofPrime`: every place is either the place at
   infinity or the place of a unique height-one prime of the coordinate ring.
+* `TauCeti.Place.valuation_algebraMap_le_one_of_ne_infinity`: the coordinate ring is regular at
+  every place other than the place at infinity, for an arbitrary Weierstrass curve.
 * `TauCeti.Place.exists_one_lt_valuation_algebraMap_iff_eq_infinity`: a place is infinite on the
   coordinate ring exactly when it is the place at infinity.
 * `TauCeti.Place.degree_infinity`: the place at infinity has degree one.
@@ -168,6 +170,15 @@ theorem eq_infinity_or_existsUnique_eq_ofPrime [IsDedekindDomain W.CoordinateRin
     refine ⟨𝔭, h𝔭, fun 𝔮 h𝔮 ↦ ?_⟩
     exact ofPrime_injective F W.FunctionField (h𝔮.trans h𝔭.symm)
 
+/-- **A function of the coordinate ring is regular at every place other than the place at
+infinity**: `x` has a pole only at infinity, and the coordinate ring is integral over the
+polynomials in `x`. No hypothesis on `W` is needed. -/
+theorem valuation_algebraMap_le_one_of_ne_infinity {Q : Place F W.FunctionField}
+    (hQ : Q ≠ infinity W) (r : W.CoordinateRing) :
+    Q.valuation (algebraMap W.CoordinateRing W.FunctionField r) ≤ 1 :=
+  Q.valuation.algebraMap_coordinateRing_le_one (le_of_not_gt fun hx ↦
+    hQ (Q.eq_of_isEquiv (W.isEquiv_infinityPlace_of_one_lt (v := Q.valuation) hx))) r
+
 /-- **A place is infinite on the coordinate ring exactly when it is the place at infinity.** -/
 -- Forwards, a place that is not the place at infinity is the place of a height-one prime, and
 -- such a place contains the whole coordinate ring; backwards, `x` has a pole at infinity.
@@ -251,6 +262,13 @@ theorem infinity_ne_ofPrime [IsDedekindDomain W.CoordinateRing]
   have hvaluation := congrArg Place.valuation h
   rw [valuation_infinity, valuation_ofPrime] at hvaluation
   exact WeierstrassCurve.Affine.infinityPlace_ne_heightOneSpectrum_valuation W 𝔭 hvaluation
+
+/-- **The place at infinity is not equivalent to the place of any prime of the affine chart**: the
+valuation form of `infinity_ne_ofPrime`, a place being determined by the class of its valuation. -/
+theorem not_isEquiv_infinityPlace_valuation [IsDedekindDomain W.CoordinateRing]
+    (𝔭 : HeightOneSpectrum W.CoordinateRing) :
+    ¬ W.infinityPlace.IsEquiv (𝔭.valuation W.FunctionField) := fun hE ↦
+  infinity_ne_ofPrime 𝔭 (Place.eq_of_isEquiv (by rwa [valuation_infinity, valuation_ofPrime]))
 
 variable (W) [IsDedekindDomain W.CoordinateRing]
 
@@ -344,6 +362,14 @@ theorem coe_pointEquivDegreeOnePlace_mk {x y : F} (h : W.Equation x y) :
   rw [← CoordinateRing.equationEquivDegreeOnePlace_apply_coe ⟨(x, y), h⟩]
   exact Place.coe_degreeOneAffineOrInfinityEquiv_some W
     (CoordinateRing.equationEquivDegreeOnePlace W ⟨(x, y), h⟩)
+
+/-- The point--place dictionary sends a nonsingular point `(x, y)` to the normalized place of its
+maximal ideal. -/
+@[simp]
+theorem coe_pointEquivDegreeOnePlace_some {x y : F} (h : W.Nonsingular x y) :
+    (pointEquivDegreeOnePlace W (.some x y h)).1 =
+      Place.ofPrime F W.FunctionField (CoordinateRing.pointPlace h.left) :=
+  coe_pointEquivDegreeOnePlace_mk W h.left
 
 /-- Reading the place at infinity backwards through the dictionary recovers the point at
 infinity. -/

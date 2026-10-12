@@ -144,7 +144,7 @@ theorem invarNum_mul_invarDenom (h : IsEllipticNet W) (s m n : ℤ) :
 
 end CommRing
 
-variable {F : Type*} [FunLike F R S] [RingHomClass F R S] (f : F)
+variable {F : Type*} [FunLike F R S] (f : F)
 
 /-- The numerator of the invariant is natural in the coefficient ring.
 
@@ -154,13 +154,15 @@ still wanted under its own name, because the specialization arguments downstream
 `simp only` — where nothing fires unless it is named, and where the point is to move a ring hom
 through the invariant *without* unfolding it into its six-term formula. This is the role Mathlib's
 `map_atom`, `map_rel` and `map_normEDS` play for the rest of this API. -/
-theorem map_invarNum (s n : ℤ) : f (invarNum W s n) = invarNum (f ∘ W) s n := by
+theorem map_invarNum [RingHomClass F R S] (s n : ℤ) :
+    f (invarNum W s n) = invarNum (f ∘ W) s n := by
   simp only [invarNum, map_add, map_mul, map_pow, Function.comp_apply]
 
 /-- The denominator of the invariant is natural in the coefficient ring.
 
 Not `@[simp]`, for the same reason as `map_invarNum`: `invarDenom_def` and `map_mul` derive it. -/
-theorem map_invarDenom (s n : ℤ) : f (invarDenom W s n) = invarDenom (f ∘ W) s n := by
+theorem map_invarDenom [MulHomClass F R S] (s n : ℤ) :
+    f (invarDenom W s n) = invarDenom (f ∘ W) s n := by
   simp only [invarDenom, map_mul, Function.comp_apply]
 
 end IsEllipticNet

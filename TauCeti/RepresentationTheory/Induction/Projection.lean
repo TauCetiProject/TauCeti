@@ -72,8 +72,8 @@ downstream, as `TauCeti.indResProjection` in
 `Coinvariants.mk _ ∘ₗ TensorProduct.mk k _ _ (MonoidAlgebra.single h 1)`, which `simp` unfolds.
 The generator lemmas below are therefore stated with `IndV.mk`, the readable form, but are not
 `simp` lemmas: their left-hand sides are not in `simp`-normal form and they never fire. This
-matches Mathlib's own `Rep.coinvariantsTensorIndHom_mk_tmul_indVMk` and the sibling
-`TauCeti.indTrivialEquiv_apply_mk`. They are applied by explicit `rw`/`Eq.trans` instead, so that
+matches Mathlib's own `Rep.coinvariantsTensorIndHom_mk_tmul_indVMk`. They are applied by
+explicit `rw`/`Eq.trans` instead, so that
 only the two definitions `TauCeti.indProjectionHom` and `TauCeti.indProjectionInv` are ever
 unfolded, and only in their own generator lemmas. For the same reason the proofs below reach the
 generators by an explicit `Representation.IndV.hom_ext`/`TensorProduct.ext'` chain and peel the
@@ -284,14 +284,17 @@ theorem coinvariantsTensorIndHom_map_indProjection_mk (X : Rep k G) (Y : Rep k H
         (((Rep.coinvariantsFunctor k H).map (indProjection φ X Y).hom).hom
           (Coinvariants.mk _ (IndV.mk φ (X ⊗ Rep.res φ Y).ρ h (x ⊗ₜ[k] y))))
       = Coinvariants.mk (X.ρ.tprod ((Rep.res φ Y).ρ)) (x ⊗ₜ[k] y) := by
-  have key : (Rep.coinvariantsTensorIndHom φ X Y).hom
-      (Rep.coinvariantsTensorMk (Rep.ind φ X) Y (IndV.mk φ X.ρ 1 x) y)
-        = Coinvariants.mk (X.ρ.tprod ((Rep.res φ Y).ρ)) (x ⊗ₜ[k] y) := by
-    simpa using Rep.coinvariantsTensorIndHom_mk_tmul_indVMk φ (1 : H) x y
+  -- `key` is simplified from Mathlib's lemma rather than stated: elaborating the stated form
+  -- checks the carrier of `Rep.coinvariantsTensorMk` through `curriedTensor`, most of a second.
+  have key := Rep.coinvariantsTensorIndHom_mk_tmul_indVMk φ (1 : H) x y
+  simp only [Functor.postcompose₂_obj_obj_obj_obj, curriedTensor_obj_obj,
+    Rep.coinvariantsFunctor_obj_carrier, Rep.tensor_V, Rep.tensor_ρ, Rep.res_obj_ρ,
+    LinearMap.coe_comp, Function.comp_apply, mk_apply, LinearMap.compr₂_apply, map_one,
+    Module.End.one_apply] at key
   refine Eq.trans ?_ key
   refine congrArg (Rep.coinvariantsTensorIndHom φ X Y).hom ?_
   refine Eq.trans (congrArg (Coinvariants.mk _) (indProjection_hom_hom_apply φ X Y h x y)) ?_
-  simp [Rep.coinvariantsTensorMk]
+  simp
 
 end Comparison
 

@@ -349,9 +349,11 @@ theorem mul (hF : IsSemigroupGroupPD F) (hG : IsSemigroupGroupPD G) :
 /-- Semigroup-group positive-definite functions are closed under finite sums. -/
 theorem sum {ι : Type*} {s : Finset ι} {F : ι → ℝ≥0 × V → ℂ}
     (hF : ∀ i ∈ s, IsSemigroupGroupPD (F i)) :
-    IsSemigroupGroupPD fun x => ∑ i ∈ s, F i x :=
-  IsSemigroupGroupPD.of_posSemidef <|
-    posSemidef_finset_sum fun i hi => (hF i hi).posSemidef
+    IsSemigroupGroupPD fun x => ∑ i ∈ s, F i x := by
+  apply IsSemigroupGroupPD.of_posSemidef
+  have heq : (∑ i ∈ s, fun a b : ℝ≥0 × V => F i (a.1 + b.1, a.2 - b.2)) =
+      (fun a b : ℝ≥0 × V => ∑ i ∈ s, F i (a.1 + b.1, a.2 - b.2)) := by ext; simp
+  exact heq ▸ Matrix.posSemidef_sum s (fun i hi => (hF i hi).posSemidef)
 
 /-- Semigroup-group positive-definite functions are closed under finite products
 (Schur products). -/

@@ -44,8 +44,11 @@ multiplicities of a minimal numerical type.
   over the principal submatrix carrying the support of `x`.
 * `TauCeti.NumericalType.sum_sum_intersection_mul_neg`: the same sum is negative for a nonzero
   vector on a proper finite set of components.
-* `TauCeti.NumericalType.not_forall_sum_intersection_mul_nonneg_of_pos`: a nonnegative, nonzero
-  vector on a proper family of distinct components has a row with negative intersection sum.
+* `TauCeti.NumericalType.not_forall_fintype_sum_intersection_mul_nonneg_of_pos`: a nonnegative,
+  nonzero vector on a proper finite family of distinct components has a row with negative
+  intersection sum.
+* `TauCeti.NumericalType.not_forall_sum_intersection_mul_nonneg_of_pos`: the specialization to a
+  family indexed by an initial segment of the natural numbers.
 * `TauCeti.NumericalType.intersection_sq_lt_intersection_mul_intersection`: `aᵢⱼ² < aᵢᵢ aⱼⱼ` for
   distinct components when there are more than two components.
 * `TauCeti.NumericalType.intersection_det_triple_neg`: the determinant of the principal `3 × 3`
@@ -175,47 +178,63 @@ theorem sum_sum_intersection_mul_neg {s : Finset T.Component} (hs : s ≠ univ)
   have hneg := T.dotProduct_intersection_mulVec_neg hxne (hx m hm)
   rwa [T.dotProduct_intersection_mulVec_of_support_subset hx, heq] at hneg
 
-/-- A nonnegative, nonzero integral vector on a proper family of distinct components cannot have
-every row of the intersection form nonnegative. This excludes affine configurations whose
+/-- A nonnegative, nonzero integral vector on a proper finite family of distinct components cannot
+have every row of the intersection form nonnegative. This excludes affine configurations whose
 intersection matrix has a positive kernel vector. -/
+theorem not_forall_fintype_sum_intersection_mul_nonneg_of_pos {I : Type*} [Fintype I]
+    {e : I → T.Component} (he : Function.Injective e)
+    (hcard : Fintype.card I < Fintype.card T.Component) {y : I → ℤ} (hy : ∀ i, 0 ≤ y i)
+    (hypos : ∃ i, 0 < y i) :
+    ¬ ∀ i, 0 ≤ ∑ j, T.intersection (e i) (e j) * y j := by
+  classical
+  intro hrow
+  let s : Finset T.Component := univ.image e
+  have hs : s ≠ univ := by
+    intro hs
+    have hcards : s.card = Fintype.card I := by
+      simp only [s, card_image_of_injective univ he, card_univ]
+    rw [hs, card_univ] at hcards
+    omega
+  let x : T.Component → ℤ := fun k ↦ ∑ i, if e i = k then y i else 0
+  have hxe (i : I) : x (e i) = y i := by
+    simp [x, he.eq_iff]
+  obtain ⟨i, hyi⟩ := hypos
+  have hne : ∃ k ∈ s, x k ≠ 0 :=
+    ⟨e i, mem_image_of_mem e (mem_univ i), by rw [hxe]; exact hyi.ne'⟩
+  have key := T.sum_sum_intersection_mul_neg hs hne
+  have hinjOn : Set.InjOn e ↑(univ : Finset I) := fun _ _ _ _ h ↦ he h
+  simp only [s, sum_image hinjOn] at key
+  have heq : ∑ i, ∑ j, T.intersection (e i) (e j) * x (e i) * x (e j) =
+      ∑ i, y i * ∑ j, T.intersection (e i) (e j) * y j := by
+    refine sum_congr rfl fun i _ ↦ ?_
+    rw [mul_sum]
+    refine sum_congr rfl fun j _ ↦ ?_
+    rw [hxe, hxe]
+    ring_nf
+  rw [heq] at key
+  exact absurd key (not_lt.mpr (sum_nonneg fun i _ ↦ mul_nonneg (hy i) (hrow i)))
+
+/-- A nonnegative, nonzero integral vector on a proper family of distinct components indexed by
+an initial segment of the natural numbers cannot have every row of the intersection form
+nonnegative. -/
 theorem not_forall_sum_intersection_mul_nonneg_of_pos {t : ℕ} {c : ℕ → T.Component}
     (hinj : ∀ i < t, ∀ j < t, c i = c j → i = j)
     (hcard : t < Fintype.card T.Component) {y : ℕ → ℤ} (hy : ∀ i < t, 0 ≤ y i)
     (hypos : ∃ i < t, 0 < y i) :
     ¬ ∀ i < t, 0 ≤ ∑ j ∈ range t, T.intersection (c i) (c j) * y j := by
-  classical
   intro hrow
-  set x : T.Component → ℤ := fun k ↦ ∑ j ∈ range t, if c j = k then y j else 0 with hxdef
-  have hxc : ∀ i < t, x (c i) = y i := by
-    intro i hi
-    rw [hxdef]
-    refine (Finset.sum_eq_single i (fun j hj hji ↦ ?_) (fun hj ↦ ?_)).trans (by simp)
-    · exact ite_eq_right_iff.mpr fun h ↦ absurd (hinj j (mem_range.mp hj) i hi h) hji
-    · exact absurd (mem_range.mpr hi) hj
-  have hinjOn : ∀ i ∈ range t, ∀ j ∈ range t, c i = c j → i = j :=
-    fun i hi j hj h ↦ hinj i (mem_range.mp hi) j (mem_range.mp hj) h
-  have hcards : ((range t).image c).card = t := by
-    rw [Finset.card_image_of_injOn (fun i hi j hj h ↦ hinjOn i (by simpa using hi) j
-      (by simpa using hj) h), card_range]
-  have hs : (range t).image c ≠ univ := by
-    intro h
-    rw [h, card_univ] at hcards
-    omega
-  obtain ⟨i, hi, hyi⟩ := hypos
-  have hne : ∃ k ∈ (range t).image c, x k ≠ 0 :=
-    ⟨c i, Finset.mem_image_of_mem c (mem_range.mpr hi), by rw [hxc i hi]; exact hyi.ne'⟩
-  have key := T.sum_sum_intersection_mul_neg hs hne
-  simp only [Finset.sum_image hinjOn] at key
-  have heq : ∑ i ∈ range t, ∑ j ∈ range t, T.intersection (c i) (c j) * x (c i) * x (c j)
-      = ∑ i ∈ range t, y i * ∑ j ∈ range t, T.intersection (c i) (c j) * y j := by
-    refine Finset.sum_congr rfl fun i hi ↦ ?_
-    rw [Finset.mul_sum]
-    refine Finset.sum_congr rfl fun j hj ↦ ?_
-    rw [hxc i (mem_range.mp hi), hxc j (mem_range.mp hj)]
-    ring
-  rw [heq] at key
-  exact absurd key (not_lt.mpr (Finset.sum_nonneg fun i hi ↦
-    mul_nonneg (hy i (mem_range.mp hi)) (hrow i (mem_range.mp hi))))
+  apply T.not_forall_fintype_sum_intersection_mul_nonneg_of_pos
+    (e := fun i : Fin t ↦ c i) (y := fun i : Fin t ↦ y i)
+  · intro i j hij
+    exact Fin.ext (hinj i i.isLt j j.isLt hij)
+  · simpa using hcard
+  · exact fun i ↦ hy i i.isLt
+  · obtain ⟨i, hi, hyi⟩ := hypos
+    exact ⟨⟨i, hi⟩, hyi⟩
+  · intro i
+    have hi := hrow i i.isLt
+    rw [← Fin.sum_univ_eq_sum_range] at hi
+    exact hi
 
 /-! ### Two components -/
 
@@ -532,28 +551,17 @@ theorem intersection_five_neg (hcard : 5 < Fintype.card T.Component)
     · exact ⟨c₅, by simp, by rw [e₅]; exact h⟩
   have hsu : ({c₁, c₂, c₃, c₄, c₅} : Finset T.Component) ≠ univ := by
     exact (card_lt_iff_ne_univ _).mp (card_le_five.trans_lt hcard)
-  have hval : ∑ i ∈ ({c₁, c₂, c₃, c₄, c₅} : Finset T.Component),
-      ∑ j ∈ ({c₁, c₂, c₃, c₄, c₅} : Finset T.Component), T.intersection i j * y i * y j =
-      T.intersection c₁ c₁ * y₁ ^ 2 + T.intersection c₂ c₂ * y₂ ^ 2 +
-            T.intersection c₃ c₃ * y₃ ^ 2 + T.intersection c₄ c₄ * y₄ ^ 2 +
-          T.intersection c₅ c₅ * y₅ ^ 2 +
-        2 * (T.intersection c₁ c₂ * y₁ * y₂ + T.intersection c₁ c₃ * y₁ * y₃ +
-          T.intersection c₁ c₄ * y₁ * y₄ + T.intersection c₁ c₅ * y₁ * y₅ +
-          T.intersection c₂ c₃ * y₂ * y₃ + T.intersection c₂ c₄ * y₂ * y₄ +
-          T.intersection c₂ c₅ * y₂ * y₅ + T.intersection c₃ c₄ * y₃ * y₄ +
-          T.intersection c₃ c₅ * y₃ * y₅ + T.intersection c₄ c₅ * y₄ * y₅) := by
-    have n₁ : c₁ ∉ ({c₂, c₃, c₄, c₅} : Finset T.Component) := by simp [h₁₂, h₁₃, h₁₄, h₁₅]
-    have n₂ : c₂ ∉ ({c₃, c₄, c₅} : Finset T.Component) := by simp [h₂₃, h₂₄, h₂₅]
-    have n₃ : c₃ ∉ ({c₄, c₅} : Finset T.Component) := by simp [h₃₄, h₃₅]
-    have n₄ : c₄ ∉ ({c₅} : Finset T.Component) := by simp [h₄₅]
-    simp only [sum_insert n₁, sum_insert n₂, sum_insert n₃, sum_insert n₄, sum_singleton,
-      e₁, e₂, e₃, e₄, e₅, T.intersection_comm c₂ c₁, T.intersection_comm c₃ c₁,
-      T.intersection_comm c₃ c₂, T.intersection_comm c₄ c₁, T.intersection_comm c₄ c₂,
-      T.intersection_comm c₄ c₃, T.intersection_comm c₅ c₁, T.intersection_comm c₅ c₂,
-      T.intersection_comm c₅ c₃, T.intersection_comm c₅ c₄]
-    ring
-  rw [← hval]
-  exact T.sum_sum_intersection_mul_neg hsu hmem
+  have h := T.sum_sum_intersection_mul_neg hsu hmem
+  have n₁ : c₁ ∉ ({c₂, c₃, c₄, c₅} : Finset T.Component) := by simp [h₁₂, h₁₃, h₁₄, h₁₅]
+  have n₂ : c₂ ∉ ({c₃, c₄, c₅} : Finset T.Component) := by simp [h₂₃, h₂₄, h₂₅]
+  have n₃ : c₃ ∉ ({c₄, c₅} : Finset T.Component) := by simp [h₃₄, h₃₅]
+  have n₄ : c₄ ∉ ({c₅} : Finset T.Component) := by simp [h₄₅]
+  simp only [sum_insert n₁, sum_insert n₂, sum_insert n₃, sum_insert n₄, sum_singleton,
+    e₁, e₂, e₃, e₄, e₅, T.intersection_comm c₂ c₁, T.intersection_comm c₃ c₁,
+    T.intersection_comm c₃ c₂, T.intersection_comm c₄ c₁, T.intersection_comm c₄ c₂,
+    T.intersection_comm c₄ c₃, T.intersection_comm c₅ c₁, T.intersection_comm c₅ c₂,
+    T.intersection_comm c₅ c₃, T.intersection_comm c₅ c₄] at h
+  linarith
 
 /-! ### Six components -/
 
@@ -601,41 +609,26 @@ theorem intersection_six_neg (hcard : 6 < Fintype.card T.Component)
     · exact ⟨c₆, by simp, by rw [e₆]; exact h⟩
   have hsu : ({c₁, c₂, c₃, c₄, c₅, c₆} : Finset T.Component) ≠ univ := by
     exact (card_lt_iff_ne_univ _).mp (card_le_six.trans_lt hcard)
-  have hval : ∑ i ∈ ({c₁, c₂, c₃, c₄, c₅, c₆} : Finset T.Component),
-      ∑ j ∈ ({c₁, c₂, c₃, c₄, c₅, c₆} : Finset T.Component),
-        T.intersection i j * y i * y j =
-      T.intersection c₁ c₁ * y₁ ^ 2 + T.intersection c₂ c₂ * y₂ ^ 2 +
-            T.intersection c₃ c₃ * y₃ ^ 2 + T.intersection c₄ c₄ * y₄ ^ 2 +
-          T.intersection c₅ c₅ * y₅ ^ 2 + T.intersection c₆ c₆ * y₆ ^ 2 +
-        2 * (T.intersection c₁ c₂ * y₁ * y₂ + T.intersection c₁ c₃ * y₁ * y₃ +
-          T.intersection c₁ c₄ * y₁ * y₄ + T.intersection c₁ c₅ * y₁ * y₅ +
-          T.intersection c₁ c₆ * y₁ * y₆ + T.intersection c₂ c₃ * y₂ * y₃ +
-          T.intersection c₂ c₄ * y₂ * y₄ + T.intersection c₂ c₅ * y₂ * y₅ +
-          T.intersection c₂ c₆ * y₂ * y₆ + T.intersection c₃ c₄ * y₃ * y₄ +
-          T.intersection c₃ c₅ * y₃ * y₅ + T.intersection c₃ c₆ * y₃ * y₆ +
-          T.intersection c₄ c₅ * y₄ * y₅ + T.intersection c₄ c₆ * y₄ * y₆ +
-          T.intersection c₅ c₆ * y₅ * y₆) := by
-    have n₁ : c₁ ∉ ({c₂, c₃, c₄, c₅, c₆} : Finset T.Component) := by
-      simp [h₁₂, h₁₃, h₁₄, h₁₅, h₁₆]
-    have n₂ : c₂ ∉ ({c₃, c₄, c₅, c₆} : Finset T.Component) := by
-      simp [h₂₃, h₂₄, h₂₅, h₂₆]
-    have n₃ : c₃ ∉ ({c₄, c₅, c₆} : Finset T.Component) := by
-      simp [h₃₄, h₃₅, h₃₆]
-    have n₄ : c₄ ∉ ({c₅, c₆} : Finset T.Component) := by simp [h₄₅, h₄₆]
-    have n₅ : c₅ ∉ ({c₆} : Finset T.Component) := by simp [h₅₆]
-    simp only [sum_insert n₁, sum_insert n₂, sum_insert n₃, sum_insert n₄,
-      sum_insert n₅, sum_singleton, e₁, e₂, e₃, e₄, e₅, e₆,
-      T.intersection_comm c₂ c₁, T.intersection_comm c₃ c₁,
-      T.intersection_comm c₃ c₂, T.intersection_comm c₄ c₁,
-      T.intersection_comm c₄ c₂, T.intersection_comm c₄ c₃,
-      T.intersection_comm c₅ c₁, T.intersection_comm c₅ c₂,
-      T.intersection_comm c₅ c₃, T.intersection_comm c₅ c₄,
-      T.intersection_comm c₆ c₁, T.intersection_comm c₆ c₂,
-      T.intersection_comm c₆ c₃, T.intersection_comm c₆ c₄,
-      T.intersection_comm c₆ c₅]
-    ring
-  rw [← hval]
-  exact T.sum_sum_intersection_mul_neg hsu hmem
+  have h := T.sum_sum_intersection_mul_neg hsu hmem
+  have n₁ : c₁ ∉ ({c₂, c₃, c₄, c₅, c₆} : Finset T.Component) := by
+    simp [h₁₂, h₁₃, h₁₄, h₁₅, h₁₆]
+  have n₂ : c₂ ∉ ({c₃, c₄, c₅, c₆} : Finset T.Component) := by
+    simp [h₂₃, h₂₄, h₂₅, h₂₆]
+  have n₃ : c₃ ∉ ({c₄, c₅, c₆} : Finset T.Component) := by
+    simp [h₃₄, h₃₅, h₃₆]
+  have n₄ : c₄ ∉ ({c₅, c₆} : Finset T.Component) := by simp [h₄₅, h₄₆]
+  have n₅ : c₅ ∉ ({c₆} : Finset T.Component) := by simp [h₅₆]
+  simp only [sum_insert n₁, sum_insert n₂, sum_insert n₃, sum_insert n₄,
+    sum_insert n₅, sum_singleton, e₁, e₂, e₃, e₄, e₅, e₆,
+    T.intersection_comm c₂ c₁, T.intersection_comm c₃ c₁,
+    T.intersection_comm c₃ c₂, T.intersection_comm c₄ c₁,
+    T.intersection_comm c₄ c₂, T.intersection_comm c₄ c₃,
+    T.intersection_comm c₅ c₁, T.intersection_comm c₅ c₂,
+    T.intersection_comm c₅ c₃, T.intersection_comm c₅ c₄,
+    T.intersection_comm c₆ c₁, T.intersection_comm c₆ c₂,
+    T.intersection_comm c₆ c₃, T.intersection_comm c₆ c₄,
+    T.intersection_comm c₆ c₅] at h
+  linarith
 
 end NumericalType
 

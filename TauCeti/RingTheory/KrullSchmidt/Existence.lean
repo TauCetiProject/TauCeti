@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
+public import TauCeti.Order.SupIndep
 public import TauCeti.RingTheory.KrullSchmidt.Indecomposable
 
 /-!
@@ -166,11 +167,7 @@ theorem exists_isCompl_isIndecomposableModule [IsArtinian A M] [Nontrivial M] :
     rw [Finset.nonempty_iff_ne_empty]
     rintro rfl
     exact top_ne_bot (α := Submodule A M) (by simpa using hss.symm)
-  refine ⟨N, (s.erase N).sup id, ⟨?_, ?_⟩, hs N hN⟩
-  · simpa using Finset.supIndep_iff_disjoint_erase.mp hsi N hN
-  · rw [codisjoint_iff, ← hss]
-    conv_rhs => rw [← Finset.insert_erase hN, Finset.sup_insert]
-    rw [id_eq]
+  exact ⟨N, (s.erase N).sup id, hsi.isCompl_sup_erase hss hN, hs N hN⟩
 
 /-- **Existence of an indecomposable decomposition** for a module of finite length: it is the
 internal direct sum of a finite set of indecomposable submodules.

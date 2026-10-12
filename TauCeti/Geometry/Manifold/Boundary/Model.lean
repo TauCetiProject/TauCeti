@@ -20,7 +20,10 @@ boundary of a manifold modeled on a Euclidean half-space, as prescribed by Layer
 GeometricTopology roadmap.  The parametrization and projection API below is intended to let
 boundary charts use this identification without unfolding its coordinate construction.  The file
 also splits the ambient Euclidean space into boundary and normal coordinates; the boundary
-inclusion and the standard product collar both use this one coordinate equivalence.
+inclusion and the standard product collar both use this one coordinate equivalence.  Finally,
+`ContinuousLinearMap.exists_pos_eq_mul_apply_zero_of_eventually_nonneg` recognises a
+linear functional that is nonnegative near a boundary point within the half-space, and positive off
+the hyperplane, as a positive multiple of the boundary coordinate.
 -/
 
 public section
@@ -284,3 +287,56 @@ theorem boundary_euclideanHalfSpace (n : ℕ) :
   simp [extChartAt, chartAt_self_eq, eq_comm]
 
 end TauCeti
+
+namespace ContinuousLinearMap
+
+open Filter Topology in
+/-- A continuous linear functional on `ℝᵏ` which vanishes at a point `p` of the boundary hyperplane
+of the half-space `{y | y 0 ≥ 0}`, and which near `p` within the half-space is nonnegative and
+positive off the hyperplane, is a positive multiple of the boundary coordinate `u ↦ u 0`. -/
+theorem exists_pos_eq_mul_apply_zero_of_eventually_nonneg {k : ℕ} [NeZero k]
+    (ν : EuclideanSpace ℝ (Fin k) →L[ℝ] ℝ) {p : EuclideanSpace ℝ (Fin k)} (hp : p 0 = 0)
+    (hνp : ν p = 0) (hnonneg : ∀ᶠ u in 𝓝[{y | 0 ≤ y 0}] p, 0 ≤ ν u)
+    (hpos : ∀ᶠ u in 𝓝[{y | 0 ≤ y 0}] p, 0 < u 0 → 0 < ν u) :
+    ∃ c : ℝ, 0 < c ∧ ∀ u, ν u = c * u 0 := by
+  -- Every direction into the half-space is followed for a short positive time where both
+  -- hypotheses hold.
+  have key : ∀ v : EuclideanSpace ℝ (Fin k), 0 ≤ v 0 →
+      ∃ t : ℝ, 0 < t ∧ 0 ≤ ν (p + t • v) ∧ (0 < (p + t • v) 0 → 0 < ν (p + t • v)) := by
+    intro v hv
+    have hlim : Tendsto (fun t : ℝ => p + t • v) (𝓝[>] 0) (𝓝[{y | 0 ≤ y 0}] p) := by
+      refine tendsto_nhdsWithin_iff.2 ⟨?_, ?_⟩
+      · have hc : Continuous fun t : ℝ => p + t • v := by fun_prop
+        simpa using (hc.tendsto 0).mono_left nhdsWithin_le_nhds
+      · filter_upwards [self_mem_nhdsWithin] with t (ht : 0 < t)
+        simp only [PiLp.add_apply, PiLp.smul_apply, hp, smul_eq_mul, zero_add]
+        positivity
+    obtain ⟨t, ⟨htn, htp⟩, ht⟩ :=
+      ((hlim.eventually (hnonneg.and hpos)).and self_mem_nhdsWithin).exists
+    exact ⟨t, ht, htn, htp⟩
+  have hshift : ∀ (t : ℝ) (v : EuclideanSpace ℝ (Fin k)), ν (p + t • v) = t * ν v := by
+    intro t v
+    rw [map_add, map_smul, hνp, zero_add, smul_eq_mul]
+  have hν_nonneg : ∀ v : EuclideanSpace ℝ (Fin k), 0 ≤ v 0 → 0 ≤ ν v := by
+    intro v hv
+    obtain ⟨t, ht, htn, -⟩ := key v hv
+    rw [hshift] at htn
+    exact (mul_nonneg_iff_of_pos_left ht).1 htn
+  have hker : ∀ v : EuclideanSpace ℝ (Fin k), v 0 = 0 → ν v = 0 := by
+    intro v hv
+    refine le_antisymm ?_ (hν_nonneg v hv.ge)
+    have := hν_nonneg (-v) (by simp [hv])
+    rwa [map_neg, neg_nonneg] at this
+  set e₀ : EuclideanSpace ℝ (Fin k) := EuclideanSpace.single 0 1
+  have he₀ : e₀ 0 = 1 := by simp [e₀]
+  refine ⟨ν e₀, ?_, fun u => ?_⟩
+  · obtain ⟨t, ht, -, htp⟩ := key e₀ (by rw [he₀]; exact zero_le_one)
+    have := htp (by simp [hp, he₀, ht])
+    rw [hshift] at this
+    exact pos_of_mul_pos_right this ht.le
+  · have hdec : u = u 0 • e₀ + (u - u 0 • e₀) := by abel
+    have hrest : (u - u 0 • e₀) 0 = 0 := by simp [he₀]
+    calc ν u = ν (u 0 • e₀ + (u - u 0 • e₀)) := congrArg ν hdec
+      _ = ν e₀ * u 0 := by rw [map_add, hker _ hrest, map_smul, smul_eq_mul, add_zero, mul_comm]
+
+end ContinuousLinearMap

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.CategoryTheory.Exact.ExtensionClosed
-public import TauCeti.CategoryTheory.Exact.Resolution
+public import TauCeti.CategoryTheory.Exact.Resolution.Basic
 public import Mathlib.CategoryTheory.ObjectProperty.Retract
 
 /-!

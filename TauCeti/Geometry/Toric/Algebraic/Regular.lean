@@ -6,7 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Toric.Algebraic.Fan.Basic
-public import TauCeti.Geometry.Toric.Algebraic.Ray.Primitive
+public import TauCeti.Geometry.Toric.Algebraic.Ray.Equiv
+import TauCeti.Data.Fin.Sum
 
 /-!
 # Regular toric cones and regular fans
@@ -49,6 +50,8 @@ boundary coordinates, twists them by `B`, and acts on the torus coordinates by `
   map.
 * `TauCeti.Toric.IsRegularCone.card_toricRay_le_finrank`: a regular cone has at most as many rays
   as the rank of the lattice, which is the count that gives the dimensions of its mixed chart.
+* `TauCeti.Toric.IsRegularCone.exists_basis_sum`: an extending basis indexed by the rays followed
+  by a finite complementary type, as required by regular affine coordinates.
 * `TauCeti.Toric.IsExtendingBasis.basis_apply_eq`,
   `TauCeti.Toric.IsExtendingBasis.repr_basis_apply` and
   `TauCeti.Toric.IsExtendingBasis.toMatrix_apply`: the salient ray columns of the transition matrix
@@ -132,6 +135,46 @@ theorem card_toricRay_le_finrank (h : IsRegularCone i σ) :
   simpa using Nat.card_le_card_of_injective r r.injective
 
 end IsRegularCone
+
+/-! ### Equivalences -/
+
+namespace IsRegularCone
+
+/-- Regularity is preserved when a cone is transported along compatible equivalences of its
+integral lattice and ambient real vector space. -/
+theorem map_equiv {f : N ≃+ N'} {e : V ≃ₗ[ℝ] V'} (hfe : ∀ n, e (i n) = i' (f n))
+    (h : IsRegularCone i σ) :
+    IsRegularCone i' (PointedCone.map (e : V →ₗ[ℝ] V') σ) := by
+  let rayEquiv := ToricRay.mapLinearEquiv (σ := σ) e
+  obtain ⟨n, b, r, hb⟩ := h.exists_basis
+  refine ⟨(isToricCone_map_equiv_iff hfe).2 h.toIsToricCone, n,
+    b.map f.toIntLinearEquiv, rayEquiv.symm.toEmbedding.trans r, ⟨fun ρ ↦ ?_⟩⟩
+  have hp := (hb.isPrimitiveGenerator_apply (rayEquiv.symm ρ)).map_equiv hfe
+  have hray : (rayEquiv.symm ρ).map e = ρ := by
+    calc
+      (rayEquiv.symm ρ).map e =
+          ToricRay.mapLinearEquiv (σ := σ) e (rayEquiv.symm ρ) :=
+        (ToricRay.mapLinearEquiv_apply e _).symm
+      _ = ρ := rayEquiv.apply_symm_apply ρ
+  convert hp using 1
+  · exact hray.symm
+  · simp
+
+end IsRegularCone
+
+/-- Regularity of a cone is invariant under compatible equivalences of its integral lattice and
+ambient real vector space. -/
+theorem isRegularCone_map_equiv_iff {f : N ≃+ N'} {e : V ≃ₗ[ℝ] V'}
+    (hfe : ∀ n, e (i n) = i' (f n)) :
+    IsRegularCone i' (PointedCone.map (e : V →ₗ[ℝ] V') σ) ↔ IsRegularCone i σ := by
+  refine ⟨fun h ↦ ?_, IsRegularCone.map_equiv hfe⟩
+  have hsymm : ∀ n', e.symm (i' n') = i (f.symm n') := fun n' ↦ by
+    simpa using (congrArg e.symm (hfe (f.symm n'))).symm
+  have hback := h.map_equiv hsymm
+  have hcomp : (e.symm : V' →ₗ[ℝ] V).comp (e : V →ₗ[ℝ] V') = LinearMap.id := by
+    ext x
+    simp
+  simpa only [PointedCone.map_map, hcomp, PointedCone.map_id] using hback
 
 /-! ### The zero cone and the cone of a ray -/
 
@@ -358,20 +401,12 @@ theorem exists_isUnit_det_toMatrix_compl (hi : IsIntegralLattice i)
         IsUnit ((b'.toMatrix b).submatrix (fun j : Fin l ↦ e' (Sum.inr j))
           (fun k : Fin l ↦ e (Sum.inr k))).det := by
   classical
-  -- The rays sit inside the index set of an extending basis, so they split off a complement.
-  have key : ∀ {m : ℕ} (s : ToricRay σ ↪ Fin m),
-      ∃ (l : ℕ) (f : ToricRay σ ⊕ Fin l ≃ Fin m), ∀ ρ, f (Sum.inl ρ) = s ρ := by
-    intro m s
-    have _ : Fintype (ToricRay σ) := Fintype.ofInjective s s.injective
-    exact ⟨Fintype.card {j : Fin m // j ∉ Set.range s},
-      (Equiv.sumCongr (Equiv.ofInjective s s.injective) (Fintype.equivFin _).symm).trans
-        (Equiv.sumCompl fun j : Fin m ↦ j ∈ Set.range s), fun ρ ↦ rfl⟩
-  have hcard : ∀ {m l : ℕ} (f : ToricRay σ ⊕ Fin l ≃ Fin m), Nat.card (ToricRay σ) + l = m := by
+  have hcard : ∀ {m l : ℕ} (_ : ToricRay σ ⊕ Fin l ≃ Fin m), Nat.card (ToricRay σ) + l = m := by
     intro m l f
     have _ : Finite (ToricRay σ) := Finite.of_injective _ (f.injective.comp Sum.inl_injective)
     simpa [Nat.card_sum] using (Nat.card_congr f)
-  obtain ⟨l, e, he⟩ := key r
-  obtain ⟨l', e', he'⟩ := key r'
+  obtain ⟨l, e, he⟩ := r.exists_equiv_sum_fin
+  obtain ⟨l', e', he'⟩ := r'.exists_equiv_sum_fin
   have hn : Module.finrank ℤ N = n := by simpa using Module.finrank_eq_card_basis b
   have hn' : Module.finrank ℤ N = n' := by simpa using Module.finrank_eq_card_basis b'
   obtain rfl : l' = l := by
@@ -381,6 +416,20 @@ theorem exists_isUnit_det_toMatrix_compl (hi : IsIntegralLattice i)
   exact ⟨_, e, e', he, he', isUnit_det_toMatrix_compl hi hσ hb hb' e e' he he'⟩
 
 end IsExtendingBasis
+
+namespace IsRegularCone
+
+/-- The primitive ray generators of a regular cone can be placed at the left summand of a basis
+indexed by the rays and a finite complementary type.  This is the indexing shape used by the
+regular affine-coordinate equivalence. -/
+theorem exists_basis_sum (h : IsRegularCone i σ) :
+    ∃ (l : ℕ) (b : Module.Basis (ToricRay σ ⊕ Fin l) ℤ N),
+  ∀ ρ, IsPrimitiveGenerator i ρ (b (Sum.inl ρ)) := by
+  obtain ⟨n, b, r, hb⟩ := h.exists_basis
+  obtain ⟨l, e, he⟩ := r.exists_equiv_sum_fin
+  exact ⟨l, b.reindex e.symm, hb.isPrimitiveGenerator_reindex e he⟩
+
+end IsRegularCone
 
 /-! ### Regular fans -/
 
@@ -400,6 +449,16 @@ theorem isRegular_iff {Φ : Fan i} :
 theorem isRegular_ofCone (hi : IsIntegralLattice i) (hσ : IsRegularCone i σ) :
     (ofCone hi hσ.toIsToricCone).IsRegular :=
   fun _ hτ ↦ hσ.of_isFaceOf ((mem_ofCone_cones hi hσ.toIsToricCone).1 hτ)
+
+/-- The fan generated by finitely many cones is regular exactly when the generating cones are. -/
+theorem isRegular_ofCones_iff (hi : IsIntegralLattice i) (S : Set (PointedCone ℝ V))
+    (hS : S.Finite) (hSt : ∀ ⦃σ⦄, σ ∈ S → IsToricCone i σ)
+    (hSinf : ∀ ⦃σ τ⦄, σ ∈ S → τ ∈ S → (σ ⊓ τ).IsFaceOf σ) :
+    (ofCones hi S hS hSt hSinf).IsRegular ↔ ∀ σ ∈ S, IsRegularCone i σ := by
+  refine ⟨fun h σ hσ ↦ h (subset_ofCones_cones hi S hS hSt hSinf hσ), ?_⟩
+  intro h τ hτ
+  obtain ⟨σ, hσ, hτσ⟩ := (mem_ofCones_cones hi S hS hSt hSinf).1 hτ
+  exact (h σ hσ).of_isFaceOf hτσ
 
 /-- A subfan of a regular fan is regular. -/
 theorem IsRegular.subfan {Φ : Fan i} (hΦ : Φ.IsRegular) (S : Set (PointedCone ℝ V))

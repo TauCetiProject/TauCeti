@@ -10,6 +10,8 @@ public import TauCeti.LinearAlgebra.IntegralLattice.RootLattice.D8Plus.Basic
 public import TauCeti.LinearAlgebra.IntegralLattice.RootLattice.TypeE
 public import TauCeti.LinearAlgebra.RootSystem.E8Coordinates
 
+import Mathlib.Algebra.BigOperators.Field
+
 /-!
 # The spinor glue lattice `D₈⁺` is the `E₈` root lattice
 
@@ -177,12 +179,6 @@ theorem e8GlueRoot_mem_d8PlusCarrier (i : Fin 8) : e8GlueRoot i ∈ d8PlusCarrie
   · exact Or.inl (e8GlueRoot_of_ne_zero i hi ▸ e8GlueShift_mem_checkerboardLattice i)
 
 /-! ## The comparison map -/
-
-/-- The simple roots of the `E₈` root lattice are the standard coordinate vectors. -/
-private theorem typeE₈SimpleRoot_eq_basisFun (i : Fin 8) :
-    typeE₈SimpleRoot i = Pi.basisFun ℚ (Fin 8) i := by
-  funext j
-  rw [typeE₈SimpleRoot_apply, Pi.basisFun_apply, Pi.single_apply]
 
 /-- The rational linear map sending the `i`-th simple root of the `E₈` root lattice to the `i`-th
 glue root of `D₈⁺`. -/

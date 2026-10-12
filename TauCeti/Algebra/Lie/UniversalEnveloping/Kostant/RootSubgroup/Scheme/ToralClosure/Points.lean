@@ -8,6 +8,8 @@ module
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.Points
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.Basic
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Borel
+public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.HopfIdealPoints.Presentation
+public import TauCeti.Algebra.AlgebraicGroup.CommHopfAlgCat.SchemePoints
 
 /-!
 # Points of the toral Kostant closure
@@ -34,6 +36,8 @@ generation theorem and is not asserted here.
 
 * `TauCeti.UniversalEnvelopingAlgebra.kostantToralPointsSubgroup`: the algebra-valued points of
   the toral closure, viewed in `GLₙ`.
+* `TauCeti.UniversalEnvelopingAlgebra.kostantToralSchemePointMulEquiv`: quotient-coordinate
+  points of the toral closure identified with its scheme-valued points.
 * `TauCeti.UniversalEnvelopingAlgebra.kostantGeneratedPointsSubgroup_le_toralPoints`: the
   root-generated point subgroup is contained in the toral point subgroup.
 * `TauCeti.UniversalEnvelopingAlgebra.kostantTorusMatrix_mem_toralPoints`: every represented
@@ -50,18 +54,17 @@ generation theorem and is not asserted here.
 
 The construction is the pointwise face of the split torus and root-subgroup carrier in the
 Chevalley--Demazure construction; see J. E. Humphreys, *Linear Algebraic Groups*, §26, and
-R. W. Carter, *Simple Groups of Lie Type*, §§4.4 and 7.1. It advances "The
-Chevalley--Demazure construction" and "Points over an algebraically closed field" targets in
-Layer 9 of `TauCetiRoadmap/ReductiveGroups/README.md`.
+R. W. Carter, *Simple Groups of Lie Type*, §§4.4 and 7.1.
 -/
 
 public section
 
-open CategoryTheory TensorProduct WithConv
+open AlgebraicGeometry CategoryTheory TensorProduct WithConv
+open scoped CategoryTheory.MonObj
 
 namespace TauCeti.UniversalEnvelopingAlgebra
 
-universe u v w
+universe u v w v'
 
 -- Match tensor products to the `ℤ`-algebra structure used by scalar extension.
 attribute [local instance high] Algebra.toModule
@@ -94,8 +97,8 @@ Hopf ideal. -/
 theorem kostantToralPointsSubgroup_def (A : Type v) [CommRing A] :
     kostantToralPointsSubgroup e h ρ M hM hnil b wt A =
       GeneralLinear.hopfIdealPointsSubgroup n
-        (kostantToralDefiningIdeal e h ρ M hM hnil b wt) A := by
-  rw [kostantToralPointsSubgroup]
+        (kostantToralDefiningIdeal e h ρ M hM hnil b wt) A :=
+  (rfl)
 
 /-- Membership in the points of the toral closure is vanishing on its defining Hopf ideal. -/
 @[simp]
@@ -108,8 +111,9 @@ theorem mem_kostantToralPointsSubgroup_iff (A : Type v) [CommRing A]
   exact GeneralLinear.mem_hopfIdealPointsSubgroup_iff n
     (kostantToralDefiningIdeal e h ρ M hM hnil b wt) A g
 
-/-- Adjoining the weight torus can only enlarge the algebra-valued point subgroup cut out by the
-root-generated defining ideal. -/
+/-- The algebra-valued point subgroup of the toral closure contains the root-generated point
+subgroup: adjoining the weight torus to the generators enlarges the represented point subgroup (by
+shrinking the defining ideal). -/
 theorem kostantGeneratedPointsSubgroup_le_toralPoints (A : Type v) [CommRing A] :
     kostantGeneratedPointsSubgroup e h ρ M hM hnil b A ≤
       kostantToralPointsSubgroup e h ρ M hM hnil b wt A := by
@@ -192,6 +196,44 @@ theorem coe_kostantToralWeightTorusPoints (A : Type v) [CommRing A] (s : κ → 
   rw [kostantToralWeightTorusPoints]
   rfl
 
+/-- The integral-points presentation of the toral Kostant closure. -/
+noncomputable abbrev kostantToralPointsPresentation (A : Type v) [CommRing A] :
+    GeneralLinear.IntegralPointsPresentation n
+      (kostantToralDefiningIdeal e h ρ M hM hnil b wt) A :=
+  ⟨kostantToralPointsSubgroup e h ρ M hM hnil b wt A,
+    kostantToralPointsSubgroup_def e h ρ M hM hnil b wt A⟩
+
+/-- The presented toral-closure root point is natural in the value ring. -/
+@[simp]
+theorem map_kostantToralRootSubgroupPoints
+    {A : Type v} {B : Type v'} [CommRing A] [CommRing B]
+    (f : A →+* B) (i : I) (u : Multiplicative A) :
+    (kostantToralPointsPresentation e h ρ M hM hnil b wt A).map
+        (kostantToralPointsPresentation e h ρ M hM hnil b wt B) f
+        (kostantToralRootSubgroupPoints e h ρ M hM hnil b wt i A u) =
+      kostantToralRootSubgroupPoints e h ρ M hM hnil b wt i B
+        (Multiplicative.ofAdd (f (Multiplicative.toAdd u))) := by
+  apply Subtype.ext
+  rw [GeneralLinear.IntegralPointsPresentation.coe_map,
+    coe_kostantToralRootSubgroupPoints, coe_kostantToralRootSubgroupPoints,
+    map_kostantRootSubgroupMatrix,
+    AdditiveGroup.mapValue_gaPointsMulEquiv_symm_apply, RingHom.toIntAlgHom_apply]
+
+/-- The presented toral-closure weight-torus point is natural in the value ring. -/
+@[simp]
+theorem map_kostantToralWeightTorusPoints
+    {A : Type v} {B : Type v'} [CommRing A] [CommRing B]
+    (f : A →+* B) (s : κ → Aˣ) :
+    (kostantToralPointsPresentation e h ρ M hM hnil b wt A).map
+        (kostantToralPointsPresentation e h ρ M hM hnil b wt B) f
+        (kostantToralWeightTorusPoints e h ρ M hM hnil b wt A s) =
+      kostantToralWeightTorusPoints e h ρ M hM hnil b wt B
+        (fun i ↦ Units.map (f : A →* B) (s i)) := by
+  apply Subtype.ext
+  rw [GeneralLinear.IntegralPointsPresentation.coe_map,
+    coe_kostantToralWeightTorusPoints, coe_kostantToralWeightTorusPoints]
+  exact map_kostantTorusMatrix (M := M) (b := b) (wt := wt) f s
+
 /-- The pinning equation in the matrix-valued points of the toral Kostant closure. If `e i` has
 Cartan weight `α`, conjugation by the weight-torus point `s` rescales the root-subgroup
 parameter by `α(s)`. This is not a `simp` lemma: the weight `α` is pinned only by the hypothesis
@@ -241,5 +283,53 @@ theorem map_kostantTorusSubsystemSubgroup_le_toralPoints
     exact kostantTorusMatrix_mem_toralPoints e h ρ M hM hnil b wt A s
 
 end Fintype
+
+/-! ### Scheme-valued points -/
+
+section SchemePoints
+
+variable [Finite κ]
+
+/-- The toral closure is represented by its quotient coordinate Hopf algebra. -/
+theorem kostantToralGroupScheme_eq_hopfSpec :
+    kostantToralGroupScheme e h ρ M hM hnil b wt =
+      (hopfSpec (CommRingCat.of ℤ)).obj (Opposite.op
+        (CommHopfAlgCat.quotient (GeneralLinear.coordinateHopfAlgebra ℤ n)
+          (kostantToralDefiningIdeal e h ρ M hM hnil b wt))) :=
+  (rfl)
+
+/-- The underlying scheme of the toral closure is the spectrum of its coordinate ring. -/
+theorem kostantToralGroupScheme_X_left :
+    (kostantToralGroupScheme e h ρ M hM hnil b wt).X.left =
+      Spec (CommRingCat.of (CommHopfAlgCat.quotient
+        (GeneralLinear.coordinateHopfAlgebra ℤ n)
+        (kostantToralDefiningIdeal e h ρ M hM hnil b wt))) :=
+  congrArg (fun G : Grp (Over (Spec (CommRingCat.of ℤ))) ↦ G.X.left)
+    (kostantToralGroupScheme_eq_hopfSpec e h ρ M hM hnil b wt)
+
+/-- Algebra-valued points of the toral closure, transported to scheme-valued points. -/
+noncomputable def kostantToralSchemePointMulEquiv (A : Type) [CommRing A] :
+    WithConv (CommHopfAlgCat.quotient (GeneralLinear.coordinateHopfAlgebra ℤ n)
+        (kostantToralDefiningIdeal e h ρ M hM hnil b wt) →ₐ[ℤ] A) ≃*
+      ((Spec (CommRingCat.of A)).asOver (Spec (CommRingCat.of ℤ)) ⟶
+        (kostantToralGroupScheme e h ρ M hM hnil b wt).X) :=
+  CommHopfAlgCat.mapMulEquivOfPresentation _ A
+    (kostantToralGroupScheme_eq_hopfSpec e h ρ M hM hnil b wt)
+
+/-- The underlying spectrum map of a quotient point of the toral closure. -/
+theorem kostantToralSchemePointMulEquiv_apply_left (A : Type) [CommRing A]
+    (q : WithConv (CommHopfAlgCat.quotient (GeneralLinear.coordinateHopfAlgebra ℤ n)
+      (kostantToralDefiningIdeal e h ρ M hM hnil b wt) →ₐ[ℤ] A)) :
+    (kostantToralSchemePointMulEquiv e h ρ M hM hnil b wt A q).left =
+      Spec.map (CommRingCat.ofHom (q.ofConv :
+        CommHopfAlgCat.quotient (GeneralLinear.coordinateHopfAlgebra ℤ n)
+          (kostantToralDefiningIdeal e h ρ M hM hnil b wt) →+* A)) ≫
+        eqToHom (kostantToralGroupScheme_X_left e h ρ M hM hnil b wt).symm := by
+  simpa only [kostantToralSchemePointMulEquiv] using
+    CommHopfAlgCat.mapMulEquivOfPresentation_apply_left _ A
+      (kostantToralGroupScheme_eq_hopfSpec e h ρ M hM hnil b wt)
+      (kostantToralGroupScheme_X_left e h ρ M hM hnil b wt) q
+
+end SchemePoints
 
 end TauCeti.UniversalEnvelopingAlgebra

@@ -16,7 +16,11 @@ The `m`-th Tate twist of a pure Hodge structure of weight `n` has weight `n - 2m
 filtration `F^p(V(m)) = F^{p+m}(V)`. The underlying lattice and complex vector space are unchanged:
 this presents `V ⊗ ℤ(m)` through the canonical identifications `V ⊗_ℤ ℤ ≃ V` and
 `V_ℂ ⊗_ℂ ℂ ≃ V_ℂ`. Thus the construction works directly with the abstract base-change
-interface and introduces no choice of tensor-product equivalence.
+interface and introduces no choice of tensor-product equivalence. Its complex Hodge components
+and filtration are those of the tensor product `TauCeti.Hodge.HodgeStructureOn.tensorProduct` with
+`ℤ(m)` along Mathlib's right unitor: see `TauCeti.Hodge.HodgeStructureOn.tateTwist_piece_eq_comap`
+and `TauCeti.Hodge.HodgeStructureOn.tateTwist_F_eq_comap` in
+`TauCeti.Geometry.Hodge.Tate.TensorProduct`.
 
 The shift carries Hodge components and Hodge numbers by the same translation. It also acts on
 morphisms. A polarizing form for `V` polarizes `V(m)` unchanged: subtracting the even integer `2m`
@@ -34,6 +38,8 @@ This is the Tate-twist companion in Layer L0 of
   component in degree `p + m`.
 * `TauCeti.Hodge.HodgeStructure.Hom.tateTwist`: the induced operation on Hodge morphisms.
 * `TauCeti.Hodge.IsPolarization.tateTwist`: a polarizing form remains polarizing after twisting.
+* `TauCeti.Hodge.IsPolarization.of_F_eq_F_add`: the same for a structure that is a Tate twist only
+  up to the identification of propositionally equal weights.
 * `TauCeti.Hodge.Polarization.tateTwist`: the corresponding bundled polarization.
 -/
 
@@ -220,6 +226,17 @@ theorem tateTwist (hQ : IsPolarization hℂ hs Q) (m : ℤ) :
     have hexp : 2 * p - (n - 2 * m) = 2 * (p + m) - n := by ring
     rw [hexp]
     exact hQ.positive (p + m) x hx' hx0
+
+/-- A form polarizing a pure Hodge structure also polarizes every Hodge structure on the same
+complex vector space whose filtration is a translate of the original one by `m`, provided its
+weight is `n - 2m`. Such a structure is the Tate twist by `m` up to the identification of the
+propositionally equal weights. -/
+theorem of_F_eq_F_add (hQ : IsPolarization hℂ hs Q) {n' : ℤ} {hs' : HodgeStructure hℂ n'}
+    (m : ℤ) (hn : n' = n - 2 * m) (hF : ∀ p, hs'.F p = hs.F (p + m)) :
+    IsPolarization hℂ hs' Q := by
+  subst hn
+  obtain rfl : hs' = hs.tateTwist m := HodgeStructureOn.ext (funext hF)
+  exact hQ.tateTwist m
 
 end IsPolarization
 

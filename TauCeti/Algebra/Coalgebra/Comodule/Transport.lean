@@ -87,8 +87,7 @@ private theorem assoc_rTensor_transportCoact (e : M ≃ₗ[R] N) (t : M ⊗[R] C
       = TensorProduct.assoc R N C C
           (TensorProduct.map (TensorProduct.map e.toLinearMap LinearMap.id) LinearMap.id
             ((coact (R := R) (C := C) (M := M)).rTensor C t)) := by
-          induction t using TensorProduct.induction_on with
-          | zero => simp [transportCoact, LinearMap.rTensor]
+          induction t using TensorProduct.inductionOn with
           | tmul m c => simp [transportCoact, LinearMap.rTensor]
           | add x y hx hy => simpa using congrArg₂ (· + ·) hx hy
     _ = TensorProduct.map e.toLinearMap (TensorProduct.map LinearMap.id LinearMap.id)
@@ -102,8 +101,7 @@ private theorem comul_lTensor_transport_map (e : M ≃ₗ[R] N) (t : M ⊗[R] C)
     Coalgebra.comul.lTensor N (TensorProduct.map e.toLinearMap LinearMap.id t) =
       TensorProduct.map e.toLinearMap (TensorProduct.map LinearMap.id LinearMap.id)
         (Coalgebra.comul.lTensor M t) := by
-  induction t using TensorProduct.induction_on with
-  | zero => simp
+  induction t using TensorProduct.inductionOn with
   | tmul m c => simp
   | add x y hx hy => simp [hx, hy]
 
@@ -111,8 +109,7 @@ omit [Comodule R C M] in
 private theorem counit_lTensor_transport_map (e : M ≃ₗ[R] N) (t : M ⊗[R] C) :
     Coalgebra.counit.lTensor N (TensorProduct.map e.toLinearMap LinearMap.id t) =
       TensorProduct.map e.toLinearMap LinearMap.id (Coalgebra.counit.lTensor M t) := by
-  induction t using TensorProduct.induction_on with
-  | zero => simp
+  induction t using TensorProduct.inductionOn with
   | tmul m c => simp
   | add x y hx hy => simp [hx, hy]
 
@@ -238,7 +235,6 @@ theorem transportHom_apply (eM : M ≃ₗ[R] N) (eN : M' ≃ₗ[R] N') (f : Hom 
   rfl
 
 /-- Transporting the identity morphism gives the identity morphism. -/
-@[simp]
 theorem transportHom_id (e : M ≃ₗ[R] N) :
     letI : Comodule R C N := Transport (R := R) (C := C) (M := M) (N := N) e
     transportHom (R := R) (C := C) (M := M) (M' := M) (N := N) (N' := N) e e
@@ -371,13 +367,11 @@ theorem transportIso_inv_toLinearMap (e : M ≃ₗ[R] N₀) :
   Comodule.transportInvHom_toLinearMap (R := R) (C := C) (M := M) (N := N₀) e
 
 /-- The forward map of the transport isomorphism applies as the original linear equivalence. -/
-@[simp]
 theorem transportIso_hom_apply (e : M ≃ₗ[R] N₀) (m : M) :
     (transportIso (R := R) (C := C) e).hom m = e m :=
   rfl
 
 /-- The inverse map of the transport isomorphism applies as the inverse linear equivalence. -/
-@[simp]
 theorem transportIso_inv_apply (e : M ≃ₗ[R] N₀) (n : N₀) :
     (transportIso (R := R) (C := C) e).inv n = e.symm n :=
   rfl

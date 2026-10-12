@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: The Tau Ceti contributors, Wentao Li
 -/
 module
 
@@ -14,7 +14,10 @@ import Mathlib.Data.Rat.Floor
 Mathlib's `discrim_le_zero` shows that a quadratic polynomial over a linearly ordered field which
 is non-negative at every point of the field has non-positive discriminant. This file supplies two
 facts about the homogeneous two-variable form `a * x ^ 2 + b * x * y + c * y ^ 2` that it does not
-give: the reverse implication, and an integral version whose hypothesis is much weaker.
+give: the reverse implication, and an integral version whose hypothesis is much weaker. It also
+records two elementary facts about discriminants used for positive definite integral forms: a
+negative discriminant together with `0 ≤ a` forces `0 < a`, and an integral discriminant is `0` or
+`1` modulo `4`.
 
 The integral version is the substantial one, and it is worth being precise about what makes it
 substantial. Over a *field*, non-negativity along a single line `y = y₀ ≠ 0` already forces
@@ -28,23 +31,28 @@ quantification needed.
 
 Together with the reverse implication this gives the upgrade that motivates the file: a form known
 to be non-negative only on some sparse subset of `ℤ ⨯ ℤ` — the locus where a fixed prime divides
-neither coordinate, which is all that the degree form on an elliptic curve is directly known to
-satisfy — is non-negative everywhere. `Int.discrim_le_zero_of_nonneg_of_not_dvd_of_not_dvd` pins
-the discriminant from that locus alone, and `nonneg_of_discrim_le_zero` then propagates the
-conclusion to every `(x, y)`.
+neither coordinate — is non-negative everywhere.
+`Int.discrim_le_zero_of_nonneg_of_not_dvd_of_not_dvd` pins the discriminant from that locus alone,
+and `nonneg_of_discrim_le_zero` then propagates the conclusion to every `(x, y)`.
 
 ## Main results
 
 * `nonneg_of_discrim_le_zero`: `0 < a` and `discrim a b c ≤ 0` give `0 ≤ a x² + b x y + c y²`.
+* `discrim_pos_of_exists_pos_of_exists_neg`: representing both signs forces positive discriminant.
 * `Int.discrim_le_zero_of_nonneg_of_lt_abs`: for `a < |y|`, and with no sign condition on `a`,
   non-negativity of `a x² + b x y + c y²` in `x` alone forces `discrim a b c ≤ 0`.
 * `Int.discrim_le_zero_of_nonneg_of_not_dvd_of_not_dvd`: the same conclusion from non-negativity
   on `{(x, y) : d ∤ x ∧ d ∤ y}`, for any non-unit `d`.
+* `pos_of_nonneg_of_discrim_lt_zero`: a quadratic of negative discriminant with `0 ≤ a` has
+  `0 < a`.
+* `Int.discrim_emod_four`: `discrim a b c % 4 = b % 2`, so an integral discriminant is `0` or `1`
+  modulo `4`.
 
-Both are proved from a common lemma in which `x` runs over an arithmetic progression rather than
-all of `ℤ`. Only one `x` is ever used — the member of the progression nearest the minimum of the
-restricted form — so thinning the line to gap `m` costs exactly a factor `m` in the height
-hypothesis, which the choice of `y` absorbs; `m = 1` is the full line.
+The two `Int.discrim_le_zero_…` results are proved from a common lemma in which `x` runs over an
+arithmetic progression rather than all of `ℤ`. Only one `x` is ever used — the member of the
+progression nearest the minimum of the restricted form — so thinning the line to gap `m` costs
+exactly a factor `m` in the height hypothesis, which the choice of `y` absorbs; `m = 1` is the full
+line.
 
 The weaker hypothesis constraining only `y` is not stated separately: it is strictly stronger
 than the one above, so a caller holding it applies the same theorem through
@@ -82,6 +90,36 @@ theorem nonneg_of_discrim_le_zero {R : Type*} [CommRing R] [LinearOrder R]
   have hb : 0 ≤ 4 * a * c - b ^ 2 := by rw [discrim] at hd; linarith
   nlinarith [sq_nonneg (2 * a * x + b * y), mul_nonneg hb (sq_nonneg y)]
 
+/-- A homogeneous binary quadratic form which represents both a positive and a negative value
+has positive discriminant. The statement needs no division or nondegeneracy hypothesis. -/
+theorem discrim_pos_of_exists_pos_of_exists_neg {R : Type*} [CommRing R] [LinearOrder R]
+    [IsStrictOrderedRing R] {a b c : R}
+    (hpos : ∃ x y, 0 < a * x ^ 2 + b * x * y + c * y ^ 2)
+    (hneg : ∃ x y, a * x ^ 2 + b * x * y + c * y ^ 2 < 0) : 0 < discrim a b c := by
+  by_contra! hd
+  obtain ⟨xp, yp, hp⟩ := hpos
+  obtain ⟨xn, yn, hn⟩ := hneg
+  rcases lt_trichotomy a 0 with ha | ha | ha
+  · have h := nonneg_of_discrim_le_zero (neg_pos.mpr ha)
+      ((discrim_neg a b c).symm ▸ hd) xp yp
+    nlinarith
+  · subst a
+    have hb : b = 0 := by
+      rw [discrim] at hd
+      nlinarith [sq_nonneg b]
+    subst b
+    simp only [zero_mul, zero_add] at hp hn
+    rcases le_or_gt c 0 with hc | hc
+    · exact hp.not_ge (mul_nonpos_of_nonpos_of_nonneg hc (sq_nonneg yp))
+    · exact hn.not_ge (mul_nonneg hc.le (sq_nonneg yn))
+  · exact hn.not_ge (nonneg_of_discrim_le_zero ha hd xn yn)
+
+/-- A quadratic of negative discriminant with a non-negative leading coefficient has a positive
+one: at `a = 0` the discriminant is `b ^ 2`, which is not negative. -/
+theorem pos_of_nonneg_of_discrim_lt_zero {R : Type*} [CommRing R] [LinearOrder R]
+    [IsStrictOrderedRing R] {a b c : R} (ha : 0 ≤ a) (hd : discrim a b c < 0) : 0 < a :=
+  ha.lt_of_ne' fun ha ↦ hd.not_ge <| by simp [discrim, ha, sq_nonneg]
+
 /-- Some member of the progression `x₀ + m * ℤ` puts `2 a x + z` within `a * m` of zero, for any
 constant `z`.
 
@@ -93,8 +131,6 @@ private theorem exists_abs_two_mul_add_le {a m x₀ z : ℤ} (ha : 0 < a) (hm : 
   -- take the member nearest the value that would make `2 a x + z` vanish: the rounding error is
   -- at most a half, and the progression's gap scales it by `2 a m`
   have ham : (0 : ℚ) < 2 * (a : ℚ) * (m : ℚ) := by
-    have h1 : (0 : ℚ) < (a : ℚ) := by exact_mod_cast ha
-    have h2 : (0 : ℚ) < (m : ℚ) := by exact_mod_cast hm
     positivity
   set t : ℚ := (-(z : ℚ) - 2 * (a : ℚ) * (x₀ : ℚ)) / (2 * (a : ℚ) * (m : ℚ)) with htdef
   refine ⟨round t, ?_⟩
@@ -124,7 +160,7 @@ private theorem discrim_le_zero_of_pos_of_nonneg_on_progression {a b c m x₀ y 
   by_contra! hcon
   rw [discrim] at hcon
   obtain ⟨k, hxa⟩ := exists_abs_two_mul_add_le (x₀ := x₀) (z := b * y) ha hm
-  set x : ℤ := x₀ + m * k with hxdef
+  set x : ℤ := x₀ + m * k
   have hsq : (2 * a * x + b * y) ^ 2 ≤ (a * m) ^ 2 := by
     have habs := abs_le.mp hxa
     nlinarith [habs.1, habs.2]
@@ -142,7 +178,7 @@ private theorem not_forall_nonneg_on_progression_of_neg {a b c m x₀ y : ℤ} (
     ¬ ∀ k : ℤ, 0 ≤ a * (x₀ + m * k) ^ 2 + b * (x₀ + m * k) * y + c * y ^ 2 := fun h => by
   have hA0 : 0 ≤ |b * y| := abs_nonneg _
   have hB0 : 0 ≤ |c * y ^ 2| := abs_nonneg _
-  set M : ℤ := |b * y| + |c * y ^ 2| + 1 with hM
+  set M : ℤ := |b * y| + |c * y ^ 2| + 1
   have hM1 : 1 ≤ M := by omega
   -- The progression reaches past `M`, and there the square already dominates the rest.
   set k : ℤ := M + |x₀| with hk
@@ -172,7 +208,6 @@ private theorem eq_zero_of_forall_nonneg_on_progression_of_ne {b c m x₀ y : �
   have hC0 : 0 ≤ |C| := abs_nonneg _
   have hCle : C ≤ |C| := le_abs_self _
   have hpos : 0 < (b * y * m) ^ 2 := by positivity
-  have hs1 : 1 ≤ (b * y * m) ^ 2 := by omega
   -- At this `k` the linear term is `-(|C| + 1) * (b y m)²`, which the constant cannot offset.
   have hx := h (-((|C| + 1) * (b * y * m)))
   rw [hid] at hx
@@ -278,3 +313,10 @@ theorem Int.discrim_le_zero_of_nonneg_of_not_dvd_of_not_dvd {a b c d : ℤ} (hd 
     linarith
   have hyd : ¬ d ∣ y := hdm _
   exact discrim_le_zero_of_nonneg_on_progression hm0 hheight fun k => h _ y (hdm k) hyd
+
+
+/-- The discriminant `b² - 4 a c` of integers `a`, `b`, `c` leaves the remainder `b % 2` on
+division by `4`, so it is `0` or `1` modulo `4`. -/
+@[simp]
+theorem Int.discrim_emod_four (a b c : ℤ) : discrim a b c % 4 = b % 2 := by
+  rw [discrim, mul_assoc, Int.sub_mul_emod_self_left, Int.sq_emod_four]

@@ -8,6 +8,7 @@ module
 public import Mathlib.CategoryTheory.Limits.MonoCoprod
 public import TauCeti.AlgebraicTopology.Singular.Subdivision.Small.Chains
 public import TauCeti.AlgebraicTopology.Singular.Subdivision.Homotopy
+import TauCeti.Algebra.Homology.Homotopy
 
 /-!
 # Subdivision and its homotopy on small singular chains
@@ -77,7 +78,7 @@ def smallSingularSubdivisionChainMap :
     (X.smallSingularSubcomplex U : SSet).chainComplex R ⟶
       (X.smallSingularSubcomplex U : SSet).chainComplex R where
   f n := smallSingularSubdivisionX R U n
-  comm' i j hij := by
+  comm' i j _ := by
     apply (cancel_mono ((SSet.chainComplexMap (X.smallSingularSubcomplex U).ι R).f j)).1
     simp only [Category.assoc, ← HomologicalComplex.Hom.comm,
       ← HomologicalComplex.Hom.comm_assoc, smallSingularSubdivisionX_ι_assoc,
@@ -149,24 +150,14 @@ lemma smallSingularPrismX_boundary_add_boundary_smallSingularPrismX (n : ℕ) :
       (singularPrismX_boundary_add_boundary_singularPrismX R X n)
 
 /-- Subdivision of small singular chains is chain homotopic to their identity map. -/
-def smallSingularSubdivisionHomotopy : Homotopy (𝟙 _) (smallSingularSubdivisionChainMap R U) where
-  hom i j := if h : i + 1 = j then smallSingularPrismX R U i ≫ eqToHom (by rw [h]) else 0
-  zero i j hij := by
-    rw [ComplexShape.down_Rel] at hij
-    simp [hij]
-  comm i := by
-    cases i with
-    | zero =>
-      rw [Homotopy.dNext_zero_chainComplex, Homotopy.prevD_chainComplex]
-      simp
-    | succ n =>
-      rw [Homotopy.dNext_succ_chainComplex, Homotopy.prevD_chainComplex]
-      simp [smallSingularPrismX_boundary_add_boundary_smallSingularPrismX]
+def smallSingularSubdivisionHomotopy : Homotopy (𝟙 _) (smallSingularSubdivisionChainMap R U) :=
+  Homotopy.equivSubZero.symm <| Homotopy.mkChainComplex _ (smallSingularPrismX R U) (by simp)
+    fun n ↦ by simp [smallSingularPrismX_boundary_add_boundary_smallSingularPrismX]
 
 @[simp]
 lemma smallSingularSubdivisionHomotopy_hom (n : ℕ) :
-    (smallSingularSubdivisionHomotopy R U).hom n (n + 1) = smallSingularPrismX R U n := by
-  simp [smallSingularSubdivisionHomotopy]
+    (smallSingularSubdivisionHomotopy R U).hom n (n + 1) = smallSingularPrismX R U n :=
+  Homotopy.mkChainComplex_hom_succ _ _ _ _ n
 
 variable {κ : Type*} {Y : TopCat.{w}} (V : κ → Set Y)
   (f : X ⟶ Y) (r : ι → κ) (hf : ∀ i, Set.MapsTo f (U i) (V (r i)))

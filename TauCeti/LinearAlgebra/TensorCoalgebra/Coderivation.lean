@@ -133,7 +133,6 @@ theorem coderivSummand_tprod (F : ReducedTensorWords R M →ₗ[R] M) {n p d : �
   rw [← subword_eq_of_tprod R x (a := p) (b := d) hd (by omega),
     splice_eq_of_tprod R x _ hd (by omega) (by omega)]
   refine of_tprod_congr R M _ rfl fun i ↦ ?_
-  have hi := i.isLt
   rw [Function.comp_apply, append_eq_dite]
   simp only [Fin.val_cast]
   by_cases h₁ : i.1 < p
@@ -253,8 +252,7 @@ theorem rTensor_add_lTensor_rTensor_congr
       LinearMap.rTensor (ReducedTensorWords R M) b₂ (TensorProduct.mapIncl P P w) +
         LinearMap.lTensor (ReducedTensorWords R M) b₂
           (LinearMap.rTensor (ReducedTensorWords R M) τ (TensorProduct.mapIncl P P w)) := by
-  induction w using TensorProduct.induction_on with
-  | zero => simp only [map_zero, add_zero]
+  induction w using TensorProduct.inductionOn with
   | tmul u v =>
       simp only [TensorProduct.mapIncl, TensorProduct.map_tmul, Submodule.coe_subtype,
         LinearMap.rTensor_tmul, LinearMap.lTensor_tmul]
@@ -308,9 +306,7 @@ theorem eq_of_letter_comp_eq_of_twist
         rw [happly₁, happly₂, ← hw]
         exact rTensor_add_lTensor_rTensor_congr _ ih w
   refine LinearMap.ext fun z ↦ ?_
-  have hz : z ∈ ⨆ n : ℕ, filtration R M n := by rw [iSup_filtration_eq_top]; trivial
-  obtain ⟨n, hn⟩ :=
-    (Submodule.mem_iSup_of_directed _ (filtration_monotone R M).directed_le).1 hz
+  obtain ⟨n, hn⟩ := exists_mem_filtration R M z
   exact key n z hn
 
 /-- A coderivation of the reduced tensor coalgebra is determined by its Taylor components, that is

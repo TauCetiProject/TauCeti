@@ -7,7 +7,7 @@ module
 
 public import TauCeti.NumberTheory.Multiquadratic.GenusField
 public import TauCeti.NumberTheory.Multiquadratic.CMField.Basic
-import TauCeti.FieldTheory.KummerExtension
+import TauCeti.FieldTheory.Kummer.Extension
 
 /-!
 # The genus field of `ℚ(√-5)`

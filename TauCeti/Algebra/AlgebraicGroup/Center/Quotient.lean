@@ -41,9 +41,6 @@ commutative value algebra `A`. Its projection has kernel exactly the universally
 
 * J. S. Milne, *Algebraic Groups* (2017), §§5 and 19.
 * W. C. Waterhouse, *Introduction to Affine Group Schemes*, Chapter 14.
-
-This advances Layer 6, "Reductive and semisimple groups", of the ReductiveGroups roadmap toward
-the adjoint form by constructing the required quotient by `Z(G)` in fppf sheaves.
 -/
 
 public section
@@ -143,6 +140,12 @@ noncomputable abbrev centerQuotientFppfSheaf (H : _root_.CommHopfAlgCat.{u} k) :
 noncomputable def centerQuotientFppfProjection (H : _root_.CommHopfAlgCat.{u} k) :
     pointsFppfGroupObject H ⟶ centerQuotientFppfSheaf H :=
   fppfQuotientProjection H (centerDefiningIdeal H) (isNormal_centerDefiningIdeal H)
+
+/-- The center-quotient projection is the fppf quotient projection by the center. -/
+theorem centerQuotientFppfProjection_def (H : _root_.CommHopfAlgCat.{u} k) :
+    centerQuotientFppfProjection H =
+      fppfQuotientProjection H (centerDefiningIdeal H) (isNormal_centerDefiningIdeal H) :=
+  (rfl)
 
 /-- Maps from the center quotient to an fppf sheaf group are equivalent to maps from the
 pointwise center quotient into its underlying presheaf. -/

@@ -12,7 +12,7 @@ import TauCeti.Algebra.Lie.Submodule.Finrank
 # Elementary identities for Lie algebra weights
 
 This file records general identities for weights that are used by several parts of the Lie algebra
-weight-space theory.
+weight-space theory. The transport and finrank identities hold over any commutative ring.
 
 ## Main results
 
@@ -99,18 +99,17 @@ namespace LieModuleEquiv
 
 open LieModule Module
 
-/-- **Weight-space dimension is an isomorphism invariant.** An equivalence of Lie modules carries
-the `χ`-weight space of one module onto the `χ`-weight space of the other. -/
+/-- **Weight-space finrank is an isomorphism invariant.** An equivalence of Lie modules over a
+commutative ring carries the `χ`-weight space of one module onto that of the other. -/
 theorem finrank_weightSpace_eq
-    {K L M P : Type*} [Field K] [LieRing L] [LieAlgebra K L]
+    {K L M P : Type*} [CommRing K] [LieRing L] [LieAlgebra K L]
     [AddCommGroup M] [Module K M] [LieRingModule L M] [LieModule K L M]
     [AddCommGroup P] [Module K P] [LieRingModule L P] [LieModule K L P]
     (e : M ≃ₗ⁅K,L⁆ P) (χ : L → K) :
     finrank K (weightSpace M χ) = finrank K (weightSpace P χ) := by
-  have hequiv := (LieSubmodule.equivMapOfInjective
+  rw [← LieModule.map_weightSpace_eq e χ]
+  exact (LieSubmodule.equivMapOfInjective
     (weightSpace M χ) e.injective).toLinearEquiv.finrank_eq
-  rw [LieModule.map_weightSpace_eq e χ] at hequiv
-  exact hequiv
 
 end LieModuleEquiv
 
@@ -135,14 +134,14 @@ theorem toSubmodule_map_weightSpace_incl (N : LieSubmodule R L M) (χ : H → R)
 
 /-- The intersection of an ambient weight space with a Lie submodule has the dimension of the
 corresponding weight space in the submodule. -/
-theorem finrank_inf_weightSpace {K : Type*} [Field K] [LieAlgebra K L]
+theorem finrank_inf_weightSpace {K : Type*} [CommRing K] [LieAlgebra K L]
     [Module K M] [LieModule K L M] {H : LieSubalgebra K L}
     (N : LieSubmodule K L M) (χ : H → K) :
     finrank K ((weightSpace M χ).toSubmodule ⊓ N.toSubmodule : Submodule K M)
       = finrank K (weightSpace ↥N χ) := by
-  have hequiv := (LieSubmodule.equivMapOfInjective
-    (f := N.incl.restrictLie H) (weightSpace ↥N χ) (injective_incl N)).toLinearEquiv.finrank_eq
-  rw [← N.toSubmodule_map_weightSpace_incl χ, TauCeti.finrank_toSubmodule, ← hequiv]
+  rw [← N.toSubmodule_map_weightSpace_incl χ, TauCeti.finrank_toSubmodule]
+  exact (LieSubmodule.equivMapOfInjective (weightSpace ↥N χ)
+    (f := N.incl.restrictLie H) (injective_incl N)).toLinearEquiv.finrank_eq.symm
 
 /-- Inclusion of a Lie submodule identifies its generalized weight space with the intersection of
 the ambient generalized weight space and its carrier. -/
@@ -159,14 +158,14 @@ theorem toSubmodule_map_genWeightSpace_incl [LieRing.IsNilpotent H]
 
 /-- The intersection of an ambient generalized weight space with a Lie submodule has the
 dimension of the corresponding generalized weight space in the submodule. -/
-theorem finrank_inf_genWeightSpace {K : Type*} [Field K] [LieAlgebra K L]
+theorem finrank_inf_genWeightSpace {K : Type*} [CommRing K] [LieAlgebra K L]
     [Module K M] [LieModule K L M] {H : LieSubalgebra K L} [LieRing.IsNilpotent H]
     (N : LieSubmodule K L M) (χ : H → K) :
     finrank K ((genWeightSpace M χ).toSubmodule ⊓ N.toSubmodule : Submodule K M)
       = finrank K (genWeightSpace ↥N χ) := by
-  have hequiv := (LieSubmodule.equivMapOfInjective
-    (f := N.incl.restrictLie H) (genWeightSpace ↥N χ) (injective_incl N)).toLinearEquiv.finrank_eq
-  rw [← N.toSubmodule_map_genWeightSpace_incl χ, TauCeti.finrank_toSubmodule, ← hequiv]
+  rw [← N.toSubmodule_map_genWeightSpace_incl χ, TauCeti.finrank_toSubmodule]
+  exact (LieSubmodule.equivMapOfInjective (genWeightSpace ↥N χ)
+    (f := N.incl.restrictLie H) (injective_incl N)).toLinearEquiv.finrank_eq.symm
 
 end LieSubmodule
 

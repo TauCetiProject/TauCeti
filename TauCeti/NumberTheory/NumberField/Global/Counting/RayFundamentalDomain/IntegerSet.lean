@@ -42,6 +42,8 @@ its orbits, which is what makes freeness the fact worth isolating here.
   section of `mixedEmbedding`;
 * `TauCeti.GlobalNumberFields.rayIntegerSet_one`: the trivial modulus recovers Mathlib's
   `integerSet`;
+* `TauCeti.GlobalNumberFields.preimageOfMemRayIntegerSet_smul`: a congruence root of unity acts
+  by multiplying the underlying algebraic integer;
 * `TauCeti.GlobalNumberFields.stabilizer_rayIntegerSet_eq_bot`: the action is free, also
   available as an `IsCancelSMul` instance.
 
@@ -147,6 +149,17 @@ noncomputable instance (𝔪 : Modulus K) :
     MulAction (unitsCongruenceTorsion 𝔪) (rayIntegerSet 𝔪) :=
   Subtype.val_injective.mulAction Subtype.val fun ζ ↦
     rayIntegerSetUnitsCongruenceTorsionSMul_smul_coe 𝔪 ζ
+
+/-- A congruence root of unity acts on `rayIntegerSet 𝔪` by multiplying the underlying algebraic
+integer. -/
+@[simp]
+theorem preimageOfMemRayIntegerSet_smul {𝔪 : Modulus K} (ζ : unitsCongruenceTorsion 𝔪)
+    (a : rayIntegerSet 𝔪) :
+    (preimageOfMemRayIntegerSet (ζ • a) : 𝓞 K) =
+      ((ζ : (𝓞 K)ˣ) : 𝓞 K) * preimageOfMemRayIntegerSet a := by
+  refine RingOfIntegers.ext <| mixedEmbedding_injective K ?_
+  simp [mixedEmbedding_preimageOfMemRayIntegerSet,
+    rayIntegerSetUnitsCongruenceTorsionSMul_smul_coe, unitSMul_smul]
 
 /-- **The action is free.**  A congruence root of unity fixing a point of `rayIntegerSet 𝔪` is
 the identity, because the point is the image of a nonzero algebraic integer. -/

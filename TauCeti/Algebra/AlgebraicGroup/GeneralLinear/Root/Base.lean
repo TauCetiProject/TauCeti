@@ -9,6 +9,7 @@ public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Root.Datum
 public import TauCeti.LinearAlgebra.RootSystem.Positive
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.Basic
 import Mathlib.LinearAlgebra.Finsupp.Pi
+import TauCeti.Algebra.Group.Submonoid.Telescoping
 
 /-!
 # A base of the diagonal root datum of the general linear group
@@ -43,8 +44,7 @@ to the standard maximal torus of `GL_(n+1)` carries the expected Bourbaki-number
 
 The support and telescoping organization follows
 `TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.A`, adapted here to the character and
-cocharacter lattices of the diagonal torus in `GL_(n+1)`. This advances Layer 7, "Root datum of
-`(G, T)`", of the ReductiveGroups roadmap.
+cocharacter lattices of the diagonal torus in `GL_(n+1)`.
 -/
 
 public section

@@ -29,11 +29,11 @@ algebra-valued points.
   `pointMulEquiv_mapDomain_coordinateInr`: their formulas under the semidirect-product point
   equivalence.
 
-## References
+## See also
 
-This uses Mathlib's `commHopfAlgCatEquivCogrpCommAlgCat` and Tau Ceti's group-object Yoneda
-equivalence. It is the coordinate bridge used by the semidirect-product construction in Layer 5,
-"The unipotent radical", of the ReductiveGroups roadmap.
+* `Mathlib.Algebra.Category.CommHopfAlgCat`: the equivalence
+  `commHopfAlgCatEquivCogrpCommAlgCat`.
+* `TauCeti.Algebra.AlgebraicGroup.CommHopfAlgCat.Yoneda`: the group-object Yoneda equivalence.
 -/
 
 public section

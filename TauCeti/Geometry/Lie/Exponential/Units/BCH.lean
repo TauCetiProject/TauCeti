@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Normed.Algebra.BCH.Local
+public import TauCeti.Geometry.Lie.Exponential.BCH
 public import TauCeti.Geometry.Lie.Exponential.Units.Compatibility
 
 /-!
@@ -28,6 +29,8 @@ local group law directly in the derivation model of the Lie algebra.
 * `TauCeti.unitsLocalBCH_map_lieExp`: the local exponential product equation.
 * `TauCeti.eq_unitsLocalBCH_of_tendsto_of_map_lieExp_eq`: uniqueness among small germs with the
   same exponential image.
+* `TauCeti.lieLocalBCH_eq_unitsLocalBCH`: the local BCH germ of the Lie group `Rˣ` is the
+  transported algebra-valued germ.
 -/
 
 public section
@@ -139,7 +142,7 @@ theorem unitsLocalBCH_sliceLeft :
     simpa only [LinearEquiv.coe_toContinuousLinearEquiv', map_zero] using
       e.toContinuousLinearEquiv.continuous.tendsto 0
   rw [unitsLocalBCH_def, Germ.sliceLeft_coe, Germ.coe_eq]
-  filter_upwards [he.eventually (NormedSpace.eventually_logOneAdd_exp_sub_one R)] with X hX
+  filter_upwards [he.eventually (NormedSpace.eventually_logOneAdd_exp_sub_one ℝ R)] with X hX
   rw [map_zero, NormedSpace.exp_zero, mul_one, hX, e.symm_apply_apply]
 
 /-- Restricting `unitsLocalBCH` to the second coordinate axis gives the identity germ. -/
@@ -155,7 +158,7 @@ theorem unitsLocalBCH_sliceRight :
     simpa only [LinearEquiv.coe_toContinuousLinearEquiv', map_zero] using
       e.toContinuousLinearEquiv.continuous.tendsto 0
   rw [unitsLocalBCH_def, Germ.sliceRight_coe, Germ.coe_eq]
-  filter_upwards [he.eventually (NormedSpace.eventually_logOneAdd_exp_sub_one R)] with Y hY
+  filter_upwards [he.eventually (NormedSpace.eventually_logOneAdd_exp_sub_one ℝ R)] with Y hY
   rw [map_zero, NormedSpace.exp_zero, one_mul, hY, e.symm_apply_apply]
 
 /-- The representative defining `unitsLocalBCH` is analytic at the origin. -/
@@ -282,5 +285,12 @@ theorem eq_unitsLocalBCH_of_tendsto_of_map_lieExp_eq
       rw [unitsLocalBCH_def, Germ.coe_eq]
       filter_upwards [(tendsto_unitsLieAlgebraCoordinates R).eventually hg] with p hp
       simpa only [gR, e, e.symm_apply_apply, e.apply_symm_apply] using congrArg e.symm hp
+
+/-- The local Baker--Campbell--Hausdorff germ of the Lie group `Rˣ` is the Banach-algebra germ
+transported to its Lie algebra. -/
+theorem lieLocalBCH_eq_unitsLocalBCH :
+    lieLocalBCH (modelWithCornersSelf ℝ R) Rˣ = unitsLocalBCH R :=
+  eq_unitsLocalBCH_of_tendsto_of_map_lieExp_eq R _ lieLocalBCH_tendsto
+    (by rw [lieLocalBCH_map_lieExp, unitsLocalBCH_map_lieExp])
 
 end TauCeti

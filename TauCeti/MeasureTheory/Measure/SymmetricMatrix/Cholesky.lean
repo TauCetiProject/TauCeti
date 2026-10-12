@@ -200,8 +200,8 @@ theorem lowerTriangleGram_eq_symm_apply (x : lowerTriangle p → ℝ) :
 def posDiagLowerRegion : Set (lowerTriangle p → ℝ) :=
   {x | ∀ i : Fin p, 0 < x ⟨(i, i), le_rfl⟩}
 
-/-- The positive-diagonal region spelled out as a set of coordinate vectors, for rewriting an
-integral stated in that spelling into the named one. -/
+/-- The positive-diagonal region is the set of coordinate vectors whose diagonal coordinates are
+positive. -/
 theorem posDiagLowerRegion_def :
     posDiagLowerRegion p = {x : lowerTriangle p → ℝ | ∀ i : Fin p, 0 < x ⟨(i, i), le_rfl⟩} :=
   (rfl)

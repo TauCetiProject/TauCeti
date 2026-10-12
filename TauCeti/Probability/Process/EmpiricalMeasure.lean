@@ -108,8 +108,14 @@ theorem integral_empiricalMeasureOfFintype [NormedAddCommGroup E] [NormedSpace �
     congr 1
     rw [ENNReal.toReal_inv]
     norm_cast
-  · intro i hi
+  · intro i _
     exact (integrable_dirac' hf (by simp)).smul_measure (by simp)
+
+/-- The Lebesgue integral against a finite empirical population is the average of the values. -/
+theorem lintegral_empiricalMeasureOfFintype {x : κ → α} {f : α → ℝ≥0∞} (hf : Measurable f) :
+    ∫⁻ y, f y ∂(empiricalMeasureOfFintype x : Measure α) =
+      ((Fintype.card κ : ℕ) : ℝ≥0∞)⁻¹ * ∑ i, f (x i) := by
+  simp [lintegral_finsetSum_measure, lintegral_dirac' _ hf, Finset.mul_sum]
 
 /-- Finite empirical distributions depend measurably on the population. -/
 theorem measurable_empiricalMeasureOfFintype :
@@ -153,9 +159,9 @@ theorem empiricalMeasure_apply_toReal {x : ℕ → α} {n : ℕ} {s : Set α} (h
   · rw [ENNReal.toReal_natCast, ENNReal.toReal_sum]
     · congr 1
       apply Finset.sum_congr rfl
-      intro i hi
+      intro i _
       by_cases hxi : x i ∈ s <;> simp [hxi]
-    · intro i hi
+    · intro i _
       by_cases hxi : x i ∈ s <;> simp [hxi]
 
 omit [MeasurableSpace Ω] in
@@ -167,7 +173,7 @@ theorem empiricalMeasure_process_apply_toReal {X : ℕ → Ω → α} {ω : Ω} 
   rw [empiricalMeasure_apply_toReal hs]
   refine congrArg (fun z : ℝ => ((n + 1 : ℕ) : ℝ)⁻¹ * z) ?_
   apply Finset.sum_congr rfl
-  intro i hi
+  intro i _
   by_cases hxi : X i ω ∈ s <;> simp [hxi]
 
 /-- Integrating against an empirical measure is averaging over the sampled values. -/
@@ -181,8 +187,14 @@ theorem integral_empiricalMeasure [NormedAddCommGroup E] [NormedSpace ℝ E] [Co
     congr 1
     rw [ENNReal.toReal_inv]
     norm_cast
-  · intro i hi
+  · intro i _
     exact (integrable_dirac' hf (by simp)).smul_measure (by simp)
+
+/-- The Lebesgue integral against an empirical measure is the average of the sampled values. -/
+theorem lintegral_empiricalMeasure {x : ℕ → α} {n : ℕ} {f : α → ℝ≥0∞} (hf : Measurable f) :
+    ∫⁻ y, f y ∂(empiricalMeasure x n : Measure α) =
+      ((n + 1 : ℕ) : ℝ≥0∞)⁻¹ * ∑ i ∈ Finset.range (n + 1), f (x i) := by
+  simp [lintegral_finsetSum_measure, lintegral_dirac' _ hf, Finset.mul_sum]
 
 /-- Empirical measures depend measurably on a sequence of measurable observations. -/
 theorem measurable_empiricalMeasure {X : ℕ → Ω → α}

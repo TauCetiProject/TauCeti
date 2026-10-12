@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Topology.Algebra.ClopenNhdofOne
 public import TauCeti.Topology.Algebra.Group.Quotient.Basic
+import Mathlib.Topology.Separation.Connected
 
 /-!
 # Profinite groups: quotients by normal subgroups, and open subgroups
@@ -33,10 +34,16 @@ carry the hypothesis, while the clopen-image statement is valid for an arbitrary
 
 * `Subgroup.eq_iInf_sup_openNormalSubgroup`: a closed subgroup is the infimum of the
   subgroups `N ⊔ U` with `U` open normal.
+* `Subgroup.exists_le_of_iInf_le_of_directed`: in a compact group, a directed family of closed
+  subgroups whose infimum lies in an open subgroup has a member lying in it.
+* `Subgroup.exists_openSubgroup_le_subset_of_isClosed`: an open set containing a closed subgroup
+  contains an open subgroup containing it.
 * `Subgroup.exists_openNormalSubgroup_comap_le`: open normal subgroups of a subgroup are
   refined by pullbacks of ambient open normal subgroups.
 * `QuotientGroup.connectedComponent_one`, `QuotientGroup.instTotallyDisconnectedSpace`:
   the quotient of a profinite group by a closed normal subgroup is totally disconnected.
+* `exists_openNormalSubgroup_lt_card_quotient`: an infinite profinite group has finite
+  quotients of arbitrarily large order.
 * `Subgroup.iInf_openNormalSubgroup_eq_bot`: the infimum of the open normal subgroups of a
   profinite group is trivial.
 * `Subgroup.isOpen_of_index_sup_openNormalSubgroup_le`: a closed subgroup whose joins with
@@ -96,6 +103,45 @@ theorem _root_.Subgroup.eq_iInf_sup_openNormalSubgroup (N : Subgroup G)
     ProfiniteGrp.exist_openNormalSubgroup_sub_open_nhds_of_one hKopen (Subgroup.one_mem K)
   exact hxK ((sup_le hKN fun y hy => hU₀ hy) (Subgroup.mem_iInf.mp hx U₀))
 
+omit [IsTopologicalGroup G] [TotallyDisconnectedSpace G] in
+/-- **Compactness for directed families of closed subgroups.** In a compact group, if the
+infimum of a downward directed family of closed subgroups lies in an open subgroup `M`, then
+already one member of the family does. -/
+theorem _root_.Subgroup.exists_le_of_iInf_le_of_directed {ι : Type*} [Nonempty ι]
+    {U : ι → Subgroup G} (hU : ∀ i, IsClosed (U i : Set G)) (hdir : Directed (· ≥ ·) U)
+    {M : Subgroup G} (hM : IsOpen (M : Set G)) (h : ⨅ i, U i ≤ M) : ∃ i, U i ≤ M := by
+  have hc : IsCompact ((M : Set G)ᶜ) := hM.isClosed_compl.isCompact
+  obtain ⟨i, hi⟩ := hc.elim_directed_family_closed (fun i ↦ (U i : Set G)) hU
+    (Set.disjoint_compl_left_iff_subset.mpr fun x hx ↦
+      h (Subgroup.mem_iInf.mpr (Set.mem_iInter.mp hx)))
+    (fun i j ↦ (hdir i j).imp fun k hk ↦
+      ⟨SetLike.coe_subset_coe.mpr hk.1, SetLike.coe_subset_coe.mpr hk.2⟩)
+  exact ⟨i, fun x hx ↦ by_contra fun hxM ↦ hi.notMem_of_mem_left hxM hx⟩
+
+/-- **An open neighbourhood of a closed subgroup contains an open subgroup containing it.** In a
+profinite group, every open set containing a closed subgroup `H` contains an open subgroup
+`V ≥ H`. -/
+theorem _root_.Subgroup.exists_openSubgroup_le_subset_of_isClosed (H : Subgroup G)
+    (hH : IsClosed (H : Set G)) {W : Set G} (hW : IsOpen W) (hHW : (H : Set G) ⊆ W) :
+    ∃ V : OpenSubgroup G, H ≤ V ∧ (V : Set G) ⊆ W := by
+  -- `H` is the intersection of the open subgroups `H ⊔ U`, `U` open normal, so by compactness of
+  -- `Wᶜ` one of them is already contained in `W`.
+  have hopen (U : OpenNormalSubgroup G) : IsOpen ((H ⊔ U.toSubgroup : Subgroup G) : Set G) :=
+    Subgroup.isOpen_mono le_sup_right U.toOpenSubgroup.isOpen
+  -- the intersection of the `H ⊔ U` is `H`, which misses the compact set `Wᶜ`
+  have hinf : Disjoint Wᶜ
+      (⋂ U : OpenNormalSubgroup G, ((H ⊔ U.toSubgroup : Subgroup G) : Set G)) := by
+    rw [← Subgroup.coe_iInf, ← Subgroup.eq_iInf_sup_openNormalSubgroup H hH]
+    exact Set.disjoint_compl_left_iff_subset.mpr hHW
+  have : Nonempty (OpenNormalSubgroup G) :=
+    ⟨⟨⊤, (OpenSubgroup.toSubgroup_top (G := G)).symm ▸ Subgroup.normal_top⟩⟩
+  obtain ⟨U, hU⟩ := hW.isClosed_compl.isCompact.elim_directed_family_closed
+    (fun U : OpenNormalSubgroup G ↦ ((H ⊔ U.toSubgroup : Subgroup G) : Set G))
+    (fun U ↦ Subgroup.isClosed_of_isOpen _ (hopen U)) hinf
+    (fun U V ↦ ⟨U ⊓ V, SetLike.coe_subset_coe.mpr (sup_le_sup_left inf_le_left _),
+      SetLike.coe_subset_coe.mpr (sup_le_sup_left inf_le_right _)⟩)
+  exact ⟨⟨H ⊔ U.toSubgroup, hopen U⟩, le_sup_left, Set.disjoint_compl_left_iff_subset.mp hU⟩
+
 /-- Every open normal subgroup of a subgroup of a profinite group contains the pullback of
 an ambient open normal subgroup. -/
 theorem _root_.Subgroup.exists_openNormalSubgroup_comap_le (H : Subgroup G)
@@ -127,6 +173,38 @@ theorem _root_.Subgroup.iInf_openNormalSubgroup_eq_bot :
     (⨅ U : OpenNormalSubgroup G, U.toSubgroup) = ⊥ := by
   simpa using (Subgroup.eq_iInf_sup_openNormalSubgroup (⊥ : Subgroup G)
     isClosed_singleton).symm
+
+/-- **An infinite profinite group has arbitrarily large finite quotients.** For every `n` there
+is an open normal subgroup `U` with `n < |G ⧸ U|`. -/
+theorem exists_openNormalSubgroup_lt_card_quotient [Infinite G] (n : ℕ) :
+    ∃ U : OpenNormalSubgroup G, n < Nat.card (G ⧸ U.toSubgroup) := by
+  classical
+  -- Any `n + 1` distinct elements are separated by an open normal subgroup avoiding the finitely
+  -- many quotients `x⁻¹ * y` of distinct ones among them, which do not include `1`.
+  obtain ⟨s, hs⟩ := Infinite.exists_subset_card_eq G (n + 1)
+  set t : Finset G := ((s ×ˢ s).filter fun q ↦ q.1 ≠ q.2).image fun q ↦ q.1⁻¹ * q.2
+  have hopen : IsOpen ((t : Set G)ᶜ) := t.finite_toSet.isClosed.isOpen_compl
+  have hone : (1 : G) ∈ (t : Set G)ᶜ := by
+    simp only [t, Finset.coe_image, Finset.coe_filter, Set.mem_compl_iff, Set.mem_image,
+      Set.mem_ofPred_eq, not_exists, not_and]
+    rintro ⟨x, y⟩ ⟨-, hxy⟩ h
+    exact hxy (inv_mul_eq_one.mp h)
+  obtain ⟨U, hU⟩ := ProfiniteGrp.exist_openNormalSubgroup_sub_open_nhds_of_one hopen hone
+  refine ⟨U, ?_⟩
+  -- Distinct elements of `s` have distinct classes modulo `U`.
+  have hinj : Set.InjOn (QuotientGroup.mk (s := U.toSubgroup)) (s : Set G) := by
+    intro x hx y hy hxy
+    by_contra hne
+    refine hU (QuotientGroup.eq.mp hxy)
+      (Finset.mem_coe.mpr (Finset.mem_image.mpr ⟨(x, y), ?_, rfl⟩))
+    exact Finset.mem_filter.mpr ⟨Finset.mem_product.mpr ⟨hx, hy⟩, hne⟩
+  have := Fintype.ofFinite (G ⧸ U.toSubgroup)
+  calc n < s.card := by omega
+    _ = (s.image (QuotientGroup.mk (s := U.toSubgroup))).card :=
+      (Finset.card_image_of_injOn hinj).symm
+    _ ≤ Nat.card (G ⧸ U.toSubgroup) := by
+      rw [Nat.card_eq_fintype_card]
+      exact Finset.card_le_univ _
 
 /-- A closed subgroup `H` of a profinite group whose joins `H ⊔ N` with the open normal
 subgroups `N` have uniformly bounded index is open.

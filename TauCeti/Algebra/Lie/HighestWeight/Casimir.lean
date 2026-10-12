@@ -352,7 +352,9 @@ theorem casimir_smul_of_isHighestWeightVector_of_lieSpan_eq_top
     UniversalEnvelopingAlgebra.representation K L M (casimirElement K L) m =
       casimirScalar base lam • m := by
   exact UniversalEnvelopingAlgebra.representation_eq_smul_of_mem_center_of_lieSpan_eq_top
-    K L M (casimirElement_mem_center K L) (casimir_smul_of_isHighestWeightVector hv) hgen m
+    K L M (casimirElement_mem_center K L)
+    (by simpa only [Set.mem_singleton_iff, forall_eq] using
+      casimir_smul_of_isHighestWeightVector hv) hgen m
 
 end Eigenvalue
 

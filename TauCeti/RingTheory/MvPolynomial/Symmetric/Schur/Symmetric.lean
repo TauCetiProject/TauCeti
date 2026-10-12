@@ -158,6 +158,21 @@ theorem isSymmetric_diagramSchurPoly (N : ℕ) (R : Type*) [CommSemiring R] (μ 
     | mul x y _ _ hx hy =>
       rw [Equiv.Perm.coe_mul, ← rename_rename, hy, hx]
 
+/-- Renaming a diagram Schur polynomial along a bijection of finite alphabets preserves it. -/
+@[simp]
+theorem rename_diagramSchurPoly {M N : ℕ} (μ : YoungDiagram) (e : Fin M ≃ Fin N) :
+    rename e (diagramSchurPoly M R μ) = diagramSchurPoly N R μ := by
+  have h : M = N := by simpa only [Fintype.card_fin] using Fintype.card_congr e
+  subst M
+  exact isSymmetric_diagramSchurPoly N R μ e
+
+/-- The partition-indexed Schur polynomial of a Young diagram in `Fin N` is its
+diagram-indexed Schur polynomial. -/
+@[simp]
+theorem schurPoly_fin_shapePartition (N : ℕ) (μ : YoungDiagram) :
+    schurPoly (Fin N) R (shapePartition μ) = diagramSchurPoly N R μ := by
+  rw [schurPoly_eq_rename, diagramOf_shapePartition, rename_diagramSchurPoly]
+
 /-- Renaming a symmetric polynomial along a bijection of alphabets keeps it symmetric. -/
 private theorem isSymmetric_rename {σ τ : Type*} {p : MvPolynomial τ R} (hp : p.IsSymmetric)
     (e : τ ≃ σ) : (rename e p).IsSymmetric := by

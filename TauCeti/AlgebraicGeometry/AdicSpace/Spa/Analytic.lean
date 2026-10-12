@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 import TauCeti.RingTheory.Valuation.CofinalIdeal.Greatest
+import TauCeti.Topology.Algebra.Nonarchimedean.AdicTopology
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Basic
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.RationalSubset.Basis
 public import TauCeti.RingTheory.Huber.Continuous.Coarsen
@@ -36,6 +37,8 @@ This file formalizes the analytic locus of the adic spectrum `Spa(A, A⁺)`.
   `Spv A` (and hence `Spa(A, A⁺)`) is analytic.
 * `TauCeti.ValuationSpectrum.spaAnalytic_eq_spa_of_isTateRing` : **Wedhorn Remark 7.40(3)**,
   for a Tate ring `A`, the analytic locus is the entire adic spectrum.
+* `TauCeti.ValuationSpectrum.isAnalyticPoint_iff_not_le_supp_of_isAdic` : in an `I`-adic ring a
+  point is analytic exactly when its support does not contain `I`.
 * `TauCeti.ValuationSpectrum.isOpen_val_preimage_spaAnalytic` : the analytic locus is open.
 * `TauCeti.ValuationSpectrum.isCompact_val_preimage_spaAnalytic` : **Wedhorn Remark 7.40(2)**,
   the analytic locus is quasi-compact; with the previous result, open and quasi-compact.
@@ -100,6 +103,20 @@ theorem spaAnalytic_subset_spa (Aplus : Subring A) :
 theorem spaAnalytic_antitone : Antitone (spaAnalytic (A := A)) := fun _ _ hle ↦
   Set.inter_subset_inter_left _ (spa_antitone hle)
 
+/-- In a ring whose topology is `I`-adic, a point is analytic exactly when its support does not
+contain `I`. -/
+theorem isAnalyticPoint_iff_not_le_supp_of_isAdic {I : Ideal A} (hI : IsAdic I) (v : Spv A) :
+    IsAnalyticPoint v ↔ ¬ I ≤ v.supp := by
+  have : IsTopologicalRing A := hI ▸ I.nonarchimedean.toIsTopologicalRing
+  rw [isAnalyticPoint_def, not_iff_not]
+  refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
+  · -- an open prime ideal contains a power of `I`, hence `I` itself
+    obtain ⟨n, -, hn⟩ := hI.hasBasis_nhds_zero.mem_iff.mp (h.mem_nhds v.supp.zero_mem)
+    exact Ideal.IsPrime.le_of_pow_le hn
+  · -- a prime containing `I` contains the open subgroup `I`
+    exact AddSubgroup.isOpen_mono (H₁ := I.toAddSubgroup) (H₂ := v.supp.toAddSubgroup) h
+      (by simpa using IsAdic.isOpen_pow hI 1)
+
 section TopologicalRing
 
 variable [IsTopologicalRing A]
@@ -149,11 +166,11 @@ theorem IsAnalyticPoint.exists_coarsenByUnits_mem_spaAnalytic [IsHuberRing A]
     {v : Spv A} (hana : IsAnalyticPoint v) (Aplus : Subring A)
     (hAplus : Aplus ≤ powerBoundedSubring A) (hcont : v.IsContinuous) :
     ∃ H : TauCeti.ConvexSubgroup
-        (MonoidWithZeroHom.ValueGroup₀ (.ofClass v.valuation))ˣ,
+        (v.valuation.ValueGroup₀)ˣ,
       Nontrivial
-          ((MonoidWithZeroHom.ValueGroup₀ (.ofClass v.valuation))ˣ ⧸ H.toSubgroup) ∧
+          ((v.valuation.ValueGroup₀)ˣ ⧸ H.toSubgroup) ∧
         MulArchimedean
-          ((MonoidWithZeroHom.ValueGroup₀ (.ofClass v.valuation))ˣ ⧸ H.toSubgroup) ∧
+          ((v.valuation.ValueGroup₀)ˣ ⧸ H.toSubgroup) ∧
         ofValuation (v.valuation.restrict.coarsenByUnits H) ∈ spaAnalytic Aplus ∧
         (ofValuation (v.valuation.restrict.coarsenByUnits H)).supp = v.supp := by
   obtain ⟨H, hHnontrivial, hHarch⟩ := Valuation.isMicrobial_iff.mp (hana.isMicrobial hcont)
@@ -180,8 +197,8 @@ theorem IsAnalyticPoint.exists_coarsenByUnits_mem_spaAnalytic [IsHuberRing A]
     rw [← hsupp, supp_ofValuation, Valuation.mem_supp_iff]
     exact hwb0
   let _ : MulArchimedean
-      ((MonoidWithZeroHom.ValueGroup₀ (.ofClass v.valuation))ˣ ⧸ H.toSubgroup) := hHarch
-  let _ : MulArchimedean (MonoidWithZeroHom.ValueGroup₀ (.ofClass w)) :=
+      ((v.valuation.ValueGroup₀)ˣ ⧸ H.toSubgroup) := hHarch
+  let _ : MulArchimedean (w.ValueGroup₀) :=
     MulArchimedean.comap MonoidWithZeroHom.ValueGroup₀.embedding.toMonoidHom
       MonoidWithZeroHom.ValueGroup₀.embedding_strictMono
   refine ⟨H, hHnontrivial, hHarch, ?_, hsupp⟩
@@ -238,7 +255,7 @@ theorem spaAnalytic_eq_biUnion_rationalSubset_of_span_eq_extendedIdealOfDefiniti
     obtain ⟨a, haI, haSupp⟩ :=
       (isAnalyticPoint_iff_exists_mem_extendedIdealOfDefinition_notMem_supp P v).mp
         ((mem_spaAnalytic_iff Aplus v).mp hv).2
-    have ha0 : (MonoidWithZeroHom.ofClass v.valuation) a ≠ 0 := by
+    have ha0 : v.valuation a ≠ 0 := by
       intro ha0
       apply haSupp
       rw [v.supp_eq_valuation_supp, v.valuation.mem_supp_iff]

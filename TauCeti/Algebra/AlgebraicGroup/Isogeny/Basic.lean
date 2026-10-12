@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.CommHopfAlgCat.FaithfullyFlatPoints
+public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Quotient.Kernel.Finite
 public import TauCeti.AlgebraicGeometry.GroupScheme.CentralIsogeny.Coordinate
 
 /-!
@@ -45,9 +46,8 @@ The isogeny and central-kernel interfaces and their proof organization are adapt
 formalizations in `TauCeti.AlgebraicGeometry.GroupScheme.CentralIsogeny.Basic` and
 `TauCeti.AlgebraicGeometry.GroupScheme.CentralIsogeny.Coordinate`.
 
-This supplies the central-isogeny interface requested in Layer 6, "Reductive and semisimple
-groups", of `TauCetiRoadmap/ReductiveGroups/README.md`. It builds on the existing
-scheme-theoretic kernel and central Hopf-ideal APIs.
+This supplies the central-isogeny interface. It builds on the scheme-theoretic kernel and central
+Hopf-ideal APIs.
 -/
 
 public section
@@ -75,6 +75,11 @@ is represented by the quotient of `K` by `kernelHopfIdeal f`, so centrality is i
 that Hopf ideal. -/
 def IsCentralIsogeny (f : H ⟶ K) : Prop :=
   IsIsogeny f ∧ (kernelHopfIdeal f).IsCentral
+
+/-- Restatement of the coordinate-algebra conditions defining an isogeny. -/
+theorem isIsogeny_iff (f : H ⟶ K) :
+    IsIsogeny f ↔ f.hom.toAlgHom.Finite ∧ f.hom.toAlgHom.toRingHom.FaithfullyFlat :=
+  Iff.rfl
 
 /-- Restatement of the coordinate-algebra conditions defining a central isogeny. -/
 theorem isCentralIsogeny_iff (f : H ⟶ K) :
@@ -163,6 +168,12 @@ theorem isIso_iff_surjective (hf : IsIsogeny f) :
       exact congrFun (BialgEquiv.coe_ofBijective f.hom hbijective) x
     rw [← he]
     infer_instance
+
+/-- An isogeny is an isomorphism exactly when its scheme-theoretic kernel is trivial. -/
+theorem isIso_iff_kernelHopfIdeal_eq_augmentation (hf : IsIsogeny f) :
+    IsIso f ↔ kernelHopfIdeal f = HopfIdeal.augmentation R K := by
+  rw [hf.isIso_iff_surjective,
+    surjective_iff_kernelHopfIdeal_eq_augmentation f hf.finite]
 
 /-- A finite coordinate morphism is in particular of finite type. -/
 theorem finiteType (hf : IsIsogeny f) : f.hom.toAlgHom.FiniteType :=

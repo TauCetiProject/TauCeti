@@ -36,6 +36,8 @@ Eisenstein*, Section 2.2, and D. A. Cox, *Primes of the Form x² + ny²*, Sectio
   generators indexed by negative prime discriminants.
 * `TauCeti.Multiquadratic.candidateGenusFieldConj_apply_eq_self_iff`: an element is fixed by
   conjugation exactly when it belongs to the real candidate.
+* `TauCeti.Multiquadratic.mem_map_candidateGenusFieldReal_iff`: inside `ℂ`, the real candidate
+  consists of the real elements of the candidate.
 * `TauCeti.Multiquadratic.fixedField_zpowers_candidateGenusFieldConj`: the fixed field of complex
   conjugation is `candidateGenusFieldReal hd`.
 * `TauCeti.Multiquadratic.fixingSubgroup_candidateGenusFieldReal`: the subgroup fixing the real
@@ -181,6 +183,21 @@ theorem candidateGenusFieldConj_apply_eq_self_iff (hd : Squarefree d)
     apply Subtype.ext
     rw [coe_candidateGenusFieldConj_apply]
     exact hx (candidateGenusField hd).val
+
+/-- **The real candidate, viewed in `ℂ`, is the set of real elements of the candidate.** A complex
+number lies in the image of `candidateGenusFieldReal hd` exactly when it lies in the candidate
+genus field and is fixed by complex conjugation. -/
+theorem mem_map_candidateGenusFieldReal_iff (hd : Squarefree d) (x : ℂ) :
+    x ∈ (candidateGenusFieldReal hd).map (candidateGenusField hd).val ↔
+      x ∈ candidateGenusField hd ∧ star x = x := by
+  rw [IntermediateField.mem_map]
+  constructor
+  · rintro ⟨y, hy, rfl⟩
+    exact ⟨y.2, (coe_candidateGenusFieldConj_apply hd y).symm.trans
+      (congrArg Subtype.val ((candidateGenusFieldConj_apply_eq_self_iff hd y).2 hy))⟩
+  · rintro ⟨hx, hstar⟩
+    exact ⟨⟨x, hx⟩, (candidateGenusFieldConj_apply_eq_self_iff hd _).1
+      (Subtype.ext ((coe_candidateGenusFieldConj_apply hd _).trans hstar)), rfl⟩
 
 /-- **The maximal totally real subfield is the fixed field of complex conjugation.** Equivalently,
 the ordinary real candidate is obtained from the full prime-discriminant compositum by fixing the

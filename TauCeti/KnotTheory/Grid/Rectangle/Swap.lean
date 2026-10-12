@@ -29,7 +29,7 @@ a Maslov or Alexander grading-change computation across a rectangle rests on, an
   source state with the two side columns swapped.
 * `TauCeti.GridRectangleBetween.target_eq_swapRows`: equivalently, the source state with the two
   rows those columns occupy swapped.
-* `TauCeti.GridRectangleBetween.nonempty_all_iff`: oriented rectangles between `x` and `y` exist
+* `TauCeti.GridRectangleBetween.nonempty_iff`: oriented rectangles between `x` and `y` exist
   exactly when `y` is a column transposition of `x`.
 * `TauCeti.GridRectangleBetween.source_eq_swapColumns`: the symmetric statement recovering the
   source from the target.
@@ -41,6 +41,8 @@ a Maslov or Alexander grading-change computation across a rectangle rests on, an
   together with its own two corners.
 * `TauCeti.GridRectangleBetween.card_pointSet_inter`: the two states share exactly `n - 2`
   grid points.
+* `TauCeti.GridState.rectangle_induction_on`: any two grid states are joined by a sequence of
+  rectangle moves.
 
 ## References
 
@@ -141,12 +143,13 @@ theorem ofSwapColumns_toGridRectangle (x y : GridState n) (a b : Fin n) (hab : a
 /-- Oriented rectangles between `x` and `y` exist exactly when `y` is a column transposition of
 `x`. A rectangle realizes its side columns as a transposition taking `x` to `y`, and conversely a
 column transposition exhibits an oriented rectangle on those two columns. -/
-theorem nonempty_all_iff : (all x y).Nonempty ↔ ∃ a b : Fin n, a ≠ b ∧ y = x.swapColumns a b := by
+theorem nonempty_iff :
+    Nonempty (GridRectangleBetween x y) ↔ ∃ a b : Fin n, a ≠ b ∧ y = x.swapColumns a b := by
   constructor
-  · rintro ⟨R, -⟩
+  · rintro ⟨R⟩
     exact ⟨R.left, R.right, R.left_ne_right, R.target_eq_swapColumns⟩
   · rintro ⟨a, b, hab, hy⟩
-    exact ⟨ofSwapColumns x y a b hab hy, mem_all _⟩
+    exact ⟨ofSwapColumns x y a b hab hy⟩
 
 /-- The source state of an oriented rectangle is the target state with its two side columns
 swapped: swapping the same pair of columns twice is the identity. -/
@@ -210,14 +213,14 @@ theorem source_pointSet_eq :
     x.pointSet =
       insert (R.left, R.bottom) (insert (R.right, R.top) (x.pointSet ∩ y.pointSet)) := by
   simpa [target_eq_swapColumns R, bottom, top] using
-    GridState.pointSet_eq_insert_insert_inter_swapColumns x R.left_ne_right
+    GridState.pointSet_eq_insert_insert_inter_swapColumns x R.left R.right
 
 /-- The target state's point set is the shared part together with its own two corners. -/
 theorem target_pointSet_eq :
     y.pointSet =
       insert (R.left, R.top) (insert (R.right, R.bottom) (x.pointSet ∩ y.pointSet)) := by
   simpa [target_eq_swapColumns R, bottom, top] using
-    GridState.swapColumns_pointSet_eq_insert_insert_inter x R.left_ne_right
+    GridState.swapColumns_pointSet_eq_insert_insert_inter x R.left R.right
 
 include R in
 /-- The source and target states share exactly `n - 2` grid points: all of the source's `n` grid
@@ -227,5 +230,28 @@ theorem card_pointSet_inter : (x.pointSet ∩ y.pointSet).card = n - 2 := by
     GridState.card_pointSet_inter_swapColumns x R.left_ne_right
 
 end GridRectangleBetween
+
+namespace GridState
+
+variable {n : ℕ}
+
+/-- **Any two grid states are joined by rectangle moves.** A property of grid states that holds
+at one state `x₀` and passes from the source to the target of every oriented rectangle holds at
+every state: every grid state is reached from `x₀` by a sequence of column transpositions, and
+each column transposition is a rectangle move. -/
+theorem rectangle_induction_on {P : GridState n → Prop} (x₀ : GridState n) (h₀ : P x₀)
+    (h : ∀ x y, GridRectangleBetween x y → P x → P y) (x : GridState n) : P x := by
+  have key : ∀ σ : Equiv.Perm (Fin n), P (x₀.relabelColumns σ) := by
+    intro σ
+    induction σ using Equiv.Perm.swap_induction_on with
+    | one => simpa [Equiv.Perm.one_def] using h₀
+    | swap_mul f a b hab hf =>
+      refine h _ _ (GridRectangleBetween.ofSwapColumns _ _ a b hab ?_) hf
+      rw [swapColumns, relabelColumns_relabelColumns, Equiv.Perm.mul_def]
+  convert key (x.toPerm.trans x₀.toPerm.symm).symm
+  ext c
+  simp [relabelColumns]
+
+end GridState
 
 end TauCeti

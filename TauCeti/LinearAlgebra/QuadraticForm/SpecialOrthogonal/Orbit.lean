@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.QuadraticForm.CartanDieudonne.Basic
+public import TauCeti.LinearAlgebra.QuadraticForm.CartanDieudonne.SpecialOrthogonal
 
 /-!
 # Orbits of nondegenerate special orthogonal groups
@@ -30,24 +30,6 @@ universe u v
 variable {K : Type u} {V : Type v} [Field K] [NeZero (2 : K)]
   [AddCommGroup V] [Module K V] [FiniteDimensional K V]
 
-private noncomputable def reflectionPairSpecialOrthogonal
-    (Q : QuadraticForm K V) (u v : V) [Invertible (Q u)] [Invertible (Q v)] :
-    specialOrthogonalGroup Q :=
-  ⟨(reflectionOrthogonal Q u : V ≃ₗ[K] V) * reflectionOrthogonal Q v, by
-    rw [mem_specialOrthogonalGroup_iff]
-    constructor
-    · exact (orthogonalGroup Q).mul_mem (reflectionOrthogonal Q u).2
-        (reflectionOrthogonal Q v).2
-    · simp⟩
-
-omit [NeZero (2 : K)] in
-private theorem reflectionPairSpecialOrthogonal_apply
-    (Q : QuadraticForm K V) (u v x : V) [Invertible (Q u)] [Invertible (Q v)] :
-    (reflectionPairSpecialOrthogonal Q u v : V ≃ₗ[K] V) x =
-      reflection Q u (reflection Q v x) := by
-  simp only [reflectionPairSpecialOrthogonal, Subgroup.coe_mk, LinearEquiv.mul_apply,
-    coe_reflectionOrthogonal]
-
 /-- A nondegenerate special orthogonal group acts transitively on every nonzero quadratic level
 set when the quadratic space has dimension at least two. -/
 theorem exists_specialOrthogonal_map_eq_of_nondegenerate (Q : QuadraticForm K V)
@@ -62,15 +44,12 @@ theorem exists_specialOrthogonal_map_eq_of_nondegenerate (Q : QuadraticForm K V)
     rw [reflectionPairSpecialOrthogonal_apply]
     rw [reflection_sub_apply_eq_of_map_eq Q x y hxy]
     exact reflection_apply_of_isOrtho Q z hzy
-  · let _ : Invertible (Q (x - -y)) := by
-      simpa only [sub_neg_eq_add] using hadd.invertible
+  · let _ : Invertible (Q (x + y)) := hadd.invertible
     have hyUnit : IsUnit (Q y) := isUnit_iff_ne_zero.mpr hy
     let _ : Invertible (Q y) := hyUnit.invertible
-    refine ⟨reflectionPairSpecialOrthogonal Q y (x - -y), ?_⟩
-    rw [reflectionPairSpecialOrthogonal_apply]
-    rw [reflection_sub_apply_eq_of_map_eq Q x (-y)]
-    · simp
-    · simpa [QuadraticMap.map_neg] using hxy
+    refine ⟨reflectionPairSpecialOrthogonal Q y (x + y), ?_⟩
+    rw [reflectionPairSpecialOrthogonal_apply, reflection_add_apply_eq_neg_of_map_eq Q x y hxy]
+    simp
 
 end
 

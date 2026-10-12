@@ -203,7 +203,7 @@ theorem picContract_injective : Function.Injective (T.picContract he) := by
     obtain ⟨v', hv'⟩ := hx
     -- Extend `v'` by zero at `e`: the combination `v` of multidegrees of `T` has the same image
     -- as `d`, so `d - v` is killed by the map of multidegrees.
-    set v : T.Component → ℤ := Function.extend Subtype.val v' 0 with hv
+    let v : T.Component → ℤ := Function.extend Subtype.val v' 0
     have hrestrict : (fun i : {i // i ≠ e} ↦ v i) = v' :=
       funext fun i ↦ Subtype.val_injective.extend_apply v' 0 i
     have hker : T.contractMultidegree he (d - v ᵥ* T.weightedIntersection) = 0 := by
@@ -278,16 +278,7 @@ private lemma isTorsionFree_pic_of_arithmeticGenus_nonpos {n : ℕ} :
     have := ih _ hcard' (T.contract he) rfl ((arithmeticGenus_contract he).trans_le hg)
     exact (T.picContract_injective he).moduleIsTorsionFree _ (map_smul _)
   · -- With a single component, the intersection matrix vanishes and `Pic(T)` is `ℤ`.
-    have h1 : Fintype.card T.Component = 1 := le_antisymm hcard Fintype.card_pos
-    have hbot : T.principalDivisors = ⊥ := by
-      rw [eq_bot_iff]
-      intro d hd
-      obtain ⟨v, rfl⟩ := T.mem_principalDivisors_iff.mp hd
-      have hzero : T.weightedIntersection = 0 := by
-        ext i j
-        simp [T.intersection_eq_zero_of_card_eq_one h1 i j]
-      simp [hzero]
-    exact (Submodule.quotEquivOfEqBot _ hbot).injective.moduleIsTorsionFree _ (map_smul _)
+    exact T.isTorsionFree_pic_of_card_eq_one (le_antisymm hcard Fintype.card_pos)
 
 /-- The Picard group of a numerical type of genus at most zero is infinite cyclic
 ([Stacks, Lemma 55.4.5](https://stacks.math.columbia.edu/tag/0C7K)). -/

@@ -158,13 +158,13 @@ untwisted branch records in `TauCeti.TypeE6LieIndex.rootGeneratorWeight_eq_root_
 the index subtype of this branch. It is not a claim that the doubled carrier is the pinned group of
 that diagram, no pinning being constructed for it. -/
 theorem rootGeneratorWeight_eq_root_simpleIndex (i : Fin d.1.rank) :
-    E6Minuscule.rootGeneratorWeight (.inl (finCongr d.rank_eq_six i)) =
+    E6.rootGeneratorWeight (.inl (finCongr d.rank_eq_six i)) =
       (E6.simplyConnectedRootDatum valid_E6).root
         (E6.simpleIndex valid_E6 (finCongr d.rank_eq_six i)) := by
   -- The uniform `root_simpleIndex` is instantiated by hand rather than rewritten with: its index
   -- argument lives in `Fin E6.rank`, which is only definitionally the `Fin 6` the carrier uses.
   have h := root_simpleIndex E6 valid_E6 (finCongr d.rank_eq_six i)
-  rw [E6Minuscule.rootGeneratorWeight_inl_eq_e6Root_e6SimpleIndex, root_e6SimpleIndex, h,
+  rw [E6.rootGeneratorWeight_inl_eq_e6Root_e6SimpleIndex, root_e6SimpleIndex, h,
     cartanMatrix_E6]
 
 /-! ## The diagram symmetry on the carrier's coordinates -/

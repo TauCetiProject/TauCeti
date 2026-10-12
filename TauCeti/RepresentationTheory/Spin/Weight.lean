@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Eigenspace.Basic
+import TauCeti.LinearAlgebra.Eigenspace.DiagonalBasis
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Quadratic.Lie.Subalgebra
 public import TauCeti.LinearAlgebra.ExteriorAlgebra.Contraction
 public import TauCeti.RepresentationTheory.Spin.Polarization.CliffordAction
@@ -142,10 +143,6 @@ theorem spinWeight_of_mem {s : Finset ι} {i : ι} (h : i ∈ s) :
 theorem spinWeight_of_notMem {s : Finset ι} {i : ι} (h : i ∉ s) :
     spinWeight K s i = -⅟(2 : K) := by
   simp [spinWeight_apply, h]
-
-/-- Twice the inverse of `2` is `1`: the scalar identity behind half-integrality. -/
-private theorem invOf_two_add_invOf_two : (⅟(2 : K)) + ⅟(2 : K) = 1 := by
-  rw [← two_mul, mul_invOf_self]
 
 /-- **The weights are half-integral**: twice the weight at an occupied index is `1`. -/
 theorem spinWeight_add_self_of_mem {s : Finset ι} {i : ι} (h : i ∈ s) :
@@ -392,18 +389,11 @@ scales the `t`-th coordinate of any spinor by the `i`-th entry of the weight of 
 theorem repr_spinAction_diagonalBivector (i : ι) (t : Finset ι) (x : ExteriorAlgebra K P.W) :
     b.ExteriorAlgebra.repr (spinAction Q P (P.diagonalBivector b i) x) t =
       spinWeight K t i * b.ExteriorAlgebra.repr x t := by
-  have key :
-      (Finsupp.lapply t).comp (b.ExteriorAlgebra.repr.toLinearMap.comp
-          (spinAction Q P (P.diagonalBivector b i) : Module.End K (ExteriorAlgebra K P.W))) =
-        spinWeight K t i •
-          (Finsupp.lapply t).comp b.ExteriorAlgebra.repr.toLinearMap := by
-    apply b.ExteriorAlgebra.ext
-    intro s
-    by_cases hst : s = t
-    · subst hst
-      simp [SpinPolarizationData.spinAction_diagonalBivector_basis]
-    · simp [SpinPolarizationData.spinAction_diagonalBivector_basis, hst]
-  simpa using LinearMap.congr_fun key x
+  simpa using
+    b.ExteriorAlgebra.repr_apply_of_apply_basis
+      (f := spinAction Q P (P.diagonalBivector b i))
+      (a := fun s => spinWeight K s i)
+      (fun s => P.spinAction_diagonalBivector_basis b i s) x t
 
 /-- **Each weight space of the spinor module is a line**, spanned by the exterior basis vector
 carrying that weight. Distinct sign vectors differ somewhere by a unit, which is what forces every
@@ -454,14 +444,8 @@ theorem spinWeightSpace_eq_bot_of_notMem_range [NoZeroDivisors K] {χ : ι → K
   rw [map_zero]
   ext t
   have hne : spinWeight K t ≠ χ := fun h => hχ ⟨t, h⟩
-  obtain ⟨i, hi⟩ := Function.ne_iff.mp hne
-  have hcoord := repr_spinAction_diagonalBivector P b i t x
-  rw [hx i, map_smul, Finsupp.smul_apply, smul_eq_mul] at hcoord
-  have hsub : (spinWeight K t i - χ i) * b.ExteriorAlgebra.repr x t = 0 := by
-    rw [sub_mul, ← hcoord, sub_self]
-  rcases mul_eq_zero.mp hsub with h | h
-  · exact absurd (sub_eq_zero.mp h) hi
-  · simpa using h
+  exact b.ExteriorAlgebra.repr_eq_zero_of_weight_ne
+    (fun s i => P.spinAction_diagonalBivector_basis b i s) hx hne
 
 /-- **The weights of the spinor module are exactly the sign vectors**: a tuple of eigenvalues has
 a nonzero simultaneous eigenspace precisely when it is one of the `TauCeti.spinWeight K s`. -/

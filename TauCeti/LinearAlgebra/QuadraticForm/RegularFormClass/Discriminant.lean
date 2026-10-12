@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Data.Nat.Choose
+public import TauCeti.Data.Nat.Choose.Basic
 public import TauCeti.FieldTheory.SquareClassGroup.Basic
 public import TauCeti.LinearAlgebra.QuadraticForm.Diagonal.Basic
 public import TauCeti.LinearAlgebra.QuadraticForm.Hyperbolic
@@ -49,9 +49,22 @@ is killed by two.
 * `TauCeti.RegularFormClass.signedDiscr_add` and `TauCeti.RegularFormClass.signedDiscr_mul`: the
   signed discriminant of an orthogonal sum picks up the sign `(-1)^{mn}`, and that of a tensor
   product is `(-1)^{mn(mn-1)/2} d(q)^n d(r)^m`.
+* `TauCeti.discr_formClass_eq_squareClass`: the discriminant of a regular form is the square
+  class of its Gram determinant in any basis.
 * `TauCeti.RegularFormClass.discr_mk_rankOne_mul` and
   `TauCeti.RegularFormClass.signedDiscr_mk_rankOne_mul`: scaling by `a` adds
   `m • squareClass a` to the (signed) discriminant of a class of rank `m`.
+* `TauCeti.RegularFormClass.discr_mk_rankOne_mul_of_even` and
+  `TauCeti.RegularFormClass.signedDiscr_mk_rankOne_mul_of_even`: scaling a class of even rank
+  leaves its (signed) discriminant unchanged.
+* `TauCeti.RegularFormClass.discr_mk_rankOne_add`: adjoining the line `⟨a⟩` adds
+  `squareClass a` to the discriminant.
+* `TauCeti.RegularFormClass.eq_one_of_rank_eq_one_of_discr_eq_zero`: a rank-one class of trivial
+  discriminant is `⟨1⟩`.
+* `TauCeti.RegularFormClass.mk_rankOne_mul_self`: scaling twice by the same unit is the identity,
+  `⟨a⟩ ⊗ ⟨a⟩ ≅ ⟨1⟩`.
+* `TauCeti.RegularFormClass.exists_eq_mk_neg_neg_mul`: a rank-three class with trivial
+  discriminant has a presentation `⟨-a, -b, ab⟩`.
 * `TauCeti.RegularFormClass.signedDiscr_mk_rankOne`: `d±⟨a⟩ = squareClass a`.
 * `TauCeti.RegularFormClass.discr_hyperbolicClass` and
   `TauCeti.RegularFormClass.signedDiscr_hyperbolicClass`: the discriminant of a hyperbolic plane
@@ -98,11 +111,7 @@ theorem equivalent_presentedForm_hyperbolicPlane_of_squareClass_prod_eq_neg_one
   have hdisc : IsSquare (w 0 * w 1 * ((1 : Kˣ) * (-1))) := by
     rw [← squareClass_eq_iff_isSquare_mul]
     simpa only [one_mul] using h
-  rw [presentedForm_eq_weightedSumSquares_coe]
-  have hweights : (fun i ↦ (w i : K)) = ![(w 0 : K), (w 1 : K)] := by
-    ext i
-    fin_cases i <;> rfl
-  rw [hweights]
+  rw [presentedForm_two]
   exact equivalent_weightedSumSquares_hyperbolicPlane_of_isSquare hdisc
 
 namespace RegularFormClass
@@ -168,6 +177,74 @@ theorem discr_mk_rankOne_mul (a : Kˣ) (x : RegularFormClass K) :
       rank x • squareClass a + discr x := by
   rw [discr_mul, rank_mk, one_nsmul, discr_mk, Fin.prod_univ_one]
 
+/-- **Scaling a class of even rank** by a unit does not change its discriminant. -/
+theorem discr_mk_rankOne_mul_of_even (a : Kˣ) {x : RegularFormClass K}
+    (hx : Even x.rank) :
+    discr (Quotient.mk (regularFormSetoid K) ⟨1, fun _ => a⟩ * x) = discr x := by
+  obtain ⟨k, hk⟩ := hx
+  rw [discr_mk_rankOne_mul, hk, ← two_mul, mul_nsmul',
+    ZModModule.char_nsmul_eq_zero 2 (k • squareClass a)]
+  exact zero_add (discr x)
+
+/-- **Adjoining a line**: `d(⟨a⟩ ⊥ q) = squareClass a + d(q)`. -/
+theorem discr_mk_rankOne_add (a : Kˣ) (x : RegularFormClass K) :
+    discr (Quotient.mk (regularFormSetoid K) ⟨1, fun _ => a⟩ + x) = squareClass a + discr x := by
+  rw [discr_add, discr_mk, Fin.prod_univ_one]
+
+/-- A class of rank one and trivial discriminant is the class `⟨1⟩`: in rank one the discriminant
+is a complete invariant. -/
+theorem eq_one_of_rank_eq_one_of_discr_eq_zero {x : RegularFormClass K}
+    (hr : x.rank = 1) (hd : discr x = 0) : x = 1 := by
+  induction x using Quotient.inductionOn with
+  | h p =>
+    obtain ⟨n, w⟩ := p
+    rw [rank_mk] at hr
+    subst hr
+    rw [discr_mk, Fin.prod_univ_one, squareClass_eq_zero_iff] at hd
+    obtain ⟨t, ht⟩ := hd
+    dsimp only at ht
+    rw [← mk_rankOne_one, mk_eq_mk_iff, presentedForm_eq_weightedSumSquares_coe,
+      presentedForm_eq_weightedSumSquares_coe]
+    refine ⟨QuadraticForm.isometryEquivWeightedSumSquaresWeightedSumSquares (fun _ => t) ?_⟩
+    intro i
+    fin_cases i
+    simp [ht, pow_two]
+
+/-- **Scaling by a unit is an involution up to isometry**: `⟨a⟩ ⊗ ⟨a⟩ ≅ ⟨a²⟩ ≅ ⟨1⟩`. -/
+@[simp 1100]
+theorem mk_rankOne_mul_self (a : Kˣ) :
+    Quotient.mk (regularFormSetoid K) ⟨1, fun _ => a⟩ *
+      Quotient.mk (regularFormSetoid K) ⟨1, fun _ => a⟩ = 1 := by
+  refine eq_one_of_rank_eq_one_of_discr_eq_zero (by simp) ?_
+  rw [discr_mk_rankOne_mul, rank_mk, discr_mk, Fin.prod_univ_one, one_nsmul, ← two_nsmul,
+    ZModModule.char_nsmul_eq_zero 2]
+
+/-- **A ternary form of trivial discriminant is a pure quaternion norm form**: a class of rank
+three and trivial discriminant is the class of `⟨-a, -b, ab⟩` for some units `a` and `b`. -/
+theorem exists_eq_mk_neg_neg_mul {x : RegularFormClass K} (hr : x.rank = 3) (hd : discr x = 0) :
+    ∃ a b : Kˣ, x = Quotient.mk (regularFormSetoid K) ⟨3, ![-a, -b, a * b]⟩ := by
+  induction x using Quotient.inductionOn with
+  | h p =>
+    obtain ⟨n, w⟩ := p
+    rw [rank_mk] at hr
+    subst hr
+    rw [discr_mk, squareClass_eq_zero_iff, Fin.prod_univ_three] at hd
+    obtain ⟨t, ht⟩ := hd
+    refine ⟨-w 0, -w 1, ?_⟩
+    rw [mk_eq_mk_iff, presentedForm_eq_weightedSumSquares_coe,
+      presentedForm_eq_weightedSumSquares_coe]
+    refine ⟨QuadraticForm.isometryEquivWeightedSumSquaresWeightedSumSquares
+      ![1, 1, t * (w 0 * w 1)⁻¹] ?_⟩
+    intro i
+    fin_cases i
+    · simp
+    · simp
+    · have ht' : (w 0 : K) * w 1 * w 2 = t * t := by simpa using congrArg Units.val ht
+      simp only [Fin.isValue, neg_neg, mul_neg, neg_mul, Fin.reduceFinMk, Matrix.cons_val,
+        Units.val_mul, mul_inv_rev, Units.val_inv_eq_inv_val]
+      field_simp
+      linear_combination -ht'
+
 /-! ### The signed discriminant -/
 
 /-- **The signed discriminant** `d±(q) = m.choose 2 • squareClass (-1) + d(q)` of a class of
@@ -181,6 +258,13 @@ only conversion between the two invariants that later arguments need. -/
 theorem signedDiscr_eq_sign_add_discr (x : RegularFormClass K) :
     signedDiscr x = (rank x).choose 2 • squareClass (-1 : Kˣ) + discr x :=
   (rfl)
+
+/-- The discriminant is the signed discriminant corrected by the same sign: the correction is its
+own inverse in the square-class group. -/
+theorem discr_eq_sign_add_signedDiscr (x : RegularFormClass K) :
+    discr x = (rank x).choose 2 • squareClass (-1 : Kˣ) + signedDiscr x := by
+  rw [signedDiscr_eq_sign_add_discr, ← add_assoc, ← two_nsmul, ZModModule.char_nsmul_eq_zero 2]
+  exact (zero_add (discr x)).symm
 
 /-- The signed discriminant of the class of a presentation. -/
 @[simp]
@@ -242,6 +326,15 @@ theorem signedDiscr_mk_rankOne_mul (a : Kˣ) (x : RegularFormClass K) :
     signedDiscr_eq_sign_add_discr]
   abel
 
+/-- **Scaling a class of even rank** by a unit does not change its signed discriminant. -/
+theorem signedDiscr_mk_rankOne_mul_of_even (a : Kˣ) {x : RegularFormClass K}
+    (hx : Even x.rank) :
+    signedDiscr (Quotient.mk (regularFormSetoid K) ⟨1, fun _ => a⟩ * x) = signedDiscr x := by
+  obtain ⟨k, hk⟩ := hx
+  rw [signedDiscr_mk_rankOne_mul, hk, ← two_mul, mul_nsmul',
+    ZModModule.char_nsmul_eq_zero 2 (k • squareClass a)]
+  exact zero_add (signedDiscr x)
+
 end RegularFormClass
 
 /-! ### Regular forms and the standard examples -/
@@ -252,6 +345,35 @@ theorem discr_formClass {V : Type v} [AddCommGroup V] [Module K V] [FiniteDimens
     (hp : Q.Equivalent (presentedForm p)) :
     RegularFormClass.discr (formClass Q hQ) = squareClass (∏ i, p.2 i) := by
   rw [formClass_mk Q hQ p hp, RegularFormClass.discr_mk]
+
+/-- **The discriminant is the Gram determinant modulo squares**: the discriminant of a regular
+form is the square class of the determinant `QuadraticForm.discr b Q` of its Gram matrix in any
+basis `b`. -/
+theorem discr_formClass_eq_squareClass {V : Type v} [AddCommGroup V] [Module K V]
+    [FiniteDimensional K V] {ι : Type*} [Fintype ι] [DecidableEq ι] (Q : QuadraticForm K V)
+    (hQ : Q.Nondegenerate) (b : Module.Basis ι K V) {u : Kˣ} (hu : (u : K) = Q.discr b) :
+    RegularFormClass.discr (formClass Q hQ) = squareClass u := by
+  obtain ⟨⟨n, w⟩, hp⟩ := exists_presentedForm_equivalent Q hQ
+  rw [discr_formClass Q hQ ⟨n, w⟩ hp, squareClass_eq_iff_isSquare_mul]
+  obtain ⟨g, hg⟩ : ∃ g : V ≃ₗ[K] (Fin n → K), Q = (presentedForm ⟨n, w⟩).comp g.toLinearMap :=
+    hp.elim fun f => ⟨f.toLinearEquiv, by ext x; exact (f.map_app x).symm⟩
+  let e : ι ≃ Fin n := Fintype.equivOfCardEq <| by
+    rw [← Module.finrank_eq_card_basis b, g.finrank_eq, Module.finrank_fin_fun, Fintype.card_fin]
+  -- Reindexing the basis permutes the rows and columns of the Gram matrix.
+  have hre : Q.discr (b.reindex e) = Q.discr b := by
+    have hM : Q.toMatrix (b.reindex e) = (Q.toMatrix b).submatrix e.symm e.symm := by
+      ext i j
+      simp [QuadraticForm.toMatrix, LinearMap.toMatrix₂_apply]
+    rw [QuadraticForm.discr, hM, Matrix.det_submatrix_equiv_self, QuadraticForm.discr]
+  set c := (g.toLinearMap.toMatrix (b.reindex e) (Pi.basisFun K (Fin n))).det
+  have hdiscr : (u : K) = c * c * ∏ i, (w i : K) := by
+    rw [hu, ← hre, hg, QuadraticForm.discr_comp (b := b.reindex e) (Pi.basisFun K (Fin n)),
+      QuadraticForm.discr_eq_discr', presentedForm_eq_weightedSumSquares_coe,
+      QuadraticForm.discr'_weightedSumSquares]
+  have hc : c * ∏ i, (w i : K) ≠ 0 := fun h => u.ne_zero (by rw [hdiscr, mul_assoc, h, mul_zero])
+  refine ⟨Units.mk0 _ hc, Units.ext ?_⟩
+  simp only [Units.val_mul, Units.coe_prod, Units.val_mk0, hdiscr]
+  ring
 
 /-- The signed discriminant of a regular form is computed by any of its diagonalizations. -/
 theorem signedDiscr_formClass {V : Type v} [AddCommGroup V] [Module K V]
@@ -311,5 +433,13 @@ theorem RegularFormClass.signedDiscr_add_hyperbolicClass (x : RegularFormClass K
         (RegularFormClass.rank x • squareClass (-1 : Kˣ) : SquareClassGroup K)
   rw [hcross]
   abel
+
+/-- Adding any number of hyperbolic planes leaves the signed discriminant unchanged. -/
+theorem RegularFormClass.signedDiscr_nsmul_hyperbolicClass_add (m : ℕ) (x : RegularFormClass K) :
+    RegularFormClass.signedDiscr (m • hyperbolicClass K + x) = RegularFormClass.signedDiscr x := by
+  induction m with
+  | zero => rw [zero_nsmul, zero_add]
+  | succ m ih =>
+    rw [succ_nsmul, add_right_comm, RegularFormClass.signedDiscr_add_hyperbolicClass, ih]
 
 end TauCeti

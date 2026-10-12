@@ -9,17 +9,20 @@ public import Mathlib.Algebra.Homology.ExactSequence
 public import Mathlib.AlgebraicTopology.EilenbergSteenrod
 
 /-!
-# The exactness and dimension axioms for homology pretheories
+# The exactness, additivity and dimension axioms for homology pretheories
 
 Mathlib's `TopPair.HomologyPretheory` bundles relative homology functors `Hₚ i`, absolute
 homology functors `H i`, their comparison on pairs `(X, ∅)` and boundary morphisms
 `δ i j : Hₚ i ⟶ proj₂ ⋙ H j`, and states homotopy invariance as the class
-`HomologyPretheory.IsHomotopyInvariant`. This file adds two further Eilenberg--Steenrod axioms
+`HomologyPretheory.IsHomotopyInvariant`. This file adds three further Eilenberg--Steenrod axioms
 as classes on a homology pretheory:
 
 * `HomologyPretheory.HasPairSequence`: for every topological pair `(X, A)` the sequence
   `⋯ ⟶ Hᵢ(A) ⟶ Hᵢ(X) ⟶ Hᵢ(X, A) ⟶ Hⱼ(A) ⟶ Hⱼ(X) ⟶ ⋯` (for `c.Rel i j`) is exact, and the
   map `Hᵢ(X) ⟶ Hᵢ(X, A)` is an epimorphism when `i` has no successor in the complex shape.
+* `HomologyPretheory.IsAdditive`: every absolute homology functor `H i` preserves coproducts of
+  families of spaces, so the homology of a disjoint union is the coproduct of the homologies of
+  its summands, with the maps induced by the inclusions of the summands as the coprojections.
 * `HomologyPretheory.HasDimensionAxiom`: for the complex shape `ComplexShape.down ℕ`, the
   homology of a point vanishes in every positive degree.
 
@@ -30,7 +33,8 @@ The map `Hᵢ(X) ⟶ Hᵢ(X, A)` of the pair sequence is `HomologyPretheory.hFst
 
 * S. Eilenberg and N. Steenrod, *Foundations of Algebraic Topology*, Chapter I.
 * J. Scharmberg, [mathlib4#38369](https://github.com/leanprover-community/mathlib4/pull/38369):
-  `hFstToHₚ`, `HasPairSequence` and `HasDimensionAxiom` are adapted from this formalization.
+  `hFstToHₚ`, `HasPairSequence`, `IsAdditive` and `HasDimensionAxiom` are adapted from this
+  formalization.
 -/
 
 @[expose] public section
@@ -75,6 +79,15 @@ class HasPairSequence : Prop where
     Epi ((HP.Hₚ i).map X.j)
 
 export HasPairSequence (exact_pair exact_snd exact_fst)
+
+/-- A homology pretheory is additive if each of its absolute homology functors preserves
+coproducts of families of spaces indexed by a type in the universe of the spaces. -/
+class IsAdditive : Prop where
+  /-- The absolute homology functor `H i` preserves coproducts indexed by `J`. -/
+  preservesColimitsOfShape_discrete (J : Type u) (i : ι) :
+    PreservesColimitsOfShape (Discrete J) (HP.H i)
+
+attribute [instance] IsAdditive.preservesColimitsOfShape_discrete
 
 /-- A homology pretheory indexed by `ComplexShape.down ℕ` has the dimension axiom if the
 homology of a point vanishes in every positive degree. -/

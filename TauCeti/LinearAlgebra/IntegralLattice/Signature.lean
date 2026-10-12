@@ -178,6 +178,10 @@ theorem isPosDef_iff_isPosSemidef_and_nondegenerate :
   exact LinearMap.BilinForm.posDef_toQuadraticMap_iff_isPosSemidef_and_nondegenerate
     L.form L.isSymm
 
+/-- A positive-definite lattice is positive-semidefinite. -/
+theorem IsPosDef.isPosSemidef (hL : L.IsPosDef) : L.IsPosSemidef :=
+  (L.isPosDef_iff_isPosSemidef_and_nondegenerate.mp hL).1
+
 /-- Positive-definiteness is equivalent to zero null and negative indices. -/
 @[grind =]
 theorem isPosDef_iff_sigNull_eq_zero_and_sigNeg_eq_zero :

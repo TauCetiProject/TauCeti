@@ -49,6 +49,12 @@ theorem unitAtFinitePlace_apply [NumberField K] (v : HeightOneSpectrum (𝓞 K))
       algebraMap K (v.adicCompletion K) (a : K) := by
   rfl
 
+/-- The valuation of a localized unit is the `v`-adic valuation of the global element. -/
+theorem valued_unitAtFinitePlace [NumberField K] (v : HeightOneSpectrum (𝓞 K)) (a : Kˣ) :
+    Valued.v (unitAtFinitePlace v a : v.adicCompletion K) = v.valuation K (a : K) := by
+  rw [unitAtFinitePlace_apply, algebraMap_adicCompletion, Function.comp_apply,
+    Algebra.algebraMap_self_apply, valuedAdicCompletion_eq_valuation']
+
 end IsDedekindDomain.HeightOneSpectrum
 
 namespace TauCeti
@@ -126,6 +132,36 @@ theorem atComplexEmbedding_def (Q : _root_.QuadraticForm K V) (w : InfinitePlace
     let _ : Algebra K ℂ := w.embedding.toAlgebra
     atComplexEmbedding Q w = Q.baseChange ℂ := by
   rfl
+
+/-- A scalar represented by a global form is represented by its finite-place localization. -/
+theorem _root_.QuadraticMap.Represents.atFinitePlace [NumberField K]
+    {Q : _root_.QuadraticForm K V} {a : K}
+    (h : _root_.QuadraticMap.Represents Q a) (v : HeightOneSpectrum (𝓞 K)) :
+    (Q.atFinitePlace v).Represents (algebraMap K (v.adicCompletion K) a) := by
+  rw [atFinitePlace_def]
+  exact h.baseChange
+
+/-- A scalar represented by a global form is represented by its real-place localization. -/
+theorem _root_.QuadraticMap.Represents.atRealPlace
+    {Q : _root_.QuadraticForm K V} {a : K}
+    (h : _root_.QuadraticMap.Represents Q a) (w : {w : InfinitePlace K // w.IsReal}) :
+    (Q.atRealPlace w).Represents (embedding_of_isReal w.2 a) := by
+  let : CharZero K := RingHom.charZero w.1.embedding
+  let : Invertible (2 : K) := invertibleOfNonzero two_ne_zero
+  let : Algebra K ℝ := (embedding_of_isReal w.2).toAlgebra
+  rw [atRealPlace_def]
+  simpa only [RingHom.algebraMap_toAlgebra] using h.baseChange (A := ℝ)
+
+/-- A scalar represented by a global form is represented after a complex embedding. -/
+theorem _root_.QuadraticMap.Represents.atComplexEmbedding
+    {Q : _root_.QuadraticForm K V} {a : K}
+    (h : _root_.QuadraticMap.Represents Q a) (w : InfinitePlace K) :
+    (Q.atComplexEmbedding w).Represents (w.embedding a) := by
+  let : CharZero K := RingHom.charZero w.embedding
+  let : Invertible (2 : K) := invertibleOfNonzero two_ne_zero
+  let : Algebra K ℂ := w.embedding.toAlgebra
+  rw [atComplexEmbedding_def]
+  simpa only [RingHom.algebraMap_toAlgebra] using h.baseChange (A := ℂ)
 
 /-- A finite-dimensional nondegenerate quadratic form stays nondegenerate at every finite place. -/
 theorem Nondegenerate.atFinitePlace [NumberField K] [FiniteDimensional K V]

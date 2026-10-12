@@ -14,6 +14,7 @@ public import Mathlib.Topology.MetricSpace.Holder
 
 import Mathlib.Analysis.Normed.Affine.AddTorsor
 import Mathlib.MeasureTheory.Integral.MeanInequalities
+import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
 import TauCeti.Analysis.Sobolev.Poincare.Potential
 import TauCeti.MeasureTheory.Integral.NormRpow
 
@@ -150,7 +151,8 @@ theorem enorm_sub_setAverage_le_of_starConvex_of_finrank_lt [CompleteSpace F] (h
           (1 - 1 / (p : ℝ)) * D ^ (1 - finrank ℝ E / (p : ℝ))) *
         eLpNorm (fderiv ℝ u) p (μ.restrict Ω) := by
   have hcont := hu.continuousOn_fderiv_of_isOpen hΩ le_rfl
-  rw [eLpNorm_nnreal_eq_lintegral (zero_le.trans_lt hp).ne', mul_assoc]
+  rw [eLpNorm_nnreal_eq_lintegral (zero_le.trans_lt hp).ne'
+    (hcont.aestronglyMeasurable hΩ.measurableSet), mul_assoc]
   refine (enorm_sub_setAverage_le_of_starConvex hΩ hu hx hD hS hS₀).trans ?_
   gcongr
   exact setLIntegral_mul_enorm_sub_rpow_one_sub_finrank_le hD

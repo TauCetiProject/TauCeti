@@ -14,14 +14,13 @@ import Mathlib.Tactic.Group
 /-!
 # Consequences of the index formula
 
-The preimage `H.comap f` of a finite-index subgroup along a group homomorphism again has finite
-index: its index is the relative index of `H` in the range of `f`, which is finite. Adjoining
-the centre to a finite-index subgroup also keeps the index finite, since it only enlarges the
-subgroup.
+Adjoining the centre to a finite-index subgroup keeps the index finite, since it only enlarges
+the subgroup.
 
 Because the order of a subgroup divides the order of the group -- with the index as cofactor --
 invertibility of the order of a finite group in a semiring passes to every subgroup.
 
+If `Γ` normalises `N`, then `Γ` has the same relative index in `Γ ⊔ N` as in `N`.
 Adjoining a two-element subgroup `N ⊄ Γ` normalised by `Γ` is also quantified: `Γ` then has
 relative index exactly `2` in `Γ ⊔ N`, so `Γ.index = 2 * (Γ ⊔ N).index`. Taking `N` to be the
 centre gives the `Γ.withCenter` readings.
@@ -34,19 +33,24 @@ centre gives the `Γ.withCenter` readings.
 * `Subgroup.withCenter_le_iff`: the universal property — containing `Γ·Z(G)` is containing both.
 * `Subgroup.withCenter_eq_self_iff`: adjoining the centre changes nothing exactly when the
   centre already lies inside `Γ`.
+* `Subgroup.relIndex_sup_of_le_normalizer`: if `H` normalises `N`, the relative index of `H` in
+  `H ⊔ N` is that in `N`.
 * `Subgroup.relIndex_sup_eq_two`, `Subgroup.index_eq_two_mul_index_sup`: the relative index `2`
   and the index doubling, for an `N` normalised by `Γ` whose elements are `1` and `a ∉ Γ`.
 * `Subgroup.instCountableQuotient`: a coset space of a countable group is countable.
 * `Subgroup.finiteIndex_of_finiteIndex_subgroupOf`: finite index composes along `V ≤ U ≤ G`.
+* `Subgroup.compositeTransversal`: representatives for `G/V` obtained by composing
+  representatives for `G/U` and `U/V`.
 * `Subgroup.finiteIndex_inf_comap`: `H ⊓ f⁻¹(K)` has finite index when `H` does and
   `K` has finite index relative to `f(H)`.
+* `Subgroup.finiteIndex_of_map_eq`: the image of a finite-index subgroup under a surjective
+  homomorphism has finite index.
 * `MonoidHom.finiteIndex_range_comp`: finite index of ranges is preserved by composition
   with a homomorphism of finite-index range.
 * `MonoidHom.mk_mul_out_bijective`: right cosets of a composite range are represented by
   products of representatives for the two successive ranges.
 * `Subgroup.relIndex_withCenter_eq_two`, `Subgroup.index_eq_two_mul_index_withCenter`: the same
   two facts on `Γ.withCenter`, when the centre is `{1, a}`.
-* `Subgroup.isCoatom_of_index_prime`: a subgroup of prime index is maximal.
 -/
 
 
@@ -61,6 +65,56 @@ theorem exists_mul_out_eq {G : Type u} [Group G] (S : Subgroup G) (x : G) :
     ∃ s ∈ S, s * (Quotient.mk (QuotientGroup.rightRel S) x).out = x :=
   ⟨_, QuotientGroup.rightRel_apply.1
     (Quotient.exact (Quotient.out_eq (Quotient.mk (QuotientGroup.rightRel S) x))), by group⟩
+
+/-- **The composite transversal for a subgroup tower.** Given `V ≤ U ≤ G`, representatives
+`t` for `G/U`, and representatives `s` for `U/V`, this chooses the representative
+`t a * s b` of a coset of `V`, where `(a, b)` are its coordinates under
+`Subgroup.quotientEquivProdOfLE'`. -/
+def compositeTransversal (G : Type u) [Group G] (U V : Subgroup G) (hVU : V ≤ U)
+    (t : G ⧸ U → G)
+    (ht : ∀ u : G ⧸ U, (QuotientGroup.mk (t u) : G ⧸ U) = u)
+    (s : U ⧸ V.subgroupOf U → U) (q : G ⧸ V) : G :=
+  t ((Subgroup.quotientEquivProdOfLE' hVU t ht q).1) *
+    s ((Subgroup.quotientEquivProdOfLE' hVU t ht q).2)
+
+/-- Evaluation of the composite transversal in the coordinates of the subgroup tower. -/
+@[simp]
+theorem compositeTransversal_apply (G : Type u) [Group G] (U V : Subgroup G) (hVU : V ≤ U)
+    (t : G ⧸ U → G)
+    (ht : ∀ u : G ⧸ U, (QuotientGroup.mk (t u) : G ⧸ U) = u)
+    (s : U ⧸ V.subgroupOf U → U) (q : G ⧸ V) :
+    compositeTransversal G U V hVU t ht s q =
+      t ((Subgroup.quotientEquivProdOfLE' hVU t ht q).1) *
+        s ((Subgroup.quotientEquivProdOfLE' hVU t ht q).2) := by
+  rw [compositeTransversal]
+
+/-- The composite transversal for `V ≤ U ≤ G` represents each coset of `V`. -/
+theorem compositeTransversal_spec (G : Type u) [Group G] (U V : Subgroup G) (hVU : V ≤ U)
+    (t : G ⧸ U → G)
+    (ht : ∀ u : G ⧸ U, (QuotientGroup.mk (t u) : G ⧸ U) = u)
+    (s : U ⧸ V.subgroupOf U → U)
+    (hs : ∀ v : U ⧸ V.subgroupOf U,
+      (QuotientGroup.mk (s v) : U ⧸ V.subgroupOf U) = v)
+    (q : G ⧸ V) :
+    (QuotientGroup.mk (compositeTransversal G U V hVU t ht s q) : G ⧸ V) = q := by
+  let e := Subgroup.quotientEquivProdOfLE' hVU t ht
+  let hmap : ∀ a b : U, QuotientGroup.leftRel (V.subgroupOf U) a b →
+      QuotientGroup.leftRel V (t (e q).1 * (a : G)) (t (e q).1 * (b : G)) := by
+    intro a b hab
+    rw [QuotientGroup.leftRel_apply] at hab ⊢
+    -- The inner coset relation is definitionally the ambient relation after subtype coercions.
+    change ((a : G)⁻¹ * (b : G)) ∈ V at hab
+    simpa only [mul_inv_rev, mul_assoc, inv_mul_cancel_left] using hab
+  calc
+    QuotientGroup.mk (compositeTransversal G U V hVU t ht s q) = e.symm (e q) := by
+      -- Unfold the inverse tower equivalence as a quotient map on the inner coset.
+      change QuotientGroup.mk (t (e q).1 * s (e q).2) =
+        Quotient.map' (fun b : U => t (e q).1 * b) hmap (e q).2
+      calc
+        _ = Quotient.map' (fun b : U => t (e q).1 * b) hmap
+            (QuotientGroup.mk (s (e q).2)) := rfl
+        _ = _ := congrArg _ (hs (e q).2)
+    _ = q := e.symm_apply_apply q
 
 end Subgroup
 
@@ -142,12 +196,6 @@ instance instCountableQuotient {G : Type*} [Group G] [Countable G] (H : Subgroup
   -- instance synthesis does not unfold: without this, `Countable (G ⧸ H)` is not found.
   inferInstanceAs (Countable (Quotient (QuotientGroup.leftRel H)))
 
-/-- The preimage of a finite-index subgroup under a group homomorphism has finite index. -/
-@[to_additive]
-instance instFiniteIndexComap {G G' : Type*} [Group G] [Group G'] (H : Subgroup G) [H.FiniteIndex]
-    (f : G' →* G) : (H.comap f).FiniteIndex :=
-  ⟨by rw [index_comap]; exact FiniteIndex.index_ne_zero⟩
-
 /-- **Finite index composes along a chain of subgroups.** If `K` has finite index in `G` and `H`
 has finite index in `K` -- that is, the copy `H.subgroupOf K` of `H` inside `K` has finite index --
 then `H` has finite index in `G`. This is the converse of `Subgroup.instFiniteIndex_subgroupOf`,
@@ -172,6 +220,14 @@ theorem finiteIndex_inf_comap {G N : Type*} [Group G] [Group N] (H : Subgroup G)
   rw [← relIndex_mul_index (inf_le_left : H ⊓ K.comap f ≤ H), inf_comm, inf_relIndex_right,
     relIndex_comap]
   exact mul_ne_zero IsFiniteRelIndex.relIndex_ne_zero FiniteIndex.index_ne_zero
+
+/-- The image of a finite-index subgroup under a surjective homomorphism has finite index. -/
+@[to_additive /-- The image of a finite-index additive subgroup under a surjective homomorphism
+has finite index. -/]
+theorem finiteIndex_of_map_eq {G N : Type*} [Group G] [Group N] (H : Subgroup G) [H.FiniteIndex]
+    (f : G →* N) (hf : Function.Surjective f) {K : Subgroup N} (h : H.map f = K) :
+    K.FiniteIndex :=
+  ⟨h ▸ ne_zero_of_dvd_ne_zero FiniteIndex.index_ne_zero (H.index_map_dvd hf)⟩
 
 /-- `Γ` with the centre of the ambient group adjoined. For `Γ ≤ SL(2, ℤ)` the centre is
 `{±I}`, which acts trivially on `ℍ`; it is the cosets of `Γ·{±I}` — not those of `Γ` itself —
@@ -227,6 +283,31 @@ instance instFiniteIndexWithCenter {G : Type*} [Group G] (Γ : Subgroup G)
   Subgroup.finiteIndex_of_le Γ.le_withCenter
 
 variable {G : Type*} [Group G] {Γ : Subgroup G} {a : G}
+
+/-- **Relative index across a join with a normalised subgroup.** If `H` normalises `N`, then `H`
+has the same relative index in `H ⊔ N` as in `N`, that is `[H ⊔ N : H] = [N : H ⊓ N]`.
+
+This is the counterpart of Mathlib's `Subgroup.relIndex_sup_right`, which measures the index of the
+normal factor instead. -/
+theorem relIndex_sup_of_le_normalizer {H N : Subgroup G} (hH : H ≤ normalizer N) :
+    H.relIndex (H ⊔ N) = H.relIndex N := by
+  -- The inclusion `N → H ⊔ N` induces a bijection on cosets of `H`.
+  have hle : N ≤ H ⊔ N := le_sup_right
+  have key (x y : N) : QuotientGroup.leftRel (H.subgroupOf N) x y ↔
+      QuotientGroup.leftRel (H.subgroupOf (H ⊔ N)) (inclusion hle x) (inclusion hle y) := by
+    simp [QuotientGroup.leftRel_apply, mem_subgroupOf]
+  refine (Nat.card_congr (Equiv.ofBijective
+    (Quotient.map' (inclusion hle) fun x y ↦ (key x y).1) ⟨?_, ?_⟩)).symm
+  · refine Quotient.ind' fun x ↦ Quotient.ind' fun y h ↦ ?_
+    exact Quotient.sound' ((key x y).2 (Quotient.exact' h))
+  · -- Write `g = h * n` with `h ∈ H` and `n ∈ N`: then `g` lies in the coset of `h * n * h⁻¹ ∈ N`.
+    rintro ⟨g, hg⟩
+    rw [← SetLike.mem_coe, coe_mul_of_left_le_normalizer_right H N hH] at hg
+    obtain ⟨h, hh, n, hn, rfl⟩ := hg
+    refine ⟨Quotient.mk'' ⟨h * n * h⁻¹, (mem_normalizer_iff.1 (hH hh) n).1 hn⟩,
+      Quotient.sound' ?_⟩
+    rw [QuotientGroup.leftRel_apply, mem_subgroupOf]
+    simpa [mul_assoc] using hh
 
 /-- **A two-element subgroup normalised by `Γ` and not already inside it has relative index
 `2`.** If every element of `N` is `1` or `a`, and `a ∉ Γ`, then `Γ ⊔ N` splits into the two
@@ -288,14 +369,6 @@ theorem index_eq_two_mul_index_withCenter (ha : a ∈ Subgroup.center G) (haΓ :
     (hcenter : ∀ c ∈ Subgroup.center G, c = 1 ∨ c = a) : Γ.index = 2 * Γ.withCenter.index :=
   Subgroup.withCenter_def Γ ▸
     index_eq_two_mul_index_sup _ Subgroup.le_normalizer_of_normal ha haΓ hcenter
-
-/-- A subgroup of prime index is maximal: an intermediate subgroup has index dividing a prime,
-so it is either the subgroup itself or everything. -/
-theorem isCoatom_of_index_prime {H : Subgroup G} (hH : H.index.Prime) : IsCoatom H := by
-  refine ⟨fun h ↦ hH.ne_one (index_eq_one.mpr h), fun K hK ↦ ?_⟩
-  rcases Nat.prime_mul_iff.mp ((relIndex_mul_index hK.le).symm ▸ hH) with ⟨-, hK1⟩ | ⟨-, hHK⟩
-  · exact index_eq_one.mp hK1
-  · exact absurd (relIndex_eq_one.mp hHK) (not_le_of_gt hK)
 
 end Subgroup
 

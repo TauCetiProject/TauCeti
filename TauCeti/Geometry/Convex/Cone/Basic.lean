@@ -14,18 +14,19 @@ public import Mathlib.LinearAlgebra.Prod
 # Salience of images and products of cones, and the line spanned by a ray
 
 Mathlib's `ConvexCone.Salient` records that a convex cone contains no line. This file proves the
-two closure properties of salience that concern standard cone constructions: the image under an
-injective linear map, and the product of two pointed cones. It also computes the dimension of the
-linear span of the cone hull of a single nonzero vector, which is the one-dimensionality making
-such a cone a ray, and the invariance of that dimension under multiplying a cone by the zero cone.
-None of these statements involves a lattice, so they belong to the generic convex-cone API rather
-than to any consumer of it.
+two closure properties of salience that concern standard cone constructions, the image under an
+injective linear map and the product of two pointed cones, together with the salience of the cone
+hull of a single vector. It also computes the dimension of the linear span of the cone hull of a
+single nonzero vector, which is the one-dimensionality making such a cone a ray, and the invariance
+of that dimension under multiplying a cone by the zero cone. None of these statements involves a
+lattice, so they belong to the generic convex-cone API rather than to any consumer of it.
 
 ## Main declarations
 
 * `ConvexCone.Salient.map`: the image of a salient convex cone under an injective linear map is
   salient.
 * `ConvexCone.Salient.prod`: a product of salient pointed cones is salient.
+* `PointedCone.salient_hull_singleton`: the cone hull of a single vector is salient.
 * `PointedCone.finrank_span_coe_hull_singleton`: the cone hull of a nonzero vector spans a line.
 * `PointedCone.finrank_span_coe_prod_bot` and `PointedCone.finrank_span_coe_bot_prod`:
   multiplying a pointed cone by the zero cone leaves the dimension of the span of the cone
@@ -60,7 +61,24 @@ end ConvexCone.Salient
 
 namespace PointedCone
 
-section Hull
+section HullSalient
+
+variable {R V : Type*} [Semiring R] [PartialOrder R] [IsOrderedRing R]
+  [AddCommGroup V] [Module R V] [NoZeroSMulDivisors R V]
+
+/-- The cone hull of a single vector is salient. -/
+theorem salient_hull_singleton (x : V) : (hull R {x} : ConvexCone R V).Salient := by
+  rintro y hy hy0 hny
+  obtain ⟨r, hr0, rfl⟩ := mem_hull_singleton.1 hy
+  obtain ⟨t, ht0, ht⟩ := mem_hull_singleton.1 hny
+  have hrt : (r + t) • x = 0 := by rw [add_smul, ht, add_neg_cancel]
+  rcases eq_zero_or_eq_zero_of_smul_eq_zero hrt with h | h
+  · exact hy0 (by rw [((add_eq_zero_iff_of_nonneg hr0 ht0).1 h).1, zero_smul])
+  · exact hy0 (by rw [h, smul_zero])
+
+end HullSalient
+
+section HullSpan
 
 variable {R V : Type*} [DivisionRing R] [PartialOrder R] [IsOrderedRing R]
   [AddCommGroup V] [Module R V]
@@ -72,7 +90,7 @@ theorem finrank_span_coe_hull_singleton {x : V} (hx : x ≠ 0) :
     Module.finrank R (Submodule.span R ((hull R {x} : PointedCone R V) : Set V)) = 1 := by
   rw [Submodule.span_span_of_tower (Nonneg R) R, finrank_span_singleton hx]
 
-end Hull
+end HullSpan
 
 section Prod
 

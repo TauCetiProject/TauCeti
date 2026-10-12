@@ -6,8 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.FieldTheory.Galois.FiberProduct
+public import Mathlib.FieldTheory.LinearDisjoint
 public import Mathlib.FieldTheory.PolynomialGaloisGroup
 public import Mathlib.FieldTheory.SeparableClosure
+public import TauCeti.GroupTheory.Perm.Partition
+public import TauCeti.RingTheory.Polynomial.Roots
 
 /-!
 # The Galois group of a product of polynomials
@@ -30,7 +33,19 @@ Separability is what makes `L/F` Galois, which the description of the image uses
   separable polynomials is Galois.
 * `Polynomial.Gal.mem_range_restrictProd_iff`: the image of `restrictProd` consists of the pairs
   agreeing on `L_p ∩ L_q`.
+* `Polynomial.Gal.restrictInfLeft` and `Polynomial.Gal.restrictInfRight`: the two restriction
+  maps to the Galois group of `L_p ∩ L_q`.
+* `Polynomial.Gal.mem_range_restrictProd_iff_restrictInfLeft_eq_restrictInfRight`: the same image
+  is the fibre product of the restriction maps `p.Gal →* Gal((L_p ∩ L_q)/F)` and
+  `q.Gal →* Gal((L_p ∩ L_q)/F)`.
 * `Polynomial.Gal.restrictProd_surjective_iff`: `restrictProd` is surjective iff `L_p ∩ L_q = F`.
+* `Polynomial.Gal.restrictProd_surjective_iff_linearDisjoint`: for splitting fields, this is
+  equivalent to linear disjointness.
+* `Polynomial.Gal.restrictProdMulEquiv`: linearly disjoint splitting fields give an isomorphism
+  from the Galois group of the product to the product of the two Galois groups.
+* `Polynomial.Gal.fullCycleType_galActionHom_restrict_prod`: an automorphism of a field in which
+  a separable product of polynomials splits permutes the roots of each factor, and the full cycle
+  type of its action on the roots of the product is the sum of those on the roots of the factors.
 -/
 
 public section
@@ -86,6 +101,65 @@ theorem _root_.Polynomial.Gal.mem_range_restrictProd_iff (hp : p.Separable) (hq 
   rw [Gal.restrictProd_eq_restrict_prod_restrict p q (mul_ne_zero hp.ne_zero hq.ne_zero)]
   exact AlgEquiv.mem_range_restrictNormalHom_prod_restrictNormalHom_iff σ τ
 
+section RestrictInf
+
+variable (p q)
+  [Fact ((p.map (algebraMap F (p * q).SplittingField)).Splits)]
+  [Fact ((q.map (algebraMap F (p * q).SplittingField)).Splits)]
+
+/-- Restriction from `p.Gal` to the Galois group of the intersection of the images of the
+splitting fields of `p` and `q` inside the splitting field of `p * q`. -/
+noncomputable def _root_.Polynomial.Gal.restrictInfLeft :
+    p.Gal →* Gal(↥((IsScalarTower.toAlgHom F p.SplittingField (p * q).SplittingField).fieldRange ⊓
+      (IsScalarTower.toAlgHom F q.SplittingField (p * q).SplittingField).fieldRange)/F) :=
+  (IsScalarTower.toAlgHom F p.SplittingField (p * q).SplittingField).restrictNormalHomOfLE
+    inf_le_left
+
+/-- Restriction from `q.Gal` to the Galois group of the intersection of the images of the
+splitting fields of `p` and `q` inside the splitting field of `p * q`. -/
+noncomputable def _root_.Polynomial.Gal.restrictInfRight :
+    q.Gal →* Gal(↥((IsScalarTower.toAlgHom F p.SplittingField (p * q).SplittingField).fieldRange ⊓
+      (IsScalarTower.toAlgHom F q.SplittingField (p * q).SplittingField).fieldRange)/F) :=
+  (IsScalarTower.toAlgHom F q.SplittingField (p * q).SplittingField).restrictNormalHomOfLE
+    inf_le_right
+
+/-- The left restriction is the general restriction along the splitting-field embedding.
+This allows the characteristic API of `AlgHom.restrictNormalHomOfLE` to be used for it. -/
+theorem _root_.Polynomial.Gal.restrictInfLeft_def :
+    Gal.restrictInfLeft p q =
+      (IsScalarTower.toAlgHom F p.SplittingField (p * q).SplittingField).restrictNormalHomOfLE
+        (inf_le_left : _ ⊓
+          (IsScalarTower.toAlgHom F q.SplittingField (p * q).SplittingField).fieldRange ≤ _) :=
+  (rfl)
+
+/-- The right restriction is the general restriction along the splitting-field embedding.
+This allows the characteristic API of `AlgHom.restrictNormalHomOfLE` to be used for it. -/
+theorem _root_.Polynomial.Gal.restrictInfRight_def :
+    Gal.restrictInfRight p q =
+      (IsScalarTower.toAlgHom F q.SplittingField (p * q).SplittingField).restrictNormalHomOfLE
+        (inf_le_right :
+          (IsScalarTower.toAlgHom F p.SplittingField (p * q).SplittingField).fieldRange ⊓ _ ≤ _) :=
+  (rfl)
+
+end RestrictInf
+
+/-- **The Galois group of a product is the fibre product over the common part.** For separable
+`p` and `q`, write `L_p` and `L_q` for the images of their splitting fields in the splitting field
+of `p * q`. A pair `(σ, τ) : p.Gal × q.Gal` lies in the image of `Polynomial.Gal.restrictProd` if
+and only if `σ` and `τ` have the same restriction to `L_p ∩ L_q`, the two restriction maps
+`p.Gal →* Gal((L_p ∩ L_q)/F)` and `q.Gal →* Gal((L_p ∩ L_q)/F)` being
+`Polynomial.Gal.restrictInfLeft` and `Polynomial.Gal.restrictInfRight`. -/
+theorem _root_.Polynomial.Gal.mem_range_restrictProd_iff_restrictInfLeft_eq_restrictInfRight
+    (hp : p.Separable) (hq : q.Separable)
+    [Fact ((p.map (algebraMap F (p * q).SplittingField)).Splits)]
+    [Fact ((q.map (algebraMap F (p * q).SplittingField)).Splits)] (σ : p.Gal) (τ : q.Gal) :
+    (σ, τ) ∈ (Gal.restrictProd p q).range ↔
+      Gal.restrictInfLeft p q σ = Gal.restrictInfRight p q τ := by
+  have := hp.isGalois_splittingField_mul hq
+  rw [Gal.restrictProd_eq_restrict_prod_restrict p q (mul_ne_zero hp.ne_zero hq.ne_zero)]
+  rw [Gal.restrictInfLeft_def, Gal.restrictInfRight_def]
+  exact AlgEquiv.mem_range_restrictNormalHom_prod_iff_restrictNormalHomOfLE_eq σ τ
+
 /-- For separable `p` and `q`, `Polynomial.Gal.restrictProd` is surjective if and only if the
 splitting fields of `p` and `q` meet only in `F` inside the splitting field of `p * q`. -/
 theorem _root_.Polynomial.Gal.restrictProd_surjective_iff (hp : p.Separable) (hq : q.Separable)
@@ -97,5 +171,122 @@ theorem _root_.Polynomial.Gal.restrictProd_surjective_iff (hp : p.Separable) (hq
   have := hp.isGalois_splittingField_mul hq
   rw [Gal.restrictProd_eq_restrict_prod_restrict p q (mul_ne_zero hp.ne_zero hq.ne_zero)]
   exact AlgEquiv.restrictNormalHom_prod_restrictNormalHom_surjective_iff
+
+/-- For separable `p` and `q`, `Polynomial.Gal.restrictProd` is surjective exactly when the
+images of their splitting fields in the splitting field of `p * q` are linearly disjoint over
+the base field. -/
+theorem _root_.Polynomial.Gal.restrictProd_surjective_iff_linearDisjoint
+    (hp : p.Separable) (hq : q.Separable)
+    [Fact ((p.map (algebraMap F (p * q).SplittingField)).Splits)]
+    [Fact ((q.map (algebraMap F (p * q).SplittingField)).Splits)] :
+    Function.Surjective (Gal.restrictProd p q) ↔
+      (IsScalarTower.toAlgHom F p.SplittingField (p * q).SplittingField).fieldRange.LinearDisjoint
+        (IsScalarTower.toAlgHom F q.SplittingField (p * q).SplittingField).fieldRange := by
+  let _ : IsGalois F p.SplittingField := IsGalois.of_separable_splitting_field hp
+  let _ : IsGalois F
+      (IsScalarTower.toAlgHom F p.SplittingField
+        (p * q).SplittingField).fieldRange :=
+    IsGalois.of_algEquiv
+      (IsScalarTower.toAlgHom F p.SplittingField
+        (p * q).SplittingField).equivFieldRange
+  rw [Gal.restrictProd_surjective_iff hp hq,
+    IntermediateField.LinearDisjoint.iff_inf_eq_bot]
+
+/-- **The Galois group of a product with linearly disjoint splitting fields.** For separable
+`p` and `q` whose splitting fields are linearly disjoint inside the splitting field of `p * q`,
+joint restriction is an isomorphism
+`(p * q).Gal ≃* p.Gal × q.Gal`. -/
+noncomputable def _root_.Polynomial.Gal.restrictProdMulEquiv
+    (hp : p.Separable) (hq : q.Separable)
+    [Fact ((p.map (algebraMap F (p * q).SplittingField)).Splits)]
+    [Fact ((q.map (algebraMap F (p * q).SplittingField)).Splits)]
+    (h :
+      (IsScalarTower.toAlgHom F p.SplittingField (p * q).SplittingField).fieldRange.LinearDisjoint
+        (IsScalarTower.toAlgHom F q.SplittingField (p * q).SplittingField).fieldRange) :
+    (p * q).Gal ≃* p.Gal × q.Gal :=
+  MulEquiv.ofBijective (Gal.restrictProd p q)
+    ⟨Gal.restrictProd_injective p q,
+      (Gal.restrictProd_surjective_iff_linearDisjoint hp hq).2 h⟩
+
+/-- The forward map of `Polynomial.Gal.restrictProdMulEquiv` is joint restriction. -/
+@[simp]
+theorem _root_.Polynomial.Gal.restrictProdMulEquiv_apply
+    (hp : p.Separable) (hq : q.Separable)
+    [Fact ((p.map (algebraMap F (p * q).SplittingField)).Splits)]
+    [Fact ((q.map (algebraMap F (p * q).SplittingField)).Splits)]
+    (h :
+      (IsScalarTower.toAlgHom F p.SplittingField (p * q).SplittingField).fieldRange.LinearDisjoint
+        (IsScalarTower.toAlgHom F q.SplittingField (p * q).SplittingField).fieldRange)
+    (g : (p * q).Gal) :
+    Gal.restrictProdMulEquiv hp hq h g = Gal.restrictProd p q g :=
+  (rfl)
+
+/-! ### Cycle types along the factors of a separable product -/
+
+section CycleType
+
+variable {E : Type*} [Field E] [Algebra F E] {ι : Type*}
+
+variable [Fintype ι]
+
+open scoped Classical in
+/-- **The full cycle type is additive along the factors of a separable product.** Let
+`f = ∏ i, g i` be separable, and let `ϕ` be an automorphism of a field `E` in which `f`
+splits (hence each `g i` splits). The root set of `f` in `E` is the disjoint union of those of the
+`g i`, `ϕ` permutes each of them, and the full cycle type of `ϕ` on the roots of `f` is the sum
+of its full cycle types on the roots of the `g i`. -/
+theorem _root_.Polynomial.Gal.fullCycleType_galActionHom_restrict_prod (g : ι → F[X])
+    (hsep : (∏ i, g i).Separable) [Fact (((∏ i, g i).map (algebraMap F E)).Splits)]
+    (ϕ : Gal(E/F)) :
+    let : ∀ i, Fact (((g i).map (algebraMap F E)).Splits) := fun i => ⟨by
+      have hs : ((∏ i, g i).map (algebraMap F E)).Splits := Fact.out
+      exact hs.of_dvd hsep.map.ne_zero
+        (Polynomial.map_dvd _ (Finset.dvd_prod_of_mem g (Finset.mem_univ i)))⟩
+    (Gal.galActionHom (∏ i, g i) E (Gal.restrict (∏ i, g i) E ϕ)).fullCycleType =
+      ∑ i, (Gal.galActionHom (g i) E (Gal.restrict (g i) E ϕ)).fullCycleType := by
+  classical
+  -- Splitting of the nonzero product supplies the factor actions.
+  let : ∀ i, Fact (((g i).map (algebraMap F E)).Splits) := fun i => ⟨by
+    have hs : ((∏ i, g i).map (algebraMap F E)).Splits := Fact.out
+    exact hs.of_dvd hsep.map.ne_zero
+      (Polynomial.map_dvd _ (Finset.dvd_prod_of_mem g (Finset.mem_univ i)))⟩
+  have hf0 : ∏ i, g i ≠ 0 := hsep.ne_zero
+  have hg0 : ∀ i, g i ≠ 0 := fun i h => hf0 (Finset.prod_eq_zero (Finset.mem_univ i) h)
+  have hmem : ∀ i, ∀ y ∈ (g i).rootSet E, y ∈ (∏ i, g i).rootSet E := fun i y hy =>
+    mem_rootSet.mpr ⟨hf0, by
+      rw [map_prod]
+      exact Finset.prod_eq_zero (Finset.mem_univ i) (mem_rootSet.mp hy).2⟩
+  -- Every root of the product is a root of exactly one factor; `π` names that factor.
+  have hex : ∀ x : (∏ i, g i).rootSet E, ∃ i, (x : E) ∈ (g i).rootSet E := by
+    intro x
+    obtain ⟨i, -, hi⟩ := Finset.prod_eq_zero_iff.mp
+      ((map_prod (aeval (x : E)) g Finset.univ).symm.trans (mem_rootSet.mp x.2).2)
+    exact ⟨i, mem_rootSet.mpr ⟨hg0 i, hi⟩⟩
+  have huniq : ∀ (y : E) i j, y ∈ (g i).rootSet E → y ∈ (g j).rootSet E → i = j :=
+    fun y i j hi hj => by_contra fun hij => Set.disjoint_left.mp
+      (hsep.pairwiseDisjoint_rootSet (E := E) (Finset.mem_coe.mpr (Finset.mem_univ i))
+        (Finset.mem_coe.mpr (Finset.mem_univ j)) hij) hi hj
+  let π : (∏ i, g i).rootSet E → ι := fun x => (hex x).choose
+  have hπ : ∀ x i, π x = i ↔ (x : E) ∈ (g i).rootSet E := fun x i =>
+    ⟨fun h => h ▸ (hex x).choose_spec, huniq _ _ _ (hex x).choose_spec⟩
+  -- `ϕ` maps the roots of each factor to roots of the same factor.
+  have hσ : ∀ x, π (Gal.galActionHom (∏ i, g i) E (Gal.restrict (∏ i, g i) E ϕ) x) = π x := by
+    intro x
+    rw [hπ, Gal.galActionHom_restrict]
+    exact rootSet_mapsTo (ϕ : E →ₐ[F] E) ((hπ x _).mp rfl)
+  rw [Equiv.Perm.fullCycleType_eq_sum_subtypePerm _ π hσ]
+  refine Finset.sum_congr rfl fun i _ => ?_
+  -- The fibre of `π` over `i` is the root set of `g i`, and `ϕ` acts on both by evaluation.
+  let e : {x : (∏ i, g i).rootSet E // π x = i} ≃ (g i).rootSet E :=
+    { toFun := fun x => ⟨x.1, (hπ _ _).mp x.2⟩
+      invFun := fun y => ⟨⟨y, hmem i y y.2⟩, (hπ _ _).mpr y.2⟩
+      left_inv := fun _ => rfl
+      right_inv := fun _ => rfl }
+  rw [← Equiv.Perm.fullCycleType_permCongr e]
+  congr 1
+  ext y
+  simp [e, Equiv.permCongr_apply, Gal.galActionHom_restrict]
+
+end CycleType
 
 end TauCeti

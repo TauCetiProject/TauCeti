@@ -12,163 +12,130 @@ import TauCeti.Topology.Algebra.Module.Complement
 /-!
 # Fredholm operators
 
-This file connects Mathlib's analytic notion of a **Fredholm operator** to the nonlinear-analysis
-substrate of the analytic Heegaard Floer roadmap (Lane F0, "Fredholm operators and index theory").
+This file extends Mathlib's notion of a **Fredholm operator** with finite-dimensional examples
+and invariance under scalar multiplication and continuous linear changes of coordinates.
 All Fredholm hypotheses use `ContinuousLinearMap.IsFredholm` directly. That predicate asks for a
 strict map with closed range, finite-dimensional kernel and cokernel, and a topologically
-complemented kernel. Between Banach spaces over an `IsRCLikeNormedField` the strictness,
-closed-range and complemented-kernel conditions are automatic, so the predicate is *equivalent*
-there to finite dimensionality of the kernel and cokernel alone; that equivalence is proved and
-exposed as `TauCeti.isFredholm_iff_finite_ker_coker` in `TauCeti.Analysis.Fredholm.ClosedRange`.
+complemented kernel. Between Banach spaces over an `IsRCLikeNormedField`, finite-dimensional
+kernel and cokernel imply the strictness, closed-range and complemented-kernel conditions.
+Thus the predicate is *equivalent* there to finite dimensionality of the kernel and cokernel alone;
+that equivalence is proved in `TauCeti.Analysis.Fredholm.ClosedRange` as
+`TauCeti.isFredholm_iff_finite_ker_coker`.
 Outside that setting `ContinuousLinearMap.IsFredholm` is genuinely stronger, and it is the notion
 intended throughout.
 
 ## Main declarations
 
-* `TauCeti.isFredholm_of_finiteDimensional`: every operator between finite-dimensional spaces is
-  Fredholm.
+* `ContinuousLinearMap.isFredholm_of_finiteDimensional`: every operator between finite-dimensional
+  topological vector spaces over a complete scalar field, with Hausdorff target, is Fredholm.
 * `ContinuousLinearMap.IsFredholm.neg`, `ContinuousLinearMap.IsFredholm.smul`: Fredholmness is
   preserved by negation and by nonzero scalar multiples.
 * `ContinuousLinearMap.IsFredholm.comp_equiv` and
   `ContinuousLinearMap.IsFredholm.equiv_comp`: composing with a continuous linear equivalence on
-  either side preserves Fredholmness. Mathlib provides stronger `↔` versions over complete scalar
-  fields; these implications hold over any `NontriviallyNormedField`.
+  either side preserves Fredholmness. These implications hold between topological modules over any
+  `NontriviallyNormedField`, without completeness or separation assumptions.
 
-The Fredholm index and its elementary API live in `TauCeti.Analysis.Fredholm.Index`.
+The Fredholm index and its elementary API live in
+`TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Index`.
 -/
 
 public section
 
-namespace TauCeti
+namespace ContinuousLinearMap
 
 open Module
 
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
 variable {E F G : Type*}
-variable [NormedAddCommGroup E] [NormedSpace 𝕜 E]
-variable [NormedAddCommGroup F] [NormedSpace 𝕜 F]
-variable [NormedAddCommGroup G] [NormedSpace 𝕜 G]
+variable [AddCommGroup E] [TopologicalSpace E] [Module 𝕜 E]
+variable [AddCommGroup F] [TopologicalSpace F] [Module 𝕜 F]
+variable [AddCommGroup G] [TopologicalSpace G] [Module 𝕜 G]
 
 section FiniteDimensional
 
-variable [CompleteSpace 𝕜] [FiniteDimensional 𝕜 E] [FiniteDimensional 𝕜 F]
+variable [CompleteSpace 𝕜]
+variable [IsTopologicalAddGroup E] [ContinuousSMul 𝕜 E] [FiniteDimensional 𝕜 E]
+variable [IsTopologicalAddGroup F] [ContinuousSMul 𝕜 F] [T2Space F] [FiniteDimensional 𝕜 F]
 
-/-- Every continuous linear map between finite-dimensional spaces is Fredholm. -/
-lemma isFredholm_of_finiteDimensional (T : E →L[𝕜] F) : ContinuousLinearMap.IsFredholm T where
+/-- Every continuous linear map between finite-dimensional topological vector spaces over a
+complete scalar field is Fredholm, provided the target is Hausdorff. -/
+lemma isFredholm_of_finiteDimensional (T : E →L[𝕜] F) : IsFredholm T where
   isStrictMap := T.isStrictMap_of_finiteDimensional
   isClosed_range := (LinearMap.range (T : E →ₗ[𝕜] F)).closed_of_finiteDimensional
   finite_ker := inferInstance
   finite_coker := inferInstance
   closedComplemented_ker :=
-    Submodule.ClosedComplemented.of_finiteDimensional_of_le
-      Submodule.closedComplemented_top le_top
+    Submodule.ClosedComplemented.of_finiteDimensional_quotient T.isClosed_ker
 
 end FiniteDimensional
-
-/-- A nonzero scalar multiple of a Fredholm operator is Fredholm. -/
-lemma _root_.ContinuousLinearMap.IsFredholm.smul {T : E →L[𝕜] F}
-    (hT : ContinuousLinearMap.IsFredholm T) {c : 𝕜} (hc : c ≠ 0) :
-    ContinuousLinearMap.IsFredholm (c • T) where
-  isStrictMap := by
-    -- `IsStrictMap` is phrased for functions; unfold the bundled scalar action to match it.
-    change Topology.IsStrictMap (fun x ↦ c • T x)
-    exact (Homeomorph.smulOfNeZero c hc).comp_isStrictMap_iff.mpr hT.isStrictMap
-  isClosed_range := by
-    rw [ContinuousLinearMap.toLinearMap_smul, LinearMap.range_smul _ _ hc]
-    exact hT.isClosed_range
-  finite_ker := by
-    rw [ContinuousLinearMap.toLinearMap_smul, LinearMap.ker_smul _ _ hc]
-    exact hT.finite_ker
-  finite_coker := by
-    rw [ContinuousLinearMap.toLinearMap_smul, LinearMap.range_smul _ _ hc]
-    exact hT.finite_coker
-  closedComplemented_ker := by
-    rw [ContinuousLinearMap.toLinearMap_smul, LinearMap.ker_smul _ _ hc]
-    exact hT.closedComplemented_ker
-
-/-- The negation of a Fredholm operator is Fredholm. -/
-lemma _root_.ContinuousLinearMap.IsFredholm.neg {T : E →L[𝕜] F}
-    (hT : ContinuousLinearMap.IsFredholm T) : ContinuousLinearMap.IsFredholm (-T) := by
-  simpa using hT.smul (c := -1) (by norm_num)
 
 section CompEquiv
 
 variable {T : E →L[𝕜] F}
 
-/-- The kernel of `e.comp T` is the kernel of `T`, since `e` is injective. Used by
-`ContinuousLinearMap.IsFredholm.equiv_comp`. -/
-private lemma ker_equiv_comp (T : E →L[𝕜] F) (e : F ≃L[𝕜] G) :
-    LinearMap.ker (((e : F →L[𝕜] G).comp T : E →L[𝕜] G) : E →ₗ[𝕜] G) =
-      LinearMap.ker (T : E →ₗ[𝕜] F) := by
-  rw [ContinuousLinearMap.toLinearMap_comp]
-  rw [ContinuousLinearEquiv.toLinearMap_toContinuousLinearMap]
-  rw [LinearMap.ker_comp_of_ker_eq_bot _ (LinearMap.ker_eq_bot.2 e.injective)]
-
-/-- The range of `T.comp e` is the range of `T`, since `e` is surjective. Used by
-`ContinuousLinearMap.IsFredholm.comp_equiv`. -/
-private lemma range_comp_equiv (T : E →L[𝕜] F) (e : G ≃L[𝕜] E) :
-    LinearMap.range ((T.comp (e : G →L[𝕜] E) : G →L[𝕜] F) : G →ₗ[𝕜] F) =
-      LinearMap.range (T : E →ₗ[𝕜] F) := by
-  rw [ContinuousLinearMap.toLinearMap_comp]
-  rw [ContinuousLinearEquiv.toLinearMap_toContinuousLinearMap]
-  rw [LinearMap.range_comp_of_range_eq_top _ (LinearMap.range_eq_top.2 e.surjective)]
-
-/-- The kernel of `T.comp e` is the image of the kernel of `T` under `e⁻¹`. Used by
-`ContinuousLinearMap.IsFredholm.comp_equiv`. -/
-private lemma ker_comp_equiv (T : E →L[𝕜] F) (e : G ≃L[𝕜] E) :
-    LinearMap.ker ((T.comp (e : G →L[𝕜] E) : G →L[𝕜] F) : G →ₗ[𝕜] F) =
-      (LinearMap.ker (T : E →ₗ[𝕜] F)).map (e.toLinearEquiv.symm : E →ₗ[𝕜] G) := by
-  rw [ContinuousLinearMap.toLinearMap_comp, LinearMap.ker_comp]
-  rw [ContinuousLinearEquiv.toLinearMap_toContinuousLinearMap]
-  rw [Submodule.comap_equiv_eq_map_symm]
-
 /-- Postcomposing a Fredholm operator with a continuous linear equivalence yields a Fredholm
 operator.
 
-This is the `mpr` direction of Mathlib's `ContinuousLinearMap.isFredholm_equiv_comp`, which
-states the `↔` and so is stronger, but assumes a complete scalar field. Transporting the structure
-fields directly proves this implication over any `NontriviallyNormedField`. -/
-lemma _root_.ContinuousLinearMap.IsFredholm.equiv_comp
-    (hT : ContinuousLinearMap.IsFredholm T) (e : F ≃L[𝕜] G) :
-    ContinuousLinearMap.IsFredholm ((e : F →L[𝕜] G).comp T) := by
+Unlike `ContinuousLinearMap.isFredholm_equiv_comp`, this implication does not require a complete
+scalar field, continuous module operations, or Hausdorff spaces. -/
+lemma IsFredholm.equiv_comp (hT : IsFredholm T) (e : F ≃L[𝕜] G) :
+    IsFredholm ((e : F →L[𝕜] G).comp T) := by
   refine ⟨?_, ?_, ?_, ?_, ?_⟩
   · -- Expose function composition so the homeomorphism strictness lemma applies.
     change Topology.IsStrictMap (fun x ↦ e (T x))
     exact e.toHomeomorph.comp_isStrictMap_iff.mpr hT.isStrictMap
   · rw [ContinuousLinearMap.toLinearMap_comp, LinearMap.range_comp]
     simpa [Submodule.map_coe] using e.isClosed_image.2 hT.isClosed_range
-  · rw [ker_equiv_comp T e]
+  · rw [ContinuousLinearMap.toLinearMap_comp,
+      ContinuousLinearEquiv.toLinearMap_toContinuousLinearMap, LinearEquiv.ker_comp]
     exact hT.finite_ker
   · rw [ContinuousLinearMap.toLinearMap_comp,
       ContinuousLinearEquiv.toLinearMap_toContinuousLinearMap, LinearMap.range_comp]
     have := hT.finite_coker
     exact (Submodule.Quotient.equiv _ _ e.toLinearEquiv rfl).finiteDimensional
-  · rw [ker_equiv_comp T e]
+  · rw [ContinuousLinearMap.toLinearMap_comp,
+      ContinuousLinearEquiv.toLinearMap_toContinuousLinearMap, LinearEquiv.ker_comp]
     exact hT.closedComplemented_ker
 
 /-- Precomposing a Fredholm operator with a continuous linear equivalence yields a Fredholm
 operator.
 
-This is the `mpr` direction of Mathlib's `ContinuousLinearMap.isFredholm_comp_equiv`, which
-states the `↔` and so is stronger, but assumes a complete scalar field. Transporting the structure
-fields directly proves this implication over any `NontriviallyNormedField`. -/
-lemma _root_.ContinuousLinearMap.IsFredholm.comp_equiv (hT : ContinuousLinearMap.IsFredholm T)
-    (e : G ≃L[𝕜] E) :
-    ContinuousLinearMap.IsFredholm (T.comp (e : G →L[𝕜] E)) := by
+Unlike `ContinuousLinearMap.isFredholm_comp_equiv`, this implication does not require a complete
+scalar field, continuous module operations, or Hausdorff spaces. -/
+lemma IsFredholm.comp_equiv (hT : IsFredholm T) (e : G ≃L[𝕜] E) :
+    IsFredholm (T.comp (e : G →L[𝕜] E)) := by
   refine ⟨?_, ?_, ?_, ?_, ?_⟩
   · -- Expose function composition so the homeomorphism strictness lemma applies.
     change Topology.IsStrictMap (fun x ↦ T (e x))
     exact e.toHomeomorph.isStrictMap_comp_iff.mpr hT.isStrictMap
-  · rw [range_comp_equiv T e]
-    exact hT.isClosed_range
-  · rw [ker_comp_equiv T e]
+  · simpa using hT.isClosed_range
+  · rw [ContinuousLinearMap.toLinearMap_comp, LinearMap.ker_comp,
+      ContinuousLinearEquiv.toLinearMap_toContinuousLinearMap,
+      Submodule.comap_equiv_eq_map_symm]
     have := hT.finite_ker
     exact (e.symm.submoduleMap _).finiteDimensional
-  · rw [range_comp_equiv T e]
-    exact hT.finite_coker
-  · rw [ker_comp_equiv T e]
+  · simpa using hT.finite_coker
+  · rw [ContinuousLinearMap.toLinearMap_comp, LinearMap.ker_comp,
+      ContinuousLinearEquiv.toLinearMap_toContinuousLinearMap,
+      Submodule.comap_equiv_eq_map_symm]
     exact hT.closedComplemented_ker.map e.symm
 
 end CompEquiv
 
-end TauCeti
+variable [ContinuousConstSMul 𝕜 F] in
+/-- A nonzero scalar multiple of a Fredholm operator is Fredholm. -/
+lemma IsFredholm.smul {T : E →L[𝕜] F} (hT : IsFredholm T) {c : 𝕜} (hc : c ≠ 0) :
+    IsFredholm (c • T) := by
+  convert hT.equiv_comp (ContinuousLinearEquiv.smulLeft (R₁ := 𝕜) (M₁ := F)
+    (Units.mk0 c hc)) using 1
+  ext x
+  simp
+
+variable [IsTopologicalAddGroup F] in
+/-- The negation of a Fredholm operator is Fredholm. -/
+lemma IsFredholm.neg {T : E →L[𝕜] F} (hT : IsFredholm T) : IsFredholm (-T) := by
+  convert hT.equiv_comp (ContinuousLinearEquiv.neg 𝕜) using 1
+  ext x
+  simp
+
+end ContinuousLinearMap

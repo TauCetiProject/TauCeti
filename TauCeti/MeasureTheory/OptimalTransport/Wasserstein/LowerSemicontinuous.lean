@@ -74,7 +74,7 @@ theorem lowerSemicontinuous_wassersteinEDist_of_ne_top (hp : p ≠ ∞) :
         wassersteinEDist 0 q.1.toMeasure q.2.toMeasure) = fun _ ↦ 0 :=
       funext fun q ↦ nonpos_iff_eq_zero.1 <|
         (wassersteinEDist_le (isCoupling_prod q.1.toMeasure q.2.toMeasure) 0).trans_eq
-          eLpNorm_exponent_zero
+          (eLpNorm_exponent_zero measurable_edist.aestronglyMeasurable)
     rw [h0]
     exact lowerSemicontinuous_const
   have hr : 0 < p.toReal := ENNReal.toReal_pos hp0 hp
@@ -84,7 +84,7 @@ theorem lowerSemicontinuous_wassersteinEDist_of_ne_top (hp : p ≠ ∞) :
       (fun t : ℝ≥0∞ ↦ t ^ p.toReal⁻¹) ∘ fun q ↦
         transportCost (fun z : X × X ↦ edist z.1 z.2 ^ p.toReal) q.1.toMeasure q.2.toMeasure := by
     funext q
-    rw [Function.comp_apply, ← wassersteinEDist_rpow_eq_transportCost hp0 hp,
+    rw [Function.comp_apply, ← wassersteinEDist_rpow_eq_transportCost measurable_edist hp0 hp,
       ENNReal.rpow_rpow_inv hr.ne']
   rw [heq]
   exact ENNReal.continuous_rpow_const.comp_lowerSemicontinuous

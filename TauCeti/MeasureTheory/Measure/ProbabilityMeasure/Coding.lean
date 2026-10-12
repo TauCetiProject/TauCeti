@@ -7,6 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.Measure.ProbabilityMeasure
 public import Mathlib.MeasureTheory.SetAlgebra
+import Mathlib.MeasureTheory.Function.FactorsThrough
 
 /-!
 # Measurable coding of probability measures
@@ -18,13 +19,19 @@ countable product of `ℝ≥0∞`: evaluate on the countable set algebra generat
 `countableGeneratingSet α`.
 
 This code lets probability arguments use a standard Borel target without imposing a topology on
-`α`. Injectivity follows from uniqueness of finite measures on a generating set algebra.
+`α`. Its coordinates generate the Giry measurable space, so every measurable function of a
+probability measure into a nonempty standard Borel space factors measurably through the code.
+Injectivity follows from uniqueness of finite measures on a generating set algebra.
 
 ## Main definitions and results
 
 * `TauCeti.MeasureTheory.ProbabilityMeasureCodeIndex` -- the countable generating set algebra;
 * `TauCeti.MeasureTheory.probabilityMeasureCode` -- evaluation on every member of that algebra;
 * `TauCeti.MeasureTheory.measurable_probabilityMeasureCode` -- measurability of the code;
+* `TauCeti.MeasureTheory.measurableSpace_probabilityMeasure_eq_comap_probabilityMeasureCode` --
+  the Giry measurable space is induced by the code;
+* `Measurable.exists_eq_measurable_comp_probabilityMeasureCode` -- measurable
+  factorization through the code;
 * `TauCeti.MeasureTheory.probabilityMeasureCode_injective` -- the code determines the measure.
 -/
 
@@ -74,6 +81,49 @@ theorem measurable_probabilityMeasureCode : Measurable (probabilityMeasureCode (
   Measurable.of_eval fun s =>
     (Measure.measurable_coe (measurableSet_probabilityMeasureCodeIndex s)).comp
       measurable_subtype_coe
+
+/-- The Giry measurable space on probability measures over a countably generated space is the
+pullback of the product measurable space along the canonical evaluation code. -/
+theorem measurableSpace_probabilityMeasure_eq_comap_probabilityMeasureCode :
+    (inferInstance : MeasurableSpace (ProbabilityMeasure α)) =
+      MeasurableSpace.comap (probabilityMeasureCode (α := α)) inferInstance := by
+  apply le_antisymm
+  · let mProb : MeasurableSpace (ProbabilityMeasure α) := inferInstance
+    let mCode : MeasurableSpace (ProbabilityMeasure α) :=
+      MeasurableSpace.comap (probabilityMeasureCode (α := α)) inferInstance
+    have hcode : @Measurable (ProbabilityMeasure α)
+        (ProbabilityMeasureCodeIndex α → ℝ≥0∞) mCode inferInstance
+        (probabilityMeasureCode (α := α)) :=
+      Measurable.of_comap_le le_rfl
+    have hmeasure : @Measurable (ProbabilityMeasure α) (Measure α) mCode inferInstance
+        ProbabilityMeasure.toMeasure := by
+      refine Measurable.measure_of_isPiSystem_of_isProbabilityMeasure
+        (S := generateSetAlgebra (countableGeneratingSet α)) ?_ ?_ ?_
+      · simp only [generateFrom_generateSetAlgebra_eq, generateFrom_countableGeneratingSet]
+      · exact isSetAlgebra_generateSetAlgebra.isSetRing.isSetSemiring.isPiSystem
+      · intro s hs
+        convert (measurable_pi_apply ⟨s, hs⟩).comp hcode using 1
+        ext P
+        exact (probabilityMeasureCode_apply P ⟨s, hs⟩).symm
+    have hid : @Measurable (ProbabilityMeasure α) (ProbabilityMeasure α) mCode mProb id := by
+      exact hmeasure.subtype_mk (p := fun μ : Measure α => IsProbabilityMeasure μ)
+    have hle := hid.comap_le
+    simpa only [MeasurableSpace.comap_id] using hle
+  · exact measurable_probabilityMeasureCode.comap_le
+
+/-- A measurable function of a probability measure into a nonempty standard Borel space factors
+measurably through its canonical code. The extension away from codes of actual probability
+measures is not specified. -/
+theorem _root_.Measurable.exists_eq_measurable_comp_probabilityMeasureCode
+    {γ : Type*} [MeasurableSpace γ]
+    [StandardBorelSpace γ] [Nonempty γ]
+    {F : ProbabilityMeasure α → γ} (hF : Measurable F) :
+    ∃ G : (ProbabilityMeasureCodeIndex α → ℝ≥0∞) → γ,
+      Measurable G ∧ F = G ∘ probabilityMeasureCode := by
+  have hF' : Measurable[MeasurableSpace.comap probabilityMeasureCode inferInstance] F := by
+    rw [← measurableSpace_probabilityMeasure_eq_comap_probabilityMeasureCode (α := α)]
+    exact hF
+  exact hF'.exists_eq_measurable_comp
 
 /-- The evaluation code determines a probability measure on a countably generated space. -/
 theorem probabilityMeasureCode_injective :

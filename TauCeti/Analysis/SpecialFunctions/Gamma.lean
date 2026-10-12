@@ -18,8 +18,8 @@ the set of its singularities is countable.
 Mathlib records the analytic side of this (`Real.differentiableAt_Gamma`,
 `Real.not_continuousAt_Gamma_neg_nat`) but never draws the measurability conclusion. It is needed
 as soon as a formula containing `Real.Gamma s` is integrated or measured *in the variable `s`* —
-for instance for the normalizing constants of the Gamma and Beta densities, which is what
-`TauCeti/Probability/Distributions/Measurability.lean` uses this for.
+for instance for the normalizing constants of the Gamma and Beta densities, which is why their
+family-specific measurability modules use this result.
 
 ## Main results
 

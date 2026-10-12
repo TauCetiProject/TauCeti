@@ -6,7 +6,7 @@ Authors: Codex
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.Semisimple.Reductive
-public import TauCeti.AlgebraicGeometry.AffineGroupScheme.Reductive
+public import TauCeti.AlgebraicGeometry.AffineGroupScheme.Reductive.Basic
 public import TauCeti.AlgebraicGeometry.AffineGroupScheme.Semisimple.Basic
 
 /-!

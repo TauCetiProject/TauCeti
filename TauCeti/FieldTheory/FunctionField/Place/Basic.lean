@@ -10,6 +10,7 @@ public import Mathlib.RingTheory.DiscreteValuationRing.TFAE
 public import Mathlib.RingTheory.Valuation.Integral
 public import Mathlib.RingTheory.Valuation.IsTrivialOn
 public import TauCeti.RingTheory.Valuation.Discrete.Order
+public import TauCeti.RingTheory.Valuation.IsTrivialOn
 
 /-!
 # Places of an algebraic function field
@@ -50,6 +51,8 @@ equivalence is needed and equality of places *is* equality of valuations
   (`TauCeti.Place.transcendental_of_ord_ne_zero`). In particular the constant field
   `algebraicClosure k F` is contained in `𝒪_P`
   (`TauCeti.Place.mem_integers_of_mem_algebraicClosure`).
+* `TauCeti.Place.eq_of_valuation_sub_lt_one`: a function agrees with at most one constant to first
+  order at a place.
 * `TauCeti.Place.integers_injective`: a place is determined by its valuation ring
   (Stichtenoth, Theorem 1.1.13), and `TauCeti.Place.eq_of_integers_le`: the valuation ring of a
   place is a maximal proper subring of `F`, so a place whose valuation ring contains that of
@@ -126,6 +129,12 @@ theorem valuation_injective : Function.Injective (valuation : Place k F → Valu
 /-- The valuation ring `𝒪_P = {f : F | v_P f ≤ 1}` of a place (Stichtenoth,
 Definition 1.1.4). -/
 def integers : ValuationSubring F := P.valuation.valuationSubring
+
+/-- The defining equation of `Place.integers`: the valuation ring of a place is Mathlib's valuation
+subring of its underlying valuation. The body of `Place.integers` is not exposed to importing
+modules, so this is how generic valuation-subring constructions are transported to it. -/
+theorem integers_def : P.integers = P.valuation.valuationSubring :=
+  (rfl)
 
 @[simp]
 theorem mem_integers_iff {f : F} : f ∈ P.integers ↔ P.valuation f ≤ 1 := (Iff.rfl)
@@ -265,6 +274,17 @@ theorem ord_sum_eq_of_forall_lt {ι : Type*} {s : Finset ι} {f : ι → F} {j :
     P.ord (∑ i ∈ s, f i) = P.ord (f j) :=
   Valuation.ord_sum_eq_of_forall_lt P.valuation hj hfj hlt
 
+/-- **Functions of pairwise distinct orders are linearly independent over the constants**: a
+family of nonzero functions whose orders at `P` are pairwise distinct is `k`-linearly independent,
+because the summand of least order dictates the order of any nontrivial linear combination. -/
+theorem linearIndependent_of_injective_ord {ι : Type*} {f : ι → F} (hf : ∀ i, f i ≠ 0)
+    (hinj : Function.Injective fun i ↦ P.ord (f i)) : LinearIndependent k f :=
+  P.valuation.linearIndependent_of_injective (fun i ↦ P.valuation.ne_zero_iff.mpr (hf i))
+    fun i j h ↦ hinj (by
+      simp only [Function.comp_apply, P.valuation_eq_exp_neg_ord (hf i),
+        P.valuation_eq_exp_neg_ord (hf j), WithZero.exp_inj, neg_inj] at h
+      exact h)
+
 /-- **Normalizing a family of coefficients.** A finite family in `F` that does not vanish
 identically has a nonzero member by which the whole family can be divided without leaving `𝒪_P`;
 a member of least order at `P` is one. This is what turns a relation with coefficients in `F`
@@ -317,15 +337,25 @@ theorem mem_integers_of_mem_algebraicClosure {f : F} (hf : f ∈ algebraicClosur
   · exact P.mem_integers_iff.mpr
       (le_of_eq (P.valuation_eq_one_of_isAlgebraic (mem_algebraicClosure_iff.mp hf) hf0))
 
+/-- **A function agrees with at most one constant to first order**: if `f - a` and `f - b` both
+vanish at `P` for constants `a` and `b`, then `a = b`, the difference `b - a` being a constant
+that vanishes at `P`. -/
+theorem eq_of_valuation_sub_lt_one {f : F} {a b : k} (ha : P.valuation (f - algebraMap k F a) < 1)
+    (hb : P.valuation (f - algebraMap k F b) < 1) : a = b := by
+  by_contra hne
+  have h := Valuation.map_sub_lt P.valuation hb ha
+  rw [sub_sub_sub_cancel_left, ← _root_.map_sub, P.isTrivialOn.eq_one _ (sub_ne_zero.mpr hne)] at h
+  exact lt_irrefl _ h
+
 end Constants
 
 section Discrete
 
 /-- Normalization says exactly that the value group of a place is all of `ℤᵐ⁰`. -/
-theorem valueGroup_eq_top : valueGroup (.ofClass P.valuation) = ⊤ :=
+theorem valueGroup_eq_top : P.valuation.valueGroup = ⊤ :=
   Valuation.valueGroup_eq_top_of_surjective P.valuation P.valuation_surjective
 
-instance : Nontrivial (valueGroup (.ofClass P.valuation)) :=
+instance : Nontrivial P.valuation.valueGroup :=
   Valuation.nontrivial_valueGroup_of_surjective P.valuation P.valuation_surjective
 
 /-- **The valuation ring of a place is a discrete valuation ring** (Stichtenoth,
@@ -450,6 +480,14 @@ theorem coe_algebraMap_constants (c : k) :
 /-- The residue field `F_P = 𝒪_P / 𝔪_P` of a place (Stichtenoth, Definition 1.1.14). The
 evaluation map `f ↦ f(P)` is `IsLocalRing.residue P.integers`. -/
 noncomputable abbrev ResidueField : Type v := IsLocalRing.ResidueField P.integers
+
+/-- The canonical map from an algebra acting compatibly on the valuation ring to the residue
+field is reduction after the map to the valuation ring. -/
+theorem algebraMap_residueField {R : Type*} [CommSemiring R] [Algebra R P.integers]
+    [Algebra R P.ResidueField] [IsScalarTower R P.integers P.ResidueField] (r : R) :
+    algebraMap R P.ResidueField r =
+      IsLocalRing.residue P.integers (algebraMap R P.integers r) := by
+  rw [IsScalarTower.algebraMap_apply R P.integers _, IsLocalRing.ResidueField.algebraMap_eq]
 
 /-- Evaluation at a place vanishes exactly on elements of positive valuation. -/
 theorem residue_eq_zero_iff_valuation_lt_one {f : P.integers} :

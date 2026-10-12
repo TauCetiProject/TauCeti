@@ -28,9 +28,13 @@ tower and the module grading.
 
 * `GradedOpposite.leftToRight_smul_of_mem`: the action on homogeneous elements is the Koszul-signed
   original left action.
+* `GradedOpposite.leftToRight_smul_of_mem_of_even`: a homogeneous scalar of even degree acts by
+  the original left action, with no sign.
 * `GradedOpposite.leftToRight_isScalarTower` and
   `GradedOpposite.leftToRight_gradedSMul`: compatibility with the ground-ring action and the
   module grading.
+* `GradedOpposite.leftToRight_leibniz_iff`: a differential satisfies the right graded Leibniz rule
+  for the transported action exactly when it satisfies the left graded Leibniz rule.
 
 The sign convention follows B. Keller, *Introduction to A-infinity algebras and modules*,
 Section 3.1.
@@ -41,6 +45,8 @@ public section
 namespace TauCeti.GradedOpposite
 
 universe uR uA uM
+
+section Action
 
 variable {R : Type uR} {A : Type uA} {M : Type uM}
   [CommRing R] [Ring A] [Algebra R A]
@@ -124,6 +130,21 @@ theorem leftToRight_smul_of_mem (G : InternalGrading R A) (H : InternalGrading R
           (InternalGrading.quadraticExponent q).negOnePow) := by ac_rfl
     _ = (p * q).negOnePow := by simp [hp, hq]
 
+/-- A homogeneous scalar of even degree acts through the graded opposite by the original left
+action, on every module element: the Koszul sign `(-1) ^ (p * q)` is trivial on each homogeneous
+component. -/
+theorem leftToRight_smul_of_mem_of_even (G : InternalGrading R A) (H : InternalGrading R M)
+    [SetLike.GradedSMul G.piece H.piece]
+    {p : ℤ} {a : A} (ha : a ∈ G.piece p) (hp : Even p) (x : M) :
+    letI : Module (GradedOpposite G)ᵐᵒᵖ M := leftToRightModule G H
+    MulOpposite.op (op G a) • x = a • x := by
+  classical
+  let _ : Module (GradedOpposite G)ᵐᵒᵖ M := leftToRightModule G H
+  rw [← DirectSum.sum_support_decompose H.piece x, Finset.smul_sum, Finset.smul_sum]
+  refine Finset.sum_congr rfl fun q _ ↦ ?_
+  rw [leftToRight_smul_of_mem G H ha (SetLike.coe_mem _),
+    Int.negOnePow_even _ (hp.mul_right q), Units.val_one, Int.cast_one, one_smul]
+
 /-- The transported graded-opposite action adds the scalar degree to the module degree. -/
 theorem leftToRight_gradedSMul (G : InternalGrading R A) (H : InternalGrading R M)
     [SetLike.GradedSMul G.piece H.piece] :
@@ -141,5 +162,91 @@ theorem leftToRight_gradedSMul (G : InternalGrading R A) (H : InternalGrading R 
   have hs' : s = MulOpposite.op (op G a) := by simp [a]
   rw [hs', leftToRight_smul_of_mem G H ha hx]
   exact Submodule.smul_mem _ _ (SetLike.GradedSMul.smul_mem ha hx)
+
+end Action
+
+section Differential
+
+/-!
+### Differentials
+
+A linear endomorphism `dM` of a graded left module satisfies the left graded Leibniz rule
+`dM (a • x) = d a • x + (-1) ^ |a| • (a • dM x)` exactly when it satisfies the right graded Leibniz
+rule `dM (x * b) = dM x * b + (-1) ^ |x| • (x * d b)` for the transported action of the graded
+opposite. Only the degree laws of `d` and `dM` are used, so the comparison serves differential
+graded and curved differential graded modules alike; the square-zero and curvature laws are added
+by their respective theories.
+-/
+
+variable {R : Type uR} {A : Type uA} {M : Type uM}
+  [CommRing R] [Ring A] [Algebra R A]
+  [AddCommGroup M] [Module R M] [Module A M] [IsScalarTower R A M]
+  (G : InternalGrading R A) (H : InternalGrading R M) [SetLike.GradedSMul G.piece H.piece]
+  {d : A →ₗ[R] A} {dM : M →ₗ[R] M}
+
+/-- The two Leibniz rules agree on a homogeneous scalar and a homogeneous module element. Both
+sides of the right-handed rule are the left-handed rule multiplied by the Koszul sign
+`(-1) ^ (p * q)`. -/
+private theorem leftToRight_leibniz_of_mem_iff
+    (hd : ∀ {p : ℤ} {a : A}, a ∈ G.piece p → d a ∈ G.piece (p + 1))
+    (hdM : ∀ {q : ℤ} {x : M}, x ∈ H.piece q → dM x ∈ H.piece (q + 1))
+    {p q : ℤ} {a : A} (ha : a ∈ G.piece p) {x : M} (hx : x ∈ H.piece q) :
+    letI : Module (GradedOpposite G)ᵐᵒᵖ M := leftToRightModule G H
+    (dM (MulOpposite.op (op G a) • x) =
+      MulOpposite.op (op G a) • dM x + q.negOnePow • (MulOpposite.op (op G (d a)) • x)) ↔
+    dM (a • x) = d a • x + p.negOnePow • (a • dM x) := by
+  let _ : Module (GradedOpposite G)ᵐᵒᵖ M := leftToRightModule G H
+  have hcast (u : ℤˣ) (y : M) : ((u : ℤ) : R) • y = u • y := by
+    rw [Int.cast_smul_eq_zsmul, Units.smul_def]
+  rw [leftToRight_smul_of_mem G H ha hx, leftToRight_smul_of_mem G H ha (hdM hx),
+    leftToRight_smul_of_mem G H (hd ha) hx, map_smul, hcast, hcast, hcast,
+    ← smul_left_cancel_iff (p * q).negOnePow (x := dM (a • x)), smul_add, smul_smul, smul_smul]
+  have hfirst : (p * q).negOnePow * p.negOnePow = (p * (q + 1)).negOnePow := by
+    rw [← Int.negOnePow_add]
+    congr 1
+    ring
+  have hsecond : q.negOnePow * ((p + 1) * q).negOnePow = (p * q).negOnePow := by
+    rw [← Int.negOnePow_add]
+    apply (Int.negOnePow_eq_iff _ _).2
+    use q
+    ring
+  rw [hfirst, hsecond, add_comm]
+
+/-- **Left and right graded Leibniz rules.** For degree-raising `d` and `dM`, the differential
+`dM` satisfies the right graded Leibniz rule for the action of the graded opposite transported by
+`leftToRightModule`, on homogeneous module elements and arbitrary scalars, exactly when it
+satisfies the left graded Leibniz rule on homogeneous scalars and arbitrary module elements. -/
+theorem leftToRight_leibniz_iff
+    (hd : ∀ {p : ℤ} {a : A}, a ∈ G.piece p → d a ∈ G.piece (p + 1))
+    (hdM : ∀ {q : ℤ} {x : M}, x ∈ H.piece q → dM x ∈ H.piece (q + 1)) :
+    letI : Module (GradedOpposite G)ᵐᵒᵖ M := leftToRightModule G H
+    (∀ {q : ℤ} {x : M}, x ∈ H.piece q → ∀ b : GradedOpposite G,
+      dM (MulOpposite.op b • x) =
+        MulOpposite.op b • dM x + q.negOnePow • (MulOpposite.op (differential G d b) • x)) ↔
+    ∀ {p : ℤ} {a : A}, a ∈ G.piece p → ∀ x : M,
+      dM (a • x) = d a • x + p.negOnePow • (a • dM x) := by
+  classical
+  let _ : Module (GradedOpposite G)ᵐᵒᵖ M := leftToRightModule G H
+  constructor
+  · intro hR p a ha x
+    rw [← DirectSum.sum_support_decompose H.piece x]
+    simp only [map_sum, Finset.smul_sum, ← Finset.sum_add_distrib]
+    refine Finset.sum_congr rfl fun q _ ↦ ?_
+    have hq := SetLike.coe_mem (DirectSum.decompose H.piece x q)
+    refine (leftToRight_leibniz_of_mem_iff G H hd hdM ha hq).1 ?_
+    rw [hR hq, differential_op]
+  · intro hL q x hx b
+    induction b using DirectSum.Decomposition.inductionOn
+        (ℳ := (GradedOpposite.grading G).piece) with
+    | zero => simp
+    | add b c hb hc =>
+        simp only [map_add, MulOpposite.op_add, add_smul, smul_add, hb, hc]
+        abel
+    | homogeneous b =>
+        have hb := (GradedOpposite.mem_piece_iff G _ b).1 b.property
+        rw [← GradedOpposite.op_unop G b, differential_op]
+        exact (leftToRight_leibniz_of_mem_iff G H hd hdM hb hx).2 (hL hb x)
+
+end Differential
 
 end TauCeti.GradedOpposite

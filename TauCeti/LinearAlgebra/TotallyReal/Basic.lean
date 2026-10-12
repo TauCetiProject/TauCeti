@@ -83,6 +83,14 @@ theorem prod {K : F →ₗ[R] F} {M : Submodule R F} (hL : IsTotallyReal J L) (h
   rw [isTotallyReal_iff, LinearMap.prodMap_map_prod, disjoint_iff, Submodule.prod_inf_prod,
     hL.inf_eq_bot, hM.inf_eq_bot, Submodule.prod_bot]
 
+/-- An injective linear map intertwining `J` and `K` sends `J`-totally real submodules to
+`K`-totally real submodules. For real-linear maps between complex vector spaces, with `J` and `K`
+multiplication by `i`, the intertwining condition says that the map is complex-linear. -/
+theorem map {K : F →ₗ[R] F} (hL : IsTotallyReal J L) {f : E →ₗ[R] F}
+    (hf : Function.Injective f) (hfJ : f ∘ₗ J = K ∘ₗ f) : IsTotallyReal K (L.map f) := by
+  rw [isTotallyReal_iff, ← Submodule.map_comp, ← hfJ, Submodule.map_comp]
+  exact Submodule.disjoint_map hf hL.disjoint
+
 end IsTotallyReal
 
 namespace IsMaximalTotallyReal

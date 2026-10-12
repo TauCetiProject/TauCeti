@@ -6,7 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Quotient.Bilinear
-public import TauCeti.Algebra.Homology.AInfinity.Algebra
+public import TauCeti.Algebra.Homology.AInfinity.Algebra.DG
+public import TauCeti.Algebra.Module.GradedModule.Quotient
 
 /-!
 # Cohomology of an `A∞` algebra
@@ -24,6 +25,17 @@ The arbitrary-input arity-three identity `AInfinityAlgebra.m_one_m_three` exhibi
 of the binary operation as a unary boundary, so the induced product is associative on cohomology.
 Together with bilinearity, this makes the cohomology an associative nonunital `R`-algebra.
 
+The unary operation has degree one, so it commutes with the homogeneous projections up to a shift
+of the degree by one.  Hence the homogeneous components of a cycle are cycles, and the degree-`p`
+component of a boundary `m₁(y)` is the boundary `m₁(y_{p-1})`.  The cycles therefore inherit the
+internal grading, the boundaries form a homogeneous submodule of them, and the cohomology is
+graded by the classes of homogeneous cycles.  The binary operation has degree zero, so the
+cohomology is a graded nonunital algebra: the graded algebra `H(A)` which carries the minimal
+models of `A` and against which formality of `A` is measured.  As a graded nonunital algebra with
+zero differential it is itself an `A∞` algebra, with zero `m₁`, the cohomology product as `m₂`,
+and no higher operations; degree-preserving algebra morphisms between cohomology algebras are
+strict morphisms of these `A∞` algebras.
+
 ## Main definitions
 
 * `TauCeti.AInfinityAlgebra.cycles` and `TauCeti.AInfinityAlgebra.boundaries`: the cycles and
@@ -31,10 +43,26 @@ Together with bilinearity, this makes the cohomology an associative nonunital `R
 * `TauCeti.AInfinityAlgebra.Cohomology`: the total cohomology module.
 * `TauCeti.AInfinityAlgebra.cohomologyClassLinearMap`: the quotient map from cycles to cohomology.
 * `TauCeti.AInfinityAlgebra.cohomologyClass`: the class represented by a cycle.
+* `TauCeti.AInfinityAlgebra.cohomologyEquivOfCyclesEqTop`: the class-map equivalence when all
+  elements are cycles.
 * `TauCeti.AInfinityAlgebra.cohomologyMul`: the product on cohomology induced by the binary
   operation.
 * `TauCeti.AInfinityAlgebra.instNonUnitalRingCohomology`, together with the scalar tower and
   commuting-scalars instances: the cohomology as an associative nonunital `R`-algebra.
+* `TauCeti.AInfinityAlgebra.cyclesGrading`: the internal grading of the cycles.
+* `TauCeti.AInfinityAlgebra.cohomologyGrading`: the internal grading of the cohomology by the
+  classes of homogeneous cycles.
+* `TauCeti.AInfinityAlgebra.cohomologyAInfinityAlgebra`: the cohomology as an `A∞` algebra whose
+  only nonzero operation is `m₂`.
+
+## Main results
+
+* `TauCeti.AInfinityAlgebra.isHomogeneous_cycles`: the homogeneous components of a cycle are
+  cycles.
+* `TauCeti.AInfinityAlgebra.decompose_cohomologyClass`: the degree-`p` component of the class of a
+  cycle is the class of its degree-`p` component.
+* `TauCeti.AInfinityAlgebra.instGradedMulCohomologyGrading`: the product on cohomology has degree
+  zero.
 
 ## References
 
@@ -45,7 +73,7 @@ public section
 
 namespace TauCeti
 
-universe uR uA
+universe uR uA uB
 
 namespace AInfinityAlgebra
 
@@ -57,6 +85,10 @@ variable {R : Type uR} {A : Type uA} [CommRing R] [AddCommGroup A] [Module R A]
 def cycles (𝒜 : AInfinityAlgebra R A) : Submodule R A :=
   LinearMap.ker 𝒜.differential
 
+/-- The cycles are the kernel of the differential. -/
+theorem cycles_def (𝒜 : AInfinityAlgebra R A) :
+    𝒜.cycles = LinearMap.ker 𝒜.differential := (rfl)
+
 /-- An element is a cycle exactly when its unary operation vanishes. -/
 @[simp]
 theorem mem_cycles (𝒜 : AInfinityAlgebra R A) {x : A} :
@@ -66,6 +98,10 @@ theorem mem_cycles (𝒜 : AInfinityAlgebra R A) {x : A} :
 /-- The boundaries of an `A∞` algebra are the range of its unary operation. -/
 def boundaries (𝒜 : AInfinityAlgebra R A) : Submodule R A :=
   LinearMap.range 𝒜.differential
+
+/-- The boundaries are the range of the differential. -/
+theorem boundaries_def (𝒜 : AInfinityAlgebra R A) :
+    𝒜.boundaries = LinearMap.range 𝒜.differential := (rfl)
 
 /-- An element is a boundary exactly when it is the unary operation of some element. -/
 @[simp]
@@ -135,8 +171,8 @@ theorem mem_boundariesInCycles (𝒜 : AInfinityAlgebra R A) {x : 𝒜.cycles} :
 
 /-- The total cohomology module of an `A∞` algebra: unary cycles modulo unary boundaries.
 
-Its elements are not required to be homogeneous; degree conditions on representatives are stated
-separately using `AInfinityAlgebra.grading`. -/
+Its elements are not required to be homogeneous; its internal grading is
+`AInfinityAlgebra.cohomologyGrading`. -/
 abbrev Cohomology (𝒜 : AInfinityAlgebra R A) := 𝒜.cycles ⧸ 𝒜.boundariesInCycles
 
 /-- The linear quotient map from cycles to cohomology. -/
@@ -151,6 +187,39 @@ def cohomologyClass (𝒜 : AInfinityAlgebra R A) {x : A} (hx : x ∈ 𝒜.cycle
 through which maps out of cohomology are built by the universal property of the quotient. -/
 theorem cohomologyClass_eq_mk (𝒜 : AInfinityAlgebra R A) {x : A} (hx : x ∈ 𝒜.cycles) :
     𝒜.cohomologyClass hx = Submodule.Quotient.mk ⟨x, hx⟩ := (rfl)
+
+/-- The quotient map sends a cycle to its cohomology class. -/
+@[simp]
+theorem cohomologyClassLinearMap_apply (𝒜 : AInfinityAlgebra R A) (x : 𝒜.cycles) :
+    𝒜.cohomologyClassLinearMap x = 𝒜.cohomologyClass x.property := by
+  rw [cohomologyClass]
+
+/-- If every element is a cycle, the differential and hence the boundaries vanish, so the class
+map is a linear equivalence with cohomology. -/
+noncomputable def cohomologyEquivOfCyclesEqTop
+    (𝒜 : AInfinityAlgebra R A) (hcycles : 𝒜.cycles = ⊤) : A ≃ₗ[R] 𝒜.Cohomology := by
+  have hd : 𝒜.differential = 0 := LinearMap.ker_eq_top.mp (𝒜.cycles_def ▸ hcycles)
+  have hboundaries : 𝒜.boundariesInCycles = ⊥ := by
+    apply le_antisymm _ bot_le
+    intro x hx
+    apply Subtype.ext
+    have hx' := (𝒜.mem_boundariesInCycles).mp hx
+    rw [boundaries_def, hd] at hx'
+    simpa using hx'
+  exact
+  (LinearEquiv.ofTop 𝒜.cycles hcycles).symm ≪≫ₗ
+    (Submodule.quotEquivOfEqBot _ hboundaries).symm
+
+/-- The equivalence for trivial differential sends an element to its cohomology class. -/
+@[simp]
+theorem cohomologyEquivOfCyclesEqTop_apply
+    (𝒜 : AInfinityAlgebra R A) (hcycles : 𝒜.cycles = ⊤)
+    (x : A) (hx : x ∈ 𝒜.cycles) :
+    𝒜.cohomologyEquivOfCyclesEqTop hcycles x =
+      𝒜.cohomologyClass hx := by
+  rw [cohomologyEquivOfCyclesEqTop, LinearEquiv.trans_apply,
+    LinearEquiv.ofTop_symm_apply, Submodule.quotEquivOfEqBot_symm_apply,
+    cohomologyClass_eq_mk]
 
 /-- Zero represents zero in cohomology. -/
 @[simp]
@@ -290,6 +359,156 @@ instance (𝒜 : AInfinityAlgebra R A) : IsScalarTower R 𝒜.Cohomology 𝒜.Co
 
 instance (𝒜 : AInfinityAlgebra R A) : SMulCommClass R 𝒜.Cohomology 𝒜.Cohomology where
   smul_comm r a b := ((𝒜.cohomologyMul a).map_smul r b).symm
+
+/-! ### The grading of cycles and cohomology -/
+
+section Grading
+
+open _root_.DirectSum
+
+/-- The unary operation commutes with the homogeneous projections, up to the degree shift by
+one. -/
+theorem differential_decompose (𝒜 : AInfinityAlgebra R A) (p : ℤ) (x : A) :
+    𝒜.differential (decompose 𝒜.grading.piece x p : A) =
+      (decompose 𝒜.grading.piece (𝒜.differential x) (p + 1) : A) :=
+  DirectSum.map_decompose_shift 𝒜.grading.piece 𝒜.grading.piece 𝒜.differential.toAddMonoidHom
+    (· + 1) (add_left_injective 1) (fun _ _ ↦ 𝒜.differential_mem_piece) p x
+
+/-- The cycles form a homogeneous submodule: the homogeneous components of a cycle are cycles. -/
+theorem isHomogeneous_cycles (𝒜 : AInfinityAlgebra R A) :
+    SetLike.IsHomogeneous 𝒜.grading.piece 𝒜.cycles := by
+  intro p x hx
+  rw [cycles, LinearMap.mem_ker] at hx ⊢
+  rw [differential_decompose, hx]
+  simp
+
+/-- The internal grading of the cycles by homogeneous cycles. -/
+noncomputable def cyclesGrading (𝒜 : AInfinityAlgebra R A) : InternalGrading R 𝒜.cycles :=
+  𝒜.grading.submodule 𝒜.cycles 𝒜.isHomogeneous_cycles
+
+/-- A cycle has degree `p` exactly when its underlying element does. -/
+@[simp]
+theorem mem_cyclesGrading_piece (𝒜 : AInfinityAlgebra R A) {p : ℤ} {x : 𝒜.cycles} :
+    x ∈ 𝒜.cyclesGrading.piece p ↔ (x : A) ∈ 𝒜.grading.piece p :=
+  𝒜.grading.mem_submodule_piece 𝒜.cycles 𝒜.isHomogeneous_cycles
+
+/-- Homogeneous projection of cycles is homogeneous projection in the ambient module. -/
+@[simp]
+theorem coe_decompose_cyclesGrading (𝒜 : AInfinityAlgebra R A) (p : ℤ) (x : 𝒜.cycles) :
+    ((decompose 𝒜.cyclesGrading.piece x p : 𝒜.cycles) : A) =
+      decompose 𝒜.grading.piece (x : A) p :=
+  𝒜.grading.coe_decompose_submodule 𝒜.cycles 𝒜.isHomogeneous_cycles p x
+
+/-- The boundaries form a homogeneous submodule of the cycles: the degree-`p` component of the
+boundary `m₁(y)` is the boundary `m₁(y_{p-1})`. -/
+theorem isHomogeneous_boundariesInCycles (𝒜 : AInfinityAlgebra R A) :
+    SetLike.IsHomogeneous 𝒜.cyclesGrading.piece 𝒜.boundariesInCycles := by
+  intro p x hx
+  rw [mem_boundariesInCycles] at hx ⊢
+  obtain ⟨y, hy⟩ := hx
+  rw [coe_decompose_cyclesGrading, ← hy, ← sub_add_cancel p 1, ← differential_decompose]
+  exact 𝒜.differential_mem_boundaries _
+
+/-- The internal grading of the cohomology: its degree-`p` piece consists of the classes of
+homogeneous cycles of degree `p`. -/
+noncomputable def cohomologyGrading (𝒜 : AInfinityAlgebra R A) : InternalGrading R 𝒜.Cohomology :=
+  𝒜.cyclesGrading.quotient 𝒜.boundariesInCycles 𝒜.isHomogeneous_boundariesInCycles
+
+/-- A cohomology class has degree `p` exactly when it is represented by a cycle of degree `p`. -/
+theorem mem_cohomologyGrading_piece_iff (𝒜 : AInfinityAlgebra R A) {p : ℤ}
+    {c : 𝒜.Cohomology} :
+    c ∈ 𝒜.cohomologyGrading.piece p ↔
+      ∃ (x : A) (hx : x ∈ 𝒜.cycles), x ∈ 𝒜.grading.piece p ∧ 𝒜.cohomologyClass hx = c := by
+  rw [cohomologyGrading, InternalGrading.mem_quotient_piece_iff]
+  constructor
+  · rintro ⟨x, hx, rfl⟩
+    exact ⟨x, x.2, 𝒜.mem_cyclesGrading_piece.1 hx, rfl⟩
+  · rintro ⟨x, hx, hp, rfl⟩
+    exact ⟨⟨x, hx⟩, 𝒜.mem_cyclesGrading_piece.2 hp, rfl⟩
+
+/-- The class of a cycle of degree `p` has degree `p`. -/
+theorem cohomologyClass_mem_cohomologyGrading_piece (𝒜 : AInfinityAlgebra R A) {p : ℤ} {x : A}
+    (hx : x ∈ 𝒜.cycles) (hp : x ∈ 𝒜.grading.piece p) :
+    𝒜.cohomologyClass hx ∈ 𝒜.cohomologyGrading.piece p :=
+  𝒜.mem_cohomologyGrading_piece_iff.2 ⟨x, hx, hp, rfl⟩
+
+/-- The degree-`p` component of the class of a cycle is the class of its degree-`p` component. -/
+@[simp]
+theorem decompose_cohomologyClass (𝒜 : AInfinityAlgebra R A) (p : ℤ) {x : A}
+    (hx : x ∈ 𝒜.cycles) :
+    (decompose 𝒜.cohomologyGrading.piece (𝒜.cohomologyClass hx) p : 𝒜.Cohomology) =
+      𝒜.cohomologyClass (𝒜.isHomogeneous_cycles p hx) := by
+  rw [cohomologyClass_eq_mk, cohomologyGrading, InternalGrading.decompose_quotient_mk,
+    cohomologyClass_eq_mk]
+  exact congrArg _ (Subtype.ext (𝒜.coe_decompose_cyclesGrading p ⟨x, hx⟩))
+
+/-- The product on cohomology has degree zero. -/
+theorem cohomologyMul_mem_cohomologyGrading_piece (𝒜 : AInfinityAlgebra R A) {p q : ℤ}
+    {a b : 𝒜.Cohomology} (ha : a ∈ 𝒜.cohomologyGrading.piece p)
+    (hb : b ∈ 𝒜.cohomologyGrading.piece q) :
+    𝒜.cohomologyMul a b ∈ 𝒜.cohomologyGrading.piece (p + q) := by
+  obtain ⟨x, hx, hxp, rfl⟩ := 𝒜.mem_cohomologyGrading_piece_iff.1 ha
+  obtain ⟨y, hy, hyq, rfl⟩ := 𝒜.mem_cohomologyGrading_piece_iff.1 hb
+  rw [cohomologyMul_cohomologyClass]
+  exact 𝒜.cohomologyClass_mem_cohomologyGrading_piece _ (by
+    simpa only [mul_apply] using 𝒜.mul_mem_piece hxp hyq)
+
+/-- The cohomology of an `A∞` algebra is a graded nonunital algebra. -/
+instance instGradedMulCohomologyGrading (𝒜 : AInfinityAlgebra R A) :
+    SetLike.GradedMul 𝒜.cohomologyGrading.piece where
+  mul_mem _ _ _ _ ha hb := 𝒜.cohomologyMul_mem_cohomologyGrading_piece ha hb
+
+end Grading
+
+/-! ### The cohomology as an `A∞` algebra -/
+
+section AInfinity
+
+/-- The cohomology of an `A∞` algebra, as the `A∞` algebra of a graded nonunital algebra with zero
+differential: `m₁ = 0`, `m₂` is the cohomology product, and all higher operations vanish. -/
+noncomputable def cohomologyAInfinityAlgebra (𝒜 : AInfinityAlgebra R A) :
+    AInfinityAlgebra R 𝒜.Cohomology :=
+  (isNonUnitalDGAlgebra_zero 𝒜.cohomologyGrading.piece).toAInfinityAlgebra
+
+/-- The cohomology `A∞` algebra is the zero-differential DG algebra converted to an `A∞`
+algebra. -/
+theorem cohomologyAInfinityAlgebra_eq_toAInfinityAlgebra (𝒜 : AInfinityAlgebra R A) :
+    𝒜.cohomologyAInfinityAlgebra =
+      (isNonUnitalDGAlgebra_zero 𝒜.cohomologyGrading.piece).toAInfinityAlgebra := by
+  rw [cohomologyAInfinityAlgebra]
+
+/-- The grading of the cohomology `A∞` algebra is the grading of the cohomology. -/
+@[simp]
+theorem cohomologyAInfinityAlgebra_grading (𝒜 : AInfinityAlgebra R A) :
+    𝒜.cohomologyAInfinityAlgebra.grading = 𝒜.cohomologyGrading := by
+  rw [cohomologyAInfinityAlgebra, IsNonUnitalDGAlgebra.toAInfinityAlgebra_grading]
+  exact InternalGrading.ext fun _ ↦ by rw [InternalGrading.ofDecomposition_piece]
+
+/-- The unary operation of the cohomology `A∞` algebra vanishes. -/
+@[simp]
+theorem cohomologyAInfinityAlgebra_m_one_apply (𝒜 : AInfinityAlgebra R A)
+    (x : Fin 1 → 𝒜.Cohomology) : 𝒜.cohomologyAInfinityAlgebra.m 1 x = 0 := by
+  rw [cohomologyAInfinityAlgebra, IsNonUnitalDGAlgebra.toAInfinityAlgebra_m_one_apply,
+    LinearMap.zero_apply]
+
+/-- The binary operation of the cohomology `A∞` algebra is the cohomology product. -/
+@[simp]
+theorem cohomologyAInfinityAlgebra_m_two_apply (𝒜 : AInfinityAlgebra R A)
+    (x : Fin 2 → 𝒜.Cohomology) : 𝒜.cohomologyAInfinityAlgebra.m 2 x = x 0 * x 1 := by
+  rw [cohomologyAInfinityAlgebra, IsNonUnitalDGAlgebra.toAInfinityAlgebra_m_two_apply]
+
+/-- The operations of arity at least three of the cohomology `A∞` algebra vanish. -/
+theorem cohomologyAInfinityAlgebra_m_of_three_le (𝒜 : AInfinityAlgebra R A) {n : ℕ}
+    (hn : 3 ≤ n) : 𝒜.cohomologyAInfinityAlgebra.m n = 0 := by
+  rw [cohomologyAInfinityAlgebra, IsNonUnitalDGAlgebra.toAInfinityAlgebra_m_of_three_le _ hn]
+
+/-- The simp-normal form of `cohomologyAInfinityAlgebra_m_of_three_le`. -/
+@[simp]
+theorem cohomologyAInfinityAlgebra_m_add_three (𝒜 : AInfinityAlgebra R A) (n : ℕ) :
+    𝒜.cohomologyAInfinityAlgebra.m (n + 3) = 0 :=
+  𝒜.cohomologyAInfinityAlgebra_m_of_three_le (by omega)
+
+end AInfinity
 
 end AInfinityAlgebra
 

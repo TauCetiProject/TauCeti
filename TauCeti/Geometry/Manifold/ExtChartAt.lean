@@ -13,7 +13,7 @@ public import Mathlib.MeasureTheory.Constructions.BorelSpace.Basic
 
 Mathlib's extended chart at a point is a `PartialEquiv` between a manifold and its model vector
 space. Its restrictions to the chart source and target are mutually continuous, hence the chart
-restricted to its source is a measurable embedding for the Borel measurable spaces. This is the
+restricted to its source is a measurable embedding for Borel measurable spaces. This is the
 form used to transport measures between a manifold and coordinates.
 
 ## Main results
@@ -33,19 +33,13 @@ namespace TauCeti
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
-  {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [MeasurableSpace M] [BorelSpace M]
 
 /-- The Borel measurable space on the model vector space, used in this file. -/
 local instance extChartAtMeasurableSpaceE : MeasurableSpace E := borel E
 
-/-- The Borel measurable space on the manifold, used in this file. -/
-local instance extChartAtMeasurableSpaceM : MeasurableSpace M := borel M
-
 /-- The model vector space's measurable space is its Borel measurable space. -/
 local instance extChartAtBorelSpaceE : BorelSpace E := ⟨rfl⟩
-
-/-- The manifold's measurable space is its Borel measurable space. -/
-local instance extChartAtBorelSpaceM : BorelSpace M := ⟨rfl⟩
 
 /-- The extended chart at `x`, restricted to its source, is a measurable embedding for the Borel
 measurable spaces. -/

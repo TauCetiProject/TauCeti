@@ -8,9 +8,9 @@ module
 public import Mathlib.RingTheory.Smooth.Basic
 public import TauCeti.Algebra.AlgebraicGroup.CommHopfAlgCat.BaseChange
 public import TauCeti.Algebra.AlgebraicGroup.Solvable.Basic
-import Mathlib.RingTheory.Flat.Basic
 import TauCeti.Algebra.AlgebraicGroup.Hopf.Commutator
 import TauCeti.RingTheory.FiniteType.PointSeparation
+import TauCeti.RingTheory.Flat.TensorProduct
 import TauCeti.RingTheory.Smooth.GeometricallyReduced
 
 /-!
@@ -42,8 +42,7 @@ solvability survives arbitrary field extension without a smoothness hypothesis.
 * J. C. Jantzen, *Representations of Algebraic Groups*, I.2.
 * T. A. Springer, *Linear Algebraic Groups*, Section 2.4.
 
-These results supply the image-solvability and scalar-extension steps for the solvable radical in
-Layer 6 of the ReductiveGroups roadmap.
+These results supply the image-solvability and scalar-extension steps for the solvable radical.
 -/
 
 public section
@@ -88,13 +87,9 @@ private theorem map_injective (f : H →ₐc[k] K) (hf : Function.Injective f) (
   induction n with
   | zero => exact hf
   | succ n ih =>
-      -- Expose the underlying linear map to apply Mathlib's flat tensor-injectivity theorem.
-      change Function.Injective
-        (Bialgebra.TensorProduct.map (map f n) (map f n)).toAlgHom.toLinearMap
-      rw [Bialgebra.TensorProduct.map_toAlgHom, Algebra.TensorProduct.toLinearMap_map,
-        TensorProduct.AlgebraTensorModule.map_eq]
-      exact TensorProduct.map_injective_of_flat_flat
-        (map f n).toAlgHom.toLinearMap (map f n).toAlgHom.toLinearMap ih ih
+      have h := Algebra.TensorProduct.map_injective_of_flat_flat
+        (map f n).toAlgHom (map f n).toAlgHom ih ih
+      rwa [← Bialgebra.TensorProduct.map_toAlgHom, BialgHom.coe_toAlgHom] at h
 
 /-- If the original coordinate algebra is smooth, every universal derived-word value algebra is
 smooth. -/
@@ -212,7 +207,7 @@ homomorphism. -/
       rw [ih, ih]
       simpa only [Bialgebra.TensorProduct.includeLeft_toAlgHom,
         Bialgebra.TensorProduct.includeRight_toAlgHom] using
-        AffineGroup.Product.productMap_restrict q
+        _root_.AlgHom.productMap_comp_includeLeft_includeRight q
 
 /-- Evaluating the universal point at a tree of points gives the corresponding derived word. -/
 @[simp] private theorem mapValue_universalDerivedWord {A : Type w} [CommRing A] [Algebra k A]
@@ -258,8 +253,9 @@ private theorem universalDerivedWord_natural (f : H →ₐc[k] K) (n : ℕ) :
   induction n with
   | zero =>
       apply WithConv.ofConv_injective
-      ext z
-      rfl
+      simp only [derivedWordCoordinateAlgebra.map_zero, universalDerivedWord_zero,
+        AlgHom.mapValue_apply, AlgHom.mapDomain_apply, ofConv_toConv,
+        AlgHom.comp_id, AlgHom.id_comp]
   | succ n ih =>
       apply WithConv.ofConv_injective
       have ih' : (derivedWordCoordinateAlgebra.map f n).toAlgHom.comp

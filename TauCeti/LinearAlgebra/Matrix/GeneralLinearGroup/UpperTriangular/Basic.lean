@@ -27,8 +27,12 @@ defined in `TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Borel`.
 ## Main declarations
 
 * `TauCeti.upperTriangularGroup`: the subgroup of upper-triangular elements of `GL m R`.
+* `TauCeti.UpperTriangularGroup.mem_comap_toGL_iff`: its preimage in `SL m R` consists of the
+  upper-triangular determinant-one matrices.
 * `TauCeti.UpperTriangularGroup.diag`: the diagonal homomorphism to `m → Rˣ`.
 * `TauCeti.UpperTriangularGroup.diagonalHom`: its section by diagonal matrices.
+* `TauCeti.UpperTriangularGroup.exists_det_eq_one_map_inv_mul_mul_map_mem`:
+  a triangularizing basis can be rescaled to have determinant one.
 * `TauCeti.UpperTriangularGroup.ker_diag`: identification of the diagonal kernel.
 
 ## References
@@ -74,6 +78,13 @@ theorem mem_iff {g : GL m R} :
 theorem isUpperTriangular (g : upperTriangularGroup m R) :
     ((g : GL m R) : Matrix m m R).IsUpperTriangular :=
   g.2
+
+/-- A determinant-one matrix lies in the preimage of the upper-triangular group exactly when it
+is upper triangular. -/
+theorem mem_comap_toGL_iff {s : Matrix.SpecialLinearGroup m R} :
+    s ∈ (upperTriangularGroup m R).comap Matrix.SpecialLinearGroup.toGL ↔
+      (s : Matrix m m R).IsUpperTriangular := by
+  rw [Subgroup.mem_comap, mem_iff, Matrix.SpecialLinearGroup.coe_GL_coe_matrix]
 
 /-- Apply a ring homomorphism entrywise to an invertible upper-triangular matrix. -/
 def map {S : Type v} [CommRing S] (phi : R →+* S) :
@@ -151,6 +162,25 @@ theorem diag_diagonalHom (t : m → Rˣ) : diag (diagonalHom t) = t := by
   funext i
   apply Units.ext
   simp
+
+/-- A triangularizing change of basis can be chosen with determinant one. Rescaling one
+column by the inverse determinant preserves the upper-triangular subgroup. -/
+theorem exists_det_eq_one_map_inv_mul_mul_map_mem {Q ι : Type*} [CommRing Q]
+    [Fintype ι] [LinearOrder ι] (f : R →+* Q) (M : GL ι Q) (P : GL ι R)
+    (h : (Matrix.GeneralLinearGroup.map f P)⁻¹ * M *
+      Matrix.GeneralLinearGroup.map f P ∈ upperTriangularGroup ι Q) :
+    ∃ P' : GL ι R, Matrix.GeneralLinearGroup.det P' = 1 ∧
+      (Matrix.GeneralLinearGroup.map f P')⁻¹ * M *
+        Matrix.GeneralLinearGroup.map f P' ∈ upperTriangularGroup ι Q := by
+  obtain ⟨u, hu⟩ := exists_det_mul_diagGL_eq_one P
+  let D : upperTriangularGroup ι R := diagonalHom u
+  refine ⟨P * D, by simpa only [D, coe_diagonalHom] using hu, ?_⟩
+  · have hD : Matrix.GeneralLinearGroup.map f (D : GL ι R) ∈
+        upperTriangularGroup ι Q := (map f D).property
+    rw [map_mul, _root_.mul_inv_rev]
+    simpa only [mul_assoc] using
+      (upperTriangularGroup ι Q).mul_mem
+        ((upperTriangularGroup ι Q).mul_mem ((upperTriangularGroup ι Q).inv_mem hD) h) hD
 
 /-- The diagonal projection is surjective. -/
 theorem diag_surjective : Function.Surjective (diag (m := m) (R := R)) :=

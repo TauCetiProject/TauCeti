@@ -118,6 +118,20 @@ theorem mem_riemannRochSpace_iff_neg_le_ord {D : Divisor k F} {f : F} (hf : f �
   rw [P.valuation_eq_exp_neg_ord hf, WithZero.exp_le_exp]
   omega
 
+/-- Membership in `L(nP)` for a single place `P`: a nonzero function lies in `L(nP)` exactly when
+its order at `P` is at least `-n` and it is regular at every other place. -/
+theorem mem_riemannRochSpace_zsmul_ofPoint_iff {P : Place k F} {n : ℤ} {f : F} (hf : f ≠ 0) :
+    f ∈ riemannRochSpace (n • WeilDivisor.ofPoint P) ↔
+      -n ≤ P.ord f ∧ ∀ Q : Place k F, Q ≠ P → 0 ≤ Q.ord f := by
+  rw [mem_riemannRochSpace_iff_neg_le_ord hf]
+  constructor
+  · refine fun h ↦ ⟨by simpa using h P, fun Q hQ ↦ ?_⟩
+    simpa [WeilDivisor.coeff_ofPoint_of_ne hQ] using h Q
+  · rintro ⟨hP, hQ⟩ Q
+    rcases eq_or_ne Q P with rfl | hQP
+    · simpa using hP
+    · simpa [WeilDivisor.coeff_ofPoint_of_ne hQP] using hQ Q hQP
+
 /-- Enlarging a divisor enlarges its Riemann–Roch space (Stichtenoth, Lemma 1.4.8, first
 part). -/
 theorem riemannRochSpace_mono {D E : Divisor k F} (h : D ≤ E) :
@@ -169,6 +183,15 @@ theorem mul_mem_riemannRochSpace_add {A B : Divisor k F} {f g : F}
   have hfP := (mem_riemannRochSpace_iff_neg_le_ord hf0).mp hf P
   have hgP := (mem_riemannRochSpace_iff_neg_le_ord hg0).mp hg P
   omega
+
+/-- The `n`-th power of a section of `L(A)` is a section of `L(n A)`. -/
+theorem pow_mem_riemannRochSpace_zsmul {A : Divisor k F} {f : F} (hf : f ∈ riemannRochSpace A)
+    (n : ℕ) : f ^ n ∈ riemannRochSpace ((n : ℤ) • A) := by
+  induction n with
+  | zero => simp
+  | succ n ih =>
+    rw [pow_succ, Nat.cast_succ, add_smul, one_smul]
+    exact mul_mem_riemannRochSpace_add ih hf
 
 namespace Divisor
 
@@ -352,6 +375,21 @@ theorem Divisor.dim_zero (hF : IsFunctionField k F) :
     Divisor.dim (0 : Divisor k F) = Module.finrank k (algebraicClosure k F) := by
   rw [Divisor.dim_def, riemannRochSpace_zero hF, Subalgebra.finrank_toSubmodule]
   rfl
+
+/-- If `k'` is the exact field of constants of a function field `F / k`, then `ℓ(0)` is the
+degree of `k' / k`. -/
+theorem Divisor.dim_zero_eq_finrank_of_isIntegrallyClosedIn {k' : Type*} [Field k']
+    [Algebra k k'] [Algebra k' F] [IsScalarTower k k' F]
+    (hF : IsFunctionField k F) (hF' : IsFunctionField k' F)
+    (hex : IsIntegrallyClosedIn k' F) :
+    Divisor.dim (0 : Divisor k F) = Module.finrank k k' := by
+  rw [Divisor.dim_zero hF, hF.algebraicClosure_eq_restrictScalars_bot hF' hex]
+  -- Restricting scalars preserves the underlying `k`-module of the bottom field.
+  calc
+    Module.finrank k ((⊥ : IntermediateField k' F).restrictScalars k) =
+        Module.finrank k (⊥ : IntermediateField k' F) := by rfl
+    _ = Module.finrank k k' :=
+      ((IntermediateField.botEquiv k' F).toLinearEquiv.restrictScalars k).finrank_eq
 
 /-- `L(0) = algebraicClosure k F` is finite-dimensional: the constants form a finite extension of
 `k` (Stichtenoth, Corollary 1.1.16). -/

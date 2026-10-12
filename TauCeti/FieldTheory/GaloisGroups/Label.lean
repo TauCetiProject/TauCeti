@@ -6,9 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.FieldTheory.GaloisGroups.Degree
-public import TauCeti.FieldTheory.GaloisGroups.Discriminant.Basic
+public import TauCeti.FieldTheory.GaloisGroups.Discriminant.Field
 public import TauCeti.FieldTheory.GaloisGroups.Orbits
 public import TauCeti.GroupTheory.Perm.TransitiveGroupLabel.Basic
+import TauCeti.GroupTheory.GroupAction.Transitive
+import TauCeti.GroupTheory.Perm.TransitiveGroupLabel.Parity
+import TauCeti.GroupTheory.Perm.TransitiveGroupLabel.Primitive
+import TauCeti.GroupTheory.Perm.TransitiveGroupLabel.Solvable
 
 /-!
 # The transitive-group label of a polynomial
@@ -31,8 +35,9 @@ reference subgroup, and it is solvable, respectively acts primitively on the roo
 the reference subgroup is solvable, respectively primitive. The Galois image consists of even
 permutations exactly when the reference subgroup does, and so, away from characteristic `2` and
 for monic `f`, the discriminant of `f` is a square exactly when the reference subgroup lies in the
-alternating group. Since every reference subgroup is transitive, a polynomial with a label is
-irreducible.
+alternating group. In the same way `f` stays irreducible over its discriminant field exactly when
+the even part of the reference subgroup is transitive. Since every reference subgroup is
+transitive, a polynomial with a label is irreducible.
 
 Separability and the degree are part of the predicate, so an inseparable polynomial, or one of
 degree other than `n`, has no label in degree `n`; nor does a polynomial of degree zero or of
@@ -47,12 +52,27 @@ by the degree alone, and in degree two by separability and irreducibility.
 ## Main results
 
 * `TauCeti.hasGaloisLabel_iff_forall`: the label does not depend on the numbering of the roots.
-* `TauCeti.HasGaloisLabel.natCard_gal`: the order of the Galois group is that of the reference.
+* `TauCeti.HasGaloisLabel.natCard_gal`: the order of the Galois group is that of the reference,
+  and `TauCeti.hasGaloisLabel_iff_natCard_gal`: conversely, the order determines the label in every
+  degree where it determines the label of a transitive subgroup.
 * `TauCeti.HasGaloisLabel.range_le_alternatingGroup_iff` and
   `TauCeti.HasGaloisLabel.isSquare_discr_iff`: the parity of the Galois image.
+* `TauCeti.HasGaloisLabel.range_le_alternatingGroup_iff_label` and
+  `TauCeti.HasGaloisLabel.isSquare_discr_iff_label`: the complete parity column, read as
+  explicit conditions on the degree and label index.
+* `TauCeti.HasGaloisLabel.irreducible_map_discrField_iff`: irreducibility over the discriminant
+  field, read on the even part of the reference subgroup.
 * `TauCeti.HasGaloisLabel.isPreprimitive_iff`, `TauCeti.HasGaloisLabel.isPreprimitive_gal_iff`:
-  primitivity of the Galois image, respectively of the Galois group, on the roots.
+  primitivity of the Galois image, respectively of the Galois group, on the roots, and
+  `TauCeti.HasGaloisLabel.isPreprimitive_gal_iff_ne_four_or_three_le`: the Galois group acts
+  primitively unless the label is `4T1`, `4T2` or `4T3`.
 * `TauCeti.HasGaloisLabel.isSolvable_iff`: solvability of the Galois group.
+* `TauCeti.HasGaloisLabel.isSolvable_iff_ne_five_or_lt_three`: the Galois group of a polynomial
+  with a label is solvable unless the label is `5T4` or `5T5`.
+* `TauCeti.isSolvable_gal_iff_exists_le_map_conj_referenceSubgroup_five_two`: the Galois group of
+  an irreducible polynomial whose root set is numbered by `Fin 5` is solvable exactly when its
+  permutation image lies in a conjugate of `F₂₀`.
+* `TauCeti.HasGaloisLabel.eq_one_of_smul_eq_self`: a regular label acts freely on the roots.
 * `TauCeti.HasGaloisLabel.irreducible`: a polynomial with a label is irreducible, and
   `TauCeti.exists_hasGaloisLabel_of_irreducible`: conversely, an irreducible separable polynomial
   has a label in every degree where each transitive subgroup has one.
@@ -161,12 +181,36 @@ theorem HasGaloisLabel.natCard_gal (h : HasGaloisLabel f j) :
   rw [← he.natCard_eq, Subgroup.card_map_of_injective e.permCongrHom.injective,
     natCard_galActionHom_range]
 
+/-- The order of a permutation of the roots induced by the Galois group of a polynomial with a
+label divides the order of the reference subgroup. The roots may be taken in any field where the
+polynomial splits. -/
+theorem HasGaloisLabel.orderOf_dvd_natCard_referenceSubgroup (h : HasGaloisLabel f j)
+    {E : Type*} [Field E] [Algebra F E] [Fact ((f.map (algebraMap F E)).Splits)]
+    {σ : Perm (f.rootSet E)} (hσ : σ ∈ (Gal.galActionHom f E).range) :
+    orderOf σ ∣ Nat.card (referenceSubgroup n j) := by
+  rw [← h.natCard_gal, ← natCard_galActionHom_range f E]
+  exact Subgroup.orderOf_dvd_natCard _ hσ
+
 /-- A polynomial with a label is irreducible, because every reference subgroup is transitive.
 There are no labels in degree zero, so no degree hypothesis is needed. -/
 theorem HasGaloisLabel.irreducible (h : HasGaloisLabel f j) : Irreducible f := by
   obtain ⟨hsep, rfl, e, he⟩ := h
   have := he.isPretransitive
   exact (isPretransitive_map_range_galActionHom_iff hsep (pos_of_transitiveGroupIndex j) e).mp this
+
+/-- **A regular label acts freely on the roots.** If the reference subgroup of the label of `f`
+has as many elements as `f` has roots, then the only element of the Galois group of `f` fixing a
+root in a splitting extension `E` is the identity: the Galois group acts transitively on the
+roots and has as many elements as there are roots. Among the quartic labels this singles out the
+cyclic label `4T1`, whose reference subgroup has order four, from the dihedral label `4T3`. -/
+theorem HasGaloisLabel.eq_one_of_smul_eq_self (h : HasGaloisLabel f j)
+    (hreg : Nat.card (referenceSubgroup n j) = n) {E : Type*} [Field E] [Algebra F E]
+    [Fact ((f.map (algebraMap F E)).Splits)] {σ : f.Gal} {x : f.rootSet E} (hx : σ • x = x) :
+    σ = 1 := by
+  have := Gal.galAction_isPretransitive f E h.irreducible
+  refine eq_one_of_natCard_eq_of_smul_eq_self ?_ hx
+  rw [h.natCard_gal, hreg, Nat.card_eq_fintype_card,
+    card_rootSet_eq_natDegree h.separable Fact.out, h.natDegree_eq]
 
 /-- **A label exists as soon as the classification supplies one.** A separable irreducible
 polynomial of degree `n` carries a label in degree `n` provided every transitive subgroup of
@@ -206,6 +250,22 @@ theorem existsUnique_hasGaloisLabel (hsep : f.Separable) (hirr : Irreducible f)
   (exists_hasGaloisLabel_of_irreducible hsep hirr hdeg hex).elim fun i hi =>
     ⟨i, hi, fun _ hk => hk.eq_of huniq hi⟩
 
+/-- **A label is recognized by its order, as soon as the classification says so.** A separable
+irreducible polynomial of degree `n` carries the label `j` exactly when its Galois group has the
+order of the reference subgroup, provided a transitive subgroup of `Equiv.Perm (Fin n)` carries
+the label `j` exactly when it has that order. -/
+theorem hasGaloisLabel_iff_natCard_gal (hsep : f.Separable) (hirr : Irreducible f)
+    (hdeg : f.natDegree = n)
+    (h : ∀ G : Subgroup (Perm (Fin n)), IsPretransitive G (Fin n) →
+      (TransitiveGroupLabel j G ↔ Nat.card G = Nat.card (referenceSubgroup n j))) :
+    HasGaloisLabel f j ↔ Nat.card f.Gal = Nat.card (referenceSubgroup n j) := by
+  refine ⟨HasGaloisLabel.natCard_gal, fun hcard => ?_⟩
+  obtain ⟨e⟩ := nonempty_rootSet_splittingField_equiv_fin f hsep
+  let e' := e.trans (finCongr hdeg)
+  refine ⟨hsep, hdeg, e', (h _ ((isPretransitive_map_range_galActionHom_iff hsep
+    (hdeg ▸ hirr.natDegree_pos) e').mpr hirr)).mpr ?_⟩
+  rwa [Subgroup.card_map_of_injective e'.permCongrHom.injective, natCard_galActionHom_range]
+
 /-- The Galois image of a polynomial with a label acts primitively on the roots exactly when the
 reference subgroup acts primitively. -/
 theorem HasGaloisLabel.isPreprimitive_iff (h : HasGaloisLabel f j) :
@@ -223,6 +283,37 @@ theorem HasGaloisLabel.isSolvable_iff (h : HasGaloisLabel f j) :
   exact MulEquiv.isSolvable_congr <|
     (MonoidHom.ofInjective (Gal.galActionHom_injective f f.SplittingField)).trans
       (e.permCongrHom.subgroupMap _)
+
+/-- **The solvability of a Galois group with a label.** The Galois group of a polynomial with a
+label is solvable unless the label is `5T4` or `5T5`. This is a statement about the group, not
+about `solvableByRad`. -/
+theorem HasGaloisLabel.isSolvable_iff_ne_five_or_lt_three (h : HasGaloisLabel f j) :
+    Group.IsSolvable f.Gal ↔ n ≠ 5 ∨ (j : ℕ) < 3 := by
+  rw [h.isSolvable_iff, isSolvable_referenceSubgroup_iff]
+
+/-- The Galois group of an irreducible polynomial whose root set is numbered by `Fin 5` is
+solvable exactly when its permutation image, read through that numbering `e`, lies in a
+conjugate of the Frobenius group `F₂₀`, the reference subgroup of `5T3`. No separability or
+degree hypothesis is needed beyond this numbering of the distinct roots. -/
+theorem isSolvable_gal_iff_exists_le_map_conj_referenceSubgroup_five_two (hirr : Irreducible f)
+    (e : f.rootSet f.SplittingField ≃ Fin 5) :
+    Group.IsSolvable f.Gal ↔
+      ∃ τ : Equiv.Perm (Fin 5),
+        (Gal.galActionHom f f.SplittingField).range.map e.permCongrHom.toMonoidHom ≤
+          (referenceSubgroup 5 ⟨2, by simp⟩).map (MulAut.conj τ).toMonoidHom := by
+  let G : Subgroup (Equiv.Perm (Fin 5)) :=
+    (Gal.galActionHom f f.SplittingField).range.map e.permCongrHom.toMonoidHom
+  have htrans : IsPretransitive G (Fin 5) := by
+    dsimp only [G]
+    rw [Equiv.isPretransitive_map_permCongrHom_iff]
+    exact isPretransitive_range_galActionHom f.SplittingField hirr
+  let _ : IsPretransitive G (Fin 5) := htrans
+  have hgal : Group.IsSolvable f.Gal ↔ Group.IsSolvable G :=
+    MulEquiv.isSolvable_congr <|
+      (MonoidHom.ofInjective (Gal.galActionHom_injective f f.SplittingField)).trans
+        (e.permCongrHom.subgroupMap _)
+  rw [hgal]
+  exact isSolvable_iff_exists_le_map_conj_referenceSubgroup_five_two G
 
 open scoped Classical in
 /-- The Galois image of a polynomial with a label consists of even permutations of the roots
@@ -243,6 +334,48 @@ theorem HasGaloisLabel.isSquare_discr_iff (h : HasGaloisLabel f j) (hf : f.Monic
   have : IsGalois F f.SplittingField := IsGalois.of_separable_splitting_field h.separable
   rw [← h.range_le_alternatingGroup_iff,
     hf.isSquare_discr_iff_range_le_alternatingGroup (E := f.SplittingField) h.separable hchar]
+
+open scoped Classical in
+/-- The Galois image of a labelled polynomial consists of even permutations exactly for
+the labels `1T1`, `3T1`, `4T2`, `4T4`, `5T1`, `5T2`, and `5T4`. -/
+theorem HasGaloisLabel.range_le_alternatingGroup_iff_label (h : HasGaloisLabel f j) :
+    (Gal.galActionHom f f.SplittingField).range ≤
+        alternatingGroup (f.rootSet f.SplittingField) ↔
+      n = 1 ∨ (n = 3 ∧ (j : ℕ) = 0) ∨
+        (n = 4 ∧ ((j : ℕ) = 1 ∨ (j : ℕ) = 3)) ∨
+        (n = 5 ∧ ((j : ℕ) = 0 ∨ (j : ℕ) = 1 ∨ (j : ℕ) = 3)) := by
+  rw [h.range_le_alternatingGroup_iff, referenceSubgroup_le_alternatingGroup_iff]
+
+/-- Away from characteristic two, a monic labelled polynomial has square discriminant
+exactly for the labels `1T1`, `3T1`, `4T2`, `4T4`, `5T1`, `5T2`, and `5T4`. -/
+theorem HasGaloisLabel.isSquare_discr_iff_label (h : HasGaloisLabel f j) (hf : f.Monic)
+    (hchar : ringChar F ≠ 2) :
+    IsSquare f.discr ↔
+      n = 1 ∨ (n = 3 ∧ (j : ℕ) = 0) ∨
+        (n = 4 ∧ ((j : ℕ) = 1 ∨ (j : ℕ) = 3)) ∨
+        (n = 5 ∧ ((j : ℕ) = 0 ∨ (j : ℕ) = 1 ∨ (j : ℕ) = 3)) := by
+  rw [h.isSquare_discr_iff hf hchar, referenceSubgroup_le_alternatingGroup_iff]
+
+/-- **Irreducibility over the discriminant field reads the even part of the label.** Away from
+characteristic `2`, a monic polynomial with a label stays irreducible over its discriminant field
+exactly when the even permutations in the reference subgroup act transitively. The discriminant
+field may be taken in any extension `E` containing a square root `δ` of the discriminant. -/
+theorem HasGaloisLabel.irreducible_map_discrField_iff (h : HasGaloisLabel f j) (hf : f.Monic)
+    (hchar : ringChar F ≠ 2) {E : Type*} [Field E] [Algebra F E] {δ : E}
+    (hδ : δ ^ 2 = algebraMap F E f.discr) :
+    Irreducible (f.map (algebraMap F (discrField f E))) ↔
+      IsPretransitive
+        (referenceSubgroup n j ⊓ alternatingGroup (Fin n) : Subgroup (Perm (Fin n))) (Fin n) := by
+  classical
+  have : IsGalois F f.SplittingField := IsGalois.of_separable_splitting_field h.separable
+  obtain ⟨e₀⟩ := nonempty_rootSet_splittingField_equiv_fin f h.separable
+  -- Move to the discriminant field inside the splitting field, where the Galois image lives.
+  rw [irreducible_map_discrField_congr hδ (hf.discrSqrt_sq h.separable e₀.symm),
+    TauCeti.irreducible_map_discrField_iff hf h.separable hchar
+      (h.natDegree_eq ▸ pos_of_transitiveGroupIndex j)]
+  obtain ⟨-, -, e, he⟩ := h
+  rw [← he.isPretransitive_inf_alternatingGroup_iff, MulEquiv.toMonoidHom_eq_coe,
+    Equiv.isPretransitive_inf_alternatingGroup_map_permCongrHom_iff]
 
 /-- In degree one, a polynomial carries the label `1T1` exactly when it has degree one; such a
 polynomial is automatically separable. -/
@@ -293,5 +426,12 @@ theorem HasGaloisLabel.isPreprimitive_gal_iff (h : HasGaloisLabel f j) :
       (Gal.rootsEquivRootsAux f f.SplittingField) fun g x => by
         rw [id, Gal.smul_def, Equiv.symm_apply_apply])
     Function.surjective_id (Gal.rootsEquivRootsAux f f.SplittingField).bijective
+
+/-- **The primitivity of a Galois group with a label.** The Galois group of a polynomial with a
+label acts primitively on the roots in the splitting field exactly when the label is not one of
+`4T1`, `4T2` and `4T3`. -/
+theorem HasGaloisLabel.isPreprimitive_gal_iff_ne_four_or_three_le (h : HasGaloisLabel f j) :
+    IsPreprimitive f.Gal (f.rootSet f.SplittingField) ↔ n ≠ 4 ∨ 3 ≤ (j : ℕ) := by
+  rw [h.isPreprimitive_gal_iff, isPreprimitive_referenceSubgroup_iff]
 
 end TauCeti

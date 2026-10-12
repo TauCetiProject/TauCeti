@@ -6,7 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Data.Matrix.Basic
+public import Mathlib.Data.Matrix.Basis
 public import Mathlib.Algebra.CharP.Defs
+public import Mathlib.Algebra.Ring.Invertible
+public import Mathlib.LinearAlgebra.Matrix.Trace
 
 /-!
 # Matrices equal to the negative of their transpose
@@ -18,11 +21,14 @@ covers every ring of odd characteristic.
 
 ## Main results
 
+* `Matrix.transpose_single_sub_single`: transposing the difference of two opposite singleton
+  matrices with the same coefficient negates it.
 * `Matrix.transpose_map_of_transpose_eq_neg`: the condition passes to the image of the matrix
-  under an additive morphism of the value rings.
+  under an additive morphism of the entry types.
 * `Matrix.diag_eq_zero_of_transpose_eq_neg`: the diagonal vanishes when doubling is injective at
   zero, with `Matrix.diag_eq_zero_of_transpose_eq_neg_of_charP` reading that off an odd
   characteristic.
+* `Matrix.trace_eq_zero_of_transpose_eq_neg`: the trace vanishes when `2` is invertible.
 * `Matrix.ext_of_lt_of_transpose_eq_neg`: two such matrices with vanishing diagonals agree as soon
   as they agree above the diagonal.
 -/
@@ -33,10 +39,17 @@ namespace Matrix
 
 variable {n : Type*} {S T : Type*}
 
+/-- Transposing the difference of two opposite singleton matrices with the same coefficient
+negates it. -/
+theorem transpose_single_sub_single {K ι : Type*} [AddGroup K] [DecidableEq ι]
+    (i j : ι) (a : K) :
+    (single i j a - single j i a).transpose = -(single i j a - single j i a) := by
+  simp only [transpose_sub, transpose_single, neg_sub]
+
 /-- **The condition `Mᵀ = -M` passes to the image of the matrix** under an additive morphism of
-the value rings. -/
-theorem transpose_map_of_transpose_eq_neg [AddGroup S] [AddGroup T] {F : Type*} [FunLike F S T]
-    [AddMonoidHomClass F S T] (f : F) {M : Matrix n n S} (hM : Mᵀ = -M) :
+the entry types. -/
+theorem transpose_map_of_transpose_eq_neg [AddGroup S] [SubtractionMonoid T] {F : Type*}
+    [FunLike F S T] [AddMonoidHomClass F S T] (f : F) {M : Matrix n n S} (hM : Mᵀ = -M) :
     (M.map f)ᵀ = -M.map f := by
   ext a b
   have h := congrFun (congrFun hM a) b
@@ -44,7 +57,7 @@ theorem transpose_map_of_transpose_eq_neg [AddGroup S] [AddGroup T] {F : Type*} 
   rw [Matrix.transpose_apply, Matrix.neg_apply, Matrix.map_apply, Matrix.map_apply, h, map_neg]
 
 /-- **The diagonal of a matrix equal to the negative of its transpose vanishes**, as soon as zero
-is the only element of the value ring that doubles to zero. -/
+is the only entry that doubles to zero. -/
 theorem diag_eq_zero_of_transpose_eq_neg [AddGroup S] {M : Matrix n n S} (hM : Mᵀ = -M)
     (h2 : ∀ x : S, x + x = 0 → x = 0) (a : n) : M a a = 0 := by
   refine h2 _ ?_
@@ -52,6 +65,16 @@ theorem diag_eq_zero_of_transpose_eq_neg [AddGroup S] {M : Matrix n n S} (hM : M
   rw [Matrix.transpose_apply, Matrix.neg_apply] at h
   nth_rewrite 1 [h]
   rw [neg_add_cancel]
+
+/-- A skew-symmetric matrix has trace zero when `2` is invertible. -/
+theorem trace_eq_zero_of_transpose_eq_neg {R : Type*} [Fintype n] [Ring R]
+    [Invertible (2 : R)] (X : Matrix n n R) (hX : Xᵀ = -X) : trace X = 0 := by
+  have h2 : ∀ x : R, x + x = 0 → x = 0 := by
+    intro x hx
+    calc
+      x = ⅟(2 : R) * ((2 : R) * x) := by simp
+      _ = 0 := by rw [two_mul, hx, mul_zero]
+  exact Finset.sum_eq_zero fun a _ => diag_eq_zero_of_transpose_eq_neg hX h2 a
 
 /-- **In a ring of odd characteristic the diagonal of a matrix equal to the negative of its
 transpose vanishes**: odd characteristic implies that doubling is injective at zero, which
@@ -70,7 +93,7 @@ theorem diag_eq_zero_of_transpose_eq_neg_of_charP [Ring S] (p : ℕ) [CharP S p]
 /-- **Two matrices equal to the negatives of their transposes agree as soon as they agree above
 the diagonal**, provided both diagonals vanish: the entries below the diagonal are the negatives
 of their mirror images. -/
-theorem ext_of_lt_of_transpose_eq_neg [LinearOrder n] [AddGroup S] {M N : Matrix n n S}
+theorem ext_of_lt_of_transpose_eq_neg [LinearOrder n] [Zero S] [Neg S] {M N : Matrix n n S}
     (hM : Mᵀ = -M) (hN : Nᵀ = -N) (hMd : ∀ a, M a a = 0) (hNd : ∀ a, N a a = 0)
     (h : ∀ a b : n, a < b → M a b = N a b) : M = N := by
   have hskew : ∀ K : Matrix n n S, Kᵀ = -K → ∀ a b, K b a = -K a b := by

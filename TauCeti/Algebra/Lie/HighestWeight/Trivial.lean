@@ -124,10 +124,11 @@ theorem isTrivial_of_isHighestWeightVector_weight_zero_of_isIrreducible
         exact ht i) he hf
   have hann : lieAnnihilator K L v = ⊤ := by
     apply eq_top_iff.mpr
-    rw [← hspan, LieSubalgebra.lieSpan_le]
+    rw [← hspan]
+    refine lieSpan_le_lieAnnihilator K L ?_
     rintro x (⟨i, rfl⟩ | ⟨i, rfl⟩)
-    · exact (mem_lieAnnihilator K L).mpr (he_zero i)
-    · exact (mem_lieAnnihilator K L).mpr (hf_zero i)
+    · exact he_zero i
+    · exact hf_zero i
   apply isTrivial_of_forall_lie_eq_zero_of_lieSpan_eq_top
     (R := K) (L := L) (M := M)
     (hgen := lieSpan_singleton_eq_top_of_ne_zero hv.ne_zero)

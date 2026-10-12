@@ -37,9 +37,6 @@ point of `H`, so it kills every equation of the original center.
 
 * J. S. Milne, *Algebraic Groups* (2017), §1.k and §2.
 * W. C. Waterhouse, *Introduction to Affine Group Schemes*, Chapters 2 and 16.
-
-This supplies the base-change compatibility of the center `Z(G)` required in Layer 6,
-"Reductive and semisimple groups", of the ReductiveGroups roadmap.
 -/
 
 public section
@@ -78,11 +75,11 @@ theorem baseChangeHopfIdeal_centerDefiningIdeal
         centerPointsSubgroup H
           (_root_.TauCeti.CommAlgCat.restrictScalarsObj (algebraMap k K) A) :=
       (mem_centerPointsSubgroup_iff H _ _).mpr hrestrictCentral
-    exact HopfIdeal.mem_toIdeal.mpr ((mkQuotient_eq_zero_iff B I y).mp
+    exact (mkQuotient_eq_zero_iff B I y).mp
       ((mem_quotientPointsSubgroup_iff B
         (baseChangeHopfIdeal (K := K) (centerDefiningIdeal H)) A q).mp
           ((mem_quotientPointsSubgroup_baseChangeHopfIdeal_iff
-            (K := K) A (centerDefiningIdeal H) q).mpr hrestrictMem) y hy))
+            (K := K) A (centerDefiningIdeal H) q).mpr hrestrictMem) y hy)
   · exact (centerDefiningIdeal_le_iff _ _).mpr
       (isCentral_baseChangeHopfIdeal (isCentral_centerDefiningIdeal H))
 

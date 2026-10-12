@@ -9,6 +9,8 @@ public import Mathlib.GroupTheory.GroupAction.Quotient
 public import Mathlib.GroupTheory.Index
 public import TauCeti.Topology.Homotopy.Covering
 
+import Mathlib.Data.Finite.Perm
+
 /-!
 # The subgroup a cover recovers from a chosen lift of the basepoint
 
@@ -44,16 +46,24 @@ subgroups differ, and it is the stabiliser, not the kernel, that the classificat
 
 ## Main declarations
 
+* `IsCoveringMap.coe_monodromy_mk`: monodromy along a path is the endpoint of its lift.
 * `TauCeti.coveringFiberEquiv`: monodromy along a homotopy class of paths is a bijection between
   the fibres over its endpoints.
+* `IsCoveringMap.toPermHom_eq_monodromyPerm`: the permutation representation of the monodromy
+  action is `IsCoveringMap.monodromyPerm`.
 * `IsCoveringMap.monodromy_eq_self_iff_mem_range`: a loop class of the base fixes the
   chosen lift under monodromy exactly when it is the image of a loop class of the cover.
-* `IsCoveringMap.stabilizer_eq_range`: the same statement for the monodromy
-  `MulAction`.
+* `IsCoveringMap.stabilizer_eq_range`, `IsCoveringMap.comap_stabilizer_monodromyPerm`: the same
+  statement for the monodromy `MulAction` and for the monodromy homomorphism.
+* `IsCoveringMap.monodromyPerm_pow_eq_one`: over a fibre with `d` points, the `n`-th power of
+  every loop class has trivial monodromy whenever `d !` divides `n`.
 * `IsCoveringMap.exists_monodromy_eq_of_joined`,
   `IsCoveringMap.exists_monodromy_eq` and
   `IsCoveringMap.monodromy_isPretransitive`: monodromy carries a lift to any lift joined
   to it by a path, so it is transitive on a fibre of a path-connected cover.
+* `IsCoveringMap.joined_monodromy` and `IsCoveringMap.pathConnectedSpace_iff`: conversely a
+  point is joined to its image under monodromy, so over a path-connected base the total space is
+  path connected exactly when monodromy is transitive on a nonempty fibre.
 * `IsCoveringMap.fiberEquivQuotientRange` and
   `IsCoveringMap.card_fiber_eq_index`: the fibre is the coset space of the recovered
   subgroup, so the number of sheets is its index.
@@ -82,6 +92,14 @@ variable {E X : Type*} [TopologicalSpace E] [TopologicalSpace X] {p : E → X} {
 
 /-! ### Monodromy as a bijection between fibres -/
 
+/-- Monodromy along the class of a path `γ` sends a lift `e` of its source to the endpoint of the
+lift of `γ` starting at `e`. This is the defining formula of `IsCoveringMap.monodromy` on a
+representative path. -/
+theorem _root_.IsCoveringMap.coe_monodromy_mk (hp : IsCoveringMap p) {x y : X} (γ : Path x y)
+    (e : p ⁻¹' {x}) (h : γ.toContinuousMap 0 = p e) :
+    (hp.monodromy (.mk γ) e : E) = hp.liftPath γ.toContinuousMap e h 1 :=
+  (rfl)
+
 /-- **Monodromy along a homotopy class of paths is a bijection between the fibres** over its
 endpoints. It is `IsCoveringMap.monodromy`, whose bijectivity Mathlib records, packaged as an
 equivalence. -/
@@ -94,6 +112,21 @@ theorem coveringFiberEquiv_apply (hp : IsCoveringMap p) {x y : X}
     (γ : Path.Homotopic.Quotient x y) (e : ↥(p ⁻¹' {x})) :
     coveringFiberEquiv hp γ e = hp.monodromy γ e :=
   Equiv.ofBijective_apply _ _ _
+
+/-- The inverse of monodromy along `γ` is monodromy along the reversed class `γ.symm`. -/
+@[simp]
+theorem coveringFiberEquiv_symm_apply (hp : IsCoveringMap p) {x y : X}
+    (γ : Path.Homotopic.Quotient x y) (e : ↥(p ⁻¹' {y})) :
+    (coveringFiberEquiv hp γ).symm e = hp.monodromy γ.symm e := by
+  rw [Equiv.symm_apply_eq, coveringFiberEquiv_apply, ← hp.monodromy_trans_apply,
+    Path.Homotopic.Quotient.symm_trans, hp.monodromy_refl, id]
+
+/-- The permutation representation of the monodromy action of `π₁(X, x)` on the fibre over `x`
+is Mathlib's monodromy homomorphism `IsCoveringMap.monodromyPerm`, which is defined as it. -/
+theorem _root_.IsCoveringMap.toPermHom_eq_monodromyPerm (hp : IsCoveringMap p) (x : X) :
+    letI := hp.fundamentalGroupMulAction x
+    MulAction.toPermHom (FundamentalGroup X x) (p ⁻¹' {x}) = hp.monodromyPerm x :=
+  (rfl)
 
 section
 
@@ -145,6 +178,25 @@ theorem _root_.IsCoveringMap.stabilizer_eq_range (hp : IsCoveringMap p) (e : p �
   ext γ
   exact IsCoveringMap.monodromy_eq_self_iff_mem_range hp e γ
 
+/-- The preimage under the monodromy homomorphism `IsCoveringMap.monodromyPerm` of the stabiliser
+of a chosen lift `e` of the basepoint is the image of `π₁(E, e)` under the covering map. -/
+theorem _root_.IsCoveringMap.comap_stabilizer_monodromyPerm (hp : IsCoveringMap p)
+    (e : p ⁻¹' {x}) :
+    (MulAction.stabilizer (Equiv.Perm (p ⁻¹' {x})) e).comap (hp.monodromyPerm x) =
+      (FundamentalGroup.mapOfEq ⟨p, hp.continuous⟩ e.2).range := by
+  ext γ
+  rw [Subgroup.mem_comap, MulAction.mem_stabilizer_iff, Equiv.Perm.smul_def,
+    IsCoveringMap.coe_monodromyPerm, IsCoveringMap.monodromy_eq_self_iff_mem_range]
+
+/-- **Over a finite fibre, a suitable power of every loop has trivial monodromy.** If the fibre
+over `x` has `d` points and `d !` divides `n`, then the `n`-th power of every loop class at `x`
+acts trivially on that fibre, because the monodromy permutation lies in a group of order `d !`. -/
+theorem _root_.IsCoveringMap.monodromyPerm_pow_eq_one (hp : IsCoveringMap p)
+    [Finite (p ⁻¹' {x})] {n : ℕ} (hn : (Nat.card (p ⁻¹' {x})).factorial ∣ n)
+    (γ : FundamentalGroup X x) : hp.monodromyPerm x (γ ^ n) = 1 := by
+  obtain ⟨k, rfl⟩ := hn
+  rw [map_pow, pow_mul, ← Nat.card_perm, pow_card_eq_one', one_pow]
+
 /-! ### Transitivity on a fibre -/
 
 /-- A path joining two lifts of the basepoint projects to a loop of the base whose monodromy
@@ -172,6 +224,36 @@ theorem _root_.IsCoveringMap.monodromy_isPretransitive
     MulAction.IsPretransitive (FundamentalGroup X x) (p ⁻¹' {x}) := by
   let := hp.fundamentalGroupMulAction x
   exact ⟨fun e e' => IsCoveringMap.exists_monodromy_eq hp e e'⟩
+
+/-- A point of a fibre is joined to its image under monodromy, by the lifted path. -/
+theorem _root_.IsCoveringMap.joined_monodromy (hp : IsCoveringMap p) {x y : X}
+    (γ : Path.Homotopic.Quotient x y) (e : p ⁻¹' {x}) : Joined (e : E) (hp.monodromy γ e) := by
+  obtain ⟨Γ⟩ := hp.liftPathQuotient γ e
+  exact ⟨Γ⟩
+
+/-- **A cover of a path-connected space is path connected exactly when monodromy is transitive on
+a nonempty fibre.** Every point of the total space is joined to the fibre over `x` by lifting a
+path to `x`, and two points of that fibre are joined by lifting a loop. -/
+theorem _root_.IsCoveringMap.pathConnectedSpace_iff [PathConnectedSpace X] (hp : IsCoveringMap p)
+    (x : X) :
+    PathConnectedSpace E ↔ Nonempty (p ⁻¹' {x}) ∧
+      (letI := hp.fundamentalGroupMulAction x
+       MulAction.IsPretransitive (FundamentalGroup X x) (p ⁻¹' {x})) := by
+  let := hp.fundamentalGroupMulAction x
+  refine ⟨fun _ => ?_, fun ⟨⟨e₀⟩, h⟩ => ⟨⟨e₀⟩, fun e e' => ?_⟩⟩
+  · obtain ⟨e⟩ := (inferInstance : Nonempty E)
+    obtain ⟨f, hf⟩ := hp.comp_subtypeVal_pathComponent_surjective e x
+    exact ⟨⟨f, hf⟩, hp.monodromy_isPretransitive x⟩
+  · obtain ⟨⟨f, hf⟩, hfx⟩ := hp.comp_subtypeVal_pathComponent_surjective e x
+    obtain ⟨⟨f', hf'⟩, hf'x⟩ := hp.comp_subtypeVal_pathComponent_surjective e' x
+    let f : p ⁻¹' {x} := ⟨f, hfx⟩
+    let f' : p ⁻¹' {x} := ⟨f', hf'x⟩
+    rw [mem_pathComponent_iff] at hf hf'
+    obtain ⟨γ, hγ⟩ := h.exists_smul_eq f f'
+    have hff' : Joined (f : E) (f' : E) := by
+      rw [← hγ]
+      exact hp.joined_monodromy γ f
+    exact (hf.trans hff').trans hf'.symm
 
 /-! ### The fibre as a coset space -/
 

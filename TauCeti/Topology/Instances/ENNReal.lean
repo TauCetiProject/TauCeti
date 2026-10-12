@@ -26,7 +26,7 @@ namespace TauCeti
 
 open scoped ENNReal
 
-variable {E : Type*} [NormedAddCommGroup E]
+variable {E : Type*} [TopologicalSpace E] [ESeminormedAddMonoid E]
 
 /-- A quantity dominated by `‖h‖ₑ` times a finite constant vanishes as `h → 0`. This is the form
 in which a linear modulus of continuity yields the qualitative limit. -/

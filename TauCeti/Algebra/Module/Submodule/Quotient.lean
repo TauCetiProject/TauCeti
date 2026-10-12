@@ -26,6 +26,9 @@ induces when it is injective or surjective.
   the images of two submodules with the subquotient of the two submodules themselves.
 * `TauCeti.comapSubquotientEquivOfSurjective`: a surjective linear map identifies the subquotient
   of the preimages of two submodules with the subquotient of the two submodules themselves.
+* `LinearMap.quotientEquivRangeQuotientMap`: a linear map whose kernel lies below a submodule
+  identifies the quotient by that submodule with the corresponding quotient of its range, and
+  `LinearMap.ker_mkQ_comp_rangeRestrict` is the kernel computation behind it.
 * `Submodule.quotientEquivPiZModOfBasis`: a quotient by a submodule with a specified diagonal
   basis is a product of cyclic groups with the specified diagonal orders.
 
@@ -37,6 +40,42 @@ coefficients made explicit so an externally normalized Smith form can be retaine
 -/
 
 public section
+
+namespace Submodule
+
+/-- Transport a subquotient across equalities of its ambient and denominator submodules. -/
+noncomputable def subquotientEquivOfEq
+    {R M : Type*} [Ring R] [AddCommGroup M] [Module R M]
+    (A B A' B' : Submodule R M) (hA : A = A') (hB : B = B') :
+    (↥B ⧸ Submodule.comap B.subtype A) ≃ₗ[R]
+      (↥B' ⧸ Submodule.comap B'.subtype A') := by
+  subst A'
+  subst B'
+  exact LinearEquiv.refl R _
+
+/-- Forward transport preserves the ambient representative. -/
+@[simp] theorem subquotientEquivOfEq_mk
+    {R M : Type*} [Ring R] [AddCommGroup M] [Module R M]
+    (A B A' B' : Submodule R M) (hA : A = A') (hB : B = B') (x : B) :
+    subquotientEquivOfEq A B A' B' hA hB (Submodule.Quotient.mk x) =
+      Submodule.Quotient.mk (show B' from ⟨x, by rw [← hB]; exact x.property⟩) := by
+  subst A'
+  subst B'
+  rfl
+
+/-- The inverse transport takes quotient representatives to the same ambient vector. -/
+@[simp] theorem subquotientEquivOfEq_symm_mk
+    {R M : Type*} [Ring R] [AddCommGroup M] [Module R M]
+    (A B A' B' : Submodule R M) (hA : A = A') (hB : B = B') (x : B') :
+    (subquotientEquivOfEq A B A' B' hA hB).symm (Submodule.Quotient.mk x) =
+      Submodule.Quotient.mk
+        (show B from ⟨x, by rw [hB]; exact x.property⟩) := by
+  -- The right representative transports `x : B'` back across `hB : B = B'`.
+  subst A'
+  subst B'
+  rfl
+
+end Submodule
 
 namespace TauCeti
 
@@ -222,6 +261,48 @@ theorem comapSubquotientEquivOfSurjective_symm_apply (f : M →ₗ[R] N) (hf : F
     (comapSubquotientEquivOfSurjective f hf A B).symm
         (Submodule.Quotient.mk (f.submoduleComap B x)) = Submodule.Quotient.mk x := by
   rw [← comapSubquotientEquivOfSurjective_apply f hf A B x,
+    LinearEquiv.symm_apply_apply]
+
+/-- The kernel of the map from `M` to the quotient of the range of `f` by the image of `I` is
+exactly `I`, provided that `I` contains the kernel of `f`. -/
+theorem _root_.LinearMap.ker_mkQ_comp_rangeRestrict (f : M →ₗ[R] N) (I : Submodule R M)
+    (hker : LinearMap.ker f ≤ I) :
+    LinearMap.ker ((I.map f.rangeRestrict).mkQ.comp f.rangeRestrict) = I := by
+  rw [LinearMap.ker_comp, Submodule.ker_mkQ]
+  exact Submodule.comap_map_eq_self (by simpa using hker)
+
+/-- **A quotient above the kernel is the corresponding quotient of the range.**
+
+If `ker f ≤ I`, the map `x ↦ f x` identifies `M / I` with the range of `f` modulo the
+image of `I`. This form of the first isomorphism theorem is useful when `f` is a representation
+with a controlled kernel. -/
+noncomputable def _root_.LinearMap.quotientEquivRangeQuotientMap (f : M →ₗ[R] N)
+    (I : Submodule R M)
+    (hker : LinearMap.ker f ≤ I) :
+    (M ⧸ I) ≃ₗ[R] (LinearMap.range f ⧸ I.map f.rangeRestrict) :=
+  (Submodule.quotEquivOfEq _ _ (LinearMap.ker_mkQ_comp_rangeRestrict f I hker).symm).trans
+    (LinearMap.quotKerEquivOfSurjective _
+      ((Submodule.mkQ_surjective _).comp f.surjective_rangeRestrict))
+
+/-- `LinearMap.quotientEquivRangeQuotientMap` sends the class of `x` to the class of `f x` in the
+range quotient. -/
+@[simp]
+theorem _root_.LinearMap.quotientEquivRangeQuotientMap_apply_mk (f : M →ₗ[R] N)
+    (I : Submodule R M) (hker : LinearMap.ker f ≤ I) (x : M) :
+    f.quotientEquivRangeQuotientMap I hker (Submodule.Quotient.mk x) =
+      Submodule.Quotient.mk (f.rangeRestrict x) := by
+  rw [LinearMap.quotientEquivRangeQuotientMap, LinearEquiv.trans_apply,
+    Submodule.quotEquivOfEq_mk, LinearMap.quotKerEquivOfSurjective_apply_mk,
+    LinearMap.comp_apply, Submodule.mkQ_apply]
+
+/-- `LinearMap.quotientEquivRangeQuotientMap` read in the inverse direction: the class of
+`f.rangeRestrict x` in the range quotient comes from the class of `x`. -/
+@[simp]
+theorem _root_.LinearMap.quotientEquivRangeQuotientMap_symm_apply_mk (f : M →ₗ[R] N)
+    (I : Submodule R M) (hker : LinearMap.ker f ≤ I) (x : M) :
+    (f.quotientEquivRangeQuotientMap I hker).symm (Submodule.Quotient.mk (f.rangeRestrict x)) =
+      Submodule.Quotient.mk x := by
+  rw [← LinearMap.quotientEquivRangeQuotientMap_apply_mk f I hker x,
     LinearEquiv.symm_apply_apply]
 
 end Quotient

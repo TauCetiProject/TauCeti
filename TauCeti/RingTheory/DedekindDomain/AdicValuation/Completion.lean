@@ -17,6 +17,8 @@ The ring of integers `𝒪_v` of the completion `K_v` of the fraction field of a
 at a height-one prime `v` is a local ring, and this file collects what it is: its maximal ideal
 contracts to `v` itself, its ideal filtration is the valuation filtration `K_v` induces on it, and
 in the subspace topology it is a complete `𝔪`-adic — hence Henselian — local ring.
+The scope `AdicCompletionIntegers` lets an algebra action on `R` act on this valuation ring
+through its canonical `R`-algebra action, without changing ambient actions elsewhere.
 
 Everything here concerns one completion. The comparison of two completions along an extension
 `w ∣ v` is `TauCeti.RingTheory.DedekindDomain.AdicCompletionExtension`.
@@ -25,12 +27,16 @@ Everything here concerns one completion. The comparison of two completions along
 
 * `IsDedekindDomain.HeightOneSpectrum.adicCompletion_charZero`: a completion of a field of
   characteristic zero has characteristic zero.
+* `algebraMap_adicCompletion_eq_algebraMap_adicCompletionIntegers` (in the same namespace): an
+  element of `R` maps to `K_v` through `K` as it does through `𝒪_v`.
 * `IsDedekindDomain.HeightOneSpectrum.under_maximalIdeal_adicCompletionIntegers`: `v` is the
   prime lying under the maximal ideal of `𝒪_v`.
 * `IsDedekindDomain.HeightOneSpectrum.map_asIdeal_adicCompletionIntegers`: `v` generates the
   maximal ideal of `𝒪_v`.
 * `IsDedekindDomain.HeightOneSpectrum.mem_maximalIdeal_pow_iff`: membership in `𝔪 ^ n` is the
   valuation bound `≤ exp (-n)`, identifying the ideal filtration with the valuation filtration.
+  `IsDedekindDomain.HeightOneSpectrum.mem_asIdeal_pow_iff_valued_algebraMap_le` is the same
+  statement for `v ^ n` and elements of `R`.
 * `IsDedekindDomain.HeightOneSpectrum.exists_ne_zero_mem_maximalIdeal_valued_lt`: the maximal
   ideal contains a nonzero element whose valuation is below two prescribed nonzero bounds.
 * `IsDedekindDomain.HeightOneSpectrum.isOpen_setOf_valued_le`: a closed valuation ball of `K_v`
@@ -45,6 +51,8 @@ Everything here concerns one completion. The comparison of two completions along
   residue field of `v` is the residue field of `𝒪_v`;
   `residueFieldEquivAdicCompletionIntegers_apply_mk` describes that isomorphism on a quotient
   representative.
+* `IsDedekindDomain.HeightOneSpectrum.exists_isUnit_adicCompletionIntegers_of_valuation_eq_one`:
+  an element of `K` of valuation one maps to a unit of `𝒪_v`.
 
 ## Implementation notes
 
@@ -79,6 +87,42 @@ public section
 
 open WithZero
 
+namespace TauCeti
+
+variable {R K S : Type*} [CommRing R] [IsDedekindDomain R] [Field K]
+  [Algebra R K] [IsFractionRing R K] [CommSemiring S] [Algebra S R]
+  {v : IsDedekindDomain.HeightOneSpectrum R}
+
+/-- An algebra action on the affine model acts on the integers of its adic completion.
+Available as an instance in the scope `AdicCompletionIntegers`. -/
+@[reducible]
+noncomputable def adicCompletionIntegersAlgebra :
+    Algebra S (v.adicCompletionIntegers K) :=
+  Algebra.compHom _ (algebraMap S R)
+
+scoped[AdicCompletionIntegers] attribute [instance 50] TauCeti.adicCompletionIntegersAlgebra
+
+open scoped AdicCompletionIntegers
+
+/-- The inherited algebra action on the adic valuation ring factors through the affine model.
+Available as an instance in the scope `AdicCompletionIntegers`. -/
+theorem adicCompletionIntegersIsScalarTower :
+    IsScalarTower S R (v.adicCompletionIntegers K) :=
+  .of_algebraMap_eq fun _ ↦ rfl
+
+scoped[AdicCompletionIntegers] attribute [instance] TauCeti.adicCompletionIntegersIsScalarTower
+
+/-- A uniformizer in an adic completion has normalized valuation `exp (-1)`. -/
+theorem isUniformizer_adicCompletion_iff {x : v.adicCompletion K} :
+    (Valued.v : Valuation (v.adicCompletion K) ℤᵐ⁰).IsUniformizer x ↔
+      Valued.v x = exp (-1) := by
+  rw [Valuation.IsUniformizer.iff,
+    Valuation.IsRankOneDiscrete.generator_eq_exp_neg_one_of_surjective
+      (v.valuedAdicCompletion_surjective K)]
+  rfl
+
+end TauCeti
+
 namespace IsDedekindDomain.HeightOneSpectrum
 
 variable {R : Type*} [CommRing R] [IsDedekindDomain R]
@@ -107,6 +151,26 @@ section SingleCompletion
 
 variable (v : HeightOneSpectrum R)
 
+/-- An element of `R`, mapped to `K_v` through `K`, is the image of its image in `𝒪_v`. -/
+@[simp]
+theorem algebraMap_adicCompletion_eq_algebraMap_adicCompletionIntegers (r : R) :
+    algebraMap K (v.adicCompletion K) (algebraMap R K r) =
+      algebraMap (v.adicCompletionIntegers K) (v.adicCompletion K)
+        (algebraMap R (v.adicCompletionIntegers K) r) := by
+  rw [ValuationSubring.algebraMap_apply, algebraMap_adicCompletionIntegers_apply,
+    algebraMap_adicCompletion, Function.comp_apply, Algebra.algebraMap_self_apply]
+/-- An element of `K` with valuation one is the image of a unit in the ring of integers of its
+completion at `v`. -/
+theorem exists_isUnit_adicCompletionIntegers_of_valuation_eq_one {c : K}
+    (hc : v.valuation K c = 1) :
+    ∃ u : v.adicCompletionIntegers K, IsUnit u ∧
+      (u : v.adicCompletion K) = algebraMap K (v.adicCompletion K) c := by
+  have hv : Valued.v (algebraMap K (v.adicCompletion K) c) = 1 := by
+    rw [algebraMap_adicCompletion, Function.comp_apply, valuedAdicCompletion_eq_valuation']
+    simpa using hc
+  exact ⟨⟨_, (mem_adicCompletionIntegers _ K v).mpr hv.le⟩,
+    adicCompletionIntegers.isUnit_iff_valued_eq_one.mpr hv, rfl⟩
+
 /-- An irreducible element of the ring of integers of a completion has valuation `exp (-1)`. -/
 theorem valued_algebraMap_eq_exp_neg_one_of_irreducible {π : v.adicCompletionIntegers K}
     (hπ : Irreducible π) :
@@ -117,9 +181,7 @@ theorem valued_algebraMap_eq_exp_neg_one_of_irreducible {π : v.adicCompletionIn
       ℤᵐ⁰).valuationSubring = Ideal.span {π} := hπ.maximalIdeal_eq
   have huni := Valuation.isUniformizer_of_maximalIdeal_eq_span
     (v := (Valued.v : Valuation (v.adicCompletion K) ℤᵐ⁰)) hgen
-  rwa [Valuation.IsUniformizer.iff,
-    Valuation.IsRankOneDiscrete.generator_eq_exp_neg_one_of_surjective
-      (v.valuedAdicCompletion_surjective K)] at huni
+  exact TauCeti.isUniformizer_adicCompletion_iff.mp huni
 
 /-- The height-one prime `v` generates the maximal ideal of the ring of integers of the
 completion at `v`. -/
@@ -140,9 +202,7 @@ theorem map_asIdeal_adicCompletionIntegers :
         valuation_of_algebraMap, hπ]
     have hπuni : (Valued.v : Valuation (v.adicCompletion K) ℤᵐ⁰).IsUniformizer
         (algebraMap R (v.adicCompletionIntegers K) π : v.adicCompletion K) := by
-      rwa [Valuation.IsUniformizer.iff,
-        Valuation.IsRankOneDiscrete.generator_eq_exp_neg_one_of_surjective
-          (v.valuedAdicCompletion_surjective K)]
+      exact TauCeti.isUniformizer_adicCompletion_iff.mpr hπval
     obtain ⟨ϖ, hϖ⟩ := IsDiscreteValuationRing.exists_irreducible
       (v.adicCompletionIntegers K)
     have hϖuni : (Valued.v : Valuation (v.adicCompletion K) ℤᵐ⁰).IsUniformizer
@@ -173,6 +233,13 @@ theorem mem_maximalIdeal_pow_iff {x : v.adicCompletionIntegers K} {n : ℕ} :
     simp
   rw [← hπn]
   exact Set.ext_iff.mp (hint.maximalIdeal_pow_eq_setOfPred_le_v_algebraMap_pow hπ n) x
+
+/-- An element of `R` lies in `v ^ n` exactly when its image in `K_v` has valuation at most
+`exp (-n)`: the ideal filtration of `R` at `v` is the valuation filtration `K_v` induces on it. -/
+theorem mem_asIdeal_pow_iff_valued_algebraMap_le {r : R} {n : ℕ} :
+    r ∈ v.asIdeal ^ n ↔ Valued.v (algebraMap R (v.adicCompletion K) r) ≤ exp (-(n : ℤ)) := by
+  rw [algebraMap_adicCompletion, Function.comp_apply, valuedAdicCompletion_eq_valuation',
+    valuation_of_algebraMap, intValuation_le_pow_iff_mem]
 
 /-- The maximal ideal of the ring of integers of an adic completion contains a nonzero element
 whose valuation is below the valuations of `a` and `b`, and below `1`. -/
@@ -385,6 +452,11 @@ noncomputable def residueFieldEquivAdicCompletionIntegers :
     rw [Valuation.map_sub_swap]
     exact ha.trans_lt (by simp)
 
+/-- The residue field of an adic completion is finite when the residue field at `v` is finite. -/
+instance finite_residueField_adicCompletionIntegers [Finite (R ⧸ v.asIdeal)] :
+    Finite (IsLocalRing.ResidueField (v.adicCompletionIntegers K)) :=
+  Finite.of_equiv _ (v.residueFieldEquivAdicCompletionIntegers (K := K)).toEquiv
+
 /-- **The residue-field equivalence on a quotient representative.** This is the characterization
 consumers should use; the equivalence's construction as an `Ideal.quotientMap` is an implementation
 detail and should not be unfolded. -/
@@ -397,5 +469,31 @@ theorem residueFieldEquivAdicCompletionIntegers_apply_mk (a : R) :
 end SingleCompletion
 
 end IsDedekindDomain.HeightOneSpectrum
+
+namespace TauCeti
+
+open scoped AdicCompletionIntegers
+
+variable {R K : Type*} [CommRing R] [IsDedekindDomain R] [Field K]
+  [Algebra R K] [IsFractionRing R K]
+
+/-- The affine-model residue comparison as an equivalence over any scalars acting on the model.
+Use the scope `AdicCompletionIntegers` for the inherited action on completed integers. -/
+noncomputable def residueFieldAlgEquivAdicCompletionIntegers
+    (S : Type*) [CommRing S] [Algebra S R] {v : IsDedekindDomain.HeightOneSpectrum R} :
+    (R ⧸ v.asIdeal) ≃ₐ[S] IsLocalRing.ResidueField (v.adicCompletionIntegers K) :=
+  AlgEquiv.ofRingEquiv (f := v.residueFieldEquivAdicCompletionIntegers (K := K))
+    (fun c ↦ v.residueFieldEquivAdicCompletionIntegers_apply_mk (K := K)
+      (algebraMap S R c))
+
+/-- The scalar-preserving residue comparison has Mathlib's underlying ring comparison. -/
+@[simp]
+theorem residueFieldAlgEquivAdicCompletionIntegers_apply
+    (S : Type*) [CommRing S] [Algebra S R] {v : IsDedekindDomain.HeightOneSpectrum R}
+    (x : R ⧸ v.asIdeal) :
+    residueFieldAlgEquivAdicCompletionIntegers (K := K) S x =
+      v.residueFieldEquivAdicCompletionIntegers (K := K) x := (rfl)
+
+end TauCeti
 
 end

@@ -43,6 +43,8 @@ connecting map with `GC⁻(G)` and multiplication by `V₁ - V₂`; that compari
 
 ## Main definitions
 
+* `TauCeti.GridDiagram.stabilizeXConeStateEquiv`: identifies the off-center states together with
+  the grid states of `G` (the center states) with all grid states of `G'`.
 * `TauCeti.GridDiagram.stabilizeXCenterComplex`: the complex of center states.
 * `TauCeti.GridDiagram.stabilizeXOffCenterComplex`: the complex of off-center states.
 * `TauCeti.GridDiagram.stabilizeXConnectingHom`: the connecting chain map between them.
@@ -75,6 +77,47 @@ variable {n : ℕ} (G : GridDiagram n) (s : Fin n)
 not contain the center `(s.succ, (G.X s).succ)` of its new block. -/
 abbrev StabilizeXOffCenterState : Type :=
   {y : GridState (n + 1) // y s.succ ≠ (G.X s).succ}
+
+private theorem stabilizeXCenterState_injective :
+    Function.Injective fun x : GridState n =>
+      (⟨x.insertPoint s.succ (G.X s).succ, not_not_intro (x.insertPoint_apply_newColumn _ _)⟩ :
+        {y : GridState (n + 1) // ¬y s.succ ≠ (G.X s).succ}) :=
+  fun _ _ h => GridState.insertPoint_injective _ _ (congrArg Subtype.val h)
+
+private theorem stabilizeXCenterState_surjective :
+    Function.Surjective fun x : GridState n =>
+      (⟨x.insertPoint s.succ (G.X s).succ, not_not_intro (x.insertPoint_apply_newColumn _ _)⟩ :
+        {y : GridState (n + 1) // ¬y s.succ ≠ (G.X s).succ}) := by
+  rintro ⟨y, hy⟩
+  obtain ⟨x, rfl⟩ := GridState.exists_insertPoint_eq (not_not.1 hy)
+  exact ⟨x, rfl⟩
+
+private noncomputable def stabilizeXCenterStateEquiv :
+    GridState n ≃ {y : GridState (n + 1) // ¬y s.succ ≠ (G.X s).succ} :=
+  Equiv.ofBijective _
+    ⟨G.stabilizeXCenterState_injective s, G.stabilizeXCenterState_surjective s⟩
+
+/-- Mapping-cone generators for the fully blocked `X`-stabilization comparison are naturally the
+grid states of the stabilized diagram. The left summand consists of off-center states; the right
+summand consists of states obtained by inserting the center of the new block. -/
+noncomputable def stabilizeXConeStateEquiv :
+    G.StabilizeXOffCenterState s ⊕ GridState n ≃ GridState (n + 1) :=
+  ((Equiv.refl _).sumCongr (G.stabilizeXCenterStateEquiv s)).trans
+    (Equiv.sumCompl fun y : GridState (n + 1) => y s.succ ≠ (G.X s).succ)
+
+/-- The cone-state equivalence sends an off-center generator to its underlying stabilized state. -/
+@[simp]
+theorem stabilizeXConeStateEquiv_apply_inl (y : G.StabilizeXOffCenterState s) :
+    G.stabilizeXConeStateEquiv s (.inl y) = y.1 := by
+  simp [stabilizeXConeStateEquiv]
+
+/-- The cone-state equivalence sends a center generator to the state with the center inserted. -/
+@[simp]
+theorem stabilizeXConeStateEquiv_apply_inr (x : GridState n) :
+    G.stabilizeXConeStateEquiv s (.inr x) = x.insertPoint s.succ (G.X s).succ := by
+  simp only [stabilizeXConeStateEquiv, Equiv.trans_apply, Equiv.sumCongr_apply, Sum.map_inr,
+    Equiv.sumCompl_apply_inr]
+  exact congrArg Subtype.val (Equiv.ofBijective_apply _ _ x)
 
 section Blocks
 
@@ -137,7 +180,7 @@ private theorem stabilizeXCenterInclusion_projection_apply (f : GridChainMinus R
   split_ifs with h
   · obtain ⟨x, rfl⟩ := GridState.exists_insertPoint_eq h
     simp [stabilizeXCenterInclusion, stabilizeXCenterProjection,
-      Finsupp.mapDomain_apply (GridState.insertPoint_injective _ _)]
+      Finsupp.mapDomain_apply_of_injective (GridState.insertPoint_injective _ _)]
   · refine Finsupp.mapDomain_of_notMem_range _ _ ?_
     rintro ⟨x, rfl⟩
     exact h (GridState.insertPoint_apply_newColumn _ _ _)
@@ -150,7 +193,8 @@ private theorem stabilizeXOffCenterInclusion_projection_apply (f : GridChainMinu
   · refine Finsupp.mapDomain_of_notMem_range _ _ ?_
     rintro ⟨y, rfl⟩
     exact y.2 h
-  · exact Finsupp.mapDomain_apply Subtype.val_injective _ (⟨y, h⟩ : G.StabilizeXOffCenterState s)
+  · exact Finsupp.mapDomain_apply_of_injective Subtype.val_injective _
+      (⟨y, h⟩ : G.StabilizeXOffCenterState s)
 
 /-- Every chain of the stabilization is the sum of its center and off-center parts. -/
 @[simp] theorem stabilizeXCenterInclusion_projection_add_offCenter (f : GridChainMinus R (n + 1)) :
@@ -235,6 +279,25 @@ theorem stabilizeXCenterDifferential_single_apply (x y : GridState n) :
     G.stabilizeXCenterDifferential s R (Finsupp.single x 1) y =
       rename s.castSucc.succAbove (G.unblockedCoefficient R x y) := by
   simp [stabilizeXCenterDifferential]
+
+/-- On chains with coefficients renamed from `R[V₀, …, V_{n-1}]`, the center differential is the
+unblocked differential of `G` followed by the renaming of the coefficients. -/
+@[simp]
+theorem stabilizeXCenterDifferential_mapRange_rename (f : GridChainMinus R n) :
+    G.stabilizeXCenterDifferential s R
+        (Finsupp.mapRange (rename s.castSucc.succAbove) (map_zero _) f) =
+      Finsupp.mapRange (rename s.castSucc.succAbove) (map_zero _)
+        (G.unblockedDifferential R f) := by
+  induction f using Finsupp.induction_linear with
+  | zero => simp
+  | add f g hf hg =>
+    rw [Finsupp.mapRange_add (map_add _), map_add, hf, hg, map_add,
+      Finsupp.mapRange_add (map_add _)]
+  | single x a =>
+    refine Finsupp.ext fun y => ?_
+    rw [Finsupp.mapRange_single, ← Finsupp.smul_single_one x (rename _ a), map_smul,
+      ← Finsupp.smul_single_one x a, map_smul]
+    simp
 
 /-- The matrix coefficients of the off-center differential are those of the unblocked
 differential of the stabilization. -/

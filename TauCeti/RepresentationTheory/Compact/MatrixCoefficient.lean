@@ -24,37 +24,36 @@ the Haar integral the orthogonality argument evaluates.
 
 ## Main definitions
 
-* `TauCeti.ContRepresentation.matrixCoeffLp`: the matrix coefficient `g ↦ ⟪π g v, w⟫` as an element
+* `ContRepresentation.matrixCoeffLp`: the matrix coefficient `g ↦ ⟪π g v, w⟫` as an element
   of `Lp 𝕜 2 (haarProb G)`.
-* `TauCeti.ContRepresentation.matrixCoeffLpₛₗ`: the matrix coefficients of a fixed representation
+* `ContRepresentation.matrixCoeffLpₛₗ`: the matrix coefficients of a fixed representation
   bundled as a sesquilinear map `V →ₗ⋆[𝕜] V →ₗ[𝕜] Lp 𝕜 2 (haarProb G)`.
 
 ## Main statements
 
-* `TauCeti.ContRepresentation.inner_matrixCoeffLp`: the `L²` inner product of two matrix
+* `ContRepresentation.inner_matrixCoeffLp`: the `L²` inner product of two matrix
   coefficients is the Haar integral of their pointwise product, in Mathlib's convention
   `⟪F, H⟫ = ∫ H · conj F`.
-* `TauCeti.ContRepresentation.norm_matrixCoeffLp_sq`: the squared `L²` norm is the Haar integral of
+* `ContRepresentation.norm_matrixCoeffLp_sq`: the squared `L²` norm is the Haar integral of
   the squared modulus.
-* `TauCeti.ContRepresentation.norm_matrixCoeffLp_le`: for a unitary representation the `L²` norm is
+* `ContRepresentation.norm_matrixCoeffLp_le`: for a unitary representation the `L²` norm is
   at most `‖v‖ * ‖w‖`, because normalized Haar measure has total mass one.
-* `TauCeti.ContRepresentation.matrixCoeffLp_eq_zero_iff`: passing to `L²` loses no information,
+* `ContRepresentation.matrixCoeffLp_eq_zero_iff`: passing to `L²` loses no information,
   since Haar measure is positive on nonempty open sets.
-* `TauCeti.ContRepresentation.matrixCoeffLp_map_map`: moving both defining vectors by `π h`
+* `ContRepresentation.matrixCoeffLp_map_map`: moving both defining vectors by `π h`
   reparametrizes the matrix coefficient by a conjugation.
 
-This is the second half of the Layer 3 milestone of the
-[compact-groups roadmap](https://github.com/TauCetiProject/TauCetiRoadmap), whose first half is the
-uniform-norm algebra in `TauCeti/RepresentationTheory/Continuous/MatrixCoefficient.lean`. The
-mathematical development follows Daniel Bump, *Lie Groups*, second edition, Chapter 2.
+The uniform-norm algebra is developed in
+`TauCeti/RepresentationTheory/Continuous/MatrixCoefficient.lean`. The mathematical development
+follows Daniel Bump, *Lie Groups*, second edition, Chapter 2.
 -/
 
 public section
 
+open TauCeti
+
 open MeasureTheory
 open scoped InnerProductSpace
-
-namespace TauCeti
 
 namespace ContRepresentation
 
@@ -261,5 +260,3 @@ theorem matrixCoeffLp_map_map (hunitary : IsUnitary π) (h : G) (v w : V) :
 end CompactGroup
 
 end ContRepresentation
-
-end TauCeti

@@ -86,7 +86,7 @@ theorem eLpNorm_exponent_top_le_liminf (hf : AEStronglyMeasurable f μ) :
       refine (measure_eq_zero_iff_ae_notMem.mp hc).mono fun x hx ↦ ?_
       simpa only [Set.mem_ofPred_eq, not_le] using (le_of_lt (not_le.mp hx))
     exact (lt_irrefl s) (hs.trans_le (by
-      rw [eLpNorm_exponent_top]
+      rw [eLpNorm_exponent_top hf]
       exact essSup_le_of_ae_le s hae))
   -- Chebyshev: `s * min c 1 ^ (1 / p) ≤ eLpNorm f p μ` for every nonzero finite exponent.
   set c' := min c 1
@@ -96,7 +96,7 @@ theorem eLpNorm_exponent_top_le_liminf (hf : AEStronglyMeasurable f μ) :
     intro p hp
     have hp0 : (p : ℝ≥0∞) ≠ 0 := ENNReal.coe_ne_zero.mpr hp
     have hppos : 0 < (p : ℝ) := NNReal.coe_pos.mpr (pos_iff_ne_zero.mpr hp)
-    have hcheb := mul_meas_ge_le_pow_eLpNorm' μ hp0 ENNReal.coe_ne_top hf s
+    have hcheb := mul_meas_ge_le_pow_eLpNorm' μ hp0 ENNReal.coe_ne_top (f := f) s
     rw [ENNReal.coe_toReal] at hcheb
     calc s * c' ^ (1 / (p : ℝ))
         = (s ^ (p : ℝ) * c') ^ (1 / (p : ℝ)) := by
@@ -130,8 +130,8 @@ theorem tendsto_eLpNorm_atTop [IsFiniteMeasure μ] (hf : AEStronglyMeasurable f 
   refine (limsup_le_limsup ?_).trans_eq hlim.limsup_eq
   filter_upwards [eventually_ne_atTop 0] with p hp
   have hppos : 0 < (p : ℝ) := NNReal.coe_pos.mpr (pos_iff_ne_zero.mpr hp)
-  rw [eLpNorm_eq_eLpNorm' (ENNReal.coe_ne_zero.mpr hp) ENNReal.coe_ne_top, ENNReal.coe_toReal,
-    eLpNorm_exponent_top]
+  rw [eLpNorm_eq_eLpNorm' (ENNReal.coe_ne_zero.mpr hp) ENNReal.coe_ne_top hf, ENNReal.coe_toReal,
+    eLpNorm_exponent_top hf]
   exact eLpNorm'_le_eLpNormEssSup_mul_rpow_measure_univ hppos
 
 end TauCeti

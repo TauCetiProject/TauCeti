@@ -67,19 +67,15 @@ which needs no coordinate ring, is
   `TauCeti.GeneralLinear.coe_frobeniusFixedMulEquivOfCoeEq_symm_apply`: the transported isomorphism
   is the entrywise inclusion of the Frobenius-fixed subring, read in both directions.
 
-## Roadmap
+## Coordinate-free constructions and matrix carriers
 
-This is the matrix form of the target "points over an algebraically closed field as a group,
-functorially in the field, so that a field endomorphism induces a group endomorphism of the points"
-in Layer 9 of `TauCetiRoadmap/ReductiveGroups/README.md`, which names the `q`-power Frobenius as the
-first case a consumer asks for; `TauCeti/Algebra/AlgebraicGroup/Frobenius/Points.lean` and
-`TauCeti/Algebra/AlgebraicGroup/Frobenius/FixedPoints.lean` supply the coordinate-free half. The
-consumer is milestone L1 of `TauCetiRoadmap/CFSGStatement/README.md`, whose untwisted Steinberg map
-is `Frob_q` on the points of a pinned Chevalley--Demazure group, and milestone L3, which sets
-`H_d = fixedSubgroup d.steinberg`. The Chevalley carrier those milestones use is the closed subgroup
-scheme of `GLₙ` over `ℤ` built by
-`TauCeti.UniversalEnvelopingAlgebra.kostantToralGroupScheme`, which is presented by a Hopf ideal, so
-it is an instance of the subgroup schemes treated here.
+`TauCeti/Algebra/AlgebraicGroup/Frobenius/Points.lean` constructs the Frobenius on convolution
+points, and `TauCeti/Algebra/AlgebraicGroup/Frobenius/FixedPoints.lean` identifies its fixed points
+with points over the Frobenius-fixed subring. Here the general-linear point equivalence reads those
+constructions entrywise and restricts them to the points cut out by a Hopf ideal. In particular,
+the toral closure `TauCeti.UniversalEnvelopingAlgebra.kostantToralGroupScheme` is presented by a
+Hopf ideal in the coordinate algebra of `GLₙ` over `ℤ`, so it is an instance of the subgroup schemes
+treated here.
 
 ## References
 
@@ -431,7 +427,7 @@ private theorem subgroupCongr_comp_eq_of_coe_eq (F : P →* P)
       (iterateFrobeniusHopfIdealPoints n p k I A).comp
         (MulEquiv.subgroupCongr hP : P →* ↥(hopfIdealPointsSubgroup n I A)) := by
   refine MonoidHom.ext fun g => Subtype.ext ?_
-  simp only [MonoidHom.comp_apply, MonoidHom.coe_coe, MulEquiv.subgroupCongr_apply,
+  simp only [MonoidHom.comp_apply, MonoidHom.coe_ofClass, MulEquiv.subgroupCongr_apply,
     coe_iterateFrobeniusHopfIdealPoints, hF]
 
 /-- **The rational points of a named carrier are its Frobenius-fixed points**, for any carrier whose

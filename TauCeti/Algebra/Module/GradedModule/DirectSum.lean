@@ -15,8 +15,6 @@ This file equips an external direct sum of internally graded modules with its ca
 grading.  Its degree-`p` piece is the direct sum of the componentwise degree-`p` pieces, included
 in the ambient direct sum, so membership is characterized componentwise.
 
-This is the direct-sum compatibility target in Layer 0 of the `DGAInfinity` roadmap.
-
 ## Main definitions
 
 * `TauCeti.InternalGrading.directSumPieceInclusion`: the inclusion of homogeneous summands of one

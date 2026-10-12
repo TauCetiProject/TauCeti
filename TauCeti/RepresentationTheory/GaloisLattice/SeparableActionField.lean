@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup
+public import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.Basic
 public import TauCeti.RepresentationTheory.GaloisLattice.ActionField
 
 /-!
@@ -50,10 +50,7 @@ universe u
 
 variable {k : Type u} [Field k]
 
-/-- The module structure stored in the bundled representation. -/
-noncomputable local instance separableActionFieldStoredModule (M : GaloisLatticeCat k) :
-    Module ℤ M.obj :=
-  M.obj.hV2
+attribute [local instance] TauCeti.GaloisLatticeCat.storedModule
 
 /-- The maximal separable subextension of the finite normal action field of a Galois lattice. -/
 noncomputable def separableActionField (M : GaloisLatticeCat k) :

@@ -228,7 +228,7 @@ theorem weightedEvalTerm_mem_of_mem_weightMul {φ : A →+* B} {T : Fin k → Se
     -- On a generator the term is `φ u * (φ t * bν)`: a small element times a bounded one.
     have hval : ψ (t * u) = φ u * (φ t * ∏ i, b i ^ ν i) := by
       simp only [ψ, AddMonoidHom.coe_comp, Function.comp_apply, AddMonoidHom.coe_mulRight,
-        AddMonoidHom.coe_coe, map_mul]
+        AddMonoidHom.coe_ofClass, map_mul]
       ring
     simp only [AddSubgroup.mem_comap, hval]
     exact hVG (Set.mul_mem_mul (hUV ⟨u, hu, rfl⟩) ⟨t, ht, rfl⟩)

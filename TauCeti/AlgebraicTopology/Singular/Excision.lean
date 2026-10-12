@@ -1,0 +1,413 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.AlgebraicTopology.SimplicialSet.Homology.Excision
+public import TauCeti.AlgebraicTopology.Singular.Subdivision.Small.Relative
+public import TauCeti.AlgebraicTopology.Singular.Triple
+public import TauCeti.Topology.Category.TopPair
+
+/-!
+# Excision for relative singular homology
+
+Let `(X, B)` be a topological pair and `A ⊆ X` a subset such that the interiors of `A` and `B`
+cover `X`.  The inclusion of pairs `(A, A ∩ B) ⟶ (X, B)` induces an isomorphism on relative
+singular homology in every degree, with coefficients in any object of an abelian category with
+coproducts (`TopPair.isIso_singularHomologyMap_excisionMap`).  Equivalently, excising a set `Z`
+whose closure lies in the interior of `B` does not change relative homology
+(`TopPair.isIso_singularHomologyMap_excisionMap_compl`).  In particular, relative homology modulo
+the complement of a closed set `K` may be computed in any open neighbourhood `U` of `K`:
+`(U, U ∖ K) ⟶ (X, X ∖ K)` induces isomorphisms
+(`TopPair.isIso_singularHomologyMap_excisionMap_of_isClosed_subset`).
+
+Both follow from a statement about an arbitrary map of topological pairs `f : P ⟶ P'` whose map
+on ambient spaces is an embedding and whose subspace is the full preimage of the subspace of `P'`:
+if the ambient space of `P'` has an open cover each of whose members lies in the subspace of `P'`
+or in the image of `f`, then `f` induces isomorphisms on relative singular homology
+(`TopPair.isIso_singularHomologyMap_of_open_cover`).
+
+Two intermediate results are available on their own.  The relative small-chain theorem
+(`TopPair.isIso_homologyMap_restrictι_smallSingularSubcomplex`) identifies the relative homology
+of a topological pair with that of its singular pair restricted to the simplices subordinate to
+any open cover of the ambient space.  Under the hypotheses of
+`TopPair.isIso_singularHomologyMap_of_open_cover`, the map `f` puts the simplices subordinate to
+the pulled-back cover which do not lie in the subspace of `P` in bijection with the simplices
+subordinate to the cover which do not lie in the subspace of `P'`
+(`TopPair.relativeSimplex_restrictMap_bijective`); this is the form in which the hypotheses on `f`
+and the cover enter, and it feeds the complementary-simplex criterion of simplicial excision.
+
+A continuous map `g : X ⟶ Y` carrying `A` into `A'` and `B` into `B'` is a map of excision data:
+it induces a map of pairs `TopPair.interPairMap g hA hB : (A, A ∩ B) ⟶ (A', A' ∩ B')`, functorial
+in `g`, which together with `TopPair.ofSubsetMap g hB : (X, B) ⟶ (Y, B')` forms a commutative
+square with the excision maps (`TopPair.interPairMap_comp_excisionMap`), so the excision
+isomorphisms are natural in the data.
+Compatibility with the connecting morphism of the pair is `TopPair.singularHomologyδ_naturality`
+applied to the excision map.
+
+Combined with the long exact sequence of the triple `(X, A, A ∩ B)`, excision shows that when the
+interiors of `A` and `B` cover `X`, a morphism into `Hₙ(X, A ∩ B)` is determined by its images in
+`Hₙ(X, A)` and `Hₙ(X, B)` (`TopPair.singularHomology_inter_hom_ext`): a morphism vanishing in
+`Hₙ(X, A)` comes from `Hₙ(A, A ∩ B)`, which excision identifies with `Hₙ(X, B)`.
+
+## References
+
+* A. Hatcher, *Algebraic Topology*, Section 2.1, Theorem 2.20 and Proposition 2.21.
+* S. Eilenberg and N. Steenrod, *Foundations of Algebraic Topology*, Chapter VII.
+-/
+
+public section
+
+noncomputable section
+
+open CategoryTheory Limits Topology
+
+universe w v u
+
+namespace TopPair
+
+variable {A : Type u} [Category.{v} A] [HasCoproducts.{w} A] [Abelian A] (R : A)
+
+section Excision
+
+variable {P P' : TopPair.{w}} (f : P ⟶ P') (hf : IsEmbedding (Hom.fst f))
+  (hsnd : ∀ x, Hom.fst f x ∈ Set.range P'.map → x ∈ Set.range P.map)
+  {ι : Type*} (U : ι → Set P'.fst) (hU : ∀ i, IsOpen (U i)) (hcov : ⋃ i, U i = Set.univ)
+  (hUf : ∀ i, U i ⊆ Set.range P'.map ∨ U i ⊆ Set.range (Hom.fst f))
+
+include hsnd in
+/-- If the subspace of `P` is the full preimage of the subspace of `P'`, then a map of pairs sends
+small simplices not lying in the subspace of `P` to small simplices not lying in the subspace of
+`P'`. -/
+lemma mem_relativeSimplex_restrictMap_right_app (n : ℕ)
+    (x : ((toSSetPair.obj P).restrict
+        (P.smallSingularSubcomplex (fun i ↦ Hom.fst f ⁻¹' U i))).RelativeSimplex n) :
+    (SSetPair.restrictMap (toSSetPair.map f)
+        (smallSingularSubcomplex_le_preimage f U)).right.app _ x.1 ∈
+      ((toSSetPair.obj P').restrict (P'.smallSingularSubcomplex U)).RelativeSimplex n := by
+  intro hx
+  obtain ⟨a, ha⟩ := (SSetPair.mem_range_restrict_hom_app_iff _ _ _).mp hx
+  have hx' := (P'.isEmbedding_map.isInducing.mem_range_toSSet_map_app_iff _ _).mp
+    ⟨a, ha.trans (SSetPair.restrictMap_right_app_coe _ _ x.1)⟩
+  refine x.2 ((mem_range_restrict_hom_app_iff P _ _).mpr ?_)
+  rintro _ ⟨t, rfl⟩
+  apply hsnd
+  apply hx'
+  exact ⟨t, rfl⟩
+
+include hf hsnd hUf in
+/-- **Complementary small simplices correspond.** For a map of pairs which is an embedding on
+ambient spaces, whose subspace is the full preimage of the subspace of the target, and an open
+cover of the target each of whose members lies in the subspace or in the image, the simplices small
+for the pulled-back cover not lying in the subspace correspond bijectively to the simplices small
+for the cover not lying in the subspace of the target. -/
+lemma relativeSimplex_restrictMap_bijective (n : ℕ) :
+    Function.Bijective (fun x : ((toSSetPair.obj P).restrict
+        (P.smallSingularSubcomplex (fun i ↦ Hom.fst f ⁻¹' U i))).RelativeSimplex n ↦
+      (⟨_, mem_relativeSimplex_restrictMap_right_app f hsnd U n x⟩ :
+        ((toSSetPair.obj P').restrict (P'.smallSingularSubcomplex U)).RelativeSimplex n)) := by
+  have : Mono (Hom.fst f) := (TopCat.mono_iff_injective _).mpr hf.injective
+  constructor
+  · intro x y hxy
+    have h1 := congrArg (fun z : ((toSSetPair.obj P').restrict
+        (P'.smallSingularSubcomplex U)).RelativeSimplex n ↦ z.1.1) hxy
+    have h2 := (SSetPair.restrictMap_right_app_coe _ _ x.1).symm.trans
+      (h1.trans (SSetPair.restrictMap_right_app_coe _ _ y.1))
+    exact Subtype.ext (Subtype.ext (injective_of_mono ((TopCat.toSSet.map (Hom.fst f)).app _) h2))
+  · intro y
+    obtain ⟨i, hi⟩ := (P'.mem_smallSingularSubcomplex_iff U _).mp y.1.2
+    have hy : ¬ Set.range (P'.fst.toSSetObjEquiv _ y.1.1) ⊆ Set.range P'.map := fun h ↦
+      y.2 ((mem_range_restrict_hom_app_iff P' _ _).mpr h)
+    -- The simplex lies in a member of the cover, which lies in the image of `f` since the simplex
+    -- does not lie in the subspace; as `f` is an embedding, the simplex is induced from `P`.
+    have hsub : Set.range (P'.fst.toSSetObjEquiv _ y.1.1) ⊆ Set.range (Hom.fst f) := by
+      rcases hUf i with h | h
+      · exact (hy (hi.trans h)).elim
+      · exact hi.trans h
+    obtain ⟨σ, hσ⟩ := (hf.isInducing.mem_range_toSSet_map_app_iff _ _).mpr hsub
+    have hσ' : (ConcreteCategory.hom (Hom.fst f)).comp (P.fst.toSSetObjEquiv _ σ) =
+        P'.fst.toSSetObjEquiv _ y.1.1 := by
+      rw [← TauCeti.TopCat.toSSetObjEquiv_toSSet_map_app, hσ]
+    rw [← hσ', ContinuousMap.coe_comp, Set.range_comp, Set.image_subset_iff] at hi
+    have hσS : σ ∈ (P.smallSingularSubcomplex (fun i ↦ Hom.fst f ⁻¹' U i)).obj _ :=
+      (P.mem_smallSingularSubcomplex_iff _ _).mpr ⟨i, hi⟩
+    refine ⟨⟨⟨σ, hσS⟩, ?_⟩, ?_⟩
+    · intro hσA
+      have hσA' := (mem_range_restrict_hom_app_iff P _ _).mp hσA
+      apply hy
+      rw [← hσ', ContinuousMap.coe_comp, Set.range_comp]
+      rintro _ ⟨a, ha, rfl⟩
+      obtain ⟨b, rfl⟩ := hσA' ha
+      exact ⟨Hom.snd f b, Hom.w_apply f b⟩
+    · apply Subtype.ext
+      apply Subtype.ext
+      exact (SSetPair.restrictMap_right_app_coe _ _ _).trans hσ
+
+include hf hsnd hU hcov hUf in
+/-- **Excision for relative singular homology.** Let `f : P ⟶ P'` be a map of topological pairs
+which is an embedding on ambient spaces and whose subspace is the full preimage of the subspace of
+`P'`.  If the ambient space of `P'` has an open cover each of whose members lies in the subspace of
+`P'` or in the image of `f`, then `f` induces isomorphisms on relative singular homology. -/
+theorem isIso_singularHomologyMap_of_open_cover (n : ℕ) :
+    IsIso (TopPair.singularHomologyMap f R n) := by
+  have h₁ := isIso_homologyMap_restrictι_smallSingularSubcomplex R P' U hU hcov n
+  have h₂ := isIso_homologyMap_restrictι_smallSingularSubcomplex R P
+    (fun i ↦ Hom.fst f ⁻¹' U i) (fun i ↦ (hU i).preimage (Hom.fst f).hom.continuous)
+    (by rw [← Set.preimage_iUnion, hcov, Set.preimage_univ]) n
+  have h₃ : IsIso (SSetPair.homologyMap (SSetPair.restrictMap (toSSetPair.map f)
+      (smallSingularSubcomplex_le_preimage f U)) R n) :=
+    SSetPair.isIso_homologyMap_of_relativeSimplex_equiv _ R
+      (fun m ↦ Equiv.ofBijective _ (relativeSimplex_restrictMap_bijective f hf hsnd U hUf m))
+      (fun _ _ ↦ rfl) n
+  have hsq := SSetPair.restrictMap_comp_restrictι (toSSetPair.map f)
+    (smallSingularSubcomplex_le_preimage f U)
+  have : IsIso (SSetPair.homologyMap ((toSSetPair.obj P).restrictι
+      (P.smallSingularSubcomplex (fun i ↦ Hom.fst f ⁻¹' U i))) R n ≫
+      TopPair.singularHomologyMap f R n) := by
+    rw [← SSetPair.homologyMap_comp, ← hsq, SSetPair.homologyMap_comp]
+    infer_instance
+  exact IsIso.of_isIso_comp_left (SSetPair.homologyMap ((toSSetPair.obj P).restrictι
+    (P.smallSingularSubcomplex (fun i ↦ Hom.fst f ⁻¹' U i))) R n) _
+
+end Excision
+
+section Subsets
+
+variable {X : TopCat.{w}} (A B : Set X)
+
+/-- The topological pair `(A, A ∩ B)`, with `A ∩ B` realised as the preimage of `B` in the
+subspace `A`. -/
+abbrev interPair : TopPair.{w} := TopPair.ofSubset (X := TopCat.of A) (Subtype.val ⁻¹' B)
+
+/-- The inclusion of pairs `(A, A ∩ B) ⟶ (X, B)`. -/
+def excisionMap : interPair A B ⟶ ofSubset B :=
+  TopPair.ofHom (TopCat.ofHom ⟨Subtype.val, continuous_subtype_val⟩)
+    (TopCat.ofHom ⟨B.restrictPreimage Subtype.val, continuous_subtype_val.restrictPreimage⟩)
+
+@[simp]
+lemma excisionMap_fst_apply (x : (interPair A B).fst) : Hom.fst (excisionMap A B) x = x.1 := (rfl)
+
+@[simp]
+lemma excisionMap_snd_apply (x : (interPair A B).snd) :
+    (Hom.snd (excisionMap A B) x).1 = x.1.1 := (rfl)
+
+/-- **Excision.** If the interiors of `A` and `B` cover `X`, the inclusion of pairs
+`(A, A ∩ B) ⟶ (X, B)` induces isomorphisms on relative singular homology. -/
+theorem isIso_singularHomologyMap_excisionMap (h : interior A ∪ interior B = Set.univ)
+    (n : ℕ) : IsIso (TopPair.singularHomologyMap (excisionMap A B) R n) := by
+  refine isIso_singularHomologyMap_of_open_cover R (excisionMap A B) IsEmbedding.subtypeVal ?_
+    (fun b : Bool ↦ bif b then interior A else interior B)
+    (fun b ↦ by cases b <;> exact isOpen_interior) ?_ ?_ n
+  · rintro x ⟨y, hy⟩
+    have hy' : y.1 = x.1 := hy
+    exact ⟨⟨x, (hy' ▸ y.2 : x.1 ∈ B)⟩, rfl⟩
+  · rw [← Set.union_eq_iUnion]
+    exact h
+  · intro b
+    cases b
+    · exact Or.inl (interior_subset.trans fun x hx ↦ ⟨⟨x, hx⟩, rfl⟩)
+    · exact Or.inr (interior_subset.trans fun x hx ↦ ⟨⟨x, hx⟩, rfl⟩)
+
+/-- **Excision of a set with closure in the interior of the subspace.** If `closure Z ⊆ interior B`,
+the inclusion of pairs `(X ∖ Z, B ∖ Z) ⟶ (X, B)` induces isomorphisms on relative singular
+homology. -/
+theorem isIso_singularHomologyMap_excisionMap_compl (Z : Set X) (h : closure Z ⊆ interior B)
+    (n : ℕ) : IsIso (TopPair.singularHomologyMap (excisionMap Zᶜ B) R n) := by
+  refine isIso_singularHomologyMap_excisionMap R Zᶜ B ?_ n
+  rw [interior_compl, Set.eq_univ_iff_forall]
+  intro x
+  by_cases hx : x ∈ closure Z
+  · exact Or.inr (h hx)
+  · exact Or.inl hx
+
+/-- **Excision onto a neighbourhood.** If `U` is open and contains the closed set `K`, the
+inclusion of pairs `(U, U ∖ K) ⟶ (X, X ∖ K)` induces isomorphisms on relative singular
+homology. -/
+theorem isIso_singularHomologyMap_excisionMap_of_isClosed_subset {U K : Set X} (hU : IsOpen U)
+    (hK : IsClosed K) (hKU : K ⊆ U) (n : ℕ) :
+    IsIso (TopPair.singularHomologyMap (excisionMap U Kᶜ) R n) := by
+  refine isIso_singularHomologyMap_excisionMap R U Kᶜ ?_ n
+  rw [hU.interior_eq, hK.isOpen_compl.interior_eq]
+  exact Set.eq_univ_of_subset (Set.union_subset_union_left _ hKU) (Set.union_compl_self K)
+
+variable {A B} {Y : TopCat.{w}} (g : X ⟶ Y) {A' B' : Set Y}
+  (hA : Set.MapsTo g A A') (hB : Set.MapsTo g B B')
+
+/-- A map of excision data: a continuous map `g : X ⟶ Y` carrying `A` into `A'` and `B` into `B'`
+induces a map of pairs `(A, A ∩ B) ⟶ (A', A' ∩ B')`. -/
+def interPairMap : interPair A B ⟶ interPair A' B' :=
+  ofSubsetMap (TopCat.ofHom ⟨hA.restrict, g.hom.continuous.restrict hA⟩)
+    (fun _ hx ↦ hB hx)
+
+@[simp]
+lemma interPairMap_fst_apply (x : (interPair A B).fst) :
+    (Hom.fst (interPairMap g hA hB) x).1 = g x.1 :=
+  congrArg Subtype.val (ofSubsetMap_fst_apply
+    (TopCat.ofHom ⟨hA.restrict, g.hom.continuous.restrict hA⟩) (fun _ hx ↦ hB hx) x)
+
+@[simp]
+lemma interPairMap_snd_apply (x : (interPair A B).snd) :
+    (Hom.snd (interPairMap g hA hB) x).1.1 = g x.1.1 :=
+  congrArg Subtype.val (ofSubsetMap_snd_apply
+    (TopCat.ofHom ⟨hA.restrict, g.hom.continuous.restrict hA⟩) (fun _ hx ↦ hB hx) x)
+
+@[simp]
+lemma interPairMap_id (hA : Set.MapsTo (𝟙 X) A A) (hB : Set.MapsTo (𝟙 X) B B) :
+    interPairMap (𝟙 X) hA hB = 𝟙 (interPair A B) := by
+  ext : 2
+  · exact Subtype.ext (Subtype.ext (interPairMap_snd_apply _ _ _ _))
+  · exact Subtype.ext (interPairMap_fst_apply _ _ _ _)
+
+@[reassoc]
+lemma interPairMap_comp {Z : TopCat.{w}} (g' : Y ⟶ Z) {A'' B'' : Set Z}
+    (hA' : Set.MapsTo g' A' A'') (hB' : Set.MapsTo g' B' B'')
+    (hA'' : Set.MapsTo (g ≫ g') A A'') (hB'' : Set.MapsTo (g ≫ g') B B'') :
+    interPairMap (g ≫ g') hA'' hB'' = interPairMap g hA hB ≫ interPairMap g' hA' hB' := by
+  ext : 2
+  · exact Subtype.ext (Subtype.ext (by simp))
+  · exact Subtype.ext (by simp)
+
+/-- The excision maps are natural in the excision data. -/
+@[reassoc]
+lemma interPairMap_comp_excisionMap :
+    interPairMap g hA hB ≫ excisionMap A' B' = excisionMap A B ≫ ofSubsetMap g hB := by
+  ext : 2
+  · exact Subtype.ext (by simp)
+  · exact (interPairMap_fst_apply g hA hB _).trans (ofSubsetMap_fst_apply g hB _).symm
+
+omit hA hB in
+/-- **Excision is compatible with shrinking the excised set.** Let `U` be open and let
+`L₂ ⊆ L₁ ⊆ U` be closed. The inclusion `(U, U ∖ L₁) ⟶ (U, U ∖ L₂)` induces isomorphisms on
+relative singular homology exactly when `(X, X ∖ L₁) ⟶ (X, X ∖ L₂)` does, since both pairs in `U`
+are carried isomorphically to the corresponding pairs in `X` by excision. -/
+theorem isIso_singularHomologyMap_ofSubsetMap_compl_iff {U L₁ L₂ : Set X} (hU : IsOpen U)
+    (hL₁ : IsClosed L₁) (hL₂ : IsClosed L₂) (hL₁U : L₁ ⊆ U) (h : L₂ ⊆ L₁) (n : ℕ) :
+    IsIso (TopPair.singularHomologyMap (ofSubsetMap (𝟙 (TopCat.of U))
+        (B := Subtype.val ⁻¹' L₁ᶜ) (B' := Subtype.val ⁻¹' L₂ᶜ)
+        fun _ hz ↦ Set.compl_subset_compl.2 h hz) R n) ↔
+      IsIso (TopPair.singularHomologyMap (ofSubsetMap (𝟙 X) (Set.compl_subset_compl.2 h)) R n) := by
+  have := isIso_singularHomologyMap_excisionMap_of_isClosed_subset R hU hL₁ hL₁U n
+  have := isIso_singularHomologyMap_excisionMap_of_isClosed_subset R hU hL₂ (h.trans hL₁U) n
+  -- The inclusion in `U` is `TopPair.interPairMap` for the identity of `X`.
+  have hU : ofSubsetMap (𝟙 (TopCat.of U)) (B := Subtype.val ⁻¹' L₁ᶜ) (B' := Subtype.val ⁻¹' L₂ᶜ)
+      (fun _ hz ↦ Set.compl_subset_compl.2 h hz) =
+      interPairMap (𝟙 X) (Set.mapsTo_id U) (Set.compl_subset_compl.2 h) := by
+    ext : 2 <;> rfl
+  have hw := congrArg (TopPair.singularHomologyMap · R n)
+    (interPairMap_comp_excisionMap (𝟙 X) (Set.mapsTo_id U) (Set.compl_subset_compl.2 h))
+  simp only [TopPair.singularHomologyMap_comp] at hw
+  rw [hU]
+  exact ⟨fun _ ↦ IsIso.of_isIso_fac_left hw.symm, fun _ ↦ IsIso.of_isIso_fac_right hw⟩
+
+end Subsets
+
+section Inter
+
+open TauCeti
+
+variable {X : TopCat.{w}} (U V : Set X)
+
+/-- The triple `(X, U, U ∩ V)`, with `U ∩ V` realised as the preimage of `V` in the subspace `U`,
+so that its inner pair is `TopPair.interPair U V`. -/
+private abbrev interTriple : TopTriple.{w} :=
+  TopTriple.of (B := TopCat.of (Subtype.val ⁻¹' V : Set U)) (A := TopCat.of U) (X := X)
+    (TopCat.ofHom ⟨Subtype.val, continuous_subtype_val⟩)
+    (TopCat.ofHom ⟨Subtype.val, continuous_subtype_val⟩) IsEmbedding.subtypeVal
+    IsEmbedding.subtypeVal
+
+/-- The inner pair of `TopPair.interTriple U V` is `TopPair.interPair U V`. -/
+private def interPairToInner : interPair U V ⟶ TopTriple.innerPair.obj (interTriple U V) :=
+  TopPair.ofHom (𝟙 _) (𝟙 _) rfl
+
+/-- The outer pair of `TopPair.interTriple U V` is `(X, U)`. -/
+private def subsetToOuter : ofSubset U ⟶ TopTriple.outerPair.obj (interTriple U V) :=
+  TopPair.ofHom (𝟙 _) (𝟙 _) rfl
+
+/-- The identification of `(X, U ∩ V)` with the total pair of `TopPair.interTriple U V`. -/
+private def interToTotal : ofSubset (U ∩ V) ⟶ TopTriple.totalPair.obj (interTriple U V) :=
+  TopPair.ofHom (𝟙 X) (TopCat.ofHom ⟨fun y ↦ ⟨⟨y.1, y.2.1⟩, y.2.2⟩, by fun_prop⟩) (by ext; rfl)
+
+private instance : IsIso (interToTotal U V) :=
+  have : IsIso (Hom.fst (interToTotal U V)) := inferInstanceAs (IsIso (𝟙 X))
+  isIso_of_isIso_fst_of_surjective_snd _ fun y ↦ ⟨⟨y.1.1, y.1.2, y.2⟩, rfl⟩
+
+private instance : IsIso (interPairToInner U V) :=
+  have : IsIso (Hom.fst (interPairToInner U V)) := inferInstanceAs (IsIso (𝟙 (TopCat.of U)))
+  isIso_of_isIso_fst_of_surjective_snd _ fun y ↦ ⟨y, rfl⟩
+
+/-- The map from the total pair `(X, U ∩ V)` of `TopPair.interTriple U V` to the pair `(X, V)`. -/
+private def totalToSubset : TopTriple.totalPair.obj (interTriple U V) ⟶ ofSubset V :=
+  TopPair.ofHom (𝟙 X) (TopCat.ofHom ⟨fun y ↦ ⟨y.1.1, y.2⟩, by fun_prop⟩) (by ext; rfl)
+
+private lemma interPairToInner_comp_innerToTotal_comp_totalToSubset :
+    interPairToInner U V ≫ TopTriple.innerToTotal.app (interTriple U V) ≫ totalToSubset U V =
+      excisionMap U V := by
+  ext x : 2
+  · refine Subtype.ext (Eq.trans ?_ (excisionMap_snd_apply U V x).symm)
+    exact congrArg (fun g ↦ (g x).1.1) (TopTriple.innerToTotal_app_snd (T := interTriple U V))
+  · refine Eq.trans ?_ (excisionMap_fst_apply U V x).symm
+    exact congrArg (fun g ↦ g x) (TopTriple.innerToTotal_app_fst (T := interTriple U V))
+
+variable {U V}
+
+private lemma interToTotal_comp_totalToOuter (hU : Set.MapsTo (𝟙 X) (U ∩ V) U) :
+    interToTotal U V ≫ TopTriple.totalToOuter.app (interTriple U V) =
+      ofSubsetMap (𝟙 X) hU ≫ subsetToOuter U V := by
+  ext x : 2
+  · refine Subtype.ext (Eq.trans ?_ (ofSubsetMap_snd_apply (𝟙 X) hU x).symm)
+    exact congrArg (fun g ↦ (g (Hom.snd (interToTotal U V) x)).1)
+      (TopTriple.totalToOuter_app_snd (T := interTriple U V))
+  · refine Eq.trans ?_ (ofSubsetMap_fst_apply (𝟙 X) hU x).symm
+    exact congrArg (fun g ↦ g x) (TopTriple.totalToOuter_app_fst (T := interTriple U V))
+
+private lemma interToTotal_comp_totalToSubset (hV : Set.MapsTo (𝟙 X) (U ∩ V) V) :
+    interToTotal U V ≫ totalToSubset U V = ofSubsetMap (𝟙 X) hV := by
+  ext x : 2
+  · exact Subtype.ext (ofSubsetMap_snd_apply (𝟙 X) hV x).symm
+  · exact (ofSubsetMap_fst_apply (𝟙 X) hV x).symm
+
+/-- **Relative homology of `(X, U ∩ V)` is detected on `(X, U)` and `(X, V)`** when the interiors
+of `U` and `V` cover `X`: two morphisms into `Hₙ(X, U ∩ V)` agree as soon as their images in
+`Hₙ(X, U)` and in `Hₙ(X, V)` agree.  By the long exact sequence of the triple `(X, U, U ∩ V)`, a
+morphism vanishing in `Hₙ(X, U)` comes from `Hₙ(U, U ∩ V)`, which excision identifies with
+`Hₙ(X, V)`.  As for `TopPair.ofSubsetMap_id`, the inclusions `hU` and `hV` are arguments, so that
+the maps of pairs in the hypotheses match those of the caller. -/
+theorem singularHomology_inter_hom_ext (h : interior U ∪ interior V = Set.univ)
+    (hU : Set.MapsTo (𝟙 X) (U ∩ V) U) (hV : Set.MapsTo (𝟙 X) (U ∩ V) V) (n : ℕ) {M : A}
+    {u v : M ⟶ (ofSubset (U ∩ V)).singularHomology R n}
+    (hu : u ≫ TopPair.singularHomologyMap (ofSubsetMap (𝟙 X) hU) R n =
+      v ≫ TopPair.singularHomologyMap (ofSubsetMap (𝟙 X) hU) R n)
+    (hv : u ≫ TopPair.singularHomologyMap (ofSubsetMap (𝟙 X) hV) R n =
+      v ≫ TopPair.singularHomologyMap (ofSubsetMap (𝟙 X) hV) R n) :
+    u = v := by
+  let T := interTriple U V
+  rw [← sub_eq_zero, ← cancel_mono (TopPair.singularHomologyMap (interToTotal U V) R n), zero_comp]
+  set w := (u - v) ≫ TopPair.singularHomologyMap (interToTotal U V) R n with hw
+  have hw₁ : w ≫ TopPair.singularHomologyMap (TopTriple.totalToOuter.app T) R n = 0 := by
+    rw [hw, Category.assoc, ← TopPair.singularHomologyMap_comp,
+      interToTotal_comp_totalToOuter hU, TopPair.singularHomologyMap_comp, ← Category.assoc,
+      Preadditive.sub_comp, hu, sub_self, zero_comp]
+  have hw₂ : w ≫ TopPair.singularHomologyMap (totalToSubset U V) R n = 0 := by
+    rw [hw, Category.assoc, ← TopPair.singularHomologyMap_comp,
+      interToTotal_comp_totalToSubset hV, Preadditive.sub_comp, hv, sub_self]
+  -- The map `Hₙ(U, U ∩ V) ⟶ Hₙ(X, U ∩ V)` followed by `Hₙ(X, U ∩ V) ⟶ Hₙ(X, V)` is excision.
+  have hiso : IsIso (TopPair.singularHomologyMap (TopTriple.innerToTotal.app T) R n ≫
+      TopPair.singularHomologyMap (totalToSubset U V) R n) := by
+    have := isIso_singularHomologyMap_excisionMap R U V h n
+    rw [← interPairToInner_comp_innerToTotal_comp_totalToSubset, TopPair.singularHomologyMap_comp,
+      TopPair.singularHomologyMap_comp] at this
+    exact IsIso.of_isIso_comp_left (TopPair.singularHomologyMap (interPairToInner U V) R n) _
+  have := mono_of_mono (TopPair.singularHomologyMap (TopTriple.innerToTotal.app T) R n)
+    (TopPair.singularHomologyMap (totalToSubset U V) R n)
+  obtain ⟨l, hl⟩ := (T.singularHomology_exact_total R n).lift' w hw₁
+  have hl₀ : l = 0 := by
+    rw [← cancel_mono (TopPair.singularHomologyMap (TopTriple.innerToTotal.app T) R n ≫
+      TopPair.singularHomologyMap (totalToSubset U V) R n), zero_comp, ← Category.assoc]
+    exact hl ▸ hw₂
+  rw [← hl, hl₀, zero_comp]
+
+end Inter
+
+end TopPair

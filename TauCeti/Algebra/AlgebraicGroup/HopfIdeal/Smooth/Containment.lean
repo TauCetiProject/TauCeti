@@ -137,8 +137,7 @@ theorem ker_eq_bot_of_smooth_of_connected_of_conormalSubspace_eq_bot
   have hbaseChange_zero : P.cotangentComplex.lTensor κ = 0 := by
     apply LinearMap.ext
     intro z
-    induction z using TensorProduct.induction_on with
-    | zero => simp
+    induction z using TensorProduct.inductionOn with
     | add x y hx hy => simp [hx, hy]
     | tmul a m =>
       obtain ⟨x, rfl⟩ := Algebra.Extension.Cotangent.mk_surjective (P := P) m

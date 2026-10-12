@@ -7,6 +7,8 @@ module
 
 public import Mathlib.AlgebraicTopology.FundamentalGroupoid.FundamentalGroup
 public import Mathlib.MeasureTheory.Integral.CircleIntegral
+public import TauCeti.AlgebraicTopology.FundamentalGroup.BasepointChange
+public import TauCeti.AlgebraicTopology.FundamentalGroup.Homeomorph
 public import TauCeti.AlgebraicTopology.ThricePuncturedSphere.Basic
 
 /-!
@@ -29,6 +31,9 @@ monodromy of a three-point cover along these elements is the permutation triple 
   `periphInf := (periph1 * periph0)⁻¹`, so that `periphInf * periph1 * periph0 = 1` holds by
   definition. In `FundamentalGroup`, `γ * δ` is the class of the path traversing `δ` first, so
   `periph1 * periph0` is the class of "`γ0`, then `γ1`".
+* Transporting these elements to another basepoint depends on a path, but their conjugacy classes
+  do not. The classes `periph0Class`, `periph1Class`, and `periphInfClass` therefore make the
+  peripheral data available canonically at every basepoint.
 
 ## Main declarations
 
@@ -41,6 +46,11 @@ monodromy of a three-point cover along these elements is the permutation triple 
   loops.
 * `periph0`, `periph1`, `periphInf`, `periphInf_mul_periph1_mul_periph0`: the peripheral elements
   of the fundamental group and their product relation.
+* `periph0Class`, `periph1Class`, `periphInfClass`: the three peripheral conjugacy classes at an
+  arbitrary basepoint, together with their path-transport rules.
+* `homeomorphMulEquivOfEq_mob01_periph0`, `homeomorphMulEquivOfEq_mob01_periph1`,
+  `homeomorphMulEquivOfEq_mob01_periphInf`: the automorphism of the fundamental group induced by
+  `z ↦ 1 − z` exchanges `periph0` and `periph1` and conjugates `periphInf` by `periph1`.
 
 ## References
 
@@ -179,6 +189,135 @@ theorem periphInf_def : periphInf = (periph1 * periph0)⁻¹ :=
 /-- The product relation of the three peripheral elements. -/
 theorem periphInf_mul_periph1_mul_periph0 : periphInf * periph1 * periph0 = 1 := by
   rw [periphInf_def, mul_assoc, inv_mul_cancel]
+
+/-! ### Peripheral conjugacy classes at arbitrary basepoints -/
+
+/-- The conjugacy class of a peripheral loop around `0`, canonically transported from `basePt` to
+the basepoint `x`. -/
+noncomputable def periph0Class (x : ThricePuncturedSphere) :
+    ConjClasses (FundamentalGroup ThricePuncturedSphere x) :=
+  FundamentalGroup.conjClassesEquivOfPathConnected basePt x (ConjClasses.mk periph0)
+
+/-- The conjugacy class of a peripheral loop around `1`, canonically transported from `basePt` to
+the basepoint `x`. -/
+noncomputable def periph1Class (x : ThricePuncturedSphere) :
+    ConjClasses (FundamentalGroup ThricePuncturedSphere x) :=
+  FundamentalGroup.conjClassesEquivOfPathConnected basePt x (ConjClasses.mk periph1)
+
+/-- The conjugacy class of a peripheral loop around `∞`, canonically transported from `basePt` to
+the basepoint `x`. -/
+noncomputable def periphInfClass (x : ThricePuncturedSphere) :
+    ConjClasses (FundamentalGroup ThricePuncturedSphere x) :=
+  FundamentalGroup.conjClassesEquivOfPathConnected basePt x (ConjClasses.mk periphInf)
+
+/-- At the standard basepoint, the canonical peripheral class around `0` is the class of
+`periph0`. -/
+@[simp]
+theorem periph0Class_basePt : periph0Class basePt = ConjClasses.mk periph0 := by
+  simp [periph0Class]
+
+/-- At the standard basepoint, the canonical peripheral class around `1` is the class of
+`periph1`. -/
+@[simp]
+theorem periph1Class_basePt : periph1Class basePt = ConjClasses.mk periph1 := by
+  simp [periph1Class]
+
+/-- At the standard basepoint, the canonical peripheral class around `∞` is the class of
+`periphInf`. -/
+@[simp]
+theorem periphInfClass_basePt : periphInfClass basePt = ConjClasses.mk periphInf := by
+  simp [periphInfClass]
+
+/-- Transport along any path from `basePt` carries `periph0` to a representative of the canonical
+peripheral conjugacy class around `0`. -/
+theorem conjClassesEquivOfPath_mk_periph0 {x : ThricePuncturedSphere} (γ : Path basePt x) :
+    FundamentalGroup.conjClassesEquivOfPath γ (ConjClasses.mk periph0) = periph0Class x := by
+  rw [periph0Class, FundamentalGroup.conjClassesEquivOfPathConnected_eq γ]
+
+/-- Transport along any path from `basePt` carries `periph1` to a representative of the canonical
+peripheral conjugacy class around `1`. -/
+theorem conjClassesEquivOfPath_mk_periph1 {x : ThricePuncturedSphere} (γ : Path basePt x) :
+    FundamentalGroup.conjClassesEquivOfPath γ (ConjClasses.mk periph1) = periph1Class x := by
+  rw [periph1Class, FundamentalGroup.conjClassesEquivOfPathConnected_eq γ]
+
+/-- Transport along any path from `basePt` carries `periphInf` to a representative of the
+canonical peripheral conjugacy class around `∞`. -/
+theorem conjClassesEquivOfPath_mk_periphInf {x : ThricePuncturedSphere} (γ : Path basePt x) :
+    FundamentalGroup.conjClassesEquivOfPath γ (ConjClasses.mk periphInf) = periphInfClass x := by
+  rw [periphInfClass, FundamentalGroup.conjClassesEquivOfPathConnected_eq γ]
+
+/-- The peripheral conjugacy class around `0` is preserved by basepoint change. -/
+@[simp]
+theorem conjClassesEquivOfPath_periph0Class {x y : ThricePuncturedSphere} (γ : Path x y) :
+    FundamentalGroup.conjClassesEquivOfPath γ (periph0Class x) = periph0Class y := by
+  simpa only [periph0Class] using
+    FundamentalGroup.conjClassesEquivOfPath_conjClassesEquivOfPathConnected basePt γ
+      (ConjClasses.mk periph0)
+
+/-- The peripheral conjugacy class around `1` is preserved by basepoint change. -/
+@[simp]
+theorem conjClassesEquivOfPath_periph1Class {x y : ThricePuncturedSphere} (γ : Path x y) :
+    FundamentalGroup.conjClassesEquivOfPath γ (periph1Class x) = periph1Class y := by
+  simpa only [periph1Class] using
+    FundamentalGroup.conjClassesEquivOfPath_conjClassesEquivOfPathConnected basePt γ
+      (ConjClasses.mk periph1)
+
+/-- The peripheral conjugacy class around `∞` is preserved by basepoint change. -/
+@[simp]
+theorem conjClassesEquivOfPath_periphInfClass {x y : ThricePuncturedSphere} (γ : Path x y) :
+    FundamentalGroup.conjClassesEquivOfPath γ (periphInfClass x) = periphInfClass y := by
+  simpa only [periphInfClass] using
+    FundamentalGroup.conjClassesEquivOfPath_conjClassesEquivOfPathConnected basePt γ
+      (ConjClasses.mk periphInf)
+
+/-! ### The involution `z ↦ 1 − z` on the fundamental group
+
+Since `mob01` fixes the basepoint, it induces an automorphism of `π₁(ℂ ∖ {0, 1}, 1/2)` with no
+choice of connecting path. It exchanges the two peripheral loops on the nose, so it exchanges
+`periph0` and `periph1`, and it carries `periphInf` to its conjugate by `periph1`. These are the
+values that make the pullback of a cover along `z ↦ 1 − z` exchange the roles of `0` and `1` in
+its monodromy triple. The three lemmas are not `simp` lemmas: `homeomorphMulEquivOfEq_apply`
+already rewrites their left-hand sides to `FundamentalGroup.mapOfEq`, so they are used by `rw`. -/
+
+/-- The automorphism of the fundamental group induced by `z ↦ 1 − z` sends `periph0` to
+`periph1`. -/
+theorem homeomorphMulEquivOfEq_mob01_periph0 :
+    FundamentalGroup.homeomorphMulEquivOfEq mob01 mob01_basePt periph0 = periph1 := by
+  rw [FundamentalGroup.homeomorphMulEquivOfEq_apply, FundamentalGroup.mapOfEq_apply, periph0_def,
+    periph1_def]
+  have hpath : (γ0.map mob01.continuous).cast mob01_basePt.symm mob01_basePt.symm = γ1 := by
+    ext t
+    -- `simp` cannot rewrite under `Path.cast` in the combined call, so the casts are peeled first;
+    -- the pointwise identity for the loops then closes the goal.
+    simp only [Path.cast_coe, Path.map_coe, Function.comp_apply]
+    simp
+  -- Both sides are the classes of explicit paths, `⟦γ0⟧` being `Path.Homotopic.Quotient.mk γ0`.
+  exact congrArg Path.Homotopic.Quotient.mk hpath
+
+/-- The automorphism of the fundamental group induced by `z ↦ 1 − z` sends `periph1` to
+`periph0`. -/
+theorem homeomorphMulEquivOfEq_mob01_periph1 :
+    FundamentalGroup.homeomorphMulEquivOfEq mob01 mob01_basePt periph1 = periph0 := by
+  rw [FundamentalGroup.homeomorphMulEquivOfEq_apply, FundamentalGroup.mapOfEq_apply, periph0_def,
+    periph1_def]
+  have hpath : (γ1.map mob01.continuous).cast mob01_basePt.symm mob01_basePt.symm = γ0 := by
+    ext t
+    -- `simp` cannot rewrite under `Path.cast` in the combined call, so the casts are peeled first;
+    -- the pointwise identity for the loops then closes the goal.
+    simp only [Path.cast_coe, Path.map_coe, Function.comp_apply]
+    simp
+  -- Both sides are the classes of explicit paths, `⟦γ1⟧` being `Path.Homotopic.Quotient.mk γ1`.
+  exact congrArg Path.Homotopic.Quotient.mk hpath
+
+/-- The automorphism of the fundamental group induced by `z ↦ 1 − z` sends `periphInf` to its
+conjugate `periph1⁻¹ * periphInf * periph1`, the third component of the branch-point operation
+exchanging `0` and `1`. -/
+theorem homeomorphMulEquivOfEq_mob01_periphInf :
+    FundamentalGroup.homeomorphMulEquivOfEq mob01 mob01_basePt periphInf =
+      periph1⁻¹ * periphInf * periph1 := by
+  rw [periphInf_def, map_inv, map_mul, homeomorphMulEquivOfEq_mob01_periph0,
+    homeomorphMulEquivOfEq_mob01_periph1]
+  group
 
 end ThricePuncturedSphere
 

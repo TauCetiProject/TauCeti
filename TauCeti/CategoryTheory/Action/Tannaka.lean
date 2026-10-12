@@ -79,7 +79,11 @@ def toEndForgetAction : G →* End (Action.forget (Type u) G) where
 
 variable {G}
 
-@[simp]
+/-- The computation rule for `TauCeti.toEndForgetAction`.
+
+This is not a `simp` lemma: the type of `NatTrans.app` puts `(Action.forget (Type u) G).obj A` in
+the coercion of the left-hand side, and `simp` rewrites that to `A.V` by `Action.forget_obj`, so
+the left-hand side here is not in `simp`-normal form. -/
 theorem toEndForgetAction_app_apply (g : G) (A : Action (Type u) G) (x : ToType A) :
     (toEndForgetAction G g).app A x = g • x :=
   by
@@ -87,7 +91,8 @@ theorem toEndForgetAction_app_apply (g : G) (A : Action (Type u) G) (x : ToType 
     change A.ρ g x = g • x
     rfl
 
-@[simp]
+/-- The value of `TauCeti.toEndForgetAction G g` at the identity of the left regular `G`-set; not a
+`simp` lemma, for the reason given at `TauCeti.toEndForgetAction_app_apply`. -/
 theorem toEndForgetAction_app_leftRegular_one (g : G) :
     (toEndForgetAction G g).app (Action.leftRegular G) (1 : G) = g :=
   mul_one g
@@ -171,7 +176,8 @@ def unitsAutForgetActionMulEquiv : Gˣ ≃* Aut (Action.forget (Type u) G) :=
 
 variable {G}
 
-@[simp]
+/-- The automorphism attached to a unit `g` acts by `g`; not a `simp` lemma, for the reason given
+at `TauCeti.toEndForgetAction_app_apply`. -/
 theorem unitsAutForgetActionMulEquiv_hom_app_apply (g : Gˣ) (A : Action (Type u) G)
     (x : ToType A) :
     (unitsAutForgetActionMulEquiv G g).hom.app A x = (g : G) • x := by
@@ -179,7 +185,8 @@ theorem unitsAutForgetActionMulEquiv_hom_app_apply (g : Gˣ) (A : Action (Type u
   change (endForgetActionMulEquiv G (g : G)).app A x = _
   rw [endForgetActionMulEquiv_apply, toEndForgetAction_app_apply]
 
-@[simp]
+/-- The inverse of the automorphism attached to a unit `g` acts by `g⁻¹`; not a `simp` lemma, for
+the reason given at `TauCeti.toEndForgetAction_app_apply`. -/
 theorem unitsAutForgetActionMulEquiv_inv_app_apply (g : Gˣ) (A : Action (Type u) G)
     (x : ToType A) :
     (unitsAutForgetActionMulEquiv G g).inv.app A x = ((g⁻¹ : Gˣ) : G) • x := by
@@ -283,14 +290,15 @@ theorem autForgetActionMulEquiv_apply (g : G) :
     autForgetActionMulEquiv G g = unitsAutForgetActionMulEquiv G (toUnits g) :=
   (rfl)
 
-@[simp]
+/-- The automorphism attached to `g` acts by `g`; not a `simp` lemma, for the reason given at
+`TauCeti.toEndForgetAction_app_apply`. -/
 theorem autForgetActionMulEquiv_hom_app_apply (g : G) (A : Action (Type u) G) (x : ToType A) :
     (autForgetActionMulEquiv G g).hom.app A x = g • x := by
   rw [autForgetActionMulEquiv_apply, unitsAutForgetActionMulEquiv_hom_app_apply,
     val_toUnits_apply]
 
-/-- The inverse of the automorphism associated to `g` acts by `g⁻¹`. -/
-@[simp]
+/-- The inverse of the automorphism associated to `g` acts by `g⁻¹`; not a `simp` lemma, for the
+reason given at `TauCeti.toEndForgetAction_app_apply`. -/
 theorem autForgetActionMulEquiv_inv_app_apply (g : G) (A : Action (Type u) G) (x : ToType A) :
     (autForgetActionMulEquiv G g).inv.app A x = g⁻¹ • x := by
   rw [autForgetActionMulEquiv_apply, unitsAutForgetActionMulEquiv_inv_app_apply, ← map_inv,

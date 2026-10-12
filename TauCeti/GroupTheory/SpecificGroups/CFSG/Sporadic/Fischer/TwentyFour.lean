@@ -6,14 +6,14 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.GroupTheory.Presentation.Coxeter
+public import TauCeti.GroupTheory.Presentation.SchreierIndexTwo
 
 /-!
 # A transcribed presentation of the third Fischer group
 
-This file carries the `Fi24Prime` row of the sporadic presentation data required by milestone S1
-of `TauCetiRoadmap/CFSGStatement/README.md`. The cited source presents the 3-transposition group
-`Fi₂₄'·2` and proves that its commutator subgroup is the simple group `Fi₂₄'`. It also gives
-the index-two subgroup generators
+This file carries the `Fi24Prime` row of the sporadic presentation data. The cited source presents
+the 3-transposition group `Fi₂₄'·2` and proves that its commutator subgroup is the simple group
+`Fi₂₄'`. It also gives the index-two subgroup generators
 
 ```text
 ab, ac, ad, ae, af, ag, ah, ai, aj, ak.
@@ -42,11 +42,12 @@ l = (a b c d e f h)^9,
 
 Sending every source generator to the nontrivial element of `C₂` is the quotient onto
 `Fi₂₄'·2 / Fi₂₄'`. With transversal `{1,a}`, the Schreier generator attached to `x` is
-`ax`. Because all source generators are involutions, a source letter in an even position rewrites
-as `(ax)⁻¹` and one in an odd position as `ax`; conjugating a relator by `a` exchanges the two
-signs. Each off-diagonal Coxeter relator and each further relator therefore contributes those two
-rewrites. The square relators are precisely the relations used to eliminate the other half of the
-Schreier generators: after that elimination each rewrites to `u⁻¹u` or `uu⁻¹`, so none remains.
+`ax`. Because all source generators are involutions, a source letter in an even position, counting
+positions from zero, rewrites as `(ax)⁻¹` and one in an odd position as `ax`; conjugating a relator
+by `a` exchanges the two signs. Each off-diagonal Coxeter relator and each further relator
+therefore contributes those two rewrites. The square relators are precisely the relations used to
+eliminate the other half of the Schreier generators: after that elimination each rewrites to
+`u⁻¹u` or `uu⁻¹`, so none remains.
 
 Thus the `66` off-diagonal Coxeter relators and two further relators yield `2 · (66 + 2) = 136`
 relators on eleven generators. `TauCeti.Sporadic.fi24PrimePresentation_matchesMetadata` checks
@@ -64,8 +65,12 @@ with the source rather than checking it against a published number.
 Nothing here asserts that the presented group is nontrivial, finite, simple, of any particular
 order, or isomorphic to another realization. Kim and Michler prove that the commutator subgroup of
 the displayed source presentation is `Fi₂₄'`; Reidemeister--Schreier rewriting transfers that
-presentation to the subgroup. The independent read-through below checks that transfer against the
-cited source; it is an audit artifact, not a Lean theorem identifying the presented group.
+presentation to the subgroup. That transfer is a theorem here:
+`TauCeti.Sporadic.fi24PrimeGroupMulEquivCommutator` identifies the group presented by
+the row with the commutator subgroup of the group `TauCeti.Sporadic.Fi24AutomorphismGroup`
+presented by the eighty source relators, through the general index-two rewriting theorem
+`TauCeti.IsSchreierIndexTwoSource.mulEquivCommutator`. The independent read-through below then
+checks the source relators, and only them, against the cited source.
 
 ## Independent source-to-Lean read-through
 
@@ -103,8 +108,11 @@ dropped or duplicated.
 
 Lemma 6.2(c) identifies the commutator subgroup and gives the generators `ab` through `ak`. The
 connected exponent-three graph makes all twelve source generators equal in the abelianization,
-while sending each of them to the nontrivial element of `C₂` kills all the source relators. Hence
-that parity map has the commutator subgroup as its index-two kernel. The rewrite was then checked
+`TauCeti.Sporadic.abelianizationOf_fi24AutomorphismGroup_of`, while sending each of them to the
+nontrivial element of `C₂` kills all the source relators. Hence that parity map has the commutator
+subgroup as its index-two kernel,
+`TauCeti.Sporadic.commutator_fi24AutomorphismGroup_eq_ker_fi24ParityHom`. The rewrite
+was then checked
 definition by definition: `fi24SchreierFactors` toggles the transversal representative after every
 source letter, omits `a`, and records `(ax)⁻¹` and `ax` in alternating positions. Starting in the
 two possible representatives gives the rewrites of `r` and `a r a`. The twelve square relations
@@ -112,10 +120,7 @@ perform the standard elimination of the redundant Schreier generators; each of t
 `66 + 2` source relators contributes both rewrites. This gives exactly the `136` relators generated
 by `fi24PrimeRelators`, retaining `al` so that the source equation for `l` remains visible.
 `fi24PrimePresentation_relatorLetters` exposes the resulting compiled words for kernel-checked
-inspection. This closes the row's S1 source-to-Lean read-through.
-
-The independent `FiniteSimpleGroups` development named by the roadmap does not cover `Fi₂₄'`, so
-the additional explicit-construction comparison does not apply to this row.
+inspection.
 
 ## Main definitions
 
@@ -123,19 +128,33 @@ the additional explicit-construction comparison does not apply to this row.
 * `TauCeti.Sporadic.fi24AutomorphismRelators`: all eighty source relators for `Fi₂₄'·2`.
 * `TauCeti.Sporadic.fi24SchreierRewrite`: the Reidemeister--Schreier rewrite of a source relator.
 * `TauCeti.Sporadic.fi24PrimePresentation`: the Reidemeister--Schreier presentation of `Fi₂₄'`.
+* `TauCeti.Sporadic.Fi24AutomorphismGroup` and `TauCeti.Sporadic.fi24ParityHom`: the group
+  presented by the eighty source relators, and its parity homomorphism onto `C₂`.
+* `TauCeti.Sporadic.fi24PrimeGroupMulEquivCommutator`: the group presented by the
+  row is the commutator subgroup of `TauCeti.Sporadic.Fi24AutomorphismGroup`.
 
-Every definition here has its body sealed, and each is pinned by a public characteristic equation
-named after it: the `_def` theorems below, the evaluation lemmas
-`TauCeti.Sporadic.fi24AutomorphismCoxeterMatrix_apply`, `TauCeti.Sporadic.fi24TargetGenerator_val`
-and `TauCeti.Sporadic.fi24SchreierFactors_nil`/`_cons`, and the field equations of the presentation
+## Main results
+
+* `TauCeti.Sporadic.isSchreierIndexTwoSource_fi24`: the source presentation and the source
+  relators selected for rewriting satisfy the hypotheses of index-two Reidemeister--Schreier
+  rewriting.
+* `TauCeti.Sporadic.relatorSet_fi24PrimeRelators`: the row's relations are the
+  Reidemeister--Schreier relators of the source words.
+* `TauCeti.Sporadic.commutator_fi24AutomorphismGroup_eq_ker_fi24ParityHom`: the commutator subgroup
+  of the source presented group is the kernel of its parity homomorphism.
+
+Every definition here except the abbreviation `TauCeti.Sporadic.Fi24AutomorphismGroup` has its
+body sealed, and each is pinned by a public characteristic equation named after it: the `_def`
+theorems below, the evaluation lemmas
+`TauCeti.Sporadic.fi24AutomorphismCoxeterMatrix_apply` and
+`TauCeti.Sporadic.fi24SchreierFactors_nil`/`_cons`, and the field equations of the presentation
 row ending in `TauCeti.Sporadic.fi24PrimePresentation_relatorLetters`, jointly determine every
 transcribed relation without unfolding a single body.
 
 ## References
 
 * H. K. Kim and G. O. Michler, *Construction of Fischer's sporadic group Fi₂₄' inside
-  GL₈₆₇₁(13)*, Journal of Algebra **322** (2009), 193--233,
-  <https://doi.org/10.1016/j.jalgebra.2009.05.003>, also <https://arxiv.org/abs/0906.1064>.
+  GL₈₆₇₁(13)*, preprint (2009), <https://arxiv.org/abs/0906.1064v1>.
   Lemma 6.2 reproduces the full presentation, proves that its commutator subgroup is simple, and
   gives the ten subgroup generators above; Theorem 6.3 identifies that subgroup with `Fi₂₄'`.
 * J. I. Hall and L. H. Soicher, *Presentations of some 3-transposition groups*, Communications in
@@ -316,12 +335,8 @@ theorem even_length_of_mem_fi24AutomorphismRelators :
   simp only [fi24AutomorphismRelators, List.mem_append] at hr
   rcases hr with hr | hr
   · obtain ⟨i, j, rfl⟩ := mem_coxeterRelators_iff.mp hr
-    have hlen :
-        (coxeterRelator fi24AutomorphismCoxeterMatrix s(i, j).inf s(i, j).sup).toWord.length =
-          fi24AutomorphismCoxeterMatrix s(i, j).inf s(i, j).sup * 2 := by
-      simp
-    rw [hlen]
-    exact even_iff_two_dvd.mpr ⟨_, Nat.mul_comm _ 2⟩
+    rw [length_toWord_coxeterRelator]
+    exact even_two_mul _
   · simp only [fi24AutomorphismAdditionalRelators, List.mem_cons, List.not_mem_nil,
       or_false] at hr
     rcases hr with rfl | rfl
@@ -331,18 +346,6 @@ theorem even_length_of_mem_fi24AutomorphismRelators :
       exact even_iff_two_dvd.mpr (by norm_num)
 
 /-! ## Reidemeister--Schreier rewriting -/
-
-/-- The target generator `ax` corresponding to a source generator `x ≠ a`.
-The source index drops by one because `a` itself contributes no target generator. -/
-def fi24TargetGenerator (i : Fin 12) (_h : i.val ≠ 0) : Fin 11 :=
-  ⟨i.val - 1, by omega⟩
-
-/-- The index shift performed by `TauCeti.Sporadic.fi24TargetGenerator`. Since a `Fin 11` is
-determined by its value, this equation determines the map. -/
-@[simp]
-theorem fi24TargetGenerator_val (i : Fin 12) (h : i.val ≠ 0) :
-    (fi24TargetGenerator i h).val = i.val - 1 := by
-  simp only [fi24TargetGenerator]
 
 /-- Rewrite source letters into the Schreier generators `ab` through `al`.
 
@@ -355,9 +358,9 @@ def fi24SchreierFactors : Bool → PresentationWord (Fin 12) → List (Relator (
   | _, [] => []
   | positive, (i, _) :: w =>
       let rest := fi24SchreierFactors (!positive) w
-      if h : i.val = 0 then rest
+      if h : i = 0 then rest
       else
-        let g : Relator (Fin 11) := .gen (fi24TargetGenerator i h)
+        let g : Relator (Fin 11) := .gen (i.pred h)
         (if positive then g else .inv g) :: rest
 
 /-- The empty source word contributes no Schreier factor. -/
@@ -374,15 +377,16 @@ the rewrite of every source word. -/
 theorem fi24SchreierFactors_cons (positive : Bool) (i : Fin 12) (sign : Bool)
     (w : PresentationWord (Fin 12)) :
     fi24SchreierFactors positive ((i, sign) :: w) =
-      if h : i.val = 0 then fi24SchreierFactors (!positive) w
+      if h : i = 0 then fi24SchreierFactors (!positive) w
       else
-        (if positive then .gen (fi24TargetGenerator i h)
-          else .inv (.gen (fi24TargetGenerator i h))) :: fi24SchreierFactors (!positive) w := by
+        (if positive then .gen (i.pred h)
+          else .inv (.gen (i.pred h))) :: fi24SchreierFactors (!positive) w := by
   simp only [fi24SchreierFactors]
 
-/-- Assemble a possibly empty list of Schreier factors as one relator expression. The zero power
-is used only for an empty rewrite, which occurs for the eliminated square relation `a²`; the final
-presentation rewrites no square relator. -/
+/-- Assemble a possibly empty list of Schreier factors as one relator expression: the factors
+multiplied in order, ending in the zero power `(ab)^0`, which contributes no letter. Every
+assembled relator ends in that factor; for the empty list, the rewrite of the eliminated square
+relation `a²`, it is the whole expression. -/
 private def relatorOfFactors (factors : List (Relator (Fin 11))) : Relator (Fin 11) :=
   factors.foldr .mul (.pow (.gen 0) 0)
 
@@ -412,8 +416,7 @@ private theorem length_foldr_fi24SchreierFactors (positive : Bool)
     rw [fi24SchreierFactors_cons, List.countP_cons]
     by_cases hi : i = 0
     · subst hi; simpa using ih (!positive)
-    · have h : i.val ≠ 0 := fun hv => hi (Fin.ext hv)
-      cases positive <;> simp [h, hi, ih, Nat.add_comm]
+    · cases positive <;> simp [hi, ih, Nat.add_comm]
 
 /-- **The Reidemeister--Schreier rewrite keeps exactly the source letters other than `a`.** The
 distinguished letter `a` is the transversal element, so it contributes no Schreier generator, while
@@ -461,17 +464,19 @@ Reidemeister--Schreier for its commutator subgroup `Fi₂₄'`.
 
 Kim and Michler reproduce the source presentation, prove that its commutator subgroup is the
 simple group `Fi₂₄'`, and give the first ten Schreier generators. The retained eleventh
-generator `al` makes the rewrite directly traceable to the displayed source relations. No
-structural property of the resulting `PresentedGroup` is asserted here. -/
+generator `al` makes the rewrite directly traceable to the displayed source relations. The
+recorded counts are those of this transcription, not figures quoted from the source: `11`
+generators, the ten displayed ones and `al`, and `136` relators, two rewrites of each of the
+`66 + 2` source relators. No structural property of the resulting `PresentedGroup` is asserted
+here. -/
 def fi24PrimePresentation : GroupPresentation where
   generatorNames := ["ab", "ac", "ad", "ae", "af", "ag", "ah", "ai", "aj", "ak", "al"]
   source := "H. K. Kim and G. O. Michler, Construction of Fischer's sporadic group Fi24' inside \
-    GL_8671(13), Journal of Algebra 322 (2009), 193-233; presentation originally due to J. I. \
-    Hall and L. H. Soicher"
-  sourceLocator := "Kim--Michler, Lemma 6.2 and Theorem 6.3, \
-    doi:10.1016/j.jalgebra.2009.05.003, arXiv:0906.1064; Hall--Soicher, Presentations of some \
-    3-transposition groups, Communications in Algebra 23 (1995), 2517-2559, \
-    doi:10.1080/00927879508825358"
+    GL_8671(13), arXiv:0906.1064v1 (2009); presentation originally due to J. I. Hall and L. H. \
+    Soicher"
+  sourceLocator := "Kim--Michler, Lemma 6.2 and Theorem 6.3, arXiv:0906.1064v1; Hall--Soicher, \
+    Presentations of some 3-transposition groups, Communications in Algebra 23 (1995), \
+    2517-2559, doi:10.1080/00927879508825358"
   generatorConvention := "Source generators are a,b,c,d,e,f,g,h,i,j,k,l. Target indices 0 \
     through 10 denote ab,ac,ad,ae,af,ag,ah,ai,aj,ak,al. All source generators are involutions. \
     With transversal {1,a}, an even-position source letter x rewrites as (a*x)^-1 and an \
@@ -500,16 +505,15 @@ theorem fi24PrimePresentation_generatorNames :
 the citation itself, rather than only the row's name, to a downstream audit. -/
 theorem fi24PrimePresentation_source :
     fi24PrimePresentation.source = "H. K. Kim and G. O. Michler, Construction of Fischer's \
-      sporadic group Fi24' inside GL_8671(13), Journal of Algebra 322 (2009), 193-233; \
-      presentation originally due to J. I. Hall and L. H. Soicher" := by
+      sporadic group Fi24' inside GL_8671(13), arXiv:0906.1064v1 (2009); presentation originally \
+      due to J. I. Hall and L. H. Soicher" := by
   simp only [fi24PrimePresentation]
 
 /-- The locator recorded for `Fi₂₄'`, pointing at the presentation inside its source. -/
 theorem fi24PrimePresentation_sourceLocator :
     fi24PrimePresentation.sourceLocator = "Kim--Michler, Lemma 6.2 and Theorem 6.3, \
-      doi:10.1016/j.jalgebra.2009.05.003, arXiv:0906.1064; Hall--Soicher, Presentations of some \
-      3-transposition groups, Communications in Algebra 23 (1995), 2517-2559, \
-      doi:10.1080/00927879508825358" := by
+      arXiv:0906.1064v1; Hall--Soicher, Presentations of some 3-transposition groups, \
+      Communications in Algebra 23 (1995), 2517-2559, doi:10.1080/00927879508825358" := by
   simp only [fi24PrimePresentation]
 
 /-- The generator convention recorded for `Fi₂₄'`, fixing which Schreier generator each relator
@@ -557,8 +561,8 @@ theorem fi24PrimePresentation_expectedRelatorCount :
 `(i, true)` is the generator with index `i` and `(i, false)` is its inverse, so index `0` reads
 `ab` and index `10` reads `al`.
 
-The row's body is sealed, so this is the equation that characterizes what it transcribes. Unlike
-the other sporadic rows the `136` words are not spelled out:
+The row's body is sealed, so this is the equation that characterizes what it transcribes. The
+`136` words are not spelled out:
 `TauCeti.Sporadic.fi24PrimeRelators_def` and the `_def` equations it cites determine every one of
 them from the eleven-edge source diagram, which is the form in which the source displays the
 presentation. Letters rather than relator expressions are compared because the index type of a
@@ -618,7 +622,7 @@ private theorem countP_toWord_fi24SourceLongRelator :
     fi24SourceLongWord_def]
   simp
 
-/-- The `68` rewritten source relators contain `538` letters other than `a`. -/
+/-- The `68` source relators selected for rewriting contain `538` letters other than `a`. -/
 private theorem sum_countP_fi24RewrittenSourceRelators :
     ((fi24SourcePairRelators ++ fi24AutomorphismAdditionalRelators).map fun r =>
       r.toWord.countP fun letter => letter.1 ≠ 0).sum = 538 := by
@@ -646,14 +650,14 @@ private theorem sum_map_length_flatMap_fi24SchreierRewrite (l : List (Relator (F
 
 By `TauCeti.Sporadic.length_fi24SchreierRewrite` the two rewrites of a source relator have
 the same length, namely its number of letters other than `a`, so the total is twice the `538`
-letters the `68` rewritten source relators contribute: `524` from the off-diagonal Coxeter
-relators, `110` from the source equation for `l`, and `442` from the final source relation.
+letters the `68` source relators selected for rewriting contribute: `262` from the off-diagonal
+Coxeter relators, `55` from the source equation for `l`, and `221` from the final source relation.
 
-Neither Kim--Michler nor Hall--Soicher publishes a presentation length, so this figure states the
-transcribed data for a reviewer to compare with the source rather than checking it against a
-recorded number. It is a count of compiled letters and not of reduced ones: unlike the other
-sporadic rows this one claims no cyclic reduction of its words, the Reidemeister--Schreier rewrite
-being what stands between a source relator and the word whose letters are counted. -/
+Neither Kim--Michler nor Hall--Soicher publishes a presentation length, so this figure is a
+property of the transcribed data and not a check against a recorded number. It is a count of
+compiled letters and not of reduced ones: no cyclic reduction of the words is claimed, the
+Reidemeister--Schreier rewrite being what stands between a source relator and the word whose
+letters are counted. -/
 @[simp]
 theorem fi24PrimePresentation_totalLength : fi24PrimePresentation.totalLength = 1076 := by
   rw [← GroupPresentation.sum_map_length_relatorLetters, fi24PrimePresentation_relatorLetters,
@@ -661,5 +665,226 @@ theorem fi24PrimePresentation_totalLength : fi24PrimePresentation.totalLength = 
   simp only [Function.comp_def, List.length_map, Relator.length_toWord]
   rw [fi24PrimeRelators_def, sum_map_length_flatMap_fi24SchreierRewrite,
     sum_countP_fi24RewrittenSourceRelators]
+
+/-! ## The row presents the commutator subgroup of the source presentation
+
+The source relators present `Fi₂₄'·2`, and the row is the Reidemeister--Schreier rewrite of the
+source words other than the squares for the transversal `{1, a}`. The general theorem
+`TauCeti.IsSchreierIndexTwoSource.mulEquivCommutator` identifies the rewritten presented group with
+the commutator subgroup of the source presented group, once the source presentation is checked to be
+one by involutions with even-length relators, its Schreier generators are matched with the row's
+generator indices, and the source generators are shown to agree in the abelianization. -/
+
+/-- **The group presented by the eighty source relators**, Hall--Soicher's presentation of
+`Fi₂₄'·2`. Nothing here asserts that it is finite or identifies it with any other realization. -/
+abbrev Fi24AutomorphismGroup : Type :=
+  PresentedGroup (Relator.relatorSet fi24AutomorphismRelators)
+
+/-- Every Coxeter relation of the source diagram holds in the source presented group, in either
+order of the two generators. -/
+theorem fi24AutomorphismGroup_of_mul_of_pow (i j : Fin 12) :
+    (PresentedGroup.of i * PresentedGroup.of j : Fi24AutomorphismGroup) ^
+      fi24AutomorphismCoxeterMatrix i j = 1 := by
+  have hmem : fi24AutomorphismCoxeterMatrix.relation i j ∈
+      Subgroup.normalClosure (Relator.relatorSet fi24AutomorphismRelators) := by
+    rw [fi24AutomorphismRelators_def, normalClosure_relatorSet_coxeterRelators_append]
+    exact Subgroup.subset_normalClosure (Or.inl ⟨(i, j), rfl⟩)
+  have key := PresentedGroup.mk_eq_one_iff.mpr hmem
+  rw [CoxeterMatrix.relation, map_pow, map_mul] at key
+  exact key
+
+/-- Every source generator is an involution in the source presented group. -/
+theorem fi24AutomorphismGroup_of_mul_of_self (i : Fin 12) :
+    (PresentedGroup.of i * PresentedGroup.of i : Fi24AutomorphismGroup) = 1 := by
+  have key := fi24AutomorphismGroup_of_mul_of_pow i i
+  rwa [fi24AutomorphismCoxeterMatrix.diagonal, pow_one] at key
+
+/-- **All source generators agree in the abelianization of the source presented group.** Two
+generators joined by an edge of the diagram are involutions whose product has order dividing
+three, so they coincide in any abelian quotient, and the diagram is connected. -/
+theorem abelianizationOf_fi24AutomorphismGroup_of (i : Fin 12) :
+    Abelianization.of (PresentedGroup.of i : Fi24AutomorphismGroup) =
+      Abelianization.of (PresentedGroup.of 0) := by
+  have step : ∀ i j : Fin 12, fi24AutomorphismCoxeterMatrix i j = 3 →
+      Abelianization.of (PresentedGroup.of i : Fi24AutomorphismGroup) =
+        Abelianization.of (PresentedGroup.of j) := by
+    intro i j hij
+    have hsquare (k : Fin 12) :
+        Abelianization.of (PresentedGroup.of k : Fi24AutomorphismGroup) ^ 2 = 1 := by
+      rw [← map_pow, sq, fi24AutomorphismGroup_of_mul_of_self, map_one]
+    have hprod := congrArg Abelianization.of (fi24AutomorphismGroup_of_mul_of_pow i j)
+    rw [hij, map_pow, map_mul, map_one, mul_pow, pow_succ _ 2, pow_succ _ 2,
+      hsquare, hsquare, one_mul, one_mul] at hprod
+    apply mul_right_cancel (b := Abelianization.of (PresentedGroup.of j : Fi24AutomorphismGroup))
+    simpa only [← sq, hsquare] using hprod
+  -- Each node other than `a` has a diagram neighbour (Coxeter entry `3`) of smaller index.
+  have hnb : ∀ i : Fin 12, i ≠ 0 → ∃ j < i, fi24AutomorphismCoxeterMatrix i j = 3 := by
+    simp only [fi24AutomorphismCoxeterMatrix_apply, fi24AutomorphismEdges_def]
+    decide
+  induction i using WellFoundedLT.induction with
+  | _ i ih =>
+    rcases eq_or_ne i 0 with rfl | hi
+    · rfl
+    obtain ⟨j, hj, hij⟩ := hnb i hi
+    exact (step i j hij).trans (ih j hj)
+
+/-- The source words the row rewrites: the compiled words of the sixty-six off-diagonal Coxeter
+relators and of the two displayed relations. -/
+def fi24SourceWords : Set (PresentationWord (Fin 12)) :=
+  {w | ∃ r ∈ fi24SourcePairRelators ++ fi24AutomorphismAdditionalRelators, r.toWord = w}
+
+theorem mem_fi24SourceWords {w : PresentationWord (Fin 12)} :
+    w ∈ fi24SourceWords ↔
+      ∃ r ∈ fi24SourcePairRelators ++ fi24AutomorphismAdditionalRelators, r.toWord = w :=
+  Iff.rfl
+
+/-- The off-diagonal source relators are Coxeter relators of the source diagram. -/
+private theorem mem_coxeterRelators_of_mem_fi24SourcePairRelators {r : Relator (Fin 12)}
+    (hr : r ∈ fi24SourcePairRelators) : r ∈ coxeterRelators fi24AutomorphismCoxeterMatrix := by
+  rw [fi24SourcePairRelators_def] at hr
+  obtain ⟨z, -, rfl⟩ := List.mem_map.mp hr
+  induction z using Sym2.ind with
+  | _ i j => exact mem_coxeterRelators_iff.mpr ⟨i, j, rfl⟩
+
+/-- Every source relator selected for rewriting is a source relator. -/
+private theorem mem_fi24AutomorphismRelators_of_mem_append {r : Relator (Fin 12)}
+    (hr : r ∈ fi24SourcePairRelators ++ fi24AutomorphismAdditionalRelators) :
+    r ∈ fi24AutomorphismRelators := by
+  rw [fi24AutomorphismRelators_def, List.mem_append]
+  rcases List.mem_append.mp hr with hr | hr
+  · exact Or.inl (mem_coxeterRelators_of_mem_fi24SourcePairRelators hr)
+  · exact Or.inr hr
+
+/-- **The source presentation is an index-two Reidemeister--Schreier source**: its generators are
+involutions, the source words selected for rewriting have even length and are relations, and every
+source relator is one of those words or the square of a generator. -/
+theorem isSchreierIndexTwoSource_fi24 :
+    IsSchreierIndexTwoSource (Relator.relatorSet fi24AutomorphismRelators) fi24SourceWords where
+  of_mul_of := fi24AutomorphismGroup_of_mul_of_self
+  even_length := by
+    rintro w ⟨r, hr, rfl⟩
+    exact even_length_of_mem_fi24AutomorphismRelators r
+      (mem_fi24AutomorphismRelators_of_mem_append hr)
+  mk_mk_eq_one := by
+    rintro w ⟨r, hr, rfl⟩
+    rw [Relator.toWord_toFreeGroup]
+    exact PresentedGroup.one_of_mem
+      (Relator.mem_relatorSet.mpr ⟨r, mem_fi24AutomorphismRelators_of_mem_append hr, rfl⟩)
+  eq_mk_or_eq_of_mul_of := by
+    intro r hr
+    obtain ⟨t, ht, rfl⟩ := Relator.mem_relatorSet.mp hr
+    rw [fi24AutomorphismRelators_def, List.mem_append] at ht
+    rcases ht with ht | ht
+    · obtain ⟨i, j, rfl⟩ := mem_coxeterRelators_iff.mp ht
+      by_cases hij : i = j
+      · subst hij
+        refine Or.inr ⟨i, ?_⟩
+        simp [CoxeterMatrix.relation]
+      · have hmem : coxeterRelator fi24AutomorphismCoxeterMatrix s(i, j).inf s(i, j).sup ∈
+            fi24SourcePairRelators := by
+          rw [fi24SourcePairRelators_def]
+          refine List.mem_map.mpr ⟨s(i, j), List.mem_filter.mpr
+            ⟨List.mk_mem_sym2 (List.mem_finRange i) (List.mem_finRange j), ?_⟩, rfl⟩
+          simpa [inf_eq_sup] using hij
+        exact Or.inl ⟨_, ⟨_, List.mem_append_left _ hmem, rfl⟩, Relator.toWord_toFreeGroup _⟩
+    · exact Or.inl ⟨_, ⟨_, List.mem_append_right _ ht, rfl⟩, Relator.toWord_toFreeGroup _⟩
+
+/-- **The parity homomorphism of the source presented group**, sending each of the twelve source
+generators to the nontrivial element of `C₂`. -/
+def fi24ParityHom : Fi24AutomorphismGroup →* Multiplicative (ZMod 2) :=
+  isSchreierIndexTwoSource_fi24.parityHom
+
+@[simp]
+theorem fi24ParityHom_of (i : Fin 12) :
+    fi24ParityHom (PresentedGroup.of i) = Multiplicative.ofAdd 1 :=
+  isSchreierIndexTwoSource_fi24.parityHom_of i
+
+/-- **The commutator subgroup of the source presented group is the kernel of its parity
+homomorphism**, the source generators all agreeing in the abelianization. -/
+theorem commutator_fi24AutomorphismGroup_eq_ker_fi24ParityHom :
+    commutator Fi24AutomorphismGroup = fi24ParityHom.ker :=
+  isSchreierIndexTwoSource_fi24.commutator_eq_ker_parityHom 0
+    abelianizationOf_fi24AutomorphismGroup_of
+
+/-- The indexing of the Schreier generators by the row: the source generator `x ≠ a` at index `i`
+names the Schreier generator `a x` at index `i - 1`. -/
+def fi24SchreierEquiv : {x : Fin 12 // x ≠ 0} ≃ Fin 11 := (finSuccAboveEquiv (0 : Fin 12)).symm
+
+theorem fi24SchreierEquiv_apply (i : Fin 12) (h : i ≠ 0) :
+    fi24SchreierEquiv ⟨i, h⟩ = i.pred h := by
+  rw [fi24SchreierEquiv, Equiv.symm_apply_eq, finSuccAboveEquiv_apply]
+  ext
+  simp
+
+/-- The row's rewrite of a source word is the general Reidemeister--Schreier rewrite for the
+transversal `{1, a}`, read through the row's indexing of the Schreier generators. -/
+private theorem toWord_foldr_fi24SchreierFactors (positive : Bool) (w : PresentationWord (Fin 12)) :
+    ((fi24SchreierFactors positive w).foldr Relator.mul ((Relator.gen 0).pow 0)).toWord =
+      schreierWord 0 fi24SchreierEquiv positive w := by
+  induction w generalizing positive with
+  | nil => simp
+  | cons p w ih =>
+    obtain ⟨i, s⟩ := p
+    rw [fi24SchreierFactors_cons, schreierWord_cons]
+    by_cases hi : i = 0
+    · simp only [hi, ↓reduceDIte, List.nil_append]
+      exact ih (!positive)
+    · simp only [hi, ↓reduceDIte, List.foldr_cons, Relator.toWord_mul, ih (!positive),
+        ← fi24SchreierEquiv_apply i hi]
+      cases positive
+      · simp [FreeGroup.invRev]
+      · simp
+
+/-- The row's rewrite of a source relator compiles to the general Reidemeister--Schreier rewrite of
+its compiled word. -/
+theorem toWord_fi24SchreierRewrite (positive : Bool) (r : Relator (Fin 12)) :
+    (fi24SchreierRewrite positive r).toWord =
+      schreierWord 0 fi24SchreierEquiv positive r.toWord := by
+  rw [fi24SchreierRewrite_def, toWord_foldr_fi24SchreierFactors]
+
+/-- **The row's relations are the Reidemeister--Schreier relators of the source words.** -/
+theorem relatorSet_fi24PrimeRelators :
+    Relator.relatorSet fi24PrimeRelators =
+      schreierRelators 0 fi24SchreierEquiv fi24SourceWords := by
+  ext r
+  simp only [Relator.mem_relatorSet, mem_schreierRelators, fi24PrimeRelators_def, List.mem_flatMap,
+    List.mem_cons, List.not_mem_nil, or_false, mem_fi24SourceWords]
+  constructor
+  · rintro ⟨t, ⟨r', hr', rfl | rfl⟩, rfl⟩
+    · exact ⟨false, r'.toWord, ⟨r', hr', rfl⟩,
+        by rw [← Relator.toWord_toFreeGroup, toWord_fi24SchreierRewrite]⟩
+    · exact ⟨true, r'.toWord, ⟨r', hr', rfl⟩,
+        by rw [← Relator.toWord_toFreeGroup, toWord_fi24SchreierRewrite]⟩
+  · rintro ⟨positive, w, ⟨r', hr', rfl⟩, rfl⟩
+    refine ⟨fi24SchreierRewrite positive r', ⟨r', hr', ?_⟩,
+      by rw [← Relator.toWord_toFreeGroup, toWord_fi24SchreierRewrite]⟩
+    cases positive <;> simp
+
+/-- **The group presented by the `Fi₂₄'` row is the commutator subgroup of the group presented by
+the source relators.** The Schreier generator `ax` at row index `i` goes to the product `a x` of the
+source generators, `TauCeti.Sporadic.coe_fi24PrimeGroupMulEquivCommutator_of`.
+
+This identifies the transcribed row with the subgroup that Kim and Michler prove to be `Fi₂₄'`. It
+asserts nothing about the order or the structure of either side. -/
+noncomputable def fi24PrimeGroupMulEquivCommutator :
+    fi24PrimePresentation.Group ≃* ↥(commutator Fi24AutomorphismGroup) :=
+  fi24PrimePresentation.mulEquivCommutator isSchreierIndexTwoSource_fi24 0 fi24SchreierEquiv
+    abelianizationOf_fi24AutomorphismGroup_of
+    (congrArg Subgroup.normalClosure relatorSet_fi24PrimeRelators)
+
+/-- The identification sends the row generator at index `i`, the Schreier generator `a x` for the
+source generator `x` at index `i + 1`, to the product `a x` in the source presented group. -/
+theorem coe_fi24PrimeGroupMulEquivCommutator_of (i : Fin 11) :
+    (fi24PrimeGroupMulEquivCommutator
+        (PresentedGroup.of
+          (Fin.cast (by simp [GroupPresentation.generatorCount, fi24PrimePresentation]) i)) :
+      Fi24AutomorphismGroup) =
+      PresentedGroup.of 0 * PresentedGroup.of i.succ := by
+  -- The generic evaluation lemma gives `a x` for `x = fi24SchreierEquiv.symm i`, which is `i + 1`
+  -- by definition of `finSuccAboveEquiv` at the pivot `0`.
+  refine (GroupPresentation.coe_mulEquivCommutator_of fi24PrimePresentation
+    isSchreierIndexTwoSource_fi24 0 fi24SchreierEquiv abelianizationOf_fi24AutomorphismGroup_of
+    _ _).trans ?_
+  rfl
 
 end TauCeti.Sporadic

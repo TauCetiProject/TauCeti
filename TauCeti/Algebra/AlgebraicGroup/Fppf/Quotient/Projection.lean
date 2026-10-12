@@ -43,8 +43,7 @@ characterization of epimorphisms of type-valued sheaves.
 * J. S. Milne, *Algebraic Groups* (2017), Section 5.
 * W. C. Waterhouse, *Introduction to Affine Group Schemes*, Section 14.
 
-This is the local-surjectivity part of the quotient and torsor interface in Layer 3,
-"Normality and quotients", of the ReductiveGroups roadmap.
+This is the local-surjectivity part of the quotient and torsor interface.
 -/
 
 public section
@@ -92,7 +91,7 @@ private instance instEpiPointwiseQuotientPresheafGrpProjectionHom
         (inferInstance : Epi ((pointwiseQuotientPresheafProjection H I hI).app A)) y.down
     refine ⟨ULift.up x, ?_⟩
     erw [pointwiseQuotientPresheafProjection_ulift_app_apply]
-    exact ULift.ext _ _ hx
+    exact ULift.ext hx
   let _ : Epi (Functor.whiskerRight
       (Functor.whiskerRight (pointwiseQuotientPresheafProjection H I hI)
         GrpCat.uliftFunctor.{u + 1, u}) (forget GrpCat.{u + 1})) :=

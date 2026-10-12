@@ -34,6 +34,8 @@ Sobolev functions and density results comparing different domains are not proved
 * `TauCeti.Wkp.ofTestFunctionₗ`: the injective linear embedding `C_c^∞(Ω) → W^{k,p}(Ω)`.
 * `TauCeti.wkp0Submodule` and `TauCeti.Wkp0`: the closure of the test functions in `W^{k,p}(Ω)`
   and its complete normed-space type.
+* `TauCeti.Wkp0.ofTestFunctionₗ` and `TauCeti.Wkp0.lowerOrderL`: the dense test-function
+  inclusion and the lower-order projection with zero-boundary codomains.
 * `TauCeti.wkp0Submodule_subset_of_isClosed`: the closure induction principle used to extend a
   closed property from test functions to `W^{k,p}_0(Ω)`.
 
@@ -69,6 +71,13 @@ noncomputable def iteratedGradientTestFunction (phi : 𝓓(Omega, ℝ)) (k : ℕ
     E → IteratedGradient E k :=
   iteratedGradientChain (phi : E → ℝ) k
 
+/-- The derivative fields of a test function are its classical iterated-gradient chain.
+This bridge is intentionally not a simp lemma: test-function fields are the normal form used
+by the zero, successor, and `Lᵖ` representative simp lemmas below. -/
+theorem iteratedGradientTestFunction_def (phi : 𝓓(Omega, ℝ)) (k : ℕ) :
+    iteratedGradientTestFunction phi k = iteratedGradientChain (phi : E → ℝ) k :=
+  (rfl)
+
 @[simp]
 theorem iteratedGradientTestFunction_zero (phi : 𝓓(Omega, ℝ)) :
     iteratedGradientTestFunction phi 0 = fun x => gradient (phi : E → ℝ) x :=
@@ -83,7 +92,8 @@ theorem iteratedGradientTestFunction_succ (phi : 𝓓(Omega, ℝ)) (k : ℕ) :
 /-- Every iterated gradient of a test function is smooth. -/
 theorem contDiff_iteratedGradientTestFunction (phi : 𝓓(Omega, ℝ)) (k : ℕ) :
     ContDiff ℝ ∞ (iteratedGradientTestFunction phi k) :=
-  contDiff_iteratedGradientChain phi.contDiff k
+  contDiff_iff_contDiffAt.mpr fun _ =>
+    contDiffAt_iteratedGradientChain phi.contDiff.contDiffAt k (by simp)
 
 /-- Every iterated gradient of a test function has compact support. -/
 theorem hasCompactSupport_iteratedGradientTestFunction (phi : 𝓓(Omega, ℝ)) (k : ℕ) :
@@ -223,14 +233,14 @@ private structure TestFunctionWkpPackage (phi : 𝓓(Omega, ℝ)) (k : ℕ) wher
 private noncomputable def testFunctionWkpPackage (phi : 𝓓(Omega, ℝ)) :
     (k : ℕ) → TestFunctionWkpPackage (mu := mu) (p := p) phi k
   | 0 =>
-      -- `Wkp mu Omega p 1` reduces to `W1p mu Omega p` through the reducible stage definitions.
+      -- `Wkp mu Omega p 1` unfolds to `W1p mu Omega p` through the stage definitions.
       { element := W1p.ofTestFunctionₗ mu Omega p phi
         value_eq := by
           exact (Wkp.value_one (W1p.ofTestFunctionₗ mu Omega p phi)).trans
             (W1p.value_ofTestFunctionₗ (mu := mu) (p := p) phi)
         iteratedGradient_eq := by
-          simp only [Wkp.iteratedGradient_zero, W1p.gradient_ofTestFunctionₗ,
-            iteratedGradientTestFunctionLp_zero] }
+          rw [Wkp.iteratedGradient_zero (W1p.ofTestFunctionₗ mu Omega p phi),
+            W1p.gradient_ofTestFunctionₗ, iteratedGradientTestFunctionLp_zero] }
   | k + 1 =>
       let previous := testFunctionWkpPackage phi k
       let hweak : HasWeakFDerivOn mu Omega (Wkp.iteratedGradient k previous.element)
@@ -240,7 +250,7 @@ private noncomputable def testFunctionWkpPackage (phi : 𝓓(Omega, ℝ)) :
       { element := Wkp.mk k previous.element
           (iteratedGradientTestFunctionLp (mu := mu) p (k + 1) phi) hweak
         value_eq := by
-          rw [Wkp.value_succ, Wkp.lowerOrder_mk]
+          rw [Wkp.value_mk]
           exact previous.value_eq
         iteratedGradient_eq := Wkp.iteratedGradient_mk k previous.element _ hweak }
 
@@ -349,11 +359,70 @@ theorem wkp0Submodule_subset_of_isClosed (k : ℕ) {s : Set (Wkp mu Omega p k)}
 theorem wkp0Submodule_one : wkp0Submodule mu Omega p 1 = w1p0Submodule mu Omega p := by
   -- Both closed submodules have the definitionally equal order-one ambient space noted above.
   apply SetLike.coe_injective
-  rw [coe_wkp0Submodule, coe_w1p0Submodule, Wkp.ofTestFunctionₗ_one]
+  rw [coe_wkp0Submodule, Wkp.ofTestFunctionₗ_one]
+  exact (coe_w1p0Submodule (mu := mu) (Omega := Omega) (p := p)).symm
 
 /-- The Sobolev space `W^{k,p}_0(Ω)`, the closure of `C_c^∞(Ω)` in `W^{k,p}(Ω)`. -/
 noncomputable abbrev Wkp0 (mu : Measure E) [mu.IsAddHaarMeasure] (Omega : Opens E)
     (p : ENNReal) [Fact (1 ≤ p)] (k : ℕ) := (wkp0Submodule mu Omega p k).toSubmodule
+
+/-- The linear inclusion of test functions into the zero-boundary Sobolev space. -/
+def Wkp0.ofTestFunctionₗ (k : ℕ) : 𝓓(Omega, ℝ) →ₗ[ℝ] Wkp0 mu Omega p k :=
+  (Wkp.ofTestFunctionₗ (mu := mu) (p := p) k).codRestrict
+    (wkp0Submodule mu Omega p k).toSubmodule (Wkp.ofTestFunctionₗ_mem_wkp0Submodule k)
+
+/-- Forgetting the zero-boundary condition recovers the usual test-function embedding. -/
+@[simp]
+theorem Wkp0.coe_ofTestFunctionₗ (k : ℕ) (phi : 𝓓(Omega, ℝ)) :
+    (Wkp0.ofTestFunctionₗ (mu := mu) (p := p) k phi : Wkp mu Omega p k) =
+      Wkp.ofTestFunctionₗ (mu := mu) (p := p) k phi :=
+  (rfl)
+
+/-- Test functions are dense in the zero-boundary Sobolev space at every order. -/
+theorem Wkp0.denseRange_ofTestFunctionₗ (k : ℕ) :
+    DenseRange (Wkp0.ofTestFunctionₗ (mu := mu) (Omega := Omega) (p := p) k) := by
+  intro u
+  rw [closure_subtype, ← Set.range_comp]
+  have hu : (u : Wkp mu Omega p k) ∈
+      (wkp0Submodule mu Omega p k : Set (Wkp mu Omega p k)) := u.2
+  rw [coe_wkp0Submodule] at hu
+  simpa only [Function.comp_def, Wkp0.coe_ofTestFunctionₗ] using hu
+
+/-- Forgetting the highest derivative preserves the zero-boundary condition. -/
+theorem Wkp.lowerOrder_mem_wkp0Submodule (k : ℕ) {u : Wkp mu Omega p (k + 1)}
+    (hu : u ∈ wkp0Submodule mu Omega p (k + 1)) :
+    Wkp.lowerOrder k u ∈ wkp0Submodule mu Omega p k := by
+  rw [← Wkp.lowerOrderL_apply]
+  refine wkp0Submodule_subset_of_isClosed (k + 1)
+    ((wkp0Submodule mu Omega p k).isClosed.preimage (Wkp.lowerOrderL k).continuous)
+    (fun phi => ?_) hu
+  rw [Set.mem_preimage, Wkp.lowerOrderL_apply k, Wkp.lowerOrder_ofTestFunctionₗ k]
+  exact Wkp.ofTestFunctionₗ_mem_wkp0Submodule k phi
+
+/-- The continuous lower-order projection on zero-boundary Sobolev spaces. -/
+def Wkp0.lowerOrderL (k : ℕ) : Wkp0 mu Omega p (k + 1) →L[ℝ] Wkp0 mu Omega p k :=
+  ((Wkp.lowerOrderL k).comp (wkp0Submodule mu Omega p (k + 1)).toSubmodule.subtypeL).codRestrict
+    (wkp0Submodule mu Omega p k).toSubmodule
+    (fun u => by
+      rw [ContinuousLinearMap.comp_apply, Submodule.subtypeL_apply, Wkp.lowerOrderL_apply k]
+      exact Wkp.lowerOrder_mem_wkp0Submodule k u.2)
+
+/-- The zero-boundary lower-order projection is the usual Sobolev projection. -/
+-- The dependent successor index prevents this rule from matching in `simp`.
+theorem Wkp0.coe_lowerOrderL (k : ℕ) (u : Wkp0 mu Omega p (k + 1)) :
+    (Wkp0.lowerOrderL k u : Wkp mu Omega p k) =
+      Wkp.lowerOrder k (u : Wkp mu Omega p (k + 1)) :=
+  Wkp.lowerOrderL_apply k (u : Wkp mu Omega p (k + 1))
+
+/-- Forgetting the highest derivative of a zero-boundary test function gives its embedding
+at the preceding order. -/
+-- The dependent successor index prevents this rule from matching in `simp`.
+theorem Wkp0.lowerOrderL_ofTestFunctionₗ (k : ℕ) (phi : 𝓓(Omega, ℝ)) :
+    Wkp0.lowerOrderL k (Wkp0.ofTestFunctionₗ (mu := mu) (p := p) (k + 1) phi) =
+      Wkp0.ofTestFunctionₗ (mu := mu) (p := p) k phi := by
+  apply Subtype.ext
+  rw [Wkp0.coe_lowerOrderL, Wkp0.coe_ofTestFunctionₗ, Wkp0.coe_ofTestFunctionₗ,
+    Wkp.lowerOrder_ofTestFunctionₗ]
 
 /-- `W^{k,p}_0(Ω)` is complete in the iterated graph norm. -/
 instance (k : ℕ) : CompleteSpace (Wkp0 mu Omega p k) :=

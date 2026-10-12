@@ -27,6 +27,8 @@ finite-distance components into `ProbabilityMeasure` are continuous.
 
 ## Main statements
 
+* `TauCeti.wassersteinEDist_map_le_of_edist_le` — an almost-everywhere displacement bound for
+  the Wasserstein distance to a pushforward;
 * `TauCeti.levyProkhorovEDist_le_of_wassersteinEDist_lt_mul_self` — a quantitative comparison
   between the two extended distances;
 * `TauCeti.WassersteinSpace.continuous_toProbabilityMeasure` — Wasserstein convergence of
@@ -51,6 +53,21 @@ namespace TauCeti
 
 universe u
 
+/-- If an almost-everywhere measurable map moves almost every point by at most `δ`, its
+pushforward is at most `δ` away in the first Wasserstein distance. -/
+theorem wassersteinEDist_map_le_of_edist_le
+    {Z : Type*} [PseudoMetricSpace Z] [SecondCountableTopology Z]
+    [MeasurableSpace Z] [BorelSpace Z]
+    (ρ : Measure Z) [IsProbabilityMeasure ρ] {F : Z → Z} (hF : AEMeasurable F ρ)
+    {δ : ℝ≥0∞} (hδ : ∀ᵐ z ∂ρ, edist z (F z) ≤ δ) :
+    wassersteinEDist 1 ρ (ρ.map F) ≤ δ := by
+  have hm : AEMeasurable (fun z : Z ↦ edist z (F z)) ρ :=
+    measurable_edist.comp_aemeasurable (aemeasurable_id.prodMk hF)
+  refine (wassersteinEDist_map_le measurable_edist hF 1).trans ?_
+  refine (eLpNorm_mono_enorm_ae hm.aestronglyMeasurable (g := fun _ : Z ↦ δ) hδ).trans ?_
+  rw [eLpNorm_const _ (by norm_num : (1 : ℝ≥0∞) ≠ 0) (IsProbabilityMeasure.ne_zero ρ)]
+  simp
+
 section Comparison
 
 variable {X : Type u} [PseudoEMetricSpace X] [MeasurableSpace X] [OpensMeasurableSpace X]
@@ -71,10 +88,10 @@ theorem levyProkhorovEDist_le_of_wassersteinEDist_lt_mul_self
     calc
       ∫⁻ z, edist z.1 z.2 ∂π
           = eLpNorm (fun z : X × X ↦ edist z.1 z.2) 1 π := by
-              rw [eLpNorm_one_eq_lintegral_enorm]
+              rw [eLpNorm_one_eq_lintegral_enorm hd.aestronglyMeasurable]
               simp
       _ ≤ eLpNorm (fun z : X × X ↦ edist z.1 z.2) p π :=
-        eLpNorm_le_eLpNorm_of_exponent_le hp hd.aestronglyMeasurable
+        eLpNorm_le_eLpNorm_of_exponent_le hp
       _ < ε * ε := hπε
   refine levyProkhorovEDist_le_of_forall_le μ ν ε fun δ B hεδ hδtop hB ↦ ?_
   have hδ0 : δ ≠ 0 := (pos_of_gt (lt_of_le_of_lt (bot_le : 0 ≤ ε) hεδ)).ne'

@@ -63,10 +63,6 @@ private noncomputable def gradedExtEulerRightAdditiveInvariant
     gradedExtEuler_of_iso k
       (h.isGradedEulerAdmissible X.property Y.property)
       (h.isGradedEulerAdmissible X'.property Y.property) (P.ι.mapIso i) (Iso.refl Y.obj)
-  map_iso₂ X {Y Y'} i :=
-    gradedExtEuler_of_iso k
-      (h.isGradedEulerAdmissible X.property Y.property)
-      (h.isGradedEulerAdmissible X.property Y'.property) (Iso.refl X.obj) (Q.ι.mapIso i)
   map_conflation₂ X {S} hS := by
     have hc : (ExactStructure.abelian C).Conflation (S.map Q.ι) :=
       (ExactStructure.fullSubcategory_conflation_iff hQ S).mp hS

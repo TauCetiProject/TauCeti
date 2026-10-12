@@ -30,7 +30,9 @@ public section
 
 namespace TauCeti.IsLocalization
 
-variable {A S : Type*} [CommRing A] [CommRing S] [Algebra A S]
+section
+
+variable {A S : Type*} [CommSemiring A] [CommSemiring S] [Algebra A S]
 
 /-- The image of an integer multiple used to clear a finite family of denominators is the
 original element multiplied by the image of the common denominator. -/
@@ -61,6 +63,8 @@ lemma map_span_finsetIntegerMultiple (M : Submonoid A) [IsLocalization M S]
   rw [Ideal.map_span, IsLocalization.finsetIntegerMultiple_image, Submonoid.smul_def,
     ← IsScalarTower.algebraMap_smul S]
   exact Submodule.span_smul_eq_of_isUnit _ _ (IsLocalization.map_units S _)
+
+end
 
 end TauCeti.IsLocalization
 

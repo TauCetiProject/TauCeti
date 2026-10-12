@@ -8,7 +8,8 @@ module
 public import TauCeti.Probability.Distributions.Beta.Basic
 public import TauCeti.Probability.Distributions.Gamma.Basic
 import Mathlib.MeasureTheory.Function.Jacobian
-import TauCeti.Probability.Distributions.PDFInstances
+import TauCeti.Probability.Distributions.Beta.PDF
+import TauCeti.Probability.Distributions.Gamma.PDF
 
 /-!
 # Independent Gamma variables and the Beta distribution

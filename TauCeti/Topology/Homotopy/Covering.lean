@@ -36,6 +36,8 @@ separately identifies `H` as a subgroup of the image of `p_*`.
   covering map is injective on fundamental groups.
 * `IsCoveringMap.injective`: a covering map from a path-connected space to a simply connected
   space is injective.
+* `IsCoveringMapOn.injective_of_range_subset`: the same for a covering map over a set, when its
+  range lies in a simply connected subset of that set.
 * `IsCoveringMap.existsUnique_continuousMap_lifts_of_range_le_subgroup`: lift when
   `f_* π₁(A, a₀) ≤ H ≤ p_* π₁(E, e₀)`.
 * `IsCoveringMap.existsUnique_continuousMap_lifts_of_subsingleton_fundamentalGroup`: lift when
@@ -97,6 +99,19 @@ theorem _root_.IsCoveringMap.injective [PathConnectedSpace E] [SimplyConnectedSp
     (SimplyConnectedSpace.paths_homotopic δ (Path.refl (p e₀))) e₀ δ.source rfl
   rw [hδ, hrefl] at key
   simpa [γ] using key.symm
+
+/-- **A covering map whose range lies in a simply connected part of its base is injective.**
+If `p : E → X` is a covering map over `s`, its total space is path-connected, and its range lies
+in a simply connected subset `t ⊆ s`, then `p` is injective. -/
+theorem _root_.IsCoveringMapOn.injective_of_range_subset [PathConnectedSpace E] {s t : Set X}
+    (hp : IsCoveringMapOn p s) (hts : t ⊆ s) [SimplyConnectedSpace t]
+    (hpt : Set.range p ⊆ t) : Function.Injective p := by
+  have hpre : p ⁻¹' t = Set.univ := Set.preimage_eq_univ_iff.mpr hpt
+  have : PathConnectedSpace (p ⁻¹' t) :=
+    isPathConnected_iff_pathConnectedSpace.mp (hpre ▸ isPathConnected_univ)
+  intro e₀ e₁ h
+  exact congrArg Subtype.val <| (hp.mono hts).isCoveringMap_restrictPreimage.injective
+    (a₁ := ⟨e₀, hpre ▸ Set.mem_univ _⟩) (a₂ := ⟨e₁, hpre ▸ Set.mem_univ _⟩) (Subtype.ext h)
 
 /-- The lifting criterion for a covering map, with the subgroup inclusion factored through an
 intermediate subgroup `H ≤ π₁(X, f a₀)`.

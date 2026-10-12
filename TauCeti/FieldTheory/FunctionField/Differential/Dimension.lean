@@ -64,12 +64,12 @@ variable {k F : Type*} [Field k] [Field F] [Algebra k F]
 /-- The Weil differentials bounded by a divisor form a finite-dimensional `k`-space: they are the
 dual of the finite-dimensional cokernel `A_F ⧸ (A_F(D) + F)`. -/
 theorem finiteDimensional_weilDifferentialFiltration (hF : IsFunctionField k F)
-    (hex : IsIntegrallyClosedIn k F) (D : Divisor k F) :
+    (D : Divisor k F) :
     FiniteDimensional k ↥(weilDifferentialFiltration D) := by
   rw [weilDifferentialFiltration_eq_dualAnnihilator,
     submoduleOfAdeleFiltrationSupDiagonalRepartitions_eq_submoduleOf]
   exact Submodule.finite_dualAnnihilator_iff.mpr
-    (finiteDimensional_quotient_repartitionSpace hF hex D)
+    (finiteDimensional_quotient_repartitionSpace hF D)
 
 /-- **Stichtenoth, Lemma 1.5.7**: `dim_k Ω_F(D) = i(D)`.  The Weil differentials bounded by `D`
 are the annihilator of `A_F(D) + F`, hence the dual of the cokernel `A_F ⧸ (A_F(D) + F)`, whose
@@ -167,7 +167,7 @@ private theorem dim_add_dim_le_indexOfSpecialty_neg (hF : IsFunctionField k F)
     (Divisor.dim (D₁ + B) : ℤ) + Divisor.dim (D₂ + B) ≤ Divisor.indexOfSpecialty (-B) := by
   have hfd₁ := finiteDimensional_riemannRochSpace hF (D₁ + B)
   have hfd₂ := finiteDimensional_riemannRochSpace hF (D₂ + B)
-  have hfdΩ := finiteDimensional_weilDifferentialFiltration hF hex (-B)
+  have hfdΩ := finiteDimensional_weilDifferentialFiltration hF (-B)
   set ψ := LinearMap.coprod
     (((LinearMap.applyₗ ω₁).comp (repartitionDualMul hF).toLinearMap).comp
       (riemannRochSpace (D₁ + B)).subtype)

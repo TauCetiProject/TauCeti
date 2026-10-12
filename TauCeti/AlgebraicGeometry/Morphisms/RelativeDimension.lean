@@ -7,7 +7,9 @@ module
 
 public import Mathlib.AlgebraicGeometry.Fiber
 public import Mathlib.AlgebraicGeometry.Morphisms.QuasiFinite
+public import Mathlib.AlgebraicGeometry.Noetherian
 public import TauCeti.AlgebraicGeometry.Scheme.KrullDimension
+public import TauCeti.RingTheory.KrullDimension.Fiber
 
 /-!
 # Morphisms of relative dimension at most `d`
@@ -26,23 +28,45 @@ locally of finite type over a field. Without a finiteness hypothesis the bound i
 under base change: `Spec K → Spec k` has relative dimension zero for every field extension
 `K / k`, while `Spec (K ⊗[k] K)` can have positive dimension when `K / k` is transcendental.
 
+Relative dimensions add up under composition of morphisms locally of finite type. The input is
+the fibrewise dimension inequality: if `f : X ⟶ Y` is a morphism of locally Noetherian schemes of
+relative dimension at most `d`, then `dim X ≤ dim Y + d`. On affine charts this is the bound
+`dim S ≤ dim R + d` for a Noetherian algebra `S` over a Noetherian ring `R` whose fibres
+`κ(p) ⊗[R] S` have dimension at most `d`
+(`ringKrullDim_le_ringKrullDim_add_of_ringKrullDim_fiber_le`). The fibre of `f ≫ g` over a point
+`z` is the base change of `f` along the fibre of `g` over `z`, a scheme locally of finite type
+over the field `κ(z)`, so the inequality bounds its dimension by `e + d`.
+
 ## Main declarations
 
 * `TauCeti.AlgebraicGeometry.RelativeDimensionLE d f`: every fibre of `f` has Krull dimension at
   most `d`.
 * `TauCeti.AlgebraicGeometry.relativeDimensionLE_iff_topologicalKrullDim_preimage_le`: the
   condition in terms of set-theoretic fibres.
+* `TauCeti.AlgebraicGeometry.topologicalKrullDim_fiber_inter_eq`: in a fibre of a morphism locally
+  of finite type, a nonempty open part of an irreducible component has the dimension of the
+  component.
+* `TauCeti.AlgebraicGeometry.isOpenEmbedding_fiber`: the fibre of the restriction of a morphism
+  to an open subscheme is an open subspace of the fibre of the morphism.
 * `TauCeti.AlgebraicGeometry.RelativeDimensionLE.isZariskiLocalAtSource` and
   `TauCeti.AlgebraicGeometry.RelativeDimensionLE.isZariskiLocalAtTarget`: locality.
 * `TauCeti.AlgebraicGeometry.RelativeDimensionLE.of_isPullback`: stability under base change of
   morphisms locally of finite type.
 * `TauCeti.AlgebraicGeometry.relativeDimensionLE_iff_of_field`: over a field, the condition bounds
   the Krull dimension of the source.
+* `TauCeti.AlgebraicGeometry.relativeDimensionLE_SpecMap_iff`: for `Spec S ⟶ Spec R`, the
+  condition bounds the Krull dimensions of the fibre rings `κ(p) ⊗[R] S`.
+* `TauCeti.AlgebraicGeometry.topologicalKrullDim_le_add_of_relativeDimensionLE`: for a morphism of
+  locally Noetherian schemes of relative dimension at most `d`, `dim X ≤ dim Y + d`.
+* `TauCeti.AlgebraicGeometry.RelativeDimensionLE.comp`: relative dimensions at most `d` and `e`
+  compose to relative dimension at most `d + e` for morphisms locally of finite type.
 
 ## References
 
 * [Stacks Project, Tag 02NI](https://stacks.math.columbia.edu/tag/02NI)
 * [Stacks Project, Tag 0C59](https://stacks.math.columbia.edu/tag/0C59)
+* [Stacks Project, Tag 00OM](https://stacks.math.columbia.edu/tag/00OM), the local form of the
+  fibrewise dimension inequality
 -/
 
 public section
@@ -79,6 +103,23 @@ theorem RelativeDimensionLE.topologicalKrullDim_preimage_le (f : X ⟶ Y) [Relat
 theorem RelativeDimensionLE.mono (f : X ⟶ Y) [RelativeDimensionLE d f] (hde : d ≤ e) :
     RelativeDimensionLE e f :=
   ⟨fun y ↦ (topologicalKrullDim_fiber_le y).trans (mod_cast hde)⟩
+
+/-- In a fibre of a morphism locally of finite type, a nonempty open part of an irreducible
+component has the dimension of the component. -/
+theorem topologicalKrullDim_fiber_inter_eq (f : X ⟶ Y) [LocallyOfFiniteType f] (y : Y) :
+    ∀ C ∈ irreducibleComponents (f.fiber y), ∀ U : Set (f.fiber y), IsOpen U →
+      (C ∩ U).Nonempty → topologicalKrullDim ↥(C ∩ U) = topologicalKrullDim C := by
+  intro C hC U hU hCU
+  have : LocallyOfFiniteType (f.fiberToSpecResidueField y) :=
+    inferInstanceAs (LocallyOfFiniteType (pullback.snd f (Y.fromSpecResidueField y)))
+  exact topologicalKrullDim_inter_eq_of_locallyOfFiniteType (K := Y.residueField y)
+    (f.fiberToSpecResidueField y) hC.1 (isClosed_of_mem_irreducibleComponents C hC) hU hCU
+
+/-- The fibre over `y` of the restriction of `f` along an open immersion `i` is an open subspace
+of the scheme-theoretic fibre of `f` over `y`. -/
+theorem isOpenEmbedding_fiber (i : Z ⟶ X) [IsOpenImmersion i] (f : X ⟶ Y) (y : Y) :
+    IsOpenEmbedding ((f.fiberHomeo y).symm ∘ (f ⁻¹' {y}).restrictPreimage i) :=
+  (f.fiberHomeo y).symm.isOpenEmbedding.comp (i.isOpenEmbedding.restrictPreimage _)
 
 private theorem preimage_comp (i : Z ⟶ X) (f : X ⟶ Y) (s : Set Y) :
     (i ≫ f) ⁻¹' s = i ⁻¹' (f ⁻¹' s) := by
@@ -218,6 +259,89 @@ dimension at most that of `g`. -/
 instance RelativeDimensionLE.pullback_fst (f : X ⟶ Z) (g : Y ⟶ Z) [LocallyOfFiniteType g]
     [RelativeDimensionLE d g] : RelativeDimensionLE d (pullback.fst f g) :=
   .of_isPullback (IsPullback.of_hasPullback f g).flip
+
+/-- The morphism `Spec S ⟶ Spec R` induced by an `R`-algebra `S` has relative dimension at most `d`
+if and only if every fibre ring `κ(p) ⊗[R] S` has Krull dimension at most `d`. -/
+theorem relativeDimensionLE_SpecMap_iff (R S : Type u) [CommRing R] [CommRing S] [Algebra R S] :
+    RelativeDimensionLE d (Spec.map (CommRingCat.ofHom (algebraMap R S))) ↔
+      ∀ (p : Ideal R) [p.IsPrime], ringKrullDim (p.Fiber S) ≤ d := by
+  have hdim (p : PrimeSpectrum R) : topologicalKrullDim
+      ((Spec.map (CommRingCat.ofHom (algebraMap R S))) ⁻¹' {p}) =
+        ringKrullDim (p.asIdeal.Fiber S) := by
+    rw [← PrimeSpectrum.topologicalKrullDim_eq_ringKrullDim]
+    -- The underlying map of `Spec.map (CommRingCat.ofHom f)` is `PrimeSpectrum.comap f`.
+    exact (PrimeSpectrum.preimageHomeomorphFiber R S p).isHomeomorph.topologicalKrullDim_eq
+  rw [relativeDimensionLE_iff_topologicalKrullDim_preimage_le]
+  refine ⟨fun h p _ ↦ (hdim ⟨p, ‹_›⟩).symm.trans_le (h ⟨p, ‹_›⟩), fun h p ↦ ?_⟩
+  have := p.isPrime
+  exact (hdim p).trans_le (h p.asIdeal)
+
+/-- A morphism `Spec S ⟶ Spec R` of spectra of Noetherian rings of relative dimension at most `d`
+satisfies `dim S ≤ dim R + d`. -/
+private theorem ringKrullDim_le_add_of_relativeDimensionLE {R S : CommRingCat.{u}}
+    [IsNoetherianRing R] [IsNoetherianRing S] (φ : R ⟶ S) [RelativeDimensionLE d (Spec.map φ)] :
+    ringKrullDim S ≤ ringKrullDim R + d := by
+  let := φ.hom.toAlgebra
+  -- `φ` is `CommRingCat.ofHom (algebraMap R S)` up to structure eta.
+  exact ringKrullDim_le_ringKrullDim_add_of_ringKrullDim_fiber_le
+    ((relativeDimensionLE_SpecMap_iff R S).mp ‹RelativeDimensionLE d (Spec.map φ)›)
+
+/-- If `f : X ⟶ Y` is a morphism of locally Noetherian schemes of relative dimension at most `d`,
+then the Krull dimension of `X` is at most the Krull dimension of `Y` plus `d`. -/
+theorem topologicalKrullDim_le_add_of_relativeDimensionLE [IsLocallyNoetherian X]
+    [IsLocallyNoetherian Y] (f : X ⟶ Y) [RelativeDimensionLE d f] :
+    topologicalKrullDim X ≤ topologicalKrullDim Y + d := by
+  -- Around every point of `X`, choose an affine open `V` mapping into an affine open `U` of `Y`.
+  have (x : X) : ∃ (U : Y.Opens) (V : X.Opens), IsAffineOpen U ∧ IsAffineOpen V ∧ x ∈ V ∧
+      V ≤ f ⁻¹ᵁ U := by
+    obtain ⟨U, hU, hxU, -⟩ :=
+      Opens.isBasis_iff_nbhd.mp Y.isBasis_affineOpens (U := ⊤) (x := f x) (by simp)
+    obtain ⟨V, hV, hxV, hVU⟩ :=
+      Opens.isBasis_iff_nbhd.mp X.isBasis_affineOpens (U := f ⁻¹ᵁ U) (x := x) hxU
+    exact ⟨U, V, hU, hV, hxV, hVU⟩
+  choose U V hU hV hxV hVU using this
+  rw [topologicalKrullDim_eq_iSup_of_isOpenEmbedding (fun x ↦ (hV x).fromSpec)
+    (fun x ↦ (hV x).fromSpec.isOpenEmbedding) fun x ↦ ⟨x, (hV x).range_fromSpec.symm ▸ hxV x⟩]
+  refine iSup_le fun x ↦ ?_
+  have : RelativeDimensionLE d (Spec.map (f.appLE (U x) (V x) (hVU x))) := by
+    rw [← relativeDimensionLE_comp_iff_of_injective _ (hU x).fromSpec
+      (hU x).fromSpec.isEmbedding.injective, IsAffineOpen.SpecMap_appLE_fromSpec f (hU x) (hV x)]
+    infer_instance
+  have := IsLocallyNoetherian.component_noetherian ⟨U x, hU x⟩
+  have := IsLocallyNoetherian.component_noetherian ⟨V x, hV x⟩
+  -- The underlying space of `Spec R` is `PrimeSpectrum R` by definition.
+  calc topologicalKrullDim (Spec Γ(X, V x))
+      = ringKrullDim Γ(X, V x) := PrimeSpectrum.topologicalKrullDim_eq_ringKrullDim _
+    _ ≤ ringKrullDim Γ(Y, U x) + d :=
+      ringKrullDim_le_add_of_relativeDimensionLE (f.appLE (U x) (V x) (hVU x))
+    _ = topologicalKrullDim (Spec Γ(Y, U x)) + d :=
+      congrArg (· + (d : WithBot ℕ∞)) (PrimeSpectrum.topologicalKrullDim_eq_ringKrullDim _).symm
+    _ ≤ topologicalKrullDim Y + d := by
+      gcongr
+      exact (hU x).fromSpec.isEmbedding.isInducing.topologicalKrullDim_le
+
+/-- If `f : X ⟶ Y` and `g : Y ⟶ Z` are locally of finite type of relative dimensions at most `d`
+and `e`, then `f ≫ g` has relative dimension at most `d + e`. -/
+instance RelativeDimensionLE.comp (f : X ⟶ Y) (g : Y ⟶ Z) [LocallyOfFiniteType f]
+    [LocallyOfFiniteType g] [RelativeDimensionLE d f] [RelativeDimensionLE e g] :
+    RelativeDimensionLE (d + e) (f ≫ g) := by
+  refine ⟨fun z ↦ ?_⟩
+  -- The fibre of `f ≫ g` over `z` is the base change of `f` along the fibre of `g` over `z`,
+  -- which is locally of finite type over the field `κ(z)`, hence locally Noetherian.
+  have : LocallyOfFiniteType (g.fiberToSpecResidueField z) :=
+    inferInstanceAs (LocallyOfFiniteType (pullback.snd g (Z.fromSpecResidueField z)))
+  have : IsLocallyNoetherian (g.fiber z) :=
+    LocallyOfFiniteType.isLocallyNoetherian (g.fiberToSpecResidueField z)
+  have : IsLocallyNoetherian (pullback f (g.fiberι z)) :=
+    LocallyOfFiniteType.isLocallyNoetherian (pullback.snd f (g.fiberι z))
+  -- `Scheme.Hom.fiber` is defined as the pullback along `Z.fromSpecResidueField z`.
+  refine ((pullbackRightPullbackFstIso g (Z.fromSpecResidueField z) f).hom.homeomorph
+    |>.isHomeomorph.topologicalKrullDim_eq).symm.trans_le <|
+    (topologicalKrullDim_le_add_of_relativeDimensionLE (d := d)
+      (pullback.snd f (g.fiberι z))).trans ?_
+  rw [add_comm d e, Nat.cast_add]
+  gcongr
+  exact topologicalKrullDim_fiber_le z
 
 /-- A scheme over a field has relative dimension at most `d` over it if and only if its Krull
 dimension is at most `d`. -/

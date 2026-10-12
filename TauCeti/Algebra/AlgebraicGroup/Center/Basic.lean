@@ -45,9 +45,6 @@ ideal, so the represented closed subgroup is canonical.
 
 * J. S. Milne, *Algebraic Groups* (2017), §1.k and §2.
 * W. C. Waterhouse, *Introduction to Affine Group Schemes*, Chapter 2.
-
-This constructs the center `Z(G)` required in Layer 6, "Reductive and semisimple groups", of
-`TauCetiRoadmap/ReductiveGroups/README.md`.
 -/
 
 public section
@@ -98,7 +95,6 @@ private theorem equivFinsuppOfBasisRight_map_apply
       g (TensorProduct.equivFinsuppOfBasisRight (centerBasis (k := k) (H := H)) z i) := by
   classical
   induction z with
-  | zero => simp
   | tmul x y =>
       simp only [Algebra.TensorProduct.map_tmul,
         TensorProduct.equivFinsuppOfBasisRight_apply_tmul_apply, AlgHom.id_apply, map_smul]
@@ -373,7 +369,7 @@ noncomputable abbrev centerPointsSubgroup (H : _root_.CommHopfAlgCat.{v} k)
   quotientPointsSubgroup H (centerDefiningIdeal H) A
 
 /-- Membership in the represented center is universal centrality in the functor of points. -/
-@[simp]
+@[simp↓]
 theorem mem_centerPointsSubgroup_iff (H : _root_.CommHopfAlgCat.{v} k)
     (A : CommAlgCat.{v} k) (g : HopfAlgebra.points (R := k) (H := H) A) :
     g ∈ centerPointsSubgroup H A ↔ HopfAlgebra.IsCentralPoint g := by
@@ -444,11 +440,6 @@ noncomputable abbrev centerGroupSchemeι (H : _root_.CommHopfAlgCat.{u} k) :
     centerGroupScheme H ⟶
       (AlgebraicGeometry.hopfSpec (CommRingCat.of k)).obj (Opposite.op H) :=
   quotientSpecι H (centerDefiningIdeal H)
-
-/-- The center is a closed subgroup scheme of the ambient affine group scheme. -/
-instance isClosedImmersion_centerGroupSchemeι (H : _root_.CommHopfAlgCat.{u} k) :
-    IsClosedImmersion (centerGroupSchemeι H).hom.hom.left :=
-  inferInstance
 
 /-- A central closed subgroup scheme cut out by `I` includes canonically into the center. -/
 noncomputable def centralSubgroupToCenter (H : _root_.CommHopfAlgCat.{u} k)

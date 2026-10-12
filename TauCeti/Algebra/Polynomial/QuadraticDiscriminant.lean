@@ -7,8 +7,10 @@ module
 
 public import Mathlib.Algebra.QuadraticDiscriminant
 public import Mathlib.FieldTheory.Perfect
+import TauCeti.Algebra.QuadraticDiscriminant
 
 import Mathlib.Algebra.Polynomial.SpecificDegree
+import Mathlib.Tactic
 
 /-!
 # Separability and splitting criteria for quadratic polynomials
@@ -20,6 +22,10 @@ statement mentions the discriminant it uses Mathlib's `discrim` rather than its 
 that Mathlib's discriminant API applies to it directly; the two criteria phrased by a root or by
 an Artin-Schreier condition mention no discriminant at all.
 
+Over an ordered commutative ring, `TauCeti.quadratic_pos_iff_of_discrim_neg` and
+`TauCeti.quadratic_neg_iff_of_discrim_neg` identify the sign of a quadratic with negative
+discriminant from its leading coefficient.
+
 Over a field, with `a ≠ 0`:
 
 * `Polynomial.separable_quadratic_iff_discrim_ne_zero`: separable exactly when `discrim a b c ≠ 0`;
@@ -29,6 +35,8 @@ Over a field, with `a ≠ 0`:
   `discrim a b c` is a square;
 * `Polynomial.splits_quadratic_of_discrim_eq_zero`: over a perfect field, splits as soon as
   `discrim a b c = 0`;
+* `Polynomial.exists_quadratic_eq_zero_and_two_mul_add_eq_zero_of_discrim_eq_zero`: over a perfect
+  field, if `discrim a b c = 0` then some `x` is a root of the quadratic and of its derivative;
 * `Polynomial.card_rootSet_quadratic_of_discrim_eq_zero`: if it splits and `discrim a b c = 0`, it
   has exactly one root;
 * `Polynomial.splits_quadratic_iff_exists_artinSchreier_of_two_eq_zero`: in characteristic two,
@@ -99,7 +107,7 @@ identity `sq_derivative_quadratic_sub_mul_eq_C_discrim` writes `1` as an `R[X]`-
 polynomial and its derivative. -/
 theorem separable_quadratic_of_isUnit_discrim {R : Type*} [CommRing R] {a b c : R}
     (h : IsUnit (discrim a b c)) : (C a * X ^ 2 + C b * X + C c).Separable := by
-  set P := C a * X ^ 2 + C b * X + C c with hP
+  set P := C a * X ^ 2 + C b * X + C c
   have hid : derivative P ^ 2 - 4 * C a * P = C (discrim a b c) :=
     sq_derivative_quadratic_sub_mul_eq_C_discrim a b c
   have hinv : C ((h.unit⁻¹ : Rˣ) : R) * C (discrim a b c) = 1 := by
@@ -187,7 +195,7 @@ splits. Perfectness is needed in characteristic two, where `X² - c` can have va
 discriminant without a root. -/
 theorem splits_quadratic_of_discrim_eq_zero {k : Type*} [Field k] [PerfectField k] {a b c : k}
     (ha : a ≠ 0) (hd : discrim a b c = 0) : (C a * X ^ 2 + C b * X + C c).Splits := by
-  set p := C a * X ^ 2 + C b * X + C c with hp
+  set p := C a * X ^ 2 + C b * X + C c
   have hdeg : p.natDegree = 2 := natDegree_quadratic ha
   have hsep : ¬ p.Separable := by
     rw [separable_quadratic_iff_discrim_ne_zero ha, not_not]
@@ -197,12 +205,25 @@ theorem splits_quadratic_of_discrim_eq_zero {k : Type*} [Field k] [PerfectField 
   obtain ⟨x, hx⟩ := Multiset.exists_mem_of_ne_zero hroots
   exact Splits.of_natDegree_eq_two hdeg (mem_roots'.1 hx).2
 
+/-- Over a perfect field, a quadratic `a X² + b X + c` (with `a ≠ 0`) whose discriminant vanishes
+has a double root: some `x` is a root of the quadratic and of its derivative `2 a X + b`. Away from
+characteristic two this is `x = -b / (2 a)`; in characteristic two `b = 0` and `x` is the square
+root of `c / a`, which is where perfectness is needed. -/
+theorem exists_quadratic_eq_zero_and_two_mul_add_eq_zero_of_discrim_eq_zero {k : Type*} [Field k]
+    [PerfectField k] {a b c : k} (ha : a ≠ 0) (hd : discrim a b c = 0) :
+    ∃ x, a * x ^ 2 + b * x + c = 0 ∧ 2 * a * x + b = 0 := by
+  obtain ⟨x, hx⟩ := (splits_quadratic_iff_exists_root ha).1
+    (splits_quadratic_of_discrim_eq_zero ha hd)
+  refine ⟨x, hx, pow_eq_zero_iff two_ne_zero |>.1 ?_⟩
+  rw [← discrim_eq_sq_of_quadratic_eq_zero (a := a) (b := b) (c := c) (by linear_combination hx),
+    hd]
+
 /-- A split quadratic `a X² + b X + c` (with `a ≠ 0`) whose discriminant vanishes has exactly one
 root. -/
 theorem card_rootSet_quadratic_of_discrim_eq_zero {k : Type*} [Field k] {a b c : k} (ha : a ≠ 0)
     (hs : (C a * X ^ 2 + C b * X + C c).Splits) (hd : discrim a b c = 0) :
     Fintype.card ((C a * X ^ 2 + C b * X + C c).rootSet k) = 1 := by
-  set p := C a * X ^ 2 + C b * X + C c with hp
+  set p := C a * X ^ 2 + C b * X + C c
   have hdeg : p.natDegree = 2 := natDegree_quadratic ha
   have hp0 : p ≠ 0 := ne_zero_of_natDegree_gt (n := 0) (by omega)
   have hs' : (p.map (algebraMap k k)).Splits := by rwa [Algebra.algebraMap_self, map_id]
@@ -219,5 +240,54 @@ theorem card_rootSet_quadratic_of_discrim_eq_zero {k : Type*} [Field k] {a b c :
   omega
 
 end Polynomial
+
+namespace TauCeti
+
+open _root_.Polynomial
+
+variable {R : Type*} [CommRing R] [LinearOrder R] [IsStrictOrderedRing R]
+
+/-- A quadratic with negative discriminant is positive at every argument exactly when its
+leading coefficient is positive. -/
+theorem quadratic_pos_iff_of_discrim_neg {a b c : R} (hd : discrim a b c < 0) (x : R) :
+    0 < (C a * X ^ 2 + C b * X + C c).eval x ↔ 0 < a := by
+  simp only [eval_add, eval_mul, eval_pow, eval_C, eval_X]
+  have ha0 : a ≠ 0 := by
+    intro ha
+    subst a
+    simp only [discrim, zero_mul, mul_zero, sub_zero] at hd
+    nlinarith [sq_nonneg b]
+  have hsq : ∀ s : R, discrim a b c ≠ s ^ 2 := by
+    intro s hs
+    exact (not_le.mpr hd) (by rw [hs]; exact sq_nonneg s)
+  have hne : a * x ^ 2 + b * x + c ≠ 0 := by
+    simpa only [sq] using quadratic_ne_zero_of_discrim_ne_sq hsq x
+  constructor
+  · intro hx
+    rcases lt_or_gt_of_ne ha0 with ha | ha
+    · have hnonneg := nonneg_of_discrim_le_zero (a := -a) (b := -b) (c := -c)
+        (by simpa only [neg_pos] using ha)
+        (by simpa only [discrim_neg] using hd.le) x 1
+      simp only [one_pow, mul_one] at hnonneg
+      nlinarith
+    · exact ha
+  · intro ha
+    have hnonneg := nonneg_of_discrim_le_zero ha hd.le x 1
+    simp only [one_pow, mul_one] at hnonneg
+    exact lt_of_le_of_ne hnonneg (Ne.symm hne)
+
+/-- With negative discriminant, a quadratic is negative everywhere exactly when its
+leading coefficient is negative. -/
+theorem quadratic_neg_iff_of_discrim_neg {a b c : R} (hd : discrim a b c < 0) (x : R) :
+    (C a * X ^ 2 + C b * X + C c).eval x < 0 ↔ a < 0 := by
+  have h := quadratic_pos_iff_of_discrim_neg (a := -a) (b := -b) (c := -c)
+    (by simpa only [discrim_neg] using hd) x
+  have heq : (C (-a) * X ^ 2 + C (-b) * X + C (-c)).eval x =
+      -(C a * X ^ 2 + C b * X + C c).eval x := by
+    simp only [eval_add, eval_mul, eval_pow, eval_C, eval_X]
+    ring
+  simpa only [heq, neg_pos] using h
+
+end TauCeti
 
 end

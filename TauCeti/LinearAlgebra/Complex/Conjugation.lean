@@ -44,6 +44,7 @@ Everything is stated for an arbitrary `V`; no finite-dimensionality is used anyw
 * `TauCeti.realPointsLift`: the canonical `ℂ`-linear map `ℂ ⊗[ℝ] realPoints K →ₗ[ℂ] V`.
 * `TauCeti.realPointsEquiv`: that map as a `ℂ`-linear isomorphism, for involutive `K`.
 * `TauCeti.tmulConj`: the conjugation `c ⊗ₜ w ↦ conj c ⊗ₜ w` of a complexification `ℂ ⊗[ℝ] W`.
+* `TauCeti.realPart`: the real-linear retraction from a complexification to its real module.
 
 ## Main statements
 
@@ -312,7 +313,6 @@ noncomputable def tmulConj : (ℂ ⊗[ℝ] W) →ₛₗ[starRingEnd ℂ] (ℂ �
   map_add' := map_add _
   map_smul' c u := by
     induction u with
-    | zero => simp
     | tmul c' w =>
       rw [TensorProduct.smul_tmul', smul_eq_mul, LinearMap.rTensor_tmul, LinearMap.rTensor_tmul,
         TensorProduct.smul_tmul', smul_eq_mul]
@@ -331,7 +331,6 @@ unexposed body. -/
 @[simp]
 theorem tmulConj_tmulConj (u : ℂ ⊗[ℝ] W) : tmulConj W (tmulConj W u) = u := by
   induction u with
-  | zero => simp
   | tmul c w => simp
   | add u₁ u₂ h₁ h₂ => rw [map_add, map_add, h₁, h₂]
 
@@ -363,6 +362,20 @@ theorem tmulConj_eq_self_iff (u : ℂ ⊗[ℝ] W) :
   · rintro ⟨w, rfl⟩
     rw [tmulConj_tmul, map_one]
 
+/-- The real-linear retraction `c ⊗ₜ w ↦ (re c) • w` of `w ↦ 1 ⊗ₜ w`. -/
+noncomputable def realPart (W : Type*) [AddCommGroup W] [Module ℝ W] :
+    ℂ ⊗[ℝ] W →ₗ[ℝ] W :=
+  TensorProduct.lid ℝ W ∘ₗ Complex.reLm.rTensor W
+
+/-- The real part of a pure tensor is its real scalar part acting on the vector. -/
+@[simp]
+theorem realPart_tmul (c : ℂ) (w : W) : realPart W (c ⊗ₜ[ℝ] w) = c.re • w := by
+  simp [realPart]
+
+/-- The real part of a real vector embedded in its complexification is that vector. -/
+theorem realPart_one_tmul (w : W) : realPart W (1 ⊗ₜ[ℝ] w) = w := by
+  simp
+
 end Complexification
 
 /-- **The conjugation of a complexification commutes with every base-changed map**, because
@@ -371,7 +384,6 @@ theorem tmulConj_baseChange {W W' : Type*} [AddCommGroup W] [Module ℝ W] [AddC
     [Module ℝ W'] (f : W →ₗ[ℝ] W') (u : ℂ ⊗[ℝ] W) :
     tmulConj W' (f.baseChange ℂ u) = f.baseChange ℂ (tmulConj W u) := by
   induction u with
-  | zero => simp
   | tmul c w => simp
   | add u₁ u₂ h₁ h₂ => rw [map_add, map_add, map_add, map_add, h₁, h₂]
 

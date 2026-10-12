@@ -68,7 +68,7 @@ private theorem exists_repartitionDualComponent_ne_zero (hF : IsFunctionField k 
   have hle : weilDifferentialFiltration (0 : Divisor k F) ≤
       weilDifferentialFiltration D :=
     weilDifferentialFiltration_antitone hDneg.le
-  have hfdD := finiteDimensional_weilDifferentialFiltration hF hex D
+  have hfdD := finiteDimensional_weilDifferentialFiltration hF D
   have hdimD := finrank_weilDifferentialFiltration hF hex D
   have hdim0 := finrank_weilDifferentialFiltration_zero hF hex
   have hP : (1 : ℤ) ≤ P.degree := by
@@ -88,7 +88,7 @@ private theorem exists_repartitionDualComponent_ne_zero (hF : IsFunctionField k 
   have hlt : weilDifferentialFiltration (0 : Divisor k F) <
       weilDifferentialFiltration D :=
     Submodule.lt_of_le_of_finrank_lt_finrank hle hdimlt
-  obtain ⟨ω, hωD, hω0⟩ := SetLike.exists_of_lt hlt
+  obtain ⟨ω, hωD, hω0⟩ := IsConcreteLE.exists_of_lt hlt
   have hωspace : ω ∈ weilDifferentialSpace k F :=
     weilDifferentialFiltration_le_weilDifferentialSpace D hωD
   refine ⟨ω, hωspace, fun hcomponent ↦ hω0 ?_⟩

@@ -20,14 +20,6 @@ cases; `WeierstrassCurve.quadraticTwistPointEquiv_map_eq_quadraticCharacter_smul
 intended consumer. Mathlib's `quadraticChar` is a different object — the Legendre symbol of a
 finite field, not a character of a Galois group.
 
-The file closes with one lemma that is **not** about quadratic extensions:
-`AlgEquiv.restrictNormal_eq_one_iff_algebraMap` says that in a tower `K ⊆ L ⊆ M` with `L/K`
-normal, an automorphism of `M` restricts to the identity on `L` exactly when it fixes `L`
-pointwise. Mathlib states this for an `IntermediateField`
-(`AlgEquiv.restrictNormal_eq_one_iff`) while `AlgEquiv.restrictNormal` itself is already given for
-an abstract algebra, so only the characterisation needed transporting; it is a bridge to Mathlib
-rather than ported material, and it asks for `[Normal K L]` alone.
-
 Mathlib already supplies the surrounding structure: `Algebra.IsQuadraticExtension` makes `L/K`
 finite and normal (`Algebra.IsQuadraticExtension.normal`), hence Galois with separability
 (`Algebra.IsQuadraticExtension.isGalois`); `IsGalois.card_aut_eq_finrank` counts the
@@ -77,9 +69,7 @@ theorem mem_range_algebraMap_of_apply_eq {σ : L ≃ₐ[K] L} (hσ : σ ≠ 1) {
     x ∈ Set.range (algebraMap K L) := by
   rw [IsGalois.mem_range_algebraMap_iff_fixed]
   intro φ
-  rcases algEquiv_eq_one_or_eq K L hσ φ with rfl | rfl
-  · exact AlgEquiv.one_apply x
-  · exact hx
+  rcases algEquiv_eq_one_or_eq K L hσ φ with rfl | rfl <;> simp_all
 
 /-- **A nontrivial automorphism moves every element outside the base field.** The difference
 `σ x - x` is the square root of the discriminant of `x`'s minimal polynomial, so this is exactly
@@ -122,8 +112,7 @@ noncomputable def quadraticCharacter : (L ≃ₐ[K] L) →* ℤˣ where
 theorem quadraticCharacter_eq_one_iff {σ : L ≃ₐ[K] L} :
     quadraticCharacter K L σ = 1 ↔ σ = 1 := by
   classical
-  simp only [quadraticCharacter, MonoidHom.coe_mk, OneHom.coe_mk]
-  split <;> simp_all
+  simp [quadraticCharacter]
 
 /-- Off the identity the quadratic character takes the value `-1`, there being nowhere else to
 go in `ℤˣ`. -/
@@ -134,29 +123,6 @@ theorem quadraticCharacter_eq_neg_one_of_ne_one {σ : L ≃ₐ[K] L} (hσ : σ �
 
 end Algebra.IsQuadraticExtension
 
-/-! ### Restriction to an intermediate field in a tower -/
-
-section Tower
-
-variable (K L : Type*) [Field K] [Field L] [Algebra K L] [Normal K L]
-  (M : Type*) [Field M] [Algebra K M] [Algebra L M] [IsScalarTower K L M]
-
-/-- **`σ` restricts to the identity on `L` exactly when it fixes `L` pointwise.** Mathlib's
-`AlgEquiv.restrictNormal_eq_one_iff` says this for an `IntermediateField`, while
-`AlgEquiv.restrictNormal` itself is already stated for an abstract algebra `L`, so only the
-characterisation needs transporting to a tower `K ⊆ L ⊆ M`. -/
-theorem AlgEquiv.restrictNormal_eq_one_iff_algebraMap (σ : M ≃ₐ[K] M) :
-    σ.restrictNormal L = 1 ↔ ∀ x : L, σ (algebraMap L M x) = algebraMap L M x := by
-  constructor
-  · intro h x
-    rw [← AlgEquiv.restrictNormal_commutes σ L x, h, AlgEquiv.one_apply]
-  · intro h
-    ext x
-    have hx := AlgEquiv.restrictNormal_commutes σ L x
-    rw [h x] at hx
-    exact (algebraMap L M).injective hx
-
-end Tower
 
 
 end

@@ -46,6 +46,8 @@ Since `e ≤ [F' : F] = n` and `m ≥ 1`, this forces `e = n` and `m = 1`.
   `TauCeti.Place.eq_of_isTotallyRamified`: a totally ramified place has relative degree `1` and
   is the only place lying over the place below it, packaged as
   `TauCeti.Place.setOf_restrict_eq_eq_singleton_of_isTotallyRamified`.
+* `TauCeti.Place.adjoin_eq_top_of_isTotallyRamified_of_ord_eq_one`: every uniformizer at a
+  totally ramified place generates the field extension.
 * `TauCeti.Place.IsEisensteinAt.natDegree_pos`: an Eisenstein polynomial has positive degree.
 * `TauCeti.Place.natDegree_mul_ord_eq_ramificationIdx`: the order of a root of an Eisenstein
   polynomial, `n · ord_{P'} y = e(P' ∣ P)`.
@@ -65,6 +67,7 @@ Since `e ≤ [F' : F] = n` and `m ≥ 1`, this forces `e = n` and `m = 1`.
 public section
 
 open Polynomial
+open scoped IntermediateField
 
 namespace TauCeti
 
@@ -134,6 +137,31 @@ theorem setOf_restrict_eq_eq_singleton_of_isTotallyRamified {P' : Place k' F'}
     (h : IsTotallyRamified F P') :
     {Q' : Place k' F' | Q'.restrict k F = P'.restrict k F} = {P'} :=
   Set.eq_singleton_iff_unique_mem.mpr ⟨rfl, fun _ hQ => eq_of_isTotallyRamified k F h hQ⟩
+
+/-- A uniformizer at a totally ramified place generates the field extension.  Its first
+`e(P' | P) = [F' : F]` powers are linearly independent, hence form a basis. -/
+theorem adjoin_eq_top_of_isTotallyRamified_of_ord_eq_one {P' : Place k' F'} {t : F'}
+    (h : IsTotallyRamified F P') (ht : P'.ord t = 1) : F⟮t⟯ = ⊤ := by
+  classical
+  have hind := linearIndependent_pow_fin_ramificationIdx F P' ht
+  let _ : Nonempty (Fin (ramificationIdx F P')) :=
+    Fin.pos_iff_nonempty.mp (ramificationIdx_pos F P')
+  have hcard : Fintype.card (Fin (ramificationIdx F P')) = Module.finrank F F' := by
+    rw [Fintype.card_fin, ← isTotallyRamified_iff]
+    exact h
+  have hspan := hind.span_eq_top_of_card_eq_finrank hcard
+  apply top_unique
+  intro x _
+  have hx : x ∈ Submodule.span F (Set.range fun j : Fin (ramificationIdx F P') ↦
+      t ^ (j : ℕ)) := by
+    rw [hspan]
+    exact Submodule.mem_top
+  refine Submodule.span_induction (p := fun x _ ↦ x ∈ F⟮t⟯) (fun y hy ↦ ?_) (by simp)
+    (fun _ _ _ _ hx hy ↦ add_mem hx hy)
+    (fun c _ _ hx ↦ ?_) hx
+  · obtain ⟨j, rfl⟩ := hy
+    exact pow_mem (IntermediateField.mem_adjoin_simple_self F t) _
+  · simpa [Algebra.smul_def] using mul_mem (IntermediateField.algebraMap_mem F⟮t⟯ c) hx
 
 end TotallyRamified
 
@@ -272,7 +300,7 @@ theorem natDegree_mul_ord_eq_ramificationIdx {φ : F[X]}
     (φ.natDegree : ℤ) * P'.ord y = ramificationIdx F P' := by
   classical
   have hdeg : 0 < φ.natDegree := hφ.natDegree_pos
-  set P := P'.restrict k F with hPdef
+  set P := P'.restrict k F
   set n := φ.natDegree with hndef
   set e : ℤ := (ramificationIdx F P' : ℤ) with hedef
   have he0 : 0 < e := by
@@ -288,7 +316,7 @@ theorem natDegree_mul_ord_eq_ramificationIdx {φ : F[X]}
     have h : algebraMap F F' (φ.coeff 0) = 0 := by
       simpa [Polynomial.aeval_def, Polynomial.eval₂_at_zero] using hy
     exact hc0 ((map_eq_zero (algebraMap F F')).mp h)
-  set m := P'.ord y with hmdef
+  set m := P'.ord y
   set T : ℕ → F' := fun i => algebraMap F F' (φ.coeff i) * y ^ i with hTdef
   have hsum : ∑ i ∈ Finset.range (n + 1), T i = 0 := by
     rw [← hy, Polynomial.aeval_eq_sum_range]
@@ -387,7 +415,7 @@ private theorem ramificationIdx_eq_and_ord_eq_one {y : F'}
   have he0 : (0 : ℤ) < (ramificationIdx F P' : ℤ) := by exact_mod_cast ramificationIdx_pos F P'
   have hn0 : (0 : ℤ) < ((minpoly F y).natDegree : ℤ) := by exact_mod_cast hdeg
   have hm1 : 1 ≤ P'.ord y := by nlinarith
-  have hm : P'.ord y = 1 := by nlinarith
+  have hm : P'.ord y = 1 := by nlinarith [hle', hn0]
   refine ⟨?_, hm⟩
   have : (ramificationIdx F P' : ℤ) = (Module.finrank F F' : ℤ) := by
     rw [hfr, ← hkey, hm, mul_one]

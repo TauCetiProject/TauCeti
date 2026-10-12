@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Polynomial.Binomial
-public import TauCeti.InformationTheory.Coding.MacWilliams
+public import TauCeti.InformationTheory.Coding.MacWilliams.Basic
 
 /-!
 # The Krawtchouk form of the MacWilliams identity

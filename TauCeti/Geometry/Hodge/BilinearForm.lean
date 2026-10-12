@@ -5,13 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.BilinearForm.TensorProduct
-public import Mathlib.LinearAlgebra.Matrix.BilinearForm
-public import Mathlib.RingTheory.TensorProduct.Free
-import Mathlib.Algebra.Algebra.Rat
-import Mathlib.RingTheory.Localization.BaseChange
 public import TauCeti.Geometry.Hodge.BaseChange
-public import TauCeti.LinearAlgebra.BilinearForm.Prod
+public import TauCeti.LinearAlgebra.BilinearForm.BaseChange
 
 /-!
 # Scalar extension of an integral bilinear form
@@ -42,6 +37,8 @@ localization from `ℤ` to `ℚ` and then by scalar extension from `ℚ` to `ℂ
   nondegeneracy from the integral form.
 * `TauCeti.Hodge.integralFormBaseChange_prod`: scalar extension of a block-diagonal form is
   block diagonal.
+* `TauCeti.Hodge.integralFormBaseChange_tmul`: complexification of the tensor product of two
+  integral forms is the tensor product of their complexifications.
 * `TauCeti.Hodge.integralFormBaseChange_rationalToComplexLinearEquiv_one_tmul`: the complexified
   form computes the rationalified one on purely rational vectors.
 -/
@@ -75,12 +72,33 @@ theorem integralFormBaseChange_ι (h : IsBaseChange A ι) (Q : LinearMap.BilinFo
     (x y : V) : integralFormBaseChange h Q (ι x) (ι y) = (Q x y : A) := by
   simp [integralFormBaseChange, h.equiv_symm_apply]
 
+/-- Complexifying the linear map from a bilinear form to the dual gives the linear map of the
+complexified form. -/
+theorem integralMapToComplex_bilinForm (hℂ : IsBaseChange ℂ ιℂ)
+    (Q : LinearMap.BilinForm ℤ V) :
+    integralMapToComplex hℂ (dualLatticeMap hℂ) Q = integralFormBaseChange hℂ Q := by
+  apply hℂ.algHom_ext
+  intro x
+  apply hℂ.algHom_ext
+  intro y
+  simp
+
 /-- The extended form is the unique bilinear form restricting to the integral one. -/
 theorem integralFormBaseChange_unique (h : IsBaseChange A ι) (Q : LinearMap.BilinForm ℤ V)
     (B : LinearMap.BilinForm A V_A) (hB : ∀ x y : V, B (ι x) (ι y) = (Q x y : A)) :
     B = integralFormBaseChange h Q := by
   refine h.algHom_ext _ _ fun x ↦ h.algHom_ext _ _ fun y ↦ ?_
   simp [hB x y]
+
+/-- Complexifying a form pulled back along integral linear maps gives the complexified form
+pulled back along their complexifications. -/
+theorem integralFormBaseChange_comp {V' V'ℂ : Type*} [AddCommGroup V'] [AddCommGroup V'ℂ]
+    [Module ℂ V'ℂ] {ι'ℂ : V' →ₗ[ℤ] V'ℂ} (h'ℂ : IsBaseChange ℂ ι'ℂ) (hℂ : IsBaseChange ℂ ιℂ)
+    (Q : LinearMap.BilinForm ℤ V) (l r : V' →ₗ[ℤ] V) :
+    integralFormBaseChange h'ℂ (Q.comp l r) =
+      (integralFormBaseChange hℂ Q).comp (integralMapToComplex h'ℂ ιℂ l)
+        (integralMapToComplex h'ℂ ιℂ r) :=
+  (integralFormBaseChange_unique h'ℂ _ _ fun x y ↦ by simp).symm
 
 /-- Scalar extension turns the flip of an integral form into the flip of the extended form. -/
 @[simp]
@@ -118,7 +136,6 @@ theorem integralFormBaseChange_conj_right (hℂ : IsBaseChange ℂ ιℂ) (Q : L
     integralFormBaseChange hℂ Q (ιℂ x) (latticeConj hℂ y) =
       starRingEnd ℂ (integralFormBaseChange hℂ Q (ιℂ x) y) := by
   induction y using hℂ.inductionOn with
-  | zero => simp
   | tmul w => simp
   | smul z y hy => simp [hy]
   | add y₁ y₂ hy₁ hy₂ => simp [hy₁, hy₂]
@@ -131,114 +148,30 @@ theorem integralFormBaseChange_conj (hℂ : IsBaseChange ℂ ιℂ) (Q : LinearM
     integralFormBaseChange hℂ Q (latticeConj hℂ x) (latticeConj hℂ y) =
       starRingEnd ℂ (integralFormBaseChange hℂ Q x y) := by
   induction x using hℂ.inductionOn generalizing y with
-  | zero => simp
   | tmul v => simpa using integralFormBaseChange_conj_right hℂ Q v y
   | smul z x hx => simp [hx]
   | add x₁ x₂ hx₁ hx₂ => simp [hx₁, hx₂]
-
-private theorem integralFormToRat_nondegenerate {Q : LinearMap.BilinForm ℤ V}
-    (hQ : Q.Nondegenerate) : (Q.baseChange ℚ).Nondegenerate := by
-  let f : V →ₗ[ℤ] ℚ ⊗[ℤ] V := TensorProduct.mk ℤ ℚ V 1
-  have hf : IsLocalizedModule (nonZeroDivisors ℤ) f := by
-    rw [isLocalizedModule_iff_isBaseChange (nonZeroDivisors ℤ) ℚ]
-    exact TensorProduct.isBaseChange ℤ V ℚ
-  constructor
-  · intro x hx
-    obtain ⟨⟨v, s⟩, hs⟩ := hf.surj x
-    have hv : v = 0 := hQ.1 v fun w ↦ by
-      have h : Q.baseChange ℚ (s • x) (1 ⊗ₜ[ℤ] w) = 0 := by simp [hx]
-      rw [hs] at h
-      have hfv : f v = 1 ⊗ₜ[ℤ] v := rfl
-      rw [hfv] at h
-      rw [LinearMap.BilinForm.baseChange_tmul] at h
-      have hc : (Q v w : ℚ) = 0 := by simpa using h
-      exact_mod_cast hc
-    rw [hv, map_zero] at hs
-    exact (IsLocalizedModule.smul_injective f s) (by simpa using hs)
-  · intro y hy
-    obtain ⟨⟨v, s⟩, hs⟩ := hf.surj y
-    have hv : v = 0 := hQ.2 v fun w ↦ by
-      have h : Q.baseChange ℚ (1 ⊗ₜ[ℤ] w) (s • y) = 0 := by simp [hy]
-      rw [hs] at h
-      have hfv : f v = 1 ⊗ₜ[ℤ] v := rfl
-      rw [hfv] at h
-      rw [LinearMap.BilinForm.baseChange_tmul] at h
-      have hc : (Q w v : ℚ) = 0 := by simpa using h
-      exact_mod_cast hc
-    rw [hv, map_zero] at hs
-    exact (IsLocalizedModule.smul_injective f s) (by simpa using hs)
-
-private theorem rationalFormToComplex_separatingLeft {W : Type*} [AddCommGroup W] [Module ℚ W]
-    {B : LinearMap.BilinForm ℚ W} (hB : B.SeparatingLeft) :
-    (B.baseChange ℂ).SeparatingLeft := by
-  classical
-  let b := Module.Free.chooseBasis ℚ ℂ
-  let e := TensorProduct.equivFinsuppOfBasisLeft (N := W) b
-  intro x hx
-  let c := e x
-  have hc : c = 0 := by
-    ext i
-    apply hB (c i)
-    intro w
-    have h := hx (1 ⊗ₜ[ℚ] w)
-    have hrepr : c.sum (fun i v ↦ b i ⊗ₜ[ℚ] v) = x := by
-      calc
-        c.sum (fun i v ↦ b i ⊗ₜ[ℚ] v) = e.symm c :=
-          (TensorProduct.equivFinsuppOfBasisLeft_symm_apply b c).symm
-        _ = x := by simp [c]
-    rw [← hrepr] at h
-    have hi := congrArg (fun z : ℂ ↦ b.repr z i) h
-    have hi' : (∑ j ∈ c.support, Finsupp.single j (B (c j) w)) i = 0 := by
-      simpa [Finsupp.sum] using hi
-    by_cases hic : i ∈ c.support
-    · have heval : (∑ j ∈ c.support, Finsupp.single j (B (c j) w)) i =
-          B (c i) w := by
-        simp [Finsupp.single_apply, hic]
-      exact heval ▸ hi'
-    · have hci : c i = 0 := Finsupp.notMem_support_iff.mp hic
-      simp [hci]
-  exact e.injective (by simpa [c] using hc)
-
-private theorem rationalFormToComplex_baseChange_flip {W : Type*} [AddCommGroup W] [Module ℚ W]
-    (B : LinearMap.BilinForm ℚ W) :
-    B.flip.baseChange ℂ = (B.baseChange ℂ).flip := by
-  ext z v
-  simp
-
-private theorem rationalFormToComplex_nondegenerate {W : Type*} [AddCommGroup W] [Module ℚ W]
-    {B : LinearMap.BilinForm ℚ W} (hB : B.Nondegenerate) :
-    (B.baseChange ℂ).Nondegenerate := by
-  constructor
-  · exact rationalFormToComplex_separatingLeft hB.1
-  · have hBflip : B.flip.SeparatingLeft := fun y hy ↦ hB.2 y hy
-    have h := rationalFormToComplex_separatingLeft hBflip
-    rw [rationalFormToComplex_baseChange_flip] at h
-    exact h
-
-private theorem integralFormToCanonicalComplex_nondegenerate {Q : LinearMap.BilinForm ℤ V}
-    (hQ : Q.Nondegenerate) : (Q.baseChange ℂ).Nondegenerate := by
-  let e := TensorProduct.AlgebraTensorModule.cancelBaseChange ℤ ℚ ℂ ℂ V
-  have hn : ((Q.baseChange ℚ).baseChange ℂ).Nondegenerate :=
-    rationalFormToComplex_nondegenerate (integralFormToRat_nondegenerate hQ)
-  have heq : Q.baseChange ℂ =
-      LinearMap.BilinForm.congr e ((Q.baseChange ℚ).baseChange ℂ) := by
-    ext z v
-    simp [e]
-  rw [heq]
-  exact LinearMap.BilinForm.Nondegenerate.congr e hn
 
 /-- Complexification preserves nondegeneracy of an integral bilinear form. -/
 theorem integralFormBaseChange_nondegenerate (hℂ : IsBaseChange ℂ ιℂ)
     {Q : LinearMap.BilinForm ℤ V} (hQ : Q.Nondegenerate) :
     (integralFormBaseChange hℂ Q).Nondegenerate := by
+  have hn : (Q.baseChange ℂ).Nondegenerate := by
+    let e := TensorProduct.AlgebraTensorModule.cancelBaseChange ℤ ℚ ℂ ℂ V
+    have heq : Q.baseChange ℂ =
+        LinearMap.BilinForm.congr e ((Q.baseChange ℚ).baseChange ℂ) := by
+      ext z v
+      simp [e]
+    rw [heq]
+    exact LinearMap.BilinForm.Nondegenerate.congr e
+      ((hQ.baseChange_of_isLocalization ℚ (nonZeroDivisors ℤ)).baseChange ℂ)
   have hform : integralFormBaseChange hℂ Q =
       LinearMap.BilinForm.congr hℂ.equiv (Q.baseChange ℂ) := by
     ext x y
     simp only [integralFormBaseChange, LinearMap.compl₁₂_apply,
       LinearMap.BilinForm.congr_apply, LinearEquiv.coe_coe]
   rw [hform]
-  exact LinearMap.BilinForm.Nondegenerate.congr hℂ.equiv
-    (integralFormToCanonicalComplex_nondegenerate hQ)
+  exact LinearMap.BilinForm.Nondegenerate.congr hℂ.equiv hn
 
 /-! ### Comparing the rational and the complex extension -/
 
@@ -253,7 +186,6 @@ private theorem integralFormBaseChange_rationalToComplexLinearEquiv_ι (hℚ : I
     integralFormBaseChange hℂ Q (ιℂ v) (rationalToComplexLinearEquiv hℚ hℂ (1 ⊗ₜ[ℚ] y)) =
       ((integralFormBaseChange hℚ Q (ιℚ v) y : ℚ) : ℂ) := by
   induction y using hℚ.inductionOn with
-  | zero => simp
   | tmul w => simp
   | smul q y hy =>
       simp [TensorProduct.tmul_smul, ← algebraMap_smul ℂ q, map_smul, hy]
@@ -268,7 +200,6 @@ theorem integralFormBaseChange_rationalToComplexLinearEquiv_one_tmul (hℚ : IsB
         (rationalToComplexLinearEquiv hℚ hℂ (1 ⊗ₜ[ℚ] y)) =
       ((integralFormBaseChange hℚ Q x y : ℚ) : ℂ) := by
   induction x using hℚ.inductionOn generalizing y with
-  | zero => simp
   | tmul v => simpa using integralFormBaseChange_rationalToComplexLinearEquiv_ι hℚ hℂ Q v y
   | smul q x hx =>
       simp [TensorProduct.tmul_smul, ← algebraMap_smul ℂ q, map_smul, hx]
@@ -297,5 +228,36 @@ theorem integralFormBaseChange_prod (h : IsBaseChange A ι) (h' : IsBaseChange A
     simp [LinearMap.prodMap_apply]).symm
 
 end Prod
+
+/-! ### Tensor products -/
+
+section TensorProduct
+
+variable {V' : Type*} {V'ℂ : Type*} [AddCommGroup V'] [AddCommGroup V'ℂ] [Module ℂ V'ℂ]
+variable {ι'ℂ : V' →ₗ[ℤ] V'ℂ}
+
+/-- The complexification of the tensor product of two integral forms, along the tensor product of
+two complexifications, is the tensor product of the two complexified forms. -/
+@[simp]
+theorem integralFormBaseChange_tmul (hℂ : IsBaseChange ℂ ιℂ) (h'ℂ : IsBaseChange ℂ ι'ℂ)
+    (Q : LinearMap.BilinForm ℤ V) (Q' : LinearMap.BilinForm ℤ V') :
+    integralFormBaseChange (isBaseChange_tensorLatticeMap hℂ h'ℂ) (Q.tmul Q') =
+      (integralFormBaseChange hℂ Q).tmul (integralFormBaseChange h'ℂ Q') := by
+  refine (integralFormBaseChange_unique _ _ _ fun x y ↦ ?_).symm
+  induction x with
+  | tmul v w =>
+    induction y with
+    | tmul v' w' =>
+      rw [tensorLatticeMap_tmul, tensorLatticeMap_tmul, LinearMap.BilinForm.tensorDistrib_tmul,
+        integralFormBaseChange_ι, integralFormBaseChange_ι, smul_eq_mul, ← Int.cast_mul]
+      -- The integral form is applied through the canonical `ℤ`-module structure of `V ⊗[ℤ] V'`,
+      -- which is only defeq, not reducibly, to the one `tensorDistrib_tmul` is stated for.
+      exact congrArg _ (LinearMap.BilinForm.tensorDistrib_tmul ℤ ℤ Q Q' v w v' w').symm
+    | add y y' hy hy' => rw [map_add, map_add, map_add, hy, hy', Int.cast_add]
+  | add x x' hx hx' =>
+    rw [map_add, map_add, LinearMap.add_apply, hx, hx', ← Int.cast_add]
+    exact congrArg _ (LinearMap.map_add₂ (Q.tmul Q') x x' y).symm
+
+end TensorProduct
 
 end TauCeti.Hodge

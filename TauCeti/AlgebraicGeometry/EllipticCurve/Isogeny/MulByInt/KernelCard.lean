@@ -39,6 +39,8 @@ closure of the pulled-back field, so that is where the torsion difference lives.
 
 ## Main results
 
+* `TauCeti.Isogeny.zsmul_map_sub_map_genericPoint_eq_zero`: two embeddings of `K(W)` agreeing on
+  the field pulled back by `[n]` move the generic point by an `n`-torsion difference.
 * `TauCeti.Isogeny.card_ker_mulByIntIsogeny_of_torsion_rational`: **`#ker [n] = n ²`** whenever the
   geometric `n`-torsion is rational and `n` is invertible.
 * `TauCeti.Isogeny.card_ker_mulByIntIsogeny_of_isAlgClosed`: the same over an algebraically closed
@@ -47,9 +49,13 @@ closure of the pulled-back field, so that is where the torsion difference lives.
   intrinsic torsion subgroup.
 * `TauCeti.Isogeny.card_ker_mulByPrimeIsogeny_of_torsion_rational`: the same at a prime, as `ℓ ²`
   rather than `(ℓ : ℤ).natAbs ^ 2`.
+* `WeierstrassCurve.finite_torsionBy`: finiteness of `E[n]` for nonzero `n`, read on
+  `W.toAffine.Point` itself rather than on the trivial base change `W⁄K`.
 
-The three steps of the argument sketched above — the torsion difference, its rationality, and the
-resulting bound on embeddings — are `private`; nothing outside this module uses them.
+Of the three steps of the argument sketched above, the torsion difference is public: it holds
+over any extension, with no rationality, and bounds the separable degree of `[n]` by the geometric
+`n`-torsion wherever that is trivial. Its rationality and the resulting bound on embeddings are
+`private`; nothing outside this module uses them.
 
 ## References
 
@@ -68,7 +74,7 @@ omit [DecidableEq F] in
 /-- **Two homomorphisms agreeing on the pulled-back field move the generic point by an `n`-torsion
 difference.** Their images of the tautological point of `[n]` agree, and that point is `n` times
 the generic point. -/
-private theorem zsmul_map_sub_map_genericPoint_eq_zero {Ω : Type*} [Field Ω] [DecidableEq Ω]
+theorem zsmul_map_sub_map_genericPoint_eq_zero {Ω : Type*} [Field Ω] [DecidableEq Ω]
     [Algebra F Ω] {n : ℤ} (hn : psiFunctionField W n ≠ 0)
     (σ τ : W.FunctionField →ₐ[F] Ω)
     (h : ∀ z ∈ (mulByIntIsogeny W hn).fieldPullback.fieldRange, σ z = τ z) :
@@ -114,7 +120,7 @@ private theorem card_emb_mulByIntIsogeny_le_card_ker {n : ℤ}
     Nat.card (Field.Emb (mulByIntIsogeny W hn).fieldPullback.fieldRange W.FunctionField) ≤
       Nat.card (mulByIntIsogeny W hn).ker := by
   classical
-  set L := (mulByIntIsogeny W hn).fieldPullback.fieldRange with hL
+  set L := (mulByIntIsogeny W hn).fieldPullback.fieldRange
   have hagree : ∀ σ τ : Field.Emb L W.FunctionField, ∀ z ∈ L,
       (σ.restrictScalars F) z = (τ.restrictScalars F) z := by
     intro σ τ z hz
@@ -198,6 +204,20 @@ theorem finite_torsionBy {n : ℤ} (hn : n ≠ 0) :
   infer_instance
 
 end WeierstrassCurve.Affine
+
+namespace WeierstrassCurve
+
+variable {K : Type*} [Field K] (W : WeierstrassCurve K) [W.IsElliptic]
+
+open scoped Classical in
+/-- The `n`-torsion read on `W.toAffine.Point` itself, rather than on the trivial base change
+`W⁄K`, is finite for nonzero `n`. -/
+theorem finite_torsionBy {n : ℤ} (hn : n ≠ 0) :
+    Finite (AddSubgroup.torsionBy W.toAffine.Point n) := by
+  have h := W.toAffine.finite_torsionBy hn
+  rwa [Affine.baseChange_self] at h
+
+end WeierstrassCurve
 
 namespace TauCeti.Isogeny
 

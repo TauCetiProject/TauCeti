@@ -82,6 +82,14 @@ def rationalRootSystem :
   rootPairingBaseChange ℚ (t.simplyConnectedRootDatum ht)
     (toLinearMap_simplyConnectedRootDatum t ht)
 
+/-- Identify the rational root system with entrywise base change of its integral datum.
+The body of `rationalRootSystem` is not exposed to importing modules, so use this equation
+to apply constructions on base-changed pairings to the rational model. -/
+theorem rationalRootSystem_def :
+    t.rationalRootSystem ht = rootPairingBaseChange ℚ (t.simplyConnectedRootDatum ht)
+      (toLinearMap_simplyConnectedRootDatum t ht) :=
+  (rfl)
+
 /-- The Bourbaki-numbered base of `TauCeti.DynkinType.rationalRootSystem`, supported on the same
 first `t.rank` root indices as the base of the integral datum. -/
 def rationalBase : (t.rationalRootSystem ht).Base :=
@@ -132,14 +140,14 @@ instance instIsCrystallographicRationalRootSystem : (t.rationalRootSystem ht).Is
 /-- Extension to the rationals preserves descending root-string lengths. -/
 @[simp] theorem chainBotCoeff_rationalRootSystem (i j : Fin t.numRoots) :
     (t.rationalRootSystem ht).chainBotCoeff i j =
-      (t.simplyConnectedRootDatum ht).chainBotCoeff i j := by
-  exact chainBotCoeff_rootPairingBaseChange ..
+      (t.simplyConnectedRootDatum ht).chainBotCoeff i j :=
+  chainBotCoeff_rootPairingBaseChange ..
 
 /-- Extension to the rationals preserves ascending root-string lengths. -/
 @[simp] theorem chainTopCoeff_rationalRootSystem (i j : Fin t.numRoots) :
     (t.rationalRootSystem ht).chainTopCoeff i j =
-      (t.simplyConnectedRootDatum ht).chainTopCoeff i j := by
-  exact chainTopCoeff_rootPairingBaseChange ..
+      (t.simplyConnectedRootDatum ht).chainTopCoeff i j :=
+  chainTopCoeff_rootPairingBaseChange ..
 
 /-- The Cartan integers of the rational system are those of the integral datum. -/
 @[simp] theorem pairingIn_rationalRootSystem (i j : Fin t.numRoots) :

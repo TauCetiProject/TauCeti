@@ -8,6 +8,7 @@ module
 public import TauCeti.Combinatorics.DenseGraphLimits.ExchangeableGraphLaw.Dissociated
 public import TauCeti.Combinatorics.DenseGraphLimits.Sampling.Consistency
 public import TauCeti.Combinatorics.DenseGraphLimits.Sampling.Unbiased
+import TauCeti.MeasureTheory.Measure.FiniteOrder
 
 /-!
 # The sampling laws of a graphon form an exchangeable graph law
@@ -33,6 +34,8 @@ the upper masses of a disjoint union of patterns multiply because homomorphism d
 * `TauCeti.DenseGraphLimits.upperMass_sampleExchangeableLaw` — the upper mass of a pattern under
   a sampling law is its homomorphism density;
 * `TauCeti.DenseGraphLimits.sampleGraph_Ici` — the same identity as a measure of an upper ray;
+* `TauCeti.DenseGraphLimits.sampleGraph_eq_of_forall_homDensity_eq` — graphons with the same
+  homomorphism densities on `n` vertices have the same `n`-vertex sampling law;
 * `TauCeti.DenseGraphLimits.isDissociated_sampleExchangeableLaw` — sampling laws are dissociated.
 
 ## References
@@ -95,6 +98,24 @@ theorem sampleGraph_Ici (W : Graphon Ω μ) {k : ℕ} (F : SimpleGraph (Fin k)) 
   have hset : Set.Ici F = {G : SimpleGraph (Fin k) | F ≤ G} := Set.ext fun _ => Set.mem_Ici
   rw [← upperMass_sampleExchangeableLaw F W, ExchangeableGraphLaw.upperMass_def,
     sampleExchangeableLaw_law, ENNReal.ofReal_toReal (measure_ne_top _ _), hset]
+
+section CrossCarrier
+
+variable {Ω₁ Ω₂ : Type*} [MeasurableSpace Ω₁] [MeasurableSpace Ω₂]
+variable {μ₁ : Measure Ω₁} {μ₂ : Measure Ω₂} [IsProbabilityMeasure μ₁] [IsProbabilityMeasure μ₂]
+
+/-- **Sampling laws are determined by homomorphism densities.** Two graphons, on arbitrary
+probability carriers, with the same homomorphism density for every graph on `n` vertices have the
+same `n`-vertex sampling law: a law on the finite lattice of graphs is determined by its upper-ray
+masses, which are homomorphism densities. -/
+theorem sampleGraph_eq_of_forall_homDensity_eq (U : Graphon Ω₁ μ₁) (W : Graphon Ω₂ μ₂) (n : ℕ)
+    (h : ∀ (F : SimpleGraph (Fin n)) [DecidableRel F.Adj], homDensity F U = homDensity F W) :
+    sampleGraph U n = sampleGraph W n := by
+  classical
+  refine Measure.ext_of_Ici_of_finite _ _ fun F => ?_
+  rw [sampleGraph_Ici, sampleGraph_Ici, h F]
+
+end CrossCarrier
 
 /-- **Sampling laws are dissociated.** Disjoint label windows of a graphon sample read disjoint
 sets of sampled points and coins. Through upper masses this is the multiplicativity of

@@ -24,9 +24,9 @@ points, we package that equalizer as an algebra equivalence and precompose algeb
 `H`. The resulting equivalence respects convolution because it is induced by postcomposition in
 the value algebra.
 
-This is the affine, group-valued faithfully flat descent statement needed by the fppf sheaf and
-quotient lane of the reductive-groups roadmap. The finite-presentation part of an fppf cover is
-not needed for descent itself, so the result is stated at the natural faithfully flat level.
+This is the affine, group-valued faithfully flat descent statement. The finite-presentation part of
+an fppf cover is not needed for descent itself, so the result is stated at the natural faithfully
+flat level.
 
 ## Main declarations
 
@@ -90,13 +90,9 @@ theorem mem_descentSubgroup_iff_apply (f : WithConv (H →ₐ[R] B)) :
       ∀ h, (includeLeft (R := A) (S := A) (A := B) (B := B)) (f h) =
         (includeRight (R := A) (A := B) (B := B)) (f h) := by
   rw [mem_descentSubgroup_iff_maps]
-  constructor
-  · intro hf h
-    exact DFunLike.congr_fun (congr_arg WithConv.ofConv hf) h
-  · intro hf
-    apply WithConv.toConv_injective
-    ext h
-    exact hf h
+  simp only [AlgHom.mapValue_apply, WithConv.toConv_injective.eq_iff, DFunLike.ext_iff,
+    AlgHom.comp_apply, faithfullyFlatDescentLeft, faithfullyFlatDescentRight,
+    AlgHom.coe_restrictScalars']
 
 end CommSemiring
 

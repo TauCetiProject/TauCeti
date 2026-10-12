@@ -54,10 +54,6 @@ by the same equation required of a pinned Chevalley--Demazure group scheme.
 * The points-map, natural-transformation, coordinate-morphism, and relative-spectrum
   constructions are adapted from the formal template in
   `TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Root.Subgroup`.
-
-This is the split-torus and root-subgroup pinning equation in Layer 9 of
-`TauCetiRoadmap/ReductiveGroups/README.md`, a prerequisite for milestone L0 of the
-`CFSGStatement` roadmap.
 -/
 
 public section
@@ -251,9 +247,11 @@ theorem mapPointsFunctor_diagonalTorusCoordinateMap_app
         (CommHopfAlgCat.mapPointsFunctor
           (diagonalTorusCoordinateMap (R := R) (N := N))).app A
             (AlgHom.mapValue (H := K) f.ofConv p) := by
-    exact DFunLike.congr_fun
+    have h := DFunLike.congr_fun
       (AlgHom.mapValue_mapDomain
-        (diagonalTorusCoordinateMap (R := R) (N := N)).hom f.ofConv) p
+        (diagonalTorusCoordinateMap (R := R) (N := N)).hom f.ofConv).symm p
+    rw [MonoidHom.comp_apply, MonoidHom.comp_apply] at h
+    exact h
   rw [← hfp, ← hnat, hp, mapValue_diagonalTorusPoints]
 
 /-- The diagonal-torus coordinate morphism sends a generic matrix entry to the corresponding
@@ -406,19 +404,13 @@ theorem schemePointsMulEquiv_diagonalTorus
       diagGL (diagonalTorusCoordinates (SplitTorus.schemePointsMulEquiv (R := R) (A := A) p)) := by
   let q := DiagonalizableGroup.groupSchemePointsMulEquiv (R := R) (A := A)
     (SplitTorus.characterGroup (ULift.{u} (Fin N))) p
-  have hGL : schemePointsMulEquiv N A
-      (groupSchemePointMulEquiv N A (diagonalTorusPoints q)) =
-      pointsMulEquiv N (diagonalTorusPoints q) := by
-    apply (schemePointsMulEquiv (R := R) N A).symm.injective
-    rw [MulEquiv.symm_apply_apply, schemePointsMulEquiv_symm_apply,
-      MulEquiv.symm_apply_apply]
   have hTorus : SplitTorus.schemePointsMulEquiv (R := R) (A := A) p =
       SplitTorus.pointsMulEquiv q := by
     ext i
     exact (SplitTorus.schemePointsMulEquiv_apply_coe p i).trans
       (SplitTorus.pointsMulEquiv_apply_coe q i).symm
-  rw [groupSchemePointsMulEquiv_comp_diagonalTorus, hGL, hTorus,
-    pointsMulEquiv_diagonalTorusPoints]
+  rw [groupSchemePointsMulEquiv_comp_diagonalTorus, schemePointsMulEquiv_groupSchemePointMulEquiv,
+    hTorus, pointsMulEquiv_diagonalTorusPoints]
 
 end SchemePoints
 

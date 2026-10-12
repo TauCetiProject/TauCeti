@@ -42,6 +42,8 @@ sublattice.
   is the absolute norm of `𝔪₀`.
 * `TauCeti.GlobalNumberFields.covolume_congruenceLattice`: its covolume is `N 𝔪₀` times the
   covolume of the ideal lattice of `I`.
+* `TauCeti.GlobalNumberFields.covolume_congruenceLattice_div_absNorm`: its covolume divided by
+  `N I` is `N 𝔪₀ · √|d_K| / 2 ^ r₂`.
 * `TauCeti.GlobalNumberFields.congruenceLattice_eq_of_finitePart_eq`: it depends only on the
   finite part of the modulus.
 * `TauCeti.GlobalNumberFields.congruenceLattice_eq_idealLattice_of_finitePart_eq_top`: for a
@@ -56,7 +58,7 @@ sublattice.
 
 public section
 
-open NumberField NumberField.mixedEmbedding
+open MeasureTheory NumberField NumberField.InfinitePlace NumberField.mixedEmbedding
 open scoped nonZeroDivisors
 
 namespace TauCeti.GlobalNumberFields
@@ -123,6 +125,19 @@ theorem covolume_congruenceLattice (𝔪 : Modulus K) (I : (FractionalIdeal (�
     ZLattice.covolume (congruenceLattice 𝔪 I) =
       Ideal.absNorm 𝔪.finitePart * ZLattice.covolume (idealLattice K I) := by
   rw [congruenceLattice_def, covolume_idealLattice_mul_mk0]
+
+open scoped Classical in
+/-- **The covolume of the congruence lattice, per unit norm.**  For an invertible fractional
+ideal `I`, the covolume of the congruence lattice of `𝔪` at `I`, divided by `N I`, is
+`N 𝔪₀ · √|d_K| / 2 ^ r₂`, where `d_K` is the discriminant and `r₂` the number of complex places
+of `K`; in particular it does not depend on `I`. -/
+theorem covolume_congruenceLattice_div_absNorm (𝔪 : Modulus K)
+    (I : (FractionalIdeal (𝓞 K)⁰ K)ˣ) :
+    ZLattice.covolume (congruenceLattice 𝔪 I) volume /
+        (FractionalIdeal.absNorm (I : FractionalIdeal (𝓞 K)⁰ K) : ℝ) =
+      Ideal.absNorm 𝔪.finitePart * √|(discr K : ℝ)| / 2 ^ nrComplexPlaces K := by
+  simp only [covolume_congruenceLattice, covolume_idealLattice, inv_pow]
+  field_simp
 
 /-- The congruence lattice depends only on the finite part of the modulus. -/
 theorem congruenceLattice_eq_of_finitePart_eq {𝔪 𝔫 : Modulus K}

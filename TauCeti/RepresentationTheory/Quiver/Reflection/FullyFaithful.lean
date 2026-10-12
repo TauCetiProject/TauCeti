@@ -348,6 +348,16 @@ theorem reflectionFunctor_map_bijective (hs : Function.Surjective (incomingSum M
     Function.Bijective fun η : M ⟶ N ↦ (reflectionFunctor i hi).map η :=
   ⟨reflectionFunctor_map_injective hi hs, reflectionFunctor_map_surjective hi hs⟩
 
+/-- Reflection preserves the dimension of the endomorphism space when the incoming sum at
+the sink is surjective. -/
+theorem finrank_end_reflectRep (hs : Function.Surjective (incomingSum M i)) :
+    Module.finrank k (End (reflectRep M hi)) = Module.finrank k (End M) := by
+  let e := LinearEquiv.ofBijective ((reflectionFunctor i hi).mapLinearMap k
+    (X := M) (Y := M)) (reflectionFunctor_map_bijective hi hs)
+  have he := e.finrank_eq
+  rw [reflectionFunctor_obj] at he
+  exact he.symm
+
 /-- **The reflection functor at a sink reflects isomorphisms**, between representations whose
 incoming sums there are onto. Fullness produces morphisms `f : M ⟶ N` and `g : N ⟶ M` reflecting
 to the two halves of the given isomorphism, and faithfulness turns the two triangle identities

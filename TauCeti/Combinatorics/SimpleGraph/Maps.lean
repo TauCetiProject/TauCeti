@@ -29,8 +29,10 @@ is how a graph on an infinite label set is read as a finite sample.
   window;
 * `SimpleGraph.comap_eq_iff_inf_map_top` — prescribing a pullback is prescribing that
   intersection;
+* `SimpleGraph.map_sup` — pushing forward along any map commutes with joins;
 * `SimpleGraph.restrictFin_adj` — two labels are joined in a window exactly when they are joined
-  in the graph.
+  in the graph;
+* `SimpleGraph.comap_restrictFin_castLE` — a window of a longer window is the shorter window.
 -/
 
 public section
@@ -57,6 +59,20 @@ theorem comap_eq_iff_inf_map_top (f : V ↪ W) (G : SimpleGraph W) (H : SimpleGr
     G.comap ⇑f = H ↔ G ⊓ (⊤ : SimpleGraph V).map ⇑f = H.map ⇑f := by
   rw [← (map_injective f).eq_iff, map_comap_eq_inf_map_top]
 
+/-- Pushing a graph forward along any map commutes with joins: an edge of the image of `G ⊔ H`
+is the image of an edge of `G` or of an edge of `H`. -/
+@[simp]
+theorem map_sup (f : V → W) (G H : SimpleGraph V) : (G ⊔ H).map f = G.map f ⊔ H.map f := by
+  ext u v
+  simp only [map_adj', sup_adj]
+  constructor
+  · rintro ⟨hne, a, b, hab | hab, ha, hb⟩
+    · exact Or.inl ⟨hne, a, b, hab, ha, hb⟩
+    · exact Or.inr ⟨hne, a, b, hab, ha, hb⟩
+  · rintro (⟨hne, a, b, hab, ha, hb⟩ | ⟨hne, a, b, hab, ha, hb⟩)
+    · exact ⟨hne, a, b, Or.inl hab, ha, hb⟩
+    · exact ⟨hne, a, b, Or.inr hab, ha, hb⟩
+
 /-- The window of a graph on `ℕ` spanned by the first `n` labels. -/
 def restrictFin (G : SimpleGraph ℕ) (n : ℕ) : SimpleGraph (Fin n) :=
   SimpleGraph.comap (fun i => (i : ℕ)) G
@@ -64,5 +80,57 @@ def restrictFin (G : SimpleGraph ℕ) (n : ℕ) : SimpleGraph (Fin n) :=
 @[simp]
 theorem restrictFin_adj {n : ℕ} (G : SimpleGraph ℕ) (a b : Fin n) :
     (G.restrictFin n).Adj a b ↔ G.Adj a b := Iff.rfl
+
+/-- Pulling a window back along a map of finite labels is pulling the graph back along the
+composite labels. -/
+theorem comap_restrictFin {m n : ℕ} (G : SimpleGraph ℕ) (f : Fin m → Fin n) :
+    SimpleGraph.comap f (G.restrictFin n) = SimpleGraph.comap (fun i => (f i : ℕ)) G := by
+  ext a b; simp [restrictFin_adj]
+
+/-- The first of two consecutive windows of a window is the window. -/
+@[simp]
+theorem comap_restrictFin_castAdd (G : SimpleGraph ℕ) (k l : ℕ) :
+    SimpleGraph.comap (Fin.castAdd l) (G.restrictFin (k + l)) = G.restrictFin k := by
+  rw [comap_restrictFin]; ext a b; simp [restrictFin_adj]
+
+/-- The second of two consecutive windows of a window is the window at the offset. -/
+@[simp]
+theorem comap_restrictFin_natAdd (G : SimpleGraph ℕ) (k l : ℕ) :
+    SimpleGraph.comap (Fin.natAdd k) (G.restrictFin (k + l))
+      = SimpleGraph.comap (fun i : Fin l => k + (i : ℕ)) G := by
+  rw [comap_restrictFin]; simp
+
+/-- Pulling back along the coercion of finite labels is taking the window. -/
+@[simp]
+theorem comap_val (G : SimpleGraph ℕ) (n : ℕ) :
+    SimpleGraph.comap (fun i : Fin n => (i : ℕ)) G = G.restrictFin n := by
+  ext a b; simp [restrictFin_adj]
+
+/-- A window of a longer window is the shorter window: pulling the length-`n` window back along
+the inclusion of `Fin m` in `Fin n` is the length-`m` window. -/
+@[simp]
+theorem comap_restrictFin_castLE {m n : ℕ} (G : SimpleGraph ℕ) (h : m ≤ n) :
+    SimpleGraph.comap (Fin.castLE h) (G.restrictFin n) = G.restrictFin m := by
+  rw [comap_restrictFin]
+  simp
+
+open Classical in
+/-- The adjacency array of a graph: `true` exactly on edges. -/
+noncomputable def adjArray {V : Type*} (G : SimpleGraph V) : V × V → Bool :=
+  fun p => decide (G.Adj p.1 p.2)
+
+open Classical in
+/-- The adjacency array is `true` exactly on edges. -/
+@[simp]
+theorem adjArray_apply {V : Type*} (G : SimpleGraph V) (i j : V) :
+    G.adjArray (i, j) = decide (G.Adj i j) :=
+  (rfl)
+
+/-- A graph is determined by its adjacency array. -/
+theorem adjArray_injective {V : Type*} :
+    Function.Injective (adjArray : SimpleGraph V → V × V → Bool) := fun G G' h => by
+  ext i j
+  have := congrFun h (i, j)
+  simpa only [adjArray_apply, decide_eq_decide] using this
 
 end SimpleGraph

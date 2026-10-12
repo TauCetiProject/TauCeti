@@ -77,8 +77,7 @@ theorem form_rationalizationEquiv (L : IntegralLattice V) (x y : ℚ ⊗[ℤ] L)
   have he : Submodule.rationalizationEquiv L.carrier = h.equiv := by
     apply LinearEquiv.ext
     intro t
-    induction t using TensorProduct.induction_on with
-    | zero => simp
+    induction t using TensorProduct.inductionOn with
     | add s t hs ht => simp only [map_add, hs, ht]
     | tmul q z =>
       rw [Submodule.rationalizationEquiv_tmul, h.equiv_tmul]
@@ -211,8 +210,7 @@ theorem rationalizationEquiv_baseChange_carrierEquiv
     (B : LinearMap.BilinForm ℤ M) (hB : B.IsSymm) (x : ℚ ⊗[ℤ] M) :
     Submodule.rationalizationEquiv (ofIntegralForm B hB).carrier
         (LinearEquiv.baseChange ℤ ℚ M _ (carrierEquiv B hB) x) = x := by
-  induction x using TensorProduct.induction_on with
-  | zero => simp
+  induction x using TensorProduct.inductionOn with
   | add x y hx hy => simp only [map_add, hx, hy]
   | tmul q m =>
     rw [LinearEquiv.baseChange_tmul, Submodule.rationalizationEquiv_tmul,

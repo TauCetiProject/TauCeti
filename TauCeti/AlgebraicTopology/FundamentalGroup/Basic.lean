@@ -6,6 +6,7 @@ Authors: Kim Morrison
 module
 
 public import Mathlib.AlgebraicTopology.FundamentalGroupoid.SimplyConnected
+public import TauCeti.AlgebraicTopology.FundamentalGroupoid.Basic
 
 /-!
 # Basic results on fundamental groupoids and fundamental groups
@@ -15,7 +16,7 @@ on fundamental groups is trivial: a characterization of trivial range loop by lo
 consequences of triviality of the *source* fundamental group.
 
 `TauCeti.FundamentalGroup.map_range_eq_bot_iff` was extracted from the proof of
-`TauCeti.semilocallySimplyConnectedAt_iff` in
+`semilocallySimplyConnectedAt_iff_range_eq_bot` in
 `TauCeti/AlgebraicTopology/SemilocallySimplyConnected/On.lean`, which is adapted from the Mathlib
 drafts [#31449](https://github.com/leanprover-community/mathlib4/pull/31449),
 [#31576](https://github.com/leanprover-community/mathlib4/pull/31576), and
@@ -24,6 +25,8 @@ Stage 0.1 of the `TauCetiRoadmap/UniversalCovers` roadmap.
 
 ## Main declarations
 
+* `FundamentalGroup.map_id`: the identity induces the identity homomorphism.
+* `FundamentalGroup.map_comp`: induced maps preserve composition.
 * `FundamentalGroupoid.nonempty_hom`: the fundamental groupoid of a path-connected
   space is connected.
 * `TauCeti.FundamentalGroup.map_range_eq_bot_iff`: the induced map has trivial range exactly
@@ -51,6 +54,26 @@ theorem nonempty_hom {Y : Type*} [TopologicalSpace Y]
   ⟨Path.Homotopic.Quotient.mk (PathConnectedSpace.somePath x.as y.as)⟩
 
 end FundamentalGroupoid
+
+namespace FundamentalGroup
+
+/-- The identity map induces the identity homomorphism on fundamental groups. -/
+@[simp]
+theorem map_id {X : Type*} [TopologicalSpace X] (x : X) :
+    map (ContinuousMap.id X) x = MonoidHom.id _ := by
+  ext p
+  -- Mapping a representative path by the identity preserves the path and its endpoints.
+  induction p using Path.Homotopic.Quotient.ind
+  rfl
+
+/-- The map on fundamental groups induced by a composite is the composite of the induced maps. -/
+@[simp]
+theorem map_comp {X Y Z : Type*} [TopologicalSpace X] [TopologicalSpace Y] [TopologicalSpace Z]
+    (g : C(Y, Z)) (f : C(X, Y)) (x : X) :
+    map (g.comp f) x = (map g (f x)).comp (map f x) :=
+  MonoidHom.ext fun p ↦ FundamentalGroupoid.map_comp_map g f p
+
+end FundamentalGroup
 
 namespace TauCeti
 

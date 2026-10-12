@@ -40,6 +40,8 @@ facts about it used below.
   `TauCeti.Sym.isOpenEmbedding_map`: the `n`-th symmetric power of a continuous, open, or open
   embedding map is again one; in particular the symmetric power of an open subspace is an open
   subspace of the symmetric power.
+* `TauCeti.Sym.isOpen_setOf_forall_mem`: the tuples with all their points in an open set form an
+  open set.
 * `TauCeti.Sym.continuous_append` and `TauCeti.Sym.isOpenMap_append`: concatenation of symmetric
   powers is continuous and open.
 * `TauCeti.Sym.instCompactSpace` and `TauCeti.Sym.instT2Space`: the symmetric power of a compact
@@ -136,6 +138,14 @@ theorem isOpenEmbedding_map {f : α → β} (hf : IsOpenEmbedding f) :
     IsOpenEmbedding (Sym.map f : Sym α n → Sym β n) :=
   .of_continuous_injective_isOpenMap (continuous_map hf.continuous)
     (Sym.map_injective hf.injective n) (isOpenMap_map hf.isOpenMap)
+
+/-- The unordered tuples all of whose points lie in an open set form an open subset of the
+symmetric power: the range of the symmetric power of the inclusion of that open set. -/
+theorem isOpen_setOf_forall_mem {V : Set α} (hV : IsOpen V) :
+    IsOpen {s : Sym α n | ∀ a ∈ s, a ∈ V} := by
+  convert (isOpenEmbedding_map (n := n) hV.isOpenEmbedding_subtypeVal).isOpen_range using 1
+  ext s
+  rw [Set.mem_ofPred_eq, mem_range_map, Subtype.range_coe]
 
 omit [TopologicalSpace α] in
 /-- Concatenation of unordered tuples read on ordered ones: it is presented by `Fin.append`, as an

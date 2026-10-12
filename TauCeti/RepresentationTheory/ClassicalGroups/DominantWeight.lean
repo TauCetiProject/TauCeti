@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Data.Fin.Tuple.Sort
 public import TauCeti.Combinatorics.Young.OfRowLens
 
 /-!
@@ -27,6 +28,13 @@ last entry is what makes the pair `(m, μ)` unique: without the row bound the sa
 `μ + m·(1, …, 1)` for many pairs.  Downstream this is the statement that a rational irreducible
 is `det^m` tensored with a polynomial one.
 
+A third fact ties the weights to the symmetric group acting on `ℤⁿ` by permuting coordinates:
+every orbit of that action contains exactly one dominant weight
+(`TauCeti.existsUnique_dominantWeight`), the weakly decreasing rearrangement
+`TauCeti.dominantWeightOf` of any of its members.  So a dominant weight is the canonical
+representative of its orbit; that these representatives index the irreducibles of `GL n` is the
+highest-weight classification, which is not proved here.
+
 The last entry `λₙ` is read through the dedicated accessor `TauCeti.DominantWeight.detShift`,
 which is `0` for `n = 0`, so that the empty weight needs no special casing at the use sites.
 Being an accessor rather than a shift, it is compatible with `TauCeti.DominantWeight.shift` only
@@ -41,6 +49,8 @@ for a nonempty weight (`TauCeti.DominantWeight.detShift_shift`).
 * `TauCeti.DominantWeight.shape` and `TauCeti.weightOfShape`: the two directions of the
   dictionary between weights and Young diagrams.
 * `TauCeti.DominantWeight.detShiftShape`: the Young diagram of the polynomial part `λ - λₙ`.
+* `TauCeti.dominantSort` and `TauCeti.dominantWeightOf`: the permutation sorting an arbitrary
+  weight into weakly decreasing order, and the dominant weight it produces.
 
 ## Main results
 
@@ -53,6 +63,12 @@ for a nonempty weight (`TauCeti.DominantWeight.detShift_shift`).
   `TauCeti.DominantWeight.colLen_zero_detShiftShape_le_pred`, which bounds `μ` by `n - 1` rows.
 * `TauCeti.DominantWeight.eq_detShift_and_eq_detShiftShape`: that decomposition is the only one
   whose diagram has at most `n - 1` rows.
+* `TauCeti.DominantWeight.detShiftShape_eq_detShiftShape_iff`: the polynomial part is a complete
+  invariant of a weight modulo the constant weights, and
+  `TauCeti.DominantWeight.detShiftShape_weightOfShape` shows every diagram with at most `n - 1`
+  rows occurs as one.
+* `TauCeti.existsUnique_dominantWeight`: each orbit of the symmetric group permuting the
+  coordinates of `ℤⁿ` contains exactly one dominant weight.
 
 ## References
 
@@ -135,7 +151,7 @@ theorem isPolynomial_iff_zero_le_detShift (l : DominantWeight n) :
   refine ⟨fun h => ?_, fun h i => h.trans (l.detShift_le i)⟩
   match n, l, h with
   | 0, _, _ => simp
-  | _ + 1, l, h => exact h _
+  | _ + 1, _, h => exact h _
 
 /-- Subtracting its last entry makes any dominant weight polynomial. -/
 theorem isPolynomial_shift_neg_detShift (l : DominantWeight n) :
@@ -291,6 +307,60 @@ form consumed by the dictionary between weights and Young diagrams. -/
 theorem colLen_zero_detShiftShape_le (l : DominantWeight n) : l.detShiftShape.colLen 0 ≤ n :=
   (colLen_zero_detShiftShape_le_pred l).trans (Nat.sub_le n 1)
 
+/-- **Shifting does not move the polynomial part**: `λ` and `λ + m·(1, …, 1)` have the same Young
+diagram, because the shift moves the last entry by `m` as well and is then subtracted off again.
+So the polynomial part only depends on the class of `λ` modulo the constant weights. -/
+@[simp]
+theorem detShiftShape_shift (l : DominantWeight n) (m : ℤ) :
+    (l.shift m).detShiftShape = l.detShiftShape := by
+  match n, l with
+  | 0, l =>
+    rw [detShiftShape, detShiftShape]
+    congr 1
+    ext i
+    exact i.elim0
+  | n + 1, l =>
+    have hm : m + -(l.detShift + m) = -l.detShift := by omega
+    rw [detShiftShape, detShiftShape, detShift_shift, shift_shift, hm]
+
+/-- The polynomial part of the weight of a Young diagram with at most `n - 1` rows is that diagram
+again: such a weight has vanishing last entry, so nothing is subtracted.  Together with
+`TauCeti.DominantWeight.colLen_zero_detShiftShape_le_pred` this makes the polynomial part a
+surjection onto the Young diagrams with at most `n - 1` rows. -/
+@[simp]
+theorem detShiftShape_weightOfShape {μ : YoungDiagram} (hμ : μ.colLen 0 ≤ n - 1) :
+    (weightOfShape n μ).detShiftShape = μ := by
+  have hdet : (weightOfShape n μ).detShift = 0 := by
+    match n, hμ with
+    | 0, _ => rfl
+    | n + 1, hμ =>
+      have hμ' : μ.colLen 0 ≤ n := by simpa using hμ
+      rw [detShift_succ, weightOfShape_apply, Fin.val_last,
+        YoungDiagram.rowLen_eq_zero_of_colLen_le hμ', Nat.cast_zero]
+  rw [detShiftShape, hdet, neg_zero, shift_zero,
+    shape_weightOfShape (hμ.trans (Nat.sub_le n 1))]
+
+/-- **The polynomial part is a complete invariant of a weight modulo the constant weights**: two
+dominant weights have the same polynomial part exactly when they differ by an integer multiple of
+`(1, …, 1)`.  With `TauCeti.DominantWeight.detShiftShape_weightOfShape` and
+`TauCeti.DominantWeight.colLen_zero_detShiftShape_le_pred` this identifies the dominant weights of
+`GL n` taken modulo the constant weights with the Young diagrams of at most `n - 1` rows; those
+classes, not the weights themselves, are what a representation of `SL n` can see. -/
+theorem detShiftShape_eq_detShiftShape_iff (l l' : DominantWeight n) :
+    l.detShiftShape = l'.detShiftShape ↔ ∃ m : ℤ, l' = l.shift m := by
+  refine ⟨fun h => ⟨l'.detShift - l.detShift, ?_⟩, ?_⟩
+  · have h1 : l.shift (-l.detShift) = l'.shift (-l'.detShift) := by
+      rw [← weightOfShape_detShiftShape, ← weightOfShape_detShiftShape, h]
+    calc l' = (l'.shift (-l'.detShift)).shift l'.detShift := by
+          rw [shift_shift, neg_add_cancel, shift_zero]
+      _ = (l.shift (-l.detShift)).shift l'.detShift := by rw [h1]
+      _ = l.shift (l'.detShift - l.detShift) := by
+          rw [shift_shift]
+          congr 1
+          omega
+  · rintro ⟨m, rfl⟩
+    rw [detShiftShape_shift]
+
 /-- **Uniqueness of the determinant twist**: a dominant weight for `GL (n + 1)` is
 `μ + m·(1, …, 1)` for exactly one integer `m` and one Young diagram `μ` with at most `n` rows,
 namely `m = λₙ₊₁` and `μ` its polynomial part.  The row bound is essential: dropping it lets `μ`
@@ -316,5 +386,56 @@ theorem eq_detShift_and_eq_detShiftShape (l : DominantWeight (n + 1)) {μ : Youn
       YoungDiagram.rowLen_eq_zero_of_colLen_le (hμ.trans hni)]
 
 end DominantWeight
+
+variable {n : ℕ}
+
+/-! ### Sorting a weight into the dominant chamber -/
+
+/-- A permutation rearranging a weight into weakly decreasing order.  It is `Tuple.sort` of the
+weight read in the order dual, since `Tuple.sort` produces monotone rearrangements. -/
+noncomputable def dominantSort (l : Fin n → ℤ) : Equiv.Perm (Fin n) :=
+  Tuple.sort fun i => OrderDual.toDual (l i)
+
+/-- Sorting makes a weight weakly decreasing. -/
+theorem antitone_comp_dominantSort (l : Fin n → ℤ) : Antitone (l ∘ ⇑(dominantSort l)) :=
+  fun _ _ hij => Tuple.monotone_sort (fun i => OrderDual.toDual (l i)) hij
+
+/-- **The dominant weight in the `Sₙ`-orbit of a weight**: its weakly decreasing rearrangement. -/
+noncomputable def dominantWeightOf (l : Fin n → ℤ) : DominantWeight n :=
+  ⟨l ∘ ⇑(dominantSort l), antitone_comp_dominantSort l⟩
+
+@[simp]
+theorem coe_dominantWeightOf (l : Fin n → ℤ) :
+    (dominantWeightOf l : Fin n → ℤ) = l ∘ ⇑(dominantSort l) :=
+  (rfl)
+
+/-- Any weakly decreasing rearrangement of a weight is its dominant representative. -/
+theorem coe_dominantWeightOf_eq_of_antitone {l : Fin n → ℤ} {σ : Equiv.Perm (Fin n)}
+    (h : Antitone (l ∘ ⇑σ)) : (dominantWeightOf l : Fin n → ℤ) = l ∘ ⇑σ :=
+  Tuple.unique_antitone (antitone_comp_dominantSort l) h
+
+/-- A dominant weight is its own dominant representative. -/
+@[simp]
+theorem dominantWeightOf_coe (d : DominantWeight n) : dominantWeightOf (d : Fin n → ℤ) = d := by
+  refine Subtype.ext ?_
+  rw [coe_dominantWeightOf, dominantSort,
+    (Tuple.sort_eq_refl_iff_monotone (f := fun i => OrderDual.toDual ((d : Fin n → ℤ) i))).2
+      fun _ _ hij => d.antitone hij,
+    Equiv.coe_refl, Function.comp_id]
+
+/-- Rearranging a weight does not change its dominant representative. -/
+@[simp]
+theorem dominantWeightOf_comp (l : Fin n → ℤ) (σ : Equiv.Perm (Fin n)) :
+    dominantWeightOf (l ∘ ⇑σ) = dominantWeightOf l :=
+  Subtype.ext <| Tuple.comp_perm_comp_sort_eq_comp_sort (f := fun i => OrderDual.toDual (l i))
+    (σ := σ)
+
+/-- **Each `Sₙ`-orbit of weights contains exactly one dominant weight**, so the dominant weights
+are a set of representatives for the action of the Weyl group on the weight lattice. -/
+theorem existsUnique_dominantWeight (l : Fin n → ℤ) :
+    ∃! d : DominantWeight n, ∃ σ : Equiv.Perm (Fin n), (d : Fin n → ℤ) = l ∘ ⇑σ := by
+  refine ⟨dominantWeightOf l, ⟨dominantSort l, rfl⟩, ?_⟩
+  rintro ⟨d, hd⟩ ⟨σ, rfl⟩
+  exact (dominantWeightOf_coe ⟨_, hd⟩).symm.trans (dominantWeightOf_comp l σ)
 
 end TauCeti

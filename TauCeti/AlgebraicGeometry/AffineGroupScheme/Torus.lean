@@ -8,7 +8,7 @@ module
 import TauCeti.CategoryTheory.ObjectProperty
 public import TauCeti.Algebra.AlgebraicGroup.Torus.Reductive
 public import TauCeti.AlgebraicGeometry.AffineGroupScheme.MultiplicativeType
-public import TauCeti.AlgebraicGeometry.AffineGroupScheme.Reductive
+public import TauCeti.AlgebraicGeometry.AffineGroupScheme.Reductive.Basic
 
 /-!
 # Torus affine group schemes

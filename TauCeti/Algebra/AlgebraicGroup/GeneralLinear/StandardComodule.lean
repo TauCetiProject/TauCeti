@@ -9,6 +9,7 @@ public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.FunctorOfPoints
 public import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient.FromMatrix
 public import TauCeti.Algebra.AlgebraicGroup.Representation.Faithful.Basic
 import Mathlib.LinearAlgebra.FiniteDimensional.Basic
+import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient.ChangeBasis
 
 /-!
 # The standard representation of the general linear group
@@ -35,6 +36,8 @@ invertible matrix, and `GL(n, k)` is transitive on nonzero vectors.
   by the invertible matrix it names.
 * `TauCeti.GeneralLinear.mulVec_mem`: a subcomodule of the standard comodule is stable under
   every invertible matrix.
+* `TauCeti.GeneralLinear.pointToGeneralLinear_mul_map_toMatrix`: change of basis conjugates the
+  matrix of a point into the coefficient matrix of the corestricted standard comodule.
 * `TauCeti.GeneralLinear.instIsSimpleOrderSubcomodule`: over a field and in
   positive size, the standard comodule is simple.
 
@@ -179,6 +182,59 @@ theorem mulVec_mem (N : Subcomodule R (coordinateHopfAlgebra R n) (Fin n → R))
     (generalLinearToPoint (R := R) n g) hw
   simpa only [basePointsRepresentation_eq_mulVec, pointToGeneralLinear_generalLinearToPoint]
     using h
+
+/-! ## Standard comodules induced by coordinate morphisms -/
+
+/-- The standard comodule corestricted along a coordinate Hopf-algebra morphism. -/
+@[expose, instance_reducible]
+noncomputable def corestrictStandardComodule {H : Type*} [CommRing H] [HopfAlgebra R H]
+    (f : coordinateHopfAlgebra R n →ₐc[R] H) : Comodule R H (Fin n → R) :=
+  let _ := standardComodule R n
+  Comodule.Corestrict f.toCoalgHom
+
+/-- A surjective coordinate morphism gives a faithful corestricted standard representation. -/
+theorem isFaithful_corestrictStandardComodule {H : Type u} [CommRing H] [HopfAlgebra R H]
+    (f : coordinateHopfAlgebra R n →ₐc[R] H) (hf : Function.Surjective f) :
+    let _ := corestrictStandardComodule R n f
+    Comodule.IsFaithful (k := R) (H := H) (V := Fin n → R) :=
+  Comodule.isFaithful_corestrict_of_surjective f hf (isFaithful_standardComodule R n)
+
+/-- A subcomodule of the corestricted standard representation is stable under base-valued points,
+acting through their ambient invertible matrices. -/
+theorem corestrictStandardComodule_mulVec_mem {H : Type*} [CommRing H] [HopfAlgebra R H]
+    (f : coordinateHopfAlgebra R n →ₐc[R] H) :
+    let _ := corestrictStandardComodule R n f
+    ∀ (N : Subcomodule R H (Fin n → R)) (g : WithConv (H →ₐ[R] R))
+      {w : Fin n → R}, w ∈ N →
+      (pointToGeneralLinear n (AlgHom.mapDomain f g) : Matrix (Fin n) (Fin n) R) *ᵥ w ∈ N := by
+  let _ := corestrictStandardComodule R n f
+  dsimp only
+  intro N g w hw
+  have h := Comodule.basePointsRepresentation_mem N g hw
+  rwa [Comodule.basePointsRepresentation_corestrict f g, basePointsRepresentation_eq_mulVec] at h
+
+/-- **Change of basis for the corestricted standard representation.** Let `P` be the matrix whose
+columns are the vectors of a basis `b` of `Rⁿ`. An `H`-valued point `f` of `GLₙ` satisfies
+`f P = P C`, where `C` is the coefficient matrix of `b` in the standard comodule corestricted
+along `f`. -/
+theorem pointToGeneralLinear_mul_map_toMatrix {H : Type*} [CommRing H] [HopfAlgebra R H]
+    (f : coordinateHopfAlgebra R n →ₐc[R] H) (b : Basis (Fin n) R (Fin n → R)) :
+    let _ := corestrictStandardComodule R n f
+    (pointToGeneralLinear n (toConv (f : coordinateHopfAlgebra R n →ₐ[R] H)) :
+        Matrix (Fin n) (Fin n) H) * ((Pi.basisFun R (Fin n)).toMatrix b).map (algebraMap R H) =
+      ((Pi.basisFun R (Fin n)).toMatrix b).map (algebraMap R H) *
+        Comodule.coefficientMatrix (C := H) b := by
+  let _ := corestrictStandardComodule R n f
+  dsimp only
+  have hbasisFun : Comodule.coefficientMatrix (C := H) (Pi.basisFun R (Fin n)) =
+      (genericMatrix R n).map f := by
+    let _ := standardComodule R n
+    rw [← coefficientMatrix_basisFun]
+    exact Comodule.coefficientMatrix_corestrict (Pi.basisFun R (Fin n)) f.toCoalgHom
+  have h := Module.Basis.coefficientMatrix_mul_toMatrix (C := H) (Pi.basisFun R (Fin n)) b
+  rw [hbasisFun] at h
+  rw [← map_genericMatrix_eq_coe_pointToGeneralLinear]
+  exact h
 
 section PointAction
 

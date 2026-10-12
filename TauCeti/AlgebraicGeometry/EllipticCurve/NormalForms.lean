@@ -13,10 +13,13 @@ public import Mathlib.AlgebraicGeometry.EllipticCurve.NormalForms
 
 Mathlib's `WeierstrassCurve.IsCharNeTwoNF` asserts `a₁ = a₃ = 0` and its
 `WeierstrassCurve.IsShortNF` asserts `a₁ = a₂ = a₃ = 0`, and its `NormalForms` file proves a
-great deal from those hypotheses. This file collects three things it does not record.
+great deal from those hypotheses. This file collects four things it does not record.
 
 **Transport.** Both conditions are preserved by `map` and `baseChange` — the coefficients of
 `W.map f` are the images of `W`'s, so a vanishing coefficient stays vanishing.
+
+**Completing the square.** The change `toCharNeTwoNF` gives explicit formulas for its three
+remaining coefficients.
 
 **Changes of variables between short normal forms.** When `2` and `3` are non-zero-divisors, a
 change of variables carrying one short equation to another is a pure scaling
@@ -50,6 +53,8 @@ re-established by hand at every such crossing.
   `(a₄, a₆) ↦ (u⁻⁴a₄, u⁻⁶a₆)`.
 * `WeierstrassCurve.y_eq_zero_of_order_two`: in a characteristic-≠-2 normal form, an affine
   point killed by `2` has `y = 0`.
+* `TauCeti.toCharNeTwoNF_a₂`, `TauCeti.toCharNeTwoNF_a₄`, and `TauCeti.toCharNeTwoNF_a₆`:
+  the coefficients after completing the square.
 -/
 
 public section
@@ -160,3 +165,38 @@ lemma y_eq_zero_of_order_two {F : Type*} [Field F] [DecidableEq F]
   exact (mul_eq_zero.mp hy).resolve_left h2F
 
 end WeierstrassCurve
+
+namespace TauCeti
+
+open WeierstrassCurve
+
+variable {k : Type*} [Field k] [Invertible (2 : k)]
+
+/-- The quadratic coefficient after completing the square. -/
+@[simp]
+theorem toCharNeTwoNF_a₂ {W : WeierstrassCurve k} :
+    (W.toCharNeTwoNF • W).a₂ = W.a₂ + (W.a₁ / 2) ^ 2 := by
+  have h2 : (2 : k) ≠ 0 := isUnit_iff_ne_zero.mp (isUnit_of_invertible _)
+  simp [variableChange_a₂, WeierstrassCurve.toCharNeTwoNF, invOf_eq_inv]
+  field_simp [h2]
+  ring
+
+/-- The linear coefficient after completing the square. -/
+@[simp]
+theorem toCharNeTwoNF_a₄ {W : WeierstrassCurve k} :
+    (W.toCharNeTwoNF • W).a₄ = W.a₄ + 2 * (W.a₁ / 2) * (W.a₃ / 2) := by
+  have h2 : (2 : k) ≠ 0 := isUnit_iff_ne_zero.mp (isUnit_of_invertible _)
+  simp [variableChange_a₄, WeierstrassCurve.toCharNeTwoNF, invOf_eq_inv]
+  field_simp [h2]
+  ring
+
+/-- The constant coefficient after completing the square. -/
+@[simp]
+theorem toCharNeTwoNF_a₆ {W : WeierstrassCurve k} :
+    (W.toCharNeTwoNF • W).a₆ = W.a₆ + (W.a₃ / 2) ^ 2 := by
+  have h2 : (2 : k) ≠ 0 := isUnit_iff_ne_zero.mp (isUnit_of_invertible _)
+  simp [variableChange_a₆, WeierstrassCurve.toCharNeTwoNF, invOf_eq_inv]
+  field_simp [h2]
+  ring
+
+end TauCeti

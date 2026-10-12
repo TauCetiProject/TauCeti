@@ -95,8 +95,8 @@ theorem closure_spin_reflection_pair_lifts_eq_top_of_surjective
         QuadraticMap.reflection Q v * QuadraticMap.reflection Q w}
   apply subgroup_eq_top_of_negOne_mem_of_reflection_pair_lift_mem Q hQ H
   · apply Subgroup.subset_closure
-    obtain ⟨v, hv⟩ := DFunLike.ne_iff.mp hQ.ne_zero
-    let _ : Invertible (Q v) := (isUnit_iff_ne_zero.mpr (by simpa using hv)).invertible
+    obtain ⟨v, hv⟩ := hQ.exists_isUnit
+    let _ : Invertible (Q v) := hv.invertible
     refine ⟨v, v, inferInstance, inferInstance, ?_⟩
     simpa using (QuadraticMap.reflection_mul_self Q v).symm
   · intro v w _ _

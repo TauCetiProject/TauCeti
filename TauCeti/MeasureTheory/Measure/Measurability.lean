@@ -7,6 +7,8 @@ module
 
 public import Mathlib.MeasureTheory.Measure.GiryMonad
 public import Mathlib.MeasureTheory.Measure.ProbabilityMeasure
+-- Non-public: measurability of the sections `ν.map (Prod.mk a)` is used only inside a proof.
+import Mathlib.MeasureTheory.Measure.Prod
 
 /-!
 # Measurability of measure-valued maps
@@ -20,6 +22,8 @@ of measures.
   fixed atoms is measurable when each weight is measurable.
 * `TauCeti.MeasureTheory.measurable_probabilityMeasure_map` — pushing forward along a fixed
   measurable map is measurable on `ProbabilityMeasure`.
+* `TauCeti.MeasureTheory.measurable_map_of_measurable_uncurry` — pushing a fixed s-finite measure
+  forward along a jointly measurable family of maps is measurable in the parameter.
 -/
 
 public section
@@ -53,6 +57,18 @@ theorem measurable_probabilityMeasure_map {α β : Type*} [MeasurableSpace α] [
     {f : α → β} (hf : Measurable f) :
     Measurable fun P : ProbabilityMeasure α => P.map f :=
   ((Measure.measurable_map f hf).comp measurable_subtype_coe).subtype_mk
+
+/-- Pushing a fixed s-finite measure forward along a jointly measurable family of maps `f a` is
+measurable in the parameter `a`. -/
+theorem measurable_map_of_measurable_uncurry {α β γ : Type*} [MeasurableSpace α]
+    [MeasurableSpace β] [MeasurableSpace γ] {ν : Measure β} [SFinite ν] {f : α → β → γ}
+    (hf : Measurable (Function.uncurry f)) :
+    Measurable fun a => ν.map (f a) := by
+  -- `ν.map (f a)` is the pushforward along `uncurry f` of the section `ν.map (Prod.mk a)`.
+  have hsec : (fun a => ν.map (f a)) = fun a => (ν.map (Prod.mk a)).map (Function.uncurry f) :=
+    funext fun a => (Measure.map_map hf measurable_prodMk_left).symm
+  rw [hsec]
+  exact (Measure.measurable_map _ hf).comp Measurable.map_prodMk_left
 
 end MeasureTheory
 

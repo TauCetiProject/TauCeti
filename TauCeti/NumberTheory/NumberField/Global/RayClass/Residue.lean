@@ -8,6 +8,7 @@ module
 public import TauCeti.NumberTheory.NumberField.Global.RayClass.Basic
 public import Mathlib.LinearAlgebra.FreeModule.IdealQuotient
 
+import TauCeti.RingTheory.Ideal.Quotient.DedekindDomain
 import TauCeti.RingTheory.Ideal.Quotient.Representative
 
 /-!
@@ -39,6 +40,11 @@ class.
   finite-place conditions in `IsCongrOne`.
 * `TauCeti.GlobalNumberFields.residueHom_eq_one_of_mem_congruenceSubgroup`: an element congruent to
   one maps to one under reduction.
+* `TauCeti.GlobalNumberFields.isCongrOne_iff_residueHom_eq_one_of_finitePart_eq`: for two moduli
+  with the same finite part, congruence to one modulo one of them is reduction to one modulo the
+  other together with positivity at its real places.
+* `TauCeti.GlobalNumberFields.IsCongrOne.exists_sub_one_mem_and_algebraMap_eq_mul`: an element
+  congruent to one is a quotient of two algebraic integers congruent to one.
 * `TauCeti.GlobalNumberFields.residueHom_surjective`: every residue unit modulo the finite part is
   the reduction of an element of `Kˣ` that is a unit at that finite part.
 * `TauCeti.GlobalNumberFields.finiteUnitsMap_refl` and
@@ -46,12 +52,13 @@ class.
   functorial in finite-part divisibility.
 * `TauCeti.GlobalNumberFields.finiteUnitsMap_residueHom`: reduction commutes with changing the
   modulus.
+* `TauCeti.GlobalNumberFields.finiteUnitsMap_surjective`: every residue unit lifts to a larger
+  finite modulus.
 
 ## References
 
 * J. Neukirch, *Algebraic Number Theory*, Chapter VI, §1.
 * S. Lang, *Algebraic Number Theory*, Chapter VI, §1.
-* `TauCetiRoadmap/GlobalNumberFields/Suggested.lean` (`GlobalNumberFields.finiteUnitsMap`).
 -/
 
 public section
@@ -80,7 +87,7 @@ theorem exists_algebraMap_eq_mul_of_mem_primeToSubgroup {𝔪 : Modulus K} {x : 
   have hd0 : (d : 𝓞 K) ≠ 0 := nonZeroDivisors.ne_zero d.2
   set D : Ideal (𝓞 K) := Ideal.span {(d : 𝓞 K)} with hD
   set C : Ideal (𝓞 K) := Ideal.span {c} with hCdef
-  set G : Ideal (𝓞 K) := C ⊔ D with hG
+  set G : Ideal (𝓞 K) := C ⊔ D with _
   have hD0 : D ≠ ⊥ := by
     simpa only [hD, ne_eq, Ideal.span_singleton_eq_bot] using hd0
   obtain ⟨L, hL⟩ : G ∣ D := Ideal.dvd_iff_le.mpr le_sup_right
@@ -90,7 +97,7 @@ theorem exists_algebraMap_eq_mul_of_mem_primeToSubgroup {𝔪 : Modulus K} {x : 
   have hLcop : L ⊔ 𝔪.finitePart = ⊤ := by
     refine (Modulus.isCoprimeTo_iff_sup_eq_top.mp
       (Modulus.isCoprimeTo_iff.mpr ⟨hL0, fun v hv hdiv ↦ ?_⟩)).2
-    set n : ℕ := (Associates.mk v.asIdeal).count (Associates.mk D).factors with hn
+    set n : ℕ := (Associates.mk v.asIdeal).count (Associates.mk D).factors with _
     -- The denominator lies in `vⁿ`, and so does the numerator, since `x` is a unit at `v`.
     have hDn : D ≤ v.asIdeal ^ n := (le_count_associates_iff_le_pow v hD0 n).mp le_rfl
     have hxv : v.valuation K (x : K) = 1 :=
@@ -254,6 +261,19 @@ theorem isCongrOne_of_residue_eq_one {𝔪 : Modulus K} {x : Kˣ} (hx : x ∈ pr
     IsCongrOne 𝔪 x :=
   isCongrOne_iff.mpr ⟨(residue_eq_one_iff ⟨x, hx⟩).mp hres, hpos⟩
 
+/-- **Congruence to one sees the finite part only through the reduction.**  For two moduli with the
+same finite part, an element that is a unit at that finite part is congruent to one modulo `𝔪`
+exactly when it reduces to one modulo `𝔫` and is positive at the real places of `𝔪`.  This is how
+the finite conditions of one modulus are read off the reduction attached to another. -/
+theorem isCongrOne_iff_residueHom_eq_one_of_finitePart_eq {𝔪 𝔫 : Modulus K}
+    (hfin : 𝔪.finitePart = 𝔫.finitePart) {x : Kˣ} (hx : x ∈ primeToSubgroup 𝔫) :
+    IsCongrOne 𝔪 x ↔ residueHom 𝔫 ⟨x, hx⟩ = 1 ∧
+      ∀ w ∈ 𝔪.infinitePart, 0 < InfinitePlace.embedding_of_isReal w.2 (x : K) := by
+  have hexp : ∀ v, 𝔪.exponent v = 𝔫.exponent v := fun v ↦ by
+    rw [Modulus.exponent_def, Modulus.exponent_def, hfin]
+  rw [isCongrOne_iff, Units.ext_iff, coe_residueHom, Units.val_one, residue_eq_one_iff]
+  simp only [hfin, hexp]
+
 /-- **An element congruent to one modulo `𝔪` reduces to one**: the congruence subgroup lies in the
 kernel of `residueHom 𝔪`. -/
 theorem residueHom_eq_one_of_mem_congruenceSubgroup {𝔪 : Modulus K} {x : primeToSubgroup 𝔪}
@@ -262,6 +282,20 @@ theorem residueHom_eq_one_of_mem_congruenceSubgroup {𝔪 : Modulus K} {x : prim
   rw [coe_residueHom, Units.val_one]
   exact (residue_eq_one_iff x).mpr fun v hv ↦
     (mem_congruenceSubgroup.mp hx).valuation_sub_one_le hv
+
+/-- **An element congruent to one is a quotient of integers congruent to one.** If
+`IsCongrOne 𝔪 x`, then `x = a / b` with `a b : 𝓞 K` both congruent to one modulo
+`𝔪.finitePart`. -/
+theorem IsCongrOne.exists_sub_one_mem_and_algebraMap_eq_mul {𝔪 : Modulus K} {x : Kˣ}
+    (hx : IsCongrOne 𝔪 x) : ∃ a b : 𝓞 K, a - 1 ∈ 𝔪.finitePart ∧ b - 1 ∈ 𝔪.finitePart ∧
+      algebraMap (𝓞 K) K a = algebraMap (𝓞 K) K b * (x : K) := by
+  have hxp : x ∈ primeToSubgroup 𝔪 :=
+    congruenceSubgroup_le_primeToSubgroup _ (mem_congruenceSubgroup.mpr hx)
+  obtain ⟨a, b, hb, hab⟩ := exists_algebraMap_eq_mul_of_mem_primeToSubgroup hxp
+  -- the reduction of `x` modulo the finite part is that of `a`, and is one
+  refine ⟨a, b, Ideal.Quotient.eq.mp ?_, hb, hab⟩
+  rw [map_one, ← residue_eq ⟨x, hxp⟩ hb hab, ← coe_residueHom,
+    residueHom_eq_one_of_mem_congruenceSubgroup (mem_congruenceSubgroup.mpr hx), Units.val_one]
 
 /-! ### Surjectivity of the reduction -/
 
@@ -317,6 +351,12 @@ theorem coe_finiteUnitsMap {𝔪 𝔫 : Modulus K} (h : 𝔪.finitePart ∣ 𝔫
       Ideal.Quotient.factor (Ideal.le_of_dvd h)
         (x : (𝓞 K) ⧸ 𝔫.finitePart) := by
   rfl
+
+/-- Every residue unit modulo the smaller finite part lifts to a residue unit modulo the larger
+finite part. The lift need not be the reduction of a global integer unit. -/
+theorem finiteUnitsMap_surjective {𝔪 𝔫 : Modulus K} (h : 𝔪.finitePart ∣ 𝔫.finitePart) :
+    Function.Surjective (finiteUnitsMap h) :=
+  units_map_quotient_factor_surjective (Ideal.le_of_dvd h) 𝔫.finitePart_ne_bot
 
 /-- Changing the finite part along reflexivity gives the identity map. -/
 @[simp]

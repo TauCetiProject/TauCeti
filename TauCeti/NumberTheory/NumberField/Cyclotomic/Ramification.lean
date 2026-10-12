@@ -25,6 +25,8 @@ to `discr K` and fails outright when `K` already contains a primitive `m`-th roo
 
 * `IsCyclotomicExtension.natCast_mem_differentIdeal`: the level `m` lies in the different ideal
   of `𝓞 M` over `𝓞 K`.
+* `IsCyclotomicExtension.isUnramifiedAt_of_natCast_notMem`: primes above an ideal not
+  containing the level are unramified.
 * `IsCyclotomicExtension.prime_dvd_natAbs_discr_or_dvd_of_dvd_natAbs_discr`: a prime dividing
   `discr M` divides `discr K` or divides `m` — the extension ramifies only below or at the level.
 
@@ -34,7 +36,7 @@ to `discr K` and fails outright when `K` already contains a primitive `m`-th roo
 `Ideal.span {(m : 𝓞 M)}`; `Ideal.span_singleton_le_iff_mem` gives the divisibility form where
 that is the one wanted.
 
-Both results ask `M` to be a number field alongside `K`. That is no restriction, since a
+These results ask `M` to be a number field alongside `K`. That is no restriction, since a
 cyclotomic extension of a number field is one: `IsCyclotomicExtension.numberField {m} K M`.
 
 -/
@@ -76,6 +78,18 @@ theorem natCast_mem_differentIdeal (K M : Type*) [Field K] [NumberField K] [Fiel
     rw [← hder, mul_assoc, pow_sub_one_mul (NeZero.ne m) z, hzpow, mul_one]
   rw [hm]
   exact Ideal.mul_mem_right _ _ (Ideal.mul_mem_right _ _ hmem)
+
+open NumberField in
+/-- In a cyclotomic extension of level `m`, every prime above an ideal not containing `m`
+is unramified. -/
+theorem isUnramifiedAt_of_natCast_notMem {K : Type*} [Field K] [NumberField K]
+    (F : Type*) [Field F] [NumberField F] [Algebra K F] (m : ℕ)
+    [IsCyclotomicExtension {m} K F] {p : Ideal (𝓞 K)} (hm : (m : 𝓞 K) ∉ p)
+    (Q : Ideal (𝓞 F)) [Q.IsPrime] [Q.LiesOver p] : Algebra.IsUnramifiedAt (𝓞 K) Q := by
+  by_contra hQ
+  refine hm ((Ideal.mem_of_liesOver Q p _).mpr ?_)
+  simpa using Ideal.le_of_dvd (dvd_differentIdeal_iff.mpr hQ)
+    (natCast_mem_differentIdeal K F m)
 
 open NumberField in
 /-- **A prime ramifying in a cyclotomic extension either ramifies below or divides the level.**

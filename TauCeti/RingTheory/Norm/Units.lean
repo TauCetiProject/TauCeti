@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Norm.Defs
+public import Mathlib.RingTheory.Norm.Transitivity
+public import Mathlib.Algebra.Group.Subgroup.Defs
 
 /-!
 # The norm on unit groups
@@ -25,6 +27,13 @@ finiteness where the value is computed.
 ## Main definitions
 
 * `TauCeti.Algebra.normUnits`: the algebra norm read as a homomorphism `Sˣ →* Rˣ`.
+* `TauCeti.normGroup`: the image of the norm on units in a finite field extension.
+
+## Main results
+
+* `TauCeti.Algebra.pow_finrank_mem_range_normUnits`: in a free algebra, the `finrank`-th power of
+  a unit of the base is a norm.
+* `AlgHom.normGroup_le_normGroup`: a larger extension has a smaller norm group.
 -/
 
 public section
@@ -42,5 +51,42 @@ noncomputable def Algebra.normUnits : Sˣ →* Rˣ :=
 @[simp]
 theorem Algebra.coe_normUnits (x : Sˣ) : (Algebra.normUnits R x : R) = Algebra.norm R (x : S) := by
   simp [Algebra.normUnits]
+
+/-- **Powers by the rank are norms.** In a free `R`-algebra `S` the norm of `a ∈ R` is
+`a ^ finrank R S`, so that power of a unit of `R` is the norm of a unit of `S`. -/
+theorem Algebra.pow_finrank_mem_range_normUnits [Module.Free R S] (a : Rˣ) :
+    a ^ Module.finrank R S ∈ (Algebra.normUnits R : Sˣ →* Rˣ).range :=
+  ⟨Units.map (algebraMap R S : R →* S) a, Units.ext <| by simp⟩
+
+section NormGroup
+
+variable (K L : Type*) [Field K] [Field L] [Algebra K L]
+
+/-- The norm group `N_{L/K}(Lˣ)` of a finite field extension `L/K`: the image in `Kˣ` of the field
+norm on units, `Algebra.normUnits K : Lˣ →* Kˣ`. Finiteness is required because `Algebra.norm K`
+is identically `1` on an infinite extension. -/
+noncomputable def normGroup [_hfin : Module.Finite K L] : Subgroup Kˣ :=
+  (Algebra.normUnits K : Lˣ →* Kˣ).range
+
+variable {K L} in
+/-- An element of `Kˣ` lies in the norm group exactly when it is the norm of a unit of `L`. -/
+@[simp]
+theorem mem_normGroup_iff [Module.Finite K L] {x : Kˣ} :
+    x ∈ normGroup K L ↔ ∃ y : Lˣ, Algebra.norm K (y : L) = x := by
+  simp [normGroup, Units.ext_iff]
+
+variable {K L} in
+/-- **A larger extension has a smaller norm group.** A `K`-algebra map `f : M →ₐ[K] L` of finite
+extensions makes `L` an extension of `M`, and by transitivity of the norm every norm from `L` is
+a norm from `M`. -/
+theorem _root_.AlgHom.normGroup_le_normGroup {M : Type*} [Field M] [Algebra K M] [Module.Finite K L]
+    [Module.Finite K M] (f : M →ₐ[K] L) : normGroup K L ≤ normGroup K M := by
+  let _ : Algebra M L := f.toRingHom.toAlgebra
+  have : IsScalarTower K M L := .of_algebraMap_eq fun x ↦ (f.commutes x).symm
+  have : Module.Finite M L := .of_restrictScalars_finite K M L
+  rintro _ ⟨y, rfl⟩
+  exact ⟨Algebra.normUnits M y, Units.ext (by simp [Algebra.norm_norm])⟩
+
+end NormGroup
 
 end TauCeti

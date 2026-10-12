@@ -61,12 +61,9 @@ private theorem _root_.LieSubalgebra.rationalizationEquiv_map_lie (M : LieSubalg
   -- `rw` cannot key Mathlib's Lie-module lemmas against the scalar-extension bracket, whose
   -- `Bracket` instance is not syntactically a `LieRingModule.toBracket` projection, so the
   -- rewrites on `K ⊗[R] M` name their arguments explicitly.
-  induction x using TensorProduct.induction_on with
-  | zero =>
-      rw [zero_lie y, map_zero, zero_lie]
+  induction x using TensorProduct.inductionOn with
   | tmul q x =>
-      induction y using TensorProduct.induction_on with
-      | zero => rw [lie_zero (q ⊗ₜ[R] x), map_zero, lie_zero]
+      induction y using TensorProduct.inductionOn with
       | tmul r y =>
           rw [LieAlgebra.ExtendScalars.bracket_tmul]
           rw [Submodule.rationalizationEquiv_tmul, Submodule.rationalizationEquiv_tmul,

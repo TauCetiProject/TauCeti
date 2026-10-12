@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.Lie.E6.DoubledMinuscule.PointsFunctor
 public import
   TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.NumberedSymmetry
+import TauCeti.Algebra.Lie.E6.DoubledMinuscule.Generation
 
 /-!
 # The graph automorphism of the doubled type-E6 minuscule carrier
@@ -20,7 +21,8 @@ that lift and descends it to the full-weight doubled minuscule carrier.
 The resulting automorphism `TauCeti.E6DoubledMinuscule.graphAutomorphism` carries each numbered
 root subgroup to the subgroup numbered by `TauCeti.DynkinType.graphPermE6`, without changing its
 additive parameter, and relabels the represented split torus by the same diagram involution. It
-has order dividing two.
+has order dividing two, and it is the only endomorphism of the carrier with that action on the
+numbered root subgroups, which generate it.
 
 No reductivity, maximality of the represented torus, or identification of the carrier's root datum
 is asserted here.
@@ -34,6 +36,9 @@ is asserted here.
 * `TauCeti.E6DoubledMinuscule.graphAutomorphism`: the induced automorphism of the doubled carrier.
 * `TauCeti.E6DoubledMinuscule.rootSubgroup_comp_graphAutomorphism_hom`: its action on the numbered
   simple-root subgroups.
+* `TauCeti.E6DoubledMinuscule.eq_graphAutomorphism_hom_of_rootSubgroup` and
+  `TauCeti.E6DoubledMinuscule.eq_graphAutomorphism_of_rootSubgroup`: that action determines it,
+  among endomorphisms and among automorphisms of the carrier.
 * `TauCeti.E6DoubledMinuscule.weightTorus_comp_graphAutomorphism_hom`: its action on the split
   weight torus.
 * `TauCeti.E6DoubledMinuscule.graphAutomorphism_hom_comp_self` and
@@ -471,6 +476,24 @@ theorem rootSubgroup_comp_graphAutomorphism_hom (k : Fin 6 ⊕ Fin 6) :
   rw [rootSubgroup_def, graphAutomorphism, toralGraphAutomorphism,
     kostantRootSubgroupToToral_comp_numberedSymmetryIso_hom]
   exact (rootSubgroup_def (graphRootPerm k)).symm
+
+/-- **The type-`E₆` diagram involution has exactly one realization on the carrier.** An
+endomorphism of the carrier carrying each numbered simple-root subgroup to the one at the image
+node, with the same additive parameter, is the graph automorphism. The numbered root subgroups
+generate the carrier, so these equations leave nothing free; in particular no condition on the
+represented weight torus is needed. -/
+theorem eq_graphAutomorphism_hom_of_rootSubgroup (φ : groupScheme ⟶ groupScheme)
+    (hroot : ∀ k, rootSubgroup k ≫ φ = rootSubgroup (graphRootPerm k)) :
+    φ = graphAutomorphism.hom :=
+  groupScheme_hom_ext_of_rootSubgroup φ _ fun k => by
+    rw [hroot k, rootSubgroup_comp_graphAutomorphism_hom]
+
+/-- **The graph automorphism is the unique automorphism of the carrier realizing the type-`E₆`
+diagram involution on the numbered simple-root subgroups.** -/
+theorem eq_graphAutomorphism_of_rootSubgroup (γ : Aut groupScheme)
+    (hroot : ∀ k, rootSubgroup k ≫ γ.hom = rootSubgroup (graphRootPerm k)) :
+    γ = graphAutomorphism :=
+  Iso.ext (eq_graphAutomorphism_hom_of_rootSubgroup γ.hom hroot)
 
 /-- The graph automorphism relabels the represented split weight torus by the type-`E₆` diagram
 involution. -/

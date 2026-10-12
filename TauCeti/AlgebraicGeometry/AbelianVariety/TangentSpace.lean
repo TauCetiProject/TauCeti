@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.AbelianVariety.Basic
+public import TauCeti.AlgebraicGeometry.Morphisms.Smooth.Regular
+public import TauCeti.AlgebraicGeometry.Scheme.KrullDimension
 public import TauCeti.AlgebraicGeometry.TangentSpace.Basic
 
 /-!
@@ -18,14 +20,19 @@ identification is `AbelianVariety.zeroResidueFieldRingEquiv`, built in
 are not definitionally equal.
 
 This file uses it to regard the Zariski tangent space at the identity as a vector space over the
-ground field, and computes its dimension.
+ground field, and computes its dimension: it is the dimension of the abelian variety. Indeed `A`
+is smooth over `K`, so its local ring at the identity is regular and its cotangent space
+`𝔪₀ / 𝔪₀²` has dimension the Krull dimension of that local ring; and since the identity is a closed
+point of the integral scheme `A`, locally of finite type over `K`, that local ring has the
+dimension of `A`.
 
 ## Main declarations
 
 * `AbelianVariety.TangentSpace A` is `T₀A`, the Zariski tangent space at the identity together
   with its `K`-vector-space structure;
 * `AbelianVariety.finrank_tangentSpace_eq_finrank_cotangentSpace` computes its dimension as the
-  dimension of `𝔪₀ / 𝔪₀²` over `κ(0)`.
+  dimension of `𝔪₀ / 𝔪₀²` over `κ(0)`;
+* `AbelianVariety.finrank_tangentSpace_eq_dim`: `dim_K T₀A = dim A`.
 
 For an *affine* group scheme the same tangent space is described in Hopf-algebra terms elsewhere
 in the library: `TauCeti.Bialgebra.CotangentSpace` in
@@ -34,13 +41,6 @@ and `TauCeti.Algebra.AlgebraicGroup.Tangent.Basic` describes the tangent space a
 counit-valued derivations. The construction here is the scheme-level Zariski tangent space at a
 point, which applies to an abelian variety, and no comparison between the two is made.
 
-This supplies the tangent-space part of the abelian-variety infrastructure explicitly listed in
-`TauCetiRoadmap/JacobianChallenge/README.md` under "Inventory: what is missing (build here)" and
-Layer E. It does not construct `Pic⁰` or prove the later comparison `T₀ Pic⁰ ≅ H¹(X, 𝒪_X)`.
-No formalization is vendored: the ground-field dimension of `κ(0)` is Mathlib's
-`Module.finrank_of_bijective_algebraMap`, the comparison of dimensions is
-`Module.finrank_mul_finrank`, and the tangent space itself is the scheme-level API in
-`TauCeti.AlgebraicGeometry.TangentSpace.Basic`.
 -/
 
 public section
@@ -186,6 +186,17 @@ lemma finrank_tangentSpace_eq_finrank_cotangentSpace (A : AbelianVariety K) :
         (ZariskiCotangentSpace A.toScheme A.zeroPoint) := by
   rw [finrank_tangentSpace_eq_finrank_residueField_tangentSpace,
     finrank_residueField_tangentSpace, Subspace.dual_finrank_eq]
+
+/-- The tangent space of an abelian variety at the identity has dimension the dimension of the
+abelian variety. -/
+@[simp]
+theorem finrank_tangentSpace_eq_dim (A : AbelianVariety K) :
+    (Module.finrank K A.TangentSpace : WithBot ℕ∞) = A.dim := by
+  have := isRegularLocalRing_stalk_of_smooth A.toOver.hom A.zeroPoint
+  rw [finrank_tangentSpace_eq_finrank_cotangentSpace,
+    (IsRegularLocalRing.iff_finrank_cotangentSpace _).mp this,
+    ringKrullDim_stalk_eq_topologicalKrullDim_of_isClosed A.toOver.hom
+      A.isClosed_singleton_zeroPoint]
 
 end
 

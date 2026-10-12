@@ -7,7 +7,11 @@ module
 
 public import Mathlib.Data.EReal.Operations
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
+public import Mathlib.Topology.Instances.EReal.Lemmas
+public import TauCeti.MeasureTheory.Measure.LowerSemicontinuousLintegral
+public import TauCeti.MeasureTheory.OptimalTransport.Coupling
 public import TauCeti.MeasureTheory.OptimalTransport.Cost.Basic
+import TauCeti.Data.EReal.Operations
 
 /-!
 # Transport costs bounded below by integrable marginal terms
@@ -24,7 +28,10 @@ cost `TauCeti.planCostBddBelow` of an individual feasible plan, and defines its 
 `TauCeti.transportCostBddBelow_congr_lowerBound` proves that the value is independent of the
 chosen split lower bound. The specialization
 `TauCeti.transportCostBddBelow_coe_eq_transportCost` recovers the nonnegative
-`TauCeti.transportCost` interface exactly.
+`TauCeti.transportCost` interface exactly. Finally,
+`TauCeti.lowerSemicontinuous_planCostBddBelow` proves the weak lower-semicontinuity bridge for
+the normalized cost of a coupling when the original cost is lower semicontinuous and the two
+split terms are upper semicontinuous.
 
 The normalization avoids every indeterminate subtraction: the only extended integral is the
 `lintegral` of a nonnegative residual, and the quantities added afterwards are finite real
@@ -35,16 +42,14 @@ also has value `∞`.
 
 * C. Villani, *Optimal Transport: Old and New*, Chapter 5, especially the convention of allowing
   costs bounded below by a sum of integrable marginal functions.
-* `TauCetiRoadmap/OptimalTransport/README.md`, Layer 1, item 1 (the bounded-below signed cost
-  interface).
 -/
 
 public section
 
 noncomputable section
 
-open MeasureTheory
-open scoped ENNReal
+open MeasureTheory Set
+open scoped ENNReal NNReal Topology
 
 namespace TauCeti
 
@@ -115,6 +120,42 @@ def ofNonneg (hc : ∀ z, 0 ≤ c z) (μ : Measure X) (ν : Measure Y) :
 
 end IntegrableSplitLowerBound
 
+omit [MeasurableSpace X] [MeasurableSpace Y] in
+/-- If `c` is lower semicontinuous and the real-valued split terms are upper semicontinuous,
+then their nonnegative extended-real residual is lower semicontinuous. -/
+theorem lowerSemicontinuous_residual
+    [TopologicalSpace X] [TopologicalSpace Y]
+    (a : X → ℝ) (b : Y → ℝ)
+    (hc : LowerSemicontinuous c)
+    (ha : UpperSemicontinuous a)
+    (hb : UpperSemicontinuous b) :
+    LowerSemicontinuous
+      (fun z : X × Y => (c z - (a z.1 + b z.2 : ℝ)).toENNReal) := by
+  have hsum : UpperSemicontinuous
+      (fun z : X × Y => a z.1 + b z.2) :=
+    (ha.comp continuous_fst).add (hb.comp continuous_snd)
+  have hsumE : UpperSemicontinuous
+      (fun z : X × Y => ((a z.1 + b z.2 : ℝ) : EReal)) :=
+    continuous_coe_real_ereal.comp_upperSemicontinuous hsum
+      EReal.coe_strictMono.monotone
+  have hneg : LowerSemicontinuous
+      (fun z : X × Y => -((a z.1 + b z.2 : ℝ) : EReal)) :=
+    continuous_neg.comp_upperSemicontinuous_antitone hsumE
+      (by intro a b hab; exact EReal.neg_le_neg_iff.mpr hab)
+  have hsub : LowerSemicontinuous
+      (fun z : X × Y => c z - ((a z.1 + b z.2 : ℝ) : EReal)) := by
+    apply LowerSemicontinuous.add' hc hneg
+    intro z
+    exact EReal.continuousAt_add (Or.inr (by simp)) (Or.inr (by simp))
+  have hto : Monotone EReal.toENNReal := by
+    intro a b hab
+    exact EReal.toENNReal_le_toENNReal hab
+  have hres : LowerSemicontinuous
+      (fun z : X × Y =>
+        (c z - ((a z.1 + b z.2 : ℝ) : EReal)).toENNReal) :=
+    EReal.continuous_toENNReal.comp_lowerSemicontinuous hsub hto
+  exact hres
+
 /-- The signed cost of a coupling, normalized using an integrable split lower bound.
 
 The coupling witness is part of the domain because the fixed marginal correction terms reconstruct
@@ -132,6 +173,61 @@ theorem planCostBddBelow_def (π : Measure (X × Y)) (hπ : IsCoupling π μ ν)
       ((∫⁻ z, h.residual z ∂π : ℝ≥0∞) : EReal) +
         ((∫ x, h.fst x ∂μ : ℝ) : EReal) + ((∫ y, h.snd y ∂ν : ℝ) : EReal) :=
   (rfl)
+
+section PlanCostSemicontinuity
+
+variable [PseudoMetricSpace X] [PseudoMetricSpace Y]
+  [OpensMeasurableSpace (X × Y)]
+  {μp : ProbabilityMeasure X} {νp : ProbabilityMeasure Y}
+  (h : IntegrableSplitLowerBound c μp.toMeasure νp.toMeasure)
+
+/-- If the cost is lower semicontinuous and both split terms are upper semicontinuous, its
+normalized signed cost is lower semicontinuous on the weak topology of couplings. -/
+theorem lowerSemicontinuous_planCostBddBelow
+    (hc : LowerSemicontinuous c)
+    (ha : UpperSemicontinuous h.fst)
+    (hb : UpperSemicontinuous h.snd) :
+    LowerSemicontinuous
+      (fun π : Coupling μp νp => planCostBddBelow π.1.toMeasure π.2 h) := by
+  have hres := lowerSemicontinuous_residual h.fst h.snd hc ha hb
+  have hlin : LowerSemicontinuous
+      (fun π : ProbabilityMeasure (X × Y) =>
+        (∫⁻ z, h.residual z ∂(π.toMeasure) : ENNReal)) :=
+    lowerSemicontinuous_lintegral_probabilityMeasure hres
+  have hco : LowerSemicontinuous
+      (fun π : ProbabilityMeasure (X × Y) =>
+        ((∫⁻ z, h.residual z ∂(π.toMeasure) : ENNReal) : EReal)) := by
+    exact continuous_coe_ennreal_ereal.comp_lowerSemicontinuous hlin
+      EReal.coe_ennreal_strictMono.monotone
+  let A : EReal := (∫ x, h.fst x ∂μp.toMeasure : ℝ)
+  let B : EReal := (∫ y, h.snd y ∂νp.toMeasure : ℝ)
+  have hAB_bot : A + B ≠ ⊥ := by
+    dsimp [A, B]; rw [← EReal.coe_add]; exact EReal.coe_ne_bot _
+  have hAB_top : A + B ≠ ⊤ := by
+    dsimp [A, B]; rw [← EReal.coe_add]; exact EReal.coe_ne_top _
+  have hF' : LowerSemicontinuous
+      (fun π : ProbabilityMeasure (X × Y) =>
+        ((∫⁻ z, h.residual z ∂(π.toMeasure) : ENNReal) : EReal) + (A + B)) := by
+    apply LowerSemicontinuous.add' hco lowerSemicontinuous_const
+    intro π
+    exact EReal.continuousAt_add (Or.inr hAB_bot) (Or.inr hAB_top)
+  have hF : LowerSemicontinuous
+      (fun π : ProbabilityMeasure (X × Y) =>
+        ((∫⁻ z, h.residual z ∂(π.toMeasure) : ENNReal) : EReal) + A + B) := by
+    simpa only [add_assoc] using hF'
+  have hsub := hF.lowerSemicontinuousOn Set.univ
+  have hcomp : LowerSemicontinuousOn
+      (fun π : Coupling μp νp =>
+        ((∫⁻ z, h.residual z ∂(π.1.toMeasure) : ENNReal) : EReal) + A + B) Set.univ := by
+    apply hsub.comp continuous_subtype_val.continuousOn
+    intro π _; simp
+  have hcomp' : LowerSemicontinuous
+      (fun π : Coupling μp νp =>
+        ((∫⁻ z, h.residual z ∂(π.1.toMeasure) : ENNReal) : EReal) + A + B) :=
+    lowerSemicontinuousOn_univ_iff.mp hcomp
+  simpa [planCostBddBelow, A, B] using hcomp'
+
+end PlanCostSemicontinuity
 
 /-- The transport cost of `μ` and `ν` for an extended-real cost bounded below by integrable
 marginal terms.
@@ -163,6 +259,30 @@ theorem le_transportCostBddBelow {d : EReal} (h : IntegrableSplitLowerBound c μ
     (hd : ∀ π hπ, d ≤ planCostBddBelow π hπ h) :
     d ≤ transportCostBddBelow c μ ν h :=
   le_iInf₂ hd
+
+private theorem coe_iInf_ennreal {ι : Sort*} (f : ι → ℝ≥0∞) :
+    ((⨅ i, f i : ℝ≥0∞) : EReal) = ⨅ i, (f i : EReal) := by
+  apply le_antisymm
+  · exact le_iInf fun i ↦ EReal.coe_ennreal_le_coe_ennreal_iff.2 (iInf_le f i)
+  · have hnonneg : 0 ≤ (⨅ i, (f i : EReal)) :=
+      le_iInf fun i ↦ EReal.coe_ennreal_nonneg (f i)
+    rw [← EReal.coe_toENNReal hnonneg]
+    exact EReal.coe_ennreal_le_coe_ennreal_iff.2 <| le_iInf fun i ↦
+      (EReal.toENNReal_le_toENNReal (iInf_le (fun j ↦ (f j : EReal)) i)).trans_eq
+        EReal.toENNReal_coe
+
+/-- Subtracting the split lower bound reduces the signed primal problem to the nonnegative
+transport problem. The marginal correction is finite even when the optimum is infinite or the
+feasible set is empty. -/
+theorem transportCostBddBelow_eq_transportCost_residual_add_integral_add_integral
+    (h : IntegrableSplitLowerBound c μ ν) :
+    transportCostBddBelow c μ ν h = (transportCost h.residual μ ν : EReal) +
+      (((∫ x, h.fst x ∂μ) + ∫ y, h.snd y ∂ν : ℝ) : EReal) := by
+  have hadd (r : EReal) (a : ℝ) : r + (a : EReal) = r - ((-a : ℝ) : EReal) := by
+    simp only [EReal.coe_neg, sub_eq_add_neg, neg_neg]
+  rw [transportCostBddBelow_def, transportCost_def]
+  simp_rw [planCostBddBelow_def, add_assoc, ← EReal.coe_add, hadd,
+    EReal.iInf_sub_coe, ← coe_iInf_ennreal]
 
 private theorem residual_add_lowerBoundParts
     (h k : IntegrableSplitLowerBound c μ ν) (z : X × Y) :
@@ -234,30 +354,10 @@ theorem planCostBddBelow_congr_lowerBound
   have hnfym : AEMeasurable (fun y ↦ ENNReal.ofReal (-fy y)) ν :=
     hfy.neg.aestronglyMeasurable.aemeasurable.ennreal_ofReal
   -- Pull all four parts back to the coupling through its two fixed marginals.
-  have hpxmap : ∫⁻ z, ENNReal.ofReal (fx z.1) ∂π = px := by
-    have hm : AEMeasurable (fun x ↦ ENNReal.ofReal (fx x)) π.fst := by
-      rwa [hπ.fst_eq]
-    dsimp only [px]
-    rw [← hπ.fst_eq]
-    exact (lintegral_map' hm measurable_fst.aemeasurable).symm
-  have hpymap : ∫⁻ z, ENNReal.ofReal (fy z.2) ∂π = py := by
-    have hm : AEMeasurable (fun y ↦ ENNReal.ofReal (fy y)) π.snd := by
-      rwa [hπ.snd_eq]
-    dsimp only [py]
-    rw [← hπ.snd_eq]
-    exact (lintegral_map' hm measurable_snd.aemeasurable).symm
-  have hnxmap : ∫⁻ z, ENNReal.ofReal (-fx z.1) ∂π = nx := by
-    have hm : AEMeasurable (fun x ↦ ENNReal.ofReal (-fx x)) π.fst := by
-      rwa [hπ.fst_eq]
-    dsimp only [nx]
-    rw [← hπ.fst_eq]
-    exact (lintegral_map' hm measurable_fst.aemeasurable).symm
-  have hnymap : ∫⁻ z, ENNReal.ofReal (-fy z.2) ∂π = ny := by
-    have hm : AEMeasurable (fun y ↦ ENNReal.ofReal (-fy y)) π.snd := by
-      rwa [hπ.snd_eq]
-    dsimp only [ny]
-    rw [← hπ.snd_eq]
-    exact (lintegral_map' hm measurable_snd.aemeasurable).symm
+  have hpxmap : ∫⁻ z, ENNReal.ofReal (fx z.1) ∂π = px := hπ.lintegral_comp_fst hfxm
+  have hpymap : ∫⁻ z, ENNReal.ofReal (fy z.2) ∂π = py := hπ.lintegral_comp_snd hfym
+  have hnxmap : ∫⁻ z, ENNReal.ofReal (-fx z.1) ∂π = nx := hπ.lintegral_comp_fst hnfxm
+  have hnymap : ∫⁻ z, ENNReal.ofReal (-fy z.2) ∂π = ny := hπ.lintegral_comp_snd hnfym
   let mpfst : MeasurePreserving Prod.fst π μ := ⟨measurable_fst, hπ.fst_eq⟩
   let mpsnd : MeasurePreserving Prod.snd π ν := ⟨measurable_snd, hπ.snd_eq⟩
   have hfxmp : AEMeasurable (fun z : X × Y ↦ ENNReal.ofReal (fx z.1)) π :=
@@ -321,17 +421,6 @@ theorem transportCostBddBelow_congr_lowerBound
     transportCostBddBelow c μ ν h = transportCostBddBelow c μ ν k := by
   simp only [transportCostBddBelow]
   exact iInf_congr fun π ↦ iInf_congr fun hπ ↦ planCostBddBelow_congr_lowerBound h k hπ
-
-private theorem coe_iInf_ennreal {ι : Sort*} (f : ι → ℝ≥0∞) :
-    ((⨅ i, f i : ℝ≥0∞) : EReal) = ⨅ i, (f i : EReal) := by
-  apply le_antisymm
-  · exact le_iInf fun i ↦ EReal.coe_ennreal_le_coe_ennreal_iff.2 (iInf_le f i)
-  · have hnonneg : 0 ≤ (⨅ i, (f i : EReal)) :=
-      le_iInf fun i ↦ EReal.coe_ennreal_nonneg (f i)
-    rw [← EReal.coe_toENNReal hnonneg]
-    exact EReal.coe_ennreal_le_coe_ennreal_iff.2 <| le_iInf fun i ↦
-      (EReal.toENNReal_le_toENNReal (iInf_le (fun j ↦ (f j : EReal)) i)).trans_eq
-        EReal.toENNReal_coe
 
 /-- For a nonnegative `ℝ≥0∞`-valued cost, the bounded-below signed interface agrees exactly
 with the original nonnegative transport cost, for any valid split lower bound. -/

@@ -6,6 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Group.Subgroup.Basic
+public import Mathlib.Algebra.Module.ZMod
+public import Mathlib.Data.Matrix.Mul
+public import Mathlib.Data.Int.Order.Units
 public import Mathlib.LinearAlgebra.Dimension.Finrank
 public import TauCeti.InformationTheory.Hamming
 
@@ -23,6 +26,8 @@ distributions and pairwise Hamming distances are invariants of the resulting equ
 
 * `TauCeti.monomialEquiv u e`: the monomial linear equivalence `(ι → R) ≃ₗ[R] (κ → R)` that
   rescales the `i`-th coordinate by the unit `u i` and moves it to the coordinate `e i`.
+* `TauCeti.signedEquiv u e`: the monomial equivalence induced by integer signs and a coordinate
+  relabelling, available over every commutative ring.
 * `TauCeti.IsMonomialEquivalent`, `TauCeti.IsPermutationEquivalent`: the two resulting
   equivalence relations on linear codes.
 * `TauCeti.monomialGroup R ι`: the group of monomial transformations of `ι → R`.
@@ -55,7 +60,7 @@ Press (2003), §1.6.
 
 public section
 
-open Function
+open Function Matrix
 
 namespace TauCeti
 
@@ -135,7 +140,144 @@ theorem hammingDist_monomialEquiv (u : ι → Rˣ) (e : ι ≃ κ) (x y : ι →
 
 end Fintype
 
+section DotProduct
+
+variable [Fintype ι] [Fintype κ]
+
+/-- A monomial coordinate change preserves the standard dot product exactly when every
+coordinate multiplier has square one. -/
+theorem dotProduct_monomialEquiv_iff (u : ι → Rˣ) (e : ι ≃ κ) :
+    (∀ x y : ι → R, monomialEquiv u e x ⬝ᵥ monomialEquiv u e y = x ⬝ᵥ y) ↔
+      ∀ i, (u i : R) ^ 2 = 1 := by
+  classical
+  have hdot (x y : ι → R) :
+      monomialEquiv u e x ⬝ᵥ monomialEquiv u e y =
+        (fun i ↦ (u i : R) * x i) ⬝ᵥ (fun i ↦ (u i : R) * y i) := by
+    rw [monomialEquiv_eq_comp, monomialEquiv_eq_comp, comp_equiv_dotProduct_comp_equiv]
+  constructor
+  · intro h i
+    have hi := h (Pi.single i 1) (Pi.single i 1)
+    rw [hdot] at hi
+    simpa [dotProduct, Pi.single_apply, pow_two] using hi
+  · intro h x y
+    rw [hdot]
+    simp only [dotProduct]
+    apply Finset.sum_congr rfl
+    intro i _
+    calc
+      (u i : R) * x i * ((u i : R) * y i) = (u i : R) ^ 2 * (x i * y i) := by ring
+      _ = x i * y i := by rw [h i]; simp
+
+end DotProduct
+
 end Monomial
+
+/-! ### Signed coordinate transformations -/
+
+section Signed
+
+variable [CommRing R]
+
+/-- The monomial equivalence which multiplies coordinates by integer signs before relabelling
+them.  It specializes coherently to every commutative ring. -/
+def signedEquiv (u : ι → ℤˣ) (e : ι ≃ κ) : (ι → R) ≃ₗ[R] (κ → R) :=
+  monomialEquiv (fun i ↦ Units.map (Int.castRingHom R) (u i)) e
+
+/-- With trivial signs a signed coordinate change is a bare relabelling of coordinates. -/
+theorem signedEquiv_one (e : ι ≃ κ) :
+    signedEquiv (R := R) (1 : ι → ℤˣ) e = LinearEquiv.funCongrLeft R R e.symm := by
+  rw [signedEquiv]
+  convert monomialEquiv_one (R := R) e using 1
+  ext i
+  simp
+
+/-- Evaluation of a signed coordinate change. -/
+@[simp]
+theorem signedEquiv_apply (u : ι → ℤˣ) (e : ι ≃ κ) (x : ι → R) (j : κ) :
+    signedEquiv (R := R) u e x j = (u (e.symm j) : R) * x (e.symm j) := by
+  simp [signedEquiv]
+
+/-- The additive homomorphism underlying a signed coordinate change has the same action as the
+ambient linear equivalence. -/
+@[simp]
+theorem signedEquiv_toAddMonoidHom_apply (u : ι → ℤˣ) (e : ι ≃ κ) (x : ι → R) :
+    (signedEquiv (R := R) u e).toAddEquiv.toAddMonoidHom x = signedEquiv u e x := rfl
+
+/-- Signed coordinate changes commute with taking integer coordinates in any commutative ring. -/
+@[simp]
+theorem signedEquiv_intCast (u : ι → ℤˣ) (e : ι ≃ κ) (z : ι → ℤ) :
+    signedEquiv (R := R) u e (fun i ↦ (z i : R)) =
+      fun j ↦ ((signedEquiv (R := ℤ) u e z j : ℤ) : R) := by
+  funext j
+  simp [signedEquiv_apply]
+
+/-- Restricting a rational signed coordinate change to integer scalars does not change its
+underlying function. -/
+@[simp]
+theorem signedEquiv_restrictScalars_apply (u : ι → ℤˣ) (e : ι ≃ κ) (x : ι → ℚ) :
+    (signedEquiv (R := ℚ) u e).restrictScalars ℤ x = signedEquiv u e x := rfl
+
+/-- A monomial coordinate change agrees with a signed coordinate change when its
+coordinate units are images of integer units. -/
+theorem monomialEquiv_eq_signedEquiv_of_intUnits (u : ι → Rˣ) (e : ι ≃ κ)
+    (v : ι → ℤˣ) (hv : ∀ i, (v i : R) = u i) :
+    monomialEquiv u e = signedEquiv v e := by
+  ext x j
+  rw [monomialEquiv_apply, signedEquiv_apply, hv]
+
+/-- A monomial map over a commutative ring is a signed coordinate change exactly when
+each multiplier is `1` or `-1`. -/
+theorem exists_signed_monomialEquiv_iff (u : ι → Rˣ) (e : ι ≃ κ) :
+    (∃ v : ι → ℤˣ, monomialEquiv u e = signedEquiv v e) ↔
+      ∀ i, u i = 1 ∨ u i = -1 := by
+  classical
+  constructor
+  · rintro ⟨v, hv⟩ i
+    have hi : (u i : R) = (v i : R) := by
+      have h := congrArg
+        (fun f : (ι → R) ≃ₗ[R] (κ → R) ↦
+          f (Pi.single i 1) (e i)) hv
+      simpa [monomialEquiv_apply, signedEquiv_apply] using h
+    obtain h | h := Int.units_eq_one_or (v i)
+    · left
+      apply Units.ext
+      simpa [h] using hi
+    · right
+      apply Units.ext
+      simpa [h] using hi
+  · intro hu
+    let v : ι → ℤˣ := fun i ↦ if u i = 1 then 1 else -1
+    have hv (i : ι) : (v i : R) = u i := by
+      obtain h | h := hu i
+      · simp [v, h]
+      · by_cases h1 : u i = 1
+        · simp [v, h1]
+        · simp only [v, h1, ↓reduceIte]
+          simpa using congrArg (fun a : Rˣ ↦ (a : R)) h.symm
+    exact ⟨v, monomialEquiv_eq_signedEquiv_of_intUnits u e v hv⟩
+
+section Fintype
+
+variable [Fintype ι] [Fintype κ]
+
+/-- A signed coordinate change preserves the standard dot product. -/
+@[simp]
+theorem dotProduct_signedEquiv (u : ι → ℤˣ) (e : ι ≃ κ) (x y : ι → R) :
+    signedEquiv u e x ⬝ᵥ signedEquiv u e y = x ⬝ᵥ y := by
+  apply (dotProduct_monomialEquiv_iff
+    (fun i ↦ Units.map (Int.castRingHom R) (u i)) e).mpr
+    (by
+      intro i
+      have hu : (u i : R) ^ 2 = 1 := by
+        calc
+          (u i : R) ^ 2 = (((u i : ℤ) ^ 2 : ℤ) : R) := by norm_cast
+          _ = 1 := by simp only [← Units.val_pow_eq_pow_val, Int.units_sq, Units.val_one,
+            Int.cast_one]
+      simpa using hu) x y
+
+end Fintype
+
+end Signed
 
 end TauCeti
 

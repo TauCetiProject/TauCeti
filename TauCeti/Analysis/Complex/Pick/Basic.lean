@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Complex.Herglotz
 public import TauCeti.Analysis.Complex.UpperHalfPlane.DiscCoordinate
+import TauCeti.Analysis.Complex.UpperHalfPlane.Cayley
 
 /-!
 # Pick functions in Cayley coordinates
@@ -52,13 +53,6 @@ private lemma add_I_ne_zero_of_mem_upperHalfPlane {z : ℂ}
   simpa only [τ, i, UpperHalfPlane.coe_mk, map_neg, conj_I, sub_neg_eq_add] using
     UpperHalfPlane.coe_sub_conj_ne_zero i τ
 
-private lemma one_sub_ne_zero_of_mem_ball {w : ℂ} (hw : w ∈ ball (0 : ℂ) 1) :
-    1 - w ≠ 0 := by
-  rw [sub_ne_zero]
-  intro hw1
-  rw [← hw1, mem_ball, dist_zero_right, norm_one] at hw
-  exact lt_irrefl 1 hw
-
 private lemma cayley_mem_ball {z : ℂ} (hz : z ∈ UpperHalfPlane.upperHalfPlaneSet) :
     (z - I) / (z + I) ∈ ball (0 : ℂ) 1 := by
   let τ : UpperHalfPlane := ⟨z, hz⟩
@@ -67,24 +61,6 @@ private lemma cayley_mem_ball {z : ℂ} (hz : z ∈ UpperHalfPlane.upperHalfPlan
   rw [UpperHalfPlane.discCoordinate_def] at h
   simpa only [τ, i, UpperHalfPlane.coe_mk, map_neg, conj_I, sub_neg_eq_add,
     mem_ball_zero_iff] using h
-
-private lemma inverseCayley_mem_upperHalfPlane {w : ℂ} (hw : w ∈ ball (0 : ℂ) 1) :
-    I * (1 + w) / (1 - w) ∈ UpperHalfPlane.upperHalfPlaneSet := by
-  let u : UnitDisc := Complex.UnitDisc.mk w (mem_ball_zero_iff.mp hw)
-  let i : UpperHalfPlane := ⟨I, by simp⟩
-  have heq : I * (1 + w) / (1 - w) =
-      ((UpperHalfPlane.discCoordinateHomeomorph i).symm u : ℂ) := by
-    rw [UpperHalfPlane.coe_discCoordinateHomeomorph_symm_apply]
-    simp only [i, u, Complex.UnitDisc.coe_mk, conj_I, neg_mul, sub_neg_eq_add]
-    ring
-  rw [heq]
-  exact ((UpperHalfPlane.discCoordinateHomeomorph i).symm u).coe_im_pos
-
-private lemma inverseCayley_cayley {z : ℂ} (hz : z ∈ UpperHalfPlane.upperHalfPlaneSet) :
-    I * (1 + (z - I) / (z + I)) / (1 - (z - I) / (z + I)) = z := by
-  have hzi := add_I_ne_zero_of_mem_upperHalfPlane hz
-  field_simp
-  ring
 
 /-- **Cayley-coordinate Herglotz representation of a Pick function.** A function holomorphic on
 the upper half-plane with nonnegative imaginary part is, after the Cayley coordinate
@@ -98,25 +74,23 @@ theorem exists_isFiniteMeasure_eq_I_mul_herglotzTransform_cayley_add {F : ℂ �
   let G : ℂ → ℂ := fun w => -I * F (I * (1 + w) / (1 - w))
   have hG : DifferentiableOn ℂ G (ball 0 1) := by
     intro w hw
-    have hw1 := one_sub_ne_zero_of_mem_ball hw
-    have hmem := inverseCayley_mem_upperHalfPlane hw
+    have hmem := bijOn_I_mul_one_add_div_one_sub_ball.mapsTo hw
     have hinner : DifferentiableAt ℂ (fun u : ℂ => I * (1 + u) / (1 - u)) w :=
-      (((differentiableAt_const I).mul
-        ((differentiableAt_const 1).add differentiableAt_id)).div
-        ((differentiableAt_const 1).sub differentiableAt_id) hw1)
+      (hasDerivAt_I_mul_one_add_div_one_sub
+        (ne_of_mem_ball_of_norm_eq_one hw norm_one)).differentiableAt
     have hF' : DifferentiableAt ℂ F (I * (1 + w) / (1 - w)) :=
       (hF _ hmem).differentiableAt
         (UpperHalfPlane.isOpen_upperHalfPlaneSet.mem_nhds hmem)
     exact ((differentiableAt_const (-I)).mul (hF'.comp w hinner)).differentiableWithinAt
   have hGre : ∀ w ∈ ball (0 : ℂ) 1, 0 ≤ (G w).re := by
     intro w hw
-    simpa [G, mul_re] using him _ (inverseCayley_mem_upperHalfPlane hw)
+    simpa [G, mul_re] using him _ (bijOn_I_mul_one_add_div_one_sub_ball.mapsTo hw)
   obtain ⟨μ, hμ, hrep⟩ := exists_isFiniteMeasure_eq_herglotzTransform_add hG hGre
   refine ⟨μ, hμ, fun z hz => ?_⟩
   have hcz := cayley_mem_ball hz
   have h := hrep ((z - I) / (z + I)) hcz
   dsimp only [G] at h
-  rw [inverseCayley_cayley hz] at h
+  rw [I_mul_one_add_sub_I_div_add_I_div_one_sub (add_I_ne_zero_of_mem_upperHalfPlane hz)] at h
   have hc : (G 0).im = -(F I).re := by
     simp [G]
   rw [hc] at h

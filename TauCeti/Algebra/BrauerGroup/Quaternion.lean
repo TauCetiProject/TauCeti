@@ -23,6 +23,7 @@ public import TauCeti.Algebra.CentralSimple.Quaternion
 -- the worked examples closing the file, so downstream importers do not pay for them.
 import Mathlib.Analysis.Complex.Polynomial.Basic
 import TauCeti.Algebra.BrauerGroup.BaseChange
+import TauCeti.Algebra.Quaternion.BrauerClass
 
 /-!
 # The Brauer class of the real quaternions has order two
@@ -96,6 +97,10 @@ end Quaternion
 /-! ### Worked examples -/
 
 section Examples
+
+/-- Hamilton's quaternions have nontrivial Brauer class over `ℝ`. -/
+example : BrauerGroup.quaternionClass (-1 : ℝˣ) (-1) ≠ 1 := by
+  simpa [BrauerGroup.quaternionClass_def] using Quaternion.mk_ne_one
 
 /-- **The Brauer class of the real quaternions is its own inverse.** Quaternion conjugation is an
 `ℝ`-algebra isomorphism `ℍ[ℝ] ≃ₐ[ℝ] ℍ[ℝ]ᵐᵒᵖ` (Mathlib's `Quaternion.starAe`), so this is

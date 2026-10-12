@@ -381,8 +381,7 @@ theorem factorFieldsEquivCompletions_apply
 private theorem factorFieldsEquivCompletions_semilocalCrtHom
     (z : v.adicCompletion K ⊗[K] L) :
     factorFieldsEquivCompletions L v (semilocalCrtHom L v z) = semilocalEquiv L v z := by
-  induction z using TensorProduct.induction_on with
-  | zero => simp
+  induction z using TensorProduct.inductionOn with
   | tmul a x =>
       ext w
       rw [← (completionFactorsEquivPlaces L v).apply_symm_apply w]

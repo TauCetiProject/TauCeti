@@ -35,9 +35,10 @@ pointwise algebra happens before integration; a later layer proves invariance un
 ## Main results
 
 * `abs_rectIntegral_le_cutNorm` and `cutNorm_le` are the introduction and elimination rules for the
-  supremum.
+  supremum, and `exists_cutNorm_eq_abs_rectIntegral` says it is attained on a finite carrier.
 * `cutNorm_zero`, `cutNorm_neg`, `cutNorm_add_le`, and `cutNorm_smul` are the seminorm laws.
-* `cutNorm_le_integral_abs` bounds the cut norm by the `L¹` norm.
+* `cutNorm_le_integral_abs` bounds the cut norm by the `L¹` norm, and
+  `cutNorm_eq_abs_of_forall_eq` computes it for a constant kernel on a probability carrier.
 * `rectIntegral_comap_preimage` and `cutNorm_le_cutNorm_comap` are the change of variables along a
   pushforward: a rectangle downstairs pulls back to one upstairs with the same integral, so the cut
   norm does not increase when a carrier is replaced by one it is a pushforward of.
@@ -204,6 +205,15 @@ theorem exists_lt_abs_rectIntegral (K : SymmKernel Ω μ) {c : ℝ} (h : c < cut
   intro S hS T hT
   exact le_of_not_gt fun hST => h' ⟨S, T, hS, hT, hST⟩
 
+/-- **On a finite carrier the cut norm is attained.** When the carrier is finite and every subset
+of it is measurable, the supremum defining the cut norm is a maximum over rectangles. -/
+theorem exists_cutNorm_eq_abs_rectIntegral [Finite Ω] [MeasurableSingletonClass Ω]
+    (K : SymmKernel Ω μ) : ∃ S T : Set Ω, cutNorm μ K = |K.rectIntegral μ S T| := by
+  obtain ⟨p, hp⟩ := Finite.exists_max fun p : Set Ω × Set Ω => |K.rectIntegral μ p.1 p.2|
+  exact ⟨p.1, p.2, le_antisymm (cutNorm_le μ fun S _ T _ => hp (S, T))
+    (abs_rectIntegral_le_cutNorm μ K (Set.toFinite _).measurableSet
+      (Set.toFinite _).measurableSet)⟩
+
 /-- The cut norm is nonnegative. -/
 theorem cutNorm_nonneg (K : SymmKernel Ω μ) : 0 ≤ cutNorm μ K := by
   rw [cutNorm_eq_cutNormSet, cutNormSet_def]
@@ -220,9 +230,9 @@ theorem cutNorm_le_integral_abs (K : SymmKernel Ω μ) :
 theorem cutNorm_le_toReal_eLpNorm (K : SymmKernel Ω μ) :
     cutNorm μ K ≤ (eLpNorm (fun p : Ω × Ω => K p.1 p.2) 1 (μ.prod μ)).toReal := by
   refine (cutNorm_le_integral_abs μ K).trans (le_of_eq ?_)
-  rw [eLpNorm_one_eq_lintegral_enorm,
-    ← integral_norm_eq_lintegral_enorm (f := fun p : Ω × Ω => K p.1 p.2)
-      K.measurable.aestronglyMeasurable]
+  have hK : AEStronglyMeasurable (fun p : Ω × Ω => K p.1 p.2) (μ.prod μ) :=
+    K.measurable.aestronglyMeasurable
+  rw [eLpNorm_one_eq_lintegral_enorm hK, ← integral_norm_eq_lintegral_enorm hK]
   simp only [Real.norm_eq_abs]
 
 /-- A pointwise bound on a kernel bounds its cut norm, on a probability carrier.
@@ -236,6 +246,13 @@ theorem cutNorm_le_of_forall_abs_le [IsProbabilityMeasure μ] (K : SymmKernel Ω
     ∫ p, |K p.1 p.2| ∂(μ.prod μ) ≤ ∫ _p : Ω × Ω, C ∂(μ.prod μ) :=
       integral_mono K.integrable_uncurry.abs (integrable_const C) fun p => hK p.1 p.2
     _ = C := by simp
+
+/-- A kernel with the constant value `c` has cut norm `|c|` on a probability carrier: the whole
+square is an extremal rectangle. -/
+theorem cutNorm_eq_abs_of_forall_eq [IsProbabilityMeasure μ] {K : SymmKernel Ω μ} {c : ℝ}
+    (hK : ∀ x y, K x y = c) : cutNorm μ K = |c| := by
+  refine le_antisymm (cutNorm_le_of_forall_abs_le μ K fun x y => (hK x y).symm ▸ le_rfl) ?_
+  simpa [hK] using abs_rectIntegral_le_cutNorm μ K MeasurableSet.univ MeasurableSet.univ
 
 /-- The zero kernel has cut norm zero. -/
 @[simp]
@@ -318,7 +335,7 @@ private theorem exists_indicator_left_of_mem_Icc (K : SymmKernel Ω μ)
       |K.testIntegral μ u v| ≤ |K.testIntegral μ (S.indicator 1) v| := by
   classical
   have hu1' : ∀ x, u x ∈ Icc (-1 : ℝ) 1 := fun x => ⟨by linarith [(hu1 x).1], (hu1 x).2⟩
-  set g := K.partialIntegral μ v with hgdef
+  set g := K.partialIntegral μ v
   have hgm : Measurable g := K.measurable_partialIntegral μ hv
   set S : Set Ω := {x | 0 ≤ g x} with hSdef
   have hS : MeasurableSet S := measurableSet_le measurable_const hgm

@@ -109,6 +109,11 @@ theorem normalizedAbsValue_inr_eq_norm_embedding (w : InfinitePlace K) (x : K) :
     normalizedAbsValue (Sum.inr w) x = ‖w.embedding x‖ ^ w.mult := by
   rw [normalizedAbsValue_inr, InfinitePlace.norm_embedding_eq]
 
+/-- The normalized absolute value at a finite place `v` is the norm in the `v`-adic completion. -/
+theorem normalizedAbsValue_inl_eq_norm_coe (v : HeightOneSpectrum (𝓞 K)) (x : K) :
+    normalizedAbsValue (Sum.inl v) x = ‖(x : v.adicCompletion K)‖ := by
+  rw [normalizedAbsValue_inl, ← FinitePlace.norm_embedding, FinitePlace.embedding_apply]
+
 theorem normalizedAbsValue_nonneg (v : Place K) (x : K) : 0 ≤ normalizedAbsValue v x := by
   cases v with
   | inl v => exact (NumberField.HeightOneSpectrum.adicAbv K v).nonneg x

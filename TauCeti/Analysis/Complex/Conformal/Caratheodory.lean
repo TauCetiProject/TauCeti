@@ -11,6 +11,7 @@ import TauCeti.Topology.JordanCurve.Separation
 public import TauCeti.Analysis.Complex.Conformal.RiemannMapping.Existence
 public import TauCeti.Topology.ClusterSet
 import TauCeti.Analysis.Complex.Conformal.Crosscut.Basic
+import TauCeti.Analysis.Complex.Conformal.Jordan.Domain
 import TauCeti.Analysis.Normed.Module.Ball.Cut
 import TauCeti.Topology.MetricSpace.Cut
 
@@ -89,8 +90,8 @@ temporary shim.
 * `TauCeti.exists_continuousOn_closedBall_eqOn_of_isJordanCurve_frontier` — **Carathéodory's
   continuity theorem**: it extends continuously to the closed disc.
 * `TauCeti.exists_continuousOn_closedBall_bijOn_ball_of_isJordanCurve_frontier` — the form the
-  milestone is stated in: a bounded simply connected domain with Jordan-curve boundary is the
-  image of the disc under a holomorphic bijection continuous up to the closed disc.
+  milestone is stated in: a bounded domain with Jordan-curve boundary is the image of the disc
+  under a holomorphic bijection continuous up to the closed disc.
 
 ## References
 
@@ -230,14 +231,14 @@ boundary values.
 The Riemann mapping theorem, in the shape
 `TauCeti.exists_bijOn_ball_differentiableOn_invFunOn`, supplies a holomorphic bijection of `Ω` onto
 the disc with holomorphic inverse; the inverse is the map extended. That `Ω` is a proper subset of
-`ℂ` needs no separate hypothesis, `frontier univ` being empty while a Jordan curve is not. Simple
-connectivity is a hypothesis and not a consequence of the boundary being a Jordan curve: deducing it
-is the Schoenflies theorem, which this development does not have.
+`ℂ` needs no separate hypothesis, `frontier univ` being empty while a Jordan curve is not. Nor does
+simple connectivity: a Jordan domain is simply connected
+(`TauCeti.IsJordanDomain.isSimplyConnected`).
 
 The extension is named as the map itself rather than beside it: replacing the inverse Riemann map by
 its extension changes neither its holomorphy on the open disc nor its bijectivity onto `Ω`. -/
 theorem exists_continuousOn_closedBall_bijOn_ball_of_isJordanCurve_frontier {Ω : Set ℂ}
-    (hΩo : IsOpen Ω) (hΩc : IsSimplyConnected Ω) (hΩb : IsBounded Ω)
+    (hΩo : IsOpen Ω) (hΩc : IsConnected Ω) (hΩb : IsBounded Ω)
     (hΩJ : IsJordanCurve (frontier Ω)) :
     ∃ g : ℂ → ℂ, ContinuousOn g (closedBall 0 1) ∧ DifferentiableOn ℂ g (ball 0 1) ∧
       BijOn g (ball 0 1) Ω := by
@@ -245,8 +246,9 @@ theorem exists_continuousOn_closedBall_bijOn_ball_of_isJordanCurve_frontier {Ω 
     rintro rfl
     rw [frontier_univ] at hΩJ
     exact not_nonempty_empty hΩJ.nonempty
+  have hΩs : IsSimplyConnected Ω := (IsJordanDomain.mk hΩo hΩc hΩb hΩJ).isSimplyConnected
   obtain ⟨φ, hφ, -, hgd, -, -⟩ :=
-    exists_bijOn_ball_differentiableOn_invFunOn hΩo hΩc hΩne
+    exists_bijOn_ball_differentiableOn_invFunOn hΩo hΩs hΩne
   have hgbij : BijOn (Function.invFunOn φ Ω) (ball 0 1) Ω :=
     BijOn.symm hφ.invOn_invFunOn.symm hφ
   have himg : Function.invFunOn φ Ω '' ball 0 1 = Ω := hgbij.image_eq

@@ -36,7 +36,8 @@ form to a coercive form by adding a sufficiently large constant.
 * `TauCeti.PDE.IsWeakSolutionDirichletMassShift`: the weak equation with scalar mass shift.
 * `TauCeti.PDE.finiteDimensional_ker_one_sub_smul_dirichletMassOperator`: finite dimensionality
   of its homogeneous solution space.
-* `TauCeti.PDE.fredholmAlternative_isWeakSolutionDirichletMassShift`: the Fredholm dichotomy.
+* `TauCeti.PDE.fredholmAlternative_isWeakSolutionDirichlet_sub_const`: the Fredholm dichotomy
+  for the operator with mass coefficient `c - κ`.
 
 ## References
 
@@ -54,20 +55,14 @@ namespace TauCeti
 namespace PDE
 
 open Bornology MeasureTheory Set TopologicalSpace
-open scoped ENNReal InnerProduct InnerProductSpace
+open scoped ENNReal InnerProductSpace
 
 variable {ι : Type*} [Fintype ι] {mu : Measure (EuclideanSpace ℝ ι)} [mu.IsAddHaarMeasure]
   {Omega : Opens (EuclideanSpace ℝ ι)} {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ}
   {b : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι}
   {c : EuclideanSpace ℝ ι → ℝ}
 
-/-- Shortcut normed group instance on `H¹₀(Ω)`, needed by the inherited Hilbert structure. -/
-noncomputable local instance instNormedAddCommGroupH1ZeroFredholm :
-    NormedAddCommGroup (W1p0 mu Omega 2) := inferInstance
-
-/-- Shortcut inner-product instance on `H¹₀(Ω)`. -/
-noncomputable local instance instInnerProductSpaceH1ZeroFredholm :
-    InnerProductSpace ℝ (W1p0 mu Omega 2) := inferInstance
+attribute [local instance] W1p0.instNormedAddCommGroup W1p0.instInnerProductSpace
 
 /-- The Lax--Milgram operator representing the `L²` mass form on `H¹₀(Ω)`.  It is characterized
 by `TauCeti.PDE.energyFormH1_dirichletMassOperator`. -/
@@ -86,8 +81,9 @@ theorem energyFormH1_dirichletMassOperator
     energyFormH1 a b c (dirichletMassOperator hcoeff hcoercive u : W1p mu Omega 2)
         (v : W1p mu Omega 2) =
       ⟪W1p.value (u : W1p mu Omega 2), W1p.value (v : W1p mu Omega 2)⟫_ℝ := by
-  rw [← energyFormH1L0_apply hcoeff, dirichletMassOperator,
-    hcoercive.apply_formPerturbationOperator, W1p0.valueL_apply, W1p0.valueL_apply]
+  unfold dirichletMassOperator
+  rw [← energyFormH1L0_apply hcoeff, hcoercive.apply_formPerturbationOperator, W1p0.valueL_apply,
+    W1p0.valueL_apply]
 
 /-- On a bounded domain, the Dirichlet mass operator is compact by Rellich--Kondrachov. -/
 theorem isCompactOperator_dirichletMassOperator
@@ -132,6 +128,16 @@ theorem isWeakSolutionDirichletMassShift_zero_iff (f : Lp ℝ 2 (mu.restrict Ome
   rw [isWeakSolutionDirichletMassShift_iff, isWeakSolutionDirichlet_iff]
   simp only [zero_mul, sub_zero]
 
+/-- For essentially bounded energy coefficients, the mass-shifted equation is the usual weak
+Dirichlet equation with mass coefficient `c - κ`. -/
+theorem isWeakSolutionDirichletMassShift_iff_isWeakSolutionDirichlet_sub_const
+    (hcoeff : MemLp (fun x ↦ energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega))
+    (kappa : ℝ) (f : Lp ℝ 2 (mu.restrict Omega)) (u : W1p0 mu Omega 2) :
+    IsWeakSolutionDirichletMassShift a b c kappa f u ↔
+      IsWeakSolutionDirichlet a b (fun x ↦ c x - kappa) f u := by
+  simp only [isWeakSolutionDirichletMassShift_iff, isWeakSolutionDirichlet_iff,
+    energyFormH1_mass_sub_const hcoeff]
+
 /-- The mass-shifted weak equation written as an operator equation on `H¹₀(Ω)`. -/
 theorem isWeakSolutionDirichletMassShift_iff_operator_eq
     (hcoeff : MemLp (fun x => energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega))
@@ -146,8 +152,8 @@ theorem isWeakSolutionDirichletMassShift_iff_operator_eq
         (1 - kappa • dirichletMassOperator hcoeff hcoercive :
             W1p0 mu Omega 2 →L[ℝ] W1p0 mu Omega 2) u =
           hcoercive.solutionOfFunctional (dirichletForcing f) := by
-    simpa only [dirichletMassOperator, IsWeakSolutionDirichletMassShift,
-      energyFormH1L0_apply, W1p0.valueL_apply] using
+    unfold dirichletMassOperator
+    simpa only [IsWeakSolutionDirichletMassShift, energyFormH1L0_apply, W1p0.valueL_apply] using
       (hcoercive.one_sub_smul_formPerturbationOperator_apply_eq_iff_functional
         (W1p0.valueL (mu := mu) (Omega := Omega) (p := 2)) kappa (dirichletForcing f) u).symm
   have hsolution :
@@ -176,17 +182,20 @@ theorem finiteDimensional_ker_one_sub_smul_dirichletMassOperator
   hcoercive.finiteDimensional_ker_one_sub_smul_formPerturbationOperator
     (W1p0.isCompactOperator_valueL (by simp) hOmega) kappa
 
-/-- **The Fredholm alternative for the mass-shifted Dirichlet problem.**  On a bounded domain,
-either the homogeneous shifted problem has a nonzero weak solution, or every `L²` forcing has a
-unique weak solution. -/
-theorem fredholmAlternative_isWeakSolutionDirichletMassShift
+/-- **The Fredholm alternative for the mass-shifted Dirichlet problem.** On a bounded domain,
+the operator with mass coefficient `c - κ` either has a nonzero homogeneous weak solution, or
+admits a unique weak solution for every `L²` forcing. -/
+theorem fredholmAlternative_isWeakSolutionDirichlet_sub_const
     (hcoeff : MemLp (fun x => energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega))
     (hcoercive : IsCoercive (energyFormH1L0 hcoeff))
     (hOmega : IsBounded (Omega : Set (EuclideanSpace ℝ ι)))
     (kappa : ℝ) :
-    (∃ u : W1p0 mu Omega 2, u ≠ 0 ∧ IsWeakSolutionDirichletMassShift a b c kappa 0 u) ∨
+    (∃ u : W1p0 mu Omega 2, u ≠ 0 ∧
+      IsWeakSolutionDirichlet a b (fun x ↦ c x - kappa) 0 u) ∨
       ∀ f : Lp ℝ 2 (mu.restrict Omega),
-        ∃! u : W1p0 mu Omega 2, IsWeakSolutionDirichletMassShift a b c kappa f u := by
+        ∃! u : W1p0 mu Omega 2,
+          IsWeakSolutionDirichlet a b (fun x ↦ c x - kappa) f u := by
+  simp only [← isWeakSolutionDirichletMassShift_iff_isWeakSolutionDirichlet_sub_const hcoeff]
   rcases hcoercive.fredholmAlternative_formPerturbation
       (W1p0.isCompactOperator_valueL (by simp) hOmega) kappa with hkernel | hunique
   · left

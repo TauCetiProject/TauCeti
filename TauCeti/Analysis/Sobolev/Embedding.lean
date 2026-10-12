@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Sobolev.W1p.Zero
 public import Mathlib.Analysis.FunctionalSpaces.SobolevInequality
 import Mathlib.MeasureTheory.Function.ConvergenceInMeasure
+import Mathlib.MeasureTheory.Function.LpSeminorm.CompareExp
 
 /-!
 # The Sobolev embedding `W^{1,p}_0(Ω) ↪ L^{p⋆}(Ω)`
@@ -52,6 +53,12 @@ is exactly what rules this out, and it is carried as an explicit hypothesis thro
 
 ## Main declarations
 
+* `TauCeti.one_sub_two_div_toReal_nonneg` and
+  `TauCeti.W1p.integral_value_sq_le_of_eLpNorm_le`: exponent and support estimates used with a
+  Sobolev inequality.
+* `TauCeti.toReal_inv_add_inv_eq_inv`: the exponent relation `1/2* + 1/n = 1/2` of `W^{1,2}`
+  read in `ℝ`. The relation forces `n ≠ 0` (`TauCeti.ne_zero_of_inv_add_inv_eq_inv`).
+
 * `TauCeti.W1p.eLpNorm_value_le_of_forall_testFunction`: the transfer principle, from an
   estimate on test functions to the same estimate on `W^{1,p}_0(Ω)`.
 * `TauCeti.W1p.eLpNorm_value_le_mul_enorm_gradient`: the Gagliardo--Nirenberg--Sobolev
@@ -83,6 +90,75 @@ variable {E : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [InnerProductSpa
   [FiniteDimensional ℝ E] [BorelSpace E] {mu : Measure E} [mu.IsAddHaarMeasure]
   {Omega : Opens E} {p : ENNReal} [Fact (1 ≤ p)]
 
+/-! ### Sobolev estimates on a measurable support -/
+
+/-- For `q ≥ 2`, the Hölder exponent `1 - 2/q` is nonnegative (it is `1` at `q = ∞`). -/
+theorem one_sub_two_div_toReal_nonneg {q : ℝ≥0∞} (hq : 2 ≤ q) :
+    0 ≤ 1 - 2 / q.toReal := by
+  rcases eq_or_ne q (∞ : ℝ≥0∞) with rfl | hqt
+  · simp
+  · have h2q : (2 : ℝ) ≤ q.toReal := by
+      simpa using ENNReal.toReal_mono hqt hq
+    rw [sub_nonneg, div_le_one (by linarith)]
+    exact h2q
+
+omit [FiniteDimensional ℝ E] in
+/-- A Sobolev estimate `‖v‖_q ≤ S ‖∇v‖₂`, combined with Hölder's inequality on a set `A` off
+which `v` vanishes, bounds `∫_Ω v²` by `S² ‖∇v‖₂² μ(Ω ∩ A)^{1 - 2/q}`. -/
+theorem W1p.integral_value_sq_le_of_eLpNorm_le {q : ℝ≥0∞} (hq : 2 ≤ q) {S : ℝ≥0}
+    {v : W1p mu Omega 2}
+    (hS : eLpNorm (W1p.value v) q (mu.restrict Omega) ≤ S * ‖W1p.gradient v‖ₑ)
+    {A : Set E} (hA : MeasurableSet A)
+    (hAfin : mu ((Omega : Set E) ∩ A) ≠ (∞ : ℝ≥0∞))
+    (hvA : ∀ᵐ x ∂mu.restrict Omega, x ∉ A → W1p.value v x = 0) :
+    ∫ x in Omega, W1p.value v x ^ 2 ∂mu ≤
+      S ^ 2 * ‖W1p.gradient v‖ ^ 2 *
+        mu.real ((Omega : Set E) ∩ A) ^ (1 - 2 / q.toReal) := by
+  set β : ℝ := 1 / (2 : ℝ≥0∞).toReal - 1 / q.toReal
+  have hβ : 0 ≤ β := by
+    have := one_sub_two_div_toReal_nonneg hq
+    rw [div_eq_mul_inv] at this
+    simp only [β, ENNReal.toReal_ofNat, one_div]
+    linarith
+  have hind : (W1p.value v : E → ℝ) =ᵐ[mu.restrict Omega]
+      A.indicator (W1p.value v) := by
+    filter_upwards [hvA] with x hx
+    by_cases hxA : x ∈ A
+    · simp [hxA]
+    · simp [hxA, hx hxA]
+  -- Hölder's inequality on `A`, then the Sobolev estimate.
+  have hle : eLpNorm (W1p.value v) 2 (mu.restrict Omega) ≤
+      S * ‖W1p.gradient v‖ₑ * mu ((Omega : Set E) ∩ A) ^ β := by
+    calc eLpNorm (W1p.value v) 2 (mu.restrict Omega)
+        = eLpNorm (W1p.value v) 2 ((mu.restrict Omega).restrict A) := by
+          rw [eLpNorm_congr_ae hind, eLpNorm_indicator_eq_eLpNorm_restrict hA.nullMeasurableSet]
+      _ ≤ eLpNorm (W1p.value v) q ((mu.restrict Omega).restrict A) *
+            ((mu.restrict Omega).restrict A) univ ^ β :=
+          eLpNorm_le_eLpNorm_mul_rpow_measure_univ hq (Lp.aestronglyMeasurable _).restrict
+      _ ≤ S * ‖W1p.gradient v‖ₑ * mu ((Omega : Set E) ∩ A) ^ β := by
+          rw [Measure.restrict_apply MeasurableSet.univ, univ_inter,
+            Measure.restrict_apply hA, inter_comm]
+          gcongr
+          exact (eLpNorm_mono_measure _ Measure.restrict_le_self).trans hS
+  have hfin : (S : ℝ≥0∞) * ‖W1p.gradient v‖ₑ *
+      mu ((Omega : Set E) ∩ A) ^ β ≠ (∞ : ℝ≥0∞) :=
+    ENNReal.mul_ne_top (by finiteness) (ENNReal.rpow_ne_top_of_nonneg hβ hAfin)
+  have hreal := ENNReal.toReal_mono hfin hle
+  rw [ENNReal.toReal_mul, ENNReal.toReal_mul, ← ENNReal.toReal_rpow, toReal_enorm,
+    ENNReal.coe_toReal, ← measureReal_def] at hreal
+  rw [W1p.integral_value_sq_eq_norm_value_sq, Lp.norm_def]
+  calc (eLpNorm (W1p.value v) 2 (mu.restrict Omega)).toReal ^ 2
+      ≤ ((S : ℝ) * ‖W1p.gradient v‖ *
+          mu.real ((Omega : Set E) ∩ A) ^ β) ^ 2 :=
+        pow_le_pow_left₀ ENNReal.toReal_nonneg hreal 2
+    _ = S ^ 2 * ‖W1p.gradient v‖ ^ 2 *
+          mu.real ((Omega : Set E) ∩ A) ^ (1 - 2 / q.toReal) := by
+        rw [mul_pow, mul_pow, ← Real.rpow_mul_natCast measureReal_nonneg]
+        congr 2
+        simp only [β, ENNReal.toReal_ofNat]
+        push_cast
+        ring
+
 /-! ### Transferring an estimate from test functions to `W^{1,p}_0(Ω)` -/
 
 omit [FiniteDimensional ℝ E] in
@@ -111,7 +187,8 @@ theorem W1p.isClosed_setOf_eLpNorm_value_le (q : ENNReal) (C : ℝ≥0) :
     (tendstoInMeasure_of_tendsto_Lp hvalue).exists_seq_tendsto_ae
   calc eLpNorm (W1p.value u : E → ℝ) q (mu.restrict Omega)
       ≤ atTop.liminf fun i => eLpNorm (W1p.value (v (ns i)) : E → ℝ) q (mu.restrict Omega) :=
-        Lp.eLpNorm_lim_le_liminf_eLpNorm (fun _ => Lp.aestronglyMeasurable _) _ hae
+        Lp.eLpNorm_lim_le_liminf_eLpNorm (fun _ => Lp.aestronglyMeasurable _) _
+          (Lp.aestronglyMeasurable _) hae
     _ ≤ atTop.liminf fun i => (C : ℝ≥0∞) * ‖W1p.gradient (v (ns i))‖ₑ :=
         liminf_le_liminf (.of_forall fun i => hv (ns i))
     _ = (C : ℝ≥0∞) * ‖W1p.gradient u‖ₑ := (hbound.comp hns.tendsto_atTop).liminf_eq
@@ -133,7 +210,8 @@ theorem W1p.eLpNorm_value_le_of_forall_testFunction {q : ENNReal} {C : ℝ≥0}
   have hvalue : eLpNorm (W1p.value (W1p.ofTestFunctionₗ mu Omega p phi) : E → ℝ) q
       (mu.restrict Omega) = eLpNorm (phi : E → ℝ) q mu := by
     rw [W1p.value_ofTestFunctionₗ, eLpNorm_congr_ae (testFunctionLp_apply_ae p phi),
-      eLpNorm_restrict_eq_of_support_subset ((subset_tsupport _).trans phi.tsupport_subset)]
+      eLpNorm_restrict_eq_of_support_subset phi.aestronglyMeasurable
+        ((subset_tsupport _).trans phi.tsupport_subset)]
   have hgradient : ‖W1p.gradient (W1p.ofTestFunctionₗ mu Omega p phi)‖ₑ =
       eLpNorm (fderiv ℝ (phi : E → ℝ)) p mu := by
     rw [W1p.gradient_ofTestFunctionₗ, enorm_gradientTestFunctionLp_eq_eLpNorm_fderiv]
@@ -154,6 +232,21 @@ theorem one_le_of_inv_add_eq_inv {r : ENNReal} (hexp : pstar⁻¹ + r = p⁻¹) 
   calc pstar⁻¹ ≤ pstar⁻¹ + r := le_self_add
     _ = p⁻¹ := hexp
     _ ≤ 1 := ENNReal.inv_le_one.2 hp1
+
+/-- The exponent relation `1/2* + 1/n = 1/2` of the Sobolev embedding of `W^{1,2}` in dimension
+`n`, read in `ℝ`. No finiteness hypothesis on `2*` is needed: at `2* = ∞` the relation forces
+`n = 2`, and both sides use `ENNReal.toReal ∞ = 0`. -/
+theorem toReal_inv_add_inv_eq_inv {n : ℕ} (hexp : pstar⁻¹ + (n : ℝ≥0∞)⁻¹ = 2⁻¹) :
+    pstar.toReal⁻¹ + (n : ℝ)⁻¹ = 2⁻¹ := by
+  have hpinv : pstar⁻¹ ≠ ∞ := ne_top_of_le_ne_top (by simp) (hexp ▸ le_self_add)
+  have hninv : (n : ℝ≥0∞)⁻¹ ≠ ∞ := ne_top_of_le_ne_top (by simp) (hexp ▸ le_add_self)
+  have := congrArg ENNReal.toReal hexp
+  rwa [ENNReal.toReal_add hpinv hninv, ENNReal.toReal_inv, ENNReal.toReal_inv,
+    ENNReal.toReal_natCast, ENNReal.toReal_inv, ENNReal.toReal_ofNat] at this
+
+/-- A Sobolev exponent `2*` with `1/2* + 1/n = 1/2` exists only in positive dimension `n`. -/
+theorem ne_zero_of_inv_add_inv_eq_inv {n : ℕ} (hexp : pstar⁻¹ + (n : ℝ≥0∞)⁻¹ = 2⁻¹) : n ≠ 0 :=
+  Nat.cast_ne_zero.1 <| ENNReal.inv_ne_top.1 <| ne_top_of_le_ne_top (by simp) (hexp ▸ le_add_self)
 
 /-- **The Gagliardo--Nirenberg--Sobolev inequality on `W^{1,p}_0(Ω)`.** If `1 ≤ p` and the Sobolev
 conjugate `p⋆` satisfies `1/p⋆ + 1/n = 1/p`, where `n = dim E`, then every `u ∈ W^{1,p}_0(Ω)`
@@ -249,8 +342,7 @@ theorem W1p.memLp_value_of_mem_w1p0Submodule (hpstar : pstar ≠ ∞)
     (hexp : pstar⁻¹ + (finrank ℝ E : ℝ≥0∞)⁻¹ = p⁻¹)
     {u : W1p mu Omega p} (hu : u ∈ w1p0Submodule mu Omega p) :
     MemLp (W1p.value u : E → ℝ) pstar (mu.restrict Omega) :=
-  ⟨Lp.aestronglyMeasurable _,
-    lt_of_le_of_lt (W1p.eLpNorm_value_le_mul_enorm_gradient hpstar hexp hu) (by finiteness)⟩
+  lt_of_le_of_lt (W1p.eLpNorm_value_le_mul_enorm_gradient hpstar hexp hu) (by finiteness)
 
 /-- The `p⋆`-integrability of an element of `W^{1,p}_0(Ω)`, packaged for the subtype. -/
 theorem W1p0.memLp_value (hpstar : pstar ≠ ∞)

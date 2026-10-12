@@ -6,18 +6,33 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.DerivativeTest
+public import TauCeti.Analysis.Calculus.TaylorIntegral
 
 /-!
-# Necessary one-dimensional second-derivative tests
+# Necessary derivative tests
 
 This file records necessary versions of Mathlib's sufficient second-derivative tests. At a local
 maximum of a continuous real-valued function, the value `deriv (deriv g) t₀` is nonpositive; at a
-local minimum it is nonnegative.
+local minimum it is nonnegative. On a real normed space the same holds for every diagonal entry
+`fderiv ℝ (fderiv ℝ f) x w w` of the Hessian of a `C²` function at a local extremum.
+
+It also records the one-sided first-derivative tests at an endpoint: a function with a local
+maximum on `Iic a` at `a` (a maximum *from the left*) has nonnegative left derivative there, and
+dually for minima and for maxima and minima from the right on `Ici a`. The maximum from the left
+is the time-direction step of the parabolic maximum principle, where the maximum may sit on the
+top of the space-time cylinder.
 
 ## Main declarations
 
+* `IsLocalMaxOn.hasDerivWithinAt_Iic_nonneg`: the left derivative at a maximum from the left is
+  nonnegative.
+* `IsLocalMinOn.hasDerivWithinAt_Iic_nonpos`, `IsLocalMaxOn.hasDerivWithinAt_Ici_nonpos`,
+  `IsLocalMinOn.hasDerivWithinAt_Ici_nonneg`: the dual endpoint tests.
 * `TauCeti.deriv_deriv_nonpos_of_isLocalMax`: the local-maximum version.
 * `TauCeti.deriv_deriv_nonneg_of_isLocalMin`: the local-minimum version.
+* `TauCeti.fderiv_fderiv_self_nonpos_of_isLocalMax` /
+  `TauCeti.fderiv_fderiv_self_nonneg_of_isLocalMin`: the Hessian is negative (resp. positive)
+  semidefinite on the diagonal at a local maximum (resp. minimum).
 -/
 
 public section
@@ -52,5 +67,68 @@ theorem deriv_deriv_nonneg_of_isLocalMin {g : ℝ → ℝ} {t₀ : ℝ}
     0 ≤ deriv (deriv g) t₀ := by
   have := deriv_deriv_nonpos_of_isLocalMax (g := -g) hg.neg hmin.neg
   simpa using this
+
+/-- **One-sided first-derivative test.** If `f : ℝ → ℝ` has a local maximum on `Iic a` at `a`,
+that is a maximum from the left, then its left derivative at `a` is nonnegative. -/
+theorem _root_.IsLocalMaxOn.hasDerivWithinAt_Iic_nonneg {f : ℝ → ℝ} {f' a : ℝ}
+    (h : IsLocalMaxOn f (Set.Iic a) a) (hf : HasDerivWithinAt f f' (Set.Iic a) a) : 0 ≤ f' := by
+  have hy : (-1 : ℝ) ∈ posTangentConeAt (Set.Iic a) a :=
+    mem_posTangentConeAt_of_segment_subset <| by
+      rw [segment_symm, segment_eq_Icc (by linarith)]
+      exact Set.Icc_subset_Iic_self
+  simpa using h.hasFDerivWithinAt_nonpos hf.hasFDerivWithinAt hy
+
+/-- **One-sided first-derivative test, minimum version.** If `f : ℝ → ℝ` has a local minimum on
+`Iic a` at `a`, then its left derivative at `a` is nonpositive. -/
+theorem _root_.IsLocalMinOn.hasDerivWithinAt_Iic_nonpos {f : ℝ → ℝ} {f' a : ℝ}
+    (h : IsLocalMinOn f (Set.Iic a) a) (hf : HasDerivWithinAt f f' (Set.Iic a) a) : f' ≤ 0 := by
+  simpa using h.neg.hasDerivWithinAt_Iic_nonneg hf.neg
+
+/-- **One-sided first-derivative test on the right.** If `f : ℝ → ℝ` has a local maximum on
+`Ici a` at `a`, that is a maximum from the right, then its right derivative at `a` is
+nonpositive. -/
+theorem _root_.IsLocalMaxOn.hasDerivWithinAt_Ici_nonpos {f : ℝ → ℝ} {f' a : ℝ}
+    (h : IsLocalMaxOn f (Set.Ici a) a) (hf : HasDerivWithinAt f f' (Set.Ici a) a) : f' ≤ 0 := by
+  have hy : (1 : ℝ) ∈ posTangentConeAt (Set.Ici a) a :=
+    mem_posTangentConeAt_of_segment_subset <| by
+      rw [segment_eq_Icc (by linarith)]
+      exact Set.Icc_subset_Ici_self
+  simpa using h.hasFDerivWithinAt_nonpos hf.hasFDerivWithinAt hy
+
+/-- **One-sided first-derivative test on the right, minimum version.** If `f : ℝ → ℝ` has a
+local minimum on `Ici a` at `a`, then its right derivative at `a` is nonnegative. -/
+theorem _root_.IsLocalMinOn.hasDerivWithinAt_Ici_nonneg {f : ℝ → ℝ} {f' a : ℝ}
+    (h : IsLocalMinOn f (Set.Ici a) a) (hf : HasDerivWithinAt f f' (Set.Ici a) a) : 0 ≤ f' := by
+  simpa using h.neg.hasDerivWithinAt_Ici_nonpos hf.neg
+
+section NormedSpace
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {f : E → ℝ} {x : E}
+
+/-- At a local maximum of a `C²` function `f : E → ℝ`, every diagonal Hessian entry is
+nonpositive. -/
+theorem fderiv_fderiv_self_nonpos_of_isLocalMax (hf : ContDiffAt ℝ 2 f x) (hmax : IsLocalMax f x)
+    (w : E) : fderiv ℝ (fderiv ℝ f) x w w ≤ 0 := by
+  have hf' : ContDiffAt ℝ 2 f (x + (0 : ℝ) • w) := by simpa using hf
+  have hline : ContinuousAt (fun t : ℝ => x + t • w) 0 := by fun_prop
+  have h := deriv_deriv_nonpos_of_isLocalMax
+    (hf'.continuousAt.comp (f := fun t : ℝ => x + t • w) hline)
+    ((by simpa using hmax : IsLocalMax f (x + (0 : ℝ) • w)).comp_continuous
+      (g := fun t : ℝ => x + t • w) hline)
+  rwa [Function.comp_def, hf'.deriv_deriv_comp_add_smul, zero_smul, add_zero] at h
+
+/-- At a local minimum of a `C²` function `f : E → ℝ`, every diagonal Hessian entry is
+nonnegative. -/
+theorem fderiv_fderiv_self_nonneg_of_isLocalMin (hf : ContDiffAt ℝ 2 f x) (hmin : IsLocalMin f x)
+    (w : E) : 0 ≤ fderiv ℝ (fderiv ℝ f) x w w := by
+  have hf' : ContDiffAt ℝ 2 f (x + (0 : ℝ) • w) := by simpa using hf
+  have hline : ContinuousAt (fun t : ℝ => x + t • w) 0 := by fun_prop
+  have h := deriv_deriv_nonneg_of_isLocalMin
+    (hf'.continuousAt.comp (f := fun t : ℝ => x + t • w) hline)
+    ((by simpa using hmin : IsLocalMin f (x + (0 : ℝ) • w)).comp_continuous
+      (g := fun t : ℝ => x + t • w) hline)
+  rwa [Function.comp_def, hf'.deriv_deriv_comp_add_smul, zero_smul, add_zero] at h
+
+end NormedSpace
 
 end TauCeti

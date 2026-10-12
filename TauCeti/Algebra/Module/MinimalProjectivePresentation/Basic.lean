@@ -153,6 +153,18 @@ theorem surjective (h : IsMinimalProjectivePresentation p₁ p₀) : Function.Su
 theorem exact (h : IsMinimalProjectivePresentation p₁ p₀) : Function.Exact p₁ p₀ :=
   LinearMap.exact_iff.mpr h.range_eq_ker.symm
 
+/-- Replacing the presented module by an isomorphic module preserves minimality. -/
+theorem comp_linearEquiv {N : Type*} [AddCommMonoid N] [Module R N]
+    (h : IsMinimalProjectivePresentation p₁ p₀) (e : M ≃ₗ[R] N) :
+    IsMinimalProjectivePresentation p₁ (e.toLinearMap ∘ₗ p₀) where
+  isProjectiveCover :=
+    { projective := h.isProjectiveCover.projective
+      surjective := e.surjective.comp h.surjective
+      isSuperfluous_ker := by simpa using h.isProjectiveCover.isSuperfluous_ker }
+  projective := h.projective
+  range_eq_ker := by simpa using h.range_eq_ker
+  isSuperfluous_ker := h.isSuperfluous_ker
+
 /-- The left-hand map of a presentation lands in the syzygy. -/
 theorem apply_mem_ker (h : IsMinimalProjectivePresentation p₁ p₀) (x : P₁) :
     p₁ x ∈ LinearMap.ker p₀ := by

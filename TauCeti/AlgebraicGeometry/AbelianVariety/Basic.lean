@@ -46,7 +46,8 @@ hypotheses we derive:
 
 The unit of the group law is a `K`-rational point, so the file also records the identity-point
 interface used by every later construction at the identity — the zero section
-`AbelianVariety.zeroSection`, the identity point `AbelianVariety.zeroPoint`, and the resulting
+`AbelianVariety.zeroSection`, the identity point `AbelianVariety.zeroPoint`, which is a closed
+point (`AbelianVariety.isClosed_singleton_zeroPoint`), and the resulting
 identification `AbelianVariety.zeroResidueFieldRingEquiv : κ(0) ≃+* K` of the residue field there
 with the ground field, with its `K`-algebra instance. These specialize the rational-point API of
 `TauCeti.AlgebraicGeometry.RationalPoint.Basic` at the unit section; the tangent space built on
@@ -183,6 +184,12 @@ lemma toOver_hom_zeroPoint (A : AbelianVariety K) :
     A.toOver.hom A.zeroPoint = IsLocalRing.closedPoint K := by
   rw [zeroPoint_def]
   exact section_apply (zeroSection_comp_toOver_hom A) (IsLocalRing.closedPoint K)
+
+/-- The identity point is closed: the zero section is a closed immersion, and its image is the
+identity point. -/
+lemma isClosed_singleton_zeroPoint (A : AbelianVariety K) : IsClosed {A.zeroPoint} := by
+  rw [zeroPoint_def]
+  exact isClosed_singleton_of_section (zeroSection_comp_toOver_hom A)
 
 /-- The residue field of an abelian variety at its identity is canonically the ground field `K`,
 through the evaluation map of the zero section. -/

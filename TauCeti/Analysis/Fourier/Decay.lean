@@ -40,9 +40,7 @@ theorem exists_norm_pow_mul_norm_fourier_le (hf : ContDiff ℝ ∞ f) (hsupp : H
   have hcoe0 : ⇑(hsupp.toSchwartzMap hf) = f := by
     ext u
     simp
-  have hcoe : ((𝓕 (hsupp.toSchwartzMap hf) : SchwartzMap V E) : V → E) = 𝓕 f := by
-    rw [SchwartzMap.fourier_coe, hcoe0]
   have h := hC v
-  rwa [norm_iteratedFDeriv_zero, hcoe] at h
+  rwa [norm_iteratedFDeriv_zero, SchwartzMap.fourier_coe, hcoe0] at h
 
 end TauCeti

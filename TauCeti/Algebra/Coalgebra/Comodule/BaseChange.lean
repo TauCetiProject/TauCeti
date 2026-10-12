@@ -94,8 +94,7 @@ private theorem collapseTriple_tmul (a : A) (z : M ⊗[R] H) (h : H) :
           ((TensorProduct.AlgebraTensorModule.distribBaseChange R A M H
             (a ⊗ₜ[R] z)) ⊗ₜ[A] (1 ⊗ₜ[R] h))) =
       a ⊗ₜ[R] TensorProduct.assoc R M H H (z ⊗ₜ[R] h) := by
-  induction z using TensorProduct.induction_on with
-  | zero => simp
+  induction z using TensorProduct.inductionOn with
   | add x y hx hy =>
       simp only [TensorProduct.tmul_add, TensorProduct.add_tmul, map_add, hx, hy]
   | tmul m g => simp [collapseTriple]
@@ -108,8 +107,7 @@ private theorem collapseTriple_coact (a : A) (z : M ⊗[R] H) :
               (a ⊗ₜ[R] z)))) =
       a ⊗ₜ[R] TensorProduct.assoc R M H H
         ((coact (R := R) (C := H) (M := M)).rTensor H z) := by
-  induction z using TensorProduct.induction_on with
-  | zero => simp
+  induction z using TensorProduct.inductionOn with
   | add x y hx hy => simp only [TensorProduct.tmul_add, map_add, hx, hy]
   | tmul m h =>
       rw [TensorProduct.AlgebraTensorModule.distribBaseChange_tmul,
@@ -123,8 +121,7 @@ private theorem collapseTriple_comulTensor (a : A) (m : M) (z : H ⊗[R] H) :
         ((a ⊗ₜ[R] m) ⊗ₜ[A]
           (TensorProduct.AlgebraTensorModule.distribBaseChange R A H H (1 ⊗ₜ[R] z))) =
       a ⊗ₜ[R] (m ⊗ₜ[R] z) := by
-  induction z using TensorProduct.induction_on with
-  | zero => simp
+  induction z using TensorProduct.inductionOn with
   | add x y hx hy => simp only [TensorProduct.tmul_add, map_add, hx, hy]
   | tmul g h => simp [collapseTriple]
 
@@ -135,8 +132,7 @@ private theorem collapseTriple_comul (a : A) (z : M ⊗[R] H) :
           ((TensorProduct.AlgebraTensorModule.distribBaseChange R A M H)
             (a ⊗ₜ[R] z))) =
       a ⊗ₜ[R] Coalgebra.comul.lTensor M z := by
-  induction z using TensorProduct.induction_on with
-  | zero => simp
+  induction z using TensorProduct.inductionOn with
   | add x y hx hy => simp only [TensorProduct.tmul_add, map_add, hx, hy]
   | tmul m h =>
       rw [TensorProduct.AlgebraTensorModule.distribBaseChange_tmul,
@@ -150,8 +146,7 @@ private theorem rid_counit_distrib (a : A) (z : M ⊗[R] H) :
           ((TensorProduct.AlgebraTensorModule.distribBaseChange R A M H)
             (a ⊗ₜ[R] z))) =
       a ⊗ₜ[R] TensorProduct.rid R M (Coalgebra.counit.lTensor M z) := by
-  induction z using TensorProduct.induction_on with
-  | zero => simp
+  induction z using TensorProduct.inductionOn with
   | add x y hx hy => simp only [TensorProduct.tmul_add, map_add, hx, hy]
   | tmul m h =>
       rw [TensorProduct.AlgebraTensorModule.distribBaseChange_tmul,
@@ -226,8 +221,7 @@ noncomputable def baseChange (f : Hom R H M N) :
   simp only [LinearMap.coe_comp, Function.comp_apply, baseChange_coact,
     baseChangeCoact_tmul, LinearMap.baseChange_tmul]
   rw [coe_toLinearMap, ← f.map_coact_apply m]
-  induction coact (R := R) (C := H) (M := M) m using TensorProduct.induction_on with
-  | zero => simp
+  induction coact (R := R) (C := H) (M := M) m using TensorProduct.inductionOn with
   | add x y hx hy => simp only [map_add, TensorProduct.tmul_add, hx, hy]
   | tmul n h => simp
 

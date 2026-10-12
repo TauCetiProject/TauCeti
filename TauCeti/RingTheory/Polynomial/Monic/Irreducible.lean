@@ -8,6 +8,8 @@ module
 public import Mathlib.Algebra.Polynomial.SpecificDegree
 public import Mathlib.RingTheory.Polynomial.DegreeLT
 public import Mathlib.RingTheory.Polynomial.RationalRoot
+import Mathlib.RingTheory.Polynomial.GaussLemma
+import Mathlib.RingTheory.Polynomial.SmallDegreeVieta
 
 /-!
 # Monic irreducible polynomials of a fixed degree
@@ -27,13 +29,19 @@ finite function space `Fin d → R`.
 * `Polynomial.mem_monicIrreduciblesOfDegree_iff`: the defining membership condition.
 * `Polynomial.finite_monicIrreduciblesOfDegree`: over a finite coefficient ring there are
   finitely many.
+* `Polynomial.ncard_monicIrreduciblesOfDegree_one`: over a domain the monic irreducibles of degree
+  one are the `X - C a`, as many as the elements of the coefficient ring.
 * `TauCeti.irreducible_map_intCast_of_natDegree_eq_three`: a monic integral cubic with no integral
   root is irreducible over `ℚ`.
+* `TauCeti.irreducible_map_intCast_of_natDegree_eq_four`: a monic integral quartic with no
+  integral root and no monic integral quadratic factor is irreducible over `ℚ`.
 -/
 
 public section
 
 namespace Polynomial
+
+section Semiring
 
 variable (R : Type*) [Semiring R]
 
@@ -62,6 +70,33 @@ theorem finite_monicIrreduciblesOfDegree [Nontrivial R] [Finite R] (d : ℕ) :
     exact Finite.of_equiv _ (Polynomial.monicEquivDegreeLT (R := R) d).symm
   exact hmon.subset fun g hg => ⟨hg.1, hg.2.2⟩
 
+end Semiring
+
+section Domain
+
+variable {R : Type*} [CommRing R] [IsDomain R]
+
+/-- Over a domain, the monic irreducible polynomials of degree one are exactly the `X - C a`. -/
+theorem monicIrreduciblesOfDegree_one :
+    monicIrreduciblesOfDegree R 1 = Set.range fun a : R => X - C a := by
+  ext g
+  rw [mem_monicIrreduciblesOfDegree_iff, Set.mem_range]
+  constructor
+  · rintro ⟨hmon, -, hdeg⟩
+    exact ⟨-g.coeff 0, by rw [C_neg, sub_neg_eq_add, ← hmon.eq_X_add_C hdeg]⟩
+  · rintro ⟨a, rfl⟩
+    exact ⟨monic_X_sub_C a, irreducible_X_sub_C a, natDegree_X_sub_C a⟩
+
+variable (R) in
+/-- Over a domain there are as many monic irreducible polynomials of degree one as elements of
+the coefficient ring. -/
+@[simp] theorem ncard_monicIrreduciblesOfDegree_one :
+    (monicIrreduciblesOfDegree R 1).ncard = Nat.card R := by
+  rw [monicIrreduciblesOfDegree_one]
+  exact Set.ncard_range_of_injective fun a b h => by simpa using h
+
+end Domain
+
 end Polynomial
 
 namespace TauCeti
@@ -82,6 +117,28 @@ theorem irreducible_map_intCast_of_natDegree_eq_three {g : ℤ[X]} (hg : g.Monic
   rw [aeval_algebraMap_apply, coe_aeval_eq_eval,
     map_eq_zero_iff _ (algebraMap ℤ ℚ).injective_int] at hx'
   exact h m hx'
+
+/-- A monic integral quartic with no integral root and no monic integral quadratic factor is
+irreducible over `ℚ`. By Gauss's lemma it suffices to rule out monic factors of degree one and two
+over `ℤ`, and a monic linear factor `X + C c` divides `g` exactly when `-c` is a root of `g`. -/
+theorem irreducible_map_intCast_of_natDegree_eq_four {g : ℤ[X]} (hg : g.Monic)
+    (hdeg : g.natDegree = 4) (hroot : ∀ m : ℤ, g.eval m ≠ 0)
+    (hquad : ∀ a b : ℤ, ¬ X ^ 2 + C a * X + C b ∣ g) :
+    Irreducible (g.map (Int.castRingHom ℚ)) := by
+  rw [← IsPrimitive.Int.irreducible_iff_irreducible_map_cast hg.isPrimitive]
+  have hg1 : g ≠ 1 := fun h => by simp [h] at hdeg
+  rw [hg.irreducible_iff_lt_natDegree_lt hg1]
+  intro q hq hqdeg hdvd
+  rw [hdeg, Finset.mem_Ioc] at hqdeg
+  obtain hq1 | hq2 : q.natDegree = 1 ∨ q.natDegree = 2 := by omega
+  · rw [hq.eq_X_add_C hq1, ← sub_neg_eq_add, ← C_neg, dvd_iff_isRoot] at hdvd
+    exact hroot _ hdvd
+  · refine hquad (q.coeff 1) (q.coeff 0) ?_
+    have hqeq : q = X ^ 2 + C (q.coeff 1) * X + C (q.coeff 0) := by
+      have h := eq_quadratic_of_degree_le_two (degree_le_of_natDegree_le hq2.le)
+      have hc : q.coeff 2 = 1 := by simpa [hq2] using hq.coeff_natDegree
+      rwa [hc, C_1, one_mul] at h
+    rwa [← hqeq]
 
 end TauCeti
 

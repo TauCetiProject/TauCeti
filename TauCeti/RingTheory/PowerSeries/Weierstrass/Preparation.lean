@@ -12,34 +12,36 @@ public import TauCeti.RingTheory.PowerSeries.Weierstrass.Division
 # Weierstrass preparation for restricted power series
 
 The power series restricted at a radius `c` form a subring `PowerSeries.IsRestricted.subring c`
-of `K⟦X⟧`; over a complete nonarchimedean field and at a positive radius it is the Tate algebra of
+of `R⟦X⟧`; over a complete nonarchimedean field and at a positive radius it is the Tate algebra of
 the closed disc of radius `c`. This file describes its units and factors a distinguished series
-through a monic polynomial.
+through a monic polynomial. The coefficients may lie in any complete ultrametric normed
+commutative ring with multiplicative norm, such as a Tate algebra in fewer variables; the series
+to be factored is then asked to have a unit coefficient in its distinguished degree, which is
+automatic over a field.
 
-A restricted series is a unit of that subring exactly when it is distinguished of degree `0`, that
-is, when its constant coefficient strictly dominates every positive-degree weighted coefficient
-and attains the Gauss norm. Weierstrass preparation then says that a restricted series `f`
-distinguished of degree `s` factors as
+Over such a ring, a restricted series is a unit of that subring exactly when it is distinguished
+of degree `0`, that is, when its constant coefficient strictly dominates every positive-degree
+weighted coefficient and attains the Gauss norm, and its constant coefficient is a unit. Over a
+field the second condition follows from the first. Weierstrass preparation then says that a
+restricted series `f` distinguished of degree `s`, with a unit coefficient in degree `s`, factors as
 
 ```text
 f = e * ω,    e a unit of the ring of restricted series,    ω monic of degree s,
 ```
 
-and that the pair `(e, ω)` is unique. Both statements come from Weierstrass division. Dividing `1`
-by a series distinguished of degree `0` leaves a remainder that vanishes in every degree, so the
-quotient is an inverse. Dividing `X ^ s` by `f` leaves a remainder `r` of degree less than `s`
-whose weighted coefficients are bounded by `c ^ s`, so `ω = X ^ s - r` is distinguished of degree
-`s`; the quotient is then distinguished of degree `0`, hence a unit, and `f` is its inverse
-times `ω`.
+and that the pair `(e, ω)` is unique; the polynomial `ω` is again distinguished of degree `s`.
+Both statements are consequences of Weierstrass division.
 
-The factorization presents the quotient of the ring of restricted series by `f` as the quotient of
-`K[X]` by a polynomial of degree `s`, which is the route to noetherianity of the Tate algebra.
+Since `e` is a unit, `f` and `ω` generate the same ideal, so the factorization presents the
+quotient of the ring of restricted series by `f` as the quotient of `R[X]` by a monic polynomial of
+degree `s`. This is the route to noetherianity of the Tate algebra.
 
 ## Main results
 
-* `TauCeti.PowerSeries.isDistinguished_zero_of_isUnit` and
-  `TauCeti.PowerSeries.isUnit_iff_isDistinguished_zero`: a restricted series is a unit of the ring
-  of restricted series exactly when it is distinguished of degree `0`.
+* `TauCeti.PowerSeries.isDistinguished_zero_of_isUnit`,
+  `TauCeti.PowerSeries.isUnit_iff_isDistinguished_zero_and_isUnit_coeff_zero` and, over a field,
+  `TauCeti.PowerSeries.isUnit_iff_isDistinguished_zero`: the units of the ring of restricted
+  series.
 * `TauCeti.PowerSeries.IsDistinguished.of_isUnit_mul`: multiplying by such a unit leaves the
   distinguished degree unchanged.
 * `TauCeti.PowerSeries.IsDistinguished.exists_isUnit_isMonicOfDegree_mul_eq`,
@@ -50,15 +52,16 @@ The factorization presents the quotient of the ring of restricted series by `f` 
 ## References
 
 * Bosch, Güntzer, Remmert, *Non-Archimedean Analysis*, §5.2.2, Theorem 1, whose statement this is;
-  the statement there is for the unit radius, and the argument is the one used here.
+  the statement there is for the unit radius. The factor `ω` is constructed as there; that the
+  quotient is a unit is deduced here from a second Weierstrass division.
 
 Mathlib's `PowerSeries.exists_isWeierstrassFactorization` is a different factorization theorem, for
 the divisors of `Mathlib.RingTheory.PowerSeries.WeierstrassPreparation`: there the series lives over
 an `I`-adically complete coefficient ring, the distinguished polynomial is one whose lower
-coefficients lie in `I`, and the unit is a unit of the whole of `A⟦X⟧`. Here the coefficient field
-is complete for an ultrametric norm, the polynomial is monic with its lower coefficients bounded by
-the Gauss norm, and the unit is a unit of the subring of restricted series. Neither statement
-implies the other.
+coefficients lie in `I`, and the unit is a unit of the whole of `A⟦X⟧`. Here the coefficient ring
+is complete for a multiplicative ultrametric norm, the polynomial is monic with its lower
+coefficients bounded by the Gauss norm, and the unit is a unit of the subring of restricted series.
+Neither statement implies the other.
 -/
 
 public section
@@ -119,20 +122,24 @@ theorem IsDistinguished.of_isUnit_mul {u : PowerSeries.IsRestricted.subring (R :
 
 end NormedRing
 
-section Field
+section NormedCommRing
 
-variable {K : Type*} [NormedField K] [IsUltrametricDist K] {c : ℝ} {s : ℕ} {f : PowerSeries K}
+variable {R : Type*} [NormedCommRing R] [IsUltrametricDist R] [NormMulClass R] {c : ℝ} {s : ℕ}
+  {f : PowerSeries R}
 
-/-- **The units of the ring of restricted power series.** Over a complete nonarchimedean field, a
-restricted power series is a unit of the ring of series restricted at a positive radius `c`
-exactly when it is distinguished of degree `0` at `c`. -/
-@[simp] theorem isUnit_iff_isDistinguished_zero [CompleteSpace K] (hc : 0 < c)
-    (x : PowerSeries.IsRestricted.subring (R := K) c) :
-    IsUnit x ↔ IsDistinguished c 0 (x : PowerSeries K) := by
-  refine ⟨isDistinguished_zero_of_isUnit hc, fun hx ↦ ?_⟩
+/-- **The units of the ring of restricted power series.** Over a complete ultrametric normed
+commutative ring with multiplicative norm, a restricted power series is a unit of the ring of
+series restricted at a positive radius `c` exactly when it is distinguished of degree `0` at `c`
+and its constant coefficient is a unit. -/
+theorem isUnit_iff_isDistinguished_zero_and_isUnit_coeff_zero [CompleteSpace R] [Nontrivial R]
+    (hc : 0 < c) (x : PowerSeries.IsRestricted.subring (R := R) c) :
+    IsUnit x ↔ IsDistinguished c 0 (x : PowerSeries R) ∧ IsUnit ((x : PowerSeries R).coeff 0) := by
+  refine ⟨fun hx ↦ ⟨isDistinguished_zero_of_isUnit hc hx, ?_⟩, fun ⟨hx, hu⟩ ↦ ?_⟩
+  · rw [PowerSeries.coeff_zero_eq_constantCoeff_apply]
+    exact (hx.map (PowerSeries.IsRestricted.subring (R := R) c).subtype).map _
   -- Dividing `1` by `x` leaves a remainder vanishing in every degree.
   obtain ⟨q, r, hq, hr, hqr⟩ :=
-    hx.exists_mul_add_eq hc x.2 (PowerSeries.isRestricted_one c)
+    hx.exists_mul_add_eq hu hc x.2 (PowerSeries.isRestricted_one c)
   have hr0 : r = 0 := PowerSeries.ext fun m ↦ by rw [hr m (Nat.zero_le m), map_zero]
   rw [hr0, add_zero] at hqr
   refine IsUnit.of_mul_eq_one ⟨q, hq⟩ (Subtype.ext ?_)
@@ -140,37 +147,42 @@ exactly when it is distinguished of degree `0` at `c`. -/
   exact hqr
 
 /-- **Weierstrass preparation** (Bosch–Güntzer–Remmert §5.2.2, Theorem 1). Over a complete
-nonarchimedean field, a restricted series `f` distinguished of degree `s` at a positive radius `c`
+ultrametric normed commutative ring with multiplicative norm, a restricted series `f`
+distinguished of degree `s` at a positive radius `c`, whose coefficient in degree `s` is a unit,
 is a unit of the ring of restricted series times a monic polynomial of degree `s`:
 
 ```text
 f = e * ω,    e a unit,    ω monic of degree s.
 ```
 
-The polynomial `ω` is then itself distinguished of degree `s`, by
-`TauCeti.PowerSeries.IsDistinguished.of_isUnit_mul`, so no bound on its lower coefficients needs
-stating separately. The factorization is unique by
+Over a field the unit condition is automatic, by
+`TauCeti.PowerSeries.IsDistinguished.coeff_ne_zero`. The polynomial `ω` is then itself
+distinguished of degree `s`, by `TauCeti.PowerSeries.IsDistinguished.of_isUnit_mul`, so no bound
+on its lower coefficients needs stating separately. The factorization is unique by
 `TauCeti.PowerSeries.IsDistinguished.eq_and_eq_of_mul_eq_mul`. -/
-theorem IsDistinguished.exists_isUnit_isMonicOfDegree_mul_eq [CompleteSpace K]
-    (hf : IsDistinguished c s f) (hc : 0 < c) (hfr : f.IsRestricted c) :
-    ∃ (e : PowerSeries.IsRestricted.subring (R := K) c) (ω : Polynomial K),
-      IsUnit e ∧ ω.IsMonicOfDegree s ∧ (e : PowerSeries K) * (ω : PowerSeries K) = f := by
+theorem IsDistinguished.exists_isUnit_isMonicOfDegree_mul_eq [CompleteSpace R]
+    (hf : IsDistinguished c s f) (hu : IsUnit (f.coeff s)) (hc : 0 < c)
+    (hfr : f.IsRestricted c) :
+    ∃ (e : PowerSeries.IsRestricted.subring (R := R) c) (ω : Polynomial R),
+      IsUnit e ∧ ω.IsMonicOfDegree s ∧ (e : PowerSeries R) * (ω : PowerSeries R) = f := by
+  have : Nontrivial R := nontrivial_of_ne _ _ hf.coeff_ne_zero
+  have : NormOneClass R := NormMulClass.toNormOneClass
   -- Divide `X ^ s` by `f`.
-  have hXr : (PowerSeries.X ^ s : PowerSeries K).IsRestricted c :=
+  have hXr : (PowerSeries.X ^ s : PowerSeries R).IsRestricted c :=
     isRestricted_of_forall_coeff_eq_zero (n := s + 1) fun m hm ↦ by
       rw [PowerSeries.coeff_X_pow, ite_eq_right (by omega : ¬(m = s))]
-  obtain ⟨q, r, hq, hr, hqr⟩ := hf.exists_mul_add_eq hc hfr hXr
+  obtain ⟨q, r, hq, hr, hqr⟩ := hf.exists_mul_add_eq hu hc hfr hXr
   have hrr : r.IsRestricted c := isRestricted_of_forall_coeff_eq_zero hr
   -- The Gauss norm of `X ^ s` is `c ^ s`, so the remainder is bounded by `c ^ s`.
-  have hXle : ∀ m, ‖(PowerSeries.X ^ s : PowerSeries K).coeff m‖ * c ^ m
-      ≤ ‖(PowerSeries.X ^ s : PowerSeries K).coeff s‖ * c ^ s := by
+  have hXle : ∀ m, ‖(PowerSeries.X ^ s : PowerSeries R).coeff m‖ * c ^ m
+      ≤ ‖(PowerSeries.X ^ s : PowerSeries R).coeff s‖ * c ^ s := by
     intro m
     rcases eq_or_ne m s with rfl | hm
     · exact le_rfl
     · rw [PowerSeries.coeff_X_pow, ite_eq_right hm, norm_zero, zero_mul,
         PowerSeries.coeff_X_pow_self, norm_one, one_mul]
       exact pow_nonneg hc.le s
-  have hXnorm : (PowerSeries.X ^ s : PowerSeries K).gaussNorm norm c = c ^ s := by
+  have hXnorm : (PowerSeries.X ^ s : PowerSeries R).gaussNorm norm c = c ^ s := by
     rw [gaussNorm_eq_of_forall_le hXle, PowerSeries.coeff_X_pow_self, norm_one, one_mul]
   have hrle : r.gaussNorm norm c ≤ c ^ s := by
     have hmax := hf.gaussNorm_mul_add_eq_max hc hq hr
@@ -178,89 +190,84 @@ theorem IsDistinguished.exists_isUnit_isMonicOfDegree_mul_eq [CompleteSpace K]
     rw [hmax]
     exact le_max_right _ _
   -- The remainder is a polynomial of degree less than `s`; subtract it from `X ^ s`.
-  have hpc : ((r.trunc s : Polynomial K) : PowerSeries K) = r :=
+  have hpc : ((r.trunc s : Polynomial R) : PowerSeries R) = r :=
     PowerSeries.ext fun m ↦ by
       rw [Polynomial.coeff_coe, PowerSeries.coeff_trunc]
       split_ifs with hm
       · rfl
       · exact (hr m (by omega)).symm
-  set ω : Polynomial K := Polynomial.X ^ s - r.trunc s with hω
-  have hωc : (ω : PowerSeries K) = PowerSeries.X ^ s - r := by
+  set ω : Polynomial R := Polynomial.X ^ s - r.trunc s with hω
+  have hωc : (ω : PowerSeries R) = PowerSeries.X ^ s - r := by
     rw [hω, Polynomial.coe_sub, Polynomial.coe_pow, Polynomial.coe_X, hpc]
-  have hωq : (ω : PowerSeries K) = q * f := by rw [hωc, ← hqr]; ring
+  have hωq : (ω : PowerSeries R) = q * f := by rw [hωc, ← hqr]; ring
   have hωm : ω.IsMonicOfDegree s := by
     rcases s with _ | s
     · simp [hω]
     · simpa [Nat.succ_eq_add_one] using
-        (Polynomial.isMonicOfDegree_X_pow K (s + 1)).sub
+        (Polynomial.isMonicOfDegree_X_pow R (s + 1)).sub
           (PowerSeries.natDegree_trunc_lt r s)
   -- `ω` is distinguished of degree `s`: its leading coefficient `1` dominates.
-  have hcs : ‖(ω : PowerSeries K).coeff s‖ * c ^ s = c ^ s := by
-    rw [Polynomial.coeff_coe,
-      hωm.coeff_eq (Polynomial.isMonicOfDegree_X_pow K s) le_rfl,
-      Polynomial.coeff_X_pow, ite_eq_left rfl, norm_one, one_mul]
-  have hbound : ∀ m, ‖(ω : PowerSeries K).coeff m‖ * c ^ m ≤ c ^ s := fun m ↦ by
+  have hωs : (ω : PowerSeries R).coeff s = 1 := by
+    rw [Polynomial.coeff_coe, hωm.coeff_eq (Polynomial.isMonicOfDegree_X_pow R s) le_rfl,
+      Polynomial.coeff_X_pow, ite_eq_left rfl]
+  have hcs : ‖(ω : PowerSeries R).coeff s‖ * c ^ s = c ^ s := by
+    rw [hωs, norm_one, one_mul]
+  have hbound : ∀ m, ‖(ω : PowerSeries R).coeff m‖ * c ^ m ≤ c ^ s := fun m ↦ by
     rcases eq_or_ne m s with rfl | hm
     · exact hcs.le
-    · have hcoeff : (ω : PowerSeries K).coeff m = -r.coeff m := by
+    · have hcoeff : (ω : PowerSeries R).coeff m = -r.coeff m := by
         rw [hωc, map_sub, PowerSeries.coeff_X_pow, ite_eq_right hm, zero_sub]
       rw [hcoeff, norm_neg]
       exact (PowerSeries.le_gaussNorm norm c r (hasGaussNorm_of_isRestricted hrr) m).trans hrle
-  have hωnorm : (ω : PowerSeries K).gaussNorm norm c = c ^ s := by
+  have hωnorm : (ω : PowerSeries R).gaussNorm norm c = c ^ s := by
     rw [gaussNorm_eq_of_forall_le (s := s) fun m ↦ (hbound m).trans hcs.ge, hcs]
-  have hωd : IsDistinguished c s (ω : PowerSeries K) :=
+  have hωd : IsDistinguished c s (ω : PowerSeries R) :=
     ⟨by rw [hcs, hωnorm], fun m hm ↦ by
       rw [Polynomial.coeff_coe,
-        hωm.coeff_eq (Polynomial.isMonicOfDegree_X_pow K s) hm.le,
+        hωm.coeff_eq (Polynomial.isMonicOfDegree_X_pow R s) hm.le,
         Polynomial.coeff_X_pow, ite_eq_right hm.ne', norm_zero, zero_mul, hωnorm]
       exact pow_pos hc s⟩
-  -- Comparing distinguished degrees in `ω = q * f` makes `q` distinguished of degree `0`.
-  have hq0 : q ≠ 0 := by
-    intro h
-    rw [h, zero_mul] at hωq
-    exact hωd.ne_zero hωq
-  obtain ⟨n, hn⟩ := exists_isDistinguished hc hq hq0
-  have hn0 : n = 0 := by
-    have hmul := hn.mul hf hc
-    rw [← hωq] at hmul
-    have := hωd.unique hmul
-    omega
-  rw [hn0] at hn
-  obtain ⟨e, he⟩ :=
-    ((isUnit_iff_isDistinguished_zero hc ⟨q, hq⟩).mpr hn).exists_right_inv
-  have hcoe : q * (e : PowerSeries K) = 1 := by
-    simpa using congrArg (Subring.subtype _) he
-  refine ⟨e, ω, IsUnit.of_mul_eq_one_right _ he, hωm, ?_⟩
-  calc (e : PowerSeries K) * (ω : PowerSeries K) = q * (e : PowerSeries K) * f := by
-        rw [hωq]; ring
-    _ = f := by rw [hcoe, one_mul]
+  -- Divide `f` by the monic `ω`: `f = e * ω + r'`. Then `f = (e * q) * f + r'`, and uniqueness of
+  -- division by `f` makes `q` an inverse of `e` and the remainder `r'` zero.
+  have hωr : (ω : PowerSeries R).IsRestricted c :=
+    isRestricted_of_forall_coeff_eq_zero (n := ω.natDegree + 1) fun m hm ↦ by
+      rw [Polynomial.coeff_coe]
+      exact Polynomial.coeff_eq_zero_of_natDegree_lt (by omega)
+  obtain ⟨e, r', he, hr', her'⟩ := hωd.exists_mul_add_eq (by rw [hωs]; exact isUnit_one) hc hωr hfr
+  have hself : e * q * f + r' = 1 * f + 0 := by
+    rw [mul_assoc, ← hωq, her', one_mul, add_zero]
+  obtain ⟨heq, hr0⟩ := hf.eq_and_eq_of_mul_add_eq_mul_add hc
+    (PowerSeries.isRestricted.mul c he hq) (PowerSeries.isRestricted_one c) hr'
+    (fun m _ ↦ by simp) hself
+  rw [hr0, add_zero] at her'
+  exact ⟨⟨e, he⟩, ω, IsUnit.of_mul_eq_one ⟨q, hq⟩ (Subtype.ext heq), hωm, her'⟩
 
 /-- **Uniqueness in Weierstrass preparation** (Bosch–Güntzer–Remmert §5.2.2, Theorem 1). A
 restricted series distinguished of degree `s` at a positive radius has at most one factorization
 as a unit of the ring of restricted series times a monic polynomial of degree `s`. -/
 theorem IsDistinguished.eq_and_eq_of_mul_eq_mul (hf : IsDistinguished c s f) (hc : 0 < c)
-    {e e' : PowerSeries.IsRestricted.subring (R := K) c} {ω ω' : Polynomial K} (he : IsUnit e)
+    {e e' : PowerSeries.IsRestricted.subring (R := R) c} {ω ω' : Polynomial R} (he : IsUnit e)
     (he' : IsUnit e') (hω : ω.IsMonicOfDegree s) (hω' : ω'.IsMonicOfDegree s)
-    (h : (e : PowerSeries K) * (ω : PowerSeries K) = f)
-    (h' : (e' : PowerSeries K) * (ω' : PowerSeries K) = f) :
+    (h : (e : PowerSeries R) * (ω : PowerSeries R) = f)
+    (h' : (e' : PowerSeries R) * (ω' : PowerSeries R) = f) :
     e = e' ∧ ω = ω' := by
   -- The cofactor of a unit in a distinguished series is distinguished of the same degree.
-  have hωd : IsDistinguished c s (ω : PowerSeries K) :=
+  have hωd : IsDistinguished c s (ω : PowerSeries R) :=
     IsDistinguished.of_isUnit_mul (by rw [h]; exact hf) hc he
   -- Dividing `ω'` by `ω`, once as it stands and once with quotient `1`, identifies the two.
   obtain ⟨v, hv⟩ := he'.exists_right_inv
-  have hv' : (e' : PowerSeries K) * (v : PowerSeries K) = 1 := by
+  have hv' : (e' : PowerSeries R) * (v : PowerSeries R) = 1 := by
     simpa using congrArg (Subring.subtype _) hv
-  have hquot : ((v * e : PowerSeries.IsRestricted.subring (R := K) c) : PowerSeries K)
-      * (ω : PowerSeries K) = (ω' : PowerSeries K) := by
-    rw [Subring.coe_mul, mul_assoc, h, ← h', ← mul_assoc, mul_comm (v : PowerSeries K), hv',
+  have hquot : ((v * e : PowerSeries.IsRestricted.subring (R := R) c) : PowerSeries R)
+      * (ω : PowerSeries R) = (ω' : PowerSeries R) := by
+    rw [Subring.coe_mul, mul_assoc, h, ← h', ← mul_assoc, mul_comm (v : PowerSeries R), hv',
       one_mul]
-  have hdiff : ∀ m, s ≤ m → ((ω' : PowerSeries K) - (ω : PowerSeries K)).coeff m = 0 := by
+  have hdiff : ∀ m, s ≤ m → ((ω' : PowerSeries R) - (ω : PowerSeries R)).coeff m = 0 := by
     intro m hm
     rw [map_sub, Polynomial.coeff_coe, Polynomial.coeff_coe, hω'.coeff_eq hω hm, sub_self]
   obtain ⟨hq1, hr1⟩ := hωd.eq_and_eq_of_mul_add_eq_mul_add hc
-    (q := ((v * e : PowerSeries.IsRestricted.subring (R := K) c) : PowerSeries K)) (r := 0)
-    (q' := 1) (r' := (ω' : PowerSeries K) - (ω : PowerSeries K))
+    (q := ((v * e : PowerSeries.IsRestricted.subring (R := R) c) : PowerSeries R)) (r := 0)
+    (q' := 1) (r' := (ω' : PowerSeries R) - (ω : PowerSeries R))
     (v * e).2 (PowerSeries.isRestricted_one c)
     (fun m _ ↦ by simp) hdiff (by rw [hquot]; ring)
   refine ⟨?_, (Polynomial.coe_inj.mp (sub_eq_zero.mp hr1.symm)).symm⟩
@@ -270,17 +277,34 @@ theorem IsDistinguished.eq_and_eq_of_mul_eq_mul (hf : IsDistinguished c s f) (hc
     _ = e' := by rw [mul_assoc, hve, mul_one]
 
 /-- **Weierstrass preparation** (Bosch–Güntzer–Remmert §5.2.2, Theorem 1), in its unique-existence
-form: over a complete nonarchimedean field, a restricted series distinguished of degree `s` at a
-positive radius is in exactly one way a unit of the ring of restricted series times a monic
-polynomial of degree `s`. -/
-theorem IsDistinguished.existsUnique_isUnit_isMonicOfDegree_mul_eq [CompleteSpace K]
-    (hf : IsDistinguished c s f) (hc : 0 < c) (hfr : f.IsRestricted c) :
-    ∃! p : PowerSeries.IsRestricted.subring (R := K) c × Polynomial K,
-      IsUnit p.1 ∧ p.2.IsMonicOfDegree s ∧ (p.1 : PowerSeries K) * (p.2 : PowerSeries K) = f := by
-  obtain ⟨e, ω, he, hm, heq⟩ := hf.exists_isUnit_isMonicOfDegree_mul_eq hc hfr
+form: over a complete ultrametric normed commutative ring with multiplicative norm, a restricted
+series distinguished of degree `s` at a positive radius, whose coefficient in degree `s` is a unit,
+is in exactly one way a unit of the ring of restricted series times a monic polynomial of degree
+`s`. -/
+theorem IsDistinguished.existsUnique_isUnit_isMonicOfDegree_mul_eq [CompleteSpace R]
+    (hf : IsDistinguished c s f) (hu : IsUnit (f.coeff s)) (hc : 0 < c)
+    (hfr : f.IsRestricted c) :
+    ∃! p : PowerSeries.IsRestricted.subring (R := R) c × Polynomial R,
+      IsUnit p.1 ∧ p.2.IsMonicOfDegree s ∧ (p.1 : PowerSeries R) * (p.2 : PowerSeries R) = f := by
+  obtain ⟨e, ω, he, hm, heq⟩ := hf.exists_isUnit_isMonicOfDegree_mul_eq hu hc hfr
   refine ⟨(e, ω), ⟨he, hm, heq⟩, fun p ⟨h1, h2, h3⟩ ↦ ?_⟩
   obtain ⟨u1, u2⟩ := hf.eq_and_eq_of_mul_eq_mul hc h1 he h2 hm h3 heq
   exact Prod.ext u1 u2
+
+end NormedCommRing
+
+section Field
+
+variable {K : Type*} [NormedField K] [IsUltrametricDist K] [CompleteSpace K] {c : ℝ}
+
+/-- **The units of the ring of restricted power series over a field.** Over a complete
+nonarchimedean field, a restricted power series is a unit of the ring of series restricted at a
+positive radius `c` exactly when it is distinguished of degree `0` at `c`. -/
+@[simp] theorem isUnit_iff_isDistinguished_zero (hc : 0 < c)
+    (x : PowerSeries.IsRestricted.subring (R := K) c) :
+    IsUnit x ↔ IsDistinguished c 0 (x : PowerSeries K) := by
+  rw [isUnit_iff_isDistinguished_zero_and_isUnit_coeff_zero hc,
+    and_iff_left_of_imp fun h ↦ h.coeff_ne_zero.isUnit]
 
 end Field
 

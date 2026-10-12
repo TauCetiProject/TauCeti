@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.InvariantDifferential
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Neg
+public import TauCeti.RingTheory.Kaehler.BaseChange
 public import TauCeti.RingTheory.Kaehler.MapSemilinear
 import TauCeti.FieldTheory.IntermediateField.FieldRange
 import Mathlib.RingTheory.Unramified.Field
@@ -151,27 +152,12 @@ theorem pullbackDifferential_invariantDifferential [W₂.IsElliptic] (φ : Isoge
 @[simp]
 theorem pullbackDifferential_negIsogeny_invariantDifferential (W : WeierstrassCurve.Affine F) :
     (negIsogeny W).pullbackDifferential (invariantDifferential W) = -invariantDifferential W := by
-  -- Negation fixes `x` and sends `y` to `negY x y`.
-  have hx : (negIsogeny W).fieldPullback (genericX W) = genericX W := by
-    have : (negIsogeny W).fieldPullback (genericX W) = algebraMap W.CoordinateRing W.FunctionField
-        (CoordinateRing.conj W (AdjoinRoot.of W.polynomial Polynomial.X)) := by
-      rw [genericX_def, fieldPullback_algebraMap, negIsogeny_pullback, negPullback_apply,
-        AdjoinRoot.mk_C]
-    rw [this, CoordinateRing.conj_mk_C, ← genericX_def]
-  have hy : (negIsogeny W).fieldPullback (genericY W) =
-      (W⁄W.FunctionField).toAffine.negY (genericX W) (genericY W) := by
-    have : (negIsogeny W).fieldPullback (genericY W) = algebraMap W.CoordinateRing W.FunctionField
-        (CoordinateRing.conj W (AdjoinRoot.root W.polynomial)) := by
-      rw [genericY_def, fieldPullback_algebraMap, negIsogeny_pullback, negPullback_apply,
-        AdjoinRoot.mk_X]
-    rw [this, CoordinateRing.conj_mk_Y, ← evalEval_genericX_genericY, ← map_negPolynomial,
-      evalEval_negPolynomial]
-    simp only [WeierstrassCurve.baseChange]
-  rw [invariantDifferential_def, pullbackDifferential_smul, pullbackDifferential_D, map_inv₀, hx,
-    ← neg_smul, neg_inv]
+  rw [invariantDifferential_def, pullbackDifferential_smul, pullbackDifferential_D, map_inv₀,
+    fieldPullback_negIsogeny_genericX, ← neg_smul, neg_inv]
   congr 2
-  simp only [invariantDifferentialDenom_def, map_add, map_mul, map_ofNat, AlgHom.commutes, hx, hy,
-    negY, WeierstrassCurve.baseChange, WeierstrassCurve.map_a₁, WeierstrassCurve.map_a₃]
+  simp only [invariantDifferentialDenom_def, map_add, map_mul, map_ofNat, AlgHom.commutes,
+    fieldPullback_negIsogeny_genericX, fieldPullback_negIsogeny_genericY, negY,
+    WeierstrassCurve.baseChange, WeierstrassCurve.map_a₁, WeierstrassCurve.map_a₃]
   ring
 
 /-- **An isogeny is separable exactly when it pulls the invariant differential back to a nonzero
@@ -200,8 +186,8 @@ theorem isSeparable_iff_pullbackDifferential_ne_zero [W₁.IsElliptic] [W₂.IsE
   have hsep : Algebra.IsSeparable φ.fieldPullback.fieldRange W₁.FunctionField ↔
       Algebra.IsSeparable W₂.FunctionField W₁.FunctionField := by
     rw [← Field.finSepDegree_eq_finrank_iff, ← Field.finSepDegree_eq_finrank_iff,
-      TauCeti.AlgHom.finSepDegree_fieldRange φ.fieldPullback halg,
-      TauCeti.AlgHom.finrank_fieldRange φ.fieldPullback halg]
+      φ.fieldPullback.finSepDegree_fieldRange halg,
+      φ.fieldPullback.finrank_fieldRange halg]
   -- A finite extension is separable exactly when its module of differentials vanishes.
   have hunr : Algebra.IsSeparable W₂.FunctionField W₁.FunctionField ↔
       Subsingleton (KaehlerDifferential W₂.FunctionField W₁.FunctionField) := by
@@ -209,40 +195,26 @@ theorem isSeparable_iff_pullbackDifferential_ne_zero [W₁.IsElliptic] [W₂.IsE
   -- By the exact sequence `K₁ ⊗ Ω[K₂/F] → Ω[K₁/F] → Ω[K₁/K₂] → 0`, that is the surjectivity of the
   -- first map.
   have hmap : Subsingleton (KaehlerDifferential W₂.FunctionField W₁.FunctionField) ↔
-      (KaehlerDifferential.mapBaseChange F W₂.FunctionField W₁.FunctionField).range = ⊤ := by
-    rw [KaehlerDifferential.range_mapBaseChange, LinearMap.ker_eq_top]
-    refine ⟨fun h ↦ LinearMap.ext fun x ↦ Subsingleton.elim _ _, fun h ↦ ⟨fun a b ↦ ?_⟩⟩
-    obtain ⟨x, rfl⟩ := KaehlerDifferential.map_surjective F W₂.FunctionField W₁.FunctionField a
-    obtain ⟨y, rfl⟩ := KaehlerDifferential.map_surjective F W₂.FunctionField W₁.FunctionField b
-    rw [h, LinearMap.zero_apply, LinearMap.zero_apply]
+      (KaehlerDifferential.mapBaseChange F W₂.FunctionField W₁.FunctionField).range = ⊤ :=
+    TauCeti.subsingleton_kaehlerDifferential_iff_range_mapBaseChange_eq_top
+      F W₂.FunctionField W₁.FunctionField
   -- The range of the first map is spanned by `φ^*ω₂`, since `ω₂` spans `Ω[K₂/F]`.
   have hrange :
       (KaehlerDifferential.mapBaseChange F W₂.FunctionField W₁.FunctionField).range =
         Submodule.span W₁.FunctionField {φ.pullbackDifferential (invariantDifferential W₂)} := by
-    refine le_antisymm ?_ ?_
-    · rintro v ⟨t, rfl⟩
-      induction t using TensorProduct.induction_on with
-      | zero => rw [map_zero]; exact Submodule.zero_mem _
-      | tmul x y =>
-        obtain ⟨c, rfl⟩ := (existsUnique_smul_invariantDifferential W₂ y).exists
-        rw [KaehlerDifferential.mapBaseChange_tmul, map_smul, hmapφ]
-        exact Submodule.smul_mem _ _ (Submodule.smul_of_tower_mem _ _
-          (Submodule.mem_span_singleton_self _))
-      | add a b ha hb => rw [map_add]; exact Submodule.add_mem _ ha hb
-    · rw [Submodule.span_le, Set.singleton_subset_iff]
-      exact ⟨1 ⊗ₜ invariantDifferential W₂, by
-        rw [KaehlerDifferential.mapBaseChange_tmul, one_smul, hmapφ]⟩
+    have hspan : Submodule.span W₂.FunctionField {invariantDifferential W₂} = ⊤ :=
+      (Submodule.span_singleton_eq_top_iff W₂.FunctionField _).mpr fun η ↦
+        (existsUnique_smul_invariantDifferential W₂ η).exists
+    rw [TauCeti.range_mapBaseChange_eq_span_singleton
+      F W₂.FunctionField W₁.FunctionField _ hspan]
+    congr 2
+    exact hmapφ _
   -- In the one-dimensional `Ω[K₁/F]`, a differential spans exactly when it is nonzero.
   have hspan : ∀ v : KaehlerDifferential F W₁.FunctionField,
-      Submodule.span W₁.FunctionField {v} = ⊤ ↔ v ≠ 0 := fun v ↦ by
-    constructor
-    · rintro h rfl
-      rw [Submodule.span_zero_singleton] at h
-      exact invariantDifferential_ne_zero W₁
-        ((Submodule.mem_bot _).1 (h ▸ Submodule.mem_top))
-    · intro hv
-      exact (finrank_eq_one_iff_of_nonzero v hv).mp
-        (TauCeti.finrank_kaehlerDifferential_eq_one_of_separating (transcendental_genericX W₁))
+      Submodule.span W₁.FunctionField {v} = ⊤ ↔ v ≠ 0 := fun v ↦
+    TauCeti.span_singleton_eq_top_iff_ne_zero_of_finrank_eq_one
+      (TauCeti.finrank_kaehlerDifferential_eq_one_of_separating
+        (transcendental_genericX W₁)) v
   rw [hsep, hunr, hmap, hrange, hspan]
 
 end TauCeti.Isogeny

@@ -7,19 +7,23 @@ module
 
 public import Mathlib.FieldTheory.PurelyInseparable.PerfectClosure
 public import Mathlib.FieldTheory.RatFunc.IntermediateField
+public import Mathlib.FieldTheory.Relrank
 
 /-!
 # Power subfields of a rational function field
 
 For a field `K` and an exponent `n`, this file computes the degree of `K(X)` over the subfield
 `K(X ^ n)`, and records that `K(X)` is purely inseparable over `K(X ^ q)` when `q` is the
-exponential characteristic of `K`.
+exponential characteristic of `K`.  Transporting the first degree along the identification of
+`K(X)` with `K⟮x⟯` gives `[K(x) : K(x ^ n)] = n` for an arbitrary transcendental element `x` of an
+extension of `K`.
 
 ## Main results
 
 * `TauCeti.RatFunc.finrank_adjoin_X_pow`: `[K(X) : K(X ^ n)] = n`.
 * `TauCeti.RatFunc.isPurelyInseparable_adjoin_X_pow`: `K(X) / K(X ^ q)` is purely inseparable
   for `q` the exponential characteristic of `K`.
+* `TauCeti.relfinrank_adjoin_pow_adjoin`: `[K(x) : K(x ^ n)] = n` for `x` transcendental.
 
 ## Mathematical context
 
@@ -64,5 +68,57 @@ instance isPurelyInseparable_adjoin_X_pow (K : Type*) [Field K] (q : ℕ) [ExpCh
   exact (_root_.RatFunc.IntermediateField.adjoinXEquiv E).isPurelyInseparable
 
 end TauCeti.RatFunc
+
+namespace TauCeti
+
+open scoped IntermediateField
+
+/-- **`[k(x) : k(x ^ n)] = n`** for an element `x` transcendental over `k`. This supplies the
+power-subfield degree formula for arbitrary transcendental parameters. -/
+theorem relfinrank_adjoin_pow_adjoin {k : Type*} [Field k] {F : Type*} [Field F] [Algebra k F]
+    {x : F} (hx : Transcendental k x) (n : ℕ) :
+    IntermediateField.relfinrank k⟮x ^ n⟯ k⟮x⟯ = n := by
+  let e : _root_.RatFunc k ≃ₐ[k] k⟮x⟯ := _root_.RatFunc.algEquivOfTranscendental x hx
+  have heX : e _root_.RatFunc.X = (⟨x, IntermediateField.mem_adjoin_simple_self k x⟩ : k⟮x⟯) := by
+    apply Subtype.ext
+    exact _root_.RatFunc.algEquivOfTranscendental_X x hx
+  have hePow : (IntermediateField.adjoin k
+      {(_root_.RatFunc.X : _root_.RatFunc k) ^ n}).map e.toAlgHom =
+      IntermediateField.adjoin k
+        {(⟨x, IntermediateField.mem_adjoin_simple_self k x⟩ : k⟮x⟯) ^ n} := by
+    rw [IntermediateField.adjoin_map, Set.image_singleton, map_pow]
+    congr 2
+    exact congrArg (· ^ n) heX
+  have heTop : (⊤ : IntermediateField k (_root_.RatFunc k)).map e.toAlgHom = ⊤ := by
+    rw [← AlgHom.fieldRange_eq_map]
+    exact e.fieldRange_eq_top
+  have hvalPow : (IntermediateField.adjoin k
+      {(⟨x, IntermediateField.mem_adjoin_simple_self k x⟩ : k⟮x⟯) ^ n}).map k⟮x⟯.val =
+      k⟮x ^ n⟯ := by
+    simpa only [IntermediateField.lift, IntermediateField.coe_pow] using
+      (IntermediateField.lift_adjoin_simple k k⟮x⟯
+        ((⟨x, IntermediateField.mem_adjoin_simple_self k x⟩ : k⟮x⟯) ^ n))
+  have hvalTop : (⊤ : IntermediateField k k⟮x⟯).map k⟮x⟯.val = k⟮x⟯ :=
+    IntermediateField.lift_top (F := k) k⟮x⟯
+  calc
+    IntermediateField.relfinrank k⟮x ^ n⟯ k⟮x⟯ =
+        IntermediateField.relfinrank
+          ((IntermediateField.adjoin k
+            {(⟨x, IntermediateField.mem_adjoin_simple_self k x⟩ : k⟮x⟯) ^ n}).map
+              k⟮x⟯.val)
+          ((⊤ : IntermediateField k k⟮x⟯).map k⟮x⟯.val) := by rw [hvalPow, hvalTop]
+    _ = IntermediateField.relfinrank
+          (IntermediateField.adjoin k
+            {(⟨x, IntermediateField.mem_adjoin_simple_self k x⟩ : k⟮x⟯) ^ n}) ⊤ :=
+      IntermediateField.relfinrank_map_map _ _ k⟮x⟯.val
+    _ = IntermediateField.relfinrank
+          (IntermediateField.adjoin k {(_root_.RatFunc.X : _root_.RatFunc k) ^ n}) ⊤ := by
+      rw [← hePow, ← heTop]
+      exact IntermediateField.relfinrank_map_map _ _ e.toAlgHom
+    _ = n := by
+      rw [IntermediateField.relfinrank_top_right]
+      exact TauCeti.RatFunc.finrank_adjoin_X_pow k n
+
+end TauCeti
 
 end

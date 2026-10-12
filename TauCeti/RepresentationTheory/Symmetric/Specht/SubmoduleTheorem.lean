@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RepresentationTheory.Induction.Restriction
+public import TauCeti.RepresentationTheory.Subrepresentation
 public import TauCeti.RepresentationTheory.Irreducible
 public import TauCeti.RepresentationTheory.Symmetric.Dominance
 public import TauCeti.RepresentationTheory.Symmetric.Factorization
@@ -45,8 +45,8 @@ self-adjoint for the tabloid form
 (`TauCeti.YoungTableau.tabloidForm_asAlgebraHom_columnAntisymmetrizer`) and `e_t = b_t · {t}`.
 
 The dimension of `S^μ`, the standard basis of polytabloids indexing it, and the statement that
-the `S^μ` exhaust the irreducibles of `Sₙ` and are pairwise non-isomorphic are separate targets and
-are not proved here.  Neither is the comparison of `S^μ` with the left ideal `ℚ[Sₙ] c_t`, which is
+the `S^μ` exhaust the irreducibles of `Sₙ` and are pairwise non-isomorphic are not proved here.
+Neither is the comparison of `S^μ` with the left ideal `ℚ[Sₙ] c_t`, which is
 irreducible by
 `TauCeti.YoungTableau.isIrreducible_spechtIdealRep` through an argument that shares the row-column
 factorization but not the tabloid form.
@@ -68,8 +68,6 @@ factorization but not the tabloid form.
 * [G. D. James, *The Representation Theory of the Symmetric Groups*][james1978], Chapter 4:
   Lemma 4.6, the submodule theorem 4.8, and Corollary 4.9.
 * B. E. Sagan, *The Symmetric Group*, 2nd ed. (2001), Section 2.4.
-* [Schur--Weyl roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SchurWeyl/README.md),
-  Layer 3, "The submodule theorem (James)", and Layer 4, "Irreducibility".
 -/
 
 public section
@@ -82,10 +80,7 @@ namespace YoungTableau
 
 variable {μ : YoungDiagram}
 
-/-- Classical decidability of membership in the column group, used to form its finite sum, as in
-`TauCeti/RepresentationTheory/Symmetric/Symmetrizer.lean`. -/
-noncomputable local instance (t : YoungTableau μ) : DecidablePred (· ∈ colSubgroup t) :=
-  Classical.decPred _
+attribute [local instance] YoungTableau.decidablePredMemColSubgroup
 
 /-! ### James's lemma: the column antisymmetrizer of a tabloid -/
 
@@ -267,7 +262,7 @@ theorem isIrreducible_spechtSubrepresentation (μ : YoungDiagram) :
 isomorphism of groups, and restriction along an isomorphism preserves irreducibility. -/
 instance isIrreducible_spechtModule {n : ℕ} (μ : n.Partition) :
     _root_.Representation.IsIrreducible (spechtModule μ).ρ :=
-  (isIrreducible_comp_equiv_iff (finCongr (card_diagramOf μ).symm).permCongrHom
+  (MulEquiv.isIrreducible_comp_equiv_iff (finCongr (card_diagramOf μ).symm).permCongrHom
     (spechtSubrepresentation (diagramOf μ)).toRepresentation).mpr
     (isIrreducible_spechtSubrepresentation (diagramOf μ))
 

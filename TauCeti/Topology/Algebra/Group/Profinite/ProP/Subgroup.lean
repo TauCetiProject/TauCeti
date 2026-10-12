@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Topology.Algebra.Group.Profinite.Basic
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Basic
+public import TauCeti.Topology.Algebra.Group.TopologicalAbelianization
 
 /-!
 # Subgroups of pro-p groups
@@ -29,6 +30,8 @@ algebraically and then promoted to a profinite subgroup.
 * `Subgroup.isProP_iff_isPGroup_map_mk'`: a subgroup is pro-`p` exactly when all its images
   in the ambient finite continuous quotients are `p`-groups.
 * `IsProP.subgroup`, `IsProP.mono`: the pro-`p` property passes to subgroups.
+* `IsProP.topologicalAbelianization`: the topological abelianization of a subgroup of a pro-`p`
+  group is pro-`p`.
 * `IsProP.topologicalClosure`, `Subgroup.isProP_topologicalClosure_iff`: the topological closure
   of a pro-`p` subgroup is pro-`p`, and the converse holds as well.
 
@@ -92,6 +95,11 @@ theorem mono {K H : Subgroup G} (hH : IsProP p H) (hKH : K ≤ H) : IsProP p K :
   intro U
   exact (hH.isPGroup_map_mk' U).of_injective
     (Subgroup.inclusion (Subgroup.map_mono hKH)) (Subgroup.inclusion_injective _)
+
+/-- The topological abelianization of a subgroup of a pro-`p` group is pro-`p`. -/
+theorem topologicalAbelianization (hG : IsProP p G) (N : Subgroup G) :
+    IsProP p (TopologicalAbelianization N) :=
+  (hG.subgroup N).quotient _
 
 end IsProP
 

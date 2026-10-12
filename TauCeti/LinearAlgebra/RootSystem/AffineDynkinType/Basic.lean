@@ -78,10 +78,11 @@ number, which reduces connectedness to a single induction. Explicitly:
 
 * `TauCeti.AffineDynkinType.graph_connected`: every valid affine simply-laced diagram is
   connected.
+* `TauCeti.AffineDynkinType.exists_adj_graph`: every node of a valid diagram has a neighbour.
 * `TauCeti.AffineDynkinType.graph_A_adj`, `.graph_D_adj`, `.graph_E6_adj`, `.graph_E7_adj`,
   `.graph_E8_adj`: adjacency in each diagram, as a condition on node numbers.
 * `TauCeti.AffineDynkinType.cartanMatrix_eq_graphCartanMatrix`: outside `A₁` the Cartan matrix is
-  the matrix `2I - A` of the underlying graph, `TauCeti.graphCartanMatrix`.
+  the matrix `2I - A` of the underlying graph, `SimpleGraph.graphCartanMatrix`.
 * `TauCeti.AffineDynkinType.graph_eq_diagramGraph_cartanMatrix`: the graph is the diagram of the
   Cartan matrix in the sense of `TauCeti.diagramGraph`, at `A₁` too.
 * `TauCeti.AffineDynkinType.cartanMatrix_E8_eq_submatrix_cartanMatrix_E`: affine `E₈` is Mathlib's
@@ -256,7 +257,6 @@ consecutive or wrap around the whole cycle. This is the arithmetic behind
 `TauCeti.AffineDynkinType.graph_A_adj`. -/
 private lemma sub_val_eq_one_iff {n : ℕ} (hn : 1 ≤ n) (u v : Fin (n + 1)) :
     ((u - v : Fin (n + 1)) : ℕ) = 1 ↔ (v : ℕ) + 1 = (u : ℕ) ∨ ((u : ℕ) = 0 ∧ (v : ℕ) = n) := by
-  have hu : (u : ℕ) < n + 1 := u.isLt
   have hv : (v : ℕ) < n + 1 := v.isLt
   rcases le_or_gt v u with h | h
   · rw [Fin.coe_sub_iff_le.2 h]
@@ -348,6 +348,14 @@ theorem graph_connected {t : AffineDynkinType} (ht : t.Valid) : t.graph.Connecte
   | E7 => exact SimpleGraph.connected_fin_of_exists_adj_lt E7.nodes_pos (by decide)
   | E8 => exact SimpleGraph.connected_fin_of_exists_adj_lt E8.nodes_pos (by decide)
 
+/-- Every node of a valid affine simply-laced diagram has a neighbour: the diagram is connected
+and has at least two nodes. -/
+theorem exists_adj_graph {t : AffineDynkinType} (ht : t.Valid) (i : Fin t.nodes) :
+    ∃ j, t.graph.Adj i j := by
+  have : Nontrivial (Fin t.nodes) := Fin.nontrivial_iff_two_le.mpr (by
+    cases t <;> simp only [Valid, nodes] at ht ⊢ <;> omega)
+  exact (graph_connected ht).preconnected.exists_adj_of_nontrivial i
+
 /-! ## The generalized Cartan matrix -/
 
 /-- The generalized Cartan matrix of an affine simply-laced diagram: `2I - A` for the adjacency
@@ -375,11 +383,12 @@ lemma cartanMatrix_A_one_apply (i j : Fin (A 1).nodes) :
 
 /-- **Away from `A₁`, the generalized Cartan matrix is the matrix `2I - A` of the underlying
 graph**, the degenerate diagrams outside `TauCeti.AffineDynkinType.Valid` included. This is what
-carries the general results about `TauCeti.graphCartanMatrix` over to the diagrams. At `E₈` it is
+carries the general results about `SimpleGraph.graphCartanMatrix` over to the diagrams.
+At `E₈` it is
 where Mathlib's numbering of `CartanMatrix.E 9` is matched up with the numbering of this file. -/
 lemma cartanMatrix_eq_graphCartanMatrix {t : AffineDynkinType} (ht : t.IsGraphical) :
-    t.cartanMatrix = graphCartanMatrix t.graph ℤ := by
-  rw [graphCartanMatrix_eq_two_smul_one_sub_adjMatrix]
+    t.cartanMatrix = SimpleGraph.graphCartanMatrix t.graph ℤ := by
+  rw [SimpleGraph.graphCartanMatrix_eq_two_smul_one_sub_adjMatrix]
   cases t with
   | A n =>
       match n with
@@ -395,7 +404,7 @@ lemma cartanMatrix_eq_graphCartanMatrix {t : AffineDynkinType} (ht : t.IsGraphic
 edge and `0` otherwise. -/
 lemma cartanMatrix_apply {t : AffineDynkinType} (ht : t.IsGraphical) (i j : Fin t.nodes) :
     t.cartanMatrix i j = if i = j then 2 else if t.graph.Adj i j then -1 else 0 := by
-  rw [cartanMatrix_eq_graphCartanMatrix ht, graphCartanMatrix_apply]
+  rw [cartanMatrix_eq_graphCartanMatrix ht, SimpleGraph.graphCartanMatrix_apply]
 
 /-- The diagonal entries of the generalized Cartan matrix are `2`, `A₁` included. -/
 @[simp] lemma cartanMatrix_apply_same (t : AffineDynkinType) (i : Fin t.nodes) :
@@ -431,7 +440,7 @@ lemma isSymm_cartanMatrix (t : AffineDynkinType) : t.cartanMatrix.IsSymm := by
     refine Matrix.IsSymm.ext fun i j ↦ ?_
     fin_cases i <;> fin_cases j <;> decide
   · rw [cartanMatrix_eq_graphCartanMatrix h]
-    exact isSymm_graphCartanMatrix _
+    exact SimpleGraph.isSymm_graphCartanMatrix _
 
 /-- **The graph of an affine simply-laced diagram is the diagram of its generalized Cartan
 matrix**, `A₁` included: the double edge there still shows up as a pair of nonzero entries. This is
@@ -563,57 +572,32 @@ private lemma sum_dMarks_neighborFinset {n : ℕ} (hn : 4 ≤ n) (i : Fin (n + 1
   rcases eq_or_lt_of_le hn with rfl | hn5
   · revert i; decide
   have hi : (i : ℕ) < n + 1 := i.isLt
-  by_cases c0 : (i : ℕ) = 0
-  · rw [sum_dMarks_of_adj_iff i [⟨1, by omega⟩] (by simp) fun j ↦ by
-      rw [← graph_D, graph_D_adj hn]
-      simp only [List.mem_cons, List.not_mem_nil, or_false, Fin.ext_iff]
-      omega]
-    simp only [List.map_cons, List.map_nil, List.sum_cons, List.sum_nil, dMarks]
-    split_ifs <;> omega
-  by_cases c1 : (i : ℕ) = 1
-  · rw [sum_dMarks_of_adj_iff i [⟨0, by omega⟩, ⟨2, by omega⟩, ⟨n - 1, by omega⟩]
-      (by simp [Fin.ext_iff]; omega) fun j ↦ by
-      rw [← graph_D, graph_D_adj hn]
-      simp only [List.mem_cons, List.not_mem_nil, or_false, Fin.ext_iff]
-      omega]
-    simp only [List.map_cons, List.map_nil, List.sum_cons, List.sum_nil, dMarks]
-    split_ifs <;> omega
-  by_cases c2 : (i : ℕ) ≤ n - 4
-  · rw [sum_dMarks_of_adj_iff i [⟨(i : ℕ) - 1, by omega⟩, ⟨(i : ℕ) + 1, by omega⟩]
-      (by simp [Fin.ext_iff]) fun j ↦ by
-      rw [← graph_D, graph_D_adj hn]
-      simp only [List.mem_cons, List.not_mem_nil, or_false, Fin.ext_iff]
-      omega]
-    simp only [List.map_cons, List.map_nil, List.sum_cons, List.sum_nil, dMarks]
-    split_ifs <;> omega
-  by_cases c3 : (i : ℕ) = n - 3
-  · rw [sum_dMarks_of_adj_iff i [⟨n - 4, by omega⟩, ⟨n - 2, by omega⟩, ⟨n, by omega⟩]
-      (by simp [Fin.ext_iff]; omega) fun j ↦ by
-      rw [← graph_D, graph_D_adj hn]
-      simp only [List.mem_cons, List.not_mem_nil, or_false, Fin.ext_iff]
-      omega]
-    simp only [List.map_cons, List.map_nil, List.sum_cons, List.sum_nil, dMarks]
-    split_ifs <;> omega
-  by_cases c4 : (i : ℕ) = n - 2
-  · rw [sum_dMarks_of_adj_iff i [⟨n - 3, by omega⟩] (by simp) fun j ↦ by
-      rw [← graph_D, graph_D_adj hn]
-      simp only [List.mem_cons, List.not_mem_nil, or_false, Fin.ext_iff]
-      omega]
-    simp only [List.map_cons, List.map_nil, List.sum_cons, List.sum_nil, dMarks]
-    split_ifs <;> omega
-  by_cases c5 : (i : ℕ) = n - 1
-  · rw [sum_dMarks_of_adj_iff i [⟨1, by omega⟩] (by simp) fun j ↦ by
-      rw [← graph_D, graph_D_adj hn]
-      simp only [List.mem_cons, List.not_mem_nil, or_false, Fin.ext_iff]
-      omega]
-    simp only [List.map_cons, List.map_nil, List.sum_cons, List.sum_nil, dMarks]
-    split_ifs <;> omega
-  · rw [sum_dMarks_of_adj_iff i [⟨n - 3, by omega⟩] (by simp) fun j ↦ by
-      rw [← graph_D, graph_D_adj hn]
-      simp only [List.mem_cons, List.not_mem_nil, or_false, Fin.ext_iff]
-      omega]
-    simp only [List.map_cons, List.map_nil, List.sum_cons, List.sum_nil, dMarks]
-    split_ifs <;> omega
+  have balance_of_neighbor_list (l : List (Fin (n + 1))) (hl : l.Nodup)
+      (hs : ∀ j, (SimpleGraph.fromRel (dRel n)).Adj i j ↔ j ∈ l)
+      (h2 : (l.map (dMarks n)).sum = 2 * dMarks n i) :
+      ∑ j ∈ (SimpleGraph.fromRel (dRel n)).neighborFinset i, dMarks n j = 2 * dMarks n i :=
+    (sum_dMarks_of_adj_iff i l hl hs).trans h2
+  -- The node roles, in order: the leaf `0`, the branch node `1`, an interior path node, the
+  -- branch node `n - 3`, and the leaves `n - 2`, `n - 1` and `n`; each supplies its neighbours.
+  rcases (by omega : (i : ℕ) = 0 ∨ (i : ℕ) = 1 ∨ (2 ≤ (i : ℕ) ∧ (i : ℕ) ≤ n - 4) ∨
+      (i : ℕ) = n - 3 ∨ (i : ℕ) = n - 2 ∨ (i : ℕ) = n - 1 ∨ (i : ℕ) = n) with
+    h | h | h | h | h | h | h <;>
+  [refine balance_of_neighbor_list [⟨1, by omega⟩] ?_ ?_ ?_;
+    refine balance_of_neighbor_list [⟨0, by omega⟩, ⟨2, by omega⟩, ⟨n - 1, by omega⟩] ?_ ?_ ?_;
+    refine balance_of_neighbor_list [⟨(i : ℕ) - 1, by omega⟩, ⟨(i : ℕ) + 1, by omega⟩] ?_ ?_ ?_;
+    refine balance_of_neighbor_list [⟨n - 4, by omega⟩, ⟨n - 2, by omega⟩, ⟨n, by omega⟩] ?_ ?_ ?_;
+    refine balance_of_neighbor_list [⟨n - 3, by omega⟩] ?_ ?_ ?_;
+    refine balance_of_neighbor_list [⟨1, by omega⟩] ?_ ?_ ?_;
+    refine balance_of_neighbor_list [⟨n - 3, by omega⟩] ?_ ?_ ?_]
+  -- The three side goals of each role: its adjacency, the sum of the marks, the list is `Nodup`.
+  all_goals first
+    | (intro j
+       rw [← graph_D, graph_D_adj hn]
+       simp only [List.mem_cons, List.not_mem_nil, or_false, Fin.ext_iff]
+       omega)
+    | (simp only [List.map_cons, List.map_nil, List.sum_cons, List.sum_nil, dMarks]
+       split_ifs <;> omega)
+    | (simp [Fin.ext_iff] <;> omega)
 
 /-- The local balance condition for `Aₙ`: every node of a cycle on at least three nodes has two
 neighbours, and every mark of `Aₙ` is `1`. -/
@@ -650,7 +634,7 @@ theorem cartanMatrix_mulVec_marks_eq_zero {t : AffineDynkinType} (ht : t.Valid) 
   by_cases h : t = A 1
   · subst h; decide
   · rw [cartanMatrix_eq_graphCartanMatrix h]
-    exact graphCartanMatrix_mulVec_eq_zero _ (sum_marks_neighborFinset_eq_two_mul ht h)
+    exact SimpleGraph.graphCartanMatrix_mulVec_eq_zero _ (sum_marks_neighborFinset_eq_two_mul ht h)
 
 end AffineDynkinType
 

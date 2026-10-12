@@ -10,10 +10,9 @@ public import TauCeti.Analysis.PDE.EnergyForm.Integrated.Basic
 /-!
 # Lower bounds for the shifted-Laplacian energy form
 
-The energy-method lane of the PDE roadmap uses the shifted Laplacian `-Δ + m` as the model
-coercive operator before adding variable uniformly elliptic coefficients.  The pointwise file
+The shifted Laplacian `-Δ + m` is a model for divergence-form energy estimates. The pointwise file
 `TauCeti.Analysis.PDE.EnergyLowerBounds` already proves that the jet density
-`energyIntegrand 1 0 m U U` controls the jet norm with constant `min 1 m` when `m ≥ 0`.
+`energyIntegrand 1 0 m U U` has lower bound `min 1 m * ‖U‖²` for arbitrary real mass `m`.
 This file integrates that estimate for raw value-gradient jet fields.
 
 These are still below the weak-derivative Sobolev-space layer: the inputs are arbitrary jet
@@ -24,7 +23,7 @@ lemmas become the concrete coercive lower bounds for the shifted Dirichlet form.
 ## Main declarations
 
 * `TauCeti.PDE.integral_min_one_mass_mul_norm_sq_le_energyFormIntegral_one_zero_mass_self`:
-  a variable nonnegative mass controls the raw jet norm with coefficient `min 1 (m x)`.
+  a variable real mass gives a lower bound with coefficient `min 1 (m x)`.
 * `TauCeti.PDE.integral_min_one_const_mass_mul_norm_sq_le_energyFormIntegral_one_zero_mass_self`:
   the constant-mass specialization.
 * `TauCeti.PDE.integral_norm_sq_le_energyFormIntegral_one_zero_mass_self_of_one_le`:
@@ -52,21 +51,20 @@ noncomputable local instance shiftedLaplacianEnergyDecidableEq : DecidableEq n :
 
 variable {μ : Measure X} {m : X → ℝ} {U : X → ℝ × EuclideanSpace ℝ n}
 
-/-- Integrated diagonal lower bound for the shifted-Laplacian model with variable
-nonnegative mass.
+/-- Integrated diagonal lower bound for the shifted-Laplacian model with variable real mass.
 
 Pointwise, `energyIntegrand 1 0 (m x) (U x) (U x)` is
-`‖(U x).2‖² + m x * (U x).1²`, so for `m x ≥ 0` it controls the full product jet norm
-with coefficient `min 1 (m x)`. -/
+`‖(U x).2‖² + m x * (U x).1²`, which is bounded below by
+`min 1 (m x) * ‖U x‖²` even when `m x` is negative. -/
 lemma integral_min_one_mass_mul_norm_sq_le_energyFormIntegral_one_zero_mass_self
-    (hm : ∀ᵐ x ∂μ, 0 ≤ m x) (hlower : Integrable (fun x => min 1 (m x) * ‖U x‖ ^ 2) μ)
+    (hlower : Integrable (fun x => min 1 (m x) * ‖U x‖ ^ 2) μ)
     (henergy : Integrable (fun x => energyIntegrand (1 : Matrix n n ℝ) 0 (m x) (U x) (U x)) μ) :
     ∫ x, (min 1 (m x) * ‖U x‖ ^ 2) ∂μ
       ≤ energyFormIntegral μ (fun _ => (1 : Matrix n n ℝ)) (fun _ => 0) m U U := by
   refine integral_min_lam_mass_mul_norm_sq_le_energyFormIntegral_zero_drift_self
-    (μ := μ) (a := fun _ => (1 : Matrix n n ℝ)) (c := m) (U := U) zero_le_one ?_ hm
+    (μ := μ) (a := fun _ => (1 : Matrix n n ℝ)) (c := m) (U := U) zero_le_one ?_
     hlower henergy
-  filter_upwards with x
+  filter_upwards with _
   intro ξ
   rw [← Matrix.toQuadraticForm'_apply, toQuadraticForm'_one]
   simp
@@ -76,7 +74,7 @@ lemma energyFormIntegral_one_zero_mass_self_nonneg (hm : ∀ᵐ x ∂μ, 0 ≤ m
     0 ≤ energyFormIntegral μ (fun _ => (1 : Matrix n n ℝ)) (fun _ => 0) m U U := by
   refine energyFormIntegral_zero_drift_self_nonneg
     (μ := μ) (a := fun _ => (1 : Matrix n n ℝ)) (c := m) (U := U) ?_ hm
-  filter_upwards with x
+  filter_upwards with _
   intro ξ
   rw [← Matrix.toQuadraticForm'_apply, toQuadraticForm'_one]
   exact sq_nonneg ‖ξ‖
@@ -89,12 +87,12 @@ lemma energyFormIntegral_one_zero_zero_self_nonneg :
 
 /-- Constant-mass specialization of the integrated shifted-Laplacian lower bound. -/
 lemma integral_min_one_const_mass_mul_norm_sq_le_energyFormIntegral_one_zero_mass_self
-    {c : ℝ} (hc : 0 ≤ c) (hlower : Integrable (fun x => min 1 c * ‖U x‖ ^ 2) μ)
+    {c : ℝ} (hlower : Integrable (fun x => min 1 c * ‖U x‖ ^ 2) μ)
     (henergy : Integrable (fun x => energyIntegrand (1 : Matrix n n ℝ) 0 c (U x) (U x)) μ) :
     ∫ x, (min 1 c * ‖U x‖ ^ 2) ∂μ
       ≤ energyFormIntegral μ (fun _ => (1 : Matrix n n ℝ)) (fun _ => 0) (fun _ => c) U U :=
   integral_min_one_mass_mul_norm_sq_le_energyFormIntegral_one_zero_mass_self
-    (m := fun _ => c) (U := U) (Filter.Eventually.of_forall fun _ => hc) hlower henergy
+    (m := fun _ => c) (U := U) hlower henergy
 
 /-- Constant nonnegative mass gives a nonnegative shifted-Laplacian diagonal form. -/
 lemma energyFormIntegral_one_zero_const_mass_self_nonneg {c : ℝ} (hc : 0 ≤ c) :
@@ -112,7 +110,7 @@ lemma integral_norm_sq_le_energyFormIntegral_one_zero_mass_self_of_one_le {c : �
   have hmin : min (1 : ℝ) c = 1 := min_eq_left hc
   simpa [hmin] using
     integral_min_one_const_mass_mul_norm_sq_le_energyFormIntegral_one_zero_mass_self
-      (U := U) (c := c) (zero_le_one.trans hc) (by simpa [hmin] using hlower) henergy
+      (U := U) (c := c) (by simpa [hmin] using hlower) henergy
 
 /-- For constant mass `1`, the shifted-Laplacian diagonal form controls the full raw jet
 `L²` density with constant `1`. -/

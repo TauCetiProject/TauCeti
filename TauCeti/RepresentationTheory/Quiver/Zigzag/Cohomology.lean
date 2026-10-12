@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Combinatorics.SimpleGraph.Cohomology
+public import TauCeti.Combinatorics.SimpleGraph.Cohomology.Basic
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Potential
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Skew.VertexFixing
 

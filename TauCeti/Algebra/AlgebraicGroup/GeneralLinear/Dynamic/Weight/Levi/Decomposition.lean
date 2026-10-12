@@ -219,12 +219,7 @@ private theorem mapPointsFunctor_apply_eq_mapValue_generic
   -- become the underlying pre- and post-compositions of algebra homomorphisms.
   change toConv (g.ofConv.comp φ.hom) =
     AlgHom.mapValue g.ofConv (toConv ((AlgHom.id R K).comp φ.hom.toAlgHom))
-  apply WithConv.ofConv_injective
-  ext h
-  -- After removing `WithConv`, expose the two `AlgHom.comp` applications; the remaining
-  -- difference is precisely evaluation through the generic identity point.
-  change g.ofConv (φ.hom h) = g.ofConv ((AlgHom.id R K) (φ.hom h))
-  rw [AlgHom.id_apply]
+  simp only [AlgHom.mapValue_apply, AlgHom.id_comp]
 
 -- The representing isomorphism sends the generic parabolic point to a point whose base change
 -- along `g : O(P(w)) → A` is the dynamic-parabolic point represented by `g`. The explicit
@@ -282,6 +277,9 @@ private theorem mapValue_weightParabolicGenericPoint (w : Fin N → ℤ)
     _ = CommHopfAlgCat.quotientPointsHom (coordinateHopfAlgebra R N)
           (weightParabolicDefiningHopfIdeal R w) (CommAlgCat.of R A) g := by
       congr 1
+      rw [AlgHom.mapValue_apply]
+      dsimp only [q]
+      rw [ofConv_toConv, AlgHom.comp_id, toConv_ofConv]
     _ = _ := (coe_weightParabolicPointsIso_hom_app_apply R w g).symm
 
 /-- The limit coordinate morphism is a section of the coordinate morphism representing the

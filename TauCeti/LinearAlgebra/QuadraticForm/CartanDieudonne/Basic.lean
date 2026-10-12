@@ -7,7 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.QuadraticForm.Radical
 import TauCeti.LinearAlgebra.BilinearForm.Orthogonal
-public import TauCeti.LinearAlgebra.QuadraticForm.OrthogonalGroup
+public import TauCeti.LinearAlgebra.QuadraticForm.OrthogonalGroup.Basic
 import Mathlib.LinearAlgebra.Eigenspace.Zero
 
 /-!
@@ -60,19 +60,14 @@ theorem det_list_prod_of_reflectionOrthogonal [FiniteDimensional K V]
     (hl : ∀ r ∈ l, ∃ (v : V) (_ : Invertible (Q v)),
       QuadraticMap.reflectionOrthogonal Q v = r) :
     LinearEquiv.det (l.prod : V ≃ₗ[K] V) = (-1 : Kˣ) ^ l.length := by
-  let detOrthogonal : QuadraticMap.orthogonalGroup Q →* Kˣ :=
-    LinearEquiv.det.comp (QuadraticMap.orthogonalGroup Q).subtype
-  -- The goal's determinant coerces the subgroup product directly to a linear equivalence. Expose
-  -- the definitionally equal composite monoid hom so `map_list_prod` can distribute over the list.
-  change detOrthogonal l.prod = _
-  rw [map_list_prod, ← List.length_map detOrthogonal]
+  rw [← _root_.QuadraticMap.orthogonalDet_apply, map_list_prod,
+    ← List.length_map (_root_.QuadraticMap.orthogonalDet Q)]
   apply List.prod_eq_pow_length
   rw [List.forall_mem_map]
   intro r hr
   obtain ⟨v, _, rfl⟩ := hl r hr
-  simpa only [detOrthogonal, MonoidHom.coe_comp, Function.comp_apply,
-    Subgroup.coe_subtype, QuadraticMap.coe_reflectionOrthogonal] using
-    TauCeti.QuadraticMap.det_reflection Q v
+  rw [_root_.QuadraticMap.orthogonalDet_apply,
+    TauCeti.QuadraticMap.coe_reflectionOrthogonal, TauCeti.QuadraticMap.det_reflection]
 
 private theorem det_reflectionWord [FiniteDimensional K V] (Q : QuadraticForm K V)
     (l : List (AnisotropicVector Q)) :
@@ -666,7 +661,7 @@ theorem exists_reflectionOrthogonal_list_prod_eq [FiniteDimensional K V] [NeZero
   let l := v.map (anisotropicReflection Q)
   refine ⟨l, ?_, by simpa only [l, List.length_map] using hvlen, ?_⟩
   · intro r hr
-    obtain ⟨x, hx, rfl⟩ := List.mem_map.mp hr
+    obtain ⟨x, _, rfl⟩ := List.mem_map.mp hr
     let _ : Invertible (Q x) := invertibleOfNonzero x.2
     refine ⟨x, inferInstance, ?_⟩
     unfold anisotropicReflection

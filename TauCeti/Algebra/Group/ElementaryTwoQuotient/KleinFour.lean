@@ -9,7 +9,9 @@ public import Mathlib.GroupTheory.SpecificGroups.KleinFour
 public import TauCeti.Algebra.Group.ElementaryTwoQuotient.Basic
 
 /-!
-# Commutative groups of order `4` and `2`-rank `2`
+# Elementary abelian groups of order `4`
+
+An additive commutative group of cardinality four that is a `ZMod 2`-module is a Klein four-group.
 
 A commutative group of order `4` whose maximal elementary-2 quotient `G / G²` has `2`-rank `2` is
 as large as that quotient, so every element squares to one
@@ -17,12 +19,23 @@ as large as that quotient, so every element squares to one
 
 ## Main results
 
+* `TauCeti.isAddKleinFour_of_natCard_eq_four`: a `ZMod 2`-module of cardinality four is a
+  Klein four-group.
 * `TauCeti.isKleinFour_of_card_eq_four_of_twoRank_eq_two`: such a group is a Klein four-group.
 -/
 
 public section
 
 namespace TauCeti
+
+/-- An additive commutative group of cardinality four that is a `ZMod 2`-module is a Klein
+four-group. -/
+theorem isAddKleinFour_of_natCard_eq_four {A : Type*} [AddCommGroup A] [Module (ZMod 2) A]
+    (hcard : Nat.card A = 4) : IsAddKleinFour A := by
+  let _ : Finite A := Nat.finite_of_card_ne_zero (by omega)
+  let _ : Nontrivial A := Finite.one_lt_card_iff_nontrivial.mp (by omega)
+  exact ⟨hcard, (AddMonoid.exponent_eq_prime_iff Nat.prime_two).mpr fun a ha ↦
+    addOrderOf_eq_prime (ZModModule.char_nsmul_eq_zero 2 a) ha⟩
 
 variable {G : Type*} [CommGroup G]
 

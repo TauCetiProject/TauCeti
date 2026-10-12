@@ -217,9 +217,9 @@ theorem rayClassLift_unique {M : Type*} [Monoid M] {𝔪 : Modulus K} (φ : idea
   obtain ⟨I, rfl⟩ := rayClassMk_surjective 𝔪 c
   rw [rayClassLift_rayClassMk, ← hψ, MonoidHom.comp_apply]
 
-/-- The kernel of `rayClassLift φ h` is the image under `rayClassMk 𝔪` of `φ.ker`.  This exposes
-`QuotientGroup.ker_lift` through the module-opaque `RayClassGroup` representation. -/
-theorem ker_rayClassLift {M : Type*} [Group M] {𝔪 : Modulus K}
+/-- For any target monoid, the kernel of `rayClassLift φ h` is the image under `rayClassMk 𝔪`
+of `φ.ker`. -/
+theorem ker_rayClassLift {M : Type*} [Monoid M] {𝔪 : Modulus K}
     (φ : idealsPrimeTo 𝔪 →* M) (h : ray 𝔪 ≤ φ.ker) :
     (rayClassLift φ h).ker = Subgroup.map (rayClassMk 𝔪) φ.ker :=
   QuotientGroup.ker_lift (ray 𝔪) φ h
@@ -326,7 +326,7 @@ theorem classMap_comp_idealClass {𝔪 𝔫 : Modulus K} (h : 𝔪 ∣ 𝔫) :
 
 /-- **Every invertible fractional ideal is prime to a modulus with empty support**: no prime
 divides the finite part, so no multiplicity is required to vanish.  The trivial modulus and the
-narrow modulus are the two moduli of this kind. -/
+narrow modulus are examples of this kind. -/
 theorem idealsPrimeTo_eq_top {𝔪 : Modulus K} (h : 𝔪.support = ∅) : idealsPrimeTo 𝔪 = ⊤ :=
   Subgroup.eq_top_iff' _ |>.mpr fun _ ↦
     NumberFieldArithmetic.mem_idealsAway_iff.mpr fun v hv ↦
@@ -359,7 +359,7 @@ theorem map_ray_one :
   rw [Subgroup.mem_map, MonoidHom.mem_range]
   refine ⟨fun ⟨J, hJ, hJI⟩ ↦ ?_, fun ⟨x, hx⟩ ↦ ?_⟩
   · obtain ⟨x, _, hxJ⟩ := mem_ray_iff.mp hJ
-    exact ⟨x, by rw [hxJ, ← hJI, MonoidHom.coe_coe, idealsPrimeToEquiv_apply]⟩
+    exact ⟨x, by rw [hxJ, ← hJI, MonoidHom.coe_ofClass, idealsPrimeToEquiv_apply]⟩
   · exact ⟨⟨I, idealsPrimeTo_eq_top (Modulus.support_one (K := K)) ▸ Subgroup.mem_top I⟩,
       mem_ray_iff.mpr ⟨x, isCongrOne_one x, hx⟩, rfl⟩
 

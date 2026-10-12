@@ -37,7 +37,7 @@ variable (A : Type*) [CommSemiring A] (p n : ℕ) [ExpChar A p]
 theorem map_iterateFrobenius_unit_eq_pow (u : Aˣ) :
     Units.map (iterateFrobenius A p n : A →* A) u = u ^ p ^ n :=
   Units.ext (by
-    rw [Units.coe_map, MonoidHom.coe_coe, iterateFrobenius_def, Units.val_pow_eq_pow_val])
+    rw [Units.coe_map, MonoidHom.coe_ofClass, iterateFrobenius_def, Units.val_pow_eq_pow_val])
 
 /-- Applying the `p ^ n`-power Frobenius to each coordinate of a family of units raises the family
 to its `p ^ n`-th power. This is the coordinatewise form of

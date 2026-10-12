@@ -6,6 +6,7 @@ Authors: Claude
 module
 
 public import Mathlib.RepresentationTheory.Rep.Res
+public import Mathlib.RepresentationTheory.Invariants
 
 /-!
 # Intertwining maps along a homomorphism of monoids
@@ -22,28 +23,49 @@ These are the general representation-theoretic inputs of a change-of-group map i
 and cohomology: `groupHomology.chainsMap` consumes the first adapter and
 `groupCohomology.cochainsMap` the second.
 
+The file also records that restricting a trivial representation along a homomorphism of monoids
+gives a trivial representation, so that `Rep.res f A` carries an `IsTrivial` instance whenever `A`
+does.
+
+Restriction along composites agrees with successive restriction as an equality of functors,
+and restriction along a monoid isomorphism is an equivalence of representation categories.
+
 ## Main definitions
 
 * `Representation.IsIntertwiningMap.toRes`: an intertwining map along `f : G →* H` read as
   a morphism `M ⟶ Res(f)(N)` of `G`-representations.
 * `Representation.IsIntertwiningMap.ofRes`: an intertwining map along an isomorphism
   `e : G ≃* H` read as a morphism `Res(e⁻¹)(M) ⟶ N` of `H`-representations.
+* `MulEquiv.resFunctorEquiv`: the equivalence induced by restriction along a monoid isomorphism.
 
 ## Main results
 
+* `MonoidHom.resFunctor_comp`: restriction along a composite is successive restriction.
+* `MonoidHom.resFunctor_id`: restriction along the identity is the identity functor.
+* `Representation.isTrivial_comp`: the restriction of a trivial representation along a
+  homomorphism of monoids is trivial; in particular `Rep.res f A` is trivial when `A` is.
 * `Representation.IsIntertwiningMap.trans` and `Representation.IsIntertwiningMap.symm`:
   intertwining maps along homomorphisms of monoids compose, and invert along an isomorphism when
   their linear part is an equivalence.
 * `Representation.IsIntertwiningMap.comp_norm`: an intertwining map along an isomorphism of
   finite groups intertwines the two norms.
+* `Representation.IsIntertwiningMap.tensor`: the tensor product of two intertwining maps along
+  one homomorphism of monoids is intertwining along it.
+* `Rep.isIntertwiningMap_tensor_res`: restriction and tensor products are compatible along a
+  homomorphism of monoids.
+* `Rep.isIntertwiningMap_trivial`: the identity intertwines trivial representations along any
+  homomorphism of monoids.
 * `Rep.isIntertwiningMap_id` and `Rep.isIntertwiningMap_res`: the identity
   map is intertwining along the identity isomorphism of the monoid, and along `f` between a
   restricted representation and the representation it restricts.
+* `Rep.isIntertwiningMap_res_res` and `Rep.isIntertwiningMap_res_res_toRes_naturality`: the identity
+  map is intertwining between the restrictions along two factorisations of one homomorphism,
+  naturally in the representation.
 -/
 
 public noncomputable section
 
-universe u uG uH uK uV uW uU
+universe u uG uH uK uL uV uW uU
 
 namespace Representation
 
@@ -85,7 +107,24 @@ theorem symm {e' : V ≃ₗ[R] W}
 
 end IsIntertwiningMap
 
+/-- The restriction of a trivial representation along a homomorphism of monoids is trivial. -/
+instance isTrivial_comp (σ : Representation R H W) [σ.IsTrivial] (f : G →* H) :
+    Representation.IsTrivial (σ.comp f) :=
+  ⟨fun g ↦ IsTrivial.out (f g)⟩
+
 end Monoid
+
+section SubgroupInvariants
+
+variable {R G V : Type*} [Group G] [CommRing R] [AddCommGroup V] [Module R V]
+  {ρ : Representation R G V} {H : Subgroup G}
+
+/-- A `G`-invariant element is `H`-invariant. -/
+theorem invariants_le_invariants_comp_subtype :
+    ρ.invariants ≤ Representation.invariants (ρ.comp H.subtype) :=
+  fun _ hx h => hx (h : G)
+
+end SubgroupInvariants
 
 section Norm
 
@@ -126,6 +165,23 @@ theorem isIntertwiningMap_res (N : Rep.{uV} R H) (f : G →* H) :
       ((LinearEquiv.refl R N.V : N.V →ₗ[R] N.V) : (Rep.res f N).V →ₗ[R] N.V) :=
   ⟨fun g v ↦ by simp⟩
 
+/-- The identity of `V` intertwines the trivial representations on `V` along any homomorphism of
+monoids. -/
+theorem isIntertwiningMap_trivial (V : Type uV) [AddCommGroup V] [Module R V] (f : G →* H) :
+    (Rep.trivial R G V).ρ.IsIntertwiningMap ((Rep.trivial R H V).ρ.comp f)
+      (LinearEquiv.refl R V : V →ₗ[R] V) :=
+  isIntertwiningMap_res (Rep.trivial R H V) f
+
+/-- The identity of `N` is intertwining along `g₁` from `Res(f₁)(Res(f₂)(N))` to `Res(g₂)(N)` when
+`g₂ ∘ g₁ = f₂ ∘ f₁`; its `toRes` is the comparison morphism
+`Res(f₁)(Res(f₂)(N)) ⟶ Res(g₁)(Res(g₂)(N))` of `K`-representations. -/
+theorem isIntertwiningMap_res_res {K : Type uK} {L : Type uL} [Monoid K] [Monoid L]
+    (N : Rep.{uV} R H) {f₁ : K →* G} {f₂ : G →* H} {g₁ : K →* L} {g₂ : L →* H}
+    (hfg : g₂.comp g₁ = f₂.comp f₁) :
+    (Rep.res f₁ (Rep.res f₂ N)).ρ.IsIntertwiningMap ((Rep.res g₂ N).ρ.comp g₁)
+      (LinearMap.id : N.V →ₗ[R] N.V) :=
+  ⟨fun k v ↦ congr(N.ρ ($hfg.symm k) v)⟩
+
 end Rep
 
 variable {M : Rep.{uV} R G} {N : Rep.{uV} R H} {φ : M.V →ₗ[R] N.V}
@@ -149,6 +205,11 @@ def ofRes {e : G ≃* H} (hφ : M.ρ.IsIntertwiningMap (N.ρ.comp (e : G →* H)
     (hφ : M.ρ.IsIntertwiningMap (N.ρ.comp f) φ) :
     (toRes hφ).hom.toLinearMap = φ := by simp [toRes]
 
+/-- `toRes hφ` acts on vectors as `φ`. The coercion is stated at `IntertwiningMap M.ρ (N.ρ.comp f)`,
+`simp`'s normal form of `IntertwiningMap M.ρ (Rep.res f N).ρ`, so that `simp` can use this lemma. -/
+@[simp] theorem toRes_hom_apply {f : G →* H} (hφ : M.ρ.IsIntertwiningMap (N.ρ.comp f) φ) (v : M.V) :
+    @DFunLike.coe (IntertwiningMap M.ρ (N.ρ.comp f)) _ _ _ (toRes hφ).hom v = φ v := by simp [toRes]
+
 @[simp] theorem ofRes_hom_toLinearMap {e : G ≃* H}
     (hφ : M.ρ.IsIntertwiningMap (N.ρ.comp (e : G →* H)) φ) :
     (ofRes hφ).hom.toLinearMap = φ := by simp [ofRes]
@@ -157,4 +218,99 @@ end IsIntertwiningMap
 
 end Representation
 
+open CategoryTheory in
+/-- The comparison morphisms `(isIntertwiningMap_res_res N hfg).toRes` from `Res(f₁)(Res(f₂)(N))`
+to `Res(g₁)(Res(g₂)(N))` are natural in `N`. The square is oriented like the `comm₁₂` field
+`τ₁ ≫ S₂.f = S₁.f ≫ τ₂` of a morphism of short complexes. -/
+@[reassoc]
+theorem Rep.isIntertwiningMap_res_res_toRes_naturality {K : Type uK} {L : Type uL} [Monoid K]
+    [Monoid L] {f₁ : K →* G} {f₂ : G →* H} {g₁ : K →* L} {g₂ : L →* H}
+    (hfg : g₂.comp g₁ = f₂.comp f₁) {N N' : Rep.{uV} R H} (ψ : N ⟶ N') :
+    (isIntertwiningMap_res_res N hfg).toRes ≫ (resFunctor g₁).map ((resFunctor g₂).map ψ) =
+      (resFunctor f₁).map ((resFunctor f₂).map ψ) ≫ (isIntertwiningMap_res_res N' hfg).toRes := by
+  ext v
+  simp
+
 end RepMorphisms
+
+section Tensor
+
+open CategoryTheory MonoidalCategory
+
+variable {R : Type u} {G : Type uG} {H : Type uH} [CommRing R] [Monoid G] [Monoid H]
+
+/-- The tensor product of two intertwining maps along one homomorphism of monoids `f` is
+intertwining along `f`. This is Mathlib's `Representation.IntertwiningMap.tensor`, stated for
+intertwining maps along a homomorphism. -/
+theorem Representation.IsIntertwiningMap.tensor {f : G →* H} {M₁ M₂ : Rep.{u} R G}
+    {N₁ N₂ : Rep.{u} R H} {φ₁ : M₁.V →ₗ[R] N₁.V} {φ₂ : M₂.V →ₗ[R] N₂.V}
+    (h₁ : M₁.ρ.IsIntertwiningMap (N₁.ρ.comp f) φ₁) (h₂ : M₂.ρ.IsIntertwiningMap (N₂.ρ.comp f) φ₂) :
+    (M₁ ⊗ M₂).ρ.IsIntertwiningMap ((N₁ ⊗ N₂).ρ.comp f) (TensorProduct.map φ₁ φ₂) :=
+  ⟨((φ₁.intertwiningMap_of_isIntertwiningMap _ _ h₁.isIntertwining).tensor
+    (φ₂.intertwiningMap_of_isIntertwiningMap _ _ h₂.isIntertwining)).isIntertwining⟩
+
+/-- Restriction and tensor products are compatible: the tensor product of the identity maps
+from the restricted representations to their originals intertwines the actions along `f`. -/
+theorem Rep.isIntertwiningMap_tensor_res (N₁ N₂ : Rep.{u} R H) (f : G →* H) :
+    (Rep.res f N₁ ⊗ Rep.res f N₂).ρ.IsIntertwiningMap ((N₁ ⊗ N₂).ρ.comp f)
+      (TensorProduct.map ((LinearEquiv.refl R N₁.V : N₁.V →ₗ[R] N₁.V) :
+          (Rep.res f N₁).V →ₗ[R] N₁.V)
+        ((LinearEquiv.refl R N₂.V : N₂.V →ₗ[R] N₂.V) : (Rep.res f N₂).V →ₗ[R] N₂.V)) :=
+  (isIntertwiningMap_res N₁ f).tensor (isIntertwiningMap_res N₂ f)
+
+end Tensor
+
+namespace TauCeti
+
+open CategoryTheory
+
+section Functor
+
+variable {k : Type u} [Semiring k] {H K L : Type*} [Monoid H] [Monoid K] [Monoid L]
+
+/-- Restricting representations along a composite homomorphism is restricting twice over.
+Mathlib has no equality of this shape (`Action.resComp` is the natural isomorphism for `Action`),
+so we record the equality form, which keeps the reduction out of proofs that state equalities of
+restriction functors. -/
+theorem _root_.MonoidHom.resFunctor_comp (φ : K →* L) (ψ : H →* K) :
+    Rep.resFunctor (k := k) (φ.comp ψ) = Rep.resFunctor φ ⋙ Rep.resFunctor ψ :=
+  rfl
+
+/-- Restricting along the identity is the identity functor. -/
+theorem _root_.MonoidHom.resFunctor_id :
+    Rep.resFunctor (k := k) (MonoidHom.id H) = 𝟭 (Rep k H) :=
+  rfl
+
+/-- Restriction along a monoid isomorphism is an equivalence of categories, with inverse
+restriction along the inverse isomorphism.  This is the `Rep` analogue of Mathlib's
+`Action.resEquiv`, which does not apply because `Rep` is a structure rather than an `Action`.
+
+Its two functors are identified with restriction by `MulEquiv.resFunctorEquiv_functor` and
+`MulEquiv.resFunctorEquiv_inverse`. -/
+def _root_.MulEquiv.resFunctorEquiv (e : H ≃* K) : Rep k K ≌ Rep k H :=
+  -- Mathlib's `MulEquiv.toMonoidHom_comp_toMonoidHom_symm` and its mirror, restated for
+  -- `MulEquiv.toMonoidHom`: the coercion in those lemmas is `toMonoidHom` definitionally but not
+  -- syntactically, so `rw` needs this form.
+  have comp_symm : e.toMonoidHom.comp e.symm.toMonoidHom = MonoidHom.id K :=
+    MulEquiv.toMonoidHom_comp_toMonoidHom_symm e
+  have symm_comp : e.symm.toMonoidHom.comp e.toMonoidHom = MonoidHom.id H :=
+    MulEquiv.toMonoidHom_symm_comp_toMonoidHom e
+  CategoryTheory.Equivalence.mk (Rep.resFunctor e.toMonoidHom) (Rep.resFunctor e.symm.toMonoidHom)
+    (eqToIso (by rw [← MonoidHom.resFunctor_comp, comp_symm, MonoidHom.resFunctor_id]))
+    (eqToIso (by rw [← MonoidHom.resFunctor_comp, symm_comp, MonoidHom.resFunctor_id]))
+
+/-- The forward functor of the restriction equivalence is restriction along the isomorphism. -/
+@[simp]
+theorem _root_.MulEquiv.resFunctorEquiv_functor (e : H ≃* K) :
+    (MulEquiv.resFunctorEquiv (k := k) e).functor = Rep.resFunctor e.toMonoidHom :=
+  (rfl)
+
+/-- The inverse functor of the restriction equivalence is restriction along the inverse. -/
+@[simp]
+theorem _root_.MulEquiv.resFunctorEquiv_inverse (e : H ≃* K) :
+    (MulEquiv.resFunctorEquiv (k := k) e).inverse = Rep.resFunctor e.symm.toMonoidHom :=
+  (rfl)
+
+end Functor
+
+end TauCeti

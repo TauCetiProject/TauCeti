@@ -330,9 +330,6 @@ theorem eq_b2Length_of_mul_b2Coroot {k : Fin 8} {c : ℤ}
 theorem isLongSimpleRoot_iff_b2Length_eq_two (i : Fin 2) :
     (B 2).IsLongSimpleRoot i ↔ b2Length (Fin.castLE (by omega) i) = 2 := by
   rw [isLongSimpleRoot_B]
-  fin_cases i
-  · norm_num [b2Length]
-  · norm_num [b2Length]
-    decide
+  fin_cases i <;> norm_num [b2Length]
 
 end TauCeti.DynkinType

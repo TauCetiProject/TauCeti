@@ -28,7 +28,7 @@ The second section reads the *difference* of the two square characters on the sq
 `TauCeti/RepresentationTheory/Continuous/Square/Basic.lean` does assemble as continuous
 representations, the eigenspaces of the flip inside `V ⊗[𝕜] V`: there
 `χ_{Sym²}(g) - χ_{Λ²}(g) = χ(g²)`, which is the linear-algebra identity
-`TauCeti.trace_symmetricTensorsRestrict_sub_trace_antisymmetricTensorsRestrict` applied to `π g`.
+`LinearMap.trace_symmetricTensorsRestrict_sub_trace_antisymmetricTensorsRestrict` applied to `π g`.
 Subtracting the two closed formulas above gives the same identity on the powers, so the two
 sections agree wherever both apply.
 
@@ -52,7 +52,7 @@ identity is integrated against it.
 
 The two sections ask different things of the scalars. For the continuity statements they are a
 complete nontrivially normed field `𝕜` with `2 ≠ 0` — exactly what the trace functional behind
-`TauCeti.ContRepresentation.character` and the closed formulas ask for; the consumer instantiates
+`ContRepresentation.character` and the closed formulas ask for; the consumer instantiates
 them at `ℂ`. There `𝕜` is in `Type` rather than `Type*` because the symmetric- and exterior-power
 representations of `TauCeti/RepresentationTheory/SymmetricPower.lean` and
 `TauCeti/RepresentationTheory/ExteriorPower.lean`, whose characters are spoken of, are built over a
@@ -64,16 +64,14 @@ pointwise identity instead needs the two squares of
 inner product space, so its scalars are `RCLike 𝕜`, in any universe, and `2` is invertible there by
 instance.
 
-All declarations sit in the **root** `ContRepresentation` namespace, so that
-`π.continuous_character_symmetricPower_two hπ` elaborates: `ContRepresentation` is Mathlib's type,
-and `scripts/lint-dot-notation.py` asks that new declarations about it not recreate its namespace
-inside `TauCeti`. That is why the ambient `TauCeti` names this file consumes are brought in by
-`open`.
+All declarations sit in the root `ContRepresentation` namespace, so that
+`π.continuous_character_symmetricPower_two hπ` elaborates. The ambient `TauCeti` constructions
+this file consumes are brought in by `open`.
 -/
 
 public section
 
-open TauCeti TauCeti.ContRepresentation
+open TauCeti
 
 namespace ContRepresentation
 
@@ -123,7 +121,7 @@ variable (π : ContRepresentation 𝕜 G V) (hπ : Continuous π)
 /-- **The two square characters differ by the character at the square**,
 `χ_{Sym²π}(g) - χ_{Λ²π}(g) = χ_π(g²)`.
 
-This is `TauCeti.trace_symmetricTensorsRestrict_sub_trace_antisymmetricTensorsRestrict` applied to
+This is `LinearMap.trace_symmetricTensorsRestrict_sub_trace_antisymmetricTensorsRestrict` applied to
 the operator `π g`, whose square is `π (g * g)`. -/
 theorem character_symmetricSquare_sub_character_exteriorSquare (g : G) :
     character (𝕜 := 𝕜) (V := symmetricTensors 𝕜 V) (symmetricSquare π)
@@ -133,7 +131,7 @@ theorem character_symmetricSquare_sub_character_exteriorSquare (g : G) :
       = character π hπ (g * g) := by
   rw [character_apply, character_apply, character_apply, symmetricSquare_apply π g,
     exteriorSquare_apply π g,
-    trace_symmetricTensorsRestrict_sub_trace_antisymmetricTensorsRestrict (π g : V →ₗ[𝕜] V)]
+    (π g : V →ₗ[𝕜] V).trace_symmetricTensorsRestrict_sub_trace_antisymmetricTensorsRestrict]
   congr 1
   rw [map_mul, ContinuousLinearMap.toLinearMap_mul, Module.End.mul_eq_comp]
 

@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Probability.Exchangeability.Arrays.AldousHoover.Basic
 public import TauCeti.Probability.Exchangeability.Arrays.Dissociated
-import TauCeti.Probability.Exchangeability.Arrays.Extreme
+import TauCeti.Probability.Exchangeability.Arrays.Extreme.Basic
 
 /-!
 # Global-free Aldous--Hoover codings are dissociated

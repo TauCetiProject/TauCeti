@@ -219,7 +219,7 @@ theorem ramificationIdx_eq_two_of_liesOver_primeDiscriminantPrime
           rw [← IsFractionRing.finrank_eq (𝓞 U) U (𝓞 L) L, hU]
           exact finrank_over_adjoin_range_ne D root hD hinj heven hroot htop i
   -- The quadratic subfield attached to the factor is already totally ramified there.
-  set F : IntermediateField ℚ L := adjoin ℚ ({root i} : Set L) with hF
+  set F : IntermediateField ℚ L := adjoin ℚ ({root i} : Set L)
   have hFlies : (𝔓.under (𝓞 F)).LiesOver
       (Ideal.span {(primeDiscriminantPrime (D i) : ℤ)}) :=
     ⟨by rw [Ideal.under_under]; exact h𝔓.over⟩
@@ -260,7 +260,7 @@ theorem isUnramifiedIn_of_forall_ramificationIdx_eq_two
   · -- A prime contracting to `⊥` is `⊥`, where there is nothing to ramify.
     have h𝔮 : 𝔮 = ⊥ := by
       by_contra hne
-      exact Ideal.IsIntegral.comap_ne_bot (R := ℤ) hne hbot
+      exact Ideal.IsIntegral.under_ne_bot (R := ℤ) hne hbot
     subst h𝔮
     exact Algebra.isUnramifiedIn_bot
   · have hlies : 𝔮.LiesOver (Ideal.span {(p : ℤ)}) := ⟨hspan.symm⟩

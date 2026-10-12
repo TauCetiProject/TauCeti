@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.Tangent.Dimension
 public import TauCeti.Algebra.AlgebraicGroup.Tangent.Lie.Basic
+public import TauCeti.Algebra.AlgebraicGroup.Tangent.Lie.Cotangent
+public import TauCeti.Algebra.Lie.Killing.BaseChange
 public import Mathlib.RingTheory.Bialgebra.TensorProduct
 
 /-!
@@ -18,7 +20,8 @@ along `h ↦ 1 ⊗ h` identifies the tangent Lie algebra of `K ⊗[R] H` over `K
 This comparison requires neither flatness nor finiteness. It connects geometric base
 change to the coefficient-valued tangent space and its convolution bracket. For an extension
 of fields, `finrank_lie_baseChange` deduces invariance of Lie dimension when the original
-augmentation cotangent space is finite-dimensional.
+augmentation cotangent space is finite-dimensional, and `isKilling_lie_baseChange_iff` shows that
+the Lie algebra has nondegenerate Killing form exactly when its base change does.
 
 ## References
 
@@ -59,12 +62,10 @@ private theorem extendTangentLinear_tmul
 private def extendTangent (d : Derivation R H (Bialgebra.CounitAlgebra R H K)) :
     Derivation K (K ⊗[R] H) (Bialgebra.CounitAlgebra K (K ⊗[R] H) K) :=
   Derivation.mk' (extendTangentLinear d) fun x y ↦ by
-    induction x using TensorProduct.induction_on with
-    | zero => simp
+    induction x using TensorProduct.inductionOn with
     | add x z hx hz => simp [add_mul, map_add, hx, hz, add_smul, smul_add]; abel
     | tmul a h =>
-      induction y using TensorProduct.induction_on with
-      | zero => simp
+      induction y using TensorProduct.inductionOn with
       | add y z hy hz => simp [mul_add, map_add, hy, hz, add_smul, smul_add]; abel
       | tmul b j =>
         apply (Bialgebra.CounitAlgebra.algEquivSelf K (K ⊗[R] H) K).injective
@@ -122,8 +123,7 @@ private theorem extendTangent_restrictTangent
     (d : Derivation K (K ⊗[R] H) (Bialgebra.CounitAlgebra K (K ⊗[R] H) K)) :
     extendTangent (restrictTangent d) = d := by
   ext x
-  induction x using TensorProduct.induction_on with
-  | zero => simp
+  induction x using TensorProduct.inductionOn with
   | add x y hx hy => simp only [map_add, hx, hy]
   | tmul a h =>
     apply (Bialgebra.CounitAlgebra.algEquivSelf K (K ⊗[R] H) K).injective
@@ -143,8 +143,7 @@ private def tangentBaseChangeLinearEquiv :
   right_inv := extendTangent_restrictTangent
   map_add' d e := by
     ext x
-    induction x using TensorProduct.induction_on with
-    | zero => simp
+    induction x using TensorProduct.inductionOn with
     | add x y hx hy => simp only [map_add, hx, hy]
     | tmul a h =>
       apply (Bialgebra.CounitAlgebra.algEquivSelf K (K ⊗[R] H) K).injective
@@ -153,8 +152,7 @@ private def tangentBaseChangeLinearEquiv :
     ext x
     apply (Bialgebra.CounitAlgebra.algEquivSelf K (K ⊗[R] H) K).injective
     simp only [RingHom.id_apply, algEquivSelf_derivation_smul_apply]
-    induction x using TensorProduct.induction_on with
-    | zero => simp only [map_zero, mul_zero]
+    induction x using TensorProduct.inductionOn with
     | add x y hx hy => simp only [map_add, mul_add, hx, hy]
     | tmul b h =>
       simp only [extendTangent_tmul, algEquivSelf_derivation_smul_apply]
@@ -177,8 +175,7 @@ private theorem restrictTangent_lie
   apply (Bialgebra.CounitAlgebra.algEquivSelf R H K).injective
   rw [restrictTangent_apply, Derivation.bracket_apply, Derivation.bracket_apply]
   simp only [map_sub, TensorProduct.comul_tmul, CommSemiring.comul_apply]
-  induction Coalgebra.comul (R := R) h using TensorProduct.induction_on with
-  | zero => simp only [tmul_zero, map_zero, sub_zero]
+  induction Coalgebra.comul (R := R) h using TensorProduct.inductionOn with
   | add x y hx hy =>
     simpa only [tmul_add, map_add, add_sub_add_comm] using congrArg₂ (· + ·) hx hy
   | tmul x y =>
@@ -240,5 +237,26 @@ theorem finrank_lie_baseChange {k K H : Type*} [Field k] [Field K] [Algebra k K]
       Module.finrank k (Derivation k H (Bialgebra.CounitAlgebra k H k)) :=
   (tangentBaseChangeLieEquiv (R := k) (K := K) (H := H)).toLinearEquiv.finrank_eq.symm.trans
     Derivation.finrank_tangent_baseChange
+
+/-- Extension of the ground field preserves and reflects nondegeneracy of the Killing form of the
+Lie algebra of an affine monoid whose augmentation cotangent space is finite-dimensional: the Lie
+algebra of `K ⊗[k] H` has nondegenerate Killing form exactly when `Lie(G)` does. -/
+theorem isKilling_lie_baseChange_iff {k K H : Type*} [Field k] [Field K] [Algebra k K]
+    [CommRing H] [Bialgebra k H] [Module.Finite k (Bialgebra.CotangentSpace k H)] :
+    LieAlgebra.IsKilling K
+        (Derivation K (K ⊗[k] H) (Bialgebra.CounitAlgebra K (K ⊗[k] H) K)) ↔
+      LieAlgebra.IsKilling k (Derivation k H (Bialgebra.CounitAlgebra k H k)) := by
+  let e := Derivation.tangentScalarExtensionLieEquiv.trans
+    (tangentBaseChangeLieEquiv (R := k) (K := K) (H := H))
+  constructor
+  · intro
+    have := LieAlgebra.isKilling_of_equiv e.symm
+    have := (isKilling_baseChange_iff k K _).1 this
+    exact LieAlgebra.isKilling_of_equiv Derivation.cotangentDualLieEquiv
+  · intro
+    have : LieAlgebra.IsKilling k (Module.Dual k (Bialgebra.CotangentSpace k H)) :=
+      LieAlgebra.isKilling_of_equiv Derivation.cotangentDualLieEquiv.symm
+    have := (isKilling_baseChange_iff k K _).2 this
+    exact LieAlgebra.isKilling_of_equiv e
 
 end TauCeti

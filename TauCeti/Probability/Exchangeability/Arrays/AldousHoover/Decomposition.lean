@@ -100,8 +100,8 @@ theorem exists_coding_of_ae_condExpKernel_arrayTail
   obtain ⟨f, hf, hmap⟩ := ProbabilityTheory.Kernel.exists_measurable_map_eq_unitInterval κ
   refine ⟨f, hf, ?_, ?_⟩
   · simpa only [hmap] using hgood
-  · have hjoint := map_prod_volume_eq_compProd_of_map_volume
-      (μ := (volume : Measure unitInterval)) κ f hf hmap
+  · have hjoint := κ.map_prod_eq_compProd_of_map
+      (μ := (volume : Measure unitInterval)) volume f hf hmap
     have hsnd := congrArg Measure.snd hjoint
     rw [Measure.snd_compProd, hmix] at hsnd
     have hpair : Measurable (fun p : unitInterval × unitInterval => (p.1, f p.1 p.2)) :=

@@ -75,12 +75,14 @@ def weightTable : TauCeti.MinusculeWeightTable (Fin 4) (Fin 24) where
   cartanMatrix := CartanMatrix.D 4
   weight := d4TripledWeight
   reflection i := d4TripledReflection i
-  cartanMatrix_isSymm := CartanMatrix.D_isSymm 4
   cartanMatrix_diag i := CartanMatrix.D_diag (n := 4) i
-  cartanMatrix_isSimplyLaced := CartanMatrix.isSimplyLaced_D 4
+  cartanMatrix_offDiag_nonpos := CartanMatrix.D_off_diag_nonpos 4
+  cartanMatrix_zero_comm i j := by rw [(CartanMatrix.D_isSymm 4).apply]
   weight_eq_neg_one_or_eq_zero_or_eq_one :=
     d4TripledWeight_apply_eq_neg_one_or_eq_zero_or_eq_one
-  weight_reflection := d4TripledWeight_reflection_apply
+  weight_reflection i a j := by
+    rw [(CartanMatrix.D_isSymm 4).apply]
+    exact d4TripledWeight_reflection_apply i a j
   weight_injective := d4TripledWeight_injective
 
 /-- The Cartan matrix of the tripled type-`D₄` weight table is the `D₄` Cartan matrix. -/
@@ -149,6 +151,14 @@ def loweringMatrix (i : Fin 4) : Matrix (Fin 24) (Fin 24) ℤ :=
 /-- The diagonal matrix of the `i`-th simple coroot on the integral tripled weight basis. -/
 def cartanGeneratorMatrix (i : Fin 4) : Matrix (Fin 24) (Fin 24) ℤ :=
   weightTable.cartanGeneratorMatrix i
+
+/-- The raising matrix is the raising matrix of the tripled weight table. -/
+theorem raisingMatrix_def (i : Fin 4) : raisingMatrix i = weightTable.raisingMatrix i :=
+  (rfl)
+
+/-- The lowering matrix is the lowering matrix of the tripled weight table. -/
+theorem loweringMatrix_def (i : Fin 4) : loweringMatrix i = weightTable.loweringMatrix i :=
+  (rfl)
 
 /-- The entry formula for a simple raising matrix. -/
 @[simp]

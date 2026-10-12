@@ -8,6 +8,8 @@ module
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Prime.Psi
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Transfer
 public import TauCeti.NumberTheory.LSeries.WienerIkehara.SharpCutoff
+import Mathlib.NumberTheory.LSeries.Linearity
+import TauCeti.NumberTheory.LSeries.Continuity
 
 /-!
 # Boundary data for prime-counting Dirichlet series
@@ -29,6 +31,18 @@ prime powers, and Abel summation.  It gives the error-term forms of all three co
 `ψ(x) = δx + o(x)`, `ϑ(x) = δx + o(x)`, and `π(x) = δ Li(x) + o(x / log x)`, including `δ = 0`.
 The conditional specialization `TauCeti.primeIdealTheorem_of_boundary` records the usual prime
 ideal theorem once boundary data with residue one is available.
+
+## Main results
+
+* `TauCeti.PrimeBoundaryRemainder`: boundary data with residue `δ` for the prime Dirichlet
+  series of `S`, with the constructor `TauCeti.PrimeBoundaryRemainder.ofFunctions`.
+* `TauCeti.primeNumberTheoremTransfer`: boundary data give the asymptotics of `ψ`, `ϑ`, and `π`.
+* `TauCeti.primeIdealTheorem_of_boundary`: the prime ideal theorem from boundary data with
+  residue one.
+* `TauCeti.primeCount_sub_mul_logIntegral_isLittleO_of_LSeriesSummable_sub`: comparison with a
+  Dirichlet series `L(c, s)`. If `L(c, s) - δ / (s - 1)` extends continuously to `Re s ≥ 1` and the
+  Dirichlet series of the coefficient difference converges absolutely at `s = 1`, then
+  `π_S(x) = δ Li(x) + o(x / log x)`.
 
 ## References
 
@@ -162,6 +176,30 @@ theorem primeNumberTheoremTransfer (B : PrimeBoundaryRemainder K S δ) :
   have hψ := primePsi_asymptotic_of_boundary B
   have hθ := primeTheta_asymptotic_of_primePsi (standardPrimePowerRemoval K S) hψ
   exact ⟨hψ, hθ, primeCount_sub_mul_logIntegral_isLittleO hθ⟩
+
+/-- **Prime counting by comparison with a Dirichlet series.** Let `c` be coefficients whose
+Dirichlet series converges absolutely on `Re s > 1` and such that `L(c, s) - δ / (s - 1)` agrees
+there with a function `G` continuous on `Re s ≥ 1`. If the Dirichlet series of the difference
+between `primeVonMangoldtCoeff K S` and `c` converges absolutely at `s = 1`, then
+`π_S(x) = δ Li(x) + o(x / log x)`. -/
+theorem primeCount_sub_mul_logIntegral_isLittleO_of_LSeriesSummable_sub {c : ℕ → ℂ} {G : ℂ → ℂ}
+    (hc : LSeries.abscissaOfAbsConv c ≤ 1) (hG : ContinuousOn G {s | 1 ≤ s.re})
+    (hGc : Set.EqOn G (fun s ↦ LSeries c s - δ / (s - 1)) {s | 1 < s.re})
+    (hd : LSeriesSummable (fun n ↦ (primeVonMangoldtCoeff K S n : ℂ) - c n) 1) :
+    (fun x ↦ primeCount K S x - δ * Real.logIntegral x) =o[atTop]
+      fun x : ℝ ↦ x / Real.log x := by
+  set d : ℕ → ℂ := fun n ↦ (primeVonMangoldtCoeff K S n : ℂ) - c n
+  have hcd : (fun n ↦ (primeVonMangoldtCoeff K S n : ℂ)) = c + d := (add_sub_cancel c _).symm
+  have hcs : ∀ s : ℂ, 1 < s.re → LSeriesSummable c s := fun s hs ↦
+    LSeriesSummable_of_abscissaOfAbsConv_lt_re (hc.trans_lt (mod_cast hs))
+  have hds : ∀ s : ℂ, 1 < s.re → LSeriesSummable d s := fun s hs ↦
+    hd.of_re_le_re (by simpa using hs.le)
+  -- `G + L(d)` is a continuous extension of the pole-subtracted series of `S` to `Re s ≥ 1`
+  exact (primeNumberTheoremTransfer <| .ofFunctions
+    (LSeries fun n ↦ (primeVonMangoldtCoeff K S n : ℂ)) (fun s ↦ G s + LSeries d s)
+    (fun s hs ↦ (hcd ▸ (hcs s hs).add (hds s hs)).LSeriesHasSum)
+    (hG.add ((TauCeti.LSeries.continuousOn_LSeries hd).mono fun s hs ↦ by simpa using hs))
+    fun s hs ↦ by rw [hGc hs, hcd, LSeries_add (hcs s hs) (hds s hs), sub_add_eq_add_sub]).2.2
 
 /-- **The conditional prime ideal theorem.**  Boundary data for all prime ideals with residue one
 give the standard asymptotic equivalences for `ψ`, `ϑ`, and `π`. -/

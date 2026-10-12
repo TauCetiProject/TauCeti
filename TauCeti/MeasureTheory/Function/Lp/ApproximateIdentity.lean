@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Calculus.BumpFunction.Convolution
+public import TauCeti.Analysis.Calculus.BumpFunction.Average
+public import TauCeti.MeasureTheory.Function.Lp.Convolution
 public import TauCeti.MeasureTheory.Function.Lp.Translation
 
 /-!
@@ -19,7 +20,7 @@ This file defines the corresponding averaging operator on `Lᵖ` by the Bochner 
 as a continuous linear map of norm at most one, and proves that these operators converge strongly
 to the identity when the outer radii of the bumps tend to zero.  The result holds for `1 ≤ p < ∞`,
 for functions with values in an arbitrary real Banach space, and for every additive Haar measure
-on a proper real normed space.
+on a finite-dimensional real normed space.
 
 The integral is taken directly in `Lᵖ`.  This avoids choosing pointwise representatives: translation
 is continuous in `Lᵖ`, so the average is a Bochner integral of a continuous compactly supported
@@ -31,19 +32,37 @@ This is the `Lᵖ` convergence input for mollification in Sobolev spaces.  Toget
 of mollification and weak differentiation, it approximates both the value and every weak derivative
 by the same smooth kernel.
 
+The averaging operator is represented almost everywhere by the classical convolution with
+the normalized bump. This formula applies to every `MemLp` representative, with no global
+integrability or compact support assumption on the function.
+
 ## Main declarations
 
 * `TauCeti.normedBumpLp`: averaging an `Lᵖ` function against a normalized smooth bump, as a
   continuous linear operator on `Lᵖ`.
 * `TauCeti.normedBumpLp_apply`: the defining Bochner integral of that operator.
+* `TauCeti.normedBumpLp_eq_normedBumpAverageL`: this operator is the normalized-bump average of
+  the `Lᵖ` translation action.
+* `TauCeti.normedBumpLp_eq_convolutionLp`: this operator is convolution with the normalized bump.
+* `TauCeti.normedBumpLp_ae_eq_convolution`: its pointwise representative is the classical
+  convolution with the normalized bump.
+* `TauCeti.compLpL_normedBumpLp`: this operator commutes with postcomposition by a continuous
+  linear map.
 * `TauCeti.norm_normedBumpLp_le_one`: this averaging operator is an `Lᵖ` contraction.
 * `TauCeti.tendsto_normedBumpLp`: normalized bumps whose radii shrink to zero converge strongly
   to the identity on `Lᵖ`.
+* `TauCeti.tendsto_eLpNorm_normed_convolution_sub`: the same convergence for the classical
+  convolution of a function in `Lᵖ` with these bumps.
 
 ## References
 
 L. C. Evans, *Partial Differential Equations*, Chapter 5, §5.3.1; H. Brezis,
 *Functional Analysis, Sobolev Spaces and Partial Differential Equations*, Proposition 4.21.
+
+The pointwise representative formula follows LeanPool's
+`RellichKondrachov/L2Compactness/Smoothing.lean`, especially its `smoothFun` and `smoothL2`
+constructions, and Tau Ceti's `RepresentationTheory/Compact/Convolution.lean`, especially
+`convolutionCLM_toLp_apply`.
 -/
 
 public section
@@ -56,61 +75,8 @@ open ContinuousLinearMap Filter MeasureTheory Metric Set
 open scoped Convolution ENNReal
 
 variable {E F : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [NormedSpace ℝ E]
-  [BorelSpace E] [ProperSpace E] [NormedAddCommGroup F] [NormedSpace ℝ F]
+  [FiniteDimensional ℝ E] [BorelSpace E] [NormedAddCommGroup F] [NormedSpace ℝ F]
   {mu : Measure E} [mu.IsAddHaarMeasure] {p : ENNReal} [Fact (1 ≤ p)]
-
-local instance : FiniteDimensional ℝ E := .of_locallyCompactSpace ℝ
-
-/-- The average of an `Lᵖ` class against the normalized form of a smooth bump centred at zero,
-before it is bundled as a continuous linear map by `TauCeti.normedBumpLp`. -/
-private def normedBumpFun (phi : ContDiffBump (0 : E)) (f : Lp F p mu) : Lp F p mu :=
-  (phi.normed mu ⋆[lsmul ℝ ℝ, mu] fun h ↦ mu.translateLp p h f) 0
-
-private theorem normedBumpFun_apply (phi : ContDiffBump (0 : E)) (f : Lp F p mu) :
-    normedBumpFun phi f = ∫ t, phi.normed mu t • mu.translateLp p (-t) f ∂mu := by
-  rw [normedBumpFun, convolution_lsmul]
-  simp only [zero_sub]
-
-private theorem integrable_normed_smul_translateLp_neg (hp : p ≠ ∞)
-    (phi : ContDiffBump (0 : E)) (f : Lp F p mu) :
-    Integrable (fun t ↦ phi.normed mu t • mu.translateLp p (-t) f) mu := by
-  apply Continuous.integrable_of_hasCompactSupport
-  · exact phi.continuous_normed.smul
-      ((Measure.continuous_translateLp (mu := mu) hp f).comp continuous_neg)
-  · exact phi.hasCompactSupport_normed.smul_right
-
-private theorem normedBumpFun_add (hp : p ≠ ∞) (phi : ContDiffBump (0 : E)) (f g : Lp F p mu) :
-    normedBumpFun phi (f + g) = normedBumpFun phi f + normedBumpFun phi g := by
-  rw [normedBumpFun_apply, normedBumpFun_apply, normedBumpFun_apply,
-    ← integral_add (integrable_normed_smul_translateLp_neg hp phi f)
-      (integrable_normed_smul_translateLp_neg hp phi g)]
-  apply integral_congr_ae
-  filter_upwards with t
-  simp only [map_add, smul_add]
-
-private theorem normedBumpFun_smul (c : ℝ) (phi : ContDiffBump (0 : E)) (f : Lp F p mu) :
-    normedBumpFun phi (c • f) = c • normedBumpFun phi f := by
-  rw [normedBumpFun_apply, normedBumpFun_apply, ← integral_smul]
-  apply integral_congr_ae
-  filter_upwards with t
-  simp only [map_smul, smul_smul, mul_comm c]
-
-private theorem norm_normedBumpFun_le (hp : p ≠ ∞) (phi : ContDiffBump (0 : E))
-    (f : Lp F p mu) :
-    ‖normedBumpFun phi f‖ ≤ ‖f‖ := by
-  calc
-    ‖normedBumpFun phi f‖ ≤
-        ∫ t, ‖phi.normed mu t • mu.translateLp p (-t) f‖ ∂mu := by
-      rw [normedBumpFun_apply]
-      exact norm_integral_le_of_norm_le
-        (integrable_normed_smul_translateLp_neg hp phi f).norm
-        (Eventually.of_forall fun _ ↦ le_rfl)
-    _ = ∫ t, phi.normed mu t * ‖f‖ ∂mu := by
-      apply integral_congr_ae
-      filter_upwards with t
-      have ht : ‖mu.translateLp p (-t) f‖ = ‖f‖ := (mu.translateLp p (-t)).norm_map f
-      rw [norm_smul, Real.norm_of_nonneg (phi.nonneg_normed t), ht]
-    _ = ‖f‖ := by rw [integral_mul_const, phi.integral_normed, one_mul]
 
 /-- Averaging an `Lᵖ` function against the normalized form of a smooth bump centred at zero, as a
 continuous linear operator on `Lᵖ`.
@@ -127,25 +93,50 @@ its argument precisely when `F` is a Banach space, which is the setting of
 `TauCeti.tendsto_normedBumpLp`; the contraction bound holds in either case. -/
 def normedBumpLp (hp : p ≠ ∞) (phi : ContDiffBump (0 : E))
     (mu : Measure E) [mu.IsAddHaarMeasure] : Lp F p mu →L[ℝ] Lp F p mu :=
-  LinearMap.mkContinuous
-    { toFun := normedBumpFun phi
-      map_add' := normedBumpFun_add hp phi
-      map_smul' := fun c f ↦ normedBumpFun_smul c phi f } 1
-    fun f ↦ by rw [one_mul]; exact norm_normedBumpFun_le hp phi f
+  normedBumpAverageL phi mu (mu.translateLp p) (Measure.continuous_translateLp hp)
 
 /-- The defining Bochner-integral formula for `normedBumpLp`. -/
 theorem normedBumpLp_apply (hp : p ≠ ∞) (phi : ContDiffBump (0 : E)) (f : Lp F p mu) :
     normedBumpLp hp phi mu f =
       ∫ t, phi.normed mu t • mu.translateLp p (-t) f ∂mu := by
-  rw [normedBumpLp]
-  exact normedBumpFun_apply phi f
+  exact normedBumpAverageL_apply (F := Lp F p mu) phi mu (mu.translateLp p)
+    (Measure.continuous_translateLp hp) f
+
+/-- `normedBumpLp` is the normalized-bump average of the `Lᵖ` translation action. -/
+theorem normedBumpLp_eq_normedBumpAverageL (hp : p ≠ ∞) (phi : ContDiffBump (0 : E)) :
+    normedBumpLp (F := F) hp phi mu =
+      normedBumpAverageL phi mu (mu.translateLp p) (Measure.continuous_translateLp hp) :=
+  (rfl)
+
+/-- Averaging against a normalized bump is convolution with the normalized bump, as an operator
+on `Lᵖ`. -/
+theorem normedBumpLp_eq_convolutionLp (hp : p ≠ ∞) (phi : ContDiffBump (0 : E)) :
+    normedBumpLp (F := F) hp phi mu = convolutionLp hp (phi.normed mu) mu := by
+  ext1 f
+  rw [normedBumpLp_apply, convolutionLp_apply hp phi.integrable_normed]
+
+/-- The `Lᵖ` approximate identity is represented almost everywhere by the usual pointwise
+convolution of any `MemLp` representative. -/
+theorem normedBumpLp_ae_eq_convolution [CompleteSpace F] (hp : p ≠ ∞)
+    (phi : ContDiffBump (0 : E)) {f : E → F} (hf : MemLp f p mu) :
+    normedBumpLp hp phi mu (hf.toLp f) =ᵐ[mu] phi.normed mu ⋆[lsmul ℝ ℝ, mu] f := by
+  rw [normedBumpLp_eq_convolutionLp]
+  exact convolutionLp_ae_eq_convolution hp phi.integrable_normed hf
+
+/-- Averaging against a normalized bump commutes with postcomposition by a continuous linear map
+between Banach spaces. -/
+theorem compLpL_normedBumpLp {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
+    [CompleteSpace F] [CompleteSpace G] (hp : p ≠ ∞) (phi : ContDiffBump (0 : E))
+    (L : F →L[ℝ] G) (f : Lp F p mu) :
+    L.compLpL p mu (normedBumpLp hp phi mu f) = normedBumpLp hp phi mu (L.compLpL p mu f) :=
+  normedBumpAverageL_comm _ _ _ _ _ _ _ L.compLpL_translateLp f
 
 /-- Averaging against a normalized nonnegative bump does not increase the `Lᵖ` norm when
 `p < ∞`. -/
 theorem norm_normedBumpLp_le_one (hp : p ≠ ∞) (phi : ContDiffBump (0 : E)) :
     ‖normedBumpLp (F := F) hp phi mu‖ ≤ 1 := by
-  rw [normedBumpLp]
-  exact LinearMap.mkContinuous_norm_le _ zero_le_one _
+  exact norm_normedBumpAverageL_le_one (F := Lp F p mu) phi mu (mu.translateLp p)
+    (Measure.continuous_translateLp hp)
 
 /-- **Smooth approximate identity in `Lᵖ`.** Let `phi i` be normalized smooth bumps centred at
 zero. If their outer radii tend to zero, then averaging any `f ∈ Lᵖ` against these bumps converges
@@ -159,12 +150,22 @@ theorem tendsto_normedBumpLp [CompleteSpace F] {I : Type*} {l : Filter I}
     (hp : p ≠ ∞) {phi : I → ContDiffBump (0 : E)}
     (hphi : Tendsto (fun i ↦ (phi i).rOut) l (nhds 0)) (f : Lp F p mu) :
     Tendsto (fun i ↦ normedBumpLp hp (phi i) mu f) l (nhds f) := by
-  have hval : ∀ i, normedBumpLp hp (phi i) mu f =
-      ((phi i).normed mu ⋆[lsmul ℝ ℝ, mu] fun h ↦ mu.translateLp p h f) 0 := fun i ↦ by
-    rw [normedBumpLp_apply, convolution_lsmul]
-    simp only [zero_sub]
-  simpa only [hval, Measure.translateLp_zero] using
-    ContDiffBump.convolution_tendsto_right_of_continuous hphi
-      (Measure.continuous_translateLp (mu := mu) hp f) (0 : E)
+  simpa only [normedBumpLp, Measure.translateLp_zero] using
+    tendsto_normedBumpAverageL (F := Lp F p mu) hphi mu (mu.translateLp p)
+      (Measure.continuous_translateLp hp) f
+
+/-- **Mollification converges in `Lᵖ`.** For `f ∈ Lᵖ` with `1 ≤ p < ∞` and normalized smooth bumps
+`phi i` centred at zero whose outer radii tend to zero, the classical convolutions
+`(phi i).normed mu ⋆ f` converge to `f` in `Lᵖ`. This is `TauCeti.tendsto_normedBumpLp` read on
+functions rather than on `Lᵖ` classes. -/
+theorem tendsto_eLpNorm_normed_convolution_sub [CompleteSpace F] {I : Type*} {l : Filter I}
+    (hp : p ≠ ∞) {phi : I → ContDiffBump (0 : E)}
+    (hphi : Tendsto (fun i ↦ (phi i).rOut) l (nhds 0)) {f : E → F} (hf : MemLp f p mu) :
+    Tendsto (fun i ↦ eLpNorm ((phi i).normed mu ⋆[lsmul ℝ ℝ, mu] f - f) p mu) l (nhds 0) := by
+  refine ((Lp.tendsto_Lp_iff_tendsto_eLpNorm' _ _).1
+    (tendsto_normedBumpLp hp hphi (hf.toLp f))).congr fun i ↦ eLpNorm_congr_ae ?_
+  filter_upwards [normedBumpLp_ae_eq_convolution hp (phi i) hf, hf.coeFn_toLp]
+    with x h₁ h₂
+  rw [Pi.sub_apply, Pi.sub_apply, h₁, h₂]
 
 end TauCeti

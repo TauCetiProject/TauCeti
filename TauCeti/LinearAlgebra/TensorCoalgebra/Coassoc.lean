@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.TensorProduct.Associator
-public import TauCeti.LinearAlgebra.TensorCoalgebra.Coaugmented
+public import TauCeti.LinearAlgebra.TensorCoalgebra.Coaugmented.Basic
 
 /-!
 # Reduced deconcatenation is coassociative

@@ -8,7 +8,10 @@ module
 public import TauCeti.Topology.Sets.Opens
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.RationalSubset.Basic
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Spectral
+public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Comap
+import TauCeti.AlgebraicGeometry.AdicSpace.Cont.DominatingUnit
 import TauCeti.RingTheory.Huber.OpenIdeal
+import TauCeti.RingTheory.Huber.ZeroSequenceOfUnits
 
 /-!
 # The rational basis of the adic spectrum
@@ -64,17 +67,21 @@ the basis arguments uses it.
 * `TauCeti.ValuationSpectrum.isCompact_of_mem_spaRationalFamily`: every member of the family is
   quasi-compact. Each result also has an `_of_pairOfDefinition` form for use with a specified
   pair of definition.
+* `TauCeti.ValuationSpectrum.spaComap_preimage_mem_spaRationalFamily`: a rational open pulls back
+  to a rational open when the ring map sends open ideals to open ideals.
 * `TauCeti.ValuationSpectrum.exists_finite_spaRationalFamily_refinement`: every open cover of a
-  member of the family admits a finite refinement by members of the family — the two results
-  above combined, and the form a sheaf criterion on this basis consumes.
+  member of the family admits a finite refinement by members of the family — the basis and
+  compactness results combined, and the form a sheaf criterion on this basis consumes.
 * `TauCeti.ValuationSpectrum.spa_eq_biUnion_rationalSubset_of_isTateRing_of_isOpen`: over a Tate
   ring, if a finite set `T` generates an open ideal, then the standard rational subsets cover
   `spa Aplus` (Wedhorn Corollary 7.53 specialization).
+* `TauCeti.ValuationSpectrum.exists_unit_forall_mem_spa_exists_vlt`: for a finite standard cover
+  of a Tate ring, a unit is strictly dominated at every point by some numerator.
 
 ## References
 
 * T. Wedhorn, *Adic Spaces*, arXiv:1910.05934v1, Definition 7.29, Remark 7.30, Theorem 7.35,
-  Corollary 7.53, and Lemma 6.6.
+  Corollaries 7.32 and 7.53, Lemmas 6.6 and 8.34.
 
 One correction to the source: Wedhorn's proof of Theorem 7.35(2) cites Remark 7.30(4) for
 stability under finite intersection, but 7.30(4) is the statement that `R(T/s)` is rational
@@ -86,6 +93,7 @@ public section
 namespace TauCeti.ValuationSpectrum
 
 open Set Topology _root_.TopologicalSpace TauCeti TauCeti.Huber
+  TauCeti.Huber.PairOfDefinition
 open scoped Pointwise
 
 variable {A : Type*} [CommRing A] [TopologicalSpace A]
@@ -130,6 +138,21 @@ theorem mem_spaRationalFamily_iff {Aplus : Subring A} {U : Set (spa Aplus)} :
     U ∈ spaRationalFamily Aplus ↔
       ∃ (T : Finset A) (s : A), IsOpen (Ideal.span (T : Set A) : Set A) ∧
         U = Subtype.val ⁻¹' rationalSubset Aplus T s := Iff.rfl
+
+open scoped Classical in
+/-- Rational opens pull back to rational opens when images of open ideals are open. -/
+theorem spaComap_preimage_mem_spaRationalFamily {B : Type*} [CommRing B]
+    [TopologicalSpace B] (φ : A →+* B) (hφ : Continuous φ)
+    (Aplus : Subring A) (Bplus : Subring B) (hplus : ∀ a ∈ Aplus, φ a ∈ Bplus)
+    (hopen : ∀ J : Ideal A, IsOpen (J : Set A) → IsOpen (Ideal.map φ J : Set B))
+    {U : Set (spa Aplus)} (hU : U ∈ spaRationalFamily Aplus) :
+    spaComap φ hφ Aplus Bplus hplus ⁻¹' U ∈ spaRationalFamily Bplus := by
+  obtain ⟨V, s, hV, rfl⟩ := mem_spaRationalFamily_iff.mp hU
+  rw [spaComap_preimage_rationalSubset]
+  exact mem_spaRationalFamily_iff.mpr
+    ⟨V.image φ, φ s, by
+      rw [Finset.coe_image, ← Ideal.map_span]
+      exact hopen _ hV, rfl⟩
 
 /-- The whole adic spectrum belongs to its rational family, presented as `R({1}/1)`. -/
 theorem univ_mem_spaRationalFamily (Aplus : Subring A) :
@@ -250,6 +273,20 @@ theorem isTopologicalBasis_spaRationalFamily_of_pairOfDefinition
         ⟨y, spa_subset_spvOfIdeal P Aplus y.property⟩
       exact hVO (a := yI) hy
 
+/-- Every neighbourhood of a point of `Spa(A,A⁺)` contains the rational subset of an admissible
+presentation containing the point. -/
+theorem exists_presentation_mem_spaBasicOpen_le (P : PairOfDefinition A) {Aplus : Subring A}
+    {U : Opens (spa Aplus)}
+    {x : spa Aplus} (hx : x ∈ U) :
+    ∃ p : Presentation P, IsOpen (Ideal.span (p.num : Set A) : Set A) ∧
+      x ∈ spaBasicOpen Aplus p.num p.den ∧ spaBasicOpen Aplus p.num p.den ≤ U := by
+  obtain ⟨W, hW, hxW, hWU⟩ :=
+    (isTopologicalBasis_spaRationalFamily_of_pairOfDefinition P Aplus).exists_subset_of_mem_open
+      hx U.isOpen
+  obtain ⟨T, s, hT, rfl⟩ := mem_spaRationalFamily_iff.mp hW
+  exact ⟨⟨T, s, P.hasDenominatorPower_of_isOpen_span T s _ hT⟩, hT, mem_spaBasicOpen.mpr hxW,
+    fun y hy ↦ hWU (mem_spaBasicOpen.mp hy)⟩
+
 /-- **Rational subsets form a basis of `Spa(A,A⁺)`**, without choosing a pair of definition
 of the Huber ring. -/
 theorem isTopologicalBasis_spaRationalFamily [IsHuberRing A] (Aplus : Subring A) :
@@ -315,6 +352,17 @@ omit [IsTopologicalRing A] in
 theorem mem_spaRationalOpens {Aplus : Subring A} {U : Opens (spa Aplus)} :
     U ∈ spaRationalOpens Aplus ↔ (U : Set (spa Aplus)) ∈ spaRationalFamily Aplus := Iff.rfl
 
+omit [IsTopologicalRing A] in
+/-- An open is a rational open exactly when it is a basic open `R(T/s)` whose numerator ideal
+`T · A` is open. This is `mem_spaRationalFamily_iff` for `Opens`, with the basic open
+`spaBasicOpen Aplus T s` in place of the preimage of `rationalSubset Aplus T s`. -/
+theorem mem_spaRationalOpens_iff_exists_spaBasicOpen {Aplus : Subring A} {U : Opens (spa Aplus)} :
+    U ∈ spaRationalOpens Aplus ↔ ∃ (T : Finset A) (s : A), IsOpen (Ideal.span (T : Set A) : Set A) ∧
+      U = spaBasicOpen Aplus T s := by
+  have (T : Finset A) (s : A) : (spaBasicOpen Aplus T s : Set (spa Aplus)) =
+      Subtype.val ⁻¹' rationalSubset Aplus T s := Set.ext fun _ ↦ mem_spaBasicOpen
+  simp only [mem_spaRationalOpens, mem_spaRationalFamily_iff, SetLike.ext'_iff, this]
+
 /-- **The rational opens are a basis** in the `Opens.IsBasis` sense, which is the form the sheaf
 criterion on a basis consumes. -/
 theorem isBasis_spaRationalOpens [IsHuberRing A] (Aplus : Subring A) :
@@ -327,6 +375,13 @@ omit [IsTopologicalRing A] in
 theorem top_mem_spaRationalOpens (Aplus : Subring A) :
     (⊤ : Opens (spa Aplus)) ∈ spaRationalOpens Aplus :=
   mem_spaRationalOpens.mpr (univ_mem_spaRationalFamily Aplus)
+
+omit [IsTopologicalRing A] in
+/-- The basic open `R(T/s)` is a rational open as soon as its numerator ideal `T · A` is open. -/
+theorem spaBasicOpen_mem_spaRationalOpens {Aplus : Subring A} {T : Finset A} {s : A}
+    (hT : IsOpen (Ideal.span (T : Set A) : Set A)) :
+    spaBasicOpen Aplus T s ∈ spaRationalOpens Aplus :=
+  mem_spaRationalOpens_iff_exists_spaBasicOpen.mpr ⟨T, s, hT, rfl⟩
 
 /-- **Wedhorn Remark 7.30(5)** in the bundled form: the rational opens are closed under binary
 meet. Meet of `Opens` is intersection of the underlying sets, so this is
@@ -390,6 +445,40 @@ theorem spa_eq_biUnion_rationalSubset_of_isTateRing_of_isOpen (Aplus : Subring A
     spa Aplus = ⋃ t ∈ T, rationalSubset Aplus T t :=
   spa_eq_biUnion_rationalSubset_of_span_eq_top Aplus
     ((IsTateRing.isOpen_iff_eq_top (Ideal.span (T : Set A))).mp hT)
+
+/-- **A dominating unit for a standard rational cover** (the input to Wedhorn Lemma 8.34(ii)).
+Let `A` be a Tate ring and `T` a finite set generating the unit ideal. Then some unit `ϖ` of `A`
+is strictly dominated at every point of `Spa (A, A⁺)` by an element of `T`.
+
+This supplies the unit used to form the Laurent generators `ϖ⁻¹ t` in part (ii). -/
+theorem exists_unit_forall_mem_spa_exists_vlt (Aplus : Subring A) {T : Finset A}
+    (hT : Ideal.span (T : Set A) = ⊤) :
+    ∃ ϖ : Aˣ, ∀ v ∈ spa Aplus, ∃ t ∈ T, v.toValuativeRel.vlt (ϖ : A) t := by
+  have hTopen : IsOpen (Ideal.span (T : Set A) : Set A) := by
+    rw [hT]
+    exact isOpen_univ
+  -- Lemma 7.31 on each piece `R(T/t)` of the standard cover
+  have hdom (t : A) : ∃ I ∈ 𝓝 (0 : A),
+      ∀ a ∈ I, ∀ v ∈ rationalSubset Aplus T t, v.toValuativeRel.vlt a t := by
+    have hcpt : IsCompact (rationalSubset Aplus T t) := by
+      have h := (isCompact_of_mem_spaRationalFamily
+        (mem_spaRationalFamily_iff.mpr ⟨T, t, hTopen, rfl⟩ :
+          (Subtype.val ⁻¹' rationalSubset Aplus T t : Set (spa Aplus)) ∈
+            spaRationalFamily Aplus)).image continuous_subtype_val
+      rwa [Subtype.image_preimage_coe,
+        Set.inter_eq_right.mpr (rationalSubset_subset_spa Aplus T t)] at h
+    exact exists_mem_nhds_zero_forall_vlt
+      (fun v hv ↦ (spa_def Aplus ▸ Set.inter_subset_left) (rationalSubset_subset_spa Aplus T t hv))
+      hcpt fun v hv ↦ ((mem_rationalSubset_iff _ _ _ _).mp hv).2.2
+  choose I hI hIt using hdom
+  -- a unit in the intersection of these neighbourhoods
+  have hc : ContinuousAt (fun a : A ↦ a • (1 : A)) 0 := by fun_prop
+  obtain ⟨ϖ, hϖ⟩ := HasZeroSequenceOfUnits.exists_unit_smul_mem (M := A) 1 (zero_smul A 1) hc
+    ((Filter.biInter_finset_mem T).mpr fun t _ ↦ hI t)
+  refine ⟨ϖ, fun v hv ↦ ?_⟩
+  obtain ⟨t, ht, hvt⟩ := Set.mem_iUnion₂.mp
+    ((spa_eq_biUnion_rationalSubset_of_span_eq_top Aplus hT).subset hv)
+  exact ⟨t, ht, hIt t ϖ (by simpa using Set.mem_iInter₂.mp hϖ t ht) v hvt⟩
 
 end Tate
 

@@ -106,8 +106,9 @@ noncomputable def laurentRelationIdeal :
   letI := isUniformAddGroup_locUniformSpace P T s S hden
   letI := isTopologicalRing_locUniformSpace P T s S hden
   letI := isHuberRing_locUniformSpace P T s S hden
-  Ideal.span {weightedC _ isWeightFamily_one_weight ((divBy t s : S) : UniformSpace.Completion S) -
-    weightedX _ isWeightFamily_one_weight 0}
+  Ideal.span
+    {weightedC _ isWeightFamily_one_weight ((divBy t s : S) : UniformSpace.Completion S) -
+      weightedX _ isWeightFamily_one_weight 0}
 
 /-- Unfolding lemma for `TauCeti.Huber.PairOfDefinition.laurentRelationIdeal`. -/
 theorem laurentRelationIdeal_def :
@@ -218,13 +219,10 @@ private theorem isPowerBounded_quotientMk_weightedC_fraction :
   rintro hs u (h | h)
   · exact (isPowerBounded_weightedC (k := 1) isWeightFamily_one_weight
       (isPowerBounded_toCompletionLoc_mul_unit_inv P T s S hden (mul_one s).symm hs
-        (by simpa using h))).map_of_isOpenMap continuous_quotient_mk'.continuousAt
-      (QuotientRing.isOpenMap_coe _)
+        (by simpa using h))).quotientMk _
   · rw [h, toCompletionLoc_mul_unit_inv_eq_divBy P T s S hden t hs,
       laurentRelationIdeal_quotientMk_weightedC P T s t S hden]
-    exact (isPowerBounded_weightedX (k := 1) isWeightFamily_one_weight
-      rfl).map_of_isOpenMap continuous_quotient_mk'.continuousAt
-      (QuotientRing.isOpenMap_coe _)
+    exact (isPowerBounded_weightedX (k := 1) isWeightFamily_one_weight rfl).quotientMk _
 
 section OneStep
 
@@ -281,7 +279,7 @@ theorem existsUnique_continuous_ringHom_laurentQuotient_restriction (ht : t ∈ 
   have _ := isHuberRing_locUniformSpace P (T') s S' hden'
   have hu' : IsUnit (toCompletionLoc P (T') s S' hden' s) :=
     isUnit_toCompletionLoc_of_dvd P (T') s S' hden' dvd_rfl
-  set φ := restrictionRingHomOfSubset P T s S hden T' S' hden' hTT' with hφdef
+  set φ := restrictionRingHomOfSubset P T s S hden T' S' hden' hTT'
   have hφ : ContinuousAt φ 0 :=
     (continuous_restrictionRingHomOfSubset P T s S hden T' S' hden' hTT').continuousAt
   set b : Fin 1 → UniformSpace.Completion S' :=

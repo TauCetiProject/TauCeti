@@ -7,6 +7,7 @@ module
 
 public import TauCeti.CategoryTheory.Exact.Opposite
 public import TauCeti.CategoryTheory.Exact.Projective
+public import TauCeti.CategoryTheory.ObjectProperty.FactorsThrough
 
 /-!
 # Relative injectives in an exact category
@@ -78,6 +79,19 @@ theorem comp_factorThru {I : C} (hI : E.isInjective I) {X Y : C} {i : X ⟶ Y}
   (hI hi f).choose_spec
 
 end isInjective
+
+/-- Factoring through any relative injective is equivalent to extending across a fixed
+inflation into a relative injective. -/
+theorem factorsThrough_injective_iff_exists_extension (E : ExactStructure C)
+    {X I Y : C} (i : X ⟶ I)
+    (hi : E.IsInflation i) (hI : E.isInjective I) (f : X ⟶ Y) :
+    E.isInjective.FactorsThrough f ↔ ∃ g : I ⟶ Y, i ≫ g = f := by
+  constructor
+  · intro hf
+    obtain ⟨J, hJ, a, b, rfl⟩ := (ObjectProperty.factorsThrough_iff _ _).mp hf
+    exact ⟨hJ.factorThru hi a ≫ b, by simp⟩
+  · rintro ⟨g, rfl⟩
+    exact ObjectProperty.factorsThrough_comp E.isInjective hI i g
 
 /-- Relative injectives are closed under retracts. -/
 instance : (E.isInjective).IsStableUnderRetracts where
@@ -349,6 +363,26 @@ def op {X : C} (P : E.ProjectivePresentation X) :
   zero := by simpa using congrArg Quiver.Hom.op P.zero
   conflation := (E.op_conflation_op_iff _).mpr P.conflation
   isInjective := (E.isProjective_iff_isInjective_op P.P).mp P.isProjective
+
+/-- The middle term of the opposite presentation is the opposite projective term. -/
+@[simp] theorem op_I {X : C} (P : E.ProjectivePresentation X) :
+    P.op.I = Opposite.op P.P := (rfl)
+
+/-- The cokernel term of the opposite presentation is the opposite kernel term. -/
+@[simp] theorem op_K {X : C} (P : E.ProjectivePresentation X) :
+    P.op.K = Opposite.op P.K := (rfl)
+
+/-- After identifying the middle term, the opposite presentation starts with the opposite
+deflation. -/
+@[simp] theorem op_i {X : C} (P : E.ProjectivePresentation X) :
+    P.op.i ≫ eqToHom P.op_I = P.p.op :=
+  Category.comp_id P.p.op
+
+/-- After identifying the middle and cokernel terms, the opposite presentation ends with the
+opposite inflation. -/
+@[simp] theorem op_p {X : C} (P : E.ProjectivePresentation X) :
+    eqToHom P.op_I.symm ≫ P.op.p ≫ eqToHom P.op_K = P.i.op :=
+  (Category.id_comp (P.i.op ≫ 𝟙 _)).trans (Category.comp_id P.i.op)
 
 /-- Unopposing a projective presentation gives an injective presentation. -/
 def unop {X : Cᵒᵖ} (P : E.op.ProjectivePresentation X) :

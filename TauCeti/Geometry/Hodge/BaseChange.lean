@@ -13,7 +13,7 @@ public import Mathlib.RingTheory.Flat.Basic
 import Mathlib.RingTheory.Flat.FaithfullyFlat.Basic
 public import TauCeti.Geometry.Hodge.Conjugation
 import TauCeti.LinearAlgebra.LinearMap.PseudoInverse
-public import TauCeti.RingTheory.IsTensorProduct
+public import TauCeti.RingTheory.IsTensorProduct.Basic
 
 /-!
 # Rational subspaces in an abstract complexification
@@ -315,7 +315,6 @@ theorem latticeConj_rationalToComplexLinearEquiv_one_tmul (hℚ : IsBaseChange �
     latticeConj hℂ (rationalToComplexLinearEquiv hℚ hℂ (1 ⊗ₜ[ℚ] x)) =
       rationalToComplexLinearEquiv hℚ hℂ (1 ⊗ₜ[ℚ] x) := by
   induction x using hℚ.inductionOn with
-  | zero => simp
   | tmul x => simp
   | smul q x hx =>
       rw [TensorProduct.tmul_smul, ← algebraMap_smul ℂ q, map_smul, map_smulₛₗ, hx]
@@ -479,8 +478,7 @@ theorem rationalMapToComplex_smul (hℚ : IsBaseChange ℚ ιℚ)
       (q : ℂ) • rationalMapToComplex hℚ hℂ h'ℚ h'ℂ f := by
   refine LinearMap.ext fun x ↦ ?_
   obtain ⟨t, rfl⟩ := (rationalToComplexLinearEquiv hℚ hℂ).surjective x
-  induction t using TensorProduct.induction_on with
-  | zero => simp
+  induction t using TensorProduct.inductionOn with
   | tmul z y =>
       rw [rationalMapToComplex_rationalToComplexLinearEquiv_tmul, LinearMap.smul_apply,
         LinearMap.smul_apply, rationalMapToComplex_rationalToComplexLinearEquiv_tmul,
@@ -498,7 +496,6 @@ theorem rationalMapToComplex_commutes_conj (hℚ : IsBaseChange ℚ ιℚ)
     rationalMapToComplex hℚ hℂ h'ℚ h'ℂ f (latticeConj hℂ x) =
       latticeConj h'ℂ (rationalMapToComplex hℚ hℂ h'ℚ h'ℂ f x) := by
   induction x using hℂ.inductionOn with
-  | zero => simp
   | tmul v =>
       rw [latticeConj_ι, ← rationalToComplexLinearEquiv_one_tmul_ι hℚ hℂ,
         rationalMapToComplex_rationalToComplexLinearEquiv_tmul,

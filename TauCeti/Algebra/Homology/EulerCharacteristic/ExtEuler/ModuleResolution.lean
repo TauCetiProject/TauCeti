@@ -8,7 +8,7 @@ module
 public import Mathlib.Algebra.Category.ModuleCat.Algebra
 public import Mathlib.Algebra.Category.ModuleCat.Ext.HasExt
 public import Mathlib.LinearAlgebra.Matrix.FiniteDimensional
-public import TauCeti.Algebra.Category.ModuleCat.CartanMap
+public import TauCeti.Algebra.Category.ModuleCat.CartanMap.Basic
 public import TauCeti.Algebra.Homology.EulerCharacteristic.ExtEuler.Resolution
 
 /-!

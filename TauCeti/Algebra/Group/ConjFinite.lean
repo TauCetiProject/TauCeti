@@ -11,13 +11,13 @@ public import Mathlib.Algebra.Group.ConjFinite
 # Sizes of conjugacy classes
 
 Two elementary facts about the carrier of a conjugacy class: the class of the identity is the
-singleton `{1}`, and every class of a finite group is nonempty.
+singleton `{1}`, and every class of a finite monoid is nonempty.
 
 ## Main results
 
 * `TauCeti.ConjClasses.carrier_mk_one`: the class of `1` is `{1}`, with its counting form
   `TauCeti.ConjClasses.card_carrier_mk_one`.
-* `TauCeti.ConjClasses.card_carrier_pos`: a conjugacy class of a finite group has positive size.
+* `TauCeti.ConjClasses.card_carrier_pos`: a conjugacy class of a finite monoid has positive size.
 -/
 
 public section
@@ -26,7 +26,7 @@ namespace TauCeti
 
 namespace ConjClasses
 
-variable {G : Type*} [Group G]
+variable {G : Type*} [Monoid G]
 
 /-- **The conjugacy class of the identity is the singleton `{1}`**: an element conjugate to `1` is
 `1`. -/
@@ -45,8 +45,7 @@ theorem card_carrier_mk_one : Nat.card (_root_.ConjClasses.mk (1 : G)).carrier =
   rw [carrier_mk_one]
   simp
 
-/-- **A conjugacy class of a finite group has positive size**: it contains any of its
-representatives. -/
+/-- **A conjugacy class of a finite monoid has positive size.** -/
 theorem card_carrier_pos [Finite G] (C : _root_.ConjClasses G) : 0 < Nat.card C.carrier := by
   obtain ⟨g, rfl⟩ := C.exists_rep
   have : Nonempty (_root_.ConjClasses.mk g).carrier := ⟨⟨g, _root_.ConjClasses.mem_carrier_mk⟩⟩

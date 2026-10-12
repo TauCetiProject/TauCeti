@@ -6,18 +6,17 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Function.LpSeminorm.Basic
--- `TauCeti.MeasureTheory.Integral.Dilation` is imported publicly: `TauCeti.lintegral_comp_inv_smul`
--- is the `∫⁻` form of the statement below, so the two belong together for a reader of either.
-public import TauCeti.MeasureTheory.Integral.Dilation
+public import Mathlib.MeasureTheory.Measure.Haar.NormedSpace
 
 /-!
 # Dilation scaling of the `Lᵖ` seminorm
 
 Dilating the variable of a function on a finite-dimensional real normed space `E` by `r⁻¹`, for
 `r > 0`, multiplies its `Lᵖ` seminorm against an additive Haar measure by `r ^ (n / p)`, where
-`n` is the dimension of `E` and `0 < p < ∞`. This is the `eLpNorm` form of the lower Lebesgue
-integral law `TauCeti.lintegral_comp_inv_smul`, obtained by applying the latter to
-`y ↦ ‖f y‖ₑ ^ p` and taking a `p`-th root.
+`n` is the dimension of `E`. Here `n / p` stands for `n / p.toReal`, which is `0` at `p = 0` and
+`p = ∞` by Lean's conventions `ENNReal.toReal ∞ = 0` and `x / 0 = 0`, so at those two exponents
+the factor is `1`. This is the `eLpNorm` counterpart of the lower Lebesgue integral law
+`TauCeti.lintegral_comp_inv_smul`.
 
 ## Main declarations
 
@@ -33,23 +32,19 @@ open scoped ENNReal
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [MeasurableSpace E] [BorelSpace E]
   [FiniteDimensional ℝ E] (μ : Measure E) [μ.IsAddHaarMeasure]
-  {G : Type*} [NormedAddCommGroup G]
+  {G : Type*} [TopologicalSpace G] [ContinuousENorm G]
 
 /-- **Dilation scaling of the `Lᵖ` seminorm:** `‖u (r⁻¹ • ·)‖_p = r ^ (n / p) * ‖u‖_p`, where
-`n` is the dimension of the ambient space. -/
-theorem eLpNorm_comp_inv_smul (f : E → G) {r : ℝ} (hr : 0 < r) {p : ℝ≥0∞} (hp₀ : p ≠ 0)
-    (hp : p ≠ ∞) :
-    eLpNorm (fun x => f (r⁻¹ • x)) p μ =
-      ENNReal.ofReal (r ^ ((finrank ℝ E : ℝ) / p.toReal)) * eLpNorm f p μ := by
-  have ht : 0 < p.toReal := ENNReal.toReal_pos hp₀ hp
-  have key := lintegral_comp_inv_smul μ (fun y => ‖f y‖ₑ ^ p.toReal) hr
-  rw [eLpNorm_eq_lintegral_rpow_enorm_toReal hp₀ hp, eLpNorm_eq_lintegral_rpow_enorm_toReal hp₀ hp,
-    key, ENNReal.mul_rpow_of_nonneg _ _ (by positivity)]
-  have hpow : ((r ^ finrank ℝ E : ℝ)) ^ (1 / p.toReal) = r ^ ((finrank ℝ E : ℝ) / p.toReal) := by
-    rw [← Real.rpow_natCast r (finrank ℝ E), ← Real.rpow_mul hr.le]
-    ring_nf
+`n` is the dimension of the ambient space. The exponent `n / p` is `n / p.toReal`, which is `0` at
+`p = 0` and `p = ∞`, where the factor is thus `1`. -/
+theorem eLpNorm_comp_inv_smul (u : E → G) {r : ℝ} (hr : 0 < r) (p : ℝ≥0∞) :
+    eLpNorm (fun x => u (r⁻¹ • x)) p μ =
+      ENNReal.ofReal (r ^ ((finrank ℝ E : ℝ) / p.toReal)) * eLpNorm u p μ := by
+  have hr' : r⁻¹ ≠ 0 := inv_ne_zero hr.ne'
+  rw [← Function.comp_def, ← (measurableEmbedding_const_smul₀ hr').eLpNorm_map_measure,
+    Measure.map_addHaar_smul μ hr', eLpNorm_smul_measure_of_ne_zero (by positivity), smul_eq_mul]
   congr 1
-  rw [← hpow]
-  exact ENNReal.ofReal_rpow_of_pos (by positivity : (0 : ℝ) < r ^ finrank ℝ E)
+  rw [inv_pow, inv_inv, abs_of_pos (by positivity), ENNReal.ofReal_rpow_of_pos (by positivity),
+    ← Real.rpow_natCast, ← Real.rpow_mul hr.le, one_div, ENNReal.toReal_inv, div_eq_mul_inv]
 
 end TauCeti

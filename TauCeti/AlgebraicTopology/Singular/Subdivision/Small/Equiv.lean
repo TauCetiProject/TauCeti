@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Homology.QuasiIso
 public import TauCeti.Algebra.Homology.Homotopy
 public import TauCeti.AlgebraicTopology.Singular.Subdivision.Small.Homotopy
 
@@ -385,7 +386,7 @@ def smallSingularRetraction :
     (TopCat.toSSet.obj X).chainComplex R ⟶
       (X.smallSingularSubcomplex U : SSet).chainComplex R where
   f := smallSingularRetractionX R U hU hcov
-  comm' i j hij := by
+  comm' i j _ := by
     apply (cancel_mono ((SSet.chainComplexMap (X.smallSingularSubcomplex U).ι R).f j)).1
     rw [Category.assoc, ← HomologicalComplex.Hom.comm, ← Category.assoc,
       smallSingularRetractionX_comp_ι, Category.assoc, smallSingularRetractionX_comp_ι,
@@ -427,6 +428,13 @@ def smallSingularChainHomotopyEquiv :
   homotopyInvHomId := (Homotopy.ofEq (smallSingularRetraction_comp_ι R U hU hcov)).trans
     (singularSmallApproxHomotopy R U).symm
 
+/-- The forward map of the small-chain homotopy equivalence is the inclusion of the chains
+subordinate to the cover. -/
+@[simp]
+lemma smallSingularChainHomotopyEquiv_hom :
+    (smallSingularChainHomotopyEquiv R U hU hcov).hom =
+      SSet.chainComplexMap (X.smallSingularSubcomplex U).ι R := (rfl)
+
 /-- The isomorphism on homology induced by the inclusion of the chains subordinate to an open
 cover.  Since the inclusion is natural in the covered space, so is this isomorphism, whereas the
 homotopy inverse underlying it is not. -/
@@ -463,5 +471,13 @@ theorem isIso_homologyMap_smallSingularChainι [CategoryWithHomology C] (n : ℕ
       (SSet.chainComplexMap (X.smallSingularSubcomplex U).ι R) n) := by
   rw [← smallSingularHomologyIso_hom R U hU hcov n]
   infer_instance
+
+/-- The inclusion of the chains subordinate to an open cover is a quasi-isomorphism. -/
+theorem quasiIso_chainComplexMap_smallSingularSubcomplex_ι [CategoryWithHomology C] :
+    QuasiIso (SSet.chainComplexMap (X.smallSingularSubcomplex U).ι R) := by
+  rw [quasiIso_iff]
+  intro n
+  rw [quasiIsoAt_iff_isIso_homologyMap]
+  exact isIso_homologyMap_smallSingularChainι R U hU hcov n
 
 end TauCeti

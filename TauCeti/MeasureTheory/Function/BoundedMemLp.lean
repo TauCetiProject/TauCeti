@@ -28,7 +28,7 @@ namespace TauCeti
 open MeasureTheory
 
 variable {Ω α E : Type*} [MeasurableSpace Ω] [MeasurableSpace α] [MeasurableSpace E]
-  [NormedAddCommGroup E] [BorelSpace E] [SecondCountableTopology E]
+  [NormedAddCommGroup E] [OpensMeasurableSpace E] [SecondCountableTopology E]
 
 /-- A bounded measurable observable of an a.e.-measurable map belongs to every `Lᵖ` on a finite
 measure space: if `f` is measurable, `g` is a.e. measurable, and `f ∘ g` is a.e. bounded, then

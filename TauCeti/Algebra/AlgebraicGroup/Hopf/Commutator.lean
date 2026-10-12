@@ -40,8 +40,7 @@ closed subgroup scheme containing the image, constructed in
 * J. S. Milne, *Algebraic Groups* (2017), §6d.
 * W. C. Waterhouse, *Introduction to Affine Group Schemes*, Chapter 10.
 
-This is the coordinate prerequisite for the derived group `G_der` in Layer 6 of the
-ReductiveGroups roadmap.
+This is the coordinate prerequisite for the derived group `G_der`.
 -/
 
 public section
@@ -117,7 +116,10 @@ theorem map_comp_commutatorAlgHom (f : H →ₐc[R] K) :
     apply WithConv.ofConv_injective
     simp only [map_mul, map_inv, AlgHom.mapValue_apply, AlgHom.mapDomain_apply]
     rw [hinclLeft, hinclRight]
-  exact congrArg (fun g : WithConv (H →ₐ[R] K ⊗[R] K) ↦ g.ofConv x) hleft
+  have h := congrArg WithConv.ofConv hleft
+  rw [AlgHom.mapValue_apply, AlgHom.mapDomain_apply, ofConv_toConv, ofConv_toConv,
+    ofConv_toConv, ofConv_toConv] at h
+  exact congrFun (congrArg DFunLike.coe h) x
 
 /-- Evaluating the commutator coordinate morphism at two algebra-valued points gives their
 group-theoretic commutator. -/

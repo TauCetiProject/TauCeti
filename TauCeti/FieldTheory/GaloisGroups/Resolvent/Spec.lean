@@ -48,6 +48,8 @@ the orbit of `Φ` at those roots.
   resolvent is monic of degree `[Sₙ : H]`.
 * `TauCeti.ResolventSpec.map_specialize_eq_galResolvent`: the resolvent is the orbit product at
   the roots.
+* `TauCeti.ResolventSpec.isRoot_specialize_eval₂_rename`: every orbit value at the roots is a
+  root of the resolvent.
 * `TauCeti.ResolventSpec.specialize_rename`: renaming the invariant does not change the
   resolvent.
 -/
@@ -192,6 +194,17 @@ theorem map_specialize_eq_galResolvent {R L : Type*} [CommRing R] [CommRing L] [
   rw [specialize_map, specialize_def]
   exact map_vietaHom_eq_galResolvent_of_roots spec.orbitProduct_esymm (hf.map φ)
     (by rw [hf.natDegree_map, hdeg]) hx
+
+/-- **Every orbit value is a root of the resolvent.** If `f` is the product of the linear factors
+attached to a family `x`, then the value at `x` of every renaming of the invariant is a root of
+the resolvent of `f`. -/
+theorem isRoot_specialize_eval₂_rename {R : Type*} [CommRing R] {f : R[X]} {x : Fin n → R}
+    (hf : f = ∏ i, (X - C (x i))) (σ : Equiv.Perm (Fin n)) :
+    (spec.specialize R f).IsRoot
+      (MvPolynomial.eval₂ (Int.castRingHom R) x (MvPolynomial.rename (⇑σ) spec.Φ)) := by
+  rw [specialize_def, map_vietaHom_eq_galResolvent spec.orbitProduct_esymm hf,
+    MvPolynomial.galResolvent_def, Polynomial.IsRoot, Polynomial.eval_prod]
+  exact Finset.prod_eq_zero ((MvPolynomial.mem_renameOrbit _ _).mpr ⟨σ, rfl⟩) (by simp)
 
 /-! ### Renaming the invariant -/
 

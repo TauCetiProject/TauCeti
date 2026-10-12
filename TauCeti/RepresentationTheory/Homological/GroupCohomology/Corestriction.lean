@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2026 Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Claude
+Authors: Claude, Codex
 -/
 module
 
@@ -57,8 +57,15 @@ restrictions.
   vanishes is killed by `[G : S]`.
 * `groupCohomology.natCard_nsmul_eq_zero`: positive-degree cohomology of a finite group is killed
   by the order of the group.
+* `groupCohomology.subsingleton_of_isUnit_natCard`: positive-degree cohomology of a finite group
+  vanishes when the order of the group is a unit of the coefficient ring.
 * `TauCeti.groupCohomology.corestriction_trans`: corestriction from `A` to `B` followed by
   corestriction from `B` to `C` is corestriction from `A` to `C`.
+
+* `TauCeti.groupCohomology.δ_comp_corestriction`: corestriction commutes with the connecting
+  maps in every ordinary cohomological degree.
+* `Rep.H0Iso_inv_comp_corestriction_comp_H0Iso_hom`: degree-zero corestriction is the relative
+  norm on invariants under the canonical ordinary degree-zero comparison.
 
 ## References
 
@@ -120,6 +127,7 @@ noncomputable def corestriction (A : Rep.{u} k G) (n : ℕ) :
     groupCohomology (res S.subtype A) n ⟶ groupCohomology A n :=
   (corestrictionNatTrans k S n).app A
 
+/-- The component at `A` of the corestriction natural transformation is `corestriction S A n`. -/
 @[simp]
 theorem corestrictionNatTrans_app (A : Rep.{u} k G) (n : ℕ) :
     (corestrictionNatTrans k S n).app A = corestriction S A n := (rfl)
@@ -162,6 +170,27 @@ theorem index_nsmul_eq_zero_of_map_eq_zero {A : Rep.{u} k G} {n : ℕ} {x : grou
     (h : map S.subtype (𝟙 (res S.subtype A)) n x = 0) : S.index • x = 0 := by
   rw [← map_subtype_id_comp_corestriction_apply S A n x, h, map_zero]
 
+/-- Corestriction from a finite-index subgroup commutes with the connecting maps of
+any short exact sequence of representations, in every ordinary cohomological degree. -/
+@[reassoc]
+theorem δ_comp_corestriction {X : ShortComplex (Rep k G)} (hX : X.ShortExact)
+    (i j : ℕ) (hij : i + 1 = j) :
+    δ ((Rep.shortExact_res S.subtype).2 hX) i j hij ≫ corestriction S X.X₁ j =
+      corestriction S X.X₃ i ≫ δ hX i j hij := by
+  classical
+  let hRes := (Rep.shortExact_res S.subtype).2 hX
+  have hSh := δ_comp_coindIso_hom S hRes i j hij
+  dsimp only [ShortComplex.map_X₁, ShortComplex.map_X₃] at hSh
+  rw [← cancel_epi (groupCohomology.coindIso (res S.subtype X.X₃) i).hom,
+    ← reassoc_of% hSh, coindIso_hom_comp_corestriction,
+    reassoc_of% (coindIso_hom_comp_corestriction S X.X₃ i)]
+  exact _root_.groupCohomology.δ_naturality (hRes.map_of_exact (coindFunctor k S.subtype)) hX
+    { τ₁ := (coindResAdjunction k S).counit.app X.X₁
+      τ₂ := (coindResAdjunction k S).counit.app X.X₂
+      τ₃ := (coindResAdjunction k S).counit.app X.X₃
+      comm₁₂ := ((coindResAdjunction k S).counit.naturality X.f).symm
+      comm₂₃ := ((coindResAdjunction k S).counit.naturality X.g).symm } i j hij
+
 /-! ### Transitivity -/
 
 section Transitivity
@@ -199,12 +228,6 @@ private theorem resCoindAdjunction_counit_app_hom_apply
     ((resCoindAdjunction k f).counit.app N).hom x = x.1 1 :=
   rfl
 
-private theorem coind_ρ_apply_coe_apply
-    {D E V : Type u} [Group D] [Group E] [AddCommGroup V] [Module k V] (f : D →* E)
-    (N : Representation k D V) (x : Representation.coindV f N) (e e' : E) :
-    ((Representation.coind f N e) x).1 e' = x.1 (e' * e) :=
-  rfl
-
 private theorem evalOne_hom_apply (f : coindComp φ₁ φ₂ M) :
     (evalOne φ₁ φ₂ M).hom f = f.1 1 :=
   rfl
@@ -219,7 +242,7 @@ private theorem restrictCoind_hom_apply_coe (f : coindComp φ₁ φ₂ M) (b : B
   rw [Rep.hom_comp, Representation.IntertwiningMap.comp_apply, Rep.resMap_hom_apply,
     hom_comm_apply, resCoindAdjunction_counit_app_hom_apply, evalOne_hom_apply] at h
   simpa only [res_obj_ρ, MonoidHom.coe_comp, Function.comp_apply, Rep.of_ρ,
-    coind_ρ_apply_coe_apply, one_mul] using h
+    Representation.coind_apply_coe_apply, one_mul] using h
 
 open scoped Classical in
 /-- The trace of `φ₁.range` after `restrictCoind`, a `B`-equivariant map
@@ -268,7 +291,7 @@ private theorem coindTrace_hom_apply_coe [φ₁.range.FiniteIndex] (f : coindCom
     traceRestrictRange_hom_apply] at h
   have h' : ((coindTrace φ₁ φ₂ M).hom f).1 c =
       (traceRestrict φ₁ φ₂ M).hom ((coindComp φ₁ φ₂ M).ρ c f) := by
-    simpa only [Rep.of_ρ, coind_ρ_apply_coe_apply, one_mul] using h
+    simpa only [Rep.of_ρ, Representation.coind_apply_coe_apply, one_mul] using h
   rw [h', traceRestrict, Rep.hom_comp, Representation.IntertwiningMap.comp_apply,
     Subgroup.coindResAdjunction_counit_app_hom_apply]
   refine Finset.sum_congr rfl fun q _ => ?_
@@ -315,6 +338,46 @@ private theorem coindTrace_comp_counit [φ₁.range.FiniteIndex] [φ₂.range.Fi
       (MonoidHom.mk_mul_out_bijective φ₁ φ₂ (by simp [φ₂.ker_eq_bot h₂]))
       _ _ fun _ => hF _
 
+/-- Read on `A` through `MonoidHom.ofInjective`, Shapiro's isomorphism for `(φ₂.comp φ₁).range`
+is the map induced by `restrictCoind` followed by Shapiro's isomorphism for `φ₁.range`. -/
+private theorem coindIso_hom_comp_mapIso_ofInjective {φ₁ : A →* B} {φ₂ : B →* C}
+    (h₁ : Function.Injective φ₁) (h₂ : Function.Injective φ₂) (n : ℕ) :
+    (coindIso (res (φ₂.comp φ₁).range.subtype M) n).hom ≫
+      (mapIso (B := res φ₁ (res φ₂ M)) (A := res (φ₂.comp φ₁).range.subtype M)
+        (MonoidHom.ofInjective (h₂.comp h₁)) (LinearEquiv.refl k M)
+        (fun _ => LinearMap.ext fun _ => rfl) n).inv ≫
+      (mapIso (B := res φ₁ (res φ₂ M)) (A := res φ₁.range.subtype (res φ₂ M))
+        (MonoidHom.ofInjective h₁) (LinearEquiv.refl k M)
+        (fun _ => LinearMap.ext fun _ => rfl) n).hom =
+      map φ₂ (restrictCoind φ₁ φ₂ M) n ≫ (coindIso (res φ₁.range.subtype (res φ₂ M)) n).hom := by
+  -- The right side first: `simp` would put `(resFunctor _).map` into `resMap` form, which
+  -- `res_map_restrictCoind_comp_counit` no longer matches. The left side is cheaper by `simp`.
+  -- `conv_rhs` keeps `rw` from re-checking the left side after every step.
+  conv_rhs => rw [coindIso_hom φ₁.range, ← map_comp, res_map_restrictCoind_comp_counit]
+  simp only [coindIso_hom, mapIso_hom, mapIso_inv, ← map_comp]
+  refine map_congr ?_ ?_ n
+  · ext a
+    exact congrArg φ₂ (MonoidHom.apply_ofInjective_symm h₁ a)
+  · exact LinearMap.ext fun _ => rfl
+
+open scoped Classical in
+/-- The trace of `φ₁.range` after `restrictCoind`, read on `C` through `MonoidHom.ofInjective`, is
+the map induced by `coindTrace` followed by Shapiro's isomorphism for `φ₂.range`. -/
+private theorem map_restrictCoind_comp_map_counit_comp_mapIso {φ₁ : A →* B} {φ₂ : B →* C}
+    [φ₁.range.FiniteIndex] (h₂ : Function.Injective φ₂) (n : ℕ) :
+    map φ₂ (restrictCoind φ₁ φ₂ M) n ≫
+      map (MonoidHom.id B) ((coindResAdjunction.{u, u, u} k φ₁.range).counit.app (res φ₂ M)) n ≫
+      (mapIso (B := res φ₂ M) (A := res φ₂.range.subtype M) (MonoidHom.ofInjective h₂)
+        (LinearEquiv.refl k M) (fun _ => LinearMap.ext fun _ => rfl) n).hom =
+      map (MonoidHom.id C) (coindTrace φ₁ φ₂ M) n ≫ (coindIso (res φ₂.range.subtype M) n).hom := by
+  -- The right side first, as in `coindIso_hom_comp_mapIso_ofInjective`.
+  conv_rhs => rw [coindIso_hom φ₂.range, ← map_comp, res_map_coindTrace_comp_counit]
+  simp only [mapIso_hom, ← map_comp]
+  refine map_congr ?_ ?_ n
+  · ext a
+    exact MonoidHom.apply_ofInjective_symm h₂ a
+  · exact LinearMap.ext fun _ => rfl
+
 /-- **Transitivity of corestriction.** Let `φ₁ : A →* B` and `φ₂ : B →* C` be injective with
 images of finite index, and let `φ₃ = φ₂.comp φ₁`. Identify each group with its image through
 `MonoidHom.ofInjective`. Then corestriction from `A` to `B`, followed by corestriction from `B`
@@ -344,49 +407,17 @@ theorem corestriction_trans {φ₁ : A →* B} {φ₂ : B →* C} {φ₃ : A →
         (fun _ => by subst h; exact LinearMap.ext fun _ => rfl) n).hom ≫
       corestriction φ₃.range M n := by
   subst h
-  let _ := MonoidHom.finiteIndex_range_comp φ₁ φ₂
-  classical
-  -- Precompose with Shapiro's isomorphism for the composite, read on `A`.
-  rw [← cancel_epi ((coindIso (res (φ₂.comp φ₁).range.subtype M) n).hom ≫
-    (mapIso (B := res φ₁ (res φ₂ M)) (A := res (φ₂.comp φ₁).range.subtype M)
-        (MonoidHom.ofInjective (h₂.comp h₁)) (LinearEquiv.refl k M)
-        (fun _ => LinearMap.ext fun _ => rfl) n).inv)]
-  simp only [Category.assoc, Iso.inv_hom_id_assoc]
-  rw [coindIso_hom_comp_corestriction]
-  -- Read on `B`, Shapiro for the composite is Shapiro for `φ₁.range` after `restrictCoind`.
-  have step₁ : (coindIso (res (φ₂.comp φ₁).range.subtype M) n).hom ≫
-      (mapIso (B := res φ₁ (res φ₂ M)) (A := res (φ₂.comp φ₁).range.subtype M)
-        (MonoidHom.ofInjective (h₂.comp h₁)) (LinearEquiv.refl k M)
-        (fun _ => LinearMap.ext fun _ => rfl) n).inv ≫
-      (mapIso (B := res φ₁ (res φ₂ M)) (A := res φ₁.range.subtype (res φ₂ M))
-        (MonoidHom.ofInjective h₁) (LinearEquiv.refl k M)
-        (fun _ => LinearMap.ext fun _ => rfl) n).hom =
-      map φ₂ (restrictCoind φ₁ φ₂ M) n ≫
-        (coindIso (res φ₁.range.subtype (res φ₂ M)) n).hom := by
-    rw [coindIso_hom, coindIso_hom, mapIso_hom, mapIso_inv, ← map_comp, ← map_comp, ← map_comp,
-      res_map_restrictCoind_comp_counit]
-    refine map_congr ?_ ?_ n
-    · ext a
-      simp only [MonoidHom.coe_comp, MonoidHom.coe_coe, Function.comp_apply, Subgroup.coe_subtype,
-        MonoidHom.ofInjective_apply, MonoidHom.apply_ofInjective_symm]
-    · exact LinearMap.ext fun _ => rfl
-  -- Then the trace of `φ₁.range`, read on `C`, is Shapiro for `φ₂.range` after `coindTrace`.
-  have step₂ : map φ₂ (restrictCoind φ₁ φ₂ M) n ≫
-      map (MonoidHom.id B) ((coindResAdjunction.{u, u, u} k φ₁.range).counit.app (res φ₂ M)) n ≫
-      (mapIso (B := res φ₂ M) (A := res φ₂.range.subtype M)
-        (MonoidHom.ofInjective h₂) (LinearEquiv.refl k M)
-        (fun _ => LinearMap.ext fun _ => rfl) n).hom =
-      map (MonoidHom.id C) (coindTrace φ₁ φ₂ M) n ≫ (coindIso (res φ₂.range.subtype M) n).hom := by
-    rw [coindIso_hom, mapIso_hom, ← map_comp, ← map_comp, ← map_comp,
-      res_map_coindTrace_comp_counit]
-    refine map_congr ?_ ?_ n
-    · ext a
-      simp only [MonoidHom.coe_comp, MonoidHom.coe_coe, Function.comp_apply, MonoidHom.id_apply,
-        Subgroup.coe_subtype, MonoidHom.apply_ofInjective_symm]
-    · exact LinearMap.ext fun _ => rfl
-  rw [reassoc_of% step₁, reassoc_of% (coindIso_hom_comp_corestriction φ₁.range (res φ₂ M) n),
-    reassoc_of% step₂, coindIso_hom_comp_corestriction, ← map_id_comp,
-    coindTrace_comp_counit φ₁ φ₂ M h₂]
+  -- Move the identification for the composite, read on `A`, to the left, and precompose with
+  -- Shapiro's isomorphism for the composite.
+  -- (`groupCohomology.coindIso` is qualified: `Rep.coindIso` is also in scope.)
+  rw [← Iso.inv_comp_eq,
+    ← cancel_epi (groupCohomology.coindIso (res (φ₂.comp φ₁).range.subtype M) n).hom,
+    coindIso_hom_comp_corestriction]
+  -- Pass through Shapiro for `φ₁.range`, then for `φ₂.range`, and compare the two traces.
+  conv_lhs => rw [reassoc_of% coindIso_hom_comp_mapIso_ofInjective M h₁ h₂ n,
+    reassoc_of% (coindIso_hom_comp_corestriction φ₁.range (res φ₂ M) n),
+    reassoc_of% map_restrictCoind_comp_map_counit_comp_mapIso M h₂ n,
+    coindIso_hom_comp_corestriction, ← map_id_comp, coindTrace_comp_counit φ₁ φ₂ M h₂]
 
 end Transitivity
 
@@ -407,4 +438,67 @@ theorem natCard_nsmul_eq_zero {A : Rep k G} {n : ℕ} (x : groupCohomology A (n 
     (ModuleCat.subsingleton_of_isZero
       (isZero_groupCohomology_succ_of_subsingleton (res (⊥ : Subgroup G).subtype A) n)).allEq _ _
 
+/-- Positive-degree cohomology of a finite group vanishes when the order of the group is a unit
+of the coefficient ring. -/
+theorem subsingleton_of_isUnit_natCard (A : Rep k G) (h : IsUnit (Nat.card G : k)) (n : ℕ) :
+    Subsingleton (groupCohomology A (n + 1)) := by
+  refine subsingleton_of_forall_eq 0 fun x ↦ ?_
+  obtain ⟨c, hc⟩ := h.exists_left_inv
+  rw [← one_smul k x, ← hc, mul_smul, Nat.cast_smul_eq_nsmul, natCard_nsmul_eq_zero, smul_zero]
+
 end groupCohomology
+
+namespace Rep
+
+universe u
+
+variable {k G : Type u} [CommRing k] [Group G]
+
+/-- Under the degree-zero identification with invariants, corestriction is the relative norm.
+The quotient `Fintype` is explicit so that the relative norm uses the caller's coset enumeration. -/
+@[reassoc]
+theorem H0Iso_inv_comp_corestriction_comp_H0Iso_hom (M : Rep.{u} k G)
+    (H : Subgroup G) [H.FiniteIndex] [Fintype (G ⧸ H)] :
+    (groupCohomology.H0Iso (res H.subtype M)).inv ≫
+        TauCeti.groupCohomology.corestriction H M 0 ≫ (groupCohomology.H0Iso M).hom =
+      ModuleCat.ofHom (Representation.relNormInvariants M.ρ H) := by
+  classical
+  rw [Iso.inv_comp_eq, ← cancel_epi (groupCohomology.coindIso (res H.subtype M) 0).hom,
+    reassoc_of% (TauCeti.groupCohomology.coindIso_hom_comp_corestriction H M 0)]
+  rw [groupCohomology.map_id_comp_H0Iso_hom]
+  ext y
+  let f := (groupCohomology.H0Iso (coind H.subtype (res H.subtype M))).hom y
+  let x := (groupCohomology.H0Iso (res H.subtype M)).hom
+    ((groupCohomology.coindIso (res H.subtype M) 0).hom y)
+  have hx : (x : M) = f.1.1 1 := by
+    have h := groupCohomology.map_H0Iso_hom_f_apply H.subtype
+      ((resCoindAdjunction k H.subtype).counit.app (res H.subtype M)) y
+    rw [← TauCeti.groupCohomology.coindIso_hom] at h
+    exact h
+  have hf (g : G) : f.1.1 g = f.1.1 1 := by
+    have h := congrArg (fun a : coind H.subtype (res H.subtype M) => a.1 1)
+      ((Representation.mem_invariants _ _).mp f.2 g)
+    convert h using 1
+    exact congrArg f.1.1 (one_mul g).symm
+  -- Both maps on invariants are restrictions of their underlying linear maps.
+  apply Subtype.ext
+  simp only [ModuleCat.hom_comp, LinearMap.comp_apply, ModuleCat.hom_ofHom]
+  suffices heq : ((coindResAdjunction.{u, u, u} k H).counit.app M).hom f.1 =
+      Representation.relNorm M.ρ H x by
+    exact heq.trans (Representation.coe_relNormInvariants (ρ := M.ρ) (H := H) x).symm
+  rw [Subgroup.coindResAdjunction_counit_app_hom_apply, Representation.relNorm_apply]
+  -- The trace uses its fixed finite-index enumeration; the norm keeps the caller's instance.
+  let : Fintype (Quotient (QuotientGroup.rightRel H)) :=
+    @QuotientGroup.fintypeQuotientRightRel G _ H
+      (@Subgroup.fintypeQuotientOfFiniteIndex G _ H _)
+  refine Fintype.sum_equiv (QuotientGroup.quotientRightRelEquivQuotientLeftRel H) _ _
+    fun q => ?_
+  rw [hf, ← hx]
+  apply M.ρ.apply_eq_apply_of_quotientGroup_mk_eq
+    ((Representation.mem_invariants _ _).1 x.2)
+  calc ((q.out⁻¹ : G) : G ⧸ H) =
+      QuotientGroup.quotientRightRelEquivQuotientLeftRel H q :=
+        congrArg (QuotientGroup.quotientRightRelEquivQuotientLeftRel H) q.out_eq
+    _ = _ := ((QuotientGroup.quotientRightRelEquivQuotientLeftRel H q).out_eq').symm
+
+end Rep

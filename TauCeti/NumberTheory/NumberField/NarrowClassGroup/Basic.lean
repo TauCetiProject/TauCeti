@@ -183,7 +183,7 @@ they differ by a unit of `𝓞 K`, so the narrow class of `(x)` is trivial iff o
     exact ⟨z⁻¹, by rw [← hz, inv_smul_smul]; exact hy⟩
   · rintro ⟨w, hw⟩
     refine ⟨Units.map (algebraMap (𝓞 K) K : (𝓞 K) →* K) w * x, ?_, ?_⟩
-    · simpa only [Units.val_mul, Units.coe_map, MonoidHom.coe_coe, Units.smul_def,
+    · simpa only [Units.val_mul, Units.coe_map, MonoidHom.coe_ofClass, Units.smul_def,
         Algebra.smul_def] using hw
     · rw [← Units.val_inj, coe_toPrincipalIdeal, coe_toPrincipalIdeal]
       refine spanSingleton_eq_spanSingleton.mpr ⟨w⁻¹, ?_⟩

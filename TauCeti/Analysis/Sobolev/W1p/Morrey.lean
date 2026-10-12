@@ -75,7 +75,14 @@ private theorem eLpNorm_fderiv_testFunction_eq (phi : 𝓓((⊤ : Opens E), ℝ)
   refine Eq.trans ?_ (eLpNorm_congr_ae
     (Filter.EventuallyEq.symm (gradientTestFunctionLp_apply_ae (mu := mu) (p : ℝ≥0∞) phi)))
   rw [Opens.coe_top, Measure.restrict_univ]
-  exact eLpNorm_congr_norm_ae (.of_forall fun x => (norm_gradient_eq_norm_fderiv _ x).symm)
+  have hfderiv : AEStronglyMeasurable (fderiv ℝ (phi : E → ℝ)) mu :=
+    ((phi.contDiff.continuous_fderiv (by simp)).stronglyMeasurable_of_hasCompactSupport
+      (phi.hasCompactSupport.fderiv ℝ)).aestronglyMeasurable
+  have hgrad : AEStronglyMeasurable (∇ (phi : E → ℝ)) mu :=
+    ((continuous_gradient_testFunction phi).stronglyMeasurable_of_hasCompactSupport
+      (hasCompactSupport_gradient_testFunction phi)).aestronglyMeasurable
+  exact eLpNorm_congr_norm_ae hfderiv hgrad
+    (.of_forall fun x => (norm_gradient_eq_norm_fderiv _ x).symm)
 
 /-- **Morrey's embedding for `W^{1,p}(ℝⁿ)`.** If `p` exceeds the dimension `n` of the space and is
 finite, then every `u ∈ W^{1,p}(ℝⁿ)` agrees almost everywhere with a function which is Hölder

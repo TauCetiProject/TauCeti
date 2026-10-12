@@ -62,7 +62,8 @@ theorem fieldUnitSignature_ker :
   ext u
   simp only [MonoidHom.mem_ker, funext_iff, Pi.one_apply, fieldUnitSignature_apply,
     QuotientGroup.eq_one_iff, Units.mem_posSubgroup, Units.coe_map,
-    RingHom.toMonoidHom_eq_coe, MonoidHom.coe_coe, mem_totallyPositiveUnits, isTotallyPositive_iff,
+    RingHom.toMonoidHom_eq_coe, MonoidHom.coe_ofClass, mem_totallyPositiveUnits,
+    isTotallyPositive_iff,
     Subtype.forall]
 
 /-- A unit has trivial field signature exactly when it is totally positive. -/
@@ -99,7 +100,7 @@ omit [NumberField K] in
 @[simp] theorem unitSignature_eq_one_iff {u : (𝓞 K)ˣ} :
     unitSignature u = 1 ↔ IsTotallyPositive (algebraMap (𝓞 K) K (u : 𝓞 K)) := by
   simp only [unitSignature, MonoidHom.comp_apply, fieldUnitSignature_eq_one_iff, Units.coe_map,
-    RingHom.toMonoidHom_eq_coe, MonoidHom.coe_coe]
+    RingHom.toMonoidHom_eq_coe, MonoidHom.coe_ofClass]
 
 omit [NumberField K] in
 /-- The kernel of the integer-unit signature is exactly the totally positive integer units. -/

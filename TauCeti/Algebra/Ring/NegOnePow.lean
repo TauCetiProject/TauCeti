@@ -24,6 +24,9 @@ This file provides the cast to a ground ring of Mathlib's unit-valued sign chara
 * `TauCeti.negOnePowCast_sum`: the sign of a finite sum is the product of the signs of its terms.
 * `TauCeti.negOnePow_smul_eq_negOnePowCast_smul`: the unit-valued sign and its ground-ring cast
   induce the same scalar action on a module.
+* `TauCeti.negOnePow_smul_negOnePow_smul`: the unit-valued sign acts as an involution.
+* `Int.negOnePow_sub_sub_one`, `TauCeti.negOnePow_mul_negOnePow_of_even`: the parity
+  identities behind the sign cancellations of twisted differentials.
 -/
 
 public section
@@ -79,21 +82,50 @@ theorem negOnePow_smul_eq_negOnePowCast_smul (e : ℤ) (a : A) :
 
 end
 
-variable {A : Type uA} [AddCommMonoid A] [Module R A]
+variable {A : Type uA}
 
 /-- The scalar `(-1) ^ e` acts as an involution. -/
 @[simp]
-theorem negOnePowCast_smul_negOnePowCast_smul (e : ℤ) (a : A) :
+theorem negOnePowCast_smul_negOnePowCast_smul [MulAction R A] (e : ℤ) (a : A) :
     negOnePowCast R e • (negOnePowCast R e • a) = a := by
   rw [smul_smul, ← negOnePowCast_add, ← two_mul, negOnePowCast_two_mul, one_smul]
 
 @[simp]
-theorem negOnePowCast_smul_eq_zero_iff (e : ℤ) (a : A) :
+theorem negOnePowCast_smul_eq_zero_iff [AddMonoid A] [DistribMulAction R A] (e : ℤ) (a : A) :
     negOnePowCast R e • a = 0 ↔ a = 0 := by
   refine ⟨fun h ↦ ?_, fun h ↦ by simp [h]⟩
   rw [← negOnePowCast_smul_negOnePowCast_smul (R := R) e a, h, smul_zero]
 
 end NegOnePowCast
+
+section NegOnePowSMul
+
+variable {A : Type uA} [AddGroup A]
+
+/-- The sign `(-1) ^ e`, acting through the units of `ℤ`, acts as an involution. -/
+@[simp]
+theorem negOnePow_smul_negOnePow_smul (e : ℤ) (a : A) : e.negOnePow • e.negOnePow • a = a := by
+  rw [smul_smul, Int.units_mul_self, one_smul]
+
+end NegOnePowSMul
+
+section Parity
+
+/-- Reversing a difference and shifting it by one flips the sign:
+`(-1) ^ (a - b - 1) = -(-1) ^ (b - a)`. -/
+theorem _root_.Int.negOnePow_sub_sub_one (a b : ℤ) :
+    (a - b - 1).negOnePow = -(b - a).negOnePow := by
+  rw [← Int.negOnePow_succ, Int.negOnePow_eq_iff]
+  exact ⟨a - b - 1, by omega⟩
+
+/-- A product of two signs is the sign of any exponent congruent modulo two to the sum of their
+exponents. -/
+theorem negOnePow_mul_negOnePow_of_even {a b c : ℤ} (h : Even (a + b - c)) :
+    a.negOnePow * b.negOnePow = c.negOnePow := by
+  rw [← Int.negOnePow_add, Int.negOnePow_eq_iff]
+  exact h
+
+end Parity
 
 section CommRing
 

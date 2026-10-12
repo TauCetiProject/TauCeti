@@ -7,6 +7,8 @@ module
 
 public import TauCeti.LinearAlgebra.RootSystem.ClassicalTypeD
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.Basic
+public import TauCeti.LinearAlgebra.RootSystem.Positive
+import TauCeti.Algebra.Group.Submonoid.Closure
 
 /-!
 # The simply connected root datum of type `Dₙ`
@@ -127,7 +129,7 @@ private lemma typeDWeight_dotProduct_coordinates (hn : 4 ≤ n) (x : Fin n → �
     simp only [dotProduct, typeDWeight_apply, smul_eq_mul]
     exact Finset.sum_congr rfl fun j _ => mul_comm _ _
   rw [hleft]
-  conv_rhs => rw [← sum_smul_typeDSimpleRootCoordinates hn y]
+  conv_rhs => rw [← sum_smul_typeDSimpleRootCoordinates hn (even_sum_typeDRoot y)]
   rw [dotProduct_sum]
   exact Finset.sum_congr rfl fun j _ => (dotProduct_smul _ _ _).symm
 
@@ -141,17 +143,20 @@ private lemma typeDWeight_injective (hn : 4 ≤ n) :
       (typeDSimpleRootCoordinates n hn x - typeDSimpleRootCoordinates n hn y) i •
         typeDSimpleRoot n hn i := by
     simp only [Pi.sub_apply, sub_smul, Finset.sum_sub_distrib,
-      sum_smul_typeDSimpleRootCoordinates]
+      sum_smul_typeDSimpleRootCoordinates hn (even_sum_typeDRoot x),
+      sum_smul_typeDSimpleRootCoordinates hn (even_sum_typeDRoot y)]
   refine Subtype.ext (sub_eq_zero.mp ?_)
   rw [hexp]
   refine sum_smul_typeDSimpleRoot_eq_zero hn fun j => ?_
   rw [← hexp, ← typeDWeight_apply hn, map_sub, hxy', sub_self, Pi.zero_apply]
 
 private lemma typeDSimpleRootCoordinates_injective (hn : 4 ≤ n) :
-    Injective (typeDSimpleRootCoordinates n hn) := by
+    Injective fun x : TypeDRoot n => typeDSimpleRootCoordinates n hn x.1 := by
   intro x y h
+  have h' : typeDSimpleRootCoordinates n hn x.1 = typeDSimpleRootCoordinates n hn y.1 := h
   refine Subtype.ext ?_
-  rw [← sum_smul_typeDSimpleRootCoordinates hn x, ← sum_smul_typeDSimpleRootCoordinates hn y, h]
+  rw [← sum_smul_typeDSimpleRootCoordinates hn (even_sum_typeDRoot x),
+    ← sum_smul_typeDSimpleRootCoordinates hn (even_sum_typeDRoot y), h']
 
 /-! ## Reflections -/
 
@@ -288,8 +293,8 @@ what pins the character lattice as the weight lattice. -/
 coroot lattice, so that the datum is the simply connected one. -/
 @[simp] theorem coroot_typeDSimpleIndex (hn : 4 ≤ n) (i : Fin n) :
     (typeDSimplyConnectedRootDatum n hn).coroot (typeDSimpleIndex n hn i) = Pi.single i 1 := by
-  rw [coroot_typeDSimplyConnectedRootDatum,
-    typeDSimpleRootCoordinates_typeDRootEquiv_apply_typeDSimpleIndex]
+  rw [coroot_typeDSimplyConnectedRootDatum, typeDRootEquiv_apply_typeDSimpleIndex,
+    typeDSimpleRootCoordinates_typeDSimpleRoot]
 
 /-- The pairing of two simple roots of the pinned datum is the corresponding entry of the
 Bourbaki-numbered Cartan matrix. -/
@@ -316,7 +321,7 @@ private lemma sum_smul_root_typeDSimpleIndex (hn : 4 ≤ n) (k : Fin (2 * n * (n
         (typeDSimplyConnectedRootDatum n hn).root (typeDSimpleIndex n hn i) =
       (typeDSimplyConnectedRootDatum n hn).root k := by
   simp only [root_eq_typeDWeight, typeDRootEquiv_apply_typeDSimpleIndex, ← map_smul]
-  rw [← map_sum, sum_smul_typeDSimpleRootCoordinates]
+  rw [← map_sum, sum_smul_typeDSimpleRootCoordinates hn (even_sum_typeDRoot _)]
 
 private lemma sum_smul_coroot_typeDSimpleIndex (hn : 4 ≤ n) (k : Fin (2 * n * (n - 1))) :
     ∑ i : Fin n, typeDSimpleRootCoordinates n hn (typeDRootEquiv n hn k) i •
@@ -388,6 +393,92 @@ indices. -/
     {k : Fin (2 * n * (n - 1))} :
     k ∈ (typeDSimplyConnectedBase n hn).support ↔ (k : ℕ) < n :=
   mem_typeDSimpleSupport hn
+
+private noncomputable def typeDSimpleSupportEquiv (hn : 4 ≤ n) :
+    Fin n ≃ (typeDSimplyConnectedBase n hn).support :=
+  Equiv.ofBijective (fun i =>
+    (⟨typeDSimpleIndex n hn i, by simp⟩ : (typeDSimplyConnectedBase n hn).support))
+    (by
+      constructor
+      · intro i j hij
+        exact typeDSimpleIndex_injective hn (congrArg Subtype.val hij)
+      · rintro ⟨j, hj⟩
+        have hjlt := (mem_typeDSimplyConnectedBase_support hn).mp hj
+        refine ⟨⟨j, hjlt⟩, ?_⟩
+        apply Subtype.ext
+        apply Fin.ext
+        simp [typeDSimpleIndex_val])
+
+private lemma sum_typeDSimpleSupport {α : Type*} [AddCommMonoid α] (hn : 4 ≤ n)
+    (f : Fin n → α) :
+    ∑ j ∈ (typeDSimplyConnectedBase n hn).support,
+      (if h : (j : ℕ) < n then f ⟨j, h⟩ else 0) = ∑ i : Fin n, f i := by
+  let e := typeDSimpleSupportEquiv hn
+  let _ : Fintype (typeDSimplyConnectedBase n hn).support := Fintype.ofEquiv (Fin n) e
+  have he_apply (i : Fin n) : (e i : Fin (2 * n * (n - 1))) = typeDSimpleIndex n hn i := by
+    rfl
+  calc
+    _ = ∑ j : (typeDSimplyConnectedBase n hn).support,
+        (if h : (j : ℕ) < n then f ⟨j, h⟩ else 0) := by
+      simpa using Finset.sum_subtype (typeDSimplyConnectedBase n hn).support
+        (p := fun j => j ∈ (typeDSimplyConnectedBase n hn).support) (by simp)
+        (fun j => if h : (j : ℕ) < n then f ⟨j, h⟩ else 0)
+    _ = ∑ i : Fin n, (if h : ((e i : Fin (2 * n * (n - 1))) : ℕ) < n then
+        f ⟨(e i : Fin (2 * n * (n - 1))), h⟩ else 0) :=
+      (e.sum_comp (fun j => if h : (j : ℕ) < n then f ⟨j, h⟩ else 0)).symm
+    _ = ∑ i : Fin n, f i := by
+      apply Finset.sum_congr rfl
+      intro i _
+      rw [he_apply]
+      simp
+
+/-! ## Positive roots in the pinned coordinates -/
+
+/-- Positive roots of the pinned type `Dₙ` datum are exactly those whose classical simple-root
+coordinates are nonnegative. This sign criterion is the orientation input for the compatible
+Borel and its positive nilradical; it does not itself construct that nilradical.
+-/
+theorem mem_posRoots_typeDSimplyConnectedBase_iff_nonneg (hn : 4 ≤ n)
+    (k : Fin (2 * n * (n - 1))) :
+    k ∈ posRoots (typeDSimplyConnectedRootDatum n hn) (typeDSimplyConnectedBase n hn) ↔
+      ∀ i, 0 ≤ typeDSimpleRootCoordinates n hn (typeDRootEquiv n hn k) i := by
+  let coeff : Fin (2 * n * (n - 1)) → ℤ := fun j =>
+    if h : (j : ℕ) < n then typeDSimpleRootCoordinates n hn
+      (typeDRootEquiv n hn k) ⟨j, h⟩ else 0
+  have hcoeff := sum_typeDSimpleSupport hn
+    (fun i => typeDSimpleRootCoordinates n hn (typeDRootEquiv n hn k) i)
+  have hroot : (typeDSimplyConnectedRootDatum n hn).root k =
+      ∑ j ∈ (typeDSimplyConnectedBase n hn).support, coeff j •
+        (typeDSimplyConnectedRootDatum n hn).root j := by
+    rw [← sum_smul_root_typeDSimpleIndex hn k]
+    rw [← sum_typeDSimpleSupport hn (fun i =>
+      typeDSimpleRootCoordinates n hn (typeDRootEquiv n hn k) i •
+        (typeDSimplyConnectedRootDatum n hn).root (typeDSimpleIndex n hn i))]
+    apply Finset.sum_congr rfl
+    intro j hj
+    have hjlt := (mem_typeDSimplyConnectedBase_support hn).mp hj
+    have hindex : typeDSimpleIndex n hn ⟨j, hjlt⟩ = j := by
+      apply Fin.ext
+      simp [typeDSimpleIndex_val]
+    simp only [dite_eq_left hjlt]
+    rw [hindex]
+    simp [coeff, hjlt]
+  rw [mem_posRoots]
+  constructor
+  · intro hk
+    rw [RootPairing.Base.isPos_iff,
+      (typeDSimplyConnectedBase n hn).height_eq_sum hroot, hcoeff] at hk
+    obtain hnonneg | hnonpos :=
+      typeDSimpleRootCoordinates_nonneg_or_nonpos hn (typeDRootEquiv n hn k)
+    · exact hnonneg
+    · exfalso
+      have hsum_nonpos : (∑ i : Fin n, typeDSimpleRootCoordinates n hn
+          (typeDRootEquiv n hn k) i) ≤ 0 := Finset.sum_nonpos fun i _ => hnonpos i
+      exact (not_lt_of_ge hsum_nonpos hk).elim
+  · intro hnonneg
+    rw [RootPairing.Base.isPos_iff',
+      (typeDSimplyConnectedBase n hn).height_eq_sum hroot, hcoeff]
+    exact Finset.sum_nonneg fun i _ => hnonneg i
 
 /-- **The pinned datum of type `Dₙ` has Cartan type `D n`.** Its Bourbaki-numbered base realizes
 the standard Cartan matrix `CartanMatrix.D n`, with the node numbering of `TauCeti.DynkinType`. -/

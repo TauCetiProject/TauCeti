@@ -65,6 +65,8 @@ the whole ball of radius `0` around its atom, so it is not finite.
 * `TauCeti.exists_map_range_wassersteinEDist_le` — quantization onto a dense sequence: some
   measurable map with values among the terms of a dense sequence pushes `ν` to within `δ` of
   itself;
+* `TauCeti.exists_eLpNorm_edist_le` — the quantizer itself: some measurable map with finitely many
+  values has a displacement of arbitrarily small `L^p (μ)` seminorm;
 * `TauCeti.exists_map_wassersteinEDist_le` — the approximation theorem in quantizer form: some
   measurable map with finitely many values pushes `μ` to within `ε` of itself;
 * `TauCeti.exists_ae_mem_finset_wassersteinEDist_le` — its measure form, with the approximating
@@ -254,7 +256,9 @@ theorem exists_nat_weights_wassersteinEDist_le
     (hb_sum.trans ha_sum.symm)).trans ?_
   -- the excess mass is at most `1 / M` at each atom, so its `L^p` seminorm is below `ε`
   refine (ENNReal.rpow_le_rpow_iff ht).1 ?_
-  rw [eLpNorm_rpow_eq_lintegral hp0 hp]
+  have hanchor : Measurable fun x : X ↦ edist x x₀ :=
+    hd.comp (measurable_id.prodMk measurable_const)
+  rw [eLpNorm_rpow_eq_lintegral hp0 hp hanchor.aemeasurable]
   have hint : ∫⁻ x, edist x x₀ ^ p.toReal ∂(∑ y ∈ s, (a y - b y) • Measure.dirac y)
       = ∑ y ∈ s, (a y - b y) * edist y x₀ ^ p.toReal := by
     simp [lintegral_smul_measure]
@@ -291,11 +295,14 @@ theorem exists_map_range_wassersteinEDist_le
   have hT_meas : Measurable fun x ↦ u (Nat.find (hidx x)) :=
     Measurable.of_discrete.comp hidx_meas
   refine ⟨fun x ↦ u (Nat.find (hidx x)), hT_meas, fun x ↦ ⟨_, rfl⟩, ?_⟩
+  have hdisp : Measurable fun x ↦ edist x (u (Nat.find (hidx x))) :=
+    hd.comp (measurable_id.prodMk hT_meas)
   refine (wassersteinEDist_map_le hd hT_meas.aemeasurable p).trans ?_
-  refine le_trans (eLpNorm_mono_enorm (g := fun _ : X ↦ ENNReal.ofReal δ) fun x ↦ ?_) ?_
+  refine le_trans (eLpNorm_mono_enorm hdisp.aestronglyMeasurable
+    (g := fun _ : X ↦ ENNReal.ofReal δ) fun x ↦ ?_) ?_
   · simpa [edist_dist] using ENNReal.ofReal_le_ofReal (Nat.find_spec (hidx x)).le
   · rcases eq_or_ne p 0 with rfl | hp0
-    · simp
+    · simp [eLpNorm_exponent_zero aestronglyMeasurable_const]
     · rw [eLpNorm_const _ hp0 (IsProbabilityMeasure.ne_zero ν)]
       simp
 
@@ -306,13 +313,14 @@ section Approximation
 variable [PseudoMetricSpace X] [OpensMeasurableSpace X] [TopologicalSpace.SeparableSpace X]
   {μ : Measure X} {ε : ℝ≥0∞}
 
-/-- **Approximation by a quantizer.** On a separable ground space, a probability measure with
-finite `p`-moment and a finite exponent `1 ≤ p < ∞` is pushed to within any prescribed accuracy
-of itself by a measurable map taking finitely many values. -/
-theorem exists_map_wassersteinEDist_le (hp : 1 ≤ p) (hp_top : p ≠ ∞) [IsProbabilityMeasure μ]
+/-- **A quantizer with small displacement.** On a separable ground space, for a probability
+measure with finite `p`-moment and a finite exponent `1 ≤ p < ∞`, some measurable map taking
+finitely many values moves points by a displacement `x ↦ edist x (T x)` of arbitrarily small
+`L^p (μ)` seminorm. -/
+theorem exists_eLpNorm_edist_le (hp : 1 ≤ p) (hp_top : p ≠ ∞) [IsProbabilityMeasure μ]
     (hμ : HasFiniteMoment p μ) (hε : ε ≠ 0) :
     ∃ (s : Finset X) (T : X → X), Measurable T ∧ (∀ x, T x ∈ s) ∧
-      wassersteinEDist p μ (μ.map T) ≤ ε := by
+      eLpNorm (fun x ↦ edist x (T x)) p μ ≤ ε := by
   have hp0 : p ≠ 0 := (zero_lt_one.trans_le hp).ne'
   have ht : 0 < p.toReal := ENNReal.toReal_pos hp0 hp_top
   classical
@@ -325,23 +333,21 @@ theorem exists_map_wassersteinEDist_le (hp : 1 ≤ p) (hp_top : p ≠ ∞) [IsPr
   have hc_ne_zero : c ≠ 0 := by
     simp only [hc_def, ne_eq, ENNReal.div_eq_zero_iff, not_or]
     exact ⟨hmin_pos.ne', ENNReal.ofNat_ne_top⟩
-  set δ : ℝ := c.toReal with hδ_def
+  set δ : ℝ := c.toReal with _
   have hδ : 0 < δ := ENNReal.toReal_pos hc_ne_zero hc_ne_top
   have hδc : ENNReal.ofReal δ = c := ENNReal.ofReal_toReal hc_ne_top
   -- the least index of a dense sequence within `δ` of a point
-  set u : ℕ → X := TopologicalSpace.denseSeq X with hu_def
+  set u : ℕ → X := TopologicalSpace.denseSeq X with _
   have hu : DenseRange u := TopologicalSpace.denseRange_denseSeq X
   have hidx : ∀ x : X, ∃ i, dist x (u i) < δ := fun x ↦ Metric.denseRange_iff.1 hu x δ hδ
-  set idx : X → ℕ := fun x ↦ Nat.find (hidx x) with hidx_def
+  set idx : X → ℕ := fun x ↦ Nat.find (hidx x) with _
   have hidx_spec : ∀ x, dist x (u (idx x)) < δ := fun x ↦ Nat.find_spec (hidx x)
   have hidx_meas : Measurable idx := measurable_find hidx fun k ↦ measurableSet_ball
   -- the ground distance to the basepoint `u 0`, and its `p`-th moment
   set f : X → ℝ≥0∞ := fun y ↦ edist (u 0) y with hf_def
   have hf_meas : Measurable f := measurable_edist.comp (measurable_const.prodMk measurable_id)
-  have hmom : MemLp f p μ := hμ.memLp hf_meas.aestronglyMeasurable
-  have hfin : ∫⁻ y, f y ^ p.toReal ∂μ ≠ ∞ := by
-    simpa only [hasFiniteIntegral_iff_enorm, enorm_eq_self, lt_top_iff_ne_top] using
-      (hmom.integrable_enorm_rpow hp0 hp_top).hasFiniteIntegral
+  have hfin : ∫⁻ y, f y ^ p.toReal ∂μ ≠ ∞ :=
+    (hasFiniteMoment_iff_lintegral_edist_rpow_ne_top hp0 hp_top (u 0) μ).1 hμ
   -- the tail sets decrease to the empty set, so their contribution vanishes
   set A : ℕ → Set X := fun n ↦ {x | n ≤ idx x} with hA_def
   have hA_meas : ∀ n, MeasurableSet (A n) := fun n ↦ hidx_meas MeasurableSet.of_discrete
@@ -385,24 +391,33 @@ theorem exists_map_wassersteinEDist_le (hp : 1 ≤ p) (hp_top : p ≠ ∞) [IsPr
       exact self_le_add_left _ _
   have hind : eLpNorm ((A n).indicator f) p μ ≤ c := by
     refine (ENNReal.rpow_le_rpow_iff ht).1 ?_
-    rw [eLpNorm_rpow_eq_lintegral hp0 hp_top]
+    rw [eLpNorm_rpow_eq_lintegral hp0 hp_top (hf_meas.indicator (hA_meas n)).aemeasurable]
     refine le_trans (le_of_eq (lintegral_congr fun y ↦ ?_)) hn
     by_cases hy : y ∈ A n
     · simp [Set.indicator_of_mem hy]
     · simp [Set.indicator_of_notMem hy, ENNReal.zero_rpow_of_pos ht]
-  calc wassersteinEDist p μ (μ.map T)
-      ≤ eLpNorm (fun x ↦ edist x (T x)) p μ :=
-        wassersteinEDist_map_le measurable_edist hT_meas.aemeasurable p
-    _ ≤ eLpNorm ((fun _ : X ↦ ENNReal.ofReal δ) + (A n).indicator f) p μ :=
-        eLpNorm_mono_enorm fun x ↦ by simpa using hbound x
+  calc eLpNorm (fun x ↦ edist x (T x)) p μ
+      ≤ eLpNorm ((fun _ : X ↦ ENNReal.ofReal δ) + (A n).indicator f) p μ :=
+        eLpNorm_mono_enorm
+          (measurable_edist.comp (measurable_id.prodMk hT_meas)).aestronglyMeasurable
+          fun x ↦ by simpa using hbound x
     _ ≤ eLpNorm (fun _ : X ↦ ENNReal.ofReal δ) p μ + eLpNorm ((A n).indicator f) p μ :=
-        eLpNorm_add_le aestronglyMeasurable_const
-          (hf_meas.indicator (hA_meas n)).aestronglyMeasurable hp
+        eLpNorm_add_le hp
     _ ≤ c + c := by
         refine add_le_add (le_of_eq ?_) hind
         rw [eLpNorm_const _ hp0 (IsProbabilityMeasure.ne_zero μ)]
         simp [hδc]
     _ ≤ ε := by rw [hc_def, ENNReal.add_halves]; exact min_le_left _ _
+
+/-- **Approximation by a quantizer.** On a separable ground space, a probability measure with
+finite `p`-moment and a finite exponent `1 ≤ p < ∞` is pushed to within any prescribed accuracy
+of itself by a measurable map taking finitely many values. -/
+theorem exists_map_wassersteinEDist_le (hp : 1 ≤ p) (hp_top : p ≠ ∞) [IsProbabilityMeasure μ]
+    (hμ : HasFiniteMoment p μ) (hε : ε ≠ 0) :
+    ∃ (s : Finset X) (T : X → X), Measurable T ∧ (∀ x, T x ∈ s) ∧
+      wassersteinEDist p μ (μ.map T) ≤ ε := by
+  obtain ⟨s, T, hT, hTs, hle⟩ := exists_eLpNorm_edist_le hp hp_top hμ hε
+  exact ⟨s, T, hT, hTs, (wassersteinEDist_map_le measurable_edist hT.aemeasurable p).trans hle⟩
 
 variable [MeasurableSingletonClass X]
 

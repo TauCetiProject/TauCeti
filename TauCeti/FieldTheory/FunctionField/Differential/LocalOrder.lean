@@ -72,7 +72,7 @@ theorem isGreatest_weilDifferentialOrder (hF : IsFunctionField k F)
   · intro m hm
     -- Reset the coefficient of `(ω)` at `P` to `m`; the local-component criterion then shows that
     -- `ω` is still bounded by the modified divisor, which maximality of `(ω)` sends back to `P`.
-    set W := weilDifferentialDivisor hF hex hmem hω with hWdef
+    set W := weilDifferentialDivisor hF hex hmem hω
     set D : Divisor k F := W + (m - W.coeff P) • WeilDivisor.ofPoint P with hDdef
     have hDP : D.coeff P = m := by
       rw [hDdef, WeilDivisor.coeff_add, WeilDivisor.coeff_zsmul,
@@ -118,7 +118,7 @@ theorem repartitionDualComponent_uniformizer_zpow_ne_zero (hF : IsFunctionField 
   -- As the residue field of `P` is `k`, the function `z` differs from a constant multiple of
   -- `t ^ (-r - 1)` by a function `ω_P` does kill, so that multiple escapes `ω_P` too, and hence
   -- so does `t ^ (-r - 1)` itself.
-  set r := weilDifferentialOrder hF hex hmem hω P with hr
+  set r := weilDifferentialOrder hF hex hmem hω P
   have hordt : P.ord t = 1 := (P.isUniformizer_iff_ord_eq_one).mp ht
   have ht0 : t ≠ 0 := by
     rintro rfl

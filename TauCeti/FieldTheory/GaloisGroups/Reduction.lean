@@ -7,13 +7,16 @@ module
 
 public import Mathlib.Analysis.Complex.Polynomial.Basic
 public import Mathlib.GroupTheory.GroupAction.Jordan
+public import TauCeti.FieldTheory.GaloisGroups.CycleTypes
 public import TauCeti.NumberTheory.NumberField.Frobenius.CycleType
 import Mathlib.Algebra.Polynomial.Eval.Irreducible
 import Mathlib.Tactic.ComputeDegree
+import TauCeti.FieldTheory.GaloisGroups.Degree
 import TauCeti.FieldTheory.GaloisGroups.FactorDegrees
 import TauCeti.FieldTheory.GaloisGroups.Orbits
 import TauCeti.GroupTheory.Perm.MultipleTransitivity
 import TauCeti.GroupTheory.Perm.Recognition
+import TauCeti.RingTheory.Polynomial.Resultant.Discriminant
 
 /-!
 # Galois groups over `ℚ` from factorizations modulo primes
@@ -44,11 +47,19 @@ three reductions are prescribed modulo `2`, `3` and `5`.
 
 ## Main results
 
+* `TauCeti.natCard_rootSet_complex_eq_natDegree`: an integral polynomial with nonzero
+  discriminant has as many distinct complex roots as its degree.
 * `TauCeti.exists_mem_range_galActionHom_fullCycleType_eq_factorDegrees`: the factor degrees of
   `f` modulo a prime not dividing `disc f` are the full cycle type of an element of the Galois
   image.
+* `TauCeti.factorDegrees_mem_cycleTypes`: those factor degrees belong to the intrinsic set of
+  Galois cycle types, independently of a splitting extension or root numbering.
+* `TauCeti.lcm_factorDegrees_dvd_natCard_gal`: the least common multiple of the factor degrees
+  of `f` modulo a prime not dividing `disc f` divides the order of the Galois group.
 * `TauCeti.exists_isCycle_mem_range_galActionHom_of_irreducible_map`: an irreducible reduction
   exhibits a cycle moving every root.
+* `TauCeti.not_irreducible_map_of_even_natDegree_of_range_le_alternatingGroup`: an even-degree
+  polynomial whose Galois image consists of even permutations has no irreducible reduction.
 * `TauCeti.exists_isSwap_mem_range_galActionHom`: a reduction with one quadratic factor and odd
   other factors exhibits a transposition.
 * `TauCeti.exists_isThreeCycle_mem_range_galActionHom`: a reduction whose only nonlinear factor
@@ -78,6 +89,30 @@ attribute [local instance] Gal.splits_ℚ_ℂ
 
 variable {f : ℤ[X]}
 
+/-- A prime candidate is good for an integral polynomial when it does not divide the polynomial
+discriminant. -/
+def IsGoodPrime (f : ℤ[X]) (p : ℕ) : Prop :=
+  ¬ (p : ℤ) ∣ f.discr
+
+/-- The defining characterization of a good prime. -/
+@[simp]
+theorem isGoodPrime_iff (f : ℤ[X]) (p : ℕ) : IsGoodPrime f p ↔ ¬ (p : ℤ) ∣ f.discr :=
+  Iff.rfl
+
+/-- An integral polynomial with nonzero discriminant has as many distinct complex roots as its
+degree. -/
+theorem natCard_rootSet_complex_eq_natDegree (hd : f.discr ≠ 0) :
+    Nat.card ((f.map (Int.castRingHom ℚ)).rootSet ℂ) = f.natDegree := by
+  obtain rfl | hf := eq_or_ne f 0
+  · simp
+  have hdeg : (f.map (Int.castRingHom ℚ)).natDegree = f.natDegree :=
+    natDegree_map_eq_of_injective Int.cast_injective f
+  have hsep : (f.map (Int.castRingHom ℚ)).Separable := by
+    rw [← discr_ne_zero_iff ((Polynomial.map_ne_zero_iff Int.cast_injective).mpr hf),
+      discr_map_of_natDegree_eq _ hdeg]
+    exact Int.cast_injective.ne hd
+  rw [Nat.card_eq_fintype_card, card_rootSet_eq_natDegree hsep Fact.out, hdeg]
+
 open scoped Classical in
 /-- **Factor degrees are a full cycle type of the Galois image.** Let `f` be a monic integral
 polynomial and `p` a prime not dividing `disc f`. Some permutation of the complex roots of `f`
@@ -91,6 +126,28 @@ theorem exists_mem_range_galActionHom_fullCycleType_eq_factorDegrees (hf : f.Mon
       σ.fullCycleType = f.factorDegrees p := by
   obtain ⟨σ, hσ⟩ := NumberField.exists_gal_fullCycleType_eq_factorizationType f hf p hp
   exact ⟨_, ⟨σ, rfl⟩, hσ⟩
+
+/-- At a good prime, the factor degrees belong to the intrinsic set of Galois cycle types of
+the polynomial over `ℚ`. This covers reducible monic polynomials as well. -/
+theorem factorDegrees_mem_cycleTypes (hf : f.Monic) (p : ℕ) [Fact p.Prime]
+    (hp : ¬ (p : ℤ) ∣ f.discr) :
+    f.factorDegrees p ∈ Gal.cycleTypes (f.map (Int.castRingHom ℚ)) := by
+  rw [Gal.mem_cycleTypes_iff_exists_mem_range _ ℂ]
+  exact exists_mem_range_galActionHom_fullCycleType_eq_factorDegrees hf p hp
+
+open scoped Classical in
+/-- **Factorization types bound the order of the Galois group from below.** Let `f` be a monic
+integral polynomial and `p` a prime not dividing `disc f`. The least common multiple of the
+degrees of the irreducible factors of `f` modulo `p` divides the order of the Galois group of `f`
+over `ℚ`: it is the order of the element of the Galois image that the factorization exhibits.
+
+A factorization type bounds the Galois image only from below: it exhibits an element of the
+image, which every larger permutation group also contains, so it cannot confine the image to a
+proper subgroup. -/
+theorem lcm_factorDegrees_dvd_natCard_gal (hf : f.Monic) (p : ℕ) [Fact p.Prime]
+    (hp : ¬ (p : ℤ) ∣ f.discr) :
+    (f.factorDegrees p).lcm ∣ Nat.card (f.map (Int.castRingHom ℚ)).Gal := by
+  exact Gal.lcm_dvd_natCard_of_mem_cycleTypes _ (factorDegrees_mem_cycleTypes hf p hp)
 
 open scoped Classical in
 /-- **An irreducible reduction exhibits a full cycle.** If a monic integral polynomial `f` of
@@ -115,6 +172,31 @@ theorem exists_isCycle_mem_range_galActionHom_of_irreducible_map (hf : f.Monic)
   refine ⟨σ, hσG, hcyc, Finset.eq_univ_of_card _ ?_⟩
   rw [hsupp, ← Nat.card_eq_fintype_card,
     natCard_rootSet_complex_eq_natDegree fun h => hp (h ▸ dvd_zero _)]
+
+/-- If a monic integral polynomial has even degree at least two and its Galois action on the
+complex roots consists of even permutations, then its reduction modulo any prime is reducible.
+An irreducible reduction would exhibit a cycle through all the roots, which is odd in even
+degree. -/
+theorem not_irreducible_map_of_even_natDegree_of_range_le_alternatingGroup (hf : f.Monic)
+    (hdeg : 2 ≤ f.natDegree) (heven : Even f.natDegree)
+    (hA : (Gal.galActionHom (f.map (Int.castRingHom ℚ)) ℂ).range ≤
+      alternatingGroup ((f.map (Int.castRingHom ℚ)).rootSet ℂ))
+    (p : ℕ) [Fact p.Prime] :
+    ¬ Irreducible (f.map (Int.castRingHom (ZMod p))) := by
+  intro hirr
+  obtain ⟨σ, hσG, hcyc, hsupp⟩ :=
+    exists_isCycle_mem_range_galActionHom_of_irreducible_map hf hdeg p hirr
+  have hp : ¬ (p : ℤ) ∣ f.discr :=
+    (hf.separable_map_zmod_iff_not_dvd_discr p).mp
+      (PerfectField.separable_of_irreducible hirr)
+  have hcard : Fintype.card ((f.map (Int.castRingHom ℚ)).rootSet ℂ) = f.natDegree := by
+    rw [← Nat.card_eq_fintype_card]
+    exact natCard_rootSet_complex_eq_natDegree (fun h => hp (h ▸ dvd_zero _))
+  have hsign : Equiv.Perm.sign σ = -1 := by
+    rw [hcyc.sign, hsupp, Finset.card_univ, hcard, heven.neg_one_pow]
+  have hsign' : Equiv.Perm.sign σ = 1 :=
+    Equiv.Perm.mem_alternatingGroup.mp (hA hσG)
+  exact (show (-1 : ℤˣ) ≠ 1 by decide) (hsign.symm.trans hsign')
 
 open scoped Classical in
 /-- **A single quadratic factor exhibits a transposition.** Let `f` be a monic integral
@@ -221,18 +303,23 @@ theorem surjective_galActionHom_of_factorDegrees (hf : f.Monic)
 
 /-! ### The quintic `X ^ 5 - X - 1` -/
 
-private theorem monic_X_pow_five_sub_X_sub_one : (X ^ 5 - X - 1 : ℤ[X]).Monic := by
+/-- The polynomial `X ^ 5 - X - 1` is monic. -/
+theorem monic_X_pow_five_sub_X_sub_one : (X ^ 5 - X - 1 : ℤ[X]).Monic := by
   rw [sub_sub]
   exact monic_X_pow_sub (by compute_degree!)
 
 /-- Modulo `2`, the irreducible factors of `X ^ 5 - X - 1` have the distinct degrees `3` and `2`,
 so the reduction is squarefree, hence separable, and `2` does not divide the discriminant. -/
-private theorem not_two_dvd_discr_X_pow_five_sub_X_sub_one :
+theorem not_two_dvd_discr_X_pow_five_sub_X_sub_one :
     ¬ ((2 : ℕ) : ℤ) ∣ (X ^ 5 - X - 1 : ℤ[X]).discr := by
   have hf := monic_X_pow_five_sub_X_sub_one
   rw [← hf.separable_map_zmod_iff_not_dvd_discr, PerfectField.separable_iff_squarefree]
   exact squarefree_map_of_nodup_factorDegrees (hf.map _).ne_zero
     (by rw [factorDegrees_X_pow_five_sub_X_sub_one_two]; decide)
+
+/-- The discriminant of `X ^ 5 - X - 1` is `2869 = 19 · 151`. -/
+theorem discr_X_pow_five_sub_X_sub_one : (X ^ 5 - X - 1 : ℤ[X]).discr = 2869 := by
+  simpa [sub_eq_add_neg] using discr_X_pow_five_add_C_mul_X_add_C (-1 : ℤ) (-1)
 
 /-- **The Galois group of `X ^ 5 - X - 1` over `ℚ` is `S₅`.** -/
 theorem surjective_galActionHom_X_pow_five_sub_X_sub_one :

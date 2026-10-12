@@ -102,10 +102,10 @@ theorem exists_isProbabilityMeasure_wassersteinEDist_le_tsum (hp : 1 ≤ p) (hp'
   have hint : ∀ n, ∫⁻ x, edist (x n) (x (n + 1)) ∂P ≤ b n := fun n ↦ by
     calc ∫⁻ x, edist (x n) (x (n + 1)) ∂P
         = eLpNorm (fun x : ℕ → X ↦ edist (x n) (x (n + 1))) 1 P := by
-          rw [eLpNorm_one_eq_lintegral_enorm]
+          rw [eLpNorm_one_eq_lintegral_enorm (hjumpmeas n).aestronglyMeasurable]
           simp
       _ ≤ eLpNorm (fun x : ℕ → X ↦ edist (x n) (x (n + 1))) p P :=
-          eLpNorm_le_eLpNorm_of_exponent_le hp (hjumpmeas n).aestronglyMeasurable
+          eLpNorm_le_eLpNorm_of_exponent_le hp
       _ ≤ b n := (hjump n).le
   have hcauchy : ∀ᵐ x ∂P, CauchySeq fun n ↦ x n := by
     have hlt : ∫⁻ x, ∑' n, edist (x n) (x (n + 1)) ∂P ≠ ∞ := by
@@ -128,12 +128,12 @@ theorem exists_isProbabilityMeasure_wassersteinEDist_le_tsum (hp : 1 ≤ p) (hp'
         calc eLpNorm (fun x : ℕ → X ↦ edist (x n) (x (n + (N + 1)))) p P
             ≤ eLpNorm (fun x : ℕ → X ↦
                 edist (x n) (x (n + N)) + edist (x (n + N)) (x (n + N + 1))) p P :=
-              eLpNorm_mono_enorm fun x ↦ by
+              eLpNorm_mono_enorm
+                (hd.comp ((hev n).prodMk (hev (n + (N + 1))))).aestronglyMeasurable fun x ↦ by
                 simpa [← Nat.add_assoc] using edist_triangle (x n) (x (n + N)) (x (n + N + 1))
           _ ≤ eLpNorm (fun x : ℕ → X ↦ edist (x n) (x (n + N))) p P
                 + eLpNorm (fun x : ℕ → X ↦ edist (x (n + N)) (x (n + N + 1))) p P :=
-              eLpNorm_add_le (hd.comp ((hev n).prodMk (hev (n + N)))).aestronglyMeasurable
-                (hjumpmeas (n + N)).aestronglyMeasurable hp
+              eLpNorm_add_le hp
           _ ≤ (∑ k ∈ Finset.range N, b (n + k)) + b (n + N) := by
               gcongr
               exact (hjump (n + N)).le

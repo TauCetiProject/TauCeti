@@ -192,7 +192,7 @@ theorem autCandidateGenusFieldEquivNarrowElementaryTwoQuotient_frobenius
     rw [narrowElementaryTwoQuotientEquivRelativeSign_apply_coe]
     exact candidateGenusFieldRelativeSignPattern_frobenius_eq_genusChar hd hnsq
       qIdeal hnorm Q σ hσ P hP
-  obtain ⟨hs, heven, hprod⟩ := genusPrimeDiscriminants_spec hd
+  obtain ⟨hs, heven, _⟩ := genusPrimeDiscriminants_spec hd
   have hxy : x = y := by
     by_cases hex : ∃ P ∈ genusPrimeDiscriminants hd, (q : ℤ) ∣ P
     · obtain ⟨P₀, hP₀, hdiv₀⟩ := hex
@@ -397,7 +397,7 @@ theorem autCandidateGenusFieldEquivNarrowElementaryTwoQuotient_artinHomAway
         (fun v _ Q _ _ ↦ isUnramifiedIn_candidateGenusField hd hnsq v.asIdeal Q
           inferInstance inferInstance) := by
     refine NumberFieldArithmetic.artinHomAway_eq_of_apply_prime _ S _ _ ?_
-    intro J v hv hJ Q hQp hQl σ hσ
+    intro J v _ hJ Q hQp hQl σ hσ
     have _ : Q.IsPrime := hQp
     have _ : Q.LiesOver v.asIdeal := hQl
     rw [MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom, MulEquiv.symm_apply_eq]
@@ -492,8 +492,10 @@ theorem artinHomAwayIntegral_candidateGenusField_surjective
     fundamentalDiscriminant_ne_zero hd.ne_zero
       (FaithfulSMul.algebraMap_injective ℤ (𝓞 (candidateGenusFieldBase hd))
         (h.trans (map_zero _).symm))
-  have hM : Ideal.span {algebraMap ℤ (𝓞 (candidateGenusFieldBase hd))
-      (fundamentalDiscriminant d)} ∈ (Ideal (𝓞 (candidateGenusFieldBase hd)))⁰ :=
+  have hM :
+      Ideal.span
+        {algebraMap ℤ (𝓞 (candidateGenusFieldBase hd))
+          (fundamentalDiscriminant d)} ∈ (Ideal (𝓞 (candidateGenusFieldBase hd)))⁰ :=
     Ideal.span_singleton_nonZeroDivisors.mpr (mem_nonZeroDivisors_iff_ne_zero.mpr hDne)
   obtain ⟨J, hJC, hcop⟩ := NarrowClassGroup.exists_mk0_eq_and_isCoprime C ⟨_, hM⟩
   have hmem : (J : Ideal (𝓞 (candidateGenusFieldBase hd))) ∈
@@ -501,8 +503,10 @@ theorem artinHomAwayIntegral_candidateGenusField_surjective
         (genusFieldArtinExcludedPrimes hd) := by
     rw [NumberFieldArithmetic.mem_integralIdealsAway_iff]
     refine ⟨mem_nonZeroDivisors_iff_ne_zero.mp J.2, fun v hv hdvdJ ↦ ?_⟩
-    have hdvdM : v.asIdeal ∣ Ideal.span {algebraMap ℤ (𝓞 (candidateGenusFieldBase hd))
-        (fundamentalDiscriminant d)} :=
+    have hdvdM : v.asIdeal ∣
+        Ideal.span
+          {algebraMap ℤ (𝓞 (candidateGenusFieldBase hd))
+            (fundamentalDiscriminant d)} :=
       Ideal.dvd_span_singleton.mpr <|
         (v.intCast_mem_asIdeal_iff _).mpr ((mem_genusFieldArtinExcludedPrimes hd v).mp hv)
     refine v.isPrime.ne_top (top_le_iff.mp ?_)

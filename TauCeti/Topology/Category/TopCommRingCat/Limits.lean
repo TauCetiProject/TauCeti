@@ -9,6 +9,8 @@ public import Mathlib.Topology.Category.TopCommRingCat
 public import Mathlib.Algebra.Ring.Subring.Basic
 public import Mathlib.CategoryTheory.Limits.Shapes.Products
 public import Mathlib.CategoryTheory.Limits.Shapes.Equalizers
+public import Mathlib.Algebra.Category.Ring.Constructions
+public import Mathlib.CategoryTheory.Limits.Constructions.LimitsOfProductsAndEqualizers
 
 /-!
 # Products and equalizers of topological commutative rings
@@ -22,8 +24,9 @@ The forgetful functor to `CommRingCat` does not *create* these limits in the tec
 it does not reflect them, since the topology on a cone apex is not determined by the
 underlying ring — the same reason `TopCat`'s own forgetful functor does not create products
 or arbitrary limits (it does create some shapes, such as terminal objects). What is true, and
-what later files use, is that the constructions below have the expected underlying rings,
-which is plain from their statements.
+what later files use, is that it preserves limits: the constructions below have the expected
+underlying rings, and preservation of products and equalizers implies preservation of all
+small limits. The forgetful functor to types consequently preserves these limits as well.
 
 ## Main definitions
 
@@ -32,6 +35,7 @@ which is plain from their statements.
 * `TauCeti.TopCommRingCat.equalizerFork` and `TauCeti.TopCommRingCat.equalizerForkIsLimit` :
   the equalizer of a parallel pair, as the agreement subring under the subspace topology.
 * The resulting `HasProducts` and `HasEqualizers` instances.
+* `PreservesLimits` instances for the forgetful functors to `CommRingCat` and types.
 
 The equalizer fork's inclusion is, as a function, the subtype coercion of the agreement subring,
 and by `rfl`; consumers state closedness of its range against the coercion and let that
@@ -113,6 +117,41 @@ instance : HasLimit (parallelPair f g) :=
 
 instance : HasEqualizers TopCommRingCat.{u} :=
   ⟨fun F => hasLimit_of_iso (diagramIsoParallelPair F).symm⟩
+
+/-- Forgetting the topology preserves products of topological commutative rings. -/
+noncomputable instance {β : Type u} (f : β → TopCommRingCat.{u}) :
+    PreservesLimit (Discrete.functor f) (forget₂ TopCommRingCat CommRingCat) := by
+  apply preservesLimit_of_preserves_limit_cone (piFanIsLimit f)
+  exact (isLimitMapConeFanMkEquiv _ _ _).symm
+    (CommRingCat.piFanIsLimit fun b => (forget₂ TopCommRingCat CommRingCat).obj (f b))
+
+/-- Forgetting the topology preserves discrete limits. -/
+noncomputable instance {β : Type u} :
+    PreservesLimitsOfShape (Discrete β) (forget₂ TopCommRingCat.{u} CommRingCat) :=
+  preservesLimitsOfShape_of_discrete _
+
+/-- Forgetting the topology preserves equalizers of topological commutative rings. -/
+noncomputable instance :
+    PreservesLimit (parallelPair f g) (forget₂ TopCommRingCat CommRingCat) := by
+  apply preservesLimit_of_preserves_limit_cone (equalizerForkIsLimit f g)
+  exact (isLimitMapConeForkEquiv _ _).symm
+    (CommRingCat.equalizerForkIsLimit
+      ((forget₂ TopCommRingCat CommRingCat).map f) ((forget₂ TopCommRingCat CommRingCat).map g))
+
+/-- Forgetting the topology preserves limits of parallel pairs. -/
+noncomputable instance :
+    PreservesLimitsOfShape WalkingParallelPair (forget₂ TopCommRingCat.{u} CommRingCat) where
+  preservesLimit {F} :=
+    preservesLimit_of_iso_diagram _ (diagramIsoParallelPair F).symm
+
+/-- Forgetting the topology preserves all small limits. -/
+noncomputable instance : PreservesLimits (forget₂ TopCommRingCat.{u} CommRingCat) :=
+  preservesLimits_of_preservesEqualizers_and_products _
+
+/-- The underlying-set functor preserves all small limits. -/
+noncomputable instance : PreservesLimits (forget TopCommRingCat.{u}) := by
+  exact inferInstanceAs (PreservesLimits
+    ((forget₂ TopCommRingCat.{u} CommRingCat) ⋙ forget CommRingCat))
 
 end TauCeti.TopCommRingCat
 

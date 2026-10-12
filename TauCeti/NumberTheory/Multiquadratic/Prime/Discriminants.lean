@@ -9,6 +9,8 @@ public import TauCeti.Algebra.Squarefree
 public import TauCeti.NumberTheory.Multiquadratic.EvenPrimeDiscriminant
 public import TauCeti.NumberTheory.Multiquadratic.Prime.Discriminant.Basic
 public import Mathlib.Data.Rat.Lemmas
+import Mathlib.Algebra.GCDMonoid.FinsetLemmas
+import Mathlib.Data.Int.NatAbs
 import TauCeti.NumberTheory.LegendreSymbol.SquareClass
 
 /-!
@@ -41,6 +43,9 @@ discriminant `D ∈ {-4, 8, -8}`, the radicand is `D / 4`, so the three even cas
   the only prime divisor.
 * `TauCeti.Multiquadratic.isCoprime_primeDiscriminant_of_ne_of_not_both_even`: distinct prime
   discriminants are coprime, unless both are even.
+* `TauCeti.Multiquadratic.lcm_natAbs_eq_natAbs_prod_of_forall_isPrimeDiscriminant_of_not_both_even`:
+  for prime discriminants with at most one even member, the least common multiple of their
+  absolute values is that of their product.
 * `TauCeti.Multiquadratic.prod_ne_zero_of_forall_isPrimeDiscriminant` and
   `TauCeti.Multiquadratic.neZero_natAbs_prod_of_forall_isPrimeDiscriminant`: a product of prime
   discriminants is nonzero, so its absolute value is a legitimate Dirichlet character level.
@@ -255,7 +260,7 @@ modulo `4`. -/
 theorem isEvenPrimeDiscriminant_or_primeDiscriminantRadicand_mod_four_eq_one {D : ℤ}
     (hD : IsPrimeDiscriminant D) :
     IsEvenPrimeDiscriminant D ∨ primeDiscriminantRadicand D % 4 = 1 := by
-  rcases isPrimeDiscriminant_iff.mp hD with hD | ⟨p, hp, hodd, rfl⟩
+  rcases isPrimeDiscriminant_iff.mp hD with hD | ⟨p, _, hodd, rfl⟩
   · exact Or.inl hD
   · exact Or.inr (primeDiscriminantRadicand_mod_four_eq_one_of_odd hodd)
 
@@ -294,7 +299,7 @@ theorem primeDiscriminantRadicand_eq_two_iff {D : ℤ} (hD : IsPrimeDiscriminant
     primeDiscriminantRadicand D = 2 ↔ D = 8 := by
   constructor
   · intro h
-    rcases isPrimeDiscriminant_iff.mp hD with hev | ⟨p, hp, hodd, rfl⟩
+    rcases isPrimeDiscriminant_iff.mp hD with hev | ⟨p, _, hodd, rfl⟩
     · rw [primeDiscriminantRadicand_of_isEvenPrimeDiscriminant hev] at h
       exact (evenPrimeDiscriminantRadicand_eq_two_iff hev).mp h
     · have hp2 : p = 2 := by
@@ -311,7 +316,7 @@ theorem primeDiscriminantRadicand_eq_neg_two_iff {D : ℤ} (hD : IsPrimeDiscrimi
     primeDiscriminantRadicand D = -2 ↔ D = -8 := by
   constructor
   · intro h
-    rcases isPrimeDiscriminant_iff.mp hD with hev | ⟨p, hp, hodd, rfl⟩
+    rcases isPrimeDiscriminant_iff.mp hD with hev | ⟨p, _, hodd, rfl⟩
     · rw [primeDiscriminantRadicand_of_isEvenPrimeDiscriminant hev] at h
       exact (evenPrimeDiscriminantRadicand_eq_neg_two_iff hev).mp h
     · have hp2 : p = 2 := by
@@ -351,7 +356,7 @@ theorem eq_of_primeDiscriminantRadicand_eq {D E : ℤ}
       · rw [h2] at habs
         rcases hqodd with ⟨k, hk⟩
         omega
-  · rcases isPrimeDiscriminant_iff.mp hE with hevE | ⟨q, hq, hqodd, rfl⟩
+  · rcases isPrimeDiscriminant_iff.mp hE with hevE | ⟨q, _, hqodd, rfl⟩
     · have habs := congrArg Int.natAbs h
       rw [primeDiscriminantRadicand_oddPrimeDiscriminant hpodd,
         primeDiscriminantRadicand_of_isEvenPrimeDiscriminant hevE,
@@ -531,5 +536,17 @@ theorem isCoprime_primeDiscriminant_of_ne_of_not_both_even {D E : ℤ}
     · rw [Int.isCoprime_iff_nat_coprime, oddPrimeDiscriminant_natAbs,
         oddPrimeDiscriminant_natAbs]
       exact (Nat.coprime_primes hp hq).mpr fun hpq => hne (by rw [hpq])
+
+/-- For a family of prime discriminants with at most one even member, the least common multiple
+of their absolute values is the absolute value of their product. -/
+theorem lcm_natAbs_eq_natAbs_prod_of_forall_isPrimeDiscriminant_of_not_both_even
+    {s : Finset ℤ} (hs : ∀ P ∈ s, IsPrimeDiscriminant P)
+    (heven : ∀ P ∈ s, ∀ Q ∈ s,
+      IsEvenPrimeDiscriminant P → IsEvenPrimeDiscriminant Q → P = Q) :
+    s.lcm Int.natAbs = (∏ P ∈ s, P).natAbs := by
+  rw [Finset.lcm_eq_prod fun P hP Q hQ hPQ ↦ Int.isCoprime_iff_nat_coprime.mp
+    (isCoprime_primeDiscriminant_of_ne_of_not_both_even (hs P hP) (hs Q hQ) hPQ
+      fun h ↦ hPQ (heven P hP Q hQ h.1 h.2))]
+  exact (map_prod Int.natAbsHom _ s).symm
 
 end TauCeti.Multiquadratic

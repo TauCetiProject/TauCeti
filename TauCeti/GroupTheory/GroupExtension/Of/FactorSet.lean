@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Data.FunLike.Fintype
 public import Mathlib.GroupTheory.GroupExtension.Defs
 public import Mathlib.GroupTheory.SemidirectProduct
 public import Mathlib.RepresentationTheory.Homological.GroupCohomology.LowDegree
@@ -47,6 +48,8 @@ group cohomology: `groupCohomology.cocyclesOfIsMulCocycle₂ α.isMulCocycle₂`
 * `TauCeti.FactorSet.rescaleEquiv`: the equivalence of extensions obtained by rescaling that
   section.
 * `TauCeti.FactorSet.trivial`: the factor set that is constantly `1`.
+* `TauCeti.FactorSet.map`: the pushforward of a factor set along a `G`-equivariant homomorphism of
+  coefficient modules.
 
 ## Main results
 
@@ -64,10 +67,7 @@ group cohomology: `groupCohomology.cocyclesOfIsMulCocycle₂ α.isMulCocycle₂`
 
 ## References
 
-This supplies the central-extension target of Layer 7 of
-`TauCetiRoadmap/RepresentationTheory/InductionRestriction/README.md` ("projective representations,
-factor sets, and the Schur multiplier"), which the roadmap records as independent of Layers 3-5
-apart from its closing Clifford-theory obstruction. See G. Karpilovsky, *Projective Representations
+G. Karpilovsky, *Projective Representations
 of Finite Groups*, Marcel Dekker (1985), Ch. 1, and I. M. Isaacs, *Character Theory of Finite
 Groups*, AMS Chelsea (1976), Ch. 11.
 -/
@@ -112,6 +112,9 @@ theorem coe_mk (f : G × G → M) (hf : IsMulCocycle₂ f) (hf₁ : f (1, 1) = 1
 theorem ext {α β : FactorSet G M} (h : ∀ p : G × G, α p = β p) : α = β :=
   DFunLike.ext _ _ h
 
+instance [Finite G] [Finite M] : Finite (FactorSet G M) :=
+  DFunLike.finite (FactorSet G M)
+
 section
 
 variable (α : FactorSet G M)
@@ -141,6 +144,27 @@ theorem smul_apply_inv_left (g : G) : g • α (g⁻¹, g) = α (g, g⁻¹) := b
 
 end
 
+/-! ### Pushforward along a coefficient map -/
+
+section Map
+
+variable {N : Type*} [CommGroup N] [MulDistribMulAction G N] (α : FactorSet G M) (f : M →*[G] N)
+
+/-- **Pushforward of a factor set along an equivariant homomorphism of coefficient modules**: the
+factor set `(g, h) ↦ f (α (g, h))` of `G` with values in `N`. -/
+def map : FactorSet G N where
+  toFun p := f (α p)
+  isMulCocycle₂' g h j := by
+    simp only [← map_mul, ← map_smul]
+    exact congrArg f (α.isMulCocycle₂ g h j)
+  map_one_one' := by simp
+
+@[simp]
+theorem map_apply (p : G × G) : α.map f p = f (α p) :=
+  (rfl)
+
+end Map
+
 /-- The **twisted product** `M × G` attached to a factor set `α`: the underlying set of the group
 extension of `G` by `M` that `α` determines, with multiplication
 `⟨a, g⟩ * ⟨b, h⟩ = ⟨a * g • b * α (g, h), g * h⟩`. For the trivial factor set this is the
@@ -154,7 +178,28 @@ structure Extension (α : FactorSet G M) where
 
 namespace Extension
 
+/-- **The twisted product is `M × G` as a type.** It is the multiplication that the factor set
+twists, not the underlying set. -/
+def equivProd (α : FactorSet G M) : α.Extension ≃ M × G where
+  toFun x := (x.left, x.right)
+  invFun p := ⟨p.1, p.2⟩
+  left_inv _ := rfl
+  right_inv _ := rfl
+
+@[simp]
+theorem equivProd_apply {α : FactorSet G M} (x : α.Extension) :
+    equivProd α x = (x.left, x.right) :=
+  (rfl)
+
+@[simp]
+theorem equivProd_symm_apply {α : FactorSet G M} (p : M × G) :
+    (equivProd α).symm p = ⟨p.1, p.2⟩ :=
+  (rfl)
+
 variable {α : FactorSet G M}
+
+instance [Finite G] [Finite M] : Finite α.Extension :=
+  Finite.of_equiv _ (equivProd α).symm
 
 instance instMul : Mul α.Extension where
   mul x y := ⟨x.left * x.right • y.left * α (x.right, y.right), x.right * y.right⟩
@@ -215,6 +260,27 @@ instance instGroup : Group α.Extension where
 
 end Extension
 
+section MapExtension
+
+variable {N : Type*} [CommGroup N] [MulDistribMulAction G N]
+
+/-- The homomorphism of twisted products induced by an equivariant coefficient homomorphism. -/
+def mapExtension (α : FactorSet G M) (f : M →*[G] N) :
+    α.Extension →* (α.map f).Extension where
+  toFun x := ⟨f x.left, x.right⟩
+  map_one' := by ext <;> simp
+  map_mul' x y := by ext <;> simp [map_smul]
+
+@[simp]
+theorem mapExtension_left (α : FactorSet G M) (f : M →*[G] N) (x : α.Extension) :
+    (α.mapExtension f x).left = f x.left := (rfl)
+
+@[simp]
+theorem mapExtension_right (α : FactorSet G M) (f : M →*[G] N) (x : α.Extension) :
+    (α.mapExtension f x).right = x.right := (rfl)
+
+end MapExtension
+
 section
 
 variable (α : FactorSet G M)
@@ -236,6 +302,21 @@ def rightHom : α.Extension →* G where
   map_mul' _ _ := rfl
 
 @[simp] theorem rightHom_apply (x : α.Extension) : rightHom α x = x.right := (rfl)
+
+/-- The induced map of extensions commutes with the coefficient inclusions. -/
+@[simp]
+theorem mapExtension_comp_inl {N : Type*} [CommGroup N] [MulDistribMulAction G N]
+    (f : M →*[G] N) :
+    (α.mapExtension f).comp (inl α) = (inl (α.map f)).comp f.toMonoidHom := by
+  ext <;> rfl
+
+/-- The induced map of extensions preserves the projection to the quotient group. -/
+@[simp]
+theorem rightHom_comp_mapExtension {N : Type*} [CommGroup N] [MulDistribMulAction G N]
+    (f : M →*[G] N) :
+    (rightHom (α.map f)).comp (α.mapExtension f) = rightHom α := by
+  ext
+  rfl
 
 theorem inl_injective : Function.Injective (inl α) := fun _ _ h => congrArg Extension.left h
 

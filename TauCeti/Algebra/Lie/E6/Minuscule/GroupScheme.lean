@@ -6,9 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.E6.Minuscule.Basic
+public import TauCeti.Algebra.Lie.E6.RootCharacters
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.MinusculeWeightTable
 public import
   TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.Points
+import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ClosedImmersion
 import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.Relations
 import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.Rigidity
 import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.Torus
@@ -37,6 +39,9 @@ is asserted here. Those are subsequent steps in the pinned Chevalley--Demazure c
 * `TauCeti.E6Minuscule.weightTorus`: its closed rank-six split torus.
 * `TauCeti.E6Minuscule.points`: its matrix-valued points over a commutative ring.
 * `TauCeti.E6Minuscule.rootSubgroupPoints`: its numbered root subgroups on matrix-valued points.
+* `TauCeti.E6Minuscule.coe_rootSubgroupPoints_inl` and
+  `TauCeti.E6Minuscule.coe_rootSubgroupPoints_inr`: their positive and negative simple-root
+  matrices in the minuscule basis.
 * `TauCeti.E6Minuscule.weightTorus_conj_rootSubgroup`: the scheme-level pinning equation.
 
 ## References
@@ -48,6 +53,8 @@ is asserted here. Those are subsequent steps in the pinned Chevalley--Demazure c
   `TauCeti.Algebra.Lie.SpecialLinear.StandardCarrier.Basic` and
   `TauCeti.Algebra.Lie.Symplectic.StandardCarrier.Scheme`, specialized here using the
   type-`E₆` minuscule representation, lattice, weights, and root characters.
+* The simple-root matrix formulas follow the parallel calculation in
+  `TauCeti.Algebra.Lie.E7.Minuscule.Carrier`.
 -/
 
 public section
@@ -57,6 +64,8 @@ open scoped Matrix
 universe v
 
 namespace TauCeti.E6Minuscule
+
+open TauCeti.E6
 
 local notation "Λ" => TauCeti.coordinateLattice (Fin 27)
 local notation "𝓑" => TauCeti.coordinateLatticeBasis (Fin 27)
@@ -69,53 +78,6 @@ open scoped CategoryTheory.MonObj TensorProduct
 attribute [local instance] TauCeti.moduleNNRat
 attribute [local instance 100] LieRing.ofAssociativeRing
 attribute [local instance high] Algebra.toModule
-
-/-! ## Root characters -/
-
-/-- The character through which the Cartan torus acts on a positive or negative numbered
-type-`E₆` root generator. -/
-def rootGeneratorWeight : Fin 6 ⊕ Fin 6 → Fin 6 → ℤ
-  | .inl i => fun j ↦ CartanMatrix.E 6 i j
-  | .inr i => fun j ↦ -CartanMatrix.E 6 i j
-
-@[simp]
-theorem rootGeneratorWeight_inl (i j : Fin 6) :
-    rootGeneratorWeight (.inl i) j = CartanMatrix.E 6 i j := by
-  rw [rootGeneratorWeight]
-
-@[simp]
-theorem rootGeneratorWeight_inr (i j : Fin 6) :
-    rootGeneratorWeight (.inr i) j = -CartanMatrix.E 6 i j := by
-  rw [rootGeneratorWeight]
-
-/-- The character of a raising generator is the corresponding simple root of the pinned
-simply connected type-`E₆` root datum. -/
-theorem rootGeneratorWeight_inl_eq_e6Root_e6SimpleIndex (i : Fin 6) :
-    rootGeneratorWeight (.inl i) = e6Root (e6SimpleIndex i) := by
-  ext j
-  rw [rootGeneratorWeight_inl, root_e6SimpleIndex]
-
-/-- The character of a lowering generator is the negative of the corresponding simple root. -/
-theorem rootGeneratorWeight_inr_eq_neg_e6Root_e6SimpleIndex (i : Fin 6) :
-    rootGeneratorWeight (.inr i) = -e6Root (e6SimpleIndex i) := by
-  ext j
-  rw [rootGeneratorWeight_inr, Pi.neg_apply, root_e6SimpleIndex]
-
-/-- The numbered Serre root generators are weight vectors for the Cartan generators. -/
-theorem lie_serreH_rootGenerator (k : Fin 6 ⊕ Fin 6) (j : Fin 6) :
-    ⁅TauCeti.serreH ℚ weightTable.cartanMatrix j,
-        TauCeti.serreRootGenerator weightTable.cartanMatrix k⁆ =
-      ((rootGeneratorWeight k j : ℤ) : ℚ) •
-        TauCeti.serreRootGenerator weightTable.cartanMatrix k := by
-  cases k with
-  | inl i =>
-      rw [TauCeti.lie_serreH_serreRootGenerator_inl, weightTable_cartanMatrix,
-        Matrix.transpose_apply,
-        rootGeneratorWeight_inl]
-  | inr i =>
-      rw [TauCeti.lie_serreH_serreRootGenerator_inr, weightTable_cartanMatrix,
-        Matrix.transpose_apply,
-        rootGeneratorWeight_inr]
 
 /-! ## The pinned carrier -/
 
@@ -298,7 +260,7 @@ theorem points_def (A : Type v) [CommRing A] :
 
 /-- A matrix is a carrier point exactly when its associated convolution point kills the
 defining Hopf ideal. -/
-@[simp]
+-- Not `@[simp]`: rewriting membership into this raw condition defeats the membership lemmas.
 theorem mem_points_iff (A : Type v) [CommRing A]
     (g : _root_.Matrix.GeneralLinearGroup (Fin 27) A) :
     g ∈ points A ↔
@@ -333,6 +295,44 @@ theorem coe_rootSubgroupPoints (k : Fin 6 ⊕ Fin 6) (A : Type v) [CommRing A]
   exact TauCeti.UniversalEnvelopingAlgebra.coe_kostantToralRootSubgroupPoints
     _ _ _ _ _ _ _ _ k A u
 
+/-- A positive simple-root point has matrix `1 + uEᵢ` in the minuscule basis. -/
+theorem coe_rootSubgroupPoints_inl (i : Fin 6) (A : Type v) [CommRing A]
+    (u : Multiplicative A) :
+    ((rootSubgroupPoints (.inl i) A u : Matrix.GeneralLinearGroup (Fin 27) A) :
+        Matrix (Fin 27) (Fin 27) A) =
+      1 + Multiplicative.toAdd u •
+        (weightTable.raisingMatrix i).map (Int.cast : ℤ → A) := by
+  rw [coe_rootSubgroupPoints]
+  simpa only [MulEquiv.apply_symm_apply] using
+    (TauCeti.UniversalEnvelopingAlgebra.kostantRootSubgroupMatrix_eq_one_add_smul
+      (TauCeti.serreRootGenerator weightTable.cartanMatrix)
+      (TauCeti.serreH ℚ weightTable.cartanMatrix) weightTable.rep (Λ).toAddSubgroup
+      weightTable.rep_kostantForm_mem_lattice (.inl i)
+      (weightTable.isNilpotent_rep_serreRootGenerator (.inl i)) 𝓑
+      (weightTable.raisingMatrix i)
+      (weightTable.nilpotencyClass_rep_serreRootGenerator_le_two (.inl i))
+      (weightTable.rep_serreRootGenerator_inl_coordinateLatticeBasis_eq_sum i)
+      ((AdditiveGroup.gaPointsMulEquiv (R := ℤ) (A := A)).symm u))
+
+/-- A negative simple-root point has matrix `1 + uFᵢ` in the minuscule basis. -/
+theorem coe_rootSubgroupPoints_inr (i : Fin 6) (A : Type v) [CommRing A]
+    (u : Multiplicative A) :
+    ((rootSubgroupPoints (.inr i) A u : Matrix.GeneralLinearGroup (Fin 27) A) :
+        Matrix (Fin 27) (Fin 27) A) =
+      1 + Multiplicative.toAdd u •
+        (weightTable.loweringMatrix i).map (Int.cast : ℤ → A) := by
+  rw [coe_rootSubgroupPoints]
+  simpa only [MulEquiv.apply_symm_apply] using
+    (TauCeti.UniversalEnvelopingAlgebra.kostantRootSubgroupMatrix_eq_one_add_smul
+      (TauCeti.serreRootGenerator weightTable.cartanMatrix)
+      (TauCeti.serreH ℚ weightTable.cartanMatrix) weightTable.rep (Λ).toAddSubgroup
+      weightTable.rep_kostantForm_mem_lattice (.inr i)
+      (weightTable.isNilpotent_rep_serreRootGenerator (.inr i)) 𝓑
+      (weightTable.loweringMatrix i)
+      (weightTable.nilpotencyClass_rep_serreRootGenerator_le_two (.inr i))
+      (weightTable.rep_serreRootGenerator_inr_coordinateLatticeBasis_eq_sum i)
+      ((AdditiveGroup.gaPointsMulEquiv (R := ℤ) (A := A)).symm u))
+
 /-- The split weight torus on matrix-valued points of the type-`E₆` carrier. -/
 noncomputable def weightTorusPoints (A : Type v) [CommRing A] :
     (Fin 6 → Aˣ) →* points A :=
@@ -356,7 +356,7 @@ theorem coe_weightTorusPoints (A : Type v) [CommRing A] (s : Fin 6 → Aˣ) :
 
 /-- **Conjugation by the minuscule weight torus acts on each numbered root subgroup through its
 positive or negative pinned simple-root character.** -/
-@[simp]
+-- Not `@[simp]`: `simp` does not match its left-hand side, even with the lemma alone; use `rw`.
 theorem weightTorus_conj_rootSubgroup (k : Fin 6 ⊕ Fin 6) (A : Type) [CommRing A]
     (s : (Spec (CommRingCat.of A)).asOver (Spec (CommRingCat.of ℤ)) ⟶
       (SplitTorus.groupScheme ℤ (Fin 6)).X)
@@ -374,6 +374,8 @@ theorem weightTorus_conj_rootSubgroup (k : Fin 6 ⊕ Fin 6) (A : Type) [CommRing
         (rootSubgroup k).hom.hom :=
   kostantWeightTorusToToral_conj_kostantRootSubgroupToToralParam
       _ _ _ _ _ _ _ weightTable.isCartanWeightVector_coordinateLatticeBasis
-      weightTable.isNilpotent_rep_serreRootGenerator A (lie_serreH_rootGenerator k) s u
+      weightTable.isNilpotent_rep_serreRootGenerator A
+      (by intro j; rw [weightTable_cartanMatrix]; exact lie_serreH_rootGenerator k j)
+      s u
 
 end TauCeti.E6Minuscule

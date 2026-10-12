@@ -5,14 +5,18 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.CliffordAlgebra.Star
-public import Mathlib.LinearAlgebra.CliffordAlgebra.Even
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Bivector
+public import TauCeti.LinearAlgebra.CliffordAlgebra.Functoriality
+-- Private: `noncomm_ring` is used only in the proof of `ι_mul_ι_mul_ι_add_reverse`.
+import Mathlib.Tactic.NoncommRing
 
 /-!
 # Reversal on Clifford subalgebras
 
-This file restricts Clifford reversal to the even subalgebra and records its action on bivectors.
+This file restricts Clifford reversal to the even subalgebra, records its action on bivectors,
+develops its naturality under the standard even-algebra equivalences, computes a product of three
+vectors plus its reversal, and records general reverse-norm identities and comparisons with
+Clifford conjugation.
 -/
 
 public section
@@ -58,11 +62,171 @@ def reverseEven (Q : QuadraticForm R M) : ↥(even Q) →ₗ[R] ↥(even Q) :=
   apply Subtype.ext
   simp only [coe_reverseEven_apply, Subalgebra.coe_mul, reverse.map_mul]
 
+/-- Reversal swaps the two vectors in a bilinear generator of the even Clifford algebra. -/
+@[simp] theorem reverseEven_ι (m₁ m₂ : M) :
+    reverseEven Q ((even.ι Q).bilin m₁ m₂) = (even.ι Q).bilin m₂ m₁ := by
+  apply Subtype.ext
+  simp [even.ι]
+
 /-- Reversal restricted to the even subalgebra is an involution. -/
 @[simp] theorem reverseEven_reverseEven (x : ↥(even Q)) :
     reverseEven Q (reverseEven Q x) = x := by
   apply Subtype.ext
   simpa only [coe_reverseEven_apply] using (reverse_reverse (Q := Q) (x : CliffordAlgebra Q))
+
+/-! ### Naturality -/
+
+/-- An isometry-induced equivalence of even Clifford algebras commutes with reversal. -/
+theorem evenEquivOfIsometry_reverseEven {N : Type*} [AddCommGroup N] [Module R N]
+    {P : QuadraticForm R N} (e : Q.IsometryEquiv P) (x : even Q) :
+    evenEquivOfIsometry e (reverseEven Q x) = reverseEven P (evenEquivOfIsometry e x) := by
+  apply Subtype.ext
+  simp only [coe_reverseEven_apply, coe_evenEquivOfIsometry_apply]
+  simp only [equivOfIsometry_apply]
+  rw [reverse_eq_star_of_mem_even x,
+    reverse_eq_star_of_mem_even
+      ⟨map e.toIsometry (x : CliffordAlgebra Q), map_mem_even e.toIsometry x.2⟩]
+  exact map_star e.toIsometry (x : CliffordAlgebra Q)
+
+/-- The even-algebra equivalence associated to negating a form commutes with reversal on the
+bilinear generators of the even Clifford algebra. -/
+private theorem evenEquivEvenNeg_reverseEven_ι (Q : QuadraticForm R M) (m₁ m₂ : M) :
+    evenEquivEvenNeg Q (reverseEven Q ((even.ι Q).bilin m₁ m₂)) =
+      reverseEven (-Q) (evenEquivEvenNeg Q ((even.ι Q).bilin m₁ m₂)) := by
+  rw [reverseEven_ι, evenEquivEvenNeg_apply, evenEquivEvenNeg_apply,
+    evenToNeg_ι, evenToNeg_ι]
+  apply Subtype.ext
+  simp [even.ι]
+
+/-- The even-algebra equivalence associated to negating a form commutes with reversal. -/
+theorem evenEquivEvenNeg_reverseEven (Q : QuadraticForm R M) (x : even Q) :
+    evenEquivEvenNeg Q (reverseEven Q x) =
+      reverseEven (-Q) (evenEquivEvenNeg Q x) := by
+  rcases x with ⟨x, hx⟩
+  induction x, hx using even_induction with
+  | algebraMap r =>
+      -- Dependent even induction exposes the algebra element and its membership proof separately.
+      change evenEquivEvenNeg Q (reverseEven Q (algebraMap R (even Q) r)) =
+        reverseEven (-Q) (evenEquivEvenNeg Q (algebraMap R (even Q) r))
+      simp
+  | add x y hx hy ihx ihy =>
+      -- Repackage the induction variables as elements of the even subalgebra.
+      change evenEquivEvenNeg Q (reverseEven Q (⟨x, hx⟩ + ⟨y, hy⟩)) =
+        reverseEven (-Q) (evenEquivEvenNeg Q (⟨x, hx⟩ + ⟨y, hy⟩))
+      rw [map_add, map_add, map_add, ihx, ihy]
+      exact ((reverseEven (-Q)).map_add _ _).symm
+  | ι_mul_ι_mul m₁ m₂ x hx ih =>
+      -- The induction hypothesis is indexed by the underlying Clifford element.
+      let z : even Q := ⟨x, by change x ∈ evenOdd Q 0; exact hx⟩
+      change evenEquivEvenNeg Q (reverseEven Q ((even.ι Q).bilin m₁ m₂ * z)) =
+        reverseEven (-Q) (evenEquivEvenNeg Q ((even.ι Q).bilin m₁ m₂ * z))
+      rw [reverseEven_mul, map_mul, map_mul, reverseEven_mul, ih,
+        evenEquivEvenNeg_reverseEven_ι]
+
+/-- The inverse of the standard even Clifford equivalence sends reversal to `star`. -/
+theorem equivEven_symm_reverseEven (Q : QuadraticForm R M) (x : even (EquivEven.Q' Q)) :
+    (equivEven Q).symm (reverseEven (EquivEven.Q' Q) x) =
+      star ((equivEven Q).symm x) := by
+  apply (equivEven Q).injective
+  rw [AlgEquiv.apply_symm_apply]
+  apply Subtype.ext
+  rw [coe_reverseEven_apply, equivEven_apply]
+  rw [star_def, coe_toEven_reverse_involute]
+  exact congrArg (fun y : even (EquivEven.Q' Q) =>
+    reverse (y : CliffordAlgebra (EquivEven.Q' Q)))
+      ((equivEven Q).apply_symm_apply x).symm
+
+/-! ### Reversal of products of vectors -/
+
+section Polar
+
+open QuadraticMap
+
+variable (Q)
+
+/-- **A product of three vectors plus its reversal is a vector**, namely
+`polar b c • a - polar a c • b + polar a b • c`: reversing the product costs three transpositions
+of adjacent generators, each of which contributes a polarization term. This is the analogue one
+degree up of Mathlib's `CliffordAlgebra.ι_mul_ι_add_swap`. -/
+theorem ι_mul_ι_mul_ι_add_reverse (a b c : M) :
+    ι Q a * ι Q b * ι Q c + reverse (ι Q a * ι Q b * ι Q c) =
+      ι Q (polar Q b c • a - polar Q a c • b + polar Q a b • c) := by
+  calc ι Q a * ι Q b * ι Q c + reverse (ι Q a * ι Q b * ι Q c)
+      = (ι Q c * ι Q b + ι Q b * ι Q c) * ι Q a - ι Q b * (ι Q c * ι Q a + ι Q a * ι Q c) +
+          (ι Q b * ι Q a + ι Q a * ι Q b) * ι Q c := by
+        simp only [reverse.map_mul, reverse_ι]
+        noncomm_ring
+    _ = algebraMap R _ (polar Q c b) * ι Q a - ι Q b * algebraMap R _ (polar Q c a) +
+          algebraMap R _ (polar Q b a) * ι Q c := by
+        simp only [ι_mul_ι_add_swap]
+    _ = ι Q (polar Q b c • a - polar Q a c • b + polar Q a b • c) := by
+        simp only [map_add, map_sub, map_smul, Algebra.smul_def, Algebra.commutes, polar_comm Q c b,
+          polar_comm Q c a, polar_comm Q b a]
+
+end Polar
+
+/-! ### Reverse norms and comparison with Clifford conjugation -/
+
+/-- The reverse norm of a product of vectors is the product of their quadratic norms. -/
+theorem reverse_prod_map_ι_mul_prod_map_ι (l : List M) :
+    reverse (l.map (ι Q)).prod * (l.map (ι Q)).prod =
+      algebraMap R (CliffordAlgebra Q) (l.map Q).prod := by
+  induction l with
+  | nil => simp
+  | cons m l ih =>
+    rw [List.map_cons, List.prod_cons, reverse.map_mul, reverse_ι, mul_assoc,
+      ← mul_assoc (ι Q m), ι_sq_scalar, ← mul_assoc, ← Algebra.commutes, mul_assoc, ih,
+      ← map_mul, List.map_cons, List.prod_cons]
+
+/-- On an even element, the `star` norm and the `reverse` norm agree. -/
+theorem star_mul_self_eq_reverse_mul_self_of_mem_even {x : CliffordAlgebra Q}
+    (hx : x ∈ evenOdd Q 0) : star x * x = reverse x * x := by
+  rw [star_def, involute_eq_of_mem_even hx]
+
+/-- On an odd element, the `star` norm is the negative of the `reverse` norm. -/
+theorem star_mul_self_eq_neg_reverse_mul_self_of_mem_odd {x : CliffordAlgebra Q}
+    (hx : x ∈ evenOdd Q 1) : star x * x = -(reverse x * x) := by
+  rw [star_def, involute_eq_of_mem_odd hx, map_neg, neg_mul]
+
+/-- On a product of `r` vectors, the `star` norm is `(-1) ^ r` times the `reverse` norm. -/
+theorem star_mul_self_eq_neg_one_pow_smul_reverse_mul_self (l : List M) :
+    star (l.map (ι Q)).prod * (l.map (ι Q)).prod =
+      (-1 : R) ^ l.length • (reverse (l.map (ι Q)).prod * (l.map (ι Q)).prod) := by
+  rw [star_def, involute_prod_map_ι, map_smul, smul_mul_assoc]
+
+/-- When the reverse norm of `x` is the scalar `r`, the reverse norm of `x * y` is `r` times
+the reverse norm of `y`. -/
+theorem reverse_mul_mul_self_mul {x y : CliffordAlgebra Q} {r : R}
+    (hx : reverse x * x = algebraMap R (CliffordAlgebra Q) r) :
+    reverse (x * y) * (x * y) = algebraMap R (CliffordAlgebra Q) r * (reverse y * y) := by
+  rw [reverse.map_mul, mul_assoc, ← mul_assoc (reverse x), hx, ← mul_assoc, ← Algebra.commutes,
+    mul_assoc]
+
+/-- If the reverse norm of a unit is a scalar, then so is the reverse norm on the other side. -/
+theorem self_mul_reverse_of_reverse_mul_self {x : (CliffordAlgebra Q)ˣ} {r : R}
+    (hx : reverse (x : CliffordAlgebra Q) * x = algebraMap R (CliffordAlgebra Q) r) :
+    (x : CliffordAlgebra Q) * reverse (x : CliffordAlgebra Q) =
+      algebraMap R (CliffordAlgebra Q) r := by
+  have hrev : reverse (x : CliffordAlgebra Q) = algebraMap R (CliffordAlgebra Q) r * ↑x⁻¹ := by
+    rw [← hx, mul_assoc, Units.mul_inv, mul_one]
+  rw [hrev, ← mul_assoc, ← Algebra.commutes, mul_assoc, Units.mul_inv, mul_one]
+
+/-- If the reverse norm of a unit is the scalar unit `r`, that of its inverse is `r⁻¹`. -/
+theorem reverse_inv_mul_inv {x : (CliffordAlgebra Q)ˣ} {r : Rˣ}
+    (hx : reverse (x : CliffordAlgebra Q) * x = algebraMap R (CliffordAlgebra Q) r) :
+    reverse ((x⁻¹ : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) * ↑x⁻¹ =
+      algebraMap R (CliffordAlgebra Q) ↑r⁻¹ := by
+  have hinv : ((x⁻¹ : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) =
+      algebraMap R (CliffordAlgebra Q) ↑r⁻¹ * reverse (x : CliffordAlgebra Q) := by
+    calc ((x⁻¹ : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q)
+        = algebraMap R (CliffordAlgebra Q) (↑r⁻¹ * ↑r) * ↑x⁻¹ := by simp
+      _ = algebraMap R (CliffordAlgebra Q) ↑r⁻¹ * (reverse (x : CliffordAlgebra Q) * x) *
+          ↑x⁻¹ := by rw [hx, map_mul]
+      _ = algebraMap R (CliffordAlgebra Q) ↑r⁻¹ * reverse (x : CliffordAlgebra Q) := by
+          rw [mul_assoc, mul_assoc, Units.mul_inv, mul_one]
+  conv_lhs => rhs; rw [hinv]
+  rw [← mul_assoc, ← Algebra.commutes, mul_assoc, ← reverse.map_mul, Units.mul_inv,
+    reverse.map_one, mul_one]
 
 section Bivector
 
@@ -75,7 +239,8 @@ variable [Invertible (2 : R)]
   module
 
 /-- Clifford reversal negates the image of the exterior-square bivector map. -/
-@[simp] theorem reverse_bivectorExterior (q : QuadraticForm R M) (x : ⋀[R]^2 M) :
+-- Use the image computation before testing membership in the quadratic Lie subalgebra.
+@[simp 1100] theorem reverse_bivectorExterior (q : QuadraticForm R M) (x : ⋀[R]^2 M) :
     reverse (bivectorExterior q x) = -bivectorExterior q x := by
   let P := LinearMap.eqLocus (reverse (Q := q)) (-LinearMap.id)
   have hle : LinearMap.range (bivectorExterior q) ≤ P :=

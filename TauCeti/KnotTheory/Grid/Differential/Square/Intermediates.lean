@@ -135,7 +135,7 @@ theorem swapColumns_mem_twoStepColumnSwapIntermediates_ne
     refine ⟨Equiv.swap c d a, Equiv.swap c d b, (Equiv.swap c d).injective.ne hab, ?_⟩
     exact x.swapColumns_swapColumns_conj a b c d
   · intro h
-    exact hpairs (sym2_mk_eq_of_swapColumns_eq (x := x) hcd hab h).symm
+    exact hpairs (sym2_mk_eq_of_swapColumns_eq (x := x) hcd h).symm
 
 /-- Every intermediate state on a nondiagonal two-step path has a distinct alternative
 intermediate state. -/
@@ -146,7 +146,7 @@ theorem exists_mem_twoStepColumnSwapIntermediates_ne_of_mem_of_ne
   obtain ⟨a, b, c, d, hab, hcd, rfl, rfl⟩ := hy
   have hpairs : s(a, b) ≠ s(c, d) := by
     intro hpairs
-    exact hzx ((swapColumns_swapColumns_eq_self_iff_sym2_mk_eq x hab hcd).mpr hpairs)
+    exact hzx ((swapColumns_swapColumns_eq_self_iff_sym2_mk_eq x hab).mpr hpairs)
   exact ⟨x.swapColumns c d,
     x.swapColumns_mem_twoStepColumnSwapIntermediates_ne hab hcd hpairs⟩
 

@@ -130,6 +130,12 @@ lemma single_eq_zsmul_ofPoint (a : X) (b : ℤ) :
     (Finsupp.single a b : WeilDivisor X) = b • ofPoint a :=
   (Finsupp.smul_single_one a b).symm
 
+/-- The sum of the points of a finite set has coefficient `1` on the set and `0` off it. -/
+@[simp]
+lemma coeff_sum_ofPoint [DecidableEq X] (s : Finset X) (x : X) :
+    coeff (∑ y ∈ s, ofPoint y) x = if x ∈ s then 1 else 0 := by
+  simp [coeff, ofPoint, Finsupp.finsetSum_apply, Finsupp.single_apply]
+
 /-- A divisor is effective when every coefficient is nonnegative. -/
 def IsEffective (D : WeilDivisor X) : Prop :=
   ∀ x, 0 ≤ coeff D x
@@ -139,7 +145,7 @@ lemma isEffective_iff (D : WeilDivisor X) : IsEffective D ↔ ∀ x, 0 ≤ coeff
 
 @[simp]
 lemma isEffective_zero : IsEffective (0 : WeilDivisor X) := by
-  intro x
+  intro _
   simp
 
 lemma IsEffective.add {D E : WeilDivisor X} (hD : IsEffective D) (hE : IsEffective E) :
@@ -151,6 +157,15 @@ lemma IsEffective.nsmul {D : WeilDivisor X} (hD : IsEffective D) (n : ℕ) :
     IsEffective (n • D) := by
   intro x
   simpa [IsEffective, coeff] using nsmul_nonneg (hD x) n
+
+/-- An effective divisor is nonnegative in the pointwise order. -/
+lemma IsEffective.zero_le {D : WeilDivisor X} (hD : IsEffective D) : 0 ≤ D :=
+  Finsupp.le_def.mpr fun x ↦ by simpa [coeff] using hD x
+
+/-- Multiples of an effective divisor are monotone in the multiplier. -/
+lemma IsEffective.zsmul_le_zsmul {D : WeilDivisor X} (hD : IsEffective D) {m n : ℤ} (h : m ≤ n) :
+    m • D ≤ n • D :=
+  Finsupp.le_def.mpr fun x ↦ by simpa [coeff] using mul_le_mul_of_nonneg_right h (hD x)
 
 /-- A nonzero effective divisor has some point with positive coefficient. -/
 lemma IsEffective.exists_pos_coeff_of_ne_zero {D : WeilDivisor X} (hD : IsEffective D)
@@ -257,7 +272,7 @@ lemma coeff_pullback {f : X → Y} (hf : Function.Injective f) (D : WeilDivisor 
 lemma pullback_pushforward {f : X → Y} (hf : Function.Injective f) (D : WeilDivisor X) :
     pullback hf (pushforward f D) = D :=
   ext fun x => by
-    rw [coeff_pullback, coeff, coeff, pushforward_apply, Finsupp.mapDomain_apply hf]
+    rw [coeff_pullback, coeff, coeff, pushforward_apply, Finsupp.mapDomain_apply_of_injective hf]
 
 @[simp]
 lemma pullback_ofPoint {f : X → Y} (hf : Function.Injective f) (x : X) :

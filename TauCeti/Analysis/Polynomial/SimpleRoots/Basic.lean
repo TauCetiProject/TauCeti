@@ -10,10 +10,9 @@ public import Mathlib.Analysis.RCLike.Basic
 public import TauCeti.Analysis.Polynomial.SymmetricPower
 import Mathlib.Analysis.Analytic.Constructions
 import Mathlib.Analysis.Analytic.Linear
-import Mathlib.Analysis.Calculus.Deriv.Inverse
 import Mathlib.Analysis.Calculus.Deriv.Polynomial
-import Mathlib.Analysis.Calculus.ImplicitContDiff
 import Mathlib.FieldTheory.Separable
+import TauCeti.Analysis.Analytic.Inverse
 
 /-!
 # Simple roots depend analytically on the coefficients
@@ -44,9 +43,9 @@ multiplication by that scalar is an invertible operator exactly when `z₀` is a
 Applying this at each of the `n` roots of a polynomial whose roots are pairwise distinct, and
 noting that pairwise distinctness persists in a neighbourhood, gives an analytic *ordered*
 parametrization `Ψ` of the whole unordered root tuple:
-`TauCeti.Polynomial.exists_analyticAt_monicOfCoeff_eq_prod_X_sub_C`. That is the multiplicity-free
-half of the statement "the inverse elementary symmetric chart is holomorphic"; the diagonal, where
-roots collide, is genuinely harder and is not treated here.
+`TauCeti.Polynomial.exists_analyticAt_monicOfCoeff_eq_prod_X_sub_C`. This is the
+multiplicity-free part of the inverse-chart statement. The colliding-point case over `ℂ` is proved
+separately by the contour-integral argument in `TauCeti/Analysis/Polynomial/RootSum.lean`.
 
 Note that no ordering of the roots is canonical: the conclusion is the existence of an analytic
 ordered lift of the (unordered) inverse chart, not analyticity of a preferred root function.
@@ -81,9 +80,10 @@ analytically on the elementary symmetric coordinates of one such patch, at multi
 tuples. That is the analytic ingredient for the transition maps of the atlas of
 `TauCeti/Geometry/Manifold/SymmetricPower.lean`. A chart there splits a tuple into the factors
 lying in `k` disjoint patches, of degrees `m 1, …, m k`, and regroups the resulting blocks of
-coefficients along a bijection `(Σ i, Fin (m i)) ≃ Fin n`; that assembly is carried out in
-`TauCeti/Analysis/Polynomial/SimpleRoots/Family.lean`. The diagonal, where the points of a tuple
-collide, is not treated here.
+coefficients along a bijection `(Σ i, Fin (m i)) ≃ Fin n`; the general blockwise assembly is in
+`TauCeti/Analysis/Polynomial/RootSum/Family.lean`. The diagonal, where points collide, is covered
+over `ℂ` by `TauCeti.Sym.analyticAt_coeffEquiv_map_coeffEquiv_symm_of_analyticAt` in
+`TauCeti/Analysis/Polynomial/RootSum.lean`.
 
 Everything is stated over an `RCLike` field, so it covers the real as well as the complex case,
 except for the elementary polynomial calculus, which needs only a nontrivially normed field; only
@@ -93,7 +93,6 @@ the statements that mention the chart itself need the field algebraically closed
 public section
 
 open Filter Polynomial Topology
-open scoped ContDiff
 
 namespace TauCeti
 
@@ -129,34 +128,18 @@ coefficients `c₀` at which the derivative does not vanish, then there is a fun
 coefficients, analytic at `c₀`, with `ψ c₀ = z₀`, whose value at every nearby coefficient tuple is
 a root of the corresponding monic polynomial.
 
-This is the implicit function theorem applied to the free monic polynomial: its partial derivative
-in the argument is multiplication by `P'(z₀)`, which is invertible exactly under the simplicity
-hypothesis. -/
+This is the analytic implicit root theorem `AnalyticAt.exists_analyticAt_eventually_eq_zero_iff`
+applied to the free monic polynomial, whose partial derivative in the argument at `(c₀, z₀)` is
+`P'(z₀)`. -/
 theorem exists_analyticAt_isRoot_monicOfCoeff {c₀ : Fin n → 𝕜} {z₀ : 𝕜}
     (hroot : (monicOfCoeff c₀).IsRoot z₀)
     (hsimple : (derivative (monicOfCoeff c₀)).eval z₀ ≠ 0) :
     ∃ ψ : (Fin n → 𝕜) → 𝕜, ψ c₀ = z₀ ∧ AnalyticAt 𝕜 ψ c₀ ∧
       ∀ᶠ c in 𝓝 c₀, (monicOfCoeff c).IsRoot (ψ c) := by
-  set f : (Fin n → 𝕜) × 𝕜 → 𝕜 := fun p => (monicOfCoeff p.1).eval p.2
-  have cdf : ContDiffAt 𝕜 ω f (c₀, z₀) := (analyticAt_eval_monicOfCoeff _).contDiffAt
-  set e : 𝕜 ≃L[𝕜] 𝕜 := ContinuousLinearEquiv.unitsEquivAut 𝕜 (Units.mk0 _ hsimple)
-  have hpartial : HasFDerivAt (fun z : 𝕜 => f (c₀, z)) (e : 𝕜 →L[𝕜] 𝕜) z₀ :=
-    ((monicOfCoeff c₀).hasDerivAt z₀).hasFDerivAt_equiv hsimple
-  have hdiff : HasFDerivAt f (fderiv 𝕜 f (c₀, z₀)) (c₀, z₀) :=
-    (cdf.differentiableAt (by simp)).hasFDerivAt
-  have hinr : HasFDerivAt (fun z : 𝕜 => ((c₀ : Fin n → 𝕜), z))
-      (ContinuousLinearMap.inr 𝕜 (Fin n → 𝕜) 𝕜) z₀ :=
-    (hasFDerivAt_const c₀ z₀).prodMk (hasFDerivAt_id z₀)
-  have hcomp : fderiv 𝕜 f (c₀, z₀) ∘L ContinuousLinearMap.inr 𝕜 (Fin n → 𝕜) 𝕜
-      = (e : 𝕜 →L[𝕜] 𝕜) := (hdiff.comp z₀ hinr).unique hpartial
-  have if₂ : (fderiv 𝕜 f (c₀, z₀) ∘L ContinuousLinearMap.inr 𝕜 (Fin n → 𝕜) 𝕜).IsInvertible := by
-    rw [hcomp]
-    exact ⟨e, rfl⟩
-  refine ⟨cdf.implicitFunction (by simp) if₂, cdf.implicitFunction_apply_self _ if₂,
-    (cdf.contDiffAt_implicitFunction _ if₂).analyticAt, ?_⟩
-  filter_upwards [cdf.eventually_apply_implicitFunction (by simp) if₂] with c hc
-  have h₀ : f (c₀, z₀) = 0 := hroot
-  exact hc.trans h₀
+  obtain ⟨ψ, hψa, hψ₀, hψ, -⟩ :=
+    (analyticAt_eval_monicOfCoeff (c₀, z₀)).exists_analyticAt_eventually_eq_zero_iff hroot
+      (by simpa using hsimple)
+  exact ⟨ψ, hψ₀, hψa, hψ⟩
 
 /-! ### An analytic ordered parametrization of a multiplicity-free root tuple -/
 

@@ -57,8 +57,8 @@ versions once those land.
 * `TauCeti.IsPointedDiscInjectionOn` — membership in the competing family.
 * `TauCeti.exists_isPointedDiscInjectionOn` — the family is nonempty.
 * `TauCeti.exists_isMaxOn_norm_deriv` — the extremal problem has a solution, given one competitor.
-* `TauCeti.exists_isMaxOn_norm_deriv_of_isSimplyConnected` — the form used by the Riemann mapping
-  theorem, where simple connectivity supplies that competitor.
+* `TauCeti.exists_isMaxOn_norm_deriv_of_hasHolomorphicSquareRoots` — the form used by the Riemann
+  mapping theorem, where holomorphic square roots supply that competitor.
 
 ## References
 
@@ -108,15 +108,15 @@ theorem deriv_ne_zero (hf : IsPointedDiscInjectionOn f Ω z₀) (hΩo : IsOpen �
 
 end IsPointedDiscInjectionOn
 
-/-- **The competing family is nonempty.** Every base point of a nonempty, simply connected, open,
-proper subset of `ℂ` admits a pointed disc injection.
+/-- **The competing family is nonempty.** Every base point of an open, proper subset of `ℂ` with
+holomorphic square roots — for instance a simply connected one — admits a pointed disc injection.
 
 This repackages `TauCeti.exists_differentiableOn_injOn_mapsTo_unitBall_apply_eq_zero`. -/
-theorem exists_isPointedDiscInjectionOn (hΩc : IsSimplyConnected Ω) (hΩo : IsOpen Ω)
+theorem exists_isPointedDiscInjectionOn (hΩs : HasHolomorphicSquareRoots Ω) (hΩo : IsOpen Ω)
     (hΩne : Ω ≠ univ) (hz₀ : z₀ ∈ Ω) :
     ∃ f : ℂ → ℂ, IsPointedDiscInjectionOn f Ω z₀ := by
   obtain ⟨f, hfd, hfi, hfm, hf₀⟩ :=
-    exists_differentiableOn_injOn_mapsTo_unitBall_apply_eq_zero hΩc hΩo hΩne hz₀
+    exists_differentiableOn_injOn_mapsTo_unitBall_apply_eq_zero hΩs hΩo hΩne hz₀
   exact ⟨f, hfd, hfm, hfi, hf₀⟩
 
 /-- Cauchy's estimate bounds the derivatives at the base point uniformly over the family: on a
@@ -196,9 +196,9 @@ family.
 
 The compactness argument needs nothing beyond these hypotheses: preconnectedness for the maximum
 modulus principle and for Hurwitz's theorem, and one competitor to make the supremum positive.
-Simple connectivity enters only through
+Holomorphic square roots enter only through
 `TauCeti.exists_isPointedDiscInjectionOn`, which supplies that competitor; see the corollary
-`TauCeti.exists_isMaxOn_norm_deriv_of_isSimplyConnected`.
+`TauCeti.exists_isMaxOn_norm_deriv_of_hasHolomorphicSquareRoots`.
 
 This is the compactness half of the Riemann mapping theorem. It does **not** assert that the
 maximizer is surjective; that is the Koebe square-root argument, proved elsewhere. -/
@@ -233,17 +233,18 @@ theorem exists_isMaxOn_norm_deriv (hΩo : IsOpen Ω) (hconn : IsPreconnected Ω)
       (by rw [← norm_ne_zero_iff, hMg]; exact hM₀.ne')
   exact ⟨g, hg, fun f hf => hMg ▸ le_csSup hbdd ⟨f, hf, rfl⟩⟩
 
-/-- **The extremal problem has a solution on a simply connected proper subdomain.** This is the
-form the Riemann mapping theorem uses: on a nonempty, simply connected, open, proper subset `Ω` of
-`ℂ` with base point `z₀`, some pointed disc injection maximizes `‖deriv · z₀‖`.
+/-- **The extremal problem has a solution on a proper subdomain with holomorphic square roots.**
+This is the form the Riemann mapping theorem uses: on an open, preconnected, proper subset `Ω` of
+`ℂ` with holomorphic square roots and base point `z₀`, some pointed disc injection maximizes
+`‖deriv · z₀‖`. A simply connected open set has holomorphic square roots
+(`IsSimplyConnected.hasHolomorphicSquareRoots`).
 
-Simple connectivity and properness serve only to produce one competitor; the compactness argument
+The square roots and properness serve only to produce one competitor; the compactness argument
 itself is `TauCeti.exists_isMaxOn_norm_deriv`. -/
-theorem exists_isMaxOn_norm_deriv_of_isSimplyConnected (hΩc : IsSimplyConnected Ω) (hΩo : IsOpen Ω)
-    (hΩne : Ω ≠ univ) (hz₀ : z₀ ∈ Ω) :
+theorem exists_isMaxOn_norm_deriv_of_hasHolomorphicSquareRoots (hΩs : HasHolomorphicSquareRoots Ω)
+    (hΩo : IsOpen Ω) (hΩc : IsPreconnected Ω) (hΩne : Ω ≠ univ) (hz₀ : z₀ ∈ Ω) :
     ∃ g : ℂ → ℂ, IsPointedDiscInjectionOn g Ω z₀ ∧
       ∀ f : ℂ → ℂ, IsPointedDiscInjectionOn f Ω z₀ → ‖deriv f z₀‖ ≤ ‖deriv g z₀‖ :=
-  exists_isMaxOn_norm_deriv hΩo hΩc.isPathConnected.isConnected.isPreconnected hz₀
-    (exists_isPointedDiscInjectionOn hΩc hΩo hΩne hz₀)
+  exists_isMaxOn_norm_deriv hΩo hΩc hz₀ (exists_isPointedDiscInjectionOn hΩs hΩo hΩne hz₀)
 
 end TauCeti

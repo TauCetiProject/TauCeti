@@ -7,18 +7,21 @@ module
 
 
 public import Mathlib.AlgebraicGeometry.Noetherian
+public import Mathlib.AlgebraicGeometry.Properties
+public import TauCeti.RingTheory.RegularLocalRing.Basic
 
 /-!
 # Irreducibility of connected schemes with domain stalks
 
-This file supplies a prerequisite for the **Standing hypotheses** target of the
-Jacobian challenge roadmap (proving that a regular connected scheme is irreducible,
-as regular stalks are integral domains).
+We show that a locally noetherian connected scheme whose stalks are domains is irreducible;
+when its stalks are regular local rings, it is integral.
 
 We prove that a locally noetherian connected scheme whose stalks have unique
 minimal primes is irreducible (`irreducibleSpace_of_connected_of_unique_minimalPrime_stalk`),
 from which we deduce that such a scheme is irreducible if its stalks are
-integral domains (`irreducibleSpace_of_connected_of_isDomain_stalk`).
+integral domains (`irreducibleSpace_of_connected_of_isDomain_stalk`). Since regular local rings
+are domains (`TauCeti.IsRegularLocalRing.isDomain`), a locally noetherian connected scheme whose
+stalks are regular local rings is integral (`isIntegral_of_connected_of_isRegularLocalRing_stalk`).
 
 The proof proceeds by showing that the irreducible components of such
 a scheme are pairwise disjoint and open (hence clopen), so
@@ -367,7 +370,7 @@ private lemma irreducibleSpace_of_connected_of_open_components {α : Type*} [Top
     have hSU : x ∈ ⋃₀ irreducibleComponents α := by
       rw [sUnion_irreducibleComponents]
       exact mem_univ x
-    obtain ⟨c, hc_in, hx⟩ := hSU
+    obtain ⟨c, hc_in, _⟩ := hSU
     exact ⟨⟨c, hc_in⟩⟩
   obtain ⟨c⟩ := hNonempty
   have hcClopen : IsClopen (c : Set α) :=
@@ -400,6 +403,14 @@ theorem irreducibleSpace_of_connected_of_isDomain_stalk (Z : Scheme.{u}) [IsLoca
     rw [IsDomain.minimalPrimes_eq_singleton_bot]
     exact Set.uniqueSingleton ⊥
   exact irreducibleSpace_of_connected_of_unique_minimalPrime_stalk Z hU
+
+/-- A locally noetherian connected scheme whose stalks are regular local rings is integral. -/
+theorem isIntegral_of_connected_of_isRegularLocalRing_stalk (Z : Scheme.{u})
+    [IsLocallyNoetherian Z] [ConnectedSpace Z]
+    [∀ x : Z, IsRegularLocalRing (Z.presheaf.stalk x)] : IsIntegral Z :=
+  have := irreducibleSpace_of_connected_of_isDomain_stalk Z fun _ ↦ inferInstance
+  have := isReduced_of_isReduced_stalk Z
+  isIntegral_of_irreducibleSpace_of_isReduced Z
 
 end AlgebraicGeometry
 

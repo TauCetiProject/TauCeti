@@ -5,14 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Group.Equiv.TypeTags
 public import Mathlib.Algebra.Group.Units.Hom
 public import Mathlib.Topology.Algebra.Group.Units
 public import Mathlib.Topology.Algebra.Group.ZPow
 public import TauCeti.Algebra.Group.FreeAbelianCharacter
 public import TauCeti.Algebra.Group.FreeCommMonoidCharacter
-public import TauCeti.Algebra.Group.Prod
-public import TauCeti.Geometry.Toric.Analytic.AffinePoint
+public import TauCeti.Geometry.Toric.Analytic.AffinePoint.Product
 
 /-!
 # Mixed coordinates on the complex points of a split affine semigroup
@@ -45,7 +43,9 @@ arbitrary monomial is the expected mixed monomial in the coordinates.
 * `TauCeti.Toric.regularAffinePointEquiv`: the mixed coordinates of the complex points of a split
   affine semigroup, with `TauCeti.Toric.regularAffinePointEquiv_fst_apply`,
   `TauCeti.Toric.val_regularAffinePointEquiv_snd_apply` and
-  `TauCeti.Toric.regularAffinePointEquiv_symm_apply_single` computing the two directions.
+  `TauCeti.Toric.regularAffinePointEquiv_symm_apply_single` computing the two directions, and
+  `TauCeti.Toric.apply_single_ne_zero_iff_regularAffinePointEquiv_fst_ne_zero` characterizing
+  monomial nonvanishing.
 * `TauCeti.Toric.continuous_regularAffinePointEquiv` and
   `TauCeti.Toric.continuous_regularAffinePointEquiv_symm`: both directions are continuous for the
   monomial-embedding topology of any finite generating family.
@@ -75,12 +75,12 @@ variable {S : Type*} [AddCommMonoid S] {ι κ : Type*} {r : ℕ}
 indexed by `κ`, the values on the generators of the free abelian factor. -/
 noncomputable def regularAffinePointEquiv (e : S ≃+ ((ι →₀ ℕ) × (κ →₀ ℤ))) :
     AffineSemigroupComplexPoint S ≃ (ι → ℂ) × (κ → ℂˣ) :=
-  (MonoidAlgebra.lift ℂ ℂ (Multiplicative S)).symm.trans <|
-    (MulEquiv.monoidHomCongrLeft e.toMultiplicative).toEquiv.trans <|
-      (MulEquiv.monoidHomCongrLeft (MulEquiv.prodMultiplicative (ι →₀ ℕ) (κ →₀ ℤ))).toEquiv.trans <|
-        MonoidHom.coprodEquiv.symm.toEquiv.trans <|
-          Equiv.prodCongr freeCommMonoidCharEquiv.toEquiv
-            (MonoidHom.toHomUnitsMulEquiv.trans freeAbelianCharEquiv).toEquiv
+  (AffineSemigroupComplexPoint.prodEquiv e).trans <|
+    Equiv.prodCongr
+      ((MonoidAlgebra.lift ℂ ℂ (Multiplicative (ι →₀ ℕ))).symm.trans
+        freeCommMonoidCharEquiv.toEquiv)
+      ((MonoidAlgebra.lift ℂ ℂ (Multiplicative (κ →₀ ℤ))).symm.trans
+        (MonoidHom.toHomUnitsMulEquiv.trans freeAbelianCharEquiv).toEquiv)
 
 /-- The complex point attached to a family of mixed coordinates takes, on the monomial of `s : S`,
 the mixed monomial value prescribed by the exponents of `s`: a product of natural powers of the
@@ -90,23 +90,25 @@ theorem regularAffinePointEquiv_symm_apply_single (e : S ≃+ ((ι →₀ ℕ) �
     (z : (ι → ℂ) × (κ → ℂˣ)) (s : S) :
     (regularAffinePointEquiv e).symm z (MonoidAlgebra.single (ofAdd s) 1) =
       ((e s).1.prod fun i n => z.1 i ^ n) * ((e s).2.prod fun j n => z.2 j ^ n : ℂˣ) := by
-  rw [regularAffinePointEquiv]
-  -- peel off the five stages of the equivalence
-  simp only [Equiv.symm_trans_apply, Equiv.prodCongr_symm, Equiv.prodCongr_apply,
-    MulEquiv.toEquiv_eq_coe, MulEquiv.coe_toEquiv_symm, Equiv.symm_symm]
-  -- evaluate the algebra homomorphism on a monomial
-  rw [MonoidAlgebra.lift_single, one_smul]
-  -- transport the exponent of `s` along the splitting `e`
-  simp only [MulEquiv.symm_monoidHomCongrLeft, MulEquiv.symm_symm,
-    MulEquiv.monoidHomCongrLeft_apply, MonoidHom.coe_comp, MonoidHom.coe_coe, Function.comp_apply,
-    AddEquiv.toMultiplicative_apply_apply, AddEquiv.toAddMonoidHom_eq_coe,
-    AddMonoidHom.toMultiplicative_apply_apply, toAdd_ofAdd, AddMonoidHom.coe_coe,
-    MulEquiv.prodMultiplicative_apply]
-  -- split the character along the two free factors and evaluate each
-  rw [MonoidHom.coprodEquiv_apply, Prod.map_fst, Prod.map_snd,
-    freeCommMonoidCharEquiv_symm_apply_ofAdd, MulEquiv.symm_trans_apply,
-    MonoidHom.toHomUnitsMulEquiv_symm_apply, MonoidHom.comp_apply,
-    freeAbelianCharEquiv_symm_apply_ofAdd, Units.coeHom_apply]
+  simp only [regularAffinePointEquiv, Equiv.symm_trans_apply,
+    AffineSemigroupComplexPoint.prodEquiv_symm_apply_single]
+  simp
+
+/-- A monomial is nonzero at a complex point exactly when every free-commutative-monoid
+coordinate occurring in its support is nonzero. The free-abelian-coordinate factor is always a
+unit. -/
+theorem apply_single_ne_zero_iff_regularAffinePointEquiv_fst_ne_zero
+    (e : S ≃+ ((ι →₀ ℕ) × (κ →₀ ℤ))) (x : AffineSemigroupComplexPoint S) (s : S) :
+    x (MonoidAlgebra.single (ofAdd s) 1) ≠ 0 ↔
+      ∀ i ∈ (e s).1.support, (regularAffinePointEquiv e x).1 i ≠ 0 := by
+  obtain ⟨z, rfl⟩ := (regularAffinePointEquiv e).symm.surjective x
+  rw [regularAffinePointEquiv_symm_apply_single, mul_ne_zero_iff, Finsupp.prod_ne_zero_iff]
+  simp only [Equiv.apply_symm_apply]
+  constructor
+  · rintro ⟨hz, -⟩ i hi hzero
+    exact hz i hi (by simp [hzero, Finsupp.mem_support_iff.mp hi])
+  · intro hz
+    exact ⟨fun i hi ↦ pow_ne_zero _ (hz i hi), Units.ne_zero _⟩
 
 /-- The coordinate of a complex point indexed by `i : ι` is its value on the monomial of the
 `i`-th generator of the free commutative monoid factor. -/

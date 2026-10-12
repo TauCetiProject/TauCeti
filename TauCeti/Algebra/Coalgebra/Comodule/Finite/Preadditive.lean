@@ -14,7 +14,7 @@ public import TauCeti.Algebra.Coalgebra.Comodule.Preadditive
 This file makes the preadditive structure on the category of finitely generated right
 comodules over a coalgebra over a commutative ring available from a finite-comodule import.
 The category is a full subcategory of all comodules, so Mathlib transfers the preadditive
-structure from `ComoduleCat`.
+structure from `ComoduleCat`. The forgetful functor to `ModuleCat R` is additive.
 
 It also records concrete simp lemmas computing the zero, addition, negation, and subtraction of
 finitely generated comodule morphisms through the underlying ambient comodule morphism `.hom`,
@@ -53,6 +53,14 @@ namespace FGComoduleCat
 
 variable {R : Type u} [CommRing R]
 variable {C : Type v} [AddCommMonoid C] [Module R C] [Coalgebra R C]
+
+/-- Forget a finite comodule to its underlying module. -/
+noncomputable instance : HasForget₂ (FGComoduleCat.{u, v, w} R C) (ModuleCat.{w} R) :=
+  HasForget₂.trans _ (ComoduleCat.{u, v, w} R C) _
+
+instance : (forget₂ (FGComoduleCat.{u, v, w} R C) (ModuleCat.{w} R)).Additive :=
+  inferInstanceAs ((incl ⋙ forget₂ (ComoduleCat.{u, v, w} R C) (ModuleCat.{w} R)).Additive)
+
 variable {M N : FGComoduleCat.{u, v, w} R C}
 
 /-- The ambient comodule morphism underlying the zero morphism is the zero morphism. -/

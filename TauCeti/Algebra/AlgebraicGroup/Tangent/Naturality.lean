@@ -136,8 +136,8 @@ theorem mapValue_adDerivation (phi : B →ₐ[R] C)
     (Bialgebra.CounitAlgebra.mapAlgHom (A := A) phi).toLinearMap]
   rw [LinearMap.algHom_comp_convMul_distrib, LinearMap.algHom_comp_convMul_distrib]
   simp only [AlgHom.mapValue_apply, coe_mapValue_linearMap, AlgHom.comp_toLinearMap,
-    toConv_ofConv]
-  rfl
+    toConv_ofConv, WithConv.convInv_def, AlgHom.toLinearMap_antipodeComp,
+    LinearMap.comp_assoc]
 
 end Adjoint
 

@@ -24,6 +24,8 @@ double cosets satisfy the Tits multiplication and nondegeneracy axioms.
 * `TauCeti.TitsSystem.intersection`: the subgroup `B ∩ N`, regarded as a subgroup of `N`.
 * `TauCeti.TitsSystem.WeylGroup`: the quotient `N / (B ∩ N)`.
 * `TauCeti.TitsSystem.simple`: the simple reflections in the Weyl group.
+* `TauCeti.TitsSystem.simple_sq_eq_one`, `TauCeti.TitsSystem.inv_simple` and
+  `TauCeti.TitsSystem.simple_ne_one`: the simple reflections are nontrivial involutions.
 
 ## References
 
@@ -109,6 +111,23 @@ theorem simple_sq_eq_one {s : T.WeylGroup} (hs : s ∈ T.simple) : s * s = 1 := 
   obtain ⟨r, rfl, hr⟩ := T.exists_simpleRep_sq_mem s hs
   rw [← QuotientGroup.mk_mul]
   exact (QuotientGroup.eq_one_iff (N := T.intersection) (r * r)).mpr hr
+
+/-- A simple reflection is its own inverse. -/
+@[simp]
+theorem inv_simple {s : T.WeylGroup} (hs : s ∈ T.simple) : s⁻¹ = s :=
+  inv_eq_of_mul_eq_one_right (T.simple_sq_eq_one hs)
+
+/-- Multiplying twice by a simple reflection on the left is the identity. -/
+@[simp]
+theorem simple_mul_simple_cancel_left {s : T.WeylGroup} (hs : s ∈ T.simple) (w : T.WeylGroup) :
+    s * (s * w) = w := by
+  rw [← mul_assoc, T.simple_sq_eq_one hs, one_mul]
+
+/-- Multiplying twice by a simple reflection on the right is the identity. -/
+@[simp]
+theorem simple_mul_simple_cancel_right (w : T.WeylGroup) {s : T.WeylGroup} (hs : s ∈ T.simple) :
+    w * s * s = w := by
+  rw [mul_assoc, T.simple_sq_eq_one hs, mul_one]
 
 /-- A simple reflection is not the identity. -/
 theorem simple_ne_one {s : T.WeylGroup} (hs : s ∈ T.simple) : s ≠ 1 := by

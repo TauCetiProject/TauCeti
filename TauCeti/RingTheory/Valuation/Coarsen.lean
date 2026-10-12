@@ -102,13 +102,15 @@ variable {R : Type*} [Ring R] {Γ₀ : Type*} [LinearOrderedCommGroupWithZero Γ
 /-- Coarsening a valuation by a convex subgroup of the units of its value monoid. -/
 noncomputable def coarsenByUnits (v : Valuation R Γ₀) (H : ConvexSubgroup Γ₀ˣ) :
     Valuation R (WithZero (Γ₀ˣ ⧸ H.toSubgroup)) :=
-  v.map (coarsenMapOfValueGroup H) (coarsenMapOfValueGroup_monotone H)
+  v.map
+    { toMonoidWithZeroHom := coarsenMapOfValueGroup H
+      monotone' := coarsenMapOfValueGroup_monotone H }
 
 /-- Coarsening applies the coarsening map to each value. -/
 @[simp]
 theorem coarsenByUnits_apply (v : Valuation R Γ₀) (H : ConvexSubgroup Γ₀ˣ) (r : R) :
     v.coarsenByUnits H r = coarsenMapOfValueGroup H (v r) :=
-  Valuation.map_apply _ _ _ _
+  Valuation.map_apply _ _ _
 
 /-- A value at most `1` whose unit avoids `H` lands strictly below `1` after coarsening. -/
 theorem coarsenByUnits_lt_one_of_notMem (v : Valuation R Γ₀) (H : ConvexSubgroup Γ₀ˣ)
@@ -149,7 +151,7 @@ quotient by `H`, and properness is the hypothesis it asks for. What is left is b
 coarsened value monoid embeds in `WithZero (Γˣ ⧸ H)`, so a cofinal element of the *whole*
 quotient group is in particular below every value the coarsened valuation attains. -/
 theorem cofinalValue_coarsenByUnits_restrict {A : Type*} [Ring A] {v : Valuation A Γ₀}
-    {H : ConvexSubgroup (ValueGroup₀ (.ofClass v))ˣ} (hH : H ≠ ⊤) {a : A}
+    {H : ConvexSubgroup (v.ValueGroup₀)ˣ} (hH : H ≠ ⊤) {a : A}
     (hcof : CofinalValue v a) : CofinalValue (v.restrict.coarsenByUnits H) a := by
   rcases eq_or_ne (v.restrict a) 0 with h0 | h0
   · -- a vanishing value stays vanishing, and `0` is below every positive element
@@ -158,11 +160,11 @@ theorem cofinalValue_coarsenByUnits_restrict {A : Type*} [Ring A] {v : Valuation
     have hz : (v.restrict.coarsenByUnits H).restrict a = 0 := by
       rw [Valuation.restrict_eq_zero_iff, coarsenByUnits_apply, h0, map_zero]
     exact ⟨1, by rwa [pow_one, hz]⟩
-  · set g : (ValueGroup₀ (.ofClass v))ˣ := Units.mk0 (v.restrict a) h0 with hgdef
+  · set g : (v.ValueGroup₀)ˣ := Units.mk0 (v.restrict a) h0 with hgdef
     -- cofinality of the value, read in the value group rather than the value monoid
-    have hcofg : TauCeti.IsCofinalElement (⊤ : Subgroup (ValueGroup₀ (.ofClass v))ˣ) g :=
+    have hcofg : TauCeti.IsCofinalElement (⊤ : Subgroup (v.ValueGroup₀)ˣ) g :=
       isCofinalElement_def.mpr fun h _ ↦ by
-        obtain ⟨n, hn⟩ := cofinalValue_iff.mp hcof (h : ValueGroup₀ (.ofClass v))
+        obtain ⟨n, hn⟩ := cofinalValue_iff.mp hcof (h : v.ValueGroup₀)
           (zero_lt_iff.mpr h.ne_zero)
         exact ⟨n, by rwa [← Units.val_lt_val, Units.val_pow_eq_pow_val, hgdef, Units.val_mk0]⟩
     have hquot := hcofg.quotientMk hH

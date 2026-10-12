@@ -156,7 +156,7 @@ theorem span_range_f4ShortRootWeight_eq_top :
   rw [Pi.basisFun_apply]
   have h (a : Fin 26) : f4ShortRootWeight a ∈ Submodule.span ℤ (Set.range f4ShortRootWeight) :=
     Submodule.subset_span (Set.mem_range_self a)
-  set S := Submodule.span ℤ (Set.range f4ShortRootWeight) with hS
+  set S := Submodule.span ℤ (Set.range f4ShortRootWeight)
   rw [pi_single_eq_f4ShortRootWeight_sum i]
   fin_cases i
   · exact S.add_mem (h 3) (h 2)

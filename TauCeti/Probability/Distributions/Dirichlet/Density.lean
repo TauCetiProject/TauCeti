@@ -9,7 +9,7 @@ public import Mathlib.MeasureTheory.Function.Jacobian
 public import TauCeti.MeasureTheory.Constructions.Pi
 public import TauCeti.MeasureTheory.Measure.WithDensity
 public import TauCeti.Probability.Distributions.Dirichlet.Basic
-public import TauCeti.Probability.Distributions.PDFInstances
+public import TauCeti.Probability.Distributions.Gamma.PDF
 
 /-!
 # The density of the Dirichlet distribution in a simplex chart
@@ -388,7 +388,7 @@ theorem dirichletChartCoords_mem_source {i₀ : ι} {z : ℝ × ({i // i ≠ i�
 theorem dirichletChartCoords_dirichletUnchart {i₀ : ι} {z : ℝ × ({i // i ≠ i₀} → ℝ)}
     (hz : z ∈ dirichletUnchartSource i₀) :
     dirichletChartCoords i₀ (dirichletUnchart i₀ z) = z := by
-  obtain ⟨hs, hy⟩ := hz
+  obtain ⟨hs, _⟩ := hz
   have hs' : 0 < z.1 := hs
   have hsum : z.1 * (1 - ∑ j, z.2 j) + ∑ j, z.1 * z.2 j = z.1 := by
     rw [← Finset.mul_sum]; ring

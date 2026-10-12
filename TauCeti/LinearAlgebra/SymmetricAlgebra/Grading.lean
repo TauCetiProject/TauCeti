@@ -62,7 +62,7 @@ noncomputable instance gradedAlgebra : GradedAlgebra (homogeneousSubmodule R M) 
   GradedAlgebra.ofAlgHom _ (SymmetricAlgebra.lift (GradedAlgebra.ι R M))
     (by
       ext m
-      simp only [LinearMap.coe_comp, LinearMap.coe_coe, AlgHom.coe_comp, Function.comp_apply,
+      simp only [LinearMap.coe_comp, LinearMap.coe_ofClass, AlgHom.coe_comp, Function.comp_apply,
         SymmetricAlgebra.lift_ι_apply, GradedAlgebra.ι_apply, DirectSum.coeAlgHom_of,
         AlgHom.coe_id, id_eq])
     -- A homogeneous element is a sum of products of `n` generators, so induction on the power

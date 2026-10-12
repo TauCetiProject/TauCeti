@@ -12,10 +12,10 @@ import Mathlib.NumberTheory.NumberField.Completion.FinitePlace
 /-!
 # The main term of the ray class ideal count
 
-This file defines the coefficient intended as the main term of the ray class ideal count, and
-proves it positive.  The counting asymptotic itself — that the number of integral ideals of a
-fixed ray class with absolute norm at most `x` is this coefficient times `x`, up to a
-power-saving error — is not proved here.
+This file defines the main term of the ray class ideal count and proves it positive: the number
+of integral ideals of a fixed ray class with absolute norm at most `x` is this coefficient times
+`x`, up to a power-saving error; this is
+`TauCeti.GlobalNumberFields.isBigO_rayClassIdealCountingFunction_sub`.
 
 The coefficient is the Dedekind-zeta residue divided by the order of the ray class group, times
 one correction factor `1 - (N 𝔭)⁻¹` for each prime `𝔭` in the support of the modulus.  The Euler

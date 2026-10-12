@@ -42,10 +42,14 @@ statements about `TauCeti.Sym.pi A` as a subspace of the topological symmetric p
   `TauCeti.Sym.pi_nonempty_iff` recording when it is inhabited.
 * `TauCeti.Sym.mem_pi_iff` and `TauCeti.Sym.mem_pi_iff_card_filter`: membership, either through an
   ordered presentation or as "exactly one point in each member".
+* `TauCeti.Sym.disjoint_basepointDivisor_pi`: tuples through a point outside every member
+  of the family do not meet `TauCeti.Sym.pi A`.
 * `TauCeti.Sym.ofFn_subtypeVal_injective` and `TauCeti.Sym.piEquiv`: for a pairwise disjoint
   family, the unordered tuples in `TauCeti.Sym.pi A` are parametrized by `∀ i, ↥(A i)`.
 * `TauCeti.Sym.matchingTuple` and `TauCeti.Sym.piInterEquiv`: the unordered tuple of a matching,
   and the resulting bijection between matchings and points of `pi A ∩ pi B`.
+* `TauCeti.Sym.matching_ext` and `TauCeti.Sym.matchingTuple_injective`: pointwise equality of
+  matchings and injectivity of the unordered-tuple representation.
 * `TauCeti.Sym.finite_pi_inter_pi` and `TauCeti.Sym.natCard_pi_inter_pi`: the intersection is
   finite when the pairwise intersections are, with cardinality the permanent of the matrix of
   their cardinalities.
@@ -126,6 +130,16 @@ from ordered tuples. -/
 theorem pi_eq_image_univ_pi (A : Fin n → Set α) : pi A = ofFn '' Set.univ.pi A := by
   ext s
   simp [mem_pi_iff, Set.mem_image]
+
+/-- The unordered tuples containing a point `a` that lies in no member of the family are disjoint
+from `TauCeti.Sym.pi A`. For a basepoint `z` of a Heegaard diagram, chosen off the attaching curves,
+this says that the divisor `{z} × Sym^{g-1}(Σ)` misses the torus `T_α`. -/
+theorem disjoint_basepointDivisor_pi {a : α} (ha : ∀ i, a ∉ A i) :
+    Disjoint (basepointDivisor a : Set (Sym α n)) (pi A) :=
+  Set.disjoint_left.2 fun s has hs => by
+    obtain ⟨x, hx, rfl⟩ := mem_pi_iff.1 hs
+    obtain ⟨i, rfl⟩ := mem_ofFn.1 (mem_basepointDivisor.1 has)
+    exact ha i (hx i)
 
 /-! ### Pairwise disjoint families -/
 
@@ -225,6 +239,23 @@ theorem matchingTuple_surjective :
   obtain ⟨σ, x, hA, hB, rfl⟩ := exists_perm_of_mem_pi_inter_pi hs
   exact ⟨⟨σ, fun i => ⟨x i, hA i, hB i⟩⟩, rfl⟩
 
+/-- Two matchings with the same chosen points are equal when the `B`-family is pairwise disjoint. -/
+theorem matching_ext (hB : Pairwise (Function.onFun Disjoint B))
+    {p q : Sigma (fun σ : Equiv.Perm (Fin n) => ∀ i, ↥(A i ∩ B (σ i)))}
+    (h : ∀ i, (p.2 i : α) = q.2 i) : p = q := by
+  obtain ⟨σ, p⟩ := p
+  obtain ⟨τ, q⟩ := q
+  have hpts : ∀ i, (p i : α) = (q i : α) := h
+  have hσ : σ = τ := by
+    refine Equiv.ext fun i => ?_
+    by_contra hne
+    refine Set.disjoint_left.1 (hB hne) (p i).2.2 ?_
+    exact (hpts i).symm ▸ (q i).2.2
+  cases hσ
+  congr 1
+  funext i
+  exact Subtype.ext (hpts i)
+
 /-- For a pair of pairwise disjoint families, a matching is determined by the unordered tuple of
 its chosen points: the points determine the permutation, and the permutation determines them. -/
 theorem matchingTuple_injective (hA : Pairwise (Function.onFun Disjoint A))
@@ -234,11 +265,8 @@ theorem matchingTuple_injective (hA : Pairwise (Function.onFun Disjoint A))
   have hpts : (fun i => ((p i : α))) = fun i => ((q i : α)) :=
     ofFn_injOn_univ_pi hA (Set.mem_univ_pi.2 fun i => (p i).2.1)
       (Set.mem_univ_pi.2 fun i => (q i).2.1) (congrArg Subtype.val hpq)
-  obtain rfl : σ = τ := by
-    refine Equiv.ext fun i => by_contra fun hne => ?_
-    refine Set.disjoint_left.1 (hB hne) (p i).2.2 ?_
-    exact congrFun hpts i ▸ (q i).2.2
-  exact congrArg _ (funext fun i => Subtype.ext (congrFun hpts i))
+  apply matching_ext hB
+  exact fun i => congrFun hpts i
 
 /-- **The points common to two tori are the matchings.** For a pair of pairwise disjoint families,
 the unordered tuples with one point in each `A i` and one point in each `B j` correspond to the

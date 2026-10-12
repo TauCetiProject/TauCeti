@@ -118,7 +118,7 @@ lemma hasSum_logPowMul_re_term {x : ℝ}
       (LSeries (LSeries.logMul^[k] a) (x : ℂ)).re := by
   have hsum : LSeriesSummable (LSeries.logMul^[k] a) (x : ℂ) :=
     LSeriesSummable_of_abscissaOfAbsConv_lt_re (by
-      simpa [LSeries.absicssaOfAbsConv_logPowMul] using hx)
+      simpa [LSeries.abscissaOfAbsConv_logPowMul] using hx)
   have h : HasSum (LSeries.term (LSeries.logMul^[k] a) (x : ℂ))
       (LSeries (LSeries.logMul^[k] a) (x : ℂ)) := hsum.hasSum
   refine (Complex.hasSum_re h).congr_fun fun n ↦ ?_
@@ -169,7 +169,7 @@ private lemma exists_differentiableOn_patch {σ : ℝ}
       DifferentiableOn ℂ G (ball (((σ + 1 : ℝ) : ℂ)) (1 + δ)) ∧
         Set.EqOn G (LSeries a) {s : ℂ | σ < s.re} := by
   obtain ⟨r, hr, F, hF, hFeq⟩ := h
-  set δ : ℝ := min (r ^ 2 / 4) 1 with hδdef
+  set δ : ℝ := min (r ^ 2 / 4) 1
   have hδpos : 0 < δ := lt_min (by positivity) one_pos
   have hδ1 : δ ≤ 1 := min_le_right _ _
   have hδr : 3 * δ < r ^ 2 := by

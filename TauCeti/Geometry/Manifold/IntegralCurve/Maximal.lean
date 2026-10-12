@@ -67,8 +67,9 @@ arbitrary initial time is recovered by translating the parameter with
 * `maximalIntegralCurveInterval_eq_univ_of_not_bddAbove_not_bddBelow`: an interval of existence
   unbounded on both sides is all of `ℝ`.
 * `maximalIntegralCurveInterval_eq_univ_of_isCompact_of_mapsTo`: a maximal curve confined to a
-  compact set is defined for all time, and `isMIntegralCurve_maximalIntegralCurve` specializes this
-  to a compact manifold: **a `C^1` vector field on a compact manifold is complete**.
+  compact set is defined for all time, and `isMIntegralCurve_maximalIntegralCurve` and
+  `maximalIntegralCurveInterval_eq_univ_of_compactSpace` specialize this to a compact manifold:
+  **a `C^1` vector field on a compact manifold is complete**.
 * `maximalIntegralCurveInterval_eq_univ_iff`: the maximal interval is all of `ℝ` exactly when some
   global integral curve passes through `x` at time `0`.
 
@@ -396,6 +397,14 @@ theorem isMIntegralCurve_maximalIntegralCurve [CompleteSpace E] [CompactSpace M]
     ← maximalIntegralCurveInterval_eq_univ_of_isCompact_of_mapsTo hv h0 isCompact_univ
       (fun _ _ ↦ mem_univ _)]
   exact isMIntegralCurveOn_maximalIntegralCurve hv
+
+/-- On a compact boundaryless manifold, the maximal integral curve of a `C^1` vector field through
+any point is defined for all time. -/
+theorem maximalIntegralCurveInterval_eq_univ_of_compactSpace [CompleteSpace E] [CompactSpace M]
+    (hv : CMDiff 1 (fun y ↦ (⟨y, v y⟩ : TangentBundle I M))) :
+    maximalIntegralCurveInterval v x = univ :=
+  maximalIntegralCurveInterval_eq_univ_of_isCompact_of_mapsTo hv
+    (zero_mem_maximalIntegralCurveInterval hv.contMDiffAt) isCompact_univ fun _ _ ↦ mem_univ _
 
 /-- The maximal interval of existence is all of `ℝ` exactly when a global integral curve of `v`
 passes through `x` at time `0`. This is the form in which completeness of the field at a point is

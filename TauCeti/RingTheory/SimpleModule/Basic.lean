@@ -9,12 +9,16 @@ public import Mathlib.Algebra.Module.Torsion.Basic
 public import Mathlib.RingTheory.SimpleModule.Basic
 
 /-!
-# Semisimple modules: binary products and endomorphisms between elements
+# Simple and semisimple modules: multiplication by `n`, products and endomorphisms
 
 Mathlib closes `IsSemisimpleModule` under submodules, quotients, `Finsupp`, and finite dependent
 products `Π i, M i`. The dependent product covers a binary product only when both factors lie in
 the same universe, since the family `M : ι → Type u` is universe-monomorphic; this file supplies
 the binary case with the two factors in unrelated universes.
+
+For a **simple** module it records that multiplication by a natural number is all-or-nothing:
+multiplication by `n` is the `R`-linear endomorphism `n • LinearMap.id`, so its kernel is an
+`R`-submodule, hence `⊥` or `⊤`, and `n` either kills no nonzero element or kills every element.
 
 It also records which elements of a semisimple module an endomorphism can connect: some
 `R`-linear endomorphism sends `w` to `x` exactly when every scalar killing `w` kills `x`. This
@@ -23,6 +27,8 @@ useful in centralizer arguments.
 
 ## Main results
 
+* `TauCeti.forall_nsmul_eq_zero_of_ne_zero_of_nsmul_eq_zero`: in a simple module, a natural number
+  killing one nonzero element kills every element.
 * `TauCeti.IsSemisimpleModule.prod`: a product of two semisimple modules is semisimple.
 * `TauCeti.IsSemisimpleModule.exists_end_apply_eq_iff`: in a semisimple module, an endomorphism
   sends `w` to `x` if and only if the torsion ideal of `w` is contained in that of `x`.
@@ -33,6 +39,26 @@ public section
 namespace TauCeti
 
 variable {R M N : Type*} [Ring R] [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
+
+section SimpleModule
+
+/-- **In a simple module a natural number that kills one nonzero element kills every element.**
+Multiplication by `n` is the `R`-linear endomorphism `n • LinearMap.id`, so its kernel is an
+`R`-submodule; a nonzero element of that kernel keeps it from being `⊥`, and in a simple module it
+is then `⊤`. -/
+theorem forall_nsmul_eq_zero_of_ne_zero_of_nsmul_eq_zero [IsSimpleModule R M] {n : ℕ} {m₀ : M}
+    (hm₀ : m₀ ≠ 0) (h : n • m₀ = 0) (m : M) : n • m = 0 := by
+  -- Membership in that kernel, read without the `ℕ`-action on linear maps.
+  have hmem : ∀ x : M, x ∈ LinearMap.ker (n • (LinearMap.id : M →ₗ[R] M)) ↔ n • x = 0 := fun x ↦ by
+    simp only [LinearMap.mem_ker, LinearMap.smul_apply, LinearMap.id_apply]
+  have hne : LinearMap.ker (n • (LinearMap.id : M →ₗ[R] M)) ≠ ⊥ := by
+    intro hbot
+    exact hm₀ ((Submodule.mem_bot R).mp (hbot ▸ (hmem m₀).mpr h))
+  have htop : LinearMap.ker (n • (LinearMap.id : M →ₗ[R] M)) = ⊤ :=
+    (eq_bot_or_eq_top _).resolve_left hne
+  exact (hmem m).mp (htop ▸ Submodule.mem_top)
+
+end SimpleModule
 
 /-- **A product of two semisimple modules is semisimple.** -/
 instance IsSemisimpleModule.prod [IsSemisimpleModule R M] [IsSemisimpleModule R N] :

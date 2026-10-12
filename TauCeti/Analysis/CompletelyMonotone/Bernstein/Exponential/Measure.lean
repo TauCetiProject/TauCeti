@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.CompletelyMonotone.Bernstein.HausdorffBernsteinWidder
-public import TauCeti.Probability.Distributions.Exponential
+public import TauCeti.Probability.Distributions.Exponential.Basic
 
 /-!
 # Exponential measures as Bernstein representing measures
@@ -20,10 +20,10 @@ This gives a continuous, non-atomic example of Bernstein's theorem: at unit rate
 `t ↦ 1 / (1 + t)` is represented by the measure with density `e⁻ˣ` on `[0, ∞)`.  Unlike the
 Dirac examples, this exercises a genuinely continuous representing measure.
 
-The measure is defined in `TauCeti.Probability.Distributions.Exponential` by pushing Mathlib's
-`ProbabilityTheory.expMeasure` forward along `Real.toNNReal`.  A positive-rate exponential random
-variable is nonnegative almost surely, so this transport retains the law and turns its
-moment-generating-function formula into the required Laplace-transform formula.
+The measure is defined in `TauCeti.Probability.Distributions.Exponential.Basic` by pushing
+Mathlib's `ProbabilityTheory.expMeasure` forward along `Real.toNNReal`.  A positive-rate
+exponential random variable is nonnegative almost surely, so this transport retains the law and
+turns its moment-generating-function formula into the required Laplace-transform formula.
 
 ## Main declarations
 

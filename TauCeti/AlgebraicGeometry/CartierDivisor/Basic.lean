@@ -34,10 +34,9 @@ unit.
 * `Scheme.principalCartierDivisor` sends a nonzero rational function to its principal Cartier
   divisor, the case of the whole space.
 
-This advances `TauCetiRoadmap/JacobianChallenge/README.md`, Layer A, item "Cartier divisors; the
-dictionaries `Cartier ≃ line bundles` and (smooth curve) `Weil ≃ Cartier`". The rational-function
-sheaf was constructed in `TauCeti/AlgebraicGeometry/Modules/RationalFunctions.lean`; the next step
-is to construct `𝒪_X(D)` from a Cartier divisor and prove the Cartier--line-bundle dictionary.
+The rational-function sheaf is constructed in
+`TauCeti/AlgebraicGeometry/Modules/RationalFunctions.lean`; the line bundle `𝒪_X(D)` of a Cartier
+divisor is constructed in `TauCeti/AlgebraicGeometry/CartierDivisor/Sheaf.lean`.
 
 The definition follows the Stacks Project, *Divisors* (Tag 02AR). No formalization is vendored.
 The sheaf quotient is Mathlib's categorical cokernel in the abelian category of sheaves of
@@ -299,6 +298,13 @@ def principalCartierDivisorAddHom : Additive X.functionFieldˣ →+ CartierDivis
 def principalCartierDivisor (f : X.functionFieldˣ) : CartierDivisor X :=
   principalCartierDivisorAddHom X (Additive.ofMul f)
 
+/-- The principal-divisor homomorphism sends an additively written rational unit to its
+principal Cartier divisor. -/
+@[simp]
+lemma principalCartierDivisorAddHom_apply (f : Additive X.functionFieldˣ) :
+    principalCartierDivisorAddHom X f = principalCartierDivisor X f.toMul :=
+  (rfl)
+
 /-- The principal Cartier divisor of one is zero. -/
 @[simp]
 lemma principalCartierDivisor_one : principalCartierDivisor X 1 = 0 :=
@@ -328,7 +334,6 @@ lemma principalCartierDivisor_regularUnitToFunctionField
 
 /-- Restricting a principal Cartier divisor to a nonempty open subset gives the class of the same
 rational function there: a principal divisor has a global equation. -/
-@[simp]
 lemma principalCartierDivisorAddHom_restrict (g : Additive X.functionFieldˣ) (U : X.Opens)
     [Nonempty U] :
     (principalCartierDivisorAddHom X g) |_ U = rationalUnitClass X U g :=

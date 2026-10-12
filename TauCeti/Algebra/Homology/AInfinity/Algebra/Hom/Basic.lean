@@ -246,6 +246,14 @@ noncomputable def linearPart (f : AInfinityHom AA BB) : A →ₗ[R] B :=
 theorem linearPart_apply (f : AInfinityHom AA BB) (a : A) :
     f.linearPart a = f.taylor (ReducedTensorWords.ofLetter R A a) := (rfl)
 
+/-- The linear part of an `A∞` morphism is the arity-one component of its bar map. -/
+theorem letter_comp_barMap_comp_ofLetter (f : AInfinityHom AA BB) :
+    ReducedTensorWords.letter R B ∘ₗ f.barMap ∘ₗ ReducedTensorWords.ofLetter R A =
+      f.linearPart := by
+  ext a
+  rw [linearPart_apply, taylor_def, LinearMap.comp_apply, LinearMap.comp_apply,
+    LinearMap.comp_apply]
+
 /-- The bar map sends a single letter to the single letter given by the linear part. -/
 @[simp]
 theorem barMap_ofLetter (f : AInfinityHom AA BB) (a : A) :

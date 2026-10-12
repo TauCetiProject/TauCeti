@@ -24,6 +24,8 @@ functors.
 
 * `TauCeti.CommHopfAlgCat.mapPointsFunctor_app_eq_one_iff`: the points-level kernel
   property.
+* `TauCeti.CommHopfAlgCat.quotientPointsSubgroup_kernelHopfIdeal_eq_ker_mapPointsFunctor`: the
+  same property as an equality of subgroups of points.
 -/
 
 public section
@@ -71,6 +73,16 @@ theorem mapPointsFunctor_app_eq_one_iff (f : H ⟶ K) (A : CommAlgCat.{w} R)
     ext a
     simp only [AlgHom.comp_apply, Algebra.ofId_apply, Bialgebra.counitAlgHom_apply]
     exact (AlgHom.convOne_apply a).symm
+
+/-- For every commutative `R`-algebra `A`, the subgroup of `A`-points cut out by the kernel Hopf
+ideal of `f` is the kernel of the induced map on `A`-points. -/
+theorem quotientPointsSubgroup_kernelHopfIdeal_eq_ker_mapPointsFunctor (f : H ⟶ K)
+    (A : CommAlgCat.{w} R) :
+    quotientPointsSubgroup K (kernelHopfIdeal f) A = ((mapPointsFunctor f).app A).hom.ker := by
+  ext g
+  -- Kernel membership is stated on the functor-object type of points, which is only
+  -- definitionally equal to `HopfAlgebra.points`; `MonoidHom.mem_ker` cannot be rewritten here.
+  exact (mapPointsFunctor_app_eq_one_iff f A g).symm
 
 end CommHopfAlgCat
 

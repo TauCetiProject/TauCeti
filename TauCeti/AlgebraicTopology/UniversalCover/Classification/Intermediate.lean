@@ -81,7 +81,7 @@ theorem _root_.IsCoveringMap.exists_isCoveringMap_comp_eq_iff_range_le [LocallyC
 
 namespace UniversalCover
 
-variable [LocallyPathConnectedSpace X] [PathConnectedSpace X] [SemilocallySimplyConnectedSpace X]
+variable [LocallyPathConnectedSpace X] [SemilocallySimplyConnectedSpace X]
 
 /-- **The universal cover covers any nonempty covering space of `X` after choosing points in a
 common fibre**, by a covering map over `X` matching those points.

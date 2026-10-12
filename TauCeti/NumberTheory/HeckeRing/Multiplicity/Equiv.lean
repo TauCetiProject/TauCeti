@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.HeckeRing.Associativity
 
+import TauCeti.GroupTheory.Coset.Basic
 import TauCeti.NumberTheory.HeckeRing.StabConjugation
 
 /-!
@@ -95,39 +96,25 @@ equivalence, without any finiteness hypothesis. -/
   let eh := decompQuotientEquivMap e H₂ H₃ h
   let c : DecompQuotient H₁ H₂ g → H₂.map (e : G →* K) := fun i ↦
     ⟨((e : G →* K) g)⁻¹ * (((eg i).out : K)⁻¹ * (e : G →* K) (i.out : G)) *
-      (e : G →* K) g,
-      decompQuotientEquivMap_out e H₁ H₂ g i⟩
+      (e : G →* K) g, decompQuotientEquivMap_out e H₁ H₂ g i⟩
   -- Transporting the first representative introduces the middle-subgroup correction `c i`.
   -- Shearing the transported second quotient by it matches the full defining fibres directly.
   let epairs := Equiv.prodShear eg fun i ↦ eh.trans (MulAction.toPerm (c i))
   rw [multiplicity_def, multiplicity_def]
   symm
-  refine Nat.card_congr (Equiv.subtypeEquiv epairs fun p ↦ ?_)
-  obtain ⟨i, j⟩ := p
-  simp only [Set.mem_ofPred_eq]
+  refine Nat.card_congr (Equiv.subtypeEquiv epairs fun ⟨i, j⟩ ↦ ?_)
   let q := c i • eh j
-  have hq : (QuotientGroup.mk q.out : DecompQuotient (H₂.map (e : G →* K))
-      (H₃.map (e : G →* K)) (e h)) =
-      QuotientGroup.mk (c i * (eh j).out) := by
-    calc
-      _ = q := QuotientGroup.out_eq' q
-      _ = c i • eh j := rfl
-      _ = c i • QuotientGroup.mk (eh j).out :=
-        congrArg (c i • ·) (QuotientGroup.out_eq' (eh j)).symm
-      _ = _ := by
-        rw [MulAction.Quotient.smul_mk, smul_eq_mul]
-  have hqmem := conj_mem_of_mk_eq ((e : G →* K) h) hq
-  have hjmem := decompQuotientEquivMap_out e H₂ H₃ h j
   have hprod :
       (((eg i).out : K) * (e : G →* K) g * ((q.out : K) * (e : G →* K) h) :
           K ⧸ (H₃.map (e : G →* K))) =
         ((e : G →* K) ((i.out : G) * g * ((j.out : G) * h)) :
           K ⧸ (H₃.map (e : G →* K))) := by
     rw [QuotientGroup.eq]
-    have hm := (H₃.map (e : G →* K)).mul_mem hqmem hjmem
+    have hm := (H₃.map (e : G →* K)).mul_mem
+      (conj_mem_of_mk_eq ((e : G →* K) h) (QuotientGroup.mk_out_smul (c i) (eh j)))
+      (decompQuotientEquivMap_out e H₂ H₃ h j)
     dsimp only [q, c, eh, Subtype.coe_mk] at hm ⊢
-    simp only [Subgroup.coe_mul, map_mul, mul_inv_rev] at hm ⊢
-    simpa only [mul_assoc, mul_inv_cancel_left] using hm
+    simpa only [Subgroup.coe_mul, map_mul, mul_inv_rev, mul_assoc, mul_inv_cancel_left] using hm
   -- Unfold only the pair equivalence so its second component is the named quotient `q` above.
   dsimp only [epairs, Equiv.prodShear_apply, Equiv.trans_apply, MulAction.toPerm_apply]
   change
@@ -135,11 +122,8 @@ equivalence, without any finiteness hypothesis. -/
       ((((eg i).out : K) * (e : G →* K) g * ((q.out : K) * (e : G →* K) h) :
           K ⧸ (H₃.map (e : G →* K))) =
         ((e : G →* K) d : K ⧸ (H₃.map (e : G →* K))))
-  rw [hprod, QuotientGroup.eq, QuotientGroup.eq]
-  convert
-    (Subgroup.mem_map_iff_mem (f := (e : G →* K)) (K := H₃) e.injective
-      (x := ((i.out : G) * g * ((j.out : G) * h))⁻¹ * d)).symm using 1
-  all_goals simp only [map_inv, map_mul]
+  rw [hprod, QuotientGroup.eq, QuotientGroup.eq, ← map_inv, ← map_mul,
+    Subgroup.mem_map_iff_mem (f := (e : G →* K)) e.injective]
 
 /-- Shimura's multiplicity depends on its second input only through its double coset, without
 any finiteness or Hecke-triple hypothesis. -/

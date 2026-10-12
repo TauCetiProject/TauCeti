@@ -12,7 +12,7 @@ public import TauCeti.RingTheory.Polynomial.Resultant.Discriminant
 import TauCeti.Algebra.Squarefree
 
 /-!
-# Polynomials of degree three and four
+# Polynomials of small degree
 
 Splitting criteria for low-degree polynomials and a separability criterion, all read off the
 coefficients.
@@ -25,10 +25,16 @@ coefficients.
   separable split polynomial of degree at least two has two distinct roots.
 * An irreducible polynomial is separable as soon as its degree is nonzero in the coefficient
   field, which for a quartic is exactly what characteristic `≠ 2` gives.
+* A monic quadratic `X² + aX + b` divides a depressed quartic `X⁴ + pX² + qX + r` exactly when
+  the two coefficients of the remainder of the division vanish. Over `ℤ` this reduces the search
+  for a quadratic factor of an explicit quartic to two Diophantine equations, which a reduction
+  modulo a small prime can rule out. The analogous criterion for `X⁵ + cX + d` supports
+  finite-field irreducibility tests for quintics: in degree at most five a polynomial with no
+  root and no monic quadratic factor is irreducible.
 
 Together these turn the single test "the resolvent cubic of a quartic has a root in the base
 field" into the classical resolvent conditions — irreducible, splits completely, exactly one root
-— used by the quartic label table of `TauCeti.FieldTheory.GaloisGroups.Quartic`.
+— used by the quartic label table of `TauCeti.FieldTheory.GaloisGroups.Quartic.Basic`.
 
 ## Main results
 
@@ -39,6 +45,13 @@ field" into the classical resolvent conditions — irreducible, splits completel
   `Polynomial.splits_iff_isSquare_discr_of_natDegree_eq_three_of_isRoot`
 * `Polynomial.Splits.of_natDegree_eq_three_of_isRoot_of_isRoot_of_ne` and
   `Polynomial.Splits.exists_isRoot_ne`
+* `Polynomial.X_sq_add_C_mul_X_add_C_dvd_X_pow_four_add_iff`: when a monic quadratic divides a
+  depressed quartic, by explicit division with remainder
+* `Polynomial.X_sq_add_C_mul_X_add_C_dvd_X_pow_five_add_iff`: when a monic quadratic divides
+  `X⁵ + cX + d`
+* `Polynomial.Monic.irreducible_of_degree_le_five_of_not_isRoot_of_not_quadratic_dvd` and
+  `Polynomial.irreducible_X_pow_five_add_C_mul_X_add_C`: irreducibility in degree at most five
+  from the absence of linear and monic quadratic factors
 -/
 
 public section
@@ -46,6 +59,26 @@ public section
 open Polynomial
 
 namespace Polynomial
+
+section CommRing
+
+variable {R : Type*} [CommRing R]
+
+/-- A cubic with a root `a` over a commutative ring is `(X - a)` times a quadratic. -/
+theorem exists_natDegree_eq_two_of_natDegree_eq_three_of_isRoot {g : R[X]}
+    (hdeg : g.natDegree = 3) {a : R} (ha : g.IsRoot a) :
+    ∃ q : R[X], q.natDegree = 2 ∧ g = (X - C a) * q := by
+  obtain ⟨q, hq⟩ := dvd_iff_isRoot.2 ha
+  have hg0 : g ≠ 0 := fun h0 => by simp [h0] at hdeg
+  have := Nontrivial.of_polynomial_ne hg0
+  have hq0 : q ≠ 0 := right_ne_zero_of_mul (hq ▸ hg0)
+  refine ⟨q, ?_, hq⟩
+  rw [hq, (monic_X_sub_C a).natDegree_mul' hq0, natDegree_X_sub_C] at hdeg
+  omega
+
+end CommRing
+
+section Field
 
 variable {F : Type*} [Field F]
 
@@ -71,21 +104,6 @@ theorem separable_of_irreducible_of_natDegree_eq_four {f : F[X]} (hchar : ringCh
   have hfour : ((4 : ℕ) : F) = 2 * 2 := by norm_num
   rw [hdeg, hfour]
   exact mul_ne_zero htwo htwo
-
-/-- A cubic with a root `a` in its coefficient field is `(X - a)` times a quadratic. This is the
-one factorization step shared by the two splitting criteria below. -/
-theorem exists_natDegree_eq_two_of_natDegree_eq_three_of_isRoot {g : F[X]}
-    (hdeg : g.natDegree = 3) {a : F} (ha : g.IsRoot a) :
-    ∃ q : F[X], q.natDegree = 2 ∧ g = (X - C a) * q := by
-  obtain ⟨q, hq⟩ := dvd_iff_isRoot.2 ha
-  have hg0 : g ≠ 0 := fun h0 => by simp [h0] at hdeg
-  have hq0 : q ≠ 0 := by
-    rintro rfl
-    rw [mul_zero] at hq
-    exact hg0 hq
-  refine ⟨q, ?_, hq⟩
-  rw [hq, natDegree_mul (X_sub_C_ne_zero a) hq0, natDegree_X_sub_C] at hdeg
-  omega
 
 /-- Away from characteristic two, a quadratic splits over its coefficient field exactly when its
 discriminant is a square. This is `Polynomial.splits_quadratic_iff_isSquare` read on `discr`
@@ -200,5 +218,134 @@ theorem Splits.exists_isRoot_ne {g : F[X]} (hsplit : g.Splits) (hsep : g.Separab
   by_cases hxa : (x : F) = a
   · exact ⟨y, hroot y, fun hya => hxy (Subtype.ext (hxa.trans hya.symm))⟩
   · exact ⟨x, hroot x, hxa⟩
+
+end Field
+
+section CommRing
+
+variable {R : Type*} [CommRing R]
+
+/-- **Division of a depressed quartic by a monic quadratic.** The monic quadratic `X² + aX + b`
+divides the depressed quartic `X⁴ + pX² + qX + r` exactly when the linear remainder of the
+division vanishes, that is when `q = a³ - 2ab + ap` and `r = a²b - b² + bp`. The quotient is
+`X² - aX + (a² - b + p)`. Over the zero ring both sides hold trivially. -/
+theorem X_sq_add_C_mul_X_add_C_dvd_X_pow_four_add_iff (a b p q r : R) :
+    X ^ 2 + C a * X + C b ∣ X ^ 4 + C p * X ^ 2 + C q * X + C r ↔
+      q = a ^ 3 - 2 * a * b + a * p ∧ r = a ^ 2 * b - b ^ 2 + b * p := by
+  rcases subsingleton_or_nontrivial R with _ | _
+  · exact iff_of_true ⟨1, Subsingleton.elim _ _⟩ ⟨Subsingleton.elim _ _, Subsingleton.elim _ _⟩
+  have hdiv : (X ^ 4 + C p * X ^ 2 + C q * X + C r : R[X]) =
+      (X ^ 2 + C a * X + C b) * (X ^ 2 - C a * X + C (a ^ 2 - b + p)) +
+        (C (q - a ^ 3 + 2 * a * b - a * p) * X + C (r - a ^ 2 * b + b ^ 2 - b * p)) := by
+    simp only [map_sub, map_add, map_mul, map_pow, map_ofNat]
+    ring
+  constructor
+  · intro hdvd
+    have hrem : X ^ 2 + C a * X + C b ∣
+        C (q - a ^ 3 + 2 * a * b - a * p) * X + C (r - a ^ 2 * b + b ^ 2 - b * p) := by
+      have := dvd_sub hdvd
+        (dvd_mul_right (X ^ 2 + C a * X + C b) (X ^ 2 - C a * X + C (a ^ 2 - b + p)))
+      rwa [hdiv, add_sub_cancel_left] at this
+    have hmonic : (X ^ 2 + C a * X + C b : R[X]).Monic := by monicity!
+    have hzero :
+        C (q - a ^ 3 + 2 * a * b - a * p) * X + C (r - a ^ 2 * b + b ^ 2 - b * p) = 0 := by
+      by_contra hne
+      refine hmonic.not_dvd_of_natDegree_lt hne ?_ hrem
+      calc (C (q - a ^ 3 + 2 * a * b - a * p) * X + C (r - a ^ 2 * b + b ^ 2 - b * p)).natDegree
+          ≤ 1 := by compute_degree
+        _ < 2 := one_lt_two
+        _ = (X ^ 2 + C a * X + C b : R[X]).natDegree := by symm; compute_degree!
+    have h1 := congrArg (fun g : R[X] => g.coeff 1) hzero
+    have h0 := congrArg (fun g : R[X] => g.coeff 0) hzero
+    simp only [coeff_add, coeff_C_mul_X, coeff_C, coeff_zero, one_ne_zero, zero_ne_one,
+      ite_true, ite_false, add_zero, zero_add] at h1 h0
+    exact ⟨by linear_combination h1, by linear_combination h0⟩
+  · rintro ⟨hq, hr⟩
+    refine ⟨X ^ 2 - C a * X + C (a ^ 2 - b + p), ?_⟩
+    have hc1 : q - a ^ 3 + 2 * a * b - a * p = 0 := by rw [hq]; ring
+    have hc0 : r - a ^ 2 * b + b ^ 2 - b * p = 0 := by rw [hr]; ring
+    rw [hdiv, hc1, hc0, C_0, zero_mul, zero_add, add_zero]
+
+/-- A monic quadratic `X² + aX + b` divides `X⁵ + cX + d` exactly when
+`a⁴ - 3a²b + b² + c = 0` and `a³b - 2ab² + d = 0`. This holds over any commutative ring. -/
+theorem X_sq_add_C_mul_X_add_C_dvd_X_pow_five_add_iff (a b c d : R) :
+    X ^ 2 + C a * X + C b ∣ X ^ 5 + C c * X + C d ↔
+      a ^ 4 - 3 * a ^ 2 * b + b ^ 2 + c = 0 ∧ a ^ 3 * b - 2 * a * b ^ 2 + d = 0 := by
+  rcases subsingleton_or_nontrivial R with _ | _
+  · exact iff_of_true ⟨1, Subsingleton.elim _ _⟩ ⟨Subsingleton.elim _ _, Subsingleton.elim _ _⟩
+  -- Extracted from `Polynomial.irreducible_X_pow_five_sub_X_sub_one_zmod_five`.
+  let quotient : R[X] :=
+    X ^ 3 - C a * X ^ 2 + C (a ^ 2 - b) * X + C (-a ^ 3 + 2 * a * b)
+  let remainder : R[X] :=
+    C (a ^ 4 - 3 * a ^ 2 * b + b ^ 2 + c) * X + C (a ^ 3 * b - 2 * a * b ^ 2 + d)
+  have hdivision : X ^ 5 + C c * X + C d =
+      (X ^ 2 + C a * X + C b) * quotient + remainder := by
+    simp only [quotient, remainder, map_add, map_sub, map_mul, map_pow, map_neg, map_ofNat]
+    ring
+  constructor
+  · intro hdvd
+    have hrem : X ^ 2 + C a * X + C b ∣ remainder := by
+      rw [hdivision] at hdvd
+      exact (dvd_add_right (dvd_mul_right _ quotient)).mp hdvd
+    have hmonic : (X ^ 2 + C a * X + C b : R[X]).Monic := by monicity!
+    have hdeg : (X ^ 2 + C a * X + C b : R[X]).natDegree = 2 := by compute_degree!
+    have hremdeg : remainder.natDegree ≤ 1 := by dsimp [remainder]; compute_degree
+    have hzero : remainder = 0 := by
+      by_contra hr
+      exact hmonic.not_dvd_of_natDegree_lt hr (by omega) hrem
+    have h1 := congrArg (fun p : R[X] ↦ p.coeff 1) hzero
+    have h0 := congrArg (fun p : R[X] ↦ p.coeff 0) hzero
+    simpa only [remainder, coeff_add, coeff_C_mul_X, coeff_C, coeff_zero,
+      one_ne_zero, zero_ne_one, ite_true, ite_false, add_zero, zero_add] using And.intro h1 h0
+  · rintro ⟨h1, h0⟩
+    refine ⟨quotient, ?_⟩
+    simpa only [remainder, h1, h0, C_0, zero_mul, zero_add, add_zero] using hdivision
+
+end CommRing
+
+section NoZeroDivisors
+
+variable {R : Type*} [CommRing R] [NoZeroDivisors R]
+
+/-- A monic polynomial of degree between one and five over a commutative ring without zero
+divisors is irreducible as soon as it has no root and no monic quadratic factor: a proper monic
+factor of least degree has degree at most half the degree, so it is linear or quadratic.
+This extends `Polynomial.Monic.irreducible_iff_roots_eq_zero_of_degree_le_three` to degrees four
+and five. -/
+theorem Monic.irreducible_of_degree_le_five_of_not_isRoot_of_not_quadratic_dvd {p : R[X]}
+    (hp : p.Monic) (hdeg : p.natDegree ∈ Finset.Icc 1 5) (hroot : ∀ x, ¬ p.IsRoot x)
+    (hquad : ∀ a b : R, ¬ X ^ 2 + C a * X + C b ∣ p) : Irreducible p := by
+  rw [Finset.mem_Icc] at hdeg
+  have hp1 : p ≠ 1 := by rintro rfl; simp at hdeg
+  rw [hp.irreducible_iff_lt_natDegree_lt hp1]
+  intro q hq hqdeg hdvd
+  rw [Finset.mem_Ioc] at hqdeg
+  obtain hq1 | hq2 : q.natDegree = 1 ∨ q.natDegree = 2 := by omega
+  · rw [hq.eq_X_add_C hq1, ← sub_neg_eq_add, ← C_neg, dvd_iff_isRoot] at hdvd
+    exact hroot _ hdvd
+  · refine hquad (q.coeff 1) (q.coeff 0) ?_
+    have hqeq : q = X ^ 2 + C (q.coeff 1) * X + C (q.coeff 0) := by
+      have h := eq_quadratic_of_degree_le_two (degree_le_of_natDegree_le hq2.le)
+      have hc : q.coeff 2 = 1 := by simpa [hq2] using hq.coeff_natDegree
+      rwa [hc, C_1, one_mul] at h
+    rwa [← hqeq]
+
+/-- The quintic `X⁵ + cX + d` over a commutative ring without zero divisors is irreducible when
+it has no root and no pair `(a, b)` solves the two equations of
+`Polynomial.X_sq_add_C_mul_X_add_C_dvd_X_pow_five_add_iff`, that is, when it has neither a linear
+nor a monic quadratic factor. Over a finite field both conditions are finite checks. -/
+theorem irreducible_X_pow_five_add_C_mul_X_add_C {c d : R}
+    (hroot : ∀ x : R, x ^ 5 + c * x + d ≠ 0)
+    (hquad : ∀ a b : R,
+      ¬ (a ^ 4 - 3 * a ^ 2 * b + b ^ 2 + c = 0 ∧ a ^ 3 * b - 2 * a * b ^ 2 + d = 0)) :
+    Irreducible (X ^ 5 + C c * X + C d : R[X]) := by
+  nontriviality R
+  have hdeg : (X ^ 5 + C c * X + C d : R[X]).natDegree = 5 := by compute_degree!
+  refine Monic.irreducible_of_degree_le_five_of_not_isRoot_of_not_quadratic_dvd (by monicity!)
+    (by rw [hdeg]; decide) (fun x => by simpa using hroot x) fun a b => ?_
+  rw [X_sq_add_C_mul_X_add_C_dvd_X_pow_five_add_iff]
+  exact hquad a b
+
+end NoZeroDivisors
 
 end Polynomial

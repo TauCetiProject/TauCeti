@@ -102,7 +102,7 @@ noncomputable def vertexComponent (v : Q) : Submodule k M :=
 /-- **The defining equation of the vertex component**: it is the piece `eᵥ • (⊤ : Submodule k M)`
 cut out by the vertex idempotent. This is the bridge to the general theory: through it both
 Mathlib's pointwise API and the general lemmas about such a piece —
-`TauCeti.mem_smul_top_iff_smul_eq_self`, `TauCeti.isInternal_smul_top`, … — apply to
+`IsIdempotentElem.mem_smul_top_iff_smul_eq_self`, `TauCeti.isInternal_smul_top`, … — apply to
 `TauCeti.vertexComponent`, without its body being exposed.
 
 Not `@[simp]`: rewriting with it would unfold the abstraction everywhere and take
@@ -117,7 +117,7 @@ variable {k M}
 theorem mem_vertexComponent_iff_smul_eq_self {v : Q} {x : M} :
     x ∈ vertexComponent k M v ↔ (vertexIdempotent k v : pathAlgebra k Q) • x = x := by
   rw [vertexComponent_def]
-  exact mem_smul_top_iff_smul_eq_self (vertexIdempotent_mul_self v)
+  exact IsIdempotentElem.mem_smul_top_iff_smul_eq_self (vertexIdempotent_mul_self v)
 
 /-- The vertex idempotent fixes its own component. -/
 @[simp]

@@ -20,15 +20,18 @@ with real shape `r` and success probability `p`. Its native mass is the Gamma-ex
 `Γ(k + r) / (k! Γ(r)) * p^r * (1 - p)^k`.
 
 The definition is totalized explicitly: the positive family is used for `0 < r` and `0 < p ≤ 1`,
-the boundary `r = 0` is a Dirac mass at zero, and every other parameter value gives the zero
-measure.  The file supplies the normalized measure, its native singleton and support interfaces,
-the exact integrability domain and closed form of its probability-generating function, and the
-additivity of the shape parameter under convolution.
+the boundaries `r = 0` and `p = 1` are Dirac masses at zero, and every other parameter value gives
+the zero measure. The file supplies the normalized measure, its native singleton and support
+interfaces, the exact integrability domain and closed form of its probability-generating function,
+and the additivity of the shape parameter under convolution.
 
 ## Main results
 
 * `negativeBinomialMeasure_singleton` and `negativeBinomialMeasure_real_singleton` compute the
   native masses;
+* `negativeBinomialMeasure_zero` and
+  `negativeBinomialMeasure_eq_dirac_of_successProbability_eq_one` identify the two Dirac boundary
+  laws;
 * `negativeBinomialMeasure_singleton_ne_zero_iff` characterizes their exact support, including the
   shape-zero and success-probability-one boundary laws;
 * `pgf_negativeBinomialMeasure` computes the probability-generating function on its exact domain;
@@ -145,6 +148,21 @@ theorem negativeBinomialWeightReal_eq_coeff (hr : 0 < r) (k : ℕ) :
     negativeBinomialWeightReal r p k =
       (Ring.multichoose r k : ℝ) * Real.rpow p r * (1 - p) ^ k := by
   rw [negativeBinomialWeightReal_eq_gamma hr.ne' k, gamma_ratio_eq_multichoose hr k]
+
+/-- At success probability one, the negative-binomial law is concentrated at zero. -/
+@[simp]
+theorem negativeBinomialMeasure_eq_dirac_of_successProbability_eq_one {r : ℝ} (hr : 0 ≤ r) :
+    negativeBinomialMeasure r 1 = Measure.dirac 0 := by
+  rcases hr.eq_or_lt with rfl | hr
+  · exact negativeBinomialMeasure_zero zero_lt_one le_rfl
+  rw [negativeBinomialMeasure_eq_sum_dirac hr.le zero_lt_one le_rfl,
+    ← Measure.sum_smul_dirac (Measure.dirac 0)]
+  congr 1
+  funext k
+  by_cases hk : k = 0
+  · subst k
+    simp [negativeBinomialWeight, negativeBinomialWeightReal_eq_coeff hr]
+  · simp [negativeBinomialWeight, negativeBinomialWeightReal_eq_coeff hr, hk, zero_pow hk]
 
 private theorem negativeBinomialWeightReal_nonneg (hr : 0 ≤ r) (hp : 0 ≤ p) (hp1 : p ≤ 1)
     (k : ℕ) : 0 ≤ negativeBinomialWeightReal r p k := by

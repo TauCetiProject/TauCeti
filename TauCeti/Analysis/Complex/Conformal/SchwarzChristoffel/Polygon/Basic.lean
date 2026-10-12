@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Geometry.Polygon.Basic
 public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Boundary
-public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Infinity
+public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Infinity.Basic
 
 /-!
 # The combinatorial polygon of Schwarz--Christoffel boundary values

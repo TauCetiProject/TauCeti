@@ -1,0 +1,342 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.Topology.Algebra.Group.LowerCentralSeries.Closed
+public import TauCeti.Topology.Algebra.Group.LowerCentralSeries.Graded.Basic
+public import TauCeti.Topology.Algebra.Group.Profinite.Limit
+public import TauCeti.Topology.Algebra.Group.Profinite.ProP.FiniteGeneration
+
+/-!
+# The lower `p`-series of a profinite group
+
+The lower `p`-series `λ_k = TauCeti.pLowerCentralSeries p G k` of a topological group is defined
+and studied for arbitrary topological groups in `TauCeti.Topology.Algebra.Group.LowerCentralSeries`.
+This file adds what holds for a profinite group `G` and a prime `p`.
+
+For a profinite group and a prime `p`, the first term `λ_1` is the pro-`p` Frattini subgroup
+`TauCeti.proPFrattini p G`. Primality matters: for `p = 4` and the cyclic group of order two,
+fourth powers and commutators are trivial, so `λ_1` is trivial, while the pro-`4` Frattini
+subgroup is the whole group.
+
+For a topologically finitely generated profinite group and a prime `p`, every `λ_k` is open, hence
+of finite index, and in a topologically finitely generated pro-`p` group the quotients `G ⧸ λ_k`
+are finite `p`-groups; in particular the graded pieces `gr_k(G) = λ_k ⧸ λ_{k+1}` are finite.
+Without finite generation the terms need not be open: an infinite product of copies of `ℤ ⧸ p`
+has `λ_1 = 1`, so `gr_0(G) = G` is infinite.
+
+In a pro-`p` group the series is **cofinal** among the open normal subgroups: every open normal
+subgroup contains some `λ_k`. So the `λ_k` have trivial intersection, and a pro-`p` group is the
+inverse limit of its quotients `G ⧸ λ_k`: a compatible sequence of cosets comes from a unique
+element, and a map into `G` is continuous as soon as its composites with the quotient maps are.
+Cofinality needs no finite generation. With it, the `λ_k` are open, so they form a neighbourhood
+basis of `1` and the quotients `G ⧸ λ_k` are finite `p`-groups; this is what lets two topologically
+finitely generated pro-`p` groups be compared level by level along their lower `p`-series.
+
+A continuous homomorphism between the quotients `G ⧸ λ_{k+1} → H ⧸ λ_{k+1}`, with `H` compact,
+carries the image of `λ_k(G)` into the image of `λ_k(H)`, so it descends to a continuous
+homomorphism `G ⧸ λ_k → H ⧸ λ_k` compatible with the quotient projections; surjectivity descends
+with it. This is the bonding operation of a levelwise comparison along the lower `p`-series.
+
+## Main results
+
+* `ContinuousMonoidHom.pLowerCentralSeriesDesc`: a continuous homomorphism between the quotients
+  by `λ_{k+1}` descends to a continuous homomorphism between the quotients by `λ_k`, compatibly
+  with the quotient projections (`ContinuousMonoidHom.pLowerCentralSeriesDesc_mapOfLE`); the descent
+  of a surjection is surjective.
+* `TauCeti.pLowerCentralSeries_one_eq_proPFrattini`: for a prime `p`, `λ_1` is the pro-`p`
+  Frattini subgroup of a profinite group.
+* `TauCeti.IsProP.surjective_of_forall_inv_mul_mem_pLowerCentralSeries_one`: a continuous
+  endomorphism of a pro-`p` group congruent to the identity modulo `λ_1` is surjective.
+* `TauCeti.IsTopologicallyFinitelyGenerated.isOpen_pLowerCentralSeries`: for a prime `p`, in a
+  topologically finitely generated profinite group every `λ_k` is open, so
+  `TauCeti.IsTopologicallyFinitelyGenerated.finite_quotient_pLowerCentralSeries`,
+  `TauCeti.IsTopologicallyFinitelyGenerated.finite_gradedPiece` and, for a pro-`p` group,
+  `TauCeti.IsProP.isPGroup_quotient_pLowerCentralSeries`.
+* `TauCeti.IsProP.exists_pLowerCentralSeries_le`: in a pro-`p` group every open normal subgroup
+  contains a term of the lower `p`-series, so `TauCeti.IsProP.iInf_pLowerCentralSeries_eq_bot`.
+  Since the closed lower central series lies termwise below it, also
+  `TauCeti.IsProP.iInf_closedLowerCentralSeries_eq_bot`.
+* `TauCeti.IsProP.eq_bot_of_le_pLowerCentralStep`: **Nakayama's lemma**, a subgroup `K` of a
+  pro-`p` group with `K ≤ closure (Kᵖ ⬝ [K, G])` is trivial.
+* `TauCeti.IsProP.le_of_le_topologicalClosure_sup_pLowerCentralStep`: **Nakayama's lemma,
+  relative form**, a subgroup `R` with `R ≤ closure (N ⬝ Rᵖ[R, G])` for a closed normal subgroup `N`
+  satisfies `R ≤ N`.
+* `TauCeti.IsProP.existsUnique_forall_mk_eq_pLowerCentralSeries` and
+  `TauCeti.IsProP.existsUnique_monoidHom_mk'_comp_eq_pLowerCentralSeries`: a pro-`p` group is the
+  inverse limit of its quotients `G ⧸ λ_k`, for elements and for homomorphisms.
+* `TauCeti.IsProP.continuous_iff_forall_continuous_mk_pLowerCentralSeries`: a map into a pro-`p`
+  group is continuous exactly when its composites with the quotient maps `G → G ⧸ λ_k` are.
+* `TauCeti.IsProP.hasAntitoneBasis_nhds_one_pLowerCentralSeries`: in a topologically finitely
+  generated pro-`p` group the lower `p`-series is a neighbourhood basis of `1`.
+* `TauCeti.IsProP.mem_of_forall_mk_mem_map_pLowerCentralSeries`: in a pro-`p` group, membership
+  in a closed subgroup is detected on the quotients `G ⧸ λ_k`.
+
+## References
+
+* L. Ribes and P. Zalesskii, *Profinite Groups*, Section 2.8.
+* J. D. Dixon, M. P. F. du Sautoy, A. Mann and D. Segal, *Analytic pro-`p` groups*, Section 1.2.
+-/
+
+public section
+
+namespace TauCeti
+
+open Subgroup
+open scoped commutatorElement
+
+section Desc
+
+variable {p : ℕ} {G H : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
+  [Group H] [TopologicalSpace H] [IsTopologicalGroup H] [CompactSpace H] {k : ℕ}
+
+/-- **Descent along the lower `p`-series.** A continuous homomorphism between the quotients by
+`λ_{k+1}` of two topological groups, the target compact, carries the image of `λ_k` into the image
+of `λ_k`, hence descends to a continuous homomorphism between the quotients by `λ_k`. Its defining
+equation is `ContinuousMonoidHom.pLowerCentralSeriesDesc_mk`. -/
+noncomputable def _root_.ContinuousMonoidHom.pLowerCentralSeriesDesc
+    (ψ : G ⧸ pLowerCentralSeries p G (k + 1) →ₜ* H ⧸ pLowerCentralSeries p H (k + 1)) :
+    G ⧸ pLowerCentralSeries p G k →ₜ* H ⧸ pLowerCentralSeries p H k :=
+  ContinuousMonoidHom.quotientLift _
+    ((⟨QuotientGroup.mapOfLE (pLowerCentralSeries_succ_le k), QuotientGroup.continuous_mapOfLE _⟩ :
+        H ⧸ pLowerCentralSeries p H (k + 1) →ₜ* H ⧸ pLowerCentralSeries p H k).comp
+      (ψ.comp (ContinuousMonoidHom.quotientMk _))) (by
+    intro g hg
+    -- The class of `g ∈ λ_k(G)` lies in `λ_k(G ⧸ λ_{k+1})`, which `ψ` carries into
+    -- `λ_k(H ⧸ λ_{k+1})`, the image of `λ_k(H)`.
+    -- `H ⧸ λ_{k+1}` is Hausdorff, as `λ_{k+1}(H)` is closed.
+    have hH : IsClosed ((pLowerCentralSeries p H (k + 1) : Subgroup H) : Set H) :=
+      isClosed_pLowerCentralSeries _
+    have h1 : ψ (g : G ⧸ pLowerCentralSeries p G (k + 1)) ∈
+        pLowerCentralSeries p (H ⧸ pLowerCentralSeries p H (k + 1)) k :=
+      ψ.toMonoidHom.map_pLowerCentralSeries_le ψ.continuous k
+        ⟨_, (QuotientGroup.mk' _).map_pLowerCentralSeries_le QuotientGroup.continuous_mk k
+          ⟨g, hg, rfl⟩, rfl⟩
+    rw [← (QuotientGroup.mk' (pLowerCentralSeries p H (k + 1)))
+      |>.map_pLowerCentralSeries_eq_of_surjective QuotientGroup.continuous_mk
+        QuotientGroup.continuous_mk.isClosedMap (QuotientGroup.mk'_surjective _)] at h1
+    obtain ⟨h, hh, hh'⟩ := h1
+    simp only [MonoidHom.mem_ker, ContinuousMonoidHom.coe_toMonoidHom, MonoidHom.coe_ofClass,
+      ContinuousMonoidHom.comp_toFun, ContinuousMonoidHom.quotientMk_apply,
+      ContinuousMonoidHom.coe_mk]
+    rw [← hh', QuotientGroup.mk'_apply, QuotientGroup.mapOfLE_mk, QuotientGroup.eq_one_iff]
+    exact hh)
+
+/-- The descended homomorphism on the class of `g` is the class of `ψ ⟦g⟧`. -/
+@[simp]
+theorem _root_.ContinuousMonoidHom.pLowerCentralSeriesDesc_mk
+    (ψ : G ⧸ pLowerCentralSeries p G (k + 1) →ₜ* H ⧸ pLowerCentralSeries p H (k + 1)) (g : G) :
+    ψ.pLowerCentralSeriesDesc (g : G ⧸ pLowerCentralSeries p G k) =
+      QuotientGroup.mapOfLE (pLowerCentralSeries_succ_le k)
+        (ψ (g : G ⧸ pLowerCentralSeries p G (k + 1))) :=
+  ContinuousMonoidHom.quotientLift_mk _ _ _ g
+
+/-- The descended homomorphism commutes with the quotient projections. -/
+@[simp]
+theorem _root_.ContinuousMonoidHom.pLowerCentralSeriesDesc_mapOfLE
+    (ψ : G ⧸ pLowerCentralSeries p G (k + 1) →ₜ* H ⧸ pLowerCentralSeries p H (k + 1))
+    (x : G ⧸ pLowerCentralSeries p G (k + 1)) :
+    ψ.pLowerCentralSeriesDesc (QuotientGroup.mapOfLE (pLowerCentralSeries_succ_le k) x) =
+      QuotientGroup.mapOfLE (pLowerCentralSeries_succ_le k) (ψ x) := by
+  induction x using QuotientGroup.induction_on with
+  | H g => rw [QuotientGroup.mapOfLE_mk, ContinuousMonoidHom.pLowerCentralSeriesDesc_mk]
+
+/-- The descent of a surjective homomorphism is surjective. -/
+theorem _root_.ContinuousMonoidHom.pLowerCentralSeriesDesc_surjective
+    (ψ : G ⧸ pLowerCentralSeries p G (k + 1) →ₜ* H ⧸ pLowerCentralSeries p H (k + 1))
+    (h : Function.Surjective ψ) : Function.Surjective ψ.pLowerCentralSeriesDesc := by
+  intro y
+  obtain ⟨y', rfl⟩ := QuotientGroup.mapOfLE_surjective (pLowerCentralSeries_succ_le k) y
+  obtain ⟨x, rfl⟩ := h y'
+  exact ⟨_, ψ.pLowerCentralSeriesDesc_mapOfLE x⟩
+
+end Desc
+
+variable {p : ℕ} {G : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
+  [CompactSpace G] [TotallyDisconnectedSpace G]
+
+/-- For a profinite group and a prime `p`, the first term of the lower `p`-series is the pro-`p`
+Frattini subgroup. -/
+theorem pLowerCentralSeries_one_eq_proPFrattini (hp : p.Prime) :
+    pLowerCentralSeries p G 1 = proPFrattini p G := by
+  rw [pLowerCentralSeries_one, proPFrattini_eq_topologicalClosure hp]
+
+/-- **Burnside's criterion modulo `λ_1`.** A continuous endomorphism of a pro-`p` group congruent
+to the identity modulo `λ_1 = Φ` is surjective. -/
+theorem IsProP.surjective_of_forall_inv_mul_mem_pLowerCentralSeries_one [Fact p.Prime]
+    (hG : IsProP p G) {φ : G →* G} (hφ : Continuous φ)
+    (h : ∀ g, g⁻¹ * φ g ∈ pLowerCentralSeries p G 1) : Function.Surjective φ := by
+  rw [pLowerCentralSeries_one_eq_proPFrattini Fact.out] at h
+  exact hG.surjective_of_forall_inv_mul_mem_proPFrattini hφ h
+
+/-- **Openness of the lower `p`-series.** For a prime `p`, in a topologically finitely generated
+profinite group every term of the lower `p`-series is open. -/
+theorem IsTopologicallyFinitelyGenerated.isOpen_pLowerCentralSeries
+    (hG : IsTopologicallyFinitelyGenerated G) (hp : p.Prime) (k : ℕ) :
+    IsOpen (pLowerCentralSeries p G k : Set G) := by
+  induction k with
+  | zero => rw [pLowerCentralSeries_zero, coe_top]; exact isOpen_univ
+  | succ k ih =>
+    let U : OpenSubgroup G := ⟨pLowerCentralSeries p G k, ih⟩
+    have : CompactSpace U.toSubgroup :=
+      isCompact_iff_compactSpace.mp (isClosed_pLowerCentralSeries k).isCompact
+    -- The Frattini subgroup of `λ_k` maps into `λ_{k+1}`.
+    have hle : (proPFrattini p U.toSubgroup).map U.toSubgroup.subtype ≤
+        pLowerCentralSeries p G (k + 1) := by
+      rw [proPFrattini_eq_topologicalClosure hp, pLowerCentralSeries_succ, pLowerCentralStep_def]
+      refine (U.toSubgroup.subtype.map_topologicalClosure_le continuous_subtype_val _).trans
+        (topologicalClosure_mono ?_)
+      rw [Subgroup.map_sup, MonoidHom.map_closure, commutator_def, map_commutator]
+      refine sup_le (le_sup_of_le_left ((Subgroup.closure_le _).mpr ?_))
+        (le_sup_of_le_right (commutator_mono (map_subtype_le _) le_top))
+      rintro _ ⟨_, ⟨x, rfl⟩, rfl⟩
+      exact Subgroup.subset_closure ⟨x, x.2, (Subgroup.coe_pow _ x p).symm⟩
+    exact isOpen_mono hle (hG.isOpen_map_subtype_proPFrattini p U)
+
+/-- For a prime `p`, in a topologically finitely generated profinite group every quotient
+`G ⧸ λ_k` is finite. -/
+theorem IsTopologicallyFinitelyGenerated.finite_quotient_pLowerCentralSeries
+    (hG : IsTopologicallyFinitelyGenerated G) (hp : p.Prime) (k : ℕ) :
+    Finite (G ⧸ pLowerCentralSeries p G k) :=
+  quotient_finite_of_isOpen _ (hG.isOpen_pLowerCentralSeries hp k)
+
+/-- For a prime `p`, in a topologically finitely generated profinite group every graded piece
+`gr_k(G) = λ_k ⧸ λ_{k+1}` of the lower `p`-series is finite. -/
+theorem IsTopologicallyFinitelyGenerated.finite_gradedPiece
+    (hG : IsTopologicallyFinitelyGenerated G) (hp : p.Prime) (k : ℕ) :
+    Finite (gradedPiece p G k) :=
+  have := hG.finite_quotient_pLowerCentralSeries hp (k + 1)
+  Finite.of_injective _ (gradedPieceInclusion_injective k)
+
+/-- For a prime `p`, in a topologically finitely generated pro-`p` group every quotient `G ⧸ λ_k`
+is a finite `p`-group. -/
+theorem IsProP.isPGroup_quotient_pLowerCentralSeries (hG : IsProP p G)
+    (hfg : IsTopologicallyFinitelyGenerated G) (hp : p.Prime) (k : ℕ) :
+    IsPGroup p (G ⧸ pLowerCentralSeries p G k) :=
+  isProP_iff.mp hG ⟨⟨pLowerCentralSeries p G k, hfg.isOpen_pLowerCentralSeries hp k⟩,
+    inferInstance⟩
+
+/-! ### Cofinality of the lower `p`-series in a pro-`p` group -/
+
+open Filter Topology
+
+omit [TotallyDisconnectedSpace G] in
+/-- **Cofinality of the lower `p`-series.** In a compact pro-`p` group every open normal subgroup
+contains a term of the lower `p`-series. No finite generation is needed. -/
+theorem IsProP.exists_pLowerCentralSeries_le (hG : IsProP p G) (hp : p.Prime)
+    (U : OpenNormalSubgroup G) : ∃ k, pLowerCentralSeries p G k ≤ U.toSubgroup := by
+  have := Fact.mk hp
+  obtain ⟨k, hk⟩ := ((isProP_iff.mp hG U).to_subgroup ⊤).exists_pLowerCentralSeries_eq_bot
+  refine ⟨k, ?_⟩
+  rw [← QuotientGroup.ker_mk' U.toSubgroup, ← Subgroup.map_eq_bot_iff,
+    (QuotientGroup.mk' U.toSubgroup).map_pLowerCentralSeries_eq_of_surjective
+      QuotientGroup.continuous_mk QuotientGroup.continuous_mk.isClosedMap
+      (QuotientGroup.mk'_surjective _),
+    pLowerCentralSeries_eq_of_discreteTopology, hk]
+
+/-- In a pro-`p` group the terms of the lower `p`-series have trivial intersection. -/
+theorem IsProP.iInf_pLowerCentralSeries_eq_bot (hG : IsProP p G) (hp : p.Prime) :
+    ⨅ k, pLowerCentralSeries p G k = ⊥ := by
+  refine le_bot_iff.mp ?_
+  rw [← Subgroup.iInf_openNormalSubgroup_eq_bot (G := G)]
+  refine le_iInf fun U ↦ ?_
+  obtain ⟨k, hk⟩ := hG.exists_pLowerCentralSeries_le hp U
+  exact (iInf_le _ k).trans hk
+
+/-- In a pro-`p` group the terms of the closed lower central series have trivial intersection. -/
+theorem IsProP.iInf_closedLowerCentralSeries_eq_bot (hG : IsProP p G) (hp : p.Prime) :
+    ⨅ n, closedLowerCentralSeries G n = ⊥ :=
+  le_bot_iff.mp <| (iInf_mono fun n ↦ closedLowerCentralSeries_le_pLowerCentralSeries p n).trans
+    (hG.iInf_pLowerCentralSeries_eq_bot hp).le
+
+/-- **Nakayama's lemma for pro-`p` groups.** In a profinite pro-`p` group a subgroup `K` with
+`K ≤ closure (Kᵖ ⬝ [K, G])` is trivial: it lies in every term of the lower `p`-series. -/
+theorem IsProP.eq_bot_of_le_pLowerCentralStep (hG : IsProP p G) (hp : p.Prime) {K : Subgroup G}
+    (h : K ≤ pLowerCentralStep p K) : K = ⊥ := by
+  refine le_bot_iff.mp ?_
+  rw [← hG.iInf_pLowerCentralSeries_eq_bot hp]
+  refine le_iInf fun k ↦ ?_
+  induction k with
+  | zero => rw [pLowerCentralSeries_zero]; exact le_top
+  | succ k ih => rw [pLowerCentralSeries_succ]; exact h.trans (pLowerCentralStep_mono ih)
+
+/-- **Nakayama's lemma for pro-`p` groups, relative form.** If a subgroup `R` of a pro-`p` group
+lies in the closure of `N ⬝ Rᵖ[R, G]` for a closed normal subgroup `N`, then `R ≤ N`: the image of
+`R` in `G ⧸ N` is contained in its own `pLowerCentralStep`, hence trivial. -/
+theorem IsProP.le_of_le_topologicalClosure_sup_pLowerCentralStep (hG : IsProP p G) (hp : p.Prime)
+    {R N : Subgroup G} [N.Normal] (hN : IsClosed (N : Set G))
+    (h : R ≤ (N ⊔ pLowerCentralStep p R).topologicalClosure) : R ≤ N := by
+  -- Closedness of `N` makes the quotient `G ⧸ N` profinite, so it is again pro-`p`.
+  have := hN
+  set q : G →* G ⧸ N := QuotientGroup.mk' N
+  have hq : Continuous q := QuotientGroup.continuous_mk
+  have hmap : R.map q ≤ pLowerCentralStep p (R.map q) := by
+    calc R.map q ≤ ((N ⊔ pLowerCentralStep p R).topologicalClosure).map q := map_mono h
+      _ = ((pLowerCentralStep p R).map q).topologicalClosure := by
+        rw [q.map_topologicalClosure hq _ (isClosed_topologicalClosure _).isCompact,
+          Subgroup.map_sup, (Subgroup.map_eq_bot_iff N).mpr (QuotientGroup.ker_mk' N).ge,
+          bot_sup_eq]
+      _ = pLowerCentralStep p (R.map q) := by
+        rw [q.map_pLowerCentralStep_eq_of_surjective hq hq.isClosedMap
+          (QuotientGroup.mk'_surjective N)]
+        exact SetLike.coe_injective
+          (by rw [topologicalClosure_coe, (isClosed_pLowerCentralStep _).closure_eq])
+  have hbot := (hG.quotient N).eq_bot_of_le_pLowerCentralStep hp hmap
+  rwa [Subgroup.map_eq_bot_iff, QuotientGroup.ker_mk'] at hbot
+
+/-- **A pro-`p` group is the inverse limit of its quotients by the lower `p`-series.** A sequence
+of cosets of the `λ_k`, compatible along the quotient maps, is realized by a unique element. -/
+theorem IsProP.existsUnique_forall_mk_eq_pLowerCentralSeries (hG : IsProP p G) (hp : p.Prime)
+    (x : ∀ k, G ⧸ pLowerCentralSeries p G k)
+    (hcompat : ∀ (k : ℕ) (g : G), (g : G ⧸ pLowerCentralSeries p G (k + 1)) = x (k + 1) →
+      (g : G ⧸ pLowerCentralSeries p G k) = x k) :
+    ∃! g : G, ∀ k, (g : G ⧸ pLowerCentralSeries p G k) = x k :=
+  existsUnique_forall_mk_eq_of_iInf_eq_bot isClosed_pLowerCentralSeries
+    (hG.iInf_pLowerCentralSeries_eq_bot hp) x hcompat
+
+/-- **A pro-`p` group is the inverse limit of its quotients by the lower `p`-series, for
+homomorphisms.** A sequence of homomorphisms `H →* G ⧸ λ_k`, compatible along the quotient maps,
+is induced by a unique homomorphism `H →* G`. -/
+theorem IsProP.existsUnique_monoidHom_mk'_comp_eq_pLowerCentralSeries (hG : IsProP p G)
+    (hp : p.Prime) {H : Type*} [MulOneClass H] (x : ∀ k, H →* G ⧸ pLowerCentralSeries p G k)
+    (hx : ∀ k, (QuotientGroup.mapOfLE (pLowerCentralSeries_succ_le k)).comp (x (k + 1)) = x k) :
+    ∃! φ : H →* G, ∀ k, (QuotientGroup.mk' (pLowerCentralSeries p G k)).comp φ = x k :=
+  existsUnique_monoidHom_mk'_comp_eq_of_iInf_eq_bot pLowerCentralSeries_succ_le
+    isClosed_pLowerCentralSeries (hG.iInf_pLowerCentralSeries_eq_bot hp) x hx
+
+/-- **The lower `p`-series is a neighbourhood basis of `1`** in a topologically finitely generated
+pro-`p` group. -/
+theorem IsProP.hasAntitoneBasis_nhds_one_pLowerCentralSeries (hG : IsProP p G)
+    (hfg : IsTopologicallyFinitelyGenerated G) (hp : p.Prime) :
+    (𝓝 (1 : G)).HasAntitoneBasis fun k ↦ (pLowerCentralSeries p G k : Set G) :=
+  hasAntitoneBasis_nhds_one_of_iInf_eq_bot pLowerCentralSeries_antitone
+    (hfg.isOpen_pLowerCentralSeries hp) (hG.iInf_pLowerCentralSeries_eq_bot hp)
+
+/-- **Membership in a closed subgroup is detected on the lower `p`-series.** In a compact pro-`p`
+group, an element whose class modulo every `λ_k` is the class of an element of the closed subgroup
+`H` lies in `H`: it lies in `H ⊔ U` for every open normal subgroup `U`, since `U` contains a term
+of the series, and `H` is the infimum of those. No finite generation is needed. -/
+theorem IsProP.mem_of_forall_mk_mem_map_pLowerCentralSeries (hG : IsProP p G) (hp : p.Prime)
+    {H : Subgroup G} (hH : IsClosed (H : Set G)) {g : G}
+    (h : ∀ k, (g : G ⧸ pLowerCentralSeries p G k) ∈
+      H.map (QuotientGroup.mk' (pLowerCentralSeries p G k))) :
+    g ∈ H := by
+  rw [H.eq_iInf_sup_openNormalSubgroup hH, Subgroup.mem_iInf]
+  intro U
+  obtain ⟨k, hk⟩ := hG.exists_pLowerCentralSeries_le hp U
+  obtain ⟨x, hxH, hx⟩ := Subgroup.mem_map.mp (h k)
+  have := Subgroup.mul_mem_sup hxH (hk (QuotientGroup.eq.mp hx))
+  rwa [mul_inv_cancel_left] at this
+
+/-- A map into a pro-`p` group is continuous exactly when all of its composites with the quotient
+maps `G → G ⧸ λ_k` are. No finite generation is needed. -/
+theorem IsProP.continuous_iff_forall_continuous_mk_pLowerCentralSeries (hG : IsProP p G)
+    (hp : p.Prime) {X : Type*} [TopologicalSpace X] {f : X → G} :
+    Continuous f ↔ ∀ k, Continuous fun x ↦ (f x : G ⧸ pLowerCentralSeries p G k) :=
+  continuous_iff_forall_continuous_mk_of_iInf_eq_bot isClosed_pLowerCentralSeries
+    (hG.iInf_pLowerCentralSeries_eq_bot hp)
+
+end TauCeti

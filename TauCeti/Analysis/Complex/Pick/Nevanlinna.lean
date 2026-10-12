@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.Pick.Basic
+public import TauCeti.Analysis.Complex.UpperHalfPlane.Cayley
 
 /-!
 # Boundary Cayley coordinates and Nevanlinna measure transport
@@ -54,42 +55,6 @@ open Complex MeasureTheory Metric Set
 
 namespace TauCeti
 
-/-- The boundary Cayley map from the real line to the unit circle, sending
-`x` to `(x - i) / (x + i)`. -/
-def boundaryCayley (x : ℝ) : Circle :=
-  ⟨((x : ℂ) - I) / ((x : ℂ) + I), by
-    refine mem_sphere_zero_iff_norm.2 ?_
-    rw [norm_div]
-    have hnorm : ‖(x : ℂ) - I‖ = ‖(x : ℂ) + I‖ := by
-      rw [← sq_eq_sq₀ (norm_nonneg _) (norm_nonneg _), ← normSq_eq_norm_sq,
-        ← normSq_eq_norm_sq]
-      simp [normSq_apply]
-    rw [hnorm]
-    apply div_self
-    rw [norm_ne_zero_iff]
-    intro h
-    have := congrArg im h
-    norm_num at this⟩
-
-/-- The boundary Cayley map as a complex-valued formula. -/
-@[simp]
-theorem coe_boundaryCayley (x : ℝ) :
-    (boundaryCayley x : ℂ) = ((x : ℂ) - I) / ((x : ℂ) + I) :=
-  by rw [boundaryCayley]
-
-/-- The boundary Cayley map never takes the omitted value `1`. -/
-theorem boundaryCayley_ne_one (x : ℝ) : boundaryCayley x ≠ 1 := by
-  intro h
-  have h' := congrArg ((↑) : Circle → ℂ) h
-  simp only [coe_boundaryCayley, Circle.coe_one] at h'
-  have hden : (x : ℂ) + I ≠ 0 := by
-    intro hzero
-    have := congrArg im hzero
-    simp at this
-  rw [div_eq_one_iff_eq hden] at h'
-  have := congrArg im h'
-  norm_num at this
-
 /-- The real coordinate of a point of the circle.  At the omitted point `1` the denominator is
 zero and Lean's totalized division assigns the harmless value `0`; the measure transport below
 first restricts away from that point. -/
@@ -101,7 +66,6 @@ number. -/
 @[simp]
 theorem circleCayleyInv_boundaryCayley (x : ℝ) :
     circleCayleyInv (boundaryCayley x) = x := by
-  have hden : x ^ 2 + 1 ≠ 0 := by positivity
   simp only [circleCayleyInv, coe_boundaryCayley, div_re, div_im, sub_re, sub_im,
     ofReal_re, ofReal_im, I_re, I_im, add_re, add_im, normSq_apply]
   field_simp
@@ -167,9 +131,13 @@ theorem boundaryCayley_circleCayleyInv {z : Circle} (hz : z ≠ 1) :
 /-- The boundary Cayley map is continuous. -/
 @[fun_prop]
 theorem continuous_boundaryCayley : Continuous boundaryCayley := by
-  exact continuous_induced_rng.mpr <| Continuous.div (by fun_prop) (by fun_prop) fun x h ↦ by
-      have := congrArg im h
-      norm_num at this
+  apply continuous_induced_rng.mpr
+  -- The circle's topology is induced by its coercion to `ℂ`, so expose that coercion here.
+  change Continuous (fun x : ℝ => (boundaryCayley x : ℂ))
+  simp_rw [coe_boundaryCayley]
+  exact Continuous.div (by fun_prop) (by fun_prop) fun x h ↦ by
+    have := congrArg im h
+    norm_num at this
 
 /-- The inverse boundary coordinate is measurable on the whole circle. -/
 @[fun_prop]
@@ -250,6 +218,63 @@ theorem integral_circle_eq_atom_add_integral_cayleyPushforward {E : Type*}
 def nevanlinnaKernel (z : ℂ) (x : ℝ) : ℂ :=
   (1 + (x : ℂ) * z) / ((x : ℂ) - z)
 
+/-- The Nevanlinna kernel is the quotient `(1 + x z) / (x - z)`. -/
+theorem nevanlinnaKernel_def (z : ℂ) (x : ℝ) :
+    nevanlinnaKernel z x = (1 + (x : ℂ) * z) / ((x : ℂ) - z) := by
+  rw [nevanlinnaKernel]
+
+/-- The Nevanlinna kernel is measurable in its real variable at every complex parameter. -/
+@[fun_prop]
+theorem measurable_nevanlinnaKernel (z : ℂ) : Measurable (nevanlinnaKernel z) := by
+  unfold nevanlinnaKernel
+  exact (measurable_const.add (Complex.measurable_ofReal.mul_const z)).div
+    (Complex.measurable_ofReal.sub measurable_const)
+
+/-- Away from its pole, the Nevanlinna kernel separates into its affine part and a resolvent. -/
+theorem nevanlinnaKernel_eq_add_div {z : ℂ} {x : ℝ} (h : (x : ℂ) - z ≠ 0) :
+    nevanlinnaKernel z x = z + (1 + z ^ 2) / ((x : ℂ) - z) := by
+  rw [nevanlinnaKernel]
+  field_simp
+  ring
+
+/-- The Nevanlinna kernel is continuous in its complex parameter away from its pole. -/
+theorem continuousAt_nevanlinnaKernel_left {x : ℝ} {z : ℂ} (h : (x : ℂ) ≠ z) :
+    ContinuousAt (fun w => nevanlinnaKernel w x) z := by
+  unfold nevanlinnaKernel
+  exact (continuousAt_const.add (continuousAt_const.mul continuousAt_id)).div
+    (continuousAt_const.sub continuousAt_id) (sub_ne_zero.mpr h)
+
+/-- On the nonpositive real axis, the Nevanlinna kernel is bounded at every parameter with
+positive real part. -/
+theorem norm_nevanlinnaKernel_le_of_nonpos {z : ℂ} {x : ℝ}
+    (hz : 0 < z.re) (hx : x ≤ 0) :
+    ‖nevanlinnaKernel z x‖ ≤ ‖z‖ + (1 + ‖z‖ ^ 2) / z.re := by
+  have hden : z.re ≤ ‖(x : ℂ) - z‖ := by
+    have hre : |x - z.re| ≤ ‖(x : ℂ) - z‖ := by
+      simpa only [sub_re, ofReal_re] using abs_re_le_norm ((x : ℂ) - z)
+    have hneg : x - z.re < 0 := by linarith
+    rw [abs_of_neg hneg] at hre
+    linarith
+  have hden0 : (x : ℂ) - z ≠ 0 := by
+    rw [← norm_pos_iff]
+    exact lt_of_lt_of_le hz hden
+  have hinv : ‖((x : ℂ) - z)⁻¹‖ ≤ (z.re)⁻¹ := by
+    rw [norm_inv]
+    exact inv_anti₀ hz hden
+  rw [nevanlinnaKernel_eq_add_div hden0, div_eq_mul_inv]
+  calc
+    ‖z + (1 + z ^ 2) * ((x : ℂ) - z)⁻¹‖
+        ≤ ‖z‖ + ‖(1 + z ^ 2) * ((x : ℂ) - z)⁻¹‖ := norm_add_le _ _
+    _ = ‖z‖ + ‖1 + z ^ 2‖ * ‖((x : ℂ) - z)⁻¹‖ := by rw [norm_mul]
+    _ ≤ ‖z‖ + (1 + ‖z‖ ^ 2) / z.re := by
+      have hone : ‖1 + z ^ 2‖ ≤ 1 + ‖z‖ ^ 2 := by
+        calc
+          ‖1 + z ^ 2‖ ≤ 1 + ‖z ^ 2‖ := by
+            simpa only [norm_one] using norm_add_le (1 : ℂ) (z ^ 2)
+          _ = _ := by rw [norm_pow]
+      rw [div_eq_mul_inv]
+      gcongr
+
 /-- At a real parameter the Nevanlinna kernel is real. -/
 @[simp]
 theorem nevanlinnaKernel_ofReal (t x : ℝ) :
@@ -329,7 +354,6 @@ theorem norm_nevanlinnaKernel_le {z : ℂ} (hz : z ∈ UpperHalfPlane.upperHalfP
     rw [hW, norm_div, ← hD, ← hE]
     field_simp
   have hWlt : W < 1 := by nlinarith
-  have hWnonneg : (0 : ℝ) ≤ W := norm_nonneg _
   have hzeta : ‖(boundaryCayley x : ℂ)‖ = 1 := Circle.norm_coe _
   have hnum : ‖(boundaryCayley x : ℂ) + (z - I) / (z + I)‖ ≤ 1 + W := by
     calc ‖(boundaryCayley x : ℂ) + (z - I) / (z + I)‖

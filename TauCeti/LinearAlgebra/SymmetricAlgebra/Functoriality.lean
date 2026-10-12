@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.SymmetricAlgebra.Basic
+import Mathlib.LinearAlgebra.Basis.VectorSpace
 
 /-!
 # Functoriality of symmetric algebras
@@ -196,5 +197,18 @@ theorem mapEquiv_trans (e : M ≃ₗ[R] N) (d : N ≃ₗ[R] P) :
       rw [AlgHom.comp_apply]
     _ = map R (d.toLinearMap.comp e.toLinearMap) a := by rw [map_comp_map]
     _ = _ := by rw [LinearEquiv.coe_trans]
+
+end SymmetricAlgebra
+
+namespace SymmetricAlgebra
+
+variable {K : Type u} [Field K] {M : Type v} {N : Type w}
+  [AddCommGroup M] [Module K M] [AddCommGroup N] [Module K N]
+
+/-- An injective linear map over a field induces an injective map of symmetric algebras. -/
+theorem map_injective (f : M →ₗ[K] N) (hf : Function.Injective f) :
+    Function.Injective (map K f) :=
+  map_injective_of_leftInverse K f f.leftInverse
+    (LinearMap.leftInverse_apply_of_inj (LinearMap.ker_eq_bot.mpr hf))
 
 end SymmetricAlgebra

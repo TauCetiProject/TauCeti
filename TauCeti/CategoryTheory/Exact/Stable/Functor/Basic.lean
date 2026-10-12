@@ -110,6 +110,20 @@ noncomputable def stableFunctor {F : Functor C D} [F.Additive]
   E.projectiveStableIdeal.map E'.projectiveStableIdeal F
     (hF.projectiveStableIdeal_le_comap hE)
 
+/-- The stable functor is the map on ideal quotients induced by the original functor. -/
+theorem stableFunctor_eq_map {F : Functor C D} [F.Additive]
+    (hF : StableConflationExact E E' F) (hE : E.IsFrobenius) :
+    hF.stableFunctor hE = E.projectiveStableIdeal.map E'.projectiveStableIdeal F
+      (hF.projectiveStableIdeal_le_comap hE) :=
+  (rfl)
+
+/-- A full stable conflation-exact functor induces a full functor on stable categories. -/
+instance stableFunctor_full {F : Functor C D} [F.Additive] [F.Full]
+    (hF : StableConflationExact E E' F) (hE : E.IsFrobenius) :
+    (hF.stableFunctor hE).Full := by
+  rw [stableFunctor_eq_map]
+  infer_instance
+
 /-- The stable functor applies the original functor on objects from the exact category. -/
 @[simp]
 theorem stableFunctor_obj_projectiveStableFunctor_obj {F : Functor C D} [F.Additive]

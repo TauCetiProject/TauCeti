@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Polynomial.SimpleRoots.Basic
-public import TauCeti.Topology.PiCurry
+public import TauCeti.Topology.PiCurry.Analytic
 import Mathlib.Analysis.Analytic.Constructions
 import Mathlib.Analysis.Analytic.Linear
 
@@ -27,8 +27,9 @@ target regroupings. The assembled statement is
 Thus the blockwise coordinate-change expression used by elementary-symmetric charts is analytic
 at tuples that are multiplicity-free inside every block. At colliding tuples, the polynomial case
 is `TauCeti.Sym.analyticOnNhd_coeffEquiv_map_eval_coeffEquiv_symm` in
-`TauCeti/Analysis/Polynomial/SymmetricPower.lean`; general holomorphic coordinate changes still
-require a direct symmetric-function argument.
+`TauCeti/Analysis/Polynomial/SymmetricPower.lean`. The complex colliding-point case, including
+general holomorphic coordinate changes, is proved separately in
+`TauCeti/Analysis/Polynomial/RootSum/Family.lean`.
 
 This is the multiplicity-free assembly step in Lane F4.1 of the analytic Heegaard Floer roadmap,
 whose first target is the smooth complex structure on `Sym^g(Σ)` from elementary symmetric
@@ -48,35 +49,6 @@ variable {𝕜 : Type*} [RCLike 𝕜] [IsAlgClosed 𝕜]
 variable {ι : Type*} [Finite ι] {m : ι → ℕ} {n : ℕ}
 
 attribute [local instance] Fintype.ofFinite
-
-omit [IsAlgClosed 𝕜] in
-/-- Regrouping a finite family of tuples is analytic. This is kept private because the public
-result below exposes exactly the conjugated coordinate change needed by symmetric-power charts. -/
-private theorem analyticAt_piSigmaConstHomeomorph
-    (e : (Σ i, Fin (m i)) ≃ Fin n) (c : ∀ i, Fin (m i) → 𝕜) :
-    AnalyticAt 𝕜 (piSigmaConstHomeomorph 𝕜 e) c := by
-  refine AnalyticAt.pi fun j => ?_
-  have hblock : AnalyticAt 𝕜 (fun p : (∀ i, Fin (m i) → 𝕜) => p (e.symm j).1) c :=
-    (ContinuousLinearMap.proj (R := 𝕜) (φ := fun i => Fin (m i) → 𝕜)
-      (e.symm j).1).analyticAt c
-  have hcoord : AnalyticAt 𝕜 (fun p : Fin (m (e.symm j).1) → 𝕜 => p (e.symm j).2)
-      (c (e.symm j).1) :=
-    (ContinuousLinearMap.proj (R := 𝕜) (φ := fun _ : Fin (m (e.symm j).1) => 𝕜)
-      (e.symm j).2).analyticAt _
-  convert hcoord.comp hblock using 1
-  ext x
-  exact piSigmaConstHomeomorph_apply 𝕜 e x j
-
-omit [IsAlgClosed 𝕜] in
-/-- The inverse regrouping from one tuple to a finite family of tuples is analytic. -/
-private theorem analyticAt_piSigmaConstHomeomorph_symm
-    (e : (Σ i, Fin (m i)) ≃ Fin n) (c : Fin n → 𝕜) :
-    AnalyticAt 𝕜 (piSigmaConstHomeomorph 𝕜 e).symm c := by
-  refine AnalyticAt.pi fun i => AnalyticAt.pi fun j => ?_
-  convert (ContinuousLinearMap.proj (R := 𝕜) (φ := fun _ : Fin n => 𝕜)
-    (e ⟨i, j⟩)).analyticAt c using 1
-  ext x
-  exact piSigmaConstHomeomorph_symm_apply 𝕜 e x i j
 
 /-- **Coordinate changes on a finite family of multiplicity-free root blocks are analytic.**
 

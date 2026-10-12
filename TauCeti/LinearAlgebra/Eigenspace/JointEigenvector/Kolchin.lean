@@ -58,7 +58,7 @@ private theorem _root_.Representation.exists_common_fixed_vector_of_isUnipotent_
     (ρ : _root_.Representation K G V)
     (hunipotent : ∀ g, IsNilpotent (ρ g - 1)) :
     ∃ v : V, v ≠ 0 ∧ ∀ g, ρ g v = v := by
-  obtain ⟨S, hS, hSirr⟩ := exists_isIrreducible_subrepresentation ρ
+  obtain ⟨S, hS, hSirr⟩ := _root_.Representation.exists_isIrreducible_subrepresentation ρ
   have hSne : S.toSubmodule ≠ ⊥ := fun h ↦
     hS (Subrepresentation.toSubmodule_injective
       (h.trans Subrepresentation.toSubmodule_bot.symm))

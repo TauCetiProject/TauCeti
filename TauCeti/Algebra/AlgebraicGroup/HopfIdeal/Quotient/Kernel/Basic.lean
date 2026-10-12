@@ -109,6 +109,13 @@ theorem kernelHopfIdeal_comp (f : H ⟶ K) {L : _root_.CommHopfAlgCat.{v} R} (g 
   rw [kernelHopfIdeal_def, kernelHopfIdeal_def, _root_.CommHopfAlgCat.hom_comp,
     ← HopfIdeal.map_map]
 
+/-- The kernel of `Spec L → Spec K` is contained in the kernel of `Spec L → Spec H`.
+Hopf ideals reverse the inclusion of closed subgroups. -/
+theorem kernelHopfIdeal_comp_le (f : H ⟶ K) {L : _root_.CommHopfAlgCat.{v} R} (g : K ⟶ L) :
+    kernelHopfIdeal (f ≫ g) ≤ kernelHopfIdeal g := by
+  rw [kernelHopfIdeal_comp, kernelHopfIdeal_def g]
+  exact HopfIdeal.map_mono g.hom (HopfIdeal.le_augmentation R K _)
+
 /-- Precomposing a coordinate morphism with a surjective morphism does not change its kernel
 closed subgroup scheme. -/
 theorem kernelHopfIdeal_comp_of_surjective (f : H ⟶ K)

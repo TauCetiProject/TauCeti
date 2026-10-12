@@ -10,10 +10,11 @@ public import Mathlib.LinearAlgebra.Matrix.Notation
 import Mathlib.Tactic.FinCases
 
 /-!
-# Quaternion symbols with a square second parameter
+# Quaternion symbols with a square parameter
 
-This file constructs the explicit splitting of a quaternion symbol whose second parameter is a
-square. For units `a` and `b` over a commutative ring in which two is invertible, the equivalence
+This file constructs the explicit splitting of a quaternion symbol one of whose parameters is
+a square, starting with the second parameter. For units `a` and `b` over a commutative ring in
+which two is invertible, the equivalence
 
 ```text
 QuaternionAlgebra R a 0 b² ≃ₐ[R] Matrix (Fin 2) (Fin 2) R
@@ -28,10 +29,12 @@ i ↦ !![0, a; 1, 0],   j ↦ !![b, 0; 0, -b].
 The formulas for the equivalence and its inverse are recorded entrywise, so later symbol
 relations can use the splitting without unfolding the quaternion-basis implementation.
 
-## Main definition
+## Main definitions
 
 * `TauCeti.secondSquareEquivMatrix`: the equivalence from the quaternion symbol
   `(a,b²)` to `Matrix (Fin 2) (Fin 2) R` for units `a` and `b`.
+* `TauCeti.firstSquareEquivMatrix`: the same for the symbol `(a²,b)`, obtained by exchanging the
+  two generators.
 
 ## References
 
@@ -216,5 +219,34 @@ theorem secondSquareEquivMatrix_symm_apply (a b : Rˣ) (M : Matrix (Fin 2) (Fin 
   rw [AlgEquiv.apply_symm_apply]
   simpa only [secondSquareEquivMatrix, AlgEquiv.ofBijective_apply,
     secondSquareMatrixInverse] using (secondSquareMatrixInverse_rightInverse a b M).symm
+
+/-- The explicit splitting of the symbol `(a²,b)` as `M₂(R)` for units `a` and `b` over a
+commutative ring in which two is invertible: exchange the two generators with
+`QuaternionAlgebra.swapEquiv` and apply `secondSquareEquivMatrix`. It sends the quaternion
+generators `i` and `j` to `!![a, 0; 0, -a]` and `!![0, b; 1, 0]`, respectively. -/
+noncomputable def firstSquareEquivMatrix (a b : Rˣ) :
+    QuaternionAlgebra R ((a : R) ^ 2) 0 (b : R) ≃ₐ[R] Matrix (Fin 2) (Fin 2) R :=
+  (QuaternionAlgebra.swapEquiv ((a : R) ^ 2) (b : R)).trans (secondSquareEquivMatrix b a)
+
+/-- The first-parameter splitting equivalence on an arbitrary quaternion. -/
+@[simp]
+theorem firstSquareEquivMatrix_apply (a b : Rˣ)
+    (q : QuaternionAlgebra R ((a : R) ^ 2) 0 (b : R)) :
+    firstSquareEquivMatrix a b q =
+      !![q.re + (a : R) * q.imI, (b : R) * q.imJ + (b : R) * (a : R) * q.imK;
+        q.imJ - (a : R) * q.imK, q.re - (a : R) * q.imI] := by
+  simp [firstSquareEquivMatrix, QuaternionAlgebra.swapEquiv, sub_eq_add_neg]
+
+/-- The inverse first-parameter splitting equivalence recovers the four quaternion coordinates
+from the four matrix entries. -/
+@[simp]
+theorem firstSquareEquivMatrix_symm_apply (a b : Rˣ) (M : Matrix (Fin 2) (Fin 2) R) :
+    (firstSquareEquivMatrix a b).symm M =
+      ⟨⅟(2 : R) * (M 0 0 + M 1 1),
+        ⅟(2 : R) * (((a⁻¹ : Rˣ) : R) * (M 0 0 - M 1 1)),
+        ⅟(2 : R) * (((b⁻¹ : Rˣ) : R) * M 0 1 + M 1 0),
+        -(⅟(2 : R) * (((a⁻¹ : Rˣ) : R) * (M 1 0 - ((b⁻¹ : Rˣ) : R) * M 0 1)))⟩ := by
+  rw [firstSquareEquivMatrix, AlgEquiv.symm_trans_apply, secondSquareEquivMatrix_symm_apply]
+  ext <;> simp [QuaternionAlgebra.swapEquiv]
 
 end TauCeti

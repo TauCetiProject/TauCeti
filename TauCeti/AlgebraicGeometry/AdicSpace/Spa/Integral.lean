@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Basic
-public import TauCeti.RingTheory.Huber.Basic
+public import TauCeti.RingTheory.Huber.Pair
 import TauCeti.RingTheory.Huber.Continuous.ValuativeCriterion
 
 /-!
@@ -19,8 +19,8 @@ spectrum — the half proved here is the one that has content.
 
 Of the three conditions making `A⁺` a ring of integral elements, only openness and integral
 closedness in `A` enter, so the statements are made for any open subring `A⁺` integrally closed
-in `A`; for a ring of integral elements `hplus`, the two hypotheses are `hplus.isOpen` and
-`hplus.isIntegrallyClosedIn`.
+in `A`; `TauCeti.Huber.IsRingOfIntegralElements.mem_of_forall_vle_one` reads both hypotheses off a
+ring of integral elements.
 
 ## Where it comes from
 
@@ -41,6 +41,8 @@ Wedhorn 7.18(1) does and what this statement consumes.
 
 * `TauCeti.ValuationSpectrum.mem_of_forall_vle_one` : Proposition 7.52(1), the direction with
   content.
+* `TauCeti.Huber.IsRingOfIntegralElements.mem_of_forall_vle_one` : the same for a ring of
+  integral elements.
 * `TauCeti.ValuationSpectrum.mem_iff_forall_vle_one` : the membership criterion
   `f ∈ A⁺ ↔ ∀ v ∈ Spa(A, A⁺), v(f) ≤ 1`.
 * `TauCeti.ValuationSpectrum.coe_eq_setOf_forall_vle_one` : the same statement as the displayed
@@ -78,6 +80,17 @@ theorem mem_of_forall_vle_one {Aplus : Subring A} (hopen : IsOpen (Aplus : Set A
   Subring.isIntegrallyClosedIn_iff.mp inferInstance
     (isIntegral_of_forall_continuous_valuation_le_one hopen fun v hcont hv ↦
       hf v ((mem_spa_iff Aplus v).mpr ⟨hcont, hv⟩))
+
+/-- **Wedhorn's Proposition 7.52(1)** for a ring of integral elements `A⁺`: an element of `A`
+whose value is at most `1` at every point of `Spa(A, A⁺)` lies in `A⁺`.
+
+`TauCeti.ValuationSpectrum.mem_of_forall_vle_one` states the same for any open subring `A⁺`
+integrally closed in `A`. -/
+theorem _root_.TauCeti.Huber.IsRingOfIntegralElements.mem_of_forall_vle_one {Aplus : Subring A}
+    (h : IsRingOfIntegralElements Aplus) {f : A} (hf : ∀ v ∈ spa Aplus, v.toValuativeRel.vle f 1) :
+    f ∈ Aplus :=
+  have := h.isIntegrallyClosedIn
+  ValuationSpectrum.mem_of_forall_vle_one h.isOpen hf
 
 /-- **Wedhorn's Proposition 7.52(1)** as a membership criterion: `f ∈ A⁺` iff every point of
 `Spa(A, A⁺)` is sub-unit at `f`.

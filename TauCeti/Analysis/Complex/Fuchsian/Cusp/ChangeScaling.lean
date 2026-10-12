@@ -11,7 +11,9 @@ public import TauCeti.Analysis.Complex.Fuchsian.Cusp.Coordinate
 # Changing the scaling of a cusp
 
 Two normalized data at the same cusp have the same positive primitive generator. Their scalings
-are related by `σ' = aσ + b`, with `a > 0`, and their widths satisfy `w' = aw`.
+are related by `σ' = aσ + b`, with `a > 0`, and their widths satisfy `w' = aw`. More generally, if
+an element `k ∈ Γ` carries the cusp of one datum to the cusp of another, then `σ' k σ⁻¹` is such a
+positive real affine transformation.
 Consequently their exponential coordinates differ by the constant
 `exp (2πib / (aw))`, of modulus one. This is the coordinate transition needed to compare cusp
 charts on the upper half-plane.
@@ -55,25 +57,32 @@ theorem cuspDatum_generator_eq (hc : D.cusp = D'.cusp) : D.generator = D'.genera
   have hE : E = D' := Subgroup.CuspDatum.ext hc rfl
   simpa only [E] using congrArg (fun F : Γ.CuspDatum ↦ F.generator) hE
 
-/-- Any two scalings at the same cusp differ by a positive real affine transformation. -/
-theorem cuspDatum_exists_scaling_eq_affine (hc : D.cusp = D'.cusp) :
+/-- If `k ∈ Γ` carries the cusp of `D` to the cusp of `D'`, then `σ' k σ⁻¹` fixes `∞`, so it acts
+on the upper half-plane by a positive real affine transformation. -/
+theorem cuspDatum_exists_scaling_smul_eq_affine {k : Γ} (hk : k • D.cusp = D'.cusp) :
     ∃ a b : ℝ, 0 < a ∧ ∀ z : ℍ,
-      (↑(D'.scaling • z) : ℂ) = a * (↑(D.scaling • z) : ℂ) + b := by
-  have hg : (D'.scaling * D.scaling⁻¹) • (∞ : OnePoint ℝ) = ∞ := by
-    rw [mul_smul, inv_smul_eq_iff.mpr D.scaling_smul_cusp.symm, hc,
-      D'.scaling_smul_cusp]
-  obtain ⟨g, hgeq⟩ := QuotientGroup.mk_surjective (D'.scaling * D.scaling⁻¹)
+      (↑(D'.scaling • k • z) : ℂ) = a * (↑(D.scaling • z) : ℂ) + b := by
+  have hg : (D'.scaling * (k : PSL(2, ℝ)) * D.scaling⁻¹) • (∞ : OnePoint ℝ) = ∞ := by
+    rw [mul_smul, mul_smul, inv_smul_eq_iff.mpr D.scaling_smul_cusp.symm, ← Subgroup.smul_def,
+      hk, D'.scaling_smul_cusp]
+  obtain ⟨g, hgeq⟩ := QuotientGroup.mk_surjective (D'.scaling * (k : PSL(2, ℝ)) * D.scaling⁻¹)
   rw [← hgeq, OnePoint.pslMk_smul, OnePoint.smul_infty_eq_self_iff,
     Matrix.SpecialLinearGroup.coe_GL_coe_matrix] at hg
   -- The affine normal form reuses Mathlib's
   -- `UpperHalfPlane.exists_SL2_smul_eq_of_apply_zero_one_eq_zero`.
   obtain ⟨a, b, hab⟩ := exists_SL2_smul_eq_of_apply_zero_one_eq_zero g hg
   refine ⟨a, b, a.property, fun z ↦ ?_⟩
-  have heq : g • (D.scaling • z) = D'.scaling • z := by
-    rw [← UpperHalfPlane.pslMk_smul, hgeq, mul_smul, inv_smul_smul]
+  have heq : g • (D.scaling • z) = D'.scaling • k • z := by
+    rw [← UpperHalfPlane.pslMk_smul, hgeq, mul_smul, mul_smul, inv_smul_smul, Subgroup.smul_def]
   rw [← heq, congrFun hab]
   simp only [Function.comp_apply, coe_vadd, coe_pos_real_smul, Complex.real_smul]
   ring
+
+/-- Any two scalings at the same cusp differ by a positive real affine transformation. -/
+theorem cuspDatum_exists_scaling_eq_affine (hc : D.cusp = D'.cusp) :
+    ∃ a b : ℝ, 0 < a ∧ ∀ z : ℍ,
+      (↑(D'.scaling • z) : ℂ) = a * (↑(D.scaling • z) : ℂ) + b := by
+  simpa using cuspDatum_exists_scaling_smul_eq_affine (k := (1 : Γ)) (by simpa using hc)
 
 /-- Under `σ' = aσ + b`, the cusp width changes from `w` to `aw`. -/
 theorem cuspDatum_width_eq_mul (hc : D.cusp = D'.cusp) {a b : ℝ}

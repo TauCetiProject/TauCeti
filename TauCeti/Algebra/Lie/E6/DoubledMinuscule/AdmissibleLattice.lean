@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Lie.E6.DoubledMinuscule.Basic
 public import TauCeti.Algebra.Lie.Matrix.IntegralCast
+import TauCeti.Algebra.Lie.Sl2.Basic
 import TauCeti.LinearAlgebra.Matrix.MulVec
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.CoordinateLattice
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.Serre
@@ -34,6 +35,8 @@ contragredient second block and its doubled weight basis.
 * `TauCeti.E6DoubledMinuscule.rationalSerreRepresentation`: the rational doubled minuscule
   representation.
 * `TauCeti.E6DoubledMinuscule.rep`: its universal-enveloping-algebra representation.
+* `TauCeti.E6DoubledMinuscule.isSl2Triple_rep_serreRootGenerator`: the represented generators at
+  every node form an `sl₂` triple.
 * `TauCeti.E6DoubledMinuscule.lattice`: the coordinate `ℤ`-lattice.
 * `TauCeti.E6DoubledMinuscule.rep_serreKostantForm_mem_lattice`: the Serre Kostant form preserves
   the lattice.
@@ -124,6 +127,20 @@ theorem isSerreSystemQ :
     rw [← ad_pow_apply_eq_ad_pow_apply ℤ ℚ]
     exact h.ad_pow_lie_F_F i j
 
+/-- At every node, the rational Cartan, raising, and lowering matrices of the doubled minuscule
+representation form an `sl₂` triple. -/
+theorem isSl2TripleQ (i : Fin 6) :
+    _root_.IsSl2Triple (cartanGeneratorMatrixQ i) (raisingMatrixQ i) (loweringMatrixQ i) := by
+  have hdiag : (CartanMatrix.E 6)ᵀ i i = 2 := by fin_cases i <;> decide
+  refine
+    { h_ne_zero := ?_
+      lie_e_f := isSerreSystemQ.lie_E_F_self i
+      lie_h_e_nsmul := by rw [isSerreSystemQ.lie_H_E i i, hdiag, ofNat_zsmul]
+      lie_h_f_nsmul := by rw [isSerreSystemQ.lie_H_F i i, hdiag, ofNat_zsmul] }
+  obtain ⟨a, ha⟩ := exists_e6MinusculeWeight_apply_eq_neg_one i
+  intro hzero
+  simpa [ha] using congrFun (congrFun hzero (.inl a)) (.inl a)
+
 /-- The rational `54`-dimensional doubled minuscule representation. -/
 noncomputable def rationalSerreRepresentation :
     Matrix.ToLieAlgebra ℚ (CartanMatrix.E 6)ᵀ →ₗ⁅ℚ⁆
@@ -199,6 +216,28 @@ theorem isNilpotent_rep_serreRootGenerator (k : Fin 6 ⊕ Fin 6) :
     IsNilpotent (rep (_root_.UniversalEnvelopingAlgebra.ι ℚ
       (TauCeti.serreRootGenerator (CartanMatrix.E 6)ᵀ k))) :=
   ⟨2, rep_serreRootGenerator_sq k⟩
+
+/-- The represented Cartan, positive, and negative Serre generators at every node form an `sl₂`
+triple. -/
+theorem isSl2Triple_rep_serreRootGenerator (i : Fin 6) :
+    _root_.IsSl2Triple
+      (rep (_root_.UniversalEnvelopingAlgebra.ι ℚ (TauCeti.serreH ℚ (CartanMatrix.E 6)ᵀ i)))
+      (rep (_root_.UniversalEnvelopingAlgebra.ι ℚ
+        (TauCeti.serreRootGenerator (CartanMatrix.E 6)ᵀ (.inl i))))
+      (rep (_root_.UniversalEnvelopingAlgebra.ι ℚ
+        (TauCeti.serreRootGenerator (CartanMatrix.E 6)ᵀ (.inr i)))) := by
+  let toEnd := (Matrix.toLinAlgEquiv' (R := ℚ) (n := Fin 27 ⊕ Fin 27)).toAlgHom.toLieHom
+  have hrep (x : Matrix.ToLieAlgebra ℚ (CartanMatrix.E 6)ᵀ) :
+      rep (_root_.UniversalEnvelopingAlgebra.ι ℚ x) = toEnd (rationalSerreRepresentation x) :=
+    LinearMap.ext fun v ↦ by
+      rw [rep_ι_apply, AlgHom.toLieHom_apply, AlgEquiv.toAlgHom_apply,
+        Matrix.toLinAlgEquiv'_apply]
+  have h := (isSl2TripleQ i).map toEnd fun hz ↦ (isSl2TripleQ i).h_ne_zero
+    (Matrix.toLinAlgEquiv'.injective (hz.trans (map_zero _).symm))
+  rw [TauCeti.serreRootGenerator_inl, TauCeti.serreRootGenerator_inr, hrep, hrep, hrep,
+    rationalSerreRepresentation_serreH, rationalSerreRepresentation_serreE,
+    rationalSerreRepresentation_serreF]
+  exact h
 
 /-! ## The admissible coordinate lattice -/
 

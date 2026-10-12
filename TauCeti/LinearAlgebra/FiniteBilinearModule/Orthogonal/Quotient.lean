@@ -55,6 +55,8 @@ identification.
   computation `|H⊥ / H| · |H|² = |A|`, for a nondegenerate module and an isotropic subgroup.
 * `TauCeti.FiniteBilinearModule.card_orthogonalQuotient_eq_one_iff_isLagrangian`: the quotient of
   an isotropic subgroup is trivial exactly when that subgroup is Lagrangian.
+* `TauCeti.FiniteBilinearModule.subsingleton_orthogonalQuotient_iff_isLagrangian`: the same
+  criterion phrased as `Subsingleton`.
 * `TauCeti.FiniteBilinearModule.Isometry.orthogonalQuotientEquiv`: transport of orthogonal
   quotients along an isometry carrying one subgroup onto another.
 
@@ -253,6 +255,14 @@ theorem card_orthogonalQuotient_eq_one_iff_isLagrangian {H : AddSubgroup A}
   rw [A.card_orthogonalQuotient_eq_one_iff H, A.isLagrangian_def H]
   exact ⟨fun h ↦ le_antisymm ((A.isIsotropic_iff_le_orthogonalComplement H).mp hH) h,
     fun h ↦ h ▸ le_rfl⟩
+
+/-- The orthogonal quotient of an isotropic subgroup is a subsingleton exactly when that subgroup
+is Lagrangian. -/
+theorem subsingleton_orthogonalQuotient_iff_isLagrangian {H : AddSubgroup A}
+    (hH : A.IsIsotropic H) :
+    Subsingleton (A.orthogonalQuotient H) ↔ A.IsLagrangian H := by
+  rw [← A.card_orthogonalQuotient_eq_one_iff_isLagrangian hH, Nat.card_eq_one_iff_unique]
+  exact ⟨fun h ↦ ⟨h, inferInstance⟩, And.left⟩
 
 /-! ## Transport along isometries -/
 

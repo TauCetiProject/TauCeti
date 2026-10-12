@@ -37,6 +37,10 @@ the two marking permutations, hence the sign of the component permutation `𝕏�
 ## Main definitions
 
 * `TauCeti.OddComponentGridDiagram`: a grid diagram with an odd number of link components.
+* `TauCeti.GridDiagram.IsKnot.toOddComponentGridDiagram`: a knot grid has one, hence an odd
+  number of components.
+* `TauCeti.OddComponentGridDiagram.relabelRows`, `TauCeti.OddComponentGridDiagram.relabelColumns`:
+  relabeling keeps the number of link components odd.
 * `TauCeti.OddComponentGridDiagram.alexanderℤ`: the integer Alexander grading.
 * `TauCeti.OddComponentGridDiagram.bidegree`: the (`O`-Maslov, Alexander) degree of a grid state.
 * `TauCeti.OddComponentGridDiagram.alexanderSupport`: the Alexander degrees occupied by grid
@@ -61,12 +65,9 @@ the two marking permutations, hence the sign of the component permutation `𝕏�
 
 ## References
 
-This completes the integer-valuedness and parity portion of
-`TauCetiRoadmap/CombinatorialHeegaardFloer/README.md`, Lane G.2; the rectangle marking-count
-formulas are separate. Integrality of `A` on a knot diagram, and the half-integer shift for an
-even number of components, are from Ozsváth--Stipsicz--Szabó, *Grid Homology for Knots and Links*,
-Chapter 4.3. The Lean proof is adapted to current `main` from the earlier Tau Ceti split-branch
-commit `05c2722248`.
+Integrality of `A` on a knot diagram, and the half-integer shift for an even number of components,
+are from Ozsváth--Stipsicz--Szabó, *Grid Homology for Knots and Links*, Chapter 4.3. The Lean proof
+is adapted from Tau Ceti split-branch commit `05c2722248`.
 -/
 
 public section
@@ -82,18 +83,18 @@ variable {n : ℕ}
 /-- The columns whose marking row is at least `k` split into those at or after `c` and those
 before `c`. -/
 private theorem card_ge_split (y : GridState n) (k c : Fin n) :
-    (Finset.univ.filter fun d : Fin n => c ≤ d ∧ k ≤ y d).card
-        + (Finset.univ.filter fun d : Fin n => d < c ∧ k ≤ y d).card =
-      (Finset.univ.filter fun d : Fin n => k ≤ y d).card := by
+    (Finset.univ.filter fun d : Fin n ↦ c ≤ d ∧ k ≤ y d).card
+        + (Finset.univ.filter fun d : Fin n ↦ d < c ∧ k ≤ y d).card =
+      (Finset.univ.filter fun d : Fin n ↦ k ≤ y d).card := by
   classical
-  have e₁ : (Finset.univ.filter fun d : Fin n => k ≤ y d).filter (fun d => c ≤ d) =
-      Finset.univ.filter fun d : Fin n => c ≤ d ∧ k ≤ y d := by
+  have e₁ : (Finset.univ.filter fun d : Fin n ↦ k ≤ y d).filter (fun d ↦ c ≤ d) =
+      Finset.univ.filter fun d : Fin n ↦ c ≤ d ∧ k ≤ y d := by
     rw [Finset.filter_filter]
-    exact Finset.filter_congr fun d _ => and_comm
-  have e₂ : (Finset.univ.filter fun d : Fin n => k ≤ y d).filter (fun d => ¬ c ≤ d) =
-      Finset.univ.filter fun d : Fin n => d < c ∧ k ≤ y d := by
+    exact Finset.filter_congr fun d _ ↦ and_comm
+  have e₂ : (Finset.univ.filter fun d : Fin n ↦ k ≤ y d).filter (fun d ↦ ¬ c ≤ d) =
+      Finset.univ.filter fun d : Fin n ↦ d < c ∧ k ≤ y d := by
     rw [Finset.filter_filter]
-    refine Finset.filter_congr fun d _ => ?_
+    refine Finset.filter_congr fun d _ ↦ ?_
     rw [not_le]
     exact and_comm
   rw [← e₁, ← e₂]
@@ -102,13 +103,13 @@ private theorem card_ge_split (y : GridState n) (k c : Fin n) :
 /-- There are `n - k` columns whose marking row is at least `k`, because the rows of a grid state
 run over every row exactly once. -/
 private theorem card_ge_add_val (y : GridState n) (k : Fin n) :
-    (Finset.univ.filter fun d : Fin n => k ≤ y d).card + (k : ℕ) = n := by
+    (Finset.univ.filter fun d : Fin n ↦ k ≤ y d).card + (k : ℕ) = n := by
   classical
-  have hcomp : (Finset.univ.filter fun d : Fin n => k ≤ y d).card =
-      (Finset.univ.filter fun r : Fin n => k ≤ r).card := by
+  have hcomp : (Finset.univ.filter fun d : Fin n ↦ k ≤ y d).card =
+      (Finset.univ.filter fun r : Fin n ↦ k ≤ r).card := by
     simp only [Finset.card_filter]
-    exact Equiv.sum_comp y.toPerm fun r : Fin n => if k ≤ r then 1 else 0
-  have hIci : (Finset.univ.filter fun r : Fin n => k ≤ r) = Finset.Ici k := by
+    exact Equiv.sum_comp y.toPerm fun r : Fin n ↦ if k ≤ r then 1 else 0
+  have hIci : (Finset.univ.filter fun r : Fin n ↦ k ≤ r) = Finset.Ici k := by
     ext r
     simp
   have hk := k.isLt
@@ -118,18 +119,18 @@ private theorem card_ge_add_val (y : GridState n) (k : Fin n) :
 /-- The columns before `c` split according to whether their marking row lies below the row `x c`
 occupied by the grid state. -/
 private theorem card_lt_split (x y : GridState n) (c : Fin n) :
-    (Finset.univ.filter fun d : Fin n => d < c ∧ y d < x c).card
-        + (Finset.univ.filter fun d : Fin n => d < c ∧ x c ≤ y d).card = (c : ℕ) := by
+    (Finset.univ.filter fun d : Fin n ↦ d < c ∧ y d < x c).card
+        + (Finset.univ.filter fun d : Fin n ↦ d < c ∧ x c ≤ y d).card = (c : ℕ) := by
   classical
-  have e₁ : (Finset.univ.filter fun d : Fin n => d < c).filter (fun d => y d < x c) =
-      Finset.univ.filter fun d : Fin n => d < c ∧ y d < x c :=
+  have e₁ : (Finset.univ.filter fun d : Fin n ↦ d < c).filter (fun d ↦ y d < x c) =
+      Finset.univ.filter fun d : Fin n ↦ d < c ∧ y d < x c :=
     Finset.filter_filter _ _ _
-  have e₂ : (Finset.univ.filter fun d : Fin n => d < c).filter (fun d => ¬ y d < x c) =
-      Finset.univ.filter fun d : Fin n => d < c ∧ x c ≤ y d := by
+  have e₂ : (Finset.univ.filter fun d : Fin n ↦ d < c).filter (fun d ↦ ¬ y d < x c) =
+      Finset.univ.filter fun d : Fin n ↦ d < c ∧ x c ≤ y d := by
     rw [Finset.filter_filter]
-    refine Finset.filter_congr fun d _ => ?_
+    refine Finset.filter_congr fun d _ ↦ ?_
     rw [not_lt]
-  have hIio : (Finset.univ.filter fun d : Fin n => d < c) = Finset.Iio c := by
+  have hIio : (Finset.univ.filter fun d : Fin n ↦ d < c) = Finset.Iio c := by
     ext d
     simp
   rw [← e₁, ← e₂, Finset.card_filter_add_card_filter_not, hIio, Fin.card_Iio]
@@ -138,13 +139,13 @@ private theorem card_lt_split (x y : GridState n) (c : Fin n) :
 private theorem JNumCenter_pointSet_add_two_mul_eq (x y : GridState n) :
     GridPoint.JNumCenter x.pointSet y.pointSet
         + 2 * ∑ c : Fin n,
-          (Finset.univ.filter fun d : Fin n => d < c ∧ x c ≤ y d).card =
+          (Finset.univ.filter fun d : Fin n ↦ d < c ∧ x c ≤ y d).card =
       n * n := by
   classical
   have key : ∀ c : Fin n,
-      (Finset.univ.filter fun d : Fin n => c ≤ d ∧ x c ≤ y d).card
-          + (Finset.univ.filter fun d : Fin n => d < c ∧ y d < x c).card
-          + 2 * (Finset.univ.filter fun d : Fin n => d < c ∧ x c ≤ y d).card + (x c : ℕ) =
+      (Finset.univ.filter fun d : Fin n ↦ c ≤ d ∧ x c ≤ y d).card
+          + (Finset.univ.filter fun d : Fin n ↦ d < c ∧ y d < x c).card
+          + 2 * (Finset.univ.filter fun d : Fin n ↦ d < c ∧ x c ≤ y d).card + (x c : ℕ) =
         n + (c : ℕ) := by
     intro c
     have h₃ := card_ge_split y (x c) c
@@ -152,16 +153,16 @@ private theorem JNumCenter_pointSet_add_two_mul_eq (x y : GridState n) :
     have h₅ := card_lt_split x y c
     omega
   have hsum : ∑ c : Fin n,
-      ((Finset.univ.filter fun d : Fin n => c ≤ d ∧ x c ≤ y d).card
-          + (Finset.univ.filter fun d : Fin n => d < c ∧ y d < x c).card
-          + 2 * (Finset.univ.filter fun d : Fin n => d < c ∧ x c ≤ y d).card + (x c : ℕ)) =
+      ((Finset.univ.filter fun d : Fin n ↦ c ≤ d ∧ x c ≤ y d).card
+          + (Finset.univ.filter fun d : Fin n ↦ d < c ∧ y d < x c).card
+          + 2 * (Finset.univ.filter fun d : Fin n ↦ d < c ∧ x c ≤ y d).card + (x c : ℕ)) =
       ∑ _c : Fin n, n + ∑ c : Fin n, (c : ℕ) := by
     rw [← Finset.sum_add_distrib]
-    exact Finset.sum_congr rfl fun c _ => key c
+    exact Finset.sum_congr rfl fun c _ ↦ key c
   rw [Finset.sum_add_distrib, Finset.sum_add_distrib, Finset.sum_add_distrib,
     ← Finset.mul_sum] at hsum
   have hval : ∑ c : Fin n, (x c : ℕ) = ∑ c : Fin n, (c : ℕ) :=
-    Equiv.sum_comp x.toPerm fun r : Fin n => (r : ℕ)
+    Equiv.sum_comp x.toPerm fun r : Fin n ↦ (r : ℕ)
   have hconst : ∑ _c : Fin n, n = n * n := by
     rw [Finset.sum_const, Finset.card_univ, Fintype.card_fin, smul_eq_mul]
   rw [JNumCenter_pointSet_eq_sum]
@@ -174,12 +175,12 @@ theorem even_JNumCenter_pointSet_add (x y : GridState n) :
   have h := JNumCenter_pointSet_add_two_mul_eq x y
   have h' : (GridPoint.JNumCenter x.pointSet y.pointSet : ℤ)
       + 2 * ((∑ c : Fin n,
-          (Finset.univ.filter fun d : Fin n => d < c ∧ x c ≤ y d).card : ℕ) : ℤ) =
+          (Finset.univ.filter fun d : Fin n ↦ d < c ∧ x c ≤ y d).card : ℕ) : ℤ) =
       (n : ℤ) * n := by
     exact_mod_cast h
   obtain ⟨m, hm⟩ := Int.even_mul_succ_self (n : ℤ)
   exact ⟨m - ((∑ c : Fin n,
-      (Finset.univ.filter fun d : Fin n => d < c ∧ x c ≤ y d).card : ℕ) : ℤ), by
+      (Finset.univ.filter fun d : Fin n ↦ d < c ∧ x c ≤ y d).card : ℕ) : ℤ), by
     nlinarith [hm, h']⟩
 
 end GridState
@@ -200,28 +201,28 @@ theorem negOnePow_maslovOℤ (x : GridState n) :
       Equiv.Perm.sign x.toPerm * Equiv.Perm.sign G.O.toPerm * ((n : ℤ) + 1).negOnePow := by
   classical
   have hx : (GridPoint.I x.pointSet x.pointSet : ℤ)
-      + ((Finset.univ.filter fun p : Fin n × Fin n => p.1 < p.2 ∧ x p.2 < x p.1).card : ℤ) =
-      ((Finset.univ.filter fun p : Fin n × Fin n => p.1 < p.2).card : ℤ) := by
+      + ((Finset.univ.filter fun p : Fin n × Fin n ↦ p.1 < p.2 ∧ x p.2 < x p.1).card : ℤ) =
+      ((Finset.univ.filter fun p : Fin n × Fin n ↦ p.1 < p.2).card : ℤ) := by
     rw [GridState.I_self_pointSet_eq_card]
     exact_mod_cast GridState.card_filter_noninversion_add_card_filter_inversion x
   have hO : (GridPoint.I G.OSet G.OSet : ℤ)
-      + ((Finset.univ.filter fun p : Fin n × Fin n =>
+      + ((Finset.univ.filter fun p : Fin n × Fin n ↦
         p.1 < p.2 ∧ G.O p.2 < G.O p.1).card : ℤ) =
-      ((Finset.univ.filter fun p : Fin n × Fin n => p.1 < p.2).card : ℤ) := by
-    rw [OSet, GridState.I_self_pointSet_eq_card]
+      ((Finset.univ.filter fun p : Fin n × Fin n ↦ p.1 < p.2).card : ℤ) := by
+    rw [OSet_def, GridState.I_self_pointSet_eq_card]
     exact_mod_cast GridState.card_filter_noninversion_add_card_filter_inversion G.O
   obtain ⟨k, hk⟩ : Even ((GridPoint.JNumCenter x.pointSet G.OSet : ℤ) + n) := by
-    rw [OSet]
+    rw [OSet_def]
     exact GridState.even_JNumCenter_pointSet_add x G.O
   have heq : (G.maslovOℤ x).negOnePow =
-      (((Finset.univ.filter fun p : Fin n × Fin n => p.1 < p.2 ∧ x p.2 < x p.1).card : ℤ)
-        + ((Finset.univ.filter fun p : Fin n × Fin n =>
+      (((Finset.univ.filter fun p : Fin n × Fin n ↦ p.1 < p.2 ∧ x p.2 < x p.1).card : ℤ)
+        + ((Finset.univ.filter fun p : Fin n × Fin n ↦
           p.1 < p.2 ∧ G.O p.2 < G.O p.1).card : ℤ)
         + ((n : ℤ) + 1)).negOnePow := by
     refine (Int.negOnePow_eq_iff _ _).mpr ?_
-    refine ⟨((Finset.univ.filter fun p : Fin n × Fin n => p.1 < p.2).card : ℤ)
-      - ((Finset.univ.filter fun p : Fin n × Fin n => p.1 < p.2 ∧ x p.2 < x p.1).card : ℤ)
-      - ((Finset.univ.filter fun p : Fin n × Fin n =>
+    refine ⟨((Finset.univ.filter fun p : Fin n × Fin n ↦ p.1 < p.2).card : ℤ)
+      - ((Finset.univ.filter fun p : Fin n × Fin n ↦ p.1 < p.2 ∧ x p.2 < x p.1).card : ℤ)
+      - ((Finset.univ.filter fun p : Fin n × Fin n ↦
         p.1 < p.2 ∧ G.O p.2 < G.O p.1).card : ℤ) - k, ?_⟩
     rw [maslovOℤ_def]
     linarith
@@ -319,9 +320,52 @@ end GridDiagram
 abbrev OddComponentGridDiagram (n : ℕ) :=
   {G : GridDiagram n // Odd G.componentCount}
 
+namespace GridDiagram.IsKnot
+
+variable {n : ℕ} {G : GridDiagram n} (hG : G.IsKnot)
+
+/-- A knot grid, viewed as a grid with an odd number of components. -/
+abbrev toOddComponentGridDiagram : OddComponentGridDiagram n :=
+  ⟨G, by rw [G.isKnot_def.mp hG]; exact odd_one⟩
+
+end GridDiagram.IsKnot
+
 namespace OddComponentGridDiagram
 
 variable {n : ℕ} (G : OddComponentGridDiagram n)
+
+/-- Relabeling the rows of a grid diagram with an odd number of components. -/
+def relabelRows (ρ : Equiv.Perm (Fin n)) : OddComponentGridDiagram n :=
+  ⟨G.1.relabelRows ρ, by rw [GridDiagram.componentCount_relabelRows]; exact G.2⟩
+
+/-- The underlying grid diagram of `G.relabelRows ρ` is the row-relabeled diagram. -/
+@[simp]
+theorem val_relabelRows (ρ : Equiv.Perm (Fin n)) : (G.relabelRows ρ).1 = G.1.relabelRows ρ :=
+  (rfl)
+
+/-- Relabeling the columns of a grid diagram with an odd number of components. -/
+def relabelColumns (κ : Equiv.Perm (Fin n)) : OddComponentGridDiagram n :=
+  ⟨G.1.relabelColumns κ, by rw [GridDiagram.componentCount_relabelColumns]; exact G.2⟩
+
+/-- The underlying grid diagram of `G.relabelColumns κ` is the column-relabeled diagram. -/
+@[simp]
+theorem val_relabelColumns (κ : Equiv.Perm (Fin n)) :
+    (G.relabelColumns κ).1 = G.1.relabelColumns κ :=
+  (rfl)
+
+/-- The half-turn of the marking squares of a diagram with an odd number of components. -/
+abbrev rotate : OddComponentGridDiagram n :=
+  ⟨G.1.rotate, by rw [GridDiagram.componentCount_rotate]; exact G.2⟩
+
+/-- The underlying diagram of the half-turn is the half-turned underlying diagram. -/
+@[simp]
+theorem val_rotate : G.rotate.1 = G.1.rotate :=
+  (rfl)
+
+/-- The half-turn is an involution on diagrams with an odd number of components. -/
+@[simp]
+theorem rotate_rotate : G.rotate.rotate = G :=
+  Subtype.ext G.1.rotate_rotate
 
 /-- The integer Alexander grading of a grid state. -/
 def alexanderℤ (x : GridState n) : ℤ :=
@@ -383,7 +427,7 @@ theorem mem_alexanderSupport_iff (a : ℤ) :
 
 /-- The `O`-Maslov degrees occupied by the grid states of a fixed Alexander degree. -/
 noncomputable def maslovSupport (a : ℤ) : Finset ℤ :=
-  (G.bidegreeSupport.filter fun g => g.2 = a).image Prod.fst
+  (G.bidegreeSupport.filter fun g ↦ g.2 = a).image Prod.fst
 
 /-- A Maslov degree is occupied in Alexander degree `a` exactly when some grid state has
 bidegree `(m, a)`. -/

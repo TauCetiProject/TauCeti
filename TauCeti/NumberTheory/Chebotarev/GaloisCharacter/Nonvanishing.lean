@@ -1,0 +1,176 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.NumberTheory.ArithmeticDirichletSeries.EulerProduct.ThreeFourOne
+public import TauCeti.NumberTheory.Chebotarev.GaloisCharacter.Weight
+import TauCeti.NumberTheory.ArithmeticDirichletSeries.EulerProduct.Restrict
+import TauCeti.NumberTheory.NumberField.DedekindZeta
+
+/-!
+# Nonvanishing of Galois character series on the line `Re s = 1`
+
+Let `F / K` be a finite Galois extension of number fields and `χ` a character of `Gal(F/K)`. On
+`Re s > 1` the `L`-series of `galoisCharacterWeight χ` does not vanish, by its Euler product. This
+file gives criteria for a function agreeing on `Re s > 1` with the `L`-series of
+`galoisCharacterWeight χ` to be nonzero at a point `s` of the line `Re s = 1`. In particular the
+series of the trivial character, which is the Dedekind zeta function of `K` with the Euler factors
+at the primes ramified in `F` deleted, does not vanish at any `s ≠ 1` with `Re s = 1`.
+
+Together with the continuation across `Re s = 1`, this is what makes the logarithmic derivatives
+of these series, with the pole of the trivial one subtracted, continuous on `Re s ≥ 1`: the
+boundary behaviour required to apply a Tauberian theorem to the Frobenius von Mangoldt series.
+
+The criterion is the `3-4-1` criterion `TauCeti.UnitaryIdealWeight.ne_zero_of_eqOn_LSeries` for
+the unitary weight `galoisCharacterUnitaryWeight χ`, whose pointwise square is the unitary weight
+of `χ²`. The remaining results handle the square: for `χ² = 1` its series is the trivial one, which
+continues across `Re s = 1` away from `s = 1` by
+`TauCeti.exists_differentiableOn_eq_LSeries_ofBadPrimes_sub`.
+
+## Main results
+
+* `MonoidHom.LSeries_galoisCharacterWeight_ne_zero`: the series of `χ` is nonzero on `Re s > 1`.
+* `NumberField.Chebotarev.ne_zero_of_eqOn_LSeries_galoisCharacterWeight`: a continuation of the
+  series of `χ`, differentiable at `s = 1 + it`, is nonzero at `s` provided some continuation of
+  the series of `χ²` is continuous at `1 + 2it`.
+* `NumberField.Chebotarev.ne_zero_of_eqOn_LSeries_galoisCharacterWeight_of_sq_eq_one`: for
+  `χ² = 1`, a continuation of the series of `χ` is nonzero on `Re s = 1` away from `s = 1`.
+* `NumberField.Chebotarev.ne_zero_of_eqOn_LSeries_galoisCharacterWeight_one`: a continuation of
+  the trivial-character series is nonzero on `Re s = 1` away from `s = 1`.
+* `NumberField.Chebotarev.exists_continuousOn_eq_neg_logDeriv_galoisCharacterWeight_one_sub`:
+  the regularized logarithmic derivative of the trivial character extends continuously to
+  `Re s ≥ 1`.
+
+## References
+
+* H. Davenport, *Multiplicative Number Theory*, Chapter 4.
+* The case analysis on `χ²` follows Mathlib's `Mathlib/NumberTheory/LSeries/Nonvanishing.lean`
+  (Michael Stoll and David Loeffler), where `DirichletCharacter.LFunction_ne_zero_of_re_eq_one`
+  proves the analogous statement for Dirichlet `L`-functions.
+-/
+
+public section
+
+open Complex Filter IsDedekindDomain NumberField TauCeti
+open scoped Topology
+
+variable {K F : Type*} [Field K] [NumberField K] [Field F] [NumberField F] [Algebra K F]
+  [IsGalois K F]
+
+/-- **Nonvanishing on `Re s > 1`.** For a finite Galois extension `F / K` and a character `χ` of
+`Gal(F/K)`, the `L`-series of `galoisCharacterWeight χ` is nonzero at every `s` with `1 < Re s`,
+where its Euler product converges absolutely. -/
+theorem MonoidHom.LSeries_galoisCharacterWeight_ne_zero (χ : (F ≃ₐ[K] F) →* ℂˣ) {s : ℂ}
+    (hs : 1 < s.re) :
+    LSeries (normCoeff K χ.galoisCharacterWeight.toIdealArithmeticFunction) s ≠ 0 :=
+  χ.galoisCharacterWeight.LSeries_ne_zero_of_summable_idealTerm
+    (χ.summable_idealTerm_galoisCharacterWeight hs)
+
+namespace NumberField.Chebotarev
+
+variable (K F) in
+-- The series of the trivial character continues to a function differentiable at every point of
+-- `Re s = 1` other than the pole `s = 1`.
+private theorem exists_differentiableAt_eqOn_LSeries_galoisCharacterWeight_one :
+    ∃ T : ℂ → ℂ, (∀ s : ℂ, s.re = 1 → s ≠ 1 → DifferentiableAt ℂ T s) ∧
+      Set.EqOn T (LSeries (normCoeff K
+        (1 : (F ≃ₐ[K] F) →* ℂˣ).galoisCharacterWeight.toIdealArithmeticFunction))
+        {s | 1 < s.re} := by
+  obtain ⟨G, hG, hGL⟩ := exists_differentiableOn_eq_LSeries_ofBadPrimes_sub K (ramifiedPrimes K F)
+  set ρ := dedekindZeta_residue K *
+    ∏ 𝔭 ∈ ramifiedPrimes K F, (1 - (Ideal.absNorm 𝔭.asIdeal : ℂ) ^ (-1 : ℂ))
+  refine ⟨fun s ↦ G s + ρ / (s - 1), fun s hs hs1 ↦ ?_, fun s (hs : 1 < s.re) ↦ ?_⟩
+  · -- The line `Re s = 1` lies in the half-plane `Re s > 1 - 1 / [K : ℚ]` of the continuation.
+    have hmem : {z : ℂ | 1 - 1 / (Module.finrank ℚ K : ℝ) < z.re} ∈ 𝓝 s :=
+      (isOpen_lt continuous_const continuous_re).mem_nhds <| by
+        rw [Set.mem_ofPred_eq, hs]
+        simpa only [Set.mem_ofPred_eq, hs] using
+          setOf_one_le_re_subset_setOf_one_sub_one_div_finrank_lt_re K hs.ge
+    exact (hG.differentiableAt hmem).add
+      ((differentiableAt_const ρ).div (differentiableAt_id.sub_const 1) (sub_ne_zero.mpr hs1))
+  · dsimp only
+    rw [hGL s hs, MonoidHom.galoisCharacterWeight_one, sub_add_cancel]
+
+/-- **The `3-4-1` criterion for a Galois character.** Let `F / K` be a finite Galois extension,
+`χ` a character of `Gal(F/K)`, and `s = 1 + it`. If `f` is complex differentiable at `s` and `f₂`
+is continuous at `1 + 2it = 2s - 1`, and they agree on `Re s > 1` with the `L`-series of `χ` and of
+`χ²` respectively, then `f s ≠ 0`. -/
+theorem ne_zero_of_eqOn_LSeries_galoisCharacterWeight (χ : (F ≃ₐ[K] F) →* ℂˣ) {s : ℂ}
+    (hs : s.re = 1) {f f₂ : ℂ → ℂ} (hf : DifferentiableAt ℂ f s)
+    (hfL : Set.EqOn f (LSeries (normCoeff K χ.galoisCharacterWeight.toIdealArithmeticFunction))
+      {z | 1 < z.re})
+    (hf₂ : ContinuousAt f₂ (2 * s - 1))
+    (hf₂L : Set.EqOn f₂
+      (LSeries (normCoeff K (χ ^ 2).galoisCharacterWeight.toIdealArithmeticFunction))
+      {z | 1 < z.re}) :
+    f s ≠ 0 := by
+  -- The series of `χ` and of `χ²` are those of the unitary weight of `χ` and of its pointwise
+  -- square, so this is the `3-4-1` criterion for unitary weights.
+  have h₁ : χ.galoisCharacterUnitaryWeight.toIdealArithmeticFunction =
+      χ.galoisCharacterWeight.toIdealArithmeticFunction := by
+    simp only [UnitaryIdealWeight.toIdealArithmeticFunction_eq_val,
+      MonoidHom.val_galoisCharacterUnitaryWeight]
+  have h₂ : (χ.galoisCharacterUnitaryWeight ^ 2).toIdealArithmeticFunction =
+      (χ ^ 2).galoisCharacterWeight.toIdealArithmeticFunction := by
+    simp only [UnitaryIdealWeight.toIdealArithmeticFunction_eq_val, sq, UnitaryIdealWeight.val_mul,
+      MonoidHom.val_galoisCharacterUnitaryWeight, MonoidHom.galoisCharacterWeight_mul]
+  exact χ.galoisCharacterUnitaryWeight.ne_zero_of_eqOn_LSeries hs hf (by rwa [h₁]) hf₂
+    (by rwa [h₂])
+
+/-- **Nonvanishing on `Re s = 1` for a character of order at most two.** Let `F / K` be a finite
+Galois extension and `χ` a character of `Gal(F/K)` with `χ² = 1`. If `f` agrees on `Re s > 1` with
+the `L`-series of `χ` and is complex differentiable at a point `s ≠ 1` with `Re s = 1`, then
+`f s ≠ 0`. -/
+theorem ne_zero_of_eqOn_LSeries_galoisCharacterWeight_of_sq_eq_one (χ : (F ≃ₐ[K] F) →* ℂˣ)
+    (hχ : χ ^ 2 = 1) {f : ℂ → ℂ} {s : ℂ} (hs : s.re = 1) (hs1 : s ≠ 1)
+    (hf : DifferentiableAt ℂ f s)
+    (hfL : Set.EqOn f (LSeries (normCoeff K χ.galoisCharacterWeight.toIdealArithmeticFunction))
+      {z | 1 < z.re}) :
+    f s ≠ 0 := by
+  -- The series of `χ² = 1` is the trivial one, which is differentiable at `2s - 1 ≠ 1`.
+  obtain ⟨T, hT, hTL⟩ := exists_differentiableAt_eqOn_LSeries_galoisCharacterWeight_one K F
+  have hs₂ : (2 * s - 1).re = 1 := by norm_num [hs]
+  have hs₂1 : 2 * s - 1 ≠ 1 := fun h ↦ hs1 (by linear_combination h / 2)
+  exact ne_zero_of_eqOn_LSeries_galoisCharacterWeight χ hs hf hfL (hT _ hs₂ hs₂1).continuousAt
+    (by rwa [hχ])
+
+/-- **The trivial-character series has no zeros on `Re s = 1` except at the pole.** Let `F / K`
+be a finite Galois extension. If `f` agrees on `Re s > 1` with the `L`-series of the trivial
+character of `Gal(F/K)`, which is the Dedekind zeta function of `K` with the Euler factors at the
+ramified primes deleted, and `f` is complex differentiable at a point `s ≠ 1` with `Re s = 1`, then
+`f s ≠ 0`. -/
+theorem ne_zero_of_eqOn_LSeries_galoisCharacterWeight_one {f : ℂ → ℂ} {s : ℂ} (hs : s.re = 1)
+    (hs1 : s ≠ 1) (hf : DifferentiableAt ℂ f s)
+    (hfL : Set.EqOn f (LSeries (normCoeff K
+      (1 : (F ≃ₐ[K] F) →* ℂˣ).galoisCharacterWeight.toIdealArithmeticFunction)) {z | 1 < z.re}) :
+    f s ≠ 0 :=
+  ne_zero_of_eqOn_LSeries_galoisCharacterWeight_of_sq_eq_one 1
+    (one_pow (M := (F ≃ₐ[K] F) →* ℂˣ) 2) hs hs1 hf hfL
+
+variable (K F) in
+/-- **The regularized boundary function of the trivial character.** Let `F / K` be a finite
+Galois extension and `L_1` the `L`-series of the trivial character of `Gal(F/K)`, that is the
+Dedekind zeta function of `K` with the Euler factors at the primes ramified in `F` deleted. Then
+`-L_1'(s) / L_1(s) - 1 / (s - 1)` extends from `Re s > 1` to a function continuous on
+`Re s ≥ 1`. -/
+theorem exists_continuousOn_eq_neg_logDeriv_galoisCharacterWeight_one_sub : ∃ G : ℂ → ℂ,
+    ContinuousOn G {s | 1 ≤ s.re} ∧ ∀ s : ℂ, 1 < s.re →
+      G s = -logDeriv (LSeries (normCoeff K
+        (1 : (F ≃ₐ[K] F) →* ℂˣ).galoisCharacterWeight.toIdealArithmeticFunction)) s -
+          1 / (s - 1) := by
+  -- `L_1` is `ζ_K` with the Euler factors at the ramified primes deleted, and the deletion adds
+  -- to the logarithmic derivative a finite sum holomorphic on `Re s > 0`.
+  obtain ⟨G, hG, hGζ⟩ := exists_continuousOn_eq_neg_deriv_dedekindZeta_div_sub K
+  refine ⟨fun s ↦ G s - ∑ P ∈ ramifiedPrimes K F,
+      Complex.log (Ideal.absNorm P.asIdeal) / ((Ideal.absNorm P.asIdeal : ℂ) ^ s - 1),
+    hG.sub ((differentiableOn_sum_log_absNorm_div_cpow_sub_one _).continuousOn.mono
+      fun s (hs : 1 ≤ s.re) ↦ zero_lt_one.trans_le hs), fun s hs ↦ ?_⟩
+  rw [MonoidHom.galoisCharacterWeight_one, logDeriv_LSeries_ofBadPrimes _ hs, logDeriv_apply]
+  dsimp only
+  rw [hGζ s hs]
+  ring
+
+end NumberField.Chebotarev

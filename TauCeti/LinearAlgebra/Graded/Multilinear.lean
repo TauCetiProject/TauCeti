@@ -211,7 +211,7 @@ variable {R : Type uR} {S : Type*} {ι : Type uι} {κ : Type uκ}
 
 /-- A scalar multiple of a homogeneous multilinear map has the same degree. -/
 @[grind ←]
-theorem IsHomogeneous.smul [Monoid S] [DistribMulAction S N] [SMulCommClass R S N]
+theorem IsHomogeneous.smul [DistribSMul S N] [SMulCommClass R S N]
     [SMulMemClass σN S N] {f : MultilinearMap R M N}
     {𝒜 : (i : κ) → ι → σM i} {ℬ : ι → σN} {q : ι}
     (hf : IsHomogeneous f 𝒜 ℬ q) (s : S) :

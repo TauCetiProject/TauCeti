@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.EilenbergSteenrod
+public import TauCeti.AlgebraicTopology.Singular.Additivity
 public import TauCeti.AlgebraicTopology.Singular.Empty
+public import TauCeti.AlgebraicTopology.Singular.Homotopy.Invariance
 
 /-!
 # Singular homology as a homology pretheory
@@ -18,9 +20,14 @@ homology functors, the two are compared on pairs `(X, ∅)` by `TopPair.singular
 and the boundary morphisms are the connecting morphisms `Hₙ(X, A) ⟶ Hₘ(A)` (for `m + 1 = n`) of
 the long exact sequence of a pair, which are natural in the pair.
 
-The pretheory satisfies the exactness axiom `HomologyPretheory.HasPairSequence`, by the long exact
-sequence of a pair, and the dimension axiom `HomologyPretheory.HasDimensionAxiom`, because the
-singular homology of a point vanishes in positive degrees.
+The pretheory satisfies the homotopy axiom `HomologyPretheory.IsHomotopyInvariant`, because
+homotopic maps of pairs induce chain-homotopic maps of relative singular chains; the exactness
+axiom `HomologyPretheory.HasPairSequence`, by the long exact sequence of a pair; and the dimension
+axiom `HomologyPretheory.HasDimensionAxiom`, because the singular homology of a point vanishes in
+positive degrees.  When coproducts are exact in the coefficient category (axiom AB4, as for
+modules over a ring), it also satisfies the additivity axiom `HomologyPretheory.IsAdditive`,
+because singular homology of a disjoint union is the coproduct of the singular homologies of the
+summands.
 
 The source is Eilenberg--Steenrod, *Foundations of Algebraic Topology*, Chapters I--III.
 -/
@@ -96,6 +103,21 @@ lemma singularHomologyPretheory_hFstToHₚ (n : ℕ) (P : TopPair.{w}) :
   erw [CategoryTheory.Functor.map_id, SSet.homologyMap_id, Category.id_comp]
   -- `P.singularHomologyπ` abbreviates the quotient map, and both transports have the same type.
   rfl
+
+/-- Singular homology satisfies the homotopy axiom: homotopic maps of topological pairs induce the
+same map on relative singular homology. -/
+instance : (singularHomologyPretheory.{w} R).IsHomotopyInvariant where
+  map_eq_of_homotopy H n := by
+    rw [singularHomologyPretheory_Hₚ, singularHomologyFunctor_map, singularHomologyFunctor_map,
+      H.congr_singularHomologyMap R n]
+
+/-- Singular homology satisfies the additivity axiom when coproducts are exact in the coefficient
+category: the singular homology of a disjoint union is the coproduct of the singular homologies
+of the summands. -/
+instance [AB4OfSize.{w} A] : (singularHomologyPretheory.{w} R).IsAdditive where
+  preservesColimitsOfShape_discrete J n := by
+    rw [singularHomologyPretheory_H]
+    infer_instance
 
 /-- Singular homology satisfies the exactness axiom: the long exact sequence of every
 topological pair. -/

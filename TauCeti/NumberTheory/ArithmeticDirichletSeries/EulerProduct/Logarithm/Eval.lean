@@ -30,6 +30,8 @@ coefficient convergence is known at every prime, the logarithmic derivative of t
 
 ## Main results
 
+* `TauCeti.EulerProductData.localPowerSeries_eval_eq_eulerFactor`: evaluation of the local power
+  series at `N(P) ^ (-s)`.
 * `TauCeti.EulerProductData.logDeriv_eulerFactor_eq_neg_log_mul_tsum_coeff_localLogDerivSeries`:
   evaluation of one local formal logarithmic derivative.
 * `TauCeti.EulerProductData.hasSum_tsum_coeff_localLogDerivSeries`: the corresponding expansion of
@@ -54,6 +56,29 @@ namespace EulerProductData
 open IdealArithmeticFunction
 
 variable {K : Type*} [Field K] [NumberField K]
+
+/-- Evaluating the local power series at `N(P) ^ (-s)` gives the local Euler factor at `s`. -/
+@[simp]
+theorem localPowerSeries_eval_eq_eulerFactor (D : EulerProductData K)
+    (P : HeightOneSpectrum (𝓞 K)) (s : ℂ) :
+    FormalMultilinearSeries.ofScalarsSum (E := ℂ)
+        (fun n ↦ D.toIdealArithmeticFunction (P.primeIdealPow n))
+          ((Ideal.absNorm P.asIdeal : ℂ) ^ (-s)) =
+      D.eulerFactor P s := by
+  rw [FormalMultilinearSeries.ofScalars_sum_eq, D.eulerFactor_eq_tsum]
+  exact tsum_congr fun e ↦ by
+    exact (IdealArithmeticFunction.idealTerm_primeIdealPow_eq_mul_cpow_neg
+      D.toIdealArithmeticFunction P s e).symm
+
+/-- A local Euler factor is nonzero at `s` if the corresponding local power series is nonzero at
+`N(P) ^ (-s)`. -/
+theorem eulerFactor_ne_zero_of_localPowerSeries_ne_zero (D : EulerProductData K)
+    (P : HeightOneSpectrum (𝓞 K)) {s : ℂ}
+    (hne : FormalMultilinearSeries.ofScalarsSum (E := ℂ)
+      (fun n ↦ PowerSeries.coeff n (D.localPowerSeries P))
+        ((Ideal.absNorm P.asIdeal : ℂ) ^ (-s)) ≠ 0) :
+    D.eulerFactor P s ≠ 0 := by
+  simpa only [D.coeff_localPowerSeries, D.localPowerSeries_eval_eq_eulerFactor] using hne
 
 /-- **Evaluation of a local formal logarithmic derivative.** If the coefficient series of
 `X F_P'(X) / F_P(X)` converges at `X = N(P) ^ (-s)` and the local Euler factor does not vanish at

@@ -263,20 +263,33 @@ def repIso (T : LayerRestriction small big) (F : Formation G) :
           _ = _ := (big.rep_ρ_mk_apply_coe F
             (Subgroup.inclusion T.ground_toSubgroup_le w) _).symm
 
+-- The `simp` lemmas on underlying elements state their left-hand sides through `dsimp% only`:
+-- `toRep` and `NormalLayer.rep` are `abbrev`s, and `simp` reduces their carriers in implicit type
+-- arguments before it looks a term up, so a left-hand side stated plainly over them is never found.
+-- This follows #8315; see the implementation notes of `Formation/Basic.lean`.
 /-- The identification of coefficient modules moves no element of the ambient module. -/
 @[simp]
 theorem repIso_hom_apply_coe (T : LayerRestriction small big) (F : Formation G)
-    (x : F.level small.top) :
-    (((T.repIso F).hom.hom x : F.level big.top) : F.toRep.V) = (x : F.toRep.V) :=
+    (x : F.level small.top) : (dsimp% only ((T.repIso F).hom.hom x : F.toRep.V)) = x :=
   LinearEquiv.coe_ofEq_apply (congrArg F.level T.same_top) x
 
 /-- The inverse of the identification of coefficient modules moves no element of the ambient
 module either. -/
 @[simp]
 theorem repIso_inv_apply_coe (T : LayerRestriction small big) (F : Formation G)
-    (x : F.level big.top) :
-    (((T.repIso F).inv.hom x : F.level small.top) : F.toRep.V) = (x : F.toRep.V) :=
+    (x : F.level big.top) : (dsimp% only ((T.repIso F).inv.hom x : F.toRep.V)) = x :=
   LinearEquiv.coe_ofEq_apply (congrArg F.level T.same_top).symm x
+
+/-- The inverse identification of coefficient modules intertwines the action of the image of the
+smaller Galois group with the action of the smaller layer. -/
+theorem repIso_inv_comm_apply (T : LayerRestriction small big) (F : Formation G)
+    (g : T.galHom.range) (x : F.level big.top) :
+    (T.repIso F).inv.hom.toLinearMap (((big.rep F).ρ.comp T.galHom.range.subtype) g x) =
+      (small.rep F).ρ ((MonoidHom.ofInjective T.galHom_injective).symm g)
+        ((T.repIso F).inv.hom.toLinearMap x) := by
+  have hg := (MonoidHom.apply_ofInjective_symm T.galHom_injective g).symm
+  simp only [MonoidHom.comp_apply, Subgroup.coe_subtype, hg]
+  exact Rep.hom_comm_apply (T.repIso F).inv ((MonoidHom.ofInjective T.galHom_injective).symm g) x
 
 /-! ### Towers of restrictions -/
 
@@ -314,6 +327,28 @@ theorem galHom_trans (T : LayerRestriction a b) (T' : LayerRestriction b c) :
     | H w =>
       rw [galHom_mk, MonoidHom.comp_apply, galHom_mk, galHom_mk]
       exact congrArg QuotientGroup.mk (Subtype.ext (by simp only [Subgroup.coe_inclusion]))
+
+/-- Along a tower, the image of the smallest Galois group sits inside the image of the middle
+one. -/
+theorem galHom_range_trans_le (T : LayerRestriction a b) (T' : LayerRestriction b c) :
+    (T.trans T').galHom.range ≤ T'.galHom.range := by
+  rw [galHom_trans T T', MonoidHom.range_comp T'.galHom T.galHom]
+  exact Subgroup.map_le_range _ _
+
+/-- Along a tower, the image of the middle Galois group inside the largest one carries the image
+of the smallest to the expected subgroup. -/
+theorem galHom_range_map_ofInjective (T : LayerRestriction a b) (T' : LayerRestriction b c) :
+    T.galHom.range.map (MonoidHom.ofInjective T'.galHom_injective : b.Gal →* T'.galHom.range) =
+      ((T.trans T').galHom.range).subgroupOf T'.galHom.range := by
+  ext z
+  simp only [Subgroup.mem_map, MonoidHom.mem_range, Subgroup.mem_subgroupOf, galHom_trans T T',
+    MonoidHom.comp_apply]
+  constructor
+  · rintro ⟨_, ⟨x, rfl⟩, rfl⟩
+    exact ⟨x, (MonoidHom.ofInjective_apply T'.galHom_injective).symm⟩
+  · rintro ⟨x, hx⟩
+    exact ⟨T.galHom x, ⟨x, rfl⟩,
+      Subtype.ext ((MonoidHom.ofInjective_apply T'.galHom_injective).trans hx)⟩
 
 /-- **The identifications of coefficient modules compose along a tower of restrictions.** All
 three are the identity on the ambient module, so this is an equation between three inclusions of
@@ -368,10 +403,10 @@ def groundInclusion (T : LayerRestriction small big) (F : Formation G) :
     F.level big.ground →ₗ[ℤ] F.level small.ground :=
   Submodule.inclusion (F.level_antitone T.ground_le)
 
+/-- The ground-level inclusion moves no element of the ambient module. -/
 @[simp]
 theorem groundInclusion_apply_coe (T : LayerRestriction small big) (F : Formation G)
-    (x : F.level big.ground) : ((T.groundInclusion F x : F.level small.ground) : F.toRep.V) =
-      (x : F.toRep.V) :=
+    (x : F.level big.ground) : (dsimp% only (T.groundInclusion F x : F.toRep.V)) = x :=
   Submodule.coe_inclusion _ x
 
 /-- The ground-level inclusion along the trivial layer restriction is the identity. -/

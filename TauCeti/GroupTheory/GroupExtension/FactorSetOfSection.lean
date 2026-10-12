@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.GroupTheory.GroupExtension.Basic
+public import TauCeti.GroupTheory.GroupExtension.Basic
 public import TauCeti.GroupTheory.GroupExtension.Of.FactorSet
 
 /-!
@@ -57,6 +58,9 @@ bookkeeping (`TauCeti.GroupExtension.factorSetFun`, `TauCeti.GroupExtension.norm
   `TauCeti.GroupExtension.inducesAction_iff_smul_eq_self`: `InducesAction` holds exactly when the
   descended conjugation action is the ambient one, and, for a central extension, exactly when the
   ambient action is trivial.
+* `TauCeti.GroupExtension.factorSet_monoidHomComp`: the factor set of a section transported along a
+  homomorphism of extensions over `G` restricting to `f` on the kernels is the pushforward along
+  `f` of the factor set of the section.
 * `TauCeti.GroupExtension.section_mul`: `σ g * σ h = inl (α (g, h)) * σ (g * h)`, the defining
   property of the factor set.
 * `TauCeti.GroupExtension.factorSetToGroupExtensionEquiv`: the extension is equivalent to the
@@ -271,6 +275,24 @@ theorem inl_factorSet (σ : S.Section) (hσ : σ 1 = 1) (hact : InducesAction S)
   simp only [coe_factorSet]
   exact inl_factorSetFun σ g h
 
+/-- **The factor set of a section transported along a homomorphism of extensions** `φ` over the
+identity of `G` that restricts to the equivariant `f` on the kernels is the pushforward along `f`
+of the factor set of the section. -/
+theorem factorSet_monoidHomComp {N : Type*} [CommGroup N] [MulDistribMulAction G N]
+    {E' : Type*} [Group E'] {S' : GroupExtension N E' G} (σ : S.Section) (hσ : σ 1 = 1)
+    (hact : InducesAction S) (hact' : InducesAction S') (f : M →*[G] N) (φ : E →* E')
+    (hinl : φ.comp S.inl = S'.inl.comp f.toMonoidHom) (hright : S'.rightHom.comp φ = S.rightHom) :
+    factorSet (σ.monoidHomComp φ hright) (by rw [σ.monoidHomComp_apply, hσ, map_one]) hact' =
+      (factorSet σ hσ hact).map f := by
+  -- The two factor sets agree after the injective inclusion of the kernel into `E'`, where both
+  -- read `φ (σ g) * φ (σ h) * (φ (σ (g * h)))⁻¹`.
+  ext ⟨g, h⟩
+  refine S'.inl_injective ?_
+  have key : S'.inl (f (factorSet σ hσ hact (g, h))) = φ (S.inl (factorSet σ hσ hact (g, h))) :=
+    (DFunLike.congr_fun hinl _).symm
+  rw [inl_factorSet, FactorSet.map_apply, key, inl_factorSet, map_mul φ, map_mul φ, map_inv φ]
+  simp only [GroupExtension.Section.monoidHomComp_apply]
+
 end FactorSet
 
 section Equiv
@@ -394,13 +416,13 @@ section Coboundary
 variable [CommGroup M] {S : GroupExtension M E G} (σ σ' : S.Section) [MulDistribMulAction G M]
   (hσ : σ 1 = 1) (hσ' : σ' 1 = 1) (hact : InducesAction S)
 
-/-- **Two normalized sections give cohomologous factor sets.** Combined with
-`TauCeti.FactorSet.nonempty_groupExtensionEquiv`, which turns a coboundary back into an equivalence
-of extensions, this says the class of the factor set in `H²(G, M)` is an invariant of the
-extension. -/
-theorem isMulCoboundary₂_div :
-    IsMulCoboundary₂ fun p : G × G => factorSet σ hσ hact p / factorSet σ' hσ' hact p := by
-  refine ⟨sectionDiff σ σ', fun g h => ?_⟩
+/-- **The factor sets of two normalized sections differ by the coboundary of their difference**,
+with the coboundary spelled as in `groupCohomology.IsMulCoboundary₂`. This is the identity behind
+`TauCeti.GroupExtension.isMulCoboundary₂_div`, stated with its witness visible so that properties of
+the witness, such as its continuity, can be tracked. -/
+theorem factorSet_div_factorSet (g h : G) :
+    factorSet σ hσ hact (g, h) / factorSet σ' hσ' hact (g, h) =
+      g • sectionDiff σ σ' h / sectionDiff σ σ' (g * h) * sectionDiff σ σ' g := by
   have e₁ : (σ g : E) * σ h
       = S.inl (factorSet σ hσ hact (g, h) * sectionDiff σ σ' (g * h)) * σ' (g * h) := by
     rw [map_mul, inl_factorSet, inl_sectionDiff]
@@ -411,7 +433,15 @@ theorem isMulCoboundary₂_div :
     rw [map_mul, map_mul, inl_smul σ hact, inl_sectionDiff, inl_sectionDiff, inl_factorSet]
     group
   have key := S.inl_injective (mul_right_cancel (e₁.symm.trans e₂))
-  rw [div_mul_eq_mul_div, div_eq_div_iff_mul_eq_mul, ← key]
+  rw [eq_comm, div_mul_eq_mul_div, div_eq_div_iff_mul_eq_mul, ← key]
+
+/-- **Two normalized sections give cohomologous factor sets.** Combined with
+`TauCeti.FactorSet.nonempty_groupExtensionEquiv`, which turns a coboundary back into an equivalence
+of extensions, this says the class of the factor set in `H²(G, M)` is an invariant of the
+extension. -/
+theorem isMulCoboundary₂_div :
+    IsMulCoboundary₂ fun p : G × G => factorSet σ hσ hact p / factorSet σ' hσ' hact p :=
+  ⟨sectionDiff σ σ', fun g h => (factorSet_div_factorSet σ σ' hσ hσ' hact g h).symm⟩
 
 end Coboundary
 

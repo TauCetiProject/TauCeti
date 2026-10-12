@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Gaussian.GaussianIntegral
 public import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
 import Mathlib.MeasureTheory.Measure.Prod
+import TauCeti.MeasureTheory.Integral.Bochner.Basic
 
 /-!
 # Exponential integrals on the real line
@@ -65,7 +66,7 @@ theorem integral_pow_mul_exp_neg_mul_Ioi (n : ℕ) {a : ℝ} (ha : 0 < a) :
       (1 / a) ^ (n + 1) * n.factorial := by
     rw [← h]
     apply MeasureTheory.setIntegral_congr_fun measurableSet_Ioi
-    intro t ht
+    intro t _
     dsimp
     rw [Real.rpow_natCast t n]
   rw [h', one_div, div_eq_mul_inv, inv_pow]
@@ -112,17 +113,8 @@ theorem lintegral_ofReal_exp_neg_mul_mul_lintegral (ν : Measure ℝ≥0) [SFini
 /-- The two-sided exponential is integrable on the line. -/
 theorem integrable_exp_neg_mul_abs {a : ℝ} (ha : 0 < a) :
     Integrable (fun x : ℝ ↦ Real.exp (-(a * |x|))) := by
-  have hIic : IntegrableOn (fun x : ℝ ↦ Real.exp (-(a * |x|))) (Iic 0) := by
-    refine (integrableOn_exp_mul_Iic (a := a) ha 0).congr_fun (fun x hx ↦ ?_) measurableSet_Iic
-    rw [abs_of_nonpos (mem_Iic.mp hx)]
-    ring_nf
-  have hIoi : IntegrableOn (fun x : ℝ ↦ Real.exp (-(a * |x|))) (Ioi 0) := by
-    refine (integrableOn_exp_mul_Ioi (a := -a) (by linarith) 0).congr_fun
-      (fun x hx ↦ ?_) measurableSet_Ioi
-    rw [abs_of_pos (mem_Ioi.mp hx)]
-    ring_nf
-  rw [← integrableOn_univ, ← Iic_union_Ioi (a := (0 : ℝ))]
-  exact hIic.union hIoi
+  simpa only [neg_mul] using MeasureTheory.integrable_comp_abs
+    (integrableOn_exp_mul_Ioi (a := -a) (by linarith) 0)
 
 
 /-- At a nonnegative rate the integrand is bounded below by a positive constant on `(c, ∞)`, a set

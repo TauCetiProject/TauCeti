@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Group.Submonoid.Telescoping
 public import TauCeti.LinearAlgebra.Matrix.Dual
 public import TauCeti.LinearAlgebra.RootSystem.DynkinType
 public import Mathlib.LinearAlgebra.RootSystem.Base
@@ -13,11 +12,11 @@ public import Mathlib.LinearAlgebra.RootSystem.Base
 /-!
 # Scaffolding shared by the pinned simply connected root data
 
-Layer 6 of the root-systems roadmap pins one integral root datum per valid Dynkin type, each on the
-lattices `Fin n → ℤ` with the dot product as pairing, and each carrying a base whose support is the
-image of an injective *simple index* map `e` naming the simple roots in Bourbaki order. This file
-holds the part of that construction which carries no information about the type: only the per-type
-files, such as `TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.A` and
+The pinned simply connected root data are integral root data, one per valid Dynkin type, each on
+the lattices `Fin n → ℤ` with the dot product as pairing, and each carrying a base whose support is
+the image of an injective *simple index* map `e` naming the simple roots in Bourbaki order. This
+file holds the part of that construction which carries no information about the type: only the
+per-type files, such as `TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.A` and
 `...SimplyConnectedRootDatum.D.Basic`, supply the mathematics of their own root system.
 
 ## Main definitions
@@ -30,18 +29,15 @@ files, such as `TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.A` and
   as soon as the pairings of the simple roots are the entries of the standard Cartan matrix of `t`.
 * `TauCeti.corootSpan_eq_top_of_coroot_eq_single`: the coroots span the cocharacter lattice as soon
   as the simple coroots are the standard basis. This is the simply connected lattice condition.
-* `TauCeti.sum_smul_mem_or_neg_mem_closure`: a combination of a family with coefficients of one
-  sign lies in the additive closure of the family, or its negative does. This is the shape in which
-  the two membership axioms of `RootPairing.Base` are met.
-* `TauCeti.sub_mem_closure_of_le`: a difference of two members of a family telescopes into the
-  additive closure of the consecutive differences. This is the shape in which those same axioms are
-  met by the pinned data written in a coordinate potential.
 
-Every pinned datum of Layer 6 pairs its two lattices by the dot product, which is a perfect pairing
-by `TauCeti.dotProductBilin_isPerfPair` in `TauCeti/LinearAlgebra/Matrix/Dual.lean`. The symmetry
-and reflection preservation of the quadratic form carried by the Cartan matrix are supplied by
-`TauCeti.vecMul_dotProduct_comm` and `TauCeti.reflect_vecMul_dotProduct_self` in
-`TauCeti/LinearAlgebra/Matrix/Gram.lean`.
+The membership axioms of `RootPairing.Base` are met by the pinned data through
+`TauCeti.sum_smul_mem_or_neg_mem_closure` in `TauCeti/Algebra/Group/Submonoid/Closure.lean`, or,
+for data written in a coordinate potential, through `TauCeti.sub_mem_closure_of_le` in
+`TauCeti/Algebra/Group/Submonoid/Telescoping.lean`. Every pinned datum pairs its two lattices by
+the dot product, which is a perfect pairing by `TauCeti.dotProductBilin_isPerfPair` in
+`TauCeti/LinearAlgebra/Matrix/Dual.lean`. The symmetry and reflection preservation of the quadratic
+form carried by the Cartan matrix are supplied by `TauCeti.vecMul_dotProduct_comm` and
+`TauCeti.reflect_vecMul_dotProduct_self` in `TauCeti/LinearAlgebra/Matrix/Gram.lean`.
 -/
 
 public section
@@ -61,14 +57,16 @@ roots among all root indices. -/
 def simpleSupport : Finset ι :=
   Finset.univ.map ⟨e, he⟩
 
+@[simp]
 theorem mem_simpleSupport {k : ι} : k ∈ simpleSupport he ↔ ∃ i, e i = k := by
   simp [simpleSupport]
 
+@[simp, norm_cast]
 theorem coe_simpleSupport : (simpleSupport he : Set ι) = range e := by
   simp [simpleSupport]
 
-/-- A family indexed by the root indices is determined on a pinned support by its values at the
-simple indices. -/
+/-- The image of a pinned support under a family indexed by the root indices is the range of the
+family's restriction to the simple indices. -/
 theorem image_simpleSupport {M : Type*} (f : ι → M) :
     f '' (simpleSupport he : Set ι) = range (f ∘ e) := by
   rw [coe_simpleSupport, range_comp]
@@ -88,7 +86,7 @@ variable {n N : ℕ} {e : Fin n → Fin N}
 
 /-- **A pinned support numbered in order is an initial segment.** When the simple index map sends
 `i` to the root index `i`, membership in the support is the bound `k < n` on the index. -/
-theorem mem_simpleSupport_iff_lt (he : Injective e) (h : ∀ i, ((e i : Fin N) : ℕ) = i)
+theorem mem_simpleSupport_iff_lt (he : Injective e) (h : ∀ i, (e i : ℕ) = i)
     {k : Fin N} : k ∈ simpleSupport he ↔ (k : ℕ) < n := by
   rw [mem_simpleSupport]
   refine ⟨?_, fun hk => ⟨⟨k, hk⟩, Fin.ext (h ⟨k, hk⟩)⟩⟩
@@ -97,44 +95,6 @@ theorem mem_simpleSupport_iff_lt (he : Injective e) (h : ∀ i, ((e i : Fin N) :
   exact i.isLt
 
 end SimpleSupportFin
-
-
-/-! ## Combinations with coefficients of one sign -/
-
-section Closure
-
-variable {κ M : Type*} [Fintype κ] [AddCommGroup M] (v : κ → M)
-
-theorem sum_smul_mem_closure (c : κ → ℤ) (hc : ∀ i, 0 ≤ c i) :
-    (∑ i, c i • v i) ∈ AddSubmonoid.closure (range v) := by
-  refine AddSubmonoid.sum_mem _ fun i _ => ?_
-  obtain ⟨m, hm⟩ := Int.eq_ofNat_of_zero_le (hc i)
-  rw [hm, natCast_zsmul]
-  exact AddSubmonoid.nsmul_mem _ (AddSubmonoid.subset_closure (mem_range_self i)) m
-
-/-- A combination of a family whose coefficients all have the same sign lies in the additive
-closure of the family, or its negative does. Both membership axioms of `RootPairing.Base` are met
-in this shape. -/
-theorem sum_smul_mem_or_neg_mem_closure (c : κ → ℤ) (hc : (∀ i, 0 ≤ c i) ∨ (∀ i, c i ≤ 0)) :
-    (∑ i, c i • v i) ∈ AddSubmonoid.closure (range v) ∨
-      -(∑ i, c i • v i) ∈ AddSubmonoid.closure (range v) := by
-  rcases hc with h | h
-  · exact Or.inl (sum_smul_mem_closure v c h)
-  · refine Or.inr ?_
-    rw [← Finset.sum_neg_distrib]
-    simp only [← neg_smul]
-    exact sum_smul_mem_closure v (fun i => -c i) fun i => neg_nonneg.mpr (h i)
-
-/-- **Telescoping into the closure of the consecutive differences.** A difference `f a - f b` with
-`a ≤ b ≤ n` lies in the additive submonoid generated by the `n` differences `f i - f (i + 1)`. A
-pinned datum whose roots or coroots are differences of a coordinate potential meets the membership
-axioms of `RootPairing.Base` in this shape. -/
-theorem sub_mem_closure_of_le {n : ℕ} (f : ℕ → M) {a b : ℕ} (hb : b ≤ n) (hab : a ≤ b) :
-    f a - f b ∈ AddSubmonoid.closure (range fun i : Fin n => f (i : ℕ) - f ((i : ℕ) + 1)) := by
-  refine sub_mem_of_consecutive_sub_mem _ _ hab fun i _ hib => AddSubmonoid.subset_closure ?_
-  exact ⟨⟨i, lt_of_lt_of_le hib hb⟩, rfl⟩
-
-end Closure
 
 /-! ## Recognizing the pinned data -/
 
@@ -150,22 +110,15 @@ theorem hasCartanType_of_pairing_eq [FaithfulSMul ℤ R] {P : RootPairing ι R M
     (hb : b.support = simpleSupport he)
     (h : ∀ i j, P.pairing (e i) (e j) = algebraMap ℤ R (t.cartanMatrix i j)) :
     HasCartanType P b t := by
-  have hmem : ∀ i, e i ∈ b.support := fun i => hb ▸ (mem_simpleSupport he).mpr ⟨i, rfl⟩
-  have hbij : Bijective fun i : Fin t.rank => (⟨e i, hmem i⟩ : b.support) := by
-    constructor
-    · exact fun i j hij => he (congrArg Subtype.val hij)
-    · rintro ⟨k, hk⟩
-      obtain ⟨i, rfl⟩ := (mem_simpleSupport he).mp (hb ▸ hk)
-      exact ⟨i, rfl⟩
-  set q := (Equiv.ofBijective _ hbij).symm
+  let r : b.support ≃ range e := Equiv.subtypeEquivRight fun k => by simp [hb]
+  let q : b.support ≃ Fin t.rank := r.trans (Equiv.ofInjective e he).symm
+  have hval (x : b.support) : (x : ι) = e (q x) := (Equiv.apply_ofInjective_symm he (r x)).symm
   refine (hasCartanType_iff b t).mpr ⟨q, fun i j => ?_⟩
-  have hval : ∀ x : b.support, (x : ι) = e (q x) := fun x =>
-    congrArg Subtype.val (Equiv.apply_symm_apply (Equiv.ofBijective _ hbij) x).symm
   rw [← (FaithfulSMul.algebraMap_injective ℤ R).eq_iff,
     RootPairing.Base.algebraMap_cartanMatrixIn_apply, hval i, hval j, h]
 
 /-- **The coroots span the cocharacter lattice when the simple coroots are the standard basis.**
-For the pinned data of Layer 6 this is the simply connected lattice condition. -/
+For a root datum on the lattice `κ → ℤ` this is the simply connected lattice condition. -/
 theorem corootSpan_eq_top_of_coroot_eq_single {κ : Type*} [Finite κ] [DecidableEq κ]
     {P : RootPairing ι R M (κ → R)} {e : κ → ι} (h : ∀ i, P.coroot (e i) = Pi.single i 1) :
     P.corootSpan R = ⊤ := by

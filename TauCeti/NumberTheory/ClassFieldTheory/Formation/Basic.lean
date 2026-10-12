@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Topology.Algebra.OpenSubgroup
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.LowDegree
-public import TauCeti.RepresentationTheory.Homological.ContCohomology.SmoothDiscrete
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.SmoothDiscrete.Basic
 public import TauCeti.RepresentationTheory.Homological.TateCohomology.LowDegree
 
 /-!
@@ -52,16 +52,23 @@ as `Kˣ` enters through an `Additive` adapter.
   subgroup, with `galOfOpenNormalEquiv` identifying its Galois group with `G ⧸ V`.
 * `TauCeti.ClassFieldTheory.NormalLayer.rep`: the coefficient module `A^V` of the layer, as a
   representation of `U ⧸ V`.
+* `TauCeti.ClassFieldTheory.NormalLayer.coeffFixedPointsEquiv`: the coefficient module `A^V`
+  read as the fixed points `M^V` when `A` is read on a `G`-module `M`.
 * `TauCeti.ClassFieldTheory.NormalLayer.H`, `TateH`, `TrivialTateH`: the ordinary and Tate
   cohomology carriers of the layer, in the coefficient module `A^V` and in trivial integral
   coefficients.
 * `TauCeti.ClassFieldTheory.NormalLayer.tateHIsoH`: the identification of positive-degree Tate
   cohomology of the layer with its ordinary cohomology.
-* `TauCeti.ClassFieldTheory.NormalLayer.tateHMinusTwoEquivAbelianization`: the canonical
+* `TauCeti.ClassFieldTheory.NormalLayer.tateHMinusTwoEquivAbelianization`: the
   identification of degree `-2` Tate cohomology with the additive abelianization of the Galois
-  group.
+  group, normalized so that the Artin map satisfies the character formula.
 * `TauCeti.ClassFieldTheory.NormalLayer.norm`, `normSubgroup`, `NormQuotient`, `normQuotientMk`:
   the norm of the layer, its image, the norm quotient and the quotient map onto it.
+* `TauCeti.ClassFieldTheory.NormalLayer.normQuotientEquivOfGroundEquiv`: the norm quotient read
+  as `A / N` through an identification of a group `A` with the ground level that carries `N` onto
+  the norm subgroup.
+* `TauCeti.ClassFieldTheory.NormalLayer.zeroTateClass`: the zero-dimensional Tate class of an
+  element of the ground level.
 
 ## Main statements
 
@@ -69,9 +76,11 @@ as `Kˣ` enters through an `Additive` adapter.
   is fixed by an open subgroup.
 * `TauCeti.ClassFieldTheory.NormalLayer.groundLevelEquiv`: `(A^V)^{U/V} ≃ A^U`.
 * `TauCeti.ClassFieldTheory.NormalLayer.tateHMinusTwoEquivAbelianization_single_one`: the
-  degree `-2` identification sends the standard homology class of `g` to its abelianization.
+  degree `-2` identification sends the standard homology class of `g` to the class of `g⁻¹`.
 * `TauCeti.ClassFieldTheory.NormalLayer.tateHZeroEquivNormQuotient`: degree-zero Tate cohomology
   of the layer is the norm quotient.
+* `TauCeti.ClassFieldTheory.NormalLayer.zeroTateClass_eq_zero_iff`: the zero-dimensional Tate
+  class of an element of the ground level vanishes exactly when the element is a norm.
 
 ## Implementation notes
 
@@ -90,11 +99,21 @@ finite group and the coefficient ring `ℤ` in one universe and for the coeffici
 same universe, and every carrier of the arithmetic instances is a `Type`, so nothing is lost.
 
 The coefficient module is read as a plain `Rep ℤ G` through `Representation.ofDistribMulAction` at
-the action `TauCeti.TopRep.distribMulAction` derives from the operators of the topological
+the action `TopRep.distribMulAction` derives from the operators of the topological
 representation. Passing instead through `ContRepresentation.toRepresentation` would carry the
 `Module ℤ` instance packaged inside `TopRep`, which is not the instance `AddCommGroup.toIntModule`
 that typeclass synthesis produces for an integral module, and the two are not definitionally
 equal.
+
+Because `toRep` and `rep` are `abbrev`s for `Rep.of`, `simp` reduces the carriers `F.toRep.V` and
+`(L.rep F).V` to `F.module.V` and `F.level L.top` wherever they occur as implicit type arguments
+(the type of a coercion, of a bundled map, of a membership) before it looks a term up among its
+lemmas. A `simp` lemma is indexed by its left-hand side as elaborated, where these carriers are
+still unreduced, so a lemma stated plainly over `F.toRep.V` is never found. The `simp` lemmas
+about levels, layer coefficients and the norm below therefore state their left-hand sides through
+`dsimp% only`, which puts those implicit arguments in the form `simp` produces. Only the left-hand
+side is wrapped, and with `only`, so that the right-hand side keeps the form it is written in:
+`rw` with these lemmas then leaves terms over `F.toRep`, as the rest of this file states them.
 
 ## References
 
@@ -144,15 +163,19 @@ abbrev module : TopRep.{0} ℤ G := F.obj
 /-- The coefficient module is discrete with open point stabilizers. -/
 abbrev smooth : IsSmoothDiscrete ℤ F.module := F.property
 
+/-- Two formations on `G` with the same coefficient module are equal. -/
 @[ext]
 theorem ext {F F' : Formation G} (h : F.module = F'.module) : F = F' :=
   ObjectProperty.FullSubcategory.ext h
 
 /-- The coefficient module of a formation as a plain integral representation of `G`, forgetting
 its topology. The levels, the layer representations and all of their cohomology are taken of this
-underlying representation. -/
+underlying representation. Being an `abbrev`, its carrier is reduced by `simp`; see the
+implementation notes for how `simp` lemmas over it are stated. -/
 abbrev toRep : Rep ℤ G := Rep.of (Representation.ofDistribMulAction ℤ G F.module.V)
 
+/-- An element `g` acts on the underlying representation `F.toRep` as it acts on the coefficient
+module. -/
 theorem toRep_ρ_apply (g : G) (x : F.toRep.V) : F.toRep.ρ g x = F.module.ρ g x :=
   (rfl)
 
@@ -163,10 +186,11 @@ module. -/
 def level (U : OpenSubgroup G) : Submodule ℤ F.toRep.V :=
   invariants (F.toRep.ρ.comp U.toSubgroup.subtype)
 
+/-- An element lies in the level `A^U` exactly when every element of `U` fixes it. -/
 @[simp]
 theorem mem_level {U : OpenSubgroup G} {x : F.toRep.V} :
-    x ∈ F.level U ↔ ∀ u ∈ U, F.toRep.ρ u x = x :=
-  ⟨fun hx u hu ↦ hx ⟨u, hu⟩, fun hx u ↦ hx u u.2⟩
+    (dsimp% only (x ∈ F.level U)) ↔ ∀ u ∈ U, F.toRep.ρ u x = x :=
+  Subtype.forall
 
 /-- **Every element of the coefficient module lies in a level.** This is the Artin–Tate condition
 that each element of `A` is fixed by a sufficiently small member of the distinguished family of
@@ -190,13 +214,14 @@ def levelEquivH0 (U : OpenSubgroup G) : F.level U ≃+ ContCohomology.H0 U.toSub
 /-- `levelEquivH0` moves no element of the ambient module. -/
 @[simp]
 theorem levelEquivH0_apply_coe (U : OpenSubgroup G) (x : F.level U) :
-    (F.levelEquivH0 U x : F.toRep.V) = x :=
+    (dsimp% only (F.levelEquivH0 U x : F.toRep.V)) = x :=
   (rfl)
 
 /-- The inverse of `levelEquivH0` moves no element of the ambient module either. -/
 @[simp]
 theorem levelEquivH0_symm_apply_coe (U : OpenSubgroup G)
-    (x : ContCohomology.H0 U.toSubgroup F.toRep.V) : ((F.levelEquivH0 U).symm x : F.toRep.V) = x :=
+    (x : ContCohomology.H0 U.toSubgroup F.toRep.V) :
+    (dsimp% only ((F.levelEquivH0 U).symm x : F.toRep.V)) = x :=
   (rfl)
 
 end Formation
@@ -226,6 +251,7 @@ variable {G : Type} [Group G] [TopologicalSpace G] [IsTopologicalGroup G] [Compa
 /-- The top subgroup `V` of a layer, viewed as a subgroup of the ground subgroup `U`. -/
 abbrev relativeTop : Subgroup L.ground := L.top.toSubgroup.subgroupOf L.ground.toSubgroup
 
+/-- The top subgroup of a layer is normal in the ground subgroup. -/
 instance : L.relativeTop.Normal := L.normal
 
 /-- The Galois group `Γ = U ⧸ V` of a finite normal layer. -/
@@ -241,16 +267,16 @@ theorem conj_mem_top {u : G} (hu : u ∈ L.ground) {v : G} (hv : v ∈ L.top) :
 subgroup. -/
 def degree : ℕ := L.relativeTop.index
 
+/-- The degree of a layer is the order of its Galois group `U ⧸ V`. -/
 @[simp]
 theorem degree_eq_natCard_gal : L.degree = Nat.card L.Gal :=
   (rfl)
 
 /-- The degree of a layer is the relative index of its top subgroup in its ground subgroup. -/
 theorem degree_eq_relIndex :
-    L.degree = L.top.toSubgroup.relIndex L.ground.toSubgroup :=
-  by
-    rw [Subgroup.relIndex]
-    exact L.degree_eq_natCard_gal
+    L.degree = L.top.toSubgroup.relIndex L.ground.toSubgroup := by
+  rw [Subgroup.relIndex]
+  exact L.degree_eq_natCard_gal
 
 /-- The layer `V ◁ ⊤` cut out by an open normal subgroup of `G`. These layers are the finite
 Galois extensions of the ground field of a formation on `G`. -/
@@ -260,10 +286,12 @@ def ofOpenNormal (V : OpenNormalSubgroup G) : NormalLayer G where
   top_le_ground := le_top
   normal := Subgroup.normal_subgroupOf
 
+/-- The ground subgroup of the layer `V ◁ ⊤` is all of `G`. -/
 @[simp]
 theorem ground_ofOpenNormal (V : OpenNormalSubgroup G) : (ofOpenNormal V).ground = ⊤ :=
   (rfl)
 
+/-- The top subgroup of the layer `V ◁ ⊤` is `V`. -/
 @[simp]
 theorem top_ofOpenNormal (V : OpenNormalSubgroup G) :
     (ofOpenNormal V).top = V.toOpenSubgroup :=
@@ -277,6 +305,8 @@ def galOfOpenNormalEquiv (V : OpenNormalSubgroup G) :
     simp only [Subgroup.mem_map]
     exact ⟨fun ⟨_, ha, h⟩ ↦ h ▸ ha, fun hx ↦ ⟨⟨x, trivial⟩, hx, rfl⟩⟩
 
+/-- The identification of the Galois group of `V ◁ ⊤` with `G ⧸ V` sends the class of `u` to the
+class of `u`. -/
 @[simp]
 theorem galOfOpenNormalEquiv_mk (V : OpenNormalSubgroup G) (u : (ofOpenNormal V).ground) :
     galOfOpenNormalEquiv V (QuotientGroup.mk u) = QuotientGroup.mk (u : G) :=
@@ -289,8 +319,23 @@ instance instFiniteGal : Finite L.Gal :=
   Subgroup.quotient_finite_of_isOpen' L.ground.toSubgroup L.relativeTop L.ground.isOpen
     (L.ground.toSubgroup.subgroupOf_isOpen L.top.toSubgroup L.top.isOpen)
 
+/-- The Galois group of a layer is finite, so it carries a `Fintype` structure. -/
 instance instFintypeGal : Fintype L.Gal := Fintype.ofFinite _
 
+/-- The top subgroup of a layer is normal in the ground subgroup, stated for the underlying
+subgroups of `G`: this is the form in which the continuous cohomology of the ground subgroup
+`L.ground.toSubgroup` takes it. -/
+instance instNormalSubgroupOf : (L.top.toSubgroup.subgroupOf L.ground.toSubgroup).Normal :=
+  L.normal
+
+/-- The top subgroup is open in the ground subgroup, so the Galois group, presented as the
+quotient of the underlying subgroup `L.ground.toSubgroup` of `G`, is discrete. -/
+instance instDiscreteTopologyQuotient :
+    DiscreteTopology (L.ground.toSubgroup ⧸ L.top.toSubgroup.subgroupOf L.ground.toSubgroup) :=
+  QuotientGroup.discreteTopology
+    (L.ground.toSubgroup.subgroupOf_isOpen L.top.toSubgroup L.top.isOpen)
+
+/-- The degree of a layer is positive. -/
 theorem degree_pos : 0 < L.degree :=
   L.degree_eq_natCard_gal ▸ Nat.card_pos
 
@@ -322,9 +367,11 @@ theorem level_top_le_comap (u : L.ground) :
 abbrev groundRep : Representation ℤ L.ground (F.level L.top) :=
   .subrepresentation (F.toRep.ρ.comp L.ground.toSubgroup.subtype) _ (L.level_top_le_comap F)
 
+/-- The ground subgroup acts on the top level by the restriction of the action on the ambient
+module. -/
 @[simp]
 theorem groundRep_apply_coe (u : L.ground) (x : F.level L.top) :
-    ((L.groundRep F u x : F.level L.top) : F.toRep.V) = F.toRep.ρ (u : G) x :=
+    (dsimp% only (L.groundRep F u x : F.toRep.V)) = F.toRep.ρ (u : G) x :=
   (rfl)
 
 /-- The top subgroup acts trivially on the top level, so the `U`-action descends to `U ⧸ V`. -/
@@ -337,6 +384,8 @@ instance : Representation.IsTrivial ((L.groundRep F).comp L.relativeTop.subtype)
 Galois group `U ⧸ V`. Its underlying module is the level itself, not an isomorphic copy. -/
 abbrev rep : Rep ℤ L.Gal := Rep.of ((L.groundRep F).ofQuotient L.relativeTop)
 
+/-- The class of `u ∈ U` in the Galois group acts on the coefficient module of the layer as `u` acts
+on the ambient module. -/
 theorem rep_ρ_mk_apply_coe (u : L.ground) (x : F.level L.top) :
     (((L.rep F).ρ (u : L.Gal) x : F.level L.top) : F.toRep.V) = F.toRep.ρ (u : G) x :=
   (rfl)
@@ -365,17 +414,71 @@ def groundLevelEquiv : (L.rep F).ρ.invariants ≃ₗ[ℤ] F.level L.ground :=
   (LinearEquiv.ofEq _ _ (L.invariants_rep F)).trans
     (Submodule.comapSubtypeEquivOfLe (L.level_ground_le_level_top F))
 
+/-- `groundLevelEquiv` moves no element of the ambient module. -/
 @[simp]
 theorem groundLevelEquiv_apply_coe (x : (L.rep F).ρ.invariants) :
-    ((L.groundLevelEquiv F x : F.level L.ground) : F.toRep.V) = ((x : F.level L.top) :
-      F.toRep.V) :=
+    (dsimp% only (L.groundLevelEquiv F x : F.toRep.V)) = x :=
   (rfl)
 
+/-- The inverse of `groundLevelEquiv` moves no element of the ambient module either. -/
 @[simp]
 theorem groundLevelEquiv_symm_apply_coe (y : F.level L.ground) :
-    ((((L.groundLevelEquiv F).symm y : (L.rep F).ρ.invariants) : F.level L.top) : F.toRep.V) =
-      (y : F.toRep.V) :=
+    (dsimp% only ((L.groundLevelEquiv F).symm y : F.toRep.V)) = y :=
   (rfl)
+
+section FixedPoints
+
+variable {F} {M : Type} [AddCommGroup M] [DistribMulAction G M] (e : M ≃+ F.toRep.V)
+  (he : ∀ (g : G) (x : M), e (g • x) = F.toRep.ρ g (e x))
+
+/-- **The coefficient module of a layer read in a `G`-module**: when the coefficient module of the
+formation is read, through an equivariant additive equivalence `e : M ≃+ A`, on a `G`-module `M`,
+the coefficient module `A^V` of a layer `V ◁ U` is the subgroup `M^V` of fixed points of its top
+subgroup, viewed as a subgroup of the ground subgroup `U`. It only changes the coefficient
+dictionary (`coeffFixedPointsEquiv_apply_coe`) and is equivariant for the Galois group of the layer
+(`coeffFixedPointsEquiv_ρ`). -/
+def coeffFixedPointsEquiv :
+    (L.rep F).V ≃+ FixedPoints.addSubgroup (L.top.toSubgroup.subgroupOf L.ground.toSubgroup) M where
+  toFun x := ⟨e.symm (x : F.level L.top), (FixedPoints.mem_addSubgroup _ _ _).2 fun v =>
+    e.injective <| (he _ _).trans <| by
+      rw [e.apply_symm_apply]
+      exact (Formation.mem_level _).1 x.2 _ (Subgroup.mem_subgroupOf.1 v.2)⟩
+  invFun m := ⟨e m, (Formation.mem_level _).2 fun v hv =>
+    (he v m).symm.trans <| congrArg e <|
+      (FixedPoints.mem_addSubgroup _ _ _).1 m.2 ⟨⟨v, L.top_le_ground hv⟩, hv⟩⟩
+  left_inv _ := Subtype.ext (e.apply_symm_apply _)
+  right_inv _ := Subtype.ext (e.symm_apply_apply _)
+  map_add' _ _ := Subtype.ext (map_add e.symm _ _)
+
+/-- `coeffFixedPointsEquiv` reads an element of the coefficient module in `M` through `e`. -/
+@[simp]
+theorem coeffFixedPointsEquiv_apply_coe (x : (L.rep F).V) :
+    (L.coeffFixedPointsEquiv e he x : M) = e.symm (x : F.level L.top) :=
+  (rfl)
+
+/-- The inverse of `coeffFixedPointsEquiv` reads a fixed point of `M` in the coefficient module
+through `e`. -/
+@[simp]
+theorem coeffFixedPointsEquiv_symm_apply_coe
+    (m : FixedPoints.addSubgroup (L.top.toSubgroup.subgroupOf L.ground.toSubgroup) M) :
+    ((L.coeffFixedPointsEquiv e he).symm m : F.level L.top) = e m :=
+  (rfl)
+
+/-- `coeffFixedPointsEquiv` is equivariant for the Galois group of the layer. -/
+@[simp]
+theorem coeffFixedPointsEquiv_ρ
+    (g : L.ground.toSubgroup ⧸ L.top.toSubgroup.subgroupOf L.ground.toSubgroup)
+    (x : (L.rep F).V) :
+    L.coeffFixedPointsEquiv e he ((L.rep F).ρ g x) = g • L.coeffFixedPointsEquiv e he x := by
+  induction g using QuotientGroup.induction_on with
+  | H u =>
+    refine Subtype.ext ?_
+    rw [coeffFixedPointsEquiv_apply_coe, coe_quotient_smul_fixedPoints_addSubgroup,
+      coe_smul_fixedPoints_addSubgroup, coeffFixedPointsEquiv_apply_coe, AddEquiv.symm_apply_eq,
+      Subgroup.smul_def, he, AddEquiv.apply_symm_apply]
+    exact L.rep_ρ_mk_apply_coe _ u x
+
+end FixedPoints
 
 end Coefficients
 
@@ -394,34 +497,55 @@ abbrev H (n : ℕ) : ModuleCat ℤ := groupCohomology (L.rep F) n
 abbrev TateH (r : ℤ) : ModuleCat ℤ := tateCohomology (L.rep F) r
 
 /-- **Tate cohomology of a finite normal layer with trivial integral coefficients**, the Tate
-group `H^r(U/V, ℤ)`. Its degree `-2` is the abelianization of the Galois group of the layer, and
-the Artin map of a class formation is a cup product between this carrier and `TateH`. -/
+group `H^r(U/V, ℤ)`. Its degree `-2` is the abelianization of the Galois group of the layer. In a
+class formation, cup product with the fundamental class of the layer carries that degree
+isomorphically onto `TateH` in degree `0`, and the Artin map is the inverse of this isomorphism. -/
 abbrev TrivialTateH (r : ℤ) : ModuleCat ℤ := tateCohomology (Rep.trivial ℤ L.Gal ℤ) r
+
+/-- **Ordinary cohomology of a finite normal layer with trivial integral coefficients**,
+`H^n(U/V, ℤ)`. This is the positive-degree comparison target for `TrivialTateH`. -/
+abbrev TrivialH (n : ℕ) : ModuleCat ℤ := groupCohomology (Rep.trivial ℤ L.Gal ℤ) n
 
 /-! ### The two low Tate degrees -/
 
 /-- **Degree `-2` Tate cohomology with trivial integral coefficients is the additive
-abelianization of the Galois group.** This is the finite-layer form of the canonical generic
-identification, and is the source of the Galois side of the Nakayama map. -/
+abelianization of the Galois group.** This is the source of the Galois side of the Nakayama map.
+
+It is the negative of the generic identification
+`TauCeti.TateCohomology.HNegTwoAddEquivAbelianization`, so the first-homology class of `(g, 1)`
+goes to `g⁻¹` (`tateHMinusTwoEquivAbelianization_single_one`). With the generic identification the
+Tate pairing of `σ ∈ Γ^ab` with the connecting class `δχ` of a character is `-χ(σ)`
+(`TauCeti.TateCohomology.toRatAddCircle_map_leftUnitor_cup_characterConnectingClass`). With this
+sign it is `χ(σ)`, and the Artin map satisfies the classical character formula
+`χ(artinMap a) = inv(a₀ ∪ δχ)` instead of being the inverse of the classical reciprocity map. -/
 def tateHMinusTwoEquivAbelianization :
     L.TrivialTateH (-2) ≃+ Additive (Abelianization L.Gal) :=
-  TauCeti.TateCohomology.HNegTwoAddEquivAbelianization
+  TauCeti.TateCohomology.HNegTwoAddEquivAbelianization.trans (AddEquiv.neg _)
 
+/-- The layer's degree-`-2` identification is the negative of the generic identification for its
+Galois group. -/
+theorem tateHMinusTwoEquivAbelianization_apply (x : L.TrivialTateH (-2)) :
+    L.tateHMinusTwoEquivAbelianization x =
+      -TauCeti.TateCohomology.HNegTwoAddEquivAbelianization x :=
+  (rfl)
+
+-- `dsimp% only` on the left-hand side, as explained in the implementation notes: Mathlib's
+-- `Rep.trivial` is also an `abbrev` for `Rep.of`, so `simp` reduces its carrier as well.
 /-- The degree `-2` identification sends the standard first-homology class represented by
-`(g, 1)` to the class of `g` in the additive abelianization. -/
+`(g, 1)` to the class of `g⁻¹` in the additive abelianization. -/
 @[simp]
 theorem tateHMinusTwoEquivAbelianization_single_one (g : L.Gal) :
-    L.tateHMinusTwoEquivAbelianization
-      ((TateCohomology.isoGroupHomology (-2) 1 rfl).inv.app
-        (Rep.trivial ℤ L.Gal ℤ)
+    (dsimp% only (L.tateHMinusTwoEquivAbelianization
+      ((TateCohomology.isoGroupHomology (-2) 1 rfl).inv.app (Rep.trivial ℤ L.Gal ℤ)
         (groupHomology.H1π (Rep.trivial ℤ L.Gal ℤ)
           ((groupHomology.cycles₁IsoOfIsTrivial (Rep.trivial ℤ L.Gal ℤ)).inv
-            (Finsupp.single g 1)))) =
-      Additive.ofMul (Abelianization.of g) := by
-  exact TauCeti.TateCohomology.HNegTwoAddEquivAbelianization_single_one g
+            (Finsupp.single g 1)))))) =
+      Additive.ofMul (Abelianization.of g⁻¹) := by
+  rw [tateHMinusTwoEquivAbelianization_apply,
+    TauCeti.TateCohomology.HNegTwoAddEquivAbelianization_single_one, map_inv, ofMul_inv]
 
-/-- The inverse degree `-2` identification sends the abelianization class of `g` to its standard
-first-homology representative with coefficient `1`. -/
+/-- The inverse degree `-2` identification sends the abelianization class of `g` to the standard
+first-homology class represented by `(g⁻¹, 1)`. -/
 @[simp]
 theorem tateHMinusTwoEquivAbelianization_symm_of (g : L.Gal) :
     L.tateHMinusTwoEquivAbelianization.symm (Additive.ofMul (Abelianization.of g)) =
@@ -429,14 +553,26 @@ theorem tateHMinusTwoEquivAbelianization_symm_of (g : L.Gal) :
         (Rep.trivial ℤ L.Gal ℤ)
         (groupHomology.H1π (Rep.trivial ℤ L.Gal ℤ)
           ((groupHomology.cycles₁IsoOfIsTrivial (Rep.trivial ℤ L.Gal ℤ)).inv
-            (Finsupp.single g 1))) := by
-  exact TauCeti.TateCohomology.HNegTwoAddEquivAbelianization_symm_of g
+            (Finsupp.single g⁻¹ 1))) := by
+  simp [AddEquiv.symm_apply_eq]
 
 /-- **In positive degrees the Tate cohomology of a finite normal layer is its ordinary
 cohomology.** This is Mathlib's comparison `TateCohomology.isoGroupCohomology`, stated between the
 carriers `TateH` and `H` of the layer, so that it composes with maps between those carriers. -/
 def tateHIsoH (r : ℕ) [NeZero r] : L.TateH F r ≅ L.H F r :=
   (TateCohomology.isoGroupCohomology r).app (L.rep F)
+
+/-- **In positive degrees Tate cohomology with trivial integral coefficients is ordinary
+cohomology.** -/
+def trivialTateHIsoH (r : ℕ) [NeZero r] : L.TrivialTateH r ≅ L.TrivialH r :=
+  (TateCohomology.isoGroupCohomology r).app (Rep.trivial ℤ L.Gal ℤ)
+
+/-- The positive-degree comparison for trivial coefficients is Mathlib's canonical comparison
+isomorphism. -/
+theorem trivialTateHIsoH_def (r : ℕ) [NeZero r] :
+    L.trivialTateHIsoH r =
+      (TateCohomology.isoGroupCohomology r).app (Rep.trivial ℤ L.Gal ℤ) :=
+  (rfl)
 
 /-- The identification of positive-degree Tate cohomology of a layer with its ordinary cohomology
 is Mathlib's comparison isomorphism at the coefficient module of the layer. -/
@@ -457,19 +593,14 @@ landing in the ground level through `groundLevelEquiv`. -/
 def norm : F.level L.top →ₗ[ℤ] F.level L.ground :=
   (L.groundLevelEquiv F).toLinearMap ∘ₗ
     (L.rep F).ρ.norm.codRestrict (L.rep F).ρ.invariants fun x ↦
-      (Representation.mem_invariants _ _).2 fun g ↦ by
-        rw [← LinearMap.comp_apply, Representation.self_comp_norm]
+      (Representation.mem_invariants _ _).2 fun g ↦ Representation.self_norm_apply _ g x
 
+/-- The norm of a layer is the sum of the Galois conjugates: `N_{U/V}(x) = ∑_{γ ∈ U ⧸ V} γ x`. -/
 @[simp]
 theorem norm_apply_coe (x : F.level L.top) :
-    ((L.norm F x : F.level L.ground) : F.toRep.V) =
-      ∑ γ : L.Gal, (((L.rep F).ρ γ x : F.level L.top) : F.toRep.V) := by
-  -- The identification with the ground level does not move the underlying element, so the norm
-  -- of the layer and Mathlib's `Representation.norm` take the same value in the ambient module.
-  have h : ((L.norm F x : F.level L.ground) : F.toRep.V)
-      = (((L.rep F).ρ.norm x : F.level L.top) : F.toRep.V) := rfl
-  rw [h]
-  simp [Representation.norm]
+    (dsimp% only (L.norm F x : F.toRep.V)) = ∑ γ : L.Gal, ((L.rep F).ρ γ x : F.toRep.V) := by
+  -- `norm` is Mathlib's `Representation.norm` read in the ground level, which moves no element.
+  simp [norm, Representation.norm]
 
 /-- The norm of a layer is the trace of the Galois action on the top level, so on an element of
 the ground level it is multiplication by the degree. -/
@@ -488,9 +619,12 @@ theorem norm_apply_coe_of_mem_level_ground (x : F.level L.top)
 def normSubgroup : Submodule ℤ (F.level L.ground) :=
   LinearMap.range (L.norm F)
 
+-- `dsimp% only` on the left-hand sides of this and `normQuotientMk_apply`, as explained in the
+-- implementation notes.
+/-- An element of the ground level lies in the norm subgroup exactly when it is a norm. -/
 @[simp]
 theorem mem_normSubgroup {y : F.level L.ground} :
-    y ∈ L.normSubgroup F ↔ ∃ x, L.norm F x = y :=
+    (dsimp% only (y ∈ L.normSubgroup F)) ↔ ∃ x, L.norm F x = y :=
   Iff.rfl
 
 /-- The **norm quotient** `A^U / N_{U/V}(A^V)` of a finite normal layer. It is the group that the
@@ -504,9 +638,10 @@ formation is defined on the ground level by composing with this map. -/
 def normQuotientMk : F.level L.ground →ₗ[ℤ] L.NormQuotient F :=
   (L.normSubgroup F).mkQ
 
+/-- `normQuotientMk` sends an element of the ground level to its class in the norm quotient. -/
 @[simp]
 theorem normQuotientMk_apply (x : F.level L.ground) :
-    L.normQuotientMk F x = Submodule.Quotient.mk x :=
+    (dsimp% only (L.normQuotientMk F x)) = Submodule.Quotient.mk x :=
   (rfl)
 
 /-- The image under `groundLevelEquiv` of the norm image inside the invariants is the norm
@@ -515,18 +650,8 @@ theorem map_groundLevelEquiv_submoduleOf :
     Submodule.map (L.groundLevelEquiv F).toLinearMap
         ((LinearMap.range (L.rep F).ρ.norm).submoduleOf (L.rep F).ρ.invariants) =
       L.normSubgroup F := by
-  ext y
-  simp only [Submodule.mem_map, Submodule.submoduleOf, Submodule.mem_comap,
-    LinearMap.mem_range, normSubgroup, LinearEquiv.coe_coe]
-  constructor
-  · rintro ⟨z, ⟨v, hv⟩, rfl⟩
-    refine ⟨v, Subtype.ext ?_⟩
-    -- The congruence is bound first: elaborated against the goal, `congrArg` would unify its
-    -- arguments with the two sides of the goal instead of with the two sides of `hv`.
-    have h := congrArg Subtype.val hv
-    exact h
-  · rintro ⟨v, rfl⟩
-    exact ⟨_, ⟨v, rfl⟩, rfl⟩
+  simp only [normSubgroup, norm, LinearMap.range_comp, LinearMap.range_codRestrict,
+    Submodule.submoduleOf]
 
 /-- **Degree-zero Tate cohomology of a finite normal layer is its norm quotient.** This is the
 low-degree identification that the Artin map of a class formation is read through. -/
@@ -535,16 +660,98 @@ def tateHZeroEquivNormQuotient : L.TateH F 0 ≃+ L.NormQuotient F :=
     (Submodule.Quotient.equiv _ _ (L.groundLevelEquiv F)
       (L.map_groundLevelEquiv_submoduleOf F)).toModuleIso).toLinearEquiv.toAddEquiv
 
+-- `dsimp% only` on the left-hand side, as explained in the implementation notes.
 /-- The identification of degree-zero Tate cohomology with the norm quotient sends the class of an
 invariant to the class of the corresponding element of the ground level. -/
 @[simp]
 theorem tateHZeroEquivNormQuotient_H0π (x : (L.rep F).ρ.invariants) :
-    L.tateHZeroEquivNormQuotient F (TateCohomology.H0π (L.rep F) x) =
+    (dsimp% only (L.tateHZeroEquivNormQuotient F (TateCohomology.H0π (L.rep F) x))) =
       L.normQuotientMk F (L.groundLevelEquiv F x) := by
   -- The elementwise form of the low-degree identification is bound as a hypothesis first, so
   -- that it is normalised to the application form the goal uses before it rewrites.
   have h := TateCohomology.H0π_comp_H0IsoNormQuotient_hom_apply (L.rep F) x
-  simp [tateHZeroEquivNormQuotient, normQuotientMk, h]
+  simp [tateHZeroEquivNormQuotient, h]
+
+-- Specified by the class field theory roadmap, `TauCetiRoadmap/ClassFieldTheory/Suggested.lean`.
+/-- The **zero-dimensional Tate class** `a₀` of an element `a` of the ground level `A^U`: the class
+of `a` in the degree-zero Tate group `H^0(U/V, A^V)`, reading `a` as an invariant of the
+coefficient module `A^V`. -/
+def zeroTateClass : F.level L.ground →+ L.TateH F 0 :=
+  ((TateCohomology.H0π (L.rep F)).hom ∘ₗ (L.groundLevelEquiv F).symm.toLinearMap).toAddMonoidHom
+
+-- `dsimp% only` on the left-hand sides of this and the next two lemmas, as explained in the
+-- implementation notes.
+/-- The zero-dimensional Tate class of the ground-level element corresponding to an invariant is
+the class of that invariant. -/
+@[simp]
+theorem zeroTateClass_groundLevelEquiv (x : (L.rep F).ρ.invariants) :
+    (dsimp% only (L.zeroTateClass F (L.groundLevelEquiv F x))) = TateCohomology.H0π (L.rep F) x :=
+  (rfl)
+
+/-- Under the identification of degree-zero Tate cohomology with the norm quotient, the
+zero-dimensional Tate class of `a` is the class of `a` modulo norms. -/
+@[simp]
+theorem tateHZeroEquivNormQuotient_zeroTateClass (a : F.level L.ground) :
+    (dsimp% only (L.tateHZeroEquivNormQuotient F (L.zeroTateClass F a))) =
+      L.normQuotientMk F a := by
+  simp [zeroTateClass]
+
+/-- The zero-dimensional Tate class of `a` vanishes exactly when `a` is a norm. -/
+@[simp]
+theorem zeroTateClass_eq_zero_iff (a : F.level L.ground) :
+    (dsimp% only (L.zeroTateClass F a = 0)) ↔ a ∈ L.normSubgroup F := by
+  rw [← (L.tateHZeroEquivNormQuotient F).map_eq_zero_iff,
+    tateHZeroEquivNormQuotient_zeroTateClass, normQuotientMk_apply, Submodule.Quotient.mk_eq_zero]
+
+section GroundEquiv
+
+variable {A : Type*} [Group A] {N : Subgroup A} (e : Additive A ≃+ F.level L.ground)
+
+/-- The map `A → A^U / N_{U/V}(A^V)` through an identification `e` of `A` with the ground level,
+written multiplicatively. -/
+private def groundNormQuotientHom : A →* Multiplicative (L.NormQuotient F) :=
+  AddMonoidHom.toMultiplicativeRight ((L.normQuotientMk F).toAddMonoidHom.comp e.toAddMonoidHom)
+
+private theorem groundNormQuotientHom_apply (a : A) :
+    L.groundNormQuotientHom F e a = Multiplicative.ofAdd (L.normQuotientMk F (e (.ofMul a))) :=
+  (rfl)
+
+private theorem ker_groundNormQuotientHom (hN : ∀ a, e (.ofMul a) ∈ L.normSubgroup F ↔ a ∈ N) :
+    N = (L.groundNormQuotientHom F e).ker := by
+  ext a
+  rw [MonoidHom.mem_ker, ← hN, groundNormQuotientHom_apply, ofAdd_eq_one, normQuotientMk_apply,
+    Submodule.Quotient.mk_eq_zero]
+
+private theorem surjective_groundNormQuotientHom :
+    Function.Surjective (L.groundNormQuotientHom F e) := fun z ↦ by
+  obtain ⟨x, hx⟩ := Submodule.Quotient.mk_surjective _ z.toAdd
+  obtain ⟨a, rfl⟩ := e.surjective x
+  refine ⟨a.toMul, ?_⟩
+  rw [groundNormQuotientHom_apply, ofMul_toMul, normQuotientMk_apply, hx, ofAdd_toAdd]
+
+/-- **The norm quotient read through an identification of the ground level**: if `e` identifies a
+group `A` with the ground level `A^U` of the layer and carries the normal subgroup `N` onto the
+norm subgroup `N_{U/V}(A^V)`, then `e` descends to an identification of `A / N` with the norm
+quotient. -/
+def normQuotientEquivOfGroundEquiv [N.Normal] (hN : ∀ a, e (.ofMul a) ∈ L.normSubgroup F ↔ a ∈ N) :
+    Additive (A ⧸ N) ≃+ L.NormQuotient F :=
+  MulEquiv.toAdditiveLeft
+    ((QuotientGroup.quotientMulEquivOfEq (L.ker_groundNormQuotientHom F e hN)).trans
+      (QuotientGroup.quotientKerEquivOfSurjective _ (L.surjective_groundNormQuotientHom F e)))
+
+/-- `normQuotientEquivOfGroundEquiv` sends the class of `a ∈ A` to the class of `e a` in the norm
+quotient. -/
+@[simp]
+theorem normQuotientEquivOfGroundEquiv_mk [N.Normal]
+    (hN : ∀ a, e (.ofMul a) ∈ L.normSubgroup F ↔ a ∈ N) (a : A) :
+    L.normQuotientEquivOfGroundEquiv F e hN (.ofMul (a : A ⧸ N)) =
+      L.normQuotientMk F (e (.ofMul a)) := by
+  rw [normQuotientEquivOfGroundEquiv, QuotientGroup.quotientKerEquivOfSurjective,
+    AddEquiv.toMultiplicativeRight_symm_apply_apply, toMul_ofMul, MulEquiv.trans_apply,
+    QuotientGroup.quotientMulEquivOfEq_mk, QuotientGroup.quotientKerEquivOfRightInverse_apply,
+    QuotientGroup.kerLift_mk, groundNormQuotientHom_apply, toAdd_ofAdd]
+
+end GroundEquiv
 
 end Norm
 

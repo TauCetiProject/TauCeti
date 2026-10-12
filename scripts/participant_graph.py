@@ -25,7 +25,7 @@ from chart_style import BAR_BG, MUTED, PALETTE, TEXT, base_css, card_rect, css_p
 REPOSITORIES = [
     ("TauCetiProject/TauCeti", "TauCeti", PALETTE[1]),
     ("TauCetiProject/TauCetiRoadmap", "TauCetiRoadmap", PALETTE[0]),
-    ("kim-em/TauCetiWorker", "TauCetiWorker", PALETTE[2]),
+    ("TauCetiProject/TauCetiWorker", "TauCetiWorker", PALETTE[2]),
     ("TauCetiProject/TauCetiReview", "TauCetiReview", PALETTE[4]),
 ]
 

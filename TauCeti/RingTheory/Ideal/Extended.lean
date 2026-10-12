@@ -7,6 +7,8 @@ module
 
 public import Mathlib.RingTheory.Filtration
 
+import TauCeti.RingTheory.Ideal.Operations
+
 /-!
 # Ideals of a noncommutative algebra extended from the base ring
 
@@ -111,20 +113,10 @@ theorem mem_map_algebraMap_iff {x : A} :
     x ∈ I.map (algebraMap R A) ↔ x ∈ I • (⊤ : Submodule R A) := by
   rw [smul_top_eq_restrictScalars_map, Submodule.restrictScalars_mem]
 
-/-- The `R`-submodule `I • ⊤` of `A` is stable under right multiplication by `A`; unlike the
-left-hand statement above this needs no centrality, only the scalar tower. -/
-private theorem smul_top_mul_mem (a : A) {x : A} (hx : x ∈ I • (⊤ : Submodule R A)) :
-    x * a ∈ I • (⊤ : Submodule R A) := by
-  refine Submodule.smul_induction_on hx (fun r hr y _ ↦ ?_) fun y z hy hz ↦ ?_
-  · rw [smul_mul_assoc]
-    exact Submodule.smul_mem_smul hr Submodule.mem_top
-  · rw [add_mul]
-    exact Submodule.add_mem _ hy hz
-
 /-- **An extended ideal is two-sided**, because the image of `algebraMap R A` is central. -/
-instance instIsTwoSidedMapAlgebraMap : (I.map (algebraMap R A)).IsTwoSided where
-  mul_mem_of_left b hx :=
-    mem_map_algebraMap_iff I |>.mpr (smul_top_mul_mem I b (mem_map_algebraMap_iff I |>.mp hx))
+instance instIsTwoSidedMapAlgebraMap : (I.map (algebraMap R A)).IsTwoSided :=
+  -- `I.map (algebraMap R A)` is by definition the span of the image of `I`.
+  isTwoSided_span_of_subset_center (by rintro _ ⟨r, -, rfl⟩; exact Set.algebraMap_mem_center r)
 
 /-- **Extension along `algebraMap R A` is multiplicative.** -/
 theorem map_algebraMap_mul :

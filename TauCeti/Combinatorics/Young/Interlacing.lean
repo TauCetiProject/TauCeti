@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Combinatorics.Young.BetaNumbers
 public import TauCeti.Combinatorics.Young.Kostka
+import TauCeti.Combinatorics.Young.OfRowLens
 
 /-!
 # Interlacing shapes and the branching of bounded tableaux
@@ -26,6 +28,11 @@ entry form a prefix, and columns increase strictly, so `μᵢ₊₁ ≤ νᵢ`. 
 interlacing does its work: filling every cell of `μ / ν` with the single letter `n` keeps the
 columns strict exactly because `μ / ν` has no two cells in a column, which is `μᵢ₊₁ ≤ νᵢ`.
 
+Interlacing also has a reading on beta-numbers, `TauCeti.forall_betaNumber_le_iff_interlacedBy`:
+shifting the row lengths by the staircase turns the alternating inequalities into the statement that
+the comparisons `ν_j + (N - 1 - j) ≤ μ_i + (N - 1 - i)` hold exactly for `i ≤ j`.  That is the form
+in which horizontal strips appear in the Pieri rule.
+
 The bijection is stated fibrewise, as `TauCeti.BoundedSSYT.fiberEquiv`: the tableaux of shape `μ`
 whose sub-shape of small entries is a *given* `ν` are the tableaux of shape `ν`.  Phrasing it this
 way keeps every type non-dependent, so the resulting sum decomposition
@@ -43,6 +50,11 @@ way keeps every type non-dependent, so the resulting sum decomposition
 
 ## Main results
 
+* `YoungDiagram.sum_interlacingShapes_eq_sum_piFinset`: the shapes with at most `n` rows
+  interlacing a shape with at most `n + 1` rows are parametrized by their row lengths, the `j`-th
+  drawn freely from `[μ_{j+1}, μ_j]`.
+* `TauCeti.forall_betaNumber_le_iff_interlacedBy`: interlacing read on beta-numbers, the
+  comparisons of the beta-numbers of the two shapes cutting out the initial segments.
 * `TauCeti.BoundedSSYT.restrictShape_mem_interlacingShapes`: the sub-shape of small entries
   interlaces `μ` and has at most `n` rows.
 * `TauCeti.BoundedSSYT.content_restrict`: erasing the top letter leaves unchanged how often each
@@ -118,9 +130,84 @@ theorem mem_interlacingShapes {n : ℕ} :
     ν ∈ interlacingShapes n μ ↔ InterlacedBy μ ν ∧ ν.colLen 0 ≤ n :=
   Set.Finite.mem_toFinset _
 
+/-- **The shapes interlacing `μ` are parametrized by their row lengths.**  For a shape `μ` with at
+most `n + 1` rows, a shape `ν` with at most `n` rows interlaces `μ` exactly when its `j`-th row
+length lies in `[μ_{j+1}, μ_j]` for each `j < n`, and it is determined by those row lengths.  So a
+sum over the interlacing shapes is a sum over the families `r : Fin n → ℕ` drawn from those
+intervals. -/
+theorem sum_interlacingShapes_eq_sum_piFinset {M : Type*} [AddCommMonoid M] {n : ℕ}
+    (hμ : μ.colLen 0 ≤ n + 1) (f : (Fin n → ℕ) → M) :
+    ∑ ν ∈ interlacingShapes n μ, f (fun j => ν.rowLen j) =
+      ∑ r ∈ Fintype.piFinset fun j : Fin n => Finset.Icc (μ.rowLen ((j : ℕ) + 1)) (μ.rowLen j),
+        f r := by
+  refine Finset.sum_bij (fun ν _ j => ν.rowLen j) (fun ν hν => ?_) (fun ν₁ hν₁ ν₂ hν₂ h => ?_)
+    (fun r hr => ?_) fun _ _ => rfl
+  · obtain ⟨hint, -⟩ := mem_interlacingShapes.mp hν
+    exact Fintype.mem_piFinset.mpr fun j => Finset.mem_Icc.mpr (interlacedBy_iff.mp hint j)
+  · refine rowLen_injective (funext fun i => ?_)
+    rcases lt_or_ge i n with hi | hi
+    · exact congrFun h ⟨i, hi⟩
+    · rw [rowLen_eq_zero_of_colLen_le ((mem_interlacingShapes.mp hν₁).2.trans hi),
+        rowLen_eq_zero_of_colLen_le ((mem_interlacingShapes.mp hν₂).2.trans hi)]
+  · have hr' : ∀ j : Fin n, μ.rowLen ((j : ℕ) + 1) ≤ r j ∧ r j ≤ μ.rowLen j := fun j =>
+      Finset.mem_Icc.mp (Fintype.mem_piFinset.mp hr j)
+    have hanti : Antitone r := fun j k hjk => by
+      rcases hjk.eq_or_lt with rfl | hlt
+      · exact le_rfl
+      · exact ((hr' k).2.trans (μ.rowLen_anti _ _ (Nat.succ_le_of_lt hlt))).trans (hr' j).1
+    refine ⟨ofRowLensFin r hanti, mem_interlacingShapes.mpr
+      ⟨interlacedBy_iff.mpr fun i => ?_, colLen_zero_ofRowLensFin_le r hanti⟩,
+      funext fun j => rowLen_ofRowLensFin r hanti j⟩
+    rcases lt_or_ge i n with hi | hi
+    · have h := rowLen_ofRowLensFin r hanti ⟨i, hi⟩
+      rw [Fin.val_mk] at h
+      rw [h]
+      exact hr' ⟨i, hi⟩
+    · rw [rowLen_ofRowLensFin_eq_zero_of_le r hanti hi,
+        rowLen_eq_zero_of_colLen_le (hμ.trans (by omega))]
+      exact ⟨le_rfl, Nat.zero_le _⟩
+
 end YoungDiagram
 
 namespace TauCeti
+
+/-- **Interlacing, read on beta-numbers.**  For diagrams `μ` and `ν` with at most `N` rows, the
+beta-number of `ν` at `j` is at most the beta-number of `μ` at `i` exactly for `i ≤ j` precisely
+when the row lengths interlace, `μ₀ ≥ ν₀ ≥ μ₁ ≥ ⋯`, that is, when `μ / ν` is a horizontal strip. -/
+theorem forall_betaNumber_le_iff_interlacedBy {N : ℕ} {μ ν : YoungDiagram}
+    (hμ : μ.colLen 0 ≤ N) (hν : ν.colLen 0 ≤ N) :
+    (∀ i j : Fin N, ν.betaNumber N j ≤ μ.betaNumber N i ↔ i ≤ j) ↔
+      μ.InterlacedBy ν := by
+  simp only [YoungDiagram.betaNumber_def, YoungDiagram.interlacedBy_iff]
+  constructor
+  · intro h i
+    have h' : ∀ a b : ℕ, a < N → b < N →
+        (ν.rowLen b + (N - 1 - b) ≤ μ.rowLen a + (N - 1 - a) ↔ a ≤ b) := by
+      intro a b ha hb
+      simpa [Fin.le_def] using h ⟨a, ha⟩ ⟨b, hb⟩
+    refine ⟨?_, ?_⟩
+    · by_cases hi : i + 1 < N
+      · have hlt := ((h' (i + 1) i hi (by omega)).not).mpr (by omega)
+        omega
+      · rw [YoungDiagram.rowLen_eq_zero_of_colLen_le (hμ.trans (by omega))]
+        exact Nat.zero_le _
+    · by_cases hi : i < N
+      · have := (h' i i hi hi).mpr le_rfl
+        omega
+      · rw [YoungDiagram.rowLen_eq_zero_of_colLen_le (hν.trans (by omega))]
+        exact Nat.zero_le _
+  · intro h i j
+    rw [Fin.le_def]
+    have hiN : (i : ℕ) < N := i.isLt
+    have hjN : (j : ℕ) < N := j.isLt
+    refine ⟨fun hle => ?_, fun hle => ?_⟩
+    · by_contra hij
+      have h1 : μ.rowLen i ≤ μ.rowLen ((j : ℕ) + 1) := μ.rowLen_anti _ _ (by omega)
+      have h2 : μ.rowLen ((j : ℕ) + 1) ≤ ν.rowLen j := (h j).1
+      omega
+    · have h1 : ν.rowLen j ≤ μ.rowLen j := (h j).2
+      have h2 : μ.rowLen j ≤ μ.rowLen i := μ.rowLen_anti _ _ hle
+      omega
 
 namespace BoundedSSYT
 
@@ -228,20 +315,14 @@ theorem content_restrict (T : BoundedSSYT (n + 1) μ) (hν : restrictShape T = �
     (hi : i < n) :
     SemistandardYoungTableau.content (restrict T ν hν).1 i
       = SemistandardYoungTableau.content T.1 i := by
+  rw [SemistandardYoungTableau.content_apply, SemistandardYoungTableau.content_apply]
   have hcells : (ν.cells.filter fun c => (restrict T ν hν).1 c.1 c.2 = i)
       = μ.cells.filter fun c => T.1 c.1 c.2 = i := by
     ext c
     obtain ⟨a, b⟩ := c
     simp only [Finset.mem_filter, _root_.YoungDiagram.mem_cells, restrict_apply]
-    constructor
-    · rintro ⟨hc, hT⟩
-      rw [ite_eq_left hc] at hT
-      exact ⟨((mem_iff_of_restrictShape_eq hν).mp hc).1, hT⟩
-    · rintro ⟨hc, hT⟩
-      have hmem : ((a, b) : ℕ × ℕ) ∈ ν :=
-        (mem_iff_of_restrictShape_eq hν).mpr ⟨hc, by rw [hT]; exact hi⟩
-      exact ⟨hmem, by rw [ite_eq_left hmem]; exact hT⟩
-  rw [SemistandardYoungTableau.content_apply, SemistandardYoungTableau.content_apply, hcells]
+    grind [mem_iff_of_restrictShape_eq]
+  rw [hcells]
 
 /-- **Restoring the top letter, as a filling**: keep the entries of `T` on `ν` and write the letter
 `n` on every cell of `μ / ν`.  Columns stay strict because `ν` interlaces `μ`, so no column of
@@ -302,16 +383,10 @@ entries. -/
 @[simp]
 theorem restrictShape_extend (h : YoungDiagram.InterlacedBy μ ν) (T : BoundedSSYT n ν) :
     restrictShape (extend h T) = ν := by
-  refine _root_.YoungDiagram.ext (Finset.ext fun c => ?_)
+  ext c
   obtain ⟨i, j⟩ := c
   simp only [_root_.YoungDiagram.mem_cells, mem_restrictShape, extend_apply]
-  constructor
-  · rintro ⟨hμ, hlt⟩
-    by_contra hν
-    rw [ite_eq_right hν, ite_eq_left hμ] at hlt
-    exact absurd hlt (lt_irrefl n)
-  · intro hν
-    exact ⟨h.le hν, by rw [ite_eq_left hν]; exact entry_lt T hν⟩
+  grind [IsConcreteLE.le_iff.mp h.le, entry_lt]
 
 /-- **The branching bijection, fibrewise.**  The tableaux of shape `μ` in the letters `{0, …, n}`
 whose sub-shape of small entries is a given `ν` are exactly the tableaux of shape `ν` in the

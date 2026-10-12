@@ -31,6 +31,8 @@ soundness bridge proves that the embedded table satisfies `TauCeti.IsCharacterTa
 
 * `TauCeti.ClassData.IsCyclotomicCharacterTableSpec.isCharacterTableSpec`: a successful exact
   cyclotomic certificate identifies the embedded output as the character table up to row order.
+* `TauCeti.ClassData.IsCyclotomicCharacterTableSpec.sum_characterDegree_eq_sum_degree`: the supplied
+  degree vector sums to the sum of the character degrees of the group.
 
 This is the exact-checker step in Layer 6, “The assembled solver”, of the
 [character theory roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/CharacterTheory/README.md).
@@ -127,6 +129,13 @@ theorem isCharacterTableSpec :
     IsCharacterTableSpec G (d.complexTableOfCyclotomic e table) :=
   IsExactCharacterTableSpec.isCharacterTableSpec h Cyclotomic.complexEmbedding
     Cyclotomic.complexEmbedding_star
+
+/-- **The degree vector of a certified cyclotomic table sums to the sum of the character degrees**
+of `G`. -/
+theorem sum_characterDegree_eq_sum_degree :
+    ∑ i, characterDegree ℂ (G := G) i = ∑ j, degree j :=
+  IsExactCharacterTableSpec.sum_characterDegree_eq_sum_degree h
+    Cyclotomic.complexEmbedding Cyclotomic.complexEmbedding_star
 
 end IsCyclotomicCharacterTableSpec
 

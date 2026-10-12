@@ -33,11 +33,17 @@ of the ambient space, rather than only on homogeneous vectors where `i^{p-q}` ma
 * `TauCeti.Hodge.HodgeStructureOn.weilOperator_unique`: that action characterizes `C`.
 * `TauCeti.Hodge.HodgeStructureOn.weilOperator_piece`, `…_F`, `…_conjF`: `C` preserves the Hodge
   components and both filtrations.
+* `TauCeti.Hodge.HodgeStructureOn.eigenspace_weilOperator`: the `μ`-eigenspace of `C` is spanned
+  by the Hodge components on which `i^{2p-n} = μ`.
 * `TauCeti.Hodge.HodgeStructureOn.weilOperator_comp_weilOperator`: `C ∘ C = (-1)^n`.
 * `TauCeti.Hodge.HodgeStructureOn.weilOperatorEquiv`: `C` bundled as a linear automorphism.
+* `TauCeti.Hodge.HodgeStructureOn.weilOperator_comap`: `C` is compatible with transport of Hodge
+  structures along equivalences.
 * `TauCeti.Hodge.HodgeStructureOn.conj_weilOperator`: `C` commutes with the conjugation.
 * `TauCeti.Hodge.HodgeStructureOn.realAlmostComplexStructure`: in odd weight, `C` restricted to the
   real form as an almost complex structure, together with its scalar-extension comparison.
+* `TauCeti.Hodge.HodgeStructureOn.almostComplexStructure`: on a literal complexification in odd
+  weight, the almost complex structure whose scalar extension is `C`.
 * `TauCeti.Hodge.IsPolarization.isOrthogonal_weilOperator`: `C` is an isometry of a complexified
   polarizing form.
 * `TauCeti.Hodge.HodgeStructure.Hom.commutes_weilOperator`: morphisms commute with `C`.
@@ -96,7 +102,7 @@ by `i^{2p-n}`. -/
 theorem weilOperator_unique (hs : HodgeStructureOn W ω n) (f : W →ₗ[ℂ] W)
     (hf : ∀ p : ℤ, ∀ x ∈ hs.piece p, f x = Complex.I ^ (2 * p - n) • x) :
     f = hs.weilOperator :=
-  hs.linearMap_ext_of_piece fun p x hx ↦ by
+  hs.addHom_ext_of_piece fun p x hx ↦ by
     rw [hf p x hx, hs.weilOperator_apply_of_mem hx]
 
 /-- The Weil operator preserves every Hodge component. -/
@@ -140,10 +146,38 @@ theorem weilOperator_mem_conjF (hs : HodgeStructureOn W ω n) {p : ℤ} {x : W}
     (hx : x ∈ hs.conjF p) : hs.weilOperator x ∈ hs.conjF p :=
   (hs.weilOperator_conjF p).le ⟨x, hx, rfl⟩
 
+/-- The Hodge projections intertwine the Weil operator with multiplication by `i^{2p-n}`. -/
+theorem proj_weilOperator (hs : HodgeStructureOn W ω n) (p : ℤ) (x : W) :
+    hs.proj p (hs.weilOperator x) = Complex.I ^ (2 * p - n) • hs.proj p x := by
+  refine hs.piece_induction_on (motive := fun y ↦
+    hs.proj p (hs.weilOperator y) = Complex.I ^ (2 * p - n) • hs.proj p y) x
+    (fun q y hy ↦ ?_) (by simp) fun y z hy hz ↦ by simp only [map_add, hy, hz, smul_add]
+  rw [hs.weilOperator_apply_of_mem hy, map_smul]
+  rcases eq_or_ne q p with rfl | hqp
+  · rfl
+  · rw [hs.proj_apply_eq_zero_of_mem_of_ne hy hqp, smul_zero, smul_zero]
+
+/-- **The eigenspaces of the Weil operator.** The `μ`-eigenspace of the Weil operator is spanned
+by the Hodge components `H^{p,n-p}` on which it acts by `i^{2p-n} = μ`. -/
+theorem eigenspace_weilOperator (hs : HodgeStructureOn W ω n) (μ : ℂ) :
+    Module.End.eigenspace hs.weilOperator μ =
+      ⨆ p, ⨆ (_ : Complex.I ^ (2 * p - n) = μ), hs.piece p := by
+  refine le_antisymm (fun x hx ↦ hs.mem_of_proj_mem fun p ↦ ?_)
+    (iSup₂_le fun p hp x hx ↦ ?_)
+  · by_cases hp : Complex.I ^ (2 * p - n) = μ
+    · exact Submodule.mem_iSup_of_mem p (Submodule.mem_iSup_of_mem hp (hs.proj_mem p x))
+    · have h := hs.proj_weilOperator p x
+      rw [Module.End.mem_eigenspace_iff.1 hx, map_smul] at h
+      have hzero : (μ - Complex.I ^ (2 * p - n)) • hs.proj p x = 0 := by
+        rw [sub_smul, h, sub_self]
+      rw [(smul_eq_zero.1 hzero).resolve_left (sub_ne_zero.2 (Ne.symm hp))]
+      exact zero_mem _
+  · rw [Module.End.mem_eigenspace_iff, hs.weilOperator_apply_of_mem hx, hp]
+
 /-- **The Weil operator squares to the weight sign:** `C ∘ C = (-1)^n`. -/
 theorem weilOperator_comp_weilOperator (hs : HodgeStructureOn W ω n) :
     hs.weilOperator ∘ₗ hs.weilOperator = ((-1 : ℂ) ^ n) • LinearMap.id :=
-  hs.linearMap_ext_of_piece fun p x hx ↦ by
+  hs.addHom_ext_of_piece fun p x hx ↦ by
     rw [LinearMap.comp_apply, hs.weilOperator_apply_of_mem hx, map_smul,
       hs.weilOperator_apply_of_mem hx, smul_smul, I_zpow_mul_self,
       negOne_zpow_two_mul_sub, LinearMap.smul_apply, LinearMap.id_apply]
@@ -196,6 +230,19 @@ theorem weilOperatorEquiv_symm_apply (hs : HodgeStructureOn W ω n) (x : W) :
 theorem weilOperator_bijective (hs : HodgeStructureOn W ω n) :
     Function.Bijective hs.weilOperator :=
   hs.weilOperatorEquiv.bijective
+
+/-- The Weil operator of a Hodge structure transported along an equivalence intertwining the
+conjugations is the transported Weil operator. -/
+@[simp]
+theorem weilOperator_comap {W' : Type*} [AddCommGroup W'] [Module ℂ W'] {ω' : Conjugation W'}
+    (e : W ≃ₗ[ℂ] W') (he : ∀ x, e (ω.toEquiv x) = ω'.toEquiv (e x))
+    (hs : HodgeStructureOn W' ω' n) :
+    (hs.comap e he).weilOperator =
+      e.symm.toLinearMap ∘ₗ hs.weilOperator ∘ₗ e.toLinearMap := by
+  symm
+  refine (hs.comap e he).weilOperator_unique _ fun p x hx ↦ ?_
+  simp only [comap_piece, Submodule.mem_comap, LinearEquiv.coe_coe] at hx
+  simpa using congrArg e.symm (hs.weilOperator_apply_of_mem hx)
 
 /-- In weight one the Weil operator acts on `H^{1,0}` by `i`. Together with the next lemma this
 identifies it with the complex structure of an effective weight-one Hodge structure. -/
@@ -263,7 +310,6 @@ theorem realPointsEquiv_baseChange_realAlmostComplexStructure_apply
         ((LinearMap.baseChange ℂ (hs.realAlmostComplexStructure hn).toLinearMap) x) =
       hs.weilOperator (realPointsEquiv ω.involutive x) := by
   induction x with
-  | zero => simp
   | tmul c x =>
       rw [LinearMap.baseChange_tmul, realPointsEquiv_tmul, realPointsEquiv_tmul,
         coe_realAlmostComplexStructure_apply, map_smul]
@@ -276,6 +322,61 @@ theorem realPointsEquiv_comp_baseChange_realAlmostComplexStructure
         LinearMap.baseChange ℂ (hs.realAlmostComplexStructure hn).toLinearMap =
       hs.weilOperator ∘ₗ (realPointsEquiv ω.involutive).toLinearMap :=
   LinearMap.ext (hs.realPointsEquiv_baseChange_realAlmostComplexStructure_apply hn)
+
+/-! ### Odd-weight Hodge structures on a complexification -/
+
+section Complexification
+
+open scoped TensorProduct
+
+variable {U : Type*} [AddCommGroup U] [Module ℝ U]
+
+/-- The Weil operator of a Hodge structure on a complexification commutes with conjugation, so it
+sends a real vector `1 ⊗ₜ u` to a real vector. -/
+private theorem weilOperator_one_tmul_eq_one_tmul_realPart
+    (hs : HodgeStructureOn (ℂ ⊗[ℝ] U) (complexificationConjugation U) n) (u : U) :
+    hs.weilOperator (1 ⊗ₜ[ℝ] u) = 1 ⊗ₜ[ℝ] realPart U (hs.weilOperator (1 ⊗ₜ[ℝ] u)) := by
+  have hfix : tmulConj U (hs.weilOperator (1 ⊗ₜ[ℝ] u)) = hs.weilOperator (1 ⊗ₜ[ℝ] u) := by
+    have h := hs.conj_weilOperator (1 ⊗ₜ[ℝ] u)
+    rwa [complexificationConjugation_toEquiv_apply, complexificationConjugation_toEquiv_apply,
+      tmulConj_tmul, map_one] at h
+  obtain ⟨w, hw⟩ := (tmulConj_eq_self_iff U _).1 hfix
+  rw [hw, realPart_one_tmul]
+
+/-- The almost complex structure on a real vector space `U` determined by a Hodge structure of odd
+weight on its complexification `ℂ ⊗[ℝ] U`. The Weil operator commutes with conjugation, so it
+preserves the real vectors `1 ⊗ₜ u`, and it squares to `-1` in odd weight. -/
+noncomputable def almostComplexStructure
+    (hs : HodgeStructureOn (ℂ ⊗[ℝ] U) (complexificationConjugation U) n) (hn : Odd n) :
+    AlmostComplexStructure U where
+  toLinearMap := realPart U ∘ₗ hs.weilOperator.restrictScalars ℝ ∘ₗ TensorProduct.mk ℝ ℂ U 1
+  square_neg := by
+    ext u
+    have h := LinearMap.congr_fun (hs.weilOperator_comp_weilOperator_of_odd hn) (1 ⊗ₜ[ℝ] u)
+    simp only [LinearMap.comp_apply, LinearMap.restrictScalars_apply, TensorProduct.mk_apply,
+      LinearMap.neg_apply, LinearMap.id_apply] at h ⊢
+    rw [← hs.weilOperator_one_tmul_eq_one_tmul_realPart, h, ← TensorProduct.tmul_neg,
+      realPart_one_tmul]
+
+/-- On a real vector `1 ⊗ₜ u` the Weil operator acts through the induced almost complex
+structure. -/
+@[simp]
+theorem weilOperator_one_tmul
+    (hs : HodgeStructureOn (ℂ ⊗[ℝ] U) (complexificationConjugation U) n) (hn : Odd n) (u : U) :
+    hs.weilOperator (1 ⊗ₜ[ℝ] u) = 1 ⊗ₜ[ℝ] hs.almostComplexStructure hn u :=
+  hs.weilOperator_one_tmul_eq_one_tmul_realPart u
+
+/-- **The induced almost complex structure complexifies to the Weil operator.** -/
+@[simp]
+theorem baseChange_almostComplexStructure
+    (hs : HodgeStructureOn (ℂ ⊗[ℝ] U) (complexificationConjugation U) n) (hn : Odd n) :
+    (hs.almostComplexStructure hn).toLinearMap.baseChange ℂ = hs.weilOperator := by
+  ext u
+  simp only [TensorProduct.AlgebraTensorModule.curry_apply, TensorProduct.curry_apply,
+    LinearMap.coe_restrictScalars, LinearMap.baseChange_tmul]
+  exact (hs.weilOperator_one_tmul hn u).symm
+
+end Complexification
 
 end HodgeStructureOn
 
@@ -299,7 +400,7 @@ theorem isOrthogonal_weilOperator (h : IsPolarization hℂ hs Q) :
     (integralFormBaseChange hℂ Q).IsOrthogonal hs.weilOperator := by
   have key : ((integralFormBaseChange hℂ Q) ∘ₗ hs.weilOperator).compl₂ hs.weilOperator =
       integralFormBaseChange hℂ Q := by
-    refine hs.linearMap_ext_of_piece fun p x hx ↦ hs.linearMap_ext_of_piece fun p' y hy ↦ ?_
+    refine hs.addHom_ext_of_piece fun p x hx ↦ hs.addHom_ext_of_piece fun p' y hy ↦ ?_
     simp only [LinearMap.compl₂_apply, LinearMap.comp_apply]
     by_cases hpp : p + p' = n
     · rw [hs.weilOperator_apply_of_mem hx, hs.weilOperator_apply_of_mem hy]

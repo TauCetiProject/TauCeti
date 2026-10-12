@@ -8,6 +8,8 @@ module
 public import TauCeti.LinearAlgebra.IntegralLattice.ConstructionA.Even
 public import TauCeti.LinearAlgebra.IntegralLattice.Discriminant.Quadratic
 
+import Mathlib.Algebra.BigOperators.Field
+
 /-!
 # The coordinate alphabet as the discriminant module of `m ℤ^ι`
 

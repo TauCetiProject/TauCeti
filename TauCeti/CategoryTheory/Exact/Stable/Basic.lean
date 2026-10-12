@@ -249,6 +249,41 @@ theorem projectiveStableFunctor_map_τ₁_eq_of_τ₃_eq {S T : ShortComplex C} 
   rw [← sub_eq_zero, ← Functor.map_sub, projectiveStableFunctor_map_eq_zero_iff, hdiff]
   exact ObjectProperty.factorsThrough_comp E.isProjective hS _ _
 
+/-- A square on the first two terms which commutes in the stable quotient extends to a
+morphism of short complexes after changing only the middle map by a projectively trivial map.
+The source must be a conflation; the target need only be a short complex. It suffices that
+every relatively projective object is relatively injective. -/
+theorem exists_shortComplex_hom_of_stable_square
+    (hPI : ∀ P, E.isProjective P → E.isInjective P)
+    {S T : ShortComplex C} (hS : E.Conflation S) (a : S.X₁ ⟶ T.X₁) (b : S.X₂ ⟶ T.X₂)
+    (hab : E.projectiveStableFunctor.map (S.f ≫ b) =
+      E.projectiveStableFunctor.map (a ≫ T.f)) :
+    ∃ φ : S ⟶ T, φ.τ₁ = a ∧ E.projectiveStableFunctor.map φ.τ₂ =
+      E.projectiveStableFunctor.map b := by
+  have hz : E.projectiveStableFunctor.map (S.f ≫ b - a ≫ T.f) = 0 := by
+    simp [Functor.map_sub, hab]
+  obtain ⟨P, hP, i, p, hp⟩ := (ObjectProperty.factorsThrough_iff _ _).1
+    ((E.projectiveStableFunctor_map_eq_zero_iff).1 hz)
+  let hI := hPI P hP
+  let t := hI.factorThru (E.isInflation_f hS) i
+  have ht : S.f ≫ t = i := hI.comp_factorThru (E.isInflation_f hS) i
+  have hb : S.f ≫ (b - t ≫ p) = a ≫ T.f := by
+    rw [Preadditive.comp_sub, ← Category.assoc, ht, ← hp]
+    abel
+  let c := (E.isKernelCokernelPair S hS).desc ((b - t ≫ p) ≫ T.g) (by
+    rw [← Category.assoc, hb, Category.assoc, T.zero, comp_zero])
+  let φ : S ⟶ T :=
+    { τ₁ := a
+      τ₂ := b - t ≫ p
+      τ₃ := c
+      comm₁₂ := hb.symm
+      comm₂₃ := ((E.isKernelCokernelPair S hS).g_desc _ _).symm }
+  refine ⟨φ, rfl, ?_⟩
+  have htp : E.projectiveStableFunctor.map (t ≫ p) = 0 :=
+    (E.projectiveStableFunctor_map_eq_zero_iff).2
+      (ObjectProperty.factorsThrough_comp E.isProjective hP t p)
+  simp only [φ, Functor.map_sub, htp, sub_zero]
+
 end ExactStructure
 
 end TauCeti

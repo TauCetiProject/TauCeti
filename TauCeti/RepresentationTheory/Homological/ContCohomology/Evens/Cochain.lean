@@ -7,10 +7,10 @@ module
 
 public import Mathlib.Algebra.CharP.Two
 public import Mathlib.Data.ZMod.Basic
-public import Mathlib.GroupTheory.Index
 public import Mathlib.Topology.Algebra.OpenSubgroup
 public import Mathlib.Topology.Instances.ZMod
 public import Mathlib.Topology.Piecewise
+public import TauCeti.GroupTheory.Index.Two
 
 import Mathlib.Tactic.Abel
 import Mathlib.Tactic.Group
@@ -49,6 +49,8 @@ element `s` chosen outside `U`.
 
 ## Main statements
 
+* `TauCeti.ContCohomology.evensExtend_mul_hom`, `evensB1_mul_hom` and `evensBs_mul_hom`:
+  the extension by zero and the two Shapiro components are additive in the homomorphism.
 * `TauCeti.ContCohomology.evensB1_mul_of_mem`, `evensB1_mul_of_notMem`, `evensBs_mul_of_mem` and
   `evensBs_mul_of_notMem`: the cocycle law of the pair `(b₁, b_s)` in the permutation module,
   from which everything else follows.
@@ -62,6 +64,12 @@ element `s` chosen outside `U`.
   `γ ↦ α (s⁻¹ s') * evensExtend U α γ`, so the class of `ν` depends on `U` and `α` alone.
 * `TauCeti.ContCohomology.evensGraphCochain_apply_of_mem_of_mem`: on `U × U` the graph cochain is
   the cup-product cochain of `α` with its conjugate `η ↦ α (s⁻¹ η s)`.
+* `TauCeti.ContCohomology.evensB1_comp_subtype`, `evensBs_comp_subtype` and
+  `evensGraphCochain_comp_subtype`: for the restriction `y|_U` of a homomorphism `y` on `G`, both
+  Shapiro components are the homomorphism `b = y + y(s) · χ_U`, with `χ_U` the character of `U`,
+  and `ν (γ, η) = b γ · b η + χ_U γ · b η`.
+* `TauCeti.ContCohomology.evensExtend_comap`, `evensB1_comap`, `evensBs_comap` and
+  `evensGraphCochain_comap`: naturality under pullback along a homomorphism `φ : G' →* G`.
 
 ## Implementation notes
 
@@ -77,9 +85,12 @@ and `α` alone; that is `TauCeti.ContCohomology.evensGraphCochain_sub_evensGraph
 stated at **every** `s'` outside `U` rather than at a chosen one.
 
 Everything below is stated for a plain subgroup `U` together with the hypotheses `U.index = 2`
-and, where a topology is involved, `IsOpen (U : Set G)`, as the corestriction of this development
-is. No topology at all is needed for the algebraic half: the cocycle laws and the comparison of
-two elements outside `U` are identities of plain functions `G → 𝔽₂`.
+for the cocycle identities and the comparison of two elements outside `U`, and
+`IsOpen (U : Set G)` for continuity. The evaluation of the graph cochain on `U × U` needs neither.
+The continuity statements need only separately continuous multiplication, since the arguments use
+fixed translations and the fact that an open subgroup is closed. No topology at all is needed for
+the algebraic half: the cocycle laws and the comparison of two elements outside `U` are identities
+of plain functions `G → 𝔽₂`.
 
 The `2`-cocycle identity is stated in the form it takes for a trivial action, an equation between
 sums of four values, rather than through `groupCohomology.IsCocycle₂`, whose statement carries a
@@ -132,14 +143,24 @@ noncomputable def evensExtend : G → ZMod 2 :=
 
 variable {U α}
 
+/-- On `U`, the extension by zero of `α` is `α`, read additively. -/
 @[simp]
 theorem evensExtend_of_mem {γ : G} (h : γ ∈ U) :
     evensExtend U α γ = Multiplicative.toAdd (α ⟨γ, h⟩) :=
   dite_eq_left h
 
+/-- Off `U`, the extension by zero of `α` vanishes. -/
 @[simp]
 theorem evensExtend_of_notMem {γ : G} (h : γ ∉ U) : evensExtend U α γ = 0 :=
   dite_eq_right h
+
+/-- The extension by zero is additive in the homomorphism. -/
+@[simp]
+theorem evensExtend_mul_hom {β : U →* Multiplicative (ZMod 2)} (γ : G) :
+    evensExtend U (α * β) γ = evensExtend U α γ + evensExtend U β γ := by
+  by_cases h : γ ∈ U
+  · simp [evensExtend_of_mem h]
+  · simp [evensExtend_of_notMem h]
 
 /-- The extension by zero is additive on `U`, where it is `α`. It is not additive on `G`: that
 failure is what the Evens norm measures. -/
@@ -167,7 +188,7 @@ variable (U α)
 
 /-- The extension by zero of a continuous homomorphism on an open subgroup is continuous: `U` is
 clopen and `𝔽₂` is discrete, so the two branches do not have to agree anywhere. -/
-theorem continuous_evensExtend [TopologicalSpace G] [IsTopologicalGroup G]
+theorem continuous_evensExtend [TopologicalSpace G] [SeparatelyContinuousMul G]
     (hopen : IsOpen (U : Set G)) (hα : Continuous α) : Continuous (evensExtend U α) := by
   -- on `U` the extension takes the first branch of its `dite`, so it restricts to `α` there
   have hres : (U : Set G).domRestrict (evensExtend U α) =
@@ -219,17 +240,34 @@ noncomputable def evensCorCochain : G → ZMod 2 :=
 
 variable {U s α}
 
+/-- On `U`, the first Shapiro component `b₁` is the extension by zero of `α`. -/
 @[simp]
 theorem evensB1_of_mem {γ : G} (h : γ ∈ U) : evensB1 U s α γ = evensExtend U α γ :=
   ite_eq_left h
 
+/-- Off `U`, the first Shapiro component is `b₁ γ = α (γ s)`, with `α` extended by zero. -/
 @[simp]
 theorem evensB1_of_notMem {γ : G} (h : γ ∉ U) : evensB1 U s α γ = evensExtend U α (γ * s) :=
   ite_eq_right h
 
+/-- The second Shapiro component is `b_s γ = b₁ (s⁻¹ γ)`. -/
 @[simp]
 theorem evensBs_apply (γ : G) : evensBs U s α γ = evensB1 U s α (s⁻¹ * γ) := (rfl)
 
+/-- The first Shapiro component is additive in the homomorphism. -/
+@[simp]
+theorem evensB1_mul_hom {β : U →* Multiplicative (ZMod 2)} (γ : G) :
+    evensB1 U s (α * β) γ = evensB1 U s α γ + evensB1 U s β γ := by
+  by_cases h : γ ∈ U
+  · simp [evensB1_of_mem h]
+  · simp [evensB1_of_notMem h]
+
+/-- The second Shapiro component is additive in the homomorphism. -/
+theorem evensBs_mul_hom {β : U →* Multiplicative (ZMod 2)} (γ : G) :
+    evensBs U s (α * β) γ = evensBs U s α γ + evensBs U s β γ := by
+  simp
+
+/-- The corestriction cochain is the sum `b₁ + b_s` of the two Shapiro components. -/
 @[simp]
 theorem evensCorCochain_apply (γ : G) :
     evensCorCochain U s α γ = evensB1 U s α γ + evensBs U s α γ := (rfl)
@@ -313,31 +351,25 @@ variable (U s α)
 
 /-- The first Shapiro component of a continuous homomorphism on an open subgroup is continuous:
 `U` is clopen, so the case split is. -/
-theorem continuous_evensB1 [TopologicalSpace G] [IsTopologicalGroup G]
+theorem continuous_evensB1 [TopologicalSpace G] [SeparatelyContinuousMul G]
     (hopen : IsOpen (U : Set G)) (hα : Continuous α) : Continuous (evensB1 U s α) := by
   classical
-  have hclopen : IsClopen {γ : G | γ ∈ U} := ⟨U.isClosed_of_isOpen hopen, hopen⟩
-  have hfr : ∀ γ ∈ frontier {γ : G | γ ∈ U},
-      evensExtend U α γ = evensExtend U α (γ * s) := by
-    intro γ hγ
-    rw [hclopen.frontier_eq] at hγ
-    simp at hγ
-  have hcont : Continuous fun γ : G =>
-      if γ ∈ U then evensExtend U α γ else evensExtend U α (γ * s) :=
-    Continuous.if hfr (continuous_evensExtend U α hopen hα)
-      ((continuous_evensExtend U α hopen hα).comp (continuous_id.mul continuous_const))
-  refine hcont.congr fun γ => ?_
-  by_cases h : γ ∈ U
-  · rw [ite_eq_left h, evensB1_of_mem h]
-  · rw [ite_eq_right h, evensB1_of_notMem h]
+  have hclopen : IsClopen (U : Set G) := ⟨U.isClosed_of_isOpen hopen, hopen⟩
+  have hif : Continuous fun γ => if γ ∈ U then evensExtend U α γ else evensExtend U α (γ * s) :=
+    Continuous.if (by simp [hclopen.frontier_eq])
+      (continuous_evensExtend U α hopen hα)
+      ((continuous_evensExtend U α hopen hα).comp (continuous_mul_const s))
+  refine hif.congr fun γ => ?_
+  split_ifs with hγ
+  exacts [(evensB1_of_mem hγ).symm, (evensB1_of_notMem hγ).symm]
 
 /-- The second Shapiro component is the first one translated, hence continuous. -/
-theorem continuous_evensBs [TopologicalSpace G] [IsTopologicalGroup G]
+theorem continuous_evensBs [TopologicalSpace G] [SeparatelyContinuousMul G]
     (hopen : IsOpen (U : Set G)) (hα : Continuous α) : Continuous (evensBs U s α) :=
-  (continuous_evensB1 U s α hopen hα).comp (continuous_const.mul continuous_id)
+  (continuous_evensB1 U s α hopen hα).comp (continuous_const_mul s⁻¹)
 
 /-- The corestriction cochain of a continuous homomorphism on an open subgroup is continuous. -/
-theorem continuous_evensCorCochain [TopologicalSpace G] [IsTopologicalGroup G]
+theorem continuous_evensCorCochain [TopologicalSpace G] [SeparatelyContinuousMul G]
     (hopen : IsOpen (U : Set G)) (hα : Continuous α) : Continuous (evensCorCochain U s α) :=
   (continuous_evensB1 U s α hopen hα).add (continuous_evensBs U s α hopen hα)
 
@@ -370,11 +402,13 @@ noncomputable def evensGraphCochain : G × G → ZMod 2 :=
 
 variable {U s α}
 
+/-- For `γ ∈ U`, the graph cochain takes `(γ, η)` to `b₁ γ · b_s η`. -/
 @[simp]
 theorem evensGraphCochain_of_mem {γ : G} (h : γ ∈ U) (η : G) :
     evensGraphCochain U s α (γ, η) = evensB1 U s α γ * evensBs U s α η :=
   ite_eq_left h
 
+/-- For `γ ∉ U`, the graph cochain takes `(γ, η)` to `b₁ γ · b₁ η + b₁ η · b_s η`. -/
 @[simp]
 theorem evensGraphCochain_of_notMem {γ : G} (h : γ ∉ U) (η : G) :
     evensGraphCochain U s α (γ, η) =
@@ -417,30 +451,22 @@ variable (U s α)
 
 /-- The graph cochain of a continuous homomorphism on an open subgroup is continuous: the case
 split is on the clopen set `U × G` and both branches are products of continuous functions. -/
-theorem continuous_evensGraphCochain [TopologicalSpace G] [IsTopologicalGroup G]
+theorem continuous_evensGraphCochain [TopologicalSpace G] [SeparatelyContinuousMul G]
     (hopen : IsOpen (U : Set G)) (hα : Continuous α) : Continuous (evensGraphCochain U s α) := by
   classical
   have hclopen : IsClopen {q : G × G | q.1 ∈ U} :=
     ⟨(U.isClosed_of_isOpen hopen).preimage continuous_fst, hopen.preimage continuous_fst⟩
-  have hfr : ∀ q ∈ frontier {q : G × G | q.1 ∈ U},
-      evensB1 U s α q.1 * evensBs U s α q.2 =
-        evensB1 U s α q.1 * evensB1 U s α q.2 + evensB1 U s α q.2 * evensBs U s α q.2 := by
-    intro q hq
-    rw [hclopen.frontier_eq] at hq
-    simp at hq
   have hb1 : Continuous (evensB1 U s α) := continuous_evensB1 U s α hopen hα
   have hbs : Continuous (evensBs U s α) := continuous_evensBs U s α hopen hα
-  have hcont : Continuous fun q : G × G =>
-      if q.1 ∈ U then evensB1 U s α q.1 * evensBs U s α q.2
-        else evensB1 U s α q.1 * evensB1 U s α q.2 + evensB1 U s α q.2 * evensBs U s α q.2 :=
-    Continuous.if hfr ((hb1.comp continuous_fst).mul (hbs.comp continuous_snd))
+  have hif : Continuous fun q : G × G => if q.1 ∈ U then evensB1 U s α q.1 * evensBs U s α q.2
+      else evensB1 U s α q.1 * evensB1 U s α q.2 + evensB1 U s α q.2 * evensBs U s α q.2 :=
+    Continuous.if (by simp [hclopen.frontier_eq])
+      ((hb1.comp continuous_fst).mul (hbs.comp continuous_snd))
       (((hb1.comp continuous_fst).mul (hb1.comp continuous_snd)).add
         ((hb1.comp continuous_snd).mul (hbs.comp continuous_snd)))
-  refine hcont.congr fun q => ?_
-  obtain ⟨γ, η⟩ := q
-  by_cases h : γ ∈ U
-  · rw [ite_eq_left h, evensGraphCochain_of_mem h]
-  · rw [ite_eq_right h, evensGraphCochain_of_notMem h]
+  refine hif.congr fun ⟨γ, η⟩ => ?_
+  split_ifs with hγ
+  exacts [(evensGraphCochain_of_mem hγ η).symm, (evensGraphCochain_of_notMem hγ η).symm]
 
 end GraphCochain
 
@@ -454,13 +480,14 @@ identity `res_U N^{Ev}(α) = α ⌣ (s · α)`. -/
 
 variable {U : Subgroup G} {s : G} {α : U →* Multiplicative (ZMod 2)}
 
-/-- **The graph cochain restricted to `U`** is the product of `α` with its `s`-conjugate. -/
-theorem evensGraphCochain_apply_of_mem_of_mem (hU : U.index = 2) (hs : s ∉ U) {γ η : G}
+/-- **The graph cochain restricted to `U`** is the product of the extension of `α` with its
+`s`-conjugate. This evaluation formula holds for any subgroup and any `s ∉ U`. -/
+theorem evensGraphCochain_apply_of_mem_of_mem (hs : s ∉ U) {γ η : G}
     (hγ : γ ∈ U) (hη : η ∈ U) :
     evensGraphCochain U s α (γ, η) =
       evensExtend U α γ * evensExtend U α (s⁻¹ * η * s) := by
   have hsη : s⁻¹ * η ∉ U := by
-    simp [Subgroup.mul_mem_iff_of_index_two hU, hs, hη]
+    simpa only [U.mul_mem_cancel_right hη, U.inv_mem_iff] using hs
   rw [evensGraphCochain_of_mem hγ, evensB1_of_mem hγ, evensBs_apply, evensB1_of_notMem hsη]
 
 end Restriction
@@ -553,13 +580,9 @@ theorem evensGraphCochain_sub_evensGraphCochain (hU : U.index = 2) (hs : s ∉ U
       evensExtend_of_notMem hγ, evensExtend_of_notMem hγη]
     ring
   · have hγη : γ * η ∈ U := by simp [Subgroup.mul_mem_iff_of_index_two hU, hγ, hη]
-    have hγs : γ * s ∈ U := by simp [Subgroup.mul_mem_iff_of_index_two hU, hs, hγ]
-    have hsη : s⁻¹ * η ∈ U := by
-      simp [Subgroup.mul_mem_iff_of_index_two hU, hs, hη]
     have hsplit : evensExtend U α (γ * η) = evensB1 U s α γ + evensBs U s α η := by
-      rw [evensB1_of_notMem hγ, evensBs_apply, evensB1_of_mem hsη, ← evensExtend_mul hγs hsη]
-      congr 1
-      group
+      rw [← evensB1_of_mem hγη]
+      exact evensB1_mul_of_notMem hU hs hγ η
     rw [evensGraphCochain_of_notMem hγ, evensGraphCochain_of_notMem hγ,
       evensB1_eq_add_of_notMem hU hs hs' hγ, evensB1_eq_add_of_notMem hU hs hs' hη,
       evensBs_eq_add_of_notMem hU hs hs' hη, evensExtend_of_notMem hγ,
@@ -572,6 +595,111 @@ theorem evensGraphCochain_sub_evensGraphCochain (hU : U.index = 2) (hs : s ∉ U
         CharTwo.two_eq_zero (R := ZMod 2)
 
 end ChangeOfElement
+
+section RestrictedHom
+
+/-! ### The graph cochain of a restricted homomorphism
+
+For the restriction `y|_U` of a homomorphism `y : G → 𝔽₂`, both Shapiro components are one and the
+same homomorphism `b = y + y(s) · χ_U` of `G`, where `χ_U = Subgroup.indexTwoCharacter` is the
+character with kernel `U`. The graph cochain is then `b ⌣ b + χ_U ⌣ b` on cochains, which is the
+cochain form of the identity `N^{Ev}(res_U y) = y ⌣ y + χ_U ⌣ y`. -/
+
+variable {U : Subgroup G} {s : G}
+
+/-- **The first Shapiro component of a restricted homomorphism** is the homomorphism
+`y + y(s) · χ_U` of `G`, with `χ_U` the character of `U`. -/
+theorem evensB1_comp_subtype (hU : U.index = 2) (hs : s ∉ U) (y : G →* Multiplicative (ZMod 2))
+    (γ : G) :
+    evensB1 U s (y.comp U.subtype) γ =
+      (y γ).toAdd + (y s).toAdd * (U.indexTwoCharacter hU γ).toAdd := by
+  by_cases hγ : γ ∈ U
+  · rw [evensB1_of_mem hγ, evensExtend_of_mem hγ, Subgroup.toAdd_indexTwoCharacter_of_mem hU hγ,
+      mul_zero, add_zero, MonoidHom.comp_apply, Subgroup.subtype_apply]
+  · have hγs : γ * s ∈ U := by simp [Subgroup.mul_mem_iff_of_index_two hU, hγ, hs]
+    rw [evensB1_of_notMem hγ, evensExtend_of_mem hγs,
+      Subgroup.toAdd_indexTwoCharacter_of_notMem hU hγ, mul_one, MonoidHom.comp_apply,
+      Subgroup.subtype_apply, MonoidHom.map_mul, toAdd_mul]
+
+/-- **The two Shapiro components of a restricted homomorphism agree.** -/
+theorem evensBs_comp_subtype (hU : U.index = 2) (hs : s ∉ U) (y : G →* Multiplicative (ZMod 2)) :
+    evensBs U s (y.comp U.subtype) = evensB1 U s (y.comp U.subtype) := by
+  funext γ
+  have hs' : (U.indexTwoCharacter hU s).toAdd = 1 :=
+    Subgroup.toAdd_indexTwoCharacter_of_notMem hU hs
+  rw [evensBs_apply, evensB1_comp_subtype hU hs, evensB1_comp_subtype hU hs]
+  simp only [MonoidHom.map_mul, MonoidHom.map_inv, toAdd_mul, toAdd_inv, hs']
+  generalize (y s).toAdd = a
+  generalize (y γ).toAdd = c
+  generalize (U.indexTwoCharacter hU γ).toAdd = x
+  revert a c x
+  decide
+
+/-- **The graph cochain of a restricted homomorphism.** With `b` the common Shapiro component of
+`y|_U` (`TauCeti.ContCohomology.evensB1_comp_subtype`) and `χ_U` the character of `U`, the graph
+cochain is `ν (γ, η) = b γ · b η + χ_U γ · b η`. -/
+theorem evensGraphCochain_comp_subtype (hU : U.index = 2) (hs : s ∉ U)
+    (y : G →* Multiplicative (ZMod 2)) (γ η : G) :
+    evensGraphCochain U s (y.comp U.subtype) (γ, η) =
+      evensB1 U s (y.comp U.subtype) γ * evensB1 U s (y.comp U.subtype) η +
+        (U.indexTwoCharacter hU γ).toAdd * evensB1 U s (y.comp U.subtype) η := by
+  by_cases hγ : γ ∈ U
+  · rw [evensGraphCochain_of_mem hγ, evensBs_comp_subtype hU hs,
+      Subgroup.toAdd_indexTwoCharacter_of_mem hU hγ, zero_mul, add_zero]
+  · rw [evensGraphCochain_of_notMem hγ, evensBs_comp_subtype hU hs,
+      Subgroup.toAdd_indexTwoCharacter_of_notMem hU hγ, one_mul]
+    -- every element of `𝔽₂` is idempotent
+    generalize evensB1 U s (y.comp U.subtype) η = b
+    generalize evensB1 U s (y.comp U.subtype) γ = c
+    revert b c
+    decide
+
+end RestrictedHom
+
+section Comap
+
+/-! ### Naturality under pullback along a homomorphism
+
+Pulling `U` and `α` back along a homomorphism `φ : G' →* G` and taking the cochains at `s ∈ G'`
+gives the cochains of `U` and `α` at `φ s`, composed with `φ`. No hypothesis on `U`, `α` or `φ`
+is needed: membership in `U.comap φ` is membership of the image in `U`. -/
+
+variable {G' : Type*} [Group G'] (φ : G' →* G) (U : Subgroup G) (s : G')
+  (α : U →* Multiplicative (ZMod 2))
+
+/-- The extension by zero commutes with pullback along a homomorphism. -/
+theorem evensExtend_comap (γ : G') :
+    evensExtend (U.comap φ) (α.comp (φ.subgroupComap U)) γ = evensExtend U α (φ γ) := by
+  by_cases h : γ ∈ U.comap φ
+  · rw [evensExtend_of_mem h, evensExtend_of_mem (Subgroup.mem_comap.1 h)]
+    rfl
+  · rw [evensExtend_of_notMem h, evensExtend_of_notMem (mt Subgroup.mem_comap.2 h)]
+
+/-- The first Shapiro component commutes with pullback along a homomorphism. -/
+theorem evensB1_comap (γ : G') :
+    evensB1 (U.comap φ) s (α.comp (φ.subgroupComap U)) γ = evensB1 U (φ s) α (φ γ) := by
+  by_cases h : γ ∈ U.comap φ
+  · rw [evensB1_of_mem h, evensB1_of_mem (Subgroup.mem_comap.1 h), evensExtend_comap]
+  · rw [evensB1_of_notMem h, evensB1_of_notMem (mt Subgroup.mem_comap.2 h), evensExtend_comap,
+      map_mul]
+
+/-- The second Shapiro component commutes with pullback along a homomorphism. -/
+theorem evensBs_comap (γ : G') :
+    evensBs (U.comap φ) s (α.comp (φ.subgroupComap U)) γ = evensBs U (φ s) α (φ γ) := by
+  rw [evensBs_apply, evensBs_apply, evensB1_comap, map_mul, map_inv]
+
+/-- **Naturality of the graph cochain:** the graph cochain of the pullback of `U` and `α` along
+`φ : G' →* G`, at `s`, is the graph cochain of `U` and `α` at `φ s`, composed with `φ × φ`. -/
+theorem evensGraphCochain_comap (γ η : G') :
+    evensGraphCochain (U.comap φ) s (α.comp (φ.subgroupComap U)) (γ, η) =
+      evensGraphCochain U (φ s) α (φ γ, φ η) := by
+  by_cases h : γ ∈ U.comap φ
+  · rw [evensGraphCochain_of_mem h, evensGraphCochain_of_mem (Subgroup.mem_comap.1 h),
+      evensB1_comap, evensBs_comap]
+  · rw [evensGraphCochain_of_notMem h, evensGraphCochain_of_notMem (mt Subgroup.mem_comap.2 h),
+      evensB1_comap, evensB1_comap, evensBs_comap]
+
+end Comap
 
 section AcceptanceCheck
 

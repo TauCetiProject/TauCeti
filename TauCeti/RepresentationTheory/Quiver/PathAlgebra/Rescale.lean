@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Combinatorics.Quiver.Path.Weight
-public import TauCeti.RepresentationTheory.Quiver.PathAlgebra.Basic
+public import TauCeti.RepresentationTheory.Quiver.PathAlgebra.Grading
 
 /-!
 # Rescaling the arrows of a path algebra
@@ -19,9 +19,10 @@ rescalings compose by multiplying labellings, and the constant labelling `1` res
 identity, so a labelling by units rescales by an algebra automorphism, inverted by the labelling
 by inverses.
 
-These rescalings are the gauge transformations of a quiver with relations: each fixes every vertex
-idempotent and multiplies each arrow by its label, so it carries a relation to the correspondingly
-rescaled relation.
+For a quiver with relations, rescaling by invertible labels gives gauge transformations: each
+fixes every vertex idempotent and multiplies each arrow by its label, so it carries a relation to
+the correspondingly rescaled relation. On a doubled quiver, sign changes and unit rescalings
+give the gauge changes used to compare preprojective presentations.
 
 ## Implementation notes
 
@@ -42,13 +43,8 @@ the metavariable cannot be applied to an arrow before the definition is unfolded
 * `TauCeti.PathAlgebra.rescale_comp_rescale`: rescalings compose by multiplying labellings.
 * `TauCeti.PathAlgebra.rescale_one`: the constant labelling `1` rescales by the identity.
 * `TauCeti.PathAlgebra.rescale_congr`: pointwise equal labellings give equal rescalings.
-
-## References
-
-This is infrastructure for the gauge-change clause of Layer 4 of
-`TauCetiRoadmap/ZigzagPreprojective/README.md`, which asks for the algebra isomorphisms rescaling
-the arrows of a doubled quiver by signs, and for their generalization to an arbitrary
-antisymmetric scalar labelling.
+* `TauCeti.PathAlgebra.rescale_mem_gradeBy` and `TauCeti.PathAlgebra.rescale_mem_grade`: rescaling
+  preserves the grading by any arrow weight, in particular the path-length grading.
 -/
 
 public section
@@ -203,6 +199,26 @@ theorem rescale_rescale_of_mul_eq_one
     rescale c (rescale d x) = x := by
   rw [← AlgHom.comp_apply, rescale_comp_rescale,
     rescale_congr _ _ h, rescale_one, AlgHom.id_apply]
+
+/-- **Arrow rescaling is graded for every arrow weight**: it multiplies each basis path by a
+scalar, so it preserves the span of the paths of any given weight. -/
+theorem rescale_mem_gradeBy {M : Type*} [AddMonoid M] (wt : ∀ {a b : Q}, (a ⟶ b) → M) {m : M}
+    {x : pathAlgebra k Q} (hx : x ∈ gradeBy k wt m) : rescale c x ∈ gradeBy k wt m := by
+  rw [gradeBy_eq_span_range] at hx
+  induction hx using Submodule.span_induction with
+  | mem u hu =>
+      obtain ⟨⟨x, hx⟩, rfl⟩ := hu
+      rw [rescale_ofPath]
+      exact Submodule.smul_mem _ _ (ofPath_mem_gradeBy_of_addWeight hx)
+  | zero => simp
+  | add u v _ _ ihu ihv => rw [map_add]; exact add_mem ihu ihv
+  | smul a u _ ih => rw [map_smul]; exact Submodule.smul_mem _ a ih
+
+/-- **Arrow rescaling preserves the path-length grading.** -/
+theorem rescale_mem_grade {n : ℕ} {x : pathAlgebra k Q} (hx : x ∈ grade k Q n) :
+    rescale c x ∈ grade k Q n := by
+  rw [← gradeBy_const_one] at hx ⊢
+  exact rescale_mem_gradeBy c _ hx
 
 end Rescale
 

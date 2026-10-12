@@ -17,7 +17,7 @@ map: `homologyMap (a • φ) i = a • homologyMap φ i`. This is the homologica
 Mathlib's `ShortComplex.homologyMap_smul`, recorded as a TODO in
 `Mathlib/Algebra/Homology/Linear.lean`. It identifies, for instance, the map induced by
 multiplication by a scalar on a complex of modules with multiplication by that scalar on
-homology.
+homology, and it makes the homology functor in each degree a linear functor.
 -/
 
 public section
@@ -45,5 +45,9 @@ lemma homologyMap_smul (a : R) {K L : HomologicalComplex C c} (φ : K ⟶ L) (i 
     homologyMap (a • φ) i = a • homologyMap φ i := by
   rw [homologyMap, shortComplexFunctor_map_smul]
   exact ShortComplex.homologyMap_smul _ _
+
+/-- Taking homology in a fixed degree is a linear functor. -/
+instance [CategoryWithHomology C] (i : ι) : (homologyFunctor C c i).Linear R where
+  map_smul φ a := homologyMap_smul a φ i
 
 end HomologicalComplex

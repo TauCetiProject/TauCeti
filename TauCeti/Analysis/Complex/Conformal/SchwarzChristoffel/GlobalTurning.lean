@@ -92,7 +92,7 @@ variable [LocallyFiniteOrder ι]
 /-- The increase in edge angle between two indexed prevertices is `-π` times the sum of the
 exponents in the corresponding right-closed index interval. -/
 theorem schwarzChristoffelEdgeAngle_sub_eq_neg_pi_mul_sum_Ioc
-    (a e : ι → ℝ) (ha : StrictMono a) {i j : ι} (hij : i < j) :
+    (a e : ι → ℝ) (ha : StrictMono a) {i j : ι} (hij : i ≤ j) :
     schwarzChristoffelEdgeAngle a e (a j) - schwarzChristoffelEdgeAngle a e (a i) =
       -Real.pi * ∑ k ∈ Finset.Ioc i j, e k := by
   calc
@@ -100,7 +100,7 @@ theorem schwarzChristoffelEdgeAngle_sub_eq_neg_pi_mul_sum_Ioc
         schwarzChristoffelEdgeAngle a e (a j)) := by ring
     _ = -(Real.pi * ∑ k ∈ Finset.univ.filter
         (fun k ↦ a k ∈ Ioc (a i) (a j)), e k) := by
-      rw [schwarzChristoffelEdgeAngle_sub a e (ha.monotone hij.le)]
+      rw [schwarzChristoffelEdgeAngle_sub a e (ha.monotone hij)]
     _ = -Real.pi * ∑ k ∈ Finset.Ioc i j, e k := by
       rw [neg_mul]
       congr 1
@@ -117,7 +117,7 @@ theorem schwarzChristoffelEdgeAngle_comp_strictMono (a e : ι → ℝ)
     (ha : StrictMono a) (he : ∀ i, e i < 0) :
     StrictMono (fun i ↦ schwarzChristoffelEdgeAngle a e (a i)) := by
   intro i j hij
-  have hdiff := schwarzChristoffelEdgeAngle_sub_eq_neg_pi_mul_sum_Ioc a e ha hij
+  have hdiff := schwarzChristoffelEdgeAngle_sub_eq_neg_pi_mul_sum_Ioc a e ha hij.le
   have hsum : ∑ k ∈ Finset.Ioc i j, e k < 0 := by
     apply Finset.sum_neg
     · exact fun k _ ↦ he k

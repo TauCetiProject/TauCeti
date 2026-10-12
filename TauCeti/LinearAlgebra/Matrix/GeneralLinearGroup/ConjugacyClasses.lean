@@ -28,6 +28,9 @@ import Mathlib.Tactic.Ring
 import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Centralizer
 import TauCeti.FieldTheory.Finite.FrobeniusFixed
 import Mathlib.FieldTheory.Finite.Trace
+-- Non-public: lifting an invertible scalar matrix to a unit of `F` is used only inside the
+-- surjectivity half of the classification.
+import TauCeti.Algebra.GroupWithZero.Units.Basic
 
 /-!
 # The conjugacy classes of `GL₂` over a field
@@ -66,7 +69,9 @@ describing the centralizer of a non-scalar matrix rather than its conjugacy clas
 
 * `TauCeti.isConj_companionGL`: **rational canonical form inside `GL₂(F)`**, a non-scalar element
   is conjugate to the companion element of its characteristic polynomial.
-* `TauCeti.eq_of_mem_range_scalar_of_isConj`: a scalar element of `GL n R` is alone in its class.
+* `TauCeti.eq_of_mem_range_scalar_of_isConj`: a scalar element of `GL n R` is alone in its class,
+  `TauCeti.not_isConj_of_mem_range_scalar`: it is therefore not conjugate to a non-scalar one, and
+  `TauCeti.isConj_scalar_iff`: two scalar elements are conjugate only when they are equal.
 * `TauCeti.isConj_iff_of_notMem_range_scalar`: **the classification**, two non-scalar elements of
   `GL₂(F)` are conjugate exactly when they have the same trace and the same determinant.
 * `TauCeti.GL2NonSplitTorus.isConj_gl2NonSplitTorusHom_iff`: the elements of the non-split torus
@@ -113,6 +118,25 @@ theorem eq_of_mem_range_scalar_of_isConj {g h : GL n R}
     rw [Units.val_mul, Units.val_mul, ← ha]
     exact (Matrix.scalar_commute a (Commute.all a) (c : Matrix n n R)).symm.eq
   rw [← hc, hcomm, mul_assoc, mul_inv_cancel, mul_one]
+
+/-- **A scalar element and a non-scalar element of `GL n R` are never conjugate.** The class of a
+scalar element is a single point, so it cannot contain a non-scalar one; being scalar is therefore a
+conjugacy invariant in its own right, and the one that trace and determinant miss: it separates a
+scalar matrix from a Jordan block with the same characteristic polynomial. -/
+theorem not_isConj_of_mem_range_scalar {g h : GL n R}
+    (hg : (g : Matrix n n R) ∈ Set.range (Matrix.scalar n))
+    (hh : (h : Matrix n n R) ∉ Set.range (Matrix.scalar n)) : ¬ IsConj g h := fun hgh =>
+  hh (eq_of_mem_range_scalar_of_isConj hg hgh ▸ hg)
+
+/-- **Two scalar elements of `GL n R` are conjugate exactly when they are equal.** A scalar element
+is alone in its class, and the scalar embedding is injective (`Matrix.scalar_inj`). -/
+theorem isConj_scalar_iff [Nonempty n] (a b : Rˣ) :
+    IsConj (Matrix.GeneralLinearGroup.scalar n a) (Matrix.GeneralLinearGroup.scalar n b) ↔
+      a = b :=
+  ⟨fun h => Units.ext (Matrix.scalar_inj.1 (by
+      simpa only [Matrix.GeneralLinearGroup.coe_scalar] using
+        congrArg Units.val (eq_of_mem_range_scalar_of_isConj ⟨(a : R), rfl⟩ h))),
+    fun h => h ▸ IsConj.refl _⟩
 
 end Invariants
 
@@ -201,8 +225,8 @@ theorem isConj_iff_of_notMem_range_scalar {g h : GL (Fin 2) F}
 
 namespace GL2NonSplitTorus
 
-variable {E : Type*} [Field E] [Algebra F E] [Finite F]
-  (hE : Module.finrank F E = 2) {u v : Eˣ}
+variable {E : Type*} [Field E] [Algebra F E] [Finite F] [Algebra.IsQuadraticExtension F E]
+  {u v : Eˣ}
 
 /-- **The elements of the elliptic torus conjugate to a given elliptic element.** For `u : Eˣ`
 outside `F`, the matrix of `v : Eˣ` is conjugate to that of `u` exactly when `v` is `u` or its
@@ -212,29 +236,29 @@ Conjugate matrices have the same trace and determinant, which on the torus are t
 norm of the field element; and `u`, `u^q` are the two roots of `X² - Tr(u) X + N(u)`, so an element
 with those invariants is one of them. -/
 theorem isConj_gl2NonSplitTorusHom_iff (hu : (u : E) ∉ Set.range (algebraMap F E)) :
-    IsConj (GL2NonSplitTorusHom F E hE u) (GL2NonSplitTorusHom F E hE v) ↔
+    IsConj (GL2NonSplitTorusHom F E u) (GL2NonSplitTorusHom F E v) ↔
       v = u ∨ v = u ^ Nat.card F := by
-  have hfin : Module.Finite F E := Module.finite_of_finrank_eq_succ (n := 1) hE
+  have h2 := Algebra.IsQuadraticExtension.finrank_eq_two F E
   have : Finite E := Module.finite_of_finite F
   have hupow : ((u ^ Nat.card F : Eˣ) : E) ∉ Set.range (algebraMap F E) := by
     rw [Units.val_pow_eq_pow_val]
-    exact FiniteField.pow_natCard_notMem_range_algebraMap hE hu
+    exact FiniteField.pow_natCard_notMem_range_algebraMap hu
   -- the trace and the norm of a quadratic extension of a finite field, written out
   have htr : ∀ w : E, algebraMap F E (Algebra.trace F E w) = w + w ^ Nat.card F := by
     intro w
-    rw [FiniteField.algebraMap_trace_eq_sum_pow, hE]
+    rw [FiniteField.algebraMap_trace_eq_sum_pow, h2]
     simp [Finset.sum_range_succ]
   have hnm : ∀ w : E, algebraMap F E (Algebra.norm F w) = w * w ^ Nat.card F := by
     intro w
-    rw [FiniteField.algebraMap_norm_eq_prod_pow, hE]
+    rw [FiniteField.algebraMap_norm_eq_prod_pow, h2]
     simp [Finset.prod_range_succ]
   constructor
   · intro hconj
     have htrace : Algebra.trace F E (v : E) = Algebra.trace F E (u : E) := by
-      rw [← trace_gl2NonSplitTorusHom hE, ← trace_gl2NonSplitTorusHom hE,
+      rw [← trace_gl2NonSplitTorusHom, ← trace_gl2NonSplitTorusHom,
         trace_val_eq_of_isConj hconj]
     have hnorm : Algebra.norm F (v : E) = Algebra.norm F (u : E) := by
-      rw [← val_det_gl2NonSplitTorusHom hE, ← val_det_gl2NonSplitTorusHom hE]
+      rw [← val_det_gl2NonSplitTorusHom, ← val_det_gl2NonSplitTorusHom]
       exact congrArg Units.val
         (isConj_iff_eq.1 (Matrix.GeneralLinearGroup.det.map_isConj hconj)).symm
     have h1 : (v : E) + (v : E) ^ Nat.card F = (u : E) + (u : E) ^ Nat.card F := by
@@ -249,15 +273,15 @@ theorem isConj_gl2NonSplitTorusHom_iff (hu : (u : E) ∉ Set.range (algebraMap F
   · rintro (rfl | rfl)
     · exact IsConj.refl _
     · refine (isConj_iff_of_notMem_range_scalar
-        (notMem_range_scalar_gl2NonSplitTorusHom hE hu)
-        (notMem_range_scalar_gl2NonSplitTorusHom hE hupow)).mpr ⟨?_, ?_⟩
+        (notMem_range_scalar_gl2NonSplitTorusHom hu)
+        (notMem_range_scalar_gl2NonSplitTorusHom hupow)).mpr ⟨?_, ?_⟩
       · rw [trace_gl2NonSplitTorusHom, trace_gl2NonSplitTorusHom]
         refine FaithfulSMul.algebraMap_injective F E ?_
-        rw [htr, htr, Units.val_pow_eq_pow_val, FiniteField.pow_natCard_pow_natCard hE, add_comm]
+        rw [htr, htr, Units.val_pow_eq_pow_val, FiniteField.pow_natCard_pow_natCard, add_comm]
       · rw [← Matrix.GeneralLinearGroup.val_det_apply, ← Matrix.GeneralLinearGroup.val_det_apply,
           val_det_gl2NonSplitTorusHom, val_det_gl2NonSplitTorusHom]
         refine FaithfulSMul.algebraMap_injective F E ?_
-        rw [hnm, hnm, Units.val_pow_eq_pow_val, FiniteField.pow_natCard_pow_natCard hE, mul_comm]
+        rw [hnm, hnm, Units.val_pow_eq_pow_val, FiniteField.pow_natCard_pow_natCard, mul_comm]
 
 end GL2NonSplitTorus
 
@@ -289,11 +313,7 @@ theorem bijective_mk_conjRepGLFinTwo :
   · rintro (a | ⟨t, d⟩) (b | ⟨t', d'⟩) hab <;>
       simp only [ConjClasses.mk_eq_mk_iff_isConj, conjRepGLFinTwo_inl,
         conjRepGLFinTwo_inr] at hab
-    · have hval := eq_of_mem_range_scalar_of_isConj (n := Fin 2) ⟨(a : F), rfl⟩ hab
-      have hcoe := congrArg (fun x : GL (Fin 2) F => (x : Matrix (Fin 2) (Fin 2) F)) hval
-      simp only [Matrix.GeneralLinearGroup.coe_scalar] at hcoe
-      have : a = b := Units.ext (Matrix.scalar_inj.1 hcoe)
-      rw [this]
+    · rw [(isConj_scalar_iff a b).1 hab]
     · exact absurd (eq_of_mem_range_scalar_of_isConj (n := Fin 2) ⟨(a : F), rfl⟩ hab)
         (scalar_ne_companionGL t' d' a)
     · exact absurd (eq_of_mem_range_scalar_of_isConj (n := Fin 2) ⟨(b : F), rfl⟩ hab.symm)
@@ -308,15 +328,14 @@ theorem bijective_mk_conjRepGLFinTwo :
   · intro C
     obtain ⟨g, rfl⟩ := ConjClasses.exists_rep C
     by_cases hg : (g : Matrix (Fin 2) (Fin 2) F) ∈ Set.range (Matrix.scalar (Fin 2))
-    · obtain ⟨a, ha⟩ := hg
-      have ha0 : a ≠ 0 := by
-        rintro rfl
-        have h1 : (g : Matrix (Fin 2) (Fin 2) F) *
-            ((g⁻¹ : GL (Fin 2) F) : Matrix (Fin 2) (Fin 2) F) = 1 := by
-          rw [← Units.val_mul, mul_inv_cancel, Units.val_one]
-        rw [← ha, map_zero, zero_mul] at h1
-        exact zero_ne_one h1
-      exact ⟨Sum.inl (Units.mk0 a ha0), congrArg ConjClasses.mk (Units.ext ha)⟩
+    · obtain ⟨a, ha⟩ := (mem_range_iff_exists_units_map_eq (Matrix.scalar (Fin 2)) g).mp hg
+      -- `Matrix.GeneralLinearGroup.scalar` is `Units.map` of `Matrix.scalar`, but the two spell
+      -- the coercion to a monoid homomorphism differently, so compare the underlying matrices
+      -- instead of unfolding either definition.
+      have hrep : conjRepGLFinTwo (Sum.inl a) = g := by
+        rw [conjRepGLFinTwo_inl, ← ha]
+        exact Units.ext (by simp)
+      exact ⟨Sum.inl a, congrArg ConjClasses.mk hrep⟩
     · exact ⟨Sum.inr ((g : Matrix (Fin 2) (Fin 2) F).trace, Matrix.GeneralLinearGroup.det g),
         ConjClasses.mk_eq_mk_iff_isConj.2 (isConj_companionGL hg).symm⟩
 

@@ -29,6 +29,8 @@ weights and avoidance of marked squares without requiring the two cuts to be dis
   a repartition preserves the product of any multiplicative weight on squares.
 * `TauCeti.GridRectangleDecomposition.IsRepartition.OMonomial_mul_OMonomial`: a repartition
   preserves the product of the `O`-monomial weights of the unblocked differential.
+* `TauCeti.GridRectangleDecomposition.IsRepartition.val_add_val_eq`: a repartition covers the same
+  squares with the same multiplicities on both sides.
 * `TauCeti.GridRectangleDecomposition.IsRepartition.disjoint_coveredSquares_first`,
   `TauCeti.GridRectangleDecomposition.IsRepartition.disjoint_coveredSquares_second`: avoidance
   of a set of squares transfers across a repartition.
@@ -75,27 +77,19 @@ theorem symm (h : D.IsRepartition E) : E.IsRepartition D where
 
 /-- Diagonal reflection preserves a repartition of two-step rectangle domains. -/
 theorem transpose (h : D.IsRepartition E) : D.transpose.IsRepartition E.transpose := by
-  -- `GridRectangleBetween.squares_transpose` is the reflection statement, but it is phrased with
-  -- `GridRectangle.squares`. Neither that definition nor `GridRectangle.coveredSquares` is
-  -- exposed outside its own module, so the two are not interchangeable by definitional equality
-  -- here; the local bridge below carries that lemma across their public defining equations.
-  have transpose_coveredSquares {a b : GridState n} (R : GridRectangleBetween a b) :
-      R.transpose.toGridRectangle.coveredSquares =
-        R.toGridRectangle.coveredSquares.image Prod.swap := by
-    simpa only [GridRectangle.coveredSquares_def, GridRectangle.coveredColumns_def,
-      GridRectangle.coveredRows_def, GridRectangle.squares, GridRectangle.columnSquares,
-      GridRectangle.rowSquares] using R.squares_transpose
   refine {
   disjoint_coveredSquares_left := by
     have hfirst := congrArg (fun p => p.2.toGridRectangle.coveredSquares) D.transpose_first
     have hsecond := congrArg (fun p => p.2.toGridRectangle.coveredSquares) D.transpose_second
-    simp only [transpose_coveredSquares] at hfirst hsecond
+    simp only [GridRectangleBetween.transpose_toGridRectangle,
+      GridRectangle.coveredSquares_transpose] at hfirst hsecond
     rw [hfirst, hsecond, Finset.disjoint_image Prod.swap_injective]
     exact h.disjoint_coveredSquares_left
   disjoint_coveredSquares_right := by
     have hfirst := congrArg (fun p => p.2.toGridRectangle.coveredSquares) E.transpose_first
     have hsecond := congrArg (fun p => p.2.toGridRectangle.coveredSquares) E.transpose_second
-    simp only [transpose_coveredSquares] at hfirst hsecond
+    simp only [GridRectangleBetween.transpose_toGridRectangle,
+      GridRectangle.coveredSquares_transpose] at hfirst hsecond
     rw [hfirst, hsecond, Finset.disjoint_image Prod.swap_injective]
     exact h.disjoint_coveredSquares_right
   coveredSquares_union_eq := by
@@ -103,7 +97,8 @@ theorem transpose (h : D.IsRepartition E) : D.transpose.IsRepartition E.transpos
     have hEsecond := congrArg (fun p => p.2.toGridRectangle.coveredSquares) E.transpose_second
     have hDfirst := congrArg (fun p => p.2.toGridRectangle.coveredSquares) D.transpose_first
     have hDsecond := congrArg (fun p => p.2.toGridRectangle.coveredSquares) D.transpose_second
-    simp only [transpose_coveredSquares] at hEfirst hEsecond hDfirst hDsecond
+    simp only [GridRectangleBetween.transpose_toGridRectangle,
+      GridRectangle.coveredSquares_transpose] at hEfirst hEsecond hDfirst hDsecond
     rw [hEfirst, hEsecond, hDfirst, hDsecond, ← Finset.image_union, ← Finset.image_union,
       h.coveredSquares_union_eq]
   }
@@ -138,6 +133,17 @@ theorem OMonomial_mul_OMonomial (h : D.IsRepartition E) (G : GridDiagram n) (R :
       G.OMonomial R D.first.toGridRectangle * G.OMonomial R D.second.toGridRectangle := by
   simp only [G.OMonomial_eq_prod_coveredSquares R]
   exact h.prod_coveredSquares_mul_prod_coveredSquares _
+
+/-- A repartition covers the same squares with the same multiplicities on both sides. -/
+theorem val_add_val_eq (h : D.IsRepartition E) :
+    E.first.toGridRectangle.coveredSquares.val + E.second.toGridRectangle.coveredSquares.val =
+      D.first.toGridRectangle.coveredSquares.val +
+        D.second.toGridRectangle.coveredSquares.val := by
+  rw [Multiset.add_eq_union_iff_disjoint.mpr
+      (Finset.disjoint_val.mpr h.disjoint_coveredSquares_right),
+    Multiset.add_eq_union_iff_disjoint.mpr
+      (Finset.disjoint_val.mpr h.disjoint_coveredSquares_left),
+    ← Finset.union_val, ← Finset.union_val, h.coveredSquares_union_eq]
 
 /-- If neither rectangle of the left-hand decomposition meets a set of squares, then the union
 of the right-hand decomposition does not meet it either. -/

@@ -26,8 +26,9 @@ class functions**: this is completeness, and `TauCeti.ClassFunction.le_span_irre
 is the spanning statement it amounts to.
 
 Expanding a class function in that basis is easy because the basis is orthonormal for
-`TauCeti.ClassFunction.characterPairing`: the coefficient of `χᵢ` in `f` is `⟨χᵢ, f⟩`. Applying this
-to the indicator function of a conjugacy class, whose pairings are computed by
+`TauCeti.ClassFunction.characterPairing`: the coefficient of `χᵢ` in `f` is `⟨χᵢ, f⟩`, so a class
+function is determined by its pairings with the `χᵢ`. Applying the expansion to the indicator
+function of a conjugacy class, whose pairings are computed by
 `TauCeti.ClassFunction.characterPairing_classIndicator_inv`, gives the **second (column)
 orthogonality relation** `|C_g| · ∑ᵢ χᵢ(g) χᵢ(h⁻¹) = |G|` or `0` according as `g` and `h` are
 conjugate or not.
@@ -41,7 +42,9 @@ conjugate or not.
 * `TauCeti.ClassFunction.le_span_irreducibleCharacters`: **completeness**, in the form that every
   class function lies in the span of the irreducible characters.
 * `TauCeti.ClassFunction.sum_characterPairing_smul_ofCharacter`: the expansion of a class function
-  in that basis, with coefficients the pairings against the irreducible characters.
+  in that basis, with coefficients the pairings against the irreducible characters, and
+  `TauCeti.ClassFunction.eq_of_forall_characterPairing_ofCharacter_eq` the consequence that a class
+  function is determined by those pairings.
 * `TauCeti.ClassFunction.exists_nonempty_equiv`: **such a family is a complete list of the
   irreducibles**, every irreducible representation being equivalent to one of its members.
 * `TauCeti.ClassFunction.card_conjClass_mul_sum_char_mul_char_inv`: **the second orthogonality
@@ -153,6 +156,18 @@ theorem sum_characterPairing_smul_ofCharacter (f : ClassFunction k G) :
   calc ∑ i, characterPairing (ofCharacter (ρ i)) f • ofCharacter (ρ i)
       = ∑ i, b.repr f i • b i := Finset.sum_congr rfl fun i _ => by rw [hrepr i, hbi i]
     _ = f := b.sum_repr f
+
+omit [Fintype ι] in
+/-- **A class function is determined by its pairings with the irreducible characters**: two class
+functions with the same pairing against every character of a complete family of pairwise
+inequivalent irreducible representations are equal. -/
+theorem eq_of_forall_characterPairing_ofCharacter_eq [Finite ι] {f₁ f₂ : ClassFunction k G}
+    (h : ∀ i, characterPairing (ofCharacter (ρ i)) f₁ = characterPairing (ofCharacter (ρ i)) f₂) :
+    f₁ = f₂ := by
+  let _ := Fintype.ofFinite ι
+  rw [← sum_characterPairing_smul_ofCharacter ρ hind hcard f₁,
+    ← sum_characterPairing_smul_ofCharacter ρ hind hcard f₂]
+  simp only [h]
 
 /-- The pointwise form of the expansion of a class function in the irreducible characters. -/
 theorem apply_eq_sum_characterPairing_mul_character (f : ClassFunction k G) (y : G) :

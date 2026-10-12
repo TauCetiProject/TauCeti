@@ -56,7 +56,8 @@ available in the `AdicCompletionExtension` scope.
 * `IsDedekindDomain.HeightOneSpectrum.valued_completionCongr`: `completionCongr` preserves the
   completion valuations.
 * `IsDedekindDomain.HeightOneSpectrum.decompositionHom_algebraMap`: the defining property
-  `decompositionHom v w τ x = τ x` for `x ∈ L`.
+  `decompositionHom v w τ x = τ x` for `x ∈ L`; `decompositionHom_algebraMap_ringOfIntegers` is
+  its form on `𝓞 L`, and `valued_decompositionHom` says the action preserves the valuation.
 * `IsDedekindDomain.HeightOneSpectrum.decompositionHom_injective`: the decomposition group
   embeds into `Aut(L_w/K_v)`.
 * `IsDedekindDomain.HeightOneSpectrum.decompositionHom_conj`: compatibility with the action of
@@ -104,7 +105,7 @@ theorem valuation_apply_eq_of_asIdeal_eq_smul (σ : L ≃ₐ[K] L)
     -- `e` and `MulSemiringAction.toRingHom _ _ σ` bundle the same map, as an equivalence and as
     -- a homomorphism respectively
     rfl
-  rw [← valuation_ringEquivOfRingEquiv (K := L) (K' := L) e hw x, hσ, AlgEquiv.coe_ringEquiv]
+  rw [← valuation_ringEquivOfRingEquiv (K := L) (K' := L) e hw x, hσ, AlgEquiv.coe_toRingEquiv]
 
 variable [NumberField K] (v : HeightOneSpectrum (𝒪 K))
 
@@ -139,7 +140,7 @@ theorem completionCongr_algebraMap (σ : L ≃ₐ[K] L) (h : w'.asIdeal = σ •
     completionCongr v σ h (algebraMap L (w.adicCompletion L) x) =
       algebraMap L (w'.adicCompletion L) (σ x) := by
   rw [completionCongr, AlgEquiv.ofRingEquiv_apply, adicCompletionCongr_algebraMap,
-    AlgEquiv.coe_ringEquiv]
+    AlgEquiv.coe_toRingEquiv]
 
 variable (v) in
 /-- `completionCongr` is continuous. -/
@@ -177,7 +178,7 @@ private theorem completionCongr_congr {σ σ' : L ≃ₐ[K] L} (hσσ' : σ = σ
 theorem completionCongr_one :
     completionCongr (w := w) (w' := w) v (1 : L ≃ₐ[K] L)
       (by simp) = AlgEquiv.refl :=
-  AlgEquiv.coe_ringEquiv_injective adicCompletionCongr_one
+  AlgEquiv.toRingEquiv_injective adicCompletionCongr_one
 
 /-- `completionCongr` is multiplicative: transporting along `σ` and then along `τ` is
 transporting along `τ * σ`. -/
@@ -186,7 +187,7 @@ theorem completionCongr_trans {w'' : HeightOneSpectrum (𝒪 L)} [w''.asIdeal.Li
     (σ τ : L ≃ₐ[K] L) (hσ : w'.asIdeal = σ • w.asIdeal) (hτ : w''.asIdeal = τ • w'.asIdeal) :
     (completionCongr v σ hσ).trans (completionCongr v τ hτ) =
       completionCongr v (τ * σ) (by rw [hτ, hσ, mul_smul]) :=
-  AlgEquiv.coe_ringEquiv_injective (adicCompletionCongr_trans _ _ _ _)
+  AlgEquiv.toRingEquiv_injective (adicCompletionCongr_trans _ _ _ _)
 
 /-- The inverse of `completionCongr v σ h` is `completionCongr` of `σ⁻¹`. -/
 @[simp]
@@ -194,7 +195,7 @@ theorem completionCongr_symm (σ : L ≃ₐ[K] L) (h : w'.asIdeal = σ • w.asI
     (completionCongr v σ h).symm =
       completionCongr v σ⁻¹
         (by rw [h, inv_smul_smul]) :=
-  AlgEquiv.coe_ringEquiv_injective (adicCompletionCongr_symm _)
+  AlgEquiv.toRingEquiv_injective (adicCompletionCongr_symm _)
 
 end completionCongr
 
@@ -225,6 +226,22 @@ theorem decompositionHom_algebraMap (τ : MulAction.stabilizer (L ≃ₐ[K] L) w
     decompositionHom v w τ (algebraMap L (w.adicCompletion L) x) =
       algebraMap L (w.adicCompletion L) ((τ : L ≃ₐ[K] L) x) := by
   rw [decompositionHom_apply, completionCongr_algebraMap]
+
+/-- On the ring of integers of `L`, `decompositionHom` is the action of the automorphism. -/
+theorem decompositionHom_algebraMap_ringOfIntegers
+    (τ : MulAction.stabilizer (L ≃ₐ[K] L) w.asIdeal) (x : 𝒪 L) :
+    decompositionHom v w τ (algebraMap (𝒪 L) (w.adicCompletion L) x) =
+      algebraMap (𝒪 L) (w.adicCompletion L) ((τ : L ≃ₐ[K] L) • x) := by
+  rw [IsScalarTower.algebraMap_apply (𝒪 L) L (w.adicCompletion L) x,
+    IsScalarTower.algebraMap_apply (𝒪 L) L (w.adicCompletion L) (_ • x),
+    decompositionHom_algebraMap, NumberField.algebraMap_smul_eq_apply]
+
+/-- The action of the decomposition group on `L_w` preserves the valuation of `L_w`. -/
+@[simp]
+theorem valued_decompositionHom (τ : MulAction.stabilizer (L ≃ₐ[K] L) w.asIdeal)
+    (x : w.adicCompletion L) :
+    Valued.v (decompositionHom v w τ x) = Valued.v x := by
+  rw [decompositionHom_apply, valued_completionCongr]
 
 variable (v) in
 /-- Each element of the decomposition group acts continuously on `L_w`. -/
