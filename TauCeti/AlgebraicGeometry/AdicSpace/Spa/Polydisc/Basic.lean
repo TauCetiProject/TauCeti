@@ -487,7 +487,6 @@ theorem closedPolydisc_vle_weightedC_iff {k : ℕ} (v : closedPolydisc k K) (x y
   rw [← vle_iff_norm_le_of_mem_spa (comap_weightedC_mem_spa v), comap_vle]
 
 /-- Every point of the closed polydisc compares the values of constants as their norms. -/
-@[simp]
 theorem closedPolydisc_valuation_weightedC_le_iff {k : ℕ} (v : closedPolydisc k K) (x y : K) :
     v.1.valuation (weightedC (fun _ : Fin k ↦ ({1} : Set K)) isWeightFamily_one_weight x) ≤
         v.1.valuation (weightedC _ isWeightFamily_one_weight y) ↔ ‖x‖ ≤ ‖y‖ := by
