@@ -47,16 +47,9 @@ theorem map_rootSubgroupPoints (f : A →+* B) (k : Fin n ⊕ Fin n)
       rootSubgroupPoints n hn k B
         (Multiplicative.ofAdd (f (Multiplicative.toAdd u))) := by
   apply Subtype.ext
-  have h := congrArg Subtype.val
-    (UniversalEnvelopingAlgebra.map_kostantToralRootSubgroupPoints
-      (e := TauCeti.serreRootGenerator (CartanMatrix.D n))
-      (h := TauCeti.serreH ℚ (CartanMatrix.D n)) (ρ := rep n hn)
-      (M := (lattice n).toAddSubgroup) (hM := rep_kostantForm_mem_lattice n hn)
-      (hnil := isNilpotent_rep_rootGenerator n hn) (b := latticeBasis n)
-      (wt := basisWeight n) f k u)
-  rw [TauCeti.GeneralLinear.IntegralPointsPresentation.coe_map] at h
-  rw [TauCeti.GeneralLinear.IntegralPointsPresentation.coe_map]
-  simpa only [coe_rootSubgroupPoints, coe_kostantToralRootSubgroupPoints] using h
+  rw [TauCeti.GeneralLinear.IntegralPointsPresentation.coe_map, coe_rootSubgroupPoints,
+    coe_rootSubgroupPoints, UniversalEnvelopingAlgebra.map_kostantRootSubgroupMatrix,
+    AdditiveGroup.mapValue_gaPointsMulEquiv_symm_apply, RingHom.toIntAlgHom_apply]
 
 /-- The induced map carries a point of the split spin weight torus coordinatewise along the
 homomorphism of value rings. -/
@@ -66,15 +59,10 @@ theorem map_weightTorusPoints (f : A →+* B) (s : Fin n → Aˣ) :
     (pointsPresentation n hn A).map (pointsPresentation n hn B) f (weightTorusPoints n hn A s) =
       weightTorusPoints n hn B fun i ↦ Units.map (f : A →* B) (s i) := by
   apply Subtype.ext
-  have h := congrArg Subtype.val
-    (UniversalEnvelopingAlgebra.map_kostantToralWeightTorusPoints
-      (e := TauCeti.serreRootGenerator (CartanMatrix.D n))
-      (h := TauCeti.serreH ℚ (CartanMatrix.D n)) (ρ := rep n hn)
-      (M := (lattice n).toAddSubgroup) (hM := rep_kostantForm_mem_lattice n hn)
-      (hnil := isNilpotent_rep_rootGenerator n hn) (b := latticeBasis n) (wt := basisWeight n) f s)
-  rw [TauCeti.GeneralLinear.IntegralPointsPresentation.coe_map] at h
-  rw [TauCeti.GeneralLinear.IntegralPointsPresentation.coe_map]
-  simpa only [coe_weightTorusPoints, coe_kostantToralWeightTorusPoints] using h
+  rw [TauCeti.GeneralLinear.IntegralPointsPresentation.coe_map, coe_weightTorusPoints,
+    coe_weightTorusPoints]
+  exact UniversalEnvelopingAlgebra.map_kostantTorusMatrix
+    (M := (lattice n).toAddSubgroup) (b := latticeBasis n) (wt := basisWeight n) f s
 
 end
 

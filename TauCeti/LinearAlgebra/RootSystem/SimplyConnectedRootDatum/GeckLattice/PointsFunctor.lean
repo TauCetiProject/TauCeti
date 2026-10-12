@@ -291,17 +291,9 @@ theorem map_geckRootSubgroupPoints (f : A →+* B)
       t.geckRootSubgroupPoints ht i B
         (Multiplicative.ofAdd (f (Multiplicative.toAdd u))) := by
   refine Subtype.ext ?_
-  have h := congrArg Subtype.val
-    (TauCeti.UniversalEnvelopingAlgebra.map_kostantToralRootSubgroupPoints
-      (e := (t.lieBasis ht).rootGenerator) (h := (t.lieBasis ht).h)
-      (ρ := t.geckRepresentation ht) (M := (t.geckCoordinateLattice ht).toAddSubgroup)
-      (hM := t.geckRepresentation_kostantForm_mem_geckCoordinateLattice ht)
-      (hnil := t.isNilpotent_geckRepresentation_rootGenerator ht)
-      (b := t.geckCoordinateBasisFin ht) (wt := t.geckWeightFin ht) f i u)
-  rw [TauCeti.GeneralLinear.IntegralPointsPresentation.coe_map] at h
-  rw [TauCeti.GeneralLinear.IntegralPointsPresentation.coe_map]
-  simpa only [coe_geckRootSubgroupPoints,
-    TauCeti.UniversalEnvelopingAlgebra.coe_kostantToralRootSubgroupPoints] using h
+  rw [TauCeti.GeneralLinear.IntegralPointsPresentation.coe_map, coe_geckRootSubgroupPoints,
+    coe_geckRootSubgroupPoints, TauCeti.UniversalEnvelopingAlgebra.map_kostantRootSubgroupMatrix,
+    AdditiveGroup.mapValue_gaPointsMulEquiv_symm_apply, RingHom.toIntAlgHom_apply]
 
 /-- **The induced map carries a point of the pinned Geck weight torus along the homomorphism of
 value rings**, parameter by parameter. -/
@@ -311,17 +303,11 @@ theorem map_geckWeightTorusPoints (f : A →+* B) (s : Fin t.rank → Aˣ) :
       (t.geckWeightTorusPoints ht A s) =
       t.geckWeightTorusPoints ht B (fun j => Units.map (f : A →* B) (s j)) := by
   refine Subtype.ext ?_
-  have h := congrArg Subtype.val
-    (TauCeti.UniversalEnvelopingAlgebra.map_kostantToralWeightTorusPoints
-      (e := (t.lieBasis ht).rootGenerator) (h := (t.lieBasis ht).h)
-      (ρ := t.geckRepresentation ht) (M := (t.geckCoordinateLattice ht).toAddSubgroup)
-      (hM := t.geckRepresentation_kostantForm_mem_geckCoordinateLattice ht)
-      (hnil := t.isNilpotent_geckRepresentation_rootGenerator ht)
-      (b := t.geckCoordinateBasisFin ht) (wt := t.geckWeightFin ht) f s)
-  rw [TauCeti.GeneralLinear.IntegralPointsPresentation.coe_map] at h
-  rw [TauCeti.GeneralLinear.IntegralPointsPresentation.coe_map]
-  simpa only [coe_geckWeightTorusPoints,
-    TauCeti.UniversalEnvelopingAlgebra.coe_kostantToralWeightTorusPoints] using h
+  rw [TauCeti.GeneralLinear.IntegralPointsPresentation.coe_map, coe_geckWeightTorusPoints,
+    coe_geckWeightTorusPoints]
+  exact TauCeti.UniversalEnvelopingAlgebra.map_kostantTorusMatrix
+    (M := (t.geckCoordinateLattice ht).toAddSubgroup) (b := t.geckCoordinateBasisFin ht)
+    (wt := t.geckWeightFin ht) f s
 
 end
 
