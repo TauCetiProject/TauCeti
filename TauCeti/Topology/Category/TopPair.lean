@@ -53,7 +53,6 @@ variable {X Y Z : TopCat.{u}} (g : X ⟶ Y) (g' : Y ⟶ Z) {B : Set X} {B' : Set
   (hB : Set.MapsTo g B B') (hB' : Set.MapsTo g' B' B'')
 
 /-- The embedding of the pair `(X, B)` has range `B`. -/
-@[simp]
 lemma range_ofSubset_map : Set.range (ofSubset B).map = B :=
   Subtype.range_coe
 
