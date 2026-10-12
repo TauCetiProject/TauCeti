@@ -13,15 +13,15 @@ public import Mathlib.MeasureTheory.Function.StronglyMeasurable.Lemmas
 
 A function `T : α → E →L[𝕜] F` is almost everywhere strongly measurable for the operator norm
 exactly when each orbit `a ↦ T a v` is, provided `E` is finite-dimensional
-(`TauCeti.aestronglyMeasurable_continuousLinearMap_iff`). One direction is Mathlib's
+(`TauCeti.aestronglyMeasurable_clm_apply_iff`). One direction is Mathlib's
 `MeasureTheory.AEStronglyMeasurable.apply_continuousLinearMap` and holds in general. For the other,
 `T a = ∑ i, (b.coord i).smulRight (T a (b i))` for a basis `b` of `E`, a finite sum of continuous
 linear images of the orbits `a ↦ T a (b i)`.
 
-In infinite dimension the orbit condition is strictly weaker: the strong operator topology and the
-norm topology then give different notions of measurability. Measurability of the orbits is what is
-checkable for time-dependent operators, for instance `t ↦ A t v w` for the energy forms of a
-parabolic equation; this file upgrades it to the operator norm once the operators are restricted
+In infinite dimension the orbit condition is weaker in general: the strong operator topology and
+the norm topology then give different notions of measurability. Measurability of the orbits is
+what is checkable for time-dependent operators, for instance `t ↦ A t v w` for the energy forms of
+a parabolic equation; this file upgrades it to the operator norm once the operators are restricted
 to a finite-dimensional subspace.
 -/
 
@@ -37,7 +37,7 @@ variable {α 𝕜 E F : Type*} {_ : MeasurableSpace α} {μ : Measure α} [Nontr
 
 /-- On a finite-dimensional space, an operator-valued function is almost everywhere strongly
 measurable for the operator norm exactly when each of its orbits `a ↦ T a v` is. -/
-theorem aestronglyMeasurable_continuousLinearMap_iff {T : α → E →L[𝕜] F} :
+theorem aestronglyMeasurable_clm_apply_iff {T : α → E →L[𝕜] F} :
     AEStronglyMeasurable T μ ↔ ∀ v, AEStronglyMeasurable (fun a ↦ T a v) μ := by
   refine ⟨fun h v ↦ h.apply_continuousLinearMap v, fun h ↦ ?_⟩
   let b := Module.finBasis 𝕜 E

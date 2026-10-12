@@ -90,8 +90,8 @@ theorem exists_hasWeakLineDerivOn_gelfandDual_of_finiteDimensional (hι : Inject
   set F : ℝ → V := fun t ↦ Ginv (f t)
   have hM : AEStronglyMeasurable M (volume.restrict (Ioo a b)) :=
     ((ContinuousLinearMap.compL ℝ V (StrongDual ℝ V) V Ginv).continuous.comp_aestronglyMeasurable
-      (aestronglyMeasurable_continuousLinearMap_iff.2 fun v ↦
-        aestronglyMeasurable_continuousLinearMap_iff.2 (hA v))).neg
+      (aestronglyMeasurable_clm_apply_iff.2 fun v ↦
+        aestronglyMeasurable_clm_apply_iff.2 (hA v))).neg
   have hMK : ∀ᵐ t ∂volume.restrict (Ioo a b), ‖M t‖ ≤ ‖Ginv‖ * K := by
     filter_upwards [hK] with t ht
     rw [norm_neg]

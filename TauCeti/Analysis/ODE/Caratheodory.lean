@@ -31,16 +31,12 @@ that is `x = ODE.picard (fun s y ↦ M s y + F s) a x₀ x` on `[a, b]`, for `x`
 Linear equations with merely measurable, bounded coefficients arise as the Galerkin
 approximations of linear parabolic equations, whose coefficients are only measurable in time.
 
-## Proof
-
-The Picard map `y ↦ x₀ + ∫ₐᵗ (M s (y s) + F s) ds` acts on `C([a, b], E)`, and its `n`-th iterate is
-Lipschitz with constant `(K (b - a))ⁿ / n!`, by induction on `n` as in the proof of the
-Picard–Lindelöf theorem. Some iterate is therefore a contraction, so the Picard map has exactly one
-fixed point.
-
 ## References
 
 * E. A. Coddington, N. Levinson, *Theory of Ordinary Differential Equations*, Chapter 2.
+* Mathlib's `Mathlib/Analysis/ODE/PicardLindelof.lean` (Yury Kudryashov, Winston Yin). The
+  existence and uniqueness proofs here follow its argument that some iterate of the Picard map is
+  a contraction.
 -/
 
 public section
