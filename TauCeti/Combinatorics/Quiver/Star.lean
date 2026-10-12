@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Combinatorics.Quiver.Covering
-public import Mathlib.Data.Finite.Defs
+public import Mathlib.Data.Fintype.EquivFin
 
 /-!
 # Finite quiver stars
