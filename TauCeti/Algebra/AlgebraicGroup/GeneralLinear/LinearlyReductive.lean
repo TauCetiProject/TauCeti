@@ -123,7 +123,10 @@ private theorem fixedMap_surjective_of_pos (hn : 0 < n)
         @Comodule.coact k C V _ _ _ _ _ _ (Comodule.Corestrict q.toCoalgHom) v =
           v ⊗ₜ[k] (1 : C) := by
     rw [hI.mem_weightSpaceOneSubcomodule, Comodule.corestrict_coact_apply]
-    rfl
+    have hq : q.toCoalgHom.toLinearMap = (Ideal.Quotient.mkₐ k I.toIdeal).toLinearMap := by
+      ext x
+      exact (BialgHom.toCoalgHom_apply q x).trans (CommHopfAlgCat.mkQuotient_apply H I x)
+    rw [hq]
   let fC := Comodule.corestrictHom q.toCoalgHom f
   have hmap (m : E) : (f.comp E.subtype) m ∈ F := by
     let _ : Comodule k C M := Comodule.Corestrict q.toCoalgHom
