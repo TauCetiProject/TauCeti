@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.Preadditive.Biproducts
+import Mathlib.Tactic.LinearCombination
+import Mathlib.Tactic.Module
 
 /-!
 # An object killed by a product of coprime integers splits
@@ -42,12 +44,6 @@ namespace CategoryTheory.Limits
 
 variable {C : Type*} [Category C] [Preadditive C] {X Y : C} {a b m n : ℤ}
 
-/-- If `a * m + b * n = 1` and `f` is killed by `m`, then multiplying `f` by `b * n` does not
-change it. -/
-private theorem mul_zsmul_eq_self_of_zsmul_eq_zero (hab : a * m + b * n = 1) {f : Y ⟶ X}
-    (hf : m • f = 0) : (b * n) • f = f := by
-  rw [eq_sub_of_add_eq' hab, sub_smul, one_smul, mul_smul, hf, smul_zero, sub_zero]
-
 /-- The inclusion of a kernel of `m • 𝟙 X` is killed by `m`. -/
 private theorem zsmul_ι_eq_zero (c : KernelFork (m • 𝟙 X)) : m • c.ι = 0 := by
   rw [← Category.comp_id c.ι, ← Preadditive.comp_zsmul]
@@ -67,32 +63,33 @@ noncomputable abbrev BinaryBicone.ofCoprimeKernelForks (hab : a * m + b * n = 1)
     {c₂ : KernelFork (n • 𝟙 X)} (hc₂ : IsLimit c₂) : BinaryBicone c₁.pt c₂.pt where
   pt := X
   fst := (KernelFork.IsLimit.lift' hc₁ ((b * n) • 𝟙 X) (by
-    rw [Preadditive.zsmul_comp, Category.id_comp, smul_smul, mul_right_comm, mul_assoc, mul_smul,
-      hX, smul_zero])).1
+    simp only [Preadditive.zsmul_comp, Category.id_comp]
+    linear_combination (norm := module) b • hX)).1
   snd := (KernelFork.IsLimit.lift' hc₂ ((a * m) • 𝟙 X) (by
-    rw [Preadditive.zsmul_comp, Category.id_comp, smul_smul, mul_assoc, mul_smul, hX,
-      smul_zero])).1
+    simp only [Preadditive.zsmul_comp, Category.id_comp]
+    linear_combination (norm := module) a • hX)).1
   inl := c₁.ι
   inr := c₂.ι
   inl_fst := by
     refine Fork.IsLimit.hom_ext hc₁ ?_
-    rw [Category.assoc, (KernelFork.IsLimit.lift' hc₁ _ _).2, Category.id_comp,
-      Preadditive.comp_zsmul, Category.comp_id]
-    exact mul_zsmul_eq_self_of_zsmul_eq_zero hab (zsmul_ι_eq_zero c₁)
+    simp only [Category.assoc, (KernelFork.IsLimit.lift' hc₁ _ _).2, Preadditive.comp_zsmul,
+      Category.comp_id, Category.id_comp]
+    linear_combination (norm := module) hab • c₁.ι - a • zsmul_ι_eq_zero c₁
   inl_snd := by
     refine Fork.IsLimit.hom_ext hc₂ ?_
-    rw [Category.assoc, (KernelFork.IsLimit.lift' hc₂ _ _).2, zero_comp, Preadditive.comp_zsmul,
-      Category.comp_id, mul_smul, zsmul_ι_eq_zero, smul_zero]
+    simp only [Category.assoc, (KernelFork.IsLimit.lift' hc₂ _ _).2, Preadditive.comp_zsmul,
+      Category.comp_id, zero_comp]
+    linear_combination (norm := module) a • zsmul_ι_eq_zero c₁
   inr_fst := by
     refine Fork.IsLimit.hom_ext hc₁ ?_
-    rw [Category.assoc, (KernelFork.IsLimit.lift' hc₁ _ _).2, zero_comp, Preadditive.comp_zsmul,
-      Category.comp_id, mul_smul, zsmul_ι_eq_zero, smul_zero]
+    simp only [Category.assoc, (KernelFork.IsLimit.lift' hc₁ _ _).2, Preadditive.comp_zsmul,
+      Category.comp_id, zero_comp]
+    linear_combination (norm := module) b • zsmul_ι_eq_zero c₂
   inr_snd := by
     refine Fork.IsLimit.hom_ext hc₂ ?_
-    rw [Category.assoc, (KernelFork.IsLimit.lift' hc₂ _ _).2, Category.id_comp,
-      Preadditive.comp_zsmul, Category.comp_id]
-    exact mul_zsmul_eq_self_of_zsmul_eq_zero (m := n) (n := m) ((add_comm _ _).trans hab)
-      (zsmul_ι_eq_zero c₂)
+    simp only [Category.assoc, (KernelFork.IsLimit.lift' hc₂ _ _).2, Preadditive.comp_zsmul,
+      Category.comp_id, Category.id_comp]
+    linear_combination (norm := module) hab • c₂.ι - b • zsmul_ι_eq_zero c₂
 
 variable (hab : a * m + b * n = 1) (hX : (m * n) • 𝟙 X = 0) {c₁ : KernelFork (m • 𝟙 X)}
   (hc₁ : IsLimit c₁) {c₂ : KernelFork (n • 𝟙 X)} (hc₂ : IsLimit c₂)
@@ -118,7 +115,8 @@ two kernels. -/
 noncomputable def BinaryBicone.isBilimitOfCoprimeKernelForks :
     (BinaryBicone.ofCoprimeKernelForks hab hX hc₁ hc₂).IsBilimit :=
   isBinaryBilimitOfTotal _ <| by
-    have h : (b * n) • 𝟙 X + (a * m) • 𝟙 X = 𝟙 X := by rw [← add_smul, add_comm, hab, one_smul]
+    have h : (b * n) • 𝟙 X + (a * m) • 𝟙 X = 𝟙 X := by
+      linear_combination (norm := module) hab • 𝟙 X
     -- The vertex is `X` and the inclusions are `c₁.ι` and `c₂.ι` by definition.
     exact (congrArg₂ (· + ·) (ofCoprimeKernelForks_fst_ι hab hX hc₁ hc₂)
       (ofCoprimeKernelForks_snd_ι hab hX hc₁ hc₂)).trans h

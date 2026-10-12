@@ -39,6 +39,8 @@ preadditive category `CommGrp (Over S)`.
 
 ## Main results
 
+* `TauCeti.GroupScheme.exists_comp_torsionι_iff`: the points of `G[n]` are the points of `G`
+  killed by `n`.
 * `TauCeti.GroupScheme.isIso_tensorHom_torsionι_comp_mul`: for `G` killed by `m * n` with `m` and
   `n` coprime, addition `G[m] ×_S G[n] ⟶ G` is an isomorphism.
 * `TauCeti.GroupScheme.torsionTensorIso_inv_hom_hom_fst_torsionι` and
@@ -122,6 +124,13 @@ noncomputable def torsionLift (x : Z ⟶ G.X) (hx : x ^ n = 1) : Z ⟶ (torsion 
 theorem torsionLift_ι (x : Z ⟶ G.X) (hx : x ^ n = 1) : torsionLift x hx ≫ torsionι G n = x :=
   kernelLift_ι _ _
 
+/-- **The points of the `n`-torsion.** A point of `G` factors through `G[n]` if and only if it is
+killed by `n`. -/
+theorem exists_comp_torsionι_iff (x : Z ⟶ G.X) : (∃ y, y ≫ torsionι G n = x) ↔ x ^ n = 1 := by
+  refine ⟨?_, fun hx ↦ ⟨torsionLift x hx, torsionLift_ι x hx⟩⟩
+  rintro ⟨y, rfl⟩
+  rw [← GrpObj.comp_zpow, torsionι_zpow, comp_one]
+
 /-- A homomorphism into `G` killed by `n` factors through the `n`-torsion as a homomorphism. -/
 instance isMonHom_torsionLift {Z : Over S} [MonObj Z] (x : Z ⟶ G.X) [IsMonHom x]
     (hx : x ^ n = 1) : IsMonHom (torsionLift x hx) where
@@ -142,15 +151,28 @@ private noncomputable abbrev torsionKernelFork (n : ℤ) : KernelFork (n • �
   KernelFork.ofι (Z := torsionCommGrp G n) (CommGrp.homMk (torsionι G n))
     (by ext; simp)
 
+/-- A morphism into `G` of `CommGrp (Over S)` killed by multiplication by `n` is, as a point of
+`G`, killed by `n`. -/
+private theorem hom_hom_hom_zpow_eq_one {n : ℤ} {W : CommGrp (Over S)} {k : W ⟶ G}
+    (hk : k ≫ (n • 𝟙 G) = 0) : k.hom.hom.hom ^ n = 1 := by
+  rw [← CommGrp.zsmul_hom_hom_hom, ← Category.comp_id k, ← Preadditive.comp_zsmul, hk,
+    CommGrp.zero_hom_hom_hom]
+
+/-- The inclusion of `torsionKernelFork` is `torsionι` on underlying morphisms of `Over S`. -/
+private theorem comp_homMk_torsionι_hom_hom_hom {n : ℤ} {W : CommGrp (Over S)}
+    (l : W ⟶ torsionCommGrp G n) :
+    (l ≫ CommGrp.homMk (torsionι G n)).hom.hom.hom = l.hom.hom.hom ≫ torsionι G n := by
+  simp only [CommGrp.comp_hom, Grp.comp', Mon.comp_hom', CommGrp.homMk_hom_hom_hom]
+
 /-- The `n`-torsion of `G` is a kernel of multiplication by `n` in `CommGrp (Over S)`. -/
 private noncomputable def isLimitTorsionKernelFork (n : ℤ) : IsLimit (torsionKernelFork G n) :=
   KernelFork.IsLimit.ofι _ _
     (fun {W} k hk ↦ CommGrp.homMk (A := W) (B := torsionCommGrp G n)
-      (torsionLift k.hom.hom.hom (by
-        simpa [GrpObj.comp_zpow] using congrArg (fun f ↦ f.hom.hom.hom) hk)))
-    (fun k hk ↦ CommGrp.hom_ext _ _ (by simp))
+      (torsionLift k.hom.hom.hom (hom_hom_hom_zpow_eq_one G hk)))
+    (fun k hk ↦ CommGrp.hom_ext _ _ (by
+      rw [comp_homMk_torsionι_hom_hom_hom, CommGrp.homMk_hom_hom_hom, torsionLift_ι]))
     (fun k hk l hl ↦ CommGrp.hom_ext _ _ (torsion_hom_ext G (by
-      simpa using congrArg (fun f ↦ f.hom.hom.hom) hl)))
+      rw [← comp_homMk_torsionι_hom_hom_hom, hl, CommGrp.homMk_hom_hom_hom, torsionLift_ι])))
 
 /-! ### The coprime splitting -/
 
@@ -268,28 +290,28 @@ theorem torsionTensorIso_hom_hom_hom (h : IsCoprime m n) (hG : 𝟙 G.X ^ (m * n
   (rfl)
 
 /-- The inverse of `G[m] ×_S G[n] ≅ G` is given by the two projections of `torsionBicone`. -/
-private theorem torsionTensorIso_inv_hom_hom (h : IsCoprime m n) (hab : a * m + b * n = 1)
+private theorem torsionTensorIso_inv_hom_hom (hab : a * m + b * n = 1)
     (hG : 𝟙 G.X ^ (m * n) = 1) :
-    (torsionTensorIso h hG).inv.hom.hom = lift (torsionFst hab hG) (torsionSnd hab hG) :=
-  Iso.inv_ext (f := (Grp.forget (Over S)).mapIso (torsionTensorIso h hG))
+    (torsionTensorIso ⟨a, b, hab⟩ hG).inv.hom.hom = lift (torsionFst hab hG) (torsionSnd hab hG) :=
+  Iso.inv_ext (f := (Grp.forget (Over S)).mapIso (torsionTensorIso ⟨a, b, hab⟩ hG))
     (tensorHom_torsionι_comp_mul_comp_lift hab hG)
 
 /-- If `a * m + b * n = 1`, the projection of `G` to `G[m]` under `G ≅ G[m] ×_S G[n]` is
 multiplication by `b * n`. -/
 @[reassoc]
-theorem torsionTensorIso_inv_hom_hom_fst_torsionι (h : IsCoprime m n) (hab : a * m + b * n = 1)
+theorem torsionTensorIso_inv_hom_hom_fst_torsionι (hab : a * m + b * n = 1)
     (hG : 𝟙 G.X ^ (m * n) = 1) :
-    (torsionTensorIso h hG).inv.hom.hom ≫ fst _ _ ≫ torsionι G m = 𝟙 G.X ^ (b * n) := by
-  rw [torsionTensorIso_inv_hom_hom h hab]
+    (torsionTensorIso ⟨a, b, hab⟩ hG).inv.hom.hom ≫ fst _ _ ≫ torsionι G m = 𝟙 G.X ^ (b * n) := by
+  rw [torsionTensorIso_inv_hom_hom hab]
   exact (lift_fst_assoc _ _ _).trans (torsionFst_torsionι hab hG)
 
 /-- If `a * m + b * n = 1`, the projection of `G` to `G[n]` under `G ≅ G[m] ×_S G[n]` is
 multiplication by `a * m`. -/
 @[reassoc]
-theorem torsionTensorIso_inv_hom_hom_snd_torsionι (h : IsCoprime m n) (hab : a * m + b * n = 1)
+theorem torsionTensorIso_inv_hom_hom_snd_torsionι (hab : a * m + b * n = 1)
     (hG : 𝟙 G.X ^ (m * n) = 1) :
-    (torsionTensorIso h hG).inv.hom.hom ≫ snd _ _ ≫ torsionι G n = 𝟙 G.X ^ (a * m) := by
-  rw [torsionTensorIso_inv_hom_hom h hab]
+    (torsionTensorIso ⟨a, b, hab⟩ hG).inv.hom.hom ≫ snd _ _ ≫ torsionι G n = 𝟙 G.X ^ (a * m) := by
+  rw [torsionTensorIso_inv_hom_hom hab]
   exact (lift_snd_assoc _ _ _).trans (torsionSnd_torsionι hab hG)
 
 end TauCeti.GroupScheme
