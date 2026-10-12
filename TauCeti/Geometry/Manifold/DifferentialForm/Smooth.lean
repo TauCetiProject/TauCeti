@@ -20,7 +20,10 @@ provides the bundled carrier `SmoothBundleForm`; fixed coefficients are the `Smo
 specialization.  These carriers are the input for smooth wedge products and pullbacks.
 
 The degree-two adapters below evaluate smooth forms on ordered pairs and expose real-valued fibres
-as alternating bilinear forms.
+as alternating bilinear forms.  Their names and laws are adapted from the corresponding
+`TauCeti.SmoothTwoForm.bilinFormAt`, `TauCeti.SmoothTwoForm.bilinFormAt_apply`, and
+`TauCeti.SmoothTwoForm.isAlt_bilinFormAt` declarations in
+`TauCeti.Geometry.Manifold.TwoForm.Basic`.
 
 Smoothness is expressed through the total-space charts of the topological alternating bundle.  The
 module operations use Mathlib's smooth-section API, so this carrier does not require a chosen
