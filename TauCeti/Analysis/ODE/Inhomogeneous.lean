@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Normed.Operator.Exponential
-import Mathlib.Analysis.Calculus.MeanValue
+import Mathlib.Analysis.ODE.ExistUnique
 
 /-!
 # Inhomogeneous equations for bounded linear operators
@@ -54,22 +54,10 @@ theorem existsUnique_hasDerivAt_add (B : X →L[ℝ] X) {f : ℝ → X} (hf : Co
     simpa only [u, intervalIntegral.integral_same, add_zero] using hinv t₀ x
   refine ⟨u, ⟨hu₀, hu⟩, ?_⟩
   intro v hv
-  let w : ℝ → X := fun t ↦ exp ((-t) • B) (v t - u t)
-  have hw (t : ℝ) : HasDerivAt w 0 t := by
-    have hd : HasDerivAt (fun s ↦ v s - u s) (B (v t - u t)) t := by
-      convert (hv.2 t).sub (hu t) using 1
-      simp [map_sub]
-    have he := (hasDerivAt_exp_smul_const' B (-t)).scomp t
-      (hasDerivAt_neg t)
-    have h := he.clm_apply hd
-    simpa only [w, Function.comp_def, mul_apply_eq_comp, neg_one_smul, neg_apply, hcomm,
-      neg_add_cancel] using h
-  have hw0 (t : ℝ) : w t = 0 := by
-    rw [is_const_of_deriv_eq_zero (fun s ↦ (hw s).differentiableAt)
-      (fun s ↦ (hw s).deriv) t t₀]
-    simp [w, hv.1, hu₀]
-  funext t
-  have h := congrArg (fun z ↦ exp (t • B) z) (hw0 t)
-  simpa only [w, hinv, map_zero, sub_eq_zero] using h
+  exact ODE_solution_unique_univ (v := fun t z ↦ B z + f t) (s := fun _ ↦ Set.univ)
+    (fun t ↦ lipschitzOnWith_iff_dist_le_mul.2 fun z _ w _ ↦ by
+      simpa only [dist_add_right] using B.lipschitzWith.dist_le_mul z w)
+    (fun t ↦ ⟨hv.2 t, Set.mem_univ _⟩) (fun t ↦ ⟨hu t, Set.mem_univ _⟩)
+    (hv.1.trans hu₀.symm)
 
 end ContinuousLinearMap
