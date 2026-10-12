@@ -51,6 +51,8 @@ orthonormal basis.
   the sum of the eigenvalues in every orthonormal basis.
 * `LinearMap.IsSymmetric.sum_sq_re_inner_apply_self_le_sum_sq_eigenvalues`:
   `∑ₖ dₖ² ≤ ∑ᵢ λᵢ²`.
+* `LinearMap.IsSymmetric.sum_mul_re_inner_apply_self_le_sum_mul_eigenvalues`: for a decreasing
+  weight sequence `c`, `∑ₖ cₖ dₖ ≤ ∑ₖ cₖ λₖ`, with the eigenvalues listed in decreasing order.
 
 ## References
 
@@ -170,5 +172,21 @@ theorem sum_sq_re_inner_apply_self_le_sum_sq_eigenvalues (hT : T.IsSymmetric)
     ∑ k, RCLike.re ⟪T (e k), e k⟫_𝕜 ^ 2 ≤ ∑ i, hT.eigenvalues hn i ^ 2 :=
   hT.sum_map_re_inner_apply_self_le_sum_map_eigenvalues hn e (Even.convexOn_pow even_two)
     fun _ ↦ Set.mem_univ _
+
+/-- **Sorted weights of the diagonal.** For a symmetric `T`, an orthonormal basis `e`, and a
+decreasing weight sequence `c`, the `c`-weighted sum of the diagonal entries `Re⟪T eₖ, eₖ⟫` is
+at most the `c`-weighted sum of the eigenvalues of `T`, listed in decreasing order. -/
+theorem sum_mul_re_inner_apply_self_le_sum_mul_eigenvalues (hT : T.IsSymmetric)
+    (hn : finrank 𝕜 E = n) (e : OrthonormalBasis (Fin n) 𝕜 E) {c : Fin n → ℝ}
+    (hc : Antitone c) :
+    ∑ k, c k * RCLike.re ⟪T (e k), e k⟫_𝕜 ≤ ∑ i, c i * hT.eigenvalues hn i := by
+  -- The diagonal is the image of the spectrum under the doubly stochastic Schur weights.
+  have hdiag : ∑ k, c k * RCLike.re ⟪T (e k), e k⟫_𝕜 =
+      c ⬝ᵥ (e.schurWeight (hT.eigenvectorBasis hn) *ᵥ hT.eigenvalues hn) := by
+    simp [hT.re_inner_apply_self_eq_sum_schurWeight_mul_eigenvalues hn,
+      OrthonormalBasis.schurWeight_apply, dotProduct, Matrix.mulVec, norm_inner_symm]
+  rw [hdiag]
+  exact (hc.monovary (hT.eigenvalues_antitone hn)).dotProduct_mulVec_le_of_mem_doublyStochastic
+    (e.schurWeight_mem_doublyStochastic _)
 
 end LinearMap.IsSymmetric

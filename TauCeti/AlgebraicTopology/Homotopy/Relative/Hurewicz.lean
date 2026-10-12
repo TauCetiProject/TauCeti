@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicTopology.Homotopy.Hurewicz
+public import TauCeti.AlgebraicTopology.Homotopy.Hurewicz.Basic
 public import TauCeti.AlgebraicTopology.Homotopy.Relative.Exact
 public import TauCeti.AlgebraicTopology.Homotopy.Relative.Group
 public import TauCeti.Topology.Homotopy.HomotopyGroup.LoopSpace

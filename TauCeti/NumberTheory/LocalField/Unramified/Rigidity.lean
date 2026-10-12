@@ -68,7 +68,7 @@ variable {K L M : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField K] [Field L] [ValuativeRel L] [TopologicalSpace L]
   [IsNonarchimedeanLocalField L] [Algebra K L] [ValuativeExtension K L] [Module.Finite K L]
   [Field M] [ValuativeRel M] [TopologicalSpace M] [IsNonarchimedeanLocalField M] [Algebra K M]
-  [ValuativeExtension K M] [Module.Finite K M] [IsUnramified K L]
+  [ValuativeExtension K M] [IsUnramified K L]
 
 /-- **Embeddings of an unramified extension are determined by their residue maps, and every
 residue map lifts.** For `L/K` unramified, reduction is a bijection from the `K`-embeddings
@@ -155,6 +155,8 @@ lift of `φ` induces `φ` on residue fields. -/
 theorem IsUnramified.residueFieldHom_residueFieldHomEquiv_symm (φ : 𝓀[L] →ₐ[𝓀[K]] 𝓀[M]) :
     ((IsUnramified.residueFieldHomEquiv K L M).symm φ).residueFieldHom = φ :=
   (IsUnramified.residueFieldHomEquiv K L M).apply_symm_apply φ
+
+variable [Module.Finite K M]
 
 /-- **Rigidity of unramified extensions.** Let `L/K` and `M/K` be finite unramified extensions.
 Every `𝓀[K]`-isomorphism `𝓀[L] ≃ 𝓀[M]` of residue fields lifts to a unique `K`-isomorphism

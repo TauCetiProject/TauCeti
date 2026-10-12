@@ -27,6 +27,8 @@ These coordinates are the input to the Gauss valuations on `A_inf = W(𝒪_F)`.
 * `WittVector.pow_dvd_sub_sum_teichmullerCoeff` : the Teichmüller expansion modulo `p ^ (n + 1)`.
 * `WittVector.teichmullerCoeff_sum_teichmuller_mul_pow` : the Teichmüller coordinates of a finite
   Teichmüller sum `∑_{j ≤ n} [aⱼ] pʲ` are the `aⱼ`.
+* `WittVector.teichmullerCoeff_sum_range_teichmuller_mul_pow` : the Teichmüller coordinates of
+  `∑_{j < n} [aⱼ] pʲ` vanish from `n` on.
 * `WittVector.teichmullerCoeff_eq_of_dvd_sub` : the first `n + 1` Teichmüller coordinates only
   depend on the residue modulo `p ^ (n + 1)`.
 * `WittVector.teichmullerCoeff_teichmuller_mul` : `[c] x` has Teichmüller coordinates `c xₙ`.
@@ -108,6 +110,22 @@ theorem teichmullerCoeff_sum_teichmuller_mul_pow (a : ℕ → R) {i n : ℕ} (hi
   by_contra h
   exact (if hk : k = j then hl (teichmuller_mul_pow_coeff_of_ne _ (hk ▸ h)) else
     hj (teichmuller_mul_pow_coeff_of_ne _ hk))
+
+/-- The Teichmüller coordinates of a finite Teichmüller sum `∑_{j < n} [aⱼ] pʲ` are the `aᵢ` for
+`i < n`, and vanish from `n` on. -/
+@[simp]
+theorem teichmullerCoeff_sum_range_teichmuller_mul_pow (a : ℕ → R) (n i : ℕ) :
+    (∑ j ∈ Finset.range n, teichmuller p (a j) * (p : 𝕎 R) ^ j).teichmullerCoeff i =
+      if i < n then a i else 0 := by
+  have h : ∑ j ∈ Finset.range n, teichmuller p (a j) * (p : 𝕎 R) ^ j =
+      ∑ j ≤ i + n, teichmuller p (if j < n then a j else 0) * (p : 𝕎 R) ^ j := by
+    have hr : Finset.range n = (Finset.Iic (i + n)).filter (· < n) := by
+      ext j
+      simp only [Finset.mem_range, Finset.mem_filter, Finset.mem_Iic]
+      omega
+    rw [hr, Finset.sum_filter]
+    exact Finset.sum_congr rfl fun j _ ↦ by split_ifs <;> simp
+  rw [h, teichmullerCoeff_sum_teichmuller_mul_pow _ (Nat.le_add_right i n)]
 
 /-- **The Teichmüller expansion**: `x` is congruent to `∑_{i ≤ n} [xᵢ] pⁱ` modulo `p ^ (n + 1)`. -/
 theorem pow_dvd_sub_sum_teichmullerCoeff (x : 𝕎 R) (n : ℕ) :
