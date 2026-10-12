@@ -17,10 +17,12 @@ public import Mathlib.RingTheory.Finiteness.ModuleFinitePresentation
 Let `H` be a commutative `R`-bialgebra, finite and free as an `R`-module, so that `G = Spec H` is
 a finite locally free monoid scheme over `Spec R`; its points with values in `R` form the
 convolution monoid `WithConv (H →ₐ[R] R)`. For a finite monoid `A`, a homomorphism
-`φ : A →* G(R)` is an *`A`-generator* of `G` (Katz–Mazur §1.10) when the `|A|` points `φ a` form a
-full set of sections of `G` over `R` (`TauCeti.IsFullSetOfSections`): after every base change, the
-norm of a function on `G` is the product of its values at the points `φ a`. This is how Katz and
-Mazur say, over an arbitrary base and counting multiplicities, that the points `φ a` exhaust `G`;
+`φ : A →* G(R)` is an *`A`-generator* of `G` when the `|A|` points `φ a` form a full set of sections
+of `G` over `R` (`TauCeti.IsFullSetOfSections`). Katz–Mazur §1.10 make this definition for a finite
+abelian group `A`; it uses only the monoid structure of `A`, so we state it for any finite monoid.
+Being a full set of sections means that after every base change, the norm of a function on `G` is
+the product of its values at the points `φ a`. This is how Katz and Mazur say, over an arbitrary
+base and counting multiplicities, that the points `φ a` exhaust `G`;
 they need not be distinct, since in characteristic `p` the identity, taken `p` times, is a full
 set of sections of `μ_p`. The Drinfeld level structures on elliptic curves are of this form: a
 `[Γ(N)]`-structure on `E` is a `(ℤ/N)²`-generator of `E[N]`.
@@ -83,8 +85,9 @@ variable {R : Type u} {H : Type v} [CommRing R] [CommRing H] [Bialgebra R H]
 variable {A : Type*} [Monoid A] [Fintype A]
 
 /-- A homomorphism `φ : A →* G(R)` from a finite monoid to the points of `G = Spec H` is an
-*`A`-generator* of `G` (Katz–Mazur §1.10) if the points `φ a`, for `a ∈ A`, form a full set of
-sections of `G` over `R`. -/
+*`A`-generator* of `G` if the points `φ a`, for `a ∈ A`, form a full set of sections of `G` over
+`R`. This generalizes the definition of Katz–Mazur §1.10, where `A` is a finite abelian group, to
+finite monoids. -/
 def IsAGenerator (φ : A →* WithConv (H →ₐ[R] R)) : Prop :=
   IsFullSetOfSections fun a ↦ (φ a).ofConv
 
