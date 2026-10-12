@@ -164,8 +164,9 @@ theorem algorithmicConductor_eq_top_iff (W : WeierstrassCurve K) [W.IsElliptic] 
       (W.minimal (Localization.AtPrime v.asIdeal)).HasGoodReduction
         (Localization.AtPrime v.asIdeal) := by
   refine ⟨fun h v => ?_, fun h => ?_⟩
-  · rw [← algorithmicOggExponent_eq_zero_iff, ← count_algorithmicConductor, h, ← Ideal.one_eq_top,
-      Associates.mk_one, Associates.factors_one, Associates.count_zero v.associates_irreducible]
+  · by_contra hv
+    rw [← dvd_algorithmicConductor_iff, h, Ideal.dvd_iff_le, top_le_iff] at hv
+    exact v.isPrime.ne_top hv
   · rw [algorithmicConductor_def, ← Ideal.one_eq_top]
     simp_rw [(algorithmicOggExponent_eq_zero_iff _).2 (h _), pow_zero, finprod_one]
 
