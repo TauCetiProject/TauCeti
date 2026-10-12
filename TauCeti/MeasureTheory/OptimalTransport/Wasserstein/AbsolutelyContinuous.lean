@@ -193,7 +193,8 @@ theorem hasFiniteMoment_map_IccExtend (hab : a ≤ b) {η : Measure C(Icc a b, X
       fun γ : C(Icc a b, X) ↦ IccExtend hab γ (projIcc a b hab t) := by
     funext γ
     rw [IccExtend_val]
-    exact IccExtend_apply hab γ t
+    -- `IccExtend hab γ` is defined as `γ ∘ projIcc a b hab`.
+    rfl
   have ht : (projIcc a b hab t : ℝ) ∈ uIcc a b := by
     rw [uIcc_of_le hab]
     exact (projIcc a b hab t).2
