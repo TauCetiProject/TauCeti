@@ -22,9 +22,6 @@ This file exposes the corresponding public API directly on functions `ℝ≥0 ×
 small prerequisite for the BCR semigroup--Bochner representation milestone, where one separates
 normalization from the independent boundedness and continuity hypotheses.
 
-This advances `TauCetiRoadmap/OneParameterSemigroups/README.md`, Part C, the positive-definite
-function API item "normalization `F(0) = 1`" and Milestone 2 ("BCR semigroup--Bochner").
-
 ## Main declarations
 
 * `TauCeti.IsSemigroupGroupPD.normalize`: the normalized function remains
