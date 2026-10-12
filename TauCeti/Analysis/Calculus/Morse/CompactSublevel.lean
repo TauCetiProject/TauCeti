@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Calculus.Morse.Breaking
+public import TauCeti.Analysis.Calculus.Morse.Breaking.Basic
 import TauCeti.Analysis.Calculus.Morse.Stable
 
 /-!
