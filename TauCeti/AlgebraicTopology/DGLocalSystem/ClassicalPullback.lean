@@ -16,6 +16,11 @@ Moore loop is the image of its class under `π₁(f)` (`MooreLoopSpace.loopClass
 degree-zero ring map `loopChainDegreeZero` intertwines `C_*(Ωf)` with the map of group rings
 (`loopChainDegreeZero_loopChainMap`).
 
+The module `Classical` builds the DG local system of a classical local system; the isomorphism
+between the pullback of the DG local system of `L` and the DG local system of the pullback of `L`
+is not proved here: it is the combination of the naturality below with the monodromy of the
+pullback.
+
 ## Main results
 
 * `TauCeti.MooreLoopSpace.loopClass_map`: the class of the image of a loop.
@@ -83,8 +88,12 @@ theorem loopChainDegreeZero_loopChainMap (f : C(B, B')) (hf : f b = b')
     change loopChainDegreeZero B' b' R (loopChainMap R f hf (cubicalChainLof _ R n y)) = _
     rw [loopChainMap_lof, loopChainDegreeZero_lof, loopChainDegreeZero_lof]
     cases n with
-    | zero => exact zerothClass_map f hf y
-    | succ n => simp [zerothComponent]
+    | zero =>
+      rw [zerothComponent_zero, zerothComponent_zero]
+      exact zerothClass_map f hf y
+    | succ n =>
+      rw [zerothComponent_eq_zero n.succ_ne_zero, zerothComponent_eq_zero n.succ_ne_zero,
+        map_zero]
   | add x y hx hy => simp only [map_add, hx, hy]
 
 end Naturality
