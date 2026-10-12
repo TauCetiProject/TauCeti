@@ -44,7 +44,6 @@ that uses them.
 
 * `ContDiffAt.hasFDerivAt_fderiv`: at a twice continuously differentiable point,
   `fderiv 𝕜 g` is differentiable, with derivative the second derivative of `g`.
-* `TauCeti.fderiv_fderiv_add`: the second derivative is additive on `C²` maps.
 * `ContDiffOn.continuousOn_fderiv_fderiv_apply`: on an open set, the second directional
   derivative of a `C²` map in a fixed direction is continuous.
 * `TauCeti.eventually_fderiv_ne`: where the second derivative is invertible, the differential
@@ -76,16 +75,6 @@ theorem _root_.ContDiffAt.hasFDerivAt_fderiv {n : WithTop ℕ∞} {g : E → F} 
     (h : ContDiffAt 𝕜 n g x) (hn : 2 ≤ n) :
     HasFDerivAt (fderiv 𝕜 g) (fderiv 𝕜 (fderiv 𝕜 g) x) x :=
   ((h.fderiv_right (m := 1) (by exact_mod_cast hn)).differentiableAt one_ne_zero).hasFDerivAt
-
-/-- The second derivative is additive at a point where both summands are `C²`. -/
-theorem fderiv_fderiv_add {f g : E → F} {x : E} (hf : ContDiffAt 𝕜 2 f x)
-    (hg : ContDiffAt 𝕜 2 g x) :
-    fderiv 𝕜 (fderiv 𝕜 (f + g)) x = fderiv 𝕜 (fderiv 𝕜 f) x + fderiv 𝕜 (fderiv 𝕜 g) x := by
-  have hev : fderiv 𝕜 (f + g) =ᶠ[𝓝 x] fderiv 𝕜 f + fderiv 𝕜 g := by
-    filter_upwards [hf.eventually (by norm_num), hg.eventually (by norm_num)] with y hfy hgy
-    exact fderiv_add (hfy.differentiableAt two_ne_zero) (hgy.differentiableAt two_ne_zero)
-  rw [hev.fderiv_eq]
-  exact ((hf.hasFDerivAt_fderiv le_rfl).add (hg.hasFDerivAt_fderiv le_rfl)).fderiv
 
 /-- On an open set `s`, the second directional derivative `x ↦ D(Dg(·) v)(x) v` of a `C²` map `g`
 in a fixed direction `v` is continuous. -/
