@@ -53,13 +53,15 @@ from the decomposition group.
   `NumberField.InfinitePlace.eq_completionCongr_of_continuous`: `completionCongr` extends `σ`,
   uniquely among continuous maps.
 * `NumberField.InfinitePlace.decompositionHom_injective`: the decomposition group embeds into
-  `Aut(L_w/K_v)`.
+  `Aut(L_w/K_v)`, and `restrictNormalHom_restrictScalarsHom_decompositionHom` says that restricting
+  its action back to `L` recovers the automorphism.
 * `NumberField.InfinitePlace.card_stabilizer_eq_finrank_completion`: for `L/K` Galois the
   decomposition group has `[L_w : K_v]` elements.
 * `NumberField.InfinitePlace.finrank_completion_eq_ite`: for `L/K` Galois, `[L_w : K_v]` is `1`
   or `2` according as `v` is unramified in `L` or not.
 * `NumberField.InfinitePlace.decompositionHom_surjective`: for `L/K` Galois every
   `K_v`-automorphism of `L_w` comes from the decomposition group.
+* `NumberField.InfinitePlace.isGalois_completion`: for `L/K` Galois, `L_w/K_v` is Galois.
 
 ## References
 
@@ -230,6 +232,19 @@ theorem decompositionHom_algebraMap (τ : MulAction.stabilizer (L ≃ₐ[K] L) w
     decompositionHom v w τ (x : w.Completion) = ((τ : L ≃ₐ[K] L) x : w.Completion) := by
   rw [decompositionHom_apply, completionCongr_algebraMap]
 
+/-- Restricting the action of an element of the decomposition group on `L_w` back to `L` recovers
+the element: `decompositionHom` is a section of restriction `Aut(L_w/K_v) → Aut(L/K)`. -/
+@[simp]
+theorem restrictNormalHom_restrictScalarsHom_decompositionHom [Normal K L]
+    (τ : MulAction.stabilizer (L ≃ₐ[K] L) w) :
+    (AlgEquiv.restrictNormalHom L).comp (AlgEquiv.restrictScalarsHom K) (decompositionHom v w τ) =
+      τ := by
+  ext x
+  refine (algebraMap L w.Completion).injective <|
+    (AlgEquiv.restrictNormal_commutes ((decompositionHom v w τ).restrictScalars K) L x).trans ?_
+  rw [AlgEquiv.restrictScalars_apply, Completion.algebraMap_apply, Completion.algebraMap_apply,
+    decompositionHom_algebraMap]
+
 variable (v w) in
 /-- The decomposition group of `w` acts faithfully on `L_w`. -/
 theorem decompositionHom_injective : Function.Injective (decompositionHom v w) := by
@@ -287,6 +302,14 @@ def decompositionEquiv :
 
 @[simp]
 theorem coe_decompositionEquiv : ⇑(decompositionEquiv v w) = decompositionHom v w := (rfl)
+
+/-- **A completion of a Galois extension at an infinite place is Galois.** For `L/K` Galois the
+local extension `L_w/K_v` at an infinite place `w` of `L` is a Galois extension. -/
+-- The decomposition group of `w` already supplies `[L_w : K_v]` automorphisms.
+theorem isGalois_completion : IsGalois v.Completion w.Completion :=
+  IsGalois.of_card_aut_eq_finrank _ _
+    ((Nat.card_congr (decompositionEquiv v w).toEquiv).symm.trans
+      (card_stabilizer_eq_finrank_completion v w))
 
 end IsGalois
 

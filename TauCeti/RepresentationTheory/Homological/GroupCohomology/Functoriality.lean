@@ -22,6 +22,8 @@ compatible pair `(f, φ)` at a pair of group elements, without unfolding the coc
 * `TauCeti.groupCohomology.map_one_succ`: the map along the trivial homomorphism vanishes in
   positive degrees.
 * `TauCeti.groupCohomology.mapCocycles₂_apply`: the value of a pulled-back `2`-cocycle.
+* `TauCeti.groupCohomology.isIso_map_of_bijective`: restriction along a bijective homomorphism is
+  an isomorphism on cohomology.
 -/
 
 public section
@@ -62,5 +64,16 @@ theorem mapCocycles₂_apply {H : Type u} [Group H] {A : Rep k H} {B : Rep k G}
     (f : G →* H) (φ : res f A ⟶ B) (c : cocycles₂ A) (q : G × G) :
     (mapCocycles₂ f φ c : G × G → B) q = φ.hom (c (f q.1, f q.2)) :=
   (rfl)
+
+/-- **Restriction along a bijective homomorphism is an isomorphism on cohomology.** For a bijective
+`f : G →* H` and a representation `A` of `H`, the map `Hⁿ(H, A) ⟶ Hⁿ(G, Res_f A)` along `f` is an
+isomorphism; it is the `hom` of Mathlib's `groupCohomology.mapIso` for the inverse of `f` and the
+identity of `A`. -/
+theorem isIso_map_of_bijective {H : Type u} [Group H] {f : G →* H} (hf : Function.Bijective f)
+    (A : Rep k H) (n : ℕ) : IsIso (map f (𝟙 (res f A)) n) :=
+  -- `(MulEquiv.ofBijective f hf).symm.symm` is `f` and `LinearEquiv.refl` is the identity, both by
+  -- definition
+  (mapIso (MulEquiv.ofBijective f hf).symm (LinearEquiv.refl k A.V)
+    (fun h ↦ LinearMap.ext fun a ↦ by simp) n (A := res f A)).isIso_hom
 
 end TauCeti.groupCohomology
