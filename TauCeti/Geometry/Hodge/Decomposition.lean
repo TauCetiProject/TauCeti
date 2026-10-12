@@ -202,13 +202,13 @@ theorem piece_induction_on (hs : HodgeStructureOn W ω n) {motive : W → Prop} 
     exact Submodule.mem_top
   exact Submodule.iSup_induction (motive := motive) hs.piece hx mem zero add
 
-/-- Two semilinear maps out of the ambient space that agree on every Hodge component are equal.
-The scalar actions need not agree with the complex vector space structure. -/
-theorem linearMap_ext_of_piece {R S : Type*} [Semiring R] [Semiring S] [Module R W]
-    {N : Type*} [AddCommMonoid N] [Module S N] {σ : R →+* S}
-    (hs : HodgeStructureOn W ω n) {f g : W →ₛₗ[σ] N}
+/-- Two additive maps out of the ambient space that agree on every Hodge component are equal.
+This applies to any additive homomorphism class, including linear and semilinear maps. -/
+theorem addHom_ext_of_piece {F N : Type*} [AddZero N] [FunLike F W N]
+    [AddMonoidHomClass F W N] (hs : HodgeStructureOn W ω n) {f g : F}
     (h : ∀ p, ∀ x ∈ hs.piece p, f x = g x) : f = g := by
-  ext x
+  apply DFunLike.ext f g
+  intro x
   refine hs.piece_induction_on x h (by simp) fun y z hy hz ↦ ?_
   rw [map_add, map_add, hy, hz]
 
