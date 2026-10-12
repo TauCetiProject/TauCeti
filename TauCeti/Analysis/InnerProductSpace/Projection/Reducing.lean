@@ -9,19 +9,21 @@ public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import Mathlib.Analysis.InnerProductSpace.Semisimple
 public import Mathlib.LinearAlgebra.Eigenspace.Basic
 public import TauCeti.Analysis.InnerProductSpace.Projection.Block
+public import TauCeti.Analysis.InnerProductSpace.Projection.Completeness
 
 /-!
 # Reducing subspaces
 
 A submodule `U` of an inner product space *reduces* an endomorphism `A` when both `U` and its
 orthogonal complement `Uᗮ` are `A`-invariant (`Submodule.Reduces`). Invariance is recorded by
-Mathlib's `Module.End.invtSubmodule`. A reducing subspace splits `A` along `E = U ⊕ Uᗮ` into an
-operator on `U` and an operator on `Uᗮ`, which is how restrictions of self-adjoint operators to
-spectral subspaces are formed.
+Mathlib's `Module.End.invtSubmodule`.
 
-When `U` admits an orthogonal projection `P_U`, the subspace `U` is closed, and it is complete
-whenever the ambient space is. So a reducing subspace of an operator on a Hilbert space is itself
-a Hilbert space on which the operator restricts.
+When `U` also admits an orthogonal projection `P_U` (`[U.HasOrthogonalProjection]`), so that
+`E = U ⊕ Uᗮ`, a reducing subspace splits `A` along this decomposition into an operator on `U` and
+an operator on `Uᗮ`, which is how restrictions of self-adjoint operators to spectral subspaces are
+formed. If moreover `E` is complete, then `U` is complete
+(`Submodule.completeSpace_of_hasOrthogonalProjection`), so it is itself a Hilbert space on which
+the operator restricts.
 
 ## Main definitions
 
@@ -29,10 +31,6 @@ a Hilbert space on which the operator restricts.
 
 ## Main results
 
-* `Submodule.isClosed_of_hasOrthogonalProjection`: a submodule admitting an orthogonal projection
-  is closed.
-* `Submodule.completeSpace_of_hasOrthogonalProjection`: in a complete space, a submodule admitting
-  an orthogonal projection is complete in its induced norm.
 * `Submodule.reduces_orthogonal_iff`: `Uᗮ` reduces `A` exactly when `U` does.
 * `Submodule.reduces_iff_commute_starProjection`: `U` reduces `A` exactly when `P_U` commutes
   with `A`; `Submodule.reduces_iff_commute_reflection` gives the same for the reflection
@@ -56,21 +54,6 @@ open Module.End
 variable {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
 
 namespace Submodule
-
-/-! ### Projected subspaces are closed -/
-
-/-- A submodule admitting an orthogonal projection is closed: it is its own double orthogonal
-complement. -/
-theorem isClosed_of_hasOrthogonalProjection (U : Submodule 𝕜 E) [U.HasOrthogonalProjection] :
-    IsClosed (U : Set E) := by
-  rw [← U.orthogonal_orthogonal]
-  exact Uᗮ.isClosed_orthogonal
-
-/-- In a complete space, a submodule admitting an orthogonal projection is complete in its
-induced norm. -/
-theorem completeSpace_of_hasOrthogonalProjection [CompleteSpace E] (U : Submodule 𝕜 E)
-    [U.HasOrthogonalProjection] : CompleteSpace U :=
-  U.isClosed_of_hasOrthogonalProjection.completeSpace_coe
 
 /-! ### Reducing subspaces -/
 
@@ -125,9 +108,9 @@ subspace reduces a bounded operator exactly when the orthogonal projection onto 
 the operator in `E →L[𝕜] E`. -/
 theorem reduces_iff_commute_starProjection' [U.HasOrthogonalProjection] {A : E →L[𝕜] E} :
     U.Reduces A ↔ Commute U.starProjection A := by
-  rw [reduces_iff_commute_starProjection, Commute, Commute, SemiconjBy, SemiconjBy,
-    ← ContinuousLinearMap.toLinearMap_mul, ← ContinuousLinearMap.toLinearMap_mul,
-    ContinuousLinearMap.coe_inj]
+  rw [ContinuousLinearMap.IsIdempotentElem.commute_iff U.isIdempotentElem_starProjection,
+    reduces_iff]
+  simp only [range_starProjection, ker_starProjection]
 
 /-- A projected subspace reduces a bounded operator exactly when the reflection across it commutes
 with the operator. -/
