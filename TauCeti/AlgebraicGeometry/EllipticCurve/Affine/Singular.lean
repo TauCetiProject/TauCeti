@@ -11,6 +11,7 @@ public import Mathlib.RingTheory.LocalRing.ResidueField.Defs
 
 import Mathlib.Algebra.CharP.Two
 import Mathlib.RingTheory.LocalRing.ResidueField.Basic
+import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Formula.VariableChange
 import TauCeti.AlgebraicGeometry.EllipticCurve.VariableChange
 
 /-!
@@ -55,9 +56,6 @@ equality. Every statement here holds in any characteristic, including two and th
   a singular point both partial values lie in the maximal ideal.
 * `WeierstrassCurve.Δ_mem_sq_of_a₆_eq_zero`: if `a₆ = 0` and `a₃`, `a₄` lie in an ideal `I`,
   then `Δ ∈ I²`.
-* `WeierstrassCurve.variableChange_translate_a₃`, `variableChange_translate_a₄` and
-  `variableChange_translate_a₆_of_equation`: the coefficients of the model translated to a point
-  `(x, y)`.
 * `WeierstrassCurve.Affine.Δ_mem_sq_of_equation`: at a solution `(x, y)` whose two partial
   values lie in `I`, `Δ ∈ I²`; for `I = 0` this is `IsSingular.Δ_eq_zero`.
 * `WeierstrassCurve.Affine.exists_isSingular_of_Δ_eq_zero`: over a perfect field, vanishing of the
@@ -260,35 +258,6 @@ theorem Δ_mem_sq_of_a₆_eq_zero (W : WeierstrassCurve R) {I : Ideal R} (h₆ :
   exact add_mem (add_mem (Ideal.mul_mem_left _ _ (Ideal.mul_mem_mul h₃ h₃))
     (Ideal.mul_mem_left _ _ (Ideal.mul_mem_mul h₃ h₄)))
     (Ideal.mul_mem_left _ _ (Ideal.mul_mem_mul h₄ h₄))
-
-/-! The equation translated so that a given solution `(x, y)` becomes the origin. -/
-
-section Translate
-
-variable (W : WeierstrassCurve R) (x y : R)
-
-/-- **`a₃` of the model translated to `(x, y)`** is the value there of the `Y`-partial derivative
-of the Weierstrass polynomial. -/
-theorem variableChange_translate_a₃ :
-    (VariableChange.mk 1 x 0 y • W).a₃ = W.toAffine.polynomialY.evalEval x y := by
-  simp only [variableChange_a₃, inv_one, Units.val_one, one_pow, one_mul,
-    Affine.evalEval_polynomialY]
-  ring
-
-/-- **`a₄` of the model translated to `(x, y)`** is minus the value there of the `X`-partial
-derivative of the Weierstrass polynomial. -/
-theorem variableChange_translate_a₄ :
-    (VariableChange.mk 1 x 0 y • W).a₄ = -W.toAffine.polynomialX.evalEval x y := by
-  simp only [variableChange_a₄, inv_one, Units.val_one, one_pow, one_mul,
-    Affine.evalEval_polynomialX]
-  ring
-
-/-- **Translating a solution `(x, y)` to the origin gives `a₆ = 0`.** -/
-theorem variableChange_translate_a₆_of_equation {x y : R} (h : W.toAffine.Equation x y) :
-    (VariableChange.mk 1 x 0 y • W).a₆ = 0 :=
-  Affine.equation_zero.mp ((W.toAffine.equation_iff_variableChange x y).mp h)
-
-end Translate
 
 /-- **The discriminant at a point of the curve.** If `(x, y)` is a solution of the Weierstrass
 equation at which both partial derivatives of the Weierstrass polynomial take values in an ideal

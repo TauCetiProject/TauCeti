@@ -203,10 +203,12 @@ section Translate
 variable (W : WeierstrassCurve R) (x y : R)
 
 /-- **A translation does not change the discriminant.** -/
+@[simp]
 theorem variableChange_translate_Δ : (VariableChange.mk 1 x 0 y • W).Δ = W.Δ := by
   simp [variableChange_Δ]
 
 /-- **A translation does not change `c₄`.** -/
+@[simp]
 theorem variableChange_translate_c₄ : (VariableChange.mk 1 x 0 y • W).c₄ = W.c₄ := by
   simp [variableChange_c₄]
 
