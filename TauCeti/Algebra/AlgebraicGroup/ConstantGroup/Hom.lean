@@ -8,7 +8,8 @@ module
 public import TauCeti.Algebra.AlgebraicGroup.BaseChange.Basic
 public import TauCeti.Algebra.AlgebraicGroup.ConstantGroup.Basic
 public import TauCeti.Algebra.AlgebraicGroup.Hopf.Map
-public import Mathlib.LinearAlgebra.TensorProduct.Pi
+public import TauCeti.Algebra.Algebra.Pi
+import Mathlib.LinearAlgebra.TensorProduct.Pi
 
 /-!
 # Homomorphisms from a constant group
@@ -69,28 +70,6 @@ section Recognition
 variable {R : Type*} [CommSemiring R] {H C : Type*} [Semiring H] [Bialgebra R H] [Semiring C]
   [Bialgebra R C] {A : Type*} [Monoid A] [Finite A] {p : A →* WithConv (C →ₐ[R] R)}
 
--- If the points `p a` identify `C` with the functions on `A`, then the points
--- `Algebra.TensorProduct.lift (p a) (p b)` separate the elements of `C ⊗[R] C`: through
--- `C ⊗[R] C ≅ (A → R) ⊗[R] (A → R) ≅ (A → A → R)` they are the coordinates.
-private theorem tensor_ext_of_bijective
-    (hp : Function.Bijective (AlgHom.pi fun a ↦ (p a).ofConv)) {x y : C ⊗[R] C}
-    (h : ∀ a b, Algebra.TensorProduct.lift (p a).ofConv (p b).ofConv (fun _ _ ↦ .all _ _) x =
-      Algebra.TensorProduct.lift (p a).ofConv (p b).ofConv (fun _ _ ↦ .all _ _) y) :
-    x = y := by
-  classical
-  have := Fintype.ofFinite A
-  let e := (AlgEquiv.ofBijective _ hp).toLinearEquiv
-  let F := (TensorProduct.congr e e).trans (TensorProduct.piScalarRight R R (A → R) A)
-  have hF (z : C ⊗[R] C) (a b : A) :
-      F z b a = Algebra.TensorProduct.lift (p a).ofConv (p b).ofConv (fun _ _ ↦ .all _ _) z := by
-    induction z using TensorProduct.inductionOn with
-    | tmul c d =>
-        simp [F, e, TensorProduct.piScalarRightHom_tmul, mul_comm]
-    | add z z' hz hz' =>
-        simp only [map_add, Pi.add_apply] at hz hz' ⊢
-        rw [hz, hz']
-  exact F.injective <| funext fun b ↦ funext fun a ↦ by rw [hF, hF, h]
-
 /-- **Recognition of constant groups.** Let `p : A →* WithConv (C →ₐ[R] R)` be a monoid
 homomorphism from a finite monoid to the `R`-points of `C` whose values identify `C` with the
 functions on `A`, that is, `c ↦ (a ↦ p a c)` is bijective. Then for every bialgebra `H`, a
@@ -118,7 +97,7 @@ theorem mapDomain_comp_bijective
       (Bialgebra.comulAlgHom R C).comp g₀ := by
     ext x
     simp only [AlgHom.comp_apply, Bialgebra.comulAlgHom_apply]
-    refine tensor_ext_of_bijective hp fun a b ↦ ?_
+    refine Algebra.TensorProduct.eq_of_pi_bijective hp hp fun a b ↦ ?_
     have h₁ := DFunLike.congr_fun (congrArg WithConv.ofConv (map_mul p a b)) (g₀ x)
     have h₂ := DFunLike.congr_fun (congrArg WithConv.ofConv (map_mul φ a b)) x
     rw [WithConv.ofConv_toConv, AlgHom.convMul_apply] at h₁ h₂
