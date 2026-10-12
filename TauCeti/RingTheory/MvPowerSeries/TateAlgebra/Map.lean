@@ -91,20 +91,20 @@ noncomputable def restrictedMap :
     fun f ↦ f.2.map φ hφ
 
 /-- `restrictedMap` acts as `MvPowerSeries.map` on the underlying series. -/
-@[simp]
 theorem coe_restrictedMap (f : IsRestricted.subring (R := R) c) :
     (restrictedMap φ hφ f : MvPowerSeries σ S) = MvPowerSeries.map φ f := (rfl)
 
 /-- `restrictedMap` acts on each coefficient by `φ`. -/
+@[simp]
 theorem coeff_restrictedMap (f : IsRestricted.subring (R := R) c) (t : σ →₀ ℕ) :
     coeff t (restrictedMap φ hφ f : MvPowerSeries σ S) = φ (coeff t (f : MvPowerSeries σ R)) := by
-  simp
+  rw [coe_restrictedMap, coeff_map]
 
 /-- The identity induces the identity on restricted series. -/
 @[simp]
 theorem restrictedMap_id {C : ℝ} (hC : ∀ r : R, ‖RingHom.id R r‖ ≤ C * ‖r‖) :
     restrictedMap (c := c) (RingHom.id R) hC = RingHom.id _ :=
-  RingHom.ext fun _ ↦ Subtype.ext (by simp)
+  RingHom.ext fun _ ↦ Subtype.ext <| MvPowerSeries.ext fun _ ↦ by simp
 
 /-- The map induced by a composite is the composite of the induced maps. -/
 theorem restrictedMap_comp {T : Type*} [NormedRing T] [IsUltrametricDist T] (ψ : S →+* T)
