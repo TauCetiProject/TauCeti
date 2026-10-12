@@ -19,9 +19,8 @@ that its graph is a smooth section of the alternating bundle.  The corresponding
 provides the bundled carrier `SmoothBundleForm`; fixed coefficients are the `SmoothForm`
 specialization.  These carriers are the input for smooth wedge products and pullbacks.
 
-The degree-two evaluation adapters below follow the evaluation API of
-`TauCeti.Geometry.Manifold.TwoForm.Basic`, in particular the corresponding `SmoothTwoForm`
-declarations, while exposing the same view for the generic `SmoothForm` carrier.
+The degree-two adapters below evaluate smooth forms on ordered pairs and expose real-valued fibres
+as alternating bilinear forms.
 
 Smoothness is expressed through the total-space charts of the topological alternating bundle.  The
 module operations use Mathlib's smooth-section API, so this carrier does not require a chosen
@@ -175,9 +174,9 @@ theorem isAlt_bilinFormAt (φ : SmoothForm I M ℝ 2) (x : M) :
   intro v
   exact (φ.1 x).map_eq_zero_of_eq _ (by simp) Fin.zero_ne_one
 
-/-- The alternating value on the normalized diagonal tuple vanishes. -/
+/-- The alternating value on the diagonal tuple vanishes. -/
 @[simp]
-theorem eval₂_self_apply (φ : SmoothForm I M F 2) (x : M) (v : TangentSpace I x) :
+theorem alternatingMap_self_apply (φ : SmoothForm I M F 2) (x : M) (v : TangentSpace I x) :
     (φ.1 x) ![v, v] = 0 := by
   exact (φ.1 x).map_eq_zero_of_eq _ (by simp) Fin.zero_ne_one
 
@@ -185,7 +184,7 @@ theorem eval₂_self_apply (φ : SmoothForm I M F 2) (x : M) (v : TangentSpace I
 theorem eval₂_self (φ : SmoothForm I M F 2) (x : M) (v : TangentSpace I x) :
     φ.eval₂ x v v = 0 := by
   rw [eval₂_apply]
-  exact eval₂_self_apply φ x v
+  exact alternatingMap_self_apply φ x v
 
 /-- Swapping the inputs of a degree-two smooth form negates its value. -/
 theorem eval₂_swap (φ : SmoothForm I M F 2) (x : M)
