@@ -23,6 +23,8 @@ coordinate ring `R[X]/(X^n - 1)` is separate quotient-polynomial infrastructure.
 
 ## Main definitions
 
+* `TauCeti.RootsOfUnityGroup.generator_pow_val`: every element of `Multiplicative (ZMod n)` is
+  the power of the standard generator given by its `ZMod.val`.
 * `TauCeti.RootsOfUnityGroup.pointsMulEquiv`: the multiplicative equivalence from
   convolution points of `R[Multiplicative (ZMod n)]` to `rootsOfUnity n A`.
 * `TauCeti.RootsOfUnityGroup.pointsMulEquiv_apply`: the equivalence sends a point to its
@@ -104,14 +106,11 @@ private lemma characterMulEquivRootsOfUnity_symm_apply_generator
 
 end Characters
 
-private lemma generator_pow_val (n : ℕ) [NeZero n] (x : Multiplicative (ZMod n)) :
+/-- Every element of `Multiplicative (ZMod n)` is the standard generator raised to the `ZMod.val`
+of its additive counterpart. -/
+lemma generator_pow_val (n : ℕ) [NeZero n] (x : Multiplicative (ZMod n)) :
     generator n ^ (Multiplicative.toAdd x).val = x := by
-  rw [← ofAdd_nsmul]
-  simp only [nsmul_eq_mul, mul_one]
-  -- Expose the `ZMod` cast hidden in the additive scalar multiple so that
-  -- `ZMod.natCast_zmod_val` applies directly.
-  change Multiplicative.ofAdd (((Multiplicative.toAdd x).val : ℕ) : ZMod n) = x
-  rw [ZMod.natCast_zmod_val, ofAdd_toAdd]
+  rw [generator, ← ofAdd_nsmul, nsmul_one, ZMod.natCast_zmod_val, ofAdd_toAdd]
 
 variable {R : Type u} {A : Type v} [CommSemiring R] [CommSemiring A] [Algebra R A]
 variable {B : Type*} [CommSemiring B] [Algebra R B]

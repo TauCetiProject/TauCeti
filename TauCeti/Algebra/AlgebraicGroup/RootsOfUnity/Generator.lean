@@ -202,9 +202,8 @@ theorem not_isAGenerator_of_eq_root (p : ℕ) [Fact p.Prime]
   -- the value of `χ` at `a` is the `a`th power of the class `θ` of `X`
   have hval (a : Multiplicative (ZMod p)) : (χ a).ofConv (MonoidAlgebra.single (generator p) 1) =
       AdjoinRoot.root _ ^ (Multiplicative.toAdd a).val := by
-    have ha : generator p ^ (Multiplicative.toAdd a).val = a := by
-      rw [generator, ← ofAdd_nsmul, nsmul_one, ZMod.natCast_zmod_val, ofAdd_toAdd]
-    rw [← ha, map_pow, ofConv_pow_apply_single_generator, hχ, ha]
+    rw [← generator_pow_val p a, map_pow, ofConv_pow_apply_single_generator, hχ,
+      generator_pow_val]
   rw [isAGenerator_iff_X_pow_sub_one_eq_prod]
   intro h
   simp only [hval] at h
