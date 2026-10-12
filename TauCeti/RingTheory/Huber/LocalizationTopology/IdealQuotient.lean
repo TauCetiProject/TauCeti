@@ -83,9 +83,6 @@ equality on `A ⧸ J` enters the statements. The standing hypothesis `HasDenomin
   the quotient Huber pair, and Definition 8.42 for quotient mappings.
 * N. Bourbaki, *General Topology*, Chapter IX, §3.1, Proposition 4, for the completion of an open
   quotient.
-* The proof of `isQuotientMapping_completionLocQuotientPairHom` follows that of
-  `TauCeti.Huber.PairOfDefinition.isQuotientMapping_rationalEvalPairHom` in
-  `TauCeti.RingTheory.Huber.LocalizationTopology.FiniteType`.
 -/
 
 public section
@@ -768,6 +765,8 @@ theorem isQuotientMapping_completionLocQuotientPairHom (hden : HasDenominatorPow
     letI := isHuberRing_completion_locTopology (P.quotient J) T' (Ideal.Quotient.mk J s) S'
       (hasDenominatorPower_quotient P J T s S hT' S' hden)
     (completionLocQuotientPairHom P J T s S hT' S' U hP hden).IsQuotientMapping := by
+  -- the argument follows the proof of `isQuotientMapping_rationalEvalPairHom` in
+  -- `TauCeti.RingTheory.Huber.LocalizationTopology.FiniteType`
   let _ := locUniformSpace P T s S hden
   have _ := isUniformAddGroup_locUniformSpace P T s S hden
   have _ := isTopologicalRing_locUniformSpace P T s S hden
