@@ -8,7 +8,7 @@ module
 public import TauCeti.CategoryTheory.Exact.Injective
 public import TauCeti.CategoryTheory.Preadditive.MorphismIdeal.Additive
 public import TauCeti.CategoryTheory.Preadditive.MorphismIdeal.FactorThrough
-public import TauCeti.CategoryTheory.Linear.HomCokernel
+public import TauCeti.CategoryTheory.Linear.HomCokernel.Basic
 public import Mathlib.LinearAlgebra.Isomorphisms
 
 /-!

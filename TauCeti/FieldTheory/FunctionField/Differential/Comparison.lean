@@ -118,6 +118,12 @@ theorem weilDifferentialOfSeparating_ne_zero (hF : IsFunctionField k F)
     weilDifferentialCotrace_eq_zero_iff, Submodule.mk_eq_zero]
   exact ratFuncWeilDifferential_ne_zero k
 
+/-- The Weil differential of a separating element remains nonzero as a repartition dual. -/
+theorem coe_weilDifferentialOfSeparating_ne_zero (hF : IsFunctionField k F)
+    (hx : Transcendental k x) [Algebra.IsSeparable k⟮x⟯ F] :
+    (weilDifferentialOfSeparating hF hx : Module.Dual k (repartitionSpace k F)) ≠ 0 := by
+  simpa only [ne_eq, Submodule.coe_eq_zero] using weilDifferentialOfSeparating_ne_zero hF hx
+
 /-- The basis of the Weil differential space whose unique vector is the differential `dx`
 attached to a separating element. -/
 noncomputable def weilDifferentialBasisOfSeparating (hF : IsFunctionField k F)
