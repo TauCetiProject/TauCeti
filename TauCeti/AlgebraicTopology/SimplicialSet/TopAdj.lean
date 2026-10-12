@@ -115,7 +115,7 @@ lemma toSSetObjEquiv_simplex₁ (g : C(I, X)) :
 
 /-- The `i`-th face of the singular `1`-simplex of a map `g` from the unit interval is the
 singular vertex at `g t` for the parameter `t` of the face. -/
-private lemma δ_simplex₁ (g : C(I, X)) (i : Fin 2) (t : I)
+private lemma δ_zero_simplex₁_eq_δ_one_simplex₁ (g : C(I, X)) (i : Fin 2) (t : I)
     (ht : ∀ w : StdSimplex ℝ (Fin 1), StdSimplex.homeomorphI (StdSimplex.map i.succAbove w) = t) :
     (TopCat.toSSet.obj X).δ i (simplex₁ g) = TopCat.toSSetObj₀Equiv.symm (g t) := by
   apply (X.toSSetObjEquiv _).injective
@@ -130,14 +130,14 @@ at `1`. -/
 @[simp]
 lemma δ_zero_simplex₁ (g : C(I, X)) :
     (TopCat.toSSet.obj X).δ 0 (simplex₁ g) = TopCat.toSSetObj₀Equiv.symm (g 1) :=
-  δ_simplex₁ g 0 1 StdSimplex.homeomorphI_map_succAbove_zero
+  δ_zero_simplex₁_eq_δ_one_simplex₁ g 0 1 StdSimplex.homeomorphI_map_succAbove_zero
 
 /-- The `1`-st face of the singular `1`-simplex of a map from the unit interval is its value
 at `0`. -/
 @[simp]
 lemma δ_one_simplex₁ (g : C(I, X)) :
     (TopCat.toSSet.obj X).δ 1 (simplex₁ g) = TopCat.toSSetObj₀Equiv.symm (g 0) :=
-  δ_simplex₁ g 1 0 StdSimplex.homeomorphI_map_succAbove_one
+  δ_zero_simplex₁_eq_δ_one_simplex₁ g 1 0 StdSimplex.homeomorphI_map_succAbove_one
 
 /-- The map of singular simplicial sets induced by a continuous map sends the singular
 `1`-simplex of a map from the unit interval to that of its composite. -/

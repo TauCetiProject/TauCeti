@@ -64,7 +64,7 @@ def simplex₁ (p : Ω^ (Fin 1) X x) : pairSSet x _⦋1⦌ :=
 
 /-- The two endpoints of the singular `1`-simplex traced by a loop agree: both are the base
 point. -/
-lemma δ_simplex₁ (p : Ω^ (Fin 1) X x) :
+lemma δ_zero_simplex₁_eq_δ_one_simplex₁ (p : Ω^ (Fin 1) X x) :
     (pairSSet x).δ 0 (simplex₁ p) = (pairSSet x).δ 1 (simplex₁ p) := by
   have h₀ := SSetPair.δ_map_eq (Q := TopPair.toSSetPair.obj (cubeBoundaryPair.{w} 1))
     cubeSimplex (TopPair.toSSetPair.map (toCubeBoundaryPairHom.{w} p)) 0 _ δ_zero_cubeSimplex
@@ -82,7 +82,7 @@ class of the singular `1`-simplex it traces: the generator of `H₁(I¹, ∂I¹;
 of the standard simplex (`TauCeti.singularHomologyCubeBoundaryPairIso_one_inv`). -/
 lemma hurewicz_comp_singularHomologyIsoOfSubsetSingleton_hom_eq_neg (p : Ω^ (Fin 1) X x) :
     hurewicz R p ≫ (singularHomologyIsoOfSubsetSingleton R 0 x).hom =
-      -(TauCeti.SSet.ιHomology₁ R (pairSSet x) (simplex₁ p) (δ_simplex₁ p) ≫
+      -(TauCeti.SSet.ιHomology₁ R (pairSSet x) (simplex₁ p) (δ_zero_simplex₁_eq_δ_one_simplex₁ p) ≫
         (TopPair.ofSubset ({x} : Set (TopCat.of X))).singularHomologyπ R 1) := by
   rw [hurewicz_comp_singularHomologyIsoOfSubsetSingleton_hom,
     singularHomologyCubeBoundaryPairIso_one_inv, Preadditive.neg_comp,
@@ -94,11 +94,11 @@ lemma hurewicz_comp_singularHomologyIsoOfSubsetSingleton_hom_eq_neg (p : Ω^ (Fi
 `1`-simplex it traces. -/
 theorem hurewicz_eq_neg_ιHomology₁ (p : Ω^ (Fin 1) X x) :
     hurewicz R p =
-      -TauCeti.SSet.ιHomology₁ R (pairSSet x) (simplex₁ p) (δ_simplex₁ p) :=
+      -TauCeti.SSet.ιHomology₁ R (pairSSet x) (simplex₁ p) (δ_zero_simplex₁_eq_δ_one_simplex₁ p) :=
   (cancel_mono (singularHomologyIsoOfSubsetSingleton R 0 x).hom).1
     ((hurewicz_comp_singularHomologyIsoOfSubsetSingleton_hom_eq_neg R p).trans
       ((Preadditive.neg_comp _ _).symm.trans (congrArg (fun g ↦ (-TauCeti.SSet.ιHomology₁ R
-        (pairSSet x) (simplex₁ p) (δ_simplex₁ p)) ≫ g)
+        (pairSSet x) (simplex₁ p) (δ_zero_simplex₁_eq_δ_one_simplex₁ p)) ≫ g)
           (singularHomologyIsoOfSubsetSingleton_hom R 0 x).symm)))
 
 /-- The singular `1`-simplex traced by a generalized loop is the singular `1`-simplex of the
@@ -121,7 +121,8 @@ variable {X : Type} [TopologicalSpace X] {x : X}
 /-- With integer coefficients, the class of the singular `1`-simplex traced by a generalized loop is
 the homology class of the corresponding loop. -/
 lemma ιHomology₁_hom_one_eq_H₁AddEquivHomology_loopClass (p : Ω^ (Fin 1) X x) :
-    (TauCeti.SSet.ιHomology₁ (ModuleCat.of ℤ ℤ) (pairSSet x) (simplex₁ p) (δ_simplex₁ p)).hom 1 =
+    (TauCeti.SSet.ιHomology₁ (ModuleCat.of ℤ ℤ) (pairSSet x) (simplex₁ p)
+      (δ_zero_simplex₁_eq_δ_one_simplex₁ p)).hom 1 =
       HurewiczOne.H₁AddEquivHomology (TopCat.of X)
         (HurewiczOne.loopClass (genLoopEquivOfUnique (Fin 1) p)) := by
   rw [TauCeti.SSet.ιHomology₁_eq]
