@@ -8,12 +8,10 @@ module
 public import TauCeti.Algebra.Homology.HomologicalComplex
 public import TauCeti.AlgebraicTopology.Singular.Cubical.Comparison.Basic
 public import TauCeti.AlgebraicTopology.Singular.Cubical.MonoidAlgebra.Basic
-public import TauCeti.AlgebraicTopology.SimplicialSet.Homology.Zero
+public import TauCeti.AlgebraicTopology.Singular.Reduced
 public import TauCeti.Topology.PathSpace.Moore.Comparison.FundamentalGroup
-public import Mathlib.AlgebraicTopology.SingularHomology.HomologyZero
 public import Mathlib.Algebra.Ring.TransferInstance
 public import Mathlib.Algebra.MonoidAlgebra.Basic
-public import Mathlib.Topology.Homotopy.TopCat.ZerothHomotopy
 public import Mathlib.Algebra.Category.ModuleCat.Colimits
 
 /-!
@@ -145,39 +143,34 @@ theorem loopZeroChainToGroupAlgebra_ofCube (c : SingularCube (MooreLoopSpace X x
     simp only [Category.assoc, HomologicalComplex.iCyclesIso_inv_hom_id,
       HomologicalComplex.liftCycles_i]
     exact Category.comp_id ((TopCat.toSSet.obj T).ιChainComplex σ)
-  have hπ : (((TopCat.toSSet.obj T).homology₀Iso (ModuleCat.of R R)).hom)
+  have hπ : (T.singularHomology₀Iso (ModuleCat.of R R)).hom
       ((L.cycles₀Iso.inv ≫ L.homologyπ 0) (simplexChain σ 1)) =
-      (Sigma.ι (fun _ : (TopCat.toSSet.obj T).π₀ ↦ ModuleCat.of R R) (.mk σ)) 1 := by
-    have vertex := SSet.ιHomology₀_homology₀Iso_hom (ModuleCat.of R R) σ
-    rw [SSet.ιHomology₀_eq] at vertex
-    -- `ιHomology₀_eq` presents the generator using the associated alternating-face
-    -- complex. `L` is that same complex through `SSet.chainComplex`; this change
-    -- only names its carrier so the degree-zero cycles isomorphism can be applied.
-    change L.liftCycles ((TopCat.toSSet.obj T).ιChainComplex σ) 0
-      (by simp) (by simp) ≫ L.homologyπ 0 ≫
-        ((TopCat.toSSet.obj T).homology₀Iso (ModuleCat.of R R)).hom = _ at vertex
+      (Sigma.ι (fun _ : ZerothHomotopy T ↦ ModuleCat.of R R) (.mk γ)) 1 := by
+    -- Singular homology is the homology of `L`; naming this carrier lets the
+    -- categorical composition equations apply to the point-section computation.
+    let φ : L.homology 0 ⟶ ∐ (fun _ : ZerothHomotopy T ↦ ModuleCat.of R R) :=
+      (T.singularHomology₀Iso (ModuleCat.of R R)).hom
+    change φ ((L.cycles₀Iso.inv ≫ L.homologyπ 0) (simplexChain σ 1)) = _
+    have vertex := singularHomology₀Section_singularHomology₀Iso_hom
+      (X := T) (ModuleCat.of R R) γ
+    rw [singularHomology₀Section_def, SSet.ιHomology₀_eq] at vertex
     rw [← hv] at vertex
+    change ((TopCat.toSSet.obj T).ιChainComplex σ ≫ L.cycles₀Iso.inv) ≫
+      L.homologyπ 0 ≫ φ = _ at vertex
     have h := congrArg (fun f : ModuleCat.of R R ⟶
-        ∐ (fun _ : (TopCat.toSSet.obj T).π₀ ↦ ModuleCat.of R R) ↦ f.hom 1) vertex
+        ∐ (fun _ : ZerothHomotopy T ↦ ModuleCat.of R R) ↦ f.hom 1) vertex
     simpa only [ModuleCat.hom_comp, LinearMap.comp_apply] using h
   -- Next reindex the component coproduct by fundamental-group classes and realize it
   -- as finitely supported coefficients, using the coproduct universal property.
-  let e := (TopCat.zerothHomotopyEquiv (X := T)).symm.trans
-    (MooreLoopSpace.zerothHomotopyEquivFundamentalGroup x)
-  have hg : Sigma.ι (fun _ : (TopCat.toSSet.obj T).π₀ ↦ ModuleCat.of R R) (.mk σ) ≫
-      ((sigmaConst.obj (ModuleCat.of R R)).mapIso e.toIso).hom =
+  have hg : Sigma.ι (fun _ : ZerothHomotopy T ↦ ModuleCat.of R R) (.mk γ) ≫
+      ((sigmaConst.obj (ModuleCat.of R R)).mapIso
+        (MooreLoopSpace.zerothHomotopyEquivFundamentalGroup x).toIso).hom =
       Sigma.ι (fun _ : FundamentalGroup X x ↦ ModuleCat.of R R)
         (MooreLoopSpace.fundamentalGroupHom x γ) := by
-    have ht : (TopCat.zerothHomotopyEquiv (X := T)).symm (.mk σ) =
-        ZerothHomotopy.mk γ :=
-      (TopCat.zerothHomotopyEquiv_symm_mk σ).trans
-        (congrArg ZerothHomotopy.mk
-          ((TopCat.toSSetObj₀Equiv (X := T)).apply_symm_apply γ))
     simp only [Functor.mapIso_hom, sigmaConst_obj_map, Equiv.toIso_hom_hom_apply,
-      Equiv.trans_apply, e, Sigma.ι_comp_map']
+      Sigma.ι_comp_map']
     exact congrArg (Sigma.ι (fun _ : FundamentalGroup X x ↦ ModuleCat.of R R))
-      ((congrArg (MooreLoopSpace.zerothHomotopyEquivFundamentalGroup x) ht).trans
-        (MooreLoopSpace.zerothHomotopyEquivFundamentalGroup_mk γ))
+      (MooreLoopSpace.zerothHomotopyEquivFundamentalGroup_mk γ)
   have he := (coproductIsCoproduct
     (fun _ : FundamentalGroup X x ↦ ModuleCat.of R R)).comp_coconePointUniqueUpToIso_hom
       (ModuleCat.finsuppCoconeIsColimit R R (FundamentalGroup X x))
@@ -188,15 +181,6 @@ theorem loopZeroChainToGroupAlgebra_ofCube (c : SingularCube (MooreLoopSpace X x
     loopHomologyZeroIso, Iso.trans_hom, Iso.symm_hom, ModuleCat.hom_comp,
     LinearMap.comp_apply]
   rw [loopHomologyZeroπ_compare, cubicalToSingular_app_f_zero_ofCube]
-  have hcompose : (sigmaConst.obj (ModuleCat.of R R)).map
-      (TopCat.zerothHomotopyEquiv (X := T)).toIso.inv ≫
-      (sigmaConst.obj (ModuleCat.of R R)).map
-        (MooreLoopSpace.zerothHomotopyEquivFundamentalGroup x).toIso.hom =
-      ((sigmaConst.obj (ModuleCat.of R R)).mapIso e.toIso).hom := by
-    rw [← Functor.map_comp]
-    rfl
-  have hcompose_apply (a) := congrArg (fun f ↦ f.hom a) hcompose
-  simp only [ModuleCat.hom_comp, LinearMap.comp_apply] at hcompose_apply
   -- Use the concrete singular complex in the comparison's target; this is the same
   -- carrier as the simplex class, avoiding instance inference through the functor wrapper.
   change (MonoidAlgebra.coeffLinearEquiv R).symm
@@ -205,13 +189,11 @@ theorem loopZeroChainToGroupAlgebra_ofCube (c : SingularCube (MooreLoopSpace X x
           (ModuleCat.finsuppCoconeIsColimit R R (FundamentalGroup X x))).hom
         (((sigmaConst.obj (ModuleCat.of R R)).map
           (MooreLoopSpace.zerothHomotopyEquivFundamentalGroup x).toIso.hom).hom
-          (((sigmaConst.obj (ModuleCat.of R R)).map
-            (TopCat.zerothHomotopyEquiv (X := T)).toIso.inv).hom
-            ((((TopCat.toSSet.obj T).homology₀Iso (ModuleCat.of R R)).hom)
-              ((L.cycles₀Iso.inv ≫ L.homologyπ 0) (simplexChain σ 1)))))) = _
-  rw [hcompose_apply, hπ]
+          ((T.singularHomology₀Iso (ModuleCat.of R R)).hom
+            ((L.cycles₀Iso.inv ≫ L.homologyπ 0) (simplexChain σ 1))))) = _
+  rw [hπ]
   have hg' := congrArg (fun f ↦ f.hom 1) hg
-  simp only [ModuleCat.hom_comp, LinearMap.comp_apply] at hg'
+  simp only [Functor.mapIso_hom, ModuleCat.hom_comp, LinearMap.comp_apply] at hg'
   rw [hg']
   have he' := congrArg (fun f : ModuleCat.of R R ⟶
       ModuleCat.of R (FundamentalGroup X x →₀ R) ↦ f.hom (1 : R)) he
