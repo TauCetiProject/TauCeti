@@ -316,7 +316,7 @@ theorem IsSymm.exists_orthogonal_basis_isUnit_of_isUnit_det [IsLocalRing R] (hB 
         exact ((b.isUnit_det c₁).pow 2).mul hdet
       exact isUnit_of_mul_isUnit_right (hsplit ▸ hu)
     obtain ⟨v', hv', _⟩ := ih (B := B.restrict N) (hB.restrict N) v hvdet
-    obtain ⟨c, hc⟩ := hB.isRefl.exists_orthogonal_basis_of_orthogonal_span_singleton
+    obtain ⟨c, hc, -, -⟩ := hB.isRefl.exists_orthogonal_basis_of_orthogonal_span_singleton
       hxx.mem_nonZeroDivisors (fun _ ↦ hxx.dvd) hv'
     have hunit : IsUnit (∏ i, B (c i) (c i)) := by
       rw [← Matrix.det_diagonal, ← hc.toMatrix_eq_diagonal,
@@ -416,8 +416,9 @@ theorem IsSymm.exists_orthogonal_basis_of_isAlt_imp_eq_zero (hB : B.IsSymm)
         finrank_span_singleton (ne_zero_of_not_isOrtho_self x hx)] at hd
       omega
     obtain ⟨v, hv⟩ := ih (hB.restrict _) hW hd'
-    exact hB.isRefl.exists_orthogonal_basis_of_orthogonal_span_singleton
+    obtain ⟨b, hb, -, -⟩ := hB.isRefl.exists_orthogonal_basis_of_orthogonal_span_singleton
       (mem_nonZeroDivisors_of_ne_zero hx) (fun _ ↦ (Ne.isUnit hx).dvd) hv
+    exact ⟨b, hb⟩
 
 /-- **A symmetric bilinear form has an orthogonal basis if and only if it is zero or not
 alternating.** The forward direction is the observation that an orthogonal basis of an alternating
