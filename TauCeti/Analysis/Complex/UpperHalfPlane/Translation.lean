@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Complex.UpperHalfPlane.Metric
+import TauCeti.Analysis.Complex.UpperHalfPlane.Bisector.Basic
 import Mathlib.Algebra.Order.Round
 
 /-!
@@ -32,7 +33,7 @@ distance constraints near a parabolic fixed point to a bounded horizontal range.
   horizontal displacement at most half the translation length.
 
 The nearest-translate construction uses Mathlib's `round_le` and `abs_sub_round`, together with
-`UpperHalfPlane.cosh_dist'`.
+`TauCeti.UpperHalfPlane.dist_le_dist_iff`.
 -/
 
 public section
@@ -57,10 +58,9 @@ half-width `w / 2` centred at `p.re`. -/
 theorem dist_le_dist_vadd_and_neg_vadd_iff {w : ℝ} (hw : 0 < w) (z p : ℍ) :
     (dist z p ≤ dist z (w +ᵥ p) ∧ dist z p ≤ dist z ((-w) +ᵥ p)) ↔
       |z.re - p.re| ≤ w / 2 := by
-  have hc (q : ℍ) : dist z p ≤ dist z q ↔ Real.cosh (dist z p) ≤ Real.cosh (dist z q) := by
-    simp only [Real.cosh_le_cosh, abs_of_nonneg dist_nonneg]
-  simp only [hc, cosh_dist', vadd_re, vadd_im,
-    div_le_div_iff_of_pos_right (by positivity : 0 < 2 * z.im * p.im), abs_le]
+  simp only [TauCeti.UpperHalfPlane.dist_le_dist_iff, vadd_im,
+    Complex.dist_eq, Complex.sq_norm, Complex.normSq_apply, Complex.sub_re, Complex.sub_im,
+    coe_re, coe_im, vadd_re, mul_le_mul_iff_right₀ p.im_pos, abs_le]
   constructor
   · rintro ⟨h₁, h₂⟩
     constructor <;> nlinarith
@@ -86,11 +86,10 @@ theorem exists_int_vadd_re_sub_le_and_dist_le (w : ℝ) (hw : 0 < w) (z q : ℍ)
       simp only [heq, abs_mul, abs_of_pos hw]
       exact mul_le_mul_of_nonneg_left (round_le _ _) hw.le
     have hsq := (sq_le_sq).mpr hnear
-    have hc : Real.cosh (dist z ((n : ℝ) * w +ᵥ q)) ≤
-        Real.cosh (dist z ((m : ℝ) * w +ᵥ q)) := by
-      simp only [cosh_dist', vadd_im]
-      exact div_le_div_of_nonneg_right (by linarith) (by positivity)
-    simpa only [Real.cosh_le_cosh, abs_of_nonneg dist_nonneg] using hc
+    rw [TauCeti.UpperHalfPlane.dist_le_dist_iff]
+    simp only [vadd_im, Complex.dist_eq, Complex.sq_norm, Complex.normSq_apply,
+      Complex.sub_re, Complex.sub_im, coe_re, coe_im]
+    nlinarith [q.im_pos]
 
 end UpperHalfPlane
 

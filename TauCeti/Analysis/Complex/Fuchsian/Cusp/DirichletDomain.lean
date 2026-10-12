@@ -10,7 +10,6 @@ public import TauCeti.MeasureTheory.Group.DirichletDomain.Basic
 import TauCeti.Analysis.Complex.UpperHalfPlane.Bisector.Basic
 import TauCeti.Analysis.Complex.Fuchsian.ProperAction
 import TauCeti.Analysis.Complex.UpperHalfPlane.Translation
-import TauCeti.Analysis.Complex.UpperHalfPlane.PSL.Translation
 
 /-!
 # Finite Dirichlet constraints near a cusp
@@ -42,7 +41,7 @@ open Set UpperHalfPlane TauCeti
 open TauCeti.Subgroup.CuspDatum
 open scoped MatrixGroups
 
-namespace Subgroup.CuspDatum
+namespace TauCeti.Subgroup.CuspDatum
 
 variable {Γ : Subgroup PSL(2, ℝ)} [DiscreteTopology Γ] (D : Γ.CuspDatum)
 
@@ -77,40 +76,35 @@ theorem exists_finset_dirichletDomain_inter_horodisc_eq (p : ℍ) :
     (D.scaling • g • p).im ∈ Icc (P.im / 2) M}
   have hT : T.Finite := D.finite_setOf_scaling_smul_mem_rectangle p (by dsimp [P]; positivity)
   let s := insert D.generator (insert D.generator⁻¹ hT.toFinset)
-  have htranslate (n : ℤ) (q : ℍ) :
-      D.scaling • (D.generator ^ n • q) = (n : ℝ) * D.width +ᵥ (D.scaling • q) := by
-    simpa only [Subgroup.smul_def, Subgroup.coe_zpow] using
-      TauCeti.UpperHalfPlane.smul_zpow_smul D.scaling_mul_generator_mul_inv n q
   refine ⟨s, fun A hA ↦ ?_⟩
   ext z
   simp only [mem_inter_iff, mem_iInter, mem_ofPred_eq, mem_dirichletDomain]
   refine and_congr_left fun hzA ↦ ⟨fun hz g _ ↦ hz g, fun hz g ↦ ?_⟩
   let Z := D.scaling • z
+  have hs (g : Γ) (hg : g ∈ s) : dist Z P ≤ dist Z (D.scaling • g • p) := by
+    simpa only [Z, P, dist_smul] using hz g hg
   have hgen : dist Z P ≤ dist Z (D.width +ᵥ P) := by
-    have h := hz D.generator (by simp [s])
     have hg : D.scaling • D.generator • p = D.width +ᵥ P := by
-      simpa only [zpow_one, Int.cast_one, one_mul] using htranslate 1 p
-    rw [← hg]
-    simpa only [Z, P, dist_smul] using h
+      simpa only [zpow_one, Int.cast_one, one_mul] using D.scaling_smul_generator_zpow 1 p
+    simpa only [hg] using hs D.generator (by simp [s])
   have hinv : dist Z P ≤ dist Z ((-D.width) +ᵥ P) := by
-    have h := hz D.generator⁻¹ (by simp [s])
     have hg : D.scaling • D.generator⁻¹ • p = (-D.width) +ᵥ P := by
-      simpa only [zpow_neg_one, Int.cast_neg, Int.cast_one, neg_one_mul] using htranslate (-1) p
-    rw [← hg]
-    simpa only [Z, P, dist_smul] using h
+      simpa only [zpow_neg_one, Int.cast_neg, Int.cast_one, neg_one_mul] using
+        D.scaling_smul_generator_zpow (-1) p
+    simpa only [hg] using hs D.generator⁻¹ (by simp [s])
   have hstrip : |Z.re - P.re| ≤ D.width / 2 :=
     (dist_le_dist_vadd_and_neg_vadd_iff D.width_pos Z P).mp ⟨hgen, hinv⟩
   have hhigh : P.im + D.width / 2 ≤ Z.im := hA.trans ((mem_horodisc D).mp hzA).le
   suffices dist Z P ≤ dist Z (D.scaling • g • p) by
     simpa only [Z, P, dist_smul] using this
   by_cases hlow : (D.scaling • g • p).im ≤ P.im / 2
-  · exact _root_.UpperHalfPlane.dist_le_dist_of_im_le_half hstrip hhigh hlow
+  · exact TauCeti.UpperHalfPlane.dist_le_dist_of_im_le_half hstrip hhigh hlow
   -- Reduce a remaining orbit point to its nearest horizontal translate in the cusp strip.
   obtain ⟨n, hnre, hndist⟩ := exists_int_vadd_re_sub_le_and_dist_le D.width D.width_pos Z
     (D.scaling • g • p)
   let k : Γ := D.generator ^ n * g
   have hk : D.scaling • k • p = (n : ℝ) * D.width +ᵥ (D.scaling • g • p) := by
-    simp only [k, mul_smul, htranslate]
+    simp only [k, mul_smul, D.scaling_smul_generator_zpow]
   have hkT : k ∈ T := by
     have hreal := abs_le.mp hstrip
     have hnreal := abs_le.mp hnre
@@ -119,11 +113,9 @@ theorem exists_finset_dirichletDomain_inter_horodisc_eq (p : ℍ) :
       constructor <;> dsimp only [Z] at * <;> linarith
     · rw [hk, vadd_im]
       exact (not_le.mp hlow).le
-  have hkdist : dist Z P ≤ dist Z (D.scaling • k • p) := by
-    have h := hz k (by
-      simp only [s, Finset.mem_insert]
-      exact Or.inr (Or.inr (hT.mem_toFinset.mpr hkT)))
-    simpa only [Z, P, dist_smul] using h
+  have hkdist := hs k (by
+    simp only [s, Finset.mem_insert]
+    exact Or.inr (Or.inr (hT.mem_toFinset.mpr hkT)))
   exact hkdist.trans (by simpa only [hk, Int.cast_zero, zero_mul, zero_vadd] using hndist 0)
 
-end Subgroup.CuspDatum
+end TauCeti.Subgroup.CuspDatum
