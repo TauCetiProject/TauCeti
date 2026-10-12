@@ -163,7 +163,7 @@ and the cancellation of the untruncated integrals
 (`TauCeti.ModularForm.intervalIntegral_fdBoundarySegment4_eq_neg_segment1`) persists.
 
 Reflection invariance, not translation closure, is the right hypothesis: the two verticals are
-exchanged by `z ↦ -conj z`, and being an isometry it moves an `ε`-ball to an `ε`-ball. (A set
+exchanged by `z ↦ -conj z`, and being an isometry it moves an `ε`-ball to an `ε`-ball. (A finite set
 closed under the bare translation `s ↦ s + 1` would have to be empty, since a finite set has an
 element of largest real part.) For `TauCeti.ModularForm.verticalSingularSet` the invariance is the
 composite of `re_eq_of_mem_verticalSingularSet` with `sub_one_mem_verticalSingularSet` or
