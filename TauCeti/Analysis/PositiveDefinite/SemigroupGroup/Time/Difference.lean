@@ -63,9 +63,6 @@ statements are read off the differences built here in
 
 * C. Berg, J. P. R. Christensen, P. Ressel, *Harmonic Analysis on Semigroups* (GTM 100, 1984),
   Theorem 4.1.13 and its bounded-semigroup argument.
-
-* Roadmap: `TauCetiRoadmap/OneParameterSemigroups/README.md`, Part C, Milestone 2
-  ("BCR semigroup--Bochner").
 -/
 
 public section
@@ -187,7 +184,7 @@ theorem iteratedTimeDifference_eq_listTimeDifference (n : ℕ) (h : ℝ≥0) (F 
 
 /-- At a fixed spatial coordinate, the `n`-th time difference is the alternating `n`-th forward
 difference of the one-variable function `t ↦ F (t, v)`. This is the bridge to the generic
-finite-difference theory of `TauCeti/Analysis/PositiveDefinite/Function/Difference.lean`. -/
+finite-difference theory of `TauCeti/Algebra/Group/ForwardDiff.lean`. -/
 theorem iteratedTimeDifference_apply_eq_fwdDiff (n : ℕ) (h : ℝ≥0) (F : ℝ≥0 × V → ℂ) (t : ℝ≥0)
     (v : V) :
     iteratedTimeDifference n h F (t, v)
@@ -203,7 +200,8 @@ theorem iteratedTimeDifference_apply_eq_fwdDiff (n : ℕ) (h : ℝ≥0) (F : ℝ
         funext s
         simp [timeDifference, fwdDiff]
       rw [hsucc, ih, hstep]
-      exact congrFun (neg_one_pow_mul_fwdDiff_iter_succ n (fun s : ℝ≥0 => F (s, v)) h) t
+      simpa only [Pi.smul_apply, zsmul_eq_mul, Int.cast_pow, Int.cast_neg, Int.cast_one] using
+        congrFun (neg_one_pow_smul_fwdDiff_iter_succ n (fun s : ℝ≥0 => F (s, v)) h) t
 
 /-- **The binomial expansion of an iterated time difference.** This is the form in which the
 measure-theoretic half of the Berg--Christensen--Ressel representation slices the differences by
@@ -213,7 +211,10 @@ theorem iteratedTimeDifference_eq_alternating_sum (n : ℕ) (h : ℝ≥0) (F : �
       ∑ k ∈ Finset.range (n + 1), (-1 : ℂ) ^ k * (n.choose k) * F (p.1 + k • h, p.2) := by
   funext p
   obtain ⟨t, v⟩ := p
-  rw [iteratedTimeDifference_apply_eq_fwdDiff, neg_one_pow_mul_fwdDiff_iter_eq_alternating_sum]
+  rw [iteratedTimeDifference_apply_eq_fwdDiff]
+  simpa only [zsmul_eq_mul, Int.cast_mul, Int.cast_pow, Int.cast_neg, Int.cast_one,
+    Int.cast_natCast] using
+    neg_one_pow_smul_fwdDiff_iter_eq_alternating_sum n (fun s : ℝ≥0 => F (s, v)) h t
 
 /-- Boundedness is preserved by taking a first time difference. -/
 theorem isBounded_range_timeDifference (hbounded : Bornology.IsBounded (range F)) (h : ℝ≥0) :
