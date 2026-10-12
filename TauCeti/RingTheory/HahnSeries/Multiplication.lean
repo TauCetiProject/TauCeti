@@ -15,6 +15,18 @@ power. These formulas detect whether a leading pole term can be cancelled by a p
 
 The formulas are `TauCeti.hahnSeries_leadingCoeff_pow f n` and
 `TauCeti.hahnSeries_orderTop_pow f n`; both are also simplification lemmas.
+
+With the typeclasses below in scope, use the qualified names as follows:
+
+```lean
+example (f : HahnSeries Γ R) (n : ℕ) :
+    (f ^ n).leadingCoeff = f.leadingCoeff ^ n :=
+  TauCeti.hahnSeries_leadingCoeff_pow f n
+
+example [Nontrivial R] (f : HahnSeries Γ R) (n : ℕ) :
+    (f ^ n).orderTop = n • f.orderTop :=
+  TauCeti.hahnSeries_orderTop_pow f n
+```
 -/
 
 public section
