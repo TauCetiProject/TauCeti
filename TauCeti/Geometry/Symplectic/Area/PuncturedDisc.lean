@@ -76,7 +76,7 @@ theorem exists_tendsto_integral_apply_circleMap_nhds_zero (ω : SymplecticForm V
   -- Wirtinger's inequality controls the action by the angular energy on each chosen circle.
   have haction (n : ℕ) : ‖action (r n)‖ ≤ ‖B‖ * δ n := by
     have h := norm_integral_bilinear_apply_circleMap_le B z₀ (r n) fun θ ↦
-      hu _ (circleMap_mem_puncturedDisc z₀ (hr n).1 ((hr n).2.le.trans (hδb n)) θ)
+      hu _ (circleMap_mem_puncturedClosedDisc z₀ (hr n).1 ((hr n).2.le.trans (hδb n)) θ)
     exact h.trans (mul_le_mul_of_nonneg_left (hE n).le (norm_nonneg B))
   have hactionlim : Tendsto (fun n ↦ action (r n)) atTop (𝓝 0) :=
     squeeze_zero_norm haction (by simpa using tendsto_const_nhds.mul hδlim)
@@ -100,7 +100,7 @@ theorem integral_fderiv_apply_punctured_disc (ω : SymplecticForm V) {u : ℂ �
   let area (z : ℂ) := ω (fderiv ℝ u z 1) (fderiv ℝ u z I)
   let action (r : ℝ) := ∫ θ in -π..π, ω (u (circleMap z₀ r θ))
     (deriv (fun θ ↦ u (circleMap z₀ r θ)) θ)
-  have hD : MeasurableSet D := measurableSet_puncturedDisc z₀ b
+  have hD : MeasurableSet D := measurableSet_puncturedClosedDisc z₀ b
   have hA (r : ℝ) : MeasurableSet (A r) :=
     (isClosed_le continuous_const (continuous_id.sub continuous_const).norm).measurableSet.inter
       (isClosed_le (continuous_id.sub continuous_const).norm continuous_const).measurableSet

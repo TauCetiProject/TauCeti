@@ -558,13 +558,13 @@ theorem ofReal_integral_norm_deriv_comp_circleMap_sq_le {V : Type*}
         exact hg θ
 
 /-- The punctured closed disc is measurable, for every centre and radius. -/
-theorem measurableSet_puncturedDisc (ζ : ℂ) (b : ℝ) :
+theorem measurableSet_puncturedClosedDisc (ζ : ℂ) (b : ℝ) :
     MeasurableSet {z : ℂ | 0 < ‖z - ζ‖ ∧ ‖z - ζ‖ ≤ b} :=
   (isOpen_lt continuous_const (continuous_id.sub continuous_const).norm).measurableSet.inter
     (isClosed_le (continuous_id.sub continuous_const).norm continuous_const).measurableSet
 
 /-- A circle of positive radius at most `b` lies in the punctured closed disc of radius `b`. -/
-theorem circleMap_mem_puncturedDisc (ζ : ℂ) {r b : ℝ} (hr : 0 < r) (hrb : r ≤ b)
+theorem circleMap_mem_puncturedClosedDisc (ζ : ℂ) {r b : ℝ} (hr : 0 < r) (hrb : r ≤ b)
     (θ : ℝ) : circleMap ζ r θ ∈ {z : ℂ | 0 < ‖z - ζ‖ ∧ ‖z - ζ‖ ≤ b} := by
   simpa only [mem_ofPred_eq, circleMap_sub_center, norm_circleMap_zero, abs_of_pos hr]
     using And.intro hr hrb
@@ -581,7 +581,7 @@ theorem exists_integral_norm_deriv_comp_circleMap_sq_lt {V : Type*}
     ∃ r ∈ Ioo 0 R,
       (∫ θ in -π..π, ‖deriv (fun θ ↦ u (circleMap ζ r θ)) θ‖ ^ 2) < ε := by
   let D := {z : ℂ | 0 < ‖z - ζ‖ ∧ ‖z - ζ‖ ≤ b}
-  have hD : MeasurableSet D := measurableSet_puncturedDisc ζ b
+  have hD : MeasurableSet D := measurableSet_puncturedClosedDisc ζ b
   let g : ℂ → ℝ≥0∞ := D.indicator (fun z ↦ ENNReal.ofReal (‖fderiv ℝ u z‖ ^ 2))
   have hg : Measurable g :=
     (ENNReal.measurable_ofReal.comp ((measurable_fderiv ℝ u).norm.pow_const 2)).indicator hD
@@ -593,7 +593,7 @@ theorem exists_integral_norm_deriv_comp_circleMap_sq_lt {V : Type*}
   obtain ⟨r, hr, hlt⟩ := exists_mul_circleLIntegral_lt_of_lintegral_ne_top hg hfin ζ
     (ENNReal.ofReal_pos.mpr hε).ne' hR
   have hmem (θ : ℝ) : circleMap ζ r θ ∈ D :=
-    circleMap_mem_puncturedDisc ζ hr.1 (hr.2.le.trans hRb) θ
+    circleMap_mem_puncturedClosedDisc ζ hr.1 (hr.2.le.trans hRb) θ
   have hbound := ofReal_integral_norm_deriv_comp_circleMap_sq_le ζ hr.1
     (fun θ ↦ hu _ (hmem θ)) (g := g) (fun θ ↦ by simp [g, hmem θ])
   exact ⟨r, hr, (ENNReal.ofReal_lt_ofReal_iff hε).mp (hbound.trans_lt hlt)⟩
