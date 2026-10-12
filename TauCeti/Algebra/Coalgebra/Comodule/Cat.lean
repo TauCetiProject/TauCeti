@@ -183,13 +183,18 @@ theorem toLinearMap_comp {M N P : ComoduleCat.{u, v, w} R C} (f : M ⟶ N) (g : 
     (f ≫ g).toLinearMap = g.toLinearMap.comp f.toLinearMap :=
   rfl
 
-/-- The identity morphism acts as the identity function. -/
-@[simp]
+/-- The identity morphism acts as the identity function.
+
+Provided for rewriting rather than as a `simp` lemma: the left-hand side is not in simp normal
+form, because the concrete-category coercion reduces it already. Mathlib states
+`ModuleCat.id_apply` the same way, for the same reason. -/
 theorem id_apply (M : ComoduleCat.{u, v, w} R C) (m : M) : (𝟙 M : M ⟶ M) m = m :=
   rfl
 
-/-- Composition of morphisms acts by ordinary function composition. -/
-@[simp]
+/-- Composition of morphisms acts by ordinary function composition.
+
+Provided for rewriting rather than as a `simp` lemma, like `TauCeti.ComoduleCat.id_apply` above
+and Mathlib's `ModuleCat.comp_apply`. -/
 theorem comp_apply {M N P : ComoduleCat.{u, v, w} R C} (f : M ⟶ N) (g : N ⟶ P) (m : M) :
     (f ≫ g) m = g (f m) :=
   rfl
