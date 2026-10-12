@@ -11,6 +11,7 @@ public import Mathlib.LinearAlgebra.Dimension.Constructions
 public import Mathlib.LinearAlgebra.Quotient.Basic
 public import Mathlib.LinearAlgebra.QuadraticForm.Prod
 import Mathlib.LinearAlgebra.Isomorphisms
+import Mathlib.LinearAlgebra.Projection
 public import Mathlib.LinearAlgebra.QuadraticForm.Radical
 
 /-!
@@ -29,6 +30,11 @@ its polar form is `2 • B`, and nondegeneracy passes from `B` to it as soon as 
 * `QuadraticMap.radical_smul`, `QuadraticMap.nondegenerate_smul_iff`: scaling a quadratic map by a
   unit does not change its radical or its nondegeneracy.
 * `QuadraticMap.radical_prod`: the radical of an orthogonal product is the product of the radicals.
+* `QuadraticMap.orthogonal_polarBilin_eq_radical_of_isCompl`: the polar orthogonal complement of
+  a radical complement is the radical.
+* `QuadraticMap.nondegenerate_restrict_of_isCompl_radical`: a radical complement is regular.
+* `QuadraticForm.exists_equivalent_zero_radical_prod`: a finite-dimensional quadratic form splits
+  as the zero form on its radical and a regular complement.
 * `QuadraticForm.finrank_radical_eq_of_equivalent_zero_prod` and
   `QuadraticForm.finrank_zeroPart_eq_of_equivalent_zero_prod`: the zero summand in a decomposition
   into a zero form and a regular form has dimension equal to the radical.
@@ -153,6 +159,27 @@ theorem nondegenerate_of_ker_polarBilin_eq_bot {Q : QuadraticMap R M P}
   rw [hker]
   nontriviality R
   simp only [rank_subsingleton', zero_le]
+
+/-- The polar orthogonal complement of a complement to the radical is the radical. -/
+theorem orthogonal_polarBilin_eq_radical_of_isCompl [Invertible (2 : R)]
+    (Q : QuadraticForm R M) {C : Submodule R M} (hC : IsCompl Q.radical C) :
+    LinearMap.BilinForm.orthogonal Q.polarBilin C = Q.radical := by
+  rw [radical_eq_ker_polarBilin] at hC ⊢
+  calc
+    LinearMap.BilinForm.orthogonal Q.polarBilin C =
+        LinearMap.BilinForm.orthogonal Q.polarBilin (C ⊔ Q.polarBilin.ker) :=
+      (Submodule.orthogonalBilin_sup_ker Q.polarBilin C).symm
+    _ = LinearMap.BilinForm.orthogonal Q.polarBilin ⊤ := by rw [hC.symm.sup_eq_top]
+    _ = Q.polarBilin.ker := LinearMap.BilinForm.orthogonal_top_eq_ker Q.isSymm_polarBilin.isRefl
+
+/-- Restricting a quadratic form to a complement of its radical gives a nondegenerate form. -/
+theorem nondegenerate_restrict_of_isCompl_radical [Invertible (2 : R)]
+    (Q : QuadraticForm R M) {C : Submodule R M} (hC : IsCompl Q.radical C) :
+    (Q.restrict C).Nondegenerate := by
+  rw [← nondegenerate_polar_iff, polarBilin_restrict]
+  apply LinearMap.IsSymm.nondegenerate_restrict_of_isCompl_ker
+    (LinearMap.BilinForm.isSymm_iff.mp Q.isSymm_polarBilin)
+  simpa only [← radical_eq_ker_polarBilin] using hC.symm
 
 /-- **The quotient by the radical is nondegenerate.** When two is invertible, the form induced
 on `M ⧸ Q.radical` has no radical: a class orthogonal to every class is represented by a vector
@@ -447,6 +474,34 @@ namespace QuadraticForm
 universe u
 
 variable {K : Type u} [Field K] [Invertible (2 : K)]
+
+/-- Every finite-dimensional quadratic form is an orthogonal sum of the zero form on its radical
+and a nondegenerate restriction to a complementary subspace.
+
+The complement argument follows Lam, *Introduction to Quadratic Forms over Fields*, Chapter I,
+§4. -/
+theorem exists_equivalent_zero_radical_prod
+    {V : Type*} [AddCommGroup V] [Module K V] [FiniteDimensional K V]
+    (Q : QuadraticForm K V) :
+    ∃ C : Submodule K V, IsCompl Q.radical C ∧ (Q.restrict C).Nondegenerate ∧
+      Q.Equivalent ((0 : QuadraticForm K Q.radical).prod (Q.restrict C)) := by
+  obtain ⟨C, hC⟩ := Q.radical.exists_isCompl
+  -- The product-isometry API imports this module, so construct the splitting isometry here.
+  have heq : ((Q.restrict C).prod (Q.restrict Q.radical)).IsometryEquiv Q :=
+    { toLinearEquiv := C.prodEquivOfIsCompl Q.radical hC.symm
+      map_app' := fun x => by
+        change Q ((x.1 : V) + x.2) = Q x.1 + Q x.2
+        rw [QuadraticMap.map_add Q]
+        have hx : (x.2 : V) ∈ LinearMap.BilinForm.orthogonal Q.polarBilin C := by
+          rw [Q.orthogonal_polarBilin_eq_radical_of_isCompl hC]
+          exact x.2.2
+        rw [← QuadraticMap.polarBilin_apply_apply, hx x.1 x.1.2, add_zero] }
+  have hradZero : Q.restrict Q.radical = (0 : QuadraticForm K Q.radical) := by
+    ext x
+    exact (QuadraticMap.mem_radical_iff'.mp x.2).1
+  refine ⟨C, hC, Q.nondegenerate_restrict_of_isCompl_radical hC, ?_⟩
+  rw [hradZero] at heq
+  exact ⟨heq.symm.trans (QuadraticMap.IsometryEquiv.prodComm _ _)⟩
 
 /-- If a quadratic form is isometric to a zero form orthogonally summed with a regular form, the
 dimension of its radical is the dimension of the zero summand. -/
