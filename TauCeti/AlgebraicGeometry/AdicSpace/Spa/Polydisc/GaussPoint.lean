@@ -68,6 +68,9 @@ valuations need not differ from `η_r`.
 * `TauCeti.ValuationSpectrum.coe_closedDiscGaussValuation`: the valuation is `sup_n ‖aₙ‖ rⁿ`;
   it takes the value `‖a‖` on the constant `a`, `r` on the variable, and `max r ‖a‖` on `T - a`
   (`TauCeti.ValuationSpectrum.coe_closedDiscGaussValuation_weightedX_sub_weightedC`).
+* `TauCeti.ValuationSpectrum.closedDiscGaussValuation_le_closedDiscGaussValuation_of_le` and
+  `TauCeti.ValuationSpectrum.tendsto_closedDiscGaussValuation`: the valuation is monotone and right
+  continuous in the radius.
 * `TauCeti.ValuationSpectrum.isContinuous_closedDiscGaussValuation` and
   `TauCeti.ValuationSpectrum.closedDiscGaussValuation_le_one_of_isPowerBounded`: the two
   conditions for membership in the closed unit disc.
@@ -189,6 +192,32 @@ theorem closedDiscGaussValuation_le_of_forall_norm_coeff_le (hr₀ : 0 < r) (hr�
   rw [coe_closedDiscGaussValuation]
   exact ciSup_le fun n ↦
     (mul_le_of_le_one_right (norm_nonneg _) (pow_le_one₀ hr₀.le hr₁)).trans (h _)
+
+/-- **The Gauss valuation is monotone in the radius**: for `0 < r ≤ s ≤ 1`, the Gauss norm of
+radius `r` is at most the Gauss norm of radius `s`. -/
+theorem closedDiscGaussValuation_le_closedDiscGaussValuation_of_le {s : ℝ} (hr₀ : 0 < r)
+    (hr₁ : r ≤ 1) (hs₁ : s ≤ 1) (hrs : r ≤ s)
+    (f : weightedRestrictedSubring (fun _ : Fin 1 ↦ ({1} : Set R)) isWeightFamily_one_weight) :
+    closedDiscGaussValuation hr₀ hr₁ f ≤ closedDiscGaussValuation (hr₀.trans_le hrs) hs₁ f := by
+  have h := TauCeti.PowerSeries.gaussNorm_le_gaussNorm_of_le (fun _ ↦ norm_nonneg _) hr₀.le hrs
+    (TauCeti.PowerSeries.hasGaussNorm_of_isRestricted
+      (toRestrictedSubring ((abs_of_pos (hr₀.trans_le hrs)).trans_le hs₁) f).2)
+  rw [← NNReal.coe_le_coe]
+  simpa only [closedDiscGaussValuation, Valuation.comap_apply,
+    TauCeti.PowerSeries.coe_gaussValuation, coe_toRestrictedSubring] using h
+
+/-- **The Gauss valuation is right continuous in the radius**: if radii `tₙ ∈ [r, 1]` tend to
+`r > 0`, the Gauss norms of radius `tₙ` tend to the Gauss norm of radius `r`. -/
+theorem tendsto_closedDiscGaussValuation {t : ℕ → ℝ} (hr₀ : 0 < r) (hrt : ∀ n, r ≤ t n)
+    (ht₁ : ∀ n, t n ≤ 1) (ht : Filter.Tendsto t Filter.atTop (nhds r))
+    (f : weightedRestrictedSubring (fun _ : Fin 1 ↦ ({1} : Set R)) isWeightFamily_one_weight) :
+    Filter.Tendsto (fun n ↦ closedDiscGaussValuation (hr₀.trans_le (hrt n)) (ht₁ n) f)
+      Filter.atTop (nhds (closedDiscGaussValuation hr₀ ((hrt 0).trans (ht₁ 0)) f)) := by
+  have h := TauCeti.PowerSeries.tendsto_gaussNorm_of_isRestricted hr₀ hrt ht₁ ht
+    (toRestrictedSubring (r := 1) (by simp) f).2
+  rw [← NNReal.tendsto_coe]
+  simpa only [closedDiscGaussValuation, Valuation.comap_apply,
+    TauCeti.PowerSeries.coe_gaussValuation, coe_toRestrictedSubring] using h
 
 /-- The Gauss valuation of a constant is its norm. -/
 @[simp]

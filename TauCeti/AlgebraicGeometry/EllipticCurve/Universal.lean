@@ -157,7 +157,6 @@ instance : Fintype Coeff := derive_fintype% _
 
 namespace Universal
 
-open scoped Polynomial Polynomial.Bivariate
 open Coeff
 
 open MvPolynomial (X) in
@@ -285,7 +284,6 @@ lemma equation_point : pointedCurve.toAffine.Equation (polyToField (C X)) (polyT
   -- The Weierstrass polynomial vanishes at `(X, Y)`: it is exactly what was quotiented out.
   rw [Affine.map_polynomial, this, polyToField_polynomial]
 
-open Polynomial Affine in
 /-- The distinguished point `(X, Y)` on `pointedCurve`. -/
 def Affine.point : (curve.baseChange Universal.Field).toAffine.Point :=
   .mk equation_point
@@ -362,7 +360,7 @@ lemma specialize_X (i : Coeff) :
 
 /-- Every Weierstrass curve is a specialization of the universal Weierstrass curve. -/
 @[simp]
-lemma map_specialize : Universal.curve.map W.specialize = W := by simp [specialize, curve, map]
+lemma map_specialize : Universal.curve.map W.specialize = W := by ext <;> simp
 
 /-- `specialize` sends the discriminant of the universal curve to the discriminant of `W`. -/
 @[simp]
@@ -409,7 +407,6 @@ ring maps and `ringEval_mk` when rewriting underneath an application. -/
 lemma ringEval_comp_mk : (ringEval eqn).comp (AdjoinRoot.mk _) = polyEval W x y :=
   RingHom.ext (ringEval_mk eqn)
 
-open Polynomial MvPolynomial in
 /-- `ringEval` sends the distinguished `X` to the abscissa of the point. Together with
 `ringEval_root` this is the coordinate-level content of the universal property: the pair
 `(X, Y)` of `Universal.Ring` goes to the chosen point `(x, y)` of `W`. -/
@@ -418,7 +415,6 @@ lemma ringEval_of_X : ringEval eqn (AdjoinRoot.of _ Polynomial.X) = x := by
   rw [← AdjoinRoot.mk_C, ringEval_mk, polyEval_apply]
   simp [Polynomial.evalEval]
 
-open Polynomial MvPolynomial in
 /-- `ringEval` sends the distinguished `Y` to the ordinate of the point. -/
 @[simp]
 lemma ringEval_root : ringEval eqn (AdjoinRoot.root _) = y := by
@@ -450,9 +446,8 @@ instance : CharZero Universal.Ring :=
 exists for — an identity proved once for `curveRing` and its distinguished point becomes the same
 identity for every Weierstrass curve `W` and every point `(x, y)` on it. -/
 @[simp]
-lemma map_ringEval : curveRing.map (ringEval eqn) = W :=
-  (map_map curve (algebraMap _ _) (ringEval eqn)).symm ▸
-    (ringEval_comp_eq_specialize eqn) ▸ map_specialize W
+lemma map_ringEval : curveRing.map (ringEval eqn) = W := by
+  simp only [baseChange, map_map, ringEval_comp_eq_specialize, map_specialize]
 
 end Universal
 
@@ -611,10 +606,7 @@ theorem exists_map_eq_and_map_eq_of_isElliptic :
   obtain ⟨R₀, _, _, _, W₀, _, f, rfl⟩ := W.exists_map_eq_of_isElliptic
   -- the ring `R₀[u, r, s, t][u⁻¹]`, a Noetherian integral domain
   set x : MvPolynomial (Fin 4) R₀ := MvPolynomial.X 0
-  have : IsDomain (Localization.Away x) := IsLocalization.isDomain_localization
-    (powers_le_nonZeroDivisors_of_noZeroDivisors (MvPolynomial.X_ne_zero 0))
-  have : IsNoetherianRing (Localization.Away x) :=
-    IsLocalization.isNoetherianRing (Submonoid.powers x) _ inferInstance
+  have : IsDomain (Localization.Away x) := Localization.Away.isDomain (MvPolynomial.X_ne_zero 0)
   -- the specialization `u, r, s, t ↦ C.u, C.r, C.s, C.t`
   set φ : MvPolynomial (Fin 4) R₀ →+* R :=
     MvPolynomial.eval₂Hom f ![(C.u : R), C.r, C.s, C.t]

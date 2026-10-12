@@ -218,6 +218,16 @@ lemma map_comp_incl (φ : F ≃ₜ F) (ψ : G ≃ₜ G) (g : C(F, G))
   ext x
   simp
 
+/-- A map of mapping tori carries the canonical cylinder homotopy to the canonical cylinder
+homotopy of the image point. -/
+-- Rewrite before simplification unfolds the homotopy track to a cylinder representative.
+@[simp↓]
+lemma map_monodromyHomotopy (φ : F ≃ₜ F) (ψ : G ≃ₜ G) (g : C(F, G))
+    (h : Function.Semiconj g φ ψ) (t : unitInterval) (x : F) :
+    map φ ψ g h (monodromyHomotopy φ (t, x)) =
+      monodromyHomotopy ψ (t, g x) := by
+  simpa using congrArg (fun y ↦ mk ψ y (t : ℝ)) (h x)
+
 /-- The map of a mapping torus induced by the identity map is the identity. -/
 @[simp]
 lemma map_id (φ : F ≃ₜ F) :

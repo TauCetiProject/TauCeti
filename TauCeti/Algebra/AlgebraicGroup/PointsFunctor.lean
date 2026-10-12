@@ -22,13 +22,13 @@ represents: its values are `A ↦ (H →ₐ[R] A)`, with the convolution group l
 
 ## Main definitions
 
-* `HopfAlgebra.points`: the bundled group of `A`-points.
-* `HopfAlgebra.extendPoint`: extension of ground-ring-valued points to a value algebra.
-* `HopfAlgebra.mapPoints`: the group homomorphism induced by post-composition in the value
+* `TauCeti.HopfAlgebra.points`: the bundled group of `A`-points.
+* `TauCeti.HopfAlgebra.extendPoint`: extension of ground-ring-valued points to a value algebra.
+* `TauCeti.HopfAlgebra.mapPoints`: the group homomorphism induced by post-composition in the value
   algebra.
-* `HopfAlgebra.pointsFunctor`: the functor `CommAlgCat R ⥤ GrpCat`.
-* `HopfAlgebra.subgroupFunctor`: the functor of a family of point subgroups stable under change
-  of value algebra, with its natural inclusion `HopfAlgebra.subgroupFunctorIncl`.
+* `TauCeti.HopfAlgebra.pointsFunctor`: the functor `CommAlgCat R ⥤ GrpCat`.
+* `TauCeti.HopfAlgebra.subgroupFunctor`: the functor of a family of point subgroups stable under
+  change of value algebra, with its natural inclusion `TauCeti.HopfAlgebra.subgroupFunctorIncl`.
 
 ## References
 
@@ -38,7 +38,7 @@ convolution-group inverse of `TauCeti.Algebra.AlgebraicGroup.FunctorOfPoints`.
 
 public section
 
-open CategoryTheory _root_.HopfAlgebra TensorProduct WithConv
+open CategoryTheory WithConv
 
 namespace TauCeti
 
@@ -48,7 +48,8 @@ universe u v w x
 
 variable {R : Type u} [CommRing R] {H : Type v} [Semiring H] [_root_.HopfAlgebra R H]
 
-/-- The group of `A`-points of the affine group object represented by a Hopf algebra `H`.
+/-- The group of `A`-points of a Hopf algebra `H`; when `H` is commutative, these are the
+`A`-points of the affine group scheme it represents.
 
 The underlying type is `WithConv (H →ₐ[R] A)`: algebra homomorphisms from `H` to `A`, with
 the convolution group structure supplied by the antipode of `H`. -/
@@ -69,7 +70,7 @@ theorem extendPoint_apply (H : Type v) [Semiring H] [_root_.HopfAlgebra R H]
 
 /-- Evaluation of an extended point is obtained by applying the value algebra's structure map. -/
 @[simp]
-theorem extendPoint_ofConv (H : Type v) [Semiring H] [_root_.HopfAlgebra R H]
+theorem extendPoint_ofConv_apply (H : Type v) [Semiring H] [_root_.HopfAlgebra R H]
     (A : CommAlgCat.{w} R) (g : points (H := H) (CommAlgCat.of R R)) (h : H) :
     (extendPoint H A g).ofConv h = algebraMap R A (g.ofConv h) := by
   simp only [extendPoint, AlgHom.mapValue_apply, WithConv.ofConv_toConv, AlgHom.comp_apply,
@@ -83,7 +84,7 @@ theorem extendPoint_self (H : Type v) [Semiring H] [_root_.HopfAlgebra R H]
   apply WithConv.ofConv_injective
   ext h
   simpa only [Algebra.algebraMap_self, RingHom.id_apply] using
-    extendPoint_ofConv H (CommAlgCat.of R R) g h
+    extendPoint_ofConv_apply H (CommAlgCat.of R R) g h
 
 /-- Post-composition of an extended point is extension to the target algebra. -/
 theorem mapValue_extendPoint (H : Type v) [Semiring H] [_root_.HopfAlgebra R H]
@@ -140,7 +141,8 @@ theorem mapPoints_extendPoint {A B : CommAlgCat.{w} R} (f : A ⟶ B)
     mapPoints (H := H) f (extendPoint H A g) = extendPoint H B g :=
   mapValue_extendPoint H f.hom g
 
-/-- The functor of points of the affine group object represented by a Hopf algebra.
+/-- The functor of points of a Hopf algebra; when `H` is commutative, it is the functor of points
+of the affine group scheme `H` represents.
 
 It maps a commutative `R`-algebra `A` to the convolution group on algebra homomorphisms
 `H →ₐ[R] A`, and maps `φ : A ⟶ B` to post-composition with `φ`. -/

@@ -9,7 +9,7 @@ public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Invertible.LocalTrivialit
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.LocalIsomorphism
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.TensorProduct.Dual
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.TensorProduct.Restriction.Closed
-public import TauCeti.CategoryTheory.Monoidal.Rigid.Functor
+public import TauCeti.CategoryTheory.Monoidal.Closed.Functor
 
 /-!
 # Duals of invertible sheaves

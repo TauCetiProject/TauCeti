@@ -15,6 +15,8 @@ Every short exact sequence with a finitely generated projective kernel and a
 Gorenstein-projective quotient splits. This is the vanishing of degree-one extensions of a
 Gorenstein-projective module by a finite projective module, and is the input for identifying
 finite projectives as relative injectives in the Gorenstein-projective exact category.
+Maps into finite projectives therefore extend across short exact sequences with
+Gorenstein-projective quotient.
 
 No noetherian or self-injectivity hypothesis is required, and the ring and module universes are
 independent. Taking the ring to be `Rᵐᵒᵖ` gives the result for right `R`-modules.
@@ -72,5 +74,23 @@ theorem IsGorensteinProjective.nonempty_splitting_of_projective
       S.zero, comp_zero, sub_zero]
   refine ⟨ShortComplex.Splitting.ofExactOfSection S hS.exact (e.inv ≫ s) ?_ hS.mono_f⟩
   rw [Category.assoc, hs, e.inv_hom_id]
+
+/-- Maps into a finite projective module extend across a short exact sequence with
+Gorenstein-projective quotient. The middle module need not be Gorenstein-projective. -/
+theorem IsGorensteinProjective.exists_extend
+    {S : ShortComplex (ModuleCat.{v} A)} (hN : IsGorensteinProjective A S.X₃)
+    (hS : S.ShortExact) (Q : ModuleCat.{v} A) [Module.Finite A Q] [Module.Projective A Q]
+    (f : S.X₁ ⟶ Q) : ∃ g : S.X₂ ⟶ Q, S.f ≫ g = f := by
+  let E := ExactStructure.abelian (ModuleCat.{v} A)
+  let sq := IsPushout.of_hasPushout S.f f
+  have hT := E.conflation_cobaseChange
+    ((ExactStructure.abelian_conflation S).mpr hS) sq
+  rw [cobaseChange_def] at hT
+  have hT' := (ExactStructure.abelian_conflation _).mp hT
+  obtain ⟨s⟩ := IsGorensteinProjective.nonempty_splitting_of_projective
+    (S := ShortComplex.mk (pushout.inr S.f f) (cobaseChangeπ S sq) (by simp)) hN hT'
+  refine ⟨pushout.inl S.f f ≫ s.r, ?_⟩
+  rw [← Category.assoc, pushout.condition, Category.assoc]
+  simpa using congrArg (f ≫ ·) s.f_r
 
 end TauCeti

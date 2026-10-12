@@ -60,19 +60,13 @@ variable (k : Type u) [Ring k]
 /-- The coefficients of a simplicial singular chain on the maps from the topological simplex. -/
 def singularCoord (X : TopCat.{u}) (n : ℕ) :
     ((singularChains k).obj X).X n →ₗ[k] ((simplexModel.{u} n ⟶ X) →₀ k) :=
-  (Cofan.IsColimit.desc ((TopCat.toSSet.obj X).isColimitChainComplexXCofan (ModuleCat.of k k) n)
-    (fun σ ↦ ModuleCat.ofHom (lsingle σ.down) :
-      ∀ _, ModuleCat.of k k ⟶ ModuleCat.of k ((simplexModel.{u} n ⟶ X) →₀ k))).hom
+  chainsDesc fun σ ↦ single σ.down (1 : k)
 
 variable {k} in
 @[simp]
 theorem singularCoord_simplexChain (X : TopCat.{u}) {n : ℕ} (σ : (TopCat.toSSet.obj X) _⦋n⦌)
     (a : k) : singularCoord k X n (simplexChain σ a) = single σ.down a := by
-  have h := Cofan.IsColimit.fac ((TopCat.toSSet.obj X).isColimitChainComplexXCofan
-    (ModuleCat.of k k) n) (fun σ ↦ ModuleCat.ofHom (lsingle σ.down) :
-      ∀ _, ModuleCat.of k k ⟶ ModuleCat.of k ((simplexModel.{u} n ⟶ X) →₀ k)) σ
-  simp only [SSet.chainComplexXCofan, Cofan.inj, Cofan.mk_ι_app] at h
-  exact congrArg (fun g ↦ g.hom a) h
+  rw [singularCoord, chainsDesc_simplexChain, smul_single, smul_eq_mul, mul_one]
 
 /-- **The simplicial singular chains are free on the topological simplices.** -/
 @[expose] def singularModelPresentation : AcyclicModels.ModelPresentation (singularChains k) where
