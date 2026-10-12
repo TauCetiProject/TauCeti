@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.CommutativeAlgebra.MatrixFactorization.Cokernel
-public import TauCeti.CommutativeAlgebra.MatrixFactorization.Polynomial.Periodic
+public import TauCeti.CommutativeAlgebra.MatrixFactorization.Polynomial.Augmentation
 public import TauCeti.Algebra.Category.FGModuleCat.Cyclic
 
 /-!
@@ -41,39 +41,6 @@ namespace TauCeti.MatrixFactorization
 open CategoryTheory Limits Polynomial MulOpposite
 
 variable (R : Type u) [CommRing R] {i n : ℕ}
-
-private theorem range_rootPowHom (n i : ℕ) :
-    LinearMap.range (rootPowHom R n i).hom =
-      Ideal.span {AdjoinRoot.root (X ^ n : R[X]) ^ i} := by
-  have h : (rootPowHom R n i).hom =
-      LinearMap.mul (AdjoinRoot (X ^ n : R[X])) (AdjoinRoot (X ^ n : R[X]))
-        (AdjoinRoot.root (X ^ n : R[X]) ^ i) := by
-    apply LinearMap.ext
-    intro a
-    exact rootPowHom_apply R n i a
-  rw [h]
-  exact Ideal.range_mul' _
-
-/-- The cokernel of multiplication by `x ^ i` on the regular module is `A/(x ^ i)`. -/
-def rootPowHomCokernelIso (n i : ℕ) :
-    cokernel (rootPowHom R n i) ≅
-      ModuleCat.of (AdjoinRoot (X ^ n : R[X]))
-        (AdjoinRoot (X ^ n : R[X]) ⧸
-          Ideal.span {AdjoinRoot.root (X ^ n : R[X]) ^ i}) :=
-  ModuleCat.cokernelIsoRangeQuotient _ ≪≫
-    (Submodule.quotEquivOfEq _ _ (range_rootPowHom R n i)).toModuleIso
-
-/-- The comparison sends the cokernel projection to the cyclic quotient projection. -/
-@[reassoc (attr := simp)]
-theorem rootPowHomCokernelIso_π_hom (n i : ℕ) :
-    cokernel.π (rootPowHom R n i) ≫ (rootPowHomCokernelIso R n i).hom =
-      ModuleCat.ofHom (Ideal.span {AdjoinRoot.root (X ^ n : R[X]) ^ i}).mkQ := by
-  rw [rootPowHomCokernelIso, Iso.trans_hom, ← Category.assoc,
-    ModuleCat.cokernel_π_cokernelIsoRangeQuotient_hom]
-  apply ModuleCat.hom_ext
-  apply LinearMap.ext
-  intro a
-  exact Submodule.quotEquivOfEq_mk _ _ (range_rootPowHom R n i) a
 
 /-- The reduction of `powerXOfLE` has cokernel `A/(x ^ i)`. -/
 def powerXOfLECokernelQuotientIso (hi : i ≤ n) :
@@ -111,10 +78,16 @@ theorem powerXOfLECokernelQuotientIso_π_hom (hi : i ≤ n) :
   dsimp only [cokernel.map]
   rw [cokernel.π_desc_assoc]
   rw [powerXOfLEBaseChangeDuplexIso_hom_f₁]
+  have hAug : powerXAugmentation R n i =
+      ModuleCat.ofHom (Ideal.span {AdjoinRoot.root (X ^ n : R[X]) ^ i}).mkQ := by
+    apply ModuleCat.hom_ext
+    apply LinearMap.ext
+    intro a
+    exact powerXAugmentation_apply R n i a
   exact (Category.assoc _ _ _).trans
     (congrArg (Functor.OplaxMonoidal.η
       (ModuleCat.extendScalars (AdjoinRoot.mk (X ^ n : R[X]))) ≫ ·)
-      (rootPowHomCokernelIso_π_hom R n i))
+      ((cokernel_π_comp_rootPowHom_cokernelIso_hom R n i).trans hAug))
 
 /-- The quotient by `x ^ i` identifies with the cyclic right module, viewed as a left module
 by restriction along the commutativity isomorphism `A ≃ Aᵐᵒᵖ`. -/
