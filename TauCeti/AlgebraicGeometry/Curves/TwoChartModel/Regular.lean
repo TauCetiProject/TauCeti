@@ -51,6 +51,8 @@ function field (`TauCeti.AlgebraicGeometry.CodimensionOnePoint.equivPlace`).
   regular local ring.
 * `TauCeti.AlgebraicGeometry.twoChartModel.isDiscreteValuationRing_stalk`: the local ring at a
   codimension-one point is a discrete valuation ring.
+* `TauCeti.AlgebraicGeometry.twoChartModel.valuationRing_stalk`: every local ring is a valuation
+  ring, the hypothesis under which rational maps from the scheme to proper schemes extend.
 
 ## References
 
@@ -171,5 +173,17 @@ theorem isDiscreteValuationRing_stalk (hxt : Transcendental k x)
     IsDiscreteValuationRing ((twoChartModel hF hx).presheaf.stalk (p : twoChartModel hF hx)) := by
   have := isRegularLocalRing_stalk hxt (p : twoChartModel hF hx)
   exact CodimensionOnePoint.isDiscreteValuationRing_stalk p
+
+/-- **The local rings of the two-chart model are valuation rings**, for `x` transcendental over
+`k`: at the generic point the local ring is the function field, and at every other point it is a
+discrete valuation ring. -/
+theorem valuationRing_stalk (hxt : Transcendental k x) (p : twoChartModel hF hx) :
+    ValuationRing ((twoChartModel hF hx).presheaf.stalk p) := by
+  by_cases hp : p = genericPoint (twoChartModel hF hx)
+  · subst hp
+    exact inferInstanceAs (ValuationRing (twoChartModel hF hx).functionField)
+  · have := isDiscreteValuationRing_stalk hxt
+      ⟨p, (coheight_eq_one_iff_ne_genericPoint hxt).mpr hp⟩
+    infer_instance
 
 end TauCeti.AlgebraicGeometry.twoChartModel

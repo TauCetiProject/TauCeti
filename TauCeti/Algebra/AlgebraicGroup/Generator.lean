@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.AlgebraicGroup.BaseChange.Basic
 public import TauCeti.Algebra.AlgebraicGroup.ConstantGroup.Basic
 public import TauCeti.Algebra.AlgebraicGroup.Hopf.Map
+public import TauCeti.Algebra.AlgebraicGroup.Product
 public import TauCeti.Algebra.Bialgebra.Hom.Representable
 public import TauCeti.RingTheory.Norm.FullSetOfSections
 public import Mathlib.RingTheory.Finiteness.ModuleFinitePresentation
@@ -50,6 +51,8 @@ monoid schemes over `T` whose points `A →* G(T)` form an `A`-generator of `G_T
 * `TauCeti.IsAGenerator.baseChange`, `TauCeti.IsAGenerator.of_baseChange` and
   `TauCeti.isAGenerator_baseChange_iff`: `A`-generators are stable under arbitrary base change and
   descend along injective ring maps, in particular along faithfully flat ones.
+* `TauCeti.IsAGenerator.prodMap`: an `A₁`-generator of `G₁` and an `A₂`-generator of `G₂` together
+  give an `A₁ × A₂`-generator of the product `G₁ × G₂`.
 * `TauCeti.ConstantGroup.isAGenerator_toPoints`: the tautological homomorphism from `A` to the
   points of the constant group `A_R` is an `A`-generator.
 * `TauCeti.isAGenerator_pointsOfBialgHom_homEquiv_iff` and
@@ -117,6 +120,23 @@ theorem isAGenerator_baseChange_iff {T : Type w} [CommRing T] [Algebra R T]
   ⟨.of_baseChange hT, fun h ↦ h.baseChange T⟩
 
 end Generator
+
+section Product
+
+variable {R : Type u} {H₁ H₂ : Type*} [CommRing R] [CommRing H₁] [CommRing H₂] [Bialgebra R H₁]
+  [Bialgebra R H₂] [Module.Free R H₁] [Module.Finite R H₁] [Module.Free R H₂]
+  [Module.Finite R H₂] {A₁ A₂ : Type*} [Monoid A₁] [Fintype A₁] [Monoid A₂] [Fintype A₂]
+  {φ₁ : A₁ →* WithConv (H₁ →ₐ[R] R)} {φ₂ : A₂ →* WithConv (H₂ →ₐ[R] R)}
+
+/-- **Products of generators.** If `φ₁` is an `A₁`-generator of `G₁ = Spec H₁` and `φ₂` is an
+`A₂`-generator of `G₂ = Spec H₂`, then `(a₁, a₂) ↦ (φ₁ a₁, φ₂ a₂)` is an `A₁ × A₂`-generator of
+the product `G₁ × G₂ = Spec (H₁ ⊗[R] H₂)`. -/
+theorem IsAGenerator.prodMap (h₁ : IsAGenerator φ₁) (h₂ : IsAGenerator φ₂) :
+    IsAGenerator ((AffineGroup.Product.pointsMulEquiv (R := R) (H₁ := H₁) (H₂ := H₂)
+      (A := R)).symm.toMonoidHom.comp (φ₁.prodMap φ₂)) := by
+  simpa [isAGenerator_iff] using IsFullSetOfSections.tensorProduct h₁ h₂
+
+end Product
 
 namespace ConstantGroup
 

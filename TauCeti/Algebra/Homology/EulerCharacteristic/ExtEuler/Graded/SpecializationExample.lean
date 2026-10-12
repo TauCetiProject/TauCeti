@@ -68,7 +68,6 @@ theorem det_specializationDegeneracyMatrixAtOne :
   simp [specializationDegeneracyMatrixAtOne, Matrix.det_fin_two_of]
 
 /-- The vector `(1, -1)` witnesses degeneracy of the matrix at `q = 1`. -/
-@[simp]
 theorem specializationDegeneracyMatrixAtOne_mulVec_kernel :
     specializationDegeneracyMatrixAtOne *ᵥ (![1, -1] : Fin 2 → ℤ) = 0 := by
   ext i
