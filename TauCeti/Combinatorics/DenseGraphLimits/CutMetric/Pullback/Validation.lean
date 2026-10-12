@@ -5,17 +5,18 @@ Authors: Claude
 -/
 module
 
-public import Mathlib.Probability.Distributions.Bernoulli
 public import TauCeti.Combinatorics.DenseGraphLimits.CutMetric.FiniteGraph
-public import TauCeti.Combinatorics.DenseGraphLimits.CutMetric.Pullback.Basic
+import Mathlib.Probability.Distributions.Bernoulli
+import TauCeti.Combinatorics.DenseGraphLimits.CutMetric.Pullback.Basic
 
 /-!
 # Atomic regressions for the map form of the cut distance
 
 The harder direction of `cutDist_eq_cutDistPullback` applies Janson's Thm A.9 to the *coupling*, so
-the atomic cases to check are atomic couplings. The named regression theorems below run the
+the atomic cases to check are atomic couplings. The regression examples below run the
 equivalence at a point-mass coupling, at finitely atomic ones, and at ones mixing an atomic with a
-continuous direction. The accompanying examples retain the computed map-form distances.
+continuous direction. Each example evaluates the map form using the equivalence and an exact
+coupling-side distance formula.
 
 The values come from the coupling side, where they can be computed exactly: against a constant
 graphon, and against a graphon on a point mass, every coupling contributes the same cut norm
@@ -29,7 +30,7 @@ carrier with the constant graphon `1/2`. Their cut distance is `1/8`: the differ
 off the diagonal and `-1/2` on it, the cut norm is attained on an off-diagonal cell of mass `1/4`,
 and no rectangle does better (`cutDist_finiteGraphGraphonOnFin_top_two_const_half`).
 
-These regressions compare the map form with independently computed distances on carriers with
+These examples compare the map form with independently computed distances on carriers with
 different atomic structures. In each case the nonzero value witnesses that the map form includes
 the relevant pullbacks. `CutMetric.Pullback.Constant` computes the same values from the definition
 of the map form, without the equivalence (`cutDistPullback_dirac_dirac`,
@@ -37,9 +38,9 @@ of the map form, without the equivalence (`cutDistPullback_dirac_dirac`,
 
 ## Main results
 
-* `cutDistPullback_dirac_regression`, `cutDistPullback_finite_atomic_regression`, and
-  `cutDistPullback_mixed_regression` are named instances of `cutDist_eq_cutDistPullback` for the
-  point-mass, finitely atomic, and mixed cases; the examples also check their computed values.
+* The point-mass example evaluates `cutDistPullback` using `cutDist_dirac_dirac`.
+* The finitely atomic and mixed examples evaluate `cutDistPullback` as `1/8` using
+  `cutDist_finiteGraphGraphonOnFin_top_two_const_half`.
 
 ## References
 
@@ -59,48 +60,28 @@ namespace TauCeti
 
 namespace DenseGraphLimits
 
-/-- **The coupling and map forms agree for two point-mass graphons.** This named regression checks
-the Layer 5 equivalence in the case where neither carrier admits a measure-preserving bijection
-with `(I, volume)`. -/
-theorem cutDistPullback_dirac_regression (U : Graphon ℝ (Measure.dirac 0))
-    (W : Graphon ℝ (Measure.dirac 1)) :
-    cutDist U W = cutDistPullback U W :=
-  cutDist_eq_cutDistPullback U W
+-- Regression: both carriers are point masses, so the only coupling is a point mass. The map form
+-- is still the distance of the two values, although no bijection relates either carrier to
+-- `(I, volume)`.
+example (U : Graphon ℝ (Measure.dirac 0)) (W : Graphon ℝ (Measure.dirac 1)) :
+    cutDistPullback U W = |U 0 0 - W 1 1| := by
+  rw [← cutDist_eq_cutDistPullback, cutDist_dirac_dirac]
 
-example (U : Graphon ℝ (Measure.dirac 0))
-    (W : Graphon ℝ (Measure.dirac 1)) : cutDistPullback U W = |U 0 0 - W 1 1| := by
-  rw [← cutDistPullback_dirac_regression, cutDist_dirac_dirac]
-
-/-- **The coupling and map forms agree between a uniform two-point graphon and a Bernoulli
-carrier, and the common distance is `1/8`.** This tests finite atomic couplings, including the
-point-mass endpoint parameters. -/
-theorem cutDistPullback_finite_atomic_regression {p : I} :
-    cutDist (finiteGraphGraphonOnFin (⊤ : SimpleGraph (Fin 2)))
-      (Graphon.const (bernoulliMeasure (0 : ℝ) 1 p) ⟨2⁻¹, by norm_num, by norm_num⟩) =
-    cutDistPullback (finiteGraphGraphonOnFin (⊤ : SimpleGraph (Fin 2)))
-      (Graphon.const (bernoulliMeasure (0 : ℝ) 1 p) ⟨2⁻¹, by norm_num, by norm_num⟩) :=
-  cutDist_eq_cutDistPullback _ _
-
+-- Regression: the uniform two-point carrier against a Bernoulli law, carried by at most two atoms
+-- — an endpoint parameter collapses it to a point mass — so every coupling is finitely atomic, and
+-- for an interior parameter there are infinitely many of them.
 example {p : I} :
     cutDistPullback (finiteGraphGraphonOnFin (⊤ : SimpleGraph (Fin 2)))
-      (Graphon.const (bernoulliMeasure (0 : ℝ) 1 p) ⟨2⁻¹, by norm_num, by norm_num⟩) = 1 / 8 := by
-  rw [← cutDistPullback_finite_atomic_regression,
-    cutDist_finiteGraphGraphonOnFin_top_two_const_half]
+      (Graphon.const (bernoulliMeasure (0 : ℝ) 1 p) ⟨2⁻¹, by norm_num, by norm_num⟩) =
+      1 / 8 := by
+  rw [← cutDist_eq_cutDistPullback, cutDist_finiteGraphGraphonOnFin_top_two_const_half]
 
-/-- **The coupling and map forms agree between an atomic graphon and the unit interval, and the
-common distance is `1/8`.** This tests couplings with an atomic and a continuous coordinate. -/
-theorem cutDistPullback_mixed_regression :
-    cutDist (finiteGraphGraphonOnFin (⊤ : SimpleGraph (Fin 2)))
-      (Graphon.const (volume : Measure I) ⟨2⁻¹, by norm_num, by norm_num⟩) =
-    cutDistPullback (finiteGraphGraphonOnFin (⊤ : SimpleGraph (Fin 2)))
-      (Graphon.const (volume : Measure I) ⟨2⁻¹, by norm_num, by norm_num⟩) :=
-  cutDist_eq_cutDistPullback _ _
-
+-- Regression: the uniform two-point carrier against `(I, volume)`, so a coupling has an atomic and
+-- a continuous direction at once.
 example :
     cutDistPullback (finiteGraphGraphonOnFin (⊤ : SimpleGraph (Fin 2)))
       (Graphon.const (volume : Measure I) ⟨2⁻¹, by norm_num, by norm_num⟩) = 1 / 8 := by
-  rw [← cutDistPullback_mixed_regression,
-    cutDist_finiteGraphGraphonOnFin_top_two_const_half]
+  rw [← cutDist_eq_cutDistPullback, cutDist_finiteGraphGraphonOnFin_top_two_const_half]
 
 end DenseGraphLimits
 
