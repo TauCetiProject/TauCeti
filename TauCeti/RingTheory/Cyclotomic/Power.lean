@@ -64,8 +64,8 @@ theorem powRingHom_zeta (hn : e.Coprime n) : powRingHom hn (zeta e) = zeta e ^ n
   exact evalRingHom_zeta _ _ _
 
 /-- A ring homomorphism intertwines power substitution with evaluation at the powered image
-of the distinguished generator. -/
-theorem map_powRingHom {R : Type*} [CommRing R] (hn : e.Coprime n)
+of the distinguished generator. The target ring need not be commutative. -/
+theorem map_powRingHom {R : Type*} [Ring R] (hn : e.Coprime n)
     (φ : Cyclotomic e →+* R) (x : Cyclotomic e) :
     φ (powRingHom hn x) = evalCoeffs (Int.castRingHom R) (φ (zeta e) ^ n) x := by
   rw [powRingHom_apply, RingHom.map_evalCoeffs]
