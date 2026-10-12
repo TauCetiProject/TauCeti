@@ -81,6 +81,100 @@ theorem projectiveStableProdFunctorCommShift_iso (n : ℤ) :
         (shiftFunctor (E.ProjectiveStableCategory × E'.ProjectiveStableCategory) n) :=
   (rfl)
 
+/-- The first component of the stable product shift comparison is the
+corresponding descended projection comparison, transported along the projection equalities. -/
+@[simp]
+theorem projectiveStableProdFunctor_commShiftIso_hom_app_fst (n : ℤ)
+    (X : (E.prod E').ProjectiveStableCategory) :
+    letI := (hE.prod hE').stableHasShift
+    letI := hE.stableHasShift
+    letI := hE'.stableHasShift
+    letI := (stableConflationExact_fst_prod E E').stableFunctorCommShift (hE.prod hE') hE
+    letI := (stableConflationExact_snd_prod E E').stableFunctorCommShift (hE.prod hE') hE'
+    letI := projectiveStableProdFunctorCommShift hE hE'
+    (((projectiveStableProdFunctor E E').commShiftIso n).hom.app X).1 =
+      eqToHom (congrArg
+        (fun F => F.obj ((shiftFunctor (E.prod E').ProjectiveStableCategory n).obj X))
+        (projectiveStableProdFunctor_comp_fst E E' hE hE')) ≫
+      (((stableConflationExact_fst_prod E E').stableFunctor (hE.prod hE')).commShiftIso
+        n).hom.app X ≫
+      (shiftFunctor E.ProjectiveStableCategory n).map
+        (eqToHom (congrArg (fun F => F.obj X)
+          (projectiveStableProdFunctor_comp_fst E E' hE hE').symm)) := by
+  dsimp
+  rw [projectiveStableProdFunctorCommShift_iso hE hE' n]
+  simp
+
+/-- The second component of the stable product shift comparison is the
+corresponding descended projection comparison, transported along the projection equalities. -/
+@[simp]
+theorem projectiveStableProdFunctor_commShiftIso_hom_app_snd (n : ℤ)
+    (X : (E.prod E').ProjectiveStableCategory) :
+    letI := (hE.prod hE').stableHasShift
+    letI := hE.stableHasShift
+    letI := hE'.stableHasShift
+    letI := (stableConflationExact_fst_prod E E').stableFunctorCommShift (hE.prod hE') hE
+    letI := (stableConflationExact_snd_prod E E').stableFunctorCommShift (hE.prod hE') hE'
+    letI := projectiveStableProdFunctorCommShift hE hE'
+    (((projectiveStableProdFunctor E E').commShiftIso n).hom.app X).2 =
+      eqToHom (congrArg
+        (fun F => F.obj ((shiftFunctor (E.prod E').ProjectiveStableCategory n).obj X))
+        (projectiveStableProdFunctor_comp_snd E E' hE hE')) ≫
+      (((stableConflationExact_snd_prod E E').stableFunctor (hE.prod hE')).commShiftIso
+        n).hom.app X ≫
+      (shiftFunctor E'.ProjectiveStableCategory n).map
+        (eqToHom (congrArg (fun F => F.obj X)
+          (projectiveStableProdFunctor_comp_snd E E' hE hE').symm)) := by
+  dsimp
+  rw [projectiveStableProdFunctorCommShift_iso hE hE' n]
+  simp
+
+/-- The first component of the inverse stable product shift comparison is the
+corresponding descended projection comparison, transported along the projection equalities. -/
+@[simp]
+theorem projectiveStableProdFunctor_commShiftIso_inv_app_fst (n : ℤ)
+    (X : (E.prod E').ProjectiveStableCategory) :
+    letI := (hE.prod hE').stableHasShift
+    letI := hE.stableHasShift
+    letI := hE'.stableHasShift
+    letI := (stableConflationExact_fst_prod E E').stableFunctorCommShift (hE.prod hE') hE
+    letI := (stableConflationExact_snd_prod E E').stableFunctorCommShift (hE.prod hE') hE'
+    letI := projectiveStableProdFunctorCommShift hE hE'
+    (((projectiveStableProdFunctor E E').commShiftIso n).inv.app X).1 =
+      (shiftFunctor E.ProjectiveStableCategory n).map
+        (eqToHom (congrArg (fun F => F.obj X) (projectiveStableProdFunctor_comp_fst E E' hE hE'))) ≫
+      (((stableConflationExact_fst_prod E E').stableFunctor (hE.prod hE')).commShiftIso
+        n).inv.app X ≫
+      eqToHom (congrArg
+        (fun F => F.obj ((shiftFunctor (E.prod E').ProjectiveStableCategory n).obj X))
+        (projectiveStableProdFunctor_comp_fst E E' hE hE').symm) := by
+  dsimp
+  rw [projectiveStableProdFunctorCommShift_iso hE hE' n]
+  simp
+
+/-- The second component of the inverse stable product shift comparison is the
+corresponding descended projection comparison, transported along the projection equalities. -/
+@[simp]
+theorem projectiveStableProdFunctor_commShiftIso_inv_app_snd (n : ℤ)
+    (X : (E.prod E').ProjectiveStableCategory) :
+    letI := (hE.prod hE').stableHasShift
+    letI := hE.stableHasShift
+    letI := hE'.stableHasShift
+    letI := (stableConflationExact_fst_prod E E').stableFunctorCommShift (hE.prod hE') hE
+    letI := (stableConflationExact_snd_prod E E').stableFunctorCommShift (hE.prod hE') hE'
+    letI := projectiveStableProdFunctorCommShift hE hE'
+    (((projectiveStableProdFunctor E E').commShiftIso n).inv.app X).2 =
+      (shiftFunctor E'.ProjectiveStableCategory n).map
+        (eqToHom (congrArg (fun F => F.obj X) (projectiveStableProdFunctor_comp_snd E E' hE hE'))) ≫
+      (((stableConflationExact_snd_prod E E').stableFunctor (hE.prod hE')).commShiftIso
+        n).inv.app X ≫
+      eqToHom (congrArg
+        (fun F => F.obj ((shiftFunctor (E.prod E').ProjectiveStableCategory n).obj X))
+        (projectiveStableProdFunctor_comp_snd E E' hE hE').symm) := by
+  dsimp
+  rw [projectiveStableProdFunctorCommShift_iso hE hE' n]
+  simp
+
 /-- The stable product equivalence preserves distinguished triangles for Happel's source
 triangulation and the componentwise target triangulation. -/
 theorem projectiveStableProdFunctorIsTriangulated :
@@ -163,10 +257,6 @@ theorem mem_distTriang_projectiveStableProd_iff :
     (projectiveStableProdFunctorIsoProd' E E' hE hE').symm ℤ
   let F := (stableConflationExact_fst_prod E E').stableFunctor (hE.prod hE')
   let G := (stableConflationExact_snd_prod E E').stableFunctor (hE.prod hE')
-  have : NatTrans.CommShift (Functor.prod'CompFst F G).hom ℤ :=
-    ⟨fun n => by ext X; simp [Functor.commShiftIso_comp_hom_app]⟩
-  have : NatTrans.CommShift (Functor.prod'CompSnd F G).hom ℤ :=
-    ⟨fun n => by ext X; simp [Functor.commShiftIso_comp_hom_app]⟩
   intro T
   rw [← (projectiveStableProdFunctor E E').map_distinguished_iff T]
   exact (distinguished_iff_of_iso
@@ -196,6 +286,23 @@ noncomputable def projectiveStableProdEquivalenceFunctorCommShift :
   letI := projectiveStableProdFunctorCommShift hE hE'
   exact Functor.CommShift.ofIso
     (eqToIso (projectiveStableProdEquivalence_functor E E')).symm ℤ
+
+/-- The forward equivalence uses the stable product functor's shift comparison, transported
+along the equality identifying the forward functor with the product comparison. -/
+@[simp]
+theorem projectiveStableProdEquivalenceFunctor_commShiftIso (n : ℤ) :
+    letI := (hE.prod hE').stableHasShift
+    letI := hE.stableHasShift
+    letI := hE'.stableHasShift
+    letI := projectiveStableProdFunctorCommShift hE hE'
+    letI := projectiveStableProdEquivalenceFunctorCommShift hE hE'
+    (projectiveStableProdEquivalence E E').functor.commShiftIso n =
+      Functor.isoWhiskerLeft (shiftFunctor (E.prod E').ProjectiveStableCategory n)
+        (eqToIso (projectiveStableProdEquivalence_functor E E')) ≪≫
+      (projectiveStableProdFunctor E E').commShiftIso n ≪≫
+      Functor.isoWhiskerRight (eqToIso (projectiveStableProdEquivalence_functor E E')).symm
+        (shiftFunctor (E.ProjectiveStableCategory × E'.ProjectiveStableCategory) n) :=
+  (rfl)
 
 /-- The inverse stable product equivalence commutes with integral shifts via the canonical
 mate of its forward comparison. -/

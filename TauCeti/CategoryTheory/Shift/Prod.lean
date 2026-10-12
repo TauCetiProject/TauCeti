@@ -276,6 +276,16 @@ lemma commShiftIso_prod'_inv_app_snd (a : A) (X : B) :
     (((F.prod' G).commShiftIso a).inv.app X).2 = (G.commShiftIso a).inv.app X :=
   (rfl)
 
+/-- Projecting a pairing onto its first functor respects the shift comparisons. -/
+instance instCommShiftProd'CompFstHom :
+    NatTrans.CommShift (Functor.prod'CompFst F G).hom A :=
+  ⟨fun a => by ext X; simp [Functor.commShiftIso_comp_hom_app]⟩
+
+/-- Projecting a pairing onto its second functor respects the shift comparisons. -/
+instance instCommShiftProd'CompSndHom :
+    NatTrans.CommShift (Functor.prod'CompSnd F G).hom A :=
+  ⟨fun a => by ext X; simp [Functor.commShiftIso_comp_hom_app]⟩
+
 end Pairing
 
 section ZeroSection

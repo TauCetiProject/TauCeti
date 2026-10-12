@@ -207,11 +207,51 @@ noncomputable def projectiveStableProdFunctorIsoProd' (hE : E.IsFrobenius)
     (hE' : E'.IsFrobenius) :
     projectiveStableProdFunctor E E' ≅
       ((stableConflationExact_fst_prod E E').stableFunctor (hE.prod hE')).prod'
-        ((stableConflationExact_snd_prod E E').stableFunctor (hE.prod hE')) := by
-  rw [← projectiveStableProdFunctor_comp_fst E E' hE hE',
-    ← projectiveStableProdFunctor_comp_snd E E' hE hE']
-  exact NatIso.ofComponents
-    (fun X => (CategoryTheory.prod.etaIso ((projectiveStableProdFunctor E E').obj X)).symm)
-    (by intro X Y f; ext <;> simp)
+        ((stableConflationExact_snd_prod E E').stableFunctor (hE.prod hE')) :=
+  NatIso.ofComponents
+    (fun X => (CategoryTheory.prod.etaIso ((projectiveStableProdFunctor E E').obj X)).symm ≪≫
+      Iso.prod ((eqToIso (projectiveStableProdFunctor_comp_fst E E' hE hE')).app X)
+        ((eqToIso (projectiveStableProdFunctor_comp_snd E E' hE hE')).app X))
+    (by
+      intro X Y f
+      apply Prod.hom_ext
+      · simpa using (eqToIso (projectiveStableProdFunctor_comp_fst E E' hE hE')).hom.naturality f
+      · simpa using (eqToIso (projectiveStableProdFunctor_comp_snd E E' hE hE')).hom.naturality f)
+
+/-- The first component of the pairing identification is the equality identification. -/
+@[simp]
+theorem projectiveStableProdFunctorIsoProd'_hom_app_fst (hE : E.IsFrobenius)
+    (hE' : E'.IsFrobenius) (X : (E.prod E').ProjectiveStableCategory) :
+    ((projectiveStableProdFunctorIsoProd' E E' hE hE').hom.app X).1 =
+      eqToHom (congrArg (fun F => F.obj X)
+        (projectiveStableProdFunctor_comp_fst E E' hE hE')) := by
+  simp [projectiveStableProdFunctorIsoProd']
+
+/-- The second component of the pairing identification is the equality identification. -/
+@[simp]
+theorem projectiveStableProdFunctorIsoProd'_hom_app_snd (hE : E.IsFrobenius)
+    (hE' : E'.IsFrobenius) (X : (E.prod E').ProjectiveStableCategory) :
+    ((projectiveStableProdFunctorIsoProd' E E' hE hE').hom.app X).2 =
+      eqToHom (congrArg (fun F => F.obj X)
+        (projectiveStableProdFunctor_comp_snd E E' hE hE')) := by
+  simp [projectiveStableProdFunctorIsoProd']
+
+/-- The first component of the inverse pairing identification is the equality identification. -/
+@[simp]
+theorem projectiveStableProdFunctorIsoProd'_inv_app_fst (hE : E.IsFrobenius)
+    (hE' : E'.IsFrobenius) (X : (E.prod E').ProjectiveStableCategory) :
+    ((projectiveStableProdFunctorIsoProd' E E' hE hE').inv.app X).1 =
+      eqToHom (congrArg (fun F => F.obj X)
+        (projectiveStableProdFunctor_comp_fst E E' hE hE').symm) := by
+  simp [projectiveStableProdFunctorIsoProd']
+
+/-- The second component of the inverse pairing identification is the equality identification. -/
+@[simp]
+theorem projectiveStableProdFunctorIsoProd'_inv_app_snd (hE : E.IsFrobenius)
+    (hE' : E'.IsFrobenius) (X : (E.prod E').ProjectiveStableCategory) :
+    ((projectiveStableProdFunctorIsoProd' E E' hE hE').inv.app X).2 =
+      eqToHom (congrArg (fun F => F.obj X)
+        (projectiveStableProdFunctor_comp_snd E E' hE hE').symm) := by
+  simp [projectiveStableProdFunctorIsoProd']
 
 end TauCeti.ExactStructure
