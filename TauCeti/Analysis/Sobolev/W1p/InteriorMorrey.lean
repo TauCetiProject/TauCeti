@@ -6,6 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Sobolev.W1p.DirichletGrowth
+public import TauCeti.Analysis.Sobolev.W1p.Morrey
+import TauCeti.Analysis.Sobolev.W1p.PreciseRepresentative
+import TauCeti.Data.ENNReal.Inv
 import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 import TauCeti.Topology.MetricSpace.Holder
 
@@ -48,6 +51,9 @@ with `ω = μ(B(0, 1))`, which is exactly the growth condition of that theorem.
   continuous on every compact subset of `Ω`.
 * `TauCeti.W1p.exists_lipschitzOnWith_preciseRepresentative_of_isCompact`: a function of
   `W^{1,∞}(Ω)` is Lipschitz on every compact subset of `Ω`.
+* `TauCeti.W1p.preciseRepresentative_eq_morreyRepresentative`: on the whole space, for finite
+  `p > n`, the precise representative is the canonical representative
+  `TauCeti.W1p.morreyRepresentative` of the whole-space embedding.
 
 ## References
 
@@ -65,19 +71,6 @@ open Metric Set MeasureTheory Module TopologicalSpace TauCeti.MeasureTheory
 open scoped ENNReal NNReal Topology
 
 namespace TauCeti
-
-/-- The Morrey exponent `1 - n / p`, read in `ℝ`. For `p = ∞` it is `1`. -/
-private theorem coe_toNNReal_one_sub_div {n : ℕ} {p : ℝ≥0∞} (hp : (n : ℝ≥0∞) < p) :
-    (((1 : ℝ≥0∞) - n / p).toNNReal : ℝ) = 1 - n / p.toReal := by
-  have hle : (n : ℝ≥0∞) / p ≤ 1 := ENNReal.div_le_of_le_mul (by simpa using hp.le)
-  rw [ENNReal.coe_toNNReal_eq_toReal, ENNReal.toReal_sub_of_le hle ENNReal.one_ne_top,
-    ENNReal.toReal_div, ENNReal.toReal_natCast, ENNReal.toReal_one]
-
-/-- The Morrey exponent `1 - n / p` is positive when `n < p`. -/
-private theorem toNNReal_one_sub_div_pos {n : ℕ} {p : ℝ≥0∞} (hp : (n : ℝ≥0∞) < p) :
-    0 < ((1 : ℝ≥0∞) - n / p).toNNReal := by
-  refine ENNReal.toNNReal_pos (tsub_pos_of_lt ?_).ne' (ENNReal.sub_ne_top ENNReal.one_ne_top)
-  exact ENNReal.div_lt_of_lt_mul (by simpa using hp)
 
 variable {E : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [InnerProductSpace ℝ E]
   [FiniteDimensional ℝ E] [BorelSpace E] {mu : Measure E} [mu.IsAddHaarMeasure]
@@ -156,9 +149,9 @@ theorem W1p.exists_dist_preciseRepresentative_le (hp : (finrank ℝ E : ℝ≥0�
   set α : ℝ≥0 := ((1 : ℝ≥0∞) - n / p).toNNReal
   set q : ℝ := 1 - 1 / p.toReal
   set ω := mu.real (ball (0 : E) 1)
-  have hα : 0 < α := toNNReal_one_sub_div_pos hp
+  have hα : 0 < α := ENNReal.toNNReal_one_sub_div_pos hp
   have hexp : (n : ℝ) * q = n - 1 + α := by
-    rw [coe_toNNReal_one_sub_div hp]
+    rw [ENNReal.coe_toNNReal_eq_toReal, ENNReal.toReal_one_sub_div hp.le, ENNReal.toReal_natCast]
     ring
   have hω : 0 < ω :=
     ENNReal.toReal_pos (measure_ball_pos mu 0 one_pos).ne' measure_ball_lt_top.ne
@@ -235,7 +228,7 @@ theorem W1p.continuousOn_preciseRepresentative (hp : (finrank ℝ E : ℝ≥0∞
     (by
       rw [cthickening_closedBall (by positivity) hε5.le]
       exact (closedBall_subset_closedBall (by linarith)).trans hsub)
-  exact ((hK.continuousOn (toNNReal_one_sub_div_pos hp)).continuousAt
+  exact ((hK.continuousOn (ENNReal.toNNReal_one_sub_div_pos hp)).continuousAt
     (closedBall_mem_nhds x hε5)).continuousWithinAt
 
 /-- **Morrey's embedding on compact subsets.** If `n < p ≤ ∞`, where `n` is the dimension, the
@@ -287,5 +280,20 @@ theorem W1p.exists_lipschitzOnWith_preciseRepresentative_of_isCompact {Omega : O
     (ENNReal.natCast_lt_top _) u hK hKΩ
   simp only [ENNReal.div_top, tsub_zero, ENNReal.toNNReal_one] at hC
   exact ⟨C, holderOnWith_one.1 hC⟩
+
+/-- On the whole space, for finite `p` above the dimension, the precise representative of
+`u ∈ W^{1,p}(ℝⁿ)` is the canonical Morrey representative `TauCeti.W1p.morreyRepresentative`: both
+are continuous and agree with `u` almost everywhere. -/
+theorem W1p.preciseRepresentative_eq_morreyRepresentative {p : ℝ≥0} [Fact (1 ≤ (p : ℝ≥0∞))]
+    (u : W1p mu ⊤ (p : ℝ≥0∞)) (hp : (finrank ℝ E : ℝ≥0) < p) :
+    preciseRepresentative mu (W1p.value u) = W1p.morreyRepresentative u hp := by
+  have hcont : Continuous (preciseRepresentative mu (W1p.value u)) := by
+    rw [← continuousOn_univ]
+    simpa using W1p.continuousOn_preciseRepresentative (by exact_mod_cast hp) u
+  refine (hcont.ae_eq_iff_eq mu (W1p.continuous_morreyRepresentative u hp)).1 ?_
+  have hae : W1p.value u =ᵐ[mu.restrict univ] preciseRepresentative mu (W1p.value u) :=
+    W1p.ae_eq_preciseRepresentative u
+  rw [Measure.restrict_univ] at hae
+  exact hae.symm.trans (W1p.value_ae_eq_morreyRepresentative u hp)
 
 end TauCeti
