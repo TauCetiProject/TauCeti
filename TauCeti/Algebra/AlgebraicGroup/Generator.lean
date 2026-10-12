@@ -16,7 +16,7 @@ public import Mathlib.RingTheory.Finiteness.ModuleFinitePresentation
 
 Let `H` be a commutative `R`-bialgebra, finite and free as an `R`-module, so that `G = Spec H` is
 a finite locally free monoid scheme over `Spec R`; its points with values in `R` form the
-convolution monoid `WithConv (H →ₐ[R] R)`. For a finite group `A`, a homomorphism
+convolution monoid `WithConv (H →ₐ[R] R)`. For a finite monoid `A`, a homomorphism
 `φ : A →* G(R)` is an *`A`-generator* of `G` (Katz–Mazur §1.10) when the `|A|` points `φ a` form a
 full set of sections of `G` over `R` (`TauCeti.IsFullSetOfSections`): after every base change, the
 norm of a function on `G` is the product of its values at the points `φ a`. This is how Katz and
@@ -26,13 +26,13 @@ set of sections of `μ_p`. The Drinfeld level structures on elliptic curves are 
 `[Γ(N)]`-structure on `E` is a `(ℤ/N)²`-generator of `E[N]`.
 
 The second half of the file constructs the scheme of `A`-generators of `G`. The scheme of
-homomorphisms `A_R → G` from the constant group `A_R = Spec (coordinateRing R A)` is
+homomorphisms `A_R → G` from the constant monoid `A_R = Spec (coordinateRing R A)` is
 `Spec (HomAlgebra R H (coordinateRing R A))`. On it the universal homomorphism provides a universal
 family of `|A|` points of `G`, and the locus where these points form a full set of sections is a
 closed subscheme of finite presentation, `Spec (HomAlgebra R H (coordinateRing R A) ⧸ I)` with
 `I = generatorIdeal R H A`. Its points with values in `T` are the homomorphisms `A_T → G_T` of
 monoid schemes over `T` whose points `A →* G(T)` form an `A`-generator of `G_T`. By the universal
-property of the constant group (`TauCeti.ConstantGroup.pointsOfBialgHom_bijective`), a homomorphism
+property of the constant monoid (`TauCeti.ConstantGroup.pointsOfBialgHom_bijective`), a homomorphism
 `A_T → G_T` is the same as a homomorphism `A →* G(T)`, so the scheme of `A`-generators represents
 the functor `T ↦ {φ : A →* G(T) // IsAGenerator φ}`.
 
@@ -55,7 +55,7 @@ the functor `T ↦ {φ : A →* G(T) // IsAGenerator φ}`.
 * `TauCeti.IsAGenerator.prodMap`: an `A₁`-generator of `G₁` and an `A₂`-generator of `G₂` together
   give an `A₁ × A₂`-generator of the product `G₁ × G₂`.
 * `TauCeti.ConstantGroup.isAGenerator_toPoints`: the tautological homomorphism from `A` to the
-  points of the constant group `A_R` is an `A`-generator.
+  points of the constant monoid `A_R` is an `A`-generator.
 * `TauCeti.isAGenerator_pointsOfBialgHom_homEquiv_iff` and
   `TauCeti.quotientGeneratorIdealHomEquiv`: the universal property of the scheme of
   `A`-generators. `TauCeti.generatorIdeal_fg` and the accompanying instance show that it is of
@@ -143,9 +143,9 @@ end Product
 
 namespace ConstantGroup
 
-variable (R : Type u) [CommRing R] (A : Type*) [Group A] [Fintype A]
+variable (R : Type u) [CommRing R] (A : Type*) [Monoid A] [Fintype A]
 
-/-- The tautological homomorphism from a finite group `A` to the points of its constant group
+/-- The tautological homomorphism from a finite monoid `A` to the points of its constant monoid
 `A_R` is an `A`-generator: the evaluations at the elements of `A` form a full set of sections of
 `A_R = ⨆_{a ∈ A} Spec R`. -/
 theorem isAGenerator_toPoints : IsAGenerator (toPoints R A) := by
@@ -164,7 +164,7 @@ section Locus
 open ConstantGroup TauCeti.Bialgebra
 
 variable (R : Type u) (H : Type v) [CommRing R] [CommRing H] [Bialgebra R H]
-  [Module.Free R H] [Module.Finite R H] (A : Type*) [Group A] [Fintype A]
+  [Module.Free R H] [Module.Finite R H] (A : Type*) [Monoid A] [Fintype A]
 
 -- `HomAlgebra` asks for the target to be finitely presented as an algebra, which holds for a
 -- finite free `H`
