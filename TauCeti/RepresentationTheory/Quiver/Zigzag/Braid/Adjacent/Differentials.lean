@@ -47,7 +47,7 @@ private theorem evaluation_adjacentArrow {i j : V} (h : G.Adj j i) :
             spanSingletonGenerator (e j)) ⊗ₜ[k]
               spanSingletonGenerator (op (e j))))) =
       zigzagAlgebraBasis k G (.inr (.inl (⟨(j, i), h⟩ : G.Dart))) := by
-  rw [zigzagBraidEvaluationHom_factors]
+  rw [hom_zigzagBraidEvaluationHom, zigzagBraidEvaluation_factors]
   simp
 
 /-- Evaluating the middle vertex of the adjacent top tensor inserts the volume in the

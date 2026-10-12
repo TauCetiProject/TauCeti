@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Braid.Factors
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Braid.Tensor
-public import TauCeti.RepresentationTheory.Quiver.Zigzag.Braid.Normal
+public import TauCeti.RepresentationTheory.Quiver.Zigzag.Braid.TensorEvaluation
 public import Mathlib.LinearAlgebra.TensorProduct.Prod
 public import Mathlib.Algebra.Category.ModuleCat.Biproducts
 public import Mathlib.CategoryTheory.Preadditive.AdditiveFunctor
@@ -344,20 +344,6 @@ theorem zigzagBraidSelfTensorInr_hom_factors (i : V) (l : L i) (r : R i) :
   simpa only [zigzagBraidSelfTensorInr, GradedModuleCat.hom_ofHom,
     volumeInIdeal_eq] using selfTensorInsertTwo_factors k G i l r
 
-/-- Evaluation on the left and right vertex factors is multiplication. -/
-theorem zigzagBraidEvaluationHom_factors (i : V) (l : L i) (r : R i) :
-    (Bimodule.of (AlgHom.id k Z)).symm
-      ((zigzagBraidEvaluationHom k G i).hom
-        ((zigzagBraidBimoduleFactorsEquiv k G i).symm (l ⊗ₜ[k] r))) =
-      (l : Z) * unop (r : Zᵐᵒᵖ) := by
-  have heval :=
-    (LinearMap.congr_fun (hom_zigzagBraidEvaluationHom (k := k) (G := G) i)
-      ((zigzagBraidBimoduleFactorsEquiv k G i).symm (l ⊗ₜ[k] r))).trans
-        (zigzagBraidEvaluation_apply (k := k) (G := G) (i := i) _)
-  simpa only [coe_zigzagBraidBimoduleFactorsEquiv_symm_tmul, Bimodule.smul_of,
-    AlgHom.id_apply, mul_one, LinearEquiv.symm_apply_apply] using
-      congrArg (Bimodule.of (AlgHom.id k Z)).symm heval
-
 /-- The degree-zero self-tensor insertion followed by right evaluation is the identity. -/
 @[reassoc (attr := simp)]
 theorem zigzagBraidSelfTensorInl_evaluationRight (i : V) :
@@ -377,7 +363,8 @@ theorem zigzagBraidSelfTensorInl_evaluationRight (i : V) :
     simp only [GradedModuleCat.hom_comp, LinearMap.comp_apply,
       GradedModuleCat.hom_id, LinearMap.id_apply]
     rw [zigzagBraidSelfTensorInl_hom_factors k G i l r,
-      zigzagBraidTensorEvaluationRight_tmul, zigzagBraidEvaluationHom_factors]
+      zigzagBraidTensorEvaluationRight_tmul, hom_zigzagBraidEvaluationHom,
+      zigzagBraidEvaluation_factors]
     simp only [coe_spanSingletonGenerator, hr, op_unop,
       zigzagBraidBimoduleFactorsEquiv_symm_tmul_smul, one_smul,
       smul_spanSingletonGenerator heop]
@@ -400,7 +387,8 @@ theorem zigzagBraidSelfTensorInl_evaluationLeft (i : V) :
     simp only [GradedModuleCat.hom_comp, LinearMap.comp_apply,
       GradedModuleCat.hom_id, LinearMap.id_apply]
     rw [zigzagBraidSelfTensorInl_hom_factors k G i l r,
-      zigzagBraidTensorEvaluationLeft_tmul, zigzagBraidEvaluationHom_factors]
+      zigzagBraidTensorEvaluationLeft_tmul, hom_zigzagBraidEvaluationHom,
+      zigzagBraidEvaluation_factors]
     simp only [coe_spanSingletonGenerator, unop_op, hl,
       zigzagBraidBimoduleFactorsEquiv_symm_tmul_smul, one_smul,
       smul_spanSingletonGenerator he]

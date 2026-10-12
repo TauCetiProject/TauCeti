@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Braid.Adjacent.Differentials
+public import TauCeti.RepresentationTheory.Quiver.Zigzag.Braid.Normal
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Braid.Triple.Differentials
 public import TauCeti.Algebra.Homology.Contraction.FourTerm
 
