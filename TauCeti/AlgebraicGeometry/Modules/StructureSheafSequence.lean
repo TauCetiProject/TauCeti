@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Homology.ShortComplex.ShortExact
 public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Cokernels
 public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Pushforward.Affine
 public import TauCeti.AlgebraicGeometry.Modules.TensorProduct
@@ -24,7 +25,8 @@ between a curve and its normalization. Quasi-compactness suffices for injectivit
 finiteness or Noetherian hypothesis is imposed on the affine cokernel result.
 
 The sequence is Mathlib's `ShortComplex.cokernelSequence`, and its first map is Mathlib's
-`SheafOfModules.unitToPushforwardObjUnit`. No additional quotient or exactness notion is used.
+`SheafOfModules.unitToPushforwardObjUnit`. Its short exactness follows from the generic
+`TauCeti.cokernelSequence_shortExact` applied to that monomorphism.
 
 ## References
 
@@ -54,16 +56,6 @@ instance _root_.AlgebraicGeometry.Scheme.Hom.mono_unitToPushforwardObjUnit
   intro U
   -- The component of the module-sheaf unit is the structure-presheaf map `f.app`.
   exact f.app_injective U.unop
-
-/-- The structure sheaf, its direct image, and their quotient form a short exact sequence
-for every quasi-compact scheme-theoretically dominant morphism. -/
-theorem _root_.AlgebraicGeometry.Scheme.Hom.shortExact_cokernelSequence_unitToPushforwardObjUnit
-    [QuasiCompact f] [IsSchemeTheoreticallyDominant f] :
-    (ShortComplex.cokernelSequence
-      (SheafOfModules.unitToPushforwardObjUnit f.toRingCatSheafHom)).ShortExact := by
-  -- Unfold the standard sequence to expose its object projections for typeclass inference.
-  dsimp only [ShortComplex.cokernelSequence]
-  exact { exact := ShortComplex.cokernelSequence_exact _ }
 
 /-- For an affine morphism the quotient of the direct image of the structure sheaf by the
 image of the base's structure sheaf is quasicoherent. Injectivity is not required. -/
