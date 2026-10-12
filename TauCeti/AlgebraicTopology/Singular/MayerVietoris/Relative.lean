@@ -46,6 +46,10 @@ small-chain theorem for the cover of `U ∪ V` by `U` and `V` identifies the rel
   `TopCat.relativeMayerVietoris_exact₃`: exactness at `Hₘ(X, U ∩ V)`, at
   `Hₙ(X, U) ⊞ Hₙ(X, V)` and at `Hₙ(X, U ∪ V)`.
 * `TopCat.epi_relativeMayerVietorisFromBiprod_zero`: surjectivity at the degree-zero endpoint.
+* `TopCat.relativeMayerVietorisToBiprod_naturality`,
+  `TopCat.relativeMayerVietorisFromBiprod_naturality`, `TopCat.relativeMayerVietorisδ_naturality`:
+  the maps of the sequence are natural in maps `f : X ⟶ Y` carrying `U` into `U'` and `V` into
+  `V'`.
 
 ## References
 
@@ -382,5 +386,128 @@ lemma epi_relativeMayerVietorisFromBiprod_zero : Epi (relativeMayerVietorisFromB
   have := SSetPair.epi_mayerVietorisFromBiprod_zero R (isPushout_left U V) (isPushout_right U V)
   rw [← mayerVietorisFromBiprod_comp_homologyMap_smallPairToUnion]
   exact epi_comp _ _
+
+/-! ### Naturality -/
+
+variable {Y : TopCat.{w}} {U' V' : Set Y} (hU' : IsOpen U') (hV' : IsOpen V') (f : X ⟶ Y)
+  (hfU : Set.MapsTo f U U') (hfV : Set.MapsTo f V V')
+
+/-- The maps of pairs induced by the identities of `X` and `Y` commute with those induced by
+`f`. -/
+private lemma ofSubsetMap_id_comp_ofSubsetMap {A B : Set X} {A' B' : Set Y}
+    (hAB : Set.MapsTo (𝟙 X) A B) (hA : Set.MapsTo f A A') (hB : Set.MapsTo f B B')
+    (hAB' : Set.MapsTo (𝟙 Y) A' B') :
+    TopPair.ofSubsetMap (𝟙 X) hAB ≫ TopPair.ofSubsetMap f hB =
+      TopPair.ofSubsetMap f hA ≫ TopPair.ofSubsetMap (𝟙 Y) hAB' :=
+  TopPair.hom_ext_of_fst _ (by
+    simp only [TopPair.Hom.fst_comp, TopPair.ofSubsetMap_fst]
+    exact (Category.id_comp f).trans (Category.comp_id f).symm)
+
+/-- The first map of the relative Mayer–Vietoris sequence is natural in maps `f : X ⟶ Y` carrying
+`U` into `U'` and `V` into `V'`. -/
+@[reassoc]
+lemma relativeMayerVietorisToBiprod_naturality (n : ℕ) :
+    relativeMayerVietorisToBiprod R U V n ≫
+        biprod.map (TopPair.singularHomologyMap (TopPair.ofSubsetMap f hfU) R n)
+          (TopPair.singularHomologyMap (TopPair.ofSubsetMap f hfV) R n) =
+      TopPair.singularHomologyMap (TopPair.ofSubsetMap f (hfU.inter_inter hfV)) R n ≫
+        relativeMayerVietorisToBiprod R U' V' n := by
+  ext <;> simp only [Category.assoc, biprod.map_fst, biprod.map_snd,
+      relativeMayerVietorisToBiprod_fst, relativeMayerVietorisToBiprod_fst_assoc,
+      relativeMayerVietorisToBiprod_snd, relativeMayerVietorisToBiprod_snd_assoc,
+      Preadditive.neg_comp, Preadditive.comp_neg, neg_inj,
+      ← TopPair.singularHomologyMap_comp] <;>
+    exact congrArg (TopPair.singularHomologyMap · R n) (ofSubsetMap_id_comp_ofSubsetMap f _ _ _ _)
+
+/-- The second map of the relative Mayer–Vietoris sequence is natural in maps `f : X ⟶ Y`
+carrying `U` into `U'` and `V` into `V'`. -/
+@[reassoc]
+lemma relativeMayerVietorisFromBiprod_naturality (n : ℕ) :
+    relativeMayerVietorisFromBiprod R U V n ≫
+        TopPair.singularHomologyMap (TopPair.ofSubsetMap f (hfU.union_union hfV)) R n =
+      biprod.map (TopPair.singularHomologyMap (TopPair.ofSubsetMap f hfU) R n)
+          (TopPair.singularHomologyMap (TopPair.ofSubsetMap f hfV) R n) ≫
+        relativeMayerVietorisFromBiprod R U' V' n := by
+  ext <;> simp only [biprod.inl_map_assoc, biprod.inr_map_assoc,
+      inl_relativeMayerVietorisFromBiprod_assoc, inr_relativeMayerVietorisFromBiprod_assoc,
+      inl_relativeMayerVietorisFromBiprod, inr_relativeMayerVietorisFromBiprod,
+      ← TopPair.singularHomologyMap_comp] <;>
+    exact congrArg (TopPair.singularHomologyMap · R n) (ofSubsetMap_id_comp_ofSubsetMap f _ _ _ _)
+
+/-- On singular simplicial sets of subspaces, the map of pairs induced by `f` is the map induced by
+the restriction of `f`. -/
+private lemma toSSetPair_map_ofSubsetMap_left_restrict {A : Set X} {A' : Set Y}
+    (hA : Set.MapsTo f A A') :
+    (TopPair.toSSetPair.map (TopPair.ofSubsetMap f hA)).left =
+      toSSet.map (ofHom ⟨hA.restrict, f.hom.continuous.restrict hA⟩) := by
+  rw [TopPair.toSSetPair_map_left]
+  congr 1
+  ext x
+  exact Subtype.ext (TopPair.ofSubsetMap_snd_apply _ _ x)
+
+include hfU hfV in
+private lemma mapsTo_vecCons : ∀ i, Set.MapsTo f (![U, V] i) (![U', V'] (id i)) := by
+  simp [Fin.forall_fin_two, hfU, hfV]
+
+/-- The map of singular pairs `(X, smallSubcomplex U V) ⟶ (Y, smallSubcomplex U' V')` induced
+by `f`. -/
+private abbrev smallPairMap : (smallSubcomplex U V).pair ⟶ (smallSubcomplex U' V').pair :=
+  SSetPair.homMk (X.smallSingularSubcomplexMap ![U, V] ![U', V'] f id (mapsTo_vecCons f hfU hfV))
+    (toSSet.map f) (smallSingularSubcomplexMap_ι _ _ _ _ _)
+
+private lemma toSmallPair_comp_smallPairMap {A : Set X} {A' : Set Y} {i : Fin 2}
+    (h : A ⊆ ![U, V] i) (h' : A' ⊆ ![U', V'] i) (hA : Set.MapsTo f A A') :
+    toSmallPair U V h ≫ smallPairMap f hfU hfV =
+      TopPair.toSSetPair.map (TopPair.ofSubsetMap f hA) ≫ toSmallPair U' V' h' := by
+  refine MorphismProperty.Arrow.Hom.ext ?_ ?_
+  · rw [MorphismProperty.Comma.comp_left, MorphismProperty.Comma.comp_left,
+      toSSetPair_map_ofSubsetMap_left_restrict]
+    exact toSmallSingularSubcomplex_comp_smallSingularSubcomplexMap _ _ f id _ h h' hA
+  · rw [MorphismProperty.Comma.comp_right, MorphismProperty.Comma.comp_right,
+      TopPair.toSSetPair_map_right, TopPair.ofSubsetMap_fst]
+    exact (Category.id_comp _).trans (Category.comp_id _).symm
+
+private lemma smallPairToUnion_comp_ofSubsetMap :
+    smallPairToUnion U V ≫ TopPair.toSSetPair.map (TopPair.ofSubsetMap f (hfU.union_union hfV)) =
+      smallPairMap f hfU hfV ≫ smallPairToUnion U' V' := by
+  refine MorphismProperty.Arrow.Hom.ext ?_ ?_
+  · rw [MorphismProperty.Comma.comp_left, MorphismProperty.Comma.comp_left,
+      toSSetPair_map_ofSubsetMap_left_restrict]
+    change smallSubcomplexToUnion U V ≫ _ =
+      X.smallSingularSubcomplexMap ![U, V] ![U', V'] f id _ ≫ smallSubcomplexToUnion U' V'
+    rw [← cancel_mono (unionι U' V'), Category.assoc, Category.assoc, smallSubcomplexToUnion_comp,
+      ← Functor.map_comp, ← ofHom_subtypeVal_comp, Functor.map_comp,
+      smallSubcomplexToUnion_comp_assoc, smallSingularSubcomplexMap_ι]
+  · rw [MorphismProperty.Comma.comp_right, MorphismProperty.Comma.comp_right,
+      TopPair.toSSetPair_map_right, TopPair.ofSubsetMap_fst]
+    exact (Category.id_comp _).trans (Category.comp_id _).symm
+
+/-- **Naturality of the relative Mayer–Vietoris connecting morphism.** A map `f : X ⟶ Y` carrying
+`U` into `U'` and `V` into `V'` commutes with the connecting morphisms. -/
+@[reassoc]
+lemma relativeMayerVietorisδ_naturality (n m : ℕ) (h : m + 1 = n := by lia) :
+    relativeMayerVietorisδ R hU hV n m h ≫
+        TopPair.singularHomologyMap (TopPair.ofSubsetMap f (hfU.inter_inter hfV)) R m =
+      TopPair.singularHomologyMap (TopPair.ofSubsetMap f (hfU.union_union hfV)) R n ≫
+        relativeMayerVietorisδ R hU' hV' n m h := by
+  have := isIso_homologyMap_smallPairToUnion R U V hU hV n
+  have := isIso_homologyMap_smallPairToUnion R U' V' hU' hV' n
+  have hnat := SSetPair.mayerVietorisδ_naturality R
+    (TopPair.toSSetPair.map (TopPair.ofSubsetMap f (hfU.inter_inter hfV)))
+    (TopPair.toSSetPair.map (TopPair.ofSubsetMap f hfU))
+    (TopPair.toSSetPair.map (TopPair.ofSubsetMap f hfV)) (smallPairMap f hfU hfV)
+    (isPushout_left U V) (isPushout_right U V) (isPushout_left U' V') (isPushout_right U' V')
+    ?_ ?_ ?_ ?_ n m h
+  · rw [relativeMayerVietorisδ, relativeMayerVietorisδ, Category.assoc, hnat, ← Category.assoc,
+      ← Category.assoc]
+    congr 1
+    rw [IsIso.inv_comp_eq, ← Category.assoc, IsIso.eq_comp_inv, ← SSetPair.homologyMap_comp,
+      ← SSetPair.homologyMap_comp, smallPairToUnion_comp_ofSubsetMap]
+  · simp only [← Functor.map_comp]
+    exact congrArg _ (ofSubsetMap_id_comp_ofSubsetMap f _ _ _ _)
+  · simp only [← Functor.map_comp]
+    exact congrArg _ (ofSubsetMap_id_comp_ofSubsetMap f _ _ _ _)
+  · exact toSmallPair_comp_smallPairMap f hfU hfV _ _ hfU
+  · exact toSmallPair_comp_smallPairMap f hfU hfV _ _ hfV
 
 end TopCat

@@ -51,6 +51,9 @@ open sets `U ∩ V`, `U`, `V` and of `U` or `V`, the small-chain theorem turns t
 * `SSetPair.mayerVietoris_exact₁`, `SSetPair.mayerVietoris_exact₂`,
   `SSetPair.mayerVietoris_exact₃`: exactness at `Hₘ(P₁)`, at `Hₙ(P₂) ⊞ Hₙ(P₃)` and at `Hₙ(P₄)`.
 * `SSetPair.epi_mayerVietorisFromBiprod_zero`: surjectivity at the degree-zero endpoint.
+* `SSetPair.mayerVietorisToBiprod_naturality`, `SSetPair.mayerVietorisFromBiprod_naturality`,
+  `SSetPair.mayerVietorisδ_naturality`: the maps of the sequence are natural in maps of squares
+  of pairs.
 
 ## References
 
@@ -128,8 +131,8 @@ theorem shortExact_mayerVietoris (sqL : IsPushout t.left l.left r.left b.left) [
     · simp [v, π]
   have : Mono v.τ₃ := inferInstanceAs (Mono (SSet.chainComplexMap P₄.hom R))
   have := (SSet.shortExact_mayerVietoris R sqL).epi_g
-  refine ShortComplex.ShortExact.of_isColimit_cokernelCofork
-    (SSet.shortExact_mayerVietoris R sqL).exact (SSet.shortExact_mayerVietoris R sqR) v π hw ?_
+  refine (SSet.shortExact_mayerVietoris R sqR).of_isColimit_cokernelCofork
+    (SSet.shortExact_mayerVietoris R sqL).exact v π hw ?_
   apply ShortComplex.isColimitOfIsColimitπ <;>
     apply (CokernelCofork.isColimitMapCoconeEquiv _ _).2
   · exact P₁.isColimitCokernelCoforkChainComplex R
@@ -177,6 +180,29 @@ lemma inr_mayerVietorisFromBiprod (n : ℕ) :
 lemma mayerVietorisToBiprod_fromBiprod (w : t ≫ r = l ≫ b) (n : ℕ) :
     mayerVietorisToBiprod R t l n ≫ mayerVietorisFromBiprod R r b n = 0 := by
   simp [mayerVietorisToBiprod, mayerVietorisFromBiprod, ← homologyMap_comp, w]
+
+variable {Q₁ Q₂ Q₃ Q₄ : SSetPair.{w}} {t' : Q₁ ⟶ Q₂} {l' : Q₁ ⟶ Q₃} {r' : Q₂ ⟶ Q₄}
+  {b' : Q₃ ⟶ Q₄} (φ₁ : P₁ ⟶ Q₁) (φ₂ : P₂ ⟶ Q₂) (φ₃ : P₃ ⟶ Q₃) (φ₄ : P₄ ⟶ Q₄)
+
+/-- The first map of the relative Mayer–Vietoris sequence is natural in maps of squares of
+pairs. -/
+@[reassoc]
+lemma mayerVietorisToBiprod_naturality (ht : t ≫ φ₂ = φ₁ ≫ t') (hl : l ≫ φ₃ = φ₁ ≫ l')
+    (n : ℕ) :
+    mayerVietorisToBiprod R t l n ≫
+        biprod.map (SSetPair.homologyMap φ₂ R n) (SSetPair.homologyMap φ₃ R n) =
+      SSetPair.homologyMap φ₁ R n ≫ mayerVietorisToBiprod R t' l' n := by
+  ext <;> simp [← homologyMap_comp, ht, hl]
+
+/-- The second map of the relative Mayer–Vietoris sequence is natural in maps of squares of
+pairs. -/
+@[reassoc]
+lemma mayerVietorisFromBiprod_naturality (hr : r ≫ φ₄ = φ₂ ≫ r') (hb : b ≫ φ₄ = φ₃ ≫ b')
+    (n : ℕ) :
+    mayerVietorisFromBiprod R r b n ≫ SSetPair.homologyMap φ₄ R n =
+      biprod.map (SSetPair.homologyMap φ₂ R n) (SSetPair.homologyMap φ₃ R n) ≫
+        mayerVietorisFromBiprod R r' b' n := by
+  ext <;> simp [← homologyMap_comp, hr, hb]
 
 private lemma mayerVietorisToBiprod_eq (n : ℕ) :
     mayerVietorisToBiprod R t l n =
@@ -237,5 +263,25 @@ lemma epi_mayerVietorisFromBiprod_zero : Epi (mayerVietorisFromBiprod R r b 0) :
       (biprod.desc (chainComplexMap r R) (chainComplexMap b R)) 0) :=
     HomologicalComplex.epi_homologyMap_of_epi_of_not_rel _ _ (by simp)
   exact HomologicalComplex.epi_biprod_desc_homologyMap 0
+
+/-- **Naturality of the relative Mayer–Vietoris connecting morphism** in maps of squares of
+pairs. -/
+@[reassoc]
+lemma mayerVietorisδ_naturality (sqL' : IsPushout t'.left l'.left r'.left b'.left) [Mono t'.left]
+    (sqR' : IsPushout t'.right l'.right r'.right b'.right) [Mono t'.right]
+    (ht : t ≫ φ₂ = φ₁ ≫ t') (hl : l ≫ φ₃ = φ₁ ≫ l') (hr : r ≫ φ₄ = φ₂ ≫ r')
+    (hb : b ≫ φ₄ = φ₃ ≫ b') (n m : ℕ) (h : m + 1 = n := by lia) :
+    mayerVietorisδ R sqL sqR n m h ≫ SSetPair.homologyMap φ₁ R m =
+      SSetPair.homologyMap φ₄ R n ≫ mayerVietorisδ R sqL' sqR' n m h := by
+  let ψ : ShortComplex.mk _ _ (mayerVietoris_chainComplex_zero R t l r b
+        (MorphismProperty.Arrow.Hom.ext sqL.w sqR.w)) ⟶
+      ShortComplex.mk _ _ (mayerVietoris_chainComplex_zero R t' l' r' b'
+        (MorphismProperty.Arrow.Hom.ext sqL'.w sqR'.w)) :=
+    { τ₁ := chainComplexMap φ₁ R
+      τ₂ := biprod.map (chainComplexMap φ₂ R) (chainComplexMap φ₃ R)
+      τ₃ := chainComplexMap φ₄ R
+      comm₁₂ := by apply biprod.hom_ext <;> simp [← Functor.map_comp, ht, hl]
+      comm₂₃ := by apply biprod.hom_ext' <;> simp [← Functor.map_comp, hr, hb] }
+  exact HomologicalComplex.HomologySequence.δ_naturality ψ _ _ n m (by simpa)
 
 end SSetPair

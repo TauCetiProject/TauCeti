@@ -132,8 +132,8 @@ from an exact sequence `L₁` whose second map is an epimorphism to a short exac
 suppose that the third component of `v` is a monomorphism. Then the cokernel `L₃` of `v`, computed
 componentwise, is short exact. This is the snake lemma in the case where the kernel of the third
 component, and hence the connecting morphism, vanishes. -/
-lemma ShortExact.of_isColimit_cokernelCofork {L₁ L₂ L₃ : ShortComplex C} (h₁ : L₁.Exact)
-    [Epi L₁.g] (h₂ : L₂.ShortExact) (v : L₁ ⟶ L₂) [Mono v.τ₃] (π : L₂ ⟶ L₃) (w : v ≫ π = 0)
+lemma ShortExact.of_isColimit_cokernelCofork {L₁ L₂ L₃ : ShortComplex C} (h₂ : L₂.ShortExact)
+    (h₁ : L₁.Exact) [Epi L₁.g] (v : L₁ ⟶ L₂) [Mono v.τ₃] (π : L₂ ⟶ L₃) (w : v ≫ π = 0)
     (hπ : IsColimit (CokernelCofork.ofπ π w)) : L₃.ShortExact := by
   have := h₂.epi_g
   let S : SnakeInput C :=
