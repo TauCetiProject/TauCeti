@@ -336,7 +336,6 @@ theorem map_bot (f : Comodule.Hom R C M N) : (⊥ : Subcomodule R C M).map f = �
   simp only [← mem_toSubmodule, map_toSubmodule, bot_toSubmodule, Submodule.map_bot]
 
 /-- The image of the top subcomodule is the range of the comodule morphism as a submodule. -/
-@[simp]
 theorem map_top_toSubmodule (f : Comodule.Hom R C M N) :
     ((⊤ : Subcomodule R C M).map f).toSubmodule = LinearMap.range f.toLinearMap := by
   rw [map_toSubmodule, top_toSubmodule, Submodule.map_top]
