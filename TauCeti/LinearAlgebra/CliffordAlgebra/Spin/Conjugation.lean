@@ -6,12 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Transvection
-import Mathlib.Algebra.Star.UnitaryStarAlgAut
 
 /-!
 # Conjugation of Spin root subgroups
 
-The isometry induced by a Spin element `g` acts on its Clifford algebra by conjugation by `g`.
+The functoriality comparisons in `TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Map` show that
+the isometry induced by a Spin element `g` acts on its Clifford algebra by conjugation by `g`.
 Consequently its induced Spin automorphism is the inner automorphism `MulAut.conj g`.
 Equality of the orthogonal projections alone would not identify these automorphisms, because
 the projection can have a nontrivial scalar kernel.
@@ -21,11 +21,8 @@ For the canonical Eichler lifts `L_{u,w} = 1 + ι w * ι u`, this gives
 `u^⊥ / K ∙ u`, and conjugation carries its image onto the root subgroup attached to `g u`.
 These comparisons let one manipulate the lifted root subgroups inside Spin itself.
 
-The Clifford and Spin automorphism comparisons work over commutative rings with `2` invertible,
-including degenerate forms. Only the canonical transvection lifts require a nondegenerate form
-over a field; finite dimensionality is not needed.
-
-The proofs use Mathlib's `Unitary.conjStarAlgAut` and the existing isometric transport of
+The canonical transvection lifts require a nondegenerate form over a field with `2` invertible;
+finite dimensionality is not needed. The proofs use the existing isometric transport of
 `spinTransvectionHom`.
 
 ## References
@@ -37,49 +34,6 @@ The proofs use Mathlib's `Unitary.conjStarAlgAut` and the existing isometric tra
 public section
 
 open TauCeti QuadraticMap
-
-namespace spinGroup
-
-variable {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M]
-  [Invertible (2 : R)] {Q : QuadraticForm R M}
-
-/-- The Clifford map induced by a Spin element's vector action is inner conjugation. -/
-@[simp]
-theorem map_vectorAction (g : spinGroup Q) (a : CliffordAlgebra Q) :
-    CliffordAlgebra.map
-        (TauCeti.QuadraticMap.orthogonalGroupEquivIsometryEquiv Q
-          (CliffordAlgebra.spinToOrthogonal Q g)).toIsometry a =
-      (g : CliffordAlgebra Q) * a * star (g : CliffordAlgebra Q) := by
-  let e := TauCeti.QuadraticMap.orthogonalGroupEquivIsometryEquiv Q
-    (CliffordAlgebra.spinToOrthogonal Q g)
-  let t : unitary (CliffordAlgebra Q) := ⟨g, pinGroup.mem_unitary g.2.1⟩
-  have h : CliffordAlgebra.map e.toIsometry =
-      (Unitary.conjStarAlgAut R (CliffordAlgebra Q) t).toAlgEquiv.toAlgHom := by
-    apply CliffordAlgebra.hom_ext
-    ext m
-    simp only [LinearMap.comp_apply, AlgHom.toLinearMap_apply,
-      CliffordAlgebra.map_apply_ι, AlgEquiv.coe_toAlgHom,
-      StarAlgEquiv.coe_toAlgEquiv, Unitary.conjStarAlgAut_apply]
-    simpa only [e, t, IsometryEquiv.toIsometry_apply,
-      TauCeti.QuadraticMap.coe_orthogonalGroupEquivIsometryEquiv,
-      CliffordAlgebra.coe_spinToOrthogonal_apply] using
-      CliffordAlgebra.ι_spinVectorAction_apply Q g m
-  rw [h]
-  exact Unitary.conjStarAlgAut_apply (S := R) t a
-
-/-- The Spin automorphism induced by the vector action of `g` is conjugation by `g`. -/
-@[simp]
-theorem spinGroupEquiv_vectorAction (g : spinGroup Q) :
-    (TauCeti.QuadraticMap.orthogonalGroupEquivIsometryEquiv Q
-      (CliffordAlgebra.spinToOrthogonal Q g)).spinGroupEquiv = MulAut.conj g := by
-  apply MulEquiv.ext
-  intro x
-  apply Subtype.ext
-  rw [IsometryEquiv.spinGroupEquiv_apply, Isometry.coe_spinGroupMap_apply,
-    map_vectorAction]
-  simp [MulAut.conj_apply, ← spinGroup.star_eq_inv]
-
-end spinGroup
 
 namespace CliffordAlgebra
 
