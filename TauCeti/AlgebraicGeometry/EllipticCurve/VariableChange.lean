@@ -274,8 +274,7 @@ end BaseChange
 
 /-- **A change of variables descends exactly when its coefficients do.** A change of variables
 over a nontrivial `K`-algebra `L` is the base change of one over the field `K` if and only if its
-four coefficients `u, r, s, t` lie in the image of `K`. The unit `u` takes care of itself: a
-preimage of a unit is nonzero, hence a unit of the field `K`. -/
+four coefficients `u, r, s, t` lie in the image of `K`. -/
 lemma VariableChange.mem_range_baseChange_iff {K L : Type*} [Field K] [CommRing L] [Nontrivial L]
     [Algebra K L] (C : VariableChange L) :
     C ∈ Set.range (fun D : VariableChange K ↦ D.baseChange L) ↔

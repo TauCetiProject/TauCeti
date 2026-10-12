@@ -8,6 +8,7 @@ module
 public import Mathlib.AlgebraicGeometry.EllipticCurve.IsomOfJ
 public import Mathlib.FieldTheory.Galois.Infinite
 public import TauCeti.AlgebraicGeometry.EllipticCurve.QuadraticTwist.Basic
+public import TauCeti.FieldTheory.Galois.FixedField
 
 /-!
 # The twists of an elliptic curve with `j ∉ {0, 1728}` are its quadratic twists
@@ -40,15 +41,13 @@ this is the classification of twists by `K^×/(K^×)²` of Silverman, X.5.4.
 
 ## Implementation notes
 
-The first result is proved by Galois descent. Let `ρ` be a change of variables over `Ω` carrying
-`E'` to `E`. Since `Aut(E_Ω) = {±1}` (`WeierstrassCurve.eq_one_or_eq_negVariableChange_map`) and
-`[-1]` is defined over `K`, every `σ ∈ Gal(Ω/K)` sends `ρ` to `ρ` or to `[-1] ρ`. So the
-automorphisms fixing the field `F` generated over `K` by the coefficients of `ρ` form a subgroup of
-index at most two, and `F` has degree at most two over `K`
-(`IntermediateField.finrank_eq_fixingSubgroup_index`). The change of variables `ρ` descends to `F`
-(`WeierstrassCurve.VariableChange.mem_range_baseChange_iff`). If `F = K` then `E'` is isomorphic
-to `E` over `K`; otherwise the classification of the forms of `E` split by the quadratic
-extension `F/K` (`WeierstrassCurve.exists_smul_eq_or_exists_smul_eq_quadraticTwist`) applies.
+The classification rests on `Aut(E_Ω) = {±1}`
+(`WeierstrassCurve.eq_one_or_eq_negVariableChange_map`), the Galois correspondence for possibly
+infinite Galois extensions (`IntermediateField.finrank_eq_fixingSubgroup_index`), the descent of a
+change of variables whose coefficients lie in a subfield
+(`WeierstrassCurve.VariableChange.mem_range_baseChange_iff`), and the classification of the forms
+of `E` split by a quadratic extension
+(`WeierstrassCurve.exists_smul_eq_or_exists_smul_eq_quadraticTwist`).
 
 ## References
 
@@ -90,15 +89,10 @@ private theorem index_fixingSubgroup_adjoin (hj₀ : E.j ≠ 0) (hj₁₇₂₈ 
       (adjoin K {(ρ.u : Ω), ρ.r, ρ.s, ρ.t}).fixingSubgroup.index = 2 := by
   set H := (adjoin K {(ρ.u : Ω), ρ.r, ρ.s, ρ.t}).fixingSubgroup
   -- an automorphism lies in `H` exactly when it fixes `ρ`
-  have hfix (σ : Ω ≃ₐ[K] Ω) (x : Ω) : x ∈ fixedField (Subgroup.zpowers σ) ↔ σ x = x := by
-    rw [mem_fixedField_iff]
-    refine ⟨fun h ↦ h σ (Subgroup.mem_zpowers σ), fun h f hf ↦ ?_⟩
-    have hf' : f ∈ MulAction.stabilizer (Ω ≃ₐ[K] Ω) x :=
-      Subgroup.zpowers_le.mpr (by rwa [MulAction.mem_stabilizer_iff, AlgEquiv.smul_def]) hf
-    rwa [MulAction.mem_stabilizer_iff, AlgEquiv.smul_def] at hf'
   have hmem (σ : Ω ≃ₐ[K] Ω) : σ ∈ H ↔ ρ.map (σ : Ω →+* Ω) = ρ := by
     rw [← Subgroup.zpowers_le, ← le_iff_le, adjoin_le_iff]
-    simp [Set.insert_subset_iff, hfix, VariableChange.ext_iff, Units.ext_iff]
+    simp [Set.insert_subset_iff, mem_fixedField_zpowers_iff, -mem_fixedField_iff,
+      VariableChange.ext_iff, Units.ext_iff]
   have hmul (σ τ : Ω ≃ₐ[K] Ω) : ρ.map ((σ * τ : Ω ≃ₐ[K] Ω) : Ω →+* Ω) =
       (ρ.map (τ : Ω →+* Ω)).map (σ : Ω →+* Ω) := by
     rw [VariableChange.map_map]
@@ -113,9 +107,9 @@ private theorem index_fixingSubgroup_adjoin (hj₀ : E.j ≠ 0) (hj₁₇₂₈ 
   have ha' : ρ.map (a : Ω →+* Ω) = N * ρ := (hconj a).resolve_left ((hmem a).not.mp ha)
   refine .inr (Subgroup.index_eq_two_iff.mpr ⟨a, fun b ↦ ?_⟩)
   -- `ba` sends `ρ` to `[-1]` times the image of `ρ` under `b`
+  have hbN : N.map (b : Ω →+* Ω) = N := E.negVariableChange_baseChange_map Ω (b : Ω →ₐ[K] Ω)
   have hba : ρ.map ((b * a : Ω ≃ₐ[K] Ω) : Ω →+* Ω) = N * ρ.map (b : Ω →+* Ω) := by
-    rw [hmul, ha', VariableChange.map_mul,
-      show N.map (b : Ω →+* Ω) = N from E.negVariableChange_baseChange_map Ω (b : Ω →ₐ[K] Ω)]
+    rw [hmul, ha', VariableChange.map_mul, hbN]
   rw [hmem, hmem, hba]
   rcases hconj b with hb | hb
   · rw [hb]
@@ -171,6 +165,7 @@ theorem exists_smul_eq_or_exists_smul_eq_quadraticTwist_of_smul_baseChange_eq [I
 subextensions `L` and `L'` of a Galois extension `Ω/K`, the quadratic twists of `E` by `L` and by
 `L'` are isomorphic over `K` exactly when `L = L'`. With
 `exists_smul_eq_or_exists_smul_eq_quadraticTwist_of_j_eq`, this classifies the twists of `E`. -/
+@[simp]
 theorem exists_smul_quadraticTwist_eq_quadraticTwist_iff [IsGalois K Ω] (hj₀ : E.j ≠ 0)
     (hj₁₇₂₈ : E.j ≠ 1728) (L L' : IntermediateField K Ω) [Algebra.IsQuadraticExtension K L]
     [Algebra.IsQuadraticExtension K L'] :
