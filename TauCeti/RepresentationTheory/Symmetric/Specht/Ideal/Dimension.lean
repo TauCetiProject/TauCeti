@@ -45,12 +45,8 @@ the shape alone, so the normalisation that makes `c_t` a genuine idempotent is
 ## Main results
 
 * `TauCeti.YoungTableau.finrank_spechtIdeal`: **the dimension of `ℚ[Sₙ] c_t` is `f^μ`.**
-* `TauCeti.YoungTableau.finrank_spechtIdeal_mul_prod_hookLength` and
-  `TauCeti.YoungTableau.finrank_spechtIdeal_eq_factorial_div_prod_hookLength`: the hook-length
-  formula for that dimension, in multiplicative and in quotient form.
 * `TauCeti.YoungTableau.youngSymmetrizer_sq_eq_factorial_div_standardCount`: **essential
-  idempotence with the scalar `n! / f^μ`**, and
-  `TauCeti.YoungTableau.standardCount_smul_youngSymmetrizer_sq` its division-free form.
+  idempotence with the scalar `n! / f^μ`**.
 * `TauCeti.YoungTableau.youngSymmetrizer_sq_eq_prod_hookLength`: **essential idempotence with the
   scalar read off the hook lengths**, with
   `TauCeti.YoungTableau.isIdempotentElem_prod_hookLength_inv_smul_youngSymmetrizer` the
@@ -93,27 +89,7 @@ theorem finrank_spechtIdeal (t : YoungTableau μ) :
   rw [finrank_spechtIdeal_eq_spechtSubrepresentation]
   exact finrank_spechtSubrepresentation μ
 
-/-- **The hook-length formula for the dimension of the Young-symmetrizer ideal**, in
-multiplicative form: the dimension of `ℚ[Sₙ] c_t`, times the product of the hook lengths of the
-shape of `t`, is `n !`. -/
-theorem finrank_spechtIdeal_mul_prod_hookLength (t : YoungTableau μ) :
-    finrank ℚ (spechtIdeal t) * ∏ c ∈ μ.cells, μ.hookLength c = μ.card ! := by
-  rw [finrank_spechtIdeal, standardCount_mul_prod_hookLength]
-
-/-- **The hook-length formula for the dimension of the Young-symmetrizer ideal**, in quotient
-form. The division is exact, by `YoungDiagram.prod_hookLength_dvd_factorial`. -/
-theorem finrank_spechtIdeal_eq_factorial_div_prod_hookLength (t : YoungTableau μ) :
-    finrank ℚ (spechtIdeal t) = μ.card ! / ∏ c ∈ μ.cells, μ.hookLength c := by
-  rw [finrank_spechtIdeal, standardCount_eq_factorial_div_prod_hookLength]
-
 /-! ### The scalar of essential idempotence -/
-
-/-- **Essential idempotence of the Young symmetrizer, division-free.** The number `f^μ` of
-standard Young tableaux of the shape of `t`, times the square of `c_t`, is `n !` times `c_t`. -/
-theorem standardCount_smul_youngSymmetrizer_sq (t : YoungTableau μ) :
-    (standardCount μ : ℚ) • (youngSymmetrizer t * youngSymmetrizer t) =
-      (μ.card ! : ℚ) • youngSymmetrizer t := by
-  rw [← finrank_spechtIdeal t, finrank_spechtIdeal_smul_youngSymmetrizer_sq]
 
 /-- **Essential idempotence of the Young symmetrizer, in terms of the tableau count.** The square
 of `c_t` is `c_t` scaled by `n !` over the number `f^μ` of standard Young tableaux of its
