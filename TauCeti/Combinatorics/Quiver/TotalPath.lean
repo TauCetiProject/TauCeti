@@ -5,10 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Combinatorics.Quiver.Path
+public import Mathlib.Combinatorics.Quiver.Symmetric
 
 /-!
-# Indexed quiver paths and partial concatenation
+# Indexed quiver paths, concatenation, and reversal
 
 `TauCeti.Quiver.TotalPath Q` records a path of a quiver together with its source and target. Two
 such paths can be concatenated when the target of the second is the source of the first. The
@@ -21,10 +21,14 @@ as a partial operation, and trivial paths are left and right units at the approp
 These operations supply the path index and multiplication of the path algebra, independently of any
 coefficient semiring.
 
+When the quiver has arrow reversal, indexed paths can also be reversed, exchanging their source and
+target. Involutive arrow reversal makes path reversal involutive.
+
 ## Main definitions
 
 * `TauCeti.Quiver.TotalPath`: the total space `Σ a b, Quiver.Path a b` of paths.
 * `TauCeti.Quiver.TotalPath.mul?`: concatenation when the paths meet, and `none` otherwise.
+* `TauCeti.Quiver.TotalPath.reverse`: reversal of an indexed path, including its endpoints.
 
 ## Main results
 
@@ -64,6 +68,23 @@ abbrev Quiver.TotalPath (Q : Type u) [Quiver.{v} Q] : Type _ :=
 namespace Quiver.TotalPath
 
 variable {Q : Type u} [Quiver.{v} Q]
+
+/-- Reverse an indexed path and exchange its source and target. -/
+def reverse [HasReverse Q] (x : TotalPath Q) : TotalPath Q :=
+  ⟨x.2.1, x.1, x.2.2.reverse⟩
+
+/-- Reversal of an explicitly indexed path reverses its underlying path. -/
+@[simp]
+theorem reverse_mk [HasReverse Q] {a b : Q} (p : Path a b) :
+    reverse (⟨a, b, p⟩ : TotalPath Q) = ⟨b, a, p.reverse⟩ :=
+  (rfl)
+
+/-- Reversing an indexed path twice returns the original path. -/
+@[simp]
+theorem reverse_reverse [HasInvolutiveReverse Q] (x : TotalPath Q) :
+    x.reverse.reverse = x := by
+  obtain ⟨a, b, p⟩ := x
+  simp
 
 /-- An indexed path is the trivial path at `v` exactly when it starts at `v` and has length zero.
 Stated this way the equality is checked against two non-dependent conditions, so recognizing a
