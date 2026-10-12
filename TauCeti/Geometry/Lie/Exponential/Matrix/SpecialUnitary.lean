@@ -33,8 +33,7 @@ The trace-zero condition is not implied by skew-Hermitian-ness, unlike the real 
 case where the diagonal entries vanish outright: the diagonal entries of a skew-Hermitian complex
 matrix are purely imaginary, and their sum need not be zero.
 
-This is the matrix-level input for computing the Lie algebra of the special unitary group, the
-piece whose absence is recorded in `TauCeti/Geometry/Lie/Subgroup/Unitary.lean`.
+This is the matrix-level input for computing the Lie algebra of the special unitary group.
 
 ## Main results
 
@@ -43,12 +42,6 @@ piece whose absence is recorded in `TauCeti/Geometry/Lie/Subgroup/Unitary.lean`.
 * `Matrix.forall_exp_smul_mem_specialUnitaryGroup_iff`: **a complex matrix generates a
   one-parameter subgroup of the special unitary group exactly when it is skew-Hermitian with
   vanishing trace.**
-
-## References
-
-* [Lie groups and the Lie algebra correspondence roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/LieGroups/README.md),
-  Deliverable A, Layer 2, "Consequences": the matrix groups are Lie groups, with their Lie
-  algebras stated explicitly.
 -/
 
 public section
@@ -60,11 +53,12 @@ noncomputable section
 
 namespace Matrix
 
-/-- A complex matrix is skew-Hermitian exactly when it is a skew-adjoint element of the matrix
-algebra. This is the dictionary between the two spellings of the condition, the matrix one used
-for the classical groups and the star-algebra one the Banach-algebra exponential lemmas take. -/
-theorem mem_skewAdjoint_iff_conjTranspose_eq_neg {n : Type*} {A : Matrix n n ℂ} :
-    A ∈ skewAdjoint (Matrix n n ℂ) ↔ Aᴴ = -A := by
+/-- A square matrix over a star ring is skew-Hermitian exactly when it is a skew-adjoint element
+of the matrix algebra. This is the dictionary between the two spellings of the condition, the
+matrix one used for the classical groups and the star-algebra one the Banach-algebra exponential
+lemmas take. -/
+theorem mem_skewAdjoint_iff_conjTranspose_eq_neg {n R : Type*} [AddCommGroup R]
+    [StarAddMonoid R] {A : Matrix n n R} : A ∈ skewAdjoint (Matrix n n R) ↔ Aᴴ = -A := by
   rw [skewAdjoint.mem_iff, star_eq_conjTranspose]
 
 variable {n : Type*} [Fintype n] [DecidableEq n]
