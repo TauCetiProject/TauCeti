@@ -269,15 +269,15 @@ variable {Y : Type u} [TopologicalSpace Y] {y : Y}
 theorem loopHomologyZeroπ_map (f : C(X, Y)) (hf : f x = y)
     (a : NormalizedCubicalChain (MooreLoopSpace X x) R 0) :
     loopHomologyZeroπ Y y R
-        (NormalizedCubicalChain.map R (MooreLoopSpace.map f hf).toContinuousMap 0 a) =
+        (NormalizedCubicalChain.map R (MooreLoopSpace.map f hf : C(_, _)) 0 a) =
       HomologicalComplex.homologyMap
         ((normalizedCubicalChainComplex R).map
-          (TopCat.ofHom (MooreLoopSpace.map f hf).toContinuousMap)) 0
+          (TopCat.ofHom (MooreLoopSpace.map f hf : C(_, _)))) 0
         (loopHomologyZeroπ X x R a) := by
   let K := (normalizedCubicalChainComplex R).obj (TopCat.of (MooreLoopSpace X x))
   let L := (normalizedCubicalChainComplex R).obj (TopCat.of (MooreLoopSpace Y y))
   let φ : K ⟶ L := (normalizedCubicalChainComplex R).map
-    (TopCat.ofHom (MooreLoopSpace.map f hf).toContinuousMap)
+    (TopCat.ofHom (MooreLoopSpace.map f hf : C(_, _)))
   let a' : K.X 0 := a
   have h : K.cycles₀Iso.inv ≫ K.homologyπ 0 ≫ HomologicalComplex.homologyMap φ 0 =
       φ.f 0 ≫ L.cycles₀Iso.inv ≫ L.homologyπ 0 := by
@@ -294,11 +294,11 @@ theorem loopHomologyZeroπ_map (f : C(X, Y)) (hf : f x = y)
 theorem loopZeroChainToGroupAlgebra_map (f : C(X, Y)) (hf : f x = y)
     (a : NormalizedCubicalChain (MooreLoopSpace X x) R 0) :
     loopZeroChainToGroupAlgebra Y y R
-        (NormalizedCubicalChain.map R (MooreLoopSpace.map f hf).toContinuousMap 0 a) =
+        (NormalizedCubicalChain.map R (MooreLoopSpace.map f hf : C(_, _)) 0 a) =
       MonoidAlgebra.mapDomainLinearMap R R (FundamentalGroup.mapOfEq f hf)
         (loopZeroChainToGroupAlgebra X x R a) := by
   have h : (loopZeroChainToGroupAlgebra Y y R).comp
-      (NormalizedCubicalChain.map R (MooreLoopSpace.map f hf).toContinuousMap 0) =
+      (NormalizedCubicalChain.map R (MooreLoopSpace.map f hf : C(_, _)) 0) =
       (MonoidAlgebra.mapDomainLinearMap R R (FundamentalGroup.mapOfEq f hf)).comp
         (loopZeroChainToGroupAlgebra X x R) := by
     apply NormalizedCubicalChain.linearMap_ext
@@ -315,7 +315,7 @@ Moore loops to the linear map induced by the fundamental-group map. -/
 theorem loopHomologyZeroIso_hom_naturality (f : C(X, Y)) (hf : f x = y) :
     HomologicalComplex.homologyMap
         ((normalizedCubicalChainComplex R).map
-          (TopCat.ofHom (MooreLoopSpace.map f hf).toContinuousMap)) 0 ≫
+          (TopCat.ofHom (MooreLoopSpace.map f hf : C(_, _)))) 0 ≫
         (loopHomologyZeroIso Y y R).hom =
       (loopHomologyZeroIso X x R).hom ≫
         ModuleCat.ofHom
