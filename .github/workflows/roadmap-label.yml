@@ -24,7 +24,8 @@ on:
 
 # Coalesce the burst of edited/synchronize events on a single PR.
 concurrency:
-  group: roadmap-label-${{ github.event.pull_request.number }}
+  # Ignored title edits must not cancel a body/push run before the job's if is evaluated.
+  group: ${{ (github.event.action == 'edited' && github.event.changes.body == null && github.event.changes.base == null) && format('roadmap-label-ignored-{0}', github.run_id) || format('roadmap-label-{0}', github.event.pull_request.number) }}
   cancel-in-progress: true
 
 permissions:
@@ -75,6 +76,7 @@ jobs:
       - name: Classify, label, and nudge
         env:
           GH_READ_TOKEN: ${{ github.token }}
+          GH_COMMENT_AUTHOR: ${{ steps.app-token.outputs.app-slug }}[bot]
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
           REPO: ${{ github.repository }}
           PR: ${{ github.event.pull_request.number }}

@@ -45,13 +45,16 @@ from App writes (GH_TOKEN). --reconcile-open repairs missed event runs;
 from __future__ import annotations
 
 import argparse
+import functools
+import hashlib
+import os
 import json
 import pathlib
 import re
 import sys
 from urllib.parse import quote
 
-from github_api import APIError, Deferred, GitHub, pr_snapshot
+from github_api import APIError, Deferred, GitHub, history_snapshots, pr_snapshot
 
 # --- label namespace -------------------------------------------------------
 
@@ -265,7 +268,7 @@ def _label_meta(name: str, areas: set[str]) -> tuple[str, str]:
     if name == NONE_LABEL:
         return NONE_COLOR, "No roadmap association (declared, infrastructure, or pin-only bump)"
     if name == UNKNOWN_LABEL:
-        return UNKNOWN_COLOR, "Missing, invalid, or conflicting roadmap association"
+        return UNKNOWN_COLOR, "Missing, invalid, conflicting, or unverifiable roadmap association"
     return AREA_COLOR, "PR declares the {} roadmap as its primary association".format(
         name[len("roadmap/"):])
 
@@ -314,22 +317,115 @@ def nudge(api: GitHub, repo: str, pr: int) -> None:
 # --- CLI -------------------------------------------------------------------
 
 
-def run_pr(api, args, areas, pr):
-    snapshot = pr_snapshot(api, args.repo, pr)
+MAX_RETRIES = 5
+
+
+@functools.lru_cache(maxsize=1)
+def policy_key():
+    root = pathlib.Path(__file__).parent
+    return hashlib.sha256(b"".join((root / name).read_bytes() for name in
+                          ("roadmap_label.py", "github_api.py", "structure_nudge.py"))).hexdigest()
+
+
+def input_key(info, areas):
+    # Comments/status labels and a moving main tip do not change a PR's attribution inputs.
+    values = {"head": info["head"]["sha"], "base": info["base"]["ref"],
+              "body": info.get("body") or "", "state": info["state"], "areas": sorted(areas), "policy": policy_key()}
+    return hashlib.sha256(json.dumps(values, sort_keys=True).encode()).hexdigest()
+
+
+class RecoveryState:
+    """Persist successful input hashes and bounded retries without storing PR bodies."""
+
+    def __init__(self, path=None, *, reset=False):
+        self.records, self.inputs, self.seen = {}, {}, set()
+        self.listed = False
+        if path and not reset and pathlib.Path(path).is_file():
+            value = json.loads(pathlib.Path(path).read_text())
+            if value.get("version") != 1 or not isinstance(value.get("prs"), dict):
+                raise RuntimeError("invalid recovery state")
+            for number, record in value["prs"].items():
+                if not number.isdigit() or not isinstance(record, dict):
+                    raise RuntimeError("invalid recovery record")
+                if not re.fullmatch(r"[0-9a-f]{64}", record.get("key", "")) or type(record.get("attempts")) is not int or not 0 <= record["attempts"] <= MAX_RETRIES:
+                    raise RuntimeError("invalid recovery retry/input hash")
+                if record["attempts"] == 0 and not isinstance(record.get("label"), str):
+                    raise RuntimeError("invalid recovery success label")
+                self.records[int(number)] = record
+        if reset:
+            self.records.clear()
+
+    def select(self, info, areas):
+        number = info["number"]
+        key = input_key(info, areas)
+        self.inputs[number] = key
+        self.seen.add(number)
+        record = self.records.get(number)
+        if not record or record["key"] != key:
+            self.records.pop(number, None)
+            return True  # Unknown/changed inputs self-heal even outside the time window.
+        if record["attempts"] >= MAX_RETRIES:
+            print(f"::warning::PR #{number}: recovery retries exhausted; change its inputs or run a full scan")
+            return False
+        if record["attempts"]:
+            return True  # Retry even when a previous successful window has passed it.
+        current = {item["name"] for item in info["labels"] if item["name"].startswith("roadmap/")}
+        return current != {record["label"]}  # A changed roadmap label must self-heal too.
+
+    def success(self, number, label, key):
+        self.records[number] = {"key": key, "label": label, "attempts": 0}
+
+    def failure(self, number, error, key=None):
+        key = key or self.inputs[number]
+        previous = self.records.get(number, {})
+        attempts = previous.get("attempts", 0) if previous.get("key") == key else 0
+        self.records[number] = {"key": key, "attempts": min(MAX_RETRIES, attempts + 1),
+                                "error": str(error)[:300]}
+
+    def save(self, path):
+        records = {str(number): record for number, record in self.records.items()
+                   if not self.listed or number in self.seen}
+        target = pathlib.Path(path)
+        target.parent.mkdir(parents=True, exist_ok=True)
+        temporary = target.with_suffix(".tmp")
+        temporary.write_text(json.dumps({"version": 1, "prs": records}, sort_keys=True))
+        temporary.replace(target)
+
+    def report(self):
+        pending = [number for number, record in self.records.items() if 0 < record["attempts"] < MAX_RETRIES]
+        exhausted = [number for number, record in self.records.items() if record["attempts"] == MAX_RETRIES]
+        summary = f"Recovery: {len(pending)} PRs queued for retry; {len(exhausted)} exhausted."
+        print(summary, file=sys.stderr)
+        if os.environ.get("GITHUB_STEP_SUMMARY"):
+            with open(os.environ["GITHUB_STEP_SUMMARY"], "a") as stream:
+                stream.write("\n" + summary + "\n")
+                for number in pending + exhausted:
+                    stream.write(f"- #{number}: attempt {self.records[number]['attempts']}/{MAX_RETRIES}\n")
+
+
+def run_pr(api, args, areas, pr, snapshot=None, preserve_labels=False):
+    snapshot = snapshot if snapshot is not None else pr_snapshot(api, args.repo, pr)
     info = snapshot["info"]
     title, body = info.get("title") or "", info.get("body") or ""
     files = [row["filename"] for row in snapshot["files"]]
-    label = classify(title, body, files, areas)
-    print(f"#{pr}\t{label}\t{title}")
+    incomplete = info.get("incomplete_files", False)
+    if incomplete:
+        label = NONE_LABEL if files and is_infra(files) else UNKNOWN_LABEL
+        print(f"::notice::PR #{pr}: incomplete diff; using {label} and skipping structure analysis")
+    else:
+        label = classify(title, body, files, areas)
+    args._processed_key = input_key(info, areas)
+    state_column = info["state"].upper() + "\t" if args.backfill else ""
+    print(f"#{pr}\t{state_column}{label}\t{title}")
     declared_present, declared = parse_declared_area(body, areas)
-    if (is_infra(files) or is_pin_only(files)) and declared_present and declared not in {None, "none"}:
+    if label == NONE_LABEL and (is_infra(files) or is_pin_only(files)) and declared_present and declared not in {None, "none"}:
         reason = "infrastructure/empty diff" if is_infra(files) else "pin-only bump"
         print(f"::notice::Roadmap: {declared} is overridden by the {reason} classification")
-    if args.apply:
+    if args.apply and not preserve_labels:
         apply_label(api, args.repo, pr, label, areas, info["labels"])
-        if args.nudge and label == UNKNOWN_LABEL:
+        if args.nudge and args.pr is not None and not incomplete and label == UNKNOWN_LABEL:
             nudge(api, args.repo, pr)
-    if args.structure_nudge and info["state"] == "open":
+    if args.structure_nudge and info["state"] == "open" and not incomplete:
         try:
             import structure_nudge
             structure_nudge.run_pr(args.repo, pr, args.apply, api=api, snapshot=snapshot)
@@ -362,15 +458,24 @@ def candidates(api, args, areas):
     if args.reconcile_open and since == "auto":
         since = recovery_since(api, args.repo)
     state = "open" if args.reconcile_open else "all"
+    order = "updated" if args.reconcile_open else "created"
+    recovery = getattr(args, "_state", None)
     count = 0
     valid = {NONE_LABEL, UNKNOWN_LABEL} | {area_label(a) for a in areas}
-    for page in api.pages(f"repos/{args.repo}/pulls?state={state}&sort=updated&direction=desc"):
+    for page in api.pages(f"repos/{args.repo}/pulls?state={state}&sort={order}&direction=desc"):
         for info in page:
             if count >= args.limit:
                 if args.reconcile_open:
                     raise RuntimeError("PR listing reached --limit; increase it to complete reconciliation")
                 return  # Historical backfills intentionally inspect only the requested count.
             count += 1
+            if recovery:
+                decision = recovery.select(info, areas)
+                if decision is False:
+                    continue
+                if decision is True:
+                    yield info["number"]
+                    continue
             current = {item["name"] for item in info["labels"] if item["name"].startswith("roadmap/")}
             # Old PRs with missing/invalid labels also self-heal, regardless of the window.
             if args.reconcile_open and since and info["updated_at"] < since and len(current) == 1 and current <= valid:
@@ -391,11 +496,17 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--since", default="auto", help="recovery window start (ISO UTC); auto uses the previous success")
     ap.add_argument("--limit", type=int, default=5000)
     ap.add_argument("--apply", action="store_true")
+    ap.add_argument("--max-wait", type=int, default=180, help="cumulative quota/transient retry wait budget in seconds")
+    ap.add_argument("--state-in", help="previous recovery input hashes and retry queue")
+    ap.add_argument("--state-out", help="recovery input hashes and retries for the next run")
+    ap.add_argument("--retry-exhausted", action="store_true", help="reset cached successes and exhausted retries")
     ap.add_argument("--allow-relabel", action="store_true")
     ap.add_argument("--nudge", action="store_true")
     ap.add_argument("--structure-nudge", action="store_true", help="reuse the diff for the advisory structure nudge")
     ap.add_argument("--sync-labels", action="store_true", help="also maintain repository label colours/descriptions")
     args = ap.parse_args(argv)
+    if args.max_wait < 0:
+        ap.error("--max-wait must be nonnegative")
     if args.limit < 1:
         ap.error("--limit must be positive")
     if args.since != "auto":
@@ -411,24 +522,60 @@ def main(argv: list[str] | None = None) -> int:
     if not areas:
         print("no roadmap areas found", file=sys.stderr)
         return 2
-    api = GitHub()
+    api = GitHub(max_wait=args.max_wait)
     failed = False
+    args._state = None
     try:
+        if args.reconcile_open and args.apply and args.state_out:
+            args._state = RecoveryState(args.state_in, reset=args.retry_exhausted)
         if args.sync_labels and args.apply:
             sync_labels(api, args.repo, areas)
         if args.pr is not None:
             run_pr(api, args, areas, args.pr)
-        else:
-            # Finish paging before mutations move PRs to the front of the updated list.
-            pending = list(candidates(api, args, areas))
-            for pr in pending:
+        elif args.backfill:
+            from collections import Counter
+            tally = Counter()
+            for pr, snapshot in history_snapshots(api, args.repo, args.limit):
+                current = {item["name"] for item in snapshot["info"]["labels"] if item["name"].startswith("roadmap/")}
+                # Keep the historical classification report even when existing labels are preserved.
                 try:
-                    run_pr(api, args, areas, pr)
+                    label = run_pr(api, args, areas, pr, snapshot=snapshot,
+                                   preserve_labels=bool(current and not args.allow_relabel))
+                    tally[label] += 1
+                    if args.apply and current != {label} and current and not args.allow_relabel:
+                        print(f"PR #{pr}: preserving {sorted(current)}; pass --allow-relabel to change it", file=sys.stderr)
                 except Deferred:
-                    raise  # Do not hammer a blocked credential for each remaining PR.
+                    raise
                 except Exception as error:
                     print(f"PR #{pr} unapplied: {error}", file=sys.stderr)
                     failed = True
+            print("\n=== summary ===", file=sys.stderr)
+            for label, count in tally.most_common():
+                print(f"  {label}: {count}", file=sys.stderr)
+        else:
+            # Finish paging before mutations move PRs to the front of the updated list.
+            pending = list(candidates(api, args, areas))
+            if args._state:
+                args._state.listed = True
+            for pr in pending:
+                args._processed_key = None
+                try:
+                    label = run_pr(api, args, areas, pr)
+                    if args._state:
+                        args._state.success(pr, label, args._processed_key)
+                except Deferred:
+                    raise  # Do not hammer a blocked credential for each remaining PR.
+                except Exception as error:
+                    print(f"::warning::PR #{pr} unapplied: {error}", file=sys.stderr)
+                    if isinstance(error, APIError) and error.status == 0:
+                        raise  # A transport outage is global; stop instead of probing every PR.
+                    if args._state:
+                        args._state.failure(pr, error, args._processed_key)
+                    else:
+                        failed = True
+                finally:
+                    if args._state:
+                        args._state.save(args.state_out)
         return 1 if failed else 0
     except Deferred as error:
         print(f"::warning::{error}; hourly reconciliation will retry", file=sys.stderr)
@@ -437,6 +584,9 @@ def main(argv: list[str] | None = None) -> int:
         print(f"Roadmap reconciliation failed: {error}", file=sys.stderr)
         return 1
     finally:
+        if args._state:
+            args._state.save(args.state_out)
+            args._state.report()
         api.report()
 
 

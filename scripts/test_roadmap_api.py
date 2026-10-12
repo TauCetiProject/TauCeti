@@ -26,7 +26,7 @@ def reply(status=200, data=None, headers=None):
 
 def info(number=1, labels=("roadmap/PDE",), updated="2026-10-12T00:00:00Z"):
     return {"number": number, "title": "test", "body": "Roadmap: PDE", "state": "open",
-            "head": {"sha": "head"}, "base": {"sha": "base"}, "changed_files": 1,
+            "head": {"sha": "head"}, "base": {"sha": "base", "ref": "main"}, "changed_files": 1,
             "labels": [{"name": label} for label in labels], "updated_at": updated}
 
 
@@ -35,7 +35,7 @@ FILES = [{"filename": "TauCeti/FooBar.lean", "status": "added"}]
 
 def graph_row(head="head"):
     return {"title": "test", "body": "Roadmap: PDE", "state": "OPEN",
-            "headRefOid": head, "baseRefOid": "base", "changedFiles": 1,
+            "headRefOid": head, "baseRefOid": "base", "baseRefName": "main", "changedFiles": 1,
             "labels": {"nodes": [{"name": "roadmap/PDE"}], "pageInfo": {"hasNextPage": False}},
             "files": {"nodes": [{"path": "TauCeti/FooBar.lean", "changeType": "ADDED"}],
                       "totalCount": 1, "pageInfo": {"hasNextPage": False, "endCursor": "last"}}}
@@ -109,6 +109,40 @@ class API(unittest.TestCase):
         self.run.side_effect = [error, reply(data={})]
         self.assertEqual(self.api.request("GET", "repos/o/r/labels"), {})
         self.assertEqual(self.sleeps, [2])
+
+    def test_transport_failure_retries_reads_and_redacts_diagnostic(self):
+        os.environ["GH_TOKEN"] = "secret"
+        self.run.return_value = subprocess.CompletedProcess([], 1, "", "connection failed: secret")
+        with self.assertRaises(ga.APIError) as caught:
+            self.api.request("GET", "repos/o/r/labels")
+        self.assertEqual(caught.exception.status, 0)
+        self.assertIn("connection failed", str(caught.exception))
+        self.assertNotIn("secret", str(caught.exception))
+        self.assertEqual(self.run.call_count, 3)
+        self.assertEqual(self.sleeps, [2, 4])
+
+    def test_transport_failure_does_not_repeat_ambiguous_post(self):
+        self.run.return_value = subprocess.CompletedProcess([], 1, "", "connection reset")
+        with self.assertRaises(ga.APIError):
+            self.api.request("POST", "repos/o/r/issues/1/comments", {"body": "test"})
+        self.run.assert_called_once()
+
+    def test_graphql_timeout_retries_without_using_partial_data(self):
+        self.run.side_effect = [reply(data={"errors": [{"message": "Something went wrong: timeout", "type": "INTERNAL"}]}),
+                                reply(data={"data": {"repository": {}}})]
+        self.assertEqual(self.api.graphql("query { repository { name } }", {}), {"repository": {}})
+        self.assertEqual(self.sleeps, [2])
+
+    def test_retry_after_header_is_respected_without_specific_error_wording(self):
+        self.run.side_effect = [reply(403, {"message": "Please wait before trying again"}, {"Retry-After": "90"}),
+                                reply(data={})]
+        self.api.request("GET", "repos/o/r/labels")
+        self.assertEqual(self.sleeps, [90])
+
+    def test_invalid_retry_after_falls_back_to_secondary_wait(self):
+        self.run.side_effect = [reply(429, {}, {"Retry-After": "invalid date"}), reply(data={})]
+        self.api.request("GET", "repos/o/r/labels")
+        self.assertEqual(self.sleeps, [60])
 
     def test_local_auth_does_not_replace_inherited_credential(self):
         os.environ["GH_TOKEN"] = "local"
@@ -260,11 +294,47 @@ class Mutations(unittest.TestCase):
         fetch.assert_not_called()
         self.api.request.assert_not_called()
 
+    def test_structure_duplicate_cleanup_preserves_human_comments(self):
+        snapshot = {"info": info(), "files": FILES}
+        findings = {"TauCeti/FooBar.lean": sn.candidates_for("TauCeti/FooBar.lean", {"TauCeti/Foo.lean"})}
+        body = sn.render_comment("head", findings)
+        bot = {"type": "Bot", "login": "app[bot]"}
+        self.api.items.return_value = [{"id": 2, "body": body, "user": bot},
+                                      {"id": 3, "body": body, "user": {"type": "User", "login": "human"}},
+                                      {"id": 4, "body": body, "user": bot}]
+        with patch.object(sn, "_local_tree", return_value={"TauCeti/Foo.lean"}):
+            sn.run_pr("o/r", 1, True, api=self.api, snapshot=snapshot)
+        self.api.request.assert_called_once_with("DELETE", "repos/o/r/issues/comments/4")
+
+    def test_last_comment_post_collapses_racing_bot_duplicates(self):
+        snapshot = {"info": info(), "files": FILES}
+        bot = {"type": "Bot", "login": "app[bot]"}
+        self.api.items.side_effect = [[], [{"id": 2, "body": sn.MARKER, "user": bot},
+                                         {"id": 4, "body": sn.MARKER, "user": bot}]]
+        self.api.request.return_value = {"id": 4, "user": bot}
+        with patch.object(sn, "_local_tree", return_value={"TauCeti/Foo.lean"}):
+            sn.run_pr("o/r", 1, True, api=self.api, snapshot=snapshot)
+        self.assertEqual(self.api.request.call_args.args, ("DELETE", "repos/o/r/issues/comments/4"))
+
+    def test_expected_bot_actor_does_not_patch_or_delete_a_human_marker(self):
+        snapshot = {"info": info(), "files": FILES}
+        self.api.items.return_value = [{"id": 2, "body": sn.MARKER, "user": {"type": "User", "login": "human"}}]
+        with patch.dict(os.environ, GH_COMMENT_AUTHOR="app[bot]"), patch.object(sn, "_local_tree", return_value={"TauCeti/Foo.lean"}):
+            sn.run_pr("o/r", 1, True, api=self.api, snapshot=snapshot)
+        self.assertEqual(self.api.request.call_args.args[0], "POST")
+
+    def test_large_structure_comment_is_bounded_without_losing_marker(self):
+        candidate = sn.candidates_for("TauCeti/FooBar.lean", {"TauCeti/Foo.lean"})
+        body = sn.render_comment("head", {f"TauCeti/Foo{i}.lean": candidate for i in range(500)})
+        self.assertLessEqual(len(body.encode("utf-8")), 60000)
+        self.assertIn(sn.MARKER, body)
+        self.assertIn("Further findings omitted", body)
+
 
 class Recovery(unittest.TestCase):
     def args(self, **kwargs):
         values = dict(repo="o/r", since="2026-10-12T00:00:00Z", reconcile_open=True,
-                      backfill=False, apply=True, allow_relabel=False, limit=5000)
+                      backfill=False, apply=True, allow_relabel=False, limit=5000, pr=None)
         return argparse.Namespace(**(values | kwargs))
 
     def test_old_missing_invalid_and_multiple_labels_are_repaired(self):
@@ -303,8 +373,7 @@ class Recovery(unittest.TestCase):
         self.assertEqual(ga.pr_snapshot(api, "o/r", 1)["info"]["head"]["sha"], "new")
         changed["changedFiles"] = 2
         api.graphql.side_effect = [graph_result(changed)]
-        with self.assertRaisesRegex(RuntimeError, "incomplete file list"):
-            ga.pr_snapshot(api, "o/r", 1)
+        self.assertTrue(ga.pr_snapshot(api, "o/r", 1)["info"]["incomplete_files"])
 
     def test_snapshot_combines_file_pages_and_includes_latest_labels(self):
         api = Mock()
@@ -329,6 +398,47 @@ class Recovery(unittest.TestCase):
         api.items.return_value = [{"name": "roadmap/PDE"}]
         self.assertEqual(ga.pr_snapshot(api, "o/r", 1)["info"]["labels"], api.items.return_value)
         api.items.assert_called_once_with("repos/o/r/issues/1/labels")
+
+    def test_historical_bulk_reads_many_prs_without_individual_snapshots(self):
+        api = Mock()
+        rows = [dict(graph_row(), number=number) for number in (1, 2)]
+        api.graphql.return_value = {"repository": {"pullRequests": {"nodes": rows,
+                                  "pageInfo": {"hasNextPage": False, "endCursor": "last"}}}}
+        with patch.object(ga, "pr_snapshot") as single:
+            results = list(ga.history_snapshots(api, "o/r", 2))
+        self.assertEqual([pr for pr, _ in results], [1, 2])
+        api.graphql.assert_called_once()
+        single.assert_not_called()
+        self.assertIn("CREATED_AT", api.graphql.call_args.args[0])
+
+    def test_historical_bulk_falls_back_only_for_a_paginated_diff(self):
+        api = Mock()
+        row = dict(graph_row(), number=1)
+        row["files"]["pageInfo"]["hasNextPage"] = True
+        api.graphql.return_value = {"repository": {"pullRequests": {"nodes": [row],
+                                  "pageInfo": {"hasNextPage": False, "endCursor": "last"}}}}
+        with patch.object(ga, "pr_snapshot", return_value={"info": info(), "files": FILES}) as single:
+            self.assertEqual(list(ga.history_snapshots(api, "o/r", 1))[0][1]["files"], FILES)
+        single.assert_called_once_with(api, "o/r", 1)
+
+    def test_file_cap_returns_a_partial_snapshot_without_unbounded_queries(self):
+        api = Mock()
+        row = graph_row()
+        row["changedFiles"] = row["files"]["totalCount"] = 3001
+        row["files"]["nodes"] = [{"path": f"TauCeti/File{i}.lean", "changeType": "ADDED"} for i in range(100)]
+        row["files"]["pageInfo"] = {"hasNextPage": True, "endCursor": "unused"}
+        count = 0
+        def fetch(*_):
+            nonlocal count
+            count += 1
+            copy_row = copy.deepcopy(row)
+            copy_row["files"]["pageInfo"]["endCursor"] = str(count)
+            return graph_result(copy_row)
+        api.graphql.side_effect = fetch
+        snapshot = ga.pr_snapshot(api, "o/r", 1)
+        self.assertEqual(api.graphql.call_count, 30)
+        self.assertEqual(len(snapshot["files"]), 3000)
+        self.assertTrue(snapshot["info"]["incomplete_files"])
 
     def test_deferred_run_fails_and_stops_remaining_items(self):
         api = Mock()
@@ -358,7 +468,9 @@ class Recovery(unittest.TestCase):
             area = Path(directory) / "PDE"
             area.mkdir()
             (area / "README.md").touch()
-            with patch.object(rl, "GitHub", return_value=api),                  patch.object(rl, "candidates", side_effect=listing),                  patch.object(rl, "run_pr", side_effect=process):
+            with (patch.object(rl, "GitHub", return_value=api),
+                  patch.object(rl, "candidates", side_effect=listing),
+                  patch.object(rl, "run_pr", side_effect=process)):
                 self.assertEqual(rl.main(["--roadmap-dir", directory, "--reconcile-open", "--apply"]), 1)
         self.assertEqual(order, ["list 1", "list 2", "write 1", "write 2"])
 
@@ -372,6 +484,106 @@ class Recovery(unittest.TestCase):
             args.reconcile_open = False
             self.assertEqual(rl.run_pr(api, args, {"PDE"}, 1), "roadmap/PDE")
 
+    def test_historical_backfill_never_posts_attribution_nudges(self):
+        args = self.args(structure_nudge=False, nudge=True, backfill=True)
+        snapshot = {"info": dict(info(labels=()), body="", state="closed"), "files": FILES}
+        with patch.object(rl, "pr_snapshot", return_value=snapshot), patch.object(rl, "apply_label"), patch.object(rl, "nudge") as nudge:
+            rl.run_pr(Mock(), args, {"PDE"}, 1)
+        nudge.assert_not_called()
+
+    def test_incomplete_diff_labels_only_proven_infra_and_skips_structure(self):
+        args = self.args(structure_nudge=True, nudge=False)
+        for files, target in ((FILES, "roadmap/Unknown"),
+                              ([{"filename": "scripts/infra.py"}], "roadmap/none"), ([], "roadmap/Unknown")):
+            snapshot = {"info": dict(info(), incomplete_files=True), "files": files}
+            with patch.object(rl, "pr_snapshot", return_value=snapshot), patch.object(rl, "apply_label"), patch.object(sn, "run_pr") as structure:
+                self.assertEqual(rl.run_pr(Mock(), args, {"PDE"}, 1), target)
+            structure.assert_not_called()
+
+    def test_cached_success_skips_status_comment_churn_but_not_changed_inputs(self):
+        state = rl.RecoveryState()
+        original = info()
+        key = rl.input_key(original, {"PDE"})
+        state.success(1, "roadmap/PDE", key)
+        self.assertFalse(state.select(dict(original, updated_at="2030-01-01T00:00:00Z"), {"PDE"}))
+        self.assertTrue(state.select(dict(original, body="Roadmap: none"), {"PDE"}))
+
+    def test_cache_uses_actual_processed_inputs_not_the_earlier_listing(self):
+        args = self.args(structure_nudge=False, nudge=False)
+        processed = dict(info(labels=("roadmap/none",)), body="Roadmap: none")
+        with patch.object(rl, "pr_snapshot", return_value={"info": processed, "files": FILES}):
+            label = rl.run_pr(Mock(), args, {"PDE"}, 1)
+        state = rl.RecoveryState()
+        state.success(1, label, args._processed_key)
+        self.assertFalse(state.select(processed, {"PDE"}))
+        reverted = dict(processed, body="Roadmap: PDE")
+        self.assertTrue(state.select(reverted, {"PDE"}))
+
+    def test_changed_roadmap_label_is_repaired_outside_the_window(self):
+        state = rl.RecoveryState()
+        original = info(updated="2000-01-01T00:00:00Z")
+        state.success(1, "roadmap/PDE", rl.input_key(original, {"PDE"}))
+        self.assertTrue(state.select(dict(original, labels=[{"name": "roadmap/none"}]), {"PDE"}))
+
+    def test_retry_handoff_is_bounded_and_resets_on_new_head(self):
+        state = rl.RecoveryState()
+        original = info()
+        for _ in range(rl.MAX_RETRIES):
+            self.assertTrue(state.select(original, {"PDE"}))
+            state.failure(1, RuntimeError("bad PR"))
+        self.assertFalse(state.select(original, {"PDE"}))
+        changed = dict(original, head={"sha": "new"})
+        self.assertTrue(state.select(changed, {"PDE"}))
+        state.failure(1, RuntimeError("bad PR"))
+        self.assertEqual(state.records[1]["attempts"], 1)
+
+    def test_uncached_old_valid_pr_is_recovered_after_a_listing_race(self):
+        args = self.args(_state=rl.RecoveryState())
+        api = Mock()
+        api.pages.return_value = [[info(updated="2000-01-01T00:00:00Z")]]
+        self.assertEqual(list(rl.candidates(api, args, {"PDE"})), [1])
+
+    def test_state_round_trip_prunes_closed_prs_and_has_no_body_text(self):
+        state = rl.RecoveryState()
+        original = dict(info(), body="sensitive body text")
+        state.select(original, {"PDE"})
+        state.failure(1, RuntimeError("bad PR"))
+        state.success(2, "roadmap/PDE", rl.input_key(info(2), {"PDE"}))
+        state.listed = True
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "state.json"
+            state.save(path)
+            self.assertNotIn("sensitive body text", path.read_text())
+            restored = rl.RecoveryState(path)
+            self.assertEqual(set(restored.records), {1})
+            self.assertTrue(restored.select(original, {"PDE"}))
+            self.assertEqual(rl.RecoveryState(path, reset=True).records, {})
+
+    def test_manual_full_scan_recovers_from_corrupt_state(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "state.json"
+            path.write_text("invalid JSON")
+            self.assertEqual(rl.RecoveryState(path, reset=True).records, {})
+
+    def test_bad_pr_does_not_fail_recovery_window_when_retry_handoff_is_saved(self):
+        api = Mock()
+        api.pages.return_value = [[info(1), info(2)]]
+        def process(_api, args, areas, pr):
+            if pr == 1:
+                raise RuntimeError("persistent bad PR")
+            args._processed_key = rl.input_key(info(2), areas)
+            return "roadmap/PDE"
+        with tempfile.TemporaryDirectory() as directory:
+            area = Path(directory) / "PDE"
+            area.mkdir()
+            (area / "README.md").touch()
+            path = Path(directory) / "state.json"
+            with patch.object(rl, "GitHub", return_value=api), patch.object(rl, "run_pr", side_effect=process):
+                self.assertEqual(rl.main(["--roadmap-dir", directory, "--reconcile-open", "--since", "1970-01-01T00:00:00Z", "--apply", "--state-out", str(path)]), 0)
+            records = json.loads(path.read_text())["prs"]
+            self.assertEqual(records["1"]["attempts"], 1)
+            self.assertEqual(records["2"]["attempts"], 0)
+
     def test_workflow_preserves_app_writes_and_filters_title_edits(self):
         root = Path(__file__).resolve().parents[1]
         event = (root / ".github/workflows/roadmap-label.yml").read_text()
@@ -382,10 +594,14 @@ class Recovery(unittest.TestCase):
             self.assertIn("--structure-nudge", workflow)
             self.assertNotIn("github.event.pull_request.head.sha", workflow)
         self.assertIn("github.event.changes.body != null", event)
+        self.assertIn("roadmap-label-ignored-{0}", event)
+        self.assertIn("github.run_id", event)
         self.assertLess(event.index("run: sleep 20"), event.index("actions/create-github-app-token"))
         self.assertIn("actions: read", recovery)
         self.assertIn("ref: main", recovery)
         self.assertIn("cancel-in-progress: false", recovery)
+        self.assertIn("--state-out", recovery)
+        self.assertIn("if: always()", recovery)
 
 
 if __name__ == "__main__":

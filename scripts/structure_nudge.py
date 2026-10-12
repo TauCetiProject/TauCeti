@@ -38,11 +38,12 @@ from __future__ import annotations
 
 import argparse
 import pathlib
+import os
 import re
 import subprocess
 import sys
 
-from github_api import GitHub, pr_snapshot
+from github_api import APIError, GitHub, pr_snapshot
 
 MARKER = "<!--structure:nudge-->"
 TRACKING_ISSUE = "https://github.com/TauCetiProject/TauCeti/issues/987"
@@ -129,7 +130,18 @@ def render_comment(head_sha: str, findings: dict[str, list[dict]]) -> str:
                     f"`{c['prefix']}/Bar.lean`) and place this file there.")
     lines.append("")
     lines.append(f"Policy and context: {TRACKING_ISSUE}.")
-    return "\n".join(lines)
+    body = "\n".join(lines)
+    if len(body.encode("utf-8")) > 60000:
+        footer = "\n\nFurther findings omitted to fit GitHub's comment limit.\n" + lines[-1]
+        kept, size = [], len(footer.encode("utf-8"))
+        for line in lines[:-2]:
+            added = len((line + "\n").encode("utf-8"))
+            if size + added > 60000:
+                break
+            kept.append(line)
+            size += added
+        body = "\n".join(kept) + footer
+    return body
 
 
 def _local_tree() -> set[str]:
@@ -140,6 +152,9 @@ def _local_tree() -> set[str]:
 
 def run_pr(repo: str, pr: int, apply: bool, *, api: GitHub, snapshot=None) -> int:
     snapshot = snapshot if snapshot is not None else pr_snapshot(api, repo, pr)
+    if snapshot["info"].get("incomplete_files"):
+        print(f"::notice::structure-nudge: PR #{pr}: incomplete diff; skipping analysis")
+        return 0
     added = [row["filename"] for row in snapshot["files"]
              if row["status"] == "added" and row["filename"].endswith(".lean")
              and row["filename"].startswith("TauCeti/")]
@@ -157,7 +172,22 @@ def run_pr(repo: str, pr: int, apply: bool, *, api: GitHub, snapshot=None) -> in
         print(body)
         return 0
     comments = api.items(f"repos/{repo}/issues/{pr}/comments")
-    prev = next((comment for comment in comments if MARKER in (comment.get("body") or "")), None)
+    author = os.environ.get("GH_COMMENT_AUTHOR")
+    marked = sorted((comment for comment in comments if MARKER in (comment.get("body") or "")
+                     and (not author or (comment.get("user") or {}).get("login") == author)),
+                    key=lambda comment: comment["id"])
+    prev = marked[0] if marked else None
+    # Collapse marker duplicates left by overlapping event/recovery POSTs.
+    for duplicate in marked[1:]:
+        author = duplicate.get("user") or {}
+        previous_author = prev.get("user") or {}
+        if author.get("type") != "Bot" or author.get("login") != previous_author.get("login"):
+            continue  # Cleanup never deletes human comments or another bot's thread.
+        try:
+            api.request("DELETE", f"repos/{repo}/issues/comments/{duplicate['id']}")
+        except APIError as error:
+            if error.status != 404:
+                raise
     if prev is not None:
         if prev["body"] == body:
             print(f"structure-nudge: PR #{pr}: comment unchanged")
@@ -165,8 +195,23 @@ def run_pr(repo: str, pr: int, apply: bool, *, api: GitHub, snapshot=None) -> in
         api.request("PATCH", f"repos/{repo}/issues/comments/{prev['id']}", {"body": body})
         print(f"structure-nudge: PR #{pr}: updated comment {prev['id']}")
     else:
-        api.request("POST", f"repos/{repo}/issues/{pr}/comments", {"body": body})
+        created = api.request("POST", f"repos/{repo}/issues/{pr}/comments", {"body": body})
         print(f"structure-nudge: PR #{pr}: posted comment")
+        # The last overlapping POST can see both comments even when both preflight
+        # listings were empty. Verify after creation so cached recovery success does
+        # not leave a duplicate behind until another head/body edit.
+        if isinstance(created, dict) and (created.get("user") or {}).get("type") == "Bot":
+            login = created["user"]["login"]
+            own = sorted((comment for comment in api.items(f"repos/{repo}/issues/{pr}/comments")
+                          if MARKER in (comment.get("body") or "")
+                          and (comment.get("user") or {}).get("login") == login),
+                         key=lambda comment: comment["id"])
+            for duplicate in own[1:]:
+                try:
+                    api.request("DELETE", f"repos/{repo}/issues/comments/{duplicate['id']}")
+                except APIError as error:
+                    if error.status != 404:
+                        raise
     return 0
 
 

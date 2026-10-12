@@ -59,7 +59,10 @@ def retry_after(value, now):
     try:
         return max(0, float(value))
     except ValueError:
-        return max(0, email.utils.parsedate_to_datetime(value).timestamp() - now)
+        try:
+            return max(0, email.utils.parsedate_to_datetime(value).timestamp() - now)
+        except (TypeError, ValueError, OverflowError):
+            return 0
 
 
 class GitHub:
@@ -73,6 +76,7 @@ class GitHub:
 
     def _credential(self, read):
         env = dict(os.environ)
+        env.pop("GH_DEBUG", None)  # Request debug logs can contain comment bodies.
         token = env.pop("GH_READ_TOKEN", None)
         if read and token:
             env["GH_TOKEN"] = token
@@ -109,7 +113,16 @@ class GitHub:
             if not read:
                 self.last_write = time.monotonic()
             # Network/CLI failures are ambiguous for a POST; do not blindly repeat it.
-            status, headers, payload = response(result.stdout)
+            try:
+                status, headers, payload = response(result.stdout)
+            except RuntimeError:
+                # Missing HTTP headers are transport/CLI failures, not API validation.
+                diagnostic = (result.stderr or "no HTTP response").strip()
+                for name in ("GH_TOKEN", "GITHUB_TOKEN"):
+                    secret = env.get(name)
+                    if secret:
+                        diagnostic = diagnostic.replace(secret, "[redacted]")
+                status, headers, payload = 0, {}, {"message": diagnostic[:300]}
             self._record(credential, method, path, status, headers, read)
             if path == "graphql" and isinstance(payload, dict):
                 rate = (payload.get("data") or {}).get("rateLimit") or {}
@@ -120,13 +133,22 @@ class GitHub:
             if path == "graphql" and isinstance(payload, dict) and payload.get("errors"):
                 message = "; ".join(item.get("message", "GraphQL error") for item in payload["errors"])
                 payload = {"message": message, "errors": payload["errors"]}
-                status = 403 if "rate limit" in message.lower() else 422
+                kinds = {item.get("type") for item in payload["errors"]}
+                if "rate limit" in message.lower() or "RATE_LIMITED" in kinds or headers.get("retry-after") or headers.get("x-ratelimit-remaining") == "0":
+                    status = 403
+                elif kinds & {"INTERNAL", "SERVICE_UNAVAILABLE", "TIMEOUT"} or any(
+                    word in message.lower() for word in ("timed out", "timeout", "something went wrong")
+                ):
+                    status = 503
+                else:
+                    status = 422
             if 200 <= status < 300 and result.returncode == 0:
                 return payload
             error = APIError(method, path, status, payload)
             message = str(error).lower()
             limited = status == 429 or (status == 403 and
-                       any(word in message for word in ("rate limit", "abuse detection")))
+                       (headers.get("retry-after") or headers.get("x-ratelimit-remaining") == "0" or
+                        any(word in message for word in ("rate limit", "abuse detection", "creating content too quickly", "was submitted too quickly"))))
             if limited:
                 now = time.time()
                 delay = retry_after(headers.get("retry-after"), now)
@@ -150,7 +172,7 @@ class GitHub:
                 continue
             # Retry reads and idempotent updates after server errors. Comment and label
             # creation POSTs are ambiguous after a server error, so reconciliation rereads state.
-            if status >= 500 and (read or method in {"PATCH", "PUT", "DELETE"}) and attempt < 2:
+            if (status == 0 or status >= 500) and (read or (status != 0 and method in {"PATCH", "PUT", "DELETE"})) and attempt < 2:
                 delay = 2 ** (attempt + 1)
                 if self.waited + delay <= self.max_wait:
                     time.sleep(delay)
@@ -195,7 +217,7 @@ query($owner: String!, $name: String!, $pr: Int!, $after: String) {
   rateLimit { cost }
   repository(owner: $owner, name: $name) {
     pullRequest(number: $pr) {
-      title body state headRefOid baseRefOid changedFiles updatedAt
+      title body state headRefOid baseRefOid baseRefName changedFiles updatedAt
       labels(first: 100) { nodes { name } pageInfo { hasNextPage } }
       files(first: 100, after: $after) {
         nodes { path changeType }
@@ -208,10 +230,69 @@ query($owner: String!, $name: String!, $pr: Int!, $after: String) {
 """
 
 
+HISTORY_QUERY = """
+query($owner: String!, $name: String!, $first: Int!, $after: String) {
+  rateLimit { cost }
+  repository(owner: $owner, name: $name) {
+    pullRequests(first: $first, after: $after, states: [OPEN, CLOSED, MERGED],
+                 orderBy: {field: CREATED_AT, direction: DESC}) {
+      nodes {
+        number title body state headRefOid baseRefOid baseRefName changedFiles
+        labels(first: 100) { nodes { name } pageInfo { hasNextPage } }
+        files(first: 100) {
+          nodes { path changeType }
+          totalCount
+          pageInfo { hasNextPage endCursor }
+        }
+      }
+      pageInfo { hasNextPage endCursor }
+    }
+  }
+}
+"""
+
+
+def snapshot_info(row):
+    return {"title": row["title"], "body": row["body"], "state": row["state"].lower(),
+            "head": {"sha": row["headRefOid"]},
+            "base": {"sha": row["baseRefOid"], "ref": row["baseRefName"]},
+            "changed_files": row["changedFiles"], "labels": row["labels"]["nodes"]}
+
+
+def history_snapshots(api, repo, limit):
+    """Bulk historical reads, ordered by creation as gh pr list --state all was.
+
+    Only PRs with paginated labels/files need an individual snapshot query.
+    """
+    owner, name = repo.split("/")
+    count, after = 0, None
+    while count < limit:
+        result = api.graphql(HISTORY_QUERY, {"owner": owner, "name": name,
+                            "first": min(100, limit - count), "after": after})
+        connection = result["repository"]["pullRequests"]
+        for row in connection["nodes"]:
+            count += 1
+            pr = row["number"]
+            files = row["files"]
+            if row["labels"]["pageInfo"]["hasNextPage"] or files["pageInfo"]["hasNextPage"] or len(files["nodes"]) != row["changedFiles"] or len(files["nodes"]) != files["totalCount"]:
+                yield pr, pr_snapshot(api, repo, pr)
+            else:
+                yield pr, {"info": snapshot_info(row), "files": [
+                    {"filename": item["path"], "status": item["changeType"].lower()}
+                    for item in files["nodes"]]}
+        if not connection["pageInfo"]["hasNextPage"]:
+            return
+        cursor = connection["pageInfo"]["endCursor"]
+        if not cursor or cursor == after:
+            raise RuntimeError("Historical PR pagination did not advance")
+        after = cursor
+
+
 def pr_snapshot(api, repo, pr):
     """Fetch metadata, labels and files together, sharing one small query in the common case.
 
-    Paginated diffs must keep the same head, base and body throughout. GraphQL
+    Paginated diffs must keep the same head, base and body throughout.
+    Incomplete/capped file lists are marked for conservative classification. GraphQL
     reads use GH_READ_TOKEN and its GraphQL bucket, leaving REST for label writes.
     """
     owner, name = repo.split("/")
@@ -222,9 +303,7 @@ def pr_snapshot(api, repo, pr):
             row = result["repository"]["pullRequest"]
             if row is None:
                 raise RuntimeError(f"PR #{pr}: not found")
-            current = {"title": row["title"], "body": row["body"], "state": row["state"].lower(),
-                       "head": {"sha": row["headRefOid"]}, "base": {"sha": row["baseRefOid"]},
-                       "changed_files": row["changedFiles"], "labels": row["labels"]["nodes"]}
+            current = snapshot_info(row)
             if first is None:
                 first = fingerprint(current)
             if first != fingerprint(current):
@@ -232,9 +311,8 @@ def pr_snapshot(api, repo, pr):
             connection = row["files"]
             files.extend({"filename": item["path"], "status": item["changeType"].lower()}
                          for item in connection["nodes"])
-            if not connection["pageInfo"]["hasNextPage"]:
-                if len(files) != current["changed_files"] or len(files) != connection["totalCount"]:
-                    raise RuntimeError(f"PR #{pr}: incomplete file list")
+            if not connection["pageInfo"]["hasNextPage"] or len(files) >= 3000:
+                current["incomplete_files"] = bool(connection["pageInfo"]["hasNextPage"]) or len(files) != current["changed_files"] or len(files) != connection["totalCount"]
                 if row["labels"]["pageInfo"]["hasNextPage"]:
                     current["labels"] = api.items(f"repos/{repo}/issues/{pr}/labels")
                 return {"info": current, "files": files}

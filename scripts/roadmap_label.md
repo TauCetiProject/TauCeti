@@ -3,16 +3,18 @@
 `roadmap-label.yml` classifies open, reopened, pushed, and body/base-edited PRs.
 Title-only edits are ignored because the title supplies no classification
 evidence. A 20-second delay before token creation lets rapid events on one PR
-collapse through its cancellation group. Only trusted default-branch code runs;
+collapse through its cancellation group. Ignored title edits use a separate
+group, so they cannot cancel a meaningful run before their job is skipped. Only trusted default-branch code runs;
 the PR body and changed file paths remain API data.
 
 ## Credentials and API usage
 
 `GH_READ_TOKEN` is the job's `GITHUB_TOKEN`. PR metadata, labels, and changed files
 are fetched together using a small GraphQL query, paginated when necessary. The
-same snapshot supplies the advisory structure nudge. File pagination rejects a
-changing head/base/body or an incomplete diff rather than applying a label from
-mixed data. Repository label probes and comment listings use REST reads.
+same snapshot supplies the advisory structure nudge. File pagination restarts on a changing head/base/body. At the 3,000-file
+API boundary, or on an incomplete listing, one proven infrastructure path safely
+selects `roadmap/none`; otherwise the result is `roadmap/Unknown` with a notice.
+Incomplete diffs skip structure analysis and attribution nudges. Repository label probes and comment listings use REST reads.
 
 `GH_TOKEN` remains the scoped App installation token for mutations. This matters:
 App label/comment events drive downstream workflows, whereas `GITHUB_TOKEN`
@@ -21,8 +23,11 @@ label/comment mutations suppress those workflow triggers. Although
 token without replacing those triggers would change behavior. Local invocations
 without `GH_READ_TOKEN` use the normal authenticated `gh` credential for both.
 
-Both credentials have finite budgets. Sharing reads reduces pressure on the App;
-it does not guarantee that either credential will always have quota. Minting a
+Both credentials have finite budgets. The workflow token normally has only
+1,000 REST requests and 1,000 GraphQL points per hour per repository, shared with
+other workflows. Sharing reads reduces pressure on the App but can move the
+bottleneck to this smaller budget. Check both resource readings during a busy
+hour after rollout; a low budget or a deferred recovery is visible in the logs. Minting a
 new token for the same App installation does not give it a new budget.
 
 Every response records its credential role, HTTP status, rate-limit resource,
@@ -40,37 +45,67 @@ or repository label probe. Relabeling adds the desired label before removing
 stale roadmap labels, preserving unrelated labels. Repository labels are created
 only after a definite 404; concurrent `already_exists` creation is accepted.
 Existing label presentation is maintained separately through `--sync-labels`.
-An unchanged structure comment also causes no mutation.
+An unchanged structure comment also causes no mutation. Comments are capped at
+60,000 UTF-8 bytes, with an omission notice. App jobs select their own bot
+comments; duplicate markers from that same bot are collapsed, including a
+verification read after a new POST. Cleanup never deletes human comments.
 
 Primary exhaustion waits until the response's reset time plus five seconds.
 Secondary limits honor `Retry-After` (seconds or HTTP date), or wait at least a
 minute with exponential backoff. At most three attempts and 180 cumulative
-seconds of retry waits are allowed per process. A longer wait stops requests
+seconds of retry waits are allowed per process by default. `--max-wait` can
+raise this budget for a deliberate long local backfill. A longer wait stops requests
 using that credential and fails label reconciliation, leaving a later recovery
 to finish. HTTP 200 GraphQL error responses are also handled. Permission and
-validation errors fail immediately. Ambiguous comment/label creation POST
+validation errors fail immediately. Reads retry transport failures and transient
+GraphQL errors; transport diagnostics are retained with credentials redacted. Ambiguous comment/label creation POST
 failures are not repeated: the next reconciliation rereads state before writing.
 Mutations are spaced by at least one second within a process.
 
 ## Recovery and maintenance
 
 `roadmap-label-reconcile.yml` runs hourly at minute 17. It scans open PR metadata
-and reconciles PRs updated since the previous successful recovery's **start**,
-with two minutes of overlap for clock skew and concurrent listing changes. PRs without one valid roadmap label are always included.
-The first recovery scans every open PR. A failed, timed-out, or rate-limited run
-does not advance the window. Paging finishes before label writes can reorder
-the updated-PR listing. A per-PR error is reported and makes the recovery fail;
-a rate limit stops the remaining pass without probing each PR again.
+before mutations can reorder the listing. The state artifact contains hashes of
+the actual processed head, body, base branch name, state, canonical area set, and
+classifier policy, plus the resulting label and bounded retries. It contains no
+PR bodies or credentials. Unrelated comments/status-label changes and ordinary
+main-tip advances do not invalidate these input hashes. A matching successful
+input with the right label skips both the snapshot query and comment listing.
 
-The event and recovery jobs can overlap. Their additive label changes and marker
-comments converge; a concurrent later edit can temporarily invalidate a snapshot,
-so the overlapping recovery window is the backstop. Structure errors remain
-advisory on event runs; recovery reports them as failures so its window is retried.
-Neither workflow writes the authoritative build status.
+New, changed, or uncached inputs are inspected regardless of their update time.
+This also repairs a PR missed by a concurrent close during page-numbered listing:
+an unseen PR has no success record and is eligible on the next sweep. Changed,
+missing, or invalid roadmap labels are repaired even on old PRs. The first run
+and a cold/missing state artifact inspect every open PR.
 
-After changing canonical roadmaps, dispatch recovery with `full-scan: true` to
-reclassify all open PRs. Use `sync-labels: true` to create new canonical labels and
-repair their descriptions/colours. Both run only against trusted `main` code.
+Per-PR failures move to the artifact's retry queue while healthy work advances.
+After five failed recovery attempts for the same inputs, the PR is reported in
+warnings and the step summary and is skipped until its inputs/policy change or a
+manual full scan resets the state. Rate limits, transport outages, listing errors,
+and failed artifact uploads fail the workflow and retain the previous successful
+window. Completed progress is saved even on a deferred run, so the next pass can
+skip its successful prefix. The state comes only from this main-branch workflow;
+closed PRs are pruned after a complete listing.
+
+Without a state handoff, local recovery uses the previous successful run's start,
+with two minutes of overlap, plus PRs missing a valid label. Per-PR failures then
+remain nonzero, since there is no durable queue to carry them forward.
+
+Event and recovery jobs can overlap. A concurrent edit can temporarily invalidate
+a snapshot, but the next sweep checks the current input hash and roadmap labels.
+Structure errors remain advisory on event runs; recovery puts them in the same
+bounded retry queue. Neither workflow writes the authoritative build status.
+
+Dispatch `full-scan: true` after unusual base-history rewrites, to force an audit
+of cached inputs, or to retry exhausted PRs. Classifier/area-set changes invalidate
+cached inputs automatically. Use `sync-labels: true` to create canonical labels
+and repair descriptions/colours. Both run only against trusted `main` code.
+
+Historical `--backfill` keeps bulk GraphQL reads, newest-created order, state and
+tally output, and never posts attribution nudges. Only paginated diffs/labels need
+individual queries. Existing associations remain protected unless
+`--allow-relabel` is supplied; structure nudges, when explicitly requested, remain
+independent of that label opt-in.
 
 For a local read-only inspection:
 
