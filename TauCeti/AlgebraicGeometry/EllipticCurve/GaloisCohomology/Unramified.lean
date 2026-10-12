@@ -56,11 +56,16 @@ theorem mem_unramifiedTorsionCohomology_iff
 
 variable [IsIntegral 𝒪[K] W] [(integralModel 𝒪[K] W).IsElliptic]
 
+local instance : W.IsElliptic := by
+  rw [← baseChange_integralModel_eq 𝒪[K] W]
+  infer_instance
+
+open scoped Classical in
 variable {W m} in
 /-- At good reduction, inertia fixes an `m`-division point of a `K`-rational point when `m`
 is prime to the residue characteristic. The action here is on the discrete coefficient module
 over the separable closure. -/
-theorem smul_pointCoeff_eq_self_of_mem_inertiaSubgroup [DecidableEq K]
+theorem smul_pointCoeff_eq_self_of_mem_inertiaSubgroup
     (hm : (m : 𝓀[K]) ≠ 0) {P : W.toAffine.Point} {Q : W.PointCoeff}
     (hQ : m • Q = W.basePointCoeff P) {σ : Gal(AlgebraicClosure K/K)}
     (hσ : σ ∈ inertiaSubgroup K) : absoluteGaloisGroupRestrictEquiv K σ • Q = Q := by
@@ -84,23 +89,27 @@ theorem smul_pointCoeff_eq_self_of_mem_inertiaSubgroup [DecidableEq K]
   rw [Affine.Point.map_map, ← hcomm, ← Affine.Point.map_map]
   exact h
 
+open scoped Classical in
 variable {W m} in
 /-- The Kummer cocycle of a division point of a rational point vanishes on inertia at good
 reduction, when its multiplier is prime to the residue characteristic. -/
-theorem kummerCocycle_eq_zero_of_mem_inertiaSubgroup [DecidableEq K]
+theorem kummerCocycle_eq_zero_of_mem_inertiaSubgroup
     (hm : (m : 𝓀[K]) ≠ 0) {P : W.toAffine.Point} {Q : W.PointCoeff}
     (hQ : m • Q = W.basePointCoeff P) {σ : Gal(AlgebraicClosure K/K)}
     (hσ : σ ∈ inertiaSubgroup K) :
     kummerCocycle hQ (absoluteGaloisGroupRestrictEquiv K σ) = 0 := by
+  classical
   apply Subtype.ext
   rw [coe_kummerCocycle, smul_pointCoeff_eq_self_of_mem_inertiaSubgroup hm hQ hσ, sub_self]
   rfl
 
+open scoped Classical in
 /-- At good reduction, the Kummer class of a rational point is unramified when the multiplier is
 prime to the residue characteristic. -/
-theorem kummerMap_mem_unramifiedTorsionCohomology [DecidableEq K] [W.IsElliptic]
+theorem kummerMap_mem_unramifiedTorsionCohomology
     (hm : IsUnit (m : K)) (hmres : (m : 𝓀[K]) ≠ 0) (P : W.toAffine.Point) :
     W.kummerMap m hm P ∈ W.unramifiedTorsionCohomology m := by
+  classical
   obtain ⟨Q, hQ⟩ := (W.kummerShortExact m hm).proj_surjective (W.basePointCoeff P)
   rw [kummerShortExact_proj, nsmulAddMonoidHom_apply] at hQ
   rw [mem_unramifiedTorsionCohomology_iff, kummerMap_eq_H1pi hm hQ]
@@ -118,11 +127,13 @@ theorem kummerMap_mem_unramifiedTorsionCohomology [DecidableEq K] [W.IsElliptic]
     exact kummerCocycle_eq_zero_of_mem_inertiaSubgroup hmres hQ hτ
   exact (explicitRes1_mk _ _ _ _).trans (congrArg (H1pi _ _) hzero)
 
+open scoped Classical in
 /-- At good reduction away from the multiplier, the local Kummer condition is contained in
 the unramified local condition. -/
-theorem range_kummerMap_le_unramifiedTorsionCohomology [DecidableEq K] [W.IsElliptic]
+theorem range_kummerMap_le_unramifiedTorsionCohomology
     (hm : IsUnit (m : K)) (hmres : (m : 𝓀[K]) ≠ 0) :
     (W.kummerMap m hm).range ≤ W.unramifiedTorsionCohomology m := by
+  classical
   rintro c ⟨P, rfl⟩
   exact W.kummerMap_mem_unramifiedTorsionCohomology m hm hmres P
 
@@ -132,7 +143,7 @@ namespace WeierstrassCurve
 
 open TauCeti TauCeti.ContCohomology ValuativeRel
 
-variable {K : Type*} [Field K] (W : WeierstrassCurve K) [W.IsElliptic]
+variable {K : Type*} [Field K] (W : WeierstrassCurve K)
   {ι : Type*} {L : ι → Type*} [∀ i, Field (L i)] [∀ i, Algebra K (L i)]
   (τ : ∀ i, SeparableClosure K →ₐ[K] SeparableClosure (L i)) (i : ι)
   [ValuativeRel (L i)] [TopologicalSpace (L i)] [IsNonarchimedeanLocalField (L i)]
@@ -146,6 +157,15 @@ theorem torsionRes_mem_unramifiedTorsionCohomology_of_mem_selmerGroup {m : ℕ}
     {c : H1 (AbsoluteGaloisGroup K) (W.TorsionCoeff m)} (hc : c ∈ W.selmerGroup τ m) :
     W.torsionRes (τ i) m c ∈ (W⁄(L i)).unramifiedTorsionCohomology m := by
   classical
+  have : (W⁄(L i)).IsElliptic := by
+    rw [← baseChange_integralModel_eq 𝒪[L i] (W⁄(L i))]
+    infer_instance
+  have : W.IsElliptic := by
+    rw [isElliptic_iff, isUnit_iff_ne_zero]
+    intro hΔ
+    have hΔL := (W⁄(L i)).isUnit_Δ.ne_zero
+    rw [baseChange, map_Δ, hΔ, map_zero] at hΔL
+    exact hΔL rfl
   exact (W⁄(L i)).range_kummerMap_le_unramifiedTorsionCohomology m
     (by simpa using hm.map (algebraMap K (L i))) hmres
     ((W.mem_selmerGroup_iff_forall_torsionRes_mem_range_kummerMap τ hm).mp hc i)
