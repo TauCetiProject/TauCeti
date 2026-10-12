@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Braid.Adjacent.Tensor
-public import TauCeti.RepresentationTheory.Quiver.Zigzag.Braid.Normal
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Braid.SelfTensor
 
 /-!
