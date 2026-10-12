@@ -33,12 +33,11 @@ public section
 open Complex MeasureTheory Metric Set Filter
 open scoped Real Topology
 
-variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F]
+variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
 
-omit [CompleteSpace F] in
 /-- Angular integrals of a continuous density on a closed annulus depend continuously
 on the radius. Continuity at the centre is not required. -/
-theorem ContinuousOn.integral_comp_circleMap {f : ℂ → F} {z₀ : ℂ} {a b : ℝ}
+theorem ContinuousOn.integral_comp_circleMap [CompleteSpace F] {f : ℂ → F} {z₀ : ℂ} {a b : ℝ}
     (hf : ContinuousOn f {z : ℂ | a ≤ ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ b}) (ha : 0 ≤ a) :
     ContinuousOn (fun r ↦ ∫ θ in -π..π, f (circleMap z₀ r θ)) (Icc a b) := by
   let A := {z : ℂ | a ≤ ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ b}
@@ -60,10 +59,9 @@ theorem ContinuousOn.integral_comp_circleMap {f : ℂ → F} {z₀ : ℂ} {a b :
 
 namespace TauCeti
 
-omit [CompleteSpace F] in
-/-- Polar Fubini for a continuous normed-space-valued density on a closed annulus, with
+/-- Polar Fubini for a continuous Banach-space-valued density on a closed annulus, with
 the radial integral outermost and the angular variable running once around the circle. -/
-theorem integral_annulus_eq_integral_circleMap {f : ℂ → F} {z₀ : ℂ} {a b : ℝ}
+theorem integral_annulus_eq_integral_circleMap [CompleteSpace F] {f : ℂ → F} {z₀ : ℂ} {a b : ℝ}
     (ha : 0 < a) (hab : a ≤ b)
     (hf : ContinuousOn f {z : ℂ | a ≤ ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ b}) :
     (∫ z in {z : ℂ | a ≤ ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ b}, f z) =
@@ -91,6 +89,8 @@ theorem integral_annulus_eq_integral_circleMap {f : ℂ → F} {z₀ : ℂ} {a b
   simp_rw [intervalIntegral.integral_of_le (by linarith [Real.pi_pos] : -π ≤ π)]
 
 end TauCeti
+
+variable [CompleteSpace F]
 
 namespace MeasureTheory.IntegrableOn
 
