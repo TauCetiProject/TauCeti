@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Symplectic.JHolomorphic.Energy.PuncturedDisc
 public import TauCeti.Geometry.Symplectic.JHolomorphic.Energy.Radial
 import TauCeti.Analysis.Calculus.PowerGrowth
 import TauCeti.Analysis.Complex.OperatorNorm
+import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 
 /-!
 # Power decay of energy at a puncture
@@ -112,10 +113,7 @@ theorem mul_integral_norm_fderiv_one_sq_ball_le_mul_deriv
     simp only [D, mem_ofPred_eq, mem_sdiff, mem_closedBall, dist_eq_norm, mem_singleton_iff]
     rw [norm_pos_iff, sub_ne_zero]
     exact and_comm
-  have hclosed : closedBall z₀ r =ᵐ[volume] ball z₀ r :=
-    (ae_eq_of_subset_of_measure_ge ball_subset_closedBall
-      (volume.addHaar_closedBall_eq_addHaar_ball z₀ r).le
-      measurableSet_ball.nullMeasurableSet measure_closedBall_lt_top.ne).symm
+  have hclosed := volume.addHaar_closedBall_ae_eq_ball z₀ hr.1
   have hae : D =ᵐ[volume] ball z₀ r := by
     rw [hD]
     exact (sdiff_null_ae_eq_self (measure_singleton z₀)).trans hclosed
