@@ -361,22 +361,6 @@ noncomputable def affinePlaneBlowUpLowerChart (z : ℂ × ℂ) :
     ⟨affinePlaneBlowUpLowerCone, mem_affinePlaneBlowUpFan_cones.2 (Or.inl (.refl _))⟩
     (affinePlaneBlowUpLowerPointHomeomorph.symm z)
 
-/-- The upper parametrization is the inverse coordinate homeomorphism followed by the
-canonical affine-chart inclusion. -/
-theorem affinePlaneBlowUpUpperChart_def (z : ℂ × ℂ) :
-    affinePlaneBlowUpUpperChart z =
-      affinePlaneBlowUpFan.analyticAffineChartι isRegular_affinePlaneBlowUpFan
-        ⟨affinePlaneBlowUpUpperCone, mem_affinePlaneBlowUpFan_cones.2 (Or.inr (.refl _))⟩
-        (affinePlaneBlowUpUpperPointHomeomorph.symm z) := (rfl)
-
-/-- The lower parametrization is the inverse coordinate homeomorphism followed by the
-canonical affine-chart inclusion. -/
-theorem affinePlaneBlowUpLowerChart_def (z : ℂ × ℂ) :
-    affinePlaneBlowUpLowerChart z =
-      affinePlaneBlowUpFan.analyticAffineChartι isRegular_affinePlaneBlowUpFan
-        ⟨affinePlaneBlowUpLowerCone, mem_affinePlaneBlowUpFan_cones.2 (Or.inl (.refl _))⟩
-        (affinePlaneBlowUpLowerPointHomeomorph.symm z) := (rfl)
-
 /-- The upper parametrization is an open embedding for the existing monomial topology. -/
 theorem isOpenEmbedding_affinePlaneBlowUpUpperChart :
     Topology.IsOpenEmbedding affinePlaneBlowUpUpperChart :=
@@ -404,7 +388,7 @@ theorem exists_affinePlaneBlowUpUpperChart_eq_or_exists_affinePlaneBlowUpLowerCh
           (Or.inl (.refl _))⟩ :=
         faceAffinePointMap affinePlaneBlowUpFan.lattice hσ y
     refine Or.inr ⟨affinePlaneBlowUpLowerPointHomeomorph p, ?_⟩
-    rw [affinePlaneBlowUpLowerChart_def]
+    unfold affinePlaneBlowUpLowerChart
     -- The face map point is read in the bundled maximal chart.
     erw [Homeomorph.symm_apply_apply]
     exact affinePlaneBlowUpFan.analyticAffineChartι_faceAffinePointMap
@@ -414,7 +398,7 @@ theorem exists_affinePlaneBlowUpUpperChart_eq_or_exists_affinePlaneBlowUpLowerCh
           (Or.inr (.refl _))⟩ :=
         faceAffinePointMap affinePlaneBlowUpFan.lattice hσ y
     refine Or.inl ⟨affinePlaneBlowUpUpperPointHomeomorph p, ?_⟩
-    rw [affinePlaneBlowUpUpperChart_def]
+    unfold affinePlaneBlowUpUpperChart
     -- The face map point is read in the bundled maximal chart.
     erw [Homeomorph.symm_apply_apply]
     exact affinePlaneBlowUpFan.analyticAffineChartι_faceAffinePointMap
