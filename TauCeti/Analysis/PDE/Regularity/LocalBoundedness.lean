@@ -1035,12 +1035,13 @@ theorem exists_ae_value_le_add_mul_rpow_mul_setIntegral_rpow [Nonempty ι] {p : 
   have := hmain (u := u) (k := k) hball fun y s hs hsub => hbound h ha hu hs hsub
   rwa [show 2 * (-(Fintype.card ι : ℝ) / 2) / p = -(Fintype.card ι : ℝ) / p by ring] at this
 
-/-- **Local boundedness with hypotheses only on the ball.** In every positive dimension,
+/-- **Local boundedness with hypotheses only on the ball.** For every `0 < p ≤ 2` and every
+positive dimension,
 the coefficients need be elliptic and measurable only on `B(x₀, R)`, and the restriction of
 `u` to that ball need be a weak subsolution only there. The bound applies to the original
 ambient-domain representative of `u`; its constant is independent of the radius. -/
-theorem exists_ae_value_le_add_mul_rpow_mul_sqrt_setIntegral_of_local_subsolution
-    [Nonempty ι] :
+theorem exists_ae_value_le_add_mul_rpow_mul_setIntegral_rpow_of_local_subsolution
+    [Nonempty ι] {p : ℝ} (hp : 0 < p) (hp2 : p ≤ 2) :
     ∃ D : ℝ, 0 < D ∧ ∀ {Omega : Opens (EuclideanSpace ℝ ι)}
       {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {u : W1p mu Omega 2} {k : ℝ}
       {x₀ : EuclideanSpace ℝ ι} {R : ℝ} (_ : 0 < R)
@@ -1053,19 +1054,20 @@ theorem exists_ae_value_le_add_mul_rpow_mul_sqrt_setIntegral_of_local_subsolutio
         (∀ᵐ x ∂mu.restrict U, 0 ≤ W1p.value (v : W1p mu U 2) x) →
           energyFormH1 a 0 0 uU (v : W1p mu U 2) ≤ 0) →
       ∀ᵐ x ∂mu.restrict (Metric.ball x₀ (R / 2)),
-        W1p.value u x ≤ k + D * R ^ (-(Fintype.card ι : ℝ) / 2) *
-          √(∫ x in Metric.ball x₀ R, max (W1p.value u x - k) 0 ^ 2 ∂mu) := by
+        W1p.value u x ≤ k + D * R ^ (-(Fintype.card ι : ℝ) / p) *
+          (∫ x in Metric.ball x₀ R, max (W1p.value u x - k) 0 ^ p ∂mu) ^ p⁻¹ := by
   obtain ⟨D, hD, hbound⟩ :=
-    exists_ae_value_le_add_mul_rpow_mul_sqrt_setIntegral (mu := mu) (lam := lam) (Lam := Lam)
+    exists_ae_value_le_add_mul_rpow_mul_setIntegral_rpow (mu := mu)
+      (lam := lam) (Lam := Lam) hp hp2
   refine ⟨D, hD, fun {Omega a u k x₀ R} hR hball h ha hu => ?_⟩
   let U : Opens (EuclideanSpace ℝ ι) := ⟨Metric.ball x₀ R, Metric.isOpen_ball⟩
   have hU : U ≤ Omega := hball
   let uU : W1p mu U 2 := W1p.restrictL hU u
-  have hlocal := hbound (u := uU) (k := k) h ha hu hR (by exact Set.Subset.rfl)
+  have hlocal := hbound (u := uU) (k := k) h ha hu (by exact Set.Subset.rfl)
   have hvalue : W1p.value uU =ᵐ[mu.restrict (Metric.ball x₀ R)] W1p.value u :=
     W1p.value_restrictL_ae hU u
-  have hint : ∫ x in Metric.ball x₀ R, max (W1p.value uU x - k) 0 ^ 2 ∂mu =
-      ∫ x in Metric.ball x₀ R, max (W1p.value u x - k) 0 ^ 2 ∂mu := by
+  have hint : ∫ x in Metric.ball x₀ R, max (W1p.value uU x - k) 0 ^ p ∂mu =
+      ∫ x in Metric.ball x₀ R, max (W1p.value u x - k) 0 ^ p ∂mu := by
     apply integral_congr_ae
     filter_upwards [hvalue] with x hx
     rw [hx]
