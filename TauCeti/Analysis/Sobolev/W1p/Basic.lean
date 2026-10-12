@@ -421,6 +421,12 @@ theorem W1p.value_finsetSum_ae {ι : Type*} (s : Finset ι) (u : ι → W1p mu O
   filter_upwards [Lp.coeFn_fun_finsetSum s fun j => W1p.value (u j)] with x hx
   rw [h, hx]
 
+/-- The value of the negation of a Sobolev function is almost everywhere the negation of its
+value. -/
+theorem W1p.value_neg_ae (u : W1p mu Omega p) :
+    ⇑(W1p.value (-u)) =ᵐ[mu.restrict Omega] -⇑(W1p.value u) := by
+  simpa only [← W1p.valueL_apply, map_neg] using Lp.coeFn_neg (W1p.value u)
+
 
 /-- As for `TauCeti.W1p.value_coe`: the Sobolev gradient component is the gradient component of
 the underlying ambient jet. -/

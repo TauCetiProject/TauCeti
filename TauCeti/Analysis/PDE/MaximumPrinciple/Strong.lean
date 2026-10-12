@@ -105,8 +105,7 @@ private theorem UniformlyEllipticOn.ae_ball_value_eq_of_frequently_sub_lt [Nonem
   have : IsFiniteMeasure (mu.restrict (ball y (2 * r))) :=
     isFiniteMeasure_restrict.2 measure_ball_lt_top.ne
   -- `w = M - u` is a nonnegative weak supersolution on `U`.
-  have hneg : ⇑(W1p.value (-u)) =ᵐ[mu.restrict Omega] -W1p.value u := by
-    simpa only [← W1p.valueL_apply, map_neg] using Lp.coeFn_neg (W1p.value u)
+  have hneg := W1p.value_neg_ae u
   set w := W1p.restrictL hU (-u) + W1p.const M
   have hwv : ∀ᵐ x ∂mu.restrict U, W1p.value w x = M - W1p.value u x := by
     filter_upwards [W1p.value_add_const_ae (W1p.restrictL hU (-u)) M,
@@ -119,7 +118,7 @@ private theorem UniformlyEllipticOn.ae_ball_value_eq_of_frequently_sub_lt [Nonem
     rw [h1]
     linarith
   have hsuper := energyFormH1_restrictL_add_const_nonneg hU (u := -u) (fun v hv => by
-    rw [← neg_one_smul ℝ u, energyFormH1_smul_left]
+    rw [energyFormH1_neg_left]
     linarith [hu v hv]) M
   -- The weak Harnack inequality for `w`: its `L^{p₀}` average is at most `C w(x)` on `B(y, r)`.
   have hHw := hH (h.mono_set hball) (ha.mono_measure (Measure.restrict_mono hball le_rfl))
@@ -276,10 +275,9 @@ theorem UniformlyEllipticOn.ae_value_eq_of_frequently_lt_add [Nonempty ι]
       ∀ ε > 0, ∃ᵐ x ∂mu.restrict (ball y ρ), W1p.value u x < m + ε) :
     ∀ᵐ x ∂mu.restrict Omega, W1p.value u x = m := by
   -- Apply the strong maximum principle to the subsolution `-u ≤ -m`.
-  have hneg : ⇑(W1p.value (-u)) =ᵐ[mu.restrict Omega] -W1p.value u := by
-    simpa only [← W1p.valueL_apply, map_neg] using Lp.coeFn_neg (W1p.value u)
+  have hneg := W1p.value_neg_ae u
   have hmax := h.ae_value_eq_of_frequently_sub_lt ha hΩ (u := -u) (M := -m) (fun v hv => by
-      rw [← neg_one_smul ℝ u, energyFormH1_smul_left]
+      rw [energyFormH1_neg_left]
       linarith [hu v hv])
     (by filter_upwards [hm, hneg] with x hx hxn; rw [hxn, Pi.neg_apply]; linarith) hy
     fun ρ hρ hρΩ ε hε => ((hfreq ρ hρ hρΩ ε hε).and_eventually
@@ -306,11 +304,10 @@ theorem UniformlyEllipticOn.ae_value_eq_of_frequently_lt_add_of_isCompact [Nonem
     (hfreq : ∀ ε > 0, ∃ᵐ x ∂mu.restrict K, W1p.value u x < m + ε) :
     ∀ᵐ x ∂mu.restrict Omega, W1p.value u x = m := by
   -- Apply the compact strong maximum principle to the subsolution `-u ≤ -m`.
-  have hneg : ⇑(W1p.value (-u)) =ᵐ[mu.restrict Omega] -W1p.value u := by
-    simpa only [← W1p.valueL_apply, map_neg] using Lp.coeFn_neg (W1p.value u)
+  have hneg := W1p.value_neg_ae u
   have hmax := h.ae_value_eq_of_frequently_sub_lt_of_isCompact ha hΩ (u := -u) (M := -m)
     (fun v hv => by
-      rw [← neg_one_smul ℝ u, energyFormH1_smul_left]
+      rw [energyFormH1_neg_left]
       linarith [hu v hv])
     (by filter_upwards [hm, hneg] with x hx hxn; rw [hxn, Pi.neg_apply]; linarith) hK hKΩ
     fun ε hε => ((hfreq ε hε).and_eventually (ae_restrict_of_ae_restrict_of_subset hKΩ hneg)).mono

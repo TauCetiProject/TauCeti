@@ -690,10 +690,9 @@ theorem exists_ae_abs_value_le_mul_rpow_mul_sqrt_setIntegral [Nonempty ι] :
           pow_le_pow_left₀ (le_max_right _ _) (max_le (le_abs_self _) (abs_nonneg _)) 2
       _ = W1p.value w x ^ 2 := sq_abs _
   -- `-u` is a weak solution too, with the same `L²` norm on the ball.
-  have hneg : ⇑(W1p.value (-u)) =ᵐ[mu.restrict Omega] -W1p.value u := by
-    simpa only [← W1p.valueL_apply, map_neg] using Lp.coeFn_neg (W1p.value u)
+  have hneg := W1p.value_neg_ae u
   have hu' : ∀ v : W1p0 mu Omega 2, energyFormH1 a 0 0 (-u) (v : W1p mu Omega 2) = 0 := fun v => by
-    rw [← neg_one_smul ℝ u, energyFormH1_smul_left, hu v, mul_zero]
+    rw [energyFormH1_neg_left, hu v, neg_zero]
   have hint : ∫ x in Metric.ball x₀ R, W1p.value (-u) x ^ 2 ∂mu =
       ∫ x in Metric.ball x₀ R, W1p.value u x ^ 2 ∂mu := by
     refine integral_congr_ae ?_
