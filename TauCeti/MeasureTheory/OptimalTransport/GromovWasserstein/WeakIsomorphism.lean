@@ -17,15 +17,17 @@ probability parametrization: the coordinate projections give a canonical paramet
 and two measure-preserving maps with equal pulled-back kernels give an exact coupling.
 
 The relation is defined for raw measures and kernels with arbitrary target. Symmetry and
-invariance under a.e. changes require only a sigma-finite first measure. Its common-space
-introduction, reflexivity and transitivity are proved for a.e. strongly measurable kernels with
-values in an extended metric space. Transitivity uses gluing; it requires a finite middle measure
+invariance under a.e. changes require only a sigma-finite first measure. The exact coupling then
+is sigma-finite, although the second measure need not be. Its common-space introduction,
+reflexivity and transitivity are proved for a.e. strongly measurable kernels with values in an
+extended metric space. Transitivity uses gluing; it requires a finite middle measure
 and a standard Borel outer carrier, rather than a topology on every carrier.
 
 For an extended metric target and every nonzero exponent, an exact coupling is precisely a
-coupling of zero distortion. Consequently weakly isomorphic kernels with a weak pseudo extended
-metric target have Gromov–Wasserstein distance zero, even when the extended pseudometric does not
-induce the target topology. The converse requires an attainment theorem and is not asserted here.
+coupling of zero distortion. Weakly isomorphic kernels have Gromov–Wasserstein distance zero
+whenever their target discrepancy vanishes on the diagonal; no topology, symmetry or triangle
+inequality is needed for this implication. The converse requires an attainment theorem and is
+not asserted here.
 
 ## References
 
@@ -116,15 +118,14 @@ theorem areWeaklyIsomorphicKernels_congr_ae [SigmaFinite μ]
     exact areWeaklyIsomorphicKernels_of_isCoupling hπ (ha'.symm.trans (heq.trans hb'))
   exact ⟨transfer hX hY, transfer hX.symm hY.symm⟩
 
-section WeakPseudoEMetricSpace
+section EDist
 
-variable [TopologicalSpace Z] [WeakPseudoEMetricSpace Z]
+variable [EDist Z]
 
-/-- Weakly isomorphic kernels have zero Gromov–Wasserstein distance at every exponent.
-This implication also holds at exponent zero and does not require the topology to be induced
-by the extended pseudometric. -/
+/-- Weakly isomorphic kernels have zero Gromov–Wasserstein distance when self-discrepancies
+vanish. No topology, symmetry or triangle inequality is needed, and the exponent may be zero. -/
 theorem AreWeaklyIsomorphicKernels.gromovWassersteinEDist_eq_zero
-    (h : AreWeaklyIsomorphicKernels μ ωX ν ωY) (p : ℝ≥0∞) :
+    (h : AreWeaklyIsomorphicKernels μ ωX ν ωY) (hself : ∀ z : Z, edist z z = 0) (p : ℝ≥0∞) :
     gromovWassersteinEDist p μ ωX ν ωY = 0 := by
   obtain ⟨π, hπ, heq⟩ := h.exists_isCoupling
   refine nonpos_iff_eq_zero.mp ((gromovWassersteinEDist_le hπ p ωX ωY).trans_eq ?_)
@@ -132,10 +133,10 @@ theorem AreWeaklyIsomorphicKernels.gromovWassersteinEDist_eq_zero
   have hzero : (fun q : (X × Y) × (X × Y) ↦
       edist (ωX (q.1.1, q.2.1)) (ωY (q.1.2, q.2.2))) =ᵐ[π.prod π] 0 := by
     filter_upwards [heq] with q hq
-    simp [hq]
+    simpa only [hq, Pi.zero_apply] using hself (ωY (q.1.2, q.2.2))
   rw [eLpNorm_congr_ae hzero, eLpNorm_zero]
 
-end WeakPseudoEMetricSpace
+end EDist
 
 section EMetricSpace
 
