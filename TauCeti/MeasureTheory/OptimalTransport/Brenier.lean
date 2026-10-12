@@ -674,7 +674,8 @@ theorem exists_isKantorovichOptimalTransportMap_gradient_and_mongeAmpereMeasure_
   obtain ⟨u, hconv, hlsc, hbot, hdiff, hT, -⟩ :=
     exists_isKantorovichOptimalTransportMap_gradient hμ hfin
   refine ⟨u, hconv, hlsc, hbot, hT,
-    (hasLaw_gradient_and_ae_ne_top_iff_mongeAmpereMeasure_eq hconv hbot hμ hν).1 ⟨hT.toHasLaw, ?_⟩⟩
+    (hasLaw_gradient_and_ae_ne_top_iff_mongeAmpereMeasure_eq_and_ae_mem_subgradientImage
+      hconv hbot hμ hν).1 ⟨hT.toHasLaw, ?_⟩⟩
   filter_upwards [hdiff] with x hx using hx.1.self_of_nhds
 
 end FiniteDimensional

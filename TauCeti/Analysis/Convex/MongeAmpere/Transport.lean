@@ -32,9 +32,10 @@ Conversely, if `μ` is absolutely continuous as well and `ν` is carried by the 
 (`TauCeti.hasLaw_gradient_of_mongeAmpereMeasure_eq`). The coverage hypothesis cannot be dropped:
 `MA_{f,ν}` does not see the part of `ν` outside `∂f(D)`. Together, these characterise the
 potentials whose gradient pushes an absolutely continuous `μ` to an absolutely continuous `ν`
-(`TauCeti.hasLaw_gradient_and_ae_ne_top_iff_mongeAmpereMeasure_eq`). Applied to the potential
-of Brenier's theorem, this says that the Brenier potential is a weak solution of its transport
-equation (`TauCeti.exists_isKantorovichOptimalTransportMap_gradient_and_mongeAmpereMeasure_eq`, in
+(`TauCeti.hasLaw_gradient_and_ae_ne_top_iff_mongeAmpereMeasure_eq_and_ae_mem_subgradientImage`).
+Applied to the potential of Brenier's theorem, this says that the Brenier potential is a weak
+solution of its transport equation
+(`TauCeti.exists_isKantorovichOptimalTransportMap_gradient_and_mongeAmpereMeasure_eq`, in
 `TauCeti.MeasureTheory.OptimalTransport.Brenier`).
 
 ## Main statements
@@ -43,9 +44,9 @@ equation (`TauCeti.exists_isKantorovichOptimalTransportMap_gradient_and_mongeAmp
   subgradients of `f` gives `MA_{f,ν} = μ`;
 * `TauCeti.hasLaw_gradient_of_mongeAmpereMeasure_eq` — for absolutely continuous `μ`, if
   `MA_{f,ν} = μ` and `ν` is carried by `∂f(D)`, the gradient of `f` pushes `μ` to `ν`;
-* `TauCeti.hasLaw_gradient_and_ae_ne_top_iff_mongeAmpereMeasure_eq` — for absolutely continuous
-  `μ` and `ν`, the gradient of `f` pushes `μ` to `ν` with `f` finite `μ`-almost everywhere
-  exactly when `MA_{f,ν} = μ` and `ν` is carried by `∂f(D)`.
+* `TauCeti.hasLaw_gradient_and_ae_ne_top_iff_mongeAmpereMeasure_eq_and_ae_mem_subgradientImage` —
+  for absolutely continuous `μ` and `ν`, the gradient of `f` pushes `μ` to `ν` with `f` finite
+  `μ`-almost everywhere exactly when `MA_{f,ν} = μ` and `ν` is carried by `∂f(D)`.
 
 ## References
 
@@ -164,7 +165,7 @@ theorem hasLaw_gradient_of_mongeAmpereMeasure_eq (hf : Convex ℝ {p : E × ℝ 
 respect to an additive Haar measure. The gradient of the real representative of `f` pushes `μ`
 to `ν`, with `f` finite `μ`-almost everywhere, exactly when the Monge–Ampère measure of `f`
 weighted by `ν` is `μ` and `ν`-almost every point is a subgradient of `f` at a point of `D`. -/
-theorem hasLaw_gradient_and_ae_ne_top_iff_mongeAmpereMeasure_eq
+theorem hasLaw_gradient_and_ae_ne_top_iff_mongeAmpereMeasure_eq_and_ae_mem_subgradientImage
     (hf : Convex ℝ {p : E × ℝ | f p.1 ≤ p.2}) (hbot : ∀ x, f x ≠ ⊥) (hμ : μ ≪ ρ) (hν : ν ≪ ρ) :
     HasLaw (∇ fun x => (f x).toReal) ν μ ∧ (∀ᵐ x ∂μ, f x ≠ ⊤) ↔
       mongeAmpereMeasure ν f = μ ∧
