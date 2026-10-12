@@ -5,10 +5,10 @@ Authors: The Tau Ceti authors
 -/
 module
 
-public import Mathlib.Topology.Algebra.Group.Basic
 public import Mathlib.Topology.Algebra.Group.Matrix
 public import TauCeti.LinearAlgebra.Matrix.ProjectiveSpecialLinearGroup
 public import TauCeti.LinearAlgebra.Matrix.ProjectiveSpecialLinearGroup.FinTwo
+public import TauCeti.Topology.Algebra.Group.Subgroup
 
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
 
@@ -34,18 +34,6 @@ public section
 open scoped MatrixGroups Pointwise
 
 open Matrix.SpecialLinearGroup
-
-namespace Matrix.ProjectiveSpecialLinearGroup
-
-/-- A projective special linear group over a `T0` topological ring is Hausdorff. -/
-instance {n R : Type*} [Fintype n] [DecidableEq n] [CommRing R] [TopologicalSpace R]
-    [IsTopologicalRing R] [T0Space R] : T2Space (ProjectiveSpecialLinearGroup n R) := by
-  let _ : IsClosed (Subgroup.center (SpecialLinearGroup n R) : Set (SpecialLinearGroup n R)) := by
-    simpa only [Subgroup.coe_center, Set.centralizer_univ] using
-      Set.isClosed_centralizer (Set.univ : Set (SpecialLinearGroup n R))
-  infer_instance
-
-end Matrix.ProjectiveSpecialLinearGroup
 
 namespace TauCeti
 
@@ -102,7 +90,7 @@ theorem continuous_upperRightHom {R : Type*} [CommRing R] [TopologicalSpace R] :
     refine continuous_matrix fun i j ↦ ?_
     simp only [SpecialLinearGroup.transvection_coe, Matrix.add_apply]
     fin_cases i <;> fin_cases j <;> simp [continuous_const, continuous_id']
-  exact (continuous_quot_mk.comp (continuous_induced_rng.mpr h)).congr fun x ↦
-    (upperRightHom_apply x).symm
+  exact (continuous_quot_mk.comp (Topology.IsInducing.subtypeVal.continuous_iff.mpr h)).congr
+    fun x ↦ (upperRightHom_apply x).symm
 
 end Matrix.ProjectiveSpecialLinearGroup
