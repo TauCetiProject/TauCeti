@@ -107,7 +107,7 @@ theorem isParabolic_cycleMap_of_locallyFinite {j : Fin n} {ξ : OnePoint ℝ}
 
 /-- If the conjugated cycle transformation is translation by `w`, the inverse full cycle
 shifts the real part of the preceding vertex by `-w`. -/
-theorem re_toComplex_inv_partialCycleMap_cycleLength_smul_vertex_sub_one {j : Fin n}
+private theorem re_toComplex_inv_partialCycleMap_cycleLength_smul_vertex_sub_one {j : Fin n}
     {ξ : OnePoint ℝ} (hj : P.vertex j = .inr ξ) {g : PSL(2, ℝ)} (hg : g • ξ = ∞)
     {w : ℝ} (hw : g * σ.cycleMap j * g⁻¹ = upperRightHom w) :
     (toComplex ((g * (σ.partialCycleMap j (σ.cycleLength j))⁻¹) • P.vertex (j - 1))).re =
