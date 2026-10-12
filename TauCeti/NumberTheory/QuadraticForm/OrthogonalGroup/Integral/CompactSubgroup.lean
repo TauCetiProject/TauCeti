@@ -104,7 +104,8 @@ theorem le_integralOrthogonalSubgroup_of_isCompact_of_reflection_mem
   have hnorm (g : orthogonalGroup Q) (i j : ι) :
       ‖b.repr ((g : V ≃ₗ[ℚ_[p]] V) (b j)) i‖ =
         ‖b.repr (((g⁻¹ : orthogonalGroup Q) : V ≃ₗ[ℚ_[p]] V) (b i)) j‖ := by
-    have h := congrArg norm (repr_orthogonal_mul_basis_value Q b hb g i j)
+    have h := congrArg norm
+      (basis_value_mul_repr_orthogonal_eq_basis_value_mul_repr_inv Q b hb g i j)
     simpa only [norm_mul, htwo, hunit, one_mul] using h
   have hintegral (g : orthogonalGroup Q) (hg : g ∈ H) (i j : ι) :
       ‖LinearMap.toMatrix b b (g : V ≃ₗ[ℚ_[p]] V).toLinearMap i j‖ ≤ 1 := by

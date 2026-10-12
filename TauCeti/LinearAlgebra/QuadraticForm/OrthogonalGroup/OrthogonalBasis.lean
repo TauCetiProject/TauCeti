@@ -56,7 +56,8 @@ theorem reflection_basis_apply (hb : ∀ i j, i ≠ j → Q.IsOrtho (b i) (b j))
 
 /-- The entries of an orthogonal automorphism and its inverse are weighted transposes of one
 another, with weights the quadratic values of the orthogonal basis vectors. -/
-theorem repr_orthogonal_mul_basis_value (hb : ∀ i j, i ≠ j → Q.IsOrtho (b i) (b j))
+theorem basis_value_mul_repr_orthogonal_eq_basis_value_mul_repr_inv
+    (hb : ∀ i j, i ≠ j → Q.IsOrtho (b i) (b j))
     (g : orthogonalGroup Q) (i j : ι) :
     (2 * Q (b i)) * b.repr ((g : V ≃ₗ[R] V) (b j)) i =
       (2 * Q (b j)) * b.repr (((g⁻¹ : orthogonalGroup Q) : V ≃ₗ[R] V) (b i)) j := by
