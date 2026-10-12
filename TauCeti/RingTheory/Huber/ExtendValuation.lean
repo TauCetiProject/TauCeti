@@ -12,7 +12,7 @@ public import TauCeti.RingTheory.Valuation.ExtendOfPowMulMem
 # Extending a valuation from a ring of definition to the whole Huber ring
 
 A ring of definition `A₀` of a Huber ring `A` is open, so a topologically nilpotent `s`
-multiplies every element of `A` into it: `TauCeti.Huber.PairOfDefinition.exists_pow_mul_mem`
+multiplies every element of `A` into it: `Subring.exists_pow_mul_mem`
 gives an `n` with `sⁿ * a ∈ A₀`. That is exactly the hypothesis under which
 `Valuation.extendOfPowMulMem` extends a valuation of a subring to the whole ring, so a valuation
 `w` of `A₀` that does not vanish at `s` has a unique extension to `A`,
@@ -76,7 +76,8 @@ is `w (sⁿ * a) * (w s)⁻ⁿ`, and `extendValuation_apply` says so at every su
 noncomputable def extendValuation (P : PairOfDefinition A) (w : Valuation P.ringOfDefinition Γ₀)
     {s : A} (hs : s ∈ P.ringOfDefinition) (hnil : IsTopologicallyNilpotent s)
     (hw : w ⟨s, hs⟩ ≠ 0) : Valuation A Γ₀ :=
-  w.extendOfPowMulMem hs (Commute.all s) (P.exists_pow_mul_mem hnil) hw
+  w.extendOfPowMulMem hs (Commute.all s)
+    (P.ringOfDefinition.exists_pow_mul_mem P.isOpen_ringOfDefinition hnil) hw
 
 /-- **The defining formula**, at every exponent that carries `a` into the ring of definition. -/
 theorem extendValuation_apply (P : PairOfDefinition A) (w : Valuation P.ringOfDefinition Γ₀)
