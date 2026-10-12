@@ -23,7 +23,8 @@ between the lifting functions.
 ## Main results
 
 * `TauCeti.isQuasiIso_transportLocalSystemHom`: transport is a quasi-isomorphism.
-* `TauCeti.liftingLocalSystemRoof`: the zigzag comparing two transitive lifting functions.
+* `TauCeti.liftingLocalSystemRoof`: the zigzag comparing two transitive lifting functions, a
+  right fraction for the quasi-isomorphisms.
 
 ## References
 
@@ -59,18 +60,24 @@ theorem isQuasiIso_transportLocalSystemHom {Φ : MooreLiftingFunction p} (hΦ : 
       exact congrArg (fun k : C(_, _) ↦ cubicalChainModuleLinearMap R k x)
         (ContinuousMap.ext fun y ↦ congrFun (Φ.coe_transportHomotopyEquiv b) y).symm
 
-/-- **The zigzag comparing two transitive lifting functions**: the strict quasi-isomorphisms
-`C_*(F)_{Φ₀} ← C_*(F') → C_*(F)_{Φ₁}` induced by transport, with no homotopy between `Φ₀` and
-`Φ₁`. -/
+/-- **The zigzag comparing two transitive lifting functions**: the roof
+`C_*(F)_{Φ₀} ← C_*(F') → C_*(F)_{Φ₁}` of strict morphisms induced by transport, as a right fraction
+for the quasi-isomorphisms, with no homotopy between `Φ₀` and `Φ₁`.  Its second leg is also a
+quasi-isomorphism (`isQuasiIso_liftingLocalSystemRoof_f`). -/
 def liftingLocalSystemRoof {Φ₀ Φ₁ : MooreLiftingFunction p} (hΦ₀ : Φ₀.IsTransitive)
     (hΦ₁ : Φ₁.IsTransitive) (b : B) :
-    DGRightModuleCat.QuasiIsoRoof (liftingLocalSystem (R := R) hΦ₀ b) (liftingLocalSystem hΦ₁ b)
-    where
-  apex := fibrationLocalSystem R p b
-  left := transportLocalSystemHom hΦ₀ b
-  right := transportLocalSystemHom hΦ₁ b
-  isQuasiIso_left := isQuasiIso_transportLocalSystemHom hΦ₀ b
-  isQuasiIso_right := isQuasiIso_transportLocalSystemHom hΦ₁ b
+    (DGRightModuleCat.quasiIsos (loopChain_isDGAlgebra B b R)).RightFraction
+      (liftingLocalSystem (R := R) hΦ₀ b) (liftingLocalSystem hΦ₁ b) where
+  X' := fibrationLocalSystem R p b
+  s := transportLocalSystemHom hΦ₀ b
+  hs := (DGRightModuleCat.quasiIsos_iff _).2 (isQuasiIso_transportLocalSystemHom hΦ₀ b)
+  f := transportLocalSystemHom hΦ₁ b
+
+/-- The second leg of the zigzag is a quasi-isomorphism too. -/
+theorem isQuasiIso_liftingLocalSystemRoof_f {Φ₀ Φ₁ : MooreLiftingFunction p}
+    (hΦ₀ : Φ₀.IsTransitive) (hΦ₁ : Φ₁.IsTransitive) (b : B) :
+    DGRightModuleCat.IsQuasiIso (liftingLocalSystemRoof (R := R) hΦ₀ hΦ₁ b).f :=
+  isQuasiIso_transportLocalSystemHom hΦ₁ b
 
 end Transport
 

@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.CategoryTheory.Localization.CalculusOfFractions
 public import TauCeti.Algebra.Homology.DG.Module.Right.Hom.Cohomology
 
 /-!
@@ -16,13 +17,13 @@ homotopies need only be linear over the ground ring and the inverse commute with
 differentials, is a quasi-isomorphism (`TauCeti.DGRightModuleHom.isQuasiIso_of_homotopyInverse`):
 this is the form in which chain homotopy equivalences of underlying complexes are used.
 
-A **roof of quasi-isomorphisms** `M ← P → N` (`TauCeti.DGRightModuleCat.QuasiIsoRoof`) records
-two DG modules that are isomorphic in the derived category, through a specified zigzag.
+The quasi-isomorphisms form the morphism property `TauCeti.DGRightModuleCat.quasiIsos`, so that
+roofs `M ← P → N` are Mathlib's right fractions for it.
 
 ## Main definitions
 
 * `TauCeti.DGRightModuleHom.IsQuasiIso`, `TauCeti.DGRightModuleCat.IsQuasiIso`: quasi-isomorphisms.
-* `TauCeti.DGRightModuleCat.QuasiIsoRoof M N`: a roof `M ← P → N` of quasi-isomorphisms.
+* `TauCeti.DGRightModuleCat.quasiIsos h`: the quasi-isomorphisms, as a `MorphismProperty`.
 
 ## Main results
 
@@ -151,19 +152,17 @@ on cohomology. -/
 abbrev IsQuasiIso {M N : DGRightModuleCat.{uR, uA, uM} h} (f : M ⟶ N) : Prop :=
   DGRightModuleHom.IsQuasiIso f
 
-/-- A **roof of quasi-isomorphisms** `M ← P → N` between DG right modules: two quasi-isomorphisms
-out of a common DG module, which make `M` and `N` isomorphic in the derived category. -/
-structure QuasiIsoRoof (M N : DGRightModuleCat.{uR, uA, uM} h) where
-  /-- The common source of the two quasi-isomorphisms. -/
-  apex : DGRightModuleCat.{uR, uA, uM} h
-  /-- The quasi-isomorphism to `M`. -/
-  left : apex ⟶ M
-  /-- The quasi-isomorphism to `N`. -/
-  right : apex ⟶ N
-  /-- The map to `M` is a quasi-isomorphism. -/
-  isQuasiIso_left : IsQuasiIso left
-  /-- The map to `N` is a quasi-isomorphism. -/
-  isQuasiIso_right : IsQuasiIso right
+variable (h) in
+/-- The **quasi-isomorphisms** of DG right modules over `h`, as a morphism property.  A roof
+`M ← P → N` whose left leg is a quasi-isomorphism is a Mathlib right fraction
+`(quasiIsos h).RightFraction M N`. -/
+def quasiIsos : MorphismProperty (DGRightModuleCat.{uR, uA, uM} h) :=
+  fun _ _ f ↦ IsQuasiIso f
+
+/-- A morphism is in `quasiIsos` exactly when it is a quasi-isomorphism. -/
+theorem quasiIsos_iff {M N : DGRightModuleCat.{uR, uA, uM} h} (f : M ⟶ N) :
+    quasiIsos h f ↔ IsQuasiIso f :=
+  Iff.rfl
 
 end DGRightModuleCat
 
