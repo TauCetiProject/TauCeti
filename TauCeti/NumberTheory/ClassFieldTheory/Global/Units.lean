@@ -41,6 +41,8 @@ and so the first fundamental inequality, is computed.
 
 ## Main results
 
+* `TauCeti.ClassFieldTheory.herbrandQuotient_units_eq_div_card`:
+  `h((𝓞 L)ˣ) = h(ℤ[S_∞(L)]) / |Aut(L/K)|`, for `Aut(L/K)` cyclic.
 * `TauCeti.ClassFieldTheory.herbrandQuotient_units_eq_div`: `h((𝓞 L)ˣ) = h(ℤ[S_∞(L)]) / [L : K]`.
 * `TauCeti.ClassFieldTheory.herbrandQuotient_units`: `h((𝓞 L)ˣ) = 2^r / [L : K]`, with `r` the
   number of infinite places of `K` ramified in `L`.
@@ -196,7 +198,7 @@ private instance : Epi (unitsToUnitLattice K L) := (Rep.epi_iff_surjective _).2 
     rw [← toSubmodule_unitLatticeSubrep (K := K)]
     exact y.2
   obtain ⟨x, -, hx⟩ := hy
-  exact ⟨x, Subtype.ext hx⟩
+  exact ⟨x, Subtype.ext <| (coe_unitsToUnitLattice_hom_apply x).trans hx⟩
 
 /-- The kernel of the logarithmic embedding, the roots of unity, is finite. -/
 private theorem finite_kernel_unitsToUnitLattice : Finite ↑(kernel (unitsToUnitLattice K L)) := by
@@ -205,7 +207,7 @@ private theorem finite_kernel_unitsToUnitLattice : Finite ↑(kernel (unitsToUni
     have hker (x : LinearMap.ker
         ((forget₂ (Rep ℤ (L ≃ₐ[K] L)) (ModuleCat ℤ)).map (unitsToUnitLattice K L)).hom) :
         Additive.toMul (α := (𝓞 L)ˣ) x.1 ∈ torsion L := by
-      rw [← logEmbedding_eq_zero_iff]
+      rw [← logEmbedding_eq_zero_iff, ← coe_unitsToUnitLattice_hom_apply (K := K)]
       exact congrArg Subtype.val (LinearMap.mem_ker.1 x.2)
     exact Finite.of_injective
       (fun x ↦ (⟨Additive.toMul (α := (𝓞 L)ˣ) x.1, hker x⟩ : torsion L))
@@ -246,6 +248,16 @@ private theorem herbrandQuotient_units_eq_herbrandQuotient_augmentationLattice :
     isBaseChange_augmentationToLogSpace
     (fun σ x ↦ by simp [Subrepresentation.toRepresentation_apply]) augmentationToLogSpace_rho
 
+/-- **The Herbrand quotient of the units** of an extension of number fields `L/K` with cyclic
+automorphism group is the Herbrand quotient of the permutation lattice on the infinite places of `L`
+divided by the order of the automorphism group: `h((𝓞 L)ˣ) = h(ℤ[S_∞(L)]) / |Aut(L/K)|`. -/
+theorem herbrandQuotient_units_eq_div_card :
+    TateCohomology.herbrandQuotient (Rep.ofMulDistribMulAction (L ≃ₐ[K] L) (𝓞 L)ˣ) =
+      TateCohomology.herbrandQuotient (Rep.ofMulAction ℤ (L ≃ₐ[K] L) (InfinitePlace L)) /
+        Nat.card (L ≃ₐ[K] L) := by
+  rw [herbrandQuotient_units_eq_herbrandQuotient_augmentationLattice,
+    TateCohomology.herbrandQuotient_augmentationSubrepresentation_eq_div]
+
 variable [IsGalois K L]
 
 /-- **The Herbrand quotient of the units** of a cyclic extension of number fields `L/K` is the
@@ -255,9 +267,7 @@ theorem herbrandQuotient_units_eq_div :
     TateCohomology.herbrandQuotient (Rep.ofMulDistribMulAction (L ≃ₐ[K] L) (𝓞 L)ˣ) =
       TateCohomology.herbrandQuotient (Rep.ofMulAction ℤ (L ≃ₐ[K] L) (InfinitePlace L)) /
         Module.finrank K L := by
-  rw [herbrandQuotient_units_eq_herbrandQuotient_augmentationLattice,
-    TateCohomology.herbrandQuotient_augmentationSubrepresentation_eq_div,
-    IsGalois.card_aut_eq_finrank K L]
+  rw [herbrandQuotient_units_eq_div_card, IsGalois.card_aut_eq_finrank K L]
 
 open scoped Classical in
 /-- **The Herbrand quotient of the units** of a cyclic extension of number fields `L/K` is
