@@ -1043,7 +1043,7 @@ theorem exists_ae_value_le_add_mul_rpow_mul_sqrt_setIntegral_of_local_subsolutio
     [Nonempty ι] :
     ∃ D : ℝ, 0 < D ∧ ∀ {Omega : Opens (EuclideanSpace ℝ ι)}
       {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {u : W1p mu Omega 2} {k : ℝ}
-      {x₀ : EuclideanSpace ℝ ι} {R : ℝ} (hR : 0 < R)
+      {x₀ : EuclideanSpace ℝ ι} {R : ℝ} (_ : 0 < R)
       (hball : Metric.ball x₀ R ⊆ (Omega : Set (EuclideanSpace ℝ ι))),
       let U : Opens (EuclideanSpace ℝ ι) := ⟨Metric.ball x₀ R, Metric.isOpen_ball⟩
       let uU : W1p mu U 2 := W1p.restrictL hball u
@@ -1081,7 +1081,7 @@ theorem exists_ae_abs_value_le_mul_rpow_mul_sqrt_setIntegral_of_local_solution
     [Nonempty ι] :
     ∃ D : ℝ, 0 < D ∧ ∀ {Omega : Opens (EuclideanSpace ℝ ι)}
       {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {u : W1p mu Omega 2}
-      {x₀ : EuclideanSpace ℝ ι} {R : ℝ} (hR : 0 < R)
+      {x₀ : EuclideanSpace ℝ ι} {R : ℝ} (_ : 0 < R)
       (hball : Metric.ball x₀ R ⊆ (Omega : Set (EuclideanSpace ℝ ι))),
       let U : Opens (EuclideanSpace ℝ ι) := ⟨Metric.ball x₀ R, Metric.isOpen_ball⟩
       let uU : W1p mu U 2 := W1p.restrictL hball u
