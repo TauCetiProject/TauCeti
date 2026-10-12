@@ -31,7 +31,8 @@ their boundary.
 * `Convexity.StdSimplex.splitLast c w` maps `Δⁿ × Δᵐ` to `Δⁿ⁺ᵐ` by splitting the last vertex of
   `Δⁿ` into the vertices of `Δᵐ`. It commutes with the face maps of `Δᵐ`, and it isolates the last
   coordinate of the cube: `ofCube (n + 1) t` is `ofCube n` of the first `n` coordinates of `t`,
-  with its last vertex split into the edge point `ofCube 1` of the last coordinate.
+  with its last vertex split into the edge point `ofCube 1` of the last coordinate; splitting it
+  into an arbitrary edge point `ofCube 1 a` instead replaces the last coordinate of the cube by `a`.
 
 These are the geometric inputs for comparing homotopy groups of a space defined with cubes, as in
 Mathlib's `HomotopyGroup`, with those of its singular simplicial set.
@@ -46,7 +47,8 @@ Mathlib's `HomotopyGroup`, with those of its singular simplicial set.
   `Convexity.StdSimplex.prism_one`, `Convexity.StdSimplex.continuous_prism`,
   `Convexity.StdSimplex.surjective_prism` and `Convexity.StdSimplex.prism_eq_prism_iff`.
 * `Convexity.StdSimplex.splitLast`, with `Convexity.StdSimplex.continuous_splitLast`,
-  `Convexity.StdSimplex.splitLast_map_succAbove` and `Convexity.StdSimplex.splitLast_ofCube_init`.
+  `Convexity.StdSimplex.splitLast_map_succAbove`, `Convexity.StdSimplex.splitLast_ofCube_init` and
+  `Convexity.StdSimplex.splitLast_ofCube_init_ofCube_one`.
 
 ## References
 
@@ -440,10 +442,20 @@ lemma splitLast_ofCube_init (t : I^(Fin (n + 1))) :
     simp [ofCube]
   | succ n ih =>
     refine ext <| Finsupp.ext fun k => Fin.cases ?_ (fun k => ?_) k
-    · exact splitLast_weights_castAdd _ _ (0 : Fin (n + 1))
+    · conv_lhs => rw [show (0 : Fin (n + 1 + 1 + 1)) = Fin.castAdd 2 0 from rfl]
+      rw [splitLast_weights_castAdd, Fin.castSucc_zero, ofCube_weights_zero, ofCube_weights_zero]
+      simp only [Fin.init_def, Fin.castSucc_zero]
     · rw [splitLast_weights_succ (c' := ofCube n (Fin.init (Fin.tail t))) (a := t 0)
         (fun k => by simp [Fin.tail_init_eq_init_tail, Fin.init]),
         ofCube_weights_succ, ← ih (Fin.tail t)]
       simp [Fin.tail]
+
+/-- Replacing the last vertex of `ofCube n` of the first `n` coordinates of `t` by the point
+`(1 - a, a)` of an edge gives `ofCube (n + 1)` of `t` with its last coordinate replaced by `a`. -/
+lemma splitLast_ofCube_init_ofCube_one (t : I^(Fin (n + 1))) (a : I) :
+    splitLast (ofCube n (Fin.init t)) (ofCube 1 fun _ => a) =
+      ofCube (n + 1) (Function.update t (Fin.last n) a) := by
+  have := splitLast_ofCube_init (Function.update t (Fin.last n) a)
+  rwa [Fin.init_update_last, Function.update_self] at this
 
 end Convexity.StdSimplex

@@ -367,14 +367,6 @@ private lemma triangleCubeMap_zero {n : ℕ} (t : I^(Fin (n + 1))) :
   rw [triangleCubeMap, triangleHomotopy_zero, StdSimplex.splitLast_map_succAbove,
     StdSimplex.splitLast_ofCube_init]
 
-/-- Replacing the last vertex of `ofCube n` of the first `n` coordinates by the point `(1 - a, a)`
-of an edge gives `ofCube (n + 1)` of the point with last coordinate `a`. -/
-private lemma splitLast_ofCube_init_ofCube_one {n : ℕ} (t : I^(Fin (n + 1))) (a : I) :
-    StdSimplex.splitLast (StdSimplex.ofCube n (Fin.init t)) (StdSimplex.ofCube 1 fun _ => a) =
-      StdSimplex.ofCube (n + 1) (Function.update t (Fin.last n) a) := by
-  have := StdSimplex.splitLast_ofCube_init (Function.update t (Fin.last n) a)
-  rwa [Fin.init_update_last, Function.update_self] at this
-
 /-- At time `1` and on the first half, `triangleCubeMap` is `ofCube (n + 1)` at the point with
 doubled last coordinate, followed by the face map `n + 2`. -/
 private lemma triangleCubeMap_one_of_le {n : ℕ} {t : I^(Fin (n + 1))}
@@ -383,7 +375,7 @@ private lemma triangleCubeMap_one_of_le {n : ℕ} {t : I^(Fin (n + 1))}
       (StdSimplex.ofCube (n + 1) (Function.update t (Fin.last n) a)).map
         (Fin.natAdd n (2 : Fin 3)).succAbove := by
   rw [triangleCubeMap, triangleHomotopy_one_of_le h ha, StdSimplex.splitLast_map_succAbove,
-    splitLast_ofCube_init_ofCube_one]
+    StdSimplex.splitLast_ofCube_init_ofCube_one]
 
 /-- At time `1` and on the second half, `triangleCubeMap` is `ofCube (n + 1)` at the point with
 last coordinate `2 tₙ - 1`, followed by the face map `n`. -/
@@ -393,7 +385,7 @@ private lemma triangleCubeMap_one_of_lt {n : ℕ} {t : I^(Fin (n + 1))}
       (StdSimplex.ofCube (n + 1) (Function.update t (Fin.last n) a)).map
         (Fin.natAdd n (0 : Fin 3)).succAbove := by
   rw [triangleCubeMap, triangleHomotopy_one_of_lt h ha, StdSimplex.splitLast_map_succAbove,
-    splitLast_ofCube_init_ofCube_one]
+    StdSimplex.splitLast_ofCube_init_ofCube_one]
 
 /-- Over the boundary of the cube, `triangleCubeMap` lands in a facet `j < n` of `Δⁿ⁺²`, or on the
 boundary of its facet `n` or `n + 2`. So a map `τ` sending these to `x` sends it to `x`. -/
