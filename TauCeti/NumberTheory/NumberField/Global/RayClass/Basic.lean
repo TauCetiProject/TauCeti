@@ -326,7 +326,7 @@ theorem classMap_comp_idealClass {𝔪 𝔫 : Modulus K} (h : 𝔪 ∣ 𝔫) :
 
 /-- **Every invertible fractional ideal is prime to a modulus with empty support**: no prime
 divides the finite part, so no multiplicity is required to vanish.  The trivial modulus and the
-narrow modulus are the two moduli of this kind. -/
+narrow modulus are examples of this kind. -/
 theorem idealsPrimeTo_eq_top {𝔪 : Modulus K} (h : 𝔪.support = ∅) : idealsPrimeTo 𝔪 = ⊤ :=
   Subgroup.eq_top_iff' _ |>.mpr fun _ ↦
     NumberFieldArithmetic.mem_idealsAway_iff.mpr fun v hv ↦
