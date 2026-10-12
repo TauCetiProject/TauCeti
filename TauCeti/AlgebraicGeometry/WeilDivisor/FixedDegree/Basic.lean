@@ -17,14 +17,10 @@ degree `d`.  It is equivalent to Mathlib's symmetric power `Sym X d`, by reading
 its finitely supported multiplicity function and conversely reading an effective divisor by its
 natural-number coefficients.
 
-This is the formal divisor model behind the Jacobian roadmap's Layer C symmetric-power lane:
-the scheme-level construction of `Symᵈ X` and relative effective Cartier divisors is later
-geometry, but the Abel-map input already needs the divisor represented by an unordered
-degree-`d` collection of points.
+The scheme-level construction of `Symᵈ X` and of relative effective Cartier divisors is not
+attempted here.
 
-This advances `TauCetiRoadmap/JacobianChallenge/README.md`, Layer C, "Relative effective
-Cartier divisors and symmetric powers `Symᵈ X`", as a small prerequisite built from the
-existing Layer A `WeilDivisor` API.  No external mathematics is vendored.
+This file is built from Tau Ceti's `WeilDivisor` API. No external mathematics is vendored.
 -/
 
 public section
