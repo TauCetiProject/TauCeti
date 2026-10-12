@@ -135,6 +135,15 @@ for a central extension it says the ambient action is trivial. -/
 def InducesAction [MulDistribMulAction G M] : Prop :=
   ∀ (e : E) (m : M), S.conjAct e m = S.rightHom e • m
 
+/-- Relabelling the quotient does not change conjugation on the kernel. -/
+@[simp]
+theorem relabelQuotient_conjAct {H : Type*} [Group H] (e : G ≃* H) :
+    (S.relabelQuotient e).conjAct = S.conjAct := by
+  ext x m
+  apply S.inl_injective
+  rw [← GroupExtension.relabelQuotient_inl S e, GroupExtension.inl_conjAct_comm,
+    GroupExtension.relabelQuotient_inl, GroupExtension.inl_conjAct_comm]
+
 /-- Relabelling the quotient transports the induced action on the kernel along the same
 equivalence. -/
 theorem InducesAction.relabelQuotient [MulDistribMulAction G M]
@@ -142,11 +151,8 @@ theorem InducesAction.relabelQuotient [MulDistribMulAction G M]
     (e : G ≃* H) (hsmul : ∀ (g : G) (m : M), e g • m = g • m) :
     InducesAction (S.relabelQuotient e) := by
   intro x m
-  apply S.inl_injective
-  rw [← GroupExtension.relabelQuotient_inl S e, GroupExtension.inl_conjAct_comm]
-  rw [GroupExtension.relabelQuotient_inl, GroupExtension.relabelQuotient_rightHom,
-    MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom, hsmul, ← hact x m,
-    GroupExtension.inl_conjAct_comm]
+  simpa only [relabelQuotient_conjAct, GroupExtension.relabelQuotient_rightHom,
+    MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom, hsmul] using hact x m
 
 /-- **A central extension induces exactly the trivial action.** This is the constructor for
 `TauCeti.GroupExtension.InducesAction` in the central case: the hypothesis holds if and only if the

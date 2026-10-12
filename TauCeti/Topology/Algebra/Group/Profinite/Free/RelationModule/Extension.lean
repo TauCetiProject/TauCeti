@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Topology.Algebra.Group.Profinite.Free.RelationModule.Comparison
 public import TauCeti.Topology.Algebra.ContinuousMonoidHom.QuotientKerEquiv
-public import TauCeti.Topology.Algebra.GroupExtension.RelabelQuotient
 
 /-!
 # Free class-module extensions over their presented quotient
@@ -87,18 +86,15 @@ abbrev presentationProfiniteExtension :
     (fun q x ↦ by
       rw [presentationClassModuleAction_smul, ContinuousMulEquiv.symm_apply_apply])
 
-/-- The projection of the free presentation extension sends the class of `f` to `lift g f`.
-Use `rw` with this formula: `simp` unfolds the bundled projection before matching it. -/
+/-- The projection of the free presentation extension sends the class of `f` to `lift g f`. -/
 theorem presentationProfiniteExtension_rightHom_mk (f : freeProfiniteGroup ι) :
     letI := presentationClassModuleAction p hg
     (presentationProfiniteExtension p hg).toGroupExtension.rightHom (QuotientGroup.mk f) =
       lift g f := by
   let := presentationClassModuleAction p hg
-  simpa only [ContinuousMonoidHom.coe_toMonoidHom, ContinuousMulEquiv.toMulEquiv_eq_coe,
-    GroupExtension.relabelQuotient_rightHom, MulEquiv.toMonoidHom_eq_coe,
-    abelianizationProPExtension_rightHom, MonoidHom.coe_comp, MonoidHom.coe_ofClass,
-    ContinuousMulEquiv.coe_toMulEquiv, Function.comp_apply, QuotientGroup.mapOfLE_mk]
-    using (lift g).quotientKerEquivOfSurjective_mk (lift_surjective hg) f
+  rw [ProfiniteGroupExtension.relabelQuotient_rightHom_apply,
+    abelianizationProPExtension_rightHom, QuotientGroup.mapOfLE_mk,
+    ContinuousMonoidHom.quotientKerEquivOfSurjective_apply_mk]
 
 section Comparison
 
@@ -120,7 +116,8 @@ theorem exists_presentationProfiniteExtension_comparison :
   refine ⟨ψ, MonoidHom.ext fun x ↦ ?_⟩
   induction x using QuotientGroup.induction_on with
   | H f =>
-    simpa using (hψ f).trans (presentationProfiniteExtension_rightHom_mk p ha f).symm
+    rw [MonoidHom.comp_apply, presentationProfiniteExtension_rightHom_mk]
+    exact hψ f
 
 end Comparison
 

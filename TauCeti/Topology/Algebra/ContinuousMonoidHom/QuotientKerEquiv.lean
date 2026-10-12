@@ -42,7 +42,7 @@ noncomputable def quotientKerEquivOfSurjective : (G ⧸ (f : G →* H).ker) ≃�
 
 /-- The topological first isomorphism theorem sends the class of `x` to `f x`. -/
 @[simp]
-theorem quotientKerEquivOfSurjective_mk (x : G) :
+theorem quotientKerEquivOfSurjective_apply_mk (x : G) :
     f.quotientKerEquivOfSurjective hf (QuotientGroup.mk x) = f x :=
   TauCeti.QuotientGroup.quotientKerEquivOfSurjective_apply_mk f.toMonoidHom hf x
 
@@ -50,6 +50,6 @@ theorem quotientKerEquivOfSurjective_mk (x : G) :
 @[simp]
 theorem quotientKerEquivOfSurjective_symm_apply (x : G) :
     (f.quotientKerEquivOfSurjective hf).symm (f x) = QuotientGroup.mk x := by
-  rw [← f.quotientKerEquivOfSurjective_mk hf x, ContinuousMulEquiv.symm_apply_apply]
+  rw [← f.quotientKerEquivOfSurjective_apply_mk hf x, ContinuousMulEquiv.symm_apply_apply]
 
 end ContinuousMonoidHom
