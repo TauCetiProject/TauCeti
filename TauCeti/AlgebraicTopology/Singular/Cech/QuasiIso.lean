@@ -63,8 +63,7 @@ def openCoverSingularTotalAugmentation :
     openCoverSingularTotal U R ⟶ ((singularChainComplexFunctor.{u} C).obj R).obj X :=
   (openCoverSingularBicomplex U R).totalAugmentation
     ((openCoverSingularAugmentation U R).f 0 ≫ (HomologicalComplex.singleObjXSelf _ 0 _).hom)
-    (by rw [← Category.assoc, ← (openCoverSingularAugmentation U R).comm,
-      HomologicalComplex.single_obj_d, comp_zero, zero_comp])
+    (HomologicalComplex₂.d_comp_f_zero_singleObjXSelf_hom _ (openCoverSingularAugmentation U R))
 
 /-- On the summand of Čech degree zero, the augmentation of the total complex is the map of
 singular chains induced by the projection of the disjoint union of the family onto the ambient
@@ -129,8 +128,8 @@ theorem quasiIso_openCoverSingularTotalAugmentation (hU : ⋃ i, (U i : Set X) =
       (openCoverSingularBicomplex U R).totalAugmentation
           ((openCoverSmallSingularAugmentation U R).f 0 ≫
             (HomologicalComplex.singleObjXSelf _ 0 _).hom)
-          (by rw [← Category.assoc, ← (openCoverSmallSingularAugmentation U R).comm,
-            HomologicalComplex.single_obj_d, comp_zero, zero_comp]) ≫
+          (HomologicalComplex₂.d_comp_f_zero_singleObjXSelf_hom _
+            (openCoverSmallSingularAugmentation U R)) ≫
         SSet.chainComplexMap (X.smallSingularSubcomplex (fun i ↦ (U i : Set X))).ι R := by
     rw [HomologicalComplex₂.totalAugmentation_comp, openCoverSingularTotalAugmentation]
     congr 1
