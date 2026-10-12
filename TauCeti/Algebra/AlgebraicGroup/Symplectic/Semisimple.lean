@@ -8,7 +8,7 @@ module
 public import TauCeti.Algebra.AlgebraicGroup.Symplectic.StandardComodule
 public import TauCeti.Algebra.AlgebraicGroup.Semisimple.Basic
 import TauCeti.Algebra.AlgebraicGroup.Representation.Normal.Scalar
-import TauCeti.Algebra.AlgebraicGroup.Symplectic.Reductive
+import TauCeti.Algebra.AlgebraicGroup.Symplectic.Reductive.Basic
 import TauCeti.Algebra.AlgebraicGroup.Symplectic.BaseChange
 import TauCeti.Algebra.AlgebraicGroup.Symplectic.Smooth
 import TauCeti.Algebra.AlgebraicGroup.Symplectic.Connected
