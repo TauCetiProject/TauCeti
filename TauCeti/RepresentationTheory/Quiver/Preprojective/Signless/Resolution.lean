@@ -55,9 +55,11 @@ universe u v w
 variable (k : Type w) [CommRing k] {R : Type u} [Quiver.{v} R]
   [Finite R] [∀ x : R, Fintype (Quiver.Star x)]
 
-noncomputable local instance : Fintype R := Fintype.ofFinite R
+/-- A finite enumeration of vertices for the Koszul sums. -/
+noncomputable local instance signlessResolutionFintypeVertex : Fintype R := Fintype.ofFinite R
 
-noncomputable local instance (i j : R) : Fintype (i ⟶ j) := by
+/-- A finite enumeration of arrows, inherited from the outgoing star of the source. -/
+noncomputable local instance signlessResolutionFintypeArrow (i j : R) : Fintype (i ⟶ j) := by
   letI : Finite (i ⟶ j) :=
     Finite.of_injective (fun b : i ⟶ j => (Quiver.Star.mk b : Quiver.Star i)) sigma_mk_injective
   exact Fintype.ofFinite _
