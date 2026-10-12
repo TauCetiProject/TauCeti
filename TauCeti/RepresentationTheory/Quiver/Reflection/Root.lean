@@ -67,9 +67,10 @@ indecomposable, at the price of that hypothesis.
 
 ## References
 
-This is the "descent by height" step of the reflection induction for Gabriel's theorem. See
-Bernstein--Gelfand--Ponomarev, *Coxeter functors and Gabriel's theorem*, and
-Assem--Simson--Skowroński, *Elements of the Representation Theory of Associative Algebras* I, VII.5.
+This is the step of the reflection induction for Gabriel's theorem showing that the dimension vector
+of an indecomposable is a positive root. See Bernstein--Gelfand--Ponomarev, *Coxeter functors and
+Gabriel's theorem*, and Assem--Simson--Skowroński, *Elements of the Representation Theory of
+Associative Algebras* I, VII.5.
 -/
 
 public section
