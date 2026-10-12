@@ -65,11 +65,13 @@ theorem Matrix.mulVec_mem_convexHull_range_comp_perm {M : Matrix ι ι R}
     (hM : M ∈ doublyStochastic R ι) (w : ι → R) :
     M *ᵥ w ∈ convexHull R (Set.range fun σ : Equiv.Perm ι ↦ w ∘ σ) := by
   rw [← SetLike.mem_coe, doublyStochastic_eq_convexHull_permMatrix] at hM
-  refine convexHull_min ?_ ((convex_convexHull R _).is_linear_preimage
-    (f := fun A : Matrix ι ι R ↦ A *ᵥ w) ?_) hM
-  · rintro _ ⟨σ, rfl⟩
-    exact subset_convexHull R _ ⟨σ, (permMatrix_mulVec σ).symm⟩
-  · exact ⟨fun A B ↦ add_mulVec A B w, fun c A ↦ smul_mulVec c A w⟩
+  have hlin : IsLinearMap R fun A : Matrix ι ι R ↦ A *ᵥ w :=
+    ⟨fun A B ↦ add_mulVec A B w, fun c A ↦ smul_mulVec c A w⟩
+  have himage : (fun A : Matrix ι ι R ↦ A *ᵥ w) '' {σ.permMatrix R | σ : Equiv.Perm ι} =
+      Set.range fun σ : Equiv.Perm ι ↦ w ∘ σ := by
+    ext; simp [permMatrix_mulVec, eq_comm]
+  rw [← himage, ← hlin.image_convexHull]
+  exact Set.mem_image_of_mem _ hM
 
 end Birkhoff
 
