@@ -53,7 +53,9 @@ theorem exteriorPower_pushforward_obj_map_mk (n : ℕ)
       ModuleCat.exteriorPower.mk
         (M := ((PresheafOfModulesOfCommRing.pushforward α).obj M).obj V)
         (fun j ↦ M.map (F.op.map f) (m j)) := by
-  refine (PresheafOfModulesOfCommRing.exteriorPower_obj_map_mk n _ f m).trans ?_
+  simp only [PresheafOfModulesOfCommRing.exteriorPower_obj_map_mk]
+  -- The pushforward formula uses `.hom`, whereas the goal uses `ConcreteCategory.hom`;
+  -- `simp` does not match these coercions, so apply it explicitly to each wedge factor.
   exact congrArg (ModuleCat.exteriorPower.mk
     (M := ((PresheafOfModulesOfCommRing.pushforward α).obj M).obj V))
     (funext fun j ↦ PresheafOfModules.pushforward_obj_map_apply _ _ _ (m j))
@@ -70,6 +72,9 @@ private def exteriorPowerPushforwardMap (n : ℕ)
     apply ModuleCat.exteriorPower.hom_ext (R := S.obj U)
     apply ModuleCat.AlternatingMap.ext
     intro m
+    -- Restriction of scalars gives the concrete-category coercions different bundled objects
+    -- with the same carriers, so `simp` cannot match the restriction and comparison formulas.
+    -- Apply each wedge formula explicitly on the two sides of the naturality square.
     refine ((congrArg
       ((ModuleCat.restrictScalarsExteriorPowerComparison (α.app V).hom n).app
         (M.obj (F.op.obj V)))
@@ -164,6 +169,9 @@ theorem pullbackExteriorPowerComparison_app_app_unit_mk (n : ℕ)
     (ModuleCat.exteriorPower.map_mk ((η.app M).app' U) m)
   have h₂ := pushforwardExteriorPowerComparison_app_app_mk α n P U
     (fun i ↦ (η.app M).app' U (m i))
+  -- Evaluating a composite at `U` applies its two section maps successively
+  -- (`PresheafOfModules.comp_app`, `ModuleCat.comp_apply`); `exteriorPower_map_app`
+  -- identifies the first section map on the right of `h` with the map used in `h₁`.
   exact h.trans (h₁.trans h₂)
 
 end
