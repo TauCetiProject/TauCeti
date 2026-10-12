@@ -33,8 +33,6 @@ single summand.
   groupoid of a disjoint union is the monodromy of a covering space.
 * `TauCeti.CoveringSpace.sigmaMonodromyEquivalence`: **covering spaces of a disjoint union of
   nice spaces are equivalent to functors from its fundamental groupoid to types.**
-
-## References
 -/
 
 public section

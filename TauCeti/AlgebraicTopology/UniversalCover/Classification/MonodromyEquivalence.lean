@@ -65,12 +65,13 @@ action, while the former realises the disjoint union of one such quotient per or
 
 ## References
 
-This is the monodromy-functor form of the classification of connected covers; see Hatcher,
-*Algebraic Topology*, Section 1.3. It consumes the based-path universal cover adapted from Kim
-Morrison's [mathlib4#38292](https://github.com/leanprover-community/mathlib4/pull/38292), the
-stabiliser-cover reconstruction of
-`TauCeti.AlgebraicTopology.UniversalCover.Classification.Reconstruction`, and the balanced-product
-cover of `TauCeti.AlgebraicTopology.UniversalCover.Classification.ActionCover.Basic`.
+This is the monodromy-functor classification of covering spaces, with connected covers corresponding
+to transitive actions; see Hatcher, *Algebraic Topology*, Section 1.3. It consumes the based-path
+universal cover adapted from Kim Morrison's
+[mathlib4#38292](https://github.com/leanprover-community/mathlib4/pull/38292), the stabiliser-cover
+reconstruction of `TauCeti.AlgebraicTopology.UniversalCover.Classification.Reconstruction`, and the
+balanced-product cover of
+`TauCeti.AlgebraicTopology.UniversalCover.Classification.ActionCover.Basic`.
 -/
 
 public section
