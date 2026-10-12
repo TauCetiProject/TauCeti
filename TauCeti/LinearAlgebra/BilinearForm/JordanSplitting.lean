@@ -38,7 +38,7 @@ including the dyadic case, for instance `R = ℤ_2`, where constituents need not
 
 ## Main results
 
-* `LinearMap.BilinForm.IsJordanSplitting.finite_support`: a finitely generated module has only
+* `LinearMap.BilinForm.IsJordanSplitting.hasFiniteSupport`: a finitely generated module has only
   finitely many nonzero Jordan constituents.
 * `LinearMap.BilinForm.IsSymm.exists_isJordanSplitting`: Jordan splittings exist.
 
@@ -126,7 +126,7 @@ theorem isJordanSplitting_congr_iff {M' : Type*} [AddCommMonoid M'] [Module R M'
     fun h ↦ h.congr e⟩
 
 /-- A Jordan splitting of a finitely generated module has finitely many nonzero constituents. -/
-theorem IsJordanSplitting.finite_support [Module.Finite R M] {π : R}
+theorem IsJordanSplitting.hasFiniteSupport [Module.Finite R M] {π : R}
     {N : ℕ → Submodule R M} (h : B.IsJordanSplitting π N) : {i | N i ≠ ⊥}.Finite := by
   exact TauCeti.Submodule.finite_ne_bot_of_iSupIndep_of_fg h.isInternal.submodule_iSupIndep
     (by rw [h.isInternal.submodule_iSup_eq_top]; exact Module.Finite.fg_top)
