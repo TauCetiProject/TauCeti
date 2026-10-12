@@ -87,7 +87,7 @@ noncomputable def isoTwoChartModel :
   have := twoChartModel.isProper (hF := IsCurveOver.isFunctionField (k := k) (X := X)) (hx := hx)
     hxt
   { hom := homOfFunctionField
-      (valuationRing_stalk_of_topologicalKrullDim_le_one
+      (Scheme.valuationRing_stalk_of_topologicalKrullDim_le_one
         (IsCurveOver.topologicalKrullDim_eq_one k).le) _
       (specMap_comp_fromSpecStalk_genericPoint_comp_over k (functionFieldIso X hx hxt).hom
         (twoChartModel.functionFieldEquiv hxt).commutes)

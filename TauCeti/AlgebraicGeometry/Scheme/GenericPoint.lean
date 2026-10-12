@@ -28,9 +28,9 @@ every other point then has codimension exactly one.
   which is maximal for the specialization order is the generic point;
 * `TauCeti.AlgebraicGeometry.Scheme.isMax_iff_eq_genericPoint`: the maximal points for the
   specialization order on an irreducible scheme are exactly the generic point;
-* `AlgebraicGeometry.Scheme.coheight_eq_one_iff_ne_genericPoint`: on an irreducible scheme of
-  dimension at most one, the points of codimension one are exactly the points other than the
-  generic point.
+* `TauCeti.AlgebraicGeometry.Scheme.coheight_eq_one_iff_ne_genericPoint`: on an irreducible
+  scheme of dimension at most one, the points of codimension one are exactly the points other
+  than the generic point.
 -/
 
 public section
@@ -63,7 +63,7 @@ theorem isMax_iff_eq_genericPoint {y : X} : IsMax y ↔ y = genericPoint X :=
 
 /-- On an irreducible scheme of dimension at most one, the points of codimension one are exactly
 the points other than the generic point. -/
-theorem _root_.AlgebraicGeometry.Scheme.coheight_eq_one_iff_ne_genericPoint
+theorem coheight_eq_one_iff_ne_genericPoint
     (hX : topologicalKrullDim X ≤ 1) {y : X} : Order.coheight y = 1 ↔ y ≠ genericPoint X := by
   have hle : Order.coheight y ≤ 1 := by
     exact_mod_cast (TauCeti.coheight_le_topologicalKrullDim y).trans hX
