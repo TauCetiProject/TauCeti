@@ -184,7 +184,6 @@ theorem bilinFormAt_isAlt (φ : SmoothForm I M ℝ 2) (x : M) :
   exact (φ.1 x).map_eq_zero_of_eq _ (by simp) Fin.zero_ne_one
 
 /-- Evaluation on two equal tangent vectors vanishes by alternation. -/
-@[simp]
 theorem eval₂_self (φ : SmoothForm I M ℝ 2) (x : M) (v : TangentSpace I x) :
     φ.eval₂ x v v = 0 := by
   rw [← bilinFormAt_apply]
