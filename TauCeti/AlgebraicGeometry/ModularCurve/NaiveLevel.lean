@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.NaiveLevel
 public import TauCeti.AlgebraicGeometry.ModularCurve.ModuliProblem
+public import TauCeti.Data.ZMod.MonoidHomEquiv
 
 /-!
 # The naive moduli problems `[Γ₁(N)]` and `[Γ(N)]`
@@ -172,25 +173,6 @@ section Points
 
 variable {B N}
 
-/-- The homomorphism `ℤ/Nℤ →+ G` sending `1` to an element `g` of `G` killed by `N`. -/
-private noncomputable def zmodLift {G : Type*} [Group G] (g : G) (hg : g ^ N = 1) :
-    ZMod N →+ Additive G :=
-  ZMod.lift N ⟨zmultiplesHom _ (.ofMul g), by
-    rw [zmultiplesHom_apply, natCast_zsmul, ← ofMul_pow, hg, ofMul_one]⟩
-
-private theorem zmodLift_natCast {G : Type*} [Group G] (g : G) (hg : g ^ N = 1) (k : ℕ) :
-    (zmodLift g hg k).toMul = g ^ k := by
-  rw [← Int.cast_natCast, zmodLift, ZMod.lift_coe, zmultiplesHom_apply, natCast_zsmul, toMul_nsmul,
-    toMul_ofMul]
-
-private theorem zmodLift_one {G : Type*} [Group G] (g : G) (hg : g ^ N = 1) :
-    (zmodLift g hg 1).toMul = g := by
-  rw [← Nat.cast_one, zmodLift_natCast, pow_one]
-
-private theorem zmodLift_apply {G : Type*} [Group G] [NeZero N] (g : G) (hg : g ^ N = 1)
-    (a : ZMod N) : (zmodLift g hg a).toMul = g ^ a.val := by
-  rw [← zmodLift_natCast, ZMod.natCast_zmod_val]
-
 /-- The `S`-points of `E` killed by `N` are the `S`-points of `E[N]`. -/
 private noncomputable def torsionPointsEquiv {S : Scheme.{u}} (E : EllipticCurveGeom S) :
     {x : 𝟙_ (Over S) ⟶ Over.mk E.structureMap // x ^ N = 1} ≃
@@ -213,40 +195,6 @@ private theorem coe_torsionPointsEquiv_symm {S : Scheme.{u}} (E : EllipticCurveG
 
 variable [NeZero N]
 
-/-- Homomorphisms `ℤ/Nℤ →* G` are the elements of `G` killed by `N`, through the image of `1`. -/
-private noncomputable def zmodHomEquiv (G : Type*) [Group G] :
-    (Multiplicative (ZMod N) →* G) ≃ {g : G // g ^ N = 1} where
-  toFun φ := ⟨φ (.ofAdd 1), by
-    rw [← map_pow, ← ofAdd_nsmul, nsmul_one, ZMod.natCast_self, ofAdd_zero, map_one]⟩
-  invFun g := (zmodLift g.1 g.2).toMultiplicativeLeft
-  left_inv φ := by
-    refine MonoidHom.ext fun z ↦ ?_
-    obtain ⟨k, rfl⟩ : ∃ k : ℕ, z = .ofAdd (k : ZMod N) := ⟨z.toAdd.val, by simp⟩
-    rw [AddMonoidHom.coe_toMultiplicativeLeft, Function.comp_apply, Function.comp_apply,
-      toAdd_ofAdd, zmodLift_natCast, ← map_pow, ← ofAdd_nsmul, nsmul_one]
-  right_inv g := by
-    refine Subtype.ext ?_
-    dsimp only
-    rw [AddMonoidHom.coe_toMultiplicativeLeft, Function.comp_apply, Function.comp_apply,
-      toAdd_ofAdd, zmodLift_one]
-
-/-- Homomorphisms `(ℤ/Nℤ)² →* G` are the pairs of elements of `G` killed by `N`, through the
-images of `(1, 0)` and `(0, 1)`. -/
-private noncomputable def zmodProdHomEquiv (G : Type*) [CommGroup G] :
-    (Multiplicative (ZMod N × ZMod N) →* G) ≃ {g : G // g ^ N = 1} × {g : G // g ^ N = 1} where
-  toFun φ := (zmodHomEquiv G (φ.comp (AddMonoidHom.inl _ _).toMultiplicative),
-    zmodHomEquiv G (φ.comp (AddMonoidHom.inr _ _).toMultiplicative))
-  invFun g := ((zmodLift g.1.1 g.1.2).coprod (zmodLift g.2.1 g.2.2)).toMultiplicativeLeft
-  left_inv φ := by
-    refine MonoidHom.ext fun z ↦ ?_
-    obtain ⟨a, b, rfl⟩ : ∃ a b : ℕ, z = .ofAdd ((a : ZMod N), (b : ZMod N)) :=
-      ⟨z.toAdd.1.val, z.toAdd.2.val, by simp⟩
-    have hab : ((a : ZMod N), (b : ZMod N)) = a • (1, 0) + b • (0, 1) := by ext <;> simp
-    rw [hab, ofAdd_add, ofAdd_nsmul, ofAdd_nsmul, map_mul, map_pow, map_pow]
-    simp [zmodHomEquiv, zmodLift_one]
-  right_inv g := by
-    refine Prod.ext (Subtype.ext ?_) (Subtype.ext ?_) <;> simp [zmodHomEquiv, zmodLift_one]
-
 /-- **Naive `[Γ₁(N)]`-structures are points of `E[N]`.** For `N ≠ 0`, a naive
 `[Γ₁(N)]`-structure `φ` on `(E/S)` is determined by the `S`-point `P = φ 1` of `E[N]`, and the
 `S`-points of `E[N]` arising this way are those of exact order `N` in every fibre: none of
@@ -256,15 +204,15 @@ noncomputable def gammaOneNaiveEquiv (X : EllObj B) :
       {P : 𝟙_ (Over X.base) ⟶ (X.curve.torsion N).X //
         ∀ k : ℕ, 0 < k → k < N → ∀ s, ((P ≫ X.curve.torsionι N) ^ k).left s ≠ X.curve.zero s} :=
   (naiveLevelEquiv X).trans <|
-    ((zmodHomEquiv _).trans (torsionPointsEquiv X.curve)).subtypeEquiv fun φ ↦ by
+    ((zmodMonoidHomEquiv N _).trans (torsionPointsEquiv X.curve)).subtypeEquiv fun φ ↦ by
       rw [EllipticCurveGeom.isFiberwiseInjective_zmod_iff]
-      simp [zmodHomEquiv]
+      simp
 
 /-- The `S`-point of `E[N]` of a naive `[Γ₁(N)]`-structure `φ` is `φ 1`. -/
 @[simp]
 theorem gammaOneNaiveEquiv_apply_torsionι (X : EllObj B) (α : (gammaOneNaive B N).obj (op X)) :
     (gammaOneNaiveEquiv X α).1 ≫ X.curve.torsionι N = (naiveLevelEquiv X α).1 (.ofAdd 1) :=
-  torsionPointsEquiv_torsionι _ _
+  (torsionPointsEquiv_torsionι _ _).trans (coe_zmodMonoidHomEquiv_apply _)
 
 /-- The naive `[Γ₁(N)]`-structure of an `S`-point `P` of `E[N]` sends `a` to `aP`. -/
 @[simp]
@@ -274,7 +222,7 @@ theorem naiveLevelEquiv_gammaOneNaiveEquiv_symm_apply (X : EllObj B)
     (a : ZMod N) :
     (naiveLevelEquiv X ((gammaOneNaiveEquiv X).symm P)).1 (.ofAdd a) =
       (P.1 ≫ X.curve.torsionι N) ^ a.val := by
-  simp [gammaOneNaiveEquiv, zmodHomEquiv, zmodLift_apply]
+  simp [gammaOneNaiveEquiv]
 
 /-- The `S`-point of `E[N]` of the pull-back of a naive `[Γ₁(N)]`-structure along an arrow `φ` of
 `Ell/B` is the base change along `φ` of its `S`-point of `E[N]`. -/
@@ -297,22 +245,22 @@ noncomputable def gammaNaiveEquiv (X : EllObj B) :
           (𝟙_ (Over X.base) ⟶ (X.curve.torsion N).X) //
         ∀ a b : ZMod N, (a, b) ≠ 0 → ∀ s, ((PQ.1 ≫ X.curve.torsionι N) ^ a.val *
           (PQ.2 ≫ X.curve.torsionι N) ^ b.val).left s ≠ X.curve.zero s} :=
-  (naiveLevelEquiv X).trans <| ((zmodProdHomEquiv _).trans
+  (naiveLevelEquiv X).trans <| ((zmodProdMonoidHomEquiv N _).trans
     ((torsionPointsEquiv X.curve).prodCongr (torsionPointsEquiv X.curve))).subtypeEquiv fun φ ↦ by
       rw [EllipticCurveGeom.isFiberwiseInjective_zmod_prod_iff]
-      simp [zmodProdHomEquiv, zmodHomEquiv]
+      simp
 
 /-- The first `S`-point `P` of `E[N]` of a naive `[Γ(N)]`-structure `φ` is `φ (1, 0)`. -/
 @[simp]
 theorem gammaNaiveEquiv_apply_fst_torsionι (X : EllObj B) (α : (gammaNaive B N).obj (op X)) :
     (gammaNaiveEquiv X α).1.1 ≫ X.curve.torsionι N = (naiveLevelEquiv X α).1 (.ofAdd (1, 0)) :=
-  torsionPointsEquiv_torsionι _ _
+  (torsionPointsEquiv_torsionι _ _).trans (coe_zmodProdMonoidHomEquiv_apply_fst _)
 
 /-- The second `S`-point `Q` of `E[N]` of a naive `[Γ(N)]`-structure `φ` is `φ (0, 1)`. -/
 @[simp]
 theorem gammaNaiveEquiv_apply_snd_torsionι (X : EllObj B) (α : (gammaNaive B N).obj (op X)) :
     (gammaNaiveEquiv X α).1.2 ≫ X.curve.torsionι N = (naiveLevelEquiv X α).1 (.ofAdd (0, 1)) :=
-  torsionPointsEquiv_torsionι _ _
+  (torsionPointsEquiv_torsionι _ _).trans (coe_zmodProdMonoidHomEquiv_apply_snd _)
 
 /-- The naive `[Γ(N)]`-structure of a pair `(P, Q)` of `S`-points of `E[N]` sends `(a, b)` to
 `aP + bQ`. -/
@@ -325,7 +273,7 @@ theorem naiveLevelEquiv_gammaNaiveEquiv_symm_apply (X : EllObj B)
     (a b : ZMod N) :
     (naiveLevelEquiv X ((gammaNaiveEquiv X).symm PQ)).1 (.ofAdd (a, b)) =
       (PQ.1.1 ≫ X.curve.torsionι N) ^ a.val * (PQ.1.2 ≫ X.curve.torsionι N) ^ b.val := by
-  simp [gammaNaiveEquiv, zmodProdHomEquiv, zmodLift_apply]
+  simp [gammaNaiveEquiv]
 
 /-- The first `S`-point of `E[N]` of the pull-back of a naive `[Γ(N)]`-structure along an arrow `φ`
 of `Ell/B` is the base change along `φ` of its first `S`-point of `E[N]`. -/
