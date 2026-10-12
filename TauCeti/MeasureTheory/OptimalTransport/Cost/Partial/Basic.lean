@@ -19,8 +19,9 @@ from that supremum: extended Borel costs can have a gap between the ordinary and
 
 For finite measures of equal mass, every partial plan can be completed by coupling its residual
 marginals. If the cost is bounded by a finite constant `C`, completion costs at most `C * ε`.
-Consequently relaxation does not change the value of a bounded cost, without any topology or
-measurability hypothesis on the cost. Infinite values remain part of both primal interfaces.
+The completion estimate also covers residual costs bounded by mass plus an error, supporting
+the no-gap criteria in `Cost/Partial/Integrable`. Infinite values remain part of both primal
+interfaces, without any topology or measurability hypothesis on the cost.
 
 ## References
 
@@ -153,41 +154,37 @@ theorem relaxedTransportCost_mono (hcd : c ≤ d) :
   relaxedTransportCost_le fun _ hε ↦
     (partialTransportCost_mono hcd).trans (partialTransportCost_le_relaxedTransportCost hε)
 
-/-- Completing a partial plan for a bounded cost adds at most the bound times the deficit.
-No measurability of the cost is needed. -/
-theorem transportCost_le_partialTransportCost_add [IsFiniteMeasure μ]
-    (hmass : μ univ = ν univ) (C : NNReal) (hc : ∀ z, c z ≤ C) :
-    transportCost c μ ν ≤ partialTransportCost c μ ν ε + C * ε := by
+/-- A uniform mass-plus-error bound on plans with dominated marginals bounds the cost of
+completing a partial plan by `C * ε + η`. No measurability of the cost is needed. -/
+theorem transportCost_le_partialTransportCost_add_of_lintegral_le [IsFiniteMeasure μ]
+    (hmass : μ univ = ν univ) {C η : ℝ≥0∞}
+    (hc : ∀ ρ : Measure (X × Y), ρ.fst ≤ μ → ρ.snd ≤ ν →
+      ∫⁻ z, c z ∂ρ ≤ C * ρ univ + η) :
+    transportCost c μ ν ≤ partialTransportCost c μ ν ε + C * ε + η := by
   rw [partialTransportCost_def]
   simp only [ENNReal.iInf_add]
   refine le_iInf fun π ↦ le_iInf fun hfst ↦ le_iInf fun hsnd ↦ le_iInf fun hπmass ↦ ?_
-  obtain ⟨ρ, -, hπρ, hρmass⟩ := exists_isCoupling_add_of_le_marginals hmass hfst hsnd
+  obtain ⟨ρ, hρ, hπρ, hρmass⟩ := exists_isCoupling_add_of_le_marginals hmass hfst hsnd
+  have hρfst : ρ.fst ≤ μ := hρ.fst_eq.trans_le Measure.sub_le
+  have hρsnd : ρ.snd ≤ ν := hρ.snd_eq.trans_le Measure.sub_le
   have hdeficit : ρ univ ≤ ε := by
     rw [hρmass, tsub_le_iff_right]
     simpa [add_comm] using hπmass
   calc transportCost c μ ν ≤ ∫⁻ z, c z ∂(π + ρ) := transportCost_le_lintegral hπρ c
     _ = (∫⁻ z, c z ∂π) + ∫⁻ z, c z ∂ρ := lintegral_add_measure _ _ _
-    _ ≤ (∫⁻ z, c z ∂π) + C * ε := by
+    _ ≤ (∫⁻ z, c z ∂π) + (C * ρ univ + η) :=
+      add_le_add le_rfl (hc ρ hρfst hρsnd)
+    _ ≤ (∫⁻ z, c z ∂π) + C * ε + η := by
+      rw [add_assoc]
       gcongr
-      calc ∫⁻ z, c z ∂ρ ≤ ∫⁻ _, (C : ℝ≥0∞) ∂ρ := lintegral_mono hc
-        _ = C * ρ univ := lintegral_const _
-        _ ≤ C * ε := by gcongr
 
-/-- **Relaxation preserves bounded-cost transport.** For finite equal-mass measures and a
-uniformly bounded nonnegative cost, the relaxed and ordinary primal values coincide. -/
-theorem relaxedTransportCost_eq_transportCost_of_bounded [IsFiniteMeasure μ]
+/-- Completing a partial plan for a bounded cost adds at most the bound times the deficit.
+No measurability of the cost is needed. -/
+theorem transportCost_le_partialTransportCost_add [IsFiniteMeasure μ]
     (hmass : μ univ = ν univ) (C : NNReal) (hc : ∀ z, c z ≤ C) :
-    relaxedTransportCost c μ ν = transportCost c μ ν := by
-  refine le_antisymm relaxedTransportCost_le_transportCost ?_
-  refine ENNReal.le_of_forall_pos_le_add fun η hη _ ↦ ?_
-  have hη' : (η : ℝ≥0∞) ≠ 0 := by exact_mod_cast hη.ne'
-  obtain ⟨δ, hδ, hCδ⟩ := ENNReal.exists_nnreal_pos_mul_lt (a := (C : ℝ≥0∞))
-    ENNReal.coe_ne_top hη'
-  have hδ' : 0 < (δ : ℝ≥0∞) := by exact_mod_cast hδ
-  calc transportCost c μ ν ≤ partialTransportCost c μ ν δ + C * δ :=
-        transportCost_le_partialTransportCost_add hmass C hc
-    _ ≤ relaxedTransportCost c μ ν + η :=
-      add_le_add (partialTransportCost_le_relaxedTransportCost hδ')
-        (by simpa only [mul_comm] using hCδ.le)
+    transportCost c μ ν ≤ partialTransportCost c μ ν ε + C * ε := by
+  simpa only [add_zero] using transportCost_le_partialTransportCost_add_of_lintegral_le
+    (c := c) (ε := ε) (C := C) (η := 0) hmass
+    (fun ρ _ _ ↦ (lintegral_mono hc).trans_eq (by rw [lintegral_const, add_zero]))
 
 end TauCeti

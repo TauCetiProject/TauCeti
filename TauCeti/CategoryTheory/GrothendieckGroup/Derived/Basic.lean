@@ -8,7 +8,7 @@ module
 public import TauCeti.CategoryTheory.GrothendieckGroup.Abelian
 public import TauCeti.CategoryTheory.GrothendieckGroup.Triangulated
 public import TauCeti.Algebra.Homology.DerivedCategory.Bounded.Basic
-public import TauCeti.CategoryTheory.GrothendieckGroup.BoundedHomotopy
+public import TauCeti.CategoryTheory.GrothendieckGroup.BoundedHomotopy.Basic
 public import TauCeti.CategoryTheory.GrothendieckGroup.EulerCharacteristic
 public import TauCeti.Algebra.BigOperators.AlternatingSum
 public import Mathlib.Algebra.Homology.DerivedCategory.FullyFaithful

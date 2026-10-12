@@ -126,11 +126,12 @@ theorem inv_mul_apply_mem_pLowerCentralSeries {k : ℕ} {g : G} (hg : g ∈ pLow
       have hθx : θ x = x * u := (mul_inv_cancel_left x (θ x)).symm
       have hθy : θ y = y * v := (mul_inv_cancel_left y (θ y)).symm
       rw [hmem, map_commutatorElement, hθx, hθy,
-        mk_eq_mk_mul_mk_of_le (m + k + 1) (by omega) (mk_commutatorElement_mul_left hu
-          (mem_pLowerCentralSeries_zero p (y * v)) x),
+        mk_eq_mk_mul_mk_of_pLowerCentralSeries_of_le (m + k + 1) (by omega)
+          (mk_commutatorElement_mul_left hu (mem_pLowerCentralSeries_zero p (y * v)) x),
         mk_eq_one_of_mem_pLowerCentralSeries_of_le (m + k + 1)
           (commutator_mem_pLowerCentralSeries_succ hu (y * v)) le_rfl, mul_one,
-        mk_eq_mk_mul_mk_of_le (m + k + 1) (by omega) (mk_commutatorElement_mul_right hx hv y),
+        mk_eq_mk_mul_mk_of_pLowerCentralSeries_of_le (m + k + 1) (by omega)
+          (mk_commutatorElement_mul_right hx hv y),
         mk_eq_one_of_mem_pLowerCentralSeries_of_le (m + k + 1)
           (commutator_mem_pLowerCentralSeries hx hv) (by omega), mul_one]
 
@@ -238,10 +239,13 @@ theorem gradedDeviation_gradedBracket (hm : 1 ≤ m) {j k : ℕ} (x : gradedPiec
   have h : ((⁅(x : G) * u, (y : G) * v⁆ : G) : G ⧸ pLowerCentralSeries p G (m + (j + k + 1) + 1)) =
       ((⁅(x : G), (y : G)⁆ : G) : G ⧸ _) * ((⁅(x : G), v⁆ : G) : G ⧸ _) *
         ((⁅u, (y : G)⁆ : G) : G ⧸ _) := by
-    rw [mk_eq_mk_mul_mk_of_le _ (by omega) (mk_commutatorElement_mul_left hu
-        (mul_mem y.2 (pLowerCentralSeries_antitone (Nat.le_add_left k m) hv)) x),
-      mk_eq_mk_mul_mk_of_le _ (by omega) (mk_commutatorElement_mul_right x.2 hv y),
-      mk_eq_mk_mul_mk_of_le _ (by omega) (mk_commutatorElement_mul_right hu hv y),
+    rw [mk_eq_mk_mul_mk_of_pLowerCentralSeries_of_le _ (by omega)
+        (mk_commutatorElement_mul_left hu
+          (mul_mem y.2 (pLowerCentralSeries_antitone (Nat.le_add_left k m) hv)) x),
+      mk_eq_mk_mul_mk_of_pLowerCentralSeries_of_le _ (by omega)
+        (mk_commutatorElement_mul_right x.2 hv y),
+      mk_eq_mk_mul_mk_of_pLowerCentralSeries_of_le _ (by omega)
+        (mk_commutatorElement_mul_right hu hv y),
       mk_eq_one_of_mem_pLowerCentralSeries_of_le _ (commutator_mem_pLowerCentralSeries hu hv)
         (by omega), mul_one]
   rw [map_commutatorElement, hθx, hθy, QuotientGroup.mk_mul, QuotientGroup.mk_inv, h,
