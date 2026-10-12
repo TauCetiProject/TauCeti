@@ -51,21 +51,7 @@ instance instGradedAlgebraTrivialGrading : GradedAlgebra (trivialGrading R A) wh
     rcases (mem_trivialGrading_iff R A).mp ha with rfl | rfl
     · rcases (mem_trivialGrading_iff R A).mp hb with rfl | rfl <;> simp
     · simp
-  decompose' a := DirectSum.of (fun p ↦ trivialGrading R A p) 0 (toTrivialGradingZero R A a)
-  left_inv a := by simp
-  right_inv x := by
-    induction x using DirectSum.induction_on with
-    | zero => simp
-    | of p y =>
-      rw [DirectSum.coeAddMonoidHom_of]
-      by_cases hp : p = 0
-      · subst hp
-        exact congrArg _ (Subtype.ext (coe_toTrivialGradingZero R A y))
-      · have hy : y = 0 :=
-          Subtype.ext (((mem_trivialGrading_iff R A).mp y.2).resolve_left hp)
-        rw [hy]
-        simp
-    | add x y hx hy => simp only [map_add, hx, hy]
+  __ := instDecompositionTrivialGrading R A
 
 /-- The homogeneous projection for the trivial grading is the identity in degree zero and the
 zero map in every other degree. -/
