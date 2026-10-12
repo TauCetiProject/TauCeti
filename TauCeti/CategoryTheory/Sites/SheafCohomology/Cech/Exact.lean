@@ -16,9 +16,9 @@ public import TauCeti.Algebra.Homology.HomologySequenceLemmas
 The Čech complex preserves short exact sequences of presheaves when the coefficient category
 has products and its products of the required sizes are exact. The exactness requirement is
 automatic for finite families in an abelian category, and for arbitrary families of abelian
-groups. Exactness here is objectwise exactness of presheaves, not exactness only after
-sheafification. For finite families, the exact-product hypothesis is supplied by locally
-enabling `Abelian.hasFiniteBiproducts`.
+groups. Exactness is tested in the presheaf values before sheafification, only at the
+objects specified below. For finite families, the exact-product hypothesis is supplied by
+locally enabling `Abelian.hasFiniteBiproducts`.
 
 Only the values at finite products of members matter: a sequence of presheaves that is short
 exact after evaluation at each such product has a short exact sequence of Čech complexes
