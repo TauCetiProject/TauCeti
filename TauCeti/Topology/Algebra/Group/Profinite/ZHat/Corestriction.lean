@@ -177,8 +177,8 @@ def signCocycle : Z1 zHat.{u} (ZMod 4) :=
         hfinite ((lift (-1 : (ZMod 4)ˣ) : zHat.{u} →ₜ* _) g)
           ((lift (-1 : (ZMod 4)ˣ) : zHat.{u} →ₜ* _) h)⟩⟩
 
-/-- Evaluation of the sign cocycle by its finite sign character. -/
-@[simp]
+/-- Evaluation of the sign cocycle by its finite sign character. This is an explicit rewrite:
+the simp normal form keeps `signCocycle` so that its generator evaluations can apply. -/
 theorem signCocycle_apply (g : zHat.{u}) :
     (signCocycle : zHat.{u} → ZMod 4) g =
       if (lift (-1 : (ZMod 4)ˣ) : zHat.{u} →ₜ* _) g = 1 then 0 else 1 := (rfl)
