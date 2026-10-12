@@ -63,25 +63,27 @@ local notation "π" => signlessPreprojectiveMk k R
 local notation "e" => fun i : R => π (vertexIdempotent k i)
 
 /-- The right vertex projective `e_i Π`, as the principal left ideal of `op e_i` in `Πᵐᵒᵖ`. -/
-noncomputable abbrev signlessPreprojectiveRightProjective (i : R) : Ideal Πᵐᵒᵖ :=
+noncomputable def signlessPreprojectiveRightProjective (i : R) : Ideal Πᵐᵒᵖ :=
   Ideal.span {op (e i)}
+
+omit [Fintype R] in
+private theorem isIdempotentElem_op_signlessVertexIdempotent [Finite R] (i : R) :
+    IsIdempotentElem (op (e i)) := by
+  apply unop_injective
+  simpa only [unop_mul, unop_op, ← map_mul] using
+    congrArg π (vertexIdempotent_mul_self (k := k) i)
 
 /-- Membership in the right vertex projective is the left corner identity in `Π`. -/
 @[simp]
 theorem mem_signlessPreprojectiveRightProjective_iff (i : R) (x : Πᵐᵒᵖ) :
     x ∈ signlessPreprojectiveRightProjective k i ↔ e i * unop x = unop x := by
-  have he : IsIdempotentElem (op (e i)) := by
-    apply unop_injective
-    simpa only [unop_mul, unop_op, ← map_mul] using
-      congrArg π (vertexIdempotent_mul_self (k := k) i)
-  rw [mem_span_singleton_iff_mul_eq_self he, ← unop_inj, unop_mul, unop_op]
+  rw [signlessPreprojectiveRightProjective,
+    mem_span_singleton_iff_mul_eq_self (isIdempotentElem_op_signlessVertexIdempotent k i),
+    ← unop_inj, unop_mul, unop_op]
 
 /-- Right vertex projectives are projective over the opposite algebra. -/
-instance (i : R) : Module.Projective Πᵐᵒᵖ (signlessPreprojectiveRightProjective k i) := by
-  apply IsIdempotentElem.projective_span_singleton
-  apply unop_injective
-  simpa only [unop_mul, unop_op, ← map_mul] using
-    congrArg π (vertexIdempotent_mul_self (k := k) i)
+instance (i : R) : Module.Projective Πᵐᵒᵖ (signlessPreprojectiveRightProjective k i) :=
+  (isIdempotentElem_op_signlessVertexIdempotent k i).projective_span_singleton
 
 /-- The incoming-arrow term of the signless Koszul complex, a finite sum of vertex projectives. -/
 abbrev signlessPreprojectiveKoszulMiddle (v : R) :=
@@ -96,13 +98,17 @@ instance (v : R) : Module.Projective Πᵐᵒᵖ (signlessPreprojectiveKoszulMid
     Module.Projective.of_equiv (DirectSum.linearEquivFunOnFintype Πᵐᵒᵖ _ _)
   exact Module.Projective.of_equiv (DirectSum.linearEquivFunOnFintype Πᵐᵒᵖ _ _)
 
+private theorem arrow_mul_mem_signlessRightProjective {i j : R} (b : i ⟶ j)
+    (x : Πᵐᵒᵖ) : x * op (π (ofArrow b)) ∈ signlessPreprojectiveRightProjective k j := by
+  classical
+  rw [mem_signlessPreprojectiveRightProjective_iff, unop_mul, unop_op, ← mul_assoc,
+    ← map_mul, vertexIdempotent_mul_ofArrow, ite_eq_left rfl]
+
 /-- The reverse-arrow map of the signless Koszul complex, `y ↦ (b* y)_b`. -/
 noncomputable def signlessPreprojectiveKoszulLeft (v : R) :
     signlessPreprojectiveRightProjective k v →ₗ[Πᵐᵒᵖ] signlessPreprojectiveKoszulMiddle k v where
-  toFun y i b := ⟨(y : Πᵐᵒᵖ) * op (π (ofArrow (reverse b))), by
-    classical
-    rw [mem_signlessPreprojectiveRightProjective_iff, unop_mul, unop_op, ← mul_assoc,
-      ← map_mul, vertexIdempotent_mul_ofArrow, ite_eq_left rfl]⟩
+  toFun y i b := ⟨(y : Πᵐᵒᵖ) * op (π (ofArrow (reverse b))),
+    arrow_mul_mem_signlessRightProjective k (reverse b) y⟩
   map_add' x y := by ext i b; simp [add_mul]
   map_smul' a y := by ext i b; simp [mul_assoc]
 
@@ -111,15 +117,9 @@ variable [∀ i j : R, Fintype (i ⟶ j)]
 /-- The incoming-arrow map of the signless Koszul complex, `(z_b) ↦ ∑ b z_b`. -/
 noncomputable def signlessPreprojectiveKoszulRight (v : R) :
     signlessPreprojectiveKoszulMiddle k v →ₗ[Πᵐᵒᵖ] signlessPreprojectiveRightProjective k v where
-  toFun z := ⟨∑ i, ∑ b : i ⟶ v, (z i b : Πᵐᵒᵖ) * op (π (ofArrow b)), by
-    classical
-    rw [mem_signlessPreprojectiveRightProjective_iff]
-    simp only [Finset.unop_sum, unop_mul, unop_op, Finset.mul_sum]
-    congr 1
-    funext i
-    congr 1
-    funext b
-    rw [← mul_assoc, ← map_mul, vertexIdempotent_mul_ofArrow, ite_eq_left rfl]⟩
+  toFun z := ⟨∑ i, ∑ b : i ⟶ v, (z i b : Πᵐᵒᵖ) * op (π (ofArrow b)),
+    Submodule.sum_mem _ fun i _ => Submodule.sum_mem _ fun b _ =>
+      arrow_mul_mem_signlessRightProjective k b (z i b)⟩
   map_add' x y := by ext; simp [add_mul, Finset.sum_add_distrib]
   map_smul' a y := by ext; simp [mul_assoc, Finset.mul_sum]
 
