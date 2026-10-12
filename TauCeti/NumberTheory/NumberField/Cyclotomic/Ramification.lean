@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.NumberField.Cyclotomic.Basic
-public import TauCeti.RingTheory.DedekindDomain.Different.Derivative
+import TauCeti.RingTheory.DedekindDomain.Different.Derivative
 
 /-!
 # The ramified primes of a cyclotomic extension of a number field
