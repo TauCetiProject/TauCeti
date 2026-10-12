@@ -11,9 +11,9 @@ public import TauCeti.Topology.Algebra.Group.Profinite.Free.Basic
 /-!
 # A weak comparison of free and arithmetic class-module extensions
 
-Let `g : ι → G/W` be a family in a quotient of a profinite group. The free profinite
-presentation on `g` has kernel `R`. Choosing lifts of the family to `G` gives a continuous
-map `F / ker(R → Rᵃᵇ(p)) → G / ker(W → Wᵃᵇ(p))` covering the given presentation.
+Let `g : ι → G/W` be a family in a quotient of a profinite group. The homomorphism
+`lift g` induced from the free profinite group has kernel `R`. Choosing lifts of the family
+to `G` gives a continuous map `F / ker(R → Rᵃᵇ(p)) → G / ker(W → Wᵃᵇ(p))` covering `lift g`.
 
 This map is not asserted to be surjective. For a finite Galois quotient, it is the weak
 comparison used to detect a generating source extension class before correcting and lifting
@@ -35,9 +35,9 @@ variable (p : ℕ) {ι G : Type u} [Group G] [TopologicalSpace G] [IsTopological
   [CompactSpace G] [TotallyDisconnectedSpace G]
   (W : Subgroup G) [W.Normal] [IsClosed (W : Set G)] (g : ι → G ⧸ W)
 
-/-- The free profinite presentation of a family in `G/W` admits a continuous comparison of
-its pro-`p` class-module extension with that of `G`. The comparison covers the original
-presentation, without any surjectivity assumption or conclusion. -/
+/-- The homomorphism `lift g` induced by a family in `G/W` admits a continuous comparison of
+its pro-`p` class-module extension with that of `G`. The comparison covers `lift g`,
+without any surjectivity assumption or conclusion. -/
 theorem exists_abelianizationProPExtension_comparison :
     ∃ ψ : abelianizationProPExtensionGroup p (freeProfiniteGroup ι)
         (lift g : freeProfiniteGroup ι →* G ⧸ W).ker →ₜ*

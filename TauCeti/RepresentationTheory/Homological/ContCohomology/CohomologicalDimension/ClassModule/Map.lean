@@ -67,6 +67,30 @@ theorem abelianizationProPMap_mk (v : V) :
     congrArg (maximalProPQuotient.mk p (TopologicalAbelianization W))
       (TopologicalAbelianization.map_mk r hr v)
 
+/-- The identity induces the identity on a pro-`p` class module. -/
+@[simp]
+theorem abelianizationProPMap_id :
+    abelianizationProPMap p (MonoidHom.id G) continuous_id
+        (V := V) (W := V) (by simp) =
+      MonoidHom.id (abelianizationProP p G V) := by
+  apply (MonoidHom.cancel_right (abelianizationProPMk_surjective p G V)).mp
+  ext v
+  simp
+
+/-- Composition of ambient homomorphisms induces composition on pro-`p` class modules.
+The intermediate subgroup `W` must be specified when rewriting this identity. -/
+theorem abelianizationProPMap_comp (g : H →* J) (hg : Continuous g)
+    (hWU : W ≤ U.comap g) :
+    abelianizationProPMap p (g.comp f) (hg.comp hf) (by
+        intro x hx
+        rw [Subgroup.mem_comap, MonoidHom.comp_apply]
+        exact Subgroup.mem_comap.mp (hWU (Subgroup.mem_comap.mp (hVW hx)))) =
+      (abelianizationProPMap p g hg hWU).comp
+        (abelianizationProPMap p f hf hVW) := by
+  apply (MonoidHom.cancel_right (abelianizationProPMk_surjective p G V)).mp
+  ext v
+  simp
+
 include hf hVW in
 /-- A continuous homomorphism preserving the specified subgroups also preserves the
 kernels killed in their pro-`p` class-module extensions. -/
