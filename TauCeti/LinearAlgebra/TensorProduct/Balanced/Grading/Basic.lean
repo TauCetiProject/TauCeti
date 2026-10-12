@@ -131,6 +131,27 @@ theorem tmul_mem_grading {p q : ℤ} {m : M} {n : N}
     tmul R A m n ∈ (grading (𝒜 := 𝒜) G H).piece (p + q) :=
   (mem_grading_piece_iff (𝒜 := 𝒜) G H).2 ⟨_, G.tmul_mem_tensorProduct H hm hn, mkQ_tmul R A m n⟩
 
+/-- A linear map shifts balanced tensor degrees if it does so on homogeneous pure tensors. -/
+theorem map_mem_of_tmul {Q : Type*} [AddCommGroup Q] [Module R Q]
+    (𝓟 : ℤ → Submodule R Q) (f : BalancedTensorProduct R A M N →ₗ[R] Q) (s : ℤ)
+    (hf : ∀ {p q : ℤ} {m : M} {n : N},
+      m ∈ G.piece p → n ∈ H.piece q → f (tmul R A m n) ∈ 𝓟 (p + q + s))
+    {p : ℤ} {z : BalancedTensorProduct R A M N}
+    (hz : z ∈ (grading (𝒜 := 𝒜) G H).piece p) : f z ∈ 𝓟 (p + s) := by
+  rw [grading_piece_eq_iSup] at hz
+  refine (iSup_le fun q ↦ Submodule.map₂_le.mpr fun m hm n hn ↦ ?_ :
+    _ ≤ (𝓟 (p + s)).comap f) hz
+  rw [Submodule.mem_comap, mk_apply]
+  simpa only [show q + (p - q) = p by omega] using hf hm hn
+
+/-- Homogeneity of a balanced tensor map can be checked on homogeneous pure tensors. -/
+theorem isHomogeneous_of_tmul {Q : Type*} [AddCommGroup Q] [Module R Q]
+    (𝓟 : ℤ → Submodule R Q) (f : BalancedTensorProduct R A M N →ₗ[R] Q) (s : ℤ)
+    (hf : ∀ {p q : ℤ} {m : M} {n : N},
+      m ∈ G.piece p → n ∈ H.piece q → f (tmul R A m n) ∈ 𝓟 (p + q + s)) :
+    LinearMap.IsHomogeneous f (grading (𝒜 := 𝒜) G H).piece 𝓟 s :=
+  LinearMap.isHomogeneous_def.2 fun _ _ hz ↦ map_mem_of_tmul G H 𝓟 f s hf hz
+
 /-- The quotient map preserves total degree. -/
 theorem isHomogeneous_mkQ :
     LinearMap.IsHomogeneous (mkQ R A) (G.tensorProduct H).piece (grading (𝒜 := 𝒜) G H).piece 0 :=
@@ -154,14 +175,11 @@ theorem isHomogeneous_map (f : M →ₗ[R] M') (g : N →ₗ[R] N')
     (hg₀ : LinearMap.IsHomogeneous g H.piece H'.piece s) :
     LinearMap.IsHomogeneous (map f g hf hg) (grading (𝒜 := 𝒜) G H).piece
       (grading (𝒜 := 𝒜) G' H').piece (r + s) := by
-  rw [LinearMap.isHomogeneous_def]
-  intro p z hz
-  rw [grading_piece_eq_iSup] at hz
-  refine (iSup_le fun q ↦ Submodule.map₂_le.mpr fun m hm n hn ↦ ?_ :
-    _ ≤ ((grading (𝒜 := 𝒜) G' H').piece (p + (r + s))).comap (map f g hf hg)) hz
-  rw [Submodule.mem_comap, mk_apply, map_tmul]
+  apply isHomogeneous_of_tmul (𝒜 := 𝒜) G H
+  intro p q m n hm hn
+  rw [map_tmul]
   have hmem := tmul_mem_grading (𝒜 := 𝒜) G' H' (hf₀.map_mem hm) (hg₀.map_mem hn)
-  simpa only [show q + r + (p - q + s) = p + (r + s) by omega] using hmem
+  simpa only [show p + r + (q + s) = p + q + (r + s) by omega] using hmem
 
 end Map
 
