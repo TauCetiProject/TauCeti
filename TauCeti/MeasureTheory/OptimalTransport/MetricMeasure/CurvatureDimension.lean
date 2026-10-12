@@ -31,6 +31,14 @@ at infinity. In the usual setting, where `m` satisfies a growth bound such as
 `∫ exp (-c d(x₀, x)²) dm(x) < ∞`, it is never `⊥` on `P₂(X)`, and the definition is the classical
 one.
 
+The predicate builds in no standing hypotheses on `m`. Like convexity on the empty set, it holds
+vacuously, for every `K`, when no law of finite second moment has entropy `≠ ⊤`; this happens for
+`m = 0`, where no probability law is absolutely continuous with respect to `m`. The same is true
+of Sturm's formulation, which asks for convexity only among the laws of finite entropy. The usual
+metric-measure hypotheses (`m` locally finite and nonzero, or `supp m = X` when the space is to be
+the support) are assumed by the theorems that use them: the results below take
+`[IsLocallyFiniteMeasure m]` and are stated for points of `supp m`, which is empty when `m = 0`.
+
 The condition says nothing about points the reference measure does not see, but it constrains
 the support of `m`:
 
@@ -182,7 +190,10 @@ variable [StandardBorelSpace X] {K K' : ℝ}
 measure `m`: the Boltzmann entropy relative to `m` is `K`-geodesically convex on the quadratic
 Wasserstein space `P₂(X)`. That is, any two laws of finite second moment with entropy `≠ ⊤` are
 joined by a `W₂`-geodesic `(μ_t)` along which
-`Ent_m(μ_t) ≤ (1 - t) Ent_m(μ₀) + t Ent_m(μ₁) - (K / 2) t (1 - t) W₂(μ₀, μ₁)²`. -/
+`Ent_m(μ_t) ≤ (1 - t) Ent_m(μ₀) + t Ent_m(μ₁) - (K / 2) t (1 - t) W₂(μ₀, μ₁)²`.
+
+No hypothesis on `m` is built in: for `m = 0` no law has finite entropy, and the condition holds
+for every `K`. Theorems using the condition assume the metric-measure hypotheses they need. -/
 def CurvatureDimensionInfinity (K : ℝ) (m : Measure X) : Prop :=
   GeodesicallyConvex K fun μ : WassersteinSpace 2 X ↦
     boltzmannEntropy m ((μ : ProbabilityMeasure X) : Measure X)
