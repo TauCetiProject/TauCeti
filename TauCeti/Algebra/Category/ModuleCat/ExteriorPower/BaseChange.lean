@@ -30,15 +30,15 @@ open scoped TensorProduct ChangeOfRings
 
 namespace TauCeti
 
-universe u
+universe u₁ u₂ v
 
 noncomputable section
 
-variable {R S : Type u} [CommRing R] [CommRing S] (f : R →+* S)
+variable {R : Type u₁} {S : Type u₂} [CommRing R] [CommRing S] (f : R →+* S)
 
 /-- Exterior powers commute with extension of scalars, without a flatness or finiteness
 assumption. -/
-def extendScalarsExteriorPowerIso (n : ℕ) (M : ModuleCat.{u} R) :
+def extendScalarsExteriorPowerIso (n : ℕ) (M : ModuleCat.{max u₁ v} R) :
     (ModuleCat.extendScalars f).obj (M.exteriorPower n) ≅
       ((ModuleCat.extendScalars f).obj M).exteriorPower n := by
   let _ := f.toAlgebra
@@ -46,9 +46,9 @@ def extendScalarsExteriorPowerIso (n : ℕ) (M : ModuleCat.{u} R) :
 
 /-- The forward comparison on a pure tensor with a decomposable wedge. -/
 @[simp]
-theorem extendScalarsExteriorPowerIso_hom_tmul_mk (n : ℕ) (M : ModuleCat.{u} R)
+theorem extendScalarsExteriorPowerIso_hom_tmul_mk (n : ℕ) (M : ModuleCat.{max u₁ v} R)
     (s : S) (m : Fin n → M) :
-    (extendScalarsExteriorPowerIso f n M).hom (s ⊗ₜ[R,f] ModuleCat.exteriorPower.mk m) =
+    (extendScalarsExteriorPowerIso.{u₁, u₂, v} f n M).hom (s ⊗ₜ[R,f] ModuleCat.exteriorPower.mk m) =
       s • ModuleCat.exteriorPower.mk
         (M := (ModuleCat.extendScalars f).obj M) (fun i ↦ (1 : S) ⊗ₜ[R,f] m i) := by
   let _ := f.toAlgebra
@@ -60,9 +60,9 @@ theorem extendScalarsExteriorPowerIso_hom_tmul_mk (n : ℕ) (M : ModuleCat.{u} R
 
 /-- The inverse comparison on a wedge of pure tensors. -/
 @[simp]
-theorem extendScalarsExteriorPowerIso_inv_mk_tmul (n : ℕ) (M : ModuleCat.{u} R)
+theorem extendScalarsExteriorPowerIso_inv_mk_tmul (n : ℕ) (M : ModuleCat.{max u₁ v} R)
     (s : Fin n → S) (m : Fin n → M) :
-    (extendScalarsExteriorPowerIso f n M).inv
+    (extendScalarsExteriorPowerIso.{u₁, u₂, v} f n M).inv
         (ModuleCat.exteriorPower.mk
           (M := (ModuleCat.extendScalars f).obj M) (fun i ↦ s i ⊗ₜ[R,f] m i)) =
       (∏ i, s i) ⊗ₜ[R,f] ModuleCat.exteriorPower.mk m := by
@@ -75,49 +75,47 @@ theorem extendScalarsExteriorPowerIso_inv_mk_tmul (n : ℕ) (M : ModuleCat.{u} R
 /-- The scalar-extension comparison is natural in the module. -/
 @[reassoc]
 theorem extendScalarsExteriorPowerIso_hom_naturality (n : ℕ)
-    {M N : ModuleCat.{u} R} (g : M ⟶ N) :
+    {M N : ModuleCat.{max u₁ v} R} (g : M ⟶ N) :
     (ModuleCat.extendScalars f).map (ModuleCat.exteriorPower.map g n) ≫
-        (extendScalarsExteriorPowerIso f n N).hom =
-      (extendScalarsExteriorPowerIso f n M).hom ≫
+        (extendScalarsExteriorPowerIso.{u₁, u₂, v} f n N).hom =
+      (extendScalarsExteriorPowerIso.{u₁, u₂, v} f n M).hom ≫
         ModuleCat.exteriorPower.map ((ModuleCat.extendScalars f).map g) n := by
-  apply ((ModuleCat.extendRestrictScalarsAdj f).homEquiv _ _).injective
+  let _ := f.toAlgebra
+  apply (Iso.comp_inv_eq (extendScalarsExteriorPowerIso.{u₁, u₂, v} f n N).symm).2
+  rw [Category.assoc]
+  apply (Iso.eq_inv_comp (extendScalarsExteriorPowerIso.{u₁, u₂, v} f n M).symm).2
   apply ModuleCat.exteriorPower.hom_ext
   ext m
-  simp only [ModuleCat.AlternatingMap.postcomp_apply,
-    ModuleCat.extendRestrictScalarsAdj_homEquiv_apply]
-  -- The adjunction produces applications of `ConcreteCategory.hom`; use morphism
-  -- applications here so that the tensor and wedge computation lemmas match directly.
-  change (extendScalarsExteriorPowerIso f n N).hom
-      ((ModuleCat.extendScalars f).map (ModuleCat.exteriorPower.map g n)
-        ((1 : S) ⊗ₜ[R,f] ModuleCat.exteriorPower.mk m)) =
-    ModuleCat.exteriorPower.map ((ModuleCat.extendScalars f).map g) n
-      ((extendScalarsExteriorPowerIso f n M).hom
-        ((1 : S) ⊗ₜ[R,f] ModuleCat.exteriorPower.mk m))
-  simp only [ModuleCat.ExtendScalars.map_tmul, ModuleCat.exteriorPower.map_mk,
-    extendScalarsExteriorPowerIso_hom_tmul_mk, one_smul]
-  erw [extendScalarsExteriorPowerIso_hom_tmul_mk, ModuleCat.exteriorPower.map_mk]
-  simp only [one_smul]
-  congr 1
+  simp only [ModuleCat.AlternatingMap.postcomp_apply, ModuleCat.comp_apply,
+    ModuleCat.exteriorPower.map_mk]
+  -- Compute the exterior-power maps on wedges before applying linear naturality.
+  -- `erw` identifies the categorical tensor object with the underlying tensor product.
+  have h := (exteriorPower.equivBaseChange_map S n g.hom
+    (_root_.exteriorPower.ιMulti S n m)).symm
+  erw [_root_.exteriorPower.map_apply_ιMulti] at h
+  exact h
 
 /-- The natural scalar-extension comparison for the `n`-th exterior power. -/
 def extendScalarsExteriorPowerNatIso (n : ℕ) :
-    ModuleCat.exteriorPower.functor R n ⋙ ModuleCat.extendScalars f ≅
-      ModuleCat.extendScalars f ⋙ ModuleCat.exteriorPower.functor S n :=
-  NatIso.ofComponents (extendScalarsExteriorPowerIso f n)
-    (fun g ↦ extendScalarsExteriorPowerIso_hom_naturality f n g)
+    ModuleCat.exteriorPower.functor.{max u₁ v} R n ⋙
+        ModuleCat.extendScalars.{u₁, u₂, max u₁ v} f ≅
+      ModuleCat.extendScalars.{u₁, u₂, max u₁ v} f ⋙
+        ModuleCat.exteriorPower.functor.{max u₁ u₂ v} S n :=
+  NatIso.ofComponents (extendScalarsExteriorPowerIso.{u₁, u₂, v} f n)
+    (fun g ↦ extendScalarsExteriorPowerIso_hom_naturality.{u₁, u₂, v} f n g)
 
 /-- The forward components of the natural scalar-extension comparison. -/
 @[simp]
-theorem extendScalarsExteriorPowerNatIso_hom_app (n : ℕ) (M : ModuleCat.{u} R) :
-    (extendScalarsExteriorPowerNatIso f n).hom.app M =
-      (extendScalarsExteriorPowerIso f n M).hom :=
+theorem extendScalarsExteriorPowerNatIso_hom_app (n : ℕ) (M : ModuleCat.{max u₁ v} R) :
+    (extendScalarsExteriorPowerNatIso.{u₁, u₂, v} f n).hom.app M =
+      (extendScalarsExteriorPowerIso.{u₁, u₂, v} f n M).hom :=
   (rfl)
 
 /-- The inverse components of the natural scalar-extension comparison. -/
 @[simp]
-theorem extendScalarsExteriorPowerNatIso_inv_app (n : ℕ) (M : ModuleCat.{u} R) :
-    (extendScalarsExteriorPowerNatIso f n).inv.app M =
-      (extendScalarsExteriorPowerIso f n M).inv :=
+theorem extendScalarsExteriorPowerNatIso_inv_app (n : ℕ) (M : ModuleCat.{max u₁ v} R) :
+    (extendScalarsExteriorPowerNatIso.{u₁, u₂, v} f n).inv.app M =
+      (extendScalarsExteriorPowerIso.{u₁, u₂, v} f n M).inv :=
   (rfl)
 
 end

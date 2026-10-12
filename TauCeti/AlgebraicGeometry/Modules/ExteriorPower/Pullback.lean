@@ -54,7 +54,7 @@ def tildePullbackExteriorPowerIso (n : ℕ) :
       (Scheme.Modules.pullback (Spec.map φ)) ≪≫
     Functor.isoWhiskerLeft (ModuleCat.exteriorPower.functor R n)
       (tildeFunctorCompPullbackIso φ) ≪≫
-    Functor.isoWhiskerRight (TauCeti.extendScalarsExteriorPowerNatIso φ.hom n)
+    Functor.isoWhiskerRight (TauCeti.extendScalarsExteriorPowerNatIso.{u, u, u} φ.hom n)
       (tilde.functor S) ≪≫
     Functor.isoWhiskerLeft (ModuleCat.extendScalars φ.hom)
       (tildeExteriorPowerNatIso (R := S) n) ≪≫
@@ -68,7 +68,7 @@ theorem tildePullbackExteriorPowerIso_hom_app (n : ℕ) (M : ModuleCat.{u} R) :
     (tildePullbackExteriorPowerIso φ n).hom.app M =
       (Scheme.Modules.pullback (Spec.map φ)).map (tildeExteriorPowerIso n M).inv ≫
         (tildeFunctorCompPullbackIso φ).hom.app (M.exteriorPower n) ≫
-        tilde.map (TauCeti.extendScalarsExteriorPowerIso φ.hom n M).hom ≫
+        tilde.map (TauCeti.extendScalarsExteriorPowerIso.{u, u, u} φ.hom n M).hom ≫
         (tildeExteriorPowerIso n ((ModuleCat.extendScalars φ.hom).obj M)).hom ≫
         (SheafOfModules.exteriorPower (Spec S).sheaf n).map
           ((tildeFunctorCompPullbackIso φ).inv.app M) := by
@@ -83,6 +83,28 @@ theorem tildePullbackExteriorPowerIso_hom_app (n : ℕ) (M : ModuleCat.{u} R) :
     tildeExteriorPowerNatIso_hom_app]
   erw [Functor.isoWhiskerRight_hom, Functor.whiskerRight_app, Iso.symm_hom]
   rfl
+
+/-- The inverse affine pullback comparison reverses the affine and scalar-extension
+comparisons. -/
+@[simp]
+theorem tildePullbackExteriorPowerIso_inv_app (n : ℕ) (M : ModuleCat.{u} R) :
+    (tildePullbackExteriorPowerIso φ n).inv.app M =
+      (SheafOfModules.exteriorPower (Spec S).sheaf n).map
+          ((tildeFunctorCompPullbackIso φ).hom.app M) ≫
+        (tildeExteriorPowerIso n ((ModuleCat.extendScalars φ.hom).obj M)).inv ≫
+        tilde.map (TauCeti.extendScalarsExteriorPowerIso.{u, u, u} φ.hom n M).inv ≫
+        (tildeFunctorCompPullbackIso φ).inv.app (M.exteriorPower n) ≫
+        (Scheme.Modules.pullback (Spec.map φ)).map (tildeExteriorPowerIso n M).hom := by
+  simp only [tildePullbackExteriorPowerIso, Iso.trans_inv, NatTrans.comp_app,
+    Functor.isoWhiskerRight_inv, Functor.isoWhiskerLeft_inv, Functor.whiskerRight_app,
+    Functor.whiskerLeft_app, Iso.symm_inv, tildeExteriorPowerNatIso_hom_app,
+    TauCeti.extendScalarsExteriorPowerNatIso_inv_app]
+  -- As in the forward formula, expose components across the composite-functor wrappers.
+  erw [Iso.trans_inv, NatTrans.comp_app]
+  simp only [Functor.isoWhiskerLeft_inv, Functor.whiskerLeft_app,
+    tildeExteriorPowerNatIso_inv_app]
+  erw [Functor.isoWhiskerRight_inv, Functor.whiskerRight_app, Iso.symm_inv]
+  erw [Category.assoc]
 
 end
 
