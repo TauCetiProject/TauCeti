@@ -35,6 +35,8 @@ presentations of `B^I` as strict quotients of `A^r{Y}` (Kedlaya, Lemma 4.9).
 
 * `MvPowerSeries.IsRestricted.map`: a bounded ring homomorphism preserves restrictedness, at
   arbitrary polyradii.
+* `TauCeti.MvPowerSeries.restrictedMap_id` and `TauCeti.MvPowerSeries.restrictedMap_comp`:
+  `restrictedMap` is functorial.
 * `TauCeti.MvPowerSeries.norm_restrictedMap_le`: `restrictedMap` is bounded by the same constant.
 * `TauCeti.MvPowerSeries.restrictedMap_surjective`: a strictly surjective `φ` induces a
   surjection `R{X/c} → S{X/c}`.
@@ -101,6 +103,29 @@ theorem coe_restrictedMap (f : IsRestricted.subring (R := R) c) :
 theorem coeff_restrictedMap (f : IsRestricted.subring (R := R) c) (t : σ →₀ ℕ) :
     coeff t (restrictedMap φ hφ f : MvPowerSeries σ S) = φ (coeff t (f : MvPowerSeries σ R)) := by
   simp
+
+/-- The identity induces the identity on restricted series. -/
+@[simp]
+theorem restrictedMap_id {C : ℝ} (hC : ∀ r : R, ‖RingHom.id R r‖ ≤ C * ‖r‖) :
+    restrictedMap (c := c) (RingHom.id R) hC = RingHom.id _ :=
+  RingHom.ext fun _ ↦ Subtype.ext (by simp)
+
+/-- The map induced by a composite is the composite of the induced maps. -/
+theorem restrictedMap_comp {T : Type*} [NormedRing T] [IsUltrametricDist T] (ψ : S →+* T)
+    {C₂ C₃ : ℝ} (hψ : ∀ s, ‖ψ s‖ ≤ C₂ * ‖s‖) (hψφ : ∀ r, ‖ψ.comp φ r‖ ≤ C₃ * ‖r‖) :
+    restrictedMap (c := c) (ψ.comp φ) hψφ = (restrictedMap ψ hψ).comp (restrictedMap φ hφ) :=
+  RingHom.ext fun _ ↦ Subtype.ext <| MvPowerSeries.ext fun _ ↦ by simp
+
+/-- Applying two induced maps in turn is applying the map induced by the composite. -/
+@[simp]
+theorem restrictedMap_restrictedMap {T : Type*} [NormedRing T] [IsUltrametricDist T]
+    (ψ : S →+* T) {C₂ : ℝ} (hψ : ∀ s, ‖ψ s‖ ≤ C₂ * ‖s‖) (f : IsRestricted.subring (R := R) c) :
+    restrictedMap ψ hψ (restrictedMap φ hφ f) =
+      restrictedMap (ψ.comp φ) (C := max C₂ 0 * C) (fun r ↦ by
+        rw [mul_assoc]
+        exact (hψ (φ r)).trans <| (mul_le_mul_of_nonneg_right (le_max_left C₂ 0)
+          (norm_nonneg _)).trans <| mul_le_mul_of_nonneg_left (hφ r) (le_max_right C₂ 0)) f :=
+  Subtype.ext <| MvPowerSeries.ext fun _ ↦ by simp
 
 /-- `restrictedMap` does not increase the Gauss norm by more than the bound on `φ`. -/
 theorem norm_restrictedMap_le [∀ i, Fact (0 < c i)] (hC : 0 ≤ C)
