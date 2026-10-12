@@ -73,12 +73,15 @@ theorem map_powRingHom {R : Type*} [Ring R] (hn : e.Coprime n)
   · exact RingHom.ext_int _ _
   · exact map_pow _ _ _
 
-/-- Reduction after power substitution is reduction at the powered primitive root. -/
+/-- Reduction at a root of the cyclotomic polynomial, over any modulus, intertwines power
+substitution with powering the root. -/
 @[simp]
-theorem reduce_powRingHom {p : ℕ} [Fact p.Prime] (hn : e.Coprime n)
-    {α : ZMod p} (hα : IsPrimitiveRoot α e) (x : Cyclotomic e) :
+theorem reduce_powRingHom {p : ℕ} (hn : e.Coprime n)
+    {α : ZMod p}
+    (hα : (Polynomial.cyclotomic e ℤ).eval₂ (Int.castRingHom (ZMod p)) α = 0)
+    (x : Cyclotomic e) :
     reduce p α (powRingHom hn x) = reduce p (α ^ n) x := by
-  rw [← reduceRingHom_apply p α hα]
-  rw [map_powRingHom, reduceRingHom_apply, reduce_zeta p α hα, reduce]
+  rw [reduce, ← evalRingHom_eq_evalCoeffs _ _ hα, map_powRingHom,
+    evalRingHom_zeta, reduce]
 
 end TauCeti.Cyclotomic

@@ -395,6 +395,14 @@ theorem le_gaussValuation (hv : v.Integers O) (hρ : ρ < 1) (x : 𝕎 O) (n : �
     v (algebraMap O K (x.teichmullerCoeff n)) * ρ ^ n ≤ gaussValuation p hv ρ hρ x :=
   le_ciSup (bddAbove_range_gaussTerm hv hρ.le x) n
 
+/-- Increasing the radius increases the Gauss valuation of a Witt vector. -/
+theorem gaussValuation_mono (hv : v.Integers O) {ρ₁ ρ₂ : ℝ≥0}
+    (hρ₁ : ρ₁ < 1) (hρ₂ : ρ₂ < 1) (hρ : ρ₁ ≤ ρ₂) (x : 𝕎 O) :
+    gaussValuation p hv ρ₁ hρ₁ x ≤ gaussValuation p hv ρ₂ hρ₂ x := by
+  rw [gaussValuation_apply]
+  exact ciSup_le fun n ↦ (mul_le_mul' le_rfl (pow_le_pow_left' hρ n)).trans
+    (le_gaussValuation hv hρ₂ x n)
+
 /-- The Gauss valuation is at most one. -/
 theorem gaussValuation_le_one (hv : v.Integers O) (hρ : ρ < 1) (x : 𝕎 O) :
     gaussValuation p hv ρ hρ x ≤ 1 :=

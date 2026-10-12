@@ -59,6 +59,9 @@ Theorem 4.3.
 * `TauCeti.RelHomotopyGroup.mem_range_homotopyGroupMap_iff`: exactness at `π_{n+1}(X, a₀)`.
 * `TauCeti.RelHomotopyGroup.mem_range_ofHomotopyGroup_iff`: exactness at `π_{n+1}(X, A, a₀)`.
 * `TauCeti.RelHomotopyGroup.mem_range_boundary_iff`: exactness at `π_n(A, a₀)`.
+* `TauCeti.RelHomotopyGroup.subsingleton_of_injective_of_surjective`: `π_{n+1}(X, A, a₀)` is
+  trivial when `π_n(A, a₀) → π_n(X, a₀)` is injective and `π_{n+1}(A, a₀) → π_{n+1}(X, a₀)` is
+  surjective.
 -/
 
 public section
@@ -380,6 +383,24 @@ theorem mem_range_boundary_iff {b : HomotopyGroup N X.pair.snd X.basepoint} :
   induction b using Quotient.inductionOn with | h β => ?_
   obtain ⟨p, hp⟩ := RelGenLoop.exists_boundary_eq (Quotient.exact h)
   exact ⟨mk p, by rw [boundary_mk, hp]⟩
+
+/-- If the inclusion `A ↪ X` induces an injection `π_n(A, a₀) → π_n(X, a₀)` and a surjection
+`π_{n+1}(A, a₀) → π_{n+1}(X, a₀)`, then the relative homotopy set `π_{n+1}(X, A, a₀)` is
+trivial. -/
+theorem subsingleton_of_injective_of_surjective
+    (hinj : Function.Injective
+      (HomotopyGroup.map (N := N) (x := X.basepoint) X.pair.map.hom rfl))
+    (hsurj : Function.Surjective
+      (HomotopyGroup.map (N := Option N) (x := X.basepoint) X.pair.map.hom rfl)) :
+    Subsingleton (RelHomotopyGroup N X) := by
+  suffices h : ∀ a : RelHomotopyGroup N X, a = default from
+    ⟨fun a b => (h a).trans (h b).symm⟩
+  intro a
+  have hb : boundary a = (⟦GenLoop.const⟧ : HomotopyGroup N X.pair.snd X.basepoint) :=
+    hinj <| by rw [homotopyGroupMap_boundary, HomotopyGroup.map_mk, GenLoop.map_const]
+  obtain ⟨c, rfl⟩ := mem_range_ofHomotopyGroup_iff.2 hb
+  obtain ⟨d, rfl⟩ := hsurj c
+  exact ofHomotopyGroup_homotopyGroupMap d
 
 end RelHomotopyGroup
 
