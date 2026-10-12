@@ -75,22 +75,6 @@ def ellipticOrbits : Set (orbitRel.Quotient Γ ℍ) :=
   Quotient.mk (orbitRel Γ ℍ) '' (freeLocus Γ ℍ : Set ℍ)ᶜ
 
 omit [DiscreteTopology Γ] in
-/-- Representatives of one orbit are either all elliptic or all free. -/
-private theorem mem_compl_freeLocus_of_quotientMk_eq {z w : ℍ}
-    (h : (Quotient.mk (orbitRel Γ ℍ) z : orbitRel.Quotient Γ ℍ) =
-      Quotient.mk (orbitRel Γ ℍ) w) (hz : z ∈ (freeLocus Γ ℍ : Set ℍ)ᶜ) :
-    w ∈ (freeLocus Γ ℍ : Set ℍ)ᶜ := by
-  have hrel : orbitRel Γ ℍ z w := Quotient.exact h
-  rw [orbitRel_apply, mem_orbit_iff] at hrel
-  obtain ⟨g, hg⟩ := hrel
-  rw [← hg] at hz
-  have hst : stabilizer Γ (g • w) ≠ ⊥ := (mem_freeLocus Γ ℍ).not.mp hz
-  rw [stabilizer_smul_eq_stabilizer_map_conj] at hst
-  exact (mem_freeLocus Γ ℍ).not.mpr ((not_congr
-    ((stabilizer Γ w).map_eq_bot_iff_of_injective
-      (f := (MulAut.conj g).toMonoidHom) (MulAut.conj g).injective)).mp hst)
-
-omit [DiscreteTopology Γ] in
 /-- An orbit is elliptic exactly when a representative has nontrivial stabilizer. -/
 @[simp]
 theorem quotientMk_mem_ellipticOrbits_iff (z : ℍ) :
@@ -98,7 +82,7 @@ theorem quotientMk_mem_ellipticOrbits_iff (z : ℍ) :
       z ∉ freeLocus Γ ℍ := by
   constructor
   · rintro ⟨w, hw, heq⟩
-    exact Γ.mem_compl_freeLocus_of_quotientMk_eq heq hw
+    exact (mem_freeLocus_iff_of_quotientMk_eq Γ ℍ heq).not.mp hw
   · intro hz
     exact ⟨z, hz, rfl⟩
 
@@ -125,8 +109,8 @@ private theorem exists_isOpen_ellipticCompactified_inter_subset_singleton (z : �
     obtain ⟨e, he, rfl⟩ := hqell
     obtain ⟨w, hw, hwq⟩ := hq'
     have hew : w ∈ (freeLocus Γ ℍ : Set ℍ)ᶜ :=
-      Γ.mem_compl_freeLocus_of_quotientMk_eq
-        ((CompactifiedQuotient.ofQuotient_injective hqq').symm.trans hwq.symm) he
+      (mem_freeLocus_iff_of_quotientMk_eq Γ ℍ
+        ((CompactifiedQuotient.ofQuotient_injective hqq').symm.trans hwq.symm)).not.mp he
     have hwz : w = z := hVell ⟨interior_subset hw, hew⟩
     subst w
     exact mem_singleton_iff.mpr (by simpa only [hwq] using hqq'.symm)
@@ -139,7 +123,7 @@ private theorem disjoint_ellipticCompactified_cuspNhd (D : Γ.CuspDatum) {A : �
   rintro x ⟨q, ⟨z, hz, rfl⟩, rfl⟩ hx
   have hq := (CompactifiedQuotient.ofQuotient_mem_cuspNhd_iff D A).mp hx
   obtain ⟨w, hw, heq⟩ := hq
-  have hwE := Γ.mem_compl_freeLocus_of_quotientMk_eq heq.symm hz
+  have hwE := (mem_freeLocus_iff_of_quotientMk_eq Γ ℍ heq.symm).not.mp hz
   exact hwE ((mem_freeLocus Γ ℍ).mpr (D.stabilizer_eq_bot_of_mem_horodisc hA hw))
 
 /-- A compactified Fuchsian quotient has finitely many elliptic orbits. -/
