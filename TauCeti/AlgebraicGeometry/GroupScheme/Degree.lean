@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicGeometry.Morphisms.FlatRank
-public import TauCeti.AlgebraicGeometry.GroupScheme.CentralIsogeny.Basic
+public import TauCeti.AlgebraicGeometry.GroupScheme.CentralIsogeny.BaseChange
 public import TauCeti.AlgebraicGeometry.GroupScheme.FiniteFlat
 public import TauCeti.AlgebraicGeometry.GroupScheme.Kernel
 import TauCeti.AlgebraicGeometry.GroupScheme.KilledByRank
@@ -66,6 +66,8 @@ disconnected base this constant-degree case is the one in which a single integer
   `TauCeti.GroupScheme.IsogenyOfDegree.kernel_ι_pow_eq_one`: degrees of isogenies multiply, the
   isogenies of degree `1` are the isomorphisms, and the kernel of an isogeny of degree `n` is killed
   by `n`.
+* `TauCeti.GroupScheme.IsogenyOfDegree.baseChange`: isogenies of degree `n` remain so after
+  arbitrary base change.
 
 ## References
 
@@ -262,6 +264,15 @@ theorem comp {g : H ⟶ K} {m n : ℕ} (hf : IsogenyOfDegree f m) (hg : IsogenyO
     have := hg.isIsogeny.isFinite
     have := hg.isIsogeny.flat
     rw [degree_comp, hf.degree_eq, hg.degree_eq]
+
+/-- **Base change preserves isogenies of degree `n`.** -/
+theorem baseChange {T : Scheme.{u}} (s : T ⟶ S) {n : ℕ} (hf : IsogenyOfDegree f n) :
+    IsogenyOfDegree ((Over.pullback s).mapGrp.map f) n where
+  isIsogeny := hf.isIsogeny.baseChange s
+  degree_eq t := by
+    have := hf.isIsogeny.isFinite
+    have := hf.isIsogeny.flat
+    rw [degree_pullback_mapGrp_map, hf.degree_eq]
 
 /-- The kernel of an isogeny of degree `n` out of a commutative group scheme, locally of finite
 presentation, is killed by `n`. -/

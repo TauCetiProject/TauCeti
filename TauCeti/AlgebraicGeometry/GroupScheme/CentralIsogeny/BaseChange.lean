@@ -12,8 +12,8 @@ public import TauCeti.AlgebraicGeometry.GroupScheme.CentralIsogeny.Basic
 
 This file proves that central kernels of group-scheme morphisms remain central after arbitrary
 base change, by identifying the point groups before and after base change through the pullback
-adjunction. Consequently, isogenies over a commutative ring remain so after base change along a
-morphism between affine bases, and central isogenies remain so after such a base change. For a
+adjunction. Isogenies remain isogenies after arbitrary base change, and central isogenies over a
+commutative ring remain so after base change along a morphism between affine bases. For a
 commutative source, the base-changed isogeny is central without any centrality
 hypothesis. The group-scheme base change is the pullback functor on the over category, lifted to
 group objects.
@@ -24,7 +24,8 @@ group objects.
   furnished by the pullback adjunction.
 * `TauCeti.GroupScheme.HasCentralKernel.baseChange`: central kernels remain central after arbitrary
   base change.
-* `TauCeti.GroupScheme.IsIsogeny.baseChange`: isogenies remain isogenies after base change.
+* `TauCeti.GroupScheme.IsIsogeny.baseChange`: isogenies remain isogenies after arbitrary base
+  change.
 * `TauCeti.GroupScheme.IsCentralIsogeny.baseChange`: central isogenies remain central after base
   change.
 * `TauCeti.GroupScheme.IsIsogeny.baseChange_isCentral_of_isCommMonObj`: the base change of an
@@ -53,26 +54,17 @@ open AlgebraicGeometry
 
 universe u
 
-section Ring
+section BaseChange
 
-variable {R S : Type u} [CommRing R] [CommRing S]
-variable {G H : Grp (Over (Spec (CommRingCat.of R)))}
+variable {X Y : Scheme.{u}} {G H : Grp (Over X)}
 
-/-- Base change along a morphism between spectra of commutative rings preserves group-scheme
-isogenies. -/
-theorem IsIsogeny.baseChange
-    (s : Spec (CommRingCat.of S) ⟶ Spec (CommRingCat.of R)) {f : G ⟶ H}
-    (hf : IsIsogeny f) : IsIsogeny ((Over.pullback s).mapGrp.map f) := by
+/-- Arbitrary base change preserves group-scheme isogenies. -/
+theorem IsIsogeny.baseChange (s : Y ⟶ X) {f : G ⟶ H} (hf : IsIsogeny f) :
+    IsIsogeny ((Over.pullback s).mapGrp.map f) := by
   rw [isIsogeny_iff, Functor.mapGrp_map_hom_hom]
   exact ⟨MorphismProperty.overPullbackMap _ _ hf.isFinite,
     MorphismProperty.overPullbackMap _ _ hf.flat,
     MorphismProperty.overPullbackMap _ _ hf.surjective⟩
-
-end Ring
-
-section BaseChange
-
-variable {X Y : Scheme.{u}} {G H : Grp (Over X)}
 
 /-- The underlying map of the inverse pullback-adjunction equivalence is postcomposition with the
 first pullback projection. -/
