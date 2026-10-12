@@ -19,11 +19,6 @@ the newspace in weight at least two. Including diamonds retains the nebentypus i
 when studying the rational algebra and its characters. Its complex algebraic span is the
 complex newspace Hecke algebra.
 
-Finiteness follows from the injective period pairing with integral modular symbols, restricted
-to the newspace. Both Hecke and diamond operators are adjoint to integral symbol operators.
-The free-algebra transfer `LinearMap.finite_adjoin_of_injective_pairing` accounts for the
-reversal of products under precomposition. Thus no lattice in the space of forms is assumed.
-
 Restriction of the complex newform characters gives integral-algebra characters. Every value
 of such a character is an algebraic integer; the good-prime values are the Fourier
 coefficients, and the diamond values are the nebentypus values.
@@ -40,6 +35,7 @@ coefficients, and the diamond values are the nebentypus values.
 * [G. Shimura, *Introduction to the arithmetic theory of automorphic functions*][shimura1971],
   Chapter 3, especially Theorems 3.48 and 3.51.
 * [T. Miyake, *Modular forms*][miyake1989], Section 4.5.
+* `LinearMap.finite_adjoin_of_injective_pairing`, the underlying finite-algebra infrastructure.
 -/
 
 public noncomputable section
@@ -108,6 +104,15 @@ theorem coe_heckeTDiamondCuspNewIntegralAlgebraToComplex
     (T : heckeTDiamondCuspNewIntegralAlgebra N k) :
     (heckeTDiamondCuspNewIntegralAlgebraToComplex N k T : Module.End ℂ (cuspFormsNew N k)) = T :=
   (rfl)
+
+/-- The natural inclusion into the complex newspace Hecke algebra is injective. -/
+theorem heckeTDiamondCuspNewIntegralAlgebraToComplex_injective :
+    Function.Injective (heckeTDiamondCuspNewIntegralAlgebraToComplex N k) := by
+  intro T S h
+  apply Subtype.ext
+  simpa only [coe_heckeTDiamondCuspNewIntegralAlgebraToComplex] using
+    congrArg (fun U : heckeTDiamondCuspNewAlgebra N k ↦
+      (U : Module.End ℂ (cuspFormsNew N k))) h
 
 /-- The complex algebraic span of the integral newspace Hecke algebra is the complex
 newspace Hecke algebra. -/
