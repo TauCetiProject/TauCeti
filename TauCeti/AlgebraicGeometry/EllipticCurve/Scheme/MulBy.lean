@@ -270,9 +270,9 @@ theorem projModelAffinePoint_projModelMulBy_ne_projModelZero_iff (n : ℤ) (s : 
   have hpt : Spec.map (CommRingCat.ofHom g) ≫ W.projModelAffinePoint h =
       W.projModelPoint g (P := ![g x, g y, 1]) ((Projective.equation_some _ _).mpr hns.1) (i := 2)
         (by simp) := by
-    rw [projModelAffinePoint_def, SpecMap_projModelPoint]
-    congr 1
-    exact funext fun k ↦ by fin_cases k <;> simp
+    rw [← projModelAffinePoint_projModelBaseChange, projModelAffinePoint_def,
+      projModelPoint_projModelBaseChange]
+    exact (projModelPoint_eq_projModelPoint_iff_of_apply_eq rfl).mpr ⟨RingHom.id_comp g, rfl⟩
   have hψ : g ((W.ψ n).evalEval x y) = ((W.map g).ψ n).evalEval (g x) (g y) := by
     rw [map_ψ, Polynomial.map_mapRingHom_evalEval]
   have hs : (W.projModelAffinePoint h ≫ W.projModelMulBy n) s =

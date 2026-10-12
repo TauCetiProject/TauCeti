@@ -185,7 +185,7 @@ theorem exists_eq_projModelAffinePoint {P : Spec (.of R) ⟶ W.projModel}
     (hP : P ≫ W.projModelOver = 𝟙 _) (hP0 : ∀ s, P s ≠ W.projModelZero s) :
     ∃ (x y : R) (h : W.toAffine.Equation x y), P = W.projModelAffinePoint h := by
   obtain ⟨Q, hQ, hQ2, rfl⟩ := W.exists_eq_projModelPoint_of_forall_mem_basicOpen
-    (g := RingHom.id R) (i := 2) (by rw [hP]; exact (Spec.map_id _).symm)
+    (g := RingHom.id R) (i := 2) (by rw [hP, CommRingCat.ofHom_id, Spec.map_id])
     fun s ↦ (ne_projModelZero_iff_mem_basicOpen hP s).mp (hP0 s)
   have hQ' : Q = ![Q 0, Q 1, 1] := funext fun k ↦ by fin_cases k <;> simp [hQ2]
   refine ⟨Q 0, Q 1, (Projective.equation_some (W' := W.toProjective) _ _).mp (hQ' ▸ hQ), ?_⟩

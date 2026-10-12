@@ -495,8 +495,7 @@ theorem projModelAffinePoint_def :
 /-- The point `[x : y : 1]` is a section of the structure morphism of the projective model. -/
 @[reassoc (attr := simp)]
 theorem projModelAffinePoint_projModelOver : W.projModelAffinePoint h ≫ W.projModelOver = 𝟙 _ := by
-  rw [projModelAffinePoint_def, projModelPoint_projModelOver]
-  exact Spec.map_id _
+  rw [projModelAffinePoint_def, projModelPoint_projModelOver, CommRingCat.ofHom_id, Spec.map_id]
 
 /-- The point `[x : y : 1]` lies on the chart `D₊(Z)` over every point of `Spec R`. -/
 theorem projModelAffinePoint_mem_basicOpen (s : Spec (.of R)) :
