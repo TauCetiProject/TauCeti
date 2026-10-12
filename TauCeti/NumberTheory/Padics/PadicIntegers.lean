@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Normed.Ring.Units
 public import Mathlib.NumberTheory.Padics.PadicIntegers
 public import Mathlib.NumberTheory.Padics.ProperSpace
 public import Mathlib.Topology.MetricSpace.Ultra.TotallySeparated
+public import TauCeti.Topology.Algebra.ContinuousMonoidHom.Basic
 import Mathlib.Data.Finset.Max
 import TauCeti.LinearAlgebra.Quotient.Pi.SpanSingleton
 
@@ -28,6 +29,10 @@ Two consequences of the ultrametric divisibility in `ℤ_p` are recorded as well
 divides every element of no larger norm, so that a finite family of `p`-adic integers is a common
 multiple `q • w` of a family `w` with a coordinate equal to `1`, namely at an index of maximal norm.
 This is the shape in which the exponent vector of a relator of a free pro-`p` group is read.
+
+Every continuous additive homomorphism from `ℤ_p` to the discrete integers is zero, as a
+specialization of the compact-domain vanishing theorem. This supplies the homomorphism
+calculation for first continuous cohomology with trivial integer coefficients.
 
 ## Main results
 
@@ -165,14 +170,5 @@ end Padic
 /-- A continuous additive homomorphism from `ℤ_[p]` to `ℤ` is zero: its image is compact, hence
 finite, and a finite subgroup of `ℤ` is trivial. -/
 theorem PadicInt.continuousAddMonoidHom_to_int_eq_zero (p : ℕ) [Fact p.Prime]
-    (φ : ContinuousAddMonoidHom ℤ_[p] ℤ) : φ = 0 := by
-  ext x
-  change φ x = 0
-  by_contra hx
-  have hfin : (Set.range φ).Finite := (isCompact_range (map_continuous φ)).finite_of_discrete
-  have hsub : Set.range (fun n : ℕ => (n : ℤ) * φ x) ⊆ Set.range φ := by
-    rintro _ ⟨n, rfl⟩
-    exact ⟨(n : ℤ) • x, by rw [map_zsmul, smul_eq_mul]⟩
-  have hinj : Function.Injective (fun n : ℕ => (n : ℤ) * φ x) := fun a b h =>
-    Nat.cast_injective (mul_right_cancel₀ hx h)
-  exact Set.infinite_range_of_injective hinj (hfin.subset hsub)
+    (φ : ContinuousAddMonoidHom ℤ_[p] ℤ) : φ = 0 :=
+  φ.eq_zero_of_isAddTorsionFree
