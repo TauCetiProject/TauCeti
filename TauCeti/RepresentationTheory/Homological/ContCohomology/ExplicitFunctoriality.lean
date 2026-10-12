@@ -147,8 +147,8 @@ section Naturality
 
 /-! The naturality squares are where the differentials enter, so this is the first point at which
 the coefficients have to be commutative groups carrying a distributive scalar action. Commutativity
-is necessary because `d0` and `d1` are additive homomorphisms; their formulas are not additive for
-a general noncommutative additive group. -/
+is necessary because `d0`, `d1` and `d2` are additive homomorphisms; their formulas are not
+additive for a general noncommutative additive group. -/
 
 variable {G : Type uG} {H : Type uH} {M : Type uM} {N : Type uN}
   [Monoid G] [Monoid H] [AddCommGroup M] [AddCommGroup N]
@@ -169,6 +169,12 @@ theorem cochainsMap2_d1 (φ : H →* G) (f : M →+ N)
   obtain ⟨h, k⟩ := p
   simp only [cochainsMap2_apply, d1_apply, map_add, map_sub, hequiv, cochainsMap1_apply,
     map_mul]
+
+/-- The degree-two differential is natural in compatible pairs, evaluated at a point. -/
+theorem d2_cochainsMap2_apply (φ : H →* G) (f : M →+ N)
+    (hequiv : ∀ (h : H) (m : M), f (φ h • m) = h • f m) (c : G × G → M) (h k j : H) :
+    d2 H N (cochainsMap2 φ f c) (h, k, j) = f (d2 G M c (φ h, φ k, φ j)) := by
+  simp only [d2_apply, cochainsMap2_apply, map_add, map_sub, hequiv, map_mul]
 
 /-- A compatible pair sends degree-one coboundaries to degree-one coboundaries. -/
 theorem cochainsMap1_mem_B1 (φ : H →* G) (f : M →+ N)
@@ -217,12 +223,11 @@ theorem cochainsMap2_mem_Z2 (φ : H →ₜ* G) (f : M →+ N) (hf : Continuous f
     (hequiv : ∀ (h : H) (m : M), f (φ h • m) = h • f m)
     {c : G × G → M} (hc : c ∈ Z2 G M) :
     cochainsMap2 (φ : H →* G) f c ∈ Z2 H N := by
-  refine mem_Z2_iff.2 ⟨continuous_cochainsMap2 φ f hf (mem_Z2_iff.1 hc).1, ?_⟩
-  intro h k j
-  simp only [cochainsMap2_apply, map_mul]
-  rw [← hequiv h, ← map_add, ← map_add]
-  exact congrArg f ((mem_Z2_iff.1 hc).2 ((φ : H →* G) h) ((φ : H →* G) k)
-    ((φ : H →* G) j))
+  refine mem_Z2_iff.2 ⟨continuous_cochainsMap2 φ f hf (mem_Z2_iff.1 hc).1,
+    d2_apply_eq_zero_iff.1 ?_⟩
+  ext ⟨h, k, j⟩
+  rw [d2_cochainsMap2_apply (φ : H →* G) f hequiv, d2_apply_eq_zero_iff.2 (mem_Z2_iff.1 hc).2,
+    Pi.zero_apply, map_zero, Pi.zero_apply]
 
 /-- The pullback of continuous degree-one cocycles along a compatible pair, sending a cocycle `c`
 to `h ↦ f (c (φ h))`. -/
@@ -876,7 +881,7 @@ theorem explicitCoeff2Equiv_symm_apply [ContinuousMul G] {N : Type uN} [AddCommG
 /-- A bijective equivariant homomorphism of discrete coefficient modules induces a bijection on
 explicit first cohomology. -/
 theorem explicitCoeff1_bijective [DiscreteTopology M] {N : Type uN} [AddCommGroup N]
-    [TopologicalSpace N] [IsTopologicalAddGroup N] [DiscreteTopology N] [DistribMulAction G N]
+    [TopologicalSpace N] [DiscreteTopology N] [DistribMulAction G N]
     [ContinuousSMul G N] {f : M →+[G] N} (hf : Function.Bijective f) :
     Function.Bijective (explicitCoeff1 G M f continuous_of_discreteTopology) := by
   have h := (explicitCoeff1Equiv G M (AddEquiv.ofBijective (f : M →+ N) hf)
@@ -894,7 +899,7 @@ theorem explicitCoeff1_bijective [DiscreteTopology M] {N : Type uN} [AddCommGrou
 /-- A bijective equivariant homomorphism of discrete coefficient modules induces a bijection on
 explicit second cohomology. -/
 theorem explicitCoeff2_bijective [ContinuousMul G] [DiscreteTopology M] {N : Type uN}
-    [AddCommGroup N] [TopologicalSpace N] [IsTopologicalAddGroup N] [DiscreteTopology N]
+    [AddCommGroup N] [TopologicalSpace N] [DiscreteTopology N]
     [DistribMulAction G N] [ContinuousSMul G N] {f : M →+[G] N} (hf : Function.Bijective f) :
     Function.Bijective (explicitCoeff2 G M f continuous_of_discreteTopology) := by
   have h := (explicitCoeff2Equiv G M (AddEquiv.ofBijective (f : M →+ N) hf)

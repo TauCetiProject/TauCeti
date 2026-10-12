@@ -8,7 +8,7 @@ module
 public import Mathlib.AlgebraicTopology.SimplicialSet.Homology.Relative
 public import Mathlib.Topology.Category.TopCat.EpiMono
 public import Mathlib.Topology.Category.TopPair
-public import TauCeti.AlgebraicTopology.SimplicialSet.Homology.Relative
+public import TauCeti.AlgebraicTopology.SimplicialSet.Homology.Relative.Basic
 public import TauCeti.AlgebraicTopology.SimplicialSet.Restrict
 public import TauCeti.AlgebraicTopology.SimplicialSet.TopAdj
 public import TauCeti.AlgebraicTopology.Singular.Basic

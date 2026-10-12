@@ -31,6 +31,8 @@ finiteness where the value is computed.
 
 ## Main results
 
+* `TauCeti.Algebra.pow_finrank_mem_range_normUnits`: in a free algebra, the `finrank`-th power of
+  a unit of the base is a norm.
 * `AlgHom.normGroup_le_normGroup`: a larger extension has a smaller norm group.
 -/
 
@@ -49,6 +51,12 @@ noncomputable def Algebra.normUnits : Sˣ →* Rˣ :=
 @[simp]
 theorem Algebra.coe_normUnits (x : Sˣ) : (Algebra.normUnits R x : R) = Algebra.norm R (x : S) := by
   simp [Algebra.normUnits]
+
+/-- **Powers by the rank are norms.** In a free `R`-algebra `S` the norm of `a ∈ R` is
+`a ^ finrank R S`, so that power of a unit of `R` is the norm of a unit of `S`. -/
+theorem Algebra.pow_finrank_mem_range_normUnits [Module.Free R S] (a : Rˣ) :
+    a ^ Module.finrank R S ∈ (Algebra.normUnits R : Sˣ →* Rˣ).range :=
+  ⟨Units.map (algebraMap R S : R →* S) a, Units.ext <| by simp⟩
 
 section NormGroup
 

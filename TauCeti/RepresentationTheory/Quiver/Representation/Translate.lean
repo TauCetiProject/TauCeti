@@ -52,15 +52,10 @@ universe u v w t
 variable (k : Type u) (Q : Type v) [Field k] [Quiver.{w} Q]
   [Finite (Quiver.TotalPath Q)]
 
-local instance : Finite Q :=
-  Finite.of_injective (fun q : Q ↦ (⟨q, q, Quiver.Path.nil⟩ : Quiver.TotalPath Q))
-    (fun _ _ h ↦ congrArg Sigma.fst h)
-
 local notation "kQ" => pathAlgebra k Q
 local notation "E" => quiverRepEquivalence k Q
 local notation "F" => quiverRepFunctor k Q
 
-local instance : Module.Finite k kQ := module_finite_pathAlgebra k Q
 local instance : IsArtinianRing kQ := IsArtinianRing.of_finite k kQ
 local instance : IsNoetherianRing kQ := IsNoetherianRing.of_finite k kQ
 
