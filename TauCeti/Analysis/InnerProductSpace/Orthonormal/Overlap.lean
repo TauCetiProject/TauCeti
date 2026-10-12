@@ -29,8 +29,8 @@ their squares is the squared Frobenius norm `∑ⱼ ∑ᵢ ‖⟪uᵢ, vⱼ⟫�
 the *squared Frobenius sine* `sin²_F Θ = ∑ₖ (1 - cos² θₖ)` of two families of the same size as
 `d - ∑ⱼ ∑ᵢ ‖⟪uᵢ, vⱼ⟫‖²`.
 
-The definitions make sense for arbitrary finite families; the statements that need orthonormality
-assume it.
+The overlap operator and its Frobenius identity make sense for arbitrary finite families; the
+principal cosines and the squared Frobenius sine are defined only for orthonormal families.
 
 ## Main declarations
 
@@ -40,10 +40,10 @@ assume it.
 * `TauCeti.adjoint_overlapOperator`: swapping the families gives the adjoint.
 * `TauCeti.norm_overlapOperator_apply_le`: for orthonormal families it is a contraction.
 * `TauCeti.sum_sq_singularValues_overlapOperator`: `∑ₖ σₖ² = ∑ⱼ ∑ᵢ ‖⟪uᵢ, vⱼ⟫‖²`.
-* `TauCeti.cosPrincipalAngles`: the principal cosines, as singular values of the overlap operator,
-  with `cosPrincipalAngles_nonneg`, `cosPrincipalAngles_le_one`, `cosPrincipalAngles_antitone`
-  and `cosPrincipalAngles_comm`.
-* `TauCeti.sinThetaSq`: the squared Frobenius sine (for orthonormal families), with
+* `TauCeti.cosPrincipalAngles`: the principal cosines of two orthonormal families, as singular
+  values of the overlap operator, with `cosPrincipalAngles_nonneg`, `cosPrincipalAngles_le_one`,
+  `cosPrincipalAngles_antitone` and `cosPrincipalAngles_comm`.
+* `TauCeti.sinThetaSq`: the squared Frobenius sine of two orthonormal families, with
   `TauCeti.sinThetaSq_eq_card_sub_sum_norm_inner_sq` and `TauCeti.sinThetaSq_self`.
 
 ## References
@@ -151,47 +151,48 @@ theorem sum_sq_singularValues_overlapOperator (u : ι → E) (v : κ → E) :
 
 /-! ### Principal cosines -/
 
-variable (𝕜) in
-/-- The principal cosines of finite families `u` and `v`: the singular values of their overlap
-operator, in nonincreasing order and padded by zeros. For orthonormal families these are the
-cosines of the principal angles between the two spans; the results below that need it assume
-orthonormality. -/
-noncomputable def cosPrincipalAngles (u : ι → E) (v : κ → E) : ℕ →₀ ℝ :=
+/-- The principal cosines of orthonormal finite families `u` and `v`: the singular values of their
+overlap operator, in nonincreasing order and padded by zeros. These are the cosines of the
+principal angles between the two spans. For arbitrary families, the singular values of the overlap
+operator are `(overlapOperator 𝕜 u v).singularValues`. -/
+noncomputable def cosPrincipalAngles {u : ι → E} {v : κ → E} (_hu : Orthonormal 𝕜 u)
+    (_hv : Orthonormal 𝕜 v) : ℕ →₀ ℝ :=
   (overlapOperator 𝕜 u v).singularValues
 
-theorem cosPrincipalAngles_def (u : ι → E) (v : κ → E) :
-    cosPrincipalAngles 𝕜 u v = (overlapOperator 𝕜 u v).singularValues :=
+theorem cosPrincipalAngles_def {u : ι → E} {v : κ → E} (hu : Orthonormal 𝕜 u)
+    (hv : Orthonormal 𝕜 v) :
+    cosPrincipalAngles hu hv = (overlapOperator 𝕜 u v).singularValues :=
   (rfl)
 
 /-- The principal cosines are nonnegative. -/
-theorem cosPrincipalAngles_nonneg (u : ι → E) (v : κ → E) (k : ℕ) :
-    0 ≤ cosPrincipalAngles 𝕜 u v k :=
+theorem cosPrincipalAngles_nonneg {u : ι → E} {v : κ → E} (hu : Orthonormal 𝕜 u)
+    (hv : Orthonormal 𝕜 v) (k : ℕ) : 0 ≤ cosPrincipalAngles hu hv k :=
   LinearMap.singularValues_nonneg _ k
 
 /-- The principal cosines form a nonincreasing sequence `cos θ₀ ≥ cos θ₁ ≥ ⋯`. -/
-theorem cosPrincipalAngles_antitone (u : ι → E) (v : κ → E) :
-    Antitone (cosPrincipalAngles 𝕜 u v) :=
+theorem cosPrincipalAngles_antitone {u : ι → E} {v : κ → E} (hu : Orthonormal 𝕜 u)
+    (hv : Orthonormal 𝕜 v) : Antitone (cosPrincipalAngles hu hv) :=
   LinearMap.singularValues_antitone _
 
 /-- Swapping the two families leaves the principal cosines unchanged. -/
-theorem cosPrincipalAngles_comm (u : ι → E) (v : κ → E) :
-    cosPrincipalAngles 𝕜 u v = cosPrincipalAngles 𝕜 v u := by
+theorem cosPrincipalAngles_comm {u : ι → E} {v : κ → E} (hu : Orthonormal 𝕜 u)
+    (hv : Orthonormal 𝕜 v) : cosPrincipalAngles hu hv = cosPrincipalAngles hv hu := by
   rw [cosPrincipalAngles_def, cosPrincipalAngles_def, ← adjoint_overlapOperator,
     LinearMap.singularValues_adjoint]
 
 /-- There are at most as many nonzero principal cosines as members of the second family. -/
-theorem cosPrincipalAngles_of_card_le_right (u : ι → E) (v : κ → E) {k : ℕ}
-    (hk : Fintype.card κ ≤ k) : cosPrincipalAngles 𝕜 u v k = 0 :=
+theorem cosPrincipalAngles_of_card_le_right {u : ι → E} {v : κ → E} (hu : Orthonormal 𝕜 u)
+    (hv : Orthonormal 𝕜 v) {k : ℕ} (hk : Fintype.card κ ≤ k) : cosPrincipalAngles hu hv k = 0 :=
   LinearMap.singularValues_of_finrank_le _ (by rwa [finrank_euclideanSpace])
 
 /-- There are at most as many nonzero principal cosines as members of the first family. -/
-theorem cosPrincipalAngles_of_card_le_left (u : ι → E) (v : κ → E) {k : ℕ}
-    (hk : Fintype.card ι ≤ k) : cosPrincipalAngles 𝕜 u v k = 0 := by
-  rw [cosPrincipalAngles_comm, cosPrincipalAngles_of_card_le_right v u hk]
+theorem cosPrincipalAngles_of_card_le_left {u : ι → E} {v : κ → E} (hu : Orthonormal 𝕜 u)
+    (hv : Orthonormal 𝕜 v) {k : ℕ} (hk : Fintype.card ι ≤ k) : cosPrincipalAngles hu hv k = 0 := by
+  rw [cosPrincipalAngles_comm, cosPrincipalAngles_of_card_le_right hv hu hk]
 
-/-- The principal cosines of two orthonormal families are at most `1`. -/
+/-- The principal cosines are at most `1`. -/
 theorem cosPrincipalAngles_le_one {u : ι → E} {v : κ → E} (hu : Orthonormal 𝕜 u)
-    (hv : Orthonormal 𝕜 v) (k : ℕ) : cosPrincipalAngles 𝕜 u v k ≤ 1 := by
+    (hv : Orthonormal 𝕜 v) (k : ℕ) : cosPrincipalAngles hu hv k ≤ 1 := by
   set A := overlapOperator 𝕜 u v
   rcases lt_or_ge k (finrank 𝕜 (EuclideanSpace 𝕜 κ)) with hk | hk
   · -- `σₖ = ‖A wₖ‖` for the `k`-th right singular vector `wₖ`, a unit vector.
@@ -202,73 +203,74 @@ theorem cosPrincipalAngles_le_one {u : ι → E} {v : κ → E} (hu : Orthonorma
   · rw [cosPrincipalAngles_def, A.singularValues_of_finrank_le hk]
     exact zero_le_one
 
-/-- The squared principal cosines of two orthonormal families are at most `1`, so each term
-`1 - cos² θₖ` of the squared Frobenius sine is nonnegative. -/
+/-- The squared principal cosines are at most `1`, so each term `1 - cos² θₖ` of the squared
+Frobenius sine is nonnegative. -/
 theorem sq_cosPrincipalAngles_le_one {u : ι → E} {v : κ → E} (hu : Orthonormal 𝕜 u)
-    (hv : Orthonormal 𝕜 v) (k : ℕ) : cosPrincipalAngles 𝕜 u v k ^ 2 ≤ 1 :=
-  pow_le_one₀ (cosPrincipalAngles_nonneg u v k) (cosPrincipalAngles_le_one hu hv k)
+    (hv : Orthonormal 𝕜 v) (k : ℕ) : cosPrincipalAngles hu hv k ^ 2 ≤ 1 :=
+  pow_le_one₀ (cosPrincipalAngles_nonneg hu hv k) (cosPrincipalAngles_le_one hu hv k)
 
 /-- The squares of the principal cosines sum to the squared Frobenius norm `∑ⱼ ∑ᵢ ‖⟪uᵢ, vⱼ⟫‖²` of
 the overlap matrix. -/
-theorem sum_range_sq_cosPrincipalAngles (u : ι → E) (v : κ → E) :
-    ∑ k ∈ Finset.range (Fintype.card κ), cosPrincipalAngles 𝕜 u v k ^ 2 =
+theorem sum_range_sq_cosPrincipalAngles {u : ι → E} {v : κ → E} (hu : Orthonormal 𝕜 u)
+    (hv : Orthonormal 𝕜 v) :
+    ∑ k ∈ Finset.range (Fintype.card κ), cosPrincipalAngles hu hv k ^ 2 =
       ∑ j, ∑ i, ‖⟪u i, v j⟫_𝕜‖ ^ 2 := by
-  rw [← sum_sq_singularValues_overlapOperator, ← cosPrincipalAngles_def,
+  rw [← sum_sq_singularValues_overlapOperator, ← cosPrincipalAngles_def hu hv,
     Finsupp.sum_of_support_subset _ (fun k hk ↦ Finset.mem_range.mpr ?_) _ fun _ _ ↦ by simp]
   by_contra h
-  exact Finsupp.mem_support_iff.mp hk (cosPrincipalAngles_of_card_le_right u v (not_lt.mp h))
+  exact Finsupp.mem_support_iff.mp hk (cosPrincipalAngles_of_card_le_right hu hv (not_lt.mp h))
 
 /-! ### The squared Frobenius sine -/
 
-variable (𝕜) in
-/-- The sum `∑ₖ (1 - cos² θₖ)` over the first `d` principal cosines of two finite families of the
-same size `d`. When both families are orthonormal this is the squared Frobenius sine
-`sin²_F Θ` between their spans. -/
-noncomputable def sinThetaSq (u v : ι → E) : ℝ :=
-  ∑ k ∈ Finset.range (Fintype.card ι), (1 - cosPrincipalAngles 𝕜 u v k ^ 2)
+/-- The squared Frobenius sine `sin²_F Θ = ∑ₖ (1 - cos² θₖ)` between the spans of two orthonormal
+families of the same size `d`, summed over their first `d` principal cosines. -/
+noncomputable def sinThetaSq {u v : ι → E} (hu : Orthonormal 𝕜 u) (hv : Orthonormal 𝕜 v) : ℝ :=
+  ∑ k ∈ Finset.range (Fintype.card ι), (1 - cosPrincipalAngles hu hv k ^ 2)
 
-theorem sinThetaSq_def (u v : ι → E) :
-    sinThetaSq 𝕜 u v =
-      ∑ k ∈ Finset.range (Fintype.card ι), (1 - cosPrincipalAngles 𝕜 u v k ^ 2) :=
+theorem sinThetaSq_def {u v : ι → E} (hu : Orthonormal 𝕜 u) (hv : Orthonormal 𝕜 v) :
+    sinThetaSq hu hv =
+      ∑ k ∈ Finset.range (Fintype.card ι), (1 - cosPrincipalAngles hu hv k ^ 2) :=
   (rfl)
 
-/-- For families of size `d`, `sinThetaSq` equals `d - ∑ₖ cos² θₖ`. -/
-theorem sinThetaSq_eq_card_sub_sum_sq (u v : ι → E) :
-    sinThetaSq 𝕜 u v =
-      Fintype.card ι - ∑ k ∈ Finset.range (Fintype.card ι), cosPrincipalAngles 𝕜 u v k ^ 2 := by
+/-- For orthonormal families of size `d`, `sin²_F Θ = d - ∑ₖ cos² θₖ`. -/
+theorem sinThetaSq_eq_card_sub_sum_sq {u v : ι → E} (hu : Orthonormal 𝕜 u)
+    (hv : Orthonormal 𝕜 v) :
+    sinThetaSq hu hv =
+      Fintype.card ι - ∑ k ∈ Finset.range (Fintype.card ι), cosPrincipalAngles hu hv k ^ 2 := by
   simp [sinThetaSq_def, Finset.sum_sub_distrib]
 
-/-- For families of size `d`, `sinThetaSq` equals `d - ∑ⱼ ∑ᵢ ‖⟪uᵢ, vⱼ⟫‖²`, the size minus the
-squared Frobenius norm of the overlap matrix. For orthonormal families this computes the squared
-Frobenius sine between the spans directly from the inner products. -/
-theorem sinThetaSq_eq_card_sub_sum_norm_inner_sq (u v : ι → E) :
-    sinThetaSq 𝕜 u v = Fintype.card ι - ∑ j, ∑ i, ‖⟪u i, v j⟫_𝕜‖ ^ 2 := by
+/-- For orthonormal families of size `d`, `sin²_F Θ = d - ∑ⱼ ∑ᵢ ‖⟪uᵢ, vⱼ⟫‖²`, the size minus the
+squared Frobenius norm of the overlap matrix: the squared Frobenius sine between the spans,
+computed directly from the inner products. -/
+theorem sinThetaSq_eq_card_sub_sum_norm_inner_sq {u v : ι → E} (hu : Orthonormal 𝕜 u)
+    (hv : Orthonormal 𝕜 v) : sinThetaSq hu hv = Fintype.card ι - ∑ j, ∑ i, ‖⟪u i, v j⟫_𝕜‖ ^ 2 := by
   rw [sinThetaSq_eq_card_sub_sum_sq, sum_range_sq_cosPrincipalAngles]
 
 /-- Swapping the two families leaves the squared Frobenius sine unchanged. -/
-theorem sinThetaSq_comm (u v : ι → E) : sinThetaSq 𝕜 u v = sinThetaSq 𝕜 v u := by
+theorem sinThetaSq_comm {u v : ι → E} (hu : Orthonormal 𝕜 u) (hv : Orthonormal 𝕜 v) :
+    sinThetaSq hu hv = sinThetaSq hv hu := by
   rw [sinThetaSq_def, sinThetaSq_def, cosPrincipalAngles_comm]
 
-/-- The squared Frobenius sine of two orthonormal families is nonnegative. -/
+/-- The squared Frobenius sine is nonnegative. -/
 theorem sinThetaSq_nonneg {u v : ι → E} (hu : Orthonormal 𝕜 u) (hv : Orthonormal 𝕜 v) :
-    0 ≤ sinThetaSq 𝕜 u v :=
+    0 ≤ sinThetaSq hu hv :=
   Finset.sum_nonneg fun k _ ↦ sub_nonneg.mpr (sq_cosPrincipalAngles_le_one hu hv k)
 
 /-- An orthonormal family makes no angle with itself: its squared Frobenius sine vanishes. -/
 @[simp]
-theorem sinThetaSq_self {v : ι → E} (hv : Orthonormal 𝕜 v) : sinThetaSq 𝕜 v v = 0 := by
+theorem sinThetaSq_self {v : ι → E} (hv : Orthonormal 𝕜 v) : sinThetaSq hv hv = 0 := by
   classical
   rw [sinThetaSq_eq_card_sub_sum_norm_inner_sq, sub_eq_zero]
   simp [orthonormal_iff_ite.mp hv, apply_ite]
 
 /-- All `d` principal cosines of an orthonormal family of size `d` with itself equal `1`. -/
 theorem cosPrincipalAngles_self_of_lt {v : ι → E} (hv : Orthonormal 𝕜 v) {k : ℕ}
-    (hk : k < Fintype.card ι) : cosPrincipalAngles 𝕜 v v k = 1 := by
+    (hk : k < Fintype.card ι) : cosPrincipalAngles hv hv k = 1 := by
   -- Every term `1 - cos² θₖ` of the vanishing sum `sin²_F Θ` is nonnegative, so each vanishes.
   have h := (Finset.sum_eq_zero_iff_of_nonneg fun k _ ↦
     sub_nonneg.mpr (sq_cosPrincipalAngles_le_one hv hv k)).mp
-      ((sinThetaSq_def v v).symm.trans (sinThetaSq_self hv)) k (Finset.mem_range.mpr hk)
+      ((sinThetaSq_def hv hv).symm.trans (sinThetaSq_self hv)) k (Finset.mem_range.mpr hk)
   rwa [sub_eq_zero, eq_comm,
-    pow_eq_one_iff_of_nonneg (cosPrincipalAngles_nonneg v v k) two_ne_zero] at h
+    pow_eq_one_iff_of_nonneg (cosPrincipalAngles_nonneg hv hv k) two_ne_zero] at h
 
 end TauCeti
