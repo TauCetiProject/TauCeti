@@ -36,6 +36,11 @@ form on `Hom W₁ W₂`, positive definite since only the zero map has degree ze
 * `TauCeti.Isogeny.Hom.polar_degree_add_left` and `TauCeti.Isogeny.Hom.polar_degree_add_right`:
   the degree polarisation is additive in each variable.
 * `TauCeti.Isogeny.Hom.degreeForm_posDef`: the degree form is positive definite.
+* `TauCeti.Isogeny.Hom.dual_eq_polar_smul_one_sub`: an endomorphism `f` satisfies
+  `f̂ = t - f` for the integer `t = deg (f + 1) - deg f - 1`, its trace.
+* `TauCeti.Isogeny.Hom.dual_two_nsmul_sub_polar_smul_one`: `2f - t` is anti-self-dual.
+* `TauCeti.Isogeny.Hom.mul_self_eq_neg_degree_of_dual_eq_neg`: an anti-self-dual endomorphism
+  squares to minus its degree.
 
 ## References
 
@@ -95,6 +100,35 @@ theorem degreeForm_apply (f : Hom W₁ W₂) : degreeForm W₁ W₂ f = f.degree
 /-- **The degree form is positive definite**: every nonzero morphism has positive degree. -/
 theorem degreeForm_posDef : (degreeForm W₁ W₂).PosDef := fun f hf ↦ by
   simpa [Nat.pos_iff_ne_zero] using hf
+
+section Endomorphism
+
+variable {W : WeierstrassCurve.Affine F} [W.IsElliptic]
+
+/-- **The dual of an endomorphism is its trace minus itself**: `f̂ = t - f`, where the trace
+`t = deg (f + 1) - deg f - 1` is the degree polarisation of `f` and `1` (Silverman III.6.2). -/
+theorem dual_eq_polar_smul_one_sub (f : Hom W W) :
+    f.dual = QuadraticMap.polar (fun h : Hom W W ↦ (h.degree : ℤ)) f 1 • 1 - f := by
+  have h := dual_comp_add_dual_comp f (id W)
+  rw [comp_id, dual_id, id_comp, ← one_def] at h
+  rw [← h, add_sub_cancel_right]
+
+/-- **Twice an endomorphism minus its trace is anti-self-dual**: `(2f - t)^ = -(2f - t)`. -/
+theorem dual_two_nsmul_sub_polar_smul_one (f : Hom W W) :
+    (2 • f - QuadraticMap.polar (fun h : Hom W W ↦ (h.degree : ℤ)) f 1 • 1).dual =
+      -(2 • f - QuadraticMap.polar (fun h : Hom W W ↦ (h.degree : ℤ)) f 1 • 1) := by
+  rw [dual_sub, dual_nsmul, dual_zsmul, dual_eq_polar_smul_one_sub, one_def, dual_id]
+  abel
+
+/-- **An anti-self-dual endomorphism squares to minus its degree**: if `x̂ = -x`, then
+`x² = -x x̂ = -deg x`. -/
+theorem mul_self_eq_neg_degree_of_dual_eq_neg {x : Hom W W} (hx : x.dual = -x) :
+    x * x = -((x.degree : ℤ) • 1) := by
+  have h := x.comp_dual_self
+  rw [hx, comp_neg, ← mul_def, ← one_def, ← natCast_zsmul] at h
+  rw [← h, neg_neg]
+
+end Endomorphism
 
 end TauCeti.Isogeny.Hom
 

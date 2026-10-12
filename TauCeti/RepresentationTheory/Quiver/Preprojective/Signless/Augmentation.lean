@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.Quiver.PathAlgebra.Augmentation
+public import TauCeti.RepresentationTheory.Quiver.PathAlgebra.PathsInto
+public import TauCeti.RepresentationTheory.Quiver.Preprojective.Signless
 public import TauCeti.RepresentationTheory.Quiver.Preprojective.Signless.Grading
 
 /-!
@@ -16,10 +18,10 @@ vertices. In the right vertex projective `e_v Π`, the kernel of the vertex coef
 exactly the image of the incoming-arrow map `(z_b) ↦ ∑ b z_b`. Every scalar occurs as a vertex
 coefficient, so the cokernel of this map is one copy of the coefficient ring, not an unspecified
 quotient. These statements complete the augmentation endpoint of the signless Koszul complex.
-The vertex kernel is also the positive path-degree part of the right vertex projective.
 They work over every commutative ring, also for non-bipartite doubled graphs and in
-characteristic two. Injectivity at the left endpoint still requires the non-backtracking
-hypothesis of `TauCeti.RepresentationTheory.Quiver.Preprojective.Signless.KoszulComplex`.
+characteristic two. The positive path-degree characterization below identifies the same
+arrow image in a finite quiver with reversal. Injectivity at the left endpoint still
+requires the non-backtracking hypothesis from the signless Koszul complex.
 
 For a connected simple graph with at least three vertices, the signless algebra is the
 quadratic dual of its zigzag algebra, whereas it need not be the signed preprojective algebra
@@ -40,6 +42,8 @@ namespace TauCeti
 open _root_.Quiver PathAlgebra
 
 universe u v w
+
+section VertexAugmentation
 
 variable (k : Type w) [CommRing k] {R : Type u} [Quiver.{v} R] [HasReverse R]
   [Finite R] [∀ x : R, Fintype (Quiver.Star x)]
@@ -130,11 +134,17 @@ theorem exists_signlessPreprojectiveAugmentation_apply_eq (v : R) (c : k) :
     exists_quotientTrivialCoeff_apply_eq
       (signlessPreprojectiveIdeal_le_arrowIdeal k) v c
 
-/-- Exactness of the signless Koszul complex at the vertex augmentation endpoint: a class in
-`e_v Π^s` has positive degree exactly when it is a sum of arrows into `v` multiplied by classes
-in the corresponding tail corners. -/
-theorem mem_iSup_signlessPreprojectiveGrade_add_one_iff_exists_eq_sum
-    [Fintype R] [∀ i j : R, Fintype (i ⟶ j)] (v : R)
+end VertexAugmentation
+
+section PositiveDegree
+
+variable (k : Type w) (R : Type u) [CommRing k] [Quiver.{v} R] [HasReverse R]
+  [Fintype R] [∀ i j : R, Fintype (i ⟶ j)] [∀ x : R, Fintype (Quiver.Star x)]
+
+/-- An element of the vertex corner has positive path degree exactly when it is a sum of
+incoming arrows times elements of their source corners. This is exactness at the augmentation
+endpoint of the signless Koszul complex. -/
+theorem mem_iSup_signlessPreprojectiveGrade_add_one_iff_exists_eq_sum (v : R)
     {x : signlessPreprojectiveAlgebra k R}
     (hx : signlessPreprojectiveMk k R (vertexIdempotent k v) * x = x) :
     x ∈ ⨆ n, signlessPreprojectiveGrade k R (n + 1) ↔
@@ -169,5 +179,7 @@ theorem mem_iSup_signlessPreprojectiveGrade_add_one_iff_exists_eq_sum
   · rintro ⟨z, -, rfl⟩
     exact sum_mem fun i _ => sum_mem fun b _ =>
       signlessPreprojectiveMk_ofArrow_mul_mem_iSup k R b (z i b)
+
+end PositiveDegree
 
 end TauCeti

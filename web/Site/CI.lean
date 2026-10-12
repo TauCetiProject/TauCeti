@@ -43,8 +43,8 @@ def minutesGraph : Html := dailyChart "ci-runner-minutes.svg"
   "Build minutes per day on Namespace and on GitHub-hosted runners, and cancelled PR builds"
   "Build minutes per day."
 def queueGraph : Html := dailyChart "ci-merge-queue.svg"
-  "Merge-queue builds per day by outcome, and PRs landed"
-  "Merge-queue builds by outcome; the dashed line is PRs landed on main."
+  "GitHub merge-queue and bors builds per day by outcome, and PRs landed"
+  "GitHub merge-queue and bors staging builds by outcome; the dashed line is PR arrivals on main."
 def pickerGraph : Html := dailyChart "ci-picker.svg"
   "Share of PR builds run on GitHub-hosted runners per day"
   "Share of PR builds the runner picker sent to GitHub-hosted runners."
@@ -56,8 +56,8 @@ is built in a sandbox, on one of two kinds of runner. GitHub-hosted runners cost
 public repository, but the organisation may run only twenty GitHub-hosted jobs at once, across
 all of its repositories. Namespace runners are faster and have no such cap, but every minute is
 paid for. So a pull-request build takes a GitHub runner while one is free and overflows to
-Namespace when they are all taken; the merge queue, which every pull request must pass to land,
-always builds on Namespace.
+Namespace when they are all taken. Merge validation through the GitHub queue or bors runs on
+Namespace; human-reviewed infrastructure changes can land directly.
 
 The timeline below has three panels on one time axis. The top panel shows how many jobs were
 running, averaged over each bin and stacked by runner and kind, against the twenty-job cap on
@@ -68,6 +68,10 @@ sent to Namespace, and dotted lines mark changes to the CI configuration. The mi
 the most jobs waiting for a runner at any moment in each bin. The bottom panel shows the longest
 wait for a runner among jobs that started in the previous thirty minutes (or the previous bin,
 when bins are longer), for builds and for other jobs separately.
+
+GitHub merge-queue entries also run a performance-gate job, which bors staging builds do not.
+That difference affects the fleet and runner-minute totals across the transition. Pilot and
+unidentified bors builds remain in the other-job and cost totals.
 
 :::blob fleetGraphs
 :::
@@ -112,10 +116,16 @@ newer push to the same pull request replaced before it finished, whose minutes b
 :::blob pickerGraph
 :::
 
-How is the merge queue doing? The queue builds each pull request together with those ahead of it,
-and lands them only if that combined build passes. When one fails, its pull request leaves the queue
-and the entries behind it, whose builds included it, are built again. The bars count build jobs,
-including retries.
+How is merge validation doing? The chart includes both GitHub's merge queue and bors staging builds.
+Both test combined changes before they land on main. GitHub rebuilds the entries behind a failed
+entry; bors splits failed batches to isolate the failing pull requests. The bars count build jobs,
+including retries, so a bors batch containing several PRs is one build. Pilot batches and bors
+builds whose target branch is unknown are excluded from this chart.
+
+The dashed line counts each PR once, on the date of the earliest recorded main-push event proving
+its commit reached main. The event time is an upper bound on arrival; coalesced pushes can
+make that bound looser for ancestor commits. The staging commit's creation time is not used. PRs without arrival evidence are excluded from that
+line. Direct merges of human-reviewed infrastructure PRs are included.
 
 :::blob queueGraph
 :::

@@ -93,7 +93,8 @@ theorem genus_le_finrank_mul_genus_add_finrank_mul_genus_add_of_isSplitCompletel
   classical
   have : Algebra.IsAlgebraic F₂ F := Algebra.IsAlgebraic.of_finite F₂ F
   have hF₂ : IsFunctionField k F₂ := hF.of_isAlgebraic_top
-  have hex₂ : IsIntegrallyClosedIn k F₂ := isIntegrallyClosedIn_of_isScalarTower hex F₂
+  have hex₂ : IsIntegrallyClosedIn k F₂ :=
+    (IsScalarTower.toAlgHom k F₂ F).isIntegrallyClosedIn (algebraMap F₂ F).injective hex
   -- A nonspecial effective divisor `B` of degree `g(F₂)` supported on `T`.
   obtain ⟨B, hB0, hBT, hBdeg, hBdim, -⟩ :=
     Divisor.exists_degree_eq_genus_dim_eq_one hF₂ hex₂ hT hcard
