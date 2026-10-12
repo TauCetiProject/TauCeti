@@ -62,11 +62,8 @@ So the class of `x₀` generates lattice homology, and the augmentation already 
 
 ## References
 
-This advances `TauCetiRoadmap/CombinatorialHeegaardFloer/README.md`, Lane L ("lattice homology"),
-whose acceptance criterion asks for the lattice homology of a concrete negative-definite plumbing,
-matched against the literature. The complex and its weights follow A. Némethi,
-[arXiv:0709.0841](https://arxiv.org/abs/0709.0841), Section 3. The comparison computation for
-`HF⁻` of lens spaces is due to P. Ozsváth and Z. Szabó,
+The complex and its weights follow A. Némethi, [arXiv:0709.0841](https://arxiv.org/abs/0709.0841),
+Section 3. The comparison computation for `HF⁻` of lens spaces is due to P. Ozsváth and Z. Szabó,
 [arXiv:math/0203265](https://arxiv.org/abs/math/0203265).
 -/
 

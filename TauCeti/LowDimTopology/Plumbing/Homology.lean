@@ -49,10 +49,8 @@ canonically isomorphic to its whole chain module.
 
 ## References
 
-This advances `TauCetiRoadmap/CombinatorialHeegaardFloer/README.md`, Lane L, which asks for
-Némethi's lattice homology `ℍ⁻` as a polynomial module built from lattice points and weight
-functions. The characteristic-two coefficient stage and the weighted cubical differential follow
-A. Némethi, [arXiv:0709.0841](https://arxiv.org/abs/0709.0841), Section 3.
+The characteristic-two coefficient stage and the weighted cubical differential follow A. Némethi,
+[arXiv:0709.0841](https://arxiv.org/abs/0709.0841), Section 3.
 -/
 
 public section

@@ -25,9 +25,8 @@ distinct directions. Reversing the pair reaches the same face with the same tota
 the commuting-face and exponent-square lemmas. Thus every term occurs twice and cancels over
 `𝔽₂[U]`.
 
-The coefficient choice is the roadmap's `𝔽₂`-first stage. Integral signs form a separate later
-layer: the unsigned formula here is exactly the characteristic-two reduction of Némethi's
-oriented cubical differential.
+The coefficients are in `𝔽₂`; the unsigned formula here is exactly the characteristic-two reduction
+of Némethi's oriented cubical differential.
 
 ## Main definitions
 
@@ -52,10 +51,7 @@ oriented cubical differential.
 
 ## References
 
-This advances `TauCetiRoadmap/CombinatorialHeegaardFloer/README.md`, Lane L ("lattice homology"),
-which asks for Némethi's lattice homology as a polynomial-module chain complex built from lattice
-points and weight functions. The face formula follows A. Némethi,
-[arXiv:0709.0841](https://arxiv.org/abs/0709.0841), Section 3.
+The face formula follows A. Némethi, [arXiv:0709.0841](https://arxiv.org/abs/0709.0841), Section 3.
 -/
 
 public section

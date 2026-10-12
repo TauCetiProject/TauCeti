@@ -42,9 +42,7 @@ from these covectors and the plumbing intersection form.
 
 ## References
 
-This supplies a prerequisite for `TauCetiRoadmap/CombinatorialHeegaardFloer/README.md`, Lane L
-("lattice homology"), which asks for plumbing graphs and their lattices together with lattice
-points and weight functions. The characteristic-covector convention follows Némethi,
+The characteristic-covector convention follows Némethi,
 [arXiv:0709.0841](https://arxiv.org/abs/0709.0841), after Ozsváth--Szabó,
 [arXiv:math/0203265](https://arxiv.org/abs/math/0203265).
 -/

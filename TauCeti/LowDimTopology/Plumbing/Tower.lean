@@ -52,10 +52,8 @@ future work.
 
 ## References
 
-This advances `TauCetiRoadmap/CombinatorialHeegaardFloer/README.md`, Lane L ("lattice homology"),
-which asks for Némethi's lattice homology as a `ℤ[U]`-module together with computations of
-concrete negative-definite plumbings and `d`-invariant analogues. The `U`-tower and the role of
-`min χ_k` follow A. Némethi, [arXiv:0709.0841](https://arxiv.org/abs/0709.0841), Section 3.
+The `U`-tower and the role of `min χ_k` follow A. Némethi,
+[arXiv:0709.0841](https://arxiv.org/abs/0709.0841), Section 3.
 -/
 
 public section

@@ -37,11 +37,10 @@ rank-one form `⟨-1⟩`:
 
 `⟨(x, s), (y, t)⟩ = ⟨x, y⟩ - s * t`.
 
-Everything else follows: the exceptional class has square `-1`, it is orthogonal to the image of
-the old lattice, and the blow-up is negative definite exactly when `P` is. That last statement is
-what makes the blow-up usable in Lane L: negative-definiteness is the standing hypothesis of
-lattice homology, so a move that leaves it in place is a move along which the invariant can be
-compared.
+Everything else follows: the exceptional class has square `-1`, it is orthogonal to the image of the
+old lattice, and the blow-up is negative definite exactly when `P` is. That last statement is what
+makes the blow-up usable for lattice homology: negative-definiteness is its standing hypothesis, so
+a move that leaves it in place is a move along which the invariant can be compared.
 
 The covector side of the same splitting is `blowUpCovectorEquiv`, the identification dual to
 `blowUpVertexEquiv`: a covector `k` of `P` together with a value `ε` on the exceptional class
@@ -89,13 +88,10 @@ that it preserves the hypothesis under which the invariant is defined.
 
 ## References
 
-This advances `TauCetiRoadmap/CombinatorialHeegaardFloer/README.md`, Lane L ("lattice homology"),
-whose programme is "Plumbing trees/graphs and their lattices; Némethi's lattice (co)homology …;
-invariance under **Neumann moves**": the move itself and its compatibility with the
-negative-definiteness hypothesis are the prerequisites for stating that invariance. The plumbing
-calculus is W. Neumann, *A calculus for plumbing applied to the topology of complex surface
-singularities and degenerating complex curves*, Trans. Amer. Math. Soc. **268** (1981), 299--344;
-the lattice conventions follow Némethi, [arXiv:0709.0841](https://arxiv.org/abs/0709.0841).
+The plumbing calculus is W. Neumann, *A calculus for plumbing applied to the topology of complex
+surface singularities and degenerating complex curves*, Trans. Amer. Math. Soc. **268** (1981),
+299--344; the lattice conventions follow Némethi,
+[arXiv:0709.0841](https://arxiv.org/abs/0709.0841).
 -/
 
 public section
