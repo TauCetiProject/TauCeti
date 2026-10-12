@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.Selmer
-public import TauCeti.RepresentationTheory.Homological.ContCohomology.AbsoluteGaloisGroup
+public import TauCeti.FieldTheory.GaloisCohomology.EmbeddingIndependence
 
 /-!
 # Independence of the embeddings of separable closures
