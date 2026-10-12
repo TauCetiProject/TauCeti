@@ -23,7 +23,7 @@ completed Huber algebra. In one variable it is moreover a principal ideal ring, 
 Mathlib's univariate restricted-series ring along
 `TauCeti.Huber.restrictedMvPowerSeriesCompletionOneEquiv`.
 
-Conversely, over a complete nontrivially normed field, strong noetherianness of the completed
+Conversely, over a complete nonarchimedean field, strong noetherianness of the completed
 Huber algebras transfers back to the Gauss-normed ring `K⟨X₁, …, Xₙ⟩`, which is therefore a
 complete strongly noetherian Tate ring; for instance `ℚ_p⟨T₁, …, Tₙ⟩`.
 
@@ -36,8 +36,7 @@ complete strongly noetherian Tate ring; for instance `ℚ_p⟨T₁, …, Tₙ⟩
 * `TauCeti.Huber.IsStronglyNoetherian.of_normedField`: a complete nonarchimedean normed field is
   strongly noetherian.
 * `TauCeti.Huber.IsStronglyNoetherian.isRestricted_subring`: the Gauss-normed Tate algebra
-  `K⟨X₁, …, Xₙ⟩` over a complete nontrivially normed field with an ultrametric norm is strongly
-  noetherian.
+  `K⟨X₁, …, Xₙ⟩` over a complete normed field with an ultrametric norm is strongly noetherian.
 
 ## References
 
@@ -79,17 +78,28 @@ instance IsStronglyNoetherian.of_normedField : IsStronglyNoetherian K :=
 
 section GaussNorm
 
-variable {K : Type*} [NontriviallyNormedField K] [IsUltrametricDist K] [CompleteSpace K]
+variable {K : Type*} [NormedField K] [IsUltrametricDist K] [CompleteSpace K]
 
-/-- **The Gauss-normed Tate algebra over a complete rank-one field is strongly noetherian.**
-Over a complete nontrivially normed field `K` with an ultrametric norm, every restricted
-power-series algebra over the Banach algebra `K⟨X₁, …, Xₙ⟩` of unit-radius restricted series with
-its Gauss norm is noetherian. -/
+/-- **The Gauss-normed Tate algebra over a complete nonarchimedean field is strongly noetherian.**
+Over a complete normed field `K` with an ultrametric norm, every restricted power-series algebra
+over the Banach algebra `K⟨X₁, …, Xₙ⟩` of unit-radius restricted series with its Gauss norm is
+noetherian. -/
 instance IsStronglyNoetherian.isRestricted_subring (n : ℕ) :
-    IsStronglyNoetherian (MvPowerSeries.IsRestricted.subring (R := K) fun _ : Fin n ↦ (1 : ℝ)) :=
+    IsStronglyNoetherian (MvPowerSeries.IsRestricted.subring (R := K) fun _ : Fin n ↦ (1 : ℝ)) := by
+  -- `K` is Huber: Tate if some nonzero element has norm `< 1`, and discrete otherwise
+  have : IsHuberRing K := by
+    by_cases h : ∃ ϖ : K, ϖ ≠ 0 ∧ ‖ϖ‖ < 1
+    · obtain ⟨ϖ, h0, h1⟩ := h
+      exact (IsTateRing.of_isUnit_norm_lt_one (isUnit_iff_ne_zero.mpr h0) h1).toIsHuberRing
+    · push Not at h
+      have : DiscreteTopology K := discreteTopology_of_isOpen_singleton_zero <| by
+        convert Metric.isOpen_ball (x := (0 : K)) (ε := 1)
+        ext x
+        simpa using ⟨fun hx ↦ hx ▸ by simp, fun hx ↦ by_contra fun h0 ↦ (h x h0).not_gt hx⟩
+      infer_instance
   -- `K⟨X₁, …, Xₙ⟩` is the completed Huber algebra `restrictedMvPowerSeriesCompletion n K`, up to
   -- an isomorphism continuous in both directions, and that algebra is strongly noetherian
-  (isStronglyNoetherian_congr restrictedMvPowerSeriesCompletionGaussEquiv
+  exact (isStronglyNoetherian_congr restrictedMvPowerSeriesCompletionGaussEquiv
     continuous_restrictedMvPowerSeriesCompletionGaussEquiv
     continuous_restrictedMvPowerSeriesCompletionGaussEquiv_symm).mp inferInstance
 
