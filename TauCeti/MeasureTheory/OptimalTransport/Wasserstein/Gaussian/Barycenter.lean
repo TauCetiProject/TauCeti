@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Gaussian
+public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Gaussian.Basic
 public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Geodesic
 public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Borel
 public import TauCeti.MeasureTheory.OptimalTransport.Cost.Quadratic
@@ -42,16 +42,16 @@ variable {ι : Type*} [Fintype ι] [DecidableEq ι]
 
 /-- A Gaussian law regarded as an element of the quadratic Wasserstein space. Every Gaussian
 law has finite second moment, including laws with singular covariance. -/
-def Probability.gaussianWassersteinLaw (m : EuclideanSpace ℝ ι) (S : Matrix ι ι ℝ)
-    (_hS : S.PosSemidef) : WassersteinSpace 2 (EuclideanSpace ℝ ι) :=
+def Probability.gaussianWassersteinLaw (m : EuclideanSpace ℝ ι) (S : Matrix ι ι ℝ) :
+    WassersteinSpace 2 (EuclideanSpace ℝ ι) :=
   WassersteinSpace.mk ⟨multivariateGaussian m S, by infer_instance⟩
     (hasFiniteMoment_def.2 ⟨0, by simpa [edist_eq_enorm_sub] using
       (ProbabilityTheory.IsGaussian.memLp_two_id (μ := multivariateGaussian m S)).enorm⟩)
 
 @[simp]
 theorem Probability.gaussianWassersteinLaw_coe (m : EuclideanSpace ℝ ι)
-    (S : Matrix ι ι ℝ) (hS : S.PosSemidef) :
-    ((Probability.gaussianWassersteinLaw m S hS).toProbabilityMeasure : Measure _) =
+    (S : Matrix ι ι ℝ) :
+    ((Probability.gaussianWassersteinLaw m S).toProbabilityMeasure : Measure _) =
       multivariateGaussian m S := by
   unfold Probability.gaussianWassersteinLaw
   exact congrArg (fun Q : ProbabilityMeasure (EuclideanSpace ℝ ι) ↦ Q.toMeasure)
@@ -94,7 +94,7 @@ theorem gaussianInterpolationCovariance_one {S₁ S₂ : Matrix ι ι ℝ}
 
 /-- The interpolating matrix acts as the affine combination of the identity and the transport
 matrix. -/
-theorem gaussianInterpolationMatrix_apply (S₁ S₂ : Matrix ι ι ℝ) (t : ℝ)
+theorem toEuclideanLin_gaussianInterpolationMatrix_apply (S₁ S₂ : Matrix ι ι ℝ) (t : ℝ)
     (x : EuclideanSpace ℝ ι) :
     (gaussianInterpolationMatrix S₁ S₂ t).toEuclideanLin x =
       (1 - t) • x + t • (geometricMean S₁⁻¹ʳ S₂).toEuclideanLin x := by
@@ -103,7 +103,7 @@ theorem gaussianInterpolationMatrix_apply (S₁ S₂ : Matrix ι ι ℝ) (t : �
 /-- Affine interpolation from a Gaussian with positive-semidefinite covariance remains Gaussian.
 Its mean is linearly interpolated, and its covariance is the congruence by the interpolating
 matrix. The formula holds for every real `t`, including extrapolation beyond the endpoints. -/
-theorem Probability.map_gaussianInterpolation (m₁ m₂ : EuclideanSpace ℝ ι)
+theorem Probability.map_interpolation_multivariateGaussian (m₁ m₂ : EuclideanSpace ℝ ι)
     {S₁ S₂ : Matrix ι ι ℝ} (hS₁ : S₁.PosSemidef) (t : ℝ) :
     (multivariateGaussian m₁ S₁).map
         (fun x ↦ (1 - t) • x + t • affineGeometricMean S₁ S₂ m₁ m₂ x) =
@@ -117,13 +117,13 @@ theorem Probability.map_gaussianInterpolation (m₁ m₂ : EuclideanSpace ℝ ι
     funext x
     rw [Probability.affineGeometricMean_sub]
     simp only [smul_add, map_sub, smul_sub]
-    rw [gaussianInterpolationMatrix_apply]
+    rw [toEuclideanLin_gaussianInterpolationMatrix_apply]
     dsimp only [A, B, c]
     simp only [sub_eq_add_neg, smul_neg, smul_add]
     abel
   rw [hfun, map_affine_multivariateGaussian m₁ hS₁ B c]
   congr 1
-  · rw [gaussianInterpolationMatrix_apply]
+  · rw [toEuclideanLin_gaussianInterpolationMatrix_apply]
     dsimp only [A, B, c]
     simp only [smul_sub]
     abel
@@ -132,15 +132,14 @@ theorem Probability.map_gaussianInterpolation (m₁ m₂ : EuclideanSpace ℝ ι
 the second is positive semidefinite, interpolation along the optimal affine map gives a
 quadratic Wasserstein geodesic. Its time-`t` law has the displayed Gaussian mean and covariance.
 The second covariance may be singular. -/
-theorem Probability.exists_gaussianInterpolation_geodesic (m₁ m₂ : EuclideanSpace ℝ ι)
+theorem Probability.exists_isGeodesicSegment_multivariateGaussian (m₁ m₂ : EuclideanSpace ℝ ι)
     {S₁ S₂ : Matrix ι ι ℝ} (hS₁ : S₁.PosDef) (hS₂ : S₂.PosSemidef) :
     ∃ γ : ℝ → WassersteinSpace 2 (EuclideanSpace ℝ ι),
-      IsGeodesicSegment γ (gaussianWassersteinLaw m₁ S₁ hS₁.posSemidef)
-        (gaussianWassersteinLaw m₂ S₂ hS₂) ∧
+      IsGeodesicSegment γ (gaussianWassersteinLaw m₁ S₁)
+        (gaussianWassersteinLaw m₂ S₂) ∧
       ∀ t ∈ Set.Icc (0 : ℝ) 1,
-        ((γ t).toProbabilityMeasure : Measure (EuclideanSpace ℝ ι)) =
-          multivariateGaussian ((1 - t) • m₁ + t • m₂)
-            (gaussianInterpolationCovariance S₁ S₂ t) := by
+        γ t = gaussianWassersteinLaw ((1 - t) • m₁ + t • m₂)
+          (gaussianInterpolationCovariance S₁ S₂ t) := by
   let T := affineGeometricMean S₁ S₂ m₁ m₂
   let π := graphPlan T (multivariateGaussian m₁ S₁)
   have hopt := isKantorovichOptimalTransportMap_affineGeometricMean hS₁ hS₂ m₁ m₂
@@ -151,48 +150,49 @@ theorem Probability.exists_gaussianInterpolation_geodesic (m₁ m₂ : Euclidean
     exact (isKantorovichOptimalTransportMap_iff_isOptimalCoupling_graphPlan hopt.toHasLaw
       (by fun_prop)).1 hopt
   have hπopt := (isOptimalCoupling_edist_rpow_iff measurable_edist two_ne_zero
-    ENNReal.ofNat_ne_top).1 (isOptimalCoupling_edist_sq_of_half hπhalf)
+    ENNReal.ofNat_ne_top).1 (isOptimalCoupling_edist_rpow_two_of_norm_sub_sq_div_two hπhalf)
   have hπcoupling : IsCoupling π
-      ((gaussianWassersteinLaw m₁ S₁ hS₁.posSemidef).toProbabilityMeasure :
+      ((gaussianWassersteinLaw m₁ S₁).toProbabilityMeasure :
         Measure (EuclideanSpace ℝ ι))
-      ((gaussianWassersteinLaw m₂ S₂ hS₂).toProbabilityMeasure :
+      ((gaussianWassersteinLaw m₂ S₂).toProbabilityMeasure :
         Measure (EuclideanSpace ℝ ι)) := by
     simpa only [gaussianWassersteinLaw_coe] using hπopt.1
   have hπvalue : eLpNorm (fun z : EuclideanSpace ℝ ι × EuclideanSpace ℝ ι ↦
       edist z.1 z.2) 2 π =
       wassersteinEDist 2
-        ((gaussianWassersteinLaw m₁ S₁ hS₁.posSemidef).toProbabilityMeasure :
+        ((gaussianWassersteinLaw m₁ S₁).toProbabilityMeasure :
           Measure (EuclideanSpace ℝ ι))
-        ((gaussianWassersteinLaw m₂ S₂ hS₂).toProbabilityMeasure :
+        ((gaussianWassersteinLaw m₂ S₂).toProbabilityMeasure :
           Measure (EuclideanSpace ℝ ι)) := by
     simpa only [gaussianWassersteinLaw_coe] using hπopt.2
   obtain ⟨γ, hγ, hγlaw⟩ :=
     WassersteinSpace.exists_isGeodesicSegment_map_smul_add_smul hπcoupling hπvalue
   refine ⟨γ, hγ, fun t ht ↦ ?_⟩
-  rw [hγlaw t ht]
+  apply WassersteinSpace.ext
+  apply ProbabilityMeasure.toMeasure_injective
+  rw [gaussianWassersteinLaw_coe, hγlaw t ht]
   dsimp only [π]
   rw [graphPlan_def, Measure.map_map]
-  · exact map_gaussianInterpolation m₁ m₂ hS₁.posSemidef t
+  · exact map_interpolation_multivariateGaussian m₁ m₂ hS₁.posSemidef t
   · fun_prop
   · exact measurable_id.prodMk (measurable_affineGeometricMean S₁ S₂ m₁ m₂)
 
 /-- **The barycenter of two Gaussian laws.** At quadratic weights `1-t,t`, the Gaussian
 displacement interpolant is a finite Fréchet barycenter in `P₂`. Its covariance is the
 congruence of the source covariance by `(1-t)I+tA`; the target covariance can be singular. -/
-theorem Probability.exists_gaussian_barycenter_two (m₁ m₂ : EuclideanSpace ℝ ι)
+theorem Probability.isFrechetBarycenter_two_multivariateGaussian (m₁ m₂ : EuclideanSpace ℝ ι)
     {S₁ S₂ : Matrix ι ι ℝ} (hS₁ : S₁.PosDef) (hS₂ : S₂.PosSemidef)
     {t : ℝ} (ht : t ∈ Set.Icc (0 : ℝ) 1) :
-    ∃ ν : WassersteinSpace 2 (EuclideanSpace ℝ ι),
-      (ν.toProbabilityMeasure : Measure (EuclideanSpace ℝ ι)) =
-        multivariateGaussian ((1 - t) • m₁ + t • m₂)
-          (gaussianInterpolationCovariance S₁ S₂ t) ∧
-      IsFrechetBarycenter 2
-        (ENNReal.ofReal (1 - t) • Measure.dirac (gaussianWassersteinLaw m₁ S₁ hS₁.posSemidef) +
-          ENNReal.ofReal t • Measure.dirac (gaussianWassersteinLaw m₂ S₂ hS₂)) ν := by
+    IsFrechetBarycenter 2
+      (ENNReal.ofReal (1 - t) • Measure.dirac (gaussianWassersteinLaw m₁ S₁) +
+        ENNReal.ofReal t • Measure.dirac (gaussianWassersteinLaw m₂ S₂))
+      (gaussianWassersteinLaw ((1 - t) • m₁ + t • m₂)
+        (gaussianInterpolationCovariance S₁ S₂ t)) := by
   have := WassersteinSpace.borelSpace (X := EuclideanSpace ℝ ι) (p := 2)
     ENNReal.ofNat_ne_top
-  obtain ⟨γ, hγ, hγlaw⟩ := exists_gaussianInterpolation_geodesic m₁ m₂ hS₁ hS₂
-  exact ⟨γ t, hγlaw t ht, hγ.isFrechetBarycenter_two ht⟩
+  obtain ⟨γ, hγ, hγlaw⟩ := exists_isGeodesicSegment_multivariateGaussian m₁ m₂ hS₁ hS₂
+  rw [← hγlaw t ht]
+  exact hγ.isFrechetBarycenter_two ht
 
 end TauCeti
 

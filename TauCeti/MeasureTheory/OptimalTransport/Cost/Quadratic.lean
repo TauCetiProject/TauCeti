@@ -30,9 +30,9 @@ half-squared cost to a minimizer of squared ground distance, as used by `W₂`.
   quadratic cost is cyclical monotonicity for the inner-product pairing, with
   `TauCeti.isCyclicallyMonotone_norm_sub_sq_div_two_iff_forall_sum_inner_le` its classical
   sum form.
-* `TauCeti.edist_sq_eq_two_mul_half_norm_sq` and
-  `TauCeti.isOptimalCoupling_edist_sq_of_half` — convert the half-squared Brenier cost into the
-  squared-distance cost without changing optimal couplings.
+* `TauCeti.edist_rpow_two_eq_two_mul_ofReal_norm_sub_sq_div_two` and
+  `TauCeti.isOptimalCoupling_edist_rpow_two_of_norm_sub_sq_div_two` — convert the half-squared
+  Brenier cost into the squared-distance cost without changing optimal couplings.
 
 ## References
 
@@ -90,7 +90,7 @@ variable {F : Type*} [NormedAddCommGroup F] [MeasurableSpace F]
 omit [MeasurableSpace F] in
 /-- Squared distance is twice the half-squared-displacement cost. This identity accounts for
 the factor `1 / 2` in the quadratic Brenier cost when reading a plan as a `W₂` plan. -/
-theorem edist_sq_eq_two_mul_half_norm_sq (z : F × F) :
+theorem edist_rpow_two_eq_two_mul_ofReal_norm_sub_sq_div_two (z : F × F) :
     edist z.1 z.2 ^ (2 : ℝ) =
       (2 : ℝ≥0∞) * ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2) := by
   rw [edist_dist, ENNReal.ofReal_rpow_of_nonneg dist_nonneg (by norm_num), dist_eq_norm]
@@ -103,18 +103,13 @@ theorem edist_sq_eq_two_mul_half_norm_sq (z : F × F) :
 /-- A coupling optimal for the half-squared-displacement cost is optimal for squared distance.
 The factor of two is positive, so it preserves the minimizing plans even when the value is
 infinite. -/
-theorem isOptimalCoupling_edist_sq_of_half {μ ν : Measure F} {π : Measure (F × F)}
+theorem isOptimalCoupling_edist_rpow_two_of_norm_sub_sq_div_two
+    {μ ν : Measure F} {π : Measure (F × F)}
     (hπ : IsOptimalCoupling
       (fun z ↦ ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2)) π μ ν) :
     IsOptimalCoupling (fun z ↦ edist z.1 z.2 ^ (2 : ℝ)) π μ ν := by
-  have hcost (ρ : Measure (F × F)) :
-      (∫⁻ z, edist z.1 z.2 ^ (2 : ℝ) ∂ρ) =
-        2 * ∫⁻ z, ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2) ∂ρ := by
-    simp_rw [edist_sq_eq_two_mul_half_norm_sq]
-    exact lintegral_const_mul' 2 _ (by norm_num)
-  refine isOptimalCoupling_iff.2 ⟨hπ.toIsCoupling, fun σ hσ ↦ ?_⟩
-  rw [hcost π, hcost σ]
-  exact mul_le_mul_of_nonneg_left (hπ.lintegral_le hσ) (by positivity)
+  simpa only [← edist_rpow_two_eq_two_mul_ofReal_norm_sub_sq_div_two] using
+    hπ.const_mul (a := 2) ENNReal.ofNat_ne_top
 
 end TauCeti
 
