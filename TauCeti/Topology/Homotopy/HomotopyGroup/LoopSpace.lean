@@ -232,6 +232,22 @@ theorem zerothHomotopyEquiv_symm_mk (p : Ω^ N X x) :
       (⟦p⟧ : ZerothHomotopy (Ω^ N X x)) :=
   by rw [zerothHomotopyEquiv.eq_1]; rfl
 
+/-- Mathlib's homeomorphism `Ω^ N X x ≃ₜ X` for empty `N` evaluates a zero-dimensional
+generalized loop at the unique point of the cube. -/
+@[simp]
+theorem _root_.genLoopHomeoOfIsEmpty_apply [IsEmpty N] (p : Ω^ N X x) :
+    genLoopHomeoOfIsEmpty N x p = p 0 :=
+  rfl
+
+/-- Mathlib's bijection between the homotopy group indexed by an empty type and the path
+components of `X` sends the class of a zero-dimensional generalized loop to the path component of
+its value. -/
+@[simp]
+theorem _root_.homotopyGroupEquivZerothHomotopyOfIsEmpty_mk [IsEmpty N] (p : Ω^ N X x) :
+    homotopyGroupEquivZerothHomotopyOfIsEmpty N x (⟦p⟧ : HomotopyGroup N X x) =
+      ZerothHomotopy.mk (p 0) :=
+  rfl
+
 /-- **Two loops at `x` are joined by a path in the loop space exactly when they are homotopic.**
 This is `GenLoop.homotopic_iff_joined` for a singleton index type, carried across the
 homeomorphism `GenLoop.homeomorphOfUnique` onto Mathlib's loop space `Ω X x`. -/

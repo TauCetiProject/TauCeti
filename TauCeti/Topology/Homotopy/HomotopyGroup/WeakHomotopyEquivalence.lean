@@ -89,12 +89,17 @@ theorem joined_iff (hf : f.IsWeakHomotopyEquivalence) {a b : X} :
   -- `π_0(X, a)` is the set of path components of `X`: Mathlib's bijection
   -- `homotopyGroupEquivZerothHomotopyOfIsEmpty` sends the class of the zero-dimensional
   -- generalized loop at `c` (the constant map `I^0 → X` with value `c`) to the path component of
-  -- `c`, by definition. Postcomposing that loop with `f` gives the loop at `f c`.
+  -- `c`. Postcomposing that loop with `f` gives the loop at `f c`.
   let φX := homotopyGroupEquivZerothHomotopyOfIsEmpty (X := X) (Fin 0) a
   let φY := homotopyGroupEquivZerothHomotopyOfIsEmpty (X := Y) (Fin 0) (f a)
   let pt (c : X) : π_ 0 X a := ⟦(genLoopHomeoOfIsEmpty (Fin 0) a).symm c⟧
-  have hφX (c : X) : φX (pt c) = ZerothHomotopy.mk c := rfl
-  have hmap (c : X) : φY (HomotopyGroup.map f rfl (pt c)) = ZerothHomotopy.mk (f c) := rfl
+  have hpt (c : X) : ((genLoopHomeoOfIsEmpty (Fin 0) a).symm c) 0 = c := by
+    rw [← genLoopHomeoOfIsEmpty_apply, Homeomorph.apply_symm_apply]
+  have hφX (c : X) : φX (pt c) = ZerothHomotopy.mk c := by
+    rw [homotopyGroupEquivZerothHomotopyOfIsEmpty_mk, hpt]
+  have hmap (c : X) : φY (HomotopyGroup.map f rfl (pt c)) = ZerothHomotopy.mk (f c) := by
+    rw [HomotopyGroup.map_mk, homotopyGroupEquivZerothHomotopyOfIsEmpty_mk, GenLoop.map_apply,
+      hpt]
   have hab : HomotopyGroup.map f rfl (pt a) = HomotopyGroup.map f rfl (pt b) :=
     φY.injective <| by rw [hmap, hmap]; exact ZerothHomotopy.sound h.somePath
   have := congrArg φX ((hf.bijective 0 a).injective hab)
@@ -131,13 +136,8 @@ theorem comp (hg : g.IsWeakHomotopyEquivalence) (hf : f.IsWeakHomotopyEquivalenc
     obtain ⟨y, hy⟩ := hg.exists_joined z
     obtain ⟨x, hx⟩ := hf.exists_joined y
     exact ⟨x, (hx.map g.continuous).trans hy⟩
-  bijective n x := by
-    have hfun : HomotopyGroup.map (N := Fin n) (g.comp f) (rfl : g.comp f x = g.comp f x) =
-        HomotopyGroup.map g rfl ∘ HomotopyGroup.map f rfl := by
-      funext a
-      exact (HomotopyGroup.map_comp_apply g rfl f rfl a).symm
-    rw [hfun]
-    exact (hg.bijective n (f x)).comp (hf.bijective n x)
+  bijective n x :=
+    HomotopyGroup.map_comp_map g rfl f rfl ▸ (hg.bijective n (f x)).comp (hf.bijective n x)
 
 /-- **Two out of three.** If `g` and `g ∘ f` are weak homotopy equivalences, then so is `f`. -/
 theorem of_comp (hg : g.IsWeakHomotopyEquivalence) (hgf : (g.comp f).IsWeakHomotopyEquivalence) :
@@ -145,12 +145,8 @@ theorem of_comp (hg : g.IsWeakHomotopyEquivalence) (hgf : (g.comp f).IsWeakHomot
   exists_joined y := by
     obtain ⟨x, hx⟩ := hgf.exists_joined (g y)
     exact ⟨x, hg.joined_iff.1 hx⟩
-  bijective n x := by
-    have hfun : HomotopyGroup.map (N := Fin n) g (rfl : g (f x) = g (f x)) ∘
-        HomotopyGroup.map f rfl = HomotopyGroup.map (g.comp f) rfl := by
-      funext a
-      exact HomotopyGroup.map_comp_apply g rfl f rfl a
-    exact (Function.Bijective.of_comp_iff' (hg.bijective n (f x)) _).1 (hfun ▸ hgf.bijective n x)
+  bijective n x := (Function.Bijective.of_comp_iff' (hg.bijective n (f x)) _).1
+    (HomotopyGroup.map_comp_map g rfl f rfl ▸ hgf.bijective n x)
 
 end IsWeakHomotopyEquivalence
 

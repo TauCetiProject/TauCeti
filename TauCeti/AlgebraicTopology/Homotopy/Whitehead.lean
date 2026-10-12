@@ -18,8 +18,9 @@ equivalence (Hatcher, *Algebraic Topology*, Theorem 4.5). This file proves it fo
 classical CW complexes, as `ContinuousMap.IsWeakHomotopyEquivalence.homotopyEquiv`, whose
 forward map is the given weak homotopy equivalence.
 
-The proof goes through Hatcher's Proposition 4.22: if `f : X → Y` is a weak homotopy equivalence,
-then every map `g : K → Y` out of a CW complex `K` lifts through `f` up to homotopy
+The proof goes through the surjectivity half of Hatcher's Proposition 4.22, i.e. surjectivity of
+`[K, X] → [K, Y]`: if `f : X → Y` is a weak homotopy equivalence, then every map `g : K → Y` out of
+a CW complex `K` lifts through `f` up to homotopy
 (`ContinuousMap.IsWeakHomotopyEquivalence.exists_comp_homotopic`).
 
 * In the mapping cylinder `M_f`, which contains `X` as the bottom face `incl f` and deformation
@@ -50,7 +51,7 @@ the skeletal induction inside the compression lemma.
 
 * A. Hatcher, [*Algebraic Topology*](https://pi.math.cornell.edu/~hatcher/AT/AT.pdf),
   Section 4.1, Theorem 4.5 (Whitehead's theorem), Lemma 4.6 (the compression lemma), and
-  Proposition 4.22.
+  Proposition 4.22 (its surjectivity half).
 -/
 
 public section
@@ -89,10 +90,10 @@ theorem subsingleton_relHomotopyGroup_mappingCylinder (hf : f.IsWeakHomotopyEqui
       Function.Bijective (HomotopyGroup.map (N := M) (x := ψ x) ι rfl) := by
     have hfun : HomotopyGroup.map (N := M) (proj f) rfl ∘ HomotopyGroup.map ι rfl ∘
         HomotopyGroup.map (ψ : C(X, range (incl f))) rfl =
-          HomotopyGroup.map f (DFunLike.congr_fun hcomp x).symm := by
-      funext a
-      exact ((congrArg _ (HomotopyGroup.map_comp_apply ι rfl _ rfl a)).trans
-        (HomotopyGroup.map_comp_apply _ rfl _ rfl a)).trans (HomotopyGroup.map_congr hcomp _ _ a)
+          HomotopyGroup.map f (DFunLike.congr_fun hcomp x).symm :=
+      (congrArg (HomotopyGroup.map (proj f) rfl ∘ ·) (HomotopyGroup.map_comp_map ι rfl _ rfl)).trans
+        ((HomotopyGroup.map_comp_map _ rfl _ rfl).trans
+          (funext (HomotopyGroup.map_congr hcomp _ _)))
     have h : ∀ {y : Y} (hy : f x = y), Function.Bijective (HomotopyGroup.map (N := M) f hy) := by
       rintro _ rfl
       exact hf.map_bijective M x
@@ -110,8 +111,9 @@ theorem subsingleton_relHomotopyGroup_mappingCylinder (hf : f.IsWeakHomotopyEqui
 variable {X' : Type*} [TopologicalSpace X'] [T2Space X'] {C : Set X'} [CWComplex C]
 
 /-- **Maps out of a CW complex lift through a weak homotopy equivalence up to homotopy**
-(Hatcher, Proposition 4.22). If `f : X → Y` is a weak homotopy equivalence and `C` is a CW
-complex, then every map `g : C → Y` is homotopic to `f ∘ g'` for some `g' : C → X`. -/
+(the surjectivity half of Hatcher, Proposition 4.22). If `f : X → Y` is a weak homotopy
+equivalence and `C` is a CW complex, then every map `g : C → Y` is homotopic to `f ∘ g'` for some
+`g' : C → X`. -/
 theorem exists_comp_homotopic (hf : f.IsWeakHomotopyEquivalence) (g : C(C, Y)) :
     ∃ g' : C(C, X), (f.comp g').Homotopic g := by
   open TauCeti TauCeti.MappingCylinder in
