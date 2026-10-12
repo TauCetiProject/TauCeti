@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.DifferentialForm.Basic
+public import TauCeti.LinearAlgebra.BilinearForm.Multilinear
 public import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
 public import Mathlib.Topology.VectorBundle.ContinuousAlternatingMap
 
@@ -139,6 +140,82 @@ abbrev SmoothForm (I : ModelWithCorners ℝ E H) (M : Type*) [TopologicalSpace M
     [ChartedSpace H M] [IsManifold I 1 M] (F : Type*)
     [NormedAddCommGroup F] [NormedSpace ℝ F] (k : ℕ) : Type _ :=
   ↥(smoothForms I M F k)
+
+namespace SmoothForm
+
+variable {I : ModelWithCorners ℝ E H} [IsManifold I 1 M]
+
+/-- Evaluate a real degree-two smooth form on an ordered pair of tangent vectors.
+
+The generic carrier deliberately has no degree-specific function coercion.  This named adapter is
+the two-vector view used by the degree-two migration and keeps that view separate from the
+underlying alternating-map representation. -/
+def eval₂ (φ : SmoothForm I M ℝ 2) (x : M) (v w : TangentSpace I x) : ℝ :=
+  φ.1 x ![v, w]
+
+@[simp]
+theorem eval₂_apply (φ : SmoothForm I M ℝ 2) (x : M) (v w : TangentSpace I x) :
+    φ.eval₂ x v w = φ.1 x ![v, w] := by
+  simp [eval₂]
+
+/-- The algebraic bilinear form represented by the value of a real degree-two smooth form. -/
+def bilinFormAt (φ : SmoothForm I M ℝ 2) (x : M) :
+    LinearMap.BilinForm ℝ (TangentSpace I x) :=
+  LinearMap.mk₂ ℝ (fun v w => φ.eval₂ x v w)
+    (by intro v₁ v₂ w
+        simpa [eval₂] using (φ.1 x).toContinuousMultilinearMap.cons_add ![w] v₁ v₂)
+    (by intro c v w
+        simpa [eval₂] using (φ.1 x).toContinuousMultilinearMap.cons_smul ![w] c v)
+    (by intro v w₁ w₂
+        simpa [eval₂] using (φ.1 x).toContinuousMultilinearMap.snoc_add ![v] w₁ w₂)
+    (by intro c v w
+        simpa [eval₂] using (φ.1 x).toContinuousMultilinearMap.snoc_smul ![v] c w)
+
+@[simp]
+theorem bilinFormAt_apply (φ : SmoothForm I M ℝ 2) (x : M) (v w : TangentSpace I x) :
+    φ.bilinFormAt x v w = φ.eval₂ x v w :=
+  by simp [bilinFormAt]
+
+/-- The bilinear form represented by a degree-two smooth form is alternating. -/
+theorem bilinFormAt_isAlt (φ : SmoothForm I M ℝ 2) (x : M) :
+    (φ.bilinFormAt x).IsAlt := by
+  intro v
+  rw [bilinFormAt_apply]
+  exact (φ.1 x).map_eq_zero_of_eq _ (by simp) Fin.zero_ne_one
+
+/-- Evaluation on two equal tangent vectors vanishes by alternation. -/
+@[simp]
+theorem eval₂_self (φ : SmoothForm I M ℝ 2) (x : M) (v : TangentSpace I x) :
+    φ.eval₂ x v v = 0 := by
+  rw [← bilinFormAt_apply]
+  exact (φ.bilinFormAt_isAlt x) v
+
+/-- Swapping the inputs of a degree-two smooth form negates its value. -/
+theorem eval₂_neg (φ : SmoothForm I M ℝ 2) (x : M)
+    (v w : TangentSpace I x) :
+    φ.eval₂ x v w = -φ.eval₂ x w v := by
+  have h := (φ.bilinFormAt_isAlt x).neg_eq v w
+  rw [bilinFormAt_apply, bilinFormAt_apply] at h
+  calc
+    φ.eval₂ x v w = - -φ.eval₂ x v w := by simp
+    _ = -φ.eval₂ x w v := by rw [h]
+
+/-- A real degree-two smooth form is determined by its values on ordered pairs. -/
+@[ext]
+theorem ext {φ ψ : SmoothForm I M ℝ 2}
+    (h : ∀ x v w, φ.eval₂ x v w = ψ.eval₂ x v w) :
+    φ = ψ := by
+  apply Subtype.ext
+  funext x
+  apply ContinuousAlternatingMap.ext
+  intro v
+  have hv : v = ![v 0, v 1] := by
+    funext i
+    fin_cases i <;> rfl
+  rw [hv]
+  exact h x (v 0) (v 1)
+
+end SmoothForm
 
 end FixedCoefficients
 
