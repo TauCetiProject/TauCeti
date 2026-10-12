@@ -33,8 +33,8 @@ generating a separable quadratic extension is negated by an automorphism.
 ## Main results
 
 * `AlgEquiv.apply_eq_or_eq_neg_of_sq_eq`: `σ x = ± x` when `x ^ 2` comes from the base.
-* `TauCeti.exists_algEquiv_apply_eq_neg_of_sq_eq`: some automorphism negates a square root `y` generating
-  a separable quadratic extension `K⟮y⟯ / K`.
+* `TauCeti.exists_algEquiv_apply_eq_neg_of_sq_eq`: some automorphism negates a square root
+  `y` generating a separable quadratic extension `K⟮y⟯ / K`.
 * `Subgroup.card_le_two_pow_of_forall_apply_eq_self`: a subgroup in which only the identity fixes
   each of `n` square roots has at most `2ⁿ` elements.
 * `Subgroup.card_eq_four_of_exists_apply_eq_neg`: a finite subgroup of order at most four
@@ -43,6 +43,8 @@ generating a separable quadratic extension is negated by an automorphism.
 -/
 
 public section
+
+open scoped IntermediateField
 
 namespace AlgEquiv
 
@@ -60,7 +62,6 @@ end AlgEquiv
 
 namespace TauCeti
 
-open scoped IntermediateField in
 /-- **A square root generating a separable quadratic extension is negated by an automorphism**:
 if `L = K⟮y⟯` is a separable extension of degree two and `y ^ 2 ∈ K`, then some `K`-automorphism
 of `L` sends `y` to `-y`. -/
