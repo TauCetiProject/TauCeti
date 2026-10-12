@@ -23,8 +23,8 @@ which `GL₂` acts trivially. The complement of that line is the **Steinberg rep
 `TauCeti.GL2Steinberg`, of dimension `q`.
 
 This file builds it as the augmentation subrepresentation of `ℂ[GL₂ ⧸ B]` — the elements whose
-coefficients sum to zero, of `TauCeti/RepresentationTheory/Augmentation.lean` — and computes its
-dimension and its character. The character values are the fixed-coset counts less one, and the
+coefficients sum to zero, of `TauCeti/RepresentationTheory/Augmentation/Basic.lean` — and computes
+its dimension and its character. The character values are the fixed-coset counts less one, and the
 Bruhat decomposition then gives the character-theoretic form of irreducibility: the Steinberg
 character has norm `1` for the character pairing of
 `TauCeti/RepresentationTheory/CharacterTable/Pairing.lean`. Everything proved here is an identity

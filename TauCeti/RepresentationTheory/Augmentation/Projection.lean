@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.Augmentation.Basic
+public import TauCeti.LinearAlgebra.Dual.Lemmas
 
 /-!
 # A module splitting of augmentation
@@ -26,11 +27,11 @@ variable (R : Type*) [Ring R] (G X : Type*) [Monoid G] [MulAction G X]
 This is a module map, not in general an equivariant map: the chosen index need not be fixed. -/
 def augmentationProjection (x₀ : X) : MonoidAlgebra R X →ₗ[R]
     (augmentationSubrepresentation R G X).toSubmodule :=
-  (LinearMap.id - (LinearMap.toSpanSingleton R _ (MonoidAlgebra.single x₀ 1)).comp
-    (MonoidAlgebra.basis X R).sumCoords).codRestrict _ fun v => by
+  (LinearMap.id - ((MonoidAlgebra.basis X R).sumCoords).smulRight
+    (MonoidAlgebra.single x₀ 1)).codRestrict _ fun v => by
       simp only [toSubmodule_augmentationSubrepresentation, LinearMap.mem_ker]
-      simp only [LinearMap.sub_apply, LinearMap.id_apply, LinearMap.comp_apply,
-        LinearMap.toSpanSingleton_apply, map_sub, map_smul]
+      simp only [LinearMap.sub_apply, LinearMap.id_apply, LinearMap.smulRight_apply,
+        map_sub, map_smul]
       simp
 
 /-- The projection subtracts the coefficient sum times the basis vector at the chosen index. -/
@@ -52,15 +53,8 @@ theorem augmentationProjection_coe (x₀ : X)
 theorem exact_toSpanSingleton_augmentationProjection (x₀ : X) :
     Function.Exact (LinearMap.toSpanSingleton R _ (MonoidAlgebra.single x₀ 1))
       (augmentationProjection R G X x₀) := by
-  intro v
-  constructor
-  · intro hv
-    have hv' := congrArg Subtype.val hv
-    simp only [coe_augmentationProjection, ZeroMemClass.coe_zero] at hv'
-    exact ⟨(MonoidAlgebra.basis X R).sumCoords v, (sub_eq_zero.mp hv').symm⟩
-  · rintro ⟨r, rfl⟩
-    apply Subtype.ext
-    simp
+  rw [LinearMap.exact_iff, augmentationProjection, LinearMap.ker_codRestrict,
+    Module.Dual.ker_id_sub_smulRight _ (by simp), LinearMap.range_toSpanSingleton]
 
 /-- Every sum-zero vector is in the image of the projection. -/
 theorem augmentationProjection_surjective (x₀ : X) :

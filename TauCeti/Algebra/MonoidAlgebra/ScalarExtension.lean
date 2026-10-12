@@ -59,6 +59,8 @@ theorem sumCoords_monoidAlgebraScalarMap (v : MonoidAlgebra R X) :
     (MonoidAlgebra.basis X S).sumCoords (monoidAlgebraScalarMap R S X v) =
       algebraMap R S ((MonoidAlgebra.basis X R).sumCoords v) := by
   simp only [Module.Basis.coe_sumCoords, MonoidAlgebra.basis_repr]
+  -- Unfold the coefficient equivalences and `Finsupp.mapRange.linearMap` in the scalar map
+  -- definition to expose `mapRange`; the pointwise coefficient lemma does not rewrite the sum.
   change (Finsupp.mapRange (algebraMap R S) (map_zero _) v.coeff).sum (fun _ => id) =
     algebraMap R S (v.coeff.sum fun _ => id)
   rw [Finsupp.sum_mapRange_index (fun _ => rfl)]
