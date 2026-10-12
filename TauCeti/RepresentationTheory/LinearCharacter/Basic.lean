@@ -16,7 +16,7 @@ A **linear character** of a monoid `G` over a commutative semiring `k` is a mult
 character `χ : G →* kˣ`. It acts on the one-dimensional `k`-module `k` by scalar multiplication.
 This file packages that action as `Representation.ofLinearCharacter χ`, bundles it as an object
 `FDRep.ofLinearCharacter χ` of `FDRep k G`, and records the facts every consumer of a linear
-character needs: over a field its character is `χ` and it is simple; over a nontrivial ring it
+character needs: over a field its character is `χ` and it is simple; over a commutative ring it
 has rank one. Restriction along a homomorphism pulls `χ` back, and two of these representations
 are isomorphic exactly when the two characters are equal.
 
@@ -160,9 +160,9 @@ theorem actionRes_obj_ofLinearCharacter [CommRing k] [Monoid G] {S : Type*} [Mon
 
 /-- A linear character is carried by a line. -/
 @[simp]
-theorem finrank_ofLinearCharacter [CommRing k] [Nontrivial k] [Monoid G] (χ : G →* kˣ) :
+theorem finrank_ofLinearCharacter [CommRing k] [Monoid G] (χ : G →* kˣ) :
     Module.finrank k (ofLinearCharacter (k := k) χ) = 1 :=
-  Module.finrank_self k
+  CommSemiring.finrank_self k
 
 /-- **The character of `FDRep.ofLinearCharacter` is the linear character it was built from.** -/
 @[simp]
