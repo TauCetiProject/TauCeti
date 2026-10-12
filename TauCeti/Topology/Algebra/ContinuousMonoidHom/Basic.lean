@@ -333,6 +333,20 @@ theorem _root_.Subgroup.inverseConjugationHom_mul [SeparatelyContinuousMul G] (N
   ext n
   simp [_root_.Subgroup.inverseConjugationHom_apply, mul_assoc]
 
+/-- The conjugation compatible-pair identity on coefficients. -/
+theorem _root_.Subgroup.inverseConjugationHom_smul [SeparatelyContinuousMul G]
+    {M : Type*} [AddMonoid M] [DistribMulAction G M] (N : Subgroup G) [N.Normal]
+    (g : G) (n : N) (m : M) :
+    (DistribSMul.toAddMonoidHom M g)
+        (Subgroup.inverseConjugationHom N g n • m) =
+      n • (DistribSMul.toAddMonoidHom M g) m := by
+  -- Unfold the subgroup action so the compatible-pair identity is an identity for the ambient
+  -- `G`-action, where `mul_smul` applies directly.
+  simp only [DistribSMul.toAddMonoidHom_apply,
+    Subgroup.inverseConjugationHom_apply]
+  change g • ((g⁻¹ * (n : G) * g) • m) = (n : G) • (g • m)
+  simp [smul_smul, mul_assoc]
+
 namespace ContinuousMonoidHom
 
 /-- The projection onto the quotient by a normal subgroup, carrying the quotient topology, as a
