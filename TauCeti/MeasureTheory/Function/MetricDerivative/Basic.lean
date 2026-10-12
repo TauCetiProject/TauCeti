@@ -66,8 +66,9 @@ set of absolutely continuous paths, which the action functional of a dynamic pla
   difference quotients converge to the norm of the derivative, which is the metric derivative.
 * `TauCeti.continuousAt_of_metricDerivative_ne_top`: a curve is continuous wherever its metric
   derivative is finite.
-* `LipschitzWith.metricDerivative_le` and `LipschitzWith.metricDerivative_comp_le`: Lipschitz
-  bounds on a curve and under Lipschitz post-composition.
+* `LipschitzWith.metricDerivative_le`, `LipschitzOnWith.metricDerivative_le` and
+  `LipschitzWith.metricDerivative_comp_le`: Lipschitz bounds on a curve, globally or near a time,
+  and under Lipschitz post-composition.
 * `BoundedVariationOn.ae_metricDerivative_le_enorm_deriv_variationOnFromTo`: for a curve of bounded
   variation, the metric derivative is almost everywhere at most the derivative of the variation.
 * `TauCeti.ae_metricDerivative_le`: minimality of the metric derivative among the integrable
@@ -142,11 +143,19 @@ theorem continuousAt_of_metricDerivative_ne_top (h : metricDerivative γ t ≠ �
   exact tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds hlim
     (Eventually.of_forall fun _ ↦ bot_le) hbound
 
+/-- The metric derivative at `t` of a curve that is `K`-Lipschitz on a neighbourhood of `t` is at
+most `K`. -/
+theorem _root_.LipschitzOnWith.metricDerivative_le {K : ℝ≥0} {s : Set ℝ}
+    (hγ : LipschitzOnWith K γ s) (hs : s ∈ 𝓝 t) : metricDerivative γ t ≤ K := by
+  rw [metricDerivative_def]
+  refine limsup_le_of_le (h := ?_)
+  filter_upwards [nhdsWithin_le_nhds hs] with r hr
+  exact ENNReal.div_le_of_le_mul (hγ hr (mem_of_mem_nhds hs))
+
 /-- The metric derivative of a `K`-Lipschitz curve is at most `K` everywhere. -/
 theorem _root_.LipschitzWith.metricDerivative_le {K : ℝ≥0} (hγ : LipschitzWith K γ) (t : ℝ) :
-    metricDerivative γ t ≤ K := by
-  rw [metricDerivative_def]
-  exact limsup_le_of_le (h := Eventually.of_forall fun s ↦ ENNReal.div_le_of_le_mul (hγ s t))
+    metricDerivative γ t ≤ K :=
+  hγ.lipschitzOnWith.metricDerivative_le univ_mem
 
 /-- Post-composing a curve with a `K`-Lipschitz map multiplies its metric derivative by at most
 `K`. -/

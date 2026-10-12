@@ -67,11 +67,9 @@ shrinking part.
 
 ## References
 
-This is the Yoneda/corepresentability step in `ReductiveGroups/README.md`, Layer 0,
-"the functor of points and the three-way dictionary". It reuses Mathlib's
-`Functor.CorepresentableBy`, `ConcreteCategory.homEquiv`, and `WithConv.equiv`. Stating the
-corepresenting equivalence separately, at the type of points, follows Mathlib's
-`CategoryTheory.Functor.RepresentableBy.homEquiv'`, which plays the same role for a
+This file reuses Mathlib's `Functor.CorepresentableBy`, `ConcreteCategory.homEquiv`, and
+`WithConv.equiv`. Stating the corepresenting equivalence separately, at the type of points, follows
+Mathlib's `CategoryTheory.Functor.RepresentableBy.homEquiv'`, which plays the same role for a
 representable functor of the form `F ⋙ forget D`. The group-valued result uses Mathlib's
 Hopf-algebra/cogroup equivalence, `CategoryTheory.yonedaGrp`, and its essential-image theorem.
 -/

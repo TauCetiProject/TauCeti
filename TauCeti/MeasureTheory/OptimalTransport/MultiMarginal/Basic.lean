@@ -80,6 +80,12 @@ protected theorem map {Y : ι → Type w} [∀ i, MeasurableSpace (Y i)]
       (Measure.map_map (hf i) (measurable_pi_apply i)).symm
     _ = (μ i).map (f i) := congrArg (Measure.map (f i)) (hπ.marginal_eq i)
 
+/-- A multi-marginal coupling of a family with a probability marginal is a probability measure. -/
+theorem isProbabilityMeasure (hπ : IsMultiCoupling π μ) (i : ι) [IsProbabilityMeasure (μ i)] :
+    IsProbabilityMeasure π :=
+  have : IsProbabilityMeasure (π.map (Function.eval i)) := (hπ.marginal_eq i).symm ▸ inferInstance
+  Measure.isProbabilityMeasure_of_map (measurable_pi_apply i).aemeasurable
+
 /-- The pair projection of a multi-marginal coupling has the prescribed first marginal. -/
 theorem fst_map_pair (hπ : IsMultiCoupling π μ) (i j : ι) :
     (π.map fun x ↦ (x i, x j)).fst = μ i := by

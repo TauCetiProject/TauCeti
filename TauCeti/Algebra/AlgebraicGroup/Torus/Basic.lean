@@ -52,10 +52,8 @@ distinguishes tori from general groups of multiplicative type.
 * J. S. Milne, *Algebraic Groups* (2017), Definitions 12.14 and 12.17.
 * W. C. Waterhouse, *Introduction to Affine Group Schemes*, Chapter 2.
 
-This is the coordinate-algebra definition required by Layer 4, "Tori: split and non-split", of
-the ReductiveGroups roadmap. Smoothness and geometric connectedness are proved in
-`TauCeti.Algebra.AlgebraicGroup.Torus.SmoothConnected`; the next step is the character lattice
-with its Galois action.
+Smoothness and geometric connectedness are proved in
+`TauCeti.Algebra.AlgebraicGroup.Torus.SmoothConnected`.
 -/
 
 public section

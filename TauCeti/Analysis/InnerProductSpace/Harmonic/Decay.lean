@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.InnerProductSpace.Harmonic.MeanValue.Basic
 import Mathlib.Analysis.Convex.Integral
 import Mathlib.MeasureTheory.Function.L2Space
+import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.MeasureTheory.Integral.Average
 import TauCeti.MeasureTheory.Integral.Bochner.Basic
 import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
@@ -67,6 +68,9 @@ the estimate follows from replacing the average `u_ρ` by `c`
   harmonic function.
 * `InnerProductSpace.HarmonicOnNhd.setIntegral_ball_norm_sub_setAverage_sq_le`: decay of the `L²`
   mean oscillation with exponent `n + 2`.
+* `InnerProductSpace.HarmonicOnNhd.setIntegral_ball_norm_sub_setAverage_sq_le_add`:
+  the comparison step of the Campanato approach. A square-integrable `f` close in `L²(B_R)` to a
+  harmonic function inherits its decay, up to the distance `∫_{B_R} ‖f - u‖²`.
 
 ## References
 
@@ -402,3 +406,77 @@ theorem _root_.InnerProductSpace.HarmonicOnNhd.setIntegral_ball_norm_sub_setAver
     _ ≤ _ := by gcongr
 
 end TauCeti
+
+namespace InnerProductSpace.HarmonicOnNhd
+
+open MeasureTheory Metric Module Set TauCeti TauCeti.MeasureTheory
+
+variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+  [MeasurableSpace E] [BorelSpace E] {μ : Measure E} [μ.IsAddHaarMeasure]
+  [NormedAddCommGroup F] [InnerProductSpace ℝ F] [CompleteSpace F]
+
+/-- **Comparison with a harmonic function.** Let `H` be harmonic on `B_r = ball x₀ r` in a space
+of dimension `n`, and let `f` and `H` be square integrable on `B_r`. For `0 < ρ ≤ r`, the square
+mean oscillation `ψ(t) = ∫_{B_t} ‖f - f_{B_t}‖²` of `f` decays like that of `H`, up to the
+distance `∫_{B_r} ‖f - H‖²` between them:
+`ψ(ρ) ≤ 4D (ρ / r)^(n + 2) ψ(r) + (4D + 2) ∫_{B_r} ‖f - H‖²`, where `D = 2^(3n + 8) (n + 1)²` is
+the constant of `InnerProductSpace.HarmonicOnNhd.setIntegral_ball_norm_sub_setAverage_sq_le`. -/
+theorem setIntegral_ball_norm_sub_setAverage_sq_le_add {f H : E → F}
+    {x₀ : E} {ρ r : ℝ} (hH : HarmonicOnNhd H (ball x₀ r)) (hf : MemLp f 2 (μ.restrict (ball x₀ r)))
+    (hHm : MemLp H 2 (μ.restrict (ball x₀ r))) (hρ : 0 < ρ) (hρr : ρ ≤ r) :
+    ∫ x in ball x₀ ρ, ‖f x - ⨍ y in ball x₀ ρ, f y ∂μ‖ ^ 2 ∂μ ≤
+      4 * (2 ^ (3 * finrank ℝ E + 8) * (finrank ℝ E + 1) ^ 2) * (ρ / r) ^ (finrank ℝ E + 2) *
+          (∫ x in ball x₀ r, ‖f x - ⨍ y in ball x₀ r, f y ∂μ‖ ^ 2 ∂μ) +
+        (4 * (2 ^ (3 * finrank ℝ E + 8) * (finrank ℝ E + 1) ^ 2) + 2) *
+          ∫ x in ball x₀ r, ‖f x - H x‖ ^ 2 ∂μ := by
+  have hr : 0 < r := hρ.trans_le hρr
+  have hsubρ : ball x₀ ρ ⊆ ball x₀ r := ball_subset_ball hρr
+  have hfint : ∀ c, IntegrableOn (fun x => ‖f x - c‖ ^ 2) (ball x₀ r) μ :=
+    hf.integrableOn_norm_sub_sq_of_subset subset_rfl measure_ball_lt_top.ne
+  have hHint : ∀ c, IntegrableOn (fun x => ‖H x - c‖ ^ 2) (ball x₀ r) μ :=
+    hHm.integrableOn_norm_sub_sq_of_subset subset_rfl measure_ball_lt_top.ne
+  have hfH : IntegrableOn (fun x => ‖f x - H x‖ ^ 2) (ball x₀ r) μ :=
+    (hf.sub hHm).integrable_norm_pow two_ne_zero
+  have hE0 : 0 ≤ ∫ x in ball x₀ r, ‖f x - H x‖ ^ 2 ∂μ :=
+    setIntegral_nonneg measurableSet_ball fun _ _ => by positivity
+  have hψr : 0 ≤ ∫ x in ball x₀ r, ‖f x - ⨍ y in ball x₀ r, f y ∂μ‖ ^ 2 ∂μ :=
+    setIntegral_nonneg measurableSet_ball fun _ _ => by positivity
+  have hD : (0 : ℝ) ≤ 2 ^ (3 * finrank ℝ E + 8) * (finrank ℝ E + 1) ^ 2 := by positivity
+  have hq0 : 0 ≤ (ρ / r) ^ (finrank ℝ E + 2) := by positivity
+  have hq1 : (ρ / r) ^ (finrank ℝ E + 2) ≤ 1 :=
+    pow_le_one₀ (by positivity) ((div_le_one hr).2 hρr)
+  -- The decay of the harmonic `H` from `B_r` to `B_ρ`.
+  have hdecay := hH.setIntegral_ball_norm_sub_setAverage_sq_le (hHint (⨍ y in ball x₀ r, f y ∂μ))
+    hρ.le hρr
+  -- On `B_ρ`, compare `f` with the average of `H`, then split off `f - H`.
+  have step1 := setIntegral_norm_sub_setAverage_sq_le_setIntegral_norm_sub_sq
+    measure_ball_lt_top.ne (hf.integrableOn_of_subset one_le_two hsubρ measure_ball_lt_top.ne)
+    (hf.integrableOn_norm_sub_sq_of_subset hsubρ measure_ball_lt_top.ne
+      (⨍ y in ball x₀ ρ, H y ∂μ))
+  have step2 : ∫ x in ball x₀ ρ, ‖f x - ⨍ y in ball x₀ ρ, H y ∂μ‖ ^ 2 ∂μ ≤
+      2 * (∫ x in ball x₀ ρ, ‖H x - ⨍ y in ball x₀ ρ, H y ∂μ‖ ^ 2 ∂μ) +
+        2 * ∫ x in ball x₀ ρ, ‖f x - H x‖ ^ 2 ∂μ := by
+    simpa only [sub_add_sub_cancel'] using
+      setIntegral_norm_add_sq_le ((hHint _).mono_set hsubρ) (hfH.mono_set hsubρ)
+  -- On `B_r`, compare `H` with the average of `f`.
+  have step3 : ∫ x in ball x₀ r, ‖H x - ⨍ y in ball x₀ r, f y ∂μ‖ ^ 2 ∂μ ≤
+      2 * (∫ x in ball x₀ r, ‖f x - ⨍ y in ball x₀ r, f y ∂μ‖ ^ 2 ∂μ) +
+        2 * ∫ x in ball x₀ r, ‖f x - H x‖ ^ 2 ∂μ := by
+    have hHf : IntegrableOn (fun x => ‖H x - f x‖ ^ 2) (ball x₀ r) μ := by
+      simpa only [norm_sub_rev (f _)] using hfH
+    simpa only [sub_add_sub_cancel', norm_sub_rev (H _)] using
+      setIntegral_norm_add_sq_le (hfint (⨍ y in ball x₀ r, f y ∂μ)) hHf
+  have step4 : ∫ x in ball x₀ ρ, ‖f x - H x‖ ^ 2 ∂μ ≤ ∫ x in ball x₀ r, ‖f x - H x‖ ^ 2 ∂μ :=
+    setIntegral_mono_set hfH (ae_of_all _ fun _ => by positivity) hsubρ.eventuallyLE
+  calc ∫ x in ball x₀ ρ, ‖f x - ⨍ y in ball x₀ ρ, f y ∂μ‖ ^ 2 ∂μ
+      ≤ 2 * (2 ^ (3 * finrank ℝ E + 8) * (finrank ℝ E + 1) ^ 2 * (ρ / r) ^ (finrank ℝ E + 2) *
+          (2 * (∫ x in ball x₀ r, ‖f x - ⨍ y in ball x₀ r, f y ∂μ‖ ^ 2 ∂μ) +
+            2 * ∫ x in ball x₀ r, ‖f x - H x‖ ^ 2 ∂μ)) +
+          2 * ∫ x in ball x₀ r, ‖f x - H x‖ ^ 2 ∂μ := by
+        refine step1.trans (step2.trans (add_le_add ?_ ?_))
+        · gcongr
+          exact hdecay.trans (by gcongr)
+        · gcongr
+    _ ≤ _ := by nlinarith [mul_le_mul_of_nonneg_left hq1 (mul_nonneg hD hE0)]
+
+end InnerProductSpace.HarmonicOnNhd

@@ -90,6 +90,38 @@ theorem idele_smul_def (σ : L ≃ₐ[K] L) (x : IdeleGroup (𝓞 L) L) :
     σ • x = Units.map (adeleGaloisAction K L σ) x :=
   Units.ext (coe_idele_smul σ x)
 
+/-- The finite part of `σ • x` is the image of the finite part of `x` under the Galois action on
+finite adeles. -/
+theorem toFiniteIdele_smul (σ : L ≃ₐ[K] L) (x : IdeleGroup (𝓞 L) L) :
+    IdeleGroup.toFiniteIdele (𝓞 L) L (σ • x) =
+      Units.map (finiteAdeleGaloisAction K L σ : _ →* _) (IdeleGroup.toFiniteIdele (𝓞 L) L x) :=
+  Units.ext <| by
+    rw [IdeleGroup.coe_toFiniteIdele, coe_idele_smul, adeleGaloisAction_snd, Units.coe_map,
+      MonoidHom.coe_ofClass, IdeleGroup.coe_toFiniteIdele]
+
+/-- The infinite part of `σ • x` is the image of the infinite part of `x` under the Galois action
+on infinite adeles. -/
+theorem units_map_fst_idele_smul (σ : L ≃ₐ[K] L) (x : IdeleGroup (𝓞 L) L) :
+    Units.map (MonoidHom.fst (InfiniteAdeleRing L) (FiniteAdeleRing (𝓞 L) L)) (σ • x) =
+      Units.map (infiniteAdeleGaloisAction K L σ : _ →* _)
+        (Units.map (MonoidHom.fst (InfiniteAdeleRing L) (FiniteAdeleRing (𝓞 L) L)) x) :=
+  -- both sides have underlying infinite adele the infinite component of `adeleGaloisAction σ x`
+  Units.ext <| (congrArg Prod.fst (coe_idele_smul σ x)).trans (adeleGaloisAction_fst K L σ _)
+
+/-- The idele with finite part `σ a` and infinite part `1` is `σ` applied to the idele with
+finite part `a` and infinite part `1`. -/
+theorem ofFiniteIdele_map_finiteAdeleGaloisAction (σ : L ≃ₐ[K] L)
+    (a : (FiniteAdeleRing (𝓞 L) L)ˣ) :
+    IdeleGroup.ofFiniteIdele (𝓞 L) L (Units.map (finiteAdeleGaloisAction K L σ : _ →* _) a) =
+      σ • IdeleGroup.ofFiniteIdele (𝓞 L) L a := by
+  refine Units.ext ?_
+  rw [coe_idele_smul]
+  refine Prod.ext ?_ ?_
+  · rw [adeleGaloisAction_fst, IdeleGroup.coe_ofFiniteIdele, IdeleGroup.coe_ofFiniteIdele]
+    exact (map_one _).symm
+  · rw [adeleGaloisAction_snd, IdeleGroup.coe_ofFiniteIdele, IdeleGroup.coe_ofFiniteIdele,
+      Units.coe_map, MonoidHom.coe_ofClass]
+
 /-- **The Galois action on principal ideles** is the Galois action on `Lˣ`. -/
 @[simp]
 theorem smul_unitEmbedding (σ : L ≃ₐ[K] L) (a : Lˣ) :
@@ -159,6 +191,29 @@ theorem mem_sIdeles_iff {x : IdeleGroup (𝓞 L) L} :
     x ∈ sIdeles L S ↔ ∀ w : HeightOneSpectrum (𝓞 L), w.under (𝓞 K) ∉ S →
       Valued.v (w.ideleFiniteCoord x : w.adicCompletion L) = 1 := by
   simp [sIdeles]
+
+/-- The `S`-ideles grow with `S`. -/
+theorem sIdeles_mono {T : Set (HeightOneSpectrum (𝓞 K))} (h : S ⊆ T) :
+    sIdeles L S ≤ sIdeles L T := fun _ hx ↦
+  mem_sIdeles_iff.2 fun w hw ↦ mem_sIdeles_iff.1 hx w fun hS ↦ hw (h hS)
+
+/-- **Every idele is an `S`-idele for a finite set `S` of finite places**: its finite components
+are units of the rings of integers at all but finitely many places. The set `S` may be taken to
+contain any given finite set `S₀`. -/
+theorem exists_finset_mem_sIdeles (S₀ : Finset (HeightOneSpectrum (𝓞 K)))
+    (x : IdeleGroup (𝓞 L) L) :
+    ∃ S : Finset (HeightOneSpectrum (𝓞 K)), S₀ ⊆ S ∧
+      x ∈ sIdeles L (S : Set (HeightOneSpectrum (𝓞 K))) := by
+  classical
+  have hT : {w : HeightOneSpectrum (𝓞 L) |
+      Valued.v ((x : AdeleRing (𝓞 L) L).2 w) ≠ 1}.Finite :=
+    Filter.eventually_cofinite.1 (FiniteAdeleRing.isUnit_iff.1
+      (x.isUnit.map (RingHom.snd (InfiniteAdeleRing L) (FiniteAdeleRing (𝓞 L) L)))).2
+  refine ⟨S₀ ∪ (hT.image (HeightOneSpectrum.under (𝓞 K))).toFinset, Finset.subset_union_left,
+    mem_sIdeles_iff.2 fun w hw ↦ ?_⟩
+  rw [HeightOneSpectrum.coe_ideleFiniteCoord]
+  by_contra h
+  exact hw (Finset.mem_union_right _ ((Set.Finite.mem_toFinset _).2 ⟨w, h, rfl⟩))
 
 variable (S) in
 /-- An idele whose finite components are all `1` is an `S`-idele. -/

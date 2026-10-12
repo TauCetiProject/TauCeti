@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.TensorProduct.Balanced.Grading
+public import TauCeti.LinearAlgebra.TensorProduct.Balanced.Grading.Basic
 
 /-!
 # Outer actions on balanced tensor products

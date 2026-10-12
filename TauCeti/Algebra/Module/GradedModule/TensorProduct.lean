@@ -59,25 +59,23 @@ namespace InternalGrading
 
 section PiTensorProduct
 
-variable {R : Type u} [CommSemiring R]
-variable {M : Type v} [AddCommMonoid M] [Module R M]
+variable {R : Type u} [CommSemiring R] {ι : Type*} [Finite ι]
+variable {M : ι → Type v} [∀ i, AddCommMonoid (M i)] [∀ i, Module R (M i)]
 variable {N : Type w} [AddCommMonoid N] [Module R N]
 
-/-- Two linear maps from a finite tensor product of an internally graded module agree if they
-agree on pure tensors of homogeneous elements. -/
-theorem piTensorProduct_ext (G : InternalGrading R M) {n : ℕ}
-    {f g : PiTensorProduct R (fun _ : Fin n ↦ M) →ₗ[R] N}
-    (h : ∀ q : ∀ _ : Fin n, Σ d : ℤ, G.piece d,
+/-- Two linear maps from a tensor product of a finite family of internally graded modules agree
+if they agree on pure tensors of homogeneous elements. -/
+theorem piTensorProduct_ext (G : ∀ i, InternalGrading R (M i))
+    {f g : PiTensorProduct R M →ₗ[R] N}
+    (h : ∀ q : ∀ i, Σ d : ℤ, (G i).piece d,
       f (PiTensorProduct.tprod R fun i ↦ (q i).2) =
         g (PiTensorProduct.tprod R fun i ↦ (q i).2)) : f = g := by
   apply PiTensorProduct.ext_of_span_eq_top
-    (g := fun _ (q : Σ d : ℤ, G.piece d) ↦ (q.2 : M))
-  · intro _
-    apply top_unique
-    rw [← G.isInternal.submodule_iSup_eq_top]
-    refine iSup_le fun d ↦ ?_
-    intro a ha
-    exact Submodule.subset_span ⟨⟨d, ⟨a, ha⟩⟩, rfl⟩
+    (g := fun i (q : Σ d : ℤ, (G i).piece d) ↦ (q.2 : M i))
+  · intro i
+    convert (G i).span_setOf_exists_mem_piece_eq_top R using 2
+    ext x
+    simp
   · exact h
 
 end PiTensorProduct
