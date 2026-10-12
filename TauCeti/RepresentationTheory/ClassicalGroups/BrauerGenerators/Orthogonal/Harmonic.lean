@@ -34,10 +34,14 @@ orthogonal stability is packaged as `TauCeti.harmonicTensorsSubrep`.
 
 Harmonic tensors are not themselves one irreducible. The classical reason to single them out is
 the Brauer duality over `ℂ`, where the two actions are each other's centralizers and the
-irreducible orthogonal modules occurring in `V^{⊗d}` are cut out shape by shape from the harmonic
-tensors — subject to the usual constraints tying the partition to `n` — which is why the
-symmetric-group stability matters; neither that duality nor any such decomposition is proved here,
-and over the general coefficient rings this file is stated over no such statement is available.
+degree-`d` harmonic tensors are cut shape by shape into irreducible orthogonal modules — subject
+to the usual constraints tying the partition to `n` — which is why the symmetric-group stability
+matters. Those pieces are only the constituents of `V^{⊗d}` that are new in degree `d`: the
+others are the constituents of the harmonic tensors of degrees `d - 2`, `d - 4`, ..., re-inserted
+by cups, so for `V = ℂ³` and `d = 2` the trivial module spanned by the cup `∑ⱼ eⱼ ⊗ eⱼ` occurs in
+`V^{⊗2}` but not in its harmonic part. Neither that duality nor any such decomposition is proved
+here, and over the general coefficient rings this file is stated over no such statement is
+available.
 What is proved here are two bounds on how the harmonic part sits against the part the arcs rebuild
 from cups on lower tensor powers. An arc acts on its own image by the loop value `n`, so a
 harmonic tensor in the image of an arc vanishes whenever `n` is invertible
@@ -45,7 +49,7 @@ harmonic tensor in the image of an arc vanishes whenever `n` is invertible
 on which every transposition of strands acts by `-1` is harmonic when `2` is invertible
 (`TauCeti.mem_harmonicTensors_of_forall_swap_eq_neg`), because an arc absorbs the crossing of its
 own two strands. On two strands the second statement says that the antisymmetric square sits
-inside the traceless tensors, the `⋀²` summand of the roadmap's worked example
+inside the traceless tensors, the `⋀²` summand of the decomposition
 `(ℂ³)^{⊗2} ≅ Sym²₀ ⊕ ⋀² ⊕ ℂ`.
 
 Nothing here needs subtraction except the two statements that mention `-1` and the orthogonal
@@ -86,8 +90,6 @@ group, so the definition and most of its API are stated over a commutative semir
 
 * R. Goodman and N. R. Wallach, *Symmetry, Representations, and Invariants*, Springer GTM 255
   (2009), Chapter 10, for the harmonic (traceless) tensors and the trace filtration.
-* [Schur--Weyl roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SchurWeyl/README.md),
-  Layer 9, "Harmonic tensors and the trace maps".
 -/
 
 public section
@@ -128,6 +130,7 @@ theorem le_harmonicTensors_iff {p : Submodule k (⨂[k]^d (Fin n → k))} :
   simp only [harmonicTensors_def, le_iInf_iff]
 
 /-- A tensor is harmonic exactly when every arc annihilates it. -/
+@[simp]
 theorem mem_harmonicTensors {x : ⨂[k]^d (Fin n → k)} :
     x ∈ harmonicTensors k n d ↔
       ∀ i j : Fin d, i ≠ j → orthogonalCupCapAt k n d i j x = 0 := by
@@ -177,14 +180,20 @@ theorem harmonicTensors_two_eq_ker_orthogonalCupCap :
 
 /-- **On two strands the harmonic tensors are the traceless tensors**: the kernel of the cap, the
 contraction of the two slots against the coordinate dot product. The arc is the cap followed by a
-cup, and the cup is injective for `V ≠ 0`, so the two kernels agree. -/
-theorem harmonicTensors_two_eq_ker_orthogonalCap [NeZero n] :
+cup, and the cup is injective for `V ≠ 0`, so the two kernels agree; in dimension zero the cap is
+itself the zero map and both kernels are everything. -/
+theorem harmonicTensors_two_eq_ker_orthogonalCap :
     harmonicTensors k n 2 = LinearMap.ker (orthogonalCap k n) := by
   rw [harmonicTensors_two_eq_ker_orthogonalCupCap]
   ext x
   simp only [LinearMap.mem_ker, orthogonalCupCap_apply]
-  refine ⟨fun h => orthogonalCup_injective k n ?_, fun h => by rw [h, map_zero]⟩
-  rw [h, map_zero]
+  refine ⟨fun h => ?_, fun h => by rw [h, map_zero]⟩
+  rcases eq_zero_or_neZero n with rfl | hn
+  · have hcap : orthogonalCap k 0 = 0 := by
+      ext v
+      simp
+    simp [hcap]
+  · exact orthogonalCup_injective k n (by rw [h, map_zero])
 
 /-! ### Stability under the two actions -/
 
@@ -287,9 +296,10 @@ theorem map_tensorPower_harmonicTensors (g : Matrix.orthogonalGroup (Fin n) k) :
 variable (k n d)
 
 /-- **The harmonic tensors as an orthogonal subrepresentation of `V^{⊗d}`.** Over `ℂ` this is
-classically the module from whose shape-`λ` pieces the irreducible representations of the
-orthogonal group occurring in `V^{⊗d}` are read off; that decomposition is not proved here, and
-the statement below is only the stability of the submodule under the action. -/
+classically the module whose shape-`λ` pieces are the irreducible representations of the
+orthogonal group that occur in `V^{⊗d}` for the first time in degree `d`; the constituents
+inherited from the lower degrees by cup insertion are not among them. That decomposition is not
+proved here, and the statement below is only the stability of the submodule under the action. -/
 noncomputable def harmonicTensorsSubrep :
     Subrepresentation ((stdOrthogonalRep k n).tensorPower d) where
   toSubmodule := harmonicTensors k n d
