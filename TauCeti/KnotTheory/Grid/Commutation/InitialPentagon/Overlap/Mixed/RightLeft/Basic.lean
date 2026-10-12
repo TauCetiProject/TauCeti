@@ -235,6 +235,36 @@ theorem recutRightEqLeft_geometry
     D.rightLeftRecut_geometry hcommon hfirst hsecond hturn
   exact ⟨hmiddle, hleft, hbottom, htop, hsecondBottom, hsecondTop⟩
 
+/-- The promoted recut keeps the pentagon's terminal side as the terminal side of both pieces,
+and its rectangle starts on the original rectangle's initial side. -/
+theorem recutRightEqLeft_sides
+    (D : GridRectangleInitialPentagonDecomposition a s x z)
+    (hcommon : D.first.right = D.second.left)
+    (hfirst : D.first.IsEmpty) (hsecond : D.pentagon.IsEmpty)
+    (hturn : s ∉ Grid.cIco D.first.bottom D.first.top) :
+    let E := D.recutRightEqLeft hcommon hfirst hsecond hturn
+    E.first.right = D.second.right ∧ E.second.left = D.first.left ∧
+      E.second.right = D.second.right := by
+  intro E
+  obtain ⟨-, hfl, hfb, hft, hsb, hst⟩ :=
+    D.recutRightEqLeft_geometry hcommon hfirst hsecond hturn
+  have hother := D.first_left_ne_second_right_of_right_eq_left hcommon hturn
+  have hfr : E.first.right = D.second.right := by
+    apply x.toPerm.injective
+    rw [← GridRectangleBetween.top_def, hft, GridRectangleBetween.top_def]
+    exact D.first.map_of_ne _ hother.symm
+      (fun h => D.second.left_ne_right (hcommon.symm.trans h.symm))
+  have hsl : E.second.left = D.first.left := by
+    apply E.middle.toPerm.injective
+    rw [← GridRectangleBetween.bottom_def, hsb, GridRectangleBetween.bottom_def]
+    exact (E.first.map_of_ne _
+      (by rw [hfl, ← hcommon]; exact D.first.left_ne_right)
+      (by rw [hfr]; exact hother)).symm
+  have hsr : E.first.right = E.second.right :=
+    E.middle.toPerm.injective (E.first.map_right.trans
+      (hfb.trans (hst.symm.trans E.second.top_def)))
+  exact ⟨hfr, hsl, hsr.symm.trans hfr⟩
+
 /-- In a mixed `right = left` overlap whose rectangle avoids the turn row, the rectangle's top row
 lies strictly between its bottom row and the pentagon's top row: emptiness allows the reverse
 order only when the pentagon's rows lie inside the rectangle's, which would put the turn row in
