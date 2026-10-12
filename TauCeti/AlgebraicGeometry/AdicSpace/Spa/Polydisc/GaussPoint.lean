@@ -9,10 +9,10 @@ public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Polydisc.Basic
 public import TauCeti.RingTheory.PowerSeries.GaussNorm
 public import TauCeti.RingTheory.Huber.Restricted.OneVariable
 
+import TauCeti.Analysis.Normed.Field.Basic
 import TauCeti.AlgebraicGeometry.AdicSpace.Cont.Basic
 import TauCeti.RingTheory.Huber.Continuous.PowerBounded
 import Mathlib.RingTheory.Valuation.RankOne
-import Mathlib.Analysis.Normed.Module.Seminorm.Norm
 import Mathlib.Analysis.SpecificLimits.Normed
 
 /-!
@@ -553,21 +553,6 @@ theorem gaussPoint_ne_classicalPoint [CompleteSpace K] (hr₀ : 0 < r) (hr₁ : 
     gaussPoint hr₀ hr₁ ≠ classicalPoint x a ha :=
   ne_classicalPoint_of_supp_eq_bot _ (supp_gaussPoint hr₀ hr₁) x a ha
 
-omit [IsUltrametricDist K] [NonarchimedeanRing K] in
-/-- Between two radii `0 < r < s` there is a constant `c` and a power `m` with
-`rᵐ < ‖c‖ < sᵐ`, so that `Tᵐ` and `c` compare differently at the two radii. -/
-private theorem exists_pow_lt_norm_lt_pow {s : ℝ} (hr₀ : 0 < r) (hlt : r < s) :
-    ∃ (m : ℕ) (c : K), r ^ m < ‖c‖ ∧ ‖c‖ < s ^ m := by
-  -- choose `m` with `‖k‖ < (s / r)ᵐ` and `c` in the shell `sᵐ / ‖k‖ ≤ ‖c‖ < sᵐ`
-  obtain ⟨k, hk⟩ := NormedField.exists_one_lt_norm K
-  obtain ⟨m, hm⟩ := pow_unbounded_of_one_lt ‖k‖ ((one_lt_div hr₀).mpr hlt)
-  obtain ⟨c, -, hcs, hcr, -⟩ :=
-    rescale_to_shell hk (pow_pos (hr₀.trans hlt) m) (one_ne_zero' K)
-  rw [smul_eq_mul, mul_one] at hcs hcr
-  refine ⟨m, c, lt_of_lt_of_le ?_ hcr, hcs⟩
-  rw [lt_div_iff₀ (one_pos.trans hk), ← lt_div_iff₀' (pow_pos hr₀ m), ← div_pow]
-  exact hm
-
 /-- **Distinct radii `0 < r, s ≤ 1` give distinct Gauss points.** -/
 theorem gaussPoint_inj {s : ℝ} (hr₀ : 0 < r) (hr₁ : r ≤ 1) (hs₀ : 0 < s) (hs₁ : s ≤ 1) :
     gaussPoint (K := K) hr₀ hr₁ = gaussPoint hs₀ hs₁ ↔ r = s := by
@@ -575,7 +560,7 @@ theorem gaussPoint_inj {s : ℝ} (hr₀ : 0 < r) (hr₁ : r ≤ 1) (hs₀ : 0 < 
   by_contra hne
   wlog hlt : r < s generalizing r s
   · exact this hs₀ hs₁ hr₀ hr₁ h.symm (Ne.symm hne) ((not_lt.mp hlt).lt_of_ne (Ne.symm hne))
-  obtain ⟨m, c, hrm, hcs⟩ := exists_pow_lt_norm_lt_pow (K := K) hr₀ hlt
+  obtain ⟨m, c, hrm, hcs⟩ := NormedField.exists_pow_lt_norm_lt_pow K hr₀ hlt
   have key := congrArg (fun p : closedPolydisc 1 K ↦ p.1.toValuativeRel.vle
     (weightedX (fun _ : Fin 1 ↦ ({1} : Set K)) isWeightFamily_one_weight 0 ^ m)
     (weightedC _ isWeightFamily_one_weight c)) h
@@ -817,7 +802,7 @@ theorem gaussPointAbove_inj {s : ℝ} (hr₀ : 0 < r) (hr₁ : r < 1) (hs₀ : 0
   by_contra hne
   wlog hlt : r < s generalizing r s
   · exact this hs₀ hs₁ hr₀ hr₁ h.symm (Ne.symm hne) ((not_lt.mp hlt).lt_of_ne (Ne.symm hne))
-  obtain ⟨m, c, hrm, hcs⟩ := exists_pow_lt_norm_lt_pow (K := K) hr₀ hlt
+  obtain ⟨m, c, hrm, hcs⟩ := NormedField.exists_pow_lt_norm_lt_pow K hr₀ hlt
   have key := congrArg (fun p : closedPolydisc 1 K ↦ p.1.toValuativeRel.vle
     (weightedX (fun _ : Fin 1 ↦ ({1} : Set K)) isWeightFamily_one_weight 0 ^ m)
     (weightedC _ isWeightFamily_one_weight c)) h
@@ -836,7 +821,7 @@ theorem gaussPointBelow_inj {s : ℝ} (hr₀ : 0 < r) (hr₁ : r ≤ 1) (hs₀ :
   by_contra hne
   wlog hlt : r < s generalizing r s
   · exact this hs₀ hs₁ hr₀ hr₁ h.symm (Ne.symm hne) ((not_lt.mp hlt).lt_of_ne (Ne.symm hne))
-  obtain ⟨m, c, hrm, hcs⟩ := exists_pow_lt_norm_lt_pow (K := K) hr₀ hlt
+  obtain ⟨m, c, hrm, hcs⟩ := NormedField.exists_pow_lt_norm_lt_pow K hr₀ hlt
   have key := congrArg (fun p : closedPolydisc 1 K ↦ p.1.toValuativeRel.vle
     (weightedX (fun _ : Fin 1 ↦ ({1} : Set K)) isWeightFamily_one_weight 0 ^ m)
     (weightedC _ isWeightFamily_one_weight c)) h
