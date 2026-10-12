@@ -33,7 +33,7 @@ variable {A : Type u₁} [Category.{v₁} A] [Abelian A] [HasDerivedCategory.{w�
   (F : A ⥤ B) [F.Additive] [PreservesFiniteLimits F] [PreservesFiniteColimits F]
 
 /-- Termwise exact functors preserve cohomological boundedness. -/
-lemma mapDerivedCategory_bounded (X : DerivedCategory A)
+lemma bounded_mapDerivedCategory (X : DerivedCategory A)
     (hX : (DerivedCategory.TStructure.t (C := A)).bounded X) :
     (DerivedCategory.TStructure.t (C := B)).bounded (F.mapDerivedCategory.obj X) := by
   obtain ⟨⟨a, ha⟩, ⟨b, hb⟩⟩ := hX
@@ -57,7 +57,7 @@ noncomputable def mapBoundedDerivedCategory :
     DerivedCategory.Bounded A ⥤ DerivedCategory.Bounded B :=
   (DerivedCategory.TStructure.t (C := B)).bounded.lift
     (DerivedCategory.Bounded.ι ⋙ F.mapDerivedCategory)
-    (fun X ↦ F.mapDerivedCategory_bounded X.obj X.property)
+    (fun X ↦ F.bounded_mapDerivedCategory X.obj X.property)
 
 /-- Inclusion identifies the bounded action with Mathlib's derived action. -/
 noncomputable def mapBoundedDerivedCategoryCompιIso :
