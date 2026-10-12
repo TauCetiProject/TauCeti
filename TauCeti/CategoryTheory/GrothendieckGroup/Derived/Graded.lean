@@ -41,6 +41,7 @@ variable {A : Type u₁} [Category.{v₁} A] [Abelian A] [EssentiallySmall.{w₁
   [HasDerivedCategory.{w₂'} B] [EssentiallySmall.{w₂''} (DerivedCategory.Bounded B)]
 
 /-- The canonical comparison to bounded-derived K₀ is natural for exact functors. -/
+@[simp]
 theorem map_comp_toBoundedDerivedK0 (F : A ⥤ B) [F.Additive]
     [PreservesFiniteLimits F] [PreservesFiniteColimits F] :
     (TriangulatedK0.map F.mapBoundedDerivedCategory).comp toBoundedDerivedK0 =
@@ -51,6 +52,7 @@ theorem map_comp_toBoundedDerivedK0 (F : A ⥤ B) [F.Additive]
   exact TriangulatedK0.of_congr ((F.mapBoundedDerivedCategorySingleFunctor 0).app X)
 
 /-- Naturality of the comparison equivalence for the actual bounded-derived action. -/
+@[simp]
 theorem boundedDerivedK0Equiv_map (F : A ⥤ B) [F.Additive]
     [PreservesFiniteLimits F] [PreservesFiniteColimits F] (x : AbelianK0 A) :
     boundedDerivedK0Equiv B (map F x) =
@@ -64,6 +66,7 @@ theorem boundedDerivedK0Equiv_map (F : A ⥤ B) [F.Additive]
       (DFunLike.congr_fun (boundedDerivedK0Equiv_toAddMonoidHom (A := A)) x).symm
 
 /-- The alternating cohomology-class inverse comparison is natural for exact functors. -/
+@[simp]
 theorem boundedDerivedK0Equiv_symm_map (F : A ⥤ B) [F.Additive]
     [PreservesFiniteLimits F] [PreservesFiniteColimits F]
     (x : TriangulatedK0 (DerivedCategory.Bounded A)) :
@@ -73,6 +76,7 @@ theorem boundedDerivedK0Equiv_symm_map (F : A ⥤ B) [F.Additive]
   rw [AddEquiv.apply_symm_apply, boundedDerivedK0Equiv_map, AddEquiv.apply_symm_apply]
 
 /-- An additive equivalence acts compatibly with the bounded-derived K₀ comparison. -/
+@[simp]
 theorem boundedDerivedK0Equiv_mapEquiv (e : A ≌ B) [e.functor.Additive]
     (x : AbelianK0 A) :
     boundedDerivedK0Equiv B (mapEquiv e x) =
@@ -89,6 +93,7 @@ theorem boundedDerivedK0Equiv_mapEquiv (e : A ≌ B) [e.functor.Additive]
     ⟨eqToIso (congrArg (fun F ↦ F.obj X) e.mapBoundedDerivedCategory_functor.symm)⟩) _
 
 /-- The inverse comparison also commutes with the equivalence induced on bounded-derived K₀. -/
+@[simp]
 theorem boundedDerivedK0Equiv_symm_mapEquiv (e : A ≌ B) [e.functor.Additive]
     (x : TriangulatedK0 (DerivedCategory.Bounded A)) :
     (boundedDerivedK0Equiv B).symm (TriangulatedK0.mapEquiv e.mapBoundedDerivedCategory x) =
@@ -97,6 +102,7 @@ theorem boundedDerivedK0Equiv_symm_mapEquiv (e : A ≌ B) [e.functor.Additive]
   rw [AddEquiv.apply_symm_apply, boundedDerivedK0Equiv_mapEquiv, AddEquiv.apply_symm_apply]
 
 /-- The comparison intertwines the inverse of an additive equivalence. -/
+@[simp]
 theorem boundedDerivedK0Equiv_mapEquiv_symm (e : A ≌ B) [e.functor.Additive]
     (x : AbelianK0 B) :
     boundedDerivedK0Equiv A ((mapEquiv e).symm x) =
@@ -109,6 +115,7 @@ section Shift
 variable (e : A ≌ A) [e.functor.Additive]
 
 /-- The bounded-derived comparison intertwines the whole integer internal grading action. -/
+@[simp]
 theorem boundedDerivedK0Equiv_shiftZPow (n : ℤ) (x : AbelianK0 A) :
     boundedDerivedK0Equiv A (shiftZPow e n x) =
       TriangulatedK0.shiftZPow e.mapBoundedDerivedCategory n (boundedDerivedK0Equiv A x) := by
@@ -122,6 +129,7 @@ theorem boundedDerivedK0Equiv_shiftZPow (n : ℤ) (x : AbelianK0 A) :
         TriangulatedK0.shiftZPow_sub_one_apply]
 
 /-- The alternating cohomology-class inverse comparison intertwines every integer grading shift. -/
+@[simp]
 theorem boundedDerivedK0Equiv_symm_shiftZPow (n : ℤ)
     (x : TriangulatedK0 (DerivedCategory.Bounded A)) :
     (boundedDerivedK0Equiv A).symm (TriangulatedK0.shiftZPow e.mapBoundedDerivedCategory n x) =

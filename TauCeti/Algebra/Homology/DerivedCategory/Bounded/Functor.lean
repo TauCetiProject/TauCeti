@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Homology.DerivedCategory.Bounded.Basic
 public import TauCeti.Algebra.Homology.DerivedCategory.Equivalence
+public import TauCeti.CategoryTheory.ObjectProperty
 
 /-!
 # Exact functors on bounded derived categories
@@ -82,6 +83,29 @@ noncomputable def mapBoundedDerivedCategorySingleFunctor (n : ℤ) :
   ((DerivedCategory.TStructure.t (C := B)).bounded.fullyFaithfulι.whiskeringRight _).preimageIso
     (F.mapDerivedCategorySingleFunctor n)
 
+/-- The bounded derived action of the identity functor is the identity. -/
+noncomputable def mapBoundedDerivedCategoryIdIso :
+    (𝟭 A).mapBoundedDerivedCategory ≅ 𝟭 (DerivedCategory.Bounded A) :=
+  ((DerivedCategory.TStructure.t (C := A)).bounded.fullyFaithfulι.whiskeringRight _).preimageIso
+    ((𝟭 A).mapBoundedDerivedCategoryCompιIso ≪≫
+      isoWhiskerLeft DerivedCategory.Bounded.ι (mapDerivedCategoryIdIso A) ≪≫
+      Functor.rightUnitor _ ≪≫ (Functor.leftUnitor _).symm)
+
+/-- The bounded derived action preserves composition of exact functors. -/
+noncomputable def mapBoundedDerivedCategoryCompIso
+    {C : Type*} [Category C] [Abelian C] [HasDerivedCategory C]
+    (G : B ⥤ C) [G.Additive] [PreservesFiniteLimits G] [PreservesFiniteColimits G] :
+    F.mapBoundedDerivedCategory ⋙ G.mapBoundedDerivedCategory ≅
+      (F ⋙ G).mapBoundedDerivedCategory :=
+  ((DerivedCategory.TStructure.t (C := C)).bounded.fullyFaithfulι.whiskeringRight _).preimageIso
+    (Functor.associator .. ≪≫
+      isoWhiskerLeft _ G.mapBoundedDerivedCategoryCompιIso ≪≫
+      (Functor.associator ..).symm ≪≫
+      isoWhiskerRight F.mapBoundedDerivedCategoryCompιIso _ ≪≫
+      Functor.associator .. ≪≫
+      isoWhiskerLeft DerivedCategory.Bounded.ι (mapDerivedCategoryCompIso F G) ≪≫
+      (F ⋙ G).mapBoundedDerivedCategoryCompιIso.symm)
+
 end CategoryTheory.Functor
 
 namespace CategoryTheory.Equivalence
@@ -90,47 +114,47 @@ variable {A : Type u₁} [Category.{v₁} A] [Abelian A] [HasDerivedCategory.{w�
   {B : Type u₂} [Category.{v₂} B] [Abelian B] [HasDerivedCategory.{w₂} B]
   (e : A ≌ B) [e.functor.Additive]
 
+/-- Boundedness is the inverse image of boundedness under an additive derived equivalence. -/
+lemma bounded_inverseImage_mapDerivedCategory :
+    (DerivedCategory.TStructure.t (C := B)).bounded.inverseImage
+        e.mapDerivedCategory.functor = (DerivedCategory.TStructure.t (C := A)).bounded := by
+  ext X
+  change (DerivedCategory.TStructure.t (C := B)).bounded
+    (e.functor.mapDerivedCategory.obj X) ↔ (DerivedCategory.TStructure.t (C := A)).bounded X
+  constructor
+  · intro hX
+    exact (DerivedCategory.TStructure.t (C := A)).bounded.prop_of_iso
+      (e.mapDerivedCategory.unitIso.app X).symm
+      (e.inverse.bounded_mapDerivedCategory _ hX)
+  · exact e.functor.bounded_mapDerivedCategory X
+
 /-- An additive equivalence restricts to the cohomologically bounded objects. -/
 noncomputable def mapBoundedDerivedCategory :
     DerivedCategory.Bounded A ≌ DerivedCategory.Bounded B :=
-  Equivalence.mk e.functor.mapBoundedDerivedCategory e.inverse.mapBoundedDerivedCategory
-    (((DerivedCategory.TStructure.t (C := A)).bounded.fullyFaithfulι.whiskeringRight _).preimageIso
-      (Functor.leftUnitor _ ≪≫
-        (Functor.rightUnitor _).symm ≪≫
-        (by simpa only [mapDerivedCategory_functor, mapDerivedCategory_inverse] using
-          isoWhiskerLeft DerivedCategory.Bounded.ι e.mapDerivedCategory.unitIso) ≪≫
-        (Functor.associator ..).symm ≪≫
-        isoWhiskerRight e.functor.mapBoundedDerivedCategoryCompιIso.symm _ ≪≫
-        Functor.associator .. ≪≫
-        isoWhiskerLeft _ e.inverse.mapBoundedDerivedCategoryCompιIso.symm ≪≫
-        (Functor.associator ..).symm))
-    (((DerivedCategory.TStructure.t (C := B)).bounded.fullyFaithfulι.whiskeringRight _).preimageIso
-      (Functor.associator .. ≪≫
-        isoWhiskerLeft _ e.functor.mapBoundedDerivedCategoryCompιIso ≪≫
-        (Functor.associator ..).symm ≪≫
-        isoWhiskerRight e.inverse.mapBoundedDerivedCategoryCompιIso _ ≪≫
-        Functor.associator .. ≪≫
-        (by simpa only [mapDerivedCategory_functor, mapDerivedCategory_inverse] using
-          isoWhiskerLeft DerivedCategory.Bounded.ι e.mapDerivedCategory.counitIso) ≪≫
-        Functor.rightUnitor _ ≪≫
-        (Functor.leftUnitor _).symm))
+  e.mapDerivedCategory.congrFullSubcategory e.bounded_inverseImage_mapDerivedCategory
 
 /-- The functor of the bounded equivalence is the actual termwise exact-functor action. -/
 @[simp]
 lemma mapBoundedDerivedCategory_functor :
-    e.mapBoundedDerivedCategory.functor = e.functor.mapBoundedDerivedCategory :=
-  (rfl)
+    e.mapBoundedDerivedCategory.functor = e.functor.mapBoundedDerivedCategory := by
+  rw [mapBoundedDerivedCategory, congrFullSubcategory_functor_eq_lift]
+  rfl
 
 /-- The inverse of the bounded equivalence is the termwise action of the original inverse. -/
 @[simp]
 lemma mapBoundedDerivedCategory_inverse :
-    e.mapBoundedDerivedCategory.inverse = e.inverse.mapBoundedDerivedCategory :=
-  (rfl)
+    e.mapBoundedDerivedCategory.inverse = e.inverse.mapBoundedDerivedCategory := by
+  rw [mapBoundedDerivedCategory, congrFullSubcategory_inverse_eq_lift]
+  rfl
 
 noncomputable instance : e.mapBoundedDerivedCategory.functor.CommShift ℤ :=
-  inferInstanceAs (e.functor.mapBoundedDerivedCategory.CommShift ℤ)
+  by
+    rw [mapBoundedDerivedCategory_functor]
+    infer_instance
 
 instance : e.mapBoundedDerivedCategory.functor.IsTriangulated :=
-  inferInstanceAs (e.functor.mapBoundedDerivedCategory.IsTriangulated)
+  by
+    rw [mapBoundedDerivedCategory_functor]
+    infer_instance
 
 end CategoryTheory.Equivalence

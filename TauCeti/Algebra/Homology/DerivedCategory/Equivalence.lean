@@ -22,13 +22,13 @@ open CategoryTheory CategoryTheory.Limits CategoryTheory.Functor
 
 universe w₁ w₂ v₁ v₂ u₁ u₂
 
-namespace CategoryTheory.Equivalence
+namespace CategoryTheory.NatIso
 
 variable {A : Type u₁} [Category.{v₁} A] [Abelian A] [HasDerivedCategory.{w₁} A]
   {B : Type u₂} [Category.{v₂} B] [Abelian B] [HasDerivedCategory.{w₂} B]
-  (e : A ≌ B) [e.functor.Additive]
 
-private noncomputable def derivedIso {F G : A ⥤ B}
+/-- An isomorphism of exact functors induces an isomorphism of their derived actions. -/
+noncomputable def mapDerivedCategory {F G : A ⥤ B}
     [F.Additive] [G.Additive] [PreservesFiniteLimits F] [PreservesFiniteLimits G]
     [PreservesFiniteColimits F] [PreservesFiniteColimits G] (α : F ≅ G) :
     F.mapDerivedCategory ≅ G.mapDerivedCategory :=
@@ -36,12 +36,20 @@ private noncomputable def derivedIso {F G : A ⥤ B}
     (HomologicalComplex.quasiIso A (ComplexShape.up ℤ)) _ _ _ _
     (isoWhiskerRight (NatIso.mapHomologicalComplex α (ComplexShape.up ℤ)) DerivedCategory.Q)
 
+end CategoryTheory.NatIso
+
+namespace CategoryTheory.Equivalence
+
+variable {A : Type u₁} [Category.{v₁} A] [Abelian A] [HasDerivedCategory.{w₁} A]
+  {B : Type u₂} [Category.{v₂} B] [Abelian B] [HasDerivedCategory.{w₂} B]
+  (e : A ≌ B) [e.functor.Additive]
+
 /-- An additive equivalence of abelian categories acts termwise on the derived categories. -/
 noncomputable def mapDerivedCategory : DerivedCategory A ≌ DerivedCategory B :=
   Equivalence.mk e.functor.mapDerivedCategory e.inverse.mapDerivedCategory
-    ((Functor.mapDerivedCategoryIdIso A).symm ≪≫ derivedIso e.unitIso ≪≫
+    ((Functor.mapDerivedCategoryIdIso A).symm ≪≫ NatIso.mapDerivedCategory e.unitIso ≪≫
       (Functor.mapDerivedCategoryCompIso e.functor e.inverse).symm)
-    (Functor.mapDerivedCategoryCompIso e.inverse e.functor ≪≫ derivedIso e.counitIso ≪≫
+    (Functor.mapDerivedCategoryCompIso e.inverse e.functor ≪≫ NatIso.mapDerivedCategory e.counitIso ≪≫
       Functor.mapDerivedCategoryIdIso B)
 
 /-- The functor of the induced equivalence is Mathlib's termwise derived action. -/
