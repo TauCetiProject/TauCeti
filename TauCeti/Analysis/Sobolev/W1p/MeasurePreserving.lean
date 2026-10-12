@@ -13,10 +13,10 @@ public import Mathlib.Analysis.InnerProductSpace.Adjoint
 /-!
 # Measure-preserving `C¹` changes of variables in `W^{1,p}`
 
-Let `Φ : E → E'` be a measure-preserving measurable embedding between finite-dimensional real
-inner product spaces carrying additive Haar measures, and let `U = Φ⁻¹(V)` for open sets
-`U ⊆ E`, `V ⊆ E'`. If `Φ` is of class `C¹` on `U` with
-`‖fderiv ℝ Φ x‖ ≤ M` there, precomposition with `Φ` is a bounded linear operator
+Let `Φ : E → E'` be a measure-preserving map between finite-dimensional real inner product spaces
+carrying additive Haar measures, and let `U = Φ⁻¹(V)` for open sets `U ⊆ E`, `V ⊆ E'`. If `Φ` is
+of class `C¹` on `U` with `‖fderiv ℝ Φ x‖ ≤ M` there, precomposition with `Φ` is a bounded linear
+operator
 
 `TauCeti.W1p.compMeasurePreservingL : W^{1,p}(V) →L[ℝ] W^{1,p}(U)`,
 
@@ -56,22 +56,22 @@ variable {E E' : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [Finite
   {p : ℝ≥0∞} [Fact (1 ≤ p)] {U : Opens E} {V : Opens E'} {Φ : E → E'} {M : ℝ}
 
 omit [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [BorelSpace E] [μ.IsAddHaarMeasure]
-  [InnerProductSpace ℝ E'] [FiniteDimensional ℝ E'] [BorelSpace E'] [ν.IsAddHaarMeasure] in
+  [InnerProductSpace ℝ E'] [FiniteDimensional ℝ E'] [ν.IsAddHaarMeasure] in
 /-- Precomposition with `Φ` is measure-preserving from `U = Φ⁻¹(V)` to `V`. -/
 private theorem measurePreserving_restrict (hΦ : MeasurePreserving Φ μ ν)
-    (hΦe : MeasurableEmbedding Φ) (hUV : (U : Set E) = Φ ⁻¹' V) :
+    (hUV : (U : Set E) = Φ ⁻¹' V) :
     MeasurePreserving Φ (μ.restrict U) (ν.restrict V) :=
-  hUV ▸ hΦ.restrict_preimage_emb hΦe V
+  hUV ▸ hΦ.restrict_preimage V.isOpen.measurableSet
 
 omit [μ.IsAddHaarMeasure] in
 /-- The transported gradient `x ↦ (fderiv ℝ Φ x)† (∇u (Φ x))` lies in `Lᵖ(U)`. -/
-private theorem memLp_adjoint_gradient (hΦ : MeasurePreserving Φ μ ν) (hΦe : MeasurableEmbedding Φ)
+private theorem memLp_adjoint_gradient (hΦ : MeasurePreserving Φ μ ν)
     (hUV : (U : Set E) = Φ ⁻¹' V) (hΦd : ContDiffOn ℝ 1 Φ U)
     (hM : ∀ x ∈ (U : Set E), ‖fderiv ℝ Φ x‖ ≤ M) (u : W1p ν V p) :
     MemLp (fun x => ContinuousLinearMap.adjoint (fderiv ℝ Φ x) (W1p.gradient u (Φ x))) p
       (μ.restrict U) := by
   have hg := (Lp.memLp (W1p.gradient u)).comp_measurePreserving
-    (measurePreserving_restrict hΦ hΦe hUV)
+    (measurePreserving_restrict hΦ hUV)
   refine hg.of_le_mul (c := M) ?_ ((ae_restrict_iff' U.isOpen.measurableSet).2 <|
     Filter.Eventually.of_forall fun x hx => ?_)
   · exact (ContinuousLinearMap.apply ℝ E).aestronglyMeasurable_comp₂ hg.aestronglyMeasurable
@@ -83,45 +83,45 @@ private theorem memLp_adjoint_gradient (hΦ : MeasurePreserving Φ μ ν) (hΦe 
       exact mul_le_mul_of_nonneg_right (hM x hx) (norm_nonneg _)
 
 /-- The element `u ∘ Φ` of `W^{1,p}(U)`, before linearity and boundedness are proved. -/
-private def compAux (hΦ : MeasurePreserving Φ μ ν) (hΦe : MeasurableEmbedding Φ)
+private def compAux (hΦ : MeasurePreserving Φ μ ν)
     (hUV : (U : Set E) = Φ ⁻¹' V) (hΦd : ContDiffOn ℝ 1 Φ U)
     (hM : ∀ x ∈ (U : Set E), ‖fderiv ℝ Φ x‖ ≤ M) (u : W1p ν V p) :
     W1p μ U p :=
-  W1p.mk (Lp.compMeasurePreserving Φ (measurePreserving_restrict hΦ hΦe hUV) (W1p.value u))
-    ((memLp_adjoint_gradient hΦ hΦe hUV hΦd hM u).toLp _) <| by
+  W1p.mk (Lp.compMeasurePreserving Φ (measurePreserving_restrict hΦ hUV) (W1p.value u))
+    ((memLp_adjoint_gradient hΦ hUV hΦd hM u).toLp _) <| by
       have hmaps : MapsTo Φ U V := fun x hx => by rwa [hUV] at hx
-      refine (((W1p.hasWeakFDerivOn u).comp_measurePreserving hΦ hΦe hΦd
+      refine (((W1p.hasWeakFDerivOn u).comp_measurePreserving hΦ hΦd
         hmaps).congr_ae (Lp.coeFn_compMeasurePreserving _ _).symm).congr_ae_deriv ?_
-      filter_upwards [(memLp_adjoint_gradient hΦ hΦe hUV hΦd hM u).coeFn_toLp] with x hx
+      filter_upwards [(memLp_adjoint_gradient hΦ hUV hΦd hM u).coeFn_toLp] with x hx
       ext v
       simp [hx, ContinuousLinearMap.adjoint_inner_left]
 
-private theorem value_compAux_ae (hΦ : MeasurePreserving Φ μ ν) (hΦe : MeasurableEmbedding Φ)
+private theorem value_compAux_ae (hΦ : MeasurePreserving Φ μ ν)
     (hUV : (U : Set E) = Φ ⁻¹' V) (hΦd : ContDiffOn ℝ 1 Φ U)
     (hM : ∀ x ∈ (U : Set E), ‖fderiv ℝ Φ x‖ ≤ M) (u : W1p ν V p) :
-    W1p.value (compAux hΦ hΦe hUV hΦd hM u) =ᵐ[μ.restrict U] fun x => W1p.value u (Φ x) := by
+    W1p.value (compAux hΦ hUV hΦd hM u) =ᵐ[μ.restrict U] fun x => W1p.value u (Φ x) := by
   rw [compAux, W1p.value_mk]
   exact Lp.coeFn_compMeasurePreserving _ _
 
-private theorem gradient_compAux_ae (hΦ : MeasurePreserving Φ μ ν) (hΦe : MeasurableEmbedding Φ)
+private theorem gradient_compAux_ae (hΦ : MeasurePreserving Φ μ ν)
     (hUV : (U : Set E) = Φ ⁻¹' V) (hΦd : ContDiffOn ℝ 1 Φ U)
     (hM : ∀ x ∈ (U : Set E), ‖fderiv ℝ Φ x‖ ≤ M) (u : W1p ν V p) :
-    W1p.gradient (compAux hΦ hΦe hUV hΦd hM u) =ᵐ[μ.restrict U]
+    W1p.gradient (compAux hΦ hUV hΦd hM u) =ᵐ[μ.restrict U]
       fun x => ContinuousLinearMap.adjoint (fderiv ℝ Φ x) (W1p.gradient u (Φ x)) := by
   rw [compAux, W1p.gradient_mk]
   exact MemLp.coeFn_toLp _
 
 /-- The pointwise bound behind `TauCeti.W1p.norm_compMeasurePreservingL_le`. -/
-private theorem norm_compAux_le (hΦ : MeasurePreserving Φ μ ν) (hΦe : MeasurableEmbedding Φ)
+private theorem norm_compAux_le (hΦ : MeasurePreserving Φ μ ν)
     (hUV : (U : Set E) = Φ ⁻¹' V) (hΦd : ContDiffOn ℝ 1 Φ U)
     (hM : ∀ x ∈ (U : Set E), ‖fderiv ℝ Φ x‖ ≤ M) (u : W1p ν V p) :
-    ‖compAux hΦ hΦe hUV hΦd hM u‖ ≤ max 1 M * ‖u‖ := by
-  have hres := measurePreserving_restrict hΦ hΦe hUV
+    ‖compAux hΦ hUV hΦd hM u‖ ≤ max 1 M * ‖u‖ := by
+  have hres := measurePreserving_restrict hΦ hUV
   rw [← Submodule.norm_coe, ← Submodule.norm_coe u,
     ← Lp.norm_compMeasurePreserving (u : Sobolev1JetLp ν V p) hres]
   refine Lp.norm_le_mul_norm_of_ae_le_mul ?_
-  filter_upwards [W1p.norm_apply_sq_ae (compAux hΦ hΦe hUV hΦd hM u),
-    value_compAux_ae hΦ hΦe hUV hΦd hM u, gradient_compAux_ae hΦ hΦe hUV hΦd hM u,
+  filter_upwards [W1p.norm_apply_sq_ae (compAux hΦ hUV hΦd hM u),
+    value_compAux_ae hΦ hUV hΦd hM u, gradient_compAux_ae hΦ hUV hΦd hM u,
     hres.quasiMeasurePreserving.ae (W1p.norm_apply_sq_ae u),
     Lp.coeFn_compMeasurePreserving (u : Sobolev1JetLp ν V p) hres,
     ae_restrict_mem U.isOpen.measurableSet] with x h1 h2 h3 h4 h5 hx
@@ -139,95 +139,92 @@ private theorem norm_compAux_le (hΦ : MeasurePreserving Φ μ ν) (hΦe : Measu
     sq_nonneg ‖W1p.gradient u (Φ x)‖, mul_le_mul hMM hMM hM0 (by positivity),
     mul_le_mul h1M h1M zero_le_one (by positivity)]
 
-/-- **Precomposition with a measure-preserving `C¹` embedding on `W^{1,p}`.** If
+/-- **Precomposition with a measure-preserving `C¹` map on `W^{1,p}`.** If
 `U = Φ⁻¹(V)` and `Φ` is of class `C¹` on `U` with `‖fderiv ℝ Φ‖ ≤ M` there, then `u ↦ u ∘ Φ` maps
 `W^{1,p}(V)` to `W^{1,p}(U)`, with weak gradient `x ↦ (fderiv ℝ Φ x)† (∇u (Φ x))`
 (`TauCeti.W1p.value_compMeasurePreservingL_ae`, `TauCeti.W1p.gradient_compMeasurePreservingL_ae`).
 -/
-def W1p.compMeasurePreservingL (hΦ : MeasurePreserving Φ μ ν) (hΦe : MeasurableEmbedding Φ)
+def W1p.compMeasurePreservingL (hΦ : MeasurePreserving Φ μ ν)
     (hUV : (U : Set E) = Φ ⁻¹' V) (hΦd : ContDiffOn ℝ 1 Φ U)
     (hM : ∀ x ∈ (U : Set E), ‖fderiv ℝ Φ x‖ ≤ M) :
     W1p ν V p →L[ℝ] W1p μ U p :=
   LinearMap.mkContinuous
-    { toFun := compAux hΦ hΦe hUV hΦd hM
+    { toFun := compAux hΦ hUV hΦd hM
       map_add' u v := W1p.ext_value <| by
-        have h := map_add (W1p.valueL : W1p μ U p →L[ℝ] _) (compAux hΦ hΦe hUV hΦd hM u)
-          (compAux hΦ hΦe hUV hΦd hM v)
+        have h := map_add (W1p.valueL : W1p μ U p →L[ℝ] _) (compAux hΦ hUV hΦd hM u)
+          (compAux hΦ hUV hΦd hM v)
         simp only [W1p.valueL_apply] at h
         rw [h]
         simp only [compAux, W1p.value_mk]
         simp only [← W1p.valueL_apply, map_add]
       map_smul' c u := W1p.ext_value <| by
-        have h := map_smul (W1p.valueL : W1p μ U p →L[ℝ] _) c (compAux hΦ hΦe hUV hΦd hM u)
+        have h := map_smul (W1p.valueL : W1p μ U p →L[ℝ] _) c (compAux hΦ hUV hΦd hM u)
         simp only [W1p.valueL_apply] at h
         rw [RingHom.id_apply, h]
         simp only [compAux, W1p.value_mk]
         rw [← W1p.valueL_apply, map_smul, W1p.valueL_apply]
         -- `Lp.compMeasurePreservingₗ` bundles `Lp.compMeasurePreserving` as a linear map.
         exact (Lp.compMeasurePreservingₗ (E := ℝ) (p := p) ℝ Φ
-          (measurePreserving_restrict hΦ hΦe hUV)).map_smul c _ }
-    (max 1 M) (norm_compAux_le hΦ hΦe hUV hΦd hM)
+          (measurePreserving_restrict hΦ hUV)).map_smul c _ }
+    (max 1 M) (norm_compAux_le hΦ hUV hΦd hM)
 
 /-- The value of `u ∘ Φ` is the composition of the value of `u` with `Φ`. -/
 theorem W1p.value_compMeasurePreservingL_ae (hΦ : MeasurePreserving Φ μ ν)
-    (hΦe : MeasurableEmbedding Φ)
     (hUV : (U : Set E) = Φ ⁻¹' V) (hΦd : ContDiffOn ℝ 1 Φ U)
     (hM : ∀ x ∈ (U : Set E), ‖fderiv ℝ Φ x‖ ≤ M) (u : W1p ν V p) :
-    W1p.value (W1p.compMeasurePreservingL hΦ hΦe hUV hΦd hM u) =ᵐ[μ.restrict U]
+    W1p.value (W1p.compMeasurePreservingL hΦ hUV hΦd hM u) =ᵐ[μ.restrict U]
       fun x => W1p.value u (Φ x) :=
-  value_compAux_ae hΦ hΦe hUV hΦd hM u
+  value_compAux_ae hΦ hUV hΦd hM u
 
 /-- **The chain rule in `W^{1,p}`**: the weak gradient of `u ∘ Φ` at `x` is the adjoint of
 `fderiv ℝ Φ x` applied to the weak gradient of `u` at `Φ x`. -/
 theorem W1p.gradient_compMeasurePreservingL_ae (hΦ : MeasurePreserving Φ μ ν)
-    (hΦe : MeasurableEmbedding Φ)
     (hUV : (U : Set E) = Φ ⁻¹' V) (hΦd : ContDiffOn ℝ 1 Φ U)
     (hM : ∀ x ∈ (U : Set E), ‖fderiv ℝ Φ x‖ ≤ M) (u : W1p ν V p) :
-    W1p.gradient (W1p.compMeasurePreservingL hΦ hΦe hUV hΦd hM u) =ᵐ[μ.restrict U]
+    W1p.gradient (W1p.compMeasurePreservingL hΦ hUV hΦd hM u) =ᵐ[μ.restrict U]
       fun x => ContinuousLinearMap.adjoint (fderiv ℝ Φ x) (W1p.gradient u (Φ x)) :=
-  gradient_compAux_ae hΦ hΦe hUV hΦd hM u
+  gradient_compAux_ae hΦ hUV hΦd hM u
 
 /-- Precomposition with `Φ` multiplies the `W^{1,p}` norm by at most `max 1 M`. -/
 theorem W1p.norm_compMeasurePreservingL_le (hΦ : MeasurePreserving Φ μ ν)
-    (hΦe : MeasurableEmbedding Φ)
     (hUV : (U : Set E) = Φ ⁻¹' V) (hΦd : ContDiffOn ℝ 1 Φ U)
     (hM : ∀ x ∈ (U : Set E), ‖fderiv ℝ Φ x‖ ≤ M) :
-    ‖(W1p.compMeasurePreservingL hΦ hΦe hUV hΦd hM : W1p ν V p →L[ℝ] W1p μ U p)‖ ≤ max 1 M :=
+    ‖(W1p.compMeasurePreservingL hΦ hUV hΦd hM : W1p ν V p →L[ℝ] W1p μ U p)‖ ≤ max 1 M :=
   LinearMap.mkContinuous_norm_le _ (zero_le_one.trans (le_max_left _ _)) _
 
 /-- Precomposition with `Φ` undoes precomposition with a left inverse `Ψ` of `Φ`:
 `(u ∘ Ψ) ∘ Φ = u`. -/
 theorem W1p.compMeasurePreservingL_compMeasurePreservingL {Ψ : E' → E} {M' : ℝ}
-    (hΦ : MeasurePreserving Φ μ ν) (hΦe : MeasurableEmbedding Φ) (hUV : (U : Set E) = Φ ⁻¹' V)
+    (hΦ : MeasurePreserving Φ μ ν) (hUV : (U : Set E) = Φ ⁻¹' V)
     (hΦd : ContDiffOn ℝ 1 Φ U) (hM : ∀ x ∈ (U : Set E), ‖fderiv ℝ Φ x‖ ≤ M)
-    (hΨ : MeasurePreserving Ψ ν μ) (hΨe : MeasurableEmbedding Ψ) (hVU : (V : Set E') = Ψ ⁻¹' U)
+    (hΨ : MeasurePreserving Ψ ν μ) (hVU : (V : Set E') = Ψ ⁻¹' U)
     (hΨd : ContDiffOn ℝ 1 Ψ V)
     (hM' : ∀ x ∈ (V : Set E'), ‖fderiv ℝ Ψ x‖ ≤ M') (hΨΦ : ∀ x, Ψ (Φ x) = x) (u : W1p μ U p) :
-    W1p.compMeasurePreservingL hΦ hΦe hUV hΦd hM
-      (W1p.compMeasurePreservingL hΨ hΨe hVU hΨd hM' u) = u := by
+    W1p.compMeasurePreservingL hΦ hUV hΦd hM
+      (W1p.compMeasurePreservingL hΨ hVU hΨd hM' u) = u := by
   refine W1p.ext_value (Lp.ext ?_)
-  filter_upwards [W1p.value_compMeasurePreservingL_ae (p := p) hΦ hΦe hUV hΦd hM _,
-    (measurePreserving_restrict hΦ hΦe hUV).quasiMeasurePreserving.ae
-      (W1p.value_compMeasurePreservingL_ae hΨ hΨe hVU hΨd hM' u)] with x h1 h2
+  filter_upwards [W1p.value_compMeasurePreservingL_ae (p := p) hΦ hUV hΦd hM _,
+    (measurePreserving_restrict hΦ hUV).quasiMeasurePreserving.ae
+      (W1p.value_compMeasurePreservingL_ae hΨ hVU hΨd hM' u)] with x h1 h2
   rw [h1, h2, hΨΦ]
 
 /-- **Zero boundary values are preserved.** For `p < ∞` and a proper map `Φ`, precomposition
 with `Φ` maps `W^{1,p}_0(V)` into `W^{1,p}_0(U)`. -/
 theorem W1p.compMeasurePreservingL_mem_w1p0Submodule (hp : p ≠ ∞) (hΦp : IsProperMap Φ)
-    (hΦ : MeasurePreserving Φ μ ν) (hΦe : MeasurableEmbedding Φ) (hUV : (U : Set E) = Φ ⁻¹' V)
+    (hΦ : MeasurePreserving Φ μ ν) (hUV : (U : Set E) = Φ ⁻¹' V)
     (hΦd : ContDiffOn ℝ 1 Φ U) (hM : ∀ x ∈ (U : Set E), ‖fderiv ℝ Φ x‖ ≤ M) {u : W1p ν V p}
     (hu : u ∈ w1p0Submodule ν V p) :
-    W1p.compMeasurePreservingL hΦ hΦe hUV hΦd hM u ∈ w1p0Submodule μ U p := by
+    W1p.compMeasurePreservingL hΦ hUV hΦd hM u ∈ w1p0Submodule μ U p := by
   refine w1p0Submodule_subset_of_isClosed (p := p)
     ((w1p0Submodule μ U p).isClosed.preimage
-      (W1p.compMeasurePreservingL hΦ hΦe hUV hΦd hM).continuous)
+      (W1p.compMeasurePreservingL hΦ hUV hΦd hM).continuous)
     (fun φ => ?_) hu
   -- A test function `φ` on `V` composed with `Φ` vanishes off the compact `Φ⁻¹(tsupport φ) ⊆ U`.
   have hK : IsCompact (Φ ⁻¹' tsupport φ) := hΦp.isCompact_preimage φ.hasCompactSupport.isCompact
   have hKU : Φ ⁻¹' tsupport φ ⊆ U := hUV ▸ preimage_mono φ.tsupport_subset
   refine W1p.mem_w1p0Submodule_of_isCompact hp hK hKU ?_
-  filter_upwards [W1p.value_compMeasurePreservingL_ae (p := p) hΦ hΦe hUV hΦd hM _,
-    (measurePreserving_restrict hΦ hΦe hUV).quasiMeasurePreserving.ae
+  filter_upwards [W1p.value_compMeasurePreservingL_ae (p := p) hΦ hUV hΦd hM _,
+    (measurePreserving_restrict hΦ hUV).quasiMeasurePreserving.ae
       (testFunctionLp_apply_ae (mu := ν) p φ)] with x h1 h2 hxK
   rw [h1, W1p.value_ofTestFunctionₗ, h2]
   exact image_eq_zero_of_notMem_tsupport hxK

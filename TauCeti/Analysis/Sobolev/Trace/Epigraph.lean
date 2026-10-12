@@ -44,7 +44,8 @@ condition by the trace.
 * `TauCeti.W1p.normalEpigraphEquivL`: `W^{1,p}` of the region is isomorphic to `W^{1,p}` of the
   half-space, with `TauCeti.W1p.normalEpigraphEquivL_mem_w1p0Submodule_iff`.
 * `TauCeti.W1p.normalEpigraphTrace`: the trace on the graph, with
-  `TauCeti.W1p.norm_normalEpigraphTrace_le` and `TauCeti.W1p.ker_normalEpigraphTrace`.
+  `TauCeti.W1p.norm_normalEpigraphTrace_le`, `TauCeti.W1p.opNorm_normalEpigraphTrace_le` and
+  `TauCeti.W1p.ker_normalEpigraphTrace`.
 
 ## References
 
@@ -109,7 +110,6 @@ half-space. -/
 private def flattenL (hφ : ContDiff ℝ 1 φ) (hL : ∀ y, ‖fderiv ℝ φ y‖ ≤ L) :
     W1p volume (normalEpigraph φ) p →L[ℝ] W1p volume (normalHalfSpace (E := E) 0) p :=
   W1p.compMeasurePreservingL (M := 1 + L) (measurePreserving_graphFlattening_symm φ φ.continuous)
-    (Homeomorph.measurableEmbedding _)
     (by
       rw [← Homeomorph.image_eq_preimage_symm, coe_normalEpigraph, graphFlattening_image_lt]
       ext x
@@ -122,7 +122,6 @@ private def flattenL (hφ : ContDiff ℝ 1 φ) (hL : ∀ y, ‖fderiv ℝ φ y�
 private def unflattenL (hφ : ContDiff ℝ 1 φ) (hL : ∀ y, ‖fderiv ℝ φ y‖ ≤ L) :
     W1p volume (normalHalfSpace (E := E) 0) p →L[ℝ] W1p volume (normalEpigraph φ) p :=
   W1p.compMeasurePreservingL (M := 1 + L) (measurePreserving_graphFlattening φ φ.continuous)
-    (Homeomorph.measurableEmbedding _)
     (by
       rw [← (graphFlattening φ φ.continuous).preimage_image (normalEpigraph φ),
         coe_normalEpigraph, graphFlattening_image_lt]
@@ -135,20 +134,20 @@ private def unflattenL (hφ : ContDiff ℝ 1 φ) (hL : ∀ y, ‖fderiv ℝ φ y
 
 private theorem norm_flattenL_le (hφ : ContDiff ℝ 1 φ) (hL : ∀ y, ‖fderiv ℝ φ y‖ ≤ L) :
     ‖(flattenL hφ hL : W1p volume (normalEpigraph φ) p →L[ℝ] _)‖ ≤ 1 + L :=
-  (W1p.norm_compMeasurePreservingL_le _ _ _ _ _).trans_eq (max_eq_right (one_le_one_add hL))
+  (W1p.norm_compMeasurePreservingL_le _ _ _ _).trans_eq (max_eq_right (one_le_one_add hL))
 
 private theorem norm_unflattenL_le (hφ : ContDiff ℝ 1 φ) (hL : ∀ y, ‖fderiv ℝ φ y‖ ≤ L) :
     ‖(unflattenL hφ hL : W1p volume (normalHalfSpace (E := E) 0) p →L[ℝ] _)‖ ≤ 1 + L :=
-  (W1p.norm_compMeasurePreservingL_le _ _ _ _ _).trans_eq (max_eq_right (one_le_one_add hL))
+  (W1p.norm_compMeasurePreservingL_le _ _ _ _).trans_eq (max_eq_right (one_le_one_add hL))
 
 private theorem unflattenL_flattenL (hφ : ContDiff ℝ 1 φ) (hL : ∀ y, ‖fderiv ℝ φ y‖ ≤ L) :
     Function.LeftInverse (unflattenL (p := p) hφ hL) (flattenL hφ hL) := fun u =>
-  W1p.compMeasurePreservingL_compMeasurePreservingL _ _ _ _ _ _ _ _ _ _
+  W1p.compMeasurePreservingL_compMeasurePreservingL _ _ _ _ _ _ _ _
     (graphFlattening φ φ.continuous).symm_apply_apply u
 
 private theorem flattenL_unflattenL (hφ : ContDiff ℝ 1 φ) (hL : ∀ y, ‖fderiv ℝ φ y‖ ≤ L) :
     Function.RightInverse (unflattenL (p := p) hφ hL) (flattenL hφ hL) := fun v =>
-  W1p.compMeasurePreservingL_compMeasurePreservingL _ _ _ _ _ _ _ _ _ _
+  W1p.compMeasurePreservingL_compMeasurePreservingL _ _ _ _ _ _ _ _
     (graphFlattening φ φ.continuous).apply_symm_apply v
 
 /-- **Flattening the region above a `C¹` graph.** If `φ` is of class `C¹` with
@@ -190,13 +189,29 @@ theorem W1p.norm_normalEpigraphEquivL_symm_le (hφ : ContDiff ℝ 1 φ)
   have h2 := norm_unflattenL_le (p := p) hφ hL
   exact h1.trans (mul_le_mul_of_nonneg_right h2 (norm_nonneg _))
 
+/-- Flattening has operator norm at most `1 + L`. -/
+theorem W1p.opNorm_normalEpigraphEquivL_le (hφ : ContDiff ℝ 1 φ) (hL : ∀ y, ‖fderiv ℝ φ y‖ ≤ L) :
+    ‖(W1p.normalEpigraphEquivL (p := p) hφ hL : W1p volume (normalEpigraph φ) p →L[ℝ]
+      W1p volume (normalHalfSpace (E := E) 0) p)‖ ≤ 1 + L :=
+  ContinuousLinearMap.opNorm_le_bound _ (zero_le_one.trans (one_le_one_add hL))
+    (W1p.norm_normalEpigraphEquivL_le hφ hL)
+
+/-- The inverse of flattening has operator norm at most `1 + L`. -/
+theorem W1p.opNorm_normalEpigraphEquivL_symm_le (hφ : ContDiff ℝ 1 φ)
+    (hL : ∀ y, ‖fderiv ℝ φ y‖ ≤ L) :
+    ‖((W1p.normalEpigraphEquivL (p := p) hφ hL).symm :
+      W1p volume (normalHalfSpace (E := E) 0) p →L[ℝ] W1p volume (normalEpigraph φ) p)‖ ≤
+      1 + L :=
+  ContinuousLinearMap.opNorm_le_bound _ (zero_le_one.trans (one_le_one_add hL))
+    (W1p.norm_normalEpigraphEquivL_symm_le hφ hL)
+
 /-- The flattened function is `u ∘ (graphFlattening φ).symm`. -/
 theorem W1p.value_normalEpigraphEquivL_ae (hφ : ContDiff ℝ 1 φ)
     (hL : ∀ y, ‖fderiv ℝ φ y‖ ≤ L) (u : W1p volume (normalEpigraph φ) p) :
     W1p.value (W1p.normalEpigraphEquivL hφ hL u) =ᵐ[volume.restrict (normalHalfSpace (E := E) 0)]
       fun x => W1p.value u ((graphFlattening φ φ.continuous).symm x) := by
   rw [normalEpigraphEquivL_apply_eq]
-  exact W1p.value_compMeasurePreservingL_ae _ _ _ _ _ u
+  exact W1p.value_compMeasurePreservingL_ae _ _ _ _ u
 
 /-- The weak gradient of the flattened function is given by the chain rule. -/
 theorem W1p.gradient_normalEpigraphEquivL_ae (hφ : ContDiff ℝ 1 φ)
@@ -205,7 +220,7 @@ theorem W1p.gradient_normalEpigraphEquivL_ae (hφ : ContDiff ℝ 1 φ)
       fun x => ContinuousLinearMap.adjoint (fderiv ℝ (graphFlattening φ φ.continuous).symm x)
         (W1p.gradient u ((graphFlattening φ φ.continuous).symm x)) := by
   rw [normalEpigraphEquivL_apply_eq]
-  exact W1p.gradient_compMeasurePreservingL_ae _ _ _ _ _ u
+  exact W1p.gradient_compMeasurePreservingL_ae _ _ _ _ u
 
 /-- The inverse of flattening is `v ∘ graphFlattening φ`. -/
 theorem W1p.value_normalEpigraphEquivL_symm_ae (hφ : ContDiff ℝ 1 φ)
@@ -213,7 +228,7 @@ theorem W1p.value_normalEpigraphEquivL_symm_ae (hφ : ContDiff ℝ 1 φ)
     W1p.value ((W1p.normalEpigraphEquivL hφ hL).symm v) =ᵐ[volume.restrict (normalEpigraph φ)]
       fun x => W1p.value v (graphFlattening φ φ.continuous x) := by
   rw [normalEpigraphEquivL_symm_apply_eq]
-  exact W1p.value_compMeasurePreservingL_ae _ _ _ _ _ v
+  exact W1p.value_compMeasurePreservingL_ae _ _ _ _ v
 
 /-- The weak gradient of the inverse of flattening is given by the chain rule. -/
 theorem W1p.gradient_normalEpigraphEquivL_symm_ae (hφ : ContDiff ℝ 1 φ)
@@ -222,7 +237,7 @@ theorem W1p.gradient_normalEpigraphEquivL_symm_ae (hφ : ContDiff ℝ 1 φ)
       fun x => ContinuousLinearMap.adjoint (fderiv ℝ (graphFlattening φ φ.continuous) x)
         (W1p.gradient v (graphFlattening φ φ.continuous x)) := by
   rw [normalEpigraphEquivL_symm_apply_eq]
-  exact W1p.gradient_compMeasurePreservingL_ae _ _ _ _ _ v
+  exact W1p.gradient_compMeasurePreservingL_ae _ _ _ _ v
 
 /-- Flattening and its inverse preserve zero boundary values. -/
 theorem W1p.normalEpigraphEquivL_mem_w1p0Submodule_iff (hp : p ≠ ∞) (hφ : ContDiff ℝ 1 φ)
@@ -232,10 +247,10 @@ theorem W1p.normalEpigraphEquivL_mem_w1p0Submodule_iff (hp : p ≠ ∞) (hφ : C
   refine ⟨fun h => ?_, fun h => ?_⟩
   · rw [← (W1p.normalEpigraphEquivL hφ hL).symm_apply_apply u, normalEpigraphEquivL_symm_apply_eq]
     exact W1p.compMeasurePreservingL_mem_w1p0Submodule hp
-      (Homeomorph.isProperMap _) _ _ _ _ _ h
+      (Homeomorph.isProperMap _) _ _ _ _ h
   · rw [normalEpigraphEquivL_apply_eq]
     exact W1p.compMeasurePreservingL_mem_w1p0Submodule hp
-      (Homeomorph.isProperMap _) _ _ _ _ _ h
+      (Homeomorph.isProperMap _) _ _ _ _ h
 
 end Flatten
 
@@ -264,6 +279,12 @@ theorem W1p.norm_normalEpigraphTrace_le (hφ : ContDiff ℝ 1 φ) (hL : ∀ y, �
     (u : W1p volume (normalEpigraph φ) 2) :
     ‖W1p.normalEpigraphTrace hφ hL u‖ ≤ (1 + L) * ‖u‖ :=
   (W1p.norm_halfSpaceTrace_le 0 _).trans (W1p.norm_normalEpigraphEquivL_le hφ hL u)
+
+/-- The trace on a graph domain has operator norm at most `1 + L`. -/
+theorem W1p.opNorm_normalEpigraphTrace_le (hφ : ContDiff ℝ 1 φ) (hL : ∀ y, ‖fderiv ℝ φ y‖ ≤ L) :
+    ‖W1p.normalEpigraphTrace hφ hL‖ ≤ 1 + L :=
+  ContinuousLinearMap.opNorm_le_bound _ (zero_le_one.trans (one_le_one_add hL))
+    (W1p.norm_normalEpigraphTrace_le hφ hL)
 
 /-- **The functions of zero trace on a graph domain are those of `H¹₀`.** -/
 theorem W1p.mem_w1p0Submodule_iff_normalEpigraphTrace_eq_zero (hφ : ContDiff ℝ 1 φ)
