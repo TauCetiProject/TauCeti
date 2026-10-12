@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Fourier.Wirtinger
 public import TauCeti.Geometry.Symplectic.CompatibleMetric
 public import TauCeti.Geometry.Symplectic.Area.Basic
+import TauCeti.MeasureTheory.Integral.CircleLIntegral
 
 /-!
 # The isoperimetric inequality in a symplectic vector space

@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Geometry.Symplectic.AlmostComplex
 public import Mathlib.MeasureTheory.Integral.CircleIntegral
-import TauCeti.Analysis.Fourier.Wirtinger
 import Mathlib.Analysis.Calculus.FDeriv.Measurable
 import Mathlib.Topology.Algebra.Module.FiniteDimensionBilinear
 import TauCeti.MeasureTheory.Integral.DivergenceTheorem
@@ -23,10 +22,6 @@ isoperimetric inequality for the boundary loops, this is the Stokes step used in
 and removal of singularities for holomorphic curves.
 
 A square-integrable differential also gives an integrable symplectic area density, on any domain.
-For a `C¹` map near a circle, the bilinear boundary action is bounded by its angular energy.
-
-The bilinear Green formula `ContinuousLinearMap.integral_bilinear_fderiv_sub_annulus` supplies
-the identity, and alternation of `ω` supplies the factor `½`.
 
 ## References
 
@@ -40,34 +35,6 @@ open MeasureTheory Set Complex
 open scoped Real
 
 namespace TauCeti
-
-/-- The bilinear action of a map that is `C¹` near each point of a parametrized circle is
-bounded by the operator norm of the bilinear map times the angular energy. -/
-theorem norm_integral_apply_apply_circleMap_le {V G : Type*} [NormedAddCommGroup V]
-    [InnerProductSpace ℝ V] [FiniteDimensional ℝ V] [NormedAddCommGroup G] [NormedSpace ℝ G]
-    [CompleteSpace G] (u : ℂ → V) {B : V →L[ℝ] V →L[ℝ] G} (z₀ : ℂ) (r : ℝ)
-    (hu : ∀ θ, ContDiffAt ℝ 1 u (circleMap z₀ r θ)) :
-    ‖∫ θ in -π..π, B (u (circleMap z₀ r θ))
-      (deriv (fun θ ↦ u (circleMap z₀ r θ)) θ)‖ ≤
-      ‖B‖ * ∫ θ in -π..π, ‖deriv (fun θ ↦ u (circleMap z₀ r θ)) θ‖ ^ 2 := by
-  have : CompleteSpace V := FiniteDimensional.complete ℝ V
-  have hc : ContDiff ℝ 1 (fun θ ↦ u (circleMap z₀ r θ)) :=
-    contDiff_iff_contDiffAt.mpr fun θ ↦
-      (hu θ).comp θ (contDiff_circleMap z₀ r).contDiffAt
-  have hd := hc.continuous_deriv (by norm_num)
-  have hLp : MemLp (deriv (fun θ ↦ u (circleMap z₀ r θ))) 2
-      (volume.restrict (Ioc (-π) π)) :=
-    (memLp_two_iff_integrable_sq_norm hd.aestronglyMeasurable).mpr
-      (hd.norm.pow 2).integrableOn_Ioc
-  have hends : circleMap z₀ r (-π) = circleMap z₀ r π := by
-    convert (periodic_circleMap z₀ r (-π)).symm using 1
-    congr 1
-    ring
-  have h := B.norm_integral_apply_apply_le (by linarith [Real.pi_pos])
-    (fun θ _ ↦ (hc.differentiable (by norm_num) θ).hasDerivAt)
-    (congrArg u hends) hLp
-  have hfactor : (π - -π) / (2 * π) = (1 : ℝ) := by field_simp; ring
-  simpa only [hfactor, mul_one] using h
 
 namespace SymplecticForm
 

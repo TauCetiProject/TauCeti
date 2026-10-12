@@ -18,15 +18,10 @@ boundary loop for the primitive `λₓ(v) = ½ ω(x, v)`. No extension, bounded 
 decay at the puncture is assumed. In particular this identity applies before removal of a
 singularity has been proved.
 
-Finite energy supplies shrinking circles with angular energy tending to zero. The bilinear
-isoperimetric inequality then makes the inner boundary action vanish along those circles, and
-dominated convergence passes the annular Stokes formula to the punctured disc. For a
-`J`-holomorphic map, the resulting area identity is the input to the radial energy-decay
-argument in removal of singularities.
-
-The proof reuses `SymplecticForm.integral_fderiv_apply_annulus`,
-`TauCeti.norm_integral_apply_apply_circleMap_le`, and
-`TauCeti.exists_integral_norm_deriv_comp_circleMap_sq_lt`.
+The vanishing-action result requires `C¹` regularity near the punctured closed disc and a
+square-integrable differential. The Stokes identity requires `C²` regularity there, including
+the outer boundary. For a `J`-holomorphic map, this area identity is the input to the radial
+energy-decay argument in removal of singularities.
 
 ## References
 
