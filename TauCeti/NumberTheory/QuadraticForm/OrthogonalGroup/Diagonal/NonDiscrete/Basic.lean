@@ -10,7 +10,6 @@ public import TauCeti.LinearAlgebra.QuadraticForm.Transvection.BaseChange
 import TauCeti.LinearAlgebra.QuadraticForm.Transvection.Powers
 import TauCeti.Topology.Algebra.QuadraticForm.Transvection
 import TauCeti.NumberTheory.Padics.Factorial
-import Mathlib.LinearAlgebra.Dual.Lemmas
 import TauCeti.Topology.Algebra.RestrictedProduct.ContinuousRng
 
 /-!
@@ -141,16 +140,9 @@ theorem not_discreteTopology_range_finiteAdelicSpecialOrthogonalDiagonal
     ¬ DiscreteTopology U.finiteAdelicSpecialOrthogonalDiagonal.range := by
   obtain ⟨u, hu₀, hu⟩ := hiso
   have hpolar := hQ.polarBilin_ne_zero hu₀
-  have hdimker := Module.Dual.finrank_ker_add_one_of_ne_zero hpolar
-  have hex : ∃ w ∈ LinearMap.ker (Q.polarBilin u), w ∉ ℚ ∙ u := by
-    by_contra! h
-    have hle : LinearMap.ker (Q.polarBilin u) ≤ ℚ ∙ u := h
-    have hbound := Submodule.finrank_mono hle
-    rw [finrank_span_singleton hu₀] at hbound
-    omega
-  obtain ⟨w, huw, hw⟩ := hex
+  obtain ⟨w, huw, hw⟩ := Q.exists_polar_eq_zero_not_mem_span_of_finrank_ge_three hpolar hdim
   exact U.not_discreteTopology_range_finiteAdelicSpecialOrthogonalDiagonal_of_transvection
-    hu (by simpa only [LinearMap.mem_ker, polarBilin_apply_apply] using huw) hpolar hw
+    hu huw hpolar hw
 
 /-- Non-discreteness of the rational diagonal in finite adelic `SO` implies non-discreteness
 of the rational diagonal in finite adelic `O`. -/

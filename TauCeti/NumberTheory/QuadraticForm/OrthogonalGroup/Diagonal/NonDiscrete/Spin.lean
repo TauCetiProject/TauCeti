@@ -9,7 +9,6 @@ public import TauCeti.NumberTheory.QuadraticForm.OrthogonalGroup.Diagonal.NonDis
 import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.Transvection
 import TauCeti.Topology.Algebra.RestrictedProduct.ContinuousRng
 import TauCeti.NumberTheory.Padics.Factorial
-import Mathlib.LinearAlgebra.Dual.Lemmas
 
 /-!
 # Rational Spin points accumulate in the finite adeles
@@ -125,17 +124,9 @@ theorem not_discreteTopology_range_finiteAdelicSpinDiagonal
     (hiso : ∃ u : V, u ≠ 0 ∧ Q u = 0) :
     ¬ DiscreteTopology U.finiteAdelicSpinDiagonal.range := by
   obtain ⟨u, hu₀, hu⟩ := hiso
-  have hpolar := hQ.polarBilin_ne_zero hu₀
-  have hdimker := Module.Dual.finrank_ker_add_one_of_ne_zero hpolar
-  have hex : ∃ w ∈ LinearMap.ker (Q.polarBilin u), w ∉ ℚ ∙ u := by
-    by_contra! h
-    have hle : LinearMap.ker (Q.polarBilin u) ≤ ℚ ∙ u := h
-    have hbound := Submodule.finrank_mono hle
-    rw [finrank_span_singleton hu₀] at hbound
-    omega
-  obtain ⟨w, huw, hw⟩ := hex
-  exact U.not_discreteTopology_range_finiteAdelicSpinDiagonal_of_transvection hQ hu
-    (by simpa only [LinearMap.mem_ker, polarBilin_apply_apply] using huw) hu₀ hw
+  obtain ⟨w, huw, hw⟩ :=
+    Q.exists_polar_eq_zero_not_mem_span_of_finrank_ge_three (hQ.polarBilin_ne_zero hu₀) hdim
+  exact U.not_discreteTopology_range_finiteAdelicSpinDiagonal_of_transvection hQ hu huw hu₀ hw
 
 end
 
