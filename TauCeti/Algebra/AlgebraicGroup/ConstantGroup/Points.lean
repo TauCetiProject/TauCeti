@@ -37,9 +37,6 @@ connectedness applies to the corresponding morphism of affine group schemes.
 
 * J. S. Milne, *Algebraic Groups* (2017), Proposition 1.34.
 * T. A. Springer, *Linear Algebraic Groups*, Theorem 6.3.1.
-
-This advances the "Lie--Kolchin; solvable groups" milestone in Layer 5 of the ReductiveGroups
-roadmap.
 -/
 
 public section
