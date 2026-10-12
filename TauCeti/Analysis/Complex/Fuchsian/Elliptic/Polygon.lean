@@ -72,6 +72,9 @@ private theorem ellipticVertexCycleEquivRange_apply
       Quotient.mk'' ((P.vertex j).getLeft j.2.1) := by
   dsimp only [ellipticVertexCycleEquivRange]
   erw [Equiv.trans_apply]
+  -- Pinned Mathlib has no representative computation lemmas for `quotientKerEquivRange`
+  -- or `congrRight`. Unfold their defining compositions here to reach the public
+  -- `Quot.congr_mk` and `Setoid.kerLift_mk` equations.
   simp only [Setoid.quotientKerEquivRange, Setoid.quotientKerEquivRangeKerLift,
     Equiv.trans_apply, Set.equivOfEq_apply, Equiv.ofInjective_apply]
   dsimp only [Quotient.congrRight, Quot.congrRight]
