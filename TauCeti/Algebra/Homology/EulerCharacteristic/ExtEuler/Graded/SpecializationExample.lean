@@ -33,6 +33,7 @@ def specializationDegeneracyMatrix : Matrix (Fin 2) (Fin 2) (LaurentPolynomial �
   !![1, 1; 1, T 1]
 
 /-- The determinant of the specialization example is `q - 1`. -/
+@[simp]
 theorem det_specializationDegeneracyMatrix :
     specializationDegeneracyMatrix.det = T 1 - 1 := by
   simp [specializationDegeneracyMatrix, Matrix.det_fin_two_of]
@@ -43,13 +44,10 @@ theorem det_specializationDegeneracyMatrix_ne_zero :
   rw [det_specializationDegeneracyMatrix]
   intro h
   have hc := congrArg (fun p : LaurentPolynomial ℤ => p.coeff 1) h
-  change (T 1).coeff 1 - (1 : LaurentPolynomial ℤ).coeff 1 = 0 at hc
-  rw [LaurentPolynomial.T_apply] at hc
   have hconst : (1 : LaurentPolynomial ℤ).coeff 1 = 0 := by
-    change Finsupp.single (0 : ℤ) (1 : ℤ) 1 = 0
-    simp
-  rw [hconst] at hc
-  norm_num at hc
+    rw [← LaurentPolynomial.T_zero (R := ℤ), LaurentPolynomial.T_apply]
+    norm_num
+  simp [hconst] at hc
 
 /-- The matrix after evaluation at `q = 1`, with entries in `ℤ`. -/
 def specializationDegeneracyMatrixAtOne : Matrix (Fin 2) (Fin 2) ℤ :=
@@ -64,11 +62,13 @@ theorem specializationDegeneracyMatrixAtOne_eq_map :
     simp [specializationDegeneracyMatrixAtOne, specializationDegeneracyMatrix, laurentEval_T]
 
 /-- The specialized matrix has zero determinant. -/
+@[simp]
 theorem det_specializationDegeneracyMatrixAtOne :
     specializationDegeneracyMatrixAtOne.det = 0 := by
   simp [specializationDegeneracyMatrixAtOne, Matrix.det_fin_two_of]
 
 /-- The vector `(1, -1)` witnesses degeneracy of the matrix at `q = 1`. -/
+@[simp]
 theorem specializationDegeneracyMatrixAtOne_mulVec_kernel :
     specializationDegeneracyMatrixAtOne *ᵥ (![1, -1] : Fin 2 → ℤ) = 0 := by
   ext i
