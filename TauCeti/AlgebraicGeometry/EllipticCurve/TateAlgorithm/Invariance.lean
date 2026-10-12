@@ -459,6 +459,25 @@ private theorem tateContext_six_of_doubleRoot (hϖ : Irreducible ϖ) (h₁ : ϖ 
       exact h₂' ⟨B, by rw [hA₂]; ring⟩
     simpa [hres] using this
 
+/-- An equation with `ϖ ∣ a₁`, `ϖ² ∣ a₂`, `ϖ³ ∣ a₃`, `ϖ⁴ ∣ a₄` and `ϖ⁵ ∣ a₆`, the normal form of
+Step 10, reaches the test of `II*`. -/
+private theorem tateContext_nine_of_pow_dvd (hϖ : Irreducible ϖ) (h₁ : ϖ ∣ W.a₁)
+    (h₂ : ϖ ^ 2 ∣ W.a₂) (h₃ : ϖ ^ 3 ∣ W.a₃) (h₄ : ϖ ^ 4 ∣ W.a₄) (h₆ : ϖ ^ 5 ∣ W.a₆) :
+    TateContext ϖ 9 W := by
+  have hp (n : ℕ) {x : R} (h : ϖ ^ (n + 1) ∣ x) : ϖ ∣ x := (dvd_pow_self ϖ n.succ_ne_zero).trans h
+  have hle {m n : ℕ} (hmn : m ≤ n) {x : R} (h : ϖ ^ n ∣ x) : ϖ ^ m ∣ x :=
+    (pow_dvd_pow ϖ hmn).trans h
+  have ht := tateTest_of_stepSix h₁ (hp 1 h₂) (hle (by omega) h₃) (hle (by omega) h₄)
+    (hle (by omega) h₆)
+  have ht' := tateTest_five_six_of_stepEight hϖ h₂ (hle (by omega) h₄) (hle (by omega) h₆)
+  refine ⟨fun k hk ↦ ?_, fun _ ↦ ⟨hp 2 h₃, hp 3 h₄, hp 4 h₆⟩,
+    fun _ ↦ ⟨h₁, hp 1 h₂, hle (by omega) h₃, hle (by omega) h₄, hle (by omega) h₆⟩,
+    fun _ ↦ ⟨h₂, hle (by omega) h₄, hle (by omega) h₆⟩, fun _ ↦ ⟨h₃, h₆⟩⟩
+  rcases lt_or_ge k 5 with hk5 | hk5
+  · exact ht k hk5
+  · interval_cases k
+    exacts [ht'.1, ht'.2, tateTest_seven_of_stepNine h₃ h₆, h₄]
+
 /-- **The test at which Tate's algorithm stops.** On an equation on which the algorithm stops with
 symbol `s`, it reaches the test `chainIndex s` and fails it. -/
 private theorem IsTateTerminal.tateContext (hϖ : Irreducible ϖ) {s : ReductionSymbol}
@@ -538,17 +557,7 @@ private theorem IsTateTerminal.tateContext (hϖ : Irreducible ϖ) {s : Reduction
       exacts [ht'.1, ht'.2, tateTest_seven_of_stepNine h₃ h₆]
   | .IIStar, h =>
     obtain ⟨h₁, h₂, h₃, h₄, h₆, h₆'⟩ := isTateTerminal_IIStar.1 h
-    have ht := tateTest_of_stepSix h₁ (hp 1 h₂) (hle (by omega) h₃) (hle (by omega) h₄)
-      (hle (by omega) h₆)
-    have ht' := tateTest_five_six_of_stepEight hϖ h₂ (hle (by omega) h₄) (hle (by omega) h₆)
-    refine ⟨⟨fun k hk ↦ ?_, fun _ ↦ ⟨hp 2 h₃, hp 3 h₄, hp 4 h₆⟩,
-      fun _ ↦ ⟨h₁, hp 1 h₂, hle (by omega) h₃, hle (by omega) h₄, hle (by omega) h₆⟩,
-      fun _ ↦ ⟨h₂, hle (by omega) h₄, hle (by omega) h₆⟩, fun _ ↦ ⟨h₃, h₆⟩⟩, h₆'⟩
-    simp only [chainIndex] at hk
-    rcases lt_or_ge k 5 with hk5 | hk5
-    · exact ht k hk5
-    · interval_cases k
-      exacts [ht'.1, ht'.2, tateTest_seven_of_stepNine h₃ h₆, h₄]
+    exact ⟨tateContext_nine_of_pow_dvd hϖ h₁ h₂ h₃ h₄ h₆, h₆'⟩
 
 /-- **Each test of Tate's algorithm is invariant under changes of variables over `R`** between
 equations on which the algorithm reaches it. -/
@@ -878,19 +887,13 @@ algorithm would go on to Step 11, passes every test. -/
 private theorem tateContext_ten_of_pow_dvd (hϖ : Irreducible ϖ) (h₁ : ϖ ∣ W.a₁)
     (h₂ : ϖ ^ 2 ∣ W.a₂) (h₃ : ϖ ^ 3 ∣ W.a₃) (h₄ : ϖ ^ 4 ∣ W.a₄) (h₆ : ϖ ^ 6 ∣ W.a₆) :
     TateContext ϖ 10 W := by
-  have hp (n : ℕ) {x : R} (h : ϖ ^ (n + 1) ∣ x) : ϖ ∣ x := (dvd_pow_self ϖ n.succ_ne_zero).trans h
-  have hle {m n : ℕ} (hmn : m ≤ n) {x : R} (h : ϖ ^ n ∣ x) : ϖ ^ m ∣ x :=
-    (pow_dvd_pow ϖ hmn).trans h
-  have ht := tateTest_of_stepSix h₁ (hp 1 h₂) (hle (by omega) h₃) (hle (by omega) h₄)
-    (hle (by omega) h₆)
-  have ht' := tateTest_five_six_of_stepEight hϖ h₂ (hle (by omega) h₄) (hle (by omega) h₆)
-  refine ⟨fun k hk ↦ ?_, fun _ ↦ ⟨hp 2 h₃, hp 3 h₄, hp 5 h₆⟩,
-    fun _ ↦ ⟨h₁, hp 1 h₂, hle (by omega) h₃, hle (by omega) h₄, hle (by omega) h₆⟩,
-    fun _ ↦ ⟨h₂, hle (by omega) h₄, hle (by omega) h₆⟩, fun _ ↦ ⟨h₃, hle (by omega) h₆⟩⟩
-  rcases lt_or_ge k 5 with hk5 | hk5
-  · exact ht k hk5
-  · interval_cases k
-    exacts [ht'.1, ht'.2, tateTest_seven_of_stepNine h₃ (hle (by omega) h₆), h₄, h₆]
+  have hc := tateContext_nine_of_pow_dvd hϖ h₁ h₂ h₃ h₄ ((pow_dvd_pow ϖ (by omega)).trans h₆)
+  refine ⟨fun k hk ↦ ?_, fun _ ↦ hc.2.1 (by omega), fun _ ↦ hc.2.2.1 (by omega),
+    fun _ ↦ hc.2.2.2.1 (by omega), fun _ ↦ hc.2.2.2.2 (by omega)⟩
+  rcases lt_or_ge k 9 with hk9 | hk9
+  · exact hc.1 k hk9
+  · obtain rfl : k = 9 := by omega
+    exact h₆
 
 /-- If Tate's algorithm stops on `W`, no change of variables over `R` carries `W` to an equation
 on which it would go on to Step 11. -/
