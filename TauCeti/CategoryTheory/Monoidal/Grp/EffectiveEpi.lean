@@ -26,8 +26,9 @@ integer `n` killing the kernel of `f`, this factors multiplication by `n` on `G`
 result is the **factorization dual** `CommGrp.factorizationDual f n : H ⟶ G`, the unique morphism
 with `f ≫ f̂ = n`, and it also satisfies `f̂ ≫ f = n`. For an isogeny `f` of elliptic curves of
 constant degree `n`, the kernel of `f` is finite locally free of rank `n`, so Deligne's theorem
-says that `n` kills it, and `f̂` is the dual obtained by factoring `[n]` through the quotient by the
-kernel: the target of `f` already is that quotient, so no quotient needs to be constructed. Over
+says that `n` kills it, and `f̂` is the morphism underlying the expected dual isogeny, obtained by
+factoring `[n]` through the quotient by the kernel: the target of `f` already is that quotient.
+This file does not show that `f̂` is an isogeny. Over
 a base scheme `S`, the hypotheses on `f` hold when its underlying morphism of schemes is flat,
 surjective and quasi-compact (`CategoryTheory.Over.effectiveEpi_of_effectiveEpi_left`, Mathlib's
 `AlgebraicGeometry.Sites.Fpqc`, and `AlgebraicGeometry.epi_tensorHom`).
@@ -114,8 +115,8 @@ instance isMonHom_homDesc [Epi (f ⊗ₘ f)]
   one_hom := by
     rw [← IsMonHom.one_hom f, Category.assoc, comp_homDesc, IsMonHom.one_hom]
   mul_hom := by
-    rw [← cancel_epi (f ⊗ₘ f), ← IsMonHom.mul_hom_assoc f, comp_homDesc,
-      tensorHom_comp_tensorHom_assoc, comp_homDesc, IsMonHom.mul_hom]
+    rw [← cancel_epi (f ⊗ₘ f)]
+    simp [← IsMonHom.mul_hom_assoc f, tensorHom_comp_tensorHom_assoc]
 
 variable (f e) in
 /-- **Factorization through an effective epimorphism.** A homomorphism `e : G ⟶ K` factors
@@ -124,8 +125,7 @@ kernel of `f`. -/
 theorem exists_comp_eq_iff_comp_eq_one :
     (∃ d : H ⟶ K, f ≫ d = e) ↔ ∀ ⦃Z : C⦄ (x : Z ⟶ G), x ≫ f = 1 → x ≫ e = 1 := by
   refine ⟨fun ⟨d, hd⟩ Z x hx ↦ ?_, fun he ↦ ⟨homDesc f e he, comp_homDesc he⟩⟩
-  rw [← hd, ← Category.assoc, hx, Hom.one_def, Category.assoc, ← IsMonHom.one_hom f,
-    Category.assoc, hd, IsMonHom.one_hom, Hom.one_def]
+  rw [← hd, reassoc_of% hx, ← MonObj.one_comp (X := Z) f, Category.assoc, hd, MonObj.one_comp]
 
 end TauCeti
 
@@ -144,7 +144,7 @@ which is an effective epimorphism, with `f ⊗ f` an epimorphism, and let `n` be
 the kernel of `f`. Then multiplication by `n` on `G` factors uniquely through `f`
 (`comp_factorizationDual`, `eq_factorizationDual`), as a homomorphism `f̂ : H ⟶ G`, and
 `f̂ ≫ f` is multiplication by `n` on `H` (`factorizationDual_comp`). For an isogeny of degree `n`
-this is the dual isogeny. -/
+this is the morphism underlying the expected dual isogeny. -/
 noncomputable def factorizationDual
     (hn : ∀ ⦃Z : C⦄ (x : Z ⟶ G.X), x ≫ f.hom.hom.hom = 1 → x ^ n = 1) : H ⟶ G :=
   homMk (homDesc f.hom.hom.hom (n : End G).hom.hom.hom fun _ x hx ↦ by
@@ -152,6 +152,13 @@ noncomputable def factorizationDual
     exact hn x hx)
 
 variable {f n}
+
+/-- If `f ⊗ f` and `f' ⊗ f'` are epimorphisms, so is `(f ≫ f') ⊗ (f ≫ f')`. -/
+instance epi_tensorHom_comp_hom_hom_hom {f' : H ⟶ K}
+    [Epi (f'.hom.hom.hom ⊗ₘ f'.hom.hom.hom)] :
+    Epi ((f ≫ f').hom.hom.hom ⊗ₘ (f ≫ f').hom.hom.hom) := by
+  simp only [comp_hom, Grp.comp', Mon.comp_hom', ← tensorHom_comp_tensorHom]
+  infer_instance
 
 /-- **The factorization dual factors multiplication by `n` through `f`:** `f ≫ f̂ = n`. -/
 @[reassoc (attr := simp)]
@@ -176,9 +183,9 @@ theorem factorizationDual_comp
     (hn : ∀ ⦃Z : C⦄ (x : Z ⟶ G.X), x ≫ f.hom.hom.hom = 1 → x ^ n = 1) :
     factorizationDual f n hn ≫ f = (n : End H) := by
   have : Epi f := (CommGrp.forget C).epi_of_epi_map (inferInstanceAs (Epi f.hom.hom.hom))
-  rw [← cancel_epi f, comp_factorizationDual_assoc, ← zsmul_one, ← zsmul_one,
-    Preadditive.zsmul_comp, Preadditive.comp_zsmul, End.one_def, End.one_def, Category.id_comp,
-    Category.comp_id]
+  rw [← cancel_epi f, comp_factorizationDual_assoc]
+  ext : 3
+  simp [GrpObj.zpow_comp, GrpObj.comp_zpow]
 
 variable (f n) in
 /-- Multiplication by `n` factors through `f` exactly when `n` kills the kernel of `f`. -/
@@ -194,23 +201,26 @@ theorem exists_comp_eq_intCast_iff :
 /-- **The factorization dual reverses composition.** If `n` kills the kernel of `f : G ⟶ H` and
 `m` kills the kernel of `f' : H ⟶ K`, then `m * n` kills the kernel of `f ≫ f'`, and the
 factorization dual of `f ≫ f'` is `f̂' ≫ f̂`. -/
+@[simp]
 theorem factorizationDual_comp_factorizationDual {f' : H ⟶ K} {m : ℤ}
     [EffectiveEpi f'.hom.hom.hom] [Epi (f'.hom.hom.hom ⊗ₘ f'.hom.hom.hom)]
-    [EffectiveEpi (f ≫ f').hom.hom.hom] [Epi ((f ≫ f').hom.hom.hom ⊗ₘ (f ≫ f').hom.hom.hom)]
+    [EffectiveEpi (f ≫ f').hom.hom.hom]
     (hn : ∀ ⦃Z : C⦄ (x : Z ⟶ G.X), x ≫ f.hom.hom.hom = 1 → x ^ n = 1)
     (hm : ∀ ⦃Z : C⦄ (x : Z ⟶ H.X), x ≫ f'.hom.hom.hom = 1 → x ^ m = 1) :
     factorizationDual f' m hm ≫ factorizationDual f n hn =
       factorizationDual (f ≫ f') (m * n) (fun _ x hx ↦
         zpow_mul_eq_one_of_comp_comp_eq_one _ hn hm x (by simpa using hx)) := by
   refine eq_factorizationDual _ ?_
-  rw [Category.assoc, comp_factorizationDual_assoc, ← Category.assoc, ← zsmul_one,
-    Preadditive.comp_zsmul, End.one_def, Category.comp_id, Preadditive.zsmul_comp,
-    comp_factorizationDual]
-  exact (zsmul_eq_mul (n : End G) m).trans (Int.cast_mul m n).symm
+  have hc : (m : End G) ≫ f = f ≫ (m : End H) := by
+    ext : 3
+    simp [GrpObj.zpow_comp, GrpObj.comp_zpow]
+  rw [Category.assoc, comp_factorizationDual_assoc, ← reassoc_of% hc, comp_factorizationDual,
+    ← End.mul_def, ← Int.cast_mul, mul_comm]
 
 variable (G) in
 /-- **The factorization dual of multiplication by `m` is multiplication by `m`.** Here the dual is
 taken relative to `m * m`, which kills the kernel of multiplication by `m`. -/
+@[simp]
 theorem factorizationDual_intCast (m : ℤ) [EffectiveEpi (m : End G).hom.hom.hom]
     [Epi ((m : End G).hom.hom.hom ⊗ₘ (m : End G).hom.hom.hom)] :
     factorizationDual (m : End G) (m * m) (fun _ x hx ↦ by

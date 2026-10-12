@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicGeometry.Morphisms.Flat
-public import Mathlib.AlgebraicGeometry.Morphisms.UnderlyingMap
 public import Mathlib.CategoryTheory.Monoidal.Cartesian.Over
 
 /-!
