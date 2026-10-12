@@ -20,9 +20,8 @@ bundle with that neighbourhood. Both directions are smooth, and the neighbourhoo
 chosen inside any prescribed open neighbourhood of the image.
 
 These are global assembly theorems: local invertibility of normal addition at zero vectors
-is an explicit input, not a conclusion. They reuse the zero-section shrinking theorem and
-`IsLocalDiffeomorphOn.partialDiffeomorphOfInjOn` for the bounded tube, followed by
-`normalBundleRadialPartialDiffeomorphOfRadius` for the whole bundle.
+is an explicit input, not a conclusion. They provide smooth normal coordinates on arbitrarily
+small ambient neighbourhoods, either from a variable-radius tube or from the whole normal bundle.
 
 The source must be nonempty because a `PartialDiffeomorph` has an inverse defined everywhere,
 including outside its target. No compactness or properness of the embedding is needed.
@@ -132,21 +131,13 @@ theorem exists_partialDiffeomorph_wholeNormalBundle_subset
   have hRtarget : R.target = Ψ.source := by
     rw [normalBundleRadialPartialDiffeomorphOfRadius_target, hsource]
   have hcomp_source : (R.trans Ψ).source = univ := by
-    simp only [PartialDiffeomorph.trans_toPartialEquiv,
-      OpenPartialHomeomorph.trans_toPartialEquiv,
-      PartialDiffeomorph.toOpenPartialHomeomorph_toPartialHomeomorph_toPartialEquiv,
-      PartialEquiv.trans_source, hRsource]
-    exact inter_eq_left.mpr fun p _ => hRtarget ▸ R.map_source (hRsource ▸ mem_univ p)
+    have hpreimage : R ⁻¹' Ψ.source = univ :=
+      eq_univ_of_forall fun p => hRtarget ▸ R.map_source (hRsource ▸ mem_univ p)
+    simp [hRsource, hpreimage]
   have hformula (p : TotalSpace F (fun x => normalSubspace I f x)) :
       (R.trans Ψ) p = f p.proj +
         r p.proj • OpenPartialHomeomorph.univUnitBall (p.2 : V) := by
-    simp only [PartialDiffeomorph.trans_toPartialEquiv,
-      OpenPartialHomeomorph.trans_toPartialEquiv,
-      PartialDiffeomorph.toOpenPartialHomeomorph_toPartialHomeomorph_toPartialEquiv,
-      PartialEquiv.trans_apply, hΨ]
-    dsimp only [R]
-    rw [normalBundleRadialPartialDiffeomorphOfRadius_apply]
-    simp
+    simp [hΨ, R, normalBundleRadialPartialDiffeomorphOfRadius_apply]
   refine ⟨r, hr, R.trans Ψ, hcomp_source, ?_, hformula, ?_⟩
   · exact fun p hp => htarget hp.1
   · intro x
