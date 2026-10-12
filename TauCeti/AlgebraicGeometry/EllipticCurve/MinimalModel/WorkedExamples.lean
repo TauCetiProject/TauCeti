@@ -34,7 +34,7 @@ Good reduction everywhere is certified by two integral models. Over `𝓞 K` the
 isomorphic to an equation whose discriminant is a unit times `(1 - θ)⁹`, and to one whose
 discriminant is a unit times `θ¹⁵`. Since `θ + (1 - θ) = 1`, every prime of `𝓞 K` misses one of
 the two discriminants, and the minimal discriminant ideal divides both
-(`WeierstrassCurve.minimalDiscriminantIdeal_dvd_span`).
+(`WeierstrassCurve.minimalDiscriminantIdeal_dvd_span_of_smul_eq_baseChange`).
 
 The obstruction is a norm computation. The discriminant of the short equation has norm
 `N(Δ) = -2³⁶ 3²⁴ = -72¹²`. An equation over `𝓞 K` with unit discriminant `Δ'` would be related
@@ -71,10 +71,9 @@ namespace TauCeti.WorkedExamples
 
 /-- `65` is not a square in `ℚ`, so `ℚ[√65]` is a field. -/
 instance fact_not_isSquare_sixtyFive : Fact (¬ IsSquare (65 : ℚ)) := ⟨by
-  rw [show (65 : ℚ) = ((65 : ℤ) : ℚ) by norm_num, Rat.isSquare_intCast_iff]
+  rw [Rat.isSquare_ofNat_iff]
   rintro ⟨r, hr⟩
-  have h₁ : r ≤ 8 := by nlinarith
-  have h₂ : -8 ≤ r := by nlinarith
+  have h : r ≤ 8 := by nlinarith
   interval_cases r <;> omega⟩
 
 /-- The real quadratic field `ℚ(√65)`, as the quadratic algebra `ℚ[√65]` with basis `1, √65`. -/
@@ -98,6 +97,28 @@ over `ℚ(√65)`, with `θ = (1 + √65) / 2`. -/
 noncomputable def curveSqrt65 : WeierstrassCurve QSqrt65 :=
   ⟨0, 0, 0, -15221331 * (sqrt65Theta : QSqrt65) - 53748576,
     -79617688290 * (sqrt65Theta : QSqrt65) - 281140318368⟩
+
+/-- The coefficient `a₁` of `curveSqrt65` is `0`. -/
+@[simp]
+theorem a₁_curveSqrt65 : curveSqrt65.a₁ = 0 := (rfl)
+
+/-- The coefficient `a₂` of `curveSqrt65` is `0`. -/
+@[simp]
+theorem a₂_curveSqrt65 : curveSqrt65.a₂ = 0 := (rfl)
+
+/-- The coefficient `a₃` of `curveSqrt65` is `0`. -/
+@[simp]
+theorem a₃_curveSqrt65 : curveSqrt65.a₃ = 0 := (rfl)
+
+/-- The coefficient `a₄` of `curveSqrt65` is `-15221331 θ - 53748576`. -/
+@[simp]
+theorem a₄_curveSqrt65 :
+    curveSqrt65.a₄ = -15221331 * (sqrt65Theta : QSqrt65) - 53748576 := (rfl)
+
+/-- The coefficient `a₆` of `curveSqrt65` is `-79617688290 θ - 281140318368`. -/
+@[simp]
+theorem a₆_curveSqrt65 :
+    curveSqrt65.a₆ = -79617688290 * (sqrt65Theta : QSqrt65) - 281140318368 := (rfl)
 
 /-- The discriminant of `curveSqrt65` in the basis `1, √65`. Its norm is `-2³⁶ 3²⁴`. -/
 theorem Δ_curveSqrt65 :
@@ -170,7 +191,9 @@ private theorem modelB_Δ_mul :
   apply RingOfIntegers.coe_injective
   simp only [modelB, Δ, b₂, b₄, b₆, b₈, map_mul, map_sub, map_add, map_neg, map_pow, map_ofNat,
     map_one, ← RingOfIntegers.coe_eq_algebraMap]
-  rw [show 15 = 3 * 5 from rfl, pow_mul, coe_sqrt65Theta_pow_three, coe_sqrt65Theta]
+  have h15 : (sqrt65Theta : QSqrt65) ^ 15 = ((sqrt65Theta : QSqrt65) ^ 3) ^ 5 := by
+    rw [← pow_mul]
+  rw [h15, coe_sqrt65Theta_pow_three, coe_sqrt65Theta]
   ext <;> simp [pow_succ] <;> norm_num
 
 /-- The two integral models have coprime discriminants, since `θ` and `1 - θ` are coprime. -/
@@ -274,7 +297,7 @@ theorem not_isUnit_Δ_of_smul_curveSqrt65_eq_baseChange {C : VariableChange QSqr
   have h12 : ((72 * x) ^ 2) ^ 6 = 1 := by
     rw [← pow_mul, mul_pow]
     norm_num at hN
-    rw [(show Even 12 from ⟨6, rfl⟩).pow_abs] at hN
+    rw [pow_abs, abs_of_nonneg (by positivity)] at hN
     norm_num
     linear_combination hN
   exact sq_seventyTwo_mul_norm_ne_one _ ((pow_eq_one_iff_of_nonneg (by positivity)
