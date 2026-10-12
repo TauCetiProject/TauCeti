@@ -54,7 +54,25 @@ def homSubmodule (I : MorphismIdeal C) (X Y : C) : Submodule R (X ⟶ Y) :=
 theorem mem_homSubmodule (I : MorphismIdeal C) {X Y : C} (f : X ⟶ Y) :
     f ∈ I.homSubmodule R X Y ↔ f ∈ I.hom X Y := Iff.rfl
 
+/-- The kernel of the quotient functor on each linear hom space is the ideal's hom submodule.
+-/
+@[simp]
+theorem ker_quotientFunctor_mapLinearMap (I : MorphismIdeal C) (X Y : C) :
+    LinearMap.ker (I.quotientFunctor.mapLinearMap R (X := X) (Y := Y)) =
+      I.homSubmodule R X Y := by
+  ext f
+  simp
+
 variable [Linear R D]
+
+/-- The containment of ideals is exactly the containment required to map their hom-space
+quotients using Mathlib's `Submodule.mapQ`. -/
+theorem homSubmodule_le_comap (I : MorphismIdeal C) (J : MorphismIdeal D) (F : C ⥤ D)
+    [F.Additive] [F.Linear R] (hF : I ≤ J.comap F) {X Y : C} :
+    I.homSubmodule R X Y ≤
+      (J.homSubmodule R (F.obj X) (F.obj Y)).comap (F.mapLinearMap R) := by
+  intro f hf
+  exact (mem_comap_hom J F).mp (le_def.mp hF f hf)
 
 /-- A linear functor carrying one ideal into another induces a linear functor on their
 quotient categories. -/
@@ -83,15 +101,6 @@ theorem homSubmodule_toAddSubgroup (X Y : C) :
   ext
   rfl
 
-/-- The kernel of the quotient functor on each linear hom space is the ideal's hom submodule.
--/
-@[simp]
-theorem ker_quotientFunctor_mapLinearMap (X Y : C) :
-    LinearMap.ker (I.quotientFunctor.mapLinearMap R (X := X) (Y := Y)) =
-      I.homSubmodule R X Y := by
-  ext f
-  simp
-
 /-- The hom space of the ideal quotient is canonically the quotient of the original linear
 hom space by the ideal's hom submodule. -/
 noncomputable def homLinearEquiv (X Y : C) :
@@ -110,7 +119,7 @@ theorem homLinearEquiv_mk {X Y : C} (f : X ⟶ Y) :
 
 /-- The inverse hom-space identification takes a represented quotient morphism to its coset. -/
 @[simp]
-theorem homLinearEquiv_symm_map {X Y : C} (f : X ⟶ Y) :
+theorem homLinearEquiv_symm_quotientFunctor_map {X Y : C} (f : X ⟶ Y) :
     (I.homLinearEquiv R X Y).symm (I.quotientFunctor.map f) = Submodule.Quotient.mk f := by
   apply (I.homLinearEquiv R X Y).injective
   simp
@@ -119,14 +128,6 @@ variable [Linear R D] (J : MorphismIdeal D) (F : C ⥤ D) [F.Additive] [F.Linear
   (hF : I ≤ J.comap F)
 
 include hF
-
-/-- The containment of ideals is exactly the containment required to map their hom-space
-quotients using Mathlib's `Submodule.mapQ`. -/
-theorem homSubmodule_le_comap {X Y : C} :
-    I.homSubmodule R X Y ≤
-      (J.homSubmodule R (F.obj X) (F.obj Y)).comap (F.mapLinearMap R) := by
-  intro f hf
-  exact (mem_comap_hom J F).mp (le_def.mp hF f hf)
 
 /-- The hom-space identification is natural under a linear functor carrying ideals into
 ideals. The endpoint transports use the object formula of the induced quotient functor. -/
