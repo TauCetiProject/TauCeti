@@ -35,8 +35,9 @@ multiplication on the ambient ring.
 
 * `Subring.topologicalClosure_coe`: `↑S.topologicalClosure = closure ↑S`.
 * `isOpen_integralClosure_toSubring`: the integral closure of an open subring is open.
-* `Subring.exists_pow_mul_mem`: a power of a topologically nilpotent scalar multiplies any
-  fixed element into an open subring.
+* `Subring.eventually_pow_mul_mem_of_isTopologicallyNilpotent` and its existential form
+  `Subring.exists_pow_mul_mem`: all sufficiently large powers of a topologically nilpotent
+  scalar multiply any fixed element into an open subring.
 * `Subring.exists_pow_smul_mem`: a power carries an element of the ambient span into a
   submodule over the open subring.
 * `Subring.exists_pow_smul_le` and `Subring.exists_pow_smul_le_pow_smul`: the uniform and
@@ -82,12 +83,20 @@ namespace Subring
 open Filter
 open scoped Topology Pointwise
 
-/-- A power of a topologically nilpotent scalar multiplies any fixed element into an open
-subring. -/
+/-- All sufficiently large powers of a topologically nilpotent scalar multiply any fixed
+element into an open subring. -/
+theorem eventually_pow_mul_mem_of_isTopologicallyNilpotent {A : Type*} [Ring A]
+    [TopologicalSpace A] [SeparatelyContinuousMul A] (S : Subring A)
+    (hS : IsOpen (S : Set A)) {s : A} (hs : IsTopologicallyNilpotent s) (c : A) :
+    ∀ᶠ n : ℕ in atTop, s ^ n * c ∈ S :=
+  (hs.mul_const c).eventually (hS.mem_nhds (by simp))
+
+/-- The existential form of `Subring.eventually_pow_mul_mem_of_isTopologicallyNilpotent`:
+some power of a topologically nilpotent scalar multiplies a fixed element into an open subring. -/
 theorem exists_pow_mul_mem {A : Type*} [Ring A] [TopologicalSpace A]
     [SeparatelyContinuousMul A] (S : Subring A) (hS : IsOpen (S : Set A)) {s : A}
     (hs : IsTopologicallyNilpotent s) (c : A) : ∃ i : ℕ, s ^ i * c ∈ S :=
-  ((hs.mul_const c).eventually (hS.mem_nhds (by simp))).exists
+  (S.eventually_pow_mul_mem_of_isTopologicallyNilpotent hS hs c).exists
 
 variable {A : Type*} [CommRing A] [TopologicalSpace A] [SeparatelyContinuousMul A]
   {M : Type*} [AddCommGroup M] [Module A M]
