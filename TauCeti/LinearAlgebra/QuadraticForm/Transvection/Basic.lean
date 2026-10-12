@@ -52,6 +52,8 @@ and `Q`, never `B / 2`, so it makes sense verbatim for integral quadratic forms.
   then `E_{u,w} = 1` exactly when `w ∈ R ∙ u`. Hence `transvectionHom_injective_of_isUnit`.
 * `QuadraticMap.transvection_eq_one_iff`: over a field, if `polarBilin Q u ≠ 0`, then
   `E_{u,w} = 1` exactly when `w ∈ K ∙ u`. Hence `transvectionHom_injective`.
+* `QuadraticMap.finrank_transvectionParameter`: for an isotropic vector outside the polar
+  radical, the parameter space `u^⊥ / K ∙ u` has dimension `dim V - 2`.
 * `QuadraticMap.subsingleton_transvectionParameter_of_finrank_eq_two`: for an isotropic vector
   outside the polar radical in a binary quadratic space, the parameter space `u^⊥ / K ∙ u` is
   trivial; consequently every Eichler transvection is the identity.
@@ -465,14 +467,12 @@ theorem transvectionHom_injective (hu : Q u = 0) (hu₀ : Q.polarBilin u ≠ 0) 
     Function.Injective (transvectionHom Q hu) :=
   transvectionHom_injective_of_isUnit hu (exists_isUnit_polar_of_polarBilin_ne_zero hu₀)
 
-/-- In a binary quadratic space, the Eichler-transvection parameter space `u^⊥ / K ∙ u` of an
-isotropic vector outside the polar radical is trivial. This is the low-dimensional
-exception to the nontrivial transvection families available in dimension at least three. -/
-theorem subsingleton_transvectionParameter_of_finrank_eq_two [FiniteDimensional K V]
-    (hV : Module.finrank K V = 2) (hu : Q u = 0) (hpolar : Q.polarBilin u ≠ 0) :
-    Subsingleton (LinearMap.ker (Q.polarBilin u) ⧸
-      (K ∙ u).comap (LinearMap.ker (Q.polarBilin u)).subtype) := by
-  rw [Submodule.Quotient.subsingleton_iff]
+/-- The Eichler-transvection parameter space `u^⊥ / K ∙ u` of an isotropic vector outside the
+polar radical has dimension `dim V - 2`. -/
+theorem finrank_transvectionParameter [FiniteDimensional K V] (hu : Q u = 0)
+    (hpolar : Q.polarBilin u ≠ 0) :
+    Module.finrank K (LinearMap.ker (Q.polarBilin u) ⧸
+      (K ∙ u).comap (LinearMap.ker (Q.polarBilin u)).subtype) = Module.finrank K V - 2 := by
   have hu₀ : u ≠ 0 := by
     rintro rfl
     exact hpolar (by ext; simp)
@@ -480,16 +480,21 @@ theorem subsingleton_transvectionParameter_of_finrank_eq_two [FiniteDimensional 
     rw [Submodule.span_singleton_le_iff_mem, LinearMap.mem_ker, polarBilin_apply_apply,
       polar_self, hu]
     simp
-  have hker : Module.finrank K (LinearMap.ker (Q.polarBilin u)) = 1 := by
-    have h := Module.Dual.finrank_ker_add_one_of_ne_zero hpolar
-    omega
-  have hspan : K ∙ u = LinearMap.ker (Q.polarBilin u) := by
-    apply Submodule.eq_of_le_of_finrank_le hspan_le
-    rw [hker, finrank_span_singleton hu₀]
-  ext w
-  simp only [Submodule.mem_comap, Submodule.coe_subtype, Submodule.mem_top, iff_true]
-  rw [hspan]
-  exact w.2
+  have hker := Module.Dual.finrank_ker_add_one_of_ne_zero hpolar
+  have hquot := Submodule.finrank_quotient_add_finrank
+    ((K ∙ u).comap (LinearMap.ker (Q.polarBilin u)).subtype)
+  rw [(Submodule.comapSubtypeEquivOfLe hspan_le).finrank_eq, finrank_span_singleton hu₀] at hquot
+  omega
+
+/-- In a binary quadratic space, the Eichler-transvection parameter space `u^⊥ / K ∙ u` of an
+isotropic vector outside the polar radical is trivial. This is the low-dimensional
+exception to the nontrivial transvection families available in dimension at least three. -/
+theorem subsingleton_transvectionParameter_of_finrank_eq_two [FiniteDimensional K V]
+    (hV : Module.finrank K V = 2) (hu : Q u = 0) (hpolar : Q.polarBilin u ≠ 0) :
+    Subsingleton (LinearMap.ker (Q.polarBilin u) ⧸
+      (K ∙ u).comap (LinearMap.ker (Q.polarBilin u)).subtype) := by
+  apply (Module.finrank_zero_iff (R := K)).mp
+  rw [finrank_transvectionParameter hu hpolar, hV]
 
 /-- Every Eichler transvection in a binary quadratic space whose isotropic direction is outside
 the polar radical is the identity. -/

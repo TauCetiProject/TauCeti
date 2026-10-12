@@ -56,6 +56,12 @@ on the trace forms of an arbitrary quadratic extension `L/K`
 `w₁(Tr_*⟨a⟩) = w₁(Tr_*⟨1⟩) + cor (a)` holds for every finite extension
 (`TauCeti.sw1Class_formClass_traceTransfer_smul_sq`).
 
+Read on diagonal presentations `Tr_*⟨1⟩ ≅ ⟨t₁, …, tₘ⟩` and `Tr_*⟨a⟩ ≅ ⟨b₁, …, bₙ⟩`, the formula
+is an identity between the classes of the tuples `t` and `b`
+(`TauCeti.sw2_eq_add_galoisEvens_add_cup_of_equivalent_traceTransfer`), the shape in which it is
+applied to an explicit diagonalization over a fixed base field. Its degree-one companion is
+`TauCeti.sw1_eq_add_galoisCor_of_equivalent_traceTransfer`.
+
 ## Main results
 
 * `TauCeti.sw1Class_formClass_traceTransfer_sq_of_sq`: `w₁(Tr_*⟨1⟩) = (d)`.
@@ -68,6 +74,8 @@ on the trace forms of an arbitrary quadratic extension `L/K`
   `w₁(Tr_*⟨1⟩) ∪ cor (a) = 0`.
 * `TauCeti.sw2Class_formClass_traceTransfer_smul_sq`: **the relative Stiefel–Whitney formula in
   degree two**, `w₂(Tr_*⟨a⟩) = w₂(Tr_*⟨1⟩) + N^{Ev}((a)) + w₁(Tr_*⟨1⟩) ∪ cor (a)`.
+* `TauCeti.sw2_eq_add_galoisEvens_add_cup_of_equivalent_traceTransfer`: the same formula on
+  diagonal presentations of the trace forms, `w₂(b) = w₂(t) + N^{Ev}((a)) + w₁(t) ∪ cor (a)`.
 
 ## References
 
@@ -233,6 +241,31 @@ theorem sw2Class_formClass_traceTransfer_smul_sq [Invertible (2 : L)]
     rw [sw2Class_formClass_traceTransfer_smul_sq_of_sq hfin hx hx2 a (t := Units.mk0 _ htr) rfl,
       galoisEvens2_kummerClass σ hfin d hx hx2 a (Units.mk0 _ htr) rfl, hN, ← add_assoc,
       add_right_comm, h2d, zero_add]
+
+/-- **The relative Stiefel–Whitney formula in degree two, on diagonal presentations of the trace
+forms**: for a quadratic extension `L/K` and `a ∈ Lˣ`, if `Tr_*⟨1⟩ ≅ ⟨t₁, …, tₘ⟩` and
+`Tr_*⟨a⟩ ≅ ⟨b₁, …, bₙ⟩`, then `w₂(b) = w₂(t) + N^{Ev}((a)) + w₁(t) ∪ cor (a)`, with the Evens
+norm and the corestriction taken along any `K`-embedding `σ` of `L` into a separable closure of
+`K`. No regularity hypothesis is needed: isometry with a diagonal form with unit coefficients
+already makes both trace forms regular. -/
+theorem sw2_eq_add_galoisEvens_add_cup_of_equivalent_traceTransfer [Invertible (2 : L)]
+    (σ : L →ₐ[K] SeparableClosure K) (hfin : Module.finrank K L = 2) (a : Lˣ) {m n : ℕ}
+    {t : Fin m → Kˣ} {b : Fin n → Kˣ}
+    (ht : ((QuadraticMap.sq (R := L) (A := L)).traceTransfer K).Equivalent
+      (weightedSumSquares K fun i => (t i : K)))
+    (hb : (((a : L) • QuadraticMap.sq (R := L) (A := L)).traceTransfer K).Equivalent
+      (weightedSumSquares K fun i => (b i : K))) :
+    sw2 b = sw2 t + galoisEvens K L σ hfin (kummerClass a) +
+      (trivialF2TopPairing (AbsoluteGaloisGroup K)).cup 1 1 (sw1 t)
+        (galoisCor K L σ 1 (kummerClass a)) := by
+  obtain ⟨et⟩ := ht
+  obtain ⟨eb⟩ := hb
+  have h1 := et.nondegenerate_iff.2 <|
+    nondegenerate_weightedSumSquares fun i => (t i).isUnit.isRegular
+  have ha := eb.nondegenerate_iff.2 <|
+    nondegenerate_weightedSumSquares fun i => (b i).isUnit.isRegular
+  rw [← sw1Class_formClass _ h1 t ⟨et⟩, ← sw2Class_formClass _ h1 t ⟨et⟩,
+    ← sw2Class_formClass _ ha b ⟨eb⟩, sw2Class_formClass_traceTransfer_smul_sq σ hfin a ha h1]
 
 end Field
 

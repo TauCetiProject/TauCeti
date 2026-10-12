@@ -202,7 +202,7 @@ theorem le_derivedDefiningIdeal_iff_isNormal_and_isMulCommutative_pointQuotient
     -- Their product map is the lifted identity on the tensor product.
     have hproduct : Algebra.TensorProduct.productMap g.ofConv h.ofConv =
         up := by
-      simp [g, h, AffineGroup.Product.productMap_restrict]
+      simp [g, h, _root_.AlgHom.productMap_comp_includeLeft_includeRight]
     have heval := DFunLike.congr_fun
       (HopfAlgebra.productMap_comp_commutatorAlgHom g h) x
     rw [hproduct] at heval

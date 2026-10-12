@@ -290,7 +290,7 @@ variable (k : Type w) {Q : Type u} [One k] [InvolutiveNeg k] [Quiver.{v} Q]
 @[simp]
 theorem doubledArrowSign_swap {i j : Symmetrify Q} (b : i ⟶ j) :
     doubledArrowSign k (i := j) (j := i) (Sum.swap b) = -doubledArrowSign k b := by
-  rcases b with a | a
+  rcases b with _ | _
   · rfl
   · exact (neg_neg (1 : k)).symm
 

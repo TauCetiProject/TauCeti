@@ -6,6 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.Padics.PadicIntegers
+public import Mathlib.NumberTheory.Padics.ProperSpace
+public import Mathlib.RingTheory.AdicCompletion.Topology
+public import Mathlib.RingTheory.LocalRing.RingHom.Basic
 public import TauCeti.NumberTheory.LocalField.NatCastValuation
 public import Mathlib.NumberTheory.Padics.LocalField
 public import TauCeti.NumberTheory.LocalField.Uniformizer
@@ -25,6 +28,8 @@ concrete p-adic norm and valuation APIs.
 
 * `Padic.toAdd_normalizedValuation_eq_valuation` identifies the additive normalized
   valuation with `Padic.valuation`.
+* `Padic.uniformSpace_eq_rightUniformSpace` identifies the metric uniformity on `ℚ_[p]` with
+  the additive-group uniformity, so completeness arguments can use the canonical group structure.
 * `Padic.integerRingEquiv` identifies the ring of integers of `ℚ_[p]` with `ℤ_[p]`.
 * `Padic.natCard_residueField` computes the residue-field cardinality of `ℚ_[p]`.
 * `Padic.normalizedAbsoluteValue_eq_nnnorm` identifies the normalized absolute value with
@@ -54,6 +59,15 @@ open scoped WithZero
 variable (p : ℕ) [Fact p.Prime]
 
 namespace Padic
+
+/-- The metric uniformity on `ℚ_[p]` agrees with the additive-group uniformity determined by its
+valuation topology. This identifies the uniformity used by the normed-field structure with the
+one used by additive topological-group completeness. -/
+theorem uniformSpace_eq_rightUniformSpace :
+    (inferInstance : UniformSpace ℚ_[p]) =
+      @IsTopologicalAddGroup.rightUniformSpace ℚ_[p] _
+        (Padic.mulValuation (p := p)).subgroups_basis.topology _ :=
+  (Padic.mulValuation (p := p)).toUniformSpace_eq
 
 /-- The zero-preserving normalized valuation on `ℚ_[p]` is the inverse of
 Mathlib's p-adic valuation. -/
@@ -100,6 +114,31 @@ the underlying `p`-adic numbers. -/
 theorem coe_integerRingEquiv_symm_apply (x : ℤ_[p]) :
     (((integerRingEquiv p).symm x : 𝒪[ℚ_[p]]) : ℚ_[p]) = x :=
   (rfl)
+
+/-- The integer ring of `ℚ_[p]` is adically complete, via its canonical identification with
+`ℤ_[p]`. -/
+instance integerRingIsAdicComplete :
+    IsAdicComplete (IsLocalRing.maximalIdeal (𝒪[ℚ_[p]])) (𝒪[ℚ_[p]]) := by
+  have h := (IsAdicComplete.congr_ringEquiv
+    (I := IsLocalRing.maximalIdeal ℤ_[p]) (e := (integerRingEquiv p).symm)).2
+      (inferInstance : IsAdicComplete (IsLocalRing.maximalIdeal ℤ_[p]) ℤ_[p])
+  simpa only [IsLocalRing.map_ringEquiv_maximalIdeal] using h
+
+/-- The integer ring of `ℚ_[p]` is compact, since it is identified with `ℤ_[p]`. -/
+instance integerRingCompactSpace : CompactSpace 𝒪[ℚ_[p]] := by
+  have hcoe : Continuous (fun x : 𝒪[ℚ_[p]] =>
+      ((integerRingEquiv p x : ℤ_[p]) : ℚ_[p])) := by
+    simp only [coe_integerRingEquiv_apply]
+    exact continuous_subtype_val
+  have hcoe' : Continuous (fun x : ℤ_[p] =>
+      (((integerRingEquiv p).symm x : 𝒪[ℚ_[p]]) : ℚ_[p])) := by
+    simp only [coe_integerRingEquiv_symm_apply]
+    exact continuous_subtype_val
+  let e : 𝒪[ℚ_[p]] ≃ₜ ℤ_[p] :=
+    { toEquiv := (integerRingEquiv p).toEquiv
+      continuous_toFun := continuous_induced_rng.2 hcoe
+      continuous_invFun := continuous_induced_rng.2 hcoe' }
+  exact e.symm.compactSpace
 
 /-- The residue field of `ℚ_[p]` has cardinality `p`. -/
 @[simp high] -- Compute the cardinality before `Nat.card_eq_fintype_card` changes its form.

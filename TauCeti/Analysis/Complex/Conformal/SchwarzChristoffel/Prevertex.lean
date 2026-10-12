@@ -6,11 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Converse
--- Non-public: the corner and logarithm asymptotics, the corner power coordinate, Schwarz
--- reflection and the accompanying conjugation-symmetric limit transfer, the branch facts for a
--- power with a real base point, and partial fractions are used only in proofs.
+-- Non-public: the corner and logarithm asymptotics, the corner power coordinate, the comparison
+-- with the model of an end of opening `2 * π`, Schwarz reflection and the accompanying
+-- conjugation-symmetric limit transfer, the branch facts for a power with a real base point, and
+-- partial fractions are used only in proofs.
 import TauCeti.Analysis.Complex.Conformal.PreSchwarzian
 import TauCeti.Analysis.Complex.Conformal.Reflection.Corner
+import TauCeti.Analysis.Complex.Conformal.Reflection.HalfStripExterior
 import TauCeti.Analysis.Complex.UpperHalfPlane.Topology
 import TauCeti.Analysis.Contour.PolarPart.PartialFraction
 
@@ -32,7 +34,9 @@ asymptotic to the punctured neighbourhood, so `β - 1` is the residue of `φ` at
 A prevertex may instead be carried to a vertex at infinity.  If that vertex has opening `β * π`
 with `0 < β < 2`, then `f` is a negative power `h ^ (-β)` up to an affine map and the residue is
 `-β - 1`; if it lies between two parallel sides, then `f` is a logarithm of a holomorphic function
-with a simple zero, up to an affine map, and the residue is `-1`.
+with a simple zero, up to an affine map, and the residue is `-1`.  If the two parallel sides point
+the same way, so that the vertex at infinity has opening `2 * π`, comparison with an explicit model
+of that end gives the residue `-3`.
 Once each prevertex contributes its residue and `φ` decays at infinity, partial fractions identify
 `φ` with `∑ i, e i / (z - a i)` and the integration theorem identifies `f` itself with an affine
 image of the Schwarz--Christoffel primitive.
@@ -50,6 +54,8 @@ image of the Schwarz--Christoffel primitive.
   a vertex at infinity of opening `β * π`.
 * `TauCeti.tendsto_sub_mul_nhdsNE_of_eqOn_exp` -- the residue `-1` at a prevertex carried to an
   end between two parallel sides.
+* `TauCeti.tendsto_sub_mul_nhdsNE_of_halfStripExterior` -- the residue `-3` at a prevertex carried
+  to an end of opening `2 * π`.
 * `TauCeti.eqOn_const_mul_schwarzChristoffelPrimitive_add_of_tendsto` -- a map of the upper
   half-plane whose pre-Schwarzian derivative continues with at most simple poles of residues
   `e i` at the prevertices `a i` and decays at infinity is an affine image of the
@@ -282,6 +288,38 @@ theorem tendsto_sub_mul_nhdsNE_of_eqOn_exp {φ f g : ℂ → ℂ} {x r : ℝ} {�
   rw [inter_comm, nhdsWithin_inter_of_mem (mem_nhdsWithin_of_mem_nhds (hΩopen.mem_nhds hx))]
     at hlim
   exact tendsto_sub_mul_nhdsNE_of_tendsto_nhdsWithin_im_pos hr hφ hφconj hlim
+
+/-- **The pre-Schwarzian residue at an end of opening `2 * π` is `-3`.**  Let `φ` be holomorphic
+on a punctured disc about a real point `x`, symmetric under conjugation, and agree with the
+pre-Schwarzian derivative of `f` above the axis near `x`.  Suppose that `f` is holomorphic on the
+upper half of the disc of radius `δ` about `x`, continuous and injective on the closed upper
+half-disc with `x` removed, and tends to infinity at `x`, and that far from `c` the image of the
+open upper half-disc coincides with the exterior of the closed half-strip
+`{0 ≤ re ((w - c) / b), 0 ≤ im ((w - c) / b) ≤ π}`.  Then `(z - x) * φ z → -3` as `z` tends to `x`
+from any direction.
+
+So the prevertex `x` represents a vertex at infinity between two parallel rays pointing the same
+way, of opening `2 * π`, and its turning exponent is `-3`.  This is the finite-prevertex
+counterpart of `TauCeti.tendsto_mul_logDeriv_deriv_upperHalfPlaneSet_of_halfStripExterior`. -/
+theorem tendsto_sub_mul_nhdsNE_of_halfStripExterior {φ f : ℂ → ℂ} {x r δ ρ : ℝ} {c b : ℂ}
+    (hr : 0 < r) (hφ : DifferentiableOn ℂ φ (Metric.ball (x : ℂ) r \ {(x : ℂ)}))
+    (hφconj : ∀ z ∈ Metric.ball (x : ℂ) r \ {(x : ℂ)},
+      φ ((starRingEnd ℂ) z) = (starRingEnd ℂ) (φ z))
+    (hφf : EqOn φ (logDeriv (deriv f)) (upperHalfPlaneSet ∩ Metric.ball (x : ℂ) δ))
+    (hδ : 0 < δ) (hb : b ≠ 0)
+    (hf : DifferentiableOn ℂ f (Metric.ball (x : ℂ) δ ∩ upperHalfPlaneSet))
+    (hfc : ContinuousOn f ((Metric.closedBall (x : ℂ) δ ∩ {z : ℂ | 0 ≤ z.im}) \ {(x : ℂ)}))
+    (hfi : InjOn f ((Metric.closedBall (x : ℂ) δ ∩ {z : ℂ | 0 ≤ z.im}) \ {(x : ℂ)}))
+    (hp : Tendsto f (𝓝[{z : ℂ | 0 ≤ z.im} \ {(x : ℂ)}] (x : ℂ)) (cobounded ℂ))
+    (hU : ∀ w : ℂ, ρ < ‖w - c‖ → (w ∈ f '' (Metric.ball (x : ℂ) δ ∩ upperHalfPlaneSet) ↔
+      ((w - c) / b).re < 0 ∨ ((w - c) / b).im ∉ Icc 0 Real.pi)) :
+    Tendsto (fun z => (z - (x : ℂ)) * φ z) (𝓝[≠] (x : ℂ)) (𝓝 (-3)) := by
+  refine tendsto_sub_mul_nhdsNE_of_tendsto_nhdsWithin_im_pos hr hφ hφconj
+    ((tendsto_sub_mul_logDeriv_deriv_nhdsWithin_of_halfStripExterior hδ hb hf hfc hfi hp
+      hU).congr' ?_)
+  filter_upwards [inter_mem_nhdsWithin upperHalfPlaneSet (Metric.ball_mem_nhds (x : ℂ) hδ)]
+    with z hz
+  rw [hφf hz]
 
 /-! ### Assembling the Schwarz--Christoffel formula -/
 

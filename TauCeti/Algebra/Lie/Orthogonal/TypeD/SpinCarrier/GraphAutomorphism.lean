@@ -463,17 +463,6 @@ theorem map_graphAutMatrix {A : Type v} {B : Type v'} [CommRing A] [CommRing B] 
     Matrix.GeneralLinearGroup.map f (graphAutMatrix n hn A) = graphAutMatrix n hn B :=
   map_kostantNumberedSymmetryMatrix _ _ _ _ f
 
-/-- The matrix-valued points of the carrier are the points of the Kostant toral closure of the
-type-`Dₙ` spin data. -/
-private theorem points_eq_kostantToralPointsSubgroup (A : Type v) [CommRing A] :
-    points n hn A =
-      kostantToralPointsSubgroup
-        (TauCeti.serreRootGenerator (CartanMatrix.D n))
-        (TauCeti.serreH ℚ (CartanMatrix.D n)) (rep n hn) (lattice n).toAddSubgroup
-        (rep_kostantForm_mem_lattice n hn)
-        (isNilpotent_rep_rootGenerator n hn) (latticeBasis n) (basisWeight n) A := by
-  rw [points_def, kostantToralPointsSubgroup_def, definingIdeal_def]
-
 /-- **The graph matrix normalizes the matrix-valued points of the carrier.** -/
 theorem map_points_conj_graphAutMatrix (A : Type v) [CommRing A] :
     (points n hn A).map

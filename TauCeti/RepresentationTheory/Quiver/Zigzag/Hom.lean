@@ -91,12 +91,6 @@ variable (k : Type w) [Field k] {V : Type u} (G : SimpleGraph V) [Finite V]
 
 /-! ### The ungraded dictionary -/
 
-private theorem zigzagProjective_eq_spanSingleton (i : V) :
-    zigzagProjective k G i = Ideal.span {zigzagVertexIdempotent k G i} := by
-  ext x
-  rw [mem_zigzagProjective_iff,
-    mem_span_singleton_iff_mul_eq_self (zigzagMk_vertexIdempotent_mul_self k G i)]
-
 private theorem zigzagCorner_eq_cornerSubmodule (i j : V) :
     zigzagCorner k G i j =
       cornerSubmodule k (zigzagVertexIdempotent k G i) (zigzagVertexIdempotent k G j) := by
@@ -109,7 +103,7 @@ private noncomputable def zigzagProjectiveEquivSpanSingleton (i : V) :
     zigzagProjective k G i ≃ₗ[nonisolatedZigzagQuotient k G]
       (Ideal.span {zigzagVertexIdempotent k G i} :
         Ideal (nonisolatedZigzagQuotient k G)) :=
-  LinearEquiv.ofEq _ _ (zigzagProjective_eq_spanSingleton k G i)
+  LinearEquiv.ofEq _ _ (zigzagProjective_def k G i)
 
 private noncomputable def zigzagProjectiveHomEquivSpanSingletonHom (i j : V) :
     (zigzagProjective k G i →ₗ[nonisolatedZigzagQuotient k G] zigzagProjective k G j) ≃ₗ[k]
@@ -136,14 +130,14 @@ private theorem coe_zigzagProjectiveEquivSpanSingleton_apply (i : V)
     (x : zigzagProjective k G i) :
     (zigzagProjectiveEquivSpanSingleton k G i x : nonisolatedZigzagQuotient k G) = x := by
   simpa only [zigzagProjectiveEquivSpanSingleton] using
-    LinearEquiv.coe_ofEq_apply (zigzagProjective_eq_spanSingleton k G i) x
+    LinearEquiv.coe_ofEq_apply (zigzagProjective_def k G i) x
 
 private theorem coe_zigzagProjectiveEquivSpanSingleton_symm_apply (i : V)
     (x : (Ideal.span {zigzagVertexIdempotent k G i} :
       Ideal (nonisolatedZigzagQuotient k G))) :
     ((zigzagProjectiveEquivSpanSingleton k G i).symm x : nonisolatedZigzagQuotient k G) = x := by
   simpa only [zigzagProjectiveEquivSpanSingleton, LinearEquiv.ofEq_symm] using
-    LinearEquiv.coe_ofEq_apply (zigzagProjective_eq_spanSingleton k G i).symm x
+    LinearEquiv.coe_ofEq_apply (zigzagProjective_def k G i).symm x
 
 private theorem coe_zigzagCornerEquivCornerSubmodule_apply (i j : V)
     (x : zigzagCorner k G i j) :

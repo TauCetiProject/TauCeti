@@ -323,15 +323,6 @@ abbrev f4PinnedRootIndex (α : (F4.cartanSubalgebra valid_F4).root) : Fin 48 :=
       f4ModularRootVector (f4PinnedRootIndex α) := by
   rw [f4ModularRootVector_eq_basis, f4KillingRootLabel_f4PinnedRootIndex]
 
-/-- In the pinned F₄ table the root opposite to a simple root is the corresponding entry in the
-second half of the table. -/
-@[simp] theorem f4OppositeRootIndex_castAdd (i : Fin 4) :
-    f4OppositeRootIndex (Fin.castAdd 44 i) =
-      Fin.addNat (Fin.castAdd 20 i) 24 := by
-  rw [f4OppositeRootIndex_eq_reflectionPerm, f4SimplyConnectedRootDatum_reflectionPerm]
-  revert i
-  decide
-
 /-- The pinned root index of a positive or negative simple root. -/
 def f4SignedSimpleRootIndex : Fin 4 ⊕ Fin 4 → Fin 48
   | .inl i => Fin.castAdd 44 i
@@ -344,16 +335,6 @@ def f4SignedSimpleRootIndex : Fin 4 ⊕ Fin 4 → Fin 48
 /-- A negative simple-root label is the index opposite to the corresponding positive root. -/
 @[simp] theorem f4SignedSimpleRootIndex_inr (i : Fin 4) :
     f4SignedSimpleRootIndex (.inr i) = f4OppositeRootIndex (Fin.castAdd 44 i) := (rfl)
-
-/-- A pinned positive or negative simple root vector in the reduced Chevalley lattice. -/
-noncomputable def f4ModularSignedSimpleRootVector (k : Fin 4 ⊕ Fin 4) :
-    f4ModularChevalleyLieAlgebra :=
-  f4ModularRootVector (f4SignedSimpleRootIndex k)
-
-/-- A signed simple root vector is the modular root vector at its pinned root index. -/
-@[simp] theorem f4ModularSignedSimpleRootVector_eq (k : Fin 4 ⊕ Fin 4) :
-    f4ModularSignedSimpleRootVector k = f4ModularRootVector (f4SignedSimpleRootIndex k) := by
-  rw [f4ModularSignedSimpleRootVector]
 
 /-- Opposite roots have the same coroot after reduction modulo two. -/
 @[simp] theorem f4ModularCoroot_f4OppositeRootIndex (α : Fin 48) :

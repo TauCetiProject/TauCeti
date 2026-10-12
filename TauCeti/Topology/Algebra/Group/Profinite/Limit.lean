@@ -155,7 +155,7 @@ theorem existsUnique_monoidHom_mk'_comp_eq {H : Type*} [MulOneClass H]
     ∃! φ : H →* G, ∀ N : OpenNormalSubgroup G, (QuotientGroup.mk' N.toSubgroup).comp φ = x N := by
   -- For a fixed `a : H`, the classes `x N a` form a compatible family of cosets, so the limit
   -- description of `G` realizes them by a unique element `φ a`.
-  have hcompat : ∀ a : H, ∀ (U V : OpenNormalSubgroup G) (hle : (U : Subgroup G) ≤ V) (g : G),
+  have hcompat : ∀ a : H, ∀ (U V : OpenNormalSubgroup G) (_ : (U : Subgroup G) ≤ V) (g : G),
       QuotientGroup.mk' (U : Subgroup G) g = x U a →
         QuotientGroup.mk' (V : Subgroup G) g = x V a := by
     intro a U V hle g hg

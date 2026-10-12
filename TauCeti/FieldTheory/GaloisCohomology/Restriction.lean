@@ -30,6 +30,8 @@ cohomology. So `galoisRes` is a map attached to `L/K` alone, and it is functoria
 
 ## Main results
 
+* `TauCeti.galoisF2Iso_hom_cup`, `TauCeti.galoisF2Iso_inv_cup`: the transport preserves the
+  `𝔽₂`-valued cup product.
 * `TauCeti.galoisRes_cup`: restriction preserves the `𝔽₂`-valued cup product.
 * `TauCeti.galoisRes_embedding_independent`: restriction does not depend on the embedding.
 * `TauCeti.galoisRes_comp`, `TauCeti.galoisRes_galoisRes`: restriction is functorial in a tower
@@ -78,6 +80,25 @@ theorem galoisF2Iso_inv (n : ℕ) :
       trivialF2Map (ContinuousMonoidHom.toContinuousMonoidHom
         (galoisSubgroupEquiv K L σ).symm) n := by
   rw [galoisF2Iso, trivialF2Iso_inv]
+
+/-- The forward transport `galoisF2Iso` preserves the cup product on `𝔽₂`-cohomology. -/
+theorem galoisF2Iso_hom_cup (m n : ℕ)
+    (x : continuousCohomology m (trivialF2 ↥(galoisSubgroup K L σ).toSubgroup))
+    (y : continuousCohomology n (trivialF2 ↥(galoisSubgroup K L σ).toSubgroup)) :
+    (galoisF2Iso K L σ (m + n)).hom
+        ((trivialF2TopPairing (galoisSubgroup K L σ).toSubgroup).cup m n x y) =
+      (trivialF2TopPairing (AbsoluteGaloisGroup L)).cup m n
+        ((galoisF2Iso K L σ m).hom x) ((galoisF2Iso K L σ n).hom y) := by
+  simp only [galoisF2Iso_hom, trivialF2Map_cup]
+
+/-- The inverse transport `galoisF2Iso` preserves the cup product on `𝔽₂`-cohomology. -/
+theorem galoisF2Iso_inv_cup (m n : ℕ)
+    (x : continuousCohomology m (trivialF2 (AbsoluteGaloisGroup L)))
+    (y : continuousCohomology n (trivialF2 (AbsoluteGaloisGroup L))) :
+    (galoisF2Iso K L σ (m + n)).inv ((trivialF2TopPairing (AbsoluteGaloisGroup L)).cup m n x y) =
+      (trivialF2TopPairing (galoisSubgroup K L σ).toSubgroup).cup m n
+        ((galoisF2Iso K L σ m).inv x) ((galoisF2Iso K L σ n).inv y) := by
+  simp only [galoisF2Iso_inv, trivialF2Map_cup]
 
 /-- Restriction on `𝔽₂`-cohomology for the finite extension `L/K`, relative to `σ`.
 It is subgroup restriction followed by the canonical identification with `G_L`. -/

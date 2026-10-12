@@ -293,7 +293,7 @@ private lemma right_window_bounds (hre : w.re = 1 / 2) (hε : 0 < ε) (hε₁ : 
       ‖fdBoundary H s - w‖ ≤ ε := by
   have hk : 0 < H - Real.sqrt 3 / 2 := by linarith
   have hδpos : 0 < ε / (H - Real.sqrt 3 / 2) := div_pos hε hk
-  obtain ⟨hwl, hwr, -, -⟩ := right_window_endpoints hre hε hεc hεv
+  obtain ⟨_, hwr, -, -⟩ := right_window_endpoints hre hε hεc hεv
   have ht₀k : (H - w.im) / (H - Real.sqrt 3 / 2) * (H - Real.sqrt 3 / 2) = H - w.im :=
     div_mul_cancel₀ _ hk.ne'
   have hδk : ε / (H - Real.sqrt 3 / 2) * (H - Real.sqrt 3 / 2) = ε := div_mul_cancel₀ _ hk.ne'
@@ -391,7 +391,6 @@ private lemma left_window_near (hre : w.re = -(1 / 2)) (hε : 0 < ε) (hεc : ε
   obtain ⟨hwl, hwr, -, -⟩ := left_window_endpoints hre hε hεc hεv
   set u := (w.im - Real.sqrt 3 / 2) / (H - Real.sqrt 3 / 2)
   set δ := ε / (H - Real.sqrt 3 / 2)
-  have hδpos : 0 < δ := div_pos hε hk
   have ht₀k : u * (H - Real.sqrt 3 / 2) = w.im - Real.sqrt 3 / 2 := div_mul_cancel₀ _ hk.ne'
   have hδk : δ * (H - Real.sqrt 3 / 2) = ε := div_mul_cancel₀ _ hk.ne'
   intro s hs

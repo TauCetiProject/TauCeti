@@ -63,9 +63,9 @@ operator is zero on an inequivalent model over any `𝕜`, and the identity on t
 on the `π`-block for an algebraically closed `𝕜`; its kernel being symmetric it is self-adjoint,
 and for a skeleton of the unitary dual every element of `L²(G)` is carried into the `π`-block, so
 it *is* the orthogonal projection of `L²(G)` onto that block
-(`TauCeti.peterWeylBlockAveraging_eq_starProjection`). That is the sense in which averaging against
-the character is the isotypic projector here: it is a statement about the orthogonal projection onto
-a subspace of `L²(G)`, not about a `G`-isotypic decomposition.
+(`TauCeti.peterWeylBlockAveraging_eq_starProjection`). The algebraic identification of this
+subspace with the corresponding isotypic component under left translation is proved in
+`TauCeti/RepresentationTheory/Compact/IsotypicBlock/Isotypic.lean`.
 
 The operator is defined for every `RCLike 𝕜`, and is deliberately *not* named a projection, because
 over a `𝕜` that is not algebraically closed it need not be one: on a model whose endomorphism
@@ -88,11 +88,11 @@ Hilbert spaces, their subspaces, their isometries and their bounded operators, a
 enters them. The blocks are called *isotypic* because the `π`-block is spanned by
 the matrix coefficients of `π` alone; that it is the `π`-isotypic component of a `G`-action, and
 that the decomposition of `L²(G)` is one of unitary `G × G`-representations under left and right
-translation, are statements about group actions and are **not** proved here. (For a *finite* `G` the
-first of them is
-`TauCeti/RepresentationTheory/Compact/IsotypicBlock/Finite.lean`, where the obstruction recorded
-below disappears.) What *is* proved
-about the action, in the section `Stability under translation` and nowhere else, is that each
+translation, are statements about group actions and are **not** proved here. The first is proved
+for arbitrary compact groups in `TauCeti/RepresentationTheory/Compact/IsotypicBlock/Isotypic.lean`;
+the equivariant Hilbert sum is constructed in
+`TauCeti/RepresentationTheory/Compact/TraceCoefficient/HilbertSum.lean`. What *is* proved about
+the action, in the section `Stability under translation` and nowhere else, is that each
 block is stable under the biregular representation
 (`TauCeti.biRegularLp_mem_peterWeylBlock`), because translation carries matrix coefficients of a
 model to matrix coefficients of the same model

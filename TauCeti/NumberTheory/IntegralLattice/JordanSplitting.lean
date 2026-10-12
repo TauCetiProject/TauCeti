@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.BilinearForm.JordanSplitting
-public import TauCeti.NumberTheory.IntegralLattice.Localization
+public import TauCeti.NumberTheory.IntegralLattice.Localization.Basic
 
 /-!
 # Jordan splittings of a localized integral lattice

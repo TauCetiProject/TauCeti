@@ -91,7 +91,6 @@ private lemma antitone_of_nonneg_logConvex_bddAbove {u : ℕ → ℝ}
     induction k with
     | zero => simp [d]
     | succ k ih =>
-        have hmono : u (n + k) ≤ u (n + k + 1) := by nlinarith [ih]
         have hpos : 0 < u (n + k) := by
           by_contra h
           have hz : u (n + k) = 0 := le_antisymm (not_lt.mp h) (hnonneg _)
