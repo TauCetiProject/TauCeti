@@ -83,8 +83,8 @@ a remainder of norm at most `‖y‖` that either has degree less than `m` or is
   have the same degree.
 * `TauCeti.WittVector.RadiusRing.degree_mul` : the degree is additive on products.
 * `TauCeti.WittVector.RadiusRing.exists_eq_mul_add` : Euclidean division in `A^r`.
-* `TauCeti.WittVector.RadiusRing.isUnit_iff_degree_eq_zero` : the units of `A^r` are its nonzero
-  elements of degree `0`.
+* `TauCeti.WittVector.RadiusRing.isUnit_iff_ne_zero_and_degree_eq_zero` : the units of `A^r` are
+  its nonzero elements of degree `0`.
 
 ## References
 
@@ -887,7 +887,7 @@ theorem isUnit_of_degree_eq_zero {x : RadiusRing p hv hϖ hϖ' hρ} (hx : x ≠ 
   · omega
 
 /-- The units of `A^r` are its nonzero elements of degree `0`. -/
-theorem isUnit_iff_degree_eq_zero {x : RadiusRing p hv hϖ hϖ' hρ} :
+theorem isUnit_iff_ne_zero_and_degree_eq_zero {x : RadiusRing p hv hϖ hϖ' hρ} :
     IsUnit x ↔ x ≠ 0 ∧ degree p hv hϖ hϖ' hρ x = 0 :=
   ⟨fun hx ↦ ⟨hx.ne_zero, degree_eq_zero_of_isUnit p hv hϖ hϖ' hρ hx⟩,
     fun ⟨hx, hdeg⟩ ↦ isUnit_of_degree_eq_zero p hv hϖ hϖ' hρ hx hdeg⟩
