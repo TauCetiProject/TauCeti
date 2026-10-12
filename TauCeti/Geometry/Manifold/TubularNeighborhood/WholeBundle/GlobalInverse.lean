@@ -50,7 +50,7 @@ variable {V E F H M : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
 small smooth tubular radius to a partial diffeomorphism. Its source is exactly the open
 normal ball bundle and its target lies in the prescribed ambient neighbourhood. -/
 theorem exists_partialDiffeomorph_normalBundle_add_subset
-    (hf : ContMDiff I 𝓘(ℝ, V) ∞ f)
+    (hf : ContMDiff I 𝓘(ℝ, V) 2 f)
     (himm : ∀ x, Injective (mfderiv I 𝓘(ℝ, V) f x)) (hind : IsInducing f)
     (hdim : Module.finrank ℝ F = Module.finrank ℝ V - Module.finrank ℝ E)
     (hlocal :
@@ -75,7 +75,7 @@ theorem exists_partialDiffeomorph_normalBundle_add_subset
   have hU : IsOpen U := isOpen_iff_mem_nhds.mpr fun _ hp => hp.eventually
   obtain ⟨r, hr, hemb, hambient, hdisc⟩ :=
     exists_isOpenEmbedding_normalTubeOfRadius_contMDiff_subset_zeroSection
-      (hf.of_le (by simp)) himm hind hU hlocal hO hfO
+      hf himm hind hU hlocal hO hfO
   let S := {p : TotalSpace F (fun x => normalSubspace I f x) | ‖(p.2 : V)‖ < r p.proj}
   have hS : IsOpen S := by
     have he := (isEmbedding_totalSpace_normalSubspace (I := I) (F := F) f).continuous
@@ -121,7 +121,8 @@ theorem exists_partialDiffeomorph_wholeNormalBundle_subset
           ∀ x, Φ (zeroSection F (fun x => normalSubspace I f x) x) = f x := by
   let := normalFiberBundle (hf.of_le (by simp)) himm hdim
   obtain ⟨r, hr, Ψ, hsource, htarget, hΨ⟩ :=
-    exists_partialDiffeomorph_normalBundle_add_subset hf himm hind hdim hlocal hO hfO
+    exists_partialDiffeomorph_normalBundle_add_subset
+      (hf.of_le (by simp)) himm hind hdim hlocal hO hfO
   have hf' : ContMDiff I 𝓘(ℝ, V) (↑(⊤ : ℕ∞) + 1) f := by simpa using hf
   have : IsManifold I (↑(⊤ : ℕ∞) + 1) M := by
     simpa using (inferInstance : IsManifold I ∞ M)
