@@ -70,12 +70,14 @@ def weightTorusCoordinateMap : CommHopfAlgCat.baseChange (K := k) coordinateHopf
 theorem standardCoordinateMap_comp_weightTorusCoordinateMap :
     standardCoordinateMap k ≫ weightTorusCoordinateMap k =
       GeneralLinear.weightTorusBaseChangeCoordinateMap (ZMod 3) k weight := by
-  rw [standardCoordinateMap, weightTorusCoordinateMap, ← Category.assoc,
-    Category.assoc (GeneralLinear.coordinateHopfAlgebraBaseChangeIso (ZMod 3) k 7).inv,
-    ← (CommHopfAlgCat.baseChangeFunctor (K := k)).map_comp,
-    CommHopfAlgCat.mkQuotient_comp_commonKernelLift, generator_inr,
-    PrimeField.generator_inr, GeneralLinear.weightTorusBaseChangeCoordinateMap_eq ℤ (ZMod 3),
-    GeneralLinear.weightTorusBaseChangeCoordinateMap_def, Category.assoc]
+  have htorus : CommHopfAlgCat.mkQuotient _ definingIdeal ≫
+      CommHopfAlgCat.commonKernelLift generator (.inr ()) =
+        GeneralLinear.weightTorusCoordinateMap (R := ZMod 3) weight := by
+    simp only [CommHopfAlgCat.mkQuotient_comp_commonKernelLift, generator_inr,
+      PrimeField.generator_inr, GeneralLinear.weightTorusBaseChangeCoordinateMap_eq]
+  simp only [standardCoordinateMap, weightTorusCoordinateMap,
+    GeneralLinear.weightTorusBaseChangeCoordinateMap_def, Category.assoc,
+    ← (CommHopfAlgCat.baseChangeFunctor (K := k)).map_comp_assoc, htorus]
 
 /-- The positive subgroup's standard representation on `k⁷`, including finite coefficient fields. -/
 @[instance_reducible]
@@ -112,9 +114,10 @@ theorem rootSubgroupPoints_mulVec_mem
   rw [GeneralLinear.pointToGeneralLinear_baseChangeMap, MulEquiv.symm_apply_apply] at h
   have hcomp : p.ofConv.comp (CommHopfAlgCat.mkQuotient _ definingIdeal).hom.toAlgHom =
       q.ofConv.comp (PrimeField.generator (.inl (.inl i))).hom.toAlgHom := by
-    dsimp only [p]
-    rw [ofConv_toConv, AlgHom.comp_assoc, ← BialgHom.comp_toAlgHom,
-      ← CommHopfAlgCat.hom_comp, CommHopfAlgCat.mkQuotient_comp_commonKernelLift, generator_inl]
+    simpa only [p, ofConv_toConv, CommHopfAlgCat.hom_comp, BialgHom.comp_toAlgHom,
+      AlgHom.comp_assoc, generator_inl] using
+      congrArg (fun f ↦ q.ofConv.comp f.hom.toAlgHom)
+        (CommHopfAlgCat.mkQuotient_comp_commonKernelLift generator (.inl i))
   rw [hcomp] at h
   have hmatrix := PrimeField.coe_rootSubgroupPoints_gaPointsMulEquiv (.inl i) k q
   rw [CommHopfAlgCat.mapPointsFunctor_app_apply, GeneralLinear.pointsMulEquiv_apply,
@@ -136,10 +139,6 @@ theorem coefficientMatrix_isUpperTriangular :
       (standardCoordinateMap k).hom.toCoalgHom
   rw [hmatrix]
   intro a b hba
-  rw [Matrix.map_apply, GeneralLinear.genericMatrix_apply, standardCoordinateMap,
-    CommHopfAlgCat.hom_comp, BialgHom.comp_apply,
-    GeneralLinear.coordinateHopfAlgebraBaseChangeIso_inv_X,
-    CommHopfAlgCat.baseChangeMap_apply_tmul]
   have hz : (CommHopfAlgCat.mkQuotient _ definingIdeal).hom
       (GeneralLinear.coordinateHopfAlgebraAlgEquiv (ZMod 3) 7
         (GeneralLinear.coordinateRingMap (ZMod 3) 7 (MvPolynomial.X (a, b)))) = 0 := by
@@ -149,7 +148,11 @@ theorem coefficientMatrix_isUpperTriangular :
     exact Ideal.subset_span
       ((GeneralLinear.UpperTriangular.mem_definingRelationSet_iff _ _ _).mpr
         ⟨a, b, hba, rfl⟩)
-  rw [hz, TensorProduct.tmul_zero]
+  simp only [Matrix.map_apply, GeneralLinear.genericMatrix_apply, standardCoordinateMap,
+    CommHopfAlgCat.hom_comp, BialgHom.comp_apply]
+  rw [GeneralLinear.coordinateHopfAlgebraBaseChangeIso_inv_X,
+    CommHopfAlgCat.baseChangeMap_apply_tmul]
+  simp only [hz, TensorProduct.tmul_zero]
 
 end
 
