@@ -47,12 +47,7 @@ private lemma pullbackComp_eqToHom (A : QuasicoherentSheaf Z) :
   -- `Opens.grothendieckTopology`, beyond the transparency used by `rw` and `simp`.
   erw [eqToHom_map, eqToHom_trans]
 
-/-- The inverse unit comparisons of successive pullbacks agree with the comparison for the
-composite morphism through the canonical composition isomorphism. -/
-@[reassoc (attr := simp↓)]
-theorem pullback_comp_η :
-    η (pullback g ⋙ pullback f) =
-      (pullbackComp f g).hom.app (𝟙_ (QuasicoherentSheaf Z)) ≫ η (pullback (f ≫ g)) := by
+private lemma pullbackComp_unit_transport :
   let U := 𝟙_ (QuasicoherentSheaf Z)
   let H : Y.Modules ⥤ X.Modules := Scheme.Modules.pullback f
   let G : Y.Modules := ((pullback g).obj U).obj
@@ -71,32 +66,19 @@ theorem pullback_comp_η :
   let eC : C ≅ (Scheme.Modules.pullback (f ≫ g)).obj (𝟙_ Z.Modules) :=
     eqToIso (pullback_obj_obj (f ≫ g) U)
   let c := Scheme.Modules.pullbackComp f g
-  have h : (eS.hom ≫ H.map (eG.hom ≫ (Scheme.Modules.pullbackObjUnitIso g).hom) ≫ eU.inv) ≫
+  (eS.hom ≫ H.map eG.hom = eD.hom) →
+  (eS.hom ≫ H.map (eG.hom ≫ (Scheme.Modules.pullbackObjUnitIso g).hom) ≫ eU.inv) ≫
       (eU.hom ≫ (Scheme.Modules.pullbackObjUnitIso f).hom) =
     (eD.hom ≫ c.hom.app (𝟙_ Z.Modules) ≫ eC.inv) ≫
       (eC.hom ≫ (Scheme.Modules.pullbackObjUnitIso (f ≫ g)).hom) := by
-    simp only [Category.assoc, Iso.inv_hom_id_assoc, Functor.map_comp]
-    have he : eS.hom ≫ H.map eG.hom = eD.hom := pullbackComp_eqToHom f g U
-    rw [← Category.assoc, he]
-    rw [cancel_epi eD.hom, ← cancel_epi (c.inv.app (𝟙_ Z.Modules))]
-    simp only [Iso.inv_hom_id_app_assoc]
-    exact Scheme.Modules.pullbackObjUnitIso_comp f g
-  rw [Functor.OplaxMonoidal.comp_η]
-  apply ObjectProperty.hom_ext
-  -- Express composition in the full subcategory on its underlying module morphisms.
-  change ((pullback f).map (η (pullback g))).hom ≫ (η (pullback f)).hom =
-    ((pullbackComp f g).hom.app _).hom ≫ (η (pullback (f ≫ g))).hom
-  rw [pullback_map_hom, pullback_η_hom, pullback_η_hom,
-    pullbackComp_hom_app_hom, pullback_η_hom]
-  exact h
+  intro U H G S A C eS eG eU eD eC c he
+  simp only [Category.assoc, Iso.inv_hom_id_assoc, Functor.map_comp]
+  rw [← Category.assoc, he]
+  rw [cancel_epi eD.hom, ← cancel_epi (c.inv.app (𝟙_ Z.Modules))]
+  simp only [Iso.inv_hom_id_app_assoc]
+  exact Scheme.Modules.pullbackObjUnitIso_comp f g
 
-/-- The inverse tensor comparisons of successive pullbacks agree with the comparison for the
-composite morphism through the canonical composition isomorphism. -/
-@[reassoc (attr := simp↓)]
-theorem pullback_comp_δ (E F : QuasicoherentSheaf Z) :
-    δ (pullback g ⋙ pullback f) E F ≫
-        ((pullbackComp f g).hom.app E ⊗ₘ (pullbackComp f g).hom.app F) =
-      (pullbackComp f g).hom.app (E ⊗ F) ≫ δ (pullback (f ≫ g)) E F := by
+private lemma pullbackComp_tensor_transport (E F : QuasicoherentSheaf Z) :
   -- First transport the desired equation to explicitly named module carriers.
   let H : Y.Modules ⥤ X.Modules := Scheme.Modules.pullback f
   let K : Z.Modules ⥤ Y.Modules := Scheme.Modules.pullback g
@@ -115,7 +97,7 @@ theorem pullback_comp_δ (E F : QuasicoherentSheaf Z) :
   let eT : T ≅ H.obj (G E ⊗ G F) :=
     eqToIso (pullback_obj_obj f ((pullback g).obj E ⊗ (pullback g).obj F))
   let c := Scheme.Modules.pullbackComp f g
-  have h :
+  (∀ A, (eS A).hom ≫ H.map (eG A).hom = (eD A).hom) →
       (eS (E ⊗ F)).hom ≫
           H.map ((eG (E ⊗ F)).hom ≫ δ K (M E) (M F) ≫
             ((eG E).inv ⊗ₘ (eG F).inv)) ≫ eT.inv ≫
@@ -125,42 +107,60 @@ theorem pullback_comp_δ (E F : QuasicoherentSheaf Z) :
       ((eD (E ⊗ F)).hom ≫ c.hom.app (M E ⊗ M F) ≫ (eC (E ⊗ F)).inv) ≫
         (eC (E ⊗ F)).hom ≫ δ (Scheme.Modules.pullback (f ≫ g)) (M E) (M F) ≫
           ((eC E).inv ⊗ₘ (eC F).inv) := by
-    simp only [Category.assoc, Iso.inv_hom_id_assoc, Functor.map_comp]
-    have he (A) : (eS A).hom ≫ H.map (eG A).hom = (eD A).hom :=
-      pullbackComp_eqToHom f g A
-    -- Naturality moves the inner object identifications through the outer tensorator;
-    -- cancellation then leaves the existing module-pullback composition equation.
-    rw [← Category.assoc, he,
-      ← Functor.OplaxMonoidal.δ_natural_assoc H (eG E).inv (eG F).inv]
-    simp only [tensorHom_comp_tensorHom]
-    rw [← he E, ← he F]
-    simp only [Category.assoc, Iso.inv_hom_id_assoc, Iso.inv_hom_id_map_assoc]
-    rw [← tensorHom_comp_tensorHom (c.hom.app (M E)) (c.hom.app (M F))
-      (eC E).inv (eC F).inv]
-    rw [cancel_epi (eD (E ⊗ F)).hom]
-    -- The underlying module of a full-subcategory tensor is the ambient module tensor.
-    change H.map (δ K (M E) (M F)) ≫ δ H (K.obj (M E)) (K.obj (M F)) ≫
-        (c.hom.app (M E) ⊗ₘ c.hom.app (M F)) ≫ ((eC E).inv ⊗ₘ (eC F).inv) =
-      c.hom.app (M E ⊗ M F) ≫ δ (Scheme.Modules.pullback (f ≫ g)) (M E) (M F) ≫
-        ((eC E).inv ⊗ₘ (eC F).inv)
-    simp only [← Category.assoc]
-    rw [cancel_mono ((eC E).inv ⊗ₘ (eC F).inv)]
-    rw [← cancel_epi (c.inv.app (M E ⊗ M F))]
-    simp only [Category.assoc, Iso.inv_hom_id_app_assoc]
-    exact (Scheme.Modules.pullback_comp_δ f g (M E) (M F)).symm
+  intro H K M G S C T eS eG eD eC eT c he
+  simp only [Category.assoc, Iso.inv_hom_id_assoc, Functor.map_comp]
+  -- Naturality moves the inner object identifications through the outer tensorator;
+  -- cancellation then leaves the existing module-pullback composition equation.
+  rw [← Category.assoc, he,
+    ← Functor.OplaxMonoidal.δ_natural_assoc H (eG E).inv (eG F).inv]
+  simp only [tensorHom_comp_tensorHom]
+  rw [← he E, ← he F]
+  simp only [Category.assoc, Iso.inv_hom_id_assoc, Iso.inv_hom_id_map_assoc]
+  rw [← tensorHom_comp_tensorHom (c.hom.app (M E)) (c.hom.app (M F))
+    (eC E).inv (eC F).inv]
+  rw [cancel_epi (eD (E ⊗ F)).hom]
+  -- Re-anchor the tensor expressions in `X.Modules`. Rewriting `tensorObj_obj` instead
+  -- leaves the unfolded sheaf presentation, on which monoidal instance search fails.
+  change H.map (δ K (M E) (M F)) ≫ δ H (K.obj (M E)) (K.obj (M F)) ≫
+      (c.hom.app (M E) ⊗ₘ c.hom.app (M F)) ≫ ((eC E).inv ⊗ₘ (eC F).inv) =
+    c.hom.app (M E ⊗ M F) ≫ δ (Scheme.Modules.pullback (f ≫ g)) (M E) (M F) ≫
+      ((eC E).inv ⊗ₘ (eC F).inv)
+  simp only [← Category.assoc]
+  rw [cancel_mono ((eC E).inv ⊗ₘ (eC F).inv)]
+  rw [← cancel_epi (c.inv.app (M E ⊗ M F))]
+  simp only [Category.assoc, Iso.inv_hom_id_app_assoc]
+  exact (Scheme.Modules.pullback_comp_δ f g (M E) (M F)).symm
+
+/-- The inverse unit comparisons of successive pullbacks agree with the comparison for the
+composite morphism through the canonical composition isomorphism. -/
+@[reassoc (attr := simp↓)]
+theorem pullback_comp_η :
+    η (pullback g ⋙ pullback f) =
+      (pullbackComp f g).hom.app (𝟙_ (QuasicoherentSheaf Z)) ≫ η (pullback (f ≫ g)) := by
+  rw [Functor.OplaxMonoidal.comp_η]
+  apply ObjectProperty.hom_ext
+  rw [ObjectProperty.FullSubcategory.comp_hom, ObjectProperty.FullSubcategory.comp_hom]
+  rw [pullback_map_hom, pullback_η_hom, pullback_η_hom,
+    pullbackComp_hom_app_hom, pullback_η_hom]
+  exact pullbackComp_unit_transport f g (pullbackComp_eqToHom f g _)
+
+/-- The inverse tensor comparisons of successive pullbacks agree with the comparison for the
+composite morphism through the canonical composition isomorphism. -/
+@[reassoc (attr := simp↓)]
+theorem pullback_comp_δ (E F : QuasicoherentSheaf Z) :
+    δ (pullback g ⋙ pullback f) E F ≫
+        ((pullbackComp f g).hom.app E ⊗ₘ (pullbackComp f g).hom.app F) =
+      (pullbackComp f g).hom.app (E ⊗ F) ≫ δ (pullback (f ≫ g)) E F := by
   -- Restrict the module equation back using the public full-subcategory comparison laws.
   rw [Functor.OplaxMonoidal.comp_δ]
   apply ObjectProperty.hom_ext
-  -- Read composition and tensor in the full subcategory as module morphisms.
-  change ((pullback f).map (δ (pullback g) E F)).hom ≫
-    (δ (pullback f) ((pullback g).obj E) ((pullback g).obj F)).hom ≫
-      tensorHom (C := X.Modules) ((pullbackComp f g).hom.app E).hom
-        ((pullbackComp f g).hom.app F).hom =
-    ((pullbackComp f g).hom.app (E ⊗ F)).hom ≫ (δ (pullback (f ≫ g)) E F).hom
+  simp only [ObjectProperty.FullSubcategory.comp_hom]
+  -- The ambient carrier must be explicit to avoid the unfolded sheaf presentation.
+  erw [ObjectProperty.tensorHom_def (C := X.Modules)]
   rw [pullback_map_hom, pullback_δ_hom, pullback_δ_hom,
     pullbackComp_hom_app_hom, pullbackComp_hom_app_hom,
     pullbackComp_hom_app_hom, pullback_δ_hom]
-  exact h
+  exact pullbackComp_tensor_transport f g E F (pullbackComp_eqToHom f g)
 
 /-- The canonical composition isomorphism of quasicoherent pullback is monoidal. -/
 instance isMonoidal_pullbackComp_hom : NatTrans.IsMonoidal (pullbackComp f g).hom where
