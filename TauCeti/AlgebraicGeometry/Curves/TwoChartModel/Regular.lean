@@ -44,9 +44,8 @@ function field (`TauCeti.AlgebraicGeometry.CodimensionOnePoint.equivPlace`).
 * `TauCeti.AlgebraicGeometry.twoChartModel.isNoetherian`: the scheme is Noetherian.
 * `TauCeti.AlgebraicGeometry.twoChartModel.topologicalKrullDim_eq_one`: the scheme has dimension
   one.
-* `TauCeti.AlgebraicGeometry.twoChartModel.coheight_le_one` and
-  `TauCeti.AlgebraicGeometry.twoChartModel.coheight_eq_one_iff_ne_genericPoint`: every point has
-  codimension at most one, and exactly one unless it is the generic point.
+* `TauCeti.AlgebraicGeometry.twoChartModel.coheight_le_one`: every point has codimension at most
+  one.
 * `TauCeti.AlgebraicGeometry.twoChartModel.isRegularLocalRing_stalk`: every local ring is a
   regular local ring.
 * `TauCeti.AlgebraicGeometry.twoChartModel.isDiscreteValuationRing_stalk`: the local ring at a
@@ -147,12 +146,6 @@ theorem coheight_le_one (hxt : Transcendental k x) (p : twoChartModel hF hx) :
   have := TauCeti.coheight_le_topologicalKrullDim p
   rw [topologicalKrullDim_eq_one hxt] at this
   exact_mod_cast this
-
-/-- **The codimension-one points of the two-chart model are its points other than the generic
-point**, for `x` transcendental over `k`. -/
-theorem coheight_eq_one_iff_ne_genericPoint (hxt : Transcendental k x)
-    {p : twoChartModel hF hx} : coheight p = 1 ↔ p ≠ genericPoint (twoChartModel hF hx) :=
-  Scheme.coheight_eq_one_iff_ne_genericPoint (topologicalKrullDim_eq_one hxt).le
 
 /-- **The two-chart model is regular**, for `x` transcendental over `k`: its local rings are the
 local rings of the Dedekind domains `𝒪_x` and `𝒪_{x⁻¹}`, which are regular. -/
