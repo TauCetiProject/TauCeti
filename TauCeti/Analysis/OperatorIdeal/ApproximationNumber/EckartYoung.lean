@@ -81,8 +81,7 @@ theorem singularValue_eq_linearMap_singularValues (T : E →L[𝕜] F) (n : ℕ)
       (T.singularValue_le_nnnorm_comp_orthogonal (v.rank_spanIndices_val_lt_le n))).trans ?_
     rw [coe_nnnorm]
     exact T.norm_comp_orthogonal_spanIndices_le_of_adjoint_comp_self_eigenbasis v
-      (fun i j hij ↦ pow_le_pow_left₀ (A.singularValues_nonneg _)
-        (A.singularValues_antitone (by exact_mod_cast hij)) 2)
+      (A.antitone_sq_singularValues.comp_monotone (Fin.valOrderEmb _).monotone)
       A.adjoint_comp_self_rightSingularBasis n
   · -- Lower bound: `T` is `σₙ`-coercive on the span of the first `n + 1` right singular vectors.
     rcases lt_or_ge n (finrank 𝕜 E) with hn | hn

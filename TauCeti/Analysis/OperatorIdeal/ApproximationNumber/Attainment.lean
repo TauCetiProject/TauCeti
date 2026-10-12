@@ -65,8 +65,8 @@ theorem nnnorm_comp_orthogonal_rightSingularBasis_spanIndices (T : E →L[𝕜] 
     ‖T ∘L Vᗮ.subtypeL‖₊ = T.singularValue n := by
   exact T.nnnorm_comp_orthogonal_spanIndices_of_adjoint_comp_self_eigenbasis
     (T : E →ₗ[𝕜] F).rightSingularBasis
-    (fun i j hij ↦ pow_le_pow_left₀ ((T : E →ₗ[𝕜] F).singularValues_nonneg _)
-      ((T : E →ₗ[𝕜] F).singularValues_antitone (by exact_mod_cast hij)) 2)
+    ((T : E →ₗ[𝕜] F).antitone_sq_singularValues.comp_monotone
+      (Fin.valOrderEmb _).monotone)
     (T : E →ₗ[𝕜] F).adjoint_comp_self_rightSingularBasis n
 
 omit [FiniteDimensional 𝕜 F] in
@@ -76,7 +76,8 @@ theorem exists_rank_le_nnnorm_sub_eq_singularValue (T : E →L[𝕜] F) (n : ℕ
     ∃ R : E →L[𝕜] F, R.rank ≤ n ∧ ‖T - R‖₊ = T.singularValue n := by
   let W := LinearMap.range (T : E →ₗ[𝕜] F)
   let T' : E →L[𝕜] W := T.codRestrict W fun x ↦ LinearMap.mem_range_self _ x
-  have hT : W.subtypeL ∘L T' = T := rfl
+  have hT : W.subtypeL ∘L T' = T :=
+    T.subtypeL_comp_codRestrict W _
   have hproj : W.orthogonalProjectionOnto ∘L T = T' := by
     apply ContinuousLinearMap.ext
     intro x
@@ -125,9 +126,6 @@ theorem nnnorm_toLin_diagonal_comp_orthogonal_spanIndices
   exact ContinuousLinearMap.nnnorm_comp_orthogonal_spanIndices_of_adjoint_comp_self_eigenbasis
     _ (e.reindex π.symm)
     (fun i j hij ↦ pow_le_pow_left₀ (norm_nonneg _) (hπ hij) 2)
-    (fun i ↦ by
-      simpa only [OrthonormalBasis.reindex_apply, Equiv.symm_symm,
-        LinearMap.coe_toContinuousLinearMap] using
-        Matrix.adjoint_comp_self_toLin_diagonal_apply e d (π i)) n
+    (e.adjoint_comp_self_toLin_diagonal_reindex_apply d π) n
 
 end OrthonormalBasis

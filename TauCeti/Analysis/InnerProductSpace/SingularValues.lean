@@ -209,6 +209,11 @@ variable (A : E →ₗ[𝕜] F)
 
 local notation "⟪" x ", " y "⟫" => inner 𝕜 x y
 
+/-- The squared singular values are nonincreasing, including the zero tail. -/
+theorem antitone_sq_singularValues : Antitone fun i : ℕ ↦ A.singularValues i ^ 2 :=
+  fun _ _ hij ↦ pow_le_pow_left₀ (A.singularValues_nonneg _)
+    (A.singularValues_antitone hij) 2
+
 /-- The **right singular basis** of `A`: the orthonormal eigenbasis `(vᵢ)` of the source Gram
 operator `A† A`, ordered so that `A† A vᵢ = σᵢ² vᵢ` for the singular values
 `σᵢ = A.singularValues i` of `A`, listed in nonincreasing order. -/
@@ -261,7 +266,7 @@ theorem singularValues_mul_norm_le_norm_apply {n : ℕ} {x : E}
     A.singularValues n * ‖x‖ ≤ ‖A x‖ := by
   have h := A.isSymmetric_adjoint_comp_self.le_re_inner_of_eigenbasis A.rightSingularBasis
     A.adjoint_comp_self_rightSingularBasis (c := A.singularValues n ^ 2)
-    (fun i hi ↦ pow_le_pow_left₀ (A.singularValues_nonneg n) (A.singularValues_antitone hi) 2) hx
+    (fun i hi ↦ A.antitone_sq_singularValues hi) hx
   rw [comp_apply, adjoint_inner_left, inner_self_eq_norm_sq, ← mul_pow] at h
   exact (pow_le_pow_iff_left₀ (mul_nonneg (A.singularValues_nonneg n) (norm_nonneg x))
     (norm_nonneg _) two_ne_zero).mp h
@@ -294,7 +299,7 @@ theorem norm_apply_le_singularValues_mul_norm {n : ℕ} {x : E}
     ‖A x‖ ≤ A.singularValues n * ‖x‖ := by
   exact A.norm_apply_le_of_mem_spanIndices_of_adjoint_comp_self_eigenbasis
     A.rightSingularBasis A.adjoint_comp_self_rightSingularBasis (A.singularValues_nonneg n)
-    (fun i hi ↦ pow_le_pow_left₀ (A.singularValues_nonneg _) (A.singularValues_antitone hi) 2) hx
+    (fun i hi ↦ A.antitone_sq_singularValues hi) hx
 
 /-- A right singular vector with singular value zero lies in the kernel, so `A vᵢ` is fixed by
 the scalar `σᵢ⁻² σᵢ²` (with total field inversion) even when `σᵢ = 0`. -/
@@ -544,6 +549,19 @@ theorem _root_.Matrix.adjoint_comp_self_toLin_diagonal_apply
     rw [← Matrix.toLin_conjTranspose, Matrix.diagonal_conjTranspose]
   simp [hDadj, smul_smul, RCLike.mul_conj]
 
+omit [FiniteDimensional 𝕜 E] in
+/-- Reindexing a diagonal basis preserves the Gram eigenvector equations, with the squared
+diagonal norms reindexed by the same equivalence. -/
+theorem _root_.OrthonormalBasis.adjoint_comp_self_toLin_diagonal_reindex_apply
+    (e : OrthonormalBasis ι 𝕜 E) (d : ι → 𝕜) {κ : Type*} [Fintype κ]
+    (π : κ ≃ ι) (i : κ) :
+    let := Module.Finite.of_basis e.toBasis
+    let D := Matrix.toLin e.toBasis e.toBasis (Matrix.diagonal d)
+    (adjoint D ∘ₗ D) ((e.reindex π.symm) i) =
+      ((‖d (π i)‖ ^ 2 : ℝ) : 𝕜) • (e.reindex π.symm) i := by
+  simpa only [OrthonormalBasis.reindex_apply, Equiv.symm_symm] using
+    Matrix.adjoint_comp_self_toLin_diagonal_apply e d (π i)
+
 /-- **Singular values of a diagonal operator.** If `π` lists the indices so that the norms
 `‖d (π k)‖` are nonincreasing, then the `k`-th singular value of the diagonal operator with entries
 `d` in an orthonormal basis is `‖d (π k)‖`. The singular values from `Fintype.card ι` on vanish
@@ -555,9 +573,7 @@ theorem _root_.Matrix.singularValues_toLin_diagonal (e : OrthonormalBasis ι �
   rw [← sq_eq_sq₀ (D.singularValues_nonneg _) (norm_nonneg _)]
   exact D.sq_singularValues_eq_of_adjoint_comp_self_eigenbasis (e.reindex π.symm)
     (fun i j hij ↦ pow_le_pow_left₀ (norm_nonneg _) (hπ hij) 2)
-    (fun i ↦ by
-      simpa only [OrthonormalBasis.reindex_apply, Equiv.symm_symm] using
-        Matrix.adjoint_comp_self_toLin_diagonal_apply e d (π i)) k
+    (e.adjoint_comp_self_toLin_diagonal_reindex_apply d π) k
 
 /-- **Rectangular singular-value factorization.** Every linear map `A : E →ₗ[𝕜] F` between
 finite-dimensional inner product spaces factors as `A = U D V`, where `U` and `V` are linear
