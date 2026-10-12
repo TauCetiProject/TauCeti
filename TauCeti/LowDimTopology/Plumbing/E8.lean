@@ -15,14 +15,13 @@ import TauCeti.LowDimTopology.Plumbing.Weight.MinusTwo
 /-!
 # The negative-definite E₈ plumbing
 
-This file defines the `E₈` plumbing used as the first concrete calculation in the lattice-homology
-lane. Its eight vertices all have framing `-2`; vertices `0, ..., 6` form a chain and vertex `7`
-is attached to vertex `2`. Thus the negative of its intersection matrix is the `E₈` Cartan
-matrix.
+This file defines the negative-definite `E₈` plumbing, whose boundary is the Poincaré homology
+sphere. Its eight vertices all have framing `-2`; vertices `0, ..., 6` form a chain and vertex `7`
+is attached to vertex `2`. Thus the negative of its intersection matrix is the `E₈` Cartan matrix.
 
 The proof of negative-definiteness gives an explicit integral completion of squares. This both
 certifies the plumbing without appealing to a classification theorem and records a formula useful
-for checking later computations on this example.
+for checking computations on this example.
 
 ## Main definitions
 

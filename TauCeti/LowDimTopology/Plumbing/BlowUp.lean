@@ -53,9 +53,8 @@ and every characteristic covector of the blow-up arises this way, so `blowUpChar
 parametrizes them completely; the canonical characteristic covector of the blow-up is the
 canonical one of `P` carrying `-1`, the adjunction value of the exceptional class.
 
-Nothing about lattice homology itself is proved here; the invariance of lattice homology under the
-Neumann moves is a separate (later) target, and this file supplies the move together with the fact
-that it preserves the hypothesis under which the invariant is defined.
+Invariance of lattice homology under Neumann moves is not proved here; this file supplies the move
+and the fact that it preserves negative-definiteness.
 
 ## Main definitions
 

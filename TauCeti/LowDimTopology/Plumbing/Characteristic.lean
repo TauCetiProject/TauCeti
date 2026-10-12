@@ -17,9 +17,9 @@ to a plumbing graph. For a plumbing graph `P`, a covector `k : V → ℤ` is cha
 value on each basis sphere is congruent modulo two to the sphere's self-intersection, namely
 `P.weight v`.
 
-This is the first parity layer used in Némethi's lattice homology: the chain groups are indexed
-by lattice points together with characteristic covectors, and later weight functions are built
-from these covectors and the plumbing intersection form.
+This is the parity condition used in Némethi's lattice homology: the chain groups are indexed by
+lattice points together with characteristic covectors, and the weight functions are built from these
+covectors and the plumbing intersection form.
 
 ## Main definitions
 
