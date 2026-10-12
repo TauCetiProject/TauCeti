@@ -121,6 +121,16 @@ noncomputable def bimoduleModuleTensorObj : GradedModuleCat.{max vM vN} Γ.piece
 def bimoduleModuleTensorTmul (m : M) (n : N) : bimoduleModuleTensorObj Γ Δ M N :=
   BalancedTensorProduct.tmul k B m n
 
+/-- The pure tensor as a bilinear map over the ground ring. -/
+noncomputable def bimoduleModuleTensorMk :
+    M →ₗ[k] N →ₗ[k] bimoduleModuleTensorObj Γ Δ M N :=
+  BalancedTensorProduct.mk k B
+
+@[simp]
+theorem bimoduleModuleTensorMk_apply (m : M) (n : N) :
+    bimoduleModuleTensorMk Γ Δ M N m n = bimoduleModuleTensorTmul Γ Δ M N m n :=
+  BalancedTensorProduct.mk_apply k B m n
+
 /-- Balancing transfers the right action on the bimodule to the left module. -/
 theorem bimoduleModuleTensorTmul_balance (b : B) (m : M) (n : N) :
     bimoduleModuleTensorTmul Γ Δ M N (((1 : A) ⊗ₜ[k] op b) • m) n =
@@ -207,6 +217,53 @@ theorem bimoduleModuleTensor_hom_ext {P : GradedModuleCat.{max vM vN} Γ.piece}
   apply hom_ext
   apply LinearMap.restrictScalars_injective k
   exact BalancedTensorProduct.hom_ext h
+
+section Lift
+
+variable {P : GradedModuleCat.{max vM vN} Γ.piece}
+  (f : M →ₗ[k] N →ₗ[k] P)
+  (hbalance : ∀ (b : B) (m : M) (n : N),
+    f (((1 : A) ⊗ₜ[k] op b) • m) n = f m (b • n))
+  (hleft : ∀ (a : A) (m : M) (n : N),
+    f ((a ⊗ₜ[k] (1 : Bᵐᵒᵖ)) • m) n = a • f m n)
+
+private noncomputable def moduleTensorLiftLinear :
+    BalancedTensorProduct k B M N →ₗ[A] P where
+  toAddHom := (BalancedTensorProduct.lift f hbalance).toAddHom
+  map_smul' a z := BalancedTensorProduct.lift_smul_left A f hbalance hleft a z
+
+omit [GradedAlgebra Γ.piece] [GradedAlgebra Δ.piece] in
+private theorem moduleTensorLiftLinear_tmul (m : M) (n : N) :
+    moduleTensorLiftLinear Γ Δ f hbalance hleft (BalancedTensorProduct.tmul k B m n) =
+      f m n :=
+  BalancedTensorProduct.lift_tmul f hbalance m n
+
+variable (hdegree : ∀ {p q : ℤ} {m : M} {n : N},
+  m ∈ M.grading.piece p → n ∈ N.grading.piece q → f m n ∈ P.grading.piece (p + q))
+
+/-- Lift a balanced bilinear map respecting the left action and total internal degree. -/
+noncomputable def bimoduleModuleTensorLift : bimoduleModuleTensorObj Γ Δ M N ⟶ P :=
+  ofHom (moduleTensorLiftLinear Γ Δ f hbalance hleft)
+    (LinearMap.isHomogeneous_def.2 fun p z hz ↦ by
+      rw [add_zero]
+      -- The object's grading is the total grading of the balanced quotient.
+      change z ∈ (BalancedTensorProduct.grading (𝒜 := Δ.piece) M.grading N.grading).piece p
+        at hz
+      rw [BalancedTensorProduct.grading_piece_eq_iSup] at hz
+      refine (iSup_le fun q ↦ Submodule.map₂_le.mpr fun m hm n hn ↦ ?_ :
+        _ ≤ (P.grading.piece p).comap
+          ((moduleTensorLiftLinear Γ Δ f hbalance hleft).restrictScalars k)) hz
+      rw [Submodule.mem_comap, BalancedTensorProduct.mk_apply,
+        LinearMap.restrictScalars_apply, moduleTensorLiftLinear_tmul]
+      simpa only [show q + (p - q) = p by omega] using hdegree hm hn)
+
+@[simp]
+theorem bimoduleModuleTensorLift_tmul (m : M) (n : N) :
+    (bimoduleModuleTensorLift Γ Δ f hbalance hleft hdegree).hom
+      (bimoduleModuleTensorTmul Γ Δ M N m n) = f m n :=
+  moduleTensorLiftLinear_tmul Γ Δ f hbalance hleft m n
+
+end Lift
 
 @[simp]
 theorem bimoduleModuleTensorMap_id :
