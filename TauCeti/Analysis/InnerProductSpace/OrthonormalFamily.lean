@@ -26,8 +26,6 @@ namespace Orthonormal
 variable {𝕜 E ι : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
   [Fintype ι]
 
-local instance : DecidableEq ι := Classical.decEq ι
-
 /-- The synthesis map of an orthonormal family is a linear isometry from Euclidean coefficient
 space into its ambient inner-product space. -/
 def synthesisMapIsometry (v : ι → E) (hv : Orthonormal 𝕜 v) :
@@ -46,9 +44,10 @@ theorem synthesisMapIsometry_apply (v : ι → E) (hv : Orthonormal 𝕜 v)
     synthesisMapIsometry v hv a = ∑ i, a i • v i := by
   simp [synthesisMapIsometry, TauCeti.synthesisMap_apply]
 
+open Classical in
 /-- The coordinate isometry sends each standard coordinate vector to the corresponding member of
 the orthonormal family. -/
-@[simp]
+@[simp high]
 theorem synthesisMapIsometry_single (v : ι → E) (hv : Orthonormal 𝕜 v) (i : ι) (c : 𝕜) :
     synthesisMapIsometry v hv (EuclideanSpace.single i c) = c • v i := by
   classical
