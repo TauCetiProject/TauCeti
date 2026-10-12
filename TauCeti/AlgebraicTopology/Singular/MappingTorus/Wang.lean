@@ -35,7 +35,6 @@ variable {F : Type w} [TopologicalSpace F] (φ : F ≃ₜ F)
 
 /-- The map `Hₙ(F) ⟶ Hₙ(T)` on singular homology induced by the fibre inclusion
 `MappingTorus.incl` of a mapping torus. -/
-@[expose]
 noncomputable def wangInclusion (n : ℕ) :
     ((singularHomologyFunctor A n).obj R).obj (TopCat.of F) ⟶
       ((singularHomologyFunctor A n).obj R).obj (TopCat.of (MappingTorus φ)) :=
@@ -44,11 +43,10 @@ noncomputable def wangInclusion (n : ℕ) :
 /-- The Wang inclusion is induced by the fibre inclusion. -/
 theorem wangInclusion_def (n : ℕ) :
     wangInclusion φ R n = ((singularHomologyFunctor A n).obj R).map (TopCat.ofHom (incl φ)) :=
-  rfl
+  (rfl)
 
 /-- The connecting map in the Wang sequence, obtained from the pair sequence and the relative
 homology identification `Hₙ₊₁(T, F) ≅ Hₙ(F)`. -/
-@[expose]
 noncomputable def wangConnecting (n : ℕ) :
     ((singularHomologyFunctor A (n + 1)).obj R).obj (TopCat.of (MappingTorus φ)) ⟶
       ((singularHomologyFunctor A n).obj R).obj (TopCat.of F) :=
@@ -59,7 +57,7 @@ identification. -/
 theorem wangConnecting_def (n : ℕ) :
     wangConnecting φ R n =
       (fiberPair φ).singularHomologyπ R (n + 1) ≫ (singularHomologyFiberPairIso φ R n).hom :=
-  rfl
+  (rfl)
 
 /-- The Wang inclusion factors through the homology of the subspace of `fiberPair φ`. -/
 private lemma wangInclusion_eq (n : ℕ) :
