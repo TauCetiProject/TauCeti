@@ -85,6 +85,7 @@ theorem map_bijective (hf : f.IsWeakHomotopyEquivalence) (N : Type*) [Finite N] 
 
 /-- A weak homotopy equivalence is injective on path components: two points of `X` are joined by
 a path exactly when their images are. -/
+@[simp]
 theorem joined_iff (hf : f.IsWeakHomotopyEquivalence) {a b : X} :
     Joined (f a) (f b) ↔ Joined a b := by
   refine ⟨fun h ↦ ?_, fun h ↦ h.map f.continuous⟩
