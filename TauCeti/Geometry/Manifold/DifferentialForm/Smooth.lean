@@ -150,9 +150,8 @@ variable {I : ModelWithCorners ℝ E H} [IsManifold I 1 M]
 
 /-- Evaluate a degree-two smooth form on an ordered pair of tangent vectors.
 
-The adapter API follows the corresponding `TauCeti.SmoothTwoForm.bilinFormAt`,
-`TauCeti.SmoothTwoForm.bilinFormAt_apply`, and `TauCeti.SmoothTwoForm.isAlt_bilinFormAt`
-declarations in `TauCeti.Geometry.Manifold.TwoForm.Basic`. -/
+This ordered-pair view supplies the arguments for the algebraic bilinear-form conversion and
+the extensionality principle for degree-two forms. -/
 def eval₂ (φ : SmoothForm I M F 2) (x : M) (v w : TangentSpace I x) : F :=
   φ.1 x ![v, w]
 
