@@ -16,6 +16,13 @@ The volume component of the lowest differential and the vertex component of the 
 differential are negative identity blocks. Split the self-tensor and reorder the other
 terms to cancel these blocks, with the corrected projection and inclusion supplied by
 the four-term contraction criterion.
+
+## References
+
+* R. S. Huerfano and M. Khovanov, *A category for the adjoint representation*,
+  [arXiv:math/0002060](https://arxiv.org/abs/math/0002060), Sections 3 and 4.6, Proposition 7.
+* M. Khovanov and P. Seidel, *Quivers, Floer cohomology, and braid group actions*,
+  [arXiv:math/0006056](https://arxiv.org/abs/math/0006056), Theorem 2.5 for the type-A relation.
 -/
 
 public section
@@ -39,31 +46,13 @@ private abbrev pairTerms (i j : V) := T (U i) (U j) ⊞ T (U j) (U i)
 
 private def pairSplitIso (i j : V) :
     T (U i) (U j) ⊞ (T (U i) (U i) ⊞ T (U j) (U i)) ≅
-      pairTerms k G i j ⊞ ((U i) ⊞ (U i).shiftObj 2) where
-  hom := biprod.lift (biprod.lift biprod.fst (biprod.snd ≫ biprod.snd))
-    (biprod.snd ≫ biprod.fst ≫ (zigzagBraidSelfTensorIso k G i).hom)
-  inv := biprod.desc (biprod.desc biprod.inl (biprod.inr ≫ biprod.inr))
-    ((zigzagBraidSelfTensorIso k G i).inv ≫ biprod.inl ≫ biprod.inr)
-  hom_inv_id := by
-    repeat' first | apply biprod.hom_ext | apply biprod.hom_ext'
-    all_goals simp [Category.assoc]
-    simpa only [zigzagBraidSelfTensorIso_inv] using
-      (Iso.hom_inv_id (zigzagBraidSelfTensorIso k G i))
-  inv_hom_id := by
-    repeat' first | apply biprod.hom_ext | apply biprod.hom_ext'
-    all_goals simp [Category.assoc]
+      pairTerms k G i j ⊞ ((U i) ⊞ (U i).shiftObj 2) :=
+  biprod.mapIso (Iso.refl _) (biprod.braiding _ _) ≪≫
+    (biprod.associator _ _ _).symm ≪≫
+      biprod.mapIso (Iso.refl _) (zigzagBraidSelfTensorIso k G i)
 
-private def vertexSplitIso (i j : V) : (U i ⊞ U j) ⊞ U i ≅ U i ⊞ (U i ⊞ U j) where
-  hom := biprod.lift (biprod.fst ≫ biprod.fst)
-    (biprod.lift biprod.snd (biprod.fst ≫ biprod.snd))
-  inv := biprod.desc (biprod.inl ≫ biprod.inl)
-    (biprod.desc biprod.inr (biprod.inr ≫ biprod.inl))
-  hom_inv_id := by
-    repeat' first | apply biprod.hom_ext | apply biprod.hom_ext'
-    all_goals simp [Category.assoc]
-  inv_hom_id := by
-    repeat' first | apply biprod.hom_ext | apply biprod.hom_ext'
-    all_goals simp [Category.assoc]
+private def vertexSplitIso (i j : V) : (U i ⊞ U j) ⊞ U i ≅ U i ⊞ (U i ⊞ U j) :=
+  biprod.associator _ _ _ ≪≫ biprod.mapIso (Iso.refl _) (biprod.braiding _ _)
 
 private def adjacentMinusThreeIso {i j : V} (h : G.Adj j i) :
     (K i j i).X (-3) ≅ (U i).shiftObj 2 :=
@@ -108,16 +97,16 @@ private theorem adjacentSecond_inl (i j : V) :
     biprod.inl ≫ adjacentSecond k G i j = biprod.lift (first k G i j) (second k G i j) := by
   repeat' first | apply biprod.hom_ext | apply biprod.hom_ext'
   all_goals simp [adjacentSecond, pairSplitIso, vertexSplitIso, first, second,
-    Category.assoc, zigzagBraidTripleSecondDifferential_inl_assoc,
+    Category.assoc, biprod.lift_eq, Preadditive.comp_add,
+    zigzagBraidTripleSecondDifferential_inl_assoc,
     zigzagBraidTripleSecondDifferential_inr_inr_assoc]
 private theorem adjacentSecond_inl_inr (i j : V) :
     (biprod.inl : U i ⟶ U i ⊞ (U i).shiftObj 2) ≫ biprod.inr ≫
         adjacentSecond k G i j = biprod.lift (-𝟙 (U i)) (delta k G i j) := by
   repeat' first | apply biprod.hom_ext | apply biprod.hom_ext'
   all_goals simp [adjacentSecond, pairSplitIso, vertexSplitIso, delta,
-    Category.assoc, zigzagBraidTripleSecondDifferential_inl_inr_assoc,
-    zigzagBraidSelfTensorInl_evaluationRight,
-    zigzagBraidSelfTensorInl_evaluationLeft]
+    Category.assoc, biprod.lift_eq, Preadditive.comp_add,
+    zigzagBraidTripleSecondDifferential_inl_inr_assoc]
 
 private theorem transported_first {i j : V} (h : G.Adj j i) :
     (adjacentMinusThreeIso k G h).inv ≫ (K i j i).d (-3) (-2) ≫
