@@ -48,6 +48,8 @@ preadditive category `CommGrp (Over S)`.
   killed by `n`.
 * `TauCeti.GroupScheme.isPullback_torsionι`: `G[n]` is the fibre of multiplication by `n` over the
   unit section.
+* `TauCeti.GroupScheme.torsionBaseChangeIso_hom_hom_hom_comp_torsionMap`: the base-change
+  comparison for the `n`-torsion is natural in `G`.
 * `TauCeti.GroupScheme.isIso_tensorHom_torsionι_comp_mul`: for `G` killed by `m * n` with `m` and
   `n` coprime, addition `G[m] ×_S G[n] ⟶ G` is an isomorphism.
 * `TauCeti.GroupScheme.torsionTensorIso_inv_hom_hom_fst_torsionι` and
@@ -243,6 +245,24 @@ theorem torsionBaseChangeIso_hom_hom_hom_torsionι {T : Scheme.{u}} (s : T ⟶ S
     kernelIsoOfEq_hom_comp_ι (pullback_mapGrp_map_intCast G s n))).trans
       (kernelBaseChangeIso_hom_comp_ι s _)
   exact congrArg (fun f ↦ f.hom.hom) h
+
+variable {G} in
+/-- The base-change comparison for the `n`-torsion is natural: it intertwines the base change of
+the map induced on the `n`-torsion by `f` with the map induced by the base change of `f`. -/
+@[reassoc]
+theorem torsionBaseChangeIso_hom_hom_hom_comp_torsionMap (f : G ⟶ H) {T : Scheme.{u}}
+    (s : T ⟶ S) (n : ℤ) :
+    (torsionBaseChangeIso G s n).hom.hom.hom ≫ torsionMap ((Over.pullback s).mapCommGrp.map f) n =
+      (Over.pullback s).map (torsionMap f n) ≫ (torsionBaseChangeIso H s n).hom.hom.hom :=
+  torsion_hom_ext _ <| by
+    -- the carriers of the two base changes agree only up to defeq, so reassociate by terms
+    refine ((Category.assoc _ _ _).trans ?_).trans <| ((Over.pullback s).map (torsionMap f n) ≫=
+      torsionBaseChangeIso_hom_hom_hom_torsionι H s n).symm.trans (Category.assoc _ _ _).symm
+    rw [torsionMap_ι, torsionBaseChangeIso_hom_hom_hom_torsionι_assoc]
+    -- both sides are the base change of `torsionι G n ≫ f = torsionMap f n ≫ torsionι H n`
+    exact ((Over.pullback s).map_comp _ _).symm.trans <|
+      (congrArg (Over.pullback s).map (torsionMap_ι f n).symm).trans
+        ((Over.pullback s).map_comp _ _)
 
 /-! ### The `n`-torsion as a kernel in `CommGrp (Over S)` -/
 
