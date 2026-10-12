@@ -16,15 +16,16 @@ kernels with extended metric values and probability measures, this is equivalent
 probability parametrization: the coordinate projections give a canonical parametrizing space,
 and two measure-preserving maps with equal pulled-back kernels give an exact coupling.
 
-The relation is defined for raw measures and kernels with arbitrary target. Its common-space
+The relation is defined for raw measures and kernels with arbitrary target. Symmetry and
+invariance under a.e. changes require only a sigma-finite first measure. Its common-space
 introduction, reflexivity and transitivity are proved for a.e. strongly measurable kernels with
 values in an extended metric space. Transitivity uses gluing; it requires a finite middle measure
 and a standard Borel outer carrier, rather than a topology on every carrier.
 
 For an extended metric target and every nonzero exponent, an exact coupling is precisely a
-coupling of zero distortion. Consequently weakly isomorphic kernels with a pseudo extended metric
-target have Gromov–Wasserstein distance zero. The converse requires an attainment theorem and
-is not asserted here.
+coupling of zero distortion. Consequently weakly isomorphic kernels with a weak pseudo extended
+metric target have Gromov–Wasserstein distance zero, even when the extended pseudometric does not
+induce the target topology. The converse requires an attainment theorem and is not asserted here.
 
 ## References
 
@@ -84,13 +85,13 @@ theorem AreWeaklyIsomorphicKernels.exists_probability_parametrization [IsProbabi
   obtain ⟨π, hπ, heq⟩ := h.exists_isCoupling
   exact ⟨π, hπ.isProbabilityMeasure, hπ.measurePreserving_fst, hπ.measurePreserving_snd, heq⟩
 
-/-- Exchanging the two kernels preserves weak isomorphism. No measurability of the target is
-needed: the coordinate swap is a measurable equivalence. -/
-protected theorem AreWeaklyIsomorphicKernels.symm [IsFiniteMeasure μ]
+/-- Exchanging the two kernels preserves weak isomorphism when the first measure is sigma-finite.
+No measurability of the target is needed: the coordinate swap is a measurable equivalence. -/
+protected theorem AreWeaklyIsomorphicKernels.symm [SigmaFinite μ]
     (h : AreWeaklyIsomorphicKernels μ ωX ν ωY) :
     AreWeaklyIsomorphicKernels ν ωY μ ωX := by
   obtain ⟨π, hπ, heq⟩ := h.exists_isCoupling
-  have : IsFiniteMeasure π := hπ.isFiniteMeasure
+  have : SigmaFinite π := hπ.measurePreserving_fst.sigmaFinite
   refine areWeaklyIsomorphicKernels_of_isCoupling hπ.swap ?_
   rw [Measure.map_prod_map π π measurable_swap measurable_swap]
   have he : MeasurableEmbedding (Prod.map (Prod.swap : X × Y → Y × X) Prod.swap) :=
@@ -98,15 +99,16 @@ protected theorem AreWeaklyIsomorphicKernels.symm [IsFiniteMeasure μ]
       (MeasurableEquiv.prodComm : X × Y ≃ᵐ Y × X).measurableEmbedding
   exact he.ae_map_iff.mpr heq.symm
 
-/-- Almost-everywhere changes of the kernels preserve weak isomorphism. -/
-theorem areWeaklyIsomorphicKernels_congr_ae [IsFiniteMeasure μ]
+/-- Almost-everywhere changes of the kernels preserve weak isomorphism when the first measure
+is sigma-finite. -/
+theorem areWeaklyIsomorphicKernels_congr_ae [SigmaFinite μ]
     (hX : ωX =ᵐ[μ.prod μ] ωX') (hY : ωY =ᵐ[ν.prod ν] ωY') :
     AreWeaklyIsomorphicKernels μ ωX ν ωY ↔ AreWeaklyIsomorphicKernels μ ωX' ν ωY' := by
   have transfer {a a' : X × X → Z} {b b' : Y × Y → Z}
       (ha : a =ᵐ[μ.prod μ] a') (hb : b =ᵐ[ν.prod ν] b')
       (h : AreWeaklyIsomorphicKernels μ a ν b) : AreWeaklyIsomorphicKernels μ a' ν b' := by
     obtain ⟨π, hπ, heq⟩ := h.exists_isCoupling
-    have : IsFiniteMeasure π := hπ.isFiniteMeasure
+    have : SigmaFinite π := hπ.measurePreserving_fst.sigmaFinite
     have ha' := (hπ.measurePreserving_fst.prod hπ.measurePreserving_fst).quasiMeasurePreserving
       |>.ae_eq_comp ha
     have hb' := (hπ.measurePreserving_snd.prod hπ.measurePreserving_snd).quasiMeasurePreserving
@@ -114,12 +116,13 @@ theorem areWeaklyIsomorphicKernels_congr_ae [IsFiniteMeasure μ]
     exact areWeaklyIsomorphicKernels_of_isCoupling hπ (ha'.symm.trans (heq.trans hb'))
   exact ⟨transfer hX hY, transfer hX.symm hY.symm⟩
 
-section PseudoEMetricSpace
+section WeakPseudoEMetricSpace
 
-variable [PseudoEMetricSpace Z]
+variable [TopologicalSpace Z] [WeakPseudoEMetricSpace Z]
 
 /-- Weakly isomorphic kernels have zero Gromov–Wasserstein distance at every exponent.
-This implication also holds at exponent zero. -/
+This implication also holds at exponent zero and does not require the topology to be induced
+by the extended pseudometric. -/
 theorem AreWeaklyIsomorphicKernels.gromovWassersteinEDist_eq_zero
     (h : AreWeaklyIsomorphicKernels μ ωX ν ωY) (p : ℝ≥0∞) :
     gromovWassersteinEDist p μ ωX ν ωY = 0 := by
@@ -132,7 +135,7 @@ theorem AreWeaklyIsomorphicKernels.gromovWassersteinEDist_eq_zero
     simp [hq]
   rw [eLpNorm_congr_ae hzero, eLpNorm_zero]
 
-end PseudoEMetricSpace
+end WeakPseudoEMetricSpace
 
 section EMetricSpace
 
