@@ -135,6 +135,19 @@ for a central extension it says the ambient action is trivial. -/
 def InducesAction [MulDistribMulAction G M] : Prop :=
   ∀ (e : E) (m : M), S.conjAct e m = S.rightHom e • m
 
+/-- Relabelling the quotient transports the induced action on the kernel along the same
+equivalence. -/
+theorem InducesAction.relabelQuotient [MulDistribMulAction G M]
+    (hact : InducesAction S) {H : Type*} [Group H] [MulDistribMulAction H M]
+    (e : G ≃* H) (hsmul : ∀ (g : G) (m : M), e g • m = g • m) :
+    InducesAction (S.relabelQuotient e) := by
+  intro x m
+  apply S.inl_injective
+  rw [← GroupExtension.relabelQuotient_inl S e, GroupExtension.inl_conjAct_comm]
+  rw [GroupExtension.relabelQuotient_inl, GroupExtension.relabelQuotient_rightHom,
+    MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom, hsmul, ← hact x m,
+    GroupExtension.inl_conjAct_comm]
+
 /-- **A central extension induces exactly the trivial action.** This is the constructor for
 `TauCeti.GroupExtension.InducesAction` in the central case: the hypothesis holds if and only if the
 ambient action of `G` on `M` is trivial. -/
