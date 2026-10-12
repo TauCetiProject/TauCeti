@@ -76,17 +76,9 @@ theorem cuspDatum_generator_eq_cycleMap {j : Fin n} {ξ : OnePoint ℝ}
   have hfix : γ ∈ stabilizer Γ D.cusp := by
     rw [hc, mem_stabilizer_iff, Subgroup.mk_smul]
     exact σ.cycleMap_smul_eq_self_of_vertex_eq_inr hj
-  obtain ⟨k, hk⟩ := D.mem_stabilizer_iff.mp hfix
-  have hk0 : k ≠ 0 := by
-    intro hk0
-    have h := congrArg (fun δ : Γ ↦ (δ : PSL(2, ℝ))) hk
-    simp only [hk0, zpow_zero, Subgroup.coe_one] at h
-    exact σ.cycleMap_ne_one_of_vertex_eq_inr hj h.symm
-  have hpar : IsParabolic (σ.cycleMap j) := by
-    have h := D.scaling_mul_generator_zpow_mul_inv k
-    rw [← Subgroup.coe_zpow, hk] at h
-    rw [← isParabolic_conj_iff D.scaling, h, isParabolic_upperRightHom_iff]
-    exact mul_ne_zero (by exact_mod_cast hk0) D.width_pos.ne'
+  have hpar : IsParabolic (σ.cycleMap j) :=
+    D.isParabolic_of_mem_stabilizer_of_ne_one hfix fun h ↦
+      σ.cycleMap_ne_one_of_vertex_eq_inr hj (congrArg Subtype.val h)
   obtain ⟨E, hEc, hEs, hEg⟩ := σ.exists_cuspDatum_generator_eq_cycleMap hj hmap hpar hdisj
     (hc ▸ D.scaling_smul_cusp)
   have hED : E = D := Subgroup.CuspDatum.ext (hEc.trans hc.symm) hEs
