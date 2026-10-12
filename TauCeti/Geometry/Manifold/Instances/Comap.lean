@@ -69,6 +69,14 @@ noncomputable def chartedSpaceComap : ChartedSpace H M where
   mem_chart_source x := by simp
   chart_mem_atlas x := mem_range_self x
 
+/-- The pulled-back atlas consists exactly of local inverses followed by preferred charts
+of the base. -/
+@[simp]
+theorem _root_.TauCeti.mem_atlas_chartedSpaceComap (e : OpenPartialHomeomorph M H) :
+    e ∈ hp.chartedSpaceComap.atlas ↔
+      ∃ x : M, (hp.localInverseAt x).symm.trans (chartAt H (p x)) = e :=
+  Iff.rfl
+
 /-- The pulled-back chart at `x` is the local inverse of `p` at `x`, inverted, followed by the
 chart of `B` at `p x`. -/
 theorem chartAt_chartedSpaceComap (x : M) :
