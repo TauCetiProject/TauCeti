@@ -10,16 +10,20 @@ public import TauCeti.FieldTheory.FunctionField.ConstantExtension.Basic
 import TauCeti.FieldTheory.IntermediateField.Adjoin.EqTop
 
 /-!
-# Rational-parameter degrees after extending constants
+# Degrees over subfields after extending constants
 
 For an exact constant field `k` in `F`, extending constants by a finite separable extension
-`k' / k` preserves `[F : k(x)]`. The ambient field `F'` is the compositum of `F` and `k'`,
-expressed by `constantCompositum F k' F' = ⊤`. No function-field hypothesis is needed.
+`k' / k` preserves `[F : k(x)]`, and more generally `[F : E]` for every subfield `E` of `F`
+containing `k`, with `E` replaced by its own compositum `E · k'`. The ambient field `F'` is the
+compositum of `F` and `k'`, expressed by `constantCompositum F k' F' = ⊤`. No function-field
+hypothesis is needed.
 
 ## Main results
 
 * `TauCeti.finrank_over_adjoin_simple_eq_of_constantCompositum_eq_top`:
   `[F' : k'(x)] = [F : k(x)]` for every `x ∈ F`.
+* `TauCeti.finrank_constantCompositum_eq_finrank_of_constantCompositum_eq_top`:
+  `[F' : E · k'] = [F : E]` for every subfield `E` of `F` containing `k`.
 
 ## Reference
 
@@ -66,5 +70,28 @@ theorem finrank_over_adjoin_simple_eq_of_constantCompositum_eq_top
     IntermediateField.relfinrank_top_right] at hdegree
   -- Restricting scalars keeps the subfield carrier and its inclusion in `F'` unchanged.
   exact hdegree
+
+/-- **A finite separable extension of an exact constant field preserves the degree over any
+subfield** (Stichtenoth, Proposition 3.6.1(c), for an arbitrary intermediate field): if `E` is a
+subfield of `F` containing `k`, then `[F · k' : E · k'] = [F : E]`. -/
+theorem finrank_constantCompositum_eq_finrank_of_constantCompositum_eq_top {E : Type*} [Field E]
+    [Algebra k E] [Algebra E F] [IsScalarTower k E F] [Algebra E F'] [IsScalarTower E F F']
+    [FiniteDimensional k k'] [Algebra.IsSeparable k k'] (hex : IsIntegrallyClosedIn k F)
+    (h : constantCompositum F k' F' = ⊤) :
+    Module.finrank (constantCompositum E k' F') F' = Module.finrank E F := by
+  -- Both `[F · k' : F]` and `[E · k' : E]` are `[k' : k]`, the constants staying exact in `E`;
+  -- compare the towers `E ⊆ F ⊆ F · k'` and `E ⊆ E · k' ⊆ F · k'`.
+  have : IsScalarTower k E F' := IsScalarTower.of_algebraMap_eq fun c ↦ by
+    rw [IsScalarTower.algebraMap_apply E F F', ← IsScalarTower.algebraMap_apply k E F,
+      ← IsScalarTower.algebraMap_apply k F F']
+  have hexE : IsIntegrallyClosedIn k E :=
+    (IsScalarTower.toAlgHom k E F).isIntegrallyClosedIn (algebraMap E F).injective hex
+  have hE := finrank_constantCompositum_eq_finrank_of_isSeparable E k' F' hexE
+  have hF := finrank_constantCompositum_eq_finrank_of_isSeparable F k' F' hex
+  rw [h, IntermediateField.finrank_top'] at hF
+  have htower := (Module.finrank_mul_finrank E F F').trans
+    (Module.finrank_mul_finrank E (constantCompositum E k' F') F').symm
+  rw [hE, hF, mul_comm] at htower
+  exact (Nat.eq_of_mul_eq_mul_left Module.finrank_pos htower).symm
 
 end TauCeti
