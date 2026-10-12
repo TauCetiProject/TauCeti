@@ -17,8 +17,9 @@ Let `W` be the Weierstrass curve `y² = x³ - x` (`TauCeti.CurveX3SubX.curve`) o
 characteristic other than two, for instance `ℚ`, and let `K(W) = K(x, y)` be its function field, a
 quadratic extension of `K(x)`. Its discriminant is `64`, so `W` is an elliptic curve. This file
 computes the ramification of `K(W) / K(x)` and checks it against the Hurwitz genus formula. Every
-ramified place is tame here, in contrast to `y² + y = x³` over `𝔽₂`, whose place at infinity is
-wild (`TauCeti.ArtinSchreier.isWild_infinity`).
+ramified place has ramification index `2`, invertible in `K`, so the ramification is tame, in
+contrast to `y² + y = x³` over `𝔽₂`, whose place at infinity is wild
+(`TauCeti.ArtinSchreier.isWild_infinity`).
 
 The points of order dividing two are the point at infinity `O` and the three points
 `T₀ = (0, 0)`, `T₁ = (1, 0)` and `T₋₁ = (-1, 0)` on the line `y = 0`, all rational over `K`.
@@ -38,8 +39,8 @@ degree `[K(W) : K(x)] = 2`, the genus `0` of `K(x)` and the four ramification in
   four points of order dividing two.
 * `TauCeti.CurveX3SubX.ramificationIdx_pointZero` and its siblings: those places have
   ramification index `2`.
-* `TauCeti.CurveX3SubX.hurwitz_genus_formula`: the Hurwitz genus formula in its tame form,
-  `2 · 1 - 2 = 2 · (0 - 2) + 4`, the different contributing `e - 1` at each ramified place.
+* `TauCeti.CurveX3SubX.hurwitz_genus_formula`: the numerical Hurwitz genus identity
+  `2 · 1 - 2 = 2 · (0 - 2) + 4`, with `e - 1` summed over the four ramified places.
 
 ## References
 
@@ -63,7 +64,7 @@ variable {K : Type*} [Field K] [NeZero (2 : K)]
 private theorem pointZero_ne_pointOne_and :
     pointZero K ≠ pointOne K ∧ pointZero K ≠ pointNegOne K ∧ pointOne K ≠ pointNegOne K := by
   have h1 : (1 : K) ≠ -1 := fun h ↦ NeZero.ne (2 : K) (by linear_combination h)
-  simp [pointZero_def, pointOne_def, pointNegOne_def, h1]
+  simp [pointZero_def, pointOne_def, pointNegOne_def, Affine.Point.mk, h1]
 
 /-- The four points of order dividing two are pairwise distinct. -/
 private theorem card_twoTorsion [DecidableEq K] :
@@ -71,7 +72,7 @@ private theorem card_twoTorsion [DecidableEq K] :
   obtain ⟨h01, h0m, h1m⟩ := pointZero_ne_pointOne_and (K := K)
   rw [Finset.card_insert_of_notMem, Finset.card_insert_of_notMem, Finset.card_pair h1m]
   · simp [h01, h0m]
-  · simp [pointZero_def, pointOne_def, pointNegOne_def]
+  · simp [pointZero_def, pointOne_def, pointNegOne_def, Affine.Point.mk]
 
 /-- Each listed point has order dividing two. -/
 private theorem neg_eq_self_of_mem [DecidableEq K] :
@@ -92,7 +93,7 @@ theorem different_eq :
   classical
   obtain ⟨h01, h0m, h1m⟩ := pointZero_ne_pointOne_and (K := K)
   rw [Affine.different_eq_sum_of_card_eq_four (NeZero.ne 2) neg_eq_self_of_mem card_twoTorsion,
-    Finset.sum_insert (by simp [pointZero_def, pointOne_def, pointNegOne_def]),
+    Finset.sum_insert (by simp [pointZero_def, pointOne_def, pointNegOne_def, Affine.Point.mk]),
     Finset.sum_insert (by simp [h01, h0m]), Finset.sum_pair h1m, Affine.Point.zero_def,
     Affine.coe_pointEquivDegreeOnePlace_zero, add_assoc, add_assoc]
 
@@ -142,8 +143,8 @@ theorem ramificationIdx_pointNegOne :
   classical
   exact ramificationIdx_place_of_mem (by simp)
 
-/-- **The Hurwitz genus formula for `y² = x³ - x`** over `K(x)`, in its tame form: every ramified
-place is tame, so the different contributes `e - 1` at each of the four ramified places, and
+/-- **The Hurwitz genus formula for `y² = x³ - x`** over `K(x)`, as a numerical identity: with
+`e - 1` summed over the four ramified places,
 
 `2 g - 2 = [K(W) : K(x)] (2 g(K(x)) - 2) + ∑ (e - 1)`,
 

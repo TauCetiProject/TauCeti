@@ -61,39 +61,33 @@ theorem equation_iff (x y : K) : (curve K).toAffine.Equation x y ↔ y ^ 2 = x ^
   constructor <;> intro h <;> linear_combination h
 
 variable [NeZero (2 : K)]
-
-/-- A root `a` of `x³ - x` gives the nonsingular point `(a, 0)` of `y² = x³ - x`. -/
-theorem nonsingular_of_pow_three_eq {a : K} (ha : a ^ 3 = a) :
-    (curve K).toAffine.Nonsingular a 0 :=
-  Affine.equation_iff_nonsingular.mp ((equation_iff a 0).mpr (by rw [ha]; ring))
-
 variable (K)
 
 /-- The point `T₀ = (0, 0)` of `y² = x³ - x`. -/
 def pointZero : (curve K).toAffine.Point :=
-  .some 0 0 (nonsingular_of_pow_three_eq (by ring))
+  .mk ((equation_iff 0 0).mpr (by ring))
 
 /-- `T₀` is the affine point `(0, 0)`. -/
 theorem pointZero_def :
-    pointZero K = .some 0 0 (nonsingular_of_pow_three_eq (by ring)) :=
+    pointZero K = .mk ((equation_iff 0 0).mpr (by ring)) :=
   (rfl)
 
 /-- The point `T₁ = (1, 0)` of `y² = x³ - x`. -/
 def pointOne : (curve K).toAffine.Point :=
-  .some 1 0 (nonsingular_of_pow_three_eq (by ring))
+  .mk ((equation_iff 1 0).mpr (by ring))
 
 /-- `T₁` is the affine point `(1, 0)`. -/
 theorem pointOne_def :
-    pointOne K = .some 1 0 (nonsingular_of_pow_three_eq (by ring)) :=
+    pointOne K = .mk ((equation_iff 1 0).mpr (by ring)) :=
   (rfl)
 
 /-- The point `T₋₁ = (-1, 0)` of `y² = x³ - x`. -/
 def pointNegOne : (curve K).toAffine.Point :=
-  .some (-1) 0 (nonsingular_of_pow_three_eq (by ring))
+  .mk ((equation_iff (-1) 0).mpr (by ring))
 
 /-- `T₋₁` is the affine point `(-1, 0)`. -/
 theorem pointNegOne_def :
-    pointNegOne K = .some (-1) 0 (nonsingular_of_pow_three_eq (by ring)) :=
+    pointNegOne K = .mk ((equation_iff (-1) 0).mpr (by ring)) :=
   (rfl)
 
 variable {K}
@@ -107,7 +101,7 @@ theorem neg_eq_self_iff (T : (curve K).toAffine.Point) :
   | zero => exact ⟨fun _ ↦ Or.inl rfl, fun _ ↦ rfl⟩
   | some x y h =>
     simp only [Affine.Point.neg_some, Affine.Point.some.injEq, Affine.negY, pointZero_def,
-      pointOne_def, pointNegOne_def, reduceCtorEq, false_or, true_and]
+      pointOne_def, pointNegOne_def, Affine.Point.mk, reduceCtorEq, false_or, true_and]
     constructor
     · intro hy
       -- `-y = y` forces `y = 0`, and then `x` is a root of `x³ - x = x (x - 1) (x + 1)`.

@@ -36,9 +36,10 @@ two are rational, as for `y² = x³ - x` over `ℚ`, the different is the sum of
 
 `Diff(F(W) / F(x)) = O + T₁ + T₂ + T₃`.
 
-These four places are then exactly the places ramified over `F(x)`: each is rational and `2` is
-invertible, so each is tame, and Dedekind's different theorem `e = d + 1` gives ramification index
-`2`, while every other place has different exponent `0` and is unramified.
+These four places are then exactly the places ramified over `F(x)`: each has ramification index
+`2`, while every other place has different exponent `0` and is unramified. The ramification index
+comes from Dedekind's different theorem `e = d + 1`, which applies because each of these places is
+rational and `2` is invertible in `F`.
 
 In every characteristic the different has degree `4`, as the Hurwitz genus formula
 `2 · 1 - 2 = 2 · (0 - 2) + deg Diff` requires.
@@ -67,7 +68,7 @@ All in the namespace `WeierstrassCurve.Affine`:
   `differentExponent_eq_zero_of_card_eq_four`,
   `ramificationIdx_pointEquivDegreeOnePlace_of_card_eq_four`,
   `ramificationIdx_eq_one_of_card_eq_four` and `one_lt_ramificationIdx_iff_of_card_eq_four`: in
-  that case the places of those four points are exactly the ramified places, each tame with
+  that case the places of those four points are exactly the ramified places, each with
   ramification index `2` and different exponent `1`.
 
 ## References
@@ -398,8 +399,7 @@ theorem differentExponent_eq_zero_of_card_eq_four (h2 : (2 : F) ≠ 0) {S : Fins
 
 /-- **The ramification index at a point of order two**: away from characteristic two, if `S` is
 a set of four rational points of order dividing two, the place of each point of `S` has
-ramification index `2` over `F(x)`. The place is rational and `2` is invertible, so it is tame,
-and its different exponent is `1`. -/
+ramification index `2` over `F(x)`. -/
 theorem ramificationIdx_pointEquivDegreeOnePlace_of_card_eq_four (h2 : (2 : F) ≠ 0)
     {S : Finset W.Point} (hS : ∀ T ∈ S, -T = T) (hcard : S.card = 4) {T : W.Point}
     (hT : T ∈ S) :
@@ -407,6 +407,7 @@ theorem ramificationIdx_pointEquivDegreeOnePlace_of_card_eq_four (h2 : (2 : F) �
   have he2 := Place.ramificationIdx_le_finrank (RatFunc F) (pointEquivDegreeOnePlace W T).1
   rw [finrank_functionField] at he2
   have he1 := Place.ramificationIdx_pos (RatFunc F) (pointEquivDegreeOnePlace W T).1
+  -- The place is rational and `e ≤ 2` is invertible, so it is tame and `e = d + 1 = 2`.
   have := Place.isSeparable_residueField_of_degree_eq_one _ (pointEquivDegreeOnePlace W T).2
   have htame : Place.IsTame F (RatFunc F) (pointEquivDegreeOnePlace W T).1 := by
     refine (Place.isTame_iff_isSeparable_residueField _ _ _).mpr
