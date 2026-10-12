@@ -48,6 +48,7 @@ range, so the value is a `dite` rather than a plain application.
 * `Fin.zero_sub_one_eq_last`: subtracting one from `0` gives the last index.
 * `Fin.eq_castSucc_last_or_eq_last`: an index `≥ n` of `Fin (n + 2)` is the penultimate or the
   last one.
+* `Fin.exists_succ_succ_eq`: the indices `> 1` of `Fin (n + 2)` are the double successors.
 * `Fin.last_ne_zero`, `Fin.castSucc_last_ne_zero`, `Fin.castSucc_last_ne_one`, `Fin.last_ne_one`:
   the last and penultimate indices differ from `0` and `1` in the nondegenerate cases.
 * `Fin.sum_univ_eq_zero_add_last_add_sum_erase`: a sum over `Fin (n + 1)` with its first and last
@@ -327,6 +328,18 @@ theorem eq_castSucc_last_or_eq_last {n : ℕ} {i : Fin (n + 2)} (hi : n ≤ i.va
   have := i.isLt
   simp only [Fin.ext_iff, val_castSucc, val_last]
   omega
+
+/-- The indices of `Fin (n + 2)` greater than `1` are the double successors of indices of
+`Fin n`. -/
+theorem exists_succ_succ_eq {n : ℕ} {j : Fin (n + 2)} :
+    (∃ k : Fin n, k.succ.succ = j) ↔ 1 < j := by
+  refine ⟨by rintro ⟨k, rfl⟩; simp [Fin.lt_def], fun hj => ?_⟩
+  cases j using Fin.cases with
+  | zero => exact absurd hj (by simp)
+  | succ j =>
+    cases j using Fin.cases with
+    | zero => exact absurd hj (by simp)
+    | succ k => exact ⟨k, rfl⟩
 
 /-- A sum over `Fin (n + 1)` with the first and the last summands split off. -/
 theorem sum_univ_eq_zero_add_last_add_sum_erase {n : ℕ} {M : Type*} [AddCommMonoid M]
