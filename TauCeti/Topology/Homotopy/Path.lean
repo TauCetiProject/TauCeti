@@ -218,6 +218,13 @@ theorem homotopic_of_continuous_square {a b : X} {p q : Path a b} (K : I × I �
          subst hs
          exact (hK_right t).trans p.target.symm }⟩
 
+/-- **A continuous path of paths is a path homotopy**: if `G : I → Path a b` is continuous, then
+`G 0` and `G 1` are homotopic relative to the end points. -/
+theorem Homotopic.of_continuous {a b : X} {p q : Path a b} (G : C(I, Path a b)) (h₀ : G 0 = p)
+    (h₁ : G 1 = q) : p.Homotopic q :=
+  homotopic_of_continuous_square (fun st ↦ G st.1 st.2) (Path.continuous_uncurry_iff.2 G.continuous)
+    (fun s ↦ by simp [h₀]) (fun s ↦ by simp [h₁]) (fun t ↦ (G t).source) (fun t ↦ (G t).target)
+
 /-- If every parameter `s` has some `γ ⁻¹' U i` as a neighbourhood, then `γ` can be subdivided
 at finitely many monotone times, starting at `0` and ending at `1`, so that the subpath between
 any two consecutive times has range in some `U i`. -/
