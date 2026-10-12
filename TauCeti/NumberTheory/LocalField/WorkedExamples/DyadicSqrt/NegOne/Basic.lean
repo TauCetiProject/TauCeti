@@ -12,11 +12,18 @@ public import TauCeti.FieldTheory.GaloisCohomology.MuTwo.Transfer
 public import TauCeti.FieldTheory.QuadraticForm.StiefelWhitney.Evens.Kummer.Value
 
 /-!
-# A nonzero Evens norm over `ℚ_2(i)`
+# The dyadic field `ℚ_2(i)` and a nonzero Evens norm
 
 The quadratic algebra `QuadraticAlgebra ℚ_[2] (-1) 0` is a field, since `-1` is not a
 square in `ℚ_2`. Its generator `i` satisfies `i² = -1`. The unit `a = 1 + 2i` has trace
 `2` and norm `5`, and its Kummer class has Evens norm `(2) ∪ (5) ≠ 0`.
+
+The canonical finite-extension construction from
+`TauCeti.NumberTheory.LocalField.FiniteExtension.Basic` equips `DyadicSqrtNegOne` with
+the valuative relation and norm topology extending those of `ℚ_2`. The corresponding
+`ValuativeExtension` and `IsNonarchimedeanLocalField` instances make `ℚ_2(i)` a
+nonarchimedean local field over `ℚ_2`, supplying its valuation and ring of integers for
+subsequent ramification and different computations.
 
 The calculation specializes `TauCeti.galoisEvens2_kummerClass_one_add`; nonvanishing
 uses `TauCeti.cup_kummerClass_eq_zero_iff_hilbertSymbol_eq_one` and the dyadic
