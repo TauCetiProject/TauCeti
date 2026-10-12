@@ -918,8 +918,8 @@ variable {K : Type*} [Field K] [Algebra R K] [IsFractionRing R K]
 theorem IsTateTerminal.isMinimal_baseChange (hϖ : Irreducible ϖ) {s : ReductionSymbol}
     (h : W.IsTateTerminal ϖ s) : IsMinimal R (W.baseChange K) := by
   by_contra hmin
-  obtain ⟨C, hC⟩ := exists_variableChange_pow_dvd_a₁_a₂_a₃_a₄_a₆_of_not_isMinimal hϖ W hmin
-  exact h.not_pow_dvd_smul hϖ C hC
+  obtain ⟨r, s', t, hC⟩ := exists_variableChange_pow_dvd_a₁_a₂_a₃_a₄_a₆_of_not_isMinimal hϖ W hmin
+  exact h.not_pow_dvd_smul hϖ _ hC
 
 /-- **Tate's algorithm decides minimality.** Over a discrete valuation ring with perfect residue
 field, an equation over `R` with nonzero discriminant is minimal over the fraction field exactly

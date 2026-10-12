@@ -194,13 +194,14 @@ theorem not_isMinimal_baseChange_of_pow_dvd (hϖ : Irreducible ϖ) (W : Weierstr
 
 open IsDiscreteValuationRing IsDedekindDomain.HeightOneSpectrum in
 /-- **The converse of Step 11 of Tate's algorithm.** If the base change of a Weierstrass equation
-over `R` to the fraction field `K` is not minimal over `R`, then a change of variables over `R`,
-indeed a translation `x ↦ x + r`, `y ↦ y + s x + t`, carries it to an equation with `ϖ ∣ a₁`,
-`ϖ² ∣ a₂`, `ϖ³ ∣ a₃`, `ϖ⁴ ∣ a₄` and `ϖ⁶ ∣ a₆`. -/
+over `R` to the fraction field `K` is not minimal over `R`, then a translation `x ↦ x + r`,
+`y ↦ y + s x + t` with `r`, `s`, `t ∈ R` carries it to an equation with `ϖ ∣ a₁`, `ϖ² ∣ a₂`,
+`ϖ³ ∣ a₃`, `ϖ⁴ ∣ a₄` and `ϖ⁶ ∣ a₆`. -/
 theorem exists_variableChange_pow_dvd_a₁_a₂_a₃_a₄_a₆_of_not_isMinimal (hϖ : Irreducible ϖ)
     (W : WeierstrassCurve R) (h : ¬ IsMinimal R (W.baseChange K)) :
-    ∃ C : VariableChange R, ϖ ∣ (C • W).a₁ ∧ ϖ ^ 2 ∣ (C • W).a₂ ∧ ϖ ^ 3 ∣ (C • W).a₃ ∧
-      ϖ ^ 4 ∣ (C • W).a₄ ∧ ϖ ^ 6 ∣ (C • W).a₆ := by
+    ∃ r s t : R, ϖ ∣ (VariableChange.mk 1 r s t • W).a₁ ∧
+      ϖ ^ 2 ∣ (VariableChange.mk 1 r s t • W).a₂ ∧ ϖ ^ 3 ∣ (VariableChange.mk 1 r s t • W).a₃ ∧
+      ϖ ^ 4 ∣ (VariableChange.mk 1 r s t • W).a₄ ∧ ϖ ^ 6 ∣ (VariableChange.mk 1 r s t • W).a₆ := by
   have : IsIntegral R (W.baseChange K) := ⟨⟨W, rfl⟩⟩
   -- Non-minimality provides an integral model `D • W` whose discriminant has larger valuation.
   obtain ⟨D, hD, hlt⟩ : ∃ D : VariableChange K, IsIntegral R (D • W.baseChange K) ∧
@@ -241,7 +242,7 @@ theorem exists_variableChange_pow_dvd_a₁_a₂_a₃_a₄_a₆_of_not_isMinimal 
   have e₃ : algebraMap R K W'.a₃ = (D • W.baseChange K).a₃ := by rw [← hW', baseChange, map_a₃]
   have e₄ : algebraMap R K W'.a₄ = (D • W.baseChange K).a₄ := by rw [← hW', baseChange, map_a₄]
   have e₆ : algebraMap R K W'.a₆ = (D • W.baseChange K).a₆ := by rw [← hW', baseChange, map_a₆]
-  refine ⟨⟨1, r₀, s₀, t₀⟩, pow_one ϖ ▸ key 1 _ W'.a₁ ?_, key 2 _ W'.a₂ ?_, key 3 _ W'.a₃ ?_,
+  refine ⟨r₀, s₀, t₀, pow_one ϖ ▸ key 1 _ W'.a₁ ?_, key 2 _ W'.a₂ ?_, key 3 _ W'.a₃ ?_,
     key 4 _ W'.a₄ ?_, key 6 _ W'.a₆ ?_⟩
   all_goals
     simp only [variableChange_a₁, variableChange_a₂, variableChange_a₃, variableChange_a₄,
@@ -262,8 +263,8 @@ theorem isMinimal_baseChange_iff_forall_not_pow_dvd_a₁_a₂_a₃_a₄_a₆ (h�
       (by simpa [variableChange_Δ] using hΔ) h₁ h₂ h₃ h₄ h₆ ?_
     rw [← baseChange_smul_baseChange]
     infer_instance
-  · obtain ⟨C, hC⟩ := exists_variableChange_pow_dvd_a₁_a₂_a₃_a₄_a₆_of_not_isMinimal hϖ W hmin
-    exact h C hC
+  · obtain ⟨r, s, t, hC⟩ := exists_variableChange_pow_dvd_a₁_a₂_a₃_a₄_a₆_of_not_isMinimal hϖ W hmin
+    exact h _ hC
 
 end WeierstrassCurve
 
