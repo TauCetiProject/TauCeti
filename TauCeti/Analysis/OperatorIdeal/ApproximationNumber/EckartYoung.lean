@@ -29,8 +29,9 @@ by at least `σₙ`, so `σₙ ≤ aₙ(T)` by the coercive-subspace bound
 
 The same right singular vectors show that a finite-dimensional source space has the converse
 min–max localization property `TauCeti.HasMinMaxLowerBound`, whatever the inner product space
-receiving the map: corestricting `T` to its finite-dimensional range does not decrease `aₙ(T)`, and
-the corestriction is `aₙ(T)`-coercive on the span of its first `n + 1` right singular vectors.
+receiving the map: corestricting `T` to its finite-dimensional range does not decrease `aₙ(T)`.
+When `aₙ(T) > 0` this forces `n < dim E` (the `n`-th singular value vanishes beyond the dimension),
+so the corestriction has `n + 1` right singular vectors and is `aₙ(T)`-coercive on their span.
 
 Two consequences are recorded for linear maps: the operator norm is the largest singular value,
 and singular values are `1`-Lipschitz in the operator norm (Weyl's perturbation bound for singular
@@ -130,8 +131,9 @@ variable {𝕜 E F : Type*} [RCLike 𝕜]
 
 /-- **Converse min–max localization in finite dimension.** If `E` is a finite-dimensional inner
 product space, then for every bounded `T : E →L[𝕜] F` into an inner product space and every
-`r < aₙ(T)`, the map `T` is `s`-coercive with `r < s` on the span of `n + 1` linearly independent
-vectors: the first `n + 1` right singular vectors of the corestriction of `T` to its range. -/
+`0 ≤ r < aₙ(T)`, the map `T` is `s`-coercive with `r < s` on the span of `n + 1` linearly
+independent vectors: the first `n + 1` right singular vectors of the corestriction of `T` to its
+range. These exist because `0 ≤ r < aₙ(T)` makes `aₙ(T)` positive, which forces `n < dim E`. -/
 theorem HasMinMaxLowerBound.of_finiteDimensional : HasMinMaxLowerBound 𝕜 E F := by
   refine hasMinMaxLowerBound_iff.mpr fun T n r hr0 hr ↦ ?_
   -- Corestrict `T` to its finite-dimensional range, where Eckart–Young applies.
