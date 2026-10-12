@@ -218,14 +218,15 @@ theorem factorizationDual_comp_factorizationDual {f' : H ⟶ K} {m : ℤ}
     ← End.mul_def, ← Int.cast_mul, mul_comm]
 
 variable (G) in
-/-- **The factorization dual of multiplication by `m` is multiplication by `m`.** Here the dual is
-taken relative to `m * m`, which kills the kernel of multiplication by `m`. -/
+/-- **The factorization dual of multiplication by `m` relative to `m * k` is multiplication by
+`k`.** Here `m * k` kills the kernel of multiplication by `m`. Taking `k = m` shows that the dual
+of `[m]` relative to `m * m` is `[m]`. -/
 @[simp]
-theorem factorizationDual_intCast (m : ℤ) [EffectiveEpi (m : End G).hom.hom.hom]
+theorem factorizationDual_intCast (m k : ℤ) [EffectiveEpi (m : End G).hom.hom.hom]
     [Epi ((m : End G).hom.hom.hom ⊗ₘ (m : End G).hom.hom.hom)] :
-    factorizationDual (m : End G) (m * m) (fun _ x hx ↦ by
+    factorizationDual (m : End G) (m * k) (fun _ x hx ↦ by
       rw [intCast_hom_hom_hom, GrpObj.comp_zpow, Category.comp_id] at hx
-      rw [zpow_mul, hx, one_zpow]) = (m : End G) :=
-  (eq_factorizationDual _ ((End.mul_def _ _).symm.trans (Int.cast_mul m m).symm)).symm
+      rw [zpow_mul, hx, one_zpow]) = (k : End G) :=
+  (eq_factorizationDual _ ((End.mul_def _ _).symm.trans <| by rw [← Int.cast_mul, mul_comm])).symm
 
 end CategoryTheory.CommGrp
