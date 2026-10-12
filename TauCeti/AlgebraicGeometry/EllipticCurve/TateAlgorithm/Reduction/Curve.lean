@@ -77,14 +77,6 @@ private theorem baseChange_smul_integralModel_minimal (W : WeierstrassCurve K)
     (C • (W.minimal R).integralModel R).baseChange K = C.baseChange K • W.minimal R := by
   rw [← integralModel_baseChange_smul, baseChange_integralModel_eq]
 
-/-- A minimal equation over `R` of `W` computes the valuation of the minimal discriminant. -/
-private theorem localMinimalDiscriminantValuation_eq_addVal_of_baseChange
-    {W : WeierstrassCurve K} [W.IsElliptic] {W' : WeierstrassCurve R}
-    [IsMinimal R (W'.baseChange K)] {D : VariableChange K} (hD : D • W = W'.baseChange K) :
-    (W.localMinimalDiscriminantValuation R : ENat) = addVal R W'.Δ := by
-  rw [W.localMinimalDiscriminantValuation_eq_addVal_of_isMinimal_smul R D hD,
-    integralModel_baseChange_self]
-
 variable [PerfectField (ResidueField R)]
 
 /-- Tate's algorithm stops on the integral model of the chosen minimal equation, after a change of
@@ -167,7 +159,7 @@ theorem reductionSymbol_eq_I_iff (W : WeierstrassCurve K) [W.IsElliptic] (n : �
     W.reductionSymbol R = .I n ↔
       ¬ (W.minimal R).HasAdditiveReduction R ∧ W.localMinimalDiscriminantValuation R = n := by
   obtain ⟨W', D, ϖ, hmin, hD, hϖ, h⟩ := W.exists_isTateTerminal_reductionSymbol R
-  have hv := localMinimalDiscriminantValuation_eq_addVal_of_baseChange R hD
+  have hv := W.localMinimalDiscriminantValuation_eq_addVal_of_isMinimal_baseChange R D hD
   rw [← forall_reductionSymbol_ne_I_iff, not_forall_not]
   constructor
   · intro hn
@@ -233,7 +225,7 @@ private theorem algorithmicOggExponent_reductionSymbol_cases (W : WeierstrassCur
     exact ReductionSymbol.algorithmicOggExponent_I _ n.succ_pos
   · obtain ⟨W', D, ϖ, hmin, hD, hϖ, h⟩ := W.exists_isTateTerminal_reductionSymbol R
     exact h.two_le_algorithmicOggExponent hϖ ((forall_reductionSymbol_ne_I_iff W).2 ha)
-      (localMinimalDiscriminantValuation_eq_addVal_of_baseChange R hD).symm
+      (W.localMinimalDiscriminantValuation_eq_addVal_of_isMinimal_baseChange R D hD).symm
 
 /-- **The algorithmic Ogg exponent is `v(Δ_min) − m + 1`**, with `m` the component count of the
 reduction symbol: the integer `v(Δ_min) − m + 1` is nonnegative, so no truncation occurs. -/
