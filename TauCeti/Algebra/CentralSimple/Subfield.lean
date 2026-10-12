@@ -13,6 +13,8 @@ module
 public import TauCeti.Algebra.CentralSimple.Splitting
 -- `TauCeti.Bimodule` supplies the left-right action transported to the orientation used here.
 public import TauCeti.Algebra.CentralSimple.Bimodule
+public import TauCeti.Algebra.Algebra.Opposite
+public import TauCeti.RingTheory.TensorProduct.Opposite
 -- Non-public: none of these appears in the type of an exported declaration. The tower law and the
 -- dimension of an endomorphism algebra, the injective-implies-surjective criterion, the matrix
 -- form of an endomorphism algebra and the faithfulness of a module over a simple ring are used
@@ -124,19 +126,6 @@ section Defs
 variable {K L A : Type*} [CommSemiring K] [CommSemiring L] [Algebra K L]
   [Semiring A] [Algebra K A]
 
-/-- The opposite-valued algebra homomorphism induced by a map from commutative `L`. -/
-abbrev _root_.AlgHom.toOppositeOfComm (f : L →ₐ[K] A) : L →ₐ[K] Aᵐᵒᵖ :=
-  f.toOpposite fun x y ↦ by simp [commute_iff_eq, ← map_mul, mul_comm]
-
-namespace BaseChangeModule
-
-variable (K L A) in
-/-- The tensor-product map identifying `A` with its double opposite. -/
-abbrev tensorOpOp : L ⊗[K] A →ₐ[K] L ⊗[K] Aᵐᵒᵖᵐᵒᵖ :=
-  Algebra.TensorProduct.map (AlgHom.id K L) (AlgEquiv.opOp K A).toAlgHom
-
-end BaseChangeModule
-
 /-- `A` regarded as a module over the scalar extension `L ⊗[K] A`, along a `K`-algebra homomorphism
 `f : L →ₐ[K] A` out of a **commutative** algebra: the pure tensor `l ⊗ₜ a` acts by
 `x ↦ a * x * f l`.
@@ -174,13 +163,14 @@ def of : A ≃ₗ[K] BaseChangeModule f :=
   (MulOpposite.opLinearEquiv K).trans (Bimodule.of (f.toOppositeOfComm))
 
 noncomputable instance : Module (L ⊗[K] A) (BaseChangeModule f) :=
-  Module.compHom (M := Bimodule (f.toOppositeOfComm)) (tensorOpOp K L A).toRingHom
+  Module.compHom (M := Bimodule (f.toOppositeOfComm))
+    (Algebra.TensorProduct.mapOpOpRight K L A).toRingHom
 
 /-- The action of `L ⊗[K] A` on `A` defining `BaseChangeModule f`, as a `K`-algebra homomorphism
 into `Module.End K A`, transported from `TauCeti.Bimodule.toEnd`. -/
 noncomputable def toEnd : L ⊗[K] A →ₐ[K] Module.End K A :=
   ((MulOpposite.opLinearEquiv K).conjAlgEquiv K).symm.toAlgHom.comp
-    ((Bimodule.toEnd (f.toOppositeOfComm)).comp (tensorOpOp K L A))
+    ((Bimodule.toEnd (f.toOppositeOfComm)).comp (Algebra.TensorProduct.mapOpOpRight K L A))
 
 /-- A pure tensor `l ⊗ₜ a` acts on `x : A` through `toEnd f` by `x ↦ a * x * f l`. -/
 @[simp]
@@ -191,7 +181,8 @@ theorem toEnd_tmul_apply (l : L) (a x : A) : toEnd f (l ⊗ₜ a) x = a * x * f 
 equation of the module structure, and the single place it is unfolded: everything else rewrites
 with it instead of reasoning up to definitional equality. -/
 theorem smul_def (r : L ⊗[K] A) (x : A) : r • of f x = of f (toEnd f r x) := by
-  change tensorOpOp K L A r • Bimodule.of (f.toOppositeOfComm) (MulOpposite.op x) =
+  change Algebra.TensorProduct.mapOpOpRight K L A r •
+      Bimodule.of (f.toOppositeOfComm) (MulOpposite.op x) =
     Bimodule.of (f.toOppositeOfComm) (MulOpposite.op (toEnd f r x))
   rw [Bimodule.smul_def]
   rfl
