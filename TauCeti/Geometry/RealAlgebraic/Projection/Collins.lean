@@ -41,9 +41,10 @@ base point determine the degrees of the specialized polynomials and, through the
 gcd criterion, the degrees of their pairwise gcds and of their gcds with their derivatives; this
 is how the projection enters Collins' delineability theorem. The last section of this file
 proves this: whenever the same elements of the projection vanish under two specializations
-`φ : R →+* K` and `ψ : R →+* L` into fields (for instance evaluation at two points of a base set
-on which the projection is sign-invariant), the specialized family has the same degrees, the same
-nullified members, the same pairwise gcd degrees and the same gcd degrees with derivatives.
+`φ : R →+* K` and `ψ : R →+* L` into characteristic-zero fields (for instance evaluation at two
+points of a base set on which the projection is sign-invariant), the specialized family has the
+same degrees, the same nullified members, the same pairwise gcd degrees and the same gcd degrees
+with derivatives.
 
 ## Main definitions and results
 
@@ -66,8 +67,9 @@ nullified members, the same pairwise gcd degrees and the same gcd degrees with d
   `Finset.natDegree_gcd_map_derivative_eq_of_collinsProjection`: under the same hypothesis, the
   specialized pairwise gcds, and the specialized gcds of each member with its derivative, have
   the same degrees.
-* `Finset.card_roots_toFinset_map_eq_of_collinsProjection`: over algebraically closed fields of
-  characteristic zero, each specialized member then has the same number of distinct roots.
+* `Finset.card_roots_toFinset_map_eq_of_collinsProjection_of_splits`: in characteristic zero,
+  a member that splits under both specializations has the same number of distinct roots.
+* `Finset.card_roots_toFinset_map_eq_of_collinsProjection`: the algebraically closed case.
 
 ## References
 
@@ -244,12 +246,15 @@ theorem psc_map_derivative_mem_image_collinsProjection [IsAddTorsionFree S] [Dec
 
 Throughout, `φ` and `ψ` are two specializations under which the same elements of the Collins
 projection vanish. The degrees and the zero patterns of principal subresultant coefficients agree
-for specializations into arbitrary commutative rings; the gcd and root-count statements are over
-fields. -/
+for specializations into commutative rings, with additively torsion-free targets for the derivative
+statements. Nullification and degree invariance allow arbitrary semiring targets. The gcd and
+root-count statements are over fields. -/
 
 section Invariance
 
-variable {A B : Type*} [CommRing A] [CommRing B] {φ : R →+* A} {ψ : R →+* B} {F : Finset R[X]}
+section
+
+variable {A B : Type*} [Semiring A] [Semiring B] {φ : R →+* A} {ψ : R →+* B} {F : Finset R[X]}
   {p q : R[X]}
 
 /-- If the same elements of the Collins projection vanish under `φ` and `ψ`, then a member of the
@@ -278,6 +283,11 @@ private theorem exists_mem_reducta_map_eq_and_map_eq
   refine ⟨_, p.reductum_mem_reducta _, natDegree_reductum_natDegree_map_add_one φ p, ?_,
     map_reductum_natDegree_map_add_one φ p, ?_⟩ <;> rw [hdeg]
   exacts [natDegree_reductum_natDegree_map_add_one ψ p, map_reductum_natDegree_map_add_one ψ p]
+
+end
+
+variable {A B : Type*} [CommRing A] [CommRing B] {φ : R →+* A} {ψ : R →+* B} {F : Finset R[X]}
+  {p q : R[X]}
 
 /-- If the same elements of the Collins projection vanish under `φ` and `ψ`, then for two members
 of the family the principal subresultant coefficients of their specializations, at the
@@ -371,6 +381,22 @@ theorem natDegree_gcd_map_derivative_eq_of_collinsProjection [IsAddTorsionFree K
   refine psc_map_derivative_eq_zero_iff_of_collinsProjection h hp ?_
   rwa [natDegree_derivative, hdeg, ← natDegree_derivative]
 
+/-- If two specializations into characteristic-zero fields nullify the same elements of the
+Collins projection and a member splits under both specializations, then it has the same number of
+distinct roots after either specialization. The zero polynomial has an empty root multiset by
+convention. -/
+theorem card_roots_toFinset_map_eq_of_collinsProjection_of_splits [CharZero K] [CharZero L]
+    (h : ∀ a ∈ F.collinsProjection, φ a = 0 ↔ ψ a = 0) (hp : p ∈ F)
+    (hφ : (p.map φ).Splits) (hψ : (p.map ψ).Splits) :
+    (p.map φ).roots.toFinset.card = (p.map ψ).roots.toFinset.card := by
+  rcases eq_or_ne (p.map ψ) 0 with h0 | h0
+  · simp [h0, (map_eq_zero_iff_of_collinsProjection h hp).2 h0]
+  rw [← natDegree_sub_natDegree_gcd_derivative_eq_card_roots_toFinset_of_splits h0 hψ,
+    ← natDegree_sub_natDegree_gcd_derivative_eq_card_roots_toFinset_of_splits
+      ((map_eq_zero_iff_of_collinsProjection h hp).not.2 h0) hφ,
+    natDegree_map_eq_of_collinsProjection h hp,
+    natDegree_gcd_map_derivative_eq_of_collinsProjection h hp]
+
 /-- If the same elements of the Collins projection vanish under specializations `φ` and `ψ` into
 algebraically closed fields of characteristic zero, then every member of the family has the same
 number of distinct roots after either specialization. A member nullified by one is nullified by
@@ -379,14 +405,9 @@ then zero. -/
 theorem card_roots_toFinset_map_eq_of_collinsProjection [CharZero K] [CharZero L]
     [IsAlgClosed K] [IsAlgClosed L]
     (h : ∀ a ∈ F.collinsProjection, φ a = 0 ↔ ψ a = 0) (hp : p ∈ F) :
-    (p.map φ).roots.toFinset.card = (p.map ψ).roots.toFinset.card := by
-  rcases eq_or_ne (p.map ψ) 0 with h0 | h0
-  · simp [h0, (map_eq_zero_iff_of_collinsProjection h hp).2 h0]
-  rw [← natDegree_sub_natDegree_gcd_derivative_eq_card_roots_toFinset h0,
-    ← natDegree_sub_natDegree_gcd_derivative_eq_card_roots_toFinset
-      ((map_eq_zero_iff_of_collinsProjection h hp).not.2 h0),
-    natDegree_map_eq_of_collinsProjection h hp,
-    natDegree_gcd_map_derivative_eq_of_collinsProjection h hp]
+    (p.map φ).roots.toFinset.card = (p.map ψ).roots.toFinset.card :=
+  card_roots_toFinset_map_eq_of_collinsProjection_of_splits h hp
+    (IsAlgClosed.splits _) (IsAlgClosed.splits _)
 
 end Field
 
