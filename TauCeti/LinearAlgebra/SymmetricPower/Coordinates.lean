@@ -86,6 +86,8 @@ products of the corresponding coordinates of the factors.
 For factors that are themselves basis vectors this recovers `Module.Basis.symmetricPower_apply`;
 the content here is the general case. The basis index type may be infinite: the sum is finite
 because a nonzero summand uses only the finite supports of the coordinates of the factors. -/
+-- The constant-index formula below should simplify directly to a product.
+@[simp low]
 theorem _root_.Module.Basis.symmetricPower_repr_tprod_apply (v : Fin n → M) (s : Sym κ n) :
     (b.symmetricPower n).repr (⨂ₛ[R] i, v i) s =
       ∑ᶠ p ∈ {p : Fin n → κ | TauCeti.Sym.ofFn p = s}, ∏ i, b.repr (v i) (p i) := by
