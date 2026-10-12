@@ -7,6 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.CliffordAlgebra.RealForm.Basic
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Reversal.Basic
+public import TauCeti.Algebra.Quaternion.NormForm
 
 /-!
 # The compact four-dimensional even Clifford algebra
@@ -31,6 +32,8 @@ the model.
   coordinates.
 * `TauCeti.realCliffordFourZeroEvenEquivQuaternionProd_reverseEven` identifies reversal with
   componentwise quaternion conjugation.
+* `TauCeti.realCliffordFourZeroQuaternionEquiv` identifies the underlying quadratic space of
+  `Cl(4,0)` with the Hamilton quaternion norm form.
 
 ## References
 
@@ -139,7 +142,7 @@ private noncomputable def realCliffordZeroFourAugmentedIsometry :
 private theorem realCliffordFormNegIsometry_four_zero (v : Fin 4 → ℝ) :
     realCliffordFormNegIsometry 4 0 v = v := by
   funext i
-  simpa using realCliffordFormNegIsometry_neg_of_pos 4 0 v i
+  simpa using realCliffordFormNegIsometry_apply_natAdd 4 0 v i
 
 private theorem realCliffordZeroFourAugmentedIsometry_apply (v : Fin 4 → ℝ) :
     realCliffordZeroFourAugmentedIsometry v = (![v 0, v 1, v 2], v 3) := by
@@ -213,6 +216,38 @@ theorem realCliffordFourZeroEvenEquivQuaternionProd_map_reverseEven_mul_self_eq_
           (Quaternion.normSq (realCliffordFourZeroEvenEquivQuaternionProd x).2)) := by
   rw [map_mul, realCliffordFourZeroEvenEquivQuaternionProd_reverseEven]
   ext <;> simp [Quaternion.star_mul_self]
+
+/-- A Hamilton-quaternion model of the vector space underlying `Cl(4,0)`. The
+coordinate order is chosen so that the two unit-quaternion factors act by left and inverse right
+multiplication. -/
+noncomputable def realCliffordFourZeroQuaternionEquiv :
+    (realCliffordForm 4 0).IsometryEquiv
+      (QuaternionAlgebra.normForm (-1 : ℝ) 0 (-1 : ℝ)) where
+  toFun v := ⟨-v 2, v 1, -v 0, v 3⟩
+  invFun q := ![-q.imJ, q.imI, -q.re, q.imK]
+  left_inv v := by ext i; fin_cases i <;> simp
+  right_inv q := by ext <;> simp
+  map_add' _ _ := by ext <;> simp <;> abel
+  map_smul' _ _ := by ext <;> simp
+  map_app' v := by
+    rw [QuaternionAlgebra.normForm_apply_coordinates, realCliffordForm_apply,
+      Fin.sum_univ_four]
+    simp
+    ring
+
+/-- The Hamilton-quaternion coordinates of a vector in the compact real four-dimensional
+model. -/
+@[simp]
+theorem realCliffordFourZeroQuaternionEquiv_apply (v : Fin 4 → ℝ) :
+    realCliffordFourZeroQuaternionEquiv v = ⟨-v 2, v 1, -v 0, v 3⟩ :=
+  (rfl)
+
+/-- The vector coordinates recovered from a Hamilton quaternion. -/
+@[simp]
+theorem realCliffordFourZeroQuaternionEquiv_symm_apply (q : ℍ[ℝ]) :
+    realCliffordFourZeroQuaternionEquiv.symm q =
+      ![-q.imJ, q.imI, -q.re, q.imK] :=
+  (rfl)
 
 end TauCeti
 

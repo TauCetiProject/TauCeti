@@ -8,7 +8,7 @@ module
 public import TauCeti.Algebra.AlgebraicGroup.Connected.CommHopfAlgCat
 public import TauCeti.Algebra.AlgebraicGroup.GeometricallyReduced.CommHopfAlgCat
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Quotient.Image.Basic
-import Mathlib.RingTheory.Flat.Basic
+import TauCeti.RingTheory.Flat.TensorProduct
 
 /-!
 # Geometric properties of affine group images
@@ -64,13 +64,9 @@ algebra into the source coordinate algebra remains injective. -/
 private theorem image_baseChange_injective (f : H ⟶ K)
     (L : Type u) [Field L] [Algebra k L] :
     Function.Injective
-      (Algebra.TensorProduct.map (imageι f).hom.toAlgHom (AlgHom.id k L)) := by
-  have h := TensorProduct.map_injective_of_flat_flat
-    (imageι f).hom.toAlgHom.toLinearMap (AlgHom.id k L).toLinearMap
-      (imageι_injective f) Function.injective_id
-  rw [← TensorProduct.AlgebraTensorModule.map_eq,
-    ← Algebra.TensorProduct.toLinearMap_map] at h
-  exact h
+      (Algebra.TensorProduct.map (imageι f).hom.toAlgHom (AlgHom.id k L)) :=
+  Algebra.TensorProduct.map_injective_of_flat_flat
+    (imageι f).hom.toAlgHom (AlgHom.id k L) (imageι_injective f) Function.injective_id
 
 end CommHopfAlgCat
 

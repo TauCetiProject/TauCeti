@@ -8,6 +8,7 @@ module
 public import Mathlib.AlgebraicGeometry.EllipticCurve.VariableChange
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Projective.CoordinateRing
 public import TauCeti.RingTheory.MvPolynomial.LinearSubst
+import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Formula.VariableChange
 
 /-!
 # Variable changes on the homogeneous coordinate ring of a Weierstrass curve
@@ -32,6 +33,15 @@ and `W`.
 
 * `WeierstrassCurve.VariableChange.toMatrix_mul`: `toMatrix` is an anti-homomorphism, matching the
   action `(C * C') • W = C • C' • W`.
+* `WeierstrassCurve.VariableChange.toMatrix_map`: `toMatrix` commutes with mapping along a ring
+  homomorphism.
+* `WeierstrassCurve.VariableChange.toMatrix_injective` and
+  `WeierstrassCurve.VariableChange.toMatrix_inj`: a change of variables is determined by its
+  matrix.
+* `WeierstrassCurve.Projective.equation_variableChange`: `P` solves the projective Weierstrass
+  equation of `C • W` exactly when `C.toMatrix *ᵥ P` solves that of `W`.
+* `WeierstrassCurve.Projective.nonsingular_variableChange`: over a field, `P` is a nonsingular
+  point representative of `C • W` exactly when `C.toMatrix *ᵥ P` is one of `W`.
 * `WeierstrassCurve.Projective.linearSubst_polynomial`: the substitution multiplies the
   homogeneous Weierstrass polynomial by `u⁶`.
 * `WeierstrassCurve.Projective.variableChangeEquiv_one` and
@@ -46,6 +56,16 @@ and `W`.
 
 * [J. H. Silverman, *The Arithmetic of Elliptic Curves*, III.1][silverman2009]
 * N. M. Katz and B. Mazur, *Arithmetic Moduli of Elliptic Curves*, 2.2.
+
+## Provenance
+
+`toMatrix_injective` is adapted from AINTLIB (`github.com/CBirkbeck/AINTLIB`, Apache-2.0) at commit
+`c3415f32a313e19ace43e05479aeaa0d56ca287a`, file
+`projects/ModularCurves/ModularCurves/EllipticCurve/ComparisonInjective.lean`: it is the last step
+of the proof of `projModelVCIso_injective'`, which recovers `u` from `u²` and `u³`, and `s` from
+`u²` and `u²s`, by cancelling the unit `u²`, and concludes by `VariableChange.ext`. The source has
+no matrix of a change of variables and applies this step to coefficients it has read off the
+affine coordinate ring; here it is stated for the entries of `toMatrix`.
 -/
 
 public section
@@ -63,6 +83,11 @@ namespace VariableChange
 `(x, y) ↦ (u²x + r, u³y + u²sx + t)`. -/
 def toMatrix (C : VariableChange R) : Matrix (Fin 3) (Fin 3) R :=
   !![(C.u : R) ^ 2, 0, C.r; (C.u : R) ^ 2 * C.s, (C.u : R) ^ 3, C.t; 0, 0, 1]
+
+/-- The entries of the matrix `C.toMatrix` of a change of variables. -/
+theorem toMatrix_def (C : VariableChange R) :
+    C.toMatrix = !![(C.u : R) ^ 2, 0, C.r; (C.u : R) ^ 2 * C.s, (C.u : R) ^ 3, C.t; 0, 0, 1] :=
+  (rfl)
 
 @[simp]
 theorem toMatrix_one : toMatrix (1 : VariableChange R) = 1 := by
@@ -82,6 +107,64 @@ theorem toMatrix_mul_toMatrix_inv (C : VariableChange R) : toMatrix C * toMatrix
 
 theorem toMatrix_inv_mul_toMatrix (C : VariableChange R) : toMatrix C⁻¹ * toMatrix C = 1 := by
   rw [← toMatrix_mul, mul_inv_cancel, toMatrix_one]
+
+/-- The matrix of a change of variables mapped along a ring homomorphism `f` is the matrix of the
+original change of variables with `f` applied to its entries. -/
+@[simp]
+theorem toMatrix_map {S : Type*} [CommRing S] (C : VariableChange R) (f : R →+* S) :
+    (C.map f).toMatrix = C.toMatrix.map f := by
+  ext i j
+  fin_cases i <;> fin_cases j <;> simp [toMatrix]
+
+/-- A change of variables `C = (u, r, s, t)` is determined by its matrix `C.toMatrix`. -/
+theorem toMatrix_injective :
+    Function.Injective (toMatrix : VariableChange R → Matrix (Fin 3) (Fin 3) R) := by
+  intro C C' h
+  -- the entries `u²`, `r`, `u²s`, `u³` and `t` of the two matrices agree
+  simp only [toMatrix_def, Equiv.apply_eq_iff_eq, Matrix.vecCons_inj, and_true, true_and] at h
+  obtain ⟨⟨h00, h02⟩, h10, h11, h12⟩ := h
+  -- `u = u³ / u²`, and then `s = u²s / u²`
+  have hu : (C.u : R) = C'.u :=
+    (C.u.isUnit.pow 2).mul_left_cancel (by linear_combination h11 - (C'.u : R) * h00)
+  exact VariableChange.ext (Units.ext hu) h02
+    ((C.u.isUnit.pow 2).mul_left_cancel (by rw [h10, h00])) h12
+
+/-- Two changes of variables have the same matrix exactly when they are equal. -/
+@[simp]
+theorem toMatrix_inj {C C' : VariableChange R} : C.toMatrix = C'.toMatrix ↔ C = C' :=
+  toMatrix_injective.eq_iff
+
+open Matrix in
+/-- A change of variables fixes the third homogeneous coordinate. -/
+@[simp]
+theorem toMatrix_mulVec_two (C : VariableChange R) (P : Fin 3 → R) :
+    (C.toMatrix *ᵥ P) 2 = P 2 := by
+  simp [toMatrix_def, Matrix.mulVec, dotProduct, Fin.sum_univ_three]
+
+section Field
+
+variable {F : Type*} [Field F] (C : VariableChange F) {P : Fin 3 → F}
+
+open Matrix
+
+/-- On the affine chart `Z ≠ 0`, the change of variables acts on the first affine coordinate
+`x = X / Z` as `x ↦ u²x + r`. -/
+theorem toMatrix_mulVec_zero_div (hP : P 2 ≠ 0) :
+    (C.toMatrix *ᵥ P) 0 / P 2 = (C.u : F) ^ 2 * (P 0 / P 2) + C.r := by
+  field_simp
+  simp [toMatrix_def, Matrix.mulVec, dotProduct, Fin.sum_univ_three]
+  ring
+
+/-- On the affine chart `Z ≠ 0`, the change of variables acts on the second affine coordinate
+`y = Y / Z` as `y ↦ u³y + u²sx + t`, where `x = X / Z`. -/
+theorem toMatrix_mulVec_one_div (hP : P 2 ≠ 0) :
+    (C.toMatrix *ᵥ P) 1 / P 2 =
+      (C.u : F) ^ 3 * (P 1 / P 2) + (C.u : F) ^ 2 * C.s * (P 0 / P 2) + C.t := by
+  field_simp
+  simp [toMatrix_def, Matrix.mulVec, dotProduct, Fin.sum_univ_three]
+  ring
+
+end Field
 
 end VariableChange
 
@@ -190,6 +273,14 @@ theorem variableChangeEquiv_symm_mem_grading {n : ℕ} {x : (C • W).toProjecti
   exact mk_mem_grading _ (hp.linearSubst _)
 
 open Matrix in
+/-- A point representative `P` solves the projective Weierstrass equation of `C • W` exactly when
+its image `C.toMatrix *ᵥ P = [u²P₀ + rP₂ : u²sP₀ + u³P₁ + tP₂ : P₂]` solves that of `W`. -/
+theorem equation_variableChange (P : Fin 3 → R) :
+    (C • W).toProjective.Equation P ↔ W.toProjective.Equation (C.toMatrix *ᵥ P) := by
+  rw [Projective.Equation, Projective.Equation, ← eval_linearSubst, linearSubst_polynomial,
+    eval_mul, eval_C, (C.u.isUnit.pow 6).mul_right_eq_zero]
+
+open Matrix in
 /-- Evaluating at `[0 : 1 : 0]` after the change of variables is evaluating at
 `[0 : u³ : 0]`: on the degree-`n` part it multiplies the value at `[0 : 1 : 0]` by `(u³)ⁿ`. -/
 theorem evalZero_variableChangeEquiv {n : ℕ} {x : W.toProjective.CoordinateRing}
@@ -203,6 +294,46 @@ theorem evalZero_variableChangeEquiv {n : ℕ} {x : W.toProjective.CoordinateRin
     fin_cases i <;> simp [VariableChange.toMatrix, Matrix.mulVec, dotProduct, Fin.sum_univ_three]
   rw [variableChangeEquiv_mk, evalZero_mk, evalZero_mk, eval_linearSubst, h, ← eval_linearSubst,
     hp.linearSubst_smul, linearSubst_one, AlgHom.id_apply, smul_eq_C_mul, eval_mul, eval_C]
+
+section Field
+
+variable {F : Type*} [Field F]
+
+open Matrix
+
+-- Over a field, the image `C.toMatrix *ᵥ P` of a nonsingular point representative `P` of `C • W`
+-- is a nonsingular point representative of `W`.
+private theorem nonsingular_toMatrix_mulVec {W : WeierstrassCurve F} {C : VariableChange F}
+    {P : Fin 3 → F} (hP : (C • W).toProjective.Nonsingular P) :
+    W.toProjective.Nonsingular (C.toMatrix *ᵥ P) := by
+  by_cases hPz : P 2 = 0
+  · -- `P = [0 : P₁ : 0]` with `P₁ ≠ 0`, so its image is `[0 : u³P₁ : 0] = u³P₁ • [0 : 1 : 0]`
+    have hPx : P 0 = 0 := X_eq_zero_of_Z_eq_zero hP.1 hPz
+    have h : C.toMatrix *ᵥ P = ((C.u : F) ^ 3 * P 1) • ![0, 1, 0] := by
+      ext k
+      fin_cases k <;> simp [VariableChange.toMatrix_def, mulVec, dotProduct, Fin.sum_univ_three,
+        hPx, hPz]
+    rw [h, nonsingular_smul _ ((C.u.isUnit.pow 3).mul (isUnit_Y_of_Z_eq_zero hP hPz))]
+    exact nonsingular_zero
+  · -- otherwise both are read on the affine chart `Z ≠ 0`, where the change of variables is
+    -- `(x, y) ↦ (u²x + r, u³y + u²sx + t)`
+    rw [nonsingular_of_Z_ne_zero hPz] at hP
+    rw [nonsingular_of_Z_ne_zero (by rwa [VariableChange.toMatrix_mulVec_two]),
+      VariableChange.toMatrix_mulVec_two, VariableChange.toMatrix_mulVec_zero_div C hPz,
+      VariableChange.toMatrix_mulVec_one_div C hPz]
+    exact (Affine.variableChange_nonsingular W C _ _).mpr hP
+
+/-- Over a field, a point representative `P` is nonsingular on `C • W` exactly when its image
+`C.toMatrix *ᵥ P = [u²P₀ + rP₂ : u²sP₀ + u³P₁ + tP₂ : P₂]` is nonsingular on `W`. -/
+theorem nonsingular_variableChange (W : WeierstrassCurve F) (C : VariableChange F)
+    (P : Fin 3 → F) :
+    (C • W).toProjective.Nonsingular P ↔ W.toProjective.Nonsingular (C.toMatrix *ᵥ P) := by
+  refine ⟨nonsingular_toMatrix_mulVec, fun h ↦ ?_⟩
+  -- the inverse change of variables carries `C.toMatrix *ᵥ P` back to `P`
+  have h' := nonsingular_toMatrix_mulVec (W := C • W) (C := C⁻¹) (by rwa [inv_smul_smul])
+  rwa [mulVec_mulVec, VariableChange.toMatrix_inv_mul_toMatrix, one_mulVec] at h'
+
+end Field
 
 end Projective
 

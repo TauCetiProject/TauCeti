@@ -228,7 +228,7 @@ private theorem tendsto_dist_blockAverage_moving_prefix_toLp {μ : Measure Ω}
   refine squeeze_zero' (Eventually.of_forall fun m ↦ dist_nonneg) ?_ hsqrt
   filter_upwards [hk] with m hkm
   -- A block placed beyond both the selection's range and the prefix.
-  set l : ℕ := max (Finset.univ.sup fun i : Fin (m + 1) ↦ k m i) m + 1 with hl
+  set l : ℕ := max (Finset.univ.sup fun i : Fin (m + 1) ↦ k m i) m + 1
   have hsel_lt : ∀ i : Fin (m + 1), k m i < l := by
     intro i
     have hle : k m i ≤ Finset.univ.sup fun i : Fin (m + 1) ↦ k m i :=

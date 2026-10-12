@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Homotopy.HomotopyGroup
+public import TauCeti.Analysis.Normed.Module.Ball.Homeomorph
+public import TauCeti.Topology.Homotopy.Cube.Basic
 
 /-!
 # Radial coordinates on the cube
@@ -28,6 +30,13 @@ it multiplies the radius by `s` as long as the result still fits in the cube
 (`TauCeti.cubeRadius_cubeScale`). In particular a point of radius `r > 0` is scaled by `1 / r`
 onto the boundary, which is what makes the collar constructions glue continuously.
 
+The radius is also the sup norm of the image of a cube point under the affine homeomorphism
+`TauCeti.cubeHomeomorphClosedBall` of the cube onto the closed unit ball of `N → ℝ`
+(`TauCeti.norm_cubeHomeomorphClosedBall`), so that homeomorphism carries the boundary of the cube
+onto the unit sphere (`TauCeti.norm_cubeHomeomorphClosedBall_eq_one_iff`). For `N = Fin (n + 1)`,
+splitting off the first coordinate identifies the closed unit ball with the cube `I × I^(Fin n)`
+(`TauCeti.closedBallHomeomorphProd`), and its unit sphere with `TauCeti.Cube.prodBoundary`.
+
 ## Main declarations
 
 * `TauCeti.cubeCenter`, `TauCeti.cubeRadius`: the centre of `I^N` and the `sup` radius around
@@ -36,6 +45,10 @@ onto the boundary, which is what makes the collar constructions glue continuousl
   with equality exactly on `Cube.boundary N`.
 * `TauCeti.cubeScale`: radial rescaling of a cube point, and `TauCeti.cubeRadius_cubeScale`: it
   scales the radius.
+* `TauCeti.norm_cubeHomeomorphClosedBall_eq_one_iff`: the cube homeomorphism onto the closed unit
+  ball of the sup norm carries `Cube.boundary N` onto the unit sphere.
+* `TauCeti.closedBallHomeomorphProd`: the closed unit ball of the sup norm on `Fin (n + 1) → ℝ` is
+  homeomorphic to `I × I^(Fin n)`, carrying the unit sphere onto `Cube.prodBoundary (Fin n)`.
 
 ## References
 
@@ -190,5 +203,71 @@ theorem cubeRadius_cubeScale {s : ℝ} (hs : 0 ≤ s) {z : I^N} (h : s * cubeRad
     intro i
     rw [dist_apply_cubeCenter, le_div_iff₀' hs0, ← key i, ← dist_apply_cubeCenter]
     exact dist_le_pi_dist _ _ i
+
+
+/-! ### The cube as the closed unit ball of the sup norm -/
+
+/-- The radius of a cube point is the sup norm of its image under the affine homeomorphism
+`TauCeti.cubeHomeomorphClosedBall` onto the closed unit ball: coordinatewise,
+`|2 * t - 1| = 2 * |t - 1 / 2|`. -/
+theorem norm_cubeHomeomorphClosedBall (y : I^N) :
+    ‖(cubeHomeomorphClosedBall N y : N → ℝ)‖ = cubeRadius y := by
+  have hcoord (i : N) :
+      ‖(cubeHomeomorphClosedBall N y : N → ℝ) i‖ = 2 * dist (y i) ((cubeCenter : I^N) i) := by
+    rw [coe_cubeHomeomorphClosedBall_apply, dist_apply_cubeCenter, Real.norm_eq_abs,
+      ← abs_two, ← abs_mul, abs_two]
+    congr 1
+    ring
+  refine le_antisymm ((pi_norm_le_iff_of_nonneg (cubeRadius_nonneg y)).2 fun i ↦ ?_) ?_
+  · rw [hcoord, cubeRadius_def]
+    gcongr
+    exact dist_le_pi_dist y cubeCenter i
+  · rw [cubeRadius_def, ← le_div_iff₀' two_pos, dist_pi_le_iff (by positivity)]
+    intro i
+    rw [le_div_iff₀' two_pos, ← hcoord]
+    exact norm_le_pi_norm _ i
+
+/-- The homeomorphism `TauCeti.cubeHomeomorphClosedBall` sends a cube point to the unit sphere of
+the sup norm exactly when it lies on the boundary of the cube. -/
+theorem norm_cubeHomeomorphClosedBall_eq_one_iff (y : I^N) :
+    ‖(cubeHomeomorphClosedBall N y : N → ℝ)‖ = 1 ↔ y ∈ Cube.boundary N := by
+  rw [norm_cubeHomeomorphClosedBall, cubeRadius_eq_one_iff]
+
+/-- The closed unit ball of the sup norm on `Fin (n + 1) → ℝ` is the cube `I × I^(Fin n)`, through
+the affine homeomorphism `TauCeti.cubeHomeomorphClosedBall` followed by splitting off the first
+coordinate. -/
+def closedBallHomeomorphProd (n : ℕ) :
+    Metric.closedBall (0 : Fin (n + 1) → ℝ) 1 ≃ₜ I × I^(Fin n) :=
+  (cubeHomeomorphClosedBall (Fin (n + 1))).symm.trans
+    { toFun z := (z 0, Fin.tail z)
+      invFun q := Fin.cons q.1 q.2
+      left_inv := Fin.cons_self_tail
+      right_inv _ := by simp
+      continuous_toFun := (continuous_apply 0).prodMk (continuous_pi fun _ ↦ continuous_apply _)
+      continuous_invFun := Continuous.finCons (A := fun _ ↦ I) continuous_fst continuous_snd }
+
+@[simp]
+theorem closedBallHomeomorphProd_apply {n : ℕ} (x : Metric.closedBall (0 : Fin (n + 1) → ℝ) 1) :
+    closedBallHomeomorphProd n x = ((cubeHomeomorphClosedBall (Fin (n + 1))).symm x 0,
+      Fin.tail ((cubeHomeomorphClosedBall (Fin (n + 1))).symm x)) :=
+  (rfl)
+
+@[simp]
+theorem closedBallHomeomorphProd_symm_apply {n : ℕ} (q : I × I^(Fin n)) :
+    (closedBallHomeomorphProd n).symm q =
+      cubeHomeomorphClosedBall (Fin (n + 1)) (Fin.cons q.1 q.2) :=
+  (rfl)
+
+/-- `TauCeti.closedBallHomeomorphProd` carries the unit sphere onto the boundary of
+`I × I^(Fin n)`. -/
+theorem closedBallHomeomorphProd_mem_prodBoundary_iff {n : ℕ}
+    (x : Metric.closedBall (0 : Fin (n + 1) → ℝ) 1) :
+    closedBallHomeomorphProd n x ∈ Cube.prodBoundary (Fin n) ↔
+      (x : Fin (n + 1) → ℝ) ∈ Metric.sphere 0 1 := by
+  have hx : ‖(x : Fin (n + 1) → ℝ)‖ = 1 ↔
+      (cubeHomeomorphClosedBall (Fin (n + 1))).symm x ∈ Cube.boundary (Fin (n + 1)) := by
+    rw [← norm_cubeHomeomorphClosedBall_eq_one_iff, Homeomorph.apply_symm_apply]
+  rw [mem_sphere_zero_iff_norm, hx, Cube.boundary_fin_succ_iff, closedBallHomeomorphProd_apply,
+    Cube.mem_prodBoundary_iff]
 
 end TauCeti

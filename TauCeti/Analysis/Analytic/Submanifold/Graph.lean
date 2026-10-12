@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Analytic.Submanifold.Basic
 import TauCeti.Data.Fin.Basic
+import TauCeti.Topology.Algebra.Module.ProjectionGraph
 import Mathlib.Topology.Algebra.Module.Equiv.Pi
 import Mathlib.Topology.OpenPartialHomeomorph.Constructions
 import Mathlib.Topology.Order.OrderClosed
@@ -95,42 +96,53 @@ private theorem exists_graph_straightening
   let c := Fin.consEquivL 𝕜 (fun _ : Fin (n + 1) ↦ 𝕜)
   have ht (w : Fin (n + 1) → 𝕜) : AnalyticAt 𝕜 Fin.tail w :=
     analyticAt_snd.comp (c.symm.analyticAt w)
-  have htail : Continuous (Fin.tail : (Fin (n + 1) → 𝕜) → Fin n → 𝕜) :=
-    continuous_id.finTail
-  have hzero : Continuous (fun w : Fin (n + 1) → 𝕜 ↦ w 0) := continuous_apply 0
-  let q : OpenPartialHomeomorph (Fin (n + 1) → 𝕜) (Fin (n + 1) → 𝕜) :=
-    { toFun := fun w ↦ Fin.cons (w 0 - g (Fin.tail w)) (e (Fin.tail w))
-      invFun := fun w ↦ Fin.cons (w 0 + g (e.symm (Fin.tail w))) (e.symm (Fin.tail w))
-      source := Fin.tail ⁻¹' e.source
-      target := Fin.tail ⁻¹' e.target
-      map_source' := fun w hw ↦ by simpa using e.map_source hw
-      map_target' := fun w hw ↦ by simpa using e.map_target hw
-      left_inv' := fun w hw ↦ by simp [e.left_inv hw]
-      right_inv' := fun w hw ↦ by simp [e.right_inv hw]
-      open_source := e.open_source.preimage htail
-      open_target := e.open_target.preimage htail
-      continuousOn_toFun := by
-        exact (hzero.continuousOn.sub
-          (hg.continuousOn.comp htail.continuousOn fun _ hw ↦ hw)).finCons
-          (e.continuousOn.comp htail.continuousOn fun _ hw ↦ hw)
-      continuousOn_invFun := by
-        exact (hzero.continuousOn.add
-          (hg.continuousOn.comp
-            (e.continuousOn_symm.comp htail.continuousOn fun _ hw ↦ hw)
-            fun _ hw ↦ e.map_target hw)).finCons
-          (e.continuousOn_symm.comp htail.continuousOn fun _ hw ↦ hw) }
-  have hq : AnalyticOnNhd 𝕜 q q.source := by
-    intro w hw
-    exact (c.analyticAt _).comp
+  -- In product coordinates, project onto the base and shear only the scalar coordinate.
+  let P : (𝕜 × (Fin n → 𝕜)) →L[𝕜] (𝕜 × (Fin n → 𝕜)) :=
+    (0 : (𝕜 × (Fin n → 𝕜)) →L[𝕜] 𝕜).prod (ContinuousLinearMap.snd 𝕜 𝕜 (Fin n → 𝕜))
+  let G : (𝕜 × (Fin n → 𝕜)) → (𝕜 × (Fin n → 𝕜)) := fun v ↦ (g v.2, 0)
+  have hG : ContinuousOn G (P.range ∩ Prod.snd ⁻¹' e.source) :=
+    (hg.continuousOn.comp continuous_snd.continuousOn fun _ hv ↦ hv.2).prodMk
+      continuousOn_const
+  have hPG : ∀ v ∈ (P.range : Set (𝕜 × (Fin n → 𝕜))) ∩ Prod.snd ⁻¹' e.source,
+      P (G v) = 0 := by
+    intro v _
+    simp [P, G]
+  let shear := P.projectionGraphChart G (e.open_source.preimage continuous_snd) hG hPG
+  let q := c.symm.toHomeomorph.toOpenPartialHomeomorph.trans
+    (shear.trans (((OpenPartialHomeomorph.refl 𝕜).prod e).trans
+      c.toHomeomorph.toOpenPartialHomeomorph))
+  have hsource : q.source = Fin.tail ⁻¹' e.source := by
+    ext w
+    simp [q, shear, c, P, G]
+  have htarget : q.target = Fin.tail ⁻¹' e.target := by
+    ext w
+    simpa [q, shear, c, P, G] using (e.map_target (x := Fin.tail w))
+  have hformula : ∀ w, q w = Fin.cons (w 0 - g (Fin.tail w)) (e (Fin.tail w)) := by
+    intro w
+    ext i
+    simp [q, shear, c, P, G, Fin.consEquivL_apply]
+  have hinverse : ∀ w, q.symm w =
+      Fin.cons (w 0 + g (e.symm (Fin.tail w))) (e.symm (Fin.tail w)) := by
+    intro w
+    ext i
+    simp [q, shear, c, P, G, Fin.consEquivL_apply]
+  -- Transfer the original analytic coordinate formulas to the composed chart.
+  refine ⟨q, hsource, hformula, ?_, ?_⟩
+  · intro w hw
+    rw [hsource] at hw
+    convert (c.analyticAt _).comp
       ((((ContinuousLinearMap.proj 0).analyticAt w).sub ((hg _ hw).comp (ht w))).prod
-        ((he.analyticOnNhd _ hw).comp (ht w)))
-  have hq' : AnalyticOnNhd 𝕜 q.symm q.target := by
-    intro w hw
+        ((he.analyticOnNhd _ hw).comp (ht w))) using 1
+    ext x i
+    simp [hformula, c, Fin.consEquivL_apply]
+  · intro w hw
+    rw [htarget] at hw
     have ht' := (he.analyticOnNhd_symm _ hw).comp (ht w)
-    exact (c.analyticAt _).comp
+    convert (c.analyticAt _).comp
       ((((ContinuousLinearMap.proj 0).analyticAt w).add
-        ((hg _ (e.map_target hw)).comp_of_eq ht' rfl)).prod ht')
-  exact ⟨q, rfl, fun _ ↦ rfl, hq, hq'⟩
+        ((hg _ (e.map_target hw)).comp_of_eq ht' rfl)).prod ht') using 1
+    ext x i
+    simp [hinverse, c, Fin.consEquivL_apply]
 
 /-- The graph of a scalar function analytic on a submanifold is an analytic submanifold of the
 same dimension. Only the values of the function on the base matter. -/

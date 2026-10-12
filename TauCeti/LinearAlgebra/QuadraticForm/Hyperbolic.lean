@@ -333,7 +333,8 @@ theorem exists_hyperbolicPlane_prod_equivalent [FiniteDimensional K V] [Invertib
     (Q : QuadraticForm K V) (hQ : Q.Nondegenerate) (hiso : ¬Q.Anisotropic) :
     ∃ p : RegularFormPresentation K,
       Q.Equivalent ((hyperbolicPlane K).prod (presentedForm p)) := by
-  obtain ⟨x, y, -, hxQ, hyQ, hxy⟩ := hQ.exists_isotropic_pair hiso
+  obtain ⟨x, y, -, hxQ, hyQ, hxy⟩ :=
+    exists_isotropic_pair_of_radical_eq_bot hQ.radical_eq_bot hiso
   obtain ⟨p, hp⟩ := exists_presentedForm_equivalent _
     (hQ.nondegenerate_restrict_orthogonal_span_pair hxQ hyQ hxy)
   exact ⟨p, (Q.equivalent_hyperbolicPlane_prod_restrict_orthogonal hxQ hyQ hxy).trans

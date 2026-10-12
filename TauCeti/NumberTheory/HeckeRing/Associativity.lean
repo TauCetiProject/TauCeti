@@ -187,7 +187,7 @@ private lemma sum_ite_mem_multiplicity [IsHeckeTriple Δ H₂ H₃] [IsHeckeTrip
   by_cases hx : ∃ F₀ ∈ Finset.univ.image (mulMap H₂ H₃ H₄ g₂ g₃),
       x ∈ doubleCoset (F₀.rep : G) H₂ H₄
   · obtain ⟨F₀, hF₀, hxF₀⟩ := hx
-    rw [Finset.sum_eq_single_of_mem F₀ hF₀ fun F hF hne ↦ ite_eq_right fun hxF ↦
+    rw [Finset.sum_eq_single_of_mem F₀ hF₀ fun F _ hne ↦ ite_eq_right fun hxF ↦
       hne (HeckeCoset.toSet_injective (by
         rw [HeckeCoset.toSet_eq_doubleCoset_rep, HeckeCoset.toSet_eq_doubleCoset_rep,
           ← doubleCoset_eq_of_mem hxF, ← doubleCoset_eq_of_mem hxF₀])),
@@ -329,7 +329,7 @@ private lemma sum_image_mulMap_multiplicity_left [IsHeckeTriple Δ H₁ H₂]
   have hwΔ : wG ∈ Δ :=
     Δ.mul_mem (Δ.mul_mem (IsHeckeTriple.mem_of_mem_left H₂ p.1.out.2) g₁.2)
       (Δ.mul_mem (IsHeckeTriple.mem_of_mem_left H₃ p.2.out.2) g₂.2)
-  set E₀ : HeckeCoset Δ H₁ H₃ := HeckeCoset.mk H₁ H₃ ⟨wG, hwΔ⟩ with hE₀def
+  set E₀ : HeckeCoset Δ H₁ H₃ := HeckeCoset.mk H₁ H₃ ⟨wG, hwΔ⟩
   have hE₀mem : E₀ ∈ Finset.univ.image (mulMap H₁ H₂ H₃ g₁ g₂) :=
     Finset.mem_image.mpr ⟨p, Finset.mem_univ p, HeckeCoset.mulMap_eq_mk _ _ _ _ _ _⟩
   have hdec : wG ∈ doubleCoset ((E₀.rep : Δ) : G) H₁ H₃ :=
@@ -388,8 +388,8 @@ lemma smul_mul [IsHeckeTriple Δ H₁ H₂] [IsHeckeTriple Δ H₂ H₃] (a : R)
   rw [mul_eq_sum, mul_eq_sum, sum_smul_index a f _ fun D₁ ↦ by
     simp only [zero_smul]; exact Finsupp.sum_fun_zero (f := g)]
   refine Eq.trans ?_ Finsupp.smul_sum.symm
-  refine Finsupp.sum_congr fun D₁ c ↦ Eq.trans ?_ Finsupp.smul_sum.symm
-  exact Finsupp.sum_congr fun D₂ b₂ ↦ by rw [mul_smul]
+  refine Finsupp.sum_congr fun D₁ _ ↦ Eq.trans ?_ Finsupp.smul_sum.symm
+  exact Finsupp.sum_congr fun D₂ _ ↦ by rw [mul_smul]
 
 /-- Evaluation of the convolution product against a basis element on the left. -/
 lemma single_mul [IsHeckeTriple Δ H₁ H₂] [IsHeckeTriple Δ H₂ H₃]

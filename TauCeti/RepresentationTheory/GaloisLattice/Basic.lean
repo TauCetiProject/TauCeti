@@ -14,6 +14,7 @@ public import Mathlib.RepresentationTheory.Rep.Basic
 An integral Galois lattice over a field is a finite free `ℤ`-module equipped with an action of
 the absolute Galois group for which every vector has an open stabilizer. This is the continuity
 criterion when the module carries the discrete topology.
+These lattices encode the character and cocharacter groups of tori over arbitrary fields.
 
 ## Main declarations
 
@@ -50,85 +51,50 @@ theorem galoisLatticeProperty_iff (k : Type u) [Field k]
         ∀ x : M, IsOpen {sigma | M.ρ sigma x = x} :=
   Iff.rfl
 
-/-- Build the Galois-lattice property for a representation induced from a multiplicative action,
-using the usual stabilizer formulation of continuity. -/
+/-- A finitely generated free abelian group with open stabilizers gives an integral Galois
+lattice via its induced representation on the additive carrier. -/
 theorem galoisLatticeProperty_ofMulDistribMulAction (k : Type u) [Field k]
     (G : Type u) [CommGroup G] [MulDistribMulAction (Field.absoluteGaloisGroup k) G]
-    [DistribMulAction (Field.absoluteGaloisGroup k) (Additive G)]
-    [free : Module.Free ℤ (Additive G)] [finite : Module.Finite ℤ (Additive G)]
-    (hρ : ∀ (sigma : Field.absoluteGaloisGroup k) (x : Additive G),
-      (Rep.ofMulDistribMulAction (Field.absoluteGaloisGroup k) G).ρ sigma x = sigma • x)
-    (hopen : ∀ x : Additive G,
+    [Module.Free ℤ (Additive G)] [Module.Finite ℤ (Additive G)]
+    (hopen : ∀ x : G,
       IsOpen (MulAction.stabilizer (Field.absoluteGaloisGroup k) x :
         Set (Field.absoluteGaloisGroup k))) :
     galoisLatticeProperty k
       (Rep.ofMulDistribMulAction (Field.absoluteGaloisGroup k) G) := by
   rw [galoisLatticeProperty_iff]
-  let M := Rep.ofMulDistribMulAction (Field.absoluteGaloisGroup k) G
-  have hmod : M.hV2 = AddCommGroup.toIntModule (Additive G) := Subsingleton.elim _ _
-  have hfree : @Module.Free ℤ (Additive G) _ _ M.hV2 := by
-    rw [hmod]
-    exact free
-  have hfinite : @Module.Finite ℤ (Additive G) _ _ M.hV2 := by
-    rw [hmod]
-    exact finite
-  refine ⟨⟨hfree, hfinite⟩, ?_⟩
-  -- Expose the carrier of Mathlib's bundled representation so the supplied additive action and
-  -- its stabilizer can be used directly.
+  let e : Rep.ofMulDistribMulAction (Field.absoluteGaloisGroup k) G ≃ₗ[ℤ] Additive G :=
+    Rep.toAdditive.toIntLinearEquiv
+  refine ⟨⟨Module.Free.of_equiv e.symm, Module.Finite.equiv e.symm⟩, ?_⟩
+  -- Expose Mathlib's bundled carrier so the representation evaluation lemma applies.
   change ∀ x : Additive G, IsOpen {sigma |
     (Rep.ofMulDistribMulAction (Field.absoluteGaloisGroup k) G).ρ sigma x = x}
   intro x
-  rw [show {sigma |
-      (Rep.ofMulDistribMulAction (Field.absoluteGaloisGroup k) G).ρ sigma x = x} =
-      (MulAction.stabilizer (Field.absoluteGaloisGroup k) x : Set _) from
+  have hstabilizer :
+      {sigma | (Rep.ofMulDistribMulAction (Field.absoluteGaloisGroup k) G).ρ sigma x = x} =
+        (MulAction.stabilizer (Field.absoluteGaloisGroup k) x.toMul : Set _) :=
     Set.ext fun sigma ↦ by
-      simp only [Set.mem_ofPred_eq, hρ, SetLike.mem_coe, MulAction.mem_stabilizer_iff]
-      exact Iff.rfl]
-  exact hopen x
-
-private theorem module_free_of_repIso {G : Type u} [Monoid G] {X Y : Rep.{u} ℤ G}
-    (e : X ≅ Y) (hX : @Module.Free ℤ X _ _ X.hV2) :
-    @Module.Free ℤ Y _ _ Y.hV2 := by
-  let _ : Module ℤ X := X.hV2
-  let _ : Module ℤ Y := Y.hV2
-  exact Module.Free.of_equiv' hX (Representation.equivOfIso e).toLinearEquiv
-
-private theorem module_finite_of_repIso {G : Type u} [Monoid G] {X Y : Rep.{u} ℤ G}
-    (e : X ≅ Y) (hX : @Module.Finite ℤ X _ _ X.hV2) :
-    @Module.Finite ℤ Y _ _ Y.hV2 := by
-  let _ : Module ℤ X := X.hV2
-  let _ : Module ℤ Y := Y.hV2
-  let _ : @Module.Finite ℤ X _ _ X.hV2 := hX
-  exact Module.Finite.equiv (Representation.equivOfIso e).toLinearEquiv
-
-private theorem isOpen_setOf_ρ_eq_of_iso {G : Type u} [Monoid G] [TopologicalSpace G]
-    {X Y : Rep.{u} ℤ G} (e : X ≅ Y)
-    (hX : ∀ x : X, IsOpen {g | X.ρ g x = x}) (y : Y) :
-    IsOpen {g | Y.ρ g y = y} := by
-  let _ : Module ℤ X := X.hV2
-  let _ : Module ℤ Y := Y.hV2
-  let inv : Y →ₗ[ℤ] X :=
-    (Representation.equivOfIso e).symm.toIntertwiningMap.toLinearMap
-  have hinv : Function.Injective inv := by
-    dsimp only [inv]
-    rw [← (Representation.equivOfIso e).symm.toLinearEquiv_toLinearMap]
-    exact (Representation.equivOfIso e).symm.toLinearEquiv.injective
-  have hcomm (g : G) (z : Y) : inv (Y.ρ g z) = X.ρ g (inv z) := by
-    simpa only [inv, LinearMap.comp_apply] using
-      congrArg (fun q : Y →ₗ[ℤ] X ↦ q z)
-        ((Representation.equivOfIso e).symm.toIntertwiningMap.isIntertwining' g)
-  rw [show {g | Y.ρ g y = y} = {g | X.ρ g (inv y) = inv y} from
-    Set.ext fun g ↦ by
-      simp only [Set.mem_ofPred_eq, ← hcomm g y, hinv.eq_iff]]
-  exact hX (inv y)
+      simp only [Set.mem_ofPred_eq, SetLike.mem_coe, MulAction.mem_stabilizer_iff,
+        Rep.ofMulDistribMulAction_ρ_apply_apply]
+      exact Additive.ofMul.injective.eq_iff
+  rw [hstabilizer]
+  exact hopen x.toMul
 
 /-- Being a Galois lattice is invariant under equivariant integral-linear isomorphisms. -/
 instance (k : Type u) [Field k] :
     (galoisLatticeProperty k).IsClosedUnderIsomorphisms where
   of_iso {X Y} e hX := by
     rw [galoisLatticeProperty_iff] at hX ⊢
-    exact ⟨⟨module_free_of_repIso e hX.1.1, module_finite_of_repIso e hX.1.2⟩,
-      isOpen_setOf_ρ_eq_of_iso e hX.2⟩
+    let _ : Module.Free ℤ X := hX.1.1
+    let _ : Module.Finite ℤ X := hX.1.2
+    let f := Representation.equivOfIso e
+    refine ⟨⟨Module.Free.of_equiv f.toLinearEquiv, Module.Finite.equiv f.toLinearEquiv⟩, ?_⟩
+    intro y
+    have hfixed (g : Field.absoluteGaloisGroup k) :
+        Y.ρ g y = y ↔ X.ρ g (f.symm y) = f.symm y := by
+      rw [← f.symm.toLinearEquiv.injective.eq_iff]
+      simp only [Representation.Equiv.toLinearEquiv_apply,
+        f.symm.toIntertwiningMap.isIntertwining, Representation.Equiv.coe_toIntertwiningMap]
+    simpa only [hfixed] using hX.2 (f.symm y)
 
 /-- The category of finite free integral representations of the absolute Galois group whose
 vectors have open stabilizers. -/

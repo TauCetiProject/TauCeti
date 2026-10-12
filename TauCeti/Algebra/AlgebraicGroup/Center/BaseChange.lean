@@ -75,11 +75,11 @@ theorem baseChangeHopfIdeal_centerDefiningIdeal
         centerPointsSubgroup H
           (_root_.TauCeti.CommAlgCat.restrictScalarsObj (algebraMap k K) A) :=
       (mem_centerPointsSubgroup_iff H _ _).mpr hrestrictCentral
-    exact HopfIdeal.mem_toIdeal.mpr ((mkQuotient_eq_zero_iff B I y).mp
+    exact (mkQuotient_eq_zero_iff B I y).mp
       ((mem_quotientPointsSubgroup_iff B
         (baseChangeHopfIdeal (K := K) (centerDefiningIdeal H)) A q).mp
           ((mem_quotientPointsSubgroup_baseChangeHopfIdeal_iff
-            (K := K) A (centerDefiningIdeal H) q).mpr hrestrictMem) y hy))
+            (K := K) A (centerDefiningIdeal H) q).mpr hrestrictMem) y hy)
   · exact (centerDefiningIdeal_le_iff _ _).mpr
       (isCentral_baseChangeHopfIdeal (isCentral_centerDefiningIdeal H))
 

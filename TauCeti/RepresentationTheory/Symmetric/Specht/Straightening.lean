@@ -106,12 +106,7 @@ namespace YoungTableau
 
 variable {μ : YoungDiagram}
 
-/-- Classical decidability of membership in the column group, used to split a sum over the
-permutations supported in a set according to whether they preserve the columns, as in
-`TauCeti/RepresentationTheory/Symmetric/Specht/Module.lean`. -/
-noncomputable local instance decidablePredMemColSubgroupStraightening (t : YoungTableau μ) :
-    DecidablePred (· ∈ colSubgroup t) :=
-  Classical.decPred _
+attribute [local instance] YoungTableau.decidablePredMemColSubgroup
 
 /-! ## Collecting the column-group terms of a Garnir relation -/
 

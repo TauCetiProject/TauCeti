@@ -220,7 +220,7 @@ theorem map_centerPointsSubgroup_pointsMulEquiv_eq_center (A : CommAlgCat.{u} k)
       Subgroup.center (Matrix.GeneralLinearGroup (Fin n) A) := by
   by_cases hn : n = 0
   · subst n
-    apply le_antisymm <;> intro g hg
+    apply le_antisymm <;> intro g _
     all_goals
       have hg_one : g = 1 := by
         apply Matrix.GeneralLinearGroup.ext

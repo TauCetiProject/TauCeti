@@ -21,6 +21,8 @@ Mathlib's `Subgroup.subtype` and `QuotientGroup.mk'` are bare `MonoidHom`s, and 
 packages those maps for a topological group and the subspace and quotient topologies. It also
 provides inverse conjugation `n ↦ g⁻¹ * n * g` on a normal subgroup, together with its evaluation,
 identity, and composition laws, and the continuous lift through a quotient by a normal subgroup.
+Named compatibility proofs describe subgroup inclusions and composition of scalar/coefficient maps
+for pullbacks of cochains; composition uses Mathlib's semiconjugacy API.
 A homomorphism from a topological group with open kernel is also continuous, for every topology
 on the target. The projections of a product of topological monoids onto its factors are
 packaged as `ContinuousMonoidHom.proj`, next to Mathlib's `ContinuousMonoidHom.fst` and
@@ -30,7 +32,7 @@ continuous multiplicative isomorphism has the same underlying function. A topolo
 continuous group homomorphism is also packaged as a continuous multiplicative equivalence with its
 range, with forward and inverse computation rules. The file also records the
 pointwise characterization of finite-order continuous homomorphisms and the open kernel of a
-finite-order continuous character into complex units.
+finite-order continuous character into the units of a `T1` topological field.
 Kernels of continuous homomorphisms into a `T1` monoid are closed, so on a compact group the
 common kernel of a family of them is approximated from outside by the common kernels of its
 finite subfamilies, and the range of a continuous homomorphism out of a compact group into a
@@ -61,34 +63,26 @@ theorem _root_.ContinuousMonoidHom.eq_one_of_isMulTorsionFree
   exact (Set.infinite_range_of_injective
     (injective_pow_iff_not_isOfFinOrder.2 (not_isOfFinOrder_of_isMulTorsionFree ha))) hfin
 
-/-- A continuous homomorphism into a commutative topological group has finite order exactly when
+/-- A continuous homomorphism into a commutative topological monoid has finite order exactly when
 all its values have a common positive exponent equal to one. -/
 theorem _root_.ContinuousMonoidHom.isOfFinOrder_iff_exists_pow_apply_eq_one
-    {A B : Type*} [Monoid A] [TopologicalSpace A] [CommGroup B] [TopologicalSpace B]
-    [IsTopologicalGroup B] (f : A →ₜ* B) :
+    {A B : Type*} [Monoid A] [TopologicalSpace A] [CommMonoid B] [TopologicalSpace B]
+    [ContinuousMul B] (f : A →ₜ* B) :
     IsOfFinOrder f ↔ ∃ n, 0 < n ∧ ∀ x, f x ^ n = 1 := by
-  constructor
-  · rintro h
-    obtain ⟨n, hn, hfn⟩ := h.exists_pow_eq_one
-    refine ⟨n, hn, fun x ↦ ?_⟩
-    simpa only [ContinuousMonoidHom.pow_apply, ContinuousMonoidHom.coe_one, Pi.one_apply]
-      using DFunLike.congr_fun hfn x
-  · rintro ⟨n, hn, h⟩
-    apply isOfFinOrder_iff_pow_eq_one.mpr
-    refine ⟨n, hn, ?_⟩
-    apply ContinuousMonoidHom.ext
-    intro x
-    simpa only [ContinuousMonoidHom.pow_apply, ContinuousMonoidHom.coe_one, Pi.one_apply] using h x
+  simp only [isOfFinOrder_iff_pow_eq_one, DFunLike.ext_iff, ContinuousMonoidHom.pow_apply,
+    ContinuousMonoidHom.coe_one, Pi.one_apply]
 
-/-- A finite-order continuous character into the complex units has open kernel. -/
+/-- A finite-order continuous character into the units of a `T₁` topological field has open
+kernel. -/
 theorem _root_.ContinuousMonoidHom.isOpen_ker_of_isOfFinOrder
-    {M : Type*} [Monoid M] [TopologicalSpace M] {χ : M →ₜ* ℂˣ}
-    (hχ : IsOfFinOrder χ) : IsOpen ((χ : M → ℂˣ) ⁻¹' {1}) := by
+    {M K : Type*} [Monoid M] [TopologicalSpace M] [Field K] [TopologicalSpace K]
+    [IsTopologicalRing K] [T1Space K] {χ : M →ₜ* Kˣ}
+    (hχ : IsOfFinOrder χ) : IsOpen ((χ : M → Kˣ) ⁻¹' {1}) := by
   obtain ⟨n, hn, hχn⟩ := χ.isOfFinOrder_iff_exists_pow_apply_eq_one.mp hχ
   let _ : NeZero n := ⟨hn.ne'⟩
-  have hmem : ∀ x, χ x ∈ rootsOfUnity n ℂ := fun x ↦ (mem_rootsOfUnity _ _).mpr (hχn x)
-  have hset : ((χ : M → ℂˣ) ⁻¹' {1}) =
-      (fun x : M => (⟨χ x, hmem x⟩ : rootsOfUnity n ℂ)) ⁻¹' {1} := by
+  have hmem : ∀ x, χ x ∈ rootsOfUnity n K := fun x ↦ (mem_rootsOfUnity _ _).mpr (hχn x)
+  have hset : ((χ : M → Kˣ) ⁻¹' {1}) =
+      (fun x : M => (⟨χ x, hmem x⟩ : rootsOfUnity n K)) ⁻¹' {1} := by
     ext x
     simp
   rw [hset]
@@ -137,6 +131,20 @@ theorem _root_.MonoidHom.isClosed_range_of_continuous [CompactSpace G] {H : Type
   exact (isCompact_range hf).isClosed
 
 namespace ContinuousMonoidHom
+
+/-- Compatible coefficient maps compose along continuous scalar homomorphisms. This supplies the
+compatibility hypothesis of the composite pair `(φ.comp ψ, q.comp f)` in cochain pullbacks. -/
+theorem _root_.ContinuousMonoidHom.comp_map_smul
+    {A B C M N P : Type*} [Monoid A] [Monoid B] [Monoid C]
+    [TopologicalSpace A] [TopologicalSpace B] [TopologicalSpace C]
+    [AddZero M] [AddZero N] [AddZero P]
+    [SMul A M] [SMul B N] [SMul C P]
+    (φ : B →ₜ* A) (ψ : C →ₜ* B) (f : M →+ N) (q : N →+ P)
+    (hf : ∀ b m, f (φ b • m) = b • f m)
+    (hq : ∀ c n, q (ψ c • n) = c • q n) (c : C) (m : M) :
+    (q.comp f) ((φ.comp ψ) c • m) = c • (q.comp f) m := by
+  simpa only [AddMonoidHom.comp_apply, ContinuousMonoidHom.coe_comp, Function.comp_apply]
+    using Function.Semiconj.trans (hf (ψ c)) (hq c) m
 
 /-- Evaluating a continuous homomorphism assembled from a homomorphism and a continuity proof. -/
 @[simp]
@@ -229,6 +237,12 @@ theorem coe_subgroupSubtype (S : Subgroup G) : (subgroupSubtype S : S →* G) = 
 theorem subgroupSubtype_apply (S : Subgroup G) (s : S) : subgroupSubtype S s = (s : G) :=
   (rfl)
 
+/-- The identity coefficient map is compatible with the continuous inclusion of a subgroup. -/
+theorem id_subgroupSubtype_smul (M : Type*) [AddZero M] [SMul G M]
+    (S : Subgroup G) (s : S) (m : M) :
+    (AddMonoidHom.id M) (subgroupSubtype S s • m) = s • (AddMonoidHom.id M) m :=
+  rfl
+
 /-- The inclusion of a subgroup into a larger subgroup, both carrying the subspace topology, as a
 continuous homomorphism. -/
 @[expose] def subgroupInclusion {H S : Subgroup G} (h : H ≤ S) : H →ₜ* S where
@@ -267,7 +281,7 @@ theorem subgroupSubtype_comp_subgroupInclusion {H S : Subgroup G} (h : H ≤ S) 
 end ContinuousMonoidHom
 
 /-- The inverse conjugation homomorphism of a normal subgroup, with the subspace topology. -/
-def _root_.Subgroup.inverseConjugationHom [IsTopologicalGroup G] (N : Subgroup G) [N.Normal]
+def _root_.Subgroup.inverseConjugationHom [SeparatelyContinuousMul G] (N : Subgroup G) [N.Normal]
     (g : G) : N →ₜ* N where
   toMonoidHom := (MulAut.conjNormal g⁻¹ : MulAut N).toMonoidHom
   continuous_toFun := by
@@ -290,7 +304,7 @@ def _root_.Subgroup.inverseConjugationHom [IsTopologicalGroup G] (N : Subgroup G
 
 /-- Evaluation of inverse conjugation on a subgroup element. -/
 @[simp]
-theorem _root_.Subgroup.inverseConjugationHom_apply [IsTopologicalGroup G] (N : Subgroup G)
+theorem _root_.Subgroup.inverseConjugationHom_apply [SeparatelyContinuousMul G] (N : Subgroup G)
     [N.Normal] (g : G) (n : N) :
     _root_.Subgroup.inverseConjugationHom N g n =
       ⟨g⁻¹ * (n : G) * g, by
@@ -303,7 +317,7 @@ theorem _root_.Subgroup.inverseConjugationHom_apply [IsTopologicalGroup G] (N : 
 
 /-- Inverse conjugation by the identity is the identity continuous homomorphism. -/
 @[simp]
-theorem _root_.Subgroup.inverseConjugationHom_one [IsTopologicalGroup G] (N : Subgroup G)
+theorem _root_.Subgroup.inverseConjugationHom_one [SeparatelyContinuousMul G] (N : Subgroup G)
     [N.Normal] :
     _root_.Subgroup.inverseConjugationHom N 1 = ContinuousMonoidHom.id N := by
   ext n
@@ -311,7 +325,7 @@ theorem _root_.Subgroup.inverseConjugationHom_one [IsTopologicalGroup G] (N : Su
 
 /-- Inverse conjugation by a product is the reversed composition of inverse conjugations. -/
 @[simp]
-theorem _root_.Subgroup.inverseConjugationHom_mul [IsTopologicalGroup G] (N : Subgroup G)
+theorem _root_.Subgroup.inverseConjugationHom_mul [SeparatelyContinuousMul G] (N : Subgroup G)
     [N.Normal] (g h : G) :
     _root_.Subgroup.inverseConjugationHom N (g * h) =
       (_root_.Subgroup.inverseConjugationHom N h).comp

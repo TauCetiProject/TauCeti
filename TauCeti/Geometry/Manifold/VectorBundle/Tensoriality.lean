@@ -7,7 +7,8 @@ module
 
 public import Mathlib.Geometry.Manifold.VectorBundle.Tensoriality
 import Mathlib.Geometry.Manifold.Algebra.Structures
-import Mathlib.Geometry.Manifold.PartitionOfUnity
+import Mathlib.Geometry.Manifold.BumpFunction
+import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
 import Mathlib.Geometry.Manifold.VectorBundle.LocalFrame
 
 /-!
@@ -16,7 +17,8 @@ import Mathlib.Geometry.Manifold.VectorBundle.LocalFrame
 This file complements Mathlib's pointwise tensoriality API with a criterion for operations whose
 locality, additivity, and smooth-function linearity laws are available for globally smooth sections.
 The criterion applies to finite-rank smooth real vector bundles over finite-dimensional Hausdorff
-manifolds.
+manifolds. The target only needs addition and scalar multiplication; no algebraic laws on
+these operations are required beyond the stated laws for the section operation.
 
 ## Main results
 
@@ -40,7 +42,8 @@ variable
 
 /-- On a finite-rank smooth real vector bundle over a finite-dimensional Hausdorff manifold,
 a local operation which is additive and linear over globally smooth functions on globally
-smooth sections depends only on the value of such a section at the point of evaluation. -/
+smooth sections depends only on the value of such a section at the point of evaluation.
+The target need only carry addition and scalar multiplication, without any algebraic laws. -/
 theorem eq_of_contMDiff_tensorial
     [FiniteDimensional ℝ E] [T2Space M] [IsManifold I ∞ M]
     {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G] [FiniteDimensional ℝ G]
@@ -48,7 +51,7 @@ theorem eq_of_contMDiff_tensorial
     [∀ x, AddCommGroup (W x)] [∀ x, Module ℝ (W x)] [∀ x, TopologicalSpace (W x)]
     [FiberBundle G W]
     [VectorBundle ℝ G W] [ContMDiffVectorBundle ∞ G W I]
-    {A : Type*} [AddCommGroup A] [Module ℝ A]
+    {A : Type*} [Add A] [SMul ℝ A]
     (Φ : (Π x : M, W x) → A) (x : M)
     (hlocal : ∀ {s s' : Π x : M, W x}, CMDiff ∞ (T% s) → CMDiff ∞ (T% s') →
       Filter.Eventually (fun y ↦ s y = s' y) (nhds x) → Φ s = Φ s')
@@ -95,32 +98,29 @@ theorem eq_of_contMDiff_tensorial
     have hρ' : ρ y = 1 := by simpa using hρ
     dsimp only [expansion]
     simpa [coeff', frame', hρ', coeff, frame] using hu.symm
-  have hzero : Φ 0 = 0 := by
-    simpa using hsmul (f := (0 : M → ℝ)) (s := (0 : Π x : M, W x))
-      contMDiff_const (contMDiff_zeroSection ℝ W)
-  -- Binary additivity suffices to distribute `Φ` over the finite local-frame expansion.
-  have hsum (u : ∀ _ : Basis.ofVectorSpaceIndex ℝ G, Π x : M, W x)
-      (hu : ∀ i, CMDiff ∞ (T% (u i))) :
-      Φ (∑ i, u i) = ∑ i, Φ (u i) := by
-    let q : Finset (Basis.ofVectorSpaceIndex ℝ G) := Finset.univ
-    -- A `Fintype` sum is definitionally a sum over `Finset.univ`; naming that finset `q`
-    -- exposes it in the goal so that `Finset.induction_on` can induct over the summation set.
-    change Φ (∑ i ∈ q, u i) = ∑ i ∈ q, Φ (u i)
+  -- Compare finite sums directly: no additive identity or scalar-action laws on `A` are needed.
+  have hsum (q : Finset (Basis.ofVectorSpaceIndex ℝ G))
+      (u v : Basis.ofVectorSpaceIndex ℝ G → Π x : M, W x)
+      (hu : ∀ i, CMDiff ∞ (T% (u i))) (hv : ∀ i, CMDiff ∞ (T% (v i)))
+      (huv : ∀ i, Φ (u i) = Φ (v i)) :
+      CMDiff ∞ (T% (∑ i ∈ q, u i)) ∧ CMDiff ∞ (T% (∑ i ∈ q, v i)) ∧
+        Φ (∑ i ∈ q, u i) = Φ (∑ i ∈ q, v i) := by
     induction q using Finset.induction_on with
-    | empty => simpa using hzero
+    | empty =>
+        simp only [Finset.sum_empty, and_true]
+        exact ⟨contMDiff_zeroSection ℝ W, contMDiff_zeroSection ℝ W⟩
     | @insert i q hi ih =>
-        rw [Finset.sum_insert hi, Finset.sum_insert hi, hadd (hu i), ih]
-        simpa only [Finset.sum_apply] using
-          (ContMDiff.sum_section (s := q) fun j _ ↦ hu j)
+        simp only [Finset.sum_insert hi]
+        refine ⟨(hu i).add_section ih.1, (hv i).add_section ih.2.1, ?_⟩
+        rw [hadd (hu i) ih.1, hadd (hv i) ih.2.1, huv i, ih.2.2]
   rw [hlocal hs (hexpansion s hs) ((hexpansion_eq s).mono fun y hy ↦ hy.symm),
     hlocal hs' (hexpansion s' hs') ((hexpansion_eq s').mono fun y hy ↦ hy.symm)]
   dsimp only [expansion]
-  rw [hsum (fun i ↦ coeff' s i • frame' i) fun i ↦
-      (hcoeff' s hs i).smul_section (hframe i),
-    hsum (fun i ↦ coeff' s' i • frame' i) fun i ↦
-      (hcoeff' s' hs' i).smul_section (hframe i)]
-  apply Finset.sum_congr rfl
-  intro i _
+  refine (hsum Finset.univ (fun i ↦ coeff' s i • frame' i)
+    (fun i ↦ coeff' s' i • frame' i)
+    (fun i ↦ (hcoeff' s hs i).smul_section (hframe i))
+    (fun i ↦ (hcoeff' s' hs' i).smul_section (hframe i)) ?_).2.2
+  intro i
   rw [hsmul (hcoeff' s hs i) (hframe i), hsmul (hcoeff' s' hs' i) (hframe i)]
   congr 1
   simp only [coeff', ρ.eq_one, one_mul]

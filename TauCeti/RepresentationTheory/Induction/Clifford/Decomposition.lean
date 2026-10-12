@@ -165,7 +165,6 @@ private theorem exists_nonempty_iso_conjNormalFDRep_of_ne_zero
     (Representation.asModuleLinearEquivOfEquiv eRange).trans
       (_root_.Subrepresentation.asModuleEquivAsSubmodule tau)
   let _ : IsSimpleModule k[N] tau.asSubmodule := IsSimpleModule.congr eModule.symm
-  have htau : IsAtom tau := _root_.Subrepresentation.isSimpleModule_asSubmodule_iff.mp inferInstance
   obtain ⟨g, ⟨eg⟩⟩ :=
     Representation.exists_nonempty_linearEquiv_asSubmodule_conjSubrep
       (N := N) rho hsigma tau.asSubmodule
@@ -220,7 +219,7 @@ private theorem characterPairing_resFDRep_eq_ite [Fintype G] [Fintype N]
       Module.finrank k
         (tau.asSubmodule →ₗ[k[N]] _root_.Representation.asModule (W.ρ.comp N.subtype)) = e) :
     ClassFunction.characterPairing (ClassFunction.ofFDRep U)
-        (ClassFunction.ofFDRep (resFDRep N W)) =
+        (ClassFunction.ofFDRep (Subgroup.resFDRep N W)) =
       if ∃ r ∈ inertiaTransversal (FDRep.of sigma.toRepresentation),
         Nonempty (U ≅ conjNormalFDRep r (FDRep.of sigma.toRepresentation))
       then (e : k) else 0 := by
@@ -257,7 +256,7 @@ private theorem characterPairing_resFDRep_eq_ite [Fintype G] [Fintype N]
       Module.finrank_zero_of_subsingleton
     calc
       (Module.finrank k
-          (Representation.IntertwiningMap U.ρ (resFDRep N W).ρ) : k) =
+          (Representation.IntertwiningMap U.ρ (Subgroup.resFDRep N W).ρ) : k) =
           (Module.finrank k
             (Representation.IntertwiningMap U.ρ (W.ρ.comp N.subtype)) : k) := rfl
       _ = ((0 : ℕ) : k) := congrArg (fun m : ℕ ↦ (m : k)) hzero
@@ -272,7 +271,7 @@ private theorem ofFDRep_resFDRep_eq_smul_sum [Fintype G] [IsAlgClosed k]
     (sigma : Subrepresentation (W.ρ.comp N.subtype)) (hsigma : IsAtom sigma) (e : ℕ)
     (hcommon : ∀ tau : Subrepresentation (W.ρ.comp N.subtype), IsAtom tau → Module.finrank k
       (tau.asSubmodule →ₗ[k[N]] _root_.Representation.asModule (W.ρ.comp N.subtype)) = e) :
-    ClassFunction.ofFDRep (resFDRep N W) =
+    ClassFunction.ofFDRep (Subgroup.resFDRep N W) =
       (e : k) • ∑ g ∈ inertiaTransversal (FDRep.of sigma.toRepresentation),
         ClassFunction.ofFDRep (conjNormalFDRep g (FDRep.of sigma.toRepresentation)) := by
   -- Pairing either side with an irreducible character `χ_U` gives `e` if `U` is a conjugate of

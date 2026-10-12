@@ -43,7 +43,8 @@ inflated from the unramified extension `K_f/K` of degree `f` restricts to the cl
 along the base change `H²(Gal(K_f/K), K_fˣ) → H²(Gal(L_f/L), L_fˣ)`, where `L_f/L` is the
 unramified extension of degree `f`, which contains the image of `K_f` under the identification
 `Kˢ ≃ Lˢ` (`TauCeti.unramifiedExtension_le_restrictScalars_unramifiedExtension`,
-`TauCeti.ClassFieldTheory.brRes_relBrInfl`), and this base change multiplies the unramified
+`TauCeti.ClassFieldTheory.brBaseChange_eq_brRes`,
+`TauCeti.ClassFieldTheory.brBaseChange_relBrInfl`), and this base change multiplies the unramified
 invariant by `[L : K]` (`TauCeti.ClassFieldTheory.unramifiedInv_map_baseChange`). Since
 multiplication by `[L : K]` is surjective on `ℚ/ℤ`, restriction is surjective, and corestriction
 `TauCeti.ClassFieldTheory.brCor K L σ` preserves the invariant because
@@ -73,9 +74,14 @@ multiplication by `[L : K]` is surjective on `ℚ/ℤ`, restriction is surjectiv
 * `TauCeti.ClassFieldTheory.brRes_surjective`: restriction of Brauer classes is surjective.
 * `TauCeti.ClassFieldTheory.invMap_brCor`: the corestriction square `inv_K (brCor y) = inv_L y`.
 * `TauCeti.ClassFieldTheory.brCor_bijective`: corestriction of Brauer classes is bijective.
+* `TauCeti.ClassFieldTheory.brBaseChange_eq_zero_of_dvd_finrank`: a finite extension of degree
+  divisible by `n` splits every `n`-torsion Brauer class.
+* `TauCeti.ClassFieldTheory.brBaseChange_eq_zero_of_isPrimitiveRoot`: a root of unity of
+  order `q^n - 1` splits every `n`-torsion Brauer class of a nonarchimedean local field.
 
 ## References
 
+* J. S. Milne, *Class Field Theory*, Chapter VII, Proposition 7.2 and Lemma 7.3.
 * J.-P. Serre, *Local Fields*, Chapter XIII, §3.
 * J. W. S. Cassels and A. Fröhlich (eds.), *Algebraic Number Theory*, Chapter VI (Serre, *Local
   Class Field Theory*), §1.
@@ -305,8 +311,8 @@ theorem invMap_brRes (x : Br K) :
   have : IsUnramified L (𝓥 f) := isUnramified_unramifiedExtension f.ne_zero
   have : ValuativeExtension K (𝓥 f) := ValuativeExtension.trans K L (𝓥 f)
   have : ValuativeExtension (𝓤 f) (𝓥 f) := ι.valuativeExtension
-  rw [brRes_relBrInfl K L (𝓤 f) (𝓥 f) σ (𝓤 f).val (𝓥 f).val
-    (fun e => (separableClosureRingEquiv K L σ).apply_symm_apply e) y, invMap_relBrInfl,
+  rw [← brBaseChange_eq_brRes K L σ,
+    brBaseChange_relBrInfl K L (𝓤 f) (𝓥 f) (𝓤 f).val (𝓥 f).val y, invMap_relBrInfl,
     invMap_relBrInfl, unramifiedInv_map_baseChange]
 
 /-- **Restriction of Brauer classes along a finite extension of nonarchimedean local fields is
@@ -337,6 +343,35 @@ theorem brCor_bijective [FiniteDimensional K L] : Function.Bijective (brCor K L 
   rw [h]
   exact (invMap K).symm.bijective.comp (invMap L).bijective
 
+/-- **A finite extension of degree divisible by `n` splits every `n`-torsion Brauer class** of a
+nonarchimedean local field, since base change multiplies the invariant by the degree. -/
+theorem brBaseChange_eq_zero_of_dvd_finrank [Algebra.IsSeparable K L] {n : ℕ}
+    (hn : n ∣ Module.finrank K L) (x : Br K) (hx : n • x = 0) : brBaseChange K L x = 0 := by
+  obtain ⟨m, hm⟩ := hn
+  apply (invMap L).injective
+  rw [map_zero, brBaseChange_eq_brRes K L IsSepClosed.lift, invMap_brRes, hm, mul_nsmul,
+    ← map_nsmul, hx, map_zero, nsmul_zero]
+
 end Restriction
+
+open _root_.ValuativeRel
+
+/-- Adjoining a primitive `(q^n - 1)`-st root of unity splits every `n`-torsion Brauer class
+of a nonarchimedean local field with residue cardinality `q`. The extension need not be finite
+or carry a valuation. -/
+theorem brBaseChange_eq_zero_of_isPrimitiveRoot
+    {F L : Type} [Field F] [ValuativeRel F] [TopologicalSpace F]
+    [IsNonarchimedeanLocalField F] [Field L] [Algebra F L]
+    {n : ℕ} (hn : n ≠ 0) {ζ : L} (hζ : IsPrimitiveRoot ζ (Nat.card 𝓀[F] ^ n - 1))
+    (x : Br F) (hx : n • x = 0) : brBaseChange F L x = 0 := by
+  let E := unramifiedExtension F L n
+  let _ := finiteExtensionValuativeRel F E
+  let _ := finiteExtensionNormedFieldTopology F E
+  have := finiteExtension_isNonarchimedeanLocalField F E
+  have := finiteExtension_valuativeExtension F E
+  have hE : brBaseChange F E x = 0 :=
+    brBaseChange_eq_zero_of_dvd_finrank F E
+      (finrank_unramifiedExtension_of_isPrimitiveRoot hn hζ).symm.dvd x hx
+  rw [← brBaseChange_brBaseChange F E L, hE, map_zero]
 
 end TauCeti.ClassFieldTheory

@@ -471,7 +471,6 @@ coroot lattice, so that the datum is the simply connected one. -/
       shift_mk _ _ _ (by split_ifs <;> omega)
     rw [typeBSimplePair, dite_eq_right hlast, hv]
     funext k
-    have hk := k.isLt
     simp only [corootOfPair_apply, Pi.single_apply, Fin.ext_iff,
       typeB_sgn_mk_ge (n := n) (a := n + (i : ℕ) + 1) (by omega)
         (show n ≤ n + (i : ℕ) + 1 by omega),

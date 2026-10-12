@@ -72,12 +72,12 @@ theorem torsion_eq_torsion'_powers_X (hd : d ≠ 0)
     simp only [C_0, sub_zero] at hab hb
     have hb0 : b.coeff 0 ≠ 0 := fun h ↦ hb (X_dvd_iff.mpr h)
     refine ⟨⟨X ^ a.rootMultiplicity 0, ⟨a.rootMultiplicity 0, rfl⟩⟩, ?_⟩
-    apply smul_injective_of_coeff_zero_ne_zero hd hX hb0
+    apply isSMulRegular_of_coeff_zero hd hX (IsSMulRegular.of_ne_zero hb0)
     simp only [Submonoid.smul_def] at hax
     rw [hab, mul_smul, smul_comm] at hax
     simpa only [Submonoid.smul_def, smul_zero] using hax
   · rintro ⟨⟨_, n, rfl⟩, hx⟩
-    exact ⟨⟨X ^ n, pow_mem X_mem_nonzeroDivisors n⟩, hx⟩
+    exact ⟨⟨X ^ n, pow_mem X_mem_nonZeroDivisors n⟩, hx⟩
 
 /-- The torsion submodule of a graded polynomial module is homogeneous if `X` strictly lowers
 degree and the module is torsion-free over its coefficient domain. In particular its scalar
@@ -89,16 +89,11 @@ theorem isHomogeneous_torsion (hd : d ≠ 0)
   rw [torsion_eq_torsion'_powers_X hd hX, Submodule.mem_torsion'_iff] at hx ⊢
   obtain ⟨⟨_, n, rfl⟩, hn⟩ := hx
   refine ⟨⟨X ^ n, ⟨n, rfl⟩⟩, ?_⟩
-  have hf : LinearMap.IsHomogeneous (_root_.LinearMap.lsmul k[X] M (X ^ n))
-      G.piece G.piece (-(n : ℤ) * d) := by
-    apply LinearMap.isHomogeneous_def.mpr
-    intro q y hy
-    simpa only [neg_mul, sub_eq_add_neg, _root_.LinearMap.lsmul_apply] using
-      X_pow_smul_mem_piece hX n hy
-  rw [Submonoid.smul_def] at hn
-  have key := hf.map_decompose p x
-  simpa only [Submonoid.smul_def, _root_.LinearMap.lsmul_apply, hn,
-    DirectSum.decompose_zero, DirectSum.zero_apply, ZeroMemClass.coe_zero] using key
+  rw [Submonoid.smul_def] at hn ⊢
+  have key := coe_decompose_X_pow_smul hX n (p - n * d) x
+  rw [sub_add_cancel, hn, DirectSum.decompose_zero, DirectSum.zero_apply,
+    ZeroMemClass.coe_zero] at key
+  exact key.symm
 
 end TauCeti.InternalGrading
 
@@ -140,7 +135,7 @@ theorem torsion_eq_torsionBy_X_pow (hd : d ≠ 0)
     exact (Submodule.mem_torsionBy_iff _ x).mpr (congrArg Subtype.val (@hN ⟨x, hx⟩))
   · intro x hx
     exact (Submodule.mem_torsion_iff x).mpr
-      ⟨⟨X ^ N, pow_mem X_mem_nonzeroDivisors N⟩, (Submodule.mem_torsionBy_iff _ x).mp hx⟩
+      ⟨⟨X ^ N, pow_mem X_mem_nonZeroDivisors N⟩, (Submodule.mem_torsionBy_iff _ x).mp hx⟩
 
 /-- A finitely generated polynomial module over a field admits a homogeneous complement to
 its torsion submodule when `X` strictly lowers degree. The complement is not canonical;
@@ -171,7 +166,7 @@ theorem exists_isCompl_torsion_of_X_smul_mem_piece (G : InternalGrading k M) (hd
   have he₀T (x : M) : e₀ x ∈ T := by
     rw [← DirectSum.sum_support_decompose G.piece x, map_sum]
     apply T.sum_mem
-    intro p hp
+    intro p _
     rw [G.homogeneousPart_apply_of_mem G hshift hshift e 0
       (DirectSum.decompose G.piece x p).property, add_zero]
     exact hT p (heT _)
@@ -184,7 +179,7 @@ theorem exists_isCompl_torsion_of_X_smul_mem_piece (G : InternalGrading k M) (hd
     rw [map_sum]
     conv_rhs => rw [← DirectSum.sum_support_decompose G.piece (x : M)]
     apply Finset.sum_congr rfl
-    intro p hp
+    intro p _
     rw [G.homogeneousPart_apply_of_mem G hshift hshift e 0
       (DirectSum.decompose G.piece (x : M) p).property, add_zero]
     rw [hefix ⟨_, hT p x.property⟩]
@@ -313,9 +308,9 @@ example : ∃ (G : InternalGrading k Q) (L : Submodule k[X] Q),
   obtain ⟨G, hX, _, _, _, _, hann, _⟩ := quotient_X_sq_example k
   obtain ⟨L, hL, hhom⟩ := G.exists_isCompl_torsion_of_X_smul_mem_piece one_ne_zero hX
   refine ⟨G, L, eq_top_iff.mpr ?_, hL, hhom⟩
-  intro x hx
+  intro x _
   exact (Submodule.mem_torsion_iff x).mpr
-    ⟨⟨X ^ 2, pow_mem X_mem_nonzeroDivisors 2⟩, hann x⟩
+    ⟨⟨X ^ 2, pow_mem X_mem_nonZeroDivisors 2⟩, hann x⟩
 
 -- A two-term external direct sum is a free-plus-torsion module. Keep its bookkeeping local
 -- to the examples rather than adding another public grading construction.
@@ -366,7 +361,7 @@ example : ∃ (G : InternalGrading k (⨁ i : Bool, mixedSummand k i))
       (Submodule.Quotient.mk (1 : k[X]) : Q)
     have ht : t ∈ Submodule.torsion k[X] (⨁ i : Bool, mixedSummand k i) := by
       apply (Submodule.mem_torsion_iff t).mpr
-      refine ⟨⟨X ^ 2, pow_mem X_mem_nonzeroDivisors 2⟩, ?_⟩
+      refine ⟨⟨X ^ 2, pow_mem X_mem_nonZeroDivisors 2⟩, ?_⟩
       rw [Submonoid.smul_def, ← map_smul, hann, map_zero]
     have ht0 := (Submodule.mem_bot k[X]).mp (hbot ▸ ht)
     have := congrArg (fun z ↦ z true) ht0

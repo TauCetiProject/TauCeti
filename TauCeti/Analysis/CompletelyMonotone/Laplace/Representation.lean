@@ -493,7 +493,7 @@ theorem isCompletelyMonotoneOnIoi_laplaceTransform
 /-- The Laplace transform of a finite measure is completely monotone in the closed-half-line
 roadmap sense. -/
 theorem isContinuousCompletelyMonotoneOnIoi_laplaceTransform
-    (μ : Measure ℝ≥0) [hμ : IsFiniteMeasure μ] :
+    (μ : Measure ℝ≥0) [IsFiniteMeasure μ] :
     IsContinuousCompletelyMonotoneOnIoi (laplaceTransform μ) :=
   isContinuousCompletelyMonotoneOnIoi_iff.mpr
     ⟨continuousOn_Ici_laplaceTransform μ,

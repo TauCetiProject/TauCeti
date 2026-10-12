@@ -589,7 +589,7 @@ private theorem closure_stabilize_eq_relabel_adjoinKink
         OrientedPDCode.relabel_toPDCode, relabel_edgePair, PerfectMatching.congr_val_apply]
     · rw [crossinglessComponentCount_closure, OrientedPDCode.relabel_toPDCode,
         relabel_crossinglessComponentCount, OrientedPDCode.toPDCode_adjoinKink,
-        adjoinKink_crossinglessComponentCount, ← OrientedPDCode.crossinglessComponents_card, hcc,
+        adjoinKink_crossinglessComponentCount, ← OrientedPDCode.card_crossinglessComponents, hcc,
         Multiset.card_replicate]
     · funext i
       obtain ⟨i, rfl⟩ := (w.stabilizeCrossingEquiv ε).surjective i

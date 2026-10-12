@@ -26,6 +26,11 @@ This is the character interpretation of integral degree-two cohomology used to s
 corestriction and the transfer. All coefficients are lifted to the universe of `G`, and
 all cohomology groups are Mathlib's canonical continuous cohomology.
 
+In every degree, the `p`-primary part of `Hⁱ⁺¹(G, ℤ)` vanishes as soon as `Hⁱ⁺¹(G, ℤ/pᵐ) = 0`
+and `pᵐ` kills every `Hⁱ(G, ℤ/pᵏ)` (`TauCeti.primaryComponent_continuousCohomology_int_eq_bot`):
+this is how the integral cohomology in the criterion for the strict cohomological dimension is
+computed from finite coefficients.
+
 The formal construction uses `TauCeti.ContCohomology.DiscreteShortExact.delta` and its long
 exact sequence, and the character identification uses
 `TauCeti.ContCohomology.explicitH1AddEquivContinuousCohomology`.
@@ -234,6 +239,34 @@ theorem mem_primaryComponent_iff_exists_integralBockstein (p : ℕ) [NeZero p]
   · rintro ⟨k, y, rfl⟩
     exact ⟨k, (mem_range_integralBockstein_iff G (p ^ k) 1 _).1 ⟨y, rfl⟩⟩
 
+/-- **Vanishing of the `p`-primary part of integral cohomology.** Let `G` be a compact, locally
+compact group, all coefficients carrying the trivial action. If `Hⁱ⁺¹(G, ℤ/pᵐ)` vanishes and `pᵐ`
+kills `Hⁱ(G, ℤ/pᵏ)` for every `k`, then the `p`-primary component of `Hⁱ⁺¹(G, ℤ)` vanishes. -/
+theorem primaryComponent_continuousCohomology_int_eq_bot [LocallyCompactSpace G] (p : ℕ) [NeZero p]
+    (m i : ℕ)
+    [Subsingleton (continuousCohomology (i + 1)
+      (ofDiscreteModule ℤ G (ULift.{u} (ZMod (p ^ m)))))]
+    (h : ∀ (k : ℕ) (y : continuousCohomology i (ofDiscreteModule ℤ G (ULift.{u} (ZMod (p ^ k))))),
+      p ^ m • y = 0) :
+    AddCommGroup.primaryComponent
+      (continuousCohomology (i + 1) (ofDiscreteModule ℤ G (ULift.{u} ℤ))) p = ⊥ := by
+  -- every `p`-primary class is an integral Bockstein, hence killed by `pᵐ`
+  have hkill : ∀ x ∈ AddCommGroup.primaryComponent
+      (continuousCohomology (i + 1) (ofDiscreteModule ℤ G (ULift.{u} ℤ))) p, p ^ m • x = 0 := by
+    rintro x ⟨k, hk⟩
+    obtain ⟨y, rfl⟩ := (exists_integralBockstein_eq_iff G (p ^ k) i x).2 hk
+    rw [← map_nsmul, h k y, _root_.map_zero]
+  refine (AddSubgroup.eq_bot_iff_forall _).2 fun x hx ↦ ?_
+  -- `x` reduces to zero in `Hⁱ⁺¹(G, ℤ/pᵐ) = 0`, so it is `pᵐ` times a class `x'`, which is again
+  -- `p`-primary and hence killed by `pᵐ`
+  obtain ⟨x', hx'⟩ :=
+    ((integralBocksteinShortExact G (p ^ m)).longExact_exact₂ (i + 1) x).1 (Subsingleton.elim _ _)
+  simp only [coeffMap_integralBocksteinShortExact_incl, TopModuleCat.hom_nsmul, smul_apply,
+    TopModuleCat.hom_id, ContinuousLinearMap.id_apply] at hx'
+  obtain ⟨k, hk⟩ := hx
+  rw [← hx']
+  exact hkill x' ⟨k + m, by rw [pow_add, mul_smul, hx', hk]⟩
+
 /-- For modulus one the integral Bockstein vanishes, in every degree. -/
 @[simp]
 theorem integralBockstein_modulus_one (i : ℕ) : integralBockstein G 1 i = 0 := by
@@ -250,14 +283,16 @@ theorem integralBockstein_zero (n : ℕ) [NeZero n] : integralBockstein G n 0 = 
   intro x
   exact Subsingleton.elim _ _
 
-/-- Increasing the modulus from `n` to `n * k` by multiplication by `k` on cyclic coefficients
+/-- Increasing the modulus from `n` to `m = n * k` by multiplication by `k` on cyclic coefficients
 preserves the integral connecting class. In particular, the character descriptions of the
 `p`-primary part are compatible as the exponent increases. -/
-theorem integralBockstein_mulCastHom (n k : ℕ) [NeZero n] [NeZero k] (i : ℕ) :
+theorem integralBockstein_mulCastHom (n k : ℕ) {m : ℕ} [NeZero n] [NeZero m] (h : n * k = m)
+    (i : ℕ) :
     coeffMap (ofDiscreteModuleMap
-      (((AddEquiv.ulift.symm.toAddMonoidHom.comp (ZMod.mulCastHom k (rfl : n * k = n * k))).comp
+      (((AddEquiv.ulift.symm.toAddMonoidHom.comp (ZMod.mulCastHom k h)).comp
         AddEquiv.ulift.toAddMonoidHom).toIntLinearMap) (fun _ _ ↦ rfl)) i ≫
-      integralBockstein G (n * k) i = integralBockstein G n i := by
+      integralBockstein G m i = integralBockstein G n i := by
+  subst h
   let fA : ULift.{u} ℤ →+[G] ULift.{u} ℤ :=
     { AddMonoidHom.id _ with map_smul' := fun _ _ ↦ rfl }
   let fB : ULift.{u} ℤ →+[G] ULift.{u} ℤ :=
@@ -287,6 +322,21 @@ theorem integralBockstein_mulCastHom (n k : ℕ) [NeZero n] [NeZero k] (i : ℕ)
     rfl
   rw [hid, coeffMap_id, Category.comp_id] at h
   exact h.symm
+
+/-- Pullback along a continuous homomorphism of compact groups commutes with the integral
+Bockstein, the coefficients being trivial on both sides and the coefficient maps the identity. -/
+@[reassoc]
+theorem integralBockstein_map {H : Type u} [Group H] [TopologicalSpace H] [IsTopologicalGroup H]
+    [CompactSpace H] (φ : H →ₜ* G) (n : ℕ) [NeZero n] (i : ℕ) :
+    integralBockstein G n i ≫ _root_.ContinuousCohomology.map φ
+        (ofDiscreteModulePair (φ : H →* G) (AddMonoidHom.id (ULift.{u} ℤ)).toIntLinearMap
+          fun _ _ ↦ rfl) (i + 1) =
+      _root_.ContinuousCohomology.map φ
+        (ofDiscreteModulePair (φ : H →* G) (AddMonoidHom.id (ULift.{u} (ZMod n))).toIntLinearMap
+          fun _ _ ↦ rfl) i ≫ integralBockstein H n i :=
+  (integralBocksteinShortExact G n).delta_map (integralBocksteinShortExact H n) φ
+    (AddMonoidHom.id _) (AddMonoidHom.id _) (AddMonoidHom.id _) (fun _ _ ↦ rfl) (fun _ _ ↦ rfl)
+    (fun _ _ ↦ rfl) (fun _ ↦ rfl) (fun _ ↦ rfl) i
 
 /-- Restriction to a compact subgroup commutes with the integral Bockstein. -/
 @[reassoc]

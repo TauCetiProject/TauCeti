@@ -23,8 +23,15 @@ for set and probability integrals.
 * `ofReal_integral_le_lintegral_ofReal` bounds the positive part of a real-valued
   function's integral by the integral of its pointwise positive part.
 
+## Exponentials
+
+* `integrable_exp_neg_of_ae_nonneg` shows that the negative exponential of an almost-everywhere
+  nonnegative function is integrable on a finite measure space.
+
 ## Set and probability integrals
 
+* `setIntegral_norm_add_sq_le` integrates the pointwise bound
+  `‖g + h‖² ≤ 2 ‖g‖² + 2 ‖h‖²` over a set.
 * `sq_setIntegral_le_measureReal_mul_setIntegral_sq` is Cauchy--Schwarz for a real-valued set
   integral, in squared form.
 * `setIntegral_le_setIntegral_sq_mul_of_eqOn` compares an integral over a set with a weighted
@@ -95,6 +102,15 @@ namespace TauCeti
 
 namespace MeasureTheory
 
+/-- The negative exponential of an almost-everywhere nonnegative, almost-everywhere measurable
+function is integrable on a finite measure space. -/
+theorem integrable_exp_neg_of_ae_nonneg {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω}
+    [IsFiniteMeasure μ] {f : Ω → ℝ} (hf : AEMeasurable f μ) (hf0 : 0 ≤ᵐ[μ] f) :
+    Integrable (fun x ↦ Real.exp (-f x)) μ :=
+  (integrable_const 1).mono' hf.neg.exp.aestronglyMeasurable <| by
+    filter_upwards [hf0] with x hx
+    simpa [Real.abs_exp] using hx
+
 /-- An even function obtained by composing with absolute value is integrable on the whole real
 line whenever the original function is integrable on the positive half-line. -/
 theorem integrable_comp_abs {E : Type*} [NormedAddCommGroup E] {f : ℝ → E}
@@ -134,6 +150,27 @@ theorem not_integrable_of_eventually_le_atTop {f : ℝ → ℝ} {ε : ℝ} (hε 
   not_integrableOn_Ioi_of_eventually_le_norm hε 0
     (hf.mono fun x hx => by rw [Real.norm_eq_abs]; exact hx.trans (le_abs_self _))
     hint.integrableOn
+
+/-- Integrating `‖g + h‖² ≤ 2 ‖g‖² + 2 ‖h‖²` over a set: if `‖g‖²` and `‖h‖²` are integrable on
+`s`, then `∫_s ‖g + h‖² ≤ 2 ∫_s ‖g‖² + 2 ∫_s ‖h‖²`. -/
+theorem setIntegral_norm_add_sq_le {X F : Type*} [MeasurableSpace X] {μ : Measure X}
+    [NormedAddCommGroup F] {g h : X → F} {s : Set X}
+    (hg : IntegrableOn (fun x => ‖g x‖ ^ 2) s μ) (hh : IntegrableOn (fun x => ‖h x‖ ^ 2) s μ) :
+    ∫ x in s, ‖g x + h x‖ ^ 2 ∂μ ≤ 2 * ∫ x in s, ‖g x‖ ^ 2 ∂μ + 2 * ∫ x in s, ‖h x‖ ^ 2 ∂μ := by
+  have h0 : 0 ≤ 2 * ∫ x in s, ‖g x‖ ^ 2 ∂μ + 2 * ∫ x in s, ‖h x‖ ^ 2 ∂μ := by
+    have := setIntegral_nonneg_of_ae_restrict (μ := μ) (s := s) (f := fun x => ‖g x‖ ^ 2)
+      (ae_of_all _ fun _ => by positivity)
+    have := setIntegral_nonneg_of_ae_restrict (μ := μ) (s := s) (f := fun x => ‖h x‖ ^ 2)
+      (ae_of_all _ fun _ => by positivity)
+    positivity
+  by_cases hgh : IntegrableOn (fun x => ‖g x + h x‖ ^ 2) s μ
+  · rw [← integral_const_mul, ← integral_const_mul,
+      ← integral_add (hg.const_mul 2) (hh.const_mul 2)]
+    refine integral_mono hgh ((hg.const_mul 2).add (hh.const_mul 2)) fun x => ?_
+    have := (pow_le_pow_left₀ (norm_nonneg _) (norm_add_le (g x) (h x)) 2).trans add_sq_le
+    simpa only [Pi.add_apply, mul_add] using this
+  · rw [integral_undef hgh]
+    exact h0
 
 /-- Cauchy--Schwarz for a real-valued set integral over a set of finite measure, in squared form. -/
 theorem sq_setIntegral_le_measureReal_mul_setIntegral_sq {Ω : Type*} [MeasurableSpace Ω]

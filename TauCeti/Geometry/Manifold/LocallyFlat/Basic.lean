@@ -49,8 +49,8 @@ zero local flatness is exactly openness of the embedding, and a locally flat emb
 closed image as soon as the origin of the complementary model is closed (on the relative layer, as
 soon as the model slice is locally closed).
 
-This is layer 2 of the geometric-topology roadmap, the substrate for topologically locally flat
-discs (topological sliceness) and for stating the annulus conjecture.
+The coordinate-slice condition is the local hypothesis in collaring and annulus theorems, and
+locally flat embedded discs are the objects used to define topological sliceness.
 
 ## Main definitions
 
@@ -90,6 +90,7 @@ discs (topological sliceness) and for stating the annulus conjecture.
   the origin of the complementary model is closed.
 * `TauCeti.isLocallyFlat_prodMkLeft`: over a domain charted on `F`, the standard model
   `x ↦ (x, 0)` is locally flat.
+* `TauCeti.isLocallyFlat_graph`: the graph of a continuous map is locally flat.
 * `TauCeti.exists_isSliceChart_of_inter_eq_inter_range`: a set which, near a point, is the graph of
   a continuous map over the first coordinate of a homeomorphism `M ≃ₜ F × F'` is flattened by a
   chart around that point.
@@ -107,9 +108,11 @@ varies (a product of standard slices is a standard slice only after a permutatio
 which is where `IsSliceEmbedding.transHomeomorph` is used). Local flatness is
 `IsLocallyFlat F F' f`, which fixes the slice to be the standard one, and that predicate does have
 teeth: `TauCeti.isLocallyFlat_iff_isOpenEmbedding` shows that in codimension zero it is equivalent
-to openness of the embedding, and `TauCeti.IsLocallyFlat.isLocallyClosed_range` rules out an image
-that is not locally closed, which the horned sphere's complement-side wildness aside is already
-enough to exclude embeddings no chart can flatten.
+to openness of the embedding. When the origin of the complementary model is closed,
+`TauCeti.IsLocallyFlat.isLocallyClosed_range` rules out images that fail to be locally closed.
+Local closedness is only a necessary condition: a compact wild embedding in a Hausdorff space,
+such as the Alexander horned sphere, already has closed image, so this condition alone does not
+distinguish wildness.
 
 No membership in a prescribed atlas is required of the flattening chart: an
 `OpenPartialHomeomorph M (F × F')` is automatically a chart of the maximal topological atlas of a
@@ -510,9 +513,9 @@ theorem isOpenEmbedding (h : IsSliceEmbedding (univ : Set F) f) : IsOpenEmbeddin
   obtain ⟨φ, hφx, hφ⟩ := h.exists_isSliceChart x
   exact Filter.mem_of_superset (φ.open_source.mem_nhds hφx) (isSliceChart_univ_iff.1 hφ)
 
-/-- The image of a slice embedding is locally closed as soon as the model slice is. This is where
-the definition has teeth: the image of a wild embedding need not be locally closed in any chart in
-this way. -/
+/-- The image of a slice embedding is locally closed whenever the model slice is locally closed.
+Thus an embedding whose image fails local closedness cannot be a slice embedding for such a
+model slice. -/
 theorem isLocallyClosed_range (h : IsSliceEmbedding S f) (hS : IsLocallyClosed S) :
     IsLocallyClosed (range f) := by
   obtain ⟨U, Z, hU, hZ, rfl⟩ := hS
@@ -738,8 +741,8 @@ theorem prodMap_of_isOpenEmbedding {G P : Type*} [TopologicalSpace G] [Topologic
   exact hprod
 
 /-- The image of a locally flat embedding is locally closed as soon as the origin of the
-complementary model is closed, the standard slice then being closed. This is where the definition
-has teeth: the image of a wild embedding need not be locally closed. -/
+complementary model is closed, since the standard slice is then closed. This necessary condition
+does not distinguish locally flat embeddings from wild embeddings with closed image. -/
 theorem isLocallyClosed_range (h : IsLocallyFlat F F' f) (h0 : IsClosed ({0} : Set F')) :
     IsLocallyClosed (range f) :=
   IsSliceEmbedding.isLocallyClosed_range h (isClosed_univ.prod h0).isLocallyClosed
@@ -795,6 +798,52 @@ end StandardSlice
 
 section Graph
 
+/-- The graph of a continuous map from a topological space to a topological additive group is
+locally flat, with complementary model `F`. -/
+theorem isLocallyFlat_graph
+    {E F : Type*} [TopologicalSpace E] [TopologicalSpace F] [AddGroup F] [IsTopologicalAddGroup F]
+    (f : E → F) (hf : Continuous f) :
+    IsLocallyFlat E F (fun x : E => (x, f x)) := by
+  let shear : E × F ≃ₜ E × F :=
+    { toFun := fun p => (p.1, p.2 + f p.1)
+      invFun := fun p => (p.1, p.2 - f p.1)
+      left_inv := by
+        intro p
+        simp
+      right_inv := by
+        intro p
+        simp
+      continuous_toFun := continuous_fst.prodMk (continuous_snd.add (hf.comp continuous_fst))
+      continuous_invFun := continuous_fst.prodMk (continuous_snd.sub (hf.comp continuous_fst)) }
+  have h := (isLocallyFlat_prodMkLeft (N := E) (F := E) (F' := F)).homeomorph_comp shear
+  convert h using 1
+  ext x
+  · rfl
+  · dsimp [Function.comp_apply, shear]
+    simp only [zero_add]
+
+/-- A continuous map is locally flat when an ambient homeomorphism presents its image as a graph.
+The section equation `(Φ (f x)).1 = x` identifies `f` with the graph of the second coordinate of
+`Φ ∘ f`, and the conclusion gives local flatness with complementary model `F`. -/
+theorem _root_.Continuous.isLocallyFlat_of_homeomorph_graph
+    {E M F : Type*} [TopologicalSpace E] [TopologicalSpace M]
+    [TopologicalSpace F] [AddGroup F] [IsTopologicalAddGroup F]
+    {f : E → M} (hf : Continuous f) (Φ : M ≃ₜ E × F)
+    (hΦ : ∀ x, (Φ (f x)).1 = x) :
+    IsLocallyFlat E F f := by
+  let g : E → F := fun x => (Φ (f x)).2
+  have hg : Continuous g := by
+    apply continuous_snd.comp
+    exact Φ.continuous.comp hf
+  have hgraph : IsLocallyFlat E F (fun x => (x, g x)) :=
+    TauCeti.isLocallyFlat_graph g hg
+  have htransport := hgraph.homeomorph_comp Φ.symm
+  convert htransport using 1
+  funext x
+  apply Φ.injective
+  rw [Function.comp_apply, Φ.apply_symm_apply]
+  exact Prod.ext (hΦ x) rfl
+
 variable [AddGroup F'] [IsTopologicalAddGroup F']
 
 /-- **A graph is flat.** Let `Φ` identify `M` with `F × F'`, and let `g : F → M` be a continuous
@@ -841,20 +890,6 @@ a locally flat embedding has local product neighbourhoods in any codimension.
 
 section ProductNeighborhood
 
-/-- An open partial homeomorphism turns an open embedding into its target into an open embedding
-into its source. This is the transport step of the constructions below. -/
-private theorem isOpenEmbedding_symm_comp {X : Type*} [TopologicalSpace X]
-    (ψ : OpenPartialHomeomorph M F) {g : X → F} (hg : IsOpenEmbedding g)
-    (hgr : range g ⊆ ψ.target) : IsOpenEmbedding (ψ.symm ∘ g) :=
-  .of_continuous_injective_isOpenMap
-    (ψ.continuousOn_symm.comp_continuous hg.continuous fun q => hgr (mem_range_self q))
-    (fun q q' hqq' => hg.injective (ψ.symm.injOn
-      (ψ.symm_source ▸ hgr (mem_range_self q)) (ψ.symm_source ▸ hgr (mem_range_self q')) hqq'))
-    fun O hO => by
-      rw [image_comp]
-      exact ψ.isOpen_image_symm_of_subset_target (hg.isOpenMap O hO)
-        ((image_subset_range g O).trans hgr)
-
 variable {G : Type*} [SeminormedAddCommGroup G] [NormedSpace ℝ G]
 
 /-- A slice chart whose target is a box `u ×ˢ ball 0 r` exhibits its source as a product of the
@@ -880,7 +915,7 @@ private theorem exists_isOpenEmbedding_prod_of_target_eq_prod {ψ : OpenPartialH
   have hjr : range j = ψ.target := by
     rw [hj, range_prodMap, Subtype.range_coe, hρr, hψt]
   set σ : u × G → M := ψ.symm ∘ j with hσ
-  have hσe : IsOpenEmbedding σ := isOpenEmbedding_symm_comp ψ hje hjr.subset
+  have hσe : IsOpenEmbedding σ := ψ.symm.isOpenEmbedding_comp hje hjr.subset
   -- The zero slice of `σ` and the restriction of `f` are two embeddings with the same image.
   set e₁ : (f ⁻¹' ψ.source) → M := f ∘ ((↑) : (f ⁻¹' ψ.source) → N) with he₁
   set e₂ : u → M := fun v => σ (v, 0) with he₂

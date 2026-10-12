@@ -254,6 +254,9 @@ noncomputable def torusContinuousMulEquiv : Circle ≃ₜ* torus where
       (f := (MonoidHom.ofInjective torusHom_injective).toEquiv)
       (continuous_torusHom.subtype_mk _)).continuous_invFun
 
+/-- The diagonal maximal torus is compact, so it carries Haar probability measure. -/
+instance : CompactSpace torus := torusContinuousMulEquiv.toHomeomorph.compactSpace
+
 @[simp]
 theorem torusContinuousMulEquiv_apply (z : Circle) :
     (torusContinuousMulEquiv z : SU2) = torusHom z := (rfl)

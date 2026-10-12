@@ -254,6 +254,19 @@ theorem frontier_leftHalfPlane (g : PSL(2, ℝ)) :
   rw [(isOpen_leftHalfPlane g).frontier_eq, closure_leftHalfPlane, Set.union_sdiff_left]
   exact sdiff_eq_self_iff_disjoint.mpr (disjoint_leftHalfPlane_range_geodesicLine g)
 
+/-- The interior of a closed left half-plane is its open half-plane. -/
+-- Not `@[simp]`: `closure_leftHalfPlane` rewrites the inner closure first.
+theorem interior_closure_leftHalfPlane (g : PSL(2, ℝ)) :
+    interior (closure (leftHalfPlane g)) = leftHalfPlane g := by
+  have h : closure (leftHalfPlane g) = (rightHalfPlane g)ᶜ := by
+    ext z
+    rw [mem_closure_leftHalfPlane_iff, Set.mem_compl_iff, mem_rightHalfPlane_iff]
+    exact not_lt.symm
+  rw [h, interior_compl]
+  ext z
+  rw [Set.mem_compl_iff, mem_closure_rightHalfPlane_iff, mem_leftHalfPlane_iff]
+  exact not_le
+
 /-! ### The non-canonicity witness
 
 `pslS` is the `PSL(2, ℝ)` element of `z ↦ -1/z`. Multiplying any
@@ -275,6 +288,12 @@ theorem rightHalfPlane_mul_pslS (g : PSL(2, ℝ)) :
 theorem leftHalfPlane_mul_pslS (g : PSL(2, ℝ)) :
     leftHalfPlane (g * pslS) = rightHalfPlane g := by
   rw [← rightHalfPlane_mul_pslS (g * pslS), mul_assoc, pslS_mul_self, mul_one]
+
+/-- The interior of a closed right half-plane is its open half-plane. -/
+-- Not `@[simp]`: `closure_rightHalfPlane` rewrites the inner closure first.
+theorem interior_closure_rightHalfPlane (g : PSL(2, ℝ)) :
+    interior (closure (rightHalfPlane g)) = rightHalfPlane g := by
+  simpa only [leftHalfPlane_mul_pslS] using interior_closure_leftHalfPlane (g * pslS)
 
 /-! ### Reparametrisation by dilations -/
 

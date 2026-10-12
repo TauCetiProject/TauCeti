@@ -56,7 +56,6 @@ theorem SeparatelyExchangeable.exists_visibleCells_coding
           ρ.map fun x => (H.domRestrict x, fun p : F => x p.1.1) := by
   dsimp
   let H : Set (ℕ × ℕ) := (Set.univ ×ˢ T) ∪ (S ×ˢ Set.univ)
-  let V : Set (ℕ × ℕ) := Sᶜ ×ˢ Tᶜ
   have hAll := hρ.iCondIndepFun_visibleCells hS hT
   have hF : iCondIndepFun (MeasurableSpace.comap H.domRestrict inferInstance)
       (Set.measurable_restrict H).comap_le

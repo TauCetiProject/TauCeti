@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.Conformal.NormalFamilies
-import Mathlib.Topology.UniformSpace.Ascoli
+import TauCeti.Topology.ContinuousMap.Ascoli
 
 /-!
 # Montel's theorem: local boundedness is relative compactness
@@ -32,11 +32,8 @@ carries such an `f` may use them directly. The hypothesis constrains nothing: a 
 `hF : ∀ i, ContinuousOn (F i) Ω` and no `f` of its own takes
 `fun i => ⟨Ω.domRestrict (F i), (hF i).domRestrict⟩`, for which it holds by `rfl`.
 
-*Locally bounded ⇒ relatively compact* is Mathlib's compact-open Arzelà–Ascoli framework. The
-family sits inside the uniform-on-compacts function space as a closed subspace
-(`ContinuousMap.isUniformEmbedding_toUniformOnFunIsCompact` together with
-`UniformOnFun.isClosed_setOfPred_continuous`), so
-`ArzelaAscoli.isCompact_closure_of_isClosedEmbedding` applies: equicontinuity on each compact is
+*Locally bounded ⇒ relatively compact* is the compact-open Arzelà–Ascoli theorem
+`ArzelaAscoli.isCompact_closure_of_equicontinuous`: equicontinuity is
 `TauCeti.IsLocallyBoundedOn.equicontinuousOn`, which is Cauchy's estimate, and pointwise relative
 compactness is local boundedness at a single point. This is the direction with analytic content —
 holomorphy enters only through the Cauchy estimate behind the equicontinuity.
@@ -94,23 +91,6 @@ namespace TauCeti
 variable {ι E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] {Ω : Set ℂ} {F : ι → ℂ → E}
   {f : ι → C(Ω, E)}
 
--- `C(X, Y)` sits inside the uniform-on-compacts function space as a closed subspace: the
--- coercion is a uniform embedding, and its range is the continuous maps, which is closed when
--- the topology of `X` is coherent with its compacts. This is the shape Arzelà–Ascoli asks for.
-private theorem isClosedEmbedding_ofFun_comp_coe {X Y : Type*} [TopologicalSpace X]
-    [CompactlyCoherentSpace X] [UniformSpace Y] :
-    IsClosedEmbedding (⇑(UniformOnFun.ofFun {K : Set X | IsCompact K}) ∘
-      (DFunLike.coe : C(X, Y) → (X → Y))) := by
-  refine ⟨ContinuousMap.isUniformEmbedding_toUniformOnFunIsCompact.isEmbedding, ?_⟩
-  -- The `rfl` below is just `ContinuousMap.toUniformOnFunIsCompact` unfolded (Mathlib
-  -- `Topology/UniformSpace/CompactConvergence.lean`): Arzelà–Ascoli asks for the map in the
-  -- `UniformOnFun.ofFun 𝔖 ∘ F` form, while `range_toUniformOnFunIsCompact` is stated for the
-  -- packaged name, so this bridges the two.
-  rw [show (⇑(UniformOnFun.ofFun {K : Set X | IsCompact K}) ∘
-      (DFunLike.coe : C(X, Y) → (X → Y))) = ContinuousMap.toUniformOnFunIsCompact from rfl,
-    ContinuousMap.range_toUniformOnFunIsCompact]
-  exact UniformOnFun.isClosed_setOfPred_continuous CompactlyCoherentSpace.isCoherentWith
-
 -- Equicontinuity of a family transfers to its range viewed as a subtype: every element of the
 -- range is some member of the family, and equicontinuity is stable under reindexing.
 private theorem equicontinuous_subtype_val_range {X Y : Type*} [TopologicalSpace X]
@@ -147,10 +127,8 @@ theorem isCompact_closure_range_of_isLocallyBoundedOn [ProperSpace E] (hΩ : IsO
     exact (equicontinuous_restrict_iff F).mpr (hb.equicontinuousOn hΩ hF)
   -- Arzelà–Ascoli in the compact-open topology: equicontinuity comes from Cauchy's estimate and
   -- pointwise relative compactness from local boundedness.
-  refine ArzelaAscoli.isCompact_closure_of_isClosedEmbedding (fun K hK => hK)
-    isClosedEmbedding_ofFun_comp_coe
-    (fun K _ => (equicontinuous_subtype_val_range heq).equicontinuousOn K) ?_
-  intro K _ x _
+  refine ArzelaAscoli.isCompact_closure_of_equicontinuous (equicontinuous_subtype_val_range heq)
+    fun x => ?_
   obtain ⟨C, hC⟩ := hb.exists_forall_norm_le x.2
   refine ⟨closedBall 0 C, isCompact_closedBall _ _, fun g hg => ?_⟩
   obtain ⟨i, rfl⟩ := hg

@@ -50,7 +50,7 @@ def disjointUnion (D : OrientedPDCode n) (E : OrientedPDCode m) : OrientedPDCode
         Equiv.symm_apply_apply, Sum.elim_inr]
       simpa only [crossing_apply] using E.orientation_oppositeCrossingSlot i slot
   crossinglessComponents := D.crossinglessComponents + E.crossinglessComponents
-  crossinglessComponents_card := by simp
+  card_crossinglessComponents := by simp
 
 variable (D : OrientedPDCode n) (E : OrientedPDCode m)
 

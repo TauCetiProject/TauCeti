@@ -48,12 +48,16 @@ case "$EVENT" in
     prs="$NUM"
     # Compare the exact commits being built, not the PR's current file list, which can describe a
     # different head (a push while queued) or base (a retarget).
-    compare=$(gh api "repos/$REPO/compare/$BASE...${HEAD_REPO%%/*}:$HEAD")
+    if ! compare=$(gh api "repos/$REPO/compare/$BASE...${HEAD_REPO%%/*}:$HEAD"); then
+      full "the immutable compare metadata is unavailable"
+    fi
     ;;
   merge_group|repository_dispatch|push)
     [[ "${BASE:-}" =~ ^[0-9a-f]{40}$ && ! "$BASE" =~ ^0+$ ]] || full "no base commit"
     [[ "${HEAD:-}" =~ ^[0-9a-f]{40}$ ]] || full "no head commit"
-    compare=$(gh api "repos/$REPO/compare/$BASE...$HEAD")
+    if ! compare=$(gh api "repos/$REPO/compare/$BASE...$HEAD"); then
+      full "the immutable compare metadata is unavailable"
+    fi
     # GitHub merge groups and bors staging both use one squash commit per PR,
     # titled `... (#N)`. The trusted workflow validates bors staging and its
     # immutable base/head before calling this script. Unknown titles stay full lint.
@@ -68,7 +72,9 @@ case "$EVENT" in
 esac
 
 for pr in $prs; do
-  info=$(gh api "repos/$REPO/pulls/$pr" --jq '[.head.ref, ([.labels[].name] | join(","))] | @tsv')
+  if ! info=$(gh api "repos/$REPO/pulls/$pr" --jq '[.head.ref, ([.labels[].name] | join(","))] | @tsv'); then
+    full "PR #$pr lint policy metadata is unavailable"
+  fi
   IFS=$'\t' read -r head_ref labels <<<"$info"
   case "$head_ref" in lint-repair/*) full "#$pr is a lint repair PR ($head_ref)" ;; esac
   case ",$labels," in *,full-lint,*) full "#$pr is labelled full-lint" ;; esac

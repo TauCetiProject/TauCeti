@@ -198,13 +198,13 @@ theorem continuous_spinToSpecialOrthogonal_pi [Invertible (2 : R)]
   apply (TauCeti.QuadraticMap.isEmbedding_specialOrthogonalToGeneralLinear
     Q).isInducing.continuous_iff.mpr
   have h : Continuous
-      ((TauCeti.QuadraticMap.specialOrthogonalToGeneralLinear Q).comp
+      ((QuadraticMap.specialOrthogonalToGeneralLinear Q).comp
         (spinToSpecialOrthogonal Q)) := by
     apply Continuous.of_coeHom_comp
     apply continuous_matrix
     intro i j
     simpa only [MonoidHom.comp_apply, Units.coeHom_apply,
-      TauCeti.QuadraticMap.specialOrthogonalToGeneralLinear_apply,
+      QuadraticMap.specialOrthogonalToGeneralLinear_apply,
       coe_spinToSpecialOrthogonal_apply, Function.comp_def] using
       (continuous_apply i).comp
         (continuous_spinVectorAction_apply Q (Pi.single j 1))

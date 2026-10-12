@@ -128,7 +128,7 @@ theorem finrank_dvd_card : finrank k V ∣ Nat.card G := by
     (isIntegral_centralCharacter_classSumCenter ρ C) ?_
   obtain ⟨g, rfl⟩ := ConjClasses.exists_rep C
   rw [ClassFunction.toConjClasses_mk, ClassFunction.ofCharacter_apply]
-  exact isIntegral_char ρ.dual (isOfFinOrder_of_finite g).orderOf_pos.ne' (pow_orderOf_eq_one g)
+  exact ρ.dual.isIntegral_char (isOfFinOrder_of_finite g).orderOf_pos.ne' (pow_orderOf_eq_one g)
 
 end Dvd
 

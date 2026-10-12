@@ -20,10 +20,10 @@ inside that translate transported back to `B`.
 Under this identification every element of `G` permutes the rows `{C} × B` of the grid, so it acts
 through the imprimitive action of the wreath product `Sym(B) ≀ Sym(orbit G B)`. This gives a group
 homomorphism `G →* WreathProduct (Equiv.Perm B) (orbit G B)` whose top component is the action of
-`G` on the block system. It is injective exactly when `G` acts faithfully on `α`, and the elements
-it sends into the base group `orbit G B → Equiv.Perm B` are exactly those acting trivially on the
-block system. So when the action on `α` is faithful, the kernel of the action on the block system
-embeds in the base group.
+`G` on the block system. Its kernel is the kernel of the action on `α`, so it is injective exactly
+when that action is faithful. The elements it sends into the base group
+`orbit G B → Equiv.Perm B` are exactly those acting trivially on the block system. So when the
+action on `α` is faithful, the kernel of the action on the block system embeds in the base group.
 
 The identification of `α` with the grid depends on the chosen elements of `G`. The lemmas below
 describe it only through properties that hold for every such choice.
@@ -39,6 +39,9 @@ describe it only through properties that hold for every such choice.
 * `MulAction.IsBlock.imprimitivityEquiv_smul`: the identification is equivariant, from the action
   on `α` to the imprimitive wreath-product action on `orbit G B × B`.
 * `MulAction.IsBlock.toWreathProduct_right`: the top component is the action on the block system.
+* `MulAction.IsBlock.toWreathProduct_eq_iff`: two elements have the same image exactly when
+  they act identically on `α`.
+* `MulAction.IsBlock.ker_toWreathProduct`: the kernel is the kernel of the action on `α`.
 * `MulAction.IsBlock.toWreathProduct_injective_iff`: the homomorphism is injective exactly when
   the action on `α` is faithful.
 * `MulAction.IsBlock.comap_toWreathProduct_range_inl`: the preimage of the base group is the
@@ -181,18 +184,32 @@ theorem _root_.MulAction.IsBlock.toWreathProduct_left_apply (g : G) (C : orbit G
     IsBlock.toWreathProduct_right]
   simp
 
+/-- Two elements have the same wreath-product image exactly when they act identically on `α`.
+This holds without a faithfulness assumption. -/
+@[simp]
+theorem _root_.MulAction.IsBlock.toWreathProduct_eq_iff {g₁ g₂ : G} :
+    hB.toWreathProduct hBne g₁ = hB.toWreathProduct hBne g₂ ↔
+      ∀ x : α, g₁ • x = g₂ • x := by
+  have : Nonempty B := hBne.to_subtype
+  rw [← (WreathProduct.imprimitiveToPerm_injective (Equiv.Perm B) (orbit G B) B).eq_iff,
+    IsBlock.imprimitiveToPerm_toWreathProduct, IsBlock.imprimitiveToPerm_toWreathProduct,
+    (hB.imprimitivityEquiv hBne).permCongrHom.injective.eq_iff, Equiv.ext_iff]
+  rfl
+
+/-- The wreath-product homomorphism has exactly the kernel of the action on `α`. -/
+@[simp]
+theorem _root_.MulAction.IsBlock.ker_toWreathProduct :
+    (hB.toWreathProduct hBne).ker = (MulAction.toPermHom G α).ker := by
+  ext g
+  rw [MonoidHom.mem_ker, ← map_one (hB.toWreathProduct hBne), IsBlock.toWreathProduct_eq_iff]
+  simp [MonoidHom.mem_ker, Equiv.ext_iff]
+
 /-- The homomorphism `hB.toWreathProduct hBne` is injective exactly when `G` acts faithfully on
 `α`. In that case it embeds `G` in `Sym(B) ≀ Sym(orbit G B)`. -/
 theorem _root_.MulAction.IsBlock.toWreathProduct_injective_iff :
     Function.Injective (hB.toWreathProduct hBne) ↔ FaithfulSMul G α := by
-  refine ⟨fun h ↦ ⟨fun {g₁ g₂} hg ↦ h ?_⟩, fun _ g₁ g₂ hg ↦ ?_⟩
-  · have : Nonempty B := hBne.to_subtype
-    apply WreathProduct.imprimitiveToPerm_injective (Equiv.Perm B) (orbit G B) B
-    have hperm : (MulAction.toPerm g₁ : Equiv.Perm α) = MulAction.toPerm g₂ := Equiv.ext hg
-    rw [IsBlock.imprimitiveToPerm_toWreathProduct, IsBlock.imprimitiveToPerm_toWreathProduct,
-      hperm]
-  · refine eq_of_smul_eq_smul (α := α) fun x ↦ (hB.imprimitivityEquiv hBne).injective ?_
-    rw [IsBlock.imprimitivityEquiv_smul, IsBlock.imprimitivityEquiv_smul, hg]
+  exact ⟨fun h ↦ ⟨fun hg ↦ h ((IsBlock.toWreathProduct_eq_iff hB hBne).2 hg)⟩,
+    fun _ _ _ hg ↦ eq_of_smul_eq_smul ((IsBlock.toWreathProduct_eq_iff hB hBne).1 hg)⟩
 
 /-- The elements of `G` that `hB.toWreathProduct hBne` sends into the base group
 `orbit G B → Equiv.Perm B` are exactly those acting trivially on the block system. -/

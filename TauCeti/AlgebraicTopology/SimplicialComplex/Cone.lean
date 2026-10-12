@@ -7,7 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.SimplicialComplex.IsCone
 public import Mathlib.Data.Fintype.Powerset
-public import TauCeti.AlgebraicTopology.SimplicialComplex.Join
+public import TauCeti.AlgebraicTopology.SimplicialComplex.Join.Basic
 import Mathlib.Basic.Finite.Prod
 import Mathlib.Data.Set.Finite.Basic
 

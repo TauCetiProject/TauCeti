@@ -67,24 +67,24 @@ def continuousFiniteQuotientCoeffMap (f : M →+[G] N) (U : OpenNormalSubgroup G
   ofDiscreteModuleMap
     (AddMonoidHom.toIntLinearMap (M := FixedPoints.addSubgroup U.toSubgroup M)
       (M₂ := FixedPoints.addSubgroup U.toSubgroup N)
-      (fixedPointsQuotientMap f U.toSubgroup).toAddMonoidHom)
-    (map_smul (fixedPointsQuotientMap f U.toSubgroup))
+      (f.fixedPointsQuotientMap U.toSubgroup).toAddMonoidHom)
+    (map_smul (f.fixedPointsQuotientMap U.toSubgroup))
 
 omit [IsTopologicalGroup G] in
 /-- The finite-level coefficient morphism acts as `f` on underlying elements. -/
 @[simp]
 theorem continuousFiniteQuotientCoeffMap_hom_apply (f : M →+[G] N)
     (U : OpenNormalSubgroup G) (m : FixedPoints.addSubgroup U.toSubgroup M) :
-    (continuousFiniteQuotientCoeffMap f U).hom m = fixedPointsMap f U.toSubgroup m :=
+    (continuousFiniteQuotientCoeffMap f U).hom m = f.fixedPointsMap U.toSubgroup m :=
   Subtype.ext <| (congrArg Subtype.val (ofDiscreteModuleMap_hom_apply _ _ m)).trans <|
-    (coe_fixedPointsQuotientMap f U.toSubgroup m).trans (coe_fixedPointsMap f U.toSubgroup m).symm
+    (f.coe_fixedPointsQuotientMap U.toSubgroup m).trans (f.coe_fixedPointsMap U.toSubgroup m).symm
 
 omit [IsTopologicalGroup G] in
 /-- The finite-level coefficient morphism associated to the identity is the identity. -/
 @[simp]
 theorem continuousFiniteQuotientCoeffMap_id (U : OpenNormalSubgroup G) :
     continuousFiniteQuotientCoeffMap (DistribMulActionHom.id G : M →+[G] M) U = 𝟙 _ := by
-  simp only [continuousFiniteQuotientCoeffMap, fixedPointsQuotientMap_id]
+  simp only [continuousFiniteQuotientCoeffMap, Subgroup.fixedPointsQuotientMap_id]
   -- The `ℤ`-linear wrapper of the identity is definitionally `LinearMap.id`.
   exact ofDiscreteModuleMap_id
 
@@ -96,7 +96,7 @@ theorem continuousFiniteQuotientCoeffMap_comp (f : M →+[G] N) (g : N →+[G] P
     continuousFiniteQuotientCoeffMap f U ≫ continuousFiniteQuotientCoeffMap g U =
       continuousFiniteQuotientCoeffMap (g.comp f) U := by
   simp only [continuousFiniteQuotientCoeffMap,
-    ← fixedPointsQuotientMap_comp_fixedPointsQuotientMap]
+    ← DistribMulActionHom.fixedPointsQuotientMap_comp_fixedPointsQuotientMap]
   -- The `ℤ`-linear wrapper of a composite is definitionally the composite of the wrappers.
   exact ofDiscreteModuleMap_comp_ofDiscreteModuleMap _ _ _ _
 
@@ -118,10 +118,10 @@ theorem continuousFiniteQuotientCoeffMap_transition_square (f : M →+[G] N)
       ((continuousFiniteQuotientPair G M hVU).hom m)
   rw [continuousFiniteQuotientCoeffMap_hom_apply f U m,
     continuousFiniteQuotientPair_hom_apply G N hVU
-      (fixedPointsMap f U.toSubgroup m),
+      (f.fixedPointsMap U.toSubgroup m),
     continuousFiniteQuotientPair_hom_apply G M hVU m,
     continuousFiniteQuotientCoeffMap_hom_apply f V (fixedPointsInclusion hVU m)]
-  exact (DFunLike.congr_fun (fixedPointsMap_comp_fixedPointsInclusion f hVU) m).symm
+  exact (DFunLike.congr_fun (f.fixedPointsMap_comp_fixedPointsInclusion hVU) m).symm
 
 end Level
 
@@ -279,7 +279,7 @@ private theorem continuousFiniteQuotientCoeffMap_comparison_square (f : M →+[G
       (ContinuousMonoidHom.quotientMk U.toSubgroup : G →* G ⧸ U.toSubgroup)
       (FixedPoints.addSubgroup U.toSubgroup N).subtype.toIntLinearMap
       (fun g m ↦ subtype_quotientMk_smul G N U.toSubgroup g m)
-      (fixedPointsMap f U.toSubgroup m'),
+      (f.fixedPointsMap U.toSubgroup m'),
     ofDiscreteModulePair_hom_apply
       (ContinuousMonoidHom.quotientMk U.toSubgroup : G →* G ⧸ U.toSubgroup)
       (FixedPoints.addSubgroup U.toSubgroup M).subtype.toIntLinearMap
@@ -287,7 +287,7 @@ private theorem continuousFiniteQuotientCoeffMap_comparison_square (f : M →+[G
     ofDiscreteModuleMap_hom_apply f.toAddMonoidHom.toIntLinearMap
       (fun g m ↦ map_smul f g m)
       ((FixedPoints.addSubgroup U.toSubgroup M).subtype.toIntLinearMap m')]
-  exact coe_fixedPointsMap f U.toSubgroup m'
+  exact f.coe_fixedPointsMap U.toSubgroup m'
 
 /-- **Naturality of the finite-quotient comparison in the coefficients**: mapping coefficients at
 a finite level and then comparing with `Hⁿ(G, N)` is the same as first comparing with

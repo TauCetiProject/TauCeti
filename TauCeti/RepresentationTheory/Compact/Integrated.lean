@@ -78,14 +78,15 @@ function is specialized to `conj χ_π`.
 
 ## References
 
-This is the operator infrastructure for the block-projection item of Layer 5 of the
-[compact-groups roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/CompactGroups/README.md),
-"averaging against `dim V_π · conj χ_π`". The mathematical development follows Daniel Bump, *Lie
+The integrated operators support averaging against `dim V_π · conj χ_π` to project onto
+isotypic components. The mathematical development follows Daniel Bump, *Lie
 Groups*, second edition, Chapter 2, and T. Bröcker and T. tom Dieck, *Representations of Compact Lie
 Groups*, Springer GTM 98 (1985), Chapter II.
 -/
 
 public section
+
+open _root_.ContRepresentation
 
 open MeasureTheory
 

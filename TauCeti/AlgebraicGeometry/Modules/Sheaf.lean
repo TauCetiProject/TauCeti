@@ -24,6 +24,8 @@ that the latter is exact.
   finite limits and finite colimits;
 * `TauCeti.AlgebraicGeometry.Scheme.Modules.isoOfSheafIso`, which lifts an isomorphism of
   underlying sheaves of modules to an isomorphism in `X.Modules`;
+* `AlgebraicGeometry.Scheme.Modules.sectionsLinearEquiv`, the `Γ(X, U)`-linear equivalence of
+  sections over `U` induced by an isomorphism of `𝒪_X`-modules;
 * `TauCeti.AlgebraicGeometry.Scheme.Modules.shortExact_map_toSheaf`: a short exact sequence of
   `𝒪_X`-modules stays short exact after forgetting the module structures.
 
@@ -74,6 +76,37 @@ lemma _root_.AlgebraicGeometry.Scheme.Modules.isoOfSheafIso_inv_val (X : Scheme.
     {M N : X.Modules} (e : @Iso (SheafOfModules X.ringCatSheaf) _ M N) :
     (_root_.AlgebraicGeometry.Scheme.Modules.isoOfSheafIso X e).inv.val = e.inv.val :=
   by simp only [_root_.AlgebraicGeometry.Scheme.Modules.isoOfSheafIso]
+
+variable {X} in
+/-- An isomorphism of `𝒪_X`-modules induces a `Γ(X, U)`-linear equivalence between the modules
+of sections over `U`, given by the components of the isomorphism and of its inverse at `U`. -/
+def _root_.AlgebraicGeometry.Scheme.Modules.sectionsLinearEquiv {M N : X.Modules} (e : M ≅ N)
+    (U : X.Opens) : Γ(M, U) ≃ₗ[Γ(X, U)] Γ(N, U) where
+  toFun := e.hom.app U
+  invFun := e.inv.app U
+  map_add' := map_add _
+  map_smul' := Scheme.Modules.Hom.app_smul e.hom
+  left_inv x := by simp [← ConcreteCategory.comp_apply, ← Scheme.Modules.Hom.comp_app]
+  right_inv x := by simp [← ConcreteCategory.comp_apply, ← Scheme.Modules.Hom.comp_app]
+
+variable {X} in
+/-- The linear equivalence induced by `e` on sections over `U` is the component of `e.hom`. -/
+@[simp]
+lemma _root_.AlgebraicGeometry.Scheme.Modules.sectionsLinearEquiv_apply {M N : X.Modules}
+    (e : M ≅ N) (U : X.Opens) (x : Γ(M, U)) :
+    Scheme.Modules.sectionsLinearEquiv e U x = e.hom.app U x := by
+  rw [Scheme.Modules.sectionsLinearEquiv]
+  rfl
+
+variable {X} in
+/-- The inverse of the linear equivalence induced by `e` on sections over `U` is the component
+of `e.inv`. -/
+@[simp]
+lemma _root_.AlgebraicGeometry.Scheme.Modules.sectionsLinearEquiv_symm_apply {M N : X.Modules}
+    (e : M ≅ N) (U : X.Opens) (x : Γ(N, U)) :
+    (Scheme.Modules.sectionsLinearEquiv e U).symm x = e.inv.app U x := by
+  rw [Scheme.Modules.sectionsLinearEquiv]
+  rfl
 
 /-- The forgetful functor from `𝒪_X`-modules to sheaves of abelian groups on `X`.
 

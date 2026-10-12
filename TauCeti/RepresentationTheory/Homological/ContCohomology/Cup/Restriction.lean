@@ -89,8 +89,9 @@ theorem explicitRes1_explicitCup01 (a : H0 G M) (b : H1 G N) :
   exact explicitMap1_explicitCup01 G M N P μ hμ hequiv U M N P μ hμ
     (fun u m n => hequiv (u : G) m n) (ContinuousMonoidHom.subgroupSubtype U)
     (AddMonoidHom.id M) (AddMonoidHom.id N) (AddMonoidHom.id P) continuous_id continuous_id
-    (id_subgroupSubtype_smul G M U) (id_subgroupSubtype_smul G N U)
-    (id_subgroupSubtype_smul G P U) (fun _ _ => rfl) a b
+    (ContinuousMonoidHom.id_subgroupSubtype_smul M U)
+    (ContinuousMonoidHom.id_subgroupSubtype_smul N U)
+    (ContinuousMonoidHom.id_subgroupSubtype_smul P U) (fun _ _ => rfl) a b
 
 omit [IsTopologicalAddGroup N] [ContinuousSMul G N] in
 /-- **Restriction preserves the `(1,0)` cup product.** -/
@@ -103,8 +104,9 @@ theorem explicitRes1_explicitCup10 (a : H1 G M) (b : H0 G N) :
   exact explicitMap1_explicitCup10 G M N P μ hμ hequiv U M N P μ hμ
     (fun u m n => hequiv (u : G) m n) (ContinuousMonoidHom.subgroupSubtype U)
     (AddMonoidHom.id M) (AddMonoidHom.id N) (AddMonoidHom.id P) continuous_id continuous_id
-    (id_subgroupSubtype_smul G M U) (id_subgroupSubtype_smul G N U)
-    (id_subgroupSubtype_smul G P U) (fun _ _ => rfl) a b
+    (ContinuousMonoidHom.id_subgroupSubtype_smul M U)
+    (ContinuousMonoidHom.id_subgroupSubtype_smul N U)
+    (ContinuousMonoidHom.id_subgroupSubtype_smul P U) (fun _ _ => rfl) a b
 
 end DegreeOne
 
@@ -137,8 +139,9 @@ theorem explicitRes2_explicitCup02 (a : H0 G M) (b : H2 G N) :
   exact explicitMap2_explicitCup02 G M N P μ hμ hequiv U M N P μ hμ
     (fun u m n => hequiv (u : G) m n) (ContinuousMonoidHom.subgroupSubtype U)
     (AddMonoidHom.id M) (AddMonoidHom.id N) (AddMonoidHom.id P) continuous_id continuous_id
-    (id_subgroupSubtype_smul G M U) (id_subgroupSubtype_smul G N U)
-    (id_subgroupSubtype_smul G P U) (fun _ _ => rfl) a b
+    (ContinuousMonoidHom.id_subgroupSubtype_smul M U)
+    (ContinuousMonoidHom.id_subgroupSubtype_smul N U)
+    (ContinuousMonoidHom.id_subgroupSubtype_smul P U) (fun _ _ => rfl) a b
 
 /-- **Restriction preserves the `(1,1)` cup product.** -/
 @[simp]
@@ -150,8 +153,9 @@ theorem explicitRes2_explicitCup11 (a : H1 G M) (b : H1 G N) :
   exact explicitMap2_explicitCup11 G M N P μ hμ hequiv U M N P μ hμ
     (fun u m n => hequiv (u : G) m n) (ContinuousMonoidHom.subgroupSubtype U)
     (AddMonoidHom.id M) (AddMonoidHom.id N) (AddMonoidHom.id P) continuous_id continuous_id
-    continuous_id (id_subgroupSubtype_smul G M U) (id_subgroupSubtype_smul G N U)
-    (id_subgroupSubtype_smul G P U) (fun _ _ => rfl) a b
+    continuous_id (ContinuousMonoidHom.id_subgroupSubtype_smul M U)
+    (ContinuousMonoidHom.id_subgroupSubtype_smul N U)
+    (ContinuousMonoidHom.id_subgroupSubtype_smul P U) (fun _ _ => rfl) a b
 
 omit [IsTopologicalAddGroup N] [ContinuousSMul G N] in
 /-- **Restriction preserves the `(2,0)` cup product.** -/
@@ -164,8 +168,9 @@ theorem explicitRes2_explicitCup20 (a : H2 G M) (b : H0 G N) :
   exact explicitMap2_explicitCup20 G M N P μ hμ hequiv U M N P μ hμ
     (fun u m n => hequiv (u : G) m n) (ContinuousMonoidHom.subgroupSubtype U)
     (AddMonoidHom.id M) (AddMonoidHom.id N) (AddMonoidHom.id P) continuous_id continuous_id
-    (id_subgroupSubtype_smul G M U) (id_subgroupSubtype_smul G N U)
-    (id_subgroupSubtype_smul G P U) (fun _ _ => rfl) a b
+    (ContinuousMonoidHom.id_subgroupSubtype_smul M U)
+    (ContinuousMonoidHom.id_subgroupSubtype_smul N U)
+    (ContinuousMonoidHom.id_subgroupSubtype_smul P U) (fun _ _ => rfl) a b
 
 end DegreeTwo
 

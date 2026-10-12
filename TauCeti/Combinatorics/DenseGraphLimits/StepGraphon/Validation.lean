@@ -29,6 +29,26 @@ column are replaced by
 zero. The exported witness `exists_partition_stepGraphonAvg_ne_self_bernoulliMeasure` records this
 failure for a partition into all three singletons.
 
+The carrier, graphon, partitions and block averages live in the namespace `NullCellExample`, so
+the computed values can be cited by name.
+
+## Main results
+
+* `NullCellExample.coarse_energy`, `NullCellExample.fine_energy` — the energies `1/4` and `1/2`;
+* `NullCellExample.l2sq_adjacency_sub_coarseAvg` and
+  `NullCellExample.l2sq_adjacency_sub_coarseAvg_eq_sub` — the coarse defect, directly and through
+  `l2sq_sub_stepGraphonAvg`;
+* `NullCellExample.l2sq_fineAvg_sub_coarseAvg` and
+  `NullCellExample.fine_energy_eq_coarse_energy_add` — the refinement increment, directly
+  and through `graphonPartitionEnergy_increment`;
+* `NullCellExample.lt_cutNorm_adjacency_sub_coarseAvg` and
+  `NullCellExample.exists_refinement_coarse_energy_add_sq_lt` — the cut witness and the strict
+  energy gain it produces;
+* `NullCellExample.exists_refinement_coarse_cutNorm_le_one_div_sixteen` — the iteration bound at
+  tolerance `1/16`;
+* `exists_partition_stepGraphonAvg_ne_self_bernoulliMeasure` — averaging over singletons can
+  change a strict graphon.
+
 ## References
 
 * L. Lovász, *Large Networks and Graph Limits*, AMS Colloquium Publications 60 (2012), §9.2.
@@ -43,28 +63,38 @@ open scoped unitInterval
 
 namespace TauCeti.DenseGraphLimits
 
-private abbrev weights : Measure (Fin 3) :=
+namespace NullCellExample
+
+/-- The carrier weights: mass `1/2` at each of `0` and `1`, and no mass at `2`. -/
+abbrev weights : Measure (Fin 3) :=
   bernoulliMeasure 0 1 ⟨1 / 2, by norm_num, by norm_num⟩
 
-private def adjacency : Graphon (Fin 3) weights :=
+/-- The complete adjacency matrix on `Fin 3`, as a graphon over `weights`: value `1` between
+distinct points, including between the null atom `2` and the positive atoms. -/
+def adjacency : Graphon (Fin 3) weights :=
   Graphon.ofMatrix weights (fun i j ↦ if i = j then 0 else 1) (by
     intro i j
     simp [eq_comm])
 
-private theorem adjacency_apply (i j : Fin 3) :
+/-- `adjacency` is `0` on the diagonal and `1` off it. -/
+@[simp] theorem adjacency_apply (i j : Fin 3) :
     adjacency i j = if i = j then 0 else 1 := by
   rw [adjacency, Graphon.ofMatrix_apply]
   split <;> simp
 
-private def coarse : Finpartition (univ : Set (Fin 3)) := Finpartition.bipartition {2}
+/-- The coarse partition `{{2}, {0, 1}}`, splitting off the null atom. -/
+def coarse : Finpartition (univ : Set (Fin 3)) := Finpartition.bipartition {2}
 
-private def fine : Finpartition (univ : Set (Fin 3)) :=
+/-- The fine partition into singletons, refining `coarse`. -/
+def fine : Finpartition (univ : Set (Fin 3)) :=
   coarse ⊓ Finpartition.bipartition {0}
 
-private def coarseAvg : Graphon (Fin 3) weights :=
+/-- The block average of `adjacency` over `coarse`. -/
+def coarseAvg : Graphon (Fin 3) weights :=
   stepGraphonAvg coarse (fun _ _ ↦ MeasurableSet.of_discrete) adjacency
 
-private def fineAvg : Graphon (Fin 3) weights :=
+/-- The block average of `adjacency` over `fine`. -/
+def fineAvg : Graphon (Fin 3) weights :=
   stepGraphonAvg fine (fun _ _ ↦ MeasurableSet.of_discrete) adjacency
 
 private theorem integral_weights_prod (f : Fin 3 × Fin 3 → ℝ) :
@@ -74,13 +104,15 @@ private theorem integral_weights_prod (f : Fin 3 × Fin 3 → ℝ) :
   simp only [weights, integral_bernoulliMeasure, smul_eq_mul]
   ring
 
-private theorem coarse_parts : coarse.parts = {{2}, {2}ᶜ} := by
+/-- The parts of `coarse` are `{2}` and its complement. -/
+theorem coarse_parts : coarse.parts = {{2}, {2}ᶜ} := by
   classical
   rw [coarse, Finpartition.parts_bipartition]
   have h : ({2}ᶜ : Set (Fin 3)) ≠ ∅ := Set.Nonempty.ne_empty ⟨0, by simp⟩
   simp [Ne.symm h]
 
-private theorem fine_parts : fine.parts = {{0}, {1}, {2}} := by
+/-- The parts of `fine` are the three singletons. -/
+theorem fine_parts : fine.parts = {{0}, {1}, {2}} := by
   classical
   have h02 : ({2} : Set (Fin 3)) ∩ {0} = ∅ := by ext x; fin_cases x <;> simp
   have h2 : ({2} : Set (Fin 3)) ∩ {0}ᶜ = {2} := by ext x; fin_cases x <;> simp
@@ -103,7 +135,9 @@ private theorem stepGraphonAvg_adjacency_apply
     setAverage_eq, measureReal_prod_prod, ← integral_indicator (by measurability),
     integral_weights_prod, smul_eq_mul]
 
-private theorem coarseAvg_apply (i j : Fin 3) :
+/-- The coarse block average is `1/2` on the positive cell and `0` on every entry incident to
+the null atom. -/
+@[simp] theorem coarseAvg_apply (i j : Fin 3) :
     coarseAvg i j = if i = 2 ∨ j = 2 then 0 else 1 / 2 := by
   classical
   let p : coarse.parts := ⟨if i = 2 then {2} else {2}ᶜ, by split <;> simp [coarse_parts]⟩
@@ -115,7 +149,9 @@ private theorem coarseAvg_apply (i j : Fin 3) :
     norm_num [p, q, weights, bernoulliMeasure_real_apply, adjacency_apply,
       Set.indicator_of_mem, Set.indicator_of_notMem]
 
-private theorem fineAvg_apply (i j : Fin 3) :
+/-- The fine block average agrees with `adjacency` away from the null atom and is `0` on every
+entry incident to it. -/
+@[simp] theorem fineAvg_apply (i j : Fin 3) :
     fineAvg i j = if i = 2 ∨ j = 2 then 0 else if i = j then 0 else 1 := by
   classical
   let p : fine.parts := ⟨{i}, by fin_cases i <;> simp [fine_parts]⟩
@@ -136,22 +172,8 @@ example : ({2} : Set (Fin 3)) ∈ coarse.parts ∧
 example : adjacency 2 0 = 1 ∧ fineAvg 2 0 = 0 ∧ fineAvg 0 2 = 0 := by
   norm_num [adjacency_apply, fineAvg_apply]
 
-/-- On the three-point carrier with masses `1/2`, `1/2`, and `0`, averaging over the
-singleton partition can change the original strict graphon. The zero-mass atom's incident
-edges are erased. -/
-theorem exists_partition_stepGraphonAvg_ne_self_bernoulliMeasure :
-    ∃ (P : Finpartition (univ : Set (Fin 3)))
-      (W : Graphon (Fin 3)
-        (bernoulliMeasure 0 1 ⟨1 / 2, by norm_num, by norm_num⟩)),
-      P.parts = {{0}, {1}, {2}} ∧
-      stepGraphonAvg P (fun _ _ ↦ MeasurableSet.of_discrete) W ≠ W := by
-  refine ⟨fine, adjacency, fine_parts, ?_⟩
-  rw [← fineAvg]
-  intro h
-  have hval := congrArg (fun W : Graphon (Fin 3) weights ↦ W 2 0) h
-  norm_num [fineAvg_apply, adjacency_apply] at hval
-
-private theorem coarse_energy :
+/-- **The coarse energy is `1/4`.** -/
+theorem coarse_energy :
     graphonPartitionEnergy weights coarse (fun _ _ ↦ MeasurableSet.of_discrete) adjacency =
       1 / 4 := by
   have h : l2sq weights coarseAvg.toSymmKernel = 1 / 4 := by
@@ -159,7 +181,8 @@ private theorem coarse_energy :
     norm_num [Graphon.coe_toSymmKernel, coarseAvg_apply]
   simpa only [graphonPartitionEnergy_eq, coarseAvg] using h
 
-private theorem fine_energy :
+/-- **The fine energy is `1/2`**, although the null cell is a part of `fine`. -/
+theorem fine_energy :
     graphonPartitionEnergy weights fine (fun _ _ ↦ MeasurableSet.of_discrete) adjacency =
       1 / 2 := by
   have h : l2sq weights fineAvg.toSymmKernel = 1 / 2 := by
@@ -167,28 +190,36 @@ private theorem fine_energy :
     norm_num [Graphon.coe_toSymmKernel, fineAvg_apply]
   simpa only [graphonPartitionEnergy_eq, fineAvg] using h
 
-private theorem adjacency_l2sq : l2sq weights adjacency.toSymmKernel = 1 / 2 := by
+/-- The squared `L²` seminorm of `adjacency` is `1/2`. -/
+theorem l2sq_adjacency : l2sq weights adjacency.toSymmKernel = 1 / 2 := by
   rw [l2sq_def, integral_weights_prod]
   norm_num [Graphon.coe_toSymmKernel, adjacency_apply]
 
--- Check the numerical defect independently, then exercise
--- the defect identity `l2sq_sub_stepGraphonAvg`.
-example : l2sq weights (adjacency.toSymmKernel - coarseAvg.toSymmKernel) = 1 / 4 := by
+/-- **The coarse approximation defect**, computed directly: `‖W - W_coarse‖₂² = 1/4`. -/
+theorem l2sq_adjacency_sub_coarseAvg :
+    l2sq weights (adjacency.toSymmKernel - coarseAvg.toSymmKernel) = 1 / 4 := by
   rw [l2sq_def, integral_weights_prod]
   norm_num [coarseAvg_apply, adjacency_apply]
 
-example : l2sq weights (adjacency.toSymmKernel - coarseAvg.toSymmKernel) =
-    1 / 2 - 1 / 4 := by
-  rw [coarseAvg, l2sq_sub_stepGraphonAvg, adjacency_l2sq, coarse_energy]
+/-- **The defect identity** `l2sq_sub_stepGraphonAvg` on the coarse partition:
+`‖W - W_coarse‖₂² = ‖W‖₂² - energy(coarse) = 1/2 - 1/4`, in agreement with
+`l2sq_adjacency_sub_coarseAvg`. -/
+theorem l2sq_adjacency_sub_coarseAvg_eq_sub :
+    l2sq weights (adjacency.toSymmKernel - coarseAvg.toSymmKernel) = 1 / 2 - 1 / 4 := by
+  rw [coarseAvg, l2sq_sub_stepGraphonAvg, l2sq_adjacency, coarse_energy]
 
--- A positive refinement gain despite the retained null part. Check it independently
--- before applying the energy-increment theorem to the same partitions.
-example : l2sq weights (fineAvg.toSymmKernel - coarseAvg.toSymmKernel) = 1 / 4 := by
+/-- **The refinement increment**, computed directly: `‖W_fine - W_coarse‖₂² = 1/4`, a positive
+gain despite the retained null part. -/
+theorem l2sq_fineAvg_sub_coarseAvg :
+    l2sq weights (fineAvg.toSymmKernel - coarseAvg.toSymmKernel) = 1 / 4 := by
   rw [l2sq_def, integral_weights_prod]
   norm_num [coarseAvg_apply, fineAvg_apply]
 
-example : 1 / 2 = (1 / 4 : ℝ) + l2sq weights
-    (fineAvg.toSymmKernel - coarseAvg.toSymmKernel) := by
+/-- **The Pythagoras increment** `graphonPartitionEnergy_increment` on `coarse ≥ fine`:
+`energy(fine) = energy(coarse) + ‖W_fine - W_coarse‖₂²`, that is `1/2 = 1/4 + 1/4`, in agreement
+with `l2sq_fineAvg_sub_coarseAvg`. -/
+theorem fine_energy_eq_coarse_energy_add :
+    1 / 2 = (1 / 4 : ℝ) + l2sq weights (fineAvg.toSymmKernel - coarseAvg.toSymmKernel) := by
   simpa only [coarse_energy, fine_energy, coarseAvg, fineAvg] using
     graphonPartitionEnergy_increment weights coarse fine (fun _ _ ↦ MeasurableSet.of_discrete)
       (fun _ _ ↦ MeasurableSet.of_discrete) inf_le_left adjacency
@@ -198,7 +229,9 @@ example : coarse.parts.card = 2 ∧ fine.parts.card = 3 ∧ fine ≤ coarse := b
   classical
   refine ⟨?_, ?_, inf_le_left⟩ <;> simp [coarse_parts, fine_parts]
 
-private theorem lt_cutNorm_adjacency_sub_coarseAvg :
+/-- **A cut witness.** The rectangle `{0} × {1}` carries `1/8` of `W - W_coarse`, so the cut norm
+of the coarse defect exceeds `1/16`. -/
+theorem lt_cutNorm_adjacency_sub_coarseAvg :
     1 / 16 < cutNorm weights (adjacency.toSymmKernel - coarseAvg.toSymmKernel) := by
   have hrect : (adjacency.toSymmKernel - coarseAvg.toSymmKernel).rectIntegral
       weights {0} {1} = 1 / 8 := by
@@ -211,9 +244,11 @@ private theorem lt_cutNorm_adjacency_sub_coarseAvg :
   rw [hrect] at hbound
   exact lt_of_lt_of_le (by norm_num) hbound
 
--- This exercises the strict energy-gain constructor from a nonzero cut witness, on an
--- input partition containing a nonempty null part. No non-null-part assumption is supplied.
-example : ∃ (Q : Finpartition (univ : Set (Fin 3)))
+/-- **The strict energy gain from the cut witness.** `exists_refinement_energy_add_sq_lt`, applied
+to `lt_cutNorm_adjacency_sub_coarseAvg` on an input partition containing a nonempty null part (no
+non-null-part assumption is supplied), refines `coarse` into at most `8` parts with energy above
+`1/4 + (1/16)²`. -/
+theorem exists_refinement_coarse_energy_add_sq_lt : ∃ (Q : Finpartition (univ : Set (Fin 3)))
     (hQ : ∀ q ∈ Q.parts, MeasurableSet q), Q ≤ coarse ∧ Q.parts.card ≤ 8 ∧
       1 / 4 + (1 / 16 : ℝ) ^ 2 < graphonPartitionEnergy weights Q hQ adjacency := by
   obtain ⟨Q, hQ, href, hcard, henergy⟩ := exists_refinement_energy_add_sq_lt weights
@@ -223,10 +258,13 @@ example : ∃ (Q : Finpartition (univ : Set (Fin 3)))
   · simpa [coarse_parts] using hcard
   · simpa only [coarse_energy] using henergy
 
--- At tolerance 1/16, the coarse partition cannot be accepted. The 256-step invariant
--- bounds the part count by 4^256 times the initial count, and its energy alternative
--- contradicts the upper bound of one. Refinement retains the nonempty null singleton.
-example : ∃ (Q : Finpartition (univ : Set (Fin 3)))
+/-- **The iteration bound at tolerance `1/16`.** Starting from `coarse`, which the cut witness
+rules out, the 256-step invariant `exists_partition_cutNorm_le_or_energy_add_mul_sq_lt` yields a
+proper refinement with at most `4 ^ ⌈1 / (1/16)²⌉ * 2` parts whose block average is within
+`1/16` in cut norm; its energy alternative contradicts the upper bound of one. The refinement
+retains the nonempty null singleton `{2}`. -/
+theorem exists_refinement_coarse_cutNorm_le_one_div_sixteen :
+    ∃ (Q : Finpartition (univ : Set (Fin 3)))
     (hQ : ∀ q ∈ Q.parts, MeasurableSet q), Q ≤ coarse ∧
       ({2} : Set (Fin 3)) ∈ Q.parts ∧ Q ≠ coarse ∧
       Q.parts.card ≤ 4 ^ Nat.ceil (1 / (1 / 16 : ℝ) ^ 2) * 2 ∧
@@ -272,5 +310,23 @@ example : ∃ (P : Finpartition (univ : Set (Fin 3)))
     norm_num
   rw [hceil] at hcard
   simpa using hcard
+
+end NullCellExample
+
+open NullCellExample in
+/-- On the three-point carrier with masses `1/2`, `1/2`, and `0`, averaging over the
+singleton partition can change the original strict graphon. The zero-mass atom's incident
+edges are erased. -/
+theorem exists_partition_stepGraphonAvg_ne_self_bernoulliMeasure :
+    ∃ (P : Finpartition (univ : Set (Fin 3)))
+      (W : Graphon (Fin 3)
+        (bernoulliMeasure 0 1 ⟨1 / 2, by norm_num, by norm_num⟩)),
+      P.parts = {{0}, {1}, {2}} ∧
+      stepGraphonAvg P (fun _ _ ↦ MeasurableSet.of_discrete) W ≠ W := by
+  refine ⟨fine, adjacency, fine_parts, ?_⟩
+  rw [← fineAvg]
+  intro h
+  have hval := congrArg (fun W : Graphon (Fin 3) weights ↦ W 2 0) h
+  norm_num [fineAvg_apply, adjacency_apply] at hval
 
 end TauCeti.DenseGraphLimits

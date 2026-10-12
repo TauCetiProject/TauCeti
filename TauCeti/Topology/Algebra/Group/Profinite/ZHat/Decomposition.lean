@@ -33,7 +33,8 @@ The decomposition has idempotents: `zHat.idem ℓ`, written `ω_ℓ` in prose, i
 with `ℓ`-adic component `1` and all other components `0`. It is idempotent, orthogonal to the
 idempotents of the other primes, multiplication by it keeps the `ℓ`-adic component and kills the
 others, and it reduces to `1` modulo every power of `ℓ` and to `0` modulo every `n` prime to `ℓ`.
-It is unequal to every integer (`zHat.idem_ne_intCast`).
+It is unequal to every integer (`zHat.idem_ne_intCast`), so `ℤ → ℤ̂` is not surjective
+(`zHat.not_surjective_ofInt`).
 In particular `ω_2 * (1 - ω_2) = 0` with both factors nonzero: the profinite integers are not a
 domain (`zHat.not_isDomain`). The finite sums of the prime idempotents tend to `1`
 (`zHat.tendsto_sum_idem`), expressing recovery from the prime factors in the product topology.
@@ -57,6 +58,7 @@ domain (`zHat.not_isDomain`). The finite sums of the prime idempotents tend to `
 * `TauCeti.zHat.toZMod_idem_of_dvd_pow`, `TauCeti.zHat.toZMod_idem_of_not_dvd`: the reductions of
   `ω_ℓ` at the finite levels.
 * `TauCeti.zHat.idem_ne_intCast`: `ω_ℓ` is not an integer.
+* `TauCeti.zHat.not_surjective_ofInt`: the integers are a proper subgroup of `ℤ̂`.
 * `TauCeti.zHat.not_isDomain`: the profinite integers are not a domain.
 
 ## References
@@ -304,6 +306,13 @@ theorem idem_ne_intCast (n : ℤ) : idem.{u} ℓ ≠ n := by
   rcases isIdempotentElem_intCast_iff.mp (h ▸ isIdempotentElem_idem ℓ) with rfl | rfl
   · exact idem_ne_zero ℓ (by simpa using h)
   · exact idem_ne_one ℓ (by simpa using h)
+
+/-- **The integers are a proper subgroup of the profinite integers**: the canonical homomorphism
+`ℤ → ℤ̂` is not surjective, since `ω_2` is not an integer. -/
+theorem not_surjective_ofInt : ¬ Function.Surjective (ofInt : Multiplicative ℤ →* zHat.{u}) :=
+  fun h ↦ by
+    obtain ⟨z, hz⟩ := h (idem.{u} 2).toMul
+    exact idem_ne_intCast 2 z.toAdd (by rw [← ofMul_ofInt, hz, ofMul_toMul])
 
 /-- **The profinite integers are not a domain**: `ω_2 * (1 - ω_2) = 0` with both factors
 nonzero. -/

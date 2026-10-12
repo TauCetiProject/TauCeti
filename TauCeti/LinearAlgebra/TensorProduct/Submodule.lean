@@ -35,6 +35,12 @@ theorem baseChange_map (f : M →ₗ[R] N) (p : Submodule R M) :
     Set.image_image, Set.image_image]
   simp
 
+/-- Extension of scalars commutes with taking the range of a linear map. -/
+@[simp]
+theorem _root_.LinearMap.baseChange_range (f : M →ₗ[R] N) :
+    (LinearMap.range f).baseChange A = LinearMap.range (f.baseChange A) := by
+  rw [← Submodule.map_top, baseChange_map, baseChange_top, Submodule.map_top]
+
 end Map
 
 variable {R A B : Type*} [CommSemiring R] [CommSemiring A] [Semiring B]

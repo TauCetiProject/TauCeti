@@ -41,7 +41,9 @@ Turaev's invariant of a braid on `n` strands with exponent sum (writhe) `e` is t
 multiplied by `α ^ (-e) * β ^ (-n)`. It is a Markov invariant of braids, the `sl_N`
 specialization of the HOMFLY polynomial at `z = q - q⁻¹` and `a = q ^ N`; these specializations,
 over all `N`, determine the HOMFLY polynomial. The weighted trace is constructed in
-`TauCeti/KnotTheory/Jimbo/Trace.lean`; its writhe normalization remains to be constructed.
+`TauCeti/KnotTheory/Jimbo/Trace.lean`; its stabilization laws and writhe normalization are
+constructed in `TauCeti/KnotTheory/Jimbo/Stabilization.lean` and
+`TauCeti/KnotTheory/Jimbo/Normalization.lean`.
 For `N = 2` this is the vertex-model route to the Jones polynomial, which
 `TauCeti.TemperleyLieb.markovTrace` follows through the Temperley-Lieb algebra.
 

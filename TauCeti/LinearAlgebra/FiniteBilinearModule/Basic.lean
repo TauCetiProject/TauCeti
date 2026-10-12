@@ -115,6 +115,10 @@ theorem pairing_neg_left (x y : A) : A.pairing (-x) y = -A.pairing x y :=
 theorem pairing_neg_right (x y : A) : A.pairing x (-y) = -A.pairing x y :=
   map_neg (A.pairing x) y
 
+/-- The pairing is `ℕ`-linear in its first argument. -/
+theorem pairing_nsmul_left (n : ℕ) (x y : A) : A.pairing (n • x) y = n • A.pairing x y := by
+  rw [A.pairing_comm, map_nsmul, A.pairing_comm]
+
 /-- The bilinear pairing associated to a finite bilinear module, viewed as a `ℤ`-bilinear map. -/
 def toBilin : A →ₗ[ℤ] A →ₗ[ℤ] AddCircle (1 : ℚ) :=
   LinearMap.mk₂' ℤ ℤ (fun x y ↦ A.pairing x y)

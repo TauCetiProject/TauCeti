@@ -270,8 +270,7 @@ theorem eq_augmentation_of_isNormal_of_forall_isUnipotentPoint_of_isLinearlyRedu
     mkQuotient_eq_counit_smul_one_of_isNormal_of_forall_isUnipotentPoint_of_isLinearlyReductive
       hI hu hlr x
   rw [hx, zero_smul] at hq
-  exact mem_toIdeal.mp
-    ((CommHopfAlgCat.mkQuotient_eq_zero_iff (_root_.CommHopfAlgCat.of k H) I x).mp hq)
+  exact (CommHopfAlgCat.mkQuotient_eq_zero_iff (_root_.CommHopfAlgCat.of k H) I x).mp hq
 
 include hI hu hlr in
 /-- Over an algebraically closed field, the coordinate Hopf algebra of a normal unipotent closed

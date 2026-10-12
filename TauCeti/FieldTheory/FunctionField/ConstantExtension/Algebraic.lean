@@ -31,9 +31,12 @@ variable [Field k] [Field k'] [Field F] [Field F']
 variable [Algebra k k'] [Algebra k F] [Algebra k F'] [Algebra k' F'] [Algebra F F']
 variable [IsScalarTower k k' F'] [IsScalarTower k F F']
 
-/-- The compositum with algebraic constants is algebraic over the original field, even for an
-infinite extension of constants. -/
-theorem isAlgebraic_constantCompositum [Algebra.IsAlgebraic k k'] :
+/-- The compositum with an algebraic algebra of constants is algebraic over the original field.
+The constants need only form a commutative ring, and their map into the ambient field need not
+be injective. -/
+theorem isAlgebraic_constantCompositum
+    {k' : Type u'} [CommRing k'] [Algebra k k'] [Algebra k' F']
+    [IsScalarTower k k' F'] [Algebra.IsAlgebraic k k'] :
     Algebra.IsAlgebraic F (constantCompositum F k' F') := by
   rw [constantCompositum_def]
   apply IntermediateField.isAlgebraic_adjoin
@@ -87,6 +90,7 @@ theorem IsFunctionField.of_constantCompositum_eq_top
   have halg := isAlgebraic_constantCompositum (k := k) (k' := k') (F := F) (F' := F')
   rw [h] at halg
   let : Algebra.IsAlgebraic F F' := IntermediateField.topEquiv.isAlgebraic_iff.mp halg
-  exact trdeg_eq_one_iff_of_isAlgebraic_base.mpr hF.trdeg_eq_one_of_isAlgebraic
+  rw [trdeg_eq_of_isAlgebraic_base (R := k)]
+  exact hF.trdeg_eq_one_of_isAlgebraic
 
 end TauCeti

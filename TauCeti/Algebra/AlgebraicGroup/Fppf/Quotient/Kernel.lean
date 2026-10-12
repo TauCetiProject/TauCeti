@@ -39,7 +39,9 @@ morphism of fppf points induced by `f`.
   kernel to the fppf points of the target.
 * `TauCeti.CommHopfAlgCat.fppfQuotientProjection_comp_kernelFppfQuotientHom`: the comparison
   carries the quotient projection to the morphism `pointsFppfGroupObjectMap f` induced by `f`.
-* `TauCeti.CommHopfAlgCat.isIso_kernelFppfQuotientHom`: the comparison is an isomorphism when
+* `TauCeti.CommHopfAlgCat.isIso_kernelFppfQuotientHom_of_exists_lift`: the comparison is an
+  isomorphism when points of `Spec H` lift to `Spec K` fppf-locally.
+* `TauCeti.CommHopfAlgCat.isIso_kernelFppfQuotientHom`: in particular, it is an isomorphism when
   `f` is faithfully flat and of finite presentation.
 * `TauCeti.CommHopfAlgCat.kernelFppfQuotientIso`: **the fppf first isomorphism theorem**.
 
@@ -160,12 +162,17 @@ private theorem exists_faithfullyFlat_lift (f : H ⟶ K)
   · exact RingHom.finitePresentation_algebraMap.2 inferInstance
   · exact AlgHom.ext hsq
 
-/-- If `f` is faithfully flat and of finite presentation, the comparison from the fppf quotient
-of `Spec K` by the kernel of `f` to the fppf points of `Spec H` is an isomorphism of group objects
-in fppf sheaves. -/
-theorem isIso_kernelFppfQuotientHom (f : H ⟶ K)
-    (hflat : f.hom.toAlgHom.toRingHom.FaithfullyFlat)
-    (hfp : f.hom.toAlgHom.toRingHom.FinitePresentation) :
+/-- If every point of `Spec H` lifts to a point of `Spec K` after a faithfully flat, finitely
+presented extension of its value algebra, the comparison from the fppf quotient of `Spec K` by the
+kernel of `f` to the fppf points of `Spec H` is an isomorphism of group objects in fppf sheaves.
+
+The hypothesis says that the homomorphism `Spec K ⟶ Spec H` is fppf-locally surjective on points;
+it holds when `f` is faithfully flat and of finite presentation (`isIso_kernelFppfQuotientHom`),
+but also, for example, when points lift only Zariski-locally. -/
+theorem isIso_kernelFppfQuotientHom_of_exists_lift (f : H ⟶ K)
+    (hlift : ∀ (A : CommAlgCat.{u} R) (y : H →ₐ[R] A), ∃ (B : CommAlgCat.{u} R) (φ : A ⟶ B)
+      (z : K →ₐ[R] B), φ.hom.toRingHom.FaithfullyFlat ∧ φ.hom.toRingHom.FinitePresentation ∧
+        z.comp f.hom.toAlgHom = φ.hom.comp y) :
     IsIso (kernelFppfQuotientHom f) := by
   let J := CommAlgCat.fppfTopology R
   let F := presheafToSheaf J (Type (u + 1))
@@ -183,7 +190,7 @@ theorem isIso_kernelFppfQuotientHom (f : H ⟶ K)
   have hsurj : Presheaf.IsLocallySurjective J β := by
     constructor
     intro U ⟨s⟩
-    obtain ⟨B, φ, z, hφflat, hφfp, hz⟩ := exists_faithfullyFlat_lift f hflat hfp s.ofConv
+    obtain ⟨B, φ, z, hφflat, hφfp, hz⟩ := hlift _ s.ofConv
     refine J.superset_covering ?_
       (CommAlgCat.generate_singleton_op_mem_fppfTopology φ hφflat hφfp)
     rw [Sieve.generate_le_iff]
@@ -215,6 +222,15 @@ theorem isIso_kernelFppfQuotientHom (f : H ⟶ K)
   have : IsIso (eqToHom (fppfQuotientSheaf_def K _ _) ≫
       F.mapGrp.map (kernelPointwiseQuotientPresheafGrpHom f)) := inferInstance
   exact this
+
+/-- If `f` is faithfully flat and of finite presentation, the comparison from the fppf quotient
+of `Spec K` by the kernel of `f` to the fppf points of `Spec H` is an isomorphism of group objects
+in fppf sheaves. -/
+theorem isIso_kernelFppfQuotientHom (f : H ⟶ K)
+    (hflat : f.hom.toAlgHom.toRingHom.FaithfullyFlat)
+    (hfp : f.hom.toAlgHom.toRingHom.FinitePresentation) :
+    IsIso (kernelFppfQuotientHom f) :=
+  isIso_kernelFppfQuotientHom_of_exists_lift f fun _ ↦ exists_faithfullyFlat_lift f hflat hfp
 
 /-- **The fppf first isomorphism theorem for affine groups.** If `f : H ⟶ K` is faithfully flat
 and of finite presentation, then the fppf quotient of `Spec K` by the kernel of the represented
