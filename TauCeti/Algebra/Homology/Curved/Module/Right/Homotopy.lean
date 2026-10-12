@@ -61,10 +61,17 @@ theorem closedHom_closedHomotopyBoundary_apply
   exact dgRightModuleCochains.curvedDifferential_neg_one_apply k x
 
 /-- The class of a closed homotopy boundary is zero. -/
-theorem quotient_map_closedHomotopyBoundary
+-- Keep zero at the quotient-functor object types so `simp` closes functor-map goals as well.
+@[simp]
+theorem homOf_closedHomotopyBoundary
     (k : dgRightModuleCochains (R := R) (A := A) (ℳ := M.grading) (ℳN := N.grading) (-1)) :
-    (dgClosedToHomotopy R).map (closedHomotopyBoundary k) = 0 := by
-  rw [dgClosedToHomotopy_map_eq_zero_iff, mem_dgBoundaries_iff]
+    DGHomotopyCategory.homOf R (dgClosedHom R (closedHomotopyBoundary k))
+      (dgClosedHom_mem_dgCycles R (closedHomotopyBoundary k)) =
+        (0 : (dgClosedToHomotopy R).obj
+          (ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) M) ⟶
+            (dgClosedToHomotopy R).obj
+              (ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) N)) := by
+  rw [DGHomotopyCategory.homOf_eq_zero_iff, mem_dgBoundaries_iff]
   refine ⟨k, fun x ↦ ?_⟩
   rw [← closedHom_eq]
   exact closedHom_closedHomotopyBoundary_apply k x
@@ -80,6 +87,9 @@ theorem quotient_map_eq_iff_exists_homotopy
           N.differential (k.1 x) + k.1 (M.differential x) := by
   rw [dgClosedToHomotopy_map_eq_iff, mem_dgBoundaries_iff]
   simp only [map_sub, ForgetEnrichment.to_of]
+  -- The cochains are subtypes of right-linear maps, with subtraction inherited pointwise.
+  -- `LinearMap.sub_apply` applies only after this projection reduces to subtraction of maps;
+  -- the closed-map computation lemmas then identify the two underlying maps.
   change (∃ k : dgRightModuleCochains (R := R) (A := A)
       (ℳ := M.grading) (ℳN := N.grading) (-1), ∀ x : M,
       ((dgHomLinearEquivCochains M N 0 (dgClosedHom R f)).1 -
