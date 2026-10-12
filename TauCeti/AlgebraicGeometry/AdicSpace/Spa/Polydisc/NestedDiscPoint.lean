@@ -34,9 +34,9 @@ of multiplicative ultrametric norms is again one, so `η` is a valuation with va
 bounded by the Gauss norm of the whole disc, which makes it continuous and at most one on
 power-bounded elements.
 
-The point `η` lies in a disc `D(b, |d|)` exactly when `inf_n max(‖cₙ‖, ‖aₙ - b‖) ≤ ‖d‖`; in
-particular it lies in every `D(aₙ, |cₙ|)`. This determines how it relates to the other points of
-the disc.
+The point `η` lies in a disc `D(b, |d|)` exactly when `d ≠ 0` and
+`inf_n max(‖cₙ‖, ‖aₙ - b‖) ≤ ‖d‖`; in particular it lies in every `D(aₙ, |cₙ|)`. This determines
+how it relates to the other points of the disc.
 
 * If the discs have a common point `b ∈ K` and their radii have a positive infimum `ρ`, then `η` is
   the point `η_{b,ρ}` of the disc `D(b, ρ)`, and `η` is a point `η_{b,s}` in no other case.
@@ -57,9 +57,9 @@ disc into Wedhorn's five types.
 
 * `TauCeti.ValuationSpectrum.tendsto_nestedDiscValuation`: the Gauss norms of `f` on the discs
   tend to `η(f)`.
-* `TauCeti.ValuationSpectrum.nestedDiscPoint_mem_closedSubdisc_iff`: the discs `D(b, |d|)`
-  containing `η`; in particular `TauCeti.ValuationSpectrum.nestedDiscPoint_mem_closedSubdisc`,
-  `η` lies in every `D(aₙ, |cₙ|)`.
+* `TauCeti.ValuationSpectrum.nestedDiscPoint_mem_closedSubdisc_iff`: `η` lies in `D(b, |d|)`
+  exactly when `d ≠ 0` and `inf_n max(‖cₙ‖, ‖aₙ - b‖) ≤ ‖d‖`; in particular
+  `TauCeti.ValuationSpectrum.nestedDiscPoint_mem_closedSubdisc`, `η` lies in every `D(aₙ, |cₙ|)`.
 * `TauCeti.ValuationSpectrum.nestedDiscPoint_eq_discPoint_iff`: `η = η_{b,s}` exactly when `b`
   lies in every disc and `s` is the infimum of the radii.
 * `TauCeti.ValuationSpectrum.nestedDiscPoint_ne_classicalPoint`,
