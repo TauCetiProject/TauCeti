@@ -150,7 +150,7 @@ private noncomputable def baseChangePointsHom :
     simp [Hom.one_def]
   map_mul' x y := by
     ext1
-    simp only [Hom.mul_def, Over.comp_left, Over.lift_left, mul_projModel_left, Category.assoc,
+    simp only [Hom.mul_def, Over.comp_left, Over.lift_left, mul_projModelOver_left, Category.assoc,
       additionMorphism_projModelBaseChange, Over.homMk_left]
     -- the base change morphism carries the pair `(x, y)` to the pair of the base changed points
     rw [← Category.assoc]
