@@ -198,7 +198,6 @@ lemma matrixBilinearFormLinear_apply (A : Matrix n n ℝ) :
 
 /-- A coefficient matrix is recovered from its bilinear form: its entries are the values of the
 form on the standard basis. -/
-@[simp]
 lemma matrixBilinearForm_single_single [DecidableEq n] (A : Matrix n n ℝ) (i j : n) :
     matrixBilinearForm A (EuclideanSpace.single i 1) (EuclideanSpace.single j 1) = A i j := by
   simp [Matrix.mulVec, dotProduct]
