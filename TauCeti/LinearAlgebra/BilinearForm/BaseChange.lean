@@ -193,6 +193,18 @@ theorem bilinForm_unique (h : IsBaseChange A f) (B : LinearMap.BilinForm R M)
   refine h.algHom_ext _ _ fun x ↦ h.algHom_ext _ _ fun y ↦ ?_
   simp [hC x y]
 
+/-- Scalar extension preserves the zero bilinear form. -/
+@[simp]
+theorem bilinForm_zero (h : IsBaseChange A f) :
+    h.bilinForm (0 : LinearMap.BilinForm R M) = 0 :=
+  (h.bilinForm_unique _ _ fun x y ↦ by simp).symm
+
+/-- Scalar extension commutes with addition of bilinear forms. -/
+@[simp]
+theorem bilinForm_add (h : IsBaseChange A f) (B C : LinearMap.BilinForm R M) :
+    h.bilinForm (B + C) = h.bilinForm B + h.bilinForm C :=
+  (h.bilinForm_unique _ _ fun x y ↦ by simp).symm
+
 /-- Scalar extension commutes with flipping a bilinear form. -/
 @[simp]
 theorem bilinForm_flip (h : IsBaseChange A f) (B : LinearMap.BilinForm R M) :
@@ -217,7 +229,9 @@ theorem bilinForm_apply_symm (h : IsBaseChange A f) (B : LinearMap.BilinForm R M
   simpa only [LinearMap.BilinForm.flip_apply, LinearMap.smul_apply, smul_eq_mul] using
     congr($(hforms) x y)
 
-/-- Scalar extension commutes with pullback along linear maps, lifted to the base changes. -/
+/-- Scalar extension commutes with pullback along linear maps, lifted to the base changes.
+Supply the target witness `h` when using this as a simp rule, as it is not determined by the
+left-hand side. -/
 theorem bilinForm_comp {M' N' : Type*} [AddCommMonoid M'] [Module R M']
     [AddCommMonoid N'] [Module R N'] [Module A N'] [IsScalarTower R A N']
     {f' : M' →ₗ[R] N'} (h' : IsBaseChange A f') (h : IsBaseChange A f)
