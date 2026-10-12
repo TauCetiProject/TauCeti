@@ -64,7 +64,7 @@ theorem isAffinoid_iff_exists_complete (X : PreAdicSpace.{u}) : isAffinoid X ↔
     have hrange : Set.range (Opens.inclusion' (⊤ : Opens M)) =
         Set.range (spaComapLocHom P S.plus {1} 1 B hden) := by
       rw [Opens.set_range_inclusion', hr]
-      rfl
+      exact Opens.coe_top
     let e' := M.restrictTopIso.symm ≪≫
       M.restrictIsoOfRangeEq (⊤ : Opens M).isOpenEmbedding hj hrange
     exact ⟨UniformSpace.Completion B, inferInstance, inferInstance, inferInstance,
