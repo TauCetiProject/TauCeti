@@ -104,7 +104,6 @@ def genX : FunctionField k := algebraMap (RatFunc k) (FunctionField k) RatFunc.X
 theorem genX_def : genX k = algebraMap (RatFunc k) (FunctionField k) RatFunc.X := (rfl)
 
 /-- The coordinate `y` satisfies the defining equation. -/
-@[simp]
 theorem genY_sq : genY k ^ 2 =
     algebraMap (RatFunc k) (FunctionField k) (algebraMap k[X] (RatFunc k) (X ^ 5 - C 1)) := by
   have hroot := root_X_pow_sub_C_pow 2 (algebraMap k[X] (RatFunc k) (X ^ 5 - C 1))
@@ -210,6 +209,7 @@ private theorem algebraMap_eq_aeval_genX (p : k[X]) :
   rw [genX_def, aeval_algebraMap_apply, RatFunc.aeval_X_left_eq_algebraMap]
 
 /-- **The affine equation in the coordinates `x` and `y`**: `y² = x⁵ - 1`. -/
+@[simp]
 theorem genY_sq_eq : genY k ^ 2 = genX k ^ 5 - 1 := by
   rw [genY_sq, algebraMap_eq_aeval_genX]
   simp
@@ -232,7 +232,7 @@ private theorem ramificationIdx_adjoin_genX (P : Place k (FunctionField k)) :
     Place.ramificationIdx k⟮genX k⟯ P = Place.ramificationIdx (RatFunc k) P :=
   (Place.ramificationIdx_eq_of_ringEquiv (F := k⟮genX k⟯) (P' := P)
     (σ := (RatFunc.algEquivOfTranscendental _ (transcendental_genX k)).toRingEquiv)
-    (coe_algEquivOfTranscendental_algebraMap_X_apply (transcendental_genX k))).symm
+    coe_algEquivOfTranscendental_algebraMap_X_apply).symm
 
 variable {k}
 

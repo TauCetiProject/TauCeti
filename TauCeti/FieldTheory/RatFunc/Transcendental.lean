@@ -134,10 +134,13 @@ theorem isSeparable_ratFuncAlgebraOfTranscendental (hx : Transcendental k x)
 /-- **Every `k(X)`-algebra structure is induced by the image of `X`**: for a `k(X)`-algebra `F`
 over `k`, with `x` the image of `X`, the structure map is the identification `k(X) ≃ k⟮x⟯`
 followed by the inclusion of `k⟮x⟯` in `F`. -/
+@[simp]
 theorem coe_algEquivOfTranscendental_algebraMap_X_apply [Algebra (RatFunc k) F]
-    [IsScalarTower k (RatFunc k) F] (hx : Transcendental k (algebraMap (RatFunc k) F RatFunc.X))
-    (r : RatFunc k) :
-    ((RatFunc.algEquivOfTranscendental _ hx r : k⟮algebraMap (RatFunc k) F RatFunc.X⟯) : F) =
+    [IsScalarTower k (RatFunc k) F] (r : RatFunc k) :
+    ((RatFunc.algEquivOfTranscendental _
+      ((transcendental_algebraMap_iff
+        (FaithfulSMul.algebraMap_injective (RatFunc k) F)).mpr RatFunc.transcendental_X) r :
+        k⟮algebraMap (RatFunc k) F RatFunc.X⟯) : F) =
       algebraMap (RatFunc k) F r := by
   -- Both maps send a polynomial `p` to `p(x)`, hence agree on fractions.
   have hp (p : k[X]) : algebraMap (RatFunc k) F (algebraMap k[X] (RatFunc k) p) =
@@ -155,7 +158,7 @@ theorem finrank_adjoin_algebraMap_X [Algebra (RatFunc k) F] [IsScalarTower k (Ra
     (FaithfulSMul.algebraMap_injective (RatFunc k) F)).mpr RatFunc.transcendental_X
   refine (Algebra.finrank_eq_of_equiv_equiv (RatFunc.algEquivOfTranscendental _ hx).toRingEquiv
     (RingEquiv.refl F) (RingHom.ext fun r ↦ ?_)).symm
-  exact coe_algEquivOfTranscendental_algebraMap_X_apply hx r
+  exact coe_algEquivOfTranscendental_algebraMap_X_apply r
 
 /-- The `k`-algebra map `k⟮x⟯ → E` sending a transcendental `x` to a transcendental `z`: both
 `k⟮x⟯` and `k⟮z⟯` are identified with the rational function field `k(X)`. -/

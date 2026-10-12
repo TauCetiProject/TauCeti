@@ -132,7 +132,7 @@ theorem exists_ord_sub_pos_of_sq_eq (h2 : (2 : k) ≠ 0) {f : k[X]} (hf : Square
     · intro hSpos
       omega
   -- The involution `y ↦ -y` of `F / k(x)` exchanges `y - b` and `-(y + b)`.
-  obtain ⟨σ, hσ⟩ := AlgEquiv.exists_apply_eq_neg_of_sq_eq
+  obtain ⟨σ, hσ⟩ := TauCeti.exists_algEquiv_apply_eq_neg_of_sq_eq
     (finrank_ratFunc_eq_two_of_sq_eq hf hdeg hgen hy) hgen hy
   have hσsymm : σ.symm y = -y := by rw [AlgEquiv.symm_apply_eq, map_neg, hσ, neg_neg]
   have hsmul : ∀ P : Place k F, (σ • P).ord D = P.ord S := fun P ↦ by

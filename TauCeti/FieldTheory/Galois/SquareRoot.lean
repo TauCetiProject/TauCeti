@@ -33,7 +33,7 @@ generating a separable quadratic extension is negated by an automorphism.
 ## Main results
 
 * `AlgEquiv.apply_eq_or_eq_neg_of_sq_eq`: `σ x = ± x` when `x ^ 2` comes from the base.
-* `AlgEquiv.exists_apply_eq_neg_of_sq_eq`: some automorphism negates a square root `y` generating
+* `TauCeti.exists_algEquiv_apply_eq_neg_of_sq_eq`: some automorphism negates a square root `y` generating
   a separable quadratic extension `K⟮y⟯ / K`.
 * `Subgroup.card_le_two_pow_of_forall_apply_eq_self`: a subgroup in which only the identity fixes
   each of `n` square roots has at most `2ⁿ` elements.
@@ -56,11 +56,15 @@ theorem apply_eq_or_eq_neg_of_sq_eq (σ : L ≃ₐ[F] L) {x : L} {c : R}
   sq_eq_sq_iff_eq_or_eq_neg.mp (by
     rw [← map_pow, hx, IsScalarTower.algebraMap_apply R F L, AlgEquiv.commutes])
 
+end AlgEquiv
+
+namespace TauCeti
+
 open scoped IntermediateField in
 /-- **A square root generating a separable quadratic extension is negated by an automorphism**:
 if `L = K⟮y⟯` is a separable extension of degree two and `y ^ 2 ∈ K`, then some `K`-automorphism
 of `L` sends `y` to `-y`. -/
-theorem exists_apply_eq_neg_of_sq_eq {K L : Type*} [Field K] [Field L] [Algebra K L]
+theorem exists_algEquiv_apply_eq_neg_of_sq_eq {K L : Type*} [Field K] [Field L] [Algebra K L]
     (hL : Module.finrank K L = 2) [Algebra.IsSeparable K L] {y : L} (hgen : K⟮y⟯ = ⊤) {c : K}
     (hy : y ^ 2 = algebraMap K L c) : ∃ σ : L ≃ₐ[K] L, σ y = -y := by
   have : Algebra.IsQuadraticExtension K L := ⟨hL⟩
@@ -71,7 +75,7 @@ theorem exists_apply_eq_neg_of_sq_eq {K L : Type*} [Field K] [Field L] [Algebra 
   obtain rfl := Set.mem_singleton_iff.mp hx
   exact h
 
-end AlgEquiv
+end TauCeti
 
 namespace Subgroup
 
