@@ -54,8 +54,8 @@ full set of sections of a finite locally free subgroup scheme.
   ideal.
 
 In the following results, `B` is finite and flat over `A`; this includes the case that
-`Spec B → Spec A` is finite locally free. They are proved by localizing at the maximal ideals of
-`A`, where `B` is free.
+`Spec B → Spec A` is finite locally free. Together with Zariski locality, they let full sets of
+sections be checked locally on `Spec A` and transported along changes of base.
 
 * `TauCeti.IsFullSetOfSections.norm_eq`: the defining identity holds on every base change
   `T ⊗[A] B` which is free over `T`, for test algebras `T` in every universe.
@@ -208,8 +208,8 @@ For `B` finite over `A`, being a full set of sections is local on `Spec A`: it c
 the localizations at a family of elements generating the unit ideal
 (`IsFullSetOfSections.of_localizationSpan`). When `B` is moreover flat over `A`, as it is when
 `Spec B → Spec A` is finite locally free, full sets of sections are stable under arbitrary base
-change and descend along injective ring maps. These proofs reduce to the free case by localizing
-at the maximal ideals of `A`, where `B` becomes free. -/
+change and descend along injective ring maps, so that full sets of sections can be checked
+locally and transported to any base. -/
 
 section FiniteFlat
 
