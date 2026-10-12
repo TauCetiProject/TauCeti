@@ -188,12 +188,24 @@ theorem compStarAlgHom'_comp (g : X → Y) (hg : Measurable g) (h : Y → Z) (hh
     compStarAlgHom' (h ∘ g) (hh.comp hg) = (compStarAlgHom' g hg).comp (compStarAlgHom' h hh) :=
   (rfl)
 
-/-- Restrict a symbol to a measurable set and extend it by zero. -/
-noncomputable def indicator (s : Set X) (hs : MeasurableSet s)
-    (f : BoundedBorelFunction X) : BoundedBorelFunction X :=
-  ⟨s.indicator f, f.measurable.indicator hs, by
+/-- Restriction to a measurable set and extension by zero, as a non-unital star algebra
+homomorphism. It need not preserve the unit because the unit restricts to the set indicator. -/
+noncomputable def indicator (s : Set X) (hs : MeasurableSet s) :
+    BoundedBorelFunction X →⋆ₙₐ[ℂ] BoundedBorelFunction X where
+  toFun f := ⟨s.indicator f, f.measurable.indicator hs, by
     obtain ⟨M, hM, hfM⟩ := f.exists_bound
     exact ⟨M, hM, fun x ↦ (norm_indicator_le_norm_self f x).trans (hfM x)⟩⟩
+  map_zero' := by ext x; exact congrFun (Set.indicator_zero ℂ s) x
+  map_add' f g := by ext x; exact congrFun (Set.indicator_add s f g) x
+  map_mul' f g := by ext x; exact congrFun (Set.indicator_mul s f g) x
+  map_smul' c f := by ext x; exact Set.indicator_const_smul_apply s c f x
+  map_star' f := by
+    ext x
+    exact (map_indicator (starAddEquiv : ℂ ≃+ ℂ) s f x).symm
+
+/-- Restriction coerces to the usual set indicator function. -/
+@[simp] theorem coe_indicator (s : Set X) (hs : MeasurableSet s)
+    (f : BoundedBorelFunction X) : ⇑(indicator s hs f) = s.indicator f := (rfl)
 
 /-- Indicator evaluation is the usual set indicator. -/
 @[simp] theorem indicator_apply (s : Set X) (hs : MeasurableSet s)
