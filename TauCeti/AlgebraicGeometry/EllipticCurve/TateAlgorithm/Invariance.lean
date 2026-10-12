@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.TateAlgorithm.Terminal
+import TauCeti.Algebra.Ring.Divisibility
 import TauCeti.AlgebraicGeometry.EllipticCurve.IntegralModel
 import TauCeti.AlgebraicGeometry.EllipticCurve.TateAlgorithm.Discriminant
 import TauCeti.AlgebraicGeometry.EllipticCurve.MinimalModel.Basic
@@ -192,11 +193,6 @@ theorem isTateTerminal_iff_of_associated {W : WeierstrassCurve R} {ϖ' : R} (hϖ
       isTateTerminal_IStar_add_one, isTateTerminal_IVStar, isTateTerminal_IIIStar,
       isTateTerminal_IIStar, isTateOddStage_iff, isTateEvenStage_iff, h, h₁]
 
-/-- Divisibility by `a` is unchanged by adding a multiple of `a` and multiplying by a unit. -/
-private theorem dvd_iff_of_eq_mul_add {a x y v : R} (hv : IsUnit v) (z : R)
-    (h : y = v * (x + a * z)) : a ∣ y ↔ a ∣ x := by
-  rw [h, hv.dvd_mul_left, dvd_add_left (dvd_mul_right a z)]
-
 variable {W : WeierstrassCurve R}
 
 /-! ### The index of `Iₙ*`
@@ -270,8 +266,7 @@ private theorem StarStage.succ {n : ℕ} (h : StarStage ϖ (n + 1) W) :
   obtain ⟨k, rfl | rfl⟩ := n.even_or_odd'
   · obtain ⟨h, ht⟩ := (starStage_two_mul_add_one.1 h).isTateOddStage_and_pow_dvd_b₆
     exact ⟨starStage_two_mul.2 h, starTest_two_mul.2 ht⟩
-  · rw [show 2 * k + 1 + 1 = 2 * (k + 1) by ring, starStage_two_mul] at h
-    obtain ⟨h, ht⟩ := h.isTateEvenStage_and_pow_dvd_discrim
+  · obtain ⟨h, ht⟩ := (starStage_two_mul (k := k + 1)).1 h |>.isTateEvenStage_and_pow_dvd_discrim
     exact ⟨starStage_two_mul_add_one.2 h, starTest_two_mul_add_one.2 ht⟩
 
 /-- Stage `m` implies every earlier stage. -/
@@ -287,7 +282,7 @@ private theorem pow_dvd_b₆_smul_iff {k : ℕ} {C : VariableChange R} (h : IsTa
     (hr : ϖ ^ (k + 2) ∣ C.r) : ϖ ^ (2 * k + 5) ∣ (C • W).b₆ ↔ ϖ ^ (2 * k + 5) ∣ W.b₆ := by
   obtain ⟨⟨x₁, hx₁⟩, ⟨x₂, hx₂⟩, -, ⟨x₃, hx₃⟩, ⟨x₄, hx₄⟩, -⟩ := isTateOddStage_iff.1 h
   obtain ⟨r₁, hr₁⟩ := hr
-  refine dvd_iff_of_eq_mul_add (C.u⁻¹.isUnit.pow 6) (2 * r₁ * (x₁ * x₃ + 2 * x₄) +
+  refine (C.u⁻¹.isUnit.pow 6).dvd_iff_of_eq_mul_add (2 * r₁ * (x₁ * x₃ + 2 * x₄) +
     r₁ ^ 2 * (ϖ * x₁ ^ 2 + 4 * x₂) + 4 * ϖ ^ (k + 1) * r₁ ^ 3) ?_
   rw [variableChange_b₆, b₄, b₂, hr₁, hx₁, hx₂, hx₃, hx₄]
   ring
@@ -309,7 +304,7 @@ private theorem pow_dvd_discrim_smul_iff {k : ℕ} {C : VariableChange R}
   obtain ⟨e₄, he₄⟩ : ∃ e, e = -(σ * x₃) - (τ + ρ * σ) * x₁ + 3 * ϖ ^ k * ρ ^ 2 - 2 * σ * τ :=
     ⟨_, rfl⟩
   obtain ⟨e₆, he₆⟩ : ∃ e, e = ϖ ^ k * ρ ^ 3 - τ * x₃ - τ ^ 2 - ρ * τ * x₁ := ⟨_, rfl⟩
-  refine dvd_iff_of_eq_mul_add (C.u⁻¹.isUnit.pow 8) (2 * (x₄ + 2 * ρ * x₂) * e₄ + ϖ * e₄ ^ 2 -
+  refine (C.u⁻¹.isUnit.pow 8).dvd_iff_of_eq_mul_add (2 * (x₄ + 2 * ρ * x₂) * e₄ + ϖ * e₄ ^ 2 -
     4 * x₂ * e₆ - 4 * e₂ * (x₆ + ρ * x₄ + ρ ^ 2 * x₂) - 4 * ϖ * e₂ * e₆) ?_
   rw [discrim, discrim, variableChange_a₂, variableChange_a₄, variableChange_a₆, hx₁, hx₂, hx₃, hx₄,
     hx₆, hρ, hσ, hτ, he₂, he₄, he₆]
@@ -600,11 +595,11 @@ private theorem tateTest_smul (hϖ : Irreducible ϖ) (C : VariableChange R) {i :
     exact dvd_mul_of_dvd_right ht _
   | 1, _, _, ht =>
     obtain ⟨⟨r₁, hr₁⟩, -⟩ := hrt le_rfl
-    exact (dvd_iff_of_eq_mul_add (hv 2) (12 * r₁) (by rw [variableChange_b₂, hr₁]; ring)).2 ht
+    exact ((hv 2).dvd_iff_of_eq_mul_add (12 * r₁) (by rw [variableChange_b₂, hr₁]; ring)).2 ht
   | 2, h, _, ht =>
     obtain ⟨⟨r₁, hr₁⟩, ⟨t₁, ht₁⟩⟩ := hrt (by norm_num)
     obtain ⟨⟨x₃, hx₃⟩, ⟨x₄, hx₄⟩, -⟩ := h.2.1 (by norm_num)
-    refine (dvd_iff_of_eq_mul_add (hv 6) (r₁ * x₄ + r₁ ^ 2 * W.a₂ + ϖ * r₁ ^ 3 - t₁ * x₃ -
+    refine ((hv 6).dvd_iff_of_eq_mul_add (r₁ * x₄ + r₁ ^ 2 * W.a₂ + ϖ * r₁ ^ 3 - t₁ * x₃ -
       t₁ ^ 2 - r₁ * t₁ * W.a₁) ?_).2 ht
     rw [variableChange_a₆, hr₁, ht₁, hx₃, hx₄]
     ring
@@ -613,7 +608,7 @@ private theorem tateTest_smul (hϖ : Irreducible ϖ) (C : VariableChange R) {i :
     obtain ⟨⟨x₃, hx₃⟩, ⟨x₄, hx₄⟩, -⟩ := h.2.1 (by norm_num)
     obtain ⟨β₂, hβ₂⟩ : ϖ ∣ W.b₂ := h.1 1 (by norm_num)
     obtain ⟨y₆, hy₆⟩ : ϖ ^ 2 ∣ W.a₆ := h.1 2 (by norm_num)
-    refine (dvd_iff_of_eq_mul_add (hv 8) (3 * r₁ * (x₃ ^ 2 + 4 * y₆) +
+    refine ((hv 8).dvd_iff_of_eq_mul_add (3 * r₁ * (x₃ ^ 2 + 4 * y₆) +
       3 * r₁ ^ 2 * (W.a₁ * x₃ + 2 * x₄) + ϖ * r₁ ^ 3 * β₂ + 3 * ϖ * r₁ ^ 4) ?_).2 ht
     rw [variableChange_b₈, hr₁, hβ₂, b₆, b₄, hx₃, hx₄, hy₆]
     ring
@@ -630,7 +625,7 @@ private theorem tateTest_smul (hϖ : Irreducible ϖ) (C : VariableChange R) {i :
         ⟨β₂ * (x₃ ^ 2 + 4 * y₆) - 4 * β₈, by
           linear_combination W.b_relation + W.b₂ * hb₆ + ϖ ^ 2 * (x₃ ^ 2 + 4 * y₆) * hβ₂ -
             4 * hβ₈⟩
-    refine (dvd_iff_of_eq_mul_add (hv 6) (2 * r₁ * β₄ + r₁ ^ 2 * β₂ + 4 * r₁ ^ 3) ?_).2 ht
+    refine ((hv 6).dvd_iff_of_eq_mul_add (2 * r₁ * β₄ + r₁ ^ 2 * β₂ + 4 * r₁ ^ 3) ?_).2 ht
     rw [variableChange_b₆, hr₁, hβ₂, hβ₄]
     ring
   | 5, _, _, ht =>
@@ -655,7 +650,7 @@ private theorem tateTest_smul (hϖ : Irreducible ϖ) (C : VariableChange R) {i :
     obtain ⟨r₂, hr₂⟩ := hr (by norm_num)
     obtain ⟨⟨x₁, hx₁⟩, -, ⟨x₃, hx₃⟩, -, -⟩ := h.2.2.1 (by norm_num)
     obtain ⟨⟨y₂, hy₂⟩, ⟨y₄, hy₄⟩, -⟩ := h.2.2.2.1 le_rfl
-    refine (dvd_iff_of_eq_mul_add (hv 6) (2 * r₂ * (x₁ * x₃ + 2 * y₄) +
+    refine ((hv 6).dvd_iff_of_eq_mul_add (2 * r₂ * (x₁ * x₃ + 2 * y₄) +
       ϖ * r₂ ^ 2 * (x₁ ^ 2 + 4 * y₂) + 4 * ϖ * r₂ ^ 3) ?_).2 ht
     rw [variableChange_b₆, hr₂, b₄, b₂, hx₁, hx₃, hy₂, hy₄]
     ring
@@ -675,7 +670,7 @@ private theorem tateTest_smul (hϖ : Irreducible ϖ) (C : VariableChange R) {i :
       rw [hr₂, hx₁, hy₂, hy₄, hz₃, hz₆, ht₁] at he₆
       rw [ht₁]
       linear_combination -he₆
-    refine (dvd_iff_of_eq_mul_add (hv 4) (-(s₁ * z₃) + 2 * r₂ * y₂ - (t₃ + r₂ * s₁) * x₁ +
+    refine ((hv 4).dvd_iff_of_eq_mul_add (-(s₁ * z₃) + 2 * r₂ * y₂ - (t₃ + r₂ * s₁) * x₁ +
       3 * r₂ ^ 2 - 2 * s₁ * t₃) ?_).2 ht
     rw [variableChange_a₄, hr₂, hs₁, ht₃, hx₁, hy₂, hz₃]
     ring
@@ -841,7 +836,8 @@ theorem IsTateTerminal.eq_of_smul (hϖ : Irreducible ϖ) {C : VariableChange R}
     have e := h'.addVal_Δ_eq hϖ
     rw [variableChange_Δ, addVal_mul, hu, zero_add, h.addVal_Δ_eq hϖ] at e
     have : m + 1 = n + 1 := by exact_mod_cast e.symm
-    rw [show m = n by omega]
+    obtain rfl : m = n := by omega
+    rfl
   · -- At `Iₙ*` the index is the stage at which the subprocedure of Step 7 stops.
     have h₀ : (C⁻¹ • C • W).IsTateTerminal ϖ (.IStar (n + 1)) := by rwa [inv_smul_smul]
     rw [le_antisymm (h.le_of_IStar_of_smul hϖ h') (h'.le_of_IStar_of_smul hϖ h₀)]
