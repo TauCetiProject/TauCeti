@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.Norm.FullSetOfSections.Basic
-import TauCeti.RingTheory.AdjoinRoot.Basic
+public import TauCeti.RingTheory.AdjoinRoot.Basic
 import TauCeti.RingTheory.Polynomial.Resultant.AdjoinRoot
 
 /-!
@@ -38,6 +38,8 @@ Conversely the norm of `X - θ` over `A[X]`, for `θ` the class of `X`, recovers
 
 * `TauCeti.isFullSetOfSections_iff_eq_prod_X_sub_C`: for monic `g`, the sections `sᵢ` of
   `Spec A[X]/(g)` form a full set of sections if and only if `g = ∏ i, (X - sᵢ(X))`.
+* `AlgHom.sectionBaseChange_algebraTensorAlgEquiv_symm_mk`: the base change of a section `s` to
+  `T`, read on `T[X]/(g)`, evaluates a polynomial at the image of `s(X)`.
 
 ## References
 
@@ -49,18 +51,24 @@ public section
 
 open Polynomial AdjoinRoot TensorProduct
 
-namespace TauCeti
-
 variable {A : Type*} [CommRing A] {g : A[X]}
 
--- The base change of a section `s` of `A[X]/(g)` to `T`, read through
--- `T ⊗[A] A[X]/(g) ≅ T[X]/(g)`, evaluates a polynomial at the image of the root `s(X)`.
-private theorem sectionBaseChange_algebraTensorAlgEquiv_symm_mk (s : AdjoinRoot g →ₐ[A] A)
+namespace AlgHom
+
+/-- The base change of a section `s` of `A[X]/(g)` to `T`, read through
+`T ⊗[A] A[X]/(g) ≅ T[X]/(g)` (`AdjoinRoot.algebraTensorAlgEquiv`), evaluates a polynomial at the
+image of the root `s(X)`. -/
+@[simp]
+theorem sectionBaseChange_algebraTensorAlgEquiv_symm_mk (s : AdjoinRoot g →ₐ[A] A)
     (T : Type*) [CommRing T] [Algebra A T] (p : T[X]) :
-    s.sectionBaseChange T ((algebraTensorAlgEquiv T g).symm (mk _ p)) =
+    s.sectionBaseChange T ((algebraTensorAlgEquiv T g).symm (AdjoinRoot.mk _ p)) =
       p.eval (algebraMap A T (s (root g))) := by
   exact (algHom_mk ((s.sectionBaseChange T).comp (algebraTensorAlgEquiv T g).symm.toAlgHom)
     p).trans (by simp [AlgHom.sectionBaseChange_tmul])
+
+end AlgHom
+
+namespace TauCeti
 
 /-- **Full sets of sections of `A[X]/(g)`.** For a monic `g ∈ A[X]`, a family `s` of sections of
 `Spec A[X]/(g) → Spec A` is a full set of sections if and only if `g` is the product of the linear
@@ -78,7 +86,7 @@ theorem isFullSetOfSections_iff_eq_prod_X_sub_C {ι : Type*} [Fintype ι] (hg : 
         Polynomial.algebraMap_eq, eval₂_C_X]
     rw [Algebra.norm_eq_of_algEquiv, hnorm] at hn
     refine hn.trans (Finset.prod_congr rfl fun i _ ↦ ?_)
-    rw [sectionBaseChange_algebraTensorAlgEquiv_symm_mk]
+    rw [AlgHom.sectionBaseChange_algebraTensorAlgEquiv_symm_mk]
     simp
   · -- over `T`, the mapped `g` still splits, and the norm of a class `p` is `∏ i, p(sᵢ(X))`
     have hmap : g.map (algebraMap A T) = ∏ i, (X - C (algebraMap A T (s i (root g)))) := by
@@ -88,6 +96,6 @@ theorem isFullSetOfSections_iff_eq_prod_X_sub_C {ι : Type*} [Fintype ι] (hg : 
     rw [← (algebraTensorAlgEquiv T g).symm_apply_apply f, ← hp, Algebra.norm_eq_of_algEquiv,
       norm_mk_eq_prod_eval hmap]
     exact Finset.prod_congr rfl fun i _ ↦
-      (sectionBaseChange_algebraTensorAlgEquiv_symm_mk _ _ _).symm
+      (AlgHom.sectionBaseChange_algebraTensorAlgEquiv_symm_mk _ _ _).symm
 
 end TauCeti

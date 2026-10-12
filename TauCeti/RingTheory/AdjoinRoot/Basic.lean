@@ -28,6 +28,8 @@ polynomial ring `R[X]/(X ^ n)`.
 * `AdjoinRoot.map_surjective`: the map is surjective when `f` is.
 * `AdjoinRoot.algHom_mk`: an algebra map out of `AdjoinRoot g` sends the class of `p` to the
   evaluation of `p` at the image of the root.
+* `AdjoinRoot.root_X_pow_sub_one_pow`: the class of `X` in `R[X]/(X ^ n - 1)` is an `n`th root of
+  unity.
 * `AdjoinRoot.exists_degree_lt_mk_eq`, `AdjoinRoot.mk_eq_mk_iff_of_degree_lt`: for a monic
   relator, every class is represented by a polynomial of degree less than that of the relator, and
   that representative is unique. Mathlib has division with remainder by a monic polynomial but
@@ -106,6 +108,11 @@ theorem algHom_mk {g : R[X]} {B F : Type*} [Semiring B] [Algebra R B] [FunLike F
     [AlgHomClass F R (AdjoinRoot g) B] (φ : F) (p : R[X]) :
     φ (mk g p) = aeval (φ (root g)) p := by
   rw [← aeval_eq, aeval_algHom_apply]
+
+/-- The class of `X` in `R[X]/(X ^ n - 1)` is an `n`th root of unity. -/
+@[simp]
+theorem root_X_pow_sub_one_pow (n : ℕ) : root (X ^ n - 1 : R[X]) ^ n = 1 := by
+  rw [← sub_eq_zero, ← mk_X, ← map_pow, ← map_one (mk _), ← map_sub, mk_self]
 
 /-- **Every class in `AdjoinRoot g`, for `g` monic, is represented by a polynomial of degree
 less than `deg g`.** Division with remainder by a monic polynomial supplies the representative. -/

@@ -19,7 +19,8 @@ group of `n`th roots of unity in `A`.
 
 The result is deliberately just the points calculation. The represented Hopf algebra is the
 group algebra `R[Multiplicative (ZMod n)]`; identifying it with the more classical
-coordinate ring `R[X]/(X^n - 1)` is separate quotient-polynomial infrastructure.
+coordinate ring `R[X]/(X^n - 1)` is separate quotient-polynomial infrastructure
+(`TauCeti.RootsOfUnityGroup.adjoinRootEquiv`).
 
 ## Main definitions
 

@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.Generator
-public import TauCeti.Algebra.AlgebraicGroup.RootsOfUnity.Basic
+public import TauCeti.Algebra.AlgebraicGroup.RootsOfUnity.AdjoinRoot
+import TauCeti.Algebra.Polynomial.XPowSubC
+import TauCeti.RingTheory.AdjoinRoot.Basic
 import TauCeti.RingTheory.Norm.FullSetOfSections.AdjoinRoot
 
 /-!
@@ -41,12 +43,6 @@ to `0`, minus the coefficient of `X ^ (p - 1)` in `X ^ p - 1`. Only the three ge
 are proved here; the exact sequence and the maps relating the three homomorphisms are not
 formalized.
 
-## Main definitions
-
-* `TauCeti.RootsOfUnityGroup.adjoinRootEquiv`: the `R`-algebra isomorphism
-  `R[X]/(X ^ N - 1) ≃ R[Multiplicative (ZMod N)]` taking the class of `X` to the standard
-  generator.
-
 ## Main results
 
 * `TauCeti.RootsOfUnityGroup.isAGenerator_iff_X_pow_sub_one_eq_prod`: a homomorphism to the points
@@ -73,60 +69,6 @@ open Polynomial WithConv
 
 namespace TauCeti.RootsOfUnityGroup
 
-section Presentation
-
-variable {R : Type*} [CommRing R] (n : ℕ)
-
--- The class of `X` in `R[X]/(X ^ n - 1)` is an `n`th root of unity.
-private theorem root_X_pow_sub_one_pow : AdjoinRoot.root (X ^ n - 1 : R[X]) ^ n = 1 := by
-  rw [← sub_eq_zero, ← AdjoinRoot.mk_X, ← map_pow, ← map_one (AdjoinRoot.mk _), ← map_sub,
-    AdjoinRoot.mk_self]
-
--- The standard generator of `R[Multiplicative (ZMod n)]` is an `n`th root of unity.
-private theorem single_generator_pow : MonoidAlgebra.single (generator n) (1 : R) ^ n = 1 := by
-  rw [MonoidAlgebra.single_pow, one_pow, ← ofAdd_nsmul, nsmul_one, ZMod.natCast_self, ofAdd_zero,
-    MonoidAlgebra.one_def]
-
--- An algebra map out of `R[Multiplicative (ZMod n)]` is determined by its value on the standard
--- generator, because the points of `μ_n` are determined by that value.
-private theorem algHom_ext_generator {B : Type*} [CommRing B] [Algebra R B]
-    {f₁ f₂ : MonoidAlgebra R (Multiplicative (ZMod n)) →ₐ[R] B}
-    (h : f₁ (MonoidAlgebra.single (generator n) 1) = f₂ (MonoidAlgebra.single (generator n) 1)) :
-    f₁ = f₂ :=
-  congrArg ofConv <| (pointsMulEquiv (R := R) (A := B) n).injective <|
-    Subtype.ext <| Units.ext <| by simpa only [pointsMulEquiv_apply] using h
-
-variable [NeZero n]
-
-/-- For `n ≠ 0`, the coordinate ring `R[Multiplicative (ZMod n)]` of `μ_n` is `R[X]/(X ^ n - 1)`,
-the class of `X` corresponding to the standard generator (`adjoinRootEquiv_root`). -/
-noncomputable def adjoinRootEquiv :
-    AdjoinRoot (X ^ n - 1 : R[X]) ≃ₐ[R] MonoidAlgebra R (Multiplicative (ZMod n)) :=
-  AlgEquiv.ofAlgHom
-    (AdjoinRoot.liftAlgHom _ (Algebra.ofId R _) (MonoidAlgebra.single (generator n) 1) (by
-      rw [eval₂_sub, eval₂_X_pow, eval₂_one, single_generator_pow, sub_self]))
-    ((pointsMulEquiv (R := R) n).symm
-      (rootsOfUnity.mkOfPowEq _ (root_X_pow_sub_one_pow n))).ofConv
-    (algHom_ext_generator n (by
-      rw [AlgHom.comp_apply, pointsMulEquiv_symm_apply_single_generator,
-        rootsOfUnity.coe_mkOfPowEq, AdjoinRoot.liftAlgHom_root, AlgHom.id_apply]))
-    (AdjoinRoot.algHom_ext (by
-      rw [AlgHom.comp_apply, AdjoinRoot.liftAlgHom_root, pointsMulEquiv_symm_apply_single_generator,
-        rootsOfUnity.coe_mkOfPowEq, AlgHom.id_apply]))
-
-@[simp]
-theorem adjoinRootEquiv_root :
-    adjoinRootEquiv (R := R) n (AdjoinRoot.root _) = MonoidAlgebra.single (generator n) 1 := by
-  rw [adjoinRootEquiv, AlgEquiv.ofAlgHom_apply, AdjoinRoot.liftAlgHom_root]
-
-@[simp]
-theorem adjoinRootEquiv_symm_single_generator :
-    (adjoinRootEquiv (R := R) n).symm (MonoidAlgebra.single (generator n) 1) =
-      AdjoinRoot.root _ := by
-  rw [AlgEquiv.symm_apply_eq, adjoinRootEquiv_root]
-
-end Presentation
-
 section Generator
 
 variable {R : Type*} [CommRing R] {A : Type*} [Monoid A] [Fintype A]
@@ -151,11 +93,13 @@ theorem isAGenerator_one_of_card_eq (p : ℕ) [ExpChar R p] {k : ℕ} (hA : Fint
   rw [isAGenerator_iff_X_pow_sub_one_eq_prod]
   simp [hA, sub_pow_expChar_pow]
 
-/-- **A generator of `μ_{p²}` with non-generator restriction** (Katz–Mazur 1.11.4). Over a ring of
-characteristic `p`, for every homomorphism `χ : ℤ/p → μ_{p²}(R)`, the homomorphism
+/-- **A generator of `μ_{p²}` whose restriction can fail to be a generator** (Katz–Mazur 1.11.4).
+Over a ring of characteristic `p`, for every homomorphism `χ : ℤ/p → μ_{p²}(R)`, the homomorphism
 `(a, b) ↦ χ(a)` from `ℤ/p × ℤ/p` is a generator of `μ_{p²}`. Writing `ζ = χ(1)`, a point of
 `μ_{p²}` with `ζ ^ p = 1`, this is `(a, b) ↦ ζ ^ a`; it is a generator because
-`∏ a, (X - ζ ^ a) ^ p = ∏ a, (X ^ p - 1) = X ^ (p²) - 1` in characteristic `p`. -/
+`∏ a, (X - ζ ^ a) ^ p = ∏ a, (X ^ p - 1) = X ^ (p²) - 1` in characteristic `p`. Its restriction
+`a ↦ ζ ^ a` to `ℤ/p × 0`, into `μ_p`, need not be a generator: `not_isAGenerator_of_eq_root` gives
+an example. -/
 theorem isAGenerator_comp_fst (p : ℕ) [Fact p.Prime] [CharP R p]
     (χ : Multiplicative (ZMod p) →*
       WithConv (MonoidAlgebra R (Multiplicative (ZMod (p ^ 2))) →ₐ[R] R)) :
@@ -172,18 +116,6 @@ theorem isAGenerator_comp_fst (p : ℕ) [Fact p.Prime] [CharP R p]
     simp
   simp only [hp, map_one, Finset.prod_const, Finset.card_univ, Fintype.card_multiplicative,
     ZMod.card, sub_pow_char, one_pow, ← pow_mul, sq]
-
--- `X ^ n - 1` does not divide `1 + X + ⋯ + X ^ (n - 1)`, which is nonzero of degree less than `n`.
-private theorem not_X_pow_sub_one_dvd_geom_sum [Nontrivial R] {n : ℕ} (hn : n ≠ 0) :
-    ¬ (X ^ n - 1 : R[X]) ∣ ∑ k ∈ Finset.range n, X ^ k := fun hdvd ↦ by
-  have hdeg := (monic_X_pow_sub_one hn).natDegree_le_of_dvd (monic_geom_sum_X hn).ne_zero hdvd
-  have hle : (∑ k ∈ Finset.range n, X ^ k : R[X]).natDegree ≤ n - 1 :=
-    natDegree_sum_le_of_forall_le _ _ fun k hk ↦ by
-      rw [natDegree_X_pow]
-      have := Finset.mem_range.mp hk
-      lia
-  rw [← C_1, natDegree_X_pow_sub_C] at hdeg
-  lia
 
 /-- **A non-generator of `μ_p`** (Katz–Mazur 1.11.4–1.11.5). Over `R = 𝔽_p[X]/(X ^ p - 1)`, let
 `χ : ℤ/p → μ_p(R)` take `1` to the class `θ` of `X`, so that `χ(a) = θ ^ a`. Then `χ` is not a
@@ -222,7 +154,9 @@ theorem not_isAGenerator_of_eq_root (p : ℕ) [Fact p.Prime]
     (g := fun k ↦ AdjoinRoot.root (X ^ p - 1 : (ZMod p)[X]) ^ k) (t := Finset.range p)
     (by simp [ZMod.val_lt]) (by simp) (by simp) (by simp +contextual [Nat.mod_eq_of_lt])
     (by simp)] at hcoeff
-  refine not_X_pow_sub_one_dvd_geom_sum (R := ZMod p) hp.ne_zero ?_
+  have hndvd := not_X_pow_sub_C_dvd_geom_sum (1 : ZMod p) hp.ne_zero
+  rw [C_1] at hndvd
+  refine hndvd ?_
   rw [← AdjoinRoot.mk_eq_zero, map_sum]
   simpa using hcoeff
 
@@ -237,7 +171,7 @@ theorem exists_not_isAGenerator (p : ℕ) [Fact p.Prime] :
         ¬ IsAGenerator χ := by
   have : NeZero p := ⟨(Fact.out : p.Prime).ne_zero⟩
   let ζ : rootsOfUnity p (AdjoinRoot (X ^ p - 1 : (ZMod p)[X])) :=
-    rootsOfUnity.mkOfPowEq _ (root_X_pow_sub_one_pow p)
+    rootsOfUnity.mkOfPowEq _ (AdjoinRoot.root_X_pow_sub_one_pow p)
   -- the character `a ↦ ζ ^ a` of `ℤ/p`, whose values are `p`th roots of unity since `ℤ/p` is
   -- killed by `p`
   let ψ := ((characterMulEquivRootsOfUnity p).symm ζ).codRestrict (rootsOfUnity p _) fun a ↦ by
