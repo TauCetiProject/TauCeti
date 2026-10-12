@@ -12,6 +12,7 @@ import TauCeti.Analysis.Sobolev.Embedding
 import Mathlib.MeasureTheory.Function.LpSeminorm.LpNorm
 import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 import TauCeti.MeasureTheory.Measure.OpenPos
+import TauCeti.Analysis.PDE.EnergyForm.Restriction
 
 /-!
 # Moser's iteration for small positive powers of a supersolution
@@ -35,7 +36,9 @@ small positive powers**: in dimension `n ≥ 3`, with `χ = n/(n - 2)`, for all 
 This is the half of Moser's weak Harnack inequality that passes from a small power `p`, reached
 from negative powers through the John–Nirenberg inequality for `log u`, up to any power below
 `n/(n - 2)`. The restriction `s < χ` keeps every exponent `p₀ χ^k` used in the iteration below
-`1`, where the Caccioppoli inequality for powers holds.
+`1`, where the Caccioppoli inequality for powers holds. Its scale-invariant averaged form, for
+`p ≤ 2`, extends to nonnegative supersolutions: apply it to `u + δ` on the ball, where constants
+lie in `H¹`, and let `δ → 0` by dominated convergence.
 
 The reverse Hölder inequality applies the Sobolev inequality to `ψ u^{p/2}`, for a cutoff `ψ` equal
 to `1` on `B(x₀, r)`, and bounds its gradient by the Caccioppoli inequality for powers, in its
@@ -52,7 +55,7 @@ form for `u^{p/2}`
   small positive powers in dimension `n ≥ 3`.
 * `TauCeti.PDE.exists_setAverage_rpow_rpow_inv_le_mul_setAverage_rpow_rpow_inv`: its
   scale-invariant form `(⨍_{B(x₀, R/2)} u^s)^{1/s} ≤ D (⨍_{B(x₀, R)} u^p)^{1/p}` for `p ≤ 2`,
-  together with the integrability of `u^s` on `B(x₀, R/2)`.
+  together with the integrability of `u^s` on `B(x₀, R/2)`, for nonnegative supersolutions.
 
 ## References
 
@@ -420,20 +423,11 @@ theorem exists_eLpNorm_le_mul_rpow_mul_eLpNorm_of_inv_add_eq_inv {pstar : ℝ≥
         gcongr
         linarith [le_abs_self D']
 
-/-- **Moser's iteration for small positive powers, averaged form (dimension `n ≥ 3`).** Let
-`2*` be the Sobolev exponent of `W^{1,2}` in dimension `n`, so that `1/2* + 1/n = 1/2` and
-`2* < ∞`, and let `χ = 2*/2 = n/(n - 2)`. For exponents `0 < p ≤ 2` and `0 < s < χ` there is
-`D > 0`, depending on `λ`, `Λ`, `p`, `s`, the dimension and the normalization of the additive Haar
-measure `mu`, with the following property. Let `a` be measurable and uniformly elliptic on `Ω`
-with constants `λ, Λ`, and let `u ∈ H¹(Ω)` be a weak supersolution of `-∂ⱼ(aⁱʲ ∂ᵢu) ≥ 0` with
-`u ≥ ε` almost everywhere for some `ε > 0`. Then on every ball `B(x₀, R) ⊆ Ω`,
-
-`(⨍_{B(x₀, R/2)} u^s)^{1/s} ≤ D (⨍_{B(x₀, R)} u^p)^{1/p}`,
-
-and `u^s` is integrable on `B(x₀, R/2)`, so the left side is a genuine average even for `s > 2`.
-The constant does not depend on `u`, `ε` or the ball. The bound `p ≤ 2` makes `u^p` integrable
-on `B(x₀, R)`, since `u ∈ L²(Ω)`. -/
-theorem exists_setAverage_rpow_rpow_inv_le_mul_setAverage_rpow_rpow_inv {pstar : ℝ≥0∞}
+/-- The averaged form of Moser's iteration for supersolutions bounded below by a positive constant
+`ε`, with a constant independent of `ε`, together with the integrability of `u^s` on the smaller
+ball. The bound `p ≤ 2` makes `u^p` integrable on `B(x₀, R)`, since `u ∈ L²(Ω)`. -/
+private theorem exists_setAverage_rpow_rpow_inv_le_mul_setAverage_rpow_rpow_inv_of_pos
+    {pstar : ℝ≥0∞}
     (hpstar : pstar ≠ (∞ : ℝ≥0∞)) (hexp : pstar⁻¹ + (Fintype.card ι : ℝ≥0∞)⁻¹ = 2⁻¹)
     {p s : ℝ} (hp : 0 < p) (hp2 : p ≤ 2) (hs : 0 < s) (hsχ : s < pstar.toReal / 2) :
     ∃ D : ℝ, 0 < D ∧ ∀ {Omega : Opens (EuclideanSpace ℝ ι)}
@@ -512,6 +506,135 @@ theorem exists_setAverage_rpow_rpow_inv_le_mul_setAverage_rpow_rpow_inv {pstar :
           ← Real.rpow_mul (by positivity), ← Real.rpow_mul hR.le, Real.div_rpow hR.le zero_le_two,
           Real.rpow_sub hR, Real.inv_rpow hV.le, ← div_eq_mul_inv n s, ← div_eq_mul_inv n p]
         field_simp
+
+/-- **Moser's iteration for small positive powers, averaged form (dimension `n ≥ 3`).** Let
+`2*` be the Sobolev exponent of `W^{1,2}` in dimension `n`, so that `1/2* + 1/n = 1/2` and
+`2* < ∞`, and let `χ = 2*/2 = n/(n - 2)`. For exponents `0 < p ≤ 2` and `0 < s < χ` there is
+`D > 0`, depending on `λ`, `Λ`, `p`, `s`, the dimension and the normalization of the additive Haar
+measure `mu`, with the following property. Let `a` be measurable and uniformly elliptic on `Ω`
+with constants `λ, Λ`, and let `u ∈ H¹(Ω)` be a nonnegative weak supersolution of
+`-∂ⱼ(aⁱʲ ∂ᵢu) ≥ 0`. Then on every ball `B(x₀, R) ⊆ Ω`,
+
+`(⨍_{B(x₀, R/2)} u^s)^{1/s} ≤ D (⨍_{B(x₀, R)} u^p)^{1/p}`,
+
+and `u^s` is integrable on `B(x₀, R/2)`, so the left side is a genuine average even for `s > 2`.
+The constant does not depend on `u` or the ball. The bound `p ≤ 2` makes `u^p` integrable on
+`B(x₀, R)`, since `u ∈ L²(Ω)`. -/
+theorem exists_setAverage_rpow_rpow_inv_le_mul_setAverage_rpow_rpow_inv {pstar : ℝ≥0∞}
+    (hpstar : pstar ≠ (∞ : ℝ≥0∞)) (hexp : pstar⁻¹ + (Fintype.card ι : ℝ≥0∞)⁻¹ = 2⁻¹)
+    {p s : ℝ} (hp : 0 < p) (hp2 : p ≤ 2) (hs : 0 < s) (hsχ : s < pstar.toReal / 2) :
+    ∃ D : ℝ, 0 < D ∧ ∀ {Omega : Opens (EuclideanSpace ℝ ι)}
+      {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {u : W1p mu Omega 2}
+      {x₀ : EuclideanSpace ℝ ι} {R : ℝ},
+      UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam →
+      AEStronglyMeasurable a (mu.restrict Omega) →
+      (∀ v : W1p0 mu Omega 2,
+        (∀ᵐ x ∂mu.restrict Omega, 0 ≤ W1p.value (v : W1p mu Omega 2) x) →
+          0 ≤ energyFormH1 a 0 0 u (v : W1p mu Omega 2)) →
+      (∀ᵐ x ∂mu.restrict Omega, 0 ≤ W1p.value u x) →
+      Metric.ball x₀ R ⊆ (Omega : Set (EuclideanSpace ℝ ι)) →
+      IntegrableOn (fun x => W1p.value u x ^ s) (Metric.ball x₀ (R / 2)) mu ∧
+        (⨍ x in Metric.ball x₀ (R / 2), W1p.value u x ^ s ∂mu) ^ s⁻¹ ≤
+          D * (⨍ x in Metric.ball x₀ R, W1p.value u x ^ p ∂mu) ^ p⁻¹ := by
+  obtain ⟨D, hD, hpos⟩ := exists_setAverage_rpow_rpow_inv_le_mul_setAverage_rpow_rpow_inv_of_pos
+    (mu := mu) (lam := lam) (Lam := Lam) hpstar hexp hp hp2 hs hsχ
+  refine ⟨D, hD, ?_⟩
+  intro Omega a u x₀ R h ha hu hu0 hball
+  rcases le_or_gt R 0 with hR | hR
+  · rw [Metric.ball_eq_empty.2 (by linarith : R / 2 ≤ 0), Metric.ball_eq_empty.2 hR]
+    refine ⟨integrableOn_empty, ?_⟩
+    simp only [Measure.restrict_empty, average_zero_measure, Real.zero_rpow (inv_ne_zero hs.ne'),
+      Real.zero_rpow (inv_ne_zero hp.ne'), mul_zero, le_refl]
+  -- Work on `U = B(x₀, R)`, which has finite measure, so constants lie in `H¹(U)`.
+  set U : Opens (EuclideanSpace ℝ ι) := ⟨Metric.ball x₀ R, Metric.isOpen_ball⟩
+  have hU : U ≤ Omega := hball
+  have : IsFiniteMeasure (mu.restrict (Metric.ball x₀ R)) :=
+    isFiniteMeasure_restrict.2 measure_ball_lt_top.ne
+  have hhalf : Metric.ball x₀ (R / 2) ⊆ Metric.ball x₀ R := Metric.ball_subset_ball (by linarith)
+  have hu0R : ∀ᵐ y ∂mu.restrict (Metric.ball x₀ R), 0 ≤ W1p.value u y :=
+    ae_restrict_of_ae_restrict_of_subset hball hu0
+  have hu0h := ae_restrict_of_ae_restrict_of_subset hhalf hu0R
+  have hmemR : MemLp (W1p.value u) 2 (mu.restrict (Metric.ball x₀ R)) :=
+    (Lp.memLp _).mono_measure (Measure.restrict_mono hball le_rfl)
+  -- For `0 < δ ≤ 1`, `(u + δ)^p ≤ (u + 1)^p`, which is integrable on `B(x₀, R)` since `p ≤ 2`.
+  have hbound : Integrable (fun y => (W1p.value u y + 1) ^ p) (mu.restrict (Metric.ball x₀ R)) := by
+    have hmem : MemLp (fun y => W1p.value u y + 1) (ENNReal.ofReal p)
+        (mu.restrict (Metric.ball x₀ R)) :=
+      (hmemR.add (memLp_const 1)).mono_exponent
+        ((ENNReal.ofReal_le_ofReal hp2).trans_eq (ENNReal.ofReal_ofNat 2))
+    refine (hmem.integrable_norm_rpow (ENNReal.ofReal_pos.2 hp).ne' ENNReal.ofReal_ne_top).congr ?_
+    filter_upwards [hu0R] with y hy
+    rw [ENNReal.toReal_ofReal hp.le, Real.norm_of_nonneg (by linarith)]
+  -- For each `δ = 1/(k + 1)`, the estimate for the positive supersolution `u + δ` on `U`.
+  have hδ : ∀ k : ℕ, IntegrableOn (fun y => W1p.value u y ^ s) (Metric.ball x₀ (R / 2)) mu ∧
+      (⨍ y in Metric.ball x₀ (R / 2), W1p.value u y ^ s ∂mu) ^ s⁻¹ ≤
+        D * (⨍ y in Metric.ball x₀ R, (W1p.value u y + 1 / ((k : ℝ) + 1)) ^ p ∂mu) ^ p⁻¹ := by
+    intro k
+    set δ : ℝ := 1 / ((k : ℝ) + 1)
+    have hδ0 : 0 < δ := Nat.one_div_pos_of_nat
+    set w := W1p.restrictL hU u + W1p.const δ
+    have hwv : ∀ᵐ y ∂mu.restrict (Metric.ball x₀ R), W1p.value w y = W1p.value u y + δ := by
+      filter_upwards [W1p.value_add_const_ae (W1p.restrictL hU u) δ,
+        W1p.value_restrictL_ae hU u] with y h1 h2
+      rw [h1, h2]
+    have hδw : ∀ᵐ y ∂mu.restrict U, δ ≤ W1p.value w y := by
+      filter_upwards [hwv, hu0R] with y h1 h2
+      rw [h1]
+      linarith
+    obtain ⟨hHi, hH⟩ := hpos (h.mono_set hball)
+      (ha.mono_measure (Measure.restrict_mono hball le_rfl))
+      (energyFormH1_restrictL_add_const_nonneg hU hu δ) hδ0 hδw (x₀ := x₀) (R := R) subset_rfl
+    have hwvh := ae_restrict_of_ae_restrict_of_subset hhalf hwv
+    have e1 : ⨍ y in Metric.ball x₀ (R / 2), W1p.value w y ^ s ∂mu =
+        ⨍ y in Metric.ball x₀ (R / 2), (W1p.value u y + δ) ^ s ∂mu :=
+      average_congr (hwvh.mono fun y hy => by simp only [hy])
+    have e2 : ⨍ y in Metric.ball x₀ R, W1p.value w y ^ p ∂mu =
+        ⨍ y in Metric.ball x₀ R, (W1p.value u y + δ) ^ p ∂mu :=
+      average_congr (hwv.mono fun y hy => by simp only [hy])
+    rw [e1, e2] at hH
+    -- `0 ≤ u^s ≤ (u + δ)^s`, and `(u + δ)^s` is integrable on `B(x₀, R/2)`, hence so is `u^s`.
+    have hle : ∀ᵐ y ∂mu.restrict (Metric.ball x₀ (R / 2)),
+        W1p.value u y ^ s ≤ (W1p.value u y + δ) ^ s :=
+      hu0h.mono fun y hy => Real.rpow_le_rpow hy (by linarith) hs.le
+    have hint' : IntegrableOn (fun y => (W1p.value u y + δ) ^ s) (Metric.ball x₀ (R / 2)) mu :=
+      hHi.congr (hwvh.mono fun y hy => congrArg (· ^ s) hy)
+    have hint : IntegrableOn (fun y => W1p.value u y ^ s) (Metric.ball x₀ (R / 2)) mu := by
+      have hmeas := hmemR.aestronglyMeasurable.mono_measure (Measure.restrict_mono hhalf le_rfl)
+      refine hint'.mono' (hmeas.aemeasurable.pow_const s).aestronglyMeasurable ?_
+      filter_upwards [hu0h, hle] with y hy hyle
+      rwa [Real.norm_of_nonneg (Real.rpow_nonneg hy _)]
+    refine ⟨hint, ?_⟩
+    -- The average of `u^s` is at most that of `(u + δ)^s`.
+    have hmono : ⨍ y in Metric.ball x₀ (R / 2), W1p.value u y ^ s ∂mu ≤
+        ⨍ y in Metric.ball x₀ (R / 2), (W1p.value u y + δ) ^ s ∂mu := by
+      rw [setAverage_eq, setAverage_eq]
+      exact smul_le_smul_of_nonneg_left (integral_mono_ae hint hint' hle) (by positivity)
+    exact (Real.rpow_le_rpow (average_nonneg_of_ae (hu0h.mono fun y hy => Real.rpow_nonneg hy _))
+      hmono (inv_nonneg.2 hs.le)).trans hH
+  -- Let `δ → 0`: by dominated convergence, `⨍_{B(x₀, R)} (u + δ)^p → ⨍_{B(x₀, R)} u^p`.
+  have hlim : Filter.Tendsto
+      (fun k : ℕ => ∫ y in Metric.ball x₀ R, (W1p.value u y + 1 / ((k : ℝ) + 1)) ^ p ∂mu)
+      Filter.atTop (nhds (∫ y in Metric.ball x₀ R, W1p.value u y ^ p ∂mu)) := by
+    refine tendsto_integral_of_dominated_convergence _ (fun k => ?_) hbound (fun k => ?_) ?_
+    · exact ((hmemR.aestronglyMeasurable.aemeasurable.add_const _).pow_const p).aestronglyMeasurable
+    · filter_upwards [hu0R] with y hy
+      have hk : 1 / ((k : ℝ) + 1) ≤ 1 :=
+        (div_le_one (by positivity)).2 (by linarith [(Nat.cast_nonneg k : (0 : ℝ) ≤ k)])
+      rw [Real.norm_of_nonneg (Real.rpow_nonneg (by positivity) _)]
+      exact Real.rpow_le_rpow (by positivity) (by linarith) hp.le
+    · refine Filter.Eventually.of_forall fun y => ?_
+      have hδ0 := (tendsto_const_nhds (x := W1p.value u y)).add
+        (tendsto_one_div_add_atTop_nhds_zero_nat (𝕜 := ℝ))
+      rw [add_zero] at hδ0
+      exact (Real.continuousAt_rpow_const _ p (Or.inr hp.le)).tendsto.comp hδ0
+  have hlim' : Filter.Tendsto
+      (fun k : ℕ =>
+        D * (⨍ y in Metric.ball x₀ R, (W1p.value u y + 1 / ((k : ℝ) + 1)) ^ p ∂mu) ^ p⁻¹)
+      Filter.atTop (nhds (D * (⨍ y in Metric.ball x₀ R, W1p.value u y ^ p ∂mu) ^ p⁻¹)) := by
+    simp only [setAverage_eq, smul_eq_mul]
+    exact ((Real.continuousAt_rpow_const _ _ (Or.inr (inv_nonneg.2 hp.le))).tendsto.comp
+      (hlim.const_mul _)).const_mul D
+  exact ⟨(hδ 0).1, ge_of_tendsto' hlim' fun k => (hδ k).2⟩
 
 end Iteration
 

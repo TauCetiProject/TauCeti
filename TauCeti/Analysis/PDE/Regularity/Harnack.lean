@@ -37,9 +37,9 @@ In both, `C` depends only on `λ`, `Λ`, the dimension, the normalization of the
 for the weak Harnack inequality, the exponent `s`. It does not depend on `u` or on the ball, so the
 estimates are scale invariant.
 
-The weak Harnack inequality is first proved for supersolutions with `u ≥ ε > 0`, with a constant
-independent of `ε`, as in Moser's proof. On `B = B(x₀, 2r)`, at an exponent
-`p₀ ≤ 2` proportional to `λ/Λ`, it combines
+The weak Harnack inequality at a small exponent is first proved for supersolutions with
+`u ≥ ε > 0`, with a constant independent of `ε`, as in Moser's proof. On `B = B(x₀, 2r)`, at the
+exponent `p₀ = min(cλ/Λ, 2)` of the crossover estimate, it combines
 
 * the lower bound from negative powers, `u⁻¹ ≤ D |B|^{-1/p₀} ‖u⁻¹‖_{L^{p₀}(B)}` on `B(x₀, r)`
   (`TauCeti.PDE.exists_ae_inv_value_le_mul_rpow_mul_setIntegral_rpow`), with
@@ -47,11 +47,11 @@ independent of `ε`, as in Moser's proof. On `B = B(x₀, 2r)`, at an exponent
   `log u` (`TauCeti.PDE.exists_setAverage_rpow_mul_setAverage_rpow_neg_le`).
 
 Together they bound `(⨍_B u^{p₀})^{1/p₀}` by `C u(x)` for almost every `x ∈ B(x₀, r)`, in every
-dimension `n ≥ 1`. Moser's iteration for small positive powers
+dimension `n ≥ 1`. A nonnegative supersolution is reduced to this case by applying it to `u + δ`
+on the bounded ball `B(x₀, 12√n r)`, where constants lie in `H¹`, and letting `δ → 0`. Moser's
+iteration for small positive powers of nonnegative supersolutions
 (`TauCeti.PDE.exists_setAverage_rpow_rpow_inv_le_mul_setAverage_rpow_rpow_inv`) then raises the
-exponent from `p₀` to any `s < n/(n - 2)`. A nonnegative supersolution is reduced to this case by
-applying it to `u + δ` on the bounded ball `B(x₀, 12√n r)`, where constants lie in `H¹`, and
-letting `δ → 0`. The Harnack inequality combines the weak Harnack
+exponent from `p₀` to any `s < n/(n - 2)`. The Harnack inequality combines the weak Harnack
 inequality at `s = 1` with the local boundedness of subsolutions in `L¹`
 (`TauCeti.PDE.exists_ae_value_le_add_mul_rpow_mul_setIntegral_rpow`).
 
@@ -62,7 +62,7 @@ The restriction `n ≥ 3` is inherited from Moser's iteration, which uses the So
 ## Main declarations
 
 * `TauCeti.PDE.exists_pos_ae_setAverage_rpow_rpow_inv_le_mul_value`: the weak Harnack inequality
-  at a small exponent `p₀`, in every dimension, for supersolutions bounded below by `ε > 0`.
+  at a small exponent `p₀`, in every dimension, for nonnegative supersolutions.
 * `TauCeti.PDE.exists_ae_setAverage_rpow_rpow_inv_le_mul_value`: Moser's weak Harnack
   inequality for nonnegative supersolutions, for every exponent `0 < s < n/(n - 2)`.
 * `TauCeti.PDE.exists_ae_ae_value_le_mul_value`: Moser's Harnack inequality for nonnegative
@@ -90,18 +90,9 @@ namespace PDE
 variable {ι : Type*} [Fintype ι] [DecidableEq ι] {mu : Measure (EuclideanSpace ℝ ι)}
   [mu.IsAddHaarMeasure] {lam Lam : ℝ}
 
-/-- **Moser's weak Harnack inequality at a small exponent.** Let `n ≥ 1` be the dimension. There
-are an exponent `p₀ ∈ (0, 2]` and a constant `C > 0`, depending only on `λ`, `Λ`, the dimension
-and the normalization of the additive Haar measure `mu`, with the following property. Let `a` be
-measurable and uniformly elliptic on `Ω` with constants `λ, Λ`, and let `u ∈ H¹(Ω)` be a weak
-supersolution of `-∂ⱼ(aⁱʲ ∂ᵢu) ≥ 0`, that is `a(u, v) ≥ 0` for every nonnegative `v ∈ H¹₀(Ω)`,
-with `u ≥ ε` almost everywhere for some `ε > 0`. Then on every ball with `B(x₀, 12√n r) ⊆ Ω`,
-
-`(⨍_{B(x₀, 2r)} u^{p₀})^{1/p₀} ≤ C u(x)` for almost every `x ∈ B(x₀, r)`.
-
-The exponent `p₀` is proportional to `λ/Λ`. The constant does not depend on `u`, `ε` or the
-ball. -/
-theorem exists_pos_ae_setAverage_rpow_rpow_inv_le_mul_value [Nonempty ι] :
+/-- The weak Harnack inequality at a small exponent for supersolutions bounded below by a positive
+constant `ε`, with constants independent of `ε`. -/
+private theorem exists_pos_ae_setAverage_rpow_rpow_inv_le_mul_value_of_pos [Nonempty ι] :
     ∃ p₀ : ℝ, 0 < p₀ ∧ p₀ ≤ 2 ∧ ∃ C : ℝ, 0 < C ∧ ∀ {Omega : Opens (EuclideanSpace ℝ ι)}
       {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {u : W1p mu Omega 2} {ε : ℝ}
       {x₀ : EuclideanSpace ℝ ι} {r : ℝ},
@@ -177,43 +168,109 @@ theorem exists_pos_ae_setAverage_rpow_rpow_inv_le_mul_value [Nonempty ι] :
     _ ≤ K' ^ p₀⁻¹ * (D * V ^ p₀⁻¹ * W1p.value u x) := by gcongr
     _ = K' ^ p₀⁻¹ * D * V ^ p₀⁻¹ * W1p.value u x := by ring
 
-/-- Moser's weak Harnack inequality for supersolutions bounded below by a positive constant `ε`,
-with a constant independent of `ε`, together with the integrability of `u^s` on the ball. -/
-private theorem exists_ae_setAverage_rpow_rpow_inv_le_mul_value_of_pos {pstar : ℝ≥0∞}
-    (hpstar : pstar ≠ (∞ : ℝ≥0∞)) (hexp : pstar⁻¹ + (Fintype.card ι : ℝ≥0∞)⁻¹ = 2⁻¹)
-    {s : ℝ} (hs : 0 < s) (hsχ : s < pstar.toReal / 2) :
-    ∃ C : ℝ, 0 < C ∧ ∀ {Omega : Opens (EuclideanSpace ℝ ι)}
-      {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {u : W1p mu Omega 2} {ε : ℝ}
+/-- **Moser's weak Harnack inequality at a small exponent.** Let `n ≥ 1` be the dimension. There
+are an exponent `p₀ ∈ (0, 2]` and a constant `C > 0`, depending only on `λ`, `Λ`, the dimension
+and the normalization of the additive Haar measure `mu`, with the following property. Let `a` be
+measurable and uniformly elliptic on `Ω` with constants `λ, Λ`, and let `u ∈ H¹(Ω)` be a
+nonnegative weak supersolution of `-∂ⱼ(aⁱʲ ∂ᵢu) ≥ 0`, that is `a(u, v) ≥ 0` for every
+nonnegative `v ∈ H¹₀(Ω)`. Then on every ball with `B(x₀, 12√n r) ⊆ Ω`,
+
+`(⨍_{B(x₀, 2r)} u^{p₀})^{1/p₀} ≤ C u(x)` for almost every `x ∈ B(x₀, r)`.
+
+The constant does not depend on `u` or the ball. -/
+theorem exists_pos_ae_setAverage_rpow_rpow_inv_le_mul_value [Nonempty ι] :
+    ∃ p₀ : ℝ, 0 < p₀ ∧ p₀ ≤ 2 ∧ ∃ C : ℝ, 0 < C ∧ ∀ {Omega : Opens (EuclideanSpace ℝ ι)}
+      {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {u : W1p mu Omega 2}
       {x₀ : EuclideanSpace ℝ ι} {r : ℝ},
       UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam →
       AEStronglyMeasurable a (mu.restrict Omega) →
       (∀ v : W1p0 mu Omega 2,
         (∀ᵐ x ∂mu.restrict Omega, 0 ≤ W1p.value (v : W1p mu Omega 2) x) →
           0 ≤ energyFormH1 a 0 0 u (v : W1p mu Omega 2)) →
-      0 < ε → (∀ᵐ x ∂mu.restrict Omega, ε ≤ W1p.value u x) →
+      (∀ᵐ x ∂mu.restrict Omega, 0 ≤ W1p.value u x) →
       ball x₀ (12 * √(Fintype.card ι) * r) ⊆ (Omega : Set (EuclideanSpace ℝ ι)) →
-      IntegrableOn (fun y => W1p.value u y ^ s) (ball x₀ r) mu ∧ ∀ᵐ x ∂mu.restrict (ball x₀ r),
-        (⨍ y in ball x₀ r, W1p.value u y ^ s ∂mu) ^ s⁻¹ ≤ C * W1p.value u x := by
-  have := Fintype.card_pos_iff.1 <| Nat.pos_of_ne_zero <| ne_zero_of_inv_add_inv_eq_inv hexp
-  obtain ⟨p₀, hp₀, hp₀2, C₁, hC₁, hsmall⟩ :=
-    exists_pos_ae_setAverage_rpow_rpow_inv_le_mul_value (mu := mu) (lam := lam) (Lam := Lam)
-  obtain ⟨D, hD, hiter⟩ := exists_setAverage_rpow_rpow_inv_le_mul_setAverage_rpow_rpow_inv
-    (mu := mu) (lam := lam) (Lam := Lam) hpstar hexp hp₀ hp₀2 hs hsχ
-  refine ⟨D * C₁, by positivity, ?_⟩
-  intro Omega a u ε x₀ r h ha hu hε hεu hball
+      ∀ᵐ x ∂mu.restrict (ball x₀ r),
+        (⨍ y in ball x₀ (2 * r), W1p.value u y ^ p₀ ∂mu) ^ p₀⁻¹ ≤ C * W1p.value u x := by
+  obtain ⟨p₀, hp₀, hp₀2, C, hC, hpos⟩ :=
+    exists_pos_ae_setAverage_rpow_rpow_inv_le_mul_value_of_pos (mu := mu) (lam := lam) (Lam := Lam)
+  refine ⟨p₀, hp₀, hp₀2, C, hC, ?_⟩
+  intro Omega a u x₀ r h ha hu hu0 hball
   rcases le_or_gt r 0 with hr | hr
   · simp [ball_eq_empty.2 hr]
   have hsqrt : 1 ≤ √(Fintype.card ι : ℝ) := Real.one_le_sqrt.2 (Nat.one_le_cast.2 Fintype.card_pos)
-  -- Moser's iteration passes from `L^{p₀}` on `B(x₀, 2r)` to `L^s` on `B(x₀, r)`.
-  obtain ⟨hint, hiter'⟩ := hiter h ha hu hε hεu (x₀ := x₀) (R := 2 * r)
-    ((ball_subset_ball (by nlinarith)).trans hball)
-  rw [mul_div_cancel_left₀ r two_ne_zero] at hint hiter'
-  refine ⟨hint, ?_⟩
-  filter_upwards [hsmall h ha hu hε hεu hball] with x hx
-  calc (⨍ y in ball x₀ r, W1p.value u y ^ s ∂mu) ^ s⁻¹
-      ≤ D * (⨍ y in ball x₀ (2 * r), W1p.value u y ^ p₀ ∂mu) ^ p₀⁻¹ := hiter'
-    _ ≤ D * (C₁ * W1p.value u x) := by gcongr
-    _ = D * C₁ * W1p.value u x := by ring
+  -- Work on the bounded open ball `U = B(x₀, 12√n r)`, where constants lie in `H¹(U)`.
+  set U : Opens (EuclideanSpace ℝ ι) := ⟨ball x₀ (12 * √(Fintype.card ι) * r), isOpen_ball⟩
+  have hU : U ≤ Omega := hball
+  have h2U : ball x₀ (2 * r) ⊆ (U : Set (EuclideanSpace ℝ ι)) := ball_subset_ball (by nlinarith)
+  have hrU : ball x₀ r ⊆ (U : Set (EuclideanSpace ℝ ι)) := ball_subset_ball (by nlinarith)
+  have : IsFiniteMeasure (mu.restrict U) := isFiniteMeasure_restrict.2 measure_ball_lt_top.ne
+  have : IsFiniteMeasure (mu.restrict (ball x₀ (2 * r))) :=
+    isFiniteMeasure_restrict.2 measure_ball_lt_top.ne
+  have hu02 : ∀ᵐ y ∂mu.restrict (ball x₀ (2 * r)), 0 ≤ W1p.value u y :=
+    ae_restrict_of_ae_restrict_of_subset (h2U.trans hball) hu0
+  have hmem2 : MemLp (W1p.value u) 2 (mu.restrict (ball x₀ (2 * r))) :=
+    (Lp.memLp _).mono_measure (Measure.restrict_mono (h2U.trans hball) le_rfl)
+  -- For each `δ = 1/(k + 1)`, the estimate for the positive supersolution `u + δ` on `U`.
+  have hδ : ∀ k : ℕ, ∀ᵐ x ∂mu.restrict (ball x₀ r),
+      (⨍ y in ball x₀ (2 * r), W1p.value u y ^ p₀ ∂mu) ^ p₀⁻¹ ≤
+        C * (W1p.value u x + 1 / ((k : ℝ) + 1)) := by
+    intro k
+    set δ : ℝ := 1 / ((k : ℝ) + 1)
+    have hδ0 : 0 < δ := Nat.one_div_pos_of_nat
+    set w := W1p.restrictL hU u + W1p.const δ
+    have hwv : ∀ᵐ y ∂mu.restrict U, W1p.value w y = W1p.value u y + δ := by
+      filter_upwards [W1p.value_add_const_ae (W1p.restrictL hU u) δ,
+        W1p.value_restrictL_ae hU u] with y h1 h2
+      rw [h1, h2]
+    have hδw : ∀ᵐ y ∂mu.restrict U, δ ≤ W1p.value w y := by
+      filter_upwards [hwv, ae_restrict_of_ae_restrict_of_subset hball hu0] with y h1 h2
+      rw [h1]
+      linarith
+    have hH := hpos (h.mono_set hball) (ha.mono_measure (Measure.restrict_mono hball le_rfl))
+      (energyFormH1_restrictL_add_const_nonneg hU hu δ) hδ0 hδw (x₀ := x₀) (r := r) subset_rfl
+    have hwv2 := ae_restrict_of_ae_restrict_of_subset h2U hwv
+    have e : ⨍ y in ball x₀ (2 * r), W1p.value w y ^ p₀ ∂mu =
+        ⨍ y in ball x₀ (2 * r), (W1p.value u y + δ) ^ p₀ ∂mu :=
+      average_congr (hwv2.mono fun y hy => congrArg (· ^ p₀) hy)
+    rw [e] at hH
+    -- `0 ≤ u^{p₀} ≤ (u + δ)^{p₀}`, and `(u + δ)^{p₀}` is integrable on `B(x₀, 2r)` as `p₀ ≤ 2`.
+    have hle : ∀ᵐ y ∂mu.restrict (ball x₀ (2 * r)),
+        W1p.value u y ^ p₀ ≤ (W1p.value u y + δ) ^ p₀ :=
+      hu02.mono fun y hy => Real.rpow_le_rpow hy (by linarith) hp₀.le
+    have hint' : IntegrableOn (fun y => (W1p.value u y + δ) ^ p₀) (ball x₀ (2 * r)) mu := by
+      have hmem : MemLp (fun y => W1p.value u y + δ) (ENNReal.ofReal p₀)
+          (mu.restrict (ball x₀ (2 * r))) :=
+        (hmem2.add (memLp_const δ)).mono_exponent
+          ((ENNReal.ofReal_le_ofReal hp₀2).trans_eq (ENNReal.ofReal_ofNat 2))
+      refine (hmem.integrable_norm_rpow (ENNReal.ofReal_pos.2 hp₀).ne'
+        ENNReal.ofReal_ne_top).congr ?_
+      filter_upwards [hu02] with y hy
+      rw [ENNReal.toReal_ofReal hp₀.le, Real.norm_of_nonneg (by linarith)]
+    have hint : IntegrableOn (fun y => W1p.value u y ^ p₀) (ball x₀ (2 * r)) mu := by
+      refine hint'.mono' (hmem2.aestronglyMeasurable.aemeasurable.pow_const p₀).aestronglyMeasurable
+        ?_
+      filter_upwards [hu02, hle] with y hy hyle
+      rwa [Real.norm_of_nonneg (Real.rpow_nonneg hy _)]
+    -- The average of `u^{p₀}` is at most that of `(u + δ)^{p₀}`.
+    have hmono : ⨍ y in ball x₀ (2 * r), W1p.value u y ^ p₀ ∂mu ≤
+        ⨍ y in ball x₀ (2 * r), (W1p.value u y + δ) ^ p₀ ∂mu := by
+      rw [setAverage_eq, setAverage_eq]
+      exact smul_le_smul_of_nonneg_left (integral_mono_ae hint hint' hle) (by positivity)
+    filter_upwards [hH, ae_restrict_of_ae_restrict_of_subset hrU hwv] with x hx hwx
+    rw [hwx] at hx
+    exact (Real.rpow_le_rpow (average_nonneg_of_ae (hu02.mono fun y hy => Real.rpow_nonneg hy _))
+      hmono (inv_nonneg.2 hp₀.le)).trans hx
+  -- Let `δ → 0`.
+  filter_upwards [ae_all_iff.2 hδ] with x hx
+  refine le_of_forall_pos_lt_add fun ε hε => ?_
+  obtain ⟨k, hk⟩ := exists_nat_one_div_lt (div_pos hε hC)
+  calc (⨍ y in ball x₀ (2 * r), W1p.value u y ^ p₀ ∂mu) ^ p₀⁻¹
+      ≤ C * (W1p.value u x + 1 / ((k : ℝ) + 1)) := hx k
+    _ < C * W1p.value u x + ε := by
+        rw [mul_add]
+        have := mul_lt_mul_of_pos_left hk hC
+        rw [mul_div_cancel₀ ε hC.ne'] at this
+        linarith
 
 /-- **Moser's weak Harnack inequality.** Let `2*` be the Sobolev exponent of `W^{1,2}` in
 dimension `n`, so that `1/2* + 1/n = 1/2` and `2* < ∞` (this forces `n ≥ 3`). For every exponent
@@ -226,8 +283,7 @@ nonnegative weak supersolution of `-∂ⱼ(aⁱʲ ∂ᵢu) ≥ 0`, that is `a(u,
 `(⨍_{B(x₀, r)} u^s)^{1/s} ≤ C u(x)` for almost every `x ∈ B(x₀, r)`,
 
 and `u^s` is integrable on `B(x₀, r)`, so the left side is a genuine average even for `s > 2`.
-The constant does not depend on `u` or the ball. The proof applies the estimate for supersolutions
-bounded below by `δ > 0` to `u + δ` on the bounded ball `B(x₀, 12√n r)` and lets `δ → 0`. -/
+The constant does not depend on `u` or the ball. -/
 theorem exists_ae_setAverage_rpow_rpow_inv_le_mul_value {pstar : ℝ≥0∞}
     (hpstar : pstar ≠ (∞ : ℝ≥0∞)) (hexp : pstar⁻¹ + (Fintype.card ι : ℝ≥0∞)⁻¹ = 2⁻¹)
     {s : ℝ} (hs : 0 < s) (hsχ : s < pstar.toReal / 2) :
@@ -244,107 +300,25 @@ theorem exists_ae_setAverage_rpow_rpow_inv_le_mul_value {pstar : ℝ≥0∞}
       IntegrableOn (fun y => W1p.value u y ^ s) (ball x₀ r) mu ∧ ∀ᵐ x ∂mu.restrict (ball x₀ r),
         (⨍ y in ball x₀ r, W1p.value u y ^ s ∂mu) ^ s⁻¹ ≤ C * W1p.value u x := by
   have := Fintype.card_pos_iff.1 <| Nat.pos_of_ne_zero <| ne_zero_of_inv_add_inv_eq_inv hexp
-  obtain ⟨C, hC, hpos⟩ := exists_ae_setAverage_rpow_rpow_inv_le_mul_value_of_pos (mu := mu)
-    (lam := lam) (Lam := Lam) hpstar hexp hs hsχ
-  refine ⟨C, hC, ?_⟩
+  obtain ⟨p₀, hp₀, hp₀2, C₁, hC₁, hsmall⟩ :=
+    exists_pos_ae_setAverage_rpow_rpow_inv_le_mul_value (mu := mu) (lam := lam) (Lam := Lam)
+  obtain ⟨D, hD, hiter⟩ := exists_setAverage_rpow_rpow_inv_le_mul_setAverage_rpow_rpow_inv
+    (mu := mu) (lam := lam) (Lam := Lam) hpstar hexp hp₀ hp₀2 hs hsχ
+  refine ⟨D * C₁, by positivity, ?_⟩
   intro Omega a u x₀ r h ha hu hu0 hball
   rcases le_or_gt r 0 with hr | hr
   · simp [ball_eq_empty.2 hr]
   have hsqrt : 1 ≤ √(Fintype.card ι : ℝ) := Real.one_le_sqrt.2 (Nat.one_le_cast.2 Fintype.card_pos)
-  -- Work on the bounded open ball `U = B(x₀, 12√n r)`, where constants lie in `H¹(U)`.
-  set U : Opens (EuclideanSpace ℝ ι) := ⟨ball x₀ (12 * √(Fintype.card ι) * r), isOpen_ball⟩
-  have hU : U ≤ Omega := hball
-  have hrU : ball x₀ r ⊆ (U : Set (EuclideanSpace ℝ ι)) := ball_subset_ball (by nlinarith)
-  have : IsFiniteMeasure (mu.restrict U) := isFiniteMeasure_restrict.2 measure_ball_lt_top.ne
-  have : IsFiniteMeasure (mu.restrict (ball x₀ r)) :=
-    isFiniteMeasure_restrict.2 measure_ball_lt_top.ne
-  have hone : HasWeakFDerivOn mu U (Lp.const 2 (mu.restrict U) (1 : ℝ))
-      fun x => innerSL ℝ ((0 : Lp (EuclideanSpace ℝ ι) 2 (mu.restrict U)) x) := by
-    have hconst : HasWeakFDerivOn mu U (fun _ : EuclideanSpace ℝ ι => (1 : ℝ)) 0 :=
-      hasWeakFDerivOn_iff.2 fun _ => hasWeakLineDerivOn_const 1
-    refine (hconst.congr_ae
-      (Lp.coeFn_const 2 _ (1 : ℝ)).symm).congr_ae_deriv ?_
-    filter_upwards [Lp.coeFn_zero (EuclideanSpace ℝ ι) 2 (mu.restrict U)] with x hx
-    rw [hx, Pi.zero_apply, Pi.zero_apply, map_zero]
-  set one : W1p mu U 2 := W1p.mk _ _ hone
-  have hu0r : ∀ᵐ y ∂mu.restrict (ball x₀ r), 0 ≤ W1p.value u y :=
-    ae_restrict_of_ae_restrict_of_subset (hrU.trans hball) hu0
-  have hmeas : AEStronglyMeasurable (W1p.value u) (mu.restrict (ball x₀ r)) :=
-    (Lp.aestronglyMeasurable _).mono_measure (Measure.restrict_mono (hrU.trans hball) le_rfl)
-  -- For each `δ = 1/(k + 1)`, the estimate for the positive supersolution `u + δ` on `U`.
-  have hδ : ∀ k : ℕ, IntegrableOn (fun y => W1p.value u y ^ s) (ball x₀ r) mu ∧
-      ∀ᵐ x ∂mu.restrict (ball x₀ r), (⨍ y in ball x₀ r, W1p.value u y ^ s ∂mu) ^ s⁻¹ ≤
-        C * (W1p.value u x + 1 / ((k : ℝ) + 1)) := by
-    intro k
-    set δ : ℝ := 1 / ((k : ℝ) + 1)
-    have hδ0 : 0 < δ := Nat.one_div_pos_of_nat
-    set w := W1p.restrictL hU u + δ • one
-    have hwv : ∀ᵐ y ∂mu.restrict U, W1p.value w y = W1p.value u y + δ := by
-      have hw : W1p.value w =
-          W1p.value (W1p.restrictL hU u) + δ • Lp.const 2 (mu.restrict U) (1 : ℝ) := by
-        rw [← W1p.valueL_apply, map_add, map_smul, W1p.valueL_apply, W1p.valueL_apply,
-          W1p.value_mk]
-      filter_upwards [W1p.value_restrictL_ae hU u,
-        Lp.coeFn_add (W1p.value (W1p.restrictL hU u)) (δ • Lp.const 2 (mu.restrict U) (1 : ℝ)),
-        Lp.coeFn_smul δ (Lp.const 2 (mu.restrict U) (1 : ℝ)),
-        Lp.coeFn_const 2 (mu.restrict U) (1 : ℝ)] with y h1 h2 h3 h4
-      rw [hw, h2, Pi.add_apply, h3, Pi.smul_apply, h4, h1, Function.const_apply, smul_eq_mul,
-        mul_one]
-    have hwg : W1p.gradient w = W1p.gradient (W1p.restrictL hU u) := by
-      rw [← W1p.gradientL_apply, map_add, map_smul, W1p.gradientL_apply, W1p.gradientL_apply,
-        W1p.gradient_mk, smul_zero, add_zero]
-    -- `u + δ` is a weak supersolution on `U`, since `a(u|_U, v) ≥ 0` and `∇(u + δ) = ∇u`.
-    have hw : ∀ v : W1p0 mu U 2, (∀ᵐ x ∂mu.restrict U, 0 ≤ W1p.value (v : W1p mu U 2) x) →
-        0 ≤ energyFormH1 a 0 0 w (v : W1p mu U 2) := by
-      intro v hv
-      have hneg := energyFormH1_restrictL_nonpos (b := 0) (c := 0) hU (u := (-1 : ℝ) • u)
-        (fun v hv => by rw [energyFormH1_smul_left]; linarith [hu v hv]) v hv
-      rw [map_smul, energyFormH1_smul_left] at hneg
-      have heq : energyFormH1 a 0 0 w (v : W1p mu U 2) =
-          energyFormH1 a 0 0 (W1p.restrictL hU u) (v : W1p mu U 2) := by
-        simp [energyFormH1_def, hwg, driftForm_apply, massForm_apply]
-      linarith
-    have hδw : ∀ᵐ y ∂mu.restrict U, δ ≤ W1p.value w y := by
-      filter_upwards [hwv, ae_restrict_of_ae_restrict_of_subset hball hu0] with y h1 h2
-      rw [h1]
-      linarith
-    obtain ⟨hHi, hH⟩ := hpos (h.mono_set hball)
-      (ha.mono_measure (Measure.restrict_mono hball le_rfl)) hw hδ0 hδw (x₀ := x₀) (r := r)
-      subset_rfl
-    have hwvr := ae_restrict_of_ae_restrict_of_subset hrU hwv
-    rw [setAverage_eq, integral_congr_ae (hwvr.mono fun y hy => by rw [hy])] at hH
-    rw [setAverage_eq]
-    -- `0 ≤ u^s ≤ (u + δ)^s`, and `(u + δ)^s` is integrable on `B(x₀, r)`, hence so is `u^s`.
-    have hle : ∀ᵐ y ∂mu.restrict (ball x₀ r), W1p.value u y ^ s ≤ (W1p.value u y + δ) ^ s :=
-      hu0r.mono fun y hy => Real.rpow_le_rpow hy (by linarith) hs.le
-    have hint' : IntegrableOn (fun y => (W1p.value u y + δ) ^ s) (ball x₀ r) mu :=
-      hHi.congr (hwvr.mono fun y hy => by simp only [hy])
-    have hint : IntegrableOn (fun y => W1p.value u y ^ s) (ball x₀ r) mu := by
-      refine hint'.mono' (hmeas.aemeasurable.pow_const s).aestronglyMeasurable ?_
-      filter_upwards [hu0r, hle] with y hy hyle
-      rwa [Real.norm_of_nonneg (Real.rpow_nonneg hy _)]
-    refine ⟨hint, ?_⟩
-    -- The average of `u^s` is at most that of `(u + δ)^s`.
-    have hmono : (mu.real (ball x₀ r))⁻¹ • ∫ y in ball x₀ r, W1p.value u y ^ s ∂mu ≤
-        (mu.real (ball x₀ r))⁻¹ • ∫ y in ball x₀ r, (W1p.value u y + δ) ^ s ∂mu :=
-      smul_le_smul_of_nonneg_left (integral_mono_ae hint hint' hle) (by positivity)
-    filter_upwards [hH, hwvr] with x hx hwx
-    rw [hwx] at hx
-    refine (Real.rpow_le_rpow ?_ hmono (inv_nonneg.2 hs.le)).trans hx
-    exact smul_nonneg (by positivity)
-      (integral_nonneg_of_ae (hu0r.mono fun y hy => Real.rpow_nonneg hy _))
-  -- Let `δ → 0`.
-  refine ⟨(hδ 0).1, ?_⟩
-  filter_upwards [ae_all_iff.2 fun k => (hδ k).2, hu0r] with x hx hx0
-  refine le_of_forall_pos_lt_add fun ε hε => ?_
-  obtain ⟨k, hk⟩ := exists_nat_one_div_lt (div_pos hε hC)
+  -- Moser's iteration passes from `L^{p₀}` on `B(x₀, 2r)` to `L^s` on `B(x₀, r)`.
+  obtain ⟨hint, hiter'⟩ := hiter h ha hu hu0 (x₀ := x₀) (R := 2 * r)
+    ((ball_subset_ball (by nlinarith)).trans hball)
+  rw [mul_div_cancel_left₀ r two_ne_zero] at hint hiter'
+  refine ⟨hint, ?_⟩
+  filter_upwards [hsmall h ha hu hu0 hball] with x hx
   calc (⨍ y in ball x₀ r, W1p.value u y ^ s ∂mu) ^ s⁻¹
-      ≤ C * (W1p.value u x + 1 / ((k : ℝ) + 1)) := hx k
-    _ < C * W1p.value u x + ε := by
-        rw [mul_add]
-        have := mul_lt_mul_of_pos_left hk hC
-        rw [mul_div_cancel₀ ε hC.ne'] at this
-        linarith
+      ≤ D * (⨍ y in ball x₀ (2 * r), W1p.value u y ^ p₀ ∂mu) ^ p₀⁻¹ := hiter'
+    _ ≤ D * (C₁ * W1p.value u x) := by gcongr
+    _ = D * C₁ * W1p.value u x := by ring
 
 /-- **Moser's Harnack inequality.** Let `2*` be the Sobolev exponent of `W^{1,2}` in dimension
 `n`, so that `1/2* + 1/n = 1/2` and `2* < ∞` (this forces `n ≥ 3`). There is `C > 0`, depending
