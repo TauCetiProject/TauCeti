@@ -75,9 +75,7 @@ The carrier API follows the formal template of
 `TauCeti.Algebra.Lie.E6.Minuscule.GroupScheme` and
 `TauCeti.Algebra.Lie.Symplectic.StandardCarrier.Scheme`, and the pinning equations below follow
 that of `TauCeti.Algebra.Lie.Symplectic.StandardCarrier.RootDatum`; the split spin representation,
-exterior lattice, and type-`D` weights are specific to this construction. This advances Layer 9,
-"The Chevalley--Demazure construction", of the ReductiveGroups roadmap and supplies the type-`D`
-carrier required by milestone L0 of the CFSGStatement roadmap.
+exterior lattice, and type-`D` weights are specific to this construction.
 -/
 
 public section
