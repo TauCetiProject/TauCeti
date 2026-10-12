@@ -56,12 +56,12 @@ public section
 universe u
 
 variable {n p : Type*} [Fintype n] [DecidableEq n] [Fintype p] [DecidableEq p]
-  (e : n ≃ p) (R : Type u) [CommSemiring R]
+  (e : n ≃ p) (R : Type u) [Semiring R]
 
 /-- Reindexing along an equivalence of index types, as a group isomorphism of general linear
 groups. -/
 def reindexGL : GL n R ≃* GL p R :=
-  Units.mapEquiv (Matrix.reindexAlgEquiv R R e).toRingEquiv.toMulEquiv
+  Units.mapEquiv (Matrix.reindexRingEquiv R e).toMulEquiv
 
 @[simp]
 theorem coe_reindexGL (M : GL n R) :
