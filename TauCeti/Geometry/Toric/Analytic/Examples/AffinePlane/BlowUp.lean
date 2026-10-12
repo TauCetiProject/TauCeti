@@ -267,6 +267,62 @@ private theorem blowUpPointHomeomorph_apply (upper : Bool)
   -- The additive-hom coercion of the inverse semigroup equivalence has the same function.
   rfl
 
+/-- The first upper-chart coordinate character, dual to the generator `(1, 1)`,
+with lattice coefficients `(1, 0)`. -/
+noncomputable def affinePlaneBlowUpUpperCharacter₁ :
+    dualSemigroup affinePlaneFan.lattice affinePlaneBlowUpUpperCone :=
+  (blowUpSemigroupEquiv true).symm
+    ((dualSemigroupProdEquiv affineRayFan.lattice affineRayFan.lattice
+      affineRayCone affineRayCone).symm (affineRayCharacter, 0))
+
+/-- The first upper-chart coordinate character evaluates the first lattice coordinate. -/
+@[simp]
+theorem affinePlaneBlowUpUpperCharacter₁_apply (n : (Fin 1 → ℤ) × (Fin 1 → ℤ)) :
+    (affinePlaneBlowUpUpperCharacter₁ : _ →+ ℤ) n = n.1 0 := by
+  simp [affinePlaneBlowUpUpperCharacter₁, blowUpSemigroupEquiv, blowUpShear]
+
+/-- The second upper-chart coordinate character, dual to the generator `(0, 1)`,
+with lattice coefficients `(−1, 1)`. -/
+noncomputable def affinePlaneBlowUpUpperCharacter₂ :
+    dualSemigroup affinePlaneFan.lattice affinePlaneBlowUpUpperCone :=
+  (blowUpSemigroupEquiv true).symm
+    ((dualSemigroupProdEquiv affineRayFan.lattice affineRayFan.lattice
+      affineRayCone affineRayCone).symm (0, affineRayCharacter))
+
+/-- The second upper-chart coordinate character evaluates the difference of lattice coordinates. -/
+@[simp]
+theorem affinePlaneBlowUpUpperCharacter₂_apply (n : (Fin 1 → ℤ) × (Fin 1 → ℤ)) :
+    (affinePlaneBlowUpUpperCharacter₂ : _ →+ ℤ) n = n.2 0 - n.1 0 := by
+  simp [affinePlaneBlowUpUpperCharacter₂, blowUpSemigroupEquiv, blowUpShear]
+
+/-- The first lower-chart coordinate character, dual to the generator `(1, 0)`,
+with lattice coefficients `(1, −1)`. -/
+noncomputable def affinePlaneBlowUpLowerCharacter₁ :
+    dualSemigroup affinePlaneFan.lattice affinePlaneBlowUpLowerCone :=
+  (blowUpSemigroupEquiv false).symm
+    ((dualSemigroupProdEquiv affineRayFan.lattice affineRayFan.lattice
+      affineRayCone affineRayCone).symm (affineRayCharacter, 0))
+
+/-- The first lower-chart coordinate character evaluates the difference of lattice coordinates. -/
+@[simp]
+theorem affinePlaneBlowUpLowerCharacter₁_apply (n : (Fin 1 → ℤ) × (Fin 1 → ℤ)) :
+    (affinePlaneBlowUpLowerCharacter₁ : _ →+ ℤ) n = n.1 0 - n.2 0 := by
+  simp [affinePlaneBlowUpLowerCharacter₁, blowUpSemigroupEquiv, blowUpShear]
+
+/-- The second lower-chart coordinate character, dual to the generator `(1, 1)`,
+with lattice coefficients `(0, 1)`. -/
+noncomputable def affinePlaneBlowUpLowerCharacter₂ :
+    dualSemigroup affinePlaneFan.lattice affinePlaneBlowUpLowerCone :=
+  (blowUpSemigroupEquiv false).symm
+    ((dualSemigroupProdEquiv affineRayFan.lattice affineRayFan.lattice
+      affineRayCone affineRayCone).symm (0, affineRayCharacter))
+
+/-- The second lower-chart coordinate character evaluates the second lattice coordinate. -/
+@[simp]
+theorem affinePlaneBlowUpLowerCharacter₂_apply (n : (Fin 1 → ℤ) × (Fin 1 → ℤ)) :
+    (affinePlaneBlowUpLowerCharacter₂ : _ →+ ℤ) n = n.2 0 := by
+  simp [affinePlaneBlowUpLowerCharacter₂, blowUpSemigroupEquiv, blowUpShear]
+
 /-- The forward upper-chart coordinates evaluate the dual-basis characters
 `(1, 0)` and `(−1, 1)`. -/
 @[simp]
@@ -274,32 +330,9 @@ theorem affinePlaneBlowUpUpperPointHomeomorph_apply
     (x : AffineSemigroupComplexPoint
       (dualSemigroup affinePlaneFan.lattice affinePlaneBlowUpUpperCone)) :
     affinePlaneBlowUpUpperPointHomeomorph x =
-      (x (MonoidAlgebra.single (ofAdd ⟨
-        (affineRayCharacter : (Fin 1 → ℤ) →+ ℤ).comp (AddMonoidHom.fst (Fin 1 → ℤ) (Fin 1 → ℤ)), by
-          have h := ((blowUpSemigroupEquiv true).symm
-            ((dualSemigroupProdEquiv affineRayFan.lattice affineRayFan.lattice
-              affineRayCone affineRayCone).symm (affineRayCharacter, 0))).property
-          change _ ∈ dualSemigroup affinePlaneFan.lattice
-            affinePlaneBlowUpUpperCone at h
-          convert h using 1
-          ext n
-          simp [blowUpSemigroupEquiv, blowUpShear]⟩) 1),
-        x (MonoidAlgebra.single (ofAdd ⟨
-        (affineRayCharacter : (Fin 1 → ℤ) →+ ℤ).comp (AddMonoidHom.snd (Fin 1 → ℤ) (Fin 1 → ℤ)) -
-          (affineRayCharacter : (Fin 1 → ℤ) →+ ℤ).comp
-            (AddMonoidHom.fst (Fin 1 → ℤ) (Fin 1 → ℤ)), by
-          have h := ((blowUpSemigroupEquiv true).symm
-            ((dualSemigroupProdEquiv affineRayFan.lattice affineRayFan.lattice
-              affineRayCone affineRayCone).symm (0, affineRayCharacter))).property
-          change _ ∈ dualSemigroup affinePlaneFan.lattice
-            affinePlaneBlowUpUpperCone at h
-          convert h using 1
-          ext n
-          simp [blowUpSemigroupEquiv, blowUpShear]⟩) 1)) := by
-  rw [affinePlaneBlowUpUpperPointHomeomorph]
-  erw [blowUpPointHomeomorph_apply]
-  congr 3 <;> apply congrArg ofAdd <;> apply Subtype.ext <;> ext n <;>
-    simp [blowUpSemigroupEquiv, blowUpShear]
+      (x (MonoidAlgebra.single (ofAdd affinePlaneBlowUpUpperCharacter₁) 1),
+        x (MonoidAlgebra.single (ofAdd affinePlaneBlowUpUpperCharacter₂) 1)) := by
+  exact blowUpPointHomeomorph_apply true x
 
 /-- The forward lower-chart coordinates evaluate the dual-basis characters
 `(1, −1)` and `(0, 1)`. -/
@@ -308,32 +341,9 @@ theorem affinePlaneBlowUpLowerPointHomeomorph_apply
     (x : AffineSemigroupComplexPoint
       (dualSemigroup affinePlaneFan.lattice affinePlaneBlowUpLowerCone)) :
     affinePlaneBlowUpLowerPointHomeomorph x =
-      (x (MonoidAlgebra.single (ofAdd ⟨
-        (affineRayCharacter : (Fin 1 → ℤ) →+ ℤ).comp (AddMonoidHom.fst (Fin 1 → ℤ) (Fin 1 → ℤ)) -
-          (affineRayCharacter : (Fin 1 → ℤ) →+ ℤ).comp
-            (AddMonoidHom.snd (Fin 1 → ℤ) (Fin 1 → ℤ)), by
-          have h := ((blowUpSemigroupEquiv false).symm
-            ((dualSemigroupProdEquiv affineRayFan.lattice affineRayFan.lattice
-              affineRayCone affineRayCone).symm (affineRayCharacter, 0))).property
-          change _ ∈ dualSemigroup affinePlaneFan.lattice
-            affinePlaneBlowUpLowerCone at h
-          convert h using 1
-          ext n
-          simp [blowUpSemigroupEquiv, blowUpShear]⟩) 1),
-        x (MonoidAlgebra.single (ofAdd ⟨
-        (affineRayCharacter : (Fin 1 → ℤ) →+ ℤ).comp (AddMonoidHom.snd (Fin 1 → ℤ) (Fin 1 → ℤ)), by
-          have h := ((blowUpSemigroupEquiv false).symm
-            ((dualSemigroupProdEquiv affineRayFan.lattice affineRayFan.lattice
-              affineRayCone affineRayCone).symm (0, affineRayCharacter))).property
-          change _ ∈ dualSemigroup affinePlaneFan.lattice
-            affinePlaneBlowUpLowerCone at h
-          convert h using 1
-          ext n
-          simp [blowUpSemigroupEquiv, blowUpShear]⟩) 1)) := by
-  rw [affinePlaneBlowUpLowerPointHomeomorph]
-  erw [blowUpPointHomeomorph_apply]
-  congr 3 <;> apply congrArg ofAdd <;> apply Subtype.ext <;> ext n <;>
-    simp [blowUpSemigroupEquiv, blowUpShear]
+      (x (MonoidAlgebra.single (ofAdd affinePlaneBlowUpLowerCharacter₁) 1),
+        x (MonoidAlgebra.single (ofAdd affinePlaneBlowUpLowerCharacter₂) 1)) := by
+  exact blowUpPointHomeomorph_apply false x
 
 /-- The upper affine chart parametrization of the toric blow-up. -/
 noncomputable def affinePlaneBlowUpUpperChart (z : ℂ × ℂ) :
@@ -427,8 +437,8 @@ private theorem blowUp_coordinate_formula (upper : Bool) (n : ℕ∞ω) (z : ℂ
       (quadrant : Set ((Fin 1 → ℝ) × (Fin 1 → ℝ))) := by
     rw [Fan.IsSubdivision.toFanHom_realMap]
     cases upper
-    · exact affinePlaneBlowUpLowerCone_le
-    · exact affinePlaneBlowUpUpperCone_le
+    · exact affinePlaneBlowUpLowerCone_le_prod
+    · exact affinePlaneBlowUpUpperCone_le_prod
   erw [FanHom.analyticMap_analyticAffineChartι_of_mapsTo
     (υ := maxCone) _ _ _ hmap, affinePlaneDiffeomorph_analyticAffineChartι]
   -- Unbundle the chart carrier before using the monomial evaluation formulas.

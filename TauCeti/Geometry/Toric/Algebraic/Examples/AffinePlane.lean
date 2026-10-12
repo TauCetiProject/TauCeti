@@ -119,7 +119,7 @@ theorem mem_affinePlaneBlowUpUpperCone_iff (x : (Fin 1 → ℝ) × (Fin 1 → �
     ext j <;> simp [Nonneg.mk_smul, Subsingleton.elim j 0]
 
 /-- The lower blow-up cone lies in the positive quadrant. -/
-theorem affinePlaneBlowUpLowerCone_le :
+theorem affinePlaneBlowUpLowerCone_le_prod :
     affinePlaneBlowUpLowerCone ≤ affineRayCone.prod affineRayCone := by
   intro x hx
   have hx' := (mem_affinePlaneBlowUpLowerCone_iff x).1 hx
@@ -127,7 +127,7 @@ theorem affinePlaneBlowUpLowerCone_le :
     (mem_affineRayCone_iff _).2 hx'.1⟩
 
 /-- The upper blow-up cone lies in the positive quadrant. -/
-theorem affinePlaneBlowUpUpperCone_le :
+theorem affinePlaneBlowUpUpperCone_le_prod :
     affinePlaneBlowUpUpperCone ≤ affineRayCone.prod affineRayCone := by
   intro x hx
   have hx' := (mem_affinePlaneBlowUpUpperCone_iff x).1 hx
