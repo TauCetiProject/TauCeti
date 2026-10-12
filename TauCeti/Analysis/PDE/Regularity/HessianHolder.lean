@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.PDE.Regularity.GradientHolder
 public import TauCeti.Analysis.PDE.Regularity.HigherOrder
-import TauCeti.Topology.MetricSpace.Holder
 
 /-!
 # Hölder continuity of the second derivatives for `-Δu = f`
