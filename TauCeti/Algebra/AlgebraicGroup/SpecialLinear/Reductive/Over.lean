@@ -9,6 +9,7 @@ public import TauCeti.Algebra.AlgebraicGroup.Reductive.Over
 public import TauCeti.Algebra.AlgebraicGroup.SplitTorus.Maximal
 public import TauCeti.Algebra.AlgebraicGroup.SpecialLinear.Reductive.Basic
 public import TauCeti.Algebra.AlgebraicGroup.SpecialLinear.DiagonalTorus.Maximal
+public import TauCeti.Algebra.AlgebraicGroup.SpecialLinear.UpperTriangular.DiagonalTorus
 import TauCeti.Algebra.AlgebraicGroup.SpecialLinear.Smooth
 
 /-!
@@ -26,7 +27,12 @@ geometric fibers.
 
 The chosen torus is compatible with base change: base-changing the torus over `R` to an
 `R`-algebra `S` and transporting it along the base-change isomorphism of coordinate Hopf algebras
-gives the chosen torus over `S` (`splitMaximalTorus_baseChange_comapOfIso`).
+gives the chosen torus over `S` (`splitMaximalTorus_baseChange_comapOfIso`). It lies in the
+upper-triangular subgroup
+(`UpperTriangular.definingHopfIdeal_le_splitMaximalTorus_definingIdeal`), which is a Borel
+subgroup of `SL_{r+1}` over every commutative ring
+(`TauCeti.SpecialLinear.UpperTriangular.isBorelOver_definingHopfIdeal`), so the two form a
+torus contained in a Borel subgroup over the base.
 
 ## References
 
@@ -104,5 +110,12 @@ theorem splitMaximalTorus_baseChange_comapOfIso (S : Type u) [CommRing S] [Algeb
   rw [SplitMaximalTorus.comapOfIso_coordinateMap, SplitMaximalTorus.baseChange_coordinateMap,
     splitMaximalTorus_coordinateMap, splitMaximalTorus_coordinateMap, Iso.symm_hom]
   exact diagonalTorusCoordinateMap_baseChange r R S
+
+/-- **The chosen split maximal torus of `SL_{r+1}` lies in the upper-triangular subgroup**, over
+every commutative base ring. The order of Hopf ideals reverses inclusion of closed subgroups. -/
+theorem UpperTriangular.definingHopfIdeal_le_splitMaximalTorus_definingIdeal (r : ℕ) :
+    UpperTriangular.definingHopfIdeal R (r + 1) ≤ (splitMaximalTorus R r).definingIdeal := by
+  rw [splitMaximalTorus_definingIdeal]
+  exact UpperTriangular.definingHopfIdeal_le_diagonalTorusDefiningIdeal r R
 
 end TauCeti.SpecialLinear

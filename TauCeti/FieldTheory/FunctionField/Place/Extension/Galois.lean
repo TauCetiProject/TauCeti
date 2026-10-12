@@ -7,7 +7,6 @@ module
 
 public import Mathlib.FieldTheory.Galois.Basic
 public import Mathlib.RingTheory.Norm.Transitivity
-public import Mathlib.RingTheory.Valuation.RamificationGroup
 public import TauCeti.FieldTheory.FunctionField.Place.Extension.Degree
 -- `TauCeti.Place.restrict_surjective_of_finiteDimensional` is what makes the fibre of a place of a
 -- function field nonempty, hence its ramification index positive.
@@ -15,6 +14,7 @@ public import TauCeti.FieldTheory.FunctionField.Place.Extension.Existence
 public import TauCeti.FieldTheory.FunctionField.Place.Extension.Fundamental
 public import TauCeti.FieldTheory.FunctionField.Place.Map
 public import TauCeti.FieldTheory.IntermediateField.ScalarTower
+public import TauCeti.RingTheory.Valuation.RamificationGroup
 
 /-!
 # The Galois action on the places lying over a place
@@ -285,7 +285,7 @@ theorem exists_smul_eq_of_restrict_eq {P Q : Place k F'} (h : P.restrict k F = Q
   have hcon' : ∀ σ : F' ≃ₐ[F] F', σ • P ≠ Q := fun σ hσ ↦ hcon ⟨σ, hσ⟩
   set s : Finset (Place k F') :=
     (Finset.univ.image fun σ : F' ≃ₐ[F] F' ↦ σ • P) ∪
-      (Finset.univ.image fun σ : F' ≃ₐ[F] F' ↦ σ • Q) with hs
+      (Finset.univ.image fun σ : F' ≃ₐ[F] F' ↦ σ • Q)
   obtain ⟨z, hz⟩ := exists_forall_mem_ord_eq s fun X ↦ if X = Q then 1 else 0
   have hQmem : Q ∈ s :=
     Finset.mem_union_right _ (Finset.mem_image.mpr ⟨1, Finset.mem_univ _, one_smul _ Q⟩)

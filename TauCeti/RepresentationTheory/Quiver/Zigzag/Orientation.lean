@@ -8,6 +8,8 @@ module
 public import Mathlib.Combinatorics.SimpleGraph.Coloring.Vertex
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Basic
 public import TauCeti.RepresentationTheory.Quiver.Acyclic.Basic
+public import TauCeti.RepresentationTheory.Quiver.Symmetrify
+import Mathlib.Combinatorics.Quiver.Cast
 
 /-!
 # Orienting a simple graph and recovering its doubled quiver
@@ -34,6 +36,8 @@ one convenient witness that every graph admits an orientation.
 * `TauCeti.DoubledQuiver.OrientedQuiver.card_hom_ofLinearOrder` and
   `TauCeti.DoubledQuiver.OrientedQuiver.isAcyclic_ofLinearOrder`: arrow counts and acyclicity for
   the linear-order orientation.
+* `TauCeti.DoubledQuiver.OrientedQuiver.card_symmetrify_hom`: symmetrifying an orientation
+  recovers the adjacency counts of the graph.
 * `TauCeti.DoubledQuiver.symmetrifyMap`: the canonical prefunctor from the symmetrification of an
   oriented graph to its doubled quiver.
 * `TauCeti.DoubledQuiver.unsymmetrifyMap`: its inverse prefunctor.
@@ -265,6 +269,14 @@ theorem card_hom_add_card_hom [DecidableRel G.Adj] (i j : V) :
     have h2 : Nat.card {h' : G.Adj j i // (⟨(j, i), h'⟩ : G.Dart) ∈ o} = 0 :=
       @Nat.card_of_isEmpty _ ⟨fun p => h p.1.symm⟩
     rw [h1, h2]
+
+/-- The symmetrification of an oriented graph has one arrow between two vertices exactly when they
+are adjacent: the chosen arrow over the edge or its formal reverse. -/
+theorem card_symmetrify_hom [DecidableRel G.Adj] (i j : V) :
+    Fintype.card (Symmetrify.of.obj (vertex G o i) ⟶ Symmetrify.of.obj (vertex G o j)) =
+      if G.Adj i j then 1 else 0 := by
+  rw [TauCeti.card_symmetrify_hom, Fintype.card_eq_nat_card, Fintype.card_eq_nat_card,
+    card_hom_add_card_hom G o i j]
 
 /-- Forgetting the choice of orientation includes the oriented quiver into the doubled quiver. -/
 def forget : OrientedQuiver G o ⥤q DoubledQuiver G where

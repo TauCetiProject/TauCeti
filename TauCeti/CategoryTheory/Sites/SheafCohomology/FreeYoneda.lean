@@ -17,6 +17,8 @@ public import Mathlib.CategoryTheory.Sites.SheafCohomology.Basic
 The source object in Mathlib's `CategoryTheory.Sheaf.H'` is obtained by applying the free abelian
 group functor to a representable presheaf and then sheafifying. This file packages those objects as
 a functor of the object of the site and records their universal property and its naturality.
+In degree zero this identifies the cohomology presheaf with the underlying presheaf of sections,
+naturally both in the object of the site and in the coefficient sheaf.
 
 ## Main declarations
 
@@ -25,24 +27,25 @@ a functor of the object of the site and records their universal property and its
 * `TauCeti.CategoryTheory.sheafH'_eq`, identifying Mathlib's `Sheaf.H'` with `Ext` from that
   functor;
 * `TauCeti.CategoryTheory.freeYonedaSheafSectionsEquiv`, the additive equivalence between
-  morphisms from that sheaf to `F` and sections of `F` over `U`;
+  morphisms from that sheaf to `F` and sections of `F` over `U`, and
+  `TauCeti.CategoryTheory.freeYonedaSheafCorepresentableBy`, the same universal property phrased
+  as a corepresentation of the sections functor;
+* `TauCeti.CategoryTheory.cohomologyZeroSectionsEquiv F U`, identifying degree-zero cohomology
+  over `U` with sections, and `TauCeti.CategoryTheory.cohomologyPresheafZeroIso F`, identifying
+  degree-zero cohomology with sections and their restriction maps;
 * `TauCeti.CategoryTheory.mono_freeYonedaSheafFunctor_map`, saying that a monomorphism of site
   objects induces a monomorphism between the corresponding free abelian sheaves.
 
 The equivalence composes the sheafification adjunction, the free-forgetful adjunction for abelian
 groups, and the Yoneda equivalence. This is the same model of the free abelian sheaf used
 definitionally by Mathlib's `Sheaf.cohomologyPresheafFunctor`.
-
-This advances `TauCetiRoadmap/JacobianChallenge/README.md`, Layer B, "coherent sheaves and
-cohomology `Hⁱ(X, ℱ)`": it is the input to the acyclicity of flasque sheaves in
-`TauCeti/Topology/Sheaves/Flasque.lean`. No formalization is vendored.
 -/
 
 public section
 
 open CategoryTheory Limits Opposite
 
-universe v u
+universe w v u
 
 namespace TauCeti
 
@@ -63,7 +66,7 @@ noncomputable def freeYonedaSheafFunctor :
 
 /-- Mathlib's cohomology presheaf is the Ext bifunctor from free abelian representable
 sheaves. -/
-lemma cohomologyPresheafFunctor_eq [HasExt.{v} (_root_.CategoryTheory.Sheaf J AddCommGrpCat.{v})]
+lemma cohomologyPresheafFunctor_eq [HasExt.{w} (_root_.CategoryTheory.Sheaf J AddCommGrpCat.{v})]
     (n : ℕ) :
     _root_.CategoryTheory.Sheaf.cohomologyPresheafFunctor J n =
       Functor.flip ((freeYonedaSheafFunctor J).op ⋙ Abelian.extFunctor n) :=
@@ -71,10 +74,10 @@ lemma cohomologyPresheafFunctor_eq [HasExt.{v} (_root_.CategoryTheory.Sheaf J Ad
 
 /-- Mathlib's sheaf cohomology over an object of a site is `Ext` from the corresponding free
 abelian sheaf. -/
-lemma sheafH'_eq [HasExt.{v} (_root_.CategoryTheory.Sheaf J AddCommGrpCat.{v})]
+lemma sheafH'_eq [HasExt.{w} (_root_.CategoryTheory.Sheaf J AddCommGrpCat.{v})]
     (F : _root_.CategoryTheory.Sheaf J AddCommGrpCat.{v}) (n : ℕ) (U : C) :
-    _root_.CategoryTheory.Sheaf.H'.{v} F n U =
-      AddCommGrpCat.of (Abelian.Ext.{v} ((freeYonedaSheafFunctor J).obj U) F n) :=
+    _root_.CategoryTheory.Sheaf.H'.{w} F n U =
+      AddCommGrpCat.of (Abelian.Ext.{w} ((freeYonedaSheafFunctor J).obj U) F n) :=
   (rfl)
 
 /-- Morphisms from the free abelian sheaf on `U` to an abelian sheaf `F` are additively equivalent
@@ -114,6 +117,13 @@ lemma freeYonedaSheafSectionsEquiv_naturality_right {U : C}
     yonedaEquiv_comp]
   rfl
 
+/-- The free abelian sheaf on `U` corepresents the functor of sections over `U`. -/
+def freeYonedaSheafCorepresentableBy (U : C) :
+    ((sheafSections J AddCommGrpCat.{v}).obj (op U) ⋙ forget AddCommGrpCat).CorepresentableBy
+      ((freeYonedaSheafFunctor J).obj U) where
+  homEquiv := (freeYonedaSheafSectionsEquiv J U _).toEquiv
+  homEquiv_comp g f := freeYonedaSheafSectionsEquiv_naturality_right J f g
+
 /-- The equivalence `freeYonedaSheafSectionsEquiv` is natural in the object of the site:
 precomposing with the map induced by `i : U ⟶ V` is restricting sections along `i`. -/
 lemma freeYonedaSheafSectionsEquiv_naturality_left {U V : C} (i : U ⟶ V)
@@ -126,6 +136,76 @@ lemma freeYonedaSheafSectionsEquiv_naturality_left {U V : C} (i : U ⟶ V)
     Functor.comp_map] at f ⊢
   rw [Adjunction.homEquiv_naturality_left, Adjunction.homEquiv_naturality_left]
   exact (yonedaEquiv_naturality _ _).symm
+
+section
+
+variable {J} [HasExt.{v} (_root_.CategoryTheory.Sheaf J AddCommGrpCat.{v})]
+
+/-- Degree-zero cohomology over an object of a site is the group of sections over that
+object. -/
+def cohomologyZeroSectionsEquiv (F : _root_.CategoryTheory.Sheaf J AddCommGrpCat.{v}) (U : C) :
+    F.H' 0 U ≃+ F.obj.obj (op U) :=
+  Abelian.Ext.addEquiv₀.trans (freeYonedaSheafSectionsEquiv J U F)
+
+/-- The degree-zero identification with sections commutes with restriction. -/
+@[simp]
+lemma cohomologyZeroSectionsEquiv_naturality_left
+    (F : _root_.CategoryTheory.Sheaf J AddCommGrpCat.{v}) {U V : C} (i : U ⟶ V)
+    (x : F.H' 0 V) :
+    cohomologyZeroSectionsEquiv F U ((F.cohomologyPresheaf 0).map i.op x) =
+      F.obj.map i.op (cohomologyZeroSectionsEquiv F V x) := by
+  have h : Abelian.Ext.addEquiv₀ ((F.cohomologyPresheaf 0).map i.op x) =
+      (freeYonedaSheafFunctor J).map i ≫ Abelian.Ext.addEquiv₀ x := by
+    -- Mathlib has no restriction-map computation lemma for `H'`; this identifies that map
+    -- with Ext precomposition, without unfolding the Ext functor implementation.
+    change Abelian.Ext ((freeYonedaSheafFunctor J).obj V) F 0 at x
+    change Abelian.Ext.addEquiv₀
+      ((Abelian.Ext.mk₀ ((freeYonedaSheafFunctor J).map i)).comp x (zero_add 0)) = _
+    apply (Abelian.Ext.mk₀_bijective _ _).injective
+    simp only [Abelian.Ext.mk₀_addEquiv₀_apply, ← Abelian.Ext.mk₀_comp_mk₀]
+  exact (congrArg (freeYonedaSheafSectionsEquiv J U F) h).trans
+    (freeYonedaSheafSectionsEquiv_naturality_left J i F _)
+
+/-- The degree-zero identification with sections commutes with maps of coefficient sheaves. -/
+@[simp]
+lemma cohomologyZeroSectionsEquiv_naturality_right
+    {F G : _root_.CategoryTheory.Sheaf J AddCommGrpCat.{v}} (f : F ⟶ G) (U : C)
+    (x : F.H' 0 U) :
+    cohomologyZeroSectionsEquiv G U
+        (((_root_.CategoryTheory.Sheaf.cohomologyPresheafFunctor J 0).map f).app (op U) x) =
+      f.hom.app (op U) (cohomologyZeroSectionsEquiv F U x) := by
+  have h : Abelian.Ext.addEquiv₀
+      (((_root_.CategoryTheory.Sheaf.cohomologyPresheafFunctor J 0).map f).app (op U) x) =
+      Abelian.Ext.addEquiv₀ x ≫ f := by
+    -- Mathlib has no coefficient-map computation lemma for `H'`; this identifies that map
+    -- with Ext postcomposition, without unfolding the Ext functor implementation.
+    change Abelian.Ext ((freeYonedaSheafFunctor J).obj U) F 0 at x
+    change Abelian.Ext.addEquiv₀ (x.comp (Abelian.Ext.mk₀ f) (add_zero 0)) =
+      Abelian.Ext.addEquiv₀ x ≫ f
+    apply (Abelian.Ext.mk₀_bijective _ _).injective
+    simp only [Abelian.Ext.mk₀_addEquiv₀_apply, ← Abelian.Ext.mk₀_comp_mk₀]
+  exact (congrArg (freeYonedaSheafSectionsEquiv J U G) h).trans
+    (freeYonedaSheafSectionsEquiv_naturality_right J _ f)
+
+/-- The degree-zero cohomology presheaf is canonically the underlying presheaf. -/
+def cohomologyPresheafZeroIso (F : _root_.CategoryTheory.Sheaf J AddCommGrpCat.{v}) :
+    F.cohomologyPresheaf 0 ≅ F.obj :=
+  NatIso.ofComponents (fun U ↦ (cohomologyZeroSectionsEquiv F U.unop).toAddCommGrpIso)
+    (fun i ↦ by ext x; exact cohomologyZeroSectionsEquiv_naturality_left F i.unop x)
+
+@[simp]
+lemma cohomologyPresheafZeroIso_hom_app_apply
+    (F : _root_.CategoryTheory.Sheaf J AddCommGrpCat.{v}) (U : C) (x : F.H' 0 U) :
+    (cohomologyPresheafZeroIso F).hom.app (op U) x = cohomologyZeroSectionsEquiv F U x :=
+  (rfl)
+
+@[simp]
+lemma cohomologyPresheafZeroIso_inv_app_apply
+    (F : _root_.CategoryTheory.Sheaf J AddCommGrpCat.{v}) (U : C) (s : F.obj.obj (op U)) :
+    (cohomologyPresheafZeroIso F).inv.app (op U) s = (cohomologyZeroSectionsEquiv F U).symm s :=
+  (rfl)
+
+end
 
 end
 

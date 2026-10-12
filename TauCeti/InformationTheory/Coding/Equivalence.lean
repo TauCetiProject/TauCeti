@@ -183,6 +183,14 @@ them.  It specializes coherently to every commutative ring. -/
 def signedEquiv (u : ι → ℤˣ) (e : ι ≃ κ) : (ι → R) ≃ₗ[R] (κ → R) :=
   monomialEquiv (fun i ↦ Units.map (Int.castRingHom R) (u i)) e
 
+/-- With trivial signs a signed coordinate change is a bare relabelling of coordinates. -/
+theorem signedEquiv_one (e : ι ≃ κ) :
+    signedEquiv (R := R) (1 : ι → ℤˣ) e = LinearEquiv.funCongrLeft R R e.symm := by
+  rw [signedEquiv]
+  convert monomialEquiv_one (R := R) e using 1
+  ext i
+  simp
+
 /-- Evaluation of a signed coordinate change. -/
 @[simp]
 theorem signedEquiv_apply (u : ι → ℤˣ) (e : ι ≃ κ) (x : ι → R) (j : κ) :

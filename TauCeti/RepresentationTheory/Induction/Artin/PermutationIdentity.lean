@@ -34,7 +34,9 @@ and `baseChangeComapEquiv` identifies the rationalizations with those representa
 
 The actions use Mathlib's fiberwise actions on sigma types and sums: they leave the subgroup and
 copy index fixed and translate the coset. The fixed points in `ArtinNegativeSet` are represented
-by copies of `G/⊤`, so no extra trivial-action instance is needed.
+by copies of `G/⊤`, so no extra trivial-action instance is needed. The equivariant equivalences
+`artinPositiveSetEquiv` and `artinNegativeSetEquiv` expose these decompositions while leaving the
+noncomputable action instances opaque.
 
 ## References
 
@@ -81,6 +83,32 @@ instance : Finite (ArtinNegativeSet G) := by
 noncomputable instance : MulAction G (ArtinNegativeSet G) := by
   unfold ArtinNegativeSet
   infer_instance
+
+/-- The positive Artin set as its defining sigma type. This equivalence exposes the decomposition
+without exposing the noncomputable action instance on `ArtinPositiveSet`. -/
+noncomputable def artinPositiveSetEquiv :
+    ArtinPositiveSet G ≃
+      Σ C : Subgroup G, Σ _ : Fin (C.artinCoeff * (Nat.card C : ℤ)).toNat, G ⧸ C :=
+  Equiv.refl _
+
+/-- `TauCeti.artinPositiveSetEquiv` is equivariant for the fiberwise action. -/
+theorem artinPositiveSetEquiv_smul (g : G) (x : ArtinPositiveSet G) :
+    artinPositiveSetEquiv G (g • x) = g • artinPositiveSetEquiv G x := by
+  rfl
+
+/-- The negative Artin set as the sum of its fixed-point and negative-coefficient sigma types.
+This equivalence exposes the decomposition without exposing its noncomputable action instance. -/
+noncomputable def artinNegativeSetEquiv :
+    ArtinNegativeSet G ≃
+      (Σ _ : Fin (Nat.card G), G ⧸ (⊤ : Subgroup G)) ⊕
+        (Σ C : Subgroup G,
+          Σ _ : Fin (-(C.artinCoeff * (Nat.card C : ℤ))).toNat, G ⧸ C) :=
+  Equiv.refl _
+
+/-- `TauCeti.artinNegativeSetEquiv` is equivariant for the fiberwise action. -/
+theorem artinNegativeSetEquiv_smul (g : G) (x : ArtinNegativeSet G) :
+    artinNegativeSetEquiv G (g • x) = g • artinNegativeSetEquiv G x := by
+  rfl
 
 variable {G}
 

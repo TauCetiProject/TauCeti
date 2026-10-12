@@ -10,6 +10,7 @@ public import Mathlib.Algebra.BigOperators.Group.Finset.Basic
 public import Mathlib.Algebra.BigOperators.Group.Finset.Sigma
 public import Mathlib.Algebra.Order.BigOperators.Group.LocallyFinite
 public import Mathlib.Data.Fintype.Prod
+public import Mathlib.Data.Finset.NatAntidiagonal
 public import Mathlib.Order.Interval.Finset.Defs
 
 /-!
@@ -57,6 +58,27 @@ public section
 namespace TauCeti
 
 open Finset
+
+/-- A sum over bounded pairs of indices of total degree less than the bound equals the
+antidiagonal sum, provided the summands agree under the natural-index coercions. -/
+theorem sum_fin_product_eq_sum_antidiagonal {M : Type*} [AddCommMonoid M] {n d : ℕ}
+    (hd : d < n) (f : Fin n × Fin n → M) (g : ℕ × ℕ → M)
+    (hfg : ∀ l, (l.1 : ℕ) + (l.2 : ℕ) = d → f l = g (l.1, l.2)) :
+    (∑ l : Fin n × Fin n with (l.1 : ℕ) + (l.2 : ℕ) = d, f l) =
+      ∑ l ∈ antidiagonal d, g l := by
+  classical
+  refine Finset.sum_bij (fun l _ ↦ ((l.1 : ℕ), (l.2 : ℕ))) ?_ ?_ ?_ ?_
+  · intro l hl
+    exact Finset.mem_antidiagonal.mpr (Finset.mem_filter.mp hl).2
+  · intro l _ m _ hlm
+    exact Prod.ext (Fin.ext (Prod.mk.inj hlm).1) (Fin.ext (Prod.mk.inj hlm).2)
+  · intro l hl
+    have hl' := Finset.mem_antidiagonal.mp hl
+    refine ⟨(⟨l.1, by omega⟩, ⟨l.2, by omega⟩), ?_, rfl⟩
+    simp only [Finset.mem_filter, Finset.mem_univ, true_and]
+    exact hl'
+  · intro l hl
+    exact hfg l (Finset.mem_filter.mp hl).2
 
 /-- A product over weakly increasing pairs splits into the strictly increasing pairs and the
 diagonal. -/

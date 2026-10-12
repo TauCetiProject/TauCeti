@@ -401,6 +401,20 @@ theorem split_isDeflation_biprod_desc_id_right {X Z : C} (g : Z ⟶ X) :
       hom_inv_id := by ext <;> simp
       inv_hom_id := by ext <;> simp }, by ext <;> simp⟩
 
+/-- The graph `biprod.lift g (𝟙 X) : X ⟶ Z ⊞ X` of a morphism `g : X ⟶ Z` and the map
+`biprod.desc (𝟙 Z) (-g) : Z ⊞ X ⟶ Z` form a split conflation `X ⟶ Z ⊞ X ⟶ Z`. -/
+theorem split_conflation_biprod_lift_id_right {X Z : C} (g : X ⟶ Z) :
+    (ExactStructure.split C).Conflation
+      (ShortComplex.mk (biprod.lift g (𝟙 X)) (biprod.desc (𝟙 Z) (-g)) (by simp)) :=
+  (split_conflation _).2 ⟨{ r := biprod.snd, s := biprod.inl }⟩
+
+/-- The graph `biprod.lift (𝟙 X) g : X ⟶ X ⊞ Z` of a morphism `g : X ⟶ Z` and the map
+`biprod.desc g (-𝟙 Z) : X ⊞ Z ⟶ Z` form a split conflation `X ⟶ X ⊞ Z ⟶ Z`. -/
+theorem split_conflation_biprod_lift_id_left {X Z : C} (g : X ⟶ Z) :
+    (ExactStructure.split C).Conflation
+      (ShortComplex.mk (biprod.lift (𝟙 X) g) (biprod.desc g (-𝟙 Z)) (by simp)) :=
+  (split_conflation _).2 ⟨{ r := biprod.fst, s := -biprod.inr }⟩
+
 /-- A morphism of `Cᵒᵖ` is a split inflation exactly when its unopposite is a split deflation
 of `C`: splittings of short complexes correspond under `ShortComplex.Splitting.op` and
 `ShortComplex.Splitting.unop`. -/

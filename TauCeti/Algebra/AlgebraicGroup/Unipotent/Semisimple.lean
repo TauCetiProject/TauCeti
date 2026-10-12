@@ -158,7 +158,6 @@ theorem eq_augmentation_of_geometricallySemisimple_of_geometricallyUnipotent
   constructor
   · exact I.counit_eq_zero
   · intro hx
-    rw [← HopfIdeal.mem_toIdeal]
     apply (mkQuotient_eq_zero_iff H I x).mp
     let e := counitBialgEquivOfGeometricallySemisimpleUnipotent
       (quotient H I) hsemisimple hunipotent

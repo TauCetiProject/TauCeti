@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.ODE.SmoothParameter
 public import TauCeti.Geometry.Lie.Exponential.ParameterDependence
+import Mathlib.Analysis.ODE.ExistUnique
 
 /-!
 # Smoothness of the Lie-group exponential
@@ -135,7 +136,7 @@ theorem contMDiffAt_mulInvariantExp_modelSpace_zero
   have hc : 0 < c := by dsimp only [c]; linarith
   have hcδ : c < δ := by dsimp only [c]; linarith
   have hc0 : c ≠ 0 := ne_of_gt hc
-  have hzeroU : (0 : E) ∈ U := mem_of_mem_nhds hU
+  have _ : (0 : E) ∈ U := mem_of_mem_nhds hU
   rw [contMDiffAt_infty]
   intro n
   have hcoord : ContDiffAt ℝ n

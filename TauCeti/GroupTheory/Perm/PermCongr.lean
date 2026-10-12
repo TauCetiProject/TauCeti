@@ -7,6 +7,7 @@ module
 
 public import Mathlib.GroupTheory.GroupAction.Primitive
 public import Mathlib.GroupTheory.SpecificGroups.Alternating
+import Mathlib.GroupTheory.GroupAction.Transitive
 
 /-!
 # Transporting permutation groups along an equivalence

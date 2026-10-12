@@ -6,6 +6,8 @@ Authors: Codex
 module
 
 public import TauCeti.AlgebraicGeometry.TangentSpace.Affine
+import Mathlib.Algebra.Module.SpanRankOperations
+import Mathlib.RingTheory.Ideal.KrullsHeightTheorem
 
 /-!
 # Dimension and regularity at a rational point

@@ -39,41 +39,22 @@ namespace ODE
 variable {E F : Type u} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [NormedAddCommGroup F] [NormedSpace ℝ F]
 
-variable {K : Type*} [TopologicalSpace K] [CompactSpace K]
+section
 
-/-- Pair a parameter with every value of a continuous path, as a continuous linear map. -/
-private noncomputable def parameterizedPath :
-    E × C(K, F) →L[ℝ] C(K, E × F) := by
-  let L : E × C(K, F) →ₗ[ℝ] C(K, E × F) :=
-    { toFun := fun p ↦ ⟨fun t ↦ (p.1, p.2 t), continuous_const.prodMk p.2.continuous⟩
-      map_add' := fun _ _ ↦ by ext t <;> rfl
-      map_smul' := fun _ _ ↦ by ext t <;> rfl }
-  exact LinearMap.mkContinuous L 1 fun p ↦ by
-    rw [one_mul]
-    apply (ContinuousMap.norm_le _ (norm_nonneg p)).2
-    intro t
-    rw [Prod.norm_def, Prod.norm_def]
-    exact max_le_max le_rfl (ContinuousMap.norm_coe_le_norm p.2 t)
+variable {E : Type*} [TopologicalSpace E]
 
-@[simp]
-private theorem parameterizedPath_apply (p : E × C(K, F)) (t : K) :
-    parameterizedPath p t = (p.1, p.2 t) := by
-  rw [parameterizedPath]
-  rfl
-
-/-- The Picard integral equation, written as a zero of a map between Banach spaces of continuous
-paths. -/
+/-- The Picard integral equation, written as a zero of a residual on continuous paths. -/
 private noncomputable def picardResidual (f : C(E × F, F)) (x₀ : F) :
     E × C(Set.Icc (0 : ℝ) 1, F) → C(Set.Icc (0 : ℝ) 1, F) := fun p ↦
   p.2 - ContinuousMap.const _ x₀ -
-    ContinuousMap.unitIntervalIntegral (f.comp (parameterizedPath p))
+    ContinuousMap.unitIntervalIntegral (f.comp ((ContinuousMap.const _ p.1).prodMk p.2))
 
 /-- The Picard residual is the path minus its initial value and integrated vector field. -/
 @[simp]
 private theorem picardResidual_apply (f : C(E × F, F)) (x₀ : F)
     (p : E × C(Set.Icc (0 : ℝ) 1, F)) :
     picardResidual f x₀ p = p.2 - ContinuousMap.const _ x₀ -
-      ContinuousMap.unitIntervalIntegral (f.comp (parameterizedPath p)) := by
+      ContinuousMap.unitIntervalIntegral (f.comp ((ContinuousMap.const _ p.1).prodMk p.2)) := by
   rfl
 
 /-- **A path's Picard residual vanishes exactly when it satisfies the Picard integral equation.**
@@ -84,20 +65,32 @@ private theorem picardResidual_eq_zero_iff (gc : C(E × F, F)) (x₀ : F) (p : E
       q t = x₀ + ∫ s in (0 : ℝ)..t, gc (p, q (Set.projIcc 0 1 zero_le_one s)) := by
   simp [ContinuousMap.ext_iff, sub_sub, sub_eq_zero]
 
+end
+
 /-- A vector field of class `Cⁿ` gives a Picard residual of class `Cⁿ`. -/
 private theorem contDiff_picardResidual (n : ℕ∞) (f : C(E × F, F))
     (hf : ContDiff ℝ n f) (x₀ : F) :
     ContDiff ℝ n (picardResidual f x₀) := by
+  -- The two coordinate inclusions assemble the parameter and path pointwise.
+  let L : E × C(Set.Icc (0 : ℝ) 1, F) →L[ℝ] C(Set.Icc (0 : ℝ) 1, E × F) :=
+    (((ContinuousLinearMap.inl ℝ E F).compLeftContinuous ℝ _).comp
+      (ContinuousLinearMap.const ℝ _)).coprod
+        ((ContinuousLinearMap.inr ℝ E F).compLeftContinuous ℝ _)
+  have hL (p : E × C(Set.Icc (0 : ℝ) 1, F)) :
+      L p = (ContinuousMap.const _ p.1).prodMk p.2 := by
+    ext t <;> simp [L]
   have hcomp : ContDiff ℝ n
-      (fun p : E × C(Set.Icc (0 : ℝ) 1, F) ↦ f.comp (parameterizedPath p)) :=
-    (ContinuousMap.contDiff_postcomp n f hf).comp
-      (parameterizedPath (E := E) (F := F) (K := Set.Icc (0 : ℝ) 1)).contDiff
+      (fun p : E × C(Set.Icc (0 : ℝ) 1, F) ↦
+        f.comp ((ContinuousMap.const _ p.1).prodMk p.2)) := by
+    simpa only [Function.comp_def, hL] using
+      (ContinuousMap.contDiff_postcomp n f hf).comp L.contDiff
   exact (contDiff_snd.sub contDiff_const).sub
     ((ContinuousMap.unitIntervalIntegral (E := F)).contDiff.fun_comp hcomp)
 
 /-- At a parameter for which the vector field vanishes locally in the state variable, the partial
 derivative of the Picard residual in the path variable is the identity. -/
 private theorem hasStrictFDerivAt_picardResidual_path
+    {E : Type*} [TopologicalSpace E]
     (f : C(E × F, F)) (p₀ : E) (x₀ : F)
     (hf : ∀ᶠ y in nhds x₀, f (p₀, y) = 0) :
     HasStrictFDerivAt
@@ -110,7 +103,7 @@ private theorem hasStrictFDerivAt_picardResidual_path
         γ - ContinuousMap.const _ x₀) =ᶠ[nhds (ContinuousMap.const _ x₀)]
       (fun γ ↦ picardResidual f x₀ (p₀, γ)) := by
     filter_upwards [ContinuousMap.eventually_mapsTo isCompact_univ hUopen fun _ _ ↦ hU] with γ hγ
-    have hcomp : f.comp (parameterizedPath (p₀, γ)) = 0 := by
+    have hcomp : f.comp ((ContinuousMap.const _ p₀).prodMk γ) = 0 := by
       ext t
       simpa using hUzero (hγ (Set.mem_univ t))
     simp only [picardResidual_apply, hcomp, map_zero, sub_zero]
@@ -177,9 +170,9 @@ theorem exists_contDiffAt_picard_solution_of_contDiff
     isInvertible_fderiv_picardResidual_comp_inr gc (hgc.of_le le_add_self) p₀ x₀ hzero
   let γ : E → C(Set.Icc (0 : ℝ) 1, F) := hR.implicitFunction hn hinvertible
   have hRbase : R u = 0 := by
-    have hcomp : gc.comp (parameterizedPath u) = 0 := by
+    have hcomp : gc.comp ((ContinuousMap.const _ u.1).prodMk u.2) = 0 := by
       ext t
-      rw [ContinuousMap.comp_apply, parameterizedPath_apply]
+      simp only [ContinuousMap.comp_apply, ContinuousMap.prod_eval, ContinuousMap.const_apply]
       exact hzero.self_of_nhds
     simp only [R, picardResidual_apply, u, basePath, hcomp, map_zero, sub_self]
   have hγeq : ∀ᶠ p in nhds p₀, R (p, γ p) = 0 := by
@@ -245,8 +238,9 @@ theorem exists_contDiffAt_picard_solution
   -- Restrict to parameters whose whole Picard path remains where the representative agrees with
   -- the original field; then transfer the integral equation and its derivative consequences.
   obtain ⟨U, hUgf, hUopen, hU⟩ := mem_nhds_iff.mp hgf
-  have hpathsNear : ∀ᶠ p in nhds p₀, Set.MapsTo (parameterizedPath (p, γ p)) Set.univ U :=
-    (parameterizedPath.continuous.continuousAt.comp
+  have hpathsNear : ∀ᶠ p in nhds p₀,
+      Set.MapsTo ((ContinuousMap.const _ p).prodMk (γ p)) Set.univ U :=
+    (ContinuousMap.continuous_prodMk_const.continuousAt.comp
       (continuousAt_id.prodMk hγsmooth.continuousAt)).eventually
       (ContinuousMap.eventually_mapsTo isCompact_univ hUopen fun t _ ↦ by
         simpa [hγbase] using hU)

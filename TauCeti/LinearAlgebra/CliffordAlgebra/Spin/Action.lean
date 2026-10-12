@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.LinearAlgebra.CliffordAlgebra.Even.Conjugation
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Lipschitz.Action
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Pin.Basic
 

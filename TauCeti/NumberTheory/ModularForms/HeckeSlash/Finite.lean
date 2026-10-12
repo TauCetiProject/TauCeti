@@ -125,7 +125,8 @@ theorem heckeTCuspAlgebra_finite (hk : 2 ≤ k) : Module.Finite ℤ (heckeTCuspA
   let u : ℕ+ → Module.End ℤ (ModularSymbols ℤ (Gamma1 N) w) := fun n ↦ by
     letI : NeZero (n : ℕ) := ⟨n.ne_zero⟩
     exact ModularSymbols.heckeTSymbol ℤ w N n
-  apply finite_adjoin_of_injective_pairing (ModularSymbols.periodMap ℤ (Gamma1 N) hw)
+  apply LinearMap.finite_adjoin_of_injective_pairing
+    ((ModularSymbols.periodMap ℤ (Gamma1 N) hw).restrictScalars ℤ)
     (ModularSymbols.periodMap_injective hw) (heckeTCuspPos N k) u
   intro n f x
   let : NeZero (n : ℕ) := ⟨n.ne_zero⟩

@@ -7,7 +7,7 @@ module
 
 public import Mathlib.RepresentationTheory.Character
 public import Mathlib.RepresentationTheory.Intertwining
-public import TauCeti.RepresentationTheory.LinearCharacter
+public import TauCeti.RepresentationTheory.LinearCharacter.Basic
 
 /-!
 # Twisting a representation by a linear character
@@ -31,9 +31,9 @@ twice multiplies the characters.  The main consumer is the determinant twist of 
 group, where `χ = det ^ m` turns a polynomial representation into a rational one.
 
 This is a module of its own rather than a section of
-`TauCeti/RepresentationTheory/LinearCharacter.lean`, which it extends: the twist needs the tensor
-product and the subrepresentation lattice, and that file is imported for the bare one-dimensional
-representation by consumers that need neither.
+`TauCeti/RepresentationTheory/LinearCharacter/Basic.lean`, which it extends: the twist needs the
+tensor product and the subrepresentation lattice. Consumers of the bare one-dimensional
+representation need neither.
 
 ## Main definitions
 

@@ -15,7 +15,7 @@ import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.PointHom.Place
 import TauCeti.FieldTheory.FunctionField.Place.Extension.Degree
 -- Proof-only: a place has finitely many extensions.
 import TauCeti.FieldTheory.FunctionField.Place.Extension.Fibre
--- Proof-only: an elliptic curve has infinitely many points over a separably closed field.
+-- Proof-only: an elliptic curve over a separably closed field has `ℓ ²` points of order `ℓ`.
 import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.MulByInt.IsSepClosed
 
 /-!
@@ -31,15 +31,15 @@ that map, `Hom.pointMap`, and proves the facts that make it the action of `f` on
   and composites act by composition;
 * the zero morphism sends every point to `O` and the identity fixes every point;
 * for a separable isogeny over a separably closed field it agrees with the additive class-group
-  point map `TauCeti.Isogeny.toPointHom`.
+  point map `TauCeti.Isogeny.toPointHom`, so it is additive there.
 
 **Rigidity.** A nonzero morphism has finite fibres on points. Thus two morphisms agreeing on
 infinitely many points are equal. Over a separably closed field the points are infinitely many,
 and a morphism is determined by its action on them.
 
 Rigidity yields **additivity of composition in the inner variable** wherever the outer morphism
-acts additively on points. For a separable isogeny `φ` over a separably closed field this gives
-`φ ∘ (f + g) = φ ∘ f + φ ∘ g`.
+acts additively on points. That every morphism does, and hence that composition is additive in
+the inner morphism over every field, is proved in `Isogeny/Hom/Ring.lean`.
 
 ## Main definitions
 
@@ -54,8 +54,6 @@ acts additively on points. For a separable isogeny `φ` over a separably closed 
 * `TauCeti.Isogeny.Hom.comp_pointMap`: a composite acts by composition.
 * `TauCeti.Isogeny.Hom.pointMap_ofIsogeny_eq_toPointHom`: for a separable isogeny over a
   separably closed field the action is the class-group point map.
-* `TauCeti.Isogeny.Hom.pointMap_add` and `TauCeti.Isogeny.Hom.pointMap_zsmul`: the point map of
-  a separable isogeny is additive and commutes with integer multiples.
 * `TauCeti.Isogeny.Hom.finite_setOf_pointMap_eq`: a nonzero morphism has finite fibres.
 * `TauCeti.Isogeny.Hom.eq_of_infinite_setOf_pointMap_eq` and `TauCeti.Isogeny.Hom.ext_pointMap`:
   rigidity.
@@ -63,9 +61,6 @@ acts additively on points. For a separable isogeny `φ` over a separably closed 
   separably closed field.
 * `TauCeti.Isogeny.Hom.comp_add_of_pointMap_add`: composition is additive in the inner morphism
   when the outer point map is additive and the source has infinitely many points.
-* `TauCeti.Isogeny.Hom.ofIsogeny_comp_add`: composition with a separable isogeny over a separably
-  closed field is additive in the inner morphism.
-* `TauCeti.Isogeny.Hom.ofIsogeny_comp_zsmul`: and, consequently, `ℤ`-linear in it.
 
 ## References
 
@@ -233,25 +228,6 @@ theorem pointMap_ofIsogeny_eq_toPointHom [IsSepClosed F]
     (Place.restrict_eq_iff_isEquiv_comap F W₂.FunctionField _ _).mp
       (φ.coe_pointEquivDegreeOnePlace_toPointHom (fun _ ↦ rfl) P).symm
 
-/-- **A separable isogeny over a separably closed field acts additively on points.** -/
-@[simp]
-theorem pointMap_add [IsSepClosed F]
-    [Algebra.IsSeparable φ.fieldPullback.fieldRange W₁.FunctionField] (P Q : W₁.Point) :
-    (ofIsogeny φ).pointMap (P + Q) =
-      (ofIsogeny φ).pointMap P + (ofIsogeny φ).pointMap Q := by
-  have := W₂.isIntegrallyClosed_coordinateRing
-  rw [pointMap_ofIsogeny_eq_toPointHom, map_add,
-    ← pointMap_ofIsogeny_eq_toPointHom, ← pointMap_ofIsogeny_eq_toPointHom]
-
-/-- **A separable isogeny over a separably closed field commutes with integer multiples of
-points.** -/
-@[simp]
-theorem pointMap_zsmul [IsSepClosed F]
-    [Algebra.IsSeparable φ.fieldPullback.fieldRange W₁.FunctionField] (n : ℤ) (P : W₁.Point) :
-    (ofIsogeny φ).pointMap (n • P) = n • (ofIsogeny φ).pointMap P := by
-  have := W₂.isIntegrallyClosed_coordinateRing
-  rw [pointMap_ofIsogeny_eq_toPointHom, map_zsmul, ← pointMap_ofIsogeny_eq_toPointHom]
-
 end Isogeny
 
 /-- **A composite acts on points by composition.** -/
@@ -267,6 +243,14 @@ theorem comp_pointMap [W₃.IsElliptic] (g : Hom W₂ W₃) (f : Hom W₁ W₂) 
   exact ((isEquiv_comap_pointMap_ofIsogeny φ P).comap
     (ψ.fieldPullback : W₃.FunctionField →+* W₂.FunctionField)).trans
       (isEquiv_comap_pointMap_ofIsogeny ψ _)
+
+/-- A power of an endomorphism acts by iterating its action on points. -/
+theorem pow_pointMap (f : Hom W₁ W₁) (n : ℕ) (P : W₁.Point) :
+    (f ^ n).pointMap P = f.pointMap^[n] P := by
+  induction n with
+  | zero => simp
+  | succ n ih =>
+    rw [pow_succ', mul_def, comp_pointMap, ih, Function.iterate_succ_apply']
 
 /-- **A nonzero morphism has finite fibres on points.** -/
 theorem finite_setOf_pointMap_eq {f : Hom W₁ W₂} (hf : f ≠ 0) (Q : W₂.Point) :
@@ -324,27 +308,6 @@ theorem comp_add_of_pointMap_add [W₃.IsElliptic] [Infinite W₁.Point]
     (f g : Hom W₁ W₂) : h.comp (f + g) = h.comp f + h.comp g := by
   refine ext_pointMap fun P ↦ ?_
   simp only [comp_pointMap, add_pointMap, hadd]
-
-omit [DecidableEq F] in
-/-- **Composition with a separable isogeny over a separably closed field is additive in the inner
-morphism.** -/
-@[simp]
-theorem ofIsogeny_comp_add [IsSepClosed F] [W₃.IsElliptic] (φ : Isogeny W₂ W₃)
-    [Algebra.IsSeparable φ.fieldPullback.fieldRange W₂.FunctionField] (f g : Hom W₁ W₂) :
-    (ofIsogeny φ).comp (f + g) = (ofIsogeny φ).comp f + (ofIsogeny φ).comp g := by
-  classical
-  have := WeierstrassCurve.Affine.infinite_point W₁
-  exact comp_add_of_pointMap_add (ofIsogeny φ) (pointMap_add φ) f g
-
-omit [DecidableEq F] in
-/-- **Composition with a separable isogeny over a separably closed field is `ℤ`-linear in the
-inner morphism.** -/
-@[simp]
-theorem ofIsogeny_comp_zsmul [IsSepClosed F] [W₃.IsElliptic] (φ : Isogeny W₂ W₃)
-    [Algebra.IsSeparable φ.fieldPullback.fieldRange W₂.FunctionField] (n : ℤ) (f : Hom W₁ W₂) :
-    (ofIsogeny φ).comp (n • f) = n • (ofIsogeny φ).comp f :=
-  map_zsmul (AddMonoidHom.mk' (fun f : Hom W₁ W₂ ↦ (ofIsogeny φ).comp f)
-    (ofIsogeny_comp_add φ)) n f
 
 end TauCeti.Isogeny.Hom
 

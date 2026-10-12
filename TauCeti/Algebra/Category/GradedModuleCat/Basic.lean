@@ -77,6 +77,15 @@ variable {𝒜}
 instance : CoeSort (GradedModuleCat.{v} 𝒜) (Type v) :=
   ⟨GradedModuleCat.carrier⟩
 
+/-- The regular graded module of a graded algebra, with its given homogeneous pieces. -/
+noncomputable abbrev regular [DirectSum.Decomposition 𝒜] [SetLike.GradedMul 𝒜] :
+    GradedModuleCat.{uA} 𝒜 where
+  carrier := A
+  grading := InternalGrading.ofDecomposition 𝒜
+  gradedSMul := ⟨fun {_ _} _ _ ha hx ↦ by
+    rw [InternalGrading.ofDecomposition_piece] at hx ⊢
+    exact SetLike.GradedMul.mul_mem ha hx⟩
+
 /-- A morphism of graded `𝒜`-modules: an `A`-linear map of degree zero. -/
 structure Hom (M N : GradedModuleCat.{v} 𝒜) where
   /-- The underlying `A`-linear map. -/
@@ -242,12 +251,18 @@ abbrev shiftObj (n : ℤ) : GradedModuleCat.{v} 𝒜 where
     rw [InternalGrading.shift_piece] at hx ⊢
     simpa [add_assoc] using SetLike.GradedSMul.smul_mem (B := M.grading.piece) ha hx⟩
 
+/-- A shift of a graded module has the same underlying `k`-module, so it is finite whenever the
+module is. -/
+instance [Module.Finite k M] (n : ℤ) : Module.Finite k (M.shiftObj n) :=
+  inferInstanceAs (Module.Finite k M)
+
 theorem mem_shiftObj_piece_iff (n p : ℤ) (x : M) :
     x ∈ (M.shiftObj n).grading.piece p ↔ x ∈ M.grading.piece (p - n) := by
   simp [sub_eq_add_neg]
 
-/-- The shift `M ↦ M{n}` of graded modules, the identity on underlying linear maps. -/
-@[expose]
+/-- The shift `M ↦ M{n}` of graded modules, the identity on underlying linear maps.
+Its objects compute during type inference, agreeing with `shiftObj` in morphism types. -/
+@[expose, implicit_reducible]
 def shiftFunctor (n : ℤ) : GradedModuleCat.{v} 𝒜 ⥤ GradedModuleCat.{v} 𝒜 where
   obj M := M.shiftObj n
   map {M N} f := ofHom (M := M.shiftObj n) (N := N.shiftObj n) f.hom <|
@@ -269,11 +284,11 @@ variable (𝒜) in
 autoequivalence; its inverse is `M ↦ M{-1}`. -/
 @[expose]
 def shift : GradedModuleCat.{v} 𝒜 ≌ GradedModuleCat.{v} 𝒜 where
-  functor := shiftFunctor 1
-  inverse := shiftFunctor (-1)
-  unitIso := NatIso.ofComponents (fun M ↦ isoMk (LinearEquiv.refl A M) fun p x ↦ by simp; rfl)
+  functor := shiftFunctor (𝒜 := 𝒜) 1
+  inverse := shiftFunctor (𝒜 := 𝒜) (-1)
+  unitIso := NatIso.ofComponents (fun M ↦ isoMk (LinearEquiv.refl A M) fun p x ↦ by simp)
     fun _ ↦ by ext; rfl
-  counitIso := NatIso.ofComponents (fun M ↦ isoMk (LinearEquiv.refl A M) fun p x ↦ by simp; rfl)
+  counitIso := NatIso.ofComponents (fun M ↦ isoMk (LinearEquiv.refl A M) fun p x ↦ by simp)
     fun _ ↦ by ext; rfl
   functor_unitIso_comp _ := by ext; rfl
 
@@ -298,6 +313,30 @@ theorem hom_shift_inverse_map {M N : GradedModuleCat.{v} 𝒜} (f : M ⟶ N) :
     ((shift 𝒜).inverse.map f).hom = f.hom :=
   rfl
 
+/-- Forgetting the internal grading identifies every grading shift with the identity functor
+on underlying modules. -/
+def shiftFunctorCompToModuleCatIso (n : ℤ) :
+    shiftFunctor (𝒜 := 𝒜) n ⋙ toModuleCat ≅ toModuleCat :=
+  -- `shiftObj` changes only the grading, so its carrier and module instances reduce to those
+  -- of `M`; the identity linear equivalence therefore supplies each component.
+  NatIso.ofComponents (fun M ↦ (LinearEquiv.refl A M).toModuleIso) fun f ↦ by
+    simp only [Functor.comp_map, toModuleCat_map, hom_shiftFunctor_map,
+      LinearEquiv.toModuleIso_hom, LinearEquiv.refl_toLinearMap, ModuleCat.ofHom_id]
+    -- The shifted carrier has the same module instances, so both identities are on the
+    -- underlying source and target of `f.hom`.
+    exact (Category.comp_id (ModuleCat.ofHom f.hom)).trans
+      (Category.id_comp (ModuleCat.ofHom f.hom)).symm
+
+@[simp]
+theorem shiftFunctorCompToModuleCatIso_hom_app_hom (n : ℤ) :
+    ((shiftFunctorCompToModuleCatIso (𝒜 := 𝒜) n).hom.app M).hom = LinearMap.id :=
+  (rfl)
+
+@[simp]
+theorem shiftFunctorCompToModuleCatIso_inv_app_hom (n : ℤ) :
+    ((shiftFunctorCompToModuleCatIso (𝒜 := 𝒜) n).inv.app M).hom = LinearMap.id :=
+  (rfl)
+
 instance (n : ℤ) : (shiftFunctor (𝒜 := 𝒜) n).Additive where
   map_add := rfl
 
@@ -305,10 +344,10 @@ instance (n : ℤ) : (shiftFunctor (𝒜 := 𝒜) n).Linear k where
   map_smul _ _ := rfl
 
 instance : (shift 𝒜).functor.Additive :=
-  inferInstanceAs (shiftFunctor 1).Additive
+  inferInstanceAs (shiftFunctor (𝒜 := 𝒜) 1).Additive
 
 instance : (shift 𝒜).functor.Linear k :=
-  inferInstanceAs ((shiftFunctor 1).Linear k)
+  inferInstanceAs ((shiftFunctor (𝒜 := 𝒜) 1).Linear k)
 
 end Shift
 

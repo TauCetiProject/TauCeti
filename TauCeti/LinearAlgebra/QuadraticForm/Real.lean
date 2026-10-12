@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.QuadraticForm.Real
+import Mathlib.Topology.Order.IntermediateValue
 import TauCeti.Analysis.Real.Sqrt
+import TauCeti.LinearAlgebra.QuadraticForm.Standard
 public import TauCeti.Data.SignType.Cardinality
 public import TauCeti.LinearAlgebra.QuadraticForm.Isometry
 public import TauCeti.LinearAlgebra.QuadraticForm.Signature
@@ -26,8 +28,14 @@ The file also supplies the normal form realizing a prescribed signature, the ort
 `p` copies of `⟨1⟩` and `q` copies of `⟨-1⟩`, and shows that every regular real form is isometric
 to the normal form of its own signature.
 
+Without any finite-dimensionality assumption, a real quadratic form is anisotropic exactly when
+it is positive or negative definite. This identifies the algebraic condition used in compactness
+criteria for real orthogonal groups with the usual order-theoretic notion of definiteness.
+
 ## Main results
 
+* `QuadraticForm.anisotropic_iff_posDef_or_negDef`: real anisotropic forms are exactly the
+  positive and negative definite forms, including forms on the zero space.
 * `QuadraticMap.map_inv_sqrt_smul_eq_one`: a vector of positive quadratic value can be
   normalized to value one by inverse-square-root scaling. This normalization feeds the
   reflection-pair construction for compact real Clifford forms.
@@ -80,6 +88,52 @@ theorem map_inv_sqrt_smul_eq_one {Q : QuadraticForm ℝ M} {v : M} (hpos : 0 < Q
 end QuadraticMap
 
 namespace QuadraticForm
+
+section Definiteness
+
+variable {M : Type*} [AddCommGroup M] [Module ℝ M]
+
+/-- A real quadratic form is anisotropic if and only if it is positive or negative definite.
+No finite-dimensionality assumption is needed; on the zero space both alternatives hold. -/
+theorem anisotropic_iff_posDef_or_negDef (Q : _root_.QuadraticForm ℝ M) :
+    Q.Anisotropic ↔ Q.PosDef ∨ (-Q).PosDef := by
+  constructor
+  · intro hQ
+    have hsign (x y : M) (hx : 0 < Q x) (hy : Q y < 0) : False := by
+      let f : ℝ → ℝ := fun t ↦
+        (1 - t) ^ 2 * Q x + t ^ 2 * Q y + (1 - t) * t * polar Q x y
+      have hf (t : ℝ) : Q ((1 - t) • x + t • y) = f t := by
+        simp only [QuadraticMap.map_add, QuadraticMap.map_smul, polar_smul_left,
+          polar_smul_right, smul_eq_mul, f, pow_two]
+        ring
+      have hcont : Continuous f := by fun_prop
+      have hinterval : (0 : ℝ) ∈ Set.Icc (f 1) (f 0) := by
+        simpa [f] using And.intro hy.le hx.le
+      obtain ⟨t, -, ht⟩ := intermediate_value_Icc' (by norm_num : (0 : ℝ) ≤ 1)
+        hcont.continuousOn hinterval
+      have ht1 : t ≠ 1 := by
+        intro h
+        have : Q y = 0 := by simpa [f, h] using ht
+        exact hy.ne this
+      have hz := hQ _ ((hf t).trans ht)
+      have heq := congrArg Q (eq_neg_of_add_eq_zero_left hz)
+      simp only [QuadraticMap.map_smul, QuadraticMap.map_neg, smul_eq_mul] at heq
+      have hpos := mul_pos (sq_pos_of_ne_zero (sub_ne_zero.mpr (Ne.symm ht1))) hx
+      have hneg := mul_nonpos_of_nonneg_of_nonpos (sq_nonneg t) hy.le
+      nlinarith
+    by_cases hn : ∀ x, 0 ≤ Q x
+    · exact Or.inl (posDef_of_nonneg hn hQ)
+    · push Not at hn
+      obtain ⟨y, hy⟩ := hn
+      refine Or.inr (posDef_of_nonneg (fun x ↦ ?_) (fun x hx ↦ hQ x ?_))
+      · simp only [neg_apply, neg_nonneg]
+        exact le_of_not_gt fun hx ↦ hsign x y hx hy
+      · simpa using hx
+  · rintro (hQ | hQ)
+    · exact hQ.anisotropic
+    · exact fun x hx ↦ hQ.anisotropic x (by simpa using hx)
+
+end Definiteness
 
 section Fibers
 
@@ -253,3 +307,36 @@ theorem exists_nondegenerate_and_sigPos_eq_and_sigNeg_eq {n p : ℕ} (h : p ≤ 
     by rw [Equivalent.sigNeg_eq ⟨f⟩, sigNeg_realSignatureForm]⟩
 
 end QuadraticForm
+
+namespace TauCeti
+
+variable {V : Type*} [AddCommGroup V] [Module ℝ V] [FiniteDimensional ℝ V]
+  {Q : _root_.QuadraticForm ℝ V}
+
+/-- A positive definite real quadratic form is isometric to the standard sum-of-squares form
+in its dimension. -/
+theorem nonempty_isometryEquiv_toQuadraticForm'_one_of_posDef (hQ : Q.PosDef) :
+    Nonempty (Q.IsometryEquiv
+      (Matrix.toQuadraticForm' (1 : Matrix (Fin (Module.finrank ℝ V))
+        (Fin (Module.finrank ℝ V)) ℝ))) := by
+  obtain ⟨w, hw, ⟨e⟩⟩ := Q.equivalent_one_zero_neg_one_weighted_sum_squared
+  have hwpos (i : Fin (Module.finrank ℝ V)) : 0 < w i := by
+    have h := hQ (e.symm (Pi.single i 1)) (by simp)
+    rw [← e.map_app] at h
+    simpa [QuadraticMap.weightedSumSquares_apply, Pi.single_apply,
+      Finset.sum_ite_eq'] using h
+  have hwone : w = 1 := funext fun i ↦ by
+    rcases hw i with h | h | h
+    · exfalso
+      have hp := hwpos i
+      norm_num [h] at hp
+    · exact False.elim (by simpa [h] using hwpos i)
+    · exact h
+  have hstandard : QuadraticMap.weightedSumSquares ℝ w =
+      Matrix.toQuadraticForm' (1 : Matrix (Fin (Module.finrank ℝ V))
+        (Fin (Module.finrank ℝ V)) ℝ) := by
+    rw [hwone, weightedSumSquares_eq_toQuadraticForm_diagonal, Matrix.diagonal_one']
+  rw [hstandard] at e
+  exact ⟨e⟩
+
+end TauCeti

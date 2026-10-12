@@ -58,6 +58,11 @@ transformation, so `deck ((↑) : 𝕜 → AddCircle p)` acts transitively on ev
   going once counterclockwise around the circle, is sent to the generator `ofAdd 1`.
 * `Circle.fundamentalGroupMulEquiv_fromPath`: the class of a loop is sent to its degree
   `Circle.degree`, computed from angle lifts.
+* `Circle.fundamentalGroupMulEquiv_map_pow`: the `n`-th power map of the circle acts on the
+  fundamental group as multiplication by `n`.
+* `Circle.zpowers_fromPath_eq_top_of_degree_map_eq_one`,
+  `Circle.homotopic_trans_of_degree_map_eq`: for a map `d : X → Circle` injective on
+  fundamental groups, the degree of the image of a loop detects generators and conjugate loops.
 
 ## References
 
@@ -390,6 +395,57 @@ theorem fundamentalGroupMulEquiv_expLoop :
   rw [fundamentalGroupMulEquiv_fromPath,
     degree_eq_of_sub_eq expLoop (θ := fun t => 2 * Real.pi * t) (by fun_prop) (fun _ => rfl)
       (n := 1) (by simp)]
+
+/-- **The `n`-th power map of the circle acts on `π₁(S¹) ≅ ℤ` as multiplication by `n`.** The
+isomorphism `fundamentalGroupMulEquiv` sends the image of a loop class under `z ↦ z ^ n` to the
+`n`-th power of the image of the class. -/
+theorem fundamentalGroupMulEquiv_map_pow (n : ℕ) {x : Circle} (γ : FundamentalGroup Circle x) :
+    fundamentalGroupMulEquiv _ (FundamentalGroup.map ⟨(· ^ n), continuous_pow n⟩ x γ) =
+      fundamentalGroupMulEquiv x γ ^ n := by
+  induction γ using Path.Homotopic.Quotient.ind with | mk γ => ?_
+  calc _ = Multiplicative.ofAdd (degree (γ.map (continuous_pow n))) :=
+        fundamentalGroupMulEquiv_fromPath _
+    _ = Multiplicative.ofAdd (degree γ) ^ n := by
+        rw [degree_map_pow, ← ofAdd_nsmul, nsmul_eq_mul]
+    _ = _ := congrArg (· ^ n) (fundamentalGroupMulEquiv_fromPath γ).symm
+
+section Detect
+
+variable {X : Type*} [TopologicalSpace X] {d : C(X, Circle)}
+
+/-- **A loop of degree one generates.** If `d : X → Circle` induces an injection of fundamental
+groups at `x`, then the class of a loop at `x` whose image under `d` has degree `1` generates
+`π₁(X, x)`. -/
+theorem zpowers_fromPath_eq_top_of_degree_map_eq_one {x : X}
+    (hd : Function.Injective (FundamentalGroup.map d x)) {γ : Path x x}
+    (hγ : degree (γ.map d.continuous) = 1) :
+    Subgroup.zpowers (FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk γ)) = ⊤ := by
+  have h : fundamentalGroupMulEquiv _
+      (FundamentalGroup.map d x (FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk γ))) =
+        Multiplicative.ofAdd 1 := by
+    rw [FundamentalGroup.map_apply, ← Path.Homotopic.Quotient.mk_map,
+      fundamentalGroupMulEquiv_fromPath, hγ]
+  refine (Subgroup.eq_top_iff' _).mpr fun g =>
+    ⟨(fundamentalGroupMulEquiv _ (FundamentalGroup.map d x g)).toAdd,
+      hd ((fundamentalGroupMulEquiv _).injective ?_)⟩
+  rw [map_zpow, map_zpow, h, ← ofAdd_zsmul, zsmul_one, Int.cast_id, ofAdd_toAdd]
+
+/-- **Loops whose images have the same degree are conjugate.** If `d : X → Circle` induces an
+injection of fundamental groups at `x`, and the images under `d` of a loop `γ` at `x` and a loop
+`δ` at `y` have the same degree, then `γ` is homotopic to `δ` conjugated by any path `α` from `x`
+to `y`. -/
+theorem homotopic_trans_of_degree_map_eq {x y : X}
+    (hd : Function.Injective (FundamentalGroup.map d x)) {γ : Path x x} {δ : Path y y}
+    (h : degree (γ.map d.continuous) = degree (δ.map d.continuous)) (α : Path x y) :
+    γ.Homotopic (α.trans (δ.trans α.symm)) := by
+  refine Path.Homotopic.Quotient.exact (hd ((fundamentalGroupMulEquiv _).injective ?_))
+  rw [FundamentalGroup.map_apply, FundamentalGroup.map_apply, ← Path.Homotopic.Quotient.mk_map,
+    ← Path.Homotopic.Quotient.mk_map, fundamentalGroupMulEquiv_fromPath,
+    fundamentalGroupMulEquiv_fromPath, Path.map_trans, Path.map_trans, ← Path.map_symm, h]
+  -- Conjugating by the image of `α` does not change the degree.
+  simpa using (degree_symm_trans_trans (δ.map d.continuous) (α.map d.continuous).symm).symm
+
+end Detect
 
 end Circle
 

@@ -10,6 +10,7 @@ public import Mathlib.Data.Nat.Factorial.BigOperators
 public import Mathlib.Data.Pi.Interval
 public import Mathlib.LinearAlgebra.Vandermonde
 public import Mathlib.RingTheory.Polynomial.Pochhammer
+import Mathlib.Data.Int.SuccPred
 import Mathlib.LinearAlgebra.Matrix.Block
 import TauCeti.LinearAlgebra.Determinant
 import TauCeti.RingTheory.Polynomial.Pochhammer
@@ -40,14 +41,14 @@ exactly such a box, and the two Vandermonde products are the two Weyl dimension 
 
 Three moves prove it; only the last uses the ordering hypothesis.  *The falling-factorial basis*
 replaces the powers, because they have the closed-form discrete antiderivative
-`TauCeti.sum_Icc_descPochhammer_eval`.  *Multilinearity*: a determinant is multilinear in its rows
+`TauCeti.sum_Ico_descPochhammer_eval`.  *Multilinearity*: a determinant is multilinear in its rows
 and the box constrains the rows independently, so the sum of the determinants over the box is the
 determinant of the matrix of row sums (`MultilinearMap.map_sum_finset`); evaluating those row
 sums, and clearing the denominators `1, 2, …, n` by a column scaling, produces the matrix of
 differences `(descPochhammer ℤ (j+1)).eval (xᵢ₊₁) - (descPochhammer ℤ (j+1)).eval (xᵢ)`, whose
 determinant is `n !` times the sum.  *A row reduction*: that matrix of differences is what remains
 of the `(n+1) × (n+1)` matrix `(descPochhammer ℤ j).eval (xᵢ)` after subtracting each row from its
-predecessor and deleting the column `j = 0`, which is constant equal to `1`.  Multiplying on the
+successor and deleting the column `j = 0`, which is constant equal to `1`.  Multiplying on the
 left by the bidiagonal matrix performing the subtraction contributes a factor `(-1)^{n+1}` to the
 determinant, and expanding the product along its first column — where only the last entry
 survives — contributes the same sign, so the two determinants agree.
@@ -88,7 +89,7 @@ of `u^j` may be replaced by the column of the values of `p j` without changing t
 if `d j` divides every weighted value `wᵢ · (p j).eval (uᵢ)` then `∏ⱼ d j` divides
 `∏ᵢ wᵢ · det (vandermonde u)` (`TauCeti.prod_dvd_prod_mul_det_vandermonde`).  With `p j` the falling
 factorial and `w = 1` this is the argument of Mathlib's `Matrix.superFactorial_dvd_vandermonde_det`.
-Two weighted products arise as numerators of Weyl dimension formulas, and both are divisible by
+Three products arise as numerators of Weyl dimension formulas.  The first two are divisible by
 `1! · 3! ⋯ (2n - 1)!`:
 
 * the odd Vandermonde product `∏ᵢ xᵢ · ∏_{i < j} (xᵢ² - xⱼ²)`, the numerator for the symplectic
@@ -99,9 +100,13 @@ Two weighted products arise as numerators of Weyl dimension formulas, and both a
   `∏_{c < k} (x - c)(x + c + 1)`, whose weighted values are sums of two falling factorials of
   degree `2k + 1` (`TauCeti.two_mul_add_one_mul_prod_sub_mul_add_add_one_eq`).
 
+The third, the unweighted product `∏_{i < j} (xᵢ² - xⱼ²)`, the numerator for the even orthogonal
+groups, is divisible by `2!/2 · 4!/2 ⋯ (2n - 2)!/2`, with the monic even polynomials
+`(x² - 0²) ⋯ (x² - k²)`, twice each of which is a sum of two falling factorials of degree `2k + 2`
+(`TauCeti.two_mul_prod_sq_sub_sq_eq`).
+
 ## Main results
 
-* `TauCeti.sum_Icc_descPochhammer_eval`: the discrete antiderivative of a falling factorial.
 * `TauCeti.factorial_mul_sum_det_vandermonde`: **the box-sum identity for Vandermonde
   determinants.**
 * `TauCeti.sum_mul_det_vandermonde_update_sub_one` and `TauCeti.sum_mul_prod_sub_update_sub_one`:
@@ -115,6 +120,11 @@ Two weighted products arise as numerators of Weyl dimension formulas, and both a
 * `TauCeti.prod_factorial_dvd_prod_two_mul_add_one_mul_prod_sub_mul_add_add_one`: **integrality
   for the Vandermonde product of the values `x (x + 1)`** weighted by `2x + 1`, which is divisible
   by `1! · 3! ⋯ (2n - 1)!` too.
+* `TauCeti.prod_add_one_mul_factorial_dvd_prod_prod_sq_sub_sq`: **integrality for the even
+  Vandermonde product** `∏_{i < j} (xᵢ² - xⱼ²)`, which is divisible by
+  `2!/2 · 4!/2 ⋯ (2n - 2)!/2`, a positive integer
+  (`TauCeti.prod_add_one_mul_factorial_two_mul_add_one_pos`), the value of the product at the
+  nodes `n - 1, …, 1, 0` (`TauCeti.prod_prod_sq_sub_sq_eq_prod_add_one_mul_factorial`).
 -/
 
 public section
@@ -122,50 +132,6 @@ public section
 namespace TauCeti
 
 open Finset Matrix Polynomial
-
-/-! ### The discrete antiderivative of a falling factorial -/
-
-/-- **The discrete derivative of a falling factorial**: the falling factorial of degree `m + 1`
-increases by `m + 1` times the falling factorial of degree `m`.  This is the analogue of
-`(x^{m+1})' = (m+1) x^m`, and the reason the falling factorials, not the powers, are the basis in
-which a Vandermonde determinant can be summed over a range. -/
-private theorem descPochhammer_eval_add_one_sub (m : ℕ) (x : ℤ) :
-    (descPochhammer ℤ (m + 1)).eval (x + 1) - (descPochhammer ℤ (m + 1)).eval x
-      = ((m : ℤ) + 1) * (descPochhammer ℤ m).eval x := by
-  rw [descPochhammer_succ_eval_add_one, descPochhammer_succ_eval]
-  ring
-
-/-- Telescoping a sum of consecutive differences over an integer interval. -/
-private theorem sum_Icc_sub_telescope (f : ℤ → ℤ) (p : ℤ) :
-    ∀ q, p - 1 ≤ q → ∑ t ∈ Finset.Icc p q, (f (t + 1) - f t) = f (q + 1) - f p := by
-  intro q hq
-  induction q, hq using Int.leInduction with
-  | base =>
-    rw [Finset.Icc_eq_empty (by omega), Finset.sum_empty]
-    norm_num
-  | succ q hq ih =>
-    have hins : Finset.Icc p (q + 1) = insert (q + 1) (Finset.Icc p q) := by
-      ext t
-      simp only [Finset.mem_insert, Finset.mem_Icc]
-      omega
-    rw [hins, Finset.sum_insert (by simp only [Finset.mem_Icc, not_and, not_le]; omega), ih]
-    ring
-
-/-- **The discrete antiderivative of a falling factorial.**  Summing the degree `m` falling
-factorial over the integer range `p ≤ t < q` gives the difference of the degree `m + 1` falling
-factorial at the endpoints, divided by `m + 1`; the statement clears that denominator.
-
-The hypothesis `p ≤ q` is what makes the range a range: for `q < p` the sum is empty while the
-right-hand side need not vanish. -/
-theorem sum_Icc_descPochhammer_eval (m : ℕ) {p q : ℤ} (h : p ≤ q) :
-    ((m : ℤ) + 1) * ∑ t ∈ Finset.Icc p (q - 1), (descPochhammer ℤ m).eval t
-      = (descPochhammer ℤ (m + 1)).eval q - (descPochhammer ℤ (m + 1)).eval p := by
-  have htel :=
-    sum_Icc_sub_telescope (fun t => (descPochhammer ℤ (m + 1)).eval t) p (q - 1) (by omega)
-  have hq : q - 1 + 1 = q := by omega
-  rw [hq] at htel
-  rw [Finset.mul_sum, ← htel]
-  exact Finset.sum_congr rfl fun t _ => (descPochhammer_eval_add_one_sub m t).symm
 
 /-! ### The box-sum identity -/
 
@@ -179,32 +145,10 @@ private theorem det_vandermonde_eq_det_descPochhammer {R : Type*} [CommRing R] [
     (fun j => descPochhammer R (j : ℕ)) (fun j => descPochhammer_natDegree (j : ℕ))
     (fun j => monic_descPochhammer (j : ℕ))
 
-/-- The one surviving term of a sum whose summand is supported on the index one step above a
-given one. -/
-private theorem sum_ite_val_eq_succ {m : ℕ} (i : Fin m) (f : Fin (m + 1) → ℤ) :
-    (∑ k : Fin (m + 1), if (k : ℕ) = (i.castSucc : ℕ) + 1 then f k else 0) = f i.succ := by
-  rw [Finset.sum_eq_single i.succ]
-  · simp
-  · intro k _ hk
-    have hne : ¬ ((k : ℕ) = (i : ℕ) + 1) := fun h => hk (by ext; simpa using h)
-    simp only [Fin.val_castSucc, ite_eq_right_iff]
-    exact fun h => absurd h hne
-  · simp
-
-/-- There is no index one step above the last one, so the corresponding sum is empty. -/
-private theorem sum_ite_val_eq_last_succ {m : ℕ} (f : Fin (m + 1) → ℤ) :
-    (∑ k : Fin (m + 1), if (k : ℕ) = ((Fin.last m : Fin (m + 1)) : ℕ) + 1 then f k else 0)
-      = 0 := by
-  refine Finset.sum_eq_zero fun k _ => ?_
-  have hk := k.isLt
-  simp only [Fin.val_last, ite_eq_right_iff]
-  intro h
-  omega
-
 /-- **The row reduction.**  The `n × n` matrix of differences of falling factorials at the
 consecutive nodes `xᵢ`, `xᵢ₊₁` has the same determinant as the `(n+1) × (n+1)` Vandermonde matrix
 of the nodes themselves: it is obtained from the falling-factorial form of the latter by
-subtracting each row from its predecessor and deleting the constant column `j = 0`. -/
+subtracting each row from its successor and deleting the constant column `j = 0`. -/
 private theorem det_descPochhammer_sub_eq_det_vandermonde {n : ℕ} (x : Fin (n + 1) → ℤ) :
     (Matrix.of fun i j : Fin n =>
         (descPochhammer ℤ ((j : ℕ) + 1)).eval (x i.succ)
@@ -258,10 +202,13 @@ private theorem det_descPochhammer_sub_eq_det_vandermonde {n : ℕ} (x : Fin (n 
   have hcastSucc : ∀ (i : Fin n) (j : Fin (n + 1)),
       (E * N) i.castSucc j = N i.succ j - N i.castSucc j := by
     intro i j
-    rw [hEN, sum_ite_val_eq_succ]
+    rw [hEN]
+    simp only [Fin.val_castSucc, ← Fin.val_succ, Fin.val_inj, Finset.sum_ite_eq',
+      Finset.mem_univ, ↓reduceIte]
   have hlast : (E * N) (Fin.last n) 0 = -1 := by
-    rw [hEN, sum_ite_val_eq_last_succ, hcol]
-    ring
+    rw [hEN, hcol]
+    have hne : ∀ k : Fin (n + 1), ¬ ((k : ℕ) = n + 1) := fun k => by omega
+    simp [hne]
   have hsubmat : (E * N).submatrix (Fin.last n).succAbove Fin.succ
       = Matrix.of fun i j : Fin n =>
           (descPochhammer ℤ ((j : ℕ) + 1)).eval (x i.succ)
@@ -286,18 +233,7 @@ private theorem det_descPochhammer_sub_eq_det_vandermonde {n : ℕ} (x : Fin (n 
   have hdetN : N.det = (Matrix.vandermonde x).det :=
     (det_vandermonde_eq_det_descPochhammer (n + 1) x).symm
   rw [Matrix.det_mul, hEdet, hdetN] at hdetEN
-  exact (mul_left_cancel₀ (pow_ne_zero (n + 1) (by norm_num : (-1 : ℤ) ≠ 0)) hdetEN).symm
-
-/-- Clearing the denominators `1, 2, …, n` of the discrete antiderivatives is a column scaling,
-whose determinant is `n !`. -/
-private theorem prod_fin_add_one_eq_factorial (n : ℕ) :
-    (∏ j : Fin n, (((j : ℕ) : ℤ) + 1)) = (Nat.factorial n : ℤ) := by
-  have hcast : ∀ k : ℕ, ((k : ℤ) + 1) = ((k + 1 : ℕ) : ℤ) := by
-    intro k
-    push_cast
-    ring
-  rw [Fin.prod_univ_eq_prod_range fun k : ℕ => ((k : ℤ) + 1)]
-  simp only [hcast, ← Nat.cast_prod, Finset.prod_range_add_one_eq_factorial]
+  exact (((isUnit_neg_one (α := ℤ)).pow (n + 1)).mul_right_inj.mp hdetEN).symm
 
 /-- **Summing Vandermonde determinants over a box of nested intervals.**  For integers
 `x₀ ≤ x₁ ≤ ⋯ ≤ xₙ`, the Vandermonde determinant of `y`, summed over all integer vectors with
@@ -346,9 +282,13 @@ theorem factorial_mul_sum_det_vandermonde {n : ℕ} (x : Fin (n + 1) → ℤ)
         * Matrix.diagonal fun j : Fin n => ((j : ℕ) : ℤ) + 1 := by
     ext i j
     rw [Matrix.mul_diagonal, Matrix.of_apply, Matrix.of_apply, mul_comm]
-    exact (sum_Icc_descPochhammer_eval (j : ℕ) (hx i)).symm
+    rw [Finset.Icc_sub_one_right_eq_Ico]
+    exact (sum_Ico_descPochhammer_eval (j : ℕ) (hx i)).symm
   have hdet := det_descPochhammer_sub_eq_det_vandermonde x
-  rw [hscale, Matrix.det_mul, Matrix.det_diagonal, prod_fin_add_one_eq_factorial] at hdet
+  rw [hscale, Matrix.det_mul, Matrix.det_diagonal] at hdet
+  simp only [← Nat.cast_add_one, ← Nat.cast_prod] at hdet
+  rw [Fin.prod_univ_eq_prod_range (fun k : ℕ => k + 1) n,
+    Finset.prod_range_add_one_eq_factorial] at hdet
   rw [hsum, mul_comm, hdet]
 
 /-! ### The lowering identity -/
@@ -418,35 +358,13 @@ private theorem det_vandermonde_eq_prod_range {R : Type*} [CommRing R] (m : ℕ)
   have hIoi : ∀ i : Fin m, ∏ j ∈ Finset.Ioi i, (b j - b i)
       = (-1) ^ (Finset.Ioi i).card * ∏ l ∈ Finset.Ico ((i : ℕ) + 1) m, (b i - b l) := by
     intro i
-    have hleft : Finset.Ioi i = Finset.univ.filter fun j : Fin m => (i : ℕ) < (j : ℕ) := by
-      ext j
-      simp only [Finset.mem_Ioi, Finset.mem_filter, Finset.mem_univ, true_and]
-      exact Fin.lt_def
-    have hright : Finset.Ico ((i : ℕ) + 1) m
-        = (Finset.range m).filter fun l => (i : ℕ) < l := by
-      ext l
-      simp only [Finset.mem_Ico, Finset.mem_filter, Finset.mem_range]
-      omega
-    rw [hright, Finset.prod_filter,
-      ← Fin.prod_univ_eq_prod_range (fun l : ℕ => if (i : ℕ) < l then b i - b l else 1) m,
-      ← Finset.prod_filter, ← hleft, ← Finset.prod_const, ← Finset.prod_mul_distrib]
-    exact Finset.prod_congr rfl fun j _ => by ring
+    have hprod := Finset.prod_map (Finset.Ioi i) Fin.valEmbedding (fun l => b i - b l)
+    rw [Fin.map_valEmbedding_Ioi, ← Finset.Ico_add_one_left_eq_Ioo] at hprod
+    rw [hprod, ← Finset.prod_neg]
+    exact Finset.prod_congr rfl fun j _ => by simp
   rw [Matrix.det_vandermonde, Finset.prod_congr rfl fun i _ => hIoi i, Finset.prod_mul_distrib,
     Finset.prod_pow_eq_pow_sum,
     Fin.prod_univ_eq_prod_range (fun k : ℕ => ∏ l ∈ Finset.Ico (k + 1) m, (b k - b l)) m]
-
-/-- Cancelling a common factor of square one carried by every term of a sum and by the value it is
-compared to.  A sign is such a factor over any commutative ring, where it need not be cancellable
-in the sense of `mul_left_cancel₀`. -/
-private theorem mul_self_cancel_sum {ι : Type*} [Fintype ι] {R : Type*} [CommRing R] {c : R}
-    (hc : c * c = 1) {f g : ι → R} {a p : R} (h : ∑ i, f i * (c * g i) = a * (c * p)) :
-    (∑ i, f i * g i) = a * p := by
-  have hsum : ∑ i, f i * (c * g i) = c * ∑ i, f i * g i := by
-    rw [Finset.mul_sum]
-    exact Finset.sum_congr rfl fun i _ => by ring
-  have key : c * c * ∑ i, f i * g i = c * c * (a * p) := by
-    rw [mul_assoc, ← hsum, h]; ring
-  rwa [hc, one_mul, one_mul] at key
 
 /-- **The lowering identity, unwound.**  For a sequence in a commutative ring, the product of the
 differences over the ordered pairs below a bound, with one term of the sequence lowered by one and
@@ -477,17 +395,14 @@ theorem sum_mul_prod_sub_update_sub_one {R : Type*} [CommRing R] (m : ℕ) (b : 
     rw [hupd i, det_vandermonde_eq_prod_range m (Function.update b (i : ℕ) (b (i : ℕ) - 1))]
   have key := sum_mul_det_vandermonde_update_sub_one fun i : Fin m => b i
   rw [Finset.sum_congr rfl fun i _ => by rw [hterm i], det_vandermonde_eq_prod_range m b] at key
-  -- both sides now carry the same sign, which cancels
-  have hsign : ((-1 : R) ^ (∑ i : Fin m, (Finset.Ioi i).card))
-      * ((-1 : R) ^ (∑ i : Fin m, (Finset.Ioi i).card)) = 1 := by
-    rw [← mul_pow]; norm_num
-  have hcancel := mul_self_cancel_sum hsign key
-  rw [Fin.sum_univ_eq_sum_range (fun i : ℕ => b i * ∏ k ∈ Finset.range m,
+  rw [← Fin.sum_univ_eq_sum_range (fun i : ℕ => b i * ∏ k ∈ Finset.range m,
       ∏ l ∈ Finset.Ico (k + 1) m,
         (Function.update b i (b i - 1) k - Function.update b i (b i - 1) l)) m,
-    Fin.sum_univ_eq_sum_range b m,
-    Fin.sum_univ_eq_sum_range (fun i : ℕ => (i : R)) m] at hcancel
-  exact hcancel
+    ← Fin.sum_univ_eq_sum_range b m,
+    ← Fin.sum_univ_eq_sum_range (fun i : ℕ => (i : R)) m]
+  -- A power of `-1` is a unit even when the coefficient ring has zero divisors.
+  apply ((isUnit_neg_one (α := R)).pow (∑ i : Fin m, (Finset.Ioi i).card)).mul_right_inj.mp
+  simpa only [Finset.mul_sum, mul_left_comm] using key
 
 /-! ### Integrality of weighted Vandermonde determinants -/
 
@@ -525,17 +440,12 @@ theorem prod_dvd_prod_mul_prod_sub {R : Type*} [CommRing R] (m : ℕ) (u w d : �
     (hdvd : ∀ i < m, ∀ j < m, d j ∣ w i * (p j).eval (u i)) :
     (∏ k ∈ Finset.range m, d k)
       ∣ ∏ k ∈ Finset.range m, w k * ∏ l ∈ Finset.Ico (k + 1) m, (u k - u l) := by
-  have hdet := det_vandermonde_eq_prod_range m u
-  set s : R := (-1) ^ (∑ i : Fin m, (Finset.Ioi i).card)
-  have hs : s * s = 1 := by rw [← mul_pow, neg_one_mul, neg_neg, one_pow]
-  have hprod : ∏ k ∈ Finset.range m, ∏ l ∈ Finset.Ico (k + 1) m, (u k - u l)
-      = s * (Matrix.vandermonde fun i : Fin m => u i).det := by
-    rw [hdet, ← mul_assoc, hs, one_mul]
-  rw [Finset.prod_mul_distrib, hprod, ← Fin.prod_univ_eq_prod_range w m, mul_left_comm,
-    ← Fin.prod_univ_eq_prod_range d m]
-  exact (prod_dvd_prod_mul_det_vandermonde (fun i : Fin m => u i) (fun i => w i) (fun j => d j)
-    (fun j => p j) (fun j => hdeg j j.2) (fun j => hmonic j j.2)
-    fun i j => hdvd i i.2 j j.2).mul_left _
+  have h := prod_dvd_prod_mul_det_vandermonde (fun i : Fin m => u i) (fun i => w i)
+    (fun j => d j) (fun j => p j) (fun j => hdeg j j.2) (fun j => hmonic j j.2)
+    fun i j => hdvd i i.2 j j.2
+  rw [det_vandermonde_eq_prod_range m u, mul_left_comm] at h
+  have hunit := (isUnit_neg_one (α := R)).pow (∑ i : Fin m, (Finset.Ioi i).card)
+  simpa only [Fin.prod_univ_eq_prod_range, Finset.prod_mul_distrib] using hunit.dvd_mul_left.mp h
 
 /-! ### Products of squared differences, weighted by the nodes -/
 
@@ -572,6 +482,50 @@ theorem prod_factorial_dvd_prod_mul_prod_sq_sub_sq (m : ℕ) (b : ℕ → ℤ) :
     (fun j _ => by rw [natDegree_finsetProd_X_sub_C_eq_card, Finset.card_range])
     (fun j _ => monic_prod_X_sub_C _ _)
     fun i _ j _ => by simpa [eval_prod] using factorial_dvd_mul_prod_sq_sub_sq j (b i)
+
+/-- The divisor `2!/2 · 4!/2 ⋯ (2m)!/2` of the even Vandermonde product is positive, so it may
+be cancelled. -/
+theorem prod_add_one_mul_factorial_two_mul_add_one_pos (m : ℕ) :
+    0 < ∏ k ∈ Finset.range m, ((k + 1) * (2 * k + 1).factorial : ℤ) :=
+  Finset.prod_pos fun k _ => by positivity
+
+/-- The products `∏_{c < j} (j² - c²)` for `j < m`, the rows of the even Vandermonde product at the
+nodes `m - 1, …, 1, 0`, multiply to `2!/2 · 4!/2 ⋯ (2m - 2)!/2`: the row `j = k + 1` is
+`(k + 1) (2k + 1)!` (`TauCeti.prod_sq_sub_sq_eq_mul_factorial`) and the row `j = 0` is empty. -/
+theorem prod_prod_sq_sub_sq_eq_prod_add_one_mul_factorial {R : Type*} [CommRing R] (m : ℕ) :
+    ∏ j ∈ Finset.range m, ∏ c ∈ Finset.range j, ((j : R) ^ 2 - (c : R) ^ 2)
+      = ∏ k ∈ Finset.range (m - 1), ((k + 1) * (2 * k + 1).factorial : R) := by
+  cases m with
+  | zero => simp
+  | succ m =>
+    rw [Finset.prod_range_succ', Finset.prod_range_zero, mul_one, Nat.add_sub_cancel]
+    exact Finset.prod_congr rfl fun k _ => by
+      exact_mod_cast prod_sq_sub_sq_eq_mul_factorial (R := R) k
+
+/-- **Integrality for the even Vandermonde product.**  For a sequence of integers, the product
+`∏_{k < l < m} (bₖ² - bₗ²)` is divisible by `∏_{k < m - 1} (k + 1) (2k + 1)!`, that is, by
+`2!/2 · 4!/2 ⋯ (2m - 2)!/2`.  In the Vandermonde determinant of the squares, the column of
+`(x²)^j` may be replaced by the column of `∏_{c < j} (x² - c²)`, whose values at the integers are
+multiples of its value `∏_{c < j} (j² - c²)` at `x = j`
+(`TauCeti.mul_factorial_dvd_prod_sq_sub_sq`). -/
+theorem prod_add_one_mul_factorial_dvd_prod_prod_sq_sub_sq (m : ℕ) (b : ℕ → ℤ) :
+    (∏ k ∈ Finset.range (m - 1), ((k + 1) * (2 * k + 1).factorial : ℤ))
+      ∣ ∏ k ∈ Finset.range m, ∏ l ∈ Finset.Ico (k + 1) m, (b k ^ 2 - b l ^ 2) := by
+  have h := prod_dvd_prod_mul_prod_sub m (fun k => b k ^ 2) (fun _ => 1)
+    (fun j => ∏ c ∈ Finset.range j, ((j : ℤ) ^ 2 - (c : ℤ) ^ 2))
+    (fun j => ∏ c ∈ Finset.range j, (X - C ((c : ℤ) ^ 2)))
+    (fun j _ => by rw [natDegree_finsetProd_X_sub_C_eq_card, Finset.card_range])
+    (fun j _ => monic_prod_X_sub_C _ _)
+    fun i _ j _ => by
+      rw [one_mul, eval_prod]
+      simp only [eval_sub, eval_X, eval_C]
+      cases j with
+      | zero => simp
+      | succ k =>
+        rw [prod_sq_sub_sq_eq_mul_factorial (R := ℤ) k]
+        push_cast
+        exact mul_factorial_dvd_prod_sq_sub_sq k (b i)
+  simpa only [prod_prod_sq_sub_sq_eq_prod_add_one_mul_factorial, one_mul] using h
 
 /-! ### The Vandermonde product of `x (x + 1)`, weighted by `2x + 1` -/
 

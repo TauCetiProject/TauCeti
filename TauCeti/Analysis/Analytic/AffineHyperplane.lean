@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Calculus.FDeriv.Analytic
 public import TauCeti.Analysis.Analytic.Order
+import Mathlib.Analysis.Calculus.Deriv.Mul
 
 /-!
 # Local equations of an affine hyperplane along an analytic curve

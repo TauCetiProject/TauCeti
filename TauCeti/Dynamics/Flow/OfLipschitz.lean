@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Dynamics.Flow
-public import TauCeti.Analysis.ODE.GlobalSolution
+public import TauCeti.Analysis.ODE.InitialCondition
 
 /-!
 # The flow of a globally Lipschitz vector field
@@ -23,6 +23,8 @@ the initial condition, and the joint continuity required by `Flow` is
 ## Main declarations
 
 * `TauCeti.flowOfLipschitz`: the flow of a globally Lipschitz vector field on a Banach space.
+* `TauCeti.contDiff_flowOfLipschitz` and `TauCeti.contDiff_flowOfLipschitz_apply`: a globally
+  `C^(n+1)` field has a `C^(n+1)` flow, jointly and at each fixed time.
 * `TauCeti.hasDerivAt_flowOfLipschitz` and `TauCeti.isIntegralCurve_flowOfLipschitz`: its
   orbits solve the differential equation.
 * `TauCeti.eq_flowOfLipschitz`: every global solution is an orbit of the flow.
@@ -65,6 +67,25 @@ with possibly different constants, produce the same flow. -/
 theorem flowOfLipschitz_congr {K' : ℝ≥0} (hv : LipschitzWith K v) (hv' : LipschitzWith K' v) :
     flowOfLipschitz v hv = flowOfLipschitz v hv' :=
   Flow.ext fun t x ↦ congrFun (ODE.globalSolution_congr v hv hv' x) t
+
+/-- **A globally Lipschitz `C^(n+1)` vector field has a `C^(n+1)` global flow**, jointly in time
+and the initial condition. -/
+theorem contDiff_flowOfLipschitz (n : ℕ) (v : E → E) (hv : LipschitzWith K v)
+    (hvs : ContDiff ℝ (n + 1) v) :
+    ContDiff ℝ (n + 1) (Function.uncurry (flowOfLipschitz v hv)) := by
+  convert (ODE.contDiff_globalSolution n v hv hvs).comp
+    (contDiff_snd.prodMk contDiff_fst) using 1
+  funext p
+  rw [Function.comp_apply, Function.uncurry_apply_pair, flowOfLipschitz_apply]
+
+/-- At each fixed time, the flow of a globally Lipschitz `C^(n+1)` vector field is `C^(n+1)` in
+the initial condition. -/
+theorem contDiff_flowOfLipschitz_apply (n : ℕ) (v : E → E) (hv : LipschitzWith K v)
+    (hvs : ContDiff ℝ (n + 1) v) (t : ℝ) :
+    ContDiff ℝ (n + 1) (flowOfLipschitz v hv t) := by
+  convert ODE.contDiff_globalSolution_apply n v hv hvs t using 1
+  funext x
+  rw [flowOfLipschitz_apply]
 
 /-- Every orbit of the flow solves the differential equation. -/
 theorem hasDerivAt_flowOfLipschitz (hv : LipschitzWith K v) (x : E) (t : ℝ) :

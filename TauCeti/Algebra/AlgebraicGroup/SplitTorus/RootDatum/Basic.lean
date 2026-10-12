@@ -192,7 +192,6 @@ private theorem coordinateRoot_injective :
     rw [← hroot]
     exact coordinateRoot_coroot_two p
   rw [dotPairing_coordinateRoot_coordinateCoroot] at htwo
-  have hp := p.2
   have hq := q.2
   refine Subtype.ext (Prod.ext ?_ ?_) <;> (split_ifs at htwo <;> simp_all)
 

@@ -122,7 +122,7 @@ theorem tateHMinusTwoEquivAbelianization_conjugateTrivialTateIso_apply
       (L.conjugateGalEquiv g).abelianizationCongr.toAdditive
         (L.tateHMinusTwoEquivAbelianization x) := by
   rw [conjugateTrivialTateIso_hom, tateHMinusTwoEquivAbelianization_apply,
-    tateHMinusTwoEquivAbelianization_apply]
+    tateHMinusTwoEquivAbelianization_apply, map_neg, neg_inj]
   exact TateCohomology.HNegTwoAddEquivAbelianization_map _ x
 
 end NormalLayer

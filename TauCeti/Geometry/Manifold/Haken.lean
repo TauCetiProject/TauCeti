@@ -42,6 +42,8 @@ Topology*, Sections 1.1--1.2, and Jaco, *Lectures on Three-Manifold Topology*, C
 * `TauCeti.isClosedHakenSurfaceEmbedding_iff` characterizes the closed specialization.
 * `TauCeti.IsPossiblyNonorientableHakenThreeManifold.exists_isOpen_sdiff_range_eq_union` and its
   closed analogue expose the two-sided complement supplied by the existential surface witness.
+* `TauCeti.IsPossiblyNonorientableClosedHakenThreeManifold.isClosedConnectedThreeManifold`: a
+  closed Haken 3-manifold is a closed connected 3-manifold.
 -/
 
 public section
@@ -224,6 +226,16 @@ theorem isPossiblyNonorientableClosedHakenThreeManifold_iff (M : Type u)
   Iff.rfl
 
 namespace IsPossiblyNonorientableClosedHakenThreeManifold
+
+/-- A possibly nonorientable closed Haken 3-manifold is a closed connected 3-manifold, as the
+ambient space of its surface witness. -/
+theorem isClosedConnectedThreeManifold {M : Type u} [TopologicalSpace M]
+    [ChartedSpace (EuclideanSpace ℝ (Fin 3)) M]
+    (h : IsPossiblyNonorientableClosedHakenThreeManifold M) : IsClosedConnectedThreeManifold M := by
+  rcases (isPossiblyNonorientableClosedHakenThreeManifold_iff M).mp h with
+    ⟨_hirr, ⟨S, tS, cS, f, hf⟩⟩
+  exact (isClosedIncompressibleSurfaceEmbedding_iff.mp
+    (isClosedHakenSurfaceEmbedding_iff.mp hf).1).2.1
 
 /-- A closed Haken surface embedding supplies its ambient possibly nonorientable closed-Haken
 predicate when the sphere-bounds-a-ball condition holds. -/

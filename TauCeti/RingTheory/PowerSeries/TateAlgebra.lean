@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Normed.Unbundled.RingSeminorm
 public import TauCeti.RingTheory.PowerSeries.GaussNorm
 
 /-!
@@ -43,7 +42,9 @@ automatically.
   `NormMulClass` and `CompleteSpace` on `PowerSeries.IsRestricted.subring c`.
 
 Apply the norm lemmas by qualified name, for example `TauCeti.PowerSeries.norm_eq_gaussNorm f`.
-Elements of the restricted subring have type `Subtype`, rather than a new Tate algebra type.
+The normed and completeness instances are supplied by the multivariate construction in
+`TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Basic`. Elements of the restricted subring have type
+`Subtype`, rather than a new Tate algebra type.
 
 ## References
 
@@ -61,30 +62,13 @@ section NormedRing
 
 variable {R : Type*} [NormedRing R] [IsUltrametricDist R] (c : ℝ) [hc : Fact (0 < c)]
 
-/-- **The Gauss norm on restricted power series.** At a positive radius `c`, the ring of power
-series restricted at `c` over a nonarchimedean normed ring is a normed ring for the Gauss norm
-`‖∑ aₙ Xⁿ‖ = sup ‖aₙ‖ cⁿ`. -/
+/-- The multivariate Gauss norm, specialized to the constant polyradius on `Unit`.
+Mathlib's univariate subring is a semireducible wrapper for instance matching, so this
+specialization supplies the same normed-ring data explicitly. -/
 noncomputable instance instNormedRingIsRestrictedSubring :
     NormedRing (PowerSeries.IsRestricted.subring (R := R) c) :=
-  RingNorm.toNormedRing
-    { toFun f := (f : PowerSeries R).gaussNorm norm c
-      map_zero' := PowerSeries.gaussNorm_zero norm c norm_zero
-      add_le' f g :=
-        (PowerSeries.gaussNorm_add_le_max norm c _ _ hc.out.le norm_nonneg
-          IsUltrametricDist.norm_add_le_max (hasGaussNorm_of_isRestricted f.2)
-          (hasGaussNorm_of_isRestricted g.2)).trans
-          (max_le_add_of_nonneg (PowerSeries.gaussNorm_nonneg norm c _ norm_nonneg)
-            (PowerSeries.gaussNorm_nonneg norm c _ norm_nonneg))
-      neg' f := by simp [PowerSeries.gaussNorm_eq]
-      mul_le' f g :=
-        MvPowerSeries.gaussNorm_mul_le norm (fun _ : Unit ↦ c) _ _ (fun _ ↦ hc.out.le)
-          norm_nonneg norm_mul_le IsUltrametricDist.isNonarchimedean_norm norm_zero
-          (hasGaussNorm_of_isRestricted f.2).hasMvGaussNorm
-          (hasGaussNorm_of_isRestricted g.2).hasMvGaussNorm
-      eq_zero_of_map_eq_zero' f h := by
-        rwa [PowerSeries.gaussNorm_eq_zero_iff norm c _ norm_zero norm_nonneg
-          (fun _ ↦ norm_eq_zero.mp) hc.out (hasGaussNorm_of_isRestricted f.2),
-          ZeroMemClass.coe_eq_zero] at h }
+  inferInstanceAs (NormedRing
+    (MvPowerSeries.IsRestricted.subring (R := R) (fun _ : Unit ↦ c)))
 
 variable {c}
 
@@ -138,70 +122,22 @@ theorem nnnorm_eq_gaussValuation [NormMulClass R] [NormOneClass R]
 variable (c)
 
 instance : IsUltrametricDist (PowerSeries.IsRestricted.subring (R := R) c) :=
-  IsUltrametricDist.isUltrametricDist_of_forall_norm_add_le_max_norm fun f g ↦
-    PowerSeries.gaussNorm_add_le_max norm c _ _ hc.out.le norm_nonneg
-      IsUltrametricDist.norm_add_le_max (hasGaussNorm_of_isRestricted f.2)
-      (hasGaussNorm_of_isRestricted g.2)
+  inferInstanceAs (IsUltrametricDist
+    (MvPowerSeries.IsRestricted.subring (R := R) (fun _ : Unit ↦ c)))
 
-instance [NormOneClass R] : NormOneClass (PowerSeries.IsRestricted.subring (R := R) c) where
-  norm_one := by
-    have h1 : (1 : PowerSeries.IsRestricted.subring (R := R) c) =
-        ⟨PowerSeries.C 1, PowerSeries.isRestricted_C c 1⟩ :=
-      Subtype.ext (map_one PowerSeries.C).symm
-    rw [h1, norm_C, norm_one]
+instance [NormOneClass R] : NormOneClass (PowerSeries.IsRestricted.subring (R := R) c) :=
+  inferInstanceAs (NormOneClass
+    (MvPowerSeries.IsRestricted.subring (R := R) (fun _ : Unit ↦ c)))
 
-/-- The Gauss norm on restricted series is multiplicative when the norm on the coefficients is. -/
-instance [NormMulClass R] : NormMulClass (PowerSeries.IsRestricted.subring (R := R) c) where
-  norm_mul f g := gaussNorm_mul_of_isRestricted hc.out f.2 g.2
+/-- The multiplicative multivariate Gauss norm specialized to one variable. -/
+instance [NormMulClass R] : NormMulClass (PowerSeries.IsRestricted.subring (R := R) c) :=
+  inferInstanceAs (NormMulClass
+    (MvPowerSeries.IsRestricted.subring (R := R) (fun _ : Unit ↦ c)))
 
-/-- **The Tate algebra is complete.** Over a complete nonarchimedean normed ring, the ring of
-series restricted at a positive radius is complete for the Gauss norm. A Cauchy sequence converges
-coefficientwise, uniformly in the weighted coefficient norms, and its coefficientwise limit is
-again restricted. -/
-instance [CompleteSpace R] : CompleteSpace (PowerSeries.IsRestricted.subring (R := R) c) := by
-  refine Metric.complete_of_cauchySeq_tendsto fun F hF ↦ ?_
-  -- Each coefficient map is a bounded additive map, so the coefficients of `F` are Cauchy.
-  have hcoeff (n : ℕ) : CauchySeq fun k ↦ (F k : PowerSeries R).coeff n := by
-    let coeffHom : PowerSeries.IsRestricted.subring (R := R) c →+ R :=
-      (PowerSeries.coeff n).toAddMonoidHom.comp
-        (PowerSeries.IsRestricted.subring (R := R) c).subtype.toAddMonoidHom
-    refine (AddMonoidHomClass.uniformContinuous_of_bound coeffHom (c ^ n)⁻¹
-      fun f ↦ ?_).comp_cauchySeq hF
-    rw [← div_eq_inv_mul, le_div_iff₀ (pow_pos hc.out n)]
-    exact norm_coeff_mul_pow_le f n
-  choose a ha using fun n ↦ cauchySeq_tendsto_of_complete (hcoeff n)
-  -- The coefficients converge uniformly in the weighted norms.
-  have hunif : ∀ ε > 0, ∃ N, ∀ k ≥ N, ∀ n,
-      ‖(F k : PowerSeries R).coeff n - a n‖ * c ^ n ≤ ε := by
-    intro ε hε
-    obtain ⟨N, hN⟩ := Metric.cauchySeq_iff.mp hF ε hε
-    refine ⟨N, fun k hk n ↦ le_of_tendsto
-      (((tendsto_const_nhds.sub (ha n)).norm).mul_const (c ^ n))
-      (eventually_atTop.mpr ⟨N, fun l hl ↦ ?_⟩)⟩
-    have h := norm_coeff_mul_pow_le (F k - F l) n
-    rw [AddSubgroupClass.coe_sub, map_sub] at h
-    exact h.trans ((dist_eq_norm _ _).symm.trans_le (hN k hk l hl).le)
-  have hg : (PowerSeries.mk a).IsRestricted c := by
-    rw [PowerSeries.isRestricted_iff']
-    refine tendsto_order.mpr ⟨fun b hb ↦ .of_forall fun n ↦
-      hb.trans_le (mul_nonneg (norm_nonneg _) (pow_nonneg hc.out.le n)), fun ε hε ↦ ?_⟩
-    obtain ⟨N, hN⟩ := hunif (ε / 2) (half_pos hε)
-    filter_upwards [((PowerSeries.isRestricted_iff' c _).mp (F N).2).eventually
-      (gt_mem_nhds (half_pos hε))] with n hn
-    calc ‖(PowerSeries.mk a).coeff n‖ * c ^ n
-        ≤ ‖(F N : PowerSeries R).coeff n‖ * c ^ n
-          + ‖(F N : PowerSeries R).coeff n - a n‖ * c ^ n := by
-          rw [PowerSeries.coeff_mk, ← add_mul]
-          exact mul_le_mul_of_nonneg_right (norm_le_norm_add_norm_sub _ _)
-            (pow_nonneg hc.out.le n)
-      _ < ε / 2 + ε / 2 := add_lt_add_of_lt_of_le hn (hN N le_rfl n)
-      _ = ε := add_halves ε
-  refine ⟨⟨PowerSeries.mk a, hg⟩, Metric.tendsto_atTop.mpr fun ε hε ↦ ?_⟩
-  obtain ⟨N, hN⟩ := hunif (ε / 2) (half_pos hε)
-  refine ⟨N, fun k hk ↦ (?_ : _ ≤ ε / 2).trans_lt (half_lt_self hε)⟩
-  rw [dist_eq_norm, norm_le_iff (half_pos hε).le]
-  intro n
-  simpa using hN k hk n
+/-- Completeness of the multivariate Gauss norm specialized to one variable. -/
+instance [CompleteSpace R] : CompleteSpace (PowerSeries.IsRestricted.subring (R := R) c) :=
+  inferInstanceAs (CompleteSpace
+    (MvPowerSeries.IsRestricted.subring (R := R) (fun _ : Unit ↦ c)))
 
 end NormedRing
 
@@ -209,10 +145,11 @@ section NormedCommRing
 
 variable {R : Type*} [NormedCommRing R] [IsUltrametricDist R] (c : ℝ) [Fact (0 < c)]
 
-/-- Over a commutative base, the restricted series form a normed commutative ring. -/
+/-- The normed commutative multivariate restricted-series ring specialized to one variable. -/
 noncomputable instance instNormedCommRingIsRestrictedSubring :
     NormedCommRing (PowerSeries.IsRestricted.subring (R := R) c) :=
-  { instNormedRingIsRestrictedSubring c with mul_comm := mul_comm }
+  inferInstanceAs (NormedCommRing
+    (MvPowerSeries.IsRestricted.subring (R := R) (fun _ : Unit ↦ c)))
 
 end NormedCommRing
 

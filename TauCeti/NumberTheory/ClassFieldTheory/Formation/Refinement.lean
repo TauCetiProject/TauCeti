@@ -39,11 +39,13 @@ Refinements compose (`LayerRefinement.trans`): along a tower `F ⊆ K ⊆ L ⊆ 
 relative degree is multiplicative, the Galois-group quotients compose, and inflation is
 functorial. In positive degree the Tate groups are the ordinary cohomology groups, and inflation
 of Tate cohomology, `LayerRefinement.tateInfl`, is `cohomologyInfl` read through that
-identification. Any two layers over the same ground, in particular any two refinements of one
-layer, have a common refinement, the compositum of the two top fields, whose top subgroup is the
-intersection of the two top subgroups (`LayerRefinement.exists_commonRefinement`). This is what
-lets the invariant of a class, defined by inflating it to *some* refinement, be compared across
-refinements.
+identification. The parallel maps `trivialCohomologyInfl` and `trivialTateInfl` inflate the trivial
+integral coefficients that form the source of Tate's class-formation isomorphism. Both kinds of
+inflation compose along towers. Any two layers over the same ground, in particular any two
+refinements of one layer, have a common refinement, the compositum of the two top fields, whose top
+subgroup is the intersection of the two top subgroups (`LayerRefinement.exists_commonRefinement`).
+This is what lets the invariant of a class, defined by inflating it to *some* refinement, be
+compared across refinements.
 
 ## Main definitions
 
@@ -57,6 +59,9 @@ refinements.
 * `TauCeti.ClassFieldTheory.LayerRefinement.cohomologyInfl`: inflation of layer cohomology.
 * `TauCeti.ClassFieldTheory.LayerRefinement.tateInfl`: inflation of layer Tate cohomology, in
   positive degrees.
+* `TauCeti.ClassFieldTheory.LayerRefinement.trivialCohomologyInfl` and
+  `TauCeti.ClassFieldTheory.LayerRefinement.trivialTateInfl`: the corresponding inflation maps
+  for trivial integral coefficients.
 
 ## Main statements
 
@@ -68,7 +73,8 @@ refinements.
 * `TauCeti.ClassFieldTheory.LayerRefinement.relativeDegree_trans`,
   `TauCeti.ClassFieldTheory.LayerRefinement.galHom_trans`,
   `TauCeti.ClassFieldTheory.LayerRefinement.cohomologyInfl_trans` and
-  `TauCeti.ClassFieldTheory.LayerRefinement.tateInfl_trans`: towers of refinements.
+  `TauCeti.ClassFieldTheory.LayerRefinement.tateInfl_trans`, together with their
+  `trivialCohomologyInfl_trans` and `trivialTateInfl_trans` counterparts: towers of refinements.
 * `TauCeti.ClassFieldTheory.LayerRefinement.groundLevelEquiv_cohomologyInfl_zero_apply`: in degree
   zero, inflation is the identity of the ground level.
 * `TauCeti.ClassFieldTheory.LayerRefinement.tateInfl_comp_tateHIsoH_hom`: in positive degree, Tate
@@ -328,6 +334,108 @@ theorem cohomologyInfl_trans (T : LayerRefinement a b) (T' : LayerRefinement b c
   rw [cohomologyInfl_def, cohomologyInfl_def, cohomologyInfl_def,
     ← groupCohomology.map_comp T.galHom T'.galHom (T.repHom F) (T'.repHom F) n]
   exact groupCohomology.map_congr (galHom_trans T T') (repHom_trans_toLinearMap T T' F) n
+
+/-! ### Inflation with trivial coefficients -/
+
+/-- The identity of `ℤ` as a morphism from the restriction of the trivial representation of the
+old Galois group to the trivial representation of the new Galois group. -/
+def trivialRepHom (T : LayerRefinement old new) :
+    Rep.res T.galHom (Rep.trivial ℤ old.Gal ℤ) ⟶ Rep.trivial ℤ new.Gal ℤ :=
+  Rep.ofHom
+    { toLinearMap := LinearMap.id
+      isIntertwining' := fun γ ↦ by ext; simp }
+
+/-- The trivial-coefficient morphism moves no integer. -/
+@[simp]
+theorem trivialRepHom_hom_apply (T : LayerRefinement old new) (x : ℤ) :
+    (T.trivialRepHom.hom x : ℤ) = x := by
+  simp [trivialRepHom]
+
+/-- The trivial-coefficient morphism of a trivial refinement is the identity on underlying
+linear maps. -/
+theorem trivialRepHom_self_toLinearMap {L : NormalLayer G} (T : LayerRefinement L L) :
+    T.trivialRepHom.hom.toLinearMap =
+      (𝟙 (Rep.trivial ℤ L.Gal ℤ) : Rep.trivial ℤ L.Gal ℤ ⟶
+        Rep.trivial ℤ L.Gal ℤ).hom.toLinearMap := by
+  ext
+  simp [trivialRepHom]
+
+/-- Trivial-coefficient morphisms compose along a tower, on underlying linear maps. -/
+theorem trivialRepHom_trans_toLinearMap (T : LayerRefinement a b) (T' : LayerRefinement b c) :
+    ((T.trans T').trivialRepHom).hom.toLinearMap =
+      (((Rep.resFunctor T'.galHom).map T.trivialRepHom ≫ T'.trivialRepHom).hom.toLinearMap) := by
+  ext
+  simp [trivialRepHom]
+
+/-- **Inflation of ordinary cohomology with trivial integral coefficients** along a refinement of
+layers. -/
+def trivialCohomologyInfl (T : LayerRefinement old new) (n : ℕ) :
+    old.TrivialH n ⟶ new.TrivialH n :=
+  groupCohomology.map T.galHom T.trivialRepHom n
+
+/-- Trivial-coefficient inflation is the ordinary change-of-group map along the quotient
+homomorphism of a refinement. -/
+theorem trivialCohomologyInfl_def (T : LayerRefinement old new) (n : ℕ) :
+    T.trivialCohomologyInfl n = groupCohomology.map T.galHom T.trivialRepHom n :=
+  (rfl)
+
+/-- Inflating trivial-coefficient cohomology along the trivial refinement does nothing. -/
+@[simp]
+theorem trivialCohomologyInfl_self {L : NormalLayer G} (T : LayerRefinement L L) (n : ℕ) :
+    T.trivialCohomologyInfl n = 𝟙 (L.TrivialH n) := by
+  rw [trivialCohomologyInfl,
+    groupCohomology.map_congr T.galHom_self T.trivialRepHom_self_toLinearMap n,
+    groupCohomology.map_id]
+
+/-- Inflation of ordinary cohomology with trivial coefficients is functorial along a tower of
+refinements. -/
+theorem trivialCohomologyInfl_trans (T : LayerRefinement a b) (T' : LayerRefinement b c)
+    (n : ℕ) :
+    (T.trans T').trivialCohomologyInfl n =
+      T.trivialCohomologyInfl n ≫ T'.trivialCohomologyInfl n := by
+  rw [trivialCohomologyInfl, trivialCohomologyInfl, trivialCohomologyInfl,
+    ← groupCohomology.map_comp T.galHom T'.galHom T.trivialRepHom T'.trivialRepHom n]
+  exact groupCohomology.map_congr (galHom_trans T T')
+    (trivialRepHom_trans_toLinearMap T T') n
+
+/-- **Inflation of positive-degree Tate cohomology with trivial integral coefficients** along a
+refinement of layers. -/
+def trivialTateInfl (T : LayerRefinement old new) (r : ℕ) [NeZero r] :
+    old.TrivialTateH r ⟶ new.TrivialTateH r :=
+  (old.trivialTateHIsoH r).hom ≫ T.trivialCohomologyInfl r ≫
+    (new.trivialTateHIsoH r).inv
+
+/-- Trivial-coefficient Tate inflation is ordinary inflation transported across the canonical
+positive-degree comparisons. -/
+theorem trivialTateInfl_def (T : LayerRefinement old new) (r : ℕ) [NeZero r] :
+    T.trivialTateInfl r = (old.trivialTateHIsoH r).hom ≫
+      T.trivialCohomologyInfl r ≫ (new.trivialTateHIsoH r).inv :=
+  (rfl)
+
+/-- Trivial-coefficient Tate inflation is ordinary inflation read through the canonical
+positive-degree comparisons with ordinary cohomology. -/
+@[reassoc]
+theorem trivialTateInfl_comp_trivialTateHIsoH_hom (T : LayerRefinement old new) (r : ℕ)
+    [NeZero r] :
+    T.trivialTateInfl r ≫ (new.trivialTateHIsoH r).hom =
+      (old.trivialTateHIsoH r).hom ≫ T.trivialCohomologyInfl r := by
+  rw [trivialTateInfl, Category.assoc, Category.assoc, Iso.inv_hom_id, Category.comp_id]
+
+/-- Inflating positive-degree Tate cohomology with trivial coefficients along the trivial
+refinement does nothing. -/
+@[simp]
+theorem trivialTateInfl_self {L : NormalLayer G} (T : LayerRefinement L L) (r : ℕ)
+    [NeZero r] : T.trivialTateInfl r = 𝟙 (L.TrivialTateH r) := by
+  rw [trivialTateInfl, trivialCohomologyInfl_self, Category.id_comp, Iso.hom_inv_id]
+
+/-- Inflation of positive-degree Tate cohomology with trivial coefficients is functorial along a
+tower of refinements. -/
+theorem trivialTateInfl_trans (T : LayerRefinement a b) (T' : LayerRefinement b c) (r : ℕ)
+    [NeZero r] :
+    (T.trans T').trivialTateInfl r = T.trivialTateInfl r ≫ T'.trivialTateInfl r := by
+  rw [trivialTateInfl, trivialTateInfl, trivialTateInfl,
+    trivialCohomologyInfl_trans T T']
+  simp only [Category.assoc, Iso.inv_hom_id_assoc]
 
 /-- **In degree zero, inflation of cohomology is the identity of the ground level.** Read through
 the identification of `H⁰(U/V, A^V)` with the ground level `A^U`, inflating a class from the layer

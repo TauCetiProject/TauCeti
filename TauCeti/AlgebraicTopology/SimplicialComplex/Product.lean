@@ -10,6 +10,7 @@ public import Mathlib.Order.Fin.Basic
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Basic
 public import TauCeti.AlgebraicTopology.SimplicialComplex.IsCone
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Maps
+import TauCeti.AlgebraicTopology.SimplicialComplex.Simplex.Basic
 import Mathlib.Data.Finset.Prod
 import Mathlib.Data.Finset.Powerset
 import Mathlib.Data.Set.Finite.Lattice
@@ -107,6 +108,39 @@ theorem orderedProd_mono (hK : K ≤ K') (hL : L ≤ L') :
     orderedProd K L ≤ orderedProd K' L' := by
   rintro σ ⟨hσK, hσL, hchain⟩
   exact ⟨hK hσK, hL hσL, hchain⟩
+
+/-- An ordered product of finite-face precomplexes has finitely many faces.
+
+Every product face is a subset of the product of the finite sets of vertices used by the two
+factor complexes.  This is the finiteness input for compactness of its geometric realization; the
+ambient vertex types themselves need not be finite. -/
+theorem finite_faces_orderedProd (hK : K.faces.Finite) (hL : L.faces.Finite) :
+    (orderedProd K L).faces.Finite := by
+  classical
+  let VK : Set α := ⋃ σ ∈ K.faces, (σ : Set α)
+  let VL : Set β := ⋃ τ ∈ L.faces, (τ : Set β)
+  have hVK : VK.Finite := by
+    dsimp [VK]
+    exact hK.biUnion fun σ _ => σ.finite_toSet
+  have hVL : VL.Finite := by
+    dsimp [VL]
+    exact hL.biUnion fun τ _ => τ.finite_toSet
+  let V := hVK.toFinset.product hVL.toFinset
+  refine (Finset.finite_toSet V.powerset).subset ?_
+  intro σ hσ
+  rw [Finset.mem_coe, Finset.mem_powerset]
+  intro p hp
+  have hpK : p.1 ∈ VK := by
+    dsimp [VK]
+    refine Set.mem_iUnion.2 ⟨σ.image Prod.fst, Set.mem_iUnion.2 ⟨?_, ?_⟩⟩
+    · exact image_fst_mem_of_mem_orderedProd hσ
+    · exact Finset.mem_image.2 ⟨p, hp, rfl⟩
+  have hpL : p.2 ∈ VL := by
+    dsimp [VL]
+    refine Set.mem_iUnion.2 ⟨σ.image Prod.snd, Set.mem_iUnion.2 ⟨?_, ?_⟩⟩
+    · exact image_snd_mem_of_mem_orderedProd hσ
+    · exact Finset.mem_image.2 ⟨p, hp, rfl⟩
+  exact Finset.mem_product.2 ⟨hVK.mem_toFinset.2 hpK, hVL.mem_toFinset.2 hpL⟩
 
 end OrderedProd
 
@@ -342,6 +376,12 @@ theorem orderedProd_mono (hK : K ≤ K') (hL : L ≤ L') :
   rw [orderedProd_toPreAbstractSimplicialComplex, orderedProd_toPreAbstractSimplicialComplex]
   exact PreAbstractSimplicialComplex.orderedProd_mono hK hL
 
+/-- An ordered product of finite-face abstract complexes has finitely many faces. -/
+theorem finite_faces_orderedProd (hK : K.faces.Finite) (hL : L.faces.Finite) :
+    (orderedProd K L).faces.Finite := by
+  rw [orderedProd_toPreAbstractSimplicialComplex]
+  exact PreAbstractSimplicialComplex.finite_faces_orderedProd hK hL
+
 /-- The ordered simplicial cylinder on `K`, obtained by taking its ordered product with the
 standard one-simplex on `Fin 2`. -/
 def orderedCylinder (K : AbstractSimplicialComplex α) :
@@ -387,17 +427,11 @@ theorem isChain_of_mem_orderedCylinder {σ : Finset (α × Fin 2)}
 /-- The ordered cylinder of a finite abstract simplicial complex has finitely many faces. -/
 theorem finite_faces_orderedCylinder (hfin : K.faces.Finite) :
     K.orderedCylinder.faces.Finite := by
-  refine (hfin.preimage' fun τ _ ↦ ?_).subset fun σ hσ ↦
-    image_fst_mem_of_mem_orderedCylinder hσ
-  refine (Finset.finite_toSet ((τ.product Finset.univ).powerset)).subset ?_
-  intro σ hστ
-  rw [Set.mem_preimage, Set.mem_singleton_iff] at hστ
-  rw [Finset.mem_coe, Finset.mem_powerset]
-  intro p hp
-  apply Finset.mem_product.mpr
-  refine ⟨?_, Finset.mem_univ _⟩
-  rw [← hστ]
-  exact Finset.mem_image.mpr ⟨p, hp, rfl⟩
+  rw [orderedCylinder_toPreAbstractSimplicialComplex]
+  have htop : (⊤ : PreAbstractSimplicialComplex (Fin 2)).faces.Finite := by
+    simpa only [PreAbstractSimplicialComplex.simplex_univ] using
+      (PreAbstractSimplicialComplex.finite_faces_simplex (Finset.univ : Finset (Fin 2)))
+  exact PreAbstractSimplicialComplex.finite_faces_orderedProd hfin htop
 
 /-- The ordered cylinder of a cone whose apex bounds every vertex of the complex is a cone with
 apex the pair of that vertex and the terminal endpoint of the interval. -/

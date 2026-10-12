@@ -141,15 +141,11 @@ private theorem homologyMap_cochainsExtToTate_comp_H0Res (M : Rep R G) (H : Subg
   refine (cancel_epi (HomologicalComplex.homologyπ _ 0)).1 ?_
   refine (HomologicalComplex.homologyπ_naturality_assoc _ _ _).trans (Eq.trans ?_
     (HomologicalComplex.homologyπ_naturality _ _).symm)
-  -- On degree-zero cycles, the projection to Tate cohomology is `H0π` on invariants.
-  have hπ : ∀ {K : Type u} [Group K] [Fintype K] (N : Rep R K),
-      (tateComplex N).homologyπ 0 = (H0CyclesIso N).hom ≫ H0π N :=
-    fun N ↦ by rw [H0π_eq_cyclesIso_inv_comp_homologyπ]; exact (Iso.hom_inv_id_assoc _ _).symm
-  refine (congrArg (_ ≫ · ≫ H0Res M H) (hπ M)).trans ?_
+  refine (congrArg (_ ≫ · ≫ H0Res M H) (H0CyclesIso_hom_comp_H0π M).symm).trans ?_
   refine (congrArg (_ ≫ ·) ((Category.assoc _ _ _).trans
     (congrArg (_ ≫ ·) (H0π_comp_H0Res M H)))).trans ?_
   exact ((reassoc_of% cyclesMap_cochainsExtToTate_zero_comp_inclusion M H) _).trans
-    (congrArg (_ ≫ ·) (hπ (Rep.res H.subtype M)).symm)
+    (congrArg (_ ≫ ·) (H0CyclesIso_hom_comp_H0π (Rep.res H.subtype M)))
 
 /-- In nonnegative degrees, the identity of cochains followed by Tate restriction is restriction
 of cochains. -/

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.Connected.CommHopfAlgCat
 public import TauCeti.Algebra.AlgebraicGroup.SpecialOrthogonal.Basic
+import Mathlib.RingTheory.FiniteStability
 import TauCeti.LinearAlgebra.Matrix.SpecialOrthogonalGroup.Reflection
 import TauCeti.Algebra.AlgebraicGroup.BaseChange.Naturality
 import TauCeti.Algebra.AlgebraicGroup.Connected.AlgebraicallyClosed

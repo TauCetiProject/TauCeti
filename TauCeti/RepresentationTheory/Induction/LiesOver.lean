@@ -28,6 +28,10 @@ the given intertwiner with the unit `FDRep.indFDRepUnit`, which is injective.
 
 * `FDRep.liesOver_iff`: the characterisation by nonzero intertwiners.
 * `FDRep.LiesOver.of_iso_left`, `FDRep.LiesOver.of_iso_right`: transport across isomorphisms.
+* `FDRep.liesOver_res_self`: a nontrivial representation lies over its own restriction.
+* `FDRep.LiesOver.of_res_iso`: transport across isomorphisms of restrictions.
+* `FDRep.liesOver_of_ne_bot`: a representation lies over each nonzero subrepresentation of its
+  restriction.
 * `FDRep.LiesOver.indFDRep`: induction preserves lying over along the composite homomorphism.
 
 ## References
@@ -62,14 +66,25 @@ theorem liesOver_iff :
     U.LiesOver φ V ↔ ∃ f : V ⟶ (Action.res (FGModuleCat k) φ).obj U, f ≠ 0 :=
   Iff.rfl
 
+/-- A nontrivial representation lies over its own restriction along any homomorphism. -/
+theorem liesOver_res_self (U : FDRep k H) (φ : N →* H) [Nontrivial U] :
+    U.LiesOver φ ((Action.res (FGModuleCat k) φ).obj U) := by
+  obtain ⟨x, hx⟩ := exists_ne (0 : U)
+  refine ⟨𝟙 _, fun h => hx ?_⟩
+  exact ConcreteCategory.congr_hom h x
+
+/-- Lying over transfers along an isomorphism of the restricted larger representations. -/
+theorem LiesOver.of_res_iso {U' : FDRep k H} (h : U.LiesOver φ V)
+    (e : (Action.res (FGModuleCat k) φ).obj U ≅
+      (Action.res (FGModuleCat k) φ).obj U') : U'.LiesOver φ V := by
+  obtain ⟨f, hf⟩ := h
+  refine ⟨f ≫ e.hom, fun hzero => hf ?_⟩
+  exact (cancel_mono e.hom).mp (hzero.trans Limits.zero_comp.symm)
+
 /-- Lying over is invariant under isomorphism of the larger representation. -/
 theorem LiesOver.of_iso_left {U' : FDRep k H} (h : U.LiesOver φ V) (e : U ≅ U') :
-    U'.LiesOver φ V := by
-  obtain ⟨f, hf⟩ := h
-  refine ⟨f ≫ ((Action.res (FGModuleCat k) φ).mapIso e).hom, ?_⟩
-  intro hzero
-  exact hf ((cancel_mono ((Action.res (FGModuleCat k) φ).mapIso e).hom).mp
-    (hzero.trans Limits.zero_comp.symm))
+    U'.LiesOver φ V :=
+  h.of_res_iso ((Action.res (FGModuleCat k) φ).mapIso e)
 
 /-- Lying over is invariant under isomorphism of the smaller representation. -/
 theorem LiesOver.of_iso_right {V' : FDRep k N} (h : U.LiesOver φ V) (e : V ≅ V') :
@@ -78,6 +93,23 @@ theorem LiesOver.of_iso_right {V' : FDRep k N} (h : U.LiesOver φ V) (e : V ≅ 
   refine ⟨e.inv ≫ f, ?_⟩
   intro hzero
   exact hf ((cancel_epi e.inv).mp (hzero.trans Limits.comp_zero.symm))
+
+/-- **A representation lies over each of its nonzero subrepresentations.**  If `σ` is a nonzero
+subrepresentation of the restriction of `U` along `φ`, then `U` lies over `σ` regarded as a
+representation, the witness being the inclusion of `σ`. -/
+theorem liesOver_of_ne_bot (U : FDRep k H) (φ : N →* H) {σ : Subrepresentation (U.ρ.comp φ)}
+    (hσ : σ ≠ ⊥) : U.LiesOver φ (FDRep.of σ.toRepresentation) := by
+  -- Both forgetful images carry the actions `σ.toRepresentation` and `U.ρ.comp φ` by definition,
+  -- so the inclusion of `σ` intertwines them on the nose.
+  let i : _root_.Representation.IntertwiningMap
+      ((forget₂ (FDRep k N) (Rep k N)).obj (FDRep.of σ.toRepresentation)).ρ
+      ((forget₂ (FDRep k N) (Rep k N)).obj ((Action.res (FGModuleCat k) φ).obj U)).ρ :=
+    ⟨σ.toSubmodule.subtype, fun _ => rfl⟩
+  refine ⟨FDRep.forget₂HomLinearEquiv _ _ (Rep.ofHom i), fun h => hσ ?_⟩
+  refine Subrepresentation.toSubmodule_injective <| (Submodule.eq_bot_iff _).mpr fun v hv => ?_
+  -- Evaluating `h` at `⟨v, hv⟩` gives `v = 0`: the morphism is the inclusion of `σ`, and neither
+  -- `Rep.ofHom` nor `FDRep.forget₂HomLinearEquiv` changes the underlying function.
+  exact ConcreteCategory.congr_hom h ⟨v, hv⟩
 
 end Defs
 

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.VectorBundle.CovariantDerivative.Torsion
+import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Regularity
 
 /-!

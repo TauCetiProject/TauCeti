@@ -81,6 +81,8 @@ pairing vanishes, while its Gauss sum is `(1 + i)² = 2i ≠ 2`, so it is not me
 * `TauCeti.FiniteQuadraticModule.gaussSign`: the Gauss-sum invariant `sign q ∈ ℤ/8`, with its
   defining property `TauCeti.FiniteQuadraticModule.IsNondegenerate.gaussSum_eq` and its
   uniqueness `TauCeti.FiniteQuadraticModule.gaussSign_eq_of_gaussSum_eq`.
+* `TauCeti.FiniteQuadraticModule.gaussSign_eq_of_gaussSum_eq_mul`: nondegenerate modules whose
+  Gauss sums differ by a nonnegative real factor have the same invariant.
 * `TauCeti.FiniteQuadraticModule.gaussSign_prod`, `TauCeti.FiniteQuadraticModule.gaussSign_neg`
   and `TauCeti.FiniteQuadraticModule.gaussSign_eq_zero_of_isMetabolic`: additivity, behaviour under
   negation, and vanishing on metabolic modules.
@@ -348,12 +350,6 @@ theorem isLagrangian_zmultiples_and_not_isMetabolic_zmodStandard_two_prod :
 
 /-! ## The eighth power of the Gauss sum -/
 
-/-- `2#A` kills every value of the quadratic map, because `2 q(x) = b(x, x)` and `#A` kills `x`. -/
-private theorem two_mul_natCard_nsmul_quadratic (x : A) :
-    (2 * Nat.card A) • A.quadratic x = 0 := by
-  rw [mul_nsmul, ← QuadraticMap.polar_self, polar_eq_pairing, ← map_nsmul, card_nsmul_eq_zero',
-    map_zero]
-
 /-- Multiplication by a quaternion `a + bi + cj + dk` of norm `2#A - 1` is a bijection of `A⁴`
 which negates `q(x₁) + ⋯ + q(x₄)`. Its composite with multiplication by the conjugate quaternion
 is multiplication by `2#A - 1`, which is `-1` on `A`. -/
@@ -476,6 +472,24 @@ theorem IsNondegenerate.gaussSum_eq (hA : A.IsNondegenerate) :
   rwa [gaussSign_eq_of_gaussSum_eq A hk]
 
 variable {A} in
+/-- **Gauss sums that differ by a nonnegative real factor have the same invariant.** If
+`G(A) = c · G(B)` for a real `c ≥ 0` and both modules are nondegenerate, then `sign A = sign B`:
+comparing absolute values gives `c √#B = √#A`. -/
+theorem gaussSign_eq_of_gaussSum_eq_mul {B : FiniteQuadraticModule} (hA : A.IsNondegenerate)
+    (hB : B.IsNondegenerate) {c : ℝ} (hc : 0 ≤ c) (h : A.gaussSum = c * B.gaussSum) :
+    A.gaussSign = B.gaussSign := by
+  set ζ := expCircle (ZMod.toRatAddCircle 8 B.gaussSign)
+  have h₁ : A.gaussSum = ((c * √(Nat.card B) : ℝ) : ℂ) * ζ := by
+    rw [h, hB.gaussSum_eq]
+    push_cast
+    ring
+  have h₂ : √(Nat.card A) = c * √(Nat.card B) := by
+    have := congrArg norm h₁
+    rwa [norm_mul, norm_expCircle, mul_one, hA.norm_gaussSum, norm_real,
+      Real.norm_of_nonneg (by positivity)] at this
+  exact gaussSign_eq_of_gaussSum_eq A (by rw [h₁, ← h₂])
+
+variable {A} in
 /-- The Gauss-sum invariant is an isometry invariant. -/
 theorem Isometry.gaussSign_eq {B : FiniteQuadraticModule} (f : Isometry A B) :
     A.gaussSign = B.gaussSign := by
@@ -511,6 +525,14 @@ theorem gaussSign_neg : A.neg.gaussSign = -A.gaussSign := by
       rw [gaussSum_neg, conj_conj] at hk'
       rw [hk', map_mul, conj_ofReal, ← expCircle_neg, ← map_neg, hcard]
     rw [gaussSign, gaussSign, dite_eq_right h, dite_eq_right h', neg_zero]
+
+/-- The zero module has Gauss sum `1 = √1` and hence Gauss-sum invariant `0`. -/
+@[simp]
+theorem gaussSign_eq_zero_of_subsingleton [Subsingleton A] : A.gaussSign = 0 := by
+  refine gaussSign_eq_of_gaussSum_eq A ?_
+  obtain ⟨_⟩ := nonempty_fintype A
+  rw [gaussSum_eq_sum, Fintype.sum_subsingleton _ 0, Nat.card_of_subsingleton (0 : A)]
+  simp
 
 variable {A} in
 /-- **The Gauss-sum invariant of a nondegenerate metabolic module vanishes.** -/

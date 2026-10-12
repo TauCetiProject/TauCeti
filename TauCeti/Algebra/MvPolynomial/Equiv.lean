@@ -6,6 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.MvPolynomial.Equiv
+public import Mathlib.Algebra.MvPolynomial.PDeriv
+public import Mathlib.Algebra.Polynomial.Derivative
+public import TauCeti.Data.Finsupp.Fin
 
 /-!
 # Singling out an arbitrary variable of a polynomial ring in `n + 1` variables
@@ -30,6 +33,24 @@ list, as happens to the coefficient ring of a grid complex when a grid diagram i
 * `MvPolynomial.polynomial_eval_finSuccEquiv'`: evaluating the polynomial variable at `a`
   substitutes `a` for `X p`.
 * `MvPolynomial.finSuccEquiv'_zero`: for `p = 0` this is Mathlib's `MvPolynomial.finSuccEquiv`.
+* `MvPolynomial.finSuccEquiv'_map`, `MvPolynomial.finSuccEquiv_map`: singling out a variable
+  commutes with mapping the coefficients along a ring homomorphism.
+* `MvPolynomial.polynomial_eval_map_finSuccEquiv'`, `MvPolynomial.polynomial_eval_map_finSuccEquiv`:
+  specializing the other variables to a point `s` and then evaluating the polynomial variable at
+  `y` is evaluating at the point obtained by inserting `y` into `s` at position `p`.
+
+The last two results are the compatibility of this equivalence with coefficient maps and with
+evaluation. They let a polynomial in `n + 1` variables be treated as a family of univariate
+polynomials in `X p` parametrized by the other coordinates, with integer input mapped to the
+reals either before or after the variable is singled out.
+
+Dually, the last variable `Xₙ` can be moved into the coefficients instead, through Mathlib's
+`MvPolynomial.optionEquivRight` after renaming along `finSuccEquivLast`. This identifies
+`R[X₀, …, Xₙ]` with the polynomials in `X₀, …, Xₙ₋₁` whose coefficients are polynomials in `Xₙ`.
+The coefficient of `Xᵘ` then has as its coefficient of `Xₙ ^ k` the coefficient of `f` at the
+exponent `Finsupp.snoc u k` (`MvPolynomial.optionEquivRight_rename_finSuccEquivLast_coeff_coeff`).
+This is the form used for Lazard evaluation, where the base variables are eliminated first and
+the last variable is kept.
 -/
 
 public section
@@ -67,6 +88,12 @@ theorem finSuccEquiv'_rename_succAbove (p : Fin (n + 1)) (f : MvPolynomial (Fin 
     algHom_ext fun i => by simp
   exact DFunLike.congr_fun this f
 
+/-- Constants stay constant. -/
+@[simp]
+theorem finSuccEquiv'_C (p : Fin (n + 1)) (r : R) :
+    finSuccEquiv' R p (C r) = Polynomial.C (C r) :=
+  (finSuccEquiv' R p).commutes r
+
 /-- The polynomial variable comes from the singled-out variable. -/
 @[simp]
 theorem finSuccEquiv'_symm_X (p : Fin (n + 1)) :
@@ -97,5 +124,111 @@ theorem polynomial_eval_finSuccEquiv' (p : Fin (n + 1)) (a : MvPolynomial (Fin n
 /-- Singling out the variable `X 0` is `MvPolynomial.finSuccEquiv`. -/
 theorem finSuccEquiv'_zero : finSuccEquiv' R (0 : Fin (n + 1)) = finSuccEquiv R n := by
   rw [finSuccEquiv', finSuccEquiv, _root_.finSuccEquiv'_zero]
+
+/-- Singling out a variable takes its partial derivative to the univariate derivative. -/
+@[simp]
+theorem finSuccEquiv'_pderiv (f : MvPolynomial (Fin (n + 1)) R) (p : Fin (n + 1)) :
+    finSuccEquiv' R p (pderiv p f) = (finSuccEquiv' R p f).derivative := by
+  induction f using MvPolynomial.induction_on with
+  | C r => simp [finSuccEquiv'_C]
+  | add f g hf hg => simp [hf, hg]
+  | mul_X f i hf =>
+    obtain rfl | ⟨i, rfl⟩ := Fin.eq_self_or_eq_succAbove p i <;>
+      simp [Derivation.leibniz, smul_eq_mul, pderiv_X, hf, Polynomial.derivative_mul,
+        mul_comm]
+
+section Map
+
+variable {S : Type*} [CommSemiring S]
+
+/-- Singling out a variable commutes with mapping the coefficients along `φ`. -/
+theorem finSuccEquiv'_map (φ : R →+* S) (p : Fin (n + 1)) (f : MvPolynomial (Fin (n + 1)) R) :
+    finSuccEquiv' S p (map φ f) = (finSuccEquiv' R p f).map (map φ) := by
+  induction f using MvPolynomial.induction_on with
+  | C r => simp
+  | add f g hf hg => simp only [map_add, Polynomial.map_add, hf, hg]
+  | mul_X f i hf =>
+    simp only [map_mul, Polynomial.map_mul, hf, map_X]
+    congr 1
+    obtain rfl | ⟨i, rfl⟩ := Fin.eq_self_or_eq_succAbove p i <;> simp
+
+/-- Mapping the coefficients along `φ` commutes with the inverse of `finSuccEquiv' R p`. -/
+theorem finSuccEquiv'_symm_map (φ : R →+* S) (p : Fin (n + 1))
+    (f : Polynomial (MvPolynomial (Fin n) R)) :
+    (finSuccEquiv' S p).symm (f.map (map φ)) = map φ ((finSuccEquiv' R p).symm f) := by
+  rw [AlgEquiv.symm_apply_eq, finSuccEquiv'_map, AlgEquiv.apply_symm_apply]
+
+/-- Singling out the variable `X 0` commutes with mapping the coefficients along `φ`. -/
+theorem finSuccEquiv_map (φ : R →+* S) (f : MvPolynomial (Fin (n + 1)) R) :
+    finSuccEquiv S n (map φ f) = (finSuccEquiv R n f).map (map φ) := by
+  simpa only [finSuccEquiv'_zero] using finSuccEquiv'_map φ 0 f
+
+/-- Specializing the variables other than `X p` along `φ` at the point `s`, and then evaluating
+the polynomial variable at `y`, is evaluating along `φ` at the point obtained by inserting `y`
+into `s` at position `p`. -/
+theorem polynomial_eval_map_finSuccEquiv' (φ : R →+* S) (p : Fin (n + 1)) (s : Fin n → S)
+    (y : S) (f : MvPolynomial (Fin (n + 1)) R) :
+    ((finSuccEquiv' R p f).map (eval₂Hom φ s)).eval y = eval₂ φ (Fin.insertNth p y s) f := by
+  induction f using MvPolynomial.induction_on with
+  | C r => simp
+  | add f g hf hg => simp only [map_add, Polynomial.map_add, Polynomial.eval_add, hf, hg, eval₂_add]
+  | mul_X f i hf =>
+    simp only [map_mul, Polynomial.map_mul, Polynomial.eval_mul, hf, eval₂_mul, eval₂_X]
+    congr 1
+    obtain rfl | ⟨i, rfl⟩ := Fin.eq_self_or_eq_succAbove p i <;> simp
+
+/-- Specializing the variables `X 1, …, X n` along `φ` at the point `s`, and then evaluating the
+polynomial variable at `y`, is evaluating along `φ` at the point `Fin.cons y s`. -/
+theorem polynomial_eval_map_finSuccEquiv (φ : R →+* S) (s : Fin n → S) (y : S)
+    (f : MvPolynomial (Fin (n + 1)) R) :
+    ((finSuccEquiv R n f).map (eval₂Hom φ s)).eval y = eval₂ φ (Fin.cons y s) f := by
+  simpa only [finSuccEquiv'_zero, Fin.insertNth_zero'] using
+    polynomial_eval_map_finSuccEquiv' φ 0 s y f
+
+end Map
+
+/-- Moving the polynomial variable into the coefficient ring maps a constant multivariate
+polynomial by the univariate constant-coefficient homomorphism. -/
+theorem optionEquivRight_optionEquivLeft_symm_C {σ : Type*} (g : MvPolynomial σ R) :
+    ((optionEquivLeft R σ).symm.trans (optionEquivRight R σ)) (Polynomial.C g) =
+      map Polynomial.C g := by
+  rw [AlgEquiv.trans_apply]
+  induction g using MvPolynomial.induction_on with
+  | C r => simp
+  | add p q hp hq => simp only [map_add, hp, hq]
+  | mul_X p i hp =>
+    simp only [map_mul, optionEquivLeft_symm_C_X,
+      optionEquivRight_X_some, hp, map_X]
+
+section Last
+
+open Finsupp
+
+/-- Moving the last variable into the coefficients sends the monomial `r • X ^ d` to the monomial
+in the first `n` variables with exponent `init d` whose coefficient is `r • Xₙ ^ d (Fin.last n)`. -/
+theorem optionEquivRight_rename_finSuccEquivLast_monomial (d : Fin (n + 1) →₀ ℕ) (r : R) :
+    optionEquivRight R (Fin n) (rename finSuccEquivLast (monomial d r)) =
+      monomial (init d) (Polynomial.monomial (d (Fin.last n)) r) := by
+  rw [monomial_eq, monomial_eq, Finsupp.prod_fintype _ _ (by simp),
+    Finsupp.prod_fintype _ _ (by simp)]
+  simp [Fin.prod_univ_castSucc, Fin.init, ← Polynomial.C_mul_X_pow_eq_monomial]
+  ring
+
+/-- After moving the last variable into the coefficients, the coefficient of `Xₙ ^ k` in the
+coefficient of `Xᵘ` is the coefficient of `f` at the exponent `Finsupp.snoc u k`. -/
+theorem optionEquivRight_rename_finSuccEquivLast_coeff_coeff (f : MvPolynomial (Fin (n + 1)) R)
+    (u : Fin n →₀ ℕ) (k : ℕ) :
+    ((optionEquivRight R (Fin n) (rename finSuccEquivLast f)).coeff u).coeff k =
+      f.coeff (snoc u k) := by
+  induction f using MvPolynomial.induction_on' with
+  | monomial d r =>
+    simp only [optionEquivRight_rename_finSuccEquivLast_monomial, coeff_monomial, eq_snoc_iff,
+      ite_and]
+    split_ifs <;> simp [Polynomial.coeff_monomial, *]
+  | add p q hp hq =>
+    simp only [map_add, AddMonoidAlgebra.coeff_add, Finsupp.add_apply, Polynomial.coeff_add, hp,
+      hq]
+
+end Last
 
 end MvPolynomial

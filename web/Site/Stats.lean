@@ -15,8 +15,26 @@ def locGraphs : Html := {{
     </figure>
     <figure class="loc-figure">
       <img class="loc-graph" src="static/loc-roadmap.svg"
-           alt="Tau Ceti Roadmap: lines written by date"/>
-      <figcaption>"The human-owned roadmap repository, total lines by date."</figcaption>
+           alt="Roadmap specification lines over time, with the archived Completed roadmaps highlighted"/>
+      <figcaption>"All roadmap specifications, including " <code>"Completed/"</code> ". The highlighted portion is archived as complete; generated status and progress reports are excluded."</figcaption>
+    </figure>
+  </div>
+}}
+
+/-- Completion uses the existing coverage reports and human archival decisions. -/
+private def roadmapCompletionGraphs : Html := {{
+  <div class="loc-graphs">
+    <figure class="loc-figure">
+      <img class="loc-graph" src="static/roadmap-layers.svg"
+           alt="Total and completed roadmap layers and lanes over time, including unassessed layers"
+           loading="lazy"/>
+      <figcaption>"Each lane or layer counts once, including the constituent roadmaps of an umbrella. Partial and unassessed layers receive no completion credit; archived roadmaps count as complete."</figcaption>
+    </figure>
+    <figure class="loc-figure">
+      <img class="loc-graph" src="static/roadmap-exhaustion.svg"
+           alt="Estimated time to exhaust roadmap work, with authoring stopped or continued at its recent pace"
+           loading="lazy"/>
+      <figcaption>"Two scenarios: stop adding roadmap work, or continue authoring at the past seven complete days' pace. Estimates use roadmap size and layer counts as separate measures."</figcaption>
     </figure>
   </div>
 }}
@@ -89,38 +107,66 @@ private def contributorGraphs : Html := {{
   </div>
 }}
 
-/-- Who works on which roadmap: one grid for merged PRs, one for reviews. Regenerated with
-the rest of the pull-request statistics by `scripts/pr_stats_graphs.py`; both slices are a
-local join over the same snapshot, so neither costs an extra API call. -/
+/-- Who works where: one grid for merged PRs, one for reviews, with a column for each arXiv
+category, as declared by the roadmap a PR advances in its `metadata.toml` in TauCetiRoadmap.
+Regenerated with the rest of the pull-request statistics by `scripts/pr_stats_graphs.py`; both
+slices are a local join over the same snapshot, so neither costs an extra API call. -/
 private def roadmapContributorGraphs : Html := {{
   <figure class="loc-figure loc-figure-wide">
     <img class="loc-graph" src="static/merges-by-roadmap-and-contributor.svg"
-         alt="Merged pull requests per contributor per roadmap, over the trailing ninety days"
+         alt="Merged pull requests per contributor per arXiv category, over the trailing ninety days"
          loading="lazy"/>
-    <figcaption>"Merged PRs per contributor per roadmap over the trailing ninety days."</figcaption>
+    <figcaption>"Merged PRs per contributor per arXiv category over the trailing ninety days. Each PR counts under the category of the roadmap it advances."</figcaption>
   </figure>
   <figure class="loc-figure loc-figure-wide">
     <img class="loc-graph" src="static/reviews-by-roadmap-and-contributor.svg"
-         alt="Reviews per contributor per roadmap, over the trailing ninety days"
+         alt="Reviews per contributor per arXiv category, over the trailing ninety days"
          loading="lazy"/>
-    <figcaption>"Reviews per contributor per roadmap over the same window and the same columns."</figcaption>
+    <figcaption>"Reviews per contributor per arXiv category over the same window and the same columns."</figcaption>
   </figure>
 }}
 
 #doc (Page) "Statistics" =>
 
 How much mathematics has Tau Ceti formalized, and how fast is the roadmap that
-directs it growing? Each chart plots the total number of lines present at every
-commit, counted straight from the git history and rebuilt from scratch at each
-deploy, so the figures cannot drift.
+directs it growing? The volume charts count the lines present in git history through
+the last complete UTC day and are rebuilt at each deploy.
 
 :::blob locGraphs
 :::
 
-The vertical scales differ by an order of magnitude and on purpose: the library is
-measured in tens of thousands of lines of Lean, the roadmap in thousands of lines of
-prose and target statements. The library figure counts only the mathematics — the
-files under `TauCeti/` — not the website or tooling.
+The library figure counts the mathematics under `TauCeti/`, plus `TauCeti.lean`.
+Roadmap size counts Markdown and Lean files, including target statements and reference
+notes, in both active and archived roadmap directories. Moving a roadmap to `Completed/`
+keeps it in the total and moves its size into the completed portion. Machine-generated reports are excluded,
+so writing a progress report does not look like authoring more work.
+
+:::blob roadmapCompletionGraphs
+:::
+
+The second chart measures the fraction of named layers and lanes that are complete.
+It uses generated coverage reports. Older reports without recorded layer assessments
+appear as unassessed here, even if the Progress page has a manual reading. A roadmap archived by its maintainers
+counts as complete even if its last report predates that decision. The shaded unassessed
+portion remains in the total. Layer sizes differ, so this is a fraction of goals, rather
+than a fraction of effort. Reports may lag the code, and a changed specification may need
+a new assessment; the [Progress](progress) page shows those individual cases.
+
+The exhaustion estimates ask how much more library growth would consume the recorded
+backlog. We divide completions over recorded roadmap history by the increase in library
+lines over that history, then apply the library's last seven complete days of growth to
+convert the result into days. For roadmap size, completion credit is the specification's
+size when it was archived; for layers, it is when a report first records them done.
+Those dates are approximate observations, not exact implementation dates.
+
+With authoring stopped, the estimate is remaining work divided by inferred daily
+completion. With authoring continuing, we subtract the recent daily increase in total
+roadmap size or layer count from that completion rate. If authoring keeps up with
+completion, there is no exhaustion at that pace. These are rough extrapolations:
+lines and layers are unequal, reports can recognize old work in a batch, and neither
+the remaining difficulty nor future throughput is known. Exact histories, assumptions,
+completion events and estimates are downloadable as
+[`roadmap-completion.json`](static/roadmap-completion.json).
 
 Which roadmap is all that Lean serving? Every pull request is labelled with the
 roadmap it advances, so we can split the library by roadmap. The chart below stacks
@@ -174,18 +220,18 @@ posting login also authors a merged PR in the fetched snapshot.
 :::blob contributorGraphs
 :::
 
-Who works where? The two grids below slice the same merges and reviews by the roadmap each PR
-carries, over the trailing ninety days. Between them they answer the questions the cumulative
-histories cannot: who already knows an area well enough to review for it, whether a roadmap is
-resting on one person, and where somebody has been spending their effort.
+Who works where? The two grids below slice the same merges and reviews by area, over the trailing
+ninety days. Each pull request counts under the arXiv category of the roadmap it carries, as that
+roadmap declares it in its `metadata.toml` in TauCetiRoadmap; a roadmap that declares none counts
+as `Unsorted`. Between them the grids answer the questions the cumulative histories cannot: who
+already knows an area well enough to review for it, whether an area is resting on one person, and
+where somebody has been spending their effort.
 
-The columns are the fifteen roadmaps with the most merges in that window, rather than the
-largest of all time — every one of those questions is about now, and a whole-history cut would
-hold a column for a roadmap that finished in July while an active one could not get in. Both
-grids use the same columns, so they can be read against each other. Everything past the cut is
-summed into one `Other` column and the quietest contributors into one `Other` row, so nothing is
-dropped; exact per-contributor, per-roadmap counts are in
-[`pr-stats.json`](static/pr-stats.json).
+The columns are the categories with the most merges in that window, busiest first — every one of
+those questions is about now. Both grids use the same columns, so they can be read against each
+other. Past twenty categories the rest would share one `Other` column, and the quietest
+contributors are summed into one `Other` row, so nothing is dropped; exact
+per-contributor, per-category counts are in [`pr-stats.json`](static/pr-stats.json).
 
 :::blob roadmapContributorGraphs
 :::

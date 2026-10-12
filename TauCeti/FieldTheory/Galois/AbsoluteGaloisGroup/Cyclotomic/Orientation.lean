@@ -5,10 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.Cyclotomic.Character
+public import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.Cyclotomic.Range
 public import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.ProP
 public import TauCeti.NumberTheory.Padics.PrincipalUnits
-import Mathlib.RingTheory.RootsOfUnity.AlgebraicallyClosed
 import TauCeti.NumberTheory.Padics.PadicIntegers
 import TauCeti.Topology.Algebra.ContinuousMonoidHom.Basic
 
@@ -22,12 +21,14 @@ with `σ ζ = ζ ^ j`. Hence every value of `localCyclotomicCharacter p K` is a 
 homomorphism to the profinite pro-`p` group `1 + pℤ_p` kills the pro-`p` kernel of the absolute
 Galois group, so the character descends to its maximal pro-`p` quotient `G_K(p)`.
 
-The descended character `cyclotomicOrientation p K hmu : G_K(p) →* ℤ_pˣ` is the arithmetic
+The descended character `cyclotomicOrientation p K hmu : G_K(p) →ₜ* ℤ_pˣ` is the arithmetic
 orientation of `G_K(p)`, the character to compare with the canonical character of `G_K(p)` when
-it is a Demushkin group. It takes the roots-of-unity witness `hmu` as an explicit argument, and no
-unconditional descent of the full character is provided: for odd `p` and `K = ℚ_p` the character
-reduced modulo `p` maps the absolute Galois group onto `(ℤ/pℤ)ˣ`, a nontrivial group of order
-prime to `p`, so it does not factor through any pro-`p` group.
+it is a Demushkin group. It is a continuous homomorphism, the form taken by the twisted
+coefficients `ZModTwist` and the prescription property `HasPrescriptionProperty`. It takes the
+roots-of-unity witness `hmu` as an explicit argument, and no unconditional descent of the full
+character is provided: for odd `p` and `K = ℚ_p` the character reduced modulo `p` maps the
+absolute Galois group onto `(ℤ/pℤ)ˣ`, a nontrivial group of order prime to `p`, so it does not
+factor through any pro-`p` group.
 
 ## Main definitions
 
@@ -36,52 +37,22 @@ prime to `p`, so it does not factor through any pro-`p` group.
 
 ## Main results
 
-* `TauCeti.localCyclotomicCharacter_mem_unitsPrincipal_one`: if `μ_p ⊆ K`, the cyclotomic
-  character takes values in `1 + pℤ_p`.
 * `TauCeti.isProP_range_localCyclotomicCharacter`: if `μ_p ⊆ K`, the image of the cyclotomic
   character is pro-`p`.
 * `TauCeti.proPKernel_le_ker_localCyclotomicCharacter`: if `μ_p ⊆ K`, the pro-`p` kernel of the
   absolute Galois group lies in the kernel of the cyclotomic character.
-* `TauCeti.cyclotomicOrientation_mk`, `TauCeti.cyclotomicOrientation_continuous`,
+* `TauCeti.cyclotomicOrientation_mk`,
+  `TauCeti.cyclotomicOrientation_comp_absoluteGaloisGroupProPQuotientMap`,
   `TauCeti.cyclotomicOrientation_range`: the orientation agrees with the character on classes,
-  is continuous, and has the same image as the character.
+  pulls back to the continuous character along the quotient map, and has the same image as the
+  character.
 -/
 
 public section
 
 namespace TauCeti
 
-variable {p : ℕ} [hp : Fact p.Prime] {K : Type*} [Field K]
-
-/-- If `K` contains a primitive `p`-th root of unity, every value of the cyclotomic character of
-`K` is a principal unit `≡ 1 mod p`: an automorphism fixing a primitive `p`-th root of unity acts
-on the `p`-th roots of unity by the exponent `1`. -/
-theorem localCyclotomicCharacter_mem_unitsPrincipal_one (hmu : ∃ ζ : K, IsPrimitiveRoot ζ p)
-    (σ : Field.absoluteGaloisGroup K) : localCyclotomicCharacter p K σ ∈ unitsPrincipal p 1 := by
-  obtain ⟨ζ, hζ⟩ := hmu
-  -- A primitive `p`-th root of unity in `K` forces `p ≠ 0` in `K`, so the algebraic closure has
-  -- all `p`-power roots of unity and Mathlib's defining equation of the character applies.
-  have := hζ.neZero'
-  have hξ : IsPrimitiveRoot (algebraMap K (AlgebraicClosure K) ζ) p :=
-    hζ.map_of_injective (algebraMap K (AlgebraicClosure K)).injective
-  have hspec := cyclotomicCharacter.spec p (n := 1) σ.toRingEquiv
-    (algebraMap K (AlgebraicClosure K) ζ) (by rw [pow_one, hξ.pow_eq_one])
-  have hmod := ((hξ.isOfFinOrder hp.out.ne_zero).pow_eq_pow_iff_modEq).mp
-    (((pow_one _).trans (σ.commutes ζ).symm).trans hspec)
-  rw [← hξ.eq_orderOf] at hmod
-  rw [mem_unitsPrincipal_iff_toZModPow, localCyclotomicCharacter_apply]
-  set c := PadicInt.toZModPow 1 (cyclotomicCharacter (AlgebraicClosure K) p σ.toRingEquiv : ℤ_[p])
-  rw [← ZMod.natCast_zmod_val c, ← Nat.cast_one (R := ZMod (p ^ 1)), ZMod.natCast_eq_natCast_iff]
-  simpa using hmod.symm
-
-variable (p K) in
-/-- If `K` contains a primitive `p`-th root of unity, the image of the cyclotomic character of
-`K` lies in the principal unit group `1 + pℤ_p`. -/
-theorem range_localCyclotomicCharacter_le_unitsPrincipal_one
-    (hmu : ∃ ζ : K, IsPrimitiveRoot ζ p) :
-    (localCyclotomicCharacter p K).range ≤ unitsPrincipal p 1 := by
-  rintro _ ⟨σ, rfl⟩
-  exact localCyclotomicCharacter_mem_unitsPrincipal_one hmu σ
+variable {p : ℕ} [Fact p.Prime] {K : Type*} [Field K]
 
 variable (p K) in
 /-- If `K` contains a primitive `p`-th root of unity, the image of the cyclotomic character of
@@ -89,63 +60,60 @@ variable (p K) in
 theorem isProP_range_localCyclotomicCharacter (hmu : ∃ ζ : K, IsPrimitiveRoot ζ p) :
     IsProP p (localCyclotomicCharacter p K).range :=
   (isProP_iff_le_unitsPrincipal_one _).mpr
-    (range_localCyclotomicCharacter_le_unitsPrincipal_one p K hmu)
+    (range_localCyclotomicCharacter_le_unitsPrincipal (n := 1) (by simpa using hmu))
 
 variable (p K) in
 /-- If `K` contains a primitive `p`-th root of unity, the pro-`p` kernel of the absolute Galois
 group of `K` lies in the kernel of the cyclotomic character. -/
 theorem proPKernel_le_ker_localCyclotomicCharacter (hmu : ∃ ζ : K, IsPrimitiveRoot ζ p) :
     proPKernel p (Field.absoluteGaloisGroup K) ≤ (localCyclotomicCharacter p K).ker := by
+  have hmem := localCyclotomicCharacter_mem_unitsPrincipal (n := 1) (by simpa using hmu)
   -- Corestrict the character to the profinite pro-`p` group `1 + pℤ_p`.
-  let χ₁ := (localCyclotomicCharacter p K).codRestrict (unitsPrincipal p 1)
-    (localCyclotomicCharacter_mem_unitsPrincipal_one hmu)
-  have hχ₁ : Continuous χ₁ :=
-    (localCyclotomicCharacter_continuous p K).subtype_mk
-      (localCyclotomicCharacter_mem_unitsPrincipal_one hmu)
-  rw [← MonoidHom.ker_codRestrict _ _ (localCyclotomicCharacter_mem_unitsPrincipal_one hmu)]
+  let χ₁ := (localCyclotomicCharacter p K).codRestrict (unitsPrincipal p 1) hmem
+  have hχ₁ : Continuous χ₁ := (localCyclotomicCharacter_continuous p K).subtype_mk hmem
+  rw [← MonoidHom.ker_codRestrict _ _ hmem]
   exact proPKernel_le_ker (isProP_unitsPrincipal p one_pos) χ₁ hχ₁
 
 variable (p K) in
 /-- The **cyclotomic orientation** of the maximal pro-`p` Galois group: when `K` contains a
-primitive `p`-th root of unity, the cyclotomic character `localCyclotomicCharacter p K` descends
-to `absoluteGaloisGroupProP p K`. -/
+primitive `p`-th root of unity, the continuous cyclotomic character
+`continuousLocalCyclotomicCharacter p K` descends to a continuous homomorphism on
+`absoluteGaloisGroupProP p K`. -/
 noncomputable def cyclotomicOrientation (hmu : ∃ ζ : K, IsPrimitiveRoot ζ p) :
-    absoluteGaloisGroupProP p K →* ℤ_[p]ˣ :=
-  (ContinuousMonoidHom.quotientLift _
-    ⟨localCyclotomicCharacter p K, localCyclotomicCharacter_continuous p K⟩
-    (proPKernel_le_ker_localCyclotomicCharacter p K hmu)).toMonoidHom
+    absoluteGaloisGroupProP p K →ₜ* ℤ_[p]ˣ :=
+  ContinuousMonoidHom.quotientLift _ (continuousLocalCyclotomicCharacter p K) fun g hg ↦ by
+    -- The two kernels agree, since the bundled character has the values of the plain one.
+    simpa using proPKernel_le_ker_localCyclotomicCharacter p K hmu hg
 
 /-- The cyclotomic orientation of the class of `g` is the cyclotomic character of `g`. -/
 @[simp]
 theorem cyclotomicOrientation_mk (hmu : ∃ ζ : K, IsPrimitiveRoot ζ p)
     (g : Field.absoluteGaloisGroup K) :
-    cyclotomicOrientation p K hmu (QuotientGroup.mk g) = localCyclotomicCharacter p K g :=
-  ContinuousMonoidHom.quotientLift_mk _ _ _ g
+    cyclotomicOrientation p K hmu (QuotientGroup.mk g) = localCyclotomicCharacter p K g := by
+  simp [cyclotomicOrientation]
 
-/-- The cyclotomic orientation restricts to the cyclotomic character along the quotient map. -/
+/-- The cyclotomic orientation pulls back to the continuous cyclotomic character along the
+quotient map from the absolute Galois group to its maximal pro-`p` quotient. -/
 @[simp]
-theorem cyclotomicOrientation_comp_mk (hmu : ∃ ζ : K, IsPrimitiveRoot ζ p) :
-    (cyclotomicOrientation p K hmu).comp
-        (maximalProPQuotient.mk p (Field.absoluteGaloisGroup K)) =
-      localCyclotomicCharacter p K :=
-  congrArg ContinuousMonoidHom.toMonoidHom
-    (ContinuousMonoidHom.quotientLift_comp_quotientMk _ _
-      (proPKernel_le_ker_localCyclotomicCharacter p K hmu))
-
-/-- The cyclotomic orientation is continuous for the quotient topology on the maximal pro-`p`
-Galois group. -/
-theorem cyclotomicOrientation_continuous (hmu : ∃ ζ : K, IsPrimitiveRoot ζ p) :
-    Continuous (cyclotomicOrientation p K hmu) :=
-  (ContinuousMonoidHom.quotientLift _ _
-    (proPKernel_le_ker_localCyclotomicCharacter p K hmu)).continuous
+theorem cyclotomicOrientation_comp_absoluteGaloisGroupProPQuotientMap
+    (hmu : ∃ ζ : K, IsPrimitiveRoot ζ p) :
+    (cyclotomicOrientation p K hmu).comp (absoluteGaloisGroupProPQuotientMap p K) =
+      continuousLocalCyclotomicCharacter p K := by
+  ext g
+  simp
 
 /-- The cyclotomic orientation and the cyclotomic character have the same image in `ℤ_pˣ`,
 because the quotient map onto the maximal pro-`p` Galois group is surjective. -/
 @[simp]
 theorem cyclotomicOrientation_range (hmu : ∃ ζ : K, IsPrimitiveRoot ζ p) :
-    (cyclotomicOrientation p K hmu).range = (localCyclotomicCharacter p K).range := by
-  rw [← cyclotomicOrientation_comp_mk hmu, MonoidHom.range_comp,
-    MonoidHom.range_eq_top_of_surjective _ (maximalProPQuotient.mk_surjective p _),
-    ← MonoidHom.range_eq_map]
+    (cyclotomicOrientation p K hmu : absoluteGaloisGroupProP p K →* ℤ_[p]ˣ).range =
+      (localCyclotomicCharacter p K).range := by
+  ext u
+  constructor
+  · rintro ⟨q, rfl⟩
+    induction q using QuotientGroup.induction_on with
+    | H g => exact ⟨g, (cyclotomicOrientation_mk hmu g).symm⟩
+  · rintro ⟨g, rfl⟩
+    exact ⟨QuotientGroup.mk g, cyclotomicOrientation_mk hmu g⟩
 
 end TauCeti

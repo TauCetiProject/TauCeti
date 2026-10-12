@@ -261,6 +261,12 @@ private noncomputable def pointsFppfGroupObjectCarrierIso
     Functor.Monoidal.ofChosenFiniteProducts _
   exact (Grp.forget _).mapIso (pointsFppfGroupObjectMapIso H)
 
+private theorem pointsFppfGroupObjectCarrierIso_hom
+    (H : _root_.CommHopfAlgCat.{u} R) :
+    (pointsFppfGroupObjectCarrierIso H).hom =
+      eqToHom (pointsFppfGroupObject_X_eq H).symm :=
+  (rfl)
+
 /-- The canonical comparison from the product of the two fppf sheaves to the sheafification of
 their pointwise product. This is the inverse of the product comparison supplied by the left
 exactness of fppf sheafification, after identifying the two sheafified factors with the carriers of
@@ -307,13 +313,24 @@ theorem fppfQuotientTorsorAction_def
           (quotientSubgroupPointsFppfGrpInclusion H I).hom.hom) :=
   (rfl)
 
-private theorem sheafify_pointwiseQuotientTorsorFst
+end TauCeti.CommHopfAlgCat
+
+namespace CommHopfAlgCat
+
+open TauCeti TauCeti.CommHopfAlgCat
+
+variable {R : Type u} [CommRing R]
+
+/-- Sheafification identifies the first projection of the pointwise torsor product
+with the first projection of the product of fppf point sheaves. -/
+@[reassoc (attr := simp)]
+theorem sheafify_pointwiseQuotientTorsorFst
     (H : _root_.CommHopfAlgCat.{u} R) (I : HopfIdeal R H) :
     (fppfQuotientTorsorProductIso H I).hom ≫
         (presheafToSheaf (CommAlgCat.fppfTopology R) (Type (u + 1))).map
           (CartesianMonoidalCategory.fst
             (pointsPresheafGrp H).X (pointsPresheafGrp (quotient H I)).X) ≫
-      (pointsFppfGroupObjectCarrierIso H).hom =
+      eqToHom (pointsFppfGroupObject_X_eq H).symm =
         CartesianMonoidalCategory.fst _ _ := by
   let F := presheafToSheaf (CommAlgCat.fppfTopology R) (Type (u + 1))
   let _ : F.Monoidal := Functor.Monoidal.ofChosenFiniteProducts _
@@ -331,12 +348,15 @@ private theorem sheafify_pointwiseQuotientTorsorFst
     Functor.Monoidal.μ_fst_assoc, CartesianMonoidalCategory.tensorHom_fst_assoc,
     Iso.inv_hom_id, Category.comp_id]
 
-private theorem sheafify_pointwiseQuotientTorsorAction
+/-- Sheafification identifies multiplication by subgroup points with the action
+on the product of fppf point sheaves. -/
+@[reassoc (attr := simp)]
+theorem sheafify_pointwiseQuotientTorsorAction
     (H : _root_.CommHopfAlgCat.{u} R) (I : HopfIdeal R H) :
     (fppfQuotientTorsorProductIso H I).hom ≫
         (presheafToSheaf (CommAlgCat.fppfTopology R) (Type (u + 1))).map
           (pointwiseQuotientTorsorAction H I) ≫
-      (pointsFppfGroupObjectCarrierIso H).hom =
+      eqToHom (pointsFppfGroupObject_X_eq H).symm =
         fppfQuotientTorsorAction H I := by
   let F := presheafToSheaf (CommAlgCat.fppfTopology R) (Type (u + 1))
   let _ : F.Monoidal := Functor.Monoidal.ofChosenFiniteProducts _
@@ -375,6 +395,12 @@ private theorem sheafify_pointwiseQuotientTorsorAction
       CartesianMonoidalCategory.tensorHom_snd_assoc]
     rfl
 
+end CommHopfAlgCat
+
+namespace TauCeti.CommHopfAlgCat
+
+variable {R : Type u} [CommRing R]
+
 /-- The kernel pair of the fppf quotient projection `G ⟶ G / V(I)` is `G × V(I)` via
 `(g,n) ↦ (g,gn)`. Together with
 `isLocallySurjective_fppfQuotientProjection`, this gives the two torsor conditions. -/
@@ -393,11 +419,13 @@ theorem isPullback_fppfQuotientTorsor
     (pointsFppfGroupObjectCarrierIso H)
     (eqToIso (fppfQuotientSheaf_X_eq H I hI).symm)
   · apply (cancel_epi (fppfQuotientTorsorProductIso H I).hom).1
-    simpa only [Category.assoc, Iso.symm_hom, Iso.hom_inv_id_assoc] using
-      sheafify_pointwiseQuotientTorsorFst H I
+    simpa only [Category.assoc, Iso.symm_hom, Iso.hom_inv_id_assoc,
+      pointsFppfGroupObjectCarrierIso_hom] using
+      _root_.CommHopfAlgCat.sheafify_pointwiseQuotientTorsorFst H I
   · apply (cancel_epi (fppfQuotientTorsorProductIso H I).hom).1
-    simpa only [Category.assoc, Iso.symm_hom, Iso.hom_inv_id_assoc] using
-      sheafify_pointwiseQuotientTorsorAction H I
+    simpa only [Category.assoc, Iso.symm_hom, Iso.hom_inv_id_assoc,
+      pointsFppfGroupObjectCarrierIso_hom] using
+      _root_.CommHopfAlgCat.sheafify_pointwiseQuotientTorsorAction H I
   · rw [fppfQuotientProjection_hom]
     rfl
   · rw [fppfQuotientProjection_hom]

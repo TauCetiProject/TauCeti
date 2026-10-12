@@ -13,7 +13,8 @@ public import Mathlib.LinearAlgebra.Matrix.Block
 
 The `A₂` quiver `• → •` is the generalized Kronecker quiver on a one-element arrow type. Its path
 algebra has the two trivial paths and the single arrow as a basis, and this file identifies it with
-the three-dimensional algebra of upper-triangular `2 × 2` matrices.
+the algebra of upper-triangular `2 × 2` matrices over a commutative semiring. This algebra has
+finite rank three when the base satisfies the strong rank condition.
 
 The identification sends a path from `a` to `b` to the matrix unit `E_{b,a}`, in the row of its
 *target* and the column of its *source*: with the *later factor first* convention of
@@ -38,14 +39,11 @@ the component at its target, so it is the target that indexes the row. The singl
   `TauCeti.Quiver.Kronecker.upperTriangularAlgEquiv_ofArrow`: the identification sends the two
   vertex idempotents to the two diagonal matrix units and the arrow to the off-diagonal one.
 * `TauCeti.Quiver.Kronecker.finrank_blockTriangularSubalgebra_eq_three`: the algebra of
-  upper-triangular `2 × 2` matrices is three-dimensional, transporting
+  upper-triangular `2 × 2` matrices has finite rank three, transporting
   `TauCeti.Quiver.Kronecker.finrank_pathAlgebra_eq_three` along the identification.
 
 ## References
 
-This file supplies the “`A₂` quiver” worked example of
-`TauCetiRoadmap/RepresentationTheory/QuiverRepresentations/README.md`, which asks for the path
-algebra of `• → •` as the three-dimensional algebra of upper-triangular `2 × 2` matrices. See
 Assem--Simson--Skowroński, *Elements of the Representation Theory of Associative Algebras I*,
 Ch. II.
 -/
@@ -145,8 +143,8 @@ private theorem ofMatrixLinear_toMatrixAlgHom (f : pathAlgebra k (Kronecker A)) 
   | zero => simp
   | add f g ihf ihg => rw [map_add, map_add, ihf, ihg]
   | single x c =>
-    rcases totalPath_eq_or x with h | h | h <;> subst h <;>
-      simp [toMatrixAlgHom_single, ofMatrixLinear]
+    rcases totalPath_eq_or x with rfl | ⟨a, rfl⟩ | rfl <;>
+      simp [toMatrixAlgHom_single, ofMatrixLinear, Unique.eq_default]
 
 private theorem toMatrixAlgHom_ofMatrixLinear {M : Matrix (Fin 2) (Fin 2) k}
     (hM : M.BlockTriangular (id : Fin 2 → Fin 2)) :
@@ -167,7 +165,7 @@ private theorem range_toMatrixAlgHom : (toMatrixAlgHom (A := A) k).range
   | zero => simp
   | add f g ihf ihg => simpa [map_add] using ihf.add ihg
   | single x c =>
-    rcases totalPath_eq_or x with h | h | h <;> subst h <;>
+    rcases totalPath_eq_or x with rfl | ⟨a, rfl⟩ | rfl <;>
       simpa [toMatrixAlgHom_single] using Matrix.blockTriangular_single (by norm_num) c
 
 /-- **The path algebra of the `A₂` quiver is the algebra of upper-triangular `2 × 2` matrices.**
@@ -238,18 +236,18 @@ end AlgEquiv
 
 /-! ### The dimension -/
 
-section Field
+section StrongRankCondition
 
-variable (k : Type w) [Field k]
+variable (k : Type w) [CommSemiring k] [StrongRankCondition k]
 
-/-- The algebra of upper-triangular `2 × 2` matrices is three-dimensional, since it is the path
-algebra of the `A₂` quiver. -/
+/-- The algebra of upper-triangular `2 × 2` matrices has finite rank three over a commutative
+semiring satisfying the strong rank condition. -/
 theorem finrank_blockTriangularSubalgebra_eq_three :
     Module.finrank k (Matrix.blockTriangularSubalgebra k k (id : Fin 2 → Fin 2)) = 3 := by
   rw [← (upperTriangularAlgEquiv (A := Unit) k).toLinearEquiv.finrank_eq]
   exact finrank_pathAlgebra_eq_three (A := Unit) k
 
-end Field
+end StrongRankCondition
 
 end Quiver.Kronecker
 

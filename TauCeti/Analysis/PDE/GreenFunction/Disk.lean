@@ -55,8 +55,8 @@ theorem harmonicAt_planarGreenKernelDisk {c a z : ℂ} {R : ℝ} (hR : 0 < R)
     intro heq
     have := smul_right_injective ℂ hRne heq
     exact hza (sub_left_inj.mp this)
-  have hh := harmonicAt_planarGreenKernel (norm_inv_smul_sub_lt_one hR ha)
-    (norm_inv_smul_sub_lt_one hR hz) hnormalized
+  have hh := harmonicAt_planarGreenKernel ((norm_inv_smul_lt_one_iff hR).2 ha)
+    ((norm_inv_smul_lt_one_iff hR).2 hz) hnormalized
   have hfun : planarGreenKernelDisk c R a =
       fun w : ℂ ↦ planarGreenKernel (R⁻¹ • (a - c)) (-(R⁻¹ • c) + R⁻¹ • w) := by
     funext w
@@ -70,7 +70,7 @@ theorem harmonicAt_planarGreenKernelDisk {c a z : ℂ} {R : ℝ} (hR : 0 < R)
     (hR : 0 < R) (hz : ‖z - c‖ = R) :
     planarGreenKernelDisk c R a z = 0 := by
   apply planarGreenKernel_eq_zero_of_norm_eq_one
-  exact norm_inv_smul_sub_eq_one_of_norm_sub_eq hR hz
+  exact (norm_inv_smul_eq_one_iff hR).2 hz
 
 /-- The Green kernel is strictly positive inside the disk away from its pole. -/
 theorem planarGreenKernelDisk_pos {c a z : ℂ} {R : ℝ} (hR : 0 < R)
@@ -81,8 +81,8 @@ theorem planarGreenKernelDisk_pos {c a z : ℂ} {R : ℝ} (hR : 0 < R)
     intro heq
     have := smul_right_injective ℂ hRne heq
     exact hza (sub_left_inj.mp this)
-  exact planarGreenKernel_pos (norm_inv_smul_sub_lt_one hR ha)
-    (norm_inv_smul_sub_lt_one hR hz) hnormalized
+  exact planarGreenKernel_pos ((norm_inv_smul_lt_one_iff hR).2 ha)
+    ((norm_inv_smul_lt_one_iff hR).2 hz) hnormalized
 
 /-- The difference between the disk Green kernel and its scaled Newtonian singularity is
 harmonic throughout the disk, including at the pole. The scale matters at the pole because
@@ -93,7 +93,7 @@ theorem harmonicAt_planarGreenKernelDisk_sub_newtonianKernel {c a z : ℂ} {R : 
       planarNewtonianKernel (R⁻¹ • (w - a))) z := by
   have hRne : R⁻¹ ≠ 0 := inv_ne_zero hR.ne'
   have hh := harmonicAt_planarGreenKernel_sub_newtonianKernel
-    (norm_inv_smul_sub_lt_one hR ha) (norm_inv_smul_sub_lt_one hR hz)
+    ((norm_inv_smul_lt_one_iff hR).2 ha) ((norm_inv_smul_lt_one_iff hR).2 hz)
   have hfun : (fun w : ℂ ↦ planarGreenKernelDisk c R a w -
       planarNewtonianKernel (R⁻¹ • (w - a))) =
       fun w : ℂ ↦ planarGreenKernel (R⁻¹ • (a - c)) (-(R⁻¹ • c) + R⁻¹ • w) -
@@ -112,7 +112,7 @@ its pole lies inside the disk. -/
 theorem differentiableAt_planarGreenKernelDisk_boundary {c a z : ℂ} {R : ℝ}
     (hR : 0 < R) (ha : ‖a - c‖ < R) (hz : ‖z - c‖ = R) :
     DifferentiableAt ℝ (planarGreenKernelDisk c R a) z := by
-  have hz' := norm_inv_smul_sub_eq_one_of_norm_sub_eq hR hz
+  have hz' := (norm_inv_smul_eq_one_iff hR).2 hz
   have hcoord : DifferentiableAt ℝ (fun w : ℂ => R⁻¹ • (w - c)) z := by
     fun_prop
   -- The disk kernel is opaque here, so use its public equation to rewrite the whole function.
@@ -122,7 +122,7 @@ theorem differentiableAt_planarGreenKernelDisk_boundary {c a z : ℂ} {R : ℝ}
   rw [hfun]
   simpa only [Function.comp_def] using
     (differentiableAt_planarGreenKernel_boundary
-      (norm_inv_smul_sub_lt_one hR ha) hz').comp z hcoord
+      ((norm_inv_smul_lt_one_iff hR).2 ha) hz').comp z hcoord
 
 end TauCeti
 

@@ -48,6 +48,7 @@ Hasse symbol differs from this `i < j` sign by the Hilbert symbol of the discrim
 * `TauCeti.RegularFormClass.localHasse_eq_one_of_rank_eq_two_of_discr_eq_neg_one`: a class of
   rank two and discriminant `[-1]` has trivial local Hasse invariant.
 * `TauCeti.RegularFormClass.localHasse_add`: `s(q ⊥ r) = s(q) · s(r) · (d(q), d(r))_K`.
+* `TauCeti.RegularFormClass.localHasse_mk_rankOne_add`: `s(⟨a⟩ ⊥ q) = s(q) · (a, d(q))_K`.
 * `TauCeti.RegularFormClass.localHasse_mk_rankOne_mul`: the formula for scaling by a unit.
 
 ## References
@@ -206,6 +207,13 @@ theorem localHasse_add (x y : RegularFormClass K) :
     induction y using Quotient.inductionOn with
     | h q =>
       simpa only [discr_mk, hilbertSymbolOnSquareClasses_squareClass] using localHasse_add_mk p q
+
+/-- **Adjoining a line**: `s(⟨a⟩ ⊥ q) = s(q) · (a, d(q))_K`, the orthogonal-sum formula with the
+trivial local Hasse invariant of the rank-one summand. -/
+theorem localHasse_mk_rankOne_add (a : Kˣ) (x : RegularFormClass K) :
+    localHasse (Quotient.mk (regularFormSetoid K) ⟨1, fun _ => a⟩ + x) =
+      localHasse x * hilbertSymbolOnSquareClasses (squareClass a) (discr x) := by
+  rw [localHasse_add, localHasse_mk_rankOne, one_mul, discr_mk, Fin.prod_univ_one]
 
 /-- The scaling formula on diagonal presentations: scaling `⟨a₁, …, aₙ⟩` by a unit `λ`
 multiplies its local Hasse invariant by `(λ, -1)_K^{n(n-1)/2} · (λ, ∏ aᵢ)_K^{n-1}`. -/

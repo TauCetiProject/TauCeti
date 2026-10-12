@@ -7,6 +7,7 @@ module
 
 public import Mathlib.GroupTheory.Transfer
 public import TauCeti.GroupTheory.Index.Basic
+public import TauCeti.GroupTheory.TransversalWord
 import TauCeti.GroupTheory.Coset.Basic
 
 /-!
@@ -31,10 +32,14 @@ index to one of finite index, and in a tower `K ≤ H` the index of `H` divides 
 
 * `MonoidHom.transfer_eq_prod_of_bijective`: the transfer computed from an arbitrary indexed
   family of coset representatives.
+* `MonoidHom.transfer_eq_prod_mul_out`: for a normal subgroup, computation by right
+  multiplication of quotient representatives, matching the factor-set convention.
 * `MonoidHom.transfer_comp`: the transfer is natural in the commutative target.
 * `MonoidHom.transfer_apply_of_mulEquiv`: the transfer is invariant under an isomorphism of
   ambient groups carrying one subgroup onto the other.
 * `MonoidHom.transfer_transfer`: transitivity of the transfer along a tower `K ≤ H ≤ G`.
+* `TauCeti.transfer_eq_prod_lWord`: computation with the transversal words used by
+  cohomological corestriction.
 
 ## References
 
@@ -76,6 +81,31 @@ theorem transfer_eq_prod_of_bijective {ι : Type*} [Fintype ι] (f : ι → G)
   refine (Fintype.prod_bijective _ ((MulAction.bijective g).comp σ.bijective) _ _ fun i ↦ ?_).symm
   simp [smul_apply_eq_smul_apply_inv_smul, IsComplement.leftQuotientEquiv_apply hσ,
     σ.symm_apply_eq.mpr (hgσ i).symm]
+
+attribute [local instance] Subgroup.fintypeQuotientOfFiniteIndex
+
+/-- For a normal finite-index subgroup, the transfer may be computed by multiplying on the
+right of quotient representatives. This convention makes the transfer of a representative the
+product of the corresponding factor-set values. -/
+theorem transfer_eq_prod_mul_out [H.Normal] [H.FiniteIndex] (g : G) :
+    transfer ϕ g = ∏ q : G ⧸ H,
+      ϕ ⟨q.out * g * (q * (g : G ⧸ H)).out⁻¹, by
+        apply (QuotientGroup.eq_one_iff _).mp
+        simp [QuotientGroup.mk_mul, QuotientGroup.mk_inv]⟩ := by
+  have hf : Function.Bijective fun q : G ⧸ H => (q.out⁻¹ : G ⧸ H) := by
+    simpa using (Equiv.inv (G ⧸ H)).bijective
+  have hπ : ∀ q : G ⧸ H,
+      (((q * (g : G ⧸ H)⁻¹).out⁻¹ : G) : G ⧸ H) = (g * q.out⁻¹ : G) := by
+    intro q
+    simp [QuotientGroup.mk_mul, QuotientGroup.mk_inv]
+  -- Use the inverse representatives as a left transversal, then reindex by right multiplication.
+  rw [transfer_eq_prod_of_bijective ϕ (fun q : G ⧸ H => q.out⁻¹) hf g
+    (fun q => q * (g : G ⧸ H)⁻¹) hπ]
+  refine (Fintype.prod_equiv (Equiv.mulRight (g : G ⧸ H)) _ _ ?_).symm
+  intro q
+  congr 1
+  apply Subtype.ext
+  simp [mul_assoc]
 
 private theorem transfer_eq_prod_out [H.FiniteIndex] [Fintype (G ⧸ H)] (g : G) : transfer ϕ g =
     ∏ q : G ⧸ H, ϕ ⟨(g • q).out⁻¹ * (g * q.out), QuotientGroup.eq.mp (mk_out_smul g q)⟩ :=
@@ -136,3 +166,33 @@ theorem transfer_transfer {K : Subgroup G} (hKH : K ≤ H) [K.FiniteIndex] (ϕ :
   simp [h, mul_assoc]
 
 end MonoidHom
+
+namespace TauCeti
+
+variable {G A : Type*} [Group G] [CommGroup A] {U : Subgroup G} [U.FiniteIndex]
+
+attribute [local instance] Subgroup.fintypeQuotientOfFiniteIndex
+
+/-- The transfer is the product of the images of the transversal words, for any transversal.
+The index convention is the one used by cohomological corestriction. -/
+theorem transfer_eq_prod_lWord (t : G ⧸ U → G)
+    (ht : ∀ q : G ⧸ U, (QuotientGroup.mk (t q) : G ⧸ U) = q)
+    (φ : U →* A) (g : G) :
+    MonoidHom.transfer φ g = ∏ q : G ⧸ U, φ ⟨lWord U t q g, lWord_mem U t ht q g⟩ := by
+  have htbij : Function.Bijective fun q : G ⧸ U => (t q : G ⧸ U) :=
+    ⟨fun _ _ h => by simpa only [ht] using h, fun q => ⟨q, ht q⟩⟩
+  have hπ : ∀ q : G ⧸ U, (t (g • q) : G ⧸ U) = (g * t q : G) := by
+    intro q
+    rw [← smul_eq_mul, ← MulAction.Quotient.smul_mk, ht, ht]
+  rw [MonoidHom.transfer_eq_prod_of_bijective φ t htbij g (g • ·) hπ]
+  calc
+    _ = ∏ q : G ⧸ U, φ ⟨lWord U t (g • q) g, lWord_mem U t ht (g • q) g⟩ := by
+      apply Finset.prod_congr rfl
+      intro q _
+      congr 1
+      apply Subtype.ext
+      simp [lWord_def, mul_assoc]
+    _ = ∏ q : G ⧸ U, φ ⟨lWord U t q g, lWord_mem U t ht q g⟩ :=
+      Fintype.prod_equiv (MulAction.toPerm g) _ _ (fun _ => rfl)
+
+end TauCeti

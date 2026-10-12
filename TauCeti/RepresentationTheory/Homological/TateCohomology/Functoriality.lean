@@ -71,6 +71,8 @@ invariants of its conjugate through the resulting map in degree two.
   with the connecting maps of short exact sequences.
 * `TauCeti.TateCohomology.tateCohomologyFunctor_map_comp_map_res`: every compatible pair factors
   as a morphism into the restriction of its target followed by the pair `Res(e)(N) → N`.
+* `TauCeti.TateCohomology.isZero_of_forall_isZero_res`: vanishing on every subgroup includes
+  vanishing on `G` itself.
 
 ## References
 
@@ -344,7 +346,7 @@ compatible coefficient map. -/
 theorem H0π_comp_map {e : G ≃* H} {φ : M.V →ₗ[R] N.V}
     (hφ : M.ρ.IsIntertwiningMap (N.ρ.comp (e : G →* H)) φ) :
     H0π M ≫ map hφ 0 = ModuleCat.ofHom (mapInvariants hφ) ≫ H0π N := by
-  rw [H0π_eq_cyclesIso_inv_comp_homologyπ, H0π_eq_cyclesIso_inv_comp_homologyπ, map_def]
+  rw [H0π_eq_H0CyclesIso_inv_comp_homologyπ, H0π_eq_H0CyclesIso_inv_comp_homologyπ, map_def]
   -- `H0π` lands in `tateCohomology M 0`, which is `(tateComplex M).homology 0` only by unfolding
   -- the semireducible `tateCohomologyFunctor`. `rw` cannot match across that unfolding, not even
   -- `Category.assoc`, so the squares are composed, and reassociated, as terms.
@@ -412,8 +414,8 @@ under the compatible coefficient map. -/
 theorem HNegOneπ_comp_map {e : G ≃* H} {φ : M.V →ₗ[R] N.V}
     (hφ : M.ρ.IsIntertwiningMap (N.ρ.comp (e : G →* H)) φ) :
     HNegOneπ M ≫ map hφ (-1) = ModuleCat.ofHom (mapKerNorm hφ) ≫ HNegOneπ N := by
-  rw [HNegOneπ_eq_cyclesIso_inv_comp_homologyπ, HNegOneπ_eq_cyclesIso_inv_comp_homologyπ,
-    map_def]
+  rw [HNegOneπ_eq_HNegOneCyclesIso_inv_comp_homologyπ,
+    HNegOneπ_eq_HNegOneCyclesIso_inv_comp_homologyπ, map_def]
   -- `HNegOneπ` lands in `tateCohomology M (-1)`, which is `(tateComplex M).homology (-1)` only by
   -- unfolding the semireducible `tateCohomologyFunctor`. `rw` cannot match across that unfolding,
   -- not even `Category.assoc`, so the squares are composed, and reassociated, as terms.
@@ -592,6 +594,15 @@ def resIso (e : G ≃* H) (n : ℤ) :
   rw [resIso]
   -- As above for `NatIso.ofComponents_inv_app`.
   rfl
+
+/-- Tate cohomology vanishing on every subgroup of `G` vanishes on `G` itself. -/
+theorem isZero_of_forall_isZero_res (A : Rep R G)
+    (hA : ∀ (S : Subgroup G) [Fintype S] (n : ℤ),
+      Limits.IsZero (tateCohomology (Rep.res S.subtype A) n))
+    (n : ℤ) : Limits.IsZero (tateCohomology A n) :=
+  have := Fintype.ofFinite (⊤ : Subgroup G)
+  -- `Subgroup.topEquiv` is `(⊤ : Subgroup G).subtype` by definition.
+  (hA ⊤ n).of_iso ((resIso (Subgroup.topEquiv : (⊤ : Subgroup G) ≃* G) n).app A).symm
 
 /-- Tate cohomology groups matched by a compatible pair whose linear part is an equivalence have
 the same cardinality. -/

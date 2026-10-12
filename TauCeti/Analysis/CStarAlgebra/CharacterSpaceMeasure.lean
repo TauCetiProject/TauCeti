@@ -12,6 +12,7 @@ public import Mathlib.Topology.Algebra.StarSubalgebra
 import Mathlib.Analysis.RCLike.ContinuousMap
 import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
 import Mathlib.MeasureTheory.Integral.RieszMarkovKakutani.Real
+import Mathlib.Topology.ContinuousMap.Lattice
 
 /-!
 # Positive functionals on commutative C⋆-algebras are measures on the character space

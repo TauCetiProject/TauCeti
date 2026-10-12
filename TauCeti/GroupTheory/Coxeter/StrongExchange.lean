@@ -8,6 +8,8 @@ module
 public import Mathlib.Data.List.Chain
 public import Mathlib.GroupTheory.Coxeter.Inversion
 public import TauCeti.GroupTheory.Coxeter.Basic
+import Mathlib.Data.List.GetD
+import Mathlib.Tactic.Group
 
 /-!
 # The strong exchange condition
@@ -463,7 +465,7 @@ theorem deletionCondition {ω : List B} (hω : ¬ cs.IsReduced ω) :
   classical
   have hex : ∃ k, ¬ cs.IsReduced (List.take (k + 1) ω) :=
     ⟨ω.length, by rwa [List.take_of_length_le (by omega)]⟩
-  set k := Nat.find hex with hkdef
+  set k := Nat.find hex
   have hk : ¬ cs.IsReduced (List.take (k + 1) ω) := Nat.find_spec hex
   have hred : cs.IsReduced (List.take k ω) := by
     rcases Nat.eq_zero_or_pos k with h0 | h0

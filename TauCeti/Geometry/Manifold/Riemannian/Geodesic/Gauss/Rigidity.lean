@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Gauss.Minimization
 public import TauCeti.Geometry.Manifold.Riemannian.ArcLength
+import Mathlib.Analysis.InnerProductSpace.Calculus
 import TauCeti.Analysis.Normed.Module.Ray
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.Basic
 import Mathlib.Analysis.Convex.StrictConvexSpace

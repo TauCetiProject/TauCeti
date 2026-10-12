@@ -7,7 +7,7 @@ module
 
 public import Mathlib.AlgebraicGeometry.PullbackCarrier
 public import Mathlib.RingTheory.DedekindDomain.Basic
-public import TauCeti.AlgebraicGeometry.Morphisms.Flat
+public import TauCeti.AlgebraicGeometry.Morphisms.Flat.Basic
 public import TauCeti.AlgebraicGeometry.SpecialFiber.Basic
 public import TauCeti.AlgebraicGeometry.WeilDivisor.Scheme.ZeroLocus
 

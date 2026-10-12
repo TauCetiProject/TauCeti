@@ -9,6 +9,7 @@ public import TauCeti.Topology.Algebra.Group.Profinite.Generation
 public import TauCeti.Topology.Algebra.Group.Profinite.Hopfian
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.LowerCentralSeries
 public import TauCeti.Topology.Compactness.InverseSystem
+import Mathlib.Topology.Separation.Connected
 
 /-!
 # Levelwise comparison along the lower `p`-series

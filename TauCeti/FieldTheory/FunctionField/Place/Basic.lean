@@ -128,6 +128,12 @@ theorem valuation_injective : Function.Injective (valuation : Place k F → Valu
 Definition 1.1.4). -/
 def integers : ValuationSubring F := P.valuation.valuationSubring
 
+/-- The defining equation of `Place.integers`: the valuation ring of a place is Mathlib's valuation
+subring of its underlying valuation. The body of `Place.integers` is not exposed to importing
+modules, so this is how generic valuation-subring constructions are transported to it. -/
+theorem integers_def : P.integers = P.valuation.valuationSubring :=
+  (rfl)
+
 @[simp]
 theorem mem_integers_iff {f : F} : f ∈ P.integers ↔ P.valuation f ≤ 1 := (Iff.rfl)
 
@@ -462,6 +468,14 @@ theorem coe_algebraMap_constants (c : k) :
 /-- The residue field `F_P = 𝒪_P / 𝔪_P` of a place (Stichtenoth, Definition 1.1.14). The
 evaluation map `f ↦ f(P)` is `IsLocalRing.residue P.integers`. -/
 noncomputable abbrev ResidueField : Type v := IsLocalRing.ResidueField P.integers
+
+/-- The canonical map from an algebra acting compatibly on the valuation ring to the residue
+field is reduction after the map to the valuation ring. -/
+theorem algebraMap_residueField {R : Type*} [CommSemiring R] [Algebra R P.integers]
+    [Algebra R P.ResidueField] [IsScalarTower R P.integers P.ResidueField] (r : R) :
+    algebraMap R P.ResidueField r =
+      IsLocalRing.residue P.integers (algebraMap R P.integers r) := by
+  rw [IsScalarTower.algebraMap_apply R P.integers _, IsLocalRing.ResidueField.algebraMap_eq]
 
 /-- Evaluation at a place vanishes exactly on elements of positive valuation. -/
 theorem residue_eq_zero_iff_valuation_lt_one {f : P.integers} :

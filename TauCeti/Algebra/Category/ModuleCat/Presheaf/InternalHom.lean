@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Category.ModuleCat.Presheaf.PushforwardZeroMonoida
 public import TauCeti.Algebra.Category.ModuleCat.Presheaf.MonoidalClosed
 public import TauCeti.Algebra.Category.ModuleCat.Presheaf.TensorFreeYoneda
 public import TauCeti.CategoryTheory.Monoidal.Closed.Functor
+import Mathlib.Algebra.Category.ModuleCat.Presheaf.EpiMono
 
 /-!
 # Sections of the internal Hom of presheaves of modules

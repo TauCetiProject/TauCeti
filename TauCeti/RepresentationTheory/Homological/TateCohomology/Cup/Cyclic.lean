@@ -160,15 +160,15 @@ theorem cup_characterConnectingClass_eq_groupCohomologyπEven
   -- comparison of Tate and ordinary cohomology and sends the periodicity class of `1` to that
   -- of `a`.
   set φ : Rep.trivial ℤ G ℤ ⟶ A :=
-    (Rep.trivial ℤ G ℤ).tensorInvariant a ≫ (β_ (Rep.trivial ℤ G ℤ) A).hom ≫ (ρ_ A).hom with hφ
+    (Rep.trivial ℤ G ℤ).tensorInvariant a ≫ (β_ (Rep.trivial ℤ G ℤ) A).hom ≫ (ρ_ A).hom with _
   have h := ConcreteCategory.congr_hom
     ((_root_.TateCohomology.isoGroupCohomology 2).inv.naturality φ)
     (groupCohomologyπEven (Rep.trivial ℤ G ℤ) g hg 2 even_two x₁)
   have hmap : groupCohomology.map (MonoidHom.id G) φ 2
       (groupCohomologyπEven (Rep.trivial ℤ G ℤ) g hg 2 even_two x₁) =
       groupCohomologyπEven A g hg 2 even_two x := by
-    refine map_groupCohomologyπEven_two (B := Rep.trivial ℤ G ℤ) A g hg (MonoidHom.id G) hg rfl φ 1
-      (one_mul _).symm x₁ x ?_
+    refine map_groupCohomologyπEven_two (B := Rep.trivial ℤ G ℤ) A g hg (MonoidHom.id G) hg 1
+      (pow_one g).symm φ 1 rfl x₁ x ?_
     rw [one_smul, hx]
     -- The scalar action of `ℤ` here is the module structure of the representation `A`, which is
     -- not syntactically the canonical action of `ℤ` on an additive group, so `one_smul` is taken

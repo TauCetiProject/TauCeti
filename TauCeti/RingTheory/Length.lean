@@ -11,6 +11,7 @@ public import Mathlib.RingTheory.Length
 public import Mathlib.RingTheory.OrderOfVanishing.Basic
 -- Proof-only: `QuotSMulTop` supplies the transport used to prove `length_quotient_lsmul_congr`;
 -- no statement in this file mentions it.
+import Mathlib.RingTheory.Ideal.Quotient.Noetherian
 import Mathlib.RingTheory.QuotSMulTop
 
 /-!
@@ -20,10 +21,10 @@ Mathlib defines `Module.length R M` as the Krull dimension of the lattice of sub
 proves that it is additive in short exact sequences. This file adds the facts about it that a
 length-counting argument needs but Mathlib does not yet have: monotonicity in the submodule
 quotiented by, additivity along a filtration, the length of an image, the fact that finitely
-generated submodules already see the whole length, the length of `I ⧸ aI` for an ideal `I`, the
-length of `R ⧸ 𝔪` for a local ring, the finite length of a quotient of a noetherian
-local ring by a maximal-primary ideal, and the infinite length of a ring of positive Krull
-dimension over itself.
+generated submodules already see the whole length, the ascent of finite length along a scalar
+tower, the length of `I ⧸ aI` for an ideal `I`, the length of `R ⧸ 𝔪` for a local ring, the
+finite length of a quotient of a noetherian local ring by a maximal-primary ideal, and the
+infinite length of a ring of positive Krull dimension over itself.
 
 The finite-generation reduction is the load-bearing one. `Module.length` is a supremum over
 strictly increasing chains, and any *finite* chain — in particular any one witnessing a finite
@@ -45,6 +46,8 @@ applies to the quotients appearing here without any further appeal to defeq.
 * `TauCeti.length_map_mkQ`: the length of the image of `N` in `M ⧸ P`.
 * `TauCeti.length_le_of_forall_fg`: a bound on all finitely generated submodules bounds the
   length.
+* `TauCeti.isFiniteLength_of_tower`: finite length over `R` gives finite length over any `A`
+  acting compatibly.
 * `TauCeti.map_lsmul_eq_smul` and `TauCeti.range_lsmul_eq_smul_top`: `aN` and `aM` as Mathlib's
   pointwise `a • N` and `a • ⊤`.
 * `TauCeti.comap_subtype_map_lsmul`: `aN` computed inside `N` agrees with `aN` computed in the
@@ -116,7 +119,7 @@ theorem length_le_of_forall_fg {c : ℕ∞} (h : ∀ N : Submodule A M, N.FG →
   have hx : ∀ i : Fin l.length, ∃ x : M, x ∈ l i.succ ∧ x ∉ l i.castSucc := fun i =>
     IsConcreteLE.exists_of_lt (l.strictMono (Fin.castSucc_lt_succ : i.castSucc < i.succ))
   choose x hx1 hx2 using hx
-  set N : Submodule A M := Submodule.span A (Set.range x) with hN
+  set N : Submodule A M := Submodule.span A (Set.range x) with _
   have hxN : ∀ i, x i ∈ N := fun i => Submodule.subset_span ⟨i, rfl⟩
   have hmono : StrictMono (fun i => Submodule.comap N.subtype (l i)) :=
     Fin.strictMono_iff_lt_succ.mpr fun i => by
@@ -135,6 +138,14 @@ theorem length_le_of_forall_fg {c : ℕ∞} (h : ∀ N : Submodule A M, N.FG →
   have habs : ((c + 1 : ℕ) : ℕ∞) ≤ ((c : ℕ) : ℕ∞) := le_trans (by exact_mod_cast hq) hfin
   have : c + 1 ≤ c := by exact_mod_cast habs
   omega
+
+/-- **Finite length ascends along a scalar tower.** A module of finite length over `R` has finite
+length over any `S` acting compatibly, since its `S`-submodules are among its `R`-submodules. -/
+theorem isFiniteLength_of_tower (R : Type*) [Ring R] [SMul R A] [Module R M]
+    [IsScalarTower R A M] (h : IsFiniteLength R M) : IsFiniteLength A M := by
+  obtain ⟨_, _⟩ := isFiniteLength_iff_isNoetherian_isArtinian.mp h
+  exact isFiniteLength_iff_isNoetherian_isArtinian.mpr
+    ⟨isNoetherian_of_tower R inferInstance, isArtinian_of_tower R inferInstance⟩
 
 end Ring
 

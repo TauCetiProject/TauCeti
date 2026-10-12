@@ -95,8 +95,8 @@ section Relations
 
 variable {C : Type u} [Category.{v} C] [HasZeroMorphisms C] [EssentiallySmall.{w} C]
 
-/-- The relation `[X₂] - [X₁] - [X₃]` attached to a short complex. It is imposed in exact `K₀`
-exactly for the distinguished conflations. -/
+/-- The relation `[X₂] - [X₁] - [X₃]` attached to a short complex. Exact `K₀` imposes it for every
+conflation. -/
 noncomputable def conflationRelation (S : ShortComplex C) : FreeAbelianGroup (ObjectCode C) :=
   freeOf S.X₂ - freeOf S.X₁ - freeOf S.X₃
 
@@ -167,7 +167,7 @@ instance (E : ExactStructure C) : AddCommGroup (ExactK0 E) :=
 
 namespace ExactK0
 
-variable {E E'' : ExactStructure C} {E' : ExactStructure D}
+variable {E : ExactStructure C} {E' : ExactStructure D}
 
 /-- The class of an object in exact `K₀`. -/
 noncomputable def of (X : C) : ExactK0 E := PresentedK0.of X
@@ -205,14 +205,12 @@ theorem of_conflation_fullSubcategory {P : ObjectProperty C}
     ObjectProperty.hom_ext _ S.zero
   refine of_eq_add_of_conflation hzero ?_
   rw [ExactStructure.fullSubcategory_conflation_iff]
-  convert hS using 1
-  rfl
+  exact hS
 
 /-- The class of the subobject of a conflation is the difference of the other two classes. -/
 theorem of_eq_sub_of_conflation {S : ShortComplex C} (hS : E.Conflation S) :
     (of S.X₁ : ExactK0 E) = of S.X₂ - of S.X₃ := by
-  rw [of_conflation hS]
-  abel
+  rw [of_conflation hS, add_sub_cancel_right]
 
 /-- The class of a biproduct is the sum of the classes: every exact structure contains the
 biproduct conflations. -/
@@ -312,7 +310,7 @@ theorem AdditiveInvariant.obj_eq_zero_of_isZero (a : AdditiveInvariant E G) {X :
   rw [a.map_iso (hX.iso (isZero_zero C))]
   simpa using a.map_conflation (E.conflation_id_zero (0 : C))
 
-private noncomputable def AdditiveInvariant.toPresented (a : AdditiveInvariant E G) :
+private def AdditiveInvariant.toPresented (a : AdditiveInvariant E G) :
     PresentedK0.AdditiveInvariant (exactRelations E) G where
   obj := a.obj
   map_iso := a.map_iso
@@ -321,10 +319,6 @@ private noncomputable def AdditiveInvariant.toPresented (a : AdditiveInvariant E
     rw [map_conflationRelation_eq_zero_iff, freeLift_freeOf a.map_iso,
       freeLift_freeOf a.map_iso, freeLift_freeOf a.map_iso]
     exact a.map_conflation hS
-
-@[simp] private lemma AdditiveInvariant.toPresented_obj (a : AdditiveInvariant E G) :
-    a.toPresented.obj = a.obj :=
-  (rfl)
 
 /-- The homomorphism out of exact `K₀` induced by a conflation-additive invariant. -/
 noncomputable def lift (a : AdditiveInvariant E G) : ExactK0 E →+ G :=
@@ -364,52 +358,48 @@ under isomorphisms in the first variable and additive on conflations in the seco
 Additivity already makes it invariant under isomorphisms in the second variable
 (`TauCeti.ExactK0.RightAdditiveInvariant.map_iso₂`). -/
 @[ext]
-structure RightAdditiveInvariant (C : Type u) [Category.{v} C] (E' : ExactStructure D)
+structure RightAdditiveInvariant (I : Type u) [Category.{v} I] (E' : ExactStructure D)
     (G : Type*) [AddCommGroup G] where
   /-- The value of the invariant on a pair of objects. -/
-  obj : C → D → G
+  obj : I → D → G
   /-- Isomorphic objects in the first variable receive equal values. -/
-  map_iso₁ : ∀ {X X' : C}, (X ≅ X') → ∀ Y : D, obj X Y = obj X' Y
+  map_iso₁ : ∀ {X X' : I}, (X ≅ X') → ∀ Y : D, obj X Y = obj X' Y
   /-- The invariant is additive on conflations in the second variable. -/
-  map_conflation₂ : ∀ (X : C) {S : ShortComplex D}, E'.Conflation S →
+  map_conflation₂ : ∀ (X : I) {S : ShortComplex D}, E'.Conflation S →
     obj X S.X₂ = obj X S.X₁ + obj X S.X₃
 
 namespace RightAdditiveInvariant
 
-variable (a : RightAdditiveInvariant C E' G)
+variable {I : Type u} [Category.{v} I] (a : RightAdditiveInvariant I E' G)
 
-private noncomputable def additiveInvariant (X : C) : AdditiveInvariant E' G where
+private def additiveInvariant (X : I) : AdditiveInvariant E' G where
   obj := a.obj X
   map_conflation := fun {_} hS ↦ a.map_conflation₂ X hS
 
-omit [Preadditive C] [HasZeroObject C] [HasBinaryBiproducts C] [EssentiallySmall.{w} C]
-  [EssentiallySmall.{w'} D] in
+omit [EssentiallySmall.{w'} D] in
 /-- A right-additive invariant takes equal values on isomorphic objects in its second variable,
 since it is additive on conflations there. -/
-theorem map_iso₂ (X : C) {Y Y' : D} (e : Y ≅ Y') : a.obj X Y = a.obj X Y' :=
+theorem map_iso₂ (X : I) {Y Y' : D} (e : Y ≅ Y') : a.obj X Y = a.obj X Y' :=
   (a.additiveInvariant X).map_iso e
 
 /-- A right-additive invariant with its first argument fixed, descended through the exact
 Grothendieck group in its second variable. -/
-noncomputable def rightLift (X : C) : ExactK0 E' →+ G :=
+noncomputable def rightLift (X : I) : ExactK0 E' →+ G :=
   lift (a.additiveInvariant X)
 
-omit [Preadditive C] [HasZeroObject C] [HasBinaryBiproducts C] [EssentiallySmall.{w} C] in
 /-- Evaluation of the one-sided descent on an object class. -/
 @[simp]
-lemma rightLift_of (X : C) (Y : D) : a.rightLift X (of Y) = a.obj X Y :=
+lemma rightLift_of (X : I) (Y : D) : a.rightLift X (of Y) = a.obj X Y :=
   lift_of _ Y
 
-omit [Preadditive C] [HasZeroObject C] [HasBinaryBiproducts C] [EssentiallySmall.{w} C] in
 /-- Any homomorphism agreeing with the invariant on the object classes of the second variable is
 its one-sided descent. -/
-theorem rightLift_unique (X : C) (f : ExactK0 E' →+ G) (hf : ∀ Y : D, f (of Y) = a.obj X Y) :
+theorem rightLift_unique (X : I) (f : ExactK0 E' →+ G) (hf : ∀ Y : D, f (of Y) = a.obj X Y) :
     f = a.rightLift X :=
   hom_ext fun Y ↦ by rw [hf, a.rightLift_of]
 
-omit [Preadditive C] [HasZeroObject C] [HasBinaryBiproducts C] [EssentiallySmall.{w} C] in
 /-- Isomorphic indexing objects induce the same one-sided descent. -/
-theorem rightLift_congr {X X' : C} (i : X ≅ X') : a.rightLift X = a.rightLift X' := by
+theorem rightLift_congr {X X' : I} (i : X ≅ X') : a.rightLift X = a.rightLift X' := by
   refine hom_ext fun Y ↦ ?_
   rw [a.rightLift_of, a.rightLift_of]
   exact a.map_iso₁ i Y
@@ -539,6 +529,8 @@ lemma transportEquiv_of (E : ExactStructure C) (e : C ≌ D) [e.functor.Additive
 end Functoriality
 
 section Comparison
+
+variable {E'' : ExactStructure C}
 
 /-- **The comparison map of two exact structures**: enlarging the class of conflations imposes
 more relations, and the identity functor induces a homomorphism of exact Grothendieck groups. -/

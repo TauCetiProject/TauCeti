@@ -8,6 +8,7 @@ module
 public import Mathlib.Topology.Instances.ZMod
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.CompactModule
 import Mathlib.NumberTheory.Padics.ProperSpace
+import Mathlib.Topology.Separation.Connected
 import TauCeti.Algebra.Group.Prod
 import TauCeti.Algebra.Module.DiscreteValuationRing
 import TauCeti.NumberTheory.Padics.RingHoms

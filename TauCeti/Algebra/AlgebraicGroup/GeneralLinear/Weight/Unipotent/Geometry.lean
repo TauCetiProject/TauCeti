@@ -125,57 +125,19 @@ theorem weightUnipotentPolynomialGenericMatrix_det (w : Fin N → ℤ) :
   intro a _
   rw [weightUnipotentPolynomialGenericMatrix_toSquareBlock R w a, Matrix.det_one]
 
-/-- Evaluate the matrix-monoid polynomial coordinates at the generic weight-unipotent matrix. -/
-private def weightUnipotentPolynomialEvaluation (w : Fin N → ℤ) :
-    MatrixMonoid.CoordinateRing R N →ₐ[R] MvPolynomial (WeightUnipotentIndex w) R :=
-  MvPolynomial.aeval fun ij ↦ weightUnipotentPolynomialGenericMatrix R w ij.1 ij.2
-
-private theorem weightUnipotentPolynomialEvaluation_determinant (w : Fin N → ℤ) :
-    weightUnipotentPolynomialEvaluation R w
-        (Matrix.det (Matrix.mvPolynomialX (Fin N) (Fin N) R)) = 1 := by
-  rw [weightUnipotentPolynomialEvaluation, AlgHom.map_det,
-    Matrix.mvPolynomialX_mapMatrix_aeval,
-    weightUnipotentPolynomialGenericMatrix_det]
-
-/-- Extend polynomial evaluation across the determinant localization defining `GL_N`. -/
-private def weightUnipotentLocalizedEvaluation (w : Fin N → ℤ) :
-    CoordinateRing R N →ₐ[R] MvPolynomial (WeightUnipotentIndex w) R :=
-  IsLocalization.Away.liftAlgHom
-    (Matrix.det (Matrix.mvPolynomialX (Fin N) (Fin N) R))
-    (by rw [weightUnipotentPolynomialEvaluation_determinant R w]; exact isUnit_one)
-
-private theorem weightUnipotentLocalizedEvaluation_coordinateRingMap
-    (w : Fin N → ℤ) (x : MatrixMonoid.CoordinateRing R N) :
-    weightUnipotentLocalizedEvaluation R w (coordinateRingMap R N x) =
-      weightUnipotentPolynomialEvaluation R w x := by
-  rw [coordinateRingMap_apply]
-  simp [-coordinateRingMap_apply, weightUnipotentLocalizedEvaluation]
-
 /-- Polynomial evaluation extended across the determinant localization and the bundled
 coordinate algebra of `GL_N`. -/
 private def weightUnipotentAmbientToPolynomial (w : Fin N → ℤ) :
     coordinateHopfAlgebra R N →ₐ[R] MvPolynomial (WeightUnipotentIndex w) R :=
-  (weightUnipotentLocalizedEvaluation R w).comp
-    (coordinateHopfAlgebraAlgEquiv R N).symm.toAlgHom
+  (generalLinearToPoint N (Matrix.GeneralLinearGroup.mk''
+    (weightUnipotentPolynomialGenericMatrix R w)
+    (by rw [weightUnipotentPolynomialGenericMatrix_det]; exact isUnit_one))).ofConv
 
 private theorem weightUnipotentAmbientToPolynomial_genericMatrix_apply
     (w : Fin N → ℤ) (i j : Fin N) :
     weightUnipotentAmbientToPolynomial R w ((genericMatrix R N) i j) =
       weightUnipotentPolynomialGenericMatrix R w i j := by
-  calc
-    _ = weightUnipotentLocalizedEvaluation R w
-        ((coordinateHopfAlgebraAlgEquiv R N).symm
-          (coordinateHopfAlgebraAlgEquiv R N
-            (coordinateRingMap R N (MvPolynomial.X (i, j))))) := by
-      rw [genericMatrix_apply]
-      rfl
-    _ = weightUnipotentLocalizedEvaluation R w
-        (coordinateRingMap R N (MvPolynomial.X (i, j))) :=
-      congrArg (weightUnipotentLocalizedEvaluation R w)
-        ((coordinateHopfAlgebraAlgEquiv R N).symm_apply_apply _)
-    _ = weightUnipotentPolynomialEvaluation R w (MvPolynomial.X (i, j)) :=
-      weightUnipotentLocalizedEvaluation_coordinateRingMap R w _
-    _ = _ := by simp [weightUnipotentPolynomialEvaluation]
+  simp [genericMatrix_apply, weightUnipotentAmbientToPolynomial]
 
 private theorem weightUnipotentAmbientToPolynomial_eq_zero
     (w : Fin N → ℤ) (x : coordinateHopfAlgebra R N)

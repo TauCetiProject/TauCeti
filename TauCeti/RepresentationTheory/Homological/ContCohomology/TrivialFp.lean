@@ -10,7 +10,7 @@ public import Mathlib.Topology.Instances.ZMod
 public import Mathlib.Topology.Algebra.Algebra
 public import TauCeti.RepresentationTheory.Continuous.Restriction
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Functoriality
-public import TauCeti.RepresentationTheory.Homological.ContCohomology.SmoothDiscrete
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.SmoothDiscrete.Basic
 
 /-!
 # Trivial `ZMod p` coefficients for continuous cohomology

@@ -6,7 +6,7 @@ Authors: Claude, Codex
 module
 
 public import TauCeti.RepresentationTheory.Homological.TateCohomology.LowDegree
-public import TauCeti.Algebra.Homology.Embedding.ExtendHomologySequence
+public import TauCeti.Algebra.Homology.Embedding.ExtendHomology.Sequence
 public import Mathlib.Algebra.Homology.Embedding.HomEquiv
 
 /-!
@@ -382,9 +382,8 @@ theorem _root_.Rep.fromGroupCohomology_succ (M : Rep R G) (n : ℕ) :
 @[simp]
 theorem _root_.Rep.fromGroupCohomology_zero (M : Rep R G) :
     fromGroupCohomology M 0 = (groupCohomology.H0Iso M).hom ≫ H0π M := by
-  have hπ : (tateComplex M).homologyπ 0 = (H0CyclesIso M).hom ≫ H0π M := by
-    rw [H0π_eq_cyclesIso_inv_comp_homologyπ]
-    exact (Iso.hom_inv_id_assoc _ _).symm
+  have hπ : (tateComplex M).homologyπ 0 = (H0CyclesIso M).hom ≫ H0π M :=
+    (H0CyclesIso_hom_comp_H0π M).symm
   refine (cancel_epi ((cochainsConnectData M).cochainComplex.homologyπ 0 ≫
     (cochainsExtIso M 0).hom)).1 ?_
   have h₁ := (Category.assoc

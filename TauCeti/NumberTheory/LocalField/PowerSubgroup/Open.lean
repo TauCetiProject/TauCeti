@@ -5,6 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Topology.Algebra.Group.Quotient
+public import TauCeti.Algebra.Group.PowMonoidHom
 public import TauCeti.NumberTheory.LocalField.PowerSubgroup.Basic
 import Mathlib.GroupTheory.IndexNSmul
 
@@ -50,6 +52,21 @@ theorem isOpen_range_powMonoidHom {n : ℕ} (hn : (n : K) ≠ 0) :
 theorem isClosed_range_powMonoidHom {n : ℕ} (hn : (n : K) ≠ 0) :
     IsClosed ((powMonoidHom n : Kˣ →* Kˣ).range : Set Kˣ) :=
   Subgroup.isClosed_of_isOpen _ (isOpen_range_powMonoidHom hn)
+
+/-- In characteristic zero, the quotient of `Kˣ` by its `n`-th powers is discrete for every
+nonzero `n`, since the `n`-th powers are open. -/
+instance instDiscreteTopologyQuotientRangePowMonoidHom [CharZero K] {n : ℕ} [NeZero n] :
+    DiscreteTopology (Kˣ ⧸ (powMonoidHom n : Kˣ →* Kˣ).range) :=
+  QuotientGroup.discreteTopology (isOpen_range_powMonoidHom (Nat.cast_ne_zero.2 (NeZero.ne n)))
+
+variable (K) in
+/-- When two is nonzero, the local square-class quotient is discrete, since the squares are open.
+This theorem applies to the literal quotient, with its quotient topology. -/
+theorem discreteTopology_localSquareClasses (h2 : (2 : K) ≠ 0) :
+    DiscreteTopology (Kˣ ⧸ Subgroup.square Kˣ) := by
+  apply QuotientGroup.discreteTopology
+  rw [square_eq_range_powMonoidHom]
+  exact isOpen_range_powMonoidHom h2
 
 /-- A subgroup of `Kˣ` is open if the exponent of its quotient is nonzero in `K`. -/
 theorem isOpen_of_natCast_exponent_ne_zero {H : Subgroup Kˣ}

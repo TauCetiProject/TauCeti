@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.ConstantSpeed
 public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Exponential
 public import TauCeti.Geometry.Manifold.Riemannian.VariationField
+import Mathlib.Analysis.InnerProductSpace.Calculus
 
 /-!
 # The Gauss lemma for the Riemannian exponential map
@@ -178,8 +179,6 @@ theorem inner_mfderiv_riemannianExp_radial [I.Boundaryless]
     fun t u ↦ curveVelocity I (fun q ↦ F q t) u
   let cov := leviCivitaConnection I M
   have hF : ∀ u t : ℝ, F u t = riemannianExp I M p (t • (v + u • w)) := fun _ _ ↦ rfl
-  have hF_eq_maximal (u : ℝ) : F u = maximalGeodesic I M p (v + u • w) :=
-    radialVariation_eq_maximalGeodesic hF u
   have hIcc : Icc (0 : ℝ) 1 ⊆ geodesicInterval I M p v :=
     ordConnected_geodesicInterval.out zero_mem_geodesicInterval (mem_expDomain_iff.mp hv)
   -- The product rule for the variation field against the radial velocity, the vanishing

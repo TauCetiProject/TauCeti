@@ -10,6 +10,7 @@ public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Basic
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Frattini.Basic
 import Mathlib.GroupTheory.Nilpotent
 import Mathlib.Topology.Algebra.ClopenNhdofOne
+import Mathlib.Topology.Separation.Connected
 import TauCeti.GroupTheory.Index.Basic
 import TauCeti.GroupTheory.PGroup
 import TauCeti.Topology.Algebra.Group.Profinite.ProP.Burnside

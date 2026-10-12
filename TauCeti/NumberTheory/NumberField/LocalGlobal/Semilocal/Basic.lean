@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Topology.Algebra.Algebra.Equiv
 public import TauCeti.NumberTheory.NumberField.Global.Approximation.Weak
 public import TauCeti.NumberTheory.NumberField.LocalGlobal.Completion
 public import TauCeti.RingTheory.DedekindDomain.AdicValuation.LocalDegree
@@ -52,6 +53,23 @@ The places above `v` are indexed by the subtype
   surjective and injective.
 * `TauCeti.sum_finrank_adicCompletion_eq_finrank`:
   `∑_{w ∣ v} [L_w : K_v] = [L : K]`.
+* `TauCeti.semilocalContinuousEquiv`: the semi-local decomposition as a continuous algebra
+  equivalence when the tensor product carries its module topology over `K_v`.
+
+## Topology
+
+Both sides of the semi-local decomposition are finite-dimensional `K_v`-vector spaces. Each
+carries its canonical `K_v`-module topology, which on `∏_{w ∣ v} L_w` is the product topology,
+and `K_v`-linear maps between such spaces are continuous. So when `K_v ⊗[K] L` carries its module
+topology, `semilocalEquiv v` is a homeomorphism. This placewise identification of topological
+rings is the finite-place input for identifying the finite adeles of `L` with the scalar
+extension of the finite adeles of `K` to `L`.
+
+## Provenance
+
+The continuous equivalence and its companion formulas follow the archimedean analogue
+`TauCeti.GlobalNumberFields.infiniteSemilocalContinuousEquiv` in
+`TauCeti.NumberTheory.NumberField.Global.Places.Semilocal`.
 
 ## References
 
@@ -186,6 +204,10 @@ def semilocalEquiv :
     (show Function.Bijective (semilocalHom L v) from
       ⟨semilocalHom_injective L v, semilocalHom_surjective L v⟩)
 
+/-- The semi-local decomposition is the semi-local map. -/
+theorem coe_semilocalEquiv : ⇑(semilocalEquiv L v) = semilocalHom L v := by
+  rw [semilocalEquiv, AlgEquiv.coe_ofBijective]
+
 variable {L v}
 
 /-- **The semi-local decomposition on a pure tensor**, the formula that determines it. -/
@@ -197,5 +219,66 @@ theorem semilocalEquiv_tmul (a : v.adicCompletion K) (x : L)
         algebraMap L (w.1.adicCompletion L) x := by
   rw [semilocalEquiv, AlgEquiv.ofBijective_apply]
   exact semilocalHom_tmul a x w
+
+variable (L v)
+
+/-- The inverse semi-local comparison sends a diagonal field element to `1 ⊗ x`. -/
+@[simp]
+theorem semilocalEquiv_symm_algebraMap (x : L) :
+    (semilocalEquiv L v).symm
+      (fun w : {w : HeightOneSpectrum (𝒪 L) // w.asIdeal.LiesOver v.asIdeal} ↦
+        algebraMap L (w.1.adicCompletion L) x) = 1 ⊗ₜ[K] x := by
+  apply (semilocalEquiv L v).symm_apply_eq.mpr
+  funext w
+  rw [semilocalEquiv_tmul]
+  simp
+
+variable [TopologicalSpace (v.adicCompletion K ⊗[K] L)]
+  [IsModuleTopology (v.adicCompletion K) (v.adicCompletion K ⊗[K] L)]
+
+/-- The semi-local decomposition is topological when the tensor product carries the module
+topology over `K_v`. Both the comparison and its inverse are continuous. -/
+def semilocalContinuousEquiv :
+    v.adicCompletion K ⊗[K] L ≃A[v.adicCompletion K]
+      ((w : {w : HeightOneSpectrum (𝒪 L) // w.asIdeal.LiesOver v.asIdeal}) →
+        w.1.adicCompletion L) where
+  toAlgEquiv := semilocalEquiv L v
+  continuous_toFun := IsModuleTopology.continuous_of_linearMap
+    (semilocalEquiv L v).toLinearMap
+  continuous_invFun := by
+    let := IsModuleTopology.toContinuousAdd (v.adicCompletion K)
+      (v.adicCompletion K ⊗[K] L)
+    let := isModuleTopologyOfFiniteDimensional (𝕜 := v.adicCompletion K)
+      (E := (w : {w : HeightOneSpectrum (𝒪 L) // w.asIdeal.LiesOver v.asIdeal}) →
+        w.1.adicCompletion L)
+    exact IsModuleTopology.continuous_of_linearMap (semilocalEquiv L v).symm.toLinearMap
+
+/-- Forgetting continuity recovers the algebraic semi-local decomposition. -/
+@[simp]
+theorem semilocalContinuousEquiv_toAlgEquiv :
+    (semilocalContinuousEquiv L v).toAlgEquiv = semilocalEquiv L v :=
+  (rfl)
+
+variable {L v}
+
+/-- The continuous semi-local comparison has the prescribed formula on pure tensors. -/
+@[simp]
+theorem semilocalContinuousEquiv_tmul (a : v.adicCompletion K) (x : L)
+    (w : {w : HeightOneSpectrum (𝒪 L) // w.asIdeal.LiesOver v.asIdeal}) :
+    semilocalContinuousEquiv L v (a ⊗ₜ x) w =
+      algebraMap (v.adicCompletion K) (w.1.adicCompletion L) a *
+        algebraMap L (w.1.adicCompletion L) x := by
+  rw [← ContinuousAlgEquiv.coe_toAlgEquiv, semilocalContinuousEquiv_toAlgEquiv]
+  exact semilocalEquiv_tmul a x w
+
+/-- The inverse continuous comparison sends a diagonal field element to `1 ⊗ x`. -/
+@[simp]
+theorem semilocalContinuousEquiv_symm_algebraMap (x : L) :
+    (semilocalContinuousEquiv L v).symm
+      (fun w : {w : HeightOneSpectrum (𝒪 L) // w.asIdeal.LiesOver v.asIdeal} ↦
+        algebraMap L (w.1.adicCompletion L) x) = 1 ⊗ₜ[K] x := by
+  rw [← ContinuousAlgEquiv.coe_toAlgEquiv, ContinuousAlgEquiv.symm_toAlgEquiv,
+    semilocalContinuousEquiv_toAlgEquiv]
+  exact semilocalEquiv_symm_algebraMap L v x
 
 end TauCeti

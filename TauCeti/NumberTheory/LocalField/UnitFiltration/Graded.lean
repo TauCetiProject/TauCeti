@@ -37,6 +37,9 @@ has `#𝓀[K]` elements.
 * `TauCeti.relIndex_unitFiltration_add_succ_succ` and
   `TauCeti.natCard_unitFiltration_succ_quotient_add_succ`: more generally,
   `U(K,m+1) / U(K,m+n+1)` has `#𝓀[K] ^ n` elements.
+* `TauCeti.unitFiltration_le_unitFiltration_iff`: the steps of the unit filtration are distinct,
+  except that `U(K,1) = U(K,0)` when `#𝓀[K] = 2`
+  (`TauCeti.unitFiltration_one_eq_unitFiltration_zero_iff`).
 
 The final identification reuses Mathlib's `Ideal.quotEquivPowQuotPowSucc`, the linear equivalence
 between a quotient by a nonzero principal ideal and each successive quotient of its powers.
@@ -334,5 +337,35 @@ theorem natCard_unitFiltration_succ_quotient_add_succ (m n : ℕ) :
         (Nat.card 𝓀[K]) ^ n := by
   rw [← Subgroup.index_eq_card]
   exact relIndex_unitFiltration_add_succ_succ m n
+
+/-- The first two steps of the unit filtration coincide, `U(K,1) = U(K,0)`, exactly when the
+residue field has two elements. -/
+theorem unitFiltration_one_eq_unitFiltration_zero_iff :
+    unitFiltration K 1 = unitFiltration K 0 ↔ Nat.card 𝓀[K] = 2 := by
+  have hq : 1 < Nat.card 𝓀[K] := Finite.one_lt_card
+  rw [le_antisymm_iff, and_iff_right (unitFiltration_antitone (Nat.zero_le 1)),
+    ← Subgroup.relIndex_eq_one, relIndex_unitFiltration_one_zero]
+  omega
+
+/-- **The steps of the unit filtration are distinct**, apart from the coincidence
+`U(K,1) = U(K,0)` when the residue field has two elements
+(`unitFiltration_one_eq_unitFiltration_zero_iff`): away from it, `U(K,j) ⊆ U(K,i)` exactly
+when `i ≤ j`. -/
+theorem unitFiltration_le_unitFiltration_iff {i j : ℕ} (h : i ≠ 1 ∨ Nat.card 𝓀[K] ≠ 2) :
+    unitFiltration K j ≤ unitFiltration K i ↔ i ≤ j := by
+  refine ⟨fun hji ↦ ?_, fun hij ↦ unitFiltration_antitone hij⟩
+  by_contra! hlt
+  have hq : 1 < Nat.card 𝓀[K] := Finite.one_lt_card
+  -- Otherwise `U(K,i-1) ⊆ U(K,j) ⊆ U(K,i)`, so the step from depth `i - 1` to `i` is trivial.
+  obtain _ | _ | k := i
+  · omega
+  · have hstep : (unitFiltration K 1).relIndex (unitFiltration K 0) = 1 :=
+      Subgroup.relIndex_eq_one.mpr ((unitFiltration_antitone (by omega)).trans hji)
+    rw [relIndex_unitFiltration_one_zero] at hstep
+    omega
+  · have hstep : (unitFiltration K (k + 2)).relIndex (unitFiltration K (k + 1)) = 1 :=
+      Subgroup.relIndex_eq_one.mpr ((unitFiltration_antitone (by omega)).trans hji)
+    rw [relIndex_unitFiltration_succ_succ] at hstep
+    omega
 
 end TauCeti

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicTopology.FundamentalGroupoid.FundamentalGroup
+public import Mathlib.AlgebraicTopology.FundamentalGroupoid.SimplyConnected
 public import Mathlib.Topology.Homotopy.Product
 
 /-!
@@ -14,7 +15,8 @@ public import Mathlib.Topology.Homotopy.Product
 Mathlib knows that the fundamental *groupoid* preserves products
 (`FundamentalGroupoidFunctor.prodIso`, `…piIso`), but the corresponding group-level
 statement is missing: the fundamental *group* of a product is the product of the
-fundamental groups. This file supplies it, both for binary and for indexed products.
+fundamental groups. This file supplies it, both for binary and for indexed products, together
+with its simplest consequence: a product of two simply connected spaces is simply connected.
 
 The two equivalences are built directly from the path-class product operations
 `Path.Homotopic.prod` / `Path.Homotopic.pi` and their coordinate projections, which already
@@ -35,6 +37,8 @@ application built on top.
 
 * `TauCeti.FundamentalGroup.prodMulEquiv`: `π₁(X × Y, (x, y)) ≃* π₁(X, x) × π₁(Y, y)`.
 * `TauCeti.FundamentalGroup.piMulEquiv`: `π₁(Π i, X i, x) ≃* Π i, π₁(X i, x i)`.
+* `TauCeti.instSimplyConnectedSpaceProd`: a product of two simply connected spaces is simply
+  connected.
 -/
 
 public section
@@ -76,6 +80,15 @@ theorem FundamentalGroup.prodMulEquiv_symm_apply (x : X) (y : Y)
     (γ : FundamentalGroup X x × FundamentalGroup Y y) :
     (FundamentalGroup.prodMulEquiv x y).symm γ = prod γ.1 γ.2 :=
   rfl
+
+/-- **A product of two simply connected spaces is simply connected.** A path class in `X × Y`
+is the product of its two coordinate classes (`Path.Homotopic.prod_projLeft_projRight`), and
+those are unique. -/
+instance instSimplyConnectedSpaceProd [SimplyConnectedSpace X] [SimplyConnectedSpace Y] :
+    SimplyConnectedSpace (X × Y) := by
+  refine simply_connected_iff_paths_homotopic.mpr ⟨inferInstance, fun a b ↦ ⟨fun p q ↦ ?_⟩⟩
+  rw [← prod_projLeft_projRight p, ← prod_projLeft_projRight q,
+    Subsingleton.elim (projLeft p) (projLeft q), Subsingleton.elim (projRight p) (projRight q)]
 
 variable {ι : Type*} {X : ι → Type*} [∀ i, TopologicalSpace (X i)]
 

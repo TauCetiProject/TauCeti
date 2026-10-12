@@ -7,7 +7,7 @@ module
 
 public import Mathlib.RingTheory.DividedPowers.RatAlgebra
 public import TauCeti.Algebra.Ring.Commutator
-import Mathlib.Data.Nat.Choose.Cast
+import TauCeti.Data.Nat.Choose.Cast
 import Mathlib.Tactic.FieldSimp
 
 /-!
@@ -184,13 +184,6 @@ theorem _root_.Commute.dividedPower_right {x y : A} (hxy : Commute x y) (n : ℕ
     Commute x (dividedPower n y) :=
   (hxy.pow_right n).smul_right _
 
-/-- The rational coefficient identity behind multiplication of divided powers. -/
-private theorem inv_factorial_mul_inv_factorial (m n : ℕ) :
-    (m.factorial : ℚ)⁻¹ * (n.factorial : ℚ)⁻¹ =
-      (Nat.choose (m + n) m : ℚ) * ((m + n).factorial : ℚ)⁻¹ := by
-  rw [Nat.cast_add_choose ℚ]
-  field_simp
-
 /-- Products of divided powers of the same element have integral structure constants:
 `x⁽ᵐ⁾ x⁽ⁿ⁾ = choose (m + n) m • x⁽ᵐ⁺ⁿ⁾`. -/
 theorem mul_dividedPower (m n : ℕ) (x : A) :
@@ -198,7 +191,7 @@ theorem mul_dividedPower (m n : ℕ) (x : A) :
       Nat.choose (m + n) m • dividedPower (m + n) x := by
   rw [← Nat.cast_smul_eq_nsmul ℚ]
   simp only [dividedPower_def, smul_mul_smul, ← pow_add, smul_smul]
-  rw [inv_factorial_mul_inv_factorial]
+  rw [Nat.inv_factorial_mul_inv_factorial]
 
 /-- The right-handed first-order recurrence for divided powers. -/
 theorem dividedPower_mul_self (n : ℕ) (x : A) :
@@ -236,15 +229,6 @@ theorem dividedPower_comp (m n : ℕ) (hn : n ≠ 0) (x : A) :
     simpa [mul_comm, mul_left_comm, mul_assoc] using (Nat.uniformBell_mul_eq m hn).symm
   · rw [mul_comm]
 
-/-- The rational coefficient identity that cancels the binomial coefficient in the divided-power
-expansion of a commuting sum. -/
-private theorem inv_factorial_mul_choose (n i j : ℕ) (hij : i + j = n) :
-    (n.factorial : ℚ)⁻¹ * Nat.choose n i =
-      (i.factorial : ℚ)⁻¹ * (j.factorial : ℚ)⁻¹ := by
-  subst n
-  rw [mul_comm]
-  exact (inv_factorial_mul_inv_factorial i j).symm
-
 /-- The divided-power binomial formula for commuting elements of an associative algebra:
 `(x + y)⁽ⁿ⁾ = ∑ i+j=n x⁽ⁱ⁾ y⁽ʲ⁾`.
 
@@ -259,7 +243,7 @@ theorem dividedPower_add {x y : A} (hxy : Commute x y) (n : ℕ) :
   intro ij hij
   rw [← Nat.cast_smul_eq_nsmul ℚ, smul_smul, dividedPower_def, dividedPower_def,
     smul_mul_smul]
-  rw [inv_factorial_mul_choose n ij.1 ij.2 (mem_antidiagonal.mp hij)]
+  rw [Nat.inv_factorial_mul_choose n ij.1 ij.2 (mem_antidiagonal.mp hij)]
 
 end Semiring
 

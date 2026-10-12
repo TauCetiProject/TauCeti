@@ -82,7 +82,7 @@ theorem exists_le_map_conj_of_isRoot_specialize_tschirnhausPolynomial [Normal F 
         ≤ spec.H.map (MulAut.conj τ).toMonoidHom := by
   have : Fact (((f.tschirnhausPolynomial T).map (algebraMap F E)).Splits) :=
     ⟨splits_map_tschirnhausPolynomial_field hfsp.out T⟩
-  rw [← hT.map_range_galActionHom_tschirnhausPolynomial hsep.ne_zero e]
+  rw [← hT.map_range_galActionHom_tschirnhausPolynomial e]
   exact spec.exists_le_map_conj_of_isRoot_specialize (monic_tschirnhausPolynomial hf T)
     ((separable_tschirnhausPolynomial_iff hsep.ne_zero T).2 ⟨hsep, hT⟩)
     ((natDegree_tschirnhausPolynomial hf T).trans hdeg) _ hres ha
@@ -101,7 +101,7 @@ theorem exists_isRoot_specialize_tschirnhausPolynomial_of_le_map_conj [IsGalois 
     ∃ a : F, (spec.specialize F (f.tschirnhausPolynomial T)).IsRoot a := by
   have : Fact (((f.tschirnhausPolynomial T).map (algebraMap F E)).Splits) :=
     ⟨splits_map_tschirnhausPolynomial_field hfsp.out T⟩
-  rw [← hT.map_range_galActionHom_tschirnhausPolynomial hsep.ne_zero e] at hle
+  rw [← hT.map_range_galActionHom_tschirnhausPolynomial e] at hle
   exact spec.exists_isRoot_specialize_of_le_map_conj (monic_tschirnhausPolynomial hf T)
     ((separable_tschirnhausPolynomial_iff hsep.ne_zero T).2 ⟨hsep, hT⟩)
     ((natDegree_tschirnhausPolynomial hf T).trans hdeg) _ τ hle
@@ -146,8 +146,8 @@ theorem map_natDegree_normalizedFactors_specialize_tschirnhausPolynomial [Normal
     ⟨splits_map_tschirnhausPolynomial_field hfsp.out T⟩
   have h := spec.map_natDegree_normalizedFactors_specialize (monic_tschirnhausPolynomial hf T)
     ((natDegree_tschirnhausPolynomial hf T).trans hdeg)
-    ((hT.rootSetEquiv hf.ne_zero hfsp.out).symm.trans e) hres
-  rwa [hT.map_range_galActionHom_tschirnhausPolynomial hf.ne_zero e] at h
+    ((hT.rootSetEquiv hfsp.out).symm.trans e) hres
+  rwa [hT.map_range_galActionHom_tschirnhausPolynomial e] at h
 
 end ResolventSpec
 

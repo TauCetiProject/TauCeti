@@ -8,7 +8,7 @@ module
 public import TauCeti.NumberTheory.NumberField.Global.HeckeCharacter.Conductor
 public import TauCeti.NumberTheory.NumberField.Global.Ideles.Congruence
 
-import TauCeti.Analysis.Normed.Field.NoSmallSubgroups
+import TauCeti.Analysis.Normed.Algebra.NoSmallSubgroups
 import TauCeti.NumberTheory.NumberField.Global.Ideles.Ray.OpenSubgroup
 import TauCeti.Topology.Algebra.ContinuousMonoidHom.Basic
 
@@ -121,14 +121,13 @@ theorem finiteComponent_pow (χ : HeckeCharacter K) (n : ℕ) (v : HeightOneSpec
 
 /-! ### Triviality on the unit filtration -/
 
-/-- **A Hecke character is trivial on a congruence subgroup at every finite place.**  There is a
-modulus `𝔪` such that at every finite place `v` the component of `χ` is trivial on the step
-`U(K_v, 𝔪.exponent v)` of the unit filtration: on the units of `𝓞_v` when `v` does not divide `𝔪`,
-and on the principal units of level `𝔪.exponent v` when it does. -/
-theorem exists_modulus_finiteComponent_eq_one (χ : HeckeCharacter K) :
-    ∃ 𝔪 : Modulus K, ∀ (v : HeightOneSpectrum (𝓞 K)),
-      ∀ u ∈ TauCeti.unitFiltration (v.adicCompletion K) (𝔪.exponent v),
-        χ.finiteComponent v u = 1 := by
+/-- A Hecke character is trivial on the finite parts of all ideles in a sufficiently small
+idele congruence subgroup. This controls the entire finite idele, including its infinitely many
+unit coordinates, rather than just each local component separately. -/
+theorem exists_modulus_finitePart_eq_one (χ : HeckeCharacter K) :
+    ∃ 𝔪 : Modulus K, ∀ x ∈ ideleCongruenceSubgroup 𝔪,
+      χ (QuotientGroup.mk (IdeleGroup.ofFiniteIdele (𝓞 K) K
+        (IdeleGroup.toFiniteIdele (𝓞 K) K x))) = 1 := by
   -- The finite parts of the ideles of a small enough idele congruence subgroup form a subgroup on
   -- which `χ` stays close to `1`, and `ℂˣ` has no small subgroups.
   -- `χ` as a character of the idele group, and a neighbourhood of `1` on which it kills every
@@ -142,16 +141,27 @@ theorem exists_modulus_finiteComponent_eq_one (χ : HeckeCharacter K) :
     (IdeleGroup.ofFiniteIdele (𝓞 K) K).comp (IdeleGroup.toFiniteIdele (𝓞 K) K)
   have hker : (ideleCongruenceSubgroup 𝔪).map φ ≤ f.ker :=
     hNker _ (by rintro _ ⟨x, hx, rfl⟩; exact h𝔪 x hx)
+  exact ⟨𝔪, fun x hx ↦ MonoidHom.mem_ker.mp (hker ⟨x, hx, rfl⟩)⟩
+
+/-- **A Hecke character is trivial on a congruence subgroup at every finite place.** There is a
+modulus `𝔪` such that at every finite place `v` the component of `χ` is trivial on the step
+`U(K_v, 𝔪.exponent v)` of the unit filtration: on the units of `𝓞_v` when `v` does not divide `𝔪`,
+and on the principal units of level `𝔪.exponent v` when it does. -/
+theorem exists_modulus_finiteComponent_eq_one (χ : HeckeCharacter K) :
+    ∃ 𝔪 : Modulus K, ∀ (v : HeightOneSpectrum (𝓞 K)),
+      ∀ u ∈ TauCeti.unitFiltration (v.adicCompletion K) (𝔪.exponent v),
+        χ.finiteComponent v u = 1 := by
+  obtain ⟨𝔪, h𝔪⟩ := χ.exists_modulus_finitePart_eq_one
   refine ⟨𝔪, fun v u hu ↦ ?_⟩
   -- An idele concentrated at a finite place is its own finite part.
-  have hφ : φ (IdeleGroup.ofAdicCompletion (𝓞 K) K v u) =
+  have hφ : IdeleGroup.ofFiniteIdele (𝓞 K) K
+      (IdeleGroup.toFiniteIdele (𝓞 K) K (IdeleGroup.ofAdicCompletion (𝓞 K) K v u)) =
       IdeleGroup.ofAdicCompletion (𝓞 K) K v u :=
     Units.ext <| by
-      rw [MonoidHom.comp_apply, IdeleGroup.coe_ofFiniteIdele, IdeleGroup.coe_toFiniteIdele,
+      rw [IdeleGroup.coe_ofFiniteIdele, IdeleGroup.coe_toFiniteIdele,
         IdeleGroup.val_ofAdicCompletion_apply]
-  have h := MonoidHom.mem_ker.mp
-    (hker ⟨_, ofAdicCompletion_mem_ideleCongruenceSubgroup_iff.mpr hu, hφ⟩)
-  simpa [f] using h
+  have h := h𝔪 _ (ofAdicCompletion_mem_ideleCongruenceSubgroup_iff.mpr hu)
+  simpa only [hφ, finiteComponent_apply, IdeleClassGroup.ofAdicCompletion_apply] using h
 
 /-- **The component of a Hecke character at a finite place is trivial on a step of the unit
 filtration.** -/
@@ -309,6 +319,62 @@ theorem finiteConductor_one : (1 : HeckeCharacter K).finiteConductor = ⊤ :=
 theorem finiteConductor_inv (χ : HeckeCharacter K) : χ⁻¹.finiteConductor = χ.finiteConductor := by
   simp [finiteConductor_def]
 
+/-- The finite part of a Hecke character is trivial on the exact conductor filtration.
+This controls arbitrary finite ideles, including their infinitely many local unit coordinates. -/
+theorem finitePart_eq_one_of_forall_mem_unitFiltration (χ : HeckeCharacter K)
+    (x : IdeleGroup (𝓞 K) K)
+    (hx : ∀ v : HeightOneSpectrum (𝓞 K),
+      v.ideleFiniteCoord x ∈ TauCeti.unitFiltration (v.adicCompletion K)
+        (χ.conductorExponent v)) :
+    χ (QuotientGroup.mk (IdeleGroup.ofFiniteIdele (𝓞 K) K
+      (IdeleGroup.toFiniteIdele (𝓞 K) K x))) = 1 := by
+  classical
+  obtain ⟨𝔪, h𝔪⟩ := χ.exists_modulus_finitePart_eq_one
+  let z : IdeleGroup (𝓞 K) K :=
+    ∏ v ∈ 𝔪.support, IdeleGroup.ofAdicCompletion (𝓞 K) K v (v.ideleFiniteCoord x)
+  have hzχ : χ (QuotientGroup.mk z) = 1 := by
+    rw [QuotientGroup.mk_prod, map_prod]
+    exact Finset.prod_eq_one fun v _ ↦ χ.finiteComponent_eq_one_of_mem_unitFiltration (hx v)
+  let y := IdeleGroup.ofFiniteIdele (𝓞 K) K
+    (IdeleGroup.toFiniteIdele (𝓞 K) K x) * z⁻¹
+  have hcoord (v : HeightOneSpectrum (𝓞 K)) :
+      v.ideleFiniteCoord y = if v ∈ 𝔪.support then 1 else v.ideleFiniteCoord x := by
+    have hfin : v.ideleFiniteCoord (IdeleGroup.ofFiniteIdele (𝓞 K) K
+        (IdeleGroup.toFiniteIdele (𝓞 K) K x)) = v.ideleFiniteCoord x := by
+      have h := congrArg v.ideleFiniteCoord (IdeleGroup.prod_ofCompletion_mul_ofFiniteIdele x)
+      simpa only [map_mul, map_prod, HeightOneSpectrum.ideleFiniteCoord_ofCompletion,
+        Finset.prod_const_one, one_mul] using h
+    simp only [y, map_mul, map_inv, hfin]
+    have hzcoord : v.ideleFiniteCoord z =
+        if v ∈ 𝔪.support then v.ideleFiniteCoord x else 1 :=
+      HeightOneSpectrum.ideleFiniteCoord_prod_ofAdicCompletion v _ _
+    rw [hzcoord]
+    split_ifs <;> simp
+  have hy : y ∈ ideleCongruenceSubgroup 𝔪 := by
+    refine mem_ideleCongruenceSubgroup_iff.mpr ⟨fun v hv ↦ ?_, fun v hv ↦ ?_, fun w _ ↦ ?_⟩
+    · rw [hcoord, ite_eq_right fun h ↦ hv ((Modulus.mem_support_iff 𝔪 v).mp h)]
+      have hv := hx v
+      rw [HeightOneSpectrum.mem_unitFiltration_adicCompletion_iff] at hv
+      exact hv.1
+    · rw [hcoord, ite_eq_left ((Modulus.mem_support_iff 𝔪 v).mpr hv)]
+      simp
+    · simp [y, z]
+  have hyχ := h𝔪 y hy
+  have hyfin : IdeleGroup.ofFiniteIdele (𝓞 K) K
+      (IdeleGroup.toFiniteIdele (𝓞 K) K y) = y := by
+    apply IdeleGroup.ext
+    · intro w
+      simp [y, z]
+    · intro v
+      apply Units.ext
+      simp only [HeightOneSpectrum.coe_ideleFiniteCoord, IdeleGroup.coe_ofFiniteIdele,
+        IdeleGroup.coe_toFiniteIdele]
+  rw [hyfin] at hyχ
+  dsimp only [y] at hyχ
+  rw [QuotientGroup.mk_mul, QuotientGroup.mk_inv, map_mul, map_inv, hzχ,
+    inv_one, mul_one] at hyχ
+  exact hyχ
+
 /-! ### Agreement with the conductor of a finite-order character -/
 
 /-- **A modulus from which `χ` comes bounds its conductor exponents**: if `χ` is the pullback of a
@@ -334,40 +400,25 @@ theorem mem_range_ofRayClassCharacter_of_conductorExponent_le {χ : HeckeCharact
   have h𝔪 := mem_range_ofRayClassCharacter_iff.mp hχ
   refine mem_range_ofRayClassCharacter_iff.mpr fun c hc ↦ ?_
   obtain ⟨x, hx, rfl⟩ := mem_raySubgroup_iff.mp hc
-  -- Split an idele `x` of the congruence subgroup of `𝔫` into its coordinates at the finitely many
-  -- places dividing `𝔪`, on which `χ` is trivial through its finite components, and an idele of
-  -- the congruence subgroup of `𝔪`, on which `χ` is trivial because it comes from `𝔪`.
-  let mk := QuotientGroup.mk' (IdeleGroup.principalSubgroup (𝓞 K) K)
-  -- The coordinates of `x` at the finite places dividing `𝔪`, as one idele.
-  let z : IdeleGroup (𝓞 K) K :=
-    ∏ v ∈ 𝔪.support, IdeleGroup.ofAdicCompletion (𝓞 K) K v (v.ideleFiniteCoord x)
-  have hzχ : χ (mk z) = 1 := by
-    rw [map_prod, map_prod]
-    exact Finset.prod_eq_one fun v _ ↦ χ.finiteComponent_eq_one_of_mem_unitFiltration
-      (TauCeti.unitFiltration_antitone (hexp v)
-        (ideleCongruenceSubgroup.ideleFiniteCoord_mem_unitFiltration hx v))
-  -- Removing them leaves an idele of the congruence subgroup of `𝔪`.
-  have hy : x * z⁻¹ ∈ ideleCongruenceSubgroup 𝔪 := by
-    have hcoord (v : HeightOneSpectrum (𝓞 K)) :
-        v.ideleFiniteCoord z = if v ∈ 𝔪.support then v.ideleFiniteCoord x else 1 :=
-      HeightOneSpectrum.ideleFiniteCoord_prod_ofAdicCompletion v _ _
-    refine mem_ideleCongruenceSubgroup_iff.mpr ⟨fun v hv ↦ ?_, fun v hv ↦ ?_, fun w hw ↦ ?_⟩
-    · rw [map_mul, map_inv, hcoord, ite_eq_right fun h ↦ hv ((Modulus.mem_support_iff 𝔪 v).mp h),
-        inv_one, mul_one]
-      exact ideleCongruenceSubgroup.valued_ideleFiniteCoord_eq_one hx v
-    · rw [map_mul, map_inv, hcoord, ite_eq_left ((Modulus.mem_support_iff 𝔪 v).mpr hv),
-        mul_inv_cancel, Units.val_one, sub_self, map_zero]
-      exact zero_le
-    · have hzw : w.1.ideleInfiniteCoord z = 1 := by
-        simp only [z, map_prod, InfinitePlace.ideleInfiniteCoord_ofAdicCompletion,
-          Finset.prod_const_one]
-      rw [map_mul, map_inv, hzw, inv_one, mul_one]
+  have hfinite := χ.finitePart_eq_one_of_forall_mem_unitFiltration x fun v ↦
+    TauCeti.unitFiltration_antitone (hexp v)
+      (ideleCongruenceSubgroup.ideleFiniteCoord_mem_unitFiltration hx v)
+  let y := ∏ w : InfinitePlace K, IdeleGroup.ofCompletion (𝓞 K) K w (w.ideleInfiniteCoord x)
+  have hsplit : y * IdeleGroup.ofFiniteIdele (𝓞 K) K
+      (IdeleGroup.toFiniteIdele (𝓞 K) K x) = x :=
+    IdeleGroup.prod_ofCompletion_mul_ofFiniteIdele x
+  have hycoord (w : InfinitePlace K) : w.ideleInfiniteCoord y = w.ideleInfiniteCoord x := by
+    have h := congrArg w.ideleInfiniteCoord hsplit
+    simpa only [map_mul, InfinitePlace.ideleInfiniteCoord_ofFiniteIdele, mul_one] using h
+  have hy : y ∈ ideleCongruenceSubgroup 𝔪 := by
+    refine mem_ideleCongruenceSubgroup_iff.mpr ⟨fun v _ ↦ ?_, fun v _ ↦ ?_, fun w hw ↦ ?_⟩
+    · simp [y]
+    · simp [y]
+    · rw [hycoord]
       exact ideleCongruenceSubgroup.extensionEmbeddingOfIsReal_pos hx (hinf hw)
-  have hyχ : χ (mk (x * z⁻¹)) = 1 :=
-    MonoidHom.mem_ker.mp (h𝔪 (mem_raySubgroup_iff.mpr ⟨_, hy, rfl⟩))
-  rw [MonoidHom.mem_ker]
-  calc χ (mk x) = χ (mk (x * z⁻¹)) * χ (mk z) := by rw [← map_mul, ← map_mul, inv_mul_cancel_right]
-    _ = 1 := by rw [hyχ, hzχ, one_mul]
+  have hyχ := MonoidHom.mem_ker.mp (h𝔪 (mem_raySubgroup_iff.mpr ⟨y, hy, rfl⟩))
+  rw [MonoidHom.mem_ker, ← hsplit, map_mul, map_mul, hyχ, one_mul]
+  exact hfinite
 
 /-- **The finite exponents of the conductor of a finite-order Hecke character are its conductor
 exponents.** -/

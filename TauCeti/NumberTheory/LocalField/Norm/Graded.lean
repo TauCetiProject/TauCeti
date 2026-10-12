@@ -10,7 +10,7 @@ public import TauCeti.NumberTheory.LocalField.Norm.Herbrand
 public import TauCeti.NumberTheory.LocalField.UnitFiltration.Uniformizer
 import Mathlib.GroupTheory.SpecificGroups.Cyclic
 import TauCeti.NumberTheory.LocalField.Norm.PrimeDegree
-import TauCeti.NumberTheory.LocalField.TamelyRamified
+import TauCeti.NumberTheory.LocalField.TamelyRamified.Basic
 import TauCeti.NumberTheory.LocalField.UnitFiltration.RamificationGroup
 
 /-!

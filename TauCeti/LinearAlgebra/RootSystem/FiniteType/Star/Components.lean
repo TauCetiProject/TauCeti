@@ -6,26 +6,30 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.SimpleGraph.BranchComponents
-public import TauCeti.LinearAlgebra.RootSystem.FiniteType.Star.UniqueBranch
+public import TauCeti.LinearAlgebra.RootSystem.FiniteType.Diagram
 
 /-!
-# The three arms of a simply-laced finite-type diagram
+# The three arms of a branch diagram
 
-A connected simply-laced finite-type diagram with a branch vertex becomes three paths when that
-vertex is deleted.  The finite-type degree bound supplies degree at most three, while the affine
-`D` obstruction in `TauCeti.LinearAlgebra.RootSystem.FiniteType.Star.UniqueBranch` says that the
-chosen branch vertex is the only vertex of degree three.  The general tree decomposition from
-`TauCeti.Combinatorics.SimpleGraph.BranchComponents` then applies.
+A diagram which is a tree of maximum degree three, with a single vertex of degree three, becomes
+three paths when that vertex is deleted: the general tree decomposition from
+`TauCeti.Combinatorics.SimpleGraph.BranchComponents` applies, because deleting the branch vertex
+leaves every other vertex with degree at most two.
 
-This is the extraction step connecting arbitrary simply-laced finite-type diagrams to the model
-stars classified in `TauCeti.LinearAlgebra.RootSystem.FiniteType.Star.Classification`.  The next
-step attaches each path to the deleted vertex, reindexes the matrix onto `starCartanMatrix`, and
-applies `TauCeti.IsFiniteType.existsUnique_dynkinType_of_star`.
+For a connected simply-laced finite-type diagram with a branch vertex the hypotheses hold: the
+finite-type degree bound supplies degree at most three, and the affine `D` obstruction in
+`TauCeti.LinearAlgebra.RootSystem.FiniteType.Star.UniqueBranch` says that the branch vertex is the
+only vertex of degree three. The statement is kept free of the finite-type hypothesis so that it
+also applies to diagrams not yet known to be of finite type.
+
+This is the extraction step connecting branch diagrams to the model stars classified in
+`TauCeti.LinearAlgebra.RootSystem.FiniteType.Star.Classification`.  The next step attaches each
+path to the deleted vertex and reindexes the matrix onto `starCartanMatrix`.
 
 ## Main result
 
-* `TauCeti.IsFiniteType.exists_three_path_components_of_isSimplyLaced`: deleting a branch vertex
-  from a connected simply-laced finite-type diagram leaves three path components.
+* `TauCeti.exists_three_path_components_of_isTree`: deleting the unique branch vertex from a
+  diagram which is a tree of maximum degree three leaves three path components.
 
 ## References
 
@@ -40,33 +44,27 @@ namespace TauCeti
 
 open SimpleGraph
 
-namespace IsFiniteType
-
 variable {B : Type*} [Fintype B] [DecidableEq B] {A : Matrix B B Int}
 
-/-- **Deleting a branch vertex from a connected simply-laced finite-type diagram leaves three
-paths.**
+/-- **Deleting the branch vertex of a tree diagram of maximum degree three leaves three paths.**
 
-The equivalence indexes the components by `Fin 3`; the component at `i` is a path graph on its own
-number of vertices.  These cardinalities are the three arm lengths in the subsequent reindexing
-onto `TauCeti.starCartanMatrix`. -/
-theorem exists_three_path_components_of_isSimplyLaced (h : IsFiniteType A)
-    (hconn : (diagramGraph A).Connected) (hsl : A.IsSimplyLaced) {c : B}
-    (hc : (diagramGraph A).degree c = 3) :
+The branch vertex `c` is assumed to be the only vertex of degree three. The equivalence indexes the
+components by `Fin 3`; the component at `i` is a path graph on its own number of vertices.  These
+cardinalities are the three arm lengths in the subsequent reindexing onto
+`TauCeti.starCartanMatrix`. -/
+theorem exists_three_path_components_of_isTree (htree : (diagramGraph A).IsTree)
+    (hdeg : ∀ v, (diagramGraph A).degree v ≤ 3) {c : B} (hc : (diagramGraph A).degree c = 3)
+    (huniq : ∀ v, (diagramGraph A).degree v = 3 → v = c) :
     ∃ e : Fin 3 ≃ ((diagramGraph A).induce ({c}ᶜ : Set B)).ConnectedComponent,
       ∀ i, Nonempty ((e i).toSimpleGraph ≃g pathGraph (Nat.card (e i))) := by
-  have htree : (diagramGraph A).IsTree := h.isTree_diagramGraph hconn
   refine TauCeti.IsTree.exists_equiv_pathGraph_components htree c hc fun v => ?_
   -- Deleting a vertex only removes edges, so it is enough to bound the degree in the diagram.
   have hle : ((diagramGraph A).induce ({c}ᶜ : Set B)).degree v ≤ (diagramGraph A).degree (v : B) :=
     (SimpleGraph.Copy.induce (diagramGraph A) ({c}ᶜ : Set B)).degree_le v
   refine le_trans hle ?_
   have hvc : (v : B) ≠ c := Set.mem_compl_singleton_iff.mp v.property
-  have hv3 := h.degree_le_three (v : B)
+  have hv3 := hdeg (v : B)
   by_contra hv2
-  have hv : (diagramGraph A).degree (v : B) = 3 := by omega
-  exact hvc (h.eq_of_degree_eq_three hsl hconn hv hc)
-
-end IsFiniteType
+  exact hvc (huniq _ (by omega))
 
 end TauCeti

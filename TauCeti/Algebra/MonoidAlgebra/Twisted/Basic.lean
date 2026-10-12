@@ -35,7 +35,8 @@ a basis and the multiplication table above holds on the nose.
 ## Main definitions and results
 
 * `TauCeti.IsFactorSet`: a normalized factor set, that is, a normalized multiplicative `2`-cocycle
-  `α : G → G → kˣ`;
+  `α : G → G → kˣ`, with the pointwise product and inverse of factor sets again factor sets
+  (`TauCeti.IsFactorSet.mul`, `TauCeti.IsFactorSet.inv`);
 * `TauCeti.IsFactorSet.exists_eq_apply_mk`: a factor set on a group `G` that is trivial whenever
   one of its arguments lies in a normal subgroup `N` is pulled back from a factor set on `G ⧸ N`;
 * `TauCeti.twistedMonoidAlgebra k G α`: the twisted monoid algebra `k_α[G]`;
@@ -62,6 +63,10 @@ on `kˣ`: the twisted algebra wants `α` curried, and wants the normalization, w
 identity alone gives only up to the constant `α 1 1`. Carrying the hypotheses in a class keeps the
 type `twistedMonoidAlgebra k G α` free of proof arguments.
 
+`α g h` is the value of the factor set at the ordered pair `(g, h)`. The multiplication
+`e g * e h = (α g h : k) • e (g * h)` follows the left-action convention used for projective
+representations.
+
 Nothing in the construction uses inverses in `G`, so `IsFactorSet`, the twisted algebra, its basis,
 the universal property and the two comparison isomorphisms are all stated for a monoid `G`. A group
 is assumed only where an inverse appears, in `TauCeti.IsFactorSet.apply_inv_eq_inv_apply` and
@@ -75,10 +80,6 @@ carrying a hand-built ring structure on `G →₀ k`. The two are the same algeb
 expected universal property.
 
 ## References
-
-This implements the twisted group algebra of Layer 7 of the
-[induction and restriction roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/RepresentationTheory/InductionRestriction/README.md),
-whose `twistedMul` is the multiplication realized here.
 
 * G. Karpilovsky, *Projective Representations of Finite Groups*, Marcel Dekker (1985), Ch. 3.
 -/
@@ -114,6 +115,23 @@ instance : IsFactorSet (1 : G → G → kˣ) where
   one_left _ := rfl
   one_right _ := rfl
 
+/-- The pointwise product of two factor sets is a factor set. It is the factor set of a tensor
+product of projective representations (`TauCeti.IsProjectiveRep.tensorProduct`). -/
+instance mul (α β : G → G → kˣ) [IsFactorSet α] [IsFactorSet β] : IsFactorSet (α * β) where
+  cocycle g h j := by
+    simp only [Pi.mul_apply]
+    rw [mul_mul_mul_comm, cocycle (α := α), cocycle (α := β), mul_mul_mul_comm]
+  one_left g := by simp [one_left (α := α), one_left (α := β)]
+  one_right g := by simp [one_right (α := α), one_right (α := β)]
+
+/-- The pointwise inverse of a factor set is a factor set. -/
+instance inv (α : G → G → kˣ) [IsFactorSet α] : IsFactorSet α⁻¹ where
+  cocycle g h j := by
+    simp only [Pi.inv_apply]
+    rw [← mul_inv, cocycle (α := α), mul_inv]
+  one_left g := by simp [one_left (α := α)]
+  one_right g := by simp [one_right (α := α)]
+
 end Monoid
 
 section Group
@@ -131,6 +149,14 @@ end Group
 section Comp
 
 variable {k G H : Type*} [CommSemiring k] [Monoid G] [Monoid H]
+
+/-- The pullback of a normalized factor set along a homomorphism `f : G →* H` is a normalized
+factor set. -/
+theorem comp (f : G →* H) (β : H → H → kˣ) [IsFactorSet β] :
+    IsFactorSet fun g₁ g₂ ↦ β (f g₁) (f g₂) where
+  cocycle g₁ g₂ g₃ := by simpa only [map_mul] using cocycle (α := β) (f g₁) (f g₂) (f g₃)
+  one_left g := by simpa only [map_one] using one_left (α := β) (f g)
+  one_right g := by simpa only [map_one] using one_right (α := β) (f g)
 
 /-- A function on `H` whose pullback along a surjective homomorphism `f : G →* H` is a normalized
 factor set is itself a normalized factor set. -/

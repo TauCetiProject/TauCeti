@@ -8,7 +8,10 @@ module
 public import TauCeti.Analysis.Calculus.Morse.Linearization
 public import TauCeti.Geometry.Manifold.Instances.Sphere
 public import TauCeti.Geometry.Manifold.Morse.Index
+import Mathlib.Analysis.Calculus.Deriv.Inv
+import Mathlib.Analysis.InnerProductSpace.Calculus
 import TauCeti.Analysis.Normed.Module.Ball
+import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 
 /-!
 # The height function on the unit sphere is a Morse function
@@ -38,7 +41,10 @@ multiple of `x`.
 * `TauCeti.sphereHeight`: the height function on the unit sphere in the direction of a unit vector.
 * `TauCeti.sphereHeight_comp_extChartAt_symm`: in the preferred chart at the north pole it is
   `stereographicHeight`.
-* `TauCeti.mvfderiv_sphereHeight_eq_zero_iff`: its critical points are the two poles.
+* `TauCeti.mvfderiv_sphereHeight_eq_zero_iff` and `TauCeti.mfderiv_sphereHeight_eq_zero_iff`: its
+  critical points are the two poles.
+* `TauCeti.sphereHeight_lt_self` and `TauCeti.sphereHeight_neg_lt`: the north pole is its strict
+  global maximum and the south pole its strict global minimum.
 * `TauCeti.isMorse_sphereHeight`: the height function is a Morse function.
 * `TauCeti.manifoldMorseIndex_sphereHeight_self` and
   `TauCeti.manifoldMorseIndex_sphereHeight_neg`: the north pole has index `n` and the south pole
@@ -237,6 +243,26 @@ theorem mvfderiv_sphereHeight_eq_zero_iff (v x : sphere (0 : E) 1) :
   · intro h
     ext u
     simpa using h u
+
+/-- The critical points of the height function, stated with `mfderiv`, are the two poles. -/
+@[simp]
+theorem mfderiv_sphereHeight_eq_zero_iff (v x : sphere (0 : E) 1) :
+    mfderiv (𝓡 n) 𝓘(ℝ) (sphereHeight v) x = 0 ↔ x = v ∨ x = -v := by
+  rw [← mvfderiv_eq_zero_iff, mvfderiv_sphereHeight_eq_zero_iff]
+
+/-- The north pole is the strict global maximum of the height function. -/
+theorem sphereHeight_lt_self {v x : sphere (0 : E) 1} (hx : x ≠ v) :
+    sphereHeight v x < sphereHeight v v := by
+  have hvn : ‖(v : E)‖ = 1 := norm_eq_of_mem_sphere v
+  simpa [real_inner_self_eq_norm_sq, hvn] using
+    (inner_lt_one_iff_real_of_norm_eq_one (norm_eq_of_mem_sphere x) hvn).2
+      (Subtype.coe_injective.ne hx)
+
+/-- The south pole is the strict global minimum of the height function. -/
+theorem sphereHeight_neg_lt {v x : sphere (0 : E) 1} (hx : x ≠ -v) :
+    sphereHeight v (-v) < sphereHeight v x := by
+  simpa only [sphereHeight_neg, Pi.neg_apply, neg_lt_neg_iff] using
+    sphereHeight_lt_self (v := -v) hx
 
 /-- In the chart centred at the north pole `v`, the height function in the direction `v` is
 `stereographicHeight`. -/

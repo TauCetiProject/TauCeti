@@ -31,6 +31,10 @@ same proof serves both the integer-valued stage and the exact cyclotomic stage.
 
 * `TauCeti.ClassData.IsExactCharacterTableSpec.isCharacterTableSpec`: a certified exact table
   maps to the complex character-table specification under any star-preserving ring homomorphism.
+* `TauCeti.ClassData.IsExactCharacterTableSpec.sum_characterDegree_eq_sum_degree`: its supplied
+  degree vector sums to the character degrees of the group.
+* `TauCeti.ClassData.IsExactCharacterTableSpec.map_central_injective`: central rows remain
+  distinct under maps to rings without zero divisors in which the group order is nonzero.
 
 This is the checker bridge required by Layer 6, “The assembled solver”, of the
 [character theory roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/CharacterTheory/README.md).
@@ -133,6 +137,23 @@ variable {degree : Fin d.numClasses → ℕ}
 variable (h : d.IsExactCharacterTableSpec conj omega table degree)
 include h
 
+/-- A ring homomorphism commuting with the specified conjugations transports an exact
+character-table certificate, leaving the degrees unchanged. -/
+theorem map {S : Type*} [CommRing S] {conj' : S → S} (f : R →+* S)
+    (hf : ∀ x, f (conj x) = conj' (f x)) :
+    d.IsExactCharacterTableSpec conj' (fun i j ↦ f (omega i j))
+      (fun i j ↦ f (table i j)) degree where
+  central_one i := by rw [h.central_one, map_one]
+  central_eigen i := (h.central_eigen i).map f
+  degree_pos := h.degree_pos
+  degree_dvd := h.degree_dvd
+  sum_degree_sq := h.sum_degree_sq
+  degree_mul_central i j := by
+    simpa only [map_mul, map_natCast] using congrArg f (h.degree_mul_central i j)
+  row_orthogonal i j := by
+    simpa only [map_sum, map_mul, map_natCast, hf, apply_ite, map_zero] using
+      congrArg f (h.row_orthogonal i j)
+
 /-- The identity column of a certified ordinary table is its supplied degree vector. -/
 theorem table_index_one (i : Fin d.numClasses) : table i (d.index 1) = (degree i : R) := by
   have hcard : (d.classFinset (d.index 1)).card = 1 := by
@@ -160,6 +181,44 @@ modular central-character search. -/
 theorem map_mem_centralCharacterSearch {F : Type*} [Field F] [Fintype F] [DecidableEq F]
     (f : R →+* F) (i : Fin d.numClasses) : (fun k ↦ f (omega i k)) ∈ d.centralCharacterSearch :=
   d.mem_centralCharacterSearch.mpr ⟨by rw [h.central_one, map_one], (h.central_eigen i).map f⟩
+
+/-- Mapping the central rows of an exact certificate into a commutative ring without zero divisors
+preserves their distinctness whenever the group order is nonzero in the target. No compatibility
+between the target map and the certificate's conjugation operation is needed. -/
+theorem map_central_injective {S : Type*} [CommRing S] [NoZeroDivisors S]
+    (f : R →+* S) (hG : (Fintype.card G : S) ≠ 0) :
+    Function.Injective fun i k ↦ f (omega i k) := by
+  intro i j hij
+  by_contra hne
+  -- Equal central rows make the ordinary rows proportional, since class sizes divide |G|.
+  have hproportional (k : Fin d.numClasses) :
+      (degree j : S) * f (table i k) = (degree i : S) * f (table j k) := by
+    have hi := congrArg f (h.degree_mul_central i k)
+    have hj := congrArg f (h.degree_mul_central j k)
+    simp only [map_mul, map_natCast] at hi hj
+    have hk : f (omega i k) = f (omega j k) := congrFun hij k
+    rw [hk] at hi
+    have hcard : ((d.classFinset k).card : S) ≠ 0 := by
+      rw [d.card_classFinset]
+      exact (d.classOf k).card_carrier_cast_ne_zero (by simpa using hG)
+    apply mul_left_cancel₀ hcard
+    linear_combination (degree i : S) * hj - (degree j : S) * hi
+  -- Pair the proportional rows with the same conjugate row and use exact orthogonality.
+  have hscaled :
+      (degree j : S) * f (∑ k, (d.classFinset k).card * table i k * conj (table i k)) =
+        (degree i : S) * f (∑ k, (d.classFinset k).card * table j k * conj (table i k)) := by
+    simp only [map_sum, map_mul, map_natCast, Finset.mul_sum]
+    apply Finset.sum_congr rfl
+    intro k _
+    calc
+      _ = (d.classFinset k).card * ((degree j : S) * f (table i k)) *
+          f (conj (table i k)) := by ring
+      _ = (d.classFinset k).card * ((degree i : S) * f (table j k)) *
+          f (conj (table i k)) := by rw [hproportional k]
+      _ = _ := by ring
+  rw [h.row_orthogonal i i, h.row_orthogonal j i] at hscaled
+  simp [Ne.symm hne] at hscaled
+  exact hscaled.elim (ne_zero_of_dvd_ne_zero hG (Nat.cast_dvd_cast (h.degree_dvd j))) hG
 
 /-- Mapping a certified central row preserves the common-eigenrow condition. -/
 private theorem central_eigen_map (f : R →+* ℂ) (i : Fin d.numClasses) :
@@ -253,6 +312,21 @@ theorem isCharacterTableSpec (f : R →+* ℂ) (hf : ∀ x, f (conj x) = star (f
     rw [h.centralCharacterRow_reindexTableOfMap f i]
     exact (d.isModularEigenrow_iff_isClassEigenrow _).mp
       (h.central_eigen_map f ((finCongr d.numClasses_eq_card_conjClasses).symm i))
+
+/-- **The supplied degree vector of a certified exact table sums to the sum of the character
+degrees of `G`.** -/
+theorem sum_characterDegree_eq_sum_degree (f : R →+* ℂ)
+    (hf : ∀ x, f (conj x) = star (f x)) :
+    ∑ i, characterDegree ℂ (G := G) i = ∑ j, degree j := by
+  have hcol : ∑ i, d.reindexTableOfMap f table i (ConjClasses.mk 1) =
+      ∑ j, (degree j : ℂ) := by
+    rw [← (finCongr d.numClasses_eq_card_conjClasses).sum_comp]
+    refine Finset.sum_congr rfl fun j _ ↦ ?_
+    rw [← d.classOf_index 1, d.reindexTableOfMap_apply_classOf, h.table_index_one,
+      map_natCast]
+  have key := (h.isCharacterTableSpec f hf).sum_apply_mk_one_eq_sum_characterDegree
+  rw [hcol] at key
+  exact_mod_cast key.symm
 
 end IsExactCharacterTableSpec
 

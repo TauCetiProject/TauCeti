@@ -38,6 +38,8 @@ functoriality API.
 * `CliffordAlgebra.evenUnitaryGroup.reverse_mul_self` and
   `CliffordAlgebra.evenUnitaryGroup.self_mul_reverse` give its two norm equations.
 * `CliffordAlgebra.evenUnitaryGroup.reverse_eq_inv` identifies reversal with the unit inverse.
+* `CliffordAlgebra.rightIotaEven_spinGroup_smul` transports the Spin action after right
+  multiplication by a vector of quadratic value `-1`.
 -/
 
 public section
@@ -447,6 +449,113 @@ theorem coe_evenUnitaryGroupEquivUnitaryOfAlgEquiv_symm_apply
 
 end Transport
 
+section TransportToPredicate
+
+variable {A : Type w} [Semiring A] [Algebra R A]
+variable {G : Type*} [Group G]
+
+/-- Transport the even unitary Clifford group through an algebra equivalence when a target group
+is exactly the subtype cut out by the transported reverse-norm-one predicate. -/
+noncomputable def evenUnitaryGroupEquivOfAlgEquiv
+    (e : even Q ≃ₐ[R] A) (P : A → Prop) (val : G →* A)
+    (hval : Function.Injective val) (ofVal : ∀ a, P a → G)
+    (val_ofVal : ∀ a ha, val (ofVal a ha) = a) (val_mem : ∀ g, P (val g))
+    (hP : ∀ x, reverseEven Q x * x = 1 ↔ P (e x)) :
+    evenUnitaryGroup Q ≃* G := by
+  let f : evenUnitaryGroup Q →* G :=
+    { toFun := fun x ↦ ofVal (e (evenUnitaryGroupEvenPart Q x))
+        ((hP _).mp (reverseEven_evenUnitaryGroupEvenPart_mul_self Q x))
+      map_one' := by
+        apply hval
+        rw [val_ofVal]
+        simp
+      map_mul' := fun x y ↦ by
+        apply hval
+        calc
+          val (ofVal (e (evenUnitaryGroupEvenPart Q (x * y))) _) =
+              e (evenUnitaryGroupEvenPart Q (x * y)) := val_ofVal _ _
+          _ = e (evenUnitaryGroupEvenPart Q x) *
+              e (evenUnitaryGroupEvenPart Q y) := by rw [map_mul, map_mul]
+          _ = val (ofVal (e (evenUnitaryGroupEvenPart Q x)) _) *
+              val (ofVal (e (evenUnitaryGroupEvenPart Q y)) _) := by
+                rw [val_ofVal, val_ofVal]
+          _ = val (ofVal (e (evenUnitaryGroupEvenPart Q x)) _ *
+              ofVal (e (evenUnitaryGroupEvenPart Q y)) _) := (map_mul val _ _).symm }
+  have val_f (x : evenUnitaryGroup Q) :
+      val (f x) = e (evenUnitaryGroupEvenPart Q x) := by
+    exact val_ofVal _ _
+  apply MulEquiv.ofBijective f
+  constructor
+  · intro x y hxy
+    apply Subtype.ext
+    apply Units.ext
+    have he : evenUnitaryGroupEvenPart Q x = evenUnitaryGroupEvenPart Q y := by
+      apply e.injective
+      have := congrArg val hxy
+      simpa only [val_f] using this
+    simpa only [coe_evenUnitaryGroupEvenPart] using congrArg Subtype.val he
+  · intro g
+    let y : even Q := e.symm (val g)
+    let yInv : even Q := e.symm (val (g⁻¹))
+    have hy : reverseEven Q y * y = 1 := (hP y).mpr (by simp [y, val_mem])
+    have hyInv : y * yInv = 1 := by
+      apply e.injective
+      rw [map_one, map_mul, e.apply_symm_apply, e.apply_symm_apply, ← map_mul]
+      simp
+    have hyInv' : yInv * y = 1 := by
+      apply e.injective
+      rw [map_one, map_mul, e.apply_symm_apply, e.apply_symm_apply, ← map_mul]
+      simp
+    let u : (CliffordAlgebra Q)ˣ :=
+      { val := y
+        inv := yInv
+        val_inv := congrArg Subtype.val hyInv
+        inv_val := congrArg Subtype.val hyInv' }
+    let z : evenUnitaryGroup Q := by
+      refine ⟨u, (evenUnitaryGroup.mem_iff_reverse_mul_self_eq_one Q).mpr ⟨y.2, ?_⟩⟩
+      simpa only [u, coe_reverseEven_apply, Subalgebra.coe_mul, Subalgebra.coe_one] using
+        congrArg Subtype.val hy
+    refine ⟨z, hval ?_⟩
+    rw [val_f]
+    have evenUnitaryGroupEvenPart_z : evenUnitaryGroupEvenPart Q z = y := by
+      apply Subtype.ext
+      rw [coe_evenUnitaryGroupEvenPart]
+    rw [evenUnitaryGroupEvenPart_z]
+    exact e.apply_symm_apply (val g)
+
+/-- The forward generic transport applies the algebra equivalence to the even Clifford value. -/
+@[simp]
+theorem coe_evenUnitaryGroupEquivOfAlgEquiv_apply
+    (e : even Q ≃ₐ[R] A) (P : A → Prop) (val : G →* A)
+    (hval : Function.Injective val) (ofVal : ∀ a, P a → G)
+    (val_ofVal : ∀ a ha, val (ofVal a ha) = a) (val_mem : ∀ g, P (val g))
+    (hP : ∀ x, reverseEven Q x * x = 1 ↔ P (e x))
+    (x : evenUnitaryGroup Q) :
+    val (evenUnitaryGroupEquivOfAlgEquiv Q e P val hval ofVal val_ofVal val_mem hP x) =
+      e (evenUnitaryGroupEvenPart Q x) := by
+  rw [evenUnitaryGroupEquivOfAlgEquiv]
+  exact val_ofVal _ _
+
+/-- The inverse generic transport is obtained by applying the inverse algebra equivalence. -/
+@[simp]
+theorem evenUnitaryGroupEquivOfAlgEquiv_symm_apply_evenPart
+    (e : even Q ≃ₐ[R] A) (P : A → Prop) (val : G →* A)
+    (hval : Function.Injective val) (ofVal : ∀ a, P a → G)
+    (val_ofVal : ∀ a ha, val (ofVal a ha) = a) (val_mem : ∀ g, P (val g))
+    (hP : ∀ x, reverseEven Q x * x = 1 ↔ P (e x)) (g : G) :
+    evenUnitaryGroupEvenPart Q ((evenUnitaryGroupEquivOfAlgEquiv (G := G) Q e P val
+      hval ofVal val_ofVal val_mem hP).symm g) = e.symm (val g) := by
+  let E := evenUnitaryGroupEquivOfAlgEquiv (G := G) Q e P val hval ofVal val_ofVal
+    val_mem hP
+  apply e.injective
+  rw [e.apply_symm_apply]
+  have hf := coe_evenUnitaryGroupEquivOfAlgEquiv_apply Q e P val hval ofVal val_ofVal
+    val_mem hP (E.symm g)
+  rw [← hf]
+  exact congrArg val (E.apply_symm_apply g)
+
+end TransportToPredicate
+
 /-- Forget a Spin element to the same Clifford unit in the even unitary carrier. -/
 def spinGroupToEvenUnitary : spinGroup Q →* evenUnitaryGroup Q :=
   spinGroup.toUnits.codRestrict (evenUnitaryGroup Q) fun x ↦ ⟨x.2.2, x.2.1.2⟩
@@ -491,5 +600,55 @@ theorem range_spinGroup_toUnits :
     refine ⟨⟨(x : CliffordAlgebra Q), hPin, hEven⟩, ?_⟩
     apply Units.ext
     rfl
+
+/-! ### Spin action after right multiplication by a negative vector -/
+
+variable [Invertible (2 : R)]
+
+/-- Multiplication by a negative generating vector transports the Spin action into multiplication
+in the even Clifford algebra. -/
+theorem rightIotaEven_spinGroup_smul (e : M) (he : Q e = -1)
+    (s : spinGroup Q) (m : M) :
+    rightIotaEven Q e (s • m) =
+      evenUnitaryGroupEvenPart Q (spinGroupToEvenUnitary Q s) *
+        rightIotaEven Q e m *
+          conjugateNegativeIotaEven Q e he
+            (reverseEven Q (evenUnitaryGroupEvenPart Q (spinGroupToEvenUnitary Q s))) := by
+  apply Subtype.ext
+  rw [coe_rightIotaEven, spinGroup_smul_apply, ι_spinVectorAction_apply]
+  simp only [Subalgebra.coe_mul, coe_rightIotaEven, coe_conjugateNegativeIotaEven]
+  rw [coe_evenUnitaryGroupEvenPart, coe_reverseEven_apply,
+    coe_evenUnitaryGroupEvenPart, coe_spinGroupToEvenUnitary_apply]
+  -- All terms now lie in the ambient Clifford algebra; this exposes associativity and the
+  -- cancellation `ι(e) * -ι(e) = 1` used below.
+  change ((s : CliffordAlgebra Q) * ι Q m * star (s : CliffordAlgebra Q)) * ι Q e =
+    (s : CliffordAlgebra Q) * (ι Q m * ι Q e) *
+      ((-ι Q e * reverse (s : CliffordAlgebra Q)) * ι Q e)
+  rw [reverse_eq_star_of_mem_even ⟨(s : CliffordAlgebra Q), spinGroup.mem_even s.2⟩]
+  symm
+  calc
+    (s : CliffordAlgebra Q) * (ι Q m * ι Q e) *
+          ((-ι Q e * star (s : CliffordAlgebra Q)) * ι Q e) =
+      (s : CliffordAlgebra Q) * ι Q m * (ι Q e * -ι Q e) *
+        star (s : CliffordAlgebra Q) * ι Q e := by
+      noncomm_ring
+    _ = (s : CliffordAlgebra Q) * ι Q m *
+        star (s : CliffordAlgebra Q) * ι Q e := by
+      rw [mul_neg, ι_sq_scalar, he, map_neg, map_one, neg_neg]
+      simp
+    _ = ((s : CliffordAlgebra Q) * ι Q m *
+        star (s : CliffordAlgebra Q)) * ι Q e := by
+      noncomm_ring
+
+/-- The negated right-vector embedding satisfies the same Spin transport identity. -/
+theorem neg_rightIotaEven_spinGroup_smul (e : M) (he : Q e = -1)
+    (s : spinGroup Q) (m : M) :
+    (-rightIotaEven Q e) (s • m) =
+      evenUnitaryGroupEvenPart Q (spinGroupToEvenUnitary Q s) *
+        (-rightIotaEven Q e) m *
+          conjugateNegativeIotaEven Q e he
+            (reverseEven Q (evenUnitaryGroupEvenPart Q (spinGroupToEvenUnitary Q s))) := by
+  have h := congrArg Neg.neg (rightIotaEven_spinGroup_smul Q e he s m)
+  simpa [neg_mul, mul_neg] using h
 
 end CliffordAlgebra

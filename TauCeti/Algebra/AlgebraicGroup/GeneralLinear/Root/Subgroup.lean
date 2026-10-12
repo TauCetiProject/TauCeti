@@ -13,6 +13,7 @@ public import TauCeti.Algebra.AlgebraicGroup.AdditiveGroup.Scheme
 public import TauCeti.Algebra.AlgebraicGroup.CommHopfAlgCat.Yoneda
 -- `TauCeti.transvectionUnit` is the matrix the homomorphism is built from.
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Transvection
+import TauCeti.LinearAlgebra.SymmetricAlgebra.Basic
 
 /-!
 # The root subgroups of the general linear group
@@ -38,6 +39,11 @@ Chevalley commutator relations, and the rescaling of the parameter under conjuga
 to any of the three views of the group. Nothing here needs `R` to be a field, and nothing needs the
 base to be reduced or the rank to be positive: the construction is the one over `ℤ` that a
 Chevalley–Demazure group of type `A` base changes from.
+
+## Formal references
+
+* [The integral coordinate-surjectivity argument](https://github.com/TauCetiProject/TauCeti/blob/6a0b39f93cf134d7d6f8ab7b5ee0bfcdbb1ce9ad/TauCeti/Algebra/Lie/SpecialLinear/StandardCarrier/AllRootSubgroups/Basic.lean)
+  for the type-A full-weight carrier.
 
 ## Main definitions
 
@@ -213,6 +219,18 @@ theorem rootSubgroupCoordinateMap_apply_X (hij : i ≠ j) (a b : Fin N) :
   simp only [AdditiveGroup.toAdd_gaPointsMulEquiv] at h
   dsimp [q] at h
   exact h
+
+/-- The root-subgroup coordinate morphism is surjective over every commutative base ring. -/
+theorem rootSubgroupCoordinateMap_surjective (hij : i ≠ j) :
+    Function.Surjective (rootSubgroupCoordinateMap (R := R) hij).hom := by
+  classical
+  let f := (rootSubgroupCoordinateMap (R := R) hij).hom.toAlgHom
+  have hgen : SymmetricAlgebra.ι R R 1 ∈ f.range := by
+    refine (AlgHom.mem_range _).mpr ⟨coordinateHopfAlgebraAlgEquiv R N
+      (coordinateRingMap R N (MvPolynomial.X (i, j))), ?_⟩
+    simpa [f, BialgHom.coe_toAlgHom, Matrix.one_apply, hij] using
+      rootSubgroupCoordinateMap_apply_X (R := R) hij i j
+  exact f.surjective_of_ι_one_mem_range hgen
 
 /-- **The root subgroup of `GLₙ` attached to the root `εᵢ - εⱼ`**: the affine
 group-scheme morphism `𝔾ₐ → GLₙ` whose value on points is `c ↦ xᵢⱼ(c)`. -/

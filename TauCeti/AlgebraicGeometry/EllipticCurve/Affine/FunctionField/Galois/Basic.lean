@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.CoordinateRingMap
-public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FunctionField.Map
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FunctionField.Map.Basic
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FunctionField.Translation.Basic
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.Galois
 

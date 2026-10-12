@@ -55,6 +55,8 @@ conjugates enters.  Finite-dimensionality is used only to *produce* an atom, in
   `N`-subrepresentation of an irreducible representation span.
 * `TauCeti.Representation.iSup_asSubmodule_conjSubrep_eq_top`: the same statement read in the
   lattice of `k[N]`-submodules of the restriction.
+* `Representation.apply_eq_smul_of_ne_bot`: if `N` acts on one nonzero
+  `N`-subrepresentation through conjugation-invariant scalars, it acts on everything through them.
 * `TauCeti.Representation.isSemisimpleRepresentation_comp_subtype_of_isAtom`: if some
   `N`-subrepresentation of an irreducible representation `IsAtom`, then the restriction to `N` is
   semisimple.
@@ -333,3 +335,32 @@ end Clifford
 end Representation
 
 end TauCeti
+
+/-! The next lemma is stated for a Mathlib `Representation`, so it lives in that type's root
+namespace, where dot notation on `ρ` finds it. -/
+
+namespace Representation
+
+open TauCeti.Representation
+
+variable {k G V : Type*} [Field k] [Group G] [AddCommGroup V] [Module k V]
+  {N : Subgroup G} [N.Normal] (ρ : Representation k G V)
+
+/-- **Scalars on one constituent are scalars everywhere.**  Suppose that `N` acts on a nonzero
+`N`-subrepresentation `σ` of an irreducible `ρ` through scalars `c : N → k`, and that `c` is
+invariant under conjugation by `G`.  Then `N` acts on all of `V` through the same scalars: the
+translates `ρ g σ` span `V` (`TauCeti.Representation.iSup_conjSubrep_eq_top`), and `n` acts on
+`ρ g σ` by `c (g⁻¹ n g) = c n`. -/
+theorem apply_eq_smul_of_ne_bot [ρ.IsIrreducible] {σ : Subrepresentation (ρ.comp N.subtype)}
+    (hσ : σ ≠ ⊥) (c : N → k) (hc : ∀ n : N, ∀ v ∈ σ, ρ n v = c n • v)
+    (hconj : ∀ (g : G) (n : N), c (MulAut.conjNormal g n) = c n) (n : N) (v : V) :
+    ρ n v = c n • v := by
+  have hle : (⊤ : Submodule k V) ≤ LinearMap.ker (ρ n - c n • LinearMap.id) := by
+    rw [← iSup_conjSubrep_eq_top ρ hσ]
+    refine iSup_le fun g => ?_
+    rintro _ ⟨u, hu, rfl⟩
+    rw [LinearMap.mem_ker, LinearMap.sub_apply, LinearMap.smul_apply, LinearMap.id_apply,
+      sub_eq_zero, ← apply_conjNormal_inv, hc _ u hu, map_smul, hconj]
+  simpa [sub_eq_zero] using hle (Submodule.mem_top (x := v))
+
+end Representation

@@ -52,6 +52,8 @@ angular frequency `k` of a character of `ℂˣ` from its restriction to the unit
   the positive reals and unit circle and extensionality for characters of `ℂˣ`.
 * `TauCeti.exists_eq_complexUnitsCharacter`, `TauCeti.complexUnitsCharacter_injective2`: the
   classification of the continuous characters of `ℂˣ`.
+* `TauCeti.realUnitsCharacter_map_normSq`, `TauCeti.complexUnitsCharacter_map_conj`: the
+  pullbacks of these characters along the norm `ℂˣ → ℝˣ` and along complex conjugation.
 
 ## References
 
@@ -116,6 +118,14 @@ theorem coe_realUnitsCharacter_apply (s : ℂ) (ε : ZMod 2) (x : ℝˣ) :
     (realUnitsCharacter s ε x : ℂ) =
       ((|(x : ℝ)| : ℝ) : ℂ) ^ s * (SignType.sign (x : ℝ) : ℂ) ^ ε.val := by
   simp [realUnitsCharacter]
+
+/-- The absolute value of `realUnitsCharacter s ε` at `x` is `|x| ^ re s`; the sign character
+contributes absolute value `1`. -/
+theorem norm_coe_realUnitsCharacter_apply (s : ℂ) (ε : ZMod 2) (x : ℝˣ) :
+    ‖(realUnitsCharacter s ε x : ℂ)‖ = |(x : ℝ)| ^ s.re := by
+  rw [realUnitsCharacter, ContinuousMonoidHom.mul_apply, Units.val_mul, norm_mul,
+    norm_coe_normCpowCharacter_apply]
+  rcases lt_or_gt_of_ne x.ne_zero with h | h <;> simp [h]
 
 /-- With parity `0`, `realUnitsCharacter s 0` is the norm-power character `x ↦ |x| ^ s`. -/
 @[simp]
@@ -243,6 +253,29 @@ theorem coe_complexUnitsCharacter_apply (s : ℂ) (k : ℤ) (z : ℂˣ) :
     (complexUnitsCharacter s k z : ℂ) = (‖(z : ℂ)‖ : ℂ) ^ s * ((z : ℂ) / ‖(z : ℂ)‖) ^ k := by
   simp [complexUnitsCharacter]
 
+/-- The absolute value of `complexUnitsCharacter s k` at `z` is `|z| ^ re s`; the angular
+character contributes absolute value `1`. -/
+theorem norm_coe_complexUnitsCharacter_apply (s : ℂ) (k : ℤ) (z : ℂˣ) :
+    ‖(complexUnitsCharacter s k z : ℂ)‖ = ‖(z : ℂ)‖ ^ s.re := by
+  rw [complexUnitsCharacter, ContinuousMonoidHom.mul_apply, Units.val_mul, norm_mul,
+    norm_coe_normCpowCharacter_apply]
+  simp [z.ne_zero]
+
+/-- Integer embedding exponents `a` and `b` give the algebraic character `z ↦ z^a conj(z)^b`.
+Their sum is the modulus exponent and their difference is the angular frequency. -/
+theorem coe_complexUnitsCharacter_intCast (a b : ℤ) (z : ℂˣ) :
+    (complexUnitsCharacter ((a + b : ℤ) : ℂ) (a - b) z : ℂ) =
+      (z : ℂ) ^ a * (starRingEnd ℂ) (z : ℂ) ^ b := by
+  rw [coe_complexUnitsCharacter_apply, cpow_intCast]
+  have hz : (z : ℂ) ≠ 0 := z.ne_zero
+  have hr : (‖(z : ℂ)‖ : ℂ) ≠ 0 := by simp
+  have hc : (starRingEnd ℂ) (z : ℂ) = (‖(z : ℂ)‖ : ℂ) ^ 2 / (z : ℂ) := by
+    apply (eq_div_iff hz).mpr
+    rw [mul_comm, mul_conj, normSq_eq_norm_sq, ofReal_pow]
+  rw [hc, zpow_add₀ hr, div_zpow, zpow_sub₀ hz, zpow_sub₀ hr, div_zpow,
+    pow_two, mul_zpow]
+  field_simp
+
 /-- With angular frequency `0`, `complexUnitsCharacter s 0` is the norm-power character
 `z ↦ |z| ^ s`. -/
 @[simp]
@@ -266,6 +299,33 @@ theorem complexUnitsCharacter_add (s t : ℂ) (k l : ℤ) :
   rw [complexUnitsCharacter, complexUnitsCharacter, complexUnitsCharacter, normCpowCharacter_add,
     zpow_add]
   exact mul_mul_mul_comm (normCpowCharacter ℂ s) _ _ _
+
+/-- Pulling back `x ↦ |x| ^ s * sgn(x) ^ ε` along the norm `z ↦ |z|²` of `ℂ / ℝ` gives
+`z ↦ |z| ^ (2 * s)`: the sign character is trivial on the positive values of the norm. -/
+theorem realUnitsCharacter_map_normSq (s : ℂ) (ε : ZMod 2) (z : ℂˣ) :
+    realUnitsCharacter s ε (Units.map (normSq : ℂ →* ℝ) z) =
+      complexUnitsCharacter (2 * s) 0 z := by
+  apply Units.ext
+  have hz : 0 < normSq (z : ℂ) := normSq_pos.2 z.ne_zero
+  rw [coe_realUnitsCharacter_apply, coe_complexUnitsCharacter_apply, Units.coe_map,
+    MonoidHom.coe_ofClass, abs_of_pos hz, sign_pos hz, normSq_eq_norm_sq, ofReal_pow,
+    ofReal_pow_cpow (norm_nonneg _)]
+  simp
+
+/-- Precomposing `z ↦ |z| ^ s * (z / |z|) ^ k` with complex conjugation negates the angular
+frequency. -/
+theorem complexUnitsCharacter_map_conj (s : ℂ) (k : ℤ) (z : ℂˣ) :
+    complexUnitsCharacter s k (Units.map (starRingEnd ℂ : ℂ →* ℂ) z) =
+      complexUnitsCharacter s (-k) z := by
+  apply Units.ext
+  have hz : (z : ℂ) ≠ 0 := z.ne_zero
+  have hn : (‖(z : ℂ)‖ : ℂ) ≠ 0 := by simp [hz]
+  -- On the unit circle, conjugation is inversion.
+  have hconj : (starRingEnd ℂ) (z : ℂ) / ‖(z : ℂ)‖ = ((z : ℂ) / ‖(z : ℂ)‖)⁻¹ := by
+    rw [inv_div, div_eq_div_iff hn hz, ← sq, ← ofReal_pow, ← normSq_eq_norm_sq, ← mul_conj,
+      mul_comm]
+  rw [coe_complexUnitsCharacter_apply, coe_complexUnitsCharacter_apply, Units.coe_map,
+    MonoidHom.coe_ofClass, RCLike.norm_conj, hconj, inv_zpow', zpow_neg]
 
 /-- Restricting `complexUnitsCharacter s k` to the positive reals gives `expUnitHom s`; the
 angular frequency is invisible there. -/

@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+import TauCeti.Data.ZMod.FinEquiv
 import Mathlib.Algebra.Field.ZMod
 public import TauCeti.GroupTheory.Perm.TransitiveGroupLabel.Classification
 public import TauCeti.GroupTheory.SpecificGroups.Affine.Basic
@@ -88,10 +89,13 @@ theorem coe_referenceSubgroupFiveTwoMulEquivAffineGroup_symm_apply (g : AffineGr
 @[simp]
 theorem referenceSubgroupFiveTwoMulEquivAffineGroup_smul (σ : referenceSubgroup 5 ⟨2, by simp⟩)
     (i : Fin 5) :
-    referenceSubgroupFiveTwoMulEquivAffineGroup σ • ZMod.finEquiv 5 i =
+    referenceSubgroupFiveTwoMulEquivAffineGroup σ • (i.val : ZMod 5) =
+      (((σ : Perm (Fin 5)) i).val : ZMod 5) := by
+  have h : referenceSubgroupFiveTwoMulEquivAffineGroup σ • ZMod.finEquiv 5 i =
       ZMod.finEquiv 5 ((σ : Perm (Fin 5)) i) := by
-  conv_rhs => rw [← referenceSubgroupFiveTwoMulEquivAffineGroup.symm_apply_apply σ]
-  rw [coe_referenceSubgroupFiveTwoMulEquivAffineGroup_symm_apply, RingEquiv.apply_symm_apply]
+    conv_rhs => rw [← referenceSubgroupFiveTwoMulEquivAffineGroup.symm_apply_apply σ]
+    rw [coe_referenceSubgroupFiveTwoMulEquivAffineGroup_symm_apply, RingEquiv.apply_symm_apply]
+  simpa only [ZMod.finEquiv_apply] using h
 
 /-- The five-cycle of `5T3` is the translation `x ↦ x + 1`. -/
 @[simp]

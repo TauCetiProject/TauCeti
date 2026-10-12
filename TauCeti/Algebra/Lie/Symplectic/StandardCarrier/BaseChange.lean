@@ -282,7 +282,7 @@ theorem coe_baseChangePointsMulEquiv_apply (B : CommAlgCat.{w} A)
 
 /-- A point over any value algebra satisfies the transported defining equations of the
 type `C_(n+1)` carrier exactly when its underlying matrix is an integral carrier point. -/
-@[simp]
+@[simp↓]
 theorem mem_baseChangeDefiningPointsSubgroup_iff_mem_points (B : CommAlgCat.{w} A)
     (g : HopfAlgebra.points (R := A)
       (H := GeneralLinear.coordinateHopfAlgebra A ((n + 1) + (n + 1))) B) :

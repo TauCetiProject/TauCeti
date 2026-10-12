@@ -16,7 +16,7 @@ import Mathlib.Tactic.Ring
 # The linear factor `X - C x`, and its reverse
 
 Linear factors, scalar factorizations, and the full power of a root factor.
-Over an ordered field, a linear polynomial has constant sign on a root-free interval.
+Over an ordered field, a polynomial of degree at most one has constant sign on a root-free interval.
 
 The *reversed* factor `C x - X` — the shape that arises as `x - θ` in `AdjoinRoot f` — has degree
 `1`, like `X - C x` itself, which is the form Mathlib states.
@@ -34,9 +34,8 @@ that does not vanish at the root.
 * `Polynomial.natDegree_C_sub_X`: the reversed linear factor `C x - X` has degree `1`.
 * `Polynomial.exists_eq_C_mul_X_sub_C_of_natDegree_le_one`: a polynomial of `natDegree ≤ 1` with
   root `x` is `C γ * (X - C x)` for some `γ`.
-
-* `Polynomial.linear_eval_mul_pos_of_no_roots`: constant nonzero sign on a root-free
-  closed interval.
+* `Polynomial.eval_mul_pos_of_natDegree_le_one_of_no_roots`: constant nonzero sign on a root-free
+  closed interval for polynomials of degree at most one.
 * `Polynomial.derivative_root_factors`: factor the derivative of a polynomial with two root powers.
 * `Polynomial.IsRoot.exists_eq_pow_succ_mul`: factor out a positive power of `X - C x`, leaving a
   cofactor nonzero at `x`.
@@ -47,8 +46,8 @@ that does not vanish at the root.
 
 The statement of `exists_eq_C_mul_X_sub_C_of_natDegree_le_one` generalizes the commutative-ring
 result adapted from Michael Stoll's `EllipticCurves` project
-(`github.com/MichaelStollBayreuth/EllipticCurves`, Apache-2.0, pinned by
-`TauCetiRoadmap/EllipticCurves/README.md` at `66889eada51a`), `EllipticCurves/Mathlib/Basic.lean`.
+(`github.com/MichaelStollBayreuth/EllipticCurves`, Apache-2.0, revision `66889eada51a`),
+`EllipticCurves/Mathlib/Basic.lean`.
 Its consumer is the `x - T` descent map of
 `TauCeti/AlgebraicGeometry/EllipticCurve/MordellWeil/XSubT.lean`, where it pins down the line
 through a `2`-torsion point.
@@ -88,11 +87,9 @@ theorem IsRoot.exists_eq_pow_succ_mul {A : Type*} [CommRing A] {p : A[X]} {a : A
 
 /-- Adding a multiple of a higher power of `X - C a` does not change the root multiplicity
 at `a` of a nonzero polynomial. -/
-theorem rootMultiplicity_add_eq_left_of_dvd {A : Type*} [CommRing A] {p q : A[X]} {a : A}
+theorem rootMultiplicity_add_eq_left_of_dvd {A : Type*} [Ring A] {p q : A[X]} {a : A}
     (hp : p ≠ 0) (hq : (X - C a) ^ (p.rootMultiplicity a + 1) ∣ q) :
     (p + q).rootMultiplicity a = p.rootMultiplicity a := by
-  by_cases hq0 : q = 0
-  · simp [hq0]
   have hpq : p + q ≠ 0 := by
     intro h
     rw [eq_neg_of_add_eq_zero_right h, dvd_neg] at hq
@@ -101,17 +98,22 @@ theorem rootMultiplicity_add_eq_left_of_dvd {A : Type*} [CommRing A] {p q : A[X]
   · rw [rootMultiplicity_le_iff hpq]
     intro h
     exact pow_rootMultiplicity_not_dvd hp a (by simpa using dvd_sub h hq)
-  · exact (le_min le_rfl ((Nat.le_succ _).trans ((le_rootMultiplicity_iff hq0).mpr hq))).trans
-      (rootMultiplicity_add a hpq)
+  · apply (le_rootMultiplicity_iff hpq).mpr
+    exact dvd_add (pow_rootMultiplicity_dvd p a) ((pow_dvd_pow _ (Nat.le_succ _)).trans hq)
 
-/-- A linear polynomial has constant nonzero sign on an interval without a root. -/
-theorem linear_eval_mul_pos_of_no_roots {R : Type*} [Field R] [LinearOrder R]
-    [IsStrictOrderedRing R] {p : R[X]} (hdeg : p.natDegree = 1) {a b : R}
+/-- A polynomial of degree at most one has constant nonzero sign on an interval without a root. -/
+theorem eval_mul_pos_of_natDegree_le_one_of_no_roots {R : Type*} [Field R] [LinearOrder R]
+    [IsStrictOrderedRing R] {p : R[X]} (hdeg : p.natDegree ≤ 1) {a b : R}
     (hab : a ≤ b) (hroot : ∀ x ∈ Set.Icc a b, p.eval x ≠ 0) :
     0 < p.eval a * p.eval b := by
-  have hd : p.degree = 1 := (degree_eq_iff_natDegree_eq_of_pos (by decide)).mpr hdeg
+  by_cases hd0 : p.natDegree = 0
+  · have hs : p.eval b = p.eval a := by rw [eq_C_of_natDegree_eq_zero hd0]; simp
+    rw [hs]
+    exact mul_self_pos.mpr (hroot a ⟨le_rfl, hab⟩)
+  have hd1 : p.natDegree = 1 := by omega
+  have hd : p.degree = 1 := (degree_eq_iff_natDegree_eq_of_pos (by decide)).mpr hd1
   obtain ⟨r, hr⟩ := exists_root_of_degree_eq_one hd
-  obtain ⟨c, hc⟩ := exists_eq_C_mul_X_sub_C_of_natDegree_le_one hdeg.le hr
+  obtain ⟨c, hc⟩ := exists_eq_C_mul_X_sub_C_of_natDegree_le_one hdeg hr
   have hcne : c ≠ 0 := by
     intro hz
     apply hroot a ⟨le_rfl, hab⟩

@@ -26,9 +26,10 @@ jobs:
   release:
     runs-on: ubuntu-latest
     if: >-
-      github.event_name == 'workflow_dispatch'
-      || github.event.action == 'dequeued'
-      || github.event.pull_request.merged == true
+      vars.MERGE_BACKEND != 'bors'
+      && (github.event_name == 'workflow_dispatch'
+        || github.event.action == 'dequeued'
+        || github.event.pull_request.merged == true)
     steps:
       # Only trusted main code runs here; no PR checkout or App credentials.
       - uses: actions/checkout@v4

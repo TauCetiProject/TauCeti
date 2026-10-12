@@ -57,7 +57,8 @@ is why the discrete synonyms exist.
 * `TauCeti.ContCohomology.explicitH1AddEquivContinuousCohomology_map` and
   `explicitH1AddEquivContinuousCohomology_coeffMap`: the degree-one comparison carries the
   explicit pullback along a compatible pair, and in particular the explicit coefficient map, to the
-  canonical one.
+  canonical one; `TopRep.explicitH1AddEquivContinuousCohomologyOfDiscrete_map` is the same
+  naturality for discrete representations over any scalars.
 * `TauCeti.ContCohomology.explicitIso_map`: the same naturality in compatible pairs for the
   degree-one comparison in `TopModuleCat ℤ`, with `explicitIso_res` and `explicitIso_coeffMap` as
   its restriction and coefficient-map specializations.
@@ -473,6 +474,47 @@ theorem _root_.TopRep.explicitH1AddEquivContinuousCohomologyOfDiscrete_apply (x 
       ofDiscreteModuleRestrictScalarsIntEquiv X 1
         (explicitH1AddEquivContinuousCohomology G X.V x) :=
   (rfl)
+
+/-- The degree-one comparison for discrete representations is natural in compatible pairs: it
+carries the explicit pullback along `φ` and the underlying additive map `f` of a morphism
+`F : res φ X ⟶ Y` to Mathlib's `ContinuousCohomology.map φ F`. -/
+theorem _root_.TopRep.explicitH1AddEquivContinuousCohomologyOfDiscrete_map
+    {H : Type u} [Group H] [TopologicalSpace H] [IsTopologicalGroup H]
+    (Y : TopRep k H) [DiscreteTopology Y.V] [ContinuousSMul H Y.V]
+    (φ : H →ₜ* G) (F : TopRep.res (φ : H →* G) X ⟶ Y) (f : X.V →+ Y.V)
+    (hF : ∀ m, F.hom m = f m) (hf : ∀ (h : H) (m : X.V), f (φ h • m) = h • f m)
+    (x : H1 G X.V) :
+    _root_.ContinuousCohomology.map φ F 1 (X.explicitH1AddEquivContinuousCohomologyOfDiscrete x) =
+      Y.explicitH1AddEquivContinuousCohomologyOfDiscrete
+        (explicitMap1 G X.V H Y.V φ f continuous_of_discreteTopology hf x) := by
+  induction x using QuotientAddGroup.induction_on with
+  | H c =>
+    rw [TopRep.explicitH1AddEquivContinuousCohomologyOfDiscrete_apply,
+      TopRep.explicitH1AddEquivContinuousCohomologyOfDiscrete_apply,
+      ← explicitH1AddEquivContinuousCohomology_map, explicitH1AddEquivContinuousCohomology_apply,
+      TauCeti.ContinuousCohomology.map_π_apply, ofDiscreteModuleRestrictScalarsIntEquiv_π,
+      ofDiscreteModuleRestrictScalarsIntEquiv_π]
+    -- Applied as a term: the cocycle sits in `restrictScalarsInt.obj (cocycles X 1)`, which `rw`
+    -- does not identify with the source `cocycles X 1` of `map φ F 1`.
+    refine (TauCeti.ContinuousCohomology.map_π_apply φ F 1 _).trans ?_
+    congr 1
+    apply (TopRep.homogeneousCochains Y).iCycles_injective 1
+    apply Subtype.ext
+    ext g₀ g₁
+    have hF' (m : X.V) :
+        (ofDiscreteModulePair (φ : H →* G) f.toIntLinearMap
+          (fun h m ↦ hf h m)).hom m = f m :=
+      ofDiscreteModulePair_hom_apply (φ : H →* G) f.toIntLinearMap
+        (fun h m ↦ hf h m) m
+    -- Applied as a term for the same reason as `map_π_apply` above.
+    refine (TauCeti.ContinuousCohomology.iCycles_cocyclesMap_one_apply φ F _ f hF
+      g₀ g₁).trans ?_
+    rw [iCycles_ofDiscreteModuleCocyclesRestrictScalarsIntIso_hom_apply,
+      iCycles_ofDiscreteModuleCocyclesRestrictScalarsIntIso_hom_apply,
+      TauCeti.ContinuousCohomology.iCycles_cocyclesMap_one_apply φ
+        (ofDiscreteModulePair (φ : H →* G) f.toIntLinearMap fun h m ↦ hf h m) _ f
+        hF']
+    rfl
 
 /-- The explicit `H²` of the carrier of a discrete smooth representation `X` over any scalars, with
 the action read off from `X`, is Mathlib's `continuousCohomology 2 X`. -/

@@ -27,6 +27,9 @@ generators of degree one into the degree-one piece preserves every degree.
 
 * `TauCeti.DirectSum.tmul_mem_decomposeTensor`: a pure tensor with homogeneous left factor is
   homogeneous of the same degree.
+* `TauCeti.DirectSum.decomposeTensor.gradedOne` and
+  `TauCeti.DirectSum.decomposeTensor.gradedMul`: tensoring preserves the unit and multiplication
+  grading separately, without requiring a decomposition into a direct sum.
 * `TauCeti.DirectSum.decomposeTensor.gradedMonoid`: the pieces `decomposeTensor 𝒜 H i` form a graded
   monoid.
 -/
@@ -53,35 +56,44 @@ theorem tmul_mem_decomposeTensor {i : ι} {a : A} (ha : a ∈ 𝒜 i) (h : H) :
 
 end Module
 
-variable [Semiring A] [Algebra R A] [AddMonoid ι] [Semiring H] [Algebra R H] (𝒜 : ι → Submodule R A)
-  [SetLike.GradedMonoid 𝒜]
+section One
 
-/-- A pure tensor with homogeneous left factor multiplies a homogeneous element by adding the
-degrees. -/
-private theorem tmul_mul_mem_decomposeTensor {i j : ι} {a : A} (ha : a ∈ 𝒜 i) (h : H)
-    {y : A ⊗[R] H} (hy : y ∈ decomposeTensor 𝒜 H j) :
-    (a ⊗ₜ[R] h) * y ∈ decomposeTensor 𝒜 H (i + j) := by
-  rw [decomposeTensor_apply] at hy
-  obtain ⟨y, rfl⟩ := hy
-  induction y using TensorProduct.inductionOn with
-  | tmul b k =>
-    rw [LinearMap.rTensor_tmul, Submodule.subtype_apply, Algebra.TensorProduct.tmul_mul_tmul]
-    exact tmul_mem_decomposeTensor (SetLike.mul_mem_graded ha b.2) _
-  | add y₁ y₂ h₁ h₂ =>
-    rw [map_add, mul_add]
-    exact add_mem h₁ h₂
+variable [AddCommMonoidWithOne A] [Module R A] [AddCommMonoidWithOne H] [Module R H]
+  (𝒜 : ι → Submodule R A)
+
+/-- If `1 : A` has degree zero, so does `1 : A ⊗[R] H`. -/
+instance decomposeTensor.gradedOne [Zero ι] [SetLike.GradedOne 𝒜] :
+    SetLike.GradedOne (decomposeTensor 𝒜 H) where
+  one_mem := tmul_mem_decomposeTensor (SetLike.one_mem_graded 𝒜) 1
+
+end One
+
+variable [Semiring A] [Algebra R A] [Semiring H] [Algebra R H] (𝒜 : ι → Submodule R A)
+
+/-- Tensoring on the right preserves graded multiplication; the index type only needs addition. -/
+instance decomposeTensor.gradedMul [Add ι] [SetLike.GradedMul 𝒜] :
+    SetLike.GradedMul (decomposeTensor 𝒜 H) where
+  mul_mem i j x y hx hy := by
+    rw [decomposeTensor_apply] at hx hy
+    obtain ⟨x, rfl⟩ := hx
+    obtain ⟨y, rfl⟩ := hy
+    induction x using TensorProduct.inductionOn with
+    | tmul a h =>
+      induction y using TensorProduct.inductionOn with
+      | tmul b k =>
+        simp only [LinearMap.rTensor_tmul, Submodule.subtype_apply,
+          Algebra.TensorProduct.tmul_mul_tmul]
+        exact tmul_mem_decomposeTensor (SetLike.mul_mem_graded a.2 b.2) _
+      | add y₁ y₂ h₁ h₂ =>
+        simpa only [map_add, mul_add] using add_mem h₁ h₂
+    | add x₁ x₂ h₁ h₂ =>
+      simpa only [map_add, add_mul] using add_mem h₁ h₂
 
 /-- The pieces of `A ⊗[R] H` induced by a graded monoid `𝒜` on `A` form a graded monoid, with
 the right tensor factor `H` in degree zero. -/
-instance decomposeTensor.gradedMonoid : SetLike.GradedMonoid (decomposeTensor 𝒜 H) where
-  one_mem := tmul_mem_decomposeTensor (SetLike.one_mem_graded 𝒜) 1
-  mul_mem i j x y hx hy := by
-    rw [decomposeTensor_apply] at hx
-    obtain ⟨x, rfl⟩ := hx
-    induction x using TensorProduct.inductionOn with
-    | tmul a h => exact tmul_mul_mem_decomposeTensor 𝒜 a.2 h hy
-    | add x₁ x₂ h₁ h₂ =>
-      rw [map_add, add_mul]
-      exact add_mem h₁ h₂
+instance decomposeTensor.gradedMonoid [AddMonoid ι] [SetLike.GradedMonoid 𝒜] :
+    SetLike.GradedMonoid (decomposeTensor 𝒜 H) where
+  toGradedOne := inferInstance
+  toGradedMul := inferInstance
 
 end TauCeti.DirectSum

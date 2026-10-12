@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Singular
 public import TauCeti.AlgebraicGeometry.EllipticCurve.PointCount
 public import TauCeti.AlgebraicGeometry.EllipticCurve.NodePolynomial
+import Mathlib.SetTheory.Cardinal.Finite
 
 /-!
 # Point counts at a singular Weierstrass model
@@ -15,7 +15,8 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.NodePolynomial
 The projective equation points of a Weierstrass model split into its nonsingular affine points,
 its singular affine points, and the point at infinity. Mathlib's `WeierstrassCurve.Affine.Point`
 contains the first and third parts. Consequently, `pointCount` is the cardinality of that point
-type plus the number of rational singular points.
+type plus the number of rational singular points whenever the affine equation has finitely many
+rational solutions. The base field itself need not be finite for these comparisons.
 
 Over a field a Weierstrass model has at most one singular point. Thus a rational singular point
 contributes exactly one to `pointCount`; the theorem `pointCount_eq_card_point_add_one_iff`
@@ -80,35 +81,58 @@ private noncomputable def equationPointEquiv :
 
 /-- **The projective equation count is the nonsingular point count plus the number of rational
 singular affine points.** The point at infinity occurs in both `pointCount` and Mathlib's point
-type, while the affine equation points split into their nonsingular and singular parts. -/
-theorem _root_.WeierstrassCurve.pointCount_eq_card_point_add_card_singular [Finite F] :
+type, while the affine equation points split into their nonsingular and singular parts. Only the
+affine solution type needs to be finite. -/
+theorem _root_.WeierstrassCurve.pointCount_eq_card_point_add_card_singular
+    [Finite {p : F × F // W.toAffine.Equation p.1 p.2}] :
     W.pointCount = Nat.card W.toAffine.Point +
       Nat.card {p : F × F // W.toAffine.IsSingular p.1 p.2} := by
+  let e := equationPointEquiv W
+  have := Finite.of_equiv _ e
+  have : Finite {p : F × F // W.toAffine.Nonsingular p.1 p.2} :=
+    Finite.sum_left {p : F × F // W.toAffine.IsSingular p.1 p.2}
+  have : Finite {p : F × F // W.toAffine.IsSingular p.1 p.2} :=
+    Finite.sum_right {p : F × F // W.toAffine.Nonsingular p.1 p.2}
   have hN : Nat.card (WithZero {p : F × F // W.toAffine.Nonsingular p.1 p.2}) =
       Nat.card {p : F × F // W.toAffine.Nonsingular p.1 p.2} + 1 :=
     Finite.card_option
-  rw [WeierstrassCurve.pointCount_def, Nat.card_congr (equationPointEquiv W), Nat.card_sum,
+  rw [WeierstrassCurve.pointCount_def, Nat.card_congr e, Nat.card_sum,
     Nat.card_congr W.toAffine.nonsingularPointEquiv, hN]
   omega
 
 /-- **A rational singular point contributes exactly one to the projective equation count.**
 There cannot be another one because a Weierstrass model over a field has at most one singular
 point. -/
-theorem _root_.WeierstrassCurve.pointCount_eq_card_point_add_one_of_isSingular [Finite F]
+theorem _root_.WeierstrassCurve.pointCount_eq_card_point_add_one_of_isSingular
     {x y : F} (h : W.toAffine.IsSingular x y) :
     W.pointCount = Nat.card W.toAffine.Point + 1 := by
-  rw [W.pointCount_eq_card_point_add_card_singular]
-  congr 1
-  apply Nat.card_eq_one_iff_exists.2
-  refine ⟨⟨(x, y), h⟩, ?_⟩
-  rintro ⟨⟨x', y'⟩, h'⟩
-  obtain ⟨hx, hy⟩ :=
-    WeierstrassCurve.Affine.eq_of_isSingular_of_isSingular h' h
-  exact Subtype.ext (Prod.ext hx hy)
+  have hsing : Nat.card {p : F × F // W.toAffine.IsSingular p.1 p.2} = 1 := by
+    apply Nat.card_eq_one_iff_exists.2
+    refine ⟨⟨(x, y), h⟩, ?_⟩
+    rintro ⟨⟨x', y'⟩, h'⟩
+    obtain ⟨hx, hy⟩ := WeierstrassCurve.Affine.eq_of_isSingular_of_isSingular h' h
+    exact Subtype.ext (Prod.ext hx hy)
+  by_cases hfin : Finite {p : F × F // W.toAffine.Equation p.1 p.2}
+  · rw [W.pointCount_eq_card_point_add_card_singular, hsing]
+  · have hfs : Finite {p : F × F // W.toAffine.IsSingular p.1 p.2} :=
+      Nat.finite_of_card_ne_zero (by rw [hsing]; norm_num)
+    have hfn : ¬ Finite {p : F × F // W.toAffine.Nonsingular p.1 p.2} := fun _ ↦
+      hfin (Finite.of_equiv _ (equationPointEquiv W).symm)
+    have hfp : ¬ Finite W.toAffine.Point := fun _ ↦ by
+      have : Finite (WithZero {p : F × F // W.toAffine.Nonsingular p.1 p.2}) :=
+        Finite.of_equiv _ W.toAffine.nonsingularPointEquiv
+      have : Function.Injective (fun a : {p : F × F // W.toAffine.Nonsingular p.1 p.2} ↦
+          (a : WithZero {p : F × F // W.toAffine.Nonsingular p.1 p.2})) := WithZero.coe_injective
+      exact hfn (Finite.of_injective _ this)
+    have : Infinite {p : F × F // W.toAffine.Equation p.1 p.2} := not_finite_iff_infinite.1 hfin
+    have : Infinite W.toAffine.Point := not_finite_iff_infinite.1 hfp
+    rw [WeierstrassCurve.pointCount_def, Nat.card_eq_zero_of_infinite,
+      Nat.card_eq_zero_of_infinite]
 
 /-- **The projective equation count exceeds the nonsingular point count by one exactly when the
 model has a rational singular affine point.** -/
-theorem _root_.WeierstrassCurve.pointCount_eq_card_point_add_one_iff [Finite F] :
+theorem _root_.WeierstrassCurve.pointCount_eq_card_point_add_one_iff
+    [Finite {p : F × F // W.toAffine.Equation p.1 p.2}] :
     W.pointCount = Nat.card W.toAffine.Point + 1 ↔
       ∃ x y : F, W.toAffine.IsSingular x y := by
   constructor
@@ -129,13 +153,6 @@ slopes of the tangent lines there. -/
 private noncomputable abbrev tangentQuadratic : F[X] :=
   C 1 * X ^ 2 + C W.a₁ * X + C (-W.a₂)
 
-/-- At a model singular at the origin the equation reads `y² + a₁ x y = x³ + a₂ x²`. -/
-private theorem equation_iff_of_isSingular_zero (h : W.toAffine.IsSingular 0 0) (x y : F) :
-    W.toAffine.Equation x y ↔ y ^ 2 + W.a₁ * x * y = x ^ 3 + W.a₂ * x ^ 2 := by
-  obtain ⟨h₆, h₄, h₃⟩ := (WeierstrassCurve.Affine.isSingular_zero _).1 h
-  rw [WeierstrassCurve.Affine.equation_iff, h₆, h₄, h₃]
-  ring_nf
-
 /-- **The solutions at a model singular at the origin are parametrised by the tangent slope.**
 Away from the origin a solution `(x, y)` has `x ≠ 0`, and its slope `t = y / x` satisfies
 `x = t² + a₁ t - a₂`; conversely every `t` off the roots of the tangent quadratic gives the solution
@@ -145,7 +162,7 @@ private theorem card_equation_add_card_rootSet_of_isSingular_zero [Finite F]
     Nat.card {p : F × F // W.toAffine.Equation p.1 p.2} +
       Nat.card ((tangentQuadratic W).rootSet F) = Nat.card F + 1 := by
   classical
-  have hE := equation_iff_of_isSingular_zero W h
+  have hE := WeierstrassCurve.Affine.equation_iff_of_isSingular_zero h
   set S := {p : F × F // W.toAffine.Equation p.1 p.2}
   -- the only solution with `x = 0` is the origin
   have hx : ∀ p : S, p.1.1 = 0 → p.1 = 0 := by
@@ -181,19 +198,6 @@ private theorem card_equation_add_card_rootSet_of_isSingular_zero [Finite F]
     Nat.card_sum]
   omega
 
-/-- The invariants of a model singular at the origin: the tangent quadratic has discriminant `b₂`,
-`c₄ = b₂²`, and the node polynomial is `c₄` times the tangent quadratic. -/
-private theorem invariants_of_isSingular_zero (h : W.toAffine.IsSingular 0 0) :
-    discrim 1 W.a₁ (-W.a₂) = W.b₂ ∧ W.c₄ = W.b₂ ^ 2 ∧
-      W.nodePolynomial = C W.c₄ * tangentQuadratic W := by
-  obtain ⟨h₆, h₄, h₃⟩ := (WeierstrassCurve.Affine.isSingular_zero _).1 h
-  have hb₄ : W.b₄ = 0 := by rw [WeierstrassCurve.b₄, h₄, h₃]; ring
-  have hb₆ : W.b₆ = 0 := by rw [WeierstrassCurve.b₆, h₆, h₃]; ring
-  refine ⟨by rw [discrim, WeierstrassCurve.b₂]; ring, by rw [WeierstrassCurve.c₄, hb₄]; ring, ?_⟩
-  rw [WeierstrassCurve.nodePolynomial_def, hb₄, hb₆, tangentQuadratic]
-  simp only [C_mul, C_neg, C_1, mul_zero, sub_zero, zero_add]
-  ring
-
 /-- **Moving the singular point to the origin.** Over a finite field a model with `Δ = 0` has a
 rational singular point, and translating it to the origin changes neither the trace, nor `c₄`, nor
 whether the node polynomial splits. -/
@@ -222,10 +226,10 @@ included. -/
 theorem _root_.WeierstrassCurve.frobeniusTrace_eq_zero_of_c₄_eq_zero [Finite F] (hΔ : W.Δ = 0)
     (hc₄ : W.c₄ = 0) : W.frobeniusTrace = 0 := by
   obtain ⟨V, h, htr, hc, -⟩ := exists_isSingular_zero_frobeniusTrace_eq W hΔ
-  obtain ⟨hd, hb, -⟩ := invariants_of_isSingular_zero V h
+  have hb := WeierstrassCurve.Affine.c₄_eq_b₂_sq_of_isSingular_zero h
   have hd0 : discrim 1 V.a₁ (-V.a₂) = 0 := by
-    rw [hd]
-    exact (pow_eq_zero_iff two_ne_zero).1 (hb ▸ hc.trans hc₄)
+    simpa [discrim, WeierstrassCurve.b₂] using
+      (pow_eq_zero_iff two_ne_zero).1 (hb ▸ hc.trans hc₄)
   rw [htr, Nat.card_eq_fintype_card, card_rootSet_quadratic_of_discrim_eq_zero one_ne_zero
     (splits_quadratic_of_discrim_eq_zero one_ne_zero hd0) hd0]
   norm_num
@@ -236,29 +240,31 @@ nonsingular points, the point at infinity included. -/
 theorem _root_.WeierstrassCurve.frobeniusTrace_eq_one_of_splits [Finite F] (hΔ : W.Δ = 0)
     (hc₄ : W.c₄ ≠ 0) (hs : W.nodePolynomial.Splits) : W.frobeniusTrace = 1 := by
   obtain ⟨V, h, htr, hc, hsV⟩ := exists_isSingular_zero_frobeniusTrace_eq W hΔ
-  obtain ⟨hd, hb, hn⟩ := invariants_of_isSingular_zero V h
-  rw [← hsV, hn, splits_mul_iff_right (C_ne_zero.2 (hc ▸ hc₄)) (Splits.C _)] at hs
+  rw [← hsV, V.nodePolynomial_eq_of_isSingular_zero h,
+    splits_mul_iff_right (C_ne_zero.2 (hc ▸ hc₄)) (Splits.C _)] at hs
   have hsep : (tangentQuadratic V).Separable := by
-    rw [separable_quadratic_iff_discrim_ne_zero one_ne_zero, hd]
-    rintro h0
-    exact hc₄ (by rw [← hc, hb, h0]; ring)
+    rw [separable_quadratic_iff_discrim_ne_zero one_ne_zero]
+    have hb₂ : V.b₂ ≠ 0 := fun h0 ↦ hc₄ (by
+      rw [← hc, WeierstrassCurve.Affine.c₄_eq_b₂_sq_of_isSingular_zero h, h0]
+      simp)
+    simpa [discrim, WeierstrassCurve.b₂] using hb₂
   rw [htr, Nat.card_eq_fintype_card,
     card_rootSet_eq_natDegree hsep (by rwa [Algebra.algebraMap_self, map_id]),
     natDegree_quadratic one_ne_zero]
   norm_num
 
-/-- **The Frobenius trace at a nonsplit node is `-1`.** A singular model over a finite field with
-`c₄ ≠ 0` whose node polynomial does not split has no rational tangent slope at its node, and `q + 1`
+/-- **The Frobenius trace at a nonsplit node is `-1`.** A singular model over a finite field whose
+node polynomial does not split has no rational tangent slope at its node, and `q + 1`
 nonsingular points, the point at infinity included. -/
 theorem _root_.WeierstrassCurve.frobeniusTrace_eq_neg_one_of_not_splits [Finite F]
-    (hΔ : W.Δ = 0) (hc₄ : W.c₄ ≠ 0) (hs : ¬ W.nodePolynomial.Splits) :
+    (hΔ : W.Δ = 0) (hs : ¬ W.nodePolynomial.Splits) :
     W.frobeniusTrace = -1 := by
-  obtain ⟨V, h, htr, hc, hsV⟩ := exists_isSingular_zero_frobeniusTrace_eq W hΔ
-  obtain ⟨-, -, hn⟩ := invariants_of_isSingular_zero V h
-  rw [← hsV, hn, splits_mul_iff_right (C_ne_zero.2 (hc ▸ hc₄)) (Splits.C _),
-    splits_quadratic_iff_exists_root one_ne_zero] at hs
+  obtain ⟨V, h, htr, -, hsV⟩ := exists_isSingular_zero_frobeniusTrace_eq W hΔ
+  rw [← hsV, V.nodePolynomial_eq_of_isSingular_zero h] at hs
+  have ht : ¬ (tangentQuadratic V).Splits := fun ht ↦ hs ((Splits.C _).mul ht)
+  rw [splits_quadratic_iff_exists_root one_ne_zero] at ht
   have : IsEmpty ((tangentQuadratic V).rootSet F) :=
-    ⟨fun t ↦ hs ⟨t.1, by simpa [aeval_def] using (mem_rootSet.1 t.2).2⟩⟩
+    ⟨fun t ↦ ht ⟨t.1, by simpa [aeval_def] using (mem_rootSet.1 t.2).2⟩⟩
   rw [htr, Nat.card_of_isEmpty]
   norm_num
 

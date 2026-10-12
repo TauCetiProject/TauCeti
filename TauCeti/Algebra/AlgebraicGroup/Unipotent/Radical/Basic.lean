@@ -124,7 +124,7 @@ private theorem smoothUnipotent_trivial :
     smoothUnipotentCommHopfAlgProperty k (FiniteTypeCommHopfAlgCat.of k k) := by
   rw [smoothUnipotentCommHopfAlgProperty_iff]
   refine ⟨⟨inferInstance, inferInstance⟩, fun g ↦ ?_⟩
-  rw [TrivialGroup.convPoint_eq_one g]
+  rw [WithConv.convPoint_eq_one g]
   exact HopfAlgebra.isUnipotentPoint_one
 
 /-- The augmentation ideal cuts out the identity subgroup, hence is an unipotent-radical

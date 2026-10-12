@@ -32,9 +32,16 @@ rows of `ν` as letters of the alphabet puts the two counts side by side at the 
 `ν`, and the symmetry of `p_ρ` moves any other monomial of degree `n` there
 (`TauCeti.coeff_eq_coeff_partWeight`).
 
-Combined with Young's rule, `ψ^ν = ∑_λ K_{λν} χ^λ`, and the monomial expansion of the Schur
-polynomials `s_λ = ∑_ν K_{λν} m_ν` (`TauCeti.schurPoly_eq_sum_kostkaNumber_smul_msymm`), this
-expansion is Frobenius's formula `p_ρ = ∑_λ χ^λ(ρ) s_λ` for the irreducible characters.
+Combined with Young's rule, `ψ^ν = ∑_λ K_{λν} χ^λ`
+(`TauCeti.char_permutationModule_eq_sum_kostkaNumber_mul_spechtChar`), and the monomial
+expansion of the Schur polynomials `s_λ = ∑_ν K_{λν} m_ν`
+(`TauCeti.schurPoly_eq_sum_kostkaNumber_smul_msymm`), this expansion is Frobenius's formula
+`p_ρ = ∑_λ χ^λ(ρ) s_λ` for the irreducible characters.
+
+Summing the power sums against a permutation character instead gives `n!` times a product of
+complete homogeneous symmetric polynomials: `∑_π ψ^ν(π) p_{ρ(π)} = n! h_ν`.  Read at the sorted
+monomial of a second partition `ξ`, this computes `∑_π ψ^ν(π) ψ^ξ(π)` through the coefficients of
+`h_ν`, which is how Young's rule is proved.
 
 ## Main results
 
@@ -47,6 +54,8 @@ expansion is Frobenius's formula `p_ρ = ∑_λ χ^λ(ρ) s_λ` for the irreduci
   the fixed-tabloid counts as coefficients.
 * `TauCeti.psumPart_eq_sum_character_smul_msymm`: the same expansion over `ℚ`, with the
   characters of the Young permutation modules as coefficients.
+* `TauCeti.sum_card_fixedPoints_smul_psumPart_partition`: **`∑_π ψ^ν(π) • p_{ρ(π)} = n! • h_ν`**,
+  the power-sum form of the statement that the Frobenius characteristic of `ψ^ν` is `h_ν`.
 
 ## References
 
@@ -72,7 +81,7 @@ private theorem length_sort_parts_le (ν : n.Partition) (hν : ν.parts.card ≤
 
 /-- The power-sum product of the partition indexing the class of `π` is the power-sum product over
 the cycle type of `π`: both take one power sum per cycle. -/
-private theorem psumPart_eq_psumPart_partition {ρ : n.Partition} {π : Perm (Fin n)}
+theorem psumPart_eq_psumPart_partition {ρ : n.Partition} {π : Perm (Fin n)}
     (hπ : ConjClasses.mk π = partitionEquivConjClasses n ρ) :
     psumPart σ R ρ = psumPart σ R π.partition := by
   rw [psumPart, psumPart, ← (partitionEquivConjClasses n).symm_apply_apply ρ, ← hπ,
@@ -114,7 +123,6 @@ private theorem card_filter_youngColouring [DecidableEq σ] (ν : n.Partition)
     intro j _ hj
     rw [youngColouring, Function.comp_apply, Function.comp_apply, Equiv.symm_apply_eq,
       Fin.ext_iff, Fin.val_castLE] at hj
-    have hlt := (youngBlock ν j).2
     omega
 
 /-! ### The coefficients of a power-sum product -/
@@ -133,6 +141,29 @@ theorem coeff_partWeight_psumPart_partition (π : Perm (Fin n)) (ν : n.Partitio
   case e_s => ext x; simp
   ext f
   exact and_congr_right' (forall_congr' fun i => by rw [card_filter_youngColouring ν hν i])
+
+/-- **The permutation character of `M^ν` against the power sums is `n! • h_ν`**:
+`∑_π ψ^ν(π) • p_{ρ(π)} = n! • h_ν`, where `ψ^ν(π)` is the number of `ν`-tabloids fixed by `π` and
+`h_ν = h_{ν₁} ⋯ h_{ν_k}`.  Dividing by `n!`, this says that the Frobenius characteristic of the
+permutation character `ψ^ν` is `h_ν`.  It is `TauCeti.sum_card_smul_psumPart_partition` for the
+colouring of `Fin n` by the rows of `ν`. -/
+theorem sum_card_fixedPoints_smul_psumPart_partition [DecidableEq σ] (ν : n.Partition) :
+    ∑ π : Perm (Fin n), Nat.card {q : Perm (Fin n) ⧸ youngSubgroup ν // π • q = q} •
+        psumPart σ R π.partition = n.factorial • hsymmPart σ R ν := by
+  have hr : ∑ i, #{a | youngBlock ν a = i} = Fintype.card (Fin n) :=
+    (card_eq_sum_card_fiberwise fun a _ => mem_univ (youngBlock ν a)).symm
+  have key := sum_card_smul_psumPart_partition (σ := σ) R _ hr
+  rw [show n.factorial = (Fintype.card (Fin n)).factorial by rw [Fintype.card_fin]]
+  convert key using 3 with π
+  · rw [youngSubgroup_eq_fiberSubgroup, card_fixedPoints_quotient_fiberSubgroup]
+    -- the two counts differ only in the instance deciding equality of rows
+    convert rfl
+  · -- the rows of `ν` have the sizes of its parts
+    rw [hsymmPart]
+    conv_lhs => rw [← Multiset.sort_eq ν.parts (· ≥ ·)]
+    rw [Multiset.map_coe, Multiset.prod_coe, ← Fin.prod_univ_fun_getElem]
+    refine prod_congr rfl fun i _ => congrArg _ ?_
+    rw [← Fintype.card_subtype, ← Fintype.card_congr (youngBlockEquiv ν i), Fintype.card_fin]
 
 /-- Local decidable equality for alphabet-indexed monomials. -/
 noncomputable local instance instDecidableEqPermutationModuleColour : DecidableEq σ :=

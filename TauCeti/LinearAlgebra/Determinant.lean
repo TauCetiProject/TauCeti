@@ -7,11 +7,13 @@ module
 
 public import Mathlib.LinearAlgebra.Determinant
 public import Mathlib.LinearAlgebra.BilinearForm.Properties
+public import Mathlib.RingTheory.Ideal.Span
+public import TauCeti.LinearAlgebra.Multilinear.Span
 import TauCeti.LinearAlgebra.BilinearForm.Multilinear
 import Mathlib.LinearAlgebra.SpecialLinearGroup
 
 /-!
-# Determinant transformation laws, and determinants of updated rows
+# Determinant transformation laws, evaluation, and determinants of updated rows
 
 Precomposing an alternating form of top degree with an endomorphism `φ` multiplies it by
 `LinearMap.det φ`, and — the direction that is actually used — a *nonzero* form merely known to be
@@ -20,7 +22,10 @@ scalars cancel against nonzero vectors of the codomain (`IsCancelMulZero R` and
 `Module.IsTorsionFree R N`; see the implementation notes, where `ω ≠ 0` alone is shown to be
 insufficient). This file records that law in three vocabularies: for
 an `AlternatingMap` indexed by a basis' index type, for an alternating bilinear form on a rank-two
-module, and for the standard-basis determinant form under matrix multiplication.
+module, and for the standard-basis determinant form under matrix multiplication. It also
+identifies evaluation of the row determinant form on a family of linear functionals with the
+determinant of their evaluation matrix. Ideal membership of these determinants extends from
+a set of rows to its linear span.
 
 Mathlib's `Module.Basis.det_comp` is the case `ω = b.det` of the first statement. The step taken
 here is that every top-degree alternating form is a multiple of `b.det`
@@ -41,8 +46,16 @@ results over the rows multiplies the determinant by the total of the factors.
   for `R` cancellative and `N` torsion-free.
 * `LinearMap.IsAlt.compl₁₂_self_eq_det_smul` and `LinearMap.det_eq_of_compl₁₂_self_eq_smul`: the
   same two statements for an alternating bilinear form on a module of rank two.
+* `LinearMap.det_eq_of_compl₁₂_self_eq_smul_of_separatingLeft`: the recovery statement over any
+  commutative ring, for a left-separating form.
 * `Matrix.detRowAlternating_mulVec`: multiplication by a square matrix scales the
   standard-basis determinant form by the matrix determinant.
+* `Matrix.detRowAlternating_pi_apply`: evaluating the row determinant form on a family of
+  linear functionals gives the determinant of their evaluation matrix.
+* `Matrix.detRowAlternating_compLinearMap_pi_apply`: the same evaluation in multilinear-map
+  vocabulary after precomposition with the family of functionals.
+* `TauCeti.det_mem_of_mem_span`: ideal membership of evaluation determinants extends from
+  a set of rows to its linear span.
 * `Matrix.sum_det_updateRow_mul_row`: Jacobi's formula for a determinant, in row form.
 * `Matrix.det_mul_column_intCast`: scaling every row `i` of an integer matrix by `d i`
   multiplies the determinant by `∏ i, d i`, over any commutative ring.
@@ -65,9 +78,13 @@ assumed can be dropped:
   determinant form reduced mod `2`, `(x, y) ↦ x₀ y₁ - x₁ y₀`, is nonzero and alternating, and
   `φ = 3 • id` scales it by `9`, that is by `1`, while `det φ = 9`.
 
-`IsCancelMulZero R` and `Module.IsTorsionFree R N` are assumed for the recovery statements, and
+`IsCancelMulZero R` and `Module.IsTorsionFree R N` are assumed for these recovery statements, and
 for nothing else; together they let a nonzero form, an element of a torsion-free module of
-alternating or bilinear maps, cancel from `det φ • ω = d • ω`.
+alternating or bilinear maps, cancel from `det φ • ω = d • ω`. A left-separating form needs neither:
+a scalar killing it kills a basis vector, so vanishes, and
+`LinearMap.det_eq_of_compl₁₂_self_eq_smul_of_separatingLeft` holds over every commutative ring. The
+examples above are not left-separating: `2 • b.det` pairs `2 • b 0` to zero, and the reduced
+determinant form pairs `2 • e₀` to zero.
 
 None of the transformation laws stated for a basis is a `simp` lemma: the basis is a hypothesis
 and does not occur in the conclusion, so `simp` could not infer it.
@@ -82,7 +99,7 @@ The four transformation and recovery laws are ported from the AINTLIB `HasseWeil
 `alternating_comp_eq_det_smul` and `det_eq_of_alternating_scaling`. The source states them over a
 field, for a scalar-valued form, evaluated at a basis, and proves the first by expanding `φ (b j)`
 in coordinates; none of that is reproduced here. `Matrix.detRowAlternating_mulVec` predates
-that port and is not from the source.
+that port and is not from the source, nor is the left-separating recovery statement.
 -/
 
 public section
@@ -161,6 +178,22 @@ theorem det_eq_of_compl₁₂_self_eq_smul [IsCancelMulZero R] [Module.IsTorsion
     {φ : M →ₗ[R] M} {d : R} (h : ω.compl₁₂ φ φ = d • ω) : LinearMap.det φ = d :=
   smul_left_injective R hω <| (halt.compl₁₂_self_eq_det_smul b φ).symm.trans h
 
+/-- **The multiplier of a left-separating alternating bilinear form on a rank-two module is the
+determinant**, over any commutative ring. Left separation of `ω` takes the place of the
+cancellation hypotheses of `LinearMap.det_eq_of_compl₁₂_self_eq_smul`; this is the form that
+applies to the Weil pairing on `N`-torsion, a module over `ZMod N`, which is not a domain for
+composite `N`. -/
+theorem det_eq_of_compl₁₂_self_eq_smul_of_separatingLeft (b : Basis (Fin 2) R M)
+    {ω : M →ₗ[R] M →ₗ[R] N} (halt : ω.IsAlt) (hω : ω.SeparatingLeft) {φ : M →ₗ[R] M} {d : R}
+    (h : ω.compl₁₂ φ φ = d • ω) : LinearMap.det φ = d := by
+  have hd : LinearMap.det φ • ω = d • ω := (halt.compl₁₂_self_eq_det_smul b φ).symm.trans h
+  -- the difference kills `ω (b 0)`, so it kills `b 0` by left separation, so it vanishes
+  have hb : (LinearMap.det φ - d) • b 0 = 0 := hω _ fun y ↦ by
+    rw [map_smul, smul_apply, sub_smul, sub_eq_zero]
+    simpa using congr($hd (b 0) y)
+  rw [← sub_eq_zero]
+  simpa using congr(b.repr $hb 0)
+
 end LinearMap
 
 namespace LinearEquiv
@@ -179,6 +212,53 @@ theorem det_ker_eq_bot_of_finrank_le_one {R V : Type*} [CommRing R] [AddCommGrou
     exact congrArg Subtype.val (Subsingleton.elim (⟨g, hg⟩ : SpecialLinearGroup R V) 1)
 
 end LinearEquiv
+
+namespace Matrix
+
+/-- Evaluating the row determinant form after a family of linear functionals gives the
+matrix of those functionals evaluated on the input vectors. -/
+@[simp]
+theorem detRowAlternating_pi_apply {ι R F : Type*} [Fintype ι]
+    [DecidableEq ι] [CommRing R] [AddCommGroup F] [Module R F]
+    (f : ι → Module.Dual R F) (v : ι → F) :
+    detRowAlternating (fun i => LinearMap.pi f (v i)) =
+      (Matrix.of fun i j => f j (v i)).det := by
+  have hmatrix : (fun i => LinearMap.pi f (v i)) = Matrix.of (fun i j => f j (v i)) := by
+    ext i j
+    simp only [LinearMap.pi_apply, Matrix.of_apply]
+  -- Mathlib defines `det` as evaluation of `detRowAlternating` on the rows.
+  simpa only [Matrix.det] using congrArg Matrix.det hmatrix
+
+/-- The multilinear form obtained by precomposing the row determinant with a family of linear
+functionals evaluates to the determinant of their evaluation matrix. -/
+theorem detRowAlternating_compLinearMap_pi_apply {ι R F : Type*} [Fintype ι]
+    [DecidableEq ι] [CommRing R] [AddCommGroup F] [Module R F]
+    (f : ι → Module.Dual R F) (v : ι → F) :
+    (detRowAlternating.compLinearMap (LinearMap.pi f)).toMultilinearMap v =
+      (Matrix.of fun i j => f j (v i)).det := by
+  rw [AlternatingMap.coe_multilinearMap, AlternatingMap.compLinearMap_apply,
+    detRowAlternating_pi_apply]
+
+end Matrix
+
+namespace TauCeti
+
+/-- If an ideal contains all evaluation determinants whose rows lie in a set, it also contains
+those whose rows lie in the linear span of that set. -/
+theorem det_mem_of_mem_span {R F : Type*} [CommRing R] [AddCommGroup F] [Module R F]
+    {p : ℕ} {s : Set F} {I : Ideal R} (f : Fin p → Dual R F) {v : Fin p → F}
+    (hv : ∀ i, v i ∈ Submodule.span R s)
+    (h : ∀ w : Fin p → F, (∀ i, w i ∈ s) → (Matrix.of fun i j ↦ f j (w i)).det ∈ I) :
+    (Matrix.of fun i j ↦ f j (v i)).det ∈ I := by
+  rw [← Matrix.detRowAlternating_compLinearMap_pi_apply]
+  refine Submodule.span_le.2 ?_ <|
+    MultilinearMap.map_mem_span_image_pi
+      (Matrix.detRowAlternating.compLinearMap (LinearMap.pi f)).toMultilinearMap (fun _ ↦ s) hv
+  rintro _ ⟨w, hw, rfl⟩
+  rw [Matrix.detRowAlternating_compLinearMap_pi_apply]
+  exact h w fun i ↦ hw i trivial
+
+end TauCeti
 
 namespace Matrix
 

@@ -51,11 +51,24 @@ These formulas support quadratic twists and computations of norms in quadratic n
 The nonzero-discriminant criterion selects a generator for a separable quadratic extension
 and ensures that twisting by that generator preserves ellipticity.
 
+Over a base field, a square root `x` of `d ∈ K` with `x ∉ K` has characteristic polynomial
+`X² - d`, in every commutative quadratic algebra:
+
+* `trace_eq_zero_of_sq_eq` and `norm_eq_neg_of_sq_eq`: `Tr x = 0` and `N x = -d`;
+* `trace_algebraMap_add_algebraMap_mul_of_sq_eq` and
+  `norm_algebraMap_add_algebraMap_mul_of_sq_eq`: in square-root coordinates
+  `Tr (b + a x) = 2b` and `N (b + a x) = b² - a² d`.
+
+In a quadratic field extension `trace_inv` gives `Tr (a⁻¹) = Tr a / N a`, with no separability
+hypothesis. These are the inputs to the diagonalization of the twisted trace forms
+`y ↦ Tr (a y²)` of a quadratic extension.
+
 Adapted from the FLT project (`ImperialCollegeLondon/FLT`,
 `FLT/Mathlib/RingTheory/Norm/Quadratic.lean` at revision `bc2fe8ff7396`, FLT PR #1088,
 Apache 2.0). That file's own header reads `Authors: Kevin Buzzard, Claude`; following this
 repository's convention for adapted material, the upstream authorship is credited here rather
-than in the copyright header.
+than in the copyright header. The square-root lemmas and `trace_inv` are not part of the
+adapted material.
 -/
 
 public section
@@ -110,6 +123,94 @@ theorem discrim_eq_zero_of_mem_range_algebraMap {θ : L} (hθ : θ ∈ Set.range
 end Algebra.IsQuadraticExtension
 
 end CommRing
+
+section SquareRoot
+
+variable {K L : Type*} [Field K] [CommRing L] [Algebra K L] [Algebra.IsQuadraticExtension K L]
+
+namespace Algebra.IsQuadraticExtension
+
+/-- In a commutative quadratic algebra over a field, the characteristic equation of a square root
+`x` of `d` with `x ∉ K` reads `Tr x · x = d + N x`. -/
+private theorem algebraMap_trace_mul_eq_of_sq_eq {x : L} {d : K}
+    (hx2 : x ^ 2 = algebraMap K L d) :
+    algebraMap K L (Algebra.trace K L x) * x = algebraMap K L (d + Algebra.norm K x) := by
+  have h := sq_eq_trace_smul_sub_norm K x
+  rw [Algebra.smul_def, hx2] at h
+  rw [map_add]
+  linear_combination -h
+
+/-- A square root `x` of an element of the base field, lying outside the base field, has trace
+zero. This holds in every commutative quadratic algebra over a field, including split and
+nonreduced ones; for field extensions of any finite degree it is
+`TauCeti.Algebra.trace_eq_zero_of_sq_algebraMap_of_not_mem_range`. -/
+theorem trace_eq_zero_of_sq_eq {x : L} {d : K} (hx : x ∉ Set.range (algebraMap K L))
+    (hx2 : x ^ 2 = algebraMap K L d) : Algebra.trace K L x = 0 := by
+  by_contra h
+  refine hx ⟨(Algebra.trace K L x)⁻¹ * (d + Algebra.norm K x), ?_⟩
+  rw [map_mul, ← algebraMap_trace_mul_eq_of_sq_eq hx2, ← mul_assoc, ← map_mul, inv_mul_cancel₀ h,
+    map_one, one_mul]
+
+/-- A square root `x` of `d`, lying outside the base field, has norm `-d`: its characteristic
+polynomial `X² - Tr x · X + N x` is `X² - d`. -/
+theorem norm_eq_neg_of_sq_eq {x : L} {d : K} (hx : x ∉ Set.range (algebraMap K L))
+    (hx2 : x ^ 2 = algebraMap K L d) : Algebra.norm K x = -d := by
+  have : Nontrivial L :=
+    Module.nontrivial_of_finrank_pos (R := K) (by rw [finrank_eq_two K L]; norm_num)
+  have h := algebraMap_trace_mul_eq_of_sq_eq hx2
+  rw [trace_eq_zero_of_sq_eq hx hx2, map_zero, zero_mul, eq_comm,
+    map_eq_zero_iff _ (algebraMap K L).injective] at h
+  linear_combination h
+
+/-- The trace in square-root coordinates: if `x² = d` with `x ∉ K`, then
+`Tr (b + a x) = 2 b`. -/
+theorem trace_algebraMap_add_algebraMap_mul_of_sq_eq {x : L} {d : K}
+    (hx : x ∉ Set.range (algebraMap K L)) (hx2 : x ^ 2 = algebraMap K L d) (a b : K) :
+    Algebra.trace K L (algebraMap K L b + algebraMap K L a * x) = 2 * b := by
+  rw [trace_algebraMap_add_algebraMap_mul, trace_eq_zero_of_sq_eq hx hx2, mul_zero, zero_add]
+
+/-- The norm in square-root coordinates: if `x² = d` with `x ∉ K`, then
+`N (b + a x) = b² - a² d`. -/
+theorem norm_algebraMap_add_algebraMap_mul_of_sq_eq {x : L} {d : K}
+    (hx : x ∉ Set.range (algebraMap K L)) (hx2 : x ^ 2 = algebraMap K L d) (a b : K) :
+    Algebra.norm K (algebraMap K L b + algebraMap K L a * x) = b ^ 2 - a ^ 2 * d := by
+  rw [norm_algebraMap_add_algebraMap_mul, trace_eq_zero_of_sq_eq hx hx2,
+    norm_eq_neg_of_sq_eq hx hx2]
+  ring
+
+end Algebra.IsQuadraticExtension
+
+end SquareRoot
+
+section QuadraticField
+
+variable {K L : Type*} [Field K] [Field L] [Algebra K L] [Algebra.IsQuadraticExtension K L]
+
+namespace Algebra.IsQuadraticExtension
+
+/-- In a quadratic field extension, `Tr (a⁻¹) = Tr a / N a`. Both sides vanish at `a = 0`, so
+no hypothesis is needed. This computes the values of twisted trace forms `y ↦ Tr (a y²)` at
+elements such as `a⁻¹` or `x / a`, as in Kahn's diagonalization of `Tr_*⟨a⟩`. -/
+theorem trace_inv (a : L) :
+    Algebra.trace K L a⁻¹ = Algebra.trace K L a / Algebra.norm K a := by
+  rcases eq_or_ne a 0 with rfl | ha
+  · simp
+  have : FiniteDimensional K L := Module.finite_of_finrank_eq_succ (finrank_eq_two K L)
+  have hN : Algebra.norm K a ≠ 0 := Algebra.norm_ne_zero_iff.mpr ha
+  have h : algebraMap K L (Algebra.norm K a) * a⁻¹ = algebraMap K L (Algebra.trace K L a) - a := by
+    have h2 := sq_eq_trace_smul_sub_norm K a
+    rw [Algebra.smul_def] at h2
+    field_simp
+    linear_combination h2
+  have h3 := congrArg (Algebra.trace K L) h
+  rw [← Algebra.smul_def, map_smul, map_sub, Algebra.trace_algebraMap, finrank_eq_two K L,
+    smul_eq_mul, two_nsmul] at h3
+  rw [eq_div_iff hN]
+  linear_combination h3
+
+end Algebra.IsQuadraticExtension
+
+end QuadraticField
 
 section Field
 

@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Algebra.Algebra.Opposite
 public import Mathlib.RingTheory.TensorProduct.Basic
-public import TauCeti.Algebra.Algebra.Frobenius.Casimir
+public import TauCeti.LinearAlgebra.TensorProduct.Basic
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Componentwise.Trace
 
 /-!
@@ -18,7 +18,7 @@ and volume basis `TauCeti.zigzagAlgebraBasis` is dual, for the symmetric Frobeni
 `(x, y) ↦ tr (x * y)` of `TauCeti.zigzagAlgebraTrace`, to its reindexing by
 `TauCeti.zigzagDualIndex`. This file defines the **Casimir element** `∑_b b ⊗ b^∨` of that pairing
 in the enveloping algebra `Z ⊗[k] Zᵐᵒᵖ` and proves that it commutes with `Z`, as the Casimir
-element of any trace does (`TauCeti.sum_mul_tmul_eq_sum_tmul_mul`).
+element of any trace does (`LinearMap.sum_mul_tmul_eq_sum_tmul_mul`).
 
 ## Main definitions
 
@@ -90,7 +90,7 @@ theorem tmul_one_mul_zigzagCasimir (a : 𝒵) :
     simp only [Function.Involutive.coe_toPerm, zigzagDualIndex_zigzagDualIndex]
     simp_rw [zigzagAlgebraTrace_mul_comm k G _ y]
     exact hx y
-  have key := sum_mul_tmul_eq_sum_tmul_mul (zigzagAlgebraTrace k G)
+  have key := (zigzagAlgebraTrace k G).sum_mul_tmul_eq_sum_tmul_mul
     (zigzagAlgebraTrace_mul_comm k G) hx hy a
   have := congrArg (TensorProduct.map LinearMap.id (opLinearEquiv k).toLinearMap) key
   simp only [map_sum, TensorProduct.map_tmul, LinearMap.id_coe, id_eq, LinearEquiv.coe_coe,

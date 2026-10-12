@@ -37,6 +37,8 @@ to a `p`-adic exponent: `g ^ x.appr n` does not change when `n` grows past the o
   topology.
 * `PadicInt.toZMod_eq_zero_iff_dvd`, `PadicInt.toZModPow_eq_zero_iff_dvd`: the kernels of
   reduction and truncation, as divisibility statements.
+* `PadicInt.toZModPow_eq_one_of_norm_sub_one_le`: a norm bound forcing a `p`-adic integer to
+  reduce to `1` modulo `p ^ n`.
 * `PadicInt.cast_toZModPow_eq_toZMod`: reducing the truncation modulo `p ^ n` further modulo `p`
   recovers `toZMod`.
 * `PadicInt.dvd_sub_appr`: `x - appr x n` is divisible by `p ^ n` in `ℤ_[p]`.
@@ -125,6 +127,14 @@ theorem toZMod_eq_zero_iff_dvd (x : ℤ_[p]) : toZMod x = 0 ↔ (p : ℤ_[p]) �
 theorem toZModPow_eq_zero_iff_dvd (n : ℕ) (x : ℤ_[p]) :
     toZModPow n x = 0 ↔ (p : ℤ_[p]) ^ n ∣ x := by
   rw [← RingHom.mem_ker, ker_toZModPow, Ideal.mem_span_singleton]
+
+/-- A `p`-adic integer within `p ^ (-n)` of `1` reduces to `1` modulo `p ^ n`. -/
+theorem toZModPow_eq_one_of_norm_sub_one_le {n : ℕ} {x : ℤ_[p]}
+    (hx : ‖x - 1‖ ≤ (p : ℝ) ^ (-(n : ℤ))) :
+    toZModPow n x = 1 := by
+  rw [← sub_eq_zero, ← map_one (toZModPow (p := p) n), ← map_sub,
+    ← RingHom.mem_ker, ker_toZModPow, ← norm_le_pow_iff_mem_span_pow]
+  exact hx
 
 /-- Reducing the truncation `x mod p ^ n` further modulo `p` gives `x mod p`. -/
 @[simp]

@@ -109,7 +109,7 @@ theorem pinToOrthogonal_surjective
     [FiniteDimensional K V] (Q : QuadraticForm K V) (hQ : Q.Nondegenerate) :
     Function.Surjective (pinToOrthogonal Q) :=
   pinToOrthogonal_surjective_of_isSquare Q hQ fun v _ ↦
-    IsSepClosed.exists_eq_mul_self (-⅟(Q v))
+    IsSepClosed.isSquare (-⅟(Q v))
 
 end IsSepClosed
 end CliffordAlgebra

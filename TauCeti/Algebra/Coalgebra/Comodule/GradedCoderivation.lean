@@ -21,6 +21,9 @@ The condition is formulated for any right comodule, so it applies to the cofree 
 comodule `sM ⊗ Tᶜ(sA)` without constructing a second comodule API.  An odd homogeneous
 coderivation over a square-zero `b` has a square which is a comodule morphism.  This is
 the algebraic step needed to read module Stasheff identities from the components of `D²`.
+Likewise, the graded commutator of a homogeneous comodule morphism with two coderivations over
+the same operator `b` is a comodule morphism. Its counit component therefore detects compatibility
+with the differentials when the target is cofree.
 
 The sign convention follows Getzler--Jones, *A-infinity algebras and the cyclic bar
 complex*, Sections 1--2, and Keller, *Introduction to A-infinity algebras and modules*,
@@ -265,6 +268,63 @@ theorem IsGradedCoderivationOver.eq_of_counit_comp_eq
   exact sub_eq_zero.mp this
 
 end Cofree
+
+namespace Hom
+
+variable {N : Type*} [AddCommGroup N] [Module R N]
+  [Comodule R C N]
+
+/-- The graded commutator of a degree-`r` comodule morphism with coderivations over the same
+coalgebra operator is a comodule morphism. The two coalgebra terms cancel by Koszul naturality. -/
+def coderivationComm {r : ℤ} (f : Hom R C M N) (G : InternalGrading R M) (H : InternalGrading R N)
+    (hf : LinearMap.IsHomogeneous f.toLinearMap G.piece H.piece r)
+    (D : M →ₗ[R] M) (E : N →ₗ[R] N)
+    (hD : IsGradedCoderivationOver G q b D) (hE : IsGradedCoderivationOver H q b E) :
+    Hom R C M N where
+  toLinearMap := E ∘ₗ f.toLinearMap - (((q * r).negOnePow : ℤ) : R) • (f.toLinearMap ∘ₗ D)
+  map_coact := by
+    let F := f.toLinearMap.rTensor C
+    let ρM := coact (R := R) (C := C) (M := M)
+    let ρN := coact (R := R) (C := C) (M := N)
+    let TM := b.lTensor M ∘ₗ (G.koszulTwist q).rTensor C
+    let TN := b.lTensor N ∘ₗ (H.koszulTwist q).rTensor C
+    have hF : F ∘ₗ ρM = ρN ∘ₗ f.toLinearMap := f.map_coact
+    have htw : H.koszulTwist q ∘ₗ f.toLinearMap =
+        (((q * r).negOnePow : ℤ) : R) • (f.toLinearMap ∘ₗ G.koszulTwist q) :=
+      hf.koszulTwist_comp q
+    have hcross : TN ∘ₗ F = (((q * r).negOnePow : ℤ) : R) • (F ∘ₗ TM) := by
+      refine TensorProduct.ext' fun x c ↦ ?_
+      simpa only [TN, TM, F, LinearMap.comp_apply, LinearMap.rTensor_tmul,
+        LinearMap.lTensor_tmul, LinearMap.smul_apply, TensorProduct.smul_tmul'] using
+        congrArg (fun y ↦ y ⊗ₜ[R] b c) (LinearMap.congr_fun htw x)
+    have hleft : ρN ∘ₗ (E ∘ₗ f.toLinearMap) =
+        E.rTensor C ∘ₗ F ∘ₗ ρM + TN ∘ₗ F ∘ₗ ρM := by
+      rw [← LinearMap.comp_assoc, hE, LinearMap.add_comp]
+      dsimp only [TN, ρN, ρM] at hF ⊢
+      simp only [LinearMap.comp_assoc, hF]
+    have hright : ρN ∘ₗ (f.toLinearMap ∘ₗ D) =
+        F ∘ₗ D.rTensor C ∘ₗ ρM + F ∘ₗ TM ∘ₗ ρM := by
+      rw [← LinearMap.comp_assoc, ← hF, LinearMap.comp_assoc, hD, LinearMap.comp_add]
+    have hcomm : ρN ∘ₗ
+        (E ∘ₗ f.toLinearMap - (((q * r).negOnePow : ℤ) : R) • (f.toLinearMap ∘ₗ D)) =
+        (E ∘ₗ f.toLinearMap -
+          (((q * r).negOnePow : ℤ) : R) • (f.toLinearMap ∘ₗ D)).rTensor C ∘ₗ ρM := by
+      have hcross' := congrArg (fun L ↦ L ∘ₗ ρM) hcross
+      simp only [LinearMap.smul_comp, LinearMap.comp_assoc] at hcross'
+      rw [LinearMap.comp_sub, LinearMap.comp_smul, hleft, hright, hcross']
+      simp only [LinearMap.rTensor_sub, LinearMap.rTensor_smul, LinearMap.rTensor_comp,
+        LinearMap.sub_comp, LinearMap.smul_comp, LinearMap.comp_assoc]
+      module
+    exact hcomm.symm
+
+/-- The underlying map of the coderivation commutator is the signed operator commutator. -/
+@[simp]
+theorem coderivationComm_toLinearMap {r : ℤ} (f : Hom R C M N) (G : InternalGrading R M)
+    (H : InternalGrading R N) (hf D E hD hE) :
+    (f.coderivationComm (r := r) (q := q) (b := b) G H hf D E hD hE).toLinearMap =
+      E ∘ₗ f.toLinearMap - (((q * r).negOnePow : ℤ) : R) • (f.toLinearMap ∘ₗ D) := (rfl)
+
+end Hom
 
 end Comodule
 

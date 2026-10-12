@@ -9,6 +9,10 @@ public import TauCeti.NumberTheory.LocalField.FiniteExtension.Basic
 public import TauCeti.NumberTheory.LocalField.IntegerRing.Basic
 public import TauCeti.RingTheory.DedekindDomain.AdicValuation.IntegersExtension
 public import TauCeti.RingTheory.DedekindDomain.AdicValuation.ValuativeExtension
+public import Mathlib.RingTheory.Norm.Defs
+
+import Mathlib.RingTheory.Norm.Transitivity
+import Mathlib.RingTheory.Valuation.Integral
 
 /-!
 # The completed integer rings are an integral closure
@@ -40,6 +44,8 @@ equal characteristic, whereas the transport is unconditional.
   for the canonical algebra structure.
 * `IsDedekindDomain.HeightOneSpectrum.adicCompletionIntegers_isIntegralClosure`: `𝒪_w` is the
   integral closure of `𝒪_v` in `L_w`.
+* `IsDedekindDomain.HeightOneSpectrum.norm_mem_adicCompletionIntegers`: the norm of `L_w` over
+  `K_v` carries `𝒪_w` into `𝒪_v`.
 * `IsDedekindDomain.HeightOneSpectrum.adicCompletionIntegers_moduleFinite` and
   `IsDedekindDomain.HeightOneSpectrum.finrank_adicCompletionIntegers`: `𝒪_w` is a finite
   `𝒪_v`-module, of rank `[L_w : K_v]`.
@@ -99,6 +105,20 @@ theorem adicCompletionIntegers_isIntegralClosure :
 
 scoped[AdicCompletionExtension] attribute [instance]
   IsDedekindDomain.HeightOneSpectrum.adicCompletionIntegers_isIntegralClosure
+
+variable {K L} in
+/-- **The local norm preserves integrality.** The norm of `L_w` over `K_v` carries the completed
+integer ring `𝒪_w` into `𝒪_v`: an element of `𝒪_w` is integral over `𝒪_v`, hence so is its norm,
+and the integral elements of `K_v` are those of valuation at most `1`. -/
+theorem norm_mem_adicCompletionIntegers {x : w.adicCompletion L}
+    (hx : x ∈ w.adicCompletionIntegers L) :
+    Algebra.norm (v.adicCompletion K) x ∈ v.adicCompletionIntegers K := by
+  have hint : IsIntegral (v.adicCompletionIntegers K) x :=
+    (IsIntegralClosure.isIntegral_iff (A := w.adicCompletionIntegers L)).2 ⟨⟨x, hx⟩, rfl⟩
+  exact (v.mem_adicCompletionIntegers_iff_valuation_le_one (K := K) _).2
+    ((Valuation.Integers.isIntegral_iff_v_le_one
+      (v.valuation_integers_adicCompletionIntegers (K := K))).1
+      (Algebra.isIntegral_norm (v.adicCompletion K) hint))
 
 omit [Finite (R ⧸ v.asIdeal)] [Finite (B ⧸ w.asIdeal)] in
 /-- **The identifications of the integer rings are natural.** The identifications

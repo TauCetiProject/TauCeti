@@ -18,7 +18,7 @@ Restricting Euler-product data away from a finite set `S` of primes, keeping onl
 coefficients of the ideals prime to `S`, replaces the local Euler factors at `S` by `1` and leaves
 the others untouched. On the half-plane of absolute convergence the two `L`-series therefore
 differ by the finitely many deleted factors; for a completely multiplicative weight `χ` the
-restriction `χ.restrict S` divides the `L`-series by `∏ 𝔭 ∈ S, (1 - χ(𝔭) N(𝔭) ^ (-s))⁻¹`.
+restriction `χ.restrictAway S` divides the `L`-series by `∏ 𝔭 ∈ S, (1 - χ(𝔭) N(𝔭) ^ (-s))⁻¹`.
 
 For the trivial weight the restriction is `ofBadPrimes S`, the indicator of the ideals prime to
 `S`, and its `L`-series is the Dedekind zeta function with the Euler factors at `S` removed:
@@ -41,7 +41,7 @@ products omit the ramified primes, such as the trivial Galois-character series, 
   replaces the local factors at `S` by `1` and keeps the others.
 * `TauCeti.EulerProductData.LSeries_restrictAway_mul_prod_eulerFactor`: multiplying the `L`-series
   of the restriction by the deleted local factors recovers the original `L`-series.
-* `TauCeti.MultiplicativeIdealWeight.LSeries_restrict`: the same for a completely multiplicative
+* `TauCeti.MultiplicativeIdealWeight.LSeries_restrictAway`: the same for a completely multiplicative
   weight, with the deleted factors in closed form.
 * `TauCeti.LSeries_ofBadPrimes`: the `L`-series of the indicator of the ideals prime to `S` is
   `ζ_K(s) * ∏ 𝔭 ∈ S, (1 - N(𝔭) ^ (-s))` on `Re s > 1`.
@@ -148,13 +148,13 @@ variable (χ : MultiplicativeIdealWeight K) {s : ℂ}
 ideal-indexed Dirichlet series of `χ` converges absolutely, restricting `χ` away from a finite set
 `S` of primes multiplies its `L`-series by `∏ 𝔭 ∈ S, (1 - χ(𝔭) N(𝔭) ^ (-s))`, the reciprocal of the
 deleted local factors. -/
-theorem LSeries_restrict (S : Finset (HeightOneSpectrum (𝓞 K)))
+theorem LSeries_restrictAway (S : Finset (HeightOneSpectrum (𝓞 K)))
     (hs : Summable (idealTerm K χ.toIdealArithmeticFunction s)) :
-    LSeries (normCoeff K (χ.restrict S S.finite_toSet).toIdealArithmeticFunction) s =
+    LSeries (normCoeff K (χ.restrictAway S S.finite_toSet).toIdealArithmeticFunction) s =
       LSeries (normCoeff K χ.toIdealArithmeticFunction) s *
         ∏ P ∈ S, (1 - χ P.asIdeal / (Ideal.absNorm P.asIdeal : ℂ) ^ s) := by
   classical
-  have hdata : EulerProductData.ofMultiplicativeIdealWeight (χ.restrict S S.finite_toSet) =
+  have hdata : EulerProductData.ofMultiplicativeIdealWeight (χ.restrictAway S S.finite_toSet) =
       (EulerProductData.ofMultiplicativeIdealWeight χ).restrictAway S :=
     EulerProductData.ext fun I ↦ by simp
   have key := EulerProductData.LSeries_restrictAway_mul_prod_eulerFactor
@@ -198,7 +198,8 @@ theorem LSeries_ofBadPrimes (S : Finset (HeightOneSpectrum (𝓞 K))) {s : ℂ} 
       (idealTerm K (1 : MultiplicativeIdealWeight K).toIdealArithmeticFunction s) := by
     rw [MultiplicativeIdealWeight.toIdealArithmeticFunction_one]
     exact summable_idealTerm_one_iff.mpr hs
-  rw [← MultiplicativeIdealWeight.one_restrict, MultiplicativeIdealWeight.LSeries_restrict _ S hsum,
+  rw [← MultiplicativeIdealWeight.one_restrictAway,
+    MultiplicativeIdealWeight.LSeries_restrictAway _ S hsum,
     MultiplicativeIdealWeight.toIdealArithmeticFunction_one,
     ← dedekindZeta_eq_LSeries_normCoeff_one]
   congr 1

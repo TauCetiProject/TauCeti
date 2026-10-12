@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Calculus.Rademacher
 public import TauCeti.Analysis.Convex.EffectiveDomain
 public import TauCeti.Analysis.Convex.Subdifferential
 public import Mathlib.Analysis.Calculus.Gradient.Basic
+import Mathlib.Analysis.Calculus.Deriv.Comp
 import Mathlib.Analysis.Calculus.LocalExtr.Basic
 import Mathlib.Analysis.Convex.Deriv
 
@@ -138,10 +139,7 @@ theorem mem_subdifferential_of_hasFDerivAt (hf : Convex ℝ {p : E × ℝ | f p.
     (hbot : ∀ x, f x ≠ ⊥) (hx : f x ≠ ⊤) {f' : E →L[ℝ] ℝ}
     (hd : HasFDerivAt (fun x' => (f x').toReal) f' x) (hy : ∀ v, f' v = B v y) :
     y ∈ subdifferential B f x := by
-  refine (mem_subdifferential_iff B).2 ⟨hbot x, hx, fun x' => ?_⟩
-  rcases eq_or_ne (f x') ⊤ with hx' | hx'
-  · rw [hx']
-    exact le_top
+  refine (mem_subdifferential_iff_forall_toReal_add_le B hbot hx).2 fun x' hx' => ?_
   -- On the segment from `x` to `x'`, which lies in the effective domain, the real representative
   -- is a convex function of one variable, with derivative `f' (x' - x)` at `0`.
   have hconv : ConvexOn ℝ (Icc 0 1) fun t : ℝ => (f (AffineMap.lineMap x x' t)).toReal :=
@@ -156,8 +154,6 @@ theorem mem_subdifferential_of_hasFDerivAt (hf : Convex ℝ {p : E × ℝ | f p.
     (right_mem_Icc.2 zero_le_one) zero_lt_one hderiv
   rw [slope_def_field, AffineMap.lineMap_apply_zero, AffineMap.lineMap_apply_one, sub_zero,
     div_one, hy] at hslope
-  rw [← EReal.coe_toReal hx (hbot x), ← EReal.coe_toReal hx' (hbot x'), ← EReal.coe_add,
-    EReal.coe_le_coe_iff]
   linarith
 
 end Normed

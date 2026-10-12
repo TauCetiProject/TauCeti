@@ -202,7 +202,6 @@ theorem forall_betaNumber_le_iff_interlacedBy {N : ℕ} {μ ν : YoungDiagram}
     have hjN : (j : ℕ) < N := j.isLt
     refine ⟨fun hle => ?_, fun hle => ?_⟩
     · by_contra hij
-      have hij' : (j : ℕ) < (i : ℕ) := by omega
       have h1 : μ.rowLen i ≤ μ.rowLen ((j : ℕ) + 1) := μ.rowLen_anti _ _ (by omega)
       have h2 : μ.rowLen ((j : ℕ) + 1) ≤ ν.rowLen j := (h j).1
       omega

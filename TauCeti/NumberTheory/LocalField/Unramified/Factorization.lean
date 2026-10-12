@@ -32,10 +32,18 @@ local field on `E` compatible with `K`; `L` is then a valuative extension of `E`
   `TauCeti.isUnramified_unramifiedExtension_inertiaDegree`: `L₀/K` is unramified of degree `f`.
 * `TauCeti.le_unramifiedExtension_inertiaDegree_of_isUnramified`: every unramified intermediate
   field of `L/K` lies in `L₀`.
+* `TauCeti.eq_unramifiedExtension_inertiaDegree_iff`: `L₀` is the unique intermediate field
+  which is unramified over `K` and over which `L` is totally ramified.
+* `TauCeti.IsUnramified.unramifiedExtension_inertiaDegree_eq_top`: `L₀ = L` when `L/K` is
+  unramified.
 * `TauCeti.isTotallyRamified_unramifiedExtension_inertiaDegree`,
   `TauCeti.ramificationIndex_unramifiedExtension_inertiaDegree` and
   `TauCeti.finrank_unramifiedExtension_inertiaDegree_eq_ramificationIndex`: `L/L₀` is totally
   ramified, with ramification index and degree `e`.
+* `TauCeti.map_unramifiedExtension_inertiaDegree_le`: maximal unramified subextensions are
+  covariant in towers.
+* `TauCeti.map_unramifiedExtension_inertiaDegree_eq_iff`: the maximal unramified subextension is
+  unchanged in a tower exactly when the top step is totally ramified.
 
 ## References
 
@@ -128,5 +136,85 @@ theorem ramificationIndex_unramifiedExtension_inertiaDegree :
   IsUnramified.ramificationIndex_tower_eq K _ L
 
 end TotallyRamified
+
+variable {K L} in
+/-- **Uniqueness of the unramified--totally ramified factorization.** An intermediate field
+`E` is the maximal unramified subextension of `L/K` exactly when `E/K` is unramified and `L/E`
+is totally ramified. -/
+theorem eq_unramifiedExtension_inertiaDegree_iff (E : IntermediateField K L)
+    [ValuativeRel E] [TopologicalSpace E] [IsNonarchimedeanLocalField E]
+    [ValuativeExtension K E] :
+    E = unramifiedExtension K L (inertiaDegree K L) ↔
+      IsUnramified K E ∧ IsTotallyRamified E L := by
+  constructor
+  · rintro rfl
+    exact ⟨isUnramified_unramifiedExtension_inertiaDegree K L,
+      isTotallyRamified_unramifiedExtension_inertiaDegree K L⟩
+  · rintro ⟨hE, hLE⟩
+    let _ := hE
+    rw [E.eq_unramifiedExtension_finrank]
+    congr 1
+    exact (IsUnramified.isTotallyRamified_iff_finrank_eq K E L).1 hLE
+
+/-- **An unramified extension is its own maximal unramified subextension.** If `L/K` is
+unramified, then `L` is generated over `K` by the roots of `X^{q^f} − X`, for `f = f(L/K)`. -/
+theorem IsUnramified.unramifiedExtension_inertiaDegree_eq_top [IsUnramified K L] :
+    unramifiedExtension K L (inertiaDegree K L) = ⊤ := by
+  have := finite_of_valuativeExtension K L
+  refine IntermediateField.eq_of_le_of_finrank_eq le_top ?_
+  rw [finrank_unramifiedExtension_inertiaDegree, IntermediateField.finrank_top',
+    IsUnramified.inertiaDegree_eq_finrank]
+
+section Tower
+
+variable (M : Type*) [Field M] [ValuativeRel M] [TopologicalSpace M]
+  [IsNonarchimedeanLocalField M] [Algebra L M] [Algebra K M] [IsScalarTower K L M]
+  [ValuativeExtension L M] [ValuativeExtension K M]
+
+/-- **Maximal unramified subextensions are covariant in towers.** The image in `M` of the
+maximal unramified subextension of `L/K` lies in the maximal unramified subextension of `M/K`. -/
+theorem map_unramifiedExtension_inertiaDegree_le :
+    (unramifiedExtension K L (inertiaDegree K L)).map
+        (IsScalarTower.toAlgHom K L M) ≤
+      unramifiedExtension K M (inertiaDegree K M) :=
+  (map_unramifiedExtension_le (inertiaDegree K L) (IsScalarTower.toAlgHom K L M)).trans
+    (unramifiedExtension_le_of_dvd inertiaDegree_pos.ne'
+      (Dvd.intro _ (inertiaDegree_tower (K := K) (L := L) M).symm))
+
+/-- **Tower compatibility of the unramified--totally ramified factorization.** The maximal
+unramified subextension is unchanged in a tower `M/L/K` exactly when the top step `M/L` is totally
+ramified. -/
+theorem map_unramifiedExtension_inertiaDegree_eq_iff :
+    (unramifiedExtension K L (inertiaDegree K L)).map
+        (IsScalarTower.toAlgHom K L M) =
+      unramifiedExtension K M (inertiaDegree K M) ↔ IsTotallyRamified L M := by
+  let U := unramifiedExtension K L (inertiaDegree K L)
+  let ι := IsScalarTower.toAlgHom K L M
+  let _ : FiniteDimensional K (U.map ι) :=
+    LinearEquiv.finiteDimensional (IntermediateField.equivMap U ι).toLinearEquiv
+  constructor
+  · intro h
+    rw [isTotallyRamified_iff_inertiaDegree_eq_one]
+    have hrank := congrArg (fun E : IntermediateField K M ↦ Module.finrank K E) h
+    rw [(IntermediateField.equivMap U ι).toLinearEquiv.finrank_eq.symm,
+      finrank_unramifiedExtension_inertiaDegree,
+      finrank_unramifiedExtension_inertiaDegree,
+      inertiaDegree_tower (K := K) (L := L) M] at hrank
+    exact Nat.eq_of_mul_eq_mul_left (inertiaDegree_pos (K := K) (L := L))
+      (by simpa using hrank.symm)
+  · intro h
+    apply IntermediateField.eq_of_le_of_finrank_eq
+      (map_unramifiedExtension_inertiaDegree_le (K := K) (L := L) M)
+    calc
+      Module.finrank K (U.map ι) = Module.finrank K U :=
+        (IntermediateField.equivMap U ι).toLinearEquiv.finrank_eq.symm
+      _ = inertiaDegree K L := finrank_unramifiedExtension_inertiaDegree K L
+      _ = inertiaDegree K M := by
+        rw [inertiaDegree_tower (K := K) (L := L) M,
+          IsTotallyRamified.inertiaDegree_eq_one h, mul_one]
+      _ = Module.finrank K (unramifiedExtension K M (inertiaDegree K M)) :=
+        (finrank_unramifiedExtension_inertiaDegree K M).symm
+
+end Tower
 
 end TauCeti

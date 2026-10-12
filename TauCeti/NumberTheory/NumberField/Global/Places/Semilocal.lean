@@ -7,7 +7,11 @@ module
 
 public import Mathlib.NumberTheory.NumberField.InfiniteAdeleRing
 public import Mathlib.Topology.Algebra.Algebra.Equiv
-public import TauCeti.NumberTheory.NumberField.Global.Places.Completion
+public import TauCeti.NumberTheory.NumberField.InfinitePlace.Completion.Extension
+public import Mathlib.RingTheory.Norm.Defs
+
+import TauCeti.RingTheory.NormTrace.BaseChange
+import TauCeti.RingTheory.NormTrace.Pi
 
 /-!
 # Semilocal decomposition at infinite places
@@ -16,7 +20,9 @@ For an extension of number fields `L/K` and an infinite place `v` of `K`, scalar
 identifies `v.Completion ⊗[K] L` with the product of the completions at the places of `L`
 above `v`. The tensor product has the module topology over `v.Completion`, and the comparison
 is a continuous algebra equivalence. This is the local archimedean comparison used to assemble
-base change of infinite adele rings.
+base change of infinite adele rings. Through it, the norm of `L/K` is the product of the local
+norms at the places above `v` (`algebraMap_norm_eq_prod_norm_infiniteCompletion`), which is the
+archimedean input to the norm map of adeles.
 
 The map sends `a ⊗ x` to `(a x)_w`. Weak approximation makes its image dense, finite
 dimensionality makes that image closed, and the sum of local degrees proves injectivity.
@@ -144,6 +150,19 @@ theorem infiniteSemilocalEquiv_symm_algebraMap (x : L) :
   funext w
   rw [infiniteSemilocalEquiv_tmul]
   simp
+
+open scoped Classical in
+/-- **The norm is the product of the archimedean local norms.** For `x ∈ L` and an infinite place
+`v` of `K`, the image of `N_{L/K}(x)` in `K_v` is the product over the places `w ∣ v` of the norms
+`N_{L_w/K_v}(x)`. This is the archimedean counterpart of `TauCeti.algebraMap_norm_eq_prod_norm`. -/
+theorem algebraMap_norm_eq_prod_norm_infiniteCompletion (x : L) :
+    algebraMap K v.Completion (Algebra.norm K x) =
+      ∏ w : {w : InfinitePlace L // w.LiesOver v},
+        Algebra.norm v.Completion (algebraMap L w.1.Completion x) := by
+  rw [← Algebra.norm_baseChange_tmul (A := v.Completion) (B := L) x,
+    ← Algebra.norm_eq_of_algEquiv (infiniteSemilocalEquiv L v), Algebra.norm_pi]
+  refine Finset.prod_congr rfl fun w _ ↦ ?_
+  rw [infiniteSemilocalEquiv_tmul, map_one, one_mul]
 
 variable [TopologicalSpace (v.Completion ⊗[K] L)]
   [IsModuleTopology v.Completion (v.Completion ⊗[K] L)]

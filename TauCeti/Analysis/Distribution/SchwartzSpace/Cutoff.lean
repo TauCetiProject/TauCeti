@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Distribution.SchwartzSpace.Basic
 import Mathlib.Analysis.Calculus.BumpFunction.FiniteDimension
 import Mathlib.Analysis.Calculus.ContDiff.Bounds
+import TauCeti.Analysis.Calculus.ContDiff.Scaling
 
 /-!
 # Cutting off a Schwartz function
@@ -71,26 +72,6 @@ theorem hasCompactSupport_smulLeftCLM_comp_inv_smul (hχ : ContDiff ℝ ∞ χ)
   rw [funext (smulLeftCLM_comp_inv_smul_apply (hsupp.hasTemperateGrowth hχ) R f)]
   exact (hsupp.comp_smul (inv_ne_zero hR)).smul_right
 
-/-- For `i ≠ 0` and `R ≥ 1`, the `i`-th derivative of `1 - χ (R⁻¹ • ·)` is at most `B / R`, where
-`B` bounds the `i`-th derivative of `χ`. -/
-private lemma norm_iteratedFDeriv_one_sub_comp_inv_smul_le (hχ : ContDiff ℝ ∞ χ) {i : ℕ}
-    (hi : i ≠ 0) {B : ℝ} (hB : ∀ x, ‖iteratedFDeriv ℝ i χ x‖ ≤ B) {R : ℝ} (hR : 1 ≤ R) (x : E) :
-    ‖iteratedFDeriv ℝ i (fun y ↦ 1 - χ (R⁻¹ • y)) x‖ ≤ B / R := by
-  have hR0 : 0 < R := zero_lt_one.trans_le hR
-  have hcomp : ContDiff ℝ i fun y ↦ χ (R⁻¹ • y) :=
-    (hχ.comp (contDiff_const_smul _)).of_le (mod_cast le_top)
-  rw [fun_iteratedFDeriv_sub_apply contDiffAt_const hcomp.contDiffAt,
-    iteratedFDeriv_const_of_ne hi, Pi.zero_apply, zero_sub, norm_neg,
-    iteratedFDeriv_comp_const_smul _ (hχ.of_le (mod_cast le_top)), norm_smul, norm_pow,
-    norm_inv, Real.norm_of_nonneg hR0.le]
-  have hRi : (R ^ i)⁻¹ ≤ R⁻¹ := by
-    rw [← inv_pow]
-    exact pow_le_of_le_one (by positivity) (inv_le_one_of_one_le₀ hR) hi
-  calc (R⁻¹) ^ i * ‖iteratedFDeriv ℝ i χ (R⁻¹ • x)‖ ≤ R⁻¹ * B := by
-        rw [inv_pow]
-        exact mul_le_mul hRi (hB _) (norm_nonneg _) (by positivity)
-    _ = B / R := by rw [inv_mul_eq_div]
-
 /-- Where `‖x‖ ≥ ρ > 0`, one power of `‖x‖` can be traded for `ρ⁻¹` against the next seminorm. -/
 private lemma pow_mul_norm_iteratedFDeriv_le_div (f : 𝓢(E, F)) (k j : ℕ) {ρ : ℝ} (hρ : 0 < ρ)
     {x : E} (hx : ρ ≤ ‖x‖) :
@@ -133,7 +114,13 @@ private lemma norm_iteratedFDeriv_one_sub_mul_le (hχ : ContDiff ℝ ∞ χ) {B 
           · linarith [hB0 0]
           · exact le_add_of_nonneg_left hS
   · -- A derivative falls on the cutoff: it contributes a factor `R⁻¹`.
-    have hhi := norm_iteratedFDeriv_one_sub_comp_inv_smul_le hχ hi (hB i) hR x
+    have hhi : ‖iteratedFDeriv ℝ i (fun y ↦ 1 - χ (R⁻¹ • y)) x‖ ≤ B i / R := by
+      have heq : (fun y ↦ 1 - χ (R⁻¹ • y)) = -(fun y ↦ χ (R⁻¹ • y) - 1) := by
+        funext y
+        exact (neg_sub _ _).symm
+      rw [heq, iteratedFDeriv_neg_apply (𝕜 := ℝ), norm_neg]
+      exact TauCeti.norm_iteratedFDeriv_comp_inv_smul_sub_const_le
+        (hχ.of_le (mod_cast le_top)) hi (hB i) hR 1 x
     have hfi : ‖x‖ ^ k * ‖iteratedFDeriv ℝ (n - i) f x‖ ≤
         SchwartzMap.seminorm ℝ k (n - i) f := le_seminorm ℝ k (n - i) f x
     have hS : 0 ≤ SchwartzMap.seminorm ℝ (k + 1) (n - i) f / r :=

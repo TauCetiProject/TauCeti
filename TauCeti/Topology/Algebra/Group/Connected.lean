@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Algebra.Group.Quotient
+public import Mathlib.Topology.Algebra.Group.Subgroup
 
 import Mathlib.Topology.Algebra.OpenSubgroup
 

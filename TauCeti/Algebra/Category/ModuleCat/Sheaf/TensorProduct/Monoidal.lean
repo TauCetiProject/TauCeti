@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Category.ModuleCat.Sheaf.Localization
 public import Mathlib.CategoryTheory.Localization.Monoidal.Braided
+public import TauCeti.CategoryTheory.Monoidal.Braided.Adjunction
 public import TauCeti.Algebra.Category.ModuleCat.Presheaf.IsMonoidalW
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.TensorProduct.Basic
 
@@ -39,7 +40,8 @@ the localization functor, for which sheafification is a braided monoidal functor
   the sectionwise tensor product of the underlying presheaves of modules, natural in `M` and `N`
   (`SheafOfModules.tensorUnderlyingIso_naturality`) and compatible with the braiding and
   the unitors.
-* `SheafOfModules.sheafificationForgetAdjunction` and `SheafOfModules.forgetLaxMonoidal`:
+* `SheafOfModules.sheafificationForgetAdjunction`, `SheafOfModules.forgetLaxMonoidal`, and
+  `SheafOfModules.forgetLaxBraided`:
   sheafification is left adjoint to the inclusion of sheaves of modules into presheaves of
   modules, which is therefore lax monoidal, with unit map the identity
   (`SheafOfModules.forget_ε`) and tensor map the unit of sheafification
@@ -259,6 +261,15 @@ the unit of sheafification (`SheafOfModules.forget_μ`), and its unit map is the
 (`SheafOfModules.forget_ε`). -/
 instance forgetLaxMonoidal : (_root_.SheafOfModules.forget (ringCatSheaf R)).LaxMonoidal :=
   (sheafificationForgetAdjunction R).rightAdjointLaxMonoidal
+
+/-- The inclusion of sheaves of modules into presheaves of modules respects symmetry, as the
+right adjoint of braided monoidal sheafification. -/
+instance forgetLaxBraided : (_root_.SheafOfModules.forget (ringCatSheaf R)).LaxBraided where
+  toLaxMonoidal := forgetLaxMonoidal R
+  braided M N := by
+    have h := ((sheafificationForgetAdjunction R).rightAdjointLaxBraided).braided M N
+    rw [Adjunction.rightAdjointLaxBraided_toLaxMonoidal] at h
+    exact h
 
 /-- The unit map of the inclusion of sheaves of modules into presheaves of modules is the
 identity. -/

@@ -6,14 +6,16 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.TensorProduct.Associator
+public import Mathlib.Algebra.BigOperators.Group.Finset.Sigma
 
 /-!
-# Tensor-product contractions
+# Tensor-product contractions and trace identities
 
 This file defines contraction of a tensor product against a linear functional on its right factor,
 and records its behavior on pure tensors and under tensor-product maps.
 Such contractions extract coordinates and test tensor identities, supporting componentwise
-arguments about coactions and weight spaces.
+arguments about coactions and weight spaces. It also proves the tensor identity that makes
+the Casimir element of a trace commute with multiplication.
 
 ## Main declarations
 
@@ -22,6 +24,13 @@ arguments about coactions and weight spaces.
 * `LinearMap.tensorComponent_assoc_symm`: contraction commutes with reassociation.
 * `LinearMap.comp_tensorComponent`: contraction commutes with a functional on the left.
 * `TauCeti.tensorProduct_rid_rTensor_apply`: naturality of the right tensor unitor.
+* `LinearMap.sum_mul_tmul_eq_sum_tmul_mul`: the Casimir element of a trace commutes with
+  multiplication.
+
+## References
+
+* L. Kadison, *New examples of Frobenius extensions*, University Lecture Series 14, AMS, 1999
+  (dual bases of Frobenius algebras and extensions, and their Casimir elements).
 -/
 
 public section
@@ -100,6 +109,60 @@ theorem comp_tensorComponent (psi : M →ₗ[R] R) (phi : N →ₗ[R] R) :
     mul_comm]
 
 end
+
+/-! ### The Casimir element of a trace
+
+Let `φ : A →ₗ[k] k` be a trace on a `k`-algebra `A`, so `φ (a * b) = φ (b * a)`, and let `x` and
+`y` be finite families dual to each other for the pairing `(a, b) ↦ φ (a * b)`, in the sense that
+every element expands in either family with coefficients read off by pairing against the other:
+
+```text
+a = ∑ i, φ (a * y i) • x i,        a = ∑ i, φ (x i * a) • y i.
+```
+
+For a finite free symmetric Frobenius algebra, a basis and its dual basis give such families;
+the expansion identities also allow redundant families. The **Casimir element** `∑ i, x i ⊗ y i`
+of `A ⊗[k] A` then commutes with `A` in the bimodule sense:
+
+```text
+∑ i, (a * x i) ⊗ y i = ∑ i, x i ⊗ (y i * a).
+```
+
+This is what makes `1 ↦ ∑ i, x i ⊗ y i` a map of `A`-bimodules `A → A ⊗[k] A`, the coevaluation of
+a symmetric Frobenius algebra; for a Frobenius coalgebra in Mathlib's sense
+(`Coalgebra.IsFrobenius`) with counit `φ`, the element is the comultiplication of `1`.
+
+The tensor identity itself needs only a `k`-module `A` with an associative multiplication.
+No multiplicative identity, distributivity, or compatibility with scalar multiplication is needed.
+
+-/
+
+section Casimir
+
+variable {k A : Type*} [CommSemiring k] [AddCommMonoid A] [Semigroup A] [Module k A]
+
+/-- **The Casimir element of a trace commutes with multiplication.** If `φ` is a trace on `A`
+and the finite families `x` and `y` are dual for `(a, b) ↦ φ (a * b)`, then
+`∑ i, (a * x i) ⊗ y i = ∑ i, x i ⊗ (y i * a)` for every `a : A`. -/
+theorem sum_mul_tmul_eq_sum_tmul_mul {ι : Type*} [Fintype ι] (φ : A →ₗ[k] k)
+    (hφ : ∀ a b : A, φ (a * b) = φ (b * a)) {x y : ι → A}
+    (hx : ∀ a : A, ∑ i, φ (a * y i) • x i = a) (hy : ∀ a : A, ∑ i, φ (x i * a) • y i = a)
+    (a : A) :
+    ∑ i, (a * x i) ⊗ₜ[k] y i = ∑ i, x i ⊗ₜ[k] (y i * a) := by
+  -- Expand each `a * x i` in the family `x`; the coefficients then match those of the expansion
+  -- of `y j * a` in the family `y`, by the trace property.
+  have expand (i : ι) :
+      (a * x i) ⊗ₜ[k] y i = ∑ j, x j ⊗ₜ[k] (φ (x i * (y j * a)) • y i) := by
+    conv_lhs => rw [← hx (a * x i)]
+    rw [TensorProduct.sum_tmul]
+    refine Finset.sum_congr rfl fun j _ => ?_
+    rw [TensorProduct.smul_tmul, mul_assoc, hφ, mul_assoc]
+  simp_rw [expand]
+  rw [Finset.sum_comm]
+  refine Finset.sum_congr rfl fun j _ => ?_
+  rw [← TensorProduct.tmul_sum, hy]
+
+end Casimir
 
 end LinearMap
 

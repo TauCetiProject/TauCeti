@@ -99,6 +99,14 @@ theorem characterPairing_isSymm :
     characterPairing (k := k) (G := G).IsSymm :=
   ⟨characterPairing_symm⟩
 
+/-- **The character pairing commutes with a change of coefficient field**: pairing the images of
+two class functions under a field homomorphism `σ` gives the image of their pairing. -/
+@[simp]
+theorem characterPairing_map {k' : Type*} [Field k'] (σ : k →+* k')
+    (f₁ f₂ : ClassFunction k G) :
+    characterPairing (map σ f₁) (map σ f₂) = σ (characterPairing f₁ f₂) := by
+  simp [characterPairing_apply]
+
 /-- **The character pairing is invariant under inverting the group element**: the inversion twist
 `TauCeti.ClassFunction.invMap` is an isometry of the pairing. -/
 @[simp]
@@ -185,6 +193,24 @@ theorem characterPairing_ofCharacter_eq_finrank {V W : Type*} [AddCommGroup V] [
       Module.finrank k (Representation.IntertwiningMap σ ρ) := by
   rw [characterPairing_ofCharacter]
   exact Representation.card_inv_mul_sum_char_mul_char_eq_finrank σ ρ
+
+/-- When `σ` admits no nonzero intertwiner into `ρ`, the norm of `χ_ρ - χ_σ` is
+`dim End(ρ) + dim End(σ)`: the cross terms are the dimensions of the intertwiner spaces between
+`ρ` and `σ` in the two directions, which agree by symmetry of the pairing. -/
+theorem characterPairing_ofCharacter_sub_self {V W : Type*} [AddCommGroup V] [Module k V]
+    [FiniteDimensional k V] [AddCommGroup W] [Module k W] [FiniteDimensional k W]
+    [Invertible (Nat.card G : k)] (ρ : Representation k G V) (σ : Representation k G W)
+    [Subsingleton (Representation.IntertwiningMap σ ρ)] :
+    characterPairing (ofCharacter ρ - ofCharacter σ) (ofCharacter ρ - ofCharacter σ) =
+      Module.finrank k (Representation.IntertwiningMap ρ ρ) +
+        Module.finrank k (Representation.IntertwiningMap σ σ) := by
+  have hρσ : characterPairing (ofCharacter ρ) (ofCharacter σ) = 0 := by
+    rw [characterPairing_ofCharacter_eq_finrank, Module.finrank_zero_of_subsingleton,
+      Nat.cast_zero]
+  simp only [map_sub, LinearMap.sub_apply]
+  rw [characterPairing_symm (ofCharacter σ), hρσ, characterPairing_ofCharacter_eq_finrank,
+    characterPairing_ofCharacter_eq_finrank]
+  ring
 
 open scoped Classical in
 /-- The character pairing of irreducible characters is Kronecker orthonormal. -/

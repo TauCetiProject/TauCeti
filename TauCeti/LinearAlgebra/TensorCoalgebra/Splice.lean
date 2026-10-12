@@ -34,6 +34,8 @@ block.
 * `TauCeti.ReducedTensorWords.splice_congr`: a spliced word depends only on the letters spliced.
 * `TauCeti.ReducedTensorWords.map_splice`: mapping a spliced word maps each of its letters.
 * `TauCeti.ReducedTensorWords.deconcatenation_splice`: reduced deconcatenation of a spliced word.
+* `TauCeti.ReducedTensorWords.prepend_splice`: prepending the first letter of a tuple commutes with
+  splicing a block of the rest.
 
 ## References
 
@@ -200,7 +202,6 @@ private theorem deconcatenation_splice_left {n : ℕ} (x : Fin n → M) {a b p d
     rw [subword_eq_of_tprod R _ (by omega) (by omega),
       splice_eq_of_tprod R x e hd (by omega) (by omega)]
     refine of_tprod_congr R M _ (by omega) fun j ↦ ?_
-    have hj := j.isLt
     simp only [Fin.val_cast]
     split_ifs <;> first | rfl | exact congrArg x (by simp only [Fin.mk.injEq]; omega) | omega
   rw [hfst, hsnd]
@@ -229,7 +230,6 @@ private theorem deconcatenation_splice_right {n : ℕ} (x : Fin n → M) {a b p 
     rw [subword_eq_of_tprod R _ (by omega) (by omega),
       splice_eq_of_tprod R x e hd (by omega) (by omega)]
     refine of_tprod_congr R M _ (by omega) fun j ↦ ?_
-    have hj := j.isLt
     simp only [Fin.val_cast]
     split_ifs <;> first | rfl | exact congrArg x (by simp only [Fin.mk.injEq]; omega) | omega
   have hsnd : subword R
@@ -241,7 +241,6 @@ private theorem deconcatenation_splice_right {n : ℕ} (x : Fin n → M) {a b p 
     rw [subword_eq_of_tprod R _ (by omega) (by omega),
       subword_eq_of_tprod R x (by omega) (by omega)]
     refine of_tprod_congr R M _ (by omega) fun j ↦ ?_
-    have hj := j.isLt
     simp only [Fin.val_cast]
     have hjp : ¬(c + j.1) < p := by omega
     have hjp_ne : ¬(c + j.1) = p := by omega
@@ -334,6 +333,22 @@ theorem deconcatenation_splice {n : ℕ} (x : Fin n → M) {a b p d : ℕ} (e : 
         simp only [Finset.mem_range] at hc
         rw [subword_eq_zero_of_lt_add R x (by omega), TensorProduct.tmul_zero]
     rw [hleft, hright, add_zero]
+
+/-- Prepending the first letter of a tuple to a splice of the remaining letters is the splice of
+the whole tuple at the next position. -/
+theorem prepend_splice {n : ℕ} (y : Fin (n + 1) → M) (p d : ℕ) (e : M) :
+    prepend R M (y 0) (splice R (Fin.tail y) 0 n p d e) = splice R y 0 (n + 1) (p + 1) d e := by
+  by_cases h : 0 < d ∧ p + d ≤ n
+  · rw [splice_eq_of_tprod R (Fin.tail y) e h.1 h.2 (by omega), prepend_of_tprod,
+      splice_eq_of_tprod R y e h.1 (by omega) (by omega)]
+    refine of_tprod_congr R M _ (by dsimp only; omega) fun i ↦ ?_
+    induction i using Fin.cases with
+    | zero => simp
+    | succ j =>
+      simp only [Fin.cons_succ, Fin.tail, Fin.val_cast, Fin.val_succ, Nat.zero_add]
+      split_ifs <;> first | omega | rfl | exact congrArg y (Fin.ext (by simp; omega))
+  · rw [splice_eq_zero_of_not_fits R _ e h, map_zero,
+      splice_eq_zero_of_not_fits R y e (by omega)]
 
 end ReducedTensorWords
 

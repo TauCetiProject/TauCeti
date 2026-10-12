@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.InnerProductSpace.Harmonic.MeanValue
+public import TauCeti.Analysis.InnerProductSpace.Harmonic.MeanValue.Basic
+import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
 import TauCeti.MeasureTheory.Integral.NormRpow
 
 /-!
@@ -198,7 +199,7 @@ theorem mul_le_eight_mul_setIntegral_ball_of_neg_mul_sq_le_laplacian
   have : Nontrivial E := Module.nontrivial_of_finrank_eq_succ hE
   rcases le_or_gt r 0 with hr | hr
   · simp [ball_eq_empty.mpr hr]
-  set I := ∫ x in ball x₀ r, w x ∂μ with hI_def
+  set I := ∫ x in ball x₀ r, w x ∂μ
   set V := μ.real (ball (0 : E) 1) with hV_def
   have hV : 0 < V := by
     rw [hV_def, measureReal_def]
@@ -260,7 +261,7 @@ theorem mul_le_eight_mul_setIntegral_ball_of_neg_mul_sq_le_laplacian
       by_contra h
       rw [le_antisymm (not_lt.mp h) hA'] at hcase
       linarith
-    set δ := Real.sqrt (1 / (4 * A' * w z)) with hδ_def
+    set δ := Real.sqrt (1 / (4 * A' * w z))
     have hδ2 : δ ^ 2 = 1 / (4 * A' * w z) := Real.sq_sqrt (by positivity)
     have hδ : 0 < δ := Real.sqrt_pos.mpr (by positivity)
     have hδε : δ ≤ ε := by
@@ -272,7 +273,7 @@ theorem mul_le_eight_mul_setIntegral_ball_of_neg_mul_sq_le_laplacian
     have h := hloc δ hδ hδε
     have hhalf : 2 * A' * w z ^ 2 * δ ^ 2 * (δ ^ 2 * V) = δ ^ 2 * V * w z / 2 := by
       linear_combination (δ ^ 2 * V * w z / 2) * hAcδ
-    have h2 : δ ^ 2 * V * w z ≤ 2 * I := by linarith
+    have _ : δ ^ 2 * V * w z ≤ 2 * I := by linarith
     have h3 : V ≤ 8 * A' * I := by
       have : δ ^ 2 * V * w z * (4 * A') = V := by linear_combination V * hAcδ
       nlinarith

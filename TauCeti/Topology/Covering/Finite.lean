@@ -95,23 +95,20 @@ abbrev forget (X : TopCat.{u}) : FiniteCoveringSpace X ⥤ CoveringSpace X :=
   CoveringSpace.FullSubcategory.forget X _
 
 /-- Construct a finite covering space from a covering map with finite fibres. -/
-def mk {E : TopCat.{u}} (p : E ⟶ X) (hp : _root_.IsCoveringMap p)
+@[expose] def mk {E : TopCat.{u}} (p : E ⟶ X) (hp : _root_.IsCoveringMap p)
     (hfin : ∀ x : X, Finite ↥(⇑p ⁻¹' {x})) : FiniteCoveringSpace X :=
   CoveringSpace.FullSubcategory.mk p hp (Over.hasFiniteFibers_iff.2 hfin)
 
 @[simp]
 theorem mk_coe {E : TopCat.{u}} (p : E ⟶ X) (hp : _root_.IsCoveringMap p)
     (hfin : ∀ x : X, Finite ↥(⇑p ⁻¹' {x})) : (mk p hp hfin : TopCat) = E :=
-  -- The `_` is the finiteness proof that `mk` supplies; the generic lemma applies because `mk`
-  -- unfolds to the generic constructor. A `rfl` cannot: this theorem is exported, so it may only
-  -- unfold definitions whose bodies are exposed, and `mk`'s is not.
-  CoveringSpace.FullSubcategory.mk_coe p hp _
+  rfl
 
 @[simp]
 theorem mk_proj {E : TopCat.{u}} (p : E ⟶ X) (hp : _root_.IsCoveringMap p)
     (hfin : ∀ x : X, Finite ↥(⇑p ⁻¹' {x})) :
-    (mk p hp hfin).proj = eqToHom (mk_coe p hp hfin) ≫ p :=
-  CoveringSpace.FullSubcategory.mk_proj p hp _
+    (mk p hp hfin).proj = p :=
+  rfl
 
 @[simp]
 theorem forget_obj_mk {E : TopCat.{u}} (p : E ⟶ X) (hp : _root_.IsCoveringMap p)

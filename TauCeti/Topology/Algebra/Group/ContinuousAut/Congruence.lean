@@ -8,6 +8,7 @@ module
 public import Mathlib.Topology.Connected.TotallyDisconnected
 public import TauCeti.Topology.Algebra.Group.Conjugacy
 public import TauCeti.Topology.Algebra.Group.ContinuousAut.Quotient
+import Mathlib.Topology.Separation.Connected
 
 /-!
 # The congruence topology on continuous automorphisms
@@ -52,6 +53,8 @@ discrete (`Multiplicative (ℤ × ℤ)` has the open characteristic subgroup `�
   `TauCeti.ContinuousAut.totallyDisconnectedSpace`: for a topologically finitely generated
   profinite group, the coordinates embed `ContinuousAut G` into a product of discrete groups, so
   the congruence topology is Hausdorff and totally disconnected.
+* `TauCeti.ContinuousAut.isEmbedding_pi_mapQuotient_of_forall_exists_le`: the coordinates along
+  any cofinal family of characteristic open normal subgroups already give such an embedding.
 * `TauCeti.ContinuousAut.isClosed_setOf_apply_eq`, `TauCeti.ContinuousAut.isClosed_isConj`: the
   automorphisms with a prescribed value, or a prescribed conjugacy class of a value, at a point
   form a closed set.
@@ -251,6 +254,32 @@ theorem isEmbedding_pi_mapQuotient (hG : IsTopologicallyFinitelyGenerated G) :
     TopologicalSpace (MulAut (G ⧸ (N.1 : Subgroup G))) := fun _ ↦ ⊥
   exact ⟨inducing_iInf_to_pi _,
     fun φ ψ h ↦ eq_of_forall_mapQuotient_eq hG fun N hN ↦ congrFun h ⟨N, hN⟩⟩
+
+/-- For a topologically finitely generated profinite group, the characteristic quotient
+coordinates along any family `N i` of topologically characteristic open normal subgroups that is
+cofinal among them already embed `ContinuousAut G` into the product of the discrete automorphism
+groups: each other coordinate factors through one of the family. -/
+theorem isEmbedding_pi_mapQuotient_of_forall_exists_le (hG : IsTopologicallyFinitelyGenerated G)
+    {ι : Type*} {N : ι → OpenNormalSubgroup G} (hN : ∀ i, IsTopCharacteristic G (N i))
+    (hcof : ∀ M : OpenNormalSubgroup G, IsTopCharacteristic G M → ∃ i, N i ≤ M) :
+    letI : ∀ i, TopologicalSpace (MulAut (G ⧸ (N i : Subgroup G))) := fun _ ↦ ⊥
+    IsEmbedding fun (φ : ContinuousAut G) i ↦ mapQuotient (hN i) φ := by
+  let _ : ∀ i, TopologicalSpace (MulAut (G ⧸ (N i : Subgroup G))) := fun _ ↦ ⊥
+  refine ⟨⟨?_⟩, fun φ ψ h ↦ eq_of_forall_mapQuotient_eq hG fun M hM ↦ ?_⟩
+  · rw [induced_to_pi, congruenceTopology_eq_iInf]
+    refine le_antisymm (le_iInf fun i ↦ iInf_le_of_le ⟨N i, hN i⟩ le_rfl) (le_iInf fun M ↦ ?_)
+    obtain ⟨i, hi⟩ := hcof M.1 M.2
+    refine iInf_le_of_le i ?_
+    -- The coordinate at `M` is constant on the fibres of the coordinate at `N i`, so it factors
+    -- through the coordinate at `N i`.
+    have hfac : (mapQuotient M.2 : ContinuousAut G → MulAut (G ⧸ (M.1 : Subgroup G))) =
+        Function.extend (mapQuotient (hN i)) (mapQuotient M.2) 1 ∘ mapQuotient (hN i) :=
+      funext fun φ ↦ (Function.FactorsThrough.extend_apply (f := mapQuotient (hN i))
+        (fun _ _ h ↦ mapQuotient_eq_mapQuotient_of_le (hN i) M.2 hi h) 1 φ).symm
+    rw [hfac, ← induced_compose]
+    exact induced_mono bot_le
+  · obtain ⟨i, hi⟩ := hcof M hM
+    exact mapQuotient_eq_mapQuotient_of_le (hN i) hM hi (congrFun h i)
 
 /-- For a topologically finitely generated profinite group, the congruence topology is
 Hausdorff. -/

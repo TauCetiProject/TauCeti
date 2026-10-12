@@ -1,0 +1,16 @@
+# Statuses on the exact PR head and on the combined staging commit.
+# TauCetiReview supplies the head-bound bors approval; trusted CI supplies
+# these statuses. A batch is tested once, then fast-forwarded to main.
+status = ["build", "bump-guard", "scope"]
+pr_status = ["build", "bump-guard", "scope"]
+
+use_squash_merge = true
+use_codeowners = false
+max_batch_size = 128
+
+# CI has an unusually long tail when Lake pins move. These are failure
+# deadlines, not batch-fill delays or target latencies.
+timeout_sec = 36000
+prerun_timeout_sec = 10800
+
+block_labels = ["keep", "hold", "wip", "human", "do-not-close"]

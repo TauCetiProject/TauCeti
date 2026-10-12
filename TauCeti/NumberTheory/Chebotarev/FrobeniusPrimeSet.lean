@@ -105,8 +105,7 @@ theorem mem_frobeniusPrimeSet_iff {𝔭 : HeightOneSpectrum (𝓞 K)}
   Iff.rfl
 
 /-- Every prime lies in the unique Frobenius fibre of the trivial extension. -/
--- Apply before the generic membership expansion in `mem_frobeniusPrimeSet_iff`.
-@[simp high] theorem mem_frobeniusPrimeSet_self (𝔭 : HeightOneSpectrum (𝓞 K))
+theorem mem_frobeniusPrimeSet_self (𝔭 : HeightOneSpectrum (𝓞 K))
     (C : ConjClasses (K ≃ₐ[K] K)) : 𝔭 ∈ frobeniusPrimeSet K K C := by
   rw [mem_frobeniusPrimeSet_iff]
   have : Subsingleton (ConjClasses (K ≃ₐ[K] K)) := Quot.Subsingleton
@@ -114,6 +113,12 @@ theorem mem_frobeniusPrimeSet_iff {𝔭 : HeightOneSpectrum (𝓞 K)}
   intro Q _ _
   -- Specify the localization algebra to avoid the ring-of-integers self-algebra diamond.
   exact inferInstanceAs (Algebra.FormallyUnramified (𝓞 K) (Localization Q.primeCompl))
+
+/-- The unique Frobenius fibre of the trivial extension is the whole spectrum:
+`frobeniusPrimeSet K K C = Set.univ`. -/
+@[simp] theorem _root_.TauCeti.NumberField.Chebotarev.frobeniusPrimeSet_self
+    (C : ConjClasses (K ≃ₐ[K] K)) : frobeniusPrimeSet K K C = Set.univ :=
+  Set.eq_univ_of_forall fun 𝔭 ↦ mem_frobeniusPrimeSet_self 𝔭 C
 
 /-- **Proof-independence.** Once an unramifiedness proof `hur` is available, membership in
 `frobeniusPrimeSet K L C` is the plain equation `artinSymbol 𝔭.asIdeal hur = C`: the existential

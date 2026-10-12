@@ -10,20 +10,23 @@ public import TauCeti.Geometry.Manifold.Boundary.Charts
 public import TauCeti.Geometry.Manifold.LocallyFlat.Smooth
 
 /-!
-# Neat smooth embeddings of manifolds with boundary are locally flat
+# Neat smooth embeddings of half-space charted spaces are locally flat
 
 `TauCeti.IsLocallyFlat.of_isSmoothEmbedding` proves that a smooth embedding into a *boundaryless*
-manifold is locally flat. This file treats an ambient manifold with boundary. The embeddings
-considered are the *neat* ones, which meet the boundary of the ambient manifold exactly in their
-own boundary: `f ⁻¹' ∂N = ∂M`. A properly embedded slice disc `D² → D⁴` is the motivating
-example. For manifolds modelled on Euclidean half-spaces `𝓡∂ k` and `𝓡∂ m`, such an embedding is
-locally flat with tangential model the half-space `EuclideanHalfSpace k`. Ambient charts take
-values in `EuclideanHalfSpace k × F`, with `F` the complement of the immersion, and carry the image
-of `f` exactly onto `EuclideanHalfSpace k × {0}`. At a boundary point this is the standard picture
-`(ℝᵏ⁻¹ × [0, ∞)) × {0} ⊆ (ℝᵏ⁻¹ × [0, ∞)) × ℝᵐ⁻ᵏ` of a neat submanifold.
+manifold is locally flat. This file treats *neat* embeddings between charted spaces modelled on
+Euclidean half-spaces `𝓡∂ k` and `𝓡∂ m`, meeting the boundary of the ambient space exactly in their
+own boundary: `f ⁻¹' ∂N = ∂M`. The maximal-atlas charts in the immersion's normal form supply the
+smoothness needed here; global `IsManifold` instances are unnecessary. Such an embedding is locally
+flat with tangential model the half-space `EuclideanHalfSpace k`. Ambient charts take values in
+`EuclideanHalfSpace k × F`, with `F` the complement of the immersion, and carry the image of `f`
+exactly onto `EuclideanHalfSpace k × {0}`.
+
+A properly embedded slice disc `D² → D⁴` in manifolds with boundary is the motivating example.
+At a boundary point the standard picture of a neat submanifold is
+`(ℝᵏ⁻¹ × [0, ∞)) × {0} ⊆ (ℝᵏ⁻¹ × [0, ∞)) × ℝᵐ⁻ᵏ`.
 
 The immersion normal form `Manifold.IsImmersionAtOfComplement` reads `f` in charts as
-`u ↦ L (u, 0)` for a linear equivalence `L : E × F ≃L E'`. When the ambient manifold has boundary
+`u ↦ L (u, 0)` for a linear equivalence `L : E × F ≃L E'`. When the ambient model has boundary,
 the ambient chart only covers a piece of the half-space `range (𝓡∂ m)`, so `L⁻¹` composed with it
 is not an open map into `E × F`. What is needed is a linear equivalence `A : E' ≃L E × F` that
 still reads `f` as `u ↦ (u, 0)` and carries the half-space `range (𝓡∂ m)` onto
@@ -53,10 +56,10 @@ multiple of the boundary coordinate is supplied by
 * `TauCeti.exists_isSliceChart_of_isImmersionAtOfComplement_of_straightening`: a straightening of
   the ambient model gives a slice chart valued in `H × F`.
 * `TauCeti.exists_isSliceChart_of_isImmersionAtOfComplement_of_preimage_boundary`: the slice chart
-  of a neat embedding of half-space manifolds at a point.
+  of a neat embedding of half-space charted spaces at a point.
 * `TauCeti.IsLocallyFlat.of_isImmersionOfComplement_of_isEmbedding_of_preimage_boundary` and
   `TauCeti.IsLocallyFlat.of_isSmoothEmbedding_of_preimage_boundary`: a neat `C^n` embedding of
-  half-space manifolds, `n ≠ 0`, is locally flat with tangential model the half-space.
+  half-space charted spaces, `n ≠ 0`, is locally flat with tangential model the half-space.
 
 ## References
 
@@ -131,7 +134,6 @@ theorem exists_isSliceChart_of_isImmersionAtOfComplement_of_straightening (hf : 
       IsSliceChart Φ (univ ×ˢ ({0} : Set F)) (range f) := by
   -- The ambient chart of the immersion, straightened into `H × F`.
   set Ψ : OpenPartialHomeomorph N (H × F) := h.codChart.trans (straighteningChart A hO hA)
-    with hΨ
   -- Both hold by unfolding `OpenPartialHomeomorph.trans` and `straighteningChart`.
   have hΨ_apply : ∀ p : N, Ψ p =
       (I.symm (A (h.codChart.extend J p)).1, (A (h.codChart.extend J p)).2) := fun _ => rfl
@@ -234,12 +236,12 @@ private theorem exists_straightening_of_eq_mul_apply_zero {F : Type*} [NormedAdd
 variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] {k m : ℕ} [NeZero k] [NeZero m]
   {M : Type*} [TopologicalSpace M] [ChartedSpace (EuclideanHalfSpace k) M]
   {N : Type*} [TopologicalSpace N] [ChartedSpace (EuclideanHalfSpace m) N]
-  {n : ℕ∞ω} [IsManifold (𝓡∂ k) n M] [IsManifold (𝓡∂ m) n N] {f : M → N}
+  {n : ℕ∞ω} {f : M → N}
 
-/-- **The slice chart of a neat embedding.** Let `f` be a topological embedding between `C^n`
-manifolds modelled on Euclidean half-spaces, `n ≠ 0`, which is an immersion at `x` with complement
-`F` and meets the boundary of `N` exactly in the boundary of `M`. Then around `f x` there is an
-ambient chart valued in `EuclideanHalfSpace k × F` carrying `Set.range f` exactly onto
+/-- **The slice chart of a neat embedding.** Let `f` be a topological embedding between charted
+spaces modelled on Euclidean half-spaces, which is a `C^n` immersion at `x`, `n ≠ 0`, with
+complement `F` and meets the boundary of `N` exactly in the boundary of `M`. Then around `f x`
+there is an ambient chart valued in `EuclideanHalfSpace k × F` carrying `Set.range f` exactly onto
 `EuclideanHalfSpace k × {0}`. -/
 theorem exists_isSliceChart_of_isImmersionAtOfComplement_of_preimage_boundary (hn : n ≠ 0)
     (hf : IsEmbedding f) (hb : f ⁻¹' (𝓡∂ m).boundary N = (𝓡∂ k).boundary M) {x : M}
@@ -319,9 +321,10 @@ theorem exists_isSliceChart_of_isImmersionAtOfComplement_of_preimage_boundary (h
     exact exists_isSliceChart_of_isImmersionAtOfComplement_of_straightening hf h A hAL
       isOpen_univ (mem_univ _) fun v _ => hA v
 
-/-- **A neat `C^n` immersion of half-space manifolds which is a topological embedding is locally
-flat**, `n ≠ 0`. The tangential model is the half-space `EuclideanHalfSpace k`, so that boundary
-points of `M` are flattened onto the boundary of the slice, and the complementary model is the
+/-- **A neat `C^n` immersion between half-space charted spaces is locally flat** if it is a
+topological embedding and `n ≠ 0`. The tangential model is the half-space `EuclideanHalfSpace k`,
+so that boundary points of `M` are flattened onto the boundary of the slice, and the
+complementary model is the
 complement `F` of the immersion. -/
 theorem IsLocallyFlat.of_isImmersionOfComplement_of_isEmbedding_of_preimage_boundary (hn : n ≠ 0)
     (h : IsImmersionOfComplement F (𝓡∂ k) (𝓡∂ m) n f) (hf : IsEmbedding f)
@@ -330,9 +333,9 @@ theorem IsLocallyFlat.of_isImmersionOfComplement_of_isEmbedding_of_preimage_boun
   isLocallyFlat_iff_isSliceEmbedding.2 ⟨hf, fun x =>
     exists_isSliceChart_of_isImmersionAtOfComplement_of_preimage_boundary hn hf hb (h x)⟩
 
-/-- **A neat `C^n` embedding of half-space manifolds is locally flat**, `n ≠ 0`: if `f` meets the
-boundary of `N` exactly in the boundary of `M`, it is locally flat with tangential model the
-half-space `EuclideanHalfSpace k` and complementary model the complement chosen by the
+/-- **A neat `C^n` embedding between half-space charted spaces is locally flat**, `n ≠ 0`: if `f`
+meets the boundary of `N` exactly in the boundary of `M`, it is locally flat with tangential model
+the half-space `EuclideanHalfSpace k` and complementary model the complement chosen by the
 immersion. -/
 theorem IsLocallyFlat.of_isSmoothEmbedding_of_preimage_boundary (hn : n ≠ 0)
     (h : IsSmoothEmbedding (𝓡∂ k) (𝓡∂ m) n f)

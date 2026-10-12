@@ -21,7 +21,8 @@ cycles of arbitrary prime length of Mathlib's
 `Equiv.Perm.alternatingGroup_le_of_isPreprimitive_of_isThreeCycle_mem`, which need no bound on
 the degree. The bound `p + 3 ≤ n` cannot be weakened to `p ≤ n` or `p + 1 ≤ n`: the affine group
 `AGL(1, 5)` is primitive of degree `5` and contains a `5`-cycle, and `AGL(1, 8)` is primitive of
-degree `8` and contains a `7`-cycle. Neither contains the alternating group.
+degree `8` and contains a `7`-cycle. Neither contains the alternating group. These two witnesses
+are proved in `TauCeti.GroupTheory.Perm.Jordan.Counterexamples`.
 
 ## Main results
 

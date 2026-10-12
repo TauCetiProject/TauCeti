@@ -63,6 +63,19 @@ theorem ofReal_riemannianTotalVolume :
 theorem riemannianTotalVolume_nonneg : 0 ≤ riemannianTotalVolume I M :=
   measureReal_nonneg
 
+/-- A nonempty compact boundaryless Riemannian manifold has positive total volume. -/
+theorem riemannianTotalVolume_pos [I.Boundaryless] [Nonempty M] :
+    0 < riemannianTotalVolume I M := by
+  obtain ⟨α⟩ := ‹Nonempty M›
+  rw [riemannianTotalVolume_def]
+  apply ENNReal.toReal_pos
+  · have hsource : 0 < riemannianVolume I M (chartAt H α).source := by
+      rw [riemannianVolume_apply_of_subset (α := α) (s := (chartAt H α).source) subset_rfl]
+      exact chartRiemannianVolume_pos α
+    have hmono : (chartAt H α).source ⊆ (Set.univ : Set M) := subset_univ _
+    exact (lt_of_lt_of_le hsource (measure_mono hmono)).ne'
+  · finiteness
+
 variable {H' : Type*} [TopologicalSpace H'] {I' : ModelWithCorners ℝ E H'}
   {N : Type*} [TopologicalSpace N] [CompactSpace N] [ChartedSpace H' N]
   [IsManifold I' 1 N]

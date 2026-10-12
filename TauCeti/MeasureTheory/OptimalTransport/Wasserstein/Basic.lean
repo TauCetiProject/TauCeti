@@ -9,7 +9,7 @@ public import Mathlib.MeasureTheory.Function.LpSeminorm.CompareExp
 public import Mathlib.MeasureTheory.Function.LpSeminorm.Count
 public import Mathlib.MeasureTheory.Function.LpSeminorm.TriangleInequality
 public import TauCeti.MeasureTheory.Function.Lp.LIntegralRpow
-public import TauCeti.MeasureTheory.OptimalTransport.Existence
+public import TauCeti.MeasureTheory.OptimalTransport.Existence.Basic
 public import TauCeti.MeasureTheory.OptimalTransport.GraphPlan.Basic
 public import TauCeti.MeasureTheory.OptimalTransport.Gluing
 
@@ -88,10 +88,14 @@ what the gluing lemma consumes.
   the finite-moment hypothesis on the anchor cannot be dropped;
 * `TauCeti.HasFiniteMoment.integrable_of_lipschitzWith` — a Lipschitz real function is integrable
   against a finite measure of finite first moment;
+* `TauCeti.HasFiniteMoment.memLp_id` — on a normed additive group, a finite measure of finite
+  `p`-moment has the identity in `L^p`;
 * `TauCeti.wassersteinEDist_rpow_eq_transportCost` and
   `TauCeti.wassersteinEDist_eq_transportCost_rpow` — for `0 < p < ∞`, the exact bridge to Layer 1's
   transport cost of `edist ^ p`, with `TauCeti.isOptimalCoupling_edist_rpow_iff` identifying the
-  minimizers and `TauCeti.wassersteinEDist_one_eq_transportCost` giving the case `p = 1`;
+  minimizers, `TauCeti.wassersteinEDist_one_eq_transportCost` giving the case `p = 1`, and
+  `TauCeti.wassersteinEDist_rpow_le_lintegral` the bound by the transport integral of a single
+  coupling;
 * `TauCeti.exists_isCoupling_eLpNorm_eq_wassersteinEDist` — on a Polish metric space and for a
   finite nonzero exponent, between finite measures that admit a coupling, the infimum is attained;
 * `TauCeti.wassersteinEDist_eq_zero_iff` — on a Polish metric space and for a finite nonzero
@@ -765,9 +769,32 @@ end Anchor
 
 end MetricMoment
 
+section NormedMoment
+
+variable {E : Type*} [NormedAddCommGroup E] [MeasurableSpace E] [OpensMeasurableSpace E]
+  [SecondCountableTopology E]
+
+/-- On a normed additive group, a finite measure with finite `p`-moment has the identity in
+`L^p`: its distance from the basepoint `0` is the norm. -/
+theorem HasFiniteMoment.memLp_id {ν : Measure E} [IsFiniteMeasure ν] (h : HasFiniteMoment p ν) :
+    MemLp id p ν :=
+  (memLp_congr_enorm aestronglyMeasurable_id measurable_edist_right.aestronglyMeasurable
+    (.of_forall fun x ↦ by simp [edist_eq_enorm_sub])).2
+    (h.memLp (x := 0) measurable_edist_right.aestronglyMeasurable)
+
+end NormedMoment
+
 section Bridge
 
 variable [EDist X]
+
+/-- For a finite nonzero exponent, every coupling bounds the `p`-th power of the Wasserstein
+distance by its transport integral of `edist ^ p`. -/
+theorem wassersteinEDist_rpow_le_lintegral (hd : Measurable fun z : X × X ↦ edist z.1 z.2)
+    (hp0 : p ≠ 0) (hp : p ≠ ∞) {μ ν : Measure X} {π : Measure (X × X)} (hπ : IsCoupling π μ ν) :
+    wassersteinEDist p μ ν ^ p.toReal ≤ ∫⁻ z, edist z.1 z.2 ^ p.toReal ∂π := by
+  rw [← eLpNorm_rpow_eq_lintegral hp0 hp hd.aemeasurable]
+  exact ENNReal.rpow_le_rpow (wassersteinEDist_le hπ p) ENNReal.toReal_nonneg
 
 /-- **The bridge to the primal Kantorovich problem.** For a finite nonzero exponent the `p`-th
 power of the Wasserstein distance is the transport cost of the cost `edist ^ p`, so the two

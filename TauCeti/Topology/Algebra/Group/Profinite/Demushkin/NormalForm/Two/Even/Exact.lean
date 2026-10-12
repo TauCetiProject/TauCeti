@@ -151,7 +151,7 @@ theorem exists_continuousMulEquiv_apply_eq_padicPow_mul_labuteComm_mul_demushkin
     simp [demushkinWordNeTwo_def, List.finRange_succ]
   -- The tail relator, read on `x₃, …, x_n`, is normalised by the case `q ≠ 2`.
   set T : freeProP 2 (Fin k) := ((List.finRange k).map fun j ↦
-    (isProP_freeProP 2 (Fin k)).padicPow (of j) (a j.succ.succ)).prod with hT_def
+    (isProP_freeProP 2 (Fin k)).padicPow (of j) (a j.succ.succ)).prod
   have h4 : ((2 : ℕ) : ℤ_[2]) ^ 2 = 4 := by norm_num
   have hT : T ∈ pLowerCentralSeries 2 (freeProP 2 (Fin k)) 2 :=
     (pLowerCentralSeries 2 (freeProP 2 (Fin k)) 2).list_prod_mem fun x hx ↦ by

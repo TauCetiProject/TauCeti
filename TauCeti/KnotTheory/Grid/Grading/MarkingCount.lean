@@ -424,7 +424,7 @@ theorem alexander_sub_alexander_eq_card_sub_card (R : GridRectangleBetween x y) 
   have hO := R.toGridRectangle.JCenter_corner_alternating_pointSet G.O
   rw [GridRectangleBetween.toGridRectangle_left, GridRectangleBetween.toGridRectangle_right,
     GridRectangleBetween.toGridRectangle_bottom, GridRectangleBetween.toGridRectangle_top] at hX hO
-  rw [G.alexander_change_rectangle R, XSet, OSet, hX, hO]
+  rw [G.alexander_change_rectangle R, XSet_def, OSet_def, hX, hO]
   ring
 
 /-- The `O`-Maslov grading change across any rectangle move is twice the number of covered
@@ -434,7 +434,7 @@ theorem maslovO_sub_maslovO_eq_two_mul_card_sub_one_sub_two_mul_card
     G.maslovO x - G.maslovO y =
       2 * ((x.pointSet ∩ R.toGridRectangle.coveredSquares).card : ℚ) - 1 -
         2 * ((G.OSet ∩ R.toGridRectangle.coveredSquares).card : ℚ) := by
-  rw [G.maslovO_change_rectangle R, OSet]
+  rw [G.maslovO_change_rectangle R, OSet_def]
   exact R.maslov_change_eq G.O
 
 /-- The `X`-Maslov grading change across any rectangle move is twice the number of covered
@@ -444,7 +444,7 @@ theorem maslovX_sub_maslovX_eq_two_mul_card_sub_one_sub_two_mul_card
     G.maslovX x - G.maslovX y =
       2 * ((x.pointSet ∩ R.toGridRectangle.coveredSquares).card : ℚ) - 1 -
         2 * ((G.XSet ∩ R.toGridRectangle.coveredSquares).card : ℚ) := by
-  rw [G.maslovX_change_rectangle R, XSet]
+  rw [G.maslovX_change_rectangle R, XSet_def]
   exact R.maslov_change_eq G.X
 
 /-- The `O`-Maslov grading change across an *empty* rectangle move is one minus twice the number

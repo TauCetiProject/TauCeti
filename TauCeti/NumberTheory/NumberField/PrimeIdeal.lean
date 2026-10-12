@@ -31,6 +31,9 @@ prime: packaging them as non-zero-divisors so that their classes can be taken wi
   lie over a nonzero prime of `ℤ`.
 * `TauCeti.NumberField.span_natCast_eq_prod_primesOverFinset`: a rational prime unramified in
   `K` generates the squarefree product of the primes of `𝓞 K` above it.
+* `TauCeti.NumberField.isPrime_span_natCast_iff_of_eq_prod_primesOverFinset_pow`: if a rational
+  prime generates a power `e` of the product of the primes above it, it stays prime iff a single
+  prime lies above it and `e = 1`.
 -/
 
 public section
@@ -127,5 +130,49 @@ theorem span_natCast_eq_prod_primesOverFinset {p : ℕ} [Fact p.Prime]
   have := hun P
   rw [← Ideal.ramificationIdx_ringOfIntegers_rat_eq_int P,
     Ideal.ramificationIdx_eq_one_of_isUnramifiedAt, pow_one]
+
+/-- **When a rational prime stays prime.** If `p 𝓞 K` is the product of the primes above the
+rational prime `p` raised to a common power `e`, then `p 𝓞 K` is prime iff a single prime lies
+above `p` and `e = 1`. -/
+theorem isPrime_span_natCast_iff_of_eq_prod_primesOverFinset_pow {p e : ℕ}
+    [hp : Fact p.Prime] (hfac : span {(p : 𝓞 K)} =
+      (∏ P ∈ IsDedekindDomain.primesOverFinset (span {(p : ℤ)}) (𝓞 K), P) ^ e) :
+    (span {(p : 𝓞 K)}).IsPrime ↔ (primesOver (span {(p : ℤ)}) (𝓞 K)).ncard = 1 ∧ e = 1 := by
+  classical
+  have hp0 : (span {(p : ℤ)} : Ideal ℤ) ≠ ⊥ := by
+    simpa [Ideal.span_singleton_eq_bot] using hp.out.ne_zero
+  have hmap : Ideal.map (algebraMap ℤ (𝓞 K)) (span {(p : ℤ)}) = span {(p : 𝓞 K)} := by
+    simp [Ideal.map_span]
+  have hI0 : span {(p : 𝓞 K)} ≠ ⊥ := hmap ▸ Ideal.map_ne_bot_of_ne_bot hp0
+  have hcoe := IsDedekindDomain.coe_primesOverFinset hp0 (𝓞 K)
+  constructor
+  · intro hI
+    have hmax := hI.isMaximal hI0
+    -- Every prime above `p` contains `p 𝓞 K`, which is maximal, so equals it.
+    have hall : ∀ Q ∈ IsDedekindDomain.primesOverFinset (span {(p : ℤ)}) (𝓞 K),
+        Q = span {(p : 𝓞 K)} := by
+      intro Q hQ
+      rw [← Finset.mem_coe, hcoe] at hQ
+      obtain ⟨hQp, hQo⟩ := hQ
+      refine (hmax.eq_of_le hQp.ne_top ?_).symm
+      rw [← hmap, Ideal.map_le_iff_le_comap, (liesOver_iff Q _).mp hQo]
+    obtain ⟨Q, hQ⟩ : (IsDedekindDomain.primesOverFinset (span {(p : ℤ)}) (𝓞 K)).Nonempty := by
+      rw [← Finset.coe_nonempty, hcoe, ← Set.nonempty_coe_sort]
+      infer_instance
+    have hS : IsDedekindDomain.primesOverFinset (span {(p : ℤ)}) (𝓞 K) =
+        {span {(p : 𝓞 K)}} :=
+      Finset.eq_singleton_iff_unique_mem.2 ⟨hall Q hQ ▸ hQ, hall⟩
+    refine ⟨?_, ?_⟩
+    · rw [← hcoe, hS, Finset.coe_singleton, Set.ncard_singleton]
+    · rw [hS, Finset.prod_singleton] at hfac
+      exact ((span {(p : 𝓞 K)}).pow_right_strictAnti hI0 hI.ne_top).injective
+        (hfac.symm.trans (pow_one _).symm)
+  · rintro ⟨hg, rfl⟩
+    obtain ⟨Q, hQ⟩ := Set.ncard_eq_one.mp hg
+    have hS : IsDedekindDomain.primesOverFinset (span {(p : ℤ)}) (𝓞 K) = {Q} :=
+      Finset.coe_injective (by rw [hcoe, hQ, Finset.coe_singleton])
+    have hQmem : Q ∈ primesOver (span {(p : ℤ)}) (𝓞 K) := hQ ▸ Set.mem_singleton Q
+    rw [hfac, hS, Finset.prod_singleton, pow_one]
+    exact hQmem.1
 
 end TauCeti.NumberField

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Topology.Algebra.ClopenNhdofOne
 public import TauCeti.Topology.Algebra.Group.Quotient.Basic
+import Mathlib.Topology.Separation.Connected
 
 /-!
 # Profinite groups: quotients by normal subgroups, and open subgroups

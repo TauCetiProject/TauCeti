@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.Quiver.FiniteRepType.Embedding
+public import TauCeti.RepresentationTheory.Quiver.FiniteRepType.TwoCycle
 public import TauCeti.RepresentationTheory.Quiver.Kronecker.FiniteRepType
 public import TauCeti.RepresentationTheory.Quiver.OneLoop.FiniteRepType
 public import TauCeti.RepresentationTheory.Quiver.Subspace.FiniteRepType
@@ -16,10 +17,11 @@ public import TauCeti.RepresentationTheory.Quiver.Subspace.FiniteRepType
 The loop quiver has infinitely many nilpotent Jordan block representations
 (`TauCeti.not_isFiniteRepType_oneLoop`), and the Kronecker quiver `• ⇉ •` has infinitely many
 indecomposable representations (`TauCeti.not_isFiniteRepType_kronecker`). Finite representation
-type passes to subquivers (`TauCeti.IsFiniteRepType.of_quiverEmbedding`), so these two families
-show that a quiver of finite representation type has no loops and at most one arrow from any
-vertex to any other. These are the two smallest extended Dynkin obstructions, `Ã₀` and `Ã₁`,
-in the non-Dynkin half of Gabriel's theorem.
+type passes to subquivers (`TauCeti.IsFiniteRepType.of_quiverEmbedding`), so these families,
+together with the oriented two-cycle obstruction, show that a quiver of finite representation type
+has no loops and at most one arrow between any two vertices, counting both directions. These are
+the two smallest extended Dynkin obstructions, `Ã₀` and `Ã₁`, in the non-Dynkin half of Gabriel's
+theorem.
 
 The four subspace quiver, whose underlying graph is the extended Dynkin diagram `D4~`, has
 infinite representation type as well (`TauCeti.not_isFiniteRepType_subspace_fin_four`), so a
@@ -31,6 +33,9 @@ vertices.
 * `TauCeti.IsFiniteRepType.isEmpty_hom_self`: a quiver of finite representation type has no loops.
 * `TauCeti.IsFiniteRepType.subsingleton_hom`: a quiver of finite representation type has no two
   parallel arrows.
+* `TauCeti.IsFiniteRepType.isEmpty_hom_reverse`: an arrow has no reverse arrow.
+* `TauCeti.IsFiniteRepType.card_hom_add_card_hom_le_one`: there is at most one arrow between two
+  vertices, counting both directions, and no loop.
 * `TauCeti.not_isFiniteRepType_of_forall_nonempty_hom`: a vertex receiving arrows from four distinct
   other vertices refutes finite representation type.
 * `TauCeti.not_isFiniteRepType_subspace`: a subspace quiver with at least four outer vertices has
@@ -107,6 +112,26 @@ theorem IsFiniteRepType.subsingleton_hom (h : IsFiniteRepType.{u, v, w, u} k Q) 
   · subst hij
     exact (h.isEmpty_hom_self i).false α
   · exact not_isFiniteRepType_kronecker k Bool (h.of_quiverEmbedding (kroneckerEmbedding hij hαβ))
+
+/-- An arrow in a quiver of finite representation type has no reverse arrow. -/
+theorem IsFiniteRepType.isEmpty_hom_reverse (h : IsFiniteRepType.{u, v, w, u} k Q)
+    {a b : Q} (α : a ⟶ b) : IsEmpty (b ⟶ a) := by
+  by_cases hab : a = b
+  · subst b
+    exact h.isEmpty_hom_self a
+  · exact ⟨fun β ↦ not_isFiniteRepType_of_opposite_hom hab α β h⟩
+
+/-- Over a quiver of finite representation type, two vertices are
+joined by at most one arrow, counting both directions, and there is no loop. -/
+theorem IsFiniteRepType.card_hom_add_card_hom_le_one [∀ a b : Q, Fintype (a ⟶ b)]
+    (h : IsFiniteRepType.{u, v, w, u} k Q) (a b : Q) :
+    Fintype.card (a ⟶ b) + Fintype.card (b ⟶ a) ≤ 1 := by
+  have hle (x y : Q) : Fintype.card (x ⟶ y) ≤ 1 :=
+    Fintype.card_le_one_iff_subsingleton.mpr (h.subsingleton_hom x y)
+  rcases isEmpty_or_nonempty (a ⟶ b) with hl | hl
+  · simpa [Fintype.card_eq_zero] using hle b a
+  · have := h.isEmpty_hom_reverse hl.some
+    simpa [Fintype.card_eq_zero] using hle a b
 
 /-- The embedding of the four subspace quiver onto four arrows `α i : x i ⟶ c` into a vertex `c`
 from four pairwise distinct vertices other than `c`. -/

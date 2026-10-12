@@ -13,14 +13,19 @@ public import TauCeti.LinearAlgebra.TensorProduct.Basic
 # Tensor-product basis coordinates
 
 This file records how contractions against one factor of a tensor product detect equality when
-that factor is free. It also proves that the coordinates in bases obtained by scalar extension
-commute with a map of the scalar-extension algebras, and that over a basis with at most one
-index a scalar extension consists of pure tensors.
+that factor is free, and how coordinates in a basis of one factor commute with maps of the other.
+It also proves that the coordinates in bases obtained by scalar extension commute with a map of
+the scalar-extension algebras, and that over a basis with at most one index a scalar extension
+consists of pure tensors.
 
 ## Main declarations
 
 * `TensorProduct.tensor_eq_of_forall_tensorComponent_eq`: contractions against a projective right
   factor detect equality.
+* `Module.Basis.equivFinsuppOfBasisLeft_lTensor_apply` and
+  `Module.Basis.lTensor_eq_zero_iff_forall_equivFinsuppOfBasisLeft`: coordinates in a basis of
+  the left factor commute with maps of the right factor, so such a map kills an element exactly
+  when it kills every coordinate.
 * `Module.Basis.map_baseChange_repr`: applying a scalar map to a coordinate in a base-changed
   basis agrees with first mapping the tensor and then taking its coordinate.
 * `Module.Basis.eq_baseChange_repr_tmul_of_subsingleton`: over a basis with at most one index,
@@ -98,6 +103,38 @@ theorem tensor_eq_of_forall_tensorComponent_eq [Module.Projective R N] {x y : M 
     _ = y := hleft y
 
 end TensorProduct
+
+namespace Module.Basis
+
+universe u v w
+
+variable {R : Type u} {M : Type v} {N : Type w}
+variable [CommSemiring R] [AddCommMonoid M] [Module R M]
+variable [AddCommMonoid N] [Module R N]
+
+section EquivFinsuppOfBasisLeft
+
+variable {ι : Type*} [DecidableEq ι] {P : Type*} [AddCommMonoid P] [Module R P]
+variable (ℬ : Module.Basis ι R M)
+
+/-- Coordinates in a basis of the left factor commute with maps of the right factor. -/
+@[simp]
+theorem equivFinsuppOfBasisLeft_lTensor_apply (g : N →ₗ[R] P) (x : M ⊗[R] N) (i : ι) :
+    equivFinsuppOfBasisLeft ℬ (g.lTensor M x) i = g (equivFinsuppOfBasisLeft ℬ x i) := by
+  induction x using TensorProduct.inductionOn with
+  | add x y hx hy => simp only [map_add, Finsupp.add_apply, hx, hy]
+  | tmul m n => simp
+
+/-- Over a basis of the left factor, a map of the right factor kills an element of the tensor
+product exactly when it kills each of its coordinates. -/
+theorem lTensor_eq_zero_iff_forall_equivFinsuppOfBasisLeft (g : N →ₗ[R] P) (x : M ⊗[R] N) :
+    g.lTensor M x = 0 ↔ ∀ i, g (equivFinsuppOfBasisLeft ℬ x i) = 0 := by
+  rw [← (equivFinsuppOfBasisLeft ℬ).map_eq_zero_iff, Finsupp.ext_iff]
+  simp
+
+end EquivFinsuppOfBasisLeft
+
+end Module.Basis
 
 namespace Module.Basis
 

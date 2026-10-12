@@ -26,7 +26,8 @@ produces the Galois cocycle used by the twist classification.
 
 That cocycle comparison lands on a product `C * [-1]`, whose four components are read off here as
 `mul_negVariableChange_u/_r/_s/_t` rather than by unfolding `VariableChange.mul_def` against the
-components of `[-1]` at each use.
+components of `[-1]` at each use. The negation automorphism of `C • E` is that of `E` conjugated
+by `C` (`negVariableChange_smul`).
 
 Similarly, the components of `C * D⁻¹`, the change of variables carrying `D • W` to `C • W`, are
 recorded as `VariableChange.mul_inv_u/_r/_s/_t`.
@@ -88,15 +89,12 @@ def negVariableChange : VariableChange R :=
 over a ring in which `2 = 0` cannot have `a₁ = a₃ = 0`. -/
 lemma negVariableChange_ne_one [Nontrivial R] [E.IsElliptic] : E.negVariableChange ≠ 1 := by
   intro h
-  rcases eq_or_ne (2 : R) 0 with h2 | h2
-  · have hs := congrArg VariableChange.s h
-    have ht := congrArg VariableChange.t h
-    simp only [negVariableChange, VariableChange.one_def, neg_eq_zero] at hs ht
-    grind [a₁_ne_zero_or_a₃_ne_zero_of_Δ_ne_zero_of_two_eq_zero E E.isUnit_Δ.ne_zero]
-  · contrapose h2
-    have hv : (-1 : R) = 1 := by
-      simpa [VariableChange.one_def] using congrArg (fun C : VariableChange R ↦ (C.u : R)) h
-    linear_combination -hv
+  have hv : (-1 : R) = 1 := by
+    simpa [VariableChange.one_def] using congrArg (fun C : VariableChange R ↦ (C.u : R)) h
+  have hs := congrArg VariableChange.s h
+  have ht := congrArg VariableChange.t h
+  simp only [negVariableChange, VariableChange.one_def, neg_eq_zero] at hs ht
+  grind [a₁_ne_zero_or_a₃_ne_zero_of_Δ_ne_zero_of_two_eq_zero E E.isUnit_Δ.ne_zero]
 
 namespace VariableChange
 
@@ -185,6 +183,19 @@ variable (C : VariableChange R)
 /-- The negation automorphism is its own inverse, being an involution. -/
 @[simp] lemma negVariableChange_inv : E.negVariableChange⁻¹ = E.negVariableChange :=
   inv_eq_of_mul_eq_one_left E.negVariableChange_mul_self
+
+/-- The negation automorphism of `C • E` is that of `E` conjugated by `C`: negating a point of
+`C • E` is carrying it to `E` by `C`, negating there, and carrying the result back by `C⁻¹`. -/
+lemma negVariableChange_smul : (C • E).negVariableChange = C * E.negVariableChange * C⁻¹ := by
+  rw [eq_mul_inv_iff_mul_eq]
+  ext
+  · simp [VariableChange.mul_def]
+  · simp [VariableChange.mul_def]
+  · simp [VariableChange.mul_def, variableChange_a₁]
+    ring
+  · have hu : (↑C.u⁻¹ : R) ^ 3 * (C.u : R) ^ 3 = 1 := by rw [← mul_pow, Units.inv_mul, one_pow]
+    simp [VariableChange.mul_def, variableChange_a₃]
+    linear_combination (-E.a₃ - C.r * E.a₁ - 2 * C.t) * hu
 
 section BaseChange
 

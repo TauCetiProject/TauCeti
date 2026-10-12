@@ -136,7 +136,7 @@ theorem symPower_torusHom_weightBasis (z : Circle) (i : Fin (d + 1)) :
   have hi : (i : ℕ) ≤ d := Nat.lt_succ_iff.mp i.isLt
   rw [weightBasis_apply, symPower_apply, toGL_torusHom,
     Representation.symmetricPower_apply,
-    SymmetricPower.map_basis_symmetricPower_of_apply_basis (Pi.basisFun ℂ (Fin 2)) _
+    Module.Basis.map_symmetricPower_of_apply (Pi.basisFun ℂ (Fin 2)) _
       (fun j => ((![Circle.toUnits z, (Circle.toUnits z)⁻¹] j : ℂˣ) : ℂ))
       (stdRep_diagGL_apply_basisFun _)]
   congr 1

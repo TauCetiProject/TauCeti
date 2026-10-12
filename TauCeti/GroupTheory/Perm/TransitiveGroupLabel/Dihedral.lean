@@ -94,7 +94,7 @@ theorem referenceSubgroupFourTwoMulEquivDihedralGroup_symm_apply_sr_zero :
           (Set.mem_insert_of_mem _ (Set.mem_singleton _))⟩ :
         referenceSubgroup 4 ⟨2, by simp⟩) := by
   simp [referenceSubgroupFourTwoMulEquivDihedralGroup, dihedralGroupMulEquiv_apply,
-    dihedralHom_sr, reflection]
+    reflection]
 
 /-- The inverse standard dihedral rotation gives the four-cycle in the reference action. -/
 @[simp]
@@ -163,10 +163,12 @@ private theorem orderOf_pentagonReflection_mul_pentagonReflection_mul_rotation :
 `i ↦ 3 - i`. -/
 private noncomputable def pentagonHom : DihedralGroup 5 →* Perm (Fin 5) :=
   dihedralHom pentagonReflection_mul_self pentagonReflection_mul_rotation_mul_self
-    orderOf_pentagonReflection_mul_pentagonReflection_mul_rotation
+    (by simpa only [orderOf_pentagonReflection_mul_pentagonReflection_mul_rotation] using
+      pow_orderOf_eq_one (pentagonReflection * (pentagonReflection * finRotate 5)))
 
 private theorem pentagonHom_injective : Function.Injective pentagonHom :=
-  dihedralHom_injective _ _ (by decide) (by decide) _
+  dihedralHom_injective _ _ (by decide) (by decide)
+    orderOf_pentagonReflection_mul_pentagonReflection_mul_rotation
 
 private theorem range_pentagonHom : pentagonHom.range = referenceSubgroup 5 ⟨1, by simp⟩ := by
   rw [pentagonHom, range_dihedralHom, referenceSubgroup_five_one]

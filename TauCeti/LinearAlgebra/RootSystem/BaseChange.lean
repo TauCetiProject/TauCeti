@@ -115,10 +115,6 @@ section Defs
 variable {ι κ R : Type*} (S : Type*) [Fintype κ] [CommRing R] [CommRing S] [Algebra R S]
   (P : RootPairing ι R (κ → R) (κ → R)) (hP : ∀ x y, P.toLinearMap x y = x ⬝ᵥ y)
 
-private theorem dotProduct_piAlgebraMap (x y : κ → R) :
-    Pi.algebraMap κ R S x ⬝ᵥ Pi.algebraMap κ R S y = algebraMap R S (x ⬝ᵥ y) := by
-  simp [dotProduct, piAlgebraMap_apply, map_sum]
-
 variable [FaithfulSMul R S]
 
 /-- **Base change of a root pairing on the standard lattices.** The roots and coroots of
@@ -132,14 +128,16 @@ def rootPairingBaseChange : RootPairing ι S (κ → S) (κ → S) where
   coroot := ⟨fun i => Pi.algebraMap κ R S (P.coroot i),
     (piAlgebraMap_injective S).comp P.coroot.injective⟩
   root_coroot_two i := by
-    simp [dotProduct_piAlgebraMap, ← hP, map_ofNat]
+    simp [Pi.algebraMap, ← RingHom.map_dotProduct, ← hP, map_ofNat]
   reflectionPerm := P.reflectionPerm
   reflectionPerm_root i j := by
-    simpa [dotProduct_piAlgebraMap, hP] using
-      congrArg (Pi.algebraMap κ R S) (P.reflectionPerm_root i j)
+    have h := congrArg (Pi.algebraMap κ R S) (P.reflectionPerm_root i j)
+    simp only [map_sub, map_smul] at h
+    simpa [Pi.algebraMap, ← RingHom.map_dotProduct, hP] using h
   reflectionPerm_coroot i j := by
-    simpa [dotProduct_piAlgebraMap, hP] using
-      congrArg (Pi.algebraMap κ R S) (P.reflectionPerm_coroot i j)
+    have h := congrArg (Pi.algebraMap κ R S) (P.reflectionPerm_coroot i j)
+    simp only [map_sub, map_smul] at h
+    simpa [Pi.algebraMap, ← RingHom.map_dotProduct, hP] using h
 
 @[simp] theorem root_rootPairingBaseChange (i : ι) :
     (rootPairingBaseChange S P hP).root i = Pi.algebraMap κ R S (P.root i) :=
@@ -159,7 +157,7 @@ def rootPairingBaseChange : RootPairing ι S (κ → S) (κ → S) where
 
 @[simp] theorem pairing_rootPairingBaseChange (i j : ι) :
     (rootPairingBaseChange S P hP).pairing i j = algebraMap R S (P.pairing i j) := by
-  simp [← RootPairing.root_coroot_eq_pairing, dotProduct_piAlgebraMap, hP]
+  simp [← RootPairing.root_coroot_eq_pairing, Pi.algebraMap, ← RingHom.map_dotProduct, hP]
 
 /-- An entrywise base-changed vector is a root of the base change exactly when the vector is a
 root of the original pairing. -/

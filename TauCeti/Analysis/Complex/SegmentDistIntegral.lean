@@ -47,7 +47,7 @@ theorem exists_mem_Icc_mul_abs_sub_le_dist (p z w : ℂ) :
   · exact ⟨0, ⟨le_rfl, zero_le_one⟩, fun s _ => by simp⟩
   have hL : (0 : ℝ) < ‖z - w‖ := norm_pos_iff.mpr (sub_ne_zero_of_ne hzw)
   set A : ℂ := w - p with hA
-  set B : ℂ := z - w with hB
+  set B : ℂ := z - w with _hB
   set q : ℝ := ⟪A, B⟫ with hq
   set s₀ : ℝ := -q / ‖B‖ ^ 2 with hs₀
   have key : ∀ t : ℝ, ‖B‖ * |t - s₀| ≤ ‖A + t • B‖ := by
@@ -110,7 +110,7 @@ theorem integral_dist_rpow_segment_le {p : ℂ} {u : ℝ} (hu : -1 < u) (hu0 : u
   have hbnd : ∀ s ∈ Icc (0 : ℝ) 1, s ≠ c →
       dist (w + s • (z - w)) p ^ u ≤ ‖z - w‖ ^ u * |s - c| ^ u := by
     intro s hs hsne
-    have habs : 0 < |s - c| := abs_pos.mpr (sub_ne_zero_of_ne hsne)
+    have _ : 0 < |s - c| := abs_pos.mpr (sub_ne_zero_of_ne hsne)
     have hpos : 0 < ‖z - w‖ * |s - c| := by positivity
     calc dist (w + s • (z - w)) p ^ u ≤ (‖z - w‖ * |s - c|) ^ u :=
           Real.rpow_le_rpow_of_nonpos hpos (hclamp s hs) hu0
@@ -183,7 +183,7 @@ theorem integral_dist_rpow_segment_le {p : ℂ} {u : ℝ} (hu : -1 < u) (hu0 : u
   have hbound : (∫ s in (0 : ℝ)..1, dist (w + s • (z - w)) p ^ u)
       ≤ ‖z - w‖ ^ u * (2 / (u + 1)) := by
     rw [hsplit]
-    have hnn : (0 : ℝ) ≤ ‖z - w‖ ^ u := Real.rpow_nonneg (norm_nonneg _) u
+    have _ : (0 : ℝ) ≤ ‖z - w‖ ^ u := Real.rpow_nonneg (norm_nonneg _) u
     calc _ ≤ ‖z - w‖ ^ u * (c ^ (u + 1) / (u + 1))
             + ‖z - w‖ ^ u * ((1 - c) ^ (u + 1) / (u + 1)) := add_le_add hb1 hb2
       _ ≤ ‖z - w‖ ^ u * (1 / (u + 1)) + ‖z - w‖ ^ u * (1 / (u + 1)) := by

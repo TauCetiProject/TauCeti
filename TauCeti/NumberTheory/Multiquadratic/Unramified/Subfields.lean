@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.Multiquadratic.Quadratic.Ramification
 public import TauCeti.NumberTheory.NumberField.Inertia
+import TauCeti.Algebra.Algebra.Equiv
 import TauCeti.FieldTheory.Galois.FixedField
 import TauCeti.FieldTheory.Galois.SquareRoot
 
@@ -161,16 +162,14 @@ theorem notMem_ramifiedPrimes_adjoin_mul {x y : M} {a b : ℚ}
       NumberField.ramifiedPrimes_rat] at hpx
     exact hpx
   intro σ hσ
-  -- The inertia criterion uses the carrier-set fixing subgroup; expose its definitionally equal
-  -- intermediate-field wrapper so that the adjoin API applies.
-  change σ ∈ (adjoin ℚ {algebraMap ℚ M r * (x * y)}).fixingSubgroup
-  rw [IntermediateField.fixingSubgroup_adjoin_simple, MulAction.mem_stabilizer_iff,
+  rw [TauCeti.IntermediateField.fixingSubgroup_coe_adjoin_simple, MulAction.mem_stabilizer_iff,
     AlgEquiv.smul_def]
   by_cases hσF : σ ∈ fixingSubgroup (M ≃ₐ[ℚ] M) ((adjoin ℚ {y} : IntermediateField ℚ M) : Set M)
   · rw [Subgroup.disjoint_def.mp hdisj hσ hσF]
     rfl
   by_cases hτF : τ ∈ fixingSubgroup (M ≃ₐ[ℚ] M) ((adjoin ℚ {y} : IntermediateField ℚ M) : Set M)
-  · exact False.elim ((AlgEquiv.ne_one_of_apply_eq_neg τ hx0 hτneg)
+  · exact False.elim ((AlgEquiv.ne_one_of_apply_eq_neg τ
+      (IsRegular.of_ne_zero two_ne_zero).left hx0 hτneg)
       (Subgroup.disjoint_def.mp hdisj hτI hτF))
   have hone : σ * τ = 1 := Subgroup.disjoint_def.mp hdisj (mul_mem hσ hτI)
     ((Subgroup.mul_mem_iff_of_index_two hindex).mpr (by simp only [hσF, hτF]))
@@ -181,10 +180,7 @@ theorem notMem_ramifiedPrimes_adjoin_mul {x y : M} {a b : ℚ}
   have hσy : σ y = -y :=
     (AlgEquiv.apply_eq_or_eq_neg_of_sq_eq σ hy).resolve_left fun hfix =>
     hσF (by
-      -- Convert the carrier-set fixing subgroup to the definitionally equal intermediate-field
-      -- wrapper before applying the adjoin API.
-      change σ ∈ (adjoin ℚ {y}).fixingSubgroup
-      rw [IntermediateField.fixingSubgroup_adjoin_simple, MulAction.mem_stabilizer_iff,
+      rw [TauCeti.IntermediateField.fixingSubgroup_coe_adjoin_simple, MulAction.mem_stabilizer_iff,
         AlgEquiv.smul_def]
       exact hfix)
   rw [map_mul, map_mul, AlgEquiv.commutes, hσx, hσy, neg_mul_neg]

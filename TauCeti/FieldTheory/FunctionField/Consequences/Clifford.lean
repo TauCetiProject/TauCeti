@@ -6,13 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Module.Submodule.Union
-public import TauCeti.FieldTheory.FunctionField.Differential.CanonicalDivisor
+public import TauCeti.FieldTheory.FunctionField.ConstantExtension.Genus
 
 /-!
 # Clifford's theorem for divisors of a function field
 
 This file proves Clifford's dimension bound for a divisor `D` of an algebraic function field
-over an infinite exact field of constants, assuming `0 ≤ deg D ≤ 2g - 2`:
+over an arbitrary exact field of constants, assuming `0 ≤ deg D ≤ 2g - 2`:
 
 `2 * ℓ(D) ≤ deg D + 2`.
 
@@ -22,26 +22,36 @@ The main input is the dimension inequality
 
 when both Riemann–Roch spaces are nonzero.  Its proof replaces `A` and `B` by effective
 representatives, chooses a divisor `D₀ ≤ A` of least degree with `L(D₀) = L(A)`, and uses that a
-vector space over an infinite field is not a finite union of proper subspaces.  A section of
-`L(D₀)` can therefore be chosen with the exact pole order prescribed by `D₀` at every place in
-the support of `B`.  Multiplication by that section embeds `L(B) / k` into
-`L(A + B) / L(A)`.
+vector space over a field with more than `m` elements is not a union of `m` proper subspaces.
+A section of `L(D₀)` can therefore be chosen with the exact pole order prescribed by `D₀` at every
+place in the support of `B`, as soon as the constant field has more than `deg B + 1` elements.
+Multiplication by that section embeds `L(B) / k` into `L(A + B) / L(A)`.
+
+Over a finite constant field there may be too few constants for this choice.  The inequality is
+then proved after a finite constant field extension `F · k' / k'` with enough constants: the
+conorm preserves degrees and the dimensions of Riemann–Roch spaces, and `k'` stays exact since
+finite fields are perfect.
 
 Applying the inequality to `A = D` and `B = W - D`, for a canonical divisor `W`, and using
 Riemann--Roch gives Clifford's theorem.  This is the route of Stichtenoth, *Algebraic Function
-Fields and Codes*, 2nd ed., Lemma 1.6.14 and Theorem 1.6.13.
+Fields and Codes*, 2nd ed., Lemma 1.6.14 and Theorem 1.6.13, whose choice of the section uses an
+infinite constant field; the reduction from a finite constant field uses the constant field
+extensions of Theorem 3.6.3.
 
 ## Main results
 
-* `TauCeti.Divisor.dim_add_dim_le_one_add_dim_add`: Stichtenoth's dimension inequality
-  `ℓ(A) + ℓ(B) ≤ 1 + ℓ(A + B)`.
-* `TauCeti.Divisor.two_mul_dim_le_degree_add_two_of_infinite`: Clifford's theorem over an
-  infinite exact constant field.
+* `TauCeti.Divisor.dim_add_dim_le_one_add_dim_add_of_lt_card`: Stichtenoth's dimension
+  inequality `ℓ(A) + ℓ(B) ≤ 1 + ℓ(A + B)` when the constant field has more than `deg B + 1`
+  elements, in particular when it is infinite.
+* `TauCeti.Divisor.dim_add_dim_le_one_add_dim_add`: the dimension inequality over an arbitrary
+  exact constant field.
+* `TauCeti.Divisor.two_mul_dim_le_degree_add_two`: Clifford's theorem over an arbitrary exact
+  constant field.
 
 ## References
 
 * H. Stichtenoth, *Algebraic Function Fields and Codes*, 2nd ed., GTM 254, Springer, 2009,
-  Lemma 1.6.14 and Theorem 1.6.13.
+  Lemma 1.6.14, Theorem 1.6.13 and Theorem 3.6.3.
 -/
 
 public section
@@ -101,9 +111,10 @@ private theorem exists_minimal_riemannRochSpace (hF : IsFunctionField k F)
   omega
 
 /-- For effective `A` and any divisor `B`, choose a section of a minimal pole bound for `L(A)`
-that has the exact allowed order at every place in the support of `B`. -/
-private theorem exists_section_exact_on_support (hF : IsFunctionField k F) [Infinite k]
-    {A B : Divisor k F} (hA : 0 ≤ A) :
+that has the exact allowed order at every place in the support of `B`, provided the constant field
+has more than `#supp B + 1` elements. -/
+private theorem exists_section_exact_on_support (hF : IsFunctionField k F)
+    {A B : Divisor k F} (hA : 0 ≤ A) (hcard : (B.support.card + 1 : ℕ∞) < ENat.card k) :
     ∃ (D : Divisor k F) (z : F), D ≤ A ∧ riemannRochSpace D = riemannRochSpace A ∧
       z ∈ riemannRochSpace D ∧ z ≠ 0 ∧ ∀ P ∈ B.support, P.ord z = -D.coeff P := by
   classical
@@ -129,7 +140,9 @@ private theorem exists_section_exact_on_support (hF : IsFunctionField k F) [Infi
       intro htop
       exact (hminimal P.1).ne (le_antisymm (hminimal P.1).le
         (Submodule.submoduleOf_eq_top.mp htop))
-  obtain ⟨z, hzU⟩ := Submodule.exists_forall_notMem_of_forall_ne_top U hU
+  obtain ⟨z, hzU⟩ : ∃ z, ∀ P, z ∉ U P := by
+    simpa [Set.ssubset_univ_iff, Set.iUnion_eq_univ_iff] using
+      Submodule.iUnion_ssubset_of_forall_ne_top_of_card_lt Finset.univ U hU (by simpa using hcard)
   have hz0 : (z : F) ≠ 0 := by
     intro hz0
     apply hzU none
@@ -140,17 +153,21 @@ private theorem exists_section_exact_on_support (hF : IsFunctionField k F) [Infi
   apply hzU (some ⟨P, hP⟩)
   simpa only [U, Submodule.submoduleOf, Submodule.mem_comap, Submodule.subtype_apply] using hmem
 
-/-- Stichtenoth's dimension inequality for effective divisors.  The general form follows by
-replacing both divisors by effective representatives. -/
+/-- Stichtenoth's dimension inequality for effective divisors, when the constant field has more
+than `deg B + 1` elements.  The general form follows by replacing both divisors by effective
+representatives. -/
 private theorem dim_add_le_one_add_dim_add_of_effective (hF : IsFunctionField k F)
-    (hex : IsIntegrallyClosedIn k F) [Infinite k] {A B : Divisor k F}
-    (hA : 0 ≤ A) (hB : 0 ≤ B) :
+    (hex : IsIntegrallyClosedIn k F) {A B : Divisor k F} (hA : 0 ≤ A) (hB : 0 ≤ B)
+    (hcard : ((degree B).toNat + 1 : ℕ∞) < ENat.card k) :
     dim A + dim B ≤ 1 + dim (A + B) := by
   classical
-  obtain ⟨D, z, hDA, hspace, hzD, hz0, hzord⟩ :=
-    exists_section_exact_on_support hF hA (B := B)
-  have hAle : riemannRochSpace A ≤ riemannRochSpace (A + B) :=
-    riemannRochSpace_mono (le_add_of_nonneg_right hB)
+  have hsupport : (B.support.card + 1 : ℕ∞) < ENat.card k := by
+    refine lt_of_le_of_lt ?_ hcard
+    have hle : B.support.card ≤ (degree B).toNat := by
+      have := card_support_le_degree hF hB
+      omega
+    gcongr
+  obtain ⟨D, z, hDA, hspace, hzD, hz0, hzord⟩ := exists_section_exact_on_support hF hA hsupport
   let LA : Submodule k (riemannRochSpace (A + B)) :=
     (riemannRochSpace A).submoduleOf (riemannRochSpace (A + B))
   have hDB : D + B ≤ A + B := by
@@ -243,13 +260,15 @@ private theorem dim_add_le_one_add_dim_add_of_effective (hF : IsFunctionField k 
   rw [← dim_def B] at hrank
   omega
 
-/-- **Stichtenoth, Lemma 1.6.14**: over an infinite exact constant field, if `L(A)` and
-`L(B)` are nonzero, then
+/-- **Stichtenoth, Lemma 1.6.14**: if `L(A)` and `L(B)` are nonzero and the exact constant field
+has more than `deg B + 1` elements, then
 
-`ℓ(A) + ℓ(B) ≤ 1 + ℓ(A + B)`. -/
-theorem dim_add_dim_le_one_add_dim_add (hF : IsFunctionField k F)
-    (hex : IsIntegrallyClosedIn k F) [Infinite k] {A B : Divisor k F}
-    (hA : 0 < dim A) (hB : 0 < dim B) :
+`ℓ(A) + ℓ(B) ≤ 1 + ℓ(A + B)`.
+
+The cardinality hypothesis holds for every infinite constant field. -/
+theorem dim_add_dim_le_one_add_dim_add_of_lt_card (hF : IsFunctionField k F)
+    (hex : IsIntegrallyClosedIn k F) {A B : Divisor k F} (hA : 0 < dim A) (hB : 0 < dim B)
+    (hcard : ((degree B).toNat + 1 : ℕ∞) < ENat.card k) :
     dim A + dim B ≤ 1 + dim (A + B) := by
   have hAne : riemannRochSpace A ≠ ⊥ :=
     (one_le_dim_iff_riemannRochSpace_ne_bot hF A).mp hA
@@ -258,6 +277,7 @@ theorem dim_add_dim_le_one_add_dim_add (hF : IsFunctionField k F)
   obtain ⟨A₀, hA₀, hAA₀⟩ := (riemannRochSpace_ne_bot_iff hF).mp hAne
   obtain ⟨B₀, hB₀, hBB₀⟩ := (riemannRochSpace_ne_bot_iff hF).mp hBne
   have h := dim_add_le_one_add_dim_add_of_effective hF hex hA₀ hB₀
+    (by rwa [← degree_eq_of_linearlyEquivalent hF hBB₀])
   have hsum := WeilDivisor.OrderSystem.LinearlyEquivalent.add
     (Place.orderSystem hF) hAA₀ hBB₀
   rw [← dim_eq_of_linearlyEquivalent hF hAA₀,
@@ -265,14 +285,38 @@ theorem dim_add_dim_le_one_add_dim_add (hF : IsFunctionField k F)
     ← dim_eq_of_linearlyEquivalent hF hsum] at h
   exact h
 
-/-- **Clifford's theorem** (Stichtenoth, Theorem 1.6.13), over an infinite exact field of
+/-- **Stichtenoth, Lemma 1.6.14, over any exact constant field**: if `L(A)` and `L(B)` are
+nonzero, then
+
+`ℓ(A) + ℓ(B) ≤ 1 + ℓ(A + B)`. -/
+theorem dim_add_dim_le_one_add_dim_add (hF : IsFunctionField k F)
+    (hex : IsIntegrallyClosedIn k F) {A B : Divisor k F} (hA : 0 < dim A) (hB : 0 < dim B) :
+    dim A + dim B ≤ 1 + dim (A + B) := by
+  rcases finite_or_infinite k with hk | hk
+  · -- pass to a finite constant field extension with more than `deg B + 1` elements, which
+    -- preserves degrees and dimensions and keeps the (perfect) constant field exact
+    obtain ⟨F', k', hk', hcard, h⟩ :=
+      exists_finiteDimensional_lt_card_constantCompositum_eq_top k F ((degree B).toNat + 1)
+    have : FiniteDimensional F F' := finiteDimensional_of_constantCompositum_eq_top (k := k) h
+    have : Algebra.IsSeparable k k' := Algebra.IsAlgebraic.isSeparable_of_perfectField
+    have : PerfectField k' := Algebra.IsAlgebraic.perfectField k
+    have hF' : IsFunctionField k' F' := hF.of_constantCompositum_eq_top h
+    have hex' := isIntegrallyClosedIn_of_constantCompositum_eq_top hex h
+    have hdim := dim_add_dim_le_one_add_dim_add_of_lt_card hF' hex'
+      (A := conorm k' F' A) (B := conorm k' F' B)
+      (by rwa [dim_conorm hex h hF']) (by rwa [dim_conorm hex h hF'])
+      (by rw [degree_conorm_of_constantCompositum_eq_top hex h]; exact_mod_cast hcard)
+    rwa [← map_add, dim_conorm hex h hF', dim_conorm hex h hF', dim_conorm hex h hF'] at hdim
+  · exact dim_add_dim_le_one_add_dim_add_of_lt_card hF hex hA hB (by simp)
+
+/-- **Clifford's theorem** (Stichtenoth, Theorem 1.6.13), over an arbitrary exact field of
 constants: a divisor of degree between `0` and `2g - 2` satisfies
 
 `2 * ℓ(D) ≤ deg D + 2`.
 
 The bound includes the nonspecial and empty-linear-system edge cases. -/
-theorem two_mul_dim_le_degree_add_two_of_infinite (hF : IsFunctionField k F)
-    (hex : IsIntegrallyClosedIn k F) [Infinite k] {D : Divisor k F}
+theorem two_mul_dim_le_degree_add_two (hF : IsFunctionField k F)
+    (hex : IsIntegrallyClosedIn k F) {D : Divisor k F}
     (hDnonneg : 0 ≤ degree D) (hDle : degree D ≤ 2 * (genus k F : ℤ) - 2) :
     2 * (dim D : ℤ) ≤ degree D + 2 := by
   obtain ⟨W, hW⟩ := exists_isRiemannRochDivisor hF hex

@@ -8,7 +8,7 @@ module
 public import Mathlib.RingTheory.Polynomial.Cyclotomic.Basic
 public import Mathlib.Data.List.Nodup
 public import Mathlib.Data.List.TakeWhile
-public import TauCeti.Algebra.Polynomial.CoeffList
+public import TauCeti.Algebra.Polynomial.Coeff.List
 
 /-!
 # The cyclotomic polynomials, computably

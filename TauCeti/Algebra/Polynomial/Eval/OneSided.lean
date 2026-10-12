@@ -33,11 +33,9 @@ S. Basu, R. Pollack, and M.-F. Roy,
 
 public section
 
-namespace TauCeti
+open Polynomial SignType Set Topology
 
-open Polynomial
-
-open SignType Set Topology
+namespace Polynomial
 
 section Definitions
 
@@ -46,51 +44,51 @@ variable {R : Type*} [CommRing R] [LinearOrder R]
 /-- The right-hand sign, computed from the derivative at the root multiplicity.
 For a nonzero polynomial over an ordered field this is its first nonzero derivative.
 The zero polynomial has sign zero. -/
-noncomputable def _root_.Polynomial.signRight (p : R[X]) (a : R) : SignType :=
+noncomputable def signRight (p : R[X]) (a : R) : SignType :=
   p.derivativeSign a (p.rootMultiplicity a)
 
 /-- The left-hand sign is the right-hand sign corrected by multiplicity parity. -/
-noncomputable def _root_.Polynomial.signLeft (p : R[X]) (a : R) : SignType :=
+noncomputable def signLeft (p : R[X]) (a : R) : SignType :=
   (-1) ^ p.rootMultiplicity a * p.signRight a
 
 /-- The derivative formula for the right-hand sign. -/
-theorem _root_.Polynomial.signRight_def (p : R[X]) (a : R) :
+theorem signRight_def (p : R[X]) (a : R) :
     p.signRight a = sign ((derivative^[p.rootMultiplicity a] p).eval a) :=
   derivativeSign_def p a _
 
 /-- The parity formula for the left-hand sign. -/
-theorem _root_.Polynomial.signLeft_def (p : R[X]) (a : R) :
+theorem signLeft_def (p : R[X]) (a : R) :
     p.signLeft a = (-1) ^ p.rootMultiplicity a * p.signRight a := (rfl)
 
 @[simp]
-theorem _root_.Polynomial.signRight_zero (a : R) : (0 : R[X]).signRight a = 0 := by
+theorem signRight_zero (a : R) : (0 : R[X]).signRight a = 0 := by
   simp [signRight_def]
 
 @[simp]
-theorem _root_.Polynomial.signLeft_zero (a : R) : (0 : R[X]).signLeft a = 0 := by
+theorem signLeft_zero (a : R) : (0 : R[X]).signLeft a = 0 := by
   simp [signLeft_def]
 
 @[simp]
-theorem _root_.Polynomial.signRight_C (c a : R) : (C c).signRight a = sign c := by
+theorem signRight_C (c a : R) : (C c).signRight a = sign c := by
   simp [signRight_def]
 
 @[simp]
-theorem _root_.Polynomial.signLeft_C (c a : R) : (C c).signLeft a = sign c := by
+theorem signLeft_C (c a : R) : (C c).signLeft a = sign c := by
   simp [signLeft_def]
 
 /-- Away from a root, the right-hand sign is the sign of the value itself. -/
-theorem _root_.Polynomial.signRight_eq_sign_eval (p : R[X]) {a : R} (ha : p.eval a ≠ 0) :
+theorem signRight_eq_sign_eval (p : R[X]) {a : R} (ha : p.eval a ≠ 0) :
     p.signRight a = sign (p.eval a) := by
   simp [signRight_def, rootMultiplicity_eq_zero ha]
 
 /-- Away from a root, the left-hand sign is also the sign of the value. -/
-theorem _root_.Polynomial.signLeft_eq_sign_eval (p : R[X]) {a : R} (ha : p.eval a ≠ 0) :
+theorem signLeft_eq_sign_eval (p : R[X]) {a : R} (ha : p.eval a ≠ 0) :
     p.signLeft a = sign (p.eval a) := by
   simp [signLeft_def, rootMultiplicity_eq_zero ha, signRight_eq_sign_eval p ha]
 
 /-- Adding a multiple of a higher power of `X - C a` leaves the right-hand sign at `a` of a
 nonzero polynomial unchanged. -/
-theorem _root_.Polynomial.signRight_add_eq_left_of_dvd {p q : R[X]} {a : R} (hp : p ≠ 0)
+theorem signRight_add_eq_left_of_dvd {p q : R[X]} {a : R} (hp : p ≠ 0)
     (hq : (X - C a) ^ (p.rootMultiplicity a + 1) ∣ q) :
     (p + q).signRight a = p.signRight a := by
   have hq0 : (derivative^[p.rootMultiplicity a] q).eval a = 0 := by
@@ -103,7 +101,7 @@ theorem _root_.Polynomial.signRight_add_eq_left_of_dvd {p q : R[X]} {a : R} (hp 
 
 /-- Adding a multiple of a higher power of `X - C a` leaves the left-hand sign at `a` of a
 nonzero polynomial unchanged. -/
-theorem _root_.Polynomial.signLeft_add_eq_left_of_dvd {p q : R[X]} {a : R} (hp : p ≠ 0)
+theorem signLeft_add_eq_left_of_dvd {p q : R[X]} {a : R} (hp : p ≠ 0)
     (hq : (X - C a) ^ (p.rootMultiplicity a + 1) ∣ q) :
     (p + q).signLeft a = p.signLeft a := by
   rw [signLeft_def, signLeft_def, rootMultiplicity_add_eq_left_of_dvd hp hq,
@@ -117,7 +115,7 @@ variable {R : Type*} [CommRing R] [LinearOrder R]
 
 /-- Strictly monotone ring embeddings preserve right-hand signs. -/
 @[simp]
-theorem _root_.Polynomial.signRight_map {S : Type*} [CommRing S] [LinearOrder S]
+theorem signRight_map {S : Type*} [CommRing S] [LinearOrder S]
     (p : R[X]) (f : R →+* S) (hf : StrictMono f) (a : R) :
     (p.map f).signRight (f a) = p.signRight a := by
   rw [signRight_def, signRight_def, ← eq_rootMultiplicity_map hf.injective,
@@ -126,7 +124,7 @@ theorem _root_.Polynomial.signRight_map {S : Type*} [CommRing S] [LinearOrder S]
 
 /-- Strictly monotone ring embeddings preserve left-hand signs. -/
 @[simp]
-theorem _root_.Polynomial.signLeft_map {S : Type*} [CommRing S] [LinearOrder S]
+theorem signLeft_map {S : Type*} [CommRing S] [LinearOrder S]
     (p : R[X]) (f : R →+* S) (hf : StrictMono f) (a : R) :
     (p.map f).signLeft (f a) = p.signLeft a := by
   rw [signLeft_def, signLeft_def, ← eq_rootMultiplicity_map hf.injective, signRight_map p f hf]
@@ -138,14 +136,14 @@ section OrderedRing
 variable {R : Type*} [CommRing R] [LinearOrder R] [IsStrictOrderedRing R]
 
 /-- Removing the full root factor gives the same sign as the first nonzero derivative. -/
-theorem _root_.Polynomial.signRight_eq_sign_eval_divByMonic (p : R[X]) (a : R) :
+theorem signRight_eq_sign_eval_divByMonic (p : R[X]) (a : R) :
     p.signRight a = sign ((p /ₘ (X - C a) ^ p.rootMultiplicity a).eval a) := by
   rw [signRight_def, eval_iterate_derivative_rootMultiplicity, nsmul_eq_mul, sign_mul,
     sign_pos (Nat.cast_pos.mpr (Nat.factorial_pos _)), one_mul]
 
 /-- A one-sided sign vanishes exactly when the polynomial is zero. -/
 @[simp]
-theorem _root_.Polynomial.signRight_eq_zero_iff (p : R[X]) (a : R) : p.signRight a = 0 ↔ p = 0 := by
+theorem signRight_eq_zero_iff (p : R[X]) (a : R) : p.signRight a = 0 ↔ p = 0 := by
   constructor
   · intro h
     by_contra hp
@@ -155,44 +153,44 @@ theorem _root_.Polynomial.signRight_eq_zero_iff (p : R[X]) (a : R) : p.signRight
     simp
 
 @[simp]
-theorem _root_.Polynomial.signLeft_eq_zero_iff (p : R[X]) (a : R) : p.signLeft a = 0 ↔ p = 0 := by
+theorem signLeft_eq_zero_iff (p : R[X]) (a : R) : p.signLeft a = 0 ↔ p = 0 := by
   rw [signLeft_def, mul_eq_zero]
   simp
 
 /-- A nonzero polynomial does not vanish where it has its right-hand sign. -/
-theorem _root_.Polynomial.eval_ne_zero_of_sign_eq_signRight {p : R[X]} (hp : p ≠ 0) {a x : R}
+theorem eval_ne_zero_of_sign_eq_signRight {p : R[X]} (hp : p ≠ 0) {a x : R}
     (h : sign (p.eval x) = p.signRight a) : p.eval x ≠ 0 := fun h0 => by
   rw [h0, sign_zero, eq_comm, signRight_eq_zero_iff] at h
   exact hp h
 
 /-- A nonzero polynomial does not vanish where it has its left-hand sign. -/
-theorem _root_.Polynomial.eval_ne_zero_of_sign_eq_signLeft {p : R[X]} (hp : p ≠ 0) {a x : R}
+theorem eval_ne_zero_of_sign_eq_signLeft {p : R[X]} (hp : p ≠ 0) {a x : R}
     (h : sign (p.eval x) = p.signLeft a) : p.eval x ≠ 0 := fun h0 => by
   rw [h0, sign_zero, eq_comm, signLeft_eq_zero_iff] at h
   exact hp h
 
 omit [IsStrictOrderedRing R] in
 /-- An even root multiplicity gives equal signs on the two sides. -/
-theorem _root_.Polynomial.signLeft_eq_signRight_of_even (p : R[X]) (a : R)
+theorem signLeft_eq_signRight_of_even (p : R[X]) (a : R)
     (h : Even (p.rootMultiplicity a)) : p.signLeft a = p.signRight a := by
   rw [signLeft_def, h.neg_one_pow, one_mul]
 
 omit [IsStrictOrderedRing R] in
 /-- An odd root multiplicity gives opposite signs on the two sides. -/
-theorem _root_.Polynomial.signLeft_eq_neg_signRight_of_odd (p : R[X]) (a : R)
+theorem signLeft_eq_neg_signRight_of_odd (p : R[X]) (a : R)
     (h : Odd (p.rootMultiplicity a)) : p.signLeft a = -p.signRight a := by
   rw [signLeft_def, h.neg_one_pow, neg_one_mul]
 
 /-- Multiplication multiplies right-hand signs, including when a factor is zero. -/
 @[simp]
-theorem _root_.Polynomial.signRight_mul (p q : R[X]) (a : R) :
+theorem signRight_mul (p q : R[X]) (a : R) :
     (p * q).signRight a = p.signRight a * q.signRight a := by
   simp only [signRight_eq_sign_eval_divByMonic, eval_divByMonic_eq_trailingCoeff_comp,
     mul_comp, trailingCoeff_mul, sign_mul]
 
 /-- Multiplication multiplies left-hand signs, including when a factor is zero. -/
 @[simp]
-theorem _root_.Polynomial.signLeft_mul (p q : R[X]) (a : R) :
+theorem signLeft_mul (p q : R[X]) (a : R) :
     (p * q).signLeft a = p.signLeft a * q.signLeft a := by
   by_cases hp : p = 0
   · simp [hp]
@@ -202,16 +200,16 @@ theorem _root_.Polynomial.signLeft_mul (p q : R[X]) (a : R) :
   ac_rfl
 
 @[simp]
-theorem _root_.Polynomial.signRight_one (a : R) : (1 : R[X]).signRight a = 1 := by
+theorem signRight_one (a : R) : (1 : R[X]).signRight a = 1 := by
   simpa using signRight_C (1 : R) a
 
 @[simp]
-theorem _root_.Polynomial.signLeft_one (a : R) : (1 : R[X]).signLeft a = 1 := by
+theorem signLeft_one (a : R) : (1 : R[X]).signLeft a = 1 := by
   simpa using signLeft_C (1 : R) a
 
 /-- Negation reverses the right-hand sign. -/
 @[simp]
-theorem _root_.Polynomial.signRight_neg (p : R[X]) (a : R) :
+theorem signRight_neg (p : R[X]) (a : R) :
     (-p).signRight a = -p.signRight a := by
   have h := signRight_mul (C (-1)) p a
   rw [signRight_C, sign_neg (neg_one_lt_zero (R := R))] at h
@@ -219,7 +217,7 @@ theorem _root_.Polynomial.signRight_neg (p : R[X]) (a : R) :
 
 /-- Negation reverses the left-hand sign. -/
 @[simp]
-theorem _root_.Polynomial.signLeft_neg (p : R[X]) (a : R) :
+theorem signLeft_neg (p : R[X]) (a : R) :
     (-p).signLeft a = -p.signLeft a := by
   have h := signLeft_mul (C (-1)) p a
   rw [signLeft_C, sign_neg (neg_one_lt_zero (R := R))] at h
@@ -227,7 +225,7 @@ theorem _root_.Polynomial.signLeft_neg (p : R[X]) (a : R) :
 
 /-- Powers raise the right-hand sign to the same power, with the convention `0^0 = 1`. -/
 @[simp]
-theorem _root_.Polynomial.signRight_pow (p : R[X]) (a : R) (n : ℕ) :
+theorem signRight_pow (p : R[X]) (a : R) (n : ℕ) :
     (p ^ n).signRight a = p.signRight a ^ n := by
   induction n with
   | zero => simp
@@ -235,7 +233,7 @@ theorem _root_.Polynomial.signRight_pow (p : R[X]) (a : R) (n : ℕ) :
 
 /-- Powers raise the left-hand sign to the same power, with the convention `0^0 = 1`. -/
 @[simp]
-theorem _root_.Polynomial.signLeft_pow (p : R[X]) (a : R) (n : ℕ) :
+theorem signLeft_pow (p : R[X]) (a : R) (n : ℕ) :
     (p ^ n).signLeft a = p.signLeft a ^ n := by
   induction n with
   | zero => simp
@@ -249,7 +247,7 @@ variable {R : Type*} [Field R] [LinearOrder R] [IsStrictOrderedRing R]
 
 /-- The algebraic one-sided signs are realized on intervals immediately to the
 left and right, including at multiple roots and for the zero polynomial. -/
-theorem _root_.Polynomial.exists_signLeft_signRight (p : R[X]) (a : R) :
+theorem exists_signLeft_signRight (p : R[X]) (a : R) :
     ∃ l u, l < a ∧ a < u ∧
       (∀ x ∈ Ioo l a, sign (p.eval x) = p.signLeft a) ∧
       (∀ x ∈ Ioo a u, sign (p.eval x) = p.signRight a) := by
@@ -280,9 +278,19 @@ theorem _root_.Polynomial.exists_signLeft_signRight (p : R[X]) (a : R) :
     rw [hf, sign_pos (sub_pos.mpr hx.1), one_pow, one_mul,
       hlu ⟨hla.trans hx.1, hx.2⟩, hs]
 
+end OrderedField
+
+end Polynomial
+
+namespace List
+
+open Polynomial
+
+variable {R : Type*} [Field R] [LinearOrder R] [IsStrictOrderedRing R]
+
 /-- A uniform interval immediately to the right of `a` on which every polynomial of a list
 has its right-hand sign at `a`. -/
-theorem _root_.List.exists_signs_right (cs : List R[X]) (a : R) :
+theorem exists_signs_right (cs : List R[X]) (a : R) :
     ∃ u, a < u ∧ ∀ p ∈ cs, ∀ x ∈ Ioo a u, sign (p.eval x) = p.signRight a := by
   -- Use the order topology only to combine the finitely many right-hand intervals.
   let : TopologicalSpace R := Preorder.topology R
@@ -296,7 +304,7 @@ theorem _root_.List.exists_signs_right (cs : List R[X]) (a : R) :
 
 /-- A uniform interval immediately to the left of `a` on which every polynomial of a list
 has its left-hand sign at `a`. -/
-theorem _root_.List.exists_signs_left (cs : List R[X]) (a : R) :
+theorem exists_signs_left (cs : List R[X]) (a : R) :
     ∃ l, l < a ∧ ∀ p ∈ cs, ∀ x ∈ Ioo l a, sign (p.eval x) = p.signLeft a := by
   -- Use the order topology only to combine the finitely many left-hand intervals.
   let : TopologicalSpace R := Preorder.topology R
@@ -308,6 +316,4 @@ theorem _root_.List.exists_signs_left (cs : List R[X]) (a : R) :
   obtain ⟨l, hla, hl⟩ := mem_nhdsLT_iff_exists_Ioo_subset.mp he
   exact ⟨l, hla, fun p hp x hx => hl hx p hp⟩
 
-end OrderedField
-
-end TauCeti
+end List

@@ -5,12 +5,14 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+-- Expose inner regularity of Polish measures for the bundled compactness instance.
+public import Mathlib.MeasureTheory.Measure.RegularityCompacts
 public import Mathlib.MeasureTheory.Measure.Tight
 public import Mathlib.Topology.MetricSpace.Polish
 public import TauCeti.MeasureTheory.OptimalTransport.Coupling
--- Proof-only: Prokhorov's theorem, which upgrades tightness to relative compactness, and the
--- continuity of the pushforward of probability measures along a continuous map.
+-- Proof-only: continuous marginal maps and Prokhorov's relative compactness theorem.
 import Mathlib.MeasureTheory.Measure.Prokhorov
+import TauCeti.MeasureTheory.Measure.ProbabilityMeasure.Map
 
 /-!
 # The transport plans of two probability measures form a compact set
@@ -25,8 +27,9 @@ The two halves are proved at their own generality and for their own reasons.
 *Closedness* is a statement about the marginal maps. Pushing forward along the two coordinate
 projections is continuous for the weak topology, and being a coupling of `μ` and `ν` says exactly
 that the two pushforwards are `μ` and `ν`; so the coupling set is an intersection of two preimages
-of points. That is closed as soon as points are closed in the two spaces of marginals, which is
-the `T1Space` hypothesis carried here. Mathlib derives it from
+of points. The factors and their product need measurable opens; neither Borel sigma algebras nor
+second countability is needed for this argument. The set is closed as soon as points are closed in
+the two spaces of marginals, which is the `T1Space` hypothesis carried here. Mathlib derives it from
 `MeasureTheory.ProbabilityMeasure.t2Space`, whose hypotheses are `BorelSpace` together with
 `HasOuterApproxClosed` — so it is available on the metrizable factors the later sections work
 with, but is asked for explicitly here rather than assumed.
@@ -45,7 +48,7 @@ this lives here rather than in the stability file that consumes it.
 ## Main statements
 
 * `TauCeti.isClosed_setOfPred_isCoupling` — the couplings of `μ` and `ν` are a weakly closed set of
-  probability measures on the product, with canonical Polish and compact-metrizable
+  probability measures on the product, with canonical Polish and compact-pseudometrizable
   specialisations;
 * `TauCeti.isTightMeasureSet_setOfPred_exists_isCoupling` and
   `TauCeti.isTightMeasureSet_setOfPred_isCoupling` — the couplings of two tight families of
@@ -53,13 +56,15 @@ this lives here rather than in the stability file that consumes it.
   the two topologies themselves;
 * `TauCeti.isCompact_setOfPred_isCoupling_of_prokhorov` — the abstract compactness theorem for a
   product on which tight families of probability measures have compact closure;
-* `TauCeti.isCompact_setOfPred_isCoupling` — the Prokhorov theorem for Hausdorff Borel factors,
+* `TauCeti.isCompact_setOfPred_isCoupling` — the Prokhorov theorem for a Hausdorff Borel product,
   with compact-metrizable and Polish specialisations;
 * `TauCeti.isCoupling_of_tendsto` — the coupling constraint passes to weak limits when the
   marginals converge;
 * `TauCeti.exists_isCoupling_tendsto_of_isTightMeasureSet` — relative compactness of a family of
   plans with tight varying marginals;
-* `TauCeti.Coupling.instCompactSpace` — the bundled coupling type is a compact space.
+* `TauCeti.Coupling.instCompactSpace` — the bundled couplings of inner-regular probability
+  measures form a compact space when the factors are Hausdorff with measurable opens, the product
+  is Borel, and both spaces of marginal probability measures are `T1`.
 
 ## References
 
@@ -67,9 +72,6 @@ this lives here rather than in the stability file that consumes it.
   transference plans that precedes the existence theorem for an optimal coupling.
 * F. Santambrogio, *Optimal Transport for Applied Mathematicians*, Springer 2015, Chapter 1 — the
   same compactness argument, run through Prokhorov's theorem.
-
-This is Layer 1, items 2 and 3 of the optimal-transport roadmap, with the moving-marginal
-compactness used by item 6.
 -/
 
 public section
@@ -81,29 +83,24 @@ namespace TauCeti
 
 section Closed
 
-variable {X Y : Type*} [TopologicalSpace X] [MeasurableSpace X] [BorelSpace X]
-  [TopologicalSpace Y] [MeasurableSpace Y] [BorelSpace Y] [SecondCountableTopologyEither X Y]
+variable {X Y : Type*} [TopologicalSpace X] [MeasurableSpace X] [OpensMeasurableSpace X]
+  [TopologicalSpace Y] [MeasurableSpace Y] [OpensMeasurableSpace Y]
+  [OpensMeasurableSpace (X × Y)]
 
 /-- **The couplings of two probability measures are weakly closed.** The coupling set is the
 intersection of the preimages of `{μ}` and `{ν}` under the two marginal maps, both of which are
 continuous for the topology of convergence in distribution. The `T1Space` hypotheses are what make
-the two singletons closed; they hold whenever the two factors are `HasOuterApproxClosed` — in
-particular whenever they are metrizable — since the spaces of probability measures are then
-Hausdorff by `MeasureTheory.ProbabilityMeasure.t2Space`. -/
+the two singletons closed. They hold for Borel factors with `HasOuterApproxClosed`, in particular
+for pseudometrizable Borel factors, by `MeasureTheory.ProbabilityMeasure.t2Space`. The factors and
+their product need only measurable opens for the marginal maps to be continuous. -/
 theorem isClosed_setOfPred_isCoupling [T1Space (ProbabilityMeasure X)]
     [T1Space (ProbabilityMeasure Y)] (μ : ProbabilityMeasure X) (ν : ProbabilityMeasure Y) :
     IsClosed {π : ProbabilityMeasure (X × Y) | IsCoupling π.toMeasure μ.toMeasure ν.toMeasure} := by
-  have hset : {π : ProbabilityMeasure (X × Y) | IsCoupling π.toMeasure μ.toMeasure ν.toMeasure} =
-      (fun π : ProbabilityMeasure (X × Y) ↦ π.map Prod.fst) ⁻¹' {μ} ∩
-        (fun π : ProbabilityMeasure (X × Y) ↦ π.map Prod.snd) ⁻¹' {ν} := by
-    ext π
-    simpa only [mem_ofPred_eq, mem_inter_iff, mem_preimage, mem_singleton_iff] using
-      isCoupling_toMeasure_iff
-  rw [hset]
-  exact (isClosed_singleton.preimage
-      (ProbabilityMeasure.continuous_map (f := (Prod.fst : X × Y → X)) continuous_fst)).inter
+  simpa only [preimage, mem_singleton_iff, ← ofPred_and, ← isCoupling_toMeasure_iff] using
     (isClosed_singleton.preimage
-      (ProbabilityMeasure.continuous_map (f := (Prod.snd : X × Y → Y)) continuous_snd))
+      (ProbabilityMeasure.continuous_map_of_measurable continuous_fst measurable_fst)).inter
+      (isClosed_singleton.preimage
+        (ProbabilityMeasure.continuous_map_of_measurable continuous_snd measurable_snd))
 
 end Closed
 
@@ -142,9 +139,10 @@ section AbstractCompact
 /-! The abstract theorem exposes exactly the Prokhorov property used by the coupling argument:
 every tight family of probability measures on the product has compact closure. -/
 
-variable {X Y : Type*} [TopologicalSpace X] [MeasurableSpace X] [BorelSpace X]
-  [T1Space (ProbabilityMeasure X)] [TopologicalSpace Y] [MeasurableSpace Y] [BorelSpace Y]
-  [T1Space (ProbabilityMeasure Y)] [SecondCountableTopologyEither X Y]
+variable {X Y : Type*} [TopologicalSpace X] [MeasurableSpace X] [OpensMeasurableSpace X]
+  [T1Space (ProbabilityMeasure X)] [TopologicalSpace Y] [MeasurableSpace Y]
+  [OpensMeasurableSpace Y] [T1Space (ProbabilityMeasure Y)]
+  [OpensMeasurableSpace (X × Y)]
 
 /-- **Compactness of couplings under an abstract Prokhorov property.** If every tight family of
 probability measures on the product has compact closure, then the couplings of two tight marginals
@@ -170,25 +168,37 @@ end AbstractCompact
 
 section Compact
 
-/-! Prokhorov's theorem asks the underlying space to be Hausdorff and Borel. Closedness of the
-coupling set additionally asks that the two spaces of probability measures be `T1`; these are the
-hypotheses exposed below, without choosing a metric on either factor. -/
+/-! Prokhorov's theorem asks the product to be Hausdorff and Borel. Assuming `BorelSpace` for the
+product directly avoids imposing second countability on either factor. Closedness additionally
+asks that the two spaces of probability measures be `T1`; these hypotheses do not choose a metric
+on either factor. -/
 
-variable {X Y : Type*} [TopologicalSpace X] [T2Space X] [MeasurableSpace X]
-  [BorelSpace X] [T1Space (ProbabilityMeasure X)]
-  [TopologicalSpace Y] [T2Space Y] [MeasurableSpace Y] [BorelSpace Y]
-  [T1Space (ProbabilityMeasure Y)] [SecondCountableTopologyEither X Y]
+variable {X Y : Type*} [TopologicalSpace X] [MeasurableSpace X]
+  [OpensMeasurableSpace X] [T1Space (ProbabilityMeasure X)]
+  [TopologicalSpace Y] [MeasurableSpace Y] [OpensMeasurableSpace Y]
+  [T1Space (ProbabilityMeasure Y)] [BorelSpace (X × Y)]
 
 /-- **The couplings of two tight probability measures are weakly compact.** The set is tight by
 `TauCeti.isTightMeasureSet_setOfPred_isCoupling`, hence relatively compact by Prokhorov's theorem,
 and it is closed by `TauCeti.isClosed_setOfPred_isCoupling`; so it equals its own closure and is
-compact. -/
-theorem isCompact_setOfPred_isCoupling {μ : ProbabilityMeasure X} {ν : ProbabilityMeasure Y}
+compact. Hausdorffness is required only of the product. -/
+theorem isCompact_setOfPred_isCoupling [T2Space (X × Y)]
+    {μ : ProbabilityMeasure X} {ν : ProbabilityMeasure Y}
     (hμ : IsTightMeasureSet {μ.toMeasure}) (hν : IsTightMeasureSet {ν.toMeasure}) :
     IsCompact
-      {π : ProbabilityMeasure (X × Y) | IsCoupling π.toMeasure μ.toMeasure ν.toMeasure} := by
-  exact isCompact_setOfPred_isCoupling_of_prokhorov
+      {π : ProbabilityMeasure (X × Y) | IsCoupling π.toMeasure μ.toMeasure ν.toMeasure} :=
+  isCompact_setOfPred_isCoupling_of_prokhorov
     (fun _ ↦ isCompact_closure_of_isTightMeasureSet) hμ hν
+
+/-- The bundled couplings of two inner-regular probability measures form a compact space for weak
+convergence when both factors are Hausdorff with measurable opens, their product is a Borel space,
+and both spaces of marginal probability measures are `T1`. This applies in particular to
+probability measures on Polish Borel spaces. -/
+instance Coupling.instCompactSpace [T2Space X] [T2Space Y]
+    {μ : ProbabilityMeasure X} {ν : ProbabilityMeasure Y}
+    [μ.toMeasure.InnerRegular] [ν.toMeasure.InnerRegular] : CompactSpace (Coupling μ ν) :=
+  isCompact_iff_compactSpace.mp (isCompact_setOfPred_isCoupling
+    isTightMeasureSet_singleton_of_innerRegular isTightMeasureSet_singleton_of_innerRegular)
 
 end Compact
 
@@ -196,11 +206,13 @@ section MovingMarginals
 
 /-! Weak limits of plans whose marginals move. The hypotheses are those of the two sections above,
 strengthened from `T1` to `T2` on the two spaces of marginals because a limit is identified here,
-not merely trapped in a closed set. -/
+not merely trapped in a closed set. Passing to limits needs only measurable opens on the factors
+and product; extracting a convergent refinement additionally needs a Hausdorff Borel product. -/
 
-variable {ι X Y : Type*} [TopologicalSpace X] [MeasurableSpace X] [BorelSpace X]
-  [T2Space (ProbabilityMeasure X)] [TopologicalSpace Y] [MeasurableSpace Y] [BorelSpace Y]
-  [T2Space (ProbabilityMeasure Y)] [SecondCountableTopologyEither X Y] {l : Filter ι}
+variable {ι X Y : Type*} [TopologicalSpace X] [MeasurableSpace X] [OpensMeasurableSpace X]
+  [T2Space (ProbabilityMeasure X)] [TopologicalSpace Y] [MeasurableSpace Y]
+  [OpensMeasurableSpace Y] [T2Space (ProbabilityMeasure Y)]
+  [OpensMeasurableSpace (X × Y)] {l : Filter ι}
   {μs : ι → ProbabilityMeasure X} {νs : ι → ProbabilityMeasure Y} {μ : ProbabilityMeasure X}
   {ν : ProbabilityMeasure Y} {πs : ι → ProbabilityMeasure (X × Y)}
   {π : ProbabilityMeasure (X × Y)}
@@ -217,21 +229,24 @@ theorem isCoupling_of_tendsto [l.NeBot]
   refine isCoupling_toMeasure_iff.mpr ⟨?_, ?_⟩
   · have h₁ : Tendsto (fun i ↦ (πs i).map Prod.fst) l
         (𝓝 (π.map Prod.fst)) :=
-      ((ProbabilityMeasure.continuous_map (f := (Prod.fst : X × Y → X))
-        continuous_fst).tendsto π).comp hπ
+      (ProbabilityMeasure.continuous_map_of_measurable continuous_fst measurable_fst).tendsto π
+        |>.comp hπ
     refine tendsto_nhds_unique h₁ (hμ.congr' ?_)
     exact hπs.mono fun i hi ↦ (isCoupling_toMeasure_iff.mp hi).1.symm
   · have h₂ : Tendsto (fun i ↦ (πs i).map Prod.snd) l
         (𝓝 (π.map Prod.snd)) :=
-      ((ProbabilityMeasure.continuous_map (f := (Prod.snd : X × Y → Y))
-        continuous_snd).tendsto π).comp hπ
+      (ProbabilityMeasure.continuous_map_of_measurable continuous_snd measurable_snd).tendsto π
+        |>.comp hπ
     refine tendsto_nhds_unique h₂ (hν.congr' ?_)
     exact hπs.mono fun i hi ↦ (isCoupling_toMeasure_iff.mp hi).2.symm
 
 /-- **Relative compactness of a family of transport plans with moving marginals.** If a tail of
 each marginal family is tight, then any eventually feasible family of plans has a weakly convergent
-refinement whose limit is a coupling of the limiting marginals. -/
-theorem exists_isCoupling_tendsto_of_isTightMeasureSet [T2Space X] [T2Space Y]
+refinement whose limit is a coupling of the limiting marginals. Prokhorov's theorem needs
+Hausdorffness and the Borel sigma algebra only on the product; no second-countability hypothesis
+on either factor is required. -/
+theorem exists_isCoupling_tendsto_of_isTightMeasureSet [T2Space (X × Y)]
+    [BorelSpace (X × Y)]
     (hμt : ∃ s ∈ l, IsTightMeasureSet ((fun i ↦ (μs i).toMeasure) '' s))
     (hνt : ∃ s ∈ l, IsTightMeasureSet ((fun i ↦ (νs i).toMeasure) '' s))
     (hμ : Tendsto μs l (𝓝 μ)) (hν : Tendsto νs l (𝓝 ν)) [l.NeBot]
@@ -265,10 +280,12 @@ variable {X Y : Type*} [TopologicalSpace X] [TopologicalSpace.MetrizableSpace X]
   [CompactSpace X] [MeasurableSpace X] [BorelSpace X] [TopologicalSpace Y]
   [TopologicalSpace.MetrizableSpace Y] [CompactSpace Y] [MeasurableSpace Y] [BorelSpace Y]
 
-/-- **Closedness of couplings on compact metrizable spaces.** This is the directly usable
-compact-metrizable specialisation of `TauCeti.isClosed_setOfPred_isCoupling`. -/
-theorem isClosed_setOfPred_isCoupling_of_compactSpace (μ : ProbabilityMeasure X)
-    (ν : ProbabilityMeasure Y) :
+omit [TopologicalSpace.MetrizableSpace X] [TopologicalSpace.MetrizableSpace Y] in
+/-- **Closedness of couplings on compact pseudometrizable spaces.** This is the directly usable
+compact-pseudometrizable specialisation of `TauCeti.isClosed_setOfPred_isCoupling`. -/
+theorem isClosed_setOfPred_isCoupling_of_compactSpace
+    [TopologicalSpace.PseudoMetrizableSpace X] [TopologicalSpace.PseudoMetrizableSpace Y]
+    (μ : ProbabilityMeasure X) (ν : ProbabilityMeasure Y) :
     IsClosed
       {π : ProbabilityMeasure (X × Y) | IsCoupling π.toMeasure μ.toMeasure ν.toMeasure} := by
   let : UniformSpace X := TopologicalSpace.pseudoMetrizableSpaceUniformity X
@@ -323,12 +340,6 @@ theorem isCompact_setOfPred_isCoupling_of_polishSpace (μ : ProbabilityMeasure X
     IsCompact
       {π : ProbabilityMeasure (X × Y) | IsCoupling π.toMeasure μ.toMeasure ν.toMeasure} :=
   isCompact_setOfPred_isCoupling isTightMeasureSet_singleton isTightMeasureSet_singleton
-
-/-- The bundled type of couplings of two probability measures on Polish spaces is a compact space,
-for the weak topology it inherits from the probability measures on the product. -/
-instance Coupling.instCompactSpace {μ : ProbabilityMeasure X} {ν : ProbabilityMeasure Y} :
-    CompactSpace (Coupling μ ν) :=
-  isCompact_iff_compactSpace.mp (isCompact_setOfPred_isCoupling_of_polishSpace μ ν)
 
 end Polish
 

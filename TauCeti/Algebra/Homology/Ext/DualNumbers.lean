@@ -10,18 +10,17 @@ public import Mathlib.Algebra.Category.ModuleCat.Ext.HasExt
 public import Mathlib.Algebra.Homology.AlternatingConst
 public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
 public import Mathlib.LinearAlgebra.Dimension.StrongRankCondition
-public import Mathlib.RingTheory.Artinian.Module
 public import Mathlib.RingTheory.DualNumber
 public import Mathlib.RingTheory.SimpleModule.Basic
+public import TauCeti.Algebra.DualNumber.Basic
 public import TauCeti.Algebra.Homology.Ext.ProjectiveResolution
-import TauCeti.Algebra.DualNumber.Basic
 
 /-!
 # `Extⁿ` over the dual numbers is free of rank one in every degree
 
 Let `k` be a commutative ring, let `A = k[ε]` be the dual numbers `k[ε]/(ε²)`, and let `S = A/(ε)`
 be the residue module of `A` -- its residue field when `k` is a field -- viewed as an `A`-module
-through `TrivSqZeroExt.fstHom`. The multiplications
+through the constant-term projection. The multiplications
 
 ```text
 ⋯ ⟶ A --ε--> A --ε--> A ⟶ S ⟶ 0
@@ -29,6 +28,8 @@ through `TrivSqZeroExt.fstHom`. The multiplications
 
 form a projective resolution of `S`, and every differential of `Hom_A(-, S)` applied to it is
 zero, because `ε` annihilates `S`. Hence `Extⁿ_A(S, S) ≅ k` as a `k`-module, for **every** `n`.
+The free and residue modules, quotient map, and finite-generation instance work over arbitrary
+rings.
 
 ## Main definitions
 
@@ -52,17 +53,15 @@ open CategoryTheory CategoryTheory.Abelian CategoryTheory.Limits TrivSqZeroExt D
 
 open scoped ModuleCat.Algebra
 
--- Provenance: the periodic resolution `⋯ ⟶ A --ε--> A --ε--> A ⟶ S ⟶ 0` and the computation
--- `Extⁿ_A(S, S) ≅ k` formalised below are written down in the Tau Ceti
--- `GrothendieckEulerForms` roadmap blueprint, `README.md`, section "The dual numbers".
-
 public section
 
 namespace TauCeti
 
 universe u
 
-variable (k : Type u) [CommRing k]
+section Ring
+
+variable (k : Type u) [Ring k]
 
 /-! ### The two modules -/
 
@@ -73,7 +72,12 @@ noncomputable abbrev dualNumberFree : ModuleCat.{u} (DualNumber k) :=
 /-- The quotient `k[ε]/(ε)` of the dual numbers, as a `k[ε]`-module: the underlying `k`-module
 is `k`, and `ε` acts by zero. When `k` is a field this is the residue field of `k[ε]`. -/
 noncomputable abbrev dualNumberResidue : ModuleCat.{u} (DualNumber k) :=
-  (ModuleCat.restrictScalars (TrivSqZeroExt.fstHom k k k).toRingHom).obj (ModuleCat.of k k)
+  (ModuleCat.restrictScalars
+    { toFun := TrivSqZeroExt.fst
+      map_one' := TrivSqZeroExt.fst_one
+      map_mul' := TrivSqZeroExt.fst_mul
+      map_zero' := TrivSqZeroExt.fst_zero
+      map_add' := TrivSqZeroExt.fst_add }).obj (ModuleCat.of k k)
 
 /-- The quotient `k[ε]/(ε)` is `k` as a `k`-module. -/
 noncomputable def dualNumberResidueEquiv : dualNumberResidue k ≃ₗ[k] k where
@@ -109,12 +113,6 @@ theorem eps_smul_dualNumberResidue (x : dualNumberResidue k) : (ε : DualNumber 
   (dualNumberResidueEquiv k).injective (by
     rw [dualNumberResidueEquiv_smul, fst_eps, zero_mul, map_zero])
 
-/-! ### The periodic resolution -/
-
-/-- Multiplication by `ε` on the rank-one free module. -/
-noncomputable def dualNumberEpsSmul : dualNumberFree k ⟶ dualNumberFree k :=
-  ModuleCat.ofHom (LinearMap.mulLeft (DualNumber k) (ε : DualNumber k))
-
 /-- The quotient map `k[ε] ↠ k[ε]/(ε)`. -/
 noncomputable def dualNumberProj : dualNumberFree k ⟶ dualNumberResidue k :=
   ModuleCat.ofHom (X := dualNumberFree k) (Y := dualNumberResidue k)
@@ -127,6 +125,38 @@ noncomputable def dualNumberProj : dualNumberFree k ⟶ dualNumberResidue k :=
 theorem dualNumberProj_apply (x : DualNumber k) :
     (dualNumberProj k).hom x = fst x :=
   (rfl)
+
+/-- The quotient map kills exactly the dual numbers with vanishing constant term. -/
+private theorem mem_ker_dualNumberProj_iff {x : DualNumber k} :
+    x ∈ LinearMap.ker (dualNumberProj k).hom ↔ fst x = 0 := by
+  rw [LinearMap.mem_ker, ← (dualNumberResidueEquiv k).map_eq_zero_iff,
+    dualNumberResidueEquiv_apply, dualNumberProj_apply]
+
+/-- The quotient map `k[ε] ↠ k[ε]/(ε)` is surjective. -/
+theorem dualNumberProj_surjective : Function.Surjective (dualNumberProj k).hom := fun x => by
+  obtain ⟨y, hy⟩ := TrivSqZeroExt.fst_surjective (R := k) (M := k) (dualNumberResidueEquiv k x)
+  exact ⟨y, (dualNumberResidueEquiv k).injective (by rw [dualNumberProj_apply]; exact hy)⟩
+
+/-- The residue module `k[ε]/(ε)` is a finitely generated `k[ε]`-module. -/
+instance : Module.Finite (DualNumber k) (dualNumberResidue k) :=
+  .of_surjective _ (dualNumberProj_surjective k)
+
+/-- The quotient map `k[ε] ↠ k[ε]/(ε)` is an epimorphism; this is what makes precomposition
+with it injective on `End(k[ε]/(ε))`. -/
+instance epi_dualNumberProj : Epi (dualNumberProj k) :=
+  (ModuleCat.epi_iff_surjective _).2 (dualNumberProj_surjective k)
+
+end Ring
+
+section CommRing
+
+variable (k : Type u) [CommRing k]
+
+/-! ### The periodic resolution -/
+
+/-- Multiplication by `ε` on the rank-one free module. -/
+noncomputable def dualNumberEpsSmul : dualNumberFree k ⟶ dualNumberFree k :=
+  ModuleCat.ofHom (LinearMap.mulLeft (DualNumber k) (ε : DualNumber k))
 
 /-- Multiplication by `ε` is left multiplication by `ε` as a linear map. -/
 @[simp]
@@ -175,12 +205,6 @@ private theorem mem_ker_dualNumberEpsSmul_iff {x : DualNumber k} :
     obtain ⟨y, rfl⟩ := fst_eq_zero_iff_eps_dvd.1 hx
     rw [← mul_assoc, eps_mul_eps, zero_mul]
 
-/-- The quotient map kills exactly the dual numbers with vanishing constant term. -/
-private theorem mem_ker_dualNumberProj_iff {x : DualNumber k} :
-    x ∈ LinearMap.ker (dualNumberProj k).hom ↔ fst x = 0 := by
-  rw [LinearMap.mem_ker, ← (dualNumberResidueEquiv k).map_eq_zero_iff,
-    dualNumberResidueEquiv_apply, dualNumberProj_apply]
-
 /-- Exactness of the periodic complex away from degree zero. -/
 private theorem range_dualNumberEpsSmul_eq_ker :
     LinearMap.range (dualNumberEpsSmul k).hom = LinearMap.ker (dualNumberEpsSmul k).hom :=
@@ -193,19 +217,9 @@ private theorem range_dualNumberEpsSmul_eq_ker_proj :
   SetLike.ext fun _ ↦
     (mem_range_dualNumberEpsSmul_iff k).trans (mem_ker_dualNumberProj_iff k).symm
 
-/-- The quotient map `k[ε] ↠ k[ε]/(ε)` is surjective. -/
-theorem dualNumberProj_surjective : Function.Surjective (dualNumberProj k).hom := fun x => by
-  obtain ⟨y, hy⟩ := TrivSqZeroExt.fst_surjective (R := k) (M := k) (dualNumberResidueEquiv k x)
-  exact ⟨y, (dualNumberResidueEquiv k).injective (by rw [dualNumberProj_apply]; exact hy)⟩
-
 section Field
 
 variable (F : Type u) [Field F]
-
-/-- The dual numbers over a field are an Artinian ring, being a two-dimensional algebra. -/
-instance : IsArtinianRing (DualNumber F) :=
-  have : Module.Finite F (DualNumber F) := inferInstanceAs (Module.Finite F (F × F))
-  IsArtinianRing.of_finite F _
 
 /-- The kernel of the quotient map `F[ε] ↠ F[ε]/(ε)` is the maximal ideal of `F[ε]`. -/
 @[simp]
@@ -226,21 +240,12 @@ private noncomputable def quotMaximalIdealEquivDualNumberResidue :
   (Submodule.quotEquivOfEq _ _ (ker_dualNumberProj F).symm).trans
     ((dualNumberProj F).hom.quotKerEquivOfSurjective (dualNumberProj_surjective F))
 
-/-- The residue module `F[ε]/(ε)` is a finitely generated `F[ε]`-module. -/
-instance : Module.Finite (DualNumber F) (dualNumberResidue F) :=
-  .of_surjective _ (dualNumberProj_surjective F)
-
 /-- The residue module `F[ε]/(ε)` is a simple `F[ε]`-module. -/
 instance : IsSimpleModule (DualNumber F) (dualNumberResidue F) :=
   isSimpleModule_iff_quot_maximal.mpr ⟨_, IsLocalRing.maximalIdeal.isMaximal _,
     ⟨(quotMaximalIdealEquivDualNumberResidue F).symm⟩⟩
 
 end Field
-
-/-- The quotient map `k[ε] ↠ k[ε]/(ε)` is an epimorphism; this is what makes precomposition
-with it injective on `End(k[ε]/(ε))`. -/
-instance epi_dualNumberProj : Epi (dualNumberProj k) :=
-  (ModuleCat.epi_iff_surjective _).2 (dualNumberProj_surjective k)
 
 /-- The `ε`-periodic complex `⋯ ⟶ A --ε--> A --ε--> A` of free modules over the dual numbers. -/
 private noncomputable def dualNumberComplex : ChainComplex (ModuleCat.{u} (DualNumber k)) ℕ :=
@@ -256,7 +261,7 @@ private theorem dualNumberComplex_d (n : ℕ) :
   simp only [dualNumberComplex, HomologicalComplex.alternatingConst_d]
   split_ifs with h1 h2 <;> first | rfl | exact absurd rfl h1
 
-/-- The augmentation of the periodic complex by the residue field. -/
+/-- The augmentation of the periodic complex by the residue module. -/
 private noncomputable def dualNumberComplexπ :
     dualNumberComplex k ⟶ (ChainComplex.single₀ (ModuleCat.{u} (DualNumber k))).obj
       (dualNumberResidue k) :=
@@ -316,7 +321,7 @@ theorem dualNumberProjectiveResolution_π_f_zero :
   -- the isomorphism is an identity, so the left-hand side is the augmentation itself
   dualNumberComplexπ_f_zero k
 
-/-- Every differential of the periodic resolution dies against the residue field. -/
+/-- Every differential of the periodic resolution dies against the residue module. -/
 @[simp]
 theorem dualNumberProjectiveResolution_comp_eq_zero (p q : ℕ)
     (f : (dualNumberProjectiveResolution k).complex.X q ⟶ dualNumberResidue k) :
@@ -421,5 +426,7 @@ theorem extDualNumberResidueEquiv_succ (n : ℕ)
 theorem finrank_ext_dualNumberResidue {k : Type u} [Field k] (n : ℕ) :
     Module.finrank k (Ext.{u} (dualNumberResidue k) (dualNumberResidue k) n) = 1 := by
   rw [(extDualNumberResidueEquiv k n).finrank_eq, Module.finrank_self]
+
+end CommRing
 
 end TauCeti

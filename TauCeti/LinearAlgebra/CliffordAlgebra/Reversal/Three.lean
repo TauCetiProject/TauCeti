@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 import TauCeti.LinearAlgebra.CliffordAlgebra.Grading
-import TauCeti.LinearAlgebra.Matrix.AdjugateFinTwo
+import TauCeti.LinearAlgebra.Matrix.Adjugate.FinTwo
 public import Mathlib.LinearAlgebra.Matrix.Adjugate
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Reversal.Basic
 
@@ -48,7 +48,7 @@ theorem exists_add_reverseEven_eq_smul_one_of_finrank_eq_three
     rw [filtration_le_iff]
     intro l hl
     have hp := prod_map_ι_mem_pow Q l
-    interval_cases hlen : l.length
+    interval_cases _ : l.length
     · exact Submodule.mem_sup_left (Submodule.mem_sup_left hp)
     · exact Submodule.mem_sup_right (Submodule.mem_sup_left hp)
     · exact Submodule.mem_sup_left (Submodule.mem_sup_right hp)

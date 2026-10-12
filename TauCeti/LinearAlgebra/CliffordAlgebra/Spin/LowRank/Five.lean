@@ -35,7 +35,8 @@ central `ω`, hence central, hence zero, in which case `y = c • ω` is itself 
 Lipschitz group (`CliffordAlgebra.mem_lipschitzGroup_of_involute_act_ι_mem_range_ι`).
 
 Dimension five is where the identification stops: in dimension six the even unitary group is
-strictly larger than the Spin group (`TauCeti/LinearAlgebra/CliffordAlgebra/Spin/LowRank/Six.lean`),
+strictly larger than the Spin group
+(`TauCeti/LinearAlgebra/CliffordAlgebra/Spin/LowRank/Six/Basic.lean`),
 the volume element being then reverse-antisymmetric and anticommuting with the vectors.
 
 ## Main results
@@ -72,17 +73,14 @@ theorem evenUnitaryGroup_le_lipschitzGroup_of_finrank_eq_five (Q : QuadraticForm
   obtain ⟨l, hl, hlen, hspan, haniso⟩ := hQ.exists_list_pairwise_isOrtho
   rw [hV] at hlen
   -- The volume element `ω` of the basis is central with nonzero scalar square.
-  set ω : CliffordAlgebra Q := (l.map (ι Q)).prod with hω
+  set ω : CliffordAlgebra Q := (l.map (ι Q)).prod
   have hcenter : ∀ z, Commute ω z := fun z =>
     (Subalgebra.mem_center_iff.mp
       (prod_map_ι_mem_center_of_odd_length hl (by rw [hlen]; decide) hspan) z).symm
   have hsq : ω * ω = algebraMap K _ ((-1 : K) ^ l.length.choose 2 * (l.map Q).prod) :=
     prod_map_ι_sq_scalar hl
-  have hs : (-1 : K) ^ l.length.choose 2 * (l.map Q).prod ≠ 0 := by
-    refine mul_ne_zero (pow_ne_zero _ (neg_ne_zero.mpr one_ne_zero)) (List.prod_ne_zero ?_)
-    intro hmem
-    obtain ⟨v, hv, hv0⟩ := List.mem_map.mp hmem
-    exact haniso v hv hv0
+  have hs : (-1 : K) ^ l.length.choose 2 * (l.map Q).prod ≠ 0 :=
+    neg_one_pow_choose_two_mul_prod_map_ne_zero haniso
   -- A vector proportional to the central `ω` commutes with two orthogonal basis vectors, so it
   -- vanishes.
   have h0 : 0 < l.length := by omega

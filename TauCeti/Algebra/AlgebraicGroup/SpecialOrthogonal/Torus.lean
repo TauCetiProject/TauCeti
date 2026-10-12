@@ -123,7 +123,7 @@ private theorem pointsMulEquiv_splitTorusPointsMulEquiv
 
 /-- The split-torus point equivalence sends a point to the point represented by the
 two-dimensional special orthogonal matrix attached to its unique unit coordinate. -/
-@[simp]
+@[simp↓]
 theorem splitTorusPointsMulEquiv_apply
     (A : Type v) [CommRing A] [Algebra R A]
     (t : WithConv ((DiagonalizableGroup.coordinateRing R
@@ -144,7 +144,7 @@ theorem splitTorusPointsMulEquiv_apply
 
 /-- The inverse split-torus point equivalence reads off the unit of a two-dimensional special
 orthogonal matrix and makes it the unique split-torus coordinate. -/
-@[simp]
+@[simp↓]
 theorem splitTorusPointsMulEquiv_symm_apply
     (A : Type v) [CommRing A] [Algebra R A]
     (s : WithConv (coordinateHopfAlgebra R 2 →ₐ[R] A)) :
@@ -197,7 +197,7 @@ noncomputable def splitTorusPointsNatIso :
 
 /-- The forward component of the natural split-torus identification is the pointwise
 equivalence `splitTorusPointsMulEquiv`. -/
-@[simp]
+-- Not `@[simp]`: `simp` does not rewrite with it, even as a pre-lemma; use `rw`.
 theorem splitTorusPointsNatIso_hom_app_apply
     (A : CommAlgCat.{u} R)
     (t : HopfAlgebra.points (R := R)
@@ -209,7 +209,7 @@ theorem splitTorusPointsNatIso_hom_app_apply
 
 /-- The inverse component of the natural split-torus identification is the inverse pointwise
 equivalence `splitTorusPointsMulEquiv`. -/
-@[simp]
+-- Not `@[simp]`: `simp` does not rewrite with it, even as a pre-lemma; use `rw`.
 theorem splitTorusPointsNatIso_inv_app_apply
     (A : CommAlgCat.{u} R)
     (s : HopfAlgebra.points (R := R) (H := coordinateHopfAlgebra R 2) A) :
@@ -228,7 +228,7 @@ noncomputable def splitTorusCoordinateIso :
 
 /-- On every value algebra, the point map induced by the forward coordinate isomorphism is the
 inverse pointwise split-torus equivalence. -/
-@[simp]
+-- Not `@[simp]`: `simp` does not rewrite with it, even as a pre-lemma; use `rw`.
 theorem mapPointsFunctor_splitTorusCoordinateIso_hom_app_apply
     (A : CommAlgCat.{u} R)
     (s : HopfAlgebra.points (R := R) (H := coordinateHopfAlgebra R 2) A) :
@@ -254,7 +254,7 @@ theorem mapPointsFunctor_splitTorusCoordinateIso_hom_app_apply
 
 /-- On every value algebra, the point map induced by the inverse coordinate isomorphism is the
 forward pointwise split-torus equivalence. -/
-@[simp]
+-- Not `@[simp]`: `simp` does not rewrite with it, even as a pre-lemma; use `rw`.
 theorem mapPointsFunctor_splitTorusCoordinateIso_inv_app_apply
     (A : CommAlgCat.{u} R)
     (t : HopfAlgebra.points (R := R)

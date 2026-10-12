@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.GroupWithZero.Action.Regular
 public import TauCeti.Algebra.AlbertAlgebra.Basic
 public import TauCeti.Algebra.Lie.Derivation.Basic
 import Mathlib.Tactic.LinearCombination
@@ -32,8 +31,7 @@ known here to satisfy one.
 The trace-zero subspace is therefore a Lie submodule
 (`TauCeti.AlbertAlgebra.traceZeroLieSubmodule`), the candidate fundamental representation, of
 dimension `26` over a base satisfying `StrongRankCondition`
-(`TauCeti.AlbertAlgebra.finrank_traceZeroLieSubmodule`); `Der J` acts faithfully on it whenever
-scalar multiplication by `3` on `J` is regular
+(`TauCeti.AlbertAlgebra.finrank_traceZeroLieSubmodule`); `Der J` acts faithfully on it
 (`TauCeti.AlbertAlgebra.isFaithful_traceZeroLieSubmodule`).
 
 ## Main definitions
@@ -49,20 +47,15 @@ scalar multiplication by `3` on `J` is regular
   a diagonal idempotent has vanishing diagonal.
 * `TauCeti.AlbertAlgebra.trace_derivation_apply_eq_zero`: **a derivation of `J` has values of trace
   `0`**, with `TauCeti.AlbertAlgebra.derivation_apply_mem_traceZero` its membership form.
-* `TauCeti.AlbertAlgebra.isFaithful_traceZeroLieSubmodule`: when scalar multiplication by `3` on `J`
-  is regular, `Der J` acts faithfully on `J₀`;
-  `TauCeti.AlbertAlgebra.instIsFaithfulTraceZeroLieSubmodule` is the instance form of that, under
-  `[NoZeroSMulDivisors R (AlbertAlgebra R)]` and `[NeZero (3 : R)]`.
+* `TauCeti.AlbertAlgebra.isFaithful_traceZeroLieSubmodule`: `Der J` acts faithfully on `J₀`;
+  `TauCeti.AlbertAlgebra.instIsFaithfulTraceZeroLieSubmodule` is its instance form.
 
 ## Implementation notes
 
 Everything is stated over a commutative ring in which `2` is invertible, the hypothesis the
-symmetrized product already carries; the base is a field nowhere. Faithfulness is stated for the
-exact hypothesis it needs, `IsSMulRegular (AlbertAlgebra R) (3 : R)`, which is not a class; the
-instance form asks instead for `[NoZeroSMulDivisors R (AlbertAlgebra R)]` and `[NeZero (3 : R)]`,
-which imply it but are strictly stronger. Some hypothesis on `3` is unavoidable: in characteristic
-`3` the trace-zero element `3 • A - (tr A) • 1` degenerates to `-(tr A) • 1`, which retains no
-information about `A`.
+symmetrized product already carries; the base is a field nowhere. Faithfulness also holds in
+characteristic `3`, where the identity belongs to `J₀`: the trace-zero diagonal differences and
+their squares determine the action on the diagonal frame.
 
 Derivations are taken in the bundled form `D : TauCeti.derivationLieAlgebra R (AlbertAlgebra R)` of
 `TauCeti/Algebra/Lie/Derivation/Basic.lean`, and are applied through the coercion
@@ -74,7 +67,7 @@ Derivations are taken in the bundled form `D : TauCeti.derivationLieAlgebra R (A
   the packaging of the invariant subspace is adapted: `TauCeti.Octonion.imaginaryLieSubmodule`,
   `TauCeti.Octonion.isFaithful_imaginaryLieSubmodule` and
   `TauCeti.Octonion.instIsFaithfulImaginaryLieSubmodule` — the imaginary octonions as a Lie
-  submodule over `Der 𝕆`, faithful once multiplication by the scalar `2` is regular — are the
+  submodule over `Der 𝕆`, faithful over every commutative ring — are the
   models for
   `TauCeti.AlbertAlgebra.traceZeroLieSubmodule`,
   `TauCeti.AlbertAlgebra.isFaithful_traceZeroLieSubmodule` and
@@ -215,34 +208,44 @@ section Faithful
 
 variable [CommRing R] [Invertible (2 : R)]
 
-/-- **`Der H₃(𝕆)` acts faithfully on the trace-zero subspace** as soon as scalar multiplication by
-`3` on `H₃(𝕆)` is regular, so no information is lost by restricting the derivation algebra to its
-candidate fundamental representation. Some hypothesis on `3` is needed; the instance
-`TauCeti.AlbertAlgebra.instIsFaithfulTraceZeroLieSubmodule` supplies this one from typeclasses. -/
-theorem isFaithful_traceZeroLieSubmodule (h3 : IsSMulRegular (AlbertAlgebra R) (3 : R)) :
+/-- **`Der H₃(𝕆)` acts faithfully on the trace-zero subspace**, so no information is lost by
+restricting the derivation algebra to its candidate fundamental representation, including in
+characteristic `3`. -/
+theorem isFaithful_traceZeroLieSubmodule :
     LieModule.IsFaithful R (derivationLieAlgebra R (AlbertAlgebra R))
       (traceZeroLieSubmodule R) := by
   rw [LieModule.isFaithful_iff']
   intro D hD
+  have hzero (A : AlbertAlgebra R) (hA : trace A = 0) :
+      (D : Module.End R (AlbertAlgebra R)) A = 0 := by
+    have h := congrArg Subtype.val (hD ⟨A, mem_traceZeroLieSubmodule.mpr hA⟩)
+    simpa only [LieSubmodule.coe_bracket, LieSubalgebra.coe_bracket_of_module,
+      Module.End.lie_apply, ZeroMemClass.coe_zero] using h
+  -- The difference and its square recover twice the first diagonal idempotent.
+  have hdiff := hzero (diagIdempotent R 0 - diagIdempotent R 1)
+    (by simp only [map_sub, trace_diagIdempotent, sub_self])
+  have hsquare : (diagIdempotent R 0 - diagIdempotent R 1) *
+      (diagIdempotent R 0 - diagIdempotent R 1) =
+      diagIdempotent R 0 + diagIdempotent R 1 := by
+    simp [sub_mul, mul_sub]
+  have hsum := derivationLieAlgebra.apply_mul_eq_zero hdiff hdiff
+  rw [hsquare, map_add] at hsum
+  rw [map_sub, sub_eq_zero] at hdiff
+  have htwo : (2 : R) • (D : Module.End R (AlbertAlgebra R)) (diagIdempotent R 0) = 0 := by
+    simpa only [two_smul R, hdiff] using hsum
+  have hdiag : (D : Module.End R (AlbertAlgebra R)) (diagIdempotent R 0) = 0 := by
+    simpa using congrArg (⅟(2 : R) • ·) htwo
   refine derivationLieAlgebra.ext fun A => ?_
-  have hA : (3 : R) • A - trace A • (1 : AlbertAlgebra R) ∈ traceZeroLieSubmodule R := by
-    rw [mem_traceZeroLieSubmodule, map_sub, map_smul, map_smul, trace_one]
-    simp [mul_comm]
-  have h := congrArg (Subtype.val) (hD ⟨_, hA⟩)
-  rw [LieSubmodule.coe_bracket] at h
-  simp only [LieSubalgebra.coe_bracket_of_module, Module.End.lie_apply, map_sub, map_smul,
-    derivationLieAlgebra.apply_one_eq_zero, smul_zero, sub_zero, ZeroMemClass.coe_zero] at h
-  simp [h3.right_eq_zero_of_smul h]
+  have h := hzero (A - trace A • diagIdempotent R 0)
+    (by simp only [map_sub, map_smul, trace_diagIdempotent, smul_eq_mul, mul_one, sub_self])
+  simpa [hdiag] using h
 
-/-- **`Der H₃(𝕆)` acts faithfully on the trace-zero subspace** over a base for which `3` is a
-nonzero scalar acting without zero divisors, the typeclass form of
+/-- **`Der H₃(𝕆)` acts faithfully on the trace-zero subspace**, the typeclass form of
 `TauCeti.AlbertAlgebra.isFaithful_traceZeroLieSubmodule`. -/
-instance instIsFaithfulTraceZeroLieSubmodule [NoZeroSMulDivisors R (AlbertAlgebra R)]
-    [NeZero (3 : R)] :
+instance instIsFaithfulTraceZeroLieSubmodule :
     LieModule.IsFaithful R (derivationLieAlgebra R (AlbertAlgebra R))
       (traceZeroLieSubmodule R) :=
-  isFaithful_traceZeroLieSubmodule <| IsSMulRegular.of_right_eq_zero_of_smul fun _ h =>
-    (eq_zero_or_eq_zero_of_smul_eq_zero h).resolve_left (NeZero.ne (3 : R))
+  isFaithful_traceZeroLieSubmodule
 
 end Faithful
 

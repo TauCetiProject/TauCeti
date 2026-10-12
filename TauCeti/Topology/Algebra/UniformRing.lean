@@ -5,32 +5,29 @@ Authors: Chris Birkbeck
 -/
 module
 
+public import Mathlib.RingTheory.RingHom.Flat
 public import Mathlib.Topology.Algebra.UniformRing
 
 /-!
-# Ring homomorphisms out of a completion
+# Completions of uniform topological rings
 
-Results about `UniformSpace.Completion` as a *ring*. Those about the completion itself live in
-the root `UniformSpace.Completion` namespace they extend; `RingHom.completionCoe_comp_heq`, whose
-subject is the homomorphism being followed by the coercion, lives in `RingHom` so that it is
-available by dot notation on that map.
+Results about `UniformSpace.Completion` as a ring: extensionality for continuous ring
+homomorphisms, comparison across equal uniformities, and the identification of a complete
+Hausdorff ring with its completion.
 
 `UniformSpace.Completion.ringHom_ext_of_continuous` is `UniformSpace.Completion.ext` for ring
 homomorphisms: two continuous ring homomorphisms out of `Completion R` that agree after composing
 with the coercion from `R` are equal. `R` is a topological ring carrying a compatible uniform
 additive-group structure, and nothing more: neither `CompleteSpace` nor `T0Space` is required, and
-`R` need not be commutative. It lives here because it is a statement about the completion functor
-rather than about any ring being completed, and it is what lets
-consumers state uniqueness on the base ring instead of on the completion.
+`R` need not be commutative. This extensionality principle lets consumers state uniqueness on
+the base ring instead of on the completion.
 
 ## The completion of a complete separated ring is itself
 
 `UniformSpace.Completion.completeRingEquivSelf`: for a complete Hausdorff topological ring
 `S`, the extension of the identity is a ring isomorphism `UniformSpace.Completion S ≃+* S`.
-The ring homomorphism is `UniformSpace.Completion.extensionHom`; its underlying function is
-that of the uniform bijection `UniformCompletion.completeEquivSelf` — the equality is
-recorded as `coe_extensionHom_id` — which supplies bijectivity. The name follows
-`UniformCompletion.completeEquivSelf`.
+Its underlying function is that of the uniform bijection `UniformCompletion.completeEquivSelf`,
+and its inverse is the canonical map from `S` into its completion.
 
 The rest of the self-equivalence material is read off that identification. The isomorphism
 is uniformly continuous
@@ -41,13 +38,18 @@ uniformly continuous because it *is* the canonical map into the completion. Over
 convenience: it is what makes the completion an `R`-algebra in the first place, since that is
 what `UniformSpace.Completion.algebra` requires.
 
-The declarations live in the root `UniformSpace.Completion` namespace they extend, following
-this repository's convention for lemmas about external types.
+## Comparison across equal uniformities
 
 `RingHom.completionCoe_comp_heq` compares the coercion for two *equal* uniformities on the same
-ring: following a fixed map by the coercion gives heterogeneously equal composites. It is stated
-here rather than where it is consumed because nothing in it is specific to any particular ring
-being completed.
+ring: following a fixed map by the coercion gives heterogeneously equal composites. It uses `HEq`
+because the completion types depend on their uniformities.
+
+`TauCeti.completionRingHom_heq_of_uniformSpace_eq` transports the characterization of a continuous
+ring homomorphism between completions across equal source and target uniformities. The completed
+rings may be noncommutative, and the fixed source of their structure maps may be a nonassociative
+semiring. `TauCeti.ringHom_flat_of_completion_heq` transports flatness across such a heterogeneous
+equality of maps, and `TauCeti.ringHom_flat_of_heq_of_uniformSpace_eq` gives the same transport for
+maps from a fixed commutative ring into completions.
 
 ## Main definitions
 
@@ -61,7 +63,11 @@ being completed.
 
 * `RingHom.completionCoe_comp_heq`: equal uniformities on the codomain give heterogeneously equal
   composites with the coercion into the completion.
-
+* `TauCeti.completionRingHom_heq_of_uniformSpace_eq`: compares continuous ring homomorphisms
+  between completions for equal source and target uniformities.
+* `TauCeti.ringHom_flat_of_completion_heq` and
+  `TauCeti.ringHom_flat_of_heq_of_uniformSpace_eq`: transport flatness across heterogeneous map
+  equalities between completions, or from a fixed ring into completions.
 * `UniformSpace.Completion.ringHom_ext_of_continuous`: two continuous ring homomorphisms out of
   a completion that agree on the image of the coercion are equal.
 * `UniformSpace.Completion.continuous_mapRingEquiv` and
@@ -218,3 +224,98 @@ theorem coe_completeAlgEquivSelf_symm :
 end Algebra
 
 end UniformSpace.Completion
+
+namespace TauCeti
+
+/-- Two completion ring homomorphisms are heterogeneously equal when their source and target
+uniformities agree and the first map satisfies the characterization that uniquely determines the
+second. The rings being completed need not be commutative, and the fixed source of the structure
+maps need only be a nonassociative semiring. -/
+theorem completionRingHom_heq_of_uniformSpace_eq
+    {A S S' : Type*} [NonAssocSemiring A] [Ring S] [Ring S']
+    {u₁ u₂ : UniformSpace S} (hu : u₂ = u₁) {v₁ v₂ : UniformSpace S'} (hv : v₂ = v₁)
+    (g₁ : @IsUniformAddGroup S u₁ _) (g₂ : @IsUniformAddGroup S u₂ _)
+    (t₁ : @IsTopologicalRing S u₁.toTopologicalSpace _)
+    (t₂ : @IsTopologicalRing S u₂.toTopologicalSpace _)
+    (g₁' : @IsUniformAddGroup S' v₁ _) (g₂' : @IsUniformAddGroup S' v₂ _)
+    (t₁' : @IsTopologicalRing S' v₁.toTopologicalSpace _)
+    (t₂' : @IsTopologicalRing S' v₂.toTopologicalSpace _) :
+    let B₁ := @UniformSpace.Completion S u₁
+    let B₂ := @UniformSpace.Completion S u₂
+    let C₁ := @UniformSpace.Completion S' v₁
+    let C₂ := @UniformSpace.Completion S' v₂
+    let b₁ := @UniformSpace.Completion.ring S _ u₁ t₁ g₁
+    let b₂ := @UniformSpace.Completion.ring S _ u₂ t₂ g₂
+    let c₁ := @UniformSpace.Completion.ring S' _ v₁ t₁' g₁'
+    let c₂ := @UniformSpace.Completion.ring S' _ v₂ t₂' g₂'
+    ∀ (f₂ : @RingHom B₂ C₂ b₂.toNonAssocSemiring c₂.toNonAssocSemiring)
+      (f₁ : @RingHom B₁ C₁ b₁.toNonAssocSemiring c₁.toNonAssocSemiring)
+      (a₂ : @RingHom A B₂ _ b₂.toNonAssocSemiring)
+      (a₁ : @RingHom A B₁ _ b₁.toNonAssocSemiring)
+      (d₂ : @RingHom A C₂ _ c₂.toNonAssocSemiring)
+      (d₁ : @RingHom A C₁ _ c₁.toNonAssocSemiring),
+      @Continuous B₂ C₂ (@UniformSpace.Completion.uniformSpace S u₂).toTopologicalSpace
+        (@UniformSpace.Completion.uniformSpace S' v₂).toTopologicalSpace f₂ →
+      HEq a₂ a₁ → HEq d₂ d₁ → f₂.comp a₂ = d₂ →
+      (∀ f : @RingHom B₁ C₁ b₁.toNonAssocSemiring c₁.toNonAssocSemiring,
+        @Continuous B₁ C₁
+          (@UniformSpace.Completion.uniformSpace S u₁).toTopologicalSpace
+          (@UniformSpace.Completion.uniformSpace S' v₁).toTopologicalSpace f →
+        f.comp a₁ = d₁ → f = f₁) →
+      HEq f₂ f₁ := by
+  subst hu
+  subst hv
+  dsimp only
+  intro f₂ f₁ a₂ a₁ d₂ d₁ hf₂ ha hd hcomp₂ huniq
+  apply heq_of_eq
+  apply huniq f₂ hf₂
+  rw [← eq_of_heq ha, hcomp₂, eq_of_heq hd]
+
+/-- Flatness passes across a heterogeneous equality between ring homomorphisms of completions
+whose source and target uniformities agree. -/
+theorem ringHom_flat_of_completion_heq
+    {S S' : Type*} [CommRing S] [CommRing S']
+    {u₁ u₂ : UniformSpace S} (hu : u₂ = u₁) {v₁ v₂ : UniformSpace S'} (hv : v₂ = v₁)
+    (g₁ : @IsUniformAddGroup S u₁ _) (g₂ : @IsUniformAddGroup S u₂ _)
+    (t₁ : @IsTopologicalRing S u₁.toTopologicalSpace _)
+    (t₂ : @IsTopologicalRing S u₂.toTopologicalSpace _)
+    (g₁' : @IsUniformAddGroup S' v₁ _) (g₂' : @IsUniformAddGroup S' v₂ _)
+    (t₁' : @IsTopologicalRing S' v₁.toTopologicalSpace _)
+    (t₂' : @IsTopologicalRing S' v₂.toTopologicalSpace _) :
+    let R₁ := @UniformSpace.Completion S u₁
+    let R₂ := @UniformSpace.Completion S u₂
+    let B₁ := @UniformSpace.Completion S' v₁
+    let B₂ := @UniformSpace.Completion S' v₂
+    let r₁ := @UniformSpace.Completion.commRing S _ u₁ g₁ t₁
+    let r₂ := @UniformSpace.Completion.commRing S _ u₂ g₂ t₂
+    let b₁ := @UniformSpace.Completion.commRing S' _ v₁ g₁' t₁'
+    let b₂ := @UniformSpace.Completion.commRing S' _ v₂ g₂' t₂'
+    ∀ (f₂ : @RingHom R₂ B₂ r₂.toNonAssocSemiring b₂.toNonAssocSemiring)
+      (f₁ : @RingHom R₁ B₁ r₁.toNonAssocSemiring b₁.toNonAssocSemiring),
+      HEq f₂ f₁ → @RingHom.Flat R₂ B₂ r₂ b₂ f₂ →
+        @RingHom.Flat R₁ B₁ r₁ b₁ f₁ := by
+  subst hu
+  subst hv
+  -- With both uniformities identified, the completion ring structures also agree.
+  exact fun _ _ hf hflat ↦ hf.eq ▸ hflat
+
+/-- Flatness of a ring homomorphism from `A` into a completion passes across a heterogeneous
+equality with a ring homomorphism into the completion for an equal uniformity. This is the
+fixed-source form of `TauCeti.ringHom_flat_of_completion_heq`: `A` keeps its ring structure, and
+only the uniformity of `S`, hence its completion, varies. For instance, it compares the canonical
+maps from `A` into two completions of a localisation `S` whose uniformities agree. -/
+theorem ringHom_flat_of_heq_of_uniformSpace_eq {A S : Type*} [CommRing A] [CommRing S]
+    {u₁ u₂ : UniformSpace S} (hu : u₂ = u₁) (g₁ : @IsUniformAddGroup S u₁ _)
+    (g₂ : @IsUniformAddGroup S u₂ _) (t₁ : @IsTopologicalRing S u₁.toTopologicalSpace _)
+    (t₂ : @IsTopologicalRing S u₂.toTopologicalSpace _) :
+    let B₁ := @UniformSpace.Completion S u₁
+    let B₂ := @UniformSpace.Completion S u₂
+    let b₁ := @UniformSpace.Completion.commRing S _ u₁ g₁ t₁
+    let b₂ := @UniformSpace.Completion.commRing S _ u₂ g₂ t₂
+    ∀ (f₂ : @RingHom A B₂ _ b₂.toNonAssocSemiring) (f₁ : @RingHom A B₁ _ b₁.toNonAssocSemiring),
+      HEq f₂ f₁ → @RingHom.Flat A B₂ _ b₂ f₂ → @RingHom.Flat A B₁ _ b₁ f₁ := by
+  subst hu
+  -- with the uniformities identified, both completions carry the same ring structure
+  exact fun _ _ hf hflat ↦ hf.eq ▸ hflat
+
+end TauCeti

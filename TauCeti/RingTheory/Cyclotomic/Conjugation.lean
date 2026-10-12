@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Star.Basic
 public import TauCeti.RingTheory.Cyclotomic.Basic
 
 /-!
@@ -39,9 +40,8 @@ Burnside--Dixon--Schneider character-table solver.
 
 ## References
 
-This supplies the exact conjugation needed by Layer 6, “The assembled solver”, of the character
-theory roadmap: the exact checker must verify the Hermitian row-orthogonality relation in
-`Cyclotomic e` before embedding its output into `ℂ`.
+* I. M. Isaacs, *Character Theory of Finite Groups*, Chapter 2, Corollary 2.14 and Lemma 2.15(d),
+  for row orthogonality and complex conjugation of character values.
 -/
 
 public section
@@ -101,28 +101,9 @@ theorem complexEmbedding_star (x : Cyclotomic e) :
     _ = star (complexEmbedding x) := by rw [complexEmbedding_eq_evalCoeffs]
 
 /-- Exact cyclotomic integers form a star ring under complex conjugation. -/
-instance instStarRing : StarRing (Cyclotomic e) where
-  star_involutive x := complexEmbedding_injective <| calc
-    complexEmbedding (star (star x)) = star (complexEmbedding (star x)) :=
-      complexEmbedding_star _
-    _ = star (star (complexEmbedding x)) := by rw [complexEmbedding_star]
-    _ = complexEmbedding x := star_star _
-  star_add x y := complexEmbedding_injective <| calc
-    complexEmbedding (star (x + y)) = star (complexEmbedding (x + y)) :=
-      complexEmbedding_star _
-    _ = star (complexEmbedding x + complexEmbedding y) := by rw [map_add]
-    _ = star (complexEmbedding x) + star (complexEmbedding y) := star_add _ _
-    _ = complexEmbedding (star x) + complexEmbedding (star y) := by
-      rw [complexEmbedding_star, complexEmbedding_star]
-    _ = complexEmbedding (star x + star y) := (map_add _ _ _).symm
-  star_mul x y := complexEmbedding_injective <| calc
-    complexEmbedding (star (x * y)) = star (complexEmbedding (x * y)) :=
-      complexEmbedding_star _
-    _ = star (complexEmbedding x * complexEmbedding y) := by rw [map_mul]
-    _ = star (complexEmbedding y) * star (complexEmbedding x) := star_mul _ _
-    _ = complexEmbedding (star y) * complexEmbedding (star x) := by
-      rw [complexEmbedding_star, complexEmbedding_star]
-    _ = complexEmbedding (star y * star x) := (map_mul _ _ _).symm
+instance instStarRing : StarRing (Cyclotomic e) := fast_instance%
+  complexEmbedding_injective.starRing complexEmbedding complexEmbedding_star
+    complexEmbedding.map_add complexEmbedding.map_mul
 
 /-- Conjugation sends the distinguished generator to `ζ_e ^ (e - 1)`. -/
 @[simp]
@@ -151,7 +132,7 @@ theorem reduce_star (p : ℕ) (r : ZMod p)
     (hr : (Polynomial.cyclotomic e ℤ).eval₂ (Int.castRingHom (ZMod p)) r = 0)
     (x : Cyclotomic e) :
     reduce p r (star x) = reduce p (r ^ (e - 1)) x := by
-  rw [reduce, evalCoeffs_eq_eval₂, ← evalRingHom_apply _ _ hr, evalRingHom_star, reduce]
+  rw [reduce, ← evalRingHom_eq_evalCoeffs _ _ hr, evalRingHom_star, reduce]
 
 /-! The exact operation reduces in the kernel. -/
 

@@ -23,13 +23,17 @@ Both proofs compare coefficients in the `L`-basis `u_σ`:
 * **simplicity**: a nonzero element `a = ∑ a_σ u_σ` of a two-sided ideal with at least two
   coefficients `a_σ, a_ρ ≠ 0` gives the element `a · x - ρ(x) · a = ∑ a_τ (τ(x) - ρ(x)) u_τ` of
   the ideal, which for `σ(x) ≠ ρ(x)` is nonzero with a smaller support. An element of minimal
-  support is therefore a single `y · u_σ`, which is a unit;
+  support is therefore a single `y · u_σ`. Multiplying by `u_{σ⁻¹}` produces a nonzero
+  element of the embedded coefficient ring, even when `L` is only a commutative ring without
+  zero divisors. When `L` is a field, this element is a unit;
 * **centrality**: a central element commutes with `L`, so all its coefficients off `u_1` vanish
   because distinct automorphisms differ somewhere, and it commutes with every `u_τ`, so its
   remaining coefficient is fixed by `Aut_K(L)` and hence lies in `K`.
 
 ## Main results
 
+* `TauCeti.CrossedProduct.exists_ne_zero_and_inc_mem`: every nonzero two-sided ideal meets the
+  embedded coefficient ring nontrivially when `L` has no zero divisors.
 * `TauCeti.CrossedProduct.instIsSimpleRing`: the crossed product is a simple ring.
 * `TauCeti.CrossedProduct.instIsCentral`: if the fixed points of `Aut_K(L)` on `L` come from `K`
   (for instance, if `L/K` is Galois), the crossed product is central over `K`.
@@ -48,9 +52,9 @@ namespace TauCeti
 
 namespace CrossedProduct
 
-section Simple
+section Domain
 
-variable {K : Type u} [CommSemiring K] {L : Type v} [Field L] [Algebra K L]
+variable {K : Type u} [CommSemiring K] {L : Type v} [CommRing L] [NoZeroDivisors L] [Algebra K L]
   {c : TwoCocycle K L}
 
 /-- A nonzero element of a two-sided ideal of the crossed product whose support has at most `n`
@@ -95,23 +99,32 @@ private theorem exists_smul_basis_mem (I : TwoSidedIdeal (CrossedProduct c)) (n 
         rw [Finset.card_erase_of_mem hρ] at this
         omega
 
-/-- A two-sided ideal of the crossed product containing a nonzero single term `y · u_σ` contains
-`1`. -/
-private theorem one_mem_of_smul_basis_mem (I : TwoSidedIdeal (CrossedProduct c))
-    {σ : L ≃ₐ[K] L} {y : L} (hy : y ≠ 0) (hI : y • basis c σ ∈ I) : (1 : CrossedProduct c) ∈ I := by
-  have hσy : σ⁻¹ y ≠ 0 := (map_ne_zero _).2 hy
-  convert I.mul_mem_left
-    (((c.toFun 1 1 : L)⁻¹ * (σ⁻¹ y)⁻¹ * (c.toFun σ⁻¹ σ : L)⁻¹) • basis c σ⁻¹) _ hI using 1
-  rw [smul_basis_mul_smul_basis, inv_mul_cancel, one_def, Units.val_inv_eq_inv_val]
-  congr 1
-  field_simp
+/-- Every nonzero two-sided ideal of the crossed product contains a nonzero element of the
+embedded coefficient ring, provided the coefficient ring has no zero divisors. -/
+theorem exists_ne_zero_and_inc_mem (c : TwoCocycle K L)
+    {I : TwoSidedIdeal (CrossedProduct c)} (hI : I ≠ ⊥) :
+    ∃ y : L, y ≠ 0 ∧ inc c y ∈ I := by
+  obtain ⟨a, haI, ha : a ≠ 0⟩ := IsConcreteLE.exists_of_lt (bot_lt_iff_ne_bot.2 hI)
+  obtain ⟨σ, y, hy, hmem⟩ := exists_smul_basis_mem I _ a haI ha le_rfl
+  refine ⟨y * c.toFun σ σ⁻¹ * c.toFun 1 1, ?_, ?_⟩
+  · exact fun h ↦ hy ((c.toFun σ σ⁻¹).mul_left_eq_zero.mp
+      ((c.toFun 1 1).mul_left_eq_zero.mp h))
+  · simpa only [smul_def, mul_assoc, basis_mul_basis, mul_inv_cancel, basis_one, ← map_mul]
+      using I.mul_mem_right _ (basis c σ⁻¹) hmem
+
+end Domain
+
+section Simple
+
+variable {K : Type u} [CommSemiring K] {L : Type v} [Field L] [Algebra K L]
+  {c : TwoCocycle K L}
 
 /-- **The crossed product is a simple ring.** -/
 instance instIsSimpleRing : IsSimpleRing (CrossedProduct c) :=
   .of_eq_bot_or_eq_top fun I => or_iff_not_imp_left.2 fun hI => by
-    obtain ⟨a, haI, ha : a ≠ 0⟩ := IsConcreteLE.exists_of_lt (bot_lt_iff_ne_bot.2 hI)
-    obtain ⟨σ, y, hy, hmem⟩ := exists_smul_basis_mem I _ a haI ha le_rfl
-    exact I.one_mem_iff.1 (one_mem_of_smul_basis_mem I hy hmem)
+    obtain ⟨y, hy, hmem⟩ := exists_ne_zero_and_inc_mem c hI
+    apply I.one_mem_iff.1
+    simpa [← map_mul, hy] using I.mul_mem_left (inc c y⁻¹) _ hmem
 
 end Simple
 

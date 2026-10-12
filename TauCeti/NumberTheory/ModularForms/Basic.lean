@@ -16,10 +16,9 @@ Small generic lemmas extending `Mathlib/NumberTheory/ModularForms/Basic.lean` an
 actions: the conjugation `σ` is trivial on `SL(2, ℤ)`-matrices — a special case of
 `UpperHalfPlane.σ_eq_refl_of_det_pos`, which lives with `σ` itself in
 `TauCeti/Analysis/Complex/UpperHalfPlane/MoebiusAction.lean` — the `CuspForm`
-translation equations Mathlib does not yet provide (`CuspForm.mcast_apply` and the
-`GL(2, ℝ)`-level `CuspForm.coe_translate_gl`), and the weight-`k` slash action of `-I`
-(`ModularForm.slash_neg_one`), the source of every parity constraint on weights and
-nebentypus characters.
+cast equation Mathlib does not yet provide (`CuspForm.mcast_apply`), and the weight-`k`
+slash action of `-I` (`ModularForm.slash_neg_one`), the source of every parity constraint on
+weights and nebentypus characters.
 
 It also records how modular and cusp forms move between two nested groups `Γ' ≤ Γ`. Shrinking
 the group is unconditional (`ModularForm.ofLe`): slash invariance restricts, and every cusp of
@@ -62,6 +61,8 @@ AINTLIB `LeanModularForms` project
   invariance passes to integer powers, and an eigenvalue law survives multiplication on both
   sides by powers of an invariance.
 * `Subgroup.IsArithmetic.isCusp_of_isCusp`: any two arithmetic groups have the same cusps.
+* `TauCeti.ModularForm.eq_zero_of_eq_const`: a constant slash-invariant form of nonzero weight
+  vanishes when its group has finite-index intersection with the modular group.
 * `ModularForm.mem_range_ofLeₗ_iff`, `CuspForm.mem_range_ofLeₗ_iff`: for `Γ' ≤ Γ` with every
   cusp of `Γ` a cusp of `Γ'`, a form for `Γ'` extends to `Γ` exactly when it is `Γ`-slash
   invariant.
@@ -156,13 +157,6 @@ lemma slash_zpow_mul_mul_zpow_eq_smul (k : ℤ) (f : ℍ → ℂ) {δ γ : GL (F
 analogue of Mathlib's `ModularForm.mcast_apply`, which Mathlib does not yet provide. -/
 lemma _root_.CuspForm.mcast_apply {a b : ℤ} {Γ Γ' : Subgroup (GL (Fin 2) ℝ)} (h : a = b)
     (f : CuspForm Γ a) (hΓ : Γ' = Γ := by rfl) (z : ℍ) : CuspForm.mcast h f hΓ z = f z := (rfl)
-
-/-- `GL(2, ℝ)`-level coercion lemma for `CuspForm.translate`; Mathlib's
-`CuspForm.coe_translate` is specialized to `SL(2, ℤ)` arguments. -/
-@[simp]
-lemma _root_.CuspForm.coe_translate_gl {F : Type*} [FunLike F UpperHalfPlane ℂ] {k : ℤ}
-    {Γ : Subgroup (GL (Fin 2) ℝ)} [CuspFormClass F Γ k] (f : F) (g : GL (Fin 2) ℝ) :
-    ⇑(CuspForm.translate f g) = ⇑f ∣[k] g := (rfl)
 
 /-- The weight-`k` slash action of `-I` is multiplication by `(-1) ^ k`: `-I` acts trivially
 on `ℍ` and has determinant `1`, so the only surviving factor is its automorphy factor
@@ -375,6 +369,48 @@ lemma mem_range_ofLeₗ_iff [Γ.HasDetOne] [Γ'.HasDetOne] (h : Γ' ≤ Γ)
   ⟨by rintro ⟨g, rfl⟩ γ hγ; exact g.slash_action_eq' γ hγ,
     fun hf ↦ ⟨ofSlashInvariant hc f hf, rfl⟩⟩
 
+/-- `ModularForm.ofLe` agrees with Mathlib's `ModularForm.restrict`. -/
+lemma ofLe_eq_restrict (h : Γ' ≤ Γ) (f : ModularForm Γ k) : ofLe h f = restrict h f :=
+  DFunLike.coe_injective (by rw [coe_ofLe, coe_restrict])
+
+variable (Γ) in
+/-- Mathlib's trace `ModularForm.trace` from `Γ'` to a group `Γ` in which `Γ'` has finite relative
+index, as a `ℂ`-linear map. -/
+noncomputable def traceₗ [Γ.HasDetOne] [Γ'.HasDetOne] [Γ'.IsFiniteRelIndex Γ] :
+    ModularForm Γ' k →ₗ[ℂ] ModularForm Γ k where
+  toFun f := ModularForm.trace Γ f
+  map_add' f g := by
+    let _ := Fintype.ofFinite (Γ ⧸ Γ'.subgroupOf Γ)
+    apply DFunLike.coe_injective
+    rw [FunLike.coe_add, coe_trace, coe_trace, coe_trace, ← Finset.sum_add_distrib]
+    refine Finset.sum_congr rfl fun q _ ↦ ?_
+    induction q using QuotientGroup.induction_on' with
+    | H h => rw [SlashInvariantForm.quotientFunc_mk, SlashInvariantForm.quotientFunc_mk,
+        SlashInvariantForm.quotientFunc_mk, FunLike.coe_add, SlashAction.add_slash]
+  map_smul' c f := by
+    let _ := Fintype.ofFinite (Γ ⧸ Γ'.subgroupOf Γ)
+    apply DFunLike.coe_injective
+    rw [FunLike.coe_smul, coe_trace, coe_trace, RingHom.id_apply, Finset.smul_sum]
+    refine Finset.sum_congr rfl fun q _ ↦ ?_
+    induction q using QuotientGroup.induction_on' with
+    | H h =>
+      have hdet : 0 < ((h.val⁻¹ : GL (Fin 2) ℝ) : Matrix (Fin 2) (Fin 2) ℝ).det := by
+        rw [← Matrix.GeneralLinearGroup.val_det_apply,
+          Subgroup.HasDetOne.det_eq (inv_mem h.property), Units.val_one]
+        exact one_pos
+      rw [SlashInvariantForm.quotientFunc_mk, SlashInvariantForm.quotientFunc_mk,
+        FunLike.coe_smul, ModularForm.smul_slash_of_det_pos k hdet]
+
+@[simp]
+lemma traceₗ_apply [Γ.HasDetOne] [Γ'.HasDetOne] [Γ'.IsFiniteRelIndex Γ] (f : ModularForm Γ' k) :
+    traceₗ Γ f = ModularForm.trace Γ f := (rfl)
+
+/-- Tracing the restriction of a form for `Γ` back to `Γ` multiplies it by the relative index.
+This is Mathlib's `trace_restrict` for the linear trace. -/
+lemma traceₗ_ofLe [Γ.HasDetOne] [Γ'.HasDetOne] [Γ'.IsFiniteRelIndex Γ] (h : Γ' ≤ Γ)
+    (f : ModularForm Γ k) : traceₗ Γ (ofLe h f) = (Γ'.relIndex Γ : ℂ) • f := by
+  rw [traceₗ_apply, ofLe_eq_restrict, trace_restrict, Nat.cast_smul_eq_nsmul]
+
 end ModularForm
 
 namespace CuspForm
@@ -431,3 +467,70 @@ lemma mem_range_ofLeₗ_iff [Γ.HasDetOne] [Γ'.HasDetOne] (h : Γ' ≤ Γ)
 end CuspForm
 
 end OfLe
+
+/-! ### Constant forms at nonzero weight -/
+
+namespace TauCeti.ModularForm
+
+open ModularGroup
+
+variable {Γ : Subgroup (GL (Fin 2) ℝ)} {k : ℤ}
+
+/-- A constant slash-invariant form of nonzero weight vanishes if its group contains a
+determinant-one matrix with nonzero lower-left entry. No holomorphy or cusp condition is needed.
+
+This extends Mathlib's level-one `SlashInvariantForm.wt_eq_zero_of_eq_const`: the nonconstant
+automorphy factor, rather than invariance under `S` itself, excludes a nonzero constant. -/
+theorem eq_zero_of_eq_const_of_weight_ne_zero
+    {F : Type*} [FunLike F ℍ ℂ] [SlashInvariantFormClass F Γ k] {f : F} {c : ℂ}
+    (hf : ⇑f = Function.const ℍ c)
+    (hk : k ≠ 0) {γ : GL (Fin 2) ℝ} (hγ : γ ∈ Γ) (hdet : γ.det = 1)
+    (hc : γ 1 0 ≠ 0) : c = 0 := by
+  by_contra hc0
+  let z : ℍ := ⟨Complex.I * (2 / |γ 1 0| : ℝ), by
+    simp only [Complex.mul_im, Complex.I_re, Complex.ofReal_im, mul_zero,
+      Complex.I_im, Complex.ofReal_re, one_mul, zero_add]
+    positivity⟩
+  have hdetpos : 0 < γ.val.det := by
+    simp [← GeneralLinearGroup.val_det_apply, hdet]
+  have h := SlashInvariantForm.slash_action_eqn_of_det_pos f hγ hdetpos z
+  simp only [hdet, Units.val_one, abs_one, Complex.ofReal_one, one_zpow, one_mul] at h
+  rw [hf, Function.const_apply, Function.const_apply] at h
+  have hd : denom γ z ^ k = 1 := mul_right_cancel₀ hc0 (by simpa using h.symm)
+  have hnorm : ‖denom γ z‖ = 1 := by
+    apply (zpow_left_inj₀ (norm_nonneg _) zero_le_one hk).mp
+    simpa only [norm_zpow, norm_one, one_zpow] using congrArg norm hd
+  have him : |(denom γ z).im| = 2 := by
+    simp [denom, z, Complex.mul_im, abs_mul, abs_div, abs_abs]
+    field_simp
+  have hle := Complex.abs_im_le_norm (denom γ z)
+  rw [him, hnorm] at hle
+  norm_num at hle
+
+/-- A group with finite-index intersection with the modular group contains a matrix in that
+intersection with nonzero lower-left entry. -/
+theorem exists_mem_lowerLeft_ne_zero [Subgroup.IsFiniteRelIndex Γ 𝒮ℒ] :
+    ∃ γ ∈ Γ ⊓ 𝒮ℒ, γ 1 0 ≠ 0 := by
+  let u : SL(2, ℤ) := S * T * S⁻¹
+  have hu : mapGL ℝ u ∈ (𝒮ℒ : Subgroup (GL (Fin 2) ℝ)) := ⟨u, rfl⟩
+  obtain ⟨n, hn, _, hmem⟩ := Γ.exists_pow_mem_of_relIndex_ne_zero Γ.relIndex_ne_zero hu
+  refine ⟨mapGL ℝ u ^ n, hmem, ?_⟩
+  have hp : u ^ n = S * T ^ n * S⁻¹ := by simp [u, conj_pow]
+  have he : (u ^ n : SL(2, ℤ)) 1 0 = -(n : ℤ) := by
+    rw [hp, ← zpow_natCast]
+    simp only [coe_mul, ModularGroup.S_inv, coe_neg, coe_S, coe_T_zpow]
+    norm_num [Matrix.mul_apply, Fin.sum_univ_two]
+  rw [← map_pow, mapGL_coe_matrix, map_apply_coe]
+  simp only [RingHom.mapMatrix_apply, Matrix.map_apply, he]
+  simp [algebraMap_int_eq, hn.ne']
+
+/-- A slash-invariant form of nonzero weight whose group has finite-index intersection with the
+modular group cannot be a nonzero constant. -/
+theorem eq_zero_of_eq_const [Subgroup.IsFiniteRelIndex Γ 𝒮ℒ]
+    {F : Type*} [FunLike F ℍ ℂ] [SlashInvariantFormClass F Γ k] {f : F} {c : ℂ}
+    (hf : ⇑f = Function.const ℍ c) (hk : k ≠ 0) : c = 0 := by
+  obtain ⟨γ, hγ, hc⟩ := exists_mem_lowerLeft_ne_zero (Γ := Γ)
+  exact eq_zero_of_eq_const_of_weight_ne_zero hf hk hγ.1
+    (Subgroup.HasDetOne.det_eq hγ.2) hc
+
+end TauCeti.ModularForm

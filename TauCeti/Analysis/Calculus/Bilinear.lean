@@ -34,6 +34,8 @@ direction `w`; its derivative involves the second derivative of `u`.
   the constant `B.flip + B`.
 * `ContinuousLinearMap.hasFDerivAt_bilinear_fderiv_apply`: the derivative of
   `y ↦ B (u y) (∂_w u y)` at a point where `u` is `C²`.
+* `ContinuousLinearMap.contDiff_precomp_comp`: the pullback `(v, w) ↦ B (L v) (L w)` of a
+  continuous bilinear map `B` along a continuous linear map `L` depends smoothly on `(B, L)`.
 -/
 
 public section
@@ -102,6 +104,19 @@ theorem _root_.ContinuousLinearMap.hasFDerivAt_bilinear_fderiv_apply (B : F →L
     simpa using hdu.hasFDerivAt.clm_apply (hasFDerivAt_const w z)
   exact B.hasFDerivAt_of_bilinear (hu.differentiableAt (by norm_num)).hasFDerivAt hw
 
+/-- The pullback `(v, w) ↦ B (L v) (L w)` of a continuous bilinear map `B` along a continuous linear
+map `L` is `C^n` as a function of the pair `(B, L)`. -/
+theorem _root_.ContinuousLinearMap.contDiff_precomp_comp :
+    ContDiff 𝕜 n fun p : (F →L[𝕜] F →L[𝕜] G) × (E →L[𝕜] F) ↦
+      (ContinuousLinearMap.precomp G p.2).comp (p.1.comp p.2) := by
+  have h : (fun p : (F →L[𝕜] F →L[𝕜] G) × (E →L[𝕜] F) ↦
+      (ContinuousLinearMap.precomp G p.2).comp (p.1.comp p.2)) = fun p ↦
+      ((ContinuousLinearMap.compL 𝕜 E F G).flip p.2).comp (p.1.comp p.2) := by
+    ext p v w
+    rfl
+  rw [h]
+  exact ((ContinuousLinearMap.compL 𝕜 E F G).flip.contDiff.comp contDiff_snd).clm_comp
+    (contDiff_fst.clm_comp contDiff_snd)
 
 end TauCeti
 

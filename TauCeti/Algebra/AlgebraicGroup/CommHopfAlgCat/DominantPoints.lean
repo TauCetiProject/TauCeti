@@ -9,8 +9,9 @@ public import TauCeti.Algebra.AlgebraicGroup.CommHopfAlgCat.BaseChange
 public import TauCeti.Algebra.AlgebraicGroup.Connected.Translation
 public import TauCeti.AlgebraicGeometry.AugmentationPoint.Dense
 public import TauCeti.RingTheory.FiniteType.FaithfullyFlatPoints
-public import TauCeti.Topology.Constructible
+public import TauCeti.Topology.Constructible.Basic
 public import Mathlib.RingTheory.Spectrum.Prime.Chevalley
+import Mathlib.RingTheory.FiniteStability
 import TauCeti.RingTheory.Spectrum.Prime.Topology
 
 /-!

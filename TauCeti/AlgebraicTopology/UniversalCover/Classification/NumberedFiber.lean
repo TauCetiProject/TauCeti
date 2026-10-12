@@ -230,13 +230,13 @@ def ConnectedPointedCoverIso (c c' : ConnectedPointedCover x n) : Prop :=
   ∃ f : c.cover ≅ c'.cover, f.hom.hom.left c.e.1 = c'.e.1
 
 /-- A numbered isomorphism consists of a cover isomorphism preserving every fibre label. -/
-theorem connectedFiberNumberedCoverIso_iff_exists {c c' : ConnectedFiberNumberedCover x n} :
+theorem connectedFiberNumberedCoverIso_def {c c' : ConnectedFiberNumberedCover x n} :
     ConnectedFiberNumberedCoverIso c c' ↔
       ∃ f : c.cover ≅ c'.cover, ∀ i, f.hom.hom.left (c.ν.symm i).1 = (c'.ν.symm i).1 :=
   Iff.rfl
 
 /-- A pointed isomorphism consists of a cover isomorphism preserving the chosen point. -/
-theorem connectedPointedCoverIso_iff_exists {c c' : ConnectedPointedCover x n} :
+theorem connectedPointedCoverIso_def {c c' : ConnectedPointedCover x n} :
     ConnectedPointedCoverIso c c' ↔
       ∃ f : c.cover ≅ c'.cover, f.hom.hom.left c.e.1 = c'.e.1 :=
   Iff.rfl
@@ -408,7 +408,8 @@ def ConnectedFiberNumberedCover.forgetNumbering (c : ConnectedFiberNumberedCover
 
 /-- Keeping only the point labelled `i`. -/
 -- The type of `e` depends on the projected cover, so this definition must expose that projection.
-@[expose] def ConnectedFiberNumberedCover.markLabel (c : ConnectedFiberNumberedCover x n)
+@[expose, simps cover e]
+def ConnectedFiberNumberedCover.markLabel (c : ConnectedFiberNumberedCover x n)
     (i : Fin n) :
     ConnectedPointedCover x n where
   cover := c.cover
@@ -425,18 +426,6 @@ def ConnectedPointedCover.forgetPoint (c : ConnectedPointedCover x n) :
 @[simp]
 theorem ConnectedFiberNumberedCover.forgetNumbering_cover (c : ConnectedFiberNumberedCover x n) :
     c.forgetNumbering.cover = c.cover :=
-  (rfl)
-
-/-- Marking a label keeps the underlying cover. -/
-@[simp]
-theorem ConnectedFiberNumberedCover.markLabel_cover (c : ConnectedFiberNumberedCover x n)
-    (i : Fin n) : (c.markLabel i).cover = c.cover :=
-  (rfl)
-
-/-- The point chosen by marking the label `i` is the point labelled `i`. -/
-@[simp]
-theorem ConnectedFiberNumberedCover.markLabel_e (c : ConnectedFiberNumberedCover x n)
-    (i : Fin n) : (c.markLabel i).e = c.ν.symm i :=
   (rfl)
 
 /-- Forgetting the chosen point keeps the underlying cover. -/
@@ -544,7 +533,7 @@ theorem smul_cover (τ : Perm (Fin n)) (c : ConnectedFiberNumberedCover x n) :
 @[simp]
 theorem smul_ν (τ : Perm (Fin n)) (c : ConnectedFiberNumberedCover x n) :
     (τ • c).ν = c.ν.trans τ :=
-  (rfl)
+  rfl
 
 /-- Relabelling is an action of the symmetric group on fibre-numbered covers. -/
 instance : MulAction (Perm (Fin n)) (ConnectedFiberNumberedCover x n) where
@@ -827,7 +816,7 @@ theorem ConnectedFiberNumberedCoverIso.permCongrHom_comp_monodromyPerm_eq
     {c c' : ConnectedFiberNumberedCover x n} (h : ConnectedFiberNumberedCoverIso c c') :
     c.ν.permCongrHom.toMonoidHom.comp (c.cover.isCoveringMap_proj.monodromyPerm x) =
       c'.ν.permCongrHom.toMonoidHom.comp (c'.cover.isCoveringMap_proj.monodromyPerm x) := by
-  obtain ⟨f, hf⟩ := connectedFiberNumberedCoverIso_iff_exists.1 h
+  obtain ⟨f, hf⟩ := connectedFiberNumberedCoverIso_def.1 h
   refine (c.cover.isCoveringMap_proj.permutationRepresentation_eq_of_fiberMap
     c'.cover.isCoveringMap_proj x c.ν c'.ν f.hom.hom.left.hom
     (CoveringSpace.proj_hom_comp_hom_left_hom ((ConnectedCoveringSpace.forget X).map f.hom))
@@ -861,7 +850,7 @@ theorem ConnectedFiberNumberedCoverIso.of_permCongrHom_comp_monodromyPerm_eq
     Action.mkIso (Equiv.toIso (c.ν.trans c'.ν.symm)) fun γ => by
       ext e
       exact hcomm γ e
-  refine connectedFiberNumberedCoverIso_iff_exists.2 ⟨F.preimageIso φ, fun i => ?_⟩
+  refine connectedFiberNumberedCoverIso_def.2 ⟨F.preimageIso φ, fun i => ?_⟩
   have hφ : (CoveringSpace.fiberActionFunctor x).map
       ((ConnectedCoveringSpace.forget X).map (F.preimage φ.hom)) = φ.hom := F.map_preimage φ.hom
   have hi := congrArg (fun ψ => ψ.hom (c.ν.symm i)) hφ

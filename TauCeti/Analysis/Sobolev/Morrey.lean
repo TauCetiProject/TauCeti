@@ -14,6 +14,7 @@ public import Mathlib.Topology.MetricSpace.Holder
 
 import Mathlib.Analysis.Normed.Affine.AddTorsor
 import Mathlib.MeasureTheory.Integral.MeanInequalities
+import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
 import TauCeti.Analysis.Sobolev.Poincare.Potential
 import TauCeti.MeasureTheory.Integral.NormRpow
 

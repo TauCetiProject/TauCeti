@@ -11,6 +11,7 @@ public import TauCeti.Topology.Algebra.Group.Profinite.ProP.PadicPow
 public import TauCeti.Topology.Algebra.Module.Compact
 public import Mathlib.RingTheory.Noetherian.Basic
 import Mathlib.NumberTheory.Padics.ProperSpace
+import Mathlib.Topology.Separation.Connected
 
 /-!
 # Compact modules underlying abelian pro-p groups

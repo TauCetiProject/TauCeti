@@ -504,6 +504,14 @@ theorem isTamelyRamified_tower_iff (M : Type*) [Field M] [ValuativeRel M]
   simp only [isTamelyRamified_iff, ramificationIndex_tower (K := K) (L := L),
     ← Algebra.ringChar_eq 𝓀[K] 𝓀[L], hp.dvd_mul, not_or]
 
+/-- An intermediate extension of a tamely ramified tower of nonarchimedean local fields is
+tamely ramified over the base field. -/
+theorem IsTamelyRamified.tower_bot {M : Type*} [Field M] [ValuativeRel M]
+    [TopologicalSpace M] [IsNonarchimedeanLocalField M] [Algebra L M] [Algebra K M]
+    [IsScalarTower K L M] [ValuativeExtension L M] (h : IsTamelyRamified K M) :
+    IsTamelyRamified K L :=
+  ((isTamelyRamified_tower_iff (K := K) (L := L) M).1 h).1
+
 variable (K L) in
 /-- An extension is tamely ramified exactly when its ramification index is a unit in the integer
 ring `𝒪[L]`, the form in which tameness enters Hensel-type arguments in `L`. -/

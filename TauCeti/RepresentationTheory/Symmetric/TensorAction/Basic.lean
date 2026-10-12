@@ -139,6 +139,13 @@ theorem permTensorActionAlgHom_of (σ : Equiv.Perm (Fin d)) :
       permTensorAction R n d σ := by
   rw [permTensorActionAlgHom_def, Representation.asAlgebraHom_of]
 
+/-- The group-algebra action of `a ∈ R[S_d]` is the coefficient-weighted sum of the permutation
+actions. -/
+theorem permTensorActionAlgHom_eq_sum (a : MonoidAlgebra R (Equiv.Perm (Fin d))) :
+    permTensorActionAlgHom R n d a = ∑ σ, a.coeff σ • permTensorAction R n d σ := by
+  simp [permTensorActionAlgHom_def, Representation.asAlgebraHom_def, MonoidAlgebra.lift_apply,
+    Finsupp.sum_fintype]
+
 /-- The group-algebra action on a pure tensor of `(Fin n → R)^{⊗d}` is the corresponding finite
 linear combination of reindexed pure tensors. -/
 @[simp]

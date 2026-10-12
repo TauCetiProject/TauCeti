@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.Compact
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Lipschitz.CliffordGroup
+public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Basic
 public import Mathlib.Topology.Algebra.Star.Unitary
 
 /-!
@@ -21,9 +22,9 @@ continuous. On the zero space the Spin group is trivial. Over a locally compact 
 group is therefore a locally compact Hausdorff topological group, the Spin point group over `ℝ` and
 `ℚ_p`.
 
-This module also proves that the compact real Spin carrier is closed in the units of its
-Clifford algebra, providing the closed-subgroup input for its Lie-group structure. The corresponding
-special-orthogonal carrier is provided separately in `RealSpecialOrthogonal.lean`.
+This module also proves that every nondegenerate Spin carrier is closed in the units of its
+Clifford algebra, providing the closed-subgroup input for Lie-group structures. The corresponding
+real special-orthogonal carrier is provided separately in `RealSpecialOrthogonal.lean`.
 
 ## References
 
@@ -35,8 +36,8 @@ special-orthogonal carrier is provided separately in `RealSpecialOrthogonal.lean
   Clifford algebra.
 * `CliffordAlgebra.locallyCompactSpace_spinGroup`: over a locally compact field it is locally
   compact.
-* `TauCeti.CliffordAlgebra.isClosed_range_realCliffordSpinGroupZero_toUnits`: the compact real Spin
-  carrier is closed in the Clifford-algebra units.
+* `CliffordAlgebra.isClosed_range_spinGroup_toUnits`: the range of the Spin group in the
+  Clifford-algebra units is closed.
 -/
 
 public section
@@ -87,55 +88,27 @@ theorem locallyCompactSpace_spinGroup [LocallyCompactSpace K] (hQ : Q.Nondegener
     LocallyCompactSpace (spinGroup Q) :=
   (isClosed_spinGroup Q hQ).locallyCompactSpace
 
-end CliffordAlgebra
-
-namespace TauCeti
-
-namespace CliffordAlgebra
-
-open _root_.CliffordAlgebra
-
 noncomputable section
 
-/-- The compact real Spin carrier is closed in the units of its Clifford algebra. -/
-theorem isClosed_range_realCliffordSpinGroupZero_toUnits (n : ℕ) :
-    IsClosed (Set.range (spinGroup.toUnits (Q := realCliffordForm n 0))) := by
-  let A := CliffordAlgebra (realCliffordForm n 0)
-  have hc : IsCompact (Set.univ : Set (realCliffordSpinGroupZero n)) := isCompact_univ
-  have himage : IsClosed ((fun x : realCliffordSpinGroupZero n => (x : A)) '' Set.univ) :=
-    (hc.image (continuous_subtype_val :
-      Continuous ((↑) : realCliffordSpinGroupZero n → A))).isClosed
-  have hsu : (fun x : realCliffordSpinGroupZero n => (x : A)) '' Set.univ =
-      (realCliffordSpinGroupZero n : Set A) :=
-    Subtype.coe_image_univ (realCliffordSpinGroupZero n : Set A)
-  have hs : IsClosed (realCliffordSpinGroupZero n : Set A) := by
-    rw [← hsu]
-    exact himage
-  let f : Aˣ → A := fun u => u
-  have hu : IsClosed (f ⁻¹' (realCliffordSpinGroupZero n : Set A)) := by
+/-- The range of the Spin group of a nondegenerate quadratic form in the units of its Clifford
+algebra is closed. -/
+theorem isClosed_range_spinGroup_toUnits (hQ : Q.Nondegenerate) :
+    IsClosed (Set.range (spinGroup.toUnits (Q := Q))) := by
+  let f : (CliffordAlgebra Q)ˣ → CliffordAlgebra Q := fun u => u
+  have hs : IsClosed (spinGroup Q : Set (CliffordAlgebra Q)) := isClosed_spinGroup Q hQ
+  have hu : IsClosed (f ⁻¹' (spinGroup Q : Set (CliffordAlgebra Q))) := by
     simpa only [f] using hs.preimage Units.continuous_val
-  have hcoe (x : realCliffordSpinGroupZero n) :
-      ((spinGroup.toUnits (Q := realCliffordForm n 0) x : Aˣ) : A) = (x : A) := by
-    -- `spinGroup.toUnits` stores the subtype value as its unit value by definition.
-    rfl
-  have hset : Set.range (spinGroup.toUnits (Q := realCliffordForm n 0)) =
-      f ⁻¹' (realCliffordSpinGroupZero n : Set A) := by
+  have hset : Set.range (spinGroup.toUnits (Q := Q)) =
+      f ⁻¹' (spinGroup Q : Set (CliffordAlgebra Q)) := by
+    rw [← MonoidHom.coe_range]
     ext u
-    constructor
-    · rintro ⟨x, rfl⟩
-      have hx : (x : A) ∈ (realCliffordSpinGroupZero n : Set A) := x.2
-      simpa only [f, Set.mem_preimage, hcoe x] using hx
-    · intro hu'
-      refine ⟨⟨u, hu'⟩, ?_⟩
-      apply Units.ext
-      exact hcoe ⟨u, hu'⟩
+    simpa only [SetLike.mem_coe, Set.mem_preimage, f] using
+      mem_spinGroup_toUnits_range_iff u
   rw [hset]
   exact hu
 
 end
 
 end CliffordAlgebra
-
-end TauCeti
 
 end

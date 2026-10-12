@@ -139,6 +139,22 @@ theorem connected_zigzagA2Graph : zigzagA2Graph.Connected :=
 theorem exists_adj_zigzagA2Graph (i : Fin 2) : ∃ j, zigzagA2Graph.Adj i j :=
   connected_zigzagA2Graph.preconnected.exists_adj_of_nontrivial i
 
+/-- The dart of `A₂` leaving the node `i`. -/
+@[expose]
+def zigzagA2Dart (i : Fin 2) : zigzagA2Graph.Dart :=
+  ⟨(i, i + 1), by fin_cases i <;> simp⟩
+
+@[simp]
+theorem zigzagA2Dart_fst (i : Fin 2) : (zigzagA2Dart i).fst = i := (rfl)
+
+@[simp]
+theorem zigzagA2Dart_snd (i : Fin 2) : (zigzagA2Dart i).snd = i + 1 := (rfl)
+
+/-- Both nodes of `A₂` have degree one. -/
+@[simp]
+theorem degree_zigzagA2Graph (i : Fin 2) : zigzagA2Graph.degree i = 1 := by
+  fin_cases i <;> decide
+
 /-- The `D₄` graph is connected. -/
 theorem connected_zigzagD4Graph : zigzagD4Graph.Connected :=
   DynkinType.connected_diagramGraph_cartanMatrix (by simp)

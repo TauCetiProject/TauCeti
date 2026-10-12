@@ -397,6 +397,14 @@ def conjugateCohomologyIso (n : ℕ) : L.H F n ≅ (L.conjugate g).H F n :=
   groupCohomology.mapIso (L.conjugateGalEquiv g) (L.conjugateCoefficientEquiv F g)
     (fun γ ↦ LinearMap.ext fun x ↦ L.conjugateCoefficientEquiv_rep_apply F g γ x) n
 
+/-- Conjugation on ordinary cohomology is Mathlib's `groupCohomology.mapIso` of the isomorphism of
+Galois groups and the action of `g` on the coefficients. -/
+theorem conjugateCohomologyIso_def (n : ℕ) :
+    L.conjugateCohomologyIso F g n =
+      groupCohomology.mapIso (L.conjugateGalEquiv g) (L.conjugateCoefficientEquiv F g)
+        (fun γ ↦ LinearMap.ext fun x ↦ L.conjugateCoefficientEquiv_rep_apply F g γ x) n :=
+  (rfl)
+
 /-- **Conjugation on the Tate cohomology of a layer**, in every integer degree. In the degrees
 where Mathlib compares Tate cohomology with ordinary cohomology or homology, it is the ordinary
 change-of-group map of that theory, by `TauCeti.TateCohomology.map_comp_isoGroupCohomology_hom`

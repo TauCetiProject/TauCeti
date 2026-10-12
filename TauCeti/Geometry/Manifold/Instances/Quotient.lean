@@ -9,6 +9,7 @@ public import Mathlib.Geometry.Manifold.Algebra.SMul
 public import Mathlib.Geometry.Manifold.Instances.Quotient
 public import Mathlib.Geometry.Manifold.LocalDiffeomorph
 public import TauCeti.Topology.Algebra.GroupAction.FreeLocus
+public import TauCeti.Topology.IsLocalHomeomorph
 
 /-!
 # Quotient manifolds of free properly discontinuous actions
@@ -71,15 +72,11 @@ private theorem contMDiffAt_localInverseAt_comp
     (hdeck : ∀ z w, f z = f w → ∃ φ : M → M, ContMDiffAt I I n φ z ∧ φ z = w ∧ f ∘ φ =ᶠ[𝓝 z] f)
     {x z : M} (hz : f z ∈ (hf.localInverseAt x).source) :
     ContMDiffAt I I n (hf.localInverseAt x ∘ f) z := by
-  set L := hf.localInverseAt x
-  obtain ⟨φ, hφ, hφz, hfφ⟩ := hdeck z (L (f z)) (hf.apply_localInverseAt_of_mem hz).symm
-  have hmem : ∀ᶠ z' in 𝓝 z, φ z' ∈ L.target :=
-    hφ.continuousAt.preimage_mem_nhds (hφz ▸ L.open_target.mem_nhds (L.map_source hz))
-  refine hφ.congr_of_eventuallyEq ?_
-  filter_upwards [hmem, hfφ] with z' hz' hfz'
-  have hL : L (L.symm (φ z')) = φ z' := L.right_inv hz'
-  rw [hf.localInverseAt_symm] at hL
-  simpa [← hfz'] using hL
+  obtain ⟨φ, hφ, hφz, hfφ⟩ :=
+    hdeck z (hf.localInverseAt x (f z)) (hf.apply_localInverseAt_of_mem hz).symm
+  exact hφ.congr_of_eventuallyEq
+    (hf.localInverseAt_comp_eventuallyEq hφ.continuousAt (hφz ▸ (hf.localInverseAt x).map_source hz)
+      hfφ)
 
 variable {g : M' → M} (hg : Function.RightInverse g f)
 

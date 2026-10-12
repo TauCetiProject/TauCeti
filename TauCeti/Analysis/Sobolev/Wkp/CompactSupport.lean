@@ -43,7 +43,9 @@ theorem firstOrder_normedBumpL (hp : p ≠ ∞) (phi : ContDiffBump (0 : E))
     firstOrder k (normedBumpL hp phi (k + 1) u) =
       W1p.normedBumpL hp phi (firstOrder k u) := by
   induction k with
-  | zero => simpa only [firstOrder_zero] using congrArg (fun f => f u) (normedBumpL_one hp phi)
+  | zero =>
+      simp only [firstOrder_zero]
+      exact congrArg (fun f => f u) (normedBumpL_one hp phi)
   | succ k ih =>
       rw [firstOrder_succ, lowerOrder_normedBumpL, ih, firstOrder_succ]
 

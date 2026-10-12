@@ -41,9 +41,9 @@ variable {N N' V V' : Type u} [AddCommGroup N] [AddCommGroup N']
 lattice map of the fan morphism. -/
 theorem analyticChartMap_smul {σ : Φ.cones} {τ : Ψ.cones}
     (h : Set.MapsTo f.realMap (σ.1 : Set V) (τ.1 : Set V'))
-    (t : ComplexTorus N) (x : (Φ.analyticAffineChartDiagram hΦ).obj σ) :
-    f.analyticChartMap hΦ hΨ h (t • x) =
-      complexTorusMap f.latticeMap t • f.analyticChartMap hΦ hΨ h x := by
+    (t : ComplexTorus N) (x : (Φ.analyticAffineChartDiagram).obj σ) :
+    f.analyticChartMap h (t • x) =
+      complexTorusMap f.latticeMap t • f.analyticChartMap h x := by
   rw [analyticChartMap_apply, analyticChartMap_apply]
   -- The bundled chart carriers and their actions are the affine complex-point carriers and
   -- actions; restate the goal there so the monomial evaluation API applies.

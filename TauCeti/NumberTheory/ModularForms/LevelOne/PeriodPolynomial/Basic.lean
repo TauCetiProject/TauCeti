@@ -8,7 +8,7 @@ module
 public import Mathlib.LinearAlgebra.Matrix.SpecialLinearGroup
 public import TauCeti.NumberTheory.ModularForms.BinaryForms
 import TauCeti.LinearAlgebra.End.OrderTwoThree
-import TauCeti.RingTheory.MvPolynomial.Finrank
+import TauCeti.NumberTheory.Modular.Relations
 
 /-!
 # The space of period polynomials
@@ -336,14 +336,6 @@ theorem periodPolynomials_ne_bot [Nontrivial R] (hw : Even w) (hw₀ : w ≠ 0) 
 
 /-! ### The kernels of `1 + S` and `1 + U + U²` span `V_w` -/
 
-/-- `U³ = -1`, for `U = T S`. -/
-private lemma U_mul_U_mul_U_eq_neg_one :
-    ((T * S : SL(2, ℤ)) : Matrix (Fin 2) (Fin 2) ℤ) *
-        (((T * S : SL(2, ℤ)) : Matrix (Fin 2) (Fin 2) ℤ) *
-          ((T * S : SL(2, ℤ)) : Matrix (Fin 2) (Fin 2) ℤ)) = -1 := by
-  ext i j
-  fin_cases i <;> fin_cases j <;> rfl
-
 /-- `U S = -T`, for `U = T S`. -/
 private lemma U_mul_S_eq_neg_T :
     ((T * S : SL(2, ℤ)) : Matrix (Fin 2) (Fin 2) ℤ) * (S : Matrix (Fin 2) (Fin 2) ℤ) =
@@ -359,7 +351,8 @@ theorem binaryFormRep_S_sq_of_even (hw : Even w) :
 /-- For even `w`, `U = T S` acts on `V_w` with cube `1`, since `U³ = -1` acts trivially. -/
 theorem binaryFormRep_U_pow_three_of_even (hw : Even w) :
     binaryFormRep R w (op ((T * S : SL(2, ℤ)) : Matrix (Fin 2) (Fin 2) ℤ)) ^ 3 = 1 := by
-  rw [← map_pow, ← op_pow, pow_three, U_mul_U_mul_U_eq_neg_one, binaryFormRep_op_neg_of_even hw,
+  rw [← map_pow, ← op_pow, ← SpecialLinearGroup.coe_pow, ModularGroup.T_mul_S_pow_three,
+    SpecialLinearGroup.coe_neg, SpecialLinearGroup.coe_one, binaryFormRep_op_neg_of_even hw,
     op_one, map_one]
 
 /-- For even `w`, `P - P ∣ T` lies in `ker (1 + S) + ker (1 + U + U²)`, where `U = T S`. -/

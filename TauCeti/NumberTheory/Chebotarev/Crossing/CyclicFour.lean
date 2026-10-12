@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Group.TypeTags.Finite
 public import TauCeti.NumberTheory.Chebotarev.Crossing.CrossingConstant
 
 /-!

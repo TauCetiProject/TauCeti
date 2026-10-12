@@ -154,6 +154,12 @@ lengths. -/
 def shapePartition (μ : YoungDiagram) : μ.card.Partition :=
   toPartition μ rfl
 
+/-- A partition built from a Young diagram along the trivial equality of sizes is its shape
+partition. -/
+@[simp]
+theorem toPartition_eq_shapePartition (μ : YoungDiagram) : toPartition μ rfl = shapePartition μ :=
+  (rfl)
+
 /-- The Young diagram of the shape partition of a Young diagram is that diagram. -/
 @[simp]
 theorem diagramOf_shapePartition (μ : YoungDiagram) : diagramOf (shapePartition μ) = μ :=

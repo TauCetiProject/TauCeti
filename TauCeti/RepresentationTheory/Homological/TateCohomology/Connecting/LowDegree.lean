@@ -113,7 +113,7 @@ theorem δ_neg_one_HNegOneπ {S : ShortComplex (Rep R G)} (hS : S.ShortExact)
   -- norm-kernel and invariant representatives. Forgetting a module morphism retains its action.
   dsimp only [ShortComplex.map_X₁, ShortComplex.map_X₃, tateComplexFunctor_obj] at h
   erw [hc₃', hc₁'] at h
-  rw [HNegOneπ_eq_cyclesIso_inv_comp_homologyπ, H0π_eq_cyclesIso_inv_comp_homologyπ]
+  rw [HNegOneπ_eq_HNegOneCyclesIso_inv_comp_homologyπ, H0π_eq_H0CyclesIso_inv_comp_homologyπ]
   exact h
 
 /-- Every class in degree `-1` admits lifts realizing the norm formula for its connecting image. -/

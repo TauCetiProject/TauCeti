@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.Ideal.KrullsHeightTheorem
 public import Mathlib.RingTheory.LocalRing.ResidueField.Fiber
+public import Mathlib.RingTheory.QuasiFinite.Basic
 
 /-!
 # Krull dimension and the fibres of a ring homomorphism
@@ -32,12 +33,16 @@ set-theoretic fibre of `Spec S → Spec R` over `p`. Mathlib's
   prime `P` lying over `p` is at most the Krull dimension of the fibre over `p`.
 * `Ideal.height_le_height_add_ringKrullDim_fiber`: the height of a prime `P` lying over `p` is
   at most the height of `p` plus the Krull dimension of the fibre over `p`.
+* `Ideal.height_eq_height_under_of_quasiFinite`: along a quasi-finite algebra satisfying going
+  down, for instance an étale algebra, the height of a prime equals the height of the prime
+  below it.
 * `TauCeti.ringKrullDim_le_ringKrullDim_add_of_ringKrullDim_fiber_le`: the Krull dimension of `S`
   is at most that of `R` plus a bound on the Krull dimensions of all fibres.
 
 ## References
 
 * [Stacks Project, Tag 00OM](https://stacks.math.columbia.edu/tag/00OM)
+* [Stacks Project, Tag 00ON](https://stacks.math.columbia.edu/tag/00ON)
 -/
 
 public section
@@ -98,6 +103,21 @@ theorem height_le_height_add_ringKrullDim_fiber [IsNoetherianRing R] [IsNoetheri
     rw [WithBot.coe_add]
     gcongr
     exact height_map_quotientMk_le_ringKrullDim_fiber p P
+
+/-- Let `S` be a Noetherian `R`-algebra which is quasi-finite and satisfies going down, for
+instance a flat quasi-finite algebra. Then the height of a prime `P` of `S` is the height of the
+prime of `R` below it. -/
+@[stacks 00ON]
+theorem height_eq_height_under_of_quasiFinite [IsNoetherianRing R] [IsNoetherianRing S]
+    [Algebra.HasGoingDown R S] [Algebra.QuasiFinite R S] (P : Ideal S) [P.IsPrime] :
+    P.height = (P.under R).height := by
+  rw [height_eq_height_add_of_liesOver_of_hasGoingDown (P.under R) P]
+  -- The fibre over `P.under R` is Artinian, so the image of `P` in it has height zero.
+  have h := (height_map_quotientMk_le_ringKrullDim_fiber (P.under R) P).trans
+    (Ring.krullDimLE_iff.mp (inferInstance : Ring.KrullDimLE 0 ((P.under R).Fiber S)))
+  have h0 : (P.map (Quotient.mk ((P.under R).map (algebraMap R S)))).height = 0 :=
+    nonpos_iff_eq_zero.mp (by exact_mod_cast h)
+  rw [h0, add_zero]
 
 end Ideal
 

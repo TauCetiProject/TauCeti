@@ -51,8 +51,7 @@ computation to an arbitrary equivalent target.
 * `TauCeti.nonempty_algEquiv_self_of_isIntegral`: a domain algebra over an algebraically closed
   field that is integral over that field is isomorphic to it as an algebra, with
   `TauCeti.nonempty_algEquiv_self_of_finiteDimensional_divisionRing` the finite-dimensional
-  division algebra special case, also available under the name the roadmap pins,
-  `TauCeti.algEquiv_self_of_finiteDimensional_divisionRing`.
+  division algebra special case.
 * `TauCeti.endAlgEquivSelfOfIsSimpleModule`: the endomorphism ring of a finite-dimensional simple
   module over an algebraically closed field collapses to that field, canonically, as the inverse
   of the structure map; `TauCeti.nonempty_end_algEquiv_self_of_isSimpleModule` is its existence
@@ -150,10 +149,6 @@ uses. -/
 theorem nonempty_algEquiv_self_of_finiteDimensional_divisionRing [DivisionRing D] [Algebra k D]
     [FiniteDimensional k D] : Nonempty (D ≃ₐ[k] k) :=
   nonempty_algEquiv_self_of_isIntegral
-
-/-- The roadmap pins the previous theorem under this name; it is available under both. -/
-alias algEquiv_self_of_finiteDimensional_divisionRing :=
-  nonempty_algEquiv_self_of_finiteDimensional_divisionRing
 
 end IsAlgClosed
 
@@ -272,6 +267,25 @@ theorem finiteDimensional_linearMap_of_isEmpty_linearEquiv (h : IsEmpty (S ≃�
   exact Module.Finite.of_surjective (0 : k →ₗ[k] (S →ₗ[A] N)) fun _ ↦ ⟨0, Subsingleton.elim _ _⟩
 
 end Vanishing
+
+section SimpleSymmetry
+
+variable {k A : Type*} [CommSemiring k] [Nontrivial k] [Ring A] [Algebra k A]
+
+/-- Hom-space finrank is symmetric between simple modules over an algebra. -/
+theorem finrank_linearMap_comm_of_isSimpleModule
+    (S N : Type*) [AddCommGroup S] [Module k S] [Module A S] [IsScalarTower k A S]
+    [AddCommGroup N] [Module k N] [Module A N] [IsScalarTower k A N]
+    [IsSimpleModule A S] [IsSimpleModule A N] :
+    Module.finrank k (S →ₗ[A] N) = Module.finrank k (N →ₗ[A] S) := by
+  by_cases h : Nonempty (S ≃ₗ[A] N)
+  · obtain ⟨e⟩ := h
+    exact ((homCongrRight k e.symm).trans (LinearEquiv.congrLeft S k e)).finrank_eq
+  · rw [finrank_linearMap_eq_zero_of_isEmpty_linearEquiv (not_nonempty_iff.mp h),
+      finrank_linearMap_eq_zero_of_isEmpty_linearEquiv
+        ⟨fun e ↦ h ⟨e.symm⟩⟩]
+
+end SimpleSymmetry
 
 section SchurDimension
 

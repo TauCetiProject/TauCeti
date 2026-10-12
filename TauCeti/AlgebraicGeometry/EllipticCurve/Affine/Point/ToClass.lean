@@ -86,56 +86,10 @@ open scoped nonZeroDivisors Polynomial.Bivariate Pointwise
 
 namespace WeierstrassCurve.Affine.Point
 
-variable {F : Type*} [Field F] {W : _root_.WeierstrassCurve.Affine F} [DecidableEq F]
-
-/-- **Surjectivity of `toClass` is exactly representability of every ideal class by a point.**
-
-`toClass` is surjective precisely when each element of `ClassGroup W.CoordinateRing` is either
-trivial or the class of `XYIdeal' h` for a nonsingular affine point `(x, y)`. The right-hand side
-is proved below in `toClass_surjective`.
-
-Stated for an arbitrary affine Weierstrass curve: neither smoothness nor ellipticity is assumed,
-and no divisor group appears. Under the hypotheses that make `W` a smooth genus-1 curve, and the
-identification of `ClassGroup W.CoordinateRing` with degree-zero divisor classes, the right-hand
-side reads as the familiar statement that every such class is `(P) - (O)` for a rational point
-`P` — but that reading is an interpretation under extra hypotheses, not part of what is stated
-here.
-
-The disjunction is spelled out rather than named: `Function.Surjective` already expresses the
-left-hand side, so a separate predicate would only add an unfolding layer for consumers to
-cross. -/
-theorem toClass_surjective_iff :
-    Function.Surjective (toClass (W := W)) ↔ ∀ g : ClassGroup W.CoordinateRing,
-      g = 1 ∨ ∃ (x y : F) (h : W.Nonsingular x y),
-        g = ClassGroup.mk W.FunctionField (CoordinateRing.XYIdeal' (W := W) h) := by
-  constructor
-  · intro hsurj g
-    obtain ⟨P, hP⟩ := hsurj (Additive.ofMul g)
-    cases P with
-    | zero =>
-        left
-        rw [← zero_def, toClass_zero] at hP
-        exact (Additive.ofMul.injective hP).symm
-    | some x y h =>
-        right
-        refine ⟨x, y, h, ?_⟩
-        rw [toClass_some] at hP
-        exact (Additive.ofMul.injective hP).symm
-  · intro hrep c
-    obtain hg | ⟨x, y, h, hg⟩ := hrep (Additive.toMul c)
-    · -- `ofMul_one` names the step `Additive.ofMul 1 = 0`, so the trivial branch closes without
-      -- appealing to the type synonym at all.
-      exact ⟨0, by rw [toClass_zero, ← ofMul_toMul c, hg, ofMul_one]⟩
-    · refine ⟨some x y h, ?_⟩
-      rw [toClass_some, ← ofMul_toMul c, hg]
-      -- What is left is `g = Additive.ofMul g`. `Additive.ofMul` is `Equiv.refl` on the
-      -- underlying type and Mathlib names no lemma for it at a general element, so this last
-      -- step is the type synonym and nothing else.
-      rfl
+variable {F : Type*} [Field F] {W : _root_.WeierstrassCurve.Affine F}
 
 /-! ## The genus-one codimension argument -/
 
-omit [DecidableEq F] in
 /-- Every nonzero ideal of an affine Weierstrass coordinate ring has finite codimension over the
 base field. -/
 private theorem finiteDimensional_quotient_of_ne_bot
@@ -148,7 +102,6 @@ private theorem finiteDimensional_quotient_of_ne_bot
   exact Module.Finite.equiv
     (Ideal.quotientEquivDirectSum F (CoordinateRing.basis W) hI).symm
 
-omit [DecidableEq F] in
 /-- Replacing an invertible fractional ideal by its integral numerator does not change its ideal
 class. -/
 private theorem mk_num (I : (FractionalIdeal W.CoordinateRing⁰ W.FunctionField)ˣ) :
@@ -168,7 +121,6 @@ private theorem mk_num (I : (FractionalIdeal W.CoordinateRing⁰ W.FunctionField
   rw [Units.val_mul, coe_toPrincipalIdeal, Units.val_mk0, hnum.unit_spec]
   simpa [mul_comm] using FractionalIdeal.den_mul_self_eq_num' R⁰ K I.1
 
-omit [DecidableEq F] in
 private theorem smul_top_eq_comap_mul (I J : Ideal W.CoordinateRing) :
     J • (⊤ : Submodule W.CoordinateRing I) =
       Submodule.comap I.subtype ((I * J : Ideal W.CoordinateRing) :
@@ -178,7 +130,6 @@ private theorem smul_top_eq_comap_mul (I J : Ideal W.CoordinateRing) :
     Submodule.map_comap_subtype, Ideal.smul_eq_mul, mul_comm J I,
     inf_eq_right.mpr Ideal.mul_le_left]
 
-omit [DecidableEq F] in
 /-- For an invertible integral ideal `I`, base change to `R / J` identifies `I / I J` with
 `R / J`. -/
 private noncomputable def quotIdealMulEquiv
@@ -218,7 +169,6 @@ private noncomputable def quotIdealMulEquiv
     ((TensorProduct.quotTensorEquivQuotSMul (I : Submodule R R) J).symm.trans
       (eFree.restrictScalars R))
 
-omit [DecidableEq F] in
 /-- Codimension is additive when the left ideal is nonzero and invertible. -/
 private theorem finrank_quotient_mul {I J : Ideal W.CoordinateRing}
     (hI : I ≠ ⊥) (hJ : J ≠ ⊥)
@@ -270,7 +220,6 @@ private theorem finrank_quotient_mul {I J : Ideal W.CoordinateRing}
   rw [hA, hB] at key
   omega
 
-omit [DecidableEq F] in
 /-- **A point derivation descends to the coordinate ring.** An `F`-linear `d` on `F[X][Y]`
 killing `W.polynomial`, and obeying the Leibniz rule at `(x, y)` so that it kills the whole
 ideal `⟨W.polynomial⟩`, factors through the quotient defining `W.CoordinateRing`. -/
@@ -287,7 +236,6 @@ private noncomputable def coordinateRingDerivation {x y : F}
     (Submodule.Quotient.restrictScalarsEquiv F
       (Ideal.span {W.polynomial} : Ideal F[X][Y])).symm.toLinearMap
 
-omit [DecidableEq F] in
 /-- The descended map is computed by `d` on any polynomial representative. -/
 @[simp] private theorem coordinateRingDerivation_mk {x y : F}
     (heval : W.polynomial.evalEval x y = 0) (d : F[X][Y] →ₗ[F] F)
@@ -298,7 +246,6 @@ omit [DecidableEq F] in
   -- on representatives, so both layers of the descent compute on `p` by `Submodule.liftQ_apply`.
   (rfl)
 
-omit [DecidableEq F] in
 /-- **A point derivation kills products drawn from the point ideal**, because evaluation at
 `(x, y)` kills the point ideal itself. -/
 private theorem coordinateRingDerivation_mul_mem_eq_zero {x y : F}
@@ -326,7 +273,6 @@ private theorem coordinateRingDerivation_mul_mem_eq_zero {x y : F}
   rw [← hp, ← hq, ← map_mul, coordinateRingDerivation_mk, hmul, hpa, hqb,
     zero_mul, zero_mul, add_zero]
 
-omit [DecidableEq F] in
 /-- **A point derivation induces a functional on the cotangent space of the point ideal.** -/
 private noncomputable def cotangentFunctional {x y : F}
     (heval : W.polynomial.evalEval x y = 0) (d : F[X][Y] →ₗ[F] F)
@@ -338,7 +284,6 @@ private noncomputable def cotangentFunctional {x y : F}
       ((CoordinateRing.XYIdeal W x (C y)).subtype.restrictScalars F))
     (coordinateRingDerivation_mul_mem_eq_zero heval d hmul hd)
 
-omit [DecidableEq F] in
 /-- The induced functional is computed by `d` on any polynomial representative. -/
 private theorem cotangentFunctional_toCotangent {x y : F}
     (heval : W.polynomial.evalEval x y = 0) (d : F[X][Y] →ₗ[F] F)
@@ -350,7 +295,6 @@ private theorem cotangentFunctional_toCotangent {x y : F}
   (Ideal.Cotangent.lift_toCotangent _ _ _).trans
     (coordinateRingDerivation_mk heval d hmul hd p)
 
-omit [DecidableEq F] in
 /-- **The cotangent space of an invertible point ideal is a line.** Base changing the invertible
 ideal `I` to the residue field `R / I ≃ F` makes `I / I²` free of rank one. -/
 private noncomputable def cotangentXYIdealEquiv {x y : F} (heq : W.Equation x y)
@@ -364,7 +308,6 @@ private noncomputable def cotangentXYIdealEquiv {x y : F} (heq : W.Equation x y)
       (quotIdealMulEquiv (F := F) hunit)).restrictScalars F).trans
     (CoordinateRing.quotientXYIdealEquiv heq).toLinearEquiv
 
-omit [DecidableEq F] in
 /-- **At a singular solution the cotangent space of the point ideal is at least a plane.** The two
 coordinate derivations at `(x, y)` descend to it, and are dual to its two generators `X - x` and
 `Y - y`, so together they map it onto `F × F`. -/
@@ -420,7 +363,6 @@ private theorem exists_surjective_cotangentProd_of_singular {x y : F}
   simp only [LinearMap.prod_apply, Function.prod_apply, map_add, map_smul, hXX, hXY, hYX, hYY]
   simp
 
-omit [DecidableEq F] in
 /-- An equation solution whose point ideal is invertible is nonsingular. At a singular solution,
 the two coordinate derivations make the cotangent space at least two-dimensional, whereas an
 invertible point ideal has one-dimensional cotangent space. -/
@@ -445,14 +387,12 @@ private theorem nonsingular_of_isUnit_XYIdeal {x y : F} (heq : W.Equation x y)
   rw [hprod, hfin] at hle
   omega
 
-omit [DecidableEq F] in
 private theorem two_nsmul_coe (n : ℕ) :
     (2 : ℕ) • (n : WithBot ℕ) = ((2 * n : ℕ) : WithBot ℕ) := by
   rw [nsmul_eq_mul]
   push_cast
   ring
 
-omit [DecidableEq F] in
 private theorem two_nsmul_degree_le {p : F[X]} {n : ℕ} (hp : p.degree < (n : ℕ)) :
     2 • p.degree ≤ ((2 * (n - 1) : ℕ) : WithBot ℕ) := by
   classical
@@ -474,7 +414,6 @@ private noncomputable def basisCombMap (W : WeierstrassCurve.Affine F) (a b : �
     (((LinearMap.toSpanSingleton F[X] W.CoordinateRing (CoordinateRing.basis W 1)).restrictScalars
       F).comp (Polynomial.degreeLT F b).subtype)
 
-omit [DecidableEq F] in
 private theorem natDegree_norm_basisComb_le {p q : F[X]} {da db : ℕ}
     (hp : p.degree < (da : ℕ)) (hq : q.degree < (db : ℕ)) :
     (Algebra.norm F[X]
@@ -498,7 +437,6 @@ private theorem natDegree_norm_basisComb_le {p q : F[X]} {da db : ℕ}
           by simpa [add_comm] using add_le_add_right (two_nsmul_degree_le hq) 3
         _ ≤ ((2 * db + 1 : ℕ) : WithBot ℕ) := by norm_cast; omega
 
-omit [DecidableEq F] in
 private theorem basisCombMap_ne_zero {a b : ℕ}
     (pq : Polynomial.degreeLT F a × Polynomial.degreeLT F b) (h : pq ≠ 0) :
     basisCombMap W a b pq ≠ 0 := by
@@ -509,7 +447,6 @@ private theorem basisCombMap_ne_zero {a b : ℕ}
   obtain ⟨hp, hq⟩ := CoordinateRing.smul_basis_eq_zero hz
   exact Prod.ext (Subtype.ext hp) (Subtype.ext hq)
 
-omit [DecidableEq F] in
 /-- Every nonzero ideal contains a nonzero function whose norm degree is at most one more than
 the ideal's codimension. This is the concrete genus-one Riemann--Roch inequality. -/
 private theorem exists_mem_norm_natDegree_le
@@ -557,7 +494,6 @@ private theorem exists_mem_norm_natDegree_le
     dsimp [da, db]
     omega
 
-omit [DecidableEq F] in
 /-- Every invertible integral ideal has an inverse-class representative of codimension at most
 one. -/
 private theorem exists_codimLEOne_inv_integral
@@ -596,7 +532,6 @@ private theorem exists_codimLEOne_inv_integral
       FractionalIdeal.coeIdeal_span_singleton, FractionalIdeal.coe_spanSingleton]
     simp
 
-omit [DecidableEq F] in
 /-- Every fractional ideal class has an inverse-class integral representative of codimension at
 most one. -/
 private theorem exists_codimLEOne_inv
@@ -614,7 +549,6 @@ private theorem exists_codimLEOne_inv
   refine ⟨J, hJunit, hfin, ?_⟩
   rwa [mk_num U] at hclass
 
-omit [DecidableEq F] in
 private theorem mk_eq_one_of_finrank_quotient_eq_zero
     (I : Ideal W.CoordinateRing)
     (hIunit : IsUnit (I : FractionalIdeal W.CoordinateRing⁰ W.FunctionField))
@@ -634,7 +568,6 @@ private theorem mk_eq_one_of_finrank_quotient_eq_zero
   rw [hIunit.unit_spec, htop, FractionalIdeal.coeIdeal_top, FractionalIdeal.coe_one,
     Submodule.one_eq_span]
 
-omit [DecidableEq F] in
 private theorem mk_eq_mk_XYIdeal'_of_finrank_quotient_eq_one
     (I : Ideal W.CoordinateRing)
     (hIunit : IsUnit (I : FractionalIdeal W.CoordinateRing⁰ W.FunctionField))
@@ -651,6 +584,57 @@ private theorem mk_eq_mk_XYIdeal'_of_finrank_quotient_eq_one
   congr 1
   apply Units.ext
   rw [hIunit.unit_spec, CoordinateRing.XYIdeal'_eq hns, hxy]
+
+/-! ## Surjectivity and the class-group equivalence -/
+
+section DecidableEq
+
+variable [DecidableEq F]
+
+/-- **Surjectivity of `toClass` is exactly representability of every ideal class by a point.**
+
+`toClass` is surjective precisely when each element of `ClassGroup W.CoordinateRing` is either
+trivial or the class of `XYIdeal' h` for a nonsingular affine point `(x, y)`. The right-hand side
+is proved below in `toClass_surjective`.
+
+Stated for an arbitrary affine Weierstrass curve: neither smoothness nor ellipticity is assumed,
+and no divisor group appears. Under the hypotheses that make `W` a smooth genus-1 curve, and the
+identification of `ClassGroup W.CoordinateRing` with degree-zero divisor classes, the right-hand
+side reads as the familiar statement that every such class is `(P) - (O)` for a rational point
+`P` — but that reading is an interpretation under extra hypotheses, not part of what is stated
+here.
+
+The disjunction is spelled out rather than named: `Function.Surjective` already expresses the
+left-hand side, so a separate predicate would only add an unfolding layer for consumers to
+cross. -/
+theorem toClass_surjective_iff :
+    Function.Surjective (toClass (W := W)) ↔ ∀ g : ClassGroup W.CoordinateRing,
+      g = 1 ∨ ∃ (x y : F) (h : W.Nonsingular x y),
+        g = ClassGroup.mk W.FunctionField (CoordinateRing.XYIdeal' (W := W) h) := by
+  constructor
+  · intro hsurj g
+    obtain ⟨P, hP⟩ := hsurj (Additive.ofMul g)
+    cases P with
+    | zero =>
+        left
+        rw [← zero_def, toClass_zero] at hP
+        exact (Additive.ofMul.injective hP).symm
+    | some x y h =>
+        right
+        refine ⟨x, y, h, ?_⟩
+        rw [toClass_some] at hP
+        exact (Additive.ofMul.injective hP).symm
+  · intro hrep c
+    obtain hg | ⟨x, y, h, hg⟩ := hrep (Additive.toMul c)
+    · -- `ofMul_one` names the step `Additive.ofMul 1 = 0`, so the trivial branch closes without
+      -- appealing to the type synonym at all.
+      exact ⟨0, by rw [toClass_zero, ← ofMul_toMul c, hg, ofMul_one]⟩
+    · refine ⟨some x y h, ?_⟩
+      rw [toClass_some, ← ofMul_toMul c, hg]
+      -- What is left is `g = Additive.ofMul g`. `Additive.ofMul` is `Equiv.refl` on the
+      -- underlying type and Mathlib names no lemma for it at a general element, so this last
+      -- step is the type synonym and nothing else.
+      rfl
 
 /-- **The point-to-class map is surjective.** Equivalently, every ideal
 class of its affine coordinate ring is represented by a rational point. -/
@@ -703,5 +687,7 @@ theorem toClass_some_eq_ofMul_mk0 [IsDedekindDomain W.CoordinateRing] {x y : F}
   rw [toClass_some, hmk]
   -- what is left is `g = Additive.ofMul g`, which is the type synonym and nothing else
   rfl
+
+end DecidableEq
 
 end WeierstrassCurve.Affine.Point

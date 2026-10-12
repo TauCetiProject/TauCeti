@@ -171,6 +171,8 @@ theorem kostantCoordinateCocharacter_mem_kostantElementarySubgroup_of_sq_eq_zero
     (A : CommAlgCat.{w} ℤ) (u : Aˣ) :
     kostantCoordinateCocharacter M b wt A c u ∈
       kostantElementarySubgroup e h ρ M hM hnil A := by
+  let := IsAddTorsionFree.of_module_rat V
+  let := IsAddTorsionFree.of_module_rat (Module.End ℚ V)
   have hEE : ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i)) *
       ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i)) = 0 := by rw [← pow_two]; exact hsqi
   have hFF : ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e j)) *
@@ -232,7 +234,7 @@ theorem kostantCoordinateCocharacter_mem_kostantElementarySubgroup_of_sq_eq_zero
         1 + α • E' + β • F' - E' * F' - F' * E' := by
     intro α β hαβ
     rw [Units.val_mul, Units.val_mul, hparam, hparam']
-    exact Sl2.triple_product_of_mul_self_eq_zero hE'E' hE'F'E' hαβ
+    exact Sl2.triple_product_of_mul_self_eq_zero (E := E') hE'E' hE'F'E' hαβ
   -- the coordinate cocharacter in the same normal form
   have htorus : (kostantCoordinateCocharacter M b wt A c u).val =
       1 + ((u : A) - 1) • (E' * F') + ((((u⁻¹ : Aˣ) : A)) - 1) • (F' * E') := by
@@ -252,7 +254,8 @@ theorem kostantCoordinateCocharacter_mem_kostantElementarySubgroup_of_sq_eq_zero
     have hFE : F' * E' = (Y * X).baseChange (A : Type w) := by
       rw [hE'def, hF'def, LinearMap.baseChange_mul]
     have hwtx := (isCartanWeightVector_iff h ρ).1 (hwt x) c
-    rcases Sl2.mul_apply_of_eq_intCast_smul hEE hFF hEFE hFEF hef hwtx hbx0 with
+    rcases Sl2.mul_apply_of_eq_zsmul hEE hFF hEFE hFEF hef
+        (by simpa only [Int.cast_smul_eq_zsmul] using hwtx) hbx0 with
       ⟨hm, hP, hQ⟩ | ⟨hm, hP, hQ⟩ | ⟨hm, hP, hQ⟩
     · have hPM : (X * Y) (b x) = b x := Subtype.ext (by rw [hPcoe, hP])
       have hQM : (Y * X) (b x) = 0 := Subtype.ext (by rw [hQcoe, hQ, ZeroMemClass.coe_zero])
@@ -292,7 +295,8 @@ theorem kostantCoordinateCocharacter_mem_kostantElementarySubgroup_of_sq_eq_zero
     refine (eq_mul_inv_iff_mul_eq.2 ?_)
     refine Units.ext ?_
     rw [Units.val_mul, htorus, htriple 1 (-1) hone, htriple (u : A) _ hunit]
-    exact Sl2.torus_mul_triple_product_of_mul_self_eq_zero hE'E' hF'F' hE'F'E' hF'E'F' _ _
+    exact Sl2.torus_mul_triple_product_of_mul_self_eq_zero (E := E')
+      hE'E' hF'F' hE'F'E' hF'E'F' _ _
   rw [hfactor]
   refine mul_mem (mul_mem (mul_mem ?_ ?_) ?_) (inv_mem (mul_mem (mul_mem ?_ ?_) ?_)) <;>
     exact kostantRootSubgroupParam_mem_kostantElementarySubgroup e h ρ M hM hnil A _ _

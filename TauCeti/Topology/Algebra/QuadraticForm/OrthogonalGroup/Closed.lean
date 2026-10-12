@@ -7,6 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.QuadraticForm.OrthogonalGroup.Basic
 public import TauCeti.Topology.Algebra.QuadraticForm.Continuity
+public import TauCeti.Topology.Algebra.Group.Subgroup
 public import TauCeti.Topology.Algebra.Module.GeneralLinearGroup
 
 /-!
@@ -19,11 +20,11 @@ When the form is continuous, this image is closed. This description is useful wh
 the topology of linear endomorphisms to local orthogonal point groups.
 
 The result holds over a Hausdorff commutative domain with module topologies and a finite free
-module, provided the form is continuous. If the scalar topology is a topological ring, invertibility
-of two supplies continuity; the theorem takes continuity directly. Local compactness is not needed
+module, provided the form is continuous. A topological ring structure on the scalars supplies
+continuity; the theorem takes continuity directly. Local compactness is not needed
 for closedness.
 
-Over a Hausdorff topological field in which `2` is invertible, the orthogonal group of a
+Over a Hausdorff topological field, the orthogonal group of a
 finite-dimensional quadratic space is also closed in the linear automorphism group with its
 canonical topology, the one recording an automorphism and its inverse: it is the preimage of the
 closed set of form-preserving endomorphisms under the continuous forgetful map. When the field is
@@ -39,6 +40,8 @@ groups over `ℝ` and `ℚ_p` are studied.
   automorphism group.
 * `TauCeti.QuadraticMap.instLocallyCompactSpaceOrthogonalGroup`: the orthogonal group is locally
   compact over a locally compact field.
+* `QuadraticMap.continuous_specialOrthogonalToOrthogonal`: the inclusion of the special
+  orthogonal group into the orthogonal group is continuous.
 -/
 
 public section
@@ -63,6 +66,7 @@ free module is closed in the endomorphism space, through its underlying linear m
 theorem isClosed_range_orthogonalGroup_toLinearMap
     (Q : QuadraticForm R M) (hQ : Q.polarBilin.SeparatingLeft) (hcont : Continuous Q) :
     IsClosed (Set.range (fun g : orthogonalGroup Q => (g : M ≃ₗ[R] M).toLinearMap)) := by
+  have : ContinuousAdd M := IsModuleTopology.toContinuousAdd R M
   rw [range_orthogonalGroup_toLinearMap Q hQ]
   exact Q.isClosed_setOfPred_forall_map_app hcont
 
@@ -71,14 +75,15 @@ end Endomorphism
 section Automorphism
 
 variable {K V : Type*} [Field K] [TopologicalSpace K] [IsTopologicalRing K] [T2Space K]
-  [Invertible (2 : K)] [AddCommGroup V] [Module K V] [FiniteDimensional K V]
+  [AddCommGroup V] [Module K V] [FiniteDimensional K V]
   (Q : QuadraticForm K V)
 
 /-- The orthogonal group of a finite-dimensional quadratic space over a Hausdorff topological
-field in which `2` is invertible is closed in the linear automorphism group with its canonical
+field is closed in the linear automorphism group with its canonical
 topology. No topology on the space itself is assumed. -/
 theorem isClosed_orthogonalGroup : IsClosed (orthogonalGroup Q : Set (V ≃ₗ[K] V)) := by
   let _ : TopologicalSpace V := moduleTopology K V
+  have : ContinuousAdd V := IsModuleTopology.toContinuousAdd K V
   have h : (orthogonalGroup Q : Set (V ≃ₗ[K] V)) =
       (fun g : V ≃ₗ[K] V => (g : Module.End K V)) ⁻¹'
         {f : Module.End K V | ∀ x, Q (f x) = Q x} := by
@@ -89,13 +94,28 @@ theorem isClosed_orthogonalGroup : IsClosed (orthogonalGroup Q : Set (V ≃ₗ[K
     continuous_linearEquiv_toLinearMap
 
 /-- The orthogonal group of a finite-dimensional quadratic space over a Hausdorff locally compact
-topological field in which `2` is invertible is locally compact, being closed in the locally
+topological field is locally compact, being closed in the locally
 compact linear automorphism group. -/
 instance instLocallyCompactSpaceOrthogonalGroup [LocallyCompactSpace K] :
     LocallyCompactSpace (orthogonalGroup Q) :=
   (isClosed_orthogonalGroup Q).locallyCompactSpace
 
 end Automorphism
+
+section Inclusion
+
+variable {R M N : Type*} [CommRing R] [TopologicalSpace R] [AddCommGroup M] [Module R M]
+  [AddCommMonoid N] [Module R N] (Q : QuadraticMap R M N)
+
+/-- The inclusion `SO(Q) →* O(Q)` is continuous, both groups carrying the subspace topology from
+the linear automorphism group. -/
+@[fun_prop]
+theorem _root_.QuadraticMap.continuous_specialOrthogonalToOrthogonal :
+    Continuous (_root_.QuadraticMap.specialOrthogonalToOrthogonal Q) :=
+  (Subgroup.continuous_inclusion (specialOrthogonalGroup_le_orthogonalGroup Q)).congr
+    fun g ↦ Subtype.ext (_root_.QuadraticMap.coe_specialOrthogonalToOrthogonal g).symm
+
+end Inclusion
 
 end QuadraticMap
 

@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.AlgebraicGeometry.Cover.Directed
 public import Mathlib.AlgebraicGeometry.Gluing
 public import TauCeti.Geometry.Toric.Algebraic.FaceLocalization
 
@@ -42,6 +43,8 @@ morphism of the associated toric schemes.
 * `TauCeti.Toric.Fan.affineToricChartι`: the open immersion of an affine toric chart into the
   toric scheme.
 * `TauCeti.Toric.Fan.exists_affineToricChartι_apply_eq`: the affine toric charts cover the toric
+  scheme.
+* `TauCeti.Toric.Fan.affineToricOpenCover`: the cone-indexed affine open cover of the toric
   scheme.
 * `TauCeti.Toric.Fan.affineToricChartι_eq_affineToricChartι_iff`: points of two
   charts are identified exactly along the chart of the intersection of the two cones.
@@ -285,6 +288,76 @@ theorem affineToricChartι_eq_affineToricChartι_iff
       affineToricOverlapLeft_comp_affineToricChartι,
       affineToricOverlapRight_comp_affineToricChartι]
 
+/-- The intersection of two affine cone opens is the affine open of the intersection cone. -/
+@[simp]
+theorem range_affineToricChartι_inter_range_affineToricChartι (σ τ : Φ.cones) :
+    Set.range (Φ.affineToricChartι σ) ∩ Set.range (Φ.affineToricChartι τ) =
+      Set.range (Φ.affineToricChartι (σ ⊓ τ)) := by
+  ext x
+  constructor
+  · rintro ⟨⟨y, rfl⟩, ⟨z, hz⟩⟩
+    obtain ⟨w, hw, _⟩ := (Φ.affineToricChartι_eq_affineToricChartι_iff y z).mp hz.symm
+    refine ⟨w, ?_⟩
+    rw [← Φ.affineToricOverlapLeft_comp_affineToricChartι σ τ, Scheme.Hom.comp_apply, hw]
+  · rintro ⟨w, rfl⟩
+    constructor
+    · exact ⟨Φ.affineToricOverlapLeft σ τ w, by
+        rw [← Scheme.Hom.comp_apply, Φ.affineToricOverlapLeft_comp_affineToricChartι]⟩
+    · exact ⟨Φ.affineToricOverlapRight σ τ w, by
+        rw [← Scheme.Hom.comp_apply, Φ.affineToricOverlapRight_comp_affineToricChartι]⟩
+
+/-- The canonical affine open cover of the scheme of a finite fan, indexed by its cones. -/
+-- Expose the cover so that its index type is the cone type in importing modules.
+@[expose]
+noncomputable def affineToricOpenCover : Φ.algebraicRealization.OpenCover :=
+  Scheme.Cover.mkOfCovers Φ.cones Φ.affineToricChart Φ.affineToricChartι
+    Φ.exists_affineToricChartι_apply_eq
+
+@[simp]
+theorem affineToricOpenCover_X (σ : Φ.cones) :
+    Φ.affineToricOpenCover.X σ = Φ.affineToricChart σ := (rfl)
+
+@[simp]
+theorem affineToricOpenCover_f (σ : Φ.cones) :
+    Φ.affineToricOpenCover.f σ = Φ.affineToricChartι σ := (rfl)
+
+/-- The cones of a fan index its affine toric open cover, ordered by inclusion. -/
+instance : Category Φ.affineToricOpenCover.I₀ := inferInstanceAs (Category Φ.cones)
+
+/-- The affine toric open cover is locally directed: its transition maps are the face morphisms,
+and the overlap of the charts of `σ` and `τ` is covered by the chart of `σ ⊓ τ`. -/
+noncomputable instance : Φ.affineToricOpenCover.LocallyDirected where
+  trans f := Φ.affineToricDiagram.map f
+  trans_id σ := Φ.affineToricDiagram.map_id σ
+  trans_comp f g := Φ.affineToricDiagram.map_comp f g
+  w {τ σ} f :=
+    faceAffineToricSchemeMap_comp_affineToricChartι (Φ := Φ) (τ := τ) (σ := σ)
+      (Φ.isFaceOf_of_le σ.2 τ.2 (leOfHom f))
+  directed {σ τ : Φ.cones} x := by
+    obtain ⟨z, hzσ, -⟩ := (Φ.affineToricChartι_eq_affineToricChartι_iff
+      (pullback.fst (Φ.affineToricChartι σ) (Φ.affineToricChartι τ) x)
+      (pullback.snd (Φ.affineToricChartι σ) (Φ.affineToricChartι τ) x)).1
+      congr($(pullback.condition (f := Φ.affineToricChartι σ) (g := Φ.affineToricChartι τ)) x)
+    refine ⟨(σ ⊓ τ : Φ.cones), (homOfLE inf_le_left : (σ ⊓ τ : Φ.cones) ⟶ σ),
+      (homOfLE inf_le_right : (σ ⊓ τ : Φ.cones) ⟶ τ), z, ?_⟩
+    -- The first projection of a pullback along an open immersion is injective.
+    apply (pullback.fst (Φ.affineToricChartι σ) (Φ.affineToricChartι τ)).isOpenEmbedding.injective
+    rw [affineToricOverlapLeft_def] at hzσ
+    refine Eq.trans ?_ hzσ
+    exact congr($(pullback.lift_fst
+      (Φ.affineToricDiagram.map (homOfLE inf_le_left : (σ ⊓ τ : Φ.cones) ⟶ σ))
+      (Φ.affineToricDiagram.map (homOfLE inf_le_right : (σ ⊓ τ : Φ.cones) ⟶ τ))
+      ((faceAffineToricSchemeMap_comp_affineToricChartι _).trans
+        (faceAffineToricSchemeMap_comp_affineToricChartι _).symm)) z)
+  property_trans f := isOpenImmersion_affineToricDiagram_map f
+
+/-- The transition maps of the affine toric open cover are the face morphisms. -/
+@[simp]
+theorem affineToricOpenCover_trans {τ σ : Φ.cones} (f : τ ⟶ σ) :
+    Φ.affineToricOpenCover.trans f =
+      faceAffineToricSchemeMap Φ.lattice (Φ.isFaceOf_of_le σ.2 τ.2 (leOfHom f)) :=
+  (rfl)
+
 end TauCeti.Toric.Fan
 
 /-! ### Morphisms of toric schemes -/
@@ -363,6 +436,19 @@ theorem affineToricChartι_comp_algebraicMap (f : FanHom Φ Ψ) (σ : Φ.cones) 
         Ψ.affineToricChartι ⟨f.leastCone σ.2, f.leastCone_mem σ.2⟩ := (by
   rw [← Fan.affineToricCocone_ι_app]
   exact Φ.isColimitAffineToricCocone.fac f.algebraicMapCocone σ)
+
+/-- If the least target cone containing the image of `σ` is `τ`, then on the chart of `σ` the
+global algebraic map is the affine toric map into the chart of `τ`, followed by that chart's
+inclusion. -/
+theorem affineToricChartι_comp_algebraicMap_of_leastCone_eq (f : FanHom Φ Ψ) (σ : Φ.cones)
+    (τ : Ψ.cones) (h : f.leastCone σ.2 = τ.1)
+    (hmaps : Set.MapsTo f.realMap (σ.1 : Set V) (τ.1 : Set V')) :
+    Φ.affineToricChartι σ ≫ f.algebraicMap =
+      affineToricSchemeMap Φ.lattice Ψ.lattice f.latticeMap f.realMap f.map_lattice hmaps ≫
+        Ψ.affineToricChartι τ := by
+  obtain ⟨τ, hτ⟩ := τ
+  subst h
+  rw [affineToricChartι_comp_algebraicMap, affineToricChartMap_def]
 
 /-- The algebraic map induced by the identity fan morphism is the identity. -/
 @[simp]

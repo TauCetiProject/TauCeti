@@ -11,6 +11,7 @@ public import TauCeti.RepresentationTheory.Homological.GroupHomology.Induced
 public import TauCeti.RepresentationTheory.Homological.TateCohomology.LowDegree
 public import TauCeti.RepresentationTheory.QuotSMulTop
 public import TauCeti.RepresentationTheory.RestrictScalars
+import TauCeti.RepresentationTheory.Coinduced
 
 /-!
 # Tate cohomology of modules induced and coinduced from the trivial subgroup
@@ -81,7 +82,7 @@ theorem isZero_coindBot_zero : IsZero (tateCohomology (coindBot k G X) 0) := by
         LinearMap.mem_range]
       -- An invariant function is constant, with value `c := y 1`.
       have hconst : ∀ h : G, (y.1).1 h = (y.1).1 1 := fun h ↦ by
-        have h1 := coindBot_ρ_apply_coe X h y.1 1
+        have h1 := Representation.coind_apply_coe_apply _ _ y.1 h 1
         rw [y.2 h, one_mul] at h1
         exact h1.symm
       -- The function supported at `1` with value `c` has norm the constant function `c`.
@@ -90,7 +91,7 @@ theorem isZero_coindBot_zero : IsZero (tateCohomology (coindBot k G X) 0) := by
       have hval : ∀ g : G, (((coindBot k G X).ρ g)
           ((coindBotEquivPi k G X).symm fun h ↦ if h = 1 then (y.1).1 1 else 0)).1 h =
             if h * g = 1 then (y.1).1 1 else 0 := fun g ↦ by
-        rw [coindBot_ρ_apply_coe, coindBotEquivPi_symm_apply_coe]
+        rw [Representation.coind_apply_coe_apply, coindBotEquivPi_symm_apply_coe]
       rw [hconst h]
       simp only [Representation.norm, LinearMap.sum_apply, Submodule.coe_sum, Finset.sum_apply,
         hval]
@@ -118,11 +119,11 @@ theorem isZero_coindBot_negOne : IsZero (tateCohomology (coindBot k G X) (-1)) :
         rw [hδ, coindBotEquivPi_symm_apply_coe]
       have hδ_apply : ∀ (g h : G) (x : X), (((coindBot k G X).ρ g) (δ x)).1 h =
           if h * g = 1 then x else 0 := fun g h x ↦ by
-        rw [coindBot_ρ_apply_coe, hδval]
+        rw [Representation.coind_apply_coe_apply, hδval]
       -- The norm of `y` vanishes, so the values of `y` sum to zero.
       have hsum : ∑ g : G, (y.1).1 g = 0 := by
         have hval : ∀ c : G, (((coindBot k G X).ρ c) y.1).1 1 = (y.1).1 c := fun c ↦ by
-          rw [coindBot_ρ_apply_coe, one_mul]
+          rw [Representation.coind_apply_coe_apply, one_mul]
         have h0 := congrArg (fun f : coindBot k G X ↦ f.1 1) y.2
         simp only [Representation.norm, LinearMap.sum_apply, Submodule.coe_sum, Finset.sum_apply,
           hval, ZeroMemClass.coe_zero, Pi.zero_apply] at h0
@@ -189,7 +190,7 @@ theorem map_eq_zero_of_hom_apply_eq_sum {A B : Rep k G} (f : A ⟶ B) (φ : A.V 
       refine Fintype.sum_equiv (Equiv.mulRight g) _ _ fun h ↦ ?_
       simp only [Equiv.coe_mulRight, ← Module.End.mul_apply, ← map_mul, mul_inv_rev,
         mul_inv_cancel_left]
-      rw [coindBot_ρ_apply_coe]
+      rw [Representation.coind_apply_coe_apply]
   have hfac : f = coindBotUnit A ≫ ψ := by
     ext x
     simp only [Representation.IntertwiningMap.coe_toLinearMap, Rep.comp_apply, hf, ψ, ψ₀,
@@ -244,7 +245,8 @@ theorem isZero_tensor_coindBot (M : Rep k G) (n : ℤ) :
   -- The `g`-th summand is the function supported at `g⁻¹` with value `f g⁻¹`.
   have hval : ∀ g : G, (((coindBot k G X).ρ g) (φ (((coindBot k G X).ρ g⁻¹) f))).1 h =
       if h * g = 1 then f.1 g⁻¹ else 0 := fun g ↦ by
-    rw [coindBot_ρ_apply_coe, hφ_coe, coindBot_ρ_apply_coe, one_mul, Pi.single_apply]
+    rw [Representation.coind_apply_coe_apply, hφ_coe, Representation.coind_apply_coe_apply, one_mul,
+      Pi.single_apply]
   simp only [Submodule.coe_sum, Finset.sum_apply, hval]
   rw [Finset.sum_eq_single h⁻¹ (fun g _ hg ↦ ite_eq_right fun H ↦ hg (eq_inv_of_mul_eq_one_right H))
     (fun H ↦ (H (Finset.mem_univ _)).elim)]

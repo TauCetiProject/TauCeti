@@ -10,6 +10,7 @@ public import TauCeti.RepresentationTheory.Quiver.Zigzag.Componentwise.Basic
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Exterior
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Monodromy
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Skew.VertexFixing
+import Mathlib.Tactic.LinearCombination
 
 /-!
 # The skew-zigzag algebras of the cycles

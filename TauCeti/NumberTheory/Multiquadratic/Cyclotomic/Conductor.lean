@@ -8,6 +8,7 @@ module
 public import TauCeti.NumberTheory.Multiquadratic.Cyclotomic.FundamentalDiscriminant
 public import TauCeti.NumberTheory.Multiquadratic.Cyclotomic.QuadraticCharacter
 public import TauCeti.NumberTheory.NumberField.Cyclotomic.GaussSum
+import Mathlib.RingTheory.Prime
 import Mathlib.RingTheory.RootsOfUnity.AlgebraicallyClosed
 import Mathlib.Analysis.Complex.Polynomial.Basic
 

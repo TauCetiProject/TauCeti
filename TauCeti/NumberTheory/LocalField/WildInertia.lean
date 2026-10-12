@@ -8,12 +8,13 @@ module
 public import TauCeti.NumberTheory.LocalField.Unramified.Inertia.Basic
 public import TauCeti.NumberTheory.LocalField.Uniformizer
 public import TauCeti.Topology.Algebra.Group.Profinite.Sylow.Basic
+public import TauCeti.NumberTheory.LocalField.TamelyRamified.NormalClosure
 import TauCeti.Algebra.CharP.LocalRing
-import TauCeti.NumberTheory.LocalField.TamelyRamified
 import TauCeti.NumberTheory.LocalField.UnitFiltration.Pow
 import TauCeti.NumberTheory.LocalField.UnitFiltration.RamificationGroup
 import TauCeti.NumberTheory.LocalField.UnitsDecomposition
 import TauCeti.NumberTheory.LocalField.Unramified.Inertia.Finite
+import TauCeti.Topology.Algebra.Group.Profinite.ProP.Burnside
 import TauCeti.Topology.Algebra.Group.Profinite.ProP.Subgroup
 import TauCeti.Topology.Algebra.Group.Profinite.Sylow.Conjugacy
 import TauCeti.Topology.Algebra.Group.Profinite.Sylow.Functoriality
@@ -53,6 +54,12 @@ Restriction to a finite Galois subextension `L` maps `I_K` onto the inertia grou
 and a continuous surjection carries a Sylow pro-`p` subgroup onto a Sylow subgroup; since `G_1` is
 the unique Sylow `p`-subgroup of `G_0`, the image of `P_K` is all of `G_1`. Consequently `L` lies
 in `K^{t}` exactly when `G_1` of `L/K` is trivial, that is, exactly when `L/K` is tamely ramified.
+Passing to the normal closure extends the containment criterion to all finite separable
+subextensions, since the normal closure of a tame extension is tame.
+
+Being a normal pro-`p` subgroup, `P_K` can be discarded when counting topological generators of
+`G_K`, up to its commutator subgroup: by the Frattini argument along `P_K`, a set generating `G_K`
+modulo `⁅P_K, P_K⁆` already generates `G_K`.
 
 ## Main definitions
 
@@ -77,9 +84,11 @@ in `K^{t}` exactly when `G_1` of `L/K` is trivial, that is, exactly when `L/K` i
 * `TauCeti.isProPSylow_wildInertiaSubgroup` and
   `TauCeti.eq_subgroupOf_wildInertiaSubgroup_of_isProPSylow`: `P_K` is the unique Sylow pro-`p`
   subgroup of `I_K`.
+* `TauCeti.topologicalClosure_eq_top_of_sup_wildInertiaCommutator`: a set topologically generating
+  `G_K` together with `⁅P_K, P_K⁆` topologically generates `G_K`.
 * `TauCeti.map_wildInertiaSubgroup_restrictNormalHom`: the image of `P_K` in the Galois group of a
   finite Galois subextension `L` is the first lower ramification group `G_1` of `L/K`.
-* `TauCeti.le_maximalTameExtension_iff`: a finite Galois subextension `L` lies in `K^{t}` exactly
+* `TauCeti.le_maximalTameExtension_iff`: a finite separable subextension `L` lies in `K^{t}` exactly
   when `L/K` is tamely ramified.
 * `TauCeti.mem_wildInertiaSubgroup_iff_of_isUniformizer`: `σ ∈ P_K` exactly when `σ ∈ I_K` and `σ`
   fixes every `m`-th root of a given uniformizer, for `p ∤ m`.
@@ -87,7 +96,9 @@ in `K^{t}` exactly when `G_1` of `L/K` is trivial, that is, exactly when `L/K` i
 ## References
 
 * [J.-P. Serre, *Corps Locaux*][serre1968], Chapter IV, §2.
-* J. Neukirch, A. Schmidt, K. Wingberg, *Cohomology of Number Fields*, Chapter VII, §5.
+* J. Neukirch, *Algebraic Number Theory*, Chapter II, §7.
+* J. Neukirch, A. Schmidt, K. Wingberg, *Cohomology of Number Fields*, (3.9.1) and Chapter VII,
+  §5.
 -/
 
 public section
@@ -570,6 +581,20 @@ theorem eq_subgroupOf_wildInertiaSubgroup_of_isProPSylow {Q : Subgroup (inertiaS
   exact (IsProPSylow.eq_of_normal p _ _ _ (isProPSylow_wildInertiaSubgroup K p) hQ
     Subgroup.normal_subgroupOf).symm
 
+/-! ### The Frattini argument along wild inertia -/
+
+variable {K} in
+/-- **Relative Frattini reduction along wild inertia** (NSW (3.9.1)). A set which topologically
+generates `G_K` together with the commutator subgroup `⁅P_K, P_K⁆` of wild inertia already
+topologically generates `G_K`. -/
+theorem topologicalClosure_eq_top_of_sup_wildInertiaCommutator
+    {s : Set (Field.absoluteGaloisGroup K)}
+    (hs : (Subgroup.closure s ⊔
+      ⁅wildInertiaSubgroup K, wildInertiaSubgroup K⁆).topologicalClosure = ⊤) :
+    (Subgroup.closure s).topologicalClosure = ⊤ := by
+  have : Fact (ringChar 𝓀[K]).Prime := ⟨CharP.char_is_prime 𝓀[K] _⟩
+  exact (isProP_wildInertiaSubgroup K _).topologicalClosure_eq_top_of_sup_commutator hs
+
 /-! ### The image of wild inertia at finite level -/
 
 variable {K}
@@ -626,7 +651,7 @@ theorem exists_mem_wildInertiaSubgroup_restrictNormal_eq {τ : Gal(L/K)}
 
 /-- **The tame criterion at finite level.** A finite Galois subextension `L` of `K^{alg}/K` lies
 in the maximal tamely ramified extension `K^{t}` exactly when `L/K` is tamely ramified. -/
-theorem le_maximalTameExtension_iff :
+private theorem le_maximalTameExtension_iff_of_isGalois :
     L ≤ maximalTameExtension K (AlgebraicClosure K) ↔ IsTamelyRamified K L := by
   set T := maximalTameExtension K (AlgebraicClosure K)
   -- `P_K` fixes `L` exactly when its image `G_1(L/K)` in `Gal(L/K)` is trivial.
@@ -644,5 +669,22 @@ theorem le_maximalTameExtension_iff :
   have hT : T ≤ separableClosure K (AlgebraicClosure K) := le_separableClosure _ _ T
   rw [← lift_restrict hT, ← fixedField_fixingSubgroup_lift_inf_separableClosure, lift_restrict]
   exact le_inf ((le_iff_le _ _).2 h) (le_separableClosure _ _ L)
+
+omit [IsGalois K L] in
+/-- **The tame criterion at finite level.** A finite separable subextension of the algebraic
+closure lies in the maximal tamely ramified extension exactly when it is tamely ramified.
+The local-field structures may be any structures compatible with the base. -/
+@[simp]
+theorem le_maximalTameExtension_iff [Algebra.IsSeparable K L] :
+    L ≤ maximalTameExtension K (AlgebraicClosure K) ↔ IsTamelyRamified K L := by
+  let N := IntermediateField.normalClosure K L (AlgebraicClosure K)
+  let _ := finiteIntermediateFieldValuativeRel K (AlgebraicClosure K) N
+  let _ := finiteIntermediateFieldTopology K (AlgebraicClosure K) N
+  have := finiteIntermediateField_isNonarchimedeanLocalField K (AlgebraicClosure K) N
+  have := finiteIntermediateField_valuativeExtension K (AlgebraicClosure K) N
+  have : IsGalois K N := ⟨⟩
+  have : ValuativeExtension L N := (IsScalarTower.toAlgHom K L N).valuativeExtension
+  rw [← normalClosure_le_iff_of_normal, le_maximalTameExtension_iff_of_isGalois N]
+  exact ⟨fun h ↦ h.tower_bot (L := L), fun h ↦ h.normalClosure⟩
 
 end TauCeti

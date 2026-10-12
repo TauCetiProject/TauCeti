@@ -82,7 +82,7 @@ jobs:
     # Re-pin together with the other two callers and .github/actions/checkout-merge-policy
     # (scripts/test_workflow_pins.py checks they agree). The called workflow checks out its own
     # commit, so no review_ref is passed.
-    uses: TauCetiProject/TauCetiReview/.github/workflows/review.yml@be3717ec5f5b525689e17f7f20e3d8ac48d13256
+    uses: TauCetiProject/TauCetiReview/.github/workflows/review.yml@17b59b39a44a15aaa7ee3913653b82b1112e5f92
     with:
       pr: ${{ needs.resolve.outputs.pr }}
       trigger: ${{ github.event_name }}

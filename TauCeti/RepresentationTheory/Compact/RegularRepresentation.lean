@@ -10,6 +10,7 @@ public import TauCeti.RepresentationTheory.Continuous.Unitary.Basic
 public import TauCeti.MeasureTheory.Function.Lp.CompMeasurePreservingEquiv
 public import Mathlib.MeasureTheory.Function.L2Space
 public import Mathlib.MeasureTheory.Function.LpSpace.DomAct.Continuous
+import Mathlib.MeasureTheory.Function.LpSpace.ContinuousCompMeasurePreserving
 
 /-!
 # The regular representations of a compact group on `L²(G)`

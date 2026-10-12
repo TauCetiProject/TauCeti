@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.ClassGroup.Basic
+public import Mathlib.RingTheory.ClassGroup.ExtendedHom
 
 import TauCeti.RingTheory.FractionalIdeal.Operations
 
@@ -36,8 +36,6 @@ compute it on ideal classes.
   `(R ≃+* R) →* MulAut (ClassGroup R)`.
 * `ClassGroup.mulEquiv_involutive`: an involutive ring equivalence acts involutively on the class
   group.
-* `ClassGroup.mulEquiv_mk0`: the induced class-group equivalence sends the class `ClassGroup.mk0 I`
-  of a nonzero ideal to the class of its pushforward ideal `Ideal.map f I`.
 * `ClassGroup.mulEquiv_apply_eq_inv_of_isPrincipal_mul_map`: if `I · (Ideal.map f I)` is principal
   for every nonzero ideal, the induced class-group map is inversion `C ↦ C⁻¹`.
 -/
@@ -61,14 +59,29 @@ arbitrary fraction fields. -/
     ClassGroup.mulEquiv f (ClassGroup.mk (FractionRing R) I) =
       ClassGroup.mk (FractionRing S)
         (Units.mapEquiv (FractionalIdeal.ringEquivOfRingEquiv
-          (FractionRing R) (FractionRing S) f) I) := by
-  apply (ClassGroup.equiv (FractionRing S)).injective
-  erw [ClassGroup.mulEquiv_apply]
-  rw [MulEquiv.apply_symm_apply, ClassGroup.equiv_mk, ClassGroup.equiv_mk]
-  erw [QuotientGroup.congr_mk']
-  apply congrArg (QuotientGroup.mk' (toPrincipalIdeal S (FractionRing S)).range)
+          (FractionRing R) (FractionRing S) f).toMulEquiv I) := by
+  erw [← ClassGroup.Quot_mk_eq_mk, ← ClassGroup.Quot_mk_eq_mk,
+    ClassGroup.mulEquiv_apply, ClassGroup.map_quotientMk]
+  -- Compare the unit representatives of the quotient classes.
+  congr 1
   apply Units.ext
-  simp [FractionalIdeal.canonicalEquiv_self]
+  simp only [Units.coe_map, Units.coe_mapEquiv, MonoidHom.coe_ofClass,
+    RingHom.toMonoidHom_eq_coe, RingEquiv.toMulEquiv_eq_coe, RingEquiv.coe_toMulEquiv]
+  apply FractionalIdeal.coeToSubmodule_injective
+  -- The injectivity lemma leaves the coercions applied as anonymous functions.
+  -- Reduce these applications to expose the underlying submodules for the named rewrites.
+  dsimp only
+  rw [FractionalIdeal.extendedHom'_apply, FractionalIdeal.coe_extended_eq_span,
+    ← FractionalIdeal.val_eq_coe, FractionalIdeal.ringEquivOfRingEquiv_apply_val]
+  simp only [FractionalIdeal.val_eq_coe]
+  rw [← Submodule.span_eq (I : Submodule R (FractionRing R)), Submodule.map_span]
+  apply congrArg (Submodule.span S)
+  apply congrArg (fun g : FractionRing R → FractionRing S ↦ g '' (I : Set (FractionRing R)))
+  funext x
+  -- `erw` aligns the inverse-map instances for `f.symm.symm` with those for `f`.
+  erw [LinearEquiv.coe_toLinearMap]
+  rw [IsFractionRing.semilinearEquivOfRingEquiv_apply,
+    IsFractionRing.ringEquivOfRingEquiv_apply]
 
 /-- `ClassGroup.mulEquiv f` sends the class of a unit fractional ideal `I` to the class of its
 image under `FractionalIdeal.ringEquivOfRingEquiv f`. This is independent of the chosen fraction
@@ -78,7 +91,7 @@ theorem mulEquiv_mk {K : Type*} (L : Type*) [Field K] [Field L] [Algebra R K]
     (I : (FractionalIdeal R⁰ K)ˣ) :
     ClassGroup.mulEquiv f (ClassGroup.mk K I) =
       ClassGroup.mk L
-        (Units.mapEquiv (FractionalIdeal.ringEquivOfRingEquiv K L f) I) := by
+        (Units.mapEquiv (FractionalIdeal.ringEquivOfRingEquiv K L f).toMulEquiv I) := by
   rw [← ClassGroup.mk_canonicalEquiv (K := K) (FractionRing R) I,
     mulEquiv_mk_fractionRing]
   rw [← ClassGroup.mk_canonicalEquiv (K := FractionRing S) L]
@@ -98,7 +111,7 @@ theorem mulEquiv_mk {K : Type*} (L : Type*) [Field K] [Field L] [Algebra R K]
       ← FractionalIdeal.ringEquivOfRingEquiv_trans_apply K (FractionRing S) L, hf]
   simpa only [Units.coe_mapEquiv, Units.coe_map,
     FractionalIdeal.canonicalEquiv_eq_ringEquivOfRingEquiv, MonoidHom.coe_ofClass,
-    RingEquiv.coe_toMulEquiv] using key I
+    RingEquiv.toMulEquiv_eq_coe, RingEquiv.coe_toMulEquiv] using key I
 
 /-- The identity ring equivalence induces the identity class-group equivalence. -/
 @[simp] theorem mulEquiv_refl :
@@ -188,26 +201,7 @@ end ClassGroup
 
 namespace ClassGroup
 
-variable {R R' : Type*} [CommRing R] [CommRing R']
-
-/-- **The class-group map induced by a ring isomorphism, on ideal classes.** For a ring isomorphism
-`f : R ≃+* R'` of Dedekind domains, `ClassGroup.mulEquiv f` sends the class of a nonzero ideal `I`
-to the class of its pushforward `Ideal.map f I`. This is the bridge between the abstract functorial
-action `ClassGroup.mulEquiv` and the concrete pushforward of ideals. -/
-@[simp high] theorem mulEquiv_mk0 [IsDedekindDomain R] [IsDedekindDomain R'] (f : R ≃+* R')
-    (I : (Ideal R)⁰) :
-    ClassGroup.mulEquiv f (ClassGroup.mk0 I) =
-      ClassGroup.mk0 ⟨Ideal.map (f : R →+* R') (I : Ideal R), mem_nonZeroDivisors_iff_ne_zero.mpr
-        (by rw [ne_eq, Ideal.zero_eq_bot,
-              Ideal.map_eq_bot_iff_of_injective (f := (f : R →+* R')) f.injective,
-              ← Ideal.zero_eq_bot]
-            exact mem_nonZeroDivisors_iff_ne_zero.mp I.2)⟩ := by
-  rw [← ClassGroup.mk_mk0 (FractionRing R) I, ClassGroup.mulEquiv_mk_fractionRing,
-    ← ClassGroup.mk_mk0 (FractionRing R')]
-  congr 1
-  apply Units.ext
-  simp only [Units.coe_mapEquiv, FractionalIdeal.coe_mk0, RingEquiv.coe_toMulEquiv]
-  exact FractionalIdeal.ringEquivOfRingEquiv_coeIdeal (FractionRing R) (FractionRing R') f I
+variable {R : Type*} [CommRing R]
 
 /-- **Inversion criterion for the class-group action.** If a ring automorphism `f : R ≃+* R` of a
 Dedekind domain makes `I · (Ideal.map f I)` principal for every nonzero ideal `I`, then the induced

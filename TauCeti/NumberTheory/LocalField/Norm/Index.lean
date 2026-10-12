@@ -7,7 +7,7 @@ module
 
 public import TauCeti.NumberTheory.LocalField.Norm.AfterBreak
 import TauCeti.GroupTheory.QuotientGroup.Index
-import TauCeti.NumberTheory.LocalField.TamelyRamified
+import TauCeti.NumberTheory.LocalField.TamelyRamified.Basic
 
 /-!
 # Norm indices around a prime-degree ramification break

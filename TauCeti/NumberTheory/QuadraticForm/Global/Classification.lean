@@ -39,6 +39,8 @@ In global notation, the two exceptions of the local realization theorem
 
 ## Main results
 
+* `formClass_atFinitePlace`: the class of the localization of a form at a finite place is the
+  scalar extension of the class of the form.
 * `atFinitePlace_equivalent_iff_finrank_eq_and_discr_eq_and_finiteHasse_eq`: the localization of
   a global form at a finite place is isometric to a regular local form exactly when their ranks,
   discriminants and Hasse invariants agree.
@@ -76,7 +78,7 @@ variable {W : Type w} [AddCommGroup W] [Module K W] [FiniteDimensional K W]
 
 /-- The class of the localization of a form at a finite place is the scalar extension of the class
 of the form. -/
-private theorem formClass_atFinitePlace (Q : _root_.QuadraticForm K V) (hQ : Q.Nondegenerate)
+theorem formClass_atFinitePlace (Q : _root_.QuadraticForm K V) (hQ : Q.Nondegenerate)
     (v : HeightOneSpectrum (𝓞 K)) :
     formClass (Q.atFinitePlace v) (Nondegenerate.atFinitePlace hQ v) =
       RegularFormClass.baseChange (v.adicCompletion K) (formClass Q hQ) := by

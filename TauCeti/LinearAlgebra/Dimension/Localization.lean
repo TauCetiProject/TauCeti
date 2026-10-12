@@ -10,6 +10,7 @@ public import Mathlib.LinearAlgebra.TensorProduct.Tower
 public import Mathlib.RingTheory.Localization.BaseChange
 import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 import Mathlib.RingTheory.Flat.Localization
+import TauCeti.Algebra.Module.LocalizedModule.Lift
 
 /-!
 # The rank of a module tensored with a localization
@@ -29,6 +30,11 @@ isomorphism. This is how an integral lattice of full rank in a module computes i
 rationalization. The map may be linear over any `R`-algebra `A`, and its rationalization is then
 `A`-linear for the module structure of `TensorProduct.AlgebraTensorModule` on the left factor.
 
+In the other direction, an `A`-linear map of rationalizations `M ⊗ Q → N ⊗ Q` becomes integral
+after multiplying by a non-zero-divisor of `R`, provided `M` is finitely generated over `A` and
+`N` is torsion-free. So a rational embedding of lattices restricts, after scaling, to an integral
+embedding.
+
 ## Main results
 
 * `TauCeti.IsLocalization.finrank_tensorProduct`: `finrank R (M ⊗[R] A) = finrank R M` for a
@@ -36,6 +42,12 @@ rationalization. The map may be linear over any `R`-algebra `A`, and its rationa
 * `TauCeti.IsFractionRing.rTensor_bijective_of_injective_of_finrank_eq`: an injective linear map
   `f : M → N` with `N` finite and `finrank R M = finrank R N` over a domain `R` becomes bijective
   after tensoring with the field of fractions of `R`.
+* `TauCeti.IsFractionRing.tmul_one_injective`: a torsion-free module embeds in its
+  rationalization.
+* `TauCeti.IsFractionRing.exists_linearMap_tmul_one_eq_smul`: a multiple of an `A`-linear map of
+  rationalizations by a non-zero-divisor is the rationalization of an `A`-linear map.
+* `TauCeti.IsFractionRing.exists_injective_linearMap_of_injective`: an injective `A`-linear map of
+  rationalizations of torsion-free modules gives an injective `A`-linear map of the modules.
 -/
 
 public section
@@ -93,5 +105,60 @@ theorem rTensor_bijective_of_injective_of_finrank_eq (f : M →ₗ[A] N)
   rw [this]
   exact ((TensorProduct.comm R Q N).bijective.comp ⟨hg, hg'⟩).comp
     (TensorProduct.comm R M Q).bijective
+
+end TauCeti.IsFractionRing
+
+namespace TauCeti.IsFractionRing
+
+open scoped TensorProduct nonZeroDivisors
+
+variable {R : Type*} [CommRing R] (Q : Type*) [CommRing Q] [Algebra R Q] [IsFractionRing R Q]
+  {A : Type*} [Ring A] [Algebra R A]
+  {M N : Type*} [AddCommGroup M] [Module R M] [Module A M] [IsScalarTower R A M]
+  [AddCommGroup N] [Module R N] [Module A N] [IsScalarTower R A N]
+
+/-- A torsion-free module embeds in its rationalization: `m ↦ m ⊗ 1` is injective, since it is the
+localization of `M` at the non-zero-divisors of `R`. -/
+theorem tmul_one_injective [Module.IsTorsionFree R M] :
+    Function.Injective fun m : M ↦ m ⊗ₜ[R] (1 : Q) := by
+  have h := (IsLocalizedModule.injective_iff_isRegular R⁰
+    ((TensorProduct.comm R Q M).toLinearMap ∘ₗ TensorProduct.mk R Q M 1)).mpr
+      fun c ↦ IsRegular.isSMulRegular (isRegular_iff_mem_nonZeroDivisors.mpr c.2)
+  simpa [Function.comp_def] using h
+
+/-- **Clearing denominators of a rational map.** Let `R` have field of fractions `Q`, let `A` be an
+`R`-algebra, and let `φ : M ⊗ Q → N ⊗ Q` be `A`-linear, where `M` is finitely generated over `A`
+and `N` is torsion-free over `R`. Then some multiple `s • φ` by a non-zero-divisor `s` of `R` is
+the rationalization of an `A`-linear map `f : M → N`, in the sense that
+`f m ⊗ 1 = s • φ (m ⊗ 1)`. -/
+theorem exists_linearMap_tmul_one_eq_smul [Module.Finite A M] [Module.IsTorsionFree R N]
+    (φ : M ⊗[R] Q →ₗ[A] N ⊗[R] Q) :
+    ∃ s ∈ R⁰, ∃ f : M →ₗ[A] N, ∀ m, f m ⊗ₜ[R] (1 : Q) = s • φ (m ⊗ₜ 1) := by
+  -- `n ↦ n ⊗ 1` is the localization of `N` at the non-zero-divisors, and it is injective because
+  -- `N` is torsion-free, so the values of `φ` on `M` lift to `N` after clearing denominators.
+  let ι : N →ₗ[A] N ⊗[R] Q := (TensorProduct.AlgebraTensorModule.mk R A N Q).flip 1
+  have : IsLocalizedModule R⁰ (ι.restrictScalars R) := by
+    have : ι.restrictScalars R =
+        (TensorProduct.comm R Q N).toLinearMap ∘ₗ TensorProduct.mk R Q N 1 := by
+      ext n
+      simp [ι]
+    rw [this]
+    infer_instance
+  obtain ⟨f, s, hf⟩ := Module.Finite.exists_lift_of_isLocalizedModule_of_injective R⁰
+    (g := ι) (tmul_one_injective Q) (φ ∘ₗ (TensorProduct.AlgebraTensorModule.mk R A M Q).flip 1)
+  exact ⟨s, s.2, f, fun m ↦ by simpa [ι, Submonoid.smul_def] using congr($hf m)⟩
+
+/-- **Rational embeddings of lattices come from integral ones.** If `M` is finitely generated over
+the `R`-algebra `A`, both `M` and `N` are torsion-free over `R`, and some `A`-linear map of
+rationalizations `M ⊗ Q → N ⊗ Q` is injective, then so is some `A`-linear map `M → N`. -/
+theorem exists_injective_linearMap_of_injective [Module.Finite A M] [Module.IsTorsionFree R M]
+    [Module.IsTorsionFree R N] (φ : M ⊗[R] Q →ₗ[A] N ⊗[R] Q) (hφ : Function.Injective φ) :
+    ∃ f : M →ₗ[A] N, Function.Injective f := by
+  obtain ⟨s, hs, f, hf⟩ := exists_linearMap_tmul_one_eq_smul Q φ
+  have key (m : M) : φ ((s • m) ⊗ₜ 1) = f m ⊗ₜ 1 := by
+    rw [← TensorProduct.smul_tmul', LinearMap.map_smul_of_tower, hf]
+  refine ⟨f, fun m m' hmm' ↦ IsRegular.isSMulRegular (isRegular_iff_mem_nonZeroDivisors.mpr hs)
+    (tmul_one_injective Q (hφ ?_))⟩
+  simp only [key, hmm']
 
 end TauCeti.IsFractionRing

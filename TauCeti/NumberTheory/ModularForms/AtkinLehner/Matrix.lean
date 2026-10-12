@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.ModularForms.CongruenceSubgroups
-public import TauCeti.Data.Nat.ExactDivisor
+public import TauCeti.Data.ZMod.ExactDivisor
 
 -- `mem_Gamma0_iff_dvd`, used only inside proofs.
 import TauCeti.NumberTheory.ModularForms.CongruenceSubgroups.Basic
@@ -45,16 +45,26 @@ Atkin–Lehner matrix for `Q` and one for `R` is an Atkin–Lehner matrix for `Q
 an exact divisor (`TauCeti.Nat.IsExactDivisor.mul`), so the exact-divisor members of the family are
 closed under coprime products. Squaring stays inside `Γ₀(N)` up to the scalar `Q`
 (`exists_mem_Gamma0_mul_self`) — the matrix-level source of the involution `𝒲_Q ^ 2 = 1` in even
-weight.
+weight. The diamond label of `W ^ 2 / Q` is `-1` modulo `Q`, and `Q` times it is `W₁₁ ^ 2` modulo
+`N`; this is what the square of `W_Q` on a nebentypus space is computed from.
+
+Moving `γ ∈ Γ₀(N)` across `W`, as `γ W = W δ`, does not preserve the lower-right entry `s` of `γ`
+modulo `N`, which is the diamond label of `γ`: the lower-right entry of `δ` is `s⁻¹` modulo `Q` and
+`s` modulo `N / Q`. In terms of the idempotent `e_Q` of `ZMod N` it is `e_Q s⁻¹ + (1 - e_Q) s`,
+because the reduced determinant equation of `W` reads `-m b c ≡ e_Q` and `Q a d ≡ 1 - e_Q`. So `W`
+normalizes `Γ₁(N)` too, and acts on the diamond labels through `Nat.IsExactDivisor.unitsInvPart`.
 
 ## Main definitions
 
 * `TauCeti.IsAtkinLehnerMatrix`: the predicate above.
 * `TauCeti.atkinLehnerMatrix`: the Bézout witness `!![Q * x, -y; N, Q]`.
+* `TauCeti.atkinLiMatrix`: the witness `!![Q, 1; N * z, Q * w]` normalized as by Atkin and Li,
+  with lower-right entry `1` modulo `N / Q`.
 
 ## Main results
 
-* `TauCeti.isAtkinLehnerMatrix_atkinLehnerMatrix`: the witness works, for every exact divisor.
+* `TauCeti.isAtkinLehnerMatrix_atkinLehnerMatrix`, `TauCeti.isAtkinLehnerMatrix_atkinLiMatrix`:
+  the witnesses work, for every exact divisor.
 * `TauCeti.isAtkinLehnerMatrix_one_iff_mem_Gamma0`, `TauCeti.isAtkinLehnerMatrix_fricke`: the two
   degenerate members, `Q = 1` and `Q = N`.
 * `TauCeti.IsAtkinLehnerMatrix.mul_left`, `TauCeti.IsAtkinLehnerMatrix.mul_right`: the family is
@@ -66,7 +76,17 @@ weight.
   `TauCeti.IsAtkinLehnerMatrix.exists_mem_Gamma0_mul_eq_mul_right`: `W` normalizes `Γ₀(N)`, with
   the new element of `Γ₀(N)` produced on the left and on the right respectively.
 * `TauCeti.IsAtkinLehnerMatrix.exists_mem_Gamma0_mul_self`: `W ^ 2 = Q • γ` with `γ ∈ Γ₀(N)`.
+* `TauCeti.IsAtkinLehnerMatrix.toHomUnits_gamma0Map_of_mul_self_eq`: the diamond label of that `γ`
+  is the unit that is `-1` modulo `Q` and satisfies `Q * u = W₁₁ ^ 2` modulo `N`; under the
+  Atkin–Li normalization it is `Q⁻¹` modulo `N / Q`
+  (`TauCeti.IsAtkinLehnerMatrix.unitsMap_div_toHomUnits_gamma0Map_of_mul_self_eq`), so a split
+  character takes the value `χ_Q(-1) χ_{N/Q}(Q)⁻¹` on it
+  (`TauCeti.IsAtkinLehnerMatrix.mul_comp_unitsMap_toHomUnits_gamma0Map_of_mul_self_eq`).
 * `TauCeti.IsAtkinLehnerMatrix.mul`: the multiplicativity of the family in the divisor.
+* `TauCeti.IsAtkinLehnerMatrix.isExactDivisor`: a divisor of the level that carries an
+  Atkin–Lehner matrix is an exact divisor.
+* `TauCeti.IsAtkinLehnerMatrix.toHomUnits_gamma0Map_of_mul_eq_mul`: moving `γ ∈ Γ₀(N)` across `W`
+  inverts the residue modulo `Q` of its lower-right entry and keeps its residue modulo `N / Q`.
 
 ## Relation to the Atkin–Lehner anti-involution
 
@@ -164,6 +184,44 @@ theorem isAtkinLehnerMatrix_atkinLehnerMatrix (h : Q ∥ N) :
     rw [atkinLehnerMatrix, hN]
     norm_num
   rwa [this]
+
+/-- **The Atkin–Li normalized Atkin–Lehner matrix** `!![Q, 1; N * z, Q * w]`, where
+`Q * w - (N / Q) * z = 1`: in the notation `!![Q * x, y; N * z, Q * w]` of Atkin and Li it has
+`x = 1` and `y = 1`, so `x ≡ 1` modulo `N / Q` and `y ≡ 1` modulo `Q`. Its lower-right entry
+`Q * w` is `1` modulo `N / Q` (`intCast_atkinLiMatrix_one_one`), which is the normalization under
+which the square of `W_Q` on a nebentypus space is the constant `Q ^ (k - 2) χ_Q(-1) χ_{N/Q}(Q)⁻¹`.
+It is an Atkin–Lehner matrix for every exact divisor `Q` of `N`
+(`isAtkinLehnerMatrix_atkinLiMatrix`). -/
+def atkinLiMatrix (N Q : ℕ) : Matrix (Fin 2) (Fin 2) ℤ :=
+  !![(Q : ℤ), 1; -(N : ℤ) * Nat.gcdB Q (N / Q), (Q : ℤ) * Nat.gcdA Q (N / Q)]
+
+/-- **The Atkin–Li matrix is an Atkin–Lehner matrix**, for every exact divisor `Q` of `N`. -/
+theorem isAtkinLehnerMatrix_atkinLiMatrix (h : Q ∥ N) :
+    IsAtkinLehnerMatrix N Q (atkinLiMatrix N Q) := by
+  have hbez : (1 : ℤ) = Q * Nat.gcdA Q (N / Q) + (N / Q : ℕ) * Nat.gcdB Q (N / Q) := by
+    have := Nat.gcd_eq_gcd_ab Q (N / Q)
+    rwa [h.coprime, Nat.cast_one] at this
+  have hm : N = Q * (N / Q) := (Nat.mul_div_cancel' h.dvd).symm
+  have key := isAtkinLehnerMatrix_of_entries hm 1 1 (-Nat.gcdB Q (N / Q)) (Nat.gcdA Q (N / Q))
+    (by linear_combination -hbez)
+  have : atkinLiMatrix N Q =
+      !![(Q : ℤ) * 1, 1; (Q : ℤ) * ((N / Q : ℕ) : ℤ) * -Nat.gcdB Q (N / Q),
+        (Q : ℤ) * Nat.gcdA Q (N / Q)] := by
+    have hN : (N : ℤ) = (Q : ℤ) * ((N / Q : ℕ) : ℤ) := by
+      exact_mod_cast congrArg (Nat.cast : ℕ → ℤ) hm
+    rw [atkinLiMatrix, hN]
+    norm_num
+  rwa [this]
+
+/-- **The lower-right entry of the Atkin–Li matrix is `1` modulo `N / Q`.** -/
+theorem intCast_atkinLiMatrix_one_one (h : Q ∥ N) :
+    ((atkinLiMatrix N Q 1 1 : ℤ) : ZMod (N / Q)) = 1 := by
+  have hbez : (1 : ℤ) = Q * Nat.gcdA Q (N / Q) + (N / Q : ℕ) * Nat.gcdB Q (N / Q) := by
+    have := Nat.gcd_eq_gcd_ab Q (N / Q)
+    rwa [h.coprime, Nat.cast_one] at this
+  have h11 : atkinLiMatrix N Q 1 1 = Q * Nat.gcdA Q (N / Q) := rfl
+  rw [h11, eq_sub_of_add_eq hbez.symm, Int.cast_sub, Int.cast_one, Int.cast_mul,
+    Int.cast_natCast, ZMod.natCast_self, zero_mul, sub_zero]
 
 /-- **At `Q = 1` the Atkin–Lehner matrices are exactly `Γ₀(N)`.** The corresponding operator is
 the identity, which is why the family is indexed by exact divisors up to this normalization. -/
@@ -339,5 +397,186 @@ theorem IsAtkinLehnerMatrix.mul (hQRN : Q * R ∣ N)
     rw [hmul]
     exact mul_dvd_mul h.dvd_apply_one_one h'.dvd_apply_one_one
   · rw [Matrix.det_mul, h.det_eq, h'.det_eq, hmul]
+
+/-- **A divisor carrying an Atkin–Lehner matrix is an exact divisor**: for `Q ∣ N`, the reduced
+determinant equation `Q * (a * d) - (N / Q) * (b * c) = 1` is a Bézout relation between `Q` and
+`N / Q`. The hypothesis `Q ∣ N` is needed, since `IsAtkinLehnerMatrix` does not force it:
+`!![3, 3; 2, 3]` satisfies `IsAtkinLehnerMatrix 2 3`. -/
+theorem IsAtkinLehnerMatrix.isExactDivisor (hQ : Q ≠ 0) (hQN : Q ∣ N)
+    (h : IsAtkinLehnerMatrix N Q M) : Q ∥ N := by
+  obtain ⟨m, hm⟩ := hQN
+  obtain ⟨a, b, c, d, -, hred⟩ := h.exists_entries hQ hm
+  refine ⟨⟨m, hm⟩, ?_⟩
+  rw [hm, Nat.mul_div_cancel_left m (Nat.pos_of_ne_zero hQ), ← Nat.isCoprime_iff_coprime]
+  exact ⟨a * d, -(b * c), by linear_combination hred⟩
+
+/-- **Moving `γ ∈ Γ₀(N)` across an Atkin–Lehner matrix**, read on lower-right entries modulo
+`N`: if `γ W = W δ`, the lower-right entry of `δ` is `e_Q a + (1 - e_Q) s`, where `a` and `s` are
+the diagonal entries of `γ` and `e_Q` is the idempotent of the exact divisor `Q`. Since `a` and
+`s` are mutually inverse modulo `N`, this is the lower-right entry `s` of `γ` with its residue
+modulo `Q` inverted. -/
+theorem IsAtkinLehnerMatrix.intCast_apply_one_one_of_mul_eq_mul (hQ : Q ≠ 0) (hQN : Q ∣ N)
+    (h : IsAtkinLehnerMatrix N Q M) {γ δ : SL(2, ℤ)} (hγ : γ ∈ Gamma0 N)
+    (hmul : (γ : Matrix (Fin 2) (Fin 2) ℤ) * M = M * (δ : Matrix (Fin 2) (Fin 2) ℤ)) :
+    ((δ 1 1 : ℤ) : ZMod N) = exactDivisorIdempotent N Q * ((γ 0 0 : ℤ) : ZMod N) +
+      (1 - exactDivisorIdempotent N Q) * ((γ 1 1 : ℤ) : ZMod N) := by
+  have hex := h.isExactDivisor hQ hQN
+  obtain ⟨m, hm⟩ := hQN
+  have hmQ : N / Q = m := by rw [hm, Nat.mul_div_cancel_left m (Nat.pos_of_ne_zero hQ)]
+  obtain ⟨a, b, c, d, rfl, hred⟩ := h.exists_entries hQ hm
+  have hQ' : (Q : ℤ) ≠ 0 := Nat.cast_ne_zero.mpr hQ
+  have hN : (N : ℤ) = (Q : ℤ) * m := by exact_mod_cast congrArg (Nat.cast : ℕ → ℤ) hm
+  obtain ⟨r, hr⟩ := mem_Gamma0_iff_dvd.mp hγ
+  -- the entry `δ₁₁`, eliminating `δ₀₁` between the second-column entries of `γ W = W δ`
+  have hδ : δ 1 1 = -(m * (b * c)) * γ 0 0 + a * b * γ 1 0 - N * (c * d) * γ 0 1 +
+      Q * (a * d) * γ 1 1 := by
+    have h11 := congrFun (congrFun hmul 1) 1
+    have h01 := congrFun (congrFun hmul 0) 1
+    simp only [Matrix.mul_apply, Fin.sum_univ_two, Matrix.of_apply, Matrix.cons_val',
+      Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.empty_val', Matrix.cons_val_fin_one]
+      at h11 h01
+    refine mul_left_cancel₀ hQ' ?_
+    linear_combination ((Q : ℤ) * m * c) * h01 - ((Q : ℤ) * a) * h11 - (Q * δ 1 1) * hred +
+      (Q * (c * d) * γ 0 1) * hN
+  -- the reduced determinant equation splits `1` as `e_Q + (1 - e_Q)`
+  have hdet : -((m : ℤ) * (b * c)) = 1 - Q * (a * d) := by linear_combination hred
+  have he : ((-(m * (b * c)) : ℤ) : ZMod N) = exactDivisorIdempotent N Q := by
+    refine hex.eq_exactDivisorIdempotent_iff.mpr ⟨?_, ?_⟩
+    · rw [map_intCast, hdet]
+      simp
+    · rw [map_intCast, hmQ]
+      simp
+  have hQad : (((Q : ℤ) * (a * d) : ℤ) : ZMod N) = ((1 + m * (b * c) : ℤ) : ZMod N) :=
+    congrArg _ (by linear_combination hred)
+  rw [hδ, hr, ← he]
+  push_cast at hQad ⊢
+  rw [hQad, ZMod.natCast_self]
+  ring
+
+/-- **Moving `γ ∈ Γ₀(N)` across an Atkin–Lehner matrix inverts the residue modulo `Q` of its
+diamond label**: if `γ W = W δ` with `δ ∈ Γ₀(N)`, the label of `δ` is the label of `γ` with its
+residue modulo `Q` inverted and its residue modulo `N / Q` kept. -/
+theorem IsAtkinLehnerMatrix.toHomUnits_gamma0Map_of_mul_eq_mul (hQ : Q ≠ 0) (hQN : Q ∣ N)
+    (h : IsAtkinLehnerMatrix N Q M) {γ δ : SL(2, ℤ)} (hγ : γ ∈ Gamma0 N) (hδ : δ ∈ Gamma0 N)
+    (hmul : (γ : Matrix (Fin 2) (Fin 2) ℤ) * M = M * (δ : Matrix (Fin 2) (Fin 2) ℤ)) :
+    (Gamma0Map N).toHomUnits ⟨δ, hδ⟩ =
+      (h.isExactDivisor hQ hQN).unitsInvPart ((Gamma0Map N).toHomUnits ⟨γ, hγ⟩) := by
+  refine Units.ext ?_
+  have hinv : (↑((Gamma0Map N).toHomUnits ⟨γ, hγ⟩)⁻¹ : ZMod N) = ((γ 0 0 : ℤ) : ZMod N) :=
+    Units.inv_eq_of_mul_eq_one_left (intCast_apply_zero_zero_mul_apply_one_one_of_mem_Gamma0 hγ)
+  rw [Nat.IsExactDivisor.coe_unitsInvPart, hinv, MonoidHom.coe_toHomUnits,
+    MonoidHom.coe_toHomUnits, Gamma0Map_apply, Gamma0Map_apply]
+  exact h.intCast_apply_one_one_of_mul_eq_mul hQ hQN hγ hmul
+
+/-- **The diamond label of `W ^ 2 / Q`, multiplied by `Q`, is the square of the lower-right entry
+of `W`**: if `W * W = Q • γ`, then `Q * γ₁₁ ≡ W₁₁ ^ 2` modulo `N`, because the lower-left entry
+of `W` vanishes modulo `N`. Since `Q` is a unit modulo `N / Q`, this pins down the residue of `γ₁₁`
+modulo `N / Q`. -/
+theorem IsAtkinLehnerMatrix.natCast_mul_intCast_apply_one_one_of_mul_self_eq
+    (h : IsAtkinLehnerMatrix N Q M) {γ : SL(2, ℤ)}
+    (hsq : M * M = (Q : ℤ) • (γ : Matrix (Fin 2) (Fin 2) ℤ)) :
+    (Q : ZMod N) * ((γ 1 1 : ℤ) : ZMod N) = ((M 1 1 : ℤ) : ZMod N) ^ 2 := by
+  obtain ⟨c, hc⟩ := h.dvd_apply_one_zero
+  have h11 := congrFun (congrFun hsq 1) 1
+  simp only [Matrix.mul_apply, Fin.sum_univ_two, Matrix.smul_apply, smul_eq_mul] at h11
+  have key : (Q : ℤ) * γ 1 1 = M 1 1 ^ 2 + N * (c * M 0 1) := by
+    rw [← h11, hc]
+    ring
+  have := congrArg (Int.cast : ℤ → ZMod N) key
+  push_cast at this
+  rw [this, ZMod.natCast_self, zero_mul, add_zero]
+
+/-- **The diamond label of `W ^ 2 / Q` is `-1` modulo `Q`**: if `W * W = Q • γ`, the lower-right
+entry of `γ` is `-1` modulo `Q`. Writing `W = !![Q * a, b; Q * m * c, Q * d]`, that entry is
+`m * b * c + Q * d ^ 2`, and the reduced determinant equation makes `m * b * c ≡ -1`. -/
+theorem IsAtkinLehnerMatrix.intCast_apply_one_one_of_mul_self_eq (hQ : Q ≠ 0) (hQN : Q ∣ N)
+    (h : IsAtkinLehnerMatrix N Q M) {γ : SL(2, ℤ)}
+    (hsq : M * M = (Q : ℤ) • (γ : Matrix (Fin 2) (Fin 2) ℤ)) :
+    ((γ 1 1 : ℤ) : ZMod Q) = -1 := by
+  obtain ⟨m, hm⟩ := hQN
+  obtain ⟨a, b, c, d, rfl, hred⟩ := h.exists_entries hQ hm
+  have hQ' : (Q : ℤ) ≠ 0 := Nat.cast_ne_zero.mpr hQ
+  have h11 := congrFun (congrFun hsq 1) 1
+  simp only [Matrix.mul_apply, Fin.sum_univ_two, Matrix.smul_apply, smul_eq_mul, Matrix.of_apply,
+    Matrix.cons_val', Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.empty_val',
+    Matrix.cons_val_fin_one] at h11
+  have hγ : γ 1 1 = Q * (a * d + d * d) - 1 :=
+    mul_left_cancel₀ hQ' (by linear_combination -h11 - (Q : ℤ) * hred)
+  rw [hγ]
+  push_cast
+  rw [ZMod.natCast_self, zero_mul, zero_sub]
+
+/-- **The diamond label of `W ^ 2 / Q`**: if `W * W = Q • γ` with `γ ∈ Γ₀(N)`, the diamond label of
+`γ` is the unit `u` of `ZMod N` that is `-1` modulo `Q` and satisfies `Q * u = W₁₁ ^ 2`, which
+determines it modulo `N / Q`. -/
+theorem IsAtkinLehnerMatrix.toHomUnits_gamma0Map_of_mul_self_eq (hQ : Q ≠ 0) (hQN : Q ∣ N)
+    (h : IsAtkinLehnerMatrix N Q M) {γ : SL(2, ℤ)} (hγ : γ ∈ Gamma0 N)
+    (hsq : M * M = (Q : ℤ) • (γ : Matrix (Fin 2) (Fin 2) ℤ)) {u : (ZMod N)ˣ}
+    (hu : ZMod.unitsMap hQN u = -1) (hu' : (Q : ZMod N) * u = ((M 1 1 : ℤ) : ZMod N) ^ 2) :
+    (Gamma0Map N).toHomUnits ⟨γ, hγ⟩ = u := by
+  have hex := h.isExactDivisor hQ hQN
+  refine Units.ext ?_
+  rw [MonoidHom.coe_toHomUnits, Gamma0Map_apply]
+  refine hex.eq_of_castHom_eq ?_ ?_
+  · rw [map_intCast, h.intCast_apply_one_one_of_mul_self_eq hQ hQN hsq, ZMod.castHom_apply,
+      ← ZMod.unitsMap_val hQN, hu, Units.val_neg, Units.val_one]
+  · have hunit : IsUnit ((Q : ℕ) : ZMod (N / Q)) :=
+      (ZMod.unitOfCoprime Q hex.coprime).isUnit
+    refine hunit.mul_left_cancel ?_
+    rw [← map_natCast (ZMod.castHom (Nat.div_dvd_of_dvd hex.dvd) (ZMod (N / Q))) Q, ← map_mul,
+      ← map_mul, h.natCast_mul_intCast_apply_one_one_of_mul_self_eq hsq, hu']
+
+/-- **The residue modulo `Q` of the diamond label of `W ^ 2 / Q` is `-1`**: the units form of
+`IsAtkinLehnerMatrix.intCast_apply_one_one_of_mul_self_eq`. -/
+theorem IsAtkinLehnerMatrix.unitsMap_toHomUnits_gamma0Map_of_mul_self_eq (hQ : Q ≠ 0)
+    (hQN : Q ∣ N) (h : IsAtkinLehnerMatrix N Q M) {γ : SL(2, ℤ)} (hγ : γ ∈ Gamma0 N)
+    (hsq : M * M = (Q : ℤ) • (γ : Matrix (Fin 2) (Fin 2) ℤ)) :
+    ZMod.unitsMap hQN ((Gamma0Map N).toHomUnits ⟨γ, hγ⟩) = -1 :=
+  Units.ext <| by
+    rw [ZMod.unitsMap_val, MonoidHom.coe_toHomUnits, Gamma0Map_apply, ZMod.cast_intCast hQN,
+      Units.val_neg, Units.val_one]
+    exact h.intCast_apply_one_one_of_mul_self_eq hQ hQN hsq
+
+/-- **The residue modulo `N / Q` of the diamond label of `W ^ 2 / Q`, under the Atkin–Li
+normalization**: if the lower-right entry of `W` is `1` modulo `N / Q`, as for `atkinLiMatrix`,
+and `W * W = Q • γ` with `γ ∈ Γ₀(N)`, the diamond label of `γ` is `Q⁻¹` modulo `N / Q`. -/
+theorem IsAtkinLehnerMatrix.unitsMap_div_toHomUnits_gamma0Map_of_mul_self_eq (hQ : Q ≠ 0)
+    (hQN : Q ∣ N) (h : IsAtkinLehnerMatrix N Q M) (hM : ((M 1 1 : ℤ) : ZMod (N / Q)) = 1)
+    {γ : SL(2, ℤ)} (hγ : γ ∈ Gamma0 N) (hsq : M * M = (Q : ℤ) • (γ : Matrix (Fin 2) (Fin 2) ℤ)) :
+    ZMod.unitsMap (Nat.div_dvd_of_dvd hQN) ((Gamma0Map N).toHomUnits ⟨γ, hγ⟩) =
+      (ZMod.unitOfCoprime Q (h.isExactDivisor hQ hQN).coprime)⁻¹ := by
+  rw [eq_inv_iff_mul_eq_one, mul_comm]
+  refine Units.ext ?_
+  have key := congrArg (ZMod.castHom (Nat.div_dvd_of_dvd hQN) (ZMod (N / Q)))
+    (h.natCast_mul_intCast_apply_one_one_of_mul_self_eq hsq)
+  rw [map_mul, map_pow, map_natCast, map_intCast, map_intCast, hM, one_pow] at key
+  rw [Units.val_mul, ZMod.coe_unitOfCoprime, ZMod.unitsMap_val, MonoidHom.coe_toHomUnits,
+    Gamma0Map_apply, ZMod.cast_intCast (Nat.div_dvd_of_dvd hQN), Units.val_one]
+  exact key
+
+/-- **The diamond label of `W ^ 2 / Q`, multiplied by `Q`, is `W₁₁ ^ 2` modulo `N`**: the units form
+of `IsAtkinLehnerMatrix.natCast_mul_intCast_apply_one_one_of_mul_self_eq`. -/
+theorem IsAtkinLehnerMatrix.natCast_mul_toHomUnits_gamma0Map_of_mul_self_eq
+    (h : IsAtkinLehnerMatrix N Q M) {γ : SL(2, ℤ)} (hγ : γ ∈ Gamma0 N)
+    (hsq : M * M = (Q : ℤ) • (γ : Matrix (Fin 2) (Fin 2) ℤ)) :
+    (Q : ZMod N) * ((Gamma0Map N).toHomUnits ⟨γ, hγ⟩ : (ZMod N)ˣ) =
+      ((M 1 1 : ℤ) : ZMod N) ^ 2 := by
+  rw [MonoidHom.coe_toHomUnits, Gamma0Map_apply]
+  exact h.natCast_mul_intCast_apply_one_one_of_mul_self_eq hsq
+
+/-- **A split character on the diamond label of `W ^ 2 / Q`, under the Atkin–Li normalization**:
+if the lower-right entry of `W` is `1` modulo `N / Q` and `W * W = Q • γ` with `γ ∈ Γ₀(N)`, then
+`χ = χ_Q · χ_{N/Q}` split along `N = Q · (N / Q)` takes the value `χ_Q(-1) χ_{N/Q}(Q)⁻¹` on the
+diamond label of `γ`. -/
+theorem IsAtkinLehnerMatrix.mul_comp_unitsMap_toHomUnits_gamma0Map_of_mul_self_eq {G : Type*}
+    [CommGroup G] (hQ : Q ≠ 0) (hQN : Q ∣ N) (h : IsAtkinLehnerMatrix N Q M)
+    (hM : ((M 1 1 : ℤ) : ZMod (N / Q)) = 1) (ψ : (ZMod Q)ˣ →* G) (φ : (ZMod (N / Q))ˣ →* G)
+    {γ : SL(2, ℤ)} (hγ : γ ∈ Gamma0 N) (hsq : M * M = (Q : ℤ) • (γ : Matrix (Fin 2) (Fin 2) ℤ)) :
+    (ψ.comp (ZMod.unitsMap hQN) * φ.comp (ZMod.unitsMap (Nat.div_dvd_of_dvd hQN)))
+        ((Gamma0Map N).toHomUnits ⟨γ, hγ⟩) =
+      ψ (-1) * (φ (ZMod.unitOfCoprime Q (h.isExactDivisor hQ hQN).coprime))⁻¹ := by
+  rw [MonoidHom.mul_apply, MonoidHom.comp_apply, MonoidHom.comp_apply,
+    h.unitsMap_toHomUnits_gamma0Map_of_mul_self_eq hQ hQN hγ hsq,
+    h.unitsMap_div_toHomUnits_gamma0Map_of_mul_self_eq hQ hQN hM hγ hsq, map_inv]
 
 end TauCeti

@@ -77,12 +77,8 @@ theorem exists_monodromyFunctor_iso_of_locallyPathConnectedSpace
     TopCat.ofHom ⟨h ∘ q.proj, hp.continuous⟩
   let p : CoveringSpace (TopCat.of X) := mk pMap hp
   refine ⟨p, ⟨?_⟩⟩
-  let totalHomeomorph : (p : TopCat) ≃ₜ (q : TopCat) :=
-    TopCat.homeoOfIso (eqToIso (mk_coe pMap hp))
-  have htotal : (h ∘ q.proj) ∘ totalHomeomorph = p.proj := by
-    funext z
-    have hproj := DFunLike.congr_fun (congrArg TopCat.Hom.hom (mk_proj pMap hp)) z
-    exact hproj.symm
+  let totalHomeomorph : (p : TopCat) ≃ₜ (q : TopCat) := Homeomorph.refl _
+  have htotal : (h ∘ q.proj) ∘ totalHomeomorph = p.proj := rfl
   let qIso : q.isCoveringMap_proj.monodromyFunctor ≅
       FundamentalGroupoid.map hMap ⋙ F :=
     eqToIso (monodromyFunctor_obj q).symm ≪≫ hq.some

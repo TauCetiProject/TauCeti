@@ -94,11 +94,14 @@ theorem normedBumpL_zero (hp : p ≠ ∞) (phi : ContDiffBump (0 : E)) :
 /-- At order one, Sobolev mollification agrees with the existing `W^{1,p}` mollifier. -/
 @[simp]
 theorem normedBumpL_one (hp : p ≠ ∞) (phi : ContDiffBump (0 : E)) :
-    normedBumpL (mu := mu) hp phi 1 = W1p.normedBumpL hp phi := by
+    normedBumpL (mu := mu) hp phi 1 = W1p.normedBumpL (mu := mu) hp phi := by
+  -- The right side names its measure because `Wkp … 1` is not reducibly `W1p`, so the
+  -- measure cannot be read off the left side's type.
   apply ContinuousLinearMap.ext
   intro u
   apply ext 1
-  rw [value_normedBumpL, value_one, value_one, W1p.value_normedBumpL]
+  rw [value_normedBumpL, value_one, value_one]
+  exact (W1p.value_normedBumpL hp phi u).symm
 
 /-- Mollification commutes with forgetting the highest weak derivative. -/
 theorem lowerOrder_normedBumpL (hp : p ≠ ∞) (phi : ContDiffBump (0 : E))

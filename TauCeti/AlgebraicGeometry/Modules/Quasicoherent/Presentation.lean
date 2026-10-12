@@ -30,6 +30,36 @@ universe u
 
 noncomputable section
 
+/-- A presentation on the canonical spectrum of an affine scheme transports back to a
+presentation on the affine scheme. -/
+def _root_.AlgebraicGeometry.Scheme.Modules.presentationOfIsoSpec
+    {X : Scheme.{u}} [IsAffine X] (M : X.Modules)
+    (P : ((Scheme.Modules.pullback X.isoSpec.inv).obj M).Presentation) : M.Presentation := by
+  let F : SheafOfModules (Spec Γ(X, ⊤)).ringCatSheaf ⥤
+      SheafOfModules X.ringCatSheaf := Scheme.Modules.pullback X.isoSpec.hom
+  have : PreservesColimitsOfSize.{u, u} F :=
+    (Scheme.Modules.pullbackPushforwardAdjunction X.isoSpec.hom).leftAdjoint_preservesColimits
+  let h : F.obj ((Scheme.Modules.pullback X.isoSpec.inv).obj M) ≅ M :=
+    (Scheme.Modules.pullbackComp X.isoSpec.hom X.isoSpec.inv).app M ≪≫
+      (Scheme.Modules.pullbackCongr X.isoSpec.hom_inv_id).app M ≪≫
+      (Scheme.Modules.pullbackId X).app M
+  exact @SheafOfModules.Presentation.ofIsIso _ _ _ _ _ _ _ _ h.hom (Iso.isIso_hom h)
+    (P.map F (Scheme.Modules.pullbackObjUnitIso X.isoSpec.hom).symm)
+
+/-- Transporting a presentation from the canonical spectrum preserves finite generators and
+finite relations. -/
+instance _root_.AlgebraicGeometry.Scheme.Modules.isFinite_presentationOfIsoSpec
+    {X : Scheme.{u}} [IsAffine X] (M : X.Modules)
+    (P : ((Scheme.Modules.pullback X.isoSpec.inv).obj M).Presentation) [P.IsFinite] :
+    (M.presentationOfIsoSpec P).IsFinite := by
+  let F : SheafOfModules (Spec Γ(X, ⊤)).ringCatSheaf ⥤
+      SheafOfModules X.ringCatSheaf := Scheme.Modules.pullback X.isoSpec.hom
+  have : PreservesColimitsOfSize.{u, u} F :=
+    (Scheme.Modules.pullbackPushforwardAdjunction X.isoSpec.hom).leftAdjoint_preservesColimits
+  unfold Scheme.Modules.presentationOfIsoSpec
+  exact @SheafOfModules.instIsFiniteOfIsIso _ _ _ _ _ _ _ _ _ (Iso.isIso_hom _) _
+    (SheafOfModules.Presentation.isFinite_map _ _ _)
+
 /-- A quasicoherent module on an affine scheme admits a global presentation by free sheaves.
 The generating and relation families need not be finite. -/
 theorem _root_.AlgebraicGeometry.Scheme.Modules.nonempty_presentation_of_isAffine
@@ -45,16 +75,7 @@ theorem _root_.AlgebraicGeometry.Scheme.Modules.nonempty_presentation_of_isAffin
   let Q := @SheafOfModules.Presentation.ofIsIso _ _ _ _ _ _ _ _
     (Scheme.Modules.fromTildeΓ N)
     (Scheme.Modules.isIso_fromTildeΓ_of_isQuasicoherent N) P
-  let F : SheafOfModules (Spec Γ(X, ⊤)).ringCatSheaf ⥤
-      SheafOfModules X.ringCatSheaf := Scheme.Modules.pullback e.hom
-  have : PreservesColimitsOfSize.{u, u} F :=
-    (Scheme.Modules.pullbackPushforwardAdjunction e.hom).leftAdjoint_preservesColimits
-  let h : F.obj N ≅ M :=
-    (Scheme.Modules.pullbackComp e.hom e.inv).app M ≪≫
-      (Scheme.Modules.pullbackCongr e.hom_inv_id).app M ≪≫
-      (Scheme.Modules.pullbackId X).app M
-  exact ⟨@SheafOfModules.Presentation.ofIsIso _ _ _ _ _ _ _ _ h.hom (Iso.isIso_hom h)
-    (Q.map F (Scheme.Modules.pullbackObjUnitIso e.hom).symm)⟩
+  exact ⟨M.presentationOfIsoSpec Q⟩
 
 end
 

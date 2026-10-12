@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Toric.Algebraic.Ray.Face
+public import TauCeti.Geometry.Toric.Algebraic.Fan.Equiv
 
 /-!
 # Rays of a finite toric fan
@@ -17,6 +18,9 @@ fan contains a ray; this follows from the generation of a toric cone by its rays
 The global ray type is the natural index for invariant boundary components of a toric variety.
 Containment of cones is detected by their rays, and any set of rays lying in a simplicial cone
 is the ray set of one of its faces. These facts determine which boundary components intersect.
+Fan equivalences transport rays functorially, and the rays of an open subfan embed as exactly
+the ambient rays whose cones belong to the subfan. These comparisons identify the indices of
+boundary components under toric isomorphisms and restriction to invariant open subspaces.
 
 ## Main declarations
 
@@ -28,6 +32,8 @@ is the ray set of one of its faces. These facts determine which boundary compone
 * `TauCeti.Toric.Fan.le_iff_forall_ray_le`: containment of cones is detected by their rays.
 * `TauCeti.Toric.Fan.exists_cone_rays_eq`: a collection of rays in a simplicial cone is exactly
   the ray set of a face.
+* `TauCeti.Toric.Fan.subfanRayEmbedding`: the ambient inclusion of the rays of an open subfan.
+* `TauCeti.Toric.FanEquiv.rayEquiv`: the ray equivalence induced by a fan equivalence.
 
 ## References
 
@@ -154,4 +160,77 @@ theorem exists_cone_rays_eq {S : Set Phi.Ray} {sigma : Phi.cones}
   refine ⟨tau, hTau, fun rho ↦ ⟨fun h ↦ (hRay rho (h.trans hTau)).mp h,
     fun h ↦ (hRay rho (hS rho h)).mpr h⟩⟩
 
+section Subfan
+
+variable (S : Set (PointedCone ℝ V)) (hS : S ⊆ Phi.cones)
+  (hface : ∀ ⦃sigma tau⦄, sigma ∈ S → tau.IsFaceOf sigma → tau ∈ S)
+
+/-- The rays of an open subfan embed in the rays of the ambient fan without changing cones. -/
+def subfanRayEmbedding : (Phi.subfan S hS hface).Ray ↪ Phi.Ray where
+  toFun rho := ⟨⟨rho.toCone.1, hS (by simpa only [subfan_cones] using rho.toCone.2)⟩, rho.2⟩
+  inj' := by
+    intro rho tau h
+    exact Subtype.ext (Subtype.ext (congrArg (fun r ↦ r.toCone.1) h))
+
+/-- The ray embedding of a subfan leaves the underlying cone unchanged. -/
+@[simp]
+theorem toCone_subfanRayEmbedding (rho : (Phi.subfan S hS hface).Ray) :
+    (Phi.subfanRayEmbedding S hS hface rho).toCone.1 = rho.toCone.1 :=
+  (rfl)
+
+/-- The rays coming from a subfan are exactly the ambient rays whose cones belong to it. -/
+@[simp]
+theorem range_subfanRayEmbedding :
+    Set.range (Phi.subfanRayEmbedding S hS hface) = {rho | rho.toCone.1 ∈ S} := by
+  ext rho
+  simp only [Set.mem_ofPred_eq]
+  constructor
+  · rintro ⟨tau, rfl⟩
+    simpa only [subfan_cones, toCone_subfanRayEmbedding] using tau.toCone.2
+  · intro h
+    exact ⟨⟨⟨rho.toCone.1, by simpa only [subfan_cones] using h⟩, rho.2⟩,
+      Subtype.ext (Subtype.ext rfl)⟩
+
+end Subfan
+
 end TauCeti.Toric.Fan
+
+namespace TauCeti.Toric.FanEquiv
+
+variable {N N' N'' V V' V'' : Type*} [AddCommGroup N] [AddCommGroup N'] [AddCommGroup N'']
+  [AddCommGroup V] [AddCommGroup V'] [AddCommGroup V''] [Module ℝ V] [Module ℝ V']
+  [Module ℝ V''] {i : N →+ V} {i' : N' →+ V'} {i'' : N'' →+ V''}
+  {Phi : Fan i} {Psi : Fan i'} {Omega : Fan i''}
+
+/-- A fan equivalence identifies the rays of the two fans by transporting their cones. -/
+def rayEquiv (e : FanEquiv Phi Psi) : Phi.Ray ≃ Psi.Ray :=
+  e.coneEquiv.toEquiv.subtypeEquiv fun sigma ↦ by
+    simp only [OrderIso.coe_toEquiv, e.finrank_span_coneEquiv]
+
+/-- The ray equivalence transports the underlying cone by the cone equivalence. -/
+@[simp]
+theorem toCone_rayEquiv (e : FanEquiv Phi Psi) (rho : Phi.Ray) :
+    (e.rayEquiv rho).toCone = e.coneEquiv rho.toCone :=
+  (rfl)
+
+/-- The inverse ray equivalence is induced by the inverse fan equivalence. -/
+@[simp]
+theorem rayEquiv_symm (e : FanEquiv Phi Psi) : e.rayEquiv.symm = e.symm.rayEquiv := by
+  simp only [rayEquiv, Equiv.subtypeEquiv_symm, ← coneEquiv_symm, OrderIso.toEquiv_symm]
+
+/-- The identity fan equivalence induces the identity on rays. -/
+@[simp]
+theorem rayEquiv_refl (Phi : Fan i) : (FanEquiv.refl Phi).rayEquiv = Equiv.refl Phi.Ray := by
+  apply Equiv.ext
+  intro rho
+  apply Subtype.ext
+  simp only [toCone_rayEquiv, coneEquiv_refl, OrderIso.refl_apply, Equiv.refl_apply]
+
+/-- Ray transport respects composition of fan equivalences. -/
+@[simp]
+theorem rayEquiv_trans (e : FanEquiv Phi Psi) (e' : FanEquiv Psi Omega) :
+    (e.trans e').rayEquiv = e.rayEquiv.trans e'.rayEquiv := by
+  simp only [rayEquiv, coneEquiv_trans]
+  exact (Equiv.subtypeEquiv_trans _ _ _ _).symm
+
+end TauCeti.Toric.FanEquiv

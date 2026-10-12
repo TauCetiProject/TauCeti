@@ -8,6 +8,7 @@ module
 public import TauCeti.LinearAlgebra.CliffordAlgebra.NegativePlane
 
 import TauCeti.Algebra.CentralSimple.Quaternion
+import TauCeti.LinearAlgebra.Matrix.TensorProduct
 
 /-!
 # Eight-step periodicity for real Clifford algebras
@@ -38,12 +39,6 @@ private abbrev C (p q : ℕ) :=
 private abbrev M2 := Matrix (Fin 2) (Fin 2) ℝ
 private abbrev M4 := Matrix (Fin 4) (Fin 4) ℝ
 private abbrev M16 := Matrix (Fin 16) (Fin 16) ℝ
-
-private def matrixTensorSelf (n : ℕ) :
-    Matrix (Fin n) (Fin n) ℝ ⊗[ℝ] Matrix (Fin n) (Fin n) ℝ ≃ₐ[ℝ]
-      Matrix (Fin (n * n)) (Fin (n * n)) ℝ :=
-  (Matrix.kroneckerAlgEquiv (Fin n) (Fin n) ℝ).trans
-    (Matrix.reindexAlgEquiv ℝ ℝ finProdFinEquiv)
 
 private noncomputable def realCliffordEightPeriodicityEquivImpl (p q : ℕ) :
     _root_.CliffordAlgebra (realCliffordForm (p + 8) q) ≃ₐ[ℝ]
@@ -86,7 +81,7 @@ private noncomputable def realCliffordEightPeriodicityEquivImpl (p q : ℕ) :
           (AlgEquiv.refl : M2 ≃ₐ[ℝ] M2))).trans <|
       (Algebra.TensorProduct.leftComm ℝ M2 M4 M2).trans <|
       (Algebra.TensorProduct.congr (AlgEquiv.refl : M4 ≃ₐ[ℝ] M4)
-        (matrixTensorSelf 2)).trans (matrixTensorSelf 4)
+        (Matrix.kroneckerFinAlgEquiv 2 2 ℝ)).trans (Matrix.kroneckerFinAlgEquiv 4 4 ℝ)
   exact chain.trans normalize
 
 /-- Eight-step periodicity for standard real Clifford algebras. -/

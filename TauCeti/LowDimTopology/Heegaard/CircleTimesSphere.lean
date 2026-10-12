@@ -72,13 +72,6 @@ namespace TauCeti
 
 namespace HeegaardRegionSystem
 
-/-- The two intersection points form one cycle of the transposition exchanging them. -/
-private theorem isCycleOn_swap_setOf (f : Fin 2 → Fin 1) (i : Fin 1) :
-    (Equiv.swap (0 : Fin 2) 1).IsCycleOn {p | f p = i} := by
-  convert Equiv.Perm.isCycleOn_swap (a := (0 : Fin 2)) (b := 1) (by decide) using 1
-  ext p
-  fin_cases p <;> simp [Subsingleton.elim (f _) i]
-
 /-- The genus-one Heegaard diagram of `S¹ × S²` whose two attaching circles meet in two points,
 with its basepoint in the region `r`. The regions `0`, `1`, `2` are the annulus and the two
 bigons. -/
@@ -87,9 +80,9 @@ def circleTimesSphere (r : Fin 3) : HeegaardRegionSystem 1 (Fin 2) (Fin 3) Unit 
   alpha _ := 0
   beta _ := 0
   alphaNext := Equiv.swap 0 1
-  alphaNext_isCycleOn := isCycleOn_swap_setOf _
+  alphaNext_isCycleOn := isCycleOn_swap_fin_two_fiber _
   betaNext := Equiv.swap 0 1
-  betaNext_isCycleOn := isCycleOn_swap_setOf _
+  betaNext_isCycleOn := isCycleOn_swap_fin_two_fiber _
   alphaLeft := ![1, 0]
   alphaRight := ![0, 2]
   betaLeft := ![0, 2]

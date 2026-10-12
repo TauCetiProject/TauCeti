@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.KrullSchmidt.Exchange
+import Mathlib.RingTheory.LocalRing.RingHom.Basic
 
 /-!
 # The Krull-Schmidt theorem
@@ -56,8 +57,8 @@ statement quantifying over the module as well, rather than run inside the theore
 Restricting a decomposition to the submodule it spans is Mathlib's
 `DirectSum.isInternal_biSup_submodule_of_iSupIndep`; transporting one along a linear equivalence is
 Mathlib's `LinearMap.iSupIndep_map` together with the private helper below, and transporting
-locality of an endomorphism ring along one is `TauCeti.IsLocalRing.of_ringEquiv` applied to
-Mathlib's `LinearEquiv.conjRingEquiv`.
+locality of an endomorphism ring along one is Mathlib's `RingEquiv.isLocalRing` applied to
+`LinearEquiv.conjRingEquiv`.
 
 ## References
 
@@ -155,7 +156,7 @@ private theorem exists_equiv_linearEquiv_aux :
     (M := T) (ι := s) (κ := t) (P := P') (Q := Q') rfl
     (LinearMap.iSupIndep_map (φ : S →ₗ[A] T) φ.injective hPi)
     (iSup_map_of_linearEquiv_eq_top φ hPs)
-    (fun i ↦ have := hPloc i; IsLocalRing.of_ringEquiv (hPP' i).some.conjRingEquiv) hQi hQs
+    (fun i ↦ have := hPloc i; (hPP' i).some.conjRingEquiv.isLocalRing) hQi hQs
     (fun j ↦ (hQind j).of_linearEquiv (hQQ' j).some.symm)
   -- Extend the matching by `i₀ ↦ j₀`.
   refine ⟨(Equiv.optionSubtypeNe i₀).symm.trans

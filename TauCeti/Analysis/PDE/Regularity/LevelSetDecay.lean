@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.PDE.Caccioppoli.Truncation
 import TauCeti.Analysis.Sobolev.Poincare.Wirtinger.DeGiorgi
-import TauCeti.MeasureTheory.Measure.AddHaar
+import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 
 /-!
 # Decay of upper level sets of weak subsolutions (De Giorgi)
@@ -223,7 +223,7 @@ theorem exists_sqrt_mul_measureReal_le_mul_measureReal_ball {θ : ℝ} (hθ : 0 
     · linarith [hlev_mono (by omega : i + 1 ≤ j)]
     · linarith [hlev_mono (by omega : j + 1 ≤ i)]
   have hsq : (J : ℝ) * A J ^ 2 ≤ K * V ^ 2 :=
-    calc (J : ℝ) * A J ^ 2 = ∑ j ∈ Finset.range J, A J ^ 2 := by simp
+    calc (J : ℝ) * A J ^ 2 = ∑ _ ∈ Finset.range J, A J ^ 2 := by simp
       _ ≤ ∑ j ∈ Finset.range J, A (j + 1) ^ 2 := Finset.sum_le_sum fun j hj =>
           pow_le_pow_left₀ measureReal_nonneg
             (hA_anti (Finset.mem_range.1 hj)) 2
