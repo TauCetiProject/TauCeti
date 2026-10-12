@@ -214,39 +214,6 @@ theorem completionLocMap_coe (x : S) :
 
 variable {Aplus : Subring A} {Bplus : Subring B}
 
-omit [TopologicalSpace A] [IsTopologicalRing A] [TopologicalSpace B] [IsTopologicalRing B] in
-include hT in
-/-- The map of localisations carries `A⁺[T/s]` into `B⁺[T'/f(s)]` as soon as `f` carries `A⁺` into
-`B⁺`. -/
-private theorem adjoin_plus_map_awayMap_le (hplus : ∀ a ∈ Aplus, f a ∈ Bplus) :
-    (Algebra.adjoin Aplus (Set.range fun t : T ↦ (divBy (t : A) s : S))).toSubring.map
-        (IsLocalization.Away.map S S' f s) ≤
-      (Algebra.adjoin Bplus (Set.range fun t : T' ↦ (divBy (t : B) (f s) : S'))).toSubring := by
-  rw [Subring.map_le_iff_le_comap, Algebra.adjoin_eq_ring_closure, Subring.closure_le]
-  rintro _ (⟨a, rfl⟩ | ⟨t, rfl⟩)
-  · rw [SetLike.mem_coe, Subring.mem_comap, IsScalarTower.algebraMap_apply Aplus A S,
-      Algebra.algebraMap_ofSubsemiring_apply, IsLocalization.Away.map, IsLocalization.map_eq]
-    exact Subalgebra.algebraMap_mem _ (⟨_, hplus a a.2⟩ : Bplus)
-  · rw [SetLike.mem_coe, Subring.mem_comap, RingHom.awayMap_divBy]
-    exact Algebra.subset_adjoin ⟨⟨_, hT t t.2⟩, rfl⟩
-
-omit [TopologicalSpace A] [IsTopologicalRing A] [TopologicalSpace B] [IsTopologicalRing B] in
-include hT in
-/-- The map of localisations carries the integral closure of `A⁺[T/s]` in `A[1/s]` into the
-integral closure of `B⁺[T'/f(s)]` in `B[1/f(s)]`. -/
-private theorem integralClosure_adjoin_plus_map_awayMap_le (hplus : ∀ a ∈ Aplus, f a ∈ Bplus) :
-    (integralClosure ↥(Algebra.adjoin Aplus (Set.range fun t : T ↦ (divBy (t : A) s : S)))
-        S).toSubring.map (IsLocalization.Away.map S S' f s) ≤
-      (integralClosure ↥(Algebra.adjoin Bplus (Set.range fun t : T' ↦
-        (divBy (t : B) (f s) : S'))) S').toSubring := by
-  rintro _ ⟨x, hx, rfl⟩
-  have hle := adjoin_plus_map_awayMap_le T s S f T' S' hT hplus
-  let φ := (IsLocalization.Away.map S S' f s).restrict
-    (Algebra.adjoin Aplus (Set.range fun t : T ↦ (divBy (t : A) s : S)))
-    (Algebra.adjoin Bplus (Set.range fun t : T' ↦ (divBy (t : B) (f s) : S')))
-    fun y hy ↦ hle ⟨y, hy, rfl⟩
-  exact IsIntegral.map_of_comp_eq φ _ (by ext; rfl) hx
-
 /-- The base change carries the plus ring `A_U⁺` of `A⟨T/s⟩` built from `A⁺` into the plus ring
 `B_V⁺` of `B⟨T'/f(s)⟩` built from `B⁺`, as soon as `f` carries `A⁺` into `B⁺`. The preimage of
 `B_V⁺` is a closed subring, so it suffices that it contain the image of the integral closure of
@@ -275,7 +242,7 @@ private theorem completionLocMap_mem_completedPlusSubring (hplus : ∀ a ∈ Apl
   refine (completedPlusSubring_le_iff P Aplus T s S hden hclosed).mpr (fun c hc ↦ ?_) hx
   rw [Subring.mem_comap, completionLocMap_coe]
   exact coeRingHom_mem_completedPlusSubring P' Bplus T' (f s) S' hden'
-    (integralClosure_adjoin_plus_map_awayMap_le T s S f T' S' hT hplus ⟨c, hc, rfl⟩)
+    (map_integralClosure_adjoin_divBy_le (T : Set A) s f (T' : Set B) hT hplus ⟨c, hc, rfl⟩)
 
 end RingHom
 
