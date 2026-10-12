@@ -36,8 +36,8 @@ every polynomial is a constant times a product of linear factors `T - b`. The tw
 in `K`, the second condition compares these values as `η_{a,r}` does. Polynomials are dense in
 `K⟨T⟩` (`TauCeti.Huber.denseRange_eval₂RingHom_weightedX`) and both points are continuous with
 trivial support, so they agree everywhere (`Valuation.IsContinuous.isEquiv_of_dense`). Trivial
-support of `x` comes from the classification of the points with nonzero support as classical
-points (`TauCeti.ValuationSpectrum.exists_weightedX_sub_weightedC_mem_supp`).
+support of `x` holds because a point with nonzero support kills some `T - b`
+(`TauCeti.ValuationSpectrum.exists_weightedX_sub_weightedC_mem_supp`).
 
 ## Main results
 
@@ -97,27 +97,53 @@ private theorem valuation_weightedC_le_iff (x : closedPolydisc 1 K) (c d : K) :
     x.1.valuation (C c) ≤ x.1.valuation (C d) ↔ ‖c‖ ≤ ‖d‖ := by
   rw [valuation_le_iff, closedPolydisc_vle_weightedC_iff]
 
-/-- Under the second condition, `x(T - a)^k ≤ x(e)` exactly when `r^k ≤ ‖e‖`: take a `k`-th root
-of `e` in `K`. -/
-private theorem pow_le_valuation_weightedC_iff [IsAlgClosed K] {x : closedPolydisc 1 K} {a : K}
-    (hr₀ : 0 < r) (hle : ∀ c : K, x.1.toValuativeRel.vle (T - C a) (C c) ↔ r ≤ ‖c‖) (e : K)
-    (k : ℕ) : x.1.valuation (T - C a) ^ k ≤ x.1.valuation (C e) ↔ r ^ k ≤ ‖e‖ := by
+/-- Under the second condition, `x(T - a)^k` compares with `x(e)` as `r^k` compares with `‖e‖`:
+take a `k`-th root of `e` in `K`. -/
+private theorem pow_le_valuation_weightedC_iff_and_valuation_weightedC_le_pow_iff [IsAlgClosed K]
+    {x : closedPolydisc 1 K} {a : K} (hr₀ : 0 < r)
+    (hle : ∀ c : K, x.1.toValuativeRel.vle (T - C a) (C c) ↔ r ≤ ‖c‖)
+    (hge : ∀ c : K, x.1.toValuativeRel.vle (C c) (T - C a) ↔ ‖c‖ ≤ r) (e : K) (k : ℕ) :
+    (x.1.valuation (T - C a) ^ k ≤ x.1.valuation (C e) ↔ r ^ k ≤ ‖e‖) ∧
+      (x.1.valuation (C e) ≤ x.1.valuation (T - C a) ^ k ↔ ‖e‖ ≤ r ^ k) := by
   rcases Nat.eq_zero_or_pos k with rfl | hk
-  · simpa using valuation_weightedC_le_iff x 1 e
+  · exact ⟨by simpa using valuation_weightedC_le_iff x 1 e,
+      by simpa using valuation_weightedC_le_iff x e 1⟩
   obtain ⟨e, rfl⟩ := IsAlgClosed.exists_pow_nat_eq e hk
-  rw [map_pow, map_pow, norm_pow, pow_le_pow_iff_left₀ zero_le zero_le hk.ne',
-    pow_le_pow_iff_left₀ hr₀.le (norm_nonneg _) hk.ne', valuation_le_iff, hle]
+  simp only [map_pow, norm_pow, pow_le_pow_iff_left₀ zero_le zero_le hk.ne',
+    pow_le_pow_iff_left₀ hr₀.le (norm_nonneg _) hk.ne',
+    pow_le_pow_iff_left₀ (norm_nonneg _) hr₀.le hk.ne', valuation_le_iff, hle, hge, and_self]
 
-/-- Under the second condition, `x(e) ≤ x(T - a)^k` exactly when `‖e‖ ≤ r^k`: take a `k`-th root
-of `e` in `K`. -/
-private theorem valuation_weightedC_le_pow_iff [IsAlgClosed K] {x : closedPolydisc 1 K} {a : K}
-    (hr₀ : 0 < r) (hge : ∀ c : K, x.1.toValuativeRel.vle (C c) (T - C a) ↔ ‖c‖ ≤ r) (e : K)
-    (k : ℕ) : x.1.valuation (C e) ≤ x.1.valuation (T - C a) ^ k ↔ ‖e‖ ≤ r ^ k := by
-  rcases Nat.eq_zero_or_pos k with rfl | hk
-  · simpa using valuation_weightedC_le_iff x e 1
-  obtain ⟨e, rfl⟩ := IsAlgClosed.exists_pow_nat_eq e hk
-  rw [map_pow, map_pow, norm_pow, pow_le_pow_iff_left₀ zero_le zero_le hk.ne',
-    pow_le_pow_iff_left₀ (norm_nonneg _) hr₀.le hk.ne', valuation_le_iff, hge]
+/-- Under the second condition, for `c ≠ 0` and `n ≤ m`, `x` compares `x(c) x(T - a)^m` and
+`x(d) x(T - a)^n`, in both directions, as the reals `‖c‖ r^m` and `‖d‖ r^n` compare. -/
+private theorem valuation_mul_pow_le_iff_of_le [IsAlgClosed K] {x : closedPolydisc 1 K} {a : K}
+    (hr₀ : 0 < r) (hle : ∀ c : K, x.1.toValuativeRel.vle (T - C a) (C c) ↔ r ≤ ‖c‖)
+    (hge : ∀ c : K, x.1.toValuativeRel.vle (C c) (T - C a) ↔ ‖c‖ ≤ r) {c : K} (hc : c ≠ 0)
+    (d : K) {m n : ℕ} (h : n ≤ m) :
+    (x.1.valuation (C c) * x.1.valuation (T - C a) ^ m ≤
+        x.1.valuation (C d) * x.1.valuation (T - C a) ^ n ↔ ‖c‖ * r ^ m ≤ ‖d‖ * r ^ n) ∧
+      (x.1.valuation (C d) * x.1.valuation (T - C a) ^ n ≤
+        x.1.valuation (C c) * x.1.valuation (T - C a) ^ m ↔ ‖d‖ * r ^ n ≤ ‖c‖ * r ^ m) := by
+  set γ := x.1.valuation (T - C a)
+  -- `m = n + k` and `d = e c`: cancel `x(c) x(T - a)^n` and `‖c‖ r^n`
+  obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_le h
+  obtain ⟨e, rfl⟩ : ∃ e, d = e * c := ⟨d / c, (div_mul_cancel₀ d hc).symm⟩
+  have hx : 0 < x.1.valuation (C c) * γ ^ n := by
+    refine zero_lt_iff.mpr (mul_ne_zero (fun h0 ↦ hc ?_)
+      (pow_ne_zero n (valuation_weightedX_sub_weightedC_ne_zero hr₀ hle)))
+    simpa [h0] using valuation_weightedC_le_iff x c 0
+  have h₁ : x.1.valuation (C c) * γ ^ (n + k) = x.1.valuation (C c) * γ ^ n * γ ^ k := by
+    rw [pow_add, mul_assoc]
+  have h₂ : x.1.valuation (C (e * c)) * γ ^ n = x.1.valuation (C c) * γ ^ n *
+      x.1.valuation (C e) := by
+    rw [map_mul, map_mul]
+    ac_rfl
+  have h₁' : ‖c‖ * r ^ (n + k) = ‖c‖ * r ^ n * r ^ k := by rw [pow_add, mul_assoc]
+  have h₂' : ‖e * c‖ * r ^ n = ‖c‖ * r ^ n * ‖e‖ := by
+    rw [norm_mul]
+    ring
+  simp only [h₁, h₂, h₁', h₂', mul_le_mul_iff_of_pos_left hx,
+    mul_le_mul_iff_of_pos_left (mul_pos (norm_pos_iff.mpr hc) (pow_pos hr₀ n))]
+  exact pow_le_valuation_weightedC_iff_and_valuation_weightedC_le_pow_iff hr₀ hle hge e k
 
 /-- Under the second condition, `x` compares `x(c) x(T - a)^m` and `x(d) x(T - a)^n` as the reals
 `‖c‖ r^m` and `‖d‖ r^n` compare. -/
@@ -127,62 +153,16 @@ private theorem valuation_mul_pow_le_iff [IsAlgClosed K] {x : closedPolydisc 1 K
     x.1.valuation (C c) * x.1.valuation (T - C a) ^ m ≤
         x.1.valuation (C d) * x.1.valuation (T - C a) ^ n ↔
       ‖c‖ * r ^ m ≤ ‖d‖ * r ^ n := by
-  set γ := x.1.valuation (T - C a)
-  have hγ : γ ≠ 0 := valuation_weightedX_sub_weightedC_ne_zero hr₀ hle
-  have hC (e : K) : x.1.valuation (C e) = 0 ↔ e = 0 := by
-    simpa using valuation_weightedC_le_iff x e 0
   rcases eq_or_ne c 0 with rfl | hc
   · simp only [map_zero, zero_mul, zero_le, norm_zero, true_iff]
     positivity
   rcases eq_or_ne d 0 with rfl | hd
-  · refine iff_of_false ?_ ?_
-    · simpa [hc, hγ] using (hC c).not.mpr hc
-    · simpa using mul_pos (norm_pos_iff.mpr hc) (pow_pos hr₀ m)
+  · simpa using (valuation_mul_pow_le_iff_of_le hr₀ hle hge hc 0 (Nat.zero_le m)).1
   rcases le_total n m with h | h
-  · -- `m = n + k` and `d = e c`: cancel `x(c) x(T - a)^n` and `‖c‖ r^n`
-    obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_le h
-    obtain ⟨e, rfl⟩ : ∃ e, d = e * c := ⟨d / c, (div_mul_cancel₀ d hc).symm⟩
-    have h₁ : x.1.valuation (C c) * γ ^ (n + k) = x.1.valuation (C c) * γ ^ n * γ ^ k := by
-      rw [pow_add, mul_assoc]
-    have h₂ : x.1.valuation (C (e * c)) * γ ^ n = x.1.valuation (C c) * γ ^ n *
-        x.1.valuation (C e) := by
-      rw [map_mul, map_mul]
-      ac_rfl
-    rw [h₁, h₂, mul_le_mul_iff_of_pos_left (zero_lt_iff.mpr (mul_ne_zero ((hC c).not.mpr hc)
-      (pow_ne_zero n hγ))), pow_le_valuation_weightedC_iff hr₀ hle, norm_mul, pow_add,
-      show ‖c‖ * (r ^ n * r ^ k) = ‖c‖ * r ^ n * r ^ k by ring,
-      show ‖e‖ * ‖c‖ * r ^ n = ‖c‖ * r ^ n * ‖e‖ by ring,
-      mul_le_mul_iff_of_pos_left (mul_pos (norm_pos_iff.mpr hc) (pow_pos hr₀ n))]
-  · -- `n = m + k` and `c = e d`: cancel `x(d) x(T - a)^m` and `‖d‖ r^m`
-    obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_le h
-    obtain ⟨e, rfl⟩ : ∃ e, c = e * d := ⟨c / d, (div_mul_cancel₀ c hd).symm⟩
-    have h₁ : x.1.valuation (C d) * γ ^ (m + k) = x.1.valuation (C d) * γ ^ m * γ ^ k := by
-      rw [pow_add, mul_assoc]
-    have h₂ : x.1.valuation (C (e * d)) * γ ^ m = x.1.valuation (C d) * γ ^ m *
-        x.1.valuation (C e) := by
-      rw [map_mul, map_mul]
-      ac_rfl
-    rw [h₁, h₂, mul_le_mul_iff_of_pos_left (zero_lt_iff.mpr (mul_ne_zero ((hC d).not.mpr hd)
-      (pow_ne_zero m hγ))), valuation_weightedC_le_pow_iff hr₀ hge, norm_mul, pow_add,
-      show ‖d‖ * (r ^ m * r ^ k) = ‖d‖ * r ^ m * r ^ k by ring,
-      show ‖e‖ * ‖d‖ * r ^ m = ‖d‖ * r ^ m * ‖e‖ by ring,
-      mul_le_mul_iff_of_pos_left (mul_pos (norm_pos_iff.mpr hd) (pow_pos hr₀ m))]
+  · exact (valuation_mul_pow_le_iff_of_le hr₀ hle hge hc d h).1
+  · exact (valuation_mul_pow_le_iff_of_le hr₀ hle hge hd c h).2
 
 variable [CompleteSpace K]
-
-/-! ### The values of `η_{a,r}` on linear polynomials -/
-
-/-- The Gauss norm of radius `r` about `a` takes the value `max r ‖b - a‖` on `T - b`. -/
-private theorem coe_closedDiscGaussValuation_taylorHom_weightedX_sub_weightedC {a : K}
-    (ha : ‖a‖ ≤ 1) (hr₀ : 0 < r) (hr₁ : r ≤ 1) (b : K) :
-    (closedDiscGaussValuation hr₀ hr₁
-      (taylorHom (fun _ ↦ a) (fun _ ↦ isPowerBounded_iff_norm_le_one.mpr ha) (T - C b)) : ℝ) =
-      max r ‖b - a‖ := by
-  have h : T + C a - C b = T - C (b - a) := by
-    rw [map_sub]
-    ring
-  rw [map_sub, taylorHom_weightedX, taylorHom_weightedC, h,
-    coe_closedDiscGaussValuation_weightedX_sub_weightedC]
 
 /-- Under the two conditions, on every polynomial `x` takes a value `x(c) x(T - a)^m` where the
 Gauss norm of radius `r` about `a` takes the value `‖c‖ r^m`. -/

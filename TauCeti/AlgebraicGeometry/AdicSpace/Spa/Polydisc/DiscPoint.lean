@@ -164,6 +164,23 @@ theorem discPoint_vle_iff (a : K) (ha : ‖a‖ ≤ 1) (hr₀ : 0 < r) (hr₁ : 
           (taylorHom (fun _ ↦ a) (fun _ ↦ isPowerBounded_iff_norm_le_one.mpr ha) g) := by
   rw [discPoint_val, comap_vle, gaussPoint_vle_iff]
 
+/-- The Gauss norm of radius `r` about `a` takes the value `max r ‖b - a‖` on `T - b`: this is the
+value of `η_{a,r}` on `T - b`. -/
+theorem coe_closedDiscGaussValuation_taylorHom_weightedX_sub_weightedC {a : K} (ha : ‖a‖ ≤ 1)
+    (hr₀ : 0 < r) (hr₁ : r ≤ 1) (b : K) :
+    (closedDiscGaussValuation hr₀ hr₁
+      (taylorHom (fun _ ↦ a) (fun _ ↦ isPowerBounded_iff_norm_le_one.mpr ha)
+        (weightedX (fun _ : Fin 1 ↦ ({1} : Set K)) isWeightFamily_one_weight 0 -
+          weightedC _ isWeightFamily_one_weight b)) : ℝ) =
+      max r ‖b - a‖ := by
+  have h : weightedX (fun _ : Fin 1 ↦ ({1} : Set K)) isWeightFamily_one_weight 0 +
+      weightedC _ isWeightFamily_one_weight a - weightedC _ isWeightFamily_one_weight b =
+      weightedX _ isWeightFamily_one_weight 0 - weightedC _ isWeightFamily_one_weight (b - a) := by
+    rw [map_sub]
+    ring
+  rw [map_sub, taylorHom_weightedX, taylorHom_weightedC, h,
+    coe_closedDiscGaussValuation_weightedX_sub_weightedC]
+
 /-- **About the origin, `η_{0,r}` is the Gauss point `η_r`.** -/
 @[simp]
 theorem discPoint_zero (ha : ‖(0 : K)‖ ≤ 1) (hr₀ : 0 < r) (hr₁ : r ≤ 1) :

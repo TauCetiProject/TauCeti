@@ -59,9 +59,8 @@ section Polynomial
 
 variable {A : Type*} [CommRing A] [TopologicalSpace A] [NonarchimedeanRing A]
 
-/-- **One-variable polynomials are dense in `A⟨T⟩_T`.** Evaluation of `A[T]` at the variable
-reaches the whole polynomial subring `weightedPolynomials`, which is dense by Wedhorn 5.49(1)
-(`TauCeti.Huber.dense_weightedPolynomials`). -/
+/-- **One-variable polynomials are dense in `A⟨T⟩_T`**: evaluating `A[T]` at the variable has
+dense range. See Wedhorn 5.49(1) and `TauCeti.Huber.dense_weightedPolynomials`. -/
 theorem denseRange_eval₂RingHom_weightedX {T : Fin 1 → Set A} (hT : IsWeightFamily T) :
     DenseRange (Polynomial.eval₂RingHom (weightedC T hT) (weightedX T hT 0)) := by
   -- the polynomial subring is the image of `MvPolynomial (Fin 1) A`, which factors through `A[T]`

@@ -201,14 +201,13 @@ theorem IsContinuous.isOpen_le [SeparatelyContinuousAdd A] {v : Valuation A Γ�
   simpa using v.map_add_le hy.le ha
 
 /-- **Continuous valuations are determined on a dense subset.** Two continuous valuations with
-the same zeros that compare the elements of a dense subset `s` in the same way are equivalent.
-Off the common support both are locally constant (`IsContinuous.eventually_eq`), so every
-comparison can be tested at nearby elements of `s`. -/
+the same zeros that compare the elements of a dense subset `s` in the same way are equivalent. -/
 theorem IsContinuous.isEquiv_of_dense [SeparatelyContinuousAdd A] {v : Valuation A Γ₀}
     {w : Valuation A Γ₀'} (hv : v.IsContinuous) (hw : w.IsContinuous)
     (hvw : ∀ a, v a = 0 ↔ w a = 0) {s : Set A} (hs : Dense s)
     (h : ∀ a ∈ s, ∀ b ∈ s, v a ≤ v b ↔ w a ≤ w b) : v.IsEquiv w := by
-  -- off the support, some element of `s` has the same value under both valuations
+  -- off the support both valuations are locally constant (`IsContinuous.eventually_eq`), so some
+  -- element of `s` has the same value under both
   have approx (a : A) (ha : v a ≠ 0) : ∃ a' ∈ s, v a' = v a ∧ w a' = w a := by
     obtain ⟨a', ⟨hva, hwa⟩, ha's⟩ := mem_closure_iff_nhds.mp (hs a) _
       ((hv.eventually_eq ha).and (hw.eventually_eq ((hvw a).not.mp ha)))
