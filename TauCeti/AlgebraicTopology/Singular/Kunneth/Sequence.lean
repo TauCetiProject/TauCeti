@@ -118,13 +118,9 @@ private def homologyKunnethShortComplexIso (m : ℕ) :
         Iso.refl_hom]
       exact (Category.id_comp _).trans (singularHomologyKunneth_def X Y M N (m + 1)))
     (by
-      simp only [Iso.symm_hom, HomotopyEquiv.toHomologyIso, eilenbergZilberHomotopyEquiv_inv,
-        Iso.refl_hom]
-      -- the shuffle map followed by the Alexander–Whitney map is homotopic to the identity
-      have h : homologyMap (shuffle X Y M N) (m + 1) ≫
-          homologyMap (alexanderWhitney X Y M N) (m + 1) = 𝟙 _ := by
-        rw [← homologyMap_comp, (shuffleAlexanderWhitneyHomotopy X Y M N).homologyMap_eq,
-          homologyMap_id]
+      have h := ((eilenbergZilberHomotopyEquiv X Y M N).toHomologyIso (m + 1)).inv_hom_id
+      simp only [Iso.symm_hom, HomotopyEquiv.toHomologyIso, eilenbergZilberHomotopyEquiv_hom,
+        eilenbergZilberHomotopyEquiv_inv, Iso.refl_hom] at h ⊢
       exact ((reassoc_of% h) _).trans (Category.comp_id _).symm)
 
 /-- **The Künneth short exact sequence for singular homology.**  Let `M` and `N` be modules over a
