@@ -148,7 +148,9 @@ def branchQuotientEquiv :
 /-- The quotient comparison takes a pair of branch functions to the difference at the origin. -/
 @[simp]
 lemma branchQuotientEquiv_mk (p : R[X] × R[X]) :
-    branchQuotientEquiv R (Submodule.Quotient.mk p) = p.1.coeff 0 - p.2.coeff 0 := (rfl)
+    branchQuotientEquiv R (Submodule.Quotient.mk p) = p.1.coeff 0 - p.2.coeff 0 := by
+  rw [branchQuotientEquiv, Function.Exact.linearEquivOfSurjective_apply]
+  exact (Submodule.liftQ_apply _ _ p).trans (branchDifference_apply R p)
 
 /-- The inverse quotient comparison represents a value by the constant function on the first
 branch and zero on the second. -/
