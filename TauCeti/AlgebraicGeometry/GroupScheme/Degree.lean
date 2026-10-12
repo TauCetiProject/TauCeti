@@ -17,7 +17,7 @@ import TauCeti.CategoryTheory.Monoidal.Grp.KernelPair
 
 Let `f : G ⟶ H` be a homomorphism of group schemes over a scheme `S` whose underlying morphism of
 schemes is finite and flat. Its scheme-theoretic kernel is the base change of `f` along the unit
-section of `H` (`TauCeti.GroupScheme.isPullback_kernel_hom_left`), so it is finite and flat over
+section of `H` (`TauCeti.GroupScheme.isPullback_kernel_scheme`), so it is finite and flat over
 `S`. The **degree** of `f` is the function `GroupScheme.degree f : S → ℕ` whose value at `s` is the
 rank of the kernel at `s`. When `f` is also locally of finite presentation it is locally constant,
 but over a disconnected base it need not be constant. For an isogeny of elliptic curves, a finite,
@@ -92,7 +92,7 @@ variable [IsFinite f.hom.hom.left] [Flat f.hom.hom.left]
 /-- **The degree is the rank over the unit section.** For a finite flat homomorphism `f : G ⟶ H`,
 the degree of `f` at `s` is the rank of `f` at the image of `s` under the unit section of `H`. -/
 theorem degree_eq_finrank (s : S) : degree f s = f.hom.hom.left.finrank (η[H.X].left s) :=
-  Scheme.Hom.finrank_of_isPullback _ _ _ _ (isPullback_kernel_hom_left f) s
+  Scheme.Hom.finrank_of_isPullback _ _ _ _ (isPullback_kernel_scheme f) s
 
 /-- **The degree is locally constant** for a finite locally free homomorphism of group schemes. -/
 theorem isLocallyConstant_degree [LocallyOfFinitePresentation f.hom.hom.left] :
