@@ -256,24 +256,6 @@ theorem exists_isMinOn_lintegral_map_eq (hw : ∑ i, w i = 1) {μ : ι → Measu
 
 /-! ### Barycenters in `P₂ (E)` -/
 
-omit [InnerProductSpace ℝ E] [CompleteSpace E] in
-/-- For weights summing to `1` and laws of finite second moment, a probability law of finite
-weighted quadratic Wasserstein cost has finite second moment. -/
-private theorem hasFiniteMoment_of_sum_mul_wassersteinEDist_sq_ne_top (hw : ∑ i, w i = 1)
-    {μ : ι → Measure E} [∀ i, IsProbabilityMeasure (μ i)] (hμ : ∀ i, HasFiniteMoment 2 (μ i))
-    {ν : Measure E} [IsProbabilityMeasure ν]
-    (h : ∑ i, (w i : ℝ≥0∞) * wassersteinEDist 2 ν (μ i) ^ 2 ≠ ∞) : HasFiniteMoment 2 ν := by
-  obtain ⟨i₀, -, hi₀⟩ := Finset.exists_ne_zero_of_sum_ne_zero (hw.trans_ne one_ne_zero)
-  have hi : (w i₀ : ℝ≥0∞) * wassersteinEDist 2 ν (μ i₀) ^ 2 ≠ ∞ :=
-    ne_top_of_le_ne_top h
-      (Finset.single_le_sum (f := fun i ↦ (w i : ℝ≥0∞) * wassersteinEDist 2 ν (μ i) ^ 2)
-      (fun _ _ ↦ bot_le) (Finset.mem_univ i₀))
-  have hne : wassersteinEDist 2 ν (μ i₀) ≠ ∞ := by
-    simpa [ENNReal.mul_eq_top, hi₀] using hi
-  rw [hasFiniteMoment_iff_wassersteinEDist_ne_top_of_hasFiniteMoment measurable_edist (hμ i₀),
-    wassersteinEDist_comm measurable_edist]
-  exact hne
-
 /-- **Quadratic Wasserstein barycenters are weighted means of optimal multi-couplings.** For
 weights summing to `1` and laws `μ i` of finite second moment, a law `ν` of finite second moment
 is a quadratic Fréchet barycenter in `P₂ (E)` of the finitely supported law `∑ i, w i • δ_{μ i}`
@@ -318,8 +300,9 @@ theorem isFrechetBarycenter_two_iff_exists_isMinOn_lintegral_map_eq (hw : ∑ i,
       (isMinOn_iff.2 fun ν' (hν' : IsProbabilityMeasure ν') ↦ ?_) (by simpa only [hF] using hfinF ν)
     by_cases htop : ∑ i, (w i : ℝ≥0∞) * wassersteinEDist 2 ν' (μ' i) ^ 2 = ∞
     · exact htop ▸ le_top
-    have hmom := hasFiniteMoment_of_sum_mul_wassersteinEDist_sq_ne_top hw
-      (fun i ↦ (μ i).hasFiniteMoment) htop
+    obtain ⟨i₀, -, hi₀⟩ := Finset.exists_ne_zero_of_sum_ne_zero (hw.trans_ne one_ne_zero)
+    have hmom := hasFiniteMoment_of_sum_mul_wassersteinEDist_pow_ne_top hd (Finset.mem_univ i₀)
+      (ENNReal.coe_ne_zero.2 hi₀) (μ i₀).hasFiniteMoment two_ne_zero htop
     have hc : ((WassersteinSpace.mk ⟨ν', hν'⟩ hmom : ProbabilityMeasure E) : Measure E) = ν' :=
       congrArg ProbabilityMeasure.toMeasure (WassersteinSpace.coe_mk _ _)
     have hz := h (WassersteinSpace.mk ⟨ν', hν'⟩ hmom)
