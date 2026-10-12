@@ -9,7 +9,6 @@ public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import Mathlib.Analysis.InnerProductSpace.Semisimple
 public import Mathlib.LinearAlgebra.Eigenspace.Basic
 public import TauCeti.Analysis.InnerProductSpace.Projection.Block
-public import TauCeti.Analysis.InnerProductSpace.Projection.Completeness
 
 /-!
 # Reducing subspaces
@@ -22,8 +21,9 @@ When `U` also admits an orthogonal projection `P_U` (`[U.HasOrthogonalProjection
 `E = U ⊕ Uᗮ`, a reducing subspace splits `A` along this decomposition into an operator on `U` and
 an operator on `Uᗮ`, which is how restrictions of self-adjoint operators to spectral subspaces are
 formed. If moreover `E` is complete, then `U` is complete
-(`Submodule.completeSpace_of_hasOrthogonalProjection`), so it is itself a Hilbert space on which
-the operator restricts.
+(`Submodule.completeSpace_of_hasOrthogonalProjection` in
+`TauCeti.Analysis.InnerProductSpace.Projection.Completeness`), so it is itself a Hilbert space on
+which the operator restricts.
 
 ## Main definitions
 
