@@ -32,7 +32,7 @@ representation is involved, so it also covers class functions that are not chara
 
 ## Main statements
 
-* `TauCeti.finrank_hom_indFDRep`, `TauCeti.finrank_hom_resFDRep`: the paired intertwining spaces
+* `FDRep.finrank_hom_indFDRep`, `FDRep.finrank_hom_resFDRep`: the paired intertwining spaces
   have the same dimension.
 * `TauCeti.frobenius_reciprocity` and `TauCeti.frobenius_reciprocity_resFDRep`: the character form
   in both directions, with all scalar products written out as explicit normalized sums.
@@ -40,7 +40,7 @@ representation is involved, so it also covers class functions that are not chara
   phrased against `TauCeti.ClassFunction.characterPairing`.
 * `TauCeti.card_inv_mul_sum_character_indFDRep`: reciprocity against the trivial representation,
   which says that induction does not change the (normalized) average of a character.
-* `TauCeti.finrank_invariants_indFDRep`: induction does not change the dimension of invariants.
+* `FDRep.finrank_invariants_indFDRep`: induction does not change the dimension of invariants.
 * `TauCeti.frobenius_reciprocity_classFunction` and `TauCeti.characterPairing_ind`: the class
   function form, `⟨Ind f, h⟩_G = ⟨f, Res h⟩_S`, for arbitrary class functions `f` on `S` and `h`
   on `G`.  `TauCeti.frobenius_reciprocity` is its special case for two characters and follows
@@ -56,10 +56,11 @@ from `Subgroup.card_mul_index`, via `TauCeti.isUnit_natCard_subgroup`.
 
 That pairing-to-dimension lemma computes `⟨χ_V, χ_W⟩` as `finrank k (W ⟶ V)`, exchanging the two
 arguments.  So the identity stated in the order `⟨Ind χ, ψ⟩ = ⟨χ, Res ψ⟩` is read off the *second*
-reciprocity, `finrank_hom_resFDRep`.  The identity in the order `⟨Res ψ, χ⟩ = ⟨ψ, Ind χ⟩` is then
+reciprocity, `FDRep.finrank_hom_resFDRep`. The identity in the order
+`⟨Res ψ, χ⟩ = ⟨ψ, Ind χ⟩` is then
 just that one with both sides flipped, by `TauCeti.ClassFunction.characterPairing_symm`, so it is
-derived rather than proved again from `finrank_hom_indFDRep`.  Neither direction needs a reindexing
-of the sums.
+derived rather than proved again from `FDRep.finrank_hom_indFDRep`. Neither direction needs a
+reindexing of the sums.
 
 The two `k`-linear equivalences of intertwining spaces that carry the reciprocities are private:
 only their `finrank` corollaries are intended as API, and both are opaque transports whose bodies
@@ -75,9 +76,11 @@ public section
 
 open CategoryTheory
 
-namespace TauCeti
-
 universe u v
+
+namespace FDRep
+
+open TauCeti
 
 section HomSpaces
 
@@ -113,7 +116,7 @@ theorem finrank_hom_indFDRep [S.FiniteIndex] (A : FDRep k S) (B : FDRep k G) :
 /-- **The second reciprocity**, available because induction from a finite-index subgroup is also a
 *right* adjoint to restriction: `Hom_S(Res_S B, A) ≃ₗ[k] Hom_G(B, Ind_S^G A)`.
 
-Where `TauCeti.indResFDRepHomEquiv` transports Mathlib's `Rep.indResHomEquiv`, this transports
+Where `FDRep.indResFDRepHomEquiv` transports Mathlib's `Rep.indResHomEquiv`, this transports
 `Rep.resCoindHomEquiv` along Mathlib's finite-index identification `Rep.indCoindIso` of induction
 with coinduction; the pair is the finite-dimensional shadow of `Rep.resIndAdjunction`.
 
@@ -152,6 +155,10 @@ theorem finrank_invariants_indFDRep [S.FiniteIndex] (A : FDRep k S) :
 
 end HomSpaces
 
+end FDRep
+
+namespace TauCeti
+
 section Characters
 
 variable {k G : Type u} [Field k] [Group G] {S : Subgroup G}
@@ -176,7 +183,7 @@ theorem frobenius_reciprocity [Fintype G] (hG : IsUnit (Nat.card G : k))
           (ClassFunction.ofFDRep B) := (ClassFunction.characterPairing_ofFDRep _ _).symm
     _ = (Module.finrank k (B ⟶ indFDRep A) : k) :=
         ClassFunction.characterPairing_ofFDRep_eq_finrank _ _
-    _ = (Module.finrank k (Subgroup.resFDRep S B ⟶ A) : k) := by rw [finrank_hom_resFDRep]
+    _ = (Module.finrank k (Subgroup.resFDRep S B ⟶ A) : k) := by rw [FDRep.finrank_hom_resFDRep]
     _ = ClassFunction.characterPairing (ClassFunction.ofFDRep A)
           (ClassFunction.ofFDRep (Subgroup.resFDRep S B)) :=
         (ClassFunction.characterPairing_ofFDRep_eq_finrank _ _).symm
