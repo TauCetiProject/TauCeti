@@ -276,6 +276,10 @@ private theorem mem_dixonCyclotomicCharacterTableCandidates (e : ℕ) (he : e = 
     ⟨omega, table, degree⟩ ∈ d.dixonCyclotomicCharacterTableCandidates e q := by
   have _ : NeZero e := ⟨he ▸ Monoid.exponent_ne_zero_of_finite⟩
   have hroot : IsPrimitiveRoot q.root e := he ▸ q.isPrimitiveRoot_root
+  have hcyclotomic :
+      (Polynomial.cyclotomic e ℤ).eval₂ (Int.castRingHom (ZMod q.p)) q.root = 0 := by
+    rw [← Polynomial.eval_map, Polynomial.map_cyclotomic]
+    exact hroot.isRoot_cyclotomic (NeZero.pos e)
   have homega (i k : Fin d.numClasses) : Cyclotomic.lift e q.root
       (fun j ↦ (d.modularCentralRowsList q).getD i 0
         (d.index (d.rep k ^ Cyclotomic.primitiveExponent e j))) = omega i k := by
@@ -283,7 +287,7 @@ private theorem mem_dixonCyclotomicCharacterTableCandidates (e : ℕ) (he : e = 
     funext j
     -- The list lookup is the defining value of `canonicalModularRow`.
     rw [← canonicalModularRow, hrows]
-    exact hspec.conjugateResidues_omega hroot i k j
+    exact hspec.conjugateResidues_omega hcyclotomic i k j
       (he ▸ Monoid.pow_exponent_eq_one (d.rep k))
   simp only [dixonCyclotomicCharacterTableCandidates, List.mem_map,
     List.mem_filter, FinEnum.mem_toList, true_and, decide_eq_true_eq]

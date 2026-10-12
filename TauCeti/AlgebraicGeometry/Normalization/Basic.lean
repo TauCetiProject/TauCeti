@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicGeometry.Normalization
+public import TauCeti.AlgebraicGeometry.Morphisms.SchemeTheoreticallyDominant
 
 /-!
 # Functoriality of the relative normalization
@@ -29,6 +30,12 @@ For quasi-compact quasi-separated morphisms `f : Y ⟶ J` and `g : Y' ⟶ J`, a 
 * `AlgebraicGeometry.Scheme.Hom.normalizationMap_id` and
   `AlgebraicGeometry.Scheme.Hom.normalizationMap_comp`: the construction preserves identities and
   composition.
+* `AlgebraicGeometry.Scheme.Hom.isSchemeTheoreticallyDominant_fromNormalization`: relative
+  normalization of a scheme-theoretically dominant morphism is scheme-theoretically dominant.
+
+## References
+
+* The Stacks Project, Tag 035H (relative normalization).
 -/
 
 public section
@@ -78,3 +85,21 @@ theorem normalizationMap_comp {Y'' : Scheme.{u}} (h : Y'' ⟶ J) [QuasiCompact h
   normalization.hom_ext f _ _ h.fromNormalization (by simp) (by simp) (by simp)
 
 end AlgebraicGeometry.Scheme.Hom
+
+namespace TauCeti
+
+open CategoryTheory AlgebraicGeometry
+
+universe u
+
+/-- Relative normalization of a scheme-theoretically dominant morphism is
+scheme-theoretically dominant over the target. -/
+instance _root_.AlgebraicGeometry.Scheme.Hom.isSchemeTheoreticallyDominant_fromNormalization
+    {X Y : Scheme.{u}} (f : X ⟶ Y) [QuasiCompact f] [QuasiSeparated f]
+    [IsSchemeTheoreticallyDominant f] : IsSchemeTheoreticallyDominant f.fromNormalization := by
+  have : IsSchemeTheoreticallyDominant (f.toNormalization ≫ f.fromNormalization) := by
+    rw [f.toNormalization_fromNormalization]
+    infer_instance
+  exact IsSchemeTheoreticallyDominant.of_comp f.toNormalization f.fromNormalization
+
+end TauCeti

@@ -330,9 +330,9 @@ theorem linearEquiv_symm {G : InternalGrading R M} {H : InternalGrading R N} {e 
 
 section Decompose
 
-variable {R S : Type*} {M : Type v} {N : Type w} [Semiring R] [Semiring S] [SMul R S]
-  [AddCommMonoid M] [Module R M] [Module S M] [IsScalarTower R S M]
-  [AddCommMonoid N] [Module R N] [Module S N] [IsScalarTower R S N]
+variable {R S : Type*} {M : Type v} {N : Type w} [Semiring R] [Semiring S]
+  [AddCommMonoid M] [Module R M] [Module S M]
+  [AddCommMonoid N] [Module R N] [Module S N]
   {f : M →ₗ[S] N} {r : ℤ}
 
 /-- A homogeneous linear map of degree `r` carries the degree-`p` component of an element to the
@@ -343,7 +343,7 @@ theorem map_decompose {ℳ : ℤ → Submodule R M} [DirectSum.Decomposition ℳ
     {𝓝 : ℤ → Submodule R N} [DirectSum.Decomposition 𝓝] (hf : LinearMap.IsHomogeneous f ℳ 𝓝 r)
     (p : ℤ) (x : M) :
     f (DirectSum.decompose ℳ x p : M) = (DirectSum.decompose 𝓝 (f x) (p + r) : N) :=
-  DirectSum.map_decompose_shift ℳ 𝓝 (f.restrictScalars R) (· + r)
+  DirectSum.map_decompose_shift ℳ 𝓝 f.toAddMonoidHom (· + r)
     (add_left_injective r) (fun _ _ hx ↦ hf.map_mem hx) p x
 
 variable {G : InternalGrading R M} {H : InternalGrading R N}

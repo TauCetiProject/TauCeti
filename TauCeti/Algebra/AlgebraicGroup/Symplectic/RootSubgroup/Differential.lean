@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.AdditiveGroup.Differential
 public import TauCeti.Algebra.AlgebraicGroup.Symplectic.RootSubgroup.Basic
-public import TauCeti.Algebra.AlgebraicGroup.Symplectic.Tangent
+public import TauCeti.Algebra.AlgebraicGroup.Symplectic.Tangent.Basic
 
 /-!
 # Differentials of symplectic root subgroups

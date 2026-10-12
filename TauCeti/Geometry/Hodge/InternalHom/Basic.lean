@@ -182,7 +182,7 @@ private theorem internalHomPiece_iSupIndep (hs₁ : HodgeStructureOn W₁ ω₁ 
   rw [Submodule.disjoint_def]
   intro f hf hf'
   rw [mem_internalHomPiece_iff] at hf
-  refine hs₁.linearMap_ext_of_piece (g := 0) fun a x hx ↦ ?_
+  refine hs₁.addHom_ext_of_piece (g := 0) fun a x hx ↦ ?_
   have hmem : f x ∈ ⨆ b, ⨆ (_ : b ≠ a + r), hs₂.piece b := by
     refine Submodule.iSup_induction
       (motive := fun g ↦ g x ∈ ⨆ b, ⨆ (_ : b ≠ a + r), hs₂.piece b) _ hf'
@@ -250,7 +250,7 @@ private theorem isHodgeDecomposition_internalHomPiece (hs₁ : HodgeStructureOn 
     obtain ⟨a₂, ha₂⟩ := hs₂.F_top
     obtain ⟨b₁, hb₁⟩ := hs₁.F_bot
     refine ⟨a₂ - b₁, fun r hr ↦ (Submodule.eq_bot_iff _).2 fun f hf ↦ ?_⟩
-    refine hs₁.linearMap_ext_of_piece (g := 0) fun a x hx ↦ ?_
+    refine hs₁.addHom_ext_of_piece (g := 0) fun a x hx ↦ ?_
     by_cases hab : b₁ ≤ a
     · rw [hs₁.piece_eq_bot_of_F_eq_bot hb₁ hab] at hx
       rw [(Submodule.mem_bot ℂ).1 hx]
@@ -355,7 +355,7 @@ theorem internalHom_proj_apply_apply (hs₁ : HodgeStructureOn W₁ ω₁ n₁)
     (hs₁.internalHom hs₂).proj r f x = hs₂.proj (a + r) (f x) := by
   have hext : LinearMap.applyₗ (R := ℂ) x ∘ₗ (hs₁.internalHom hs₂).proj r =
       hs₂.proj (a + r) ∘ₗ LinearMap.applyₗ (R := ℂ) x := by
-    refine (hs₁.internalHom hs₂).linearMap_ext_of_piece fun s g hg ↦ ?_
+    refine (hs₁.internalHom hs₂).addHom_ext_of_piece fun s g hg ↦ ?_
     have hgx : g x ∈ hs₂.piece (a + s) := hs₁.map_mem_piece_of_mem_internalHom_piece hs₂ hg hx
     rcases eq_or_ne s r with rfl | hsr
     · simp only [LinearMap.comp_apply, LinearMap.applyₗ_apply_apply,
@@ -393,7 +393,7 @@ theorem mem_internalHom_F_iff (hs₁ : HodgeStructureOn W₁ ω₁ n₁)
   refine (hs₁.internalHom hs₂).mem_of_proj_mem fun r ↦ ?_
   rcases lt_or_ge r p with hrp | hpr
   · have hzero : (hs₁.internalHom hs₂).proj r f = 0 :=
-      hs₁.linearMap_ext_of_piece fun a x hx ↦ by
+      hs₁.addHom_ext_of_piece fun a x hx ↦ by
         rw [hs₁.internalHom_proj_apply_apply hs₂ f hx,
           hs₂.proj_eq_zero_of_mem_F_of_lt (hf a x (hs₁.piece_le_F a hx)) (by omega),
           LinearMap.zero_apply]
@@ -471,7 +471,7 @@ theorem weilOperator_internalHom (hs₁ : HodgeStructureOn W₁ ω₁ n₁)
     (hs₁.internalHom hs₂).weilOperator =
       (hs₁.weilOperatorEquiv.arrowCongr hs₂.weilOperatorEquiv).toLinearMap := by
   refine ((hs₁.internalHom hs₂).weilOperator_unique _ fun r φ hφ ↦ ?_).symm
-  refine hs₁.linearMap_ext_of_piece fun a x hx ↦ ?_
+  refine hs₁.addHom_ext_of_piece fun a x hx ↦ ?_
   have hφx := hs₁.map_mem_piece_of_mem_internalHom_piece hs₂ hφ hx
   simp only [LinearEquiv.coe_coe, LinearEquiv.arrowCongr_apply, weilOperatorEquiv_symm_apply,
     weilOperatorEquiv_apply, hs₁.weilOperator_apply_of_mem hx, map_smul,
