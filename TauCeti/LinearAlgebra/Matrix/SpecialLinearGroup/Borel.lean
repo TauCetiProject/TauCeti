@@ -112,7 +112,7 @@ of its underlying matrix. -/
 @[simp]
 theorem coe_map {S : Type v} [CommRing S] (phi : R →+* S) (g : SL2Borel R) :
     (map phi g : SL(2, S)) = Matrix.SpecialLinearGroup.map phi g.1 := by
-  rfl
+  simp only [map, MonoidHom.codRestrict_apply, MonoidHom.domRestrict_apply]
 
 /-- The `(i, j)` entry of the entrywise map of `g` is the image under `phi` of the `(i, j)`
 entry of `g`. -/
@@ -168,8 +168,9 @@ def diag : SL2Borel R →* Rˣ :=
 /-- The value of the diagonal parameter is the upper-left matrix entry. -/
 @[simp]
 theorem diag_val (g : SL2Borel R) :
-    (diag g : R) = (g : Matrix (Fin 2) (Fin 2) R) 0 0 :=
-  GL2Borel.diag_fst_val (toGL2Borel g)
+    (diag g : R) = (g : Matrix (Fin 2) (Fin 2) R) 0 0 := by
+  rw [diag, MonoidHom.comp_apply, MonoidHom.comp_apply, MonoidHom.coe_fst, GL2Borel.diag_fst_val,
+    coe_toGL2Borel, Matrix.SpecialLinearGroup.coe_GL_coe_matrix]
 
 /-- The free upper-right parameter of an `SL₂` Borel matrix. -/
 def upperRight (g : SL2Borel R) : R :=
