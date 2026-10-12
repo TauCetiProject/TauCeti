@@ -118,6 +118,22 @@ theorem mem_affinePlaneBlowUpUpperCone_iff (x : (Fin 1 → ℝ) × (Fin 1 → �
     refine ⟨⟨x.2 0 - x.1 0, sub_nonneg.2 h1⟩, ⟨x.1 0, h0⟩, ?_⟩
     ext j <;> simp [Nonneg.mk_smul, Subsingleton.elim j 0]
 
+/-- The lower blow-up cone lies in the positive quadrant. -/
+theorem affinePlaneBlowUpLowerCone_le :
+    affinePlaneBlowUpLowerCone ≤ affineRayCone.prod affineRayCone := by
+  intro x hx
+  have hx' := (mem_affinePlaneBlowUpLowerCone_iff x).1 hx
+  exact ⟨(mem_affineRayCone_iff _).2 (hx'.1.trans hx'.2),
+    (mem_affineRayCone_iff _).2 hx'.1⟩
+
+/-- The upper blow-up cone lies in the positive quadrant. -/
+theorem affinePlaneBlowUpUpperCone_le :
+    affinePlaneBlowUpUpperCone ≤ affineRayCone.prod affineRayCone := by
+  intro x hx
+  have hx' := (mem_affinePlaneBlowUpUpperCone_iff x).1 hx
+  exact ⟨(mem_affineRayCone_iff _).2 hx'.1,
+    (mem_affineRayCone_iff _).2 (hx'.1.trans hx'.2)⟩
+
 /-- Membership in the diagonal ray: `0 ≤ x = y`. -/
 @[simp]
 theorem mem_affinePlaneBlowUpDiagonalCone_iff (x : (Fin 1 → ℝ) × (Fin 1 → ℝ)) :

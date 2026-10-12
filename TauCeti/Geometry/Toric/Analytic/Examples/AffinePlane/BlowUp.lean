@@ -6,6 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Toric.Analytic.Examples.AffinePlane.Basic
+public import TauCeti.Geometry.Toric.Analytic.Fan.Boundary.Basic
+public import TauCeti.Geometry.Toric.Analytic.Fan.Map.Orbit
+public import TauCeti.Geometry.Toric.Analytic.Fan.Map.Subdivision
 
 /-!
 # Explicit affine charts of the toric blow-up of the plane
@@ -16,6 +19,9 @@ of their complex-point charts with `ℂ × ℂ`. In these coordinates the toric 
 `(u, v) ↦ (u, u * v)` on the upper cone and `(u, v) ↦ (u * v, v)` on the lower cone.
 These formulas identify the exceptional fibre with a coordinate axis in each chart, including
 points where a coordinate vanishes.
+
+The toric map is proper because the two fans have the same support. Its fibre over the origin
+is the boundary component of the diagonal ray, the closure of that ray’s orbit.
 
 The chart homeomorphisms use `AffineSemigroupComplexPoint.comapHomeomorph`, its product
 comparison, and the standard character coordinate of the affine ray. They use the existing
@@ -33,6 +39,33 @@ open Multiplicative
 open scoped ContDiff
 
 namespace TauCeti.Toric
+
+/-! ### The blow-up of the affine plane at the origin -/
+
+/-- The analytic toric map from the blow-up of the affine plane at the origin, the star
+subdivision of the affine-plane fan along the diagonal, to the affine plane is proper. -/
+theorem isProperMap_analyticMap_affinePlaneBlowUpFan :
+    IsProperMap (affinePlaneBlowUpFan_isSubdivision.toFanHom.analyticMap
+      isRegular_affinePlaneBlowUpFan isRegular_affinePlaneFan) :=
+  affinePlaneBlowUpFan_isSubdivision.isProperMap_analyticMap isRegular_affinePlaneBlowUpFan
+    isRegular_affinePlaneFan
+
+/-- The exceptional fibre of the blow-up of the affine plane at the origin. The preimage of the
+origin, the orbit of the positive quadrant, is the boundary component of the diagonal ray. -/
+theorem preimage_analyticMap_analyticConeOrbit_affinePlaneBlowUpFan :
+    affinePlaneBlowUpFan_isSubdivision.toFanHom.analyticMap isRegular_affinePlaneBlowUpFan
+        isRegular_affinePlaneFan ⁻¹'
+      affinePlaneFan.analyticConeOrbit isRegular_affinePlaneFan
+        (affineRayFan.prodCone affineRayFan affineRayFanMaxCone affineRayFanMaxCone) =
+      affinePlaneBlowUpFan.analyticBoundaryComponent isRegular_affinePlaneBlowUpFan
+        affinePlaneBlowUpDiagonalRay := by
+  rw [FanHom.preimage_analyticMap_analyticConeOrbit, Fan.analyticBoundaryComponent_eq_iUnion]
+  ext x
+  simp only [Set.mem_iUnion, Set.mem_Ici, exists_prop, ← Subtype.coe_le_coe,
+    coe_toCone_affinePlaneBlowUpDiagonalRay]
+  exact exists_congr fun σ ↦ and_congr_left fun _ ↦ leastCone_affinePlaneBlowUpFan_eq_iff σ.2
+
+/-! ### Explicit affine charts -/
 
 private abbrev PlaneLattice := (Fin 1 → ℤ) × (Fin 1 → ℤ)
 private abbrev quadrant := affineRayCone.prod affineRayCone
@@ -156,7 +189,21 @@ private theorem blowUpPointHomeomorph_symm_apply_single (upper : Bool) (z : ℂ 
     AffineSemigroupComplexPoint.coe_prodHomeomorph_symm,
     AffineSemigroupComplexPoint.prodEquiv_symm_apply_single]
   simp only [AddEquiv.symm_symm]
+  -- Coercing the semigroup equivalence to an additive homomorphism preserves its function.
   rfl
+
+private theorem blowUpPointHomeomorph_symm_apply_single_eq_pow (upper : Bool) (z : ℂ × ℂ)
+    (m : dualSemigroup affinePlaneFan.lattice (blowUpCone upper)) :
+    letI := affinePointTopology
+      (affinePlaneBlowUpFan.analyticChartGenerators (blowUpFanCone upper)).2
+    (blowUpPointHomeomorph upper).symm z (MonoidAlgebra.single (ofAdd m) 1) =
+      z.1 ^ ((m : PlaneLattice →+ ℤ) (blowUpShear ℤ upper (1, 0))).toNat *
+        z.2 ^ ((m : PlaneLattice →+ ℤ) (blowUpShear ℤ upper (0, 1))).toNat := by
+  have h := blowUpPointHomeomorph_symm_apply_single upper z m
+  simp only [affineRayPointHomeomorph_symm_apply_single_eq_pow,
+    dualSemigroupProdEquiv_fst_apply, dualSemigroupProdEquiv_snd_apply,
+    blowUpSemigroupEquiv, dualSemigroupEquiv_apply] at h
+  exact h
 
 /-- In upper-chart coordinates, a character monomial has exponents given by its values on
 `(1, 1)` and `(0, 1)`, the two primitive generators of the cone. -/
@@ -168,15 +215,11 @@ theorem affinePlaneBlowUpUpperPointHomeomorph_symm_apply_single (z : ℂ × ℂ)
     x (MonoidAlgebra.single (ofAdd m) 1) =
       z.1 ^ ((m : ((Fin 1 → ℤ) × (Fin 1 → ℤ)) →+ ℤ) (1, 1)).toNat *
         z.2 ^ ((m : ((Fin 1 → ℤ) × (Fin 1 → ℤ)) →+ ℤ) (0, 1)).toNat := by
-  have h := blowUpPointHomeomorph_symm_apply_single true z m
-  simp only [affineRayPointHomeomorph_symm_apply_single_eq_pow,
-    dualSemigroupProdEquiv_fst_apply, dualSemigroupProdEquiv_snd_apply,
-    blowUpSemigroupEquiv, dualSemigroupEquiv_apply] at h
-  dsimp only
-  -- The public homeomorphism has the same inverse as the shared construction.
-  convert h using 1
-  · rfl
-  · simp [blowUpShear]
+  rw [affinePlaneBlowUpUpperPointHomeomorph]
+  have h := blowUpPointHomeomorph_symm_apply_single_eq_pow true z m
+  simp only [blowUpShear, ↓reduceIte, LinearEquiv.skewProd_apply, LinearEquiv.refl_apply,
+    LinearMap.id_coe, id_eq, zero_add, add_zero] at h
+  exact h
 
 /-- In lower-chart coordinates, a character monomial has exponents given by its values on
 `(1, 0)` and `(1, 1)`, the two primitive generators of the cone. -/
@@ -188,15 +231,109 @@ theorem affinePlaneBlowUpLowerPointHomeomorph_symm_apply_single (z : ℂ × ℂ)
     x (MonoidAlgebra.single (ofAdd m) 1) =
       z.1 ^ ((m : ((Fin 1 → ℤ) × (Fin 1 → ℤ)) →+ ℤ) (1, 0)).toNat *
         z.2 ^ ((m : ((Fin 1 → ℤ) × (Fin 1 → ℤ)) →+ ℤ) (1, 1)).toNat := by
-  have h := blowUpPointHomeomorph_symm_apply_single false z m
-  simp only [affineRayPointHomeomorph_symm_apply_single_eq_pow,
-    dualSemigroupProdEquiv_fst_apply, dualSemigroupProdEquiv_snd_apply,
-    blowUpSemigroupEquiv, dualSemigroupEquiv_apply] at h
-  dsimp only
-  -- The public homeomorphism has the same inverse as the shared construction.
-  convert h using 1
-  · rfl
-  · simp [blowUpShear]
+  rw [affinePlaneBlowUpLowerPointHomeomorph]
+  have h := blowUpPointHomeomorph_symm_apply_single_eq_pow false z m
+  simp only [blowUpShear, Bool.false_eq_true, ↓reduceIte, LinearEquiv.trans_apply,
+    LinearEquiv.prodComm_apply, Prod.swap_prod_mk, LinearEquiv.skewProd_apply,
+    LinearEquiv.refl_apply, LinearMap.id_coe, id_eq, add_zero, zero_add] at h
+  exact h
+
+private theorem blowUpPointHomeomorph_apply (upper : Bool)
+    (x : AffineSemigroupComplexPoint (dualSemigroup affinePlaneFan.lattice (blowUpCone upper))) :
+    letI := affinePointTopology
+      (affinePlaneBlowUpFan.analyticChartGenerators (blowUpFanCone upper)).2
+    blowUpPointHomeomorph upper x =
+      (x (MonoidAlgebra.single (ofAdd ((blowUpSemigroupEquiv upper).symm
+        ((dualSemigroupProdEquiv affineRayFan.lattice affineRayFan.lattice
+          affineRayCone affineRayCone).symm (affineRayCharacter, 0)))) 1),
+        x (MonoidAlgebra.single (ofAdd ((blowUpSemigroupEquiv upper).symm
+          ((dualSemigroupProdEquiv affineRayFan.lattice affineRayFan.lattice
+            affineRayCone affineRayCone).symm (0, affineRayCharacter)))) 1)) := by
+  let _ := affinePointTopology rayGenerators
+  let _ := affinePointTopology (affinePlaneFan.analyticChartGenerators maxCone).2
+  let _ := affinePointTopology
+    (affinePlaneBlowUpFan.analyticChartGenerators (blowUpFanCone upper)).2
+  rw [blowUpPointHomeomorph]
+  -- Read the transports before evaluating the two ray-coordinate monomials.
+  erw [Homeomorph.trans_apply, Homeomorph.trans_apply,
+    AffineSemigroupComplexPoint.coe_prodHomeomorph,
+    AffineSemigroupComplexPoint.coe_comapHomeomorph,
+    Homeomorph.coe_prodCongr, Prod.map_apply,
+    affineRayPointHomeomorph_apply, affineRayPointHomeomorph_apply,
+    AffineSemigroupComplexPoint.prodEquiv_fst_apply_single,
+    AffineSemigroupComplexPoint.prodEquiv_snd_apply_single,
+    AffineSemigroupComplexPoint.comap_apply_single,
+    AffineSemigroupComplexPoint.comap_apply_single]
+  -- The additive-hom coercion of the inverse semigroup equivalence has the same function.
+  rfl
+
+/-- The forward upper-chart coordinates evaluate the dual-basis characters
+`(1, 0)` and `(−1, 1)`. -/
+@[simp]
+theorem affinePlaneBlowUpUpperPointHomeomorph_apply
+    (x : AffineSemigroupComplexPoint
+      (dualSemigroup affinePlaneFan.lattice affinePlaneBlowUpUpperCone)) :
+    affinePlaneBlowUpUpperPointHomeomorph x =
+      (x (MonoidAlgebra.single (ofAdd ⟨
+        (affineRayCharacter : (Fin 1 → ℤ) →+ ℤ).comp (AddMonoidHom.fst (Fin 1 → ℤ) (Fin 1 → ℤ)), by
+          have h := ((blowUpSemigroupEquiv true).symm
+            ((dualSemigroupProdEquiv affineRayFan.lattice affineRayFan.lattice
+              affineRayCone affineRayCone).symm (affineRayCharacter, 0))).property
+          change _ ∈ dualSemigroup affinePlaneFan.lattice
+            affinePlaneBlowUpUpperCone at h
+          convert h using 1
+          ext n
+          simp [blowUpSemigroupEquiv, blowUpShear]⟩) 1),
+        x (MonoidAlgebra.single (ofAdd ⟨
+        (affineRayCharacter : (Fin 1 → ℤ) →+ ℤ).comp (AddMonoidHom.snd (Fin 1 → ℤ) (Fin 1 → ℤ)) -
+          (affineRayCharacter : (Fin 1 → ℤ) →+ ℤ).comp
+            (AddMonoidHom.fst (Fin 1 → ℤ) (Fin 1 → ℤ)), by
+          have h := ((blowUpSemigroupEquiv true).symm
+            ((dualSemigroupProdEquiv affineRayFan.lattice affineRayFan.lattice
+              affineRayCone affineRayCone).symm (0, affineRayCharacter))).property
+          change _ ∈ dualSemigroup affinePlaneFan.lattice
+            affinePlaneBlowUpUpperCone at h
+          convert h using 1
+          ext n
+          simp [blowUpSemigroupEquiv, blowUpShear]⟩) 1)) := by
+  rw [affinePlaneBlowUpUpperPointHomeomorph]
+  erw [blowUpPointHomeomorph_apply]
+  congr 3 <;> apply congrArg ofAdd <;> apply Subtype.ext <;> ext n <;>
+    simp [blowUpSemigroupEquiv, blowUpShear]
+
+/-- The forward lower-chart coordinates evaluate the dual-basis characters
+`(1, −1)` and `(0, 1)`. -/
+@[simp]
+theorem affinePlaneBlowUpLowerPointHomeomorph_apply
+    (x : AffineSemigroupComplexPoint
+      (dualSemigroup affinePlaneFan.lattice affinePlaneBlowUpLowerCone)) :
+    affinePlaneBlowUpLowerPointHomeomorph x =
+      (x (MonoidAlgebra.single (ofAdd ⟨
+        (affineRayCharacter : (Fin 1 → ℤ) →+ ℤ).comp (AddMonoidHom.fst (Fin 1 → ℤ) (Fin 1 → ℤ)) -
+          (affineRayCharacter : (Fin 1 → ℤ) →+ ℤ).comp
+            (AddMonoidHom.snd (Fin 1 → ℤ) (Fin 1 → ℤ)), by
+          have h := ((blowUpSemigroupEquiv false).symm
+            ((dualSemigroupProdEquiv affineRayFan.lattice affineRayFan.lattice
+              affineRayCone affineRayCone).symm (affineRayCharacter, 0))).property
+          change _ ∈ dualSemigroup affinePlaneFan.lattice
+            affinePlaneBlowUpLowerCone at h
+          convert h using 1
+          ext n
+          simp [blowUpSemigroupEquiv, blowUpShear]⟩) 1),
+        x (MonoidAlgebra.single (ofAdd ⟨
+        (affineRayCharacter : (Fin 1 → ℤ) →+ ℤ).comp (AddMonoidHom.snd (Fin 1 → ℤ) (Fin 1 → ℤ)), by
+          have h := ((blowUpSemigroupEquiv false).symm
+            ((dualSemigroupProdEquiv affineRayFan.lattice affineRayFan.lattice
+              affineRayCone affineRayCone).symm (0, affineRayCharacter))).property
+          change _ ∈ dualSemigroup affinePlaneFan.lattice
+            affinePlaneBlowUpLowerCone at h
+          convert h using 1
+          ext n
+          simp [blowUpSemigroupEquiv, blowUpShear]⟩) 1)) := by
+  rw [affinePlaneBlowUpLowerPointHomeomorph]
+  erw [blowUpPointHomeomorph_apply]
+  congr 3 <;> apply congrArg ofAdd <;> apply Subtype.ext <;> ext n <;>
+    simp [blowUpSemigroupEquiv, blowUpShear]
 
 /-- The upper affine chart parametrization of the toric blow-up. -/
 noncomputable def affinePlaneBlowUpUpperChart (z : ℂ × ℂ) :
@@ -243,7 +380,7 @@ theorem isOpenEmbedding_affinePlaneBlowUpLowerChart :
       affinePlaneBlowUpLowerPointHomeomorph.symm.isOpenEmbedding
 
 /-- The two explicit affine charts cover the analytic realization of the subdivided fan. -/
-theorem exists_affinePlaneBlowUpChart_eq
+theorem exists_affinePlaneBlowUpUpperChart_eq_or_exists_affinePlaneBlowUpLowerChart_eq
     (x : affinePlaneBlowUpFan.analyticRealization isRegular_affinePlaneBlowUpFan) :
     (∃ z, affinePlaneBlowUpUpperChart z = x) ∨
       (∃ z, affinePlaneBlowUpLowerChart z = x) := by
@@ -271,16 +408,6 @@ theorem exists_affinePlaneBlowUpChart_eq
     exact affinePlaneBlowUpFan.analyticAffineChartι_faceAffinePointMap
       isRegular_affinePlaneBlowUpFan hσ.le y
 
-private theorem blowUpCone_le_quadrant (upper : Bool) : blowUpCone upper ≤ quadrant := by
-  intro x hx
-  cases upper
-  · have hx' := (mem_affinePlaneBlowUpLowerCone_iff _).1 hx
-    exact ⟨(mem_affineRayCone_iff _).2 (hx'.1.trans hx'.2),
-      (mem_affineRayCone_iff _).2 hx'.1⟩
-  · have hx' := (mem_affinePlaneBlowUpUpperCone_iff _).1 hx
-    exact ⟨(mem_affineRayCone_iff _).2 hx'.1,
-      (mem_affineRayCone_iff _).2 (hx'.1.trans hx'.2)⟩
-
 private theorem blowUp_coordinate_formula (upper : Bool) (n : ℕ∞ω) (z : ℂ × ℂ) :
     letI := affinePointTopology
       (affinePlaneBlowUpFan.analyticChartGenerators (blowUpFanCone upper)).2
@@ -299,7 +426,9 @@ private theorem blowUp_coordinate_formula (upper : Bool) (n : ℕ∞ω) (z : ℂ
       (blowUpCone upper : Set ((Fin 1 → ℝ) × (Fin 1 → ℝ)))
       (quadrant : Set ((Fin 1 → ℝ) × (Fin 1 → ℝ))) := by
     rw [Fan.IsSubdivision.toFanHom_realMap]
-    exact blowUpCone_le_quadrant upper
+    cases upper
+    · exact affinePlaneBlowUpLowerCone_le
+    · exact affinePlaneBlowUpUpperCone_le
   erw [FanHom.analyticMap_analyticAffineChartι_of_mapsTo
     (υ := maxCone) _ _ _ hmap, affinePlaneDiffeomorph_analyticAffineChartι]
   -- Unbundle the chart carrier before using the monomial evaluation formulas.
