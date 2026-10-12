@@ -25,7 +25,8 @@ Mathlib's univariate restricted-series ring along
 
 Conversely, over a complete nonarchimedean field, strong noetherianness of the completed
 Huber algebras transfers back to the Gauss-normed ring `K⟨X₁, …, Xₙ⟩`, which is therefore a
-complete strongly noetherian Tate ring; for instance `ℚ_p⟨T₁, …, Tₙ⟩`.
+complete strongly noetherian ring. When the norm of `K` is nontrivial it is moreover a Tate ring
+(`TauCeti.Huber.IsTateRing.isRestricted_subring`); for instance `ℚ_p⟨T₁, …, Tₙ⟩`.
 
 ## Main results
 
