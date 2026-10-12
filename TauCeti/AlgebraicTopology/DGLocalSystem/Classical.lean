@@ -65,6 +65,10 @@ def zerothComponent :
 
 variable {B b R}
 
+@[simp]
+theorem zerothComponent_zero : zerothComponent B b R 0 = zerothClass B b R :=
+  (rfl)
+
 theorem zerothComponent_eq_zero {n : ℕ} (h : n ≠ 0)
     (x : NormalizedCubicalChain (MooreLoopSpace B b) R n) : zerothComponent B b R n x = 0 := by
   cases n with
