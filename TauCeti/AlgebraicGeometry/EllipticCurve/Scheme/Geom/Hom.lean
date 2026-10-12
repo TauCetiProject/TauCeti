@@ -40,6 +40,8 @@ schemes over `S` is the homomorphism whose kernel is the `n`-torsion `E[n]`.
 
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.hom_ext_left`: a homomorphism of elliptic curves is
   determined by its morphism of schemes.
+* `TauCeti.AlgebraicGeometry.EllipticCurveGeom.hom_hom_hom_left_comp_structureMap`: the morphism of
+  schemes underlying a homomorphism of elliptic curves commutes with the structure morphisms.
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.isIso_iff_isIso_hom_hom_hom_left`: a homomorphism of
   elliptic curves is an isomorphism exactly when its morphism of schemes is one.
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.locallyOfFinitePresentation_hom_hom_hom_left`: the
@@ -82,6 +84,14 @@ theorem hom_ext_left {f g : E.toCommGrp ⟶ E'.toCommGrp}
   CommGrp.hom_ext _ _ (Over.OverMorphism.ext h)
 
 variable {E} in
+/-- The morphism of schemes underlying a homomorphism of elliptic curves over `S` commutes with the
+structure morphisms to `S`. -/
+@[reassoc]
+theorem hom_hom_hom_left_comp_structureMap (f : E.toCommGrp ⟶ E'.toCommGrp) :
+    f.hom.hom.hom.left ≫ E'.structureMap = E.structureMap :=
+  Over.w f.hom.hom.hom
+
+variable {E} in
 /-- **A homomorphism of elliptic curves is an isomorphism exactly when its morphism of schemes is
 one.** -/
 theorem isIso_iff_isIso_hom_hom_hom_left {f : E.toCommGrp ⟶ E'.toCommGrp} :
@@ -101,7 +111,7 @@ instance locallyOfFinitePresentation_hom_hom_hom_left (f : E.toCommGrp ⟶ E'.to
   have : Smooth E.structureMap := SmoothOfRelativeDimension.smooth 1 _
   have : Smooth E'.structureMap := SmoothOfRelativeDimension.smooth 1 _
   have : LocallyOfFinitePresentation (f.hom.hom.hom.left ≫ E'.structureMap) := by
-    rw [show f.hom.hom.hom.left ≫ E'.structureMap = E.structureMap from Over.w f.hom.hom.hom]
+    rw [hom_hom_hom_left_comp_structureMap]
     infer_instance
   locallyOfFinitePresentation_of_comp _ E'.structureMap
 
