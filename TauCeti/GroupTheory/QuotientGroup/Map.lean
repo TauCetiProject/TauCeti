@@ -117,6 +117,16 @@ theorem mapOfLE_surjective [U.Normal] [V.Normal] (hVU : V ≤ U) :
   _root_.QuotientGroup.map_surjective_of_surjective V U (.id G)
     _root_.QuotientGroup.mk_surjective _
 
+/-- Generation by a family modulo a normal subgroup descends to any larger normal subgroup. -/
+theorem closure_range_quotient_mk_eq_top_of_le {ι : Type*} {N N' : Subgroup G}
+    [N.Normal] [N'.Normal] (h : N' ≤ N) {x : ι → G}
+    (hx : Subgroup.closure (Set.range fun i ↦ (_root_.QuotientGroup.mk (x i) : G ⧸ N')) = ⊤) :
+    Subgroup.closure (Set.range fun i ↦ (_root_.QuotientGroup.mk (x i) : G ⧸ N)) = ⊤ := by
+  have hmap := congrArg (Subgroup.map (mapOfLE h)) hx
+  rw [MonoidHom.map_closure, ← Set.range_comp,
+    Subgroup.map_top_of_surjective _ (mapOfLE_surjective h)] at hmap
+  simpa only [Function.comp_def, mapOfLE_mk] using hmap
+
 /-- The kernel of the quotient homomorphism `G ⧸ V →* G ⧸ U` is the image of `U` in `G ⧸ V`. -/
 @[simp]
 theorem ker_mapOfLE [U.Normal] [V.Normal] (hVU : V ≤ U) :

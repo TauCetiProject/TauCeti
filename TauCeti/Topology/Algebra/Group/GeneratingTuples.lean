@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Algebra.OpenSubgroup
+public import TauCeti.GroupTheory.QuotientGroup.Map
 
 /-!
 # Generating tuples in quotients by open normal subgroups
@@ -24,50 +25,33 @@ public section
 
 namespace TauCeti
 
-variable {G : Type*} [Group G]
+variable {G : Type*} [Group G] [TopologicalSpace G]
 
-/-- Generation by a family modulo a normal subgroup descends to any larger normal subgroup. -/
-theorem closure_range_quotient_mk_eq_top_of_le {ι : Type*} {N N' : Subgroup G}
-    [N.Normal] [N'.Normal] (h : N' ≤ N) {x : ι → G}
-    (hx : Subgroup.closure (Set.range fun i ↦ (QuotientGroup.mk (x i) : G ⧸ N')) = ⊤) :
-    Subgroup.closure (Set.range fun i ↦ (QuotientGroup.mk (x i) : G ⧸ N)) = ⊤ := by
-  have hN : N' ≤ N.comap (MonoidHom.id G) := h
-  let f : G ⧸ N' →* G ⧸ N := QuotientGroup.map N' N (MonoidHom.id G) hN
-  have hf : Function.Surjective f :=
-    QuotientGroup.map_surjective_of_surjective N' N (MonoidHom.id G)
-      QuotientGroup.mk_surjective hN
-  have hcomp : (fun i ↦ (QuotientGroup.mk (x i) : G ⧸ N)) =
-      f ∘ (fun i ↦ (QuotientGroup.mk (x i) : G ⧸ N')) :=
-    funext fun i ↦ (QuotientGroup.map_mk N' N (MonoidHom.id G) hN (x i)).symm
-  rw [hcomp, Set.range_comp, ← MonoidHom.map_closure, hx, Subgroup.map_top_of_surjective f hf]
-
-variable [TopologicalSpace G]
-
-/-- The tuples of length `n` whose images generate the quotient by an open normal subgroup.
-Repetitions are allowed, so a tuple may have greater length than a minimal generating set. -/
-def generatingTuples (n : ℕ) (U : OpenNormalSubgroup G) : Set (Fin n → G) :=
+/-- The `ι`-indexed tuples whose images generate the quotient by an open normal subgroup.
+Repetitions are allowed; use `ι := Fin n` for tuples of length `n`. -/
+def generatingTuples (ι : Type*) (U : OpenNormalSubgroup G) : Set (ι → G) :=
   {x | Subgroup.closure (Set.range fun i ↦ (QuotientGroup.mk (x i) : G ⧸ U.toSubgroup)) = ⊤}
 
 /-- Membership in `generatingTuples` means that the images of the tuple generate the quotient. -/
 @[simp]
-theorem mem_generatingTuples (n : ℕ) (U : OpenNormalSubgroup G) (x : Fin n → G) :
-    x ∈ generatingTuples n U ↔
+theorem mem_generatingTuples (ι : Type*) (U : OpenNormalSubgroup G) (x : ι → G) :
+    x ∈ generatingTuples ι U ↔
       Subgroup.closure (Set.range fun i ↦ (QuotientGroup.mk (x i) : G ⧸ U.toSubgroup)) = ⊤ :=
   Iff.rfl
 
-/-- The tuples generating a quotient by an open normal subgroup form a closed set: the
+/-- The finite tuples generating a quotient by an open normal subgroup form a closed set: the
 condition depends only on their image in a discrete quotient. -/
-theorem isClosed_generatingTuples [SeparatelyContinuousMul G] (n : ℕ)
-    (U : OpenNormalSubgroup G) : IsClosed (generatingTuples n U) := by
-  let q : (Fin n → G) → (Fin n → G ⧸ U.toSubgroup) := fun x i ↦ QuotientGroup.mk (x i)
+theorem isClosed_generatingTuples [SeparatelyContinuousMul G] (ι : Type*) [Finite ι]
+    (U : OpenNormalSubgroup G) : IsClosed (generatingTuples ι U) := by
+  let q : (ι → G) → (ι → G ⧸ U.toSubgroup) := fun x i ↦ QuotientGroup.mk (x i)
   have hq : Continuous q := by
     apply continuous_pi
     intro i
     exact continuous_quotient_mk'.comp (continuous_apply i)
-  let S : Set (Fin n → G ⧸ U.toSubgroup) := {y | Subgroup.closure (Set.range y) = ⊤}
+  let S : Set (ι → G ⧸ U.toSubgroup) := {y | Subgroup.closure (Set.range y) = ⊤}
   have : DiscreteTopology (G ⧸ U.toSubgroup) := QuotientGroup.discreteTopology U.isOpen
   have hS : IsClosed S := isClosed_discrete S
-  have hEq : generatingTuples n U = q ⁻¹' S := by
+  have hEq : generatingTuples ι U = q ⁻¹' S := by
     ext x
     rfl
   rw [hEq]
@@ -75,9 +59,9 @@ theorem isClosed_generatingTuples [SeparatelyContinuousMul G] (n : ℕ)
 
 /-- If `U' ≤ U`, every tuple generating the finer quotient by `U'` also generates the quotient
 by `U`. -/
-theorem generatingTuples_mono (n : ℕ) {U U' : OpenNormalSubgroup G}
-    (h : U' ≤ U) : generatingTuples n U' ⊆ generatingTuples n U :=
-  fun _ hx ↦ (mem_generatingTuples n U _).mpr
-    (closure_range_quotient_mk_eq_top_of_le h ((mem_generatingTuples n U' _).mp hx))
+theorem generatingTuples_mono (ι : Type*) {U U' : OpenNormalSubgroup G}
+    (h : U' ≤ U) : generatingTuples ι U' ⊆ generatingTuples ι U :=
+  fun _ hx ↦ (mem_generatingTuples ι U _).mpr
+    (QuotientGroup.closure_range_quotient_mk_eq_top_of_le h ((mem_generatingTuples ι U' _).mp hx))
 
 end TauCeti
