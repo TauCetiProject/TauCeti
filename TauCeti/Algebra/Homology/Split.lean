@@ -83,10 +83,15 @@ variable [Abelian C] (K : HomologicalComplex C c)
 /-! ### The complex of homology objects -/
 
 /-- The complex with the homology objects of `K` as terms and zero differentials. -/
-@[simps]
-abbrev homologyComplex : HomologicalComplex C c where
+@[expose, simps X]
+def homologyComplex : HomologicalComplex C c where
   X i := K.homology i
   d _ _ := 0
+
+/-- The complex of homology objects has zero differentials. -/
+@[simp]
+lemma homologyComplex_d (i j : ι) : K.homologyComplex.d i j = 0 :=
+  rfl
 
 /-- The inclusion of the cycles is a split monomorphism when the quotient of the term by its cycles
 is projective. -/
@@ -110,7 +115,7 @@ chosen retraction of the inclusion of the cycles; it is a chain map since bounda
 homology class.  It depends on the choice of `r`, so it need not be natural in `K`. -/
 def toHomologyComplex : K ⟶ K.homologyComplex where
   f i := retraction (K.iCycles i) ≫ K.homologyπ i
-  comm' i j _ := by simp
+  comm' i j _ := by simp [homologyComplex]
 
 /-- The components of the projection onto the complex of homology objects. -/
 @[simp]
@@ -122,8 +127,8 @@ lemma toHomologyComplex_f (i : ι) :
 homology. -/
 @[reassoc]
 lemma iCycles_toHomologyComplex_f (i : ι) :
-    K.iCycles i ≫ K.toHomologyComplex.f i = K.homologyπ i := by
-  simp [toHomologyComplex_f]
+    K.iCycles i ≫ K.toHomologyComplex.f i = K.homologyπ i :=
+  IsSplitMono.id_assoc _ _
 
 /-- The projection onto the complex of homology objects induces isomorphisms on homology. -/
 instance isIso_homologyMap_toHomologyComplex (i : ι) :
@@ -133,13 +138,14 @@ instance isIso_homologyMap_toHomologyComplex (i : ι) :
   -- the homology of `K.homologyComplex` is its term, through `π⁻¹ ≫ ι`, and the induced map
   -- followed by this identification is the identity
   have h : homologyMap K.toHomologyComplex i ≫ inv (K.homologyComplex.homologyπ i) ≫
-      K.homologyComplex.iCycles i = 𝟙 _ := by
-    rw [← cancel_epi (K.homologyπ i)]
-    simp
+      K.homologyComplex.iCycles i = 𝟙 (K.homology i) := by
+    refine (cancel_epi (K.homologyπ i)).1 ?_
+    rw [homologyπ_naturality_assoc, IsIso.hom_inv_id_assoc, cyclesMap_i]
+    exact (iCycles_toHomologyComplex_f K i).trans (Category.comp_id _).symm
   have : IsIso (homologyMap K.toHomologyComplex i ≫ inv (K.homologyComplex.homologyπ i) ≫
       K.homologyComplex.iCycles i) := by
     rw [h]
-    infer_instance
+    exact IsIso.id _
   exact IsIso.of_isIso_comp_right _ (inv (K.homologyComplex.homologyπ i) ≫
     K.homologyComplex.iCycles i)
 
@@ -200,12 +206,19 @@ private lemma d_htpy {i k : ι} (hik : c.Rel i k) :
 
 /-- The inclusion `s ≫ ι : Hᵢ ⟶ Kᵢ`, a chain map since it lands in the cycles. -/
 private def incl : K.homologyComplex ⟶ K where
-  f i := section_ (K.homologyπ i) ≫ K.iCycles i
-  comm' i j _ := by simp
+  f i := (section_ (K.homologyπ i) : K.homology i ⟶ _) ≫ K.iCycles i
+  comm' i j _ := by simp [homologyComplex]
 
 private lemma incl_toHomologyComplex : incl K ≫ K.toHomologyComplex = 𝟙 _ := by
   ext i
-  simp [incl]
+  exact (Category.assoc _ _ _).trans
+    ((section_ (K.homologyπ i) ≫= K.iCycles_toHomologyComplex_f i).trans
+      (IsSplitEpi.id (K.homologyπ i)))
+
+private lemma toHomologyComplex_f_incl_f (i : ι) :
+    K.toHomologyComplex.f i ≫ (incl K).f i =
+      retraction (K.iCycles i) ≫ K.homologyπ i ≫ section_ (K.homologyπ i) ≫ K.iCycles i :=
+  Category.assoc _ _ _
 
 /-- The identity of `K` minus the idempotent `toHomologyComplex ≫ incl` is `d h + h d`.  The term
 `d h` is the component of `Kᵢ` in the complement of the cycles, which vanishes when no differential
@@ -223,7 +236,7 @@ private lemma id_sub_toHomologyComplex_incl :
     have := K.isIso_homologyπ (c.prev i) i rfl (K.shape _ _ (hp _))
     rw [IsIso.eq_inv_of_inv_hom_id (IsSplitEpi.id (K.homologyπ i)), IsIso.hom_inv_id]
   simp only [HomologicalComplex.sub_f_apply, HomologicalComplex.id_f, HomologicalComplex.comp_f,
-    toHomologyComplex_f, incl, Category.assoc]
+    toHomologyComplex_f_incl_f]
   by_cases hn : c.Rel i (c.next i) <;> by_cases hp : c.Rel (c.prev i) i
   · rw [Homotopy.nullHomotopicMap'_f hp hn, d_htpy, htpy_d]
     simp only [Preadditive.sub_comp, Preadditive.comp_sub, Category.id_comp, Category.assoc]
@@ -260,6 +273,6 @@ of such a complex are its homology, so by `HomotopyEquiv.toHomologyIso` they are
 `K`. -/
 theorem exists_homotopyEquiv_d_eq_zero :
     ∃ L : HomologicalComplex C c, (∀ i j, L.d i j = 0) ∧ Nonempty (HomotopyEquiv K L) :=
-  ⟨K.homologyComplex, fun _ _ ↦ rfl, ⟨homotopyEquiv K⟩⟩
+  ⟨K.homologyComplex, K.homologyComplex_d, ⟨homotopyEquiv K⟩⟩
 
 end HomologicalComplex
