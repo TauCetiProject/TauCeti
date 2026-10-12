@@ -662,6 +662,18 @@ Gram matrix in the standard basis of simple roots is `CartanMatrix.E 8`. -/
 noncomputable def typeE₈RootLattice : IntegralLattice (Fin 8 → ℚ) :=
   ofGramMatrix (Pi.basisFun ℚ (Fin 8)) (CartanMatrix.E 8) (CartanMatrix.E_isSymm 8)
 
+open _root_.Matrix in
+/-- The rational norm of an integer vector in simple-root coordinates is its integral
+Cartan norm. -/
+theorem norm_typeE₈RootLattice_intCast (v : Fin 8 → ℤ) :
+    typeE₈RootLattice.norm (fun j ↦ (v j : ℚ)) =
+      (((v ᵥ* CartanMatrix.E 8) ⬝ᵥ v : ℤ) : ℚ) := by
+  rw [norm_apply, typeE₈RootLattice, form_ofGramMatrix_basisFun_apply]
+  simp only [vecMul, dotProduct]
+  push_cast
+  simp_rw [Finset.sum_mul, Finset.mul_sum, mul_assoc]
+  exact Finset.sum_comm
+
 /-- The `i`-th simple root of the type `E₈` root lattice, as a vector of the ambient space. -/
 -- This is sealed so `Pi.basisFun_apply` does not rewrite beneath it and destabilize the simp API.
 noncomputable def typeE₈SimpleRoot (i : Fin 8) : Fin 8 → ℚ := Pi.basisFun ℚ (Fin 8) i
