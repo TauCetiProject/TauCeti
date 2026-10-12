@@ -111,6 +111,7 @@ noncomputable def weightTorusCoordinateBialgHom (wt : Fin N → sigma → ℤ) :
 
 /-- The direct weight-torus morphism is the diagonal representation with the prescribed
 integral weight characters. -/
+@[simp]
 theorem weightTorusCoordinateBialgHom_def [Fintype sigma] (wt : Fin N → sigma → ℤ) :
     weightTorusCoordinateBialgHom (S := S) wt =
       DiagonalizableGroup.diagonalCoordinateMap (Pi.basisFun S (Fin N))

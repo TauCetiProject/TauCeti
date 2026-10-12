@@ -109,6 +109,9 @@ theorem splitTorusCommHopfAlgProperty_quotient_weightTorusDefiningIdeal :
       (_root_.CommHopfAlgCat.isoMk (MonoidAlgebra.domCongrBialgEquiv R R e))
   exact ⟨7, ⟨(weightTorusCoordinateIso R ≪≫ i).symm⟩⟩
 
+grind_pattern splitTorusCommHopfAlgProperty_quotient_weightTorusDefiningIdeal =>
+  weightTorusDefiningIdeal R
+
 /-- On all algebra-valued points, restriction to the torus followed by the carrier inclusion
 is the named minuscule weight-torus matrix. -/
 @[simp↓]
@@ -121,6 +124,8 @@ theorem pointsMulEquiv_mapPointsFunctor_weightTorusToBaseChangeCoordinateMap
           ((CommHopfAlgCat.mapPointsFunctor (weightTorusToBaseChangeCoordinateMap R)).app A q)) =
       (weightTorusPoints A (SplitTorus.pointsMulEquiv q) :
         Matrix.GeneralLinearGroup (Fin 56) A) := by
+  -- The categorical weight-torus point formula requires the base ring and torus index in one
+  -- universe. The direct bialgebra map allows arbitrary `R : Type u` with weights in `Fin 7`.
   have hcomp : (weightTorusToBaseChangeCoordinateMap R).hom.comp (coordinateMap R).hom =
       GeneralLinear.weightTorusCoordinateBialgHom (S := R) e7MinusculeWeight := by
     rw [← _root_.CommHopfAlgCat.hom_comp,
