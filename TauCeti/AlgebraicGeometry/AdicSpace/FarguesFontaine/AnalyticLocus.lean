@@ -22,7 +22,8 @@ analytic point outside `𝒴` on either side.
   (`TauCeti.FarguesFontaine.supp_gaussPoint_zero`), so it kills `p` but not `[ϖ]`, and lies in
   `D([ϖ]) \ 𝒴`.
 * A maximal ideal `𝔪` of `O` contains `ϖ`, which is not a unit, and the residue field `k = O ⧸ 𝔪`
-  is perfect of characteristic `p`. The `p`-adic valuation of `𝕎 k`, pulled back along
+  is perfect of characteristic `p`. This part only uses that `O` is perfect of characteristic `p`
+  and that `ϖ` is not a unit. The `p`-adic valuation of `𝕎 k`, pulled back along
   `𝕎 O → 𝕎 k`, kills `[ϖ]` but not `p`, so it lies in `D(p) \ 𝒴`. The `p`-adic valuation
   `x ↦ ρ ^ (ord_p x)` of `𝕎 k` is the Gauss valuation `λ_ρ` for the trivial valuation of `k`
   (`Valuation.integers_one`).
@@ -94,21 +95,19 @@ private theorem exists_mem_spa_natCast_notMem_supp_teichmuller_mem_supp_of_ringH
   · simp [w]
   · simp [w, hφ]
 
-/-- **A point of `Spa(𝕎 O, 𝕎 O)` killing `[ϖ]` but not `p`**, for `v(ϖ) < 1` and the
-`(p, [ϖ])`-adic topology on `𝕎 O`: the `p`-adic valuation of the Witt vectors of a residue field
-of `O`, pulled back to `𝕎 O`. It is an analytic point outside `𝒴`, in `D(p) \ 𝒴`. -/
+/-- **A point of `Spa(𝕎 O, 𝕎 O)` killing `[ϖ]` but not `p`**, for a perfect ring `O` of
+characteristic `p`, a nonunit `ϖ ∈ O` (for instance `v(ϖ) < 1` when `O` is a ring of integers of
+`v`), and the `(p, [ϖ])`-adic topology on `𝕎 O`: the `p`-adic valuation of the Witt vectors of a
+residue field of `O`, pulled back to `𝕎 O`. It is an analytic point outside `𝒴`, in `D(p) \ 𝒴`. -/
 theorem exists_mem_spa_natCast_notMem_supp_teichmuller_mem_supp
-    (hI : IsAdic (Ideal.span {(p : WittVector p O), teichmuller p ϖ})) (hv : v.Integers O)
-    (hϖ : v (algebraMap O K ϖ) < 1) :
+    (hI : IsAdic (Ideal.span {(p : WittVector p O), teichmuller p ϖ})) (hϖ : ¬IsUnit ϖ) :
     ∃ x ∈ spa (⊤ : Subring (WittVector p O)),
       (p : WittVector p O) ∉ x.supp ∧ teichmuller p ϖ ∈ x.supp := by
-  have := hv.isDomain
   -- `ϖ` is not a unit, so it lies in a maximal ideal `𝔪`, whose residue field is perfect
-  obtain ⟨𝔪, h𝔪, hϖ𝔪⟩ := Ideal.exists_le_maximal _
-    (Ideal.span_singleton_ne_top (mt hv.isUnit_iff_valuation_eq_one.mp hϖ.ne))
+  obtain ⟨𝔪, h𝔪, hϖ𝔪⟩ := Ideal.exists_le_maximal _ (Ideal.span_singleton_ne_top hϖ)
   let := Ideal.Quotient.field 𝔪
-  have : CharP (O ⧸ 𝔪) p :=
-    CharP.of_ringHom_of_ne_zero (Ideal.Quotient.mk 𝔪) p (Fact.out : p.Prime).ne_zero
+  have : CharP (O ⧸ 𝔪) p := (CharP.charP_iff_prime_eq_zero Fact.out).mpr <| by
+    rw [← map_natCast (Ideal.Quotient.mk 𝔪), CharP.cast_eq_zero, map_zero]
   have : PerfectRing (O ⧸ 𝔪) p := PerfectRing.ofSurjective _ p fun x ↦ by
     obtain ⟨y, rfl⟩ := Ideal.Quotient.mk_surjective x
     obtain ⟨z, rfl⟩ := surjective_frobenius O p y
