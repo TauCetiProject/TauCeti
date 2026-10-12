@@ -21,7 +21,7 @@ Their coefficient L-series therefore have abscissa of absolute convergence at mo
 The same bound holds after adding an arbitrary cusp form, by Hecke's cusp-form bound.
 
 The ε-family avoids asserting the false bound `σ₁(n) = O(n)`. The result concerns the
-corrected Eisenstein span, which covers only the trivial-character series. At nonsquarefree
+corrected Eisenstein span, which covers only the trivial-character series. At some nonsquarefree
 levels, the full Eisenstein complement also requires series with nontrivial characters.
 
 ## References
