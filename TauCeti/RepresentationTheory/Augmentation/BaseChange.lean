@@ -31,7 +31,7 @@ namespace TauCeti
 
 section ScalarMap
 
-variable (R S : Type*) [CommSemiring R] [CommSemiring S] [Algebra R S]
+variable (R S : Type*) [CommSemiring R] [Semiring S] [Algebra R S]
   (G X : Type*) [Monoid G] [MulAction G X]
 
 /-- Extend the coefficients of a sum-zero permutation vector along `R → S`. -/
