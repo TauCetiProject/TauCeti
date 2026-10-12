@@ -207,6 +207,7 @@ private theorem blowUpPointHomeomorph_symm_apply_single_eq_pow (upper : Bool) (z
 
 /-- In upper-chart coordinates, a character monomial has exponents given by its values on
 `(1, 1)` and `(0, 1)`, the two primitive generators of the cone. -/
+@[simp]
 theorem affinePlaneBlowUpUpperPointHomeomorph_symm_apply_single (z : ℂ × ℂ)
     (m : dualSemigroup affinePlaneFan.lattice affinePlaneBlowUpUpperCone) :
     let x : AffineSemigroupComplexPoint
@@ -223,6 +224,7 @@ theorem affinePlaneBlowUpUpperPointHomeomorph_symm_apply_single (z : ℂ × ℂ)
 
 /-- In lower-chart coordinates, a character monomial has exponents given by its values on
 `(1, 0)` and `(1, 1)`, the two primitive generators of the cone. -/
+@[simp]
 theorem affinePlaneBlowUpLowerPointHomeomorph_symm_apply_single (z : ℂ × ℂ)
     (m : dualSemigroup affinePlaneFan.lattice affinePlaneBlowUpLowerCone) :
     let x : AffineSemigroupComplexPoint

@@ -145,6 +145,7 @@ theorem eq_nsmul_affineRayCharacter
 
 /-- In the standard affine-line coordinate, every semigroup monomial is the corresponding
 natural power, including at the origin. -/
+@[simp low]
 theorem affineRayPointHomeomorph_symm_apply_single_eq_pow (z : ℂ)
     (m : dualSemigroup (isIntegralLattice_intCast 1) affineRayCone) :
     let _ := affinePointTopology g
