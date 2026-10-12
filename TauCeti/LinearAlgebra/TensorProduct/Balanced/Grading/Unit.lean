@@ -41,13 +41,13 @@ section Left
 variable {N : Type*} [AddCommGroup N] [Module R N] [Module A N]
   [IsScalarTower R A N] (H : InternalGrading R N) [SetLike.GradedSMul 𝒜 H.piece]
 
-local instance : SetLike.GradedSMul (InternalGrading.ofDecomposition 𝒜).opposite.piece
+local instance unitGradedRight :
+    SetLike.GradedSMul (InternalGrading.ofDecomposition 𝒜).opposite.piece
     (InternalGrading.ofDecomposition 𝒜).piece := by
   rw [InternalGrading.ofDecomposition_piece]
   infer_instance
 
 /-- The left unit identification carries the total-degree tensor piece onto the module piece. -/
-@[simp]
 theorem map_lid_grading_piece (p : ℤ) :
     ((grading (𝒜 := 𝒜) (InternalGrading.ofDecomposition 𝒜) H).piece p).map
       (lid R A N).toLinearMap = H.piece p := by
@@ -72,12 +72,12 @@ variable {M : Type*} [AddCommGroup M] [Module R M] [Module Aᵐᵒᵖ M]
   [IsScalarTower R Aᵐᵒᵖ M] (G : InternalGrading R M)
   [SetLike.GradedSMul (InternalGrading.ofDecomposition 𝒜).opposite.piece G.piece]
 
-local instance : SetLike.GradedSMul 𝒜 (InternalGrading.ofDecomposition 𝒜).piece := by
+local instance unitGradedLeft : SetLike.GradedSMul 𝒜
+    (InternalGrading.ofDecomposition 𝒜).piece := by
   rw [InternalGrading.ofDecomposition_piece]
   infer_instance
 
 /-- The right unit identification carries the total-degree tensor piece onto the module piece. -/
-@[simp]
 theorem map_rid_grading_piece (p : ℤ) :
     ((grading (𝒜 := 𝒜) G (InternalGrading.ofDecomposition 𝒜)).piece p).map
       (rid R A M).toLinearMap = G.piece p := by
