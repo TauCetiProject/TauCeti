@@ -207,4 +207,72 @@ theorem projectiveLinePartialDiffeomorph_transition_symm (n : ℕ∞ω) (z : ℂ
   exact (projectiveLinePositivePartialDiffeomorph_symm_analyticAffineChartι n x).trans
     ((affineRayPointHomeomorph_apply gp x).symm.trans (by rw [ht, inv_inv]))
 
+/-- A positive chart point lies in the negative chart exactly when its coordinate is nonzero. -/
+@[simp↓] theorem projectiveLinePositivePartialDiffeomorph_mem_negative_target
+    (n : ℕ∞ω) (z : ℂ) :
+    projectiveLinePositivePartialDiffeomorph n z ∈
+      (projectiveLineNegativePartialDiffeomorph n).target ↔ z ≠ 0 := by
+  let _ := affinePointTopology gp
+  let g₀ := (projectiveLineFan.analyticChartGenerators projectiveLineZeroCone).2
+  let _ := affinePointTopology g₀
+  have hp : projectiveLineZeroCone ≤ projectiveLinePositiveCone :=
+    Subtype.mk_le_mk.mpr bot_le
+  rw [projectiveLinePositivePartialDiffeomorph_apply,
+    projectiveLineNegativePartialDiffeomorph_target]
+  have hoverlap : projectiveLineFan.analyticAffineChartι isRegular_projectiveLineFan
+      projectiveLinePositiveCone ((affineRayPointHomeomorph gp).symm z) ∈
+      range (projectiveLineFan.analyticAffineChartι isRegular_projectiveLineFan
+        projectiveLineNegativeCone) ↔
+      projectiveLineFan.analyticAffineChartι isRegular_projectiveLineFan
+        projectiveLinePositiveCone ((affineRayPointHomeomorph gp).symm z) ∈
+      range (projectiveLineFan.analyticAffineChartι isRegular_projectiveLineFan
+        projectiveLineZeroCone) := by
+    rw [← projectiveLine_chart_overlap, mem_inter_iff]
+    exact ⟨fun h ↦ ⟨⟨_, rfl⟩, h⟩, And.right⟩
+  rw [hoverlap]
+  constructor
+  · rintro ⟨w, hw⟩
+    have hwp := (projectiveLineFan.isOpenEmbedding_analyticAffineChartι
+      isRegular_projectiveLineFan projectiveLinePositiveCone).injective
+        ((projectiveLineFan.analyticAffineChartι_faceAffinePointMap
+          isRegular_projectiveLineFan hp w).trans hw)
+    have hcoord := affineRayPointHomeomorph_faceAffinePointMap gp g₀ w
+    rw [hwp, Homeomorph.apply_symm_apply] at hcoord
+    exact hcoord.symm ▸ Units.ne_zero (affineRayZeroFacePointHomeomorph g₀ w)
+  · intro hz
+    let w := (affineRayZeroFacePointHomeomorph g₀).symm (Units.mk0 z hz)
+    have hwp : faceAffinePointMap projectiveLineFan.lattice
+        (projectiveLineFan.isFaceOf_of_le projectiveLinePositiveCone.2
+          projectiveLineZeroCone.2 hp) w = (affineRayPointHomeomorph gp).symm z := by
+      apply (affineRayPointHomeomorph gp).injective
+      rw [Homeomorph.apply_symm_apply]
+      exact affineRayPointHomeomorph_faceAffinePointMap_symm gp g₀ (Units.mk0 z hz)
+    exact ⟨w, (projectiveLineFan.analyticAffineChartι_faceAffinePointMap
+      isRegular_projectiveLineFan hp w).symm.trans (congrArg
+        (projectiveLineFan.analyticAffineChartι isRegular_projectiveLineFan
+          projectiveLinePositiveCone) hwp)⟩
+
+/-- A negative chart point lies in the positive chart exactly when its coordinate is nonzero. -/
+@[simp↓] theorem projectiveLineNegativePartialDiffeomorph_mem_positive_target
+    (n : ℕ∞ω) (z : ℂ) :
+    projectiveLineNegativePartialDiffeomorph n z ∈
+      (projectiveLinePositivePartialDiffeomorph n).target ↔ z ≠ 0 := by
+  let _ := projectiveLineFan.analyticChartedSpace isRegular_projectiveLineFan
+  constructor
+  · intro hz
+    have hcoord := (projectiveLinePositivePartialDiffeomorph_mem_negative_target n _).1
+      (by rw [(projectiveLinePositivePartialDiffeomorph n).right_inv hz]
+          exact (projectiveLineNegativePartialDiffeomorph n).map_source (by simp))
+    rwa [projectiveLinePartialDiffeomorph_transition_symm n z hz, ne_eq,
+      inv_eq_zero] at hcoord
+  · intro hz
+    have hoverlap := (projectiveLinePositivePartialDiffeomorph_mem_negative_target n
+      z⁻¹).2 (inv_ne_zero hz)
+    have hcoord := projectiveLinePartialDiffeomorph_transition n z⁻¹ hoverlap
+    rw [inv_inv] at hcoord
+    have hpoint := (projectiveLineNegativePartialDiffeomorph n).right_inv hoverlap
+    rw [hcoord] at hpoint
+    rw [hpoint]
+    exact (projectiveLinePositivePartialDiffeomorph n).map_source (by simp)
+
 end TauCeti.Toric
