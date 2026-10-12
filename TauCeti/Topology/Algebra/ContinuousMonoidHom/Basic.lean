@@ -340,11 +340,8 @@ theorem _root_.Subgroup.inverseConjugationHom_smul [SeparatelyContinuousMul G]
     (DistribSMul.toAddMonoidHom M g)
         (Subgroup.inverseConjugationHom N g n • m) =
       n • (DistribSMul.toAddMonoidHom M g) m := by
-  -- Unfold the subgroup action so the compatible-pair identity is an identity for the ambient
-  -- `G`-action, where `mul_smul` applies directly.
-  simp only [DistribSMul.toAddMonoidHom_apply,
-    Subgroup.inverseConjugationHom_apply]
-  change g • ((g⁻¹ * (n : G) * g) • m) = (n : G) • (g • m)
+  simp only [DistribSMul.toAddMonoidHom_apply, Subgroup.inverseConjugationHom_apply,
+    Subgroup.smul_def]
   simp [smul_smul, mul_assoc]
 
 namespace ContinuousMonoidHom
