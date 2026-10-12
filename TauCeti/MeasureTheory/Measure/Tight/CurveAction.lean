@@ -41,14 +41,16 @@ and still move, like the Cantor function.
 
 ## Main results
 
-* `TauCeti.uniformEquicontinuous_of_curveAction_le`: absolutely continuous paths of `p`-action at
-  most `M < ∞` are uniformly equicontinuous, for `1 < p`.
-* `TauCeti.exists_measure_continuity_modulus_le_of_curveAction`: if the action is uniformly small
-  in probability, the laws satisfy a uniform modulus of continuity in probability.
-* `TauCeti.exists_measure_continuity_modulus_le_of_lintegral_curveAction_le`: the same under a
-  uniform bound on the expected action.
-* `TauCeti.isTightMeasureSet_of_map_eval_of_lintegral_curveAction_le`: tight time marginals and a
-  uniformly bounded expected action give tightness.
+* `TauCeti.uniformEquicontinuous_of_absolutelyContinuousOnInterval_of_curveAction_le`: absolutely
+  continuous paths of `p`-action at most `M < ∞` are uniformly equicontinuous, for `1 < p`.
+* `TauCeti.exists_continuity_modulus_le_of_absolutelyContinuousOnInterval_of_curveAction`: if the
+  paths are almost surely absolutely continuous and the action is uniformly small in probability,
+  the laws satisfy a uniform modulus of continuity in probability.
+* `exists_continuity_modulus_le_of_absolutelyContinuousOnInterval_of_lintegral_curveAction_le`:
+  the same under a uniform bound on the expected action.
+* `isTightMeasureSet_of_map_eval_of_absolutelyContinuousOnInterval_of_lintegral_curveAction_le`:
+  tight time marginals, almost surely absolutely continuous paths and a uniformly bounded expected
+  action give tightness.
 * `TauCeti.exists_lintegral_curveAction_le_one_not_isTightMeasureSet`: the bound on the expected
   action alone does not give tightness.
 
@@ -71,8 +73,8 @@ variable {X : Type*} [PseudoMetricSpace X] {a b p : ℝ}
 /-- **Paths of bounded action are uniformly equicontinuous.** For `1 < p` and `M < ∞`, the paths
 `γ ∈ C([a, b], X)` that are absolutely continuous with `p`-action at most `M` form a uniformly
 equicontinuous family: by the Hölder estimate, `d(γ s, γ t) ^ p ≤ |t - s| ^ (p - 1) * M`. -/
-theorem uniformEquicontinuous_of_curveAction_le (hab : a ≤ b) (hp : 1 < p) {M : ℝ≥0∞}
-    (hM : M ≠ ∞) :
+theorem uniformEquicontinuous_of_absolutelyContinuousOnInterval_of_curveAction_le (hab : a ≤ b)
+    (hp : 1 < p) {M : ℝ≥0∞} (hM : M ≠ ∞) :
     UniformEquicontinuous fun γ : {γ : C(Icc a b, X) //
         AbsolutelyContinuousOnInterval (IccExtend hab γ) a b ∧
           curveAction p (IccExtend hab γ) a b ≤ M} ↦ ⇑(γ : C(Icc a b, X)) := by
@@ -109,8 +111,8 @@ paths, whose `p`-action is uniformly small in probability: for every `ε > 0` th
 with `P {γ | M ≤ A_p(γ)} ≤ ε` for all `P ∈ S`. Then for all `η, ε > 0` there is `δ > 0` such that,
 for every `P ∈ S`, the paths with two times closer than `δ` at which their values are at least
 `η` apart have `P`-measure at most `ε`. -/
-theorem exists_measure_continuity_modulus_le_of_curveAction (hab : a ≤ b) (hp : 1 < p)
-    {S : Set (Measure C(Icc a b, X))}
+theorem exists_continuity_modulus_le_of_absolutelyContinuousOnInterval_of_curveAction
+    (hab : a ≤ b) (hp : 1 < p) {S : Set (Measure C(Icc a b, X))}
     (hAC : ∀ P ∈ S, ∀ᵐ γ : C(Icc a b, X) ∂P, AbsolutelyContinuousOnInterval (IccExtend hab γ) a b)
     (hA : ∀ ε > 0, ∃ M ≠ ∞, ∀ P ∈ S,
       P {γ : C(Icc a b, X) | M ≤ curveAction p (IccExtend hab γ) a b} ≤ ε) :
@@ -119,7 +121,8 @@ theorem exists_measure_continuity_modulus_le_of_curveAction (hab : a ≤ b) (hp 
   intro η hη ε hε
   obtain ⟨M, hM, hMS⟩ := hA ε hε
   obtain ⟨δ, hδ, hδη⟩ := Metric.uniformEquicontinuous_iff.mp
-    (uniformEquicontinuous_of_curveAction_le (X := X) hab hp hM) η hη
+    (uniformEquicontinuous_of_absolutelyContinuousOnInterval_of_curveAction_le (X := X) hab hp hM)
+      η hη
   refine ⟨δ, hδ, fun P hP ↦ ?_⟩
   -- An oscillating path is either not absolutely continuous or has action at least `M`.
   calc P {γ : C(Icc a b, X) | ∃ s t, dist s t < δ ∧ η ≤ dist (γ s) (γ t)}
@@ -137,13 +140,14 @@ let `S` be a set of measures on `C([a, b], X)`, each concentrated on absolutely 
 with uniformly bounded expected `p`-action `∫ A_p dP ≤ C < ∞`. Then for all `η, ε > 0` there is
 `δ > 0` such that, for every `P ∈ S`, the paths with two times closer than `δ` at which their values
 are at least `η` apart have `P`-measure at most `ε`. -/
-theorem exists_measure_continuity_modulus_le_of_lintegral_curveAction_le (hab : a ≤ b)
-    (hp : 1 < p) {S : Set (Measure C(Icc a b, X))} {C : ℝ≥0∞} (hC : C ≠ ∞)
+theorem exists_continuity_modulus_le_of_absolutelyContinuousOnInterval_of_lintegral_curveAction_le
+    (hab : a ≤ b) (hp : 1 < p) {S : Set (Measure C(Icc a b, X))} {C : ℝ≥0∞} (hC : C ≠ ∞)
     (hAC : ∀ P ∈ S, ∀ᵐ γ : C(Icc a b, X) ∂P, AbsolutelyContinuousOnInterval (IccExtend hab γ) a b)
     (hA : ∀ P ∈ S, ∫⁻ γ : C(Icc a b, X), curveAction p (IccExtend hab γ) a b ∂P ≤ C) :
     ∀ η > 0, ∀ ε > 0, ∃ δ > 0, ∀ P ∈ S,
       P {γ : C(Icc a b, X) | ∃ s t, dist s t < δ ∧ η ≤ dist (γ s) (γ t)} ≤ ε := by
-  refine exists_measure_continuity_modulus_le_of_curveAction hab hp hAC fun ε hε ↦ ?_
+  refine exists_continuity_modulus_le_of_absolutelyContinuousOnInterval_of_curveAction hab hp hAC
+    fun ε hε ↦ ?_
   rcases eq_or_ne ε ∞ with rfl | hε'
   · exact ⟨1, ENNReal.one_ne_top, fun _ _ ↦ le_top⟩
   -- Markov's inequality at the level `M = C / ε + 1`.
@@ -163,8 +167,8 @@ theorem exists_measure_continuity_modulus_le_of_lintegral_curveAction_le (hab : 
 space, `1 < p`, and `D ⊆ [a, b]` dense. A set `S` of measures on `C([a, b], X)` is tight if its time
 marginals at the times of `D` are tight and its members are concentrated on absolutely continuous
 paths with uniformly bounded expected `p`-action `∫ A_p dP ≤ C < ∞`. -/
-theorem isTightMeasureSet_of_map_eval_of_lintegral_curveAction_le [MeasurableSpace X]
-    [BorelSpace X] [CompleteSpace X] [T2Space X] (hab : a ≤ b) (hp : 1 < p)
+theorem isTightMeasureSet_of_map_eval_of_absolutelyContinuousOnInterval_of_lintegral_curveAction_le
+    [MeasurableSpace X] [BorelSpace X] [CompleteSpace X] [T2Space X] (hab : a ≤ b) (hp : 1 < p)
     {S : Set (Measure C(Icc a b, X))} {D : Set (Icc a b)} (hD : Dense D)
     (h_eval : ∀ t ∈ D, IsTightMeasureSet ((fun P : Measure C(Icc a b, X) ↦ P.map fun γ ↦ γ t) '' S))
     {C : ℝ≥0∞} (hC : C ≠ ∞)
@@ -172,14 +176,15 @@ theorem isTightMeasureSet_of_map_eval_of_lintegral_curveAction_le [MeasurableSpa
     (hA : ∀ P ∈ S, ∫⁻ γ : C(Icc a b, X), curveAction p (IccExtend hab γ) a b ∂P ≤ C) :
     IsTightMeasureSet S :=
   isTightMeasureSet_of_map_eval_of_continuity_modulus hD h_eval
-    (exists_measure_continuity_modulus_le_of_lintegral_curveAction_le hab hp hC hAC hA)
+    (exists_continuity_modulus_le_of_absolutelyContinuousOnInterval_of_lintegral_curveAction_le
+      hab hp hC hAC hA)
 
 /-- **A bounded expected action does not give tightness.** The Dirac masses at the curves
 `γₙ(t) = t • eₙ`, `t ∈ [0, 1]`, along the standard basis vectors `eₙ` of `ℓ²` are concentrated on
 absolutely continuous paths of `p`-action at most `1` for every `p ≥ 0`, but they do not form a
 tight set of measures on `C([0, 1], ℓ²)`. The hypothesis on the time marginals of
-`TauCeti.isTightMeasureSet_of_map_eval_of_lintegral_curveAction_le` therefore cannot be
-dropped. -/
+`isTightMeasureSet_of_map_eval_of_absolutelyContinuousOnInterval_of_lintegral_curveAction_le`
+therefore cannot be dropped. -/
 theorem exists_lintegral_curveAction_le_one_not_isTightMeasureSet :
     ∃ γ : ℕ → C(Icc (0 : ℝ) 1, lp (fun _ : ℕ ↦ ℝ) 2),
       (∀ n, AbsolutelyContinuousOnInterval (IccExtend zero_le_one (γ n)) 0 1) ∧
