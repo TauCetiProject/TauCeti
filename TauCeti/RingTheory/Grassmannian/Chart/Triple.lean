@@ -33,8 +33,9 @@ The three charts can be listed in any order, and the triple overlaps for the cyc
 `TripleAlgebra R x y z`, is the map compatible with the points
 (`Module.Grassmannian.TripleAlgebra.tripleHomEquiv_comp_cycle`). Going round the three cyclic
 orders gives the identity (`Module.Grassmannian.TripleAlgebra.cycle_cycle`), so the cyclic maps are
-isomorphisms, and the cyclic map is compatible with the transition isomorphism from the chart at
-`x` to the chart at `y` (`Module.Grassmannian.TripleAlgebra.cycle_comp_inr`). These are the cocycle
+isomorphisms (`Module.Grassmannian.TripleAlgebra.cycleAlgEquiv`), and the cyclic map is compatible
+with the transition isomorphism from the chart at `x` to the chart at `y`
+(`Module.Grassmannian.TripleAlgebra.cycle_comp_inr`). These are the cocycle
 conditions under which the charts glue to the Grassmannian scheme.
 
 ## Main definitions
@@ -47,6 +48,7 @@ conditions under which the charts glue to the Grassmannian scheme.
   `OverlapAlgebra R x z → TripleAlgebra R x y z`.
 * `Module.Grassmannian.TripleAlgebra.cycle R x y z`: the cyclic map
   `TripleAlgebra R y z x → TripleAlgebra R x y z`.
+* `Module.Grassmannian.TripleAlgebra.cycleAlgEquiv R x y z`: the cyclic map as an isomorphism.
 
 ## Main results
 
@@ -213,7 +215,8 @@ and `z`, read in the charts at `y` and at `x`: the map classifying the universal
 `TripleAlgebra R x y z`, which lies in the charts at `y`, `z` and `x`. It is compatible with the
 points (`Module.Grassmannian.TripleAlgebra.tripleHomEquiv_comp_cycle`), and it is an isomorphism,
 with inverse the composite of the cyclic maps for the other two cyclic orders
-(`Module.Grassmannian.TripleAlgebra.cycle_cycle`). -/
+(`Module.Grassmannian.TripleAlgebra.cycle_cycle`), bundled as
+`Module.Grassmannian.TripleAlgebra.cycleAlgEquiv`. -/
 noncomputable def cycle (x y z : Fin k → M) : TripleAlgebra R y z x →ₐ[R] TripleAlgebra R x y z :=
   (tripleHomEquiv R y z x _).symm
     ⟨(tripleHomEquiv R x y z _ (AlgHom.id R _)).1, ⟨(tripleHomEquiv R x y z _ _).2.1.2,
@@ -238,6 +241,29 @@ theorem cycle_cycle (x y z : Fin k → M) :
   hom_ext <| by
     rw [← AlgHom.comp_assoc, tripleHomEquiv_comp_cycle, tripleHomEquiv_comp_cycle,
       ← AlgHom.id_comp (cycle R x y z), tripleHomEquiv_comp_cycle]
+
+variable (R) in
+/-- The cyclic map `TripleAlgebra R y z x → TripleAlgebra R x y z` as an isomorphism. Its inverse is
+the composite of the cyclic maps for the other two cyclic orders. -/
+noncomputable def cycleAlgEquiv (x y z : Fin k → M) :
+    TripleAlgebra R y z x ≃ₐ[R] TripleAlgebra R x y z :=
+  AlgEquiv.ofAlgHom (cycle R x y z) ((cycle R y z x).comp (cycle R z x y)) (cycle_cycle x y z)
+    ((AlgHom.comp_assoc _ _ _).trans (cycle_cycle y z x))
+
+@[simp]
+theorem toAlgHom_cycleAlgEquiv (x y z : Fin k → M) :
+    (cycleAlgEquiv R x y z : TripleAlgebra R y z x →ₐ[R] TripleAlgebra R x y z) = cycle R x y z :=
+  (rfl)
+
+@[simp]
+theorem coe_cycleAlgEquiv (x y z : Fin k → M) : ⇑(cycleAlgEquiv R x y z) = cycle R x y z :=
+  (rfl)
+
+@[simp]
+theorem toAlgHom_cycleAlgEquiv_symm (x y z : Fin k → M) :
+    ((cycleAlgEquiv R x y z).symm : TripleAlgebra R x y z →ₐ[R] TripleAlgebra R y z x) =
+      (cycle R y z x).comp (cycle R z x y) :=
+  (rfl)
 
 /-- The cyclic map is compatible with the transition isomorphism from the chart at `x` to
 the chart at `y`: on the coordinate ring of the overlap of the charts at `y` and `x`, both send the

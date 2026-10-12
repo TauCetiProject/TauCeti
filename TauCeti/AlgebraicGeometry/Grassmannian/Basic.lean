@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.AlgebraicGeometry.Gluing
 public import Mathlib.AlgebraicGeometry.Pullbacks
 public import TauCeti.RingTheory.Grassmannian.Chart.Triple
 
@@ -105,18 +104,6 @@ theorem pullbackTripleIso_hom_snd (x y z : Fin k → M) :
 
 variable (R M k)
 
--- The overlap of a chart with itself is the whole chart.
-private lemma isIso_algebraMap_overlapAlgebra_self (x : Fin k → M) :
-    IsIso (CommRingCat.ofHom (algebraMap (ChartAlgebra R x) (OverlapAlgebra R x x))) := by
-  let e := IsLocalization.atUnit (ChartAlgebra R x) (OverlapAlgebra R x x) (transitionDet R x x)
-    (by simp)
-  have : CommRingCat.ofHom (algebraMap (ChartAlgebra R x) (OverlapAlgebra R x x)) =
-      e.toRingEquiv.toCommRingCatIso.hom := by
-    ext a
-    simp [e]
-  rw [this]
-  infer_instance
-
 /-- The **gluing data of the Grassmannian**: the standard charts `Spec (ChartAlgebra R x)`, glued
 along the overlaps `Spec (OverlapAlgebra R x y)` by the transition isomorphisms
 `transitionAlgEquiv R x y`. The cocycle condition is `TripleAlgebra.cycle_cycle`. The body is
@@ -128,7 +115,10 @@ explicit schemes and morphisms. -/
   V p := Spec (.of (OverlapAlgebra R p.1 p.2))
   f x y := Spec.map (CommRingCat.ofHom (algebraMap (ChartAlgebra R x) (OverlapAlgebra R x y)))
   f_id x := by
-    have := isIso_algebraMap_overlapAlgebra_self R M k x
+    -- the overlap of a chart with itself is the localization away from `1`
+    dsimp only [OverlapAlgebra]
+    rw [transitionDet_self]
+    have := localization_unit_isIso (.of (ChartAlgebra R x))
     infer_instance
   t x y := Spec.map (CommRingCat.ofHom
       (transitionAlgEquiv R x y : OverlapAlgebra R y x →+* OverlapAlgebra R x y))
