@@ -8,7 +8,6 @@ module
 public import TauCeti.NumberTheory.ClassFieldTheory.Global.IdeleClass.SIdeles
 public import TauCeti.NumberTheory.ClassFieldTheory.Global.PlacePermutation.Basic
 public import TauCeti.RepresentationTheory.Homological.TateCohomology.FiniteGeneration
-import Mathlib.GroupTheory.FiniteAbelian.Basic
 import Mathlib.NumberTheory.NumberField.ClassNumber
 import TauCeti.NumberTheory.NumberField.Units.SUnit
 
@@ -31,24 +30,25 @@ exact sequence of representations of `Aut(L/K)`
 
 where `ℤ[S_L]` is the permutation lattice on the primes of `L` above `S`. The last map has finite
 cokernel: the class number of `L` kills the class of every prime, so its multiple of every vector
-of `ℤ[S_L]` is the valuation vector of an `S`-unit. For a cyclic extension the Herbrand quotient is
-therefore multiplicative along the sequence (`herbrandQuotient_sUnitsRep_eq_mul`), and for a
-cyclic Galois extension the permutation lattice contributes the local degrees
-(`herbrandQuotient_sUnitsRep`):
+of `ℤ[S_L]` is the valuation vector of an `S`-unit. When the group of `K`-automorphisms of `L` is
+cyclic the Herbrand quotient is therefore multiplicative along the sequence
+(`herbrandQuotient_sUnitsRep_eq_mul`), and for a cyclic Galois extension the permutation lattice
+contributes the local degrees (`herbrandQuotient_sUnitsRep`):
 
 ```text
 h(U_{L,S}) = h(U_{L,∅}) · ∏_{v ∈ S} [L_w : K_v].
 ```
 
-This is the finite-place part of the Herbrand quotient of the `S`-units in the computation
-`h(C_L) = h(I_{L,S}) / h(U_{L,S}) = [L : K]` of `herbrandQuotient_ideleClassRep`.
+This is the finite-place part of the Herbrand quotient of the `S`-units, an input to a future
+computation of `h(C_L) = [L : K]`. The quotient formula `h(C_L) = h(I_{L,S}) / h(U_{L,S})`, for `S`
+whose primes generate the class group of `L`, is `herbrandQuotient_ideleClassRep`.
 
 ## Main results
 
 * `TauCeti.ClassFieldTheory.finite_tateCohomology_zero_sUnitsRep` and
   `TauCeti.ClassFieldTheory.finite_tateCohomology_negOne_sUnitsRep`: the low-degree Tate groups of
   the `S`-units are finite.
-* `TauCeti.ClassFieldTheory.herbrandQuotient_sUnitsRep_eq_mul`: for cyclic `L/K`,
+* `TauCeti.ClassFieldTheory.herbrandQuotient_sUnitsRep_eq_mul`: when `Aut(L/K)` is cyclic,
   `h(U_{L,S}) = h(U_{L,∅}) · h(ℤ[S_L])`.
 * `TauCeti.ClassFieldTheory.herbrandQuotient_sUnitsRep`: for cyclic Galois `L/K`,
   `h(U_{L,S}) = h(U_{L,∅}) · ∏_{v ∈ S} [L_w : K_v]`.
@@ -192,35 +192,27 @@ private instance : Mono (sUnitsValuationShortComplex L S).f :=
     Additive.toMul.injective <| Subgroup.inclusion_injective (unit_primesAbove_empty_le L S)
       (congrArg Additive.toMul h)
 
-omit [NumberField K] in
-/-- The class number of `L` times any vector of `ℤ[S_L]` is the valuation vector of an
-`S`-unit. -/
-private theorem exists_sUnitsValuationHom_eq_nsmul
-    (f : MonoidAlgebra ℤ ↥(primesAbove (𝓞 K) (𝓞 L) S)) :
-    ∃ x, sUnitsValuationHom L S x = Nat.card (ClassGroup (𝓞 L)) • f := by
-  have := (primesAbove_finite (𝓞 K) (𝓞 L) (Set.toFinite S)).to_subtype
-  obtain ⟨u, hu⟩ := pow_mem_range_unitValuation (𝓞 L) L _ _ (fun _ ↦ pow_card_eq_one')
-    (fun w ↦ Multiplicative.ofAdd (f.coeff w))
-  refine ⟨Additive.ofMul u, MonoidAlgebra.ext (Finsupp.ext fun w ↦ ?_)⟩
-  simp [coeff_sUnitsValuationHom, congrFun hu w]
-
-/-- The valuation map has finite cokernel: its range contains the class number of `L` times
-`ℤ[S_L]`. -/
+/-- The valuation map has finite cokernel: its range is Mathlib's finite-index valuation lattice
+`finiteIndex_range_unitValuation`, read in `ℤ[S_L]`. -/
 private instance : Finite ↑(cokernel (sUnitsValuationShortComplex L S).g) := by
   have := (primesAbove_finite (𝓞 K) (𝓞 L) (Set.toFinite S)).to_subtype
-  have : AddGroup.FG (MonoidAlgebra ℤ ↥(primesAbove (𝓞 K) (𝓞 L) S)) :=
-    Module.Finite.iff_addGroup_fg.mp inferInstance
-  have : (nsmulAddMonoidHom (α := MonoidAlgebra ℤ ↥(primesAbove (𝓞 K) (𝓞 L) S))
-      (Nat.card (ClassGroup (𝓞 L)))).range.FiniteIndex :=
-    AddSubgroup.finiteIndex_range_nsmulAddMonoidHom_of_fg _ Nat.card_pos.ne'
+  -- read a vector of `ℤ[S_L]` as a tuple of valuations
+  let e : MonoidAlgebra ℤ ↥(primesAbove (𝓞 K) (𝓞 L) S) →+
+      Additive (↥(primesAbove (𝓞 K) (𝓞 L) S) → Multiplicative ℤ) :=
+    { toFun f := .ofMul fun w ↦ .ofAdd (f.coeff w)
+      map_zero' := by ext; simp
+      map_add' _ _ := by ext; simp }
+  have : (Set.unitValuation (primesAbove (𝓞 K) (𝓞 L) S) L).range.toAddSubgroup.FiniteIndex :=
+    Subgroup.finiteIndex_toAddSubgroup_iff.mpr (finiteIndex_range_unitValuation (𝓞 L) L _)
   have : (LinearMap.range ((forget₂ (Rep ℤ (L ≃ₐ[K] L)) (ModuleCat ℤ)).map
       (sUnitsValuationShortComplex L S).g).hom).toAddSubgroup.FiniteIndex := by
-    refine AddSubgroup.finiteIndex_of_le (H := (nsmulAddMonoidHom (α := MonoidAlgebra ℤ
-      ↥(primesAbove (𝓞 K) (𝓞 L) S)) (Nat.card (ClassGroup (𝓞 L)))).range) ?_
-    rintro _ ⟨f, rfl⟩
-    obtain ⟨x, hx⟩ := exists_sUnitsValuationHom_eq_nsmul S f
+    refine AddSubgroup.finiteIndex_of_le
+      (H := (Set.unitValuation (primesAbove (𝓞 K) (𝓞 L) S) L).range.toAddSubgroup.comap e) ?_
+    rintro f ⟨u, hu⟩
+    refine ⟨Additive.ofMul u, MonoidAlgebra.ext (Finsupp.ext fun w ↦ ?_)⟩
     -- the forgotten morphism applies `sUnitsValuationHom` by definition
-    exact ⟨x, hx⟩
+    change (sUnitsValuationHom L S (Additive.ofMul u)).coeff w = f.coeff w
+    simpa [coeff_sUnitsValuationHom, e] using congrArg Multiplicative.toAdd (congrFun hu w)
   -- the cokernel is computed in `ModuleCat ℤ`, as the quotient by the range
   have : Finite (MonoidAlgebra ℤ ↥(primesAbove (𝓞 K) (𝓞 L) S) ⧸ LinearMap.range
       ((forget₂ (Rep ℤ (L ≃ₐ[K] L)) (ModuleCat ℤ)).map (sUnitsValuationShortComplex L S).g).hom) :=
@@ -235,9 +227,9 @@ end Valuation
 /-! ### The Herbrand quotient -/
 
 variable (L) [Finite S] [IsCyclic (L ≃ₐ[K] L)] in
-/-- **The Herbrand quotient of the `S`-units** of a cyclic extension `L/K` of number fields, for a
-finite set `S` of finite places of `K`, is that of the units at every finite place times that of
-the permutation lattice on the primes of `L` above `S`:
+/-- **The Herbrand quotient of the `S`-units** of an extension `L/K` of number fields whose group of
+`K`-automorphisms is cyclic, for a finite set `S` of finite places of `K`, is that of the units at
+every finite place times that of the permutation lattice on the primes of `L` above `S`:
 `h(U_{L,S}) = h(U_{L,∅}) · h(ℤ[S_L])`. -/
 theorem herbrandQuotient_sUnitsRep_eq_mul :
     TateCohomology.herbrandQuotient (sUnitsRep L S) =
