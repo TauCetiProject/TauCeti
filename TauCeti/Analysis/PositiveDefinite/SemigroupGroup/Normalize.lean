@@ -16,11 +16,10 @@ semigroup-group positive-definite functions on `ℝ≥0 × V`: if `F (0, 0) ≠ 
 `F` by the reciprocal of the nonnegative real number `(F (0, 0)).re` gives a
 semigroup-group positive-definite function with value `1` at the origin.
 
-The generic positive-definite-function normalization API applies to the internal involutive
-monoid used to define `TauCeti.IsSemigroupGroupPD`, but that wrapper is intentionally private.
-This file exposes the corresponding public API directly on functions `ℝ≥0 × V → ℂ`. It is a
-small prerequisite for the BCR semigroup--Bochner representation milestone, where one separates
-normalization from the independent boundedness and continuity hypotheses.
+The generic positive-definite-function normalization API applies to the internal involutive monoid
+used to define `TauCeti.IsSemigroupGroupPD`, but that wrapper is intentionally private. This file
+exposes the corresponding public API directly on functions `ℝ≥0 × V → ℂ`. The API keeps
+normalization separate from the independent boundedness and continuity hypotheses.
 
 ## Main declarations
 
