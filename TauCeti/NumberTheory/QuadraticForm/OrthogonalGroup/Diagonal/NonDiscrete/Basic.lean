@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.QuadraticForm.OrthogonalGroup.Diagonal.Finite
 public import TauCeti.LinearAlgebra.QuadraticForm.Transvection.BaseChange
+public import TauCeti.Topology.Algebra.Group.Subgroup
 import TauCeti.LinearAlgebra.QuadraticForm.Transvection.Powers
 import TauCeti.Topology.Algebra.QuadraticForm.Transvection
 import TauCeti.NumberTheory.Padics.Factorial
@@ -105,8 +106,6 @@ theorem tendsto_finiteAdelicSpecialOrthogonalDiagonal_transvection_factorial
 theorem not_discreteTopology_range_finiteAdelicSpecialOrthogonalDiagonal_of_transvection
     (hu : Q u = 0) (huw : polar Q u w = 0) (hu₀ : Q.polarBilin u ≠ 0)
     (hw : w ∉ ℚ ∙ u) : ¬ DiscreteTopology U.finiteAdelicSpecialOrthogonalDiagonal.range := by
-  intro hD
-  let : DiscreteTopology U.finiteAdelicSpecialOrthogonalDiagonal.range := hD
   let g : specialOrthogonalGroup Q :=
     ⟨transvection Q hu huw, transvection_mem_specialOrthogonalGroup hu huw⟩
   have hne (n : ℕ) : g ^ n.factorial ≠ 1 := by
@@ -118,18 +117,10 @@ theorem not_discreteTopology_range_finiteAdelicSpecialOrthogonalDiagonal_of_tran
     rw [← Nat.cast_smul_eq_nsmul ℚ, (ℚ ∙ u).smul_mem_iff
       (by exact_mod_cast n.factorial_ne_zero)] at hmem
     exact hw hmem
-  let s (n : ℕ) : U.finiteAdelicSpecialOrthogonalDiagonal.range :=
-    U.finiteAdelicSpecialOrthogonalDiagonal.rangeRestrict (g ^ n.factorial)
-  have hs : Tendsto s atTop (𝓝 1) :=
-    tendsto_subtype_rng.mpr (U.tendsto_finiteAdelicSpecialOrthogonalDiagonal_transvection_factorial
-      hu huw)
-  have hev : ∀ᶠ n in atTop, s n = 1 := by
-    simpa only [nhds_discrete, tendsto_pure] using hs
-  obtain ⟨n, hn⟩ := hev.exists
-  apply hne n
-  apply U.finiteAdelicSpecialOrthogonalDiagonal_injective
-  simpa only [s, MonoidHom.coe_rangeRestrict, OneMemClass.coe_one, map_one] using
-    congrArg Subtype.val hn
+  exact U.finiteAdelicSpecialOrthogonalDiagonal.not_discreteTopology_range_of_tendsto_one
+    U.finiteAdelicSpecialOrthogonalDiagonal_injective
+    (U.tendsto_finiteAdelicSpecialOrthogonalDiagonal_transvection_factorial hu huw)
+    (Eventually.of_forall hne)
 
 /-- For a nondegenerate isotropic rational quadratic space of dimension at least three, the
 rational diagonal is not discrete in finite adelic `SO`. In dimension two the transvection

@@ -94,8 +94,6 @@ theorem not_discreteTopology_range_finiteAdelicSpinDiagonal_of_transvection
     (hQ : Q.Nondegenerate) (hu : Q u = 0) (huw : polar Q u w = 0)
     (hu₀ : u ≠ 0) (hw : w ∉ ℚ ∙ u) :
     ¬ DiscreteTopology U.finiteAdelicSpinDiagonal.range := by
-  intro hD
-  let : DiscreteTopology U.finiteAdelicSpinDiagonal.range := hD
   let g := spinTransvection hQ hu huw
   have hne (n : ℕ) : g ^ n.factorial ≠ 1 := by
     intro hn
@@ -104,18 +102,10 @@ theorem not_discreteTopology_range_finiteAdelicSpinDiagonal_of_transvection
     rw [← Nat.cast_smul_eq_nsmul ℚ, (ℚ ∙ u).smul_mem_iff
       (by exact_mod_cast n.factorial_ne_zero)] at hn
     exact hw hn
-  let s (n : ℕ) : U.finiteAdelicSpinDiagonal.range :=
-    U.finiteAdelicSpinDiagonal.rangeRestrict (g ^ n.factorial)
-  have hs : Tendsto s atTop (𝓝 1) :=
-    tendsto_subtype_rng.mpr
-      (U.tendsto_finiteAdelicSpinDiagonal_spinTransvection_factorial hQ hu huw)
-  have hev : ∀ᶠ n in atTop, s n = 1 := by
-    simpa only [nhds_discrete, tendsto_pure] using hs
-  obtain ⟨n, hn⟩ := hev.exists
-  apply hne n
-  apply U.finiteAdelicSpinDiagonal_injective
-  simpa only [s, MonoidHom.coe_rangeRestrict, OneMemClass.coe_one, map_one] using
-    congrArg Subtype.val hn
+  exact U.finiteAdelicSpinDiagonal.not_discreteTopology_range_of_tendsto_one
+    U.finiteAdelicSpinDiagonal_injective
+    (U.tendsto_finiteAdelicSpinDiagonal_spinTransvection_factorial hQ hu huw)
+    (Eventually.of_forall hne)
 
 /-- For a nondegenerate isotropic rational quadratic space of dimension at least three, the
 rational Spin diagonal is not discrete in the finite adeles. -/
