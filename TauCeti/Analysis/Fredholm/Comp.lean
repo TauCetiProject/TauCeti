@@ -22,8 +22,7 @@ sequence
 
 `0 → ker T → ker (S ∘ T) → ker S → coker T → coker (S ∘ T) → coker S → 0`.
 
-These results supply the compositional calculus for the Fredholm operators and index theory in
-Lane F0 of the analytic Heegaard Floer roadmap.
+These results supply the compositional calculus of Fredholm operators and their index.
 
 ## Main declarations
 
