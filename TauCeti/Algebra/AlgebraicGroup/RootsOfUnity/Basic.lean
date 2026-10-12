@@ -34,6 +34,8 @@ coordinate ring `R[X]/(X^n - 1)` is separate quotient-polynomial infrastructure.
   the chosen root of unity.
 * `TauCeti.RootsOfUnityGroup.pointsMulEquiv_symm_apply_single_generator`: the inverse
   equivalence sends a root of unity to the point taking the standard generator to it.
+* `TauCeti.RootsOfUnityGroup.algHom_ext`: an algebra map out of the coordinate ring is determined
+  by its value on the standard generator.
 
 This is a worked-example check for the reductive-groups roadmap, Layer 4:
 "`μ_n = D(ℤ/n)`" in the diagonalizable-groups lane, together with the Layer 0 functor-of-points
@@ -221,6 +223,14 @@ lemma pointsMulEquiv_symm_apply_single_ofAdd_val_smul (n : ℕ) [NeZero n] (ζ :
   rw [
     pointsMulEquiv_symm_apply_single_zmod_val_smul (R := R) (A := A) n ζ
       (Multiplicative.ofAdd j) r, toAdd_ofAdd]
+
+/-- An `R`-algebra map out of the coordinate ring `R[Multiplicative (ZMod n)]` of `μ_n` is
+determined by its value on the standard generator. -/
+theorem algHom_ext (n : ℕ) {f₁ f₂ : MonoidAlgebra R (Multiplicative (ZMod n)) →ₐ[R] A}
+    (h : f₁ (MonoidAlgebra.single (generator n) 1) = f₂ (MonoidAlgebra.single (generator n) 1)) :
+    f₁ = f₂ :=
+  congrArg ofConv <| (pointsMulEquiv (R := R) (A := A) n).injective <|
+    Subtype.ext <| Units.ext <| by simpa only [pointsMulEquiv_apply] using h
 
 /-- Naturality of the inverse `μ_n` points equivalence in the value algebra: post-composing
 the point attached to `ζ` gives the point attached to the image of `ζ`. -/

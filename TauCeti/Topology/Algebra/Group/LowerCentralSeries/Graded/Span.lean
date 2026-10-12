@@ -327,7 +327,7 @@ theorem gradedMap_degreeOneFamily (f : G →* H) (hf : Continuous f)
       gradedMap_gradedPow]
   · rw [degreeOneFamily_inr, degreeOneFamily_inr, Function.comp_apply, Function.comp_apply,
       ← gradedMap_gradedMkZero, ← gradedMap_gradedMkZero]
-    exact gradedMap_gradedBracket f hf (j := 0) (k := 0) _ _
+    exact gradedMap_gradedBracket_zero_zero f hf _ _
 
 end DegreeOneFamily
 

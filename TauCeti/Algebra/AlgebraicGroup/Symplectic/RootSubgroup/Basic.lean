@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
--- The ambient root subgroups supply the coordinate maps through which the symplectic maps factor.
+-- The general-linear root subgroups, which the long-root composites with `Sp₂ₘ → GL₂ₘ` recover.
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Root.Subgroup
 -- The symplectic scheme and its point equivalence identify the target of the root maps.
 public import TauCeti.Algebra.AlgebraicGroup.Symplectic.Scheme
@@ -35,6 +35,10 @@ factorization through the symplectic equations is recorded scheme-theoretically,
 
 ## Main definitions
 
+* `TauCeti.Symplectic.rootSubgroupPoints`, `TauCeti.Symplectic.rootSubgroupPointsMap`,
+  `TauCeti.Symplectic.rootSubgroupCoordinateMap` and `TauCeti.Symplectic.rootSubgroup`: the shared
+  pipeline for a root index, on points, as a natural transformation, on coordinate Hopf algebras,
+  and as an affine group-scheme morphism.
 * `TauCeti.Symplectic.positiveLongRootSubgroupPoints` and
   `TauCeti.Symplectic.negativeLongRootSubgroupPoints`: the homomorphisms on algebra-valued points.
 * `TauCeti.Symplectic.positiveLongRootSubgroupCoordinateMap` and

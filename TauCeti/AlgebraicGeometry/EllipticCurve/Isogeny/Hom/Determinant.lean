@@ -47,7 +47,6 @@ open WeierstrassCurve.Affine
 variable {F : Type*} [Field F] [DecidableEq F] [IsSepClosed F]
   {W : WeierstrassCurve.Affine F} [W.IsElliptic] {N : ℕ} [NeZero N] (hN : (N : F) ≠ 0)
 
-include hN in
 /-- **An endomorphism of `E[N]` scaling the Weil pairing by `d` has determinant `d`**, over a
 separably closed field in which `N` is invertible. -/
 theorem det_eq_of_weilPairing_eq_smul

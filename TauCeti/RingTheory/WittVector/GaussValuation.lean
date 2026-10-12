@@ -48,6 +48,9 @@ modulo a suitable power of `p`.
 * `TauCeti.WittVector.gaussValuation_teichmuller_mul_pow` : `λ_ρ([a] p ^ m) = v(a) ρ ^ m`.
 * `TauCeti.WittVector.gaussValuation_eq_zero_iff` : for `0 < ρ`, `λ_ρ` vanishes only at `0`.
 * `TauCeti.WittVector.gaussValuation_pos` : for `0 < ρ`, `λ_ρ` is positive away from `0`.
+* `TauCeti.WittVector.gaussValuation_teichmuller_add_teichmuller_sub_le` : Teichmüller
+  representatives are additive up to multiples of `p`, with
+  `λ_ρ([a] + [b] - [a + b]) ≤ ρ max (v(a), v(b))`.
 * `TauCeti.WittVector.isContinuous_gaussValuation` : if `v(ϖ) < 1`, then `λ_ρ` is continuous for
   the `(p, [ϖ])`-adic topology.
 * `TauCeti.WittVector.eventually_gaussValuation_eq_mul_pow_gaussDegree` : for `ρ'` slightly larger
@@ -477,6 +480,39 @@ theorem gaussValuation_mul_pow_le_of_eq_sum_add_pow_mul (hv : v.Integers O) (hρ
         rw [map_mul, map_pow, gaussValuation_p, mul_comm]
     _ ≤ _ := h ▸ (Valuation.map_sub _ _ _).trans (max_le le_rfl hsum)
 
+/-- A Witt vector whose `0`-th coordinate vanishes, that is, a multiple of `p`, has Gauss
+valuation at most `ρ`. -/
+theorem gaussValuation_le_of_coeff_zero_eq_zero (hv : v.Integers O) (hρ : ρ < 1) {x : 𝕎 O}
+    (hx : x.coeff 0 = 0) : gaussValuation p hv ρ hρ x ≤ ρ := by
+  rw [gaussValuation_apply]
+  refine ciSup_le fun n ↦ ?_
+  rcases n with _ | n
+  · simp [hx]
+  · exact (mul_le_of_le_one_left' (hv.map_le_one _)).trans
+      (pow_le_of_le_one zero_le hρ.le n.succ_ne_zero)
+
+/-- **Teichmüller representatives are additive up to `p`**, quantitatively:
+`λ_ρ([a] + [b] - [a + b]) ≤ ρ max (v(a), v(b))`. -/
+theorem gaussValuation_teichmuller_add_teichmuller_sub_le (hv : v.Integers O) (hρ : ρ < 1)
+    (a b : O) :
+    gaussValuation p hv ρ hρ (teichmuller p a + teichmuller p b - teichmuller p (a + b)) ≤
+      ρ * max (v (algebraMap O K a)) (v (algebraMap O K b)) := by
+  wlog h : v (algebraMap O K b) ≤ v (algebraMap O K a) generalizing a b
+  · rw [max_comm, add_comm (teichmuller p a), add_comm a]
+    exact this b a (le_of_not_ge h)
+  obtain ⟨t, rfl⟩ := hv.dvd_of_le h
+  -- `[a] + [a t] - [a + a t] = [a] (1 + [t] - [1 + t])`, and the second factor is a multiple of
+  -- `p`.
+  have he : (1 + teichmuller p t - teichmuller p (1 + t)).coeff 0 = 0 := by
+    rw [← constantCoeff_apply, map_sub, map_add, map_one, constantCoeff_apply,
+      constantCoeff_apply, teichmuller_coeff_zero, teichmuller_coeff_zero, sub_self]
+  have hfac : teichmuller p a + teichmuller p (a * t) - teichmuller p (a + a * t) =
+      teichmuller p a * (1 + teichmuller p t - teichmuller p (1 + t)) := by
+    rw [← mul_one_add a t, map_mul, map_mul]
+    ring
+  rw [hfac, map_mul, gaussValuation_teichmuller, max_eq_left h, mul_comm ρ]
+  exact mul_le_mul' le_rfl (gaussValuation_le_of_coeff_zero_eq_zero hv hρ he)
+
 /-- For `0 < ρ`, the Gauss valuation vanishes only at zero. -/
 @[simp]
 theorem gaussValuation_eq_zero_iff (hv : v.Integers O) (hρ₀ : 0 < ρ) (hρ : ρ < 1) {x : 𝕎 O} :
@@ -712,6 +748,17 @@ theorem gaussDegree_teichmuller_mul (hv : v.Integers O) (hρ₀ : 0 < ρ) (hρ :
   have h₀ := gaussDegree_teichmuller_mul_pow (p := p) hv hρ₀ hρ hc 0
   rw [pow_zero, mul_one] at h₀
   rw [gaussDegree_mul hv hρ₀ hρ (teichmuller_ne_zero p hc) hx, h₀, zero_add]
+
+/-- A nonzero finite Teichmüller sum `∑_{j < n} [aⱼ] pʲ` has degree less than `n`. -/
+theorem gaussDegree_sum_range_teichmuller_mul_pow_lt (hv : v.Integers O) (hρ₀ : 0 < ρ)
+    (hρ : ρ < 1) {a : ℕ → O} {n : ℕ}
+    (h : ∑ j ∈ Finset.range n, teichmuller p (a j) * (p : 𝕎 O) ^ j ≠ 0) :
+    gaussDegree p hv ρ hρ (∑ j ∈ Finset.range n, teichmuller p (a j) * (p : 𝕎 O) ^ j) < n := by
+  by_contra! hn
+  have := gaussValuation_eq_mul_pow_gaussDegree hv hρ₀ hρ h
+  simp only [teichmullerCoeff_sum_range_teichmuller_mul_pow, hn.not_gt, ↓reduceIte, map_zero,
+    zero_mul, gaussValuation_eq_zero_iff hv hρ₀ hρ] at this
+  exact h this
 
 end Degree
 

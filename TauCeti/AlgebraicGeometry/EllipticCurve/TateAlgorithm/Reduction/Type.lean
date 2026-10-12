@@ -31,12 +31,6 @@ The additive symbols are recognised by divisibilities alone: at each of them `ϖ
 origin and the stopping test asks for `ϖ ∤ b₂`, which is Tate's test for multiplicative reduction
 (`WeierstrassCurve.hasMultiplicativeReduction_iff_reduction_b₂_ne_zero`).
 
-Since the reduction type and the valuation of the minimal discriminant are invariants of the curve,
-the output of the algorithm is independent of the choices made along the way whenever one run of it
-stops at some `Iₙ`: any other minimal equation of the same curve, run with any uniformiser, stops at
-the same `Iₙ`. In particular two runs either both stop at an additive symbol or both stop at the
-same `Iₙ`.
-
 Over a Dedekind domain `O` with fraction field `F`, an elliptic curve is semistable
 (`WeierstrassCurve.IsSemistable`) exactly when, at every height-one prime `v`, Tate's algorithm run
 on a minimal equation over the localisation `O_v` stops at some `Iₙ`; the reverse direction needs
@@ -52,8 +46,6 @@ the residue fields to be perfect, so that the algorithm runs at all.
   split test.
 * `WeierstrassCurve.IsTateTerminal.localMinimalDiscriminantValuation_eq`: at `Iₙ`, `n` is the
   valuation of the minimal discriminant.
-* `WeierstrassCurve.IsTateTerminal.eq_I_iff_of_isMinimal_smul`: two runs of the algorithm on
-  minimal equations of the same curve stop at the same `Iₙ`, or both at additive symbols.
 * `WeierstrassCurve.IsSemistable.exists_eq_I_of_isTateTerminal` and
   `WeierstrassCurve.isSemistable_iff_forall_isTateTerminal`: a curve over the fraction field of a
   Dedekind domain is semistable exactly when Tate's algorithm only ever stops at symbols `Iₙ`.
@@ -169,33 +161,6 @@ theorem IsTateTerminal.localMinimalDiscriminantValuation_eq [(W.baseChange K).Is
     (one_smul _ _)
   rw [integralModel_baseChange_self, h.addVal_Δ_eq hϖ] at key
   exact_mod_cast key
-
-omit [IsMinimal R (W.baseChange K)] in
-/-- **Tate's algorithm stops at the same `Iₙ` on every minimal equation of a curve.** If `W₁` and
-`W₂` are minimal equations over `R` of the same elliptic curve over `K`, and the algorithm stops on
-them, with any uniformisers, at `s₁` and `s₂`, then `s₁ = Iₙ` exactly when `s₂ = Iₙ`. So the two
-runs stop at the same `Iₙ`, or both at symbols other than every `Iₙ`. -/
-theorem IsTateTerminal.eq_I_iff_of_isMinimal_smul {W₁ W₂ : WeierstrassCurve R}
-    [IsMinimal R (W₁.baseChange K)] [IsMinimal R (W₂.baseChange K)] [(W₁.baseChange K).IsElliptic]
-    {ϖ₁ ϖ₂ : R} (hϖ₁ : Irreducible ϖ₁) (hϖ₂ : Irreducible ϖ₂) {s₁ s₂ : ReductionSymbol}
-    (h₁ : W₁.IsTateTerminal ϖ₁ s₁) (h₂ : W₂.IsTateTerminal ϖ₂ s₂) (D : VariableChange K)
-    (hD : D • W₁.baseChange K = W₂.baseChange K) (n : ℕ) : s₁ = .I n ↔ s₂ = .I n := by
-  have hadd := hasAdditiveReduction_iff_of_isMinimal_smul R D hD
-  -- the minimal discriminant valuation of the curve, read off `W₂`
-  have hv : ((W₁.baseChange K).localMinimalDiscriminantValuation R : ℕ∞) = addVal R W₂.Δ := by
-    rw [localMinimalDiscriminantValuation_eq_addVal_of_isMinimal_smul R _ D hD,
-      integralModel_baseChange_self]
-  constructor
-  · rintro rfl
-    obtain ⟨m, rfl⟩ := (h₂.not_hasAdditiveReduction_iff hϖ₂).1
-      (hadd.not.2 ((h₁.not_hasAdditiveReduction_iff hϖ₁).2 ⟨n, rfl⟩))
-    rw [h₁.localMinimalDiscriminantValuation_eq hϖ₁, h₂.addVal_Δ_eq hϖ₂] at hv
-    exact congrArg ReductionSymbol.I (by exact_mod_cast hv.symm)
-  · rintro rfl
-    obtain ⟨m, rfl⟩ := (h₁.not_hasAdditiveReduction_iff hϖ₁).1
-      (hadd.not.1 ((h₂.not_hasAdditiveReduction_iff hϖ₂).2 ⟨n, rfl⟩))
-    rw [h₁.localMinimalDiscriminantValuation_eq hϖ₁, h₂.addVal_Δ_eq hϖ₂] at hv
-    exact congrArg ReductionSymbol.I (by exact_mod_cast hv)
 
 end DiscreteValuationRing
 

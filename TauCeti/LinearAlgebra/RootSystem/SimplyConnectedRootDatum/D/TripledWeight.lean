@@ -79,7 +79,7 @@ the weights of the natural representation, beginning at `ϖ₁ = (1, 0, 0, 0)`; 
 those of the half-spin representation `V(ϖ₃)`, beginning at `ϖ₃`; and indices `16` to `23` those
 of `V(ϖ₄)`, beginning at `ϖ₄`. Within each block every weight after the first is a simple
 reflection of an earlier weight of the block; no mathematical structure depends on the ordering. -/
-def d4TripledWeight : Fin 24 → Fin 4 → ℤ := ![
+@[expose] def d4TripledWeight : Fin 24 → Fin 4 → ℤ := ![
   ![1, 0, 0, 0], ![-1, 1, 0, 0], ![0, -1, 1, 1], ![0, 0, -1, 1],
   ![0, 0, 1, -1], ![0, 1, -1, -1], ![1, -1, 0, 0], ![-1, 0, 0, 0],
   ![0, 0, 1, 0], ![0, 1, -1, 0], ![1, -1, 0, 1], ![-1, 0, 0, 1],
@@ -155,26 +155,24 @@ theorem exists_d4TripledWeight_apply_eq_neg_one (i : Fin 4) :
 
 /-! ## Simple reflections -/
 
-private def d4TripledReflectionIndex : Fin 4 → Fin 24 → Fin 24 := ![
-  ![1, 0, 2, 3, 4, 5, 7, 6, 8, 9, 11, 10, 13, 12, 14, 15, 16, 17, 19, 18, 21, 20, 22, 23],
-  ![0, 2, 1, 3, 4, 6, 5, 7, 8, 10, 9, 11, 12, 14, 13, 15, 16, 18, 17, 19, 20, 22, 21, 23],
-  ![0, 1, 3, 2, 5, 4, 6, 7, 9, 8, 10, 11, 12, 13, 15, 14, 16, 17, 20, 21, 18, 19, 22, 23],
-  ![0, 1, 4, 5, 2, 3, 6, 7, 8, 9, 12, 13, 10, 11, 14, 15, 17, 16, 18, 19, 20, 21, 23, 22]]
-
-private theorem d4TripledReflectionIndex_involutive (i : Fin 4) :
-    Function.Involutive (d4TripledReflectionIndex i) := by
-  fin_cases i <;> intro a <;> fin_cases a <;> decide
-
 /-- **The permutation of the twenty-four tripled weights induced by the `i`-th simple
 reflection.** It preserves each of the three blocks. -/
-def d4TripledReflection (i : Fin 4) : Equiv.Perm (Fin 24) :=
-  (d4TripledReflectionIndex_involutive i).toPerm
+@[expose] def d4TripledReflection (i : Fin 4) : Equiv.Perm (Fin 24) :=
+  let reflectionIndex : Fin 4 → Fin 24 → Fin 24 := ![
+    ![1, 0, 2, 3, 4, 5, 7, 6, 8, 9, 11, 10, 13, 12, 14, 15, 16, 17, 19, 18, 21, 20, 22, 23],
+    ![0, 2, 1, 3, 4, 6, 5, 7, 8, 10, 9, 11, 12, 14, 13, 15, 16, 18, 17, 19, 20, 22, 21, 23],
+    ![0, 1, 3, 2, 5, 4, 6, 7, 9, 8, 10, 11, 12, 13, 15, 14, 16, 17, 20, 21, 18, 19, 22, 23],
+    ![0, 1, 4, 5, 2, 3, 6, 7, 8, 9, 12, 13, 10, 11, 14, 15, 17, 16, 18, 19, 20, 21, 23, 22]]
+  Function.Involutive.toPerm (reflectionIndex i) (by
+    intro a
+    fin_cases i <;> fin_cases a <;> decide)
 
 /-- Applying the same simple reflection twice fixes every index in the weight table. -/
 @[simp]
 theorem d4TripledReflection_apply_apply (i : Fin 4) (a : Fin 24) :
-    d4TripledReflection i (d4TripledReflection i a) = a :=
-  d4TripledReflectionIndex_involutive i a
+    d4TripledReflection i (d4TripledReflection i a) = a := by
+  revert i a
+  decide +kernel
 
 /-- **The coordinate equation for a simple reflection on the tripled weights.** Reflection in the
 `i`-th simple root subtracts the pairing with the `i`-th simple coroot times that root, the root
@@ -197,7 +195,7 @@ theorem d4TripledWeight_reflection_apply (i : Fin 4) (a : Fin 24) (j : Fin 4) :
 /-- **The summand containing a tripled weight**, numbered `0`, `1` and `2` for `V(ϖ₁)`, `V(ϖ₃)`
 and `V(ϖ₄)`: the table lists the eight weights of each summand consecutively. The label is an
 integer so that it can serve directly as a block labelling of the coordinates of `GL₂₄`. -/
-def d4TripledSummand (a : Fin 24) : ℤ :=
+@[expose] def d4TripledSummand (a : Fin 24) : ℤ :=
   ((a : ℕ) / 8 : ℕ)
 
 /-- Each summand of the tripled weight table contains eight coordinates. -/
@@ -309,34 +307,25 @@ private theorem trialityPermD4_apply_eq_d4TrialityNode (i : Fin 4) :
     trialityPermD4 i = d4TrialityNode i := by
   fin_cases i <;> simp [d4TrialityNode]
 
-/-- The index table of `d4TripledTrialityPerm`. It carries the natural block onto the `V(ϖ₃)`
-block, that block onto the `V(ϖ₄)` block, and the `V(ϖ₄)` block back onto the natural block. -/
-private def d4TripledTrialityIndex : Fin 24 → Fin 24 :=
-  ![8, 9, 10, 12, 11, 13, 14, 15, 16, 17, 18, 20, 19, 21, 22, 23, 0, 1, 2, 3, 4, 5, 6, 7]
-
-private theorem d4TripledTrialityIndex_apply_apply_apply (a : Fin 24) :
-    d4TripledTrialityIndex (d4TripledTrialityIndex (d4TripledTrialityIndex a)) = a := by
-  decide +kernel +revert
-
 /-- **The permutation of the twenty-four tripled weights realizing triality.** It carries the
 weight `μ` to `μ ∘ σ⁻¹`, where `σ = TauCeti.trialityPermD4`, so it cycles the three blocks
 `V(ϖ₁) → V(ϖ₃) → V(ϖ₄) → V(ϖ₁)`. Its inverse is its own square. -/
-def d4TripledTrialityPerm : Equiv.Perm (Fin 24) where
-  toFun := d4TripledTrialityIndex
-  invFun a := d4TripledTrialityIndex (d4TripledTrialityIndex a)
-  left_inv := d4TripledTrialityIndex_apply_apply_apply
-  right_inv := d4TripledTrialityIndex_apply_apply_apply
-
-private theorem d4TripledTrialityPerm_apply (a : Fin 24) :
-    d4TripledTrialityPerm a = d4TripledTrialityIndex a :=
-  (rfl)
+@[expose] def d4TripledTrialityPerm : Equiv.Perm (Fin 24) :=
+  let index : Fin 24 → Fin 24 :=
+    ![8, 9, 10, 12, 11, 13, 14, 15, 16, 17, 18, 20, 19, 21, 22, 23,
+      0, 1, 2, 3, 4, 5, 6, 7]
+  {
+    toFun := index
+    invFun a := index (index a)
+    left_inv := by decide +kernel
+    right_inv := by decide +kernel
+  }
 
 /-- Triality carries block `j` to the next block in the cycle `0 → 1 → 2 → 0`. -/
 @[simp]
 theorem d4TripledSummand_d4TripledTrialityPerm_eq_iff (a : Fin 24) (j : Fin 3) :
     d4TripledSummand (d4TripledTrialityPerm a) = ((j + 1 : Fin 3) : ℤ) ↔
       d4TripledSummand a = j := by
-  rw [d4TripledTrialityPerm_apply]
   revert a j
   decide +kernel
 
@@ -361,9 +350,7 @@ theorem d4TripledTrialityPerm_sixteen : d4TripledTrialityPerm 16 = 0 := by
 @[simp]
 theorem d4TripledTrialityPerm_pow_three : d4TripledTrialityPerm ^ 3 = 1 := by
   ext a
-  simp only [pow_succ, pow_zero, one_mul, Equiv.Perm.mul_apply, Equiv.Perm.one_apply,
-    d4TripledTrialityPerm_apply]
-  exact congrArg Fin.val (d4TripledTrialityIndex_apply_apply_apply a)
+  decide +kernel +revert
 
 /-- The inverse triality permutation is its square. -/
 theorem d4TripledTrialityPerm_symm :
@@ -397,10 +384,6 @@ theorem d4TripledTrialityPerm_symm_apply_symm_apply_symm_apply (a : Fin 24) :
       a := by
   simp only [d4TripledTrialityPerm_symm_apply, d4TripledTrialityPerm_apply_apply_apply]
 
-private theorem d4TripledWeight_d4TripledTrialityIndex_apply (a : Fin 24) (i : Fin 4) :
-    d4TripledWeight (d4TripledTrialityIndex a) (d4TrialityNode i) = d4TripledWeight a i := by
-  decide +kernel +revert
-
 /-- **The tripled weight family is equivariant for triality**: the weight at the image index,
 read at the image node, is the weight at the original index read at the original node. This is
 the hypothesis `wt (π a) (σ k) = wt a k` under which a numbered permutation of the coordinates of a
@@ -408,8 +391,9 @@ Kostant toral-closure carrier extends to an automorphism of the carrier. -/
 @[simp]
 theorem d4TripledWeight_d4TripledTrialityPerm_apply (a : Fin 24) (i : Fin 4) :
     d4TripledWeight (d4TripledTrialityPerm a) (trialityPermD4 i) = d4TripledWeight a i := by
-  rw [trialityPermD4_apply_eq_d4TrialityNode, d4TripledTrialityPerm_apply]
-  exact d4TripledWeight_d4TripledTrialityIndex_apply a i
+  rw [trialityPermD4_apply_eq_d4TrialityNode]
+  revert a i
+  decide +kernel
 
 /-- The functional form of `d4TripledWeight_d4TripledTrialityPerm_apply`: triality carries the
 weight `μ` to `μ ∘ σ⁻¹`. -/
