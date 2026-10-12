@@ -13,14 +13,17 @@ public import Mathlib.Algebra.Homology.BifunctorAssociator
 The associator on cochain complexes is natural in all three inputs. This
 comparison is needed to identify composition of the totalized tensor functors
 in the graded bimodule action.
+
+This extends Joël Riou's construction in `Mathlib.Algebra.Homology.BifunctorAssociator`,
+using `HomologicalComplex.mapBifunctorAssociator` and its summand-inclusion equations.
 -/
 
 public section
 noncomputable section
 
-open CategoryTheory CategoryTheory.Limits
+open CategoryTheory CategoryTheory.Limits HomologicalComplex
 
-namespace HomologicalComplex
+namespace TauCeti.HomologicalComplex
 
 universe u₁ u₂ u₃ u₁₂ u₂₃ u₄ v₁ v₂ v₃ v₁₂ v₂₃ v₄
 variable {C₁ : Type u₁} {C₂ : Type u₂} {C₃ : Type u₃}
@@ -83,10 +86,10 @@ private theorem ι_map₂₃ (f₁ : K₁ ⟶ L₁) (f₂ : K₂ ⟶ L₂) (f₃
       p q r (q + r) j rfl (by dsimp [ComplexShape.r] at h ⊢; omega)]
 
 variable
-  [∀ (K : CochainComplex C₁ ℤ) (L : CochainComplex C₂ ℤ) (P : CochainComplex C₃ ℤ),
-    HasGoodTrifunctor₁₂Obj F₁₂ G K L P (.up ℤ) (.up ℤ)]
-  [∀ (K : CochainComplex C₁ ℤ) (L : CochainComplex C₂ ℤ) (P : CochainComplex C₃ ℤ),
-    HasGoodTrifunctor₂₃Obj F G₂₃ K L P (.up ℤ) (.up ℤ) (.up ℤ)]
+  [HasGoodTrifunctor₁₂Obj F₁₂ G K₁ K₂ K₃ (.up ℤ) (.up ℤ)]
+  [HasGoodTrifunctor₁₂Obj F₁₂ G L₁ L₂ L₃ (.up ℤ) (.up ℤ)]
+  [HasGoodTrifunctor₂₃Obj F G₂₃ K₁ K₂ K₃ (.up ℤ) (.up ℤ) (.up ℤ)]
+  [HasGoodTrifunctor₂₃Obj F G₂₃ L₁ L₂ L₃ (.up ℤ) (.up ℤ) (.up ℤ)]
 
 /-- The totalized cochain associator is natural in all three complexes. -/
 @[reassoc]
@@ -123,4 +126,4 @@ theorem mapCochainBifunctorAssociator_inv_naturality
   simp only [Category.assoc, Iso.inv_hom_id, Category.comp_id,
     mapCochainBifunctorAssociator_naturality, Iso.inv_hom_id_assoc]
 
-end HomologicalComplex
+end TauCeti.HomologicalComplex
