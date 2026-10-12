@@ -19,6 +19,14 @@ public section
 open scoped TensorProduct
 
 /-- The tensor-product homomorphism identifying the right factor with its double opposite. -/
-abbrev Algebra.TensorProduct.mapOpOpRight (K L A : Type*) [CommSemiring K] [Semiring L]
+def Algebra.TensorProduct.mapOpOpRight (K L A : Type*) [CommSemiring K] [Semiring L]
     [Semiring A] [Algebra K L] [Algebra K A] : L ⊗[K] A →ₐ[K] L ⊗[K] Aᵐᵒᵖᵐᵒᵖ :=
   Algebra.TensorProduct.map (AlgHom.id K L) (AlgEquiv.opOp K A).toAlgHom
+
+/-- On pure tensors the map leaves the left factor fixed and takes the double opposite of
+the right factor. -/
+@[simp]
+theorem Algebra.TensorProduct.mapOpOpRight_tmul {K L A : Type*} [CommSemiring K] [Semiring L]
+    [Semiring A] [Algebra K L] [Algebra K A] (l : L) (a : A) :
+    mapOpOpRight K L A (l ⊗ₜ[K] a) = l ⊗ₜ[K] MulOpposite.op (MulOpposite.op a) := by
+  rfl
