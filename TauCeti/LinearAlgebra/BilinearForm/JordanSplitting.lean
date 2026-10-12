@@ -26,11 +26,10 @@ pairing (`LinearMap.BilinForm.IsJordanSplitting`). Thus each `N_i` carries the f
 for a perfect pairing `C_i`; this is the Jordan decomposition of O'Meara 91C.
 
 The main result is that every nondegenerate symmetric bilinear form on a finite free module has
-a Jordan splitting (`LinearMap.BilinForm.IsSymm.exists_isJordanSplitting`). The proof splits off
-a modular summand of minimal scale, of rank one or two
-(`LinearMap.BilinForm.IsSymm.exists_isModular_restrict_isCompl_orthogonal`), and recurses on its
-orthogonal complement. No inverse of `2` is used, so the theorem covers the dyadic case, for
-instance `R = ℤ_2`, where Jordan constituents need not be diagonalizable.
+a Jordan splitting (`LinearMap.BilinForm.IsSymm.exists_isJordanSplitting`). The constituents
+separate the form into its valuation scales, reducing its analysis to perfect pairings at each
+scale. This decomposition supports the local analysis and classification of integral forms,
+including the dyadic case, for instance `R = ℤ_2`, where constituents need not be diagonalizable.
 
 ## Main definitions
 
