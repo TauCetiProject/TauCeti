@@ -19,8 +19,6 @@ map on global sections. Restriction to affine opens gives the result on arbitrar
 without Noetherian or separation assumptions.
 
 Consequently quasicoherent sheaves have cokernels and their inclusion preserves them.
-In particular, the quotient of an affine direct image of the structure sheaf by the structure
-sheaf is quasicoherent. This quotient measures the defect of a finite normalization.
 
 ## References
 
@@ -55,7 +53,7 @@ def _root_.AlgebraicGeometry.Scheme.Modules.tildeCokernelIso {R : CommRingCat.{u
 /-- The affine cokernel comparison intertwines the quotient maps through the counit of the
 associated-sheaf/global-sections adjunction. -/
 @[reassoc (attr := simp)]
-theorem _root_.AlgebraicGeometry.Scheme.Modules.tildeCokernelIso_π_comp_hom
+theorem _root_.AlgebraicGeometry.Scheme.Modules.map_π_comp_tildeCokernelIso_hom
     {R : CommRingCat.{u}} {M N : (Spec R).Modules} (f : M ⟶ N)
     [M.IsQuasicoherent] [N.IsQuasicoherent] :
     tilde.map (cokernel.π ((moduleSpecΓFunctor (R := R)).map f)) ≫
@@ -77,17 +75,10 @@ private theorem isQuasicoherent_cokernel_affine {X : Scheme.{u}} [IsAffine X]
     {M N : X.Modules} (f : M ⟶ N) [M.IsQuasicoherent] [N.IsQuasicoherent] :
     (cokernel f).IsQuasicoherent := by
   let F := Scheme.Modules.restrictFunctor X.isoSpec.inv
-  let G := Scheme.Modules.restrictFunctor X.isoSpec.hom
   have : (F.obj (cokernel f)).IsQuasicoherent :=
     (SheafOfModules.isQuasicoherent (Spec Γ(X, ⊤)).ringCatSheaf).prop_of_iso
       (PreservesCokernel.iso F f).symm (isQuasicoherent_cokernel_spec (F.map f))
-  have : (G.obj (F.obj (cokernel f))).IsQuasicoherent :=
-    Scheme.Modules.isQuasicoherent_restrictFunctor X.isoSpec.hom _
-  let e : G.obj (F.obj (cokernel f)) ≅ cokernel f :=
-    (Scheme.Modules.restrictFunctorComp X.isoSpec.hom X.isoSpec.inv).symm.app _ ≪≫
-      (Scheme.Modules.restrictFunctorCongr X.isoSpec.hom_inv_id).app _ ≪≫
-      Scheme.Modules.restrictFunctorId.app _
-  exact (SheafOfModules.isQuasicoherent X.ringCatSheaf).prop_of_iso e inferInstance
+  exact isQuasicoherent_of_isQuasicoherent_restrict_iso X.isoSpec (cokernel f)
 
 /-- The ambient cokernel of a morphism of quasicoherent sheaves on any scheme is quasicoherent. -/
 instance _root_.AlgebraicGeometry.Scheme.Modules.isQuasicoherent_cokernel

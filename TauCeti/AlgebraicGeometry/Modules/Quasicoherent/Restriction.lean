@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Category.ModuleCat.Sheaf.Quasicoherent
 public import Mathlib.AlgebraicGeometry.AffineScheme
 public import Mathlib.AlgebraicGeometry.Modules.Sheaf
+public import Mathlib.AlgebraicGeometry.Modules.Tilde
 
 /-!
 # Restriction criteria for quasicoherent modules on schemes
@@ -30,6 +31,20 @@ namespace TauCeti.AlgebraicGeometry
 universe u
 
 noncomputable section
+
+/-- Quasicoherence can be checked after restriction along a scheme isomorphism. -/
+theorem isQuasicoherent_of_isQuasicoherent_restrict_iso {X Y : Scheme.{u}}
+    (e : X ≅ Y) (M : X.Modules) [hM : (M.restrict e.inv).IsQuasicoherent] :
+    M.IsQuasicoherent := by
+  let F := Scheme.Modules.restrictFunctor e.inv
+  let G := Scheme.Modules.restrictFunctor e.hom
+  have : (G.obj (F.obj M)).IsQuasicoherent :=
+    Scheme.Modules.isQuasicoherent_restrictFunctor e.hom _
+  let i : G.obj (F.obj M) ≅ M :=
+    (Scheme.Modules.restrictFunctorComp e.hom e.inv).symm.app _ ≪≫
+      (Scheme.Modules.restrictFunctorCongr e.hom_inv_id).app _ ≪≫
+      Scheme.Modules.restrictFunctorId.app _
+  exact (SheafOfModules.isQuasicoherent X.ringCatSheaf).prop_of_iso i inferInstance
 
 /-- Quasicoherence on an open subscheme implies quasicoherence on its slice site. -/
 theorem isQuasicoherent_over_of_isQuasicoherent_restrict {X : Scheme.{u}}

@@ -57,7 +57,7 @@ instance _root_.AlgebraicGeometry.Scheme.Hom.mono_unitToPushforwardObjUnit
 
 /-- The structure sheaf, its direct image, and their quotient form a short exact sequence
 for every quasi-compact scheme-theoretically dominant morphism. -/
-theorem _root_.AlgebraicGeometry.Scheme.Hom.shortExact_structureSheafSequence
+theorem _root_.AlgebraicGeometry.Scheme.Hom.shortExact_cokernelSequence_unitToPushforwardObjUnit
     [QuasiCompact f] [IsSchemeTheoreticallyDominant f] :
     (ShortComplex.cokernelSequence
       (SheafOfModules.unitToPushforwardObjUnit f.toRingCatSheafHom)).ShortExact := by
