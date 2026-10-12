@@ -35,7 +35,7 @@ algebraic closure of the ground field via the counit.
   algebras.
 * `TauCeti.semisimpleCommHopfAlgProperty_of_geometricFiber_iso`: establish semisimplicity
   using an isomorphic coordinate model of the geometric fibre.
-* `TauCeti.semisimpleCommHopfAlgProperty_of_geometricFiber_iso_of_isReduced`: the same, with
+* `TauCeti.semisimpleCommHopfAlgProperty_of_geometricFiber_iso_of_forall_isReduced`: the same, with
   the candidate subgroups presented as reduced, connected, and with solvable points.
 * `TauCeti.semisimpleCommHopfAlgProperty.eq_augmentation`: every connected normal smooth
   solvable closed subgroup of a semisimple group's geometric fibre is trivial.
@@ -152,7 +152,7 @@ theorem semisimpleCommHopfAlgProperty_of_geometricFiber_iso
 receives the geometric conditions on a candidate subgroup in the form used by point-based
 arguments: its coordinate ring is reduced with connected prime spectrum, and its group of points
 over the algebraic closure is solvable. -/
-theorem semisimpleCommHopfAlgProperty_of_geometricFiber_iso_of_isReduced
+theorem semisimpleCommHopfAlgProperty_of_geometricFiber_iso_of_forall_isReduced
     (k : Type u) [Field k] (H : FiniteTypeCommHopfAlgCat.{u, u} k)
     (G : CommHopfAlgCat.{u} (AlgebraicClosure k))
     (hsmooth : Algebra.Smooth k H)
