@@ -17,7 +17,7 @@ arbitrary commutative ring `R` in which `n` is invertible, where "primitive" has
 pointwise on `Spec R`.
 
 Write `X ^ n - 1 = Φ_n * Ψ_n` with `Ψ_n = ∏_{d ∣ n, d < n} Φ_d`
-(`Polynomial.cyclotomic_mul_prod_properDivisors`). When `n` is a unit, `X ^ n - 1` is separable,
+(Mathlib's `Polynomial.eq_cyclotomic_iff`). When `n` is a unit, `X ^ n - 1` is separable,
 so `Φ_n` is separable and coprime to `Ψ_n`. Consequently, for `ζ ∈ R`, the following are
 equivalent:
 
@@ -44,13 +44,6 @@ namespace Polynomial
 
 variable {R : Type*} [CommRing R] {n : ℕ}
 
-variable (R) in
-/-- `X ^ n - 1` is the product of `Φ_n` and the `Φ_d` for the proper divisors `d` of `n`. -/
-theorem cyclotomic_mul_prod_properDivisors (hn : n ≠ 0) :
-    cyclotomic n R * ∏ d ∈ n.properDivisors, cyclotomic d R = X ^ n - 1 := by
-  rw [← prod_cyclotomic_eq_X_pow_sub_one (Nat.pos_of_ne_zero hn),
-    ← Nat.insert_self_properDivisors hn, prod_insert Nat.self_notMem_properDivisors]
-
 /-- If `n` is invertible in `R`, then the cyclotomic polynomial `Φ_n` is separable over `R`. -/
 theorem separable_cyclotomic_of_isUnit (hn : IsUnit (n : R)) : (cyclotomic n R).Separable := by
   have h := separable_X_pow_sub_C_unit (1 : Rˣ) hn
@@ -64,7 +57,8 @@ theorem isCoprime_cyclotomic_prod_properDivisors (hn : IsUnit (n : R)) :
   rcases eq_or_ne n 0 with rfl | hn₀
   · simpa using isCoprime_one_left
   have h := separable_X_pow_sub_C_unit (1 : Rˣ) hn
-  rw [Units.val_one, C_1, ← cyclotomic_mul_prod_properDivisors R hn₀] at h
+  rw [Units.val_one, C_1,
+    ← (eq_cyclotomic_iff (Nat.pos_of_ne_zero hn₀) (cyclotomic n R)).mp rfl] at h
   exact h.isCoprime
 
 /-- An `n`th root of unity `ζ` for which every `ζ ^ d - 1`, with `d` a proper divisor of `n`, is
@@ -76,7 +70,7 @@ theorem isRoot_cyclotomic_of_isUnit_pow_sub_one (hn : n ≠ 0) {ζ : R} (h₁ : 
     intro d hd
     refine isUnit_of_dvd_unit ?_ (h d hd)
     simpa using eval_dvd (x := ζ) (cyclotomic.dvd_X_pow_sub_one d R)
-  have h₀ := congr(eval ζ $(cyclotomic_mul_prod_properDivisors R hn))
+  have h₀ := congr(eval ζ $((eq_cyclotomic_iff (Nat.pos_of_ne_zero hn) (cyclotomic n R)).mp rfl))
   rw [eval_mul, eval_sub, eval_pow, eval_X, eval_one, h₁, sub_self, hu.mul_left_eq_zero] at h₀
   exact h₀
 
@@ -90,7 +84,8 @@ theorem isRoot_cyclotomic_iff_isUnit_pow_sub_one (hn : IsUnit (n : R)) {ζ : R} 
     rintro rfl
     simp at hn
   refine ⟨fun hζ ↦ ⟨?_, fun d hd ↦ ?_⟩, fun h ↦ isRoot_cyclotomic_of_isUnit_pow_sub_one hn₀ h.1 h.2⟩
-  · have h₀ := congr(eval ζ $(cyclotomic_mul_prod_properDivisors R hn₀))
+  · have h₀ :=
+      congr(eval ζ $((eq_cyclotomic_iff (Nat.pos_of_ne_zero hn₀) (cyclotomic n R)).mp rfl))
     rw [eval_mul, hζ.eq_zero, zero_mul, eval_sub, eval_pow, eval_X, eval_one] at h₀
     exact (sub_eq_zero.mp h₀.symm)
   · -- `Ψ_n(ζ)` is a unit by coprimality, and `ζ ^ d - 1` divides it.
@@ -100,11 +95,8 @@ theorem isRoot_cyclotomic_iff_isUnit_pow_sub_one (hn : IsUnit (n : R)) {ζ : R} 
       simpa [hζ.eq_zero] using congr(eval ζ $hab)
     refine isUnit_of_dvd_unit ?_ hu
     have hd' := Nat.mem_properDivisors.mp hd
-    have hdvd : X ^ d - 1 ∣ ∏ d ∈ n.properDivisors, cyclotomic d R := by
-      rw [← prod_cyclotomic_eq_X_pow_sub_one (Nat.pos_of_mem_properDivisors hd)]
-      exact prod_dvd_prod_of_subset _ _ _
-        (Nat.divisors_subset_properDivisors hn₀ hd'.1 hd'.2.ne)
-    simpa using eval_dvd (x := ζ) hdvd
+    simpa using eval_dvd (x := ζ)
+      (X_pow_sub_one_dvd_prod_cyclotomic R (Nat.pos_of_ne_zero hn₀) hd'.1 hd'.2.ne)
 
 /-- **Roots of `Φ_n` are the fibrewise primitive roots of unity.** If `n` is a unit in `R`, then
 `ζ` is a root of `Φ_n` if and only if `ζ ^ n = 1` and the image of `ζ` in `R ⧸ p` is a primitive

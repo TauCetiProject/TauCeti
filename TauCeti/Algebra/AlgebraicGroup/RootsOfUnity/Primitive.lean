@@ -133,8 +133,8 @@ theorem exists_isIdempotentElem_ker_primitiveRootsMap (hn : IsUnit (n : R)) :
   set g := MonoidAlgebra.single (generator n) (1 : R) with hg
   set Ψ := ∏ d ∈ n.properDivisors, cyclotomic d R
   have hΦΨ : aeval g (cyclotomic n R) * aeval g Ψ = 0 := by
-    rw [← map_mul, cyclotomic_mul_prod_properDivisors R (NeZero.ne n), map_sub, map_pow, aeval_X,
-      map_one, hg, single_generator_pow, sub_self]
+    rw [← map_mul, (eq_cyclotomic_iff (Nat.pos_of_ne_zero (NeZero.ne n)) (cyclotomic n R)).mp rfl,
+      map_sub, map_pow, aeval_X, map_one, hg, single_generator_pow, sub_self]
   -- The idempotent is `e = a(g) Φ_n(g)`; its complement is `1 - e = b(g) Ψ(g)`.
   set e := aeval g (a * cyclotomic n R) with he_def
   have hab' : e + aeval g (b * Ψ) = 1 := by
