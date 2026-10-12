@@ -73,7 +73,7 @@ theorem conj_comp_spinTransvectionHom (hQ : Q.Nondegenerate) (hu : Q u = 0)
 
 /-- Conjugation carries the lifted Eichler root subgroup onto the root subgroup attached
 to the transported isotropic vector. -/
-theorem map_range_spinTransvectionHom_conj (hQ : Q.Nondegenerate) (hu : Q u = 0)
+theorem map_spinTransvectionHom_range_conj (hQ : Q.Nondegenerate) (hu : Q u = 0)
     (g : spinGroup Q) :
     (spinTransvectionHom hQ hu).range.map (MulAut.conj g).toMonoidHom.toAdditive =
       (spinTransvectionHom hQ
