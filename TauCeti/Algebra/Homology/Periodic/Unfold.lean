@@ -99,6 +99,21 @@ private noncomputable def unfoldShortComplexIso (i : ℤ) :
       simp)) (fun f ↦ by
         ext <;> simp [shortComplexFunctor', ShortComplex.isoMk, XIsoOfEq_hom_naturality])
 
+/-- Compare the canonical short complexes, allowing homology to be assumed locally. -/
+private noncomputable def unfoldCanonicalShortComplexIso (i : ℤ) :
+    unfoldFunctor C n ⋙ shortComplexFunctor C (ComplexShape.up ℤ) i ≅
+      shortComplexFunctor C (ComplexShape.up (ZMod n)) (i : ZMod n) :=
+  Functor.isoWhiskerLeft _
+      (natIsoSc' C (ComplexShape.up ℤ) (i - 1) i (i + 1) (by simp) (by simp)) ≪≫
+    unfoldShortComplexIso C n i ≪≫
+    (natIsoSc' C (ComplexShape.up (ZMod n))
+      ((i : ZMod n) - 1) (i : ZMod n) ((i : ZMod n) + 1) (by simp) (by simp)).symm
+
+/-- Homology at a cyclic degree supplies homology at each integer degree above it. -/
+instance (K : HomologicalComplex C (ComplexShape.up (ZMod n))) (i : ℤ)
+    [K.HasHomology (i : ZMod n)] : ((unfoldFunctor C n).obj K).HasHomology i :=
+  ShortComplex.hasHomology_of_iso ((unfoldCanonicalShortComplexIso C n i).app K).symm
+
 /-- Ordinary homology of the unfolding is cyclic homology at the residue of the degree. -/
 noncomputable def unfoldHomologyIso [CategoryWithHomology C] (i : ℤ) :
     unfoldFunctor C n ⋙ HomologicalComplex.homologyFunctor C (ComplexShape.up ℤ) i ≅
@@ -129,16 +144,19 @@ theorem unfoldFunctor_acyclic_iff (K : HomologicalComplex C (ComplexShape.up (ZM
 
 /-- Unfolding preserves and reflects quasi-isomorphisms at the corresponding residue. -/
 @[simp]
-theorem unfoldFunctor_quasiIsoAt_iff [CategoryWithHomology C]
-    {K L : HomologicalComplex C (ComplexShape.up (ZMod n))} (f : K ⟶ L) (i : ℤ) :
+theorem unfoldFunctor_quasiIsoAt_iff
+    {K L : HomologicalComplex C (ComplexShape.up (ZMod n))} (f : K ⟶ L) (i : ℤ)
+    [K.HasHomology (i : ZMod n)] [L.HasHomology (i : ZMod n)] :
     QuasiIsoAt ((unfoldFunctor C n).map f) i ↔ QuasiIsoAt f (i : ZMod n) := by
-  simp only [quasiIsoAt_iff_isIso_homologyMap]
-  exact NatIso.isIso_map_iff (unfoldHomologyIso C n i) f
+  simp only [quasiIsoAt_iff]
+  exact ShortComplex.quasiIso_iff_of_arrow_mk_iso _ _
+    (Arrow.isoOfNatIso (unfoldCanonicalShortComplexIso C n i) (Arrow.mk f))
 
 /-- A cyclic map is a quasi-isomorphism exactly when its unfolding is one. -/
 @[simp]
-theorem unfoldFunctor_quasiIso_iff [CategoryWithHomology C]
-    {K L : HomologicalComplex C (ComplexShape.up (ZMod n))} (f : K ⟶ L) :
+theorem unfoldFunctor_quasiIso_iff
+    {K L : HomologicalComplex C (ComplexShape.up (ZMod n))} (f : K ⟶ L)
+    [∀ j, K.HasHomology j] [∀ j, L.HasHomology j] :
     QuasiIso ((unfoldFunctor C n).map f) ↔ QuasiIso f := by
   simp only [quasiIso_iff, unfoldFunctor_quasiIsoAt_iff]
   constructor
