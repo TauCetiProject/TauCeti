@@ -24,7 +24,7 @@ for `0 ≤ s`, `n < s` and `R > 0`, the extended-valued bound
 `dist x y ^ (-s)` is integrable on `{x | R < dist x y}`. The exponent `n` need not be an integer.
 For an additive Haar measure on a finite-dimensional real normed space the growth bound holds with
 `n` the dimension and `A` the measure of the unit ball
-(`TauCeti.setLIntegral_ofReal_norm_rpow_neg_le`).
+(`MeasureTheory.Measure.setLIntegral_ofReal_norm_rpow_neg_le`).
 
 The proof splits the region `dist x y > R` into the dyadic annuli `2ᵏ R ≤ dist x y < 2ᵏ⁺¹ R`.
 On the `k`-th annulus `dist x y ^ (-s)` is at most `(2ᵏ R) ^ (-s)`, and the annulus lies in a
@@ -34,8 +34,8 @@ with ratio `2 ^ (n - s)`.
 ## Main declarations
 
 * `TauCeti.setLIntegral_ofReal_dist_rpow_neg_le`: the tail bound for `dist x y ^ (-s)`.
-* `TauCeti.setLIntegral_ofReal_norm_rpow_neg_le`: the tail bound for `‖x‖ ^ (-s)` under an
-  additive Haar measure, for `s` above the dimension.
+* `MeasureTheory.Measure.setLIntegral_ofReal_norm_rpow_neg_le`: the tail bound for `‖x‖ ^ (-s)`
+  under an additive Haar measure, for `s` above the dimension.
 -/
 
 public section
@@ -109,6 +109,12 @@ theorem setLIntegral_ofReal_dist_rpow_neg_le {y : X} {A : ℝ≥0∞} {n s : ℝ
         congr 2
         ring
 
+end TauCeti
+
+namespace MeasureTheory.Measure
+
+open Metric
+
 /-- **The tail of a negative power of the norm.** For an additive Haar measure `μ` on a
 finite-dimensional real normed space of dimension `n`, `n < s` and `R > 0`,
 
@@ -120,8 +126,8 @@ theorem setLIntegral_ofReal_norm_rpow_neg_le {E : Type*} [NormedAddCommGroup E]
     ∫⁻ x in {x | R < ‖x‖}, ENNReal.ofReal (‖x‖ ^ (-s)) ∂μ ≤
       μ (ball 0 1) * ENNReal.ofReal (2 ^ (Module.finrank ℝ E : ℝ) /
         (1 - 2 ^ (Module.finrank ℝ E - s)) * R ^ (Module.finrank ℝ E - s)) := by
-  simpa using setLIntegral_ofReal_dist_rpow_neg_le (y := 0) (μ := μ) (A := μ (ball 0 1))
+  simpa using TauCeti.setLIntegral_ofReal_dist_rpow_neg_le (y := 0) (μ := μ) (A := μ (ball 0 1))
     (fun r hr ↦ by rw [Measure.addHaar_closedBall μ 0 hr.le, mul_comm, Real.rpow_natCast])
     ((Nat.cast_nonneg _).trans hs.le) hs hR
 
-end TauCeti
+end MeasureTheory.Measure

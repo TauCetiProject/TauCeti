@@ -243,7 +243,7 @@ theorem exists_setIntegral_norm_fourierInv_le {ι : Type*} [Fintype ι]
   -- Cauchy–Schwarz splits the tail integral into the tail of `‖x‖ ^ (-2N)`, which is
   -- `O(R ^ (n - 2N))`, and the weighted `L²` integral, which is at most `D T²`.
   have hCS := setLIntegral_enorm_fourierInv_le σ N hR
-  have htail := TauCeti.setLIntegral_ofReal_norm_rpow_neg_le (volume : Measure V) hns hR
+  have htail := (volume : Measure V).setLIntegral_ofReal_norm_rpow_neg_le hns hR
   rw [← ofReal_measureReal] at htail
   have hK : ∫⁻ x, ENNReal.ofReal (‖x‖ ^ (2 * N) * ‖𝓕⁻ σ x‖ ^ 2) ≤
       ENNReal.ofReal (D * T ^ 2) := by
