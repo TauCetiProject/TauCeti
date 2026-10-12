@@ -68,6 +68,44 @@ instance : FunLike (BoundedBorelFunction X) X ℂ where
   coe f := f.val
   coe_injective := Subtype.val_injective
 
+/-- The subtype and function coercions have the same values. -/
+@[simp] theorem val_eq_coe (f : BoundedBorelFunction X) : f.val = ⇑f := (rfl)
+
+/-- Function coercion determines a bounded Borel symbol. -/
+theorem coe_injective : Function.Injective
+    (DFunLike.coe : BoundedBorelFunction X → X → ℂ) := DFunLike.coe_injective
+
+/-- The zero symbol coerces to the zero function. -/
+@[simp] theorem coe_zero : ⇑(0 : BoundedBorelFunction X) = 0 := (rfl)
+
+/-- The unit symbol coerces to the constant unit function. -/
+@[simp] theorem coe_one : ⇑(1 : BoundedBorelFunction X) = 1 := (rfl)
+
+/-- Function coercion preserves addition. -/
+@[simp] theorem coe_add (f g : BoundedBorelFunction X) : ⇑(f + g) = ⇑f + ⇑g := (rfl)
+
+/-- Function coercion preserves negation. -/
+@[simp] theorem coe_neg (f : BoundedBorelFunction X) : ⇑(-f) = -⇑f := (rfl)
+
+/-- Function coercion preserves subtraction. -/
+@[simp] theorem coe_sub (f g : BoundedBorelFunction X) : ⇑(f - g) = ⇑f - ⇑g := (rfl)
+
+/-- Function coercion preserves multiplication. -/
+@[simp] theorem coe_mul (f g : BoundedBorelFunction X) : ⇑(f * g) = ⇑f * ⇑g := (rfl)
+
+/-- Function coercion preserves scalar multiplication. -/
+@[simp] theorem coe_smul (c : ℂ) (f : BoundedBorelFunction X) : ⇑(c • f) = c • ⇑f := (rfl)
+
+/-- Function coercion preserves the star operation. -/
+@[simp] theorem coe_star (f : BoundedBorelFunction X) : ⇑(star f) = star ⇑f := (rfl)
+
+/-- Function coercion preserves natural powers. -/
+@[simp] theorem coe_pow (f : BoundedBorelFunction X) (n : ℕ) : ⇑(f ^ n) = ⇑f ^ n := (rfl)
+
+/-- Algebra scalars coerce to constant functions. -/
+@[simp] theorem coe_algebraMap (c : ℂ) :
+    ⇑(algebraMap ℂ (BoundedBorelFunction X) c) = fun _ => c := (rfl)
+
 /-- Two symbols are equal when they agree at every point. -/
 @[ext] theorem ext {f g : BoundedBorelFunction X} (h : ∀ x, f x = g x) : f = g :=
   DFunLike.ext _ _ h
@@ -88,11 +126,9 @@ def ofFunction (f : X → ℂ) (hf : Measurable f)
 @[simp] theorem ofFunction_apply (f : X → ℂ) (hf : Measurable f) (hbound) (x : X) :
     ofFunction f hf hbound x = f x := (rfl)
 
-/-- The constant bounded Borel symbol. -/
-def const (c : ℂ) : BoundedBorelFunction X := algebraMap ℂ _ c
-
-/-- Evaluation of a constant symbol. -/
-@[simp] theorem const_apply (c : ℂ) (x : X) : const c x = c := (rfl)
+/-- Evaluation of an algebra scalar is the constant scalar. -/
+@[simp] theorem algebraMap_apply (c : ℂ) (x : X) :
+    algebraMap ℂ (BoundedBorelFunction X) c x = c := (rfl)
 
 /-- Evaluation of zero. -/
 @[simp] theorem zero_apply (x : X) : (0 : BoundedBorelFunction X) x = 0 := (rfl)
@@ -126,7 +162,7 @@ def const (c : ℂ) : BoundedBorelFunction X := algebraMap ℂ _ c
 variable {Y Z : Type*} [MeasurableSpace Y] [MeasurableSpace Z]
 
 /-- Pullback of symbols along a measurable map, as a star algebra homomorphism. -/
-def compHom (g : X → Y) (hg : Measurable g) :
+def compStarAlgHom' (g : X → Y) (hg : Measurable g) :
     BoundedBorelFunction Y →⋆ₐ[ℂ] BoundedBorelFunction X where
   toFun f := ⟨f ∘ g, f.measurable.comp hg, by
     obtain ⟨M, hM, hfM⟩ := f.exists_bound
@@ -139,17 +175,18 @@ def compHom (g : X → Y) (hg : Measurable g) :
   map_star' _ := (rfl)
 
 /-- Pullback evaluates by composition. -/
-@[simp] theorem compHom_apply (g : X → Y) (hg : Measurable g)
-    (f : BoundedBorelFunction Y) (x : X) : compHom g hg f x = f (g x) := (rfl)
+@[simp] theorem compStarAlgHom'_apply (g : X → Y) (hg : Measurable g)
+    (f : BoundedBorelFunction Y) (x : X) : compStarAlgHom' g hg f x = f (g x) := (rfl)
 
-/-- Pullback by the identity does not change a symbol. -/
-@[simp] theorem compHom_id (f : BoundedBorelFunction X) :
-    compHom id measurable_id f = f := (rfl)
+/-- Pullback by the identity is the identity star algebra homomorphism. -/
+@[simp] theorem compStarAlgHom'_id :
+    compStarAlgHom' (X := X) id measurable_id = StarAlgHom.id ℂ (BoundedBorelFunction X) :=
+  (rfl)
 
-/-- Successive pullbacks agree with pullback along the composite map. -/
-theorem compHom_comp (g : X → Y) (hg : Measurable g) (h : Y → Z) (hh : Measurable h)
-    (f : BoundedBorelFunction Z) :
-    compHom g hg (compHom h hh f) = compHom (h ∘ g) (hh.comp hg) f := (rfl)
+/-- Pullback along a composite is composition of the star algebra homomorphisms. -/
+theorem compStarAlgHom'_comp (g : X → Y) (hg : Measurable g) (h : Y → Z) (hh : Measurable h) :
+    compStarAlgHom' (h ∘ g) (hh.comp hg) = (compStarAlgHom' g hg).comp (compStarAlgHom' h hh) :=
+  (rfl)
 
 /-- Restrict a symbol to a measurable set and extend it by zero. -/
 noncomputable def indicator (s : Set X) (hs : MeasurableSet s)
@@ -179,12 +216,12 @@ theorem indicator_mul_indicator (s t : Set X) (hs : MeasurableSet s) (ht : Measu
   exact (Set.inter_indicator_mul _ _ x).symm
 
 /-- Pullback commutes with restriction and extension by zero. -/
-theorem compHom_indicator (g : X → Y) (hg : Measurable g) (s : Set Y)
+theorem compStarAlgHom'_indicator (g : X → Y) (hg : Measurable g) (s : Set Y)
     (hs : MeasurableSet s) (f : BoundedBorelFunction Y) :
-    compHom g hg (indicator s hs f) =
-      indicator (g ⁻¹' s) (hs.preimage hg) (compHom g hg f) := by
+    compStarAlgHom' g hg (indicator s hs f) =
+      indicator (g ⁻¹' s) (hs.preimage hg) (compStarAlgHom' g hg f) := by
   ext x
-  simp only [compHom_apply, indicator_apply]
+  simp only [compStarAlgHom'_apply, indicator_apply]
   exact (Set.indicator_comp_right g (g := (f : Y → ℂ)) (s := s) (x := x)).symm
 
 /-- Every measurable complex simple function is an everywhere bounded symbol. -/
