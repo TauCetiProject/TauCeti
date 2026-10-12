@@ -442,7 +442,10 @@ lemma splitLast_ofCube_init (t : I^(Fin (n + 1))) :
     simp [ofCube]
   | succ n ih =>
     refine ext <| Finsupp.ext fun k => Fin.cases ?_ (fun k => ?_) k
-    · conv_lhs => rw [show (0 : Fin (n + 1 + 1 + 1)) = Fin.castAdd 2 0 from Fin.ext (by simp)]
+    · -- The zero coordinate lies in the first block `Fin.castAdd 2` of `Fin (n + 1 + 2)`, where
+      -- `splitLast_weights_castAdd` applies: both indices have value `0`.
+      have h0 : (0 : Fin (n + 1 + 1 + 1)) = Fin.castAdd 2 0 := Fin.ext (by simp)
+      conv_lhs => rw [h0]
       rw [splitLast_weights_castAdd, Fin.castSucc_zero, ofCube_weights_zero, ofCube_weights_zero]
       simp only [Fin.init_def, Fin.castSucc_zero]
     · rw [splitLast_weights_succ (c' := ofCube n (Fin.init (Fin.tail t))) (a := t 0)
