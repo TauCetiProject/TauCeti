@@ -167,15 +167,17 @@ class VariableBinding:
     binder: str
 
 
-def strip_comments_and_strings(text: str) -> str:
-    """Blank comments and literal text, preserving offsets, newlines and interpolation code."""
+def strip_comments_and_strings(text: str, *, mask_strings: bool = True) -> str:
+    """Mask comments and literals, preserving offsets and newlines.
+
+    With ``mask_strings=False``, keep string text visible for conservative token guards.
+    Quoted identifiers and character literals remain masked.
+    """
     chars = list(text)
     i = 0
     block_depth = 0
     in_string = False
     raw_end = None
-    strings = []
-    interpolations = []
     while i < len(chars):
         if block_depth:
             if text.startswith("/-", i):
@@ -193,30 +195,25 @@ def strip_comments_and_strings(text: str) -> str:
         elif raw_end is not None:
             if text.startswith(raw_end, i):
                 for j in range(i, i + len(raw_end)):
-                    chars[j] = " "
+                    if mask_strings:
+                        chars[j] = " "
                 i += len(raw_end)
                 raw_end = None
             else:
-                if chars[i] != "\n":
+                if mask_strings and chars[i] != "\n":
                     chars[i] = " "
                 i += 1
         elif in_string:
             if chars[i] == "\\" and i + 1 < len(chars):
-                chars[i] = " "
-                if chars[i + 1] != "\n":
-                    chars[i + 1] = " "
+                if mask_strings:
+                    chars[i] = " "
+                    if chars[i + 1] != "\n":
+                        chars[i + 1] = " "
                 i += 2
-            elif strings[-1] and chars[i] == "{":
-                chars[i] = " "
-                i += 1
-                # Interpolated expressions are code, and can contain nested strings.
-                interpolations.append(1)
-                in_string = False
             else:
                 if chars[i] == '"':
                     in_string = False
-                    strings.pop()
-                if chars[i] != "\n":
+                if mask_strings and chars[i] != "\n":
                     chars[i] = " "
                 i += 1
         elif text.startswith("--", i):
@@ -230,7 +227,7 @@ def strip_comments_and_strings(text: str) -> str:
         elif chars[i] == "«":
             while i < len(chars):
                 closing = chars[i] == "»"
-                # Keep delimiters so command parsers do not mistake Foo.«bar» for Foo.
+                # Preserve delimiters so Foo.«bar» is not mistaken for Foo.
                 if chars[i] not in "\n«»":
                     chars[i] = " "
                 i += 1
@@ -241,11 +238,12 @@ def strip_comments_and_strings(text: str) -> str:
                 raw_match := RAW_STRING_START.match(text, i)):
             raw_end = '"' + (raw_match.group(1) or "")
             for j in range(i, raw_match.end()):
-                chars[j] = " "
+                if mask_strings:
+                    chars[j] = " "
             i = raw_match.end()
         elif chars[i] == '"':
-            strings.append(i > 0 and text[i - 1] == "!")
-            chars[i] = " "
+            if mask_strings:
+                chars[i] = " "
             in_string = True
             i += 1
         elif chars[i] == "'" and (i == 0 or not (
@@ -260,13 +258,6 @@ def strip_comments_and_strings(text: str) -> str:
                     i += 1
             else:
                 i += 1
-        elif interpolations and chars[i] in "{}":
-            interpolations[-1] += 1 if chars[i] == "{" else -1
-            if interpolations[-1] == 0:
-                interpolations.pop()
-                chars[i] = " "
-                in_string = True
-            i += 1
         else:
             i += 1
     return "".join(chars)

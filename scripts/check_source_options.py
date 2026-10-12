@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Reject option overrides in library code, ignoring comments and literal text."""
+"""Reject option overrides in library code, ignoring comments, conservatively including string text."""
 
 from __future__ import annotations
 
@@ -20,7 +20,7 @@ def option_lines(source: str) -> list[int]:
     # Most files contain no candidate token. Avoid lexing them at all.
     if not any(token in source for token in OPTION_OVERRIDES):
         return []
-    code = strip_comments_and_strings(source)
+    code = strip_comments_and_strings(source, mask_strings=False)
     return [number for number, line in enumerate(code.splitlines(), 1)
             if OPTION_PATTERN.search(line)]
 

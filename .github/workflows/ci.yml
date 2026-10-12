@@ -161,7 +161,7 @@ jobs:
           fi
 
       # `set_option` is forbidden anywhere in code, including inside proofs and macros.
-      # This cheap source scan ignores comments/strings and never elaborates candidate code.
+      # This cheap scan ignores comments, conservatively includes strings, and never elaborates code.
       - name: No-set_option guard (TauCeti/ and TauCeti.lean use no set_option)
         run: |
           python3 scripts/check_source_options.py TauCeti/ TauCeti.lean

@@ -425,15 +425,17 @@ end TauCeti
     def test_quoted_namespace_is_not_truncated_to_an_unquoted_prefix(self):
         self.assertEqual(lint.scopes("namespace Foo.«bar»\nend Foo.«bar»\n"), [])
 
-    def test_interpolated_expressions_remain_code(self):
-        source = ('def text := s!"literal set_option {"set_option"} '
-                  '{set_option maxRecDepth 4000 in 1}"\n'
+    def test_literal_string_text_can_be_preserved_for_conservative_guards(self):
+        source = ('def text := "set_option"\n'
+                  'def raw := r#"set_option """#\n'
+                  '-- set_option maxRecDepth 4000\n'
                   'def next := 1\n')
-        cleaned = lint.strip_comments_and_strings(source)
+        cleaned = lint.strip_comments_and_strings(source, mask_strings=False)
         self.assertEqual(len(cleaned), len(source))
-        self.assertEqual(cleaned.count("set_option"), 1)
-        self.assertIn("set_option maxRecDepth 4000 in 1", cleaned)
+        self.assertEqual(cleaned.count("set_option"), 2)
+        self.assertNotIn("maxRecDepth", cleaned)
         self.assertIn("def next := 1", cleaned)
+        self.assertNotIn("set_option", lint.strip_comments_and_strings(source))
 
     def test_main_rejects_new_and_reports_ratchetable_findings(self):
         with tempfile.TemporaryDirectory() as directory:

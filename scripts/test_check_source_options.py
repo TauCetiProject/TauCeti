@@ -19,13 +19,16 @@ class SourceOptionsTests(unittest.TestCase):
             'set_option\n'
             '  linter.unusedVariables false in\n'), [1, 3, 4])
 
-    def test_allows_documentation_strings_and_identifier_substrings(self):
+    def test_allows_documentation_and_identifier_substrings(self):
         self.assertEqual(option_lines(
             '-- set_option hygiene false\n'
             '/- set_option /- nested comment -/ maxHeartbeats 0 -/\n'
-            'def text := "set_option hygiene false"\n'
-            'def escaped := "quoted \\" set_option hygiene false"\n'
             'def my_set_option := 1\n'), [])
+
+    def test_conservatively_rejects_command_names_in_literal_strings(self):
+        self.assertEqual(option_lines('def text := "set_option hygiene false"\n'), [1])
+        self.assertEqual(option_lines(
+            'def escaped := "quoted \\" set_option hygiene false"\n'), [1])
 
     def test_nested_comments_preserve_diagnostic_lines(self):
         self.assertEqual(option_lines(
@@ -43,7 +46,7 @@ class SourceOptionsTests(unittest.TestCase):
         self.assertEqual(option_lines(
             'def text := r###"set_option "# /- not a comment\n'
             'set_option hygiene false "###\n'
-            '  set_option maxHeartbeats 0 in\n'), [3])
+            '  set_option maxHeartbeats 0 in\n'), [1, 2, 3])
 
     def test_quoted_identifiers_and_characters_cannot_hide_following_options(self):
         self.assertEqual(option_lines(
@@ -61,7 +64,7 @@ class SourceOptionsTests(unittest.TestCase):
             'def set_option! := 4\n'
             'set_option hygiene false in\n'), [5])
 
-    def test_interpolation_scans_code_and_preserves_following_commands(self):
+    def test_interpolation_cannot_hide_option_names_or_following_commands(self):
         sources = [
             'def text := s!"{\'"\'}"\nset_option hygiene false in\n',
             'def text := s!"{"\\\""}"\nset_option hygiene false in\n',
@@ -76,7 +79,26 @@ class SourceOptionsTests(unittest.TestCase):
             'def text := s!"{({value := set_option maxRecDepth 4000 in 1} : Foo).value}"\n'),
             [1])
         self.assertEqual(option_lines(
-            'def text := s!"literal set_option {"set_option hygiene false"}"\n'), [])
+            'def text := s!"literal set_option {"set_option hygiene false"}"\n'), [1])
+        self.assertEqual(option_lines(
+            'def text := s! /- "comment" -/\n'
+            '  "{set_option maxRecDepth 4000 in (1 : Nat)}"\n'), [2])
+        self.assertEqual(option_lines(
+            'example : True := by\n'
+            '  dbg_trace "{set_option maxRecDepth 4000 in (1 : Nat)}"\n'
+            '  trivial\n'), [2])
+        self.assertEqual(option_lines(
+            'def text := identity! "{set_option hygiene false}"\n'), [1])
+        self.assertEqual(option_lines(
+            'example : True := by\n'
+            '  dbg_trace "{"\n'
+            '  set_option maxHeartbeats 0 in\n'
+            '  dbg_trace "}"\n'
+            '  trivial\n'), [3])
+        self.assertEqual(option_lines(
+            'def greet : IO Unit := println! "{"\\\""}"\n'
+            'set_option maxHeartbeats 0 in\n'
+            'theorem t : True := trivial\n'), [2])
 
     def test_escaped_character_cannot_hide_following_commands(self):
         self.assertEqual(option_lines(
@@ -91,7 +113,7 @@ class SourceOptionsTests(unittest.TestCase):
             'theorem other : True := by trivial\n'), [1, 3])
         self.assertEqual(option_lines(
             '-- guard_min_heartbeats 0 in\n'
-            'def message := "count_heartbeats"\n'), [])
+            'def message := "count_heartbeats"\n'), [2])
 
     def test_cli_checks_nested_files_and_root_and_fails_on_missing_input(self):
         checker = Path(__file__).with_name("check_source_options.py")

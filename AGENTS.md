@@ -50,7 +50,8 @@ scope do not coincide.
   couple of small proofs. Keep macro hygiene enabled: `set_option`, including
   `set_option hygiene false`, is forbidden anywhere in library code. Heartbeat-measurement
   commands (`guard_min_heartbeats` and `#count_heartbeats`) also disable limits and belong in
-  tooling rather than library code. A local syntax rule needed for elaboration performance
+  tooling rather than library code. The source guard conservatively includes string text;
+  put explanatory references in comments. A local syntax rule needed for elaboration performance
   should document the concrete need at its declaration.
 - One topic per PR. Ship a prerequisite refactor as its own PR.
 - Tau Ceti does not preserve backwards compatibility. When declarations or modules are moved,
