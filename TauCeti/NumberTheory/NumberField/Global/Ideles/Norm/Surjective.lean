@@ -42,7 +42,7 @@ places, `L` has an unramified place above every finite place outside `S ∪ T`, 
 surject onto `∏_{v ∈ T} U_v / U_v ^ n`. Then `C_L → C_K` is again surjective
 (`ideleClassNormMap_surjective_of_forall_exists_mem_unit`). Here no approximation is used: an
 idele class has a representative that is a unit outside `S`, and an `S`-unit corrects it to an
-`n`-th power at `T` without changing the other unit coordinates. The class group and `S`-unit
+`n`-th power at `T` while preserving the unit condition outside `S`. The class group and `S`-unit
 conditions concern `S` and `T` alone (the latter is Milne's Lemma 6.9). The local conditions hold
 for a Kummer extension `L = K(b^{1/n})` of a field containing the `n`-th roots of unity when `b`
 is an `n`-th power at `S` and at the infinite places, `b` is a unit outside `S ∪ T`, and `n` is a
@@ -278,8 +278,8 @@ theorem ideleClassNormMap_surjective_of_forall_exists_mem_unit
       exact hpow (hu ⟨v, hvT⟩)
     -- Outside `S ∪ T` the coordinate is a unit, and units are norms from an unramified place.
     have hval : Valued.v (v.ideleFiniteCoord z : v.adicCompletion K) = 1 := by
-      rw [map_mul, Units.val_mul, map_mul, ha v hvS, map_inv, map_inv, Units.val_inv_eq_inv_val,
-        map_inv₀, hu' v hvS, inv_one, one_mul]
+      rw [hzcoord, Units.val_mul, map_mul, ha v hvS, mul_one]
+      simpa using hu' v hvS
     obtain ⟨w, hw⟩ := exists_unit_preimages_of_isUnramifiedAt K L v _ hval (hunr v hvS hvT)
     exact (mem_range_normUnits_adicCompletion_iff K L v _).mpr ⟨w, hw.1⟩
   obtain ⟨y, hy⟩ := (mem_range_ideleNormMap_iff K L z).mpr ⟨hfin, fun w ↦ by simp [hinf w]⟩
