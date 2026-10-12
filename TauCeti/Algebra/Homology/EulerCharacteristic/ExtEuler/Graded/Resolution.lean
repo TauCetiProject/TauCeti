@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Homology.EulerCharacteristic.ExtEuler.Graded.Additivity
+public import TauCeti.Algebra.Homology.EulerCharacteristic.ExtEuler.Graded.Quotient
 public import TauCeti.Algebra.Homology.EulerCharacteristic.ExtEuler.Resolution
 
 /-!

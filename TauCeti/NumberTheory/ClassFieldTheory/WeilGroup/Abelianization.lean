@@ -19,8 +19,15 @@ homomorphism
 
 This file identifies its image without choosing a Frobenius lift: it consists exactly of the
 classes whose unramified coordinate in `ℤ̂` is an integer.  It also descends the Weil degree to
-`W_K^{ab}` and proves that the resulting square with `ℤ → ℤ̂` commutes.  These statements are the
-image half of the local Weil reciprocity isomorphism `Kˣ ≃ₜ* W_K^{ab}`.
+`W_K^{ab}` and proves that the resulting square with `ℤ → ℤ̂` commutes.
+
+The map is injective.  The commutators of `W_K` lie in inertia, on which the Weil topology is the
+profinite topology of `G_K`, and `W_K` is dense in `G_K`, so the closed commutator subgroup of
+`W_K` is the trace on `W_K` of the closed commutator subgroup of `G_K`.  Hence `W_K^{ab}` is
+isomorphic, as an abstract group, to the classes in `G_K^{ab}` with integral unramified
+coordinate, and its topology is the one induced by `x ↦ (x, deg x)` into `G_K^{ab} × ℤ`, exactly
+as for `W_K` itself.  These are the inputs about `W_K^{ab}` itself to the local Weil reciprocity
+isomorphism `Kˣ ≃ₜ* W_K^{ab}`.
 
 ## Main definitions
 
@@ -31,6 +38,8 @@ image half of the local Weil reciprocity isomorphism `Kˣ ≃ₜ* W_K^{ab}`.
   unramified coordinate is integral.
 * `TauCeti.ClassFieldTheory.weilToIntegralUnramified`: the induced surjection from `W_K^{ab}`
   onto that subgroup.
+* `TauCeti.ClassFieldTheory.weilAbelianizationEquivIntegralUnramified`: the same map, as an
+  isomorphism of groups.
 
 ## Main results
 
@@ -38,7 +47,13 @@ image half of the local Weil reciprocity isomorphism `Kˣ ≃ₜ* W_K^{ab}`.
   coordinate of a Weil class is the image of its degree in `ℤ̂`.
 * `TauCeti.ClassFieldTheory.range_weilToAbsoluteAbelianization`: the image of `W_K^{ab}` is
   precisely `integralUnramifiedSubgroup K`.
-* `TauCeti.ClassFieldTheory.denseRange_weilToAbsoluteAbelianization`: this image is dense in
+* `TauCeti.ClassFieldTheory.injective_weilToAbsoluteAbelianization`: the map
+  `W_K^{ab} → G_K^{ab}` is injective.
+* `TauCeti.ClassFieldTheory.ker_weilDegreeAbelianization`: the classes of degree zero in
+  `W_K^{ab}` are the classes of inertia.
+* `isEmbedding_weilToAbsoluteAbelianization_prod_weilDegreeAbelianization`, in the same
+  namespace: `x ↦ (x, deg x)` is a topological embedding `W_K^{ab} → G_K^{ab} × ℤ`.
+* `TauCeti.ClassFieldTheory.denseRange_weilToAbsoluteAbelianization`: the image is dense in
   `G_K^{ab}`.
 
 ## References
@@ -51,6 +66,8 @@ image half of the local Weil reciprocity isomorphism `Kˣ ≃ₜ* W_K^{ab}`.
 public section
 
 noncomputable section
+
+open Topology
 
 namespace TauCeti.ClassFieldTheory
 
@@ -157,6 +174,85 @@ theorem surjective_weilToIntegralUnramified :
     Function.Surjective (weilToIntegralUnramified K) :=
   (Set.surjective_codRestrict _).2 <| by
     rw [← MonoidHom.coe_range, range_weilToAbsoluteAbelianization]
+
+/-- **The abelianized Weil group injects into the abelianized absolute Galois group**: the map
+`W_K^{ab} → G_K^{ab}` induced by the inclusion `W_K → G_K` is injective. -/
+theorem injective_weilToAbsoluteAbelianization :
+    Function.Injective (weilToAbsoluteAbelianization K) := by
+  -- `W_K` is dense in `G_K`, and inertia carries the same topology in `W_K` and in `G_K`.
+  refine TopologicalAbelianization.map_injective_of_isInducing (weilToAbsolute K)
+    (continuous_weilToAbsolute K) (denseRange_weilToAbsolute K) (inertiaToWeil K)
+    (isOpenEmbedding_inertiaToWeil K).continuous ?_ ?_
+  · have : weilToAbsolute K ∘ inertiaToWeil K = Subtype.val := funext weilToAbsolute_inertiaToWeil
+    rw [this]
+    exact .subtypeVal
+  · -- An element dying in `G_K^{ab}` has trivial unramified coordinate, so it lies in inertia.
+    intro w hw
+    rw [range_inertiaToWeil, Subgroup.mem_comap, ← unramifiedCoordinate_mk_eq_one_iff,
+      (QuotientGroup.eq_one_iff (weilToAbsolute K w)).2 hw, map_one]
+
+/-- **The abelianized inertia sequence**: the classes of degree zero in `W_K^{ab}` are exactly
+the classes of elements of inertia. This is the abelianized form of `ker_weilDegree`. -/
+theorem ker_weilDegreeAbelianization :
+    (weilDegreeAbelianization K).toMonoidHom.ker =
+      ((QuotientGroup.mk' (commutator (WeilGroup K)).topologicalClosure).comp
+        (inertiaToWeil K)).range := by
+  refine le_antisymm (fun x hx ↦ ?_) ?_
+  · obtain ⟨w, rfl⟩ := QuotientGroup.mk_surjective x
+    have hw : w ∈ (inertiaToWeil K).range := by
+      rw [range_inertiaToWeil, ← ker_weilDegree, MonoidHom.mem_ker, ← weilDegreeAbelianization_mk]
+      exact hx
+    obtain ⟨σ, rfl⟩ := hw
+    exact ⟨σ, rfl⟩
+  · rintro _ ⟨σ, rfl⟩
+    simp
+
+/-- **The topology of `W_K^{ab}`**: `x ↦ (x, deg x)` is a topological embedding of `W_K^{ab}`
+into `G_K^{ab} × ℤ`, with `ℤ` discrete. This is the abelianized form of the characterization of
+the Weil topology, `isEmbedding_weilToAbsolute_prod_weilDegree`. -/
+theorem isEmbedding_weilToAbsoluteAbelianization_prod_weilDegreeAbelianization :
+    IsEmbedding ((weilToAbsoluteAbelianization K).prod (weilDegreeAbelianization K)) := by
+  set Φ := (weilToAbsoluteAbelianization K).prod (weilDegreeAbelianization K)
+  have hinj : Function.Injective Φ := fun _ _ h ↦
+    injective_weilToAbsoluteAbelianization K (congrArg Prod.fst h)
+  refine Φ.toMonoidHom.isEmbedding_of_isCompact_preimage Φ.continuous hinj
+    (prod_mem_nhds Filter.univ_mem ((isOpen_discrete {1}).mem_nhds rfl)) ?_
+  -- The preimage of `G_K^{ab} × {0}` is the subgroup of classes of degree zero, which is compact
+  -- as the image of the compact group `I_K`.
+  have hA : Φ.toMonoidHom ⁻¹' (Set.univ ×ˢ {1}) =
+      ((weilDegreeAbelianization K).toMonoidHom.ker : Set _) := by
+    ext x
+    simp [Φ]
+  have : CompactSpace (inertiaSubgroup K) :=
+    isCompact_iff_compactSpace.1 (isClosed_inertiaSubgroup K).isCompact
+  rw [hA, ker_weilDegreeAbelianization, MonoidHom.coe_range]
+  exact isCompact_range (QuotientGroup.continuous_mk.comp
+    (isOpenEmbedding_inertiaToWeil K).continuous)
+
+/-- The abelianized Weil group is isomorphic, as an abstract group, to the subgroup of `G_K^{ab}`
+of classes with integral unramified coordinate, through the map induced by `W_K → G_K`. -/
+def weilAbelianizationEquivIntegralUnramified :
+    TopologicalAbelianization (WeilGroup K) ≃* integralUnramifiedSubgroup K :=
+  MulEquiv.ofBijective (weilToIntegralUnramified K)
+    ⟨fun _ _ h ↦ injective_weilToAbsoluteAbelianization K (congrArg Subtype.val h),
+      surjective_weilToIntegralUnramified K⟩
+
+/-- The isomorphism `W_K^{ab} ≃* integralUnramifiedSubgroup K` has the same underlying value in
+`G_K^{ab}` as the induced map `W_K^{ab} → G_K^{ab}`. -/
+@[simp]
+theorem coe_weilAbelianizationEquivIntegralUnramified
+    (w : TopologicalAbelianization (WeilGroup K)) :
+    (weilAbelianizationEquivIntegralUnramified K w : Field.absoluteGaloisGroupAbelianization K) =
+      weilToAbsoluteAbelianization K w :=
+  (rfl)
+
+/-- The inverse of `W_K^{ab} ≃* integralUnramifiedSubgroup K` sends a class with integral
+unramified coordinate to the unique Weil class mapping to it in `G_K^{ab}`. -/
+@[simp]
+theorem weilToAbsoluteAbelianization_weilAbelianizationEquivIntegralUnramified_symm
+    (x : integralUnramifiedSubgroup K) :
+    weilToAbsoluteAbelianization K ((weilAbelianizationEquivIntegralUnramified K).symm x) = x := by
+  rw [← coe_weilAbelianizationEquivIntegralUnramified, MulEquiv.apply_symm_apply]
 
 /-- The induced map `W_K^{ab} → G_K^{ab}` has dense image.  Equivalently, classes with integral
 unramified coordinate are dense in `G_K^{ab}`. -/

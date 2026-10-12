@@ -7,7 +7,8 @@ module
 
 public import Mathlib.Analysis.Normed.Module.Completion
 public import Mathlib.Analysis.Normed.Unbundled.RingSeminorm
-public import TauCeti.RingTheory.Huber.Completion
+public import TauCeti.Analysis.Normed.Ring.Completion
+public import TauCeti.RingTheory.Huber.Completion.Basic
 public import TauCeti.RingTheory.Huber.Normed
 public import TauCeti.RingTheory.Valuation.ExtendToLocalization
 public import TauCeti.RingTheory.WittVector.GaussValuation
@@ -41,6 +42,10 @@ The ring `B^I` is a complete Hausdorff Tate ring: `p` becomes a unit of norm `ma
 hence a pseudouniformiser (`TauCeti.WittVector.isPseudoUniformizer_natCast_intervalRing`), and the
 Tate structure of `𝕎 O[1/(p [ϖ])]` comes from `TauCeti.Huber.IsTateRing.of_isUnit_norm_lt_one`.
 
+The norm `λ_I` is power-multiplicative, though in general not multiplicative, and so is its
+extension to `B^I`. Hence the power-bounded elements of `B^I` are exactly its unit ball
+`B^{I,+} = {x : λ_I(x) ≤ 1}`, which is therefore a ring of integral elements, and `B^I` is uniform.
+
 ## Main definitions
 
 * `TauCeti.WittVector.gaussValuationAway` : the extension of `λ_ρ` to `𝕎 O[1/(p [ϖ])]`.
@@ -57,6 +62,15 @@ Tate structure of `𝕎 O[1/(p [ϖ])]` comes from `TauCeti.Huber.IsTateRing.of_i
   `B^I`.
 * `TauCeti.WittVector.isPseudoUniformizer_teichmuller_intervalRing` : `[ϖ]` is a pseudouniformiser
   of `B^I`.
+* `TauCeti.WittVector.coe_powerBoundedSubring_intervalRing` : the power-bounded subring of `B^I`
+  is its unit ball `B^{I,+}`; `TauCeti.WittVector.IntervalLocalization.coe_powerBoundedSubring` is
+  the same statement on `𝕎 O[1/(p [ϖ])]`.
+* `TauCeti.WittVector.isUniform_intervalRing` : `B^I` is uniform.
+* `TauCeti.WittVector.continuous_algebraMap_intervalLocalization` and
+  `TauCeti.WittVector.continuous_algebraMap_intervalRing` : `𝕎 O → 𝕎 O[1/(p [ϖ])]` and
+  `𝕎 O → B^I` are continuous for the `(p, [ϖ])`-adic topology on `𝕎 O`.
+* `TauCeti.WittVector.exists_norm_le_one_algebraMap_eq_mul_intervalRing` : if `λ_ρ(x) ≤ λ_ρ(y)` at
+  both radii and `y` is a unit of `𝕎 O[1/(p [ϖ])]`, then `x / y` lies in the unit ball of `B^I`.
 * `TauCeti.WittVector.IntervalLocalization.instIsTateRing` : `𝕎 O[1/(p [ϖ])]` with the interval
   norm is a Tate ring, so its completion `B^I` is a complete Hausdorff Tate ring by
   `TauCeti.Huber.IsTateRing.completion`.
@@ -125,17 +139,9 @@ theorem gaussValuationAway_mk' (hv : v.Integers O) (hϖ : ϖ ≠ 0) {ρ : ℝ≥
 /-- The extended Gauss valuation vanishes only at zero. -/
 @[simp]
 theorem gaussValuationAway_eq_zero_iff (hv : v.Integers O) (hϖ : ϖ ≠ 0) {ρ : ℝ≥0}
-    (hρ : ρ ∈ Set.Ioo 0 1) {x : B} : gaussValuationAway p hv hϖ ρ hρ B x = 0 ↔ x = 0 := by
-  refine ⟨fun hx ↦ ?_, fun hx ↦ hx ▸ map_zero _⟩
-  obtain ⟨⟨a, s⟩, rfl⟩ := IsLocalization.mk'_surjective
-    (Submonoid.powers ((p : 𝕎 O) * teichmuller p ϖ)) x
-  dsimp only at hx ⊢
-  have hs : gaussValuation p hv ρ hρ.2 s ≠ 0 :=
-    Valuation.powers_le_supp_primeCompl
-      (gaussValuation_natCast_mul_teichmuller_ne_zero hv hϖ hρ) s.2
-  rw [gaussValuationAway_mk', mul_eq_zero, inv_eq_zero, gaussValuation_eq_zero_iff hv hρ.1,
-    or_iff_left hs] at hx
-  rw [hx, IsLocalization.mk'_zero]
+    (hρ : ρ ∈ Set.Ioo 0 1) {x : B} : gaussValuationAway p hv hϖ ρ hρ B x = 0 ↔ x = 0 :=
+  Valuation.extendToLocalization_eq_zero_iff _ _ fun _ ↦
+    (gaussValuation_eq_zero_iff hv hρ.1 hρ.2).mp
 
 end Away
 
@@ -260,6 +266,22 @@ instance instIsTateRing : IsTateRing (IntervalLocalization p hv hϖ hϖ' hρ₁ 
   IsTateRing.of_isUnit_norm_lt_one (isUnit_natCast p hv hϖ hϖ' hρ₁ hρ₂)
     (norm_natCast_lt_one p hv hϖ hϖ' hρ₁ hρ₂)
 
+/-- **The interval norm is power-multiplicative**: `λ_I(x ^ n) = λ_I(x) ^ n`, because `λ_{ρ₁}` and
+`λ_{ρ₂}` are multiplicative. -/
+theorem isPowMul_norm : IsPowMul (‖·‖ : IntervalLocalization p hv hϖ hϖ' hρ₁ hρ₂ → ℝ) :=
+  fun x n _ ↦ by
+    simp only [norm_def, map_pow, ← NNReal.coe_pow, ← NNReal.coe_max, (pow_left_mono n).map_max]
+
+/-- **The power-bounded elements of `𝕎 O[1/(p [ϖ])]` are the unit ball of `λ_I`**, since `λ_I` is
+power-multiplicative and `p` is a unit of norm less than one. -/
+theorem coe_powerBoundedSubring :
+    (powerBoundedSubring (IntervalLocalization p hv hϖ hϖ' hρ₁ hρ₂) :
+      Set (IntervalLocalization p hv hϖ hϖ' hρ₁ hρ₂)) = Metric.closedBall 0 1 :=
+  IsPseudoUniformizer.coe_powerBoundedSubring_eq_closedBall
+    (IsPseudoUniformizer.of_norm_lt_one (isUnit_natCast p hv hϖ hϖ' hρ₁ hρ₂)
+      (norm_natCast_lt_one p hv hϖ hϖ' hρ₁ hρ₂))
+    (isPowMul_norm p hv hϖ hϖ' hρ₁ hρ₂)
+
 /-- Scalar multiplication by `𝕎 O` is uniformly continuous, so that the `𝕎 O`-algebra structure
 extends to the completion `B^I`. -/
 instance : UniformContinuousConstSMul (𝕎 O) (IntervalLocalization p hv hϖ hϖ' hρ₁ hρ₂) :=
@@ -320,6 +342,95 @@ theorem isPseudoUniformizer_teichmuller_intervalRing :
   · rw [norm_algebraMap_intervalRing, gaussValuation_teichmuller, gaussValuation_teichmuller,
       max_self]
     exact_mod_cast hϖ'
+
+/-- **The norm of `B^I` is power-multiplicative**: `‖x ^ n‖ = ‖x‖ ^ n`. -/
+theorem isPowMul_norm_intervalRing : IsPowMul (‖·‖ : IntervalRing p hv hϖ hϖ' hρ₁ hρ₂ → ℝ) :=
+  (IntervalLocalization.isPowMul_norm p hv hϖ hϖ' hρ₁ hρ₂).completion
+
+/-- **The power-bounded elements of `B^I` are its unit ball**: `x ∈ B^I` is power-bounded exactly
+when `λ_I(x) ≤ 1`. -/
+@[simp]
+theorem isPowerBounded_iff_norm_le_one_intervalRing {x : IntervalRing p hv hϖ hϖ' hρ₁ hρ₂} :
+    IsPowerBounded x ↔ ‖x‖ ≤ 1 :=
+  (isPseudoUniformizer_natCast_intervalRing p hv hϖ hϖ' hρ₁ hρ₂).isPowerBounded_iff_norm_le_one
+    (isPowMul_norm_intervalRing p hv hϖ hϖ' hρ₁ hρ₂)
+
+/-- **The unit ball `B^{I,+}` of `B^I` is its power-bounded subring `(B^I)°`.** In particular it
+is a ring of integral elements of `B^I`, the plus ring of the Huber pair
+`TauCeti.Huber.Pair.powerBounded (IntervalRing p hv hϖ hϖ' hρ₁ hρ₂)`. -/
+theorem coe_powerBoundedSubring_intervalRing :
+    (powerBoundedSubring (IntervalRing p hv hϖ hϖ' hρ₁ hρ₂) :
+      Set (IntervalRing p hv hϖ hϖ' hρ₁ hρ₂)) = Metric.closedBall 0 1 :=
+  IsPseudoUniformizer.coe_powerBoundedSubring_eq_closedBall
+    (isPseudoUniformizer_natCast_intervalRing p hv hϖ hϖ' hρ₁ hρ₂)
+    (isPowMul_norm_intervalRing p hv hϖ hϖ' hρ₁ hρ₂)
+
+/-- **`B^I` is uniform**: its power-bounded subring, the unit ball, is bounded. -/
+instance isUniform_intervalRing : IsUniform (IntervalRing p hv hϖ hϖ' hρ₁ hρ₂) :=
+  IsUniform.of_isPowMul (isPseudoUniformizer_natCast_intervalRing p hv hϖ hϖ' hρ₁ hρ₂)
+    (isPowMul_norm_intervalRing p hv hϖ hϖ' hρ₁ hρ₂)
+
+/-- **The map `𝕎 O → 𝕎 O[1/(p [ϖ])]` is continuous for the interval norm**, when `𝕎 O` carries the
+`(p, [ϖ])`-adic topology: the Gauss valuations `λ_{ρ₁}` and `λ_{ρ₂}` are continuous valuations, so
+`λ_I = max(λ_{ρ₁}, λ_{ρ₂})` is small on a neighbourhood of `0`. -/
+theorem continuous_algebraMap_intervalLocalization [TopologicalSpace (𝕎 O)]
+    [IsTopologicalRing (𝕎 O)] (hI : IsAdic (Ideal.span {(p : 𝕎 O), teichmuller p ϖ})) :
+    Continuous (algebraMap (𝕎 O) (IntervalLocalization p hv hϖ hϖ' hρ₁ hρ₂)) := by
+  refine continuous_of_continuousAt_zero _ ?_
+  rw [ContinuousAt, map_zero, Metric.nhds_basis_ball.tendsto_right_iff]
+  intro ε hε
+  -- `λ_I(p ^ N) = max(ρ₁, ρ₂) ^ N` is below `ε` for some `N`
+  obtain ⟨N, hN⟩ := exists_pow_lt_of_lt_one hε
+    (IntervalLocalization.norm_natCast_lt_one p hv hϖ hϖ' hρ₁ hρ₂)
+  have hopen {ρ : ℝ≥0} (hρ : ρ ∈ Set.Ioo 0 1) :
+      {x : 𝕎 O | gaussValuation p hv ρ hρ.2 x < ρ ^ N} ∈ nhds (0 : 𝕎 O) := by
+    have h := Valuation.isContinuous_def.mp (isContinuous_gaussValuation hI hv hρ.2 hϖ')
+      ((p : 𝕎 O) ^ N)
+    rw [map_pow, gaussValuation_p] at h
+    exact h.mem_nhds (by simpa using pow_pos hρ.1 N)
+  filter_upwards [hopen hρ₁, hopen hρ₂] with x hx₁ hx₂
+  rw [Metric.mem_ball, dist_zero_right, IntervalLocalization.norm_algebraMap]
+  refine lt_of_lt_of_le ?_ ((IntervalLocalization.norm_natCast p hv hϖ hϖ' hρ₁ hρ₂ ▸ hN).le)
+  rw [max_lt_iff]
+  constructor
+  · exact (NNReal.coe_lt_coe.mpr hx₁).trans_le (by push_cast; gcongr; exact le_max_left _ _)
+  · exact (NNReal.coe_lt_coe.mpr hx₂).trans_le (by push_cast; gcongr; exact le_max_right _ _)
+
+/-- **The map `𝕎 O → B^I` is continuous** for the `(p, [ϖ])`-adic topology on `𝕎 O`: it is the
+continuous map `𝕎 O → 𝕎 O[1/(p [ϖ])]` (`continuous_algebraMap_intervalLocalization`) followed
+by the completion map. -/
+theorem continuous_algebraMap_intervalRing [TopologicalSpace (𝕎 O)]
+    (hI : IsAdic (Ideal.span {(p : 𝕎 O), teichmuller p ϖ})) :
+    Continuous (algebraMap (𝕎 O) (IntervalRing p hv hϖ hϖ' hρ₁ hρ₂)) := by
+  have : IsTopologicalRing (𝕎 O) := hI ▸ (Ideal.span _).nonarchimedean.toIsTopologicalRing
+  exact Completion.continuous_coe _ |>.comp
+    (continuous_algebraMap_intervalLocalization p hv hϖ hϖ' hρ₁ hρ₂ hI)
+
+/-- **Division by a unit of `𝕎 O[1/(p [ϖ])]` within the unit ball.** If `y ∈ 𝕎 O` becomes a unit
+of `𝕎 O[1/(p [ϖ])]` and `λ_ρ(x) ≤ λ_ρ(y)` at both radii, then `x = z y` in `B^I` for some `z` in
+the unit ball `B^{I,+} = {z : λ_I(z) ≤ 1}`, namely `z = x / y`. -/
+theorem exists_norm_le_one_algebraMap_eq_mul_intervalRing {x y : 𝕎 O}
+    (hy : IsUnit (algebraMap (𝕎 O) (IntervalLocalization p hv hϖ hϖ' hρ₁ hρ₂) y))
+    (h₁ : gaussValuation p hv ρ₁ hρ₁.2 x ≤ gaussValuation p hv ρ₁ hρ₁.2 y)
+    (h₂ : gaussValuation p hv ρ₂ hρ₂.2 x ≤ gaussValuation p hv ρ₂ hρ₂.2 y) :
+    ∃ z : IntervalRing p hv hϖ hϖ' hρ₁ hρ₂, ‖z‖ ≤ 1 ∧
+      algebraMap (𝕎 O) (IntervalRing p hv hϖ hϖ' hρ₁ hρ₂) x =
+        z * algebraMap (𝕎 O) (IntervalRing p hv hϖ hϖ' hρ₁ hρ₂) y := by
+  set L := IntervalLocalization p hv hϖ hϖ' hρ₁ hρ₂
+  set z : L := algebraMap (𝕎 O) L x * ↑hy.unit⁻¹
+  -- at each radius `λ_ρ(z) = λ_ρ(x) / λ_ρ(y) ≤ 1`
+  have hz {ρ : ℝ≥0} (hρ : ρ ∈ Set.Ioo 0 1)
+      (h : gaussValuation p hv ρ hρ.2 x ≤ gaussValuation p hv ρ hρ.2 y) :
+      gaussValuationAway p hv hϖ ρ hρ L z ≤ 1 := by
+    have hu : gaussValuation p hv ρ hρ.2 y * gaussValuationAway p hv hϖ ρ hρ L ↑hy.unit⁻¹ = 1 := by
+      rw [← gaussValuationAway_algebraMap hv hϖ hρ y (B := L), ← map_mul, hy.mul_val_inv, map_one]
+    rw [map_mul, gaussValuationAway_algebraMap]
+    exact (mul_le_mul_left h _).trans_eq hu
+  refine ⟨(z : Completion L), ?_, ?_⟩
+  · rw [Completion.norm_coe, IntervalLocalization.norm_def]
+    exact_mod_cast max_le (hz hρ₁ h₁) (hz hρ₂ h₂)
+  · rw [Completion.algebraMap_def, Completion.algebraMap_def, ← Completion.coe_mul, mul_assoc,
+      hy.val_inv_mul, mul_one]
 
 /-! `B^I` is a complete Hausdorff Tate ring: completeness and separatedness hold for every
 completion, and the Tate structure is that of `𝕎 O[1/(p [ϖ])]`, carried to the completion by

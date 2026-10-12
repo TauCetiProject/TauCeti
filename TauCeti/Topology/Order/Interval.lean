@@ -6,11 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Order.IntermediateValue
+import Mathlib.Topology.Order.Compact
 
 /-!
 # Intervals in order topologies
 
 An unordered closed interval is a neighbourhood of each of its points other than its endpoints.
+A nonempty compact subset of an open interval lies in the interior of a smaller closed interval.
 Every nonempty closed unbounded order-connected set in a conditionally complete linear order is
 a left half-line, a right half-line, or the whole space.
 
@@ -22,6 +24,8 @@ when the limit is finite.
 
 * `TauCeti.uIcc_mem_nhds_of_ne` — `uIcc a b` is a neighbourhood of each of its points other than
   `a` and `b`.
+* `IsCompact.exists_Icc_between` — a nonempty compact subset of `Ioo a b` lies in the interior of
+  a closed interval contained in `Ioo a b`.
 * `Set.OrdConnected.eq_Ici_or_eq_Iic_or_eq_univ` — classification of nonempty closed unbounded
   order-connected sets.
 * `ContinuousOn.image_Ici_of_strictMonoOn_of_tendsto` — a continuous strictly
@@ -46,6 +50,19 @@ theorem uIcc_mem_nhds_of_ne {α : Type*} [TopologicalSpace α] [LinearOrder α]
     exact Icc_mem_nhds (lt_of_le_of_ne ht.1 ha.symm) (lt_of_le_of_ne ht.2 hb)
   · rw [uIcc_of_ge hab] at ht ⊢
     exact Icc_mem_nhds (lt_of_le_of_ne ht.1 hb.symm) (lt_of_le_of_ne ht.2 ha)
+
+/-- A nonempty compact subset `K` of an open interval `Ioo a b` lies in the interior `Ioo c d` of
+a closed interval `Icc c d ⊆ Ioo a b`. This is the interval form of `exists_compact_between`. -/
+theorem _root_.IsCompact.exists_Icc_between {α : Type*} [LinearOrder α] [TopologicalSpace α]
+    [OrderClosedTopology α] [DenselyOrdered α] {K : Set α} {a b : α} (hK : IsCompact K)
+    (hne : K.Nonempty) (hKs : K ⊆ Ioo a b) :
+    ∃ c d, K ⊆ Ioo c d ∧ Icc c d ⊆ Ioo a b := by
+  obtain ⟨m, hmK, hm⟩ := hK.exists_isLeast hne
+  obtain ⟨M, hMK, hM⟩ := hK.exists_isGreatest hne
+  obtain ⟨c, hac, hcm⟩ := exists_between (hKs hmK).1
+  obtain ⟨d, hMd, hdb⟩ := exists_between (hKs hMK).2
+  exact ⟨c, d, fun x hx ↦ ⟨hcm.trans_le (hm hx), (hM hx).trans_lt hMd⟩,
+    fun x hx ↦ ⟨hac.trans_le hx.1, hx.2.trans_lt hdb⟩⟩
 
 /-- A nonempty closed order-connected set which is not bounded on both sides is a right
 half-line, a left half-line, or the whole space. -/

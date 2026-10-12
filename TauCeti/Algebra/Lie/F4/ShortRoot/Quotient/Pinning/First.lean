@@ -119,14 +119,10 @@ theorem f4ShortRootQuotientToIdealEquiv_firstColumn_eq_firstColumn_of_specialMap
     let a := f4ShortRootWeightIndexEquiv.symm (Sum.inl iβ)
     f4ShortRootQuotientToIdealEquiv (f4ShortRootQuotientFirstColumn k a) =
       f4ShortRootIdealFirstColumn (isogenyReverse k) a := by
-  dsimp only
-  let iβ : F4ShortRootIndex :=
-    ⟨f4SpecialIsogenyIndexEquiv β, by
-      exact (f4Length_f4SpecialIsogenyIndexEquiv_eq_one_iff β).2 hβ⟩
+  intro iβ a
   let iγ : F4ShortRootIndex :=
     ⟨f4SpecialIsogenyIndexEquiv γ, by
       exact (f4Length_f4SpecialIsogenyIndexEquiv_eq_one_iff γ).2 hγ⟩
-  let a := f4ShortRootWeightIndexEquiv.symm (Sum.inl iβ)
   let b := f4ShortRootWeightIndexEquiv.symm (Sum.inl iγ)
   have hlift : f4ShortRootQuotientLift a = f4ModularRootVector β := by
     rw [f4ShortRootQuotientLift_eq_basis,
@@ -143,28 +139,17 @@ theorem f4ShortRootQuotientToIdealEquiv_firstColumn_eq_firstColumn_of_specialMap
       (f4SignedSimpleRootIndex k) β γ hk hβ hγ hadd
   have hout : f4ShortRootQuotientToIdealEquiv
       (f4ShortRootSubspace.mkQ (f4ModularRootVector γ)) =
-        f4ShortRootLieIdealBasis b := by
-    have hq := f4ShortRootSubspace_mkQ_rootVector_eq_quotientBasis γ hγ
-    calc
-      _ = f4ShortRootQuotientToIdealEquiv (f4ShortRootQuotientBasis b) :=
-        congrArg f4ShortRootQuotientToIdealEquiv hq
-      _ = _ := f4ShortRootQuotientToIdealEquiv_basis b
+        f4ShortRootLieIdealBasis b :=
+    f4ShortRootQuotientToIdealEquiv_mkQ_rootVector γ hγ
   have htargetSource : f4SignedSimpleRootIndex (isogenyReverse k) =
       f4SpecialIsogenyIndexEquiv (f4SignedSimpleRootIndex k) := by
     exact (f4SpecialIsogenyIndexEquiv_f4SignedSimpleRootIndex k).symm
   have hedge : f4ShortRootAdjoint
       (f4ModularRootVector
         (f4SpecialIsogenyIndexEquiv (f4SignedSimpleRootIndex k)))
-      (f4ShortRootLieIdealBasis a) = f4ShortRootLieIdealBasis b := by
+      (f4ShortRootLieIdealBasis a) = f4ShortRootLieIdealBasis b :=
     -- `a` and `b` are the source and target weight-basis labels.
-    change f4ShortRootAdjoint
-        (f4ModularRootVector
-          (f4SpecialIsogenyIndexEquiv (f4SignedSimpleRootIndex k)))
-        (f4ShortRootLieIdealBasis
-          (f4ShortRootWeightIndexEquiv.symm (Sum.inl iβ))) =
-      f4ShortRootLieIdealBasis
-        (f4ShortRootWeightIndexEquiv.symm (Sum.inl iγ))
-    exact f4ShortRootAdjoint_rootVector_of_add_eq_short
+    f4ShortRootAdjoint_rootVector_of_add_eq_short
       (f4SpecialIsogenyIndexEquiv (f4SignedSimpleRootIndex k))
       (f4SpecialIsogenyIndexEquiv β) (f4SpecialIsogenyIndexEquiv γ)
       iβ.property iγ.property hadd
@@ -300,11 +285,6 @@ theorem f4ShortRootQuotientToIdealEquiv_firstColumn_opposite_of_long
       show β = f4OppositeRootIndex α from rfl]
     exact congrArg f4ShortRootSubspace.mkQ (f4Modular_lie_rootVector_opposite α)
   let α' := f4SignedSimpleRootIndex (isogenyReverse k)
-  have hα'short : f4Length α' = 1 := by
-    have hα'eq : α' = f4SpecialIsogenyIndexEquiv α :=
-      (f4SpecialIsogenyIndexEquiv_f4SignedSimpleRootIndex k).symm
-    rw [hα'eq]
-    exact (f4Length_f4SpecialIsogenyIndexEquiv_eq_one_iff α).2 hk
   have hinput : (i : Fin 48) = f4OppositeRootIndex α' := by
     -- Coercing the subtype index `i` exposes its chosen reversed root.
     change f4SpecialIsogenyIndexEquiv β = f4OppositeRootIndex α'
@@ -476,9 +456,6 @@ private theorem f4ShortRootQuotientToIdealEquiv_firstColumn_cartan_of_long
   let α' := f4SignedSimpleRootIndex (isogenyReverse k)
   have hα' : f4SpecialIsogenyIndexEquiv α = α' :=
     f4SpecialIsogenyIndexEquiv_f4SignedSimpleRootIndex k
-  have hα'short : f4Length α' = 1 := by
-    rw [← hα']
-    exact (f4Length_f4SpecialIsogenyIndexEquiv_eq_one_iff α).2 hk
   let iα : F4ShortRootIndex := ⟨f4SpecialIsogenyIndexEquiv α, by
     exact (f4Length_f4SpecialIsogenyIndexEquiv_eq_one_iff α).2 hk⟩
   let b := f4ShortRootWeightIndexEquiv.symm (Sum.inl iα)

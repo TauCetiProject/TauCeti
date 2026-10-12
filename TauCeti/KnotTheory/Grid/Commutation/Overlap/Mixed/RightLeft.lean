@@ -52,8 +52,10 @@ mirror of the mixed `left = right` overlap of initial-side pentagons in
 
 * `TauCeti.GridRectanglePentagonDecomposition.isRecut_recutRightEqLeft`: the promoted
   decomposition is an empty-rectangle recut of the original domain.
-* `TauCeti.GridRectanglePentagonDecomposition.recutRightEqLeft_top`: its pentagon has the
-  original pentagon's top row and its rectangle the original rectangle's top row.
+* `TauCeti.GridRectanglePentagonDecomposition.recutRightEqLeft_top` and
+  `TauCeti.GridRectanglePentagonDecomposition.recutRightEqLeft_geometry`: the promoted recut
+  retains both outer top rows, places the pentagon on the replaced grid line, and contains the turn
+  row in that pentagon.
 * `TauCeti.GridRectanglePentagonDecomposition.coveredSquares_val_add_val_recutRightEqLeft`: both
   decompositions cover the same squares with the same multiplicities.
 * `TauCeti.GridDiagram.recutRightEqLeft_mem_pentagonRectangleDecompositions` and
@@ -95,17 +97,9 @@ common side column when its two other sides differ. -/
 theorem hasOneCommonSide_of_right_eq_left (D : GridRectanglePentagonDecomposition a s x z)
     (hcommon : D.rectangle.right = D.pentagon.left)
     (hother : D.rectangle.left ≠ D.pentagon.right) :
-    D.toRectangleDecomposition.HasOneCommonSide := by
-  apply D.toRectangleDecomposition.hasOneCommonSide_iff_existsUnique.mpr
-  refine ⟨D.rectangle.right, ?_, ?_⟩
-  · simp [GridRectangleBetween.mem_sideColumns, hcommon]
-  · intro c hc
-    simp only [GridRectangleBetween.mem_sideColumns, toRectangleDecomposition_first_left,
-      toRectangleDecomposition_first_right, toRectangleDecomposition_second_left,
-      toRectangleDecomposition_second_right] at hc
-    have hfirst := D.rectangle.left_ne_right
-    have hsecond := D.pentagon.left_ne_right
-    grind
+    D.toRectangleDecomposition.HasOneCommonSide :=
+  D.toRectangleDecomposition.hasOneCommonSide_of_right_eq_left (by simpa using hcommon)
+    (by simpa using hother)
 
 /-- The generic recut of a mixed `right = left` overlap whose turn row lies in the rows from the
 rectangle's top to the pentagon's top. -/
@@ -235,6 +229,26 @@ theorem recutRightEqLeft_top (D : GridRectanglePentagonDecomposition a s x z)
   obtain ⟨-, htop, hsecondTop, -⟩ := D.rightLeftRecut_geometry hcommon hrectangle hpentagon hturn
   exact ⟨by simpa only [recutRightEqLeft, GridPentagonBetween.ofRightEq_top] using htop,
     by simpa only [recutRightEqLeft] using hsecondTop⟩
+
+/-- The promoted pentagon--rectangle recut has its pentagon on the replaced grid line, preserves
+the two outer top rows, and places the turn row inside the promoted pentagon. -/
+theorem recutRightEqLeft_geometry (D : GridRectanglePentagonDecomposition a s x z)
+    (hcommon : D.rectangle.right = D.pentagon.left)
+    (hrectangle : D.rectangle.IsEmpty) (hpentagon : D.pentagon.IsEmpty)
+    (hturn : s ∈ Grid.cIco D.rectangle.top D.pentagon.top) :
+    let E := D.recutRightEqLeft hcommon hrectangle hpentagon hturn
+    E.pentagon.right = finRotate n a ∧ E.pentagon.top = D.pentagon.top ∧
+    E.rectangle.top = D.rectangle.top ∧
+        s ∈ Grid.cIco E.pentagon.bottom E.pentagon.top := by
+  let E := D.recutRightEqLeft hcommon hrectangle hpentagon hturn
+  obtain ⟨hright, hptop, hrtop, hturn'⟩ :=
+    D.rightLeftRecut_geometry hcommon hrectangle hpentagon hturn
+  refine ⟨?_, ?_, ?_, ?_⟩
+  · simp only [recutRightEqLeft, GridPentagonBetween.ofRightEq_right]
+  · simpa only [E, recutRightEqLeft, GridPentagonBetween.ofRightEq_top] using hptop
+  · simpa only [E, recutRightEqLeft] using hrtop
+  · simpa only [E, recutRightEqLeft, GridPentagonBetween.ofRightEq_bottom,
+      GridPentagonBetween.ofRightEq_top] using hturn'
 
 /-- The promoted recut of a mixed `right = left` overlap covers the squares of the original domain
 with the same multiplicities, the rectangle of the commuted diagram being read in the original

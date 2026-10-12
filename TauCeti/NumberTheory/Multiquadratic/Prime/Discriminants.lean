@@ -260,7 +260,7 @@ modulo `4`. -/
 theorem isEvenPrimeDiscriminant_or_primeDiscriminantRadicand_mod_four_eq_one {D : ℤ}
     (hD : IsPrimeDiscriminant D) :
     IsEvenPrimeDiscriminant D ∨ primeDiscriminantRadicand D % 4 = 1 := by
-  rcases isPrimeDiscriminant_iff.mp hD with hD | ⟨p, hp, hodd, rfl⟩
+  rcases isPrimeDiscriminant_iff.mp hD with hD | ⟨p, _, hodd, rfl⟩
   · exact Or.inl hD
   · exact Or.inr (primeDiscriminantRadicand_mod_four_eq_one_of_odd hodd)
 
@@ -299,7 +299,7 @@ theorem primeDiscriminantRadicand_eq_two_iff {D : ℤ} (hD : IsPrimeDiscriminant
     primeDiscriminantRadicand D = 2 ↔ D = 8 := by
   constructor
   · intro h
-    rcases isPrimeDiscriminant_iff.mp hD with hev | ⟨p, hp, hodd, rfl⟩
+    rcases isPrimeDiscriminant_iff.mp hD with hev | ⟨p, _, hodd, rfl⟩
     · rw [primeDiscriminantRadicand_of_isEvenPrimeDiscriminant hev] at h
       exact (evenPrimeDiscriminantRadicand_eq_two_iff hev).mp h
     · have hp2 : p = 2 := by
@@ -316,7 +316,7 @@ theorem primeDiscriminantRadicand_eq_neg_two_iff {D : ℤ} (hD : IsPrimeDiscrimi
     primeDiscriminantRadicand D = -2 ↔ D = -8 := by
   constructor
   · intro h
-    rcases isPrimeDiscriminant_iff.mp hD with hev | ⟨p, hp, hodd, rfl⟩
+    rcases isPrimeDiscriminant_iff.mp hD with hev | ⟨p, _, hodd, rfl⟩
     · rw [primeDiscriminantRadicand_of_isEvenPrimeDiscriminant hev] at h
       exact (evenPrimeDiscriminantRadicand_eq_neg_two_iff hev).mp h
     · have hp2 : p = 2 := by
@@ -356,7 +356,7 @@ theorem eq_of_primeDiscriminantRadicand_eq {D E : ℤ}
       · rw [h2] at habs
         rcases hqodd with ⟨k, hk⟩
         omega
-  · rcases isPrimeDiscriminant_iff.mp hE with hevE | ⟨q, hq, hqodd, rfl⟩
+  · rcases isPrimeDiscriminant_iff.mp hE with hevE | ⟨q, _, hqodd, rfl⟩
     · have habs := congrArg Int.natAbs h
       rw [primeDiscriminantRadicand_oddPrimeDiscriminant hpodd,
         primeDiscriminantRadicand_of_isEvenPrimeDiscriminant hevE,

@@ -50,8 +50,6 @@ namespace TauCeti.UpperHalfPlane
 theorem dist_eq_dist_iff {z p q : ℍ} :
     dist z p = dist z q ↔ q.im * dist (z : ℂ) p ^ 2 = p.im * dist (z : ℂ) q ^ 2 := by
   have hz := z.im_pos
-  have hp := p.im_pos
-  have hq := q.im_pos
   have hcosh : dist z p = dist z q ↔ Real.cosh (dist z p) = Real.cosh (dist z q) := by
     simp only [le_antisymm_iff, Real.cosh_le_cosh, abs_of_nonneg dist_nonneg]
   rw [hcosh, cosh_dist, cosh_dist, add_right_inj, div_eq_div_iff (by positivity) (by positivity)]
@@ -63,8 +61,6 @@ inequality of a Dirichlet domain; compare Beardon, §9.4, and Katok, §3.2. -/
 theorem dist_le_dist_iff {z p q : ℍ} :
     dist z p ≤ dist z q ↔ q.im * dist (z : ℂ) p ^ 2 ≤ p.im * dist (z : ℂ) q ^ 2 := by
   have hz := z.im_pos
-  have hp := p.im_pos
-  have hq := q.im_pos
   have hcosh : dist z p ≤ dist z q ↔ Real.cosh (dist z p) ≤ Real.cosh (dist z q) := by
     rw [Real.cosh_le_cosh]
     simp only [abs_of_nonneg dist_nonneg]

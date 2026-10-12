@@ -6,9 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RepresentationTheory.Invariants
+public import TauCeti.RepresentationTheory.GrothendieckGroup.GroupAlgebra.Induction
 public import TauCeti.RepresentationTheory.GrothendieckGroup.GroupAlgebra.Ring
 public import TauCeti.RepresentationTheory.GrothendieckGroup.GroupAlgebra.Universal
 import TauCeti.RepresentationTheory.Invariants
+import TauCeti.RepresentationTheory.Induction.FrobeniusReciprocity
 
 /-!
 # Invariant dimensions on the Grothendieck group of a group algebra
@@ -29,6 +31,10 @@ dimension gives another additive homomorphism,
 
 whose value at `[M]` is `dimₖ (M ⊗ A)^G`. This packages the semisimple representation-theoretic
 functional used in Euler characteristic calculations.
+
+Induction from a subgroup `S` does not change invariant dimension (`finrank_invariants_indFDRep`),
+so `finrankInvariantsK0` is unchanged by induction on Grothendieck groups
+(`finrankInvariantsK0_indK0`).
 
 ## References
 
@@ -90,5 +96,33 @@ theorem finrankTensorInvariantsK0_of (A M : FDRep k G) :
       Module.finrank k (Representation.invariants (M ⊗ A).ρ) := by
   rw [← fdRepK0RingEquiv_of, finrankTensorInvariantsK0_apply, ← map_mul, ExactK0.of_mul_of,
     fdRepK0RingEquiv_of, finrankInvariantsK0_of]
+
+/-- **Induction preserves invariant dimension on Grothendieck groups.** Evaluating invariant
+dimension after induction from a subgroup gives invariant dimension over that subgroup. -/
+theorem finrankInvariantsK0_indK0 (S : Subgroup G) [NeZero (Nat.card S : k)]
+    (x : ExactK0 (finiteModulesExactStructure k[S])) :
+    finrankInvariantsK0 (indK0 k S x) = finrankInvariantsK0 x := by
+  let e := ExactK0.mapEquiv (fdRepEquivalence k S)
+    (isConflationExact_fdRepEquivalence_functor k S)
+    (isConflationExact_fdRepEquivalence_inverse k S)
+  suffices he : ((finrankInvariantsK0 (k := k) (G := G)).comp (indK0 k S)).comp
+      e.toAddMonoidHom = (finrankInvariantsK0 (k := k) (G := S)).comp e.toAddMonoidHom by
+    obtain ⟨y, rfl⟩ := e.surjective x
+    exact DFunLike.congr_fun he y
+  apply ExactK0.hom_ext
+  intro V
+  let : Module.Finite k[S] (Representation.asModule V.ρ) :=
+    Module.Finite.of_restrictScalars_finite k k[S] _
+  let : Module.Finite k[G] (Representation.asModule (indFDRep V).ρ) :=
+    Module.Finite.of_restrictScalars_finite k k[G] _
+  have hV : e (ExactK0.of V) =
+      (ExactK0.of (FGModuleCat.of k[S] (Representation.asModule V.ρ)) :
+        ExactK0 (finiteModulesExactStructure k[S])) := by
+    rw [ExactK0.mapEquiv_of]
+    exact ExactK0.of_congr (ObjectProperty.isoMk _
+      (eqToIso (fdRepEquivalence_functor_obj_obj k S V)))
+  simp only [AddMonoidHom.comp_apply, AddEquiv.coe_toAddMonoidHom, hV, indK0_of_indFDRep,
+    finrankInvariantsK0_of]
+  exact_mod_cast finrank_invariants_indFDRep V
 
 end TauCeti

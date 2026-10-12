@@ -21,6 +21,10 @@ under the explicit hypothesis `x ≠ 0`, together with the Laplacian of the dipo
 `⟪a, x⟫ ‖x‖^(-dim E)`, harmonic away from the origin, from which the Poisson kernel of a ball is
 assembled.
 
+The Hessian is bounded by `‖x‖ ^ (p - 2)` in size and, for `p ≤ 3`, by `‖a - b‖ ‖b‖ ^ (p - 3)`
+in its variation between points `a` and `b` with `2 ‖a - b‖ ≤ ‖b‖`.  For negative `p` these are
+the size and smoothness estimates of a singular integral kernel.
+
 The first derivative proof adapts Mathlib's `hasFDerivAt_norm_rpow`, retaining its norm-square
 chain-rule argument while replacing the global exponent hypothesis with the local condition
 `x ≠ 0`.
@@ -30,6 +34,9 @@ chain-rule argument while replacing the global exponent hypothesis with the loca
 * `norm_rpow_eq_norm_sq_rpow`: a real power of the norm as a power of the squared norm.
 * `hasFDerivAt_norm_rpow_of_ne`: the derivative of an arbitrary real power away from zero.
 * `iteratedFDeriv_two_norm_rpow_apply`: the Hessian of an arbitrary real power away from zero.
+* `norm_iteratedFDeriv_two_norm_rpow_le`: the Hessian is `O(‖x‖ ^ (p - 2))`.
+* `norm_iteratedFDeriv_two_norm_rpow_sub_le`: for `p ≤ 3`, the Hessian changes by
+  `O(‖a - b‖ ‖b‖ ^ (p - 3))` between points `a` and `b` with `2 ‖a - b‖ ≤ ‖b‖`.
 * `laplacian_norm_rpow_of_ne`: the radial Laplacian formula
   `Δ ‖x‖^p = p (p + dim E - 2) ‖x‖^(p-2)` away from zero.
 * `laplacian_inner_mul_norm_rpow_of_ne`: the dipole formula
@@ -97,6 +104,170 @@ theorem iteratedFDeriv_two_norm_rpow_apply (p : ℝ) {x : E} (hx : x ≠ 0) (v w
     Matrix.cons_val_one, Matrix.cons_val_fin_one]
   rw [hinner]
   ring_nf
+
+/-- The Hessian of `x ↦ ‖x‖ ^ p` away from the origin has operator norm at most
+`|p| (|p - 2| + 1) ‖x‖ ^ (p - 2)`. -/
+theorem norm_iteratedFDeriv_two_norm_rpow_le (p : ℝ) {x : E} (hx : x ≠ 0) :
+    ‖iteratedFDeriv ℝ 2 (fun y : E ↦ ‖y‖ ^ p) x‖ ≤ |p| * (|p - 2| + 1) * ‖x‖ ^ (p - 2) := by
+  have hN : 0 < ‖x‖ := norm_pos_iff.mpr hx
+  have h42 : ‖x‖ ^ (p - 4) * ‖x‖ ^ 2 = ‖x‖ ^ (p - 2) := by
+    rw [← Real.rpow_natCast, ← Real.rpow_add hN]
+    ring_nf
+  refine ContinuousMultilinearMap.opNorm_le_bound (by positivity) fun m ↦ ?_
+  have hm : m = ![m 0, m 1] := by ext i; fin_cases i <;> rfl
+  rw [hm, iteratedFDeriv_two_norm_rpow_apply p hx, Fin.prod_univ_two]
+  simp only [Matrix.cons_val_zero, Matrix.cons_val_one, Real.norm_eq_abs]
+  have h1 := abs_real_inner_le_norm x (m 0)
+  have h2 := abs_real_inner_le_norm x (m 1)
+  have h3 := abs_real_inner_le_norm (m 0) (m 1)
+  have hX := Real.rpow_pos_of_pos hN (p - 4)
+  have hY := Real.rpow_pos_of_pos hN (p - 2)
+  calc |p * (p - 2) * ‖x‖ ^ (p - 4) * ⟪x, m 0⟫_ℝ * ⟪x, m 1⟫_ℝ +
+        p * ‖x‖ ^ (p - 2) * ⟪m 0, m 1⟫_ℝ|
+      ≤ |p| * |p - 2| * ‖x‖ ^ (p - 4) * (‖x‖ * ‖m 0‖) * (‖x‖ * ‖m 1‖) +
+          |p| * ‖x‖ ^ (p - 2) * (‖m 0‖ * ‖m 1‖) := by
+        refine (abs_add_le _ _).trans (add_le_add ?_ ?_)
+        · rw [abs_mul, abs_mul, abs_mul, abs_mul, abs_of_pos hX]
+          gcongr
+        · rw [abs_mul, abs_mul, abs_of_pos hY]
+          gcongr
+    _ = |p| * (|p - 2| + 1) * ‖x‖ ^ (p - 2) * (‖m 0‖ * ‖m 1‖) := by
+        rw [← h42]
+        ring
+
+/-- Along the line `s ↦ b + s • d`, the Hessian formula of `x ↦ ‖x‖ ^ p`
+(`TauCeti.iteratedFDeriv_two_norm_rpow_apply`) evaluated on two fixed directions `v`, `w` is
+differentiable at every `t` with `b + t • d ≠ 0`, with derivative at most
+`|p (p - 2)| (|p - 4| + 3) ‖b + t • d‖ ^ (p - 3) ‖d‖ ‖v‖ ‖w‖` in absolute value. -/
+private theorem exists_hasDerivAt_norm_rpow_hessian_line (p : ℝ) (b d v w : E) {t : ℝ}
+    (hz : b + t • d ≠ 0) :
+    ∃ g', HasDerivAt (fun s : ℝ ↦ p * (p - 2) * ‖b + s • d‖ ^ (p - 4) * ⟪b + s • d, v⟫_ℝ *
+        ⟪b + s • d, w⟫_ℝ + p * ‖b + s • d‖ ^ (p - 2) * ⟪v, w⟫_ℝ) g' t ∧
+      |g'| ≤ |p * (p - 2)| * (|p - 4| + 3) * ‖b + t • d‖ ^ (p - 3) * ‖d‖ * ‖v‖ * ‖w‖ := by
+  set z := b + t • d with hzdef
+  have hN : 0 < ‖z‖ := norm_pos_iff.mpr hz
+  have hpath : HasDerivAt (fun s : ℝ ↦ b + s • d) d t := by
+    simpa using ((hasDerivAt_id t).smul_const d).const_add b
+  have hnorm (q : ℝ) :
+      HasDerivAt (fun s : ℝ ↦ ‖b + s • d‖ ^ q) (q * ‖z‖ ^ (q - 2) * ⟪z, d⟫_ℝ) t := by
+    simpa [Function.comp_def, mul_assoc] using
+      (hasFDerivAt_norm_rpow_of_ne q hz).comp_hasDerivAt t hpath
+  have hinner (u : E) : HasDerivAt (fun s : ℝ ↦ ⟪b + s • d, u⟫_ℝ) ⟪d, u⟫_ℝ t := by
+    simpa using hpath.inner ℝ (hasDerivAt_const t u)
+  refine ⟨p * (p - 2) * (p - 4) * ‖z‖ ^ (p - 4 - 2) * ⟪z, d⟫_ℝ * ⟪z, v⟫_ℝ * ⟪z, w⟫_ℝ +
+      p * (p - 2) * ‖z‖ ^ (p - 4) * ⟪d, v⟫_ℝ * ⟪z, w⟫_ℝ +
+      p * (p - 2) * ‖z‖ ^ (p - 4) * ⟪z, v⟫_ℝ * ⟪d, w⟫_ℝ +
+      p * (p - 2) * ‖z‖ ^ (p - 4) * ⟪z, d⟫_ℝ * ⟪v, w⟫_ℝ,
+    (((((hnorm (p - 4)).const_mul (p * (p - 2))).mul (hinner v)).mul (hinner w)).add
+      (((hnorm (p - 2)).const_mul p).mul_const ⟪v, w⟫_ℝ)).congr_deriv ?_, ?_⟩
+  · -- `ring_nf` also normalizes the real exponents `p - 2 - 2` and `p - 4`.
+    simp only [Pi.mul_apply, ← hzdef]
+    ring_nf
+  -- Each term is a power of `‖z‖` times inner products, each bounded by Cauchy–Schwarz.
+  have h6 : ‖z‖ ^ (p - 4 - 2) * ‖z‖ ^ 3 = ‖z‖ ^ (p - 3) := by
+    rw [← Real.rpow_natCast, ← Real.rpow_add hN]
+    ring_nf
+  have h4 : ‖z‖ ^ (p - 4) * ‖z‖ = ‖z‖ ^ (p - 3) := by
+    rw [← Real.rpow_add_one hN.ne']
+    ring_nf
+  have hzd := abs_real_inner_le_norm z d
+  have hzv := abs_real_inner_le_norm z v
+  have hzw := abs_real_inner_le_norm z w
+  have hdv := abs_real_inner_le_norm d v
+  have hdw := abs_real_inner_le_norm d w
+  have hvw := abs_real_inner_le_norm v w
+  have hX := Real.rpow_pos_of_pos hN (p - 4 - 2)
+  have hY := Real.rpow_pos_of_pos hN (p - 4)
+  set A := |p * (p - 2)|
+  have hA : A = |p| * |p - 2| := abs_mul _ _
+  calc
+    _ ≤ A * |p - 4| * ‖z‖ ^ (p - 4 - 2) * (‖z‖ * ‖d‖) * (‖z‖ * ‖v‖) * (‖z‖ * ‖w‖) +
+        A * ‖z‖ ^ (p - 4) * (‖d‖ * ‖v‖) * (‖z‖ * ‖w‖) +
+        A * ‖z‖ ^ (p - 4) * (‖z‖ * ‖v‖) * (‖d‖ * ‖w‖) +
+        A * ‖z‖ ^ (p - 4) * (‖z‖ * ‖d‖) * (‖v‖ * ‖w‖) := by
+      refine (abs_add_le _ _).trans (add_le_add ((abs_add_le _ _).trans (add_le_add
+        ((abs_add_le _ _).trans (add_le_add ?_ ?_)) ?_)) ?_)
+      · simp only [abs_mul, abs_of_pos hX, hA]
+        gcongr
+      all_goals
+        simp only [abs_mul, abs_of_pos hY, hA]
+        gcongr
+    _ = A * (|p - 4| * (‖z‖ ^ (p - 4 - 2) * ‖z‖ ^ 3) + 3 * (‖z‖ ^ (p - 4) * ‖z‖)) *
+        ‖d‖ * ‖v‖ * ‖w‖ := by ring
+    _ = _ := by
+      rw [h6, h4]
+      ring
+
+/-- **Smoothness of the Hessian of `x ↦ ‖x‖ ^ p`** for `p ≤ 3`: if `2 ‖a - b‖ ≤ ‖b‖`, then
+
+`‖D²(‖·‖ ^ p)(a) - D²(‖·‖ ^ p)(b)‖ ≤ |p (p - 2)| (7 - p) 2 ^ (3 - p) ‖a - b‖ ‖b‖ ^ (p - 3)`.
+
+For `p < 0` this is the smoothness estimate of a singular kernel homogeneous of degree `p - 2`.
+The hypothesis `p ≤ 3` is what makes `‖z‖ ^ (p - 3)` largest where `‖z‖` is smallest on the
+segment from `b` to `a`, where `‖z‖ ≥ ‖b‖ / 2`. -/
+theorem norm_iteratedFDeriv_two_norm_rpow_sub_le {p : ℝ} (hp : p ≤ 3) {a b : E}
+    (hab : 2 * ‖a - b‖ ≤ ‖b‖) :
+    ‖iteratedFDeriv ℝ 2 (fun y : E ↦ ‖y‖ ^ p) a - iteratedFDeriv ℝ 2 (fun y : E ↦ ‖y‖ ^ p) b‖ ≤
+      |p * (p - 2)| * (7 - p) * 2 ^ (3 - p) * ‖a - b‖ * ‖b‖ ^ (p - 3) := by
+  have hC : 0 ≤ |p * (p - 2)| * (7 - p) * 2 ^ (3 - p) * ‖a - b‖ * ‖b‖ ^ (p - 3) :=
+    mul_nonneg (mul_nonneg (mul_nonneg (mul_nonneg (abs_nonneg _) (by linarith))
+      (by positivity)) (norm_nonneg _)) (by positivity)
+  rcases eq_or_ne b 0 with rfl | hb
+  · obtain rfl : a = 0 := by
+      rw [sub_zero, norm_zero] at hab
+      exact norm_eq_zero.mp (by linarith [norm_nonneg a])
+    simp
+  set d := a - b with hd
+  have hbN : 0 < ‖b‖ := norm_pos_iff.mpr hb
+  -- Every point of the segment from `b` to `a` has norm at least `‖b‖ / 2`.
+  have hseg (t : ℝ) (ht : t ∈ Set.Icc (0 : ℝ) 1) : ‖b‖ / 2 ≤ ‖b + t • d‖ := by
+    have htd : ‖t • d‖ ≤ ‖d‖ := by
+      rw [norm_smul, Real.norm_eq_abs, abs_of_nonneg ht.1]
+      exact mul_le_of_le_one_left (norm_nonneg _) ht.2
+    have := norm_sub_norm_le b (-(t • d))
+    rw [sub_neg_eq_add, norm_neg] at this
+    linarith
+  have hpow (t : ℝ) (ht : t ∈ Set.Icc (0 : ℝ) 1) :
+      ‖b + t • d‖ ^ (p - 3) ≤ 2 ^ (3 - p) * ‖b‖ ^ (p - 3) := by
+    calc ‖b + t • d‖ ^ (p - 3) ≤ (‖b‖ / 2) ^ (p - 3) :=
+          Real.rpow_le_rpow_of_nonpos (by positivity) (hseg t ht) (by linarith)
+      _ = 2 ^ (3 - p) * ‖b‖ ^ (p - 3) := by
+          rw [Real.div_rpow hbN.le zero_le_two, div_eq_mul_inv, ← Real.rpow_neg zero_le_two]
+          ring_nf
+  have ha : a ≠ 0 := by
+    have := hseg 1 ⟨zero_le_one, le_rfl⟩
+    rw [one_smul, hd, add_sub_cancel] at this
+    exact norm_pos_iff.mp (by linarith)
+  refine ContinuousMultilinearMap.opNorm_le_bound hC fun m ↦ ?_
+  set v := m 0
+  set w := m 1
+  have hm : m = ![v, w] := by ext i; fin_cases i <;> rfl
+  rw [Fin.prod_univ_two, sub_apply, hm,
+    iteratedFDeriv_two_norm_rpow_apply p ha, iteratedFDeriv_two_norm_rpow_apply p hb]
+  -- Apply the mean value inequality to the Hessian formula along the segment from `b` to `a`.
+  set g : ℝ → ℝ := fun s ↦ p * (p - 2) * ‖b + s • d‖ ^ (p - 4) * ⟪b + s • d, v⟫_ℝ *
+    ⟪b + s • d, w⟫_ℝ + p * ‖b + s • d‖ ^ (p - 2) * ⟪v, w⟫_ℝ with hg
+  have key (t : ℝ) (ht : t ∈ Set.Icc (0 : ℝ) 1) :=
+    exists_hasDerivAt_norm_rpow_hessian_line p b d v w (t := t)
+      (norm_pos_iff.mp (lt_of_lt_of_le (by positivity) (hseg t ht)))
+  choose! g' hg' hg'b using key
+  have hmvt := norm_image_sub_le_of_norm_deriv_le_segment_01' (f := g) (f' := g')
+    (fun t ht ↦ (hg' t ht).hasDerivWithinAt) (C := |p * (p - 2)| * (7 - p) * 2 ^ (3 - p) *
+      ‖d‖ * ‖b‖ ^ (p - 3) * (‖v‖ * ‖w‖)) fun t ht ↦ by
+    have ht' : t ∈ Set.Icc (0 : ℝ) 1 := Set.Ico_subset_Icc_self ht
+    rw [Real.norm_eq_abs]
+    refine (hg'b t ht').trans ?_
+    rw [abs_of_nonpos (by linarith : p - 4 ≤ 0)]
+    have := hpow t ht'
+    calc |p * (p - 2)| * (-(p - 4) + 3) * ‖b + t • d‖ ^ (p - 3) * ‖d‖ * ‖v‖ * ‖w‖
+        = |p * (p - 2)| * (7 - p) * ‖d‖ * ‖v‖ * ‖w‖ * ‖b + t • d‖ ^ (p - 3) := by ring
+      _ ≤ |p * (p - 2)| * (7 - p) * ‖d‖ * ‖v‖ * ‖w‖ * (2 ^ (3 - p) * ‖b‖ ^ (p - 3)) := by
+        gcongr
+        exact mul_nonneg (mul_nonneg (mul_nonneg (mul_nonneg (abs_nonneg _) (by linarith))
+          (norm_nonneg _)) (norm_nonneg _)) (norm_nonneg _)
+      _ = _ := by ring
+  simpa only [hg, one_smul, zero_smul, add_zero, hd, add_sub_cancel, Matrix.cons_val_zero,
+    Matrix.cons_val_one] using hmvt
 
 variable [FiniteDimensional ℝ E]
 

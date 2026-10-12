@@ -220,7 +220,7 @@ theorem lowerSemicontinuous_planCostBddBelow
       (fun π : Coupling μp νp =>
         ((∫⁻ z, h.residual z ∂(π.1.toMeasure) : ENNReal) : EReal) + A + B) Set.univ := by
     apply hsub.comp continuous_subtype_val.continuousOn
-    intro π hπ; simp
+    intro π _; simp
   have hcomp' : LowerSemicontinuous
       (fun π : Coupling μp νp =>
         ((∫⁻ z, h.residual z ∂(π.1.toMeasure) : ENNReal) : EReal) + A + B) :=
@@ -354,30 +354,10 @@ theorem planCostBddBelow_congr_lowerBound
   have hnfym : AEMeasurable (fun y ↦ ENNReal.ofReal (-fy y)) ν :=
     hfy.neg.aestronglyMeasurable.aemeasurable.ennreal_ofReal
   -- Pull all four parts back to the coupling through its two fixed marginals.
-  have hpxmap : ∫⁻ z, ENNReal.ofReal (fx z.1) ∂π = px := by
-    have hm : AEMeasurable (fun x ↦ ENNReal.ofReal (fx x)) π.fst := by
-      rwa [hπ.fst_eq]
-    dsimp only [px]
-    rw [← hπ.fst_eq]
-    exact (lintegral_map' hm measurable_fst.aemeasurable).symm
-  have hpymap : ∫⁻ z, ENNReal.ofReal (fy z.2) ∂π = py := by
-    have hm : AEMeasurable (fun y ↦ ENNReal.ofReal (fy y)) π.snd := by
-      rwa [hπ.snd_eq]
-    dsimp only [py]
-    rw [← hπ.snd_eq]
-    exact (lintegral_map' hm measurable_snd.aemeasurable).symm
-  have hnxmap : ∫⁻ z, ENNReal.ofReal (-fx z.1) ∂π = nx := by
-    have hm : AEMeasurable (fun x ↦ ENNReal.ofReal (-fx x)) π.fst := by
-      rwa [hπ.fst_eq]
-    dsimp only [nx]
-    rw [← hπ.fst_eq]
-    exact (lintegral_map' hm measurable_fst.aemeasurable).symm
-  have hnymap : ∫⁻ z, ENNReal.ofReal (-fy z.2) ∂π = ny := by
-    have hm : AEMeasurable (fun y ↦ ENNReal.ofReal (-fy y)) π.snd := by
-      rwa [hπ.snd_eq]
-    dsimp only [ny]
-    rw [← hπ.snd_eq]
-    exact (lintegral_map' hm measurable_snd.aemeasurable).symm
+  have hpxmap : ∫⁻ z, ENNReal.ofReal (fx z.1) ∂π = px := hπ.lintegral_comp_fst hfxm
+  have hpymap : ∫⁻ z, ENNReal.ofReal (fy z.2) ∂π = py := hπ.lintegral_comp_snd hfym
+  have hnxmap : ∫⁻ z, ENNReal.ofReal (-fx z.1) ∂π = nx := hπ.lintegral_comp_fst hnfxm
+  have hnymap : ∫⁻ z, ENNReal.ofReal (-fy z.2) ∂π = ny := hπ.lintegral_comp_snd hnfym
   let mpfst : MeasurePreserving Prod.fst π μ := ⟨measurable_fst, hπ.fst_eq⟩
   let mpsnd : MeasurePreserving Prod.snd π ν := ⟨measurable_snd, hπ.snd_eq⟩
   have hfxmp : AEMeasurable (fun z : X × Y ↦ ENNReal.ofReal (fx z.1)) π :=

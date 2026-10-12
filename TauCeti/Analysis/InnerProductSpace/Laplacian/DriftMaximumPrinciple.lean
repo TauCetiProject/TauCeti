@@ -276,7 +276,6 @@ private theorem le_of_strict_subsolution_barrier {K : Set E} (hK : IsCompact K)
       exact hzmax hxK
     have hzC : ε * w z ≤ ε * C :=
       mul_le_mul_of_nonneg_left (hCub (Set.mem_image_of_mem w hzK)) hε.le
-    have hexp : ε * (C - w x) = ε * C - ε * w x := by ring
     linarith [hbdry hzfr]
   exact le_of_forall_pos_mul_le (sub_nonneg.mpr hxC) key
 
