@@ -38,62 +38,20 @@ open ContCohomology
 
 universe u v
 
-/-- The kernel of reduction modulo `n`, as an open normal subgroup of `ℤ̂`. -/
-def modSubgroup (n : ℕ+) : OpenNormalSubgroup zHat.{u} where
-  toSubgroup := (lift (Multiplicative.ofAdd (1 : ZMod n))).toMonoidHom.ker
-  isOpen' := (isOpen_discrete {1}).preimage (lift _).continuous
-
-/-- Membership in the reduction kernel is vanishing of the residue. -/
-@[simp]
-theorem mem_modSubgroup (n : ℕ+) (x : zHat.{u}) :
-    x ∈ modSubgroup n ↔ toZMod n (Additive.ofMul x) = 0 := by
-  -- Membership in the bundled open subgroup is membership in the kernel of its homomorphism.
-  change (lift (Multiplicative.ofAdd (1 : ZMod n)) : zHat.{u} →ₜ* _) x = 1 ↔ _
-  simp
-
-private theorem reduction_surjective (n : ℕ+) :
-    Function.Surjective (lift (Multiplicative.ofAdd (1 : ZMod n)) :
-      zHat.{u} →ₜ* Multiplicative (ZMod n)) := by
-  intro x
-  refine ⟨gen ^ x.toAdd.val, ?_⟩
-  simp [nsmul_eq_mul]
-
-/-- The quotient by the reduction kernel is the finite cyclic group modulo `n`. -/
-def modQuotientEquiv (n : ℕ+) :
-    zHat.{u} ⧸ (modSubgroup n).toSubgroup ≃* Multiplicative (ZMod n) :=
-  QuotientGroup.quotientKerEquivOfSurjective _ (reduction_surjective n)
-
-/-- The quotient equivalence is reduction modulo `n` on representatives. -/
-@[simp]
-theorem modQuotientEquiv_mk (n : ℕ+) (x : zHat.{u}) :
-    modQuotientEquiv n (QuotientGroup.mk x) =
-      Multiplicative.ofAdd (toZMod n (Additive.ofMul x)) := by
-  exact lift_ofAdd_one_apply x
-
-/-- The reduction kernel has index `n`. -/
-@[simp]
-theorem modSubgroup_index (n : ℕ+) : (modSubgroup.{u} n).toSubgroup.index = n := by
-  rw [Subgroup.index_eq_card, Nat.card_congr (modQuotientEquiv n).toEquiv]
-  simp
-
-/-- The cyclic transversal chooses the least nonnegative exponent representing a coset. -/
-def modTransversal (n : ℕ+) (x : zHat.{u} ⧸ (modSubgroup n).toSubgroup) : zHat.{u} :=
-  gen ^ (modQuotientEquiv n x).toAdd.val
-
-/-- The cyclic transversal represents each coset. -/
-@[simp]
-theorem mk_modTransversal (n : ℕ+) (x : zHat.{u} ⧸ (modSubgroup n).toSubgroup) :
-    QuotientGroup.mk (modTransversal n x) = x := by
-  apply (modQuotientEquiv n).injective
-  simp [modTransversal, toZMod_apply, ← ofAdd_nsmul, nsmul_eq_mul]
-
-/-- In residue coordinates the cyclic transversal uses the least nonnegative exponent. -/
-@[simp]
-theorem modTransversal_modQuotientEquiv_symm (n : ℕ+) (x : Multiplicative (ZMod n)) :
-    modTransversal n ((modQuotientEquiv.{u} n).symm x) = gen ^ x.toAdd.val := by
-  simp [modTransversal]
-
 attribute [local instance] Subgroup.fintypeQuotientOfFiniteIndex
+
+-- Mathlib's `ZMod.finEquiv` is the identity at positive successor levels, but has no
+-- evaluation lemma. Isolate that definitional fact from the quotient computation.
+private theorem val_finEquiv (n : ℕ) [NeZero n] (i : Fin n) :
+    (ZMod.finEquiv n i).val = (i : ℕ) := by
+  cases n with
+  | zero => exact (NeZero.ne 0 rfl).elim
+  | succ n => rfl
+
+private theorem modTransversal_finEquiv (n : ℕ+) (i : Fin n) :
+    modTransversal n ((modQuotientEquiv.{u} n).symm
+      (Multiplicative.ofAdd (ZMod.finEquiv (n : ℕ) i))) = gen ^ (i : ℕ) := by
+  rw [modTransversal_modQuotientEquiv_symm, toAdd_ofAdd, val_finEquiv]
 
 private theorem sum_modTransversal (n : ℕ+) {M : Type v} [AddCommMonoid M]
     (f : zHat.{u} → M) :
@@ -104,14 +62,10 @@ private theorem sum_modTransversal (n : ℕ+) {M : Type v} [AddCommMonoid M]
   let e := (modQuotientEquiv n).toEquiv.trans
     (Multiplicative.toAdd : Multiplicative (ZMod n) ≃ ZMod n) |>.trans
       (ZMod.finEquiv (n : ℕ)).symm.toEquiv
-  exact Fintype.sum_equiv e (fun x ↦ f (modTransversal n x))
-    (fun i ↦ f (gen ^ (i : ℕ))) (fun x ↦ by
-      obtain ⟨k, hk⟩ := Nat.exists_eq_succ_of_ne_zero n.ne_zero
-      cases n with
-      | mk n hn =>
-        dsimp at hk
-        subst n
-        rfl)
+  have he (i : Fin n) : modTransversal n (e.symm i) = gen ^ (i : ℕ) := by
+    exact modTransversal_finEquiv n i
+  exact (Fintype.sum_equiv e.symm (fun i ↦ f (gen ^ (i : ℕ)))
+    (fun x ↦ f (modTransversal n x)) (fun i ↦ congrArg f (he i).symm)).symm
 
 variable (n : ℕ+) (M : Type v) [AddCommGroup M] [DistribMulAction zHat.{u} M]
 
@@ -224,6 +178,7 @@ def signCocycle : Z1 zHat.{u} (ZMod 4) :=
           ((lift (-1 : (ZMod 4)ˣ) : zHat.{u} →ₜ* _) h)⟩⟩
 
 /-- Evaluation of the sign cocycle by its finite sign character. -/
+@[simp]
 theorem signCocycle_apply (g : zHat.{u}) :
     (signCocycle : zHat.{u} → ZMod 4) g =
       if (lift (-1 : (ZMod 4)ˣ) : zHat.{u} →ₜ* _) g = 1 then 0 else 1 := (rfl)
@@ -263,7 +218,8 @@ theorem signCocycle_class_ne_zero : (signCocycle : H1 zHat.{u} (ZMod 4)) ≠ 0 :
 
 /-- The nonzero sign class is killed by two. -/
 @[simp]
-theorem two_smul_signCocycle_class : (2 : ℕ) • (signCocycle : H1 zHat.{u} (ZMod 4)) = 0 := by
+theorem two_smul_signCocycle_class_eq_zero :
+    (2 : ℕ) • (signCocycle : H1 zHat.{u} (ZMod 4)) = 0 := by
   have hclass : (((2 : ℕ) • signCocycle : Z1 zHat.{u} (ZMod 4)) :
       H1 zHat.{u} (ZMod 4)) = 0 := by
     apply H1pi_eq_zero_iff.2
@@ -302,6 +258,6 @@ theorem explicitCor1_res_signCocycle :
       (explicitRes1 zHat (ZMod 4) (modSubgroup 2).toSubgroup
         (signCocycle : H1 zHat.{u} (ZMod 4))) = 0 := by
   have htwo : ((2 : ℕ+) : ℕ) = 2 := rfl
-  rw [explicitCor1_comp_res1, modSubgroup_index, htwo, two_smul_signCocycle_class]
+  rw [explicitCor1_comp_res1, modSubgroup_index, htwo, two_smul_signCocycle_class_eq_zero]
 
 end TauCeti.zHat
