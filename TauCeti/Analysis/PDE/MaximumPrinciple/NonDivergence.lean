@@ -11,7 +11,6 @@ public import TauCeti.Analysis.InnerProductSpace.Laplacian.DriftMaximumPrinciple
 import Mathlib.Analysis.Calculus.FDeriv.Symmetric
 import Mathlib.Analysis.InnerProductSpace.Positive
 import TauCeti.Analysis.Calculus.DerivativeTest
-import TauCeti.Analysis.Calculus.SecondDerivative
 import TauCeti.LinearAlgebra.Matrix.ToQuadraticForm
 
 /-!
@@ -34,8 +33,9 @@ If `c ≥ 0` and a function `u`, continuous on `K` and `C²` in its interior, sa
 The minimum principle, the two-sided bound for solutions, the comparison principle and uniqueness
 for the Dirichlet problem follow, and so does the quantitative form: if instead
 `c u - F ≤ L u` for a constant `F ≥ 0`, then `u ≤ m + (exp ((β / λ + 1) diam K) - 1) F / λ`, with
-a constant depending only on `β / λ`, `λ` and the diameter of `K`. This is the bound on `sup |u|`
-in terms of the data that the Schauder theory of the Dirichlet problem uses.
+a constant depending only on `β / λ`, `λ` and the diameter of `K`. This one-sided estimate, applied
+to `u` and `-u`, gives the bound on `sup |u|` in terms of the data that the Schauder theory of the
+Dirichlet problem uses.
 
 Only the lower ellipticity bound is used, so a coefficient field with
 `TauCeti.PDE.UniformlyEllipticOn (interior K) a λ Λ` supplies the hypotheses through
@@ -65,6 +65,8 @@ compares `u` with `m + (F / λ) (exp (α d) - exp (α (⟪e, ·⟫ - s)))`, wher
   `L` has no local maximum.
 * `TauCeti.PDE.mul_exp_le_sum_mul_fderiv_fderiv_add_fderiv_exp_inner`: the exponential barrier is
   a strict subsolution of `L`, with an explicit lower bound for `L w`.
+* `TauCeti.PDE.sum_mul_fderiv_fderiv_add_fderiv_add_smul`,
+  `TauCeti.PDE.sum_mul_fderiv_fderiv_add_fderiv_neg`: linearity of `∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼ + ∂_v`.
 * `TauCeti.PDE.le_of_mul_le_sum_mul_fderiv_fderiv_add_fderiv_le_frontier`: **the weak maximum
   principle** for `-L + c`, `c ≥ 0`.
 * `TauCeti.PDE.ge_of_sum_mul_fderiv_fderiv_add_fderiv_le_mul_ge_frontier`: the weak minimum
@@ -199,7 +201,7 @@ theorem mul_exp_le_sum_mul_fderiv_fderiv_add_fderiv_exp_inner {A : Matrix ι ι 
     congrArg (· * (α * Real.exp (α * ⟪e, x⟫))) hαlam]
 
 /-- The operator `∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼ + ∂_v` is linear on functions that are `C²` at the point. -/
-private theorem sum_mul_fderiv_fderiv_add_fderiv_add_smul {A : Matrix ι ι ℝ}
+theorem sum_mul_fderiv_fderiv_add_fderiv_add_smul {A : Matrix ι ι ℝ}
     {f g : EuclideanSpace ℝ ι → ℝ} {x : EuclideanSpace ℝ ι} (hf : ContDiffAt ℝ 2 f x)
     (hg : ContDiffAt ℝ 2 g x) (r : ℝ) (v : EuclideanSpace ℝ ι) :
     ∑ i, ∑ j, A i j * fderiv ℝ (fderiv ℝ (f + r • g)) x (EuclideanSpace.single i 1)
@@ -227,7 +229,7 @@ private theorem sum_mul_fderiv_fderiv_add_fderiv_add_smul {A : Matrix ι ι ℝ}
   ring
 
 /-- The operator `∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼ + ∂_v` commutes with negation. -/
-private theorem sum_mul_fderiv_fderiv_add_fderiv_neg (A : Matrix ι ι ℝ)
+theorem sum_mul_fderiv_fderiv_add_fderiv_neg (A : Matrix ι ι ℝ)
     (f : EuclideanSpace ℝ ι → ℝ) (x v : EuclideanSpace ℝ ι) :
     ∑ i, ∑ j, A i j * fderiv ℝ (fderiv ℝ (-f)) x (EuclideanSpace.single i 1)
       (EuclideanSpace.single j 1) + fderiv ℝ (-f) x v =
