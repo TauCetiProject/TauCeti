@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.StandardComodule
 public import TauCeti.Algebra.AlgebraicGroup.SpecialOrthogonal.Basic
+import TauCeti.LinearAlgebra.Matrix.OrthogonalGroup.Basic
 
 /-!
 # The standard representation of the special orthogonal group
@@ -156,15 +157,13 @@ theorem scalar_sq_eq_one_of_basePointsRepresentation_eq_smul (hn : n ≠ 0)
       (Fin n → R) g = c • (1 : Module.End R (Fin n → R))) : c ^ 2 = 1 := by
   have hmat : (pointsMulEquiv (R := R) (A := R) n g : Matrix (Fin n) (Fin n) R) =
       c • (1 : Matrix (Fin n) (Fin n) R) := by
-    apply Matrix.toLin'.injective
-    apply LinearMap.ext
+    rw [Matrix.ext_iff_mulVec]
     intro v
     have hv := LinearMap.congr_fun hc v
     rw [basePointsRepresentation_eq_mulVec] at hv
-    simpa only [Matrix.toLin'_apply, Matrix.smul_mulVec, Matrix.one_mulVec,
-      LinearMap.smul_apply, Module.End.one_apply] using hv
+    simpa [Matrix.smul_mulVec] using hv
   have : Nonempty (Fin n) := ⟨⟨0, Nat.pos_of_ne_zero hn⟩⟩
-  exact Matrix.sq_eq_one_of_smul_one_mem_orthogonalGroup
+  exact sq_eq_one_of_smul_one_mem_orthogonalGroup
     (hmat ▸ (Matrix.mem_specialOrthogonalGroup_iff.mp
       (pointsMulEquiv (R := R) (A := R) n g).2).1)
 

@@ -12,28 +12,16 @@ public import Mathlib.LinearAlgebra.UnitaryGroup
 
 A ring homomorphism maps a special orthogonal matrix entrywise to a special orthogonal matrix.
 This expresses the functoriality of special orthogonal groups under coefficient-ring maps and
-supports their base-change constructions. A scalar matrix is orthogonal only when its scalar
-squares to one.
+supports their base-change constructions.
 
 ## Main declarations
 
 * `Matrix.SpecialOrthogonalGroup.map`: entrywise mapping of special orthogonal matrices.
-* `Matrix.sq_eq_one_of_smul_one_mem_orthogonalGroup`: a scalar orthogonal matrix has scalar a
-  square root of one.
 -/
 
 public section
 
 open Matrix
-
-/-- A scalar matrix preserving the standard symmetric form has scalar a square root of one,
-provided the index type is nonempty: the orthogonality relation reads `c ^ 2 • 1 = 1`. -/
-theorem Matrix.sq_eq_one_of_smul_one_mem_orthogonalGroup {n : Type*} [Fintype n] [DecidableEq n]
-    [Nonempty n] {R : Type*} [CommRing R] {c : R}
-    (h : c • (1 : Matrix n n R) ∈ Matrix.orthogonalGroup n R) : c ^ 2 = 1 := by
-  rw [Matrix.mem_orthogonalGroup_iff] at h
-  have hentry := congrFun (congrFun h (Classical.arbitrary n)) (Classical.arbitrary n)
-  simpa [sq] using hentry
 
 namespace Matrix.SpecialOrthogonalGroup
 

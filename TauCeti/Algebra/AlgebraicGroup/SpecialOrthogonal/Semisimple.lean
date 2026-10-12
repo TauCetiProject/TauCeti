@@ -11,35 +11,39 @@ import TauCeti.Algebra.AlgebraicGroup.Representation.Normal.Scalar
 import TauCeti.Algebra.AlgebraicGroup.SpecialOrthogonal.BaseChange
 import TauCeti.Algebra.AlgebraicGroup.SpecialOrthogonal.Connected
 import TauCeti.Algebra.AlgebraicGroup.SpecialOrthogonal.Irreducible
+import TauCeti.Algebra.AlgebraicGroup.SpecialOrthogonal.LowRank
 import TauCeti.Algebra.AlgebraicGroup.SpecialOrthogonal.Reductive
 import TauCeti.Algebra.AlgebraicGroup.SpecialOrthogonal.Smooth
+import TauCeti.Algebra.AlgebraicGroup.SpecialLinear.Semisimple
 import TauCeti.RingTheory.Smooth.GeometricallyReduced
 
 /-!
-# The special orthogonal group is semisimple in dimension at least three
+# The special orthogonal group is semisimple outside dimension two
 
 Let `SOₙ` be the special orthogonal group of the standard symmetric form over a field of
-characteristic different from two. In dimension at least three it is semisimple. A connected
-reduced normal solvable subgroup acts by scalars on the standard representation, which is simple
-in these dimensions. Preservation of the symmetric form restricts those scalars to square roots
-of one. A regular function with finite image on a reduced connected affine scheme is constant,
-so the subgroup acts trivially. Faithfulness of the standard representation identifies its
-defining ideal with the augmentation ideal.
+characteristic different from two. It is semisimple for every `n ≠ 2`. The dimension-zero and
+dimension-one groups are the special linear groups `SL₀` and `SL₁`. Dimension two must be
+excluded: `SO₂` is a torus, hence not semisimple.
+
+From dimension three on, a connected reduced normal solvable subgroup acts by scalars on the
+standard representation, which is simple in these dimensions. Preservation of the symmetric form
+restricts those scalars to square roots of one. A regular function with finite image on a reduced
+connected affine scheme is constant, so the subgroup acts trivially. Faithfulness of the standard
+representation identifies its defining ideal with the augmentation ideal.
 
 The argument is `HopfIdeal.eq_augmentation_of_isFaithful_of_isNormal_of_isSolvable_of_pow_eq_one`
 applied to the standard special orthogonal comodule, as in
 `TauCeti.Algebra.AlgebraicGroup.Symplectic.Semisimple` with the alternating form replaced by the
-symmetric form. The dimension bound is necessary: `SO₂` is a torus, hence not semisimple. The
-characteristic restriction is the one under which `SOₙ` is known to be smooth and geometrically
-connected.
+symmetric form. The characteristic restriction is the one under which `SOₙ` is known to be smooth
+and geometrically connected.
 
 ## Main declarations
 
-* `eq_augmentation_of_isNormal_of_isSolvable_of_three_le`: a connected reduced normal solvable
-  closed subgroup of `SOₙ` over an algebraically closed field of characteristic different from
-  two is trivial when `3 ≤ n`.
-* `semisimpleCommHopfAlgProperty_finiteTypeCoordinateHopfAlgebra_of_three_le`:
-  **`SOₙ` is semisimple when `3 ≤ n`**, over every field of characteristic different from two.
+* `TauCeti.SpecialOrthogonal.eq_augmentation_of_isNormal_of_isSolvable_of_three_le`: a connected
+  reduced normal solvable closed subgroup of `SOₙ` over an algebraically closed field of
+  characteristic different from two is trivial when `3 ≤ n`.
+* `TauCeti.SpecialOrthogonal.semisimpleCommHopfAlgProperty_finiteTypeCoordinateHopfAlgebra`:
+  **`SOₙ` is semisimple when `n ≠ 2`**, over every field of characteristic different from two.
 
 ## References
 
@@ -86,36 +90,34 @@ theorem eq_augmentation_of_isNormal_of_isSolvable_of_three_le
     (V := Fin n → k) I hI (isFaithful_standardComodule k n) two_pos
     fun g c hc ↦ scalar_sq_eq_one_of_basePointsRepresentation_eq_smul k n (by omega) _ c hc
 
-/-- **The special orthogonal group is semisimple in dimension at least three**, over every field
-of characteristic different from two. -/
-theorem semisimpleCommHopfAlgProperty_finiteTypeCoordinateHopfAlgebra_of_three_le
-    (k : Type u) [Field k] [NeZero (2 : k)] (n : ℕ) (hn : 3 ≤ n) :
-    semisimpleCommHopfAlgProperty k (finiteTypeCoordinateHopfAlgebra k n) := by
-  have hred := reductiveCommHopfAlgProperty_finiteTypeCoordinateHopfAlgebra k n
-  let K := AlgebraicClosure k
-  have htwo : (2 : K) ≠ 0 := by
-    simpa only [map_ofNat] using (map_ne_zero (algebraMap k K)).2 (NeZero.ne (2 : k))
-  let _ : NeZero (2 : K) := ⟨htwo⟩
-  let B := FiniteTypeCommHopfAlgCat.baseChange (K := K) (finiteTypeCoordinateHopfAlgebra k n)
-  let G := coordinateHopfAlgebra K n
-  let e : B.obj ≅ G :=
-    (forget₂ (FiniteTypeCommHopfAlgCat K) (_root_.CommHopfAlgCat K)).mapIso
-      (finiteTypeCoordinateHopfAlgebraBaseChangeIso k K n) ≪≫
-        eqToIso (finiteTypeCoordinateHopfAlgebra_obj K n)
-  apply semisimpleCommHopfAlgProperty_of_geometricFiber_iso k _ G
-    hred.smooth hred.geometricallyConnected e
-  intro I hnormal hconnected hsmooth hsolvable
-  let _ : Algebra.Smooth K (CommHopfAlgCat.quotient G I) := hsmooth
-  let _ : IsReduced (CommHopfAlgCat.quotient G I) := isReduced_of_smooth K _
-  let _ : ConnectedSpace (PrimeSpectrum (CommHopfAlgCat.quotient G I)) :=
-    geometricallyConnectedCommHopfAlgProperty.connectedSpace K _ hconnected
-  let _ : Group.IsSolvable
-      (WithConv (CommHopfAlgCat.quotient G I →ₐ[K] AlgebraicClosure K)) :=
-    (geometricallySolvablePointsCommHopfAlgProperty_iff K _).mp hsolvable
-  let φ : K →ₐ[K] AlgebraicClosure K := Algebra.ofId K (AlgebraicClosure K)
-  let _ : Group.IsSolvable (WithConv (CommHopfAlgCat.quotient G I →ₐ[K] K)) :=
-    Group.isSolvable_of_isSolvable_injective (AlgHom.mapValue_injective φ.injective)
-  exact eq_augmentation_of_isNormal_of_isSolvable_of_three_le n hn I hnormal
+/-- **The special orthogonal group is semisimple in every dimension other than two**, over every
+field of characteristic different from two. `SO₀` and `SO₁` are special linear groups; `SO₂` is a
+torus, which is not semisimple. -/
+theorem semisimpleCommHopfAlgProperty_finiteTypeCoordinateHopfAlgebra
+    (k : Type u) [Field k] [NeZero (2 : k)] (n : ℕ) (hn : n ≠ 2) :
+    semisimpleCommHopfAlgProperty k (finiteTypeCoordinateHopfAlgebra k n) :=
+  match n, hn with
+  | 0, _ => by
+    rw [finiteTypeCoordinateHopfAlgebra_zero]
+    exact SpecialLinear.semisimpleCommHopfAlgProperty_finiteTypeCoordinateHopfAlgebra k 0
+  | 1, _ => by
+    rw [finiteTypeCoordinateHopfAlgebra_one]
+    exact SpecialLinear.semisimpleCommHopfAlgProperty_finiteTypeCoordinateHopfAlgebra k 1
+  | 2, hn => (hn rfl).elim
+  | m + 3, _ => by
+    have hred := reductiveCommHopfAlgProperty_finiteTypeCoordinateHopfAlgebra k (m + 3)
+    let K := AlgebraicClosure k
+    have htwo : (2 : K) ≠ 0 := by
+      simpa only [map_ofNat] using (map_ne_zero (algebraMap k K)).2 (NeZero.ne (2 : k))
+    let _ : NeZero (2 : K) := ⟨htwo⟩
+    let e : (FiniteTypeCommHopfAlgCat.baseChange (K := K)
+        (finiteTypeCoordinateHopfAlgebra k (m + 3))).obj ≅ coordinateHopfAlgebra K (m + 3) :=
+      (forget₂ (FiniteTypeCommHopfAlgCat K) (_root_.CommHopfAlgCat K)).mapIso
+        (finiteTypeCoordinateHopfAlgebraBaseChangeIso k K (m + 3)) ≪≫
+          eqToIso (finiteTypeCoordinateHopfAlgebra_obj K (m + 3))
+    exact semisimpleCommHopfAlgProperty_of_geometricFiber_iso_of_isReduced k _ _
+      hred.smooth hred.geometricallyConnected e fun I hI _ _ _ ↦
+        eq_augmentation_of_isNormal_of_isSolvable_of_three_le (m + 3) (by omega) I hI
 
 end
 
