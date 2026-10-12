@@ -33,7 +33,8 @@ can be infinite dimensional; it vanishes exactly when `J` has dense range.
 Coercivity forces every variational eigenvalue to be positive, and quantitatively to be at
 least the coercivity constant whenever `J` is a contraction; this is the abstract form of the
 statement that the first eigenvalue of a Dirichlet problem is bounded below by the constant in
-the corresponding Poincaré inequality.
+the corresponding Poincaré inequality.  These estimates only need a real normed source and a
+seminormed inner-product target, without completeness of either space.
 
 The kernel of `S` is the orthogonal complement of the range of `J`
 (`IsCoercive.ker_formSolutionOperator`), so `S` is injective exactly when `J` has dense range;
@@ -124,7 +125,7 @@ theorem formPerturbationOperator_eq_comp (hB : IsCoercive B) (J : V →L[ℝ] H)
 /-- The **solution operator** of a coercive form `B` along `J : V →L[ℝ] H`: it sends `h : H` to
 `J u`, where `u` is the solution of `B u v = ⟪h, J v⟫`.  For a coercive elliptic form and the
 inclusion of a Sobolev space into `L²` it is the operator inverting the elliptic problem, whose
-spectrum is that of the corresponding eigenvalue problem. -/
+nonzero eigenvalues are the reciprocals of the variational eigenvalues. -/
 def formSolutionOperator (hB : IsCoercive B) (J : V →L[ℝ] H) : H →L[ℝ] H :=
   J.comp (hB.formSolutionMap J)
 
@@ -165,10 +166,8 @@ theorem inner_formSolutionOperator_self (hB : IsCoercive B) (J : V →L[ℝ] H) 
 solution, which coercivity keeps nonnegative. -/
 theorem inner_formSolutionOperator_self_nonneg (hB : IsCoercive B) (J : V →L[ℝ] H) (h : H) :
     0 ≤ ⟪h, hB.formSolutionOperator J h⟫_ℝ := by
-  obtain ⟨C, hC, hle⟩ := id hB
-  refine (inner_formSolutionOperator_self hB J h).trans_ge ?_
-  refine le_trans ?_ (hle (hB.formSolutionMap J h))
-  positivity
+  rw [inner_formSolutionOperator_self]
+  exact hB.apply_self_nonneg _
 
 /-! ### The kernel of the solution operator -/
 
@@ -233,23 +232,20 @@ theorem eigenspace_formSolutionOperator_zero_eq_bot (hB : IsCoercive B) {J : V �
 
 /-! ### Variational eigenvalues -/
 
-omit [CompleteSpace V] [CompleteSpace H] in
+variable {V H : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
+  [SeminormedAddCommGroup H] [InnerProductSpace ℝ H]
+  {B : V →L[ℝ] V →L[ℝ] ℝ}
+
 /-- A variational eigenvalue is positive: coercivity bounds the energy of an eigenfunction
 below by a positive multiple of its squared norm. -/
 theorem pos_of_forall_apply_eq_smul_inner (hB : IsCoercive B) (J : V →L[ℝ] H) {kappa : ℝ}
     {u : V} (hu : u ≠ 0) (heq : ∀ v : V, B u v = kappa * ⟪J u, J v⟫_ℝ) : 0 < kappa := by
   obtain ⟨C, hC, hle⟩ := id hB
   have hpos : 0 < ‖u‖ := norm_pos_iff.mpr hu
-  have hself : B u u = kappa * ‖J u‖ ^ 2 := by
-    rw [heq u, real_inner_self_eq_norm_sq]
-  rcases le_or_gt kappa 0 with hk | hk
-  · exfalso
-    have h1 : kappa * ‖J u‖ ^ 2 ≤ 0 := by nlinarith [sq_nonneg ‖J u‖]
-    have h2 : 0 < C * ‖u‖ * ‖u‖ := mul_pos (mul_pos hC hpos) hpos
-    linarith [hle u]
-  · exact hk
+  have henergy : 0 < B u u := lt_of_lt_of_le (by positivity) (hle u)
+  rw [heq u] at henergy
+  exact pos_of_mul_pos_left henergy real_inner_self_nonneg
 
-omit [CompleteSpace V] [CompleteSpace H] in
 /-- **A variational eigenvalue is at least the coercivity constant**, when `J` is a
 contraction.  For the Dirichlet problem this is the statement that the first eigenvalue is
 bounded below by the constant appearing in the Poincaré inequality. -/
@@ -268,10 +264,6 @@ theorem le_of_forall_apply_eq_smul_inner (hB : IsCoercive B) {J : V →L[ℝ] H}
   have hsq : 0 < ‖u‖ ^ 2 := by positivity
   exact le_of_mul_le_mul_right (by linarith [hlower u]) hsq
 
-variable {V H : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
-  [NormedAddCommGroup H] [InnerProductSpace ℝ H]
-  {B : V →L[ℝ] V →L[ℝ] ℝ}
-
 /-- **A variational eigenfunction has nonzero image in `H`.**  If `J u` vanished, the
 eigenvalue equation would make the energy of `u` vanish too, which coercivity forbids for
 `u ≠ 0`. -/
@@ -289,11 +281,12 @@ variable {V H : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [Complet
   [NormedAddCommGroup H] [InnerProductSpace ℝ H] [CompleteSpace H]
   {B : V →L[ℝ] V →L[ℝ] ℝ}
 
-/-- A variational eigenfunction for `κ ≠ 0` produces an eigenvector of the solution operator
-with eigenvalue `κ⁻¹`. -/
+/-- A variational eigenfunction produces an eigenvector of the solution operator with
+eigenvalue `κ⁻¹`; coercivity ensures that `κ` is positive. -/
 theorem hasEigenvector_formSolutionOperator (hB : IsCoercive B) (J : V →L[ℝ] H) {kappa : ℝ}
-    (hkappa : kappa ≠ 0) {u : V} (hu : u ≠ 0) (heq : ∀ v : V, B u v = kappa * ⟪J u, J v⟫_ℝ) :
+    {u : V} (hu : u ≠ 0) (heq : ∀ v : V, B u v = kappa * ⟪J u, J v⟫_ℝ) :
     HasEigenvector (hB.formSolutionOperator J : H →ₗ[ℝ] H) kappa⁻¹ (kappa • J u) := by
+  have hkappa := (hB.pos_of_forall_apply_eq_smul_inner J hu heq).ne'
   have hsol : u = hB.formSolutionMap J (kappa • J u) :=
     eq_formSolutionMap hB J fun v => by rw [heq v, real_inner_smul_left]
   refine ⟨mem_eigenspace_iff.mpr ?_,
@@ -348,7 +341,7 @@ theorem hasEigenvalue_formSolutionOperator_iff (hB : IsCoercive B) (J : V →L[�
     exact ⟨u, hu, by simpa only [inv_inv] using heq⟩
   · rintro ⟨u, hu, heq⟩
     exact hasEigenvalue_of_hasEigenvector
-      (hB.hasEigenvector_formSolutionOperator J hkappa hu heq)
+      (hB.hasEigenvector_formSolutionOperator J hu heq)
 
 /-- **The reciprocal of the norm of the solution operator is a variational eigenvalue.**
 Compactness of `J` is what makes `‖S‖` itself an eigenvalue of `S`, and positivity of `S` is what

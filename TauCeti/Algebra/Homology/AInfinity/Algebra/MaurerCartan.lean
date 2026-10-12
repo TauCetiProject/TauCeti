@@ -146,7 +146,7 @@ theorem taylor_of_tprod_const {α : A} (hα : α ∈ 𝒜.grading.piece 1) (n : 
       negOnePowCast R (n.choose 2) • 𝒜.m n fun _ ↦ α := by
   have h := (AInfinity.isSuspension_def _ _ _).1 𝒜.taylor_isSuspension n hn (fun _ ↦ 1)
     (fun _ ↦ α) (fun _ _ ↦ hα)
-  rw [AInfinity.evalNat_suspend, MultilinearMap.suspExp_const, mul_one,
+  rw [MultilinearMap.evalNat_suspend, MultilinearMap.suspExp_const, mul_one,
     MultilinearMap.evalNat_def] at h
   exact h
 
