@@ -175,11 +175,17 @@ theorem isAlt_bilinFormAt (φ : SmoothForm I M ℝ 2) (x : M) :
   intro v
   exact (φ.1 x).map_eq_zero_of_eq _ (by simp) Fin.zero_ne_one
 
+/-- The alternating value on the normalized diagonal tuple vanishes. -/
+@[simp]
+theorem eval₂_self_apply (φ : SmoothForm I M F 2) (x : M) (v : TangentSpace I x) :
+    (φ.1 x) ![v, v] = 0 := by
+  exact (φ.1 x).map_eq_zero_of_eq _ (by simp) Fin.zero_ne_one
+
 /-- Evaluation on two equal tangent vectors vanishes by alternation. -/
 theorem eval₂_self (φ : SmoothForm I M F 2) (x : M) (v : TangentSpace I x) :
     φ.eval₂ x v v = 0 := by
-  change φ.1 x ![v, v] = 0
-  exact (φ.1 x).map_eq_zero_of_eq _ (by simp) Fin.zero_ne_one
+  rw [eval₂_apply]
+  exact eval₂_self_apply φ x v
 
 /-- Swapping the inputs of a degree-two smooth form negates its value. -/
 theorem eval₂_swap (φ : SmoothForm I M F 2) (x : M)
@@ -205,9 +211,7 @@ theorem ext {φ ψ : SmoothForm I M F 2}
   funext x
   apply ContinuousAlternatingMap.ext
   intro v
-  have hv : v = ![v 0, v 1] := by
-    funext i
-    fin_cases i <;> rfl
+  have hv : v = ![v 0, v 1] := (FinVec.etaExpand_eq v).symm
   rw [hv]
   exact h x (v 0) (v 1)
 
