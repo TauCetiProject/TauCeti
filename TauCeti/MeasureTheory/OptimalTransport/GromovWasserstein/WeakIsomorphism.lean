@@ -19,21 +19,21 @@ and two measure-preserving maps with equal pulled-back kernels give an exact cou
 
 The relation is defined for raw measures and kernels with arbitrary target. Symmetry and
 invariance under a.e. changes require only a sigma-finite first measure. The exact coupling then
-is sigma-finite, although the second measure need not be. The carrier-side pullback law asks for
-measurable equality on the target carrier of the transport map and an s-finite source measure.
-Its identity case gives reflexivity when the kernel carrier has measurable equality. These laws
-allow arbitrary raw kernels without any structure on their value type.
-
-Common-space introduction, pullbacks, reflexivity and transitivity also hold for a.e. strongly
-measurable kernels with values in an extended metric space, without measurable equality on the
-carriers. Transitivity uses gluing; it requires a finite middle measure and a standard Borel outer
-carrier, rather than a topology on every carrier.
+is sigma-finite, although the second measure need not be. Its common-space introduction,
+reflexivity and transitivity are proved for a.e. strongly measurable kernels with values in an
+extended metric space. Transitivity uses gluing; it requires a finite middle measure
+and a standard Borel outer carrier, rather than a topology on every carrier.
 
 For an extended metric target and every nonzero exponent, an exact coupling is precisely a
 coupling of zero distortion. Weakly isomorphic kernels have Gromov–Wasserstein distance zero
 whenever their target discrepancy vanishes on the diagonal; no topology, symmetry or triangle
 inequality is needed for this implication. The converse requires an attainment theorem and is
 not asserted here.
+
+Raw kernels admit pullback along a transport map whose target carrier has measurable equality
+and whose source measure is s-finite. The identity case gives reflexivity under measurable
+carrier equality. These laws require no structure on the kernel values. The extended-metric
+pullback and reflexivity laws use a.e. strong measurability without measurable carrier equality.
 
 ## References
 
@@ -72,6 +72,26 @@ theorem areWeaklyIsomorphicKernels_of_isCoupling {π : Measure (X × Y)}
     (heq : (fun q : (X × Y) × (X × Y) ↦ ωX (q.1.1, q.2.1)) =ᵐ[π.prod π]
       (fun q ↦ ωY (q.1.2, q.2.2))) : AreWeaklyIsomorphicKernels μ ωX ν ωY :=
   ⟨π, hπ, heq⟩
+
+/-- A raw kernel and its pullback along a transport map are weakly isomorphic when the target
+carrier has measurable equality and the source measure is s-finite. The graph plan supplies the
+exact coupling, so neither structure on the kernel target nor measurability of the kernel is
+required. In particular this permits duplication of a measured carrier. -/
+theorem areWeaklyIsomorphicKernels_comp_prodMap_of_hasLaw [MeasurableEq Y] [SFinite μ]
+    {f : X → Y} (ωY : Y × Y → Z) (hf : ProbabilityTheory.HasLaw f ν μ) :
+    AreWeaklyIsomorphicKernels μ (ωY ∘ Prod.map f f) ν ωY := by
+  refine areWeaklyIsomorphicKernels_of_isCoupling (isCoupling_graphPlan hf) ?_
+  have hgraph := ae_snd_eq_graphPlan hf.aemeasurable
+  filter_upwards [Measure.quasiMeasurePreserving_fst.ae hgraph,
+    Measure.quasiMeasurePreserving_snd.ae hgraph] with q hq₁ hq₂
+  simp only [Function.comp_apply, Prod.map_apply, hq₁, hq₂]
+
+/-- Every raw kernel on an s-finite measure with measurable carrier equality is weakly
+isomorphic to itself. No structure or measurability is required of its values. -/
+theorem areWeaklyIsomorphicKernels_refl_of_measurableEq [MeasurableEq X] [SFinite μ]
+    (ωX : X × X → Z) : AreWeaklyIsomorphicKernels μ ωX μ ωX := by
+  simpa using areWeaklyIsomorphicKernels_comp_prodMap_of_hasLaw ωX
+    (ProbabilityTheory.HasLaw.id (μ := μ))
 
 /-- Extract an exact coupling from a weak isomorphism, without unfolding the predicate in an
 importing module. Neither construction nor extraction requires structure on the target. -/
@@ -123,26 +143,6 @@ theorem areWeaklyIsomorphicKernels_congr_ae [SigmaFinite μ]
       |>.ae_eq_comp hb
     exact areWeaklyIsomorphicKernels_of_isCoupling hπ (ha'.symm.trans (heq.trans hb'))
   exact ⟨transfer hX hY, transfer hX.symm hY.symm⟩
-
-/-- A raw kernel and its pullback along a transport map are weakly isomorphic when the target
-carrier has measurable equality and the source measure is s-finite. The graph plan supplies the
-exact coupling, so neither structure on the kernel target nor measurability of the kernel is
-required. In particular this permits duplication of a measured carrier. -/
-theorem areWeaklyIsomorphicKernels_comp_prodMap_of_hasLaw [MeasurableEq Y] [SFinite μ]
-    {f : X → Y} (ωY : Y × Y → Z) (hf : ProbabilityTheory.HasLaw f ν μ) :
-    AreWeaklyIsomorphicKernels μ (ωY ∘ Prod.map f f) ν ωY := by
-  refine areWeaklyIsomorphicKernels_of_isCoupling (isCoupling_graphPlan hf) ?_
-  have hgraph := ae_snd_eq_graphPlan hf.aemeasurable
-  filter_upwards [Measure.quasiMeasurePreserving_fst.ae hgraph,
-    Measure.quasiMeasurePreserving_snd.ae hgraph] with q hq₁ hq₂
-  simp only [Function.comp_apply, Prod.map_apply, hq₁, hq₂]
-
-/-- Every raw kernel on an s-finite measure with measurable carrier equality is weakly
-isomorphic to itself. No structure or measurability is required of its values. -/
-theorem areWeaklyIsomorphicKernels_refl_of_measurableEq [MeasurableEq X] [SFinite μ]
-    (ωX : X × X → Z) : AreWeaklyIsomorphicKernels μ ωX μ ωX := by
-  simpa using areWeaklyIsomorphicKernels_comp_prodMap_of_hasLaw ωX
-    (ProbabilityTheory.HasLaw.id (μ := μ))
 
 section EDist
 
