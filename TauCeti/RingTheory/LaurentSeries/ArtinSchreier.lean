@@ -34,34 +34,34 @@ variable {k : Type*} [Ring k] [IsDomain k] {n : ℕ} {a : k}
 
 /-- The order of a power of a nonzero Laurent series is the corresponding multiple of its
 integer order. -/
-theorem orderTop_pow_of_ne_zero (n : ℕ) {w : k⸨X⸩} (hw : w ≠ 0) :
+theorem laurentSeries_orderTop_pow_of_ne_zero (n : ℕ) {w : k⸨X⸩} (hw : w ≠ 0) :
     (w ^ n).orderTop = ((n : ℤ) * w.order : ℤ) := by
   rw [hahnSeries_orderTop_pow, ← order_eq_orderTop_of_ne_zero hw,
     ← WithTop.coe_nsmul, nsmul_eq_mul]
 
 /-- Raising a Laurent series of negative order to a power greater than one strictly lowers
 its order. -/
-theorem orderTop_pow_lt_orderTop_of_order_neg
+theorem laurentSeries_orderTop_pow_lt_orderTop_of_order_neg
     (hn : 1 < n) {w : k⸨X⸩} (hw : w.order < 0) :
     (w ^ n).orderTop < w.orderTop := by
   have hw0 : w ≠ 0 := by rintro rfl; simp at hw
   have hnZ : (1 : ℤ) < n := by exact_mod_cast hn
-  rw [orderTop_pow_of_ne_zero n hw0, ← order_eq_orderTop_of_ne_zero hw0]
+  rw [laurentSeries_orderTop_pow_of_ne_zero n hw0, ← order_eq_orderTop_of_ne_zero hw0]
   exact_mod_cast (by nlinarith : (n : ℤ) * w.order < w.order)
 
 /-- At a negative order, the power term determines the order of `wⁿ - w` when `n > 1`. -/
-theorem orderTop_pow_sub_self_of_order_neg
+theorem laurentSeries_orderTop_pow_sub_self_of_order_neg
     (hn : 1 < n) {w : k⸨X⸩} (hw : w.order < 0) :
     (w ^ n - w).orderTop = ((n : ℤ) * w.order : ℤ) := by
   have hw0 : w ≠ 0 := by rintro rfl; simp at hw
-  rw [orderTop_sub (orderTop_pow_lt_orderTop_of_order_neg hn hw),
-    orderTop_pow_of_ne_zero n hw0]
+  rw [orderTop_sub (laurentSeries_orderTop_pow_lt_orderTop_of_order_neg hn hw),
+    laurentSeries_orderTop_pow_of_ne_zero n hw0]
 
 /-- At a negative order, the leading coefficient of `wⁿ - w` is that of `w`, raised to `n`. -/
-theorem leadingCoeff_pow_sub_self_of_order_neg
+theorem laurentSeries_leadingCoeff_pow_sub_self_of_order_neg
     (hn : 1 < n) {w : k⸨X⸩} (hw : w.order < 0) :
     (w ^ n - w).leadingCoeff = w.leadingCoeff ^ n := by
-  rw [leadingCoeff_sub (orderTop_pow_lt_orderTop_of_order_neg hn hw),
+  rw [leadingCoeff_sub (laurentSeries_orderTop_pow_lt_orderTop_of_order_neg hn hw),
     hahnSeries_leadingCoeff_pow]
 
 /-- If the coefficient of `a T⁻ⁿ` is not an `n`-th power, subtracting `wⁿ - w` never
@@ -79,9 +79,9 @@ theorem orderTop_single_sub_pow_sub_self
   · simpa [hn0] using hu
   have hwtop : w.orderTop = (w.order : WithTop ℤ) :=
     (order_eq_orderTop_of_ne_zero hw).symm
-  have hpow := orderTop_pow_of_ne_zero n hw
+  have hpow := laurentSeries_orderTop_pow_of_ne_zero n hw
   by_cases hneg : w.order < 0
-  · have hv := orderTop_pow_sub_self_of_order_neg hn hneg
+  · have hv := laurentSeries_orderTop_pow_sub_self_of_order_neg hn hneg
     split_ifs with hlow
     · -- A substitution pole of order greater than one dominates the original pole.
       have hlow' : (n : ℤ) * w.order < -(n : ℤ) := by nlinarith
@@ -91,7 +91,7 @@ theorem orderTop_single_sub_pow_sub_self
       have hw1 : w.order = -1 := by omega
       have hv' : (w ^ n - w).orderTop = (-(n : ℤ) : ℤ) := by
         simpa [hw1] using hv
-      have hlead := leadingCoeff_pow_sub_self_of_order_neg hn hneg
+      have hlead := laurentSeries_leadingCoeff_pow_sub_self_of_order_neg hn hneg
       have hcoeff : (single (-(n : ℤ)) a - (w ^ n - w)).coeff (-(n : ℤ)) ≠ 0 := by
         have hcoeff_lead : (w ^ n - w).coeff (-(n : ℤ)) =
             (w ^ n - w).leadingCoeff := by
