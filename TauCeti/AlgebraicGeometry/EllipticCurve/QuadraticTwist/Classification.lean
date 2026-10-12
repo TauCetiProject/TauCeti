@@ -39,16 +39,6 @@ this is the classification of twists by `K^×/(K^×)²` of Silverman, X.5.4.
   over `K` with the same `j`-invariant as `E` is isomorphic over `K` to `E` or to the quadratic
   twist of `E` by a quadratic subextension of a separable closure of `K`.
 
-## Implementation notes
-
-The classification rests on `Aut(E_Ω) = {±1}`
-(`WeierstrassCurve.eq_one_or_eq_negVariableChange_map`), the Galois correspondence for possibly
-infinite Galois extensions (`IntermediateField.finrank_eq_fixingSubgroup_index`), the descent of a
-change of variables whose coefficients lie in a subfield
-(`WeierstrassCurve.VariableChange.mem_range_baseChange_iff`), and the classification of the forms
-of `E` split by a quadratic extension
-(`WeierstrassCurve.exists_smul_eq_or_exists_smul_eq_quadraticTwist`).
-
 ## References
 
 * [J. H. Silverman, *The Arithmetic of Elliptic Curves*][silverman2009], X.2 and X.5
