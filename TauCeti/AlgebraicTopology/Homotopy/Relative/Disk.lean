@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicTopology.Homotopy.Relative.Basic
+public import TauCeti.AlgebraicTopology.Homotopy.Relative.Compression
 public import TauCeti.Topology.CWComplex.Classical.Compression
 public import TauCeti.Topology.Homotopy.Extension.Cube
 
@@ -44,8 +44,6 @@ defined here in positive degrees.
 
 ## Main declarations
 
-* `TauCeti.RelGenLoop.mapsTo_prodBoundary`: a relative cube is a map of pairs
-  `(I × Iⁿ, ∂(I × Iⁿ)) → (Y, B)`.
 * `TauCeti.exists_homotopicWith_relGenLoop`: a map of pairs out of the cube `I × Iⁿ` is homotopic
   through maps of pairs to a relative cube.
 * `TauCeti.exists_homotopicRel_range_subset_of_subsingleton`: maps of disk pairs compress into `B`
@@ -116,19 +114,6 @@ private theorem openBoxContraction_mem {z : I × I^N} (hz : z.1 = 1 ∨ z.2 ∈ 
 end OpenBox
 
 /-! ### Deforming a map of pairs into a relative cube -/
-
-/-- A relative cube of the pair `(Y, B)` is a map of pairs
-`(I × I^N, ∂(I × I^N)) → (Y, B)`. -/
-theorem RelGenLoop.mapsTo_prodBoundary {N : Type v} {Y : TopCat.{u}} {B : Set Y} {b : B}
-    {q : C(I × I^N, Y)} (hq : q ∈ RelGenLoop N ⟨TopPair.ofSubset B, b⟩) :
-    MapsTo q (Cube.prodBoundary N) B := by
-  rintro ⟨s, y⟩ hz
-  rcases Cube.mem_prodBoundary_iff.1 hz with (hs | hs) | hy
-  · obtain rfl : s = 0 := hs
-    have := (RelGenLoop.mem_iff.1 hq).1 y
-    rwa [TopPair.range_ofSubset_map] at this
-  · exact (congrArg (· ∈ B) ((RelGenLoop.mem_iff.1 hq).2 s y (.inl hs))).mpr b.2
-  · exact (congrArg (· ∈ B) ((RelGenLoop.mem_iff.1 hq).2 s y (.inr hy))).mpr b.2
 
 variable {N : Type v} [Finite N] {Y : TopCat.{u}} {B : Set Y}
 
@@ -241,7 +226,9 @@ theorem exists_homotopicRel_range_subset_of_subsingleton {n : ℕ}
   obtain ⟨F⟩ := RelGenLoop.homotopic_iff.1 (RelHomotopyGroup.mk_eq_mk.1
     (Subsingleton.elim (RelHomotopyGroup.mk p) (RelHomotopyGroup.mk RelGenLoop.const)))
   let H := G.trans
-    { toHomotopy := F.toHomotopy, prop' t := RelGenLoop.mapsTo_prodBoundary (F.prop t) }
+    { toHomotopy := F.toHomotopy
+      prop' t := (RelGenLoop.mapsTo_prodBoundary (F.prop t)).mono_right
+        TopPair.range_ofSubset_map.subset }
   refine ContinuousMap.HomotopicWith.exists_homotopicRel_range_subset
     (g₁ := ContinuousMap.const _ (b : Y))
     ⟨{ toFun q := H.toContinuousMap (q.1, e q.2)
