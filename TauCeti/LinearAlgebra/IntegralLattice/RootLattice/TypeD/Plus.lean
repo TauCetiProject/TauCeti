@@ -110,7 +110,6 @@ theorem discriminantSubgroup_checkerboardPlusCarrier :
     (checkerboardLattice n).discriminantSubgroup_intermediateCarrierOfDiscriminantSubgroup]
 
 /-- The spinor class is quadratic-isotropic exactly in ranks divisible by eight. -/
-@[simp]
 theorem discriminantQuadraticMap_checkerboardSpinorClass_eq_zero_iff :
     (checkerboardLattice n).discriminantQuadraticMap (isEven_checkerboardLattice n)
       (checkerboardSpinorClass n) = 0 ↔ 8 ∣ n := by
