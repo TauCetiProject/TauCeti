@@ -44,11 +44,11 @@ namespace ProjectiveGeneralLinear
 
 universe u
 
-variable (k : Type u) [Field k] [CharZero k]
+variable (n : ℕ) (k : Type u) [Field k] [CharZero k]
 
 /-- **`PGLₙ` is linearly reductive in characteristic zero.** Every finite-dimensional comodule
 over its coordinate Hopf algebra is completely reducible. -/
-theorem linearlyReductiveCommHopfAlgProperty_coordinateHopfAlgebra (n : ℕ) :
+theorem linearlyReductiveCommHopfAlgProperty_coordinateHopfAlgebra :
     linearlyReductiveCommHopfAlgProperty k (coordinateHopfAlgebra n k) :=
   .of_injective (SpecialLinear.conjugationMap n k) (SpecialLinear.injective_conjugationMap n k)
     (SpecialLinear.linearlyReductiveCommHopfAlgProperty_coordinateHopfAlgebra k n)
