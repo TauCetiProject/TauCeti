@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.Normed.Group.BallSphere
 public import Mathlib.Analysis.Normed.Module.Ball.Action
-public import Mathlib.LinearAlgebra.FiniteDimensional.Basic
+public import TauCeti.Analysis.Normed.Module.FiniteDimension
 public import TauCeti.Topology.PathComponent
 
 /-!
@@ -42,21 +42,12 @@ and its antipode. For radius zero, the two points coincide. -/
 theorem sphere_eq_pair_of_finrank_eq_one (h : finrank ℝ E = 1) {r : ℝ} {p : E}
     (hp : p ∈ sphere (0 : E) r) : sphere (0 : E) r = {p, -p} := by
   have hp' : ‖p‖ = r := by simpa using hp
-  by_cases hp0 : p = 0
-  · subst p
-    have hr : r = 0 := by simpa using hp'.symm
-    simp [hr]
   ext x
   simp only [mem_sphere_zero_iff_norm, Set.mem_insert_iff, Set.mem_singleton_iff]
   constructor
   · intro hx
-    obtain ⟨c, rfl⟩ := (finrank_eq_one_iff_of_nonzero' p hp0).mp h x
-    rw [norm_smul, Real.norm_eq_abs, ← hp'] at hx
-    have hc : |c| = 1 := (mul_eq_right₀ (norm_ne_zero_iff.mpr hp0)).mp hx
-    rcases (abs_eq zero_le_one).mp hc with rfl | rfl <;> simp
-  · rintro (rfl | rfl)
-    · exact hp'
-    · simpa using hp'
+    exact eq_or_eq_neg_of_norm_eq_of_finrank_eq_one h (hx.trans hp'.symm)
+  · rintro (rfl | rfl) <;> simpa using hp'
 
 /-- Every sphere in a one-dimensional real normed space is finite. -/
 theorem finite_sphere_of_finrank_eq_one (h : finrank ℝ E = 1) (x : E) (r : ℝ) :
