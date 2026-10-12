@@ -60,12 +60,12 @@ theorem _root_.MulEquiv.zpowers_eq_top_of_apply_eq_ofAdd_one {G : Type*} [Group 
     e.injective (by simp [hg, ← ofAdd_zsmul])⟩
 
 /-- **Euler's criterion in a finite cyclic group.** If `n` divides the order of a finite cyclic
-group `G`, then `x` is an `n`-th power exactly when `x ^ (Nat.card G / n) = 1`. The `n`-th powers
-are contained in the kernel of `y ↦ y ^ (Nat.card G / n)`, and both subgroups have
-`Nat.card G / n` elements. -/
+group `G`, then `x` is an `n`-th power exactly when `x ^ (Nat.card G / n) = 1`. -/
 theorem _root_.IsCyclic.mem_range_powMonoidHom_iff {G : Type*} [CommGroup G] [IsCyclic G]
     [Finite G] {n : ℕ} (hn : n ∣ Nat.card G) (x : G) :
     x ∈ (powMonoidHom n : G →* G).range ↔ x ^ (Nat.card G / n) = 1 := by
+  -- The `n`-th powers lie in the kernel of `y ↦ y ^ (Nat.card G / n)`, and both subgroups have
+  -- `Nat.card G / n` elements.
   have hle : (powMonoidHom n : G →* G).range ≤ (powMonoidHom (Nat.card G / n) : G →* G).ker := by
     rintro _ ⟨y, rfl⟩
     rw [MonoidHom.mem_ker, powMonoidHom_apply, powMonoidHom_apply, ← pow_mul,

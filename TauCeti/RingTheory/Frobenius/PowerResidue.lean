@@ -8,7 +8,7 @@ module
 public import Mathlib.RingTheory.Frobenius
 public import Mathlib.RingTheory.RootsOfUnity.PrimitiveRoots
 import Mathlib.RingTheory.IntegralDomain
-import TauCeti.GroupTheory.SpecificGroups.Cyclic.Basic
+import TauCeti.FieldTheory.Finite.EulerCriterion
 import TauCeti.RingTheory.RootsOfUnity.Basic
 
 /-!
@@ -33,7 +33,7 @@ The proof has three steps.
   (`AlgHom.IsArithFrobAt.sub_pow_mul_mem`).
 * `φ x` is an `n`-th root of `a`, hence `ζ ^ i * x` for some `i`. Two `n`-th roots of unity that
   are congruent modulo `Q` are equal because `n ∉ Q`, so `φ x = x` exactly when
-  `a ^ ((q - 1) / n) ≡ 1`. By Euler's criterion in the finite cyclic group of units of `R ⧸ Q ∩ R`
+  `a ^ ((q - 1) / n) ≡ 1`. By Euler's criterion in the finite field `R ⧸ Q ∩ R`
   (`Ideal.exists_pow_eq_mk_iff_pow_sub_one_mem`), this says that `a` is an `n`-th power there.
 
 For a family of Frobenius elements `σ i` at primes `Q i`, the subgroup they generate fixes `x`
@@ -78,25 +78,9 @@ theorem exists_pow_eq_mk_iff_pow_sub_one_mem {P : Ideal R} [P.IsPrime] [Finite (
       a ^ ((Nat.card (R ⧸ P) - 1) / n) - 1 ∈ P := by
   have : P.IsMaximal := Ideal.Quotient.maximal_of_isField P (Finite.isField_of_domain (R ⧸ P))
   let := Ideal.Quotient.field P
-  have hcard : Nat.card (R ⧸ P)ˣ = Nat.card (R ⧸ P) - 1 := Nat.card_units _
   have ha' : Ideal.Quotient.mk P a ≠ 0 := by rwa [Ne, Ideal.Quotient.eq_zero_iff_mem]
-  have hn : n ≠ 0 := by
-    rintro rfl
-    have := Finite.one_lt_card (α := R ⧸ P)
-    have := Nat.eq_zero_of_zero_dvd hdvd
-    omega
-  -- Euler's criterion in the cyclic group `(R ⧸ P)ˣ` of order `#(R ⧸ P) - 1`.
-  have h := IsCyclic.mem_range_powMonoidHom_iff (hcard ▸ hdvd) (Units.mk0 _ ha')
-  rw [hcard, ← Units.val_eq_one, Units.val_pow_eq_pow_val, Units.val_mk0] at h
-  rw [← Ideal.Quotient.eq_zero_iff_mem, map_sub, map_pow, map_one, sub_eq_zero, ← h]
-  constructor
-  · rintro ⟨b, hb⟩
-    have hb0 : b ≠ 0 := by
-      rintro rfl
-      exact ha' (by rw [← hb, zero_pow hn])
-    exact ⟨Units.mk0 b hb0, Units.ext (by simp [hb])⟩
-  · rintro ⟨b, hb⟩
-    exact ⟨b, by simpa using congrArg Units.val hb⟩
+  rw [TauCeti.FiniteField.exists_pow_eq_iff_pow_card_sub_one_div_eq_one hdvd ha',
+    ← Ideal.Quotient.eq_zero_iff_mem, map_sub, map_pow, map_one, sub_eq_zero]
 
 end Ideal
 
@@ -105,12 +89,13 @@ namespace AlgHom.IsArithFrobAt
 variable {R S : Type*} [CommRing R] [CommRing S] [Algebra R S] {φ : S →ₐ[R] S} {Q : Ideal S}
 
 /-- If `R` contains an element that is a primitive `n`-th root of unity in the domain `S` and
-`n ∉ Q`, then `n` divides `q - 1`, where `q = #(R ⧸ Q ∩ R)` is the exponent of a Frobenius at `Q`:
-the Frobenius fixes the root of unity and raises it to its `q`-th power. -/
+`n ∉ Q`, then `n` divides `q - 1`, where `q = #(R ⧸ Q ∩ R)` is the exponent of a Frobenius at
+`Q`. -/
 theorem dvd_card_sub_one [IsDomain S] (H : φ.IsArithFrobAt Q) {n : ℕ} {ζ : R}
     (hζ : IsPrimitiveRoot (algebraMap R S ζ) n) (hn : (n : S) ∉ Q) :
     n ∣ Nat.card (R ⧸ Q.under R) - 1 := by
   have hn0 : n ≠ 0 := by rintro rfl; exact hn (by simp)
+  -- The Frobenius fixes the root of unity and raises it to its `q`-th power.
   have h := H.apply_of_pow_eq_one hζ.pow_eq_one hn
   rw [AlgHom.commutes] at h
   apply hζ.dvd_of_pow_eq_one
