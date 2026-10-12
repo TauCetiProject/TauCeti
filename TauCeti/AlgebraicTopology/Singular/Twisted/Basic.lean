@@ -137,6 +137,13 @@ def vertexTransport (α : m ⟶ n) (σ : (TopCat.toSSet.obj X).obj m) :
     initialVertex σ ⟶ initialVertex ((TopCat.toSSet.obj X).map α σ) :=
   pathTransport σ (toTopInitialVertex m.unop) (toTop.map α.unop (toTopInitialVertex n.unop))
 
+/-- The vertex transport along `α` is the transport inside `σ` from its initial vertex to the image
+under `α` of the initial vertex of the reindexed simplex. -/
+lemma vertexTransport_eq_pathTransport (α : m ⟶ n) (σ : (TopCat.toSSet.obj X).obj m) :
+    vertexTransport α σ =
+      pathTransport σ (toTopInitialVertex m.unop) (toTop.map α.unop (toTopInitialVertex n.unop)) :=
+  (rfl)
+
 /-- Reindexing along an identity does not move the initial vertex, so the transport it induces is
 the `eqToHom` between the two (equal) initial vertices. -/
 lemma vertexTransport_id (σ : (TopCat.toSSet.obj X).obj n) :
@@ -217,6 +224,17 @@ attached to a singular `k`-simplex. -/
 def ιTwistedChainComplex (k : ℕ) (σ : (TopCat.toSSet.obj X) _⦋k⦌) :
     L.obj (initialVertex σ) ⟶ (twistedChainComplex L).X k :=
   ιTwistedChains L σ
+
+/-- The cofan exhibiting the degree-`k` term of the twisted chain complex as a family indexed by the
+singular `k`-simplices. -/
+abbrev twistedChainComplexXCofan (k : ℕ) :
+    Cofan fun σ : (TopCat.toSSet.obj X) _⦋k⦌ ↦ L.obj (initialVertex σ) :=
+  Cofan.mk _ (ιTwistedChainComplex L k)
+
+/-- The degree-`k` term of the twisted chain complex is the coproduct, over the singular
+`k`-simplices `σ`, of the fibres of `L` at the initial vertices of `σ`. -/
+def isColimitTwistedChainComplexXCofan (k : ℕ) : IsColimit (twistedChainComplexXCofan L k) :=
+  coproductIsCoproduct _
 
 /-- Two maps out of a degree of the twisted chain complex agree as soon as they agree on every
 summand. -/
