@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Homology.Monoidal.Homology.Kunneth
+public import TauCeti.Algebra.Homology.Monoidal.Homology.Kunneth.Basic
 public import TauCeti.AlgebraicTopology.Singular.CrossProduct
 public import TauCeti.Algebra.Homology.PrincipalIdealRing
 public import Mathlib.LinearAlgebra.DirectSum.Basis
