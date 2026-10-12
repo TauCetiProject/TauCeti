@@ -565,7 +565,7 @@ jobs:
             exit 1
           fi
 
-      - name: No-set_option guard (TauCeti/ and TauCeti.lean use no set_option)
+      - name: Reject option overrides and heartbeat instrumentation
         if: ${{ env.INFRA != '1' }}
         run: |
           python3 gate/scripts/check_source_options.py pr/TauCeti/ pr/TauCeti.lean
