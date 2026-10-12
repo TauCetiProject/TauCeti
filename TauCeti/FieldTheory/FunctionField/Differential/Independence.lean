@@ -7,6 +7,8 @@ module
 
 public import TauCeti.FieldTheory.FunctionField.Differential.Residue
 public import TauCeti.FieldTheory.FunctionField.Place.Expansion.Laurent.Derivative
+import TauCeti.FieldTheory.FunctionField.ConstantExtension.ResidueField
+import TauCeti.FieldTheory.FunctionField.Differential.ConstantExtension
 import TauCeti.FieldTheory.FunctionField.Differential.LocalNonvanishing
 import TauCeti.FieldTheory.FunctionField.Different.Separating
 import TauCeti.FieldTheory.FunctionField.Place.Existence
@@ -37,6 +39,17 @@ rational places, for instance over an algebraically closed field
 function `x - x(P)` is a prime element, since only finitely many places ramify over `k(x)`
 (`TauCeti.Place.finite_setOf_forall_ord_sub_algebraMap_ne_one`).
 
+Over a perfect constant field the chain rule holds with no condition on rational places, for
+instance over a finite field. Choose a place `P` at which `x` and `y` are units and some `q(x)` and
+`r(y)` are prime elements, with `q` and `r` irreducible over `k`
+(`TauCeti.Place.finite_setOf_forall_irreducible_ord_aeval_ne_one`). A finite separable constant
+field extension `F' = F · k'` has a rational place `P'` over `P`
+(`TauCeti.Place.exists_constantCompositum_eq_top_and_forall_degree_eq_one`). There `q(x)` splits
+off a prime element `x - a`, and `r(y)` a prime element `y - b`, so the chain rule holds in `F'`.
+The cotrace from `F` to `F'` is injective and carries `dx`, `dy` and `dy/dx` to their counterparts
+in `F'` (`TauCeti.weilDifferentialCotrace_weilDifferentialOfSeparating`,
+`TauCeti.derivativeOfSeparating_algebraMap`), so the chain rule descends to `F`.
+
 Consequently the Kähler–Weil comparison
 `TauCeti.kaehlerDifferentialEquivWeilDifferentialOfSeparating` does not depend on the separating
 element used to build it, and the local components of the Weil differential attached to a Kähler
@@ -54,8 +67,11 @@ Kähler differential. The abstract residue theorem `∑_P ω_P (1) = 0`
 * `TauCeti.weilDifferentialOfSeparating_eq_derivativeOfSeparating_smul_of_ord_eq_one`:
   `dy = (dy/dx) · dx`, given a rational place at which `x - a` and `y - b` are prime elements.
 * `TauCeti.weilDifferentialOfSeparating_eq_derivativeOfSeparating_smul`: **the chain rule
-  `dy = (dy/dx) · dx`** when `F` has infinitely many rational places.
-* `TauCeti.kaehlerDifferentialEquivWeilDifferentialOfSeparating_eq`:
+  `dy = (dy/dx) · dx`** when `F` has infinitely many rational places, and
+  `TauCeti.weilDifferentialOfSeparating_eq_derivativeOfSeparating_smul_of_perfectField`, the same
+  over a perfect constant field.
+* `TauCeti.kaehlerDifferentialEquivWeilDifferentialOfSeparating_eq` and
+  `TauCeti.kaehlerDifferentialEquivWeilDifferentialOfSeparating_eq_of_perfectField`:
   the Kähler–Weil comparison is independent of the separating element.
 * `TauCeti.repartitionDualComponent_kaehlerDifferentialEquivWeilDifferentialOfSeparating`:
   **local components are residues**, `ω_P (u) = res_P (u ω)`.
@@ -150,6 +166,148 @@ theorem kaehlerDifferentialEquivWeilDifferentialOfSeparating_eq
     kaehlerDifferentialEquivWeilDifferentialOfSeparating_D_self,
     kaehlerDifferentialEquivWeilDifferentialOfSeparating_D,
     weilDifferentialOfSeparating_eq_derivativeOfSeparating_smul hF hex hinf hy hx]
+
+/-! ### The chain rule over a perfect field -/
+
+section PerfectField
+
+variable {k' F' : Type*} [Field k'] [Field F'] [Algebra k k'] [Algebra k F'] [Algebra k' F']
+  [Algebra F F'] [IsScalarTower k k' F'] [IsScalarTower k F F']
+
+open _root_.Polynomial in
+/-- At a rational place `P'` of `F'` over a place `P` of `F` with `e(P' ∣ P) = 1`, a prime element
+`q(z)` of `P`, with `q` separable over `k` and `z` regular at `P`, gives a prime element `z - a` of
+`P'` for some constant `a`: `a` is the value of `z` at `P'`, a simple root of `q`. -/
+private theorem exists_ord_sub_algebraMap_eq_one [Algebra.IsIntegral F F'] {P' : Place k' F'}
+    (hdeg : P'.degree = 1) (he : P'.ramificationIdx F = 1) {z : F}
+    (hz : 0 ≤ (P'.restrict k F).ord z) {q : Polynomial k} (hq : q.Separable)
+    (hqz : (P'.restrict k F).ord (Polynomial.aeval z q) = 1) :
+    ∃ a : k', P'.ord (algebraMap F F' z - algebraMap k' F' a) = 1 := by
+  set z' := algebraMap F F' z
+  have hzint : z' ∈ P'.integers := (Place.mem_integers_restrict_iff k F P' z).mp
+    ((P'.restrict k F).mem_integers_iff_ord_nonneg.mpr hz)
+  obtain ⟨a, ha⟩ := (Place.degree_eq_one_iff_forall_exists_valuation_sub_lt_one P').mp hdeg z' hzint
+  refine ⟨a, ?_⟩
+  -- `Q(z')`, with `Q` the image of `q` over `k'`, is a prime element of `P'`.
+  set Q := q.map (algebraMap k k')
+  have hQz : P'.ord (aeval z' Q) = 1 := by
+    rw [aeval_map_algebraMap, aeval_algebraMap_apply, Place.ord_algebraMap_restrict k F P', he, hqz]
+    simp
+  have hord_eq_zero {w : F'} (hw : P'.valuation w = 1) : P'.ord w = 0 := by
+    rw [Place.ord_def, hw, WithZero.log_one, neg_zero]
+  -- `a` is a root of `Q`, simple because `Q` is separable, so `Q = (X - a) R` with `R(a) ≠ 0`.
+  have hQa : Q.eval a = 0 := by
+    by_contra hne
+    rw [hord_eq_zero (Place.valuation_aeval_eq_one_of_valuation_sub_lt_one ha hne)] at hQz
+    exact zero_ne_one hQz
+  set R := Q /ₘ (X - C a)
+  have hQR : (X - C a) * R = Q := mul_divByMonic_eq_iff_isRoot.mpr hQa
+  have hRa : R.eval a ≠ 0 := by
+    have hsep : Q.Separable := hq.map
+    have hder := hsep.aeval_derivative_ne_zero (x := a) (by rwa [coe_aeval_eq_eval])
+    rw [coe_aeval_eq_eval] at hder
+    rw [← hQR] at hder
+    simpa using hder
+  -- So `ord (z' - a) = ord Q(z') - ord R(z') = 1 - 0`.
+  have hRz := hord_eq_zero (Place.valuation_aeval_eq_one_of_valuation_sub_lt_one ha hRa)
+  have hfac : aeval z' Q = (z' - algebraMap k' F' a) * aeval z' R := by
+    rw [← hQR, map_mul, map_sub, aeval_X, aeval_C]
+  have hne : aeval z' Q ≠ 0 := fun h0 ↦ by rw [h0, Place.ord_zero] at hQz; exact zero_ne_one hQz
+  rw [hfac] at hQz hne
+  rw [P'.ord_mul (left_ne_zero_of_mul hne) (right_ne_zero_of_mul hne), hRz, add_zero] at hQz
+  exact hQz
+
+/-- The descent step of the chain rule: if a finite separable constant field extension `F' = F · k'`
+has a rational place `P'` lying over a place at which `q(x)` and `r(y)` are prime elements, then
+`dy = (dy/dx) · dx` in `F`. The chain rule holds in `F'` at `P'`, and the cotrace from `F` to `F'`
+is injective and carries `dx`, `dy` and `dy/dx` to their counterparts in `F'`. -/
+private theorem weilDifferentialOfSeparating_eq_derivativeOfSeparating_smul_of_constantCompositum
+    [PerfectField k] [FiniteDimensional k k'] [Algebra.IsSeparable k k'] [FiniteDimensional F F']
+    (h : constantCompositum F k' F' = ⊤) (hF : IsFunctionField k F)
+    (hex : IsIntegrallyClosedIn k F) {x y : F}
+    (hx : Transcendental k x) [Algebra.IsSeparable k⟮x⟯ F]
+    (hy : Transcendental k y) [Algebra.IsSeparable k⟮y⟯ F] {P' : Place k' F'}
+    (hdeg : P'.degree = 1) (hx0 : 0 ≤ (P'.restrict k F).ord x) (hy0 : 0 ≤ (P'.restrict k F).ord y)
+    {q r : Polynomial k} (hq : Irreducible q) (hr : Irreducible r)
+    (hqx : (P'.restrict k F).ord (Polynomial.aeval x q) = 1)
+    (hry : (P'.restrict k F).ord (Polynomial.aeval y r) = 1) :
+    letI := weilDifferentialSpaceModule hF
+    weilDifferentialOfSeparating hF hy =
+      derivativeOfSeparating hx y • weilDifferentialOfSeparating hF hx := by
+  let := weilDifferentialSpaceModule hF
+  have hF' : IsFunctionField k' F' := hF.of_constantCompositum_eq_top h
+  have : PerfectField k' := Algebra.IsAlgebraic.perfectField k
+  have hex' : IsIntegrallyClosedIn k' F' := isIntegrallyClosedIn_of_constantCompositum_eq_top hex h
+  have hx' : Transcendental k' (algebraMap F F' x) :=
+    ((transcendental_algebraMap_iff (algebraMap F F').injective).mpr hx).extendScalars k'
+  have hy' : Transcendental k' (algebraMap F F' y) :=
+    ((transcendental_algebraMap_iff (algebraMap F F').injective).mpr hy).extendScalars k'
+  have := isSeparable_adjoin_algebraMap_of_constantCompositum_eq_top (k := k) (x := x) h
+  have := isSeparable_adjoin_algebraMap_of_constantCompositum_eq_top (k := k) (x := y) h
+  have := isSeparable_of_constantCompositum_eq_top (k := k) h
+  let := weilDifferentialSpaceModule hF'
+  have he := Place.ramificationIdx_eq_one_of_constantCompositum_eq_top (k := k) h P'
+  obtain ⟨a, ha⟩ := exists_ord_sub_algebraMap_eq_one hdeg he hx0
+    (PerfectField.separable_of_irreducible hq) hqx
+  obtain ⟨b, hb⟩ := exists_ord_sub_algebraMap_eq_one hdeg he hy0
+    (PerfectField.separable_of_irreducible hr) hry
+  have hup := weilDifferentialOfSeparating_eq_derivativeOfSeparating_smul_of_ord_eq_one hF' hex' hx'
+    hy' hdeg ha hb
+  refine weilDifferentialCotrace_injective (k' := k') (F' := F') hF hF' ?_
+  rw [weilDifferentialCotrace_smul,
+    weilDifferentialCotrace_weilDifferentialOfSeparating h hF hF' hy hy',
+    weilDifferentialCotrace_weilDifferentialOfSeparating h hF hF' hx hx',
+    ← derivativeOfSeparating_algebraMap hx hx', hup]
+
+/-- **The chain rule for Weil differentials over a perfect field** (Stichtenoth,
+Theorem 4.3.2(a)): over a perfect exact constant field, the Weil differentials of any two
+separating elements `x` and `y` satisfy `dy = (dy/dx) · dx`. -/
+theorem weilDifferentialOfSeparating_eq_derivativeOfSeparating_smul_of_perfectField
+    [PerfectField k] (hF : IsFunctionField k F) (hex : IsIntegrallyClosedIn k F) {x y : F}
+    (hx : Transcendental k x) [Algebra.IsSeparable k⟮x⟯ F]
+    (hy : Transcendental k y) [Algebra.IsSeparable k⟮y⟯ F] :
+    letI := weilDifferentialSpaceModule hF
+    weilDifferentialOfSeparating hF hy =
+      derivativeOfSeparating hx y • weilDifferentialOfSeparating hF hx := by
+  have := Place.infinite hF
+  -- Choose a place `P` at which `x` and `y` are units and some `q(x)` and `r(y)` are prime
+  -- elements.
+  obtain ⟨P, hP⟩ := (((Place.finite_setOf_forall_irreducible_ord_aeval_ne_one hF hx).union
+    (Place.finite_setOf_forall_irreducible_ord_aeval_ne_one hF hy)).union
+      ((Place.finite_setOf_ord_ne_zero hF x).union
+        (Place.finite_setOf_ord_ne_zero hF y))).infinite_compl.nonempty
+  simp only [Set.mem_compl_iff, Set.mem_union, Set.mem_ofPred_eq, not_or, not_and, not_forall,
+    not_not] at hP
+  obtain ⟨⟨hxq, hyq⟩, hx0, hy0⟩ := hP
+  obtain ⟨q, hq, hqx⟩ := hxq hx0.ge
+  obtain ⟨r, hr, hry⟩ := hyq hy0.ge
+  -- Enlarge the constants until the places over `P` are rational, and pick one of them.
+  have := P.finiteDimensional_residueField hF
+  obtain ⟨F', k', _, _, h, hdeg⟩ :=
+    Place.exists_constantCompositum_eq_top_and_forall_degree_eq_one hF hex P
+  have := finiteDimensional_of_constantCompositum_eq_top (k := k) h
+  obtain ⟨P', rfl⟩ := Place.restrict_surjective (hF.of_constantCompositum_eq_top h) P
+  exact weilDifferentialOfSeparating_eq_derivativeOfSeparating_smul_of_constantCompositum h hF hex
+    hx hy (hdeg P' rfl) hx0.ge hy0.ge hq hr hqx hry
+
+/-- **The Kähler–Weil comparison does not depend on the separating element, over a perfect field**
+(Stichtenoth, Theorem 4.3.2): over a perfect exact constant field, the comparisons built from any
+two separating elements are equal. -/
+theorem kaehlerDifferentialEquivWeilDifferentialOfSeparating_eq_of_perfectField [PerfectField k]
+    (hF : IsFunctionField k F) (hex : IsIntegrallyClosedIn k F) {x y : F}
+    (hx : Transcendental k x) [Algebra.IsSeparable k⟮x⟯ F]
+    (hy : Transcendental k y) [Algebra.IsSeparable k⟮y⟯ F] :
+    kaehlerDifferentialEquivWeilDifferentialOfSeparating hF hex hx =
+      kaehlerDifferentialEquivWeilDifferentialOfSeparating hF hex hy := by
+  let := weilDifferentialSpaceModule hF
+  -- Both are `F`-linear, so compare them on the basis `dx`.
+  refine LinearEquiv.toLinearMap_injective ((kaehlerBasisOfSeparating hx).ext fun _ ↦ ?_)
+  rw [kaehlerBasisOfSeparating_apply, LinearEquiv.coe_coe, LinearEquiv.coe_coe,
+    kaehlerDifferentialEquivWeilDifferentialOfSeparating_D_self,
+    kaehlerDifferentialEquivWeilDifferentialOfSeparating_D,
+    weilDifferentialOfSeparating_eq_derivativeOfSeparating_smul_of_perfectField hF hex hy hx]
+
+end PerfectField
 
 /-- **Local components are residues** (Stichtenoth, Theorem 4.3.2(d)): over an exact constant
 field with infinitely many rational places, let `ω` be a Kähler differential and `P` a rational

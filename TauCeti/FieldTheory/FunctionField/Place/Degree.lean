@@ -51,7 +51,9 @@ a genuine positive natural number.
 The auxiliary `TauCeti.Place.residue_aeval_of_residue_eq_zero`, that a polynomial expression in
 an element of the maximal ideal reduces to the constant term of the polynomial, is the residue
 computation Stichtenoth's argument turns on; it is reused by the bound on the zeros of a
-function in `TauCeti.FieldTheory.FunctionField.Place.Zeros`.
+function in `TauCeti.FieldTheory.FunctionField.Place.Zeros`. Its companion
+`TauCeti.Place.valuation_aeval_eq_one_of_valuation_sub_lt_one` says that a polynomial in a function
+congruent to a constant `c` is a unit at `P` as soon as it does not vanish at `c`.
 
 The rational places themselves are characterised in
 `TauCeti.FieldTheory.FunctionField.Place.Basic`, where no function-field hypothesis is needed.
@@ -101,6 +103,32 @@ to the constant term of `p`. -/
   rw [aeval_def, Polynomial.hom_eval₂, ht, eval₂_at_zero]
   rw [RingHom.comp_apply, IsScalarTower.algebraMap_apply k P.integers P.ResidueField,
     IsLocalRing.ResidueField.algebraMap_eq]
+
+/-- **A polynomial in a function congruent to a constant `c` is a unit at `P` when it does not
+vanish at `c`**: if `v_P (z - c) < 1` and `R (c) ≠ 0`, then `v_P (R (z)) = 1`. -/
+theorem valuation_aeval_eq_one_of_valuation_sub_lt_one {z : F} {c : k}
+    (hz : P.valuation (z - algebraMap k F c) < 1) {R : k[X]} (hR : R.eval c ≠ 0) :
+    P.valuation (aeval z R) = 1 := by
+  -- `z` is regular at `P`, hence so is every polynomial in `z`.
+  have hzint : z ∈ P.integers := by
+    simpa using add_mem (P.mem_integers_iff.mpr hz.le) (P.algebraMap_mem_integers c)
+  have hint (T : k[X]) : P.valuation (aeval z T) ≤ 1 := by
+    induction T using Polynomial.induction_on with
+    | C a => rw [aeval_C]; exact P.mem_integers_iff.mp (P.algebraMap_mem_integers a)
+    | add p q hp hq => rw [map_add]; exact P.valuation.map_add_le hp hq
+    | monomial n a h =>
+      rw [pow_succ, ← mul_assoc, map_mul, aeval_X, map_mul]
+      exact mul_le_one' h (P.mem_integers_iff.mp hzint)
+  -- `R (z) = R (c) + (z - c) S (z)`, where the second term lies in the maximal ideal.
+  obtain ⟨S, hS⟩ := X_sub_C_dvd_sub_C_eval (p := R) (a := c)
+  have hzS : aeval z R = algebraMap k F (R.eval c) + (z - algebraMap k F c) * aeval z S := by
+    have := congrArg (aeval z) hS
+    simp only [map_sub, aeval_C, map_mul, aeval_X] at this
+    linear_combination this
+  have hc : P.valuation (algebraMap k F (R.eval c)) = 1 := Valuation.IsTrivialOn.eq_one _ hR
+  rw [hzS, Valuation.map_add_eq_of_lt_left, hc]
+  rw [hc, map_mul]
+  exact mul_lt_one_of_lt_of_le hz (hint S)
 
 /-! ### Linear independence over `k(x)` of a lift of a `k`-independent family of residues -/
 

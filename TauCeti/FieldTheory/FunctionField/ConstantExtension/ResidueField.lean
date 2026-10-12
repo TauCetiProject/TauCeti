@@ -39,6 +39,8 @@ splits in `k'`, so its residue in `F'_{P'}` is already a constant.
   **`F'_{P'} = F_P · k'`** (Stichtenoth, Theorem 3.6.3(g)).
 * `TauCeti.Place.degree_eq_one_of_constantCompositum_eq_top`: a place over `P` is rational when
   `k' / k` is normal and `F_P` embeds into `k'` over `k`.
+* `TauCeti.Place.exists_constantCompositum_eq_top_and_forall_degree_eq_one`: a place with
+  separable residue field becomes rational after a finite separable extension of constants.
 
 ## Reference
 
@@ -167,6 +169,61 @@ theorem degree_eq_one_of_constantCompositum_eq_top [Normal k k'] (hF : IsFunctio
   | zero => exact ⟨0, map_zero ι⟩
   | add x y _ _ hx hy => exact ι.range.add_mem hx hy
   | smul r x _ hx => exact Algebra.smul_def r x ▸ ι.range.mul_mem (hmem r) hx
+
+omit [Field k'] [Field F'] [Algebra k k'] [Algebra k F'] [Algebra k' F'] [Algebra F F']
+  [IsScalarTower k k' F'] [IsScalarTower k F F'] [FiniteDimensional k k']
+  [Algebra.IsSeparable k k'] in
+/-- **A place becomes rational after a finite separable extension of constants**: if the residue
+field of a place `P` of `F / k`, with `k` exact, is separable over `k`, then some finite separable
+constant field extension `F' = F · k'`, formed inside an algebraic closure of `F`, has only places
+of degree one over `P`.
+
+The constants `k'` are the splitting field of the minimal polynomial of a primitive element of
+`F_P / k`, which is normal over `k` and receives `F_P`. -/
+theorem exists_constantCompositum_eq_top_and_forall_degree_eq_one (hF : IsFunctionField k F)
+    (hex : IsIntegrallyClosedIn k F) (P : Place k F) [Algebra.IsSeparable k P.ResidueField] :
+    ∃ (F' : IntermediateField F (AlgebraicClosure F)) (k' : IntermediateField k F'),
+      FiniteDimensional k k' ∧ Algebra.IsSeparable k k' ∧ constantCompositum F k' F' = ⊤ ∧
+        ∀ P' : Place k' F', P'.restrict k F = P → P'.degree = 1 := by
+  classical
+  have := P.finiteDimensional_residueField hF
+  -- Adjoin to `F` the roots of the minimal polynomial `p` of a primitive element `γ` of `F_P`.
+  obtain ⟨γ, hγ⟩ := Field.exists_primitive_element k P.ResidueField
+  have hγint : IsIntegral k γ := Algebra.IsIntegral.isIntegral γ
+  set p := minpoly k γ
+  let Ω := AlgebraicClosure F
+  let F' := IntermediateField.adjoin F (p.rootSet Ω)
+  have hsplit : (p.map (algebraMap k F')).Splits :=
+    IntermediateField.splits_of_splits (F := F'.restrictScalars k)
+      (IsAlgClosed.splits (p.map (algebraMap k Ω))) fun z hz ↦
+        IntermediateField.subset_adjoin F (p.rootSet Ω) hz
+  let k' := IntermediateField.adjoin k (p.rootSet F')
+  have : p.IsSplittingField k k' := IntermediateField.adjoin_rootSet_isSplittingField hsplit
+  have : FiniteDimensional k k' := Polynomial.IsSplittingField.finiteDimensional k' p
+  have : Normal k k' := Normal.of_isSplittingField p
+  have : Algebra.IsSeparable k k' :=
+    Algebra.isSeparable_of_separable_splitting_field (F := k) (E := k')
+      (Algebra.IsSeparable.isSeparable k γ)
+  -- `F'` is generated over `F` by the roots of `p`, which lie in `k'`.
+  have htop : constantCompositum F k' F' = ⊤ := by
+    have : IsScalarTower k F' Ω := .of_algebraMap_eq fun c ↦ IsScalarTower.algebraMap_apply k F Ω c
+    have himage : Subtype.val '' p.rootSet F' = p.rootSet Ω := hsplit.image_rootSet_algebraMap
+    have hF' : IntermediateField.adjoin F (p.rootSet F') = ⊤ := by
+      apply IntermediateField.lift_injective
+      rw [IntermediateField.lift_adjoin, himage, IntermediateField.lift_top]
+    rw [eq_top_iff, ← hF', constantCompositum_def]
+    exact IntermediateField.adjoin.mono _ _ _ fun z hz ↦
+      ⟨⟨z, IntermediateField.subset_adjoin k _ hz⟩, rfl⟩
+  -- `F_P = k(γ)` embeds into `k'`, where `p` has a root.
+  obtain ⟨r, hr⟩ := (Polynomial.IsSplittingField.splits k' p).exists_eval_eq_zero (by
+    rw [Polynomial.degree_map]; exact (minpoly.degree_pos hγint).ne')
+  have hroot : r ∈ p.aroots k' := by
+    rw [Polynomial.mem_aroots]
+    exact ⟨minpoly.ne_zero hγint, by rwa [Polynomial.eval_map_algebraMap] at hr⟩
+  let φ : P.ResidueField →ₐ[k] k' := ((IntermediateField.algHomAdjoinIntegralEquiv k hγint).symm
+    ⟨r, hroot⟩).comp ((IntermediateField.equivOfEq hγ).trans IntermediateField.topEquiv).symm
+  refine ⟨F', k', inferInstance, inferInstance, htop, fun P' hP' ↦ ?_⟩
+  exact degree_eq_one_of_constantCompositum_eq_top hF hex htop P' (hP' ▸ φ)
 
 end Place
 
