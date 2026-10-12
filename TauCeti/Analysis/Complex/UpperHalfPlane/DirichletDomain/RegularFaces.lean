@@ -25,9 +25,6 @@ fixing the centre are excluded, and different elements with the same orbit centr
 
 * Alan Beardon, *The Geometry of Discrete Groups*, §9.4.
 * Svetlana Katok, *Fuchsian Groups*, §3.2.
-
-The neighbourhood result uses `TauCeti.mem_interior_union_smul_dirichletDomain`, which derives
-local coverage from the locally finite distance constraints.
 -/
 
 public section

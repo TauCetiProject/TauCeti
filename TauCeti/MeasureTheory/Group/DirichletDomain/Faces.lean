@@ -146,22 +146,10 @@ theorem mem_interior_union_smul_dirichletDomain [ProperSpace X]
     [ProperlyDiscontinuousSMul G X] {p x : X} (g : G)
     (hx : ∀ h : G, h • p ≠ p → h • p ≠ g • p → dist x p < dist x (h • p)) :
     x ∈ interior (dirichletDomain G p ∪ g • dirichletDomain G p) := by
-  let S := {h ∈ dirichletCompetitors G p (closedBall x 1) |
-    h • p ≠ p ∧ h • p ≠ g • p}
-  have hS : S.Finite := (finite_dirichletCompetitors (G := G) p isBounded_closedBall).subset
-    fun _ hh ↦ hh.1
-  have hU : (⋂ h ∈ S, {y | dist y p < dist y (h • p)}) ∈ 𝓝 x :=
-    (biInter_mem hS).mpr fun h hh ↦
-      (isOpen_lt (continuous_id.dist continuous_const)
-        (continuous_id.dist continuous_const)).mem_nhds (hx h hh.2.1 hh.2.2)
-  refine mem_interior_iff_mem_nhds.mpr (mem_of_superset
-    (inter_mem (closedBall_mem_nhds x zero_lt_one) hU) ?_)
-  rintro y ⟨hyB, hyU⟩
-  have hy (h : G) (hh : h • p ≠ p) (hhg : h • p ≠ g • p) :
-      dist y p < dist y (h • p) := by
-    by_cases hc : h ∈ dirichletCompetitors G p (closedBall x 1)
-    · exact mem_iInter₂.mp hyU h ⟨hc, hh, hhg⟩
-    · exact lt_of_not_ge fun hle ↦ hc (mem_dirichletCompetitors.mpr ⟨y, hyB, hle⟩)
+  refine mem_interior_iff_mem_nhds.mpr ?_
+  filter_upwards [eventually_forall_dist_lt_of_forall_dist_lt
+    (s := {h : G | h • p ≠ p ∧ h • p ≠ g • p})
+    (fun h hh ↦ hx h hh.1 hh.2)] with y hy
   rcases le_total (dist y p) (dist y (g • p)) with hle | hle
   · left
     refine mem_dirichletDomain.mpr fun h ↦ ?_
@@ -169,7 +157,7 @@ theorem mem_interior_union_smul_dirichletDomain [ProperSpace X]
     · simp [hh]
     by_cases hhg : h • p = g • p
     · simpa only [hhg] using hle
-    · exact (hy h hh hhg).le
+    · exact (hy h ⟨hh, hhg⟩).le
   · right
     rw [smul_dirichletDomain]
     refine mem_dirichletDomain.mpr fun h ↦ ?_
@@ -178,7 +166,7 @@ theorem mem_interior_union_smul_dirichletDomain [ProperSpace X]
     · simpa only [hh] using hle
     by_cases hhg : (h * g) • p = g • p
     · simp [hhg]
-    · exact hle.trans (hy (h * g) hh hhg).le
+    · exact hle.trans (hy (h * g) ⟨hh, hhg⟩).le
 
 end Group
 

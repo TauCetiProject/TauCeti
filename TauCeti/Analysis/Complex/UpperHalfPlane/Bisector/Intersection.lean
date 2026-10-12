@@ -13,10 +13,7 @@ import Mathlib.Geometry.Euclidean.Basic
 
 Two perpendicular bisectors with the same first centre and distinct second centres meet in at
 most one point. This prevents distinct equality faces of a hyperbolic Dirichlet domain from
-sharing a segment. We use Mathlib’s
-`EuclideanGeometry.eq_of_dist_eq_of_dist_eq_of_finrank_eq_two` and
-`UpperHalfPlane.dist_eq_iff_dist_coe_center_eq` to pass from Euclidean circles to hyperbolic
-distance equations. No discreteness or group action is required for the geometric result.
+sharing a segment. No discreteness or group action is required for the geometric result.
 
 ## References
 
@@ -36,6 +33,8 @@ theorem eq_of_dist_eq_dist_of_dist_eq_dist {p q r z w : ℍ}
     (hpq : p ≠ q) (hpr : p ≠ r) (hzw : z ≠ w)
     (hzq : dist z p = dist z q) (hwq : dist w p = dist w q)
     (hzr : dist z p = dist z r) (hwr : dist w p = dist w r) : q = r := by
+  -- The geometric bridge uses Mathlib's `UpperHalfPlane.dist_eq_iff_dist_coe_center_eq` and
+  -- `EuclideanGeometry.eq_of_dist_eq_of_dist_eq_of_finrank_eq_two`.
   have hcosh (v : ℍ) : v.im * Real.cosh (dist p v) =
       ((p.re - v.re) ^ 2 + p.im ^ 2 + v.im ^ 2) / (2 * p.im) := by
     rw [cosh_dist']
