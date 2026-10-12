@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Combinatorics.Quiver.Star
 public import TauCeti.RepresentationTheory.Quiver.PathAlgebra.Augmentation
 public import TauCeti.RepresentationTheory.Quiver.PathAlgebra.PathsInto
 public import TauCeti.RepresentationTheory.Quiver.Preprojective.Signless
@@ -43,12 +44,10 @@ open _root_.Quiver PathAlgebra
 
 universe u v w
 
-/-- Arrow sets are finite because they inject into their source vertex stars. -/
+/-- Choose enumerations of the finite arrow types for the augmentation sums. -/
 noncomputable local instance fintypeHomOfFiniteStar {R : Type u} [Quiver.{v} R]
-    [∀ x : R, Fintype (Quiver.Star x)] (i j : R) : Fintype (i ⟶ j) := by
-  letI : Finite (i ⟶ j) :=
-    Finite.of_injective (fun e : i ⟶ j => (Quiver.Star.mk e : Quiver.Star i)) sigma_mk_injective
-  exact Fintype.ofFinite _
+    [∀ x : R, Fintype (Quiver.Star x)] (i j : R) : Fintype (i ⟶ j) :=
+  Fintype.ofFinite _
 
 section VertexAugmentation
 
