@@ -36,10 +36,11 @@ So `(A ⧸ J)⟨q(T)/q(s)⟩` is `A⟨T/s⟩` modulo the closure of `J · A⟨T/
 The same holds for the plus rings. Give `A ⧸ J` the plus ring `(A ⧸ J)⁺` of the quotient Huber
 pair, the integral closure of `q(A⁺)`. Then the completed map is a quotient mapping of Huber pairs
 `(A⟨T/s⟩, A_U⁺) → ((A ⧸ J)⟨q(T)/q(s)⟩, (A ⧸ J)_U⁺)`: the plus ring of the target is the
-integral closure of the image of `A_U⁺`. Together, these say that over a rational subset `R(T/s)`
-of `Spa(A, A⁺)`, the closed subspace `Spa(A ⧸ J, (A ⧸ J)⁺)` of Wedhorn's Proposition 7.38 is cut
-out by the closed ideal `closure(J · A⟨T/s⟩)` of the coordinate ring `A⟨T/s⟩`, plus rings
-included.
+integral closure of the image of `A_U⁺`. Together, these identify the rational localisation of
+the quotient pair with the quotient Huber pair of `(A⟨T/s⟩, A_U⁺)` by the closed ideal
+`closure(J · A⟨T/s⟩)`. This is the algebraic input for describing the restriction of the closed
+subspace `Spa(A ⧸ J, (A ⧸ J)⁺)` of Wedhorn's Proposition 7.38 to a rational subset `R(T/s)`; that
+geometric statement is not proved here.
 
 The numerators over `A ⧸ J` are a finset `T'` with underlying set `q '' T`, so that no decidable
 equality on `A ⧸ J` enters the statements. The standing hypothesis `HasDenominatorPower` for
@@ -82,6 +83,9 @@ equality on `A ⧸ J` enters the statements. The standing hypothesis `HasDenomin
   the quotient Huber pair, and Definition 8.42 for quotient mappings.
 * N. Bourbaki, *General Topology*, Chapter IX, §3.1, Proposition 4, for the completion of an open
   quotient.
+* The proof of `isQuotientMapping_completionLocQuotientPairHom` follows that of
+  `TauCeti.Huber.PairOfDefinition.isQuotientMapping_rationalEvalPairHom` in
+  `TauCeti.RingTheory.Huber.LocalizationTopology.FiniteType`.
 -/
 
 public section
@@ -709,6 +713,7 @@ theorem toRingHom_completionLocQuotientPairHom (hden : HasDenominatorPower P T s
 /-- **`completionLocQuotientPairHom` is compatible with the structure morphisms**: the structure
 morphism `(A, A⁺) → (A⟨T/s⟩, A_U⁺)` followed by it is the quotient morphism
 `(A, A⁺) → (A ⧸ J, (A ⧸ J)⁺)` followed by the structure morphism of the quotient pair. -/
+@[simp]
 theorem completionLocQuotientPairHom_comp_toCompletionLocHom
     (hden : HasDenominatorPower P T s S) :
     letI := locUniformSpace P T s S hden
