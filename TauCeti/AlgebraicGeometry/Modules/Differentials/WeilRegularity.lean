@@ -180,27 +180,16 @@ theorem smul_D_mem_range_rationalDifferential_iff_of_isAlgClosed (U : X.Opens) [
   rw [← he, mem_range_rationalDifferential_iff_weilDifferentialOrder_nonneg_of_isAlgClosed
     hF ht U hU (fun _ _ ↦ inferInstance) ω hω]
   simp only [hf, false_or]
-  have hdiv := weilDifferentialDivisor_repartitionDualMul hF
-    isIntegrallyClosedIn_of_isAlgClosed (weilDifferentialOfSeparating hF ht).2
-      (coe_weilDifferentialOfSeparating_ne_zero hF ht) (Units.mk0 f hf)
-  have hcoe : (ω : Module.Dual k (repartitionSpace k X.functionField)) =
-      repartitionDualMul hF f (weilDifferentialOfSeparating hF ht) :=
-    coe_weilDifferentialSpaceModule_smul _ _ _
   apply forall_congr'
   intro y
   apply forall_congr'
   intro hy
-  have hord : weilDifferentialOrder hF isIntegrallyClosedIn_of_isAlgClosed ω.2 hω
-      (X.toPlace (k := k) (y : X)) = X.ord f y +
-        weilDifferentialOrder hF isIntegrallyClosedIn_of_isAlgClosed
-          (weilDifferentialOfSeparating hF ht).2
-          (coe_weilDifferentialOfSeparating_ne_zero hF ht) (X.toPlace (k := k) (y : X)) := by
-    have hdiv' := (weilDifferentialDivisor_congr hF
-      isIntegrallyClosedIn_of_isAlgClosed hcoe ω.2 hω _ _).trans hdiv
-    rw [← coeff_weilDifferentialDivisor, ← coeff_weilDifferentialDivisor,
-      hdiv', WeilDivisor.coeff_add, Divisor.coeff_principal]
-    rw [CodimensionOnePoint.toPlace_ord]
-    simp only [Units.val_mk0]
+  have hord := weilDifferentialOrder_repartitionDualMul hF isIntegrallyClosedIn_of_isAlgClosed
+    (weilDifferentialOfSeparating hF ht).2
+    (coe_weilDifferentialOfSeparating_ne_zero hF ht) (Units.mk0 f hf)
+    (X.toPlace (k := k) (y : X))
+  simp only [Units.val_mk0, CodimensionOnePoint.toPlace_ord] at hord
+  simp only [ω, coe_weilDifferentialSpaceModule_smul]
   rw [hord]
   omega
 

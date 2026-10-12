@@ -62,65 +62,48 @@ private lemma differentialCoordinateEquiv_symm_apply (f : X.functionField) :
   simp [kaehlerBasisOfSeparating_apply]
 
 private def differentialCoordinateApp (U : X.Opens) [Nonempty U] :
-    Γ(X.relativeDifferentials k, U) →ₗ[Γ(X, U)] Γ(Scheme.rationalFunctions X, U) :=
-  (Scheme.rationalFunctionsEquiv U).symm.toLinearMap.comp
+    (X.relativeDifferentials k).val.obj (op U) ⟶ (Scheme.rationalFunctions X).val.obj (op U) :=
+  ModuleCat.ofHom (R := Γ(X, U)) (X := Γ(X.relativeDifferentials k, U))
+    (Y := Γ(Scheme.rationalFunctions X, U)) <|
+    (Scheme.rationalFunctionsEquiv U).symm.toLinearMap.comp
     (((differentialCoordinateEquiv ht).restrictScalars Γ(X, U)).toLinearMap.comp
       (rationalDifferential k U))
+
+private lemma differentialCoordinateApp_apply (U : X.Opens) [Nonempty U]
+    (s : Γ(X.relativeDifferentials k, U)) :
+    differentialCoordinateApp ht U s = (Scheme.rationalFunctionsEquiv U).symm
+      (differentialCoordinateEquiv ht (rationalDifferential k U s)) :=
+  (rfl)
 
 private lemma differentialCoordinateApp_naturality {U V : X.Opens}
     [Nonempty U] [Nonempty V] (i : V ⟶ U) (s : Γ(X.relativeDifferentials k, U)) :
     differentialCoordinateApp ht V ((X.relativeDifferentials k).presheaf.map i.op s) =
       (Scheme.rationalFunctions X).presheaf.map i.op (differentialCoordinateApp ht U s) := by
   apply (Scheme.rationalFunctionsEquiv V).injective
-  simp only [differentialCoordinateApp, LinearMap.comp_apply, LinearEquiv.coe_coe,
-    LinearEquiv.restrictScalars_apply, LinearEquiv.apply_symm_apply]
-  rw [Scheme.rationalFunctionsEquiv_map, LinearEquiv.apply_symm_apply,
-    rationalDifferential_map]
+  simp only [differentialCoordinateApp_apply, Scheme.rationalFunctionsEquiv_map,
+    LinearEquiv.apply_symm_apply, rationalDifferential_map]
 
-private def differentialCoordinateHom : X.relativeDifferentials k ⟶ Scheme.rationalFunctions X := by
-  classical
-  refine
-    { val :=
-      { app := fun U ↦ if hU : Nonempty U.unop then
-          letI := hU
-          ModuleCat.ofHom (differentialCoordinateApp ht U.unop)
-        else 0
-        naturality := ?_ } }
-  intro U V i
-  by_cases hV : Nonempty V.unop
-  · let := hV
-    have hU : Nonempty U.unop := ⟨⟨(Classical.choice hV).1,
-      i.unop.le (Classical.choice hV).2⟩⟩
-    let := hU
-    simp only [dite_eq_left hU, dite_eq_left hV]
-    ext s
-    exact differentialCoordinateApp_naturality ht i.unop s
-  · ext s
-    exact TopCat.Presheaf.section_ext
-      ⟨(Scheme.rationalFunctions X).presheaf, (Scheme.rationalFunctions X).isSheaf⟩
-      V.unop _ _ fun x hx ↦ (hV ⟨⟨x, hx⟩⟩).elim
+private def differentialCoordinateHom : X.relativeDifferentials k ⟶ Scheme.rationalFunctions X :=
+  Scheme.rationalFunctionsHom (X.relativeDifferentials k) (differentialCoordinateApp ht)
+    (fun i s ↦ differentialCoordinateApp_naturality ht i s)
 
 private lemma differentialCoordinateHom_app (U : X.Opens) [Nonempty U]
     (s : Γ(X.relativeDifferentials k, U)) :
     Scheme.rationalFunctionsEquiv U ((differentialCoordinateHom ht).app U s) =
       differentialCoordinateEquiv ht (rationalDifferential k U s) := by
-  simp only [differentialCoordinateHom, Scheme.Modules.Hom.app,
-    dite_eq_left (inferInstance : Nonempty U)]
+  rw [differentialCoordinateHom, Scheme.rationalFunctionsHom_app]
   exact (Scheme.rationalFunctionsEquiv U).apply_symm_apply _
 
 private lemma differentialCoordinateHom_app_injective (U : X.Opens)
     [SheafOfModules.isInvertible X (X.relativeDifferentials k)] :
     Function.Injective ((differentialCoordinateHom ht).app U) := by
-  intro s s' h
-  by_cases hU : Nonempty U
-  · let := hU
-    apply rationalDifferential_injective k U
-    apply (differentialCoordinateEquiv ht).injective
-    simpa only [differentialCoordinateHom_app] using
-      congrArg (Scheme.rationalFunctionsEquiv U) h
-  · exact TopCat.Presheaf.section_ext
-      ⟨(X.relativeDifferentials k).presheaf, (X.relativeDifferentials k).isSheaf⟩
-      U s s' fun x hx ↦ (hU ⟨⟨x, hx⟩⟩).elim
+  apply Scheme.rationalFunctionsHom_app_injective
+  intro U _ s s' h
+  apply rationalDifferential_injective k U
+  apply (differentialCoordinateEquiv ht).injective
+  simpa only [differentialCoordinateApp_apply ht U s, differentialCoordinateApp_apply ht U s',
+    LinearEquiv.apply_symm_apply] using
+    congrArg (Scheme.rationalFunctionsEquiv U) h
 
 variable [IsAlgClosed k] [IsLocallyNoetherian X]
   [∀ y : CodimensionOnePoint X, IsDiscreteValuationRing (X.presheaf.stalk (y : X))]
