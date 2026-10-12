@@ -8,7 +8,7 @@ module
 public import TauCeti.Algebra.AlgebraicGroup.Orthogonal.Tangent
 public import TauCeti.Algebra.AlgebraicGroup.SpecialLinear.Tangent.Basic
 public import TauCeti.Algebra.AlgebraicGroup.SpecialOrthogonal.Basic
-public import TauCeti.Algebra.Lie.Orthogonal.Basic
+public import TauCeti.LinearAlgebra.Matrix.Alternating
 
 /-!
 # The tangent Lie algebra of the special orthogonal group
@@ -47,15 +47,10 @@ theorem transpose_tangentMatrix_eq_neg_of_mem
       (Bialgebra.CounitAlgebra R (GeneralLinear.coordinateHopfAlgebra R n) B))
     (hd : d ∈ HopfIdeal.lieSubalgebra (B := B) (definingHopfIdeal R n)) :
     (GeneralLinear.tangentMatrix n d)ᵀ = -GeneralLinear.tangentMatrix n d := by
-  have hO : d ∈ HopfIdeal.lieSubalgebra (B := B) (Orthogonal.definingHopfIdeal R n) := by
-    rw [HopfIdeal.mem_lieSubalgebra_iff] at hd ⊢
-    intro x hx
-    apply hd x
-    rw [definingHopfIdeal_toIdeal]
-    exact Ideal.mem_sup_left ((ConstantForm.definingHopfIdeal_toIdeal R n 1) ▸ hx)
+  rw [definingHopfIdeal_def, HopfIdeal.mem_lieSubalgebra_sup_iff] at hd
   simpa using congrArg Matrix.transpose
     (add_eq_zero_iff_eq_neg.mp
-      ((Orthogonal.mem_lieSubalgebra_definingHopfIdeal_iff n d).mp hO))
+      ((Orthogonal.mem_lieSubalgebra_definingHopfIdeal_iff n d).mp hd.1))
 
 /-- An ambient tangent derivation belongs to the special-orthogonal Lie algebra exactly when its
 tangent matrix is skew-symmetric. -/
@@ -64,32 +59,12 @@ theorem mem_lieSubalgebra_definingHopfIdeal_iff [Invertible (2 : B)]
       (Bialgebra.CounitAlgebra R (GeneralLinear.coordinateHopfAlgebra R n) B)) :
     d ∈ HopfIdeal.lieSubalgebra (B := B) (definingHopfIdeal R n) ↔
       (GeneralLinear.tangentMatrix n d)ᵀ = -GeneralLinear.tangentMatrix n d := by
-  have hspan : (definingHopfIdeal R n).toIdeal =
-      Ideal.span (Orthogonal.relationSet R n ∪
-        {(GeneralLinear.determinantGroupLike R n :
-          GeneralLinear.coordinateHopfAlgebra R n) - 1}) := by
-    rw [definingHopfIdeal_toIdeal, ← Ideal.span_union]
-  have hO_iff : (∀ x ∈ Orthogonal.relationSet R n, d x = 0) ↔
-      GeneralLinear.tangentMatrix n d + (GeneralLinear.tangentMatrix n d)ᵀ = 0 := by
-    rw [← HopfIdeal.mem_lieSubalgebra_iff_of_toIdeal_eq_span
-      (Orthogonal.definingHopfIdeal R n)
-      (ConstantForm.definingHopfIdeal_toIdeal R n 1) d]
-    exact Orthogonal.mem_lieSubalgebra_definingHopfIdeal_iff n d
-  have hSL_iff : (∀ x ∈ ({(GeneralLinear.determinantGroupLike R n :
-      GeneralLinear.coordinateHopfAlgebra R n) - 1} :
-        Set (GeneralLinear.coordinateHopfAlgebra R n)), d x = 0) ↔
-        Matrix.trace (GeneralLinear.tangentMatrix n d) = 0 := by
-    rw [← HopfIdeal.mem_lieSubalgebra_iff_of_toIdeal_eq_span
-      (SpecialLinear.definingHopfIdeal R n)
-      (SpecialLinear.definingHopfIdeal_toIdeal R n) d]
-    exact SpecialLinear.mem_lieSubalgebra_definingHopfIdeal_iff n d
-  rw [HopfIdeal.mem_lieSubalgebra_iff_of_toIdeal_eq_span _ hspan,
-    Set.forall_mem_union, hO_iff, hSL_iff]
   constructor
-  · rintro ⟨hform, _⟩
-    simpa using congrArg Matrix.transpose
-      (add_eq_zero_iff_eq_neg.mp hform)
+  · exact transpose_tangentMatrix_eq_neg_of_mem n d
   · intro hskew
+    rw [definingHopfIdeal_def, HopfIdeal.mem_lieSubalgebra_sup_iff,
+      Orthogonal.mem_lieSubalgebra_definingHopfIdeal_iff,
+      SpecialLinear.mem_lieSubalgebra_definingHopfIdeal_iff]
     exact ⟨by rw [hskew, add_neg_cancel],
       Matrix.trace_eq_zero_of_transpose_eq_neg _ hskew⟩
 
