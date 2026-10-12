@@ -17,6 +17,11 @@ OPTION_PATTERN = re.compile(r"(?<![\w'.!?])(?:" + "|".join(OPTION_OVERRIDES) + r
 
 
 def option_lines(source: str) -> list[int]:
+    """Return 1-based lines containing forbidden standalone option-override tokens.
+
+    Ignore comments, character literals, quoted identifiers, and tokens within longer or
+    qualified names. Conservatively include string text, including interpolations.
+    """
     # Most files contain no candidate token. Avoid lexing them at all.
     if not any(token in source for token in OPTION_OVERRIDES):
         return []
