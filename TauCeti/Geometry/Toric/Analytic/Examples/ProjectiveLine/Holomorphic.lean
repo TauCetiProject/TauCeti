@@ -217,8 +217,6 @@ theorem projectiveLinePartialDiffeomorph_transition_symm (n : ℕ∞ω) (z : ℂ
   let _ := affinePointTopology gp
   let g₀ := (projectiveLineFan.analyticChartGenerators projectiveLineZeroCone).2
   let _ := affinePointTopology g₀
-  have hp : projectiveLineZeroCone ≤ projectiveLinePositiveCone :=
-    Subtype.mk_le_mk.mpr bot_le
   rw [projectiveLinePositivePartialDiffeomorph_apply,
     projectiveLineNegativePartialDiffeomorph_target]
   have hoverlap : projectiveLineFan.analyticAffineChartι isRegular_projectiveLineFan
@@ -237,7 +235,7 @@ theorem projectiveLinePartialDiffeomorph_transition_symm (n : ℕ∞ω) (z : ℂ
     have hwp := (projectiveLineFan.isOpenEmbedding_analyticAffineChartι
       isRegular_projectiveLineFan projectiveLinePositiveCone).injective
         ((projectiveLineFan.analyticAffineChartι_faceAffinePointMap
-          isRegular_projectiveLineFan hp w).trans hw)
+          isRegular_projectiveLineFan projectiveLineZeroCone_le_positiveCone w).trans hw)
     have hcoord := affineRayPointHomeomorph_faceAffinePointMap gp g₀ w
     rw [hwp, Homeomorph.apply_symm_apply] at hcoord
     exact hcoord.symm ▸ Units.ne_zero (affineRayZeroFacePointHomeomorph g₀ w)
@@ -245,12 +243,13 @@ theorem projectiveLinePartialDiffeomorph_transition_symm (n : ℕ∞ω) (z : ℂ
     let w := (affineRayZeroFacePointHomeomorph g₀).symm (Units.mk0 z hz)
     have hwp : faceAffinePointMap projectiveLineFan.lattice
         (projectiveLineFan.isFaceOf_of_le projectiveLinePositiveCone.2
-          projectiveLineZeroCone.2 hp) w = (affineRayPointHomeomorph gp).symm z := by
+          projectiveLineZeroCone.2 projectiveLineZeroCone_le_positiveCone) w =
+        (affineRayPointHomeomorph gp).symm z := by
       apply (affineRayPointHomeomorph gp).injective
       rw [Homeomorph.apply_symm_apply]
       exact affineRayPointHomeomorph_faceAffinePointMap_symm gp g₀ (Units.mk0 z hz)
     exact ⟨w, (projectiveLineFan.analyticAffineChartι_faceAffinePointMap
-      isRegular_projectiveLineFan hp w).symm.trans (congrArg
+      isRegular_projectiveLineFan projectiveLineZeroCone_le_positiveCone w).symm.trans (congrArg
         (projectiveLineFan.analyticAffineChartι isRegular_projectiveLineFan
           projectiveLinePositiveCone) hwp)⟩
 

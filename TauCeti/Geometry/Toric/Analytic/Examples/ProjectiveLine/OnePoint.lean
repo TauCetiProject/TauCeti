@@ -19,9 +19,6 @@ finite point `z`, and the negative character coordinate `w` to `w⁻¹`, with `w
 infinity. These formulas identify the two toric charts with the usual projective-line charts
 and supply the chart computations needed to compare their complex structures.
 
-The construction uses Mathlib's `OnePoint.equivOfIsEmbeddingOfRangeEq`, rather than constructing
-another quotient or proving the uniqueness of the one-point compactification again.
-
 ## References
 
 * W. Fulton, *Introduction to Toric Varieties*, §1.4.
@@ -196,6 +193,7 @@ theorem range_projectiveLineNegativeChartMap :
 is the finite coordinate, and the origin of the negative chart is infinity. -/
 noncomputable def projectiveLineOnePointHomeomorph : X ≃ₜ OnePoint ℂ := by
   letI := compactSpace_projectiveLineFan_analyticRealization
+  -- Use Mathlib's one-point compactification constructor `OnePoint.equivOfIsEmbeddingOfRangeEq`.
   exact (OnePoint.equivOfIsEmbeddingOfRangeEq (projectiveLineNegativeChartMap 0)
     projectiveLinePositiveChartMap isOpenEmbedding_projectiveLinePositiveChartMap.isEmbedding
       range_projectiveLinePositiveChartMap).symm
