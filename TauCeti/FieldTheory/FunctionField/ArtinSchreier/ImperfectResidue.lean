@@ -37,7 +37,7 @@ theorem not_exists_reduced_artinSchreier_representative_ratFunc_zmod
       0 ≤ (HahnSeries.single (-(p : ℤ)) RatFunc.X - (w ^ p - w)).orderTop ∨
         ((HahnSeries.single (-(p : ℤ)) RatFunc.X - (w ^ p - w)).order < 0 ∧
           ¬ (p : ℤ) ∣ (HahnSeries.single (-(p : ℤ)) RatFunc.X - (w ^ p - w)).order) := by
-  exact LaurentSeries.not_exists_reduced_representative_single_sub_pow_sub_self
+  exact not_exists_reduced_representative_single_sub_pow_sub_self
     (Fact.out : p.Prime).one_lt (ratFunc_pow_ne_X (Fact.out : p.Prime).one_lt)
 
 end TauCeti

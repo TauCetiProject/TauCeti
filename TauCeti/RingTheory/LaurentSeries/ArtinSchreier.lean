@@ -32,33 +32,41 @@ open _root_.HahnSeries
 
 variable {k : Type*} [Ring k] [IsDomain k] {n : ℕ} {a : k}
 
+/-- The order of a power of a nonzero Laurent series is the corresponding multiple of its
+integer order. -/
+theorem orderTop_pow_of_ne_zero (n : ℕ) {w : k⸨X⸩} (hw : w ≠ 0) :
+    (w ^ n).orderTop = ((n : ℤ) * w.order : ℤ) := by
+  rw [hahnSeries_orderTop_pow, ← order_eq_orderTop_of_ne_zero hw,
+    ← WithTop.coe_nsmul, nsmul_eq_mul]
+
+/-- Raising a Laurent series of negative order to a power greater than one strictly lowers
+its order. -/
+theorem orderTop_pow_lt_orderTop_of_order_neg
+    (hn : 1 < n) {w : k⸨X⸩} (hw : w.order < 0) :
+    (w ^ n).orderTop < w.orderTop := by
+  have hw0 : w ≠ 0 := by rintro rfl; simp at hw
+  have hnZ : (1 : ℤ) < n := by exact_mod_cast hn
+  rw [orderTop_pow_of_ne_zero n hw0, ← order_eq_orderTop_of_ne_zero hw0]
+  exact_mod_cast (by nlinarith : (n : ℤ) * w.order < w.order)
+
 /-- At a negative order, the power term determines the order of `wⁿ - w` when `n > 1`. -/
-theorem LaurentSeries.orderTop_pow_sub_self_of_order_neg
+theorem orderTop_pow_sub_self_of_order_neg
     (hn : 1 < n) {w : k⸨X⸩} (hw : w.order < 0) :
     (w ^ n - w).orderTop = ((n : ℤ) * w.order : ℤ) := by
   have hw0 : w ≠ 0 := by rintro rfl; simp at hw
-  have hwtop := (order_eq_orderTop_of_ne_zero hw0).symm
-  have hpow : (w ^ n).orderTop = ((n : ℤ) * w.order : ℤ) := by
-    rw [hahnSeries_orderTop_pow, hwtop, ← WithTop.coe_nsmul, nsmul_eq_mul]
-  have hnZ : (1 : ℤ) < n := by exact_mod_cast hn
-  rw [orderTop_sub (by rw [hpow, hwtop]; exact_mod_cast (by nlinarith :
-    (n : ℤ) * w.order < w.order)), hpow]
+  rw [orderTop_sub (orderTop_pow_lt_orderTop_of_order_neg hn hw),
+    orderTop_pow_of_ne_zero n hw0]
 
 /-- At a negative order, the leading coefficient of `wⁿ - w` is that of `w`, raised to `n`. -/
-theorem LaurentSeries.leadingCoeff_pow_sub_self_of_order_neg
+theorem leadingCoeff_pow_sub_self_of_order_neg
     (hn : 1 < n) {w : k⸨X⸩} (hw : w.order < 0) :
     (w ^ n - w).leadingCoeff = w.leadingCoeff ^ n := by
-  have hw0 : w ≠ 0 := by rintro rfl; simp at hw
-  have hwtop := (order_eq_orderTop_of_ne_zero hw0).symm
-  have hnZ : (1 : ℤ) < n := by exact_mod_cast hn
-  rw [leadingCoeff_sub (by
-    rw [hahnSeries_orderTop_pow, hwtop, ← WithTop.coe_nsmul, nsmul_eq_mul]
-    exact_mod_cast (by nlinarith : (n : ℤ) * w.order < w.order)),
+  rw [leadingCoeff_sub (orderTop_pow_lt_orderTop_of_order_neg hn hw),
     hahnSeries_leadingCoeff_pow]
 
 /-- If the coefficient of `a T⁻ⁿ` is not an `n`-th power, subtracting `wⁿ - w` never
 cancels its pole. A pole of `w` of order greater than one only makes the pole worse. -/
-theorem LaurentSeries.orderTop_single_sub_pow_sub_self
+theorem orderTop_single_sub_pow_sub_self
     (hn : 1 < n) (ha : ∀ b : k, b ^ n ≠ a) (w : k⸨X⸩) :
     (single (-(n : ℤ)) a - (w ^ n - w)).orderTop =
       ((if w.order < -1 then (n : ℤ) * w.order else -(n : ℤ)) : ℤ) := by
@@ -71,10 +79,9 @@ theorem LaurentSeries.orderTop_single_sub_pow_sub_self
   · simpa [hn0] using hu
   have hwtop : w.orderTop = (w.order : WithTop ℤ) :=
     (order_eq_orderTop_of_ne_zero hw).symm
-  have hpow : (w ^ n).orderTop = ((n : ℤ) * w.order : ℤ) := by
-    rw [hahnSeries_orderTop_pow, hwtop, ← WithTop.coe_nsmul, nsmul_eq_mul]
+  have hpow := orderTop_pow_of_ne_zero n hw
   by_cases hneg : w.order < 0
-  · have hv := LaurentSeries.orderTop_pow_sub_self_of_order_neg hn hneg
+  · have hv := orderTop_pow_sub_self_of_order_neg hn hneg
     split_ifs with hlow
     · -- A substitution pole of order greater than one dominates the original pole.
       have hlow' : (n : ℤ) * w.order < -(n : ℤ) := by nlinarith
@@ -84,7 +91,7 @@ theorem LaurentSeries.orderTop_single_sub_pow_sub_self
       have hw1 : w.order = -1 := by omega
       have hv' : (w ^ n - w).orderTop = (-(n : ℤ) : ℤ) := by
         simpa [hw1] using hv
-      have hlead := LaurentSeries.leadingCoeff_pow_sub_self_of_order_neg hn hneg
+      have hlead := leadingCoeff_pow_sub_self_of_order_neg hn hneg
       have hcoeff : (single (-(n : ℤ)) a - (w ^ n - w)).coeff (-(n : ℤ)) ≠ 0 := by
         have hcoeff_lead : (w ^ n - w).coeff (-(n : ℤ)) =
             (w ^ n - w).leadingCoeff := by
@@ -110,12 +117,12 @@ theorem LaurentSeries.orderTop_single_sub_pow_sub_self
 
 /-- Every translate of `a T⁻ⁿ` by `wⁿ - w` is nonzero, has a pole of order at least `n`,
 and its order is divisible by `n`, if `a` is not an `n`-th power. -/
-theorem LaurentSeries.single_sub_pow_sub_self_pole
+theorem single_sub_pow_sub_self_pole
     (hn : 1 < n) (ha : ∀ b : k, b ^ n ≠ a) (w : k⸨X⸩) :
     single (-(n : ℤ)) a - (w ^ n - w) ≠ 0 ∧
       (single (-(n : ℤ)) a - (w ^ n - w)).order ≤ -(n : ℤ) ∧
       (n : ℤ) ∣ (single (-(n : ℤ)) a - (w ^ n - w)).order := by
-  have ht := LaurentSeries.orderTop_single_sub_pow_sub_self hn ha w
+  have ht := orderTop_single_sub_pow_sub_self hn ha w
   have hne := ne_zero_of_coeff_ne_zero (coeff_orderTop_ne ht)
   have ho := WithTop.coe_injective ((order_eq_orderTop_of_ne_zero hne).trans ht)
   refine ⟨hne, ?_, ?_⟩
@@ -128,17 +135,17 @@ theorem LaurentSeries.single_sub_pow_sub_self_pole
 
 /-- If `a` is not an `n`-th power, no translate of `a T⁻ⁿ` by `wⁿ - w` is integral or has
 negative order not divisible by `n`. The integral alternative explicitly includes zero. -/
-theorem LaurentSeries.not_exists_reduced_representative_single_sub_pow_sub_self
+theorem not_exists_reduced_representative_single_sub_pow_sub_self
     (hn : 1 < n) (ha : ∀ b : k, b ^ n ≠ a) :
     ¬ ∃ w : k⸨X⸩,
       0 ≤ (single (-(n : ℤ)) a - (w ^ n - w)).orderTop ∨
         ((single (-(n : ℤ)) a - (w ^ n - w)).order < 0 ∧
           ¬ (n : ℤ) ∣ (single (-(n : ℤ)) a - (w ^ n - w)).order) := by
   rintro ⟨w, hreg | hpole⟩
-  · obtain ⟨hne, hle, -⟩ := LaurentSeries.single_sub_pow_sub_self_pole hn ha w
+  · obtain ⟨hne, hle, -⟩ := single_sub_pow_sub_self_pole hn ha w
     rw [← order_eq_orderTop_of_ne_zero hne, WithTop.coe_nonneg] at hreg
     have hnZ : (0 : ℤ) < n := by omega
     omega
-  · exact hpole.2 (LaurentSeries.single_sub_pow_sub_self_pole hn ha w).2.2
+  · exact hpole.2 (single_sub_pow_sub_self_pole hn ha w).2.2
 
 end TauCeti
