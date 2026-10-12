@@ -163,22 +163,22 @@ augmentation by the identity of `E` is an isomorphism. -/
 lemma isIso_totalAugmentation_single :
     IsIso (totalAugmentation ((HomologicalComplex.single _ (ComplexShape.down ℕ) 0).obj E)
       (HomologicalComplex.singleObjXSelf _ 0 E).hom (single_d_comp_singleObjXSelf_hom E)) := by
-  -- The last argument is the componentwise `IsIso` instance; the inverse in degree `n` is the
-  -- inclusion of `E.X n` as the summand of the column `0`.
-  refine @HomologicalComplex.Hom.isIso_of_components _ _ _ _ _ _ _ _ fun n ↦
-    ⟨(HomologicalComplex.singleObjXSelf _ 0 E).inv.f n ≫
+  -- The inverse in degree `n` is the inclusion of `E.X n` as the summand of the column `0`.
+  have (n : ℕ) : IsIso ((totalAugmentation _ _ (single_d_comp_singleObjXSelf_hom E)).f n) := by
+    refine ⟨(HomologicalComplex.singleObjXSelf _ 0 E).inv.f n ≫
       HomologicalComplex₂.ιTotal ((HomologicalComplex.single _ (ComplexShape.down ℕ) 0).obj E)
         _ 0 n n (by simp), ?_, ?_⟩
-  · refine total.hom_ext _ fun p q h ↦ ?_
-    rcases p with _ | p
-    · obtain rfl : q = n := by simpa using h
-      rw [ιTotal_totalAugmentation_f_zero_assoc, Category.comp_id,
-        ← HomologicalComplex.comp_f_assoc, Iso.hom_inv_id, HomologicalComplex.id_f,
-        Category.id_comp]
-    · exact ((HomologicalComplex.eval C _ q).map_isZero
-        (HomologicalComplex.isZero_single_obj_X _ _ _ _ (by simp))).eq_of_src _ _
-  · rw [Category.assoc, ιTotal_totalAugmentation_f_zero, ← HomologicalComplex.comp_f,
-      Iso.inv_hom_id, HomologicalComplex.id_f]
+    · refine total.hom_ext _ fun p q h ↦ ?_
+      rcases p with _ | p
+      · obtain rfl : q = n := by simpa using h
+        rw [ιTotal_totalAugmentation_f_zero_assoc, Category.comp_id,
+          ← HomologicalComplex.comp_f_assoc, Iso.hom_inv_id, HomologicalComplex.id_f,
+          Category.id_comp]
+      · exact ((HomologicalComplex.eval C _ q).map_isZero
+          (HomologicalComplex.isZero_single_obj_X _ _ _ _ (by simp))).eq_of_src _ _
+    · rw [Category.assoc, ιTotal_totalAugmentation_f_zero, ← HomologicalComplex.comp_f,
+        Iso.inv_hom_id, HomologicalComplex.id_f]
+  exact HomologicalComplex.Hom.isIso_of_components _
 
 variable {E}
 
