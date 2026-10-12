@@ -45,15 +45,15 @@ theorem _root_.LinearPMap.Intertwines.comp_eq_of_isResolventAt
   have hleft := hS.apply_smul_sub ⟨X (R y), h.mem_domain ⟨R y, hR.mem_domain y⟩⟩
   rw [← h.apply_eq ⟨R y, hR.mem_domain y⟩, ← X.map_smul,
     ← X.map_sub, hR.smul_sub_apply y] at hleft
-  exact hleft.symm
+  simpa only [ContinuousLinearMap.comp_apply] using hleft.symm
 
 /-- Intertwining two continuous inverses at the same parameter recovers the full
 domain-aware intertwining relation of the partial operators. -/
 theorem _root_.LinearPMap.intertwines_of_comp_eq_of_isResolventAt
     (hR : A.IsResolventAt z R) (hS : B.IsResolventAt z S) (h : X ∘L R = S ∘L X) :
     A.Intertwines B X := by
-  have hpoint (y : E) : X (R y) = S (X y) :=
-    congrArg (fun Z : E →L[𝕜] F => Z y) h
+  have hpoint (y : E) : X (R y) = S (X y) := by
+    simpa only [ContinuousLinearMap.comp_apply] using DFunLike.congr_fun h y
   have hrecover (x : A.domain) : S (X (z • (x : E) - A x)) = X x := by
     rw [← hpoint, hR.apply_smul_sub x]
   have hmem (x : A.domain) : X x ∈ B.domain :=

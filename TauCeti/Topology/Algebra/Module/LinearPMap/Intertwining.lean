@@ -88,9 +88,10 @@ the equality of the two continuous linear compositions. -/
   constructor
   · intro h
     ext x
-    exact h.apply_eq ⟨x, Submodule.mem_top⟩
+    simpa [LinearMap.toPMap_apply] using h.apply_eq ⟨x, Submodule.mem_top⟩
   · intro h
     refine ⟨fun _ => Submodule.mem_top, fun x => ?_⟩
-    exact congrArg (fun Z : E →L[𝕜] F => Z x) h
+    rcases x with ⟨x, hx⟩
+    simpa [LinearMap.toPMap_apply] using DFunLike.congr_fun h x
 
 end TauCeti
