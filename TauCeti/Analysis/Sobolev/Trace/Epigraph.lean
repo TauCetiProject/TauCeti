@@ -85,22 +85,6 @@ theorem normalEpigraph_zero : normalEpigraph (0 : C(E, ℝ)) = normalHalfSpace 0
   ext x
   simp
 
-omit [InnerProductSpace ℝ E] in
-/-- Inverse graph flattening carries the half-space `{0 < t}` onto the region above the graph
-of `φ`. -/
-theorem preimage_graphFlattening_symm_normalEpigraph (φ : C(E, ℝ)) :
-    (graphFlattening φ φ.continuous).symm ⁻¹' normalEpigraph φ = normalHalfSpace (E := E) 0 := by
-  ext x
-  simp
-
-omit [InnerProductSpace ℝ E] in
-/-- Graph flattening carries the region above the graph of `φ` onto the half-space
-`{0 < t}`. -/
-theorem preimage_graphFlattening_normalHalfSpace (φ : C(E, ℝ)) :
-    graphFlattening φ φ.continuous ⁻¹' normalHalfSpace (E := E) 0 = normalEpigraph φ := by
-  ext x
-  simp [sub_pos]
-
 /-- The derivative bound `‖fderiv ℝ (graphFlattening ψ)‖ ≤ 1 + L` for a `C¹` function `ψ`
 whose derivative is bounded by `L`. -/
 private theorem norm_fderiv_graphFlattening_le_of_forall {L : ℝ} {ψ : E → ℝ}
@@ -139,7 +123,12 @@ half-space. -/
 private def flattenL (hφ : ContDiff ℝ 1 φ) (hL : ∀ y, ‖fderiv ℝ φ y‖ ≤ L) :
     W1p volume (normalEpigraph φ) p →L[ℝ] W1p volume (normalHalfSpace (E := E) 0) p :=
   W1p.compMeasurePreservingL (measurePreserving_graphFlattening_symm φ)
-    (preimage_graphFlattening_symm_normalEpigraph φ).symm
+    (by
+      rw [← Homeomorph.image_eq_preimage_symm,
+        show (normalEpigraph φ : Set (WithLp 2 (ℝ × E))) = {x | φ x.snd < x.fst} from rfl,
+        graphFlattening_image_lt]
+      ext x
+      exact mem_normalHalfSpace 0 x)
     (contDiff_graphFlattening_symm hφ).contDiffOn
     fun x _ => norm_fderiv_graphFlattening_symm_le_of_forall hφ hL x
 
@@ -147,7 +136,14 @@ private def flattenL (hφ : ContDiff ℝ 1 φ) (hL : ∀ y, ‖fderiv ℝ φ y�
 private def unflattenL (hφ : ContDiff ℝ 1 φ) (hL : ∀ y, ‖fderiv ℝ φ y‖ ≤ L) :
     W1p volume (normalHalfSpace (E := E) 0) p →L[ℝ] W1p volume (normalEpigraph φ) p :=
   W1p.compMeasurePreservingL (measurePreserving_graphFlattening φ φ.continuous)
-    (preimage_graphFlattening_normalHalfSpace φ).symm (contDiff_graphFlattening hφ).contDiffOn
+    (by
+      rw [← (graphFlattening φ φ.continuous).preimage_image (normalEpigraph φ),
+        show (normalEpigraph φ : Set (WithLp 2 (ℝ × E))) = {x | φ x.snd < x.fst} from rfl,
+        graphFlattening_image_lt]
+      congr 1
+      ext x
+      exact (mem_normalHalfSpace 0 x).symm)
+    (contDiff_graphFlattening hφ).contDiffOn
     fun x _ => norm_fderiv_graphFlattening_le_of_forall hφ hL x
 
 private theorem norm_flattenL_le (hφ : ContDiff ℝ 1 φ) (hL : ∀ y, ‖fderiv ℝ φ y‖ ≤ L) :
