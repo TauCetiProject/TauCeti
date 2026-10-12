@@ -96,9 +96,9 @@ theorem etale_torsion_hom_of_forall_intCast_ne_zero {n : ℤ}
   have := E.formallyUnramified_torsion_hom hn
   exact Etale.of_formallyUnramified_of_flat _
 
-/-- **The étale locus of `E[n]`** (Katz–Mazur 2.3.1). For an elliptic curve `E` over a scheme `S`
-and a nonzero integer `n`, the `n`-torsion `E[n]` is étale over `S` if and only if `n` is invertible
-in every residue field of `S`. -/
+/-- **Criterion for `E[n]` to be étale** (Katz–Mazur 2.3.1). For an elliptic curve `E` over a
+scheme `S` and a nonzero integer `n`, the `n`-torsion `E[n]` is étale over `S` if and only if `n` is
+invertible in every residue field of `S`. -/
 theorem etale_torsion_hom_iff {n : ℤ} (hn : n ≠ 0) :
     Etale (E.torsion n).X.hom ↔ ∀ s : S, (n : S.residueField s) ≠ 0 := by
   refine ⟨fun _ s hns ↦ ?_, E.etale_torsion_hom_of_forall_intCast_ne_zero⟩
