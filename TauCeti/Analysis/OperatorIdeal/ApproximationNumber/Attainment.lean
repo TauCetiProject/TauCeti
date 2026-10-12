@@ -81,8 +81,8 @@ theorem exists_rank_le_nnnorm_sub_eq_singularValue (T : E →L[𝕜] F) (n : ℕ
   have hproj : W.orthogonalProjectionOnto ∘L T = T' := by
     apply ContinuousLinearMap.ext
     intro x
-    exact W.orthogonalProjectionOnto_mem_subspace_eq_self
-      ⟨T x, LinearMap.mem_range_self _ x⟩
+    simpa only [ContinuousLinearMap.comp_apply, T', coe_codRestrict_apply] using
+      W.orthogonalProjectionOnto_mem_subspace_eq_self (T' x)
   have hle : T'.singularValue n ≤ T.singularValue n := by
     rw [← hproj]
     exact (singularValue_comp_le_left _ _ _).trans
@@ -96,7 +96,7 @@ theorem exists_rank_le_nnnorm_sub_eq_singularValue (T : E →L[𝕜] F) (n : ℕ
   have hnorm : ‖T ∘L Vᗮ.subtypeL‖₊ = ‖T' ∘L Vᗮ.subtypeL‖₊ := by
     apply NNReal.coe_injective
     simp only [coe_nnnorm]
-    rw [← hT, ContinuousLinearMap.comp_assoc]
+    rw [← hT, ContinuousLinearMap.comp_assoc, ← Submodule.subtypeₗᵢ_toContinuousLinearMap]
     exact W.subtypeₗᵢ.norm_toContinuousLinearMap_comp
   rw [hnorm, T'.nnnorm_comp_orthogonal_rightSingularBasis_spanIndices n]
   exact hle
