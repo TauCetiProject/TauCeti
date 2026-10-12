@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Category.GradedModuleCat.CartanMap.Resolution
+public import TauCeti.Algebra.Category.GradedModuleCat.CartanMap.Basic
 public import TauCeti.Algebra.Category.GradedModuleCat.HomLaurentSupport
 public import TauCeti.Algebra.Homology.EulerCharacteristic.ExtEuler.Graded.Resolution
 
