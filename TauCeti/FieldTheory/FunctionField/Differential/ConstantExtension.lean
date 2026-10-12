@@ -17,10 +17,9 @@ public import TauCeti.FieldTheory.FunctionField.Differential.Comparison
 Let `F' = F · k'` be a finite separable constant field extension of an algebraic function field
 `F / k`, and let `x` be a separating element of `F / k`. Its image in `F'` is separating for
 `F' / k'`. This file proves that the cotrace from `F` to `F'` carries the Weil differential `dx` of
-`F` (`TauCeti.weilDifferentialOfSeparating`) to the Weil differential `dx` of `F'`, and that the
-derivatives `dy/dx` of the two fields correspond. The key case is the rational function field:
-the cotrace from `k(X)` to `k'(X)` carries the canonical differential `η` of `k(X)` to that of
-`k'(X)`.
+`F` (`TauCeti.weilDifferentialOfSeparating`) to the Weil differential `dx` of `F'`. The key case
+is the rational function field: the cotrace from `k(X)` to `k'(X)` carries the canonical
+differential `η` of `k(X)` to that of `k'(X)`.
 
 Since the cotrace is injective and `F`-semilinear, identities between Weil differentials of `F`
 can be checked after a constant field extension, where more places are rational. This is how the
@@ -33,8 +32,6 @@ chain rule `dy = (dy/dx) · dx` is proved over a perfect constant field
   carries `η` to `η'`.
 * `TauCeti.weilDifferentialCotrace_weilDifferentialOfSeparating`: the cotrace from `F` to
   `F · k'` carries `dx` to `dx`.
-* `TauCeti.derivativeOfSeparating_algebraMap`: `dy/dx` computed in `F'` is the image of `dy/dx`
-  computed in `F`.
 
 ## References
 
@@ -199,22 +196,6 @@ theorem weilDifferentialCotrace_weilDifferentialOfSeparating [FiniteDimensional 
   rw [weilDifferentialCotrace_weilDifferentialCotrace (k₁ := k) (F₁ := F),
     ← weilDifferentialCotrace_ratFuncWeilDifferential hXX,
     weilDifferentialCotrace_weilDifferentialCotrace (k₁ := k') (F₁ := RatFunc k')]
-
-/-- **Derivatives are stable under extension of scalars**: if `x` is separating for `F / k` and its
-image is separating for `F' / k'`, then differentiating with respect to `x` commutes with
-`F → F'`: `dy/dx` computed in `F'` is the image of `dy/dx` computed in `F`. -/
-theorem derivativeOfSeparating_algebraMap {x : F} (hx : Transcendental k x)
-    [Algebra.IsSeparable k⟮x⟯ F] (hx' : Transcendental k' (algebraMap F F' x))
-    [Algebra.IsSeparable k'⟮algebraMap F F' x⟯ F'] (y : F) :
-    derivativeOfSeparating hx' (algebraMap F F' y) =
-      algebraMap F F' (derivativeOfSeparating hx y) := by
-  -- `y ↦ dy/dx` in `F'` restricts to a `k`-derivation `F → F'`, so the chain rule for `x` applies
-  -- to it.
-  have h := (((derivativeOfSeparating hx').restrictScalars k).compAlgebraMap F)
-    |>.apply_eq_derivativeOfSeparating_smul hx y
-  simp only [Derivation.compAlgebraMap_apply, Derivation.restrictScalars_apply,
-    derivativeOfSeparating_self] at h
-  rw [h, Algebra.smul_def, mul_one]
 
 end ConstantExtension
 

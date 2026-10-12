@@ -8,6 +8,7 @@ module
 public import TauCeti.FieldTheory.FunctionField.ConstantExtension.Basic
 public import TauCeti.FieldTheory.FunctionField.Place.Extension.Basic
 public import TauCeti.FieldTheory.FunctionField.Place.RatFunc.Basic
+import Mathlib.FieldTheory.RatFunc.IntermediateField
 
 /-!
 # Constant field extensions of the rational function field
@@ -36,19 +37,15 @@ theorem constantCompositum_ratFunc_eq_top [Algebra (RatFunc k) (RatFunc k')]
     (hX : algebraMap (RatFunc k) (RatFunc k') RatFunc.X = RatFunc.X) :
     constantCompositum (RatFunc k) k' (RatFunc k') = ⊤ := by
   set K := constantCompositum (RatFunc k) k' (RatFunc k')
-  have hXK : (RatFunc.X : RatFunc k') ∈ K := hX ▸ K.algebraMap_mem RatFunc.X
-  -- Every polynomial over `k'` lies in `K`, hence so does every fraction of polynomials.
-  have hpoly (p : Polynomial k') : algebraMap (Polynomial k') (RatFunc k') p ∈ K := by
-    induction p using Polynomial.induction_on' with
-    | add p q hp hq => rw [map_add]; exact K.add_mem hp hq
-    | monomial n c =>
-      rw [← Polynomial.C_mul_X_pow_eq_monomial, map_mul, map_pow, RatFunc.algebraMap_X,
-        RatFunc.algebraMap_C]
-      exact K.mul_mem (by simpa [RatFunc.algebraMap_eq_C] using
-        algebraMap_mem_constantCompositum (RatFunc k) k' (RatFunc k') c) (K.pow_mem hXK n)
-  refine eq_top_iff.mpr fun f _ ↦ ?_
-  rw [← RatFunc.num_div_denom f]
-  exact K.div_mem (hpoly _) (hpoly _)
+  -- `K` contains the constants `k'`, so it is an intermediate field of `k'(X) / k'`; it contains
+  -- `X`, which generates `k'(X)` over `k'`.
+  let E : IntermediateField k' (RatFunc k') :=
+    { K.toSubfield with
+      algebraMap_mem' := algebraMap_mem_constantCompositum (RatFunc k) k' (RatFunc k') }
+  have hXE : (RatFunc.X : RatFunc k') ∈ E := hX ▸ K.algebraMap_mem RatFunc.X
+  have hE : E = ⊤ := eq_top_iff.mpr <|
+    RatFunc.adjoin_X.symm.le.trans (IntermediateField.adjoin_simple_le_iff.mpr hXE)
+  exact eq_top_iff.mpr fun f _ ↦ (hE ▸ IntermediateField.mem_top : f ∈ E)
 
 namespace Place
 
