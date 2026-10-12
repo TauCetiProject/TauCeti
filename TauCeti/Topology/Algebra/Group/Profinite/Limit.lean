@@ -400,7 +400,9 @@ theorem continuous_iff_forall_continuous_mk_of_iInf_eq_bot [IsTopologicalGroup G
     (hN : ⨅ i, N i = ⊥) {X : Type*} [TopologicalSpace X] {f : X → G} :
     Continuous f ↔ ∀ i, Continuous fun x ↦ (f x : G ⧸ N i) := by
   refine ⟨fun hf i ↦ QuotientGroup.continuous_mk.comp hf, fun h ↦ ?_⟩
-  have := hclosed
+  have (i : ι) : T2Space (G ⧸ N i) := by
+    have : IsClosed (N i : Set G) := hclosed i
+    infer_instance
   have he : IsInducing fun g : G ↦ fun i ↦ (g : G ⧸ N i) :=
     ((continuous_pi fun i ↦ QuotientGroup.continuous_mk).isClosedEmbedding fun a b hab ↦
       eq_of_forall_mk_eq_of_iInf_eq_bot hN fun i ↦ congr_fun hab i).isInducing
