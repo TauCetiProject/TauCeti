@@ -83,9 +83,15 @@ private def unitsToDecompositionUnits :
     fun d a ↦ Additive.toMul.injective <| Units.ext <|
       (decompositionHom_algebraMap (v := v) d (Additive.toMul a : Lˣ)).symm
 
+/-- `unitsToDecompositionUnits` sends `a ∈ Lˣ` to its image in `L_w`. -/
+private theorem coe_unitsToDecompositionUnits_hom_apply (a : Additive Lˣ) :
+    ((Additive.toMul ((unitsToDecompositionUnits v w).hom a) : (w.adicCompletion L)ˣ) :
+      w.adicCompletion L) = algebraMap L (w.adicCompletion L) (Additive.toMul a : Lˣ) :=
+  rfl
+
 /-- The semi-local component at `v` of the principal idele of `a ∈ Lˣ` is `1 ⊗ a`. -/
 private theorem coe_unitsToIdeles_idelesToSemilocalUnits_hom_apply
-    (a : Rep.ofMulDistribMulAction (L ≃ₐ[K] L) Lˣ) :
+    (a : Additive Lˣ) :
     ((Additive.toMul (α := (v.adicCompletion K ⊗[K] L)ˣ)
       ((unitsToIdeles K L ≫ idelesToSemilocalUnits L v).hom a) : (v.adicCompletion K ⊗[K] L)ˣ) :
         v.adicCompletion K ⊗[K] L) = 1 ⊗ₜ[K] ((Additive.toMul a : Lˣ) : L) := by
@@ -104,14 +110,19 @@ the semi-local units are the adjunct of the inclusion `Lˣ → L_wˣ`. -/
 private theorem unitsToIdeles_comp_semilocalUnitsToCoind :
     unitsToIdeles K L ≫ idelesToSemilocalUnits L v ≫ semilocalUnitsToCoind v w =
       Rep.resCoindToHom _ _ _ (unitsToDecompositionUnits v w) := by
-  ext a g
+  ext (a : Additive Lˣ) g
   refine (Additive.toMul (α := (w.adicCompletion L)ˣ)).injective (Units.ext ?_)
   refine (semilocalUnitsToCoind_apply v w (Additive.toMul (α := (v.adicCompletion K ⊗[K] L)ˣ)
     ((unitsToIdeles K L ≫ idelesToSemilocalUnits L v).hom a)) g).trans ?_
   rw [coe_unitsToIdeles_idelesToSemilocalUnits_hom_apply,
     Algebra.TensorProduct.baseChangeAutHom_tmul, semilocalEquiv_tmul, map_one, one_mul]
-  -- the right side is the image in `L_w` of `g • a` by `Rep.resCoindToHom_hom_apply_coe`
-  rfl
+  rw [Representation.IntertwiningMap.coe_toLinearMap]
+  refine Eq.trans ?_ ((congrArg (fun z ↦ Units.val (Additive.toMul z : (w.adicCompletion L)ˣ))
+    (Rep.resCoindToHom_hom_apply_coe _ _ _ (unitsToDecompositionUnits v w) a g)).trans <|
+      (coe_unitsToDecompositionUnits_hom_apply v w _).trans <| congrArg (algebraMap L _) <|
+        congrArg (fun z ↦ Units.val (Additive.toMul z : Lˣ))
+          (Rep.ofMulDistribMulAction_ρ_apply_apply g a)).symm
+  rw [toMul_ofMul, AlgEquiv.smul_units_def, Units.coe_map, MonoidHom.coe_ofClass]
 
 variable [IsGalois K L]
 
@@ -166,10 +177,17 @@ private def unitsToInfiniteDecompositionUnits :
     fun d a ↦ Additive.toMul.injective <| Units.ext <|
       (decompositionHom_algebraMap (v := v) d ((Additive.toMul a : Lˣ) : L)).symm
 
+omit [NumberField K] [NumberField L] in
+/-- `unitsToInfiniteDecompositionUnits` sends `a ∈ Lˣ` to its image in `L_w`. -/
+private theorem coe_unitsToInfiniteDecompositionUnits_hom_apply (a : Additive Lˣ) :
+    ((Additive.toMul ((unitsToInfiniteDecompositionUnits v w).hom a) : w.Completionˣ) :
+      w.Completion) = algebraMap L w.Completion (Additive.toMul a : Lˣ) :=
+  rfl
+
 /-- The semi-local component at the infinite place `v` of the principal idele of `a ∈ Lˣ` is
 `1 ⊗ a`. -/
 private theorem coe_unitsToIdeles_idelesToInfiniteSemilocalUnits_hom_apply
-    (a : Rep.ofMulDistribMulAction (L ≃ₐ[K] L) Lˣ) :
+    (a : Additive Lˣ) :
     ((Additive.toMul (α := (v.Completion ⊗[K] L)ˣ)
       ((unitsToIdeles K L ≫ idelesToInfiniteSemilocalUnits L v).hom a) : (v.Completion ⊗[K] L)ˣ) :
         v.Completion ⊗[K] L) = 1 ⊗ₜ[K] ((Additive.toMul a : Lˣ) : L) :=
@@ -184,14 +202,19 @@ coinduction map of the semi-local units are the adjunct of the inclusion `Lˣ �
 private theorem unitsToIdeles_comp_infiniteSemilocalUnitsToCoind :
     unitsToIdeles K L ≫ idelesToInfiniteSemilocalUnits L v ≫ infiniteSemilocalUnitsToCoind v w =
       Rep.resCoindToHom _ _ _ (unitsToInfiniteDecompositionUnits v w) := by
-  ext a g
+  ext (a : Additive Lˣ) g
   refine (Additive.toMul (α := w.Completionˣ)).injective (Units.ext ?_)
   refine (infiniteSemilocalUnitsToCoind_apply v w (Additive.toMul (α := (v.Completion ⊗[K] L)ˣ)
     ((unitsToIdeles K L ≫ idelesToInfiniteSemilocalUnits L v).hom a)) g).trans ?_
   rw [coe_unitsToIdeles_idelesToInfiniteSemilocalUnits_hom_apply,
     Algebra.TensorProduct.baseChangeAutHom_tmul, infiniteSemilocalEquiv_tmul, map_one, one_mul]
-  -- the right side is the image in `L_w` of `g • a` by `Rep.resCoindToHom_hom_apply_coe`
-  rfl
+  rw [Representation.IntertwiningMap.coe_toLinearMap]
+  refine Eq.trans ?_ ((congrArg (fun z ↦ Units.val (Additive.toMul z : w.Completionˣ))
+    (Rep.resCoindToHom_hom_apply_coe _ _ _ (unitsToInfiniteDecompositionUnits v w) a g)).trans <|
+      (coe_unitsToInfiniteDecompositionUnits_hom_apply v w _).trans <| congrArg (algebraMap L _) <|
+        congrArg (fun z ↦ Units.val (Additive.toMul z : Lˣ))
+          (Rep.ofMulDistribMulAction_ρ_apply_apply g a)).symm
+  rw [toMul_ofMul, AlgEquiv.smul_units_def, Units.coe_map, MonoidHom.coe_ofClass]
 
 variable [IsGalois K L]
 
@@ -252,16 +275,12 @@ theorem map_unitsToIdeles_eq_zero_iff_brLocalization_eq_zero (σ : L →ₐ[K] S
       groupCohomology.map (MonoidHom.id _) (idelesToSemilocalUnits L v) 2 y = 0 ↔
         brBaseChange K (v.adicCompletion K) (relBrInfl K L σ x) = 0 := by
     rw [← map_unitsToIdeles_idelesToSemilocalUnits_eq_zero_iff_brBaseChange_eq_zero σ x,
-      groupCohomology.map_id_comp]
-    -- a composite of linear maps applied to `x`
-    rfl
+      groupCohomology.map_id_comp, ModuleCat.comp_apply]
   have hinf (w : InfinitePlace K) :
       groupCohomology.map (MonoidHom.id _) (idelesToInfiniteSemilocalUnits L w) 2 y = 0 ↔
         brBaseChange K w.Completion (relBrInfl K L σ x) = 0 := by
     rw [← map_unitsToIdeles_idelesToInfiniteSemilocalUnits_eq_zero_iff_brBaseChange_eq_zero σ x,
-      groupCohomology.map_id_comp]
-    -- a composite of linear maps applied to `x`
-    rfl
+      groupCohomology.map_id_comp, ModuleCat.comp_apply]
   constructor
   · intro hy
     refine Prod.ext (DFinsupp.ext fun v ↦ ?_) (funext fun w ↦ ?_)
@@ -274,11 +293,13 @@ theorem map_unitsToIdeles_eq_zero_iff_brLocalization_eq_zero (σ : L →ₐ[K] S
         (hf : groupCohomology.map (MonoidHom.id _) f 2 y = 0) :
         ((tateCohomologyFunctor ((2 : ℕ) : ℤ)).map f).hom (e.inv.app _ y) = 0 :=
       calc ((tateCohomologyFunctor ((2 : ℕ) : ℤ)).map f).hom (e.inv.app _ y)
-          _ = (e.inv.app _ ≫ (tateCohomologyFunctor ((2 : ℕ) : ℤ)).map f).hom y := rfl
+          _ = (e.inv.app _ ≫ (tateCohomologyFunctor ((2 : ℕ) : ℤ)).map f).hom y :=
+            (ModuleCat.comp_apply _ _ y).symm
           _ = ((groupCohomology.functor ℤ (L ≃ₐ[K] L) 2).map f ≫ e.inv.app _).hom y := by
             rw [e.inv.naturality]
-          -- `groupCohomology.functor` acts on morphisms by `groupCohomology.map (MonoidHom.id _)`
-          _ = (e.inv.app _).hom (groupCohomology.map (MonoidHom.id _) f 2 y) := rfl
+          _ = (e.inv.app _).hom (groupCohomology.map (MonoidHom.id _) f 2 y) := by
+            rw [groupCohomology.functor_map]
+            exact ModuleCat.comp_apply _ _ y
           _ = 0 := by rw [hf]; exact map_zero _
     suffices e.inv.app _ y = 0 from
       (e.app _).symm.toLinearEquiv.injective (this.trans (map_zero _).symm)

@@ -197,9 +197,8 @@ theorem map_id_eq_zero_iff_of_comp_eq_resCoindToHom {Γ : Type u} [Group Γ] {X 
   -- Shapiro's lemma: `ψ` on `Hⁿ(S, -)` is `u` followed by two isomorphisms
   have hS : map S.subtype ψ n x = (coindIso (res f B) n).hom
       (map (MonoidHom.id G) e.hom n (map (MonoidHom.id G) u n x)) := by
-    rw [← map_resCoindToHom_comp_coindIso_hom, ← hu, map_id_comp]
-    -- a composite of linear maps applied to `x`
-    rfl
+    rw [← map_resCoindToHom_comp_coindIso_hom, ← hu, map_id_comp, ModuleCat.comp_apply,
+      ModuleCat.comp_apply]
   -- `ψ` is `φ` along `r`, followed by the isomorphism along the bijection `f`
   have hD : map S.subtype ψ n = map r φ n ≫ map f (𝟙 (res f B)) n :=
     (map_congr (MonoidHom.ext fun s ↦ (hr s).symm) hψ n).trans (map_comp r f φ (𝟙 _) n)
