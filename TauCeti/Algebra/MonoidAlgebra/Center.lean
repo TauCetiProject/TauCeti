@@ -29,8 +29,7 @@ namespace TauCeti
 instance instFiniteCenterMonoidAlgebra (K G : Type*) [CommSemiring K] [Finite K] [Monoid G]
     [Finite G] : Finite (Subalgebra.center K (MonoidAlgebra K G)) := by
   have : Finite (MonoidAlgebra K G) := Module.finite_of_finite K
-  exact Finite.of_injective (Subalgebra.center K (MonoidAlgebra K G)).val
-    Subtype.val_injective
+  infer_instance
 
 /-- The centre of a finite monoid algebra over an Artinian commutative ring is Artinian. -/
 instance instIsArtinianRingCenterMonoidAlgebra (K G : Type*) [CommRing K] [IsArtinianRing K]
@@ -38,7 +37,6 @@ instance instIsArtinianRingCenterMonoidAlgebra (K G : Type*) [CommRing K] [IsArt
   have : IsArtinian K (MonoidAlgebra K G) :=
     isArtinian_of_linearEquiv (MonoidAlgebra.coeffLinearEquiv K).symm
   exact isArtinian_of_tower K
-    (isArtinian_of_injective (Subalgebra.center K (MonoidAlgebra K G)).val.toLinearMap
-      Subtype.val_injective)
+    (isArtinian_submodule' (Subalgebra.center K (MonoidAlgebra K G)).toSubmodule)
 
 end TauCeti
