@@ -144,9 +144,11 @@ theorem isTotallyReal_of_sq_ratCast_of_nonneg [Algebra ℚ K] {x : K} {r : ℚ}
   intro y
   exact AlgHom.congr_fun halg y
 
+omit [NumberField K] in
 /-- **A field with a negative square is totally complex.** If some `x : K` has `x² = r` for a
 negative rational `r`, then every infinite place of `K` is complex. -/
-theorem isTotallyComplex_of_sq_ratCast_of_neg {x : K} {r : ℚ} (hx2 : x ^ 2 = algebraMap ℚ K r)
+theorem isTotallyComplex_of_sq_ratCast_of_neg [Algebra ℚ K] {x : K} {r : ℚ}
+    (hx2 : x ^ 2 = algebraMap ℚ K r)
     (hr : r < 0) : IsTotallyComplex K := by
   -- A real embedding would carry `x` to a real square root of `r < 0`, which is impossible.
   rw [isTotallyComplex_iff]
