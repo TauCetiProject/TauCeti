@@ -51,7 +51,7 @@ weak derivative of `u`, tested against the components of `φ A ∇ψ`, which are
 * `TauCeti.PDE.exists_isWeakSolutionDirichlet_top_ae_eq_on_of_isCompact`: near a compact subset
   of `Ω`, a weak solution and its forcing agree with a whole-space weak solution and its forcing.
 * `TauCeti.PDE.UniformlyEllipticOn.exists_lowerOrder_eq_restrictL`: interior `H²` regularity.
-* `TauCeti.PDE.divMatrixGradient_eq_sum_fderiv_fderiv`: the classical Hessian contraction.
+* `TauCeti.PDE.divMatrixGradient_eq_sum_fderiv_fderiv_apply`: the classical Hessian contraction.
 * `ContDiffOn.integral_matrixBilinearForm_gradient_eq_neg_integral_divMatrixGradient`:
   integration by parts against the conormal gradient of a `C²` function.
 
@@ -103,7 +103,7 @@ variable {g : EuclideanSpace ℝ ι → ℝ}
 
 /-- For a `C²` function, the divergence of its constant-matrix conormal gradient is the
 contraction of the matrix against the classical Hessian. -/
-theorem divMatrixGradient_eq_sum_fderiv_fderiv
+theorem divMatrixGradient_eq_sum_fderiv_fderiv_apply
     (hg : ContDiffOn ℝ 2 g Omega) {x : EuclideanSpace ℝ ι} (hx : x ∈ Omega) :
     divMatrixGradient A g x = ∑ j, ∑ i, A j i *
       fderiv ℝ (fun y => fderiv ℝ g y (EuclideanSpace.basisFun ι ℝ i)) x

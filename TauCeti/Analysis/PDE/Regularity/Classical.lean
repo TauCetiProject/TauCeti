@@ -20,7 +20,7 @@ frozen coefficient equation.
 
 The operator is the existing `TauCeti.PDE.divMatrixGradient`, with the sign convention
 `-divMatrixGradient A u = f`. The coordinate formula
-`divMatrixGradient_eq_sum_fderiv_fderiv` identifies it with the contraction of `A` against the
+`divMatrixGradient_eq_sum_fderiv_fderiv_apply` identifies it with the contraction of `A` against the
 Hessian, including nonsymmetric matrices.
 
 ## References
@@ -43,7 +43,7 @@ variable {ι : Type*} [Fintype ι] {Omega : Opens (EuclideanSpace ℝ ι)}
 
 /-- Green's identity for a `C²` representative of a Sobolev function, tested against a compactly
 supported smooth function. No ellipticity, boundary condition, or global Hessian bound is used. -/
-theorem energyFormH1_ofTestFunction_eq_neg_setIntegral_divMatrixGradient
+theorem energyFormH1_ofTestFunctionₗ_eq_neg_setIntegral_divMatrixGradient
     (hg : ContDiffOn ℝ 2 g Omega) {u : W1p mu Omega 2}
     (hug : W1p.value u =ᵐ[mu.restrict Omega] g) (φ : 𝓓(Omega, ℝ)) :
     energyFormH1 (fun _ => A) 0 0 u (W1p.ofTestFunctionₗ mu Omega 2 φ) =
@@ -88,7 +88,7 @@ theorem divMatrixGradient_eq_neg_of_forall_energyFormH1_eq
     refine Omega.isOpen.ae_eq_zero_of_integral_contDiff_smul_eq_zero
       (hDl.add hfl) fun φ hφ hφc hφs => ?_
     let ψ : 𝓓(Omega, ℝ) := ⟨φ, hφ, hφc, hφs⟩
-    have he := energyFormH1_ofTestFunction_eq_neg_setIntegral_divMatrixGradient (A := A) hg hug ψ
+    have he := energyFormH1_ofTestFunctionₗ_eq_neg_setIntegral_divMatrixGradient (A := A) hg hug ψ
     rw [hu ψ] at he
     have hfi := integrable_smul_of_locallyIntegrableOn hfl ψ
     have hDi := integrable_smul_of_locallyIntegrableOn hDl ψ
