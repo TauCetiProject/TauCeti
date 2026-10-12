@@ -172,13 +172,17 @@ theorem sum_sign_smul_rotate_blocks {γ M : Type*} [AddCommGroup M] {k l m : ℕ
       Fin.ext (Nat.add_assoc k l r)
     simp only [B, Equiv.permCongr_apply, this, Equiv.trans_apply, finAddFlip_apply_natAdd]
     exact Fin.ext rfl
-  rw [Finset.smul_sum]
-  refine Fintype.sum_equiv (c.permCongr.trans (Equiv.mulRight B)) _ _ fun τ => ?_
-  have hsign : Perm.sign τ = (-1) ^ (k * (l + m)) * Perm.sign (c.permCongr τ * B) := by
-    rw [Perm.sign_mul, Perm.sign_permCongr, hB, mul_comm, mul_assoc, ← sq]
-    simp [Int.units_sq]
-  simp only [Equiv.trans_apply, Equiv.coe_mulRight, Perm.mul_apply, h₁, h₂, h₃,
-    Equiv.permCongr_apply, Equiv.symm_apply_apply, hsign, mul_smul]
-  simp only [c, finCongr_apply]
+  let f : Perm (Fin (k + l + m)) → M := fun σ =>
+    g (fun i => v (σ (Fin.castAdd m (Fin.castAdd l i))))
+      (fun j => v (σ (Fin.castAdd m (Fin.natAdd k j))))
+      (fun r => v (σ (Fin.natAdd (k + l) r)))
+  calc
+    _ = ∑ τ : Perm (Fin (l + m + k)), Perm.sign τ • f (c.permCongr τ * B) := by
+      apply Finset.sum_congr rfl
+      intro τ _
+      simp only [f, Perm.mul_apply, h₁, h₂, h₃, Equiv.permCongr_apply,
+        Equiv.symm_apply_apply]
+      simp only [c, finCongr_apply]
+    _ = _ := (sum_sign_smul_permCongr_mul c B f).trans (by rw [hB])
 
 end TauCeti
