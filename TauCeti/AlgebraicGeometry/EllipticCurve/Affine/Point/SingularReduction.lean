@@ -22,13 +22,14 @@ conditions on the equation under which no point of `W(F)` reduces to the singula
 `E₀(F) = W(F)` and the index is one.
 
 The input is a computation at an integral solution `(x₀, y₀)` of `W_O`. Translating it to the
-origin by `x ↦ x + x₀`, `y ↦ y + y₀` gives an equation with `a₆ = 0`, whose `a₃` and `a₄` are the
-values at `(x₀, y₀)` of the two partial derivatives of the Weierstrass polynomial, and whose
+origin by `x ↦ x + x₀`, `y ↦ y + y₀` gives an equation with `a₆ = 0`, whose `a₃` and `-a₄` are
+the values at `(x₀, y₀)` of the two partial derivatives of the Weierstrass polynomial, and whose
 discriminant is that of `W`. For such an equation
 
 `Δ = b₂² (a₄² + a₁ a₃ a₄ − a₂ a₃²) − 8 (2 a₄ + a₁ a₃)³ − 27 a₃⁴ + 9 b₂ (2 a₄ + a₁ a₃) a₃²`,
 
-so `Δ` lies in the square of any ideal containing both partial values. If `(x₀, y₀)` reduces to
+so `Δ` lies in the square of any ideal containing both partial values
+(`WeierstrassCurve.Affine.Δ_mem_sq_of_equation`). If `(x₀, y₀)` reduces to
 the singular point of `W_k`, both partial values lie in `𝔪`, hence `Δ ∈ 𝔪²`. If moreover the
 singular point is a nonsplit node, the tangent form `a₄² + a₁ a₃ a₄ − a₂ a₃²` is anisotropic
 modulo `𝔪`, so its value is a unit times the square of `a₃` or of `a₄`; the remaining terms are of
@@ -46,10 +47,6 @@ without completeness.
 
 ## Main results
 
-* `WeierstrassCurve.Δ_mem_sq_of_a₆_eq_zero`: if `a₆ = 0` and `a₃`, `a₄` lie in an ideal
-  `I`, then `Δ ∈ I²`.
-* `WeierstrassCurve.Affine.Δ_mem_sq_of_equation`: at a solution `(x, y)` whose two partial
-  values lie in `I`, `Δ ∈ I²`.
 * `WeierstrassCurve.Δ_mem_maximalIdeal_sq_of_isSingular`: over a local ring, a solution
   reducing to a singular point forces `Δ ∈ 𝔪²`.
 * `WeierstrassCurve.exists_associated_sq_Δ_of_isSingular`: over a valuation ring, a solution
@@ -76,68 +73,7 @@ open IsLocalRing Polynomial
 
 namespace WeierstrassCurve
 
-variable {R : Type*} [CommRing R]
-
-/-! ### The discriminant at a point of the curve -/
-
-/-- **The discriminant of an equation through the origin.** If `a₆ = 0`, so that the origin lies
-on the curve, and `a₃` and `a₄`, the values there of the two partial derivatives of the
-Weierstrass polynomial, lie in an ideal `I`, then the discriminant lies in `I²`. -/
-theorem Δ_mem_sq_of_a₆_eq_zero (W : WeierstrassCurve R) {I : Ideal R} (h₆ : W.a₆ = 0)
-    (h₃ : W.a₃ ∈ I) (h₄ : W.a₄ ∈ I) : W.Δ ∈ I ^ 2 := by
-  have hΔ : W.Δ = (-W.b₂ ^ 2 * W.a₂ - 8 * (2 * W.a₄ + W.a₁ * W.a₃) * W.a₁ ^ 2 - 27 * W.a₃ ^ 2 +
-      9 * W.b₂ * (2 * W.a₄ + W.a₁ * W.a₃)) * (W.a₃ * W.a₃) +
-      (W.b₂ ^ 2 * W.a₁ - 32 * (2 * W.a₄ + W.a₁ * W.a₃) * W.a₁) * (W.a₃ * W.a₄) +
-      (W.b₂ ^ 2 - 32 * (2 * W.a₄ + W.a₁ * W.a₃)) * (W.a₄ * W.a₄) := by
-    simp only [Δ, b₄, b₆, b₈, h₆]
-    ring
-  rw [hΔ, pow_two]
-  exact add_mem (add_mem (Ideal.mul_mem_left _ _ (Ideal.mul_mem_mul h₃ h₃))
-    (Ideal.mul_mem_left _ _ (Ideal.mul_mem_mul h₃ h₄)))
-    (Ideal.mul_mem_left _ _ (Ideal.mul_mem_mul h₄ h₄))
-
-/-! The equation translated so that a given solution `(x, y)` becomes the origin. -/
-
-section Translate
-
-variable (W : WeierstrassCurve R) (x y : R)
-
-private theorem translate_a₃ :
-    (VariableChange.mk 1 x 0 y • W).a₃ = W.toAffine.polynomialY.evalEval x y := by
-  simp only [variableChange_a₃, inv_one, Units.val_one, one_pow, one_mul,
-    Affine.evalEval_polynomialY]
-  ring
-
-private theorem translate_a₄ :
-    (VariableChange.mk 1 x 0 y • W).a₄ = -W.toAffine.polynomialX.evalEval x y := by
-  simp only [variableChange_a₄, inv_one, Units.val_one, one_pow, one_mul,
-    Affine.evalEval_polynomialX]
-  ring
-
-private theorem translate_a₆ {x y : R} (h : W.toAffine.Equation x y) :
-    (VariableChange.mk 1 x 0 y • W).a₆ = 0 :=
-  Affine.equation_zero.mp ((W.toAffine.equation_iff_variableChange x y).mp h)
-
-private theorem translate_Δ : (VariableChange.mk 1 x 0 y • W).Δ = W.Δ := by
-  simp [variableChange_Δ]
-
-private theorem translate_c₄ : (VariableChange.mk 1 x 0 y • W).c₄ = W.c₄ := by
-  simp [variableChange_c₄]
-
-end Translate
-
-/-- **The discriminant at a point of the curve.** If `(x, y)` is a solution of the Weierstrass
-equation at which both partial derivatives of the Weierstrass polynomial take values in an ideal
-`I`, then the discriminant lies in `I²`. For `I = 0` this is the vanishing of the discriminant at a
-singular point (`WeierstrassCurve.Affine.IsSingular.Δ_eq_zero`). -/
-theorem Affine.Δ_mem_sq_of_equation (W : Affine R) {I : Ideal R} {x y : R}
-    (h : W.Equation x y) (hX : W.polynomialX.evalEval x y ∈ I)
-    (hY : W.polynomialY.evalEval x y ∈ I) : W.Δ ∈ I ^ 2 := by
-  have := (VariableChange.mk 1 x 0 y • W).Δ_mem_sq_of_a₆_eq_zero
-    (translate_a₆ W h) (translate_a₃ W x y ▸ hY) (translate_a₄ W x y ▸ I.neg_mem hX)
-  rwa [translate_Δ] at this
-
-variable [IsLocalRing R]
+variable {R : Type*} [CommRing R] [IsLocalRing R]
 
 /-- At a solution reducing to a singular point of the reduced curve, both partial derivatives of
 the Weierstrass polynomial take values in the maximal ideal. -/
@@ -251,16 +187,17 @@ theorem exists_associated_sq_Δ_of_isSingular (W : WeierstrassCurve R) {x y : R}
     ∃ m : R, Associated (m ^ 2) W.Δ := by
   set W' := VariableChange.mk 1 x 0 y • W
   obtain ⟨hX, hY⟩ := W.evalEval_polynomialX_mem_and_evalEval_polynomialY_mem hs
-  have h₆ : W'.a₆ = 0 := translate_a₆ W h
-  have h₃ : W'.a₃ ∈ maximalIdeal R := translate_a₃ W x y ▸ hY
-  have h₄ : W'.a₄ ∈ maximalIdeal R := translate_a₄ W x y ▸ (maximalIdeal R).neg_mem hX
+  have h₆ : W'.a₆ = 0 := variableChange_translate_a₆_of_equation W h
+  have h₃ : W'.a₃ ∈ maximalIdeal R := variableChange_translate_a₃ W x y ▸ hY
+  have h₄ : W'.a₄ ∈ maximalIdeal R :=
+    variableChange_translate_a₄ W x y ▸ (maximalIdeal R).neg_mem hX
   -- the translated reduction is singular at the origin
   have h0 : (W'.map (residue R)).toAffine.IsSingular 0 0 := by
     simp [h₆, (residue_eq_zero_iff _).mpr h₃, (residue_eq_zero_iff _).mpr h₄]
   -- there `c₄ = b₂²`, so `b₂` is a unit
   have hb₂ : IsUnit W'.b₂ := by
     have hc := Affine.c₄_eq_b₂_sq_of_isSingular_zero h0
-    rw [map_c₄, map_b₂, translate_c₄] at hc
+    rw [map_c₄, map_b₂, variableChange_translate_c₄] at hc
     rw [← residue_ne_zero_iff_isUnit]
     exact fun hb ↦ hc₄ (by rw [hc, hb, zero_pow two_ne_zero])
   -- a rational root of the tangent quadratic would split the node polynomial
@@ -277,7 +214,7 @@ theorem exists_associated_sq_Δ_of_isSingular (W : WeierstrassCurve R) {x y : R}
     rw [hfac]
     exact (Splits.C _).mul ((Splits.X_sub_C _).mul (Splits.X_sub_C _))
   obtain ⟨m, hm⟩ := W'.exists_associated_sq_Δ_of_a₆_eq_zero h₆ h₃ h₄ hb₂ hroot
-  exact ⟨m, translate_Δ W x y ▸ hm⟩
+  exact ⟨m, variableChange_translate_Δ W x y ▸ hm⟩
 
 end ValuationRing
 
@@ -336,10 +273,7 @@ theorem nonsingularReduction_eq_top_of_not_splits
   nonsingularReduction_eq_top_of_forall_not_isSingular v fun _ _ hE hs ↦ by
     obtain ⟨m, u, hu⟩ := exists_associated_sq_Δ_of_isSingular _ hE hs hc₄ hn
     refine hΔ m ?_
-    have hW : W.Δ = algebraMap v.valuationSubring F (integralModel v.valuationSubring W).Δ := by
-      conv_lhs => rw [← baseChange_integralModel_eq v.valuationSubring W]
-      exact map_Δ _ _
-    rw [hW, ← hu, map_mul, map_pow, map_mul, map_pow,
+    rw [← integralModel_Δ_eq v.valuationSubring W, ← hu, map_mul, map_pow, map_mul, map_pow,
       (Valuation.valuationSubring.integers v).isUnit_iff_valuation_eq_one.mp u.isUnit, mul_one,
       ValuationSubring.algebraMap_apply]
 
