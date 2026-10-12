@@ -38,6 +38,8 @@ rewritable.
   commutes with the homomorphisms `QuotientGroup.map` induced by a homomorphism `G →* H` on the
   quotients.
 * `TauCeti.QuotientGroup.mapOfLE_surjective`: the map is surjective.
+* `TauCeti.QuotientGroup.closure_range_quotient_mk_eq_top_of_le`: a family generating `G ⧸ N'`
+  also generates `G ⧸ N` when `N' ≤ N`.
 * `TauCeti.QuotientGroup.ker_mapOfLE`: its kernel is the image of `U` in `G ⧸ V`.
 * `TauCeti.QuotientGroup.map_injective_of_eq_comap`: the homomorphism `G ⧸ f⁻¹(M) →* H ⧸ M`
   induced by `f : G →* H` is injective.
@@ -48,6 +50,8 @@ Work with `mapOfLE` through the lemmas above: `mapOfLE_mk` evaluates it on class
 `mapOfLE_refl`, `mapOfLE_comp`, `mapOfLE_comp_mk'`, `map_comp_mapOfLE` and `mapOfLE_comp_map`
 simplify identities and composites, `mapOfLE_surjective` feeds constructions that need a
 surjection, such as `Sylow.mapSurjective`, and `ker_mapOfLE` identifies its kernel.
+Use `closure_range_quotient_mk_eq_top_of_le` to descend generation by a family from a quotient
+by a normal subgroup to the quotient by a larger normal subgroup.
 To identify `mapOfLE hVU` with another homomorphism out of `G ⧸ V`, compare the two on classes with
 `QuotientGroup.induction_on` and `mapOfLE_mk`.
 -/
