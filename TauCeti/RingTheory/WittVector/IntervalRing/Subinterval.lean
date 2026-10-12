@@ -145,13 +145,25 @@ private theorem continuous_intervalLocalizationEquiv (h₁ : ρ₁ ≤ ρ₁') (
 variable (p) in
 /-- **Restriction to a subinterval** (Kedlaya, Corollary 4.6). For a subinterval
 `[ρ₁', ρ₂'] ⊆ [ρ₁, ρ₂]`, the identity of `𝕎 O[1/(p [ϖ])]` does not increase the interval norm,
-by the Hadamard three circles inequality, so it extends to a ring homomorphism
+by the Hadamard three circles inequality, so it extends to a `𝕎 O`-algebra homomorphism
 `B^{[ρ₁, ρ₂]} → B^{[ρ₁', ρ₂']}` of the completions. -/
 noncomputable def intervalRingRestrict (h₁ : ρ₁ ≤ ρ₁') (h₁₂ : ρ₁' ≤ ρ₂') (h₂ : ρ₂' ≤ ρ₂) :
-    IntervalRing p hv hϖ hϖ' hρ₁ hρ₂ →+* IntervalRing p hv hϖ hϖ' hρ₁' hρ₂' :=
-  Completion.mapRingHom _ (continuous_intervalLocalizationEquiv hv hϖ hϖ' h₁ h₁₂ h₂)
+    IntervalRing p hv hϖ hϖ' hρ₁ hρ₂ →ₐ[𝕎 O] IntervalRing p hv hϖ hϖ' hρ₁' hρ₂' where
+  toRingHom := Completion.mapRingHom _ (continuous_intervalLocalizationEquiv hv hϖ hϖ' h₁ h₁₂ h₂)
+  commutes' x := by
+    rw [Completion.algebraMap_def, Completion.algebraMap_def, RingHom.toFun_eq_coe,
+      Completion.mapRingHom_coe]
+    simp
 
 variable {hv hϖ hϖ' hρ₁ hρ₂ hρ₁' hρ₂'}
+
+/-- Restriction to a subinterval is the extension of the identity of `𝕎 O[1/(p [ϖ])]` to the
+completions. -/
+private theorem coe_intervalRingRestrict (h₁ : ρ₁ ≤ ρ₁') (h₁₂ : ρ₁' ≤ ρ₂') (h₂ : ρ₂' ≤ ρ₂) :
+    ⇑(intervalRingRestrict p hv hϖ hϖ' hρ₁ hρ₂ hρ₁' hρ₂' h₁ h₁₂ h₂) =
+      Completion.mapRingHom (intervalLocalizationEquiv p hv hϖ hϖ' hρ₁ hρ₂ hρ₁' hρ₂').toRingHom
+        (continuous_intervalLocalizationEquiv hv hϖ hϖ' h₁ h₁₂ h₂) :=
+  rfl
 
 /-- Restriction to a subinterval is the identity on fractions `x / s` with `x ∈ 𝕎 O` and `s` a
 power of `p [ϖ]`. -/
@@ -162,7 +174,7 @@ theorem intervalRingRestrict_coe_mk' (h₁ : ρ₁ ≤ ρ₁') (h₁₂ : ρ₁'
         (IsLocalization.mk' (IntervalLocalization p hv hϖ hϖ' hρ₁ hρ₂) x s) =
       (IsLocalization.mk' (IntervalLocalization p hv hϖ hϖ' hρ₁' hρ₂') x s :
         IntervalRing p hv hϖ hϖ' hρ₁' hρ₂') := by
-  rw [intervalRingRestrict, Completion.mapRingHom_coe]
+  rw [coe_intervalRingRestrict, Completion.mapRingHom_coe]
   simp [intervalLocalizationEquiv]
 
 /-- Restriction to a subinterval on `𝕎 O[1/(p [ϖ])]`. -/
@@ -171,23 +183,12 @@ private theorem intervalRingRestrict_coe (h₁ : ρ₁ ≤ ρ₁') (h₁₂ : ρ
     intervalRingRestrict p hv hϖ hϖ' hρ₁ hρ₂ hρ₁' hρ₂' h₁ h₁₂ h₂ x =
       (intervalLocalizationEquiv p hv hϖ hϖ' hρ₁ hρ₂ hρ₁' hρ₂' x :
         IntervalRing p hv hϖ hϖ' hρ₁' hρ₂') :=
-  Completion.mapRingHom_coe _ _
-
-/-- Restriction to a subinterval is compatible with the structure maps from `𝕎 O`. -/
-@[simp]
-theorem intervalRingRestrict_algebraMap (h₁ : ρ₁ ≤ ρ₁') (h₁₂ : ρ₁' ≤ ρ₂') (h₂ : ρ₂' ≤ ρ₂)
-    (x : 𝕎 O) :
-    intervalRingRestrict p hv hϖ hϖ' hρ₁ hρ₂ hρ₁' hρ₂' h₁ h₁₂ h₂
-        (algebraMap (𝕎 O) (IntervalRing p hv hϖ hϖ' hρ₁ hρ₂) x) =
-      algebraMap (𝕎 O) (IntervalRing p hv hϖ hϖ' hρ₁' hρ₂') x := by
-  rw [Completion.algebraMap_def, Completion.algebraMap_def, intervalRingRestrict,
-    Completion.mapRingHom_coe]
-  simp
+  Completion.mapRingHom_coe (continuous_intervalLocalizationEquiv hv hϖ hϖ' h₁ h₁₂ h₂) x
 
 /-- Restriction to a subinterval is continuous. -/
 theorem continuous_intervalRingRestrict (h₁ : ρ₁ ≤ ρ₁') (h₁₂ : ρ₁' ≤ ρ₂') (h₂ : ρ₂' ≤ ρ₂) :
     Continuous (intervalRingRestrict p hv hϖ hϖ' hρ₁ hρ₂ hρ₁' hρ₂' h₁ h₁₂ h₂) := by
-  rw [intervalRingRestrict, Completion.coe_mapRingHom]
+  rw [coe_intervalRingRestrict, Completion.coe_mapRingHom]
   exact Completion.continuous_map
 
 /-- **Restriction to a subinterval does not increase the interval norm.** -/
@@ -199,7 +200,8 @@ theorem norm_intervalRingRestrict_le (h₁ : ρ₁ ≤ ρ₁') (h₁₂ : ρ₁'
     exact isClosed_le (continuous_intervalRingRestrict (hv := hv) (hϖ := hϖ) (hϖ' := hϖ')
       (hρ₁ := hρ₁) (hρ₂ := hρ₂) (hρ₁' := hρ₁') (hρ₂' := hρ₂') h₁ h₁₂ h₂).norm continuous_norm
   | ih a =>
-    rw [intervalRingRestrict, Completion.mapRingHom_coe, Completion.norm_coe, Completion.norm_coe]
+    rw [coe_intervalRingRestrict, Completion.mapRingHom_coe, Completion.norm_coe,
+      Completion.norm_coe]
     exact norm_intervalLocalizationEquiv_le hv hϖ hϖ' h₁ h₁₂ h₂ a
 
 /-- Restriction of an interval to itself is the identity. -/
@@ -241,8 +243,8 @@ theorem intervalRingRestrict_comp {ρ₁'' ρ₂'' : ℝ≥0} {hρ₁'' : ρ₁'
     (intervalRingRestrict p hv hϖ hϖ' hρ₁' hρ₂' hρ₁'' hρ₂'' h₁' h₁₂' h₂').comp
         (intervalRingRestrict p hv hϖ hϖ' hρ₁ hρ₂ hρ₁' hρ₂' h₁ h₁₂ h₂) =
       intervalRingRestrict p hv hϖ hϖ' hρ₁ hρ₂ hρ₁'' hρ₂'' (h₁.trans h₁') h₁₂' (h₂'.trans h₂) :=
-  RingHom.ext fun x ↦ by
-    rw [RingHom.comp_apply, intervalRingRestrict_intervalRingRestrict h₁ h₁₂ h₂ h₁' h₁₂' h₂']
+  AlgHom.ext fun x ↦ by
+    rw [AlgHom.comp_apply, intervalRingRestrict_intervalRingRestrict h₁ h₁₂ h₂ h₁' h₁₂' h₂']
 
 end Restrict
 
@@ -398,7 +400,8 @@ noncomputable def intervalRingRestrictedEval (h₁ : ρ₁ ≤ ρ₁') (h₁₂ 
         (Fin.cons (ρ₁' : ℝ)⁻¹ c : Fin (k + 1) → ℝ) →+*
       IsRestricted.subring (R := IntervalRing p hv hϖ hϖ' hρ₁' hρ₂) c :=
   MvPowerSeries.restrictedEval₂
-    ((algebraMap _ _).comp (intervalRingRestrict p hv hϖ hϖ' hρ₁ hρ₂ hρ₁' hρ₂ h₁ h₁₂ le_rfl))
+    ((algebraMap _ _).comp
+      (intervalRingRestrict p hv hϖ hϖ' hρ₁ hρ₂ hρ₁' hρ₂ h₁ h₁₂ le_rfl).toRingHom)
     (Fin.cons (algebraMap _ _ (Ring.inverse (p : IntervalRing p hv hϖ hϖ' hρ₁' hρ₂)))
       fun i ↦ ⟨X i, isRestricted_monomial c (Finsupp.single i 1) 1⟩)
     (fun b ↦ by
