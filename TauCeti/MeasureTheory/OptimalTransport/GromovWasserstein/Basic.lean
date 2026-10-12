@@ -61,6 +61,9 @@ finiteness instances they use.
   integral-of-a-power formula for `0 < p < ∞` and the essential-supremum formula for `p = ∞`;
 * `TauCeti.gromovWassersteinDistortion_congr_ae` and `TauCeti.gromovWassersteinEDist_congr_ae` —
   invariance under almost-everywhere modification of the kernels;
+* `TauCeti.gromovWassersteinDistortion_eq_zero_iff` — for an extended metric target and a
+  nonzero exponent, zero distortion is exactly almost-everywhere equality of the pulled-back
+  kernels;
 * `TauCeti.gromovWassersteinEDist_comp_prodMap_eq_zero` — a measured kernel and its pullback along
   a measure-preserving map are at distance `0`;
 * `TauCeti.gromovWassersteinEDist_self`, `TauCeti.gromovWassersteinEDist_comm` and
@@ -420,5 +423,20 @@ theorem gromovWassersteinEDist_dirac_right (y : Y) (ωY : Y × Y → Z) [IsProba
 end Dirac
 
 end PseudoEMetricSpace
+
+section EMetricSpace
+
+variable [EMetricSpace Z] {ωX : X × X → Z} {ωY : Y × Y → Z} {π : Measure (X × Y)}
+
+/-- At a nonzero exponent, zero distortion means that the two pulled-back kernels agree
+almost everywhere. No integrability or finiteness hypothesis is needed. -/
+theorem gromovWassersteinDistortion_eq_zero_iff (hp : p ≠ 0) :
+    gromovWassersteinDistortion p ωX ωY π = 0 ↔
+      (fun q : (X × Y) × (X × Y) ↦ ωX (q.1.1, q.2.1)) =ᵐ[π.prod π]
+        (fun q ↦ ωY (q.1.2, q.2.2)) := by
+  rw [gromovWassersteinDistortion_def, eLpNorm_eq_zero_iff hp]
+  simp only [Filter.EventuallyEq, Pi.zero_apply, edist_eq_zero]
+
+end EMetricSpace
 
 end TauCeti

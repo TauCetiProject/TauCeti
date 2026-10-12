@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Group.Equiv.Basic
 public import Mathlib.Algebra.Group.Hom.Instances
+public import TauCeti.Algebra.Group.Hom.Lift
 
 /-!
 # Pre- and postcomposition with homomorphisms, as bijections on homomorphisms
@@ -129,16 +130,10 @@ theorem _root_.MonoidHom.compHom_bijective_of_forall_pow_eq_one {M N P : Type*} 
     [CommMonoid N] [CommMonoid P] {f : N →* P} (hf : Function.Injective f) {n : ℕ}
     (hM : ∀ a : M, a ^ n = 1) (hf' : ∀ y : P, y ^ n = 1 → ∃ x, f x = y) :
     Function.Bijective (MonoidHom.compHom f : (M →* N) →* M →* P) := by
-  refine ⟨fun φ ψ h => MonoidHom.ext fun a => hf ?_, fun ψ => ?_⟩
-  · simpa only [MonoidHom.compHom_apply_apply, MonoidHom.comp_apply] using DFunLike.congr_fun h a
-  · have hψ : ∀ a : M, ∃ x, f x = ψ a := fun a => hf' (ψ a) (by rw [← map_pow, hM, map_one])
-    let φ : M → N := fun a => Classical.choose (hψ a)
-    have hφ : ∀ a, f (φ a) = ψ a := fun a => Classical.choose_spec (hψ a)
-    refine ⟨{ toFun := φ, map_one' := hf ?_, map_mul' := fun a b => hf ?_ },
-      MonoidHom.ext fun a => ?_⟩
-    · rw [hφ, map_one, map_one]
-    · rw [hφ, map_mul, map_mul, hφ, hφ]
-    · simpa only [MonoidHom.compHom_apply_apply, MonoidHom.comp_apply, MonoidHom.coe_mk,
-        OneHom.coe_mk] using hφ a
+  apply (Function.bijective_iff_existsUnique _).2
+  intro ψ
+  simpa only [MonoidHom.ext_iff, MonoidHom.compHom_apply_apply, MonoidHom.comp_apply] using
+    ψ.existsUnique_comp_eq_of_injective f hf
+      (fun a => hf' (ψ a) (by rw [← map_pow, hM, map_one]))
 
 end TauCeti

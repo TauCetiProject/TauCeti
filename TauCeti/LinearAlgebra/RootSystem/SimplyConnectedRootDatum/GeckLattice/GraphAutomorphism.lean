@@ -280,19 +280,6 @@ theorem geckGraphAutMatrix_pow_eq_one (hsigma : sigma ∈ t.diagramSymmetry) (A 
   rw [Units.val_pow_eq_pow_val, Units.val_one, coe_geckGraphAutMatrix,
     ← Matrix.permMatrixHom_apply, ← map_pow, geckDiagramFinPerm_pow_eq_one ht hsigma hm, map_one]
 
-/-- The points of the pinned Geck carrier are the points of the Kostant toral closure of the
-pinned Geck data. -/
-private theorem geckPoints_eq_kostantToralPointsSubgroup (A : Type v) [CommRing A] :
-    t.geckPoints ht A =
-      TauCeti.UniversalEnvelopingAlgebra.kostantToralPointsSubgroup
-        (t.lieBasis ht).rootGenerator (t.lieBasis ht).h (t.geckRepresentation ht)
-        (t.geckCoordinateLattice ht).toAddSubgroup
-        (t.geckRepresentation_kostantForm_mem_geckCoordinateLattice ht)
-        (t.isNilpotent_geckRepresentation_rootGenerator ht)
-        (t.geckCoordinateBasisFin ht) (t.geckWeightFin ht) A := by
-  rw [t.geckPoints_def ht A,
-    TauCeti.UniversalEnvelopingAlgebra.kostantToralPointsSubgroup_def, t.geckDefiningIdeal_def ht]
-
 /-- **The matrix of the pinned coordinate permutation normalizes the points of the Geck
 carrier.** -/
 theorem map_geckPoints_conj_geckGraphAutMatrix (hsigma : sigma ∈ t.diagramSymmetry) (A : Type v)

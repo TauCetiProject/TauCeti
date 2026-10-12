@@ -183,9 +183,7 @@ theorem eLpNorm_setLIntegral_enorm_sub_rpow_mul_le {p q : ℝ≥0} {κ δ : ℝ}
     measure_ball_lt_top.ne
   have hp' : (1 : ℝ) ≤ p := by exact_mod_cast hp
   have hpq' : (p : ℝ) ≤ q := by exact_mod_cast hpq
-  have hp0 : (0 : ℝ) < p := by linarith
   have hq0 : (0 : ℝ) < q := by linarith
-  have hδ0 : 0 ≤ δ := hδ ▸ sub_nonneg.2 (inv_anti₀ hp0 hpq')
   have hδ1 : δ < 1 := hκ.trans_le hκ1
   -- Young's inequality applies with the exponent `r = 1 / (1 - δ)`, and the `r`-th power of the
   -- kernel is the Riesz kernel of order `n κ'`, `κ' = (κ - δ) / (1 - δ)`.

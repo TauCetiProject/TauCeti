@@ -131,8 +131,7 @@ private theorem two_le_nilpotencyClass_geckRootOperator
     intro hzero
     apply hrestricted
     apply Subtype.ext
-    rw [TauCeti.coe_integralDividedPower_apply, TauCeti.Associative.dividedPower_one,
-      hzero, zero_smul]
+    rw [TauCeti.coe_integralDividedPower_one_apply, hzero, zero_smul]
     rfl
   by_contra hlt
   have hone : (t.geckRepresentation ht
@@ -155,7 +154,7 @@ theorem geckRootSubgroupMatrix_apply (i : Fin t.rank ⊕ Fin t.rank)
   simp_rw [t.geckRootSubgroup_dividedPower_repr ht]
   rw [Finset.sum_eq_single 1]
   · simp
-  · intro n hn hne
+  · intro n _ hne
     simp [hne]
   · intro hnot
     have htwo := t.two_le_nilpotencyClass_geckRootOperator ht i

@@ -29,6 +29,9 @@ points of a proper curve to be reindexed by function-field places.
 
 ## Main results
 
+* `CodimensionOnePoint.exists_toPlace_eq_of_lift`: a morphism from the spectrum of the valuation
+  ring of a place that restricts to the generic point sends the closed point to the centre of the
+  place;
 * `CodimensionOnePoint.toPlace_surjective`: every place of the function field of such a curve is
   attached to a codimension-one point;
 * `CodimensionOnePoint.equivPlace`: the resulting equivalence between codimension-one points and
@@ -55,23 +58,17 @@ namespace CodimensionOnePoint
 variable {k : Type u} [Field k] {X : Scheme.{u}} [IsIntegral X] [X.Over (Spec (.of k))]
   [∀ x : CodimensionOnePoint X, IsDiscreteValuationRing (X.presheaf.stalk (x : X))]
 
-/-- Every normalized place of the function field of an integral curve over `k` is attached to a
-codimension-one point, as soon as the structure morphism satisfies the existence part of the
-valuative criterion. A proper curve is the motivating instance. -/
-theorem toPlace_surjective (hex : ValuativeCriterion.Existence (X ↘ Spec (.of k)))
-    (hdim : ∀ x : X, coheight x ≤ 1) :
-    Function.Surjective (fun x : CodimensionOnePoint X ↦ X.toPlace (k := k) (x : X)) := by
-  intro P
-  let S : ValuativeCommSq (X ↘ Spec (.of k)) :=
-    { R := P.integers
-      K := X.functionField
-      i₁ := X.fromSpecStalk (genericPoint X)
-      i₂ := Spec.map (CommRingCat.ofHom (algebraMap k P.integers))
-      commSq := ⟨by
-        rw [X.fromSpecStalk_genericPoint_comp_over (k := k), ← Spec.map_comp]
-        congr 1⟩ }
-  obtain ⟨l, hlK, -⟩ := (hex S).exists_lift.some
-  let x : X := l (IsLocalRing.closedPoint S.R)
+/-- **The closed point of a lift is the centre of the place.** If a morphism `l : Spec 𝒪_P ⟶ X`
+from the spectrum of the valuation ring of a place `P` of `k(X)` restricts to the generic point on
+`Spec k(X)`, then on a scheme of dimension at most one the image of the closed point of `Spec 𝒪_P`
+is a codimension-one point whose place is `P`. -/
+theorem exists_toPlace_eq_of_lift (hdim : ∀ x : X, coheight x ≤ 1)
+    (P : Place k X.functionField) (l : Spec (.of P.integers) ⟶ X)
+    (hlK : Spec.map (CommRingCat.ofHom (algebraMap P.integers X.functionField)) ≫ l =
+      X.fromSpecStalk (genericPoint X)) :
+    ∃ y : CodimensionOnePoint X, (y : X) = l (IsLocalRing.closedPoint P.integers) ∧
+      X.toPlace (k := k) (y : X) = P := by
+  let x : X := l (IsLocalRing.closedPoint P.integers)
   have hg :
       Spec.map (CommRingCat.ofHom
           (algebraMap (X.presheaf.stalk x) X.functionField)) ≫ X.fromSpecStalk x =
@@ -125,10 +122,29 @@ theorem toPlace_surjective (hex : ValuativeCriterion.Existence (X ↘ Spec (.of 
   let y : CodimensionOnePoint X := ⟨x, hx_one⟩
   let _ : IsDiscreteValuationRing (X.presheaf.stalk x) := inferInstanceAs
     (IsDiscreteValuationRing (X.presheaf.stalk (y : X)))
-  refine ⟨y, Place.eq_of_integers_le ?_⟩
+  refine ⟨y, rfl, Place.eq_of_integers_le ?_⟩
   intro f hf
   obtain ⟨a, rfl⟩ := (X.mem_toPlace_integers_iff_exists_stalk (k := k) x _).mp hf
   exact hmem a
+
+/-- Every normalized place of the function field of an integral curve over `k` is attached to a
+codimension-one point, as soon as the structure morphism satisfies the existence part of the
+valuative criterion. A proper curve is the motivating instance. -/
+theorem toPlace_surjective (hex : ValuativeCriterion.Existence (X ↘ Spec (.of k)))
+    (hdim : ∀ x : X, coheight x ≤ 1) :
+    Function.Surjective (fun x : CodimensionOnePoint X ↦ X.toPlace (k := k) (x : X)) := by
+  intro P
+  let S : ValuativeCommSq (X ↘ Spec (.of k)) :=
+    { R := P.integers
+      K := X.functionField
+      i₁ := X.fromSpecStalk (genericPoint X)
+      i₂ := Spec.map (CommRingCat.ofHom (algebraMap k P.integers))
+      commSq := ⟨by
+        rw [X.fromSpecStalk_genericPoint_comp_over (k := k), ← Spec.map_comp]
+        congr 1⟩ }
+  obtain ⟨l, hlK, -⟩ := (hex S).exists_lift.some
+  obtain ⟨y, -, hy⟩ := exists_toPlace_eq_of_lift hdim P l hlK
+  exact ⟨y, hy⟩
 
 /-- The codimension-one points of a separated integral curve over `k` whose structure morphism
 satisfies the existence part of the valuative criterion, a proper curve for instance, are

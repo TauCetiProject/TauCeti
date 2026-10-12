@@ -8,33 +8,41 @@ module
 public import Mathlib.NumberTheory.NumberField.Basic
 public import TauCeti.AlgebraicGeometry.EllipticCurve.MordellWeil.LocalCondition
 public import TauCeti.AlgebraicGeometry.EllipticCurve.MordellWeil.SelmerGroupA
+public import TauCeti.AlgebraicGeometry.EllipticCurve.MordellWeil.SquarefreeDiscriminant
 public import TauCeti.RingTheory.DedekindDomain.AdicCompletionExtension
 
 /-!
-# The semilocal comparison of `2`-descent at the good finite places
+# The semilocal comparison of `2`-descent at the finite places
 
 Let `W : y² = f(x) = x³ + a₂x² + a₄x + a₆` be an elliptic curve in characteristic `≠ 2` normal form
-over a number field `F`, with étale algebra `W.A = F[X] ⧸ (f)` and square classes `W.M`. Two
-subgroups of `W.M` cut out by valuation conditions are in play:
+over a number field `F`, with étale algebra `W.A = F[X] ⧸ (f)` and square classes `W.M`, and let
+`S` be a set of finite places of `F`. Two subgroups cut out by valuation conditions are in play:
 
-* `W.selmerGroupA (𝓞 F)` — the `S`-unramifiedness condition `A(S,2)`, a *global* condition at the
-  primes of the rings of integers of the field factors of `W.A` not lying above a bad prime;
-* `(W⁄F_v).toAffine.selmerGroupA 𝒪_v` — the same condition for the curve base-changed to the
-  completion at a finite place `v`.
+* `W.selmerGroupA (𝓞 F) S` — the condition `A(S,2)` of being unramified outside `S`, a *global*
+  condition at the primes of the rings of integers of the field factors of `W.A` not lying above
+  `S`;
+* `(W⁄F_v).toAffine.selmerGroupA 𝒪_v ∅` — the condition of being unramified, for the curve
+  base-changed to the completion at a finite place `v`.
 
-This file compares the two at the **good** finite places, in both directions: an `S`-unramified
-class localizes to an unramified class at each good place, and conversely a class that localizes
-to an unramified class at every good place is `S`-unramified. That is what makes the local
-conditions at the good finite places redundant — they are already implied by `A(S,2)` — so
-membership in the `2`-Selmer group reduces to the finitely many conditions at the bad and infinite
-places.
+This file compares the two at the places outside `S`, in both directions: a class unramified
+outside `S` localizes to an unramified class at each place `v ∉ S`, and conversely a class that
+localizes to an unramified class at every place `v ∉ S` is unramified outside `S`. At a place `v`
+at which `a₂`, `a₄` and `a₆` are integral and `disc f` has valuation at most `1`, Step 6 of weak
+Mordell–Weil over the completion puts the local descent image among the unramified classes
+(`range_μ_le_selmerGroupA_empty`). Combined with the local-to-global direction, a class whose
+localization lies in the local descent image at every finite place outside `S` lies in `A(S,2)`,
+for any `S` outside which these conditions hold.
 
 ## Main results
 
-* `WeierstrassCurve.Affine.localRes_mem_selmerGroupA` (global to local): an `S`-unramified square
-  class localizes to an unramified class at every good finite place.
+* `WeierstrassCurve.Affine.range_μ_le_selmerGroupA_empty`: at a finite place with integral
+  coefficients and `disc f` of valuation at most `1`, the local descent image over the completion
+  is unramified, in every residue characteristic.
+* `WeierstrassCurve.Affine.localRes_mem_selmerGroupA` (global to local): a square class
+  unramified outside `S` localizes to an unramified class at every finite place outside `S`.
 * `WeierstrassCurve.Affine.mem_selmerGroupA_of_forall_localRes` (local to global): a square class
-  that localizes to an unramified class at every good finite place is `S`-unramified.
+  that localizes to an unramified class at every finite place outside `S` is unramified outside
+  `S`.
 
 ## Provenance
 
@@ -44,7 +52,9 @@ Adapted from Michael Stoll's elliptic-curves formalisation
 `AdjoinRoot.map_comp_algebraMap` from `EllipticCurves/Mathlib/Basic.lean`. The source states
 square classes as its own `Units.modPow`; they are re-spelled here to this repository's single
 spelling `Mˣ ⧸ (powMonoidHom n).range`, and `HeightOneSpectrum.below` is Mathlib's
-`HeightOneSpectrum.under`.
+`HeightOneSpectrum.under`. `range_μ_le_selmerGroupA_empty` is the source's
+`range_μ_le_selmerGroupA_empty_of_exp_neg_one_le_discr` at its later revision `3bfe124`,
+`EllipticCurves/SelmerGroup.lean`.
 
 -/
 
@@ -79,31 +89,6 @@ private instance instIsScalarTowerRingOfIntegersFactor (p : W.f.Factors) :
     @IsScalarTower (𝓞 F) (W.ringOfIntegersFactor (𝓞 F) p) (𝕃 p)
       Algebra.toSMul Algebra.toSMul Algebra.toSMul :=
   .of_algebraMap_eq' rfl
-
-/- Goodness transfers to the completion: over the valuation ring of a good place, the base-changed
-curve has no bad primes. -/
-private lemma badPrimes_adicCompletionIntegers {v : HeightOneSpectrum (𝓞 F)}
-    (hv : v ∉ W.badPrimes (𝓞 F)) : 𝕎[v].badPrimes 𝒪_[v] = ∅ := by
-  ext P
-  simp only [Set.mem_empty_iff_false, iff_false, mem_badPrimes_iff]
-  have hPval (z : F) : P.valuation F_[v] (algebraMap F F_[v] z) = v.valuation F z :=
-    valuation_adicCompletion_algebraMap v P z
-  have hone {y : F} {c : F_[v]} (hc : c = algebraMap F F_[v] y)
-      (h : P.valuation F_[v] c ≠ 1) : v.valuation F y ≠ 1 := by
-    rwa [hc, hPval] at h
-  have hsupp {y : F} {c : F_[v]} (hc : c = algebraMap F F_[v] y)
-      (h : 1 < P.valuation F_[v] c) : ¬ v.valuation F y ≤ 1 :=
-    not_le.mpr <| by rwa [hc, hPval] at h
-  rintro (h | h | h | h | h)
-  · exact hone (by rw [map_ofNat]) h (W.valuation_two_eq_one_of_notMem_badPrimes (𝓞 F) hv)
-  · exact hone (_root_.WeierstrassCurve.map_Δ ..) h
-      (W.valuation_Δ_eq_one_of_notMem_badPrimes (𝓞 F) hv)
-  · exact hsupp (_root_.WeierstrassCurve.map_a₂ ..) h
-      (W.valuation_a₂_le_one_of_notMem_badPrimes (𝓞 F) hv)
-  · exact hsupp (_root_.WeierstrassCurve.map_a₄ ..) h
-      (W.valuation_a₄_le_one_of_notMem_badPrimes (𝓞 F) hv)
-  · exact hsupp (_root_.WeierstrassCurve.map_a₆ ..) h
-      (W.valuation_a₆_le_one_of_notMem_badPrimes (𝓞 F) hv)
 
 /- The base-change map on a field factor is integral on the ring of integers. -/
 private lemma isIntegral_mapOfDvd {p : W.f.Factors} {q : 𝕎[v].f.Factors}
@@ -288,16 +273,15 @@ private lemma localFactorEmb_projFactor (p : W.f.Factors)
 
 /- Unfolding of the local unramifiedness condition into per-factor divisibilities. -/
 private lemma localRes_mem_selmerGroupA_iff (a : W.Aˣ) :
-    W.localRes F_[v] (QuotientGroup.mk a) ∈ 𝕎[v].selmerGroupA 𝒪_[v] ↔
+    W.localRes F_[v] (QuotientGroup.mk a) ∈ 𝕎[v].selmerGroupA 𝒪_[v] ∅ ↔
       ∀ (q : 𝕎[v].f.Factors) (w' : HeightOneSpectrum (𝕎[v].ringOfIntegersFactor 𝒪_[v] q)),
-        w' ∉ HeightOneSpectrum.primesAbove 𝒪_[v] (𝕎[v].ringOfIntegersFactor 𝒪_[v] q)
-          (𝕎[v].badPrimes 𝒪_[v]) →
         (2 : ℤ) ∣ Multiplicative.toAdd (w'.valuationOfNeZero
           (Units.map (projFactor 𝕎[v].f_ne_zero 𝕎[v].squarefree_f q).toRingHom.toMonoidHom
             (Units.map (W.mapA F_[v]).toMonoidHom a))) := by
   rw [localRes_mk]
   simp only [mem_selmerGroupA_iff, AdjoinRoot.modPowEquivPiFactors_mk,
-    mem_selmerGroupFactor_unit_iff]
+    mem_selmerGroupFactor_unit_iff, HeightOneSpectrum.primesAbove_empty, Set.mem_empty_iff_false,
+    not_false_eq_true, forall_const]
 
 /- Transport of the divisibility from the contracted prime of the local factor to `w`. -/
 private lemma dvd_toAdd_valuationOfNeZero_of_localFactor (p : W.f.Factors)
@@ -373,13 +357,35 @@ end Semilocal
 
 variable [W.IsElliptic] [W.IsCharNeTwoNF]
 
+open scoped Classical in
+/-- **Step 6 over a completion**: at a finite place `v` of `F` at which `a₂`, `a₄` and `a₆` are
+integral and `disc f` has valuation at most `1`, that is `exp (-1) ≤ v (disc f)`, the image of the
+local descent map over the completion `F_v` consists of unramified square classes. The residue
+characteristic is unrestricted, so this holds at a place above `2` as soon as the cubic `f` has
+separable reduction there. -/
+theorem range_μ_le_selmerGroupA_empty {v : HeightOneSpectrum (𝓞 F)}
+    (ha₂ : v.valuation F W.a₂ ≤ 1) (ha₄ : v.valuation F W.a₄ ≤ 1) (ha₆ : v.valuation F W.a₆ ≤ 1)
+    (hd : WithZero.exp (-1) ≤ v.valuation F W.f.discr) :
+    (μ (W := 𝕎[v])).range ≤ 𝕎[v].selmerGroupA 𝒪_[v] ∅ := by
+  have key (P : HeightOneSpectrum 𝒪_[v]) (z : F) :
+      P.valuation F_[v] (algebraMap F F_[v] z) = v.valuation F z :=
+    v.valuation_adicCompletion_algebraMap P z
+  have : CharZero F_[v] := charZero_of_injective_algebraMap (algebraMap F F_[v]).injective
+  refine 𝕎[v].range_μ_le_selmerGroupA_of_exp_neg_one_le (fun P _ ↦ ?_) (fun P _ ↦ ?_)
+    (fun P _ ↦ ?_) fun P _ ↦ ?_
+  · simpa [toAffine, key] using ha₂
+  · simpa [toAffine, key] using ha₄
+  · simpa [toAffine, key] using ha₆
+  · rw [W.baseChange_discr_f, key]
+    exact hd
+
 open AdjoinRoot in
 open scoped Classical in
-/-- **Semilocal comparison, global to local**: an `S`-unramified square class localizes to an
-unramified class at every good finite place. -/
-theorem localRes_mem_selmerGroupA {v : HeightOneSpectrum (𝓞 F)} (hv : v ∉ W.badPrimes (𝓞 F))
-    {m : W.M} (hm : m ∈ W.selmerGroupA (𝓞 F)) :
-    W.localRes F_[v] m ∈ 𝕎[v].selmerGroupA 𝒪_[v] := by
+/-- **Semilocal comparison, global to local**: a square class unramified outside `S` localizes to
+an unramified class at every finite place outside `S`. -/
+theorem localRes_mem_selmerGroupA {S : Set (HeightOneSpectrum (𝓞 F))}
+    {v : HeightOneSpectrum (𝓞 F)} (hv : v ∉ S) {m : W.M} (hm : m ∈ W.selmerGroupA (𝓞 F) S) :
+    W.localRes F_[v] m ∈ 𝕎[v].selmerGroupA 𝒪_[v] ∅ := by
   -- Each monic irreducible factor `q` of `f` over `F_v` divides the image of a factor `p` of `f`;
   -- the induced embedding `F[X] ⧸ (p) → F_v[X] ⧸ (q)` restricts to the rings of integers, the
   -- prime of the local ring of integers contracts to a prime `w ∣ v`, and the local valuation is
@@ -389,7 +395,7 @@ theorem localRes_mem_selmerGroupA {v : HeightOneSpectrum (𝓞 F)} (hv : v ∉ W
   simp only [mem_selmerGroupA_iff, AdjoinRoot.modPowEquivPiFactors_mk,
     mem_selmerGroupFactor_unit_iff] at hm
   rw [W.localRes_mem_selmerGroupA_iff v a]
-  intro q w hw
+  intro q w
   -- find the global factor `p` below the local factor `q`
   obtain ⟨p, hq⟩ := Polynomial.Factors.exists_dvd_map (algebraMap F F_[v]) W.f_ne_zero q.prime
     (q.dvd.trans (W.baseChange_f F_[v]).dvd)
@@ -414,12 +420,11 @@ theorem localRes_mem_selmerGroupA {v : HeightOneSpectrum (𝓞 F)} (hv : v ∉ W
 open AdjoinRoot in
 open scoped Classical in
 /-- **Semilocal comparison, local to global**: a square class that localizes to an unramified class
-at every good finite place is `S`-unramified. -/
-theorem mem_selmerGroupA_of_forall_localRes {m : W.M}
-    (hm : ∀ v : HeightOneSpectrum (𝓞 F), v ∉ W.badPrimes (𝓞 F) →
-      W.localRes F_[v] m ∈ 𝕎[v].selmerGroupA 𝒪_[v]) :
-    m ∈ W.selmerGroupA (𝓞 F) := by
-  -- Every prime `w` of a field factor `F[X] ⧸ (p)` above a good place `v` arises from a factor of
+at every finite place outside `S` is unramified outside `S`. -/
+theorem mem_selmerGroupA_of_forall_localRes {S : Set (HeightOneSpectrum (𝓞 F))} {m : W.M}
+    (hm : ∀ v : HeightOneSpectrum (𝓞 F), v ∉ S → W.localRes F_[v] m ∈ 𝕎[v].selmerGroupA 𝒪_[v] ∅) :
+    m ∈ W.selmerGroupA (𝓞 F) S := by
+  -- Every prime `w` of a field factor `F[X] ⧸ (p)` above a place `v ∉ S` arises from a factor of
   -- `f` over `F_v`, namely the minimal polynomial of the image of the root in the completion at
   -- `w` (`localFactor`). Evenness transports from the primes of the local ring of integers
   -- through the completion `(F[X] ⧸ (p))_w` back to `w`.
@@ -428,13 +433,11 @@ theorem mem_selmerGroupA_of_forall_localRes {m : W.M}
   simp only [mem_selmerGroupA_iff, AdjoinRoot.modPowEquivPiFactors_mk,
     mem_selmerGroupFactor_unit_iff]
   intro p w hw
-  have hv : HeightOneSpectrum.under (𝓞 F) w ∉ W.badPrimes (𝓞 F) :=
-    W.under_notMem_badPrimes (𝓞 F) p hw
+  have hv : HeightOneSpectrum.under (𝓞 F) w ∉ S := fun h ↦
+    hw ((HeightOneSpectrum.mem_primesAbove_iff (𝓞 F) _ _ _).mpr h)
   refine W.dvd_toAdd_valuationOfNeZero_of_localFactor (HeightOneSpectrum.under (𝓞 F) w) p w a ?_
-  refine (W.localRes_mem_selmerGroupA_iff (HeightOneSpectrum.under (𝓞 F) w) a).mp
-    (hm (HeightOneSpectrum.under (𝓞 F) w) hv) _ _ ?_
-  rw [HeightOneSpectrum.mem_primesAbove_iff, W.badPrimes_adicCompletionIntegers hv]
-  exact Set.notMem_empty _
+  exact (W.localRes_mem_selmerGroupA_iff (HeightOneSpectrum.under (𝓞 F) w) a).mp
+    (hm (HeightOneSpectrum.under (𝓞 F) w) hv) _ _
 
 end WeierstrassCurve.Affine
 

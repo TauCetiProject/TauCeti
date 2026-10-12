@@ -53,20 +53,20 @@ universe u v w x
 section Semiring
 
 variable {A : Type u} [Semiring A]
-variable {M : Type v} [AddCommGroup M] [Module A M]
-variable {N : Type w} [AddCommGroup N] [Module A N]
+variable {M : Type v} [AddCommMonoid M] [Module A M]
+variable {N : Type w} [AddCommMonoid N] [Module A N]
 variable {P : Type x} [AddCommGroup P] [Module A P]
 
 /-- **Cancellation of a summand with local endomorphism ring.** If `End_A(P)` is local, a linear
 equivalence `M × P ≃ N × P` induces a linear equivalence `M ≃ N`.
 
-No finiteness assumption is needed.  The local endomorphism hypothesis already implies that `P`
+Only `P` needs additive inverses; `M` and `N` may be semimodules over a semiring. No finiteness
+assumption is needed. The local endomorphism hypothesis already implies that `P`
 is indecomposable; this is the one-summand cancellation step iterated in Krull--Schmidt--Azumaya
 cancellation. -/
 theorem nonempty_linearEquiv_of_prod_linearEquiv_of_isLocalRing_end
     [IsLocalRing (Module.End A P)]
     (h : Nonempty ((M × P) ≃ₗ[A] (N × P))) : Nonempty (M ≃ₗ[A] N) := by
-  let _ : Nontrivial P := nontrivial_of_isLocalRing_end (A := A)
   let e := h.some
   let b : P →ₗ[A] N := (LinearMap.fst A N P).comp
     ((e : (M × P) →ₗ[A] (N × P)).comp (LinearMap.inr A M P))
@@ -117,56 +117,42 @@ theorem nonempty_linearEquiv_of_prod_linearEquiv_of_isLocalRing_end
       convert hd using 1
       ext p
       simp [b, d, LinearMap.add_apply]
-  -- Two triangular shears clear the off-diagonal blocks; the remaining diagonal block
-  -- `s = a₁ - b₁ d₁⁻¹ c₁` is the required isomorphism `M ≃ N`.
-  let a₁ : M →ₗ[A] N := (LinearMap.fst A N P).comp
-    ((e₁ : (M × P) →ₗ[A] (N × P)).comp (LinearMap.inl A M P))
-  let b₁ : P →ₗ[A] N := (LinearMap.fst A N P).comp
-    ((e₁ : (M × P) →ₗ[A] (N × P)).comp (LinearMap.inr A M P))
+  -- Clear the lower-left block. The resulting triangular equivalence restricts to an
+  -- equivalence on pairs with second coordinate zero, so no subtraction in `M` or `N` is needed.
   let c₁ : M →ₗ[A] P := (LinearMap.snd A N P).comp
     ((e₁ : (M × P) →ₗ[A] (N × P)).comp (LinearMap.inl A M P))
   let d₁ : Module.End A P := (LinearMap.snd A N P).comp
     ((e₁ : (M × P) →ₗ[A] (N × P)).comp (LinearMap.inr A M P))
   let ed : P ≃ₗ[A] P := LinearEquiv.ofBijective d₁ ((Module.End.isUnit_iff d₁).mp he₁)
-  let s : M →ₗ[A] N := a₁ - b₁.comp ((ed.symm : P →ₗ[A] P).comp c₁)
   let sourceShear : (M × P) ≃ₗ[A] (M × P) :=
     (LinearEquiv.refl A M).skewProd (LinearEquiv.refl A P)
       (-((ed.symm : P →ₗ[A] P).comp c₁))
-  let targetShear : (N × P) ≃ₗ[A] (N × P) :=
-    (LinearEquiv.prodComm A N P).trans
-      (((LinearEquiv.refl A P).skewProd (LinearEquiv.refl A N)
-        (-b₁.comp (ed.symm : P →ₗ[A] P))).trans (LinearEquiv.prodComm A P N))
-  let diagonal := sourceShear.trans (e₁.trans targetShear)
-  have he₁_apply (m : M) (p : P) : e₁ (m, p) =
-      (a₁ m + b₁ p, c₁ m + d₁ p) := by
+  let triangular := sourceShear.trans e₁
+  let s : M →ₗ[A] N := (LinearMap.fst A N P).comp
+    ((triangular : (M × P) →ₗ[A] (N × P)).comp (LinearMap.inl A M P))
+  have he₁_snd (m : M) (p : P) : (e₁ (m, p)).2 = c₁ m + d₁ p := by
     rw [← Prod.fst_add_snd (m, p), map_add]
-    simp only [a₁, b₁, c₁, d₁, LinearMap.comp_apply, LinearMap.inl_apply,
-      LinearMap.inr_apply, LinearMap.fst_apply, LinearMap.snd_apply]
     rfl
-  have hdiagonal (m : M) (p : P) : diagonal (m, p) = (s m, d₁ p) := by
-    simp only [diagonal, sourceShear, targetShear, LinearEquiv.trans_apply,
-      LinearEquiv.skewProd_apply, LinearEquiv.refl_apply, LinearEquiv.prodComm_apply]
-    rw [he₁_apply]
-    have hd_inv (x : P) : d₁ ((ed.symm : P →ₗ[A] P) x) = x := ed.apply_symm_apply x
-    have hinv_d (x : P) : (ed.symm : P →ₗ[A] P) (d₁ x) = x := ed.symm_apply_apply x
-    simp only [s, LinearMap.comp_apply, LinearMap.sub_apply, LinearMap.neg_apply,
-      Prod.swap_prod_mk]
-    apply Prod.ext
-    · simp only [map_add, map_neg]
-      rw [hd_inv, hinv_d]
-      module
-    · simp only [map_add, map_neg]
-      rw [hd_inv]
-      module
+  have htriangular (m : M) (p : P) : (triangular (m, p)).2 = d₁ p := by
+    simp only [triangular, sourceShear, LinearEquiv.trans_apply,
+      LinearEquiv.skewProd_apply, LinearEquiv.refl_apply, LinearMap.neg_apply,
+      LinearMap.comp_apply]
+    rw [he₁_snd]
+    have hd_inv (x : P) : d₁ (ed.symm x) = x := ed.apply_symm_apply x
+    simp [hd_inv]
   have hs_injective : Function.Injective s := by
     intro m m' hmm'
-    have hpair : diagonal (m, 0) = diagonal (m', 0) := by
-      rw [hdiagonal, hdiagonal, hmm']
-    exact congrArg Prod.fst (diagonal.injective hpair)
+    have hpair : triangular (m, 0) = triangular (m', 0) := by
+      apply Prod.ext
+      · exact hmm'
+      · rw [htriangular, htriangular]
+    exact congrArg Prod.fst (triangular.injective hpair)
   have hs_surjective : Function.Surjective s := by
     intro n
-    obtain ⟨⟨m, p⟩, hmp⟩ := diagonal.surjective (n, 0)
-    rw [hdiagonal] at hmp
+    obtain ⟨⟨m, p⟩, hmp⟩ := triangular.surjective (n, 0)
+    have hp : d₁ p = 0 := by simpa only [htriangular] using congrArg Prod.snd hmp
+    have hp : p = 0 := ed.injective (hp.trans ed.map_zero.symm)
+    subst p
     exact ⟨m, congrArg Prod.fst hmp⟩
   exact ⟨LinearEquiv.ofBijective s ⟨hs_injective, hs_surjective⟩⟩
 

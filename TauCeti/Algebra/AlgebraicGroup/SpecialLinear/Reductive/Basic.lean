@@ -47,9 +47,6 @@ common geometric-fibre transport factored through the generic reductivity API.
 
 * J. S. Milne, *Algebraic Groups* (2017), §§4.a, 5, 19.b, and Chapter 14.
 * T. A. Springer, *Linear Algebraic Groups*, §§2.2 and 2.4.
-
-This completes the `SL_n` worked example in Layer 6, "Reductive and semisimple groups", of the
-ReductiveGroups roadmap.
 -/
 
 public section
