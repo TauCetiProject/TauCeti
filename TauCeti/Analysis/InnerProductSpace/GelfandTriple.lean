@@ -7,9 +7,6 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.Continuous
 public import Mathlib.Analysis.InnerProductSpace.LinearMap
-public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
-import Mathlib.Analysis.Normed.Module.FiniteDimension
-import Mathlib.LinearAlgebra.Dual.Lemmas
 
 /-!
 # The Gelfand triple `V ↪ H ↪ V*`
@@ -37,8 +34,7 @@ The composite `ι.gelfandDual ∘ ι : V →L[ℝ] StrongDual ℝ V` is the symm
 * `ContinuousLinearMap.gelfandDual_injective`: it is injective when `ι` has dense range.
 * `ContinuousLinearMap.flip_gelfandDual_comp`: the form `⟪ι x, ι y⟫` on `V` is symmetric.
 * `ContinuousLinearMap.gelfandDual_comp_injective`: the composite `V → V*` is injective when `ι`
-  is, and `ContinuousLinearMap.gelfandDual_comp_bijective`: bijective if `V` is moreover
-  finite-dimensional.
+  is.
 
 ## References
 
@@ -109,13 +105,5 @@ theorem gelfandDual_comp_injective (hι : Function.Injective ι) :
     Function.Injective (ι.gelfandDual.comp ι) := by
   refine (injective_iff_map_eq_zero _).2 fun x hx ↦ (injective_iff_map_eq_zero ι).1 hι x ?_
   simpa using congr($hx x)
-
-/-- If `V` is finite-dimensional and `ι` is injective, the composite `ι.gelfandDual ∘ ι : V → V*`
-is bijective, since `V*` has the same dimension as `V`. -/
-theorem gelfandDual_comp_bijective [FiniteDimensional ℝ V] (hι : Function.Injective ι) :
-    Function.Bijective (ι.gelfandDual.comp ι) :=
-  (LinearMap.linearEquivOfInjective (ι.gelfandDual.comp ι : V →ₗ[ℝ] StrongDual ℝ V)
-    (ι.gelfandDual_comp_injective hι)
-    (Subspace.dual_finrank_eq.symm.trans LinearMap.toContinuousLinearMap.finrank_eq)).bijective
 
 end ContinuousLinearMap

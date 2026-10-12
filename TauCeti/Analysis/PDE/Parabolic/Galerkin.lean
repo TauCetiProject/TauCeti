@@ -12,10 +12,10 @@ public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 public import TauCeti.Analysis.Sobolev.WeakDeriv.Basic
 import Mathlib.Analysis.InnerProductSpace.Dual
 import Mathlib.Analysis.Normed.Module.FiniteDimension
-import Mathlib.LinearAlgebra.Dual.Lemmas
 import TauCeti.Analysis.ODE.Caratheodory
 import TauCeti.Analysis.Sobolev.WeakDeriv.Interval
 import TauCeti.MeasureTheory.Function.StronglyMeasurable.FiniteDimensional
+import TauCeti.Topology.Algebra.Module.BilinearForm
 
 /-!
 # Galerkin approximations of linear parabolic equations
@@ -195,9 +195,8 @@ theorem exists_hasWeakLineDerivOn_gelfandDual_of_finiteDimensional (hι : Inject
         (fun t ↦ f t - A t (u t)) 1 := by
   have := FiniteDimensional.complete ℝ V
   -- The Gram operator `G = ι.gelfandDual ∘ ι` is an isomorphism `V ≃L[ℝ] V*`.
-  set G : V ≃L[ℝ] StrongDual ℝ V :=
-    (LinearEquiv.ofBijective _ (ι.gelfandDual_comp_bijective hι)).toContinuousLinearEquiv
-  have hG : ∀ v, G v = ι.gelfandDual (ι v) := fun v ↦ by simp [G]
+  obtain ⟨G, hG⟩ := ContinuousLinearMap.isInvertible_of_injective (ι.gelfandDual_comp_injective hι)
+  replace hG : ∀ v, G v = ι.gelfandDual (ι v) := fun v ↦ congr($hG v)
   set Ginv : StrongDual ℝ V →L[ℝ] V := (G.symm : StrongDual ℝ V →L[ℝ] V)
   -- The equation is `x' = M(t) x + F(t)` with `M(t) = -G⁻¹ A(t)` and `F(t) = G⁻¹ f(t)`.
   set M : ℝ → V →L[ℝ] V := fun t ↦ -(Ginv.comp (A t))
