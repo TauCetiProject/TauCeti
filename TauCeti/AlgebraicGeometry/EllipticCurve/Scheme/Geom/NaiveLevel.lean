@@ -95,7 +95,6 @@ theorem comp_pointsPullback_left_eq_comp_zero_iff (P : 𝟙_ (Over S) ⟶ Over.m
 point does.** For a pullback square of elliptic curves over `f : S' ⟶ S` and an `S`-point `P` of
 `E`, the base change `P'` of `P` agrees with the zero section of `E'` at a point `s'` of `S'` if and
 only if `P` agrees with the zero section of `E` at `f s'`. -/
-@[simp]
 theorem pointsPullback_left_apply_eq_zero_iff (P : 𝟙_ (Over S) ⟶ Over.mk E.structureMap)
     (s' : S') :
     (pointsPullback hg h0 P).left s' = E'.zero s' ↔ P.left (f s') = E.zero (f s') := by
