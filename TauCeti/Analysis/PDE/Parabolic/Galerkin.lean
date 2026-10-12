@@ -52,12 +52,12 @@ variable {V H F : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
 
 /-- **Existence and uniqueness of Galerkin approximations.** For a bounded autonomous energy
 operator, continuous forcing and a finite-dimensional trial map injective into the pivot space,
-the projected parabolic equation has a unique global `C¹` solution. The coordinates need not
-be orthonormal in the pivot space. -/
+the projected parabolic equation has a unique global `C¹` solution with prescribed value at
+any time `t₀`. The coordinates need not be orthonormal in the pivot space. -/
 theorem existsUnique_galerkinSolution (ι : V →L[ℝ] H) (A : V →L[ℝ] StrongDual ℝ V)
     (e : F →L[ℝ] V) (he : Function.Injective (ι.comp e)) {f : ℝ → StrongDual ℝ V}
-    (hf : Continuous f) (x : F) :
-    ∃! c : ℝ → F, c 0 = x ∧ ContDiff ℝ 1 c ∧ ∀ t v,
+    (hf : Continuous f) (x : F) (t₀ : ℝ) :
+    ∃! c : ℝ → F, c t₀ = x ∧ ContDiff ℝ 1 c ∧ ∀ t v,
       ⟪ι (e (deriv c t)), ι (e v)⟫_ℝ + A (e (c t)) (e v) = f t (e v) := by
   -- Represent the restricted mass and energy forms by operators on the coordinate space.
   let j := ι.comp e
@@ -109,7 +109,7 @@ theorem existsUnique_galerkinSolution (ι : V →L[ℝ] H) (A : V →L[ℝ] Stro
       simp only [hM, inner_sub_left, hR, hD] at hv
       exact (eq_sub_iff_add_eq).1 hv
   -- Solve the reduced ODE, then transfer both its equation and its uniqueness back.
-  obtain ⟨c, hc, huniq⟩ := B.existsUnique_hasDerivAt_add hg x
+  obtain ⟨c, hc, huniq⟩ := B.existsUnique_hasDerivAt_add hg x t₀
   have hderiv : deriv c = fun t ↦ B (c t) + g t := by
     funext t
     exact (hc.2 t).deriv
@@ -125,19 +125,20 @@ theorem existsUnique_galerkinSolution (ι : V →L[ℝ] H) (A : V →L[ℝ] Stro
   exact (hd.2.1.differentiable one_ne_zero t).hasDerivAt
 
 /-- **The uniform Galerkin energy estimate.** If the energy operator satisfies Gårding's
-inequality with constants `α > 0` and `β ≥ 0`, every `C¹` projected solution on a
-complete trial subspace satisfies the parabolic energy estimate with the same constants.
+inequality on the trial subspace with constants `α > 0` and `β ≥ 0`, every `C¹` projected
+solution on a complete trial subspace satisfies the parabolic energy estimate on `[t₀, T]`
+with the same constants.
 The right-hand side uses the norm of the original forcing in `V*`, not its coordinate norm. -/
 theorem norm_sq_add_mul_integral_le_galerkin (ι : V →L[ℝ] H)
     (A : V →L[ℝ] StrongDual ℝ V) (G : Submodule ℝ V) [CompleteSpace G]
     {c : ℝ → G} (hc : ContDiff ℝ 1 c) {f : ℝ → StrongDual ℝ V} (hf : Continuous f)
-    {α β T : ℝ} (hα : 0 < α) (hβ : 0 ≤ β)
-    (hA : ∀ v, α * ‖v‖ ^ 2 - β * ‖ι v‖ ^ 2 ≤ A v v)
+    {α β t₀ T : ℝ} (hα : 0 < α) (hβ : 0 ≤ β)
+    (hA : ∀ v : G, α * ‖v‖ ^ 2 - β * ‖ι v‖ ^ 2 ≤ A v v)
     (heq : ∀ t (v : G),
       ⟪ι (↑(deriv c t) : V), ι v⟫_ℝ + A (c t) v = f t v)
-    {t : ℝ} (ht : t ∈ Icc 0 T) :
-    ‖ι (c t)‖ ^ 2 + α * ∫ s in (0 : ℝ)..t, ‖c s‖ ^ 2 ≤
-      Real.exp (2 * β * t) * (‖ι (c 0)‖ ^ 2 + α⁻¹ * ∫ s in (0 : ℝ)..t, ‖f s‖ ^ 2) := by
+    {t : ℝ} (ht : t ∈ Icc t₀ T) :
+    ‖ι (c t)‖ ^ 2 + α * ∫ s in t₀..t, ‖c s‖ ^ 2 ≤
+      Real.exp (2 * β * (t - t₀)) * (‖ι (c t₀)‖ ^ 2 + α⁻¹ * ∫ s in t₀..t, ‖f s‖ ^ 2) := by
   let j : G →L[ℝ] H := ι.comp G.subtypeL
   let L := j.gelfandDual.comp j
   let Ag := A.bilinearComp G.subtypeL G.subtypeL
@@ -145,24 +146,24 @@ theorem norm_sq_add_mul_integral_le_galerkin (ι : V →L[ℝ] H)
   have hcc : Continuous c := hc.continuous
   have hdc : Continuous (deriv c) := hc.continuous_deriv (by simp)
   have hfg : Continuous fg := by fun_prop
-  have hweak : HasWeakLineDerivOn volume ⟨Ioo 0 T, isOpen_Ioo⟩ c (deriv c) 1 := by
+  have hweak : HasWeakLineDerivOn volume ⟨Ioo t₀ T, isOpen_Ioo⟩ c (deriv c) 1 := by
     refine hasWeakLineDerivOn_of_hasLineDerivAt
       (hcc.locallyIntegrable.locallyIntegrableOn _) (hdc.locallyIntegrable.locallyIntegrableOn _) ?_
     intro s _
     simpa using (hc.differentiable one_ne_zero s).hasDerivAt.hasFDerivAt.hasLineDerivAt (1 : ℝ)
-  have hcp : MemLp c 2 (volume.restrict (Ioo 0 T)) :=
+  have hcp : MemLp c 2 (volume.restrict (Ioo t₀ T)) :=
     hcc.continuousOn.memLp_restrict_of_subset_isCompact
       isCompact_Icc measurableSet_Ioo Ioo_subset_Icc_self 2
-  have hdcp : MemLp (fun s ↦ L (deriv c s)) 2 (volume.restrict (Ioo 0 T)) :=
+  have hdcp : MemLp (fun s ↦ L (deriv c s)) 2 (volume.restrict (Ioo t₀ T)) :=
     (L.continuous.comp hdc).continuousOn.memLp_restrict_of_subset_isCompact
       isCompact_Icc measurableSet_Ioo Ioo_subset_Icc_self 2
-  have hfp : MemLp fg 2 (volume.restrict (Ioo 0 T)) :=
+  have hfp : MemLp fg 2 (volume.restrict (Ioo t₀ T)) :=
     ContinuousOn.memLp_restrict_of_subset_isCompact (E := StrongDual ℝ G) (μ := volume)
       hfg.continuousOn isCompact_Icc measurableSet_Ioo Ioo_subset_Icc_self 2
-  have hAg : ∀ᵐ s ∂volume.restrict (Ioo 0 T),
+  have hAg : ∀ᵐ s ∂volume.restrict (Ioo t₀ T),
       ∀ v, α * ‖v‖ ^ 2 - β * ‖j v‖ ^ 2 ≤ Ag v v := by
     exact .of_forall fun _ v ↦ by simpa [j, Ag] using hA v
-  have heqg : ∀ᵐ s ∂volume.restrict (Ioo 0 T), L (deriv c s) + Ag (c s) = fg s := by
+  have heqg : ∀ᵐ s ∂volume.restrict (Ioo t₀ T), L (deriv c s) + Ag (c s) = fg s := by
     refine .of_forall fun s ↦ ?_
     ext v
     simpa [L, j, Ag, fg] using heq s v
@@ -170,18 +171,20 @@ theorem norm_sq_add_mul_integral_le_galerkin (ι : V →L[ℝ] H)
     hcp hdcp hfp hα hβ hAg heqg
     (j.continuous.comp hcc).continuousOn (.of_forall fun _ ↦ rfl) ht
   have hfnorm (s : ℝ) : ‖fg s‖ ≤ ‖f s‖ := by
-    refine ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg _) fun v ↦ ?_
-    exact (f s).le_opNorm v
-  have hint : ∫ s in (0 : ℝ)..t, ‖fg s‖ ^ 2 ≤ ∫ s in (0 : ℝ)..t, ‖f s‖ ^ 2 := by
+    calc
+      ‖fg s‖ ≤ ‖f s‖ * ‖G.subtypeL‖ := ContinuousLinearMap.opNorm_comp_le _ _
+      _ ≤ ‖f s‖ * 1 := mul_le_mul_of_nonneg_left G.norm_subtypeL_le (norm_nonneg _)
+      _ = ‖f s‖ := mul_one _
+  have hint : ∫ s in t₀..t, ‖fg s‖ ^ 2 ≤ ∫ s in t₀..t, ‖f s‖ ^ 2 := by
     have hfg2 : Continuous (fun s ↦ ‖fg s‖ ^ 2) :=
       (Continuous.norm (E := StrongDual ℝ G) hfg).pow 2
     have hf2 : Continuous (fun s ↦ ‖f s‖ ^ 2) :=
       (Continuous.norm (E := StrongDual ℝ V) hf).pow 2
     refine intervalIntegral.integral_mono_on ht.1
-      (hfg2.intervalIntegrable 0 t) (hf2.intervalIntegrable 0 t) fun s _ ↦ ?_
+      (hfg2.intervalIntegrable t₀ t) (hf2.intervalIntegrable t₀ t) fun s _ ↦ ?_
     exact pow_le_pow_left₀ (ContinuousLinearMap.opNorm_nonneg (fg s)) (hfnorm s) 2
-  have hest' : ‖ι (c t)‖ ^ 2 + α * ∫ s in (0 : ℝ)..t, ‖c s‖ ^ 2 ≤
-      Real.exp (2 * β * t) * (‖ι (c 0)‖ ^ 2 + α⁻¹ * ∫ s in (0 : ℝ)..t, ‖fg s‖ ^ 2) := by
+  have hest' : ‖ι (c t)‖ ^ 2 + α * ∫ s in t₀..t, ‖c s‖ ^ 2 ≤
+      Real.exp (2 * β * (t - t₀)) * (‖ι (c t₀)‖ ^ 2 + α⁻¹ * ∫ s in t₀..t, ‖fg s‖ ^ 2) := by
     simpa [j] using hest
   refine hest'.trans ?_
   gcongr
