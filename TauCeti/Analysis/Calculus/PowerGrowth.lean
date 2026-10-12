@@ -14,8 +14,6 @@ public import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 The inequality `α f(t) ≤ t f'(t)` makes `f(t) / t^α` nondecreasing on positive
 intervals. It gives power bounds at smaller radii from data at a larger radius,
 including when `f` vanishes. No division by `f` or positivity assumption on `f` is needed.
-
-The proof uses Mathlib's derivative criterion for monotonicity and real-power calculus.
 -/
 
 public section

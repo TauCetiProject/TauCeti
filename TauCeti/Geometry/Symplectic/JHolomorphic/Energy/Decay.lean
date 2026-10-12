@@ -24,8 +24,7 @@ continuous extension and elliptic regularity require further arguments.
 ## References
 
 * D. McDuff and D. Salamon, *J-holomorphic Curves and Symplectic Topology*, 2nd ed.,
-  Section 4.5. The proof combines the punctured-disc isoperimetric estimate with
-  radial differentiation of the energy and Mathlib's monotonicity criterion.
+  Section 4.5.
 -/
 
 public section
