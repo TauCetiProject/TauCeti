@@ -203,7 +203,8 @@ open CategoryTheory.Functor IntSequence
 variable {C : Type u₁} [Category.{v₁} C] (e : C ≌ C)
 
 /-- The counit of the evaluation equivalence, with its source displayed as a degree-zero term. -/
-private noncomputable def evalCounitIso (X : C) : ((eval (e := e)).inv.obj X).X 0 ≅ X :=
+@[expose]
+noncomputable def evalCounitIso (X : C) : ((eval (e := e)).inv.obj X).X 0 ≅ X :=
   (eval (e := e)).asEquivalence.counitIso.app X
 
 /-- Evaluation in degree zero of a morphism lifted through the inverse evaluation equivalence. -/
@@ -225,7 +226,7 @@ private theorem evalCommShiftIso_one_hom_app (Y : IntSequence e) :
   exact (Iso.eq_comp_inv (e.shiftFunctorOneIso.app (Y.X 0))).2 h
 
 /-- The degree-zero component of the inverse evaluation functor's degree-one shift comparison. -/
-private theorem evalInverseCommShiftIso_one_hom_app_f_zero (X : C) :
+theorem evalInverseCommShiftIso_one_hom_app_f_zero (X : C) :
     letI := e.hasShift
     letI : (eval (e := e)).asEquivalence.functor.CommShift ℤ := e.evalCommShift
     letI : (eval (e := e)).inv.CommShift ℤ := (eval (e := e)).asEquivalence.commShiftInverse ℤ

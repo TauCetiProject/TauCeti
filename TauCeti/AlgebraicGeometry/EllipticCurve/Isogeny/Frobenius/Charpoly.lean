@@ -28,7 +28,7 @@ proves the Frobenius identities
 in the endomorphisms of `W` (Silverman V.2.3.1). The first says that `π` is a root of
 `X² - a_q X + q`; the second, with `π ∘ π̂ = [q]`, says that `π` and `π̂` are the two roots.
 
-The proof works on torsion over a separably closed algebraic extension `K` of `F`. For a prime
+The proof works on torsion over a separably closed extension `K` of `F`. For a prime
 `ℓ ≠ char F`, the base-changed Frobenius acts on `E[ℓ]` by a `2 × 2` matrix over `ZMod ℓ` of
 determinant `q`, through the Weil pairing, and with `det (1 - M) = deg (id - π) = #E(𝔽_q)`; so its
 trace is `a_q` modulo `ℓ`, and the Cayley–Hamilton theorem kills `π² - a_q π + q` on `E[ℓ]`. An
@@ -60,9 +60,9 @@ variable {F : Type*} [Field F] [Finite F] (W : WeierstrassCurve.Affine F) [W.IsE
 
 namespace Hom
 
-variable {K : Type*} [Field K] [Algebra F K] [IsSepClosed K] [Algebra.IsAlgebraic F K]
+variable {K : Type*} [Field K] [Algebra F K] [IsSepClosed K]
 
-/-- Over a separably closed algebraic extension, `π ∘ π` and `a_q π - q` act alike on `E[ℓ]` for
+/-- Over a separably closed extension, `π ∘ π` and `a_q π - q` act alike on `E[ℓ]` for
 every prime `ℓ` invertible in the field: the matrix of `π` there has determinant `q` and trace
 `a_q`, and satisfies its characteristic polynomial. -/
 private theorem torsionLinearMap_baseChangeFrobenius_comp [DecidableEq K] {ℓ : ℕ}
@@ -100,7 +100,7 @@ private theorem torsionLinearMap_baseChangeFrobenius_comp [DecidableEq K] {ℓ :
     _root_.map_nsmul, LinearMap.toMatrix_id b, ← sub_eq_zero, ← hcayley]
   abel
 
-/-- Over a separably closed algebraic extension, the base-changed Frobenius satisfies
+/-- Over a separably closed extension, the base-changed Frobenius satisfies
 `π ∘ π = a_q π - q`, by rigidity on prime torsion. -/
 private theorem baseChangeFrobenius_comp_baseChangeFrobenius :
     (ofIsogeny (baseChangeFrobenius K W)).comp (ofIsogeny (baseChangeFrobenius K W)) =

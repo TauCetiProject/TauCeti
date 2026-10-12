@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.Quiver.PathAlgebra.Augmentation
+public import TauCeti.RepresentationTheory.Quiver.PathAlgebra.PathsInto
 public import TauCeti.RepresentationTheory.Quiver.Preprojective.Signless
+public import TauCeti.RepresentationTheory.Quiver.Preprojective.Signless.Grading
 
 /-!
 # The augmentation endpoint of the signless preprojective Koszul complex
@@ -17,8 +19,9 @@ exactly the image of the incoming-arrow map `(z_b) ↦ ∑ b z_b`. Every scalar 
 coefficient, so the cokernel of this map is one copy of the coefficient ring, not an unspecified
 quotient. These statements complete the augmentation endpoint of the signless Koszul complex.
 They work over every commutative ring, also for non-bipartite doubled graphs and in
-characteristic two. Injectivity at the left endpoint still requires the non-backtracking
-hypothesis of `TauCeti.RepresentationTheory.Quiver.Preprojective.Signless.KoszulComplex`.
+characteristic two. The positive path-degree characterization below identifies the same
+arrow image in a finite quiver with involutive reversal. Injectivity at the left endpoint still
+requires the non-backtracking hypothesis from the signless Koszul complex.
 
 For a connected simple graph with at least three vertices, the signless algebra is the
 quadratic dual of its zigzag algebra, whereas it need not be the signed preprojective algebra
@@ -39,6 +42,8 @@ namespace TauCeti
 open _root_.Quiver PathAlgebra
 
 universe u v w
+
+section VertexAugmentation
 
 variable (k : Type w) [CommRing k] {R : Type u} [Quiver.{v} R] [HasReverse R]
   [Finite R] [∀ x : R, Fintype (Quiver.Star x)]
@@ -128,5 +133,53 @@ theorem exists_signlessPreprojectiveAugmentation_apply_eq (v : R) (c : k) :
   simpa only [signlessPreprojectiveAugmentation, signlessPreprojectiveMk_apply] using
     exists_quotientTrivialCoeff_apply_eq
       (signlessPreprojectiveIdeal_le_arrowIdeal k) v c
+
+end VertexAugmentation
+
+section PositiveDegree
+
+variable (k : Type w) (R : Type u) [CommRing k] [Quiver.{v} R] [HasInvolutiveReverse R]
+  [Fintype R] [∀ i j : R, Fintype (i ⟶ j)] [∀ x : R, Fintype (Quiver.Star x)]
+
+/-- An element of the vertex corner has positive path degree exactly when it is a sum of
+incoming arrows times elements of their source corners. This is exactness at the augmentation
+endpoint of the signless Koszul complex. -/
+theorem mem_iSup_signlessPreprojectiveGrade_add_one_iff_exists_eq_sum (v : R)
+    {x : signlessPreprojectiveAlgebra k R}
+    (hx : signlessPreprojectiveMk k R (vertexIdempotent k v) * x = x) :
+    x ∈ ⨆ n, signlessPreprojectiveGrade k R (n + 1) ↔
+      ∃ z : (i : R) → (i ⟶ v) → signlessPreprojectiveAlgebra k R,
+        (∀ i b, signlessPreprojectiveMk k R (vertexIdempotent k i) * z i b = z i b) ∧
+          x = ∑ i, ∑ b, signlessPreprojectiveMk k R (ofArrow b) * z i b := by
+  refine ⟨fun h => ?_, ?_⟩
+  · obtain ⟨z, hz, hxz⟩ : ∃ z : (i : R) → (i ⟶ v) → signlessPreprojectiveAlgebra k R,
+        (∀ i b, signlessPreprojectiveMk k R (vertexIdempotent k i) * z i b = z i b) ∧
+          signlessPreprojectiveMk k R (vertexIdempotent k v) * x =
+            ∑ i, ∑ b, signlessPreprojectiveMk k R (ofArrow b) * z i b := by
+      refine Submodule.iSup_induction (motive := fun x => ∃ z : (i : R) →
+          (i ⟶ v) → signlessPreprojectiveAlgebra k R,
+          (∀ i b, signlessPreprojectiveMk k R (vertexIdempotent k i) * z i b = z i b) ∧
+            signlessPreprojectiveMk k R (vertexIdempotent k v) * x =
+              ∑ i, ∑ b, signlessPreprojectiveMk k R (ofArrow b) * z i b) _ h
+        (fun n x hx' => ?_) ⟨0, fun _ _ => mul_zero _, by simp⟩
+        fun x x' hx hx' => ?_
+      · obtain ⟨y, hy, rfl⟩ := (mem_signlessPreprojectiveGrade_iff k R).1 hx'
+        obtain ⟨w, hw, hwy⟩ := exists_eq_sum_ofArrow_mul
+          (vertexIdempotent_mul_mem_pathsInto v hy)
+        refine ⟨fun i b => signlessPreprojectiveMk k R (w i b), fun i b => ?_, ?_⟩
+        · rw [← map_mul, vertexIdempotent_mul_of_mem_pathsInto (hw i b)]
+        · rw [← map_mul, hwy]
+          simp only [map_sum, map_mul]
+      · obtain ⟨z, hz, hxz⟩ := hx
+        obtain ⟨z', hz', hxz'⟩ := hx'
+        refine ⟨z + z', fun i b => ?_, ?_⟩
+        · rw [Pi.add_apply, Pi.add_apply, mul_add, hz, hz']
+        · simp only [mul_add, hxz, hxz', Pi.add_apply, Finset.sum_add_distrib]
+    exact ⟨z, hz, hx.symm.trans hxz⟩
+  · rintro ⟨z, -, rfl⟩
+    exact sum_mem fun i _ => sum_mem fun b _ =>
+      signlessPreprojectiveMk_ofArrow_mul_mem_iSup k R b (z i b)
+
+end PositiveDegree
 
 end TauCeti
