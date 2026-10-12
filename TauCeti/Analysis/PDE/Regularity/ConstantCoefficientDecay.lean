@@ -49,8 +49,8 @@ and `T Tᵀ = S`, so `u` solves the equation exactly when `u ∘ T` is harmonic
 (`TauCeti.PDE.exists_continuousLinearEquiv_laplacian_comp_eq`). Since `‖T y‖² = yᵀ A y`, the map
 `T` stretches lengths by at most `√Λ` and its inverse by at most `1 / √λ`, and the decay estimates
 for harmonic functions after a linear change of variables
-(`TauCeti.setIntegral_ball_norm_sq_le_of_harmonicOnNhd_comp`) give the result with the condition
-number `√(Λ / λ)` of `T` in the constant.
+(`TauCeti.setIntegral_ball_norm_sq_le_of_harmonicOnNhd_comp`) give the result with the bound
+`√(Λ / λ)` on the condition number of `T` in the constant.
 
 ## Main declarations
 
@@ -117,13 +117,6 @@ theorem laplacian_comp_toEuclideanCLE (T : Matrix ι ι ℝ) (hT : T.det ≠ 0)
     _ = _ := Finset.sum_congr rfl fun c _ => Finset.sum_congr rfl fun a _ =>
         Finset.sum_congr rfl fun k _ => by rw [mul_comm]
 
-/-- The squared norm of the image of `y` under a matrix `T` is the quadratic form of `Tᵀ T`. -/
-private lemma norm_toEuclideanLin_sq (T : Matrix ι ι ℝ) (y : EuclideanSpace ℝ ι) :
-    ‖T.toEuclideanLin y‖ ^ 2 = (Tᵀ * T).toQuadraticForm' y := by
-  rw [← real_inner_self_eq_norm_sq, Matrix.toQuadraticForm'_apply,
-    EuclideanSpace.inner_eq_star_dotProduct, ← mulVec_mulVec, dotProduct_mulVec, vecMul_transpose]
-  simp
-
 /-- **A constant-coefficient operator is the Laplacian in suitable linear coordinates.** Let `A`
 be a square matrix whose quadratic form satisfies `λ ‖ξ‖² ≤ ξᵀ A ξ ≤ Λ ‖ξ‖²` with `0 < λ`. Then
 there is a continuous linear automorphism `e` of `EuclideanSpace ℝ ι`, with
@@ -165,7 +158,10 @@ theorem exists_continuousLinearEquiv_laplacian_comp_eq {A : Matrix ι ι ℝ} {l
     exact (Real.sqrt_pos.2 hS.det_pos).ne'
   set e := T.toEuclideanCLE hdet
   have hnorm : ∀ y, ‖e y‖ ^ 2 = A.toQuadraticForm' y := fun y => by
-    rw [Matrix.toEuclideanCLE_apply, norm_toEuclideanLin_sq, hTt, hTT, hSq]
+    have h := Matrix.inner_toEuclideanLin_toEuclideanLin T 1 y
+    rw [Matrix.toEuclideanCLE_apply, ← real_inner_self_eq_norm_sq, ← hSq, ← hTT]
+    simpa [Matrix.toQuadraticForm'_apply, EuclideanSpace.inner_eq_star_dotProduct, hTt,
+      dotProduct_comm] using h
   refine ⟨e, fun x => ?_, fun y => ?_, fun u y hu => ?_⟩
   · -- `√λ ‖y‖ ≤ ‖e y‖`, applied to `y = e⁻¹ x`.
     have h := hA (e.symm x)

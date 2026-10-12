@@ -131,18 +131,6 @@ omit [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [NormedSpace ℝ F] in
 private noncomputable abbrev smulLeftContinuousLinearEquiv (c : ℝ) (hc : c ≠ 0) : E ≃L[ℝ] E :=
   ContinuousLinearEquiv.smulLeft (Units.mk0 c hc)
 
-omit [FiniteDimensional ℝ E] [FiniteDimensional ℝ E'] in
-/-- The iterated derivative transforms under a continuous linear equivalence on the right by
-pulling the directions through it. This is the unconditional engine behind the transformation of
-the Laplacian under linear changes of variable. -/
-private theorem iteratedFDeriv_comp_continuousLinearEquiv_apply (e : E ≃L[ℝ] E') (f : E' → F)
-    (i : ℕ) (x : E) (m : Fin i → E) :
-    iteratedFDeriv ℝ i (f ∘ e) x m = iteratedFDeriv ℝ i f (e x) (fun j ↦ e (m j)) := by
-  have h := e.iteratedFDerivWithin_comp_right f uniqueDiffOn_univ (x := x) (Set.mem_univ _) i
-  rw [Set.preimage_univ, iteratedFDerivWithin_univ, iteratedFDerivWithin_univ] at h
-  rw [h, ContinuousMultilinearMap.compContinuousLinearMap_apply]
-  rfl
-
 omit [FiniteDimensional ℝ E'] in
 /-- **The Laplacian after a linear change of variables.** For a continuous linear equivalence
 `e : E ≃L[ℝ] E'` and an orthonormal basis `b` of `E`,
@@ -154,7 +142,9 @@ theorem laplacian_comp_continuousLinearEquiv_right_apply {ι : Type*} [Fintype �
     Δ (f ∘ e) x = ∑ i, iteratedFDeriv ℝ 2 f (e x) ![e (b i), e (b i)] := by
   rw [laplacian_eq_iteratedFDeriv_orthonormalBasis (f ∘ e) b]
   refine Finset.sum_congr rfl fun i _ ↦ ?_
-  rw [iteratedFDeriv_comp_continuousLinearEquiv_apply]
+  have h := e.iteratedFDerivWithin_comp_right f uniqueDiffOn_univ (x := x) (Set.mem_univ _) 2
+  rw [Set.preimage_univ, iteratedFDerivWithin_univ, iteratedFDerivWithin_univ] at h
+  rw [h, ContinuousMultilinearMap.compContinuousLinearMap_apply]
   congr 1
   funext j
   fin_cases j <;> rfl

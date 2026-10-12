@@ -530,8 +530,11 @@ theorem setIntegral_ball_norm_sq_le_of_harmonicOnNhd_comp (e : E ≃L[ℝ] E)
           refine mul_le_mul_of_nonneg_left ?_ (by positivity)
           exact setIntegral_mono_set hint' (ae_of_all _ fun _ ↦ by positivity) hsub.eventuallyLE
       _ = _ := by
-          rw [show (∫ y in e ⁻¹' ball x₀ R, ‖(u ∘ e) y‖ ^ 2 ∂ν) = I from
-            setIntegral_comp_map_symm e (fun x ↦ ‖u x‖ ^ 2) _]
+          -- `setIntegral_comp_map_symm` matches the goal only after unfolding `ν` and `∘`, so
+          -- state the pullback of `I` in the form in which it appears here.
+          have hI' : ∫ y in e ⁻¹' ball x₀ R, ‖(u ∘ e) y‖ ^ 2 ∂ν = I :=
+            setIntegral_comp_map_symm e (fun x ↦ ‖u x‖ ^ 2) _
+          rw [hI']
           field_simp
           ring
   · -- For `a ρ > R / b` the factor `2ⁿ (a b)ⁿ (ρ / R)ⁿ` is at least one.
@@ -641,8 +644,11 @@ theorem setIntegral_ball_norm_sub_setAverage_sq_le_of_harmonicOnNhd_comp (e : E 
             (mul_le_mul_of_nonneg_left ?_ (by positivity)) (by norm_num)
           exact setIntegral_mono_set hint' (ae_of_all _ fun _ ↦ by positivity) hsub.eventuallyLE
       _ = _ := by
-          rw [show (∫ y in e ⁻¹' ball x₀ R, ‖(u ∘ e) y - c‖ ^ 2 ∂ν) = I from
-            setIntegral_comp_map_symm e (fun x ↦ ‖u x - c‖ ^ 2) _]
+          -- `setIntegral_comp_map_symm` matches the goal only after unfolding `ν` and `∘`, so
+          -- state the pullback of `I` in the form in which it appears here.
+          have hI' : ∫ y in e ⁻¹' ball x₀ R, ‖(u ∘ e) y - c‖ ^ 2 ∂ν = I :=
+            setIntegral_comp_map_symm e (fun x ↦ ‖u x - c‖ ^ 2) _
+          rw [hI']
           field_simp
           ring
   · -- For `a ρ > R / b` compare with the constant `c`; the factor is then at least `4`.
