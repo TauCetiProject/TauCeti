@@ -121,6 +121,7 @@ theorem coe_spaComapLocHom :
 
 /-- The morphism `spaComapLocHom` is the morphism of `TopCat` induced by the structure map
 `A → A⟨T/s⟩`. -/
+@[simp]
 theorem spaComapTopHom_toCompletionLoc :
     letI := locUniformSpace P T s S hden
     letI := isUniformAddGroup_locUniformSpace P T s S hden

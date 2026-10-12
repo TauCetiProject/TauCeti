@@ -260,9 +260,9 @@ theorem toCompletionLoc_apply [IsTopologicalRing A] (P : PairOfDefinition A) (T 
     letI := isTopologicalRing_locUniformSpace P T s S hden
     toCompletionLoc P T s S hden a = (algebraMap A S a : UniformSpace.Completion S) := (rfl)
 
-/-- **The structure map `A → A⟨T/s⟩` carries open ideals to ideals generating open ideals**: the
-localisation map does so for `locTopology`, and the completion map does so because `Aₛ` is a Huber
-ring. -/
+/-- **The structure map `A → A⟨T/s⟩` carries open ideals to ideals generating open ideals.** This
+is the openness hypothesis `hopen` of `presentationLimitPreAdicSpaceComap`, so it lets the structure
+map of a rational localisation induce a morphism of pre-adic spaces. -/
 theorem isOpen_map_toCompletionLoc [IsTopologicalRing A] (P : PairOfDefinition A) (T : Finset A)
     (s : A) (S : Type*) [CommRing S] [Algebra A S] [IsLocalization.Away s S]
     (hden : HasDenominatorPower P T s S) {J : Ideal A} (hJ : IsOpen (J : Set A)) :
@@ -274,9 +274,12 @@ theorem isOpen_map_toCompletionLoc [IsTopologicalRing A] (P : PairOfDefinition A
   have _ := isUniformAddGroup_locUniformSpace P T s S hden
   have _ := isTopologicalRing_locUniformSpace P T s S hden
   have _ := isHuberRing_locUniformSpace P T s S hden
-  rw [show toCompletionLoc P T s S hden =
-      UniformSpace.Completion.coeRingHom.comp (algebraMap A S) from
-        RingHom.ext (toCompletionLoc_apply P T s S hden), ← Ideal.map_map]
+  -- The body of `toCompletionLoc` is not exported, so unfold it through `toCompletionLoc_apply`
+  -- into the localisation map followed by the completion map, and push `J` through each in turn.
+  have hρ : toCompletionLoc P T s S hden =
+      UniformSpace.Completion.coeRingHom.comp (algebraMap A S) :=
+    RingHom.ext (toCompletionLoc_apply P T s S hden)
+  rw [hρ, ← Ideal.map_map]
   exact isOpen_map_coeRingHom (isOpen_map_algebraMap_locUniformSpace P T s S hden hJ)
 
 /-- **A change of presentation with the same ring of definition leaves the structure map alone.**
