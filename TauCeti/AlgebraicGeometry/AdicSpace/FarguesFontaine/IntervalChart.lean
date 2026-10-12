@@ -6,7 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.AdicSpace.FarguesFontaine.PreAdicSpace
-public import TauCeti.AlgebraicGeometry.AdicSpace.PreAdicSpace.RationalOpen
+public import TauCeti.AlgebraicGeometry.AdicSpace.PreAdicSpace.Adic
+public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.StructurePresheaf.SheafForEveryPresentation
 public import TauCeti.RingTheory.WittVector.Window.Localization
 
 /-!
@@ -46,6 +47,11 @@ The Frobenius windows `U_n` and `V_n` are the windows `q = p ^ n`, `q' = c p ^ n
 The pair of definition of `B^I` used to form its pre-adic space is arbitrary; any one of them gives
 the same space up to this isomorphism.
 
+Sheafiness transfers along the isomorphism. If the pair `(B^I, B^{I,+})` is sheafy, as it is when
+`B^I` is strongly noetherian, then the window is an adic space, and the structure presheaf `𝒪_𝒴`
+of `𝒴` is a sheaf on every open of `𝒴` contained in the window. The sheaf property of `𝒴`, and so
+of the Fargues–Fontaine curve `𝒳 = 𝒴 / φ^ℤ`, is assembled from these charts.
+
 ## Main results
 
 * `TauCeti.FarguesFontaine.rationalSubset_windowNumerators` : the window `{q ≤ κ ≤ q'}` is the
@@ -55,12 +61,17 @@ the same space up to this isomorphism.
 * `TauCeti.FarguesFontaine.windowPreAdicSpaceIso` : the restriction of `Spa(𝕎 O, 𝕎 O)` along `j`
   is isomorphic in `𝒱^pre` to `Spa(B^I, B^{I,+})`; on points it is pullback along
   `B^I ≃+* 𝕎 O⟨T/s⟩` (`windowPreAdicSpaceIso_hom_base_apply`).
+* `TauCeti.FarguesFontaine.isAdic_spaPreAdicSpace_restrict_windowNumerators` : if
+  `(B^I, B^{I,+})` is sheafy, the restriction of `Spa(𝕎 O, 𝕎 O)` along `j` is an adic space.
+* `TauCeti.FarguesFontaine.isSheafy_spaYPreAdicSpace_restrict` : if `(B^I, B^{I,+})` is sheafy,
+  the restriction of `𝒴` to any open inside the window is sheafy.
 
 ## References
 
 * K. S. Kedlaya, *Sheaves, stacks, and shtukas*, lecture notes, Arizona Winter School 2017,
   §3.1, for the interval rings `B^I` and the windows.
-* [T. Wedhorn, *Adic Spaces*][wedhorn_adic] (arXiv:1910.05934v1), Remark 8.8.
+* [T. Wedhorn, *Adic Spaces*][wedhorn_adic] (arXiv:1910.05934v1), Remark 8.8 and
+  Definition 8.22.
 -/
 
 public noncomputable section
@@ -72,6 +83,7 @@ namespace TauCeti.FarguesFontaine
 open scoped NNReal
 open _root_.WittVector TauCeti.Huber TauCeti.Localization TauCeti.ValuationSpectrum
   TauCeti.WittVector
+open _root_.CategoryTheory _root_.TopologicalSpace Topology
 
 variable {p : ℕ} [Fact p.Prime]
 
@@ -231,6 +243,98 @@ theorem windowPreAdicSpaceIso_hom_base_apply (h₁ : ρ₁ ^ q.num = v (algebraM
   erw [presentationLimitPreAdicSpaceComapIso_hom_base, _root_.CategoryTheory.Category.id_comp]
   exact spaComap_val ..
 
+/-- **A window of `𝒴` is an adic space once `(B^I, B^{I,+})` is sheafy**: if the structure
+presheaf of `Spa(B^I, B^{I,+})` is a sheaf, for the interval ring `B^I` with its plus ring
+`B^{I,+} = (B^I)°`, then so is the structure presheaf of the window `{q ≤ κ ≤ q'}` of
+`Spa(𝕎 O, 𝕎 O)`, the restriction along the open embedding `j : Spa(𝕎 O⟨T/s⟩, A_U⁺) → Spa(𝕎 O, 𝕎 O)`,
+which is therefore an adic space: it is isomorphic to `Spa(B^I, B^{I,+})`
+(`windowPreAdicSpaceIso`). The pair `(B^I, B^{I,+})` is sheafy when `B^I` is strongly noetherian
+(`TauCeti.Huber.isSheafyForEveryPresentation_of_isStronglyNoetherian`). -/
+theorem isAdic_spaPreAdicSpace_restrict_windowNumerators
+    (hB : IsSheafyForEveryPresentation (powerBoundedSubring (IntervalRing p hv hϖ hϖ' hρ₁ hρ₂)))
+    (h₁ : ρ₁ ^ q.num = v (algebraMap O K ϖ) ^ q.den)
+    (h₂ : ρ₂ ^ q'.num = v (algebraMap O K ϖ) ^ q'.den) (h₁₂ : ρ₁ ≤ ρ₂) :
+    letI := P.locUniformSpace (windowNumerators p ϖ q q') (windowDenominator p ϖ q q') L hden
+    letI := P.isUniformAddGroup_locUniformSpace _ _ L hden
+    letI := P.isTopologicalRing_locUniformSpace _ _ L hden
+    PreAdicSpace.isAdic ((spaPreAdicSpace P hI).restrict
+      (isOpenEmbedding_spaComapLocHom P ⊤ le_top (windowNumerators p ϖ q q')
+        (windowDenominator p ϖ q q') L hden)) :=
+  let P' : PairOfDefinition (IntervalRing p hv hϖ hϖ' hρ₁ hρ₂) :=
+    IsHuberRing.nonempty_pairOfDefinition.some
+  ObjectProperty.prop_of_iso PreAdicSpace.isAdic
+    (windowPreAdicSpaceIso hv hϖ hϖ' hρ₁ hρ₂ hI P hden h₁ h₂ h₁₂ P').symm
+    (isAdic_presentationLimitPreAdicSpace P' _ _ _ (hB.isSheaf P' P'.le_powerBoundedSubring))
+
 end Chart
+
+/-! ### Sheafiness of `𝒴` over a window -/
+
+section Sheafy
+
+variable {O : Type u} [CommRing O] {ϖ : O} {q q' : ℚ≥0} {K : Type*} [Field K] [Algebra O K]
+  {v : Valuation K ℝ≥0} [CharP O p] [PerfectRing O p]
+  (hv : v.Integers O) (hϖ : ϖ ≠ 0) (hϖ' : v (algebraMap O K ϖ) < 1) {ρ₁ ρ₂ : ℝ≥0}
+  (hρ₁ : ρ₁ ∈ Set.Ioo 0 1) (hρ₂ : ρ₂ ∈ Set.Ioo 0 1)
+  [TopologicalSpace (WittVector p O)] [IsTopologicalRing (WittVector p O)]
+  {hI : IsAdic (Ideal.span {(p : WittVector p O), teichmuller p ϖ})}
+  {P : PairOfDefinition (WittVector p O)}
+
+/-- **`𝒪_𝒴` is a sheaf over every open contained in a window, once `(B^I, B^{I,+})` is
+sheafy**: let `q = a / b` and `q' = a' / b'` in lowest terms, with radii `ρ₁ ^ a = v(ϖ) ^ b`,
+`ρ₂ ^ a' = v(ϖ) ^ b'` and `ρ₁ ≤ ρ₂`. If the structure presheaf of `Spa(B^I, B^{I,+})` is a sheaf,
+then the restriction of the pre-adic space `𝒴` along any open embedding whose image lies in the
+window `{q ≤ κ ≤ q'}` is sheafy. The window is an adic space
+(`isAdic_spaPreAdicSpace_restrict_windowNumerators`), and sheafiness passes to its open
+subspaces. -/
+theorem isSheafy_spaYPreAdicSpace_restrict {U : TopCat.{u}}
+    {f : U ⟶ (spaYPreAdicSpace P hI).toTopCat} (hf : IsOpenEmbedding f)
+    (hB : IsSheafyForEveryPresentation (powerBoundedSubring (IntervalRing p hv hϖ hϖ' hρ₁ hρ₂)))
+    (h₁ : ρ₁ ^ q.num = v (algebraMap O K ϖ) ^ q.den)
+    (h₂ : ρ₂ ^ q'.num = v (algebraMap O K ϖ) ^ q'.den) (h₁₂ : ρ₁ ≤ ρ₂)
+    (hfW : ∀ x, IsRadiusLowerBound p ϖ q (f x).val ∧ IsRadiusUpperBound p ϖ q' (f x).val) :
+    PreAdicSpace.isSheafy ((spaYPreAdicSpace P hI).restrict hf) := by
+  -- `q ≠ 0`, as otherwise `h₁` reads `1 = v(ϖ)`
+  have hq : q ≠ 0 := by
+    rintro rfl
+    simp only [NNRat.num_zero, pow_zero, NNRat.den_zero, pow_one] at h₁
+    exact hϖ'.ne h₁.symm
+  have := isLocalization_away_windowDenominator (p := p) (ϖ := ϖ) (q' := q')
+    (IntervalLocalization p hv hϖ hϖ' hρ₁ hρ₂) hq
+  have hden := hasDenominatorPower_windowNumerators (q := q) (q' := q')
+    (B := IntervalLocalization p hv hϖ hϖ' hρ₁ hρ₂) hI P
+  let _ := P.locUniformSpace (windowNumerators p ϖ q q') (windowDenominator p ϖ q q') _ hden
+  have _ := P.isUniformAddGroup_locUniformSpace (windowNumerators p ϖ q q')
+    (windowDenominator p ϖ q q') _ hden
+  have _ := P.isTopologicalRing_locUniformSpace (windowNumerators p ϖ q q')
+    (windowDenominator p ϖ q q') _ hden
+  have hj := isOpenEmbedding_spaComapLocHom P ⊤ le_top (windowNumerators p ϖ q q')
+    (windowDenominator p ϖ q q') _ hden
+  have hW := (isAdic_spaPreAdicSpace_restrict_windowNumerators hv hϖ hϖ' hρ₁ hρ₂ hI P hden hB h₁ h₂
+    h₁₂).isSheafy
+  -- the window, as an open of `𝒴`, is the preimage of the image of `j`
+  let W : Opens (spaYPreAdicSpace P hI) :=
+    ⟨spaYInclusion p ϖ ⁻¹' Set.range (spaComapLocHom P ⊤ (windowNumerators p ϖ q q')
+      (windowDenominator p ϖ q q') _ hden), hj.isOpenMap.isOpen_range.preimage
+        (spaYInclusion p ϖ).hom.2⟩
+  refine PreAdicSpace.isSheafy_restrict_of_range_subset hf W.isOpenEmbedding ?_
+    (ObjectProperty.prop_of_iso PreAdicSpace.isSheafy
+      (PreAdicSpace.restrictRestrictIso _ (isOpenEmbedding_spaYInclusion p ϖ) W).symm
+      (PreAdicSpace.isSheafy_restrict_of_range_subset _ hj ?_ hW))
+  · rintro _ ⟨x, rfl⟩
+    rw [Opens.set_range_inclusion']
+    have hx : spaYInclusion p ϖ (f x) ∈ Set.range (spaComapLocHom P ⊤
+        (windowNumerators p ϖ q q') (windowDenominator p ϖ q q') _ hden) := by
+      rw [coe_spaComapLocHom, range_spaComapLoc_windowNumerators P _ hden hq]
+      -- `f x` is a point of `𝒴` only after unfolding `spaYPreAdicSpace`, which `simp` and `rw`
+      -- do not see through, so the inclusion is removed by an explicit congruence
+      exact (congrArg (· ∈ {v | v ∈ spaY p ϖ ∧ IsRadiusLowerBound p ϖ q v ∧
+        IsRadiusUpperBound p ϖ q' v}) (spaYInclusion_apply_val ϖ (f x))).mpr ⟨(f x).2, hfW x⟩
+    exact hx
+  · rw [Opens.set_range_inclusion']
+    rintro _ ⟨y, hy, rfl⟩
+    exact hy
+
+end Sheafy
 
 end TauCeti.FarguesFontaine

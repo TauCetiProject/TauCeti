@@ -42,8 +42,7 @@ solvability survives arbitrary field extension without a smoothness hypothesis.
 * J. C. Jantzen, *Representations of Algebraic Groups*, I.2.
 * T. A. Springer, *Linear Algebraic Groups*, Section 2.4.
 
-These results supply the image-solvability and scalar-extension steps for the solvable radical in
-Layer 6 of the ReductiveGroups roadmap.
+These results supply the image-solvability and scalar-extension steps for the solvable radical.
 -/
 
 public section

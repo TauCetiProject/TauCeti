@@ -35,8 +35,7 @@ source-to-image morphism is needed.
 * J. C. Jantzen, *Representations of Algebraic Groups*, I.2.
 
 This supplies the geometric-solvability part of binary-product closure for connected normal
-smooth solvable closed subgroups in Layer 6, "Reductive and semisimple groups", of the
-ReductiveGroups roadmap.
+smooth solvable closed subgroups.
 -/
 
 public section

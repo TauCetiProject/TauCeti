@@ -131,7 +131,7 @@ section Ker
 
 variable {S N : Type*} [Semiring R] [Semiring S] [SMul R S]
   [AddCommMonoid M] [Module R M] [Module S M] [IsScalarTower R S M]
-  [AddCommMonoid N] [Module R N] [Module S N] [IsScalarTower R S N]
+  [AddCommMonoid N] [Module R N] [Module S N]
   (G : InternalGrading R M) {H : InternalGrading R N} {f : M →ₗ[S] N} {r : ℤ}
   (hf : LinearMap.IsHomogeneous f G.piece H.piece r)
 
@@ -208,8 +208,8 @@ theorem isHomogeneous_mkQ : LinearMap.IsHomogeneous U.mkQ G.piece (G.quotient U 
 theorem decompose_quotient_mk (p : ℤ) (x : M) :
     (decompose (G.quotient U hU).piece (Submodule.Quotient.mk x : M ⧸ U) p : M ⧸ U) =
       Submodule.Quotient.mk (decompose G.piece x p : M) :=
-  (DirectSum.map_decompose_shift G.piece (G.quotient U hU).piece U.mkQ id Function.injective_id
-    (fun _ _ hx ↦ G.mk_mem_quotient_piece U hU hx) p x).symm
+  (DirectSum.map_decompose_shift G.piece (G.quotient U hU).piece U.mkQ.toAddMonoidHom
+    id Function.injective_id (fun _ _ hx ↦ G.mk_mem_quotient_piece U hU hx) p x).symm
 
 end Quotient
 
