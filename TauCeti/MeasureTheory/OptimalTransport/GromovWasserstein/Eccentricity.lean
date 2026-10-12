@@ -18,10 +18,12 @@ of the target is the `Lᵖ(μ)` norm of the distance from `z₀` of the section 
 
 `ecc_{p, z₀}(x) = ‖x' ↦ edist (ω (x, x')) z₀‖_{Lᵖ(μ)}`.
 
-It is the Wasserstein distance from the law of that section to the Dirac mass at `z₀`, and its
-own `Lᵖ(μ)` norm is the `p`-size of the kernel. Eccentricity is an extended value: it is finite
-almost everywhere whenever the size is finite, and no moment hypothesis is imposed here. Its law,
-the *eccentricity distribution*, is a measure on `[0, ∞]`.
+When `μ` is a probability measure and the distance on a Borel target is measurable, the
+eccentricity at `μ`-almost every `x` is the Wasserstein distance from the law of that section to
+the Dirac mass at `z₀`. The `Lᵖ(μ)` norm of eccentricity is the `p`-size of the kernel.
+Eccentricity is an extended value: it is finite almost everywhere whenever the size is finite, and
+no moment hypothesis is imposed here. Its law, the *eccentricity distribution*, is a measure on
+`[0, ∞]`.
 
 The Gromov–Wasserstein distance controls this distribution: for `1 ≤ p` and every coupling `π`
 of the two source measures,
@@ -49,8 +51,9 @@ arguments exchanged, and satisfies the same bound.
 * `TauCeti.aestronglyMeasurable_kernelEccentricity` and `TauCeti.kernelEccentricity_congr_ae` —
   eccentricity is a.e. strongly measurable and only depends on the kernel up to a.e. equality;
 * `TauCeti.eLpNorm_kernelEccentricity` — the `Lᵖ(μ)` norm of eccentricity is the size;
-* `TauCeti.ae_kernelEccentricity_eq_wassersteinEDist` — eccentricity is the Wasserstein distance
-  from the outgoing section law to the Dirac mass at `z₀`;
+* `TauCeti.ae_kernelEccentricity_eq_wassersteinEDist` — for a probability measure `μ`,
+  eccentricity is, `μ`-almost everywhere, the Wasserstein distance from the outgoing section law
+  to the Dirac mass at `z₀`;
 * `TauCeti.wassersteinEDist_map_kernelEccentricity_le_gromovWassersteinEDist` — the eccentricity
   lower bound, with the incoming version
   `TauCeti.wassersteinEDist_map_kernelEccentricity_comp_swap_le_gromovWassersteinEDist`;
@@ -119,8 +122,8 @@ theorem eLpNorm_kernelEccentricity [SFinite μ] (hω : AEStronglyMeasurable ω (
   rw [gromovWassersteinSize_def]
   exact (eLpNorm_prod_eq_eLpNorm_eLpNorm (aestronglyMeasurable_edist_const hω z₀)).symm
 
-/-- Eccentricity is the Wasserstein distance from the outgoing section law
-`(x' ↦ ω (x, x'))_# μ` to the Dirac mass at `z₀`, for almost every `x`. -/
+/-- For a probability measure `μ`, eccentricity is the Wasserstein distance from the outgoing
+section law `(x' ↦ ω (x, x'))_# μ` to the Dirac mass at `z₀`, for almost every `x`. -/
 theorem ae_kernelEccentricity_eq_wassersteinEDist [MeasurableSpace Z] [BorelSpace Z]
     (hd : Measurable fun z : Z × Z ↦ edist z.1 z.2) [IsProbabilityMeasure μ]
     (hω : AEStronglyMeasurable ω (μ.prod μ)) (z₀ : Z) :
