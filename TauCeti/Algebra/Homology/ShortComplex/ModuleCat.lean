@@ -63,7 +63,7 @@ theorem finrank_homology_add_finrank_range_f (S : ShortComplex (ModuleCat.{v} k)
 
 section LeftHomologyData
 
-variable {R : Type*} [Ring R] (S : ShortComplex (ModuleCat R))
+variable {R : Type u} [Ring R] (S : ShortComplex (ModuleCat.{v} R))
 
 /-- Two cycles of a short complex of modules have the same class in the explicit left homology
 exactly when their difference is a boundary. -/
