@@ -10,9 +10,9 @@ public import TauCeti.NumberTheory.QuadraticOrder.Field
 public import Mathlib.RingTheory.FractionalIdeal.Operations
 import TauCeti.Algebra.QuadraticDiscriminant
 import Mathlib.LinearAlgebra.Basis.Basic
+import Mathlib.Algebra.Module.Submodule.Equiv
 import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Ring
-import Mathlib.Tactic.FinCases
 
 /-!
 # The ideal attached to an integral binary quadratic form
@@ -227,29 +227,36 @@ theorem idealGenerators_linearIndependent (f : BinaryQuadraticForm ℤ) (D : ℤ
     exact_mod_cast (mul_eq_zero.mp hmQ).resolve_right (by exact_mod_cast ha)
   exact ⟨hm, rfl⟩
 
+private noncomputable def idealSpanEquiv (f : BinaryQuadraticForm ℤ) (D : ℤ)
+    (hf : f.discrim = D) :
+    Submodule.span ℤ (Set.range ![(f.a : QuadraticAlgebra ℚ (D : ℚ) 0), f.idealGenerator D]) ≃ₗ[ℤ]
+      f.orderIdeal D hf :=
+  (LinearEquiv.ofEq _ _ (by
+    simp [orderIdeal_restrictScalars, Matrix.range_cons, Set.pair_comm])).trans
+    (((f.orderIdeal D hf).restrictScalarsEquiv ℤ).restrictScalars ℤ)
+
+private theorem coe_idealSpanEquiv_apply (f : BinaryQuadraticForm ℤ) (D : ℤ)
+    (hf : f.discrim = D)
+    (z : Submodule.span ℤ
+      (Set.range ![(f.a : QuadraticAlgebra ℚ (D : ℚ) 0), f.idealGenerator D])) :
+    (idealSpanEquiv f D hf z : QuadraticAlgebra ℚ (D : ℚ) 0) = z := by
+  simp only [idealSpanEquiv, LinearEquiv.trans_apply, LinearEquiv.restrictScalars_apply]
+  exact (congrArg (fun w : f.orderIdeal D hf ↦ (w : QuadraticAlgebra ℚ (D : ℚ) 0))
+    (Submodule.restrictScalarsEquiv_apply ℤ _ _ (f.orderIdeal D hf) _)).trans
+      (LinearEquiv.coe_ofEq_apply _ z)
+
 /-- The integral basis `a, (-b + √D)/2` of the form ideal. -/
 noncomputable def idealBasis (f : BinaryQuadraticForm ℤ) (D : ℤ)
     (hf : f.discrim = D) (ha : f.a ≠ 0) :
-    Module.Basis (Fin 2) ℤ (f.orderIdeal D hf) := by
-  let v : Fin 2 → f.orderIdeal D hf := fun i ↦
-    ⟨![(f.a : QuadraticAlgebra ℚ (D : ℚ) 0), f.idealGenerator D] i, by fin_cases i <;> simp⟩
-  apply Module.Basis.mk (v := v) ?_ ?_
-  · apply LinearIndependent.of_comp ((f.orderIdeal D hf).subtype.restrictScalars ℤ)
-    exact idealGenerators_linearIndependent f D ha
-  · intro x _
-    obtain ⟨m, n, hmn⟩ := (mem_orderIdeal_iff f D hf x).mp x.property
-    have hx : x = m • v 0 + n • v 1 := Subtype.ext hmn.symm
-    rw [hx]
-    exact (Submodule.span ℤ (Set.range v)).add_mem
-      ((Submodule.span ℤ (Set.range v)).smul_mem m (Submodule.subset_span ⟨0, rfl⟩))
-      ((Submodule.span ℤ (Set.range v)).smul_mem n (Submodule.subset_span ⟨1, rfl⟩))
+    Module.Basis (Fin 2) ℤ (f.orderIdeal D hf) :=
+  (Module.Basis.span (idealGenerators_linearIndependent f D ha)).map (idealSpanEquiv f D hf)
 
 /-- The ideal basis maps to its defining two-generator family in the quadratic algebra. -/
 theorem coe_idealBasis_apply (f : BinaryQuadraticForm ℤ) (D : ℤ)
     (hf : f.discrim = D) (ha : f.a ≠ 0) (i : Fin 2) :
     (f.idealBasis D hf ha i : QuadraticAlgebra ℚ (D : ℚ) 0) =
       ![(f.a : QuadraticAlgebra ℚ (D : ℚ) 0), f.idealGenerator D] i := by
-  simp only [idealBasis, Module.Basis.mk_apply]
+  rw [idealBasis, Module.Basis.map_apply, coe_idealSpanEquiv_apply, Module.Basis.coe_span_apply]
 
 /-- The first ideal basis vector is the leading coefficient. -/
 @[simp] theorem coe_idealBasis_zero (f : BinaryQuadraticForm ℤ) (D : ℤ)
