@@ -429,6 +429,13 @@ theorem energyFormH1_smul_left (a : EuclideanSpace ℝ ι → Matrix ι ι ℝ)
         .rfl .rfl .rfl (jetField_smul_ae r u) .rfl
     _ = r * energyFormH1 a b c u v := energyFormIntegral_smul_left _ _ _ _ _ _ r
 
+/-- The Sobolev energy form changes sign under negation of its left argument. -/
+@[simp]
+theorem energyFormH1_neg_left (a : EuclideanSpace ℝ ι → Matrix ι ι ℝ)
+    (b : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι) (c : EuclideanSpace ℝ ι → ℝ)
+    (u v : W1p mu Omega 2) : energyFormH1 a b c (-u) v = -energyFormH1 a b c u v := by
+  rw [← neg_one_smul ℝ u, energyFormH1_smul_left, neg_one_mul]
+
 /-- Homogeneity of the Sobolev energy form in its right argument. -/
 @[simp]
 theorem energyFormH1_smul_right (a : EuclideanSpace ℝ ι → Matrix ι ι ℝ)

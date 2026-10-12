@@ -70,6 +70,9 @@ closed unit disc next to its Gauss points.
   seminormed ring, at any nonnegative radius.
 * `TauCeti.PowerSeries.gaussNorm_eq_of_forall_le`: the Gauss norm is attained at a degree whose
   weighted coefficient dominates.
+* `TauCeti.PowerSeries.gaussNorm_le_gaussNorm_of_le` and
+  `TauCeti.PowerSeries.tendsto_gaussNorm_of_isRestricted`: the Gauss norm is monotone and, for a
+  restricted series, right continuous in the radius.
 * `TauCeti.PowerSeries.exists_isDistinguished`: at a positive radius, every nonzero restricted
   series is distinguished of some degree.
 * `TauCeti.PowerSeries.IsDistinguished.unique`: of no more than one degree.
@@ -183,6 +186,54 @@ theorem gaussNorm_eq_of_forall_le {S : Type*} [Semiring S] {v : S → ℝ} {a : 
     a.gaussNorm v c = v (a.coeff s) * c ^ s :=
   le_antisymm ((PowerSeries.gaussNorm_eq v c a).trans_le (ciSup_le h))
     (PowerSeries.le_gaussNorm v c a ⟨_, Set.forall_mem_range.mpr h⟩ s)
+
+/-- **The Gauss norm is monotone in the radius**: if the weighted coefficients of `a` at radius
+`s` are bounded, the Gauss norm at a radius `0 ≤ r ≤ s` is at most the one at `s`. -/
+theorem gaussNorm_le_gaussNorm_of_le {S : Type*} [Semiring S] {v : S → ℝ} {a : PowerSeries S}
+    (hv : ∀ x, 0 ≤ v x) {r s : ℝ} (hr : 0 ≤ r) (hrs : r ≤ s) (ha : a.HasGaussNorm v s) :
+    a.gaussNorm v r ≤ a.gaussNorm v s :=
+  (PowerSeries.gaussNorm_eq v r a).trans_le <| ciSup_le fun n ↦
+    (mul_le_mul_of_nonneg_left (pow_le_pow_left₀ hr hrs n) (hv _)).trans
+      (PowerSeries.le_gaussNorm v s a ha n)
+
+/-- **The Gauss norm is right continuous in the radius**: for a series restricted at radius `s`,
+if radii `rₙ ∈ [ρ, s]` tend to `ρ > 0`, the Gauss norms at `rₙ` tend to the Gauss norm at `ρ`.
+The weighted coefficients of high degree are uniformly small on `[ρ, s]`, and the finitely many of
+low degree grow by at most the factor `(rₙ / ρ) ^ N`. -/
+theorem tendsto_gaussNorm_of_isRestricted {s ρ : ℝ} {r : ℕ → ℝ} (hρ : 0 < ρ)
+    (hρr : ∀ n, ρ ≤ r n) (hrs : ∀ n, r n ≤ s) (hr : Tendsto r atTop (𝓝 ρ))
+    (hf : f.IsRestricted s) :
+    Tendsto (fun n ↦ f.gaussNorm norm (r n)) atTop (𝓝 (f.gaussNorm norm ρ)) := by
+  have hbdd {t : ℝ} (ht : 0 ≤ t) (hts : t ≤ s) : f.HasGaussNorm norm t :=
+    hasGaussNorm_of_isRestricted (isRestricted_of_abs_le hf (abs_le_abs_of_nonneg ht hts))
+  refine tendsto_order.mpr ⟨fun b hb ↦ Eventually.of_forall fun n ↦ hb.trans_le
+    (gaussNorm_le_gaussNorm_of_le (fun _ ↦ norm_nonneg _) hρ.le (hρr n)
+      (hbdd (hρ.le.trans (hρr n)) (hrs n))), fun b hb ↦ ?_⟩
+  have hG : 0 ≤ f.gaussNorm norm ρ := PowerSeries.gaussNorm_nonneg _ _ _ fun _ ↦ norm_nonneg _
+  -- beyond some degree `N`, the weighted coefficients at radius `s` are below `ε`
+  have hε : 0 < (b - f.gaussNorm norm ρ) / 2 := half_pos (sub_pos.mpr hb)
+  obtain ⟨N, hN⟩ := eventually_atTop.mp
+    (((PowerSeries.isRestricted_iff' s f).mp hf).eventually (gt_mem_nhds hε))
+  -- below degree `N`, the weighted coefficients at radius `rₙ` are at most `|f|_ρ (rₙ / ρ) ^ N`
+  have hlim : Tendsto (fun n ↦ f.gaussNorm norm ρ * (r n / ρ) ^ N) atTop
+      (𝓝 (f.gaussNorm norm ρ)) := by
+    simpa [div_self hρ.ne'] using ((hr.div_const ρ).pow N).const_mul (f.gaussNorm norm ρ)
+  filter_upwards [hlim.eventually (gt_mem_nhds hb)] with n hn
+  refine lt_of_le_of_lt (b := max ((b - f.gaussNorm norm ρ) / 2)
+    (f.gaussNorm norm ρ * (r n / ρ) ^ N)) ?_ (max_lt (by linarith) hn)
+  rw [PowerSeries.gaussNorm_eq]
+  refine ciSup_le fun k ↦ ?_
+  rcases le_or_gt N k with hk | hk
+  · exact le_max_of_le_left ((mul_le_mul_of_nonneg_left
+      (pow_le_pow_left₀ (hρ.le.trans (hρr n)) (hrs n) k) (norm_nonneg _)).trans (hN k hk).le)
+  · refine le_max_of_le_right ?_
+    calc ‖f.coeff k‖ * r n ^ k = ‖f.coeff k‖ * ρ ^ k * (r n / ρ) ^ k := by
+          rw [div_pow]
+          field_simp
+      _ ≤ f.gaussNorm norm ρ * (r n / ρ) ^ N :=
+          mul_le_mul (PowerSeries.le_gaussNorm _ _ _ (hbdd hρ.le ((hρr 0).trans (hrs 0))) k)
+            (pow_le_pow_right₀ ((one_le_div hρ).mpr (hρr n)) hk.le)
+            (pow_nonneg (div_nonneg (hρ.le.trans (hρr n)) hρ.le) k) hG
 
 section Distinguished
 

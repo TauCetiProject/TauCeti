@@ -250,8 +250,8 @@ theorem cartanMap_comp_finiteProjectiveModulesK0Equiv :
   apply ExactK0.hom_ext
   rintro ⟨M, hM⟩
   simp only [AddMonoidHom.comp_apply, AddEquiv.coe_toAddMonoidHom,
-    finiteProjectiveModulesK0Equiv_of, cartanMap_of A hM, finiteModulesK0Equiv_of]
-  rw [cartanMap_of B (e.finiteProjectiveModulesEquivalence.functor.obj ⟨M, hM⟩).property]
+    finiteProjectiveModulesK0Equiv_of, cartanMap_of A ⟨M, hM⟩, finiteModulesK0Equiv_of]
+  rw [cartanMap_of B (e.finiteProjectiveModulesEquivalence.functor.obj ⟨M, hM⟩)]
   exact congrArg ExactK0.of (FullSubcategory.ext (by simp))
 
 /-- Pointwise form of `CategoryTheory.Equivalence.cartanMap_comp_finiteProjectiveModulesK0Equiv`:

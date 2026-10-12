@@ -213,6 +213,14 @@ theorem ofCube_def {n : ℕ} (c : SingularCube X n) :
     ofCube X R c = Submodule.Quotient.mk (single c 1) := by
   rw [ofCube]
 
+variable {R} in
+/-- Two linear maps out of the normalized `n`-chains agree if they agree on cubes. -/
+theorem linearMap_ext {N : Type*} [AddCommGroup N] [Module R N] {n : ℕ}
+    {f g : NormalizedCubicalChain X R n →ₗ[R] N}
+    (h : ∀ c : SingularCube X n, f (ofCube X R c) = g (ofCube X R c)) : f = g := by
+  refine Submodule.linearMap_qext _ (Finsupp.lhom_ext' fun c ↦ LinearMap.ext_ring ?_)
+  simpa [ofCube_def] using h c
+
 @[simp]
 theorem ofCube_eq_zero {n : ℕ} {c : SingularCube X n} (hc : SingularCube.IsDegenerate c) :
     ofCube X R c = 0 :=
