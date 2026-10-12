@@ -107,6 +107,12 @@ theorem integralDividedPower_zero (x : A) (M : S)
   ext v
   simp
 
+/-- The first restricted divided power of `x` acts as `x`. -/
+theorem coe_integralDividedPower_one_apply (x : A) (M : S)
+    (hM1 : ∀ v ∈ M, Associative.dividedPower 1 x • v ∈ M) (v : M) :
+    ((integralDividedPower x M 1 hM1 v : M) : V) = x • (v : V) := by
+  rw [coe_integralDividedPower_apply, Associative.dividedPower_one]
+
 /-- Multiplication formula for restricted divided powers. -/
 theorem mul_integralDividedPower (x : A) (M : S)
     (m n : ℕ) (hm : ∀ v ∈ M, Associative.dividedPower m x • v ∈ M)
