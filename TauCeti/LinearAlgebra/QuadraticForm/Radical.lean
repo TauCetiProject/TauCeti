@@ -17,8 +17,8 @@ public import Mathlib.LinearAlgebra.QuadraticForm.Radical
 # Radical API for quadratic forms
 
 This file records basic properties of the radical of a quadratic form (such as its invariance under
-negation and orthogonal products) and general consequences of nondegeneracy, together with the two
-facts about the
+negation and orthogonal products), the splitting of a form into its radical and quotient parts, and
+general consequences of nondegeneracy, together with the two facts about the
 quadratic form `x ↦ B x x` of a *symmetric* bilinear form `B` that a Clifford construction consumes:
 its polar form is `2 • B`, and nondegeneracy passes from `B` to it as soon as `2` is invertible.
 
@@ -49,6 +49,12 @@ its polar form is `2 • B`, and nondegeneracy passes from `B` to it as soon as 
   trivial radical is injective.
 * `QuadraticMap.liftOfSurjective`: descent of a quadratic map along a surjective linear map whose
   kernel lies in the radical.
+* `QuadraticMap.IsometryEquiv.restrictComplementLiftRadical`: the restriction to a complement of
+  the radical is isometric to the descended form on the quotient.
+* `QuadraticMap.IsometryEquiv.prodRadicalLiftOfIsCompl` and
+  `QuadraticMap.IsometryEquiv.prodRadicalLift`: a quadratic map is isometric to the product of the
+  zero form on its radical and the descended form on the quotient, given a complement or over a
+  field, respectively.
 * `QuadraticMap.exists_isUnit_of_ne_zero`: a nonzero quadratic form over a semifield has a vector of
   unit norm.
 * `QuadraticMap.isUnit_apply_smul`: scaling a vector of unit norm by a unit preserves unit norm.
@@ -258,6 +264,188 @@ theorem liftOfSurjective_apply (Q : QuadraticMap R M P) (f : M →ₗ[R] N)
     LinearMap.quotKerEquivOfSurjective_symm_apply, QuadraticMap.lift_mk]
 
 end LiftOfSurjective
+
+section QuotientByRadical
+
+variable {N : Type*} [AddCommGroup N] [Module R N]
+
+private theorem quotientEquivOfIsCompl_symm_apply {S : Submodule R M}
+    (W : Submodule R M) (hW : IsCompl S W) (x : W) :
+    (S.quotientEquivOfIsCompl W hW).symm x =
+      (Submodule.Quotient.mk (x : M) : M ⧸ S) :=
+  LinearMap.congr_fun (Submodule.toLinearMap_symm_quotientEquivOfIsCompl hW) x
+
+/-- The restriction of a quadratic map to a complement of its radical is isometric to the
+quadratic map descended to the quotient by the radical. -/
+noncomputable def IsometryEquiv.restrictComplementLiftRadical (Q : QuadraticMap R M P)
+    (W : Submodule R M) (hW : IsCompl Q.radical W) :
+    (Q.restrict W).IsometryEquiv (Q.lift Q.radical le_rfl) where
+  toLinearEquiv := (Q.radical.quotientEquivOfIsCompl W hW).symm
+  map_app' x := by
+    -- Expose the quotient equivalence hidden by the isometry-equivalence coercion.
+    change Q.lift Q.radical le_rfl ((Q.radical.quotientEquivOfIsCompl W hW).symm x) = _
+    rw [quotientEquivOfIsCompl_symm_apply]
+    simp only [QuadraticMap.lift_mk, QuadraticMap.restrict_apply]
+
+/-- The complement-to-quotient isometry sends a vector to its quotient class. -/
+@[simp]
+theorem IsometryEquiv.restrictComplementLiftRadical_apply (Q : QuadraticMap R M P)
+    (W : Submodule R M) (hW : IsCompl Q.radical W) (x : W) :
+    IsometryEquiv.restrictComplementLiftRadical Q W hW x =
+      (Submodule.Quotient.mk (x : M) : M ⧸ Q.radical) := by
+  exact quotientEquivOfIsCompl_symm_apply W hW x
+
+/-- The inverse complement-to-quotient isometry is the quotient equivalence. -/
+@[simp]
+theorem IsometryEquiv.restrictComplementLiftRadical_symm_apply (Q : QuadraticMap R M P)
+    (W : Submodule R M) (hW : IsCompl Q.radical W) (x : M ⧸ Q.radical) :
+    (IsometryEquiv.restrictComplementLiftRadical Q W hW).symm x =
+      Q.radical.quotientEquivOfIsCompl W hW x := by
+  rfl
+
+/-- The direct sum of a complement and the radical maps to their sum in the ambient module. -/
+noncomputable def IsometryEquiv.restrictProdRadicalOfIsCompl (Q : QuadraticMap R M P)
+    (W : Submodule R M) (hW : IsCompl Q.radical W) :
+    ((Q.restrict W).prod (0 : QuadraticMap R Q.radical P)).IsometryEquiv Q where
+  toLinearEquiv := W.prodEquivOfIsCompl Q.radical hW.symm
+  map_app' x := by
+    -- Expose the sum map underlying the direct-sum equivalence.
+    change Q (W.prodEquivOfIsCompl Q.radical hW.symm x) = _
+    rw [Submodule.coe_prodEquivOfIsCompl', QuadraticMap.prod_apply,
+      QuadraticMap.restrict_apply, add_comm,
+      (QuadraticMap.mem_radical_iff'.mp x.2.2).2]
+    simp
+
+/-- The direct-sum isometry adds the complement and radical components. -/
+@[simp]
+theorem IsometryEquiv.restrictProdRadicalOfIsCompl_apply (Q : QuadraticMap R M P)
+    (W : Submodule R M) (hW : IsCompl Q.radical W) (x : W × Q.radical) :
+    IsometryEquiv.restrictProdRadicalOfIsCompl Q W hW x = (x.1 : M) + x.2 := by
+  -- An `IsometryEquiv` coerces to its underlying `LinearEquiv`; expose that coercion to apply
+  -- the public sum formula for `prodEquivOfIsCompl`.
+  change W.prodEquivOfIsCompl Q.radical hW.symm x = _
+  exact Submodule.coe_prodEquivOfIsCompl' (p := W) (q := Q.radical) hW.symm x
+
+/-- The inverse direct-sum isometry extracts the complement and radical projections. -/
+@[simp]
+theorem IsometryEquiv.restrictProdRadicalOfIsCompl_symm_apply (Q : QuadraticMap R M P)
+    (W : Submodule R M) (hW : IsCompl Q.radical W) (x : M) :
+    (IsometryEquiv.restrictProdRadicalOfIsCompl Q W hW).symm x =
+      (W.projectionOnto Q.radical hW.symm x, Q.radical.projectionOnto W hW x) := by
+  -- The inverse isometry coerces to the inverse of its underlying `LinearEquiv`, so apply the
+  -- public inverse formula for `prodEquivOfIsCompl` after exposing that coercion.
+  change (W.prodEquivOfIsCompl Q.radical hW.symm).symm x = _
+  exact Submodule.prodEquivOfIsCompl_symm_apply hW.symm x
+
+/-- Given a complement to the radical, a quadratic map is isometric to the product of the zero
+form on its radical and the descended form on the quotient. -/
+noncomputable def IsometryEquiv.prodRadicalLiftOfIsCompl (Q : QuadraticMap R M P)
+    (W : Submodule R M) (hW : IsCompl Q.radical W) :
+    ((0 : QuadraticMap R Q.radical P).prod (Q.lift Q.radical le_rfl)).IsometryEquiv Q :=
+  ((QuadraticMap.IsometryEquiv.prodComm (0 : QuadraticMap R Q.radical P)
+      (Q.lift Q.radical le_rfl)).trans
+    ((IsometryEquiv.restrictComplementLiftRadical Q W hW).symm.prod
+      (QuadraticMap.IsometryEquiv.refl (0 : QuadraticMap R Q.radical P)))).trans
+    (IsometryEquiv.restrictProdRadicalOfIsCompl Q W hW)
+
+/-- The decomposition maps a pair to its complement representative plus its radical component. -/
+@[simp]
+theorem IsometryEquiv.prodRadicalLiftOfIsCompl_apply (Q : QuadraticMap R M P)
+    (W : Submodule R M) (hW : IsCompl Q.radical W) (x : Q.radical × M ⧸ Q.radical) :
+    IsometryEquiv.prodRadicalLiftOfIsCompl Q W hW x =
+      (Q.radical.quotientEquivOfIsCompl W hW x.2 : M) + x.1 := by
+  -- Composition and product of isometries coerce to composition and product of their underlying
+  -- linear equivalences; expose this composite to use the application lemmas below.
+  change IsometryEquiv.restrictProdRadicalOfIsCompl Q W hW
+    ((IsometryEquiv.restrictComplementLiftRadical Q W hW).symm x.2, x.1) = _
+  rw [IsometryEquiv.restrictProdRadicalOfIsCompl_apply,
+    IsometryEquiv.restrictComplementLiftRadical_symm_apply]
+
+/-- The decomposition sends a radical vector and zero quotient class to that vector. -/
+theorem IsometryEquiv.prodRadicalLiftOfIsCompl_apply_radical (Q : QuadraticMap R M P)
+    (W : Submodule R M) (hW : IsCompl Q.radical W) (x : Q.radical) :
+    IsometryEquiv.prodRadicalLiftOfIsCompl Q W hW (x, 0) = x := by
+  rw [IsometryEquiv.prodRadicalLiftOfIsCompl_apply]
+  simp
+
+/-- The quotient component of the image under the complement-based decomposition is the input
+class. -/
+theorem IsometryEquiv.prodRadicalLiftOfIsCompl_mkQ_apply (Q : QuadraticMap R M P)
+    (W : Submodule R M) (hW : IsCompl Q.radical W)
+    (x : Q.radical × M ⧸ Q.radical) :
+    Submodule.Quotient.mk (IsometryEquiv.prodRadicalLiftOfIsCompl Q W hW x) = x.2 := by
+  rw [IsometryEquiv.prodRadicalLiftOfIsCompl_apply, add_comm]
+  simp
+
+/-- The quotient component of the inverse decomposition is the quotient class of its input. -/
+theorem IsometryEquiv.prodRadicalLiftOfIsCompl_symm_apply_snd (Q : QuadraticMap R M P)
+    (W : Submodule R M) (hW : IsCompl Q.radical W) (x : M) :
+    ((IsometryEquiv.prodRadicalLiftOfIsCompl Q W hW).symm x).2 =
+      Submodule.Quotient.mk x := by
+  simpa using (IsometryEquiv.prodRadicalLiftOfIsCompl_mkQ_apply Q W hW
+    ((IsometryEquiv.prodRadicalLiftOfIsCompl Q W hW).symm x)).symm
+
+/-- The inverse decomposition pairs the radical projection with the quotient class. -/
+@[simp]
+theorem IsometryEquiv.prodRadicalLiftOfIsCompl_symm_apply (Q : QuadraticMap R M P)
+    (W : Submodule R M) (hW : IsCompl Q.radical W) (x : M) :
+    (IsometryEquiv.prodRadicalLiftOfIsCompl Q W hW).symm x =
+      (Q.radical.projectionOnto W hW x, Submodule.Quotient.mk x) := by
+  apply Prod.ext
+  · have h := congrArg (Q.radical.projectionOnto W hW)
+      ((IsometryEquiv.prodRadicalLiftOfIsCompl Q W hW).apply_symm_apply x)
+    simpa only [IsometryEquiv.prodRadicalLiftOfIsCompl_apply, map_add, zero_add,
+      Submodule.projectionOnto_apply_right hW,
+      Submodule.projectionOnto_apply_left hW] using h
+  · exact IsometryEquiv.prodRadicalLiftOfIsCompl_symm_apply_snd Q W hW x
+
+end QuotientByRadical
+
+section QuotientByRadical
+
+variable {K V : Type*} [Field K] [AddCommGroup V] [Module K V]
+
+/-- Every quadratic map over a field splits as the zero form on its radical and the descended form
+on the quotient by the radical. The complement used to construct the isometry is noncanonical. -/
+noncomputable def IsometryEquiv.prodRadicalLift {P : Type*} [AddCommGroup P] [Module K P]
+    (Q : QuadraticMap K V P) :
+    ((0 : QuadraticMap K Q.radical P).prod (Q.lift Q.radical le_rfl)).IsometryEquiv Q :=
+  IsometryEquiv.prodRadicalLiftOfIsCompl Q (Submodule.exists_isCompl Q.radical).choose
+    (Submodule.exists_isCompl Q.radical).choose_spec
+
+/-- The field-level decomposition maps a radical vector and zero quotient class to that vector. -/
+@[simp]
+theorem IsometryEquiv.prodRadicalLift_apply_radical {P : Type*} [AddCommGroup P] [Module K P]
+    (Q : QuadraticMap K V P)
+    (x : Q.radical) : IsometryEquiv.prodRadicalLift Q (x, 0) = x := by
+  simp [IsometryEquiv.prodRadicalLift]
+
+/-- The quotient component of the image under the field-level decomposition is the input class. -/
+@[simp]
+theorem IsometryEquiv.prodRadicalLift_mkQ_apply {P : Type*} [AddCommGroup P] [Module K P]
+    (Q : QuadraticMap K V P)
+    (x : Q.radical × V ⧸ Q.radical) :
+    Submodule.Quotient.mk (IsometryEquiv.prodRadicalLift Q x) = x.2 := by
+  simp [IsometryEquiv.prodRadicalLift]
+
+/-- The quotient component of the inverse field-level decomposition is the quotient class. -/
+theorem IsometryEquiv.prodRadicalLift_symm_apply_snd {P : Type*} [AddCommGroup P] [Module K P]
+    (Q : QuadraticMap K V P) (x : V) :
+    ((IsometryEquiv.prodRadicalLift Q).symm x).2 = Submodule.Quotient.mk x := by
+  simpa using (IsometryEquiv.prodRadicalLift_mkQ_apply Q
+    ((IsometryEquiv.prodRadicalLift Q).symm x)).symm
+
+/-- The inverse field-level decomposition pairs the radical projection with the quotient class. -/
+@[simp]
+theorem IsometryEquiv.prodRadicalLift_symm_apply {P : Type*} [AddCommGroup P] [Module K P]
+    (Q : QuadraticMap K V P) (x : V) :
+    (IsometryEquiv.prodRadicalLift Q).symm x =
+      ((Q.radical.projectionOnto (Submodule.exists_isCompl Q.radical).choose
+        (Submodule.exists_isCompl Q.radical).choose_spec x), Submodule.Quotient.mk x) := by
+  simp only [IsometryEquiv.prodRadicalLift,
+    IsometryEquiv.prodRadicalLiftOfIsCompl_symm_apply]
+
+end QuotientByRadical
 
 end QuadraticMap
 
