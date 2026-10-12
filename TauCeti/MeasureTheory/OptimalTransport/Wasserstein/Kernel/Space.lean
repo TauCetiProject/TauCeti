@@ -57,6 +57,7 @@ theorem coe_comp (μ : WassersteinSpace p X) (κ : Kernel X Y) [IsMarkovKernel �
   exact coe_mk _ _
 
 /-- The measure underlying the Wasserstein-space action is the ordinary kernel mixture. -/
+@[simp]
 theorem toMeasure_comp (μ : WassersteinSpace p X) (κ : Kernel X Y) [IsMarkovKernel κ]
     (hp : p ≠ ∞) (hκ : ∀ x x', wassersteinEDist p (κ x) (κ x') ≤ L * edist x x')
     (hκ₀ : ∃ x, HasFiniteMoment p (κ x)) :
@@ -103,8 +104,16 @@ end Lipschitz
 theorem comp_deterministic (μ : WassersteinSpace p X) {f : X → Y} (hf : Measurable f)
     (hLip : LipschitzWith L f) (hp : p ≠ ∞)
     (hκ : ∀ x x', wassersteinEDist p (Kernel.deterministic f hf x)
-      (Kernel.deterministic f hf x') ≤ L * edist x x')
-    (hκ₀ : ∃ x, HasFiniteMoment p (Kernel.deterministic f hf x)) :
+      (Kernel.deterministic f hf x') ≤ L * edist x x' := (by
+        intro x x'
+        simpa only [Kernel.deterministic_apply,
+          wassersteinEDist_dirac_dirac (zero_lt_one.trans_le Fact.out).ne'] using hLip x x'))
+    (hκ₀ : ∃ x, HasFiniteMoment p (Kernel.deterministic f hf x) := (by
+      obtain ⟨x⟩ := (μ : ProbabilityMeasure X).nonempty
+      refine ⟨x, ?_⟩
+      rw [Kernel.deterministic_apply,
+        hasFiniteMoment_iff_wassersteinEDist_dirac_ne_top measurable_edist (f x)]
+      simp)) :
     μ.comp (Kernel.deterministic f hf) hp hκ hκ₀ =
       map f (fun _ ↦ measurable_edist_right) hf hLip μ := by
   apply ext
@@ -116,8 +125,13 @@ theorem comp_deterministic (μ : WassersteinSpace p X) {f : X → Y} (hf : Measu
 @[simp]
 theorem comp_const (μ : WassersteinSpace p X) (ν : WassersteinSpace p Y) (hp : p ≠ ∞)
     (hκ : ∀ x x', wassersteinEDist p ((Kernel.const X ((ν : ProbabilityMeasure Y) : Measure Y)) x)
-      ((Kernel.const X ((ν : ProbabilityMeasure Y) : Measure Y)) x') ≤ L * edist x x')
-    (hκ₀ : ∃ x, HasFiniteMoment p ((Kernel.const X ((ν : ProbabilityMeasure Y) : Measure Y)) x)) :
+      ((Kernel.const X ((ν : ProbabilityMeasure Y) : Measure Y)) x') ≤ L * edist x x' := (by
+        intro x x'
+        simp))
+    (hκ₀ : ∃ x, HasFiniteMoment p ((Kernel.const X ((ν : ProbabilityMeasure Y) : Measure Y)) x) :=
+      (by
+        obtain ⟨x⟩ := (μ : ProbabilityMeasure X).nonempty
+        exact ⟨x, by simpa only [Kernel.const_apply] using ν.hasFiniteMoment⟩)) :
     μ.comp (Kernel.const X ((ν : ProbabilityMeasure Y) : Measure Y)) hp hκ hκ₀ = ν := by
   apply ext
   apply ProbabilityMeasure.toMeasure_injective
