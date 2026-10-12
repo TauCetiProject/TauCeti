@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Sobolev.Wkp.MeyersSerrin
+public import TauCeti.MeasureTheory.Function.AEStronglyMeasurable
 public import TauCeti.MeasureTheory.Function.Jacobian
 public import TauCeti.MeasureTheory.Function.LpSeminorm.Comp
 public import TauCeti.MeasureTheory.Measure.AbsolutelyContinuous
