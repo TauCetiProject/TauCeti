@@ -11,10 +11,10 @@ public import TauCeti.AlgebraicGeometry.WeilDivisor.Principal.Basic
 # The abstract Abel-Jacobi divisor class map
 
 This file adds the point-level divisor-class shadow of the Abel-Jacobi map to the formal divisor
-API. Over an algebraically closed field, the Abel-Jacobi morphism to the Jacobian `Pic⁰(X)` attached
-to a base point `x₀` sends a point `x` to the degree-zero line bundle `𝒪_X(x - x₀)`. For closed
-points over a non-algebraically closed field, the weighted-degree-corrected divisor is
-`x - w(x) x₀`, when `x₀` has residue degree `1`.
+API. For a smooth projective geometrically connected curve `X` over an algebraically closed field,
+the Abel-Jacobi morphism to the Jacobian `Pic⁰(X)` attached to a base point `x₀` sends a point `x`
+to the degree-zero line bundle `𝒪_X(x - x₀)`. For closed points over a non-algebraically closed
+field, the weighted-degree-corrected divisor is `x - w(x) x₀`, when `x₀` has residue degree `1`.
 
 Here the geometry is abstracted to an `OrderSystem` and an integer-valued weight `w : X → ℤ`. We
 define the formal divisor `[x] - w(x)[x₀]`, prove it has weighted degree zero when `w x₀ = 1`, and
