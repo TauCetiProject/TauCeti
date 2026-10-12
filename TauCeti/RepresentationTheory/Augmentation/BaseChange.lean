@@ -38,7 +38,7 @@ variable (R S : Type*) [CommSemiring R] [Semiring S] [Algebra R S]
 def augmentationScalarMap :
     (augmentationSubrepresentation R G X).toSubmodule →ₗ[R]
       (augmentationSubrepresentation S G X).toSubmodule :=
-  ((monoidAlgebraScalarMap R S X).comp
+  ((MonoidAlgebra.scalarMap R S X).comp
     (augmentationSubrepresentation R G X).toSubmodule.subtype).codRestrict
       ((augmentationSubrepresentation S G X).toSubmodule.restrictScalars R)
       fun (v : (augmentationSubrepresentation R G X).toSubmodule) => by
@@ -49,7 +49,7 @@ def augmentationScalarMap :
 theorem coe_augmentationScalarMap
     (v : (augmentationSubrepresentation R G X).toSubmodule) :
     (augmentationScalarMap R S G X v : MonoidAlgebra S X) =
-      monoidAlgebraScalarMap R S X v :=
+      MonoidAlgebra.scalarMap R S X v :=
   (rfl)
 
 /-- Scalar extension of augmentation vectors commutes with the permutation action. -/
@@ -65,7 +65,7 @@ theorem augmentationScalarMap_action (g : G)
     LinearMap.restrict_apply]
   apply MonoidAlgebra.coeff_injective
   have hcoeff (w : MonoidAlgebra R X) :
-      (monoidAlgebraScalarMap R S X w).coeff =
+      (MonoidAlgebra.scalarMap R S X w).coeff =
         Finsupp.mapRange (algebraMap R S) (map_zero _) w.coeff := by
     ext x
     simp
@@ -90,12 +90,12 @@ theorem isBaseChange_augmentationScalarMap :
   · let x₀ := Classical.arbitrary X
     -- Project along a single basis vector. This splitting need not respect the group action.
     refine IsBaseChange.of_right_exact S (Algebra.linearMap R S)
-      (monoidAlgebraScalarMap R S X) (augmentationScalarMap R S G X)
+      (MonoidAlgebra.scalarMap R S X) (augmentationScalarMap R S G X)
       (f := LinearMap.toSpanSingleton R _ (MonoidAlgebra.single x₀ 1))
       (g := augmentationProjection R G X x₀)
       (f' := LinearMap.toSpanSingleton S _ (MonoidAlgebra.single x₀ 1))
       (g' := augmentationProjection S G X x₀)
-      ?_ ?_ (IsBaseChange.linearMap R S) (isBaseChange_monoidAlgebraScalarMap R S X)
+      ?_ ?_ (IsBaseChange.linearMap R S) (MonoidAlgebra.isBaseChange_scalarMap R S X)
       (exact_toSpanSingleton_augmentationProjection R G X x₀)
       (augmentationProjection_surjective R G X x₀)
       (exact_toSpanSingleton_augmentationProjection S G X x₀)
@@ -104,14 +104,14 @@ theorem isBaseChange_augmentationScalarMap :
       intro r
       simp only [LinearMap.comp_apply, LinearMap.toSpanSingleton_apply,
         LinearMap.restrictScalars_apply, Algebra.linearMap_apply,
-        LinearMap.map_smul_of_tower, monoidAlgebraScalarMap_single, map_one,
+        LinearMap.map_smul_of_tower, MonoidAlgebra.scalarMap_single, map_one,
         algebraMap_smul]
     · apply LinearMap.ext
       intro v
       apply Subtype.ext
       simp only [LinearMap.comp_apply, coe_augmentationScalarMap, coe_augmentationProjection,
         LinearMap.restrictScalars_apply, map_sub, LinearMap.map_smul_of_tower,
-        monoidAlgebraScalarMap_single, map_one, sumCoords_monoidAlgebraScalarMap,
+        MonoidAlgebra.scalarMap_single, map_one, MonoidAlgebra.sumCoords_scalarMap,
         algebraMap_smul]
 
 end TauCeti

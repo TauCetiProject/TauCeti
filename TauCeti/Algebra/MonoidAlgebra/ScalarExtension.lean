@@ -27,21 +27,21 @@ section ScalarMap
 variable (R S : Type*) [CommSemiring R] [Semiring S] [Algebra R S] (X : Type*)
 
 /-- Extend every coefficient along `R → S` in the free module on `X`. -/
-def monoidAlgebraScalarMap : MonoidAlgebra R X →ₗ[R] MonoidAlgebra S X :=
+def MonoidAlgebra.scalarMap : MonoidAlgebra R X →ₗ[R] MonoidAlgebra S X :=
   (MonoidAlgebra.coeffLinearEquiv R).symm.toLinearMap ∘ₗ
     Finsupp.mapRange.linearMap (Algebra.linearMap R S) ∘ₗ
       (MonoidAlgebra.coeffLinearEquiv R).toLinearMap
 
 /-- The coefficients of scalar extension are the images of the original coefficients. -/
 @[simp]
-theorem coeff_monoidAlgebraScalarMap (v : MonoidAlgebra R X) (x : X) :
-    (monoidAlgebraScalarMap R S X v).coeff x = algebraMap R S (v.coeff x) := by
-  simp [monoidAlgebraScalarMap]
+theorem MonoidAlgebra.coeff_scalarMap (v : MonoidAlgebra R X) (x : X) :
+    (MonoidAlgebra.scalarMap R S X v).coeff x = algebraMap R S (v.coeff x) := by
+  simp [MonoidAlgebra.scalarMap]
 
 /-- Scalar extension sends a basis vector to the same basis vector with extended coefficient. -/
 @[simp]
-theorem monoidAlgebraScalarMap_single (x : X) (r : R) :
-    monoidAlgebraScalarMap R S X (MonoidAlgebra.single x r) =
+theorem MonoidAlgebra.scalarMap_single (x : X) (r : R) :
+    MonoidAlgebra.scalarMap R S X (MonoidAlgebra.single x r) =
       MonoidAlgebra.single x (algebraMap R S r) := by
   classical
   ext y
@@ -49,8 +49,8 @@ theorem monoidAlgebraScalarMap_single (x : X) (r : R) :
 
 /-- Scalar extension preserves augmentation, that is, the sum of all coefficients. -/
 @[simp]
-theorem sumCoords_monoidAlgebraScalarMap (v : MonoidAlgebra R X) :
-    (MonoidAlgebra.basis X S).sumCoords (monoidAlgebraScalarMap R S X v) =
+theorem MonoidAlgebra.sumCoords_scalarMap (v : MonoidAlgebra R X) :
+    (MonoidAlgebra.basis X S).sumCoords (MonoidAlgebra.scalarMap R S X v) =
       algebraMap R S ((MonoidAlgebra.basis X R).sumCoords v) := by
   simp only [Module.Basis.coe_sumCoords, MonoidAlgebra.basis_repr]
   -- Unfold the coefficient equivalences and `Finsupp.mapRange.linearMap` in the scalar map
@@ -65,11 +65,11 @@ end ScalarMap
 variable (R S : Type*) [CommSemiring R] [CommSemiring S] [Algebra R S] (X : Type*)
 
 /-- The free module on `X` commutes with extension of scalars. -/
-theorem isBaseChange_monoidAlgebraScalarMap : IsBaseChange S (monoidAlgebraScalarMap R S X) := by
+theorem MonoidAlgebra.isBaseChange_scalarMap : IsBaseChange S (MonoidAlgebra.scalarMap R S X) := by
   have h := (IsBaseChange.linearMap R S).finsuppPow X
   exact (IsBaseChange.iff_of_equiv_comm
     (MonoidAlgebra.coeffLinearEquiv R).symm
     (MonoidAlgebra.coeffLinearEquiv S).symm
-    (LinearMap.ext fun v => by simp [monoidAlgebraScalarMap])).mp h
+    (LinearMap.ext fun v => by simp [MonoidAlgebra.scalarMap])).mp h
 
 end TauCeti
