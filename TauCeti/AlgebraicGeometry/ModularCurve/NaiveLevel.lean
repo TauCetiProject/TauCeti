@@ -18,14 +18,15 @@ the zero section everywhere. The condition is pointwise, so it is stable under b
 (`EllipticCurveGeom.IsFiberwiseInjective.pointsPullback`), and the naive `A`-structures form a
 moduli problem over `Ell/B` (`ModuliProblem.naiveLevel`).
 
-For `A = ℤ/Nℤ` this is the naive moduli problem `[Γ₁(N)]` (`ModuliProblem.gammaOneNaive`): a
-naive `[Γ₁(N)]`-structure is an `S`-point `P` of `E[N]` none of whose multiples `P, …, (N - 1)P`
-meets the zero section (`EllipticCurveGeom.isFiberwiseInjective_zmod_iff`). For `A = (ℤ/Nℤ)²` it is
-the naive moduli problem `[Γ(N)]` (`ModuliProblem.gammaNaive`): a pair of `S`-points of `E[N]`
-which, when `N` is invertible on `S`, is a basis of the `N`-torsion in every geometric fibre
-(`EllipticCurveGeom.isFiberwiseInjective_iff_range_eq_ker`). Restriction along an injective
-homomorphism `A' →* A` is a morphism of moduli problems (`ModuliProblem.naiveLevelMap`); forgetting
-the second basis vector gives `[Γ(N)] ⟶ [Γ₁(N)]` (`ModuliProblem.gammaNaiveToGammaOneNaive`).
+For `A = ℤ/Nℤ` this is the naive moduli problem `[Γ₁(N)]` (`ModuliProblem.gammaOneNaive`): for
+`N ≠ 0`, a naive `[Γ₁(N)]`-structure is an `S`-point `P` of `E[N]` none of whose multiples
+`P, …, (N - 1)P` meets the zero section (`EllipticCurveGeom.isFiberwiseInjective_zmod_iff`).
+For `A = (ℤ/Nℤ)²` it is the naive moduli problem `[Γ(N)]` (`ModuliProblem.gammaNaive`): a pair
+of `S`-points of `E[N]` which, when `N` is invertible on `S`, is a basis of the `N`-torsion in
+every geometric fibre (`EllipticCurveGeom.isFiberwiseInjective_iff_range_eq_ker`). Restriction
+along an injective homomorphism `A' →* A` is a morphism of moduli problems
+(`ModuliProblem.naiveLevelMap`); keeping the first component `P` of a pair `(P, Q)`, the first basis
+vector when `N` is invertible, gives `[Γ(N)] ⟶ [Γ₁(N)]` (`ModuliProblem.gammaNaiveToGammaOneNaive`).
 
 The definitions make sense over every base `B`, but they are the naive level structures of Katz and
 Mazur only over a base on which `N` is invertible, where `E[N]` is finite étale. Over a general base
@@ -47,6 +48,8 @@ the level structures are Drinfeld's (`ModuliProblem.gammaOne` for `[Γ₁(N)]`).
 
 * `TauCeti.AlgebraicGeometry.ModuliProblem.naiveLevelEquiv_map`: the pull-back of a naive
   structure along an arrow of `Ell/B` is its composite with base change of points.
+* `TauCeti.AlgebraicGeometry.ModuliProblem.naiveLevelEquiv_gammaNaiveToGammaOneNaive_app_apply`:
+  the morphism `[Γ(N)] ⟶ [Γ₁(N)]` restricts a naive `[Γ(N)]`-structure along `z ↦ (z, 0)`.
 
 ## References
 
@@ -125,8 +128,8 @@ theorem naiveLevelEquiv_naiveLevelMap_app {A' : Type} [Group A'] (ψ : A' →* A
 variable (B) (N : ℕ)
 
 /-- **The naive moduli problem `[Γ₁(N)]`** over `Ell/B`: a naive `[Γ₁(N)]`-structure on `(E/S)` is
-a homomorphism `ℤ/Nℤ →* E(S)` injective on every fibre, that is, an `S`-point `P` of `E[N]` none of
-whose multiples `P, …, (N - 1)P` meets the zero section
+a homomorphism `ℤ/Nℤ →* E(S)` injective on every fibre, that is, for `N ≠ 0`, an `S`-point `P` of
+`E[N]` none of whose multiples `P, …, (N - 1)P` meets the zero section
 (`EllipticCurveGeom.isFiberwiseInjective_zmod_iff`). It is the naive level structure of Katz and
 Mazur over a base on which `N` is invertible. -/
 noncomputable abbrev gammaOneNaive : ModuliProblem B :=
@@ -139,11 +142,20 @@ it is a pair of `S`-points of `E[N]` forming a basis of the `N`-torsion in every
 noncomputable abbrev gammaNaive : ModuliProblem B :=
   naiveLevel B (Multiplicative (ZMod N × ZMod N))
 
-/-- The morphism `[Γ(N)] ⟶ [Γ₁(N)]` of naive moduli problems which keeps the first basis vector
-`P` of a naive `[Γ(N)]`-structure `(P, Q)`. -/
+/-- The morphism `[Γ(N)] ⟶ [Γ₁(N)]` of naive moduli problems which keeps the first component `P`
+of a naive `[Γ(N)]`-structure `(P, Q)`, that is, restricts it along `z ↦ (z, 0)`. When `N` is
+invertible, `P` is the first vector of the basis `(P, Q)` of the `N`-torsion. -/
 noncomputable def gammaNaiveToGammaOneNaive : gammaNaive B N ⟶ gammaOneNaive B N :=
   naiveLevelMap B (AddMonoidHom.toMultiplicative (AddMonoidHom.inl (ZMod N) (ZMod N)))
     (Multiplicative.ofAdd.injective.comp (Prod.mk_left_injective 0))
+
+/-- The morphism `[Γ(N)] ⟶ [Γ₁(N)]` restricts a naive `[Γ(N)]`-structure along `z ↦ (z, 0)`. -/
+@[simp]
+theorem naiveLevelEquiv_gammaNaiveToGammaOneNaive_app_apply (X : EllObj B)
+    (α : (gammaNaive B N).obj (op X)) (z : Multiplicative (ZMod N)) :
+    (naiveLevelEquiv X ((gammaNaiveToGammaOneNaive B N).app (op X) α)).1 z =
+      (naiveLevelEquiv X α).1 (.ofAdd (z.toAdd, 0)) :=
+  (rfl)
 
 end ModuliProblem
 

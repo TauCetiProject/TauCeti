@@ -7,7 +7,6 @@ module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.FieldPoints
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.BaseChange.Points
-import TauCeti.AlgebraicGeometry.RationalPoint.Basic
 
 /-!
 # Naive level structures on an elliptic curve
@@ -21,8 +20,8 @@ the zero section at every point of `S`. Equivalently, for every point `s` of `S`
 with restriction to the fibre over any field-valued point of `S`, in particular over every geometric
 point (`EllipticCurveGeom.IsFiberwiseInjective.injective_pointsPullback`).
 
-For `A = ℤ/Nℤ` such a homomorphism is an `S`-point `P` of `E[N]` that has exact order `N` in every
-geometric fibre: none of `P, 2P, …, (N - 1)P` meets the zero section
+For `A = ℤ/Nℤ` with `N ≠ 0` such a homomorphism is an `S`-point `P` of `E[N]` that has exact order
+`N` in every geometric fibre: none of `P, 2P, …, (N - 1)P` meets the zero section
 (`EllipticCurveGeom.isFiberwiseInjective_zmod_iff`). For `A = (ℤ/Nℤ)²` it is a pair of `S`-points
 of `E[N]` that is a basis of the `N`-torsion in every geometric fibre in which `N` is invertible:
 over a separably closed field in which `N` is invertible, the injective homomorphisms
@@ -36,9 +35,8 @@ The condition is pointwise, so it is stable under arbitrary base change
 (`EllipticCurveGeom.IsFiberwiseInjective.pointsPullback`), and it descends along surjective base
 changes (`EllipticCurveGeom.isFiberwiseInjective_pointsPullback_iff`). The key input is that a base
 changed point meets the zero section exactly over the points where the original point does
-(`EllipticCurveGeom.pointsPullback_left_apply_eq_zero_iff`): two sections of a morphism agree at a
-field-valued point of the base exactly when they agree at its underlying point
-(`TauCeti.AlgebraicGeometry.comp_eq_comp_iff_of_section`).
+(`EllipticCurveGeom.pointsPullback_left_apply_eq_zero_iff`), and over a field a point is zero
+exactly when it meets the zero section (`EllipticCurveGeom.eq_one_iff_left_apply_eq_zero`).
 
 The group law on points of `E` is written multiplicatively, following `EllipticCurveGeom.mulBy`.
 
@@ -74,45 +72,6 @@ open CategoryTheory Limits MonoidalCategory CartesianMonoidalCategory AlgebraicG
 universe u
 
 namespace TauCeti.AlgebraicGeometry.EllipticCurveGeom
-
-/-! ### Base-changed points and the zero section -/
-
-section BaseChange
-
-variable {S S' : Scheme.{u}} {E : EllipticCurveGeom S} {E' : EllipticCurveGeom S'}
-  {g : E'.carrier ⟶ E.carrier} {f : S' ⟶ S} (hg : IsPullback g E'.structureMap E.structureMap f)
-  (h0 : E'.zero ≫ g = f ≫ E.zero)
-
-/-- Along a morphism `t : T ⟶ S'`, the base change `P'` of an `S`-point `P` of `E` agrees with the
-zero section of `E'` exactly when `P` agrees with the zero section of `E` along `t ≫ f`. -/
-theorem comp_pointsPullback_left_eq_comp_zero_iff (P : 𝟙_ (Over S) ⟶ Over.mk E.structureMap)
-    {T : Scheme.{u}} (t : T ⟶ S') :
-    t ≫ (pointsPullback hg h0 P).left = t ≫ E'.zero ↔ (t ≫ f) ≫ P.left = (t ≫ f) ≫ E.zero :=
-  ⟨fun h ↦ by simpa [h0] using congr($h ≫ g),
-    fun h ↦ hg.hom_ext (by simpa [h0] using h) (by simp)⟩
-
-/-- **A base-changed point meets the zero section exactly over the points where the original
-point does.** For a pullback square of elliptic curves over `f : S' ⟶ S` and an `S`-point `P` of
-`E`, the base change `P'` of `P` agrees with the zero section of `E'` at a point `s'` of `S'` if and
-only if `P` agrees with the zero section of `E` at `f s'`. -/
-theorem pointsPullback_left_apply_eq_zero_iff (P : 𝟙_ (Over S) ⟶ Over.mk E.structureMap)
-    (s' : S') :
-    (pointsPullback hg h0 P).left s' = E'.zero s' ↔ P.left (f s') = E.zero (f s') := by
-  -- both sides are read at the point `t : Spec κ(s') ⟶ S'`, where they become equalities of
-  -- morphisms; they are chained with `Iff.trans` since the point `p` of `Spec κ(s')` is typed in
-  -- `Spec (.of _)` by `comp_eq_comp_iff_of_section`, which blocks `rw`
-  obtain ⟨p⟩ : Nonempty (Spec (S'.residueField s')) := inferInstance
-  have key {T : Scheme.{u}} {X : Scheme.{u}} (a b : T ⟶ X) (z y : T) (hz : z = y) :
-      a z = b z ↔ a y = b y := by
-    rw [hz]
-  refine (key _ _ _ _ (Scheme.fromSpecResidueField_apply s' p)).symm.trans
-    ((comp_eq_comp_iff_of_section (left_comp_structureMap _) E'.zero_comp_structureMap
-      (S'.fromSpecResidueField s') p).symm.trans
-        ((comp_pointsPullback_left_eq_comp_zero_iff hg h0 P _).trans ((comp_eq_comp_iff_of_section
-          (left_comp_structureMap P) E.zero_comp_structureMap (S'.fromSpecResidueField s' ≫ f)
-            p).trans (key _ _ _ _ (congrArg f (Scheme.fromSpecResidueField_apply s' p))))))
-
-end BaseChange
 
 /-! ### Homomorphisms injective on every fibre -/
 
@@ -172,17 +131,6 @@ theorem IsFiberwiseInjective.injective [Nonempty S] (h : E.IsFiberwiseInjective 
 section Field
 
 variable {K : Type u} [Field K] (E : EllipticCurveGeom (Spec (.of K)))
-
-/-- A point of an elliptic curve over a field `K` with values in `Spec K` is the zero point
-exactly when it meets the zero section at the point `p` of `Spec K`. -/
-theorem eq_one_iff_left_apply_eq_zero (x : 𝟙_ (Over (Spec (.of K))) ⟶ Over.mk E.structureMap)
-    (p : Spec (.of K)) : x = 1 ↔ x.left p = E.zero p := by
-  refine Iff.trans ?_
-    (comp_eq_comp_iff_of_section (left_comp_structureMap x) E.zero_comp_structureMap (𝟙 _) p)
-  simp only [Category.id_comp]
-  refine ⟨fun hx ↦ by simp [hx], fun hx ↦ ?_⟩
-  ext1
-  simpa using hx
 
 /-- **Over a field, injectivity on fibres is injectivity.** -/
 theorem isFiberwiseInjective_iff_injective
