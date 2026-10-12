@@ -25,6 +25,10 @@ possibly nonreduced bases and is an equality of scheme morphisms. Containment in
 as an inclusion of ideal sheaves, so the existing closed-subscheme factorization API applies
 directly.
 
+This annihilation result is intrinsic to the subgroup divisor and its rank. It applies directly
+to the subgroup-divisor formulation of exact order, independently of generator schemes or a
+comparison with full sets of sections.
+
 ## References
 
 * N. M. Katz and B. Mazur, *Arithmetic Moduli of Elliptic Curves*, §§1.4 and 1.12.
