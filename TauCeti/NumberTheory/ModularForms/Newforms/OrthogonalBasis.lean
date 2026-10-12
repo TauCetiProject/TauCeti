@@ -87,16 +87,6 @@ theorem linearIndependent_toCuspForm :
 
 /-! ### Normalising a new eigenvector -/
 
-/-- A nonzero good Hecke eigenvector in the new subspace has nonzero first coefficient. -/
-theorem _root_.TauCeti.qExpansion_coeff_one_ne_zero_of_mem_cuspFormsNew
-    {F : CuspForm ((Gamma1 N).map (mapGL ℝ)) k}
-    (hχ : F ∈ cuspFormCharSpace k χ) (hnew : F ∈ cuspFormsNew N k) (hF : F ≠ 0)
-    (h : ∀ p : ℕ, p.Prime → Nat.Coprime p N → ∃ c : ℂ,
-      heckeRingHomCuspCharSpace k χ (heckeTGeneratorGamma0 N p) ⟨F, hχ⟩ = c • ⟨F, hχ⟩) :
-    (qExpansion 1 F).coeff 1 ≠ 0 := fun h1 ↦
-  hF (eq_zero_of_forall_prime_heckeRingHomCusp_of_one_eq_zero_of_mem_cuspFormsNew (F := ⟨F, hχ⟩)
-    (fun p hp hpN ↦ by rw [heckeTCompositeGamma0_prime N hp]; exact h p hp hpN) h1 hnew)
-
 /-- **A new eigenvector, normalised, is a newform.** A nonzero cusp form of nebentypus `χ` in the
 new subspace that is an eigenvector of the Hecke ring at every prime not dividing `N`, divided
 by its first coefficient (which is nonzero). -/

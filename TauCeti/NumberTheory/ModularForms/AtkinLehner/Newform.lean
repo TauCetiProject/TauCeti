@@ -24,7 +24,7 @@ two moduli, this is `ψ(p)⁻¹ a_p(f)`.
 
 `HeckeRing.GL2.Newform.atkinLehnerTransform` constructs this normalized newform from
 the exact divisor using the canonical matrix. The equation
-`normalizedAtkinLehnerOperatorGamma1Cusp_eq_coeff_smul` identifies the scalar relating it
+`atkinLehnerNormalizer_smul_atkinLehnerOperatorGamma1Cusp_eq_smul` identifies the scalar relating it
 to the Petersson-normalized slash, without asserting that this scalar has modulus one.
 The characterization `atkinLehnerTransform_eq_iff` uniquely identifies the newform on that
 line and makes it independent of the choice of Atkin–Lehner matrix.
@@ -62,17 +62,8 @@ private theorem atkinLehner_newform_prime_eigen (f : Newform N k)
   let ψ := χ.comp (MonoidHom.inl (ZMod Q)ˣ (ZMod (N / Q))ˣ)
   let φ := χ.comp (MonoidHom.inr (ZMod Q)ˣ (ZMod (N / Q))ˣ)
   have hχ : f.χ = ψ.comp (ZMod.unitsMap h.dvd) *
-      φ.comp (ZMod.unitsMap (Nat.div_dvd_of_dvd h.dvd)) := by
-    apply MonoidHom.ext
-    intro u
-    have hu := DFunLike.congr_fun (MonoidHom.coprod_unique χ) (h.unitsEquivProd u)
-    calc
-      f.χ u = χ (h.unitsEquivProd u) := by simp [χ]
-      _ = ψ (h.unitsEquivProd u).1 * φ (h.unitsEquivProd u).2 := hu.symm
-      _ = _ := by
-        rw [Nat.IsExactDivisor.unitsEquivProd_apply_fst,
-          Nat.IsExactDivisor.unitsEquivProd_apply_snd]
-        rfl
+      φ.comp (ZMod.unitsMap (Nat.div_dvd_of_dvd h.dvd)) :=
+    h.eq_mul_comp_unitsMap f.χ
   exact (heckeTCuspNat_atkinLehnerOperatorGamma1Cusp_eq_smul_iff_heckeTCuspNat_eq_smul
     ψ φ h.pos h.dvd hW hpN (hχ ▸ f.mem_charSpace)
     (f.eigenvalue ⟨p, hp.pos⟩ hpN)).mpr (f.heckeTCuspNat_eq_eigenvalue_smul hp hpN)
@@ -91,6 +82,13 @@ private theorem atkinLehner_newform_ring_eigen (f : Newform N k)
   rw [← heckeTCompositeGamma0_prime N hp]
   exact ⟨_, heckeRingHomCuspCharSpace_heckeTCompositeGamma0_eq_smul_of_heckeTCuspNat_eq_smul hp hc⟩
 
+/-- The Atkin–Lehner slash of a newform is nonzero. -/
+theorem _root_.HeckeRing.GL2.Newform.atkinLehnerOperatorGamma1Cusp_ne_zero
+    (f : Newform N k) (hQ : 0 < Q) (hQN : Q ∣ N) (hW : IsAtkinLehnerMatrix N Q W) :
+    atkinLehnerOperatorGamma1Cusp hQ hQN hW k f.toCuspForm ≠ 0 :=
+  fun hzero ↦ f.ne_zero (atkinLehnerOperatorGamma1Cusp_injective hQ hQN hW k
+    (hzero.trans (map_zero _).symm))
+
 /-- The first Fourier coefficient of the Atkin–Lehner slash of a newform is nonzero.
 Thus the slash can be normalized without changing its eigenline. -/
 theorem _root_.HeckeRing.GL2.Newform.qExpansion_coeff_one_atkinLehnerOperatorGamma1Cusp_ne_zero
@@ -99,8 +97,7 @@ theorem _root_.HeckeRing.GL2.Newform.qExpansion_coeff_one_atkinLehnerOperatorGam
   exact qExpansion_coeff_one_ne_zero_of_mem_cuspFormsNew
     (atkinLehnerOperatorGamma1Cusp_mem_cuspFormCharSpace hQ hQN hW f.mem_charSpace)
     (atkinLehnerOperatorGamma1Cusp_mem_cuspFormsNew hQ hQN hW f.isNew)
-    (fun hzero ↦ f.ne_zero (atkinLehnerOperatorGamma1Cusp_injective hQ hQN hW k
-      (hzero.trans (map_zero _).symm)))
+    (f.atkinLehnerOperatorGamma1Cusp_ne_zero hQ hQN hW)
     (atkinLehner_newform_ring_eigen f hQ hQN hW)
 
 /-- The normalized newform on the Atkin–Lehner image line of `f`. The underlying cusp form
@@ -111,8 +108,7 @@ private def atkinLehner_newform (f : Newform N k)
   Newform.ofForallPrime
     (atkinLehnerOperatorGamma1Cusp_mem_cuspFormCharSpace hQ hQN hW f.mem_charSpace)
     (atkinLehnerOperatorGamma1Cusp_mem_cuspFormsNew hQ hQN hW f.isNew)
-    (fun hzero ↦ f.ne_zero (atkinLehnerOperatorGamma1Cusp_injective hQ hQN hW k
-      (hzero.trans (map_zero _).symm)))
+    (f.atkinLehnerOperatorGamma1Cusp_ne_zero hQ hQN hW)
     (atkinLehner_newform_ring_eigen f hQ hQN hW)
 
 /-- The cusp form underlying Atkin–Lehner transport is the normalized slash. -/
@@ -176,7 +172,7 @@ theorem _root_.HeckeRing.GL2.Newform.toCuspForm_atkinLehnerTransform (f : Newfor
   atkinLehner_newform_toCuspForm f h.pos h.dvd _
 
 /-- Every Atkin–Lehner matrix gives the canonical transported newform after normalization. -/
-theorem _root_.HeckeRing.GL2.Newform.toCuspForm_atkinLehnerTransform_of_matrix
+theorem _root_.HeckeRing.GL2.Newform.toCuspForm_atkinLehnerTransform_of_isAtkinLehnerMatrix
     (f : Newform N k) (h : Q ∥ N) (hW : IsAtkinLehnerMatrix N Q W) :
     (f.atkinLehnerTransform h).toCuspForm =
       ((qExpansion 1 (atkinLehnerOperatorGamma1Cusp h.pos h.dvd hW k f.toCuspForm)).coeff 1)⁻¹ •
@@ -196,13 +192,14 @@ theorem _root_.HeckeRing.GL2.Newform.χ_atkinLehnerTransform (f : Newform N k)
 
 /-- The Petersson-normalized slash by any matrix is its first Fourier coefficient times
 the canonical transported newform. This specifies the scalar without a modulus-one claim. -/
-theorem _root_.HeckeRing.GL2.Newform.normalizedAtkinLehnerOperatorGamma1Cusp_eq_coeff_smul
+theorem
+    _root_.HeckeRing.GL2.Newform.atkinLehnerNormalizer_smul_atkinLehnerOperatorGamma1Cusp_eq_smul
     (f : Newform N k) (h : Q ∥ N) (hW : IsAtkinLehnerMatrix N Q W) :
     atkinLehnerNormalizer Q k • atkinLehnerOperatorGamma1Cusp h.pos h.dvd hW k f.toCuspForm =
       (atkinLehnerNormalizer Q k *
         (qExpansion 1 (atkinLehnerOperatorGamma1Cusp h.pos h.dvd hW k f.toCuspForm)).coeff 1) •
           (f.atkinLehnerTransform h).toCuspForm := by
-  rw [f.toCuspForm_atkinLehnerTransform_of_matrix h hW, mul_smul,
+  rw [f.toCuspForm_atkinLehnerTransform_of_isAtkinLehnerMatrix h hW, mul_smul,
     smul_inv_smul₀ (f.qExpansion_coeff_one_atkinLehnerOperatorGamma1Cusp_ne_zero h.pos h.dvd hW)]
 
 /-- A newform is the canonical Atkin–Lehner transform exactly when its line contains the
@@ -268,9 +265,8 @@ theorem _root_.HeckeRing.GL2.Newform.eigenvalue_atkinLehnerTransform
   have hc0 : c ≠ 0 := by
     intro hzero
     rw [hzero, zero_smul] at hc
-    exact f.ne_zero (atkinLehnerOperatorGamma1Cusp_injective h.pos h.dvd
-      (isAtkinLehnerMatrix_atkinLehnerMatrix h) k
-      (hc.trans (map_zero _).symm))
+    exact f.atkinLehnerOperatorGamma1Cusp_ne_zero h.pos h.dvd
+      (isAtkinLehnerMatrix_atkinLehnerMatrix h) hc
   have hT := atkinLehner_newform_prime_eigen f h
     (isAtkinLehnerMatrix_atkinLehnerMatrix h) hp hpN
   rw [hc, map_smul, g.heckeTCuspNat_eq_eigenvalue_smul hp hpN, smul_smul, smul_smul] at hT
