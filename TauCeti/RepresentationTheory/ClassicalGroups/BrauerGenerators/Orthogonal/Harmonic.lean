@@ -249,9 +249,9 @@ section CommRing
 variable {k n d} [CommRing k]
 
 /-- **A tensor negated by every transposition of strands is harmonic**, provided `2` is
-invertible: an arc absorbs the crossing of its own two strands, so it sends such a tensor to minus
-itself. On two strands this says that the antisymmetric square is traceless for the symmetric
-form. -/
+invertible: an arc absorbs the crossing of its own two strands, so its value on such a tensor `x`
+is its value on `-x`, namely minus itself; with `2` invertible that value is therefore zero. On
+two strands this says that the antisymmetric square is traceless for the symmetric form. -/
 theorem mem_harmonicTensors_of_forall_swap_eq_neg [Invertible (2 : k)]
     {x : ⨂[k]^d (Fin n → k)}
     (hx : ∀ i j : Fin d, i ≠ j → permTensorAction k n d (Equiv.swap i j) x = -x) :
