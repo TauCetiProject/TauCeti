@@ -89,7 +89,7 @@ theorem differential_tprod [DecidableEq ι] (d : ∀ i, Module.End R (M i))
 
 /-- A tensor of maps commuting with the factor differentials commutes with the tensor
 differentials. No square-zero or characteristic hypothesis is needed for this identity. -/
-theorem differential_map {N : ι → Type*} [∀ i, AddCommMonoid (N i)]
+theorem differential_comp_map {N : ι → Type*} [∀ i, AddCommMonoid (N i)]
     [∀ i, Module R (N i)] (d : ∀ i, Module.End R (M i))
     (e : ∀ i, Module.End R (N i)) (f : ∀ i, M i →ₗ[R] N i)
     (hf : ∀ i, e i ∘ₗ f i = f i ∘ₗ d i) :
@@ -108,7 +108,7 @@ theorem differential_map {N : ι → Type*} [∀ i, AddCommMonoid (N i)]
   rw [hfi]
 
 /-- Reindexing transports the tensor differential to the reindexed family. -/
-theorem differential_reindex {κ : Type*} [Fintype κ] (e : ι ≃ κ)
+theorem differential_comp_reindex {κ : Type*} [Fintype κ] (e : ι ≃ κ)
     (d : ∀ i, Module.End R (M i)) :
     differential (fun j ↦ d (e.symm j)) ∘ₗ
         (_root_.PiTensorProduct.reindex R M e).toLinearMap =

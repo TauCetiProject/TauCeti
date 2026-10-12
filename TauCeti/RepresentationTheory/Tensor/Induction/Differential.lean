@@ -45,9 +45,9 @@ noncomputable def wreathTensorDifferential :
   toLinearMap := TauCeti.PiTensorProduct.differential (fun _ : ι ↦ d.toLinearMap)
   isIntertwining' a := by
     rw [wreathTensor_apply, ← LinearMap.comp_assoc,
-      TauCeti.PiTensorProduct.differential_map _ _ _ (fun i ↦ d.isIntertwining' (a.left i)),
+      TauCeti.PiTensorProduct.differential_comp_map _ _ _ (fun i ↦ d.isIntertwining' (a.left i)),
       LinearMap.comp_assoc,
-      TauCeti.PiTensorProduct.differential_reindex a.right (fun _ ↦ d.toLinearMap),
+      TauCeti.PiTensorProduct.differential_comp_reindex a.right (fun _ ↦ d.toLinearMap),
       LinearMap.comp_assoc]
 
 /-- The underlying map of the wreath tensor differential is the finite tensor differential. -/

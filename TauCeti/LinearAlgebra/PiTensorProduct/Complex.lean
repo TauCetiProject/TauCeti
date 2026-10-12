@@ -148,6 +148,8 @@ end Semiring
 
 section Ring
 
+open CategoryTheory
+
 variable [CommRing R] [∀ i, AddCommGroup (M i)] [∀ i, Module R (M i)]
 
 /-- The total-degree tensor cochain complex in characteristic two. Its terms are the tensor
@@ -168,6 +170,21 @@ theorem cochainComplex_X [CharP R 2] (ℳ : ∀ i, ℤ → Submodule R (M i))
     (cochainComplex ℳ d hdeg hd).X n = ModuleCat.of R (degreePiece ℳ n) := by
   rw [cochainComplex, gradedCochainComplex_X]
 
+/-- The complex differential is the restricted tensor differential, transported along the
+identifications of its source and target degree pieces. -/
+@[simp]
+theorem cochainComplex_d [CharP R 2] (ℳ : ∀ i, ℤ → Submodule R (M i))
+    (d : ∀ i, Module.End R (M i))
+    (hdeg : ∀ i, LinearMap.IsHomogeneous (d i) (ℳ i) (ℳ i) 1)
+    (hd : ∀ i, d i ∘ₗ d i = 0) (n : ℤ) :
+    (cochainComplex ℳ d hdeg hd).d n (n + 1) =
+      eqToHom (cochainComplex_X ℳ d hdeg hd n) ≫
+        ModuleCat.ofHom ((differential d).restrict
+          (p := degreePiece ℳ n) (q := degreePiece ℳ (n + 1))
+          fun _ hz ↦ (isHomogeneous_differential ℳ d hdeg).map_mem hz) ≫
+        eqToHom (cochainComplex_X ℳ d hdeg hd (n + 1)).symm :=
+  gradedCochainComplex_d n
+
 /-- Under the degree-piece identification, the complex differential applies the finite tensor
 differential to the underlying tensor. -/
 theorem cochainComplex_d_apply [CharP R 2] (ℳ : ∀ i, ℤ → Submodule R (M i))
@@ -180,6 +197,28 @@ theorem cochainComplex_d_apply [CharP R 2] (ℳ : ∀ i, ℤ → Submodule R (M 
       (⟨differential d z, (isHomogeneous_differential ℳ d hdeg).map_mem z.2⟩ :
         degreePiece ℳ (n + 1)) :=
   gradedCochainComplex_d_apply n z
+
+/-- The degree-`n` term of the tensor cochain complex identified with its total-degree piece
+as a linear equivalence. -/
+noncomputable def cochainComplexXEquiv [CharP R 2] (ℳ : ∀ i, ℤ → Submodule R (M i))
+    (d : ∀ i, Module.End R (M i))
+    (hdeg : ∀ i, LinearMap.IsHomogeneous (d i) (ℳ i) (ℳ i) 1)
+    (hd : ∀ i, d i ∘ₗ d i = 0) (n : ℤ) :
+    (cochainComplex ℳ d hdeg hd).X n ≃ₗ[R] degreePiece ℳ n :=
+  gradedCochainComplexXEquiv (hdeg := isHomogeneous_differential ℳ d hdeg)
+    (hsq := fun _ x ↦ LinearMap.congr_fun (differential_comp_self d hd) x) n
+
+/-- Under the degree-piece equivalence, the complex differential applies the finite tensor
+differential to the underlying tensor. -/
+theorem cochainComplexXEquiv_d [CharP R 2] (ℳ : ∀ i, ℤ → Submodule R (M i))
+    (d : ∀ i, Module.End R (M i))
+    (hdeg : ∀ i, LinearMap.IsHomogeneous (d i) (ℳ i) (ℳ i) 1)
+    (hd : ∀ i, d i ∘ₗ d i = 0) (n : ℤ) (z : (cochainComplex ℳ d hdeg hd).X n) :
+    (cochainComplexXEquiv ℳ d hdeg hd (n + 1)
+        (((cochainComplex ℳ d hdeg hd).d n (n + 1)).hom z) : ⨂[R] i, M i) =
+      differential d (cochainComplexXEquiv ℳ d hdeg hd n z) := by
+  dsimp only [cochainComplexXEquiv]
+  exact gradedCochainComplexXEquiv_d n z
 
 end Ring
 
