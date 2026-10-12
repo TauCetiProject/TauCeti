@@ -172,12 +172,6 @@ private theorem map_tautologicalUnit :
   rw [SL2Borel.map_apply, presentationPoint, SL2Borel.coe_mk] at h
   simpa [diagonalUnit_val, presentationUnit_val] using h
 
-private theorem unitOfPoint_CAlgHom :
-    MultiplicativeGroup.unitOfPoint
-        (Polynomial.CAlgHom : LaurentPolynomial R →ₐ[R] presentationRing R) =
-      presentationUnit R :=
-  (MultiplicativeGroup.map_genericUnit _ _).symm
-
 private theorem presentationToCoordinate_comp_coordinateToPresentation :
     (presentationToCoordinate R).comp (coordinateToPresentation R) =
       AlgHom.id R (coordinateHopfAlgebra R) := by
@@ -207,10 +201,13 @@ private theorem coordinateToPresentation_comp_presentationToCoordinate :
     apply (MultiplicativeGroup.pointEquiv
       (R := R) (A := presentationRing R)).injective
     rw [MultiplicativeGroup.pointEquiv_comp]
+    have hunit : MultiplicativeGroup.unitOfPoint
+        (Polynomial.CAlgHom : LaurentPolynomial R →ₐ[R] presentationRing R) = presentationUnit R :=
+      (MultiplicativeGroup.map_genericUnit _ _).symm
     simpa only [presentationCoefficientToCoordinate,
       MultiplicativeGroup.pointsMulEquiv_symm_apply, WithConv.ofConv_toConv,
       MultiplicativeGroup.pointEquiv_apply, MultiplicativeGroup.unitOfPoint_point,
-      AlgHom.id_comp, unitOfPoint_CAlgHom] using map_tautologicalUnit R
+      AlgHom.id_comp, hunit] using map_tautologicalUnit R
   · have h := congrArg
       (fun g : SL2Borel (presentationRing R) ↦
         (g : Matrix (Fin 2) (Fin 2) (presentationRing R)) 0 1)
