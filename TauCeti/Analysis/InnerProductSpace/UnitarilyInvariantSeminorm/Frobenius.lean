@@ -25,8 +25,10 @@ Frobenius seminorm controls the nuclear seminorm with the rank-sharp constant:
 In finite orthonormal source and target bases, the Frobenius seminorm equals the Frobenius
 norm of the rectangular coordinate matrix. This comparison connects basis-independent
 operator estimates to entrywise matrix calculations. For a Sylvester equation `AX - XB = C`
-in orthonormal eigenbases, the coordinate equation `(αᵢ - βⱼ)Xᵢⱼ = Cᵢⱼ` and a lower
-bound `δ ≤ |αᵢ - βⱼ|` give an entrywise norm bound. Summing its squares and using
+in orthonormal eigenbases,
+`ContinuousLinearMap.inner_sylvester_apply_eigenvectorBasis` gives the coordinate equation
+`(αᵢ - βⱼ)Xᵢⱼ = Cᵢⱼ`. A lower bound `δ ≤ |αᵢ - βⱼ|` then gives an entrywise norm bound.
+Summing its squares and using
 `LinearMap.frobenius_norm_toMatrix` for `X` and `C` converts that bound into
 `δ ‖X‖_F ≤ ‖C‖_F`.
 
