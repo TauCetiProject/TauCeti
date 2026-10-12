@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicTopology.SingularHomology.Basic
+public import Mathlib.AlgebraicTopology.SimplicialSet.TopAdj
 public import TauCeti.AlgebraicTopology.FundamentalGroupoid.Basic
 public import TauCeti.AlgebraicTopology.FundamentalGroupoid.SimplyConnected
 public import TauCeti.AlgebraicTopology.LocalCoefficient
@@ -76,12 +77,36 @@ variable {R : Type u} [Ring R] {X Y : TopCat.{v}} {m n p : SimplexCategoryᵒᵖ
 abbrev initialVertex (σ : (TopCat.toSSet.obj X).obj n) : FundamentalGroupoid X :=
   ⟨TopCat.simplexMap σ (toTopInitialVertex n.unop)⟩
 
+/-- The initial vertex is evaluation at the first vertex of the standard simplex. -/
+lemma initialVertex_eq (σ : (TopCat.toSSet.obj X).obj n) :
+    initialVertex σ = FundamentalGroupoid.mk
+      (X.toSSetObjEquiv n σ (Convexity.StdSimplex.single 0)) := by
+  apply congrArg FundamentalGroupoid.mk
+  exact congrArg (X.toSSetObjEquiv n σ) (toTopInitialVertex_down n.unop)
+
+/-- The initial vertex of a singular zero-simplex is its underlying point. -/
+@[simp]
+lemma initialVertex_zero (σ : (TopCat.toSSet.obj X) _⦋0⦌) :
+    initialVertex σ = FundamentalGroupoid.mk (TopCat.toSSetObj₀Equiv σ) := by
+  apply congrArg FundamentalGroupoid.mk
+  exact congrArg (TopCat.simplexMap σ) (Subsingleton.elim _ _)
+
 /-- The morphism of the fundamental groupoid of `X` obtained by running a singular simplex along
 the unique path class between two points of its simplex. -/
 def pathTransport (σ : (TopCat.toSSet.obj X).obj n) (z w : toTop.{v}.obj n.unop) :
     (⟨TopCat.simplexMap σ z⟩ : FundamentalGroupoid X) ⟶ ⟨TopCat.simplexMap σ w⟩ :=
   (FundamentalGroupoid.map (TopCat.simplexMap σ)).map
     (default : (⟨z⟩ : FundamentalGroupoid (toTop.{v}.obj n.unop)) ⟶ ⟨w⟩)
+
+/-- Transport inside a simplex is represented by the image of any path joining its endpoints. -/
+lemma pathTransport_eq_mk (σ : (TopCat.toSSet.obj X).obj n)
+    {z w : toTop.{v}.obj n.unop} (q : Path z w) :
+    pathTransport σ z w = Path.Homotopic.Quotient.mk
+      (q.map (TopCat.simplexMap σ).continuous) := by
+  unfold pathTransport
+  rw [Subsingleton.elim (default : (⟨z⟩ : FundamentalGroupoid (toTop.{v}.obj n.unop)) ⟶ ⟨w⟩)
+    (Path.Homotopic.Quotient.mk q)]
+  exact (Path.Homotopic.Quotient.mk_map q (TopCat.simplexMap σ)).symm
 
 /-- Transport inside a simplex from a point to itself is the identity. -/
 @[simp]
@@ -136,6 +161,14 @@ the singular `n`-simplex obtained from `σ` by reindexing along `α`. -/
 def vertexTransport (α : m ⟶ n) (σ : (TopCat.toSSet.obj X).obj m) :
     initialVertex σ ⟶ initialVertex ((TopCat.toSSet.obj X).map α σ) :=
   pathTransport σ (toTopInitialVertex m.unop) (toTop.map α.unop (toTopInitialVertex n.unop))
+
+/-- Vertex transport is represented by the image of any path to the reindexed initial vertex. -/
+lemma vertexTransport_eq_mk (α : m ⟶ n) (σ : (TopCat.toSSet.obj X).obj m)
+    (q : Path (toTopInitialVertex m.unop)
+      (toTop.map α.unop (toTopInitialVertex n.unop))) :
+    vertexTransport α σ = Path.Homotopic.Quotient.mk
+      (q.map (TopCat.simplexMap σ).continuous) := by
+  rw [vertexTransport, pathTransport_eq_mk σ q]
 
 /-- Reindexing along an identity does not move the initial vertex, so the transport it induces is
 the `eqToHom` between the two (equal) initial vertices. -/
@@ -217,6 +250,19 @@ attached to a singular `k`-simplex. -/
 def ιTwistedChainComplex (k : ℕ) (σ : (TopCat.toSSet.obj X) _⦋k⦌) :
     L.obj (initialVertex σ) ⟶ (twistedChainComplex L).X k :=
   ιTwistedChains L σ
+
+/-- A family of maps on the simplex fibres induces a map out of twisted chains in one degree. -/
+def twistedChainComplexDesc (k : ℕ) {M : ModuleCat.{max v w} R}
+    (f : ∀ σ : (TopCat.toSSet.obj X) _⦋k⦌, L.obj (initialVertex σ) ⟶ M) :
+    (twistedChainComplex L).X k ⟶ M := Sigma.desc f
+
+/-- The map induced by a family on simplex fibres restricts to that family on each summand. -/
+@[reassoc (attr := simp)]
+lemma ιTwistedChainComplex_desc (k : ℕ) {M : ModuleCat.{max v w} R}
+    (f : ∀ σ : (TopCat.toSSet.obj X) _⦋k⦌, L.obj (initialVertex σ) ⟶ M)
+    (σ : (TopCat.toSSet.obj X) _⦋k⦌) :
+    ιTwistedChainComplex L k σ ≫ twistedChainComplexDesc L k f = f σ :=
+  Sigma.ι_comp_desc f σ
 
 /-- Two maps out of a degree of the twisted chain complex agree as soon as they agree on every
 summand. -/
