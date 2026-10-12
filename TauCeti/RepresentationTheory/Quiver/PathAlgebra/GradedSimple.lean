@@ -7,6 +7,7 @@ module
 
 public import Mathlib.CategoryTheory.Abelian.Projective.Dimension
 public import TauCeti.Algebra.Category.GradedModuleCat.Abelian
+public import TauCeti.Algebra.Category.GradedModuleCat.Coproducts
 public import TauCeti.Algebra.Category.GradedModuleCat.CartanMap.Idempotent.Head
 public import TauCeti.RepresentationTheory.Quiver.PathAlgebra.GradedProjective
 
@@ -221,7 +222,7 @@ abbrev gradedArrowSum : GradedModuleCat.{max u v w} (integerGrade k Q) :=
 /-- The arrow kernel is projective in the graded module category. -/
 instance projective_gradedArrowSum : Projective (gradedArrowSum k Q i) :=
   let _ := integerGradedAlgebra k Q
-  GradedModuleCat.projective_of_module_projective _
+  GradedModuleCat.projective_directSumObj.{w, max u v w, w, max u v} _
 
 variable [Finite ((j : Q) × (i ⟶ j))]
 

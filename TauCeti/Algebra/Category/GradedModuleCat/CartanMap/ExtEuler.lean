@@ -87,21 +87,6 @@ theorem gradedExtEuler_directSum [HasExt.{w} (GradedModuleCat.{max uJ v} 𝒜)]
     (hj : ∀ j, IsGradedEulerAdmissible.{w} k e (M j) Y) :
     gradedExtEuler k e h = ∑ j, gradedExtEuler k e (hj j) := by
   classical
-  let _ := CategoryTheory.Limits.HasBiproduct.of_hasCoproduct M
-  -- Mathlib's biproduct-projectivity instance ties the index and Hom universes together.
-  -- The universal property supports the independent index universe needed here.
-  let _ : Projective (CategoryTheory.Limits.biproduct M) := ⟨fun f g _ ↦
-    ⟨CategoryTheory.Limits.biproduct.desc fun j ↦
-      Projective.factorThru (CategoryTheory.Limits.biproduct.ι M j ≫ f) g, by
-        apply CategoryTheory.Limits.biproduct.hom_ext'
-        intro j
-        simp only [CategoryTheory.Limits.biproduct.ι_desc_assoc,
-          Projective.factorThru_comp]⟩⟩
-  let i := (GradedModuleCat.coproductCofanIsColimit M).coconePointUniqueUpToIso
-    (CategoryTheory.Limits.biproduct.isColimit M)
-  let _ : Projective (GradedModuleCat.directSumObj M) :=
-    Projective.of_iso i.symm
-      (inferInstanceAs (Projective (CategoryTheory.Limits.biproduct M)))
   rw [gradedExtEuler_projective]
   ext p
   rw [coeff_targetShiftGradedDimension]
