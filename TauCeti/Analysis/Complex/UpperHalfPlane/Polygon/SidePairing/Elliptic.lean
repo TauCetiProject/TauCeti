@@ -182,13 +182,14 @@ theorem map_smul_selfPairedSideFixedPoint (i : {i : Fin n // σ.pair i = i}) :
     σ.map i • σ.selfPairedSideFixedPoint i = σ.selfPairedSideFixedPoint i :=
   (σ.selfPairedSideFixedPoint_spec i).2.2.2
 
-/-- Any nonendpoint fixed point on a self-paired side is its distinguished fixed point. -/
+/-- Any fixed point of a self-pairing map is its distinguished side fixed point. -/
 theorem selfPairedSideFixedPoint_eq (i : {i : Fin n // σ.pair i = i}) {z : ℍ}
-    (hz : z ∈ P.side i) (hzp : P.vertex i ≠ .inl z)
-    (hzq : P.vertex (i + 1) ≠ .inl z) (hfix : σ.map i • z = z) :
+    (hfix : σ.map i • z = z) :
     σ.selfPairedSideFixedPoint i = z := by
-  exact (σ.existsUnique_mem_side_map_smul_eq_self_of_pair_eq_self i.2).unique
-    (σ.selfPairedSideFixedPoint_spec i) ⟨hz, hzp, hzq, hfix⟩
+  by_contra hne
+  exact σ.map_ne_one i
+    (Matrix.ProjectiveSpecialLinearGroup.eq_one_of_smul_eq_self_of_smul_eq_self
+      hfix (σ.map_smul_selfPairedSideFixedPoint i) hne)
 
 /-- The stabilizer of a nonendpoint side point is trivial exactly when the side-pairing map
 does not fix it. -/

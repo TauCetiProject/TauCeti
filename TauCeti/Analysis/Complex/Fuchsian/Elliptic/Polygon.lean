@@ -265,7 +265,7 @@ private theorem ellipticOrbitMap_surjective
   induction q using Quotient.inductionOn' with | _ z =>
   have hz := (Γ.quotientMk_mem_ellipticOrbits_iff z).mp hq
   have hzbot : stabilizer Γ z ≠ ⊥ := (mem_freeLocus Γ ℍ).not.mp hz
-  obtain ⟨w, hworb, hv | ⟨i, hi, hip, hiq, hpair, hfix, -⟩⟩ :=
+  obtain ⟨w, hworb, hv | ⟨i, -, -, -, hpair, hfix, -⟩⟩ :=
     σ.exists_vertex_or_self_paired_side_of_stabilizer_ne_bot hmap hcover hdisj hzbot
   · obtain ⟨i, hi⟩ := hv
     have hwq : (Quotient.mk'' w : orbitRel.Quotient Γ ℍ) = Quotient.mk'' z :=
@@ -284,7 +284,7 @@ private theorem ellipticOrbitMap_surjective
   · let j : {i : Fin n // σ.pair i = i} := ⟨i, hpair⟩
     refine ⟨.inr j, Subtype.ext ?_⟩
     dsimp only [ellipticOrbitMap]
-    rw [σ.selfPairedSideFixedPoint_eq j hi hip hiq hfix]
+    rw [σ.selfPairedSideFixedPoint_eq j hfix]
     exact Quotient.sound (orbitRel_apply.mpr hworb)
 
 /-- The elliptic orbits of a fundamental polygon are precisely its nontrivial finite vertex
