@@ -734,7 +734,7 @@ theorem conjNormalFDRepFunctor_one :
     conjNormalFDRepFunctor (k := k) (N := N) (1 : G) = 𝟭 (FDRep k N) := by
   unfold conjNormalFDRepFunctor
   rw [inv_one, map_one]
-  rfl
+  exact MonoidHom.actionRes_id
 
 /-- Conjugation is a left action, as an equality of endofunctors.  The `FDRep` mirror of
 `conjNormalRepFunctor_mul`. -/
@@ -806,6 +806,12 @@ def _root_.FDRep.conjNormalIso (A : FDRep k N) (n : N) : conjNormalFDRep (n : G)
 @[simp]
 theorem _root_.FDRep.conjNormalIso_hom_hom (A : FDRep k N) (n : N) :
     (A.conjNormalIso n).hom.hom = Action.ρ A n :=
+  (rfl)
+
+/-- The inverse of `{}^n A ≅ A` for `n : N` is the action of `n⁻¹`. -/
+@[simp]
+theorem _root_.FDRep.conjNormalIso_inv_hom (A : FDRep k N) (n : N) :
+    (A.conjNormalIso n).inv.hom = Action.ρ A n⁻¹ :=
   (rfl)
 
 /-- Conjugation acts on the isomorphism classes of finite-dimensional representations of `N`: the
