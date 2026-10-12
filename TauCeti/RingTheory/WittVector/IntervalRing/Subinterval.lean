@@ -58,9 +58,11 @@ is how Kedlaya proves that the rings `B^I{T/c}` are noetherian (his Theorem 4.10
   `𝕎 O[1/(p [ϖ])]`.
 * `TauCeti.WittVector.norm_intervalRingRestrict_le`: restriction to a subinterval does not
   increase the norm.
+* `TauCeti.WittVector.intervalRingRestrict_self` and
+  `TauCeti.WittVector.intervalRingRestrict_intervalRingRestrict`: restriction is functorial.
 * `TauCeti.WittVector.norm_ringInverse_natCast_intervalRing`: `‖p⁻¹‖ = max(ρ₁⁻¹, ρ₂⁻¹)` in
   `B^{[ρ₁, ρ₂]}`.
-* `TauCeti.WittVector.surjective_intervalRingRestrictedEval`: the evaluation at `p⁻¹` is
+* `TauCeti.WittVector.intervalRingRestrictedEval_surjective`: the evaluation at `p⁻¹` is
   surjective.
 
 ## References
@@ -120,40 +122,6 @@ private theorem gaussValuationAway_algHom (hv : v.Integers O) (hϖ : ϖ ≠ 0) {
   rw [h, gaussValuationAway_mk', gaussValuationAway_mk']
 
 end Away
-
-section Expansion
-
-variable (hv : v.Integers O)
-
-/-- Splitting the Teichmüller expansion of `y` after `m` terms: `y = ∑_{i < m} [yᵢ] pⁱ + pᵐ b`. -/
-private theorem exists_eq_sum_add_pow_mul (y : 𝕎 O) (m : ℕ) :
-    ∃ b : 𝕎 O, y = ∑ i ∈ Finset.range m, teichmuller p (y.teichmullerCoeff i) * (p : 𝕎 O) ^ i +
-      (p : 𝕎 O) ^ m * b := by
-  cases m with
-  | zero => exact ⟨y, by simp⟩
-  | succ n =>
-    obtain ⟨b, hb⟩ := pow_dvd_sub_sum_teichmullerCoeff y n
-    exact ⟨b, by rw [Nat.range_succ_eq_Iic, ← hb, add_sub_cancel]⟩
-
-/-- In the splitting `y = ∑_{i < m} [yᵢ] pⁱ + pᵐ b`, the tail satisfies `λ_ρ(b) ρᵐ ≤ λ_ρ(y)`. -/
-private theorem gaussValuation_mul_pow_le {ρ : ℝ≥0} (hρ : ρ < 1) {y b : 𝕎 O} {m : ℕ}
-    (hb : y = ∑ i ∈ Finset.range m, teichmuller p (y.teichmullerCoeff i) * (p : 𝕎 O) ^ i +
-      (p : 𝕎 O) ^ m * b) :
-    gaussValuation p hv ρ hρ b * ρ ^ m ≤ gaussValuation p hv ρ hρ y := by
-  have hsum : gaussValuation p hv ρ hρ
-      (∑ i ∈ Finset.range m, teichmuller p (y.teichmullerCoeff i) * (p : 𝕎 O) ^ i) ≤
-        gaussValuation p hv ρ hρ y :=
-    Valuation.map_sum_le _ fun i _ ↦ by
-      rw [gaussValuation_teichmuller_mul_pow]
-      exact le_gaussValuation hv hρ y i
-  have h : (p : 𝕎 O) ^ m * b =
-      y - ∑ i ∈ Finset.range m, teichmuller p (y.teichmullerCoeff i) * (p : 𝕎 O) ^ i :=
-    eq_sub_iff_add_eq'.mpr hb.symm
-  calc gaussValuation p hv ρ hρ b * ρ ^ m = gaussValuation p hv ρ hρ ((p : 𝕎 O) ^ m * b) := by
-        rw [map_mul, map_pow, gaussValuation_p, mul_comm]
-    _ ≤ _ := h ▸ (Valuation.map_sub _ _ _).trans (max_le le_rfl hsum)
-
-end Expansion
 
 section Restrict
 
@@ -247,6 +215,48 @@ theorem norm_intervalRingRestrict_le (h₁ : ρ₁ ≤ ρ₁') (h₁₂ : ρ₁'
     rw [intervalRingRestrict, Completion.mapRingHom_coe, Completion.norm_coe, Completion.norm_coe]
     exact norm_intervalLocalizationEquiv_le hv hϖ hϖ' h₁ h₁₂ h₂ a
 
+/-- Restriction of an interval to itself is the identity. -/
+@[simp]
+theorem intervalRingRestrict_self (h₁₂ : ρ₁ ≤ ρ₂) (x : IntervalRing p hv hϖ hϖ' hρ₁ hρ₂) :
+    intervalRingRestrict p hv hϖ hϖ' hρ₁ hρ₂ hρ₁ hρ₂ le_rfl h₁₂ le_rfl x = x := by
+  induction x using Completion.induction_on with
+  | hp => exact isClosed_eq (continuous_intervalRingRestrict le_rfl h₁₂ le_rfl) continuous_id
+  | ih a =>
+    obtain ⟨⟨y, s⟩, rfl⟩ :=
+      IsLocalization.mk'_surjective (Submonoid.powers ((p : 𝕎 O) * teichmuller p ϖ)) a
+    exact intervalRingRestrict_coe_mk' le_rfl h₁₂ le_rfl y s
+
+/-- Restricting to a subinterval and then to a smaller one is restricting to the smaller one. -/
+@[simp]
+theorem intervalRingRestrict_intervalRingRestrict {ρ₁'' ρ₂'' : ℝ≥0} {hρ₁'' : ρ₁'' ∈ Set.Ioo 0 1}
+    {hρ₂'' : ρ₂'' ∈ Set.Ioo 0 1} (h₁ : ρ₁ ≤ ρ₁') (h₁₂ : ρ₁' ≤ ρ₂') (h₂ : ρ₂' ≤ ρ₂)
+    (h₁' : ρ₁' ≤ ρ₁'') (h₁₂' : ρ₁'' ≤ ρ₂'') (h₂' : ρ₂'' ≤ ρ₂')
+    (x : IntervalRing p hv hϖ hϖ' hρ₁ hρ₂) :
+    intervalRingRestrict p hv hϖ hϖ' hρ₁' hρ₂' hρ₁'' hρ₂'' h₁' h₁₂' h₂'
+        (intervalRingRestrict p hv hϖ hϖ' hρ₁ hρ₂ hρ₁' hρ₂' h₁ h₁₂ h₂ x) =
+      intervalRingRestrict p hv hϖ hϖ' hρ₁ hρ₂ hρ₁'' hρ₂'' (h₁.trans h₁') h₁₂' (h₂'.trans h₂)
+        x := by
+  induction x using Completion.induction_on with
+  | hp =>
+    exact isClosed_eq ((continuous_intervalRingRestrict h₁' h₁₂' h₂').comp
+      (continuous_intervalRingRestrict h₁ h₁₂ h₂))
+      (continuous_intervalRingRestrict (h₁.trans h₁') h₁₂' (h₂'.trans h₂))
+  | ih a =>
+    obtain ⟨⟨y, s⟩, rfl⟩ :=
+      IsLocalization.mk'_surjective (Submonoid.powers ((p : 𝕎 O) * teichmuller p ϖ)) a
+    simp only [intervalRingRestrict_coe_mk']
+
+/-- Restriction to subintervals is compatible with composition. -/
+@[simp]
+theorem intervalRingRestrict_comp {ρ₁'' ρ₂'' : ℝ≥0} {hρ₁'' : ρ₁'' ∈ Set.Ioo 0 1}
+    {hρ₂'' : ρ₂'' ∈ Set.Ioo 0 1} (h₁ : ρ₁ ≤ ρ₁') (h₁₂ : ρ₁' ≤ ρ₂') (h₂ : ρ₂' ≤ ρ₂)
+    (h₁' : ρ₁' ≤ ρ₁'') (h₁₂' : ρ₁'' ≤ ρ₂'') (h₂' : ρ₂'' ≤ ρ₂') :
+    (intervalRingRestrict p hv hϖ hϖ' hρ₁' hρ₂' hρ₁'' hρ₂'' h₁' h₁₂' h₂').comp
+        (intervalRingRestrict p hv hϖ hϖ' hρ₁ hρ₂ hρ₁' hρ₂' h₁ h₁₂ h₂) =
+      intervalRingRestrict p hv hϖ hϖ' hρ₁ hρ₂ hρ₁'' hρ₂'' (h₁.trans h₁') h₁₂' (h₂'.trans h₂) :=
+  RingHom.ext fun x ↦ by
+    rw [RingHom.comp_apply, intervalRingRestrict_intervalRingRestrict h₁ h₁₂ h₂ h₁' h₁₂' h₂']
+
 end Restrict
 
 section Presentation
@@ -278,7 +288,7 @@ private theorem exists_sum_eq_mul_inv_pow (h₁ : ρ₁ ≤ ρ₁')
   set L' := IntervalLocalization p hv hϖ hϖ' hρ₁' hρ₂
   set u := (IntervalLocalization.isUnit_natCast p hv hϖ hϖ' hρ₁' hρ₂).unit
   obtain ⟨m, hm⟩ := s.2
-  obtain ⟨b, hb⟩ := exists_eq_sum_add_pow_mul y m
+  obtain ⟨b, hb⟩ := exists_eq_sum_teichmullerCoeff_add_pow_mul y m
   set t : ℕ → 𝕎 O := fun i ↦
     if i < m then teichmuller p (y.teichmullerCoeff i) * (p : 𝕎 O) ^ m else b * (p : 𝕎 O) ^ m
   refine ⟨m, fun i ↦ algebraMap (𝕎 O) L' (t i) * IsLocalization.mk' L' 1 s, fun i hi ↦ ?_, ?_⟩
@@ -330,7 +340,8 @@ private theorem exists_sum_eq_mul_inv_pow (h₁ : ρ₁ ≤ ρ₁')
             gaussValuation p hv ρ hρ.2 y * ((ρ * V) ^ i)⁻¹ := by
         rw [mul_pow, mul_inv, ← mul_assoc]
         gcongr
-        exact (le_mul_inv_iff₀ (pow_pos hρ.1 i)).mpr (gaussValuation_mul_pow_le hv hρ.2 hb)
+        exact (le_mul_inv_iff₀ (pow_pos hρ.1 i)).mpr
+          (gaussValuation_mul_pow_le_of_eq_sum_add_pow_mul hv hρ.2 hb)
       rw [htm ρ₁ hρ₁, htm ρ₂ hρ₂, Nat.sub_self, pow_zero, mul_one]
       refine max_le (le_max_of_le_left ((?_ : _ ≤ _).trans (htail ρ₁' hρ₁')))
         (le_max_of_le_right (htail ρ₂ hρ₂))
@@ -393,7 +404,7 @@ B^{[ρ₁, ρ₂]}{T/c, U/ρ₁'⁻¹} → B^{[ρ₁', ρ₂]}{T/c},    T ↦ T,
 
 restricting the coefficients to the subinterval. Here `U = X 0` and `T i = X i.succ`, and `U` has
 radius `ρ₁'⁻¹`, the norm of `p⁻¹` in `B^{[ρ₁', ρ₂]}`. It is surjective
-(`TauCeti.WittVector.surjective_intervalRingRestrictedEval`): this is the form of Kedlaya's
+(`TauCeti.WittVector.intervalRingRestrictedEval_surjective`): this is the form of Kedlaya's
 Lemma 4.9 that moves the left endpoint of an interval in the normalisation `λ_ρ(p) = ρ`. -/
 noncomputable def intervalRingRestrictedEval (h₁ : ρ₁ ≤ ρ₁') (h₁₂ : ρ₁' ≤ ρ₂) :
     IsRestricted.subring (R := IntervalRing p hv hϖ hϖ' hρ₁ hρ₂)
@@ -539,7 +550,7 @@ is surjective, so `B^{[ρ₁', ρ₂]}{T/c}` is a quotient of a ring of restrict
 `B^{[ρ₁, ρ₂]}` with one more variable. The lifts are controlled: elements of
 `𝕎 O[1/(p [ϖ])]` lift without increasing the norm (Kedlaya's estimate (4.9.1)), and these are dense,
 so the open mapping argument of `controlled_closure_of_complete` lifts everything. -/
-theorem surjective_intervalRingRestrictedEval (h₁ : ρ₁ ≤ ρ₁') (h₁₂ : ρ₁' ≤ ρ₂) :
+theorem intervalRingRestrictedEval_surjective (h₁ : ρ₁ ≤ ρ₁') (h₁₂ : ρ₁' ≤ ρ₂) :
     Function.Surjective (intervalRingRestrictedEval p hv hϖ hϖ' hρ₁ hρ₂ hρ₁' c h₁ h₁₂) := by
   classical
   have : ∀ j, Fact (0 < (Fin.cons (ρ₁' : ℝ)⁻¹ c : Fin (k + 1) → ℝ) j) :=

@@ -11,9 +11,9 @@ public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Basic
 /-!
 # Evaluating restricted power series at bounded arguments
 
-Let `R` and `S` be ultrametric normed commutative rings, with `S` complete and `‖1‖ = 1`, let
-`φ : R →+* S` not increase norms, and let `a : Fin k → S` satisfy `‖a i‖ ≤ c i` for a polyradius
-`c`. For a series `f = ∑ₜ fₜ Xᵗ` restricted at `c`, the monomial values satisfy
+Let `R` and `S` be ultrametric normed commutative rings, with `S` complete, let `φ : R →+* S` not
+increase norms, and let `a : Fin k → S` satisfy `‖a i‖ ≤ c i` for a polyradius `c`. For a series
+`f = ∑ₜ fₜ Xᵗ` restricted at `c`, the monomial values satisfy
 
 ```text
 ‖φ(fₜ) aᵗ‖ ≤ ‖fₜ‖ cᵗ → 0,
@@ -64,17 +64,21 @@ namespace MvPowerSeries
 open Filter TauCeti.Huber
 open scoped Topology
 
-variable {k : ℕ} {R S : Type*} [NormedCommRing R] [NormedCommRing S] [NormOneClass S]
+variable {k : ℕ} {R S : Type*} [NormedCommRing R] [NormedCommRing S]
   {c : Fin k → ℝ} (φ : R →+* S) (a : Fin k → S)
 
 /-- A monomial value `φ(fₜ) aᵗ` is bounded by the weighted coefficient norm `‖fₜ‖ cᵗ`. -/
 private theorem norm_weightedEvalTerm_le (hφ : ∀ r, ‖φ r‖ ≤ ‖r‖) (ha : ∀ i, ‖a i‖ ≤ c i)
     (f : MvPowerSeries (Fin k) R) (t : Fin k →₀ ℕ) :
     ‖weightedEvalTerm φ a f t‖ ≤ ‖coeff t f‖ * t.prod (c · ^ ·) := by
-  rw [weightedEvalTerm_def, Finsupp.prod_fintype _ _ fun _ ↦ pow_zero _]
+  rw [weightedEvalTerm_def, ← Finsupp.prod_fintype t (a · ^ ·) fun _ ↦ pow_zero _]
+  -- only positive exponents occur in `t.prod`, so no bound on `‖1‖` is needed
+  rcases t.support.eq_empty_or_nonempty with h | h
+  · simpa [Finsupp.prod, h] using hφ _
   refine (norm_mul_le _ _).trans (mul_le_mul (hφ _) ?_ (norm_nonneg _) (norm_nonneg _))
-  exact (Finset.norm_prod_le _ _).trans (Finset.prod_le_prod₀ (fun i _ ↦ norm_nonneg _) fun i _ ↦
-    (norm_pow_le _ _).trans (pow_le_pow_left₀ (norm_nonneg _) (ha i) _))
+  exact (Finset.norm_prod_le' _ h _).trans (Finset.prod_le_prod₀ (fun i _ ↦ norm_nonneg _)
+    fun i hi ↦ (norm_pow_le' _ (Nat.pos_of_ne_zero (Finsupp.mem_support_iff.mp hi))).trans
+      (pow_le_pow_left₀ (norm_nonneg _) (ha i) _))
 
 /-- The monomial values of a restricted series at a bounded argument tend to zero. -/
 theorem IsRestricted.tendsto_weightedEvalTerm (hφ : ∀ r, ‖φ r‖ ≤ ‖r‖) (ha : ∀ i, ‖a i‖ ≤ c i)
