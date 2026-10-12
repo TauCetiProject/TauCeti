@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Symplectic.Area.Basic
 public import TauCeti.MeasureTheory.Integral.CircleLIntegral
+import Mathlib.Analysis.InnerProductSpace.PiL2
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
 import Mathlib.Topology.Algebra.Module.FiniteDimensionBilinear
 
@@ -16,7 +17,7 @@ import Mathlib.Topology.Algebra.Module.FiniteDimensionBilinear
 The symplectic area of a finite-energy map on a punctured disc equals the action of its outer
 boundary loop for the primitive `λₓ(v) = ½ ω(x, v)`. No extension, bounded image, or boundary
 decay at the puncture is assumed. In particular this identity applies before removal of a
-singularity has been proved.
+singularity has been proved. Both results hold in any finite-dimensional real normed space.
 
 The vanishing-action result requires `C¹` regularity near the punctured closed disc and a
 square-integrable differential. The Stokes identity requires `C²` regularity there, including
@@ -36,7 +37,7 @@ open scoped Real
 
 namespace TauCeti.SymplecticForm
 
-variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
+variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
   [FiniteDimensional ℝ V]
 
 /-- Finite energy gives a sequence of shrinking circles whose symplectic boundary actions
@@ -52,7 +53,12 @@ theorem exists_tendsto_integral_apply_circleMap_nhds_zero (ω : SymplecticForm V
   have : CompleteSpace V := FiniteDimensional.complete ℝ V
   let action (r : ℝ) := ∫ θ in -π..π, ω (u (circleMap z₀ r θ))
     (deriv (fun θ ↦ u (circleMap z₀ r θ)) θ)
-  let B := ω.toBilinForm.toContinuousBilinearMap
+  -- Use Euclidean coordinates only for Wirtinger; the original norm controls their energy.
+  let e : V ≃L[ℝ] EuclideanSpace ℝ (Fin (Module.finrank ℝ V)) :=
+    ContinuousLinearEquiv.ofFinrankEq (by simp)
+  let B := ω.toBilinForm.toContinuousBilinearMap.bilinearComp
+    e.symm.toContinuousLinearMap e.symm.toContinuousLinearMap
+  let C := ‖B‖ * ‖e.toContinuousLinearMap‖ ^ 2
   -- The small-circle estimate needs only finite energy; no boundary decay is imposed.
   let δ (n : ℕ) : ℝ := b / ((n : ℝ) + 1)
   have hδ (n : ℕ) : 0 < δ n := div_pos hb (by positivity)
@@ -69,10 +75,38 @@ theorem exists_tendsto_integral_apply_circleMap_nhds_zero (ω : SymplecticForm V
   have hrlim : Tendsto r atTop (𝓝 0) :=
     squeeze_zero (fun n ↦ (hr n).1.le) (fun n ↦ (hr n).2.le) hδlim
   -- Wirtinger's inequality controls the action by the angular energy on each chosen circle.
-  have haction (n : ℕ) : ‖action (r n)‖ ≤ ‖B‖ * δ n := by
-    have h := norm_integral_apply_apply_circleMap_le u (B := B) z₀ (r n) fun θ ↦
+  have haction (n : ℕ) : ‖action (r n)‖ ≤ C * δ n := by
+    have hcircle (θ : ℝ) : ContDiffAt ℝ 1 u (circleMap z₀ (r n) θ) :=
       hu _ (circleMap_mem_puncturedClosedDisc z₀ (hr n).1 ((hr n).2.le.trans (hδb n)) θ)
-    exact h.trans (mul_le_mul_of_nonneg_left (hE n).le (norm_nonneg B))
+    let f (θ : ℝ) := u (circleMap z₀ (r n) θ)
+    have hc : ContDiff ℝ 1 f := contDiff_iff_contDiffAt.mpr fun θ ↦
+      (hcircle θ).comp θ (contDiff_circleMap z₀ (r n)).contDiffAt
+    have hd := hc.continuous_deriv (by norm_num)
+    have hederiv (θ : ℝ) : deriv (fun θ ↦ e (u (circleMap z₀ (r n) θ))) θ =
+        e (deriv (fun θ ↦ u (circleMap z₀ (r n) θ)) θ) :=
+      (e.toContinuousLinearMap.hasFDerivAt.comp_hasDerivAt θ
+        (hc.differentiable (by norm_num) θ).hasDerivAt).deriv
+    have h := norm_integral_apply_apply_circleMap_le (e ∘ u) (B := B) z₀ (r n)
+      (fun θ ↦ e.contDiff.contDiffAt.comp _ (hcircle θ))
+    simp only [Function.comp_def, hederiv, B, ContinuousLinearMap.bilinearComp_apply,
+      ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.symm_apply_apply] at h
+    have hbound : (∫ θ in -π..π, ‖e (deriv f θ)‖ ^ 2) ≤
+        ‖e.toContinuousLinearMap‖ ^ 2 * ∫ θ in -π..π, ‖deriv f θ‖ ^ 2 := by
+      rw [← intervalIntegral.integral_const_mul]
+      apply intervalIntegral.integral_mono (by linarith [Real.pi_pos])
+        (((e.continuous.comp hd).norm.pow 2).intervalIntegrable _ _)
+        (((hd.norm.pow 2).intervalIntegrable _ _).const_mul _)
+      intro θ
+      calc
+        ‖e (deriv f θ)‖ ^ 2 ≤ (‖e.toContinuousLinearMap‖ * ‖deriv f θ‖) ^ 2 := by
+          gcongr
+          exact e.toContinuousLinearMap.le_opNorm _
+        _ = ‖e.toContinuousLinearMap‖ ^ 2 * ‖deriv f θ‖ ^ 2 := mul_pow _ _ _
+    calc ‖action (r n)‖ ≤ ‖B‖ * ∫ θ in -π..π, ‖e (deriv f θ)‖ ^ 2 := h
+      _ ≤ ‖B‖ * (‖e.toContinuousLinearMap‖ ^ 2 * δ n) := by
+        gcongr
+        exact hbound.trans (mul_le_mul_of_nonneg_left (hE n).le (sq_nonneg _))
+      _ = C * δ n := (mul_assoc _ _ _).symm
   have hactionlim : Tendsto (fun n ↦ action (r n)) atTop (𝓝 0) :=
     squeeze_zero_norm haction (by simpa using tendsto_const_nhds.mul hδlim)
   exact ⟨r, fun n ↦ ⟨(hr n).1, (hr n).2.le.trans (hδb n)⟩, hrlim, hactionlim⟩
