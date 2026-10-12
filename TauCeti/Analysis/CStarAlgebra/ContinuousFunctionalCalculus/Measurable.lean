@@ -63,18 +63,18 @@ theorem measurable_cfc {f : 𝕜 → 𝕜} {s : Set 𝕜} (hf : ContinuousOn f s
 
 /-- Continuous functional calculus preserves measurability along a random element
 satisfying its defining predicate, for a scalar function continuous on a common neighborhood
-of the spectra of all elements satisfying the predicate. The predicate itself need not be
+of the spectra of values taken by the random element. The predicate itself need not be
 measurable. -/
 @[fun_prop]
 theorem measurable_cfc_of_predicate {X : Type*} [MeasurableSpace X]
     {a : X → A} (ha : Measurable a) (hpa : ∀ x, p (a x))
     {f : 𝕜 → 𝕜} {s : Set 𝕜} (hf : ContinuousOn f s)
-    (hs : s ∈ 𝓝ˢ (⋃ b ∈ {b : A | p b}, spectrum 𝕜 b)) :
+    (hs : s ∈ 𝓝ˢ (⋃ x, spectrum 𝕜 (a x))) :
     Measurable (fun x ↦ cfc f (a x)) := by
-  have hc : Continuous (fun b : {b : A | p b} ↦ cfc f (b : A)) :=
+  have hc : Continuous (fun b : Set.range a ↦ cfc f (b : A)) :=
     continuous_subtype_val.cfc_of_mem_nhdsSet f
-      (by simpa only [Set.iUnion_subtype, Set.mem_ofPred_eq] using hs)
-      (fun b ↦ b.property) hf
-  exact hc.measurable.comp (ha.subtype_mk (h := hpa))
+      (by simpa only [Set.iUnion_subtype, Set.biUnion_range] using hs)
+      (by rintro ⟨_, x, rfl⟩; exact hpa x) hf
+  exact hc.measurable.comp (ha.subtype_mk (h := fun x ↦ Set.mem_range_self x))
 
 end TauCeti
