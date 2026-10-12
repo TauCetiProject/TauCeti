@@ -62,15 +62,15 @@ variable {V H : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [Complet
 /-- The operator representing the form `(u, v) ↦ ⟪J u, J v⟫` relative to a coercive form `B`.
 It is characterized by `IsCoercive.apply_formPerturbationOperator` without unfolding. -/
 def formPerturbationOperator (hB : IsCoercive B) (J : V →L[ℝ] H) : V →L[ℝ] V :=
-  (hB.continuousLinearEquivOfBilin.symm.toContinuousLinearMap.comp
-    (InnerProductSpace.toDual ℝ V).symm.toContinuousLinearEquiv.toContinuousLinearMap).comp
+  hB.solutionOfFunctionalCLM.comp
     ((ContinuousLinearMap.toSesqForm J).comp J)
 
 /-- The form perturbation operator solves the forcing functional `v ↦ ⟪J u, J v⟫`. -/
 theorem formPerturbationOperator_apply (hB : IsCoercive B) (J : V →L[ℝ] H) (u : V) :
     hB.formPerturbationOperator J u =
       hB.solutionOfFunctional (ContinuousLinearMap.toSesqForm J (J u)) := by
-  simp [formPerturbationOperator, solutionOfFunctional_def, solutionOfInner_def]
+  simp only [formPerturbationOperator, ContinuousLinearMap.comp_apply,
+    solutionOfFunctionalCLM_apply]
 
 /-- Characterization of the form perturbation operator by its variational equation. -/
 @[simp]
@@ -85,8 +85,7 @@ theorem isCompactOperator_formPerturbationOperator (hB : IsCoercive B) {J : V �
     (hJ : IsCompactOperator J) : IsCompactOperator (hB.formPerturbationOperator J) := by
   rw [formPerturbationOperator]
   exact (hJ.clm_comp (ContinuousLinearMap.toSesqForm J)).clm_comp
-    (hB.continuousLinearEquivOfBilin.symm.toContinuousLinearMap.comp
-      (InnerProductSpace.toDual ℝ V).symm.toContinuousLinearEquiv.toContinuousLinearMap)
+    hB.solutionOfFunctionalCLM
 
 /-- The compactly perturbed operator equation is equivalent to its variational formulation. -/
 theorem one_sub_smul_formPerturbationOperator_apply_eq_iff (hB : IsCoercive B)

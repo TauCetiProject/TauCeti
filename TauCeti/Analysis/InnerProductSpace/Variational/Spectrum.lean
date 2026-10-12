@@ -95,14 +95,12 @@ variable {V H : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [Complet
 `h : H` to the unique `u : V` solving `B u v = ⟪h, J v⟫` for every `v : V`.  It is characterized
 by `IsCoercive.apply_formSolutionMap` together with `IsCoercive.eq_formSolutionMap`. -/
 def formSolutionMap (hB : IsCoercive B) (J : V →L[ℝ] H) : H →L[ℝ] V :=
-  (hB.continuousLinearEquivOfBilin.symm.toContinuousLinearMap.comp
-    (InnerProductSpace.toDual ℝ V).symm.toContinuousLinearEquiv.toContinuousLinearMap).comp
-    (ContinuousLinearMap.toSesqForm J)
+  hB.solutionOfFunctionalCLM.comp (ContinuousLinearMap.toSesqForm J)
 
 /-- The solution map solves the forcing functional `v ↦ ⟪h, J v⟫`. -/
 theorem formSolutionMap_apply (hB : IsCoercive B) (J : V →L[ℝ] H) (h : H) :
     hB.formSolutionMap J h = hB.solutionOfFunctional (ContinuousLinearMap.toSesqForm J h) := by
-  simp [formSolutionMap, solutionOfFunctional_def, solutionOfInner_def]
+  simp only [formSolutionMap, ContinuousLinearMap.comp_apply, solutionOfFunctionalCLM_apply]
 
 /-- **The variational equation solved by the solution map.** -/
 @[simp]
