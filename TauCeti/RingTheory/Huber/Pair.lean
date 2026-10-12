@@ -166,13 +166,13 @@ variable {C : Type*} [CommRing C] [TopologicalSpace C] [IsTopologicalRing C]
 variable [IsHuberRing A] [IsHuberRing B] [IsHuberRing C]
 
 /-- The identity morphism of a Huber pair. -/
-@[expose] def Hom.id (S : Pair A) : Hom S S where
+def Hom.id (S : Pair A) : Hom S S where
   toRingHom := RingHom.id A
   continuous_toRingHom := continuous_id
   map_mem_plus _ ha := ha
 
 /-- Morphisms of Huber pairs compose. -/
-@[expose] def Hom.comp {S : Pair A} {T : Pair B} {U : Pair C} (g : Hom T U) (f : Hom S T) :
+def Hom.comp {S : Pair A} {T : Pair B} {U : Pair C} (g : Hom T U) (f : Hom S T) :
     Hom S U where
   toRingHom := g.toRingHom.comp f.toRingHom
   continuous_toRingHom := g.continuous_toRingHom.comp f.continuous_toRingHom

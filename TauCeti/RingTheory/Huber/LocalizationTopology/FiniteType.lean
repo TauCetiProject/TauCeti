@@ -259,9 +259,9 @@ variable {A : Type*} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A] [Is
   (T : Finset A) (s : A) (S : Type*) [CommRing S] [Algebra A S] [IsLocalization.Away s S]
   (hden : HasDenominatorPower P T s S)
   (P' : PairOfDefinition B) (U' : Pair B) (hP' : P'.ringOfDefinition ≤ U'.plus)
-  (f : Pair.Hom U U') (T' : Finset B) (S' : Type*) [CommRing S'] [Algebra B S']
-  [IsLocalization.Away (f.toRingHom s) S'] (hden' : HasDenominatorPower P' T' (f.toRingHom s) S')
-  (hT : ∀ t ∈ T, f.toRingHom t ∈ T')
+  (f : Pair.Hom U U') (T' : Finset B) (s' : B) (S' : Type*) [CommRing S'] [Algebra B S']
+  [IsLocalization.Away s' S'] (hden' : HasDenominatorPower P' T' s' S')
+  (hs : f.toRingHom s = s') (hT : ∀ t ∈ T, f.toRingHom t ∈ T')
 
 /-- **Base change along a rational localisation preserves topological finite type**, over a Tate
 base: if `f : (A, A⁺) → (B, B⁺)` is topologically of finite type and `A` is Tate, then so is the
@@ -274,30 +274,30 @@ finite type by `isTopologicallyFiniteType_toCompletionLocHom`, is that of the st
 as `T` and `s` generate the unit ideal of `A`, which for a rational subset of a Tate spectrum
 follows from openness of the numerator ideal. -/
 theorem isTopologicallyFiniteType_completionLocPairMap (hf : f.IsTopologicallyFiniteType)
-    (hspan : Ideal.span (insert (f.toRingHom s) (T' : Set B)) = ⊤) :
+    (hspan : Ideal.span (insert s' (T' : Set B)) = ⊤) :
     letI := locUniformSpace P T s S hden
     letI := isUniformAddGroup_locUniformSpace P T s S hden
     letI := isTopologicalRing_locUniformSpace P T s S hden
     letI := isHuberRing_completion_locTopology P T s S hden
-    letI := locUniformSpace P' T' (f.toRingHom s) S' hden'
-    letI := isUniformAddGroup_locUniformSpace P' T' (f.toRingHom s) S' hden'
-    letI := isTopologicalRing_locUniformSpace P' T' (f.toRingHom s) S' hden'
-    letI := isHuberRing_completion_locTopology P' T' (f.toRingHom s) S' hden'
-    (completionLocPairMap P U hP T s S hden P' U' hP' f T' S' hden'
-      hT).IsTopologicallyFiniteType := by
+    letI := locUniformSpace P' T' s' S' hden'
+    letI := isUniformAddGroup_locUniformSpace P' T' s' S' hden'
+    letI := isTopologicalRing_locUniformSpace P' T' s' S' hden'
+    letI := isHuberRing_completion_locTopology P' T' s' S' hden'
+    (completionLocPairMap P U hP T s S hden P' U' hP' f T' s' S' hden'
+      hs hT).IsTopologicallyFiniteType := by
   let _ := locUniformSpace P T s S hden
   have _ := isUniformAddGroup_locUniformSpace P T s S hden
   have _ := isTopologicalRing_locUniformSpace P T s S hden
   have _ := isHuberRing_completion_locTopology P T s S hden
-  let _ := locUniformSpace P' T' (f.toRingHom s) S' hden'
-  have _ := isUniformAddGroup_locUniformSpace P' T' (f.toRingHom s) S' hden'
-  have _ := isTopologicalRing_locUniformSpace P' T' (f.toRingHom s) S' hden'
-  have _ := isHuberRing_completion_locTopology P' T' (f.toRingHom s) S' hden'
+  let _ := locUniformSpace P' T' s' S' hden'
+  have _ := isUniformAddGroup_locUniformSpace P' T' s' S' hden'
+  have _ := isTopologicalRing_locUniformSpace P' T' s' S' hden'
+  have _ := isHuberRing_completion_locTopology P' T' s' S' hden'
   have : IsTateRing B := IsTateRing.of_continuous f.continuous_toRingHom
-  have h := (isTopologicallyFiniteType_toCompletionLocHom P' U' hP' T' (f.toRingHom s) S' hden'
+  have h := (isTopologicallyFiniteType_toCompletionLocHom P' U' hP' T' s' S' hden'
     hspan).comp hf
-  rw [← completionLocPairMap_comp_toCompletionLocHom P U hP T s S hden P' U' hP' f T' S' hden'
-    hT] at h
+  rw [← completionLocPairMap_comp_toCompletionLocHom P U hP T s S hden P' U' hP' f T' s' S' hden'
+    hs hT] at h
   exact h.of_comp
 
 end TauCeti.Huber.PairOfDefinition

@@ -178,11 +178,8 @@ private theorem existsUnique_continuous_ringHom_comp_eq (φ : A →+* B) (hφ : 
         UniformSpace.Completion (Localization.Away q.den),
       Continuous g ∧ g.comp (toCompletionLoc P p.num p.den _ p.hasDenominatorPower) =
         (toCompletionLoc P' q.num q.den _ q.hasDenominatorPower).comp φ := by
-  -- `q.den` is a field of `q`, so destructuring `q` lets `hden` substitute `φ p.den` for it
-  obtain ⟨num, den, hq⟩ := q
-  subst hden
   exact existsUnique_continuous_ringHom_comp_toCompletionLoc_eq P p.num p.den _
-    p.hasDenominatorPower P' φ hφ.continuousAt num _ hq hnum
+    p.hasDenominatorPower P' φ hφ.continuousAt q.num q.den _ q.hasDenominatorPower hden.symm hnum
 
 /-- The morphism `A⟨p⟩ ⟶ B⟨q⟩` of `existsUnique_continuous_ringHom_comp_eq`. -/
 noncomputable def Presentation.mapHom (φ : A →+* B) (hφ : Continuous φ) (p : Presentation P)
