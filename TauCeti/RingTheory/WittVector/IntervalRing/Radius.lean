@@ -139,9 +139,7 @@ multiplication by a power of `p`. -/
 theorem exists_coe_mul_natCast_pow_eq_toIntervalRing (hρ : ρ₁ ≤ ρ₂) (x : B₀) :
     ∃ (n : ℕ) (a : A),
       (x : B) * (p : B) ^ n = toIntervalRing p hv hϖ hϖ' hρ₁ hρ₂ hρ a := by
-  obtain ⟨⟨y, s⟩, hy⟩ := IsLocalization.surj
-    (Submonoid.powers ((p : 𝕎 O) * teichmuller p ϖ)) x
-  obtain ⟨n, hn : ((p : 𝕎 O) * teichmuller p ϖ) ^ n = s⟩ := s.property
+  obtain ⟨n, y, hy⟩ := IsLocalization.Away.surj ((p : 𝕎 O) * teichmuller p ϖ) x
   let t : Submonoid.powers (teichmuller p ϖ) :=
     ⟨teichmuller p ϖ ^ n, ⟨n, rfl⟩⟩
   let a := IsLocalization.mk' A₀ y t
@@ -155,7 +153,7 @@ theorem exists_coe_mul_natCast_pow_eq_toIntervalRing (hρ : ρ₁ ≤ ρ₂) (x 
     apply ((IntervalLocalization.isUnit_algebraMap_teichmuller
       p hv hϖ hϖ' hρ₁ hρ₂).pow n).mul_right_cancel
     rw [ha]
-    simpa only [← hn, map_pow, map_mul, map_natCast, mul_pow, mul_assoc] using hy
+    simpa only [map_mul, map_natCast, mul_pow, mul_assoc] using hy
   refine ⟨n, (a : A), ?_⟩
   rw [toIntervalRing_coe]
   have h := congrArg (Completion.coeRingHom : B₀ →+* B) hx
