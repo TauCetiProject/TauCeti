@@ -47,7 +47,7 @@ in `CompatibleMetric.lean`).
 
 public section
 
-open MeasureTheory Set
+open MeasureTheory Set TauCeti
 open scoped Real Interval RealInnerProductSpace
 
 namespace TauCeti
@@ -102,7 +102,7 @@ theorem abs_integral_fderiv_apply_annulus_le {u : ℂ → V} (z₀ : ℂ)
         abs_of_nonneg (ha.le.trans hr.1)] using (mem_Icc.mp hr)
     have hE : 0 ≤ ∫ θ in -π..π, ‖deriv (fun θ ↦ u (circleMap z₀ r θ)) θ‖ ^ 2 :=
       intervalIntegral.integral_nonneg (by linarith [Real.pi_pos]) fun θ _ ↦ sq_nonneg _
-    have h := norm_integral_apply_apply_circleMap_le B z₀ r
+    have h := B.norm_integral_apply_apply_circleMap_le z₀ r
       (fun θ ↦ (hu _ (hmem θ)).of_le one_le_two)
     simpa only [B, LinearMap.mkContinuous₂_apply, Real.norm_eq_abs, one_mul] using
       h.trans (mul_le_mul_of_nonneg_right hB hE)
