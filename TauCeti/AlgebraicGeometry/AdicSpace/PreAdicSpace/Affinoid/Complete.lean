@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.AdicSpace.PreAdicSpace.RationalOpen
+public import TauCeti.RingTheory.Huber.LocalizationTopology.Trivial
 
 /-!
 # Complete models of affinoid pre-adic spaces
@@ -83,10 +84,8 @@ theorem isAffinoid_iff_exists_complete (X : PreAdicSpace.{u}) : isAffinoid X ↔
   constructor
   · intro hX
     obtain ⟨A, _, _, _, _, S, P, hP, ⟨e⟩⟩ := (isAffinoid_iff X).mp hX
-    let T : Finset A := {1}
-    have hT : IsOpen (Ideal.span (T : Set A) : Set A) := by simp [T]
     let B := Localization.Away (1 : A)
-    have hden := hasDenominatorPower_of_isOpen_span P T 1 B hT
+    have hden := hasDenominatorPower_denom_one P {1} B
     let _ := locUniformSpace P {1} 1 B hden
     have _ := isUniformAddGroup_locUniformSpace P {1} 1 B hden
     have _ := isTopologicalRing_locUniformSpace P {1} 1 B hden
