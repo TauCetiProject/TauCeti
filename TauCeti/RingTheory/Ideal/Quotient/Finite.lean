@@ -127,6 +127,8 @@ theorem finite_quotient_of_map_algebraMap_le {I : Ideal R} {J : Ideal B}
     [J.IsTwoSided] [Module.Finite R (B ⧸ J)]
     (hIJ : I.map (algebraMap R B) ≤ J) (h : Module.Finite A (R ⧸ I)) :
     Module.Finite A (B ⧸ J) := by
+  -- Scalar-tower verification adapted from `Algebra.trace_quotient_pow_mk` in
+  -- `TauCeti.RingTheory.Trace.QuotientPow`.
   let _ : Algebra (R ⧸ I) (B ⧸ J) :=
     Ideal.Quotient.algebraQuotientOfLEComap (Ideal.map_le_iff_le_comap.mp hIJ)
   have : IsScalarTower R (R ⧸ I) (B ⧸ J) := .of_algebraMap_eq fun r ↦ by
