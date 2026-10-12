@@ -76,12 +76,12 @@ theorem subsingleton_relHomotopyGroup_mappingCylinder (hf : f.IsWeakHomotopyEqui
   let ψ := inclHomeomorph f
   -- The inclusion `ι` of the bottom face, composed with `ψ : X ≃ₜ range (incl f)` and with the
   -- projection `M_f → Y`, is `f`; the outer two maps are homotopy equivalences.
-  let ι := (TopPair.ofSubset (X := TopCat.of (TauCeti.MappingCylinder f))
-    (range (incl f))).map.hom
+  let ι := ContinuousMap.subtypeVal (range (incl f))
   have hcomp : (proj f).comp (ι.comp (ψ : C(X, range (incl f)))) = f := by
     ext x'
-    change proj f (ψ x' : TauCeti.MappingCylinder f) = f x'
-    rw [inclHomeomorph_apply_coe, ← ContinuousMap.comp_apply (proj f), proj_comp_incl]
+    rw [ContinuousMap.comp_apply, ContinuousMap.comp_apply, ContinuousMap.subtypeVal_apply,
+      ContinuousMap.coe_coe, inclHomeomorph_apply_coe, ← ContinuousMap.comp_apply (proj f),
+      proj_comp_incl]
   have hproj : (homotopyEquiv f).toFun = proj f := ContinuousMap.ext homotopyEquiv_apply
   -- By two out of three `ι ∘ ψ` is a weak homotopy equivalence, hence so is `ι = ι ∘ ψ ∘ ψ⁻¹`.
   have hιψ : (ι.comp (ψ : C(X, range (incl f)))).IsWeakHomotopyEquivalence :=
