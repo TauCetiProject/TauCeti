@@ -165,10 +165,6 @@ theorem f4ShortRootQuotientToIdealEquiv_dividedSquare_rootColumn_of_long
       rw [hlift]
       exact f4ShortRootSubspace_mkQ_dividedSquare_rootVector_eq_zero_of_long
         k β hk hβ hβne
-    have htargetShort :
-        f4Length (f4SignedSimpleRootIndex (isogenyReverse k)) = 1 := by
-      rw [← f4SpecialIsogenyIndexEquiv_f4SignedSimpleRootIndex]
-      exact (f4Length_f4SpecialIsogenyIndexEquiv_eq_one_iff _).2 hk
     have htargetNe : i ≠
         f4OppositeRootIndex (f4SignedSimpleRootIndex (isogenyReverse k)) := by
       intro h

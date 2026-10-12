@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Weight.Levi.Basic
 public import TauCeti.Algebra.Lie.D4.Tripled.BaseChange
-import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Weight.Levi.Geometry
 import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ClosedImmersion
 
 /-!

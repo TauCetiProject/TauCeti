@@ -100,8 +100,8 @@ theorem signlessPreprojectiveMk_A_ofPath_eq_zero_or_valley {a b : Fin (DynkinTyp
   rcases signlessPreprojectiveMk_A_ofPath_eq_zero_or_ladderValley k p with
     h | ⟨m, s, r, ε, hlen, hs, hr, h⟩
   · exact .inl h
-  have ha := a.isLt
-  have hb := b.isLt
+  have _ := a.isLt
+  have _ := b.isLt
   have hn := DynkinType.rank_A n
   have hs' : a.val - m = s := by omega
   have hr' : b.val - m = r := by omega

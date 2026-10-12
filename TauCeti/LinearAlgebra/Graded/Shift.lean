@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Ring.NegOnePow
-public import TauCeti.LinearAlgebra.Graded.Multilinear
+public import TauCeti.LinearAlgebra.Graded.Insertion
 import Mathlib.Tactic.Ring
 
 /-!
@@ -385,6 +384,15 @@ theorem suspend_apply {k : ℕ} {M : Fin k → Type uM} {N : Type uN}
     (d : ℕ → ℤ) (f : MultilinearMap R M N) (x : ∀ i, M i) :
     suspend d f x = TauCeti.negOnePowCast R (suspExp k d) • f x := by
   rw [suspend_eq_smul, smul_apply]
+
+/-- Evaluating a suspended operation on a natural-indexed input family scales its value by the
+suspension sign of the supplied degrees. -/
+@[simp]
+theorem evalNat_suspend {k : ℕ} {M : Type uM} {N : Type uN}
+    [AddCommMonoid M] [Module R M] [AddCommMonoid N] [Module R N]
+    (d : ℕ → ℤ) (f : MultilinearMap R (fun _ : Fin k ↦ M) N) (x : ℕ → M) :
+    evalNat (suspend d f) x = TauCeti.negOnePowCast R (suspExp k d) • evalNat f x := by
+  rw [suspend_eq_smul, evalNat_smul]
 
 /-- Suspension for a fixed degree family is an involution, so `suspend d` also computes
 unsuspension. -/

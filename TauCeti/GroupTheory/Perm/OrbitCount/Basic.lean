@@ -56,7 +56,7 @@ Composing `TauCeti.orbitCount_add_one_eq_of_semiconj` with `TauCeti.orbitCount_m
 says that adjoining a point to a permutation and immediately splicing it into an existing orbit
 leaves the number of orbits unchanged. That composite is the reason this file exists: it is the
 invariance of the number of components of a link under the stabilization move on braids, in
-`TauCeti/KnotTheory/Markov.lean`.
+`TauCeti/KnotTheory/Markov/Basic.lean`.
 
 ## Implementation notes
 

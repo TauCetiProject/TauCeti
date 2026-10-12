@@ -5,16 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Module.Submodule.Map
-public import Mathlib.Basic.Complex.Basic
 public import Mathlib.LinearAlgebra.Contraction
 public import Mathlib.LinearAlgebra.Dual.BaseChange
-public import Mathlib.LinearAlgebra.Dual.Lemmas
 public import Mathlib.LinearAlgebra.Eigenspace.Basic
-public import Mathlib.LinearAlgebra.Quotient.Basic
-public import Mathlib.LinearAlgebra.TensorProduct.Map
 public import Mathlib.RingTheory.Flat.Basic
-public import Mathlib.RingTheory.TensorProduct.IsBaseChangePi
 public import TauCeti.LinearAlgebra.Complex.Conjugation
 public import TauCeti.RingTheory.TensorProduct.IsBaseChange
 import Mathlib.RingTheory.Flat.TorsionFree
@@ -116,8 +110,8 @@ noncomputable def complexificationConjugation : Conjugation (ℂ ⊗[ℝ] V) whe
 /-- The bundled canonical conjugation agrees with tensor conjugation on every vector. -/
 @[simp]
 theorem complexificationConjugation_toEquiv_apply (x : ℂ ⊗[ℝ] V) :
-    (complexificationConjugation V).toEquiv x = tmulConj V x :=
-  by simp [complexificationConjugation]
+    (complexificationConjugation V).toEquiv x = tmulConj V x := by
+  simp [complexificationConjugation]
 
 /-- Canonical conjugation on a complexification conjugates the complex coefficient of a pure
 tensor and fixes its real factor. -/
@@ -224,11 +218,10 @@ def tensorProduct (ω₁ : Conjugation W₁) (ω₂ : Conjugation W₂) :
 @[simp]
 theorem tensorProduct_toEquiv_tmul (ω₁ : Conjugation W₁) (ω₂ : Conjugation W₂)
     (x : W₁) (y : W₂) :
-    (ω₁.tensorProduct ω₂).toEquiv (x ⊗ₜ[ℂ] y) = ω₁.toEquiv x ⊗ₜ[ℂ] ω₂.toEquiv y :=
-  by
-    -- Expose the private map so Mathlib's pure-tensor computation lemma can fire.
-    change tensorMap ω₁ ω₂ (x ⊗ₜ[ℂ] y) = _
-    simp [tensorMap]
+    (ω₁.tensorProduct ω₂).toEquiv (x ⊗ₜ[ℂ] y) = ω₁.toEquiv x ⊗ₜ[ℂ] ω₂.toEquiv y := by
+  -- Expose the private map so Mathlib's pure-tensor computation lemma can fire.
+  change tensorMap ω₁ ω₂ (x ⊗ₜ[ℂ] y) = _
+  simp [tensorMap]
 
 end TensorProduct
 
@@ -250,8 +243,8 @@ def internalHom (ω₁ : Conjugation W₁) (ω₂ : Conjugation W₂) :
 @[simp]
 theorem internalHom_toEquiv_apply_apply (ω₁ : Conjugation W₁) (ω₂ : Conjugation W₂)
     (f : W₁ →ₗ[ℂ] W₂) (x : W₁) :
-    (ω₁.internalHom ω₂).toEquiv f x = ω₂.toEquiv (f (ω₁.toEquiv x)) :=
-  by simp [internalHom, ω₁.toEquiv_symm]
+    (ω₁.internalHom ω₂).toEquiv f x = ω₂.toEquiv (f (ω₁.toEquiv x)) := by
+  simp [internalHom, ω₁.toEquiv_symm]
 
 /-- A complex-linear map is fixed by the internal-hom conjugation exactly when it intertwines the
 two conjugations. -/
@@ -274,7 +267,7 @@ theorem map_map_eq_self (ω : Conjugation W) (U : Submodule ℂ W) :
   simpa only [ω.toEquiv_symm] using h
 
 /-- The conjugate filtration obtained by mapping each step through a conjugation. -/
-noncomputable def conjFiltration (ω : Conjugation W) (F : ℤ → Submodule ℂ W) (p : ℤ) :
+def conjFiltration (ω : Conjugation W) (F : ℤ → Submodule ℂ W) (p : ℤ) :
     Submodule ℂ W :=
   (F p).map ω.toEquiv.toLinearMap
 
@@ -320,7 +313,7 @@ private theorem restrict_involutive (ω : Conjugation W) {U : Submodule ℂ W}
   simp
 
 /-- The conjugation induced on a complex subspace stable under a given conjugation. -/
-noncomputable def restrict (ω : Conjugation W) {U : Submodule ℂ W}
+def restrict (ω : Conjugation W) {U : Submodule ℂ W}
     (hU : ∀ x ∈ U, ω.toEquiv x ∈ U) : Conjugation U where
   toEquiv := LinearEquiv.ofInvolutive _ (ω.restrict_involutive hU)
   involutive := ω.restrict_involutive hU
@@ -368,7 +361,7 @@ private theorem quotient_involutive (ω : Conjugation W) {U : Submodule ℂ W}
     congrArg Submodule.Quotient.mk (ω.apply_apply y)
 
 /-- The conjugation induced on the quotient of a complex vector space by a stable subspace. -/
-noncomputable def quotient (ω : Conjugation W) {U : Submodule ℂ W}
+def quotient (ω : Conjugation W) {U : Submodule ℂ W}
     (hU : ∀ x ∈ U, ω.toEquiv x ∈ U) : Conjugation (W ⧸ U) where
   toEquiv := LinearEquiv.ofInvolutive _ (ω.quotient_involutive hU)
   involutive := ω.quotient_involutive hU
@@ -513,14 +506,13 @@ noncomputable def concreteLatticeConj :
 /-- Conjugation on the tensor model conjugates the scalar in a pure tensor. -/
 @[simp]
 theorem concreteLatticeConj_tmul (z : ℂ) (v : V) :
-    concreteLatticeConj (V := V) (z ⊗ₜ[ℤ] v) = (starRingEnd ℂ z) ⊗ₜ[ℤ] v :=
-  by
-    -- The tensor map is `ℤ`-linear while the bundled result is conjugate-linear over `ℂ`, so the
-    -- public pure-tensor equation is the stable bridge between the two scalar interfaces.
-    change concreteLatticeConjIntLinear (z ⊗ₜ[ℤ] v) = _
-    unfold concreteLatticeConjIntLinear
-    rw [TensorProduct.map_tmul]
-    simp
+    concreteLatticeConj (V := V) (z ⊗ₜ[ℤ] v) = (starRingEnd ℂ z) ⊗ₜ[ℤ] v := by
+  -- The tensor map is `ℤ`-linear while the bundled result is conjugate-linear over `ℂ`, so the
+  -- public pure-tensor equation is the stable bridge between the two scalar interfaces.
+  change concreteLatticeConjIntLinear (z ⊗ₜ[ℤ] v) = _
+  unfold concreteLatticeConjIntLinear
+  rw [TensorProduct.map_tmul]
+  simp
 
 /-- Conjugation on the tensor model fixes the image of the integral module. -/
 @[simp]
@@ -616,8 +608,8 @@ noncomputable def latticeConjugation (hℂ : IsBaseChange ℂ ιℂ) : Conjugati
 /-- The equivalence underlying bundled lattice conjugation applies as `latticeConj`. -/
 @[simp]
 theorem latticeConjugation_toEquiv_apply (hℂ : IsBaseChange ℂ ιℂ) (x : Vℂ) :
-    (latticeConjugation hℂ).toEquiv x = latticeConj hℂ x :=
-  by simp [latticeConjugation]
+    (latticeConjugation hℂ).toEquiv x = latticeConj hℂ x := by
+  simp [latticeConjugation]
 
 /-- The linear map underlying bundled lattice conjugation is `latticeConj`, bridging the bundled
 spelling used by `HodgeStructureOn` and the bare spelling used by the base-change API. This is not

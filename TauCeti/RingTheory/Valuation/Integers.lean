@@ -5,11 +5,15 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Ring.Hom.InjSurj
 public import Mathlib.FieldTheory.Perfect
 public import Mathlib.RingTheory.Valuation.Integers
 
 /-!
-# Perfection of rings of integers
+# Rings of integers: domains and perfection
+
+A ring of integers `O` for a valuation `v` on a domain `R` (in the sense of `Valuation.Integers`)
+embeds into `R`, so it is a domain.
 
 If `O` is a ring of integers for a valuation `v` on a ring `R` (in the sense of
 `Valuation.Integers`) and `R` is perfect, then so is `O`: a `p`-th root of an integral element is
@@ -19,6 +23,7 @@ perfect valued field `F` of characteristic `p` is perfect, as is needed to form 
 
 ## Main results
 
+* `Valuation.Integers.isDomain`: the ring of integers of a domain is a domain.
 * `Valuation.Integers.perfectRing`: the ring of integers of a perfect ring is perfect.
 -/
 
@@ -28,6 +33,10 @@ namespace Valuation.Integers
 
 variable {R Γ₀ O : Type*} [CommRing R] [LinearOrderedCommGroupWithZero Γ₀] {v : Valuation R Γ₀}
   [CommRing O] [Algebra O R]
+
+/-- **The ring of integers of a domain is a domain**, as it embeds into it. -/
+theorem isDomain [IsDomain R] (hv : v.Integers O) : IsDomain O :=
+  Function.Injective.isDomain _ hv.hom_inj
 
 /-- **The ring of integers of a perfect ring is perfect.** If `O` is a ring of integers for a
 valuation on a ring `R` that is perfect for the exponent `p`, then `O` is perfect for `p`. -/

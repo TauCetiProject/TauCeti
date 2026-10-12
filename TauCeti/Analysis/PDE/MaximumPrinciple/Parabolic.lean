@@ -86,7 +86,7 @@ private theorem sub_mul_le_of_deriv_le_laplacian_add_fderiv (hK : IsCompact K) {
     (hε : 0 < ε) (hτ : τ < T) :
     ∀ ⦃t⦄, t ∈ Icc 0 τ → ∀ ⦃x⦄, x ∈ K → u t x - ε * t ≤ m := by
   intro t ht x hx
-  set w : ℝ × E → ℝ := fun p ↦ Function.uncurry u p - ε * p.1 with hw
+  set w : ℝ × E → ℝ := fun p ↦ Function.uncurry u p - ε * p.1
   have hsub' : Icc 0 τ ×ˢ K ⊆ Icc 0 T ×ˢ K := prod_mono (Icc_subset_Icc_right hτ.le) le_rfl
   have hwcont : ContinuousOn w (Icc 0 τ ×ˢ K) :=
     (hcont.mono hsub').sub (continuousOn_const.mul continuousOn_fst)

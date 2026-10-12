@@ -68,7 +68,7 @@ theorem eq_finRev_of_antitone_of_prefix_sum_le_of_sum_eq_of_casimir_eq
     intro k hk
     rw [← Fin.sum_univ_eq_sum_range aZ k,
       ← Fin.sum_univ_eq_sum_range (fun i => ((N - (i + 1) : ℕ) : ℤ)) k]
-    convert hmajor k hk using 1 <;> apply Finset.sum_congr rfl <;> intro i hi
+    convert hmajor k hk using 1 <;> apply Finset.sum_congr rfl <;> intro i _
     · have hiN : i < N := lt_trans i.isLt hk
       simp only [aZ, dite_eq_left hiN]
       congr 1
@@ -77,7 +77,7 @@ theorem eq_finRev_of_antitone_of_prefix_sum_le_of_sum_eq_of_casimir_eq
       ∑ i ∈ Finset.range N, ((N - (i + 1) : ℕ) : ℤ) := by
     rw [← Fin.sum_univ_eq_sum_range aZ N,
       ← Fin.sum_univ_eq_sum_range (fun i => ((N - (i + 1) : ℕ) : ℤ)) N]
-    convert hsum using 1 <;> apply Finset.sum_congr rfl <;> intro i hi
+    convert hsum using 1 <;> apply Finset.sum_congr rfl <;> intro i _
     · simp [aZ, i.isLt]
     · rfl
   have hcasimirZ :
@@ -89,7 +89,7 @@ theorem eq_finRev_of_antitone_of_prefix_sum_le_of_sum_eq_of_casimir_eq
       ← Fin.sum_univ_eq_sum_range
         (fun i => ((N - (i + 1) : ℕ) : ℤ) *
           (((N - (i + 1) : ℕ) : ℤ) + (N : ℤ) - 2 * i)) N]
-    convert hcasimir using 1 <;> apply Finset.sum_congr rfl <;> intro i hi
+    convert hcasimir using 1 <;> apply Finset.sum_congr rfl <;> intro i _
     · simp [aZ, i.isLt]
     · rfl
   funext i

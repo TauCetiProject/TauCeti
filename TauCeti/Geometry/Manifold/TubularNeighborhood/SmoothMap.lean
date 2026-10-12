@@ -102,7 +102,7 @@ theorem contMDiffWithinAt_normalBundle_iff
   · rintro ⟨hbase, hvec⟩
     rw [Bundle.contMDiffWithinAt_totalSpace]
     refine ⟨hbase, ?_⟩
-    have hcoord := (contMDiffAt_normalCoordinateMap hf himm (g x).proj
+    have hcoord := (contMDiffAt_normalCoordinateMap (hf (g x).proj) (himm (g x).proj) (g x).proj
       (by simp)).comp_contMDiffWithinAt x hbase
     have hfixed := (normalFiberEquiv hdim (g x).proj
       (himm (g x).proj)).toContinuousLinearMap.contMDiff (n := n)

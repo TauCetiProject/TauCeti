@@ -363,7 +363,7 @@ noncomputable instance distribSMul :
   smul_add t m₁ m₂ := by
     classical
     rw [← MulOpposite.op_unop t, smul_eq_sum, smul_eq_sum, smul_eq_sum]
-    refine (Finsupp.sum_congr fun D b₁ ↦ ?_).trans Finsupp.sum_add
+    refine (Finsupp.sum_congr fun D _ ↦ ?_).trans Finsupp.sum_add
     refine Finsupp.sum_add_index' (fun q ↦ ?_) fun q b₂ b₃ ↦ ?_
     · exact Finset.sum_eq_zero fun i _ ↦ by simp
     · rw [← Finset.sum_add_distrib]

@@ -319,6 +319,10 @@ end Rep
 spins. -/
 def spinWeight (s : Fin n → Bool) : R := ∏ l, markovWeight q (s l)
 
+/-- The spin weight is the product of the single-strand enhancement weights. -/
+theorem spinWeight_def (s : Fin n → Bool) : spinWeight q s = ∏ l, markovWeight q (s l) :=
+  (rfl)
+
 /-- Two configurations that agree away from the strands `j` and `k` and are antiparallel on them
 have the same weight: each carries one spin `true` and one spin `false` on these two strands. -/
 theorem spinWeight_eq_of_forall_notMem {j k : Fin n} {s t : Fin n → Bool}
