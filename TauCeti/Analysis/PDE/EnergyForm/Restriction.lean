@@ -25,6 +25,8 @@ hypotheses on `Ω`.
 * `TauCeti.PDE.energyFormH1_restrictL`: `a(u|_U, v) = a(u, v₀)` for `v ∈ H¹₀(U)` with zero
   extension `v₀ ∈ H¹₀(Ω)`.
 * `TauCeti.PDE.energyFormH1_restrictL_nonpos`: weak subsolutions restrict to weak subsolutions.
+* `TauCeti.PDE.energyFormH1_restrictL_add_const_nonneg`: the restriction of a weak supersolution,
+  shifted by a constant, is a weak supersolution.
 * `TauCeti.PDE.energyFormH1_restrictL_eq_setIntegral`: weak solutions restrict to weak solutions.
 -/
 
@@ -105,6 +107,26 @@ theorem energyFormH1_restrictL_nonpos {a : EuclideanSpace ℝ ι → Matrix ι �
   · rw [indicator_of_mem hxU]
     exact hxv hxU
   · rw [indicator_of_notMem hxU]
+
+/-- **Shifted weak supersolutions.** If `u ∈ H¹(Ω)` satisfies `a(u, v) ≥ 0` for every nonnegative
+`v ∈ H¹₀(Ω)`, then for every open `U ⊆ Ω` of finite measure and every constant `δ`, the shifted
+restriction `u|_U + δ ∈ H¹(U)` satisfies `a(u|_U + δ, v) ≥ 0` for every nonnegative
+`v ∈ H¹₀(U)`: adding a constant does not change the gradient, and the form has no lower-order
+terms. -/
+theorem energyFormH1_restrictL_add_const_nonneg {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ}
+    (hU : U ≤ Omega) [IsFiniteMeasure (mu.restrict U)] {u : W1p mu Omega 2}
+    (hu : ∀ v : W1p0 mu Omega 2,
+      (∀ᵐ x ∂mu.restrict Omega, 0 ≤ W1p.value (v : W1p mu Omega 2) x) →
+        0 ≤ energyFormH1 a 0 0 u (v : W1p mu Omega 2))
+    (δ : ℝ) (v : W1p0 mu U 2) (hv : ∀ᵐ x ∂mu.restrict U, 0 ≤ W1p.value (v : W1p mu U 2) x) :
+    0 ≤ energyFormH1 a 0 0 (W1p.restrictL hU u + W1p.const δ) (v : W1p mu U 2) := by
+  have hneg := energyFormH1_restrictL_nonpos (b := 0) (c := 0) hU (u := (-1 : ℝ) • u)
+    (fun v hv => by rw [energyFormH1_smul_left]; linarith [hu v hv]) v hv
+  rw [map_smul, energyFormH1_smul_left] at hneg
+  have heq : energyFormH1 a 0 0 (W1p.restrictL hU u + W1p.const δ) (v : W1p mu U 2) =
+      energyFormH1 a 0 0 (W1p.restrictL hU u) (v : W1p mu U 2) := by
+    simp [energyFormH1_def, driftForm_apply, massForm_apply]
+  linarith
 
 /-- **Weak solutions restrict to weak solutions.** If `u ∈ H¹(Ω)` satisfies
 `a(u, v) = ∫_Ω f v` for every `v ∈ H¹₀(Ω)`, then for every open `U ⊆ Ω` its restriction `u|_U`

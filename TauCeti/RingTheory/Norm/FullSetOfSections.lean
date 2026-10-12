@@ -45,10 +45,13 @@ full set of sections of a finite locally free subgroup scheme.
 
 ## Main results
 
-Throughout, `B` is free of finite rank over `A`.
+* `TauCeti.isFullSetOfSections_comp_algEquiv_iff`: being a full set of sections is invariant under
+  isomorphisms of `B`.
+
+In the remaining results, `B` is free of finite rank over `A`.
 
 * `TauCeti.IsFullSetOfSections.norm_eq`: the defining identity holds for test algebras in every
-  universe.
+  universe; `TauCeti.IsFullSetOfSections.norm_eq_prod` is the case `T = A`.
 * `TauCeti.isFullSetOfSections_iff_norm_eq_prod`: the reduction to the universal case
   (Katz–Mazur, proof of 1.9.1). For a basis `b` of `B` indexed by `κ`, `s` is a full set of
   sections if and only if the norm form factors into linear forms,
@@ -64,6 +67,9 @@ Throughout, `B` is free of finite rank over `A`.
   of the constant scheme `⨆_{i ∈ ι} Spec A`, form a full set of sections.
 * `TauCeti.IsFullSetOfSections.prod`: full sets of sections of `B₁` and `B₂` together form one of
   `B₁ × B₂` (Katz–Mazur 1.8.4).
+* `TauCeti.IsFullSetOfSections.tensorProduct`: full sets of sections `s₁` of `B₁` and `s₂` of
+  `B₂` give the full set of sections `x ⊗ y ↦ s₁ᵢ(x) s₂ⱼ(y)` of `B₁ ⊗[A] B₂`, the coordinate ring
+  of the fibre product `Spec B₁ ×_{Spec A} Spec B₂`.
 * `TauCeti.isFullSetOfSections_liftEquiv_comp_iff`: the full-set locus (Katz–Mazur 1.9.1, over
   an affine base and for `B` free). For `φ : C →ₐ[A] T`, the family `φ ∘ u` is a full set of
   sections of `T ⊗[A] B` over `T` if and only if `φ` kills `fullSetIdeal u`.
@@ -108,6 +114,26 @@ theorem isFullSetOfSections_iff : IsFullSetOfSections s ↔
       Algebra.norm T f = ∏ i, (s i).sectionBaseChange T f :=
   Iff.rfl
 
+-- The base change of `e : B ≃ₐ[A] B'` identifies the norms and the values at the sections.
+private theorem IsFullSetOfSections.of_comp_algEquiv {B' : Type*} [CommRing B'] [Algebra A B']
+    (e : B ≃ₐ[A] B') {s : ι → B' →ₐ[A] A}
+    (h : IsFullSetOfSections fun i ↦ (s i).comp e.toAlgHom) : IsFullSetOfSections s := by
+  intro T _ _ _ f
+  let eT := Algebra.TensorProduct.congr (AlgEquiv.refl : T ≃ₐ[T] T) e
+  have : Module.Free T (T ⊗[A] B) := .of_equiv eT.symm.toLinearEquiv
+  rw [← Algebra.norm_eq_of_algEquiv eT.symm, h T]
+  refine Finset.prod_congr rfl fun i _ ↦ ?_
+  induction f using TensorProduct.inductionOn with
+  | tmul x y => simp [eT]
+  | add x y hx hy => simp only [map_add, hx, hy]
+
+/-- Being a full set of sections is invariant under isomorphism: for `e : B ≃ₐ[A] B'` and sections
+`s` of `B'`, the sections `sᵢ ∘ e` of `B` form a full set if and only if the `sᵢ` do. -/
+theorem isFullSetOfSections_comp_algEquiv_iff {B' : Type*} [CommRing B'] [Algebra A B']
+    (e : B ≃ₐ[A] B') {s : ι → B' →ₐ[A] A} :
+    (IsFullSetOfSections fun i ↦ (s i).comp e.toAlgHom) ↔ IsFullSetOfSections s :=
+  ⟨.of_comp_algEquiv e, fun h ↦ .of_comp_algEquiv e.symm (by simpa [AlgHom.comp_assoc] using h)⟩
+
 section Free
 
 variable [Module.Free A B] [Module.Finite A B]
@@ -137,6 +163,13 @@ theorem IsFullSetOfSections.norm_eq (h : IsFullSetOfSections s) (T : Type w) [Co
     Algebra.norm T f = ∏ i, (s i).sectionBaseChange T f :=
   norm_eq_prod_of_generic ((Module.Free.chooseBasis A B).reindex (Fintype.equivFin _))
     ((h _ _).trans (Finset.prod_congr rfl fun _ _ ↦ AlgHom.sectionBaseChange_sum_tmul _ _ _ _)) T f
+
+/-- Without base change, the norm of a function on `Spec B` is the product of its values at a full
+set of sections. -/
+theorem IsFullSetOfSections.norm_eq_prod (h : IsFullSetOfSections s) (b : B) :
+    Algebra.norm A b = ∏ i, s i b := by
+  rw [← Algebra.norm_eq_of_algEquiv (Algebra.TensorProduct.lid A B).symm, h.norm_eq]
+  simp
 
 /-- **Reduction to the universal case** (Katz–Mazur, proof of 1.9.1). For a basis `b` of `B`
 indexed by `κ`, a family of sections `s` is a full set of sections if and only if the norm of the
@@ -243,6 +276,50 @@ theorem IsFullSetOfSections.prod {B₁ B₂ : Type*} [CommRing B₁] [Algebra A 
   induction f using TensorProduct.inductionOn with
   | tmul t y => simp
   | add x y hx hy => simp only [map_add, Prod.fst_add, Prod.snd_add, hx, hy]
+
+section TensorProduct
+
+variable {B₁ B₂ : Type*} [CommRing B₁] [Algebra A B₁] [CommRing B₂] [Algebra A B₂]
+  [Module.Free A B₁] [Module.Finite A B₁] [Module.Free A B₂] [Module.Finite A B₂]
+  {ι₁ ι₂ : Type*} [Fintype ι₁] [Fintype ι₂] {s₁ : ι₁ → B₁ →ₐ[A] A} {s₂ : ι₂ → B₂ →ₐ[A] A}
+
+-- The norm identity for `B₁ ⊗[A] B₂` over `A` itself, by transitivity of the norm through `B₁`:
+-- over `B₁`, the algebra `B₁ ⊗[A] B₂` is the base change of `B₂`, whose norm is computed by `s₂`.
+private theorem norm_eq_prod_productMap (h₁ : IsFullSetOfSections s₁)
+    (h₂ : IsFullSetOfSections s₂) (f : B₁ ⊗[A] B₂) :
+    Algebra.norm A f =
+      ∏ p : ι₁ × ι₂, Algebra.TensorProduct.productMap (s₁ p.1) (s₂ p.2) f := by
+  rw [← Algebra.norm_norm (S := B₁), h₂.norm_eq, map_prod, Fintype.prod_prod_type_right]
+  refine Finset.prod_congr rfl fun j _ ↦ ?_
+  rw [h₁.norm_eq_prod]
+  refine Finset.prod_congr rfl fun i _ ↦ ?_
+  induction f using TensorProduct.inductionOn with
+  | tmul x y => simp
+  | add x y hx hy => simp only [map_add, hx, hy]
+
+/-- **Fibre products.** If `s₁` and `s₂` are full sets of sections of `B₁` and `B₂`, then the
+sections `x ⊗ y ↦ s₁ᵢ(x) s₂ⱼ(y)` of `Spec (B₁ ⊗[A] B₂) = Spec B₁ ×_{Spec A} Spec B₂`, indexed by
+the pairs `(i, j)`, form a full set of sections of `B₁ ⊗[A] B₂`. -/
+theorem IsFullSetOfSections.tensorProduct (h₁ : IsFullSetOfSections s₁)
+    (h₂ : IsFullSetOfSections s₂) :
+    IsFullSetOfSections fun p : ι₁ × ι₂ ↦ Algebra.TensorProduct.productMap (s₁ p.1) (s₂ p.2) := by
+  intro T _ _ _ f
+  -- `T ⊗[A] (B₁ ⊗[A] B₂)` is the tensor product over `T` of `T ⊗[A] B₁` and `T ⊗[A] B₂`, which
+  -- have the base changes of `s₁` and `s₂` as full sets of sections.
+  let e : (T ⊗[A] B₁) ⊗[T] (T ⊗[A] B₂) ≃ₐ[T] T ⊗[A] (B₁ ⊗[A] B₂) :=
+    (Algebra.TensorProduct.cancelBaseChange A T T (T ⊗[A] B₁) B₂).trans
+      (Algebra.TensorProduct.assoc A A T T B₁ B₂)
+  rw [← Algebra.norm_eq_of_algEquiv e.symm,
+    norm_eq_prod_productMap (h₁.baseChange T) (h₂.baseChange T)]
+  refine Finset.prod_congr rfl fun p _ ↦ ?_
+  induction f using TensorProduct.inductionOn with
+  | tmul t y =>
+    induction y using TensorProduct.inductionOn with
+    | tmul x y => simp [e, mul_assoc]
+    | add x y hx hy => simp only [tmul_add, map_add, hx, hy]
+  | add x y hx hy => simp only [map_add, hx, hy]
+
+end TensorProduct
 
 /-! ### The full-set locus
 

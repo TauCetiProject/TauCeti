@@ -61,7 +61,7 @@ open scoped ENNReal NNReal
 section Metric
 
 variable {X G : Type*} [PseudoMetricSpace X] [MeasurableSpace X] [OpensMeasurableSpace X]
-  {μ : Measure X} [SeminormedAddCommGroup G]
+  {μ : Measure X} [SeminormedAddGroup G]
 
 /-- **The standard smoothness estimate implies Hörmander's condition.** Let the closed balls
 about `y'` satisfy the growth bound `μ (closedBall y' r) ≤ A rⁿ` with `0 ≤ n`, and let `K` satisfy
@@ -123,7 +123,7 @@ end Metric
 
 section Pi
 
-variable {ι G : Type*} [Fintype ι] [SeminormedAddCommGroup G]
+variable {ι G : Type*} [Fintype ι] [SeminormedAddGroup G]
 
 /-- **The standard smoothness estimate implies Hörmander's condition** on `ℝⁿ = ι → ℝ`, with the
 sup norm and Lebesgue measure. If `δ > 0` and

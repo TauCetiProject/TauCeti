@@ -132,27 +132,39 @@ instance gAlgebra : DirectSum.GAlgebra R fun n : ℕ ↦ NormalizedCubicalChain 
 
 end NormalizedCubicalChain
 
-variable (G : Type*) [Monoid G] [TopologicalSpace G] [ContinuousMul G] (R : Type*) [CommRing R]
+section Space
 
-/-- The **graded algebra of normalized cubical chains** of a topological monoid `G`:
-`⨁ n, C^□_n(G; R)` with the Pontryagin product. -/
+variable (G : Type*) [TopologicalSpace G] (R : Type*) [CommRing R]
+
+/-- The direct sum `⨁ n, C^□_n(G; R)` of the normalized cubical chains of a space.  When `G` is a
+topological monoid it is the **graded algebra of normalized cubical chains**, with the Pontryagin
+product. -/
 abbrev normalizedCubicalChainAlgebra : Type _ := ⨁ n : ℕ, NormalizedCubicalChain G R n
 
-/-- The ring structure of the graded algebra of normalized cubical chains. -/
-instance : Ring (normalizedCubicalChainAlgebra G R) :=
-  DirectSum.ring (fun n : ℕ ↦ NormalizedCubicalChain G R n)
+/-- The additive group structure of the direct sum of the normalized cubical chains.  It is
+supplied explicitly because instance search does not find the additive group structures of the
+summands under the binder. -/
+instance : AddCommGroup (normalizedCubicalChainAlgebra G R) :=
+  @DirectSum.instAddCommGroup ℕ (fun n ↦ NormalizedCubicalChain G R n) fun _ ↦ inferInstance
 
-/-- The inclusion of the chains of dimension `n` into the graded algebra. -/
+/-- The inclusion of the chains of dimension `n` into the direct sum. -/
 abbrev cubicalChainLof (n : ℕ) :
     NormalizedCubicalChain G R n →ₗ[R] normalizedCubicalChainAlgebra G R :=
   DirectSum.lof R ℕ (fun n ↦ NormalizedCubicalChain G R n) n
 
-omit [Monoid G] [ContinuousMul G] in
-/-- Reindexing a chain does not change its image in the graded algebra. -/
+/-- Reindexing a chain does not change its image in the direct sum. -/
 theorem cubicalChainLof_cast {n m : ℕ} (h : n = m) (x : NormalizedCubicalChain G R n) :
     cubicalChainLof G R m (NormalizedCubicalChain.cast R h x) = cubicalChainLof G R n x := by
   subst h
   rw [NormalizedCubicalChain.cast_rfl]
+
+end Space
+
+variable (G : Type*) [Monoid G] [TopologicalSpace G] [ContinuousMul G] (R : Type*) [CommRing R]
+
+/-- The ring structure of the graded algebra of normalized cubical chains. -/
+instance : Ring (normalizedCubicalChainAlgebra G R) :=
+  DirectSum.ring (fun n : ℕ ↦ NormalizedCubicalChain G R n)
 
 /-- The product of homogeneous chains in the graded algebra is their Pontryagin product. -/
 theorem cubicalChainLof_mul {p q : ℕ} (a : NormalizedCubicalChain G R p)

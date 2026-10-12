@@ -32,7 +32,8 @@ isomorphic to `(ℤ/Nℤ)²`.
 
 Every elliptic curve over `Spec K` is the curve of a Weierstrass equation
 (`EllipticCurveGeom.exists_iso_toEllipticCurveGeom`), so the finiteness of its `n`-torsion points
-holds for every elliptic curve over a field.
+holds for every elliptic curve over a field, and so does the count of `n²` field points of `E[n]`
+over a separably closed field in which `n` is invertible.
 
 ## Main definitions
 
@@ -64,6 +65,9 @@ holds for every elliptic curve over a field.
   isomorphic to `(ℤ/Nℤ)²`.
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.finite_comp_mulBy_eq_one`: for `n ≠ 0`, finitely
   many points of any elliptic curve over `Spec K` are killed by `[n]`.
+* `TauCeti.AlgebraicGeometry.EllipticCurveGeom.natCard_torsion`: over a separably closed field in
+  which `n` is invertible, the `n`-torsion of any elliptic curve has `n.natAbs ^ 2` points with
+  values in `Spec K`.
 
 ## References
 
@@ -279,5 +283,22 @@ theorem finite_comp_mulBy_eq_one {n : ℤ} (hn : n ≠ 0) :
       rw [← h0, Category.assoc, Iso.hom_inv_id, Category.comp_id]
     simp [e', hmul', reassoc_of% hx, h0']
   · exact Subtype.ext ((cancel_mono e').mp (congrArg Subtype.val hxy))
+
+/-- **The number of field points of `E[n]`.** For an elliptic curve `E` over a separably closed
+field `K` in which the integer `n` is invertible, the `n`-torsion `E[n]` has exactly
+`n.natAbs ^ 2` points with values in `Spec K`. -/
+theorem natCard_torsion [IsSepClosed K] {n : ℤ} (hn : (n : K) ≠ 0) :
+    Nat.card (𝟙_ (Over (Spec (.of K))) ⟶ (E.torsion n).X) = n.natAbs ^ 2 := by
+  -- `E` is the curve of a Weierstrass equation `W`, through an isomorphism `e` over `Spec K`
+  obtain ⟨W, _, e, he, h0⟩ := E.exists_iso_toEllipticCurveGeom
+  have hg : IsPullback e.hom W.toEllipticCurveGeom.structureMap E.structureMap (𝟙 _) :=
+    .of_horiz_isIso ⟨by simp [he]⟩
+  have h0' : W.toEllipticCurveGeom.zero ≫ e.hom = 𝟙 _ ≫ E.zero := by simp [h0]
+  -- `e` restricts to an isomorphism of the `n`-torsion over `Spec K`
+  have := (isPullback_torsionMap n hg h0').isIso_fst_of_isIso
+  let eT : (W.toEllipticCurveGeom.torsion n).X ≅ (E.torsion n).X :=
+    Over.isoMk (asIso (torsionMap n hg h0')) (by rw [asIso_hom, torsionMap_hom, Category.comp_id])
+  rw [← W.natCard_toEllipticCurveGeom_torsion hn]
+  exact Nat.card_congr ((Iso.refl _).homCongr eT).symm
 
 end TauCeti.AlgebraicGeometry.EllipticCurveGeom

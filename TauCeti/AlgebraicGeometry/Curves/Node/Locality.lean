@@ -49,7 +49,8 @@ theorem AtWorstNodalOfRelativeDimensionOne.comp_of_isOpenImmersion
   refine AtWorstNodalOfRelativeDimensionOne.mk hs ?_
   -- The local `Over` instance has structure map `i ≫ f`; its inferred flatness, finite
   -- presentation, and relative dimension proofs agree by proof irrelevance with those in `mk`.
-  suffices hsing : FormallyUnramified ((X.singularLocus R).subschemeι ≫ i ≫ f) from hsing
+  suffices hsing : FormallyUnramified ((X.singularLocus R).subschemeι ≫ i ≫ f) from
+    ⟨inferInstance, hsing⟩
   have H := Scheme.isPullback_singularLocus_of_isOpenImmersion (R := R) i
   have hi := MorphismProperty.of_isPullback (P := @IsOpenImmersion) H
     (inferInstanceAs (IsOpenImmersion i))
@@ -57,7 +58,7 @@ theorem AtWorstNodalOfRelativeDimensionOne.comp_of_isOpenImmersion
   -- Fix the morphism-property universe so instance search finds Mathlib's locality instance.
   exact IsZariskiLocalAtSource.comp
     (P := (show MorphismProperty Scheme.{u} from @FormallyUnramified.{u}))
-    h.singular_formallyUnramified _
+    h.unramified_singularLocus.toFormallyUnramified _
 
 /-- The nodal-curve criterion over an affine base can be checked on an open cover of the
 source. -/
@@ -72,7 +73,8 @@ theorem AtWorstNodalOfRelativeDimensionOne.of_openCover
   refine AtWorstNodalOfRelativeDimensionOne.mk hs ?_
   -- The local `Over` instance has structure map `f`; its inferred flatness, finite
   -- presentation, and relative dimension proofs agree by proof irrelevance with those in `mk`.
-  suffices hsing : FormallyUnramified ((Y.singularLocus R).subschemeι ≫ f) from hsing
+  suffices hsing : FormallyUnramified ((Y.singularLocus R).subschemeι ≫ f) from
+    ⟨inferInstance, hsing⟩
   -- Fix the morphism-property universe so instance search finds Mathlib's locality instance.
   refine IsZariskiLocalAtSource.of_openCover
     (P := (show MorphismProperty Scheme.{u} from @FormallyUnramified.{u}))
@@ -92,7 +94,7 @@ theorem AtWorstNodalOfRelativeDimensionOne.of_openCover
   dsimp only [Precoverage.ZeroHypercover.pullback₁, PreZeroHypercover.pullback₁]
   rw [← MorphismProperty.cancel_left_of_respectsIso (P := @FormallyUnramified.{u})
     H.isoPullback.hom, H.isoPullback_hom_fst_assoc, H.w_assoc]
-  simpa only [Category.assoc] using (h j).singular_formallyUnramified
+  simpa only [Category.assoc] using (h j).unramified_singularLocus.toFormallyUnramified
 
 /-- A relative curve over an affine base is nodal if and only if its restrictions to every
 member of an open cover are nodal. -/

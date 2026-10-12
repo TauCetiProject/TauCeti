@@ -13,7 +13,8 @@ public import Mathlib.Geometry.Convex.ConvexSpace.Defs
 Complements to Mathlib's `Convexity.StdSimplex` about the maps `StdSimplex.map f` along injective
 maps `f`, which embed a standard simplex as a face of a larger one.  Such a map keeps the weights
 of a point, so it is injective.  For `f = j.succAbove` its image is the facet on which the `j`-th
-weight vanishes.  Two facets, opposite `j < k`, meet in the codimension-two face opposite both:
+weight vanishes, so a function taking a constant value on every facet takes that value wherever
+some weight vanishes.  Two facets, opposite `j < k`, meet in the codimension-two face opposite both:
 a common point of the two facets comes from that face through both composites of face maps, the
 two sides of the simplicial identity `SimplexCategory.δ_comp_δ`.
 -/
@@ -28,6 +29,19 @@ variable {R : Type*} [PartialOrder R] [Semiring R] [IsStrictOrderedRing R] {X Y 
 theorem weights_map_apply_of_injective {f : X → Y} (hf : f.Injective) (x : StdSimplex R X)
     (a : X) : (x.map f).weights (f a) = x.weights a :=
   Finsupp.mapDomain_apply_of_injective hf _ _
+
+omit [IsStrictOrderedRing R] in
+/-- The three weights of a point of the standard `2`-simplex add up to `1`. -/
+theorem total_fin_three (x : StdSimplex R (Fin 3)) :
+    x.weights 0 + x.weights 1 + x.weights 2 = 1 := by
+  rw [← x.total_of_fintype, Fin.sum_univ_three]
+
+/-- The weights of the last two vertices of a point of the standard `2`-simplex add up to at
+most `1`. -/
+theorem weights_one_add_weights_two_le_one (x : StdSimplex R (Fin 3)) :
+    x.weights 1 + x.weights 2 ≤ 1 := by
+  rw [← x.total_fin_three, add_assoc]
+  exact le_add_of_nonneg_left (x.weights_nonneg 0)
 
 /-- The map of standard simplices along an injective map is injective. -/
 theorem map_injective {f : X → Y} (hf : f.Injective) : (map (R := R) f).Injective := by
@@ -46,6 +60,14 @@ theorem mem_range_map_succAbove_iff {n : ℕ} (j : Fin (n + 1)) (x : StdSimplex 
 theorem weights_map_succAbove_self {n : ℕ} (j : Fin (n + 1)) (x : StdSimplex R (Fin n)) :
     (x.map j.succAbove).weights j = 0 :=
   (mem_range_map_succAbove_iff j _).1 ⟨x, rfl⟩
+
+/-- A function on a standard simplex which takes the value `z` on every facet takes the value `z`
+at every point with a vanishing weight. -/
+theorem apply_eq_of_weights_eq_zero {n : ℕ} {Z : Type*} {φ : StdSimplex R (Fin (n + 1)) → Z}
+    {z : Z} (hφ : ∀ (i : Fin (n + 1)) (w : StdSimplex R (Fin n)), φ (w.map i.succAbove) = z)
+    {b : StdSimplex R (Fin (n + 1))} {k : Fin (n + 1)} (hb : b.weights k = 0) : φ b = z := by
+  obtain ⟨w, rfl⟩ := (mem_range_map_succAbove_iff k b).2 hb
+  exact hφ k w
 
 /-- The facets of a standard simplex opposite `j < k` meet in the codimension-two face opposite
 both: a common point is the image of a point `w` of that face, and the corresponding points of
