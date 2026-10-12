@@ -9,8 +9,10 @@ public import TauCeti.Analysis.Fourier.HessianMultiplier
 public import TauCeti.Analysis.PDE.FundamentalSolution.Euclidean.Potential
 import TauCeti.Analysis.Calculus.FDeriv.ContinuousLinearMap
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
+import TauCeti.Analysis.InnerProductSpace.Laplacian.Cutoff
 import TauCeti.Analysis.Normed.Lp.SmoothApprox
 import TauCeti.Analysis.PDE.FundamentalSolution.Euclidean.Hessian
+import TauCeti.MeasureTheory.Function.Lp.IntegralBoundedSmul
 
 /-!
 # The kernel of the Hessian Fourier multiplier
@@ -35,7 +37,8 @@ the Calderón–Zygmund theory asks of an `L²`-bounded operator before it bound
 For `φ` smooth with compact support, the Newtonian potential `u = Gₙ ⋆ φ` solves `-Δu = φ`, so
 `T_{m_{v,w}} φ` should be `-∂_v ∂_w u`. The identity `∂_v ∂_w = T_{m_{v,w}} ∘ Δ` holds on Schwartz
 functions, and `u` is not one, but its truncations `χ_R u` are: `χ_R` is a cutoff equal to `1` on
-`ball 0 R` with `‖Dχ_R‖ = O(1/R)` and `‖D²χ_R‖ = O(1/R²)`. Since `u = O(‖x‖ ^ (2 - n))` and
+`ball 0 R` with `‖Dχ_R‖ = O(1/R)` and `|Δχ_R| = O(1/R²)`
+(`TauCeti.exists_forall_contDiff_cutoff_ball_norm_laplacian_le`). Since `u = O(‖x‖ ^ (2 - n))` and
 `Du = O(‖x‖ ^ (2 - n))` (`TauCeti.norm_newtonianKernel_convolution_le`,
 `TauCeti.norm_fderiv_newtonianKernel_convolution_apply_le`), the error
 `Δ(χ_R u) + φ = 2 Du(∇χ_R) + (Δχ_R) u` lives on the annulus `R ≤ ‖x‖ ≤ 2R`, where it is
@@ -49,8 +52,9 @@ kernel: `D²u(x)(v, w) = ∫ D²Gₙ(x - y)(v, w) φ(y) dy`
 `f ∈ L²` vanishing off `s` is the `L²` limit of smooth functions supported in shrinking
 thickenings of `s`
 (`MeasureTheory.MemLp.exist_contDiff_tsupport_subset_cthickening_eLpNorm_sub_le`).
-For `x ∉ s` the kernel is bounded on a fixed thickening of `s`, so the kernel integrals converge,
-while `T_{m_{v,w}}` of the approximations converges almost everywhere along a subsequence.
+For `x ∉ s` the kernel is bounded on a fixed thickening of `s`, so the kernel integrals converge
+(`TauCeti.integrable_smul_and_norm_integral_smul_le`), while `T_{m_{v,w}}` of the approximations
+converges almost everywhere along a subsequence.
 
 ## Main declarations
 
@@ -80,48 +84,6 @@ open scoped Convolution ContDiff
 
 variable {n : ℕ} {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
   {φ : EuclideanSpace ℝ (Fin n) → F}
-
-open scoped Laplacian in
-/-- A family of smooth cutoffs `χ_R`, equal to `1` on `ball 0 R` and to `0` off `closedBall 0 (2R)`,
-whose first and second derivatives are `O(1/R)` and `O(1/R²)`. -/
-private theorem exists_cutoff : ∃ C : ℝ, ∀ R : ℝ, 0 < R → ∃ χ : EuclideanSpace ℝ (Fin n) → ℝ,
-    ContDiff ℝ ∞ χ ∧ HasCompactSupport χ ∧ (∀ x, ‖x‖ < R → χ =ᶠ[𝓝 x] fun _ => 1) ∧
-      (∀ x, 2 * R < ‖x‖ → χ =ᶠ[𝓝 x] fun _ => 0) ∧ (∀ x, ‖fderiv ℝ χ x‖ ≤ C / R) ∧
-        ∀ x, ‖Δ χ x‖ ≤ C / R ^ 2 := by
-  let b : ContDiffBump (0 : EuclideanSpace ℝ (Fin n)) := ⟨1, 2, zero_lt_one, one_lt_two⟩
-  have hb : ContDiff ℝ ∞ b := b.contDiff
-  obtain ⟨C₁, hC₁⟩ := (hb.continuous_fderiv (by simp)).bounded_above_of_compact_support
-    (b.hasCompactSupport.fderiv (𝕜 := ℝ))
-  obtain ⟨C₂, hC₂⟩ := (continuousOn_univ.1 ((hb.of_le (by simp)).contDiffOn.continuousOn_laplacian
-    isOpen_univ)).bounded_above_of_compact_support
-      (b.hasCompactSupport.mono' ((subset_tsupport _).trans (tsupport_laplacian_subset _)))
-  refine ⟨max C₁ C₂, fun R hR => ⟨fun x => b (R⁻¹ • x), hb.comp (contDiff_id.const_smul R⁻¹),
-    b.hasCompactSupport.comp_smul (inv_ne_zero hR.ne'), fun x hx => ?_, fun x hx => ?_,
-    fun x => ?_, fun x => ?_⟩⟩
-  · filter_upwards [isOpen_ball.mem_nhds (mem_ball_zero_iff.2 hx)] with y hy
-    refine b.one_of_mem_closedBall (mem_closedBall_zero_iff.2 ?_)
-    rw [norm_smul, Real.norm_eq_abs, abs_inv, abs_of_pos hR, inv_mul_le_iff₀ hR, mul_one]
-    exact (mem_ball_zero_iff.1 hy).le
-  · filter_upwards [(isOpen_lt continuous_const continuous_norm).mem_nhds hx] with y hy
-    refine b.zero_of_le_dist ?_
-    rw [dist_zero_right, norm_smul, Real.norm_eq_abs, abs_inv, abs_of_pos hR,
-      le_inv_mul_iff₀ hR]
-    have hy' : 2 * R < ‖y‖ := hy
-    linarith
-  · have h : HasFDerivAt (fun x => b (R⁻¹ • x)) _ x :=
-      ((hb.differentiable (by simp)) (R⁻¹ • x)).hasFDerivAt.comp x
-        ((hasFDerivAt_id x).const_smul R⁻¹)
-    rw [h.fderiv]
-    refine (opNorm_comp_le _ _).trans ?_
-    rw [div_eq_mul_inv]
-    refine mul_le_mul ((hC₁ _).trans (le_max_left _ _)) ?_ (norm_nonneg _)
-      ((norm_nonneg _).trans ((hC₁ 0).trans (le_max_left _ _)))
-    refine (norm_smul_le _ _).trans ?_
-    rw [Real.norm_eq_abs, abs_inv, abs_of_pos hR]
-    exact mul_le_of_le_one_right (inv_nonneg.2 hR.le) (norm_id_le)
-  · rw [laplacian_comp_smul_right, norm_smul, Real.norm_eq_abs, div_eq_mul_inv, ← inv_pow,
-      abs_pow, abs_inv, abs_of_pos hR, mul_comm]
-    exact mul_le_mul_of_nonneg_right ((hC₂ _).trans (le_max_right _ _)) (by positivity)
 
 open scoped Laplacian Gradient in
 /-- **The truncation error of the Newtonian potential.** Let `φ` be smooth with support in
@@ -241,45 +203,6 @@ private theorem tendsto_mul_rpow_mul_measureReal_closedBall_rpow (hn : 3 ≤ n) 
     ring
   exact hlim.congr' (eventually_gt_atTop 0 |>.mono fun R hR => (key R hR).symm)
 
-/-- If `k` is bounded by `B` and continuous on a compact set `W`, and `h ∈ L²` vanishes off `W`,
-then `k • h` is integrable and, by the Cauchy–Schwarz inequality on `W`,
-`‖∫ k • h‖ ≤ B |W| ^ (1/2) ‖h‖₂`. -/
-private theorem integrable_smul_and_norm_integral_smul_le {k : EuclideanSpace ℝ (Fin n) → ℝ}
-    {W : Set (EuclideanSpace ℝ (Fin n))} (hW : IsCompact W) {B : ℝ} (hB : 0 ≤ B)
-    (hk : ContinuousOn k W) (hkB : ∀ y ∈ W, ‖k y‖ ≤ B) {h : EuclideanSpace ℝ (Fin n) → F}
-    (hh : MemLp h 2) (h0 : ∀ y, y ∉ W → h y = 0) :
-    Integrable (fun y => k y • h y) ∧
-      ‖∫ y, k y • h y‖ ≤ B * (volume W ^ (1 / 2 : ℝ) * eLpNorm h 2 volume).toReal := by
-  have : IsFiniteMeasure (volume.restrict W) :=
-    isFiniteMeasure_restrict.2 hW.measure_lt_top.ne
-  have hhW : IntegrableOn h W := (hh.restrict W).integrable one_le_two
-  have hbound : ∀ᵐ y ∂volume.restrict W, ‖k y • h y‖ ≤ B * ‖h y‖ :=
-    (ae_restrict_iff' hW.measurableSet).2 (ae_of_all _ fun y hy => by
-      rw [norm_smul]
-      exact mul_le_mul_of_nonneg_right (hkB y hy) (norm_nonneg _))
-  have hint : IntegrableOn (fun y => k y • h y) W :=
-    (hhW.norm.const_mul B).mono' ((hk.aestronglyMeasurable hW.measurableSet).smul
-      (hh.restrict W).aestronglyMeasurable) hbound
-  refine ⟨hint.integrable_of_ae_notMem_eq_zero (ae_of_all _ fun y hy => by simp [h0 y hy]), ?_⟩
-  rw [← setIntegral_eq_integral_of_forall_compl_eq_zero fun y hy => by simp [h0 y hy]]
-  refine (norm_integral_le_of_norm_le (hhW.norm.const_mul B) hbound).trans ?_
-  rw [integral_const_mul]
-  refine mul_le_mul_of_nonneg_left ?_ hB
-  rw [integral_norm_eq_lintegral_enorm (hh.restrict W).aestronglyMeasurable,
-    ← eLpNorm_one_eq_lintegral_enorm (hh.restrict W).aestronglyMeasurable]
-  refine ENNReal.toReal_mono (ENNReal.mul_ne_top
-    (ENNReal.rpow_ne_top_of_nonneg (by norm_num) hW.measure_lt_top.ne) hh.eLpNorm_ne_top) ?_
-  calc eLpNorm h 1 (volume.restrict W)
-      ≤ eLpNorm h 2 (volume.restrict W) * volume.restrict W univ ^
-          (1 / (1 : ENNReal).toReal - 1 / (2 : ENNReal).toReal) :=
-        eLpNorm_le_eLpNorm_mul_rpow_measure_univ one_le_two (hh.restrict W).aestronglyMeasurable
-    _ ≤ eLpNorm h 2 volume * volume W ^ (1 / 2 : ℝ) := by
-        rw [Measure.restrict_apply_univ]
-        norm_num
-        gcongr
-        exact Measure.restrict_le_self
-    _ = _ := mul_comm _ _
-
 /-- Away from a closed set `s`, the kernel `y ↦ D²Gₙ(x - y)(v, w)` is continuous and bounded on a
 closed thickening of `s`. -/
 private theorem exists_continuousOn_norm_le_cthickening {s : Set (EuclideanSpace ℝ (Fin n))}
@@ -335,7 +258,8 @@ private theorem exists_schwartzMap_eventuallyEq_tendsto_toLp_laplacian_add (hn :
           (𝓝 0) := by
   set u := newtonianKernel n ⋆ φ
   have hu : ContDiff ℝ ∞ u := contDiff_newtonianKernel_convolution hφ hc
-  obtain ⟨C, hC⟩ := exists_cutoff (n := n)
+  obtain ⟨C, hC⟩ :=
+    exists_forall_contDiff_cutoff_ball_norm_laplacian_le (E := EuclideanSpace ℝ (Fin n))
   obtain ⟨R₀, hR₀⟩ := hc.isCompact.isBounded.subset_closedBall 0
   set R : ℕ → ℝ := fun m => max (max m 1) (2 * R₀)
   have hR1 : ∀ m, 1 ≤ R m := fun m => (le_max_right _ _).trans (le_max_left _ _)
@@ -506,12 +430,17 @@ theorem ae_fourierMultiplierCLM_hessianSymbolLp_eq_neg_integral (hn : 3 ≤ n)
     filter_upwards [hsmall] with k hk
     have hφk0 : ∀ y, y ∉ cthickening η s → φ k y = 0 := fun y hy =>
       image_eq_zero_of_notMem_tsupport fun h => hy (hφW k hk h)
-    obtain ⟨hint₁, -⟩ := integrable_smul_and_norm_integral_smul_le (hs.cthickening (r := η)) hB
-      hkc hkB (hφL k) hφk0
-    obtain ⟨hint₂, -⟩ := integrable_smul_and_norm_integral_smul_le (hs.cthickening (r := η)) hB
-      hkc hkB hf'L hf'W
-    obtain ⟨-, hle⟩ := integrable_smul_and_norm_integral_smul_le (hs.cthickening (r := η)) hB
-      hkc hkB ((hφL k).sub hf'L) fun y hy => by simp [hφk0 y hy, hf'W y hy]
+    have hW := hs.cthickening (r := η)
+    have hkm := hkc.aestronglyMeasurable (μ := volume) hW.measurableSet
+    obtain ⟨hint₁, -⟩ := integrable_smul_and_norm_integral_smul_le hW.measurableSet
+      hW.measure_lt_top.ne hB hkm hkB one_le_two (hφL k) hφk0
+    obtain ⟨hint₂, -⟩ := integrable_smul_and_norm_integral_smul_le hW.measurableSet
+      hW.measure_lt_top.ne hB hkm hkB one_le_two hf'L hf'W
+    obtain ⟨-, hle⟩ := integrable_smul_and_norm_integral_smul_le hW.measurableSet
+      hW.measure_lt_top.ne hB hkm hkB one_le_two ((hφL k).sub hf'L)
+      fun y hy => by simp [hφk0 y hy, hf'W y hy]
+    have h12 : (1 : ℝ) - 1 / (2 : ENNReal).toReal = 1 / 2 := by norm_num
+    rw [h12] at hle
     rw [norm_norm, ← integral_sub hint₁ hint₂]
     simp_rw [← smul_sub]
     refine hle.trans ?_
