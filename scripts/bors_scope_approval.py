@@ -4,6 +4,7 @@ Run only from workflow-pinned tooling. The bors HTTPS observation, rather than
 dispatch payloads or contributor comments, supplies approval and batch membership.
 No candidate code is executed. Missing/incomplete observations fail closed.
 Maintainer approval applies to one PR head and merge base.
+Cancellation or a changed revision requires fresh approval through bors.
 """
 
 import argparse
