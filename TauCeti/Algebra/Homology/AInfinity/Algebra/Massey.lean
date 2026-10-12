@@ -515,7 +515,12 @@ theorem exists_isHomogeneous_value_eq_iff {p q r : ℤ} (hx : x ∈ 𝒜.cohomol
     have h₃ := 𝒜.m_three_mem_piece (ha₂ ▸ hap) (hb₂ ▸ hbq) (hcT ▸ hcr)
     rw [show p + q - 1 + r = p + q + r - 1 by ring] at h₁
     rw [show p + (q + r - 1) = p + q + r - 1 by ring] at h₂
-    simp only [LinearMap.flip_apply, mul_apply] at h₁ h₂
+    change (𝒜.m 2) ![(decompose 𝒜.grading.piece T.u (p + q - 1) : A), T.c] =
+      (decompose 𝒜.grading.piece ((𝒜.m 2) ![T.u, T.c]) (p + q + r - 1) : A) at h₁
+    change (𝒜.m 2) ![𝒜.grading.koszulTwist 1 T.a,
+      (decompose 𝒜.grading.piece T.v (q + r - 1) : A)] =
+      (decompose 𝒜.grading.piece ((𝒜.m 2) ![𝒜.grading.koszulTwist 1 T.a, T.v])
+        (p + q + r - 1) : A) at h₂
     rw [TripleMasseyDefiningSystem.cycle_def, TripleMasseyDefiningSystem.cycle_def,
       decompose_add, decompose_sub, DirectSum.add_apply, DirectSum.sub_apply, Submodule.coe_add,
       Submodule.coe_sub, ← h₁, ← h₂, decompose_of_mem_same _ h₃]
@@ -545,8 +550,12 @@ theorem mem_tripleMasseyIndeterminacy_and_mem_piece_iff {p r n : ℤ}
     have ht := DirectSum.map_decompose_shift 𝒜.cohomologyGrading.piece 𝒜.cohomologyGrading.piece
       (LinearMap.mulRight R z) (· + r) (add_left_injective r)
       (fun _ _ h ↦ SetLike.GradedMul.mul_mem h hz) (n - r) t
-    rw [LinearMap.mulLeft_apply, LinearMap.mulLeft_apply, add_sub_cancel] at hs
-    rw [LinearMap.mulRight_apply, LinearMap.mulRight_apply, sub_add_cancel] at ht
+    change x * (decompose 𝒜.cohomologyGrading.piece s (n - p) : 𝒜.Cohomology) =
+      (decompose 𝒜.cohomologyGrading.piece (x * s) (p + (n - p)) : 𝒜.Cohomology) at hs
+    change (decompose 𝒜.cohomologyGrading.piece t (n - r) : 𝒜.Cohomology) * z =
+      (decompose 𝒜.cohomologyGrading.piece (t * z) (n - r + r) : 𝒜.Cohomology) at ht
+    rw [add_sub_cancel] at hs
+    rw [sub_add_cancel] at ht
     refine ⟨_, (decompose 𝒜.cohomologyGrading.piece s (n - p)).2, _,
       (decompose 𝒜.cohomologyGrading.piece t (n - r)).2, ?_⟩
     rw [hs, ht, ← Submodule.coe_add, ← DirectSum.add_apply, ← decompose_add,
