@@ -40,7 +40,7 @@ variable {k : Type w} {l : Type z} [CommRing k] [CommRing l] [Algebra k l]
 
 /-- Scalar extension identifies each tensor-product graded piece with the path-length piece
 of the quotient with extended parameters. -/
-theorem map_skewZigzagGrade_baseChange (n : ℕ) :
+theorem skewZigzagScalarExtensionEquiv_map_baseChange_skewZigzagGrade (n : ℕ) :
     ((skewZigzagGrade k G c n).baseChange l).map
       (skewZigzagScalarExtensionEquiv (l := l) G c).toLinearEquiv.toLinearMap =
         skewZigzagGrade l G (c.map (algebraMap k l : k →* l)) n := by
@@ -61,7 +61,8 @@ theorem skewZigzagScalarExtensionEquiv_mem_skewZigzagGrade_iff {n : ℕ}
     skewZigzagScalarExtensionEquiv G c x ∈
         skewZigzagGrade l G (c.map (algebraMap k l : k →* l)) n ↔
       x ∈ (skewZigzagGrade k G c n).baseChange l := by
-  rw [← map_skewZigzagGrade_baseChange G c n, Submodule.mem_map_equiv]
+  rw [← skewZigzagScalarExtensionEquiv_map_baseChange_skewZigzagGrade G c n,
+    Submodule.mem_map_equiv]
   simp only [AlgEquiv.coe_symm_toLinearEquiv, AlgEquiv.symm_apply_apply]
 
 /-- The inverse scalar-extension comparison preserves path degree. -/
