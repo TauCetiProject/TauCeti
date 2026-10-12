@@ -27,6 +27,8 @@ The forward implication holds at every prime and without any determinant-unit hy
   the rank and determinant square class at every prime.
 * `TauCeti.IntegralLattice.localIntegralForm_equivalent_iff`: for local unit determinants at an
   odd prime, these invariants classify the integral local forms.
+* `TauCeti.IntegralLattice.localIntegralForm_equivalent_of_not_dvd`: equal rank and signed
+  determinant give integral local isometry outside the prime factors of twice the determinant.
 
 ## References
 
@@ -91,5 +93,22 @@ theorem localIntegralForm_equivalent_iff
   · exact L.localIntegralForm_equivalent_imp M p
   · rintro ⟨hn, hs⟩
     exact (hsame hn).mpr hs
+
+/-- Lattices of equal rank and signed determinant have isometric integral localizations at
+every prime not dividing twice the absolute determinant. -/
+theorem localIntegralForm_equivalent_of_not_dvd
+    (L : IntegralLattice V) (M : IntegralLattice W) {p : ℕ} [Fact p.Prime]
+    (hrank : finrank ℤ L = finrank ℤ M) (hdet : L.determinant = M.determinant)
+    (hp : ¬p ∣ 2 * L.determinant.natAbs) :
+    (L.localIntegralForm p).Equivalent (M.localIntegralForm p) := by
+  have hp2 : p ≠ 2 := by
+    rintro rfl
+    exact hp (dvd_mul_right 2 L.determinant.natAbs)
+  have hunit : IsUnit (L.determinant : ℤ_[p]) := by
+    by_contra h
+    have hdiv := PadicInt.norm_intCast_lt_one_iff.mp (PadicInt.not_isUnit_iff.mp h)
+    exact hp (dvd_mul_of_dvd_right (Int.natCast_dvd.mp hdiv) 2)
+  apply (L.localIntegralForm_equivalent_iff M hp2 hunit (hdet ▸ hunit)).mpr
+  exact ⟨hrank, hdet ▸ IsSquare.mul_self (L.determinant : ℤ_[p])⟩
 
 end TauCeti.IntegralLattice

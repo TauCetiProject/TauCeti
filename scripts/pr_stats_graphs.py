@@ -172,10 +172,10 @@ RATE_LIMITED = re.compile(r"rate limit|secondary rate|was submitted too quickly"
 MAX_RATE_LIMIT_WAIT = 75 * 60
 
 
-def rate_limit_reset_wait() -> float | None:
-    """Seconds until the GraphQL budget refills, or None if that cannot be established."""
+def rate_limit_reset_wait(resource: str = "graphql") -> float | None:
+    """Seconds until the exhausted API budget refills, or None if unknown."""
     probe = subprocess.run(
-        ["gh", "api", "rate_limit", "--jq", ".resources.graphql.reset"],
+        ["gh", "api", "rate_limit", "--jq", f".resources.{resource}.reset"],
         text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
     )
     if probe.returncode != 0:
@@ -202,7 +202,8 @@ def run_gh(arguments: list[str], attempts: int = 3) -> str:
             return result.stdout
         last_error = result.stderr.strip() or f"gh exited {result.returncode}"
         if RATE_LIMITED.search(last_error):
-            wait = rate_limit_reset_wait()
+            resource = "graphql" if arguments[:2] == ["api", "graphql"] else "core"
+            wait = rate_limit_reset_wait(resource)
             if wait is None or waited + wait > MAX_RATE_LIMIT_WAIT:
                 raise RuntimeError(
                     f"GitHub rate limit exhausted and not waitable: {last_error}. "
@@ -235,7 +236,7 @@ query($owner:String!, $name:String!, $cursor:String) {
                  orderBy:{field:CREATED_AT, direction:ASC}) {
       pageInfo { hasNextPage endCursor }
       nodes {
-        number createdAt updatedAt mergedAt closedAt state isDraft
+        number title additions deletions createdAt updatedAt mergedAt closedAt state isDraft
         author { login }
         labels(first:100) { nodes { name } pageInfo { hasNextPage } }
       }
@@ -415,6 +416,9 @@ def fetch_prs(repo: str, previous: dict | None = None) -> list[dict]:
             labels = [item["name"] for item in raw["labels"]["nodes"]]
             prs.append({
                 "number": raw["number"],
+                "title": raw.get("title", ""),
+                "additions": raw.get("additions", 0),
+                "deletions": raw.get("deletions", 0),
                 "created_at": raw["createdAt"],
                 "updated_at": raw["updatedAt"],
                 "merged_at": raw["mergedAt"],
@@ -631,14 +635,71 @@ def load_previous(path: Path | None, repo: str) -> dict | None:
     return previous
 
 
+# Bors squash-merges land on main, but GitHub records their PRs as CLOSED with
+# mergedAt=null. Trust the installed app's success receipt, never the editable
+# "[Merged by Bors]" title, a queued approval, or a successful staging build.
+BORS_LOGIN = "tau-ceti-bors[bot]"
+BORS_SUCCESS = "Pull request successfully merged into main.\n\n"
+
+
+def fetch_bors_merges(repo: str, previous: dict | None = None,
+                      now: datetime | None = None) -> tuple[dict[str, str], str]:
+    """Success receipt times keyed by PR number, including the entire old history.
+
+    Old snapshots lack this watermark and force a full backfill. Subsequent scans
+    overlap by an hour, like scoreboards, while keeping historical receipts even
+    if the PR's updatedAt has not changed. No timeline-cache invalidation is needed.
+    """
+    now = now or datetime.now(timezone.utc)
+    scanned = parse_dt((previous or {}).get("bors_merges_scanned_at"))
+    since = scanned - SCOREBOARD_OVERLAP if scanned else None
+    merges = dict((previous or {}).get("bors_merges") or {}) if since else {}
+    query = "per_page=100&sort=created&direction=desc"
+    if since:
+        query += f"&since={iso_z(since)}"
+    print("scanning bors merge receipts" + (f" since {iso_z(since)}" if since
+          else " across the full historical comment archive"), file=sys.stderr)
+    raw = run_gh([
+        "api", "--paginate", f"repos/{repo}/issues/comments?{query}", "--jq",
+        '.[] | select(.user.type == "Bot" and .user.login == '
+        + json.dumps(BORS_LOGIN) + ') | select((.body // "") | startswith('
+        + json.dumps(BORS_SUCCESS) + '))'
+        + ' | {number: (.issue_url | split("/") | last), created_at}',
+    ])
+    for line in raw.splitlines():
+        receipt = json.loads(line)
+        number, stamp = str(int(receipt["number"])), receipt["created_at"]
+        if parse_dt(stamp) is None:
+            raise ValueError(f"invalid bors merge time for #{number}")
+        # Repeated notifications still describe one merge, at its first success.
+        if number not in merges or parse_dt(stamp) < parse_dt(merges[number]):
+            merges[number] = stamp
+    return merges, iso_z(now)
+
+
+def apply_bors_merges(prs: list[dict], merges: dict[str, str]) -> None:
+    """Normalize bors closures before any chart or reviewer-trust calculation."""
+    for pr in prs:
+        stamp = merges.get(str(pr["number"]))
+        if not pr.get("merged_at") and pr.get("state") == "CLOSED" and stamp:
+            created = parse_dt(pr.get("created_at"))
+            if created and parse_dt(stamp) < created:
+                raise ValueError(f"bors merge predates creation of PR #{pr['number']}")
+            pr.update(merged_at=stamp, state="MERGED", merge_source="bors")
+
+
 def fetch_snapshot(repo: str, previous: dict | None = None) -> dict:
     prs = fetch_prs(repo, previous)
+    bors_merges, bors_scanned_at = fetch_bors_merges(repo, previous)
+    apply_bors_merges(prs, bors_merges)
+    # Reconsider old rejected scoreboards now that bors-only contributors are trusted.
+    scoreboard_previous = previous if (previous or {}).get("bors_merges_scanned_at") else None
     trusted_logins = {
         pr["author"] for pr in prs
         if pr.get("merged_at") and pr.get("author") != "unknown"
     }
     scoreboards, rejected, scanned_at = fetch_scoreboards(
-        repo, {pr["number"] for pr in prs}, trusted_logins, previous,
+        repo, {pr["number"] for pr in prs}, trusted_logins, scoreboard_previous,
     )
     return {
         # 2: pull requests carry `updated_at` and scoreboards carry `id`, both so that the next
@@ -649,6 +710,8 @@ def fetch_snapshot(repo: str, previous: dict | None = None) -> dict:
         "repo": repo,
         "fetched_at": iso_z(datetime.now(timezone.utc)),
         "prs": prs,
+        "bors_merges": bors_merges,
+        "bors_merges_scanned_at": bors_scanned_at,
         "scoreboards": scoreboards,
         # Per comment, so that the next incremental scan can revise a single verdict. The
         # published counts below are derived from it and stay exact across incremental runs.
@@ -1552,6 +1615,7 @@ def generate(
             "review_cycle": cycles["definition"],
             "review": "one canonical <!--tauceti-scoreboard--> comment on a pull request of this repository, identified by the tauceti-meta:v1 block naming that PR, whose posting login also authors a merged PR in the fetched snapshot",
             "active_author": "distinct PR author opening a PR in the trailing seven-day window",
+            "merge": "GitHub mergedAt, or the installed bors app success receipt for a closed PR merged into main",
             "merge_latency": "PR creation timestamp to merge timestamp",
         },
         "queue": queue,

@@ -95,9 +95,19 @@ the integral form on the carrier, not from the rational form on the ambient spac
 noncomputable def localIntegralForm : LinearMap.BilinForm ℤ_[p] (L.LocalCarrier p) :=
   L.integralForm.baseChange ℤ_[p]
 
+/-- The localized integral form is the base change of the integral carrier form. -/
+theorem localIntegralForm_def :
+    L.localIntegralForm p = L.integralForm.baseChange ℤ_[p] :=
+  (rfl)
+
 /-- The rational form of an integral lattice, base-changed from `ℚ` to `ℚ_p`. -/
 noncomputable def completedRationalForm : LinearMap.BilinForm ℚ_[p] (ℚ_[p] ⊗[ℚ] V) :=
   L.form.baseChange ℚ_[p]
+
+/-- The completed rational form is the base change of the ambient rational form. -/
+theorem completedRationalForm_def :
+    L.completedRationalForm p = L.form.baseChange ℚ_[p] :=
+  (rfl)
 
 /-- The localized integral form on pure tensors. -/
 @[simp]

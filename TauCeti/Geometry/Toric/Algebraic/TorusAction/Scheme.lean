@@ -58,6 +58,18 @@ theorem pullbackSpecIso_inv_comp_affineToricSchemeAction :
         Spec.map (CommRingCat.ofHom (affineCoordinateRingCoaction hi σ).toRingHom) := by
   simp [affineToricSchemeAction]
 
+/-- The affine torus action is a morphism over `Spec ℂ`: it commutes with the projections of its
+source and target to `Spec ℂ`. -/
+@[reassoc]
+theorem affineToricSchemeAction_comp_specMap_algebraMap :
+    affineToricSchemeAction hi σ ≫
+        Spec.map (CommRingCat.ofHom (algebraMap ℂ (affineCoordinateRing hi σ))) =
+      pullback.snd _ _ ≫
+        Spec.map (CommRingCat.ofHom (algebraMap ℂ (affineCoordinateRing hi σ))) := by
+  rw [← cancel_epi (pullbackSpecIso ℂ _ _).inv]
+  simp [← Spec.map_comp, ← CommRingCat.ofHom_comp,
+    (affineCoordinateRingCoaction hi σ).comp_algebraMap]
+
 /-- For the zero cone, the affine action is multiplication of the dense torus scheme. -/
 theorem affineToricSchemeAction_bot :
     affineToricSchemeAction hi (⊥ : PointedCone ℝ V) =

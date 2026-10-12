@@ -61,8 +61,6 @@ open scoped commutatorElement
 
 namespace TauCeti.CommHopfAlgCat
 
-noncomputable section
-
 -- The subgroup-closure proof adapts the in-repository proof of
 -- `derivedDefiningIdeal_eq_vanishingIdeal_commutator` previously in this module.
 
@@ -81,10 +79,8 @@ private theorem map_vanishingIdeal_commutator_le_derivedDefiningIdeal
   let lift (g : S) := liftQuotientPoint A I (CommAlgCat.of k k) g.val
     (fun x hx ↦ (HopfIdeal.mem_vanishingIdeal S x).mp hx g)
   have hsep := HopfIdeal.eq_zero_of_forall_liftQuotientPoint_apply_eq_zero S
-  rw [le_derivedDefiningIdeal_iff]
-  intro x hx
-  obtain ⟨x, hmem, rfl⟩ :=
-    (HopfIdeal.mem_map_iff_of_surjective (mkQuotient_surjective A I)).mp hx
+  rw [le_derivedDefiningIdeal_iff, HopfIdeal.map_toIdeal, Ideal.map_le_iff_le_comap]
+  intro x hmem
   apply RingHom.mem_ker.mpr
   apply tensor_eq_zero_of_forall_productMap_eq_zero
     (fun g : S ↦ (lift g).ofConv) (fun g : S ↦ (lift g).ofConv) hsep hsep
@@ -204,7 +200,5 @@ theorem derivedSeries_points_derived_eq_bot {n : ℕ}
     derivedSeries (WithConv (quotient (_root_.CommHopfAlgCat.of k H)
       (derivedDefiningIdeal (R := k) H) →ₐ[k] k)) n = ⊥ :=
   derivedSeries_points_derived_eq_bot_of_dense_points HopfIdeal.vanishingIdeal_top hn
-
-end
 
 end TauCeti.CommHopfAlgCat

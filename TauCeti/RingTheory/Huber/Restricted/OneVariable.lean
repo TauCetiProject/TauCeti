@@ -33,6 +33,8 @@ ultrametric hypothesis is needed only for the target ring: Mathlib defines
   to `Unit` identifies the Huber restrictedness predicate with Mathlib's radius-one one.
 * `TauCeti.Huber.restrictedMvPowerSeriesSubringOneEquiv`: the two uncompleted one-variable
   restricted-series models are equivalent as rings.
+* `TauCeti.Huber.weightedRestrictedSubringOneEquiv`: the same equivalence for the trivially
+  weighted ring `R⟨T⟩`, the coordinate ring of the closed unit disc.
 * `TauCeti.Huber.restrictedMvPowerSeriesCompletionOneEquiv`: over a complete base, the completed
   Huber model is equivalent to Mathlib's univariate restricted-series ring.
 
@@ -109,6 +111,56 @@ theorem coe_restrictedMvPowerSeriesSubringOneEquiv_symm
       MvPowerSeries.renameEquiv R finOneEquiv.symm (f : PowerSeries R) := by
   simp [restrictedMvPowerSeriesSubringOneEquiv]
 
+/-- **The trivially weighted one-variable restricted-series ring is Mathlib's.** The ring
+`R⟨T⟩ = weightedRestrictedSubring (fun _ : Fin 1 ↦ {1}) _`, the coordinate ring of the closed unit
+disc in the Huber development, is the univariate ring of power series restricted at the unit
+radius, after renaming its variable from `Fin 1` to `Unit`. -/
+noncomputable def weightedRestrictedSubringOneEquiv :
+    weightedRestrictedSubring (fun _ : Fin 1 ↦ ({1} : Set R)) isWeightFamily_one_weight ≃+*
+      PowerSeries.IsRestricted.subring (R := R) 1 :=
+  (RingEquiv.subringCongr (weightedRestrictedSubring_one_weight (k := 1) (A := R))).trans
+    restrictedMvPowerSeriesSubringOneEquiv
+
+/-- The trivially weighted one-variable equivalence is variable renaming on underlying power
+series. It is not a `simp` lemma: on constants and on the variable, where `simp` should land on
+Mathlib's univariate `PowerSeries.C` and `PowerSeries.X`, use
+`coe_weightedRestrictedSubringOneEquiv_weightedC` and
+`coe_weightedRestrictedSubringOneEquiv_weightedX`. -/
+theorem coe_weightedRestrictedSubringOneEquiv
+    (f : weightedRestrictedSubring (fun _ : Fin 1 ↦ ({1} : Set R)) isWeightFamily_one_weight) :
+    ((weightedRestrictedSubringOneEquiv f : PowerSeries.IsRestricted.subring (R := R) 1) :
+        PowerSeries R) =
+      MvPowerSeries.renameEquiv R finOneEquiv (f : MvPowerSeries (Fin 1) R) := by
+  simp [weightedRestrictedSubringOneEquiv]
+
+/-- The inverse trivially weighted one-variable equivalence renames the sole variable back from
+`Unit` to `Fin 1` on underlying power series. -/
+@[simp]
+theorem coe_weightedRestrictedSubringOneEquiv_symm
+    (f : PowerSeries.IsRestricted.subring (R := R) 1) :
+    ((weightedRestrictedSubringOneEquiv.symm f :
+        weightedRestrictedSubring (fun _ : Fin 1 ↦ ({1} : Set R)) isWeightFamily_one_weight) :
+        MvPowerSeries (Fin 1) R) =
+      MvPowerSeries.renameEquiv R finOneEquiv.symm (f : PowerSeries R) := by
+  simp [weightedRestrictedSubringOneEquiv]
+
+/-- The trivially weighted one-variable equivalence sends the constant `a` to the constant
+power series `a`. -/
+@[simp]
+theorem coe_weightedRestrictedSubringOneEquiv_weightedC (a : R) :
+    ((weightedRestrictedSubringOneEquiv (weightedC _ isWeightFamily_one_weight a) :
+        PowerSeries.IsRestricted.subring (R := R) 1) : PowerSeries R) = PowerSeries.C a := by
+  simp [coe_weightedRestrictedSubringOneEquiv, PowerSeries.C_apply]
+
+/-- The trivially weighted one-variable equivalence sends the variable `T` to the variable of
+Mathlib's univariate power series. -/
+@[simp]
+theorem coe_weightedRestrictedSubringOneEquiv_weightedX :
+    ((weightedRestrictedSubringOneEquiv (weightedX (fun _ : Fin 1 ↦ ({1} : Set R))
+        isWeightFamily_one_weight 0) : PowerSeries.IsRestricted.subring (R := R) 1) :
+        PowerSeries R) = PowerSeries.X := by
+  simp [coe_weightedRestrictedSubringOneEquiv, PowerSeries.X_apply]
+
 end Comparison
 
 section Complete
@@ -122,10 +174,7 @@ trivial-weight comparison and variable renaming then give the displayed ring equ
 noncomputable def restrictedMvPowerSeriesCompletionOneEquiv :
     restrictedMvPowerSeriesCompletion 1 R ≃+*
       PowerSeries.IsRestricted.subring (R := R) 1 :=
-  (restrictedMvPowerSeriesCompletionEquiv 1 R).trans <|
-    (RingEquiv.subringCongr
-      (weightedRestrictedSubring_one_weight (k := 1) (A := R))).trans
-        restrictedMvPowerSeriesSubringOneEquiv
+  (restrictedMvPowerSeriesCompletionEquiv 1 R).trans weightedRestrictedSubringOneEquiv
 
 /-- The completed comparison sends a restricted series in the canonical dense subring to the
 same series, with its sole variable renamed from `Fin 1` to `Unit`. -/
@@ -134,10 +183,7 @@ theorem restrictedMvPowerSeriesCompletionOneEquiv_coe
     (f : weightedRestrictedSubring (fun _ : Fin 1 ↦ ({1} : Set R))
       isWeightFamily_one_weight) :
     restrictedMvPowerSeriesCompletionOneEquiv
-        (f : restrictedMvPowerSeriesCompletion 1 R) =
-      restrictedMvPowerSeriesSubringOneEquiv
-        (RingEquiv.subringCongr
-          (weightedRestrictedSubring_one_weight (k := 1) (A := R)) f) := by
+        (f : restrictedMvPowerSeriesCompletion 1 R) = weightedRestrictedSubringOneEquiv f := by
   simp [restrictedMvPowerSeriesCompletionOneEquiv, RingEquiv.trans_apply]
 
 /-- The inverse completed comparison renames the sole variable back from `Unit` to `Fin 1` and
@@ -146,9 +192,7 @@ then includes the resulting restricted series in the completion. -/
 theorem restrictedMvPowerSeriesCompletionOneEquiv_symm_apply
     (f : PowerSeries.IsRestricted.subring (R := R) 1) :
     restrictedMvPowerSeriesCompletionOneEquiv.symm f =
-      (((RingEquiv.subringCongr
-          (weightedRestrictedSubring_one_weight (k := 1) (A := R))).symm
-        (restrictedMvPowerSeriesSubringOneEquiv.symm f) :
+      ((weightedRestrictedSubringOneEquiv.symm f :
           weightedRestrictedSubring (fun _ : Fin 1 ↦ ({1} : Set R))
             isWeightFamily_one_weight) : restrictedMvPowerSeriesCompletion 1 R) := by
   simp [restrictedMvPowerSeriesCompletionOneEquiv, RingEquiv.symm_trans_apply]

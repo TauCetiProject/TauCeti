@@ -392,7 +392,7 @@ theorem taylor_ofLetter (𝒜 : AInfinityAlgebra R A) (x : A) :
       (fun _ ↦ p) (fun _ ↦ y) fun _ _ ↦ hy
     rw [ReducedTensorWords.of_tprod_eq_subword R Nat.one_pos,
       ReducedTensorWords.subword_one R A _ Nat.one_pos] at hs
-    rw [LinearMap.comp_apply, hs, AInfinity.evalNat_suspend, _root_.MultilinearMap.suspExp_one,
+    rw [LinearMap.comp_apply, hs, MultilinearMap.evalNat_suspend, _root_.MultilinearMap.suspExp_one,
       negOnePowCast_zero, one_smul, MultilinearMap.evalNat_def, differential_apply]
     congr 1
     funext i

@@ -51,6 +51,8 @@ free of rank `n²`, which rests on the finiteness and flatness of `[n]`.
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.isClosedImmersion_torsionι_left`: `E[n] ⟶ E` is a
   closed immersion; consequently `E[n]` is proper over `S`
   (`TauCeti.AlgebraicGeometry.EllipticCurveGeom.isProper_torsion_hom`).
+* `TauCeti.AlgebraicGeometry.EllipticCurveGeom.locallyOfFinitePresentation_torsion_hom`: `E[n]` is
+  locally of finite presentation over `S`.
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.isPullback_torsionMap`: the `n`-torsion commutes
   with base change.
 
@@ -199,6 +201,12 @@ instance isClosedImmersion_torsionι_left : IsClosedImmersion (E.torsionι n).le
 instance isProper_torsion_hom : IsProper (E.torsion n).X.hom := by
   rw [← torsionι_left_structureMap]
   infer_instance
+
+/-- **The `n`-torsion is locally of finite presentation** over `S`: `E[n]` is the base change of
+`[n]` along the zero section. -/
+instance locallyOfFinitePresentation_torsion_hom :
+    LocallyOfFinitePresentation (E.torsion n).X.hom :=
+  MorphismProperty.of_isPullback (E.isPullback_torsion n) inferInstance
 
 /-! ### Base change -/
 
