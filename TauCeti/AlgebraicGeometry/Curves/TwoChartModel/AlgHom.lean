@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.Birational.RationalMap
+public import TauCeti.AlgebraicGeometry.Birational.AlgHom
 public import TauCeti.AlgebraicGeometry.Curves.TwoChartModel.Map
 public import TauCeti.AlgebraicGeometry.Curves.TwoChartModel.Proper
 
@@ -22,13 +22,13 @@ Every `k`-embedding `φ : F →ₐ[k] F'` gives a `k`-morphism `Spec F' ⟶ X` f
 `X'`, through the generic point of `X`. The local rings of `X'` are valuation rings
 (`TauCeti.AlgebraicGeometry.twoChartModel.valuationRing_stalk`) and `X` is proper over `k`, so this
 morphism extends uniquely to a `k`-morphism `homOfAlgHom φ : X' ⟶ X`
-(`AlgebraicGeometry.Scheme.homOfFunctionField`). Its pullback of rational functions is `φ`, and
-since `X` is separated, a dominant `k`-morphism is determined by its pullback of rational functions:
-the construction is a bijection, and it is functorial. In particular a `k`-isomorphism `F ≃ F'`
-gives an isomorphism of the models, so **the two-chart model does not depend on the choice of the
-transcendental function**: `twoChartModel hF hx ≅ twoChartModel hF hy` for any two transcendental
-`x, y ∈ F`. When the embedding carries `x` to `x'`, the morphism is the one glued from the chart
-maps (`TauCeti.AlgebraicGeometry.twoChartModel.map`).
+(`AlgebraicGeometry.Scheme.homOfFunctionFieldAlgHom`). Its pullback of rational functions is `φ`,
+and since `X` is separated, a dominant `k`-morphism is determined by its pullback of rational
+functions: the construction is a bijection, and it is functorial. In particular a `k`-isomorphism
+`F ≃ F'` gives an isomorphism of the models, so **the two-chart model does not depend on the
+choice of the transcendental function**: `twoChartModel hF hx ≅ twoChartModel hF hy` for any two
+transcendental `x, y ∈ F`. When the embedding carries `x` to `x'`, the morphism is the one glued
+from the chart maps (`TauCeti.AlgebraicGeometry.twoChartModel.map`).
 
 This is the morphism half of the anti-equivalence between function fields of one variable and
 regular projective curves.
@@ -80,18 +80,6 @@ private noncomputable def functionFieldAlgHom (hxt : Transcendental k x)
     (twoChartModel hF hx).functionField →ₐ[k] (twoChartModel hF' hx').functionField :=
   ((functionFieldEquiv hx't).symm.toAlgHom.comp φ).comp (functionFieldEquiv hxt).toAlgHom
 
-/-- The morphism `Spec k(X') ⟶ X` through which `φ : F →ₐ[k] F'` moves the generic point of `X'`
-to the generic point of `X` is a morphism over `k`. -/
-private theorem specMap_functionFieldAlgHom_fromSpecStalk_comp_over (hxt : Transcendental k x)
-    (hx't : Transcendental k x') (φ : F →ₐ[k] F') :
-    (Spec.map (CommRingCat.ofHom (functionFieldAlgHom hxt hx't φ).toRingHom) ≫
-        (twoChartModel hF hx).fromSpecStalk _) ≫ twoChartModel hF hx ↘ Spec (.of k) =
-      (twoChartModel hF' hx').fromSpecStalk _ ≫ twoChartModel hF' hx' ↘ Spec (.of k) := by
-  rw [Category.assoc, Scheme.fromSpecStalk_genericPoint_comp_over,
-    Scheme.fromSpecStalk_genericPoint_comp_over, ← Spec.map_comp, ← CommRingCat.ofHom_comp]
-  congr 2
-  exact (functionFieldAlgHom hxt hx't φ).comp_algebraMap
-
 /-- **The morphism of two-chart models induced by a `k`-embedding `φ : F →ₐ[k] F'`** of function
 fields, for transcendental `x ∈ F` and `x' ∈ F'`: the unique dominant `k`-morphism
 `twoChartModel hF' hx' ⟶ twoChartModel hF hx` whose pullback of rational functions is `φ`
@@ -99,39 +87,29 @@ fields, for transcendental `x ∈ F` and `x' ∈ F'`: the unique dominant `k`-mo
 noncomputable def homOfAlgHom (hxt : Transcendental k x) (hx't : Transcendental k x')
     (φ : F →ₐ[k] F') : twoChartModel hF' hx' ⟶ twoChartModel hF hx :=
   have := isProper (hF := hF) (hx := hx) hxt
-  Scheme.homOfFunctionField (valuationRing_stalk hx't)
-    (Spec.map (CommRingCat.ofHom (functionFieldAlgHom hxt hx't φ).toRingHom) ≫
-      (twoChartModel hF hx).fromSpecStalk _)
-    (specMap_functionFieldAlgHom_fromSpecStalk_comp_over hF hF' hx hx' hxt hx't φ)
+  Scheme.homOfFunctionFieldAlgHom (valuationRing_stalk hx't) (functionFieldAlgHom hxt hx't φ)
 
 variable (φ : F →ₐ[k] F')
-
-/-- On the generic point, `homOfAlgHom φ` is `Spec` of the map of function fields given by `φ`. -/
-private theorem fromSpecStalk_homOfAlgHom :
-    (twoChartModel hF' hx').fromSpecStalk _ ≫ homOfAlgHom hF hF' hx hx' hxt hx't φ =
-      Spec.map (CommRingCat.ofHom (functionFieldAlgHom hxt hx't φ).toRingHom) ≫
-        (twoChartModel hF hx).fromSpecStalk _ := by
-  have := isProper (hF := hF) (hx := hx) hxt
-  exact Scheme.fromSpecStalk_homOfFunctionField _ _ _
 
 /-- `homOfAlgHom φ` is a morphism over `k`. -/
 instance : (homOfAlgHom hF hF' hx hx' hxt hx't φ).IsOver (Spec (.of k)) := by
   have := isProper (hF := hF) (hx := hx) hxt
   rw [homOfAlgHom]
-  -- Instance search does not unify the unfolded morphism with the instance's conclusion, so the
-  -- instance is applied by name.
-  exact Scheme.isOver_homOfFunctionField _ _ _
+  infer_instance
 
 /-- `homOfAlgHom φ` is dominant: it sends the generic point to the generic point. -/
-instance : IsDominant (homOfAlgHom hF hF' hx hx' hxt hx't φ) :=
-  Scheme.Hom.isDominant_of_SpecMap_fromSpecStalk _ _ (fromSpecStalk_homOfAlgHom ..).symm
+instance : IsDominant (homOfAlgHom hF hF' hx hx' hxt hx't φ) := by
+  have := isProper (hF := hF) (hx := hx) hxt
+  rw [homOfAlgHom]
+  infer_instance
 
 /-- The pullback of rational functions along `homOfAlgHom φ` is the map of function fields given by
 `φ`. -/
 private theorem functionFieldMap_homOfAlgHom :
     (homOfAlgHom hF hF' hx hx' hxt hx't φ).functionFieldMap =
-      CommRingCat.ofHom (functionFieldAlgHom hxt hx't φ).toRingHom :=
-  ((Scheme.Hom.eq_functionFieldMap_iff _ _).mpr (fromSpecStalk_homOfAlgHom ..).symm).symm
+      CommRingCat.ofHom (functionFieldAlgHom hxt hx't φ).toRingHom := by
+  have := isProper (hF := hF) (hx := hx) hxt
+  exact Scheme.functionFieldMap_homOfFunctionFieldAlgHom ..
 
 /-- **The pullback of rational functions along `homOfAlgHom φ` is `φ`**: under the identifications
 `k(X) ≃ F` and `k(X') ≃ F'` of the function fields of the two models, the pullback along
