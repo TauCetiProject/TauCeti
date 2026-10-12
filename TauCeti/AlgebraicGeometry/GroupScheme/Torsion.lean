@@ -29,6 +29,13 @@ The argument is the splitting of an object of a preadditive category killed by a
 integers (`CategoryTheory.Limits.BinaryBicone.isBilimitOfCoprimeKernelForks`), applied in the
 preadditive category `CommGrp (Over S)`.
 
+The definition of `G[n]` and its points API generalize the `n`-torsion of an elliptic curve in
+`TauCeti/AlgebraicGeometry/EllipticCurve/Scheme/Geom/Torsion.lean`
+(`TauCeti.AlgebraicGeometry.EllipticCurveGeom.torsion`, identified with a kernel by
+`TauCeti.AlgebraicGeometry.EllipticCurveGeom.torsion_eq_kernel`, together with its `torsionι`,
+`torsionLift`, `torsionPointsMulEquiv`, and `torsionMap`) from elliptic curves to arbitrary
+commutative group schemes.
+
 ## Main definitions
 
 * `TauCeti.GroupScheme.torsion G n`: the `n`-torsion `G[n]`, a group object of `Over S`.
@@ -159,18 +166,17 @@ variable (G n Z)
 /-- **The points of the `n`-torsion.** The points of `G[n]` with values in `Z` form the `n`-torsion
 subgroup of the commutative group of points of `G` with values in `Z`. -/
 noncomputable def torsionPointsMulEquiv :
-    (Z ⟶ (torsion G n).X) ≃* (zpowGroupHom n : (Z ⟶ G.X) →* (Z ⟶ G.X)).ker where
-  toFun y := ⟨y ≫ torsionι G n, by simp [← GrpObj.comp_zpow]⟩
-  invFun x := torsionLift x.1 x.2
-  left_inv y := torsion_hom_ext G (torsionLift_ι _ _)
-  right_inv x := Subtype.ext (torsionLift_ι _ _)
-  map_mul' y y' := Subtype.ext (MonObj.mul_comp _ _ _)
+    (Z ⟶ (torsion G n).X) ≃* (zpowGroupHom n : (Z ⟶ G.X) →* (Z ⟶ G.X)).ker :=
+  (kernelPointsMulEquiv _ Z).trans <| MulEquiv.subgroupCongr <|
+    congrArg MonoidHom.ker <| MonoidHom.ext fun (x : Z ⟶ G.X) ↦
+      (congrArg (x ≫ ·) (CommGrp.intCast_hom_hom_hom G n)).trans <|
+        (GrpObj.comp_zpow x (𝟙 G.X) n).trans (congrArg (· ^ n) (Category.comp_id x))
 
 /-- A point of the `n`-torsion corresponds to its image in `G`. -/
 @[simp]
 theorem coe_torsionPointsMulEquiv_apply (y : Z ⟶ (torsion G n).X) :
     (torsionPointsMulEquiv G n Z y : Z ⟶ G.X) = y ≫ torsionι G n :=
-  (rfl)
+  coe_kernelPointsMulEquiv_apply _ Z y
 
 /-- The point of the `n`-torsion corresponding to a point `x` of `G` killed by `n` maps to `x` in
 `G`. -/
@@ -178,7 +184,7 @@ theorem coe_torsionPointsMulEquiv_apply (y : Z ⟶ (torsion G n).X) :
 theorem torsionPointsMulEquiv_symm_apply_torsionι
     (x : (zpowGroupHom n : (Z ⟶ G.X) →* (Z ⟶ G.X)).ker) :
     (torsionPointsMulEquiv G n Z).symm x ≫ torsionι G n = x :=
-  torsionLift_ι x.1 x.2
+  kernelPointsMulEquiv_symm_apply_ι _ Z _
 
 variable {n Z}
 
@@ -186,21 +192,29 @@ variable {n Z}
 
 variable {G} {H K : CommGrp (Over S)}
 
+/-- A homomorphism of commutative group schemes commutes with multiplication by `n`. -/
+private theorem forget₂Grp_map_intCast_comp (f : G ⟶ H) (n : ℤ) :
+    (CommGrp.forget₂Grp (Over S)).map (n : End G) ≫ (CommGrp.forget₂Grp (Over S)).map f =
+      (CommGrp.forget₂Grp (Over S)).map f ≫ (CommGrp.forget₂Grp (Over S)).map (n : End H) := by
+  rw [← Functor.map_comp, ← Functor.map_comp]
+  refine congrArg _ (CommGrp.hom_ext _ _ ?_)
+  simp [GrpObj.zpow_comp, GrpObj.comp_zpow]
+
 /-- The homomorphism `G[n] ⟶ H[n]` induced by a homomorphism `f : G ⟶ H` of commutative group
 schemes over `S`, the restriction of `f` to the `n`-torsion. -/
 noncomputable def torsionMap (f : G ⟶ H) (n : ℤ) : (torsion G n).X ⟶ (torsion H n).X :=
-  torsionLift (torsionι G n ≫ f.hom.hom.hom)
-    (by rw [← GrpObj.zpow_comp, torsionι_zpow, MonObj.one_comp])
+  (kernel.map _ _ _ _ (forget₂Grp_map_intCast_comp f n)).hom.hom
 
 /-- The map induced on the `n`-torsion by `f` is the restriction of `f`. -/
 @[reassoc (attr := simp)]
 theorem torsionMap_ι (f : G ⟶ H) (n : ℤ) :
     torsionMap f n ≫ torsionι H n = torsionι G n ≫ f.hom.hom.hom :=
-  torsionLift_ι _ _
+  congrArg (fun g ↦ g.hom.hom) (kernel.lift_ι _ _ _ :
+    kernel.map _ _ _ _ (forget₂Grp_map_intCast_comp f n) ≫ kernel.ι _ = _)
 
 /-- The map induced on the `n`-torsion is a homomorphism of group schemes over `S`. -/
 instance isMonHom_torsionMap (f : G ⟶ H) (n : ℤ) : IsMonHom (torsionMap f n) :=
-  isMonHom_torsionLift _ _
+  (kernel.map _ _ _ _ (forget₂Grp_map_intCast_comp f n)).hom.isMonHom_hom
 
 /-- The identity of `G` induces the identity of `G[n]`. -/
 @[simp]
