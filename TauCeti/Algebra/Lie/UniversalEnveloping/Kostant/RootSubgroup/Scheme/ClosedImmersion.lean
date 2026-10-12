@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.GroupScheme.ClosedSubgroup
+public import TauCeti.AlgebraicGeometry.GroupScheme.ClosedSubgroup.Basic
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.Basic
+public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Torus.Basic
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Transvection
 import TauCeti.LinearAlgebra.SymmetricAlgebra.Basic
 
@@ -172,6 +173,16 @@ variable {η : Type*} (b : Module.Basis η ℤ M)
   b.toMatrix fun s ↦
     ⟨ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i)) (b s),
       hM _ (rootVector_mem_kostantForm e h i) _ (b s).2⟩
+
+/-- The represented integral root matrix is the matrix of its lattice endomorphism. -/
+theorem kostantRootGeneratorIntMatrix_eq_toMatrix [Fintype η] [DecidableEq η] :
+    kostantRootGeneratorIntMatrix e h ρ M hM i b =
+      LinearMap.toMatrix b b (kostantRootOperator e h ρ M hM i) := by
+  ext r s
+  rw [kostantRootGeneratorIntMatrix, Module.Basis.toMatrix_apply, LinearMap.toMatrix_apply]
+  congr 2
+  apply Subtype.ext
+  rw [coe_kostantRootOperator_apply]
 
 /-- A represented root generator acts on each lattice basis vector by its integral matrix column. -/
 theorem rep_rootGenerator_basis_eq_sum [Fintype η] (i : ι) (b : Module.Basis η ℤ M) (s : η) :

@@ -56,6 +56,14 @@ lemma alternatizeBilinCLM_apply (B : E →L[𝕜] E →L[𝕜] F) (v : Fin 2 →
   simp [alternatizeBilinCLM, ContinuousAlternatingMap.alternatizeUncurryFin_apply,
     Fin.sum_univ_two, Fin.removeNth, Fin.succAbove, sub_eq_add_neg]
 
+/-- Alternating the one-form induced by a bilinear map is its bilinear alternatization. -/
+lemma alternatizeUncurryFin_ofSubsingletonLIE_comp (B : E →L[𝕜] E →L[𝕜] F) :
+    ContinuousAlternatingMap.alternatizeUncurryFin
+        ((ContinuousAlternatingMap.ofSubsingletonLIE (𝕜 := 𝕜) (E := E) (F := F)
+          (0 : Fin 1)).toContinuousLinearEquiv.toContinuousLinearMap.comp B) =
+      alternatizeBilinCLM 𝕜 E F B := by
+  rfl
+
 end ContinuousAlternatingMap
 
 end TauCeti

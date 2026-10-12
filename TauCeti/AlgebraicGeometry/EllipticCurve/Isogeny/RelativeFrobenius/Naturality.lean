@@ -95,7 +95,8 @@ theorem relativeFrobeniusIsogeny_map {K : Type*} [Field K]
 /-- **Relative Frobenius has degree `p` after any base change**: its base change is relative
 Frobenius of the base-changed curve, up to the identification of target curves in
 `relativeFrobeniusIsogeny_map`, and transport along that identification keeps the degree. -/
-@[simp]
+-- Compute this degree directly before expanding the degree of a base change.
+@[simp 1100]
 theorem degree_relativeFrobeniusIsogeny_map {K : Type*} [Field K]
     (W : WeierstrassCurve.Affine F) (f : F →+* K) :
     ((relativeFrobeniusIsogeny p W).map f).degree = p := by

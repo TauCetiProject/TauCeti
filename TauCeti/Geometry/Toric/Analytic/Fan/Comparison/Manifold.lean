@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Instances.Comap
-public import TauCeti.Geometry.Manifold.LocalDiffeomorph
+public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
 public import TauCeti.Geometry.Toric.Analytic.Fan.Comparison.Naturality
 public import TauCeti.Geometry.Toric.Analytic.Fan.Map.Holomorphic
 

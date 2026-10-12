@@ -269,20 +269,13 @@ theorem exists_congruence_of_symmetric_family
   have hR0 : R 0 = 1 := by simp [R, hC0]
   have hten : Filter.Tendsto C (𝓝 (0 : E)) (𝓝 1) :=
     hC0 ▸ hCsmooth.continuous.continuousAt
-  have htenR : Filter.Tendsto R (𝓝 (0 : E)) (𝓝 1) := by
-    simpa [R, Function.comp_def] using
-      (continuousAt_sqrtNearOne (A := E →L[ℝ] E)).tendsto.comp hten
-  have htenA : Filter.Tendsto (fun v ↦ adj (R v)) (𝓝 (0 : E)) (𝓝 1) := by
-    simpa [adj_one, Function.comp_def] using (adj.continuous.tendsto 1).comp htenR
   have e1 := hten.eventually (eventually_mul_self_sqrtNearOne (A := E →L[ℝ] E))
-  have e2 := htenA.eventually (eventually_sqrtNearOne_mul_self (A := E →L[ℝ] E))
+  have e2 := hten.eventually
+    (eventually_sqrtNearOne_fixed adj.continuous.continuousAt adj_one adj_mul)
   have hspec : ∀ᶠ v in 𝓝 (0 : E), ∀ w w', B₀ (R v w) (R v w') = B v w w' := by
     filter_upwards [e1, e2] with v h1 h2
-    have h3 : adj (sqrtNearOne (E →L[ℝ] E) (C v)) * adj (sqrtNearOne (E →L[ℝ] E) (C v)) = C v := by
-      rw [← adj_mul, h1, hCadj]
-    have h4 : sqrtNearOne (E →L[ℝ] E) (C v) = adj (sqrtNearOne (E →L[ℝ] E) (C v)) := by
-      rw [h3] at h2
-      exact h2
+    have h4 : sqrtNearOne (E →L[ℝ] E) (C v) = adj (sqrtNearOne (E →L[ℝ] E) (C v)) :=
+      (h2 (hCadj v)).symm
     have hself : ∀ w w' : E, B₀ (sqrtNearOne (E →L[ℝ] E) (C v) w) w'
         = B₀ w (sqrtNearOne (E →L[ℝ] E) (C v) w') := by
       intro w w'

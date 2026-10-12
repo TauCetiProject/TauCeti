@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.FieldTheory.Perfect
 public import Mathlib.RingTheory.Localization.Module
 public import TauCeti.Algebra.Polynomial.CommonXPower
 public import TauCeti.FieldTheory.FunctionField.Basic
@@ -42,6 +43,8 @@ a genuine positive natural number.
 * `TauCeti.Place.degree_eq_one_of_isAlgClosed_of_isFunctionField`: over an algebraically closed
   field of constants every place of an algebraic function field is rational (Stichtenoth,
   Remark 1.1.17).
+* `TauCeti.Place.perfectField_residueField`: over a perfect field of constants every residue
+  field is perfect.
 
 The auxiliary `TauCeti.Place.residue_aeval_of_residue_eq_zero`, that a polynomial expression in
 an element of the maximal ideal reduces to the constant term of the polynomial, is the residue
@@ -231,6 +234,14 @@ theorem degree_eq_one_of_isAlgClosed_of_isFunctionField [IsAlgClosed k]
     (hF : IsFunctionField k F) : P.degree = 1 := by
   let _ := P.finiteDimensional_residueField hF
   exact P.degree_eq_one_of_isAlgClosed_of_isIntegral
+
+variable (P) in
+/-- Over a perfect field of constants the residue field of every place of an algebraic function
+field is perfect, being a finite extension of the constants. -/
+theorem perfectField_residueField [PerfectField k] (hF : IsFunctionField k F) :
+    PerfectField P.ResidueField :=
+  have := P.finiteDimensional_residueField hF
+  Algebra.IsAlgebraic.perfectField k
 
 end Place
 

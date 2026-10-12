@@ -61,9 +61,9 @@ theorem exists_forall_mem_ball_exists_eq_forall_mem_Ioo_hasDerivAt_and_mem [Comp
     have : (0 : ℝ) < r₀ := hr₀
     linarith
   -- shrink the ball so that it sits inside `u`, and shrink the time accordingly
-  set ρ' : ℝ≥0 := ⟨ρ / 2, by positivity⟩ with hρ'
+  set ρ' : ℝ≥0 := ⟨ρ / 2, by positivity⟩
   have hρ'pos : 0 < ρ' := by rw [← NNReal.coe_pos]; exact half_pos hρ
-  set a' : ℝ≥0 := min a ρ' with ha'
+  set a' : ℝ≥0 := min a ρ'
   have ha'pos : 0 < a' := lt_min (by exact_mod_cast hapos) hρ'pos
   have ha'u : closedBall c (a' : ℝ) ⊆ u := by
     refine subset_trans (closedBall_subset_ball ?_) hρu

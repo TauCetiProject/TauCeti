@@ -155,13 +155,13 @@ theorem mdifferentiableAt_of_comp_quotientMk {E' : Type*} [NormedAddCommGroup E'
     {M' : Type*} [TopologicalSpace M'] [ChartedSpace H' M'] {F : orbitRel.Quotient Γ ℍ → M'} {z : ℍ}
     (hz : stabilizer Γ z = ⊥) (hF : MDifferentiableAt 𝓘(ℂ) I' (F ∘ Quotient.mk _) z) :
     MDifferentiableAt 𝓘(ℂ) I' F (Quotient.mk _ z) := by
-  set q : orbitRel.Quotient Γ ℍ := Quotient.mk _ z with hq
+  set q : orbitRel.Quotient Γ ℍ := Quotient.mk _ z with _
   -- The chart at `q` is centred at a point `g • z` of the orbit of `z`, which is also free.
   obtain ⟨g, hg⟩ : ∃ g : Γ, g • z = q.out :=
     mem_orbit_iff.mp (orbitRel_apply.mp (Quotient.exact (Quotient.out_eq q)))
   have hm : Nat.card (stabilizer Γ q.out) = 1 := by
     rw [← hg, stabilizer_smul_eq_stabilizer_map_conj, hz, Subgroup.map_bot, Subgroup.card_bot]
-  set z₀ := q.out with hz₀
+  set z₀ := q.out with _
   -- The pullback is holomorphic at `g • z` as well, by invariance under `Γ`.
   have hFg : MDifferentiableAt 𝓘(ℂ) I' (F ∘ Quotient.mk _) z₀ := by
     have heq : (F ∘ Quotient.mk (orbitRel Γ ℍ)) =

@@ -730,26 +730,16 @@ theorem abelianizationOf_fi24AutomorphismGroup_of (i : Fin 12) :
       hsquare, hsquare, one_mul, one_mul] at hprod
     apply mul_right_cancel (b := Abelianization.of (PresentedGroup.of j : Fi24AutomorphismGroup))
     simpa only [← sq, hsquare] using hprod
-  have edge : ∀ i j : Fin 12, (i, j) ∈ fi24AutomorphismEdges ∨ (j, i) ∈ fi24AutomorphismEdges →
-      i ≠ j →
-      Abelianization.of (PresentedGroup.of i : Fi24AutomorphismGroup) =
-        Abelianization.of (PresentedGroup.of j) := fun i j hij hne =>
-    step i j (by rw [fi24AutomorphismCoxeterMatrix_apply]; simp [hne, hij])
-  rw [fi24AutomorphismEdges_def] at edge
-  -- Walk the connected diagram `l - k - a - b - c - d - e - f - g - j`, `d - h - i`, back to `a`.
-  have h1 := edge 1 0 (by decide) (by decide)
-  have h2 := (edge 2 1 (by decide) (by decide)).trans h1
-  have h3 := (edge 3 2 (by decide) (by decide)).trans h2
-  have h4 := (edge 4 3 (by decide) (by decide)).trans h3
-  have h5 := (edge 5 4 (by decide) (by decide)).trans h4
-  have h6 := (edge 6 5 (by decide) (by decide)).trans h5
-  have h7 := (edge 7 3 (by decide) (by decide)).trans h3
-  have h8 := (edge 8 7 (by decide) (by decide)).trans h7
-  have h9 := (edge 9 6 (by decide) (by decide)).trans h6
-  have h10 := edge 10 0 (by decide) (by decide)
-  have h11 := (edge 11 10 (by decide) (by decide)).trans h10
-  fin_cases i
-  exacts [rfl, h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11]
+  -- Each node other than `a` has a diagram neighbour (Coxeter entry `3`) of smaller index.
+  have hnb : ∀ i : Fin 12, i ≠ 0 → ∃ j < i, fi24AutomorphismCoxeterMatrix i j = 3 := by
+    simp only [fi24AutomorphismCoxeterMatrix_apply, fi24AutomorphismEdges_def]
+    decide
+  induction i using WellFoundedLT.induction with
+  | _ i ih =>
+    rcases eq_or_ne i 0 with rfl | hi
+    · rfl
+    obtain ⟨j, hj, hij⟩ := hnb i hi
+    exact (step i j hij).trans (ih j hj)
 
 /-- The source words the row rewrites: the compiled words of the sixty-six off-diagonal Coxeter
 relators and of the two displayed relations. -/

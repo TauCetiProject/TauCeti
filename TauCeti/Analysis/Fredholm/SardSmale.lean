@@ -174,7 +174,7 @@ private theorem surjective_fderiv_iff_slice (pkg : ContinuousLinearMap.FredholmP
     Surjective (fderiv ℝ f ((pkg.normalFormOpenPartialHomeomorph hT).symm y)) ↔
       Surjective (fderiv ℝ (pkg.obstructionSlice hT y.1) y.2) := by
   obtain ⟨e, he⟩ := hinv
-  set Φ := pkg.normalFormOpenPartialHomeomorph hT with hΦ
+  set Φ := pkg.normalFormOpenPartialHomeomorph hT
   set q := pkg.obstructionMap hT with hqdef
   have hsym' : HasFDerivAt Φ.symm (e : (pkg.decCodom.X₁ × pkg.decDom.X₀) →L[ℝ] E) y := by
     rw [he]; exact hsym.hasFDerivAt
@@ -233,7 +233,7 @@ theorem exists_mem_nhds_isClosed_isNowhereDense_image_criticalPoints
     (hU : U ∈ 𝓝 a) :
     ∃ N ∈ 𝓝 a, N ⊆ U ∧ IsClosed (f '' (N ∩ {x | ¬ Surjective (fderiv ℝ f x)})) ∧
       IsNowhereDense (f '' (N ∩ {x | ¬ Surjective (fderiv ℝ f x)})) := by
-  set T := fderiv ℝ f a with hTdef
+  set T := fderiv ℝ f a
   set k : ℕ := finrank ℝ T.ker * finrank ℝ T.ker + 1 with hkdef
   have hk1 : (1 : ℕ∞ω) ≤ (k : ℕ∞ω) := by
     have : (1 : ℕ) ≤ k := by omega
@@ -296,7 +296,7 @@ theorem exists_mem_nhds_isClosed_isNowhereDense_image_criticalPoints
   obtain ⟨V₀, hV₀, hV₀P⟩ := hgood
   obtain ⟨V, hVV₀, hVopen, hy₀V⟩ := mem_nhds_iff.1 hV₀
   have hVP := fun y (hy : y ∈ V) ↦ hV₀P y (hVV₀ hy)
-  set N : Set E := Φ.source ∩ Φ ⁻¹' V with hNdef
+  set N : Set E := Φ.source ∩ Φ ⁻¹' V
   have hNopen : IsOpen N := Φ.isOpen_inter_preimage hVopen
   have haN : a ∈ N := ⟨ha, by rw [Set.mem_preimage, hΦa]; exact hy₀V⟩
   have hNV : ∀ x ∈ N, Φ x ∈ V := fun x hx ↦ hx.2
@@ -390,7 +390,7 @@ theorem exists_mem_nhds_isClosed_isNowhereDense_image_criticalPoints
     hFred.isClosed_range hFred.finite_ker hFred.closedComplemented_ker
   obtain ⟨r, hr, hball⟩ := Metric.mem_nhds_iff.1
     (Filter.inter_mem (Filter.inter_mem (hNopen.mem_nhds haN) hN₂) hU)
-  set N' : Set E := Metric.closedBall a (r / 2) with hN'def
+  set N' : Set E := Metric.closedBall a (r / 2)
   have hN'sub : N' ⊆ N ∩ N₂ ∩ U := (Metric.closedBall_subset_ball (by linarith)).trans hball
   have hN'ball : N' ⊆ N ∩ N₂ := fun z hz ↦ (hN'sub hz).1
   have hN'U : N' ⊆ U := fun z hz ↦ (hN'sub hz).2
@@ -453,13 +453,13 @@ theorem isMeagre_image_criticalPoints_of_isFredholm {n : ℕ∞ω} (hU : IsOpen 
     (hn : ∀ x ∈ U, ((finrank ℝ (fderiv ℝ f x).ker * finrank ℝ (fderiv ℝ f x).ker + 1 : ℕ) : ℕ∞ω)
       ≤ n) :
     IsMeagre (f '' (U ∩ {x | ¬ Surjective (fderiv ℝ f x)})) := by
-  have hloc : ∀ x ∈ U, ∃ N ⊆ U, N ∈ 𝓝 x ∧
+  have hloc : ∀ x ∈ U, ∃ N, N ∈ 𝓝 x ∧
       IsNowhereDense (f '' (N ∩ {x | ¬ Surjective (fderiv ℝ f x)})) := by
     intro x hx
-    obtain ⟨N, hN, hNU, -, hNnd⟩ := exists_mem_nhds_isClosed_isNowhereDense_image_criticalPoints
+    obtain ⟨N, hN, -, -, hNnd⟩ := exists_mem_nhds_isClosed_isNowhereDense_image_criticalPoints
       (hf x hx) (hFred x hx) (hn x hx) (hU.mem_nhds hx)
-    exact ⟨N, hNU, hN, hNnd⟩
-  choose! N hNU hNnhds hNnd using hloc
+    exact ⟨N, hN, hNnd⟩
+  choose! N hNnhds hNnd using hloc
   obtain ⟨t, htU, htc, htcover⟩ := TopologicalSpace.countable_cover_nhdsWithin
     (f := N) (s := U) fun x hx ↦ nhdsWithin_le_nhds (hNnhds x hx)
   have hsub : f '' (U ∩ {x | ¬ Surjective (fderiv ℝ f x)}) ⊆

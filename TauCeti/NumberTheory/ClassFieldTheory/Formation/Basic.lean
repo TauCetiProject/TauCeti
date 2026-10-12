@@ -64,6 +64,9 @@ as `Kˣ` enters through an `Additive` adapter.
   group, normalized so that the Artin map satisfies the character formula.
 * `TauCeti.ClassFieldTheory.NormalLayer.norm`, `normSubgroup`, `NormQuotient`, `normQuotientMk`:
   the norm of the layer, its image, the norm quotient and the quotient map onto it.
+* `TauCeti.ClassFieldTheory.NormalLayer.normQuotientEquivOfGroundEquiv`: the norm quotient read
+  as `A / N` through an identification of a group `A` with the ground level that carries `N` onto
+  the norm subgroup.
 * `TauCeti.ClassFieldTheory.NormalLayer.zeroTateClass`: the zero-dimensional Tate class of an
   element of the ground level.
 
@@ -699,6 +702,56 @@ theorem zeroTateClass_eq_zero_iff (a : F.level L.ground) :
     (dsimp% only (L.zeroTateClass F a = 0)) ↔ a ∈ L.normSubgroup F := by
   rw [← (L.tateHZeroEquivNormQuotient F).map_eq_zero_iff,
     tateHZeroEquivNormQuotient_zeroTateClass, normQuotientMk_apply, Submodule.Quotient.mk_eq_zero]
+
+section GroundEquiv
+
+variable {A : Type*} [Group A] {N : Subgroup A} (e : Additive A ≃+ F.level L.ground)
+
+/-- The map `A → A^U / N_{U/V}(A^V)` through an identification `e` of `A` with the ground level,
+written multiplicatively. -/
+private def groundNormQuotientHom : A →* Multiplicative (L.NormQuotient F) :=
+  AddMonoidHom.toMultiplicativeRight ((L.normQuotientMk F).toAddMonoidHom.comp e.toAddMonoidHom)
+
+private theorem groundNormQuotientHom_apply (a : A) :
+    L.groundNormQuotientHom F e a = Multiplicative.ofAdd (L.normQuotientMk F (e (.ofMul a))) :=
+  (rfl)
+
+private theorem ker_groundNormQuotientHom (hN : ∀ a, e (.ofMul a) ∈ L.normSubgroup F ↔ a ∈ N) :
+    N = (L.groundNormQuotientHom F e).ker := by
+  ext a
+  rw [MonoidHom.mem_ker, ← hN, groundNormQuotientHom_apply, ofAdd_eq_one, normQuotientMk_apply,
+    Submodule.Quotient.mk_eq_zero]
+
+private theorem surjective_groundNormQuotientHom :
+    Function.Surjective (L.groundNormQuotientHom F e) := fun z ↦ by
+  obtain ⟨x, hx⟩ := Submodule.Quotient.mk_surjective _ z.toAdd
+  obtain ⟨a, rfl⟩ := e.surjective x
+  refine ⟨a.toMul, ?_⟩
+  rw [groundNormQuotientHom_apply, ofMul_toMul, normQuotientMk_apply, hx, ofAdd_toAdd]
+
+/-- **The norm quotient read through an identification of the ground level**: if `e` identifies a
+group `A` with the ground level `A^U` of the layer and carries the normal subgroup `N` onto the
+norm subgroup `N_{U/V}(A^V)`, then `e` descends to an identification of `A / N` with the norm
+quotient. -/
+def normQuotientEquivOfGroundEquiv [N.Normal] (hN : ∀ a, e (.ofMul a) ∈ L.normSubgroup F ↔ a ∈ N) :
+    Additive (A ⧸ N) ≃+ L.NormQuotient F :=
+  MulEquiv.toAdditiveLeft
+    ((QuotientGroup.quotientMulEquivOfEq (L.ker_groundNormQuotientHom F e hN)).trans
+      (QuotientGroup.quotientKerEquivOfSurjective _ (L.surjective_groundNormQuotientHom F e)))
+
+/-- `normQuotientEquivOfGroundEquiv` sends the class of `a ∈ A` to the class of `e a` in the norm
+quotient. -/
+@[simp]
+theorem normQuotientEquivOfGroundEquiv_mk [N.Normal]
+    (hN : ∀ a, e (.ofMul a) ∈ L.normSubgroup F ↔ a ∈ N) (a : A) :
+    L.normQuotientEquivOfGroundEquiv F e hN (.ofMul (a : A ⧸ N)) =
+      L.normQuotientMk F (e (.ofMul a)) := by
+  rw [normQuotientEquivOfGroundEquiv, QuotientGroup.quotientKerEquivOfSurjective,
+    AddEquiv.toMultiplicativeRight_symm_apply_apply, toMul_ofMul, MulEquiv.trans_apply,
+    QuotientGroup.quotientMulEquivOfEq_mk, QuotientGroup.quotientKerEquivOfRightInverse_apply,
+    QuotientGroup.kerLift_mk, groundNormQuotientHom_apply, toAdd_ofAdd]
+
+end GroundEquiv
 
 end Norm
 

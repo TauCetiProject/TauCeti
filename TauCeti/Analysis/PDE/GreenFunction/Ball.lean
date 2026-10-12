@@ -326,7 +326,6 @@ from the pole. -/
 theorem ballGreenKernel_pos (hn : n ≠ 2) {x y : EuclideanSpace ℝ (Fin n)} (hx : ‖x‖ < 1)
     (hy : ‖y‖ < 1) (hxy : y ≠ x) :
     0 < ballGreenKernel n x y := by
-  have hω := volume_real_unitBall_pos n
   have hsub : 0 < ‖y - x‖ ^ 2 := by
     have : y - x ≠ 0 := sub_ne_zero.mpr hxy
     positivity
@@ -415,7 +414,6 @@ theorem continuous_ballPoissonKernel_on_sphere
     exact hx hy
   have hden : (n : ℝ) * volume.real (ball (0 : EuclideanSpace ℝ (Fin n)) 1) *
       ‖x - (y : EuclideanSpace ℝ (Fin n))‖ ^ n ≠ 0 := by
-    have hnpos : (0 : ℝ) < n := by exact_mod_cast Nat.pos_of_ne_zero hn
     have hvol := volume_real_unitBall_pos n
     have hnorm : 0 < ‖x - (y : EuclideanSpace ℝ (Fin n))‖ :=
       norm_pos_iff.mpr (sub_ne_zero.mpr hxy)
@@ -512,7 +510,7 @@ theorem fderiv_ballGreenKernel_normal (hn : n ≠ 2) {x y : EuclideanSpace ℝ (
     exact hx hy
   have h : 0 < ‖x‖ ^ 2 * ‖y‖ ^ 2 - 2 * ⟪x, y⟫_ℝ + 1 :=
     norm_sq_mul_norm_sq_sub_two_mul_inner_add_one_pos (by rw [hy, mul_one]; exact hx)
-  have hsub : 0 < ‖y - x‖ := norm_pos_iff.mpr (sub_ne_zero.mpr hxy)
+  have _ : 0 < ‖y - x‖ := norm_pos_iff.mpr (sub_ne_zero.mpr hxy)
   rw [(hasFDerivAt_ballGreenKernel hn hxy h).fderiv, ← norm_sub_sq_eq_of_norm_eq_one x hy,
     ballPoissonKernel_def, norm_sub_rev x y]
   have hpow : (‖y - x‖ ^ 2) ^ (-(n : ℝ) / 2) = ‖y - x‖ ^ (-(n : ℝ)) :=

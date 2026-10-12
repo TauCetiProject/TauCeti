@@ -57,49 +57,6 @@ public section
 
 namespace TauCeti
 
-namespace GridRectanglePentagonDecomposition
-
-variable {n : ℕ} {a s : Fin n} {x z : GridState n}
-
-/-- Two rectangle--pentagon decompositions cover the same squares with the same multiplicities
-when their underlying rectangle decompositions are repartitions of each other and their pentagons
-have the same bottom row. -/
-private theorem val_add_val_eq_of_isRepartition_of_bottom_eq
-    (D D' : GridRectanglePentagonDecomposition a s x z)
-    (hrep : D.toRectangleDecomposition.IsRepartition D'.toRectangleDecomposition)
-    (hbottom : D'.pentagon.bottom = D.pentagon.bottom) :
-    D'.rectangle.toGridRectangle.coveredSquares.val + D'.pentagon.coveredSquares.val =
-      D.rectangle.toGridRectangle.coveredSquares.val + D.pentagon.coveredSquares.val := by
-  have hrep' := fun q => congrArg (Multiset.count q) hrep.val_add_val_eq
-  simp only [Multiset.count_add, Multiset.count_eq_of_nodup (Finset.nodup _), Finset.mem_val,
-    toRectangleDecomposition_first_toGridRectangle,
-    toRectangleDecomposition_second_toGridRectangle] at hrep'
-  refine Multiset.ext.mpr fun p => ?_
-  simp only [Multiset.count_add, Multiset.count_eq_of_nodup (Finset.nodup _), Finset.mem_val]
-  obtain ⟨c, t⟩ := p
-  by_cases hca : c = a
-  · subst hca
-    have h := hrep' (c, t)
-    have h₁ := Grid.ite_mem_cIco_eq_add_add D'.pentagon.turn_mem_cIco_bottom_top t
-    have h₂ := Grid.ite_mem_cIco_eq_add_add D.pentagon.turn_mem_cIco_bottom_top t
-    simp only [GridPentagonBetween.mk_mem_coveredSquares_left_column,
-      GridPentagonBetween.mk_mem_toGridRectangle_coveredSquares_left_column] at h ⊢
-    rw [hbottom] at h h₁
-    omega
-  by_cases hcb : c = finRotate n a
-  · subst hcb
-    have h := hrep' (finRotate n a, t)
-    simp only [GridPentagonBetween.mk_mem_coveredSquares_right_column,
-      GridPentagonBetween.mk_notMem_toGridRectangle_coveredSquares_right_column, ↓reduceIte,
-      add_zero, hbottom] at h ⊢
-    omega
-  · have h := hrep' (c, t)
-    simp only [D'.pentagon.mem_coveredSquares_iff_of_ne (p := (c, t)) hca hcb,
-      D.pentagon.mem_coveredSquares_iff_of_ne (p := (c, t)) hca hcb]
-    omega
-
-end GridRectanglePentagonDecomposition
-
 namespace GridDiagram
 
 variable {n : ℕ} (G : GridDiagram n)
@@ -244,7 +201,7 @@ theorem rectanglePentagonWeight_recutRightEqRightSecond
         (D.recutRightEqRightSecond hcommon hone hrectangle hpentagon hsecond) =
       G.rectanglePentagonWeight C R D := by
   apply G.rectanglePentagonWeight_eq_of_val_add_val_eq C R
-  refine D.val_add_val_eq_of_isRepartition_of_bottom_eq _
+  refine D.coveredSquares_val_add_val_eq_of_isRepartition_of_bottom_eq _
     (D.isRecut_recutRightEqRightSecond hcommon hone hrectangle hpentagon hsecond).isRepartition ?_
   obtain ⟨hcol, -, hleft, hmiddle⟩ :=
     D.second_recut_branch_data_of_right_eq_right hcommon hone hrectangle hpentagon hsecond

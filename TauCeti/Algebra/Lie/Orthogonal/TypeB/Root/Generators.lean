@@ -14,7 +14,8 @@ public import TauCeti.LinearAlgebra.Matrix.ToLin
 This file constructs integral matrices for both signs of the Bourbaki simple roots in the standard
 split model `LieAlgebra.Orthogonal.typeB ι K`, together with the auxiliary difference-root family
 `εᵢ - εⱼ`. For a difference root, the matrices are the usual paired matrix units. For a short
-root `εᵢ`, the normalization forced by Mathlib's form matrix `diag(2, J)` is
+root `εᵢ`, Mathlib's form matrix `diag(2, J)` forces the ratio of the two coefficients in each root
+matrix; the integral normalization used here is
 
 ```text
 eᵢ = 2 Eᵢ₀ - E₀,-ᵢ,       fᵢ = E₀,ᵢ - 2 E-ᵢ,₀.
@@ -132,10 +133,8 @@ theorem typeBDifferenceRootMatrix_mem_typeB (i j : ι) (hij : i ≠ j) :
     LieAlgebra.Orthogonal.JB ι K * (-typeBDifferenceRootMatrix (K := K) i j hij)
   ext (a | (a | a)) (b | (b | b)) <;>
     simp [typeBDifferenceRootMatrix, LieAlgebra.Orthogonal.JB, LieAlgebra.Orthogonal.JD,
-      Matrix.mul_apply, Matrix.one_apply, Matrix.single_apply, eq_comm]
-  all_goals
-    by_cases hia : i = a <;> by_cases hja : j = a <;>
-      by_cases hib : i = b <;> by_cases hjb : j = b <;> simp_all <;> aesop
+      Matrix.mul_apply, Matrix.one_apply, Matrix.single_apply, eq_comm, ite_and]
+  all_goals grind
 
 /-- The root vector `e_{εᵢ-εⱼ}` in the split type-`B` Lie algebra. -/
 def typeBDifferenceRootGenerator (i j : ι) (hij : i ≠ j) :
@@ -192,6 +191,18 @@ theorem typeBDifferenceRootGenerator_lie_swap (i j : ι) (hij : i ≠ j) :
       mul_sub, sub_mul, Matrix.single_mul_single_same, Matrix.single_mul_single_of_ne,
       Matrix.single_apply, Pi.single_apply]
   all_goals aesop
+
+/-- Concatenated difference-root vectors bracket to the difference-root vector of the concatenated
+index pair. -/
+@[simp]
+theorem typeBDifferenceRootGenerator_lie_chain (i j k : ι) (hij : i ≠ j) (hjk : j ≠ k)
+    (hik : i ≠ k) :
+    ⁅typeBDifferenceRootGenerator (K := K) i j hij,
+      typeBDifferenceRootGenerator (K := K) j k hjk⁆ =
+      typeBDifferenceRootGenerator i k hik := by
+  apply Subtype.ext
+  simpa only [LieSubalgebra.coe_bracket, coe_typeBDifferenceRootGenerator] using
+    typeBDifferenceRootMatrix_lie_differenceRootMatrix_chain (K := K) i j j k hij hjk rfl hik
 
 /-- Every difference-root matrix is square-zero. -/
 theorem typeBDifferenceRootMatrix_mul_self (i j : ι) (hij : i ≠ j) :
@@ -518,6 +529,15 @@ theorem typeBSimpleNegativeRootMatrix_mem_typeB (i : Fin (n + 1)) :
     exact typeBDifferenceRootMatrix_mem_typeB (K := K) j.succ j.castSucc
       (ne_of_gt j.castSucc_lt_succ)
 
+/-- Every Bourbaki simple coroot matrix belongs to the split type-`B` Lie algebra. -/
+theorem typeBSimpleCorootMatrix_mem_typeB (i : Fin (n + 1)) :
+    typeBSimpleCorootMatrix (K := K) i ∈ LieAlgebra.Orthogonal.typeB (Fin (n + 1)) K := by
+  refine Fin.lastCases ?_ (fun j => ?_) i
+  · rw [typeBSimpleCorootMatrix_last, typeBShortCorootMatrix]
+    exact typeBDiagonalMatrix_mem_typeB _
+  · rw [typeBSimpleCorootMatrix_castSucc, typeBDifferenceCorootMatrix]
+    exact typeBDiagonalMatrix_mem_typeB _
+
 /-- The positive simple-root vector `eᵢ` for the Bourbaki pinning of `Bₙ₊₁`. -/
 def typeBSimpleRootGenerator (i : Fin (n + 1)) :
     LieAlgebra.Orthogonal.typeB (Fin (n + 1)) K :=
@@ -531,8 +551,7 @@ def typeBSimpleNegativeRootGenerator (i : Fin (n + 1)) :
 /-- The simple coroot `hᵢ` for the Bourbaki pinning of `Bₙ₊₁`. -/
 def typeBSimpleCorootGenerator (i : Fin (n + 1)) :
     LieAlgebra.Orthogonal.typeB (Fin (n + 1)) K :=
-  Fin.lastCases (typeBShortCorootGenerator (Fin.last n))
-    (fun j => typeBDifferenceCorootGenerator j.castSucc j.succ (ne_of_lt j.castSucc_lt_succ)) i
+  ⟨typeBSimpleCorootMatrix i, typeBSimpleCorootMatrix_mem_typeB i⟩
 
 @[simp]
 theorem typeBSimpleRootGenerator_last :
@@ -566,12 +585,14 @@ theorem typeBSimpleNegativeRootGenerator_castSucc (j : Fin n) :
 theorem typeBSimpleCorootGenerator_last :
     typeBSimpleCorootGenerator (K := K) (Fin.last n) =
       typeBShortCorootGenerator (Fin.last n) := by
+  apply Subtype.ext
   simp [typeBSimpleCorootGenerator]
 
 @[simp]
 theorem typeBSimpleCorootGenerator_castSucc (j : Fin n) :
     typeBSimpleCorootGenerator (K := K) j.castSucc =
       typeBDifferenceCorootGenerator j.castSucc j.succ (ne_of_lt j.castSucc_lt_succ) := by
+  apply Subtype.ext
   simp [typeBSimpleCorootGenerator]
 
 @[simp]
@@ -593,8 +614,7 @@ theorem coe_typeBSimpleCorootGenerator (i : Fin (n + 1)) :
     (typeBSimpleCorootGenerator (K := K) i :
       Matrix (Unit ⊕ Fin (n + 1) ⊕ Fin (n + 1)) (Unit ⊕ Fin (n + 1) ⊕ Fin (n + 1)) K) =
       typeBSimpleCorootMatrix i := by
-  refine Fin.lastCases ?_ (fun j => ?_) i <;>
-    simp [typeBSimpleCorootGenerator, typeBSimpleCorootMatrix]
+  simp [typeBSimpleCorootGenerator]
 
 /-- Every numbered simple coroot belongs to the split diagonal Cartan. -/
 theorem typeBSimpleCorootGenerator_mem_typeBDiagonalCartan (i : Fin (n + 1)) :

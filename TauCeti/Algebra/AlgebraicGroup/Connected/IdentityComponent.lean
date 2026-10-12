@@ -108,7 +108,7 @@ theorem map_antipodeAlgHom_connectedComponentIdeal_augmentationPoint_eq_self :
 
 /-- An antipode image belongs to the ideal cutting out the augmentation point's connected
 component exactly when its preimage does. -/
-@[simp]
+@[simp↓]
 theorem antipode_mem_connectedComponentIdeal_augmentationPoint_iff {x : H} :
     HopfAlgebraStruct.antipode k x ∈
         PrimeSpectrum.connectedComponentIdeal (Bialgebra.augmentationPoint k H) ↔

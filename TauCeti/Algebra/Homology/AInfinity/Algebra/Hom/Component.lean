@@ -112,7 +112,7 @@ theorem taylor_eq_suspend_component (f : AInfinityHom AA BB) (n : ℕ) (hn : 0 <
         (ReducedTensorWords.of R A ⟨n, hn⟩
           (PiTensorProduct.tprod R fun i : Fin n ↦ x i)) =
       MultilinearMap.evalNat (MultilinearMap.suspend d (f.component n)) x := by
-  rw [AInfinity.evalNat_suspend, MultilinearMap.evalNat_def, component_apply f n hn]
+  rw [MultilinearMap.evalNat_suspend, MultilinearMap.evalNat_def, component_apply f n hn]
   have htwist :
       (fun i : Fin n ↦ AA.grading.koszulTwist ((n : ℤ) - 1 - i) (x i)) =
         fun i : Fin n ↦

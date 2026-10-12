@@ -13,6 +13,32 @@ public import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.ClassGroup
 
 This file relates the fractional ideal of an idele's finite component to its valuations at
 finite places. It also gives a norm-one idele representative of every ideal class.
+
+Let `T` be a set of finite places whose classes generate the ideal class group, for instance a
+finite set when the class group is finite
+(`ClassGroup.exists_finite_closure_classGroupMk_image_eq_top`).
+Write `I_{K,T}` for the ideles that are local units at every finite place outside `T`, and `U_T`
+for the `T`-units `T.unit K`. Then every idele is a principal idele times an element of `I_{K,T}`,
+and the principal ideles in `I_{K,T}` are exactly those of the `T`-units:
+
+`I_K = Kˣ · I_{K,T}`,  `Kˣ ∩ I_{K,T} = U_T`,
+
+so the idele class group is `C_K = I_{K,T} / U_T`. This is the form in which the cohomology of
+the idele classes of a Galois extension is computed from that of the `T`-ideles and the `T`-units,
+for `T` stable under the Galois group.
+
+## Main results
+
+* `NumberField.IdeleGroup.exists_valued_ideleFiniteCoord_mul_unitEmbedding_eq_one`:
+  `I_K = Kˣ · I_{K,T}`.
+* `NumberField.IdeleGroup.mem_principalSubgroup_iff_exists_mem_unit`: `Kˣ ∩ I_{K,T} = U_T`.
+* `NumberField.IdeleClassGroup.exists_valued_ideleFiniteCoord_eq_one_and_mk_eq`: every idele class
+  is the class of an element of `I_{K,T}`.
+
+## References
+
+* J. S. Milne, *Class Field Theory*, Chapter VII, §4.
+* J. Neukirch, *Algebraic Number Theory*, Chapter VI, §1.
 -/
 
 public section
@@ -94,3 +120,67 @@ theorem exists_ideleNorm_eq_one_and_toClassGroup_eq (c : ClassGroup (𝓞 K)) :
       IdeleGroup.toFiniteIdele_ofCompletion, map_one, mul_one, hf]
 
 end ClassGroup
+
+/-! ### Ideles that are units outside a set of places -/
+
+namespace NumberField.IdeleGroup
+
+variable {R : Type*} [CommRing R] [IsDedekindDomain R]
+variable {K : Type*} [Field K] [Algebra R K] [IsFractionRing R K]
+variable {T : Set (HeightOneSpectrum R)}
+
+/-- **Every idele is a principal idele times an idele that is a unit at the finite places outside
+`T`**, when the classes of the primes in `T` generate the ideal class group:
+`I_K = Kˣ · I_{K,T}`. -/
+theorem exists_valued_ideleFiniteCoord_mul_unitEmbedding_eq_one
+    (hT : Subgroup.closure (HeightOneSpectrum.classGroupMk '' T) = ⊤) (x : IdeleGroup R K) :
+    ∃ a : Kˣ, ∀ v ∉ T,
+      Valued.v (v.ideleFiniteCoord (x * unitEmbedding R K a) : v.adicCompletion K) = 1 := by
+  obtain ⟨a, ha⟩ := FiniteAdeleRing.exists_valued_mul_unitEmbedding_eq_one hT (toFiniteIdele R K x)
+  refine ⟨a, fun v hv ↦ ?_⟩
+  rw [HeightOneSpectrum.coe_ideleFiniteCoord, ← coe_toFiniteIdele, map_mul,
+    toFiniteIdele_unitEmbedding]
+  exact ha v hv
+
+/-- A principal idele is a unit at every finite place outside `T` exactly when it comes from a
+`T`-unit. -/
+theorem forall_valued_ideleFiniteCoord_unitEmbedding_eq_one_iff (a : Kˣ) :
+    (∀ v ∉ T,
+      Valued.v (v.ideleFiniteCoord (unitEmbedding R K a) : v.adicCompletion K) = 1) ↔
+      a ∈ T.unit K := by
+  rw [← FiniteAdeleRing.forall_valued_unitEmbedding_eq_one_iff]
+  refine forall₂_congr fun v _ ↦ ?_
+  rw [HeightOneSpectrum.coe_ideleFiniteCoord, ← coe_toFiniteIdele, toFiniteIdele_unitEmbedding]
+
+/-- **The principal ideles that are units outside `T` are those of the `T`-units**:
+`Kˣ ∩ I_{K,T} = U_T`. -/
+theorem mem_principalSubgroup_iff_exists_mem_unit {x : IdeleGroup R K}
+    (hx : ∀ v ∉ T, Valued.v (v.ideleFiniteCoord x : v.adicCompletion K) = 1) :
+    x ∈ principalSubgroup R K ↔ ∃ a ∈ T.unit K, unitEmbedding R K a = x := by
+  refine ⟨fun ⟨a, ha⟩ ↦ ⟨a, ?_, ha⟩, fun ⟨a, _, ha⟩ ↦ ⟨a, ha⟩⟩
+  rw [← forall_valued_ideleFiniteCoord_unitEmbedding_eq_one_iff (R := R)]
+  exact ha ▸ hx
+
+end NumberField.IdeleGroup
+
+namespace NumberField.IdeleClassGroup
+
+variable {R : Type*} [CommRing R] [IsDedekindDomain R]
+variable {K : Type*} [Field K] [Algebra R K] [IsFractionRing R K]
+variable {T : Set (HeightOneSpectrum R)}
+
+/-- **Every idele class is represented by an idele that is a unit at the finite places outside
+`T`**, when the classes of the primes in `T` generate the ideal class group. With
+`NumberField.IdeleGroup.mem_principalSubgroup_iff_exists_mem_unit`, this identifies `C_K` with
+`I_{K,T} / U_T`. -/
+theorem exists_valued_ideleFiniteCoord_eq_one_and_mk_eq
+    (hT : Subgroup.closure (HeightOneSpectrum.classGroupMk '' T) = ⊤) (c : IdeleClassGroup R K) :
+    ∃ x : IdeleGroup R K,
+      (∀ v ∉ T, Valued.v (v.ideleFiniteCoord x : v.adicCompletion K) = 1) ∧
+        (x : IdeleClassGroup R K) = c := by
+  obtain ⟨x, rfl⟩ := QuotientGroup.mk_surjective c
+  obtain ⟨a, ha⟩ := IdeleGroup.exists_valued_ideleFiniteCoord_mul_unitEmbedding_eq_one hT x
+  exact ⟨x * IdeleGroup.unitEmbedding R K a, ha,
+    QuotientGroup.mk_mul_of_mem x ⟨a, rfl⟩⟩
+
+end NumberField.IdeleClassGroup

@@ -1,0 +1,180 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.Algebra.QuadraticAlgebra.NormTrace
+public import TauCeti.NumberTheory.LocalField.QuadraticForm.CupPadicTwo
+public import TauCeti.FieldTheory.GaloisCohomology.MuTwo.Transfer
+public import TauCeti.FieldTheory.QuadraticForm.StiefelWhitney.Evens.Kummer.Value
+
+/-!
+# A nonzero Evens norm over `ℚ_2(i)`
+
+The quadratic algebra `QuadraticAlgebra ℚ_[2] (-1) 0` is a field, since `-1` is not a
+square in `ℚ_2`. Its generator `i` satisfies `i² = -1`. The unit `a = 1 + 2i` has trace
+`2` and norm `5`, and its Kummer class has Evens norm `(2) ∪ (5) ≠ 0`.
+
+The calculation specializes `TauCeti.galoisEvens2_kummerClass_one_add`; nonvanishing
+uses `TauCeti.cup_kummerClass_eq_zero_iff_hilbertSymbol_eq_one` and the dyadic
+Hilbert-symbol computations.
+
+This calculation distinguishes the index-two Evens norm from a class differing by
+`(-1) ∪ (-1)`: both classes restrict to the same class over `ℚ_2(i)`, but they are
+unequal over `ℚ_2`. In particular, testing only after restriction cannot fix the
+normalization of the norm.
+
+## References
+
+* B. Kahn, *Classes de Stiefel-Whitney de formes quadratiques et de représentations
+  galoisiennes réelles*, Invent. Math. 78 (1984), Lemme II.2.1.
+* J.-P. Serre, *L'invariant de Witt de la forme Tr(x²)*, Comment. Math. Helv. 59
+  (1984), Théorème 1′.
+* J.-P. Serre, *A Course in Arithmetic*, Chapter III, §1.2, for `(2,5)_{ℚ_2} = -1`.
+-/
+
+public section
+
+noncomputable section
+
+open scoped QuadraticAlgebra
+
+namespace TauCeti
+
+local instance instFactPrimeTwoDyadicSqrtNegOne : Fact (Nat.Prime 2) := ⟨Nat.prime_two⟩
+
+/-- The quadratic dyadic field `ℚ₂(i)`, with `i² = -1`. -/
+abbrev DyadicSqrtNegOne := QuadraticAlgebra ℚ_[2] (-1) 0
+
+namespace DyadicSqrtNegOne
+
+/-- The distinguished square root of `-1` in `ℚ₂(i)`. -/
+abbrev i : DyadicSqrtNegOne := QuadraticAlgebra.omega
+
+private theorem one_add_two_mul_i_ne_zero : (1 + 2 * i : DyadicSqrtNegOne) ≠ 0 := by
+  intro h
+  have him := congrArg QuadraticAlgebra.im h
+  norm_num at him
+
+/-- The unit `1 + 2i` of `ℚ_2(i)`. -/
+def oneAddTwoI : DyadicSqrtNegOneˣ := Units.mk0 (1 + 2 * i) one_add_two_mul_i_ne_zero
+
+/-- The value of the distinguished unit. -/
+@[simp]
+theorem coe_oneAddTwoI : (oneAddTwoI : DyadicSqrtNegOne) = 1 + 2 * i := (rfl)
+
+/-- The trace of `1 + 2i` is `2`. -/
+@[simp↓] -- Compute before coercion and quadratic-algebra comparison lemmas apply.
+theorem trace_oneAddTwoI : Algebra.trace ℚ_[2] DyadicSqrtNegOne oneAddTwoI = 2 := by
+  rw [QuadraticAlgebra.algebraTrace_eq_trace]
+  norm_num [QuadraticAlgebra.trace_def, coe_oneAddTwoI]
+
+/-- The norm of `1 + 2i` is `5`. -/
+@[simp↓] -- Compute before coercion and quadratic-algebra comparison lemmas apply.
+theorem norm_oneAddTwoI : Algebra.norm ℚ_[2] (oneAddTwoI : DyadicSqrtNegOne) = 5 := by
+  rw [QuadraticAlgebra.algebraNorm_eq_norm]
+  norm_num [QuadraticAlgebra.norm_def, coe_oneAddTwoI]
+
+/-- The finite extension `ℚ_2(i)/ℚ_2` is separable. -/
+instance : Algebra.IsSeparable ℚ_[2] DyadicSqrtNegOne := by
+  let : Algebra.IsAlgebraic ℚ_[2] DyadicSqrtNegOne := Algebra.IsAlgebraic.of_finite _ _
+  let : PerfectField ℚ_[2] := PerfectField.ofCharZero
+  exact Algebra.IsAlgebraic.isSeparable_of_perfectField
+
+/-- Two is invertible in the quadratic dyadic field `ℚ_2(i)`. -/
+instance instInvertibleTwo : Invertible (2 : DyadicSqrtNegOne) :=
+  invertibleOfNonzero (by norm_num)
+
+/-- **A nonzero dyadic Evens norm.** Along every embedding of `ℚ_2(i)` in a separable
+closure, the Evens norm of the class of `1 + 2i` is `(2) ∪ (5)`. -/
+theorem galoisEvens_oneAddTwoI (σ : DyadicSqrtNegOne →ₐ[ℚ_[2]] SeparableClosure ℚ_[2]) :
+    galoisEvens ℚ_[2] DyadicSqrtNegOne σ
+      (QuadraticAlgebra.finrank_eq_two (-1 : ℚ_[2]) 0) (kummerClass oneAddTwoI) =
+      (trivialF2TopPairing (AbsoluteGaloisGroup ℚ_[2])).cup 1 1
+        (kummerClass (Units.mk0 (2 : ℚ_[2]) two_ne_zero))
+        (kummerClass (Units.mk0 (5 : ℚ_[2]) (by norm_num))) := by
+  have h := galoisEvens2_kummerClass_one_add σ
+    (QuadraticAlgebra.finrank_eq_two (-1 : ℚ_[2]) 0) (-1) (x := i)
+    (by
+      rintro ⟨c, hc⟩
+      have him := congrArg QuadraticAlgebra.im hc
+      simp at him)
+    (by simp [QuadraticAlgebra.omega_pow_two_eq_add]) (2 : ℚ_[2]) (by norm_num)
+    oneAddTwoI (by simp [map_ofNat])
+  have h2 : unitOfInvertible (2 : ℚ_[2]) = Units.mk0 2 two_ne_zero := by
+    ext
+    simp
+  have h5 : Units.mk0 (1 - (2 : ℚ_[2]) ^ 2 * ((-1 : ℚ_[2]ˣ) : ℚ_[2])) (by norm_num) =
+      Units.mk0 (5 : ℚ_[2]) (by norm_num) := by
+    ext
+    norm_num
+  simpa only [h2, h5] using h
+
+/-- Kahn's expression gives the same value: its extra cup `(2) ∪ (-1)` vanishes. -/
+theorem galoisEvens_oneAddTwoI_eq_cup_add_cup
+    (σ : DyadicSqrtNegOne →ₐ[ℚ_[2]] SeparableClosure ℚ_[2]) :
+    galoisEvens ℚ_[2] DyadicSqrtNegOne σ
+      (QuadraticAlgebra.finrank_eq_two (-1 : ℚ_[2]) 0) (kummerClass oneAddTwoI) =
+      (trivialF2TopPairing (AbsoluteGaloisGroup ℚ_[2])).cup 1 1
+        (kummerClass (Units.mk0 (2 : ℚ_[2]) two_ne_zero))
+        (kummerClass (Units.mk0 (5 : ℚ_[2]) (by norm_num))) +
+      (trivialF2TopPairing (AbsoluteGaloisGroup ℚ_[2])).cup 1 1
+        (kummerClass (Units.mk0 (2 : ℚ_[2]) two_ne_zero)) (kummerClass (-1)) := by
+  have hz := (cup_kummerClass_eq_zero_iff
+    (Units.mk0 (2 : ℚ_[2]) two_ne_zero) (-1)).mpr ⟨1, 1, by norm_num⟩
+  rw [hz, add_zero, galoisEvens_oneAddTwoI]
+
+/-- The Evens norm of the Kummer class of `1 + 2i` is nonzero. -/
+theorem galoisEvens_oneAddTwoI_ne_zero
+    (σ : DyadicSqrtNegOne →ₐ[ℚ_[2]] SeparableClosure ℚ_[2]) :
+    galoisEvens ℚ_[2] DyadicSqrtNegOne σ
+      (QuadraticAlgebra.finrank_eq_two (-1 : ℚ_[2]) 0) (kummerClass oneAddTwoI) ≠ 0 := by
+  rw [galoisEvens_oneAddTwoI]
+  exact cup_kummerClass_two_five_ne_zero_padicTwo
+
+/-- Adding the alternative correction `(-1) ∪ (-1)` makes the dyadic example zero,
+whereas the genuine Evens norm is nonzero. -/
+theorem galoisEvens_oneAddTwoI_add_cup_neg_one_neg_one_eq_zero
+    (σ : DyadicSqrtNegOne →ₐ[ℚ_[2]] SeparableClosure ℚ_[2]) :
+    galoisEvens ℚ_[2] DyadicSqrtNegOne σ
+      (QuadraticAlgebra.finrank_eq_two (-1 : ℚ_[2]) 0) (kummerClass oneAddTwoI) +
+      (trivialF2TopPairing (AbsoluteGaloisGroup ℚ_[2])).cup 1 1
+        (kummerClass (-1)) (kummerClass (-1)) = 0 := by
+  rw [galoisEvens_oneAddTwoI, ← cup_kummerClass_two_five_eq_neg_one_neg_one_padicTwo]
+  exact (two_nsmul _).symm.trans (cohomF2.two_nsmul_eq_zero _ _ _)
+
+/-- The nonzero Evens norm in this example restricts to zero over `ℚ_2(i)`. Thus
+restriction alone cannot distinguish it from the alternative corrected value. -/
+theorem galoisRes_galoisEvens_oneAddTwoI_eq_zero
+    (σ : DyadicSqrtNegOne →ₐ[ℚ_[2]] SeparableClosure ℚ_[2]) :
+    galoisRes ℚ_[2] DyadicSqrtNegOne σ 2
+      (galoisEvens ℚ_[2] DyadicSqrtNegOne σ
+        (QuadraticAlgebra.finrank_eq_two (-1 : ℚ_[2]) 0) (kummerClass oneAddTwoI)) = 0 := by
+  have hi0 : i ≠ 0 := by
+    intro h
+    have him := congrArg QuadraticAlgebra.im h
+    simp at him
+  have hsquare : Units.map (algebraMap ℚ_[2] DyadicSqrtNegOne).toMonoidHom (-1) ∈
+      Subgroup.square DyadicSqrtNegOneˣ := by
+    apply Subgroup.mem_square.mpr
+    refine ⟨Units.mk0 i hi0, Units.ext ?_⟩
+    simp [← sq, QuadraticAlgebra.omega_pow_two_eq_add]
+  rw [galoisEvens_oneAddTwoI, cup_kummerClass_two_five_eq_neg_one_neg_one_padicTwo,
+    galoisRes_cup ℚ_[2] DyadicSqrtNegOne σ 1 1 (kummerClass (-1)) (kummerClass (-1)),
+    galoisRes_kummerClass,
+    (kummerClass_eq_zero_iff_square DyadicSqrtNegOne).mpr hsquare]
+  simp
+
+/-- The worked example has an actual embedding into a separable closure, and a nonzero
+Evens norm there; it is not conditional on the existence of such an embedding. -/
+theorem exists_galoisEvens_oneAddTwoI_ne_zero :
+    ∃ σ : DyadicSqrtNegOne →ₐ[ℚ_[2]] SeparableClosure ℚ_[2],
+      galoisEvens ℚ_[2] DyadicSqrtNegOne σ
+        (QuadraticAlgebra.finrank_eq_two (-1 : ℚ_[2]) 0) (kummerClass oneAddTwoI) ≠ 0 :=
+  ⟨IsSepClosed.lift, galoisEvens_oneAddTwoI_ne_zero _⟩
+
+end DyadicSqrtNegOne
+
+end TauCeti

@@ -421,7 +421,7 @@ theorem mem_closure_of_nonempty_of_mul_mem_of_one_le {S : Set Γ} (hne : S.Nonem
               ⟨g, hg, by simpa using inv_le_inv' hag, by simpa using inv_le_inv' hga⟩ }
         ordConnected' := by
           constructor
-          rintro p ⟨g, hg, hgp, hpg⟩ q ⟨h, hh, hhq, hqh⟩ z hz
+          rintro p ⟨g, hg, hgp, _⟩ q ⟨h, hh, _, hqh⟩ z hz
           refine ⟨g * h, hmul g hg h hh, ?_, ?_⟩
           · refine le_trans ?_ (hgp.trans hz.1)
             rw [mul_inv]

@@ -6,14 +6,15 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Data.Fin.Rev
-public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Diagonal.Normalizer
-public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Transvection
+public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.InverseTranspose
+public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.UpperTriangular.Basic
 
 /-!
 # The pinned type-A graph automorphism on matrices
 
-For a commutative ring `A`, inverse transpose is an automorphism of `GL_n(A)`. In type `A_r`,
-conjugating it by the signed reversal matrix gives the pinned graph automorphism
+Inverse transpose is an automorphism of `GL_n(A)` over any commutative semiring. Over a
+commutative ring, conjugating it by the signed reversal matrix gives the pinned type-`A_r`
+graph automorphism
 
 ```text
 g ↦ Q (g⁻¹)ᵀ Q⁻¹,
@@ -46,6 +47,9 @@ carrier.
 * `TauCeti.typeAGraphAutomorphism_transvectionUnit_of_ne`: the equation on the root subgroup of an
   arbitrary root `ε_i - ε_j`, where the parameter is rescaled by the sign `(-1) ^ (i + j + 1)`.
 * `TauCeti.typeAGraphAutomorphism_diagGL`: the automorphism reverses and inverts diagonal entries.
+* `TauCeti.typeAGraphAutomorphism_apply_apply`: the signed entrywise formula on the inverse matrix.
+* `TauCeti.typeAGraphAutomorphism_mem_upperTriangularGroup_iff`: preservation of
+  upper triangularity.
 * `TauCeti.typeAGraphAutomorphism_mul_self`: the automorphism has order dividing two.
 * `TauCeti.map_typeAGraphAutomorphism`: the construction is natural in the coefficient ring.
 
@@ -53,148 +57,45 @@ carrier.
 
 * R. W. Carter, *Finite Groups of Lie Type: Conjugacy Classes and Complex Characters*, §1.15.
 * R. Steinberg, *Lectures on Chevalley Groups*, §10.
-
-This supplies the matrix-points prerequisite for the pinned type-`A` graph automorphism in Layer
-9 of `TauCetiRoadmap/ReductiveGroups/README.md`, consumed by milestone L1 of
-`TauCetiRoadmap/CFSGStatement/README.md` for the Steinberg map defining `²A_r(q)`.
 -/
 
 public section
 
 open Matrix
 
-namespace Matrix.GeneralLinearGroup
-
-universe u v
-
-variable {n : Type u} [Fintype n] [DecidableEq n]
-variable {A : Type v} [CommRing A]
-
-/-- Transpose an invertible matrix, retaining its transposed inverse as inverse data. This is
-anti-multiplicative; composing it with inversion below gives a group automorphism. -/
-private def transposeUnit (g : GL n A) : GL n A where
-  val := g.val.transpose
-  inv := g.inv.transpose
-  val_inv := by rw [← Matrix.transpose_mul, g.inv_val, Matrix.transpose_one]
-  inv_val := by rw [← Matrix.transpose_mul, g.val_inv, Matrix.transpose_one]
-
-/-- **Inverse transpose on the general linear group.** This is the group automorphism
-`g ↦ (g⁻¹)ᵀ`. -/
-def inverseTranspose : GL n A ≃* GL n A where
-  toFun g := transposeUnit g⁻¹
-  invFun g := transposeUnit g⁻¹
-  left_inv g := by
-    apply Units.ext
-    simp [transposeUnit, Matrix.transpose_transpose]
-  right_inv g := by
-    apply Units.ext
-    simp [transposeUnit, Matrix.transpose_transpose]
-  map_mul' g h := by
-    apply Units.ext
-    simp [transposeUnit, Matrix.transpose_mul]
-
-/-- The matrix underlying inverse transpose is `(g⁻¹)ᵀ`. -/
-@[simp]
-theorem coe_inverseTranspose (g : GL n A) :
-    (inverseTranspose g : Matrix n n A) = ((g⁻¹ : GL n A) : Matrix n n A).transpose :=
-  (rfl)
-
-/-- Inverse transpose is an involution. -/
-@[simp]
-theorem inverseTranspose_inverseTranspose (g : GL n A) :
-    inverseTranspose (inverseTranspose g) = g :=
-  (inverseTranspose : GL n A ≃* GL n A).left_inv g
-
-/-- Inverse transpose commutes with entrywise application of a ring homomorphism. -/
-@[simp]
-theorem map_inverseTranspose {B : Type*} [CommRing B] (f : A →+* B) (g : GL n A) :
-    map f (inverseTranspose g) = inverseTranspose (map f g) := by
-  apply Units.ext
-  ext i j
-  rfl
-
-end Matrix.GeneralLinearGroup
-
 namespace TauCeti
 
 universe u
 
-variable {A : Type u} [CommRing A]
+variable {A : Type u}
 
-/-- Inverse transpose inverts the entries of an invertible diagonal matrix. -/
-@[simp]
-theorem inverseTranspose_diagGL {ι : Type*} [Fintype ι] [DecidableEq ι] (d : ι → Aˣ) :
-    Matrix.GeneralLinearGroup.inverseTranspose (diagGL d) = diagGL (fun i => (d i)⁻¹) := by
-  have hInv : (diagGL d)⁻¹ = diagGL (fun i => (d i)⁻¹) := by
-    rw [← map_inv]
-    rfl
-  apply Units.ext
-  rw [Matrix.GeneralLinearGroup.coe_inverseTranspose, hInv]
-  ext i j
-  by_cases hij : i = j
-  · subst j
-    simp [Matrix.transpose_apply]
-  · have hji : j ≠ i := Ne.symm hij
-    simp [Matrix.transpose_apply, hij, hji]
+section Ring
+
+variable [Ring A]
 
 /-- The alternating diagonal signs used to pin the type-`A_r` graph automorphism. -/
 private def typeAGraphSign (i : Fin (r + 1)) : Aˣ := (-1 : Aˣ) ^ (i : ℕ)
 
-private theorem typeAGraphSign_mul_self (i : Fin (r + 1)) :
-    typeAGraphSign (A := A) i * typeAGraphSign (A := A) i = 1 := by
+private theorem typeAGraphSign_inv (i : Fin (r + 1)) :
+    (typeAGraphSign (A := A) i)⁻¹ = typeAGraphSign (A := A) i := by
+  apply inv_eq_iff_mul_eq_one.mpr
   simp only [typeAGraphSign, ← pow_add, ← two_mul (i : ℕ), pow_mul]
   simp
 
-private theorem typeAGraphSign_inv (i : Fin (r + 1)) :
-    (typeAGraphSign (A := A) i)⁻¹ = typeAGraphSign (A := A) i :=
-  inv_eq_iff_mul_eq_one.mpr (typeAGraphSign_mul_self (A := A) i)
+private theorem coe_typeAGraphSign (i : Fin (r + 1)) :
+    ((typeAGraphSign (A := A) i : Aˣ) : A) = (-1 : A) ^ (i : ℕ) := by
+  simp [typeAGraphSign]
 
 /-- The signed reversal matrix `Q` used in the pinned type-`A_r` graph automorphism. It first
 reverses the standard basis and then applies alternating signs. -/
-def typeAGraphConjugator (r : ℕ) (A : Type u) [CommRing A] : GL (Fin (r + 1)) A :=
+def typeAGraphConjugator (r : ℕ) (A : Type u) [Ring A] : GL (Fin (r + 1)) A :=
   diagGL (typeAGraphSign (A := A)) * permutationGL (k := A) Fin.revPerm
 
-/-- **The pinned graph automorphism of the type-`A_r` matrix group.** It is signed reverse
-inverse transpose, `g ↦ Q (g⁻¹)ᵀ Q⁻¹`. -/
-def typeAGraphAutomorphism (r : ℕ) (A : Type u) [CommRing A] :
-    GL (Fin (r + 1)) A ≃* GL (Fin (r + 1)) A :=
-  Matrix.GeneralLinearGroup.inverseTranspose.trans (MulAut.conj (typeAGraphConjugator r A))
-
-/-- The type-`A` graph automorphism is conjugated inverse transpose. -/
-theorem typeAGraphAutomorphism_apply (r : ℕ) (g : GL (Fin (r + 1)) A) :
-    typeAGraphAutomorphism r A g =
-      typeAGraphConjugator r A * Matrix.GeneralLinearGroup.inverseTranspose g *
-        (typeAGraphConjugator r A)⁻¹ :=
-  (rfl)
-
-private theorem inverseTranspose_diagGL_typeAGraphSign (r : ℕ) :
-    Matrix.GeneralLinearGroup.inverseTranspose
-        (diagGL (typeAGraphSign (A := A) : Fin (r + 1) → Aˣ)) =
-      diagGL (typeAGraphSign (A := A)) := by
-  rw [inverseTranspose_diagGL]
-  congr 1
-
-private theorem permutationGL_rev_inv (r : ℕ) :
+private theorem permutationGL_rev_inv {A : Type u} [Semiring A] (r : ℕ) :
     (permutationGL (k := A) (Fin.revPerm : Equiv.Perm (Fin (r + 1))))⁻¹ =
       permutationGL (k := A) Fin.revPerm := by
   rw [← map_inv]
   congr 1
-
-private theorem inverseTranspose_permutationGL_rev (r : ℕ) :
-    Matrix.GeneralLinearGroup.inverseTranspose
-        (permutationGL (k := A) (Fin.revPerm : Equiv.Perm (Fin (r + 1)))) =
-      permutationGL (k := A) Fin.revPerm := by
-  apply Units.ext
-  rw [Matrix.GeneralLinearGroup.coe_inverseTranspose, permutationGL_rev_inv]
-  simp only [permutationGL_coe, Matrix.transpose_permMatrix, inv_inv]
-  exact congrArg (fun σ : Equiv.Perm (Fin (r + 1)) => σ.permMatrix A)
-    Fin.revPerm_symm.symm
-
-private theorem inverseTranspose_typeAGraphConjugator (r : ℕ) :
-    Matrix.GeneralLinearGroup.inverseTranspose (typeAGraphConjugator r A) =
-      typeAGraphConjugator r A := by
-  rw [typeAGraphConjugator, map_mul, inverseTranspose_diagGL_typeAGraphSign,
-    inverseTranspose_permutationGL_rev]
 
 /-- The square of the signed reversal matrix is the scalar matrix `(-1)^r I`. -/
 theorem typeAGraphConjugator_mul_self (r : ℕ) :
@@ -226,6 +127,58 @@ theorem typeAGraphConjugator_mul_self (r : ℕ) :
       omega
     _ = Matrix.GeneralLinearGroup.scalar (Fin (r + 1)) ((-1 : Aˣ) ^ r) := diagGL_const _
 
+/-- Entrywise base change carries the signed reversal matrix to the signed reversal matrix. -/
+@[simp]
+theorem map_typeAGraphConjugator {B : Type*} [Ring B] (f : A →+* B) (r : ℕ) :
+    Units.map (MonoidHom.ofClass (f.mapMatrix (m := Fin (r + 1)))) (typeAGraphConjugator r A) =
+      typeAGraphConjugator r B := by
+  apply Units.ext
+  ext i j
+  simp [typeAGraphConjugator, typeAGraphSign, Fin.rev_eq_iff]
+
+end Ring
+
+variable [CommRing A]
+
+/-- **The pinned graph automorphism of the type-`A_r` matrix group.** It is signed reverse
+inverse transpose, `g ↦ Q (g⁻¹)ᵀ Q⁻¹`. -/
+def typeAGraphAutomorphism (r : ℕ) (A : Type u) [CommRing A] :
+    GL (Fin (r + 1)) A ≃* GL (Fin (r + 1)) A :=
+  Matrix.GeneralLinearGroup.inverseTranspose.trans (MulAut.conj (typeAGraphConjugator r A))
+
+/-- The type-`A` graph automorphism is conjugated inverse transpose. -/
+theorem typeAGraphAutomorphism_apply (r : ℕ) (g : GL (Fin (r + 1)) A) :
+    typeAGraphAutomorphism r A g =
+      typeAGraphConjugator r A * Matrix.GeneralLinearGroup.inverseTranspose g *
+        (typeAGraphConjugator r A)⁻¹ :=
+  (rfl)
+
+/-- The graph automorphism reverses the two indices of the inverse matrix and multiplies
+its entries by the alternating row and column signs. -/
+@[simp]
+theorem typeAGraphAutomorphism_apply_apply (r : ℕ) (g : GL (Fin (r + 1)) A)
+    (i j : Fin (r + 1)) :
+    (typeAGraphAutomorphism r A g : Matrix (Fin (r + 1)) (Fin (r + 1)) A) i j =
+      (-1 : A) ^ (i : ℕ) *
+        ((g⁻¹ : GL (Fin (r + 1)) A) : Matrix (Fin (r + 1)) (Fin (r + 1)) A) j.rev i.rev *
+        (-1 : A) ^ (j : ℕ) := by
+  have hmiddle := coe_permutationGL_inv_mul_mul_permutationGL_apply
+    Fin.revPerm (Matrix.GeneralLinearGroup.inverseTranspose g) i j
+  rw [permutationGL_rev_inv] at hmiddle
+  -- Regroup the signed conjugation so diagonal multiplication acts only on the outside.
+  rw [typeAGraphAutomorphism_apply, typeAGraphConjugator, _root_.mul_inv_rev,
+    ← mul_assoc, mul_assoc (diagGL _), mul_assoc (diagGL _),
+    permutationGL_rev_inv, ← map_inv (diagGL (k := A))]
+  rw [Units.val_mul, Units.val_mul, diagGL_coe, diagGL_coe,
+    Matrix.mul_diagonal, Matrix.diagonal_mul, hmiddle]
+  simp [Matrix.GeneralLinearGroup.coe_inverseTranspose, typeAGraphSign]
+
+private theorem inverseTranspose_typeAGraphConjugator (r : ℕ) :
+    Matrix.GeneralLinearGroup.inverseTranspose (typeAGraphConjugator r A) =
+      typeAGraphConjugator r A := by
+  simp only [typeAGraphConjugator, map_mul, inverseTranspose_diagGL,
+    inverseTranspose_permutationGL, typeAGraphSign_inv]
+
 private theorem typeAGraphAutomorphism_eq_iff_gl (r : ℕ) (g h : GL (Fin (r + 1)) A) :
     typeAGraphAutomorphism r A g = h ↔
       h * typeAGraphConjugator r A * (Matrix.GeneralLinearGroup.inverseTranspose g)⁻¹ =
@@ -240,9 +193,9 @@ Composing with an entrywise ring endomorphism `σ` and taking `g = σ h` reads t
 invariance of the `σ`-sesquilinear form of Gram matrix `Q` under `h`, in the transposed form
 recorded by `TauCeti.typeAGraphAutomorphism_eq_iff_transpose_mul_conjugator_mul_eq`. That is the
 shape of a unitarity condition, but not yet that condition: `σ` is only assumed to be a ring
-endomorphism, and `Q` is the reversal matrix with alternating signs, so `Qᵀ = (-1) ^ r • Q`. Even
-`r` therefore makes the form Hermitian; odd `r` makes it skew-Hermitian, which is again Hermitian
-exactly where `-1 = 1`, as in characteristic two. -/
+endomorphism, and `Q` is the reversal matrix with alternating signs, so `Qᵀ = (-1) ^ r • Q`.
+For involutive `σ`, even `r` gives a Hermitian form and odd `r` gives a skew-Hermitian form,
+which is again Hermitian exactly where `-1 = 1`, as in characteristic two. -/
 @[simp]
 theorem typeAGraphAutomorphism_eq_iff_mul_conjugator_mul_transpose_eq (r : ℕ)
     (g h : GL (Fin (r + 1)) A) :
@@ -320,6 +273,25 @@ theorem typeAGraphAutomorphism_typeAGraphAutomorphism (r : ℕ)
       rw [Matrix.GeneralLinearGroup.scalar_commute]
       group
 
+/-- Signed reverse inverse transpose preserves the upper-triangular subgroup over every
+commutative ring. -/
+@[simp↓]
+theorem typeAGraphAutomorphism_mem_upperTriangularGroup_iff (r : ℕ)
+    (g : GL (Fin (r + 1)) A) :
+    typeAGraphAutomorphism r A g ∈ upperTriangularGroup (Fin (r + 1)) A ↔
+      g ∈ upperTriangularGroup (Fin (r + 1)) A := by
+  have hpres (h : GL (Fin (r + 1)) A)
+      (hh : h ∈ upperTriangularGroup (Fin (r + 1)) A) :
+      typeAGraphAutomorphism r A h ∈ upperTriangularGroup (Fin (r + 1)) A := by
+    have hinv := (upperTriangularGroup (Fin (r + 1)) A).inv_mem hh
+    rw [UpperTriangularGroup.mem_iff] at hinv ⊢
+    intro i j hji
+    have hz := hinv (i := j.rev) (j := i.rev) (Fin.rev_lt_rev.mpr hji)
+    simp only [typeAGraphAutomorphism_apply_apply, hz, mul_zero, zero_mul]
+  refine ⟨fun h => ?_, hpres g⟩
+  simpa only [typeAGraphAutomorphism_typeAGraphAutomorphism] using
+    hpres (typeAGraphAutomorphism r A g) h
+
 /-- The pinned type-`A` graph automorphism has order dividing two. -/
 @[simp]
 theorem typeAGraphAutomorphism_mul_self (r : ℕ) :
@@ -327,31 +299,6 @@ theorem typeAGraphAutomorphism_mul_self (r : ℕ) :
   apply DFunLike.ext _ _
   intro g
   exact typeAGraphAutomorphism_typeAGraphAutomorphism r g
-
-private theorem permutationGL_conj_transvectionUnit {i j : Fin (r + 1)}
-    (hij : i ≠ j) (c : A) :
-    permutationGL (k := A) Fin.revPerm * transvectionUnit hij c *
-        (permutationGL (k := A) Fin.revPerm)⁻¹ =
-      transvectionUnit (Fin.rev_injective.ne hij) c := by
-  rw [permutationGL_rev_inv]
-  apply Units.ext
-  rw [Units.val_mul, Units.val_mul, permutationGL_coe]
-  simp only [coe_transvectionUnit, Equiv.Perm.inv_def]
-  rw [PEquiv.toMatrix_toPEquiv_mul, PEquiv.mul_toMatrix_toPEquiv]
-  ext a b
-  simp [Matrix.transvection, Matrix.submatrix_apply, Matrix.one_apply,
-    Matrix.single_apply, Fin.revPerm_apply, Fin.rev_eq_iff, Fin.rev_injective.eq_iff]
-
-/-- Inverse transpose swaps the indices of a transvection and negates its parameter. -/
-@[simp]
-theorem inverseTranspose_transvectionUnit {n : Type*} [Fintype n] [DecidableEq n] {i j : n}
-    (hij : i ≠ j) (c : A) :
-    Matrix.GeneralLinearGroup.inverseTranspose (transvectionUnit hij c) =
-      transvectionUnit hij.symm (-c) := by
-  apply Units.ext
-  rw [Matrix.GeneralLinearGroup.coe_inverseTranspose, transvectionUnit_inv,
-    coe_transvectionUnit, coe_transvectionUnit]
-  simp [Matrix.transvection, Matrix.transpose_add, Matrix.transpose_single]
 
 private theorem typeAGraphAutomorphism_transvectionUnit_aux (r : ℕ)
     {i j : Fin (r + 1)} (hij : i ≠ j) (c : A) :
@@ -368,12 +315,10 @@ private theorem typeAGraphAutomorphism_transvectionUnit_aux (r : ℕ)
   calc
     _ = d * (p * transvectionUnit hij.symm (-c) * p⁻¹) * d⁻¹ := by group
     _ = d * transvectionUnit (Fin.rev_injective.ne hij.symm) (-c) * d⁻¹ := by
-      rw [permutationGL_conj_transvectionUnit]
+      congr 2
+      simpa only [p, permutationGL_rev_inv, Fin.revPerm_symm, Fin.revPerm_apply] using
+        permutationGL_inv_mul_transvectionUnit_mul_permutationGL Fin.revPerm hij.symm (-c)
     _ = _ := by rw [diagGL_mul_transvectionUnit_mul_inv]
-
-private theorem coe_typeAGraphSign (i : Fin (r + 1)) :
-    ((typeAGraphSign (A := A) i : Aˣ) : A) = (-1 : A) ^ (i : ℕ) := by
-  simp [typeAGraphSign]
 
 /-- **The pinned graph automorphism on an arbitrary root subgroup.** For every root `ε_i - ε_j` of
 the type-`A_r` system, that is every pair of distinct matrix indices, the automorphism carries the
@@ -401,7 +346,7 @@ theorem typeAGraphAutomorphism_transvectionUnit_of_ne (r : ℕ) {i j : Fin (r + 
   rw [typeAGraphAutomorphism_transvectionUnit_aux, typeAGraphSign_inv]
   congr 1
   rw [coe_typeAGraphSign, coe_typeAGraphSign]
-  -- The two exponents `rev j + rev i + 1` and `i + j + 1` differ by `2 * r`, hence agree mod two.
+  -- Reversing both indices preserves the parity of the total exponent.
   have hmod : ((j.rev : ℕ) + (i.rev : ℕ) + 1) % 2 = ((i : ℕ) + (j : ℕ) + 1) % 2 := by
     have hi := i.isLt
     have hj := j.isLt
@@ -469,22 +414,14 @@ theorem typeAGraphAutomorphism_diagGL (r : ℕ) (d : Fin (r + 1) → Aˣ) :
       funext i
       simp [mul_assoc]
 
-/-- Entrywise base change carries the signed reversal matrix to the signed reversal matrix. -/
-@[simp]
-theorem map_typeAGraphConjugator {B : Type*} [CommRing B] (f : A →+* B) (r : ℕ) :
-    Matrix.GeneralLinearGroup.map f (typeAGraphConjugator r A) =
-      typeAGraphConjugator r B := by
-  apply Units.ext
-  ext i j
-  simp [typeAGraphConjugator, typeAGraphSign, Fin.rev_eq_iff]
-
 /-- The pinned type-`A` graph automorphism is natural in the coefficient ring. -/
 @[simp]
 theorem map_typeAGraphAutomorphism {B : Type*} [CommRing B] (f : A →+* B) (r : ℕ)
     (g : GL (Fin (r + 1)) A) :
     Matrix.GeneralLinearGroup.map f (typeAGraphAutomorphism r A g) =
       typeAGraphAutomorphism r B (Matrix.GeneralLinearGroup.map f g) := by
-  rw [typeAGraphAutomorphism_apply, typeAGraphAutomorphism_apply, map_mul, map_mul,
-    Matrix.GeneralLinearGroup.map_inverseTranspose, map_inv, map_typeAGraphConjugator]
+  rw [typeAGraphAutomorphism_apply, typeAGraphAutomorphism_apply]
+  simp only [Matrix.GeneralLinearGroup.map, RingHom.toMonoidHom_eq_coe, map_mul, map_inv,
+    Matrix.GeneralLinearGroup.map_inverseTranspose, map_typeAGraphConjugator]
 
 end TauCeti

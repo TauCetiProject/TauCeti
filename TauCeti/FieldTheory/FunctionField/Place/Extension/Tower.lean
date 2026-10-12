@@ -26,6 +26,9 @@ and the degree identity is the ordinary finrank tower formula for the residue fi
   restricting directly to `F₀`.
 * `TauCeti.Place.ramificationIdx_restrict_mul`: ramification indices multiply in a tower.
 * `TauCeti.Place.relativeDegree_restrict_mul`: relative residue degrees multiply in a tower.
+* `TauCeti.Place.isSeparable_residueField_restrict_top` and
+  `TauCeti.Place.isSeparable_residueField_restrict_bot`: a separable residue extension stays
+  separable on each step of the tower.
 
 ## Mathematical context
 
@@ -95,6 +98,43 @@ theorem ramificationIdx_restrict_mul (P : Place k₂ F₂) :
     IsScalarTower.algebraMap_apply F₀ F₁ F₂, hP, hP₁, ord_algebraMap_restrict k₁ F₁ P,
     ramificationIdx_def]
 
+/-- Read through the identification `(P ∩ F₁) ∩ F₀ = P ∩ F₀` of `TauCeti.Place.restrict_restrict`,
+the residue-field map of the twice-restricted place `(P ∩ F₁) ∩ F₀` into `F₂_P` is the
+residue-field map of `P ∩ F₀`.  The algebra structure of `𝒪_P` over `𝒪_{(P ∩ F₁) ∩ F₀}` is
+arbitrary here, as long as it factors through `𝒪_{P ∩ F₁}`. -/
+private theorem algebraMap_comp_cast_restrict_restrict (P : Place k₂ F₂)
+    [Algebra ((P.restrict k₁ F₁).restrict k₀ F₀).integers P.integers]
+    [IsLocalHom (algebraMap ((P.restrict k₁ F₁).restrict k₀ F₀).integers P.integers)]
+    [IsScalarTower ((P.restrict k₁ F₁).restrict k₀ F₀).integers (P.restrict k₁ F₁).integers
+      P.integers] :
+    letI : Algebra.IsIntegral F₀ F₂ := Algebra.IsIntegral.trans F₁
+    (algebraMap ((P.restrict k₁ F₁).restrict k₀ F₀).ResidueField P.ResidueField).comp
+        (RingEquiv.cast (R := fun Q : Place k₀ F₀ ↦ Q.ResidueField)
+          (restrict_restrict (k₀ := k₀) (F₀ := F₀) (k₁ := k₁) (F₁ := F₁) P).symm : _ →+* _) =
+      algebraMap (P.restrict k₀ F₀).ResidueField P.ResidueField := by
+  let _ : Algebra.IsIntegral F₀ F₂ := Algebra.IsIntegral.trans F₁
+  let h := restrict_restrict (k₀ := k₀) (F₀ := F₀) (k₁ := k₁) (F₁ := F₁) P
+  ext x
+  obtain ⟨x, rfl⟩ := IsLocalRing.residue_surjective x
+  have cast_residue (Q : Place k₀ F₀) (hQ : Q = P.restrict k₀ F₀)
+      (x : (P.restrict k₀ F₀).integers) (y : Q.integers) (hy : (y : F₀) = x) :
+      RingEquiv.cast (R := fun R : Place k₀ F₀ ↦ R.ResidueField) hQ.symm
+          (IsLocalRing.residue (P.restrict k₀ F₀).integers x) =
+        IsLocalRing.residue Q.integers y := by
+    subst Q
+    have hxy : y = x := Subtype.ext hy
+    subst y
+    rfl
+  let y : ((P.restrict k₁ F₁).restrict k₀ F₀).integers := ⟨x, by rw [h]; exact x.2⟩
+  simp only [RingHom.coe_comp, Function.comp_apply, RingHom.coe_coe]
+  rw [cast_residue _ h x y rfl, IsLocalRing.ResidueField.algebraMap_residue,
+    IsLocalRing.ResidueField.algebraMap_residue, IsScalarTower.algebraMap_apply _
+      (P.restrict k₁ F₁).integers P.integers]
+  refine congrArg (IsLocalRing.residue P.integers) (Subtype.ext ?_)
+  simp only [coe_algebraMap_integers, IsScalarTower.algebraMap_apply F₀ F₁ F₂]
+  -- `y` and `x` have the same representative in `F₀`.
+  rfl
+
 /-- **Relative residue degrees are multiplicative in towers** (Stichtenoth, Proposition 3.1.6):
 `f(P₂ / P₀) = f(P₂ / P₁) f(P₁ / P₀)` for the restrictions `P₁` and `P₀` of `P₂`. -/
 theorem relativeDegree_restrict_mul (P : Place k₂ F₂) :
@@ -115,42 +155,66 @@ theorem relativeDegree_restrict_mul (P : Place k₂ F₂) :
     IsScalarTower.of_algebraMap_eq fun _ ↦ rfl
   have hfinrank : Module.finrank (P.restrict k₀ F₀).ResidueField P.ResidueField =
       Module.finrank ((P.restrict k₁ F₁).restrict k₀ F₀).ResidueField P.ResidueField := by
-    let h := restrict_restrict (k₀ := k₀) (F₀ := F₀) (k₁ := k₁) (F₁ := F₁) P
-    let e : (P.restrict k₀ F₀).ResidueField ≃+*
-        ((P.restrict k₁ F₁).restrict k₀ F₀).ResidueField :=
-      RingEquiv.cast (R := fun Q : Place k₀ F₀ ↦ Q.ResidueField) h.symm
-    refine Algebra.finrank_eq_of_equiv_equiv e (RingEquiv.refl P.ResidueField) ?_
-    ext x
-    obtain ⟨x, rfl⟩ := IsLocalRing.residue_surjective x
-    let y : ((P.restrict k₁ F₁).restrict k₀ F₀).integers :=
-      ⟨x, by rw [h]; exact x.2⟩
-    have cast_residue (Q : Place k₀ F₀) (hQ : Q = P.restrict k₀ F₀)
-        (x : (P.restrict k₀ F₀).integers) (y : Q.integers) (hy : (y : F₀) = x) :
-        RingEquiv.cast (R := fun R : Place k₀ F₀ ↦ R.ResidueField) hQ.symm
-            (IsLocalRing.residue (P.restrict k₀ F₀).integers x) =
-          IsLocalRing.residue Q.integers y := by
-      subst Q
-      have hxy : y = x := Subtype.ext hy
-      subst y
-      rfl
-    -- The direct residue-field algebra synthesized by `finrank_eq_of_equiv_equiv` and the
-    -- locally defined composite algebra have definitionally equal maps, but no named equality
-    -- relates the two structures for rewriting; `change` exposes that definitional equality.
-    change (algebraMap ((P.restrict k₁ F₁).restrict k₀ F₀).ResidueField P.ResidueField)
-        (e (IsLocalRing.residue (P.restrict k₀ F₀).integers x)) =
-      algebraMap (P.restrict k₀ F₀).ResidueField P.ResidueField
-        (IsLocalRing.residue (P.restrict k₀ F₀).integers x)
-    rw [cast_residue _ h x y rfl]
-    simp only [IsLocalRing.ResidueField.algebraMap_residue]
-    apply congrArg (IsLocalRing.residue P.integers)
-    apply Subtype.ext
-    simp only [coe_algebraMap_integers, IsScalarTower.algebraMap_apply F₀ F₁ F₂]
-    rfl
+    refine Algebra.finrank_eq_of_equiv_equiv
+      (RingEquiv.cast (R := fun Q : Place k₀ F₀ ↦ Q.ResidueField)
+        (restrict_restrict (k₀ := k₀) (F₀ := F₀) (k₁ := k₁) (F₁ := F₁) P).symm)
+      (RingEquiv.refl P.ResidueField) ?_
+    exact (algebraMap_comp_cast_restrict_restrict P).trans (RingHom.id_comp _).symm
   rw [hfinrank]
   simpa only [mul_comm] using
     (Module.finrank_mul_finrank
       ((P.restrict k₁ F₁).restrict k₀ F₀).ResidueField
       (P.restrict k₁ F₁).ResidueField P.ResidueField).symm
+
+/-- Separability of the residue extension of `P` over `F₀` passes to both steps of the tower of
+residue fields through `P ∩ F₁`, the bottom step read at the twice-restricted place
+`(P ∩ F₁) ∩ F₀`. -/
+private theorem isSeparable_residueField_restrict_and (P : Place k₂ F₂)
+    [Algebra.IsSeparable
+      (@restrict k₀ k₂ F₀ F₂ _ _ _ _ _ _ _ _ _ _ _ P (Algebra.IsIntegral.trans F₁)).ResidueField
+      P.ResidueField] :
+    Algebra.IsSeparable (P.restrict k₁ F₁).ResidueField P.ResidueField ∧
+      Algebra.IsSeparable ((P.restrict k₁ F₁).restrict k₀ F₀).ResidueField
+        (P.restrict k₁ F₁).ResidueField := by
+  let _ : Algebra ((P.restrict k₁ F₁).restrict k₀ F₀).integers P.integers :=
+    ((algebraMap (P.restrict k₁ F₁).integers P.integers).comp
+      (algebraMap ((P.restrict k₁ F₁).restrict k₀ F₀).integers
+        (P.restrict k₁ F₁).integers)).toAlgebra
+  let _ : IsLocalHom
+      (algebraMap ((P.restrict k₁ F₁).restrict k₀ F₀).integers P.integers) :=
+    RingHom.isLocalHom_comp _ _
+  let _ : IsScalarTower ((P.restrict k₁ F₁).restrict k₀ F₀).integers
+      (P.restrict k₁ F₁).integers P.integers :=
+    IsScalarTower.of_algebraMap_eq fun _ ↦ rfl
+  have : Algebra.IsSeparable ((P.restrict k₁ F₁).restrict k₀ F₀).ResidueField P.ResidueField := by
+    refine Algebra.IsSeparable.of_equiv_equiv
+      (RingEquiv.cast (R := fun Q : Place k₀ F₀ ↦ Q.ResidueField)
+        (restrict_restrict (k₀ := k₀) (F₀ := F₀) (k₁ := k₁) (F₁ := F₁) P).symm)
+      (RingEquiv.refl P.ResidueField) ?_
+    exact (algebraMap_comp_cast_restrict_restrict P).trans (RingHom.id_comp _).symm
+  exact ⟨Algebra.isSeparable_tower_top_of_isSeparable
+      ((P.restrict k₁ F₁).restrict k₀ F₀).ResidueField _ _,
+    Algebra.isSeparable_tower_bot_of_isSeparable _ _ P.ResidueField⟩
+
+variable (k₀ F₀) in
+/-- **Separability of residue extensions passes to the top of a tower**: if the residue extension
+of `P` over `F₀` is separable, so is its residue extension over `F₁`. -/
+theorem isSeparable_residueField_restrict_top (P : Place k₂ F₂)
+    [Algebra.IsSeparable
+      (@restrict k₀ k₂ F₀ F₂ _ _ _ _ _ _ _ _ _ _ _ P (Algebra.IsIntegral.trans F₁)).ResidueField
+      P.ResidueField] :
+    Algebra.IsSeparable (P.restrict k₁ F₁).ResidueField P.ResidueField :=
+  (isSeparable_residueField_restrict_and (k₀ := k₀) (F₀ := F₀) (k₁ := k₁) (F₁ := F₁) P).1
+
+/-- **Separability of residue extensions passes to the bottom of a tower**: if the residue
+extension of `P` over `F₀` is separable, so is the residue extension of `P ∩ F₁` over `F₀`. -/
+theorem isSeparable_residueField_restrict_bot (P : Place k₂ F₂)
+    [Algebra.IsSeparable
+      (@restrict k₀ k₂ F₀ F₂ _ _ _ _ _ _ _ _ _ _ _ P (Algebra.IsIntegral.trans F₁)).ResidueField
+      P.ResidueField] :
+    Algebra.IsSeparable ((P.restrict k₁ F₁).restrict k₀ F₀).ResidueField
+      (P.restrict k₁ F₁).ResidueField :=
+  (isSeparable_residueField_restrict_and P).2
 
 end Place
 

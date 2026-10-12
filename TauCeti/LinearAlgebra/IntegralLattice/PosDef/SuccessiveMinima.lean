@@ -111,7 +111,7 @@ theorem IsPosSemidef.successiveMinimum_zero (hL : L.IsPosSemidef)
     · have hx' : LinearIndependent ℤ (fun _ : Fin 1 ↦ x) :=
         linearIndependent_unique_iff.mpr hx
       exact hx'
-    · intro j
+    · intro _
       exact hnorm.le
   · obtain ⟨x, hx, hnorm⟩ := L.exists_linearIndependent_integralNorm_le_successiveMinimum ⟨0, h⟩
     have hle := (hL.minimum_le_integralNorm (hx.ne_zero 0)).trans (hnorm 0)
@@ -213,7 +213,7 @@ theorem IsPosSemidef.exists_linearIndependent_integralNorm_eq_successiveMinimum
         (Int.toNat_of_nonneg (hL.integralNorm_nonneg w)).symm
       have hsnoc : LinearIndependent ℤ (Fin.snoc x w) := by
         have h := (hx.map' L.carrier.subtype
-          (Submodule.ker_subtype _)).finSnoc_of_not_mem_span_over hw
+          (Submodule.ker_subtype _)).finSnoc_of_notMem_span_over hw
         have h' : LinearIndependent ℤ (L.carrier.subtype ∘ Fin.snoc x w) := by
           simpa only [Fin.comp_snoc, Submodule.subtype_apply] using h
         exact h'.of_comp L.carrier.subtype

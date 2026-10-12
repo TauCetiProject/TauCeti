@@ -8,7 +8,12 @@ module
 public import Mathlib.MeasureTheory.Measure.AbsolutelyContinuous
 
 /-!
-# Almost-everywhere statements along a map with absolutely continuous pushforward
+# Absolute continuity: domination by point-charging measures and transfer along maps
+
+If a measure gives positive mass to every singleton, every null set is empty. It
+therefore dominates any other measure, without a countability or finiteness
+assumption. This is useful when a full-support discrete reference is used for
+relative entropy.
 
 If `f` pushes `μ` forward to a measure absolutely continuous with respect to `ν`, then every
 property holding `ν`-almost everywhere holds at `f x` for `μ`-almost every `x`. Mathlib's
@@ -16,11 +21,34 @@ property holding `ν`-almost everywhere holds at `f x` for `μ`-almost every `x`
 
 ## Main declarations
 
+* `TauCeti.absolutelyContinuous_of_forall_singleton_ne_zero`: a measure positive on every
+  singleton dominates every measure.
 * `MeasureTheory.ae_comp_of_map_absolutelyContinuous`: a `ν`-almost-everywhere property holds
   along `f` `μ`-almost everywhere.
 -/
 
 public section
+
+open MeasureTheory
+
+namespace TauCeti
+
+variable {α : Type*} [MeasurableSpace α] {μ ν : Measure α}
+
+/-- A measure positive on every singleton dominates every measure: a null set cannot contain
+any point. No finiteness or countability assumption is needed. -/
+theorem absolutelyContinuous_of_forall_singleton_ne_zero
+    (hν : ∀ x : α, ν {x} ≠ 0) : μ ≪ ν := by
+  refine Measure.AbsolutelyContinuous.mk fun s _ hs ↦ ?_
+  have hempty : s = ∅ := by
+    apply Set.Subset.antisymm _ (Set.empty_subset s)
+    intro y hy
+    have hzero : ν {y} = 0 :=
+      le_zero_iff.mp ((measure_mono (Set.singleton_subset_iff.mpr hy)).trans_eq hs)
+    exact hν y hzero
+  simp [hempty]
+
+end TauCeti
 
 namespace MeasureTheory
 

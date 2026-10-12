@@ -45,6 +45,12 @@ variable {p : ℕ} [hp : Fact p.Prime] {R : Type*} [CommRing R] [CharP R p] [Per
 
 local notation "𝕎" => WittVector p
 
+variable (p) in
+omit [CharP R p] [PerfectRing R p] in
+/-- The Teichmüller representative `[a]` of `a ≠ 0` is nonzero, as its `0`-th coordinate is `a`. -/
+theorem teichmuller_ne_zero {a : R} (ha : a ≠ 0) : teichmuller p a ≠ 0 := fun h ↦
+  ha (by simpa using congrArg (coeff · 0) h)
+
 /-- The `n`-th **Teichmüller coordinate** of a Witt vector `x` over a perfect ring of
 characteristic `p`: the `p ^ n`-th root of the `n`-th Witt coordinate of `x`. These are the
 coefficients of the Teichmüller expansion `x = ∑ₙ [xₙ] pⁿ`. -/

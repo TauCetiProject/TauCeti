@@ -266,83 +266,16 @@ theorem geckSimpleWeylPoint_mem_normalizer_geckWeightTorusPoints (i : Fin t.rank
     (A : Type v) [CommRing A] :
     t.geckSimpleWeylPoint ht i A ∈
       Subgroup.normalizer (t.geckWeightTorusPoints ht A).range := by
-  let carrierEquiv : t.geckPoints ht A ≃*
-      UniversalEnvelopingAlgebra.kostantToralPointsSubgroup
-        (t.lieBasis ht).rootGenerator (t.lieBasis ht).h (t.geckRepresentation ht)
-        (t.geckCoordinateLattice ht).toAddSubgroup
-        (t.geckRepresentation_kostantForm_mem_geckCoordinateLattice ht)
-        (t.isNilpotent_geckRepresentation_rootGenerator ht)
-        (t.geckCoordinateBasisFin ht) (t.geckWeightFin ht) A :=
-    MulEquiv.subgroupCongr (geckPoints_eq_kostantToralPointsSubgroup t ht A)
-  have htorusPoint (s : Fin t.rank → Aˣ) :
-      carrierEquiv (t.geckWeightTorusPoints ht A s) =
-        UniversalEnvelopingAlgebra.kostantToralWeightTorusPoints
-          (t.lieBasis ht).rootGenerator (t.lieBasis ht).h (t.geckRepresentation ht)
-          (t.geckCoordinateLattice ht).toAddSubgroup
-          (t.geckRepresentation_kostantForm_mem_geckCoordinateLattice ht)
-          (t.isNilpotent_geckRepresentation_rootGenerator ht)
-          (t.geckCoordinateBasisFin ht) (t.geckWeightFin ht) A s := by
-    apply Subtype.ext
-    simp only [carrierEquiv, MulEquiv.subgroupCongr_apply, coe_geckWeightTorusPoints,
-      UniversalEnvelopingAlgebra.coe_kostantToralWeightTorusPoints]
-  have htorus : (t.geckWeightTorusPoints ht A).range.map carrierEquiv.toMonoidHom =
-      (UniversalEnvelopingAlgebra.kostantToralWeightTorusPoints
-        (t.lieBasis ht).rootGenerator (t.lieBasis ht).h (t.geckRepresentation ht)
-        (t.geckCoordinateLattice ht).toAddSubgroup
-        (t.geckRepresentation_kostantForm_mem_geckCoordinateLattice ht)
-        (t.isNilpotent_geckRepresentation_rootGenerator ht)
-        (t.geckCoordinateBasisFin ht) (t.geckWeightFin ht) A).range := by
-    ext x
-    constructor
-    · rintro ⟨_, ⟨s, rfl⟩, rfl⟩
-      exact ⟨s, (htorusPoint s).symm⟩
-    · rintro ⟨s, rfl⟩
-      exact ⟨t.geckWeightTorusPoints ht A s, ⟨s, rfl⟩, htorusPoint s⟩
-  have hweylPoint : carrierEquiv (t.geckSimpleWeylPoint ht i A) =
-      UniversalEnvelopingAlgebra.kostantToralWeylPoint
-        (t.lieBasis ht).rootGenerator (t.lieBasis ht).h (t.geckRepresentation ht)
-        (t.geckCoordinateLattice ht).toAddSubgroup
-        (t.geckRepresentation_kostantForm_mem_geckCoordinateLattice ht)
-        (t.isNilpotent_geckRepresentation_rootGenerator ht)
-        (t.geckCoordinateBasisFin ht) (t.geckWeightFin ht) (.inl i) (.inr i) A := by
-    apply Subtype.ext
-    rfl
-  have htransport :
-      t.geckSimpleWeylPoint ht i A ∈
-          Subgroup.normalizer (t.geckWeightTorusPoints ht A).range ↔
-        carrierEquiv (t.geckSimpleWeylPoint ht i A) ∈
-          Subgroup.normalizer
-            (UniversalEnvelopingAlgebra.kostantToralWeightTorusPoints
-              (t.lieBasis ht).rootGenerator (t.lieBasis ht).h (t.geckRepresentation ht)
-              (t.geckCoordinateLattice ht).toAddSubgroup
-              (t.geckRepresentation_kostantForm_mem_geckCoordinateLattice ht)
-              (t.isNilpotent_geckRepresentation_rootGenerator ht)
-              (t.geckCoordinateBasisFin ht) (t.geckWeightFin ht) A).range := by
-    have hcarrierApply :
-        carrierEquiv.toMonoidHom (t.geckSimpleWeylPoint ht i A) =
-          carrierEquiv (t.geckSimpleWeylPoint ht i A) := rfl
-    rw [← Subgroup.mem_map_iff_mem (f := carrierEquiv.toMonoidHom) carrierEquiv.injective,
-      Subgroup.map_equiv_normalizer_eq, htorus, hcarrierApply]
-  rw [htransport]
-  simpa only [hweylPoint] using
-    (UniversalEnvelopingAlgebra.kostantToralWeylPoint_mem_normalizer_weightTorusPoints
-      (i := Sum.inl i) (j := Sum.inr i) (c := i)
-      (α := (t.simplyConnectedRootDatum ht).root (t.simpleIndex ht i))
-      (t.lieBasis ht).rootGenerator (t.lieBasis ht).h (t.geckRepresentation ht)
-      (t.geckCoordinateLattice ht).toAddSubgroup
-      (t.geckRepresentation_kostantForm_mem_geckCoordinateLattice ht)
-      (t.isNilpotent_geckRepresentation_rootGenerator ht)
-      (t.geckCoordinateBasisFin ht) (t.geckWeightFin ht)
-      (t.isSl2Triple_geckRepresentation ht i)
-      (fun q ↦ by
-        rw [← t.rootGeneratorWeight_inl_eq_root_simpleIndex ht i]
-        exact t.lie_lieBasis_h_rootGenerator ht (.inl i) q)
-      (fun q ↦ by
-        have hneg := t.lie_lieBasis_h_rootGenerator ht (.inr i) q
-        rw [t.rootGeneratorWeight_inr_eq_neg_root_simpleIndex ht i,
-          Pi.neg_apply, Int.cast_neg, neg_smul] at hneg
-        exact hneg)
-      (t.isCartanWeightVector_geckCoordinateBasisFin ht) A)
+  -- Conjugation maps each torus point to the torus point of the reflected parameter, and the
+  -- reflection is an involution, so it maps the torus onto itself.
+  refine Subgroup.mem_normalizer_iff.2 fun x ↦ ⟨?_, ?_⟩
+  · rintro ⟨s, rfl⟩
+    exact ⟨_, (t.geckSimpleWeylPoint_conj_geckWeightTorusPoints ht i A s).symm⟩
+  · rintro ⟨s, hs⟩
+    have h := t.geckSimpleWeylPoint_conj_geckWeightTorusPoints ht i A
+      (t.geckSimpleReflectionTorusPoint ht i A s)
+    rw [geckSimpleReflectionTorusPoint_geckSimpleReflectionTorusPoint, hs] at h
+    exact ⟨_, mul_left_cancel (mul_right_cancel h)⟩
 
 /-! ## Products along words -/
 

@@ -264,7 +264,6 @@ lemma deriv_fdBoundary_four_sub_arc (H : ℝ) {t : ℝ} (ht : t ∈ Set.Ioo (1 :
     rwa [eqOn_fdBoundary_arc H hmem, eqOn_fdBoundary_arc H ⟨ht.1.le, ht.2.le⟩] at h
   have hcurve : fdBoundary H t = circleMap 0 1 ((t + 1) * (Real.pi / 6)) :=
     eqOn_fdBoundary_arc H ⟨ht.1.le, ht.2.le⟩
-  have hne : circleMap 0 1 ((t + 1) * (Real.pi / 6)) ≠ 0 := circleMap_ne_center one_ne_zero
   rw [deriv_fdBoundary_of_mem_Ioo_one_three ⟨by linarith [ht.2], by linarith [ht.1]⟩,
     deriv_fdBoundary_of_mem_Ioo_one_three ht, hcurve, hval, Complex.real_smul,
     Complex.real_smul]
@@ -276,7 +275,6 @@ lemma deriv_fdBoundary_four_sub_arc (H : ℝ) {t : ℝ} (ht : t ∈ Set.Ioo (1 :
 @[simp]
 theorem logDeriv_fdBoundary_arc {H t : ℝ} (ht : t ∈ Set.Ioo (1 : ℝ) 3) :
     logDeriv (fdBoundary H) t = (Real.pi / 6 : ℝ) * Complex.I := by
-  have hne : circleMap 0 1 ((t + 1) * (Real.pi / 6)) ≠ 0 := circleMap_ne_center one_ne_zero
   rw [logDeriv_apply, deriv_fdBoundary_of_mem_Ioo_one_three ht,
     eqOn_fdBoundary_arc H ⟨ht.1.le, ht.2.le⟩, Complex.real_smul]
   field_simp

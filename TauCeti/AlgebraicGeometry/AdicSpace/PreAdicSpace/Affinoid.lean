@@ -20,7 +20,8 @@ residue-field valuations, not only a homeomorphism of the underlying spaces.
 The predicate is independent of the chosen representative by construction and is registered as
 closed under isomorphisms. Canonical presentation-limit spectra are affinoid, and every affinoid
 pre-adic space has a spectral underlying topological space. The latter is the quasi-compactness
-input used to distinguish genuinely non-affinoid spaces later.
+input used to distinguish genuinely non-affinoid spaces: a pre-adic space whose underlying space
+is not quasi-compact is not affinoid.
 
 The further condition defining a pre-adic space in Wedhorn's sense is local: it asks for an
 affinoid open cover and for the structure presheaf to be adapted to the set of all affinoid open
@@ -108,6 +109,11 @@ theorem spectralSpace_of_isAffinoid {X : PreAdicSpace.{u}} (hX : isAffinoid X) :
         S.isRingOfIntegralElements.isPowerBounded_of_mem hP))
   let _ : CompactSpace X := h.symm.compactSpace
   exact h.isOpenEmbedding.spectralSpace
+
+/-- A pre-adic space whose underlying topological space is not quasi-compact is not affinoid. -/
+theorem not_isAffinoid_of_noncompactSpace {X : PreAdicSpace.{u}} [NoncompactSpace X] :
+    ¬ isAffinoid X := fun hX ↦
+  not_compactSpace_iff.mpr ‹_› (spectralSpace_of_isAffinoid hX).toCompactSpace
 
 end PreAdicSpace
 
