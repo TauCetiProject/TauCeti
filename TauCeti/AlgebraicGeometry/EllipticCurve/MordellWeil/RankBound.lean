@@ -139,8 +139,8 @@ open scoped Classical in
 /-- **The norm condition halves the bound.** Over a number field `F` in which `-1` is not a square,
 twice the order of the `2`-Selmer group is at most the order of `A(S, 2)`, for every finite set `S`
 of finite places outside which `a₂`, `a₄` and `a₆` are integral and `disc f` has valuation at most
-`1`. The factor `2` is the index in `A(S, 2)` of the classes with trivial norm class, which contain
-the `2`-Selmer group and exclude the class of `-1`. -/
+`1`. The classes in `A(S, 2)` with trivial norm class contain the `2`-Selmer group and have index
+at least `2`, because the class of `-1` has nontrivial norm class. -/
 theorem two_mul_card_selmerGroup₂_le_card_selmerGroupA {S : Set (HeightOneSpectrum (𝓞 F))}
     (hS : S.Finite) (ha₂ : ∀ v ∉ S, v.valuation F W.a₂ ≤ 1)
     (ha₄ : ∀ v ∉ S, v.valuation F W.a₄ ≤ 1) (ha₆ : ∀ v ∉ S, v.valuation F W.a₆ ≤ 1)
