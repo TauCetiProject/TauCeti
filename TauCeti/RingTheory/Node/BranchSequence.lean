@@ -85,11 +85,12 @@ private lemma exists_eq_aeval_sum_add_mul [Nontrivial R] (z : NodeAlgebra R 0) :
     simpa only [pb, AdjoinRoot.powerBasis'_dim, natDegree_quadratic] using hf
   simp only [pb, AdjoinRoot.powerBasis'_gen] at he
   refine ⟨f.coeff 0, f.coeff 1, ?_⟩
-  have hz := congrArg e he
-  rw [e.apply_symm_apply] at hz
+  have hz := congrArg (adjoinRootEquiv (0 : R)) he
+  rw [AlgEquiv.apply_symm_apply] at hz
   rw [Polynomial.aeval_eq_sum_range' hf2] at hz
-  simpa [e, Finset.sum_range_succ,
-    Algebra.smul_def, AdjoinRoot.algebraMap_eq] using hz
+  simp only [Finset.sum_range_succ, Finset.sum_range_zero, zero_add, pow_zero, pow_one,
+    Algebra.smul_def, AdjoinRoot.algebraMap_eq, mul_one] at hz
+  simpa only [map_add, map_mul, adjoinRootEquiv_of, adjoinRootEquiv_root] using hz
 
 /-- Restriction to the two branches loses no regular functions, over any commutative base. -/
 theorem branchMap_injective : Function.Injective (branchMap R) := by
