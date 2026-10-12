@@ -21,6 +21,8 @@ the differential vanishes, on elements (`HomologicalComplex.Hom.comm_apply`,
 is a cycle, `HomologicalComplex.moduleCatCyclesMk`.  This constructor directly returns
 an element of `K.cycles n` for modules over a ring in any universe, whereas Mathlib's
 `HomologicalComplex.cyclesMk` returns an element of `(forget₂ C Ab).obj (K.cycles n)`.
+Consequently, when `K` is the union of subcomplexes `L i`, every homology class of `K` comes from
+some `L i` (`HomologicalComplex.exists_homologyMap_eq_of_injective`).
 
 For a cochain complex `K`, `K.cyclesShortComplex n` is the sequence
 `Zⁿ(K) ⟶ Kⁿ ⟶ Zⁿ⁺¹(K)`. It is short exact whenever `K` is exact in degree `n + 1`.
@@ -72,6 +74,27 @@ noncomputable def moduleCatCyclesMk (x : K.X n) (m : ι) (hm : c.next n = m)
 lemma iCycles_moduleCatCyclesMk (x : K.X n) (m : ι) (hm : c.next n = m)
     (hx : K.d n m x = 0) : K.iCycles n (K.moduleCatCyclesMk x m hm hx) = x :=
   (K.sc n).moduleCatCyclesIso_inv_iCycles_apply _
+
+variable {K} in
+/-- **Homology classes of a union of subcomplexes.** Let `φ i : L i ⟶ K` be chain maps of
+complexes of modules that are injective in degree `c.next n`, and suppose every element of `K.X n`
+comes from some `L i`. Then every degree-`n` homology class of `K` comes from some `L i`. -/
+theorem exists_homologyMap_eq_of_injective {κ : Type*}
+    {L : κ → HomologicalComplex (ModuleCat R) c} (φ : ∀ i, L i ⟶ K)
+    (hφ : ∀ i, Function.Injective ((φ i).f (c.next n)))
+    (h : ∀ x : K.X n, ∃ i y, (φ i).f n y = x) (z : K.homology n) :
+    ∃ i y, homologyMap (φ i) n y = z := by
+  obtain ⟨z, rfl⟩ := K.moduleCat_homologyπ_surjective n z
+  obtain ⟨i, y, hy⟩ := h (K.iCycles n z)
+  -- the lift `y` of the cycle is again a cycle, since its differential maps to zero injectively
+  have hdy : (L i).d n (c.next n) y = 0 := hφ i <| by
+    rw [← Hom.comm_apply, hy, map_zero, ← ModuleCat.comp_apply, K.iCycles_d]
+    simp only [ModuleCat.hom_zero, LinearMap.zero_apply]
+  refine ⟨i, (L i).homologyπ n ((L i).moduleCatCyclesMk y _ rfl hdy), ?_⟩
+  rw [← ModuleCat.comp_apply, homologyπ_naturality, ModuleCat.comp_apply]
+  congr 1
+  apply K.moduleCat_iCycles_injective
+  rw [← ModuleCat.comp_apply, cyclesMap_i, ModuleCat.comp_apply, iCycles_moduleCatCyclesMk, hy]
 
 end HomologicalComplex
 

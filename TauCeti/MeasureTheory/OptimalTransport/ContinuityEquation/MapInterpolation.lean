@@ -5,8 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Convex.StrictConvexSpace
 public import TauCeti.MeasureTheory.OptimalTransport.ContinuityEquation.Basic
+public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Basic
 import Mathlib.Analysis.Calculus.ContDiff.Operations
+import TauCeti.MeasureTheory.OptimalTransport.Cost.NoCrossing
 import TauCeti.MeasureTheory.Function.ConditionalExpectation
 
 /-!
@@ -39,6 +42,11 @@ particles is discarded (for instance if almost every `Fₜ` is injective on a me
 These curves are the map-induced competitors in the Benamou–Brenier formula: when the graph plan of
 `T` is optimal for the cost `‖x - y‖ ^ p`, the `p`-th moment of the displacement is
 `W_p (μ, T₊ μ) ^ p`, so the action of the barycentric velocity is at most `W_p (μ, T₊ μ) ^ p`.
+If moreover `E` is strictly convex and `1 < p < ∞`, optimality rules out crossings: the optimal plan
+is concentrated on a cyclically monotone set, on which every intermediate interpolating map `Fₜ`
+is injective (`TauCeti.IsCyclicallyMonotone.injOn_smul_add_smul`). The velocity is then the
+displacement itself and the action bound is an equality,
+`∫₀¹ ∫ ‖vₜ‖ ^ p dμₜ dt = W_p (μ, T₊ μ) ^ p`.
 
 ## Main results
 
@@ -51,6 +59,10 @@ These curves are the map-induced competitors in the Benamou–Brenier formula: w
   equals the `p`-th moment of the displacement.
 * `TauCeti.exists_isContinuityEquation_map_smul_add_smul_of_ae_injOn`: the special case in which
   almost every interpolating map is injective on one measurable set carrying `μ`.
+* `TauCeti.exists_isContinuityEquation_map_smul_add_smul_of_isOptimalCoupling`: on a strictly
+  convex space and for `1 < p < ∞`, if the graph plan of `T` is optimal for the cost `d(x, y) ^ p`
+  at finite Wasserstein distance, the velocity field is the displacement read along the
+  interpolation, and its `p`-action is `W_p (μ, T₊ μ) ^ p`.
 
 ## References
 
@@ -178,5 +190,72 @@ theorem exists_isContinuityEquation_map_smul_add_smul_of_ae_injOn (μ : Measure 
     ((Measure.ae_prod_mem_iff_ae_ae_mem (hU.prod hS)).2
       (hUμ.mono fun _ ht ↦ hSμ.mono fun _ hx ↦ ⟨ht, hx⟩))
     fun t _ hx _ hx' ↦ hUinj t hx.1 hx.2 hx'.2
+
+/-- **The velocity along an optimal linear interpolation.** Let `E` be strictly convex, let
+`1 < p < ∞`, and let `μ` be a finite measure on `E` and `T` a measurable map whose graph plan is
+an optimal coupling of `μ` and `ν` for the cost `d(x, y) ^ p`, at finite Wasserstein distance
+`W_p (μ, ν)`. Then the laws `μₜ` of `(1 - t) • x + t • T x` under `μ` solve the continuity
+equation on `(0, 1)` with a velocity field `v` equal to the displacement along the interpolation,
+`vₜ ((1 - t) • x + t • T x) = T x - x` for almost every `t ∈ (0, 1)` and `μ`-almost every `x`, and
+the `p`-action of `v` is the `p`-th power of the Wasserstein distance:
+`∫₀¹ ∫ ‖vₜ‖ ^ p dμₜ dt = W_p (μ, ν) ^ p`.
+
+The optimal plan is concentrated on its support, which is cyclically monotone, and transport
+segments between points of a cyclically monotone set do not cross
+(`TauCeti.IsCyclicallyMonotone.injOn_smul_add_smul`), so no averaging takes place. -/
+theorem exists_isContinuityEquation_map_smul_add_smul_of_isOptimalCoupling
+    [StrictConvexSpace ℝ E] (μ : Measure E) [IsFiniteMeasure μ] {ν : Measure E}
+    (hT : Measurable T) {p : ℝ≥0∞} (hp : 1 < p) (hp_top : p ≠ ∞)
+    (hopt : IsOptimalCoupling (fun z : E × E ↦ edist z.1 z.2 ^ p.toReal) (graphPlan T μ) μ ν)
+    (hfin : wassersteinEDist p μ ν ≠ ∞) :
+    ∃ v : ℝ → E → E,
+      IsContinuityEquation (fun t ↦ μ.map fun x ↦ (1 - t) • x + t • T x) v 0 1 ∧
+      (∀ᵐ t, t ∈ Ioo 0 1 → ∀ᵐ x ∂μ, v t ((1 - t) • x + t • T x) = T x - x) ∧
+      ∫⁻ t in Ioo 0 1, ∫⁻ y, ‖v t y‖ₑ ^ p.toReal ∂μ.map (fun x ↦ (1 - t) • x + t • T x) =
+        wassersteinEDist p μ ν ^ p.toReal := by
+  have hp₁ : 1 < p.toReal := by
+    simpa using (ENNReal.toReal_lt_toReal ENNReal.one_ne_top hp_top).2 hp
+  have hc : Continuous fun z : E × E ↦ edist z.1 z.2 ^ p.toReal :=
+    ENNReal.continuous_rpow_const.comp continuous_edist
+  have hcost : transportCost (fun z : E × E ↦ edist z.1 z.2 ^ p.toReal) μ ν =
+      wassersteinEDist p μ ν ^ p.toReal :=
+    (wassersteinEDist_rpow_eq_transportCost continuous_edist.measurable
+      (zero_lt_one.trans hp).ne' hp_top μ ν).symm
+  -- the `p`-th moment of the displacement is the optimal cost
+  have hmom : ∫⁻ x, ‖T x - x‖ₑ ^ p.toReal ∂μ = wassersteinEDist p μ ν ^ p.toReal := by
+    rw [← hcost, ← hopt.lintegral_eq, lintegral_graphPlan hT.aemeasurable
+      hc.measurable.aemeasurable]
+    simp only [edist_eq_enorm_sub, enorm_sub_rev]
+  have hmom_fin : ∫⁻ x, ‖T x - x‖ₑ ^ p.toReal ∂μ ≠ ∞ :=
+    hmom ▸ ENNReal.rpow_ne_top_of_nonneg ENNReal.toReal_nonneg hfin
+  -- so the displacement has finite first moment
+  have hint : ∫⁻ x, ‖T x - x‖ₑ ∂μ < ∞ := by
+    have hle (a : ℝ≥0∞) : a ≤ 1 + a ^ p.toReal := by
+      rcases le_total a 1 with ha | ha
+      · exact ha.trans le_self_add
+      · calc a = a ^ (1 : ℝ) := (ENNReal.rpow_one a).symm
+          _ ≤ a ^ p.toReal := ENNReal.rpow_le_rpow_of_exponent_le ha hp₁.le
+          _ ≤ 1 + a ^ p.toReal := le_add_self
+    calc ∫⁻ x, ‖T x - x‖ₑ ∂μ ≤ ∫⁻ x, 1 + ‖T x - x‖ₑ ^ p.toReal ∂μ := lintegral_mono fun x ↦ hle _
+      _ = μ univ + ∫⁻ x, ‖T x - x‖ₑ ^ p.toReal ∂μ := by
+        rw [lintegral_add_left measurable_const, lintegral_const, one_mul]
+      _ < ∞ := ENNReal.add_lt_top.2 ⟨measure_lt_top μ univ, hmom_fin.lt_top⟩
+  -- the optimal plan is concentrated on its support, which is cyclically monotone
+  have hgraph : Measurable fun x ↦ (x, T x) := measurable_id.prodMk hT
+  set S := (fun x ↦ (x, T x)) ⁻¹' (graphPlan T μ).support
+  have hS : MeasurableSet S := Measure.isClosed_support.measurableSet.preimage hgraph
+  have hSμ : ∀ᵐ x ∂μ, x ∈ S := by
+    have h := Measure.measure_compl_support (μ := graphPlan T μ)
+    rw [graphPlan_def, Measure.map_apply hgraph Measure.isClosed_support.measurableSet.compl,
+      ← graphPlan_def] at h
+    exact measure_eq_zero_iff_ae_notMem.1 h |>.mono fun x hx ↦ not_not.1 hx
+  have hmono := hopt.isCyclicallyMonotone_support hc (hcost ▸
+    ENNReal.rpow_ne_top_of_nonneg ENNReal.toReal_nonneg hfin)
+  have hinj : ∀ᵐ t, t ∈ Ioo (0 : ℝ) 1 → InjOn (fun x ↦ (1 - t) • x + t • T x) S :=
+    .of_forall fun t ht x hx y hy he ↦
+      congrArg Prod.fst (hmono.injOn_smul_add_smul hp₁ ht hx hy he)
+  obtain ⟨v, hce, hv, hact⟩ :=
+    exists_isContinuityEquation_map_smul_add_smul_of_ae_injOn μ hT hint hS hSμ hinj
+  exact ⟨v, hce, hv, (hact p.toReal).trans hmom⟩
 
 end TauCeti

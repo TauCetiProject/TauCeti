@@ -7,7 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.AdicSpace.FarguesFontaine.GaussPoint
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Localization.UniversalProperty
-public import TauCeti.RingTheory.WittVector.IntervalRing
+public import TauCeti.RingTheory.WittVector.IntervalRing.Basic
 
 /-!
 # The adic spectrum of an interval ring lies over a window

@@ -38,7 +38,7 @@ concatenation in the matching direction.
 * `GenLoop.homotopic_homeomorph_iff`: a homeomorphism of generalized-loop spaces preserves and
   reflects homotopy.
 * `HomotopyGroup.congrEquiv`, `HomotopyGroup.congrMulEquiv`: reindexing the cube directions
-  along `M ≃ N`.
+  along `M ≃ N`, natural in the space by `HomotopyGroup.map_congrEquiv`.
 * `HomotopyGroup.zerothHomotopyEquiv`: **`π_N(X, x)` is the set of path components of
   `Ω^ N X x`**, with `Path.joined_iff_homotopic` its one-dimensional form and
   `HomotopyGroup.zerothHomotopyLoopSpaceEquivFundamentalGroup` the degree-zero shift
@@ -161,6 +161,17 @@ theorem congrEquiv_symm_mk (e : M ≃ N) (q : Ω^ N X x) :
     (congrEquiv e).symm (⟦q⟧ : HomotopyGroup N X x) = ⟦_root_.GenLoop.congr x e.symm q⟧ :=
   by rw [congrEquiv.eq_1]; rfl
 
+/-- Reindexing the cube directions commutes with the maps induced by based continuous maps. -/
+@[simp]
+theorem map_congrEquiv {Y : Type*} [TopologicalSpace Y] {y : Y} (f : C(X, Y)) (hf : f x = y)
+    (e : M ≃ N) (a : HomotopyGroup M X x) :
+    map f hf (congrEquiv e a) = congrEquiv e (map f hf a) := by
+  induction a using Quotient.inductionOn
+  rw [congrEquiv_mk, map_mk, map_mk, congrEquiv_mk]
+  -- both generalized loops are `f ∘ p ∘ (t ↦ t ∘ e)`; they differ only in the order in which
+  -- the two compositions are bundled.
+  rfl
+
 /-- In positive dimensions, reindexing the cube directions along `e : M ≃ N` is an isomorphism
 of homotopy groups. The target index type inherits its nonemptiness, hence its group structure,
 from `e`; that is what the `letI` in the statement records. -/
@@ -221,6 +232,22 @@ theorem zerothHomotopyEquiv_symm_mk (p : Ω^ N X x) :
     zerothHomotopyEquiv.symm (⟦p⟧ : HomotopyGroup N X x) =
       (⟦p⟧ : ZerothHomotopy (Ω^ N X x)) :=
   by rw [zerothHomotopyEquiv.eq_1]; rfl
+
+/-- Mathlib's homeomorphism `Ω^ N X x ≃ₜ X` for empty `N` evaluates a zero-dimensional
+generalized loop at the unique point of the cube. -/
+@[simp]
+theorem _root_.genLoopHomeoOfIsEmpty_apply [IsEmpty N] (p : Ω^ N X x) :
+    genLoopHomeoOfIsEmpty N x p = p 0 :=
+  rfl
+
+/-- Mathlib's bijection between the homotopy group indexed by an empty type and the path
+components of `X` sends the class of a zero-dimensional generalized loop to the path component of
+its value. -/
+@[simp]
+theorem _root_.homotopyGroupEquivZerothHomotopyOfIsEmpty_mk [IsEmpty N] (p : Ω^ N X x) :
+    homotopyGroupEquivZerothHomotopyOfIsEmpty N x (⟦p⟧ : HomotopyGroup N X x) =
+      ZerothHomotopy.mk (p 0) :=
+  rfl
 
 /-- **Two loops at `x` are joined by a path in the loop space exactly when they are homotopic.**
 This is `GenLoop.homotopic_iff_joined` for a singleton index type, carried across the

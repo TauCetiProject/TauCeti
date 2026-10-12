@@ -147,6 +147,7 @@ theorem coe_decompose_smul_of_mem (hd : d ≠ 0)
     rw [notMem_support_iff.mp hn, zero_smul, DirectSum.decompose_zero, DirectSum.zero_apply,
       ZeroMemClass.coe_zero]
 
+omit [IsScalarTower k k[X] M] in
 /-- If `X` lowers degree by `d`, the component of `X ^ n • x` in degree `p` is `X ^ n` times the
 component of `x` in degree `p + n * d`. No homogeneity of `x` is assumed. -/
 theorem coe_decompose_X_pow_smul

@@ -471,4 +471,45 @@ theorem affineRayFanDiffeomorph_analyticAffineChartι (n : ℕ∞ω)
       rayNumbering g n]
   exact affineRayPointDiffeomorph_apply g n x
 
+namespace Fan
+
+variable (Φ : Fan ((Int.castAddHom ℝ).compLeft (Fin 1))) (hΦ : Φ.IsRegular)
+  (hσ : affineRayCone ∈ Φ.cones)
+
+/-- The affine-ray chart inclusion is a biholomorphism onto its cone open, for the standard
+positive-character complex structure. -/
+noncomputable def affineRayChartPartialDiffeomorph (n : ℕ∞ω) :
+    let _ := affinePointTopology g
+    let _ := affineRayChartedSpace g
+    let _ := Φ.analyticChartedSpace hΦ
+    PartialDiffeomorph 𝓘(ℂ, (Fin 1 → ℂ) × (Fin 0 → ℂ))
+      𝓘(ℂ, Fin (Module.finrank ℤ (Fin 1 → ℤ)) → ℂ)
+      (AffineSemigroupComplexPoint (dualSemigroup (isIntegralLattice_intCast 1) affineRayCone))
+      (Φ.analyticRealization hΦ) n :=
+  Φ.analyticAffineChartPartialDiffeomorph hΦ ⟨affineRayCone, hσ⟩ rayBasis_extends rayNumbering g n
+
+/-- The standard affine-ray chart inclusion is defined everywhere. -/
+@[simp] theorem affineRayChartPartialDiffeomorph_source (n : ℕ∞ω) :
+    (Φ.affineRayChartPartialDiffeomorph g hΦ hσ n).source = Set.univ :=
+  Φ.analyticAffineChartPartialDiffeomorph_source hΦ ⟨affineRayCone, hσ⟩
+    rayBasis_extends rayNumbering g n
+
+/-- The target of the standard affine-ray chart inclusion is its cone open. -/
+@[simp] theorem affineRayChartPartialDiffeomorph_target (n : ℕ∞ω) :
+    (Φ.affineRayChartPartialDiffeomorph g hΦ hσ n).target =
+      Set.range (Φ.analyticAffineChartι hΦ ⟨affineRayCone, hσ⟩) :=
+  Φ.analyticAffineChartPartialDiffeomorph_target hΦ ⟨affineRayCone, hσ⟩
+    rayBasis_extends rayNumbering g n
+
+/-- The standard affine-ray chart inclusion is the canonical map into the fan realization. -/
+@[simp] theorem affineRayChartPartialDiffeomorph_apply (n : ℕ∞ω)
+    (x : AffineSemigroupComplexPoint
+      (dualSemigroup (isIntegralLattice_intCast 1) affineRayCone)) :
+    Φ.affineRayChartPartialDiffeomorph g hΦ hσ n x =
+      Φ.analyticAffineChartι hΦ ⟨affineRayCone, hσ⟩ x :=
+  Φ.analyticAffineChartPartialDiffeomorph_apply hΦ ⟨affineRayCone, hσ⟩
+    rayBasis_extends rayNumbering g n x
+
+end Fan
+
 end TauCeti.Toric
