@@ -34,6 +34,8 @@ preadditive category `CommGrp (Over S)`.
 * `TauCeti.GroupScheme.torsion G n`: the `n`-torsion `G[n]`, a group object of `Over S`.
 * `TauCeti.GroupScheme.torsionι G n`: its inclusion `G[n] ⟶ G`.
 * `TauCeti.GroupScheme.torsionLift`: the point of `G[n]` given by a point of `G` killed by `n`.
+* `TauCeti.GroupScheme.torsionMap`: the homomorphism `G[n] ⟶ H[n]` induced by a homomorphism
+  `G ⟶ H`.
 * `TauCeti.GroupScheme.torsionPointsMulEquiv`: the points of `G[n]` with values in `Z`, as a group,
   are the `n`-torsion of the points of `G` with values in `Z`.
 * `TauCeti.GroupScheme.torsionBaseChangeIso`: formation of `G[n]` commutes with base change.
@@ -177,6 +179,39 @@ theorem torsionPointsMulEquiv_symm_apply_torsionι
   torsionLift_ι x.1 x.2
 
 variable {n Z}
+
+/-! ### Functoriality of the `n`-torsion -/
+
+variable {G} {H K : CommGrp (Over S)}
+
+/-- The homomorphism `G[n] ⟶ H[n]` induced by a homomorphism `f : G ⟶ H` of commutative group
+schemes over `S`, the restriction of `f` to the `n`-torsion. -/
+noncomputable def torsionMap (f : G ⟶ H) (n : ℤ) : (torsion G n).X ⟶ (torsion H n).X :=
+  torsionLift (torsionι G n ≫ f.hom.hom.hom)
+    (by rw [← GrpObj.zpow_comp, torsionι_zpow, MonObj.one_comp])
+
+/-- The map induced on the `n`-torsion by `f` is the restriction of `f`. -/
+@[reassoc (attr := simp)]
+theorem torsionMap_ι (f : G ⟶ H) (n : ℤ) :
+    torsionMap f n ≫ torsionι H n = torsionι G n ≫ f.hom.hom.hom :=
+  torsionLift_ι _ _
+
+/-- The map induced on the `n`-torsion is a homomorphism of group schemes over `S`. -/
+instance isMonHom_torsionMap (f : G ⟶ H) (n : ℤ) : IsMonHom (torsionMap f n) :=
+  isMonHom_torsionLift _ _
+
+/-- The identity of `G` induces the identity of `G[n]`. -/
+@[simp]
+theorem torsionMap_id (n : ℤ) : torsionMap (𝟙 G) n = 𝟙 _ :=
+  torsion_hom_ext G (by simp)
+
+/-- The map induced on the `n`-torsion by a composite is the composite of the induced maps. -/
+@[simp]
+theorem torsionMap_comp (f : G ⟶ H) (g : H ⟶ K) (n : ℤ) :
+    torsionMap (f ≫ g) n = torsionMap f n ≫ torsionMap g n :=
+  torsion_hom_ext K (by simp)
+
+variable (G)
 
 /-! ### Base change of the `n`-torsion -/
 
