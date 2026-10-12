@@ -57,6 +57,10 @@ unramified the units of its ring of integers have no Tate cohomology
 
 ## Main results
 
+* `IsDedekindDomain.HeightOneSpectrum.isZero_tateCohomology_one_semilocalUnitsRep`,
+  `NumberField.InfinitePlace.isZero_tateCohomology_one_infiniteSemilocalUnitsRep`: first
+  cohomology vanishes at every place, for any finite Galois extension, by Shapiro and field
+  Hilbert 90.
 * `TauCeti.ClassFieldTheory.herbrandQuotient_semilocalUnitsRep`: `h((K_v ⊗[K] L)ˣ) = [L_w : K_v]`
   for `L/K` cyclic and `v` finite.
 * `TauCeti.ClassFieldTheory.isZero_tateCohomology_semilocalIntegralUnitsRep`:
@@ -70,7 +74,10 @@ unramified the units of its ring of integers have no Tate cohomology
 
 ## References
 
-* J. S. Milne, *Class Field Theory*, Chapter VII, Lemma 2.4 and Proposition 2.7.
+* J. S. Milne, *Class Field Theory*, v4.03, Chapter VII, Lemma 2.4, Corollary 2.6
+  and Proposition 2.7.
+
+The first-cohomology computations reuse Mathlib's `groupCohomology.H1ofAutOnUnitsUnique`.
 -/
 
 public section
@@ -196,3 +203,52 @@ theorem herbrandQuotient_infiniteSemilocalUnitsRep (v : InfinitePlace K) (w : In
 end InfinitePlace
 
 end TauCeti.ClassFieldTheory
+
+open TauCeti TauCeti.ClassFieldTheory
+open scoped NumberField.LiesOver
+
+variable {K L : Type} [Field K] [NumberField K] [Field L] [NumberField L]
+  [Algebra K L] [IsGalois K L]
+
+namespace IsDedekindDomain.HeightOneSpectrum
+
+/-- The first Tate cohomology of the semi-local units at a finite place vanishes, for any
+finite Galois extension of number fields. -/
+theorem isZero_tateCohomology_one_semilocalUnitsRep (v : HeightOneSpectrum (𝓞 K)) :
+    IsZero (tateCohomology (semilocalUnitsRep L v) 1) := by
+  obtain ⟨w, rfl⟩ := HeightOneSpectrum.under_surjective (𝓞 K) (𝓞 L) v
+  let A := Rep.ofAlgebraAutOnUnits ((w.under (𝓞 K)).adicCompletion K) (w.adicCompletion L)
+  have hA : IsZero (groupCohomology A 1) := ModuleCat.isZero_of_subsingleton _
+  exact hA.of_iso <|
+    (tateCohomologyFunctor 1).mapIso (semilocalUnitsCoindIso (w.under (𝓞 K)) w) ≪≫
+      TauCeti.TateCohomology.coindIsoPos _ _ 1 ≪≫
+      -- The decomposition representation is restriction along the hom of this equivalence.
+      (TauCeti.TateCohomology.resIso (MulEquiv.ofBijective (HeightOneSpectrum.decompositionHom
+        (w.under (𝓞 K)) w) ⟨HeightOneSpectrum.decompositionHom_injective _ _,
+          HeightOneSpectrum.decompositionHom_surjective _ _⟩) 1).app A ≪≫
+      (_root_.TateCohomology.isoGroupCohomology 1).app A
+
+end IsDedekindDomain.HeightOneSpectrum
+
+namespace NumberField.InfinitePlace
+
+/-- The first Tate cohomology of the semi-local units at an infinite place vanishes, including
+at real places that become complex in the extension. -/
+theorem isZero_tateCohomology_one_infiniteSemilocalUnitsRep (v : InfinitePlace K) :
+    IsZero (tateCohomology (GlobalNumberFields.infiniteSemilocalUnitsRep L v) 1) := by
+  classical
+  obtain ⟨w, rfl⟩ := InfinitePlace.comap_surjective (K := L) v
+  let : Fintype (MulAction.stabilizer (L ≃ₐ[K] L) w) := Fintype.ofFinite _
+  let A := Rep.ofAlgebraAutOnUnits (w.comap (algebraMap K L)).Completion w.Completion
+  have hA : IsZero (groupCohomology A 1) := ModuleCat.isZero_of_subsingleton _
+  exact hA.of_iso <|
+    (tateCohomologyFunctor 1).mapIso
+        (GlobalNumberFields.infiniteSemilocalUnitsCoindIso (w.comap (algebraMap K L)) w) ≪≫
+      TauCeti.TateCohomology.coindIsoPos _ _ 1 ≪≫
+      -- The decomposition representation is restriction along the hom of this equivalence.
+      (TauCeti.TateCohomology.resIso (MulEquiv.ofBijective (InfinitePlace.decompositionHom
+        (w.comap (algebraMap K L)) w) ⟨InfinitePlace.decompositionHom_injective _ _,
+          InfinitePlace.decompositionHom_surjective _ _⟩) 1).app A ≪≫
+      (_root_.TateCohomology.isoGroupCohomology 1).app A
+
+end NumberField.InfinitePlace
