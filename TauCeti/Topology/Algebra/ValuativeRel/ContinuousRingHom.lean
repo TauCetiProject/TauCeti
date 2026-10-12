@@ -6,10 +6,16 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Algebra.ValuativeRel.ValuativeTopology
+public import TauCeti.RingTheory.Valuation.ValuativeRel.Extension
 import TauCeti.RingTheory.Valuation.Continuous.TopologicallyNilpotent
 
 /-!
-# Continuous ring homomorphisms preserve valuations
+# Continuity and compatibility of valued field homomorphisms
+
+The algebra map of a compatible valued field extension is continuous if nonzero values of the
+base field are coinitial among the nonzero values of the extension. Algebraic extensions satisfy
+this condition, with no restriction on the rank of the valuations or completeness of the fields.
+Compatibility alone does not imply continuity for transcendental extensions.
 
 Let `K` and `L` be division rings whose topologies are induced by their valuative relations, with
 archimedean value groups (that is, of rank at most one), and with the valuation of `K`
@@ -35,6 +41,10 @@ Chapter II, Proposition (3.3), for absolute values.
 
 ## Main results
 
+* `TauCeti.continuous_algebraMap_of_coinitial`: coinitiality of nonzero base-field values implies
+  continuity of the algebra map of a compatible extension.
+* `TauCeti.continuous_algebraMap_of_valuativeExtension`: the algebra map of an algebraic
+  compatible extension is continuous.
 * `RingHom.isEquiv_comap_valuation_of_continuous`: the pullback of the valuation of `L` along a
   continuous `f : K →+* L` is equivalent to the valuation of `K`.
 * `RingHom.map_vle_map_iff_of_continuous`: a continuous `f : K →+* L` satisfies
@@ -50,6 +60,43 @@ Chapter II, Proposition (3.3), for absolute values.
 public section
 
 open ValuativeRel
+
+namespace TauCeti
+
+variable (K L : Type*) [Field K] [ValuativeRel K] [TopologicalSpace K]
+  [IsValuativeTopology K] [DivisionRing L] [ValuativeRel L] [TopologicalSpace L]
+  [IsValuativeTopology L] [Algebra K L] [ValuativeExtension K L]
+
+/-- The algebra map of a compatible extension is continuous if the nonzero base-field values
+are coinitial among the nonzero target values. -/
+theorem continuous_algebraMap_of_coinitial
+    (h : ∀ y : L, y ≠ 0 → ∃ x : K, x ≠ 0 ∧ algebraMap K L x ≤ᵥ y) :
+    Continuous (algebraMap K L) := by
+  refine continuous_of_continuousAt_zero (algebraMap K L) ?_
+  rw [ContinuousAt, map_zero]
+  refine ((IsValuativeTopology.hasBasis_nhds_zero K).tendsto_iff
+    (IsValuativeTopology.hasBasis_nhds_zero L)).mpr fun γ _ ↦ ?_
+  obtain ⟨y, hy⟩ := valuation_surjective γ.val
+  have hy0 : y ≠ 0 := by
+    intro h0
+    exact γ.ne_zero (by simpa [h0] using hy.symm)
+  obtain ⟨x, hx0, hxy⟩ := h y hy0
+  refine ⟨Units.mk0 (valuation K x) (by simpa using hx0), trivial, fun z hz ↦ ?_⟩
+  have hz' : z <ᵥ x := (valuation K).vlt_iff_lt.mpr hz
+  exact ((valuation L).vlt_iff_lt.mp (ValuativeExtension.vlt_iff_vlt.mpr hz')).trans_le
+    (((valuation L).vle_iff_le.mp hxy).trans_eq hy)
+
+end TauCeti
+
+/-- The algebra map of an algebraic compatible extension is continuous for the valuative
+topologies. -/
+theorem TauCeti.continuous_algebraMap_of_valuativeExtension (K L : Type*)
+    [Field K] [ValuativeRel K] [TopologicalSpace K] [IsValuativeTopology K]
+    [Field L] [ValuativeRel L] [TopologicalSpace L] [IsValuativeTopology L]
+    [Algebra K L] [ValuativeExtension K L] [Algebra.IsAlgebraic K L] :
+    Continuous (algebraMap K L) :=
+  continuous_algebraMap_of_coinitial K L fun y hy ↦
+    (Algebra.IsAlgebraic.isAlgebraic y).exists_ne_zero_vle hy
 
 section RingHom
 
