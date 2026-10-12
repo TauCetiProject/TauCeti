@@ -41,9 +41,8 @@ The multiplication bridge used here is `TauCeti.CommHopfAlgCat.grpObjPointsMulEq
   `CategoryTheory.IsMonHom.normal_iff_normal_monoidHom`; the latter follows Görtz–Wedhorn,
   *Algebraic Geometry II*, Definition 27.3.
 
-This advances Layer 5, "The unipotent radical", of the ReductiveGroups roadmap. It connects the
-coordinate normality API to the categorical semidirect-product API used to form the product of
-two normal unipotent-radical candidates.
+This connects the coordinate normality API to the categorical semidirect-product API used to form
+the product of two normal unipotent-radical candidates.
 -/
 
 public section
