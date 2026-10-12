@@ -38,8 +38,9 @@ average of the orbit of `Δ φ` over `(0, t]` tends to `Δ φ` by strong continu
 (`TauCeti.Semigroups.StronglyContinuousSemigroup.tendsto_average_orbit_zero`).
 
 This identifies the generator only on `C²` functions with compact support; its full domain is not
-determined here. For `1 < p < ∞` that domain is the Sobolev space `W^{2,p}`, by the
-Calderón–Zygmund estimates, while for `p = 1` it is strictly larger than `W^{2,1}`.
+determined here. For scalar-valued functions and `1 < p < ∞` that domain is the Sobolev space
+`W^{2,p}`, by the Calderón–Zygmund estimates, while for `p = 1` and `dim E ≥ 2` it is strictly
+larger than `W^{2,1}`.
 
 ## Main declarations
 
