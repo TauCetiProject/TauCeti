@@ -77,19 +77,20 @@ private theorem weight_mul_one_add_exp (y : ℝ) :
   rw [weight_def, Real.tanh_eq, hsq, div_mul_eq_mul_div, div_eq_iff hpos.ne']
   linear_combination 2 * Real.exp (-(π * y / 2)) * hone
 
+/-- For `y ≥ 0`, `|kernelIntegrand (y, t)| = (w(y) / 2) |sin t| e^{-y |t|}`. -/
+private theorem abs_kernelIntegrand {y : ℝ} (hy : 0 ≤ y) (t : ℝ) :
+    |kernelIntegrand (y, t)| = weight y / 2 * (|Real.sin t| * Real.exp (-(y * |t|))) := by
+  rw [kernelIntegrand_def, abs_mul, abs_div, abs_two, abs_mul, abs_of_nonneg (weight_nonneg hy),
+    Real.abs_exp, mul_comm |t| y]
+  ring
+
 /-- For `y > 0`, the `t`-integral of `|kernelIntegrand (y, t)|` is `(1 + y²)⁻¹`: the weight
 cancels the periodic factor of the Laplace transform of `|sin|`. -/
 private theorem integral_abs_kernelIntegrand {y : ℝ} (hy : 0 < y) :
     ∫ t, |kernelIntegrand (y, t)| = (1 + y ^ 2)⁻¹ := by
-  have hw := weight_nonneg hy.le
   have hlt : Real.exp (-(π * y)) < 1 := Real.exp_lt_one_iff.mpr (by nlinarith [Real.pi_pos])
   have hne : 1 - Real.exp (-(π * y)) ≠ 0 := (sub_pos.mpr hlt).ne'
-  have habs : ∀ t, |kernelIntegrand (y, t)| =
-      weight y / 2 * (|Real.sin t| * Real.exp (-(y * |t|))) := fun t ↦ by
-    rw [kernelIntegrand_def, abs_mul, abs_div, abs_two, abs_mul, abs_of_nonneg hw,
-      Real.abs_exp, mul_comm |t| y]
-    ring
-  simp only [habs, integral_const_mul, integral_abs_sin_mul_exp_neg_mul_abs hy]
+  simp only [abs_kernelIntegrand hy.le, integral_const_mul, integral_abs_sin_mul_exp_neg_mul_abs hy]
   have h := weight_mul_one_add_exp y
   field_simp
   linear_combination h
@@ -103,9 +104,7 @@ theorem integrable_kernelIntegrand :
   · refine (ae_restrict_iff' measurableSet_Ioi).mpr (Filter.Eventually.of_forall fun y hy ↦ ?_)
     refine ((integrable_abs_sin_mul_exp_neg_mul_abs hy).const_mul (weight y / 2)).mono'
       (by fun_prop) (Filter.Eventually.of_forall fun t ↦ ?_)
-    rw [Real.norm_eq_abs, kernelIntegrand_def, abs_mul, abs_div, abs_two, abs_mul,
-      abs_of_nonneg (weight_nonneg (le_of_lt hy)), Real.abs_exp, mul_comm |t| y]
-    exact le_of_eq (by ring)
+    rw [Real.norm_eq_abs, abs_kernelIntegrand (le_of_lt hy)]
   · simp only [Real.norm_eq_abs]
     refine integrable_inv_one_add_sq.integrableOn.congr_fun (fun y hy ↦ ?_) measurableSet_Ioi
     exact (integral_abs_kernelIntegrand hy).symm
