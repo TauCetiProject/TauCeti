@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.GradientFlow.MoreauYosida.Basic
 public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.GeneralizedGeodesic.Basic
-public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Space
 import TauCeti.Data.EReal.Operations
 
 /-!

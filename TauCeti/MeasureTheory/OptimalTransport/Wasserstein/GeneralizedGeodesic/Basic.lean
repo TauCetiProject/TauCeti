@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.InnerProductSpace.CompleteSquare
 public import TauCeti.MeasureTheory.OptimalTransport.Gluing
-public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Basic
 public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Space
 import TauCeti.MeasureTheory.Function.Lp.LIntegralRpow
 import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Infinity.Basic
