@@ -142,7 +142,9 @@ theorem map_mem_of_tmul {Q : Type*} [AddCommGroup Q] [Module R Q]
   refine (iSup_le fun q ↦ Submodule.map₂_le.mpr fun m hm n hn ↦ ?_ :
     _ ≤ (𝓟 (p + s)).comap f) hz
   rw [Submodule.mem_comap, mk_apply]
-  simpa only [show q + (p - q) = p by omega] using hf hm hn
+  convert hf hm hn using 1
+  congr 1
+  omega
 
 /-- Homogeneity of a balanced tensor map can be checked on homogeneous pure tensors. -/
 theorem isHomogeneous_of_tmul {Q : Type*} [AddCommGroup Q] [Module R Q]
@@ -179,7 +181,9 @@ theorem isHomogeneous_map (f : M →ₗ[R] M') (g : N →ₗ[R] N')
   intro p q m n hm hn
   rw [map_tmul]
   have hmem := tmul_mem_grading (𝒜 := 𝒜) G' H' (hf₀.map_mem hm) (hg₀.map_mem hn)
-  simpa only [show p + r + (q + s) = p + q + (r + s) by omega] using hmem
+  convert hmem using 1
+  congr 1
+  omega
 
 end Map
 
