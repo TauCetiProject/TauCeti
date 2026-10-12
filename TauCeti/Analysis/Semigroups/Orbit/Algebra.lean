@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Semigroups.Basic
+public import TauCeti.Analysis.Semigroups.Orbit.Estimates
 
 /-! # Orbit estimates and fixed vectors of semigroups
 
@@ -80,8 +80,8 @@ theorem norm_orbit_sub_le (S :
 theorem norm_increment_le (S :
     StronglyContinuousSemigroup X) (s t : ℝ≥0) (x : X) :
     ‖S (s + t) x - S s x‖ ≤ ‖S s‖ * ‖S t x - x‖ := by
-  rw [S.map_add_apply, ← ContinuousLinearMap.map_sub]
-  exact ContinuousLinearMap.le_opNorm _ _
+  rw [S.map_add_sub_apply]
+  exact (S s).le_opNorm _
 
 /-- An orbit increment between ordered times is bounded through the earlier operator. -/
 theorem norm_increment_le_of_le (S :
@@ -131,7 +131,7 @@ theorem orbit_periodic (S :
   rw [S.map_add_apply t s x, hx]
 
 /-- A fixed difference of vectors gives equal orbit increments. -/
-theorem orbit_eq_of_fixed_difference (S :
+theorem orbit_increment_eq_of_fixed_sub (S :
     StronglyContinuousSemigroup X) (t : ℝ≥0) {x y : X} (h : S t (x - y) = x - y) :
     S t x - x = S t y - y := by
   have h1 : S t x - S t y = x - y := by
@@ -139,7 +139,7 @@ theorem orbit_eq_of_fixed_difference (S :
   exact sub_eq_sub_iff_sub_eq_sub.mp h1
 
 /-- A vector fixed by an operator of norm less than one is zero. -/
-theorem norm_fixed_le (S :
+theorem eq_zero_of_fixed_of_norm_lt_one (S :
     StronglyContinuousSemigroup X) {t : ℝ≥0} {x : X} (hx : S t x = x) (h : ‖S t‖ < 1) :
     x = 0 := by
   have h1 : ‖x‖ ≤ ‖S t‖ * ‖x‖ := by
@@ -157,68 +157,53 @@ end StronglyContinuousSemigroup
 
 namespace ContractionSemigroup
 
-/-- The norm bound controls the separation of two orbits at a fixed time. -/
-theorem norm_orbit_sub_le (S : ContractionSemigroup X)
-    (t : ℝ≥0) (x y : X) :
-    ‖S t x - S t y‖ ≤ ‖x - y‖ := by
-  rw [← map_sub]
-  calc ‖S t (x - y)‖ ≤ ‖S t‖ * ‖x - y‖ := ContinuousLinearMap.le_opNorm _ _
-    _ ≤ 1 * ‖x - y‖ := mul_le_mul_of_nonneg_right (S.contracting t) (norm_nonneg _)
-    _ = ‖x - y‖ := one_mul _
-
 /-- A contraction semigroup does not increase the norm of a vector. -/
-theorem norm_apply_le (S : ContractionSemigroup X) (t :
-    ℝ≥0) (x : X) :
-    ‖S t x‖ ≤ ‖x‖ := calc ‖S t x‖ ≤ ‖S t‖ * ‖x‖ := ContinuousLinearMap.le_opNorm _ _
-  _ ≤ 1 * ‖x‖ := mul_le_mul_of_nonneg_right (S.contracting t) (norm_nonneg _)
+theorem norm_apply_le (S : ContractionSemigroup X) (t : ℝ≥0) (x : X) :
+    ‖S t x‖ ≤ ‖x‖ := calc
+  ‖S t x‖ ≤ ‖S t‖ * ‖x‖ := (S t).le_opNorm x
+  _ ≤ 1 * ‖x‖ := mul_le_mul_of_nonneg_right (S.contracting t) (norm_nonneg x)
   _ = ‖x‖ := one_mul _
+
+/-- The norm bound controls the separation of two orbits at a fixed time. -/
+theorem norm_orbit_sub_le (S : ContractionSemigroup X) (t : ℝ≥0) (x y : X) :
+    ‖S t x - S t y‖ ≤ ‖x - y‖ := by
+  simpa only [map_sub] using S.norm_apply_le t (x - y)
 
 /-- For a contraction semigroup, an orbit increment decreases after a time shift. -/
 theorem norm_increment_bound (S : ContractionSemigroup
     X) (s t : ℝ≥0) (x : X) :
     ‖S (s + t) x - S s x‖ ≤ ‖S t x - x‖ := by
-  have h : S (s + t) x - S s x = S s (S t x - x) := by
-    have h1 : S (s + t) x = S s (S t x) := S.toStronglyContinuousSemigroup.map_add_apply s t x
-    rw [h1, ← map_sub]
-  calc ‖S (s + t) x - S s x‖ = ‖S s (S t x - x)‖ := by rw [h]
-    _ ≤ ‖S s‖ * ‖S t x - x‖ := ContinuousLinearMap.le_opNorm _ _
-    _ ≤ 1 * ‖S t x - x‖ := mul_le_mul_of_nonneg_right (S.contracting s) (norm_nonneg _)
-    _ = ‖S t x - x‖ := one_mul _
+  have h := S.toStronglyContinuousSemigroup.map_add_sub_apply s t x
+  simp only [toStronglyContinuousSemigroup_apply] at h
+  rw [h]
+  exact S.norm_apply_le s (S t x - x)
 
 /-- A contraction semigroup preserves every closed ball centered at zero. -/
 theorem orbit_closedBall (S : ContractionSemigroup X) (t
     : ℝ≥0) {x : X} {r : ℝ} (hx : x ∈ Metric.closedBall 0 r) :
     S t x ∈ Metric.closedBall 0 r := by
   simp only [Metric.mem_closedBall, dist_eq_norm, sub_zero] at hx ⊢
-  calc ‖S t x‖ ≤ ‖S t‖ * ‖x‖ := ContinuousLinearMap.le_opNorm _ _
-    _ ≤ 1 * ‖x‖ := mul_le_mul_of_nonneg_right (S.contracting t) (norm_nonneg _)
-    _ = ‖x‖ := by ring
-    _ ≤ r := hx
+  exact (S.norm_apply_le t x).trans hx
 
 /-- A contraction semigroup preserves every open ball centered at zero. -/
 theorem orbit_ball (S : ContractionSemigroup X) (t :
     ℝ≥0) {x : X} {r : ℝ} (hx : x ∈ Metric.ball 0 r) :
     S t x ∈ Metric.ball 0 r := by
-  simpa using (calc ‖S t x‖ ≤ ‖S t‖ * ‖x‖ := ContinuousLinearMap.le_opNorm _ _
-    _ ≤ 1 * ‖x‖ := mul_le_mul_of_nonneg_right (S.contracting t) (norm_nonneg _)
-    _ < r := by simpa using hx)
+  simp only [Metric.mem_ball, dist_eq_norm, sub_zero] at hx ⊢
+  exact (S.norm_apply_le t x).trans_lt hx
 
 /-- A contraction orbit returning to its initial vector preserves its norm at earlier times. -/
 theorem norm_eq_of_return (S : ContractionSemigroup X)
     {s t : ℝ≥0} (h : s ≤ t) {x : X} (hx : S t x = x) :
     ‖S s x‖ = ‖x‖ := by
-  have hc : ∀ (r : ℝ≥0) (y : X), ‖S r y‖ ≤ ‖y‖ := by
-    intro r y
-    calc ‖S r y‖ ≤ ‖S r‖ * ‖y‖ := ContinuousLinearMap.le_opNorm _ _
-      _ ≤ ‖y‖ := mul_le_of_le_one_left (norm_nonneg _) (S.contracting r)
   have hts : (t - s) + s = t := by
     rw [add_comm, add_tsub_cancel_of_le h]
   have hsg : S ((t - s) + s) x = S (t - s) (S s x) :=
     (S.toStronglyContinuousSemigroup).map_add_apply (t - s) s x
   have hge : ‖x‖ ≤ ‖S s x‖ := by
     calc ‖x‖ = ‖S (t - s) (S s x)‖ := by rw [← hsg, hts, hx]
-      _ ≤ ‖S s x‖ := hc (t - s) (S s x)
-  exact le_antisymm (hc s x) hge
+      _ ≤ ‖S s x‖ := S.norm_apply_le (t - s) (S s x)
+  exact le_antisymm (S.norm_apply_le s x) hge
 
 end ContractionSemigroup
 

@@ -7,7 +7,13 @@ module
 
 public import TauCeti.Analysis.Semigroups.Basic
 
-/-! # Algebraic identities for semigroup orbit increments -/
+/-!
+# Propagation of semigroup orbit increments
+
+Time-shifted orbit and operator increments factor through the earlier time operator.
+These identities and the operator norm estimate control how an initial increment propagates
+along a strongly continuous semigroup.
+-/
 
 public section
 noncomputable section
