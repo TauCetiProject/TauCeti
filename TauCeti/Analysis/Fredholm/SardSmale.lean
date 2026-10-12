@@ -10,6 +10,7 @@ public import Mathlib.Analysis.Normed.Operator.Fredholm.Basic
 public import Mathlib.Topology.GDelta.Basic
 import Mathlib.Topology.Baire.Lemmas
 import Mathlib.Topology.Maps.Proper.CompactlyGenerated
+import TauCeti.Algebra.Group.Prod
 import TauCeti.Analysis.Calculus.Sard.OutermostStratum
 import TauCeti.Analysis.Fredholm.NormalForm
 import TauCeti.Analysis.Fredholm.Proper
@@ -137,6 +138,21 @@ private theorem surjective_add_coe_iff {X₁ Y₀ : Submodule ℝ F} (h : Submod
       rw [hsplit, hz']
       abel
     exact ⟨(p₁, z), hval⟩
+/-- A subset of a product has empty interior as soon as all of its vertical fibres do: an
+interior point of the subset would supply a whole box, whose second factor is an open subset of a
+fibre. This is the step of the Sard--Smale argument where the infinite dimension of the first
+factor is harmless. -/
+private theorem interior_eq_empty_of_forall_interior_fiber_eq_empty {X Z : Type*}
+    [TopologicalSpace X] [TopologicalSpace Z] {A : Set (X × Z)}
+    (h : ∀ x : X, interior {z | (x, z) ∈ A} = ∅) : interior A = ∅ := by
+  rw [Set.eq_empty_iff_forall_notMem]
+  rintro ⟨x, z⟩ hxz
+  have hopen : IsOpen {z' : Z | (x, z') ∈ interior A} := isOpen_interior.preimage (by fun_prop)
+  have hsub : {z' : Z | (x, z') ∈ interior A} ⊆ {z' : Z | (x, z') ∈ A} :=
+    fun _ hz' ↦ interior_subset (s := A) hz'
+  have hz : z ∈ interior {z' : Z | (x, z') ∈ A} := interior_maximal hsub hopen hxz
+  rw [h x] at hz
+  exact hz
 
 section Local
 
@@ -198,8 +214,16 @@ private theorem surjective_fderiv_iff_slice (pkg : ContinuousLinearMap.FredholmP
       ((fderiv ℝ q y).comp (ContinuousLinearMap.inr ℝ pkg.decCodom.X₁ pkg.decDom.X₀)) y.2 := by
     rw [hqdef]
     exact pkg.hasFDerivAt_obstructionSlice hT hq
-  rw [hstep₁, hufun, surjective_add_coe_iff pkg.decCodom.isTopCompl, hslice.fderiv]
-  simp [ContinuousLinearMap.coe_comp, Function.comp_def]
+  rw [hstep₁, hufun, hslice.fderiv]
+  -- Identify the codomain with its algebraic splitting, then apply the triangular-map criterion.
+  let D := (fderiv ℝ q y).toLinearMap.toAddMonoidHom
+  simpa only [D, Function.comp_def, Submodule.coe_prodEquivOfIsCompl', AddMonoidHom.prod_apply,
+    AddMonoidHom.coe_fst, AddMonoidHom.coe_comp, AddMonoidHom.inr_apply,
+    LinearMap.toAddMonoidHom_coe, ContinuousLinearMap.coe_coe, ContinuousLinearMap.coe_comp,
+    ContinuousLinearMap.inr_apply] using
+    (EquivLike.comp_surjective ((AddMonoidHom.fst _ _).prod D)
+      (Submodule.prodEquivOfIsCompl _ _ pkg.decCodom.isTopCompl.isCompl)).trans
+      D.surjective_fst_prod_iff
 
 /-- **Sard--Smale, locally.** Near a point where a sufficiently smooth map has Fredholm
 derivative there is a neighbourhood on which the critical values form a closed nowhere dense set.

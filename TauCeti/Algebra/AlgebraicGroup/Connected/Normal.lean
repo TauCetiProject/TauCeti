@@ -41,9 +41,6 @@ to membership in `H ⊗ I`.
 
 * J. S. Milne, *Algebraic Groups* (2017), Proposition 2.37.
 * W. C. Waterhouse, *Introduction to Affine Group Schemes*, Section 6.7.
-
-This supplies the normal-subgroup input for the component-group quotient in Layer 3, “Identity
-component `G°` and component group `π₀(G)`”, of the ReductiveGroups roadmap.
 -/
 
 public section

@@ -239,4 +239,22 @@ theorem zigzagBraidTensorCornerEquiv_tmul_smul (i j : V) (a : Z) (b : Zᵐᵒᵖ
           LinearMap.id_apply, Algebra.lsmul_apply]
   | ha x y hx hy => simp only [smul_add, map_add, hx, hy]
 
+/-- Evaluation on the left and right vertex factors is multiplication.
+The function type fixes the graded source and target module structures. -/
+@[simp]
+theorem zigzagBraidEvaluation_factors (i : V) (l : L i) (r : R i) :
+    (Bimodule.of (AlgHom.id k Z)).symm
+      (DFunLike.coe (F := U i →ₗ[E] zigzagGradedBimodule k G)
+        (zigzagBraidEvaluation k G i)
+        ((zigzagBraidBimoduleFactorsEquiv k G i).symm (l ⊗ₜ[k] r))) =
+      (l : Z) * unop (r : Zᵐᵒᵖ) := by
+  rw [← hom_zigzagBraidEvaluationHom]
+  have heval :=
+    (LinearMap.congr_fun (hom_zigzagBraidEvaluationHom (k := k) (G := G) i)
+      ((zigzagBraidBimoduleFactorsEquiv k G i).symm (l ⊗ₜ[k] r))).trans
+        (zigzagBraidEvaluation_apply (k := k) (G := G) (i := i) _)
+  simpa only [coe_zigzagBraidBimoduleFactorsEquiv_symm_tmul, Bimodule.smul_of,
+    AlgHom.id_apply, mul_one, LinearEquiv.symm_apply_apply] using
+      congrArg (Bimodule.of (AlgHom.id k Z)).symm heval
+
 end TauCeti

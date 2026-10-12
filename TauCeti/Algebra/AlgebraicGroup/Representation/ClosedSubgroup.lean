@@ -36,6 +36,8 @@ and the result here then identifies the subgroup with the identity.
   a faithful trivial representation is trivial.
 * `TauCeti.Comodule.eq_augmentation_of_isFaithful_of_quotient_coact_eq_tmul_one`: a closed
   subgroup acting trivially in a faithful representation is the identity subgroup.
+* `TauCeti.Comodule.eq_augmentation_of_isFaithful_of_subsingleton`: a faithful representation on
+  a subsingleton module makes every closed subgroup the identity subgroup.
 
 ## References
 
@@ -123,6 +125,14 @@ theorem eq_augmentation_of_isFaithful_of_quotient_coact_eq_tmul_one
     I = (⊥ : HopfIdeal R Q).comapOfSurjective q hq := hcomapBot.symm
     _ = (HopfIdeal.augmentation R Q).comapOfSurjective q hq := by rw [haugmentationQ]
     _ = HopfIdeal.augmentation R H := HopfIdeal.comapOfSurjective_augmentation q hq
+
+/-- A faithful representation on a subsingleton module forces every closed subgroup to be the
+identity subgroup: the coaction is trivial for lack of nonzero vectors. -/
+theorem eq_augmentation_of_isFaithful_of_subsingleton [Subsingleton M]
+    (I : HopfIdeal R H) (hM : IsFaithful (k := R) (H := H) (V := M)) :
+    I = HopfIdeal.augmentation R H :=
+  eq_augmentation_of_isFaithful_of_quotient_coact_eq_tmul_one I hM fun m ↦ by
+    rw [Subsingleton.elim m 0, map_zero, map_zero, TensorProduct.zero_tmul]
 
 end TrivialFaithful
 

@@ -28,6 +28,12 @@ make it computable from the geometry of `T`, in the spirit of the Courant–Fisc
   most `n` whose error is `T` on `Vᗮ`. Conversely, for an approximant `R` of rank at most `n` the
   subspace `V = (ker R)ᗮ` has rank at most `n`, and `R` vanishes up to norm zero on
   `Vᗮ = closure (ker R)`, so `T` restricted to `Vᗮ` is no larger than `T - R`.
+* **The converse min–max localization.** The coercive-subspace bound has a converse on a pair of
+  spaces `E`, `F` exactly when every strict lower bound `r < aₙ(T)` is beaten by a uniform
+  coercivity bound on the span of `n + 1` linearly independent vectors. This is the property
+  `TauCeti.HasMinMaxLowerBound 𝕜 E F`; it says that `aₙ(T)` is the supremum of the coercivity
+  constants of `T` on `(n + 1)`-dimensional subspaces, and it is the input from which the Ky Fan
+  triangle inequality for approximation numbers is derived.
 
 ## Main declarations
 
@@ -41,6 +47,13 @@ make it computable from the geometry of `T`, in the spirit of the Courant–Fisc
   subspace `V` of rank at most `n`.
 * `ContinuousLinearMap.singularValue_eq_iInf_nnnorm_comp_orthogonal`: on a complete inner product
   space, `aₙ(T)` is the infimum of `‖T|_{Vᗮ}‖` over subspaces `V` of rank at most `n`.
+* `TauCeti.HasMinMaxLowerBound`: the converse min–max localization property of a pair of spaces.
+* `TauCeti.hasMinMaxLowerBound_iff_forall_isLUB`: a pair has this property exactly when, for every
+  `T` and `n`, `aₙ(T)` is the least upper bound of the coercivity constants of `T` on spans of
+  `n + 1` linearly independent vectors.
+* `TauCeti.HasMinMaxLowerBound.exists_singularValue_le_compression`: on such a pair, the first `k`
+  approximation numbers of `T` are those of a compression of `T` to finite-dimensional subspaces,
+  up to any `δ > 0`.
 
 ## References
 
@@ -182,3 +195,125 @@ theorem singularValue_eq_iInf_nnnorm_comp_orthogonal [CompleteSpace E] (T : E �
 end OrthogonalTail
 
 end ContinuousLinearMap
+
+/-! ### The converse min–max localization -/
+
+namespace TauCeti
+
+section HasMinMaxLowerBound
+
+variable (𝕜 E F : Type*) [NontriviallyNormedField 𝕜]
+  [SeminormedAddCommGroup E] [NormedSpace 𝕜 E] [SeminormedAddCommGroup F] [NormedSpace 𝕜 F]
+
+/-- A pair of spaces `E`, `F` has the **converse min–max localization property** when, for every
+bounded linear map `T : E →L[𝕜] F` and every `n`, each nonnegative strict lower bound
+`0 ≤ r < aₙ(T)` is improved by a uniform coercivity bound `s ‖x‖ ≤ ‖T x‖`, with `r < s`, on the
+span of some `n + 1` linearly independent vectors.
+
+Together with the coercive-subspace bound
+`ContinuousLinearMap.le_singularValue_of_linearIndependent` this says that `aₙ(T)` is the supremum
+of the coercivity constants of `T` on `(n + 1)`-dimensional subspaces
+(`HasMinMaxLowerBound.isLUB_singularValue`). -/
+def HasMinMaxLowerBound : Prop :=
+  ∀ (T : E →L[𝕜] F) (n : ℕ) {r : ℝ}, 0 ≤ r → r < T.singularValue n →
+    ∃ s : ℝ, r < s ∧ ∃ v : Fin (n + 1) → E, LinearIndependent 𝕜 v ∧
+      ∀ x ∈ Submodule.span 𝕜 (Set.range v), s * ‖x‖ ≤ ‖T x‖
+
+variable {𝕜 E F} in
+/-- Unfolding `HasMinMaxLowerBound`. -/
+theorem hasMinMaxLowerBound_iff : HasMinMaxLowerBound 𝕜 E F ↔
+    ∀ (T : E →L[𝕜] F) (n : ℕ) {r : ℝ}, 0 ≤ r → r < T.singularValue n →
+      ∃ s : ℝ, r < s ∧ ∃ v : Fin (n + 1) → E, LinearIndependent 𝕜 v ∧
+        ∀ x ∈ Submodule.span 𝕜 (Set.range v), s * ‖x‖ ≤ ‖T x‖ :=
+  Iff.rfl
+
+end HasMinMaxLowerBound
+
+variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜]
+  [NormedAddCommGroup E] [NormedSpace 𝕜 E] [SeminormedAddCommGroup F] [NormedSpace 𝕜 F]
+
+/-- The set of coercivity constants of `T` on spans of `n + 1` linearly independent vectors is
+bounded above by `aₙ(T)`, and `aₙ(T)` is its least upper bound exactly on pairs with the converse
+min–max localization property. -/
+theorem hasMinMaxLowerBound_iff_forall_isLUB :
+    HasMinMaxLowerBound 𝕜 E F ↔ ∀ (T : E →L[𝕜] F) (n : ℕ),
+      IsLUB {s : ℝ≥0 | ∃ v : Fin (n + 1) → E, LinearIndependent 𝕜 v ∧
+        ∀ x ∈ Submodule.span 𝕜 (Set.range v), s * ‖x‖ ≤ ‖T x‖} (T.singularValue n) := by
+  rw [hasMinMaxLowerBound_iff]
+  refine ⟨fun h T n ↦ ⟨?_, fun b hb ↦ ?_⟩, fun h T n r hr0 hr ↦ ?_⟩
+  · rintro s ⟨v, hv, hs⟩
+    exact_mod_cast T.le_singularValue_of_linearIndependent hv hs
+  · -- A bound `b < aₙ(T)` is beaten by the coercivity constant the property supplies.
+    by_contra! hlt
+    obtain ⟨s, hbs, v, hv, hs⟩ := h T n b.2 (by exact_mod_cast hlt)
+    have hs0 : 0 ≤ s := b.2.trans hbs.le
+    exact hbs.not_ge (by exact_mod_cast hb (show (⟨s, hs0⟩ : ℝ≥0) ∈ _ from ⟨v, hv, hs⟩))
+  · -- `r` lies below the least upper bound, so some member of the set exceeds it.
+    lift r to ℝ≥0 using hr0
+    obtain ⟨s, ⟨v, hv, hs⟩, hrs⟩ := (lt_isLUB_iff (h T n)).mp (by exact_mod_cast hr)
+    exact ⟨s, by exact_mod_cast hrs, v, hv, hs⟩
+
+/-- **Finite-restriction supremum.** On a pair with the converse min–max localization property,
+`aₙ(T)` is the least upper bound of the coercivity constants of `T` on spans of `n + 1` linearly
+independent vectors. -/
+theorem HasMinMaxLowerBound.isLUB_singularValue (h : HasMinMaxLowerBound 𝕜 E F)
+    (T : E →L[𝕜] F) (n : ℕ) :
+    IsLUB {s : ℝ≥0 | ∃ v : Fin (n + 1) → E, LinearIndependent 𝕜 v ∧
+      ∀ x ∈ Submodule.span 𝕜 (Set.range v), s * ‖x‖ ≤ ‖T x‖} (T.singularValue n) :=
+  hasMinMaxLowerBound_iff_forall_isLUB.mp h T n
+
+section Compression
+
+variable {𝕜 E F : Type*} [RCLike 𝕜]
+  [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedAddCommGroup F] [InnerProductSpace 𝕜 F]
+
+/-- **Finite-dimensional compressions.** On a pair with the converse min–max localization
+property, for every `k` and `δ > 0` there is a finite-dimensional subspace `V` such that the
+compression `V → T(V)` of `T`, followed by the orthogonal projection onto `T(V)`, lowers none of
+the first `k` approximation numbers of `T` by more than `δ`. -/
+theorem HasMinMaxLowerBound.exists_singularValue_le_compression (h : HasMinMaxLowerBound 𝕜 E F)
+    (T : E →L[𝕜] F) (k : ℕ) {δ : ℝ} (hδ : 0 < δ) :
+    ∃ (V : Submodule 𝕜 E) (_ : FiniteDimensional 𝕜 V), ∀ n < k,
+      (T.singularValue n : ℝ) ≤
+        ((V.map (T : E →ₗ[𝕜] F)).orthogonalProjectionOnto.comp
+          (T.comp V.subtypeL)).singularValue n + δ := by
+  -- For each `n`, either `aₙ(T) ≤ δ` or `T` is `(aₙ(T) - δ)`-coercive on the span of `n + 1`
+  -- linearly independent vectors.
+  have hv : ∀ n, ∃ v : Fin (n + 1) → E, δ < T.singularValue n →
+      LinearIndependent 𝕜 v ∧ ∀ x ∈ Submodule.span 𝕜 (Set.range v),
+        (T.singularValue n - δ) * ‖x‖ ≤ ‖T x‖ := by
+    intro n
+    by_cases hn : δ < T.singularValue n
+    · obtain ⟨s, hs, v, hv, hvs⟩ := hasMinMaxLowerBound_iff.mp h T n
+        (sub_nonneg.mpr hn.le) (sub_lt_self _ hδ)
+      exact ⟨v, fun _ ↦ ⟨hv, fun x hx ↦
+        (mul_le_mul_of_nonneg_right hs.le (norm_nonneg x)).trans (hvs x hx)⟩⟩
+    · exact ⟨0, fun h ↦ absurd h hn⟩
+  choose v hv using hv
+  -- `V` is spanned by the witnesses for the first `k` indices.
+  set V : Submodule 𝕜 E := Submodule.span 𝕜 (⋃ n ∈ Finset.range k, Set.range (v n))
+  have : FiniteDimensional 𝕜 V := FiniteDimensional.span_of_finite 𝕜
+    ((Finset.range k).finite_toSet.biUnion fun n _ ↦ Set.finite_range (v n))
+  set W : Submodule 𝕜 F := V.map (T : E →ₗ[𝕜] F)
+  refine ⟨V, this, fun n hn ↦ ?_⟩
+  by_cases hδn : δ < T.singularValue n
+  · -- The compression keeps the coercivity bound on the span of the witnesses.
+    obtain ⟨hvi, hvs⟩ := hv n hδn
+    have hmem : ∀ j, v n j ∈ V := fun j ↦ Submodule.subset_span
+      (Set.mem_biUnion (Finset.mem_coe.mpr (Finset.mem_range.mpr hn)) ⟨j, rfl⟩)
+    have hw : LinearIndependent 𝕜 fun j ↦ (⟨v n j, hmem j⟩ : V) :=
+      LinearIndependent.of_comp V.subtype hvi
+    rw [← sub_le_iff_le_add]
+    refine ContinuousLinearMap.le_singularValue_of_linearIndependent _ hw fun x hx ↦ ?_
+    have hx' : (x : E) ∈ Submodule.span 𝕜 (Set.range (v n)) := by
+      have := Submodule.mem_map_of_mem (f := V.subtype) hx
+      rwa [Submodule.map_span, ← Set.range_comp] at this
+    have hW : T x ∈ W := Submodule.mem_map_of_mem x.2
+    rw [ContinuousLinearMap.comp_apply, ContinuousLinearMap.comp_apply, Submodule.subtypeL_apply,
+      W.norm_orthogonalProjectionOnto_apply hW]
+    exact hvs x hx'
+  · exact (le_of_not_gt hδn).trans (le_add_of_nonneg_left (NNReal.coe_nonneg _))
+
+end Compression
+
+end TauCeti

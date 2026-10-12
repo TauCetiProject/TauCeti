@@ -55,7 +55,7 @@ namespace TauCeti
 namespace PDE
 
 open Bornology MeasureTheory Set TopologicalSpace
-open scoped ENNReal InnerProduct InnerProductSpace
+open scoped ENNReal InnerProductSpace
 
 variable {ι : Type*} [Fintype ι] {mu : Measure (EuclideanSpace ℝ ι)} [mu.IsAddHaarMeasure]
   {Omega : Opens (EuclideanSpace ℝ ι)} {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ}
