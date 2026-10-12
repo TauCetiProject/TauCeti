@@ -23,8 +23,8 @@ import Mathlib.RingTheory.FiniteType
 The powers of a transcendental element of an algebra are linearly independent over the base ring.
 Consequently, the first `n` powers span a submodule of rank `n` over a nontrivial commutative ring,
 and in a tower `R → K → A` with `K` a field, the products `x ^ i y ^ j` of the powers of `x ∈ K`
-transcendental over `R` with the powers of `y ∈ A` below its degree over `K` are linearly
-independent over `R`.
+transcendental over `R` with the powers `y ^ j`, `j < (minpoly K y).natDegree`, of `y ∈ A` are
+linearly independent over `R`.
 
 ## Main results
 
@@ -33,8 +33,8 @@ independent over `R`.
 * `Transcendental.finrank_span_range_pow`: over a nontrivial commutative ring, the span of the
   first `n` powers of a transcendental element has rank `n`.
 * `Transcendental.linearIndepOn_pow_mul_pow`: in a tower `R → K → A`, the products `x ^ i y ^ j`
-  with `x ∈ K` transcendental over `R` and `j` less than the degree of `y` over `K` are linearly
-  independent over `R`.
+  with `x ∈ K` transcendental over `R` and `j < (minpoly K y).natDegree` are linearly independent
+  over `R`.
 -/
 
 public section
@@ -58,13 +58,15 @@ theorem _root_.Transcendental.finrank_span_range_pow {K B : Type*} [CommRing K] 
     (Fintype.card_fin n)
 
 /-- **The products `x ^ i y ^ j` are linearly independent**: in a tower `R → K → A` with `K` a
-field, if `x ∈ K` is transcendental over `R` and `y ∈ A`, then the products `x ^ i y ^ j` with `j`
-less than the degree of `y` over `K` are linearly independent over `R`. -/
+field, if `x ∈ K` is transcendental over `R` and `y ∈ A`, then the products `x ^ i y ^ j` with
+`j < (minpoly K y).natDegree` are linearly independent over `R`. The bound is the degree of `y`
+over `K` when `y` is integral over `K`; otherwise `minpoly K y = 0` and the statement is vacuous. -/
 theorem _root_.Transcendental.linearIndepOn_pow_mul_pow {K : Type*} [Field K] [Algebra R K]
     [Algebra K A] [IsScalarTower R K A] {x : K} (hx : Transcendental R x) (y : A) :
     LinearIndepOn R (fun p : ℕ × ℕ ↦ algebraMap K A x ^ p.1 * y ^ p.2)
       {p | p.2 < (minpoly K y).natDegree} := by
-  -- The powers of `x` are independent over `R`, those of `y` below its degree over `K`.
+  -- The powers of `x` are independent over `R`, those of `y` below `(minpoly K y).natDegree`
+  -- over `K`.
   have h := linearIndependent_smul (R := R) hx.linearIndependent_pow (linearIndependent_pow y)
   have hinj : Function.Injective fun p : {p : ℕ × ℕ | p.2 < (minpoly K y).natDegree} ↦
       ((p : ℕ × ℕ).1, (⟨(p : ℕ × ℕ).2, p.2⟩ : Fin (minpoly K y).natDegree)) :=
