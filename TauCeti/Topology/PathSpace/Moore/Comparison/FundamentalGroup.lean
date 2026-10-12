@@ -63,7 +63,7 @@ theorem fundamentalGroupHom_apply (γ : MooreLoopSpace X x) :
 
 /-- Path components of Moore loops identify with the fundamental group, in the multiplicative
 convention of `fundamentalGroupHom`. -/
-def componentFundamentalGroupEquiv (x : X) :
+def zerothHomotopyEquivFundamentalGroup (x : X) :
     ZerothHomotopy (MooreLoopSpace X x) ≃ FundamentalGroup X x :=
   ({ toFun := Quotient.map toPath (fun _ _ h ↦ h.map continuous_toPath)
      invFun := Quotient.map Path.toMooreLoop (fun _ _ h ↦ h.map Path.continuous_toMooreLoop)
@@ -78,8 +78,8 @@ def componentFundamentalGroupEquiv (x : X) :
 
 /-- The component equivalence agrees with the multiplicative class on loops. -/
 @[simp]
-theorem componentFundamentalGroupEquiv_mk (γ : MooreLoopSpace X x) :
-    componentFundamentalGroupEquiv x (.mk γ) = fundamentalGroupHom x γ := by
+theorem zerothHomotopyEquivFundamentalGroup_mk (γ : MooreLoopSpace X x) :
+    zerothHomotopyEquivFundamentalGroup x (.mk γ) = fundamentalGroupHom x γ := by
   exact congrArg (Inv.inv (α := FundamentalGroup X x))
     (HomotopyGroup.zerothHomotopyLoopSpaceEquivFundamentalGroup_mk γ.toPath)
 

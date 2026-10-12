@@ -10,7 +10,9 @@ public import TauCeti.AlgebraicTopology.Singular.Cubical.Comparison.Basic
 public import TauCeti.AlgebraicTopology.Singular.Cubical.MonoidAlgebra.Basic
 public import TauCeti.AlgebraicTopology.SimplicialSet.Homology.Zero
 public import TauCeti.Topology.PathSpace.Moore.Comparison.FundamentalGroup
-public import Mathlib.AlgebraicTopology.SimplicialSet.Homology.HomologyZero
+public import Mathlib.AlgebraicTopology.SingularHomology.HomologyZero
+public import Mathlib.Algebra.Ring.TransferInstance
+public import Mathlib.Algebra.MonoidAlgebra.Basic
 public import Mathlib.Topology.Homotopy.TopCat.ZerothHomotopy
 public import Mathlib.Algebra.Category.ModuleCat.Colimits
 
@@ -27,11 +29,14 @@ fixed-interval homotopy class. This is the multiplicative convention forced by M
 `FundamentalGroup.mul_def`: categorical multiplication traverses the right factor first.
 The Pontryagin product still concatenates loops in traversal order.
 
-The identification and its projection on zero chains supply the algebraic bridge from loop
-chains to classical local coefficients. References: W. S. Massey, *Singular Homology Theory*,
+The unital Pontryagin algebra structure on `loopHomologyZero` preserves its original module
+structure. `loopHomologyZeroAlgEquiv` identifies it with the group algebra, and
+`loopHomologyZeroπ_mul` and `loopHomologyZeroπ_one` identify the actual chain product and unit
+with the homology operations. This supplies the algebraic bridge from loop chains to classical
+local coefficients. References: W. S. Massey, *Singular Homology Theory*,
 Chapter VII; Barraud--Damian--Humilière--Oancea, *Floer homology with DG coefficients*, §2.2,
 https://arxiv.org/html/2404.07953v3#S2.SS2.
-The formal construction reuses `SSet.homology₀Iso` and
+The formal construction reuses `TopCat.singularHomology₀Iso` and
 `ModuleCat.finsuppCoconeIsColimit`.
 -/
 
@@ -56,10 +61,9 @@ is the inverse path class, so it preserves traversal-order Pontryagin multiplica
 def loopHomologyZeroIso :
     loopHomologyZero X x R ≅ ModuleCat.of R (MonoidAlgebra R (FundamentalGroup X x)) :=
   (singularCubicalHomologyIso R (TopCat.of (MooreLoopSpace X x)) 0).symm ≪≫
-    (TopCat.toSSet.obj (TopCat.of (MooreLoopSpace X x))).homology₀Iso (ModuleCat.of R R) ≪≫
+    (TopCat.of (MooreLoopSpace X x)).singularHomology₀Iso (ModuleCat.of R R) ≪≫
     (sigmaConst.obj (ModuleCat.of R R)).mapIso
-      (TopCat.zerothHomotopyEquiv.symm.trans
-        (MooreLoopSpace.componentFundamentalGroupEquiv x)).toIso ≪≫
+      (MooreLoopSpace.zerothHomotopyEquivFundamentalGroup x).toIso ≪≫
     IsColimit.coconePointUniqueUpToIso
       (coproductIsCoproduct (fun _ : FundamentalGroup X x ↦ ModuleCat.of R R))
       (ModuleCat.finsuppCoconeIsColimit R R (FundamentalGroup X x)) ≪≫
@@ -146,6 +150,9 @@ theorem loopZeroChainToGroupAlgebra_ofCube (c : SingularCube (MooreLoopSpace X x
       (Sigma.ι (fun _ : (TopCat.toSSet.obj T).π₀ ↦ ModuleCat.of R R) (.mk σ)) 1 := by
     have vertex := SSet.ιHomology₀_homology₀Iso_hom (ModuleCat.of R R) σ
     rw [SSet.ιHomology₀_eq] at vertex
+    -- `ιHomology₀_eq` presents the generator using the associated alternating-face
+    -- complex. `L` is that same complex through `SSet.chainComplex`; this change
+    -- only names its carrier so the degree-zero cycles isomorphism can be applied.
     change L.liftCycles ((TopCat.toSSet.obj T).ιChainComplex σ) 0
       (by simp) (by simp) ≫ L.homologyπ 0 ≫
         ((TopCat.toSSet.obj T).homology₀Iso (ModuleCat.of R R)).hom = _ at vertex
@@ -156,7 +163,7 @@ theorem loopZeroChainToGroupAlgebra_ofCube (c : SingularCube (MooreLoopSpace X x
   -- Next reindex the component coproduct by fundamental-group classes and realize it
   -- as finitely supported coefficients, using the coproduct universal property.
   let e := (TopCat.zerothHomotopyEquiv (X := T)).symm.trans
-    (MooreLoopSpace.componentFundamentalGroupEquiv x)
+    (MooreLoopSpace.zerothHomotopyEquivFundamentalGroup x)
   have hg : Sigma.ι (fun _ : (TopCat.toSSet.obj T).π₀ ↦ ModuleCat.of R R) (.mk σ) ≫
       ((sigmaConst.obj (ModuleCat.of R R)).mapIso e.toIso).hom =
       Sigma.ι (fun _ : FundamentalGroup X x ↦ ModuleCat.of R R)
@@ -169,8 +176,8 @@ theorem loopZeroChainToGroupAlgebra_ofCube (c : SingularCube (MooreLoopSpace X x
     simp only [Functor.mapIso_hom, sigmaConst_obj_map, Equiv.toIso_hom_hom_apply,
       Equiv.trans_apply, e, Sigma.ι_comp_map']
     exact congrArg (Sigma.ι (fun _ : FundamentalGroup X x ↦ ModuleCat.of R R))
-      ((congrArg (MooreLoopSpace.componentFundamentalGroupEquiv x) ht).trans
-        (MooreLoopSpace.componentFundamentalGroupEquiv_mk γ))
+      ((congrArg (MooreLoopSpace.zerothHomotopyEquivFundamentalGroup x) ht).trans
+        (MooreLoopSpace.zerothHomotopyEquivFundamentalGroup_mk γ))
   have he := (coproductIsCoproduct
     (fun _ : FundamentalGroup X x ↦ ModuleCat.of R R)).comp_coconePointUniqueUpToIso_hom
       (ModuleCat.finsuppCoconeIsColimit R R (FundamentalGroup X x))
@@ -181,16 +188,28 @@ theorem loopZeroChainToGroupAlgebra_ofCube (c : SingularCube (MooreLoopSpace X x
     loopHomologyZeroIso, Iso.trans_hom, Iso.symm_hom, ModuleCat.hom_comp,
     LinearMap.comp_apply]
   rw [loopHomologyZeroπ_compare, cubicalToSingular_app_f_zero_ofCube]
+  have hcompose : (sigmaConst.obj (ModuleCat.of R R)).map
+      (TopCat.zerothHomotopyEquiv (X := T)).toIso.inv ≫
+      (sigmaConst.obj (ModuleCat.of R R)).map
+        (MooreLoopSpace.zerothHomotopyEquivFundamentalGroup x).toIso.hom =
+      ((sigmaConst.obj (ModuleCat.of R R)).mapIso e.toIso).hom := by
+    rw [← Functor.map_comp]
+    rfl
+  have hcompose_apply (a) := congrArg (fun f ↦ f.hom a) hcompose
+  simp only [ModuleCat.hom_comp, LinearMap.comp_apply] at hcompose_apply
   -- Use the concrete singular complex in the comparison's target; this is the same
   -- carrier as the simplex class, avoiding instance inference through the functor wrapper.
   change (MonoidAlgebra.coeffLinearEquiv R).symm
       ((IsColimit.coconePointUniqueUpToIso
           (coproductIsCoproduct (fun _ : FundamentalGroup X x ↦ ModuleCat.of R R))
           (ModuleCat.finsuppCoconeIsColimit R R (FundamentalGroup X x))).hom
-        (((sigmaConst.obj (ModuleCat.of R R)).mapIso e.toIso).hom
-          ((((TopCat.toSSet.obj T).homology₀Iso (ModuleCat.of R R)).hom)
-            ((L.cycles₀Iso.inv ≫ L.homologyπ 0) (simplexChain σ 1))))) = _
-  rw [hπ]
+        (((sigmaConst.obj (ModuleCat.of R R)).map
+          (MooreLoopSpace.zerothHomotopyEquivFundamentalGroup x).toIso.hom).hom
+          (((sigmaConst.obj (ModuleCat.of R R)).map
+            (TopCat.zerothHomotopyEquiv (X := T)).toIso.inv).hom
+            ((((TopCat.toSSet.obj T).homology₀Iso (ModuleCat.of R R)).hom)
+              ((L.cycles₀Iso.inv ≫ L.homologyπ 0) (simplexChain σ 1)))))) = _
+  rw [hcompose_apply, hπ]
   have hg' := congrArg (fun f ↦ f.hom 1) hg
   simp only [ModuleCat.hom_comp, LinearMap.comp_apply] at hg'
   rw [hg']
@@ -261,6 +280,79 @@ theorem loopZeroChainToGroupAlgebra_one :
   rw [NormalizedCubicalChain.one_def, loopZeroChainToGroupAlgebra_ofCube,
     SingularCube.point_apply, map_one]
   rfl
+
+variable (X x R)
+
+/-- The unital Pontryagin ring on actual cubical zeroth homology. Only multiplication, the unit,
+and their powers and casts are transported through the linear comparison; the existing
+homology addition, negation and scalar action are preserved. The equations
+`loopHomologyZeroπ_mul` and `loopHomologyZeroπ_one` identify this structure with the product
+and unit induced by Moore-loop chains, rather than an independently chosen ring structure. -/
+instance loopHomologyZeroRing : Ring (loopHomologyZero X x R) := by
+  let e := (loopHomologyZeroIso X x R).toLinearEquiv
+  letI : Mul (loopHomologyZero X x R) := e.toEquiv.mul
+  letI : One (loopHomologyZero X x R) := e.toEquiv.one
+  letI : Pow (loopHomologyZero X x R) ℕ := e.toEquiv.pow ℕ
+  letI : NatCast (loopHomologyZero X x R) := ⟨fun n ↦ e.symm n⟩
+  letI : IntCast (loopHomologyZero X x R) := ⟨fun n ↦ e.symm n⟩
+  exact e.injective.ring e e.map_zero (e.apply_symm_apply 1) e.map_add
+    (fun a b ↦ e.apply_symm_apply (e a * e b)) e.map_neg e.map_sub
+    (fun n a ↦ map_nsmul e n a) (fun n a ↦ map_zsmul e n a)
+    (fun a n ↦ e.apply_symm_apply (e a ^ n))
+    (fun n ↦ e.apply_symm_apply n) (fun n ↦ e.apply_symm_apply n)
+
+/-- The Pontryagin algebra uses the original coefficient action on cubical homology. -/
+instance loopHomologyZeroAlgebra : Algebra R (loopHomologyZero X x R) := by
+  let e := (loopHomologyZeroIso X x R).toLinearEquiv
+  have hmul (a b : loopHomologyZero X x R) : e (a * b) = e a * e b :=
+    e.apply_symm_apply _
+  exact Algebra.ofModule
+    (fun r a b ↦ e.injective (by rw [hmul, e.map_smul, e.map_smul, hmul, smul_mul_assoc]))
+    (fun r a b ↦ e.injective (by rw [hmul, e.map_smul, e.map_smul, hmul, mul_smul_comm]))
+
+/-- The unital algebra identification `H₀(ΩX; R) ≃ₐ[R] R[π₁(X, x)]`, using inverse path
+classes to reconcile traversal-order Pontryagin multiplication with Mathlib's group convention.
+Its underlying linear equivalence is exactly `loopHomologyZeroIso`. -/
+def loopHomologyZeroAlgEquiv :
+    loopHomologyZero X x R ≃ₐ[R] MonoidAlgebra R (FundamentalGroup X x) :=
+  AlgEquiv.ofLinearEquiv (loopHomologyZeroIso X x R).toLinearEquiv
+    ((loopHomologyZeroIso X x R).toLinearEquiv.apply_symm_apply 1)
+    (fun a b ↦ (loopHomologyZeroIso X x R).toLinearEquiv.apply_symm_apply
+      ((loopHomologyZeroIso X x R).hom a * (loopHomologyZeroIso X x R).hom b))
+
+variable {X x R}
+
+/-- The algebra equivalence preserves the original linear homology comparison. -/
+theorem loopHomologyZeroAlgEquiv_apply (a : loopHomologyZero X x R) :
+    loopHomologyZeroAlgEquiv X x R a = (loopHomologyZeroIso X x R).hom a := by
+  rfl
+
+/-- The algebra equivalence agrees with the existing zero-chain projection. -/
+@[simp]
+theorem loopHomologyZeroAlgEquiv_π
+    (a : NormalizedCubicalChain (MooreLoopSpace X x) R 0) :
+    loopHomologyZeroAlgEquiv X x R (loopHomologyZeroπ X x R a) =
+      loopZeroChainToGroupAlgebra X x R a := by
+  rfl
+
+/-- The product on homology is represented by the actual Pontryagin product on zero chains.
+Surjectivity of `loopHomologyZeroπ` makes this equation characterize the homology product. -/
+@[simp]
+theorem loopHomologyZeroπ_mul
+    (a b : NormalizedCubicalChain (MooreLoopSpace X x) R 0) :
+    loopHomologyZeroπ X x R
+        (NormalizedCubicalChain.mul (MooreLoopSpace X x) R 0 0 a b) =
+      loopHomologyZeroπ X x R a * loopHomologyZeroπ X x R b := by
+  apply (loopHomologyZeroAlgEquiv X x R).injective
+  rw [map_mul, loopHomologyZeroAlgEquiv_π, loopHomologyZeroAlgEquiv_π,
+    loopHomologyZeroAlgEquiv_π, loopZeroChainToGroupAlgebra_mul]
+
+/-- The constant duration-zero Moore loop represents the unit of the homology algebra. -/
+@[simp]
+theorem loopHomologyZeroπ_one :
+    loopHomologyZeroπ X x R (NormalizedCubicalChain.one (MooreLoopSpace X x) R) = 1 := by
+  apply (loopHomologyZeroAlgEquiv X x R).injective
+  rw [map_one, loopHomologyZeroAlgEquiv_π, loopZeroChainToGroupAlgebra_one]
 
 variable {Y : Type u} [TopologicalSpace Y] {y : Y}
 
