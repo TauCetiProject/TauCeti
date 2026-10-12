@@ -15,6 +15,11 @@ Approaching infinity within the image of a set is described by the coclosed-comp
 restricted to that set. In a pseudometric space, escaping bounded sets gives convergence to
 the compactifying point. These facts translate limits in the original space into limits in
 its one-point compactification.
+
+The one-point compactification of a proper pseudometric space is first countable: at a point of
+the space it inherits the neighbourhood filter of the space, and at infinity the complements of
+the closed balls about a fixed point form a countable basis. Being also compact, it is then
+sequentially compact, and Fatou-type limit arguments may be run along its neighbourhood filters.
 -/
 
 public section
@@ -43,5 +48,28 @@ theorem tendsto_coe_infty_of_tendsto_cobounded {α X : Type*} [PseudoMetricSpace
     Tendsto (fun x => (f x : OnePoint X)) l (𝓝 ∞) := by
   apply OnePoint.tendsto_coe_infty.comp
   simpa only [coclosedCompact_eq_cocompact] using h.mono_right Metric.cobounded_le_cocompact
+
+/-- The one-point compactification of a proper pseudometric space is first countable. In a proper
+space the coclosed-compact filter is the cobounded filter, which is the pullback of `atTop` along
+the distance to any fixed point. -/
+instance {X : Type*} [PseudoMetricSpace X] [ProperSpace X] :
+    FirstCountableTopology (OnePoint X) := by
+  refine ⟨fun b ↦ ?_⟩
+  induction b using OnePoint.rec with
+  | infty =>
+    have : (coclosedCompact X).IsCountablyGenerated := by
+      cases isEmpty_or_nonempty X with
+      | inl _ =>
+        rw [Filter.filter_eq_bot_of_isEmpty (coclosedCompact X)]
+        infer_instance
+      | inr h =>
+        rw [coclosedCompact_eq_cocompact, ← Metric.cobounded_eq_cocompact,
+          ← Metric.comap_dist_right_atTop h.some]
+        infer_instance
+    rw [OnePoint.nhds_infty_eq]
+    infer_instance
+  | coe x =>
+    rw [OnePoint.nhds_coe_eq]
+    infer_instance
 
 end TauCeti
