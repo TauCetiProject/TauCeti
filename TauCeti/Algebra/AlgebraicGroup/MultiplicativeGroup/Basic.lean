@@ -124,10 +124,10 @@ theorem genericUnit_zpow_val (n : ℤ) :
   have h := laurentEval_unique (genericUnit A) (AlgHom.id A _) (by simp)
   simpa using (DFunLike.congr_fun h (LaurentPolynomial.T n)).symm
 
-/-- Mapping the generic unit along a Laurent-polynomial point gives the unit represented by
-that point. -/
+/-- Mapping the generic unit along a Laurent-polynomial algebra map gives the unit represented
+by that map. -/
 @[simp]
-theorem map_genericUnit {B : Type w} [CommSemiring B] [Algebra A B]
+theorem map_genericUnit {B : Type w} [Semiring B] [Algebra A B]
     (φ : A[T;T⁻¹] →ₐ[A] B) :
     Units.map φ (genericUnit A) = laurentEvalEquiv.symm φ := by
   apply Units.ext
