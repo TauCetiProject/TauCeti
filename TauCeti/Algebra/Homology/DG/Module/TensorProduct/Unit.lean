@@ -21,10 +21,6 @@ to the universe of the tensor product. This is only a universe lift: the forward
 are the action maps and the inverse components are insertion of `1`. These are underived
 isomorphisms and require no flatness hypothesis.
 
-The degree-piece isomorphisms and differential compatibility proofs adapt the formalization
-pattern of `cochainComplexAssoc` in
-`TauCeti/Algebra/Homology/DG/Module/TensorProduct/Associator.lean`.
-
 ## Main definitions
 
 * `cochainComplexLid`: tensoring the regular right DG module with a left DG module returns it.
@@ -60,6 +56,9 @@ local notation "K" => cochainComplex hA.isDGRightModule hN
 
 attribute [local instance] tensorGradedRight tensorGradedLeft
 
+-- The degree-piece isomorphisms and differential compatibility proofs below adapt the
+-- formalization pattern of `cochainComplexAssoc` in
+-- `TauCeti/Algebra/Homology/DG/Module/TensorProduct/Associator.lean`.
 private noncomputable def lidDegreeIso (p : ℤ) :
     (K).X p ≅ (gradedCochainComplexLift.{uR, uM, uA} 𝒩 dN
       hN.isHomogeneous (fun _ x ↦ hN.sq_zero x)).X p :=
