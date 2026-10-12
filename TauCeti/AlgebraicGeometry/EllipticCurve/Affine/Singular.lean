@@ -57,6 +57,9 @@ equality. Every statement here holds in any characteristic, including two and th
   difference is nilpotent.
 * `WeierstrassCurve.Affine.subsingleton_singular`: over a reduced ring they coincide, so a
   Weierstrass model has at most one singular point.
+* `WeierstrassCurve.Affine.nonsingular_of_isSingular_zero` and
+  `WeierstrassCurve.Affine.ne_zero_of_isSingular_zero`: on a model singular at the origin, the
+  solutions with `x ≠ 0` are exactly the nonsingular points.
 
 ## References
 
@@ -417,6 +420,23 @@ theorem subsingleton_singular [IsReduced R] (W : WeierstrassCurve.Affine R) (p q
     eq_of_isSingular_of_isSingular (isSingular_iff_equation_and_not_nonsingular.2 ⟨hp, hp'⟩)
       (isSingular_iff_equation_and_not_nonsingular.2 ⟨hq, hq'⟩)
   exact Prod.ext hx hy
+
+/-- **On a model over a reduced ring singular at the origin, a solution with `x ≠ 0` is a
+nonsingular point**, since the origin is the only singular point. -/
+theorem nonsingular_of_isSingular_zero [IsReduced R] (h0 : W.IsSingular 0 0) {x y : R}
+    (h : W.Equation x y) (hx : x ≠ 0) : W.Nonsingular x y := by
+  by_contra hn
+  exact hx (eq_of_isSingular_of_isSingular
+    (isSingular_iff_equation_and_not_nonsingular.2 ⟨h, hn⟩) h0).1
+
+/-- **On a model over a reduced ring singular at the origin, a nonsingular point has `x ≠ 0`**:
+the equation forces `y ^ 2 = 0`, hence `y = 0`, when `x = 0`. -/
+theorem ne_zero_of_isSingular_zero [IsReduced R] (h0 : W.IsSingular 0 0) {x y : R}
+    (h : W.Nonsingular x y) : x ≠ 0 := by
+  rintro rfl
+  have hy : y ^ 2 = 0 := by simpa using (equation_iff_of_isSingular_zero h0 0 y).1 h.1
+  obtain rfl : y = 0 := IsNilpotent.eq_zero ⟨2, hy⟩
+  exact (isSingular_iff_equation_and_not_nonsingular.1 h0).2 h
 
 end WeierstrassCurve.Affine
 

@@ -87,24 +87,6 @@ variable {F : Type*} [Field F] {W : WeierstrassCurve F} {α : F}
 
 section Origin
 
-/-- On a model singular at the origin, a solution with `x ≠ 0` is a nonsingular point, since the
-origin is the only singular point. -/
-private theorem nonsingular_of_isSingular_zero (h0 : W.toAffine.IsSingular 0 0) {x y : F}
-    (h : W.toAffine.Equation x y) (hx : x ≠ 0) : W.toAffine.Nonsingular x y := by
-  by_contra hn
-  exact hx (eq_of_isSingular_of_isSingular
-    (isSingular_iff_equation_and_not_nonsingular.2 ⟨h, hn⟩) h0).1
-
-/-- On a model singular at the origin, a nonsingular point has `x ≠ 0`: the equation forces
-`y = 0` when `x = 0`. -/
-private theorem ne_zero_of_isSingular_zero (h0 : W.toAffine.IsSingular 0 0) {x y : F}
-    (h : W.toAffine.Nonsingular x y) : x ≠ 0 := by
-  rintro rfl
-  have hy : y ^ 2 = 0 := by simpa using (equation_iff_of_isSingular_zero h0 0 y).1 h.1
-  rw [pow_eq_zero_iff two_ne_zero] at hy
-  subst hy
-  exact (isSingular_iff_equation_and_not_nonsingular.1 h0).2 h
-
 /-- The algebraic heart of the cusp group law, on `u² = x³` with `u = y - α x`. Let `m` be the
 slope in `(x, u)`-coordinates of the line through the points of parameters `t₁` and `t₂`, that is
 of `(1 / tᵢ², 1 / tᵢ³)`, or of the tangent when `t₁ = t₂`. The sum of the two points has
