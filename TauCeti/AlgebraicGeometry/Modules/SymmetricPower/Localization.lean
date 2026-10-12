@@ -20,8 +20,6 @@ restriction of `PresheafOfModulesOfCommRing.symmetricPower`.
 This computes the sectionwise symmetric-power presheaf on an affine basis. It does not identify
 the symmetric power of sections with sections of the sheafified symmetric power on arbitrary
 opens. The computation supplies the localization compatibility used in that affine comparison.
-The section-carrier bookkeeping follows
-`Scheme.Modules.isLocalizedModule_exteriorPower_map_basicOpen`.
 
 ## References
 
@@ -49,6 +47,8 @@ theorem isLocalizedModule_symmetricPower_map_basicOpen [M.IsQuasicoherent]
       (((PresheafOfModulesOfCommRing.symmetricPower (R := X.presheaf) n).obj M.val).map
         (homOfLE (X.basicOpen_le f)).op).hom := by
   let : IsLocalization (.powers f) Γ(X, X.basicOpen f) := hU.isLocalization_basicOpen f
+  -- The section-carrier bookkeeping follows
+  -- `Scheme.Modules.isLocalizedModule_exteriorPower_map_basicOpen`.
   -- Keep the section carriers and their restriction-of-scalars structures explicit: these
   -- determine the dependent homogeneous-submodule carriers in the presheaf restriction map.
   let N := PresheafOfModulesOfCommRing.obj (R := X.presheaf) M.val (.op (X.basicOpen f))

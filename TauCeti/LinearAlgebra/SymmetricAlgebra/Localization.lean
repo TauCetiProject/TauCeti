@@ -17,12 +17,6 @@ comparison applies to an arbitrary map exhibiting scalar extension, rather than 
 tensor-product model. Its characteristic equation identifies it with the map induced by the
 original module map on homogeneous symmetric-algebra elements. Consequently the induced
 semilinear map on each homogeneous piece is a localization map.
-
-The construction uses `TauCeti.SymmetricAlgebra.homogeneousSubmoduleEquivBaseChange` and
-`SymmetricAlgebra.map`. The localization argument follows the scalar-extension characterization
-in Mathlib's `isLocalizedModule_iff_isBaseChange`.
-The scalar-extension comparison, pure-tensor formula, and localization proof follow the proof
-pattern in `TauCeti/LinearAlgebra/ExteriorPower/Localization.lean`.
 -/
 
 public section
@@ -38,6 +32,9 @@ variable {R A M N : Type*} [CommSemiring R] [CommSemiring A] [Algebra R A]
 
 namespace IsBaseChange
 
+-- The scalar-extension comparison, pure-tensor formula, and localization proof follow the
+-- proof pattern in `TauCeti/LinearAlgebra/ExteriorPower/Localization.lean`. The comparison uses
+-- `TauCeti.SymmetricAlgebra.homogeneousSubmoduleEquivBaseChange` and `SymmetricAlgebra.map`.
 /-- Scalar extension of a symmetric power along any map exhibiting scalar extension.
 No flatness or finite-generation assumption is required. -/
 def symmetricPowerEquiv (h : IsBaseChange A f) (n : ℕ) :
@@ -155,6 +152,7 @@ theorem isLocalizedModule_symmetricPower (n : ℕ)
     (g : homogeneousSubmodule R M n →ₗ[R] homogeneousSubmodule A N n)
     (hg : ∀ x, (g x : SymmetricAlgebra A N) = SymmetricAlgebra.mapₛₗ f' x.1) :
     IsLocalizedModule S g := by
+  -- Use Mathlib's scalar-extension characterization `isLocalizedModule_iff_isBaseChange`.
   rw [@isLocalizedModule_iff_isBaseChange R _ S A _ _ _
     (homogeneousSubmodule R M n) _ _ (homogeneousSubmodule A N n) _ symR _ symTower g]
   refine @IsBaseChange.of_equiv R (homogeneousSubmodule R M n)
