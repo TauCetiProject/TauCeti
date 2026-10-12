@@ -222,7 +222,6 @@ theorem comap_comap {P : Type y} [AddCommMonoid P] [Module R P] [Comodule R C P]
   rfl
 
 /-- The inverse image along the identity comodule morphism is the original subcomodule. -/
-@[simp]
 theorem comap_id (B : Subcomodule R C M) :
     B.comap (Comodule.Hom.id R C M) = B := by
   ext m

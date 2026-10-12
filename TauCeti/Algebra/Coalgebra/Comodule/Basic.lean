@@ -304,12 +304,10 @@ maps. -/
 theorem comp_toLinearMap (g : Hom R C N P) (f : Hom R C M N) :
     (g.comp f).toLinearMap = g.toLinearMap ∘ₗ f.toLinearMap := rfl
 
-@[simp]
 theorem id_comp (f : Hom R C M N) : comp (id R C N) f = f := by
   ext m
   simp
 
-@[simp]
 theorem comp_id (f : Hom R C M N) : comp f (id R C M) = f := by
   ext m
   simp
