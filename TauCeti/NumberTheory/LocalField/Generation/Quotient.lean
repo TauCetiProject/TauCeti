@@ -37,7 +37,7 @@ variable (K : Type*) [Field K] [ValuativeRel K] [TopologicalSpace K]
 
 /-- If a finite local Galois quotient kills the commutator of wild inertia, it is a
 quotient of the arithmetic pro-`p` class-module extension at `P_K U`. -/
-theorem abelianizationProPExtensionKernel_le_of_wildInertiaCommutator_le
+theorem abelianizationProPExtensionKernel_le_of_commutator_wildInertiaSubgroup_le
     (U : OpenNormalSubgroup (Field.absoluteGaloisGroup K))
     (hU : ⁅wildInertiaSubgroup K, wildInertiaSubgroup K⁆ ≤ U.toSubgroup) :
     abelianizationProPExtensionKernel p (Field.absoluteGaloisGroup K)

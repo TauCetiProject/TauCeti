@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.CohomologicalDimension.ClassModule.Extension
+import TauCeti.Topology.Algebra.Group.TopologicalAbelianization.Lift
 
 /-!
 # Finite quotients of a pro-`p` class-module extension
@@ -47,19 +48,16 @@ theorem abelianizationProPExtensionKernel_le_of_isPGroup_map (p : ℕ)
   let f : V →* H := q.subgroupMap V
   have hf : Continuous f :=
     (QuotientGroup.continuous_mk.comp continuous_subtype_val).subtype_mk _
-  have hker : (commutator V).topologicalClosure ≤ f.ker :=
-    Subgroup.topologicalClosure_minimal _ (Abelianization.commutator_subset_ker f)
-      (isClosed_singleton.preimage hf)
-  let a : TopologicalAbelianization V →* H := QuotientGroup.lift _ f hker
-  have ha : Continuous a := (QuotientGroup.isQuotientMap_mk _).continuous_iff.mpr hf
+  let fc : V →ₜ* H := ⟨f, hf⟩
+  let a := TopologicalAbelianization.lift fc
   have hHpro : IsProP p H := isProP_iff_isPGroup.mpr hpro
-  let b := maximalProPQuotient.lift hHpro a ha
+  let b := maximalProPQuotient.lift hHpro a.toMonoidHom a.continuous
   intro x hx
   obtain ⟨hv, hzero⟩ := (mem_abelianizationProPExtensionKernel_iff p G V x).mp hx
   have hb : b (abelianizationProPMk p G V ⟨x, hv⟩) = f ⟨x, hv⟩ := by
     rw [abelianizationProPMk_apply, maximalProPQuotient.mk_apply]
     simp only [b, maximalProPQuotient.lift_mk]
-    exact QuotientGroup.lift_mk _ _ _
+    exact TopologicalAbelianization.lift_mk fc _
   rw [hzero, map_one] at hb
   exact (QuotientGroup.eq_one_iff x).mp (congrArg Subtype.val hb.symm)
 
