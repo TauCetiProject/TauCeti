@@ -14,6 +14,7 @@ public import Mathlib.MeasureTheory.SpecificCodomains.WithLp
 public import Mathlib.Analysis.InnerProductSpace.ProdL2
 import Mathlib.Analysis.InnerProductSpace.Dual
 import TauCeti.Analysis.Sobolev.GraphStep
+import TauCeti.MeasureTheory.Function.LocallyIntegrable
 
 /-!
 # First-order weak Sobolev spaces
@@ -61,6 +62,13 @@ boundary regularity of `Ω` is used.
 * `TauCeti.W1p.locallyIntegrableOn_gradient`: the weak gradient is locally integrable on `Ω`.
 * `TauCeti.W1p.gradient_ae_eq_zero_of_value_ae_eq_zero`: the weak gradient vanishes wherever
   the value vanishes on an open subset.
+* `TauCeti.W1p.const`: on a domain of finite measure, a constant function is an element of
+  `W^{1,p}(Ω)` with weak gradient `0`.
+* `TauCeti.W1p.exists_value_gradient_ae_eq_of_contDiffOn`: a `C¹` function on `Ω` with `u` and
+  `∇u` in `Lᵖ(Ω)` is an element of `W^{1,p}(Ω)`.
+* `TauCeti.W1p.exists_value_gradient_ae_eq_of_contDiffOn_of_isCompact`: a function of class
+  `C¹` on an open set `U` is an element of `W^{1,p}(Ω)` for every `Ω` inside a compact subset
+  of `U`.
 * `TauCeti.W1p.ofExponentLE`: on a domain of finite measure, `W^{1,q}(Ω) ⊆ W^{1,p}(Ω)` for
   `p ≤ q`.
 
@@ -610,6 +618,84 @@ theorem W1p.ext_value {u v : W1p mu Omega p} (hvalue : W1p.value u = W1p.value v
     simpa only [hvalue] using W1p.hasWeakFDerivOn v
   filter_upwards [hderiv] with x hx
   exact innerSL_inj.mp hx
+
+section Const
+
+variable [IsFiniteMeasure (mu.restrict (Omega : Set E))]
+
+/-- On a domain of finite measure, the constant function `c` as an element of `W^{1,p}(Ω)`. Its
+weak gradient is `0`. -/
+def W1p.const (c : ℝ) : W1p mu Omega p :=
+  W1p.mk (Lp.const p (mu.restrict Omega) c) 0 <| by
+    have hconst : HasWeakFDerivOn mu Omega (fun _ : E => c) 0 :=
+      hasWeakFDerivOn_iff.2 fun _ => hasWeakLineDerivOn_const c
+    refine (hconst.congr_ae (Lp.coeFn_const p _ c).symm).congr_ae_deriv ?_
+    filter_upwards [Lp.coeFn_zero E p (mu.restrict Omega)] with x hx
+    rw [hx, Pi.zero_apply, Pi.zero_apply, map_zero]
+
+/-- The value component of the constant Sobolev function `c` is the constant `c` in `Lᵖ`. -/
+@[simp]
+theorem W1p.value_const (c : ℝ) :
+    W1p.value (W1p.const c : W1p mu Omega p) = Lp.const p (mu.restrict Omega) c :=
+  W1p.value_mk _ _ _
+
+/-- The weak gradient of a constant Sobolev function is `0`. -/
+@[simp]
+theorem W1p.gradient_const (c : ℝ) : W1p.gradient (W1p.const c : W1p mu Omega p) = 0 :=
+  W1p.gradient_mk _ _ _
+
+/-- Adding a constant `c` to a Sobolev function adds `c` to its value almost everywhere. -/
+theorem W1p.value_add_const_ae (u : W1p mu Omega p) (c : ℝ) :
+    ∀ᵐ x ∂mu.restrict Omega, W1p.value (u + W1p.const c) x = W1p.value u x + c := by
+  rw [← W1p.valueL_apply, map_add, W1p.valueL_apply, W1p.valueL_apply, W1p.value_const]
+  filter_upwards [Lp.coeFn_add (W1p.value u) (Lp.const p (mu.restrict Omega) c),
+    Lp.coeFn_const p (mu.restrict Omega) c] with x h1 h2
+  rw [h1, Pi.add_apply, h2, Function.const_apply]
+
+/-- Adding a constant to a Sobolev function does not change its weak gradient. -/
+@[simp]
+theorem W1p.gradient_add_const (u : W1p mu Omega p) (c : ℝ) :
+    W1p.gradient (u + W1p.const c) = W1p.gradient u := by
+  rw [← W1p.gradientL_apply, map_add, W1p.gradientL_apply, W1p.gradientL_apply,
+    W1p.gradient_const, add_zero]
+
+end Const
+
+open scoped Gradient in
+/-- **A `C¹` function with integrable gradient is a Sobolev function.** If `u` is `C¹` on the open
+set `Ω` and both `u` and its classical gradient `∇u` lie in `Lᵖ(Ω)`, then `u` is represented by an
+element of `W^{1,p}(Ω)` whose weak gradient is `∇u`. Nothing is assumed about `u` at the boundary
+of `Ω`. -/
+theorem W1p.exists_value_gradient_ae_eq_of_contDiffOn {u : E → ℝ} (hu : ContDiffOn ℝ 1 u Omega)
+    (hv : MemLp u p (mu.restrict Omega)) (hg : MemLp (∇ u) p (mu.restrict Omega)) :
+    ∃ U : W1p mu Omega p, W1p.value U =ᵐ[mu.restrict Omega] u ∧
+      W1p.gradient U =ᵐ[mu.restrict Omega] ∇ u := by
+  refine ⟨W1p.mk (hv.toLp u) (hg.toLp _)
+    (((hasWeakFDerivOn_gradient_of_contDiffOn hu).congr_ae hv.coeFn_toLp.symm).congr_ae_deriv ?_),
+    ?_, ?_⟩
+  · filter_upwards [hg.coeFn_toLp] with x hx
+    rw [hx]
+  · rw [W1p.value_mk]
+    exact hv.coeFn_toLp
+  · rw [W1p.gradient_mk]
+    exact hg.coeFn_toLp
+
+open scoped Gradient in
+/-- **A `C¹` function is a Sobolev function on compactly contained subdomains.** If `u` is `C¹`
+on an open set `U` and `Ω` lies in a compact subset `K` of `U`, then `u` is represented by an
+element of `W^{1,p}(Ω)` whose weak gradient is the classical gradient `∇u`. -/
+theorem W1p.exists_value_gradient_ae_eq_of_contDiffOn_of_isCompact {u : E → ℝ} {U K : Set E}
+    (hU : IsOpen U) (hu : ContDiffOn ℝ 1 u U) (hK : IsCompact K) (hΩK : (Omega : Set E) ⊆ K)
+    (hKU : K ⊆ U) :
+    ∃ v : W1p mu Omega p, W1p.value v =ᵐ[mu.restrict Omega] u ∧
+      W1p.gradient v =ᵐ[mu.restrict Omega] ∇ u := by
+  have hgrad : ContinuousOn (∇ u) U :=
+    (InnerProductSpace.toDual ℝ E).symm.continuous.comp_continuousOn
+      (hu.continuousOn_fderiv_of_isOpen hU le_rfl)
+  exact W1p.exists_value_gradient_ae_eq_of_contDiffOn (hu.mono (hΩK.trans hKU))
+    ((hu.continuousOn.mono hKU).memLp_restrict_of_subset_isCompact hK Omega.isOpen.measurableSet
+      hΩK p)
+    ((hgrad.mono hKU).memLp_restrict_of_subset_isCompact hK Omega.isOpen.measurableSet hΩK p)
 
 end
 

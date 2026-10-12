@@ -10,6 +10,7 @@ public import TauCeti.AlgebraicTopology.ThricePuncturedSphere.PeripheralLoops
 public import TauCeti.Topology.Homotopy.Path
 import Mathlib.Analysis.Convex.Contractible
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Inverse
+import TauCeti.Analysis.SpecialFunctions.Trigonometric.Bounds
 
 /-!
 # The peripheral element at infinity is a loop around infinity
@@ -274,10 +275,6 @@ private theorem isSimplyConnected_lower :
     IsSimplyConnected {z : ThricePuncturedSphere | (z : ℂ).im ≤ 0} := by
   simpa using isSimplyConnected_setOf_mul_im (neg_ne_zero.2 one_ne_zero)
 
-private theorem sin_nonpos_of_pi_le {x : ℝ} (h₁ : π ≤ x) (h₂ : x ≤ 2 * π) : Real.sin x ≤ 0 := by
-  rw [← Real.sin_sub_two_pi]
-  exact sin_nonpos_of_nonpos_of_neg_pi_le (by linarith) (by linarith)
-
 private theorem im_coe_δ (t : unitInterval) : (δ t : ℂ).im = 3 * Real.sin (θ₀ + 2 * π * t) := by
   rw [coe_δ, circleMap_zero_im]
 
@@ -357,7 +354,7 @@ private theorem range_δ₁_subset : range δ₁ ⊆ {z | 0 ≤ (z : ℂ).im} :=
 
 private theorem range_δ₂_subset : range δ₂ ⊆ {z | (z : ℂ).im ≤ 0} :=
   δ.range_subpath_subset_of_im im_coe_δ tNeg_le_tPos (P := (· ≤ 0)) fun _ h₁ h₂ ↦
-    mul_nonpos_of_nonneg_of_nonpos (by norm_num) (sin_nonpos_of_pi_le
+    mul_nonpos_of_nonneg_of_nonpos (by norm_num) (sin_nonpos_of_pi_le_of_le_two_pi
       (by linarith [θ₀_add_two_pi_mul_tNeg]) (by linarith [θ₀_add_two_pi_mul_tPos]))
 
 private theorem range_δ₃_subset : range δ₃ ⊆ {z | 0 ≤ (z : ℂ).im} :=
@@ -375,7 +372,7 @@ private theorem range_γ0₁_subset : range γ0₁ ⊆ {z | 0 ≤ (z : ℂ).im} 
 private theorem range_γ0₂_subset : range γ0₂ ⊆ {z | (z : ℂ).im ≤ 0} :=
   γ0.range_subpath_subset_of_im (a := 0) (fun u ↦ by rw [im_coe_γ0, zero_add])
     unitInterval.le_one' (P := (· ≤ 0)) fun _ h₁ h₂ ↦
-    mul_nonpos_of_nonneg_of_nonpos (by norm_num) (sin_nonpos_of_pi_le
+    mul_nonpos_of_nonneg_of_nonpos (by norm_num) (sin_nonpos_of_pi_le_of_le_two_pi
       (by linarith [two_pi_mul_tHalf]) (by simpa using h₂))
 
 private theorem range_γ1₁_subset : range γ1₁ ⊆ {z | (z : ℂ).im ≤ 0} :=
@@ -387,7 +384,7 @@ private theorem range_γ1₁_subset : range γ1₁ ⊆ {z | (z : ℂ).im ≤ 0} 
 private theorem range_γ1₂_subset : range γ1₂ ⊆ {z | 0 ≤ (z : ℂ).im} :=
   γ1.range_subpath_subset_of_im (a := 0) (fun u ↦ by rw [im_coe_γ1, zero_add])
     unitInterval.le_one' (P := (0 ≤ ·)) fun _ h₁ h₂ ↦
-    mul_nonneg_of_nonpos_of_nonpos (by norm_num) (sin_nonpos_of_pi_le
+    mul_nonneg_of_nonpos_of_nonpos (by norm_num) (sin_nonpos_of_pi_le_of_le_two_pi
       (by linarith [two_pi_mul_tHalf]) (by simpa using h₂))
 
 /-- A subset of the real axis lies in both closed half-planes. -/
