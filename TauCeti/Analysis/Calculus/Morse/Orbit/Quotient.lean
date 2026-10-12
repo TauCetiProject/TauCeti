@@ -23,6 +23,10 @@ The construction uses `Flow.IsNegativeGradient.exists_continuous_levelSlice` and
 `Function.RightInverse.homeomorph` for a continuous retraction. No Morse nondegeneracy,
 transversality, or finite-dimensionality is needed for this topological identification.
 
+Use `TauCeti.connectingOrbitSetoid φ p q` for the orbit relation and
+`TauCeti.orbitQuotientHomeomorphLevelSlice hφ hf hfp hfq hc` for the identification.
+The characterization lemmas are in the same `TauCeti` namespace.
+
 ## References
 
 * M. Audin and M. Damian, *Morse Theory and Floer Homology*, Springer Universitext, 2014,
