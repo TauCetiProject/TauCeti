@@ -873,7 +873,7 @@ variable [Ring k]
 @[simp]
 theorem finrank_conjNormalFDRep (g : G) (A : FDRep k N) :
     Module.finrank k (conjNormalFDRep g A).V = Module.finrank k A.V :=
-  rfl
+  congrArg (fun V : FGModuleCat k => Module.finrank k V) (conjNormalFDRep_V g A)
 
 end NormalFDRepFinrank
 

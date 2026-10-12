@@ -43,6 +43,7 @@ theorem MonoidHom.actionRes_comp (φ : K →* L) (ψ : H →* K) :
 
 /-- Restriction of actions along the identity is the identity functor. This is the equality
 form of Mathlib's natural isomorphism `Action.resId`. -/
+@[simp]
 theorem MonoidHom.actionRes_id :
     Action.res V (MonoidHom.id H) = 𝟭 (Action V H) :=
   rfl
