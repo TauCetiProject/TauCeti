@@ -124,11 +124,11 @@ section Defs
 variable {K L A : Type*} [CommSemiring K] [CommSemiring L] [Algebra K L]
   [Semiring A] [Algebra K A]
 
-namespace BaseChangeModule
-
 /-- The opposite-valued algebra homomorphism induced by a map from commutative `L`. -/
-abbrev oppositeHom (f : L →ₐ[K] A) : L →ₐ[K] Aᵐᵒᵖ :=
+abbrev _root_.AlgHom.toOppositeOfComm (f : L →ₐ[K] A) : L →ₐ[K] Aᵐᵒᵖ :=
   f.toOpposite fun x y ↦ by simp [commute_iff_eq, ← map_mul, mul_comm]
+
+namespace BaseChangeModule
 
 variable (K L A) in
 /-- The tensor-product map identifying `A` with its double opposite. -/
@@ -146,41 +146,41 @@ Equivalently this is the `A`-`L`-bimodule `A`, with `A` acting on the left by mu
 left action of `L ⊗[K] A` with no opposite algebra. It is a type synonym for `A` so that `A` itself
 is left without an `L ⊗[K] A`-action, and so that different subfields can act at the same time. -/
 @[expose] def BaseChangeModule (f : L →ₐ[K] A) : Type _ :=
-  Bimodule (BaseChangeModule.oppositeHom f)
+  Bimodule (f.toOppositeOfComm)
 
 namespace BaseChangeModule
 
 variable (f : L →ₐ[K] A)
 
 instance : AddCommMonoid (BaseChangeModule f) :=
-  inferInstanceAs (AddCommMonoid (Bimodule (oppositeHom f)))
+  inferInstanceAs (AddCommMonoid (Bimodule (f.toOppositeOfComm)))
 
 -- Conditional, so that the endomorphism ring of `BaseChangeModule f` is a ring and not merely a
 -- semiring when `A` is one; nothing in the construction itself needs the negation.
 instance {A : Type*} [Ring A] [Algebra K A] (f : L →ₐ[K] A) : AddCommGroup (BaseChangeModule f) :=
-  inferInstanceAs (AddCommGroup (Bimodule (oppositeHom f)))
+  inferInstanceAs (AddCommGroup (Bimodule (f.toOppositeOfComm)))
 
 instance : Module K (BaseChangeModule f) :=
-  inferInstanceAs (Module K (Bimodule (oppositeHom f)))
+  inferInstanceAs (Module K (Bimodule (f.toOppositeOfComm)))
 
 instance [Nontrivial A] : Nontrivial (BaseChangeModule f) :=
-  inferInstanceAs (Nontrivial (Bimodule (oppositeHom f)))
+  inferInstanceAs (Nontrivial (Bimodule (f.toOppositeOfComm)))
 
 instance [Module.Finite K A] : Module.Finite K (BaseChangeModule f) :=
-  Module.Finite.equiv ((MulOpposite.opLinearEquiv K).trans (Bimodule.of (oppositeHom f)))
+  Module.Finite.equiv ((MulOpposite.opLinearEquiv K).trans (Bimodule.of (f.toOppositeOfComm)))
 
 /-- `BaseChangeModule f` is `A` again as a `K`-module: only the `L ⊗[K] A`-action is new. -/
 def of : A ≃ₗ[K] BaseChangeModule f :=
-  (MulOpposite.opLinearEquiv K).trans (Bimodule.of (oppositeHom f))
+  (MulOpposite.opLinearEquiv K).trans (Bimodule.of (f.toOppositeOfComm))
 
 noncomputable instance : Module (L ⊗[K] A) (BaseChangeModule f) :=
-  Module.compHom (M := Bimodule (oppositeHom f)) (tensorOpOp K L A).toRingHom
+  Module.compHom (M := Bimodule (f.toOppositeOfComm)) (tensorOpOp K L A).toRingHom
 
 /-- The action of `L ⊗[K] A` on `A` defining `BaseChangeModule f`, as a `K`-algebra homomorphism
 into `Module.End K A`, transported from `TauCeti.Bimodule.toEnd`. -/
 noncomputable def toEnd : L ⊗[K] A →ₐ[K] Module.End K A :=
   ((MulOpposite.opLinearEquiv K).conjAlgEquiv K).symm.toAlgHom.comp
-    ((Bimodule.toEnd (oppositeHom f)).comp (tensorOpOp K L A))
+    ((Bimodule.toEnd (f.toOppositeOfComm)).comp (tensorOpOp K L A))
 
 /-- A pure tensor `l ⊗ₜ a` acts on `x : A` through `toEnd f` by `x ↦ a * x * f l`. -/
 @[simp]
@@ -191,8 +191,8 @@ theorem toEnd_tmul_apply (l : L) (a x : A) : toEnd f (l ⊗ₜ a) x = a * x * f 
 equation of the module structure, and the single place it is unfolded: everything else rewrites
 with it instead of reasoning up to definitional equality. -/
 theorem smul_def (r : L ⊗[K] A) (x : A) : r • of f x = of f (toEnd f r x) := by
-  change tensorOpOp K L A r • Bimodule.of (oppositeHom f) (MulOpposite.op x) =
-    Bimodule.of (oppositeHom f) (MulOpposite.op (toEnd f r x))
+  change tensorOpOp K L A r • Bimodule.of (f.toOppositeOfComm) (MulOpposite.op x) =
+    Bimodule.of (f.toOppositeOfComm) (MulOpposite.op (toEnd f r x))
   rw [Bimodule.smul_def]
   rfl
 
