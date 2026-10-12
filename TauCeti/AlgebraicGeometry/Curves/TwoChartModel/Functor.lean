@@ -64,8 +64,7 @@ instance (F : FunctionFieldCat.{u, u} k) : (model F).IsCurveOver k :=
   TauCeti.AlgebraicGeometry.twoChartModel.isCurveOver (hF := F.isFunctionField)
     (transcendental_modelParameter F)
 
-/-- Every local ring of the model is a valuation ring. At a closed point it is a discrete
-valuation ring; at the generic point it is the function field. -/
+/-- Every local ring of the model is a valuation ring. -/
 instance (F : FunctionFieldCat.{u, u} k) (p : model F) :
     ValuationRing ((model F).presheaf.stalk p) :=
   TauCeti.AlgebraicGeometry.twoChartModel.valuationRing_stalk
@@ -81,9 +80,7 @@ def modelFunctionFieldEquiv (F : FunctionFieldCat.{u, u} k) :
 /-- The contravariant two-chart model functor. Its morphisms are dominant morphisms over `k`.
 Its codomain is the over category of schemes; properness and regularity of its objects are
 provided by the instances on `model`. -/
--- The object computation is exposed because the function-field comparison has a dependent
--- type: the stalks of the functor's underlying scheme must compute to those of `model`.
-@[expose] def modelFunctor (k : Type u) [Field k] :
+def modelFunctor (k : Type u) [Field k] :
     (FunctionFieldCat.{u, u} k)ᵒᵖ ⥤ Over (Spec (.of k)) where
   obj F := (model F.unop).asOver (Spec (.of k))
   map {F G} f := (TauCeti.AlgebraicGeometry.twoChartModel.homOfAlgHom
@@ -102,6 +99,19 @@ provided by the instances on `model`. -/
 @[simp] theorem modelFunctor_obj_left (F : (FunctionFieldCat.{u, u} k)ᵒᵖ) :
     ((modelFunctor k).obj F).left = model F.unop := (rfl)
 
+/-- After identifying its source and target with the chosen models, the scheme morphism
+underlying a functor image is the extension of the field embedding. -/
+@[simp] theorem modelFunctor_map_left
+    {F G : (FunctionFieldCat.{u, u} k)ᵒᵖ} (f : F ⟶ G) :
+    eqToHom (modelFunctor_obj_left F).symm ≫ ((modelFunctor k).map f).left ≫
+        eqToHom (modelFunctor_obj_left G) =
+      TauCeti.AlgebraicGeometry.twoChartModel.homOfAlgHom
+        G.unop.isFunctionField F.unop.isFunctionField
+        (transcendental_modelParameter G.unop).ne_zero
+        (transcendental_modelParameter F.unop).ne_zero
+        (transcendental_modelParameter G.unop) (transcendental_modelParameter F.unop)
+        (ConcreteCategory.hom f.unop) := (rfl)
+
 /-- The underlying scheme of each functor value is a proper integral curve. -/
 instance (F : (FunctionFieldCat.{u, u} k)ᵒᵖ) :
     ((modelFunctor k).obj F).left.IsCurveOver k :=
@@ -115,15 +125,20 @@ instance {F G : (FunctionFieldCat.{u, u} k)ᵒᵖ} (f : F ⟶ G) :
     (transcendental_modelParameter F.unop).ne_zero (transcendental_modelParameter G.unop)
     (transcendental_modelParameter F.unop) (ConcreteCategory.hom f.unop)))
 
-/-- Under the identifications of the model function fields, pullback along a functor image is
-the original field embedding. -/
-@[simp] theorem modelFunctionFieldEquiv_functionFieldMap
+/-- After identifying the functor objects with the chosen models and their function fields
+with the original fields, pullback along a functor image is the original field embedding. -/
+-- The map computation lemma simplifies the morphism in this statement, so the pullback
+-- comparison is not itself a simp-normal-form lemma.
+theorem modelFunctionFieldEquiv_functionFieldMap
     {F G : (FunctionFieldCat.{u, u} k)ᵒᵖ} (f : F ⟶ G) (z : G.unop) :
-    modelFunctionFieldEquiv F.unop (((modelFunctor k).map f).left.functionFieldMap
-      ((modelFunctionFieldEquiv G.unop).symm z)) = f.unop z :=
-  TauCeti.AlgebraicGeometry.twoChartModel.functionFieldEquiv_functionFieldMap_homOfAlgHom
-    G.unop.isFunctionField F.unop.isFunctionField (transcendental_modelParameter G.unop).ne_zero
-    (transcendental_modelParameter F.unop).ne_zero (ConcreteCategory.hom f.unop) z
+    modelFunctionFieldEquiv F.unop
+      ((eqToHom (modelFunctor_obj_left F).symm ≫ ((modelFunctor k).map f).left ≫
+        eqToHom (modelFunctor_obj_left G)).functionFieldMap
+          ((modelFunctionFieldEquiv G.unop).symm z)) = f.unop z := by
+  simpa only [modelFunctor_map_left, modelFunctionFieldEquiv] using
+    TauCeti.AlgebraicGeometry.twoChartModel.functionFieldEquiv_functionFieldMap_homOfAlgHom
+      G.unop.isFunctionField F.unop.isFunctionField (transcendental_modelParameter G.unop).ne_zero
+      (transcendental_modelParameter F.unop).ne_zero (ConcreteCategory.hom f.unop) z
 
 /-- Distinct embeddings induce distinct morphisms of models. -/
 instance : (modelFunctor k).Faithful where
@@ -131,10 +146,12 @@ instance : (modelFunctor k).Faithful where
     apply Quiver.Hom.unop_inj
     apply ConcreteCategory.hom_ext
     intro z
-    have hfield : ((modelFunctor k).map f).left.functionFieldMap =
-        ((modelFunctor k).map g).left.functionFieldMap := by
-      congr 1
-      exact congrArg Over.Hom.left h
+    have hfield :
+        (eqToHom (modelFunctor_obj_left F).symm ≫ ((modelFunctor k).map f).left ≫
+          eqToHom (modelFunctor_obj_left G)).functionFieldMap =
+        (eqToHom (modelFunctor_obj_left F).symm ≫ ((modelFunctor k).map g).left ≫
+          eqToHom (modelFunctor_obj_left G)).functionFieldMap := by
+      simp only [h]
     rw [← modelFunctionFieldEquiv_functionFieldMap f z,
       ← modelFunctionFieldEquiv_functionFieldMap g z, hfield]
 
