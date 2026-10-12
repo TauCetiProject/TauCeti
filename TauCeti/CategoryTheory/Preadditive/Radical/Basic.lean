@@ -549,18 +549,11 @@ theorem smul_mem_jacobsonRadical {X Y : C} (c : k) {f : X ⟶ Y}
     (hf : f ∈ jacobsonRadical X Y) : c • f ∈ jacobsonRadical X Y := fun g => by
   simpa using hf (c • g)
 
-/-- **Scaling preserves the square of the radical**, the generating composites being scaled in
-their first factor. -/
+/-- **Scaling preserves the square of the radical.** -/
 theorem smul_mem_jacobsonRadicalSq {X Y : C} (c : k) {f : X ⟶ Y}
     (hf : f ∈ jacobsonRadicalSq X Y) : c • f ∈ jacobsonRadicalSq X Y := by
-  induction hf using AddSubgroup.closure_induction with
-  | mem x hx =>
-    obtain ⟨Z, a, b, ha, hb, rfl⟩ := hx
-    rw [← Linear.smul_comp]
-    exact comp_mem_jacobsonRadicalSq (smul_mem_jacobsonRadical c ha) hb
-  | zero => rw [smul_zero]; exact zero_mem _
-  | add x y _ _ hx hy => rw [smul_add]; exact add_mem hx hy
-  | neg x _ hx => rw [smul_neg]; exact neg_mem hx
+  simpa only [Linear.smul_comp, Category.id_comp] using
+    comp_mem_jacobsonRadicalSq_left (c • 𝟙 X) hf
 
 variable (k) in
 /-- **The radical of a `k`-linear category as a submodule**, the same subgroup as

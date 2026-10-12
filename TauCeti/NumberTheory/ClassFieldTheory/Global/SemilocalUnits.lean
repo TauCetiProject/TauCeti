@@ -60,7 +60,9 @@ unramified the units of its ring of integers have no Tate cohomology
 * `TauCeti.ClassFieldTheory.herbrandQuotient_semilocalUnitsRep`: `h((K_v ⊗[K] L)ˣ) = [L_w : K_v]`
   for `L/K` cyclic and `v` finite.
 * `TauCeti.ClassFieldTheory.isZero_tateCohomology_semilocalIntegralUnitsRep`:
-  `H-hat^n(Gal(L/K), ∏_{w ∣ v} 𝒪_wˣ) = 0` for `L/K` cyclic and `v` unramified in `L`.
+  `H-hat^n(Gal(L/K), ∏_{w ∣ v} 𝒪_wˣ) = 0` for `L/K` cyclic and `v` unramified in `L`; for an
+  arbitrary Galois extension, `isZero_tateCohomology_semilocalIntegralUnitsRep_of_neZero` gives
+  the same in every positive degree.
 * `TauCeti.ClassFieldTheory.herbrandQuotient_units_eq_finrank_completion`:
   `h(L_wˣ) = [L_w : K_v]` for an infinite place `w`, as a representation of `Aut(L_w/K_v)`.
 * `TauCeti.ClassFieldTheory.herbrandQuotient_infiniteSemilocalUnitsRep`:
@@ -128,6 +130,22 @@ theorem isZero_tateCohomology_semilocalIntegralUnitsRep (w : HeightOneSpectrum (
   (TateCohomology.isZero_tateCohomology_unitFiltration_zero_of_isUnramified n).of_iso <|
     (tateCohomologyFunctor n).mapIso (semilocalIntegralUnitsCoindIso v w) ≪≫
       TateCohomology.coindIso _ _ n ≪≫
+      -- `decompositionIntegralUnitsRep v w` is by definition the restriction along
+      -- `decompositionHom v w`, the underlying hom of this equivalence
+      (TateCohomology.resIso (MulEquiv.ofBijective (decompositionHom v w)
+        ⟨decompositionHom_injective v w, decompositionHom_surjective v w⟩) n).app _
+
+omit [IsCyclic (L ≃ₐ[K] L)] in
+/-- **The integral semi-local units at an unramified place have no cohomology in positive
+degrees**, for an arbitrary Galois extension `L/K` of number fields: for a finite place `v` of `K`
+unramified in `L`, `H-hat^n(Gal(L/K), ∏_{w ∣ v} 𝒪_wˣ) = 0` for every `n > 0`. For a cyclic
+extension this holds in every degree (`isZero_tateCohomology_semilocalIntegralUnitsRep`). -/
+theorem isZero_tateCohomology_semilocalIntegralUnitsRep_of_neZero (w : HeightOneSpectrum (𝒪 L))
+    [w.asIdeal.LiesOver v.asIdeal] [Algebra.IsUnramifiedAt (𝒪 K) w.asIdeal] (n : ℕ) [NeZero n] :
+    IsZero (tateCohomology (semilocalIntegralUnitsRep L v) n) :=
+  (TateCohomology.isZero_tateCohomology_unitFiltration_zero_of_isUnramified n).of_iso <|
+    (tateCohomologyFunctor n).mapIso (semilocalIntegralUnitsCoindIso v w) ≪≫
+      TateCohomology.coindIsoPos _ _ n ≪≫
       -- `decompositionIntegralUnitsRep v w` is by definition the restriction along
       -- `decompositionHom v w`, the underlying hom of this equivalence
       (TateCohomology.resIso (MulEquiv.ofBijective (decompositionHom v w)
