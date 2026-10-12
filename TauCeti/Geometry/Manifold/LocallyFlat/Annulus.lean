@@ -7,12 +7,10 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import Mathlib.Topology.UnitInterval
-public import TauCeti.Analysis.Normed.Module.Ball
 public import TauCeti.Analysis.Normed.Module.FilledHull
 public import TauCeti.Geometry.Manifold.LocallyFlat.Basic
 import Mathlib.Analysis.Normed.Module.Ball.RadialEquiv
 import Mathlib.Analysis.SpecialFunctions.Exp
-import Mathlib.Topology.Order.MonotoneContinuity
 
 /-!
 # The annulus conjecture
@@ -43,10 +41,10 @@ model `EuclideanSpace ℝ (Fin n) × ℝ`. Kirby's theorem is the case `n + 1 �
 
 The round case is proved here, which shows that the hypotheses of the conjecture can hold and that
 its conclusion is attained: scaling the unit sphere by `c ≠ 0` is locally flat
-(`TauCeti.isLocallyFlat_smul_coe_sphere`), for `0 < r < R` the sphere of radius `r` lies inside the
-sphere of radius `R` (`TauCeti.range_smul_coe_sphere_subset_filledHull_sdiff`), and the two
-concentric spheres cobound the closed annulus `{r ≤ ‖x‖ ≤ R}`
-(`TauCeti.coboundAnnulus_smul_coe_sphere`).
+(`TauCeti.isLocallyFlat_smul_coe_sphere`), and for `0 < r < R` the two concentric spheres cobound
+the closed annulus `{r ≤ ‖x‖ ≤ R}` (`TauCeti.coboundAnnulus_smul_coe_sphere`). The required nesting
+condition follows from `TauCeti.range_smul_coe_sphere_subset_filledHull_sdiff` in the
+filled-hull API.
 
 ## Main definitions
 
@@ -57,8 +55,6 @@ concentric spheres cobound the closed annulus `{r ≤ ‖x‖ ≤ R}`
 
 * `TauCeti.isLocallyFlat_smul_coe_sphere`: a rescaled unit sphere is locally flat, with
   one-dimensional complementary model.
-* `TauCeti.range_smul_coe_sphere_subset_filledHull_sdiff`: a smaller concentric sphere lies inside
-  a larger one.
 * `TauCeti.coboundAnnulus_smul_coe_sphere`: two concentric round spheres cobound an annulus.
 
 ## References
@@ -128,18 +124,6 @@ theorem isLocallyFlat_smul_coe_sphere {F : Type*} [TopologicalSpace F]
   convert hflat using 1
   ext u
   simp [polar]
-
-/-- **A smaller concentric sphere lies inside a larger one:** for `0 < r < R`, the sphere of
-radius `r` lies in the open region bounded by the sphere of radius `R`. -/
-theorem range_smul_coe_sphere_subset_filledHull_sdiff {r R : ℝ} (hr : 0 < r) (hrR : r < R) :
-    range (fun u : sphere (0 : E) 1 => r • (u : E)) ⊆
-      filledHull (range fun u : sphere (0 : E) 1 => R • (u : E)) \
-        range fun u : sphere (0 : E) 1 => R • (u : E) := by
-  rw [range_smul_coe_sphere hr, range_smul_coe_sphere (hr.trans hrR),
-    filledHull_sphere _ (hr.trans hrR).le]
-  intro x hx
-  rw [mem_sphere_zero_iff_norm] at hx
-  simp [hx, hrR]
 
 /-- **Two concentric round spheres cobound an annulus:** for `0 < r < R`, the spheres of radii `R`
 and `r` cobound the closed annulus `{x | r ≤ ‖x‖ ≤ R}`, parametrized by
