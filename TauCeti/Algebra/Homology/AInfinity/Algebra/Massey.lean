@@ -139,7 +139,8 @@ theorem cycle_mem_cycles : S.cycle ∈ 𝒜.cycles := by
   rw [mem_cycles, ← differential_apply, cycle_def, map_add, map_sub]
   simp only [differential_apply, m_one_m_two, m_one_m_three, m_one_koszulTwist,
     InternalGrading.koszulTwist_koszulTwist, S.m_one_u, S.m_one_v, ha, hb, hc, map_zero,
-    neg_zero, m_three_zero₀, m_three_zero₁, m_three_zero₂, m_two_zero_left, m_two_zero_right]
+    neg_zero, m_three_zero_first, m_three_zero_second, m_three_zero_third,
+    m_two_zero_left, m_two_zero_right]
   abel
 
 /-- The class of the Massey cycle of a defining system: an element of the triple Massey
@@ -250,20 +251,26 @@ theorem add_mem_tripleMasseyProduct {w i : 𝒜.Cohomology} (hw : w ∈ 𝒜.tri
       m_one_v := by
         rw [← differential_apply, map_sub, differential_apply, differential_apply, S.m_one_v,
           hσ, sub_zero] }
+  have hcycle : T.cycle = S.cycle +
+      ((𝒜.m 2) ![𝒜.grading.koszulTwist 1 S.a, σ] + (𝒜.m 2) ![θ, S.c]) := by
+    simp only [TripleMasseyDefiningSystem.cycle_def, T, ← mul_apply, map_add, map_sub,
+      LinearMap.add_apply]
+    abel
+  have hclass : 𝒜.cohomologyClass T.cycle_mem_cycles =
+      𝒜.cohomologyClass S.cycle_mem_cycles +
+        (𝒜.cohomologyClass (𝒜.m_two_mem_cycles
+          (𝒜.koszulTwist_mem_cycles S.a_mem_cycles) (𝒜.mem_cycles.mpr hσ)) +
+          𝒜.cohomologyClass (𝒜.m_two_mem_cycles (𝒜.mem_cycles.mpr hθ) S.c_mem_cycles)) := by
+    rw [← cohomologyClass_add, ← cohomologyClass_add, cohomologyClass_eq_iff,
+      hcycle, sub_self]
+    exact zero_mem _
   refine ⟨T, ?_⟩
-  rw [TripleMasseyDefiningSystem.value_def, TripleMasseyDefiningSystem.value_def,
-    𝒜.cohomologyClass_eq_add_add S.cycle_mem_cycles
-      (𝒜.m_two_mem_cycles (𝒜.koszulTwist_mem_cycles S.a_mem_cycles) (𝒜.mem_cycles.mpr hσ))
-      (𝒜.m_two_mem_cycles (𝒜.mem_cycles.mpr hθ) S.c_mem_cycles) T.cycle_mem_cycles ?_,
+  rw [TripleMasseyDefiningSystem.value_def, TripleMasseyDefiningSystem.value_def, hclass,
     ← 𝒜.cohomologyMul_cohomologyClass (𝒜.koszulTwist_mem_cycles S.a_mem_cycles)
       (𝒜.mem_cycles.mpr hσ),
     ← 𝒜.cohomologyMul_cohomologyClass (𝒜.mem_cycles.mpr hθ) S.c_mem_cycles,
     ← 𝒜.koszulTwist_cohomologyClass S.a_mem_cycles, S.cohomologyClass_a, S.cohomologyClass_c,
     cohomology_mul_eq_cohomologyMul, cohomology_mul_eq_cohomologyMul]
-  simp only [TripleMasseyDefiningSystem.cycle_def, T, ← mul_apply, map_add, map_sub,
-    LinearMap.add_apply]
-  abel
-
 namespace TripleMasseyDefiningSystem
 
 variable (S : 𝒜.TripleMasseyDefiningSystem x y z)
@@ -295,8 +302,9 @@ private theorem exists_a_eq {a' : A} (ha' : a' ∈ 𝒜.cycles) (hx : 𝒜.cohom
   refine ⟨𝒜.m 2 ![𝒜.grading.koszulTwist 1 α, S.v] - 𝒜.m 3 ![α, S.b, S.c], ?_⟩
   rw [← differential_apply, map_sub, differential_apply, differential_apply]
   simp only [cycle_def, T, m_one_m_two, m_one_m_three, m_one_koszulTwist,
-    InternalGrading.koszulTwist_koszulTwist, S.m_one_v, hb, hc, m_three_zero₁, m_three_zero₂,
-    m_three_add₀]
+    InternalGrading.koszulTwist_koszulTwist, S.m_one_v, hb, hc,
+    m_three_zero_second, m_three_zero_third,
+    m_three_add_first]
   simp only [← mul_apply, map_add, map_neg, LinearMap.add_apply, LinearMap.neg_apply]
   abel
 
@@ -332,8 +340,8 @@ private theorem exists_b_eq {b' : A} (hb' : b' ∈ 𝒜.cycles) (hy : 𝒜.cohom
   refine ⟨-𝒜.m 3 ![𝒜.grading.koszulTwist 1 S.a, β, S.c], ?_⟩
   rw [← differential_apply, map_neg, differential_apply]
   simp only [cycle_def, T, m_one_m_three, m_one_koszulTwist,
-    InternalGrading.koszulTwist_koszulTwist, ha, hc, map_zero, neg_zero, m_three_zero₀,
-    m_three_zero₂, m_three_add₁]
+    InternalGrading.koszulTwist_koszulTwist, ha, hc, map_zero, neg_zero, m_three_zero_first,
+    m_three_zero_third, m_three_add_second]
   simp only [← mul_apply, map_add, LinearMap.add_apply]
   abel
 
@@ -366,7 +374,7 @@ private theorem exists_c_eq {c' : A} (hc' : c' ∈ 𝒜.cycles) (hz : 𝒜.cohom
   rw [← differential_apply, map_sub, differential_apply, differential_apply]
   simp only [cycle_def, T, m_one_m_two, m_one_m_three, m_one_koszulTwist,
     InternalGrading.koszulTwist_koszulTwist, S.m_one_u, koszulTwist_m_two, ha, hb, map_zero,
-    neg_zero, m_three_zero₀, m_three_zero₁, m_three_add₂]
+    neg_zero, m_three_zero_first, m_three_zero_second, m_three_add_third]
   simp only [← mul_apply, map_add, map_neg, LinearMap.neg_apply]
   abel
 
@@ -389,7 +397,10 @@ private theorem value_sub_value_mem (S' : 𝒜.TripleMasseyDefiningSystem x y z)
   refine ⟨𝒜.cohomologyClass (𝒜.mem_cycles.mpr hv), 𝒜.cohomologyClass (𝒜.mem_cycles.mpr hu), ?_⟩
   rw [eq_sub_iff_add_eq', value_def, value_def, koszulTwist_cohomologyClass,
     cohomology_mul_eq_cohomologyMul, cohomology_mul_eq_cohomologyMul,
-    cohomologyMul_cohomologyClass, cohomologyMul_cohomologyClass, ← cohomologyClass_eq_add_add]
+    cohomologyMul_cohomologyClass, cohomologyMul_cohomologyClass,
+    ← cohomologyClass_add, ← cohomologyClass_add, cohomologyClass_eq_iff]
+  -- The class equality is a boundary statement; the two expanded cycles differ by zero.
+  convert (zero_mem 𝒜.boundaries) using 1
   simp only [cycle_def, ← mul_apply, map_sub, LinearMap.sub_apply]
   abel
 
@@ -450,6 +461,7 @@ theorem IsHomogeneous.cycle_mem_piece (hS : S.IsHomogeneous p q r) :
     S.cycle ∈ 𝒜.grading.piece (p + q + r - 1) := by
   have h₁ := 𝒜.mul_mem_piece hS.u_mem hS.c_mem
   have h₂ := 𝒜.mul_mem_piece (𝒜.grading.koszulTwist_mem_piece hS.a_mem 1) hS.v_mem
+  -- Normalize the associative degree sums to the degree used in the Massey cycle.
   rw [mul_apply, show p + q - 1 + r = p + q + r - 1 by ring] at h₁
   rw [mul_apply, show p + (q + r - 1) = p + q + r - 1 by ring] at h₂
   exact add_mem (sub_mem h₁ h₂) (𝒜.m_three_mem_piece hS.a_mem hS.b_mem hS.c_mem)
@@ -515,6 +527,8 @@ theorem exists_isHomogeneous_value_eq_iff {p q r : ℤ} (hx : x ∈ 𝒜.cohomol
     have h₃ := 𝒜.m_three_mem_piece (ha₂ ▸ hap) (hb₂ ▸ hbq) (hcT ▸ hcr)
     rw [show p + q - 1 + r = p + q + r - 1 by ring] at h₁
     rw [show p + (q + r - 1) = p + q + r - 1 by ring] at h₂
+    -- The projection lemma acts through additive-hom coercions. Unwrap them to expose the
+    -- linear-map applications before rewriting the propositional binary-operation formula.
     change 𝒜.mul (decompose 𝒜.grading.piece T.u (p + q - 1) : A) T.c =
       (decompose 𝒜.grading.piece (𝒜.mul T.u T.c) (p + q + r - 1) : A) at h₁
     change 𝒜.mul (𝒜.grading.koszulTwist 1 T.a)
@@ -551,6 +565,8 @@ theorem mem_tripleMasseyIndeterminacy_and_mem_piece_iff {p r n : ℤ}
     have ht := DirectSum.map_decompose_shift 𝒜.cohomologyGrading.piece 𝒜.cohomologyGrading.piece
       (LinearMap.mulRight R z) (· + r) (add_left_injective r)
       (fun _ _ h ↦ SetLike.GradedMul.mul_mem h hz) (n - r) t
+    -- Unwrap the additive-hom views of mulLeft/mulRight so the projection equations rewrite
+    -- actual products in the cohomology algebra.
     change x * (decompose 𝒜.cohomologyGrading.piece s (n - p) : 𝒜.Cohomology) =
       (decompose 𝒜.cohomologyGrading.piece (x * s) (p + (n - p)) : 𝒜.Cohomology) at hs
     change (decompose 𝒜.cohomologyGrading.piece t (n - r) : 𝒜.Cohomology) * z =
@@ -578,6 +594,7 @@ theorem exists_isHomogeneous_value_eq_iff_sub_mem {p q r : ℤ}
       ∃ s ∈ 𝒜.cohomologyGrading.piece (q + r - 1), ∃ t ∈ 𝒜.cohomologyGrading.piece (p + q - 1),
         x * s + t * z = w' - w := by
   obtain ⟨hwM, hwn⟩ := (exists_isHomogeneous_value_eq_iff hx hy hz).1 hw
+  -- Subtract the endpoint degrees to identify the two classical indeterminacy components.
   rw [exists_isHomogeneous_value_eq_iff hx hy hz, mem_tripleMasseyProduct_iff_sub_mem hwM,
     ← (𝒜.cohomologyGrading.piece _).sub_mem_iff_left hwn,
     mem_tripleMasseyIndeterminacy_and_mem_piece_iff hx hz,
