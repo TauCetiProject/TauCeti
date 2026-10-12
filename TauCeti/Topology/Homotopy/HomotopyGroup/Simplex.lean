@@ -265,25 +265,16 @@ private lemma continuous_triangleHomotopy {Y : Type*} [TopologicalSpace Y] {u s 
     simp only [Function.comp_apply, triangleHomotopy, Finsupp.equivFunOnFinite_symm_apply_apply] <;>
     fun_prop
 
-/-- A point of the triangle is determined by its three barycentric coordinates. -/
-private lemma ext_fin_three {z z' : StdSimplex ℝ (Fin 3)} (h0 : z.weights 0 = z'.weights 0)
-    (h1 : z.weights 1 = z'.weights 1) (h2 : z.weights 2 = z'.weights 2) : z = z' :=
-  StdSimplex.ext <| Finsupp.ext fun k => by fin_cases k <;> assumption
-
-/-- The weights of a point of an edge of the triangle. -/
-private lemma weights_map_succAbove_of_eq {j k : Fin 3} {i : Fin 2} (h : j.succAbove i = k)
-    (z : StdSimplex ℝ (Fin 2)) : (z.map j.succAbove).weights k = z.weights i :=
-  h ▸ StdSimplex.weights_map_apply_of_injective Fin.succAbove_right_injective z i
-
 /-- At time `0`, the homotopy `triangleHomotopy` is the edge path `0 → 2`. -/
 private lemma triangleHomotopy_zero (s : I) :
     triangleHomotopy 0 s = (StdSimplex.ofCube 1 fun _ => s).map (1 : Fin 3).succAbove := by
-  refine ext_fin_three ?_ ?_ ?_
-  · rw [weights_map_succAbove_of_eq (i := 0) (by decide)]
+  refine StdSimplex.ext_fin_three ?_ ?_ ?_
+  · rw [StdSimplex.weights_map_succAbove_of_eq (i := 0) (by decide)]
     simp [triangleHomotopy]
   · rw [StdSimplex.weights_map_succAbove_self]
     simp [triangleHomotopy]
-  · rw [weights_map_succAbove_of_eq (i := 1) (by decide), StdSimplex.ofCube_one_weights_one]
+  · rw [StdSimplex.weights_map_succAbove_of_eq (i := 1) (by decide),
+      StdSimplex.ofCube_one_weights_one]
     simp [triangleHomotopy]
 
 /-- At time `1` and on the first half, the homotopy `triangleHomotopy` runs the edge path
@@ -294,10 +285,11 @@ private lemma triangleHomotopy_one_of_le {s : I} (h : (s : ℝ) ≤ 1 / 2) {a : 
   have h0 : 0 ≤ 1 - 2 * (s : ℝ) := by linarith
   have h1 : 2 * (s : ℝ) ≤ 2 - 2 * s := by linarith
   have h2 : 2 * (s : ℝ) - 1 ≤ 0 := by linarith
-  refine ext_fin_three ?_ ?_ ?_
-  · rw [weights_map_succAbove_of_eq (i := 0) (by decide)]
+  refine StdSimplex.ext_fin_three ?_ ?_ ?_
+  · rw [StdSimplex.weights_map_succAbove_of_eq (i := 0) (by decide)]
     simp [triangleHomotopy, ha, max_eq_left h0]
-  · rw [weights_map_succAbove_of_eq (i := 1) (by decide), StdSimplex.ofCube_one_weights_one]
+  · rw [StdSimplex.weights_map_succAbove_of_eq (i := 1) (by decide),
+      StdSimplex.ofCube_one_weights_one]
     simp [triangleHomotopy, ha, min_eq_left h1]
   · rw [StdSimplex.weights_map_succAbove_self]
     simp [triangleHomotopy, max_eq_right h2]
@@ -310,13 +302,14 @@ private lemma triangleHomotopy_one_of_lt {s : I} (h : 1 / 2 < (s : ℝ)) {a : I}
   have h0 : 1 - 2 * (s : ℝ) ≤ 0 := by linarith
   have h1 : 2 - 2 * (s : ℝ) ≤ 2 * s := by linarith
   have h2 : 0 ≤ 2 * (s : ℝ) - 1 := by linarith
-  refine ext_fin_three ?_ ?_ ?_
+  refine StdSimplex.ext_fin_three ?_ ?_ ?_
   · rw [StdSimplex.weights_map_succAbove_self]
     simp [triangleHomotopy, max_eq_right h0]
-  · rw [weights_map_succAbove_of_eq (i := 0) (by decide)]
+  · rw [StdSimplex.weights_map_succAbove_of_eq (i := 0) (by decide)]
     simp [triangleHomotopy, ha, min_eq_right h1]
     ring
-  · rw [weights_map_succAbove_of_eq (i := 1) (by decide), StdSimplex.ofCube_one_weights_one]
+  · rw [StdSimplex.weights_map_succAbove_of_eq (i := 1) (by decide),
+      StdSimplex.ofCube_one_weights_one]
     simp [triangleHomotopy, ha, max_eq_left h2]
 
 /-- A map `τ : Δⁿ⁺² → X` whose facets `j < n` are sent to `x` and whose facets `n` and `n + 2` send
