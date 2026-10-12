@@ -18,6 +18,9 @@ the two kernels agree on the boundary. The construction works for any unit norma
 In dimension `n = 2`, the underlying `newtonianKernel` is degenerate; the Green-kernel
 interpretation here is for `n = 1` or `n ≥ 3`.
 
+The Poisson kernel, the negative normal derivative of the Green kernel on the hyperplane, is
+harmonic in its pole away from the hyperplane.
+
 The normalization follows Evans, *Partial Differential Equations*, Section 2.2.4.
 -/
 
@@ -146,6 +149,32 @@ theorem halfSpacePoissonKernel_pos {v : {w : E // ‖w‖ = 1}} {x y : E}
   exact mul_pos (mul_pos (by norm_num) hx)
     (mul_pos (inv_pos.mpr (mul_pos hnreal (volume_real_unitBall_pos n)))
       (Real.rpow_pos_of_pos (norm_pos_iff.mpr (sub_ne_zero.mpr hxy)) _))
+
+/-- For a point `y` of the hyperplane, the Poisson kernel `x ↦ K(x, y)` is harmonic in its pole
+away from `y`. -/
+theorem harmonicAt_halfSpacePoissonKernel_left (v : U) {x y : E} (hy : ⟪(v : E), y⟫_ℝ = 0)
+    (hxy : x ≠ y) : HarmonicAt (fun z ↦ halfSpacePoissonKernel n v z y) x := by
+  set c := 2 * ((n : ℝ) * volume.real (ball (0 : E) 1))⁻¹
+  have hG : HarmonicAt (fun w : E ↦ c * (⟪(v : E), w⟫_ℝ * ‖w‖ ^ (-(n : ℝ)))) (x + -y) := by
+    have h := (harmonicAt_inner_mul_norm_rpow_neg_finrank (v : E)
+      (by rwa [← sub_eq_add_neg, sub_ne_zero] : x + -y ≠ 0)).const_smul (c := c)
+    simpa only [finrank_euclideanSpace_fin, Pi.smul_def, smul_eq_mul] using h
+  have heq : (fun z ↦ halfSpacePoissonKernel n v z y) =
+      fun z ↦ c * (⟪(v : E), z + -y⟫_ℝ * ‖z + -y‖ ^ (-(n : ℝ))) := by
+    funext z
+    rw [halfSpacePoissonKernel_def, ← sub_eq_add_neg, norm_sub_rev, inner_sub_right, hy,
+      sub_zero]
+    ring
+  rw [heq]
+  exact harmonicAt_comp_add_right_iff.2 hG
+
+/-- For a point `y` of the hyperplane, the Poisson kernel `x ↦ K(x, y)` is harmonic on the open
+half-space `0 < ⟪v, x⟫`. -/
+theorem harmonicOnNhd_halfSpacePoissonKernel_left (v : U) {y : E} (hy : ⟪(v : E), y⟫_ℝ = 0) :
+    HarmonicOnNhd (fun z ↦ halfSpacePoissonKernel n v z y) {x | 0 < ⟪(v : E), x⟫_ℝ} :=
+  fun _ hx ↦ harmonicAt_halfSpacePoissonKernel_left v hy fun h ↦ by
+    rw [Set.mem_ofPred_eq, h, hy] at hx
+    exact lt_irrefl 0 hx
 
 /-- The Fréchet derivative of the half-space Green kernel away from its two poles. -/
 theorem hasFDerivAt_halfSpaceGreenKernel (hn : n ≠ 2) {v : U} {x y : E}
