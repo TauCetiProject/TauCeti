@@ -119,12 +119,13 @@ lemma bounded_inverseImage_mapDerivedCategory :
     (DerivedCategory.TStructure.t (C := B)).bounded.inverseImage
         e.mapDerivedCategory.functor = (DerivedCategory.TStructure.t (C := A)).bounded := by
   ext X
-  change (DerivedCategory.TStructure.t (C := B)).bounded
-    (e.functor.mapDerivedCategory.obj X) ↔ (DerivedCategory.TStructure.t (C := A)).bounded X
+  simp only [ObjectProperty.prop_inverseImage_iff, mapDerivedCategory_functor]
   constructor
   · intro hX
-    exact (DerivedCategory.TStructure.t (C := A)).bounded.prop_of_iso
-      (e.mapDerivedCategory.unitIso.app X).symm
+    have unit : X ≅ e.inverse.mapDerivedCategory.obj (e.functor.mapDerivedCategory.obj X) := by
+      simpa only [mapDerivedCategory_functor, mapDerivedCategory_inverse,
+        Functor.comp_obj, Functor.id_obj] using e.mapDerivedCategory.unitIso.app X
+    exact (DerivedCategory.TStructure.t (C := A)).bounded.prop_of_iso unit.symm
       (e.inverse.bounded_mapDerivedCategory _ hX)
   · exact e.functor.bounded_mapDerivedCategory X
 
@@ -137,24 +138,32 @@ noncomputable def mapBoundedDerivedCategory :
 @[simp]
 lemma mapBoundedDerivedCategory_functor :
     e.mapBoundedDerivedCategory.functor = e.functor.mapBoundedDerivedCategory := by
-  rw [mapBoundedDerivedCategory, congrFullSubcategory_functor_eq_lift]
+  rw [mapBoundedDerivedCategory, congrFullSubcategory_functor_eq_lift,
+    mapDerivedCategory_functor]
   rfl
 
 /-- The inverse of the bounded equivalence is the termwise action of the original inverse. -/
 @[simp]
 lemma mapBoundedDerivedCategory_inverse :
     e.mapBoundedDerivedCategory.inverse = e.inverse.mapBoundedDerivedCategory := by
-  rw [mapBoundedDerivedCategory, congrFullSubcategory_inverse_eq_lift]
+  rw [mapBoundedDerivedCategory, congrFullSubcategory_inverse_eq_lift,
+    mapDerivedCategory_inverse]
   rfl
 
-noncomputable instance : e.mapBoundedDerivedCategory.functor.CommShift ℤ :=
-  by
-    rw [mapBoundedDerivedCategory_functor]
-    infer_instance
+private noncomputable def boundedFunctorCompιIso :
+    e.mapBoundedDerivedCategory.functor ⋙ DerivedCategory.Bounded.ι ≅
+      DerivedCategory.Bounded.ι ⋙ e.functor.mapDerivedCategory :=
+  isoWhiskerRight (eqToIso e.mapBoundedDerivedCategory_functor) _ ≪≫
+    e.functor.mapBoundedDerivedCategoryCompιIso
 
-instance : e.mapBoundedDerivedCategory.functor.IsTriangulated :=
-  by
-    rw [mapBoundedDerivedCategory_functor]
-    infer_instance
+noncomputable instance : e.mapBoundedDerivedCategory.functor.CommShift ℤ :=
+  Functor.CommShift.ofComp e.boundedFunctorCompιIso ℤ
+
+noncomputable instance : NatTrans.CommShift e.boundedFunctorCompιIso.hom ℤ :=
+  Functor.CommShift.ofComp_compatibility _ _
+
+instance : e.mapBoundedDerivedCategory.functor.IsTriangulated := by
+  rw [Functor.isTriangulated_iff_comp_right e.boundedFunctorCompιIso]
+  infer_instance
 
 end CategoryTheory.Equivalence
