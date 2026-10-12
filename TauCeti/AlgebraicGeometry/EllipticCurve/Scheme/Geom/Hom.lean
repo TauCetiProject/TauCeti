@@ -39,6 +39,8 @@ schemes over `S` is the homomorphism whose kernel is the `n`-torsion `E[n]`.
 
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.hom_ext_left`: a homomorphism of elliptic curves is
   determined by its morphism of schemes.
+* `TauCeti.AlgebraicGeometry.EllipticCurveGeom.isIso_iff_isIso_hom_hom_hom_left`: a homomorphism of
+  elliptic curves is an isomorphism exactly when its morphism of schemes is one.
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.add_hom_hom_hom_left`,
   `TauCeti.AlgebraicGeometry.EllipticCurveGeom.zero_hom_hom_hom_left` and
   `TauCeti.AlgebraicGeometry.EllipticCurveGeom.neg_hom_hom_hom_left`: the sum, zero and negative
@@ -74,6 +76,15 @@ noncomputable abbrev toCommGrp : CommGrp (Over S) :=
 theorem hom_ext_left {f g : E.toCommGrp ⟶ E'.toCommGrp}
     (h : f.hom.hom.hom.left = g.hom.hom.hom.left) : f = g :=
   CommGrp.hom_ext _ _ (Over.OverMorphism.ext h)
+
+variable {E} in
+/-- **A homomorphism of elliptic curves is an isomorphism exactly when its morphism of schemes is
+one.** -/
+theorem isIso_iff_isIso_hom_hom_hom_left {f : E.toCommGrp ⟶ E'.toCommGrp} :
+    IsIso f ↔ IsIso f.hom.hom.hom.left := by
+  let F := CommGrp.forget₂Grp (Over S) ⋙ Grp.forget₂Mon (Over S) ⋙ Mon.forget (Over S) ⋙
+    Over.forget S
+  exact ⟨fun _ ↦ (F.map_isIso f :), fun h ↦ have : IsIso (F.map f) := h; isIso_of_reflects_iso f F⟩
 
 /-- The sum of two homomorphisms of elliptic curves over `S` is, on underlying schemes, their sum
 under the addition morphism of the target. -/
