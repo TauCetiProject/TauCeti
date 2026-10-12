@@ -350,19 +350,4 @@ theorem projectiveLine_chart_coordinates_mul_of_eq
   rw [hpx, hny] at hm
   exact hm
 
-/-- When points in the two affine charts represent the same point of the analytic realization,
-their complex coordinates are inverse to one another. -/
-theorem projectiveLine_chart_transition
-    (x : (projectiveLineFan.analyticAffineChartDiagram).obj projectiveLinePositiveCone)
-    (y : (projectiveLineFan.analyticAffineChartDiagram).obj projectiveLineNegativeCone)
-    (hxy : projectiveLineFan.analyticAffineChartι isRegular_projectiveLineFan
-        projectiveLinePositiveCone x =
-      projectiveLineFan.analyticAffineChartι isRegular_projectiveLineFan
-        projectiveLineNegativeCone y) :
-    negativeRayPointHomeomorph
-      (projectiveLineFan.analyticChartGenerators projectiveLineNegativeCone).2 y =
-      (affineRayPointHomeomorph
-        (projectiveLineFan.analyticChartGenerators projectiveLinePositiveCone).2 x)⁻¹ := by
-  exact eq_inv_of_mul_eq_one_right (projectiveLine_chart_coordinates_mul_of_eq x y hxy)
-
 end TauCeti.Toric
