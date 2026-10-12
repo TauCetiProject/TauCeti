@@ -9,9 +9,11 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Frobenius.Subring
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Hom.ComplexMultiplication
 public import TauCeti.AlgebraicGeometry.EllipticCurve.PointCount
 import Mathlib.FieldTheory.Finite.GaloisField
+import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Dual.Degree
 import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Frobenius.Charpoly
 import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Frobenius.Composition
 import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Frobenius.Differential
+import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Frobenius.Ordinary
 import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Frobenius.PowTrace
 import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Frobenius.Supersingular
 
@@ -41,6 +43,10 @@ complex multiplication acting over `𝔽_q`.
 * As `2² = -1` in `𝔽₅`, the Gaussian integers act on it, with `i` acting by `(x, y) ↦ (-x, 2y)`
   (`WeierstrassCurve.gaussianIntCMAction`). The Frobenius endomorphism is `π₅ = 1 + 2i`.
 * Hence `ℤ[π₅] = ℤ[2i]`, which does not contain `i`: it has index `2` in the image of `ℤ[i]`.
+* The image of `ℤ[i]` is the whole endomorphism ring. Some nonzero integer `N` multiplies every
+  endomorphism `f` into `ℤ[π₅] ⊆ ℤ[i]`, and `ℤ[i]` is integrally closed while `f` is a root of
+  the monic `X² - t X + deg f`, so `f` lies in `ℤ[i]` already. So `ℤ[π₅]` has index `2` in the
+  endomorphism ring `ℤ[i]`.
 
 The point counts are computed by enumerating the solutions of the affine equations.
 
@@ -52,6 +58,10 @@ The point counts are computed by enumerating the solutions of the affine equatio
   endomorphism of `y² = x³ + x` is `1 + 2i`.
 * `TauCeti.WorkedExamples.gaussianIntCMActionCurveX3AddX_sqrtd_notMem_adjoin`: the endomorphism
   `i` of `y² = x³ + x` over `𝔽₅` does not lie in `ℤ[π₅]`.
+* `TauCeti.WorkedExamples.bijective_gaussianIntCMActionCurveX3AddX`: the endomorphism ring of
+  `y² = x³ + x` over `𝔽₅` is `ℤ[i]`.
+* `TauCeti.WorkedExamples.index_adjoin_ofIsogeny_frobeniusIsogeny_curveX3AddX`: `ℤ[π₅]` has index
+  `2` in it.
 
 ## References
 
@@ -257,6 +267,32 @@ theorem gaussianIntCMActionCurveX3AddX_sqrtd_notMem_adjoin :
   rintro ⟨z, hz, hι⟩
   rw [gaussianIntCMActionCurveX3AddX.injective hι] at hz
   simp at hz
+
+/-- **The endomorphism ring of `y² = x³ + x` over `𝔽₅` is `ℤ[i]`**: the action of the Gaussian
+integers, with `i` acting by `(x, y) ↦ (-x, 2y)`, is a bijection onto the endomorphism ring. -/
+theorem bijective_gaussianIntCMActionCurveX3AddX :
+    Function.Bijective gaussianIntCMActionCurveX3AddX := by
+  refine ⟨gaussianIntCMActionCurveX3AddX.injective, fun f ↦ ?_⟩
+  -- a nonzero multiple of `f` lies in `ℤ[π₅] = ℤ[2i]`, and `ℤ[i]` is integrally closed
+  obtain ⟨N, hN, h⟩ :=
+    exists_zsmul_mem_adjoin_ofIsogeny_frobeniusIsogeny_of_isOrdinary isOrdinary_curveX3AddX
+  obtain ⟨z, -, hz⟩ := mem_adjoin_ofIsogeny_frobeniusIsogeny_curveX3AddX_iff.1 (h f)
+  exact Hom.mem_range_of_zsmul_mem_range (ι := gaussianIntCMActionCurveX3AddX.toRingHom)
+    gaussianIntCMActionCurveX3AddX.injective hN ⟨z, hz⟩
+
+/-- **`ℤ[π₅]` has index `2` in the endomorphism ring of `y² = x³ + x` over `𝔽₅`**: the
+endomorphism ring is `ℤ[i]` and `ℤ[π₅] = ℤ[2i]`. -/
+theorem index_adjoin_ofIsogeny_frobeniusIsogeny_curveX3AddX :
+    (Subalgebra.toSubmodule (Algebra.adjoin ℤ
+      {Hom.ofIsogeny (frobeniusIsogeny curveX3AddX.toAffine)})).toAddSubgroup.index = 2 := by
+  rw [AddSubgroup.index_eq_two_iff]
+  refine ⟨gaussianIntCMActionCurveX3AddX Zsqrtd.sqrtd, fun f ↦ ?_⟩
+  obtain ⟨z, rfl⟩ := bijective_gaussianIntCMActionCurveX3AddX.2 f
+  simp only [Submodule.mem_toAddSubgroup, Subalgebra.mem_toSubmodule, ← map_add,
+    mem_adjoin_ofIsogeny_frobeniusIsogeny_curveX3AddX_iff,
+    gaussianIntCMActionCurveX3AddX.injective.eq_iff, exists_eq_right, Zsqrtd.im_add,
+    Zsqrtd.im_sqrtd, Xor]
+  omega
 
 end TauCeti.WorkedExamples
 
