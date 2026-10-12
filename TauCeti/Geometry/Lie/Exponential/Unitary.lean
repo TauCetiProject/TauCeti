@@ -50,7 +50,7 @@ Only a multiplicative involution is needed, in a complete normed rational algebr
 theorem star_exp_eq_exp_neg_of_exp_mem_unitary {y : R} (h : exp y ∈ unitary R) :
     star (exp y) = exp (-y) := by
   apply left_inv_eq_right_inv (Unitary.star_mul_self_of_mem h)
-  rw [← exp_add_of_commute (Commute.refl y).neg_right, add_neg_cancel, exp_zero]
+  simpa only [Ring.inverse_exp] using Ring.mul_inverse_cancel _ (isUnit_exp y)
 
 end Rat
 
