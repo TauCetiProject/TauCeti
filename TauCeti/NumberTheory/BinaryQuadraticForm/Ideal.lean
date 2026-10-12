@@ -132,8 +132,9 @@ theorem orderIdeal_restrictScalars (f : BinaryQuadraticForm ℤ) (D : ℤ)
     (hf : f.discrim = D) :
     (f.orderIdeal D hf).restrictScalars ℤ =
       Submodule.span ℤ {(f.a : QuadraticAlgebra ℚ (D : ℚ) 0), f.idealGenerator D} := by
-  ext
-  rfl
+  ext z
+  rw [Submodule.restrictScalars_mem]
+  exact Set.ext_iff.mp (orderIdeal_coe f D hf) z
 
 /-- Every member of the form ideal belongs to the order. -/
 theorem orderIdeal_le_order (f : BinaryQuadraticForm ℤ) (D : ℤ)
@@ -189,6 +190,13 @@ def fractionalIdeal (f : BinaryQuadraticForm ℤ) (D : ℤ)
   simpa only [← FractionalIdeal.mem_coe, FractionalIdeal.coe_one] using
     mem_one_of_mem_orderIdeal f D hf hz
 
+/-- The fractional ideal has the same carrier as the order ideal. -/
+@[simp] theorem fractionalIdeal_coe (f : BinaryQuadraticForm ℤ) (D : ℤ)
+    (hf : f.discrim = D) [Fact (¬ IsSquare D)] :
+    (f.fractionalIdeal D hf : Set (QuadraticAlgebra ℚ (D : ℚ) 0)) =
+      (f.orderIdeal D hf : Set (QuadraticAlgebra ℚ (D : ℚ) 0)) := by
+  rfl
+
 /-- Restriction of the fractional ideal to the integers recovers the defining lattice. -/
 theorem fractionalIdeal_restrictScalars (f : BinaryQuadraticForm ℤ) (D : ℤ)
     (hf : f.discrim = D) [Fact (¬ IsSquare D)] :
@@ -196,8 +204,9 @@ theorem fractionalIdeal_restrictScalars (f : BinaryQuadraticForm ℤ) (D : ℤ)
       (QuadraticOrder.numberFieldOrder D (hf ▸ f.discrim_emod_four_eq_zero_or_one)).toSubalgebra
       (QuadraticAlgebra ℚ (D : ℚ) 0)).restrictScalars ℤ =
       (f.orderIdeal D hf).restrictScalars ℤ := by
-  ext
-  rfl
+  ext z
+  rw [Submodule.restrictScalars_mem, Submodule.restrictScalars_mem, FractionalIdeal.mem_coe]
+  exact Set.ext_iff.mp (fractionalIdeal_coe f D hf) z
 
 /-- The first ideal generator is a member of the ideal. -/
 @[simp] theorem a_mem_orderIdeal (f : BinaryQuadraticForm ℤ) (D : ℤ)
@@ -276,9 +285,7 @@ theorem mem_fractionalIdeal_iff (f : BinaryQuadraticForm ℤ) (D : ℤ)
     (z : QuadraticAlgebra ℚ (D : ℚ) 0) :
     z ∈ f.fractionalIdeal D hf ↔
       ∃ m n : ℤ, m • (f.a : QuadraticAlgebra ℚ (D : ℚ) 0) + n • f.idealGenerator D = z := by
-  rw [← FractionalIdeal.mem_coe, ← Submodule.restrictScalars_mem ℤ,
-    fractionalIdeal_restrictScalars, Submodule.restrictScalars_mem]
-  exact mem_orderIdeal_iff f D hf z
+  exact (Set.ext_iff.mp (fractionalIdeal_coe f D hf) z).trans (mem_orderIdeal_iff f D hf z)
 
 /-- The leading coefficient belongs to the fractional form ideal. -/
 @[simp] theorem a_mem_fractionalIdeal (f : BinaryQuadraticForm ℤ) (D : ℤ)
