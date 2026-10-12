@@ -239,7 +239,7 @@ theorem ramificationIdx_restrict_sup (hF : IsFunctionField k F) (P' : Place k F'
     exact hQint y
   have he (E : IntermediateField F F') :
       ramificationIdx F (P'.restrict k E) = ramificationIdx F (Q.restrict k ↥(E.map g)) := by
-    rw [hrestrict, ramificationIdx_equivOfRingEquiv]
+    simp only [hrestrict, AlgEquiv.toRingEquiv_restrictScalars, ramificationIdx_equivOfRingEquiv]
   -- The residue extension of `Q` over `F` is separable, the residue field below being perfect.
   have hbelow : Q.restrict k F = P'.restrict k F := by
     apply integers_injective

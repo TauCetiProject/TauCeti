@@ -33,12 +33,14 @@ base field: transporting a place of `L` along `e : L ≃ₐ[F] L'` does not chan
 index over `F`. -/
 @[simp]
 theorem ramificationIdx_equivOfRingEquiv (e : L ≃ₐ[F] L') (Q : Place k L) :
-    ramificationIdx F (equivOfRingEquiv (RingEquiv.refl k) (e.restrictScalars k).toRingEquiv
-      (e.restrictScalars k).commutes Q) = ramificationIdx F Q := by
+    ramificationIdx F (equivOfRingEquiv (RingEquiv.refl k) e.toRingEquiv
+      (fun c ↦ by simp [IsScalarTower.algebraMap_apply k F L,
+        IsScalarTower.algebraMap_apply k F L']) Q) = ramificationIdx F Q := by
   rw [ramificationIdx_def, ramificationIdx_def]
   congr 1
   ext c
-  simp
+  rw [Valuation.comap_apply, Valuation.comap_apply, valuation_equivOfRingEquiv]
+  exact congrArg Q.valuation (e.symm.commutes c)
 
 /-- Complete splitting is invariant under an isomorphism of the upstairs field over the
 base field. -/
