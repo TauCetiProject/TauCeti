@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicTopology.Homotopy.Relative.Compression
+public import TauCeti.AlgebraicTopology.Homotopy.Relative.Basic
 public import TauCeti.Topology.CWComplex.Classical.Compression
 public import TauCeti.Topology.Homotopy.Extension.Cube
 
@@ -44,6 +44,8 @@ defined here in positive degrees.
 
 ## Main declarations
 
+* `TauCeti.RelGenLoop.mapsTo_prodBoundary`: a relative cube is a map of pairs
+  `(I × Iⁿ, ∂(I × Iⁿ)) → (Y, B)`.
 * `TauCeti.exists_homotopicWith_relGenLoop`: a map of pairs out of the cube `I × Iⁿ` is homotopic
   through maps of pairs to a relative cube.
 * `TauCeti.exists_homotopicRel_range_subset_of_subsingleton`: maps of disk pairs compress into `B`
@@ -115,6 +117,19 @@ end OpenBox
 
 /-! ### Deforming a map of pairs into a relative cube -/
 
+/-- A relative cube of the pair `(Y, B)` is a map of pairs
+`(I × I^N, ∂(I × I^N)) → (Y, B)`. -/
+theorem RelGenLoop.mapsTo_prodBoundary {N : Type v} {Y : TopCat.{u}} {B : Set Y} {b : B}
+    {q : C(I × I^N, Y)} (hq : q ∈ RelGenLoop N ⟨TopPair.ofSubset B, b⟩) :
+    MapsTo q (Cube.prodBoundary N) B := by
+  rintro ⟨s, y⟩ hz
+  rcases Cube.mem_prodBoundary_iff.1 hz with (hs | hs) | hy
+  · obtain rfl : s = 0 := hs
+    have := (RelGenLoop.mem_iff.1 hq).1 y
+    rwa [TopPair.range_ofSubset_map] at this
+  · exact (congrArg (· ∈ B) ((RelGenLoop.mem_iff.1 hq).2 s y (.inl hs))).mpr b.2
+  · exact (congrArg (· ∈ B) ((RelGenLoop.mem_iff.1 hq).2 s y (.inr hy))).mpr b.2
+
 variable {N : Type v} [Finite N] {Y : TopCat.{u}} {B : Set Y}
 
 /-- A map of pairs `g : (I × I^N, ∂(I × I^N)) → (Y, B)`, restricted to the boundary of the cube, is
@@ -182,7 +197,7 @@ relative cube.** Its basepoint `b ∈ B` is the value of the given map at the ce
 `{1} × I^N`. -/
 theorem exists_homotopicWith_relGenLoop (g : C(I × I^N, Y))
     (hg : MapsTo g (Cube.prodBoundary N) B) :
-    ∃ (b : B) (p : RelGenLoop N ⟨TopPair.ofSubset B, b⟩),
+    ∃ b : B, (b : Y) = g (1, cubeCenter) ∧ ∃ p : RelGenLoop N ⟨TopPair.ofSubset B, b⟩,
       g.HomotopicWith p.1 fun f ↦ MapsTo f (Cube.prodBoundary N) B := by
   -- Extend the homotopy of `g` on the boundary of the cube over the whole cube.
   obtain ⟨h, h₀, hB, h₁⟩ := exists_boundaryHomotopy g hg
@@ -196,7 +211,7 @@ theorem exists_homotopicWith_relGenLoop (g : C(I × I^N, Y))
     continuous_id)⟩
   obtain ⟨b, hb⟩ : ∃ b : B, (b : Y) = g (1, cubeCenter) :=
     ⟨⟨_, hg (Cube.mk_mem_prodBoundary (.inl rfl))⟩, rfl⟩
-  refine ⟨b, RelGenLoop.mk c hface fun s t hst ↦
+  refine ⟨b, hb, RelGenLoop.mk c hface fun s t hst ↦
       (hG 1 ⟨(s, t), Cube.mk_mem_prodBoundary hst⟩).trans ((h₁ _ hst).trans hb.symm),
     ⟨{ toFun := G
        map_zero_left := hG₀
@@ -205,30 +220,6 @@ theorem exists_homotopicWith_relGenLoop (g : C(I × I^N, Y))
        prop' t z hz := (hG t ⟨z, hz⟩).symm ▸ hB t ⟨z, hz⟩ }⟩⟩
 
 /-! ### Compressing maps of disk pairs -/
-
-/-- The closed unit ball of the sup norm on `Fin (n + 1) → ℝ` is the cube `I × I^(Fin n)`, through
-the affine homeomorphism `TauCeti.cubeHomeomorphClosedBall` followed by splitting off the first
-coordinate. -/
-private def closedBallHomeomorphProd (n : ℕ) :
-    closedBall (0 : Fin (n + 1) → ℝ) 1 ≃ₜ I × I^(Fin n) :=
-  (cubeHomeomorphClosedBall (Fin (n + 1))).symm.trans
-    { toFun z := (z 0, Fin.tail z)
-      invFun q := Fin.cons q.1 q.2
-      left_inv := Fin.cons_self_tail
-      right_inv _ := by simp
-      continuous_toFun := (continuous_apply 0).prodMk (continuous_pi fun _ ↦ continuous_apply _)
-      continuous_invFun := Continuous.finCons (A := fun _ ↦ I) continuous_fst continuous_snd }
-
-/-- `closedBallHomeomorphProd` carries the unit sphere onto the boundary of `I × I^(Fin n)`. -/
-private theorem closedBallHomeomorphProd_mem_prodBoundary_iff {n : ℕ}
-    (x : closedBall (0 : Fin (n + 1) → ℝ) 1) :
-    closedBallHomeomorphProd n x ∈ Cube.prodBoundary (Fin n) ↔
-      (x : Fin (n + 1) → ℝ) ∈ sphere 0 1 := by
-  have hx : ‖(x : Fin (n + 1) → ℝ)‖ = 1 ↔
-      (cubeHomeomorphClosedBall (Fin (n + 1))).symm x ∈ Cube.boundary (Fin (n + 1)) := by
-    rw [← norm_cubeHomeomorphClosedBall_eq_one_iff, Homeomorph.apply_symm_apply]
-  rw [mem_sphere_zero_iff_norm, hx, Cube.boundary_fin_succ_iff, Cube.mem_prodBoundary_iff]
-  rfl
 
 /-- **Compressing a map of disk pairs.** Let `B ⊆ Y` be such that the relative homotopy set
 `π_{n+1}(Y, B, b)` is trivial for every `b ∈ B`. Then every map from the closed unit ball of the
@@ -244,21 +235,13 @@ theorem exists_homotopicRel_range_subset_of_subsingleton {n : ℕ}
   -- That relative cube is trivial, so it is homotopic through relative cubes to the constant cube.
   -- Back on the ball, `g` is homotopic through maps of pairs to a constant map with value in `B`.
   let e := closedBallHomeomorphProd n
-  obtain ⟨b, p, ⟨G⟩⟩ := exists_homotopicWith_relGenLoop (g.comp (e.symm : C(I × I^(Fin n), _)))
+  obtain ⟨b, -, p, ⟨G⟩⟩ := exists_homotopicWith_relGenLoop
+    (g.comp (e.symm : C(I × I^(Fin n), _)))
     fun z hz ↦ hg ((closedBallHomeomorphProd_mem_prodBoundary_iff _).1 (by simpa [e] using hz))
-  -- Relative cubes are maps of pairs `(I × I^(Fin n), ∂(I × I^(Fin n))) → (Y, B)`.
-  have hrel {q : C(I × I^(Fin n), Y)} (hq : q ∈ RelGenLoop (Fin n) ⟨TopPair.ofSubset B, b⟩) :
-      MapsTo q (Cube.prodBoundary (Fin n)) B := by
-    rintro ⟨s, y⟩ hz
-    rcases Cube.mem_prodBoundary_iff.1 hz with (hs | hs) | hy
-    · obtain rfl : s = 0 := hs
-      have := (RelGenLoop.mem_iff.1 hq).1 y
-      rwa [TopPair.range_ofSubset_map] at this
-    · exact (congrArg (· ∈ B) ((RelGenLoop.mem_iff.1 hq).2 s y (.inl hs))).mpr b.2
-    · exact (congrArg (· ∈ B) ((RelGenLoop.mem_iff.1 hq).2 s y (.inr hy))).mpr b.2
   obtain ⟨F⟩ := RelGenLoop.homotopic_iff.1 (RelHomotopyGroup.mk_eq_mk.1
     (Subsingleton.elim (RelHomotopyGroup.mk p) (RelHomotopyGroup.mk RelGenLoop.const)))
-  let H := G.trans { toHomotopy := F.toHomotopy, prop' t := hrel (F.prop t) }
+  let H := G.trans
+    { toHomotopy := F.toHomotopy, prop' t := RelGenLoop.mapsTo_prodBoundary (F.prop t) }
   refine ContinuousMap.HomotopicWith.exists_homotopicRel_range_subset
     (g₁ := ContinuousMap.const _ (b : Y))
     ⟨{ toFun q := H.toContinuousMap (q.1, e q.2)

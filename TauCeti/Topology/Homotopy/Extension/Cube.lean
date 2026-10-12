@@ -21,7 +21,9 @@ extension property in the closed unit ball
 
 The same holds for the boundary `TauCeti.Cube.prodBoundary N` of the cube `I × I^N` with a
 distinguished first direction, on which relative cubes are defined: it corresponds to the boundary
-of `I^(Option N)` under `TauCeti.piOptionEquivProdHomeomorph`.
+of `I^(Option N)` under `TauCeti.piOptionEquivProdHomeomorph`. For `N = Fin n`, the closed unit
+ball of the sup norm on `Fin (n + 1) → ℝ` is the cube `I × I^(Fin n)`
+(`TauCeti.closedBallHomeomorphProd`), and its unit sphere corresponds to `Cube.prodBoundary`.
 
 ## Main declarations
 
@@ -29,11 +31,13 @@ of `I^(Option N)` under `TauCeti.piOptionEquivProdHomeomorph`.
   extension property.
 * `TauCeti.hasHomotopyExtensionProperty_prodBoundary`: the boundary of `I × I^N` has the homotopy
   extension property.
+* `TauCeti.closedBallHomeomorphProd`: the closed unit ball of the sup norm on `Fin (n + 1) → ℝ` is
+  homeomorphic to `I × I^(Fin n)`, carrying the unit sphere onto `Cube.prodBoundary (Fin n)`.
 -/
 
 public section
 
-open Metric Set unitInterval
+open Metric Set Topology unitInterval
 
 namespace TauCeti
 
@@ -56,5 +60,42 @@ theorem hasHomotopyExtensionProperty_prodBoundary :
   ext y
   rw [Homeomorph.image_eq_preimage_symm, mem_preimage,
     ← piOptionEquivProdHomeomorph_mem_prodBoundary_iff, Homeomorph.apply_symm_apply]
+
+/-- The closed unit ball of the sup norm on `Fin (n + 1) → ℝ` is the cube `I × I^(Fin n)`, through
+the affine homeomorphism `TauCeti.cubeHomeomorphClosedBall` followed by splitting off the first
+coordinate. -/
+@[expose] noncomputable def closedBallHomeomorphProd (n : ℕ) :
+    closedBall (0 : Fin (n + 1) → ℝ) 1 ≃ₜ I × I^(Fin n) :=
+  (cubeHomeomorphClosedBall (Fin (n + 1))).symm.trans
+    { toFun z := (z 0, Fin.tail z)
+      invFun q := Fin.cons q.1 q.2
+      left_inv := Fin.cons_self_tail
+      right_inv _ := by simp
+      continuous_toFun := (continuous_apply 0).prodMk (continuous_pi fun _ ↦ continuous_apply _)
+      continuous_invFun := Continuous.finCons (A := fun _ ↦ I) continuous_fst continuous_snd }
+
+@[simp]
+theorem closedBallHomeomorphProd_apply {n : ℕ} (x : closedBall (0 : Fin (n + 1) → ℝ) 1) :
+    closedBallHomeomorphProd n x = ((cubeHomeomorphClosedBall (Fin (n + 1))).symm x 0,
+      Fin.tail ((cubeHomeomorphClosedBall (Fin (n + 1))).symm x)) :=
+  rfl
+
+@[simp]
+theorem closedBallHomeomorphProd_symm_apply {n : ℕ} (q : I × I^(Fin n)) :
+    (closedBallHomeomorphProd n).symm q =
+      cubeHomeomorphClosedBall (Fin (n + 1)) (Fin.cons q.1 q.2) :=
+  rfl
+
+/-- `TauCeti.closedBallHomeomorphProd` carries the unit sphere onto the boundary of
+`I × I^(Fin n)`. -/
+theorem closedBallHomeomorphProd_mem_prodBoundary_iff {n : ℕ}
+    (x : closedBall (0 : Fin (n + 1) → ℝ) 1) :
+    closedBallHomeomorphProd n x ∈ Cube.prodBoundary (Fin n) ↔
+      (x : Fin (n + 1) → ℝ) ∈ sphere 0 1 := by
+  have hx : ‖(x : Fin (n + 1) → ℝ)‖ = 1 ↔
+      (cubeHomeomorphClosedBall (Fin (n + 1))).symm x ∈ Cube.boundary (Fin (n + 1)) := by
+    rw [← norm_cubeHomeomorphClosedBall_eq_one_iff, Homeomorph.apply_symm_apply]
+  rw [mem_sphere_zero_iff_norm, hx, Cube.boundary_fin_succ_iff, closedBallHomeomorphProd_apply,
+    Cube.mem_prodBoundary_iff]
 
 end TauCeti
