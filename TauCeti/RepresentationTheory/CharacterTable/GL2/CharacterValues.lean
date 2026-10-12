@@ -54,7 +54,7 @@ values below being stated at the normal forms themselves.
 None of those eight values is a `simp` lemma. `TauCeti.character_GL2Steinberg` is itself `@[simp]`,
 so `simp` rewrites the left-hand side of each of them to a fixed-coset count, and then, `F` being
 finite, on to a `Fintype.card` by `Nat.card_eq_fintype_card`; so none of the eight is in
-`simp`-normal form, and tagging any of them fails the `simpNF` linter.
+`simp`-normal form.
 
 ## References
 

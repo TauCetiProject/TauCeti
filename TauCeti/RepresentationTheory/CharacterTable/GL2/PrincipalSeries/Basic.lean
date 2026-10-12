@@ -73,8 +73,7 @@ model whose carrier lies in the universe of the coefficient ring. It therefore p
 of `FDRep ℂ (GL (Fin 2) F)` without restricting the universe of `F`.
 
 No `[DecidableEq F]` hypothesis is assumed: `GL (Fin 2) F` needs decidable equality only on the
-index type `Fin 2`, and an unused instance argument would be flagged by the `unusedArguments`
-linter.
+index type `Fin 2`.
 
 ## References
 
