@@ -49,8 +49,8 @@ noncomputable def mapDerivedCategory : DerivedCategory A ≌ DerivedCategory B :
   Equivalence.mk e.functor.mapDerivedCategory e.inverse.mapDerivedCategory
     ((Functor.mapDerivedCategoryIdIso A).symm ≪≫ NatIso.mapDerivedCategory e.unitIso ≪≫
       (Functor.mapDerivedCategoryCompIso e.functor e.inverse).symm)
-    (Functor.mapDerivedCategoryCompIso e.inverse e.functor ≪≫ NatIso.mapDerivedCategory e.counitIso ≪≫
-      Functor.mapDerivedCategoryIdIso B)
+    (Functor.mapDerivedCategoryCompIso e.inverse e.functor ≪≫
+      NatIso.mapDerivedCategory e.counitIso ≪≫ Functor.mapDerivedCategoryIdIso B)
 
 /-- The functor of the induced equivalence is Mathlib's termwise derived action. -/
 @[simp]
