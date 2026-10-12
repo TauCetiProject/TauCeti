@@ -22,11 +22,10 @@ subgroup is a candidate. The Lie dimension of every candidate is bounded by that
 group. Hence the natural numbers occurring as candidate dimensions form a nonempty finite set,
 and one of the candidates has maximal Lie dimension.
 
-To turn a maximal-dimensional candidate into the solvable radical, one must next show that the
-scheme-theoretic multiplication image of two candidates is again a candidate. The connectedness,
-smoothness, and source-solvability results already exist; the remaining input is solvability of
-the image, for which the current image theorem requires faithful flatness of the canonical Hopf
-image inclusion.
+A maximal-dimensional candidate is the solvable radical once candidates are closed under
+scheme-theoretic multiplication images. That closure is
+`TauCeti.HopfIdeal.IsSolvableRadicalCandidate.productOfNormal` in
+`TauCeti.Algebra.AlgebraicGroup.Solvable.Radical.Product`.
 
 ## Main declarations
 
