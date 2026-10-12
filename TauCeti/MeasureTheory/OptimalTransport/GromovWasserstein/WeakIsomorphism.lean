@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.MeasureTheory.OptimalTransport.GromovWasserstein.Basic
+public import TauCeti.MeasureTheory.OptimalTransport.GraphPlan.Basic
 
 /-!
 # Weak isomorphism of measured kernels
@@ -18,9 +19,11 @@ and two measure-preserving maps with equal pulled-back kernels give an exact cou
 
 The relation is defined for raw measures and kernels with arbitrary target. Symmetry and
 invariance under a.e. changes require only a sigma-finite first measure. The exact coupling then
-is sigma-finite, although the second measure need not be. Its common-space introduction,
-reflexivity and transitivity are proved for a.e. strongly measurable kernels with values in an
-extended metric space. Transitivity uses gluing; it requires a finite middle measure
+is sigma-finite, although the second measure need not be. If a carrier has measurable equality,
+every raw kernel on an s-finite measure is weakly isomorphic to itself and to its pullbacks along
+transport maps, without any structure on the kernel target. Common-space introduction and
+transitivity are proved for a.e. strongly measurable kernels with values in an extended metric
+space. Transitivity uses gluing; it requires a finite middle measure
 and a standard Borel outer carrier, rather than a topology on every carrier.
 
 For an extended metric target and every nonzero exponent, an exact coupling is precisely a
@@ -117,6 +120,29 @@ theorem areWeaklyIsomorphicKernels_congr_ae [SigmaFinite μ]
       |>.ae_eq_comp hb
     exact areWeaklyIsomorphicKernels_of_isCoupling hπ (ha'.symm.trans (heq.trans hb'))
   exact ⟨transfer hX hY, transfer hX.symm hY.symm⟩
+
+/-- A raw kernel and its pullback along a transport map are weakly isomorphic when the target
+carrier has measurable equality and the source measure is s-finite. The graph plan supplies the
+exact coupling, so neither structure on the kernel target nor measurability of the kernel is
+required. In particular this permits duplication of a measured carrier. -/
+theorem areWeaklyIsomorphicKernels_comp_prodMap_of_hasLaw [MeasurableEq Y] [SFinite μ]
+    {f : X → Y} (ωY : Y × Y → Z) (hf : ProbabilityTheory.HasLaw f ν μ) :
+    AreWeaklyIsomorphicKernels μ (ωY ∘ Prod.map f f) ν ωY := by
+  have : SFinite (graphPlan f μ) := by
+    rw [graphPlan_def]
+    infer_instance
+  refine areWeaklyIsomorphicKernels_of_isCoupling (isCoupling_graphPlan hf) ?_
+  have hgraph := ae_snd_eq_graphPlan hf.aemeasurable
+  filter_upwards [Measure.quasiMeasurePreserving_fst.ae hgraph,
+    Measure.quasiMeasurePreserving_snd.ae hgraph] with q hq₁ hq₂
+  simp only [Function.comp_apply, Prod.map_apply, hq₁, hq₂]
+
+/-- Every raw kernel on an s-finite measure with measurable carrier equality is weakly
+isomorphic to itself. No structure or measurability is required of its values. -/
+theorem areWeaklyIsomorphicKernels_refl_of_measurableEq [MeasurableEq X] [SFinite μ]
+    (ωX : X × X → Z) : AreWeaklyIsomorphicKernels μ ωX μ ωX := by
+  simpa using areWeaklyIsomorphicKernels_comp_prodMap_of_hasLaw ωX
+    (ProbabilityTheory.HasLaw.id (μ := μ))
 
 section EDist
 
