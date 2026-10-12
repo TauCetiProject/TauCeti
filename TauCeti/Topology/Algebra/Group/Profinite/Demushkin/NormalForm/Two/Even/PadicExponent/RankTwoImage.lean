@@ -42,7 +42,7 @@ variable {α : ℤ_[2]} {q : ℕ}
 /-- The orientation image of the rank-two dyadic presentation is `U^[g]` exactly when
 the `2`-adic exponent `α` has exact divisibility depth `g ≥ 2`. -/
 theorem
-    range_eq_topologicalClosure_zpowers_iff_of_hasPrescriptionProperty_demushkinWordTwoEvenPadic_two
+    range_eq_topologicalClosure_zpowers_iff_dvd_and_not_dvd_demushkinWordTwoEvenPadic_two
     (hα : 4 ∣ α) {g : ℕ} (hg : 2 ≤ g) {w : ℤ_[2]ˣ}
     (hw : (w : ℤ_[2]) = -1 + (2 : ℤ_[2]) ^ g) (hχ : HasPrescriptionProperty χ) :
     χ.toMonoidHom.range = (zpowers w).topologicalClosure ↔
@@ -72,7 +72,8 @@ theorem
 
 /-- The orientation image of the rank-two dyadic presentation is the endpoint `{±1}`
 exactly when its `2`-adic exponent `α` is zero. -/
-theorem range_eq_zpowers_neg_one_iff_of_hasPrescriptionProperty_demushkinWordTwoEvenPadic_two
+theorem
+    range_eq_zpowers_neg_one_iff_eq_zero_demushkinWordTwoEvenPadic_two
     (hα : 4 ∣ α) (hχ : HasPrescriptionProperty χ) :
     χ.toMonoidHom.range = zpowers (-1) ↔ α = 0 := by
   have hα₂ : 2 ∣ α := (Dvd.intro 2 (by norm_num)).trans hα
