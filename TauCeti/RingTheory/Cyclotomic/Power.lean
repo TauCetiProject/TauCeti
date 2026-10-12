@@ -68,7 +68,7 @@ of the distinguished generator. -/
 theorem map_powRingHom {R : Type*} [CommRing R] (hn : e.Coprime n)
     (φ : Cyclotomic e →+* R) (x : Cyclotomic e) :
     φ (powRingHom hn x) = evalCoeffs (Int.castRingHom R) (φ (zeta e) ^ n) x := by
-  rw [powRingHom_apply, evalCoeffs_eq_eval₂, Polynomial.hom_eval₂, evalCoeffs_eq_eval₂]
+  rw [powRingHom_apply, RingHom.map_evalCoeffs]
   congr 1
   · exact RingHom.ext_int _ _
   · exact map_pow _ _ _

@@ -71,7 +71,7 @@ distinguished generator. The target ring need not be commutative or carry a star
 theorem _root_.RingHom.map_star_eq_evalCoeffs {R : Type*} [Ring R]
     (f : Cyclotomic e →+* R) (x : Cyclotomic e) :
     f (star x) = evalCoeffs (Int.castRingHom R) (f (zeta e) ^ (e - 1)) x := by
-  rw [star_def, evalCoeffs_eq_eval₂, Polynomial.hom_eval₂, evalCoeffs_eq_eval₂]
+  rw [star_def, RingHom.map_evalCoeffs]
   congr 1
   · exact RingHom.ext_int _ _
   · exact map_pow _ _ _
