@@ -144,7 +144,7 @@ end HomologicalComplex
 
 namespace HomologicalComplex
 
-variable {C : Type u} [Category.{v} C] [Preadditive C] {ι : Type*}
+variable {C : Type u} [Category.{v} C] [HasZeroMorphisms C] {ι : Type*}
   {c : ComplexShape ι} {K : HomologicalComplex C c}
 
 variable (K) in
@@ -160,7 +160,18 @@ lemma exact_iCycles_toCycles [CategoryWithHomology C] (i j : ι) (hij : c.next i
       τ₃ := K.iCycles j
       comm₁₂ := by simp
       comm₂₃ := (Category.id_comp _).trans (toCycles_i _ _ _).symm }).2 ?_
-  exact ShortComplex.exact_of_f_is_kernel _ (K.cyclesIsKernel i j hij)
+  let S := ShortComplex.mk _ _ (K.iCycles_d i j)
+  rw [S.exact_iff_iCycles_pOpcycles_zero]
+  have h : (K.cyclesIsKernel i j hij).lift (KernelFork.ofι S.iCycles S.iCycles_g) ≫
+      S.f = S.iCycles := Fork.IsLimit.lift_ι _
+  rw [← h, Category.assoc, S.f_pOpcycles, comp_zero]
+
+end HomologicalComplex
+
+namespace HomologicalComplex
+
+variable {C : Type u} [Category.{v} C] [Preadditive C] {ι : Type*}
+  {c : ComplexShape ι} {K : HomologicalComplex C c}
 
 /-- In a complex exact in degree `j`, the map onto the cycles in degree `j` from the preceding
 degree is an epimorphism. -/
