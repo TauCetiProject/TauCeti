@@ -76,6 +76,8 @@ theorem overlapOperator_def (u : ι → E) (v : κ → E) :
     overlapOperator 𝕜 u v = analysisMap 𝕜 u ∘ₗ synthesisMap 𝕜 v :=
   (rfl)
 
+/-- The `i`-th coordinate of the overlap operator applied to `a` is `∑ⱼ ⟪uᵢ, vⱼ⟫ aⱼ`, the
+matrix `(⟪uᵢ, vⱼ⟫)ᵢⱼ` acting on the coefficients `a`. -/
 @[simp]
 theorem overlapOperator_apply (u : ι → E) (v : κ → E) (a : EuclideanSpace 𝕜 κ) (i : ι) :
     overlapOperator 𝕜 u v a i = ∑ j, ⟪u i, v j⟫_𝕜 * a j := by
@@ -161,10 +163,12 @@ theorem cosPrincipalAngles_def (u : ι → E) (v : κ → E) :
     cosPrincipalAngles 𝕜 u v = (overlapOperator 𝕜 u v).singularValues :=
   (rfl)
 
+/-- The principal cosines are nonnegative. -/
 theorem cosPrincipalAngles_nonneg (u : ι → E) (v : κ → E) (k : ℕ) :
     0 ≤ cosPrincipalAngles 𝕜 u v k :=
   LinearMap.singularValues_nonneg _ k
 
+/-- The principal cosines form a nonincreasing sequence `cos θ₀ ≥ cos θ₁ ≥ ⋯`. -/
 theorem cosPrincipalAngles_antitone (u : ι → E) (v : κ → E) :
     Antitone (cosPrincipalAngles 𝕜 u v) :=
   LinearMap.singularValues_antitone _
