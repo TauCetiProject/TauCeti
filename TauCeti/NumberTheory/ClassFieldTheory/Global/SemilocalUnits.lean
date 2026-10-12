@@ -23,8 +23,9 @@ the factors at `v` in the Tate cohomology of the `S`-ideles of `L`, which togeth
 Herbrand quotient of the `S`-units gives the first fundamental inequality for cyclic extensions.
 
 * For a finite place `v ∈ S`, the factor is the Galois module `∏_{w ∣ v} L_wˣ`, realized as the
-  units of the semi-local algebra `K_v ⊗[K] L` (`TauCeti.semilocalUnitsRep`). Its Herbrand
-  quotient is the local degree `[L_w : K_v]` at any place `w` above `v`.
+  units of the semi-local algebra `K_v ⊗[K] L` (`TauCeti.semilocalUnitsRep`). Its Tate
+  cohomology is that of `L_wˣ` as a representation of `Gal(L_w/K_v)`, for any place `w` above `v`,
+  and its Herbrand quotient is the local degree `[L_w : K_v]`.
 * For a finite place `v ∉ S`, and `v` unramified in `L`, the factor is `∏_{w ∣ v} 𝒪_wˣ`, realized
   as the integral semi-local units (`TauCeti.semilocalIntegralUnitsRep`). Its Tate cohomology
   vanishes in every degree, so it contributes nothing.
@@ -48,12 +49,20 @@ and `NumberField.InfinitePlace.decompositionEquiv`). Finally, for the cyclic loc
 unramified the units of its ring of integers have no Tate cohomology
 (`TauCeti.TateCohomology.isZero_tateCohomology_unitFiltration_zero_of_isUnramified`).
 
+## Main definitions
+
+* `TauCeti.ClassFieldTheory.semilocalUnitsTateCohomologyIso`: Shapiro's lemma for the semi-local
+  units at a finite place, `H-hat^n(Gal(L/K), (K_v ⊗[K] L)ˣ) ≅ H-hat^n(Gal(L_w/K_v), L_wˣ)` for
+  `L/K` cyclic.
+
 ## Main results
 
 * `TauCeti.ClassFieldTheory.herbrandQuotient_semilocalUnitsRep`: `h((K_v ⊗[K] L)ˣ) = [L_w : K_v]`
   for `L/K` cyclic and `v` finite.
 * `TauCeti.ClassFieldTheory.isZero_tateCohomology_semilocalIntegralUnitsRep`:
-  `H-hat^n(Gal(L/K), ∏_{w ∣ v} 𝒪_wˣ) = 0` for `L/K` cyclic and `v` unramified in `L`.
+  `H-hat^n(Gal(L/K), ∏_{w ∣ v} 𝒪_wˣ) = 0` for `L/K` cyclic and `v` unramified in `L`; for an
+  arbitrary Galois extension, `isZero_tateCohomology_semilocalIntegralUnitsRep_of_neZero` gives
+  the same in every positive degree.
 * `TauCeti.ClassFieldTheory.herbrandQuotient_units_eq_finrank_completion`:
   `h(L_wˣ) = [L_w : K_v]` for an infinite place `w`, as a representation of `Aut(L_w/K_v)`.
 * `TauCeti.ClassFieldTheory.herbrandQuotient_infiniteSemilocalUnitsRep`:
@@ -78,6 +87,21 @@ local notation "𝒪" => _root_.NumberField.RingOfIntegers
 
 variable {K : Type} [Field K] [NumberField K] {L : Type} [Field L] [NumberField L] [Algebra K L]
   [IsGalois K L] [IsCyclic (L ≃ₐ[K] L)] (v : HeightOneSpectrum (𝒪 K))
+
+/-- **Shapiro's lemma for the semi-local units.** For a cyclic extension `L/K` of number fields, a
+finite place `v` of `K` and a place `w` of `L` above `v`, the Tate cohomology of the units of
+`K_v ⊗[K] L ≃ ∏_{w' ∣ v} L_{w'}` as a representation of `Gal(L/K)` is the Tate cohomology of
+`L_wˣ` as a representation of `Gal(L_w/K_v)`, in every degree `n : ℤ`. -/
+def semilocalUnitsTateCohomologyIso (w : HeightOneSpectrum (𝒪 L)) [w.asIdeal.LiesOver v.asIdeal]
+    (n : ℤ) :
+    tateCohomology (semilocalUnitsRep L v) n ≅
+      tateCohomology (Rep.ofAlgebraAutOnUnits (v.adicCompletion K) (w.adicCompletion L)) n :=
+  (tateCohomologyFunctor n).mapIso (semilocalUnitsCoindIso v w) ≪≫
+    TateCohomology.coindIso _ _ n ≪≫
+    -- `decompositionUnitsRep v w` is by definition the restriction along `decompositionHom v w`,
+    -- the underlying hom of this equivalence
+    (TateCohomology.resIso (MulEquiv.ofBijective (decompositionHom v w)
+      ⟨decompositionHom_injective v w, decompositionHom_surjective v w⟩) n).app _
 
 /-- **The Herbrand quotient of the semi-local units.** For a cyclic extension `L/K` of number
 fields and a finite place `v` of `K`, the units of `K_v ⊗[K] L ≃ ∏_{w ∣ v} L_w` have Herbrand
@@ -106,6 +130,22 @@ theorem isZero_tateCohomology_semilocalIntegralUnitsRep (w : HeightOneSpectrum (
   (TateCohomology.isZero_tateCohomology_unitFiltration_zero_of_isUnramified n).of_iso <|
     (tateCohomologyFunctor n).mapIso (semilocalIntegralUnitsCoindIso v w) ≪≫
       TateCohomology.coindIso _ _ n ≪≫
+      -- `decompositionIntegralUnitsRep v w` is by definition the restriction along
+      -- `decompositionHom v w`, the underlying hom of this equivalence
+      (TateCohomology.resIso (MulEquiv.ofBijective (decompositionHom v w)
+        ⟨decompositionHom_injective v w, decompositionHom_surjective v w⟩) n).app _
+
+omit [IsCyclic (L ≃ₐ[K] L)] in
+/-- **The integral semi-local units at an unramified place have no cohomology in positive
+degrees**, for an arbitrary Galois extension `L/K` of number fields: for a finite place `v` of `K`
+unramified in `L`, `H-hat^n(Gal(L/K), ∏_{w ∣ v} 𝒪_wˣ) = 0` for every `n > 0`. For a cyclic
+extension this holds in every degree (`isZero_tateCohomology_semilocalIntegralUnitsRep`). -/
+theorem isZero_tateCohomology_semilocalIntegralUnitsRep_of_neZero (w : HeightOneSpectrum (𝒪 L))
+    [w.asIdeal.LiesOver v.asIdeal] [Algebra.IsUnramifiedAt (𝒪 K) w.asIdeal] (n : ℕ) [NeZero n] :
+    IsZero (tateCohomology (semilocalIntegralUnitsRep L v) n) :=
+  (TateCohomology.isZero_tateCohomology_unitFiltration_zero_of_isUnramified n).of_iso <|
+    (tateCohomologyFunctor n).mapIso (semilocalIntegralUnitsCoindIso v w) ≪≫
+      TateCohomology.coindIsoPos _ _ n ≪≫
       -- `decompositionIntegralUnitsRep v w` is by definition the restriction along
       -- `decompositionHom v w`, the underlying hom of this equivalence
       (TateCohomology.resIso (MulEquiv.ofBijective (decompositionHom v w)

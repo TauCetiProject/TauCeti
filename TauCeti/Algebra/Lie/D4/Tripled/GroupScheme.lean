@@ -242,7 +242,7 @@ theorem points_def (A : Type v) [CommRing A] :
 
 /-- A matrix is a carrier point exactly when its associated convolution point kills the defining
 Hopf ideal. -/
-@[simp]
+-- Not `@[simp]`: rewriting membership into this raw condition defeats the membership lemmas.
 theorem mem_points_iff (A : Type v) [CommRing A]
     (g : _root_.Matrix.GeneralLinearGroup (Fin 24) A) :
     g ∈ points A ↔
@@ -361,7 +361,7 @@ theorem weightTorusPoints_conj_rootSubgroupPoints (k : Fin 4 ⊕ Fin 4) (A : Typ
 
 /-- **Conjugation by the tripled weight torus acts on each numbered root subgroup through its
 positive or negative simple-root character, on scheme points.** -/
-@[simp]
+-- Not `@[simp]`: `simp` does not match its left-hand side, even with the lemma alone; use `rw`.
 theorem weightTorus_conj_rootSubgroup (k : Fin 4 ⊕ Fin 4) (A : Type) [CommRing A]
     (s : (Spec (CommRingCat.of A)).asOver (Spec (CommRingCat.of ℤ)) ⟶
       (SplitTorus.groupScheme ℤ (Fin 4)).X)

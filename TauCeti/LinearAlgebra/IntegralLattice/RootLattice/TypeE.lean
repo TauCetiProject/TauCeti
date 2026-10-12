@@ -30,7 +30,7 @@ det E₈ = 1,   A_{E₈} = 0,      E₈ is unimodular.
 ```
 
 Their levels are respectively `3`, `4`, and `1`, computed from these quadratic values
-using `IntegralLattice.IsEven.level_eq_addOrderOf` and the even-unimodular criterion.
+using `IntegralLattice.IsEven.level_eq_den` and the even-unimodular criterion.
 
 The generators are the classes of the minuscule fundamental weights, `ϖ₁` for `E₆` and `ϖ₇` for
 `E₇`, written in the simple-root coordinates that the inverse Cartan matrix dictates:
@@ -167,7 +167,7 @@ theorem discriminant_typeE₆RootLattice : typeE₆RootLattice.discriminant = 3 
   decide
 
 /-- **The discriminant group of the type `E₆` root lattice has order `3`.** -/
--- This is not a `simp` lemma because `Nat.card_eq_fintype_card` rewrites its left-hand side.
+@[simp]
 theorem natCard_discriminantGroup_typeE₆RootLattice :
     Nat.card typeE₆RootLattice.DiscriminantGroup = 3 := by
   rw [natCard_discriminantGroup, discriminant_typeE₆RootLattice]
@@ -283,14 +283,10 @@ theorem zsmul_typeE₆MinusculeWeightClass_eq_zero_iff (k : ℤ) :
 @[simp]
 theorem addOrderOf_typeE₆MinusculeWeightClass :
     addOrderOf typeE₆MinusculeWeightClass = 3 := by
-  have hiff : ∀ k : ℤ, ((addOrderOf typeE₆MinusculeWeightClass : ℤ) ∣ k) ↔ (3 : ℤ) ∣ k := by
-    intro k
-    rw [addOrderOf_dvd_iff_zsmul_eq_zero]
-    exact zsmul_typeE₆MinusculeWeightClass_eq_zero_iff k
-  have h : (addOrderOf typeE₆MinusculeWeightClass : ℤ) = 3 :=
-    Int.dvd_antisymm (Int.natCast_nonneg _) (by norm_num) ((hiff _).mpr dvd_rfl)
-      ((hiff _).mp dvd_rfl)
-  exact_mod_cast h
+  refine addOrderOf_eq_prime ?_ fun h ↦ ?_
+  · rw [← natCast_zsmul, zsmul_typeE₆MinusculeWeightClass_eq_zero_iff]
+    norm_num
+  · simpa using (zsmul_typeE₆MinusculeWeightClass_eq_zero_iff 1).mp (by simpa using h)
 
 /-- **The class of the minuscule weight `ϖ₁` generates the discriminant group of type `E₆`.** -/
 theorem zmultiples_typeE₆MinusculeWeightClass_eq_top :
@@ -325,16 +321,13 @@ theorem discriminantQuadraticMap_typeE₆MinusculeWeightClass :
 
 /-- The level of the `E₆` root lattice is `3`. -/
 @[simp]
-theorem level_typeE₆RootLattice : typeE₆RootLattice.level = 3 := by
-  rw [isEven_typeE₆RootLattice.level_eq_addOrderOf _
-    zmultiples_typeE₆MinusculeWeightClass_eq_top,
-    discriminantQuadraticMap_typeE₆MinusculeWeightClass]
-  simpa only [Rat.cast_id, mul_one] using
-    (_root_.AddCircle.addOrderOf_coe_rat (p := (1 : ℚ)) (q := 2 / 3)).trans (by norm_num)
+theorem level_typeE₆RootLattice : typeE₆RootLattice.level = 3 :=
+  (isEven_typeE₆RootLattice.level_eq_den _ zmultiples_typeE₆MinusculeWeightClass_eq_top
+    discriminantQuadraticMap_typeE₆MinusculeWeightClass).trans (by norm_num)
 
 /-- **The discriminant bilinear value of the minuscule weight `ϖ₁` of type `E₆` is `1/3`.** -/
 @[simp]
-theorem discriminantPairing_typeE₆MinusculeWeightClass :
+theorem discriminantPairing_typeE₆MinusculeWeightClass_self :
     typeE₆RootLattice.discriminantPairing typeE₆MinusculeWeightClass typeE₆MinusculeWeightClass =
       (((1 : ℚ) / 3 : ℚ) : AddCircle (1 : ℚ)) := by
   rw [typeE₆MinusculeWeightClass, discriminantPairing_mk, coe_typeE₆MinusculeWeightDual,
@@ -452,7 +445,7 @@ theorem discriminant_typeE₇RootLattice : typeE₇RootLattice.discriminant = 2 
   decide
 
 /-- **The discriminant group of the type `E₇` root lattice has order `2`.** -/
--- This is not a `simp` lemma because `Nat.card_eq_fintype_card` rewrites its left-hand side.
+@[simp]
 theorem natCard_discriminantGroup_typeE₇RootLattice :
     Nat.card typeE₇RootLattice.DiscriminantGroup = 2 := by
   rw [natCard_discriminantGroup, discriminant_typeE₇RootLattice]
@@ -568,14 +561,10 @@ theorem zsmul_typeE₇MinusculeWeightClass_eq_zero_iff (k : ℤ) :
 @[simp]
 theorem addOrderOf_typeE₇MinusculeWeightClass :
     addOrderOf typeE₇MinusculeWeightClass = 2 := by
-  have hiff : ∀ k : ℤ, ((addOrderOf typeE₇MinusculeWeightClass : ℤ) ∣ k) ↔ (2 : ℤ) ∣ k := by
-    intro k
-    rw [addOrderOf_dvd_iff_zsmul_eq_zero]
-    exact zsmul_typeE₇MinusculeWeightClass_eq_zero_iff k
-  have h : (addOrderOf typeE₇MinusculeWeightClass : ℤ) = 2 :=
-    Int.dvd_antisymm (Int.natCast_nonneg _) (by norm_num) ((hiff _).mpr dvd_rfl)
-      ((hiff _).mp dvd_rfl)
-  exact_mod_cast h
+  refine addOrderOf_eq_prime ?_ fun h ↦ ?_
+  · rw [← natCast_zsmul, zsmul_typeE₇MinusculeWeightClass_eq_zero_iff]
+    norm_num
+  · simpa using (zsmul_typeE₇MinusculeWeightClass_eq_zero_iff 1).mp (by simpa using h)
 
 /-- **The class of the minuscule weight `ϖ₇` generates the discriminant group of type `E₇`.** -/
 theorem zmultiples_typeE₇MinusculeWeightClass_eq_top :
@@ -610,16 +599,13 @@ theorem discriminantQuadraticMap_typeE₇MinusculeWeightClass :
 
 /-- The level of the `E₇` root lattice is `4`, not the exponent `2` of its discriminant group. -/
 @[simp]
-theorem level_typeE₇RootLattice : typeE₇RootLattice.level = 4 := by
-  rw [isEven_typeE₇RootLattice.level_eq_addOrderOf _
-    zmultiples_typeE₇MinusculeWeightClass_eq_top,
-    discriminantQuadraticMap_typeE₇MinusculeWeightClass]
-  simpa only [Rat.cast_id, mul_one] using
-    (_root_.AddCircle.addOrderOf_coe_rat (p := (1 : ℚ)) (q := 3 / 4)).trans (by norm_num)
+theorem level_typeE₇RootLattice : typeE₇RootLattice.level = 4 :=
+  (isEven_typeE₇RootLattice.level_eq_den _ zmultiples_typeE₇MinusculeWeightClass_eq_top
+    discriminantQuadraticMap_typeE₇MinusculeWeightClass).trans (by norm_num)
 
 /-- **The discriminant bilinear value of the minuscule weight `ϖ₇` of type `E₇` is `1/2`.** -/
 @[simp]
-theorem discriminantPairing_typeE₇MinusculeWeightClass :
+theorem discriminantPairing_typeE₇MinusculeWeightClass_self :
     typeE₇RootLattice.discriminantPairing typeE₇MinusculeWeightClass typeE₇MinusculeWeightClass =
       (((1 : ℚ) / 2 : ℚ) : AddCircle (1 : ℚ)) := by
   rw [typeE₇MinusculeWeightClass, discriminantPairing_mk, coe_typeE₇MinusculeWeightDual,
@@ -702,8 +688,8 @@ theorem form_typeE₈SimpleRoot_typeE₈SimpleRoot (i j : Fin 8) :
   exact form_ofGramMatrix_basisFun_basisFun _ _ i j
 
 /-- The carrier of the type `E₈` root lattice is the integral span of the simple roots. -/
--- This is not a `simp` lemma because `ofGramMatrix_carrier` first unfolds its left-hand side to a
--- bare `Submodule.span`; `mem_typeE₈RootLattice_carrier_iff` is the `simp` form.
+-- This is not a `simp` lemma: it would rewrite the left-hand side of the `simp` lemma
+-- `mem_typeE₈RootLattice_carrier_iff`.
 theorem typeE₈RootLattice_carrier :
     typeE₈RootLattice.carrier = Submodule.span ℤ (Set.range (Pi.basisFun ℚ (Fin 8))) := by
   rw [typeE₈RootLattice]
@@ -787,7 +773,7 @@ instance instSubsingletonDiscriminantGroupTypeE₈RootLattice :
     isUnimodular_typeE₈RootLattice
 
 /-- **The discriminant group of the type `E₈` root lattice has order `1`.** -/
--- This is not a `simp` lemma because `Nat.card_eq_fintype_card` rewrites its left-hand side.
+-- This is not a `simp` lemma: `simp` already proves it by `Nat.card_unique`.
 theorem natCard_discriminantGroup_typeE₈RootLattice :
     Nat.card typeE₈RootLattice.DiscriminantGroup = 1 := by
   rw [natCard_discriminantGroup, discriminant_typeE₈RootLattice]

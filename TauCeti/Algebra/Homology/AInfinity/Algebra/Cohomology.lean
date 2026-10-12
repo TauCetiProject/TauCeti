@@ -381,8 +381,8 @@ one. -/
 theorem differential_decompose (𝒜 : AInfinityAlgebra R A) (p : ℤ) (x : A) :
     𝒜.differential (decompose 𝒜.grading.piece x p : A) =
       (decompose 𝒜.grading.piece (𝒜.differential x) (p + 1) : A) :=
-  DirectSum.map_decompose_shift 𝒜.grading.piece 𝒜.grading.piece 𝒜.differential (· + 1)
-    (add_left_injective 1) (fun _ _ ↦ 𝒜.differential_mem_piece) p x
+  DirectSum.map_decompose_shift 𝒜.grading.piece 𝒜.grading.piece 𝒜.differential.toAddMonoidHom
+    (· + 1) (add_left_injective 1) (fun _ _ ↦ 𝒜.differential_mem_piece) p x
 
 /-- The cycles form a homogeneous submodule: the homogeneous components of a cycle are cycles. -/
 theorem isHomogeneous_cycles (𝒜 : AInfinityAlgebra R A) :

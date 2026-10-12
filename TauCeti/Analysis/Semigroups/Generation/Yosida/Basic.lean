@@ -114,7 +114,7 @@ theorem yosidaApproximation_comm {A : X →ₗ.[ℝ] X} {lambda mu : ℝ}
       (lambda ^ 2 • LinearPMap.resolvent A lambda)
       (mu ^ 2 • LinearPMap.resolvent A mu) :=
     let h : Commute (LinearPMap.resolvent A lambda) (LinearPMap.resolvent A mu) :=
-      LinearPMap.resolvent_comm hlambda hmu
+      _root_.LinearPMap.resolvent_comm hlambda hmu
     h.smul_left (lambda ^ 2) |>.smul_right (mu ^ 2)
   have hR_one : Commute
       (lambda ^ 2 • LinearPMap.resolvent A lambda)

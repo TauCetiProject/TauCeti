@@ -6,7 +6,7 @@ Authors: Codex
 module
 
 public import TauCeti.Algebra.Lie.G2.ShortRoot.PrimeField.Carrier
-public import TauCeti.AlgebraicGeometry.GroupScheme.ClosedSubgroup
+public import TauCeti.AlgebraicGeometry.GroupScheme.ClosedSubgroup.Basic
 
 /-!
 # Closed generators of the short-root G₂ carrier over 𝔽₃

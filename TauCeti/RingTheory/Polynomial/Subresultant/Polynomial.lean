@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.Polynomial.Subresultant.Basic
+import TauCeti.Algebra.Polynomial.Coeff.Basic
 import TauCeti.GroupTheory.Perm.Inversion
 
 /-!

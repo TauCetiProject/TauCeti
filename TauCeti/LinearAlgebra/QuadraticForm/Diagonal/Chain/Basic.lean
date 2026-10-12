@@ -268,7 +268,7 @@ theorem induction_on {w w' : Fin n → Rˣ} (h : DiagonalChain w w')
 theorem symm {w w' : Fin n → Rˣ} (h : DiagonalChain w w') : DiagonalChain w' w := by
   induction h with
   | refl => exact Relation.ReflTransGen.refl
-  | tail hchain hstep ih =>
+  | tail _ hstep ih =>
       exact (Relation.ReflTransGen.single hstep.symm).trans ih
 
 /-- The diagonal forms at the endpoints of a diagonal chain are equivalent over a commutative

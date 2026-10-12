@@ -9,7 +9,10 @@ public import Mathlib.Geometry.Convex.ConvexSpace.AffineMap
 public import Mathlib.Geometry.Convex.ConvexSpace.Topology
 
 /-!
-# Continuity of affine maps between standard simplices
+# Maps and homeomorphisms between standard simplices
+
+An equivalence of vertex types induces `Equiv.stdSimplexHomeomorph`, preserving
+barycentric weights under reindexing. No finiteness assumption on the vertex types is needed.
 
 An affine map `Convexity.StdSimplex.affineMapMk v` out of a standard simplex is determined by the
 images `v m` of the vertices. When the target is a standard simplex on a finite type, its
@@ -17,6 +20,9 @@ weights are the bilinear expressions `∑ m, w.weights m * (v m).weights n`, so 
 continuous; `Convexity.StdSimplex.continuousAffineMapMk` bundles it as a continuous map. This
 makes affine simplices, such as the simplices of a barycentric subdivision,
 available as continuous maps between topological standard simplices.
+
+A standard simplex on a finite type is Hausdorff (`Convexity.StdSimplex.t2Space`), so continuous
+surjections onto it from compact spaces are quotient maps.
 -/
 
 public section
@@ -42,6 +48,29 @@ end Semiring
 
 variable [Ring R] [IsStrictOrderedRing R] [TopologicalSpace R] [IsTopologicalRing R]
 
+/-- An equivalence of vertex types induces a homeomorphism of standard simplices,
+with inverse induced by the inverse equivalence. -/
+noncomputable def _root_.Equiv.stdSimplexHomeomorph (e : M ≃ N) :
+    StdSimplex R M ≃ₜ StdSimplex R N where
+  toFun := map e
+  invFun := map e.symm
+  left_inv x := by
+    rw [← map_comp, Equiv.symm_comp_self, map_id]
+  right_inv x := by
+    rw [← map_comp, Equiv.self_comp_symm, map_id]
+  continuous_toFun := continuous_map R e
+  continuous_invFun := continuous_map R e.symm
+
+/-- The simplex reindexing homeomorphism acts by Mathlib's standard simplex map. -/
+@[simp]
+lemma _root_.Equiv.coe_stdSimplexHomeomorph (e : M ≃ N) :
+    ⇑(e.stdSimplexHomeomorph (R := R)) = map e := (rfl)
+
+/-- Inverting the simplex reindexing homeomorphism inverts the vertex equivalence. -/
+@[simp]
+lemma _root_.Equiv.stdSimplexHomeomorph_symm (e : M ≃ N) :
+    (e.stdSimplexHomeomorph (R := R)).symm = e.symm.stdSimplexHomeomorph := (rfl)
+
 /-- An affine map from a standard simplex to a standard simplex on a finite type is
 continuous. -/
 lemma continuous_affineMapMk [Finite N] (v : M → StdSimplex R N) :
@@ -66,5 +95,9 @@ noncomputable def continuousAffineMapMk [Finite N] (v : M → StdSimplex R N) :
 @[simp]
 lemma continuousAffineMapMk_apply [Finite N] (v : M → StdSimplex R N) (w : StdSimplex R M) :
     continuousAffineMapMk v w = affineMapMk v w := (rfl)
+
+/-- A standard simplex on a finite type is Hausdorff, being embedded in `N → R` by its weights. -/
+instance t2Space [T2Space R] [Finite N] : T2Space (StdSimplex R N) :=
+  (isEmbedding_toFun_comp_weights R N).t2Space
 
 end Convexity.StdSimplex

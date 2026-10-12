@@ -7,7 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.StructurePresheaf.SheafForEveryPresentation
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.StructurePresheaf.SubsetLimit
-public import TauCeti.RingTheory.Huber.TopologicallyFiniteType
+public import TauCeti.RingTheory.Huber.TopologicallyFiniteType.Basic
 
 /-!
 # Sheafy and stably sheafy Huber rings

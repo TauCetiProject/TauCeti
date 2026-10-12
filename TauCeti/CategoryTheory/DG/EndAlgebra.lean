@@ -124,14 +124,12 @@ private theorem mk_mul_mk_mul_mk {i j k : ℤ} (a : DGHom R i X X) (b : DGHom R 
     (c : DGHom R k X X) :
     GradedMonoid.mk (A := fun n ↦ DGHom R n X X) i a * GradedMonoid.mk j b * GradedMonoid.mk k c =
       GradedMonoid.mk i a * (GradedMonoid.mk j b * GradedMonoid.mk k c) := by
-  simp only [GradedMonoid.mk_mul_mk, gMul_def, Units.smul_def, ← Int.cast_smul_eq_zsmul R,
-    smul_dgComp, dgComp_smul, smul_smul, ← Int.cast_mul]
-  rw [dgComp_assoc R c b a (add_comm k j) (add_comm j i) (by omega), Int.cast_smul_eq_zsmul,
-    Int.cast_smul_eq_zsmul]
-  refine mk_zsmul_dgComp X ?_ _ _ _ _
-  rw [← Units.val_mul, ← Units.val_mul, ← Int.negOnePow_add, ← Int.negOnePow_add]
-  congr 2
-  ring
+  simp only [GradedMonoid.mk_mul_mk, gMul_def]
+  -- `gMul_def` writes the Koszul sign of `g * f` as `(-1) ^ (q * p)`; commute the products into
+  -- the order `(-1) ^ (p * q)` of `negOnePow_smul_dgComp_assoc`.
+  rw [mul_comm i (j + k), mul_comm j k, mul_comm (i + j) k, mul_comm i j,
+    ← negOnePow_smul_dgComp_assoc R c b a (add_comm k j) (add_comm j i) (by omega)]
+  exact mk_zsmul_dgComp X rfl _ _ _ _
 
 /- In the fields below, the unit of `GradedMonoid` is `⟨0, GOne.one⟩`, the structure map sends
 `r` to `r • dgId R X`, and a product `⟨i, a⟩ * ⟨j, b⟩` is `⟨i + j, GMul.mul a b⟩`, all by
@@ -276,17 +274,8 @@ private theorem differential_lof_mul_lof {p q : ℤ} (g : DGHom R q X X) (f : DG
           differential R X (lof R ℤ (fun n ↦ DGHom R n X X) p f)) := by
   rw [lof_mul_lof g f rfl, differential_lof, differential_lof, differential_lof,
     lof_mul_lof (dgDifferential R q g) f (add_assoc p q 1).symm,
-    lof_mul_lof g (dgDifferential R p f) (add_right_comm p 1 q), map_zsmul_unit,
-    dgDifferential_dgComp, smul_add, ← map_zsmul_unit, ← map_add]
-  congr 1
-  have e₁ : (p * q).negOnePow * p.negOnePow = (p * (q + 1)).negOnePow := by
-    rw [← Int.negOnePow_add, Int.negOnePow_eq_iff]
-    exact ⟨0, by ring⟩
-  have e₂ : q.negOnePow * ((p + 1) * q).negOnePow = (p * q).negOnePow := by
-    rw [← Int.negOnePow_add, Int.negOnePow_eq_iff]
-    exact ⟨q, by ring⟩
-  rw [smul_smul, smul_smul, e₁, e₂]
-  exact add_comm _ _
+    lof_mul_lof g (dgDifferential R p f) (add_right_comm p 1 q),
+    dgDifferential_negOnePow_smul_dgComp, map_add, ← map_zsmul_unit]
 
 /-- **The endomorphism algebra of an object is a differential graded algebra.** -/
 theorem isDGAlgebra : IsDGAlgebra (grading R X) (differential R X) where

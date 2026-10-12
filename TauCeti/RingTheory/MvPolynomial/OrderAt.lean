@@ -56,6 +56,8 @@ The Taylor shift itself preserves the degree in each variable (`MvPolynomial.deg
 * `MvPolynomial.orderAt_eq_of_forall_eval_foldl_pderiv_eq_zero_iff`: the order at a point is
   determined by which iterated partial derivatives, up to the total degree, vanish there.
 * `MvPolynomial.orderAt_le_orderAt_aeval`: substitution does not decrease the order.
+* `MvPolynomial.orderAt_taylor`, `MvPolynomial.orderAt_map`: the order is unchanged by Taylor
+  shifts, after translating the point, and by injective coefficient maps.
 * `MvPolynomial.orderAt_rename`: renaming along an injective map preserves the order.
 * `MvPolynomial.finSuccEquiv_taylor`, `MvPolynomial.coeff_taylor_cons`: singling out the
   variable `X₀` turns the Taylor shift at `a` into the univariate Taylor shift at `a₀` followed by
@@ -369,6 +371,20 @@ theorem min_orderAt_le_orderAt_add (p q : MvPolynomial σ R) (a : σ → R) :
 theorem le_orderAt_mul (p q : MvPolynomial σ R) (a : σ → R) :
     p.orderAt a + q.orderAt a ≤ (p * q).orderAt a := by
   simpa [orderAt_def] using MvPowerSeries.le_order_mul
+
+/-- The order of the Taylor shift of `p` at `a` is the order of `p` at the translated point. -/
+@[simp]
+theorem orderAt_taylor (a b : σ → R) (p : MvPolynomial σ R) :
+    (taylor a p).orderAt b = p.orderAt (b + a) := by
+  rw [orderAt_def, orderAt_def, taylor_taylor]
+
+/-- Mapping the coefficients along an injective ring homomorphism does not change the order, at
+the image of the point. -/
+theorem orderAt_map {S : Type*} [CommSemiring S] {f : R →+* S} (hf : Function.Injective f)
+    (p : MvPolynomial σ R) (a : σ → R) :
+    (map f p).orderAt (fun i ↦ f (a i)) = p.orderAt a := by
+  refine eq_of_forall_le_iff fun n ↦ ?_
+  simp only [le_orderAt_iff, ← map_taylor, coeff_map, map_eq_zero_iff f hf]
 
 end CommSemiring
 

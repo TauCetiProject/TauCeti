@@ -38,11 +38,14 @@ dimension at least five by Manolescu.
 ## Main definitions
 
 * `TauCeti.TriangulationConjecture`: every closed topological `n`-manifold is triangulable.
+* `TauCeti.ManolescuTheorem`: the non-triangulation statement in every dimension at least five.
 
 ## Main results
 
 * `TauCeti.not_triangulationConjecture_iff`: a disproof is a closed topological manifold that is
   not triangulable, the shape of Manolescu's theorem.
+* `TauCeti.manolescuTheorem_iff`: the theorem is equivalent to the existence of a
+  non-triangulable closed topological manifold in each dimension at least five.
 * `TauCeti.isTriangulable_of_chartedSpace_zero`: every space locally homeomorphic to `ℝ⁰` is
   triangulable.
 * `TauCeti.triangulationConjecture_zero`: the conjecture holds in dimension zero.
@@ -75,6 +78,14 @@ def TriangulationConjecture.{v} (n : ℕ) : Prop :=
   ∀ (M : Type v) [TopologicalSpace M] [T2Space M] [CompactSpace M]
     [ChartedSpace (EuclideanSpace ℝ (Fin n)) M], IsTriangulable.{v} M
 
+/-- Manolescu's non-triangulation theorem, recorded as its mathematical statement.
+
+For every dimension at least five, some closed topological manifold is not homeomorphic to the
+realization of any abstract simplicial complex. This declaration records the theorem's statement
+without asserting its proof here. -/
+def ManolescuTheorem.{w} : Prop :=
+  ∀ n : ℕ, 5 ≤ n → ¬ TriangulationConjecture.{w} n
+
 /-- The triangulation conjecture fails in dimension `n` exactly when some closed topological
 `n`-manifold is not triangulable. This is the shape of Manolescu's theorem. -/
 @[simp]
@@ -83,6 +94,28 @@ theorem not_triangulationConjecture_iff {n : ℕ} :
       ∃ (M : Type u) (_ : TopologicalSpace M) (_ : T2Space M) (_ : CompactSpace M)
         (_ : ChartedSpace (EuclideanSpace ℝ (Fin n)) M), ¬ IsTriangulable.{u} M := by
   simp only [TriangulationConjecture, not_forall, exists_prop]
+
+/-- Manolescu's statement is equivalent to having a non-triangulable closed manifold in every
+dimension at least five. -/
+theorem manolescuTheorem_iff :
+    ManolescuTheorem.{u} ↔
+      ∀ n : ℕ, 5 ≤ n →
+        ∃ (M : Type u) (_ : TopologicalSpace M) (_ : T2Space M) (_ : CompactSpace M)
+          (_ : ChartedSpace (EuclideanSpace ℝ (Fin n)) M), ¬ IsTriangulable.{u} M := by
+  constructor
+  · intro h n hn
+    exact not_triangulationConjecture_iff.mp (h n hn)
+  · intro h n hn
+    exact not_triangulationConjecture_iff.mpr (h n hn)
+
+namespace ManolescuTheorem
+
+/-- The non-triangulation conclusion in one dimension covered by Manolescu's theorem. -/
+theorem not_triangulationConjecture (h : ManolescuTheorem.{u}) {n : ℕ} (hn : 5 ≤ n) :
+    ¬ TriangulationConjecture.{u} n :=
+  h n hn
+
+end ManolescuTheorem
 
 /-- Every topological space locally homeomorphic to the zero-dimensional Euclidean space is
 triangulable. -/

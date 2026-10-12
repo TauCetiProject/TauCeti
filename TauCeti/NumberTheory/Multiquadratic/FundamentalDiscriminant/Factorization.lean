@@ -138,14 +138,14 @@ theorem IsFundamentalDiscriminant.exists_finset_primeDiscriminant {D : ℤ}
     have hsf : Squarefree (D / 4) := hD.squarefree_div_four h0
     have hmm : D / 4 % 4 = 2 ∨ D / 4 % 4 = 3 := hD.div_four_mod_four_eq_two_or_three h0
     have hDm : D = 4 * (D / 4) := by omega
-    set m := D / 4 with hm
+    set m := D / 4
     rcases hmm with hm2 | hm3
     · -- `m ≡ 2 (mod 4)`: write `m = 2 * k` with `k` odd; the even factor is `±8`.
       have hk2 : m = 2 * (m / 2) := by omega
-      set k := m / 2 with hk
+      set k := m / 2
       have hkodd : Odd k := Int.odd_iff.mpr (by omega)
       have hksf : Squarefree k := hsf.squarefree_of_dvd ⟨2, by omega⟩
-      have hD8 : D = 8 * k := by omega
+      have _hD8 : D = 8 * k := by omega
       rcases (by omega : k % 4 = 1 ∨ k % 4 = 3) with hk1 | hk3
       · -- `k ≡ 1 (mod 4)`: even factor `8`, odd product `k`.
         have hcore := prod_oddPrimeDiscriminant_primeFactors_eq hksf hkodd hk1
@@ -234,7 +234,7 @@ theorem finset_primeDiscriminant_eq_of_prod_eq {s t : Finset ℤ}
     rw [Finset.prod_ne_zero_iff]
     intro P hP
     rcases isPrimeDiscriminant_iff.mp (hs P (Finset.mem_filter.mp hP).1) with
-      hPeven | ⟨p, hp, hPodd, rfl⟩
+      hPeven | ⟨p, hp, _, rfl⟩
     · exact absurd hPeven (Finset.mem_filter.mp hP).2
     · exact oddPrimeDiscriminant_ne_zero.mpr hp.ne_zero
   have heven_prod : (∏ P ∈ s with IsEvenPrimeDiscriminant P, P) =

@@ -36,6 +36,8 @@ Multiplying one `n`-th root of a nonzero `a` by the powers of a primitive `n`-th
   when it fixes the chosen primitive root.
 * `IsPrimitiveRoot.coe_autToPow_eq_natCast`: an automorphism raising the primitive root to the
   `k`-th power has cyclotomic character `k`.
+* `IsPrimitiveRoot.cast_autToPow_eq_natCast`: modulo a divisor `d` of the level, the cyclotomic
+  character is read off from the action on a primitive `d`-th root of unity.
 * `IsPrimitiveRoot.exists_algEquiv_apply_eq_pow_of_coprime`: every coprime power of a primitive
   root in a normal extension of `ℚ` is realized by an automorphism.
 * `IsPrimitiveRoot.card_nthRootsFinset_of_pow_eq`: in the presence of a primitive `n`-th root of
@@ -122,3 +124,20 @@ theorem _root_.IsPrimitiveRoot.coe_autToPow_eq_natCast {K M : Type*} [CommRing K
   have hmod := (hζ.isOfFinOrder (NeZero.ne _)).pow_eq_pow_iff_modEq.mp
     ((hζ.autToPow_spec K x).trans hx)
   simpa only [hζ.eq_orderOf] using hmod
+
+/-- **The cyclotomic character modulo a divisor.** Let `d ∣ m`. An automorphism raising the
+primitive `d`-th root of unity `ζ ^ (m / d)` to the `c`-th power has cyclotomic character
+congruent to `c` modulo `d`. -/
+theorem _root_.IsPrimitiveRoot.cast_autToPow_eq_natCast {K M : Type*} [CommRing K] [CommRing M]
+    [IsDomain M] [Algebra K M] {m d : ℕ} [NeZero m] (hd : d ∣ m) {ζ : M}
+    (hζ : IsPrimitiveRoot ζ m) {x : M ≃ₐ[K] M} {c : ℕ}
+    (hx : x (ζ ^ (m / d)) = (ζ ^ (m / d)) ^ c) :
+    ((hζ.autToPow K x : ZMod m).cast : ZMod d) = c := by
+  have : NeZero d := ⟨ne_zero_of_dvd_ne_zero (NeZero.ne m) hd⟩
+  have ht := hζ.pow_of_dvd (Nat.div_ne_zero_iff_of_dvd hd |>.2 ⟨NeZero.ne m, NeZero.ne d⟩)
+    (Nat.div_dvd_of_dvd hd)
+  rw [Nat.div_div_self hd (NeZero.ne m)] at ht
+  -- Both `c` and the exponent of `x` on `ζ` are the exponent of `x` on `ζ ^ (m / d)`.
+  rw [ZMod.cast_eq_val, ← ht.coe_autToPow_eq_natCast (K := K) hx,
+    ht.coe_autToPow_eq_natCast (K := K) (k := (hζ.autToPow K x : ZMod m).val)]
+  rw [map_pow, ← hζ.autToPow_spec K x, ← pow_mul, ← pow_mul, mul_comm]

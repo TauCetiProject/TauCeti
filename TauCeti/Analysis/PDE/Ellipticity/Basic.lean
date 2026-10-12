@@ -366,7 +366,6 @@ theorem mul_sq_mul_norm_sq_le_matrixBilinearForm_add {A : Matrix n n ℝ} {lam L
     rw [← matrixBilinearForm_self, ← matrixBilinearForm_apply]
     simp only [map_add, map_smul, _root_.add_apply, FunLike.coe_smul, Pi.smul_apply, smul_eq_mul]
     ring
-  have hcross : |q ⬝ᵥ (A *ᵥ g)| ≤ Lam * ‖q‖ * ‖g‖ := hupper
   -- Weighted Young inequality `2 X Y ≤ (λ/2) X² + (2/λ) Y²` for `X = |z| ‖g‖` and
   -- `Y = Λ |w| ‖q‖`: Mathlib's `two_mul_le_add_mul_sq` at weight `ε = λ/2`.
   have hyoung : 2 * (|z| * ‖g‖) * (Lam * |w| * ‖q‖) ≤
@@ -727,8 +726,8 @@ lemma uniformlyEllipticOn_congr (hab : Set.EqOn a b Ω) :
 lemma uniformlyEllipticOn_const_one (Ω : Set X) {lam Lam : ℝ} (hlam : 0 < lam)
     (hlam_one : lam ≤ 1) (hone_Lam : 1 ≤ Lam) :
     UniformlyEllipticOn Ω (fun _ => (1 : Matrix n n ℝ)) lam Lam := by
-  refine UniformlyEllipticOn.of_bounds hlam (hlam_one.trans hone_Lam) (fun {x} hx ξ => ?_)
-    (fun {x} hx η ξ => ?_)
+  refine UniformlyEllipticOn.of_bounds hlam (hlam_one.trans hone_Lam) (fun {x} _ ξ => ?_)
+    (fun {x} _ η ξ => ?_)
   · have hnorm : 0 ≤ (‖ξ‖ : ℝ) ^ 2 := sq_nonneg ‖ξ‖
     simp only [toQuadraticForm'_one]
     simpa using mul_le_mul_of_nonneg_right hlam_one hnorm

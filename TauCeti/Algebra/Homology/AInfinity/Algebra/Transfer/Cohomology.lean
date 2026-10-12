@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.Basis.VectorSpace
 public import TauCeti.Algebra.Homology.AInfinity.Algebra.Transfer.Basic
 public import TauCeti.LinearAlgebra.Graded.Splitting
 
