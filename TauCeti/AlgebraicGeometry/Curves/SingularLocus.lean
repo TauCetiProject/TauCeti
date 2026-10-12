@@ -46,8 +46,8 @@ families of nodal curves.
   one, so its first Fitting ideal sheaf is the unit ideal sheaf.
 * `AlgebraicGeometry.Scheme.singularLocus_eq_comap_of_isOpenImmersion`: the singular ideal
   sheaf restricts along open immersions over the base.
-* `AlgebraicGeometry.Scheme.isPullback_singularLocus_of_isOpenImmersion`: the corresponding
-  pullback square of singular subschemes.
+* `AlgebraicGeometry.Scheme.isPullback_singularLocus_subschemeι_of_isOpenImmersion`:
+  the corresponding pullback square of singular subschemes.
 * `AlgebraicGeometry.Scheme.singularLocus_eq_comap_of_isPullback`: the formation of the singular
   locus commutes with base change along `Spec R' → Spec R`: if `X'` is the base change of `X`,
   then `Sing(X'/R')` is the inverse image of `Sing(X/R)`.
@@ -229,7 +229,7 @@ theorem _root_.AlgebraicGeometry.Scheme.singularLocus_eq_comap_of_isOpenImmersio
 
 /-- Restricting a relative curve to an open subscheme gives a pullback square of singular
 subschemes. -/
-theorem _root_.AlgebraicGeometry.Scheme.isPullback_singularLocus_of_isOpenImmersion :
+theorem _root_.AlgebraicGeometry.Scheme.isPullback_singularLocus_subschemeι_of_isOpenImmersion :
     IsPullback (X.singularLocus R).subschemeι
       ((X.singularLocus R).subschemeMap (Y.singularLocus R) i
         (Scheme.IdealSheafData.le_map_iff_comap_le.mpr

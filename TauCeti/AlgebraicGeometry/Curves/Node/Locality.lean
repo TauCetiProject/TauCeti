@@ -51,7 +51,7 @@ theorem AtWorstNodalOfRelativeDimensionOne.comp_of_isOpenImmersion
   -- presentation, and relative dimension proofs agree by proof irrelevance with those in `mk`.
   suffices hsing : FormallyUnramified ((X.singularLocus R).subschemeι ≫ i ≫ f) from
     { toLocallyOfFiniteType := inferInstance, toFormallyUnramified := hsing }
-  have H := Scheme.isPullback_singularLocus_of_isOpenImmersion (R := R) i
+  have H := Scheme.isPullback_singularLocus_subschemeι_of_isOpenImmersion (R := R) i
   have hi := MorphismProperty.of_isPullback (P := @IsOpenImmersion) H
     (inferInstanceAs (IsOpenImmersion i))
   rw [H.w_assoc]
@@ -87,7 +87,7 @@ theorem AtWorstNodalOfRelativeDimensionOne.of_openCover
     MorphismProperty.IsLocalAtSource.toRespects
       (P := (show MorphismProperty Scheme.{u} from @FormallyUnramified.{u}))
       (K := Scheme.zariskiPrecoverage)
-  have H := (Scheme.isPullback_singularLocus_of_isOpenImmersion
+  have H := (Scheme.isPullback_singularLocus_subschemeι_of_isOpenImmersion
     (R := R) (𝒰.f j)).flip
   -- The cover index and the source of its map depend on these projections. The generated
   -- projection lemmas do not simplify this dependent goal, so reduce just the two wrappers.
