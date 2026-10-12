@@ -50,7 +50,10 @@ separable degree, which connects the two.
 The same comparison bounds the `p`-torsion of `W` over `K` itself: the kernel of `[p]` has at most
 as many points as its separable degree, which is at most `deg V = p`. So `E[p]` is either zero or
 cyclic of order `p`, and it is the latter over an algebraically closed field exactly when `W` is
-ordinary.
+ordinary. More generally, when `p` divides `n ≠ 0`, the `n`-torsion of `W` over `K` has fewer than
+`n²` points, although `[n]` has degree `n²`. Over a separably closed field a finite étale
+`n`-torsion scheme of rank `n²` would have `n²` points, so this bound shows that the `n`-torsion
+is not étale where the characteristic divides `n`.
 
 ## Main results
 
@@ -67,6 +70,9 @@ ordinary.
   `k = 1` or any `k ≠ 0`.
 * `WeierstrassCurve.natCard_torsionBy_le` and `WeierstrassCurve.torsionBy_eq_zmultiples`: `W` has
   at most `p` points of order dividing `p`, so a nonzero one generates them all.
+* `WeierstrassCurve.natCard_torsionBy_lt`: in characteristic `p > 0`, when `p ∣ n ≠ 0`, `W` has
+  fewer than `n²` points of order dividing `n`, which detects the failure of the `n`-torsion to be
+  étale.
 
 ## References
 
@@ -249,11 +255,12 @@ theorem torsionBy_eq_zmultiples {Q : W.toAffine.Point} (hQ : p • Q = 0) (hQ₀
 
 open scoped Classical in
 /-- **A curve has fewer than `n²` points of order dividing `n`** when the characteristic `p > 0`
-divides `n ≠ 0`. Writing `n = p k`, multiplication by `k` maps the `n`-torsion to the `p`-torsion,
-which has at most `p` points, with kernel the `k`-torsion, which has at most `deg [k] = k²` points.
-So the `n`-torsion has at most `p k² < n²` points. -/
+divides `n ≠ 0`, although `[n]` has degree `n²`. This is the input that detects the failure of the
+`n`-torsion of `W` to be étale where the characteristic divides `n`: over a separably closed field,
+a finite étale `n`-torsion of rank `n²` would have exactly `n²` points. -/
 theorem natCard_torsionBy_lt (hp : p.Prime) {n : ℤ} (hn : n ≠ 0) (hpn : (p : ℤ) ∣ n) :
     Nat.card (AddSubgroup.torsionBy W.toAffine.Point n) < n.natAbs ^ 2 := by
+  -- write `n = p k`; the `n`-torsion then has at most `p k² < n²` points
   obtain ⟨k, rfl⟩ := hpn
   have hk : k ≠ 0 := right_ne_zero_of_mul hn
   have := W.finite_torsionBy (mod_cast hp.ne_zero : (p : ℤ) ≠ 0)
