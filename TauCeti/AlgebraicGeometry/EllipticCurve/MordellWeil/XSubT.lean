@@ -1059,7 +1059,6 @@ lemma normM_mk (u : W.Aˣ) :
 omit [W.IsCharNeTwoNF] [DecidableEq K] [W.IsElliptic] in
 /-- The norm class of the class of `-1` is the class of `-1`: the étale algebra `W.A` has odd
 degree `3` over `K`. -/
-@[simp]
 lemma normM_neg_one : W.normM (QuotientGroup.mk (-1 : W.Aˣ)) = QuotientGroup.mk (-1 : Kˣ) := by
   rw [normM_mk]
   congr 1
