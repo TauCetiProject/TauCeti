@@ -451,10 +451,8 @@ theorem f4Modular_lie_simpleCoroot_simpleCoroot_eq_zero (i j : Fin F4.rank) :
     (ε γ : Fin 48) (hεγ : ε ≠ γ) :
     f4ModularChevalleyBasis.repr (f4ModularRootVector ε)
       (Sum.inl (f4KillingRootLabel γ)) = 0 := by
-  have hlabel : f4KillingRootLabel ε ≠ f4KillingRootLabel γ := fun h =>
-    hεγ (f4KillingRoot_injective (congrArg Subtype.val h))
   simp only [f4ModularRootVector_eq_basis, Basis.repr_self]
-  exact Finsupp.single_eq_of_ne (by simpa using hlabel.symm)
+  exact Finsupp.single_eq_of_ne (by simpa using hεγ.symm)
 
 /-- The coordinate of a root vector at its own root label is one. -/
 @[simp] theorem f4ModularChevalleyBasis_repr_rootVector_self (β : Fin 48) :
@@ -531,7 +529,7 @@ theorem f4_root_eq_add_of_repr_lie_rootVector_ne_zero
         (Sum.inl (f4KillingRootLabel β)) = 0 := by
   apply f4ModularChevalleyBasis_repr_lie_rootVector_eq_zero
   intro h
-  exact f4KillingRootLabel_ne_of_root_eq_add δ β β
+  exact f4_ne_of_root_eq_add δ β β
     (by simpa only [f4SimplyConnectedRootDatum_root] using h) rfl
 
 /-! ## Integral root exponentials -/
