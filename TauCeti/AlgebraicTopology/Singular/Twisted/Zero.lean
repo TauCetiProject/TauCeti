@@ -261,7 +261,7 @@ def twistedHomology₀Cocone : Cocone L where
         exact (map_ιTwistedHomology₀ L p).trans (Category.comp_id _).symm }
 
 private def zeroChainsDesc (s : Cocone L) : (twistedChainComplex L).X 0 ⟶ s.pt :=
-  twistedChainComplexDesc L 0 fun σ ↦ s.ι.app (initialVertex σ)
+  eqToHom (twistedChainComplex_X L 0) ≫ Sigma.desc (fun σ ↦ s.ι.app (initialVertex σ))
 
 private lemma d_zeroChainsDesc (s : Cocone L) :
     (twistedChainComplex L).d 1 0 ≫ zeroChainsDesc L s = 0 := by
@@ -280,7 +280,8 @@ private lemma ιTwistedHomology₀_zeroHomologyDesc (s : Cocone L) (x : X) :
   -- The summand's fibre and the degree-zero object agree at default transparency.
   erw [Category.assoc, Category.assoc, Iso.inv_hom_id_assoc,
     HomologicalComplex.p_descOpcycles]
-  exact ιTwistedChainComplex_desc L 0 _ _
+  erw [zeroChainsDesc, ιTwistedChainComplex_eqToHom_assoc, Sigma.ι_comp_desc]
+  rfl
 
 /-- **Zeroth homology with local coefficients is the colimit of the local system.**
 The structure maps are the classes of the point fibres. -/

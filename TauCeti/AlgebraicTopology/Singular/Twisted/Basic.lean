@@ -251,18 +251,18 @@ def ιTwistedChainComplex (k : ℕ) (σ : (TopCat.toSSet.obj X) _⦋k⦌) :
     L.obj (initialVertex σ) ⟶ (twistedChainComplex L).X k :=
   ιTwistedChains L σ
 
-/-- A family of maps on the simplex fibres induces a map out of twisted chains in one degree. -/
-def twistedChainComplexDesc (k : ℕ) {M : ModuleCat.{max v w} R}
-    (f : ∀ σ : (TopCat.toSSet.obj X) _⦋k⦌, L.obj (initialVertex σ) ⟶ M) :
-    (twistedChainComplex L).X k ⟶ M := Sigma.desc f
+/-- Each degree of the twisted chain complex is the coproduct of the simplex fibres. -/
+lemma twistedChainComplex_X (k : ℕ) :
+    (twistedChainComplex L).X k =
+      ∐ fun σ : (TopCat.toSSet.obj X) _⦋k⦌ ↦ L.obj (initialVertex σ) := (rfl)
 
-/-- The map induced by a family on simplex fibres restricts to that family on each summand. -/
+/-- Under the coproduct identification, a simplex inclusion is the coproduct inclusion. -/
 @[reassoc (attr := simp)]
-lemma ιTwistedChainComplex_desc (k : ℕ) {M : ModuleCat.{max v w} R}
-    (f : ∀ σ : (TopCat.toSSet.obj X) _⦋k⦌, L.obj (initialVertex σ) ⟶ M)
+lemma ιTwistedChainComplex_eqToHom (k : ℕ)
     (σ : (TopCat.toSSet.obj X) _⦋k⦌) :
-    ιTwistedChainComplex L k σ ≫ twistedChainComplexDesc L k f = f σ :=
-  Sigma.ι_comp_desc f σ
+    ιTwistedChainComplex L k σ ≫ eqToHom (twistedChainComplex_X L k) =
+      Sigma.ι (fun τ : (TopCat.toSSet.obj X) _⦋k⦌ ↦ L.obj (initialVertex τ)) σ :=
+  Category.comp_id _
 
 /-- Two maps out of a degree of the twisted chain complex agree as soon as they agree on every
 summand. -/
