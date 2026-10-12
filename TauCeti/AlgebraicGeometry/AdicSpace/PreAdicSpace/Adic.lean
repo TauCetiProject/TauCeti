@@ -49,10 +49,17 @@ subspaces (`isPreAdic.isSheafy_iff`), the mechanism of Wedhorn's Remark 8.27.
   an open immersion.
 * `TauCeti.PreAdicSpace.isSheafy_restrict_of_range_subset`: if the restriction of `X` to an open
   is sheafy, so is its restriction to every smaller open.
+
+* `TauCeti.PreAdicSpace.isPreAdic_restrict`: the restriction of a pre-adic space to an open is
+  pre-adic.
 * `TauCeti.PreAdicSpace.isLocallyAffinoid_of_jointly_surjective`: an object covered by open
   immersions from locally affinoid objects is locally affinoid.
 * `TauCeti.PreAdicSpace.isPreAdic.isSheafy_iff`: a pre-adic space is sheafy exactly when its
   structure presheaf is a sheaf on its open affinoid subspaces.
+* `TauCeti.PreAdicSpace.isPreAdic.isSheafy_of_forall_exists_le`,
+  `TauCeti.PreAdicSpace.isPreAdic.isSheafy_of_directed`: a pre-adic space is sheafy if each open
+  affinoid subspace lies in a sheafy open, for instance if it is exhausted by a directed family of
+  sheafy opens.
 * `TauCeti.ValuationSpectrum.isAdic_presentationLimitPreAdicSpace`: `Spa(A, A⁺)` with a sheaf
   structure presheaf is an adic space.
 
@@ -158,6 +165,18 @@ theorem isSheafy_restrict_of_range_subset {V : TopCat.{u}} {g : V ⟶ X.toTopCat
     (restrictRestrictIso X hg W ≪≫ X.restrictIsoOfRangeEq _ h hW)
     (isSheafy_restrict W.isOpenEmbedding hX)
 
+/-- **The restriction of a pre-adic space to an open is pre-adic.** It is locally affinoid, and its
+open affinoid subspaces are the opens whose images are open affinoid subspaces of `X`, to which
+the restricted structure presheaf is adapted (`TopCat.Presheaf.IsAdapted.restrict`). -/
+theorem isPreAdic_restrict (hX : isPreAdic X) : isPreAdic (X.restrict h) := by
+  refine ⟨isLocallyAffinoid_restrict h hX.isLocallyAffinoid, ?_⟩
+  rw [show (X.restrict h).affinoidOpens = h.functor.obj ⁻¹' X.affinoidOpens from
+    Set.ext (mem_affinoidOpens_restrict_iff X h)]
+  -- the structure presheaf of `X.restrict h` is `h.functor.op ⋙ X.presheaf` by definition
+  -- (`PresheafedSpace.restrict_presheaf`); rewriting with it is blocked by the dependence of the
+  -- family of opens on the carrier
+  exact hX.isAdapted.restrict h
+
 /-- The source of an open immersion into a locally affinoid object is locally affinoid. -/
 theorem isLocallyAffinoid_of_isOpenImmersion {Y : PreAdicSpace.{u}} (hX : isLocallyAffinoid X)
     (f : Y ⟶ X) [IsOpenImmersion f] : isLocallyAffinoid Y :=
@@ -194,6 +213,33 @@ theorem isPreAdic.isSheafy_iff (hX : isPreAdic X) :
         X.toPresheafedSpace.presheaf) :=
   TopCat.Presheaf.isSheaf_iff_of_isAdapted _ _ (isBasis_affinoidOpens hX.isLocallyAffinoid)
     hX.isAdapted
+
+/-- **A pre-adic space is sheafy if each open affinoid subspace lies in a sheafy open.** If every
+open affinoid subspace `V` of the pre-adic space `X` is contained in an open `U` with `X|_U`
+sheafy, then `X` is sheafy. The structure presheaf is determined by its values on the open affinoid
+subspaces, and the sheaf condition for a cover of `V` by open affinoid subspaces holds inside the
+sheafy open `U`. -/
+theorem isPreAdic.isSheafy_of_forall_exists_le (hX : isPreAdic X)
+    (h : ∀ V ∈ X.affinoidOpens, ∃ U : Opens X, V ≤ U ∧ isSheafy (X.restrict U.isOpenEmbedding)) :
+    isSheafy X :=
+  -- `X|_U` is sheafy when `U.isOpenEmbedding.functor.op ⋙ X.presheaf` is a sheaf, by definition of
+  -- the presheaf of a restriction (`PresheafedSpace.restrict_presheaf`)
+  TopCat.Presheaf.isSheaf_of_isAdapted_of_forall_exists_le _ _
+    (isBasis_affinoidOpens hX.isLocallyAffinoid) hX.isAdapted h
+
+/-- **A pre-adic space exhausted by sheafy opens is sheafy.** If a directed family of opens `U i`
+covers the pre-adic space `X` and every `X|_{U i}` is sheafy, then `X` is sheafy: an open affinoid
+subspace is quasi-compact, so it lies in a single `U i`. -/
+theorem isPreAdic.isSheafy_of_directed {ι : Type*} [Nonempty ι] (hX : isPreAdic X)
+    {U : ι → Opens X} (hU : Directed (· ≤ ·) U) (hcov : iSup U = ⊤)
+    (h : ∀ i, isSheafy (X.restrict (U i).isOpenEmbedding)) : isSheafy X := by
+  refine hX.isSheafy_of_forall_exists_le fun V hV ↦ ?_
+  have := (spectralSpace_of_isAffinoid hV).toCompactSpace
+  obtain ⟨i, hi⟩ := (isCompact_iff_compactSpace.mpr this).elim_directed_cover
+    (fun i ↦ (U i : Set X)) (fun i ↦ (U i).isOpen)
+    (by rw [← Opens.coe_iSup, hcov]; exact Set.subset_univ _)
+    fun i j ↦ hU i j
+  exact ⟨U i, hi, h i⟩
 
 /-! ### Adic spaces -/
 

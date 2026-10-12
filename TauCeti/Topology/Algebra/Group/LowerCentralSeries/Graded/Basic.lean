@@ -938,6 +938,15 @@ theorem gradedMap_gradedBracket (f : G →* H) (hf : Continuous f) {j k : ℕ} (
   congr 1
   exact Subtype.ext (map_commutatorElement f _ _)
 
+/-- **Naturality of the bracket of two degree-zero classes**, with its degree written `1`: the
+degree `0 + 0 + 1` of `TauCeti.gradedMap_gradedBracket` does not match a numeral. -/
+@[simp]
+theorem gradedMap_gradedBracket_zero_zero (f : G →* H) (hf : Continuous f)
+    (x y : gradedPiece p G 0) :
+    gradedMap p f hf 1 (gradedBracket p G 0 0 x y) =
+      gradedBracket p H 0 0 (gradedMap p f hf 0 x) (gradedMap p f hf 0 y) :=
+  gradedMap_gradedBracket f hf x y
+
 /-- **Naturality of the `p`-power operator.** -/
 @[simp]
 theorem gradedMap_gradedPow (f : G →* H) (hf : Continuous f) {k : ℕ} (x : gradedPiece p G k) :
