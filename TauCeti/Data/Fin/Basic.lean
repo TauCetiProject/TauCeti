@@ -165,16 +165,15 @@ first `i` indices plus its value at `i`. -/]
 theorem prod_univ_eq_prod_castLE_mul {M : Type*} [CommMonoid M] {n : ℕ} (i : Fin (n + 1))
     (f : Fin (n + 1) → M) (hf : ∀ j, i < j → f j = 1) :
     ∏ j, f j = (∏ j : Fin i, f (castLE i.is_lt.le j)) * f i := by
-  rw [Finset.prod_fin_eq_prod_range, Finset.prod_fin_eq_prod_range,
-    ← Finset.prod_range_mul_prod_Ico _ (by omega : (i : ℕ) + 1 ≤ n + 1),
-    Finset.prod_eq_one (s := Finset.Ico _ _) fun j hj => ?_, mul_one, Finset.prod_range_succ,
-    dite_eq_left i.is_lt]
-  · refine congrArg (· * _) (Finset.prod_congr rfl fun j hj => ?_)
-    rw [Finset.mem_range] at hj
-    rw [dite_eq_left hj, dite_eq_left (show j < n + 1 by omega), Fin.castLE_mk]
-  · rw [Finset.mem_Ico] at hj
-    rw [dite_eq_left (show j < n + 1 by omega)]
-    exact hf _ (Fin.mk_lt_mk.2 (by omega))
+  have hIio : Finset.univ.map (castLEEmb i.is_lt.le) = Finset.Iio i := by
+    ext j
+    simp only [Finset.mem_map, Finset.mem_univ, true_and, castLEEmb_apply, Finset.mem_Iio]
+    exact ⟨by rintro ⟨k, rfl⟩; exact k.is_lt, fun h => ⟨⟨j, h⟩, rfl⟩⟩
+  rw [← Finset.prod_subset (Finset.subset_univ (Finset.Iic i))
+      fun j _ hj => hf j (by simpa using hj),
+    ← Finset.Iio_insert, Finset.prod_insert Finset.notMem_Iio_self, mul_comm, ← hIio,
+    Finset.prod_map]
+  rfl
 
 /-- Conjugating forward rotation of a finite ordinal by reversal gives backward rotation. -/
 @[simp]

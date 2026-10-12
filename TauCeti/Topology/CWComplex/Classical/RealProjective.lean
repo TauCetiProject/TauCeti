@@ -35,7 +35,8 @@ homeomorphism `ContinuousLinearEquiv.unitBallHomeomorph`.
 * `TauCeti.RealProjectiveSpace.hemispherePoint`: the upper hemisphere of `Sⁱ ⊆ Sⁿ` over `Dⁱ`.
 * `TauCeti.RealProjectiveSpace.openCell`: the open `i`-cell `RPⁱ ∖ RPⁱ⁻¹`.
 * `TauCeti.RealProjectiveSpace.cellMap`: the characteristic map of the `i`-cell, with
-  `TauCeti.RealProjectiveSpace.cellMap_apply` its formula on the closed ball.
+  `TauCeti.RealProjectiveSpace.cellMap_apply` its formula on the closed ball and
+  `TauCeti.RealProjectiveSpace.cellMap_symm_mk` the formula for its inverse.
 * `TauCeti.RealProjectiveSpace.cwComplex`: the CW structure on `RPⁿ`, with characteristic maps
   `cellMap` (`TauCeti.RealProjectiveSpace.map_cwComplex`); it is finite
   (`TauCeti.RealProjectiveSpace.finite_cwComplex`) with one cell in each dimension `m ≤ n`
@@ -298,6 +299,15 @@ theorem cellMap_apply (i : Fin (n + 1)) {x : Fin i → ℝ} (hx : x ∈ closedBa
           (mem_closedBall_zero_iff.1 hx)))⟩ :=
   dite_eq_left hx
 
+/-- The inverse of the characteristic map of the `i`-cell sends the class of a unit vector `y` to
+its first `i` coordinates, multiplied by the sign `yᵢ / |yᵢ|` of its coordinate `i` and read in the
+sup-norm ball through the radial homeomorphism. On the open cell, where `yᵢ ≠ 0`, this is the
+truncation of whichever of `±y` has positive coordinate `i`. -/
+theorem cellMap_symm_mk (i : Fin (n + 1)) (y : sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) :
+    (cellMap i).symm (mk n y) = (EuclideanSpace.equiv (Fin i) ℝ).unitBallHomeomorph
+      ((y.1 i / |y.1 i|) • WithLp.toLp 2 fun j => y.1 (Fin.castLE i.is_lt.le j)) :=
+  cellMapInv_mk i y
+
 /-- The characteristic map of the `i`-cell maps the open unit ball onto the open `i`-cell. -/
 theorem image_cellMap_ball (i : Fin (n + 1)) : cellMap i '' ball 0 1 = openCell n i :=
   (cellMap i).image_source_eq_target
@@ -389,18 +399,14 @@ theorem map_cwComplex (i : Fin (n + 1))
 theorem finite_cwComplex :
     letI := cwComplex n
     RelCWComplex.Finite (univ : Set (RealProjectiveSpace n)) :=
-  letI := cwComplex n
-  { eventually_isEmpty_cell := Filter.eventually_atTop.2
-      ⟨n + 1, fun _ hm => ⟨fun c => absurd (c : Cell n _).down (by omega)⟩⟩
-    finite_cell _ := inferInstanceAs (Finite (Cell n _)) }
+  CWComplex.finite_mkFinite _ _ _ _ _ _ _ _ _ _ _
 
 /-- The CW structure on `RPⁿ` has one cell in each dimension `m ≤ n` and none above. -/
 theorem nat_card_cell_cwComplex (m : ℕ) :
     letI := cwComplex n
     Nat.card (cell (univ : Set (RealProjectiveSpace n)) m) = if m ≤ n then 1 else 0 := by
-  -- `CWComplex.mkFinite` takes the supplied family as its `cell` field
-  -- (`CWComplex.mkFinite_cell`), so the cells of `cwComplex n` in dimension `m` are
-  -- `Cell n m` by definition.
+  -- Unfolding the definition of `CWComplex.mkFinite`, the cells of `cwComplex n` in dimension `m`
+  -- are `Cell n m`.
   change Nat.card (Cell n m) = _
   split_ifs with h
   · have : Unique (Cell n m) := ⟨⟨⟨by omega⟩⟩, fun _ => rfl⟩
