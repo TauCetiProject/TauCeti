@@ -127,14 +127,14 @@ theorem finite_quotient_of_map_algebraMap_le {I : Ideal R} {J : Ideal B}
     [J.IsTwoSided] [Module.Finite R (B ⧸ J)]
     (hIJ : I.map (algebraMap R B) ≤ J) (h : Module.Finite A (R ⧸ I)) :
     Module.Finite A (B ⧸ J) := by
-  -- Scalar-tower verification adapted from `Algebra.trace_quotient_pow_mk` in
+  -- Quotient scalar-tower setup adapted from `Algebra.trace_quotient_pow_mk` in
   -- `TauCeti.RingTheory.Trace.QuotientPow`.
   let _ : Algebra (R ⧸ I) (B ⧸ J) :=
     Ideal.Quotient.algebraQuotientOfLEComap (Ideal.map_le_iff_le_comap.mp hIJ)
-  have : IsScalarTower R (R ⧸ I) (B ⧸ J) := .of_algebraMap_eq fun r ↦ by
-    -- The structure map supplied by `algebraQuotientOfLEComap` is `Ideal.quotientMap`.
-    rw [← Ideal.Quotient.mk_algebraMap, Ideal.Quotient.algebraMap_eq]
-    exact Ideal.quotientMap_mk.symm
+  -- The structure map is `Ideal.quotientMap`, whose defining lift sends `mk I r` to
+  -- `mk J (algebraMap R B r)`. This also defines the direct `R`-algebra map into `B ⧸ J`,
+  -- so composing with `mk I` gives that map definitionally.
+  have : IsScalarTower R (R ⧸ I) (B ⧸ J) := .of_algebraMap_eq' rfl
   have : Module.Finite (R ⧸ I) (B ⧸ J) := Module.Finite.of_restrictScalars_finite R _ _
   have : IsScalarTower A (R ⧸ I) (B ⧸ J) := .of_algebraMap_eq fun a ↦ by
     -- Both quotient structure maps are induced by the original algebra maps.
