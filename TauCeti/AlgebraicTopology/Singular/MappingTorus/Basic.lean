@@ -8,7 +8,6 @@ module
 public import TauCeti.Topology.MappingTorus.Basic
 public import Mathlib.AlgebraicTopology.SingularHomology.HomotopyInvariance
 public import TauCeti.Algebra.Homology.HomotopyCofiber
-import TauCeti.AlgebraicTopology.SimplicialSet.Homology.HomotopyInvariance
 
 /-!
 # Singular chains of a mapping torus
@@ -44,8 +43,7 @@ public section
 
 noncomputable section
 
-open AlgebraicTopology CategoryTheory Limits MonoidalCategory
-open scoped Simplicial
+open AlgebraicTopology CategoryTheory Limits
 
 universe w v u
 
@@ -97,6 +95,16 @@ def singularChainHomotopy :
   -- whose composite `(incl φ).comp φ` is exactly the source of `monodromyHomotopy φ`.
   exact (show TopCat.Homotopy (f ≫ i) i from
     TauCeti.MappingTorus.monodromyHomotopy φ).singularChainComplexFunctorObjMap R
+
+/-- The components of the singular-chain homotopy are those induced by the cylinder homotopy. -/
+@[simp]
+lemma singularChainHomotopy_hom (i j : ℕ) :
+    (singularChainHomotopy φ R).hom i j =
+      (TopCat.Homotopy.singularChainComplexFunctorObjMap (monodromyHomotopy φ : TopCat.Homotopy
+        (TopCat.ofHom (⟨φ, φ.continuous⟩ : C(F, F)) ≫
+          TopCat.ofHom (TauCeti.MappingTorus.incl φ))
+        (TopCat.ofHom (TauCeti.MappingTorus.incl φ))) R).hom i j := by
+  simp [singularChainHomotopy, _root_.Homotopy.trans, _root_.Homotopy.ofEq]
 
 /-- On singular homology, the map induced by the fibre inclusion is unchanged after
 precomposition with the monodromy map. -/
@@ -279,40 +287,6 @@ lemma homotopyCofiber_inlX_comp_wangMappingConeMapOfSemiconj_f (i j : ℕ)
   simp [wangMappingConeMapOfSemiconj, wangArrowHom]
 
 end WangMappingCone
-
-/-- The singular-chain homotopy of the mapping-torus cylinder is natural under a map
-intertwining the monodromies. -/
-lemma singularChainHomotopy_hom_naturality (i j : ℕ) :
-    (fibreChainMap R g).f i ≫ (singularChainHomotopy ψ R).hom i j =
-      (singularChainHomotopy φ R).hom i j ≫
-        (mappingTorusChainMap φ R ψ g h).f j := by
-  unfold singularChainHomotopy
-  unfold _root_.Homotopy.trans _root_.Homotopy.ofEq
-  simp only [Pi.add_apply, Pi.zero_apply, zero_add]
-  let hφ : TopCat.Homotopy
-      (TopCat.ofHom (⟨φ, φ.continuous⟩ : C(F, F)) ≫
-        TopCat.ofHom (TauCeti.MappingTorus.incl φ))
-      (TopCat.ofHom (TauCeti.MappingTorus.incl φ)) := monodromyHomotopy φ
-  let hψ : TopCat.Homotopy
-      (TopCat.ofHom (⟨ψ, ψ.continuous⟩ : C(G, G)) ≫
-        TopCat.ofHom (TauCeti.MappingTorus.incl ψ))
-      (TopCat.ofHom (TauCeti.MappingTorus.incl ψ)) := monodromyHomotopy ψ
-  have ht : TopCat.ofHom g ▷ TopCat.I ≫ hψ.h =
-      hφ.h ≫ TopCat.ofHom (map φ ψ g h) := by
-    ext p
-    -- Evaluate category morphisms as continuous maps to expose the homotopy tracks.
-    change monodromyHomotopy ψ (TopCat.I.homeomorph p.2, g p.1) =
-      map φ ψ g h (monodromyHomotopy φ (TopCat.I.homeomorph p.2, p.1))
-    exact (map_monodromyHomotopy φ ψ g h (TopCat.I.homeomorph p.2) p.1).symm
-  have hu : TopCat.toSSet.map (TopCat.ofHom g) ▷ Δ[1] ≫ hψ.toSSet.h =
-      hφ.toSSet.h ≫ TopCat.toSSet.map (TopCat.ofHom (map φ ψ g h)) := by
-    simp only [TopCat.Homotopy.toSSet, Category.assoc]
-    rw [← whisker_exchange_assoc (TopCat.toSSet.map (TopCat.ofHom g))
-      SSet.stdSimplex.toSSetObjI]
-    rw [Functor.LaxMonoidal.μ_natural_left_assoc]
-    simp only [← Functor.map_comp]
-    rw [ht]
-  exact hφ.toSSet.chainComplexMap_hom_comm hψ.toSSet hu R i j
 
 end Map
 

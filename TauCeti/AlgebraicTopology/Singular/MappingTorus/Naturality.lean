@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.Singular.MappingTorus.Basic
+import TauCeti.AlgebraicTopology.SimplicialSet.Homology.HomotopyInvariance
 
 /-!
 # Naturality of the Wang mapping-cone map
@@ -27,7 +28,8 @@ public section
 
 noncomputable section
 
-open AlgebraicTopology CategoryTheory Limits
+open AlgebraicTopology CategoryTheory Limits MonoidalCategory
+open scoped Simplicial
 
 universe w v u
 
@@ -37,7 +39,42 @@ variable {F G : Type w} [TopologicalSpace F] [TopologicalSpace G]
   (φ : F ≃ₜ F) (ψ : G ≃ₜ G) (g : C(F, G)) (h : Function.Semiconj g φ ψ)
 
 variable {C : Type u} [Category.{v} C] [HasCoproducts.{w} C] [Preadditive C]
-  [HasBinaryBiproducts C] (R : C)
+  (R : C)
+
+/-- The singular-chain homotopy of the mapping-torus cylinder is natural under a map
+intertwining the monodromies. -/
+lemma singularChainHomotopy_hom_naturality (φ : F ≃ₜ F) (R : C) (ψ : G ≃ₜ G)
+    (g : C(F, G)) (h : Function.Semiconj g φ ψ) (i j : ℕ) :
+    (fibreChainMap R g).f i ≫ (singularChainHomotopy ψ R).hom i j =
+      (singularChainHomotopy φ R).hom i j ≫
+        (mappingTorusChainMap φ R ψ g h).f j := by
+  simp only [singularChainHomotopy_hom, fibreChainMap_def, mappingTorusChainMap_def]
+  let hφ : TopCat.Homotopy
+      (TopCat.ofHom (⟨φ, φ.continuous⟩ : C(F, F)) ≫
+        TopCat.ofHom (TauCeti.MappingTorus.incl φ))
+      (TopCat.ofHom (TauCeti.MappingTorus.incl φ)) := monodromyHomotopy φ
+  let hψ : TopCat.Homotopy
+      (TopCat.ofHom (⟨ψ, ψ.continuous⟩ : C(G, G)) ≫
+        TopCat.ofHom (TauCeti.MappingTorus.incl ψ))
+      (TopCat.ofHom (TauCeti.MappingTorus.incl ψ)) := monodromyHomotopy ψ
+  have ht : TopCat.ofHom g ▷ TopCat.I ≫ hψ.h =
+      hφ.h ≫ TopCat.ofHom (map φ ψ g h) := by
+    ext p
+    -- Evaluate category morphisms as continuous maps to expose the homotopy tracks.
+    change monodromyHomotopy ψ (TopCat.I.homeomorph p.2, g p.1) =
+      map φ ψ g h (monodromyHomotopy φ (TopCat.I.homeomorph p.2, p.1))
+    exact (map_monodromyHomotopy φ ψ g h (TopCat.I.homeomorph p.2) p.1).symm
+  have hu : TopCat.toSSet.map (TopCat.ofHom g) ▷ Δ[1] ≫ hψ.toSSet.h =
+      hφ.toSSet.h ≫ TopCat.toSSet.map (TopCat.ofHom (map φ ψ g h)) := by
+    simp only [TopCat.Homotopy.toSSet, Category.assoc]
+    rw [← whisker_exchange_assoc (TopCat.toSSet.map (TopCat.ofHom g))
+      SSet.stdSimplex.toSSetObjI]
+    rw [Functor.LaxMonoidal.μ_natural_left_assoc]
+    simp only [← Functor.map_comp]
+    rw [ht]
+  exact hφ.toSSet.chainComplexMap_hom_comm hψ.toSSet hu R i j
+
+variable [HasBinaryBiproducts C]
 
 /-- The map from the Wang mapping cone to mapping-torus chains commutes with a map
 intertwining the monodromies. -/

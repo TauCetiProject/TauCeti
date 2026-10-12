@@ -220,6 +220,8 @@ lemma map_comp_incl (φ : F ≃ₜ F) (ψ : G ≃ₜ G) (g : C(F, G))
 
 /-- A map of mapping tori carries the canonical cylinder homotopy to the canonical cylinder
 homotopy of the image point. -/
+-- Rewrite before simplification unfolds the homotopy track to a cylinder representative.
+@[simp↓]
 lemma map_monodromyHomotopy (φ : F ≃ₜ F) (ψ : G ≃ₜ G) (g : C(F, G))
     (h : Function.Semiconj g φ ψ) (t : unitInterval) (x : F) :
     map φ ψ g h (monodromyHomotopy φ (t, x)) =
