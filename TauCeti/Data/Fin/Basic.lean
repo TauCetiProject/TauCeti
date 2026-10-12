@@ -166,14 +166,12 @@ theorem prod_univ_eq_prod_castLE_mul {M : Type*} [CommMonoid M] {n : ℕ} (i : F
     (f : Fin (n + 1) → M) (hf : ∀ j, i < j → f j = 1) :
     ∏ j, f j = (∏ j : Fin i, f (castLE i.is_lt.le j)) * f i := by
   have hIio : Finset.univ.map (castLEEmb i.is_lt.le) = Finset.Iio i := by
-    ext j
-    simp only [Finset.mem_map, Finset.mem_univ, true_and, castLEEmb_apply, Finset.mem_Iio]
-    exact ⟨by rintro ⟨k, rfl⟩; exact k.is_lt, fun h => ⟨⟨j, h⟩, rfl⟩⟩
+    simp [← Finset.coe_inj, Set.Iio_def]
   rw [← Finset.prod_subset (Finset.subset_univ (Finset.Iic i))
       fun j _ hj => hf j (by simpa using hj),
     ← Finset.Iio_insert, Finset.prod_insert Finset.notMem_Iio_self, mul_comm, ← hIio,
     Finset.prod_map]
-  rfl
+  simp only [castLEEmb_apply]
 
 /-- Conjugating forward rotation of a finite ordinal by reversal gives backward rotation. -/
 @[simp]
