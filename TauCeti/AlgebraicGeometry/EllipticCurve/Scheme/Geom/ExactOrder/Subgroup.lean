@@ -119,7 +119,8 @@ theorem IsOfExactOrder.subschemeι_comp_mulBy (h : E.IsOfExactOrder P N) :
   have hiN : i ≫ E.mulBy N = 1 := by
     rw [comp_mulBy, zpow_natCast]
     simpa only [pow_comp, Category.id_comp, one_comp] using congrArg (fun x ↦ x ≫ i) hid
-  exact congrArg Over.Hom.left hiN
+  simpa only [Over.comp_left, hom_one_left, i, Over.homMk_left, Over.mk_hom, Category.assoc]
+    using congrArg Over.Hom.left hiN
 
 /-- The subgroup divisor of a point of exact order `N` is contained in `E[N]` as a closed
 subscheme. The order on ideal sheaves reverses containment of their closed subschemes. -/
