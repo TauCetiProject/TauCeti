@@ -274,6 +274,7 @@ theorem algorithmicOggExponent_pos_iff (W : WeierstrassCurve K) [W.IsElliptic] :
   rw [Nat.pos_iff_ne_zero, ne_eq, algorithmicOggExponent_eq_zero_iff]
 
 /-- **The algorithmic Ogg exponent is `1` exactly at multiplicative reduction.** -/
+@[simp]
 theorem algorithmicOggExponent_eq_one_iff (W : WeierstrassCurve K) [W.IsElliptic] :
     W.algorithmicOggExponent R = 1 ↔ (W.minimal R).HasMultiplicativeReduction R := by
   obtain ⟨hg, hm, ha⟩ := W.algorithmicOggExponent_reductionSymbol_cases (R := R)
@@ -286,6 +287,7 @@ theorem algorithmicOggExponent_eq_one_iff (W : WeierstrassCurve K) [W.IsElliptic
   · exact absurd (ha h') (by rw [h]; decide)
 
 /-- **The algorithmic Ogg exponent is at least `2` exactly at additive reduction.** -/
+@[simp]
 theorem two_le_algorithmicOggExponent_iff (W : WeierstrassCurve K) [W.IsElliptic] :
     2 ≤ W.algorithmicOggExponent R ↔ (W.minimal R).HasAdditiveReduction R := by
   obtain ⟨hg, hm, ha⟩ := W.algorithmicOggExponent_reductionSymbol_cases (R := R)
