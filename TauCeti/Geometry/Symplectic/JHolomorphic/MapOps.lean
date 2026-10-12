@@ -28,9 +28,7 @@ normed-vector-space constant-structure `J`-holomorphic predicates are invariant.
   in `TauCeti.Geometry.Symplectic.Transport`; `JHolomorphicTransport` adds the matching map-level
   calculus.
 
-These lemmas are chart-level bookkeeping for the Cauchy--Riemann equation on almost complex
-manifolds, where maps are constantly replaced by equal local representatives in overlapping charts,
-restricted domains are reflected or reoriented, and tangent charts change coordinates.
+These are invariance lemmas for the flat constant-structure model.
 
 ## Main declarations
 

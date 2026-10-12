@@ -15,9 +15,7 @@ predicates. A constant-structure `J`-holomorphic condition depends only on a loc
 the map near the point or within the source set, because the underlying Frechet derivative has the
 same locality property.
 
-These lemmas are chart-level bookkeeping for the Cauchy--Riemann equation on almost complex
-manifolds, where maps are constantly replaced by equal local representatives in overlapping charts
-and restricted domains.
+These are locality lemmas for the flat constant-structure model.
 
 ## Main declarations
 
