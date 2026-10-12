@@ -23,11 +23,9 @@ framing, the smallest plumbing whose differential is not forced to vanish: the a
 `ℍ(P, k) ≅ 𝔽₂[U]`,
 
 for every characteristic covector, hence for every spin^c structure. A one-vertex plumbing with
-framing `w < 0` is the disc bundle over the sphere with Euler number `w`, whose boundary is the
-lens space `L(-w, 1)`, and one tower per spin^c structure agrees with the lens-space computation
-of Ozsváth–Szabó, [arXiv:math/0203265](https://arxiv.org/abs/math/0203265). Up to now the only
-computed lattice homology was that of the zero-vertex plumbing, where the differential vanishes
-for lack of directions.
+framing `w < 0` is the disc bundle over the sphere with Euler number `w`, whose boundary is the lens
+space `L(-w, 1)`, and one tower per spin^c structure agrees with the lens-space computation of
+Ozsváth–Szabó, [arXiv:math/0203265](https://arxiv.org/abs/math/0203265).
 
 Two facts drive the computation. First, the lattice is `ℤ`, so the only cubes are lattice points
 and edges; the lattice differential is injective on chains of edges, so every cycle is a chain of
