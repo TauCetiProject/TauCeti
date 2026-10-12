@@ -425,6 +425,14 @@ end TauCeti
     def test_quoted_namespace_is_not_truncated_to_an_unquoted_prefix(self):
         self.assertEqual(lint.scopes("namespace Foo.«bar»\nend Foo.«bar»\n"), [])
 
+    def test_identifier_suffixes_do_not_start_raw_strings_or_characters(self):
+        for prefix in ('Foo.r', 'f!r', 'f?r', '℘r'):
+            source = 'def text := ' + prefix + '"\\\" /- "\ndef next := 1\n'
+            with self.subTest(prefix=prefix):
+                self.assertIn('def next := 1', lint.strip_comments_and_strings(source))
+        source = 'def text := f!\'"\' /- "\ndef next := 1\n'
+        self.assertIn('def next := 1', lint.strip_comments_and_strings(source))
+
     def test_literal_string_text_can_be_preserved_for_conservative_guards(self):
         source = ('def text := "set_option"\n'
                   'def raw := r#"set_option """#\n'

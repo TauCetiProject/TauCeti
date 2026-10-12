@@ -167,29 +167,46 @@ class VariableBinding:
     binder: str
 
 
+def _literal_can_start_after(char: str) -> bool:
+    """Conservatively exclude identifier continuations before raw strings and characters."""
+    code = ord(char)
+    return not (char.isalnum() or char in "_'!?.»" or
+                0x2100 <= code <= 0x214f or 0x1d49c <= code <= 0x1d59f or
+                0x2090 <= code <= 0x209c or 0x1d62 <= code <= 0x1d6a or code == 0x2c7c)
+
+
 def strip_comments_and_strings(text: str, *, mask_strings: bool = True) -> str:
     """Mask comments and literals, preserving offsets and newlines.
 
-    With ``mask_strings=False``, keep string text visible for conservative token guards.
-    Quoted identifiers and character literals remain masked.
+    With ``mask_strings=False``, keep strings and quoted identifiers visible for conservative
+    token guards. Also retain apparent comments containing a quote: interpolation can make
+    a literal comment opener look like code to this approximate lexer. Character literals
+    remain masked.
     """
     chars = list(text)
     i = 0
     block_depth = 0
+    block_start = 0
+    preserve_block = False
     in_string = False
     raw_end = None
     while i < len(chars):
         if block_depth:
+            if not mask_strings and chars[i] == '"' and not preserve_block:
+                chars[block_start:i + 1] = text[block_start:i + 1]
+                preserve_block = True
             if text.startswith("/-", i):
-                chars[i] = chars[i + 1] = " "
+                if not preserve_block:
+                    chars[i] = chars[i + 1] = " "
                 block_depth += 1
                 i += 2
             elif text.startswith("-/", i):
-                chars[i] = chars[i + 1] = " "
+                if not preserve_block:
+                    chars[i] = chars[i + 1] = " "
                 block_depth -= 1
                 i += 2
             else:
-                if chars[i] != "\n":
+                if not preserve_block and chars[i] != "\n":
                     chars[i] = " "
                 i += 1
         elif raw_end is not None:
@@ -217,10 +234,15 @@ def strip_comments_and_strings(text: str, *, mask_strings: bool = True) -> str:
                     chars[i] = " "
                 i += 1
         elif text.startswith("--", i):
+            start = i
             while i < len(chars) and chars[i] != "\n":
                 chars[i] = " "
                 i += 1
+            if not mask_strings and '"' in text[start:i]:
+                chars[start:i] = text[start:i]
         elif text.startswith("/-", i):
+            block_start = i
+            preserve_block = False
             chars[i] = chars[i + 1] = " "
             block_depth = 1
             i += 2
@@ -228,13 +250,13 @@ def strip_comments_and_strings(text: str, *, mask_strings: bool = True) -> str:
             while i < len(chars):
                 closing = chars[i] == "»"
                 # Preserve delimiters so Foo.«bar» is not mistaken for Foo.
-                if chars[i] not in "\n«»":
+                if mask_strings and chars[i] not in "\n«»":
                     chars[i] = " "
                 i += 1
                 if closing:
                     break
         elif chars[i] == "r" and (
-                i == 0 or not (text[i - 1].isalnum() or text[i - 1] in "_'")) and (
+                i == 0 or _literal_can_start_after(text[i - 1])) and (
                 raw_match := RAW_STRING_START.match(text, i)):
             raw_end = '"' + (raw_match.group(1) or "")
             for j in range(i, raw_match.end()):
@@ -246,8 +268,7 @@ def strip_comments_and_strings(text: str, *, mask_strings: bool = True) -> str:
                 chars[i] = " "
             in_string = True
             i += 1
-        elif chars[i] == "'" and (i == 0 or not (
-                chars[i - 1].isalnum() or chars[i - 1] in "_'")) and i + 2 < len(chars) and (
+        elif chars[i] == "'" and (i == 0 or _literal_can_start_after(text[i - 1])) and i + 2 < len(chars) and (
                 chars[i + 1] == "\\" or chars[i + 2] == "'"):
             end = i + 1
             while end < len(chars) and chars[end] not in "'\n":

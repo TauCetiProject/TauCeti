@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Reject option overrides in library code, ignoring comments, conservatively including string text."""
+"""Reject option overrides, conservatively including strings, names and quote-bearing comments."""
 
 from __future__ import annotations
 
@@ -10,23 +10,25 @@ import re
 from lean_source import strip_comments_and_strings
 
 
-# Mathlib's heartbeat-measurement commands disable maxHeartbeats internally.
+# Keep heartbeat instrumentation in tooling; some Mathlib command forms disable limits.
 OPTION_OVERRIDES = ("set_option", "guard_min_heartbeats", "count_heartbeats")
-# Lean identifiers may be qualified or end in primes, question marks or exclamation marks.
-OPTION_PATTERN = re.compile(r"(?<![\w'.!?])(?:" + "|".join(OPTION_OVERRIDES) + r")(?![\w'.!?])")
+# Also reject qualified/quoted syntax-kind names and Mathlib's bang heartbeat command.
+OPTION_PATTERN = re.compile(
+    r"(?<![\w'!?])(?:set_option|guard_min_heartbeats|count_heartbeats!?)(?![\w'!?])")
 
 
 def option_lines(source: str) -> list[int]:
     """Return 1-based lines containing forbidden standalone option-override tokens.
 
-    Ignore comments, character literals, quoted identifiers, and tokens within longer or
-    qualified names. Conservatively include string text, including interpolations.
+    Ignore ordinary comments, character literals, and tokens within longer identifiers.
+    Conservatively include strings, qualified/quoted names, and quote-bearing comments
+    that this approximate lexer cannot reliably distinguish from interpolation text.
     """
     # Most files contain no candidate token. Avoid lexing them at all.
     if not any(token in source for token in OPTION_OVERRIDES):
         return []
     code = strip_comments_and_strings(source, mask_strings=False)
-    return [number for number, line in enumerate(code.splitlines(), 1)
+    return [number for number, line in enumerate(code.split("\n"), 1)
             if OPTION_PATTERN.search(line)]
 
 
