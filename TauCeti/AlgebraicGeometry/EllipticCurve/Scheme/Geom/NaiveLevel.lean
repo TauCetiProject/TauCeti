@@ -22,10 +22,11 @@ point (`EllipticCurveGeom.IsFiberwiseInjective.injective_pointsPullback`).
 
 For `A = ℤ/Nℤ` with `N ≠ 0` such a homomorphism is an `S`-point `P` of `E[N]` that has exact order
 `N` in every geometric fibre: none of `P, 2P, …, (N - 1)P` meets the zero section
-(`EllipticCurveGeom.isFiberwiseInjective_zmod_iff`). For `A = (ℤ/Nℤ)²` it is a pair of `S`-points
-of `E[N]` that is a basis of the `N`-torsion in every geometric fibre in which `N` is invertible:
-over a separably closed field in which `N` is invertible, the injective homomorphisms
-`(ℤ/Nℤ)² →* E(K)` are exactly those with image `E[N](K)`
+(`EllipticCurveGeom.isFiberwiseInjective_zmod_iff`). For `A = (ℤ/Nℤ)²` it is a pair `(P, Q)` of
+`S`-points of `E[N]` none of whose combinations `aP + bQ` with `(a, b) ≠ 0` meets the zero section
+(`EllipticCurveGeom.isFiberwiseInjective_zmod_prod_iff`), that is, a basis of the `N`-torsion in
+every geometric fibre in which `N` is invertible: over a separably closed field in which `N` is
+invertible, the injective homomorphisms `(ℤ/Nℤ)² →* E(K)` are exactly those with image `E[N](K)`
 (`EllipticCurveGeom.isFiberwiseInjective_iff_range_eq_ker`), and every elliptic curve there has
 one (`EllipticCurveGeom.exists_isFiberwiseInjective`). Over a base on which `N` is invertible these
 are the naive `[Γ₁(N)]`- and `[Γ(N)]`-structures, which are compared with Drinfeld level structures
@@ -55,6 +56,8 @@ The group law on points of `E` is written multiplicatively, following `EllipticC
   injectivity on fibres is injectivity on the fibre over every residue field.
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.isFiberwiseInjective_zmod_iff`: the naive
   `[Γ₁(N)]` condition, as `kP` missing the zero section for `0 < k < N`.
+* `TauCeti.AlgebraicGeometry.EllipticCurveGeom.isFiberwiseInjective_zmod_prod_iff`: the naive
+  `[Γ(N)]` condition, as `aP + bQ` missing the zero section for `(a, b) ≠ 0`.
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.isFiberwiseInjective_iff_range_eq_ker`: over a
   separably closed field in which `N` is invertible, the naive `[Γ(N)]`-structures are the bases of
   `E[N](K)`.
@@ -185,6 +188,23 @@ theorem isFiberwiseInjective_zmod_iff {N : ℕ} [NeZero N]
       rwa [Ne, ZMod.val_eq_zero, ← ofAdd_eq_one, ofAdd_toAdd]
     have := h a.toAdd.val (Nat.pos_of_ne_zero hval) (ZMod.val_lt _)
     rwa [hφ, ZMod.natCast_zmod_val, ofAdd_toAdd] at this
+
+/-! ### Naive `[Γ(N)]`-structures -/
+
+/-- **The naive `[Γ(N)]` condition.** A homomorphism `φ : (ℤ/Nℤ)² →* E(S)`, given by the pair of
+`S`-points `P = φ (1, 0)` and `Q = φ (0, 1)` of `E[N]`, is injective on every fibre exactly when no
+combination `aP + bQ` with `(a, b) ≠ 0` in `(ℤ/Nℤ)²` meets the zero section. -/
+theorem isFiberwiseInjective_zmod_prod_iff {N : ℕ} [NeZero N]
+    {φ : Multiplicative (ZMod N × ZMod N) →* (𝟙_ (Over S) ⟶ Over.mk E.structureMap)} :
+    E.IsFiberwiseInjective φ ↔ ∀ a b : ZMod N, (a, b) ≠ 0 → ∀ s,
+      (φ (.ofAdd (1, 0)) ^ a.val * φ (.ofAdd (0, 1)) ^ b.val).left s ≠ E.zero s := by
+  -- `(a, b)` is `a.val • (1, 0) + b.val • (0, 1)`
+  have hφ (a b : ZMod N) :
+      φ (.ofAdd (1, 0)) ^ a.val * φ (.ofAdd (0, 1)) ^ b.val = φ (.ofAdd (a, b)) := by
+    rw [← map_pow φ, ← map_pow φ, ← map_mul φ, ← ofAdd_nsmul, ← ofAdd_nsmul, ← ofAdd_add]
+    simp
+  simp only [hφ, isFiberwiseInjective_iff, ne_eq, ← ofAdd_eq_one]
+  exact ⟨fun h a b ↦ h _, fun h z ↦ h z.toAdd.1 z.toAdd.2⟩
 
 /-! ### Naive `[Γ(N)]`-structures over a separably closed field -/
 
