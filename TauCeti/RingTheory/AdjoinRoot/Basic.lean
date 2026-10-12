@@ -223,10 +223,10 @@ theorem algebraTensorAlgEquiv_one_tmul_root :
 theorem algebraTensorAlgEquiv_one_tmul_mk (p : R[X]) :
     algebraTensorAlgEquiv T g (1 ⊗ₜ mk g p) =
       mk (g.map (algebraMap R T)) (p.map (algebraMap R T)) := by
-  rw [← aeval_eq, ← Algebra.TensorProduct.includeRight_apply, ← aeval_algHom_apply,
-    Algebra.TensorProduct.includeRight_apply, ← AlgEquiv.coe_toAlgHom,
-    ← AlgHom.restrictScalars_apply R, ← aeval_algHom_apply, AlgHom.restrictScalars_apply,
-    AlgEquiv.coe_toAlgHom, algebraTensorAlgEquiv_one_tmul_root, ← aeval_map_algebraMap T, aeval_eq]
+  rw [← aeval_eq (p.map (algebraMap R T)), aeval_map_algebraMap]
+  simpa [aeval_eq] using (aeval_algHom_apply
+    (((algebraTensorAlgEquiv T g).toAlgHom.restrictScalars R).comp
+      Algebra.TensorProduct.includeRight) (root g) p).symm
 
 @[simp]
 theorem algebraTensorAlgEquiv_symm_root :

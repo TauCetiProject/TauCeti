@@ -59,9 +59,8 @@ private theorem sectionBaseChange_algebraTensorAlgEquiv_symm_mk (s : AdjoinRoot 
     (T : Type*) [CommRing T] [Algebra A T] (p : T[X]) :
     s.sectionBaseChange T ((algebraTensorAlgEquiv T g).symm (mk _ p)) =
       p.eval (algebraMap A T (s (root g))) := by
-  rw [← aeval_eq, ← AlgEquiv.coe_toAlgHom, ← AlgHom.comp_apply, ← aeval_algHom_apply,
-    AlgHom.comp_apply, AlgEquiv.coe_toAlgHom, algebraTensorAlgEquiv_symm_root,
-    AlgHom.sectionBaseChange_tmul, one_mul, coe_aeval_eq_eval]
+  simpa [aeval_eq, AlgHom.sectionBaseChange_tmul] using (aeval_algHom_apply
+    ((s.sectionBaseChange T).comp (algebraTensorAlgEquiv T g).symm.toAlgHom) (root _) p).symm
 
 /-- **Full sets of sections of `A[X]/(g)`.** For a monic `g ∈ A[X]`, a family `s` of sections of
 `Spec A[X]/(g) → Spec A` is a full set of sections if and only if `g` is the product of the linear

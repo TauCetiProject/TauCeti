@@ -163,16 +163,28 @@ theorem isAGenerator_comp_fst (p : ℕ) [Fact p.Prime] [CharP R p]
     IsAGenerator (χ.comp (MonoidHom.fst (Multiplicative (ZMod p)) (Multiplicative (ZMod p)))) := by
   rw [isAGenerator_iff_X_pow_sub_one_eq_prod, Fintype.prod_prod_type]
   simp only [MonoidHom.comp_apply, MonoidHom.coe_fst, Finset.prod_const, Finset.card_univ,
-    Fintype.card_multiplicative, ZMod.card, sub_pow_char, ← C_pow, ← pointsMulEquiv_apply]
+    Fintype.card_multiplicative, ZMod.card, sub_pow_char, ← C_pow]
   -- every value of `χ` is a `p`th root of unity, since `ℤ/p` is killed by `p`
   have hp (a : Multiplicative (ZMod p)) :
-      (((pointsMulEquiv (R := R) (A := R) (p ^ 2) (χ a)) : Rˣ) : R) ^ p = 1 := by
+      (χ a).ofConv (MonoidAlgebra.single (generator (p ^ 2)) 1) ^ p = 1 := by
     have ha : a ^ p = 1 := by
       simpa [Fintype.card_multiplicative, ZMod.card] using pow_card_eq_one (x := a)
-    rw [← Units.val_pow_eq_pow_val, ← Subgroup.coe_pow, ← map_pow, ← map_pow, ha, map_one,
+    rw [← ofConv_pow_apply_single_generator, ← map_pow, ha, map_one, ← pointsMulEquiv_apply,
       map_one, OneMemClass.coe_one, Units.val_one]
   simp only [hp, map_one, Finset.prod_const, Finset.card_univ, Fintype.card_multiplicative,
     ZMod.card, sub_pow_char, one_pow, ← pow_mul, sq]
+
+-- `X ^ n - 1` does not divide `1 + X + ⋯ + X ^ (n - 1)`, which is nonzero of degree less than `n`.
+private theorem not_X_pow_sub_one_dvd_geom_sum [Nontrivial R] {n : ℕ} (hn : n ≠ 0) :
+    ¬ (X ^ n - 1 : R[X]) ∣ ∑ k ∈ Finset.range n, X ^ k := fun hdvd ↦ by
+  have hdeg := (monic_X_pow_sub_one hn).natDegree_le_of_dvd (monic_geom_sum_X hn).ne_zero hdvd
+  have hle : (∑ k ∈ Finset.range n, X ^ k : R[X]).natDegree ≤ n - 1 :=
+    natDegree_sum_le_of_forall_le _ _ fun k hk ↦ by
+      rw [natDegree_X_pow]
+      have := Finset.mem_range.mp hk
+      lia
+  rw [← C_1, natDegree_X_pow_sub_C] at hdeg
+  lia
 
 /-- **A non-generator of `μ_p`** (Katz–Mazur 1.11.4–1.11.5). Over `R = 𝔽_p[X]/(X ^ p - 1)`, let
 `χ : ℤ/p → μ_p(R)` take `1` to the class `θ` of `X`, so that `χ(a) = θ ^ a`. Then `χ` is not a
@@ -192,8 +204,7 @@ theorem not_isAGenerator_of_eq_root (p : ℕ) [Fact p.Prime]
       AdjoinRoot.root _ ^ (Multiplicative.toAdd a).val := by
     have ha : generator p ^ (Multiplicative.toAdd a).val = a := by
       rw [generator, ← ofAdd_nsmul, nsmul_one, ZMod.natCast_zmod_val, ofAdd_toAdd]
-    rw [← pointsMulEquiv_apply, ← ha, map_pow, map_pow, Subgroup.coe_pow, Units.val_pow_eq_pow_val,
-      pointsMulEquiv_apply, hχ, ha]
+    rw [← ha, map_pow, ofConv_pow_apply_single_generator, hχ, ha]
   rw [isAGenerator_iff_X_pow_sub_one_eq_prod]
   intro h
   simp only [hval] at h
@@ -213,20 +224,9 @@ theorem not_isAGenerator_of_eq_root (p : ℕ) [Fact p.Prime]
     (g := fun k ↦ AdjoinRoot.root (X ^ p - 1 : (ZMod p)[X]) ^ k) (t := Finset.range p)
     (by simp [ZMod.val_lt]) (by simp) (by simp) (by simp +contextual [Nat.mod_eq_of_lt])
     (by simp)] at hcoeff
-  have hdvd : (X ^ p - 1 : (ZMod p)[X]) ∣ ∑ k ∈ Finset.range p, X ^ k := by
-    rw [← AdjoinRoot.mk_eq_zero, map_sum]
-    simpa using hcoeff
-  -- but `1 + X + ⋯ + X ^ (p - 1)` is nonzero of degree less than `p`
-  have hdeg := (monic_X_pow_sub_one hp.ne_zero).natDegree_le_of_dvd
-    (monic_geom_sum_X hp.ne_zero).ne_zero hdvd
-  have hle : (∑ k ∈ Finset.range p, X ^ k : (ZMod p)[X]).natDegree ≤ p - 1 :=
-    natDegree_sum_le_of_forall_le _ _ fun k hk ↦ by
-      rw [natDegree_X_pow]
-      have := Finset.mem_range.mp hk
-      lia
-  rw [← C_1, natDegree_X_pow_sub_C] at hdeg
-  have := hp.pos
-  lia
+  refine not_X_pow_sub_one_dvd_geom_sum (R := ZMod p) hp.ne_zero ?_
+  rw [← AdjoinRoot.mk_eq_zero, map_sum]
+  simpa using hcoeff
 
 /-- The homomorphism `ℤ/p → μ_p` of `not_isAGenerator_of_eq_root` exists: over
 `𝔽_p[X]/(X ^ p - 1)` there is a homomorphism `a ↦ θ ^ a` from `ℤ/p` to the points of `μ_p`, where

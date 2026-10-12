@@ -137,6 +137,13 @@ lemma pointsMulEquiv_apply (n : ℕ)
     characterMulEquivRootsOfUnity_apply]
   exact DiagonalizableGroup.charOfPoint_apply_coe f.ofConv (generator n)
 
+/-- The value of a power of a point on the standard generator is the power of its value. -/
+lemma ofConv_pow_apply_single_generator (n : ℕ)
+    (f : WithConv (MonoidAlgebra R (Multiplicative (ZMod n)) →ₐ[R] A)) (k : ℕ) :
+    (f ^ k).ofConv (MonoidAlgebra.single (generator n) 1) =
+      f.ofConv (MonoidAlgebra.single (generator n) 1) ^ k := by
+  simp only [← pointsMulEquiv_apply, map_pow, Subgroup.coe_pow, Units.val_pow_eq_pow_val]
+
 /-- The points equivalence is natural in the value algebra. -/
 lemma pointsMulEquiv_mapValue (n : ℕ) (φ : A →ₐ[R] B)
     (f : WithConv (MonoidAlgebra R (Multiplicative (ZMod n)) →ₐ[R] A)) :
