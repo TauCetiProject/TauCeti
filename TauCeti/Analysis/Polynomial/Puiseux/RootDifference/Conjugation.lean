@@ -75,8 +75,9 @@ theorem exists_root_sub_eq_zpow_mul_unit_conj {d a c : ℕ}
   let w : Fin d → Fin d → E × ℂ → ℂ := fun i j ↦
     if hij : i ≠ j then w₀ i j hij else fun _ ↦ 0
   let T : E × ℂ → E × ℂ := fun p ↦ (τ p.1, conj p.2)
-  have hTt : Tendsto T (𝓝 (x₀, (0 : ℂ))) (𝓝 (x₀, (0 : ℂ))) :=
-    tendsto_conjParam hτ hτ0
+  have hTt : Tendsto T (𝓝 (x₀, (0 : ℂ))) (𝓝 (x₀, (0 : ℂ))) := by
+    simpa only [T, Prod.map_def, hτ0, map_zero] using hτ.tendsto.prodMap_nhds
+      (Complex.continuous_conj.tendsto (0 : ℂ))
   -- Compare the two forms for each pair using conjugation of the roots.
   have hcompat (i j : Fin d) (hij : i ≠ j) (hσij : σ i ≠ σ j) :
       e₀ (σ i) (σ j) hσij = e₀ i j hij ∧

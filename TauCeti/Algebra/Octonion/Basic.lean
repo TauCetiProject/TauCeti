@@ -460,6 +460,16 @@ def normQuadraticForm (R : Type*) [CommRing R] : QuadraticForm R (Octonion R) :=
 
 @[simp] theorem normQuadraticForm_apply (x : Octonion R) : normQuadraticForm R x = norm x := (rfl)
 
+/-- Left multiplication scales the polar norm form by the norm of the multiplying octonion. -/
+theorem polar_norm_mul_left {R : Type*} [CommRing R] (x y z : TauCeti.Octonion R) :
+    QuadraticMap.polar (TauCeti.Octonion.normQuadraticForm R) (x * y) (x * z) =
+      TauCeti.Octonion.norm x * QuadraticMap.polar (TauCeti.Octonion.normQuadraticForm R) y z := by
+  rw [QuadraticMap.polar, QuadraticMap.polar]
+  simp only [TauCeti.Octonion.normQuadraticForm_apply]
+  rw [← mul_add]
+  simp only [TauCeti.Octonion.norm_mul]
+  ring
+
 /-- The polar form of the norm, read off the entries of the two vector matrices. Stated for
 `QuadraticMap.polar` rather than for `QuadraticMap.polarBilin`, which `simp` unfolds to it. Not a
 `simp` lemma: the polar form and its half `QuadraticMap.associated` are the interface the Hermitian

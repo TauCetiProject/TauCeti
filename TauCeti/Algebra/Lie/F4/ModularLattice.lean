@@ -323,15 +323,6 @@ abbrev f4PinnedRootIndex (α : (F4.cartanSubalgebra valid_F4).root) : Fin 48 :=
       f4ModularRootVector (f4PinnedRootIndex α) := by
   rw [f4ModularRootVector_eq_basis, f4KillingRootLabel_f4PinnedRootIndex]
 
-/-- In the pinned F₄ table the root opposite to a simple root is the corresponding entry in the
-second half of the table. -/
-@[simp] theorem f4OppositeRootIndex_castAdd (i : Fin 4) :
-    f4OppositeRootIndex (Fin.castAdd 44 i) =
-      Fin.addNat (Fin.castAdd 20 i) 24 := by
-  rw [f4OppositeRootIndex_eq_reflectionPerm, f4SimplyConnectedRootDatum_reflectionPerm]
-  revert i
-  decide
-
 /-- The pinned root index of a positive or negative simple root. -/
 def f4SignedSimpleRootIndex : Fin 4 ⊕ Fin 4 → Fin 48
   | .inl i => Fin.castAdd 44 i

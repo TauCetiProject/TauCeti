@@ -109,6 +109,20 @@ noncomputable def weightTorusCoordinateBialgHom (wt : Fin N → sigma → ℤ) :
   exact DiagonalizableGroup.diagonalCoordinateMap (Pi.basisFun S (Fin N))
     (fun i => SplitTorus.weightCharacter (wt i))
 
+/-- The direct weight-torus morphism is the diagonal representation with the prescribed
+integral weight characters. -/
+@[simp]
+theorem weightTorusCoordinateBialgHom_def [Fintype sigma] (wt : Fin N → sigma → ℤ) :
+    weightTorusCoordinateBialgHom (S := S) wt =
+      DiagonalizableGroup.diagonalCoordinateMap (Pi.basisFun S (Fin N))
+        (fun i ↦ SplitTorus.weightCharacter (wt i)) := by
+  rw [weightTorusCoordinateBialgHom]
+  congr 1
+  funext i
+  apply Multiplicative.toAdd.injective
+  ext j
+  simp
+
 /-- A generic matrix entry maps under the direct weight-torus bialgebra morphism to the
 prescribed character on the diagonal, and to zero off the diagonal. -/
 @[simp]

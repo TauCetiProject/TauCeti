@@ -215,6 +215,29 @@ theorem stableDerivations.mem_lieSubmodule (S : Submodule R A) (x : A) :
     x ∈ stableDerivations.lieSubmodule R S ↔ x ∈ S :=
   Iff.rfl
 
+/-- A derivation preserving two submodules preserves their intersection. -/
+theorem mem_stableDerivations_inf {R A : Type*} [CommRing R] [NonUnitalNonAssocRing A]
+    [Module R A] [SMulCommClass R A A] [IsScalarTower R A A]
+    (S T : Submodule R A) (D : TauCeti.derivationLieAlgebra R A)
+    (hS : D ∈ TauCeti.stableDerivations R S) (hT : D ∈ TauCeti.stableDerivations R T) :
+    D ∈ TauCeti.stableDerivations R (S ⊓ T) := by
+  rw [TauCeti.mem_stableDerivations]
+  intro x hx
+  rw [Submodule.mem_inf] at hx ⊢
+  exact ⟨hS x hx.1, hT x hx.2⟩
+
+/-- A derivation preserving every submodule in a family preserves their intersection. -/
+theorem mem_stableDerivations_iInf {R A ι : Type*} [CommRing R] [NonUnitalNonAssocRing A]
+    [Module R A] [SMulCommClass R A A] [IsScalarTower R A A]
+    (S : ι → Submodule R A) (D : TauCeti.derivationLieAlgebra R A)
+    (hS : ∀ i, D ∈ TauCeti.stableDerivations R (S i)) :
+    D ∈ TauCeti.stableDerivations R (⨅ i, S i) := by
+  rw [mem_stableDerivations]
+  intro x hx
+  rw [Submodule.mem_iInf] at hx ⊢
+  intro i
+  exact (mem_stableDerivations R (S i) D).1 (hS i) x (hx i)
+
 end Stabilizer
 
 section Unital

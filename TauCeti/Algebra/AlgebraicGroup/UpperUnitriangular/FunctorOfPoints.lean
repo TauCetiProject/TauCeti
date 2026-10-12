@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.AlgebraicGroup.PointsFunctor
 public import TauCeti.Algebra.AlgebraicGroup.UpperUnitriangular.Coordinate.HopfAlgebra
 
 /-!
@@ -41,8 +40,6 @@ The layout follows `GeneralLinear.FunctorOfPoints`.
 
 public section
 
-open scoped TensorProduct
-
 namespace TauCeti.UpperUnitriangular
 
 open Algebra.TensorProduct CategoryTheory WithConv
@@ -67,13 +64,6 @@ private theorem isUpperUnitriangular_matrixOfPoint
     (matrixOfPoint R m f).IsUpperUnitriangular :=
   (isUpperUnitriangular_genericMatrix R m).map
     (f.ofConv.comp (coordinateHopfAlgebraAlgEquiv R m).toAlgHom)
-
-@[simp]
-private theorem matrixOfPoint_apply
-    (f : WithConv (coordinateHopfAlgebra R m →ₐ[R] A)) (i j : m) :
-    matrixOfPoint R m f i j =
-      f.ofConv (coordinateHopfAlgebraAlgEquiv R m (genericMatrix R m i j)) := by
-  rfl
 
 /-- The upper-unitriangular matrix obtained by evaluating a point on the generic matrix. -/
 noncomputable def pointToUpperUnitriangular
@@ -209,7 +199,7 @@ theorem pointsMulEquiv_mapValue {B : Type*} [CommRing B] [Algebra R B]
     (φ : A →ₐ[R] B) (f : WithConv (coordinateHopfAlgebra R m →ₐ[R] A)) :
     pointsMulEquiv R m (AlgHom.mapValue (H := coordinateHopfAlgebra R m) φ f) =
       UpperUnitriangularGroup.map φ.toRingHom (pointsMulEquiv R m f) := by
-  exact pointToUpperUnitriangular_mapValue R m φ f
+  simpa only [pointsMulEquiv_apply] using pointToUpperUnitriangular_mapValue R m φ f
 
 /-- Naturality of the inverse pointwise equivalence in the value algebra. -/
 theorem mapValue_pointsMulEquiv_symm_apply {B : Type*} [CommRing B] [Algebra R B]
@@ -226,7 +216,7 @@ section Functor
 
 /-- The group-valued functor sending a commutative `R`-algebra to its upper-unitriangular group,
 before the universe lift used by `upperUnitriangularFunctor`. -/
-private noncomputable abbrev upperUnitriangularFunctorUnlifted :
+private abbrev upperUnitriangularFunctorUnlifted :
     CommAlgCat.{w} R ⥤ GrpCat.{max v w} where
   obj A := GrpCat.of (upperUnitriangularGroup m (A : Type w))
   map φ := GrpCat.ofHom (UpperUnitriangularGroup.map φ.hom.toRingHom)
@@ -240,7 +230,7 @@ private noncomputable abbrev upperUnitriangularFunctorUnlifted :
 /-- The group-valued functor sending a commutative `R`-algebra to its upper-unitriangular group
 and a value-algebra morphism to entrywise application. Its values are universe-lifted so that its
 codomain agrees with the generic Hopf-algebra points functor. -/
-noncomputable def upperUnitriangularFunctor :
+def upperUnitriangularFunctor :
     CommAlgCat.{w} R ⥤ GrpCat.{max u v w} :=
   upperUnitriangularFunctorUnlifted (R := R) m ⋙ GrpCat.uliftFunctor.{u, max v w}
 

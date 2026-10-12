@@ -21,7 +21,7 @@ The excluded case, where the rectangle contains the turn row, is the turn-point 
 `GridDiagram.rectanglePentagonTurnCuts`: the same two underlying rectangles are instead read as an
 initial-side pentagon followed by a rectangle. This file is the half-turn mirror of the mixed
 `right = left` overlap of initial-side pentagons in
-`TauCeti.KnotTheory.Grid.Commutation.InitialPentagon.Overlap.Mixed.RightLeft`.
+`TauCeti.KnotTheory.Grid.Commutation.InitialPentagon.Overlap.Mixed.RightLeft.Basic`.
 
 Write `f` for the rectangle's terminal side and `c` for the pentagon's initial side, and `p`, `q`,
 `r` for the rows of the source state on `b`, `c` and `f`. The two domains share their top row `r`.
