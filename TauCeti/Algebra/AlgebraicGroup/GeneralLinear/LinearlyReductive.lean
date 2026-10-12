@@ -68,14 +68,13 @@ private theorem fixed_of_center_and_specialLinear (hn : 0 < n) (m : M)
   rw [Comodule.mem_fixedSubcomodule,
     Comodule.coact_eq_tmul_one_iff_forall_basePointsRepresentation_eq]
   intro g
-  have hroot (r : kˣ) : ∃ a : kˣ, a ^ Fintype.card (Fin n) = r := by
-    obtain ⟨a, ha⟩ := IsAlgClosed.exists_pow_nat_eq (r : k) hn
-    have ha0 : a ≠ 0 := by
-      rintro rfl
-      exact r.ne_zero (by simpa [zero_pow (Nat.ne_of_gt hn)] using ha.symm)
-    exact ⟨Units.mk0 a ha0, Units.ext (by simpa using ha)⟩
-  obtain ⟨s, hs'⟩ := Matrix.ProjectiveSpecialLinearGroup.toPGL_surj_of_roots hroot
-    (Matrix.ProjGenLinGroup.mk (pointsMulEquiv n g))
+  have : Nonempty (Fin n) := ⟨⟨0, hn⟩⟩
+  -- The inverse of Mathlib's isomorphism is the natural inclusion `toPGL` by construction.
+  have hsurj : Function.Surjective
+      (Matrix.ProjectiveSpecialLinearGroup.toPGL (n := Fin n) (R := k)) :=
+    (Matrix.ProjectiveSpecialLinearGroup.isoPSLOfAlgClosedOfNonempty
+      (n := Fin n) (F := k)).symm.surjective
+  obtain ⟨s, hs'⟩ := hsurj (Matrix.ProjGenLinGroup.mk (pointsMulEquiv n g))
   induction s using QuotientGroup.induction_on with
   | H s =>
     rw [Matrix.ProjectiveSpecialLinearGroup.toPGL_mk,
