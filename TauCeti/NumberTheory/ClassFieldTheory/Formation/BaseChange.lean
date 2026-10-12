@@ -164,8 +164,8 @@ theorem degree_baseChange_of_coprime
   refine Nat.dvd_antisymm (L.degree_baseChange_dvd hU') (hcop.symm.dvd_of_dvd_mul_right ?_)
   -- Both `[U' : V ⊓ U'] * [U : U']` and `[U : V] * [V : V ⊓ U']` are the index of `V ⊓ U'` in `U`.
   refine ⟨(L.baseChange hU').top.toSubgroup.relIndex L.top.toSubgroup, ?_⟩
-  rw [degree_eq_relIndex, degree_eq_relIndex, show U'.toSubgroup.relIndex L.ground.toSubgroup =
-      (L.baseChange hU').ground.toSubgroup.relIndex L.ground.toSubgroup from rfl,
+  rw [degree_eq_relIndex, degree_eq_relIndex,
+    ← congrArg (·.toSubgroup.relIndex L.ground.toSubgroup) (L.baseChange_ground hU'),
     Subgroup.relIndex_mul_relIndex _ _ _
       (OpenSubgroup.toSubgroup_le.2 (L.baseChange hU').top_le_ground)
       (OpenSubgroup.toSubgroup_le.2 (L.baseChange_ground_le hU')),
@@ -189,8 +189,8 @@ theorem coe_norm_baseChange (hdeg : (L.baseChange hU').degree = L.degree)
   refine Fintype.sum_bijective _ (L.baseChangeGalHom_bijective hU' hdeg) _ _ fun γ ↦ ?_
   induction γ using QuotientGroup.induction_on with
   | H u =>
-    rw [baseChangeGalHom_mk, rep_ρ_mk_apply_coe, rep_ρ_mk_apply_coe]
-    rfl
+    rw [baseChangeGalHom_mk, rep_ρ_mk_apply_coe, rep_ρ_mk_apply_coe, Submodule.coe_inclusion,
+      Subgroup.coe_inclusion]
 
 /-- The **restriction** `A^U / N_{U/V}(A^V) → A^{U'} / N_{U'/(V ⊓ U')}(A^{V ⊓ U'})` of norm
 quotients to the base change, induced by the inclusion `A^U ⊆ A^{U'}`. It is defined when the base
