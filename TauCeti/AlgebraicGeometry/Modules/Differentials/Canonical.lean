@@ -51,6 +51,10 @@ private def differentialCoordinateEquiv :
     Ω[X.functionField⁄k] ≃ₗ[X.functionField] X.functionField :=
   (kaehlerBasisOfSeparating ht).equivFun.trans (LinearEquiv.funUnique Unit _ _)
 
+private lemma differentialCoordinateEquiv_apply (ω : Ω[X.functionField⁄k]) :
+    differentialCoordinateEquiv ht ω = (kaehlerBasisOfSeparating ht).coord () ω := by
+  simp [differentialCoordinateEquiv, Module.Basis.coord_apply]
+
 private lemma differentialCoordinateEquiv_symm_apply (f : X.functionField) :
     (differentialCoordinateEquiv ht).symm f = f • KaehlerDifferential.D k X.functionField t := by
   simp only [differentialCoordinateEquiv, LinearEquiv.trans_symm,
@@ -90,8 +94,7 @@ private def differentialCoordinateHom : X.relativeDifferentials k ⟶ Scheme.rat
     let := hU
     simp only [dite_eq_left hU, dite_eq_left hV]
     ext s
-    exact differentialCoordinateApp_naturality ht i.unop
-      (id s : Γ(X.relativeDifferentials k, U.unop))
+    exact differentialCoordinateApp_naturality ht i.unop s
   · ext s
     exact TopCat.Presheaf.section_ext
       ⟨(Scheme.rationalFunctions X).presheaf, (Scheme.rationalFunctions X).isSheaf⟩
@@ -124,66 +127,11 @@ variable [IsAlgClosed k] [IsLocallyNoetherian X]
   [SheafOfModules.isInvertible X (X.relativeDifferentials k)]
   (hF : IsFunctionField k X.functionField)
 
-/-- The rational differential `f dt` is regular on `U` exactly when `f` satisfies the
-order bounds of the divisor of the Weil differential `dt`. -/
-private lemma smul_d_mem_range_iff (U : X.Opens) [Nonempty U]
-    (hU : ∀ y ∈ U, coheight y ≤ 1) (f : X.functionField) :
-    f • KaehlerDifferential.D k X.functionField t ∈ Set.range (rationalDifferential k U) ↔
-      f = 0 ∨ ∀ (y : CodimensionOnePoint X), (y : X) ∈ U →
-        -weilDifferentialOrder hF isIntegrallyClosedIn_of_isAlgClosed
-          (weilDifferentialOfSeparating hF ht).2
-          (by simpa only [ne_eq, Submodule.coe_eq_zero] using
-            weilDifferentialOfSeparating_ne_zero hF ht) (X.toPlace (k := k) (y : X)) ≤
-            X.ord f y := by
-  let := weilDifferentialSpaceModule hF
-  by_cases hf : f = 0
-  · subst f
-    simp
-  let ω := f • weilDifferentialOfSeparating hF ht
-  have hω : (ω : Module.Dual k (repartitionSpace k X.functionField)) ≠ 0 := by
-    rw [coe_weilDifferentialSpaceModule_smul]
-    exact repartitionDualMul_ne_zero hF hf
-      (by simpa only [ne_eq, Submodule.coe_eq_zero] using
-        weilDifferentialOfSeparating_ne_zero hF ht)
-  have he : (kaehlerDifferentialEquivWeilDifferentialOfSeparating hF
-      isIntegrallyClosedIn_of_isAlgClosed ht).symm ω =
-      f • KaehlerDifferential.D k X.functionField t := by
-    simp [ω]
-  rw [← he, mem_range_rationalDifferential_iff_weilDifferentialOrder_nonneg_of_isAlgClosed
-    hF ht U hU (fun _ _ ↦ inferInstance) ω hω]
-  simp only [hf, false_or]
-  have hdiv := weilDifferentialDivisor_repartitionDualMul hF
-    isIntegrallyClosedIn_of_isAlgClosed (weilDifferentialOfSeparating hF ht).2
-      (by simpa only [ne_eq, Submodule.coe_eq_zero] using
-        weilDifferentialOfSeparating_ne_zero hF ht) (Units.mk0 f hf)
-  have hcoe : (ω : Module.Dual k (repartitionSpace k X.functionField)) =
-      repartitionDualMul hF f (weilDifferentialOfSeparating hF ht) :=
-    coe_weilDifferentialSpaceModule_smul _ _ _
-  apply forall_congr'
-  intro y
-  apply forall_congr'
-  intro hy
-  have hord : weilDifferentialOrder hF isIntegrallyClosedIn_of_isAlgClosed ω.2 hω
-      (X.toPlace (k := k) (y : X)) = X.ord f y +
-        weilDifferentialOrder hF isIntegrallyClosedIn_of_isAlgClosed
-          (weilDifferentialOfSeparating hF ht).2
-          (by simpa only [ne_eq, Submodule.coe_eq_zero] using
-            weilDifferentialOfSeparating_ne_zero hF ht) (X.toPlace (k := k) (y : X)) := by
-    have hdiv' := (weilDifferentialDivisor_congr hF
-      isIntegrallyClosedIn_of_isAlgClosed hcoe ω.2 hω _ _).trans hdiv
-    rw [← coeff_weilDifferentialDivisor, ← coeff_weilDifferentialDivisor,
-      hdiv', WeilDivisor.coeff_add, Divisor.coeff_principal]
-    rw [CodimensionOnePoint.toPlace_ord]
-    rfl
-  rw [hord]
-  omega
-
 variable (hdim : ∀ y : X, coheight y ≤ 1) (K : SchemeWeilDivisor X)
   (hK : ∀ y : CodimensionOnePoint X, WeilDivisor.coeff K y =
     weilDifferentialOrder hF isIntegrallyClosedIn_of_isAlgClosed
       (weilDifferentialOfSeparating hF ht).2
-      (by simpa only [ne_eq, Submodule.coe_eq_zero] using
-        weilDifferentialOfSeparating_ne_zero hF ht) (X.toPlace (k := k) (y : X)))
+      (coe_weilDifferentialOfSeparating_ne_zero hF ht) (X.toPlace (k := k) (y : X)))
 
 include hF hdim hK in
 private lemma range_differentialCoordinateHom_app (U : X.Opens)
@@ -194,7 +142,7 @@ private lemma range_differentialCoordinateHom_app (U : X.Opens)
   · let := hU
     rw [SchemeWeilDivisor.mem_sections_iff]
     simp_rw [hK]
-    rw [← smul_d_mem_range_iff ht hF U (fun y _ ↦ hdim y),
+    rw [← smul_D_mem_range_rationalDifferential_iff_of_isAlgClosed hF ht U (fun y _ ↦ hdim y),
       ← differentialCoordinateEquiv_symm_apply ht]
     constructor
     · rintro ⟨a, rfl⟩
@@ -236,8 +184,8 @@ lemma relativeDifferentialsIsoDivisorSheaf_hom_app (U : X.Opens) [Nonempty U]
       ((relativeDifferentialsIsoDivisorSheaf ht hF hdim K hK).hom.app U s)) =
       (kaehlerBasisOfSeparating ht).coord () (rationalDifferential k U s) := by
   rw [relativeDifferentialsIsoDivisorSheaf, asIso_hom,
-    SchemeWeilDivisor.sheafι_app_sheafLift, differentialCoordinateHom_app]
-  rfl
+    SchemeWeilDivisor.sheafι_app_sheafLift, differentialCoordinateHom_app,
+    differentialCoordinateEquiv_apply]
 
 /-- The inverse divisor-sheaf isomorphism sends a rational coefficient `f` to `f dt`. -/
 @[simp]
@@ -271,8 +219,8 @@ theorem nonempty_iso_relativeDifferentials_canonicalBundle :
   obtain ⟨t, ht, hsep⟩ := hF.exists_transcendental_and_isSeparable_adjoin_of_perfectField
   let := hsep
   let ω := weilDifferentialOfSeparating hF ht
-  have hω : (ω : Module.Dual k (repartitionSpace k X.functionField)) ≠ 0 := by
-    simpa only [ne_eq, Submodule.coe_eq_zero] using weilDifferentialOfSeparating_ne_zero hF ht
+  have hω : (ω : Module.Dual k (repartitionSpace k X.functionField)) ≠ 0 :=
+    coe_weilDifferentialOfSeparating_ne_zero hF ht
   let K := (SchemeWeilDivisor.equivFunctionFieldDivisor hex hdim).symm
     (weilDifferentialDivisor hF isIntegrallyClosedIn_of_isAlgClosed ω.2 hω)
   have hK (y : CodimensionOnePoint X) : WeilDivisor.coeff K y =

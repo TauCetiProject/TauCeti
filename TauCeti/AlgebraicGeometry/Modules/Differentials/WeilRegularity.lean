@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.Modules.Differentials.Rational
-public import TauCeti.AlgebraicGeometry.Scheme.Place.Basic
+public import TauCeti.AlgebraicGeometry.WeilDivisor.Scheme.Place
 public import TauCeti.FieldTheory.FunctionField.Differential.Regular
 public import TauCeti.RingTheory.Kaehler.MapSemilinear
 
@@ -150,6 +150,59 @@ theorem mem_range_rationalDifferential_iff_weilDifferentialOrder_nonneg_of_isAlg
   intro y hy
   let := hDVR y hy
   exact (X.toPlace (k := k) (y : X)).degree_eq_one_of_isAlgClosed_of_isFunctionField hF
+
+variable [IsLocallyNoetherian X]
+  [∀ y : CodimensionOnePoint X, IsDiscreteValuationRing (X.presheaf.stalk (y : X))]
+
+/-- The rational differential `f dt` is regular on `U` exactly when `f` satisfies the
+order bounds of the divisor of the Weil differential `dt`. -/
+theorem smul_D_mem_range_rationalDifferential_iff_of_isAlgClosed (U : X.Opens) [Nonempty U]
+    (hU : ∀ y ∈ U, coheight y ≤ 1) (f : X.functionField) :
+    f • KaehlerDifferential.D k X.functionField t ∈ Set.range (rationalDifferential k U) ↔
+      f = 0 ∨ ∀ (y : CodimensionOnePoint X), (y : X) ∈ U →
+        -weilDifferentialOrder hF isIntegrallyClosedIn_of_isAlgClosed
+          (weilDifferentialOfSeparating hF ht).2
+          (coe_weilDifferentialOfSeparating_ne_zero hF ht) (X.toPlace (k := k) (y : X)) ≤
+            X.ord f y := by
+  let := weilDifferentialSpaceModule hF
+  by_cases hf : f = 0
+  · subst f
+    simp
+  let ω := f • weilDifferentialOfSeparating hF ht
+  have hω : (ω : Module.Dual k (repartitionSpace k X.functionField)) ≠ 0 := by
+    rw [coe_weilDifferentialSpaceModule_smul]
+    exact repartitionDualMul_ne_zero hF hf
+      (coe_weilDifferentialOfSeparating_ne_zero hF ht)
+  have he : (kaehlerDifferentialEquivWeilDifferentialOfSeparating hF
+      isIntegrallyClosedIn_of_isAlgClosed ht).symm ω =
+      f • KaehlerDifferential.D k X.functionField t := by
+    simp [ω]
+  rw [← he, mem_range_rationalDifferential_iff_weilDifferentialOrder_nonneg_of_isAlgClosed
+    hF ht U hU (fun _ _ ↦ inferInstance) ω hω]
+  simp only [hf, false_or]
+  have hdiv := weilDifferentialDivisor_repartitionDualMul hF
+    isIntegrallyClosedIn_of_isAlgClosed (weilDifferentialOfSeparating hF ht).2
+      (coe_weilDifferentialOfSeparating_ne_zero hF ht) (Units.mk0 f hf)
+  have hcoe : (ω : Module.Dual k (repartitionSpace k X.functionField)) =
+      repartitionDualMul hF f (weilDifferentialOfSeparating hF ht) :=
+    coe_weilDifferentialSpaceModule_smul _ _ _
+  apply forall_congr'
+  intro y
+  apply forall_congr'
+  intro hy
+  have hord : weilDifferentialOrder hF isIntegrallyClosedIn_of_isAlgClosed ω.2 hω
+      (X.toPlace (k := k) (y : X)) = X.ord f y +
+        weilDifferentialOrder hF isIntegrallyClosedIn_of_isAlgClosed
+          (weilDifferentialOfSeparating hF ht).2
+          (coe_weilDifferentialOfSeparating_ne_zero hF ht) (X.toPlace (k := k) (y : X)) := by
+    have hdiv' := (weilDifferentialDivisor_congr hF
+      isIntegrallyClosedIn_of_isAlgClosed hcoe ω.2 hω _ _).trans hdiv
+    rw [← coeff_weilDifferentialDivisor, ← coeff_weilDifferentialDivisor,
+      hdiv', WeilDivisor.coeff_add, Divisor.coeff_principal]
+    rw [CodimensionOnePoint.toPlace_ord]
+    simp only [Units.val_mk0]
+  rw [hord]
+  omega
 
 end IsAlgClosed
 
