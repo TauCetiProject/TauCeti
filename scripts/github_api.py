@@ -19,6 +19,13 @@ import time
 
 
 class APIError(RuntimeError):
+    """A failed API request, retaining its HTTP status and parsed response data.
+
+    ``status`` is zero when no HTTP response was received; ``data`` then holds
+    a bounded diagnostic with the request's credentials redacted. The exception
+    message identifies the method/path and the server's message, if present.
+    """
+
     def __init__(self, method, path, status, data):
         self.status, self.data = status, data
         message = data.get("message", "request failed") if isinstance(data, dict) else "request failed"
@@ -66,6 +73,20 @@ def retry_after(value, now):
 
 
 class GitHub:
+    """A gh-backed client with separate read/write credentials and bounded retries.
+
+    Reads use GH_READ_TOKEN when set; writes retain GH_TOKEN so App mutations
+    can trigger downstream workflows. Without GH_READ_TOKEN, both use normal
+    gh authentication. ``max_wait`` caps cumulative retry sleeps in seconds
+    across this instance, excluding ordinary request time and write spacing.
+    Requests try at most three times; exhausted quota waits raise Deferred and
+    block further requests on that credential until reset. Mutations are spaced
+    by one second within this instance; separate processes are not coordinated.
+
+    Pagination helpers count every response. ``report`` emits request counts,
+    GraphQL costs and observed quota headers to stderr and the Actions summary.
+    """
+
     def __init__(self, *, max_wait=180):
         self.max_wait = max_wait
         self.waited = 0

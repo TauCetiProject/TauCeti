@@ -82,8 +82,11 @@ and a cold/missing state artifact inspect every open PR.
 
 Per-PR failures move to the artifact's retry queue while healthy work advances.
 After five failed recovery attempts for the same inputs, the PR is reported in
-warnings and the step summary and is skipped until its inputs/policy change or a
-manual full scan resets the state. Rate limits, transport outages, listing errors,
+warnings and the step summary. Transient server failures and non-capped incomplete
+file listings pause for six hours, then start another bounded retry cycle without
+requiring a PR edit. Non-transient failures remain exhausted until their
+inputs/policy change or a manual full scan resets the state.
+Rate limits, transport outages, listing errors,
 and failed artifact uploads fail the workflow and retain the previous successful
 window. Completed progress is saved even on a deferred run, so the next pass can
 skip its successful prefix. The state comes only from this main-branch workflow;
@@ -108,6 +111,52 @@ tally output, and never posts attribution nudges. Only paginated diffs/labels ne
 individual queries. Existing associations remain protected unless
 `--allow-relabel` is supplied; structure nudges, when explicitly requested, remain
 independent of that label opt-in.
+
+## Capacity planning
+
+This mitigation does not guarantee capacity for ten times the event rate. Each
+meaningful event run still needs a snapshot query; large diffs need more pages.
+The debounce coalesces rapid events only on the same PR. Recovery caches avoid
+repeated snapshots for unchanged PRs, but every sweep still lists all open PR
+metadata. Cold state must inspect every open PR and can need multiple quota
+windows to finish. The default reconciliation safety limit is 5,000 open PRs;
+exceeding it fails the listing and requires explicitly raising `--limit`.
+
+Estimate workflow GraphQL demand as meaningful event runs times measured points
+per snapshot, plus recovery points and other workflows. REST demand includes
+comment pages, label probes, open-PR listing pages, and artifact handoff. Keep
+headroom in each credential/resource bucket, using response headers and these
+scripts' counters together. Include burst traffic and cold-state recovery in
+capacity tests, not just average PR creation rates. GitHub also enforces secondary
+limits on concurrency and content generation; an hourly primary budget alone
+does not establish safe throughput. See the official
+[REST limits](https://docs.github.com/en/rest/using-the-rest-api/rate-limits-for-the-rest-api)
+and [GraphQL limits](https://docs.github.com/en/graphql/overview/rate-limits-and-query-limits-for-the-graphql-api).
+
+A smaller first scaling step is resource-specific credential routing: snapshot
+reads can use the App installation's GraphQL bucket (normally at least 5,000
+points/hour), which is separate from its REST bucket. The current client sends
+all reads to the workflow token instead. Measure other App GraphQL consumers
+before moving those reads, and retain the App credential for writes that must
+trigger downstream workflows. This increases available snapshot capacity but
+does not remove shared REST or secondary limits.
+
+For sustained growth, move event processing to a durable queue keyed by repository
+and PR, coalescing pending work to the newest input. A shared scheduler should pace
+writes across workers, retain quota reset times, and reserve capacity for required
+labels ahead of advisory comments and historical maintenance. Retry jitter and
+bounded worker concurrency prevent all deferred jobs from restarting together.
+Persist processed inputs and pending work so process restarts do not require a
+full rescan; keep a bounded periodic audit for missed events. Batch compatible
+GraphQL reads with measured query costs and node limits. These are follow-up
+architecture changes, not properties of the current Actions implementation.
+
+Monitor backlog age, classification latency, deferred/exhausted PR counts, and
+remaining quota per credential/resource. Select an explicit labeling latency
+target and alert before the projected workload consumes the available budget.
+If measured demand still exceeds that budget after eliminating duplicate work,
+evaluate a supported higher-quota deployment. Minting additional tokens for the
+same installation cannot increase throughput.
 
 For a local read-only inspection:
 
