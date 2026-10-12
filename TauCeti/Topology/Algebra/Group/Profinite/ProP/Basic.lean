@@ -30,6 +30,8 @@ separate topological fact is supplied by `QuotientGroup.instTotallyDisconnectedS
 
 * `IsProP`: every quotient by an open normal subgroup is a `p`-group.
 * `isProP_iff`: the defining property, as a lemma usable outside this module.
+* `IsPGroup.quotient_openNormalSubgroup_comap`: a quotient by the preimage of an open normal
+  subgroup is a `p`-group when the original quotient is.
 * `IsPGroup.isProP`: an abstract `p`-group with any topology is pro-`p`.
 * `isProP_of_module_zmod`: a commutative group whose additive copy is a `ZMod p`-module, for
   instance an elementary abelian group, is pro-`p`.
@@ -79,6 +81,14 @@ theorem isProP_iff {G : Type u} [Group G] [TopologicalSpace G] :
 namespace IsPGroup
 
 variable {G : Type u} [Group G] [TopologicalSpace G]
+
+/-- The quotient by the preimage of an open normal subgroup is a `p`-group if the original
+quotient is a `p`-group. -/
+theorem _root_.IsPGroup.quotient_openNormalSubgroup_comap {H : Type v} [Group H]
+    [TopologicalSpace H] {U : OpenNormalSubgroup H} (hU : IsPGroup p (H ⧸ U.toSubgroup))
+    (f : G →* H) (hf : Continuous f) : IsPGroup p (G ⧸ (U.comap f hf).toSubgroup) :=
+  (hU.quotient_comap f).of_equiv
+    (QuotientGroup.quotientMulEquivOfEq (U.toSubgroup_comap f hf)).symm
 
 /-- An abstract `p`-group is pro-`p` for any topology: all of its group quotients are
 `p`-groups. -/
