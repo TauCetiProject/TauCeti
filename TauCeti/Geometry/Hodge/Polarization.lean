@@ -108,7 +108,7 @@ theorem complex_symm_weight (h : IsPolarization hℂ hs Q) (x y : Vℂ) :
 /-- The complexification of a polarizing form is nondegenerate. -/
 theorem complex_nondegenerate (h : IsPolarization hℂ hs Q) :
     LinearMap.BilinForm.Nondegenerate (bilinForm hℂ Q) :=
-  bilinForm_nondegenerate hℂ h.nondegenerate
+  nondegenerate_bilinForm hℂ h.nondegenerate
 
 /-- The first Hodge–Riemann relation transported to the conjugate filtration. -/
 theorem orthogonal_conjF (h : IsPolarization hℂ hs Q) (p : ℤ) {x y : Vℂ}

@@ -24,7 +24,7 @@ localization from `ℤ` to `ℚ` and then by scalar extension from `ℚ` to `ℂ
 
 * `IsBaseChange.bilinForm_conj`: the complex extension commutes with lattice-induced
   conjugation.
-* `IsBaseChange.bilinForm_nondegenerate`: the complex extension inherits
+* `IsBaseChange.nondegenerate_bilinForm`: the complex extension inherits
   nondegeneracy from the integral form.
 * `IsBaseChange.bilinForm_tensorLatticeMap`: complexification of the tensor product of two
   integral forms is the tensor product of their complexifications.
@@ -82,7 +82,7 @@ theorem _root_.IsBaseChange.bilinForm_conj (hℂ : IsBaseChange ℂ ιℂ) (Q : 
   | add x₁ x₂ hx₁ hx₂ => simp [hx₁, hx₂]
 
 /-- Complexification preserves nondegeneracy of an integral bilinear form. -/
-theorem _root_.IsBaseChange.bilinForm_nondegenerate (hℂ : IsBaseChange ℂ ιℂ)
+theorem _root_.IsBaseChange.nondegenerate_bilinForm (hℂ : IsBaseChange ℂ ιℂ)
     {Q : LinearMap.BilinForm ℤ V} (hQ : Q.Nondegenerate) :
     (bilinForm hℂ Q).Nondegenerate := by
   have hn : (Q.baseChange ℂ).Nondegenerate := by
