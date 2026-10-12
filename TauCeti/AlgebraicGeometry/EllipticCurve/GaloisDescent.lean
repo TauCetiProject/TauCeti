@@ -88,12 +88,13 @@ theorem mem_range_baseChange_iff_fixed (C : VariableChange L) :
       ∀ σ : Gal(L/K), C.map (σ : L →+* L) = C := by
   constructor
   · rintro ⟨D, rfl⟩ σ
-    ext <;> simp [VariableChange.baseChange, VariableChange.map, AlgEquiv.commutes]
+    exact D.map_baseChange (σ : L →ₐ[K] L)
   · intro h
     have fixed (f : VariableChange L → L)
         (hf : ∀ σ : Gal(L/K), f (C.map σ) = σ (f C)) :
         f C ∈ Set.range (algebraMap K L) :=
       (InfiniteGalois.mem_range_algebraMap_iff_fixed _).2 fun σ ↦ by rw [← hf, h]
+    -- `map` applies σ coefficientwise; the unit coefficient coerces via `Units.map`.
     obtain ⟨u, hu⟩ := fixed (fun D ↦ (D.u : L)) fun _ ↦ rfl
     obtain ⟨r, hr⟩ := fixed VariableChange.r fun _ ↦ rfl
     obtain ⟨s, hs⟩ := fixed VariableChange.s fun _ ↦ rfl
@@ -102,6 +103,7 @@ theorem mem_range_baseChange_iff_fixed (C : VariableChange L) :
       rintro rfl
       exact C.u.ne_zero (hu.symm.trans (map_zero _))
     refine ⟨⟨Units.mk0 u hu₀, r, s, t⟩, ?_⟩
+    -- `baseChange` is `map (algebraMap K L)`, and `Units.mk0` has value `u`.
     exact VariableChange.ext (Units.ext hu) hr hs ht
 
 end VariableChange
@@ -118,7 +120,7 @@ nontrivial `σ ∈ Gal(L/K)` has all its coefficients in `K`, so it is the base 
 of variables over `K`. -/
 lemma exists_baseChange_eq_of_map_eq {σ : L ≃ₐ[K] L} (hσ : σ ≠ 1) {C : VariableChange L}
     (hCinv : C.map σ.toAlgHom.toRingHom = C) : ∃ CK : VariableChange K, CK.baseChange L = C := by
-  apply (mem_range_baseChange_iff_fixed C).2
+  refine Set.mem_range.mp ((mem_range_baseChange_iff_fixed C).2 ?_)
   intro τ
   rcases algEquiv_eq_one_or_eq K L hσ τ with rfl | rfl
   · simp [AlgEquiv.aut_one]

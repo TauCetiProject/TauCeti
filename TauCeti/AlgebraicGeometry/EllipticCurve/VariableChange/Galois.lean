@@ -35,6 +35,7 @@ theorem isLocallyConstant_map (C : VariableChange L)
     (IsLocallyConstant.iff_eventually_eq _).1 hs.isLocallyConstant_apply σ₀,
     (IsLocallyConstant.iff_eventually_eq _).1 ht.isLocallyConstant_apply σ₀]
     with σ hu hr hs ht
+  -- `map` applies σ coefficientwise; `Units.map` coerces to the image of the unit value.
   exact VariableChange.ext (Units.ext hu) hr hs ht
 
 /-- Over an algebraic extension, every change of variables has a locally constant Galois orbit. -/

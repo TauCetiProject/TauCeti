@@ -60,6 +60,12 @@ instance : DiscreteTopology (W.AutCoeff L) := ⟨rfl⟩
 /-- Identify the discrete coefficient group with the stabilizer of the base-changed equation. -/
 def autCoeffEquiv : (W.baseChange L).autGroup ≃* W.AutCoeff L := MulEquiv.refl _
 
+/-- Automorphism coefficients are determined by their underlying change of variables. -/
+@[ext]
+theorem AutCoeff.ext {a b : W.AutCoeff L}
+    (h : ((W.autCoeffEquiv L).symm a).val = ((W.autCoeffEquiv L).symm b).val) : a = b :=
+  (W.autCoeffEquiv L).symm.injective (Subtype.ext h)
+
 variable {L}
 
 instance : SMul Gal(L/K) (W.AutCoeff L) where
@@ -81,20 +87,16 @@ theorem smul_autCoeffEquiv (σ : Gal(L/K)) (a : (W.baseChange L).autGroup) :
 
 instance : MulDistribMulAction Gal(L/K) (W.AutCoeff L) where
   one_smul a := by
-    apply (W.autCoeffEquiv L).symm.injective
-    apply Subtype.ext
+    apply AutCoeff.ext
     simp [AlgEquiv.aut_one]
   mul_smul σ τ a := by
-    apply (W.autCoeffEquiv L).symm.injective
-    apply Subtype.ext
+    apply AutCoeff.ext
     simp [AlgEquiv.aut_mul, VariableChange.map_map]
   smul_one σ := by
-    apply (W.autCoeffEquiv L).symm.injective
-    apply Subtype.ext
+    apply AutCoeff.ext
     simp
   smul_mul σ a b := by
-    apply (W.autCoeffEquiv L).symm.injective
-    apply Subtype.ext
+    apply AutCoeff.ext
     simp
 
 /-- Over an algebraic extension the discrete automorphism group has a continuous Galois
@@ -107,7 +109,7 @@ instance AutCoeff.instContinuousSMul [Algebra.IsAlgebraic K L] :
   convert h using 1
   ext σ
   simp only [SetLike.mem_coe, MulAction.mem_stabilizer_iff, Set.mem_ofPred_eq,
-    ← (W.autCoeffEquiv L).symm.injective.eq_iff, Subtype.ext_iff, autCoeffEquiv_symm_smul, C]
+    AutCoeff.ext_iff, autCoeffEquiv_symm_smul, C]
 
 namespace VariableChange
 
@@ -131,11 +133,10 @@ def twistCocycle : NonabelianH1.Cocycle Gal(L/K) (W.AutCoeff L) where
       (fun D ↦ C * D⁻¹)).isOpen_fiber (((W.autCoeffEquiv L).symm a).val) using 1
     ext σ
     simp only [Set.mem_preimage, Set.mem_singleton_iff, Function.comp_apply,
-      ← (W.autCoeffEquiv L).symm.injective.eq_iff, Subtype.ext_iff,
+      AutCoeff.ext_iff,
       MulEquiv.symm_apply_apply, Set.mem_ofPred_eq]
   map_mul' σ τ := by
-    apply (W.autCoeffEquiv L).symm.injective
-    apply Subtype.ext
+    apply AutCoeff.ext
     simp only [_root_.map_mul, Subgroup.coe_mul, autCoeffEquiv_symm_smul,
       MulEquiv.symm_apply_apply, VariableChange.map_mul, VariableChange.map_inv,
       VariableChange.map_map]
@@ -171,8 +172,7 @@ theorem twistCohomologyClass_eq (D : VariableChange L)
   refine NonabelianH1.mk_eq_mk_iff.2
     ⟨W.autCoeffEquiv L ⟨C * D⁻¹, mul_inv_mem_stabilizer_of_smul_eq C D hC hD⟩,
       fun σ ↦ ?_⟩
-  apply (W.autCoeffEquiv L).symm.injective
-  apply Subtype.ext
+  apply AutCoeff.ext
   simp only [_root_.map_mul, _root_.map_inv, Subgroup.coe_mul, Subgroup.coe_inv,
     autCoeffEquiv_symm_twistCocycle, autCoeffEquiv_symm_smul, MulEquiv.symm_apply_apply,
     VariableChange.map_mul, VariableChange.map_inv]
@@ -182,9 +182,8 @@ theorem twistCohomologyClass_eq (D : VariableChange L)
 @[simp]
 theorem twistCocycle_one :
     twistCocycle (W := W) (V := W) (1 : VariableChange L) (one_smul _ _) = 1 := by
-  ext σ
-  apply (W.autCoeffEquiv L).symm.injective
-  apply Subtype.ext
+  ext σ : 1
+  apply AutCoeff.ext
   simp [autCoeffEquiv_symm_twistCocycle]
 
 end Algebraic
@@ -231,12 +230,12 @@ theorem twistCohomologyClass_eq_iff {U : WeierstrassCurve K} (D : VariableChange
     rw [twistCohomologyClass_eq C hC (D * B.baseChange L) hDB,
       twistCohomologyClass_def, twistCohomologyClass_def]
     congr 1
-    ext σ
-    apply (W.autCoeffEquiv L).symm.injective
-    apply Subtype.ext
+    ext σ : 1
+    apply AutCoeff.ext
+    have hBfix : (B.baseChange L).map (σ : L →+* L) = B.baseChange L := by
+      simpa only [AlgEquiv.toAlgHom_toRingHom] using B.map_baseChange (σ : L →ₐ[K] L)
     rw [autCoeffEquiv_symm_twistCocycle, autCoeffEquiv_symm_twistCocycle,
-      VariableChange.map_mul,
-      (mem_range_baseChange_iff_fixed (B.baseChange L)).1 ⟨B, rfl⟩ σ]
+      VariableChange.map_mul, hBfix]
     group
 
 /-- A twist has trivial Galois cohomology class exactly when `V` is isomorphic to `W`
