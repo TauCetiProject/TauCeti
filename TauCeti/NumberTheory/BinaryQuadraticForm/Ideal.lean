@@ -230,7 +230,7 @@ theorem orderIdeal_ne_bot (f : BinaryQuadraticForm ℤ) (D : ℤ) (hf : f.discri
   norm_num at hi
 
 /-- The two ideal generators are independent if the leading coefficient is nonzero. -/
-theorem idealGenerators_linearIndependent (f : BinaryQuadraticForm ℤ) (D : ℤ) (ha : f.a ≠ 0) :
+theorem linearIndependent_idealGenerators (f : BinaryQuadraticForm ℤ) (D : ℤ) (ha : f.a ≠ 0) :
     LinearIndependent ℤ ![(f.a : QuadraticAlgebra ℚ (D : ℚ) 0), f.idealGenerator D] := by
   rw [LinearIndependent.pair_iff]
   intro m n h
@@ -267,7 +267,7 @@ private theorem coe_idealSpanEquiv_apply (f : BinaryQuadraticForm ℤ) (D : ℤ)
 noncomputable def idealBasis (f : BinaryQuadraticForm ℤ) (D : ℤ)
     (hf : f.discrim = D) (ha : f.a ≠ 0) :
     Module.Basis (Fin 2) ℤ (f.orderIdeal D hf) :=
-  (Module.Basis.span (idealGenerators_linearIndependent f D ha)).map (idealSpanEquiv f D hf)
+  (Module.Basis.span (linearIndependent_idealGenerators f D ha)).map (idealSpanEquiv f D hf)
 
 /-- The ideal basis maps to its defining two-generator family in the quadratic algebra. -/
 theorem coe_idealBasis_apply (f : BinaryQuadraticForm ℤ) (D : ℤ)
