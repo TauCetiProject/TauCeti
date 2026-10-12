@@ -69,7 +69,7 @@ def openCoverSingularTotalAugmentation :
 /-- On the summand of Čech degree zero, the augmentation of the total complex is the map of
 singular chains induced by the projection of the disjoint union of the family onto the ambient
 space. -/
-@[reassoc (attr := simp)]
+@[simp, reassoc]
 theorem ιTotal_openCoverSingularTotalAugmentation_f_zero (q : ℕ) :
     (openCoverSingularBicomplex U R).ιTotal (ComplexShape.down ℕ) 0 q q (zero_add q) ≫
         (openCoverSingularTotalAugmentation U R).f q =
@@ -80,7 +80,7 @@ theorem ιTotal_openCoverSingularTotalAugmentation_f_zero (q : ℕ) :
   exact Category.comp_id _
 
 /-- The augmentation of the total complex vanishes on the summands of positive Čech degree. -/
-@[reassoc (attr := simp)]
+@[simp, reassoc]
 theorem ιTotal_openCoverSingularTotalAugmentation_f_succ (p q n : ℕ)
     (h : ComplexShape.π (ComplexShape.down ℕ) (ComplexShape.down ℕ) (ComplexShape.down ℕ)
       (p + 1, q) = n) :
