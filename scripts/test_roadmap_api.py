@@ -315,6 +315,9 @@ class Mutations(unittest.TestCase):
         with patch.object(sn, "_local_tree", return_value={"TauCeti/Foo.lean"}):
             sn.run_pr("o/r", 1, True, api=self.api, snapshot=snapshot)
         self.assertEqual(self.api.request.call_args.args, ("DELETE", "repos/o/r/issues/comments/4"))
+        patch_call = self.api.request.call_args_list[1].args
+        self.assertEqual(patch_call[:2], ("PATCH", "repos/o/r/issues/comments/2"))
+        self.assertIn("analyzed head `head`", patch_call[2]["body"])
 
     def test_expected_bot_actor_does_not_patch_or_delete_a_human_marker(self):
         snapshot = {"info": info(), "files": FILES}
@@ -420,6 +423,18 @@ class Recovery(unittest.TestCase):
         with patch.object(ga, "pr_snapshot", return_value={"info": info(), "files": FILES}) as single:
             self.assertEqual(list(ga.history_snapshots(api, "o/r", 1))[0][1]["files"], FILES)
         single.assert_called_once_with(api, "o/r", 1)
+
+    def test_one_failing_history_fallback_does_not_abandon_other_prs(self):
+        api = Mock()
+        rows = [dict(graph_row(), number=number) for number in (1, 2)]
+        rows[0]["files"]["pageInfo"]["hasNextPage"] = True
+        api.graphql.return_value = {"repository": {"pullRequests": {"nodes": rows,
+                                  "pageInfo": {"hasNextPage": False, "endCursor": "last"}}}}
+        error = ga.APIError("POST", "graphql", 503, {"message": "bad PR"})
+        with patch.object(ga, "pr_snapshot", side_effect=error):
+            results = list(ga.history_snapshots(api, "o/r", 2))
+        self.assertIs(results[0][1], error)
+        self.assertIsInstance(results[1][1], dict)
 
     def test_file_cap_returns_a_partial_snapshot_without_unbounded_queries(self):
         api = Mock()
@@ -537,6 +552,18 @@ class Recovery(unittest.TestCase):
         state.failure(1, RuntimeError("bad PR"))
         self.assertEqual(state.records[1]["attempts"], 1)
 
+    def test_server_failure_exhaustion_resumes_automatically_after_cooldown(self):
+        state = rl.RecoveryState()
+        original = info()
+        with patch.object(rl.time, "time", return_value=1000):
+            for _ in range(rl.MAX_RETRIES):
+                state.select(original, {"PDE"})
+                state.failure(1, ga.APIError("POST", "graphql", 503, {"message": "service unavailable"}))
+            self.assertFalse(state.select(original, {"PDE"}))
+        with patch.object(rl.time, "time", return_value=1000 + 6 * 3600):
+            self.assertTrue(state.select(original, {"PDE"}))
+        self.assertNotIn(1, state.records)
+
     def test_uncached_old_valid_pr_is_recovered_after_a_listing_race(self):
         args = self.args(_state=rl.RecoveryState())
         api = Mock()
@@ -583,6 +610,33 @@ class Recovery(unittest.TestCase):
             records = json.loads(path.read_text())["prs"]
             self.assertEqual(records["1"]["attempts"], 1)
             self.assertEqual(records["2"]["attempts"], 0)
+
+    def test_temporary_incomplete_diff_is_queued_instead_of_cached_success(self):
+        for capped, attempts in ((False, 1), (True, 0)):
+            with self.subTest(capped=capped), tempfile.TemporaryDirectory() as directory:
+                area = Path(directory) / "PDE"
+                area.mkdir()
+                (area / "README.md").touch()
+                api = Mock(known_labels=set())
+                api.pages.return_value = [[info()]]
+                snapshot = {"info": dict(info(labels=("roadmap/Unknown",)),
+                            incomplete_files=True, files_capped=capped), "files": FILES}
+                path = Path(directory) / "state.json"
+                with patch.object(rl, "GitHub", return_value=api), patch.object(rl, "pr_snapshot", return_value=snapshot):
+                    self.assertEqual(rl.main(["--roadmap-dir", directory, "--reconcile-open", "--apply", "--state-out", str(path)]), 0)
+                record = json.loads(path.read_text())["prs"]["1"]
+                self.assertEqual(record["attempts"], attempts)
+                if not capped:
+                    self.assertNotIn("label", record)
+
+    def test_state_mode_does_not_read_unused_window_and_lists_by_creation(self):
+        args = self.args(since="auto", _state=rl.RecoveryState())
+        api = Mock()
+        api.pages.return_value = [[info()]]
+        with patch.object(rl, "recovery_since") as since:
+            self.assertEqual(list(rl.candidates(api, args, {"PDE"})), [1])
+        since.assert_not_called()
+        self.assertIn("sort=created", api.pages.call_args.args[0])
 
     def test_workflow_preserves_app_writes_and_filters_title_edits(self):
         root = Path(__file__).resolve().parents[1]

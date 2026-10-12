@@ -101,4 +101,5 @@ jobs:
           name: roadmap-label-state
           path: ${{ runner.temp }}/roadmap-state-out/state.json
           retention-days: 7
+          overwrite: true
           if-no-files-found: ignore

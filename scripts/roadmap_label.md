@@ -48,7 +48,8 @@ Existing label presentation is maintained separately through `--sync-labels`.
 An unchanged structure comment also causes no mutation. Comments are capped at
 60,000 UTF-8 bytes, with an omission notice. App jobs select their own bot
 comments; duplicate markers from that same bot are collapsed, including a
-verification read after a new POST. Cleanup never deletes human comments.
+verification read after a new POST. If the surviving older comment has stale
+content, it is updated to the analysis just posted. Cleanup never deletes human comments.
 
 Primary exhaustion waits until the response's reset time plus five seconds.
 Secondary limits honor `Retry-After` (seconds or HTTP date), or wait at least a
@@ -65,7 +66,8 @@ Mutations are spaced by at least one second within a process.
 ## Recovery and maintenance
 
 `roadmap-label-reconcile.yml` runs hourly at minute 17. It scans open PR metadata
-before mutations can reorder the listing. The state artifact contains hashes of
+in creation order before mutations. This keeps comment activity from moving
+PRs between pages and resetting retries. The state artifact contains hashes of
 the actual processed head, body, base branch name, state, canonical area set, and
 classifier policy, plus the resulting label and bounded retries. It contains no
 PR bodies or credentials. Unrelated comments/status-label changes and ordinary

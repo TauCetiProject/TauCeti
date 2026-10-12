@@ -275,7 +275,16 @@ def history_snapshots(api, repo, limit):
             pr = row["number"]
             files = row["files"]
             if row["labels"]["pageInfo"]["hasNextPage"] or files["pageInfo"]["hasNextPage"] or len(files["nodes"]) != row["changedFiles"] or len(files["nodes"]) != files["totalCount"]:
-                yield pr, pr_snapshot(api, repo, pr)
+                try:
+                    yield pr, pr_snapshot(api, repo, pr)
+                except Deferred:
+                    raise
+                except APIError as error:
+                    if error.status == 0:
+                        raise
+                    yield pr, error
+                except Exception as error:
+                    yield pr, error
             else:
                 yield pr, {"info": snapshot_info(row), "files": [
                     {"filename": item["path"], "status": item["changeType"].lower()}
@@ -312,6 +321,7 @@ def pr_snapshot(api, repo, pr):
             files.extend({"filename": item["path"], "status": item["changeType"].lower()}
                          for item in connection["nodes"])
             if not connection["pageInfo"]["hasNextPage"] or len(files) >= 3000:
+                current["files_capped"] = current["changed_files"] > 3000 and len(files) >= 3000
                 current["incomplete_files"] = bool(connection["pageInfo"]["hasNextPage"]) or len(files) != current["changed_files"] or len(files) != connection["totalCount"]
                 if row["labels"]["pageInfo"]["hasNextPage"]:
                     current["labels"] = api.items(f"repos/{repo}/issues/{pr}/labels")

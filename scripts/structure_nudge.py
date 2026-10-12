@@ -172,9 +172,9 @@ def run_pr(repo: str, pr: int, apply: bool, *, api: GitHub, snapshot=None) -> in
         print(body)
         return 0
     comments = api.items(f"repos/{repo}/issues/{pr}/comments")
-    author = os.environ.get("GH_COMMENT_AUTHOR")
+    expected_author = os.environ.get("GH_COMMENT_AUTHOR")
     marked = sorted((comment for comment in comments if MARKER in (comment.get("body") or "")
-                     and (not author or (comment.get("user") or {}).get("login") == author)),
+                     and (not expected_author or (comment.get("user") or {}).get("login") == expected_author)),
                     key=lambda comment: comment["id"])
     prev = marked[0] if marked else None
     # Collapse marker duplicates left by overlapping event/recovery POSTs.
@@ -206,6 +206,8 @@ def run_pr(repo: str, pr: int, apply: bool, *, api: GitHub, snapshot=None) -> in
                           if MARKER in (comment.get("body") or "")
                           and (comment.get("user") or {}).get("login") == login),
                          key=lambda comment: comment["id"])
+            if own and own[0]["id"] != created["id"] and own[0]["body"] != body:
+                api.request("PATCH", f"repos/{repo}/issues/comments/{own[0]['id']}", {"body": body})
             for duplicate in own[1:]:
                 try:
                     api.request("DELETE", f"repos/{repo}/issues/comments/{duplicate['id']}")

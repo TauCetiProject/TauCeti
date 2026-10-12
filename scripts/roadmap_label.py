@@ -52,6 +52,7 @@ import json
 import pathlib
 import re
 import sys
+import time
 from urllib.parse import quote
 
 from github_api import APIError, Deferred, GitHub, history_snapshots, pr_snapshot
@@ -365,7 +366,12 @@ class RecoveryState:
             self.records.pop(number, None)
             return True  # Unknown/changed inputs self-heal even outside the time window.
         if record["attempts"] >= MAX_RETRIES:
-            print(f"::warning::PR #{number}: recovery retries exhausted; change its inputs or run a full scan")
+            retry_at = record.get("retry_at")
+            if retry_at is not None and time.time() >= retry_at:
+                self.records.pop(number)
+                return True
+            print(f"::warning::PR #{number}: recovery retries exhausted; " +
+                  (f"automatic retry after epoch {retry_at}" if retry_at else "change its inputs or run a full scan"))
             return False
         if record["attempts"]:
             return True  # Retry even when a previous successful window has passed it.
@@ -375,12 +381,16 @@ class RecoveryState:
     def success(self, number, label, key):
         self.records[number] = {"key": key, "label": label, "attempts": 0}
 
-    def failure(self, number, error, key=None):
+    def failure(self, number, error, key=None, *, transient=False):
         key = key or self.inputs[number]
         previous = self.records.get(number, {})
         attempts = previous.get("attempts", 0) if previous.get("key") == key else 0
         self.records[number] = {"key": key, "attempts": min(MAX_RETRIES, attempts + 1),
                                 "error": str(error)[:300]}
+        if attempts + 1 >= MAX_RETRIES and (transient or isinstance(error, APIError) and error.status >= 500):
+            # Persistent server/input-listing failures can recover without a PR edit.
+            # Pause six hours between bounded retry cycles instead of quarantining forever.
+            self.records[number]["retry_at"] = time.time() + 6 * 3600
 
     def save(self, path):
         records = {str(number): record for number, record in self.records.items()
@@ -415,6 +425,7 @@ def run_pr(api, args, areas, pr, snapshot=None, preserve_labels=False):
     else:
         label = classify(title, body, files, areas)
     args._processed_key = input_key(info, areas)
+    args._processed_incomplete = incomplete and not info.get("files_capped", False)
     state_column = info["state"].upper() + "\t" if args.backfill else ""
     print(f"#{pr}\t{state_column}{label}\t{title}")
     declared_present, declared = parse_declared_area(body, areas)
@@ -455,11 +466,11 @@ def recovery_since(api, repo):
 
 def candidates(api, args, areas):
     since = args.since
-    if args.reconcile_open and since == "auto":
+    if args.reconcile_open and since == "auto" and not getattr(args, "_state", None):
         since = recovery_since(api, args.repo)
     state = "open" if args.reconcile_open else "all"
-    order = "updated" if args.reconcile_open else "created"
     recovery = getattr(args, "_state", None)
+    order = "created" if recovery else "updated" if args.reconcile_open else "created"
     count = 0
     valid = {NONE_LABEL, UNKNOWN_LABEL} | {area_label(a) for a in areas}
     for page in api.pages(f"repos/{args.repo}/pulls?state={state}&sort={order}&direction=desc"):
@@ -536,6 +547,10 @@ def main(argv: list[str] | None = None) -> int:
             from collections import Counter
             tally = Counter()
             for pr, snapshot in history_snapshots(api, args.repo, args.limit):
+                if isinstance(snapshot, Exception):
+                    print(f"PR #{pr} unapplied: {snapshot}", file=sys.stderr)
+                    failed = True
+                    continue
                 current = {item["name"] for item in snapshot["info"]["labels"] if item["name"].startswith("roadmap/")}
                 # Keep the historical classification report even when existing labels are preserved.
                 try:
@@ -559,10 +574,15 @@ def main(argv: list[str] | None = None) -> int:
                 args._state.listed = True
             for pr in pending:
                 args._processed_key = None
+                args._processed_incomplete = False
                 try:
                     label = run_pr(api, args, areas, pr)
                     if args._state:
-                        args._state.success(pr, label, args._processed_key)
+                        if args._processed_incomplete:
+                            args._state.failure(pr, RuntimeError("temporary incomplete diff; queued for retry"),
+                                                args._processed_key, transient=True)
+                        else:
+                            args._state.success(pr, label, args._processed_key)
                 except Deferred:
                     raise  # Do not hammer a blocked credential for each remaining PR.
                 except Exception as error:
