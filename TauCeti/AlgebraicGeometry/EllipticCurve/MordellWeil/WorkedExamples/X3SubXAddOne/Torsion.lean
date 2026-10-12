@@ -103,9 +103,9 @@ theorem torsion_curveX3SubXAddOne_eq_bot :
   exact Point.not_isOfFinAddOrder_of_coprime v w (p := 3) (q := 5) (m := 7) (n := 8) hP0
     (hv ▸ Ideal.mem_span_singleton_self _) (hw ▸ Ideal.mem_span_singleton_self _) (by norm_num)
     (by simpa only [card_point_curveX3SubXAddOne_zmod_three] using
-      curveX3SubXAddOne.card_nsmul_reductionHom_baseChange v 3 hv P)
+      curveX3SubXAddOne.card_nsmul_reductionHom_baseChange_eq_zero v 3 hv P)
     (by simpa only [card_point_curveX3SubXAddOne_zmod_five] using
-      curveX3SubXAddOne.card_nsmul_reductionHom_baseChange w 5 hw P) hP
+      curveX3SubXAddOne.card_nsmul_reductionHom_baseChange_eq_zero w 5 hw P) hP
 
 /-- The rational point group of `y² = x³ - x + 1` is torsion-free. -/
 instance : IsAddTorsionFree (curveX3SubXAddOne.baseChange ℚ).toAffine.Point :=

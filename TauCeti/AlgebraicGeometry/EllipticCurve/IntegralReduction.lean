@@ -77,7 +77,7 @@ theorem card_point_reduction_baseChange :
 include hv in
 /-- At good reduction at `(p)`, the order of the point group over `ZMod p` annihilates the
 reduction of every rational point of an integral equation. -/
-theorem card_nsmul_reductionHom_baseChange [DecidableEq k] [(integralModel O W).IsElliptic]
+theorem card_nsmul_reductionHom_baseChange_eq_zero [DecidableEq k] [(integralModel O W).IsElliptic]
     (P : (W).toAffine.Point) :
     Nat.card (E.map (Int.castRingHom (ZMod p))).toAffine.Point •
       Affine.Point.reductionHom (v.valuation ℚ) P = 0 := by
