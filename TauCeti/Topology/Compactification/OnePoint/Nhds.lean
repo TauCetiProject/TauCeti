@@ -7,6 +7,9 @@ module
 
 public import Mathlib.Topology.Compactification.OnePoint.Basic
 public import Mathlib.Topology.MetricSpace.Bounded
+public import Mathlib.Topology.MetricSpace.ProperSpace
+public import Mathlib.Topology.Order.Real
+import Mathlib.Topology.Instances.ENNReal.Lemmas
 
 /-!
 # Approach filters in the one-point compactification
@@ -20,6 +23,8 @@ The one-point compactification of a proper pseudometric space is first countable
 the space it inherits the neighbourhood filter of the space, and at infinity the complements of
 the closed balls about a fixed point form a countable basis. Being also compact, it is then
 sequentially compact, and Fatou-type limit arguments may be run along its neighbourhood filters.
+On a proper space the extended distance from a fixed point, with value `⊤` at infinity, is
+continuous on the one-point compactification.
 -/
 
 public section
@@ -71,5 +76,19 @@ instance {X : Type*} [PseudoMetricSpace X] [ProperSpace X] :
   | coe x =>
     rw [OnePoint.nhds_coe_eq]
     infer_instance
+
+/-- On a proper space, the extended distance from a fixed point to a point of the one-point
+compactification, with value `⊤` at infinity, is continuous. -/
+theorem continuous_elim_edist {X : Type*} [PseudoMetricSpace X] [ProperSpace X] (x : X) :
+    Continuous fun b : OnePoint X ↦ b.elim ⊤ (edist x) := by
+  refine continuous_iff_continuousAt.2 fun b ↦ ?_
+  induction b using OnePoint.rec with
+  | infty =>
+    refine OnePoint.continuousAt_infty'.2 ?_
+    rw [coclosedCompact_eq_cocompact, ← Metric.cobounded_eq_cocompact]
+    simpa [Function.comp_def, edist_dist] using
+      ENNReal.tendsto_ofReal_atTop.comp (Metric.tendsto_dist_left_cobounded_atTop x)
+  | coe y =>
+    exact OnePoint.continuousAt_coe.2 (continuous_const.edist continuous_id).continuousAt
 
 end TauCeti

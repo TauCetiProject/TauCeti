@@ -37,7 +37,7 @@ namely its finite coordinates. No rate of decay of the error is claimed, and the
 
 * `TauCeti.eLpNorm_infEDist_le_wassersteinEDist` — the Wasserstein distance from `μ` to a law
   carried by `s` is at least the `L^p (μ)` seminorm of the distance to `s`;
-* `TauCeti.exists_wassersteinEDist_map_eq_eLpNorm_infEDist` — for a nonempty finite set `s`, a
+* `TauCeti.exists_map_wassersteinEDist_eq_eLpNorm_infEDist` — for a nonempty finite set `s`, a
   measurable nearest-point projection onto `s` attains this bound;
 * `TauCeti.wassersteinQuantizationError_eq_iInf_eLpNorm_infEDist` — the quantization error as an
   infimum over sets of at most `N` points;
@@ -93,7 +93,7 @@ variable [MeasurableSingletonClass X]
 measurable nearest-point projection `T` onto `s` gives the law carried by `s` closest to `μ`: its
 Wasserstein distance to `μ` is exactly the `L^p (μ)` seminorm of the distance to `s`, the lower
 bound `TauCeti.eLpNorm_infEDist_le_wassersteinEDist` for every law carried by `s`. -/
-theorem exists_wassersteinEDist_map_eq_eLpNorm_infEDist
+theorem exists_map_wassersteinEDist_eq_eLpNorm_infEDist
     (hd : Measurable fun z : X × X ↦ edist z.1 z.2) {s : Finset X} (hs : s.Nonempty)
     (μ : Measure X) (p : ℝ≥0∞) :
     ∃ T : X → X, Measurable T ∧ (∀ x, T x ∈ s) ∧
@@ -114,7 +114,7 @@ theorem wassersteinQuantizationError_eq_iInf_eLpNorm_infEDist
         eLpNorm (fun x ↦ infEDist x s) p μ := by
   refine le_antisymm (le_iInf₂ fun s hs ↦ le_iInf fun hsN ↦ ?_)
     (le_wassersteinQuantizationError fun ν hν hcarrier ↦ ?_)
-  · obtain ⟨T, hT, hTs, hTeq⟩ := exists_wassersteinEDist_map_eq_eLpNorm_infEDist hd hs μ p
+  · obtain ⟨T, hT, hTs, hTeq⟩ := exists_map_wassersteinEDist_eq_eLpNorm_infEDist hd hs μ p
     refine (wassersteinQuantizationError_le inferInstance ⟨s, hsN, mem_ae_iff.1 ?_⟩).trans hTeq.le
     exact (ae_map_iff hT.aemeasurable s.measurableSet).2 (.of_forall hTs)
   · obtain ⟨s, hsN, hνs⟩ := hcarrier
@@ -182,20 +182,6 @@ private theorem infEDist_finitePart (x : X) (b : Fin N → OnePoint X) :
     | coe y => exact infEDist_le_edist_of_mem (mem_finitePart.2 ⟨i, hi⟩)
   · obtain ⟨i, hi⟩ := mem_finitePart.1 hy
     exact Finset.inf_le_of_le (Finset.mem_univ i) (by simp [hi])
-
-/-- On a proper space, the extended distance from a fixed point to a point of the one-point
-compactification, with value `⊤` at infinity, is continuous. -/
-private theorem continuous_elim_edist [ProperSpace X] (x : X) :
-    Continuous fun b : OnePoint X ↦ b.elim ⊤ (edist x) := by
-  refine continuous_iff_continuousAt.2 fun b ↦ ?_
-  induction b using OnePoint.rec with
-  | infty =>
-    refine OnePoint.continuousAt_infty'.2 ?_
-    rw [coclosedCompact_eq_cocompact, ← Metric.cobounded_eq_cocompact]
-    simpa [Function.comp_def, edist_dist] using
-      ENNReal.tendsto_ofReal_atTop.comp (tendsto_dist_left_cobounded_atTop x)
-  | coe y =>
-    exact OnePoint.continuousAt_coe.2 (continuous_const.edist continuous_id).continuousAt
 
 variable [ProperSpace X] [MeasurableSpace X] [OpensMeasurableSpace X]
 
@@ -265,7 +251,7 @@ theorem exists_map_wassersteinEDist_eq_wassersteinQuantizationError (hp_top : p 
   have : Nonempty X := nonempty_of_isProbabilityMeasure μ
   obtain ⟨s, hs, hsN, hmin⟩ := exists_forall_eLpNorm_infEDist_le hp_top hN μ
   obtain ⟨T, hT, hTs, hTeq⟩ :=
-    exists_wassersteinEDist_map_eq_eLpNorm_infEDist measurable_edist hs μ p
+    exists_map_wassersteinEDist_eq_eLpNorm_infEDist measurable_edist hs μ p
   refine ⟨s, T, hsN, hT, hTs, hTeq.trans ?_⟩
   rw [wassersteinQuantizationError_eq_iInf_eLpNorm_infEDist measurable_edist]
   exact le_antisymm (le_iInf₂ fun t ht ↦ le_iInf fun htN ↦ hmin t ht htN)
