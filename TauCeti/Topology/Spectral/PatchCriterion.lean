@@ -153,7 +153,7 @@ private lemma nonempty_inter_biInter_of_isIrreducible {Z : Set X} (hZ : IsIrredu
   classical
   induction T using Finset.induction_on with
   | empty => simpa using hZ.nonempty
-  | insert a T ha ih =>
+  | insert a T _ ih =>
     rw [Finset.set_biInter_insert]
     exact hZ.2 (f a) (⋂ i ∈ T, f i) (hf a (Finset.mem_insert_self a T))
       (isOpen_biInter_finset fun i hi ↦ hf i (Finset.mem_insert_of_mem hi))

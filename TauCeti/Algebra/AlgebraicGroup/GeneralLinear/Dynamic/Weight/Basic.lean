@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.AlgebraicGroup.Dynamic.Parabolic
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Dynamic.PointMaps
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Weight.Torus
 public import Mathlib.LinearAlgebra.Matrix.Block

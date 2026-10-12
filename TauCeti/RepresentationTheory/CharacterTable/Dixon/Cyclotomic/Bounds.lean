@@ -79,7 +79,7 @@ theorem isSome_dixonCyclotomicCharacterTable_of_rootCoeffBound (d : ClassData G)
     (degree : Fin d.numClasses → ℕ)
     (hspec : d.IsCyclotomicCharacterTableSpec e omega table degree)
     (hp : 2 * (Fintype.card G * Cyclotomic.rootCoeffBound e) < q.p) :
-    (d.dixonCyclotomicCharacterTable? e he q).isSome = true := by
+    (d.dixonCyclotomicCharacterTable? e q).isSome = true := by
   have : NeZero e := ⟨he ▸ Monoid.exponent_ne_zero_of_finite⟩
   apply d.isSome_dixonCyclotomicCharacterTable_of_spec e he q omega table degree hspec
   intro i k j

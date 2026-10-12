@@ -71,8 +71,8 @@ theorem _root_.AlgHom.apply_eq_pow_mul_of_forall_ι_eq {A : Type*}
     g s = c ^ n * f s := by
   induction hs using Submodule.pow_induction_on_left' with
   | algebraMap r => simp
-  | add x y i hx hy ihx ihy => simp [ihx, ihy, mul_add]
-  | mem_mul m hm i x hx ih =>
+  | add x y _ _ _ ihx ihy => simp [ihx, ihy, mul_add]
+  | mem_mul m hm _ _ _ ih =>
     obtain ⟨y, rfl⟩ := hm
     simp only [map_mul, h, ih, pow_succ]
     ring

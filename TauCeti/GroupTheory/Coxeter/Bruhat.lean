@@ -277,7 +277,7 @@ theorem BruhatLE.exists_sublist_wordProd_eq {u w : W} (h : cs.BruhatLE u w) :
       refine ⟨ht, ?_⟩
       rw [hω, ← mul_assoc, ht.mul_self, one_mul]
       exact hlt
-    obtain ⟨j, hj, hje⟩ := strongExchange cs hinv
+    obtain ⟨j, _, hje⟩ := strongExchange cs hinv
     have hv : π (ω.eraseIdx j) = v := by
       rw [← hje, hω, ← mul_assoc, ht.mul_self, one_mul]
     obtain ⟨σ, hσ, hσprod⟩ := ih (ω.eraseIdx j) hv
@@ -388,7 +388,7 @@ private theorem BruhatLE.mul_simple_lifting (h : cs.BruhatLE u w) (i : B) :
       · intro hw
         exact (cs.bruhatStep_mul_simple_of_isRightDescent i hw).bruhatLE
       · exact fun _ => cs.bruhatLE_refl _
-  | @tail v w h hs ih =>
+  | @tail v w _ hs ih =>
       constructor
       · intro hw
         by_cases hv : cs.IsRightDescent v i

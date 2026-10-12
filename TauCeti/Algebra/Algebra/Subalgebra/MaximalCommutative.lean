@@ -25,8 +25,8 @@ together with it, a commutative subalgebra, which maximal dimension forces to be
 
 Neither statement needs anything of `A` beyond finite-dimensionality. They become interesting in a
 division algebra, where a commutative subalgebra of maximal dimension is a maximal subfield
-(`TauCeti.Algebra.exists_subalgebra_isField_finrank_eq_deg` in
-`TauCeti/Algebra/CentralSimple/MaximalSubfield.lean`).
+(`TauCeti.Algebra.exists_subalgebra_isField_isSeparable_finrank_eq_deg` in
+`TauCeti/Algebra/CentralSimple/MaximalSubfield/Separable.lean`).
 
 ## Main results
 
@@ -63,7 +63,7 @@ Maximality is in dimension over `K` and is stated as a bound on every commutativ
 
 No hypothesis beyond finite-dimensionality is needed; it is in a division algebra that such a
 subalgebra becomes interesting
-(`TauCeti.Algebra.exists_subalgebra_isField_finrank_eq_deg`). -/
+(`TauCeti.Algebra.exists_subalgebra_isField_isSeparable_finrank_eq_deg`). -/
 theorem exists_isMulCommutative_forall_finrank_le :
     ∃ L : Subalgebra K A, IsMulCommutative ↥L ∧
       ∀ M : Subalgebra K A, IsMulCommutative ↥M → finrank K ↥M ≤ finrank K ↥L := by
@@ -89,7 +89,7 @@ of `A` that `TauCeti.exists_isMulCommutative_forall_finrank_le` produces.
 
 Nothing beyond finite-dimensionality is asked of `A`; it is in a division algebra that the
 conclusion becomes the maximality of a subfield
-(`TauCeti.Algebra.exists_subalgebra_isField_finrank_eq_deg`). -/
+(`TauCeti.Algebra.exists_subalgebra_isField_isSeparable_finrank_eq_deg`). -/
 theorem centralizer_eq_self_of_forall_finrank_le {L : Subalgebra K A} [IsMulCommutative ↥L]
     (hmax : ∀ M : Subalgebra K A, IsMulCommutative ↥M → finrank K ↥M ≤ finrank K ↥L) :
     Subalgebra.centralizer K (L : Set A) = L := by

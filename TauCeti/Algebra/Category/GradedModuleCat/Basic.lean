@@ -260,8 +260,9 @@ theorem mem_shiftObj_piece_iff (n p : ℤ) (x : M) :
     x ∈ (M.shiftObj n).grading.piece p ↔ x ∈ M.grading.piece (p - n) := by
   simp [sub_eq_add_neg]
 
-/-- The shift `M ↦ M{n}` of graded modules, the identity on underlying linear maps. -/
-@[expose]
+/-- The shift `M ↦ M{n}` of graded modules, the identity on underlying linear maps.
+Its objects compute during type inference, agreeing with `shiftObj` in morphism types. -/
+@[expose, implicit_reducible]
 def shiftFunctor (n : ℤ) : GradedModuleCat.{v} 𝒜 ⥤ GradedModuleCat.{v} 𝒜 where
   obj M := M.shiftObj n
   map {M N} f := ofHom (M := M.shiftObj n) (N := N.shiftObj n) f.hom <|
@@ -283,11 +284,11 @@ variable (𝒜) in
 autoequivalence; its inverse is `M ↦ M{-1}`. -/
 @[expose]
 def shift : GradedModuleCat.{v} 𝒜 ≌ GradedModuleCat.{v} 𝒜 where
-  functor := shiftFunctor 1
-  inverse := shiftFunctor (-1)
-  unitIso := NatIso.ofComponents (fun M ↦ isoMk (LinearEquiv.refl A M) fun p x ↦ by simp; rfl)
+  functor := shiftFunctor (𝒜 := 𝒜) 1
+  inverse := shiftFunctor (𝒜 := 𝒜) (-1)
+  unitIso := NatIso.ofComponents (fun M ↦ isoMk (LinearEquiv.refl A M) fun p x ↦ by simp)
     fun _ ↦ by ext; rfl
-  counitIso := NatIso.ofComponents (fun M ↦ isoMk (LinearEquiv.refl A M) fun p x ↦ by simp; rfl)
+  counitIso := NatIso.ofComponents (fun M ↦ isoMk (LinearEquiv.refl A M) fun p x ↦ by simp)
     fun _ ↦ by ext; rfl
   functor_unitIso_comp _ := by ext; rfl
 
@@ -343,10 +344,10 @@ instance (n : ℤ) : (shiftFunctor (𝒜 := 𝒜) n).Linear k where
   map_smul _ _ := rfl
 
 instance : (shift 𝒜).functor.Additive :=
-  inferInstanceAs (shiftFunctor 1).Additive
+  inferInstanceAs (shiftFunctor (𝒜 := 𝒜) 1).Additive
 
 instance : (shift 𝒜).functor.Linear k :=
-  inferInstanceAs ((shiftFunctor 1).Linear k)
+  inferInstanceAs ((shiftFunctor (𝒜 := 𝒜) 1).Linear k)
 
 end Shift
 

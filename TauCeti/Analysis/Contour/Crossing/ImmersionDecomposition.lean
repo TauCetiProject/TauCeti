@@ -170,10 +170,10 @@ theorem IsPwC1ImmersionOn.exists_crossingDecomposition
   have hregular : IsPiecewiseC1On (exciseCrossings γ s windows) a b :=
     h_imm.isPiecewiseC1On.exciseCrossings
       (pairwise_disjoint_interval_of_pairwise_upper_lt_lower hordered) hinside
-      (fun W hW => eq_circleMap_startAngle_of_mem_exitCapWindows hδ hε
+      (fun W hW => eq_circleMap_startAngle_of_mem_exitCapWindows hδ.le hε.le
         (fun t ht => (hγ_window t ht).mono (Icc_subset_Icc le_rfl (by linarith)))
         (fun t ht => (hT_mem.mp ht).2) hεL hW)
-      (fun W hW => eq_circleMap_endAngle_of_mem_exitCapWindows hδ hε hγ_window
+      (fun W hW => eq_circleMap_endAngle_of_mem_exitCapWindows hδ.le hε.le hγ_window
         (fun t ht => (hT_mem.mp ht).2) hεL hεR hL_R hL_L h_R h_L hW)
   have hclosed_excised :
       exciseCrossings γ s windows a = exciseCrossings γ s windows b :=

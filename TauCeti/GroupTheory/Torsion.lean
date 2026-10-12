@@ -56,6 +56,8 @@ Unlike a bound on the exponent, the condition is elementwise: for prime `p`,
 
 * `TauCeti.IsPPrimaryTorsion`: every element of `M` lies in the `p`-primary component.
 * `TauCeti.isPPrimaryTorsion_iff`: every element is killed by some power of `p`.
+* `TauCeti.primaryComponent_eq_bot_of_injective_nsmul`: injective multiplication by `p`
+  makes the `p`-primary component trivial.
 * `TauCeti.isPPrimaryTorsion_additive_iff`: for a multiplicative group `M`, `Additive M` is
   `p`-primary torsion exactly when `M` is a `p`-group.
 * `TauCeti.IsPPrimaryTorsion.of_injective`, `TauCeti.IsPPrimaryTorsion.of_surjective`: the
@@ -217,6 +219,18 @@ theorem isPPrimaryTorsion_iff : IsPPrimaryTorsion p M ↔ ∀ m : M, ∃ k : ℕ
 theorem isPPrimaryTorsion_iff_primaryComponent_eq_top :
     IsPPrimaryTorsion p M ↔ AddCommGroup.primaryComponent M p = ⊤ :=
   (AddSubgroup.eq_top_iff' _).symm
+
+/-- If multiplication by `p` is injective, the `p`-primary component is trivial. -/
+theorem primaryComponent_eq_bot_of_injective_nsmul
+    (hp : Function.Injective fun x : M => p • x) :
+    AddCommGroup.primaryComponent M p = ⊥ := by
+  rw [AddSubgroup.eq_bot_iff_forall]
+  intro x hx
+  obtain ⟨m, hm⟩ := AddCommGroup.mem_primaryComponent.mp hx
+  have hpPow : Function.Injective fun y : M => p ^ m • y := by
+    rw [← smul_iterate]
+    exact hp.iterate m
+  exact hpPow (by simpa using hm)
 
 /-- For a multiplicative commutative group `M`, `Additive M` is `p`-primary torsion exactly when
 `M` is a `p`-group. -/

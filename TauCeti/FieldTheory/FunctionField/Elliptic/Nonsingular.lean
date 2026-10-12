@@ -36,6 +36,8 @@ singular.
 
 * `TauCeti.Place.IsWeierstrassCoordinates.adjoin_div_eq_top_of_isSingular`: at a rational
   singular point `(x₀, y₀)` of `W`, the slope `(y - y₀) / (x - x₀)` generates `F`.
+* `TauCeti.Place.IsWeierstrassCoordinates.transcendental_div_of_isSingular`: that slope is
+  transcendental, so `F` is a rational function field.
 * `TauCeti.Place.IsWeierstrassCoordinates.genus_eq_zero_of_isSingular`: so `F` has genus zero.
 * `TauCeti.Place.IsWeierstrassCoordinates.isElliptic`: over a perfect field, the Weierstrass
   curve of a function field of nonzero genus is elliptic.
@@ -109,17 +111,25 @@ theorem adjoin_div_eq_top_of_isSingular (hF : IsFunctionField k F) (hP : P.degre
   rw [eq_top_iff, ← h.adjoin_eq_top hF hP, IntermediateField.adjoin_le_iff]
   exact Set.insert_subset_iff.mpr ⟨hxK, Set.singleton_subset_iff.mpr hyK⟩
 
-/-- **A Weierstrass equation with a rational singular point defines a rational function
-field**: if `W` has a singular point over `k`, then `F` has genus zero. -/
-theorem genus_eq_zero_of_isSingular (hF : IsFunctionField k F) (hP : P.degree = 1)
-    {x₀ y₀ : k} (hs : W.toAffine.IsSingular x₀ y₀) : genus k F = 0 := by
+/-- At a rational singular point `(x₀, y₀)` of `W`, the slope `(y - y₀) / (x - x₀)` is
+transcendental over `k`: it generates `F`, which contains the transcendental `x`. -/
+theorem transcendental_div_of_isSingular (hF : IsFunctionField k F) (hP : P.degree = 1)
+    {x₀ y₀ : k} (hs : W.toAffine.IsSingular x₀ y₀) :
+    Transcendental k ((y - algebraMap k F y₀) / (x - algebraMap k F x₀)) := by
   set z := (y - algebraMap k F y₀) / (x - algebraMap k F x₀)
   have htop : k⟮z⟯ = ⊤ := h.adjoin_div_eq_top_of_isSingular hF hP hs
   -- `x` lies in `k(z)`, so `z` is transcendental together with `x`.
-  refine genus_eq_zero_of_adjoin_eq_top (fun hz ↦ h.transcendental_x ?_) htop
+  refine fun hz ↦ h.transcendental_x ?_
   have := IntermediateField.isAlgebraic_adjoin_simple hz.isIntegral
   have hx : x ∈ k⟮z⟯ := htop ▸ IntermediateField.mem_top
   exact (Algebra.IsAlgebraic.isAlgebraic (⟨x, hx⟩ : k⟮z⟯)).algHom k⟮z⟯.val
+
+/-- **A Weierstrass equation with a rational singular point defines a rational function
+field**: if `W` has a singular point over `k`, then `F` has genus zero. -/
+theorem genus_eq_zero_of_isSingular (hF : IsFunctionField k F) (hP : P.degree = 1)
+    {x₀ y₀ : k} (hs : W.toAffine.IsSingular x₀ y₀) : genus k F = 0 :=
+  genus_eq_zero_of_adjoin_eq_top (h.transcendental_div_of_isSingular hF hP hs)
+    (h.adjoin_div_eq_top_of_isSingular hF hP hs)
 
 /-- **The Weierstrass curve of a function field of nonzero genus is elliptic**, over a perfect
 field. -/

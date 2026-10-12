@@ -27,7 +27,9 @@ its limiting point is fixed by the flow.  Time reversal exchanges the two constr
 * `Flow.stableSet`: points converging to a given point in forward time.
 * `Flow.unstableSet`: points converging to a given point in backward time.
 * `Flow.isInvariant_stableSet` and `Flow.isInvariant_unstableSet`: invariance
-  under time translation.
+  under time translation, and `Flow.apply_mem_stableSet_iff` and `Flow.apply_mem_unstableSet_iff`:
+  a point and its images under the flow lie in the same stable and unstable sets
+  (`IsInvariant.flow_apply_mem_iff` for any invariant set).
 * `Flow.fixed_of_mem_stableSet` and `Flow.fixed_of_mem_unstableSet`: a limiting
   point of a trajectory is fixed.
 * `Flow.disjoint_stableSet` and `Flow.disjoint_unstableSet`: stable (respectively unstable) sets
@@ -90,6 +92,24 @@ theorem isInvariant_unstableSet (φ : _root_.Flow ℝ α) (x : α) :
   rw [mem_unstableSet] at hy ⊢
   simpa only [Function.comp_def, ← φ.map_add, id_eq] using
     hy.comp (tendsto_atBot_add_const_right atBot t tendsto_id)
+
+/-- A point lies in a set invariant under a flow exactly when its image under a time map of the
+flow does. -/
+theorem _root_.IsInvariant.flow_apply_mem_iff {τ : Type*} [TopologicalSpace τ] [AddGroup τ]
+    {ϕ : _root_.Flow τ α} {s : Set α} (h : IsInvariant ϕ s) (t : τ) {y : α} :
+    ϕ t y ∈ s ↔ y ∈ s :=
+  ⟨fun hy ↦ by simpa only [← ϕ.map_add, neg_add_cancel, ϕ.map_zero_apply] using h (-t) hy,
+    fun hy ↦ h t hy⟩
+
+/-- A point lies in a stable set exactly when its image under a time map of the flow does. -/
+theorem apply_mem_stableSet_iff (φ : _root_.Flow ℝ α) (t : ℝ) {x y : α} :
+    φ t y ∈ stableSet φ x ↔ y ∈ stableSet φ x :=
+  (isInvariant_stableSet φ x).flow_apply_mem_iff t
+
+/-- A point lies in an unstable set exactly when its image under a time map of the flow does. -/
+theorem apply_mem_unstableSet_iff (φ : _root_.Flow ℝ α) (t : ℝ) {x y : α} :
+    φ t y ∈ unstableSet φ x ↔ y ∈ unstableSet φ x :=
+  (isInvariant_unstableSet φ x).flow_apply_mem_iff t
 
 /-- If some trajectory converges to `x` in forward time, then `x` is fixed by every time map of
 the flow. -/

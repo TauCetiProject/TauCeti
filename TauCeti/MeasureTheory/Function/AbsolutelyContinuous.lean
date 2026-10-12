@@ -29,6 +29,8 @@ variation.
   space is continuous on its interval.
 * `AbsolutelyContinuousOnInterval.boundedVariationOn'`: an absolutely continuous curve in a
   pseudometric space has bounded variation on its interval.
+* `AbsolutelyContinuousOnInterval.prodMk`: a pair of absolutely continuous curves is an absolutely
+  continuous curve in the product.
 -/
 
 public section
@@ -58,5 +60,18 @@ theorem boundedVariationOn' (hγ : AbsolutelyContinuousOnInterval γ a b) :
     simp only [eVariationOn, Function.comp_apply, he.edist_eq]
   rw [BoundedVariationOn, ← hvar]
   exact (he.lipschitzWith.comp_absolutelyContinuousOnInterval hγ).boundedVariationOn
+
+/-- A pair of absolutely continuous curves in pseudometric spaces is an absolutely continuous curve
+in their product. -/
+theorem prodMk {Y : Type*} [PseudoMetricSpace Y] {δ : ℝ → Y}
+    (hγ : AbsolutelyContinuousOnInterval γ a b) (hδ : AbsolutelyContinuousOnInterval δ a b) :
+    AbsolutelyContinuousOnInterval (fun t ↦ (γ t, δ t)) a b := by
+  unfold AbsolutelyContinuousOnInterval at hγ hδ ⊢
+  refine squeeze_zero (fun _ ↦ Finset.sum_nonneg fun _ _ ↦ dist_nonneg) (fun _ ↦ ?_)
+    (by simpa using hγ.add hδ)
+  rw [← Finset.sum_add_distrib]
+  gcongr
+  rw [Prod.dist_eq]
+  exact max_le_add_of_nonneg dist_nonneg dist_nonneg
 
 end AbsolutelyContinuousOnInterval

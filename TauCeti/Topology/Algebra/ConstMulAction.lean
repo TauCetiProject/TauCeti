@@ -22,7 +22,8 @@ import Mathlib.Topology.Algebra.Group.Basic
 # Transfer instances for restricted and properly discontinuous actions
 
 This file records generic instances for actions on a topological space that typeclass search
-cannot otherwise reach. A submonoid, and hence a subgroup, inherits `ContinuousConstSMul` from
+cannot otherwise reach, and continuity of maps equal to fixed-element scalar actions.
+A submonoid, and hence a subgroup, inherits `ContinuousConstSMul` from
 an ambient scalar action; and a properly discontinuous action has `Finite` point stabilisers.
 It also records that a properly discontinuous scalar family on a nonempty σ-compact space is
 countable, and that the translates of a compact set under it form a locally finite family.
@@ -62,6 +63,12 @@ namespace TauCeti
 
 open Topology
 open scoped Pointwise
+
+/-- A map equal to the action of a fixed scalar is continuous. -/
+theorem continuous_of_eq_smul {G M : Type*} [TopologicalSpace M] [SMul G M]
+    [ContinuousConstSMul G M] (g : G) {f : M → M} (hf : ∀ m : M, f m = g • m) :
+    Continuous f :=
+  (continuous_const_smul g).congr fun m => (hf m).symm
 
 section DisjointTranslates
 

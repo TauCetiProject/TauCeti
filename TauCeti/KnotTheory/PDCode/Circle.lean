@@ -207,6 +207,14 @@ theorem exists_eq_adjoinCircle_of_mem {D : OrientedPDCode n} {o : Bool}
       OrientedPDCode.adjoinCircle D.mirror orientation := by
   apply OrientedPDCode.ext <;> simp
 
+/-- Reversing component directions reverses the direction of an added circle too. -/
+@[simp] theorem reverse_adjoinCircle (D : OrientedPDCode n) (o : Bool) :
+    (D.adjoinCircle o).reverse = D.reverse.adjoinCircle (!o) := by
+  apply OrientedPDCode.ext
+  · simp
+  · funext x; simp
+  · simp
+
 /-- Adjoining a circle to a nonempty oriented diagram multiplies the normalized bracket by the
 same loop value as the unoriented bracket, since the writhe is unchanged. -/
 @[simp] theorem normalizedKauffmanBracket_adjoinCircle {R : Type*} [CommRing R]

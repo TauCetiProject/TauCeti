@@ -8,6 +8,7 @@ module
 public import TauCeti.NumberTheory.QuadraticForm.Global.Localization
 public import TauCeti.Topology.Algebra.QuadraticForm.Continuity
 
+import TauCeti.FieldTheory.SquareClassGroup.Real
 import TauCeti.NumberTheory.LocalField.PowerSubgroup.Open
 import TauCeti.RingTheory.DedekindDomain.AdicValuation.ValuativeRel
 import TauCeti.Topology.Algebra.GroupWithZero.Squares
@@ -76,9 +77,12 @@ theorem _root_.QuadraticForm.exists_isOpen_isSquare_div_atRealPlace
     ∃ U : Set (RealScalarExtension (V := V) w), IsOpen U ∧ x ∈ U ∧
       ∀ z ∈ U, Q.atRealPlace w z ≠ 0 ∧
         IsSquare (Q.atRealPlace w z / Q.atRealPlace w x) := by
-  let : Algebra K ℝ := (embedding_of_isReal w.2).toAlgebra
-  obtain ⟨U, hU, hUo, hxU⟩ :=
-    mem_nhds_iff.mp ((Q.atRealPlace w).eventually_isSquare_div hx)
+  obtain ⟨U, hU, hUo, hxU⟩ := mem_nhds_iff.mp
+    ((Q.continuous_atRealPlace w).continuousAt.eventually_isSquare_div_of_isOpen_squares
+      (by
+        simpa only [Units.isSquare_iff_pos] using
+          (isOpen_lt continuous_const Units.continuous_val : IsOpen {u : ℝˣ | 0 < (u : ℝ)}))
+      hx)
   exact ⟨U, hUo, hxU, fun z hz ↦ hU hz⟩
 
 /-- Around a finite local vector with nonzero value there is an open neighborhood on which
