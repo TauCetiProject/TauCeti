@@ -59,6 +59,20 @@ theorem nonempty_connectedTriplesWithExactOrders_iff :
   · rintro ⟨t, ho⟩
     exact ⟨t.1, t.2, ho⟩
 
+/-- A connected triple with specified exact orders exists if and only if its signature occurs
+in the computed order table for that degree. -/
+theorem exists_hasExactOrders_iff_mem_image_computedOrderTriple :
+    (∃ t : ConnectedTriple n, t.1.HasExactOrders a b c) ↔
+      (a, b, c) ∈ (connectedTriples n).image PermutationTriple.computedOrderTriple := by
+  rw [Finset.mem_image]
+  simp only [mem_connectedTriples, PermutationTriple.computedOrderTriple_eq,
+    ← PermutationTriple.hasExactOrders_iff]
+  constructor
+  · rintro ⟨t, ho⟩
+    exact ⟨t.1, t.2, ho⟩
+  · rintro ⟨t, ht, ho⟩
+    exact ⟨⟨t, ht⟩, ho⟩
+
 /-- There are no connected triples of degree zero, for any order specification. -/
 @[simp] theorem connectedTriplesWithExactOrders_zero (a b c : ℕ) :
     connectedTriplesWithExactOrders 0 a b c = ∅ := by
@@ -88,14 +102,8 @@ theorem exists_hasExactOrders_three_iff (a b c : ℕ) :
     (∃ t : ConnectedTriple 3, t.1.HasExactOrders a b c) ↔
       (a, b, c) ∈ ({(1, 3, 3), (3, 1, 3), (3, 3, 1), (2, 2, 3),
         (2, 3, 2), (3, 2, 2), (3, 3, 3)} : Finset (ℕ × ℕ × ℕ)) := by
-  rw [← image_computedOrderTriple_connectedTriples_three, Finset.mem_image]
-  simp only [mem_connectedTriples, PermutationTriple.computedOrderTriple_eq,
-    ← PermutationTriple.hasExactOrders_iff]
-  constructor
-  · rintro ⟨t, ho⟩
-    exact ⟨t.1, t.2, ho⟩
-  · rintro ⟨t, ht, ho⟩
-    exact ⟨⟨t, ht⟩, ho⟩
+  rw [exists_hasExactOrders_iff_mem_image_computedOrderTriple,
+    image_computedOrderTriple_connectedTriples_three]
 
 /-! The searches below count numbered triples. They exercise exactness, positive genus,
 and the distinction between individual orders and a realizable product-one signature. -/
