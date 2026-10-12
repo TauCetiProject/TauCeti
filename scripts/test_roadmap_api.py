@@ -1,0 +1,392 @@
+"""Hermetic API, mutation, recovery, and workflow tests: python3 scripts/test_roadmap_api.py."""
+
+import argparse
+import contextlib
+import copy
+import io
+import json
+import os
+from pathlib import Path
+import subprocess
+import tempfile
+import unittest
+from unittest.mock import Mock, patch
+
+import github_api as ga
+import roadmap_label as rl
+import structure_nudge as sn
+
+
+def reply(status=200, data=None, headers=None):
+    headers = {"X-RateLimit-Remaining": "100", "X-RateLimit-Reset": "2000", **(headers or {})}
+    raw = f"HTTP/2.0 {status}\r\n" + "".join(f"{k}: {v}\r\n" for k, v in headers.items())
+    return subprocess.CompletedProcess([], 0 if status < 400 else 1,
+                                       raw + "\r\n" + json.dumps(data), "gh: error" if status >= 400 else "")
+
+
+def info(number=1, labels=("roadmap/PDE",), updated="2026-10-12T00:00:00Z"):
+    return {"number": number, "title": "test", "body": "Roadmap: PDE", "state": "open",
+            "head": {"sha": "head"}, "base": {"sha": "base"}, "changed_files": 1,
+            "labels": [{"name": label} for label in labels], "updated_at": updated}
+
+
+FILES = [{"filename": "TauCeti/FooBar.lean", "status": "added"}]
+
+
+def graph_row(head="head"):
+    return {"title": "test", "body": "Roadmap: PDE", "state": "OPEN",
+            "headRefOid": head, "baseRefOid": "base", "changedFiles": 1,
+            "labels": {"nodes": [{"name": "roadmap/PDE"}], "pageInfo": {"hasNextPage": False}},
+            "files": {"nodes": [{"path": "TauCeti/FooBar.lean", "changeType": "ADDED"}],
+                      "totalCount": 1, "pageInfo": {"hasNextPage": False, "endCursor": "last"}}}
+
+
+def graph_result(row):
+    return {"repository": {"pullRequest": row}}
+
+
+class API(unittest.TestCase):
+    def setUp(self):
+        self.clock = 1000.0
+        self.sleeps = []
+        self.stack = contextlib.ExitStack()
+        self.addCleanup(self.stack.close)
+        self.output = io.StringIO()
+        self.stack.enter_context(contextlib.redirect_stderr(self.output))
+        self.stack.enter_context(patch.dict(os.environ, {}, clear=True))
+        self.stack.enter_context(patch.object(ga.time, "time", side_effect=lambda: self.clock))
+        self.stack.enter_context(patch.object(ga.time, "monotonic", side_effect=lambda: self.clock))
+        self.stack.enter_context(patch.object(ga.time, "sleep", side_effect=self.sleep))
+        self.run = self.stack.enter_context(patch.object(ga.subprocess, "run"))
+        self.api = ga.GitHub()
+
+    def sleep(self, seconds):
+        self.sleeps.append(seconds)
+        self.clock += seconds
+
+    def test_read_and_write_select_different_credentials_without_leaking_them(self):
+        os.environ.update(GH_READ_TOKEN="read-secret", GH_TOKEN="write-secret", GITHUB_TOKEN="other-secret")
+        self.run.return_value = reply(data={})
+        self.api.request("GET", "repos/o/r/pulls/1")
+        self.api.request("POST", "repos/o/r/issues/1/labels", {"labels": ["roadmap/none"]})
+        read, write = self.run.call_args_list
+        self.assertEqual(read.kwargs["env"]["GH_TOKEN"], "read-secret")
+        self.assertNotIn("GITHUB_TOKEN", read.kwargs["env"])
+        self.assertEqual(write.kwargs["env"]["GH_TOKEN"], "write-secret")
+        self.assertEqual(json.loads(write.kwargs["input"]), {"labels": ["roadmap/none"]})
+        self.api.report()
+        self.assertEqual(self.api.stats["workflow-read"]["reads"], 1)
+        self.assertEqual(self.api.stats["app-write"]["writes"], 1)
+        for secret in ("read-secret", "write-secret", "other-secret"):
+            self.assertNotIn(secret, self.output.getvalue())
+
+    def test_graphql_queries_use_read_credential_and_record_points(self):
+        os.environ.update(GH_READ_TOKEN="read-secret", GH_TOKEN="write-secret")
+        self.run.return_value = reply(data={"data": {"rateLimit": {"cost": 2}, "repository": {}}},
+                                      headers={"X-RateLimit-Resource": "graphql"})
+        self.assertEqual(self.api.graphql("query { rateLimit { cost } }", {}),
+                         {"rateLimit": {"cost": 2}, "repository": {}})
+        self.assertEqual(self.run.call_args.kwargs["env"]["GH_TOKEN"], "read-secret")
+        self.assertEqual(self.api.stats["workflow-read"]["graphql_points"], 2)
+        self.assertEqual(self.api.stats["workflow-read"]["writes"], 0)
+
+    def test_graphql_http_200_exhaustion_is_deferred(self):
+        self.run.return_value = reply(data={"errors": [{"message": "API rate limit already exceeded"}]},
+                                      headers={"X-RateLimit-Remaining": "0", "X-RateLimit-Resource": "graphql"})
+        with self.assertRaises(ga.Deferred):
+            self.api.graphql("query { repository { name } }", {})
+        self.run.assert_called_once()
+
+    def test_graphql_partial_data_and_schema_errors_are_not_used(self):
+        self.run.return_value = reply(data={"data": {"repository": {}},
+                                           "errors": [{"message": "Field does not exist"}]})
+        with self.assertRaises(ga.APIError):
+            self.api.graphql("query { badField }", {})
+        self.run.assert_called_once()
+
+    def test_non_json_server_error_on_get_is_retried(self):
+        error = subprocess.CompletedProcess([], 1, "HTTP/2.0 502\r\n\r\nBad gateway", "")
+        self.run.side_effect = [error, reply(data={})]
+        self.assertEqual(self.api.request("GET", "repos/o/r/labels"), {})
+        self.assertEqual(self.sleeps, [2])
+
+    def test_local_auth_does_not_replace_inherited_credential(self):
+        os.environ["GH_TOKEN"] = "local"
+        self.run.return_value = reply(data={})
+        self.api.request("GET", "user")
+        self.assertEqual(self.run.call_args.kwargs["env"]["GH_TOKEN"], "local")
+        self.assertIn("gh-default", self.api.stats)
+
+    def test_primary_far_reset_defers_without_fast_retries_or_repeated_probes(self):
+        self.run.return_value = reply(403, {"message": "API rate limit exceeded for installation ID 143500674"},
+                                      {"X-RateLimit-Remaining": "0", "X-RateLimit-Reset": "3000"})
+        with self.assertRaises(ga.Deferred) as caught:
+            self.api.request("POST", "repos/o/r/labels", {})
+        self.assertEqual(caught.exception.until, 3005)
+        with self.assertRaises(ga.Deferred):
+            self.api.request("GET", "repos/o/r/pulls/2")
+        self.run.assert_called_once()
+        self.assertEqual(self.sleeps, [])
+
+    def test_primary_near_reset_waits_until_reset_with_margin(self):
+        self.run.side_effect = [reply(403, {"message": "API rate limit exceeded"},
+                                     {"X-RateLimit-Remaining": "0", "X-RateLimit-Reset": "1010"}), reply(data=[])]
+        self.assertEqual(self.api.request("GET", "repos/o/r/labels"), [])
+        self.assertEqual(self.sleeps, [15])
+
+    def test_missing_primary_reset_is_conservative(self):
+        self.run.return_value = reply(403, {"message": "API rate limit exceeded"}, {"X-RateLimit-Reset": ""})
+        with self.assertRaises(ga.Deferred):
+            self.api.request("GET", "repos/o/r/labels")
+        self.run.assert_called_once()
+
+    def test_retry_after_seconds_and_http_date(self):
+        for value in ("90", "Thu, 01 Jan 1970 00:18:10 GMT"):
+            with self.subTest(value=value):
+                self.clock, self.sleeps = 1000, []
+                self.run.side_effect = [reply(429, {"message": "secondary rate limit"}, {"Retry-After": value}),
+                                        reply(data={})]
+                ga.GitHub().request("GET", "repos/o/r/labels")
+                self.assertEqual(self.sleeps, [90])
+
+    def test_secondary_backoff_is_bounded_and_shared_across_calls(self):
+        self.run.return_value = reply(403, {"message": "You have exceeded a secondary rate limit"})
+        with self.assertRaises(ga.Deferred):
+            self.api.request("GET", "repos/o/r/labels")
+        self.assertEqual(self.sleeps, [60, 120])
+        self.assertEqual(self.run.call_count, 3)
+        with self.assertRaises(ga.Deferred):
+            self.api.request("GET", "repos/o/r/pulls/1")
+        self.assertEqual(self.run.call_count, 3)
+
+    def test_permissions_and_validation_errors_are_not_retried(self):
+        for status in (403, 404, 422):
+            with self.subTest(status=status):
+                self.run.reset_mock()
+                self.run.return_value = reply(status, {"message": "Resource not accessible"})
+                with self.assertRaises(ga.APIError):
+                    ga.GitHub().request("GET", "repos/o/r/labels")
+                self.run.assert_called_once()
+        self.assertEqual(self.sleeps, [])
+
+    def test_ambiguous_comment_post_is_not_retried_but_get_is(self):
+        self.run.return_value = reply(502, {"message": "Bad gateway"})
+        with self.assertRaises(ga.APIError):
+            self.api.request("POST", "repos/o/r/issues/1/comments", {"body": "test"})
+        self.run.assert_called_once()
+        self.run.reset_mock()
+        self.run.side_effect = [reply(502, {}), reply(data=[])]
+        self.api.request("GET", "repos/o/r/issues/1/comments")
+        self.assertEqual(self.run.call_count, 2)
+
+    def test_mutations_are_spaced(self):
+        self.run.return_value = reply(data={})
+        self.api.request("POST", "repos/o/r/issues/1/labels", {})
+        self.api.request("DELETE", "repos/o/r/issues/1/labels/old")
+        self.assertEqual(self.sleeps, [1])
+
+    def test_all_pages_are_read_with_headers(self):
+        self.run.side_effect = [reply(data=list(range(100))), reply(data=[100])]
+        self.assertEqual(self.api.items("repos/o/r/pulls?state=open"), list(range(101)))
+        self.assertIn("state=open&per_page=100&page=2", self.run.call_args.args[0][-1])
+        self.assertEqual(self.api.stats["gh-default"]["requests"], 2)
+
+
+class Mutations(unittest.TestCase):
+    def setUp(self):
+        self.api = Mock(known_labels=set())
+
+    def test_correct_label_with_other_labels_is_a_true_no_op(self):
+        rl.apply_label(self.api, "o/r", 1, "roadmap/PDE", {"PDE"}, info(labels=("roadmap/PDE", "ready"))["labels"])
+        self.api.request.assert_not_called()
+
+    def test_relabel_adds_before_removing_and_preserves_unrelated_labels(self):
+        self.api.request.return_value = {}
+        rl.apply_label(self.api, "o/r", 1, "roadmap/PDE", {"PDE"}, info(labels=("roadmap/none", "ready"))["labels"])
+        calls = [call.args for call in self.api.request.call_args_list]
+        self.assertEqual(calls, [("GET", "repos/o/r/labels/roadmap%2FPDE"),
+                                ("POST", "repos/o/r/issues/1/labels", {"labels": ["roadmap/PDE"]}),
+                                ("DELETE", "repos/o/r/issues/1/labels/roadmap%2Fnone")])
+
+    def test_only_missing_labels_are_created_and_cached(self):
+        self.api.request.side_effect = [ga.APIError("GET", "label", 404, {}), {}]
+        for _ in range(2):
+            rl.ensure_label(self.api, "o/r", "roadmap/PDE", "blue", "desc")
+        self.assertEqual(self.api.request.call_count, 2)
+        self.assertEqual(self.api.request.call_args.args,
+                         ("POST", "repos/o/r/labels", {"name": "roadmap/PDE", "color": "blue", "description": "desc"}))
+
+    def test_probe_failure_does_not_become_missing_label(self):
+        self.api.request.side_effect = ga.APIError("GET", "label", 403, {})
+        with self.assertRaises(ga.APIError):
+            rl.ensure_label(self.api, "o/r", "roadmap/PDE", "blue", "desc")
+        self.api.request.assert_called_once()
+
+    def test_concurrent_creation_is_accepted_but_other_validation_errors_are_not(self):
+        for code in ("already_exists", "invalid"):
+            self.api.request.reset_mock()
+            self.api.known_labels.clear()
+            self.api.request.side_effect = [ga.APIError("GET", "label", 404, {}),
+                                           ga.APIError("POST", "label", 422, {"errors": [{"code": code}]})]
+            if code == "already_exists":
+                rl.ensure_label(self.api, "o/r", "roadmap/PDE", "blue", "desc")
+            else:
+                with self.assertRaises(ga.APIError):
+                    rl.ensure_label(self.api, "o/r", "roadmap/PDE", "blue", "desc")
+
+    def test_partial_relabel_repairs_stale_labels_without_readding_target(self):
+        rl.apply_label(self.api, "o/r", 1, "roadmap/PDE", {"PDE"}, info(labels=("roadmap/PDE", "roadmap/none"))["labels"])
+        self.api.request.assert_called_once_with("DELETE", "repos/o/r/issues/1/labels/roadmap%2Fnone")
+
+    def test_label_presentation_is_a_separate_no_op_or_one_patch(self):
+        color, desc = rl._label_meta("roadmap/none", set())
+        self.api.items.return_value = [
+            {"name": "roadmap/none", "color": color, "description": desc},
+            {"name": "roadmap/Unknown", "color": rl.UNKNOWN_COLOR,
+             "description": rl._label_meta("roadmap/Unknown", set())[1]}]
+        rl.sync_labels(self.api, "o/r", set())
+        self.api.request.assert_not_called()
+        self.api.items.return_value[0]["description"] = "old"
+        rl.sync_labels(self.api, "o/r", set())
+        self.api.request.assert_called_once_with("PATCH", "repos/o/r/labels/roadmap%2Fnone",
+                                                 {"color": color, "description": desc})
+
+    def test_structure_reuses_snapshot_and_skips_identical_comment(self):
+        snapshot = {"info": info(), "files": FILES}
+        findings = {"TauCeti/FooBar.lean": sn.candidates_for("TauCeti/FooBar.lean", {"TauCeti/Foo.lean"})}
+        self.api.items.return_value = [{"id": 42, "body": sn.render_comment("head", findings)}]
+        with patch.object(sn, "_local_tree", return_value={"TauCeti/Foo.lean"}), patch.object(sn, "pr_snapshot") as fetch:
+            sn.run_pr("o/r", 1, True, api=self.api, snapshot=snapshot)
+        fetch.assert_not_called()
+        self.api.request.assert_not_called()
+
+
+class Recovery(unittest.TestCase):
+    def args(self, **kwargs):
+        values = dict(repo="o/r", since="2026-10-12T00:00:00Z", reconcile_open=True,
+                      backfill=False, apply=True, allow_relabel=False, limit=5000)
+        return argparse.Namespace(**(values | kwargs))
+
+    def test_old_missing_invalid_and_multiple_labels_are_repaired(self):
+        api = Mock()
+        old = "2026-10-11T00:00:00Z"
+        api.pages.return_value = [[info(1), info(2, updated=old), info(3, (), old),
+                                   info(4, ("roadmap/Removed",), old),
+                                   info(5, ("roadmap/PDE", "roadmap/none"), old)]]
+        self.assertEqual(list(rl.candidates(api, self.args(), {"PDE"})), [1, 3, 4, 5])
+
+    def test_watermark_is_previous_success_start_and_initial_scan_is_complete(self):
+        api = Mock()
+        api.request.return_value = {"workflow_runs": [{"run_started_at": "2026-10-12T00:00:00Z"}]}
+        self.assertEqual(rl.recovery_since(api, "o/r"), "2026-10-11T23:58:00Z")
+        self.assertIn("status=success", api.request.call_args.args[1])
+        api.request.return_value = {"workflow_runs": []}
+        self.assertEqual(rl.recovery_since(api, "o/r"), "1970-01-01T00:00:00Z")
+
+    def test_listing_cap_fails_instead_of_advancing_incomplete_window(self):
+        api = Mock()
+        api.pages.return_value = [[info(1), info(2)]]
+        with self.assertRaisesRegex(RuntimeError, "listing reached"):
+            list(rl.candidates(api, self.args(limit=1), {"PDE"}))
+
+    def test_historical_backfill_honors_an_intentional_limit(self):
+        api = Mock()
+        api.pages.return_value = [[info(1), info(2)]]
+        self.assertEqual(list(rl.candidates(api, self.args(limit=1, reconcile_open=False,
+                                                         backfill=True, apply=False), {"PDE"})), [1])
+
+    def test_snapshot_retries_a_changed_head_and_rejects_incomplete_diff(self):
+        api = Mock()
+        old, changed = graph_row(), graph_row(head="new")
+        old["files"]["pageInfo"] = {"hasNextPage": True, "endCursor": "cursor"}
+        api.graphql.side_effect = [graph_result(old), graph_result(changed), graph_result(changed)]
+        self.assertEqual(ga.pr_snapshot(api, "o/r", 1)["info"]["head"]["sha"], "new")
+        changed["changedFiles"] = 2
+        api.graphql.side_effect = [graph_result(changed)]
+        with self.assertRaisesRegex(RuntimeError, "incomplete file list"):
+            ga.pr_snapshot(api, "o/r", 1)
+
+    def test_snapshot_combines_file_pages_and_includes_latest_labels(self):
+        api = Mock()
+        first, second = graph_row(), graph_row()
+        for row in (first, second):
+            row["changedFiles"] = row["files"]["totalCount"] = 2
+        first["files"]["pageInfo"] = {"hasNextPage": True, "endCursor": "next"}
+        second["files"]["nodes"] = [{"path": "scripts/infra.py", "changeType": "ADDED"}]
+        second["labels"]["nodes"] = [{"name": "roadmap/none"}]
+        api.graphql.side_effect = [graph_result(first), graph_result(second)]
+        snapshot = ga.pr_snapshot(api, "o/r", 1)
+        self.assertEqual([row["filename"] for row in snapshot["files"]],
+                         ["TauCeti/FooBar.lean", "scripts/infra.py"])
+        self.assertEqual(snapshot["info"]["labels"], [{"name": "roadmap/none"}])
+        self.assertEqual(api.graphql.call_args.args[1]["after"], "next")
+
+    def test_snapshot_fetches_labels_beyond_first_page(self):
+        api = Mock()
+        row = graph_row()
+        row["labels"]["pageInfo"]["hasNextPage"] = True
+        api.graphql.return_value = graph_result(row)
+        api.items.return_value = [{"name": "roadmap/PDE"}]
+        self.assertEqual(ga.pr_snapshot(api, "o/r", 1)["info"]["labels"], api.items.return_value)
+        api.items.assert_called_once_with("repos/o/r/issues/1/labels")
+
+    def test_deferred_run_fails_and_stops_remaining_items(self):
+        api = Mock()
+        with tempfile.TemporaryDirectory() as directory:
+            area = Path(directory) / "PDE"
+            area.mkdir()
+            (area / "README.md").touch()
+            with patch.object(rl, "GitHub", return_value=api), \
+                 patch.object(rl, "candidates", return_value=iter([1, 2])), \
+                 patch.object(rl, "run_pr", side_effect=ga.Deferred("app-write", 2000)) as run:
+                self.assertEqual(rl.main(["--roadmap-dir", directory, "--reconcile-open", "--apply"]), 1)
+            run.assert_called_once()
+            api.report.assert_called_once()
+
+    def test_all_candidates_are_listed_before_writes_and_item_failure_fails_pass(self):
+        api = Mock()
+        order = []
+        def listing(*_):
+            for pr in (1, 2):
+                order.append(f"list {pr}")
+                yield pr
+        def process(_api, _args, _areas, pr):
+            order.append(f"write {pr}")
+            if pr == 1:
+                raise RuntimeError("failed item")
+        with tempfile.TemporaryDirectory() as directory:
+            area = Path(directory) / "PDE"
+            area.mkdir()
+            (area / "README.md").touch()
+            with patch.object(rl, "GitHub", return_value=api),                  patch.object(rl, "candidates", side_effect=listing),                  patch.object(rl, "run_pr", side_effect=process):
+                self.assertEqual(rl.main(["--roadmap-dir", directory, "--reconcile-open", "--apply"]), 1)
+        self.assertEqual(order, ["list 1", "list 2", "write 1", "write 2"])
+
+    def test_advisory_rate_limit_cannot_advance_recovery_watermark(self):
+        args = self.args(structure_nudge=True, nudge=False)
+        api = Mock()
+        with patch.object(rl, "pr_snapshot", return_value={"info": info(), "files": FILES}), \
+             patch.object(sn, "run_pr", side_effect=ga.Deferred("app-write", 2000)):
+            with self.assertRaises(ga.Deferred):
+                rl.run_pr(api, args, {"PDE"}, 1)
+            args.reconcile_open = False
+            self.assertEqual(rl.run_pr(api, args, {"PDE"}, 1), "roadmap/PDE")
+
+    def test_workflow_preserves_app_writes_and_filters_title_edits(self):
+        root = Path(__file__).resolve().parents[1]
+        event = (root / ".github/workflows/roadmap-label.yml").read_text()
+        recovery = (root / ".github/workflows/roadmap-label-reconcile.yml").read_text()
+        for workflow in (event, recovery):
+            self.assertIn("GH_READ_TOKEN: ${{ github.token }}", workflow)
+            self.assertIn("GH_TOKEN: ${{ steps.app-token.outputs.token }}", workflow)
+            self.assertIn("--structure-nudge", workflow)
+            self.assertNotIn("github.event.pull_request.head.sha", workflow)
+        self.assertIn("github.event.changes.body != null", event)
+        self.assertLess(event.index("run: sleep 20"), event.index("actions/create-github-app-token"))
+        self.assertIn("actions: read", recovery)
+        self.assertIn("ref: main", recovery)
+        self.assertIn("cancel-in-progress: false", recovery)
+
+
+if __name__ == "__main__":
+    unittest.main()

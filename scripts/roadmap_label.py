@@ -19,7 +19,7 @@ A PR gets exactly one label, decided in this order:
 6. `roadmap/Unknown` -- attribution is absent, invalid, or conflicting.
 
 Evidence from steps 3--5 must agree. Area names are read at runtime from active
-and completed roadmaps, and labels are created on first use (`ensure_label`).
+and completed roadmaps, and labels are created only when missing (`ensure_label`).
 File paths and conventional-commit titles are deliberately not used as roadmap
 evidence.
 
@@ -36,7 +36,9 @@ evidence.
     roadmap_label.py --backfill --repo ... --roadmap-dir roadmap \
         --apply --allow-relabel
 
-`--apply`/`--nudge` shell out to `gh`, which must be authenticated (GH_TOKEN).
+API calls shell out to authenticated `gh`. GH_READ_TOKEN can separate reads
+from App writes (GH_TOKEN). --reconcile-open repairs missed event runs;
+--sync-labels maintains label presentation separately from per-PR writes.
 `classify` and the parsing helpers are pure and are what the tests exercise.
 """
 
@@ -46,9 +48,10 @@ import argparse
 import json
 import pathlib
 import re
-import subprocess
 import sys
-import time
+from urllib.parse import quote
+
+from github_api import APIError, Deferred, GitHub, pr_snapshot
 
 # --- label namespace -------------------------------------------------------
 
@@ -222,32 +225,40 @@ def canonical_areas(roadmap_dir: pathlib.Path) -> set[str]:
 # --- gh plumbing (only reached in --apply/--nudge/--pr/--backfill IO paths) --
 
 
-def _gh(args: list[str], retries: int = 3) -> str:
-    """Run `gh`, retrying transient failures (API 5xx, secondary rate limits).
+def ensure_label(api: GitHub, repo: str, name: str, color: str, desc: str) -> None:
+    """Create only on a definite 404, and cache the result for a reconciliation pass."""
+    key = (repo, name)
+    if key in api.known_labels:
+        return
+    try:
+        api.request("GET", f"repos/{repo}/labels/{quote(name, safe='')}")
+    except APIError as error:
+        if error.status != 404:
+            raise
+        try:
+            api.request("POST", f"repos/{repo}/labels",
+                        {"name": name, "color": color, "description": desc})
+        except APIError as create_error:
+            # Another run may have created it between our probe and POST.
+            errors = create_error.data.get("errors", []) if isinstance(create_error.data, dict) else []
+            if create_error.status != 422 or not any(
+                isinstance(item, dict) and item.get("code") == "already_exists" for item in errors
+            ):
+                raise
+    api.known_labels.add(key)
 
-    Every call site is idempotent (label add/remove, `label create --force`, and
-    comments guarded by a marker), so a retry after a partial failure is safe.
-    """
-    last = ""
-    for attempt in range(retries):
-        r = subprocess.run(
-            ["gh", *args], text=True,
-            stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-        )
-        if r.returncode == 0:
-            return r.stdout or ""
-        last = r.stderr or ""
-        if attempt < retries - 1:
-            time.sleep(2 * (attempt + 1))
-    raise RuntimeError(f"gh {' '.join(args)} failed after {retries} tries: {last}")
 
-
-def ensure_label(repo: str, name: str, color: str, desc: str) -> None:
-    """Create the label if missing (idempotent; `--force` heals colour/desc)."""
-    _gh([
-        "label", "create", name, "--repo", repo,
-        "--color", color, "--description", desc, "--force",
-    ])
+def sync_labels(api: GitHub, repo: str, areas: set[str]) -> None:
+    """Maintain presentation separately from the per-PR event path (manual opt-in)."""
+    existing = {row["name"]: row for row in api.items(f"repos/{repo}/labels")}
+    for name in sorted({NONE_LABEL, UNKNOWN_LABEL} | {area_label(a) for a in areas}):
+        color, desc = _label_meta(name, areas)
+        row = existing.get(name)
+        if row is None:
+            ensure_label(api, repo, name, color, desc)
+        elif row["color"].lower() != color or (row.get("description") or "") != desc:
+            api.request("PATCH", f"repos/{repo}/labels/{quote(name, safe='')}",
+                        {"color": color, "description": desc})
 
 
 def _label_meta(name: str, areas: set[str]) -> tuple[str, str]:
@@ -274,148 +285,159 @@ NUDGE_BODY = (
 )
 
 
-def apply_label(repo: str, pr: int, target: str, areas: set[str]) -> None:
-    """Set the PR's roadmap/* label to `target`, removing any stale ones."""
-    color, desc = _label_meta(target, areas)
-    ensure_label(repo, target, color, desc)
-    current = json.loads(_gh([
-        "pr", "view", str(pr), "--repo", repo, "--json", "labels",
-    ]))["labels"]
-    have = {l["name"] for l in current}
-    stale = [n for n in have if n.startswith("roadmap/") and n != target]
-    edits: list[str] = []
+def apply_label(api: GitHub, repo: str, pr: int, target: str, areas: set[str], current) -> None:
+    """Change only roadmap labels; preserve every unrelated label."""
+    have = {item["name"] for item in current}
+    stale = sorted(n for n in have if n.startswith("roadmap/") and n != target)
+    if target in have and not stale:
+        return  # No label creation, presentation update, or mutation for an unchanged PR.
     if target not in have:
-        edits += ["--add-label", target]
-    for s in stale:
-        edits += ["--remove-label", s]
-    if edits:  # nothing to do when the PR already carries exactly this label
-        _gh(["pr", "edit", str(pr), "--repo", repo, *edits])
+        color, desc = _label_meta(target, areas)
+        ensure_label(api, repo, target, color, desc)
+        api.request("POST", f"repos/{repo}/issues/{pr}/labels", {"labels": [target]})
+    for name in stale:
+        try:
+            api.request("DELETE", f"repos/{repo}/issues/{pr}/labels/{quote(name, safe='')}")
+        except APIError as error:
+            if error.status != 404:  # A concurrent reconciliation already removed it.
+                raise
 
 
-def _already_nudged(repo: str, pr: int) -> bool:
-    comments = json.loads(_gh([
-        "pr", "view", str(pr), "--repo", repo, "--json", "comments",
-    ]))["comments"]
-    return any(NUDGE_MARKER in (c.get("body") or "") for c in comments)
-
-
-def nudge(repo: str, pr: int) -> None:
-    """Post the citation nudge once (idempotent via a hidden marker)."""
-    if _already_nudged(repo, pr):
+def nudge(api: GitHub, repo: str, pr: int) -> None:
+    """Post the attribution nudge once; never retry an ambiguous comment POST."""
+    comments = api.items(f"repos/{repo}/issues/{pr}/comments")
+    if any(NUDGE_MARKER in (c.get("body") or "") for c in comments):
         return
-    _gh(["pr", "comment", str(pr), "--repo", repo, "--body", NUDGE_BODY])
-
-
-def _pr_fields(repo: str, pr: int) -> tuple[str, str, list[str]]:
-    d = json.loads(_gh([
-        "pr", "view", str(pr), "--repo", repo, "--json", "title,body,files",
-    ]))
-    return d.get("title") or "", d.get("body") or "", [f["path"] for f in d.get("files") or []]
+    api.request("POST", f"repos/{repo}/issues/{pr}/comments", {"body": NUDGE_BODY})
 
 
 # --- CLI -------------------------------------------------------------------
 
 
-def _run_one(args, areas) -> int:
-    title, body, files = _pr_fields(args.repo, args.pr)
+def run_pr(api, args, areas, pr):
+    snapshot = pr_snapshot(api, args.repo, pr)
+    info = snapshot["info"]
+    title, body = info.get("title") or "", info.get("body") or ""
+    files = [row["filename"] for row in snapshot["files"]]
     label = classify(title, body, files, areas)
-    print(f"#{args.pr}\t{label}\t{title}")
+    print(f"#{pr}\t{label}\t{title}")
     declared_present, declared = parse_declared_area(body, areas)
     if (is_infra(files) or is_pin_only(files)) and declared_present and declared not in {None, "none"}:
         reason = "infrastructure/empty diff" if is_infra(files) else "pin-only bump"
-        print(
-            f"::notice::Roadmap: {declared} is overridden by the {reason} classification"
-        )
+        print(f"::notice::Roadmap: {declared} is overridden by the {reason} classification")
     if args.apply:
-        apply_label(args.repo, args.pr, label, areas)
+        apply_label(api, args.repo, pr, label, areas, info["labels"])
         if args.nudge and label == UNKNOWN_LABEL:
-            nudge(args.repo, args.pr)
-    return 0
+            nudge(api, args.repo, pr)
+    if args.structure_nudge and info["state"] == "open":
+        import structure_nudge
+        try:
+            structure_nudge.run_pr(args.repo, pr, args.apply, api=api, snapshot=snapshot)
+        except Deferred:
+            # A recovery pass must not advance its watermark past an unapplied comment.
+            if args.reconcile_open:
+                raise
+            print(f"::warning::Structure nudge for #{pr} deferred; hourly reconciliation will retry")
+        except Exception as error:
+            if args.reconcile_open:
+                raise  # Preserve the recovery window for a transient advisory failure too.
+            print(f"::warning::Structure nudge for #{pr} failed: {error}")
+    return label
 
 
-def _run_backfill(args, areas) -> int:
-    prs = json.loads(_gh([
-        "pr", "list", "--repo", args.repo, "--state", "all",
-        "--limit", str(args.limit),
-        "--json", "number,title,body,files,state,labels",
-    ]))
-    from collections import Counter
-    tally: Counter[str] = Counter()
-    plan = []
-    for p in prs:
-        files = [f["path"] for f in p.get("files") or []]
-        label = classify(p.get("title") or "", p.get("body") or "", files, areas)
-        tally[label] += 1
-        current = {
-            item["name"] for item in p.get("labels") or []
-            if item["name"].startswith("roadmap/")
-        }
-        plan.append((p["number"], label, current))
-        print(f"#{p['number']}\t{p['state']}\t{label}\t{p.get('title','')}")
+def recovery_since(api, repo):
+    """Only successful recovery runs advance the window; overlap their start time."""
+    runs = api.request("GET", f"repos/{repo}/actions/workflows/roadmap-label-reconcile.yml/runs"
+                       "?status=success&branch=main&per_page=1")["workflow_runs"]
+    if not runs:
+        return "1970-01-01T00:00:00Z"
+    import datetime as dt
+    start = dt.datetime.fromisoformat(runs[0]["run_started_at"].replace("Z", "+00:00"))
+    # Match the status reconciler's overlap for clock skew and concurrent listing changes.
+    return (start - dt.timedelta(minutes=2)).strftime("%Y-%m-%dT%H:%M:%SZ")
 
-    failed: list[int] = []
-    if args.apply:
-        # A per-PR failure must not abandon the rest of the backfill; collect and
-        # retry once at the end (transient API errors are already retried in _gh).
-        for num, label, current in plan:
-            if current == {label}:
+
+def candidates(api, args, areas):
+    since = args.since
+    if args.reconcile_open and since == "auto":
+        since = recovery_since(api, args.repo)
+    state = "open" if args.reconcile_open else "all"
+    count = 0
+    valid = {NONE_LABEL, UNKNOWN_LABEL} | {area_label(a) for a in areas}
+    for page in api.pages(f"repos/{args.repo}/pulls?state={state}&sort=updated&direction=desc"):
+        for info in page:
+            if count >= args.limit:
+                if args.reconcile_open:
+                    raise RuntimeError("PR listing reached --limit; increase it to complete reconciliation")
+                return  # Historical backfills intentionally inspect only the requested count.
+            count += 1
+            current = {item["name"] for item in info["labels"] if item["name"].startswith("roadmap/")}
+            # Old PRs with missing/invalid labels also self-heal, regardless of the window.
+            if args.reconcile_open and since and info["updated_at"] < since and len(current) == 1 and current <= valid:
                 continue
-            if current and current != {label} and not args.allow_relabel:
-                print(
-                    f"  - #{num}: preserving {', '.join(sorted(current))}; "
-                    "pass --allow-relabel to change it",
-                    file=sys.stderr,
-                )
+            if args.apply and args.backfill and current and not args.allow_relabel:
                 continue
-            try:
-                apply_label(args.repo, num, label, areas)  # never nudges
-            except Exception as e:  # noqa: BLE001 -- keep going, report at the end
-                print(f"  ! #{num}: {e}", file=sys.stderr)
-                failed.append(num)
-        for num in list(failed):
-            label = next(label for plan_num, label, _ in plan if plan_num == num)
-            try:
-                apply_label(args.repo, num, label, areas)
-                failed.remove(num)
-            except Exception as e:  # noqa: BLE001
-                print(f"  ! #{num} (retry): {e}", file=sys.stderr)
-
-    print("\n=== summary ===", file=sys.stderr)
-    for name, n in sorted(tally.items(), key=lambda kv: -kv[1]):
-        print(f"  {name:24} {n}", file=sys.stderr)
-    if failed:
-        print(f"  UNAPPLIED (needs another run): {failed}", file=sys.stderr)
-        return 1
-    return 0
+            yield info["number"]
 
 
 def main(argv: list[str] | None = None) -> int:
-    ap = argparse.ArgumentParser(description="Assign roadmap labels to PRs.")
+    ap = argparse.ArgumentParser(description="Assign roadmap labels and reconcile missed events.")
     ap.add_argument("--repo", default="TauCetiProject/TauCeti")
-    ap.add_argument("--roadmap-dir", required=True,
-                    help="path to a TauCetiRoadmap checkout (for the canonical area set)")
-    ap.add_argument("--pr", type=int, help="classify a single PR")
-    ap.add_argument("--backfill", action="store_true", help="classify every PR")
-    ap.add_argument("--limit", type=int, default=5000, help="max PRs for --backfill")
-    ap.add_argument("--apply", action="store_true", help="write the label to the PR(s)")
-    ap.add_argument(
-        "--allow-relabel", action="store_true",
-        help="with --backfill --apply, permit changing an existing roadmap/* label",
-    )
-    ap.add_argument("--nudge", action="store_true",
-                    help="with --pr --apply: comment once when the label is roadmap/Unknown")
-    a = ap.parse_args(argv)
-
-    areas = canonical_areas(pathlib.Path(a.roadmap_dir))
+    ap.add_argument("--roadmap-dir", required=True)
+    mode = ap.add_mutually_exclusive_group(required=True)
+    mode.add_argument("--pr", type=int)
+    mode.add_argument("--backfill", action="store_true", help="inspect historical PRs")
+    mode.add_argument("--reconcile-open", action="store_true", help="repair open PRs since a successful recovery")
+    ap.add_argument("--since", default="auto", help="recovery window start (ISO UTC); auto uses the previous success")
+    ap.add_argument("--limit", type=int, default=5000)
+    ap.add_argument("--apply", action="store_true")
+    ap.add_argument("--allow-relabel", action="store_true")
+    ap.add_argument("--nudge", action="store_true")
+    ap.add_argument("--structure-nudge", action="store_true", help="reuse the diff for the advisory structure nudge")
+    ap.add_argument("--sync-labels", action="store_true", help="also maintain repository label colours/descriptions")
+    args = ap.parse_args(argv)
+    if args.limit < 1:
+        ap.error("--limit must be positive")
+    if args.since != "auto":
+        import datetime as dt
+        try:
+            moment = dt.datetime.fromisoformat(args.since.replace("Z", "+00:00"))
+            if moment.utcoffset() != dt.timedelta(0):
+                raise ValueError("UTC required")
+            args.since = moment.strftime("%Y-%m-%dT%H:%M:%SZ")
+        except ValueError:
+            ap.error("--since must be an ISO timestamp in UTC")
+    areas = canonical_areas(pathlib.Path(args.roadmap_dir))
     if not areas:
-        print(f"no roadmap areas found under {a.roadmap_dir}", file=sys.stderr)
+        print("no roadmap areas found", file=sys.stderr)
         return 2
-    if a.backfill:
-        return _run_backfill(a, areas)
-    if a.pr is not None:
-        return _run_one(a, areas)
-    ap.error("one of --pr or --backfill is required")
-    return 2
+    api = GitHub()
+    failed = False
+    try:
+        if args.sync_labels and args.apply:
+            sync_labels(api, args.repo, areas)
+        if args.pr is not None:
+            run_pr(api, args, areas, args.pr)
+        else:
+            # Finish paging before mutations move PRs to the front of the updated list.
+            pending = list(candidates(api, args, areas))
+            for pr in pending:
+                try:
+                    run_pr(api, args, areas, pr)
+                except Deferred:
+                    raise  # Do not hammer a blocked credential for each remaining PR.
+                except Exception as error:
+                    print(f"PR #{pr} unapplied: {error}", file=sys.stderr)
+                    failed = True
+        return 1 if failed else 0
+    except Deferred as error:
+        print(f"::warning::{error}; hourly reconciliation will retry", file=sys.stderr)
+        return 1  # A deferred recovery must not become the successful watermark.
+    except Exception as error:
+        print(f"Roadmap reconciliation failed: {error}", file=sys.stderr)
+        return 1
+    finally:
+        api.report()
 
 
 if __name__ == "__main__":

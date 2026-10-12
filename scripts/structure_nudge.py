@@ -37,11 +37,12 @@ right family boundary is left to humans and the placement rubric.
 from __future__ import annotations
 
 import argparse
-import json
 import pathlib
 import re
 import subprocess
 import sys
+
+from github_api import GitHub, pr_snapshot
 
 MARKER = "<!--structure:nudge-->"
 TRACKING_ISSUE = "https://github.com/TauCetiProject/TauCeti/issues/987"
@@ -131,51 +132,40 @@ def render_comment(head_sha: str, findings: dict[str, list[dict]]) -> str:
     return "\n".join(lines)
 
 
-def _gh_json(args: list[str]):
-    return json.loads(subprocess.run(["gh"] + args, check=True,
-                                     capture_output=True, text=True).stdout)
-
-
 def _local_tree() -> set[str]:
     out = subprocess.run(["git", "ls-files", "TauCeti/**/*.lean", "TauCeti/*.lean"],
                          check=True, capture_output=True, text=True).stdout
     return {l for l in out.splitlines() if l.endswith(".lean")}
 
 
-def run_pr(repo: str, pr: int, apply: bool) -> int:
-    info = _gh_json(["api", f"repos/{repo}/pulls/{pr}",
-                     "--jq", "{head: .head.sha}"])
-    files = _gh_json(["api", "--paginate", f"repos/{repo}/pulls/{pr}/files?per_page=100",
-                      "--jq", "[.[] | select(.status == \"added\") | .filename]"])
-    added = [f for f in files if f.endswith(".lean") and f.startswith("TauCeti/")]
+def run_pr(repo: str, pr: int, apply: bool, *, api: GitHub, snapshot=None) -> int:
+    snapshot = snapshot if snapshot is not None else pr_snapshot(api, repo, pr)
+    added = [row["filename"] for row in snapshot["files"]
+             if row["status"] == "added" and row["filename"].endswith(".lean")
+             and row["filename"].startswith("TauCeti/")]
     tree = _local_tree() | set(added)
     findings = {}
-    for f in added:
-        cands = candidates_for(f, tree - {f})
+    for path in added:
+        cands = candidates_for(path, tree - {path})
         if cands:
-            findings[f] = cands
+            findings[path] = cands
     if not findings:
         print(f"structure-nudge: PR #{pr}: no findings")
-        # An earlier comment may be stale (files since removed from the diff):
-        # leave it in place; it names the head SHA it analyzed.
         return 0
-    body = render_comment(info["head"], findings)
+    body = render_comment(snapshot["info"]["head"]["sha"], findings)
     if not apply:
         print(body)
         return 0
-    comments = _gh_json(["api", "--paginate",
-                         f"repos/{repo}/issues/{pr}/comments?per_page=100",
-                         "--jq", "[.[] | {id: .id, body: .body}]"])
-    prev = next((c["id"] for c in comments if MARKER in (c["body"] or "")), None)
+    comments = api.items(f"repos/{repo}/issues/{pr}/comments")
+    prev = next((comment for comment in comments if MARKER in (comment.get("body") or "")), None)
     if prev is not None:
-        subprocess.run(["gh", "api", "-X", "PATCH",
-                        f"repos/{repo}/issues/comments/{prev}", "-f", f"body={body}"],
-                       check=True, capture_output=True, text=True)
-        print(f"structure-nudge: PR #{pr}: updated comment {prev}")
+        if prev["body"] == body:
+            print(f"structure-nudge: PR #{pr}: comment unchanged")
+            return 0
+        api.request("PATCH", f"repos/{repo}/issues/comments/{prev['id']}", {"body": body})
+        print(f"structure-nudge: PR #{pr}: updated comment {prev['id']}")
     else:
-        subprocess.run(["gh", "api", f"repos/{repo}/issues/{pr}/comments",
-                        "-f", f"body={body}"],
-                       check=True, capture_output=True, text=True)
+        api.request("POST", f"repos/{repo}/issues/{pr}/comments", {"body": body})
         print(f"structure-nudge: PR #{pr}: posted comment")
     return 0
 
@@ -206,15 +196,18 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--tree-dry-run", action="store_true",
                     help="report over every existing file (snapshot mode)")
     args = ap.parse_args(argv)
+    api = GitHub()
     try:
         if args.tree_dry_run:
             return run_tree_dry_run()
         if args.pr is None:
             ap.error("--pr or --tree-dry-run required")
-        return run_pr(args.repo, args.pr, args.apply)
+        return run_pr(args.repo, args.pr, args.apply, api=api)
     except Exception as e:  # advisory: never fail the job
         print(f"::warning::structure-nudge failed harmlessly: {e}")
         return 0
+    finally:
+        api.report()
 
 
 if __name__ == "__main__":

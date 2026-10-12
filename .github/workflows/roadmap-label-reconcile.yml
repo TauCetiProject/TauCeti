@@ -1,0 +1,75 @@
+name: Roadmap label recovery
+
+# Repair missed/cancelled/limited event runs without requiring another author edit.
+# Only a successful recovery advances the time window. Old PRs without a valid
+# roadmap label are also inspected, so a deleted label always self-heals.
+on:
+  schedule:
+    - cron: "17 * * * *"
+  workflow_dispatch:
+    inputs:
+      full-scan:
+        description: Reclassify every open PR (also use after roadmap changes)
+        type: boolean
+        default: false
+      sync-labels:
+        description: Maintain roadmap label colours and descriptions
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+  pull-requests: read
+  actions: read
+
+concurrency:
+  group: roadmap-label-recovery
+  cancel-in-progress: false
+
+jobs:
+  reconcile:
+    if: github.repository == 'TauCetiProject/TauCeti' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Manual dispatch must also execute only trusted default-branch code.
+          ref: main
+          persist-credentials: false
+
+      - uses: actions/checkout@v4
+        with:
+          repository: TauCetiProject/TauCetiRoadmap
+          path: roadmap
+          persist-credentials: false
+
+      - uses: actions/create-github-app-token@29824e69f54612133e76f7eaac726eef6c875baf # v2.2.1
+        id: app-token
+        with:
+          app-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+          owner: TauCetiProject
+          repositories: TauCeti
+          permission-issues: write
+          permission-pull-requests: write
+
+      - name: Reconcile missed roadmap labels and structure nudges
+        env:
+          GH_READ_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          REPO: ${{ github.repository }}
+          FULL_SCAN: ${{ inputs.full-scan && '1' || '' }}
+          SYNC_LABELS: ${{ inputs.sync-labels && '1' || '' }}
+        run: |
+          set -euo pipefail
+          extra=()
+          if [[ "$FULL_SCAN" == 1 ]]; then
+            extra+=(--since 1970-01-01T00:00:00Z)
+          fi
+          if [[ "$SYNC_LABELS" == 1 ]]; then
+            extra+=(--sync-labels)
+          fi
+          python3 scripts/roadmap_label.py \
+            --repo "$REPO" --roadmap-dir roadmap --reconcile-open \
+            --apply --structure-nudge "${extra[@]}"
