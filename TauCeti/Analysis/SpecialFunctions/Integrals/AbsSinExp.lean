@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
 public import TauCeti.MeasureTheory.Integral.ExpDecay
 
 /-!
@@ -23,8 +22,8 @@ geometric series gives the closed form.
 
 ## Main declarations
 
-* `TauCeti.integral_sin_mul_exp_neg_mul`: the integral over one arch;
-* `TauCeti.integral_Ioi_abs_sin_mul_exp_neg_mul`: the one-sided Laplace transform of `|sin|`;
+* `TauCeti.integral_sin_mul_exp_neg_mul_zero_pi`: the integral over one arch;
+* `TauCeti.integral_abs_sin_mul_exp_neg_mul_Ioi`: the one-sided Laplace transform of `|sin|`;
 * `TauCeti.integral_abs_sin_mul_exp_neg_mul_abs`: the two-sided transform
   `∫_ℝ |sin t| e^{-a |t|} dt = 2 (1 + e^{-π a}) / ((1 - e^{-π a}) (1 + a²))`.
 -/
@@ -38,7 +37,7 @@ namespace TauCeti
 
 /-- **The Laplace integral of `sin` over one arch.** For every real `a`,
 `∫_0^π sin t e^{-a t} dt = (1 + e^{-π a}) / (1 + a²)`. -/
-theorem integral_sin_mul_exp_neg_mul (a : ℝ) :
+theorem integral_sin_mul_exp_neg_mul_zero_pi (a : ℝ) :
     ∫ t in (0 : ℝ)..π, Real.sin t * Real.exp (-(a * t)) =
       (1 + Real.exp (-(π * a))) / (1 + a ^ 2) := by
   -- `t ↦ -e^{-a t} (a sin t + cos t) / (1 + a²)` is an antiderivative.
@@ -73,7 +72,7 @@ theorem integrableOn_abs_sin_mul_exp_neg_mul_Ioi {a : ℝ} (ha : 0 < a) :
 
 /-- **The Laplace transform of `|sin|`.** For `0 < a`,
 `∫_{t > 0} |sin t| e^{-a t} dt = (1 + e^{-π a}) / ((1 - e^{-π a}) (1 + a²))`. -/
-theorem integral_Ioi_abs_sin_mul_exp_neg_mul {a : ℝ} (ha : 0 < a) :
+theorem integral_abs_sin_mul_exp_neg_mul_Ioi {a : ℝ} (ha : 0 < a) :
     ∫ t in Ioi (0 : ℝ), |Real.sin t| * Real.exp (-(a * t)) =
       (1 + Real.exp (-(π * a))) / ((1 - Real.exp (-(π * a))) * (1 + a ^ 2)) := by
   set f : ℝ → ℝ := fun t ↦ |Real.sin t| * Real.exp (-(a * t)) with hf
@@ -81,7 +80,7 @@ theorem integral_Ioi_abs_sin_mul_exp_neg_mul {a : ℝ} (ha : 0 < a) :
   have hint := integrableOn_abs_sin_mul_exp_neg_mul_Ioi ha
   -- The first arch, where `|sin t| = sin t`.
   have harch : ∫ t in (0 : ℝ)..π, f t = (1 + Real.exp (-(π * a))) / (1 + a ^ 2) := by
-    rw [← integral_sin_mul_exp_neg_mul a]
+    rw [← integral_sin_mul_exp_neg_mul_zero_pi a]
     refine intervalIntegral.integral_congr fun t ht ↦ ?_
     rw [uIcc_of_le Real.pi_pos.le] at ht
     simp only [hf, abs_of_nonneg (Real.sin_nonneg_of_nonneg_of_le_pi ht.1 ht.2)]
@@ -98,7 +97,7 @@ theorem integral_Ioi_abs_sin_mul_exp_neg_mul {a : ℝ} (ha : 0 < a) :
   have hsplit := intervalIntegral.integral_interval_add_Ioi hint
     (hint.mono_set (Ioi_subset_Ioi Real.pi_pos.le))
   rw [harch, htail] at hsplit
-  change _ + _ = I at hsplit
+  rw [← hI] at hsplit
   have hlt : Real.exp (-(π * a)) < 1 := Real.exp_lt_one_iff.mpr (by nlinarith [Real.pi_pos])
   have hne : 1 - Real.exp (-(π * a)) ≠ 0 := (sub_pos.mpr hlt).ne'
   have key : (1 + Real.exp (-(π * a))) / (1 + a ^ 2) = I - Real.exp (-(π * a)) * I := by
@@ -126,6 +125,6 @@ theorem integral_abs_sin_mul_exp_neg_mul_abs {a : ℝ} (ha : 0 < a) :
     ext t
     rcases abs_choice t with h | h <;> simp [h]
   rw [heven, integral_comp_abs (f := fun t ↦ |Real.sin t| * Real.exp (-(a * t))),
-    integral_Ioi_abs_sin_mul_exp_neg_mul ha, mul_div_assoc]
+    integral_abs_sin_mul_exp_neg_mul_Ioi ha, mul_div_assoc]
 
 end TauCeti
