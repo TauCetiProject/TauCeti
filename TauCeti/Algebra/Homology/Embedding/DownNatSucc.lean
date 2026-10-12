@@ -11,9 +11,9 @@ public import Mathlib.Algebra.Homology.Embedding.Basic
 # The embedding `n ↦ n + 1` of `ComplexShape.down ℕ`
 
 Extending a chain complex indexed by `ℕ` along the embedding `n ↦ n + 1` of `ComplexShape.down ℕ`
-into itself places it one degree higher, with a zero object in degree `0`. Mathlib's
-`ComplexShape.embeddingDown'Add 1 1` is this embedding for the shape `ComplexShape.down' 1`, but
-its instances are not found for `ComplexShape.down ℕ`.
+into itself places it one degree higher, with a zero object in degree `0`. This is Mathlib's
+`ComplexShape.embeddingDown'Add 1 1`, restated for the shape `ComplexShape.down ℕ` (definitionally
+`ComplexShape.down' 1`) so that its instances are found there.
 
 ## Main definitions
 
@@ -24,18 +24,17 @@ public section
 
 namespace ComplexShape
 
-/-- The embedding `n ↦ n + 1` of `ComplexShape.down ℕ` into itself. -/
+/-- The embedding `n ↦ n + 1` of `ComplexShape.down ℕ` into itself: Mathlib's
+`ComplexShape.embeddingDown'Add 1 1`, since `ComplexShape.down ℕ` unfolds to `down' 1`. -/
 @[expose] def embeddingDownNatSucc : (ComplexShape.down ℕ).Embedding (ComplexShape.down ℕ) :=
-  Embedding.mk' _ _ (· + 1) (fun _ _ h ↦ by simpa using h) (by simp)
+  embeddingDown'Add (1 : ℕ) 1
 
 @[simp] lemma embeddingDownNatSucc_f (n : ℕ) : embeddingDownNatSucc.f n = n + 1 := rfl
 
--- The relation `(down ℕ).Rel (b + 1 + 1) (a + 1)` unfolds to `b + 1 + 1 = a + 1`.
-instance : embeddingDownNatSucc.IsRelIff where
-  rel' a b (h : b + 1 + 1 = a + 1) := show b + 1 = a by omega
+instance : embeddingDownNatSucc.IsRelIff :=
+  inferInstanceAs (embeddingDown'Add (1 : ℕ) 1).IsRelIff
 
--- The relation `(down ℕ).Rel i (j + 1)` unfolds to `j + 1 + 1 = i`.
-instance : embeddingDownNatSucc.IsTruncLE where
-  mem_prev {i j} (h : j + 1 + 1 = i) := ⟨j + 1, h⟩
+instance : embeddingDownNatSucc.IsTruncLE :=
+  inferInstanceAs (embeddingDown'Add (1 : ℕ) 1).IsTruncLE
 
 end ComplexShape
