@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.InnerProductSpace.OpNormDefect
 public import TauCeti.Analysis.InnerProductSpace.PointSpectrum
 
 /-!
@@ -17,12 +18,14 @@ subspaces under perturbation (Davis–Kahan, Bhatia–Davis–McIntosh).
 
 Quadratic-form separation bounds solutions in operator norm, in every dimension. If
 `re ⟪A x, x⟫ ≥ α ‖x‖²` and `re ⟪B y, y⟫ ≥ β ‖y‖²`, then `(α + β) ‖X‖ ≤ ‖A X + X B‖`; this needs
-neither symmetry, completeness nor finite dimension. Taking `α = β = δ` gives the Lyapunov bound
-`‖X‖ ≤ ‖A X + X B‖ / (2 δ)`. Replacing `B` by `-B` gives the separated Sylvester bound: if the form
-of `A` is at least `c + g` and that of `B` at most `c`, then `g ‖X‖ ≤ ‖A X - X B‖`. The reverse
-orientation follows in the same way. The proof evaluates the equation on unit vectors `v` with
-`‖X v‖` close to `‖X‖`. For such `v`, the Cauchy–Schwarz inequality for the positive semidefinite
-form `‖X‖² ⟪·, ·⟫ - ⟪X ·, X ·⟫` makes `re ⟪X (B v), X v⟫` close to `‖X‖² re ⟪B v, v⟫`.
+neither symmetry, completeness nor finite dimension. Taking `α = β = δ > 0` gives the Lyapunov
+bound `‖X‖ ≤ ‖A X + X B‖ / (2 δ)`. Replacing `B` by `-B` gives the separated Sylvester bound: if
+the form of `A` is at least `c + g` and that of `B` at most `c`, then `g ‖X‖ ≤ ‖A X - X B‖`. The
+reverse orientation follows in the same way. The proof evaluates the equation on unit vectors `v`
+with `‖X v‖` close to `‖X‖`. For such `v`, the Cauchy–Schwarz inequality for the positive
+semidefinite form `‖X‖² ⟪·, ·⟫ - ⟪X ·, X ·⟫`
+(`ContinuousLinearMap.sq_opNorm_sq_mul_re_inner_sub_re_inner_le`) makes `re ⟪X (B v), X v⟫` close
+to `‖X‖² re ⟪B v, v⟫`.
 
 When `A` is symmetric, the equation diagonalises on eigenvectors: if `A u = α u` and `B v = β v`
 with `α, β` real, then `⟪u, (A X - X B) v⟫ = (α - β) ⟪u, X v⟫`. In finite dimension, choosing
@@ -46,8 +49,6 @@ separation `Module.End.PointSpectraSeparated A ⊤ B ⊤ δ` with `0 < δ` suppl
 
 * `OrthonormalBasis.sum_inner_smul_rankOne`: for orthonormal bases `(uᵢ)`, `(vⱼ)`, every operator
   `C` is the sum of `⟪uᵢ, C vⱼ⟫` times the rank-one operators `rankOne 𝕜 uᵢ vⱼ`.
-* `ContinuousLinearMap.sq_opNorm_sq_mul_re_inner_sub_re_inner_le`: the Cauchy–Schwarz inequality
-  for the defect form `(v, w) ↦ ‖X‖² re ⟪v, w⟫ - re ⟪X v, X w⟫` of an operator `X`.
 * `ContinuousLinearMap.add_mul_norm_le_norm_comp_add_comp`: if the forms of `A` and `B` are
   bounded below by `α` and `β`, then `(α + β) ‖X‖ ≤ ‖A X + X B‖`.
 * `ContinuousLinearMap.mul_norm_le_norm_sylvester_apply_of_le_re_inner_of_re_inner_le`,
@@ -124,28 +125,6 @@ section Bounds
 variable {𝕜 E F : Type*} [RCLike 𝕜]
   [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [NormedAddCommGroup F] [InnerProductSpace 𝕜 F]
   {A : E →L[𝕜] E} {B : F →L[𝕜] F}
-
-/-- **Cauchy–Schwarz for the defect form of an operator.** For `X : F →L[𝕜] E`, the real form
-`(v, w) ↦ ‖X‖² re ⟪v, w⟫ - re ⟪X v, X w⟫` is positive semidefinite, so it satisfies the
-Cauchy–Schwarz inequality. In particular, if a unit vector `v` nearly attains the norm of `X`, then
-`re ⟪X w, X v⟫` is close to `‖X‖² re ⟪w, v⟫` uniformly in `‖w‖`. -/
-theorem sq_opNorm_sq_mul_re_inner_sub_re_inner_le (X : F →L[𝕜] E) (v w : F) :
-    (‖X‖ ^ 2 * RCLike.re ⟪v, w⟫_𝕜 - RCLike.re ⟪X v, X w⟫_𝕜) ^ 2 ≤
-      (‖X‖ ^ 2 * ‖v‖ ^ 2 - ‖X v‖ ^ 2) * (‖X‖ ^ 2 * ‖w‖ ^ 2 - ‖X w‖ ^ 2) := by
-  -- The defect form is nonnegative on `v + t w`, a quadratic in `t : ℝ`.
-  have h (t : ℝ) : 0 ≤ (‖X‖ ^ 2 * ‖w‖ ^ 2 - ‖X w‖ ^ 2) * (t * t) +
-      2 * (‖X‖ ^ 2 * RCLike.re ⟪v, w⟫_𝕜 - RCLike.re ⟪X v, X w⟫_𝕜) * t +
-      (‖X‖ ^ 2 * ‖v‖ ^ 2 - ‖X v‖ ^ 2) := by
-    have h₁ : ‖X (v + (t : 𝕜) • w)‖ ^ 2 ≤ (‖X‖ * ‖v + (t : 𝕜) • w‖) ^ 2 := by
-      gcongr
-      exact X.le_opNorm _
-    rw [map_add, map_smul, mul_pow, norm_add_sq (𝕜 := 𝕜), norm_add_sq (𝕜 := 𝕜)] at h₁
-    simp only [inner_smul_real_right, norm_smul, RCLike.norm_ofReal, mul_pow, sq_abs,
-      RCLike.smul_re] at h₁
-    nlinarith
-  have := discrim_le_zero h
-  rw [discrim] at this
-  nlinarith
 
 /-- **The coercivity bound for `A X + X B`.** If the real parts of the quadratic forms of `A` and
 `B` are bounded below by `α` and `β`, then `(α + β) ‖X‖ ≤ ‖A X + X B‖` for every bounded operator
