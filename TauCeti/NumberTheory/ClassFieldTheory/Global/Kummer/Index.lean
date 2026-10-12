@@ -20,6 +20,10 @@ principal-unit contribution needed to compare the Kummer idele-class index with 
 Kummer extension. It does not assume that a principal idele which is locally an `n`-th power at
 `S` is globally an `n`-th power.
 
+The arithmetic input is the existence of `S`-idele representatives. The remaining factorization
+is the image-index formula for a surjective group homomorphism, with the principal ideles
+accounting for its kernel.
+
 ## References
 
 * J. S. Milne, *Class Field Theory*, Chapter VII, §§5 and 9.
