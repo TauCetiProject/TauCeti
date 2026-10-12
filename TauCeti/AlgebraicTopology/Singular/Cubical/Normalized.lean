@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Quotient.Basic
 public import Mathlib.LinearAlgebra.Finsupp.Supported
+public import Mathlib.Topology.Connected.PathConnected
 public import TauCeti.AlgebraicTopology.Singular.Cubical.Chains
 
 /-!
@@ -387,6 +388,16 @@ theorem boundary_ofCube_one (c : SingularCube X 1) :
   rw [SingularCube.eq_point (SingularCube.face 0 0 c),
     SingularCube.eq_point (SingularCube.face 0 1 c), SingularCube.face_zero_apply,
     SingularCube.face_zero_apply]
+
+/-- **Points joined by a path differ by a boundary**: the `0`-cubes at two points of the same path
+component differ by the boundary of a `1`-chain. -/
+theorem ofCube_point_sub_mem_range_boundary {γ δ : X} (h : Joined γ δ) :
+    ofCube X R (SingularCube.point γ) - ofCube X R (SingularCube.point δ) ∈
+      LinearMap.range (boundary X R 0) := by
+  obtain ⟨P⟩ := h
+  refine ⟨ofCube X R (⟨fun t ↦ P (t 0), by fun_prop⟩ : SingularCube X 1), ?_⟩
+  rw [boundary_ofCube_one]
+  simp
 
 end NormalizedCubicalChain
 

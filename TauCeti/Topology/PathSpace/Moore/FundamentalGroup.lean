@@ -82,6 +82,7 @@ theorem loopClass_one : loopClass (1 : MooreLoopSpace X x) = 1 := by
 /-- **The class of a product of Moore loops** is the product of the classes in the opposite
 order: concatenation runs through the first factor first, composition in the fundamental groupoid
 through the second factor first. -/
+@[simp]
 theorem loopClass_mul (γ δ : MooreLoopSpace X x) :
     loopClass (γ * δ) = loopClass δ * loopClass γ := by
   rw [FundamentalGroup.mul_def]
