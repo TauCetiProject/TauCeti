@@ -208,7 +208,7 @@ theorem weightParabolicCoordinateMap_surjective (w : Fin N → ℤ) :
     (coordinateHopfAlgebra R N) (weightParabolicDefiningHopfIdeal R w)
 
 /-- A forbidden coordinate vanishes in the weight-parabolic coordinate algebra. -/
-@[simp]
+@[simp↓]
 theorem weightParabolicCoordinateMap_X (w : Fin N → ℤ) {i j : Fin N}
     (hij : w i < w j) :
     (weightParabolicCoordinateMap R w).hom
@@ -239,7 +239,7 @@ theorem weightParabolicInclusion_def (w : Fin N → ℤ) :
 
 /-- The coordinate morphism recovered from the weight-parabolic inclusion is the quotient
 coordinate map. -/
-@[simp]
+@[simp↓]
 theorem weightParabolicInclusion_coordinateMap (w : Fin N → ℤ) :
     ((AlgebraicGeometry.hopfSpec.fullyFaithful (R := CommRingCat.of R)).preimage
       (weightParabolicInclusion R w ≫ eqToHom (groupScheme_def R N))).unop =
