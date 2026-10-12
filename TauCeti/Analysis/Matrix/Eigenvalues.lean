@@ -65,20 +65,19 @@ eigenvalue by the matrix size times that bound. -/
 theorem _root_.Matrix.IsHermitian.abs_eigenvalues₀_le_of_entry_le (hA : A.IsHermitian) {β : ℝ}
     (hentry : ∀ i j, ‖A i j‖ ≤ β) (k : Fin (Fintype.card ι)) :
     |hA.eigenvalues₀ k| ≤ (Fintype.card ι : ℝ) * β := by
-  let hT := isSymmetric_toEuclideanLin_iff.mpr hA
-  let v := hT.eigenvectorBasis finrank_euclideanSpace k
-  have hv : ‖v‖ = 1 := hT.eigenvectorBasis finrank_euclideanSpace |>.orthonormal.1 k
-  have he : A.toEuclideanLin v = (hA.eigenvalues₀ k : 𝕜) • v := by
-    -- Unfold only the sorted enumeration to use its defining operator-level API.
-    simpa only [Matrix.IsHermitian.eigenvalues₀] using
-      hT.apply_eigenvectorBasis finrank_euclideanSpace k
-  have h := norm_toEuclideanLin_le_of_entry_le_square hentry v
-  simpa only [he, norm_smul, RCLike.norm_ofReal, hv, mul_one] using h
+  have hZ : (0 : Matrix ι ι 𝕜).IsHermitian := isHermitian_zero
+  have hzero : hZ.eigenvalues₀ k = 0 := by
+    -- Unfold the matrix-indexed enumeration to reindex Mathlib's zero-eigenvalue result.
+    simpa only [IsHermitian.eigenvalues, Equiv.symm_apply_apply, Pi.zero_apply] using
+      congrFun (hZ.eigenvalues_eq_zero_iff.mpr rfl)
+        (Fintype.equivOfCardEq (Fintype.card_fin (Fintype.card ι)) k)
+  simpa only [hzero, sub_zero] using hA.abs_eigenvalues₀_sub_le_of_entry_le hZ
+    (by simpa only [Matrix.zero_apply, sub_zero] using hentry) k
 
 /-- Reindexing a sorted eigenvalue by the canonical finite equivalence gives the
 corresponding matrix-indexed eigenvalue. -/
 @[simp]
-theorem _root_.Matrix.IsHermitian.eigenvalues_equivOfCardEq (hA : A.IsHermitian)
+theorem _root_.Matrix.IsHermitian.eigenvalues_apply_equivOfCardEq (hA : A.IsHermitian)
     (i : Fin (Fintype.card ι)) :
     hA.eigenvalues (Fintype.equivOfCardEq (Fintype.card_fin (Fintype.card ι)) i) =
       hA.eigenvalues₀ i := by
@@ -91,13 +90,13 @@ theorem _root_.Matrix.IsHermitian.rank_eq_card_non_zero_eigenvalues₀ (hA : A.I
   rw [hA.rank_eq_card_non_zero_eigs]
   exact Fintype.card_congr
     ((Fintype.equivOfCardEq (Fintype.card_fin (Fintype.card ι))).symm.subtypeEquiv
-      (fun _ ↦ by rw [← hA.eigenvalues_equivOfCardEq, Equiv.apply_symm_apply]))
+      (fun _ ↦ by rw [← hA.eigenvalues_apply_equivOfCardEq, Equiv.apply_symm_apply]))
 
 /-- Every entry of the sorted eigenvalue list of a positive-semidefinite matrix is nonnegative. -/
 theorem _root_.Matrix.PosSemidef.eigenvalues₀_nonneg
     (hA : A.PosSemidef) (i : Fin (Fintype.card ι)) :
     0 ≤ hA.isHermitian.eigenvalues₀ i := by
-  simpa only [hA.isHermitian.eigenvalues_equivOfCardEq] using
+  simpa only [hA.isHermitian.eigenvalues_apply_equivOfCardEq] using
     hA.eigenvalues_nonneg (Fintype.equivOfCardEq (Fintype.card_fin (Fintype.card ι)) i)
 
 /-- A sorted eigenvalue of a positive-semidefinite matrix vanishes from the rank onward. -/
