@@ -83,13 +83,12 @@ private def unitsToDecompositionUnits :
     fun d a ↦ Additive.toMul.injective <| Units.ext <|
       (decompositionHom_algebraMap (v := v) d (Additive.toMul a : Lˣ)).symm
 
-/-- The principal ideles followed by the semi-local component at `v` and the coinduction map of
-the semi-local units are the adjunct of the inclusion `Lˣ → L_wˣ`. -/
-private theorem unitsToIdeles_comp_semilocalUnitsToCoind :
-    unitsToIdeles K L ≫ idelesToSemilocalUnits L v ≫ semilocalUnitsToCoind v w =
-      Rep.resCoindToHom _ _ _ (unitsToDecompositionUnits v w) := by
-  ext a g
-  -- the semi-local image of the principal idele of `a` is `1 ⊗ a`
+/-- The semi-local component at `v` of the principal idele of `a ∈ Lˣ` is `1 ⊗ a`. -/
+private theorem coe_unitsToIdeles_idelesToSemilocalUnits_hom_apply
+    (a : Rep.ofMulDistribMulAction (L ≃ₐ[K] L) Lˣ) :
+    ((Additive.toMul (α := (v.adicCompletion K ⊗[K] L)ˣ)
+      ((unitsToIdeles K L ≫ idelesToSemilocalUnits L v).hom a) : (v.adicCompletion K ⊗[K] L)ˣ) :
+        v.adicCompletion K ⊗[K] L) = 1 ⊗ₜ[K] ((Additive.toMul a : Lˣ) : L) := by
   have h : (unitsToIdeles K L ≫ idelesToSemilocalUnits L v).hom a =
       Additive.ofMul (finiteIdeleSemilocalHom L v
         (FiniteAdeleRing.unitEmbedding (𝓞 L) L (Additive.toMul a))) :=
@@ -97,12 +96,20 @@ private theorem unitsToIdeles_comp_semilocalUnitsToCoind :
       ((idelesToSemilocalUnits_hom_apply L v _).trans
         (congrArg (fun z ↦ Additive.ofMul (finiteIdeleSemilocalHom L v z))
           (IdeleGroup.toFiniteIdele_unitEmbedding (𝓞 L) L _)))
+  rw [h, toMul_ofMul, coe_finiteIdeleSemilocalHom, FiniteAdeleRing.unitEmbedding_apply,
+    finiteAdeleSemilocalHom_algebraMap]
+
+/-- The principal ideles followed by the semi-local component at `v` and the coinduction map of
+the semi-local units are the adjunct of the inclusion `Lˣ → L_wˣ`. -/
+private theorem unitsToIdeles_comp_semilocalUnitsToCoind :
+    unitsToIdeles K L ≫ idelesToSemilocalUnits L v ≫ semilocalUnitsToCoind v w =
+      Rep.resCoindToHom _ _ _ (unitsToDecompositionUnits v w) := by
+  ext a g
   refine (Additive.toMul (α := (w.adicCompletion L)ˣ)).injective (Units.ext ?_)
   refine (semilocalUnitsToCoind_apply v w (Additive.toMul (α := (v.adicCompletion K ⊗[K] L)ˣ)
     ((unitsToIdeles K L ≫ idelesToSemilocalUnits L v).hom a)) g).trans ?_
-  rw [h, toMul_ofMul, coe_finiteIdeleSemilocalHom, FiniteAdeleRing.unitEmbedding_apply,
-    finiteAdeleSemilocalHom_algebraMap, Algebra.TensorProduct.baseChangeAutHom_tmul,
-    semilocalEquiv_tmul, map_one, one_mul]
+  rw [coe_unitsToIdeles_idelesToSemilocalUnits_hom_apply,
+    Algebra.TensorProduct.baseChangeAutHom_tmul, semilocalEquiv_tmul, map_one, one_mul]
   -- the right side is the image in `L_w` of `g • a` by `Rep.resCoindToHom_hom_apply_coe`
   rfl
 
@@ -159,6 +166,19 @@ private def unitsToInfiniteDecompositionUnits :
     fun d a ↦ Additive.toMul.injective <| Units.ext <|
       (decompositionHom_algebraMap (v := v) d ((Additive.toMul a : Lˣ) : L)).symm
 
+/-- The semi-local component at the infinite place `v` of the principal idele of `a ∈ Lˣ` is
+`1 ⊗ a`. -/
+private theorem coe_unitsToIdeles_idelesToInfiniteSemilocalUnits_hom_apply
+    (a : Rep.ofMulDistribMulAction (L ≃ₐ[K] L) Lˣ) :
+    ((Additive.toMul (α := (v.Completion ⊗[K] L)ˣ)
+      ((unitsToIdeles K L ≫ idelesToInfiniteSemilocalUnits L v).hom a) : (v.Completion ⊗[K] L)ˣ) :
+        v.Completion ⊗[K] L) = 1 ⊗ₜ[K] ((Additive.toMul a : Lˣ) : L) :=
+  (coe_idelesToInfiniteSemilocalUnits_hom_apply L v _).trans <|
+    (congrArg (fun z : Additive (IdeleGroup (𝓞 L) L) ↦
+      infiniteAdeleSemilocalHom L v ((Additive.toMul z : IdeleGroup (𝓞 L) L) : AdeleRing (𝓞 L) L).1)
+      (unitsToIdeles_hom_apply (K := K) L a)).trans
+    (infiniteAdeleSemilocalHom_algebraMap (L := L) (v := v) _)
+
 /-- The principal ideles followed by the semi-local component at the infinite place `v` and the
 coinduction map of the semi-local units are the adjunct of the inclusion `Lˣ → L_wˣ`. -/
 private theorem unitsToIdeles_comp_infiniteSemilocalUnitsToCoind :
@@ -168,18 +188,8 @@ private theorem unitsToIdeles_comp_infiniteSemilocalUnitsToCoind :
   refine (Additive.toMul (α := w.Completionˣ)).injective (Units.ext ?_)
   refine (infiniteSemilocalUnitsToCoind_apply v w (Additive.toMul (α := (v.Completion ⊗[K] L)ˣ)
     ((unitsToIdeles K L ≫ idelesToInfiniteSemilocalUnits L v).hom a)) g).trans ?_
-  -- the semi-local image of the principal idele of `a` is `1 ⊗ a`
-  have h : ((Additive.toMul (α := (v.Completion ⊗[K] L)ˣ)
-      ((unitsToIdeles K L ≫ idelesToInfiniteSemilocalUnits L v).hom a) : (v.Completion ⊗[K] L)ˣ) :
-        v.Completion ⊗[K] L) = (1 : v.Completion) ⊗ₜ[K] ((Additive.toMul a : Lˣ) : L) :=
-    (coe_idelesToInfiniteSemilocalUnits_hom_apply L v _).trans <|
-      (congrArg (fun z : Additive (IdeleGroup (𝓞 L) L) ↦
-        infiniteAdeleSemilocalHom L v
-          ((Additive.toMul z : IdeleGroup (𝓞 L) L) : AdeleRing (𝓞 L) L).1)
-          (unitsToIdeles_hom_apply (K := K) L a)).trans
-        (infiniteAdeleSemilocalHom_algebraMap (L := L) (v := v) _)
-  rw [h, Algebra.TensorProduct.baseChangeAutHom_tmul, infiniteSemilocalEquiv_tmul, map_one,
-    one_mul]
+  rw [coe_unitsToIdeles_idelesToInfiniteSemilocalUnits_hom_apply,
+    Algebra.TensorProduct.baseChangeAutHom_tmul, infiniteSemilocalEquiv_tmul, map_one, one_mul]
   -- the right side is the image in `L_w` of `g • a` by `Rep.resCoindToHom_hom_apply_coe`
   rfl
 

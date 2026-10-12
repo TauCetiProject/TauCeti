@@ -61,7 +61,7 @@ from the decomposition group.
   or `2` according as `v` is unramified in `L` or not.
 * `NumberField.InfinitePlace.decompositionHom_surjective`: for `L/K` Galois every
   `K_v`-automorphism of `L_w` comes from the decomposition group.
-* `NumberField.InfinitePlace.isGalois_completion`: for `L/K` Galois, `L_w/K_v` is Galois.
+* `NumberField.InfinitePlace.isGalois_completion`: `L_w/K_v` is Galois.
 
 ## References
 
@@ -256,6 +256,20 @@ theorem decompositionHom_injective : Function.Injective (decompositionHom v w) :
     ← Completion.algebraMap_apply] at this
   exact (algebraMap L w.Completion).injective this
 
+variable (v w) in
+/-- **A completion at an infinite place is Galois.** The local extension `L_w/K_v` at an infinite
+place `w` of `L` is a Galois extension. -/
+-- `L_w/K_v` is `ℝ/ℝ`, `ℂ/ℂ` or `ℂ/ℝ`: of degree one, or quadratic in characteristic zero.
+theorem isGalois_completion : IsGalois v.Completion w.Completion := by
+  rcases w.isUnramified_or_isRamified K with hw | hw
+  · exact (AlgEquiv.ofBijective (Algebra.ofId v.Completion w.Completion)
+      (Module.Free.bijective_algebraMap_of_finrank_eq_one
+        (IsUnramified.finrank_eq_one v hw))).transfer_galois.mp (IsGalois.self _)
+  · have : Algebra.IsQuadraticExtension v.Completion w.Completion :=
+      ⟨IsRamified.finrank_eq_two v hw⟩
+    have : CharZero v.Completion := RingHom.charZero (Completion.extensionEmbedding v)
+    infer_instance
+
 /-! ### The decomposition group is the local Galois group -/
 
 section IsGalois
@@ -302,14 +316,6 @@ def decompositionEquiv :
 
 @[simp]
 theorem coe_decompositionEquiv : ⇑(decompositionEquiv v w) = decompositionHom v w := (rfl)
-
-/-- **A completion of a Galois extension at an infinite place is Galois.** For `L/K` Galois the
-local extension `L_w/K_v` at an infinite place `w` of `L` is a Galois extension. -/
--- The decomposition group of `w` already supplies `[L_w : K_v]` automorphisms.
-theorem isGalois_completion : IsGalois v.Completion w.Completion :=
-  IsGalois.of_card_aut_eq_finrank _ _
-    ((Nat.card_congr (decompositionEquiv v w).toEquiv).symm.trans
-      (card_stabilizer_eq_finrank_completion v w))
 
 end IsGalois
 
