@@ -291,27 +291,33 @@ private lemma triangleHomotopy_zero (s : I) :
 private lemma triangleHomotopy_one_of_le {s : I} (h : (s : ℝ) ≤ 1 / 2) {a : I}
     (ha : (a : ℝ) = 2 * s) :
     triangleHomotopy 1 s = (StdSimplex.ofCube 1 fun _ => a).map (2 : Fin 3).succAbove := by
+  have h0 : 0 ≤ 1 - 2 * (s : ℝ) := by linarith
+  have h1 : 2 * (s : ℝ) ≤ 2 - 2 * s := by linarith
+  have h2 : 2 * (s : ℝ) - 1 ≤ 0 := by linarith
   refine ext_fin_three ?_ ?_ ?_
   · rw [weights_map_succAbove_of_eq (i := 0) (by decide)]
-    simp [triangleHomotopy, ha, max_eq_left (show 0 ≤ 1 - 2 * (s : ℝ) by linarith)]
+    simp [triangleHomotopy, ha, max_eq_left h0]
   · rw [weights_map_succAbove_of_eq (i := 1) (by decide), StdSimplex.ofCube_one_weights_one]
-    simp [triangleHomotopy, ha, min_eq_left (show 2 * (s : ℝ) ≤ 2 - 2 * s by linarith)]
+    simp [triangleHomotopy, ha, min_eq_left h1]
   · rw [StdSimplex.weights_map_succAbove_self]
-    simp [triangleHomotopy, max_eq_right (show 2 * (s : ℝ) - 1 ≤ 0 by linarith)]
+    simp [triangleHomotopy, max_eq_right h2]
 
 /-- At time `1` and on the second half, the homotopy `triangleHomotopy` runs the edge path
 `1 → 2` at double speed. -/
 private lemma triangleHomotopy_one_of_lt {s : I} (h : 1 / 2 < (s : ℝ)) {a : I}
     (ha : (a : ℝ) = 2 * s - 1) :
     triangleHomotopy 1 s = (StdSimplex.ofCube 1 fun _ => a).map (0 : Fin 3).succAbove := by
+  have h0 : 1 - 2 * (s : ℝ) ≤ 0 := by linarith
+  have h1 : 2 - 2 * (s : ℝ) ≤ 2 * s := by linarith
+  have h2 : 0 ≤ 2 * (s : ℝ) - 1 := by linarith
   refine ext_fin_three ?_ ?_ ?_
   · rw [StdSimplex.weights_map_succAbove_self]
-    simp [triangleHomotopy, max_eq_right (show 1 - 2 * (s : ℝ) ≤ 0 by linarith)]
+    simp [triangleHomotopy, max_eq_right h0]
   · rw [weights_map_succAbove_of_eq (i := 0) (by decide)]
-    simp [triangleHomotopy, ha, min_eq_right (show 2 - 2 * (s : ℝ) ≤ 2 * s by linarith)]
+    simp [triangleHomotopy, ha, min_eq_right h1]
     ring
   · rw [weights_map_succAbove_of_eq (i := 1) (by decide), StdSimplex.ofCube_one_weights_one]
-    simp [triangleHomotopy, ha, max_eq_left (show 0 ≤ 2 * (s : ℝ) - 1 by linarith)]
+    simp [triangleHomotopy, ha, max_eq_left h2]
 
 /-- A map `τ : Δⁿ⁺² → X` whose facets `j < n` are sent to `x` and whose facets `n` and `n + 2` send
 their boundaries to `x` sends to `x` every point whose weight `n + 1` vanishes together with the
@@ -326,16 +332,18 @@ private lemma apply_eq_of_weights_natAdd_eq_zero {n : ℕ} {τ : C(StdSimplex �
     τ z = x := by
   rcases h with h | h
   · obtain ⟨w, rfl⟩ := (StdSimplex.mem_range_map_succAbove_iff _ z).2 h
-    rw [show (Fin.natAdd n (1 : Fin 3) : Fin (n + 3)) =
-        (Fin.natAdd n (0 : Fin 3)).succAbove (Fin.natAdd n (0 : Fin 2)) by
-          rw [Fin.succAbove_of_le_castSucc _ _ (by simp)]; rfl,
-      StdSimplex.weights_map_apply_of_injective Fin.succAbove_right_injective] at h1
+    -- The vertex `n + 1` of `Δⁿ⁺²` is the vertex `n` of its facet `n`.
+    have hi : (Fin.natAdd n (0 : Fin 3)).succAbove (Fin.natAdd n (0 : Fin 2)) =
+        Fin.natAdd n (1 : Fin 3) := by
+      rw [Fin.natAdd_succAbove_natAdd]; rfl
+    rw [← hi, StdSimplex.weights_map_apply_of_injective Fin.succAbove_right_injective] at h1
     rw [hψ, StdSimplex.apply_eq_of_weights_eq_zero ψ.2 h1]
   · obtain ⟨w, rfl⟩ := (StdSimplex.mem_range_map_succAbove_iff _ z).2 h
-    rw [show (Fin.natAdd n (1 : Fin 3) : Fin (n + 3)) =
-        (Fin.natAdd n (2 : Fin 3)).succAbove (Fin.natAdd n (1 : Fin 2)) by
-          rw [Fin.succAbove_of_castSucc_lt _ _ (by simp [Fin.lt_def])]; rfl,
-      StdSimplex.weights_map_apply_of_injective Fin.succAbove_right_injective] at h1
+    -- The vertex `n + 1` of `Δⁿ⁺²` is the vertex `n + 1` of its facet `n + 2`.
+    have hi : (Fin.natAdd n (2 : Fin 3)).succAbove (Fin.natAdd n (1 : Fin 2)) =
+        Fin.natAdd n (1 : Fin 3) := by
+      rw [Fin.natAdd_succAbove_natAdd]; rfl
+    rw [← hi, StdSimplex.weights_map_apply_of_injective Fin.succAbove_right_injective] at h1
     rw [hφ, StdSimplex.apply_eq_of_weights_eq_zero φ.2 h1]
 
 /-- The map `I × Iⁿ⁺¹ → Δⁿ⁺²` which runs `triangleHomotopy` in the triangle spanned by the last
@@ -443,9 +451,12 @@ theorem homotopic_simplexEquiv_transAt_last {n : ℕ}
       (transAt (Fin.last n) (simplexEquiv X x (n + 1) φ) (simplexEquiv X x (n + 1) ψ)) := by
   -- The facets `n`, `n + 1` and `n + 2` of `Δⁿ⁺²` are those opposite the vertices of its last
   -- triangle.
-  rw [show (Fin.last n).castSucc.castSucc = Fin.natAdd n (0 : Fin 3) from Fin.ext rfl] at hlt hψ
-  rw [show (Fin.last n).castSucc.succ = Fin.natAdd n (1 : Fin 3) from Fin.ext rfl] at hχ
-  rw [show (Fin.last n).succ.succ = Fin.natAdd n (2 : Fin 3) from Fin.ext rfl] at hφ
+  have h0 : (Fin.last n).castSucc.castSucc = Fin.natAdd n (0 : Fin 3) := Fin.ext rfl
+  have h1 : (Fin.last n).castSucc.succ = Fin.natAdd n (1 : Fin 3) := Fin.ext rfl
+  have h2 : (Fin.last n).succ.succ = Fin.natAdd n (2 : Fin 3) := Fin.ext rfl
+  rw [h0] at hlt hψ
+  rw [h1] at hχ
+  rw [h2] at hφ
   refine ⟨{ toFun := fun p => τ (triangleCubeMap n p)
             continuous_toFun := τ.continuous.comp (continuous_triangleCubeMap n)
             map_zero_left := fun t => (congrArg τ (triangleCubeMap_zero t)).trans (hχ _)

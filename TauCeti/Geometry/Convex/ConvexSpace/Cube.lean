@@ -9,6 +9,8 @@ public import Mathlib.Geometry.Convex.ConvexSpace.CompactSpaceStdSimplex
 public import Mathlib.Topology.Homotopy.HomotopyGroup
 public import TauCeti.Geometry.Convex.ConvexSpace.Defs
 
+import TauCeti.Data.Fin.Basic
+
 /-!
 # Standard simplices as quotients of the cube and the prism
 
@@ -381,6 +383,7 @@ lemma splitLast_weights_natAdd (c : StdSimplex ℝ (Fin (n + 1))) (w : StdSimple
     (splitLast c w).weights (Fin.natAdd n j) = c.weights (Fin.last n) * w.weights j := by
   simp [splitLast]
 
+/-- `splitLast` is jointly continuous in the two simplices. -/
 @[fun_prop]
 lemma continuous_splitLast :
     Continuous fun p : StdSimplex ℝ (Fin (n + 1)) × StdSimplex ℝ (Fin (m + 1)) =>
@@ -393,28 +396,19 @@ lemma continuous_splitLast :
     fun_prop
 
 /-- Splitting the last vertex commutes with the face maps of the simplex replacing it. -/
+@[simp]
 lemma splitLast_map_succAbove (c : StdSimplex ℝ (Fin (n + 1))) (w : StdSimplex ℝ (Fin (m + 1)))
     (j : Fin (m + 2)) :
     splitLast c (w.map j.succAbove) = (splitLast c w).map (Fin.natAdd n j).succAbove := by
   refine ext <| Finsupp.ext fun k =>
     Fin.addCases (m := n) (n := m + 2) (fun k => ?_) (fun i => ?_) k
-  · rw [splitLast_weights_castAdd, show (Fin.castAdd (m + 2) k : Fin (n + (m + 2))) =
-        (Fin.natAdd n j).succAbove (Fin.castAdd (m + 1) k) by
-          rw [Fin.succAbove_of_castSucc_lt _ _ (by simp [Fin.lt_def]; omega)]; rfl,
+  · rw [splitLast_weights_castAdd, ← Fin.natAdd_succAbove_castAdd j k,
       weights_map_apply_of_injective Fin.succAbove_right_injective, splitLast_weights_castAdd]
   · rcases Fin.eq_self_or_eq_succAbove j i with rfl | ⟨i, rfl⟩
     · rw [splitLast_weights_natAdd, weights_map_succAbove_self, weights_map_succAbove_self,
         mul_zero]
     · rw [splitLast_weights_natAdd, weights_map_apply_of_injective Fin.succAbove_right_injective,
-        show (Fin.natAdd n (j.succAbove i) : Fin (n + (m + 2))) =
-          (Fin.natAdd n j).succAbove (Fin.natAdd n i) by
-            by_cases h : i.castSucc < j
-            · rw [Fin.succAbove_of_castSucc_lt _ _ h,
-                Fin.succAbove_of_castSucc_lt _ _ (by simpa [Fin.lt_def] using h)]
-              rfl
-            · rw [Fin.succAbove_of_le_castSucc _ _ (not_lt.1 h),
-                Fin.succAbove_of_le_castSucc _ _ (by simpa [Fin.le_def] using h)]
-              rfl,
+        ← Fin.natAdd_succAbove_natAdd,
         weights_map_apply_of_injective Fin.succAbove_right_injective, splitLast_weights_natAdd]
 
 /-- If the coordinates of `c` after the first are `a` times those of `c'`, then the same holds for
@@ -423,6 +417,9 @@ private lemma splitLast_weights_succ {c : StdSimplex ℝ (Fin (n + 2))}
     {c' : StdSimplex ℝ (Fin (n + 1))} {a : ℝ} (hc : ∀ k, c.weights k.succ = a * c'.weights k)
     (w : StdSimplex ℝ (Fin 2)) (k : Fin (n + 2)) :
     (splitLast c w).weights k.succ = a * (splitLast c' w).weights k := by
+  -- `Fin.succ` moves each block of `Fin (n + 2)` one index up. The two index identities below need
+  -- the block size to be the numeral `2`: for a general block size `m`, the two sides would live in
+  -- `Fin (n + m + 1)` and `Fin (n + 1 + m)`, so no `Fin.cast`-free lemma states them.
   refine Fin.addCases (m := n) (n := 2) (fun k => ?_) (fun j => ?_) k
   · rw [show (Fin.castAdd 2 k).succ = Fin.castAdd 2 k.succ from rfl,
       splitLast_weights_castAdd, splitLast_weights_castAdd, ← Fin.succ_castSucc, hc]

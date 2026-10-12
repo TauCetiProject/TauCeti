@@ -216,6 +216,7 @@ theorem toSSetPiEquivHomotopyGroup_map {Y : TopCat.{u}} (f : X ⟶ Y)
 class of the facet `n + 1` of an `(n + 2)`-simplex whose facets `n + 2` and `n` are `p` and `q`
 (`SSet.KanComplex.π.mul_mk_eq_iff`), which runs `p` before `q` in the last direction of the
 cube, whereas Mathlib's product `⟦f⟧ * ⟦g⟧` runs `g` before `f` (`HomotopyGroup.mul_spec`). -/
+@[simp]
 theorem toSSetPiEquivHomotopyGroup_mul
     (a b : KanComplex.π (n + 1) (toSSet.obj X) (toSSetObj₀Equiv.symm x)) :
     toSSetPiEquivHomotopyGroup X x n (a * b) =
@@ -244,14 +245,14 @@ theorem toSSetPiEquivHomotopyGroup_mul
 @[simp]
 lemma toSSetPiEquivHomotopyGroup_inv
     (a : KanComplex.π (n + 1) (toSSet.obj X) (toSSetObj₀Equiv.symm x)) :
-    toSSetPiEquivHomotopyGroup X x n a⁻¹ = (toSSetPiEquivHomotopyGroup X x n a)⁻¹ :=
-  eq_inv_of_mul_eq_one_left (by
-    -- `a * a⁻¹` is idempotent, so its image is idempotent, hence the identity.
-    have he := congrArg (toSSetPiEquivHomotopyGroup X x n)
-      (show a * a⁻¹ * (a * a⁻¹) = a * a⁻¹ by rw [mul_inv_cancel, mul_one])
-    rw [toSSetPiEquivHomotopyGroup_mul] at he
-    rw [← toSSetPiEquivHomotopyGroup_mul]
-    exact mul_left_cancel (he.trans (mul_one _).symm))
+    toSSetPiEquivHomotopyGroup X x n a⁻¹ = (toSSetPiEquivHomotopyGroup X x n a)⁻¹ := by
+  -- The unit of the group `π (n + 1)` is not exposed as the `1` of
+  -- `toSSetPiEquivHomotopyGroup_one`. Instead, `a * a⁻¹` is idempotent, so its image is
+  -- idempotent, hence the identity.
+  have hidem : a * a⁻¹ * (a * a⁻¹) = a * a⁻¹ := by rw [mul_inv_cancel, mul_one]
+  have he := congrArg (toSSetPiEquivHomotopyGroup X x n) hidem
+  rw [toSSetPiEquivHomotopyGroup_mul, mul_eq_left] at he
+  exact eq_inv_of_mul_eq_one_left (by rw [← toSSetPiEquivHomotopyGroup_mul, he])
 
 variable (X x n) in
 /-- In degrees at least two, where Mathlib's homotopy groups are commutative, the comparison of the
