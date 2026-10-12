@@ -15,7 +15,8 @@ Over a commutative ring with cancellation by nonzero elements, the diagonal toru
 is the group of determinant-one diagonal matrices, the preimage of the diagonal torus of
 `GL_n(k)`. When this torus separates every pair of coordinates, its normalizer in `SL_n(k)`
 consists of the determinant-one monomial matrices, and the normalizer quotient is the symmetric
-group on the coordinate lines, exactly as for `GL_n(k)`.
+group on the coordinate lines, exactly as for `GL_n(k)`. In dimensions zero and one, the quotient
+is trivial over any commutative ring, without cancellation or separation assumptions.
 
 The separation hypothesis cannot simply be dropped. Over `𝔽₃` the torus of `SL₂` is the central
 subgroup `{±1}`, so its normalizer is all of `SL₂(𝔽₃)` and the normalizer quotient has order
@@ -61,6 +62,15 @@ variable {k : Type u} {n : ℕ}
 section CommRing
 
 variable [CommRing k]
+
+/-- In dimensions zero and one, the determinant-one diagonal normalizer quotient is trivial
+over any commutative ring. -/
+instance [Subsingleton (Fin n)] :
+    Subsingleton (Subgroup.normalizerQuotient (diagonalTorus k n)) := by
+  apply QuotientGroup.subsingleton_iff.mpr
+  apply top_unique
+  intro g _
+  exact mem_diagonalTorus_iff.mpr (Matrix.isDiag_of_subsingleton _)
 
 /-- An element of `SL_n(k)` normalizing the diagonal torus of `GL_n(k)` normalizes the diagonal
 torus of `SL_n(k)`. -/

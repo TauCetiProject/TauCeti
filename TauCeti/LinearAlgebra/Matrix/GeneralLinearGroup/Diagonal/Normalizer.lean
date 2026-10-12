@@ -15,7 +15,8 @@ Over a commutative semiring with cancellation by nonzero elements and at least t
 invertible matrix normalizes the diagonal torus exactly when it is monomial: it is a diagonal
 matrix followed by a permutation matrix. The permutation is unique, and multiplication of
 monomial matrices multiplies these permutations. Consequently the quotient of the normalizer by
-the diagonal torus is canonically the symmetric group.
+the diagonal torus is canonically the symmetric group. In dimensions zero and one, the quotient
+is trivial over any semiring, without cancellation or nontrivial-unit assumptions.
 
 This is the group-of-points calculation behind the Weyl group of the diagonal maximal torus in
 `GL_n`.  It complements `TauCeti.SplitTorus.coordinatePermMulEquivWeylGroup`, which identifies the
@@ -139,6 +140,15 @@ theorem permutationGL_mem_normalizer (σ : Equiv.Perm (Fin n)) :
     exact ⟨fun i ↦ t (σ i), hback'.symm⟩
 
 end Permutation
+
+/-- In dimensions zero and one, the diagonal normalizer quotient is trivial over any
+semiring. -/
+instance [Semiring k] [Subsingleton (Fin n)] :
+    Subsingleton (Subgroup.normalizerQuotient (diagonalTorus k n)) := by
+  apply QuotientGroup.subsingleton_iff.mpr
+  apply top_unique
+  intro g _
+  exact mem_diagonalTorus_iff.mpr (Matrix.isDiag_of_subsingleton _)
 
 section IsCancelMulZero
 
