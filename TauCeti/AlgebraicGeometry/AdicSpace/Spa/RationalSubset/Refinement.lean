@@ -48,7 +48,7 @@ contains its generization `x`.
 * `TauCeti.ValuationSpectrum.exists_span_eq_top_forall_rationalSubset_subset` : a cover of
   `Spa (A, A⁺)` by rational subsets `R(Tᵢ/sᵢ)`, each `Tᵢ` generating the unit ideal, has a standard
   rational refinement.
-* `TauCeti.ValuationSpectrum.exists_span_eq_top_forall_rationalSubset_subset_of_iUnion_eq_univ` :
+* `ValuationSpectrum.exists_span_eq_top_forall_rationalSubset_subset_of_isOpen_of_iUnion_eq_univ`:
   **Wedhorn Lemma 7.54** over a complete Hausdorff Huber ring, for an arbitrary open cover.
 
 ## References
@@ -146,8 +146,8 @@ inside one of the `R(Tᵢ/sᵢ)`. The cover may be infinite, since `Spa (A, A⁺
 standard rational cover refining the given one.
 
 Wedhorn's rational subsets only ask the numerator ideals `Tᵢ · A` to be open, which is weaker.
-`exists_span_eq_top_forall_rationalSubset_subset_of_iUnion_eq_univ` reduces an arbitrary open
-cover of `spa Aplus` to this case when `A` is a complete Hausdorff Huber ring. -/
+`exists_span_eq_top_forall_rationalSubset_subset_of_isOpen_of_iUnion_eq_univ` reduces an
+arbitrary open cover of `spa Aplus` to this case when `A` is a complete Hausdorff Huber ring. -/
 theorem exists_span_eq_top_forall_rationalSubset_subset [IsHuberRing A] (Aplus : Subring A)
     (hplus : IsRingOfIntegralElements Aplus) {ι : Type*} {T : ι → Finset A} {s : ι → A}
     (hT : ∀ i, Ideal.span (T i : Set A) = ⊤)
@@ -181,8 +181,8 @@ characteristic group, so around it the denominator of a rational neighbourhood c
 value at least `1` and `1` added to the numerators. The resulting rational subset also contains
 `x`, of which `r(x)` is a specialisation, and `exists_span_eq_top_forall_rationalSubset_subset`
 refines the cover by these subsets. -/
-theorem exists_span_eq_top_forall_rationalSubset_subset_of_iUnion_eq_univ [IsHuberRing A]
-    (Aplus : Subring A) (hplus : IsRingOfIntegralElements Aplus) {ι : Type*}
+theorem exists_span_eq_top_forall_rationalSubset_subset_of_isOpen_of_iUnion_eq_univ
+    [IsHuberRing A] (Aplus : Subring A) (hplus : IsRingOfIntegralElements Aplus) {ι : Type*}
     (V : ι → Set (spa Aplus)) (hV : ∀ i, IsOpen (V i)) (hcov : ⋃ i, V i = Set.univ) :
     ∃ S : Finset A, Ideal.span (S : Set A) = ⊤ ∧
       ∀ f ∈ S, ∃ i, Subtype.val ⁻¹' rationalSubset Aplus S f ⊆ V i := by
