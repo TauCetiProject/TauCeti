@@ -55,6 +55,7 @@ instance [NeZero (2 : K)] : (curve K).IsElliptic := by
 variable {K}
 
 /-- The affine points of `y² = x³ - x` are the solutions of `y² = x³ - x`. -/
+@[simp]
 theorem equation_iff (x y : K) : (curve K).toAffine.Equation x y ↔ y ^ 2 = x ^ 3 - x := by
   rw [Affine.equation_iff]
   constructor <;> intro h <;> linear_combination h
@@ -99,6 +100,7 @@ variable {K}
 
 /-- **The points of order dividing two on `y² = x³ - x`** are the point at infinity and the three
 points `(0, 0)`, `(1, 0)` and `(-1, 0)` on the line `y = 0`. -/
+@[simp]
 theorem neg_eq_self_iff (T : (curve K).toAffine.Point) :
     -T = T ↔ T = 0 ∨ T = pointZero K ∨ T = pointOne K ∨ T = pointNegOne K := by
   cases T with
