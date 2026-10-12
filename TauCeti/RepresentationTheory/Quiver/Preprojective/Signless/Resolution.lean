@@ -53,7 +53,14 @@ open _root_.Quiver PathAlgebra MulOpposite CategoryTheory
 universe u v w
 
 variable (k : Type w) [CommRing k] {R : Type u} [Quiver.{v} R]
-  [Fintype R] [∀ x : R, Fintype (Quiver.Star x)]
+  [Finite R] [∀ x : R, Fintype (Quiver.Star x)]
+
+noncomputable local instance : Fintype R := Fintype.ofFinite R
+
+noncomputable local instance (i j : R) : Fintype (i ⟶ j) := by
+  letI : Finite (i ⟶ j) :=
+    Finite.of_injective (fun b : i ⟶ j => (Quiver.Star.mk b : Quiver.Star i)) sigma_mk_injective
+  exact Fintype.ofFinite _
 
 section Reverse
 
@@ -67,8 +74,7 @@ local notation "e" => fun i : R => π (vertexIdempotent k i)
 noncomputable def signlessPreprojectiveRightProjective (i : R) : Ideal Πᵐᵒᵖ :=
   Ideal.span {op (e i)}
 
-omit [Fintype R] in
-private theorem isIdempotentElem_op_signlessVertexIdempotent [Finite R] (i : R) :
+private theorem isIdempotentElem_op_signlessVertexIdempotent (i : R) :
     IsIdempotentElem (op (e i)) := by
   apply unop_injective
   simpa only [unop_mul, unop_op, ← map_mul] using
@@ -92,9 +98,6 @@ abbrev signlessPreprojectiveKoszulMiddle (v : R) :=
 
 /-- The incoming-arrow term is projective as a finite direct sum. -/
 instance (v : R) : Module.Projective Πᵐᵒᵖ (signlessPreprojectiveKoszulMiddle k v) := by
-  have (i j : R) : Finite (i ⟶ j) :=
-    Finite.of_injective (fun b : i ⟶ j => (Quiver.Star.mk b : Quiver.Star i)) sigma_mk_injective
-  let (i j : R) : Fintype (i ⟶ j) := Fintype.ofFinite _
   let (i : R) : Module.Projective Πᵐᵒᵖ ((i ⟶ v) → signlessPreprojectiveRightProjective k i) :=
     Module.Projective.of_equiv (DirectSum.linearEquivFunOnFintype Πᵐᵒᵖ _ _)
   exact Module.Projective.of_equiv (DirectSum.linearEquivFunOnFintype Πᵐᵒᵖ _ _)
@@ -113,8 +116,6 @@ noncomputable def signlessPreprojectiveKoszulLeft (v : R) :
   map_add' x y := by ext i b; simp [add_mul]
   map_smul' a y := by ext i b; simp [mul_assoc]
 
-variable [∀ i j : R, Fintype (i ⟶ j)]
-
 /-- The incoming-arrow map of the signless Koszul complex, `(z_b) ↦ ∑ b z_b`. -/
 noncomputable def signlessPreprojectiveKoszulRight (v : R) :
     signlessPreprojectiveKoszulMiddle k v →ₗ[Πᵐᵒᵖ] signlessPreprojectiveRightProjective k v where
@@ -124,7 +125,6 @@ noncomputable def signlessPreprojectiveKoszulRight (v : R) :
   map_add' x y := by ext; simp [add_mul, Finset.sum_add_distrib]
   map_smul' a y := by ext; simp [mul_assoc, Finset.mul_sum]
 
-omit [∀ i j : R, Fintype (i ⟶ j)] in
 @[simp]
 theorem unop_signlessPreprojectiveKoszulLeft_apply (v : R)
     (y : signlessPreprojectiveRightProjective k v) (i : R) (b : i ⟶ v) :
@@ -191,11 +191,9 @@ private noncomputable def signlessVertexCoeff (v : R) :
     ((opLinearEquiv k (M := Π)).symm.toLinearMap.comp
       ((signlessPreprojectiveRightProjective k v).subtype.restrictScalars k)))
 
-omit [∀ i j : R, Fintype (i ⟶ j)] in
 private theorem signlessVertexCoeff_apply (v : R) (x : signlessPreprojectiveRightProjective k v) :
     signlessVertexCoeff k v x = signlessPreprojectiveAugmentation k (unop (x : Πᵐᵒᵖ)) v := (rfl)
 
-omit [∀ i j : R, Fintype (i ⟶ j)] in
 private theorem signlessVertexCoeff_surjective (v : R) :
     Function.Surjective (signlessVertexCoeff k v) := by
   intro c
@@ -258,7 +256,7 @@ end Reverse
 
 section InvolutiveReverse
 
-variable [HasInvolutiveReverse R] [∀ i j : R, Fintype (i ⟶ j)]
+variable [HasInvolutiveReverse R]
 
 local notation "Π" => signlessPreprojectiveAlgebra k R
 local notation "π" => signlessPreprojectiveMk k R
@@ -292,7 +290,6 @@ theorem range_signlessPreprojectiveKoszulLeft_eq_ker_right (v : R) :
     exact funext fun i => funext fun b => Subtype.ext (unop_injective (by
       rw [unop_signlessPreprojectiveKoszulLeft_apply, unop_op, hzy]))
 
-omit [∀ i j : R, Fintype (i ⟶ j)] in
 /-- A non-backtracking outgoing-arrow choice makes the left Koszul map injective. -/
 theorem signlessPreprojectiveKoszulLeft_injective {σ : ∀ v : R, Quiver.Star v}
     (hσ : ∀ v, σ (σ v).1 ≠ Quiver.Star.mk (reverse (σ v).2)) (v : R) :
