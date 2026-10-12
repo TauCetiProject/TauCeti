@@ -65,8 +65,8 @@ the support of `m`:
 ## Main statements
 
 * `TauCeti.CurvatureDimensionInfinity.mono`: `CD(K, ∞)` implies `CD(K', ∞)` for `K' ≤ K`.
-* `TauCeti.curvatureDimensionInfinity_iff_geodesicallyConvex`: when the entropy is never `⊥` on
-  `P₂(X)`, `CD(K, ∞)` is the `K`-geodesic convexity of the entropy.
+* `TauCeti.curvatureDimensionInfinity_iff_geodesicallyConvex`: when the entropy is never `⊥` at a
+  law of `P₂(X)` where it is `≠ ⊤`, `CD(K, ∞)` is the `K`-geodesic convexity of the entropy.
 * `TauCeti.CurvatureDimensionInfinity.exists_mem_support_dist_sq_add_dist_sq_le`: under
   `CD(K, ∞)`, points of the support have approximate midpoints in the support.
 * `TauCeti.not_curvatureDimensionInfinity_of_support_eq_pair`: a reference measure supported on
@@ -152,40 +152,6 @@ theorem exists_boltzmannEntropy_ne_top_and_ne_bot_and_wassersteinEDist_dirac_le
   refine ⟨.mk ⟨m[|s], hprob⟩ hmom, ?_, ?_, by rwa [hcoe]⟩ <;> rw [hcoe, hE]
   exacts [EReal.coe_ne_top E, EReal.coe_ne_bot E]
 
-/-- If a law `ν ≪ m` is within `W₂`-distance `R` of both `δ_{x₀}` and `δ_{x₁}`, some point `z` of
-the support of `m` has `d(x₀, z)² + d(z, x₁)² ≤ 2 R²`: the two second moments of `ν` add up to at
-most `2 R²`, and `ν` does not charge the complement of the support. -/
-private theorem exists_mem_support_dist_sq_add_dist_sq_le_of_wassersteinEDist_le
-    (ν : Measure X) [IsProbabilityMeasure ν] (hν : ν ≪ m) {x₀ x₁ : X} {R : ℝ} (hR : 0 ≤ R)
-    (h₀ : wassersteinEDist 2 (Measure.dirac x₀) ν ≤ ENNReal.ofReal R)
-    (h₁ : wassersteinEDist 2 (Measure.dirac x₁) ν ≤ ENNReal.ofReal R) :
-    ∃ z ∈ m.support, dist x₀ z ^ 2 + dist z x₁ ^ 2 ≤ 2 * R ^ 2 := by
-  -- The second moment of `ν` about `x` is `W₂(δ_x, ν)²`.
-  have hmom (x : X) : ∫⁻ z, ENNReal.ofReal (dist x z ^ 2) ∂ν =
-      wassersteinEDist 2 (Measure.dirac x) ν ^ ((2 : ℝ≥0) : ℝ) := by
-    rw [wassersteinEDist_dirac_left measurable_edist, ← ENNReal.coe_ofNat,
-      eLpNorm_nnreal_pow_eq_lintegral (f := fun y ↦ edist x y) two_ne_zero (by fun_prop)]
-    refine lintegral_congr fun z ↦ ?_
-    rw [enorm_eq_self, edist_dist, NNReal.coe_ofNat, ENNReal.ofReal_rpow_of_nonneg dist_nonneg
-      zero_le_two, Real.rpow_two]
-  have hbound (x : X) (hx : wassersteinEDist 2 (Measure.dirac x) ν ≤ ENNReal.ofReal R) :
-      ∫⁻ z, ENNReal.ofReal (dist x z ^ 2) ∂ν ≤ ENNReal.ofReal (R ^ 2) := by
-    rw [hmom, NNReal.coe_ofNat, ← Real.rpow_two, ← ENNReal.ofReal_rpow_of_nonneg hR zero_le_two]
-    gcongr
-  -- Some `z` outside the `ν`-null set `(supp m)ᶜ` lies below the mean of the two moments.
-  have hmeas (x : X) : Measurable fun z ↦ ENNReal.ofReal (dist x z ^ 2) := by fun_prop
-  obtain ⟨z, hz, hle⟩ := exists_notMem_null_le_lintegral (μ := ν)
-    (f := fun z ↦ ENNReal.ofReal (dist x₀ z ^ 2) + ENNReal.ofReal (dist x₁ z ^ 2))
-    ((hmeas x₀).add (hmeas x₁)).aemeasurable (hν m.measure_compl_support)
-  refine ⟨z, not_not.1 hz, ?_⟩
-  rw [lintegral_add_left (hmeas x₀)] at hle
-  have := hle.trans (add_le_add (hbound x₀ h₀) (hbound x₁ h₁))
-  rw [← ENNReal.ofReal_add (by positivity) (by positivity),
-    ← ENNReal.ofReal_add (by positivity) (by positivity),
-    ENNReal.ofReal_le_ofReal_iff (by positivity)] at this
-  rw [dist_comm z x₁]
-  linarith
-
 end FiniteEntropy
 
 section CurvatureDimension
@@ -222,14 +188,15 @@ theorem curvatureDimensionInfinity_def :
           boltzmannEntropy m ((μ : ProbabilityMeasure X) : Measure X)) γ :=
   Iff.rfl
 
-/-- When the Boltzmann entropy is never `⊥` on `P₂(X)` (for instance when `m` is finite),
-`CD(K, ∞)` is the `K`-geodesic convexity of the entropy. -/
+/-- When the Boltzmann entropy is never `⊥` at a law of `P₂(X)` where it is `≠ ⊤` (for instance
+when `m` is finite), `CD(K, ∞)` is the `K`-geodesic convexity of the entropy. -/
 theorem curvatureDimensionInfinity_iff_geodesicallyConvex
     (hm : ∀ μ : WassersteinSpace 2 X,
+      boltzmannEntropy m ((μ : ProbabilityMeasure X) : Measure X) ≠ ⊤ →
       boltzmannEntropy m ((μ : ProbabilityMeasure X) : Measure X) ≠ ⊥) :
     CurvatureDimensionInfinity K m ↔ GeodesicallyConvex K fun μ : WassersteinSpace 2 X ↦
       boltzmannEntropy m ((μ : ProbabilityMeasure X) : Measure X) :=
-  ⟨fun h ↦ geodesicallyConvex_def.2 fun _ _ h₀ h₁ ↦ h h₀ (hm _) h₁ (hm _),
+  ⟨fun h ↦ geodesicallyConvex_def.2 fun _ _ h₀ h₁ ↦ h h₀ (hm _ h₀) h₁ (hm _ h₁),
     fun h _ _ h₀ _ h₁ _ ↦ geodesicallyConvex_def.1 h h₀ h₁⟩
 
 /-- `CD(K, ∞)` implies `CD(K', ∞)` for every `K' ≤ K`. -/
@@ -300,8 +267,9 @@ theorem CurvatureDimensionInfinity.exists_mem_support_dist_sq_add_dist_sq_le
   have hν₀ := hmid x₀ μ₀ hW₀ (hγ.dist_source_apply ht)
   have hν₁ := hmid x₁ μ₁ hW₁ (by rw [dist_comm, hγ.dist_apply_target ht]; norm_num)
   obtain ⟨z, hz, hle⟩ :=
-    exists_mem_support_dist_sq_add_dist_sq_le_of_wassersteinEDist_le ν hν (by positivity) hν₀ hν₁
-  exact ⟨z, hz, hle.trans (by nlinarith)⟩
+    exists_notMem_dist_sq_add_dist_sq_le_of_wassersteinEDist_le measurable_edist ν
+      (hν m.measure_compl_support) (by positivity) hν₀ hν₁
+  exact ⟨z, not_not.1 hz, hle.trans (by nlinarith)⟩
 
 end CurvatureDimension
 

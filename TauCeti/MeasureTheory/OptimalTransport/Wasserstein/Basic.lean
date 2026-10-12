@@ -86,6 +86,9 @@ what the gluing lemma consumes.
   along a single coupling, and with
   `TauCeti.hasFiniteMoment_iff_forall_hasFiniteMoment_iff_wassersteinEDist_ne_top` recording that
   the finite-moment hypothesis on the anchor cannot be dropped;
+* `TauCeti.exists_notMem_dist_sq_add_dist_sq_le_of_wassersteinEDist_le` — a probability measure
+  `W₂`-close to two Dirac laws gives, off any null set, a point `z` with
+  `d(x₀, z)² + d(z, x₁)² ≤ 2 R²`;
 * `TauCeti.HasFiniteMoment.integrable_of_lipschitzWith` — a Lipschitz real function is integrable
   against a finite measure of finite first moment;
 * `TauCeti.HasFiniteMoment.memLp_id` — on a normed additive group, a finite measure of finite
@@ -769,6 +772,48 @@ theorem hasFiniteMoment_iff_forall_hasFiniteMoment_iff_wassersteinEDist_ne_top
       exact eLpNorm_eq_zero_of_ae_zero (.of_forall fun x ↦ edist_self x))⟩
 
 end Anchor
+
+/-- **A point near two Dirac laws.** If a probability measure `ν` is within `W₂`-distance `R` of
+both `δ_{x₀}` and `δ_{x₁}`, then outside any `ν`-null set `s` there is a point `z` with
+`d(x₀, z)² + d(z, x₁)² ≤ 2 R²`: the two second moments of `ν` add up to at most `2 R²`, and some
+point off `s` lies below their mean. -/
+theorem exists_notMem_dist_sq_add_dist_sq_le_of_wassersteinEDist_le
+    (hd : Measurable fun z : X × X ↦ edist z.1 z.2) (ν : Measure X) [IsProbabilityMeasure ν]
+    {s : Set X} (hs : ν s = 0) {x₀ x₁ : X} {R : ℝ} (hR : 0 ≤ R)
+    (h₀ : wassersteinEDist 2 (Measure.dirac x₀) ν ≤ ENNReal.ofReal R)
+    (h₁ : wassersteinEDist 2 (Measure.dirac x₁) ν ≤ ENNReal.ofReal R) :
+    ∃ z ∉ s, dist x₀ z ^ 2 + dist z x₁ ^ 2 ≤ 2 * R ^ 2 := by
+  -- The second moment of `ν` about `x` is `W₂(δ_x, ν)²`.
+  have hsec (x : X) : Measurable fun y ↦ edist x y :=
+    hd.comp (measurable_const.prodMk measurable_id)
+  have hmom (x : X) : ∫⁻ z, ENNReal.ofReal (dist x z ^ 2) ∂ν =
+      wassersteinEDist 2 (Measure.dirac x) ν ^ ((2 : ℝ≥0) : ℝ) := by
+    rw [wassersteinEDist_dirac_left hd, ← ENNReal.coe_ofNat,
+      eLpNorm_nnreal_pow_eq_lintegral (f := fun y ↦ edist x y) two_ne_zero
+        (hsec x).aestronglyMeasurable]
+    refine lintegral_congr fun z ↦ ?_
+    rw [enorm_eq_self, edist_dist, NNReal.coe_ofNat, ENNReal.ofReal_rpow_of_nonneg dist_nonneg
+      zero_le_two, Real.rpow_two]
+  have hbound (x : X) (hx : wassersteinEDist 2 (Measure.dirac x) ν ≤ ENNReal.ofReal R) :
+      ∫⁻ z, ENNReal.ofReal (dist x z ^ 2) ∂ν ≤ ENNReal.ofReal (R ^ 2) := by
+    rw [hmom, NNReal.coe_ofNat, ← Real.rpow_two, ← ENNReal.ofReal_rpow_of_nonneg hR zero_le_two]
+    gcongr
+  -- Some `z` outside the `ν`-null set `s` lies below the mean of the two moments.
+  have hmeas (x : X) : Measurable fun z ↦ ENNReal.ofReal (dist x z ^ 2) := by
+    have : Measurable fun z ↦ dist x z := by
+      simpa only [edist_dist, ENNReal.toReal_ofReal dist_nonneg] using (hsec x).ennreal_toReal
+    fun_prop
+  obtain ⟨z, hz, hle⟩ := exists_notMem_null_le_lintegral (μ := ν)
+    (f := fun z ↦ ENNReal.ofReal (dist x₀ z ^ 2) + ENNReal.ofReal (dist x₁ z ^ 2))
+    ((hmeas x₀).add (hmeas x₁)).aemeasurable hs
+  refine ⟨z, hz, ?_⟩
+  rw [lintegral_add_left (hmeas x₀)] at hle
+  have := hle.trans (add_le_add (hbound x₀ h₀) (hbound x₁ h₁))
+  rw [← ENNReal.ofReal_add (by positivity) (by positivity),
+    ← ENNReal.ofReal_add (by positivity) (by positivity),
+    ENNReal.ofReal_le_ofReal_iff (by positivity)] at this
+  rw [dist_comm z x₁]
+  linarith
 
 end MetricMoment
 
