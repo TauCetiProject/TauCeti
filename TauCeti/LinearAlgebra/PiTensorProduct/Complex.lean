@@ -88,18 +88,18 @@ theorem map_mem_degreePiece {N : ι → Type*} [∀ i, AddCommMonoid (N i)]
   exact tprod_mem_degreePiece 𝒩 q _ fun i ↦ by
     simpa only [add_zero] using (hf i).map_mem (hx i)
 
-/-- Reindexing a tensor power preserves total degree. -/
+/-- Reindexing a graded family preserves total degree. -/
 theorem reindex_mem_degreePiece {κ : Type*} [Fintype κ] (e : ι ≃ κ)
-    {A : Type*} [AddCommMonoid A] [Module R A] (ℳ : ℤ → Submodule R A) {n : ℤ}
-    {z : ⨂[R] _ : ι, A} (hz : z ∈ degreePiece (fun _ : ι ↦ ℳ) n) :
-    _root_.PiTensorProduct.reindex R (fun _ : ι ↦ A) e z ∈
-      degreePiece (fun _ : κ ↦ ℳ) n := by
-  refine (degreePiece_le_comap_iff (fun _ : ι ↦ ℳ) n
-    (_root_.PiTensorProduct.reindex R (fun _ : ι ↦ A) e).toLinearMap
-    (degreePiece (fun _ : κ ↦ ℳ) n)).2 (fun q x hq hx ↦ ?_) hz
+    (ℳ : ∀ i, ℤ → Submodule R (M i)) {n : ℤ}
+    {z : ⨂[R] i, M i} (hz : z ∈ degreePiece ℳ n) :
+    _root_.PiTensorProduct.reindex R M e z ∈
+      degreePiece (fun j ↦ ℳ (e.symm j)) n := by
+  refine (degreePiece_le_comap_iff ℳ n
+    (_root_.PiTensorProduct.reindex R M e).toLinearMap
+    (degreePiece (fun j ↦ ℳ (e.symm j)) n)).2 (fun q x hq hx ↦ ?_) hz
   rw [LinearEquiv.coe_coe, _root_.PiTensorProduct.reindex_tprod,
     ← hq, ← Equiv.sum_comp e.symm]
-  exact tprod_mem_degreePiece (fun _ : κ ↦ ℳ) (fun i ↦ q (e.symm i)) _ fun i ↦ hx _
+  exact tprod_mem_degreePiece (fun j ↦ ℳ (e.symm j)) (fun j ↦ q (e.symm j)) _ fun j ↦ hx _
 
 /-- Equal factor degrees multiply by the number of tensor factors. -/
 theorem tprod_mem_degreePiece_const (ℳ : ∀ i, ℤ → Submodule R (M i)) (q : ℤ)

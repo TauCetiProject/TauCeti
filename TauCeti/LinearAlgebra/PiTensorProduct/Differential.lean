@@ -16,9 +16,10 @@ import Mathlib.Algebra.BigOperators.Fin
 
 For a finite family of modules with endomorphisms `dᵢ`, the tensor differential is the sum of the
 maps applying `dᵢ` in one tensor factor. If the endomorphisms square to zero and the ground ring
-has characteristic two, this sum squares to zero. In characteristic two the Koszul signs are
-trivial, so the differential also commutes with reindexing the factors. These are the underlying
-linear maps used to tensor complexes with permutation actions.
+has characteristic two, this sum squares to zero. The unsigned differential commutes with
+reindexing in every characteristic. In characteristic two the Koszul signs are trivial, so this
+unsigned sum is the usual tensor differential. These are the underlying linear maps used to
+tensor complexes with permutation actions.
 
 ## References
 
@@ -42,7 +43,7 @@ Over a ring of characteristic two this is the usual tensor differential, without
 noncomputable def differential (d : ∀ i, Module.End R (M i)) :
     Module.End R (⨂[R] i, M i) := by
   classical
-  exact ∑ i, _root_.PiTensorProduct.map (Function.update (fun i ↦ LinearMap.id) i (d i))
+  exact ∑ i, _root_.PiTensorProduct.map (Function.update (fun _ ↦ LinearMap.id) i (d i))
 
 /-- The tensor differential of zero endomorphisms is zero. -/
 @[simp]
@@ -60,21 +61,31 @@ theorem differential_of_isEmpty [IsEmpty ι] (d : ∀ i, Module.End R (M i)) :
   classical
   simp [differential]
 
-open Classical in
-/-- On a pure tensor the differential is the sum replacing one factor by its differential. -/
-@[simp]
-theorem differential_tprod (d : ∀ i, Module.End R (M i)) (x : ∀ i, M i) :
-    differential d (_root_.PiTensorProduct.tprod R x) =
-      ∑ i, _root_.PiTensorProduct.tprod R (Function.update x i (d i (x i))) := by
-  classical
-  simp only [differential, LinearMap.sum_apply, _root_.PiTensorProduct.map_tprod]
-  congr 1 with i
+omit [Fintype ι] in
+/-- Applying an endomorphism in one tensor coordinate replaces just that factor. -/
+theorem map_update_id_tprod [DecidableEq ι] (i : ι) (f : Module.End R (M i))
+    (x : ∀ i, M i) :
+    _root_.PiTensorProduct.map (Function.update (fun _ ↦ LinearMap.id) i f)
+        (_root_.PiTensorProduct.tprod R x) =
+      _root_.PiTensorProduct.tprod R (Function.update x i (f (x i))) := by
+  rw [_root_.PiTensorProduct.map_tprod]
   congr 1
   funext j
-  by_cases h : j = i
-  · subst h
-    simp
-  · simp [Function.update_of_ne h]
+  simpa using Function.apply_update (fun k (g : Module.End R (M k)) ↦ g (x k))
+    (fun k ↦ LinearMap.id) i f j
+
+/-- On a pure tensor the differential is the sum replacing one factor by its differential. -/
+@[simp]
+theorem differential_tprod [DecidableEq ι] (d : ∀ i, Module.End R (M i))
+    (x : ∀ i, M i) :
+    differential d (_root_.PiTensorProduct.tprod R x) =
+      ∑ i, _root_.PiTensorProduct.tprod R (Function.update x i (d i (x i))) := by
+  simp only [differential, LinearMap.sum_apply, map_update_id_tprod]
+  apply Finset.sum_congr rfl
+  intro i _
+  congr 1
+  exact congrArg (fun decEq ↦ @Function.update ι M decEq x i (d i (x i)))
+    (Subsingleton.elim _ _)
 
 /-- A tensor of maps commuting with the factor differentials commutes with the tensor
 differentials. No square-zero or characteristic hypothesis is needed for this identity. -/
@@ -92,18 +103,16 @@ theorem differential_map {N : ι → Type*} [∀ i, AddCommMonoid (N i)]
   intro i _
   congr 1
   funext j
-  by_cases h : j = i
-  · subst h
-    simpa using LinearMap.congr_fun (hf j) (x j)
-  · simp [Function.update_of_ne h]
+  rw [Function.apply_update (fun j z ↦ f j z) x i (d i (x i)) j]
+  have hfi : e i (f i (x i)) = f i (d i (x i)) := LinearMap.congr_fun (hf i) (x i)
+  rw [hfi]
 
-/-- On a tensor power, reindexing commutes with the tensor differential of a single module. -/
+/-- Reindexing transports the tensor differential to the reindexed family. -/
 theorem differential_reindex {κ : Type*} [Fintype κ] (e : ι ≃ κ)
-    {A : Type*} [AddCommMonoid A] [Module R A] (d : Module.End R A) :
-    differential (fun _ : κ ↦ d) ∘ₗ
-        (_root_.PiTensorProduct.reindex R (fun _ : ι ↦ A) e).toLinearMap =
-      (_root_.PiTensorProduct.reindex R (fun _ : ι ↦ A) e).toLinearMap ∘ₗ
-        differential (fun _ : ι ↦ d) := by
+    (d : ∀ i, Module.End R (M i)) :
+    differential (fun j ↦ d (e.symm j)) ∘ₗ
+        (_root_.PiTensorProduct.reindex R M e).toLinearMap =
+      (_root_.PiTensorProduct.reindex R M e).toLinearMap ∘ₗ differential d := by
   classical
   ext x
   simp only [LinearMap.compMultilinearMap_apply, LinearMap.comp_apply,
@@ -113,45 +122,62 @@ theorem differential_reindex {κ : Type*} [Fintype κ] (e : ι ≃ κ)
   intro i _
   congr 1
   funext j
-  by_cases h : e.symm j = i
-  · have hj : j = e i := by simpa using congrArg e h
-    subst hj
-    simp only [Function.update_self, h]
-    exact congrArg (fun k ↦ d (x k)) h
-  · have hj : j ≠ e i := fun hj ↦ h (by simp [hj])
-    simp [Function.update_of_ne h, Function.update_of_ne hj]
+  by_cases hj : j = e i
+  · subst j
+    rw [Function.update_self]
+    -- Name the transported index before substituting in the dependent family.
+    generalize hk : e.symm (e i) = k
+    have hki : k = i := hk.symm.trans (e.symm_apply_apply i)
+    clear hk
+    subst k
+    simp
+  · have hji : e.symm j ≠ i := fun h ↦ hj (by simpa using congrArg e h)
+    simp only [Function.update_of_ne hj, Function.update_of_ne hji]
+
+omit [Fintype ι] in
+/-- Single-coordinate tensor maps multiply by composing in that coordinate. -/
+theorem map_update_id_mul [DecidableEq ι] (i : ι) (f g : Module.End R (M i)) :
+    _root_.PiTensorProduct.map (Function.update (fun _ ↦ LinearMap.id) i f) *
+        _root_.PiTensorProduct.map (Function.update (fun _ ↦ LinearMap.id) i g) =
+      _root_.PiTensorProduct.map (Function.update (fun _ ↦ LinearMap.id) i (f * g)) := by
+  rw [← _root_.PiTensorProduct.map_mul]
+  congr 1
+  funext j
+  simpa [← Module.End.one_eq_id] using
+    Function.apply_update₂ (fun k (a b : Module.End R (M k)) ↦ a * b)
+      (fun k ↦ LinearMap.id) (fun k ↦ LinearMap.id) i f g j
+
+omit [Fintype ι] in
+/-- Maps in distinct tensor coordinates commute. In the same coordinate they commute
+whenever the factor endomorphisms do. -/
+theorem map_update_id_commute [DecidableEq ι] (i j : ι)
+    (f : Module.End R (M i)) (g : Module.End R (M j))
+    (h : ∀ hij : i = j, Commute (hij ▸ f) g) :
+    Commute (_root_.PiTensorProduct.map (Function.update (fun _ ↦ LinearMap.id) i f))
+      (_root_.PiTensorProduct.map (Function.update (fun _ ↦ LinearMap.id) j g)) := by
+  rcases eq_or_ne i j with rfl | hij
+  · simpa only [Commute, SemiconjBy, map_update_id_mul] using
+      congrArg (fun a ↦ _root_.PiTensorProduct.map
+        (Function.update (fun _ ↦ LinearMap.id) i a)) (h rfl).eq
+  · dsimp only [Commute, SemiconjBy]
+    ext x
+    simp only [LinearMap.compMultilinearMap_apply, Module.End.mul_apply,
+      map_update_id_tprod,
+      Function.update_of_ne hij, Function.update_of_ne hij.symm]
+    rw [Function.update_comm hij]
 
 /-- The finite tensor differential squares to zero in characteristic two when each factor
 differential does. The mixed terms cancel in pairs. -/
 theorem differential_comp_self [CharP R 2] (d : ∀ i, Module.End R (M i))
     (hd : ∀ i, d i ∘ₗ d i = 0) : differential d ∘ₗ differential d = 0 := by
   classical
-  let δ (i : ι) := _root_.PiTensorProduct.map (Function.update (fun i ↦ LinearMap.id) i (d i))
+  let δ (i : ι) := _root_.PiTensorProduct.map (Function.update (fun _ ↦ LinearMap.id) i (d i))
   have hδ (i : ι) : δ i * δ i = 0 := by
-    simp only [δ, ← _root_.PiTensorProduct.map_mul]
-    have h : (fun j ↦ Function.update (fun i ↦ LinearMap.id) i (d i) j *
-        Function.update (fun i ↦ LinearMap.id) i (d i) j) =
-        Function.update (fun i ↦ LinearMap.id) i 0 := by
-      funext j
-      by_cases h : j = i
-      · subst h
-        simpa only [Function.update_self, Module.End.mul_eq_comp] using hd j
-      · simp [Function.update_of_ne h, ← Module.End.one_eq_id]
-    rw [h]
-    exact (_root_.PiTensorProduct.mapMultilinear R M M).map_coord_zero i
-      (Function.update_self i 0 _)
-  have hc (i j : ι) : Commute (δ i) (δ j) := by
-    dsimp only [Commute, SemiconjBy, δ]
-    rw [← _root_.PiTensorProduct.map_mul, ← _root_.PiTensorProduct.map_mul]
-    congr 1
-    funext k
-    by_cases hi : k = i <;> by_cases hj : k = j
-    · subst hi
-      subst hj
-      rfl
-    · simp [Function.update_of_ne hj, ← Module.End.one_eq_id]
-    · simp [Function.update_of_ne hi, ← Module.End.one_eq_id]
-    · simp [Function.update_of_ne hi, Function.update_of_ne hj, ← Module.End.one_eq_id]
+    rw [map_update_id_mul, Module.End.mul_eq_comp, hd i]
+    exact (_root_.PiTensorProduct.mapMultilinear R M M).map_update_zero _ i
+  have hc (i j : ι) : Commute (δ i) (δ j) :=
+    map_update_id_commute i j (d i) (d j)
+      (fun hij ↦ by subst hij; exact Commute.refl _)
   have htwo : (2 : Module.End R (⨂[R] i, M i)) = 0 := by
     apply LinearMap.ext
     intro z
@@ -167,14 +193,13 @@ theorem differential_comp_self [CharP R 2] (d : ∀ i, Module.End R (M i))
   exact hs Finset.univ
 
 /-- The two-factor differential replaces each of `(0, 1)` in turn by `(1, 0)`.
-This is a nonconstant square-zero factor differential over a ring of characteristic two. -/
+This uses the nonconstant square-zero factor map `(x, y) ↦ (y, 0)` over any commutative ring. -/
 example {S : Type*} [CommRing S] :
     differential (fun _ : Fin 2 ↦
       (LinearMap.inl S S S).comp (LinearMap.snd S S S))
         (_root_.PiTensorProduct.tprod S (fun _ ↦ (0, 1))) =
       _root_.PiTensorProduct.tprod S ![(1, 0), (0, 1)] +
         _root_.PiTensorProduct.tprod S ![(0, 1), (1, 0)] := by
-  classical
   rw [differential_tprod, Fin.sum_univ_two]
   congr 1 <;> congr 1 <;> ext i <;> fin_cases i <;> simp
 

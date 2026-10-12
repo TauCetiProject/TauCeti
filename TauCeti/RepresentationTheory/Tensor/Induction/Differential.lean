@@ -14,7 +14,7 @@ public import TauCeti.LinearAlgebra.PiTensorProduct.Complex
 A differential commuting with a group representation induces a differential commuting with its
 finite wreath tensor representation and hence with tensor induction along a subgroup. In
 characteristic two the induced differential squares to zero. If the original action preserves
-a grading, the wreath action preserves total tensor degree, so it acts on the tensor complex.
+a grading, the wreath action preserves each total-degree piece `PiTensorProduct.degreePiece`.
 
 These identities supply the permutation-compatible differential for tensor induction of
 complexes. The ground ring need not have characteristic two for equivariance or preservation of
@@ -46,7 +46,8 @@ noncomputable def wreathTensorDifferential :
   isIntertwining' a := by
     rw [wreathTensor_apply, ← LinearMap.comp_assoc,
       TauCeti.PiTensorProduct.differential_map _ _ _ (fun i ↦ d.isIntertwining' (a.left i)),
-      LinearMap.comp_assoc, TauCeti.PiTensorProduct.differential_reindex,
+      LinearMap.comp_assoc,
+      TauCeti.PiTensorProduct.differential_reindex a.right (fun _ ↦ d.toLinearMap),
       LinearMap.comp_assoc]
 
 /-- The underlying map of the wreath tensor differential is the finite tensor differential. -/
@@ -55,6 +56,19 @@ theorem wreathTensorDifferential_toLinearMap :
     (wreathTensorDifferential d ι).toLinearMap =
       TauCeti.PiTensorProduct.differential (fun _ : ι ↦ d.toLinearMap) :=
   (rfl)
+
+/-- The wreath tensor differential replaces one pure-tensor factor at a time. -/
+@[simp]
+theorem wreathTensorDifferential_apply_tprod [DecidableEq ι] (x : ι → M) :
+    wreathTensorDifferential d ι (_root_.PiTensorProduct.tprod R x) =
+      ∑ i, _root_.PiTensorProduct.tprod R (Function.update x i (d (x i))) := by
+  exact TauCeti.PiTensorProduct.differential_tprod (fun _ ↦ d.toLinearMap) x
+
+/-- The wreath tensor differential commutes with the wreath tensor action. -/
+theorem wreathTensorDifferential_comp_wreathTensor (a : WreathProduct D ι) :
+    (wreathTensorDifferential d ι).toLinearMap ∘ₗ ρ.wreathTensor ι a =
+      ρ.wreathTensor ι a ∘ₗ (wreathTensorDifferential d ι).toLinearMap :=
+  (wreathTensorDifferential d ι).isIntertwining' a
 
 /-- The induced differential squares to zero in characteristic two. -/
 theorem wreathTensorDifferential_comp_self [CharP R 2]
@@ -89,13 +103,29 @@ theorem tensorInducedDifferential_toLinearMap (d : τ.IntertwiningMap τ)
       TauCeti.PiTensorProduct.differential (fun _ : G ⧸ U ↦ d.toLinearMap) :=
   (rfl)
 
+/-- The tensor-induced differential replaces one coset-indexed pure-tensor factor at a time. -/
+@[simp]
+theorem tensorInducedDifferential_apply_tprod (d : τ.IntertwiningMap τ)
+    (s : U.LeftTransversal) [Fintype (G ⧸ U)] [DecidableEq (G ⧸ U)] (x : G ⧸ U → M) :
+    tensorInducedDifferential d s (_root_.PiTensorProduct.tprod R x) =
+      ∑ i, _root_.PiTensorProduct.tprod R (Function.update x i (d (x i))) :=
+  wreathTensorDifferential_apply_tprod d (G ⧸ U) x
+
+/-- The tensor-induced differential commutes with the tensor-induced action. -/
+theorem tensorInducedDifferential_comp_tensorInducedRepresentation (d : τ.IntertwiningMap τ)
+    (s : U.LeftTransversal) [Fintype (G ⧸ U)] (g : G) :
+    (tensorInducedDifferential d s).toLinearMap ∘ₗ U.tensorInducedRepresentation s τ g =
+      U.tensorInducedRepresentation s τ g ∘ₗ (tensorInducedDifferential d s).toLinearMap :=
+  (tensorInducedDifferential d s).isIntertwining' g
+
 /-- The tensor-induced differential squares to zero in characteristic two. -/
 theorem tensorInducedDifferential_comp_self [CharP R 2] (d : τ.IntertwiningMap τ)
     (s : U.LeftTransversal) [Fintype (G ⧸ U)] (hd : d.comp d = 0) :
     (tensorInducedDifferential d s).comp (tensorInducedDifferential d s) = 0 := by
   apply Representation.IntertwiningMap.ext
-  exact TauCeti.PiTensorProduct.differential_comp_self _
-    (fun _ ↦ congrArg Representation.IntertwiningMap.toLinearMap hd)
+  have h := congrArg Representation.IntertwiningMap.toLinearMap
+    (wreathTensorDifferential_comp_self d (G ⧸ U) hd)
+  exact h
 
 end TauCeti
 
@@ -113,6 +143,6 @@ theorem wreathTensor_mem_degreePiece (ℳ : ℤ → Submodule R M)
     ρ.wreathTensor ι a z ∈ PiTensorProduct.degreePiece (fun _ : ι ↦ ℳ) n := by
   rw [wreathTensor_apply, LinearMap.comp_apply]
   exact PiTensorProduct.map_mem_degreePiece _ _ _ (fun i ↦ hρ (a.left i))
-    (PiTensorProduct.reindex_mem_degreePiece a.right ℳ hz)
+    (PiTensorProduct.reindex_mem_degreePiece a.right (fun _ ↦ ℳ) hz)
 
 end TauCeti
