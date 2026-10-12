@@ -68,8 +68,10 @@ theorem _root_.Matrix.IsHermitian.abs_eigenvalues₀_le_of_entry_le (hA : A.IsHe
   let hT := isSymmetric_toEuclideanLin_iff.mpr hA
   let v := hT.eigenvectorBasis finrank_euclideanSpace k
   have hv : ‖v‖ = 1 := hT.eigenvectorBasis finrank_euclideanSpace |>.orthonormal.1 k
-  have he : A.toEuclideanLin v = (hA.eigenvalues₀ k : 𝕜) • v :=
-    hT.apply_eigenvectorBasis finrank_euclideanSpace k
+  have he : A.toEuclideanLin v = (hA.eigenvalues₀ k : 𝕜) • v := by
+    -- Unfold only the sorted enumeration to use its defining operator-level API.
+    simpa only [Matrix.IsHermitian.eigenvalues₀] using
+      hT.apply_eigenvectorBasis finrank_euclideanSpace k
   have h := norm_toEuclideanLin_le_of_entry_le_square hentry v
   simpa only [he, norm_smul, RCLike.norm_ofReal, hv, mul_one] using h
 
