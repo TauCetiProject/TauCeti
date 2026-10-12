@@ -220,7 +220,7 @@ attribute [local implicit_reducible] dgClosedToHomotopy
   DGHomotopyCategory.of DGHomotopyCategory.underlying
 
 /-- The first adjacent composite vanishes in the curved homotopy category. -/
-@[reassoc]
+@[reassoc (attr := simp), simp]
 theorem quotient_map_comp_coneInclusion :
     (dgClosedToHomotopy R).map f ≫ (dgClosedToHomotopy R).map (coneInclusion f) = 0 := by
   rw [← Functor.map_comp, dgClosedToHomotopy_map_eq_zero_iff, mem_dgBoundaries_iff]
@@ -229,7 +229,7 @@ theorem quotient_map_comp_coneInclusion :
   exact comp_coneInclusion_boundary f x
 
 /-- The third adjacent composite also vanishes in the curved homotopy category. -/
-@[reassoc]
+@[reassoc (attr := simp), simp]
 theorem quotient_map_coneProjection_comp_shift :
     (dgClosedToHomotopy R).map (coneProjection f) ≫
       (dgClosedToHomotopy R).map ((closedShiftFunctor 1).map f) = 0 := by
