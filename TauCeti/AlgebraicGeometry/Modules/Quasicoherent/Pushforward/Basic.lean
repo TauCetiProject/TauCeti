@@ -137,15 +137,6 @@ theorem pushforwardSpecMapId_inv_app_hom (M : QuasicoherentSheaf (Spec R)) :
         (Scheme.Modules.pushforwardCongr (Spec.map_id R)).inv.app M.obj := by
   rfl
 
-/-- The underlying module of a composite affine quasicoherent pushforward is the composite
-module pushforward. -/
-theorem pushforwardSpecMapComp_obj_obj {T : CommRingCat.{u}} (f : R ⟶ S) (g : S ⟶ T)
-    (M : QuasicoherentSheaf (Spec T)) :
-    ((pushforwardSpecMap g ⋙ pushforwardSpecMap f).obj M).obj =
-      (Scheme.Modules.pushforward (Spec.map g) ⋙
-        Scheme.Modules.pushforward (Spec.map f)).obj M.obj :=
-  (rfl)
-
 /-- Affine quasicoherent pushforward respects composition of ring maps. -/
 def pushforwardSpecMapComp {T : CommRingCat.{u}} (f : R ⟶ S) (g : S ⟶ T) :
     pushforwardSpecMap g ⋙ pushforwardSpecMap f ≅ pushforwardSpecMap (f ≫ g) :=
