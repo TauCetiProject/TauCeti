@@ -16,15 +16,17 @@ The discriminant `Δ` is a normalized full Hecke eigenform of level one and weig
 Its eigenvalues are its Fourier coefficients, which satisfy coprime multiplicativity and
 the prime-power recurrence. In particular, the classical operator `T₂` acts by `-24`.
 
-The construction uses Mathlib's
-`CuspForm.exists_smul_discriminant_of_weight_eq_twelve`: every weight-twelve cusp form
-is a scalar multiple of `Δ`. The coefficient identities then follow from the full eigenform API.
+The bundled `discriminantEigenform` makes the general Hecke eigenform theory available for `Δ`.
+The eigenvalue identity translates Hecke actions into Fourier coefficients, while multiplicativity
+and the prime-power recurrence reduce coefficient calculations to prime indices. The uniqueness
+results identify any level-one, weight-twelve cusp form with first Fourier coefficient `1` as `Δ`.
 
 ## References
 
 * [F. Diamond and J. Shurman, *A first course in modular forms*][diamondshurman2005],
   §5.8, in particular Proposition 5.8.5.
 * J.-P. Serre, *A Course in Arithmetic*, VII.4.
+* Mathlib, `CuspForm.exists_smul_discriminant_of_weight_eq_twelve`.
 -/
 
 public noncomputable section
@@ -94,21 +96,26 @@ theorem discriminantEigenform_χ : discriminantEigenform.χ = 1 := (rfl)
 
 /-- Every positive-index Hecke eigenvalue of `Δ` is its Fourier coefficient. -/
 @[simp]
-theorem discriminantEigenform_eigenvalue (n : ℕ+) :
+theorem discriminantEigenform_eigenvalue_eq_qExpansion_coeff (n : ℕ+) :
     discriminantEigenform.eigenvalue n = (qExpansion 1 discriminant).coeff n := (rfl)
 
-/-- The discriminant is the unique normalized full eigenform of level one and weight twelve. -/
-theorem eq_discriminantEigenform_of_coeff_one {f : Eigenform 1 12}
-    (h₁ : (qExpansion 1 f.toCuspForm).coeff 1 = 1) : f = discriminantEigenform := by
-  obtain ⟨c, hc⟩ := exists_smul_discriminantGamma1 f.toCuspForm
+/-- The discriminant is the unique normalized cusp form of level one and weight twelve. -/
+theorem eq_discriminantEigenform_toCuspForm_of_coeff_one
+    {f : CuspForm ((Gamma1 1).map (mapGL ℝ)) 12}
+    (h₁ : (qExpansion 1 f).coeff 1 = 1) : f = discriminantEigenform.toCuspForm := by
+  obtain ⟨c, hc⟩ := exists_smul_discriminantGamma1 f
   have hc' : c = 1 := by
     rw [hc, FunLike.coe_smul,
       ModularForm.qExpansion_smul one_pos (one_mem_strictPeriods_Gamma1_map 1),
       PowerSeries.coeff_smul] at h₁
     simpa [discriminant_qExpansion_coeff_one] using h₁
-  apply Eigenform.ext
   ext z
   simpa [hc'] using DFunLike.congr_fun hc z
+
+/-- The discriminant is the unique normalized full eigenform of level one and weight twelve. -/
+theorem eq_discriminantEigenform_of_coeff_one {f : Eigenform 1 12}
+    (h₁ : (qExpansion 1 f.toCuspForm).coeff 1 = 1) : f = discriminantEigenform :=
+  Eigenform.ext (eq_discriminantEigenform_toCuspForm_of_coeff_one h₁)
 
 namespace ModularForm
 
