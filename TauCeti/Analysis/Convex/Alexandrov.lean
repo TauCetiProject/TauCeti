@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Convex.SubgradientImage
+public import TauCeti.Analysis.Convex.Differentiability
 public import Mathlib.Analysis.InnerProductSpace.Positive
 import TauCeti.Analysis.Calculus.Sard.EqualDimension
 import TauCeti.MeasureTheory.Measure.Haar.Lipschitz
@@ -21,9 +22,9 @@ effective domain, `F` has a second-order Taylor expansion
   `F x' = F x + ⟪∇F x, x' - x⟫ + ⟪A (x' - x), x' - x⟫ / 2 + o(‖x' - x‖ ^ 2)`
 
 with a positive (symmetric, positive semidefinite) operator `A`, the Alexandrov Hessian of `F` at
-`x`. The stronger statement proved here is that the subdifferential `∂f` itself is differentiable
-at `x` with derivative `A`: every subgradient `y'` of `f` at a point `x'` near `x` satisfies
-`y' = ∇F x + A (x' - x) + o(‖x' - x‖)`.
+`x`; it is the only symmetric operator giving such an expansion. The stronger statement proved
+here is that the subdifferential `∂f` itself is differentiable at `x` with derivative `A`: every
+subgradient `y'` of `f` at a point `x'` near `x` satisfies `y' = ∇F x + A (x' - x) + o(‖x' - x‖)`.
 
 The proof goes through the resolvent of the subdifferential. If `y₁ ∈ ∂f(x₁)` and `y₂ ∈ ∂f(x₂)`,
 then `‖x₁ - x₂‖ ≤ ‖(x₁ + y₁) - (x₂ + y₂)‖`, by monotonicity of `∂f`; so `x + y ↦ x` is a
@@ -39,7 +40,9 @@ The second-order expansion of `F` follows from that of `∂f` with no convexity:
 `x` to `x'`, split into `n` steps, the increments of `F` are squeezed between the subgradient
 inequalities at the ends of each step, and summing them gives the expansion up to an error of
 order `(‖A‖ / n + ε) * ‖x' - x‖ ^ 2`. Comparing that expansion with the subgradient inequality at
-nearby points shows that `A` is symmetric and positive semidefinite.
+nearby points shows that `A` is symmetric and positive semidefinite. Both expansions determine
+`A`: two derivatives of the subdifferential differ by a map that is `o(‖x' - x‖)`, and two symmetric
+second-order terms differ by a quadratic form that is `o(‖x' - x‖ ^ 2)`, hence zero.
 
 ## Main statements
 
@@ -49,12 +52,17 @@ nearby points shows that `A` is symmetric and positive semidefinite.
   subdifferential at `x` gives a second-order Taylor expansion of `F` at `x`;
 * `TauCeti.isPositive_of_forall_mem_subdifferential_norm_sub_le` — the derivative of the
   subdifferential is a positive operator;
-* `TauCeti.ae_exists_isPositive_forall_mem_subdifferential_norm_sub_le` — **Alexandrov's
-  theorem** for the subdifferential: it is differentiable, with positive derivative, almost
-  everywhere on the effective domain;
-* `TauCeti.ae_exists_isPositive_isLittleO` — **Alexandrov's theorem**: `F` has a second-order
-  Taylor expansion with a positive Hessian almost everywhere on the effective domain;
-* `ConvexOn.ae_exists_isPositive_isLittleO` — the same for a real convex function on a set.
+* `TauCeti.eq_of_forall_mem_subdifferential_norm_sub_le` — the derivative of the subdifferential
+  is unique;
+* `TauCeti.eq_of_isSymmetric_of_isLittleO` — the symmetric second-order term of a Taylor
+  expansion is unique;
+* `TauCeti.ae_existsUnique_isPositive_forall_mem_subdifferential_norm_sub_le` — **Alexandrov's
+  theorem** for the subdifferential: it is differentiable, with a unique and positive derivative,
+  almost everywhere on the effective domain;
+* `TauCeti.ae_existsUnique_isPositive_isLittleO` — **Alexandrov's theorem**: `F` has a
+  second-order Taylor expansion with a unique positive Hessian almost everywhere on the effective
+  domain;
+* `ConvexOn.ae_existsUnique_isPositive_isLittleO` — the same for a real convex function on a set.
 
 ## References
 
@@ -294,6 +302,65 @@ theorem isPositive_of_forall_mem_subdifferential_norm_sub_le {x y : E} {A : E �
   rw [ContinuousLinearMap.coe_coe, real_inner_comm (A v) u]
   exact le_antisymm (hD u v) (hD v u)
 
+/-- **The derivative of the subdifferential is unique.** If `f : E → EReal` has subgradients at
+every point near `x`, and these follow both expansions `y' = y + A (x' - x) + o(‖x' - x‖)` and
+`y' = y + B (x' - x) + o(‖x' - x‖)`, then `A = B`. -/
+theorem eq_of_forall_mem_subdifferential_norm_sub_le {x y : E} {A B : E →L[ℝ] E}
+    (hne : ∀ᶠ x' in 𝓝 x, (subdifferential (innerₗ E) f x').Nonempty)
+    (hA : ∀ ε > 0, ∀ᶠ x' in 𝓝 x, ∀ y' ∈ subdifferential (innerₗ E) f x',
+      ‖y' - y - A (x' - x)‖ ≤ ε * ‖x' - x‖)
+    (hB : ∀ ε > 0, ∀ᶠ x' in 𝓝 x, ∀ y' ∈ subdifferential (innerₗ E) f x',
+      ‖y' - y - B (x' - x)‖ ≤ ε * ‖x' - x‖) :
+    A = B := by
+  -- The map `x' ↦ (A - B) (x' - x)` has derivative `A - B` at `x`, and also derivative `0`, since
+  -- comparing the two expansions at a subgradient near `x` makes it `o(‖x' - x‖)`.
+  have h₀ : HasFDerivAt (fun x' => (A - B) (x' - x)) (0 : E →L[ℝ] E) x := by
+    refine HasFDerivAt.of_isLittleO (IsLittleO.of_bound fun c hc => ?_)
+    filter_upwards [hne, hA (c / 2) (half_pos hc), hB (c / 2) (half_pos hc)]
+      with x' ⟨y', hy'⟩ hA' hB'
+    have h : (A - B) (x' - x) = (y' - y - B (x' - x)) - (y' - y - A (x' - x)) := by
+      rw [sub_apply]
+      abel
+    rw [sub_self, map_zero, sub_zero, zero_apply, sub_zero, h]
+    linarith [norm_sub_le (y' - y - B (x' - x)) (y' - y - A (x' - x)), hA' y' hy', hB' y' hy']
+  have h₁ : HasFDerivAt (fun x' => (A - B) (x' - x)) (A - B) x := by
+    have h := (A - B).hasFDerivAt.comp x ((hasFDerivAt_id x).sub_const x)
+    rwa [ContinuousLinearMap.comp_id] at h
+  exact sub_eq_zero.1 (h₁.unique h₀)
+
+/-- **The symmetric second-order term of a Taylor expansion is unique.** If the real function `u`
+has the second-order expansions
+`u x' = u x + ⟪y, x' - x⟫ + ⟪A (x' - x), x' - x⟫ / 2 + o(‖x' - x‖ ^ 2)` and the same with `B`, and
+`A` and `B` are symmetric, then `A = B`. -/
+theorem eq_of_isSymmetric_of_isLittleO {u : E → ℝ} {x y : E} {A B : E →L[ℝ] E}
+    (hA : A.IsSymmetric) (hB : B.IsSymmetric)
+    (hTA : (fun x' => u x' - u x - ⟪y, x' - x⟫_ℝ - ⟪A (x' - x), x' - x⟫_ℝ / 2)
+      =o[𝓝 x] fun x' => ‖x' - x‖ ^ 2)
+    (hTB : (fun x' => u x' - u x - ⟪y, x' - x⟫_ℝ - ⟪B (x' - x), x' - x⟫_ℝ / 2)
+      =o[𝓝 x] fun x' => ‖x' - x‖ ^ 2) :
+    A = B := by
+  -- The quadratic form of `A - B` is `o(‖x' - x‖ ^ 2)`. Restricted to the line through `x` in a
+  -- direction `v` it is `t ^ 2 ⟪(A - B) v, v⟫`, so it vanishes, and a symmetric operator with
+  -- vanishing quadratic form is zero.
+  have hD : (fun x' => ⟪(A - B) (x' - x), x' - x⟫_ℝ) =o[𝓝 x] fun x' => ‖x' - x‖ ^ 2 := by
+    refine ((hTB.sub hTA).const_mul_left 2).congr_left fun x' => ?_
+    simp only [sub_apply, inner_sub_left]
+    ring
+  have hq : ∀ v, ⟪(A - B) v, v⟫_ℝ = 0 := fun v => by
+    have hlim : Tendsto (fun t : ℝ => x + t • v) (𝓝[≠] 0) (𝓝 x) :=
+      ((continuous_const.add (continuous_id.smul continuous_const)).tendsto' 0 x
+        (by simp)).mono_left nhdsWithin_le_nhds
+    have h := ((hD.comp_tendsto hlim).mul_isBigO (isBigO_refl (fun t : ℝ => (t ^ 2)⁻¹) _))
+    refine (isLittleO_const_const_iff (c := ‖v‖ ^ 2)).1 (h.congr' ?_ ?_)
+    all_goals
+      filter_upwards [self_mem_nhdsWithin] with t ht
+      have ht' : t ≠ 0 := ht
+      simp only [comp_apply, add_sub_cancel_left, map_smul, real_inner_smul_left,
+        real_inner_smul_right, norm_smul, Real.norm_eq_abs, mul_pow, sq_abs]
+      field_simp
+  have h := (hA.sub hB).inner_map_self_eq_zero.1 (by simpa using hq)
+  exact sub_eq_zero.1 (ContinuousLinearMap.coe_injective (by simpa using h))
+
 /-- The expansion of the subdifferential at `x` obtained by inverting that of the resolvent. Let
 `g` agree with the resolvent, `g (x' + y') = x'` whenever `y' ∈ ∂f(x')`, let `y ∈ ∂f(x)`, and let
 `g` have the invertible derivative `L` at `x + y`. If the subgradients at points near `x` are close
@@ -372,10 +439,11 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDim
 epigraph, never `⊥`) on a finite-dimensional real inner product space with an additive Haar measure
 `μ`. At `μ`-almost every point `x` of the effective domain, the subdifferential of `f` is
 differentiable with a positive derivative `A`: every subgradient `y'` of `f` at a point `x'` near
-`x` satisfies `y' = ∇F x + A (x' - x) + o(‖x' - x‖)`, where `F x = (f x).toReal`. -/
-theorem ae_exists_isPositive_forall_mem_subdifferential_norm_sub_le
+`x` satisfies `y' = ∇F x + A (x' - x) + o(‖x' - x‖)`, where `F x = (f x).toReal`. The operator `A`
+is the only one with this expansion. -/
+theorem ae_existsUnique_isPositive_forall_mem_subdifferential_norm_sub_le
     (hf : Convex ℝ {p : E × ℝ | f p.1 ≤ p.2}) (hbot : ∀ x, f x ≠ ⊥) :
-    ∀ᵐ x ∂μ, f x ≠ ⊤ → ∃ A : E →L[ℝ] E, A.IsPositive ∧ ∀ ε > 0, ∀ᶠ x' in 𝓝 x,
+    ∀ᵐ x ∂μ, f x ≠ ⊤ → ∃! A : E →L[ℝ] E, A.IsPositive ∧ ∀ ε > 0, ∀ᶠ x' in 𝓝 x,
       ∀ y' ∈ subdifferential (innerₗ E) f x',
         ‖y' - gradient (fun x' => (f x').toReal) x - A (x' - x)‖ ≤ ε * ‖x' - x‖ := by
   -- The resolvent `R : x + y ↦ x` (for `y ∈ ∂f(x)`) is `1`-Lipschitz on its domain; extend it to
@@ -401,7 +469,7 @@ theorem ae_exists_isPositive_forall_mem_subdifferential_norm_sub_le
   -- `g` maps the points where it is not differentiable, and those where its derivative is not
   -- surjective, to null sets.
   have hgN : μ (g '' {z | ¬DifferentiableAt ℝ g z}) = 0 :=
-    hglip.lipschitzOnWith.addHaar_image_eq_zero μ μ rfl
+    hglip.lipschitzOnWith.addHaar_image_eq_zero μ μ le_rfl
       (measure_eq_zero_iff_ae_notMem.2 (hglip.ae_differentiableAt.mono fun _ h h' => h' h))
   have hgC : μ (g '' {z | DifferentiableAt ℝ g z ∧ ¬Surjective (fderiv ℝ g z)}) = 0 :=
     addHaar_image_eq_zero_of_not_surjective_fderivWithin μ rfl
@@ -421,63 +489,67 @@ theorem ae_exists_isPositive_forall_mem_subdifferential_norm_sub_le
   have hsurj : Surjective (fderiv ℝ g (x + y)) := by
     by_contra h
     exact hxC ⟨x + y, ⟨hdz, h⟩, hgx x y hy⟩
-  set L : E ≃L[ℝ] E := (LinearEquiv.ofBijective (fderiv ℝ g (x + y) : E →ₗ[ℝ] E)
-    ⟨LinearMap.injective_iff_surjective.2 hsurj, hsurj⟩).toContinuousLinearEquiv
+  set L : E ≃L[ℝ] E := ContinuousLinearEquiv.ofBijective (fderiv ℝ g (x + y))
+    (LinearMap.ker_eq_bot.2 (LinearMap.injective_iff_surjective.2 hsurj))
+    (LinearMap.range_eq_top.2 hsurj)
   have hL : HasFDerivAt g (L : E →L[ℝ] E) (x + y) := by
-    convert hdz.hasFDerivAt using 1
-    ext v
-    rfl
+    rw [ContinuousLinearEquiv.coe_ofBijective]
+    exact hdz.hasFDerivAt
   have hexp := fun ε (hε : 0 < ε) =>
     eventually_forall_mem_subdifferential_norm_sub_le_of_hasFDerivAt hy hL hgx
       (fun δ hδ => eventually_forall_mem_subdifferential_norm_sub_le hdom hdiff.hasGradientAt hδ)
       hε
-  have hne : ∀ᶠ x' in 𝓝 x, (subdifferential (innerₗ E) f x').Nonempty :=
-    eventually_of_mem (isOpen_interior.mem_nhds (mem_interior_iff_mem_nhds.2 hdom))
-      fun x' hx' => nonempty_subdifferential_of_mem_interior hf hbot hx'
-  exact ⟨_, isPositive_of_forall_mem_subdifferential_norm_sub_le hne hexp, hexp⟩
+  have hne := eventually_nonempty_subdifferential hf hbot hdom
+  exact ⟨_, ⟨isPositive_of_forall_mem_subdifferential_norm_sub_le hne hexp, hexp⟩,
+    fun B hB => eq_of_forall_mem_subdifferential_norm_sub_le hne hB.2 hexp⟩
 
 /-- **Alexandrov's theorem.** Let `f : E → EReal` be convex (convex real epigraph, never `⊥`) on a
 finite-dimensional real inner product space with an additive Haar measure `μ`, and let
 `F x = (f x).toReal`. At `μ`-almost every point `x` of the effective domain, `F` has a
 second-order Taylor expansion
 `F x' = F x + ⟪∇F x, x' - x⟫ + ⟪A (x' - x), x' - x⟫ / 2 + o(‖x' - x‖ ^ 2)`
-with a positive operator `A`. -/
-theorem ae_exists_isPositive_isLittleO
+with a positive operator `A`, the only positive operator giving such an expansion. -/
+theorem ae_existsUnique_isPositive_isLittleO
     (hf : Convex ℝ {p : E × ℝ | f p.1 ≤ p.2}) (hbot : ∀ x, f x ≠ ⊥) :
-    ∀ᵐ x ∂μ, f x ≠ ⊤ → ∃ A : E →L[ℝ] E, A.IsPositive ∧
+    ∀ᵐ x ∂μ, f x ≠ ⊤ → ∃! A : E →L[ℝ] E, A.IsPositive ∧
       (fun x' => (f x').toReal - (f x).toReal -
           ⟪gradient (fun x' => (f x').toReal) x, x' - x⟫_ℝ - ⟪A (x' - x), x' - x⟫_ℝ / 2)
         =o[𝓝 x] fun x' => ‖x' - x‖ ^ 2 := by
-  filter_upwards [ae_exists_isPositive_forall_mem_subdifferential_norm_sub_le (μ := μ) hf hbot,
+  filter_upwards
+    [ae_existsUnique_isPositive_forall_mem_subdifferential_norm_sub_le (μ := μ) hf hbot,
     ae_eventually_ne_top_and_differentiableAt_toReal (μ := μ) hf hbot] with x h₁ h₂ hfx
-  obtain ⟨A, hA, hexp⟩ := h₁ hfx
-  have hne : ∀ᶠ x' in 𝓝 x, (subdifferential (innerₗ E) f x').Nonempty :=
-    eventually_of_mem (isOpen_interior.mem_nhds (mem_interior_iff_mem_nhds.2 (h₂ hfx).1))
-      fun x' hx' => nonempty_subdifferential_of_mem_interior hf hbot hx'
-  exact ⟨A, hA, isLittleO_of_forall_mem_subdifferential_norm_sub_le hne hexp⟩
+  obtain ⟨A, ⟨hA, hexp⟩, -⟩ := h₁ hfx
+  have hT := isLittleO_of_forall_mem_subdifferential_norm_sub_le
+    (eventually_nonempty_subdifferential hf hbot (h₂ hfx).1) hexp
+  exact ⟨A, ⟨hA, hT⟩, fun B hB => eq_of_isSymmetric_of_isLittleO hB.1.isSymmetric
+    hA.isSymmetric hB.2 hT⟩
 
 /-- **Alexandrov's theorem** for a real convex function. Let `u` be convex on a set `Ω` of a
 finite-dimensional real inner product space with an additive Haar measure `μ`. At `μ`-almost every
 point `x` of `Ω`, `u` is differentiable and has a second-order Taylor expansion
 `u x' = u x + ⟪∇u x, x' - x⟫ + ⟪A (x' - x), x' - x⟫ / 2 + o(‖x' - x‖ ^ 2)` with a positive
-operator `A`. -/
-theorem _root_.ConvexOn.ae_exists_isPositive_isLittleO {Ω : Set E} {u : E → ℝ}
+operator `A`, the only positive operator giving such an expansion. -/
+theorem _root_.ConvexOn.ae_existsUnique_isPositive_isLittleO {Ω : Set E} {u : E → ℝ}
     (hu : ConvexOn ℝ Ω u) :
-    ∀ᵐ x ∂μ, x ∈ Ω → DifferentiableAt ℝ u x ∧ ∃ A : E →L[ℝ] E, A.IsPositive ∧
+    ∀ᵐ x ∂μ, x ∈ Ω → DifferentiableAt ℝ u x ∧ ∃! A : E →L[ℝ] E, A.IsPositive ∧
       (fun x' => u x' - u x - ⟪gradient u x, x' - x⟫_ℝ - ⟪A (x' - x), x' - x⟫_ℝ / 2)
         =o[𝓝 x] fun x' => ‖x' - x‖ ^ 2 := by
   classical
   -- Extend `u` by `⊤` off `Ω`. Almost every point of `Ω` is interior, and near an interior point
   -- the real representative of the extension is `u` itself.
-  filter_upwards [TauCeti.ae_exists_isPositive_isLittleO (μ := μ) (convex_epigraph_ite hu)
+  filter_upwards [TauCeti.ae_existsUnique_isPositive_isLittleO (μ := μ) (convex_epigraph_ite hu)
     ite_ne_bot, hu.ae_differentiableAt_of_mem, hu.1.ae_mem_interior] with x h₁ h₂ h₃ hx
   have heq : (fun x' => ((if x' ∈ Ω then (u x' : EReal) else ⊤)).toReal) =ᶠ[𝓝 x] u :=
     eventually_of_mem (isOpen_interior.mem_nhds (h₃ hx)) fun x' hx' => by
       simp [interior_subset hx']
-  obtain ⟨A, hA, hT⟩ := h₁ (by simp [hx])
-  refine ⟨h₂ hx, A, hA, hT.congr' ?_ EventuallyEq.rfl⟩
-  filter_upwards [heq] with x' hx'
-  rw [hx', heq.gradient_eq, heq.eq_of_nhds]
+  obtain ⟨A, ⟨hA, hT⟩, -⟩ := h₁ (by simp [hx])
+  have hT' : (fun x' => u x' - u x - ⟪gradient u x, x' - x⟫_ℝ - ⟪A (x' - x), x' - x⟫_ℝ / 2)
+      =o[𝓝 x] fun x' => ‖x' - x‖ ^ 2 := by
+    refine hT.congr' ?_ EventuallyEq.rfl
+    filter_upwards [heq] with x' hx'
+    rw [hx', heq.gradient_eq, heq.eq_of_nhds]
+  exact ⟨h₂ hx, A, ⟨hA, hT'⟩, fun B hB => eq_of_isSymmetric_of_isLittleO hB.1.isSymmetric
+    hA.isSymmetric hB.2 hT'⟩
 
 end FiniteDimensional
 

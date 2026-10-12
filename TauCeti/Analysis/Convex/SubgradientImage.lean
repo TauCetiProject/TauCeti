@@ -5,12 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Convex.Differentiability
 public import TauCeti.Analysis.Convex.EffectiveDomain
 public import TauCeti.Analysis.Convex.Subdifferential
 public import Mathlib.Analysis.InnerProductSpace.Basic
 public import Mathlib.Analysis.Normed.Module.FiniteDimension
 public import TauCeti.Topology.UniformSpace.LocallyUniformConvergence
+import TauCeti.Analysis.Convex.Differentiability
 import Mathlib.Topology.MetricSpace.Thickening
 import Mathlib.Analysis.Convex.Continuous
 
@@ -48,7 +48,8 @@ contains that of `K` under `F k`.
   graph of the subdifferential over a compact subset of `D`, and the subgradient image of such a
   set, are compact;
 * `TauCeti.nonempty_subdifferential_of_mem_interior` — the subdifferential is nonempty at every
-  point of `D`;
+  point of `D`, and `TauCeti.eventually_nonempty_subdifferential` at every point near a point
+  around which `f` is finite;
 * `TauCeti.exists_forall_add_inner_le_of_forall_frontier` — slopes of affine functions through a
   point of the graph that lie below the boundary values are subgradients at points of `Ω`;
 * `TauCeti.exists_forall_add_inner_add_le_of_forall_frontier_le` — if `w ≤ u` on the frontier of
@@ -197,6 +198,14 @@ theorem nonempty_subdifferential_of_mem_interior {x : E} (hx : x ∈ interior {x
     continuous_fst).isClosed.closure_eq] at hcl
   obtain ⟨⟨x₀, y⟩, hz, rfl⟩ := hcl
   exact ⟨y, hz.2⟩
+
+open scoped Topology in
+/-- If a convex `f : E → EReal` is finite at every point near `x`, then it has a subgradient at
+every point near `x`. -/
+theorem eventually_nonempty_subdifferential {x : E} (hdom : ∀ᶠ x' in 𝓝 x, f x' ≠ ⊤) :
+    ∀ᶠ x' in 𝓝 x, (subdifferential (innerₗ E) f x').Nonempty :=
+  Filter.eventually_of_mem (isOpen_interior.mem_nhds (mem_interior_iff_mem_nhds.2 hdom))
+    fun _ hx' => nonempty_subdifferential_of_mem_interior hf hbot hx'
 
 omit [FiniteDimensional ℝ E] hf hbot in
 /-- **Slopes below the boundary values are subgradients.** Let `Ω` be bounded and `u` continuous

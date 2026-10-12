@@ -39,8 +39,8 @@ derivative at any point of the effective domain where the real representative is
 is a subgradient (`TauCeti.mem_subdifferential_of_hasFDerivAt`), since a convex function of one
 variable lies above its tangent lines; this is how the gradient of a convex potential is shown to
 be an optimal transport map. Near such a point every subgradient is close to the gradient
-(`TauCeti.eventually_forall_mem_subdifferential_norm_sub_le`): the subdifferential is continuous
-at points of differentiability, again with no convexity assumption.
+(`TauCeti.eventually_forall_mem_subdifferential_norm_sub_le`): the subdifferential is outer
+semicontinuous at points of differentiability, again with no convexity assumption.
 
 ## Main statements
 
