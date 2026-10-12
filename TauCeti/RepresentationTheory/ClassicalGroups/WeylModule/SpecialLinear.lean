@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Complex.Polynomial.Basic
+import Mathlib.Analysis.Complex.Polynomial.Basic
 public import TauCeti.RepresentationTheory.ClassicalGroups.WeylModule.Rational
 public import TauCeti.RepresentationTheory.ClassicalGroups.SpecialLinear
 
