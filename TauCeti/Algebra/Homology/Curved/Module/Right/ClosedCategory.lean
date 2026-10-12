@@ -6,6 +6,7 @@ Authors: Wentao Li
 module
 
 public import TauCeti.Algebra.Homology.Curved.Module.Right.DGCategory
+public import TauCeti.CategoryTheory.DG.Preadditive
 
 /-!
 # Closed morphisms of curved differential graded right modules
@@ -26,6 +27,9 @@ open CategoryTheory MulOpposite
 namespace TauCeti.CurvedDGRightModuleCat
 
 universe u
+
+-- The closed category keeps the original enriched object carrier.
+attribute [local implicit_reducible] ForgetEnrichment
 
 variable {R A : Type u} [CommRing R] [Ring A] [Algebra R A]
   {𝒜 : ℤ → Submodule R A} [GradedAlgebra 𝒜] {d : A →ₗ[R] A} {w : A}
@@ -126,6 +130,24 @@ theorem closedHom_comp
     (ℳ := M.grading) (ℳN := P.grading) 0 ↦ c.1 x)
       (dgClosedHomEquivZeroCocycles_comp f g)
 
+/-- The zero closed morphism has zero underlying linear map. -/
+@[simp]
+theorem closedHom_zero (M N : CurvedDGRightModuleCat.{u, u, u} h) :
+    closedHom (0 : ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) M ⟶
+      ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) N) = 0 := by
+  rw [closedHom_eq, dgClosedHom_zero R _ _, map_zero]
+  rfl
+
+/-- Addition of closed morphisms is addition of their underlying linear maps. -/
+@[simp]
+theorem closedHom_add {M N : CurvedDGRightModuleCat.{u, u, u} h}
+    (f g : ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) M ⟶
+      ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) N) :
+    closedHom (f + g) = closedHom f + closedHom g := by
+  simp only [closedHom_eq]
+  rw [dgClosedHom_add R f g, map_add]
+  rfl
+
 /-- A graded right-linear equivalence commuting with differentials is a closed isomorphism. -/
 noncomputable def closedIsoOf (e : M ≃ₗ[Aᵐᵒᵖ] N)
     (he : ∀ p x, x ∈ M.grading p ↔ e x ∈ N.grading p)
@@ -161,5 +183,15 @@ theorem closedHom_closedIsoOf_inv (e : M ≃ₗ[Aᵐᵒᵖ] N)
     (hd : ∀ x, N.differential (e x) = e (M.differential x)) :
     closedHom (closedIsoOf e he hd).inv = e.symm.toLinearMap := by
   simp only [closedIsoOf, closedHom_closedHomOf]
+
+/-- Scalar multiplication of closed morphisms acts on their underlying right-linear maps. -/
+@[simp]
+theorem closedHom_smul (r : R)
+    (f : ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) M ⟶
+      ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) N) :
+    closedHom (r • f) = r • closedHom f := by
+  ext x
+  simp only [closedHom_eq, dgClosedHom_smul R r f, map_smul,
+    Submodule.coe_smul, LinearMap.smul_apply]
 
 end TauCeti.CurvedDGRightModuleCat

@@ -904,9 +904,11 @@ jobs:
       #
       # Scoped to the change's files exactly when the environment lint is. A file it skips was
       # audited by the PR that last touched it, main is clean, and every route onto main runs
-      # this workflow, so the invariant holds without rescanning the library. The unscoped
-      # fallback is affordable anyway: headers alone, one process, about 5 seconds at 13k
-      # files against 0.6 for a PR's files.
+      # this workflow, so the invariant holds without rescanning the library. When that scope is
+      # withheld the whole library is audited, which is the answer those cases want rather than a
+      # concession: a `full-lint` label or a `lint-repair/...` branch is a request to check
+      # everything, and a scope that could not be determined should widen the audit, not narrow
+      # it. Headers alone, one process: about 5 seconds at 13k files against 0.6 for a PR's files.
       - name: Meta-import guard (TauCeti/ and TauCeti.lean use no `meta import`)
         if: ${{ env.INFRA != '1' }}
         run: |

@@ -6,11 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Homology.ShortComplex.Limit
+public import TauCeti.Algebra.Category.ModuleCat.AB
 public import TauCeti.AlgebraicTopology.Cohomology.Basic
 public import TauCeti.AlgebraicTopology.Singular.Additivity
-import Mathlib.CategoryTheory.Limits.Preserves.Opposites
 import Mathlib.CategoryTheory.Limits.Shapes.Opposites.Products
-import Mathlib.CategoryTheory.Preadditive.Yoneda.Limits
 
 /-!
 # Additivity of singular cochains and singular cohomology
@@ -75,38 +74,8 @@ induced by the canonical inclusions of the summands. -/
 def isLimitFanSingularCochainComplex :
     IsLimit (Fan.mk ((TopCat.of (Σ i, X i)).singularCochainComplex R k M)
       (fun i ↦ TopCat.singularCochainComplexMap (sigmaι X i)) :
-      Fan fun i ↦ (X i).singularCochainComplex R k M) := by
-  let _ : PreservesLimitsOfShape (Discrete ι)ᵒᵖ ((linearYoneda k C).obj M) := by
-    -- Forgetting the `k`-module structure turns `Hom(-, M)` into the ordinary hom functor
-    -- `yoneda.obj M`, which takes coproducts in `C` to products of types.
-    have hforget : (linearYoneda k C).obj M ⋙ forget (ModuleCat.{v} k) = yoneda.obj M :=
-      Functor.congr_obj (whiskering_linearYoneda k C) M
-    let _ : PreservesLimitsOfShape (Discrete (Shrink.{v} ι))ᵒᵖ
-        ((linearYoneda k C).obj M ⋙ forget (ModuleCat.{v} k)) :=
-      hforget ▸ inferInstance
-    -- `forget (ModuleCat.{v} k)` reflects limits only of `v`-small shape, so the reflection step
-    -- runs over a `v`-small copy of `ι` and is transported back along the induced equivalence.
-    let _ : PreservesLimitsOfShape (Discrete (Shrink.{v} ι))ᵒᵖ ((linearYoneda k C).obj M) :=
-      preservesLimitsOfShape_of_reflects_of_preserves _ (forget (ModuleCat.{v} k))
-    exact preservesLimitsOfShape_of_equiv
-      (Discrete.equivalence (equivShrink.{v} ι)).symm.op _
-  let _ : HasColimitsOfShape (Discrete ι) C := inferInstance
-  let _ : PreservesColimitsOfShape (Discrete ι) ((linearYoneda k C).obj M).rightOp :=
-    preservesColimitsOfShape_rightOp _ _
-  let _ : PreservesColimitsOfShape (Discrete ι)
-      (((linearYoneda k C).obj M).rightOp.mapHomologicalComplex (ComplexShape.down ℕ)) :=
-    inferInstance
-  let _ : PreservesLimitsOfShape (Discrete ι)
-      (((linearYoneda k C).obj M).rightOp.mapHomologicalComplex (ComplexShape.down ℕ)).op :=
-    preservesLimitsOfShape_op _ _
-  let _ : PreservesLimitsOfShape (Discrete ι)
-      (HomologicalComplex.unopFunctor (ModuleCat.{v} k) (ComplexShape.down ℕ)) := inferInstance
-  let _ : PreservesLimitsOfShape (Discrete ι)
-      (ChainComplex.linearYonedaFunctor (α := ℕ) k M) :=
-    inferInstanceAs (PreservesLimitsOfShape (Discrete ι)
-      ((((linearYoneda k C).obj M).rightOp.mapHomologicalComplex _).op ⋙
-        HomologicalComplex.unopFunctor _ _))
-  exact isLimitFanMkObjOfIsLimit (ChainComplex.linearYonedaFunctor (α := ℕ) k M) _ _
+      Fan fun i ↦ (X i).singularCochainComplex R k M) :=
+  isLimitFanMkObjOfIsLimit (ChainComplex.linearYonedaFunctor (α := ℕ) k M) _ _
     (Cofan.IsColimit.op (isColimitCofanSingularChainComplex X C R))
 
 /-- **Additivity of singular cohomology.** In every degree, the singular cohomology of a
@@ -116,22 +85,7 @@ def isLimitFanSingularCohomology (n : ℕ) :
     IsLimit (Fan.mk ((TopCat.of (Σ i, X i)).singularCohomology R k M n)
       (fun i ↦ TopCat.singularCohomologyMap (sigmaι X i) n) :
       Fan fun i ↦ (X i).singularCohomology R k M n) :=
-  -- `ι`-indexed products of `k`-modules exist and are exact for a coefficient ring in any
-  -- universe: Mathlib's AB4* instance gives exactness in `AddCommGrpCat.{v}` for the `v`-small
-  -- copy `Shrink.{v} ι` of the index type, and both facts transfer to `ModuleCat.{v} k` along
-  -- `forget₂ (ModuleCat k) AddCommGrpCat`, which preserves these products and preserves and
-  -- reflects finite colimits.
-  haveI : HasLimitsOfShape (Discrete ι) (ModuleCat.{v} k) := ModuleCat.hasLimitsOfShape
-  haveI : HasExactLimitsOfShape (Discrete ι) AddCommGrpCat.{v} :=
-    HasExactLimitsOfShape.of_domain_equivalence _ (Discrete.equivalence (equivShrink.{v} ι)).symm
-  haveI : PreservesLimitsOfShape (Discrete ι) (forget₂ (ModuleCat.{v} k) AddCommGrpCat.{v}) :=
-    { preservesLimit := inferInstance }
-  haveI : PreservesFiniteColimits (forget₂ (ModuleCat.{v} k) AddCommGrpCat.{v}) :=
-    ⟨fun _ _ _ ↦ inferInstance⟩
-  haveI : ReflectsFiniteColimits (forget₂ (ModuleCat.{v} k) AddCommGrpCat.{v}) :=
-    { reflects := fun _ _ _ ↦ inferInstance }
-  haveI : HasExactLimitsOfShape (Discrete ι) (ModuleCat.{v} k) :=
-    HasExactLimitsOfShape.domain_of_functor _ (forget₂ (ModuleCat.{v} k) AddCommGrpCat.{v})
+  have : HasLimitsOfShape (Discrete ι) (ModuleCat.{v} k) := ModuleCat.hasLimitsOfShape
   isLimitFanMkObjOfIsLimit (HomologicalComplex.homologyFunctor
     (ModuleCat.{v} k) (ComplexShape.up ℕ) n) _ _
       (isLimitFanSingularCochainComplex X C R k M)

@@ -89,21 +89,15 @@ private theorem posPart_mem_w1p0Submodule_of_continuousOn_closure (hp : p ≠ �
   have : IsFiniteMeasure (mu.restrict Omega) :=
     isFiniteMeasure_restrict.2 hb.measure_lt_top.ne
   -- The constant function `1`, an element of `W^{1,p}(Ω)` because `Ω` has finite measure.
-  have hconst : HasWeakFDerivOn mu Omega (fun _ : E => (1 : ℝ)) 0 :=
-    hasWeakFDerivOn_iff.2 fun _ => hasWeakLineDerivOn_const 1
-  have hone : HasWeakFDerivOn mu Omega (Lp.const p (mu.restrict Omega) (1 : ℝ))
-      fun x => innerSL ℝ ((0 : Lp E p (mu.restrict Omega)) x) := by
-    refine (hconst.congr_ae (Lp.coeFn_const p _ (1 : ℝ)).symm).congr_ae_deriv ?_
-    filter_upwards [Lp.coeFn_zero E p (mu.restrict Omega)] with x hx
-    rw [hx, Pi.zero_apply, Pi.zero_apply, map_zero]
-  set one : W1p mu Omega p := W1p.mk _ _ hone
+  set one : W1p mu Omega p := W1p.const 1
   -- For `k ≥ 0`, `(u - k)⁺` is the positive part of `u - k • 1`.
   have hshift {k : ℝ} (hk : 0 ≤ k) :
       W1p.posPart hp (u - k • one) = W1p.posPartAbove hp hk u := by
     refine W1p.ext_value (Lp.ext ?_)
     rw [W1p.value_posPart]
     have hsub : W1p.value (u - k • one) = W1p.value u - k • Lp.const p (mu.restrict Omega) 1 := by
-      rw [← W1p.valueL_apply, map_sub, map_smul, W1p.valueL_apply, W1p.valueL_apply, W1p.value_mk]
+      rw [← W1p.valueL_apply, map_sub, map_smul, W1p.valueL_apply, W1p.valueL_apply,
+        W1p.value_const]
     filter_upwards [Lp.coeFn_posPart (W1p.value (u - k • one)), W1p.value_posPartAbove_ae hp hk u,
       Lp.coeFn_sub (W1p.value u) (k • Lp.const p (mu.restrict Omega) (1 : ℝ)),
       Lp.coeFn_smul k (Lp.const p (mu.restrict Omega) (1 : ℝ)),

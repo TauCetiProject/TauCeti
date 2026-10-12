@@ -31,6 +31,10 @@ Taking all three algebras and gradings equal gives tensor composition of
 endobimodules; heterogeneous composition also supplies the tensors needed for
 transfer through a supplied Morita equivalence.
 
+`bimoduleModuleTensor` gives the corresponding action on graded left modules:
+an `(A,B)`-bimodule tensored over `B` with a left `B`-module is a left `A`-module.
+Both constructions are linear in each variable.
+
 ## References
 
 * B. Keller, *Deriving DG categories*, Section 6.1.
@@ -92,6 +96,248 @@ local instance rightGradedSMul [DirectSum.Decomposition Δ.piece]
     have h := Γ.tmul_mem_tensorProduct Δ.opposite (SetLike.one_mem_graded Γ.piece) ha'
     rw [zero_add] at h
     exact SetLike.GradedSMul.smul_mem h hm
+
+section ModuleTensor
+
+variable [GradedAlgebra Γ.piece] [GradedAlgebra Δ.piece]
+  (M : GradedModuleCat.{vM} (Γ.tensorProduct Δ.opposite).piece)
+  (N : GradedModuleCat.{vN} Δ.piece)
+
+local notation "T" => BalancedTensorProduct k B M N
+
+/-- The output left action is induced from the bimodule's first factor. -/
+local instance : Module A T := BalancedTensorProduct.leftModule A
+local instance : IsScalarTower k A T := BalancedTensorProduct.leftIsScalarTower A
+local instance : SetLike.GradedSMul Γ.piece
+    (BalancedTensorProduct.grading (𝒜 := Δ.piece) M.grading N.grading).piece :=
+  BalancedTensorProduct.gradedSMul_left (𝒜 := Δ.piece) M.grading N.grading A Γ.piece
+
+/-- An internally graded bimodule acts on a graded left module by balanced tensor product. -/
+noncomputable def bimoduleModuleTensorObj : GradedModuleCat.{max vM vN} Γ.piece where
+  carrier := T
+  grading := BalancedTensorProduct.grading (𝒜 := Δ.piece) M.grading N.grading
+
+/-- The pure tensor of a bimodule element and a left-module element. -/
+def bimoduleModuleTensorTmul (m : M) (n : N) : bimoduleModuleTensorObj Γ Δ M N :=
+  BalancedTensorProduct.tmul k B m n
+
+/-- Balancing transfers the right action on the bimodule to the left module. -/
+theorem bimoduleModuleTensorTmul_balance (b : B) (m : M) (n : N) :
+    bimoduleModuleTensorTmul Γ Δ M N (((1 : A) ⊗ₜ[k] op b) • m) n =
+      bimoduleModuleTensorTmul Γ Δ M N m (b • n) :=
+  BalancedTensorProduct.balance k B b m n
+
+/-- The output left action acts on the first tensor factor. -/
+@[simp]
+theorem smul_bimoduleModuleTensorTmul (a : A) (m : M) (n : N) :
+    a • bimoduleModuleTensorTmul Γ Δ M N m n =
+      bimoduleModuleTensorTmul Γ Δ M N ((a ⊗ₜ[k] (1 : Bᵐᵒᵖ)) • m) n :=
+  BalancedTensorProduct.smul_tmul_left A a m n
+
+/-- The internal degrees of the two factors add. -/
+theorem bimoduleModuleTensorTmul_mem {p q : ℤ} {m : M} {n : N}
+    (hm : m ∈ M.grading.piece p) (hn : n ∈ N.grading.piece q) :
+    bimoduleModuleTensorTmul Γ Δ M N m n ∈
+      (bimoduleModuleTensorObj Γ Δ M N).grading.piece (p + q) :=
+  BalancedTensorProduct.tmul_mem_grading (𝒜 := Δ.piece) M.grading N.grading hm hn
+
+variable {M N}
+  {M' M'' : GradedModuleCat.{vM} (Γ.tensorProduct Δ.opposite).piece}
+  {N' N'' : GradedModuleCat.{vN} Δ.piece}
+
+private def moduleTensorMapBase (f : M ⟶ M') (g : N ⟶ N') :
+    BalancedTensorProduct k B M N →ₗ[k] BalancedTensorProduct k B M' N' :=
+  BalancedTensorProduct.map (f.hom.restrictScalars k) (g.hom.restrictScalars k)
+    (fun b m ↦ f.hom.map_smul ((1 : A) ⊗ₜ[k] op b) m) (fun b n ↦ g.hom.map_smul b n)
+
+private def moduleTensorMapLinear (f : M ⟶ M') (g : N ⟶ N') :
+    BalancedTensorProduct k B M N →ₗ[A] BalancedTensorProduct k B M' N' where
+  toAddHom := (moduleTensorMapBase Γ Δ f g).toAddHom
+  map_smul' a z := BalancedTensorProduct.map_smul_left A
+    (f.hom.restrictScalars k) (g.hom.restrictScalars k)
+    (fun b m ↦ f.hom.map_smul ((1 : A) ⊗ₜ[k] op b) m) (fun b n ↦ g.hom.map_smul b n)
+    (fun a m ↦ f.hom.map_smul (a ⊗ₜ[k] (1 : Bᵐᵒᵖ)) m) a z
+
+omit [GradedAlgebra Γ.piece] [GradedAlgebra Δ.piece] in
+private theorem moduleTensorMapLinear_apply (f : M ⟶ M') (g : N ⟶ N')
+    (z : BalancedTensorProduct k B M N) :
+    moduleTensorMapLinear Γ Δ f g z = moduleTensorMapBase Γ Δ f g z := rfl
+
+private theorem moduleTensorMap_mem (f : M ⟶ M') (g : N ⟶ N') {p : ℤ}
+    {z : BalancedTensorProduct k B M N}
+    (hz : z ∈ (BalancedTensorProduct.grading (𝒜 := Δ.piece) M.grading N.grading).piece p) :
+    moduleTensorMapLinear Γ Δ f g z ∈
+      (BalancedTensorProduct.grading (𝒜 := Δ.piece) M'.grading N'.grading).piece p := by
+  have hf : LinearMap.IsHomogeneous (f.hom.restrictScalars k)
+      M.grading.piece M'.grading.piece 0 :=
+    LinearMap.isHomogeneous_def.2 fun _ _ hx ↦ by simpa using map_mem f hx
+  have hg : LinearMap.IsHomogeneous (g.hom.restrictScalars k)
+      N.grading.piece N'.grading.piece 0 :=
+    LinearMap.isHomogeneous_def.2 fun _ _ hx ↦ by simpa using map_mem g hx
+  have h := BalancedTensorProduct.isHomogeneous_map (𝒜 := Δ.piece)
+    M.grading N.grading M'.grading N'.grading
+    (f.hom.restrictScalars k) (g.hom.restrictScalars k)
+    (fun b m ↦ f.hom.map_smul ((1 : A) ⊗ₜ[k] op b) m) (fun b n ↦ g.hom.map_smul b n) hf hg
+  rw [moduleTensorMapLinear_apply]
+  simpa only [moduleTensorMapBase, add_zero] using h.map_mem hz
+
+/-- Tensor a graded bimodule map with a graded left-module map. -/
+noncomputable def bimoduleModuleTensorMap (f : M ⟶ M') (g : N ⟶ N') :
+    bimoduleModuleTensorObj Γ Δ M N ⟶ bimoduleModuleTensorObj Γ Δ M' N' :=
+  ofHom (moduleTensorMapLinear Γ Δ f g) (LinearMap.isHomogeneous_def.2 fun p z hz ↦ by
+    -- The object's carrier and grading are the balanced quotient and its total grading.
+    change z ∈ (BalancedTensorProduct.grading (𝒜 := Δ.piece) M.grading N.grading).piece p at hz
+    change moduleTensorMapLinear Γ Δ f g z ∈
+      (BalancedTensorProduct.grading (𝒜 := Δ.piece) M'.grading N'.grading).piece (p + 0)
+    rw [add_zero]
+    exact moduleTensorMap_mem Γ Δ f g hz)
+
+@[simp]
+theorem bimoduleModuleTensorMap_tmul (f : M ⟶ M') (g : N ⟶ N') (m : M) (n : N) :
+    (bimoduleModuleTensorMap Γ Δ f g).hom (bimoduleModuleTensorTmul Γ Δ M N m n) =
+      bimoduleModuleTensorTmul Γ Δ M' N' (f.hom m) (g.hom n) :=
+  BalancedTensorProduct.map_tmul _ _ _ _ _ _
+
+/-- Maps from a bimodule-module tensor are determined by their values on pure tensors. -/
+@[ext]
+theorem bimoduleModuleTensor_hom_ext {P : GradedModuleCat.{max vM vN} Γ.piece}
+    {f g : bimoduleModuleTensorObj Γ Δ M N ⟶ P}
+    (h : ∀ m n, f.hom (bimoduleModuleTensorTmul Γ Δ M N m n) =
+      g.hom (bimoduleModuleTensorTmul Γ Δ M N m n)) : f = g := by
+  apply hom_ext
+  apply LinearMap.restrictScalars_injective k
+  exact BalancedTensorProduct.hom_ext h
+
+@[simp]
+theorem bimoduleModuleTensorMap_id :
+    bimoduleModuleTensorMap Γ Δ (𝟙 M) (𝟙 N) = 𝟙 (bimoduleModuleTensorObj Γ Δ M N) := by
+  apply bimoduleModuleTensor_hom_ext Γ Δ
+  intro m n
+  simp
+
+@[simp]
+theorem bimoduleModuleTensorMap_comp (f : M ⟶ M') (g : N ⟶ N')
+    (f' : M' ⟶ M'') (g' : N' ⟶ N'') :
+    bimoduleModuleTensorMap Γ Δ (f ≫ f') (g ≫ g') =
+      bimoduleModuleTensorMap Γ Δ f g ≫ bimoduleModuleTensorMap Γ Δ f' g' := by
+  apply bimoduleModuleTensor_hom_ext Γ Δ
+  intro m n
+  simp
+
+@[simp]
+theorem bimoduleModuleTensorMap_add_left (f f' : M ⟶ M') (g : N ⟶ N') :
+    bimoduleModuleTensorMap Γ Δ (f + f') g =
+      bimoduleModuleTensorMap Γ Δ f g + bimoduleModuleTensorMap Γ Δ f' g := by
+  apply bimoduleModuleTensor_hom_ext Γ Δ
+  intro m n
+  simp only [hom_add, LinearMap.add_apply, bimoduleModuleTensorMap_tmul]
+  exact BalancedTensorProduct.add_tmul k B _ _ _
+
+@[simp]
+theorem bimoduleModuleTensorMap_add_right (f : M ⟶ M') (g g' : N ⟶ N') :
+    bimoduleModuleTensorMap Γ Δ f (g + g') =
+      bimoduleModuleTensorMap Γ Δ f g + bimoduleModuleTensorMap Γ Δ f g' := by
+  apply bimoduleModuleTensor_hom_ext Γ Δ
+  intro m n
+  simp only [hom_add, LinearMap.add_apply, bimoduleModuleTensorMap_tmul]
+  exact BalancedTensorProduct.tmul_add k B _ _ _
+
+@[simp]
+theorem bimoduleModuleTensorMap_smul_left (c : k) (f : M ⟶ M') (g : N ⟶ N') :
+    bimoduleModuleTensorMap Γ Δ (c • f) g = c • bimoduleModuleTensorMap Γ Δ f g := by
+  apply bimoduleModuleTensor_hom_ext Γ Δ
+  intro m n
+  simp only [hom_smul, LinearMap.smul_apply, bimoduleModuleTensorMap_tmul]
+  exact BalancedTensorProduct.smul_tmul k B _ _ _
+
+@[simp]
+theorem bimoduleModuleTensorMap_smul_right (c : k) (f : M ⟶ M') (g : N ⟶ N') :
+    bimoduleModuleTensorMap Γ Δ f (c • g) = c • bimoduleModuleTensorMap Γ Δ f g := by
+  apply bimoduleModuleTensor_hom_ext Γ Δ
+  intro m n
+  simp only [hom_smul, LinearMap.smul_apply, bimoduleModuleTensorMap_tmul]
+  exact BalancedTensorProduct.tmul_smul k B _ _ _
+
+/-- Balanced tensor action of graded bimodules on graded left modules. -/
+@[implicit_reducible]
+noncomputable def bimoduleModuleTensor :
+    GradedModuleCat.{vM} (Γ.tensorProduct Δ.opposite).piece ⥤
+      GradedModuleCat.{vN} Δ.piece ⥤ GradedModuleCat.{max vM vN} Γ.piece where
+  obj M :=
+    { obj N := bimoduleModuleTensorObj Γ Δ M N
+      map g := bimoduleModuleTensorMap Γ Δ (𝟙 M) g
+      map_id N := bimoduleModuleTensorMap_id Γ Δ
+      map_comp g g' := by rw [← bimoduleModuleTensorMap_comp, Category.id_comp] }
+  map f :=
+    { app N := bimoduleModuleTensorMap Γ Δ f (𝟙 N)
+      naturality N N' g := by
+        dsimp only
+        simp only [← bimoduleModuleTensorMap_comp, Category.id_comp, Category.comp_id] }
+  map_id M := by
+    apply NatTrans.ext
+    funext N
+    exact bimoduleModuleTensorMap_id Γ Δ
+  map_comp f f' := by
+    apply NatTrans.ext
+    funext N
+    simp only [NatTrans.comp_app]
+    rw [← bimoduleModuleTensorMap_comp, Category.id_comp]
+
+@[simp]
+theorem bimoduleModuleTensor_obj_obj : ((bimoduleModuleTensor Γ Δ).obj M).obj N =
+    bimoduleModuleTensorObj Γ Δ M N := (rfl)
+
+@[simp, reassoc]
+theorem bimoduleModuleTensor_obj_map (g : N ⟶ N') :
+    ((bimoduleModuleTensor Γ Δ).obj M).map g =
+      eqToHom (bimoduleModuleTensor_obj_obj Γ Δ (M := M) (N := N)) ≫
+        bimoduleModuleTensorMap Γ Δ (𝟙 M) g ≫
+        eqToHom (bimoduleModuleTensor_obj_obj Γ Δ (M := M) (N := N')).symm := (rfl)
+
+@[simp, reassoc]
+theorem bimoduleModuleTensor_map_app (f : M ⟶ M') :
+    ((bimoduleModuleTensor Γ Δ).map f).app N =
+      eqToHom (bimoduleModuleTensor_obj_obj Γ Δ (M := M) (N := N)) ≫
+        bimoduleModuleTensorMap Γ Δ f (𝟙 N) ≫
+        eqToHom (bimoduleModuleTensor_obj_obj Γ Δ (M := M') (N := N)).symm := (rfl)
+
+instance : ((bimoduleModuleTensor Γ Δ).obj M).Additive where
+  map_add := bimoduleModuleTensorMap_add_right Γ Δ (𝟙 M) _ _
+
+instance : ((bimoduleModuleTensor Γ Δ).flip.obj N).Additive where
+  map_add := bimoduleModuleTensorMap_add_left Γ Δ _ _ (𝟙 N)
+
+instance : (bimoduleModuleTensor Γ Δ).Additive where
+  map_add {X Y f g} := by
+    apply NatTrans.ext
+    funext N
+    exact bimoduleModuleTensorMap_add_left Γ Δ f g (𝟙 N)
+
+instance : (bimoduleModuleTensor Γ Δ).flip.Additive where
+  map_add {X Y f g} := by
+    apply NatTrans.ext
+    funext M
+    exact bimoduleModuleTensorMap_add_right Γ Δ (𝟙 M) f g
+
+instance : ((bimoduleModuleTensor Γ Δ).obj M).Linear k where
+  map_smul f c := bimoduleModuleTensorMap_smul_right Γ Δ c (𝟙 M) f
+
+instance : ((bimoduleModuleTensor Γ Δ).flip.obj N).Linear k where
+  map_smul f c := bimoduleModuleTensorMap_smul_left Γ Δ c f (𝟙 N)
+
+instance : (bimoduleModuleTensor Γ Δ).Linear k where
+  map_smul f c := by
+    apply NatTrans.ext
+    funext N
+    exact bimoduleModuleTensorMap_smul_left Γ Δ c f (𝟙 N)
+
+instance : (bimoduleModuleTensor Γ Δ).flip.Linear k where
+  map_smul f c := by
+    apply NatTrans.ext
+    funext M
+    exact bimoduleModuleTensorMap_smul_right Γ Δ c (𝟙 M) f
+
+end ModuleTensor
 
 variable {C : Type uC} [Ring C] [Algebra k C] (Θ : InternalGrading k C)
 
