@@ -83,10 +83,12 @@ and `OrthonormalBasis.rank_spanIndices_val_lt_le`. -/
 @[simp]
 theorem nnnorm_sub_comp_rightSingularBasis_starProjection (T : E →L[𝕜] F) (n : ℕ) :
     let V := (T : E →ₗ[𝕜] F).rightSingularBasis.spanIndices
-      ↑({i | (i : ℕ) < n} : Finset (Fin (finrank 𝕜 E)))
+      {i | (i : ℕ) < n}
     ‖T - T ∘L V.starProjection‖₊ = T.singularValue n := by
   let v := (T : E →ₗ[𝕜] F).rightSingularBasis
   let V := v.spanIndices ↑({i | (i : ℕ) < n} : Finset (Fin (finrank 𝕜 E)))
+  suffices ‖T - T ∘L V.starProjection‖₊ = T.singularValue n by
+    simpa only [V, v, Finset.coe_filter, Finset.mem_univ, true_and] using this
   have hR := T.rank_comp_starProjection_le (v.rank_spanIndices_val_lt_le n)
   refine le_antisymm ?_ (T.singularValue_le_nnnorm_sub hR)
   exact (T.nnnorm_sub_comp_starProjection_le V).trans_eq
@@ -111,8 +113,10 @@ theorem exists_rank_le_nnnorm_sub_eq_singularValue (T : E →L[𝕜] F) (n : ℕ
     exact (singularValue_comp_le_left _ _ _).trans
       (mul_le_of_le_one_left' (by exact_mod_cast W.orthogonalProjectionOnto_norm_le))
   let v := (T' : E →ₗ[𝕜] W).rightSingularBasis
-  let V := v.spanIndices ↑({i | (i : ℕ) < n} : Finset (Fin (finrank 𝕜 E)))
-  have hR := T.rank_comp_starProjection_le (v.rank_spanIndices_val_lt_le n)
+  let V := v.spanIndices {i | (i : ℕ) < n}
+  have hR : (T ∘L V.starProjection).rank ≤ n := by
+    simpa only [Finset.coe_filter, Finset.mem_univ, true_and] using
+      T.rank_comp_starProjection_le (v.rank_spanIndices_val_lt_le n)
   refine ⟨T ∘L V.starProjection, hR, le_antisymm ?_
     (T.singularValue_le_nnnorm_sub hR)⟩
   have hnorm : ‖T - T ∘L V.starProjection‖₊ = ‖T' - T' ∘L V.starProjection‖₊ := by
