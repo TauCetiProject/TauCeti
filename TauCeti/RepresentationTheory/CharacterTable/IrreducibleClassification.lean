@@ -24,7 +24,7 @@ read off a presentation — first of all the multiset of degrees `nᵢ` — is a
 Completeness is not a new argument: a family of pairwise inequivalent irreducibles indexed by as
 many indices as `G` has conjugacy classes already exhausts the irreducibles
 (`TauCeti.ClassFunction.exists_nonempty_equiv`), and a presentation has exactly that many blocks
-(`AlgEquiv.natCard_eq_card_conjClasses_of_pi_matrix`). What was missing was the assembly, and
+(`AlgEquiv.card_eq_card_conjClasses_of_pi_matrix`). What was missing was the assembly, and
 the invariance statements it unlocks.
 
 ## Main results
@@ -96,7 +96,7 @@ theorem exists_nonempty_equiv_blockRepresentation {W : Type w'} [AddCommGroup W]
     isIrreducible_blockRepresentation e i
   exact ClassFunction.exists_nonempty_equiv (blockRepresentation e)
     (fun _ _ hij => isEmpty_equiv_blockRepresentation e hij)
-    e.natCard_eq_card_conjClasses_of_pi_matrix σ
+    e.card_eq_card_conjClasses_of_pi_matrix σ
 
 include e in
 /-- **The dimension of an irreducible representation is one of the Wedderburn degrees.** -/
@@ -167,8 +167,8 @@ theorem exists_equiv_blockRepresentation :
   -- Both index sets have as many members as `G` has conjugacy classes, so it is a bijection.
   have hcard : Fintype.card ι = Fintype.card ι' := by
     simpa only [Nat.card_eq_fintype_card] using
-      e.natCard_eq_card_conjClasses_of_pi_matrix.trans
-        e'.natCard_eq_card_conjClasses_of_pi_matrix.symm
+      e.card_eq_card_conjClasses_of_pi_matrix.trans
+        e'.card_eq_card_conjClasses_of_pi_matrix.symm
   have hbij : Function.Bijective f := (Fintype.bijective_iff_injective_and_card f).2 ⟨hinj, hcard⟩
   refine ⟨Equiv.ofBijective f hbij, fun i => ⟨?_, hf i⟩⟩
   obtain ⟨φ⟩ := hf i

@@ -22,7 +22,7 @@ strong rank condition; the center statements are over a field.
 
 * `AlgEquiv.sum_sq_eq_card_of_pi_matrix`: the matrix sizes satisfy `∑ᵢ nᵢ² = |G|`, because
   both sides compute `dimₖ k[G]`;
-* `AlgEquiv.natCard_eq_card_conjClasses_of_pi_matrix`: the **number of blocks is the number of
+* `AlgEquiv.card_eq_card_conjClasses_of_pi_matrix`: the **number of blocks is the number of
   conjugacy classes** of `G`, because both sides compute `dimₖ Z(k[G])` — on one side through the
   class-sum basis (`TauCeti.finrank_center_monoidAlgebra`), on the other because the center of a
   product of matrix algebras over `k` is the product of their (one-dimensional) centers.
@@ -71,43 +71,43 @@ variable [Field k]
 
 /-- **The center of the monoid algebra splits**: a Wedderburn presentation of `k[G]` with blocks
 indexed by `ι` identifies `Z(k[G])` with the algebra `ι → k` of functions on the blocks. -/
-noncomputable def centerMonoidAlgebraEquivPi [Monoid G] [∀ i, NeZero (d i)]
+noncomputable def centerMonoidAlgebraAlgEquivPi [Monoid G] [∀ i, NeZero (d i)]
     (e : MonoidAlgebra k G ≃ₐ[k] Π i, Matrix (Fin (d i)) (Fin (d i)) k) :
     Subalgebra.center k (MonoidAlgebra k G) ≃ₐ[k] (ι → k) :=
   (centerCongr e).trans (centerPiMatrixAlgEquiv k d)
 
-/-- `centerMonoidAlgebraEquivPi e` records, block by block, the scalar that a central element of
+/-- `centerMonoidAlgebraAlgEquivPi e` records, block by block, the scalar that a central element of
 `k[G]` acts by: the `i`-th component of `e z` is the corresponding scalar matrix. -/
 @[simp]
-theorem algebraMap_centerMonoidAlgebraEquivPi_apply [Monoid G] [∀ i, NeZero (d i)]
+theorem algebraMap_centerMonoidAlgebraAlgEquivPi_apply [Monoid G] [∀ i, NeZero (d i)]
     (e : MonoidAlgebra k G ≃ₐ[k] Π i, Matrix (Fin (d i)) (Fin (d i)) k)
     (z : Subalgebra.center k (MonoidAlgebra k G)) (i : ι) :
-    algebraMap k (Matrix (Fin (d i)) (Fin (d i)) k) (centerMonoidAlgebraEquivPi e z i) =
+    algebraMap k (Matrix (Fin (d i)) (Fin (d i)) k) (centerMonoidAlgebraAlgEquivPi e z i) =
       e (z : MonoidAlgebra k G) i := by
-  simp [centerMonoidAlgebraEquivPi]
+  simp [centerMonoidAlgebraAlgEquivPi]
 
-/-- The inverse of `centerMonoidAlgebraEquivPi e` builds the central element acting on each
+/-- The inverse of `centerMonoidAlgebraAlgEquivPi e` builds the central element acting on each
 block by the prescribed scalar. -/
 @[simp]
-theorem centerMonoidAlgebraEquivPi_symm_apply [Monoid G] [∀ i, NeZero (d i)]
+theorem centerMonoidAlgebraAlgEquivPi_symm_apply [Monoid G] [∀ i, NeZero (d i)]
     (e : MonoidAlgebra k G ≃ₐ[k] Π i, Matrix (Fin (d i)) (Fin (d i)) k) (f : ι → k) (i : ι) :
-    e ((centerMonoidAlgebraEquivPi e).symm f : MonoidAlgebra k G) i =
+    e ((centerMonoidAlgebraAlgEquivPi e).symm f : MonoidAlgebra k G) i =
       algebraMap k (Matrix (Fin (d i)) (Fin (d i)) k) (f i) := by
-  simp [centerMonoidAlgebraEquivPi]
+  simp [centerMonoidAlgebraAlgEquivPi]
 
 /-- **The number of Wedderburn blocks of `k[G]` is the number of conjugacy classes of `G`**: both
 sides compute the dimension of `Z(k[G])`.
 
 This is the numerical half of the count `#irreducibles = #conjugacy classes`; identifying the blocks
 with the isomorphism classes of simple `k[G]`-modules is a separate statement. -/
-theorem natCard_eq_card_conjClasses_of_pi_matrix [Group G] [Finite G] [Finite ι]
+theorem card_eq_card_conjClasses_of_pi_matrix [Group G] [Finite G] [Finite ι]
     [∀ i, NeZero (d i)] (e : MonoidAlgebra k G ≃ₐ[k] Π i, Matrix (Fin (d i)) (Fin (d i)) k) :
     Nat.card ι = Nat.card (ConjClasses G) := by
   let := Fintype.ofFinite ι
   calc Nat.card ι
       = Module.finrank k (ι → k) := by rw [Module.finrank_pi, Nat.card_eq_fintype_card]
     _ = Module.finrank k (Subalgebra.center k (MonoidAlgebra k G)) :=
-        e.centerMonoidAlgebraEquivPi.toLinearEquiv.finrank_eq.symm
+        e.centerMonoidAlgebraAlgEquivPi.toLinearEquiv.finrank_eq.symm
     _ = Nat.card (ConjClasses G) := finrank_center_monoidAlgebra k G
 
 end Presentation
@@ -141,7 +141,7 @@ theorem exists_algEquiv_pi_matrix_conjClasses :
   obtain ⟨n, d, hd, ⟨e⟩⟩ := exists_algEquiv_pi_matrix k G
   have := hd
   obtain rfl : n = Nat.card (ConjClasses G) := by
-    simpa using e.natCard_eq_card_conjClasses_of_pi_matrix
+    simpa using e.card_eq_card_conjClasses_of_pi_matrix
   set σ := Finite.equivFin (ConjClasses G)
   refine ⟨fun c => d (σ c), fun c => hd _, ?_,
     ⟨e.trans (AlgEquiv.piCongrLeft k (fun i => Matrix (Fin (d i)) (Fin (d i)) k) σ).symm⟩⟩
