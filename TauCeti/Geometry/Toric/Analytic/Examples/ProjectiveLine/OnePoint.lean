@@ -146,7 +146,9 @@ theorem projectiveLinePositiveChartMap_eq_negativeChartMap_iff (z w : ℂ) :
     have hxn := (negativeRayPointHomeomorph gn).injective
       (hn.trans ((negativeRayPointHomeomorph gn).apply_symm_apply w).symm)
     rw [projectiveLinePositiveChartMap, projectiveLineNegativeChartMap, ← hxp, ← hxn]
-    exact projectiveLine_chart_faceAffinePointMap_eq x
+    exact projectiveLineFan.analyticAffineChartι_faceAffinePointMap_eq
+      isRegular_projectiveLineFan projectiveLineZeroCone_le_positiveCone
+      projectiveLineZeroCone_le_negativeCone x
 
 /-- The two complex-line parametrizations cover the toric projective line. -/
 theorem projectiveLineChartMap_cover :
@@ -171,6 +173,24 @@ theorem range_projectiveLinePositiveChartMap :
     · have hw : w ≠ 0 := fun h ↦ hx (congrArg projectiveLineNegativeChartMap h)
       exact ⟨w⁻¹, (projectiveLinePositiveChartMap_eq_negativeChartMap_iff _ _).2
         (inv_mul_cancel₀ hw)⟩
+
+/-- The negative affine chart misses exactly the origin of the positive affine chart. -/
+@[simp]
+theorem range_projectiveLineNegativeChartMap :
+    range projectiveLineNegativeChartMap = {projectiveLinePositiveChartMap 0}ᶜ := by
+  ext x
+  constructor
+  · rintro ⟨w, rfl⟩ h
+    have hm := (projectiveLinePositiveChartMap_eq_negativeChartMap_iff 0 w).1 h.symm
+    simp at hm
+  · intro hx
+    have hcover : x ∈ range projectiveLinePositiveChartMap ∪
+        range projectiveLineNegativeChartMap := by rw [projectiveLineChartMap_cover]; trivial
+    rcases hcover with ⟨z, rfl⟩ | hn
+    · have hz : z ≠ 0 := fun h ↦ hx (congrArg projectiveLinePositiveChartMap h)
+      exact ⟨z⁻¹, ((projectiveLinePositiveChartMap_eq_negativeChartMap_iff _ _).2
+        (mul_inv_cancel₀ hz)).symm⟩
+    · exact hn
 
 /-- The toric projective line is homeomorphic to `OnePoint ℂ`. The positive character coordinate
 is the finite coordinate, and the origin of the negative chart is infinity. -/

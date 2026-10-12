@@ -246,24 +246,6 @@ theorem projectiveLineZeroCone_le_negativeCone :
     projectiveLineZeroCone ≤ projectiveLineNegativeCone :=
   Subtype.mk_le_mk.mpr bot_le
 
-/-- The face maps of a zero-cone point agree in the two maximal charts of the projective line. -/
-theorem projectiveLine_chart_faceAffinePointMap_eq
-    (x : projectiveLineFan.analyticAffineChartDiagram.obj projectiveLineZeroCone) :
-    projectiveLineFan.analyticAffineChartι isRegular_projectiveLineFan
-        projectiveLinePositiveCone
-        (faceAffinePointMap projectiveLineFan.lattice
-          (projectiveLineFan.isFaceOf_of_le projectiveLinePositiveCone.2
-            projectiveLineZeroCone.2 projectiveLineZeroCone_le_positiveCone) x) =
-      projectiveLineFan.analyticAffineChartι isRegular_projectiveLineFan
-        projectiveLineNegativeCone
-        (faceAffinePointMap projectiveLineFan.lattice
-          (projectiveLineFan.isFaceOf_of_le projectiveLineNegativeCone.2
-            projectiveLineZeroCone.2 projectiveLineZeroCone_le_negativeCone) x) := by
-  exact (projectiveLineFan.analyticAffineChartι_faceAffinePointMap
-    isRegular_projectiveLineFan projectiveLineZeroCone_le_positiveCone x).trans
-      (projectiveLineFan.analyticAffineChartι_faceAffinePointMap
-        isRegular_projectiveLineFan projectiveLineZeroCone_le_negativeCone x).symm
-
 private theorem projectiveLinePositiveCone_inf_negativeCone :
     projectiveLinePositiveCone ⊓ projectiveLineNegativeCone = projectiveLineZeroCone :=
   Subtype.ext affineRayCone_inf_negativeRayCone
