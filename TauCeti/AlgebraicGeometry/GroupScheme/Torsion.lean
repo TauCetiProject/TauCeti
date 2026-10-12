@@ -34,6 +34,9 @@ preadditive category `CommGrp (Over S)`.
 * `TauCeti.GroupScheme.torsion G n`: the `n`-torsion `G[n]`, a group object of `Over S`.
 * `TauCeti.GroupScheme.torsionι G n`: its inclusion `G[n] ⟶ G`.
 * `TauCeti.GroupScheme.torsionLift`: the point of `G[n]` given by a point of `G` killed by `n`.
+* `TauCeti.GroupScheme.torsionPointsMulEquiv`: the points of `G[n]` with values in `Z`, as a group,
+  are the `n`-torsion of the points of `G` with values in `Z`.
+* `TauCeti.GroupScheme.torsionBaseChangeIso`: formation of `G[n]` commutes with base change.
 * `TauCeti.GroupScheme.torsionTensorIso`: for `G` killed by `m * n` with `m` and `n` coprime, the
   isomorphism `G[m] ×_S G[n] ≅ G` of group schemes given by addition.
 
@@ -41,6 +44,8 @@ preadditive category `CommGrp (Over S)`.
 
 * `TauCeti.GroupScheme.exists_comp_torsionι_iff`: the points of `G[n]` are the points of `G`
   killed by `n`.
+* `TauCeti.GroupScheme.isPullback_torsionι`: `G[n]` is the fibre of multiplication by `n` over the
+  unit section.
 * `TauCeti.GroupScheme.isIso_tensorHom_torsionι_comp_mul`: for `G` killed by `m * n` with `m` and
   `n` coprime, addition `G[m] ×_S G[n] ⟶ G` is an isomorphism.
 * `TauCeti.GroupScheme.torsionTensorIso_inv_hom_hom_fst_torsionι` and
@@ -60,6 +65,7 @@ public section
 
 open CategoryTheory CategoryTheory.Limits MonoidalCategory CartesianMonoidalCategory MonObj
 open AlgebraicGeometry
+open scoped CategoryTheory.Obj
 
 namespace TauCeti.GroupScheme
 
@@ -105,6 +111,13 @@ theorem torsionι_comp_zpow (n : ℤ) : torsionι G n ≫ 𝟙 G.X ^ n = 1 := by
 theorem torsionι_zpow (n : ℤ) : torsionι G n ^ n = 1 := by
   rw [← torsionι_comp_zpow G n, GrpObj.comp_zpow, Category.comp_id]
 
+/-- **The `n`-torsion is the fibre of multiplication by `n` over the unit section.** -/
+theorem isPullback_torsionι (n : ℤ) :
+    IsPullback (torsionι G n) (toUnit _) (𝟙 G.X ^ n) η[G.X] := by
+  have h := isPullback_kernel_hom ((CommGrp.forget₂Grp (Over S)).map (n : End G))
+  rw [CommGrp.forget₂Grp_map_hom, CommGrp.intCast_hom_hom_hom] at h
+  exact h
+
 /-- Two points of the `n`-torsion agree if their images in `G` do. -/
 theorem torsion_hom_ext {n : ℤ} {Z : Over S} {y y' : Z ⟶ (torsion G n).X}
     (h : y ≫ torsionι G n = y' ≫ torsionι G n) : y = y' :=
@@ -137,7 +150,64 @@ instance isMonHom_torsionLift {Z : Over S} [MonObj Z] (x : Z ⟶ G.X) [IsMonHom 
   one_hom := torsion_hom_ext G (by simp)
   mul_hom := torsion_hom_ext G (by simp [IsMonHom.mul_hom])
 
-variable (G)
+variable (G n Z)
+
+/-- **The points of the `n`-torsion.** The points of `G[n]` with values in `Z` form the `n`-torsion
+subgroup of the commutative group of points of `G` with values in `Z`. -/
+noncomputable def torsionPointsMulEquiv :
+    (Z ⟶ (torsion G n).X) ≃* (zpowGroupHom n : (Z ⟶ G.X) →* (Z ⟶ G.X)).ker where
+  toFun y := ⟨y ≫ torsionι G n, by simp [← GrpObj.comp_zpow]⟩
+  invFun x := torsionLift x.1 x.2
+  left_inv y := torsion_hom_ext G (torsionLift_ι _ _)
+  right_inv x := Subtype.ext (torsionLift_ι _ _)
+  map_mul' y y' := Subtype.ext (MonObj.mul_comp _ _ _)
+
+/-- A point of the `n`-torsion corresponds to its image in `G`. -/
+@[simp]
+theorem coe_torsionPointsMulEquiv_apply (y : Z ⟶ (torsion G n).X) :
+    (torsionPointsMulEquiv G n Z y : Z ⟶ G.X) = y ≫ torsionι G n :=
+  (rfl)
+
+/-- The point of the `n`-torsion corresponding to a point `x` of `G` killed by `n` maps to `x` in
+`G`. -/
+@[simp]
+theorem torsionPointsMulEquiv_symm_apply_torsionι
+    (x : (zpowGroupHom n : (Z ⟶ G.X) →* (Z ⟶ G.X)).ker) :
+    (torsionPointsMulEquiv G n Z).symm x ≫ torsionι G n = x :=
+  torsionLift_ι x.1 x.2
+
+variable {n Z}
+
+/-! ### Base change of the `n`-torsion -/
+
+/-- Base change along `s : T ⟶ S` takes multiplication by `n` on `G` to multiplication by `n` on
+the base change of `G`. -/
+private theorem pullback_mapGrp_map_intCast {T : Scheme.{u}} (s : T ⟶ S) (n : ℤ) :
+    (Over.pullback s).mapGrp.map ((CommGrp.forget₂Grp (Over S)).map (n : End G)) =
+      (CommGrp.forget₂Grp (Over T)).map (n : End ((Over.pullback s).mapCommGrp.obj G)) := by
+  ext : 2
+  rw [Functor.mapGrp_map_hom_hom, CommGrp.forget₂Grp_map_hom, CommGrp.forget₂Grp_map_hom,
+    CommGrp.intCast_hom_hom_hom, CommGrp.intCast_hom_hom_hom]
+  exact congrArg Over.Hom.left <| (map_zpow (Over.pullback s).homMonoidHom (𝟙 G.X) n).trans
+    (congrArg (· ^ n) ((Over.pullback s).map_id G.X))
+
+/-- **Formation of the `n`-torsion commutes with base change.** The canonical isomorphism from the
+base change of `G[n]` along `s : T ⟶ S` to the `n`-torsion of the base change of `G`. -/
+noncomputable def torsionBaseChangeIso {T : Scheme.{u}} (s : T ⟶ S) (n : ℤ) :
+    (Over.pullback s).mapGrp.obj (torsion G n) ≅
+      torsion ((Over.pullback s).mapCommGrp.obj G) n :=
+  kernelBaseChangeIso s _ ≪≫ kernelIsoOfEq (pullback_mapGrp_map_intCast G s n)
+
+/-- The base-change comparison for the `n`-torsion intertwines the two inclusions. -/
+@[reassoc (attr := simp)]
+theorem torsionBaseChangeIso_hom_hom_hom_torsionι {T : Scheme.{u}} (s : T ⟶ S) (n : ℤ) :
+    (torsionBaseChangeIso G s n).hom.hom.hom ≫ torsionι ((Over.pullback s).mapCommGrp.obj G) n =
+      (Over.pullback s).map (torsionι G n) := by
+  -- the inclusion of the base change of `G[n]` is the base change of the inclusion of `G[n]`
+  have h := ((Category.assoc _ _ _).trans ((kernelBaseChangeIso s _).hom ≫=
+    kernelIsoOfEq_hom_comp_ι (pullback_mapGrp_map_intCast G s n))).trans
+      (kernelBaseChangeIso_hom_comp_ι s _)
+  exact congrArg (fun f ↦ f.hom.hom) h
 
 /-! ### The `n`-torsion as a kernel in `CommGrp (Over S)` -/
 
