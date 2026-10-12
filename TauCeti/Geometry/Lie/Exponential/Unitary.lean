@@ -9,28 +9,36 @@ public import Mathlib.Analysis.Normed.Algebra.Exponential
 public import TauCeti.Geometry.Lie.Exponential.OneParameter
 
 /-!
-# Exponential lines inside the unitary group of a Banach star algebra
+# Unitary exponentials and exponential lines
 
-For an element `x` of a complete normed real star algebra `R`, the exponential line
-`t ↦ exp (t • x)` is the one-parameter subgroup of `Rˣ` that `x` generates.  This file
-characterizes the generators whose whole line stays inside the unitary group: they are exactly
-the skew-adjoint elements, `star x = -x`.
+In a complete normed rational algebra `R` with a multiplicative involution (`StarMul R`), a
+unitary exponential satisfies `star (exp y) = exp (-y)`. Unitarity makes `star (exp y)` a left
+inverse of `exp y`, while Mathlib's exponential-inverse API makes `exp (-y)` a right inverse.
+Uniqueness of inverses identifies them. This identity requires no additive or continuous star
+structure, and no real scalar action.
 
-One direction is Mathlib's `exp_mem_unitary_of_mem_skewAdjoint`, applied at every `t • x`.  The
-other is where the *line*, rather than a single exponential, is doing the work.  Unitarity of
+For a complete normed real star algebra `R` with continuous star compatible with real scalar
+multiplication, the exponential line `t ↦ exp (t • x)` is the one-parameter subgroup of `Rˣ`
+that `x` generates. Its whole line stays inside the unitary group exactly when `x` is
+skew-adjoint, `star x = -x`.
+
+For this line characterization, one direction is Mathlib's
+`exp_mem_unitary_of_mem_skewAdjoint`, applied at every `t • x`. The converse uses the pointwise
+inverse identity above together with star/exponential compatibility. Unitarity of
 `exp (t • x)` says `star (exp (t • x)) = exp (t • x)⁻¹`, and both sides are exponentials:
 the left is `exp (t • star x)` and the right is `exp (t • (-x))`.  Two exponential lines that
 agree have equal generators (`TauCeti.eq_of_forall_exp_smul_eq`), so `star x = -x`.  Unitarity
 of the single exponential `exp x` would not be enough: `exp` is not injective, so it does not see
 the generator, and it is the whole line that pins `x` down.
 
-This is the algebra-side input for computing the Lie algebra of the unitary group; the geometric
-statement is in `TauCeti/Geometry/Lie/Subgroup/Unitary.lean`.
+The line characterization is the algebra-side input for computing the Lie algebra of the unitary
+group; the geometric statement is in `TauCeti/Geometry/Lie/Subgroup/Unitary.lean`.
 
 ## Main results
 
 * `TauCeti.star_exp_eq_exp_neg_of_exp_mem_unitary`: a unitary exponential has the exponential of
-  the negative as its adjoint.
+  the negative as its adjoint, in a complete normed rational algebra with a multiplicative
+  involution.
 * `TauCeti.forall_exp_smul_mem_unitary_iff_mem_skewAdjoint`: **an exponential line lies in the
   unitary group exactly when its generator is skew-adjoint.**
 -/
