@@ -107,16 +107,11 @@ theorem _root_.Matrix.PosSemidef.eigenvalues₀_eq_zero_of_rank_le
   by_contra hne
   have hpos : 0 < hA.isHermitian.eigenvalues₀ i :=
     lt_of_le_of_ne (hA.eigenvalues₀_nonneg i) (Ne.symm hne)
-  have hprefix (j : Fin (Fintype.card ι)) (hj : j ≤ i) :
-      hA.isHermitian.eigenvalues₀ j ≠ 0 :=
-    (hpos.trans_le (hA.isHermitian.eigenvalues₀_antitone hj)).ne'
-  have hcard : i.val + 1 ≤ A.rank := by
+  have hcard : i.val < A.rank := by
     rw [hA.isHermitian.rank_eq_card_non_zero_eigenvalues₀, Fintype.card_subtype]
-    have hsub : Finset.Iic i ⊆ Finset.univ.filter
-        (fun j ↦ hA.isHermitian.eigenvalues₀ j ≠ 0) := by
-      intro j hj
-      exact Finset.mem_filter.mpr ⟨Finset.mem_univ j, hprefix j (Finset.mem_Iic.mp hj)⟩
-    simpa only [Fin.card_Iic] using Finset.card_le_card hsub
+    simpa only [fun j ↦ (hA.eigenvalues₀_nonneg j).lt_iff_ne, ne_comm] using
+      (Tuple.lt_card_gt_iff_apply_gt_of_antitone
+        hA.isHermitian.eigenvalues₀_antitone).mpr hpos
   omega
 
 /-- A positive-semidefinite matrix has rank at most `d` exactly when its sorted eigenvalues
