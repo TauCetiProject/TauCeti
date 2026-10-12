@@ -50,7 +50,7 @@ theorem AtWorstNodalOfRelativeDimensionOne.comp_of_isOpenImmersion
   -- The local `Over` instance has structure map `i ≫ f`; its inferred flatness, finite
   -- presentation, and relative dimension proofs agree by proof irrelevance with those in `mk`.
   suffices hsing : FormallyUnramified ((X.singularLocus R).subschemeι ≫ i ≫ f) from
-    ⟨inferInstance, hsing⟩
+    { toLocallyOfFiniteType := inferInstance, toFormallyUnramified := hsing }
   have H := Scheme.isPullback_singularLocus_of_isOpenImmersion (R := R) i
   have hi := MorphismProperty.of_isPullback (P := @IsOpenImmersion) H
     (inferInstanceAs (IsOpenImmersion i))
@@ -74,7 +74,7 @@ theorem AtWorstNodalOfRelativeDimensionOne.of_openCover
   -- The local `Over` instance has structure map `f`; its inferred flatness, finite
   -- presentation, and relative dimension proofs agree by proof irrelevance with those in `mk`.
   suffices hsing : FormallyUnramified ((Y.singularLocus R).subschemeι ≫ f) from
-    ⟨inferInstance, hsing⟩
+    { toLocallyOfFiniteType := inferInstance, toFormallyUnramified := hsing }
   -- Fix the morphism-property universe so instance search finds Mathlib's locality instance.
   refine IsZariskiLocalAtSource.of_openCover
     (P := (show MorphismProperty Scheme.{u} from @FormallyUnramified.{u}))
