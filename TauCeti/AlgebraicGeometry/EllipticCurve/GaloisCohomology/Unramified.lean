@@ -107,9 +107,14 @@ open scoped Classical in
 /-- At good reduction, the Kummer class of a rational point is unramified when the multiplier is
 prime to the residue characteristic. -/
 theorem kummerMap_mem_unramifiedTorsionCohomology
-    (hm : IsUnit (m : K)) (hmres : (m : 𝓀[K]) ≠ 0) (P : W.toAffine.Point) :
-    W.kummerMap m hm P ∈ W.unramifiedTorsionCohomology m := by
+    (hmres : (m : 𝓀[K]) ≠ 0) (P : W.toAffine.Point) :
+    W.kummerMap m (by
+      have hm := (IsLocalRing.residue_ne_zero_iff_isUnit (m : 𝒪[K])).mp
+        (by simpa using hmres)
+      simpa using hm.map (algebraMap 𝒪[K] K)) P ∈ W.unramifiedTorsionCohomology m := by
   classical
+  generalize_proofs
+  rename_i hm
   obtain ⟨Q, hQ⟩ := (W.kummerShortExact m hm).proj_surjective (W.basePointCoeff P)
   rw [kummerShortExact_proj, nsmulAddMonoidHom_apply] at hQ
   rw [mem_unramifiedTorsionCohomology_iff, kummerMap_eq_H1pi hm hQ]
@@ -131,11 +136,14 @@ open scoped Classical in
 /-- At good reduction away from the multiplier, the local Kummer condition is contained in
 the unramified local condition. -/
 theorem range_kummerMap_le_unramifiedTorsionCohomology
-    (hm : IsUnit (m : K)) (hmres : (m : 𝓀[K]) ≠ 0) :
-    (W.kummerMap m hm).range ≤ W.unramifiedTorsionCohomology m := by
+    (hmres : (m : 𝓀[K]) ≠ 0) :
+    (W.kummerMap m (by
+      have hm := (IsLocalRing.residue_ne_zero_iff_isUnit (m : 𝒪[K])).mp
+        (by simpa using hmres)
+      simpa using hm.map (algebraMap 𝒪[K] K))).range ≤ W.unramifiedTorsionCohomology m := by
   classical
   rintro c ⟨P, rfl⟩
-  exact W.kummerMap_mem_unramifiedTorsionCohomology m hm hmres P
+  exact W.kummerMap_mem_unramifiedTorsionCohomology m hmres P
 
 end WeierstrassCurve
 
@@ -153,7 +161,7 @@ variable {K : Type*} [Field K] (W : WeierstrassCurve K)
 where the equation has good reduction and the multiplier is prime to the residue characteristic.
 No good-reduction assumption is made at the other fields in the family. -/
 theorem torsionRes_mem_unramifiedTorsionCohomology_of_mem_selmerGroup {m : ℕ}
-    (hm : IsUnit (m : K)) (hmres : (m : 𝓀[L i]) ≠ 0)
+    (hmres : (m : 𝓀[L i]) ≠ 0)
     {c : H1 (AbsoluteGaloisGroup K) (W.TorsionCoeff m)} (hc : c ∈ W.selmerGroup τ m) :
     W.torsionRes (τ i) m c ∈ (W⁄(L i)).unramifiedTorsionCohomology m := by
   classical
@@ -166,8 +174,17 @@ theorem torsionRes_mem_unramifiedTorsionCohomology_of_mem_selmerGroup {m : ℕ}
     have hΔL := (W⁄(L i)).isUnit_Δ.ne_zero
     rw [baseChange, map_Δ, hΔ, map_zero] at hΔL
     exact hΔL rfl
+  have hmL : IsUnit (m : L i) := by
+    have hm := (IsLocalRing.residue_ne_zero_iff_isUnit (m : 𝒪[L i])).mp
+      (by simpa using hmres)
+    simpa using hm.map (algebraMap 𝒪[L i] (L i))
+  have hm : IsUnit (m : K) := by
+    rw [isUnit_iff_ne_zero]
+    intro h
+    apply hmL.ne_zero
+    simpa using congrArg (algebraMap K (L i)) h
   exact (W⁄(L i)).range_kummerMap_le_unramifiedTorsionCohomology m
-    (by simpa using hm.map (algebraMap K (L i))) hmres
+    hmres
     ((W.mem_selmerGroup_iff_forall_torsionRes_mem_range_kummerMap τ hm).mp hc i)
 
 end WeierstrassCurve
