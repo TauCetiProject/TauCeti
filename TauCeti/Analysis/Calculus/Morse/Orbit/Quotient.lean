@@ -84,12 +84,17 @@ private theorem exists_homeomorph_levelSlice
       exact hinvar y t
     · intro h
       have horbit' (z : ↥(unstableSet φ p ∩ stableSet φ q)) :
-          connectingOrbitSetoid φ p q (i (s' z)) z := φ.mem_orbit_iff.mp (horbit z)
-      change s' x = s' y at h
+          connectingOrbitSetoid φ p q (i (s' z)) z :=
+        (connectingOrbitSetoid_iff _ _).mpr (φ.mem_orbit_iff.mp (horbit z))
+      rw [Setoid.ker_def] at h
       exact (connectingOrbitSetoid φ p q).trans'
         ((connectingOrbitSetoid φ p q).symm' (horbit' x)) (h.symm ▸ horbit' y)
   let e := (Homeomorph.Quotient.congrRight hrel).trans hright.homeomorph
   refine ⟨e, fun x ↦ ?_⟩
+  -- `Function.RightInverse.homeomorph` uses `Setoid.quotientKerEquivOfRightInverse`,
+  -- whose inverse is `Quotient.mk` composed with `i`. The inverse of
+  -- `Homeomorph.Quotient.congrRight` (via `Homeomorph.Quot.congr` and `Quot.congr`)
+  -- preserves representatives, so their composite reduces to the displayed quotient class.
   rfl
 
 /-- The orbit quotient of connecting negative-gradient trajectories is homeomorphic to an
