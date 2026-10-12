@@ -20,8 +20,9 @@ that restricting along the evaluations at the elements of `A` is a bijection
 
   `(H →ₐc[R] coordinateRing R A) ≃ (A →* WithConv (H →ₐ[R] R))`
 
-(`TauCeti.ConstantGroup.bialgHomEquiv`). No finiteness, flatness, connectedness or commutativity
-hypothesis is made on `H` or on `R`.
+(`TauCeti.ConstantGroup.bialgHomEquiv`). No finiteness, flatness or commutativity hypothesis is
+made on `H`, and no connectedness hypothesis is made on `R`; `R` is only required to be a
+commutative ring (a commutative semiring for `TauCeti.ConstantGroup.mapDomain_comp_bijective`).
 
 When `H` is commutative, so that `G = Spec H` is an affine monoid scheme over `R`, this is the
 universal property of the constant monoid scheme `A_R = ⨆_{a ∈ A} Spec R`: a homomorphism of monoid
