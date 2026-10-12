@@ -43,7 +43,7 @@ namespace TauCeti
 
 /-- The bilinear action of a map that is `C¹` near each point of a parametrized circle is
 bounded by the operator norm of the bilinear map times the angular energy. -/
-theorem norm_integral_bilinear_apply_circleMap_le {V G : Type*} [NormedAddCommGroup V]
+theorem norm_integral_apply_apply_circleMap_le {V G : Type*} [NormedAddCommGroup V]
     [InnerProductSpace ℝ V] [FiniteDimensional ℝ V] [NormedAddCommGroup G] [NormedSpace ℝ G]
     [CompleteSpace G] (B : V →L[ℝ] V →L[ℝ] G) {u : ℂ → V} (z₀ : ℂ) (r : ℝ)
     (hu : ∀ θ, ContDiffAt ℝ 1 u (circleMap z₀ r θ)) :

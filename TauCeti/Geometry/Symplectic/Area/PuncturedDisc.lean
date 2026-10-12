@@ -25,7 +25,7 @@ dominated convergence passes the annular Stokes formula to the punctured disc. F
 argument in removal of singularities.
 
 The proof reuses `SymplecticForm.integral_fderiv_apply_annulus`,
-`TauCeti.norm_integral_bilinear_apply_circleMap_le`, and
+`TauCeti.norm_integral_apply_apply_circleMap_le`, and
 `TauCeti.exists_integral_norm_deriv_comp_circleMap_sq_lt`.
 
 ## References
@@ -75,7 +75,7 @@ theorem exists_tendsto_integral_apply_circleMap_nhds_zero (ω : SymplecticForm V
     squeeze_zero (fun n ↦ (hr n).1.le) (fun n ↦ (hr n).2.le) hδlim
   -- Wirtinger's inequality controls the action by the angular energy on each chosen circle.
   have haction (n : ℕ) : ‖action (r n)‖ ≤ ‖B‖ * δ n := by
-    have h := norm_integral_bilinear_apply_circleMap_le B z₀ (r n) fun θ ↦
+    have h := norm_integral_apply_apply_circleMap_le B z₀ (r n) fun θ ↦
       hu _ (circleMap_mem_puncturedClosedDisc z₀ (hr n).1 ((hr n).2.le.trans (hδb n)) θ)
     exact h.trans (mul_le_mul_of_nonneg_left (hE n).le (norm_nonneg B))
   have hactionlim : Tendsto (fun n ↦ action (r n)) atTop (𝓝 0) :=
