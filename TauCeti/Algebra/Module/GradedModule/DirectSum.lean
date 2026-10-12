@@ -9,7 +9,6 @@ public import Mathlib.Algebra.GradedMulAction
 public import Mathlib.RingTheory.GradedAlgebra.Basic
 public import TauCeti.Algebra.Module.GradedModule.Internal
 public import TauCeti.Algebra.DirectSum.Internal
-import TauCeti.Algebra.DirectSum.Module
 
 /-!
 # Direct sums of internally graded modules
@@ -164,13 +163,25 @@ private theorem directSumRecomposeEquiv_lof_lof (G : ∀ i, InternalGrading R (M
     congr 1
     exact (directSumPieceEquiv G p).symm_apply_apply _
   rw [hpieces]
-  rw [DirectSum.sigmaLcurryEquiv_symm_lof_lof]
+  -- Mathlib packages the inverse as `DFinsupp.sigmaUncurry`, and `lof` as `DFinsupp.single`.
+  -- Rewrite matching does not unfold these wrappers, so expose this application first.
+  conv_lhs =>
+    pattern (DirectSum.sigmaLcurryEquiv R).symm _
+    change DFinsupp.sigmaUncurry (δ := fun p i ↦ (G i).piece p)
+      (DFinsupp.single p (DFinsupp.single i x))
+    rw [DFinsupp.sigmaUncurry_single, DirectSum.single_eq_lof R]
   rw [DirectSum.lequivCongrLeft_lof
     (M := fun z : Σ _ : ℤ, ι ↦ (G z.2).piece z.1) R (e := sigmaSwap ι)
     (i := Sigma.mk p i) (k := Sigma.mk i p) rfl x x rfl]
   -- After swapping the indices, apply the second curry generator formula.
   rw [sigmaSwapPieceEquiv_lof]
-  rw [DirectSum.sigmaLcurryEquiv_lof]
+  -- The forward function is the same `DFinsupp.sigmaCurry` packaged by `DirectSum.sigmaCurry`.
+  -- Expose that application to use Mathlib's additive generator formula.
+  conv_lhs =>
+    pattern (DirectSum.sigmaLcurryEquiv R) _
+    change DirectSum.sigmaCurry
+      (DirectSum.of (fun z : Σ _ : ι, ℤ ↦ (G z.1).piece z.2) ⟨i, p⟩ x)
+    rw [DirectSum.sigmaCurry_of, ← DirectSum.lof_eq_of R ι, ← DirectSum.lof_eq_of R ℤ]
   -- The last congruence map acts componentwise on the single summand.
   rw [DirectSum.coe_congrLinearEquiv, DirectSum.lmap_lof]
   congr 1
