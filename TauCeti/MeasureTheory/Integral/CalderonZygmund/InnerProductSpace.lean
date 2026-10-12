@@ -308,24 +308,27 @@ variable {H K : Type*} [NormedAddCommGroup H] [InnerProductSpace ℝ H] [Complet
 `T` be a bounded linear operator on `L²(V)` of Hilbert space valued functions. Suppose that `T` and
 its adjoint `T†` are given off the support of their argument by kernels `k` and `k'`: for every
 compact set `s` and every `f` vanishing off `s`, `T f x = ∫ k x y (f y) dy` (respectively
-`T† f x = ∫ k' x y (f y) dy`) for almost every `x ∉ s`. Suppose that, for some `δ > 0`, both
-kernels satisfy the size and smoothness estimates
+`T† f x = ∫ k' x y (f y) dy`) for almost every `x ∉ s`. Suppose that, for some `δ > 0`, the
+kernel `k` satisfies the size and smoothness estimates
 
 `‖k x y‖ ≤ C₀ ‖x - y‖ ^ (-n)` for `x ≠ y`, and
-`‖k x y - k x y'‖ ≤ C ‖y - y'‖ ^ δ ‖x - y'‖ ^ (-(n + δ))` whenever `‖x - y'‖ > 2 ‖y - y'‖`.
+`‖k x y - k x y'‖ ≤ C ‖y - y'‖ ^ δ ‖x - y'‖ ^ (-(n + δ))` whenever `‖x - y'‖ > 2 ‖y - y'‖`,
+
+and that `k'` satisfies the same estimates with its own constants `C₀'`, `C'` and exponent
+`δ' > 0`.
 
 Then for every `1 < p < ∞` there is a constant `C` with `‖T f‖_p ≤ C ‖f‖_p` for every `f ∈ L²`. -/
 theorem exists_eLpNorm_le_of_norm_sub_le_mul_rpow [Nontrivial V]
     (T : Lp H 2 (volume : Measure V) →L[ℝ] Lp K 2 (volume : Measure V))
     {k : V → V → H →L[ℝ] K} (hkm : StronglyMeasurable (Function.uncurry k))
-    {k' : V → V → K →L[ℝ] H} (hk'm : StronglyMeasurable (Function.uncurry k')) {C₀ C : ℝ≥0}
-    {δ : ℝ} (hδ : 0 < δ)
+    {k' : V → V → K →L[ℝ] H} (hk'm : StronglyMeasurable (Function.uncurry k'))
+    {C₀ C C₀' C' : ℝ≥0} {δ δ' : ℝ} (hδ : 0 < δ) (hδ' : 0 < δ')
     (hsize : ∀ x y, x ≠ y → ‖k x y‖ ≤ C₀ * dist x y ^ (-(Module.finrank ℝ V : ℝ)))
-    (hsize' : ∀ x y, x ≠ y → ‖k' x y‖ ≤ C₀ * dist x y ^ (-(Module.finrank ℝ V : ℝ)))
+    (hsize' : ∀ x y, x ≠ y → ‖k' x y‖ ≤ C₀' * dist x y ^ (-(Module.finrank ℝ V : ℝ)))
     (hk : ∀ x y y', 2 * dist y y' < dist x y' →
       ‖k x y - k x y'‖ ≤ C * (dist y y' ^ δ * dist x y' ^ (-(Module.finrank ℝ V + δ))))
     (hk' : ∀ x y y', 2 * dist y y' < dist x y' →
-      ‖k' x y - k' x y'‖ ≤ C * (dist y y' ^ δ * dist x y' ^ (-(Module.finrank ℝ V + δ))))
+      ‖k' x y - k' x y'‖ ≤ C' * (dist y y' ^ δ' * dist x y' ^ (-(Module.finrank ℝ V + δ'))))
     (hrep : ∀ (f : Lp H 2 (volume : Measure V)) (s : Set V), IsCompact s →
       (∀ᵐ x, x ∉ s → f x = 0) → ∀ᵐ x, x ∉ s → T f x = ∫ z, k x z (f z))
     (hrep' : ∀ (f : Lp K 2 (volume : Measure V)) (s : Set V), IsCompact s →
@@ -336,7 +339,7 @@ theorem exists_eLpNorm_le_of_norm_sub_le_mul_rpow [Nontrivial V]
   set b := stdOrthonormalBasis ℝ V
   have : Nonempty (Fin (Module.finrank ℝ V)) := ⟨⟨0, Module.finrank_pos⟩⟩
   obtain ⟨B, hB, hT⟩ := exists_cancellation b T hkm hδ hsize hk hrep
-  obtain ⟨B', hB', hT'⟩ := exists_cancellation b (adjoint T) hk'm hδ hsize' hk' hrep'
+  obtain ⟨B', hB', hT'⟩ := exists_cancellation b (adjoint T) hk'm hδ' hsize' hk' hrep'
   rw [← adjoint_coordConj] at hT'
   obtain ⟨A, hA⟩ := (coordConj b T).exists_eLpNorm_le_of_setLIntegral_compl_closedBall_le
     hB hB' hT hT' hp hp_top
