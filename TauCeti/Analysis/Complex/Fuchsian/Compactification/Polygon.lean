@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Complex.Fuchsian.Compactification.Compactness
 public import TauCeti.Analysis.Complex.Fuchsian.Cusp.Quotient
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Polygon.Convex.Truncation
+import TauCeti.Analysis.Complex.Fuchsian.Polygon.CuspDatum
 
 /-!
 # Compactifying a quotient with a cuspidal fundamental polygon
@@ -63,11 +64,7 @@ theorem exists_isCompact_cover_quotient_horodiscs
   classical
   -- Choose data only at ideal vertices; finite vertices carry no auxiliary cusp data.
   let I := {i : Fin n // (P.vertex i).isRight}
-  have hex (i : I) : ∃ E : Γ.CuspDatum, P.vertex i = .inr E.cusp := by
-    obtain ⟨c, hc⟩ := Sum.isRight_iff.mp i.property
-    obtain ⟨E, hE⟩ := (hcusp i c hc).exists_cuspDatum_cusp_eq
-    exact ⟨E, by rw [hE]; exact hc⟩
-  choose E hE using hex
+  obtain ⟨E, g, hgE, hg⟩ := P.exists_cuspDatum_scaling hcusp
   -- Match each vertex datum to the prescribed datum of its orbit, rescaling heights.
   have hscale (i : I) : ∃ a : ℝ, 0 < a ∧ ∀ B : ℝ,
       Quotient.mk (orbitRel Γ ℍ) '' horodisc (E i) (a * B) =
@@ -75,21 +72,15 @@ theorem exists_isCompact_cover_quotient_horodiscs
     exact exists_image_quotientMk_horodisc_eq _ _
       (((E i).cuspOrbit_eq_iff _).mp (hD (E i).cuspOrbit).symm)
   choose a _ hscale using hscale
-  let g (i : Fin n) : PSL(2, ℝ) :=
-    if hi : (P.vertex i).isRight then (E ⟨i, hi⟩).scaling else 1
   let B (i : Fin n) : ℝ :=
     if hi : (P.vertex i).isRight then a ⟨i, hi⟩ * A (E ⟨i, hi⟩).cuspOrbit else 0
-  have hg (i : Fin n) (c : OnePoint ℝ) (hi : P.vertex i = .inr c) : g i • c = ∞ := by
-    have hright : (P.vertex i).isRight := by simp [hi]
-    have heq : (E ⟨i, hright⟩).cusp = c := Sum.inr.inj ((hE ⟨i, hright⟩).symm.trans hi)
-    simpa only [g, dite_eq_left hright, heq] using (E ⟨i, hright⟩).scaling_smul_cusp
   let H : Set ℍ := ⋃ i, ⋃ (_ : (P.vertex i).isRight), {z : ℍ | B i < (g i • z).im}
   refine ⟨P.carrier \ H, P.isCompact_carrier_diff_iUnion g hg B, fun q ↦ ?_⟩
   obtain ⟨z, hz, rfl⟩ := hcover q
   by_cases hzH : z ∈ H
   · obtain ⟨i, hi, hzi⟩ := mem_iUnion₂.mp hzH
     have hhor : z ∈ horodisc (E ⟨i, hi⟩) (a ⟨i, hi⟩ * A (E ⟨i, hi⟩).cuspOrbit) := by
-      simpa only [mem_horodisc, B, g, dite_eq_left hi, mem_ofPred_eq] using hzi
+      simpa only [mem_horodisc, B, hgE i hi, dite_eq_left hi, mem_ofPred_eq] using hzi
     refine Or.inr ⟨(E ⟨i, hi⟩).cuspOrbit, ?_⟩
     rw [← hscale ⟨i, hi⟩]
     exact mem_image_of_mem _ hhor

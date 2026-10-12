@@ -5,9 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Complex.Fuchsian.Cusp.Horodisc
-public import TauCeti.Analysis.Complex.UpperHalfPlane.Polygon.Convex.Truncation
+public import TauCeti.Analysis.Complex.Fuchsian.Cusp.Basic
+public import TauCeti.Analysis.Complex.UpperHalfPlane.Polygon.Convex
+import TauCeti.Analysis.Complex.Fuchsian.Cusp.Horodisc
+import TauCeti.Analysis.Complex.Fuchsian.Polygon.CuspDatum
 import TauCeti.Analysis.Complex.Fuchsian.ProperAction
+import TauCeti.Analysis.Complex.UpperHalfPlane.Polygon.Convex.Truncation
 import TauCeti.Topology.Algebra.ConstMulAction
 
 /-!
@@ -48,17 +51,7 @@ theorem locallyFinite_smul_carrier_of_isCuspPoint [DiscreteTopology Γ]
   classical
   -- Only ideal vertices require cusp data; this also handles polygons with no ideal vertices.
   let I := {i : Fin n // (P.vertex i).isRight}
-  have hex (i : I) : ∃ D : Γ.CuspDatum, P.vertex i = .inr D.cusp := by
-    obtain ⟨c, hc⟩ := Sum.isRight_iff.mp i.property
-    obtain ⟨D, hD⟩ := (hcusp i c hc).exists_cuspDatum_cusp_eq
-    exact ⟨D, by rw [hD]; exact hc⟩
-  choose D hD using hex
-  let g (i : Fin n) : PSL(2, ℝ) :=
-    if hi : (P.vertex i).isRight then (D ⟨i, hi⟩).scaling else 1
-  have hg (i : Fin n) (c : OnePoint ℝ) (hi : P.vertex i = .inr c) : g i • c = ∞ := by
-    have hright : (P.vertex i).isRight := by simp [hi]
-    have heq : (D ⟨i, hright⟩).cusp = c := Sum.inr.inj ((hD ⟨i, hright⟩).symm.trans hi)
-    simpa only [g, dite_eq_left hright, heq] using (D ⟨i, hright⟩).scaling_smul_cusp
+  obtain ⟨D, g, hgD, hg⟩ := P.exists_cuspDatum_scaling hcusp
   intro z
   -- All translates of this neighbourhood have bounded height in each cusp coordinate.
   choose S hS hz A hA using fun i : I ↦
@@ -79,7 +72,7 @@ theorem locallyFinite_smul_carrier_of_isCuspPoint [DiscreteTopology Γ]
   have hbound := hA ⟨i, hi⟩ γ⁻¹ ((γ : PSL(2, ℝ)) • x)
     (mem_iInter.mp hwU ⟨i, hi⟩)
   have hle : (g i • x).im ≤ B i := by
-    simpa only [g, B, dite_eq_left hi, Subgroup.smul_def, Subgroup.coe_inv,
+    simpa only [hgD i hi, B, dite_eq_left hi, Subgroup.smul_def, Subgroup.coe_inv,
       inv_smul_smul] using hbound
   exact hxi.not_ge hle
 
