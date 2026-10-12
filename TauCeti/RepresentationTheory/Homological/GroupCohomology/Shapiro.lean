@@ -203,13 +203,14 @@ theorem map_id_eq_zero_iff_of_comp_eq_resCoindToHom {Γ : Type u} [Group Γ] {X 
   -- `ψ` is `φ` along `r`, followed by the isomorphism along the bijection `f`
   have hD : map S.subtype ψ n = map r φ n ≫ map f (𝟙 (res f B)) n :=
     (map_congr (MonoidHom.ext fun s ↦ (hr s).symm) hψ n).trans (map_comp r f φ (𝟙 _) n)
-  have := isIso_map_of_bijective hf B n
   have hc : Function.Injective (coindIso (res f B) n).hom :=
     (coindIso (res f B) n).toLinearEquiv.injective
   have he : Function.Injective (map (MonoidHom.id G) e.hom n) :=
     ((functor k G n).mapIso e).toLinearEquiv.injective
+  -- the map along the bijection `f` is the `hom` of Mathlib's `mapIso` for the inverse of `f`
   have hd : Function.Injective (map f (𝟙 (res f B)) n) :=
-    (asIso (map f (𝟙 (res f B)) n)).toLinearEquiv.injective
+    (mapIso (MulEquiv.ofBijective f hf).symm (LinearEquiv.refl k B.V)
+      (fun _ ↦ LinearMap.ext fun _ ↦ by simp) n (A := res f B)).toLinearEquiv.injective
   refine (map_eq_zero_iff _ he).symm.trans <| (map_eq_zero_iff _ hc).symm.trans ?_
   rw [← hS, hD]
   exact map_eq_zero_iff _ hd
