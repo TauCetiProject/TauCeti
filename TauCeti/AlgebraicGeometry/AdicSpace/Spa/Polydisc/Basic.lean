@@ -386,9 +386,9 @@ theorem taylorHom_taylorHom_neg (a : Fin k → A) (ha : ∀ i, IsPowerBounded (a
   simp
 
 /-- **A continuous valuation bounded on monomials is invariant under translation.** Let `v` be a
-continuous valuation on `A⟨T₁, …, Tₖ⟩` that bounds every monomial `fν Tν` of a series `f` by
-`v f`, with `v (Tᵢ + aᵢ) ≤ v (Tᵢ)` and `v (Tᵢ - aᵢ) ≤ v (Tᵢ)` for every `i`. Then
-`v (f(T + a)) = v f`: apply `valuation_taylorHom_le` to translation by `a` and by `-a`. -/
+continuous valuation on `A⟨T₁, …, Tₖ⟩` that bounds every monomial `gν Tν` of every series `g` by
+`v g`, with `v (Tᵢ + aᵢ) ≤ v (Tᵢ)` and `v (Tᵢ - aᵢ) ≤ v (Tᵢ)` for every `i`. Then
+`v (f(T + a)) = v f` for every series `f`. -/
 theorem valuation_taylorHom_eq {Γ₀ : Type*} [LinearOrderedCommGroupWithZero Γ₀]
     (a : Fin k → A) (ha : ∀ i, IsPowerBounded (a i))
     {v : Valuation (weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set A))
