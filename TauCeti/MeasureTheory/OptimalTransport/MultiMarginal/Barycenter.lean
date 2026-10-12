@@ -92,14 +92,6 @@ private theorem isProbabilityMeasure_map_sum_smul (hw : ∑ i, w i = 1) {μ : ι
   have := hγ.isProbabilityMeasure i
   infer_instance
 
-omit [NormedSpace ℝ E] in
-/-- The square of `W₂` is bounded by the quadratic transport integral of any coupling. -/
-private theorem wassersteinEDist_two_sq_le_lintegral {μ ν : Measure E} {π : Measure (E × E)}
-    (hπ : IsCoupling π μ ν) :
-    wassersteinEDist 2 μ ν ^ 2 ≤ ∫⁻ z, edist z.1 z.2 ^ 2 ∂π := by
-  simpa using wassersteinEDist_rpow_le_lintegral measurable_edist two_ne_zero
-    ENNReal.ofNat_ne_top hπ
-
 /-- **The weighted mean of a multi-coupling is a competitor for the barycenter.** For every
 multi-marginal coupling `γ` of the laws `μ i`, the weighted quadratic Wasserstein cost of the law
 of the weighted mean `m x = ∑ j, w j • x j` under `γ` is at most the multi-marginal cost
@@ -118,7 +110,10 @@ theorem sum_mul_wassersteinEDist_sq_map_le {μ : ι → Measure E} {γ : Measure
       (γ.map fun x ↦ ∑ j, (w j : ℝ) • x j) (μ i) :=
     ⟨Measure.fst_map_prodMk hm (measurable_pi_apply i),
       (Measure.snd_map_prodMk hm (measurable_pi_apply i)).trans (hγ.marginal_eq i)⟩
-  refine (wassersteinEDist_two_sq_le_lintegral hc).trans_eq ?_
+  have h := wassersteinEDist_rpow_le_lintegral measurable_edist two_ne_zero
+    ENNReal.ofNat_ne_top hc
+  simp only [ENNReal.toReal_ofNat, ENNReal.rpow_ofNat] at h
+  refine h.trans_eq ?_
   rw [lintegral_map (by fun_prop) (by fun_prop)]
 
 end NormedSpace
@@ -184,7 +179,10 @@ theorem exists_isMultiCoupling_lintegral_add_wassersteinEDist_sq_le (hw : ∑ i,
     rfl
   have hle : wassersteinEDist 2 ν (Γ.snd.map fun x ↦ ∑ j, (w j : ℝ) • x j) ^ 2 ≤
       ∫⁻ q, edist q.1 (∑ j, (w j : ℝ) • q.2 j) ^ 2 ∂Γ := by
-    refine (wassersteinEDist_two_sq_le_lintegral hc).trans_eq ?_
+    have h := wassersteinEDist_rpow_le_lintegral measurable_edist two_ne_zero
+      ENNReal.ofNat_ne_top hc
+    simp only [ENNReal.toReal_ofNat, ENNReal.rpow_ofNat] at h
+    refine h.trans_eq ?_
     rw [lintegral_map (by fun_prop) (measurable_fst.prodMk hm₂)]
   simp only [hW]
   rw [sum_mul_lintegral_edist_sq_eq_add hw Γ, add_comm]

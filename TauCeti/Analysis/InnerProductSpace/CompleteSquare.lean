@@ -128,7 +128,7 @@ theorem sum_mul_norm_sub_sq_eq (s : Finset ι) {w : ι → ℝ} (hw : ∑ i ∈ 
     simp only [smul_sub, sum_sub_distrib, ← sum_smul, hw, one_smul, m, sub_self]
   have hexpand (i : ι) : w i * ‖y - x i‖ ^ 2 =
       w i * ‖y - m‖ ^ 2 + 2 * ⟪y - m, w i • (m - x i)⟫ + w i * ‖m - x i‖ ^ 2 := by
-    rw [show y - x i = (y - m) + (m - x i) by abel, norm_add_sq_real, real_inner_smul_right]
+    rw [← sub_add_sub_cancel y m (x i), norm_add_sq_real, real_inner_smul_right]
     ring
   rw [sum_congr rfl fun i _ ↦ hexpand i, sum_add_distrib, sum_add_distrib, ← sum_mul, hw,
     ← mul_sum, ← inner_sum, hdev, inner_zero_right]
