@@ -115,7 +115,7 @@ private theorem integralDividedPower_one_apply_of_step
     (hstep : x (v : V) = c • (w : V)) :
     integralDividedPower x M 1 hmem v = c • w := by
   refine Subtype.ext ?_
-  rw [coe_integralDividedPower_apply, Associative.dividedPower_one, AddSubgroup.coe_zsmul]
+  rw [coe_integralDividedPower_one_apply, AddSubgroup.coe_zsmul]
   exact hstep
 
 /-- Beyond the first divided power, the column of a root step vanishes. -/
@@ -305,8 +305,7 @@ theorem kostantRootSubgroupPoints_apply_baseChange_basis_of_action
           (fun _ hv => dividedPower_apply_mem_of_kostantForm_apply_mem e h ρ hM i 1 hv)
           (b s) = if s = source then b target else 0 := by
     apply Subtype.ext
-    rw [coe_integralDividedPower_apply, Associative.dividedPower_one, Module.End.smul_def,
-      haction]
+    rw [coe_integralDividedPower_one_apply, Module.End.smul_def, haction]
     split <;> rfl
   rw [Module.Basis.baseChange_apply, kostantRootSubgroupPoints_tmul, hclass,
     Finset.sum_range_succ, Finset.sum_range_one, integralDividedPower_zero, hone]

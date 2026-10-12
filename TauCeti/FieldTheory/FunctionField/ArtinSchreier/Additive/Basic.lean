@@ -32,7 +32,9 @@ prime to `|V|`; in characteristic `p` this means prime to `p`. Then:
 
 Both follow from the total ramification of the places above `P`
 (`TauCeti.Place.isTotallyRamified_of_exists_reduced_additivePolynomial_pole`). The reduced
-representative `w` is an explicit hypothesis of these results.
+representative `w` is an explicit hypothesis of these results. The different divisor and the
+genus formula, parts (c)-(e), are in
+`TauCeti.FieldTheory.FunctionField.ArtinSchreier.Additive.Genus`.
 
 ## References
 

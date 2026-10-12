@@ -98,8 +98,8 @@ private theorem forkBranch_mem_span_normalForms (hn : 3 ≤ n)
     simpa only [← Int.cast_smul_eq_zsmul k, mul_smul_comm, smul_mul_assoc, ite_true] using
       M.smul_of_tower_mem α (hword false 0 (by omega))
   | succ t =>
-    have hx := forkTurn_mul_self k (G := DG) hn' hG (l := dc + 1) (by omega) (by omega)
-    have hy := forkTurn_mul_self k (G := DG) hn' hG (l := dc + 2) (by omega) (by omega)
+    have hx := forkTurn_mul_self k (G := DG) hG (l := dc + 1) (by omega) (by omega)
+    have hy := forkTurn_mul_self k (G := DG) hG (l := dc + 2) (by omega) (by omega)
     have hw' := span_pair_pow_succ_le (R := ℤ) hx hy t hw
     obtain ⟨α, β, rfl⟩ := Submodule.mem_span_pair.mp hw'
     have hleft := hword true (t + 1) (by omega)

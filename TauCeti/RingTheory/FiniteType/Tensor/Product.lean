@@ -12,9 +12,10 @@ public import Mathlib.RingTheory.TensorProduct.Maps
 /-!
 # Reduced tensor products over an algebraically closed field
 
-A reduced finite-type algebra over an algebraically closed field stays reduced after tensoring
-with any reduced algebra. This applies in particular to the tensor square of a coordinate ring
-modulo its nilradical, before any Hopf structure has been constructed on that quotient.
+A reduced commutative finite-type algebra over an algebraically closed field stays reduced after
+tensoring with any reduced algebra, which need not be commutative. This applies in particular to
+the tensor square of a coordinate ring modulo its nilradical, before any Hopf structure has been
+constructed on that quotient.
 
 ## References
 
@@ -30,12 +31,13 @@ namespace TauCeti
 
 universe u v w
 
-/-- The tensor product of a reduced finite-type algebra over an algebraically closed field
-with any reduced algebra is reduced. Only the first factor needs to be of finite type. -/
+/-- The tensor product of a reduced commutative finite-type algebra over an algebraically closed
+field with any reduced algebra is reduced. Only the first factor needs to be commutative and of
+finite type. -/
 instance instIsReducedTensorProductOfIsAlgClosed
     (k : Type u) [Field k] [IsAlgClosed k]
     (A : Type v) [CommRing A] [Algebra k A] [Algebra.FiniteType k A] [IsReduced A]
-    (B : Type w) [CommRing B] [Algebra k B] [IsReduced B] :
+    (B : Type w) [Ring B] [Algebra k B] [IsReduced B] :
     IsReduced (A ⊗[k] B) := by
   refine ⟨fun x hx ↦ ?_⟩
   apply tensor_eq_zero_of_forall_lid_rTensor_eq_zero (fun f : A →ₐ[k] k ↦ f.toLinearMap)

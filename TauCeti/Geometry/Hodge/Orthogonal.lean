@@ -88,7 +88,7 @@ theorem proj_mem_orthogonal (hQ : IsPolarization hℂ hs Qint) {A : Submodule �
     rcases eq_or_ne (q + p) n with hqp | hqp
     · have hcomp : (integralFormBaseChange hℂ Qint w) ∘ₗ hs.proj p =
           integralFormBaseChange hℂ Qint w := by
-        refine hs.linearMap_ext_of_piece fun p' y hy ↦ ?_
+        refine hs.addHom_ext_of_piece fun p' y hy ↦ ?_
         rcases eq_or_ne p' p with rfl | hp'
         · simp [hs.proj_apply_of_mem hy]
         · rw [LinearMap.comp_apply, hs.proj_apply_eq_zero_of_mem_of_ne hy hp', map_zero]

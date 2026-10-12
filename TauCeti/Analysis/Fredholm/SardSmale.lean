@@ -32,8 +32,9 @@ This file proves that, in the local form
 `TauCeti.exists_mem_nhds_isClosed_isNowhereDense_image_criticalPoints` first and then in the
 global forms `TauCeti.isMeagre_image_criticalPoints_of_isFredholm` and
 `TauCeti.dense_compl_image_criticalPoints_of_isFredholm`. The local form needs no separability;
-the global ones assume the domain second countable, since their proof covers it by countably many
-of the local neighbourhoods.
+the global ones apply on any Lindelöf subset of the domain, since their proof covers that subset
+by countably many of the local neighbourhoods. In particular, every subset of a separable Banach
+space satisfies this covering assumption; the subset need not be open.
 
 ## The proof
 
@@ -61,9 +62,9 @@ sources in a compact set, and a subsequential limit produces the missing critica
 this half only density, not residuality, would follow, since a countable union of sets with empty
 interior need not be meagre.
 
-The global statement follows by covering: a second-countable domain is Lindelöf, so countably many
-of these balls suffice, and a countable union of closed nowhere dense sets is meagre. Density of
-the regular values is then the Baire category theorem. The `CompleteSpace F` assumption supplies
+The global statement follows by covering: countably many of these balls cover a Lindelöf subset
+of the domain, and a countable union of closed nowhere dense sets is meagre. Density of the
+regular values is then the Baire category theorem. The `CompleteSpace F` assumption supplies
 both the Baire instance and the local properness used above to prove closedness.
 
 The regularity threshold is inherited unchanged from the finite-dimensional theorem: `C^k` with
@@ -435,11 +436,12 @@ end Local
 
 section Global
 
-variable [CompleteSpace E] [CompleteSpace F] [SecondCountableTopology E]
-  {U : Set E} {f : E → F}
+variable [CompleteSpace E] [CompleteSpace F] {U : Set E} [LindelofSpace U] {f : E → F}
 
-/-- **The Sard--Smale theorem.** The critical values of a sufficiently smooth Fredholm map on an
-open subset of a separable Banach space form a meagre set.
+/-- **The Sard--Smale theorem.** The critical values of a sufficiently smooth Fredholm map on a
+Lindelöf subset of a Banach space form a meagre set. The subset need not be open; smoothness
+is assumed at each of its points in the ambient space. Every subset of a separable Banach space
+is Lindelöf.
 
 Sard's theorem itself is false in infinite dimensions, and "measure zero" has no meaning there;
 what survives is that the Fredholm condition confines the failure of regularity to a
@@ -448,7 +450,7 @@ finite-dimensional direction, in which the finite-dimensional theorem applies fi
 The regularity threshold is the pointwise one of
 `TauCeti.exists_mem_nhds_isClosed_isNowhereDense_image_criticalPoints`: at each point `C^k` with
 `k ≥ (dim ker)² + 1`. In particular `n = ∞` needs no side condition. -/
-theorem isMeagre_image_criticalPoints_of_isFredholm {n : ℕ∞ω} (hU : IsOpen U)
+theorem isMeagre_image_criticalPoints_of_isFredholm {n : ℕ∞ω}
     (hf : ∀ x ∈ U, ContDiffAt ℝ n f x) (hFred : ∀ x ∈ U, (fderiv ℝ f x).IsFredholm)
     (hn : ∀ x ∈ U, ((finrank ℝ (fderiv ℝ f x).ker * finrank ℝ (fderiv ℝ f x).ker + 1 : ℕ) : ℕ∞ω)
       ≤ n) :
@@ -457,28 +459,27 @@ theorem isMeagre_image_criticalPoints_of_isFredholm {n : ℕ∞ω} (hU : IsOpen 
       IsNowhereDense (f '' (N ∩ {x | ¬ Surjective (fderiv ℝ f x)})) := by
     intro x hx
     obtain ⟨N, hN, -, -, hNnd⟩ := exists_mem_nhds_isClosed_isNowhereDense_image_criticalPoints
-      (hf x hx) (hFred x hx) (hn x hx) (hU.mem_nhds hx)
+      (hf x hx) (hFred x hx) (hn x hx) (U := univ) Filter.univ_mem
     exact ⟨N, hN, hNnd⟩
   choose! N hNnhds hNnd using hloc
-  obtain ⟨t, htU, htc, htcover⟩ := TopologicalSpace.countable_cover_nhdsWithin
-    (f := N) (s := U) fun x hx ↦ nhdsWithin_le_nhds (hNnhds x hx)
+  obtain ⟨t, htc, htU, htcover⟩ := (IsLindelof.of_coe (s := U)).elim_nhds_subcover N hNnhds
   have hsub : f '' (U ∩ {x | ¬ Surjective (fderiv ℝ f x)}) ⊆
       ⋃ x ∈ t, f '' (N x ∩ {x | ¬ Surjective (fderiv ℝ f x)}) := by
     rintro _ ⟨z, ⟨hzU, hzc⟩, rfl⟩
     obtain ⟨x, hx, hzN⟩ := Set.mem_iUnion₂.1 (htcover hzU)
     exact Set.mem_iUnion₂.2 ⟨x, hx, ⟨z, ⟨hzN, hzc⟩, rfl⟩⟩
-  exact IsMeagre.mono hsub (isMeagre_biUnion htc fun x hx ↦ (hNnd x (htU hx)).isMeagre)
+  exact IsMeagre.mono hsub (isMeagre_biUnion htc fun x hx ↦ (hNnd x (htU x hx)).isMeagre)
 
 /-- **Sard--Smale**, in the form transversality arguments consume: the regular values of a
-sufficiently smooth Fredholm map are dense, being the complement of a meagre set in a Baire
-space. The regularity threshold is that of
+sufficiently smooth Fredholm map restricted to a Lindelöf subset are dense, being the complement
+of a meagre set in a Baire space. The regularity threshold is that of
 `TauCeti.isMeagre_image_criticalPoints_of_isFredholm`. -/
-theorem dense_compl_image_criticalPoints_of_isFredholm {n : ℕ∞ω} (hU : IsOpen U)
+theorem dense_compl_image_criticalPoints_of_isFredholm {n : ℕ∞ω}
     (hf : ∀ x ∈ U, ContDiffAt ℝ n f x) (hFred : ∀ x ∈ U, (fderiv ℝ f x).IsFredholm)
     (hn : ∀ x ∈ U, ((finrank ℝ (fderiv ℝ f x).ker * finrank ℝ (fderiv ℝ f x).ker + 1 : ℕ) : ℕ∞ω)
       ≤ n) :
     Dense (f '' (U ∩ {x | ¬ Surjective (fderiv ℝ f x)}))ᶜ :=
-  dense_of_mem_residual (isMeagre_image_criticalPoints_of_isFredholm hU hf hFred hn)
+  dense_of_mem_residual (isMeagre_image_criticalPoints_of_isFredholm hf hFred hn)
 
 end Global
 
