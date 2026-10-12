@@ -8,8 +8,8 @@ module
 public import Mathlib.RingTheory.Finiteness.Defs
 public import Mathlib.RingTheory.IntegralClosure.Algebra.Basic
 public import Mathlib.Topology.Algebra.OpenSubgroup
-public import Mathlib.Topology.Algebra.TopologicallyNilpotent
 public import TauCeti.Algebra.Module.Submodule.Pointwise
+public import TauCeti.Topology.Algebra.TopologicallyNilpotent
 
 /-!
 # Subrings of a topological ring
@@ -29,15 +29,13 @@ Powers of a topologically nilpotent scalar absorb elements of the ambient ring i
 subring. For submodules over that subring, they absorb the ambient span element by element,
 and a single exponent absorbs a finitely generated submodule. These facts compare the
 power-scaled filtrations of finite spanning lattices; they need only separately continuous
-multiplication on the ambient ring.
+multiplication on the ambient ring. Scalar absorption is supplied by
+`exists_mul_pow_mem_of_isTopologicallyNilpotent`.
 
 ## Main results
 
 * `Subring.topologicalClosure_coe`: `↑S.topologicalClosure = closure ↑S`.
 * `isOpen_integralClosure_toSubring`: the integral closure of an open subring is open.
-* `Subring.eventually_pow_mul_mem_of_isTopologicallyNilpotent` and its existential form
-  `Subring.exists_pow_mul_mem`: all sufficiently large powers of a topologically nilpotent
-  scalar multiply any fixed element into an open subring.
 * `Subring.exists_pow_smul_mem`: a power carries an element of the ambient span into a
   submodule over the open subring.
 * `Subring.exists_pow_smul_le` and `Subring.exists_pow_smul_le_pow_smul`: the uniform and
@@ -80,23 +78,7 @@ theorem isOpen_integralClosure_toSubring {R : Subring B} (hR : IsOpen (R : Set B
 
 namespace Subring
 
-open Filter
 open scoped Topology Pointwise
-
-/-- All sufficiently large powers of a topologically nilpotent scalar multiply any fixed
-element into an open subring. -/
-theorem eventually_pow_mul_mem_of_isTopologicallyNilpotent {A : Type*} [Ring A]
-    [TopologicalSpace A] [SeparatelyContinuousMul A] (S : Subring A)
-    (hS : IsOpen (S : Set A)) {s : A} (hs : IsTopologicallyNilpotent s) (c : A) :
-    ∀ᶠ n : ℕ in atTop, s ^ n * c ∈ S :=
-  (hs.mul_const c).eventually (hS.mem_nhds (by simp))
-
-/-- The existential form of `Subring.eventually_pow_mul_mem_of_isTopologicallyNilpotent`:
-some power of a topologically nilpotent scalar multiplies a fixed element into an open subring. -/
-theorem exists_pow_mul_mem {A : Type*} [Ring A] [TopologicalSpace A]
-    [SeparatelyContinuousMul A] (S : Subring A) (hS : IsOpen (S : Set A)) {s : A}
-    (hs : IsTopologicallyNilpotent s) (c : A) : ∃ i : ℕ, s ^ i * c ∈ S :=
-  (S.eventually_pow_mul_mem_of_isTopologicallyNilpotent hS hs c).exists
 
 variable {A : Type*} [CommRing A] [TopologicalSpace A] [SeparatelyContinuousMul A]
   {M : Type*} [AddCommGroup M] [Module A M]
@@ -123,7 +105,8 @@ theorem exists_pow_smul_mem (S : Subring A) (hS : IsOpen (S : Set A)) {s : A}
       rw [smul_add]; exact M₀.add_mem hx' hy'
   | smul c x _ ih =>
       obtain ⟨k, hk⟩ := ih
-      obtain ⟨i, hi⟩ := S.exists_pow_mul_mem hS hs c
+      obtain ⟨i, hi⟩ := exists_mul_pow_mem_of_isTopologicallyNilpotent hs hS c
+      rw [mul_comm] at hi
       refine ⟨i + k, ?_⟩
       have he : s ^ (i + k) • (c • x) = (⟨s ^ i * c, hi⟩ : S) • (s ^ k • x) := by
         rw [smul_smul, Subring.smul_def, ← smul_assoc, smul_eq_mul]
@@ -184,7 +167,8 @@ theorem exists_pow_smul_le_pow_smul_of_isUnit (S : Subring A) (hS : IsOpen (S : 
     ∃ k : ℕ, (⟨t, ht0⟩ : S) ^ k • M₀
       ≤ (⟨s, hs0⟩ : S) ^ n • M₀ := by
   obtain ⟨u, rfl⟩ := hs
-  obtain ⟨k, hk⟩ := S.exists_pow_mul_mem hS ht ((↑u⁻¹ : A) ^ n)
+  obtain ⟨k, hk⟩ := exists_mul_pow_mem_of_isTopologicallyNilpotent ht hS ((↑u⁻¹ : A) ^ n)
+  rw [mul_comm] at hk
   refine ⟨k, fun x hx ↦ ?_⟩
   obtain ⟨y, hy, rfl⟩ := (Submodule.mem_smul_pointwise_iff_exists _ _ _).mp hx
   apply (Submodule.mem_smul_pointwise_iff_exists _ _ _).mpr

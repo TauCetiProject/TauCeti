@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RingTheory.Huber.Basic
 import TauCeti.Topology.Algebra.Nonarchimedean.SubmodulesBasis
+public import TauCeti.Topology.Algebra.Ring.Subring
 
 /-!
 # The `ϖⁿ • M₀` submodules basis, and the `A`-module topology it induces
@@ -158,8 +159,9 @@ def powSmulModuleFilterBasis (P : PairOfDefinition A) {s : A} (hs : IsPseudoUnif
     exact ((⟨s, hs0⟩ : P.ringOfDefinition) ^ n • M₀).smul_mem ⟨a, ha⟩ hm
   smul_left' := by
     rintro a _ ⟨n, rfl⟩
-    obtain ⟨k, hk⟩ := P.ringOfDefinition.exists_pow_mul_mem P.isOpen_ringOfDefinition
-      hs.isTopologicallyNilpotent a
+    obtain ⟨k, hk⟩ := exists_mul_pow_mem_of_isTopologicallyNilpotent
+      hs.isTopologicallyNilpotent P.isOpen_ringOfDefinition a
+    rw [mul_comm] at hk
     refine ⟨_, ⟨n + k, rfl⟩, fun x hx ↦ ?_⟩
     simp only [SetLike.mem_coe, Set.mem_preimage, Submodule.mem_smul_pointwise_iff_exists] at hx ⊢
     obtain ⟨y, hy, rfl⟩ := hx
