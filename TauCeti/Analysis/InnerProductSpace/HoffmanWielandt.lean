@@ -19,7 +19,10 @@ spectrum `μ` under the doubly stochastic Schur weight matrix of `(eₖ)` and an
 Doubly stochastic averaging cannot increase a sorted pairing, so for every decreasing weight
 sequence `c`,
 
-`∑ₖ cₖ dₖ ≤ ∑ₖ cₖ μₖ`.
+`∑ₖ cₖ dₖ ≤ ∑ₖ cₖ μₖ`
+
+(`LinearMap.IsSymmetric.sum_mul_re_inner_apply_self_le_sum_mul_eigenvalues`, in the Schur–Horn
+file).
 
 Taking `(eₖ)` to be an eigenbasis of `T` and `c = λ` gives the **von Neumann trace inequality**
 `Re tr (T S) ≤ ∑ᵢ λᵢ μᵢ`.
@@ -34,10 +37,8 @@ for every orthonormal basis `(eₖ)`.
 
 ## Main results
 
-* `LinearMap.IsSymmetric.sum_mul_re_inner_apply_self_le_sum_mul_eigenvalues`: for a decreasing
-  weight sequence `c` and an orthonormal basis `e`, `∑ₖ cₖ Re⟪S eₖ, eₖ⟫ ≤ ∑ₖ cₖ μₖ`.
-* `LinearMap.IsSymmetric.sum_eigenvalues_mul_re_inner_apply_self_le`: the same bound with `e` an
-  eigenbasis of `T` and `c` its eigenvalues.
+* `LinearMap.IsSymmetric.sum_eigenvalues_mul_re_inner_apply_self_le`: for `e` an eigenbasis of
+  `T`, `∑ₖ λₖ Re⟪S eₖ, eₖ⟫ ≤ ∑ₖ λₖ μₖ`.
 * `LinearMap.IsSymmetric.re_trace_comp_le_sum_eigenvalues_mul_eigenvalues`: the von Neumann trace
   inequality `Re tr (T S) ≤ ∑ᵢ λᵢ μᵢ`.
 * `LinearMap.IsSymmetric.sum_sq_eigenvalues_sub_le_sum_sq_norm_apply`: the Hoffman–Wielandt
@@ -61,22 +62,6 @@ namespace LinearMap.IsSymmetric
 
 variable {𝕜 E ι : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
   [FiniteDimensional 𝕜 E] [Fintype ι] {T S : E →ₗ[𝕜] E} {n : ℕ}
-
-/-- **Sorted weights of the diagonal.** For a symmetric `S`, an orthonormal basis `e`, and a
-decreasing weight sequence `c`, the `c`-weighted sum of the diagonal entries `Re⟪S eₖ, eₖ⟫` is
-at most the `c`-weighted sum of the eigenvalues of `S`, listed in decreasing order. -/
-theorem sum_mul_re_inner_apply_self_le_sum_mul_eigenvalues (hS : S.IsSymmetric)
-    (hn : finrank 𝕜 E = n) (e : OrthonormalBasis (Fin n) 𝕜 E) {c : Fin n → ℝ}
-    (hc : Antitone c) :
-    ∑ k, c k * RCLike.re ⟪S (e k), e k⟫_𝕜 ≤ ∑ i, c i * hS.eigenvalues hn i := by
-  -- The diagonal is the image of the spectrum under the doubly stochastic Schur weights.
-  have hdiag : ∑ k, c k * RCLike.re ⟪S (e k), e k⟫_𝕜 =
-      c ⬝ᵥ (e.schurWeight (hS.eigenvectorBasis hn) *ᵥ hS.eigenvalues hn) := by
-    simp [hS.re_inner_apply_self_eq_sum_schurWeight_mul_eigenvalues hn,
-      OrthonormalBasis.schurWeight_apply, dotProduct, Matrix.mulVec, norm_inner_symm]
-  rw [hdiag]
-  exact (hc.monovary (hS.eigenvalues_antitone hn)).dotProduct_mulVec_le_of_mem_doublyStochastic
-    (e.schurWeight_mem_doublyStochastic _)
 
 /-- **The von Neumann trace core.** For symmetric `T` and `S`, pairing the eigenvalues of `T`
 with the diagonal of `S` in an eigenbasis of `T` gives at most the sorted pairing
