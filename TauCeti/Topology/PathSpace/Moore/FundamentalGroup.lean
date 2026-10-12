@@ -49,6 +49,10 @@ interval. -/
 def loopClass (γ : MooreLoopSpace X x) : FundamentalGroup X x :=
   Path.Homotopic.Quotient.mk γ.toPath
 
+theorem loopClass_def (γ : MooreLoopSpace X x) :
+    loopClass γ = Path.Homotopic.Quotient.mk γ.toPath :=
+  (rfl)
+
 theorem loopClass_eq_iff_homotopic {γ δ : MooreLoopSpace X x} :
     loopClass γ = loopClass δ ↔ γ.toPath.Homotopic δ.toPath :=
   Path.Homotopic.Quotient.eq
@@ -73,7 +77,7 @@ theorem loopClass_eq_iff {γ δ : MooreLoopSpace X x} : loopClass γ = loopClass
 /-- The class of the constant loop is trivial. -/
 @[simp]
 theorem loopClass_one : loopClass (1 : MooreLoopSpace X x) = 1 := by
-  rw [loopClass, toPath_one, FundamentalGroup.one_def, Path.Homotopic.Quotient.mk_refl]
+  rw [loopClass_def, toPath_one, FundamentalGroup.one_def, Path.Homotopic.Quotient.mk_refl]
 
 /-- **The class of a product of Moore loops** is the product of the classes in the opposite
 order: concatenation runs through the first factor first, composition in the fundamental groupoid
@@ -91,7 +95,7 @@ theorem loopClass_mul (γ δ : MooreLoopSpace X x) :
 theorem loopClass_surjective : Function.Surjective (loopClass : MooreLoopSpace X x → _) := by
   intro g
   obtain ⟨p, rfl⟩ := Path.Homotopic.Quotient.mk_surjective g
-  exact ⟨p.toMooreLoop, by rw [loopClass, Path.toPath_toMooreLoop]⟩
+  exact ⟨p.toMooreLoop, by rw [loopClass_def, Path.toPath_toMooreLoop]⟩
 
 end MooreLoopSpace
 
