@@ -343,7 +343,7 @@ def relBrCocycle
     (FixedPoints.addSubgroup (galoisOpenNormalSubgroup K L σ).toSubgroup
       (UnitsCoeff K)).subtype
     (continuous_fixedPoints_addSubgroup_subtype _ _ _)
-    (subtype_quotientMk_smul _ _ _) (relBrLevelCocycle K L σ c)
+    (fun _ _ ↦ by simp) (relBrLevelCocycle K L σ c)
 
 /-- The value of the relative Brauer cocycle is the embedded value of the original cocycle at
 the restrictions of the two absolute Galois elements. -/
@@ -354,9 +354,8 @@ theorem relBrCocycle_apply
     ((relBrCocycle K L σ c).1 (g, h) : UnitsCoeff K) =
       embeddedUnitsEquivInvariants K L σ
         (Rep.toAdditive (c (σ.restrictNormalHom g, σ.restrictNormalHom h))) := by
-  rw [relBrCocycle, cocyclesMap2_apply]
-  simpa only [ContinuousMonoidHom.quotientMk_apply, AddSubgroup.coe_subtype] using
-    relBrLevelCocycle_apply K L σ c g h
+  exact (cocyclesMap2_apply _ _ _ _ _ _ _ _ (relBrLevelCocycle K L σ c) g h).trans
+    (relBrLevelCocycle_apply K L σ c g h)
 
 /-- `relBrLevelEquiv K L σ` sends the class of a cocycle `c` to the class of any cocycle on
 `Gal(Kˢ/K) ⧸ Gal(Kˢ/σ(L))` whose value at the classes of `g` and `h` is the image under `σ` of
