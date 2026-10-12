@@ -39,8 +39,10 @@ The bijection sends the identity element to the identity element
 map `Δⁿ⁺² → X` whose facets `n + 2`, `n + 1` and `n` are `p`, the product and `q`, so the product
 runs `p` before `q` in the last direction of the cube
 (`GenLoop.homotopic_simplexEquiv_transAt_last`), whereas Mathlib's product `⟦f⟧ * ⟦g⟧` runs `g`
-before `f`. In degrees at least two Mathlib's homotopy groups are commutative, so the bijection is
-a group isomorphism (`TopCat.toSSetPiMulEquivHomotopyGroup`).
+before `f`. So in every positive degree the bijection is a group isomorphism onto the opposite of
+Mathlib's homotopy group (`TopCat.toSSetPiMulEquivHomotopyGroupMulOpposite`). In degrees at least
+two Mathlib's homotopy groups are commutative, so the bijection is a group isomorphism
+(`TopCat.toSSetPiMulEquivHomotopyGroup`).
 
 ## Main declarations
 
@@ -54,6 +56,8 @@ a group isomorphism (`TopCat.toSSetPiMulEquivHomotopyGroup`).
   `TopCat.toSSetPiEquivHomotopyGroup_map` its naturality.
 * `TopCat.toSSetPiEquivHomotopyGroup_mul_reverse`, `TopCat.toSSetPiEquivHomotopyGroup_inv`: the
   bijection reverses products and preserves inverses.
+* `TopCat.toSSetPiMulEquivHomotopyGroupMulOpposite`: the group isomorphism onto the opposite of
+  Mathlib's homotopy group, in every positive degree.
 * `TopCat.toSSetPiMulEquivHomotopyGroup`: the group isomorphism in degrees at least two.
 
 ## References
@@ -255,14 +259,30 @@ lemma toSSetPiEquivHomotopyGroup_inv
   exact eq_inv_of_mul_eq_one_left (by rw [← toSSetPiEquivHomotopyGroup_mul_reverse, he])
 
 variable (X x n) in
+/-- In every positive degree, the comparison of the homotopy groups of the singular simplicial set
+of `X` with those of `X` is a group isomorphism onto the opposite of Mathlib's homotopy group,
+since it reverses products (`TopCat.toSSetPiEquivHomotopyGroup_mul_reverse`). -/
+def toSSetPiMulEquivHomotopyGroupMulOpposite :
+    KanComplex.π (n + 1) (toSSet.obj X) (toSSetObj₀Equiv.symm x) ≃*
+      (HomotopyGroup (Fin (n + 1)) X x)ᵐᵒᵖ where
+  toEquiv := (toSSetPiEquivHomotopyGroup X x n).trans MulOpposite.opEquiv
+  map_mul' a b := congrArg MulOpposite.op (toSSetPiEquivHomotopyGroup_mul_reverse a b)
+
+@[simp]
+lemma toSSetPiMulEquivHomotopyGroupMulOpposite_apply
+    (a : KanComplex.π (n + 1) (toSSet.obj X) (toSSetObj₀Equiv.symm x)) :
+    toSSetPiMulEquivHomotopyGroupMulOpposite X x n a =
+      MulOpposite.op (toSSetPiEquivHomotopyGroup X x n a) :=
+  (rfl)
+
+variable (X x n) in
 /-- In degrees at least two, where Mathlib's homotopy groups are commutative, the comparison of the
 homotopy groups of the singular simplicial set of `X` with those of `X` is a group
 isomorphism. -/
 def toSSetPiMulEquivHomotopyGroup :
     KanComplex.π (n + 2) (toSSet.obj X) (toSSetObj₀Equiv.symm x) ≃*
-      HomotopyGroup (Fin (n + 2)) X x where
-  toEquiv := toSSetPiEquivHomotopyGroup X x (n + 1)
-  map_mul' a b := (toSSetPiEquivHomotopyGroup_mul_reverse a b).trans (mul_comm _ _)
+      HomotopyGroup (Fin (n + 2)) X x :=
+  (toSSetPiMulEquivHomotopyGroupMulOpposite X x (n + 1)).trans MulOpposite.opMulEquiv.symm
 
 @[simp]
 lemma coe_toSSetPiMulEquivHomotopyGroup :
