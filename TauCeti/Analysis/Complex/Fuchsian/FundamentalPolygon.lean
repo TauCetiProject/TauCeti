@@ -59,12 +59,12 @@ namespace TauCeti.UpperHalfPlane.ConvexPolygon.SidePairing
 
 variable {n : ℕ} [NeZero n] {P : ConvexPolygon n} (σ : P.SidePairing) {Γ : Subgroup PSL(2, ℝ)}
 
-/-- For a side-paired convex polygon whose cycle transformations lie in `Γ` and whose translated
-interiors are disjoint, the translates are locally finite exactly when every ideal vertex cycle
-transformation is parabolic. No local finiteness, discreteness, or coverage assumption is needed
-for the reverse implication. -/
+/-- For a side-paired convex polygon whose ideal vertex cycle transformations lie in `Γ` and whose
+translated interiors are disjoint, the translates are locally finite exactly when every ideal vertex
+cycle transformation is parabolic. No local finiteness, discreteness, or coverage assumption is
+needed for the reverse implication. -/
 theorem locallyFinite_smul_carrier_iff_isParabolic_cycleMap
-    (hcycle : ∀ i, σ.cycleMap i ∈ Γ)
+    (hcycle : ∀ i, (P.vertex i).isRight → σ.cycleMap i ∈ Γ)
     (hdisj : ∀ γ : Γ, γ ≠ 1 →
       Disjoint ((γ : PSL(2, ℝ)) • interior P.carrier) (interior P.carrier)) :
     LocallyFinite (fun γ : Γ ↦ (γ : PSL(2, ℝ)) • P.carrier) ↔
@@ -73,14 +73,14 @@ theorem locallyFinite_smul_carrier_iff_isParabolic_cycleMap
   constructor
   · intro hlf i hi
     obtain ⟨c, hc⟩ := Sum.isRight_iff.mp hi
-    exact σ.isParabolic_cycleMap_of_locallyFinite hc (hcycle i) hlf
+    exact σ.isParabolic_cycleMap_of_locallyFinite hc (hcycle i hi) hlf
   · intro hpar
     have : DiscreteTopology Γ := TauCeti.discreteTopology_of_disjoint_smul
       (fun _ ↦ by fun_prop) isOpen_interior P.nonempty_interior_carrier hdisj
     apply P.locallyFinite_smul_carrier_of_isCuspPoint
     intro i c hi
     refine Subgroup.isCuspPoint_iff_exists_mem_stabilizer_isParabolic.mpr
-      ⟨⟨σ.cycleMap i, hcycle i⟩, ?_, hpar i (by simp [hi])⟩
+      ⟨⟨σ.cycleMap i, hcycle i (by simp [hi])⟩, ?_, hpar i (by simp [hi])⟩
     exact MulAction.mem_stabilizer_iff.mpr
       (σ.cycleMap_smul_eq_self_of_vertex_eq_inr hi)
 
