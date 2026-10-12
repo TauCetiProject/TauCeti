@@ -13,7 +13,7 @@ import Mathlib.Tactic.Module
 /-!
 # The mean of a finite family of vectors
 
-The mean `z̄ = (card ι)⁻¹ • ∑ i, z i` of a finite family `z : ι → E` in a vector space over a field
+The mean `m = (card ι)⁻¹ • ∑ i, z i` of a finite family `z : ι → E` in a vector space over a field
 `R` is its center of mass with equal weights, `Finset.univ.centerMass (fun _ ↦ 1) z`. Through total
 inversion, the mean of the empty family is `0`. For a nonempty family this is the affine
 `Finset.centroid`, which has no canonical value on the empty family. Mathlib's average
@@ -22,14 +22,14 @@ as an inner product space over `ℝ` or `ℂ`, does not carry as an instance.
 
 Over a field of characteristic zero, this file records the identities of descriptive statistics
 used for sample means and scatter operators: the sum of a family is its size times its mean, the
-deviations `zᵢ - z̄` sum to zero, and appending a point `y` to a family of `n` points moves the
-mean by `(n + 1)⁻¹ (y - z̄)`, including for `n = 0`.
+deviations `zᵢ - m` sum to zero, and appending a point `y` to a family of `n` points moves the
+mean by `(n + 1)⁻¹ (y - m)`, including for `n = 0`.
 
 ## Main declarations
 
 * `TauCeti.finiteMean`: the mean of a finite family.
-* `TauCeti.sum_eq_card_smul_finiteMean`: `∑ i, z i = card ι • z̄`.
-* `TauCeti.sum_sub_finiteMean`: `∑ i, (z i - z̄) = 0`.
+* `TauCeti.sum_eq_card_smul_finiteMean`: `∑ i, z i = card ι • m`.
+* `TauCeti.sum_sub_finiteMean`: `∑ i, (z i - m) = 0`.
 * `TauCeti.finiteMean_snoc`: the mean after appending a point.
 -/
 
@@ -69,8 +69,9 @@ theorem sum_sub_finiteMean (z : ι → E) : ∑ i, (z i - finiteMean R z) = 0 :=
   rw [sum_sub_distrib, sum_const, card_univ, ← Nat.cast_smul_eq_nsmul R,
     ← sum_eq_card_smul_finiteMean, sub_self]
 
-/-- **Appending a point.** Appending `y` to a family `z` of `n` points moves its mean by
-`(n + 1)⁻¹ • (y - z̄)`. For `n = 0` this says that the mean of the single point `y` is `y`. -/
+/-- **Appending a point.** Appending `y` to a family `z` of `n` points with mean `m` moves the
+mean by `(n + 1)⁻¹ • (y - m)`. For `n = 0` this says that the mean of the single point `y` is
+`y`. -/
 theorem finiteMean_snoc {n : ℕ} (z : Fin n → E) (y : E) :
     finiteMean R (Fin.snoc z y : Fin (n + 1) → E) =
       finiteMean R z + ((n : R) + 1)⁻¹ • (y - finiteMean R z) := by

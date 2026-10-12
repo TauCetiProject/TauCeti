@@ -12,23 +12,23 @@ public import TauCeti.Analysis.InnerProductSpace.Frame
 # The centered scatter operator of a finite family
 
 Let `z : ι → E` be a finite family of points in an inner product space over `ℝ` or `ℂ`, with
-mean `z̄ = TauCeti.finiteMean 𝕜 z`. Its (unnormalized) *centered scatter operator* is
+mean `m = TauCeti.finiteMean 𝕜 z`. Its (unnormalized) *centered scatter operator* is
 
-`S(z) = ∑ᵢ (zᵢ - z̄) ⊗ (zᵢ - z̄)`, that is `S(z) x = ∑ᵢ ⟪zᵢ - z̄, x⟫ (zᵢ - z̄)`.
+`S(z) = ∑ᵢ (zᵢ - m) ⊗ (zᵢ - m)`, that is `S(z) x = ∑ᵢ ⟪zᵢ - m, x⟫ (zᵢ - m)`.
 
 Divided by the number of points it is the empirical covariance operator of the sample `z`. It is
-the frame operator of the centered family `zᵢ - z̄`, so it is positive with quadratic form
-`Re ⟪S(z) x, x⟫ = ∑ᵢ ‖⟪zᵢ - z̄, x⟫‖²`.
+the frame operator of the centered family `zᵢ - m`, so it is positive with quadratic form
+`Re ⟪S(z) x, x⟫ = ∑ᵢ ‖⟪zᵢ - m, x⟫‖²`.
 
 The main identity is the exact rank-one update when a point `y` is appended to a family `z` of
 `n` points: writing `(z, y)` for the extended family `Fin.snoc z y`,
 
-`S(z, y) = S(z) + n / (n + 1) · (y - z̄) ⊗ (y - z̄)`,
+`S(z, y) = S(z) + n / (n + 1) · (y - m) ⊗ (y - m)`,
 
 so the scatter operator only grows, in the Loewner order, as points are added. It comes from the
 decomposition of the scatter about an arbitrary centre `p`,
-`∑ᵢ (zᵢ - p) ⊗ (zᵢ - p) = S(z) + card ι · (z̄ - p) ⊗ (z̄ - p)` (the König–Huygens identity),
-together with the update `z̄ + (n + 1)⁻¹ (y - z̄)` of the mean (`TauCeti.finiteMean_snoc`).
+`∑ᵢ (zᵢ - p) ⊗ (zᵢ - p) = S(z) + card ι · (m - p) ⊗ (m - p)` (the König–Huygens identity),
+together with the update `m + (n + 1)⁻¹ (y - m)` of the mean (`TauCeti.finiteMean_snoc`).
 
 ## Main declarations
 
@@ -59,8 +59,8 @@ namespace TauCeti
 variable {𝕜 E ι : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [Fintype ι]
 
 variable (𝕜) in
-/-- The centered scatter operator `∑ᵢ (zᵢ - z̄) ⊗ (zᵢ - z̄)` of a finite family `z`, where
-`z̄ = finiteMean 𝕜 z` is its mean: it sends `x` to `∑ᵢ ⟪zᵢ - z̄, x⟫ (zᵢ - z̄)`. -/
+/-- The centered scatter operator `∑ᵢ (zᵢ - m) ⊗ (zᵢ - m)` of a finite family `z`, where
+`m = finiteMean 𝕜 z` is its mean: it sends `x` to `∑ᵢ ⟪zᵢ - m, x⟫ (zᵢ - m)`. -/
 noncomputable def centeredScatter (z : ι → E) : E →L[𝕜] E :=
   ∑ i, rankOne 𝕜 (z i - finiteMean 𝕜 z) (z i - finiteMean 𝕜 z)
 
@@ -73,7 +73,8 @@ theorem centeredScatter_apply (z : ι → E) (x : E) :
     centeredScatter 𝕜 z x = ∑ i, ⟪z i - finiteMean 𝕜 z, x⟫_𝕜 • (z i - finiteMean 𝕜 z) := by
   simp only [centeredScatter_def, _root_.sum_apply, rankOne_apply]
 
-/-- The centered scatter operator is the frame operator of the centered family `zᵢ - z̄`. -/
+/-- The centered scatter operator is the frame operator of the centered family `zᵢ - m`,
+where `m` is the mean of `z`. -/
 theorem toLinearMap_centeredScatter (z : ι → E) :
     (centeredScatter 𝕜 z : E →ₗ[𝕜] E) = frameOperator 𝕜 fun i ↦ z i - finiteMean 𝕜 z := by
   ext x
@@ -81,7 +82,7 @@ theorem toLinearMap_centeredScatter (z : ι → E) :
 
 /-- **The scatter about an arbitrary centre** (König–Huygens). Measured from a point `p`, the
 scatter of a finite family exceeds the centered scatter by `card ι` times the rank-one operator
-of the displacement `z̄ - p` of the mean. -/
+of the displacement `m - p` of the mean. -/
 theorem sum_rankOne_sub_eq_centeredScatter_add (z : ι → E) (p : E) :
     ∑ i, rankOne 𝕜 (z i - p) (z i - p) =
       centeredScatter 𝕜 z +
@@ -95,7 +96,7 @@ theorem sum_rankOne_sub_eq_centeredScatter_add (z : ι → E) (p : E) :
   abel
 
 /-- **The quadratic form of the centered scatter operator.**
-`Re ⟪S(z) x, x⟫ = ∑ᵢ ‖⟪zᵢ - z̄, x⟫‖²`. -/
+`Re ⟪S(z) x, x⟫ = ∑ᵢ ‖⟪zᵢ - m, x⟫‖²`, where `m` is the mean of `z`. -/
 theorem re_inner_centeredScatter_apply_self (z : ι → E) (x : E) :
     RCLike.re ⟪centeredScatter 𝕜 z x, x⟫_𝕜 = ∑ i, ‖⟪z i - finiteMean 𝕜 z, x⟫_𝕜‖ ^ 2 := by
   rw [← ContinuousLinearMap.coe_coe, toLinearMap_centeredScatter,
@@ -111,8 +112,9 @@ private theorem natCast_div_natCast_add_one_eq_ofReal (n : ℕ) :
     (n : 𝕜) / ((n : 𝕜) + 1) = ((n / (n + 1) : ℝ) : 𝕜) := by
   push_cast; rfl
 
-/-- **Appending a point to a family.** If `y` is appended to a family `z` of `n` points, the
-centered scatter operator grows by the rank-one operator `n / (n + 1) · (y - z̄) ⊗ (y - z̄)`. -/
+/-- **Appending a point to a family.** If `y` is appended to a family `z` of `n` points with
+mean `m`, the centered scatter operator grows by the rank-one operator
+`n / (n + 1) · (y - m) ⊗ (y - m)`. -/
 theorem centeredScatter_snoc {n : ℕ} (z : Fin n → E) (y : E) :
     centeredScatter 𝕜 (Fin.snoc z y : Fin (n + 1) → E) =
       centeredScatter 𝕜 z +
@@ -138,7 +140,8 @@ theorem centeredScatter_snoc {n : ℕ} (z : Fin n → E) (y : E) :
   ring
 
 /-- **The quadratic form after appending a point.** Appending `y` to a family `z` of `n` points
-adds `n / (n + 1) · ‖⟪y - z̄, x⟫‖²` to the quadratic form of the centered scatter operator. -/
+with mean `m` adds `n / (n + 1) · ‖⟪y - m, x⟫‖²` to the quadratic form of the centered scatter
+operator. -/
 theorem re_inner_centeredScatter_snoc_apply_self {n : ℕ} (z : Fin n → E) (y x : E) :
     RCLike.re ⟪centeredScatter 𝕜 (Fin.snoc z y : Fin (n + 1) → E) x, x⟫_𝕜 =
       RCLike.re ⟪centeredScatter 𝕜 z x, x⟫_𝕜 +
