@@ -43,6 +43,13 @@ open _root_.Quiver PathAlgebra
 
 universe u v w
 
+/-- Arrow sets are finite because they inject into their source vertex stars. -/
+noncomputable local instance {R : Type u} [Quiver.{v} R]
+    [∀ x : R, Fintype (Quiver.Star x)] (i j : R) : Fintype (i ⟶ j) := by
+  letI : Finite (i ⟶ j) :=
+    Finite.of_injective (fun e : i ⟶ j => (Quiver.Star.mk e : Quiver.Star i)) sigma_mk_injective
+  exact Fintype.ofFinite _
+
 section VertexAugmentation
 
 variable (k : Type w) [CommRing k] {R : Type u} [Quiver.{v} R] [HasReverse R]
@@ -115,7 +122,7 @@ theorem signlessPreprojectiveAugmentation_eq_single [DecidableEq R] (v : R) {x :
 `x ∈ e_v Π` has vertex coefficient zero exactly when `x = ∑ b z_b` with `z_b ∈ e_i Π`.
 This holds without a non-backtracking choice or a bipartiteness hypothesis. -/
 theorem signlessPreprojectiveAugmentation_apply_eq_zero_iff_exists_eq_sum
-    [Fintype R] (v : R) [∀ i : R, Fintype (i ⟶ v)] {x : Π}
+    [Fintype R] (v : R) {x : Π}
     (hx : π (vertexIdempotent k v) * x = x) :
     signlessPreprojectiveAugmentation k x v = 0 ↔
       ∃ z : (i : R) → (i ⟶ v) → Π,
@@ -145,7 +152,6 @@ variable (k : Type w) (R : Type u) [CommRing k] [Quiver.{v} R] [HasReverse R]
 incoming arrows times elements of their source corners. This is exactness at the augmentation
 endpoint of the signless Koszul complex. -/
 theorem mem_iSup_signlessPreprojectiveGrade_add_one_iff_exists_eq_sum (v : R)
-    [∀ i : R, Fintype (i ⟶ v)]
     {x : signlessPreprojectiveAlgebra k R}
     (hx : signlessPreprojectiveMk k R (vertexIdempotent k v) * x = x) :
     x ∈ ⨆ n, signlessPreprojectiveGrade k R (n + 1) ↔
