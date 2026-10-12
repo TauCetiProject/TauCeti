@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.PDE.FundamentalSolution.Euclidean.Basic
 public import TauCeti.Analysis.InnerProductSpace.Harmonic.Dilation
 public import Mathlib.MeasureTheory.Constructions.HaarToSphere
+import TauCeti.Analysis.InnerProductSpace.CompleteSquare
 
 /-!
 # The Green kernel and the Poisson kernel of the Euclidean unit ball
@@ -27,8 +28,8 @@ is harmonic in `y` away from the pole and vanishes for `‖y‖ = 1`.  The corre
 through the identity `‖‖x‖ y - x / ‖x‖‖² = ‖x‖² ‖y‖² - 2 ⟪x, y⟫ + 1`, whose right-hand side is
 defined at `x = 0` as well, where the corrector is the constant value of `Φ` on the unit sphere.
 
-The outward normal derivative of `G(x, ·)` on the unit sphere is the negative of the **Poisson
-kernel** of the ball,
+Outside dimension two, the outward normal derivative of `G(x, ·)` on the unit sphere is the
+negative of the **Poisson kernel** of the ball,
 
 `K(x, y) = (1 - ‖x‖²) / (n ωₙ ‖x - y‖ⁿ)`,
 
@@ -59,7 +60,7 @@ dimension two that kernel vanishes identically, so the planar case is instead
 * `TauCeti.harmonicAt_ballPoissonKernel_left`, `TauCeti.harmonicOnNhd_ballPoissonKernel_left`:
   for a boundary point `y`, the Poisson kernel is harmonic in its pole away from `y`.
 * `TauCeti.fderiv_ballGreenKernel_normal`: the outward normal derivative of the Green kernel on
-  the unit sphere is the negative Poisson kernel.
+  the unit sphere is the negative Poisson kernel outside dimension two.
 
 ## References
 
@@ -83,15 +84,6 @@ open scoped RealInnerProductSpace
 section Reflection
 
 variable {F : Type*} [SeminormedAddCommGroup F] [InnerProductSpace ℝ F]
-
-/-- The squared length of `‖x‖ • y - x / ‖x‖`, which is `‖x‖ ‖y - x*‖` for the reflection
-`x* = x / ‖x‖²` of `x` through the unit sphere.  The right-hand side is a polynomial in `x` and
-`y`, defined at `x = 0` as well. -/
-theorem norm_sq_norm_smul_sub_inv_norm_smul {x : F} (hx : ‖x‖ ≠ 0) (y : F) :
-    ‖‖x‖ • y - ‖x‖⁻¹ • x‖ ^ 2 = ‖x‖ ^ 2 * ‖y‖ ^ 2 - 2 * ⟪x, y⟫_ℝ + 1 := by
-  rw [norm_sub_sq_real, real_inner_smul_left, real_inner_smul_right, real_inner_comm x y]
-  simp only [norm_smul, Real.norm_eq_abs, abs_norm, abs_inv, mul_pow, inv_pow]
-  field_simp
 
 /-- The reflection polynomial `‖x‖² ‖y‖² - 2 ⟪x, y⟫ + 1` is at least `(1 - ‖x‖ ‖y‖)²`. -/
 theorem one_sub_norm_mul_norm_sq_le (x y : F) :
@@ -484,9 +476,9 @@ theorem harmonicOnNhd_ballPoissonKernel_left {y : EuclideanSpace ℝ (Fin n)} (h
     HarmonicOnNhd (fun z ↦ ballPoissonKernel n z y) {y}ᶜ :=
   fun _ hx ↦ harmonicAt_ballPoissonKernel_left hy hx
 
-/-- **The Poisson kernel is the normal derivative of the Green kernel.**  On the unit sphere, the
-derivative of the Green kernel with pole `x` off the sphere, taken in the direction of the outward
-unit normal `y`, is the negative of the Poisson kernel. -/
+/-- **Outside dimension two, the Poisson kernel is the negative normal derivative of the Green
+kernel.** On the unit sphere, the derivative of the Green kernel with pole `x` off the sphere,
+taken in the direction of the outward unit normal `y`, is the negative of the Poisson kernel. -/
 theorem fderiv_ballGreenKernel_normal (hn : n ≠ 2) {x y : EuclideanSpace ℝ (Fin n)}
     (hx : ‖x‖ ≠ 1) (hy : ‖y‖ = 1) :
     fderiv ℝ (ballGreenKernel n x) y y = -ballPoissonKernel n x y := by
@@ -507,8 +499,9 @@ theorem fderiv_ballGreenKernel_normal (hn : n ≠ 2) {x y : EuclideanSpace ℝ (
   rw [div_eq_mul_inv, mul_inv]
   ring
 
-/-- The radial derivative of the Green kernel of the unit ball at a boundary point `y`, along the
-ray from the center through `y`, is the negative of the Poisson kernel. -/
+/-- Outside dimension two, the radial derivative of the Green kernel of the unit ball at a
+boundary point `y`, along the ray from the center through `y`, is the negative of the Poisson
+kernel. -/
 theorem hasDerivAt_ballGreenKernel_radial (hn : n ≠ 2) {x y : EuclideanSpace ℝ (Fin n)}
     (hx : ‖x‖ ≠ 1) (hy : ‖y‖ = 1) :
     HasDerivAt (fun t : ℝ => ballGreenKernel n x (t • y)) (-ballPoissonKernel n x y) 1 := by
