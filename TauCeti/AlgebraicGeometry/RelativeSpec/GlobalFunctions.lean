@@ -52,48 +52,36 @@ private theorem relativeSpecGlobalSectionsRingEquiv_apply
   simp only [relativeSpecGlobalSectionsRingEquiv]
   rfl
 
+-- Normalize the structure morphism on global sections once, including the
+-- section-presheaf object wrapper, so ΓSpec naturality applies to the algebra map.
+private theorem relativeSpecGlobalSections_baseMap :
+    A.relativeSpecToBase.appTop ≫ A.relativeSpecIsoSpec.inv.appTop =
+      X.isoSpec.inv.appTop ≫
+        (Spec.map (CommRingCat.ofHom (algebraMap Γ(X, ⊤) Γ(A.X, ⊤)))).appTop := by
+  have h := congrArg Scheme.Hom.appTop A.relativeSpecIsoSpec_inv_relativeSpecToBase
+  rw [Scheme.Hom.comp_appTop, Scheme.Hom.comp_appTop] at h
+  -- The two presentations carry definitionally equal section-ring instances;
+  -- record that identification here rather than repeating it in the main proof.
+  convert h using 1
+  all_goals simp only [CommMon.toSectionsPresheaf_app]
+  all_goals rfl
+
 /-- The affine global-function comparison respects the algebra structures over the
 global functions on the base. -/
 def relativeSpecGlobalSectionsAlgEquiv :
     Γ(A.relativeSpecToBase.pushforwardStructureAlgebra.X, ⊤) ≃ₐ[Γ(X, ⊤)] Γ(A.X, ⊤) :=
   AlgEquiv.ofRingEquiv (f := A.relativeSpecGlobalSectionsRingEquiv) (by
     intro r
-    have h := congrArg Scheme.Hom.appTop
-      (A.relativeSpecIsoSpec_inv_relativeSpecToBase)
-    rw [Scheme.Hom.comp_appTop, Scheme.Hom.comp_appTop] at h
     have hx : X.isoSpec.inv.appTop ≫ (Scheme.ΓSpecIso Γ(X, ⊤)).hom = 𝟙 _ := by
       have hx' := congrArg Scheme.Hom.appTop X.isoSpec.hom_inv_id
       rw [Scheme.Hom.comp_appTop] at hx'
       simpa only [Scheme.isoSpec, asIso_hom, Scheme.toSpecΓ_appTop,
         Scheme.Hom.id_appTop] using hx'
-    have h' := congrArg (· ≫
-      (Scheme.ΓSpecIso (CommRingCat.of Γ(A.X, ⊤))).hom) h
-    have hn := Scheme.ΓSpecIso_naturality (A.toSectionsPresheaf.app (op ⊤))
-    have hn' : (Spec.map (A.toSectionsPresheaf.app (op ⊤))).appTop ≫
-        (Scheme.ΓSpecIso (CommRingCat.of Γ(A.X, ⊤))).hom =
-      (Scheme.ΓSpecIso Γ(X, ⊤)).hom ≫
-        CommRingCat.ofHom (algebraMap Γ(X, ⊤) Γ(A.X, ⊤)) := by
-      convert hn using 1
-      all_goals simp only [CommMon.sectionsPresheaf_obj, CommMon.toSectionsPresheaf_app]
-      all_goals rfl
-    have hn'' :
-        (Spec.map (CommRingCat.ofHom (algebraMap Γ(X, ⊤) Γ(A.X, ⊤)))).appTop ≫
-          (Scheme.ΓSpecIso (CommRingCat.of Γ(A.X, ⊤))).hom =
-        (Scheme.ΓSpecIso Γ(X, ⊤)).hom ≫
-          CommRingCat.ofHom (algebraMap Γ(X, ⊤) Γ(A.X, ⊤)) := by
-      convert hn' using 1
-      all_goals simp only [CommMon.toSectionsPresheaf_app]
-      all_goals rfl
-    have h'' : (A.relativeSpecToBase.appTop ≫ A.relativeSpecIsoSpec.inv.appTop) ≫
-        (Scheme.ΓSpecIso (CommRingCat.of Γ(A.X, ⊤))).hom =
-      (X.isoSpec.inv.appTop ≫
-          (Spec.map (CommRingCat.ofHom (algebraMap Γ(X, ⊤) Γ(A.X, ⊤)))).appTop) ≫
-        (Scheme.ΓSpecIso (CommRingCat.of Γ(A.X, ⊤))).hom := by
-      convert h' using 1
-      all_goals simp only [CommMon.toSectionsPresheaf_app]
-      all_goals rfl
+    have h'' := congrArg (· ≫
+      (Scheme.ΓSpecIso (CommRingCat.of Γ(A.X, ⊤))).hom) A.relativeSpecGlobalSections_baseMap
     simp only [Category.assoc] at h''
-    rw [hn''] at h''
+    rw [Scheme.ΓSpecIso_naturality (R := Γ(X, ⊤))
+      (CommRingCat.ofHom (algebraMap Γ(X, ⊤) Γ(A.X, ⊤)))] at h''
     simp only [← Category.assoc] at h''
     rw [hx, Category.id_comp] at h''
     rw [relativeSpecGlobalSectionsRingEquiv_apply,
