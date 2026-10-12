@@ -12,13 +12,12 @@ public import TauCeti.GroupTheory.QuotientGroup.Map
 # Generating tuples in quotients by open normal subgroups
 
 A tuple in a group generates a quotient when its image generates that quotient. For a group
-with separately continuous multiplication, the set of tuples generating the quotient by an
-open normal subgroup is closed, and generation descends along quotient maps.
+with separately continuous multiplication, the set of tuples indexed by a finite type that
+generate the quotient by an open normal subgroup is closed. Generation descends along quotient
+maps for arbitrary index types.
 
 For compact groups these quotients are finite. These facts let compactness produce a tuple
 that works in every finite quotient when each quotient has a generating tuple of that length.
-In particular, they apply to absolute Galois groups, with tuple length specialized to the
-arithmetic bound `[K : ℚ_[p]] + 2` for finite extensions of `ℚ_[p]`.
 -/
 
 public section
