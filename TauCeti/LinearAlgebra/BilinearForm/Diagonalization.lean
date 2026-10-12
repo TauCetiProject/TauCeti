@@ -8,7 +8,7 @@ module
 public import Mathlib.LinearAlgebra.BilinearForm.IsometryEquiv
 public import Mathlib.LinearAlgebra.Matrix.BilinearForm
 public import TauCeti.LinearAlgebra.BilinearForm.SymplecticBasis
-public import TauCeti.LinearAlgebra.BilinearForm.Ideals
+import TauCeti.LinearAlgebra.BilinearForm.Ideals
 public import Mathlib.LinearAlgebra.QuadraticForm.IsometryEquiv
 public import TauCeti.LinearAlgebra.QuadraticForm.Diagonal.Basic
 import Mathlib.LinearAlgebra.Basis.SMul

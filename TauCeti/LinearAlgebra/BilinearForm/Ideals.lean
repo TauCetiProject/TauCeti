@@ -8,7 +8,7 @@ module
 public import TauCeti.LinearAlgebra.BilinearForm.Basic
 public import Mathlib.Algebra.Module.Submodule.Bilinear
 public import Mathlib.LinearAlgebra.BilinearForm.TensorProduct
-public import Mathlib.LinearAlgebra.BilinearForm.Hom
+import Mathlib.LinearAlgebra.BilinearForm.Hom
 public import Mathlib.RingTheory.Ideal.Operations
 import Mathlib.Tactic.Ring
 
