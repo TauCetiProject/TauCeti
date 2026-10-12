@@ -176,12 +176,26 @@ noncomputable def unfoldPeriodic (h : Homotopy f g) :
   hom i j := if j + 1 = i then h.hom (i : ZMod n) (j : ZMod n) else 0
   zero i j hij := ite_eq_right hij
   comm i := by
-    rw [dNext_eq _ (show (ComplexShape.up ℤ).Rel i (i + 1) by simp),
-      prevD_eq _ (show (ComplexShape.up ℤ).Rel (i - 1) i by simp)]
+    have hi_next : (ComplexShape.up ℤ).Rel i (i + 1) := by simp
+    have hi_prev : (ComplexShape.up ℤ).Rel (i - 1) i := by simp
     have hn : (ComplexShape.up (ZMod n)).Rel (i : ZMod n) ((i + 1 : ℤ) : ZMod n) := by simp
     have hp : (ComplexShape.up (ZMod n)).Rel ((i - 1 : ℤ) : ZMod n) (i : ZMod n) := by simp
-    simpa [TauCeti.PeriodicComplex.unfoldFunctor, CochainComplex.of.d,
-      dNext_eq _ hn, prevD_eq _ hp] using h.comm (i : ZMod n)
+    have d_consecutive (j k : ℤ) (hjk : j + 1 = k) :
+        ((TauCeti.PeriodicComplex.unfoldFunctor C n).obj L).d j k =
+          L.d (j : ZMod n) (k : ZMod n) := by
+      subst k
+      exact TauCeti.PeriodicComplex.unfoldFunctor_obj_d C n L j
+    have hom_next : (if i + 1 = i + 1 then
+        h.hom ((i + 1 : ℤ) : ZMod n) (i : ZMod n) else 0) =
+        h.hom ((i + 1 : ℤ) : ZMod n) (i : ZMod n) := ite_eq_left rfl
+    have hom_prev : (if (i - 1) + 1 = i then
+        h.hom (i : ZMod n) ((i - 1 : ℤ) : ZMod n) else 0) =
+        h.hom (i : ZMod n) ((i - 1 : ℤ) : ZMod n) := ite_eq_left (Int.sub_add_cancel i 1)
+    rw [dNext_eq _ hi_next, prevD_eq _ hi_prev, hom_next, hom_prev]
+    simp only [TauCeti.PeriodicComplex.unfoldFunctor_map_f,
+      TauCeti.PeriodicComplex.unfoldFunctor_obj_d,
+      d_consecutive (i - 1) i (Int.sub_add_cancel i 1)]
+    simpa only [dNext_eq _ hn, prevD_eq _ hp] using h.comm (i : ZMod n)
 
 /-- The consecutive component of an unfolded homotopy is the original cyclic component. -/
 @[simp]
