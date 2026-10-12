@@ -31,8 +31,7 @@ are made after extension to an algebraic closure, where the torus is split.
 * J. S. Milne, *Algebraic Groups* (2017), Corollary 12.41 and §21.a.
 * T. A. Springer, *Linear Algebraic Groups*, Chapter 8.
 
-This completes the torus worked example requested in Layers 4 and 6 of the ReductiveGroups
-roadmap. It uses geometric unipotence, rather than complete reducibility, so it is valid in every
+The proof uses geometric unipotence, rather than complete reducibility, so it is valid in every
 characteristic.
 -/
 
