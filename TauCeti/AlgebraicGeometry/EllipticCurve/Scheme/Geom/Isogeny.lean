@@ -207,7 +207,9 @@ theorem IsIsogeny.kernel_eq_ofKernel :
 theorem IsIsogeny.finrank_kernel (s : S) :
     (IsIsogeny.kernel f).structureMap.finrank s = degree f s := by
   rw [degree_apply, ← one_left]
-  exact GroupScheme.finrank_kernel_hom f.hom s
+  exact (congrArg (fun X : Over S ↦ X.hom.finrank s)
+    (FiniteFlatCommGroupScheme.ofKernel_toOver f.hom)).trans
+      (GroupScheme.finrank_kernel_hom f.hom s)
 
 /-- An isogeny has degree `n` exactly when its kernel has constant rank `n`. -/
 theorem isogenyOfDegree_iff_forall_finrank_kernel {n : ℕ} :
@@ -259,9 +261,15 @@ points. -/
 theorem IsogenyOfDegree.pow_eq_one {n : ℕ} (hf : IsogenyOfDegree f n) {Z : Over S}
     (x : Z ⟶ Over.mk E.structureMap) (hx : x ≫ f.hom.hom.hom = 1) : x ^ n = 1 := by
   have := hf.isIsogeny
+  -- transport Deligne's theorem from `IsIsogeny.kernel f` to `Limits.kernel f.hom` along
+  -- `grpMk_ofKernel`
+  have key : ∀ K : Grp (Over S), Grp.mk (IsIsogeny.kernel f).toOver = K →
+      ∀ y : Z ⟶ K.X, y ^ n = 1 := by
+    rintro _ rfl y
+    exact (IsIsogeny.kernel f).pow_eq_one_of_finrank
+      (fun s ↦ (IsIsogeny.finrank_kernel f s).trans (hf.degree_eq s)) y
   have hy : GroupScheme.kernelLift (f := f.hom) x hx ^ n = 1 :=
-    (IsIsogeny.kernel f).pow_eq_one_of_finrank
-      (fun s ↦ (IsIsogeny.finrank_kernel f s).trans (hf.degree_eq s)) _
+    key _ (FiniteFlatCommGroupScheme.grpMk_ofKernel f.hom) _
   calc x ^ n = (GroupScheme.kernelLift (f := f.hom) x hx ≫ (Limits.kernel.ι f.hom).hom.hom) ^ n :=
         congrArg (· ^ n) (GroupScheme.kernelLift_ι (f := f.hom) x hx).symm
     _ = (GroupScheme.kernelLift (f := f.hom) x hx ^ n) ≫ (Limits.kernel.ι f.hom).hom.hom :=

@@ -167,7 +167,6 @@ variable {S : Scheme.{u}} {G H : Grp (Over S)} (f : G ⟶ H) [IsCommMonObj G.X]
 /-- **The kernel of a finite locally free homomorphism of group schemes** out of a commutative group
 scheme, as a finite locally free commutative group scheme over the base. Its group object is the
 categorical kernel `Limits.kernel f` (`grpMk_ofKernel`). -/
-@[expose]
 noncomputable def ofKernel : FiniteFlatCommGroupScheme S where
   carrier := (kernel f).X.left
   structureMap := (kernel f).X.hom
@@ -181,8 +180,8 @@ noncomputable def ofKernel : FiniteFlatCommGroupScheme S where
 theorem ofKernel_carrier : (ofKernel f).carrier = (kernel f).X.left :=
   (rfl)
 
-/-- The structure morphism of `ofKernel f` is that of the categorical kernel of `f`. -/
-theorem ofKernel_structureMap : (ofKernel f).structureMap = (kernel f).X.hom :=
+/-- The scheme over `S` underlying `ofKernel f` is that of the categorical kernel of `f`. -/
+theorem ofKernel_toOver : (ofKernel f).toOver = (kernel f).X :=
   (rfl)
 
 /-- The group object underlying `ofKernel f` is the categorical kernel of `f` in `Grp (Over S)`. -/
