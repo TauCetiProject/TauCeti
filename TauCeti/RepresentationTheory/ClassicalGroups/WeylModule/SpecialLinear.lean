@@ -38,6 +38,9 @@ rewrite, that invariance is stated outright as `TauCeti.rationalWeylSLFDRep_shif
 Over `ℂ`, these restrictions are irreducible exactly when the shape has at most `n` rows.
 In particular every rational Weyl module restricts irreducibly. Exhaustion and distinctness
 of the irreducible rational representations of `SL n ℂ` are separate classification statements.
+The irreducibility and simplicity statements here concern the complex Weyl modules used in that
+classification. The underlying restriction theorem `Representation.IsIrreducible.comp_toGL`
+is available over any algebraically closed field.
 
 ## Main definitions
 
