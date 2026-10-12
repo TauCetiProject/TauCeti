@@ -568,10 +568,7 @@ jobs:
       - name: No-set_option guard (TauCeti/ and TauCeti.lean use no set_option)
         if: ${{ env.INFRA != '1' }}
         run: |
-          if grep -rIn '^set_option ' pr/TauCeti/ pr/TauCeti.lean; then
-            echo "::error::TauCeti/ may not use set_option (it can weaken maxHeartbeats, linters, maxRecDepth, ...); remove it"
-            exit 1
-          fi
+          python3 gate/scripts/check_source_options.py pr/TauCeti/ pr/TauCeti.lean
 
       # The trusted checker requires each source-only PR that declares a new temporary Mathlib shim
       # to record a concrete expiry target in TauCeti's AI-owned registry. Keeping the registry under
