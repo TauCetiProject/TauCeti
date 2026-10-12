@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicGeometry.Morphisms.FlatRank
-public import TauCeti.AlgebraicGeometry.GroupScheme.CentralIsogeny.BaseChange
 public import TauCeti.AlgebraicGeometry.GroupScheme.FiniteFlat
+public import TauCeti.AlgebraicGeometry.GroupScheme.Isogeny.BaseChange
 public import TauCeti.AlgebraicGeometry.GroupScheme.Kernel
 import TauCeti.AlgebraicGeometry.GroupScheme.KilledByRank
 import TauCeti.AlgebraicGeometry.Morphisms.Flat.Rank
