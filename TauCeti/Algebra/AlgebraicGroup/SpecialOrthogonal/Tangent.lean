@@ -5,10 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Lie.Classical
-public import TauCeti.Algebra.AlgebraicGroup.ConstantForm.Tangent
+public import TauCeti.Algebra.AlgebraicGroup.Orthogonal.Tangent
 public import TauCeti.Algebra.AlgebraicGroup.SpecialLinear.Tangent.Basic
 public import TauCeti.Algebra.AlgebraicGroup.SpecialOrthogonal.Basic
+public import TauCeti.Algebra.Lie.Orthogonal.Basic
 
 /-!
 # The tangent Lie algebra of the special orthogonal group
@@ -40,19 +40,22 @@ attribute [local instance 100] LieRing.ofAssociativeRing
 variable {R : Type u} [CommRing R] {B : Type w} [CommRing B] [Algebra R B]
 variable (n : ℕ)
 
-/-- A skew-symmetric matrix has trace zero when `2` is invertible. -/
-private theorem trace_eq_zero_of_transpose_eq_neg [Invertible (2 : B)]
-    (X : Matrix (Fin n) (Fin n) B) (hX : Xᵀ = -X) : Matrix.trace X = 0 := by
-  classical
-  rw [Matrix.trace]
-  apply Finset.sum_eq_zero
-  intro i hi
-  have hdiag : X i i = -X i i := by
-    simpa only [Matrix.transpose_apply, Matrix.neg_apply] using congrFun (congrFun hX i) i
-  have htwo : (2 : B) * X i i = 0 := by linear_combination hdiag
-  calc
-    X i i = ⅟(2 : B) * ((2 : B) * X i i) := by simp
-    _ = 0 := by rw [htwo]; simp
+/-- Every special-orthogonal tangent derivation has a skew-symmetric tangent matrix,
+without any restriction on the characteristic. -/
+theorem transpose_tangentMatrix_eq_neg_of_mem
+    (d : Derivation R (GeneralLinear.coordinateHopfAlgebra R n)
+      (Bialgebra.CounitAlgebra R (GeneralLinear.coordinateHopfAlgebra R n) B))
+    (hd : d ∈ HopfIdeal.lieSubalgebra (B := B) (definingHopfIdeal R n)) :
+    (GeneralLinear.tangentMatrix n d)ᵀ = -GeneralLinear.tangentMatrix n d := by
+  have hO : d ∈ HopfIdeal.lieSubalgebra (B := B) (Orthogonal.definingHopfIdeal R n) := by
+    rw [HopfIdeal.mem_lieSubalgebra_iff] at hd ⊢
+    intro x hx
+    apply hd x
+    rw [definingHopfIdeal_toIdeal]
+    exact Ideal.mem_sup_left ((ConstantForm.definingHopfIdeal_toIdeal R n 1) ▸ hx)
+  simpa using congrArg Matrix.transpose
+    (add_eq_zero_iff_eq_neg.mp
+      ((Orthogonal.mem_lieSubalgebra_definingHopfIdeal_iff n d).mp hO))
 
 /-- An ambient tangent derivation belongs to the special-orthogonal Lie algebra exactly when its
 tangent matrix is skew-symmetric. -/
@@ -68,12 +71,10 @@ theorem mem_lieSubalgebra_definingHopfIdeal_iff [Invertible (2 : B)]
     rw [definingHopfIdeal_toIdeal, ← Ideal.span_union]
   have hO_iff : (∀ x ∈ Orthogonal.relationSet R n, d x = 0) ↔
       GeneralLinear.tangentMatrix n d + (GeneralLinear.tangentMatrix n d)ᵀ = 0 := by
-    change (∀ x ∈ ConstantForm.relationSet R n 1, d x = 0) ↔ _
     rw [← HopfIdeal.mem_lieSubalgebra_iff_of_toIdeal_eq_span
-      (ConstantForm.definingHopfIdeal R n 1)
+      (Orthogonal.definingHopfIdeal R n)
       (ConstantForm.definingHopfIdeal_toIdeal R n 1) d]
-    simpa [Matrix.map_one] using ConstantForm.mem_lieSubalgebra_definingHopfIdeal_iff
-      (C := (1 : Matrix (Fin n) (Fin n) R)) (n := n) d
+    exact Orthogonal.mem_lieSubalgebra_definingHopfIdeal_iff n d
   have hSL_iff : (∀ x ∈ ({(GeneralLinear.determinantGroupLike R n :
       GeneralLinear.coordinateHopfAlgebra R n) - 1} :
         Set (GeneralLinear.coordinateHopfAlgebra R n)), d x = 0) ↔
@@ -86,82 +87,67 @@ theorem mem_lieSubalgebra_definingHopfIdeal_iff [Invertible (2 : B)]
     Set.forall_mem_union, hO_iff, hSL_iff]
   constructor
   · rintro ⟨hform, _⟩
-    have hsum : GeneralLinear.tangentMatrix n d +
-        (GeneralLinear.tangentMatrix n d)ᵀ = 0 := by simpa using hform
     simpa using congrArg Matrix.transpose
-      (add_eq_zero_iff_eq_neg.mp hsum)
+      (add_eq_zero_iff_eq_neg.mp hform)
   · intro hskew
-    refine ⟨?_, ?_⟩
-    · apply Matrix.ext
-      intro i j
-      have hij : GeneralLinear.tangentMatrix n d j i =
-          -GeneralLinear.tangentMatrix n d i j := by
-        simpa only [Matrix.transpose_apply, Matrix.neg_apply] using
-          congrFun (congrFun hskew i) j
-      change GeneralLinear.tangentMatrix n d i j +
-        GeneralLinear.tangentMatrix n d j i = 0
-      rw [hij]
-      ring
-    · exact trace_eq_zero_of_transpose_eq_neg n _ hskew
+    exact ⟨by rw [hskew, add_neg_cancel],
+      Matrix.trace_eq_zero_of_transpose_eq_neg _ hskew⟩
 
 /-- The tangent matrix of `SOₙ`, as a skew-symmetric matrix in Mathlib's orthogonal Lie algebra. -/
-noncomputable def tangentMatrix [Invertible (2 : B)] :
+noncomputable def tangentMatrix :
     Derivation R (coordinateHopfAlgebra R n)
       (Bialgebra.CounitAlgebra R (coordinateHopfAlgebra R n) B) →ₗ[B]
       LieAlgebra.Orthogonal.so (Fin n) B :=
   let ambient := (GeneralLinear.tangentMatrix (R := R) (B := B) n).comp
     (HopfIdeal.quotientLieHom (B := B) (definingHopfIdeal R n)).toLinearMap
   ambient.codRestrict (LieAlgebra.Orthogonal.so (Fin n) B) fun d => by
-    change ambient d ∈ LieAlgebra.Orthogonal.so (Fin n) B
+    -- Expose the composite before its public computation rule is available.
+    change GeneralLinear.tangentMatrix n
+      (HopfIdeal.quotientLieHom (B := B) (definingHopfIdeal R n) d) ∈
+        LieAlgebra.Orthogonal.so (Fin n) B
     rw [LieAlgebra.Orthogonal.mem_so]
-    apply (mem_lieSubalgebra_definingHopfIdeal_iff n _).mp
-    change HopfIdeal.quotientLieHom (B := B) (definingHopfIdeal R n) d ∈
-      HopfIdeal.lieSubalgebra (B := B) (definingHopfIdeal R n)
     simpa only [HopfIdeal.quotientLieEquiv_apply_coe] using
-      (HopfIdeal.quotientLieEquiv (B := B) (definingHopfIdeal R n) d).property
+      transpose_tangentMatrix_eq_neg_of_mem n _
+        (HopfIdeal.quotientLieEquiv (B := B) (definingHopfIdeal R n) d).property
 
 /-- The underlying matrix of `tangentMatrix` is the ambient tangent matrix after quotienting by
 the special-orthogonal defining ideal. -/
 @[simp]
-theorem tangentMatrix_apply_coe [Invertible (2 : B)]
+theorem tangentMatrix_apply_coe
     (d : Derivation R (coordinateHopfAlgebra R n)
       (Bialgebra.CounitAlgebra R (coordinateHopfAlgebra R n) B)) :
     (tangentMatrix n d : Matrix (Fin n) (Fin n) B) =
       GeneralLinear.tangentMatrix n
-        (HopfIdeal.quotientLieHom (B := B) (definingHopfIdeal R n) d) := by
-  rw [tangentMatrix]
-  change GeneralLinear.tangentMatrix n
-    (HopfIdeal.quotientLieHom (B := B) (definingHopfIdeal R n) d) = _
-  rfl
+        (HopfIdeal.quotientLieHom (B := B) (definingHopfIdeal R n) d) := (rfl)
 
-private theorem tangentMatrix_injective [Invertible (2 : B)] :
-    Function.Injective (tangentMatrix (R := R) (B := B) n) := by
-  intro d e hde
-  apply HopfIdeal.quotientLieHom_injective (B := B) (definingHopfIdeal R n)
-  apply (GeneralLinear.tangentLinearEquivMatrix (R := R) (B := B) n).injective
-  simpa only [GeneralLinear.tangentLinearEquivMatrix_apply, tangentMatrix_apply_coe n] using
-    congrArg Subtype.val hde
+/-- The special-orthogonal tangent-matrix map preserves the convolution Lie bracket. -/
+@[simp]
+theorem tangentMatrix_lie
+    (d e : Derivation R (coordinateHopfAlgebra R n)
+      (Bialgebra.CounitAlgebra R (coordinateHopfAlgebra R n) B)) :
+    tangentMatrix n ⁅d, e⁆ = ⁅tangentMatrix n d, tangentMatrix n e⁆ := by
+  apply Subtype.ext
+  simp only [tangentMatrix_apply_coe (R := R) (B := B), LieHom.map_lie,
+    GeneralLinear.tangentMatrix_lie, LieSubalgebra.coe_bracket]
 
-private theorem tangentMatrix_surjective [Invertible (2 : B)] :
-    Function.Surjective (tangentMatrix (R := R) (B := B) n) := by
-  intro X
-  let d := (GeneralLinear.tangentLieEquivMatrix (R := R) (B := B) n).symm X.val
-  have hd : GeneralLinear.tangentMatrix n d = X.val := by
-    rw [← GeneralLinear.tangentLieEquivMatrix_apply]
-    exact (GeneralLinear.tangentLieEquivMatrix (R := R) (B := B) n).apply_symm_apply X.val
-  have hmem : d ∈ HopfIdeal.lieSubalgebra (B := B) (definingHopfIdeal R n) := by
-    apply (mem_lieSubalgebra_definingHopfIdeal_iff n d).mpr
-    rw [hd]
-    exact (LieAlgebra.Orthogonal.mem_so (n := Fin n) (R := B) X.val).mp X.property
-  let d' : HopfIdeal.lieSubalgebra (B := B) (definingHopfIdeal R n) := ⟨d, hmem⟩
-  let e := (HopfIdeal.quotientLieEquiv (B := B) (definingHopfIdeal R n)).symm d'
-  refine ⟨e, Subtype.ext ?_⟩
-  rw [tangentMatrix_apply_coe]
-  have he : HopfIdeal.quotientLieHom (B := B) (definingHopfIdeal R n) e = d := by
-    rw [← HopfIdeal.quotientLieEquiv_apply_coe]
-    exact congrArg Subtype.val
-      ((HopfIdeal.quotientLieEquiv (B := B) (definingHopfIdeal R n)).apply_symm_apply d')
-  rw [he, hd]
+/-- The general-linear tangent equivalence carries the special-orthogonal tangent image
+onto the skew-symmetric matrix Lie algebra when `2` is invertible. -/
+theorem map_lieSubalgebra_definingHopfIdeal [Invertible (2 : B)] :
+    (HopfIdeal.lieSubalgebra (B := B) (definingHopfIdeal R n)).map
+        (GeneralLinear.tangentLieEquivMatrix (R := R) (B := B) n).toLieHom =
+      LieAlgebra.Orthogonal.so (Fin n) B := by
+  ext X
+  rw [LieSubalgebra.mem_map, LieAlgebra.Orthogonal.mem_so]
+  constructor
+  · rintro ⟨d, hd, rfl⟩
+    simpa only [LieEquiv.coe_coe, GeneralLinear.tangentLieEquivMatrix_apply] using
+      (mem_lieSubalgebra_definingHopfIdeal_iff n d).mp hd
+  · intro hX
+    refine ⟨(GeneralLinear.tangentLieEquivMatrix (R := R) (B := B) n).symm X, ?_,
+      (GeneralLinear.tangentLieEquivMatrix (R := R) (B := B) n).apply_symm_apply X⟩
+    rw [mem_lieSubalgebra_definingHopfIdeal_iff,
+      ← GeneralLinear.tangentLieEquivMatrix_apply, LieEquiv.apply_symm_apply]
+    exact hX
 
 /-- The tangent Lie algebra of `SOₙ` is the classical orthogonal Lie algebra, whenever `2` is
 invertible in the coefficient algebra. -/
@@ -169,19 +155,9 @@ noncomputable def tangentLieEquivSo [Invertible (2 : B)] :
     Derivation R (coordinateHopfAlgebra R n)
       (Bialgebra.CounitAlgebra R (coordinateHopfAlgebra R n) B) ≃ₗ⁅B⁆
       LieAlgebra.Orthogonal.so (Fin n) B :=
-  LieEquiv.ofBijective
-    { tangentMatrix (R := R) (B := B) n with
-      map_lie' := fun {d e} ↦ by
-        apply Subtype.ext
-        change GeneralLinear.tangentMatrix n
-            (HopfIdeal.quotientLieHom (B := B) (definingHopfIdeal R n) ⁅d, e⁆) =
-          ⁅GeneralLinear.tangentMatrix n
-              (HopfIdeal.quotientLieHom (B := B) (definingHopfIdeal R n) d),
-            GeneralLinear.tangentMatrix n
-              (HopfIdeal.quotientLieHom (B := B) (definingHopfIdeal R n) e)⁆
-        rw [LieHom.map_lie, GeneralLinear.tangentMatrix_lie] }
-    ⟨tangentMatrix_injective (R := R) (B := B) n,
-      tangentMatrix_surjective (R := R) (B := B) n⟩
+  (HopfIdeal.quotientLieEquiv (B := B) (definingHopfIdeal R n)).trans
+    ((GeneralLinear.tangentLieEquivMatrix (R := R) (B := B) n).ofSubalgebras _ _
+      (map_lieSubalgebra_definingHopfIdeal n))
 
 /-- The orthogonal Lie equivalence computes by the tangent-matrix map. -/
 @[simp]
@@ -189,6 +165,9 @@ theorem tangentLieEquivSo_apply [Invertible (2 : B)]
     (d : Derivation R (coordinateHopfAlgebra R n)
       (Bialgebra.CounitAlgebra R (coordinateHopfAlgebra R n) B)) :
     tangentLieEquivSo n d = tangentMatrix n d := by
-  rfl
+  apply Subtype.ext
+  simp only [tangentLieEquivSo, LieEquiv.trans_apply, LieEquiv.ofSubalgebras_apply,
+    HopfIdeal.quotientLieEquiv_apply_coe, GeneralLinear.tangentLieEquivMatrix_apply,
+    tangentMatrix_apply_coe (R := R) (B := B)]
 
 end TauCeti.SpecialOrthogonal
