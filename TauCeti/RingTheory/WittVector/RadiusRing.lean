@@ -57,7 +57,7 @@ into higher indices, and its carries are smaller by the factor `ρ ≤ ε`
 (`TauCeti.WittVector.gaussValuation_teichmuller_add_teichmuller_sub_le`), so the result is again
 close to a Teichmüller sum, now of length `n`. Descending to length `m` gives Kedlaya's Lemma 2.8:
 a remainder of norm at most `‖y‖` that either has degree less than `m` or is smaller than
-`ε ‖y‖`. Iterating on the remainders (`Ideal.subset_span_of_approx`) gives Proposition 2.9.
+`ε ‖y‖`. Iterating on the remainders (`TauCeti.subset_idealSpan_of_approx`) gives Proposition 2.9.
 
 ## Main definitions
 
@@ -863,7 +863,7 @@ theorem exists_eq_mul_add {x : RadiusRing p hv hϖ hϖ' hρ} (hx : x ≠ 0)
     (w = 0 ∨ degree p hv hϖ hϖ' hρ w < degree p hv hϖ hϖ' hρ x)}
   have hS : S ⊆ (Ideal.span (({x} : Finset (RadiusRing p hv hϖ hϖ' hρ)) :
       Set (RadiusRing p hv hϖ hϖ' hρ)) : Set (RadiusRing p hv hϖ hϖ' hρ)) := by
-    refine Ideal.subset_span_of_approx ε.2 hε1 fun y hy ↦ ?_
+    refine TauCeti.subset_idealSpan_of_approx ε.2 hε1 fun y hy ↦ ?_
     obtain ⟨z, w, rfl, hw, hdeg⟩ := hdiv y
     have hw' : ‖w‖ ≤ ‖z * x + w‖ := by exact_mod_cast hw
     have hwS : w ∈ S := fun ⟨z', w', h, hw'', hdeg'⟩ ↦
