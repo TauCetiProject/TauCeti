@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.Galois
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Frobenius.Reduction
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Hom.Determinant
-public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.MulByInt.WeilPairing.Galois
 import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.BaseChange.Degree
 
 /-!
