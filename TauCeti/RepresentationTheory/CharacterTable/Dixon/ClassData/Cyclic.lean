@@ -32,12 +32,9 @@ multiplicative notation are the identity and the nontrivial element.
 
 ## References
 
-This supplies the executable class data for the cyclic `C₂` example in Layer 6, “Rational tables
-(first executable milestone),” of the [character theory roadmap][roadmap].
+This supplies the executable class data for the cyclic `C₂` example.
 
 The definition follows the executable pattern of `TauCeti.dihedralClassData`.
-
-[roadmap]: https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/CharacterTheory/README.md
 -/
 
 public section
