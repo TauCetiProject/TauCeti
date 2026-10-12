@@ -373,13 +373,7 @@ private noncomputable def signlessPreprojectiveKoszulComplexπ (v : R) :
   (ChainComplex.toSingle₀Equiv _ _).symm
     ⟨ModuleCat.ofHom (signlessPreprojectiveVertexAugmentation k v), by
       apply ModuleCat.hom_ext
-      ext z
-      -- The wrapper's object instances obscure the explicit module-map composite.
-      change signlessPreprojectiveVertexAugmentation k v
-        (signlessPreprojectiveKoszulRight k v z) = 0
-      apply LinearMap.mem_ker.1
-      rw [ker_signlessPreprojectiveVertexAugmentation]
-      exact LinearMap.mem_range_self _ z⟩
+      exact LinearMap.range_mkQ_comp (signlessPreprojectiveKoszulRight k v)⟩
 
 private theorem signlessPreprojectiveKoszulComplexπ_f_zero (v : R) :
     (signlessPreprojectiveKoszulComplexπ k v).f 0 =
