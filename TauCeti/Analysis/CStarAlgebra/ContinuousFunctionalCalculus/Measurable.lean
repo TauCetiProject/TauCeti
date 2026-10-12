@@ -13,13 +13,8 @@ public import Mathlib.MeasureTheory.Constructions.BorelSpace.Basic
 
 For a fixed scalar function `f` continuous on a common neighborhood of the spectra of
 elements satisfying the defining predicate, the map `a ↦ cfc f a` is measurable whenever
-that predicate is measurable. On the predicate, Mathlib's
-`ContinuousOn.cfc_of_mem_nhdsSet` supplies continuity; elsewhere the calculus is zero.
+that predicate is measurable. Outside the predicate, the calculus is zero.
 The resulting map need not be continuous on the whole algebra.
-
-The proof of `measurable_cfc` generalizes the piecewise-measurability argument in Gaëtan
-Serré's non-unital `CFC.measurable_sqrt` in
-`Mathlib.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Rpow.Measurable`.
 
 This lets continuous spectral functions be applied to random Hermitian matrices without
 choosing measurable eigenvectors. It also applies to random self-adjoint elements of
@@ -52,6 +47,10 @@ the calculus takes the value zero. -/
 theorem measurable_cfc {f : 𝕜 → 𝕜} {s : Set 𝕜} (hf : ContinuousOn f s)
     (hs : s ∈ 𝓝ˢ (⋃ a ∈ {a : A | p a}, spectrum 𝕜 a))
     (hp : MeasurableSet {a : A | p a}) : Measurable (cfc f : A → A) := by
+  -- This proof generalizes the piecewise-measurability argument in Gaëtan Serré's
+  -- non-unital `CFC.measurable_sqrt` in
+  -- `Mathlib.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Rpow.Measurable`,
+  -- using `ContinuousOn.cfc_of_mem_nhdsSet` for continuity on the predicate.
   classical
   have hc : ContinuousOn (cfc f : A → A) {a | p a} :=
     continuousOn_id.cfc_of_mem_nhdsSet f hs (fun _ ha ↦ ha) hf
