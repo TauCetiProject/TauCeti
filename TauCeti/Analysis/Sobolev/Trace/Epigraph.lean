@@ -87,6 +87,7 @@ theorem coe_normalEpigraph (φ : C(E, ℝ)) :
 
 omit [InnerProductSpace ℝ E] in
 /-- The region above the graph of `0` is the half-space `{0 < t}`. -/
+@[simp]
 theorem normalEpigraph_zero : normalEpigraph (0 : C(E, ℝ)) = normalHalfSpace 0 := by
   ext x
   simp
