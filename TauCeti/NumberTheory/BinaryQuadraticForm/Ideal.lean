@@ -149,53 +149,50 @@ theorem orderIdeal_le_order (f : BinaryQuadraticForm ℤ) (D : ℤ)
       (hf ▸ f.discrim_emod_four_eq_zero_or_one)).algebraMap_mem f.a
   · exact Set.mem_singleton_iff.mp hz ▸ idealGenerator_mem_order f D hf
 
-private theorem mem_one_of_mem_orderIdeal (f : BinaryQuadraticForm ℤ) (D : ℤ)
-    (hf : f.discrim = D) [Fact (¬ IsSquare D)] {z : QuadraticAlgebra ℚ (D : ℚ) 0}
-    (hz : z ∈ f.orderIdeal D hf) :
-    z ∈ (1 : FractionalIdeal
-      (nonZeroDivisors (QuadraticOrder.numberFieldOrder D
-        (hf ▸ f.discrim_emod_four_eq_zero_or_one)).toSubalgebra)
-      (QuadraticAlgebra ℚ (D : ℚ) 0)) := by
-  apply (FractionalIdeal.mem_one_iff _).mpr
-  refine ⟨⟨z, ?_⟩, rfl⟩
-  exact (congrArg (fun O ↦ z ∈ O)
-    (QuadraticOrder.numberFieldOrder_toSubalgebra D
-      (hf ▸ f.discrim_emod_four_eq_zero_or_one))).mpr (orderIdeal_le_order f D hf hz)
-
 /-- The form ideal as a fractional ideal of the existing quadratic number-field order. -/
-def fractionalIdeal (f : BinaryQuadraticForm ℤ) (D : ℤ)
+noncomputable def fractionalIdeal (f : BinaryQuadraticForm ℤ) (D : ℤ)
     (hf : f.discrim = D) [Fact (¬ IsSquare D)] :
     FractionalIdeal
       (nonZeroDivisors (QuadraticOrder.numberFieldOrder D
         (hf ▸ f.discrim_emod_four_eq_zero_or_one)).toSubalgebra)
-      (QuadraticAlgebra ℚ (D : ℚ) 0) := by
-  let I : Submodule (QuadraticOrder.numberFieldOrder D
-      (hf ▸ f.discrim_emod_four_eq_zero_or_one)).toSubalgebra
       (QuadraticAlgebra ℚ (D : ℚ) 0) :=
-    { carrier := f.orderIdeal D hf
-      zero_mem' := (f.orderIdeal D hf).zero_mem
-      add_mem' := (f.orderIdeal D hf).add_mem
-      smul_mem' r z hz := by
-        have hr : (r : QuadraticAlgebra ℚ (D : ℚ) 0) ∈
-            QuadraticOrder.toSubalgebra D (hf ▸ f.discrim_emod_four_eq_zero_or_one) :=
-          (congrArg (fun O ↦ (r : QuadraticAlgebra ℚ (D : ℚ) 0) ∈ O)
-            (QuadraticOrder.numberFieldOrder_toSubalgebra D
-              (hf ▸ f.discrim_emod_four_eq_zero_or_one))).mp r.property
-        have hm := mul_mem_span_idealGenerators f D hf ⟨r, hr⟩
-          (Submodule.mem_span_pair.mpr ((mem_orderIdeal_iff f D hf z).mp hz))
-        rw [coe_orderIdeal]
-        simpa only [Algebra.smul_def, Subalgebra.algebraMap_apply, SetLike.mem_coe] using hm }
-  refine ⟨I, FractionalIdeal.isFractional_of_le_one I ?_⟩
-  intro z hz
-  simpa only [← FractionalIdeal.mem_coe, FractionalIdeal.coe_one] using
-    mem_one_of_mem_orderIdeal f D hf hz
+  FractionalIdeal.spanFinset
+    (QuadraticOrder.numberFieldOrder D
+      (hf ▸ f.discrim_emod_four_eq_zero_or_one)).toSubalgebra
+    (Finset.univ : Finset (Fin 2))
+    ![(f.a : QuadraticAlgebra ℚ (D : ℚ) 0), f.idealGenerator D]
 
 /-- The fractional ideal has the same carrier as the order ideal. -/
 @[simp] theorem coe_fractionalIdeal (f : BinaryQuadraticForm ℤ) (D : ℤ)
     (hf : f.discrim = D) [Fact (¬ IsSquare D)] :
     (f.fractionalIdeal D hf : Set (QuadraticAlgebra ℚ (D : ℚ) 0)) =
       (f.orderIdeal D hf : Set (QuadraticAlgebra ℚ (D : ℚ) 0)) := by
-  rfl
+  rw [coe_orderIdeal]
+  ext z
+  simp only [SetLike.mem_coe]
+  rw [← FractionalIdeal.mem_coe, fractionalIdeal, FractionalIdeal.spanFinset_coe]
+  have hs : ![(f.a : QuadraticAlgebra ℚ (D : ℚ) 0), f.idealGenerator D] ''
+      (Finset.univ : Finset (Fin 2)) =
+        {(f.a : QuadraticAlgebra ℚ (D : ℚ) 0), f.idealGenerator D} := by
+    simp [Matrix.range_cons, Set.pair_comm]
+  rw [hs]
+  constructor
+  · intro hz
+    refine Submodule.span_induction (fun x hx ↦ Submodule.subset_span hx)
+      (Submodule.zero_mem _) (fun x y _ _ hx hy ↦ Submodule.add_mem _ hx hy) ?_ hz
+    intro r x _ hx
+    have hr : (r : QuadraticAlgebra ℚ (D : ℚ) 0) ∈
+        QuadraticOrder.toSubalgebra D (hf ▸ f.discrim_emod_four_eq_zero_or_one) :=
+      (congrArg (fun O ↦ (r : QuadraticAlgebra ℚ (D : ℚ) 0) ∈ O)
+        (QuadraticOrder.numberFieldOrder_toSubalgebra D
+          (hf ▸ f.discrim_emod_four_eq_zero_or_one))).mp r.property
+    simpa only [Algebra.smul_def, Subalgebra.algebraMap_apply] using
+      mul_mem_span_idealGenerators f D hf ⟨r, hr⟩ hx
+  · intro hz
+    exact Submodule.span_subset_span ℤ
+      (QuadraticOrder.numberFieldOrder D
+        (hf ▸ f.discrim_emod_four_eq_zero_or_one)).toSubalgebra
+      {(f.a : QuadraticAlgebra ℚ (D : ℚ) 0), f.idealGenerator D} hz
 
 /-- Restriction of the fractional ideal to the integers recovers the defining lattice. -/
 theorem fractionalIdeal_restrictScalars (f : BinaryQuadraticForm ℤ) (D : ℤ)
@@ -313,21 +310,34 @@ theorem fractionalIdeal_le_one (f : BinaryQuadraticForm ℤ) (D : ℤ)
     (hf : f.discrim = D) [Fact (¬ IsSquare D)] :
     f.fractionalIdeal D hf ≤ 1 := by
   intro z hz
-  exact mem_one_of_mem_orderIdeal f D hf
-    ((mem_orderIdeal_iff f D hf z).mpr ((mem_fractionalIdeal_iff f D hf z).mp hz))
+  apply (FractionalIdeal.mem_one_iff _).mpr
+  refine ⟨⟨z, ?_⟩, rfl⟩
+  have hzO := (Set.ext_iff.mp (coe_fractionalIdeal f D hf) z).mp hz
+  exact (congrArg (fun O ↦ z ∈ O)
+    (QuadraticOrder.numberFieldOrder_toSubalgebra D
+      (hf ▸ f.discrim_emod_four_eq_zero_or_one))).mpr (orderIdeal_le_order f D hf hzO)
 
 /-- The form ideal is nonzero. -/
 theorem fractionalIdeal_ne_zero (f : BinaryQuadraticForm ℤ) (D : ℤ)
     (hf : f.discrim = D) [Fact (¬ IsSquare D)] :
     f.fractionalIdeal D hf ≠ 0 := by
-  intro h
-  apply orderIdeal_ne_bot f D hf
-  ext z
-  rw [Submodule.mem_bot]
-  have hmem := Set.ext_iff.mp (coe_fractionalIdeal f D hf) z
-  simp only [SetLike.mem_coe] at hmem
-  rw [h, FractionalIdeal.mem_zero_iff] at hmem
-  exact hmem.symm
+  rw [fractionalIdeal, FractionalIdeal.spanFinset_ne_zero]
+  have hspan : Submodule.span
+      (QuadraticOrder.numberFieldOrder D
+        (hf ▸ f.discrim_emod_four_eq_zero_or_one)).toSubalgebra
+      (![(f.a : QuadraticAlgebra ℚ (D : ℚ) 0), f.idealGenerator D] ''
+        (Finset.univ : Finset (Fin 2))) ≠ ⊥ := by
+    intro h
+    apply orderIdeal_ne_bot f D hf
+    ext z
+    rw [Submodule.mem_bot]
+    have hmem := Set.ext_iff.mp (coe_fractionalIdeal f D hf) z
+    simp only [SetLike.mem_coe] at hmem
+    rw [← FractionalIdeal.mem_coe, fractionalIdeal, FractionalIdeal.spanFinset_coe,
+      h, Submodule.mem_bot] at hmem
+    exact hmem.symm
+  simpa only [ne_eq, Submodule.span_eq_bot, Set.mem_image, Finset.mem_coe,
+    forall_exists_index, and_imp, forall_apply_eq_imp_iff₂, not_forall, exists_prop] using hspan
 
 /-- Norm on the ideal generators recovers the original form, with the second coordinate negated. -/
 theorem norm_idealGenerators (f : BinaryQuadraticForm ℤ) (D : ℤ)
