@@ -43,6 +43,7 @@ variable {C : Type u} [Category.{v} C] [HasCoproducts.{w} C] [Preadditive C]
 
 /-- The singular-chain homotopy of the mapping-torus cylinder is natural under a map
 intertwining the monodromies. -/
+@[reassoc]
 lemma singularChainHomotopy_hom_naturality (φ : F ≃ₜ F) (R : C) (ψ : G ≃ₜ G)
     (g : C(F, G)) (h : Function.Semiconj g φ ψ) (i j : ℕ) :
     (fibreChainMap R g).f i ≫ (singularChainHomotopy ψ R).hom i j =
@@ -78,6 +79,7 @@ variable [HasBinaryBiproducts C]
 
 /-- The map from the Wang mapping cone to mapping-torus chains commutes with a map
 intertwining the monodromies. -/
+@[reassoc]
 theorem wangMappingConeMap_naturality :
     wangMappingConeMapOfSemiconj φ R ψ g h ≫ wangMappingConeMap ψ R =
       wangMappingConeMap φ R ≫ mappingTorusChainMap φ R ψ g h := by
