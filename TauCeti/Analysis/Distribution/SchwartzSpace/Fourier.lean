@@ -39,6 +39,8 @@ Plancherel's theorem `‖𝓕⁻ f‖_{L²} = ‖f‖_{L²}`.
 * `SchwartzMap.fourier_laplacian_apply`: the Fourier transform of the Laplacian.
 * `SchwartzMap.fourierInv_iterate_lineDerivOp_apply`: the inverse Fourier transform of an
   iterated directional derivative, `𝓕⁻ (∂_m^N σ) x = (-2πi ⟪x, m⟫) ^ N 𝓕⁻ σ x`.
+* `SchwartzMap.norm_fourierInv_iterate_lineDerivOp_sq`: its consequence for squared norms,
+  `‖𝓕⁻ (∂_m^N σ) x‖² = (2π) ^ (2N) ⟪x, m⟫ ^ (2N) ‖𝓕⁻ σ x‖²`.
 * `SchwartzMap.norm_fourierInv_toL2_eq`: Plancherel's theorem for the inverse Fourier transform.
 * `SchwartzMap.sum_sum_norm_toLp_lineDerivOp_lineDerivOp_sq`: the squared `L²` norms of the
   second derivatives along an orthonormal basis sum to the squared `L²` norm of the Laplacian.
@@ -97,6 +99,16 @@ theorem fourierInv_iterate_lineDerivOp_apply (σ : 𝓢(E, F)) (m : E) (N : ℕ)
       smulLeftCLM_apply_apply hm, ih, pow_succ, ← Complex.coe_smul, smul_smul, smul_smul]
     congr 1
     ring
+
+/-- Differentiating `N` times along `m` multiplies the squared norm of the inverse Fourier
+transform by `(2π) ^ (2N) ⟪x, m⟫ ^ (2N)`. -/
+theorem norm_fourierInv_iterate_lineDerivOp_sq (σ : 𝓢(E, F)) (m : E) (N : ℕ) (x : E) :
+    ‖𝓕⁻ ((∂_{m})^[N] σ) x‖ ^ 2 = (2 * π) ^ (2 * N) * (⟪x, m⟫ ^ (2 * N) * ‖𝓕⁻ σ x‖ ^ 2) := by
+  rw [fourierInv_iterate_lineDerivOp_apply, norm_smul, mul_pow, norm_pow, norm_mul, norm_neg,
+    Complex.norm_real, Complex.norm_mul, Complex.norm_I, Complex.norm_mul, Complex.norm_ofNat,
+    Complex.norm_real, Real.norm_eq_abs, Real.norm_eq_abs, abs_of_pos Real.pi_pos,
+    ← (even_two_mul N).pow_abs ⟪x, m⟫]
+  ring
 
 end normed
 

@@ -71,14 +71,6 @@ section Normed
 
 variable [NormedAddCommGroup H] [NormedSpace ℂ H]
 
-private theorem norm_fourierInv_iterate_lineDerivOp_sq (σ : 𝓢(V, H)) (m : V) (N : ℕ) (x : V) :
-    ‖𝓕⁻ ((∂_{m})^[N] σ) x‖ ^ 2 = (2 * π) ^ (2 * N) * (⟪x, m⟫ ^ (2 * N) * ‖𝓕⁻ σ x‖ ^ 2) := by
-  rw [fourierInv_iterate_lineDerivOp_apply, norm_smul, mul_pow, norm_pow, norm_mul, norm_neg,
-    Complex.norm_real, Complex.norm_mul, Complex.norm_I, Complex.norm_mul, Complex.norm_ofNat,
-    Complex.norm_real, Real.norm_eq_abs, Real.norm_eq_abs, abs_of_pos Real.pi_pos,
-    ← (even_two_mul N).pow_abs ⟪x, m⟫]
-  ring
-
 /-- For a Schwartz function `σ`, the function `⟪x, m⟫ ^ (2N) ‖𝓕⁻ σ x‖²` is integrable. -/
 theorem integrable_inner_pow_mul_norm_fourierInv_sq (σ : 𝓢(V, H)) (m : V) (N : ℕ) :
     Integrable fun x ↦ ⟪x, m⟫ ^ (2 * N) * ‖𝓕⁻ σ x‖ ^ 2 := by
