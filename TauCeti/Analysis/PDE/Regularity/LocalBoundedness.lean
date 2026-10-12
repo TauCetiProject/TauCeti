@@ -32,9 +32,9 @@ Haar measure used for the `L²` norm. No regularity of the coefficients beyond m
 is used. This is the first half of the De Giorgi–Nash–Moser theorem; Hölder continuity is the
 second.
 
-The `_of_local_subsolution` and `_of_local_solution` forms require the coefficient hypotheses
-and the weak equation only on the ball. They apply the estimate to the restriction of the
-Sobolev function and transfer its almost-everywhere bound back to the ambient representative.
+The `_of_local_subsolution` and `_of_local_solution` forms allow an ambient Sobolev function
+while requiring the coefficient hypotheses and the weak equation only on the selected ball,
+with no assumptions on the coefficients or equation outside that ball.
 
 The energy recursion `setIntegral_sq_mul_max_sub_sq_le` is useful when a Sobolev inequality
 `‖v‖_q ≤ S ‖∇v‖₂` is available on `W^{1,2}_0(B(x₀, R))` for some `q > 2`. It controls higher
