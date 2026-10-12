@@ -49,13 +49,25 @@ theorem quotientEquivOfEqSup_symm_apply (F p p' : Submodule R M) (hF : F = p ⊔
   simp only [LinearEquiv.trans_apply, quotEquivOfEqBot_symm_apply]
   exact LinearMap.quotientInfEquivSupQuotient_apply_mk p p' x
 
-/-- The equivalence sends the quotient class of an element of `p` to that element. -/
+/-- The equivalence sends the class of any representative lying in `p` to that representative. -/
 @[simp]
 theorem quotientEquivOfEqSup_apply_mk (F p p' : Submodule R M) (hF : F = p ⊔ p')
-    (h : Disjoint p p') (x : p) :
-    quotientEquivOfEqSup F p p' hF h
-      (Quotient.mk ⟨x, by rw [hF]; exact mem_sup_left x.property⟩) = x := by
-  rw [← quotientEquivOfEqSup_symm_apply F p p' hF h x, LinearEquiv.apply_symm_apply]
+    (h : Disjoint p p') (y : F) (hy : (y : M) ∈ p) :
+    quotientEquivOfEqSup F p p' hF h (Quotient.mk y) = ⟨y, hy⟩ := by
+  apply (quotientEquivOfEqSup F p p' hF h).symm.injective
+  rw [LinearEquiv.symm_apply_apply, quotientEquivOfEqSup_symm_apply]
+
+/-- A quotient representative has zero image exactly when it lies in the right summand. -/
+theorem quotientEquivOfEqSup_apply_mk_eq_zero_iff (F p p' : Submodule R M)
+    (hF : F = p ⊔ p') (h : Disjoint p p') (y : F) :
+    quotientEquivOfEqSup F p p' hF h (Quotient.mk y) = 0 ↔ (y : M) ∈ p' := by
+  simp
+
+/-- The equivalence sends the class of any representative in the right summand to zero. -/
+theorem quotientEquivOfEqSup_apply_mk_of_mem_right (F p p' : Submodule R M)
+    (hF : F = p ⊔ p') (h : Disjoint p p') (y : F) (hy : (y : M) ∈ p') :
+    quotientEquivOfEqSup F p p' hF h (Quotient.mk y) = 0 := by
+  simp [hy]
 
 /-- Mapping the inverse image of the span of a quotient class gives the image of the
 quotient kernel plus the span of the image of a representative. -/
