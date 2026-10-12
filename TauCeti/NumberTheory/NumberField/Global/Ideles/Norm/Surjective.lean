@@ -34,6 +34,22 @@ infinitely many places that do not split completely. That is how the Frobenius e
 abelian extension are seen to generate its Galois group without the Chebotarev density theorem, as
 the Kummer-theoretic proof of the second fundamental inequality requires.
 
+The same proof of the second fundamental inequality needs surjectivity in a second situation,
+where the places outside `S` need not split (Milne's Proposition 6.10). Let `T` be a finite set of
+finite places disjoint from `S`, where `S` generates the ideal class group, and let `[L : K]`
+divide `n`. Suppose every element of `K_v` is a local norm at the places of `S` and at the infinite
+places, `L` has an unramified place above every finite place outside `S ∪ T`, and the `S`-units
+surject onto `∏_{v ∈ T} U_v / U_v ^ n`. Then `C_L → C_K` is again surjective
+(`ideleClassNormMap_surjective_of_forall_exists_mem_unit`). Here no approximation is used: an
+idele class has a representative that is a unit outside `S`, and an `S`-unit corrects it to an
+`n`-th power at `T` without changing the other unit coordinates. The class group and `S`-unit
+conditions concern `S` and `T` alone (the latter is Milne's Lemma 6.9). The local conditions hold
+for a Kummer extension `L = K(b^{1/n})` of a field containing the `n`-th roots of unity when `b`
+is an `n`-th power at `S` and at the infinite places, `b` is a unit outside `S ∪ T`, and `n` is a
+unit outside `S`. The first inequality, applied to the cyclic extension `L/K`, then forces
+`L = K`, so `b` is an `n`-th power: this is Milne's Proposition 6.10, from which his Lemma 6.7
+computes the index of the Kummer idele subgroup in the proof of the second inequality.
+
 ## Main results
 
 * `NumberField.InfinitePlace.Completion.mem_range_powMonoidHom`: a unit of an archimedean
@@ -45,11 +61,13 @@ the Kummer-theoretic proof of the second fundamental inequality requires.
 * `TauCeti.GlobalNumberFields.ideleClassNormMap_surjective_of_forall_range_normUnits_eq_top` and
   `TauCeti.GlobalNumberFields.ideleClassNormMap_surjective_of_forall_exists_finrank_eq_one`: the
   surjectivity of the idele-class norm map.
+* `TauCeti.GlobalNumberFields.ideleClassNormMap_surjective_of_forall_exists_mem_unit`:
+  surjectivity when the `S`-units surject onto the local power classes of units at `T`.
 
 ## References
 
-* J. S. Milne, *Class Field Theory*, v4.03, Chapter VII, Lemma 4.5, Proposition 4.6 and
-  Proposition 4.7.
+* J. S. Milne, *Class Field Theory*, v4.03, Chapter VII, Lemma 4.5, Proposition 4.6,
+  Proposition 4.7 and Proposition 6.10.
 -/
 
 public section
@@ -179,10 +197,8 @@ theorem ideleClassNormMap_surjective_of_forall_range_normUnits_eq_top
   -- A `[L : K]`-th power of a local unit is a local norm.
   have hpow {F : Type _} [Field F] [Algebra K F] {y : Fˣ}
       (hy : y ∈ (powMonoidHom (Module.finrank K L) : Fˣ →* Fˣ).range) :
-      y ∈ (Algebra.normUnits F (S := F ⊗[K] L)).range := by
-    obtain ⟨b, rfl⟩ := hy
-    have hb := Algebra.pow_finrank_mem_range_normUnits F (S := F ⊗[K] L) b
-    rwa [Module.finrank_baseChange] at hb
+      y ∈ (Algebra.normUnits F (S := F ⊗[K] L)).range :=
+    Algebra.range_powMonoidHom_le_range_normUnits F (by rw [Module.finrank_baseChange]) hy
   obtain ⟨z, hz⟩ := (mem_range_ideleNormMap_iff K L _).mpr
     ⟨fun v ↦ if hv : v ∈ S then hpow (hfin v hv) else by simp [hS v hv],
       fun w ↦ hpow (hinf w)⟩
@@ -204,5 +220,74 @@ theorem ideleClassNormMap_surjective_of_forall_exists_finrank_eq_one
     Function.Surjective (ideleClassNormMap K L) :=
   ideleClassNormMap_surjective_of_forall_range_normUnits_eq_top S fun v hv ↦
     (hS v hv).elim (range_normUnits_adicCompletion_eq_top_of_finrank_eq_one L v)
+
+/-- **Every idele class is a norm when `S`-units control the local power classes at `T`**
+(Milne, *Class Field Theory*, VII, Proposition 6.10). Let `S` and `T` be disjoint finite sets of
+finite places of `K`, with the classes of the primes of `S` generating the ideal class group, and
+let `[L : K]` divide `n`. Suppose that
+
+* at the places of `S` and at the infinite places every element of `K_v` is a local norm,
+* at every finite place outside `S ∪ T` some place of `L` above it is unramified, and
+* the `S`-units surject onto `∏_{v ∈ T} U_v / U_v ^ n`: every family of local units at `T` agrees
+  with a single `S`-unit up to local `n`-th powers.
+
+Then the norm map `C_L → C_K` is surjective. -/
+theorem ideleClassNormMap_surjective_of_forall_exists_mem_unit
+    (S T : Finset (HeightOneSpectrum (𝓞 K))) (hST : Disjoint S T) {n : ℕ}
+    (hn : Module.finrank K L ∣ n)
+    (hcl : Subgroup.closure
+      (HeightOneSpectrum.classGroupMk '' (S : Set (HeightOneSpectrum (𝓞 K)))) = ⊤)
+    (hS : ∀ v ∈ S,
+      (Algebra.normUnits (v.adicCompletion K) (S := v.adicCompletion K ⊗[K] L)).range = ⊤)
+    (hinf : ∀ w : InfinitePlace K,
+      (Algebra.normUnits w.Completion (S := w.Completion ⊗[K] L)).range = ⊤)
+    (hunr : ∀ v ∉ S, v ∉ T →
+      ∃ w : {w : HeightOneSpectrum (𝓞 L) // w.asIdeal.LiesOver v.asIdeal},
+        Algebra.IsUnramifiedAt (𝓞 K) w.1.asIdeal)
+    (hT : ∀ y : (v : T) → (v.1.adicCompletion K)ˣ,
+      (∀ v, Valued.v (y v : v.1.adicCompletion K) = 1) →
+      ∃ u ∈ (S : Set (HeightOneSpectrum (𝓞 K))).unit K, ∀ v : T,
+        (Units.map (algebraMap K (v.1.adicCompletion K)).toMonoidHom u)⁻¹ * y v ∈
+          (powMonoidHom n).range) :
+    Function.Surjective (ideleClassNormMap K L) := by
+  classical
+  intro c
+  obtain ⟨x, rfl⟩ := QuotientGroup.mk_surjective c
+  -- A representative `x * a` of the class that is a unit at every finite place outside `S`.
+  obtain ⟨a, ha⟩ := IdeleGroup.exists_valued_ideleFiniteCoord_mul_unitEmbedding_eq_one hcl x
+  set x' := x * IdeleGroup.unitEmbedding (𝓞 K) K a with hx'
+  obtain ⟨u, huS, hu⟩ := hT (fun v ↦ v.1.ideleFiniteCoord x')
+    fun v ↦ ha v.1 fun hv ↦ Finset.disjoint_left.mp hST hv v.2
+  have hu' := (IdeleGroup.forall_valued_ideleFiniteCoord_unitEmbedding_eq_one_iff
+    (R := 𝓞 K) (T := (S : Set (HeightOneSpectrum (𝓞 K)))) u).mpr huS
+  set z := x' * IdeleGroup.unitEmbedding (𝓞 K) K u⁻¹ with hz
+  have hzcoord (v : HeightOneSpectrum (𝓞 K)) : v.ideleFiniteCoord z =
+      (Units.map (algebraMap K (v.adicCompletion K)).toMonoidHom u)⁻¹ * v.ideleFiniteCoord x' := by
+    rw [map_mul, mul_comm, map_inv, map_inv, ideleFiniteCoord_unitEmbedding]
+  -- An `n`-th power of a local unit is a local norm, since `[L : K]` divides `n`.
+  have hpow {F : Type _} [Field F] [Algebra K F] {y : Fˣ}
+      (hy : y ∈ (powMonoidHom n : Fˣ →* Fˣ).range) :
+      y ∈ (Algebra.normUnits F (S := F ⊗[K] L)).range :=
+    Algebra.range_powMonoidHom_le_range_normUnits F (by rwa [Module.finrank_baseChange]) hy
+  have hfin (v : HeightOneSpectrum (𝓞 K)) : v.ideleFiniteCoord z ∈
+      (Algebra.normUnits (v.adicCompletion K) (S := v.adicCompletion K ⊗[K] L)).range := by
+    by_cases hvS : v ∈ S
+    · simp [hS v hvS]
+    by_cases hvT : v ∈ T
+    · rw [hzcoord]
+      exact hpow (hu ⟨v, hvT⟩)
+    -- Outside `S ∪ T` the coordinate is a unit, and units are norms from an unramified place.
+    have hval : Valued.v (v.ideleFiniteCoord z : v.adicCompletion K) = 1 := by
+      rw [map_mul, Units.val_mul, map_mul, ha v hvS, map_inv, map_inv, Units.val_inv_eq_inv_val,
+        map_inv₀, hu' v hvS, inv_one, one_mul]
+    obtain ⟨w, hw⟩ := exists_unit_preimages_of_isUnramifiedAt K L v _ hval (hunr v hvS hvT)
+    exact (mem_range_normUnits_adicCompletion_iff K L v _).mpr ⟨w, hw.1⟩
+  obtain ⟨y, hy⟩ := (mem_range_ideleNormMap_iff K L z).mpr ⟨hfin, fun w ↦ by simp [hinf w]⟩
+  refine ⟨(y : IdeleClassGroup (𝓞 L) L), ?_⟩
+  replace hy : ideleNormMap K L y = z := hy
+  have hmem : IdeleGroup.unitEmbedding (𝓞 K) K a * IdeleGroup.unitEmbedding (𝓞 K) K u⁻¹ ∈
+      IdeleGroup.principalSubgroup (𝓞 K) K := ⟨a * u⁻¹, map_mul _ _ _⟩
+  rw [ideleClassNormMap_mk, hy, hz, hx', mul_assoc]
+  exact QuotientGroup.mk_mul_of_mem x hmem
 
 end TauCeti.GlobalNumberFields
