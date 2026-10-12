@@ -19,16 +19,16 @@ the newspace in weight at least two. Including diamonds retains the nebentypus i
 when studying the rational algebra and its characters. Its complex algebraic span is the
 complex newspace Hecke algebra.
 
-Restriction of the complex newform characters gives integral-algebra characters. Every value
-of such a character is an algebraic integer; the good-prime values are the Fourier
+Restriction of the complex newform characters gives integral-algebra characters. When `2 ≤ k`,
+every value of such a character is an algebraic integer; the good-prime values are the Fourier
 coefficients, and the diamond values are the nebentypus values.
 
 ## Main results
 
-* `TauCeti.heckeTDiamondCuspNewIntegralAlgebra_finite`: finiteness over `ℤ`.
+* `TauCeti.heckeTDiamondCuspNewIntegralAlgebra_finite`: finiteness over `ℤ` when `2 ≤ k`.
 * `TauCeti.adjoin_heckeTDiamondCuspNewIntegralAlgebra`: recovery of the complex algebra.
 * `TauCeti.Newform.isIntegral_heckeTDiamondCuspNewIntegralCharacter`: integrality of the
-  restricted `heckeTDiamondCuspNewCharacter`.
+  restricted `heckeTDiamondCuspNewCharacter` when `2 ≤ k`.
 
 ## References
 
