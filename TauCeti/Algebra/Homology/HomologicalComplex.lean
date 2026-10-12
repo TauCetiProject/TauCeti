@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Homology.HomologicalComplex
 public import Mathlib.Algebra.Homology.HomologicalComplexLimits
 public import Mathlib.Algebra.Homology.ShortComplex.HomologicalComplex
 public import Mathlib.Algebra.Homology.ShortComplex.Preadditive
+public import Mathlib.Algebra.Homology.ShortComplex.ShortExact
 
 /-!
 # Additional API for homological complexes
@@ -22,7 +23,9 @@ degree `i`, and are epimorphisms in degrees where the complex is exact. In a deg
 differential into it, the identification of the homology with the cycles is natural
 (`HomologicalComplex.isoHomologyπ_inv_naturality`). The sequence
 `Zᵢ ⟶ Kᵢ ⟶ Zⱼ` of cycles is exact (`HomologicalComplex.exact_iCycles_toCycles`), so the cycles of
-a complex exact in degree `j` fit into short exact sequences `0 ⟶ Zᵢ ⟶ Kᵢ ⟶ Zⱼ ⟶ 0`.
+a complex exact in degree `j` fit into short exact sequences `0 ⟶ Zᵢ ⟶ Kᵢ ⟶ Zⱼ ⟶ 0`
+(`HomologicalComplex.cyclesShortComplex_shortExact`). Constructing the bundled cycle sequence
+requires homology only in the two selected degrees.
 For chain complexes indexed by the natural numbers, the identification of zero chains with
 cycles is natural (`ChainComplex.cycles₀Iso_inv_naturality`). The isomorphisms `homologyIsoSc'`
 are natural (`HomologicalComplex.homologyMap_comp_homologyIsoSc'_hom`).
@@ -61,6 +64,45 @@ vanishes. -/
 lemma iCycles_toCycles (i j : ι) [K.HasHomology i] [K.HasHomology j] :
     K.iCycles i ≫ K.toCycles i j = 0 := by
   rw [← cancel_mono (K.iCycles j), Category.assoc, toCycles_i, iCycles_d, zero_comp]
+
+/-- The short complex `Zᵢ(K) ⟶ Kᵢ ⟶ Zⱼ(K)` cut out of a homological complex. Its
+second map is the differential with codomain restricted to the cycles in degree `j`. -/
+noncomputable def cyclesShortComplex (i j : ι) [K.HasHomology i] [K.HasHomology j] :
+    ShortComplex C :=
+  ShortComplex.mk (K.iCycles i) (K.toCycles i j) (K.iCycles_toCycles i j)
+
+/-- The cycle sequence is formed by the inclusion of cycles and the corestricted differential. -/
+lemma cyclesShortComplex_def (i j : ι) [K.HasHomology i] [K.HasHomology j] :
+    K.cyclesShortComplex i j =
+      ShortComplex.mk (K.iCycles i) (K.toCycles i j) (K.iCycles_toCycles i j) := (rfl)
+
+@[simp]
+lemma cyclesShortComplex_X₁ (i j : ι) [K.HasHomology i] [K.HasHomology j] :
+    (K.cyclesShortComplex i j).X₁ = K.cycles i := (rfl)
+
+@[simp]
+lemma cyclesShortComplex_X₂ (i j : ι) [K.HasHomology i] [K.HasHomology j] :
+    (K.cyclesShortComplex i j).X₂ = K.X i := (rfl)
+
+@[simp]
+lemma cyclesShortComplex_X₃ (i j : ι) [K.HasHomology i] [K.HasHomology j] :
+    (K.cyclesShortComplex i j).X₃ = K.cycles j := (rfl)
+
+/-- The first map of the cycle sequence is the inclusion of cycles, transported along the
+object equalities `cyclesShortComplex_X₁` and `cyclesShortComplex_X₂`. -/
+@[simp]
+lemma cyclesShortComplex_f (i j : ι) [K.HasHomology i] [K.HasHomology j] :
+    (K.cyclesShortComplex i j).f = eqToHom (K.cyclesShortComplex_X₁ i j) ≫ K.iCycles i ≫
+      eqToHom (K.cyclesShortComplex_X₂ i j).symm :=
+  (Category.comp_id _).symm.trans (Category.id_comp _).symm
+
+/-- The second map of the cycle sequence is the corestricted differential, transported along the
+object equalities `cyclesShortComplex_X₂` and `cyclesShortComplex_X₃`. -/
+@[simp]
+lemma cyclesShortComplex_g (i j : ι) [K.HasHomology i] [K.HasHomology j] :
+    (K.cyclesShortComplex i j).g = eqToHom (K.cyclesShortComplex_X₂ i j) ≫ K.toCycles i j ≫
+      eqToHom (K.cyclesShortComplex_X₃ i j).symm :=
+  (Category.comp_id _).symm.trans (Category.id_comp _).symm
 
 variable {K}
 
@@ -102,13 +144,13 @@ end HomologicalComplex
 
 namespace HomologicalComplex
 
-variable {C : Type u} [Category.{v} C] [Preadditive C] [CategoryWithHomology C] {ι : Type*}
+variable {C : Type u} [Category.{v} C] [Preadditive C] {ι : Type*}
   {c : ComplexShape ι} {K : HomologicalComplex C c}
 
 variable (K) in
 /-- The sequence `Zᵢ ⟶ Kᵢ ⟶ Zⱼ` of the cycles of a complex `K` is exact when `j` is the degree
 following `i`: the cycles in degree `i` are the kernel of the differential. -/
-lemma exact_iCycles_toCycles (i j : ι) (hij : c.next i = j) :
+lemma exact_iCycles_toCycles [CategoryWithHomology C] (i j : ι) (hij : c.next i = j) :
     (ShortComplex.mk _ _ (K.iCycles_toCycles i j)).Exact := by
   refine (ShortComplex.exact_iff_of_epi_of_isIso_of_mono
     (S₁ := ShortComplex.mk _ _ (K.iCycles_toCycles i j))
@@ -122,12 +164,22 @@ lemma exact_iCycles_toCycles (i j : ι) (hij : c.next i = j) :
 
 /-- In a complex exact in degree `j`, the map onto the cycles in degree `j` from the preceding
 degree is an epimorphism. -/
-lemma epi_toCycles_of_exactAt {i j : ι} (h : K.ExactAt j) (hij : c.prev j = i) :
+lemma epi_toCycles_of_exactAt {i j : ι} [K.HasHomology j]
+    (h : K.ExactAt j) (hij : c.prev j = i) :
     Epi (K.toCycles i j) := by
   rw [exactAt_iff' _ i j (c.next j) hij rfl] at h
+  have := h.hasHomology
   rw [← epi_comp_iff_of_isIso _ (K.cyclesIsoSc' i j (c.next j) hij rfl).hom,
     K.toCycles_cyclesIsoSc'_hom]
   exact h.epi_toCycles
+
+/-- The cycle sequence `Zᵢ(K) ⟶ Kᵢ ⟶ Zⱼ(K)` is short exact when `i` and `j` are adjacent
+and `K` is exact in degree `j`. -/
+lemma cyclesShortComplex_shortExact [CategoryWithHomology C] (i j : ι)
+    (hij : c.Rel i j) (hK : K.ExactAt j) : (K.cyclesShortComplex i j).ShortExact := by
+  rw [cyclesShortComplex_def]
+  exact ShortComplex.ShortExact.mk' (K.exact_iCycles_toCycles i j (c.next_eq' hij))
+    inferInstance (epi_toCycles_of_exactAt hK (c.prev_eq' hij))
 
 end HomologicalComplex
 
