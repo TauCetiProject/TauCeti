@@ -103,20 +103,14 @@ place `P`, then so is `b`, which is integral over `k[a]`. -/
 theorem mem_integers_of_aeval_eq_zero (P : Place k F) {φ : MvPolynomial (Fin 2) k}
     (hmon : ((Bivariate.equivMvPolynomial k).symm φ).Monic) {a b : F}
     (hab : MvPolynomial.aeval ![a, b] φ = 0) (ha : a ∈ P.integers) : b ∈ P.integers := by
-  -- View `F` as a `k[X]`-algebra through `X ↦ a`.
-  let _ : Algebra k[X] F := (aeval a).toAlgebra
-  have : IsScalarTower k k[X] F := .of_algebraMap_eq fun c ↦ by
+  -- View `k[a]` as a `k[X]`-algebra through `X ↦ a`; the monic equation makes `b` integral over it.
+  let A := Algebra.adjoin k ({a} : Set F)
+  let _ : Algebra k[X] A := (aeval (⟨a, Algebra.self_mem_adjoin_singleton k a⟩ : A)).toAlgebra
+  have : IsScalarTower k k[X] A := .of_algebraMap_eq fun c ↦ by
     simp [RingHom.algebraMap_toAlgebra]
-  have hX : algebraMap k[X] F X = a := by simp [RingHom.algebraMap_toAlgebra]
-  have hR (r : k[X]) : algebraMap k[X] F r ∈ P.integers := by
-    induction r using Polynomial.induction_on' with
-    | add p q hp hq => rw [map_add]; exact add_mem hp hq
-    | monomial n c =>
-      rw [← C_mul_X_pow_eq_monomial, map_mul, map_pow, hX, ← Polynomial.algebraMap_eq,
-        ← IsScalarTower.algebraMap_apply]
-      exact mul_mem (P.algebraMap_mem_integers c) (pow_mem ha n)
-  refine P.mem_integers_of_isIntegral hR ⟨_, hmon, ?_⟩
-  rw [← aeval_def, ← Bivariate.aeval_equivMvPolynomial, AlgEquiv.apply_symm_apply, hX, hab]
+  refine P.mem_integers_of_isIntegral_adjoin ha ⟨_, hmon.map (algebraMap k[X] A), ?_⟩
+  rw [← aeval_def, Bivariate.aeval_map_eq_aeval_equivMvPolynomial, AlgEquiv.apply_symm_apply]
+  simpa [RingHom.algebraMap_toAlgebra] using hab
 
 end Integral
 
