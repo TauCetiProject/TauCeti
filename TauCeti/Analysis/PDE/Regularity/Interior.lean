@@ -84,13 +84,6 @@ def divMatrixGradient (A : Matrix ι ι ℝ) (ψ : EuclideanSpace ℝ ι → ℝ
   ∑ i, lineDeriv ℝ (fun y => matrixBilinearForm A (EuclideanSpace.basisFun ι ℝ i) (∇ ψ y)) x
     (EuclideanSpace.basisFun ι ℝ i)
 
-/-- The divergence of a matrix gradient is the sum of its directional conormal derivatives. -/
-theorem divMatrixGradient_def (A : Matrix ι ι ℝ) (ψ : EuclideanSpace ℝ ι → ℝ)
-    (x : EuclideanSpace ℝ ι) :
-    divMatrixGradient A ψ x =
-      ∑ i, lineDeriv ℝ (fun y => matrixBilinearForm A (EuclideanSpace.basisFun ι ℝ i) (∇ ψ y)) x
-        (EuclideanSpace.basisFun ι ℝ i) := (rfl)
-
 /-- `div(A ∇ψ)` vanishes off the support of `ψ`. -/
 @[simp] theorem divMatrixGradient_eq_zero_of_notMem_tsupport {ψ : EuclideanSpace ℝ ι → ℝ}
     (hψ : ContDiff ℝ ∞ ψ) {x : EuclideanSpace ℝ ι} (hx : x ∉ tsupport ψ) :
@@ -129,7 +122,7 @@ theorem divMatrixGradient_eq_sum_fderiv_fderiv
     funext y
     simp [matrixBilinearForm_apply, b, EuclideanSpace.basisFun_apply, Matrix.mulVec,
       dotProduct, hcoord]
-  rw [divMatrixGradient_def]
+  rw [divMatrixGradient]
   refine Finset.sum_congr rfl fun j _ => ?_
   rw [hflux, ((DifferentiableAt.fun_sum fun i _ => (hd i).const_mul _)).lineDeriv_eq_fderiv,
     fderiv_fun_sum fun i _ => (hd i).const_mul _]
@@ -145,7 +138,7 @@ theorem continuousOn_divMatrixGradient (hg : ContDiffOn ℝ 2 g Omega) :
   have hgrad : ContDiffOn ℝ 1 (∇ g) Omega :=
     (toDual ℝ (EuclideanSpace ℝ ι)).symm.contDiff.comp_contDiffOn
       (hg.fderiv_of_isOpen Omega.isOpen (by norm_num))
-  rw [funext (divMatrixGradient_def A g)]
+  unfold divMatrixGradient
   refine continuousOn_finsetSum _ fun i _ => ?_
   have hi : ContDiffOn ℝ 1
       (fun y => matrixBilinearForm A (EuclideanSpace.basisFun ι ℝ i) (∇ g y)) Omega :=
@@ -205,7 +198,7 @@ theorem _root_.ContDiffOn.integral_matrixBilinearForm_gradient_eq_neg_integral_d
       simp_rw [← smul_eq_mul, (hqweak _).integral_lineDeriv_smul_eq_neg_integral_smul φ]
       rw [Finset.sum_neg_distrib, ← integral_finsetSum _
         (fun i _ => integrable_smul_of_locallyIntegrableOn (hqd i) φ)]
-      simp only [Finset.mul_sum, divMatrixGradient_def, b, q, smul_eq_mul]
+      simp only [Finset.mul_sum, divMatrixGradient, b, q, smul_eq_mul]
 
 end ClassicalOperator
 
