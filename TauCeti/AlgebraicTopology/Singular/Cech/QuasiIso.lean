@@ -75,7 +75,10 @@ theorem ιTotal_openCoverSingularTotalAugmentation_f_zero (q : ℕ) :
       (((singularChainComplexFunctor.{u} C).obj R).map
         ((openCoverArrow U).augmentedCechNerve.hom.app (op ⦋0⦌))).f q := by
   rw [openCoverSingularTotalAugmentation, HomologicalComplex₂.ιTotal_totalAugmentation_f_zero,
-    HomologicalComplex.comp_f, openCoverSingularAugmentation_f_zero]
+    HomologicalComplex.comp_f, openCoverSingularAugmentation_f_zero, ChainComplex.single₀ObjXSelf,
+    Iso.refl_hom, HomologicalComplex.id_f]
+  -- The identity is on degree `q` of the single complex's object, which is the singular chains
+  -- only up to definitional unfolding of `HomologicalComplex.single`, so `rw` cannot close it.
   exact Category.comp_id _
 
 /-- The augmentation of the total complex vanishes on the summands of positive Čech degree. -/
