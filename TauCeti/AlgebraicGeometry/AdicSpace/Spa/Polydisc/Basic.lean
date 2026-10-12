@@ -486,6 +486,21 @@ theorem closedPolydisc_vle_weightedC_iff {k : ℕ} (v : closedPolydisc k K) (x y
         (weightedC _ isWeightFamily_one_weight y) ↔ ‖x‖ ≤ ‖y‖ := by
   rw [← vle_iff_norm_le_of_mem_spa (comap_weightedC_mem_spa v), comap_vle]
 
+/-- Every point of the closed polydisc compares the values of constants as their norms. -/
+@[simp]
+theorem closedPolydisc_valuation_weightedC_le_iff {k : ℕ} (v : closedPolydisc k K) (x y : K) :
+    v.1.valuation (weightedC (fun _ : Fin k ↦ ({1} : Set K)) isWeightFamily_one_weight x) ≤
+        v.1.valuation (weightedC _ isWeightFamily_one_weight y) ↔ ‖x‖ ≤ ‖y‖ := by
+  rw [valuation_le_iff, closedPolydisc_vle_weightedC_iff]
+
+/-- A point of the closed polydisc vanishes on a constant `x` only for `x = 0`. -/
+@[simp]
+theorem closedPolydisc_valuation_weightedC_eq_zero_iff {k : ℕ} (v : closedPolydisc k K) (x : K) :
+    v.1.valuation (weightedC (fun _ : Fin k ↦ ({1} : Set K)) isWeightFamily_one_weight x) = 0 ↔
+      x = 0 := by
+  rw [← le_zero_iff, ← map_zero v.1.valuation, ← map_zero (weightedC _ _),
+    closedPolydisc_valuation_weightedC_le_iff, norm_zero, norm_le_zero_iff]
+
 end NormedField
 
 end TauCeti.ValuationSpectrum
