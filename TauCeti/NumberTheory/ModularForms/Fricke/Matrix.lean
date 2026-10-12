@@ -23,8 +23,8 @@ through `NeZero.charZero`; the instance runs only in that direction.
 
 This file is only the matrix. `TauCeti/NumberTheory/ModularForms/Fricke/Operator.lean` builds
 the Fricke *slash operator* on `M_k(Γ₁(N))` on top of it: the raw `f ↦ f ∣[k] W`, carrying no
-normalizing scalar and so not an involution. The normalized `𝒲_N = (√N) ^ (2 - k) • (· ∣[k] W)`,
-which rescales that map and is an involution in even weight, is a later rung.
+normalizing scalar and so not an involution. The normalization
+`𝒲_N = (√N) ^ (2 - k) • (· ∣[k] W)` rescales that map to an involution in even weight.
 
 ## Main definitions
 
@@ -54,8 +54,7 @@ different objects in different settings — neither carries a determinant-`N` no
 
 Ported from the AINTLIB `LeanModularForms` project
 (`projects/LeanModularForms/LeanModularForms/HeckeRIngs/GL2/Fricke.lean`, Chris Birkbeck,
-Apache-2.0, <https://github.com/CBirkbeck/AINTLIB>), realizing part of Layer 6 of the
-ModularForms roadmap.
+Apache-2.0, <https://github.com/CBirkbeck/AINTLIB>).
 -/
 
 open Matrix

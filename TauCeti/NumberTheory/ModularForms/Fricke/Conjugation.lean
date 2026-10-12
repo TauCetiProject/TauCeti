@@ -117,8 +117,7 @@ no transpose, and lives on `Γ₀(N)` itself. The two *matrices* are already dis
 
 Ported from the AINTLIB `LeanModularForms` project
 ([`LeanModularForms/HeckeRIngs/GL2/Fricke.lean`](https://github.com/CBirkbeck/AINTLIB),
-commit `340875adfb2`, Apache-2.0, Chris Birkbeck), realizing part of Layer 6 of the ModularForms
-roadmap.
+commit `340875adfb2`, Apache-2.0, Chris Birkbeck).
 
 Ported from there: the divisibility witness and its spec (`botLeftDiv`, `botLeftDiv_spec`
 upstream, `natCast_mul_lowerLeft_ediv` here), `frickeConjSL` with its coercion lemma,
