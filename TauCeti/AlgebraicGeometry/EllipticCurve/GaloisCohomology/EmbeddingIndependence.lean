@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.Selmer
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.AbsoluteGaloisGroup
 
 /-!
 # Independence of the embeddings of separable closures
@@ -40,19 +41,18 @@ variable {K : Type*} [Field K] {L : Type*} [Field L] [Algebra K L]
 /-- Restriction on `H¹(G_K, E(Kˢ))` is independent of the embedding of separable closures. -/
 theorem pointRes_eq_pointRes (τ' : SeparableClosure K →ₐ[K] SeparableClosure L) :
     W.pointRes τ = W.pointRes τ' := by
-  obtain ⟨σ, rfl⟩ := τ.exists_comp_eq_of_normal τ'
   rw [pointRes_eq_explicitMap1, pointRes_eq_explicitMap1]
-  exact (explicitMap1_eq_of_conj _ _ _ _ _ _ _ _ _ _ _ _ σ
-    (absoluteGaloisGroupMap_comp τ σ) (W.pointCoeffBaseChange_comp τ σ)).symm
+  exact explicitMap1_absoluteGaloisGroupMap_eq W.pointCoeffBaseChange
+    W.pointCoeffBaseChange_smul W.pointCoeffBaseChange_comp τ τ'
 
 /-- Restriction on `H¹(G_K, E(Kˢ)[m])` is independent of the embedding of separable closures,
 for every natural number `m`. -/
 theorem torsionRes_eq_torsionRes (τ' : SeparableClosure K →ₐ[K] SeparableClosure L) (m : ℕ) :
     W.torsionRes τ m = W.torsionRes τ' m := by
-  obtain ⟨σ, rfl⟩ := τ.exists_comp_eq_of_normal τ'
   rw [torsionRes_eq_explicitMap1, torsionRes_eq_explicitMap1]
-  exact (explicitMap1_eq_of_conj _ _ _ _ _ _ _ _ _ _ _ _ σ
-    (absoluteGaloisGroupMap_comp τ σ) (W.torsionCoeffBaseChange_comp τ σ m)).symm
+  exact explicitMap1_absoluteGaloisGroupMap_eq (fun τ => W.torsionCoeffBaseChange τ m)
+    (fun τ => W.torsionCoeffBaseChange_smul τ m)
+    (fun τ σ => W.torsionCoeffBaseChange_comp τ σ m) τ τ'
 
 section Families
 
