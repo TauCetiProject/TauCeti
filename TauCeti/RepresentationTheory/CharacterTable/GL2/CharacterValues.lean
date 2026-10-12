@@ -58,11 +58,9 @@ finite, on to a `Fintype.card` by `Nat.card_eq_fintype_card`; so none of the eig
 
 ## References
 
-This supplies the Steinberg row of the character-value formulas of Layer 9 ("the representation
-theory of `GL₂(𝔽_q)`") of
-`TauCetiRoadmap/RepresentationTheory/CharacterTheory/README.md`. See also W. Fulton and J. Harris,
-*Representation Theory: A First Course*, GTM 129, §5.2, and C. Bonnafé, *Representations of
-`SL₂(𝔽_q)`* (2011), Chapter 5.
+This supplies the Steinberg row of the character-value formulas for `GL₂(𝔽_q)`. See also W. Fulton
+and J. Harris, *Representation Theory: A First Course*, GTM 129, §5.2, and C. Bonnafé,
+*Representations of `SL₂(𝔽_q)`* (2011), Chapter 5.
 -/
 
 public section
