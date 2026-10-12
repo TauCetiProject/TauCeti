@@ -182,7 +182,7 @@ private theorem existsUnique_continuous_ringHom_comp_eq (φ : A →+* B) (hφ : 
   obtain ⟨num, den, hq⟩ := q
   subst hden
   exact existsUnique_continuous_ringHom_comp_toCompletionLoc_eq P p.num p.den _
-    p.hasDenominatorPower P' φ hφ num _ hq hnum
+    p.hasDenominatorPower P' φ hφ.continuousAt num _ hq hnum
 
 /-- The morphism `A⟨p⟩ ⟶ B⟨q⟩` of `existsUnique_continuous_ringHom_comp_eq`. -/
 noncomputable def Presentation.mapHom (φ : A →+* B) (hφ : Continuous φ) (p : Presentation P)

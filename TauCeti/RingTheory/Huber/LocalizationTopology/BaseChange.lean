@@ -76,15 +76,15 @@ section RingHom
 
 variable (P : PairOfDefinition A) (T : Finset A) (s : A) (S : Type*) [CommRing S] [Algebra A S]
   [IsLocalization.Away s S] (hden : HasDenominatorPower P T s S)
-  (P' : PairOfDefinition B) (f : A →+* B) (hf : Continuous f) (T' : Finset B) (S' : Type*)
+  (P' : PairOfDefinition B) (f : A →+* B) (hf : ContinuousAt f 0) (T' : Finset B) (S' : Type*)
   [CommRing S'] [Algebra B S'] [IsLocalization.Away (f s) S']
   (hden' : HasDenominatorPower P' T' (f s) S') (hT : ∀ t ∈ T, f t ∈ T')
 
 include hf hT in
 /-- **The universal property of `A⟨T/s⟩` applied to `A → B → B⟨T'/f(s)⟩`**: exactly one continuous
 ring homomorphism `A⟨T/s⟩ → B⟨T'/f(s)⟩` carries the structure map of `A` to that of `B` after `f`.
-Beyond continuity of `f`, only `f(T) ⊆ T'` is assumed: `f(s)` is a unit of `B⟨T'/f(s)⟩`, and each
-`f(t)/f(s)`, for `t ∈ T`, is power-bounded there because `f(t)` is a numerator. -/
+Beyond continuity of `f` at `0`, only `f(T) ⊆ T'` is assumed: `f(s)` is a unit of `B⟨T'/f(s)⟩`, and
+each `f(t)/f(s)`, for `t ∈ T`, is power-bounded there because `f(t)` is a numerator. -/
 theorem existsUnique_continuous_ringHom_comp_toCompletionLoc_eq :
     letI := locUniformSpace P T s S hden
     letI := isUniformAddGroup_locUniformSpace P T s S hden
@@ -105,7 +105,8 @@ theorem existsUnique_continuous_ringHom_comp_toCompletionLoc_eq :
   have hu := isUnit_toCompletionLoc_of_dvd P' T' (f s) S' hden' ⟨1, hs⟩
   exact existsUnique_continuous_ringHom_completion_locTopology P T s S hden
     (φ := (toCompletionLoc P' T' (f s) S' hden').comp f)
-    ((continuous_toCompletionLoc P' T' (f s) S' hden').comp hf).continuousAt hu
+    ((continuous_toCompletionLoc P' T' (f s) S' hden').comp
+      (continuous_of_continuousAt_zero f hf)).continuousAt hu
     fun t ht ↦ isPowerBounded_toCompletionLoc_mul_unit_inv P' T' (f s) S' hden' hs hu
       ((mul_one (f t)).symm ▸ hT t ht)
 
@@ -310,13 +311,14 @@ noncomputable def completionLocPairMap :
   letI := isUniformAddGroup_locUniformSpace P' T' (f.toRingHom s) S' hden'
   letI := isTopologicalRing_locUniformSpace P' T' (f.toRingHom s) S' hden'
   letI := isHuberRing_completion_locTopology P' T' (f.toRingHom s) S' hden'
-  { toRingHom := completionLocMap P T s S hden P' f.toRingHom f.continuous_toRingHom T' S' hden' hT
+  { toRingHom := completionLocMap P T s S hden P' f.toRingHom f.continuous_toRingHom.continuousAt
+      T' S' hden' hT
     continuous_toRingHom := continuous_completionLocMap P T s S hden P' f.toRingHom
-      f.continuous_toRingHom T' S' hden' hT
+      f.continuous_toRingHom.continuousAt T' S' hden' hT
     map_mem_plus := by
       rw [rationalLocalizationPair_plus, rationalLocalizationPair_plus]
       exact completionLocMap_mem_completedPlusSubring P T s S hden P' f.toRingHom
-        f.continuous_toRingHom T' S' hden' hT f.map_mem_plus }
+        f.continuous_toRingHom.continuousAt T' S' hden' hT f.map_mem_plus }
 
 /-- The underlying ring homomorphism of `completionLocPairMap` is `completionLocMap`. -/
 @[simp]
@@ -330,12 +332,14 @@ theorem toRingHom_completionLocPairMap :
     letI := isTopologicalRing_locUniformSpace P' T' (f.toRingHom s) S' hden'
     letI := isHuberRing_completion_locTopology P' T' (f.toRingHom s) S' hden'
     (completionLocPairMap P U hP T s S hden P' U' hP' f T' S' hden' hT).toRingHom =
-      completionLocMap P T s S hden P' f.toRingHom f.continuous_toRingHom T' S' hden' hT :=
+      completionLocMap P T s S hden P' f.toRingHom f.continuous_toRingHom.continuousAt
+        T' S' hden' hT :=
   (rfl)
 
 /-- **`completionLocPairMap` is compatible with the structure morphisms**: the structure morphism
 `(A, A⁺) → (A⟨T/s⟩, A_U⁺)` followed by it is `f` followed by the structure morphism
 `(B, B⁺) → (B⟨T'/f(s)⟩, B_V⁺)`. -/
+@[simp]
 theorem completionLocPairMap_comp_toCompletionLocHom :
     letI := locUniformSpace P T s S hden
     letI := isUniformAddGroup_locUniformSpace P T s S hden
@@ -359,8 +363,8 @@ theorem completionLocPairMap_comp_toCompletionLocHom :
   apply Pair.Hom.ext
   rw [Pair.Hom.toRingHom_comp, Pair.Hom.toRingHom_comp, toRingHom_completionLocPairMap,
     toRingHom_toCompletionLocHom, toRingHom_toCompletionLocHom]
-  exact completionLocMap_comp_toCompletionLoc P T s S hden P' f.toRingHom f.continuous_toRingHom
-    T' S' hden' hT
+  exact completionLocMap_comp_toCompletionLoc P T s S hden P' f.toRingHom
+    f.continuous_toRingHom.continuousAt T' S' hden' hT
 
 end Pair
 
