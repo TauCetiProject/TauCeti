@@ -58,7 +58,8 @@ is exactly what rules this out, and it is carried as an explicit hypothesis thro
   Sobolev inequality.
 * `TauCeti.toReal_inv_add_inv_eq_inv` and `TauCeti.one_lt_toReal_div_two_and_div_mul_eq`: the
   exponent relation `1/2* + 1/n = 1/2` of `W^{1,2}` read in `ℝ`, and the arithmetic of the ratio
-  `χ = 2*/2` that Moser's iteration multiplies exponents by.
+  `χ = 2*/2` that Moser's iteration multiplies exponents by. The relation forces `n ≠ 0`
+  (`TauCeti.ne_zero_of_inv_add_inv_eq_inv`).
 
 * `TauCeti.W1p.eLpNorm_value_le_of_forall_testFunction`: the transfer principle, from an
   estimate on test functions to the same estimate on `W^{1,p}_0(Ω)`.
@@ -245,16 +246,17 @@ theorem toReal_inv_add_inv_eq_inv {n : ℕ} (hexp : pstar⁻¹ + (n : ℝ≥0∞
   rwa [ENNReal.toReal_add hpinv hninv, ENNReal.toReal_inv, ENNReal.toReal_inv,
     ENNReal.toReal_natCast, ENNReal.toReal_inv, ENNReal.toReal_ofNat] at this
 
+/-- A Sobolev exponent `2*` with `1/2* + 1/n = 1/2` exists only in positive dimension `n`. -/
+theorem ne_zero_of_inv_add_inv_eq_inv {n : ℕ} (hexp : pstar⁻¹ + (n : ℝ≥0∞)⁻¹ = 2⁻¹) : n ≠ 0 :=
+  Nat.cast_ne_zero.1 <| ENNReal.inv_ne_top.1 <| ne_top_of_le_ne_top (by simp) (hexp ▸ le_add_self)
+
 /-- The exponent arithmetic of Moser's iteration in dimension `n ≥ 3`. If `1/2* + 1/n = 1/2` with
 `2* < ∞`, then `χ = 2*/2` exceeds `1`, and multiplying an exponent `t` by `χ` lowers `n/t` by
 `2/t`, that is `n/(tχ) = n/t - 2/t`. -/
 theorem one_lt_toReal_div_two_and_div_mul_eq {n : ℕ} (hpstar : pstar ≠ ∞)
     (hexp : pstar⁻¹ + (n : ℝ≥0∞)⁻¹ = 2⁻¹) :
     1 < pstar.toReal / 2 ∧ ∀ t : ℝ, t ≠ 0 → (n : ℝ) / (t * (pstar.toReal / 2)) = n / t - 2 / t := by
-  have hn : n ≠ 0 := by
-    rintro rfl
-    rw [Nat.cast_zero, ENNReal.inv_zero, add_top] at hexp
-    exact absurd hexp.symm (by simp)
+  have hn := ne_zero_of_inv_add_inv_eq_inv hexp
   have hn0 : (0 : ℝ) < n := Nat.cast_pos.2 (Nat.pos_of_ne_zero hn)
   have hpinv : pstar⁻¹ ≠ ∞ := ne_top_of_le_ne_top (by simp) (hexp ▸ le_self_add)
   have hreal := toReal_inv_add_inv_eq_inv hexp

@@ -5,8 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.AlgebraicGroup.Dynamic.Functor
-public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Borel
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Dynamic.GL2.Subgroups
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Dynamic.Weight.Parabolic.Basic
 
@@ -42,14 +40,11 @@ root-subgroup point map.
 
 * G. R. Kempf, *Instability in invariant theory*, Annals of Mathematics 108 (1978), §2.
 * J. S. Milne, *Algebraic Groups* (2017), Chapter 13.
-
-This supplies scheme-level representability for the rank-one dynamic-parabolic route in Layer 7,
-"Structure theory", of the ReductiveGroups roadmap.
 -/
 
 public section
 
-open CategoryTheory WithConv
+open CategoryTheory
 
 namespace TauCeti.GeneralLinear.Dynamic.GL2
 
@@ -103,7 +98,7 @@ theorem coe_borelPointsIsoParabolicFunctor_hom_app_apply
 /-! ## The dynamic Levi -/
 
 /-- The diagonal-torus point map, with codomain restricted to the dynamic Levi. -/
-noncomputable def splitTorusToLevi (A : CommAlgCat.{w} R) :
+private noncomputable def splitTorusToLevi (A : CommAlgCat.{w} R) :
     HopfAlgebra.points
         (R := R)
         (H := MonoidAlgebra R (Multiplicative (ULift.{u} (Fin 2) →₀ ℤ))) A →*
@@ -196,7 +191,7 @@ theorem splitTorusPointsIsoLeviFunctor_inv_app_apply (A : CommAlgCat.{w} R)
 
 /-- The positive root-subgroup point map, with codomain restricted to the dynamic unipotent
 subgroup. -/
-noncomputable def additiveToUnipotent (A : CommAlgCat.{w} R) :
+private noncomputable def additiveToUnipotent (A : CommAlgCat.{w} R) :
     HopfAlgebra.points (R := R) (H := AdditiveGroup.coordinateHopfAlgebra R) A →*
       Cocharacter.unipotent A (dynamicCocharacter (R := R)) :=
   (rootSubgroupPoints (R := R) (N := 2) (A := A)
