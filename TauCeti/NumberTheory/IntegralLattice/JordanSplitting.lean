@@ -15,8 +15,8 @@ Let `L` be a nondegenerate integral lattice and `p` a prime. The localization
 `L_p = ℤ_p ⊗[ℤ] L`, with its localized integral form, is an orthogonal direct sum
 `L_p = ⊕_i N_i` in which the form on `N_i` is `p ^ i` times a unimodular form
 (`TauCeti.IntegralLattice.exists_isJordanSplitting_localIntegralForm`). This holds at every prime,
-`p = 2` included; at `p = 2` the constituents need not be diagonalizable, and the splitting is
-not unique.
+`p = 2` included; at `p = 2` the constituents need not be diagonalizable, and the splitting
+need not be unique.
 
 ## Main results
 

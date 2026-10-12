@@ -25,7 +25,7 @@ submodules such that the restriction of `B` to `N_i` is `π ^ i`-modular: `π ^ 
 pairing (`LinearMap.BilinForm.IsJordanSplitting`). Thus each `N_i` carries the form `π ^ i • C_i`
 for a perfect pairing `C_i`; this is the Jordan decomposition of O'Meara 91C.
 
-The main result is that every nondegenerate symmetric bilinear form on a finite free module has
+The main result is that every nondegenerate symmetric bilinear form on a finite module has
 a Jordan splitting (`LinearMap.BilinForm.IsSymm.exists_isJordanSplitting`). The constituents
 separate the form into its valuation scales, reducing its analysis to perfect pairings at each
 scale. This decomposition supports the local analysis and classification of integral forms,
@@ -96,7 +96,7 @@ variable [IsDomain R] [IsDiscreteValuationRing R]
 /-- **Jordan splittings exist.** Over a discrete valuation ring with uniformizer `π`, every
 nondegenerate symmetric bilinear form on a finite free module is an orthogonal direct sum of
 submodules `N i` on which the form is `π ^ i`-modular. -/
-theorem IsSymm.exists_isJordanSplitting [Free R M] [Module.Finite R M] (hB : B.IsSymm)
+private theorem exists_isJordanSplitting_of_free [Free R M] [Module.Finite R M] (hB : B.IsSymm)
     (hnd : B.Nondegenerate) {π : R} (hπ : Irreducible π) :
     ∃ N : ℕ → Submodule R M, B.IsJordanSplitting π N := by
   have hπ0 : ∀ i, π ^ i ∈ nonZeroDivisors R := fun i ↦
@@ -177,5 +177,22 @@ theorem IsSymm.exists_isJordanSplitting [Free R M] [Module.Finite R M] (hB : B.I
     · beta_reduce
       rw [ite_eq_right hi]
       exact hNi
+
+/-- **Jordan splittings exist.** Over a discrete valuation ring with uniformizer `π`, every
+nondegenerate symmetric bilinear form on a finite module is an orthogonal direct sum of submodules
+`N i` on which the form is `π ^ i`-modular. Nondegeneracy forces the module to be torsion-free. -/
+theorem IsSymm.exists_isJordanSplitting [Module.Finite R M] (hB : B.IsSymm)
+    (hnd : B.Nondegenerate) {π : R} (hπ : Irreducible π) :
+    ∃ N : ℕ → Submodule R M, B.IsJordanSplitting π N := by
+  letI : IsTorsionFree R M := Module.isTorsionFree_iff_smul_eq_zero.mpr fun r m h ↦ by
+    by_cases hr : r = 0
+    · exact Or.inl hr
+    · refine Or.inr (hnd.1 m fun y ↦ ?_)
+      have hb : r * B m y = 0 := by
+        simpa only [LinearMap.map_smul₂, smul_eq_mul, map_zero, LinearMap.zero_apply] using
+          congrArg (fun x ↦ B x y) h
+      exact (mul_eq_zero.mp hb).resolve_left hr
+  letI : Free R M := inferInstance
+  exact exists_isJordanSplitting_of_free hB hnd hπ
 
 end LinearMap.BilinForm
