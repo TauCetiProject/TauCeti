@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Distribution.SchwartzSpace.Fourier
 public import Mathlib.Analysis.Fourier.LpSpace
 import Mathlib.Algebra.Order.Chebyshev
 import Mathlib.MeasureTheory.Integral.MeanInequalities
+import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.MeasureTheory.Function.Lp.Translation
 import TauCeti.MeasureTheory.Integral.DistRpow
 
@@ -69,13 +70,6 @@ section Measure
 variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [MeasurableSpace E]
   [BorelSpace E] [SecondCountableTopology E] [NormedAddCommGroup F] [NormedSpace ℝ F]
   {μ : Measure E} [μ.HasTemperateGrowth]
-
-/-- The `L²` norm of a Schwartz function, squared, is the integral of its pointwise norm
-squared. -/
-theorem norm_toLp_two_sq (f : 𝓢(E, F)) : ‖f.toLp 2 μ‖ ^ 2 = ∫ x, ‖f x‖ ^ 2 ∂μ := by
-  rw [norm_toLp' two_ne_zero ENNReal.ofNat_ne_top, ENNReal.toReal_ofNat, ← Real.rpow_natCast,
-    ← Real.rpow_mul (integral_nonneg fun _ ↦ by positivity)]
-  norm_num
 
 /-- For a Schwartz function `f`, the function `‖x‖ ^ k ‖f x‖²` is integrable. -/
 theorem integrable_norm_pow_mul_norm_sq (f : 𝓢(E, F)) (k : ℕ) :
@@ -190,8 +184,10 @@ theorem norm_fourierInv_toL2_eq (f : 𝓢(V, H)) : ‖(𝓕⁻ f).toLp 2‖ = �
 theorem integral_inner_pow_mul_norm_fourierInv_sq (σ : 𝓢(V, H)) (m : V) (N : ℕ) :
     (2 * π) ^ (2 * N) * ∫ x, ⟪x, m⟫ ^ (2 * N) * ‖𝓕⁻ σ x‖ ^ 2 =
       ‖((∂_{m})^[N] σ).toLp 2‖ ^ 2 := by
-  rw [← norm_fourierInv_toL2_eq, norm_toLp_two_sq, ← integral_const_mul]
-  simp_rw [norm_fourierInv_iterate_lineDerivOp_sq]
+  rw [← norm_fourierInv_toL2_eq, ← Lp.integral_norm_sq_eq_norm_sq, ← integral_const_mul]
+  refine integral_congr_ae ?_
+  filter_upwards [(𝓕⁻ ((∂_{m})^[N] σ)).coeFn_toLp 2] with x hx
+  rw [hx, norm_fourierInv_iterate_lineDerivOp_sq]
 
 /-- **The weighted Plancherel bound**: for a Schwartz function `σ`, an orthonormal basis `b` of
 `V` indexed by `ι`, and `N ≠ 0`,
@@ -232,10 +228,13 @@ private theorem setIntegral_closedBall_norm_fourierInv_le (σ : 𝓢(V, H)) {R :
     rw [Measure.addHaar_closedBall _ _ hR.le, ← ofReal_measureReal,
       ← ENNReal.ofReal_mul (by positivity)]
   have hL2 : ∫⁻ x, ‖𝓕⁻ σ x‖ₑ ^ (2 : ℝ) = ENNReal.ofReal (‖σ.toLp 2‖ ^ 2) := by
-    rw [← norm_fourierInv_toL2_eq, norm_toLp_two_sq, ofReal_integral_eq_lintegral_ofReal
-      (((𝓕⁻ σ).memLp 2).integrable_norm_pow two_ne_zero) (.of_forall fun _ ↦ by positivity)]
-    refine lintegral_congr fun x ↦ ?_
-    rw [← ofReal_norm, ENNReal.ofReal_rpow_of_nonneg (norm_nonneg _) zero_le_two, Real.rpow_two]
+    rw [← norm_fourierInv_toL2_eq, ← Lp.integral_norm_sq_eq_norm_sq,
+      ofReal_integral_eq_lintegral_ofReal ((Lp.memLp _).integrable_norm_pow two_ne_zero)
+        (.of_forall fun _ ↦ by positivity)]
+    refine lintegral_congr_ae ?_
+    filter_upwards [(𝓕⁻ σ).coeFn_toLp 2] with x hx
+    rw [hx, ← ofReal_norm, ENNReal.ofReal_rpow_of_nonneg (norm_nonneg _) zero_le_two,
+      Real.rpow_two]
   have hle : ∫⁻ x in closedBall (0 : V) R, ‖𝓕⁻ σ x‖ₑ ≤
       ENNReal.ofReal (√A * R ^ ((finrank ℝ V : ℝ) / 2) * ‖σ.toLp 2‖) := by
     have h := ENNReal.lintegral_mul_le_Lp_mul_Lq (volume.restrict (closedBall (0 : V) R))
