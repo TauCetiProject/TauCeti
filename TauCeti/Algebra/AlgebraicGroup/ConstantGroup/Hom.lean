@@ -12,7 +12,7 @@ public import TauCeti.Algebra.Algebra.Pi
 import Mathlib.LinearAlgebra.TensorProduct.Pi
 
 /-!
-# Homomorphisms from a constant group
+# Homomorphisms from a constant monoid
 
 Let `A` be a finite monoid and `R` a commutative ring, and let `coordinateRing R A`
 (`TauCeti.ConstantGroup.coordinateRing`) be the coordinate ring of the constant monoid `A_R`,
@@ -35,7 +35,8 @@ The bijection is proved for every bialgebra `C` together with a monoid homomorph
 `p : A →* WithConv (C →ₐ[R] R)` whose values identify `C` with the functions `A → R`
 (`TauCeti.ConstantGroup.mapDomain_comp_bijective`). Besides `coordinateRing R A` with its
 evaluations, this applies to any base change of it, which is how Katz–Mazur `A`-generators over a
-varying base are read off a scheme of homomorphisms from the constant group.
+varying base are read off a scheme of homomorphisms from the constant group `A_R` of a finite
+group `A`.
 
 ## Main results
 
@@ -70,7 +71,7 @@ section Recognition
 variable {R : Type*} [CommSemiring R] {H C : Type*} [Semiring H] [Bialgebra R H] [Semiring C]
   [Bialgebra R C] {A : Type*} [Monoid A] [Finite A] {p : A →* WithConv (C →ₐ[R] R)}
 
-/-- **Recognition of constant groups.** Let `p : A →* WithConv (C →ₐ[R] R)` be a monoid
+/-- **Recognition of constant monoids.** Let `p : A →* WithConv (C →ₐ[R] R)` be a monoid
 homomorphism from a finite monoid to the `R`-points of `C` whose values identify `C` with the
 functions on `A`, that is, `c ↦ (a ↦ p a c)` is bijective. Then for every bialgebra `H`, a
 bialgebra homomorphism `g : H →ₐc[R] C` is determined by, and can be prescribed through, the monoid
@@ -127,18 +128,18 @@ theorem pi_toPoints_bijective :
   ext
   simp
 
-/-- **Universal property of the constant group.** Bialgebra homomorphisms
+/-- **Universal property of the constant monoid.** Bialgebra homomorphisms
 `H →ₐc[R] coordinateRing R A` correspond to monoid homomorphisms from `A` to the `R`-points
 `WithConv (H →ₐ[R] R)` of `H`; a homomorphism `g` goes to `a ↦ eval a ∘ g`. When `H` is
-commutative, these are the homomorphisms of monoid schemes `A_R → Spec H` from the constant group,
-and `eval a ∘ g` is the image of the point `a` of `A_R`. -/
+commutative, these are the homomorphisms of monoid schemes `A_R → Spec H` from the constant
+monoid, and `eval a ∘ g` is the image of the point `a` of `A_R`. -/
 noncomputable def bialgHomEquiv :
     (H →ₐc[R] coordinateRing R A) ≃ (A →* WithConv (H →ₐ[R] R)) :=
   Equiv.ofBijective _ (mapDomain_comp_bijective (pi_toPoints_bijective R A))
 
 /-- The base changes to an `R`-algebra `T` of the evaluations at the elements of `A` identify
 `T ⊗[R] coordinateRing R A` with the functions `A → T`. Geometrically, the base change of the
-constant group `A_R` is the constant group `A_T`. -/
+constant monoid `A_R` is the constant monoid `A_T`. -/
 theorem pi_pointsBaseChange_toPoints_bijective (T : Type*) [CommRing T] [Algebra R T] :
     Function.Bijective
       (AlgHom.pi fun a ↦ ((AlgHom.pointsBaseChange T).comp (toPoints R A) a).ofConv) := by
@@ -178,7 +179,7 @@ variable {R : Type*} [CommRing R] (H : Type*) [Semiring H] [Bialgebra R H] {A : 
 /-- The homomorphism `A →* WithConv (T ⊗[R] H →ₐ[T] T)` attached to a `T`-bialgebra homomorphism
 `g : T ⊗[R] H →ₐc[T] T ⊗[R] coordinateRing R A`: `a ∈ A` goes to the composite of `g` with the base
 change of evaluation at `a`. When `H` is commutative, `g` is a homomorphism `A_T → G_T` of monoid
-schemes over `T` from the constant group, where `G = Spec H`, and `a` goes to the image under `g`
+schemes over `T` from the constant monoid, where `G = Spec H`, and `a` goes to the image under `g`
 of the point `a` of `A_T`. -/
 noncomputable def pointsOfBialgHom (g : T ⊗[R] H →ₐc[T] T ⊗[R] coordinateRing R A) :
     A →* WithConv (T ⊗[R] H →ₐ[T] T) :=
@@ -195,7 +196,7 @@ theorem ofConv_pointsOfBialgHom (g : T ⊗[R] H →ₐc[T] T ⊗[R] coordinateRi
   simp [pointsOfBialgHom, AlgHom.ofConv_pointsBaseChange]
 
 variable (H) in
-/-- **Homomorphisms from the constant group after base change.** `T`-bialgebra homomorphisms
+/-- **Homomorphisms from the constant monoid after base change.** `T`-bialgebra homomorphisms
 `T ⊗[R] H →ₐc[T] T ⊗[R] coordinateRing R A` correspond through `pointsOfBialgHom` to the monoid
 homomorphisms `A →* WithConv (T ⊗[R] H →ₐ[T] T)`. -/
 theorem pointsOfBialgHom_bijective :
@@ -204,7 +205,7 @@ theorem pointsOfBialgHom_bijective :
 
 variable (R H A T) in
 /-- `pointsOfBialgHom` as an equivalence: after base change to `T`, bialgebra homomorphisms from
-`T ⊗[R] H` to the coordinate ring of the constant group correspond to the monoid homomorphisms
+`T ⊗[R] H` to the coordinate ring of the constant monoid correspond to the monoid homomorphisms
 `A →* WithConv (T ⊗[R] H →ₐ[T] T)`. -/
 noncomputable def pointsOfBialgHomEquiv :
     (T ⊗[R] H →ₐc[T] T ⊗[R] coordinateRing R A) ≃ (A →* WithConv (T ⊗[R] H →ₐ[T] T)) :=

@@ -148,7 +148,7 @@ theorem eval_one : WithConv.toConv (eval R G (1 : G)) = 1 := by
   rw [eval_apply, AlgHom.convOne_apply]
   simpa using (counit_apply R G f).symm
 
-/-- A finite monoid maps canonically to the monoid of algebra points of its constant group. -/
+/-- A finite monoid maps canonically to the monoid of algebra points of its constant monoid. -/
 noncomputable def toPoints : G →* WithConv (coordinateRing R G →ₐ[R] R) where
   toFun g := WithConv.toConv (eval R G g)
   map_one' := eval_one R G
@@ -158,7 +158,7 @@ noncomputable def toPoints : G →* WithConv (coordinateRing R G →ₐ[R] R) wh
 theorem toPoints_apply (g : G) : (toPoints R G g).ofConv = eval R G g := by
   simp [toPoints]
 
-/-- Over a nontrivial base ring, evaluation distinguishes the elements of the constant group. -/
+/-- Over a nontrivial base ring, evaluation distinguishes the elements of the constant monoid. -/
 theorem toPoints_injective [Nontrivial R] : Function.Injective (toPoints R G) := by
   intro g h hgh
   have hmaps := congrArg WithConv.ofConv hgh
