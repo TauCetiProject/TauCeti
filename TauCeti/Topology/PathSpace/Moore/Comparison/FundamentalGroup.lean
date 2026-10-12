@@ -84,6 +84,7 @@ theorem componentFundamentalGroupEquiv_mk (γ : MooreLoopSpace X x) :
     (HomotopyGroup.zerothHomotopyLoopSpaceEquivFundamentalGroup_mk γ.toPath)
 
 /-- The multiplicative loop class is natural under based continuous maps. -/
+@[simp]
 theorem fundamentalGroupHom_map (f : C(X, Y)) (hf : f x = y) (γ : MooreLoopSpace X x) :
     fundamentalGroupHom y (map f hf γ) =
       FundamentalGroup.mapOfEq f hf (fundamentalGroupHom x γ) := by
