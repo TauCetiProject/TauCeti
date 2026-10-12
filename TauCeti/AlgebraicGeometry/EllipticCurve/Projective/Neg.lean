@@ -7,7 +7,7 @@ module
 
 public import Mathlib.AlgebraicGeometry.EllipticCurve.Projective.Point
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Projective.VariableChange
-public import TauCeti.AlgebraicGeometry.EllipticCurve.VariableChange
+public import TauCeti.AlgebraicGeometry.EllipticCurve.VariableChange.Basic
 
 /-!
 # Negation of solutions of the projective Weierstrass equation

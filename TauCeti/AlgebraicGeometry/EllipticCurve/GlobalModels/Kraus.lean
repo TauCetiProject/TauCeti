@@ -13,7 +13,7 @@ import Mathlib.RingTheory.LocalRing.Basic
 import TauCeti.Algebra.Ring.TwoPowMulThreePow
 import TauCeti.AlgebraicGeometry.EllipticCurve.GlobalMinimalModel
 import TauCeti.AlgebraicGeometry.EllipticCurve.IntegralModel
-import TauCeti.AlgebraicGeometry.EllipticCurve.VariableChange
+import TauCeti.AlgebraicGeometry.EllipticCurve.VariableChange.Basic
 import TauCeti.NumberTheory.DedekindDomain.FiniteApproximation
 
 /-!
