@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.NumberField.LocalGlobal.Semilocal.Basic
 public import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.Extension
+public import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.Place
 import TauCeti.NumberTheory.NumberField.LocalGlobal.Semilocal.Integers
 import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.LocallyCompact
 import Mathlib.LinearAlgebra.Countable
@@ -101,20 +102,17 @@ scalar extension of evaluation at `v`. -/
 theorem finiteAdeleBaseChangeHom_apply (s : FiniteAdeleRing (𝓞 K) K ⊗[K] L)
     (v : HeightOneSpectrum (𝓞 K))
     (w : {w : HeightOneSpectrum (𝓞 L) // w.asIdeal.LiesOver v.asIdeal}) :
-    let f : FiniteAdeleRing (𝓞 K) K →ₗ[K] v.adicCompletion K :=
-      { toFun := fun a ↦ a v
-        map_add' := fun _ _ ↦ rfl
-        map_smul' := fun c a ↦ by
-          simp only [Algebra.smul_def, RingHom.id_apply]
-          rfl }
     finiteAdeleBaseChangeHom K L s w.1 =
-      semilocalHom L v (TensorProduct.map f (LinearMap.id : L →ₗ[K] L) s) w := by
-  intro f
+      semilocalHom L v
+        (TensorProduct.map
+          (FiniteAdeleRing.proj K v : FiniteAdeleRing (𝓞 K) K →ₐ[K] v.adicCompletion K).toLinearMap
+          (LinearMap.id : L →ₗ[K] L) s) w := by
   induction s using TensorProduct.inductionOn with
   | tmul a x =>
     simp only [TensorProduct.map_tmul, LinearMap.id_apply, semilocalHom_tmul,
       finiteAdeleBaseChangeHom_tmul, FiniteAdeleRing.mul_apply,
-      finiteAdeleExtension_apply, FiniteAdeleRing.algebraMap_apply]
+      finiteAdeleExtension_apply, FiniteAdeleRing.algebraMap_apply, AlgHom.toLinearMap_apply,
+      ContinuousAlgHom.coe_coe, FiniteAdeleRing.proj_apply]
     rcases w with ⟨w, hw⟩
     have hv : v = w.under (𝓞 K) := HeightOneSpectrum.asIdeal_injective hw.over
     subst v
@@ -137,12 +135,7 @@ theorem finiteAdeleBaseChangeHom_injective :
   intro i
   apply FiniteAdeleRing.ext
   intro v
-  let f : FiniteAdeleRing (𝓞 K) K →ₗ[K] v.adicCompletion K :=
-    { toFun := fun a ↦ a v
-      map_add' := fun _ _ ↦ rfl
-      map_smul' := fun c a ↦ by
-        simp only [Algebra.smul_def, RingHom.id_apply]
-        rfl }
+  let f := (FiniteAdeleRing.proj K v : FiniteAdeleRing (𝓞 K) K →ₐ[K] v.adicCompletion K).toLinearMap
   let T := TensorProduct.map f (LinearMap.id : L →ₗ[K] L)
   -- A zero adelic image gives a zero tensor at `v` by semilocal injectivity.
   have hT : T t = 0 := by
@@ -157,7 +150,7 @@ theorem finiteAdeleBaseChangeHom_injective :
     | tmul a x =>
       simp only [T, TensorProduct.map_tmul, LinearMap.id_apply, B,
         Module.Basis.baseChange_repr_tmul]
-      exact (f.map_smul ((b.repr x) i) a).symm
+      exact (f.map_smul ((b.repr x) i) a).symm.trans (FiniteAdeleRing.proj_apply v _)
     | add t u ht hu =>
       simp only [map_add, Finsupp.add_apply, ht, hu]
       rfl
@@ -235,7 +228,8 @@ theorem finiteAdeleBaseChangeHom_surjective :
   refine ⟨∑ i, a i ⊗ₜ[K] (RingOfIntegers.basis L i : L), FiniteAdeleRing.ext L fun w ↦ ?_⟩
   rw [finiteAdeleBaseChangeHom_apply K L _ (w.under (𝓞 K)) ⟨w, inferInstance⟩]
   convert congrFun (hc (w.under (𝓞 K))) ⟨w, inferInstance⟩ using 2
-  simp only [map_sum, TensorProduct.map_tmul, LinearMap.id_apply]
+  simp only [map_sum, TensorProduct.map_tmul, LinearMap.id_apply, AlgHom.toLinearMap_apply,
+    ContinuousAlgHom.coe_coe, FiniteAdeleRing.proj_apply]
   -- The component of `a i` at `v` is `c v i` by construction.
   rfl
 

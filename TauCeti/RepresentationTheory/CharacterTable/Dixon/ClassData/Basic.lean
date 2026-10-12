@@ -270,24 +270,10 @@ theorem equivConjClasses_symm_apply (C : ConjClasses G) :
 
 omit [DecidableRel (IsConj : G → G → Prop)] in
 /-- **The numbering has the expected length**: `d.reps` lists as many elements as `G` has
-conjugacy classes. The bijection is the one underlying `TauCeti.ClassData.equivConjClasses`, but it
-is exhibited here from the two fields directly, since the count itself needs neither a finite `G`
-nor a decidable conjugacy. -/
+conjugacy classes. The statement assumes neither a finite `G` nor a decidable conjugacy. -/
 theorem numClasses_eq_card_conjClasses : d.numClasses = Nat.card (ConjClasses G) := by
-  have hbij : Function.Bijective d.classOf := by
-    constructor
-    · intro i j hij
-      rw [classOf_eq_mk, classOf_eq_mk, ConjClasses.mk_eq_mk_iff_isConj] at hij
-      by_contra hne
-      exact d.not_isConj_rep hne hij
-    · refine Quotient.ind fun g => ?_
-      obtain ⟨x, hx, hxg⟩ := d.exists_isConj g
-      obtain ⟨i, hi, rfl⟩ := List.getElem_of_mem hx
-      refine ⟨⟨i, hi⟩, ?_⟩
-      rw [ConjClasses.quotient_mk_eq_mk, classOf_eq_mk, ConjClasses.mk_eq_mk_iff_isConj]
-      -- the representative `d.rep ⟨i, hi⟩` is the list entry `d.reps[i]` by definition
-      exact hxg
-  simpa using Nat.card_congr (Equiv.ofBijective _ hbij)
+  classical
+  simpa only [Nat.card_fin] using Nat.card_congr d.equivConjClasses
 
 /-! ### Reindexing numbered tables -/
 
@@ -315,13 +301,7 @@ theorem reindexTableOfMap_apply_classOf {R S : Type*}
     (i j : Fin d.numClasses) :
     d.reindexTableOfMap f table (finCongr d.numClasses_eq_card_conjClasses i) (d.classOf j) =
       f (table i j) := by
-  rw [d.reindexTableOfMap_apply]
-  have hi : (finCongr d.numClasses_eq_card_conjClasses).symm
-      (finCongr d.numClasses_eq_card_conjClasses i) = i :=
-    (finCongr d.numClasses_eq_card_conjClasses).symm_apply_apply i
-  have hj : d.equivConjClasses.symm (d.classOf j) = j := by
-    rw [← d.equivConjClasses_apply j, Equiv.symm_apply_apply]
-  rw [hi, hj]
+  simp only [d.reindexTableOfMap_apply, ← d.equivConjClasses_apply, Equiv.symm_apply_apply]
 
 -- Finiteness enters only from here: it is what presents a conjugacy class as a `Finset`, and so
 -- what lets the structure constants be counted.
@@ -458,14 +438,7 @@ at once. -/
 theorem getD_structureConstantTable (i j k : Fin d.numClasses) :
     (((d.structureConstantTable.getD i.val []).getD j.val []).getD k.val 0) =
       d.structureConstant i j k := by
-  symm
-  have hi : i.val < d.structureConstantTable.length := by simp
-  rw [List.getD_eq_getElem d.structureConstantTable [] hi]
-  rw [d.getElem_structureConstantTable]
-  rw [List.getD_eq_getElem _ [] (by simp)]
-  simp only [List.getElem_map, List.getElem_finRange]
-  rw [List.getD_eq_getElem _ 0 (by simp)]
-  simp
+  simp [List.getD_eq_getElem?_getD]
 
 end StructureConstants
 
