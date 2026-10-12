@@ -61,9 +61,19 @@ theorem Probability.gaussianWassersteinLaw_coe (m : EuclideanSpace ℝ ι)
 def gaussianInterpolationMatrix (S₁ S₂ : Matrix ι ι ℝ) (t : ℝ) : Matrix ι ι ℝ :=
   (1 - t) • 1 + t • geometricMean S₁⁻¹ʳ S₂
 
+/-- The interpolation matrix is the affine combination of the identity and transport matrix. -/
+theorem gaussianInterpolationMatrix_def (S₁ S₂ : Matrix ι ι ℝ) (t : ℝ) :
+    gaussianInterpolationMatrix S₁ S₂ t = (1 - t) • 1 + t • geometricMean S₁⁻¹ʳ S₂ := (rfl)
+
 /-- The covariance of the Gaussian displacement interpolant. -/
 def gaussianInterpolationCovariance (S₁ S₂ : Matrix ι ι ℝ) (t : ℝ) : Matrix ι ι ℝ :=
   gaussianInterpolationMatrix S₁ S₂ t * S₁ * (gaussianInterpolationMatrix S₁ S₂ t).transpose
+
+/-- The interpolated covariance is the congruence by the interpolation matrix. -/
+theorem gaussianInterpolationCovariance_def (S₁ S₂ : Matrix ι ι ℝ) (t : ℝ) :
+    gaussianInterpolationCovariance S₁ S₂ t =
+      gaussianInterpolationMatrix S₁ S₂ t * S₁ *
+        (gaussianInterpolationMatrix S₁ S₂ t).transpose := (rfl)
 
 /-- At the source endpoint, the interpolation matrix is the identity. -/
 @[simp]
