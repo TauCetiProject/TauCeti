@@ -9,7 +9,6 @@ public import TauCeti.Analysis.Normed.Group.Ultra
 public import TauCeti.Analysis.Normed.Ring.Completion
 public import TauCeti.RingTheory.Huber.Completion.Basic
 public import TauCeti.RingTheory.Huber.Normed
-public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Groebner
 public import TauCeti.RingTheory.Valuation.ExtendToLocalization
 public import TauCeti.RingTheory.WittVector.GaussValuation
 public import TauCeti.Topology.MetricSpace.Ultra.Completion
@@ -41,10 +40,11 @@ Lemma 2.6).
 
 `A^r` admits Euclidean division for this degree (Kedlaya, Proposition 2.9): for `x ≠ 0`, every
 `y` is `z x + w` with `‖w‖ ≤ ‖y‖` and either `w = 0` or `deg w < deg x`. Consequently the rings
-`A^r{T₁/ρ₁, …, Tₙ/ρₙ}` of restricted power series are noetherian (Kedlaya, Theorem 3.2, through
-`TauCeti.MvPowerSeries.isNoetherianRing_isRestricted_subring_of_division`). This is the input for
-the strong noetherianity of the interval rings `B^I` (`TauCeti.WittVector.IntervalRing`,
-Kedlaya's Theorem 4.10).
+`A^r{T₁/ρ₁, …, Tₙ/ρₙ}` of restricted power series are noetherian (Kedlaya, Theorem 3.2,
+`TauCeti.WittVector.RadiusRing.isNoetherianRing_isRestricted_subring` in
+`TauCeti.RingTheory.MvPowerSeries.TateAlgebra.RadiusRing`). This is the input for the strong
+noetherianity of the interval rings `B^I` (`TauCeti.WittVector.IntervalRing`, Kedlaya's
+Theorem 4.10).
 
 ## Euclidean division
 
@@ -85,8 +85,6 @@ a remainder of norm at most `‖y‖` that either has degree less than `m` or is
 * `TauCeti.WittVector.RadiusRing.exists_eq_mul_add` : Euclidean division in `A^r`.
 * `TauCeti.WittVector.RadiusRing.isUnit_iff_degree_eq_zero` : the units of `A^r` are its nonzero
   elements of degree `0`.
-* `TauCeti.WittVector.RadiusRing.isNoetherianRing_isRestricted_subring` : the rings
-  `A^r{T₁/ρ₁, …, Tₙ/ρₙ}` of restricted power series are noetherian.
 
 ## References
 
@@ -893,16 +891,6 @@ theorem isUnit_iff_degree_eq_zero {x : RadiusRing p hv hϖ hϖ' hρ} :
     IsUnit x ↔ x ≠ 0 ∧ degree p hv hϖ hϖ' hρ x = 0 :=
   ⟨fun hx ↦ ⟨hx.ne_zero, degree_eq_zero_of_isUnit p hv hϖ hϖ' hρ hx⟩,
     fun ⟨hx, hdeg⟩ ↦ isUnit_of_degree_eq_zero p hv hϖ hϖ' hρ hx hdeg⟩
-
-/-- **Kedlaya's Hilbert basis theorem for `A^r`** (Kedlaya, Theorem 3.2). For finitely many
-variables and all positive radii `c`, the ring `A^r{T/c}` of restricted power series over the
-radius ring with its Gauss norm is noetherian. -/
-instance isNoetherianRing_isRestricted_subring {σ : Type*} [Finite σ] {c : σ → ℝ}
-    [∀ i, Fact (0 < c i)] :
-    IsNoetherianRing (MvPowerSeries.IsRestricted.subring (R := RadiusRing p hv hϖ hϖ' hρ) c) :=
-  TauCeti.MvPowerSeries.isNoetherianRing_isRestricted_subring_of_division
-    (degree p hv hϖ hϖ' hρ) (fun _ _ h ↦ degree_eq_of_norm_sub_lt p hv hϖ hϖ' hρ h)
-    fun _ y hx ↦ exists_eq_mul_add p hv hϖ hϖ' hρ hx y
 
 end RadiusRing
 
