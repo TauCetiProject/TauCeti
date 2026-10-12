@@ -11,17 +11,20 @@ public import TauCeti.MeasureTheory.OptimalTransport.GromovWasserstein.Basic
 # Weak isomorphism of measured kernels
 
 Two measured kernels are weakly isomorphic when a coupling of their measures makes their
-pullbacks equal almost everywhere on the square of the coupling. For a.e. strongly measurable
-kernels with extended metric values and probability measures, this is equivalently a common
-probability parametrization: the coordinate projections give a canonical parametrizing space,
+pullbacks equal almost everywhere on the square of the coupling. For probability measures this
+is equivalently a common probability parametrization, in either of two regimes: a.e. measurable
+kernels into a measurable target with measurable equality, or a.e. strongly measurable kernels
+with extended metric values. The coordinate projections give a canonical parametrizing space,
 and two measure-preserving maps with equal pulled-back kernels give an exact coupling.
 
 The relation is defined for raw measures and kernels with arbitrary target. Symmetry and
 invariance under a.e. changes require only a sigma-finite first measure. The exact coupling then
-is sigma-finite, although the second measure need not be. Its common-space introduction,
-reflexivity and transitivity are proved for a.e. strongly measurable kernels with values in an
-extended metric space. Transitivity uses gluing; it requires a finite middle measure
-and a standard Borel outer carrier, rather than a topology on every carrier.
+is sigma-finite, although the second measure need not be. Common-space introduction,
+reflexivity and transitivity are available in both regimes above. The measurable-target API
+requires no topology or essentially separable range; the extended metric API requires no
+measurable structure on the target. Transitivity uses gluing: an explicit gluing hypothesis
+needs only a sigma-finite middle measure, while a finite middle measure and a standard Borel
+last carrier ensure such a gluing without topology on the other carriers.
 
 For an extended metric target and every nonzero exponent, an exact coupling is precisely a
 coupling of zero distortion. Weakly isomorphic kernels have Gromov–Wasserstein distance zero
@@ -118,6 +121,112 @@ theorem areWeaklyIsomorphicKernels_congr_ae [SigmaFinite μ]
     exact areWeaklyIsomorphicKernels_of_isCoupling hπ (ha'.symm.trans (heq.trans hb'))
   exact ⟨transfer hX hY, transfer hX.symm hY.symm⟩
 
+private theorem areWeaklyIsomorphicKernels_of_common_parametrization_of_nullMeasurableSet
+    {γ : Measure Ω} [SFinite γ] {f : Ω → X} {g : Ω → Y}
+    (hf : MeasurePreserving f γ μ) (hg : MeasurePreserving g γ ν)
+    (hmeas : NullMeasurableSet
+      {q : (X × Y) × (X × Y) | ωX (q.1.1, q.2.1) = ωY (q.1.2, q.2.2)}
+      ((γ.map fun w ↦ (f w, g w)).prod (γ.map fun w ↦ (f w, g w))))
+    (heq : (fun q : Ω × Ω ↦ ωX (f q.1, f q.2)) =ᵐ[γ.prod γ]
+      (fun q ↦ ωY (g q.1, g q.2))) : AreWeaklyIsomorphicKernels μ ωX ν ωY := by
+  have hfg : MeasurePreserving (fun w ↦ (f w, g w)) γ (γ.map fun w ↦ (f w, g w)) :=
+    ⟨hf.measurable.prodMk hg.measurable, rfl⟩
+  refine areWeaklyIsomorphicKernels_of_isCoupling
+    (isCoupling_map_prodMk_of_measurePreserving hf hg) ?_
+  have hpre := (hfg.prod hfg).measure_preimage hmeas.compl
+  simp only [Set.compl_ofPred] at hpre
+  rw [Filter.EventuallyEq, ae_iff, ← hpre]
+  exact ae_iff.mp heq
+
+/-- Exact couplings that admit a gluing give a common sigma-finite parametrization of the
+outer kernels. No structure or measurability is required of any kernel or its target. -/
+theorem AreWeaklyIsomorphicKernels.exists_common_parametrization_of_exists_glue [SigmaFinite ν]
+    (hXY : AreWeaklyIsomorphicKernels μ ωX ν ωY)
+    (hYW : AreWeaklyIsomorphicKernels ν ωY ρ ωW)
+    (hglue : ∀ π : Measure (X × Y), ∀ σ : Measure (Y × W),
+      IsCoupling π μ ν → IsCoupling σ ν ρ →
+      ∃ γ : Measure (X × Y × W), γ.map (Prod.map id Prod.fst) = π ∧ γ.snd = σ) :
+    ∃ γ : Measure (X × Y × W), SigmaFinite γ ∧
+      MeasurePreserving Prod.fst γ μ ∧ MeasurePreserving (Prod.snd ∘ Prod.snd) γ ρ ∧
+      (fun q : (X × Y × W) × (X × Y × W) ↦ ωX (q.1.1, q.2.1)) =ᵐ[γ.prod γ]
+        (fun q ↦ ωW (q.1.2.2, q.2.2.2)) := by
+  obtain ⟨π, hπ, heqXY⟩ := hXY.exists_isCoupling
+  obtain ⟨σ, hσ, heqYW⟩ := hYW.exists_isCoupling
+  obtain ⟨γ, hγπ, hγσ⟩ := hglue π σ hπ hσ
+  have hleft : MeasurePreserving (Prod.map id Prod.fst) γ π :=
+    ⟨measurable_id.prodMap measurable_fst, hγπ⟩
+  have hright : MeasurePreserving Prod.snd γ σ := ⟨measurable_snd, hγσ⟩
+  have : SigmaFinite π := hπ.measurePreserving_snd.sigmaFinite
+  have : SigmaFinite γ := hleft.sigmaFinite
+  have heqXY' := (hleft.prod hleft).quasiMeasurePreserving.ae_eq_comp heqXY
+  have heqYW' := (hright.prod hright).quasiMeasurePreserving.ae_eq_comp heqYW
+  exact ⟨γ, inferInstance, hπ.measurePreserving_fst.comp hleft,
+    hσ.measurePreserving_snd.comp hright, heqXY'.trans heqYW'⟩
+
+section MeasurableEq
+
+variable [MeasurableSpace Z] [MeasurableEq Z]
+
+/-- A common s-finite parametrization with equal pulled-back a.e. measurable kernels gives a
+weak isomorphism. A measurable diagonal in the target suffices; no topology is needed. -/
+theorem areWeaklyIsomorphicKernels_of_common_parametrization_of_aemeasurable
+    {γ : Measure Ω} [SFinite γ] {f : Ω → X} {g : Ω → Y}
+    (hf : MeasurePreserving f γ μ) (hg : MeasurePreserving g γ ν)
+    (hωX : AEMeasurable ωX (μ.prod μ)) (hωY : AEMeasurable ωY (ν.prod ν))
+    (heq : (fun q : Ω × Ω ↦ ωX (f q.1, f q.2)) =ᵐ[γ.prod γ]
+      (fun q ↦ ωY (g q.1, g q.2))) : AreWeaklyIsomorphicKernels μ ωX ν ωY := by
+  have hπ := isCoupling_map_prodMk_of_measurePreserving hf hg
+  exact areWeaklyIsomorphicKernels_of_common_parametrization_of_nullMeasurableSet hf hg
+    (nullMeasurableSet_eq_fun
+      (hωX.comp_quasiMeasurePreserving (hπ.measurePreserving_fst.prod
+        hπ.measurePreserving_fst).quasiMeasurePreserving)
+      (hωY.comp_quasiMeasurePreserving (hπ.measurePreserving_snd.prod
+        hπ.measurePreserving_snd).quasiMeasurePreserving)) heq
+
+/-- Pullback along a measure-preserving map preserves weak isomorphism for a.e. measurable
+kernels whose target has measurable equality. -/
+theorem areWeaklyIsomorphicKernels_comp_prodMap_of_aemeasurable [SFinite μ] {f : X → Y}
+    (hf : MeasurePreserving f μ ν) (hωY : AEMeasurable ωY (ν.prod ν)) :
+    AreWeaklyIsomorphicKernels μ (ωY ∘ Prod.map f f) ν ωY :=
+  areWeaklyIsomorphicKernels_of_common_parametrization_of_aemeasurable
+    (MeasurePreserving.id μ) hf
+    (hωY.comp_quasiMeasurePreserving (hf.prod hf).quasiMeasurePreserving) hωY
+    (.of_forall fun _ ↦ rfl)
+
+/-- Every a.e. measurable kernel into a target with measurable equality is weakly isomorphic
+to itself over an s-finite measure. -/
+theorem areWeaklyIsomorphicKernels_refl_of_aemeasurable [SFinite μ]
+    (hωX : AEMeasurable ωX (μ.prod μ)) : AreWeaklyIsomorphicKernels μ ωX μ ωX :=
+  areWeaklyIsomorphicKernels_of_common_parametrization_of_aemeasurable
+    (MeasurePreserving.id μ) (MeasurePreserving.id μ) hωX hωX (.of_forall fun _ ↦ rfl)
+
+/-- Weak isomorphisms compose when their exact couplings admit a gluing and their outer
+kernels are a.e. measurable into a target with measurable equality. -/
+theorem AreWeaklyIsomorphicKernels.trans_of_exists_glue_of_aemeasurable [SigmaFinite ν]
+    (hXY : AreWeaklyIsomorphicKernels μ ωX ν ωY)
+    (hYW : AreWeaklyIsomorphicKernels ν ωY ρ ωW)
+    (hωX : AEMeasurable ωX (μ.prod μ)) (hωW : AEMeasurable ωW (ρ.prod ρ))
+    (hglue : ∀ π : Measure (X × Y), ∀ σ : Measure (Y × W),
+      IsCoupling π μ ν → IsCoupling σ ν ρ →
+      ∃ γ : Measure (X × Y × W), γ.map (Prod.map id Prod.fst) = π ∧ γ.snd = σ) :
+    AreWeaklyIsomorphicKernels μ ωX ρ ωW := by
+  obtain ⟨γ, hγ, hX, hW, heq⟩ :=
+    hXY.exists_common_parametrization_of_exists_glue hYW hglue
+  exact areWeaklyIsomorphicKernels_of_common_parametrization_of_aemeasurable hX hW hωX hωW heq
+
+/-- Weak isomorphisms of a.e. measurable kernels are transitive when the target has measurable
+equality, the last carrier is standard Borel, and the middle measure is finite. -/
+theorem AreWeaklyIsomorphicKernels.trans_of_aemeasurable [StandardBorelSpace W]
+    [IsFiniteMeasure ν] (hXY : AreWeaklyIsomorphicKernels μ ωX ν ωY)
+    (hYW : AreWeaklyIsomorphicKernels ν ωY ρ ωW)
+    (hωX : AEMeasurable ωX (μ.prod μ)) (hωW : AEMeasurable ωW (ρ.prod ρ)) :
+    AreWeaklyIsomorphicKernels μ ωX ρ ωW :=
+  hXY.trans_of_exists_glue_of_aemeasurable hYW hωX hωW fun π σ hπ hσ ↦
+    have : IsFiniteMeasure σ := hσ.isFiniteMeasure
+    Measure.exists_glue_of_standardBorel_right π σ (hπ.snd_eq.trans hσ.fst_eq.symm)
+
+end MeasurableEq
+
 section EDist
 
 variable [EDist Z]
@@ -163,12 +272,12 @@ theorem areWeaklyIsomorphicKernels_of_common_parametrization {γ : Measure Ω} [
     (hωX : AEStronglyMeasurable ωX (μ.prod μ)) (hωY : AEStronglyMeasurable ωY (ν.prod ν))
     (heq : (fun q : Ω × Ω ↦ ωX (f q.1, f q.2)) =ᵐ[γ.prod γ]
       (fun q ↦ ωY (g q.1, g q.2))) : AreWeaklyIsomorphicKernels μ ωX ν ωY := by
-  refine (areWeaklyIsomorphicKernels_iff_exists_distortion_eq_zero (p := ∞) ENNReal.top_ne_zero).mpr
-    ⟨γ.map (fun w ↦ (f w, g w)), isCoupling_map_prodMk_of_measurePreserving hf hg, ?_⟩
-  rw [gromovWassersteinDistortion_map_prodMk hf hg hωX hωY, eLpNorm_eq_zero_iff
-    ENNReal.top_ne_zero]
-  filter_upwards [heq] with q hq
-  simp [hq]
+  have hπ := isCoupling_map_prodMk_of_measurePreserving hf hg
+  exact areWeaklyIsomorphicKernels_of_common_parametrization_of_nullMeasurableSet hf hg
+    ((hωX.comp_quasiMeasurePreserving (hπ.measurePreserving_fst.prod
+      hπ.measurePreserving_fst).quasiMeasurePreserving).nullMeasurableSet_eq_fun
+      (hωY.comp_quasiMeasurePreserving (hπ.measurePreserving_snd.prod
+        hπ.measurePreserving_snd).quasiMeasurePreserving)) heq
 
 /-- A measured kernel and its pullback along a measure-preserving map are weakly isomorphic.
 In particular this permits duplication of a measured carrier without changing its kernel. -/
@@ -187,8 +296,8 @@ theorem areWeaklyIsomorphicKernels_refl [SFinite μ]
 
 /-- Weak isomorphisms compose whenever their exact couplings admit a gluing. Only the outer
 kernels need a.e. strong measurability; equality of their pullbacks passes through the middle
-kernel on the common glued space. -/
-theorem AreWeaklyIsomorphicKernels.trans_of_exists_glue [IsFiniteMeasure ν]
+kernel on the common glued space. The middle measure need only be sigma-finite. -/
+theorem AreWeaklyIsomorphicKernels.trans_of_exists_glue [SigmaFinite ν]
     (hXY : AreWeaklyIsomorphicKernels μ ωX ν ωY)
     (hYW : AreWeaklyIsomorphicKernels ν ωY ρ ωW)
     (hωX : AEStronglyMeasurable ωX (μ.prod μ)) (hωW : AEStronglyMeasurable ωW (ρ.prod ρ))
@@ -196,22 +305,9 @@ theorem AreWeaklyIsomorphicKernels.trans_of_exists_glue [IsFiniteMeasure ν]
       IsCoupling π μ ν → IsCoupling σ ν ρ →
       ∃ γ : Measure (X × Y × W), γ.map (Prod.map id Prod.fst) = π ∧ γ.snd = σ) :
     AreWeaklyIsomorphicKernels μ ωX ρ ωW := by
-  obtain ⟨π, hπ, heqXY⟩ := hXY.exists_isCoupling
-  obtain ⟨σ, hσ, heqYW⟩ := hYW.exists_isCoupling
-  obtain ⟨γ, hγπ, hγσ⟩ := hglue π σ hπ hσ
-  have hleft : MeasurePreserving (Prod.map id Prod.fst) γ π :=
-    ⟨measurable_id.prodMap measurable_fst, hγπ⟩
-  have hright : MeasurePreserving Prod.snd γ σ := ⟨measurable_snd, hγσ⟩
-  have : IsFiniteMeasure π := hπ.isFiniteMeasure_of_right
-  have : IsFiniteMeasure (γ.map (Prod.map id Prod.fst)) := by rw [hγπ]; infer_instance
-  have : IsFiniteMeasure γ := MeasureTheory.Measure.isFiniteMeasure_of_map
-    hleft.measurable.aemeasurable
-  have hX := hπ.measurePreserving_fst.comp hleft
-  have hW := hσ.measurePreserving_snd.comp hright
-  have heqXY' := (hleft.prod hleft).quasiMeasurePreserving.ae_eq_comp heqXY
-  have heqYW' := (hright.prod hright).quasiMeasurePreserving.ae_eq_comp heqYW
-  exact areWeaklyIsomorphicKernels_of_common_parametrization hX hW hωX hωW
-    (heqXY'.trans heqYW')
+  obtain ⟨γ, hγ, hX, hW, heq⟩ :=
+    hXY.exists_common_parametrization_of_exists_glue hYW hglue
+  exact areWeaklyIsomorphicKernels_of_common_parametrization hX hW hωX hωW heq
 
 /-- Weak isomorphisms are transitive when the last carrier is standard Borel and the middle
 measure is finite. The other carriers need no topology or standard Borel structure. -/
