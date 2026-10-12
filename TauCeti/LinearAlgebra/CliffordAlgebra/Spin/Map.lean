@@ -22,6 +22,8 @@ fixed-complement result specializes this naturality to an orthogonal summand.
 For the vector action of a Spin element, the induced Clifford map and Spin automorphism are
 inner conjugation. These comparisons work over commutative rings with `2` invertible, including
 degenerate forms, and use Mathlib's `Unitary.conjStarAlgAut` and `CliffordAlgebra.hom_ext`.
+The assumption on `2` comes from `CliffordAlgebra.spinToOrthogonal` and its underlying vector
+action.
 
 ## Main results
 
