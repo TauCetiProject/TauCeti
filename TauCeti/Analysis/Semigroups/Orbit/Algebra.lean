@@ -31,16 +31,6 @@ theorem apply_comm (S :
     S s (S t x) = S t (S s x) := by
   rw [← S.map_add_apply s t x, ← S.map_add_apply t s x, add_comm]
 
-/-- The operator at a sum of three times is the composition of the three operators. -/
-theorem map_add_three (S :
-    StronglyContinuousSemigroup X) (r s t : ℝ≥0) :
-    S (r + s + t) = (S r).comp ((S s).comp (S t)) := by simp only [add_assoc, S.map_add]
-
-/-- The action at twice a time is the second iterate of the action at that time. -/
-theorem map_two_mul_apply (S :
-    StronglyContinuousSemigroup X) (t : ℝ≥0) (x : X) :
-    S (2 * t) x = S t (S t x) := by simp [two_mul]
-
 /-- Powers of two operators in the same semigroup commute. -/
 theorem commute_powers (S :
     StronglyContinuousSemigroup X) (s t : ℝ≥0) (m n : ℕ) :
@@ -60,15 +50,6 @@ theorem surjective_of_right_inverse_time (S :
   exact ⟨S s y, by
     rw [← ContinuousLinearMap.comp_apply, hcomp]
     exact one_apply_eq_self y⟩
-
-/-- The operator norm at a sum of three times is bounded by the product of their norms. -/
-theorem norm_map_three_le (S :
-    StronglyContinuousSemigroup X) (r s t : ℝ≥0) :
-    ‖S (r + s + t)‖ ≤ ‖S r‖ * ‖S s‖ * ‖S t‖ := by
-  have h1 := S.norm_map_add_le (r + s) t
-  have h2 := S.norm_map_add_le r s
-  calc ‖S (r + s + t)‖ ≤ ‖S (r + s)‖ * ‖S t‖ := h1
-    _ ≤ (‖S r‖ * ‖S s‖) * ‖S t‖ := mul_le_mul_of_nonneg_right h2 (norm_nonneg _)
 
 /-- The norm bound controls the separation of two orbits at a fixed time. -/
 theorem norm_orbit_sub_le (S :
