@@ -27,9 +27,9 @@ detect the cohomology of the ideles:
 
 By Shapiro's lemma (`semilocalUnitsTateCohomologyIso` for cyclic `G`) the group
 `H^n(G, (K_v ⊗[K] L)ˣ)` is the cohomology `H^n(G_w, L_wˣ)` of the completion at a place `w ∣ v`,
-so in degree `2` the images of an idele class are its local Brauer classes in `Br(L_w/K_v)`. The
-first statement is the idelic half of the injectivity of `Br(L/K) → ⨁_v Br(L_w/K_v)`; the other
-half is the vanishing of `H¹(G, C_L)`.
+so the images of a degree-`2` cohomology class with coefficients in the ideles are its local Brauer
+classes in `Br(L_w/K_v)`. The first statement is the idelic half of the injectivity of
+`Br(L/K) → ⨁_v Br(L_w/K_v)`; the other half is the vanishing of `H¹(G, C_L)`.
 
 The proof is Milne's (*Class Field Theory*, VII, Lemma 2.4 and Proposition 2.5). The ideles are the
 union of the `S`-ideles over the finite sets `S` of finite places, so every class comes from the
@@ -278,9 +278,10 @@ theorem eq_zero_of_forall_map_semilocal_eq_zero
       congrArg (fun φ ↦ ((tateCohomologyFunctor n).map φ).hom y) (sIdeles_hom_decomp L S)
   rw [hy0, map_zero]
 
-/-- **The semi-local components of an idele class are finitely supported.** For a finite Galois
-extension `L/K` of number fields and `n > 0`, a class of `H^n(Gal(L/K), I_L)` has nonzero image in
-`H^n(Gal(L/K), (K_v ⊗[K] L)ˣ)` at only finitely many finite places `v` of `K`. -/
+/-- **The semi-local components of a cohomology class with coefficients in the ideles are finitely
+supported.** For a finite Galois extension `L/K` of number fields and `n > 0`, a class of
+`H^n(Gal(L/K), I_L)` has nonzero image in `H^n(Gal(L/K), (K_v ⊗[K] L)ˣ)` at only finitely many
+finite places `v` of `K`. -/
 theorem finite_setOf_map_idelesToSemilocalUnits_ne_zero (x : tateCohomology (idelesRep K L) n) :
     {v | ((tateCohomologyFunctor n).map (idelesToSemilocalUnits L v)).hom x ≠ 0}.Finite := by
   obtain ⟨S, hS, y, rfl⟩ := exists_map_sIdelesToIdeles_eq L n x
