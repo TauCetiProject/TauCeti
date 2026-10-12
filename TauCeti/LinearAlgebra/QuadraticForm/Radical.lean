@@ -490,6 +490,10 @@ theorem exists_equivalent_zero_radical_prod
   have heq : ((Q.restrict C).prod (Q.restrict Q.radical)).IsometryEquiv Q :=
     { toLinearEquiv := C.prodEquivOfIsCompl Q.radical hC.symm
       map_app' := fun x => by
+        -- Normalize the bundled isometry goal with `change` so `map_add` applies directly:
+        -- `Submodule.prodEquivOfIsCompl` evaluates to the sum of the coerced components,
+        -- and `QuadraticMap.prod` and `QuadraticMap.restrict` evaluate to the sum of their
+        -- values under `Q`. These reductions are definitional.
         change Q ((x.1 : V) + x.2) = Q x.1 + Q x.2
         rw [QuadraticMap.map_add Q]
         have hx : (x.2 : V) ∈ LinearMap.BilinForm.orthogonal Q.polarBilin C := by
