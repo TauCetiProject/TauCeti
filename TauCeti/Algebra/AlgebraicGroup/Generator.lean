@@ -5,9 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.AlgebraicGroup.BaseChange.Basic
 public import TauCeti.Algebra.AlgebraicGroup.ConstantGroup.Hom
-public import TauCeti.Algebra.AlgebraicGroup.Hopf.Map
 public import TauCeti.Algebra.Bialgebra.Hom.Representable
 public import TauCeti.RingTheory.Norm.FullSetOfSections
 public import Mathlib.RingTheory.Finiteness.ModuleFinitePresentation
@@ -33,7 +31,7 @@ family of `|A|` points of `G`, and the locus where these points form a full set 
 closed subscheme of finite presentation, `Spec (HomAlgebra R H (coordinateRing R A) ⧸ I)` with
 `I = generatorIdeal R H A`. Its points with values in `T` are the homomorphisms `A_T → G_T` of
 monoid schemes over `T` whose points `A →* G(T)` form an `A`-generator of `G_T`. By the universal
-property of the constant group (`TauCeti.ConstantGroup.bijective_mapDomain_comp`), a homomorphism
+property of the constant group (`TauCeti.ConstantGroup.pointsOfBialgHom_bijective`), a homomorphism
 `A_T → G_T` is the same as a homomorphism `A →* G(T)`, so the scheme of `A`-generators represents
 the functor `T ↦ {φ : A →* G(T) // IsAGenerator φ}`.
 
@@ -55,8 +53,6 @@ the functor `T ↦ {φ : A →* G(T) // IsAGenerator φ}`.
   descend along injective ring maps, in particular along faithfully flat ones.
 * `TauCeti.ConstantGroup.isAGenerator_toPoints`: the tautological homomorphism from `A` to the
   points of the constant group `A_R` is an `A`-generator.
-* `TauCeti.ConstantGroup.bijective_pointsOfBialgHom`: homomorphisms `A_T → G_T` of monoid schemes
-  over `T` are the monoid homomorphisms `A →* G(T)`.
 * `TauCeti.isAGenerator_pointsOfBialgHom_homEquiv_iff` and
   `TauCeti.quotientGeneratorIdealHomEquiv`: the universal property of the scheme of
   `A`-generators. `TauCeti.generatorIdeal_fg` and the accompanying instance show that it is of
@@ -138,35 +134,6 @@ theorem isAGenerator_toPoints : IsAGenerator (toPoints R A) := by
     ext; simp
   simpa only [isAGenerator_iff, h, isFullSetOfSections_comp_algEquiv_iff] using
     isFullSetOfSections_evalAlgHom
-
-variable {R A} (H : Type v) [CommRing H] [Bialgebra R H] {T : Type w} [CommRing T] [Algebra R T]
-
-/-- The homomorphism `A →* G(T)` attached to a homomorphism `A_T → G_T` of monoid schemes over
-`T` from the constant group, where `G = Spec H`. The homomorphism of monoid schemes is given as a
-`T`-bialgebra homomorphism `g : T ⊗[R] H →ₐc[T] T ⊗[R] coordinateRing R A`, and `a ∈ A` goes to
-the image under `g` of the point `a` of `A_T`. -/
-noncomputable def pointsOfBialgHom (g : T ⊗[R] H →ₐc[T] T ⊗[R] coordinateRing R A) :
-    A →* WithConv (T ⊗[R] H →ₐ[T] T) :=
-  (AlgHom.mapDomain (H₁ := T ⊗[R] H) (H₂ := T ⊗[R] coordinateRing R A) (A := T) g).comp
-    ((AlgHom.pointsBaseChange T).comp (toPoints R A))
-
-variable {H}
-
-/-- The point `pointsOfBialgHom g a` is the composite of `g` with the base change of evaluation
-at `a`. -/
-@[simp]
-theorem ofConv_pointsOfBialgHom (g : T ⊗[R] H →ₐc[T] T ⊗[R] coordinateRing R A) (a : A) :
-    (pointsOfBialgHom H g a).ofConv = ((eval R A a).sectionBaseChange T).comp (g : _ →ₐ[T] _) := by
-  simp [pointsOfBialgHom, AlgHom.ofConv_pointsBaseChange]
-
-variable (H) in
-/-- **Homomorphisms from the constant group after base change.** Homomorphisms `A_T → G_T` of
-monoid schemes over `T`, given as `T`-bialgebra homomorphisms
-`T ⊗[R] H →ₐc[T] T ⊗[R] coordinateRing R A`, correspond through `pointsOfBialgHom` to the monoid
-homomorphisms `A →* G(T)`. -/
-theorem bijective_pointsOfBialgHom :
-    Function.Bijective (pointsOfBialgHom (R := R) (A := A) (T := T) H) :=
-  bijective_mapDomain_comp (bijective_pi_pointsBaseChange_toPoints R A T)
 
 end ConstantGroup
 
@@ -277,7 +244,7 @@ noncomputable def quotientGeneratorIdealHomEquivAGenerators (T : Type w) [CommRi
     (HomAlgebra R H (coordinateRing R A) ⧸ generatorIdeal R H A →ₐ[R] T) ≃
       {φ : A →* WithConv (T ⊗[R] H →ₐ[T] T) // IsAGenerator φ} :=
   (quotientGeneratorIdealHomEquiv R H A T).trans <|
-    (Equiv.ofBijective _ (bijective_pointsOfBialgHom H)).subtypeEquiv fun _ ↦ Iff.rfl
+    (pointsOfBialgHomEquiv R H A T).subtypeEquiv fun _ ↦ by rw [pointsOfBialgHomEquiv_apply]
 
 /-- The `A`-generator attached to `g : _ ⧸ generatorIdeal R H A →ₐ[R] T` is the homomorphism
 `A →* G(T)` given by the points of the homomorphism `A_T → G_T` classified by `g` composed with
@@ -287,7 +254,22 @@ theorem coe_quotientGeneratorIdealHomEquivAGenerators_apply {T : Type w} [CommRi
     [Algebra R T] (g : HomAlgebra R H (coordinateRing R A) ⧸ generatorIdeal R H A →ₐ[R] T) :
     (quotientGeneratorIdealHomEquivAGenerators R H A T g : A →* WithConv (T ⊗[R] H →ₐ[T] T)) =
       pointsOfBialgHom H (HomAlgebra.homEquiv R H _ T (g.comp (Ideal.Quotient.mkₐ R _))) :=
-  congrArg (pointsOfBialgHom H) (coe_quotientGeneratorIdealHomEquiv_apply g)
+  (pointsOfBialgHomEquiv_apply _).trans <|
+    congrArg (pointsOfBialgHom H) (coe_quotientGeneratorIdealHomEquiv_apply g)
+
+/-- The map out of the scheme of `A`-generators attached to an `A`-generator `φ : A →* G(T)` is
+the map induced on the quotient by the `R`-algebra map classifying the homomorphism `A_T → G_T`
+with points `φ`. -/
+@[simp]
+theorem quotientGeneratorIdealHomEquivAGenerators_symm_apply_mk {T : Type w} [CommRing T]
+    [Algebra R T] (φ : {φ : A →* WithConv (T ⊗[R] H →ₐ[T] T) // IsAGenerator φ})
+    (x : HomAlgebra R H (coordinateRing R A)) :
+    (quotientGeneratorIdealHomEquivAGenerators R H A T).symm φ (Ideal.Quotient.mk _ x) =
+      (HomAlgebra.homEquiv R H _ T).symm ((pointsOfBialgHomEquiv R H A T).symm φ.1) x :=
+  quotientGeneratorIdealHomEquiv_symm_apply_mk
+    ⟨(pointsOfBialgHomEquiv R H A T).symm φ.1, by
+      rw [← pointsOfBialgHomEquiv_apply, Equiv.apply_symm_apply]
+      exact φ.2⟩ x
 
 end Locus
 

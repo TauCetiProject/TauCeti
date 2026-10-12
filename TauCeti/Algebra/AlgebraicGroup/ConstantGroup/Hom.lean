@@ -13,37 +13,42 @@ public import Mathlib.LinearAlgebra.TensorProduct.Pi
 /-!
 # Homomorphisms from a constant group
 
-Let `A` be a finite group and `R` a commutative ring. The constant group `A_R` is the disjoint
-union `⨆_{a ∈ A} Spec R`, with coordinate ring the functions `A → R`
-(`TauCeti.ConstantGroup.coordinateRing`). A morphism of schemes `A_R → G` over `Spec R` is
-therefore a family of `|A|` points of `G` with values in `R`, and it is a homomorphism of monoid
-schemes exactly when this family is a monoid homomorphism `A →* G(R)`. This file proves this
-universal property in coordinates: for an `R`-bialgebra `H`, with `G = Spec H`,
-restricting along the points of `A_R` is a bijection
+Let `A` be a finite monoid and `R` a commutative ring, and let `coordinateRing R A`
+(`TauCeti.ConstantGroup.coordinateRing`) be the coordinate ring of the constant monoid `A_R`,
+whose underlying algebra is the functions `A → R`. This file proves, for every `R`-bialgebra `H`,
+that restricting along the evaluations at the elements of `A` is a bijection
 
-  `(H →ₐc[R] coordinateRing R A) ≃ (A →* G(R))`
+  `(H →ₐc[R] coordinateRing R A) ≃ (A →* WithConv (H →ₐ[R] R))`
 
-(`TauCeti.ConstantGroup.bialgHomEquiv`). No finiteness, flatness or connectedness hypothesis is
-made on `H` or on `R`; over a disconnected base `A_R` is still a disjoint union of copies of the
-base, so homomorphisms from it are still indexed by `A`.
+(`TauCeti.ConstantGroup.bialgHomEquiv`). No finiteness, flatness, connectedness or commutativity
+hypothesis is made on `H` or on `R`.
 
-The universal property is proved for every bialgebra `C` together with a monoid homomorphism
+When `H` is commutative, so that `G = Spec H` is an affine monoid scheme over `R`, this is the
+universal property of the constant monoid scheme `A_R = ⨆_{a ∈ A} Spec R`: a homomorphism of monoid
+schemes `A_R → G` over `Spec R` is the same as a monoid homomorphism `A →* G(R)`. Over a
+disconnected base `A_R` is still a disjoint union of copies of the base, so homomorphisms from it
+are still indexed by `A`.
+
+The bijection is proved for every bialgebra `C` together with a monoid homomorphism
 `p : A →* WithConv (C →ₐ[R] R)` whose values identify `C` with the functions `A → R`
-(`TauCeti.ConstantGroup.bijective_mapDomain_comp`). Besides `coordinateRing R A` with its
+(`TauCeti.ConstantGroup.mapDomain_comp_bijective`). Besides `coordinateRing R A` with its
 evaluations, this applies to any base change of it, which is how Katz–Mazur `A`-generators over a
 varying base are read off a scheme of homomorphisms from the constant group.
 
 ## Main results
 
-* `TauCeti.ConstantGroup.bijective_mapDomain_comp`: if the points `p a` identify `C` with the
+* `TauCeti.ConstantGroup.mapDomain_comp_bijective`: if the points `p a` identify `C` with the
   functions on `A`, then a bialgebra homomorphism `H →ₐc[R] C` is the same as a monoid
-  homomorphism from `A` to the points of `Spec H`.
-* `TauCeti.ConstantGroup.bialgHomEquiv`: homomorphisms of monoid schemes `A_R → Spec H` are the
-  monoid homomorphisms `A →* WithConv (H →ₐ[R] R)`.
-* `TauCeti.ConstantGroup.bijective_pi_toPoints` and
-  `TauCeti.ConstantGroup.bijective_pi_pointsBaseChange_toPoints`: the evaluations identify
+  homomorphism from `A` to the `R`-points `WithConv (H →ₐ[R] R)` of `H`.
+* `TauCeti.ConstantGroup.bialgHomEquiv`: bialgebra homomorphisms `H →ₐc[R] coordinateRing R A`
+  are the monoid homomorphisms `A →* WithConv (H →ₐ[R] R)`.
+* `TauCeti.ConstantGroup.pi_toPoints_bijective` and
+  `TauCeti.ConstantGroup.pi_pointsBaseChange_toPoints_bijective`: the evaluations identify
   `coordinateRing R A`, and each of its base changes `T ⊗[R] coordinateRing R A`, with the
-  functions on `A`, so `bijective_mapDomain_comp` applies to them.
+  functions on `A`, so `mapDomain_comp_bijective` applies to them.
+* `TauCeti.ConstantGroup.pointsOfBialgHomEquiv`: after base change to an `R`-algebra `T`,
+  `T`-bialgebra homomorphisms `T ⊗[R] H →ₐc[T] T ⊗[R] coordinateRing R A` are the monoid
+  homomorphisms `A →* WithConv (T ⊗[R] H →ₐ[T] T)`.
 
 ## References
 
@@ -86,11 +91,11 @@ private theorem tensor_ext_of_bijective
   exact F.injective <| funext fun b ↦ funext fun a ↦ by rw [hF, hF, h]
 
 /-- **Recognition of constant groups.** Let `p : A →* WithConv (C →ₐ[R] R)` be a monoid
-homomorphism from a finite monoid to the points of `Spec C` whose values identify `C` with the
+homomorphism from a finite monoid to the `R`-points of `C` whose values identify `C` with the
 functions on `A`, that is, `c ↦ (a ↦ p a c)` is bijective. Then for every bialgebra `H`, a
 bialgebra homomorphism `g : H →ₐc[R] C` is determined by, and can be prescribed through, the monoid
-homomorphism `a ↦ p a ∘ g` from `A` to the points of `Spec H`. -/
-theorem bijective_mapDomain_comp
+homomorphism `a ↦ p a ∘ g` from `A` to the `R`-points of `H`. -/
+theorem mapDomain_comp_bijective
     (hp : Function.Bijective (AlgHom.pi fun a ↦ (p a).ofConv)) :
     Function.Bijective fun g : H →ₐc[R] C ↦ (AlgHom.mapDomain g).comp p := by
   refine ⟨fun g g' hgg' ↦ BialgHom.ext fun x ↦ hp.1 <| funext fun a ↦ ?_, fun φ ↦ ?_⟩
@@ -131,29 +136,30 @@ end Recognition
 
 section Universal
 
-variable (R : Type*) [CommRing R] (H : Type*) [Semiring H] [Bialgebra R H] (A : Type*) [Group A]
+variable (R : Type*) [CommRing R] (H : Type*) [Semiring H] [Bialgebra R H] (A : Type*) [Monoid A]
   [Finite A]
 
 /-- The evaluations at the elements of `A` identify `coordinateRing R A` with the functions on
 `A`. -/
-theorem bijective_pi_toPoints :
+theorem pi_toPoints_bijective :
     Function.Bijective (AlgHom.pi fun a ↦ (toPoints R A a).ofConv) := by
   convert (functionAlgEquiv R A).bijective
   ext
   simp
 
-/-- **Universal property of the constant group.** Homomorphisms of monoid schemes `A_R → Spec H`
-from the constant group, given as bialgebra homomorphisms `H →ₐc[R] coordinateRing R A`,
-correspond to monoid homomorphisms from `A` to the points `WithConv (H →ₐ[R] R)` of `Spec H`. A
-homomorphism `g` goes to `a ↦ eval a ∘ g`, the image of the point `a` of `A_R`. -/
+/-- **Universal property of the constant group.** Bialgebra homomorphisms
+`H →ₐc[R] coordinateRing R A` correspond to monoid homomorphisms from `A` to the `R`-points
+`WithConv (H →ₐ[R] R)` of `H`; a homomorphism `g` goes to `a ↦ eval a ∘ g`. When `H` is
+commutative, these are the homomorphisms of monoid schemes `A_R → Spec H` from the constant group,
+and `eval a ∘ g` is the image of the point `a` of `A_R`. -/
 noncomputable def bialgHomEquiv :
     (H →ₐc[R] coordinateRing R A) ≃ (A →* WithConv (H →ₐ[R] R)) :=
-  Equiv.ofBijective _ (bijective_mapDomain_comp (bijective_pi_toPoints R A))
+  Equiv.ofBijective _ (mapDomain_comp_bijective (pi_toPoints_bijective R A))
 
 /-- The base changes to an `R`-algebra `T` of the evaluations at the elements of `A` identify
-`T ⊗[R] coordinateRing R A` with the functions `A → T`: the base change of the constant group
-`A_R` is the constant group `A_T`. -/
-theorem bijective_pi_pointsBaseChange_toPoints (T : Type*) [CommRing T] [Algebra R T] :
+`T ⊗[R] coordinateRing R A` with the functions `A → T`. Geometrically, the base change of the
+constant group `A_R` is the constant group `A_T`. -/
+theorem pi_pointsBaseChange_toPoints_bijective (T : Type*) [CommRing T] [Algebra R T] :
     Function.Bijective
       (AlgHom.pi fun a ↦ ((AlgHom.pointsBaseChange T).comp (toPoints R A) a).ofConv) := by
   classical
@@ -183,5 +189,64 @@ theorem bialgHomEquiv_symm_apply_ofConv_single (φ : A →* WithConv (H →ₐ[R
     functionAlgEquiv_apply] using h
 
 end Universal
+
+section BaseChange
+
+variable {R : Type*} [CommRing R] (H : Type*) [Semiring H] [Bialgebra R H] {A : Type*} [Monoid A]
+  [Finite A] {T : Type*} [CommRing T] [Algebra R T]
+
+/-- The homomorphism `A →* WithConv (T ⊗[R] H →ₐ[T] T)` attached to a `T`-bialgebra homomorphism
+`g : T ⊗[R] H →ₐc[T] T ⊗[R] coordinateRing R A`: `a ∈ A` goes to the composite of `g` with the base
+change of evaluation at `a`. When `H` is commutative, `g` is a homomorphism `A_T → G_T` of monoid
+schemes over `T` from the constant group, where `G = Spec H`, and `a` goes to the image under `g`
+of the point `a` of `A_T`. -/
+noncomputable def pointsOfBialgHom (g : T ⊗[R] H →ₐc[T] T ⊗[R] coordinateRing R A) :
+    A →* WithConv (T ⊗[R] H →ₐ[T] T) :=
+  (AlgHom.mapDomain (H₁ := T ⊗[R] H) (H₂ := T ⊗[R] coordinateRing R A) (A := T) g).comp
+    ((AlgHom.pointsBaseChange T).comp (toPoints R A))
+
+variable {H}
+
+/-- The point `pointsOfBialgHom g a` is the composite of `g` with the base change of evaluation
+at `a`. -/
+@[simp]
+theorem ofConv_pointsOfBialgHom (g : T ⊗[R] H →ₐc[T] T ⊗[R] coordinateRing R A) (a : A) :
+    (pointsOfBialgHom H g a).ofConv = ((eval R A a).sectionBaseChange T).comp (g : _ →ₐ[T] _) := by
+  simp [pointsOfBialgHom, AlgHom.ofConv_pointsBaseChange]
+
+variable (H) in
+/-- **Homomorphisms from the constant group after base change.** `T`-bialgebra homomorphisms
+`T ⊗[R] H →ₐc[T] T ⊗[R] coordinateRing R A` correspond through `pointsOfBialgHom` to the monoid
+homomorphisms `A →* WithConv (T ⊗[R] H →ₐ[T] T)`. -/
+theorem pointsOfBialgHom_bijective :
+    Function.Bijective (pointsOfBialgHom (R := R) (A := A) (T := T) H) :=
+  mapDomain_comp_bijective (pi_pointsBaseChange_toPoints_bijective R A T)
+
+variable (R H A T) in
+/-- `pointsOfBialgHom` as an equivalence: after base change to `T`, bialgebra homomorphisms from
+`T ⊗[R] H` to the coordinate ring of the constant group correspond to the monoid homomorphisms
+`A →* WithConv (T ⊗[R] H →ₐ[T] T)`. -/
+noncomputable def pointsOfBialgHomEquiv :
+    (T ⊗[R] H →ₐc[T] T ⊗[R] coordinateRing R A) ≃ (A →* WithConv (T ⊗[R] H →ₐ[T] T)) :=
+  Equiv.ofBijective _ (pointsOfBialgHom_bijective H)
+
+/-- `pointsOfBialgHomEquiv` is `pointsOfBialgHom`. -/
+@[simp]
+theorem pointsOfBialgHomEquiv_apply (g : T ⊗[R] H →ₐc[T] T ⊗[R] coordinateRing R A) :
+    pointsOfBialgHomEquiv R H A T g = pointsOfBialgHom H g := by
+  simp [pointsOfBialgHomEquiv]
+
+/-- The bialgebra homomorphism attached to `φ : A →* WithConv (T ⊗[R] H →ₐ[T] T)` takes `x` to
+an element whose base-changed evaluation at `a` is `φ a x`. -/
+@[simp]
+theorem sectionBaseChange_eval_pointsOfBialgHomEquiv_symm_apply
+    (φ : A →* WithConv (T ⊗[R] H →ₐ[T] T)) (a : A) (x : T ⊗[R] H) :
+    (eval R A a).sectionBaseChange T ((pointsOfBialgHomEquiv R H A T).symm φ x) =
+      (φ a).ofConv x := by
+  have h := congrArg (fun ψ ↦ (ψ a).ofConv x) ((pointsOfBialgHomEquiv R H A T).apply_symm_apply φ)
+  simpa only [pointsOfBialgHomEquiv_apply, ofConv_pointsOfBialgHom, AlgHom.comp_apply,
+    BialgHom.coe_toAlgHom] using h
+
+end BaseChange
 
 end TauCeti.ConstantGroup
