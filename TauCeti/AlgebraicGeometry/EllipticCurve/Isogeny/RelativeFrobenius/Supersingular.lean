@@ -247,6 +247,46 @@ theorem torsionBy_eq_zmultiples {Q : W.toAffine.Point} (hQ : p • Q = 0) (hQ₀
   rw [Nat.card_zmultiples, addOrderOf_eq_prime (hp := ⟨hp⟩) hQ hQ₀]
   exact natCard_torsionBy_le p W
 
+open scoped Classical in
+/-- **A curve has fewer than `n²` points of order dividing `n`** when the characteristic `p > 0`
+divides `n ≠ 0`. Writing `n = p k`, multiplication by `k` maps the `n`-torsion to the `p`-torsion,
+which has at most `p` points, with kernel the `k`-torsion, which has at most `deg [k] = k²` points.
+So the `n`-torsion has at most `p k² < n²` points. -/
+theorem natCard_torsionBy_lt (hp : p.Prime) {n : ℤ} (hn : n ≠ 0) (hpn : (p : ℤ) ∣ n) :
+    Nat.card (AddSubgroup.torsionBy W.toAffine.Point n) < n.natAbs ^ 2 := by
+  obtain ⟨k, rfl⟩ := hpn
+  have hk : k ≠ 0 := right_ne_zero_of_mul hn
+  have := W.finite_torsionBy (mod_cast hp.ne_zero : (p : ℤ) ≠ 0)
+  have := W.finite_torsionBy hk
+  -- the `k`-torsion has at most `deg [k] = k²` points
+  have hk' : Nat.card (AddSubgroup.torsionBy W.toAffine.Point k) ≤ k.natAbs ^ 2 := by
+    have h := (mulByIntIsogenyOfNeZero W.toAffine hk).card_ker_le_degree
+    rwa [ker_mulByIntIsogeny_eq_torsionBy, Affine.baseChange_self,
+      degree_mulByIntIsogenyOfNeZero] at h
+  -- multiplication by `k` maps the `p k`-torsion to the `p`-torsion, with kernel the `k`-torsion
+  let φ := (zsmulAddGroupHom k).comp
+    (AddSubgroup.torsionBy W.toAffine.Point ((p : ℤ) * k)).subtype
+  have hker : Nat.card φ.ker ≤ Nat.card (AddSubgroup.torsionBy W.toAffine.Point k) :=
+    Nat.card_le_card_of_injective
+      (fun x ↦ ⟨x.1.1, (Submodule.mem_torsionBy_iff _ _).2 (AddMonoidHom.mem_ker.1 x.2)⟩)
+      fun x y hxy ↦ Subtype.ext (Subtype.ext congr(($hxy).1))
+  have hrange : Nat.card φ.range ≤ Nat.card (AddSubgroup.torsionBy W.toAffine.Point (p : ℤ)) := by
+    refine AddSubgroup.card_le_of_le ?_
+    rintro _ ⟨x, rfl⟩
+    have hx := (Submodule.mem_torsionBy_iff _ _).1 x.2
+    exact (Submodule.mem_torsionBy_iff _ _).2 (by simpa [φ, smul_smul, mul_comm] using hx)
+  have hcard := AddSubgroup.card_ker_mul_card_range φ
+  have hp' := natCard_torsionBy_le p W
+  rw [Int.natAbs_mul, Int.natAbs_natCast]
+  calc Nat.card (AddSubgroup.torsionBy W.toAffine.Point ((p : ℤ) * k))
+      ≤ k.natAbs ^ 2 * p := by
+        rw [← hcard]
+        exact Nat.mul_le_mul (hker.trans hk') (hrange.trans (by simpa using hp'))
+    _ < (p * k.natAbs) ^ 2 := by
+        have h1 := hp.two_le
+        have h2 : 0 < k.natAbs := Int.natAbs_pos.2 hk
+        nlinarith
+
 end WeierstrassCurve
 
 end
