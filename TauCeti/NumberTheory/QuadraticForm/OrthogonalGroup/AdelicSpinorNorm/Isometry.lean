@@ -62,6 +62,7 @@ theorem eventually_localSpinorNormImage_eq_of_isometry :
 
 /-- The adelic spinor norm commutes with local isometric transport and the induced change of
 square-class reference family. -/
+@[simp]
 theorem adelicSpinorNorm_restrictedProductCongrRight (g : U.finiteAdelicSpecialOrthogonal) :
     U'.adelicSpinorNorm hQ'
         (restrictedProductCongrRight U.specialOrthogonal U'.specialOrthogonal
@@ -77,6 +78,7 @@ theorem adelicSpinorNorm_restrictedProductCongrRight (g : U.finiteAdelicSpecialO
 
 /-- Local isometric transport carries the adelic spinor kernel onto the adelic spinor kernel
 of the target quadratic space. -/
+@[simp]
 theorem map_adelicSpinorKernel_restrictedProductCongrRight :
     (U.adelicSpinorKernel hQ).map
         (restrictedProductCongrRight U.specialOrthogonal U'.specialOrthogonal
