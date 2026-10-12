@@ -6,13 +6,15 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicGeometry.EllipticCurve.Reduction
-public import TauCeti.AlgebraicGeometry.EllipticCurve.TateAlgorithm.Terminal
+public import TauCeti.AlgebraicGeometry.EllipticCurve.TateAlgorithm.Reduction.Type
 -- Proof-only: `v (Δ) < 12` implies minimal.
 import TauCeti.AlgebraicGeometry.EllipticCurve.MinimalModel.Basic
 -- Proof-only: divisibility of integers by powers of `p` is read in `ℤ`.
 import TauCeti.Data.Nat.Prime.IntCast
 -- Proof-only: `norm_num` decides primality of the small primes.
 import Mathlib.Tactic.NormNum.Prime
+-- Proof-only: a uniformiser of a Dedekind domain at `v` is one of its localisation at `v`.
+import TauCeti.RingTheory.DedekindDomain.LocalizationAtPrime
 
 /-!
 # Worked examples: Tate's algorithm on curves over `ℚ`, one for each reduction symbol
@@ -60,16 +62,32 @@ Of the multiplicative entries, 11.a1 and 11.a2 at `11` and 14.a4 at `7` are spli
 not certified here; neither is the independence of the symbol from the choices made in running the
 algorithm.
 
+The last section checks semistability over `ℤ` (`WeierstrassCurve.IsSemistable`) against these
+symbols. At the primes not dividing the discriminant the reduction is good; at the others it is
+the type the symbol names. So 11.a1, whose only bad prime is `11`, of symbol `I₁`, has
+multiplicative reduction there, in agreement with its semistability, which the coprimality of its
+discriminant and `c₄` gives directly; while 27.a4, of symbol `II` at `3`, has additive reduction
+there and is not semistable.
+
 ## Main results
 
 * `TauCeti.WorkedExamples.isMinimal_and_exists_isTateTerminal_curve11a1_11` and its fourteen
   companions, one for each row of the table.
+* `TauCeti.WorkedExamples.hasGoodReduction_curve11a1_iff` and
+  `TauCeti.WorkedExamples.hasMultiplicativeReduction_curve11a1`: 11.a1 has good reduction away
+  from `11` and multiplicative reduction at `11`.
+* `TauCeti.WorkedExamples.isSemistable_curve11a1`: 11.a1 is semistable.
+* `TauCeti.WorkedExamples.hasGoodReduction_curve27a4_iff` and
+  `TauCeti.WorkedExamples.hasAdditiveReduction_curve27a4`: 27.a4 has good reduction away from `3`
+  and additive reduction at `3`.
+* `TauCeti.WorkedExamples.not_isSemistable_curve27a4`: 27.a4 is not semistable.
 
 ## References
 
 * J. Tate, *Algorithm for determining the type of a singular fibre in an elliptic pencil*, in
   *Modular Functions of One Variable IV*, LNM 476 (1975), 33–52.
 * J. H. Silverman, *Advanced Topics in the Arithmetic of Elliptic Curves*, GTM 151, IV.9.
+* J. H. Silverman, *The Arithmetic of Elliptic Curves*, GTM 106, VII.5.
 * J. E. Cremona, *Algorithms for Modular Elliptic Curves*, 2nd ed., the tables; the equations
   above are those of Cremona's `ecdata` tables (`allcurves`, with the label correspondence of
   `alllabels`).
@@ -271,5 +289,179 @@ theorem isMinimal_and_exists_isTateTerminal_curve24a1_2 (h : Irreducible (2 : R)
       ∃ C : VariableChange R, (C • curve24a1.map (Int.castRingHom R)).IsTateTerminal 2 .IIStar :=
   isMinimal_and_exists_isTateTerminal K (p := 2) (by norm_num) (by norm_num) h curve24a1
     (by simp [Δ, b₂, b₄, b₆, b₈]) ⟨1, 2, 1, 4⟩ (by simp [variableChange_def])
+
+/-! ### Semistability read off the symbols
+
+The symbols above are computed at one prime each. Together with good reduction at the primes not
+dividing the discriminant, they decide the reduction type of the curve at every prime of `ℤ`, and
+hence whether it is semistable (`WeierstrassCurve.IsSemistable`). On 11.a1, of discriminant `-11`,
+the only bad prime is `11`, where the symbol `I₁` gives multiplicative reduction, as semistability
+requires. On 27.a4, of discriminant `-3³`, the symbol `II` at `3` gives additive reduction: the
+curve is not semistable. -/
+
+section Semistable
+
+open IsDedekindDomain IsDedekindDomain.HeightOneSpectrum
+
+/-- The discriminant of 11.a1 is `-11`. -/
+theorem Δ_curve11a1 : curve11a1.Δ = -11 := by
+  simp [Δ, b₂, b₄, b₆, b₈]
+
+/-- 11.a1 is an elliptic curve over `ℚ`. -/
+instance : (curve11a1.baseChange ℚ).IsElliptic := by
+  rw [isElliptic_iff, WeierstrassCurve.baseChange, map_Δ, Δ_curve11a1]
+  norm_num
+
+/-- The discriminant of 27.a4 is `-3³`. -/
+theorem Δ_curve27a4 : curve27a4.Δ = -27 := by
+  simp [Δ, b₂, b₄, b₆, b₈]
+
+/-- 27.a4 is an elliptic curve over `ℚ`. -/
+instance : (curve27a4.baseChange ℚ).IsElliptic := by
+  rw [isElliptic_iff, WeierstrassCurve.baseChange, map_Δ, Δ_curve27a4]
+  norm_num
+
+variable (v : HeightOneSpectrum ℤ)
+
+/-- An equation over `ℤ`, read over the localisation `ℤ_(v)` and then over `ℚ`, is the equation
+read over `ℚ`. -/
+private theorem baseChange_map_localizationAtPrime (W : WeierstrassCurve ℤ) :
+    (W.map (Int.castRingHom (Localization.AtPrime v.asIdeal))).baseChange ℚ = W.baseChange ℚ := by
+  rw [WeierstrassCurve.baseChange, WeierstrassCurve.baseChange, map_map]
+  congr 1
+  exact RingHom.ext_int _ _
+
+/-- A prime number `p` lying in `v` is a uniformiser of the localisation `ℤ_(v)`. -/
+private theorem irreducible_natCast_localizationAtPrime {p : ℕ} (hp : p.Prime)
+    (hv : (p : ℤ) ∈ v.asIdeal) : Irreducible (p : Localization.AtPrime v.asIdeal) := by
+  simpa using v.irreducible_algebraMap_localizationAtPrime_of_prime
+    (Nat.prime_iff_prime_int.mp hp) hv
+
+/-- Let `W` be an equation over `ℤ` whose image over `ℤ_(v)` is minimal, and on which, after a
+change of variables over `ℤ_(v)`, Tate's algorithm stops at `s`. Then the chosen minimal equation
+of `W` at `v` is carried by a change of variables to the minimal equation the algorithm stops on. -/
+private theorem exists_smul_minimal_eq_isTateTerminal (W : WeierstrassCurve ℤ)
+    [(W.baseChange ℚ).IsElliptic] {ϖ : Localization.AtPrime v.asIdeal} {s : ReductionSymbol}
+    (h : IsMinimal (Localization.AtPrime v.asIdeal)
+        ((W.map (Int.castRingHom (Localization.AtPrime v.asIdeal))).baseChange ℚ) ∧
+      ∃ C : VariableChange (Localization.AtPrime v.asIdeal),
+        (C • W.map (Int.castRingHom (Localization.AtPrime v.asIdeal))).IsTateTerminal ϖ s) :
+    ∃ (W' : WeierstrassCurve (Localization.AtPrime v.asIdeal)) (D : VariableChange ℚ),
+      IsMinimal (Localization.AtPrime v.asIdeal) (W'.baseChange ℚ) ∧
+        D • (W.baseChange ℚ).minimal (Localization.AtPrime v.asIdeal) = W'.baseChange ℚ ∧
+          W'.IsTateTerminal ϖ s := by
+  set Rv := Localization.AtPrime v.asIdeal
+  set W₀ := W.map (Int.castRingHom Rv)
+  obtain ⟨hmin, C, hC⟩ := h
+  have hCW₀ : (C • W₀).baseChange ℚ = C.baseChange ℚ • W₀.baseChange ℚ := by
+    rw [WeierstrassCurve.baseChange, ← map_variableChange, ← WeierstrassCurve.baseChange,
+      VariableChange.baseChange]
+  obtain ⟨D, hD⟩ := (W.baseChange ℚ).exists_smul_eq_minimal Rv
+  refine ⟨C • W₀, C.baseChange ℚ * D⁻¹, hCW₀ ▸ inferInstance, ?_, hC⟩
+  rw [mul_smul, ← hD, inv_smul_smul, hCW₀, baseChange_map_localizationAtPrime]
+
+/-- In the situation of `exists_smul_minimal_eq_isTateTerminal`, the chosen minimal equation of `W`
+at `v` has good reduction exactly when `s = I₀`. -/
+private theorem hasGoodReduction_minimal_iff_of_isTateTerminal (W : WeierstrassCurve ℤ)
+    [(W.baseChange ℚ).IsElliptic] {ϖ : Localization.AtPrime v.asIdeal} (hϖ : Irreducible ϖ)
+    {s : ReductionSymbol}
+    (h : IsMinimal (Localization.AtPrime v.asIdeal)
+        ((W.map (Int.castRingHom (Localization.AtPrime v.asIdeal))).baseChange ℚ) ∧
+      ∃ C : VariableChange (Localization.AtPrime v.asIdeal),
+        (C • W.map (Int.castRingHom (Localization.AtPrime v.asIdeal))).IsTateTerminal ϖ s) :
+    ((W.baseChange ℚ).minimal (Localization.AtPrime v.asIdeal)).HasGoodReduction
+      (Localization.AtPrime v.asIdeal) ↔ s = .I 0 := by
+  obtain ⟨W', D, _, hD, hs⟩ := exists_smul_minimal_eq_isTateTerminal v W h
+  rw [← hs.hasGoodReduction_iff (K := ℚ) hϖ, hasGoodReduction_minimal_iff,
+    ← valuation_Δ_eq_of_isMinimal_smul (Localization.AtPrime v.asIdeal) D hD]
+  exact ⟨fun h ↦ ⟨h⟩, fun h ↦ h.goodReduction⟩
+
+/-- In the situation of `exists_smul_minimal_eq_isTateTerminal`, the chosen minimal equation of `W`
+at `v` has additive reduction exactly when `s` is none of the `Iₙ`. -/
+private theorem hasAdditiveReduction_minimal_iff_of_isTateTerminal (W : WeierstrassCurve ℤ)
+    [(W.baseChange ℚ).IsElliptic] {ϖ : Localization.AtPrime v.asIdeal} (hϖ : Irreducible ϖ)
+    {s : ReductionSymbol}
+    (h : IsMinimal (Localization.AtPrime v.asIdeal)
+        ((W.map (Int.castRingHom (Localization.AtPrime v.asIdeal))).baseChange ℚ) ∧
+      ∃ C : VariableChange (Localization.AtPrime v.asIdeal),
+        (C • W.map (Int.castRingHom (Localization.AtPrime v.asIdeal))).IsTateTerminal ϖ s) :
+    ((W.baseChange ℚ).minimal (Localization.AtPrime v.asIdeal)).HasAdditiveReduction
+      (Localization.AtPrime v.asIdeal) ↔ ∀ n, s ≠ .I n := by
+  obtain ⟨W', D, _, hD, hs⟩ := exists_smul_minimal_eq_isTateTerminal v W h
+  have : ((W.baseChange ℚ).minimal (Localization.AtPrime v.asIdeal)).IsElliptic :=
+    ((W.baseChange ℚ).exists_smul_eq_minimal (Localization.AtPrime v.asIdeal)).choose_spec ▸
+      inferInstance
+  rw [← hasAdditiveReduction_iff_of_isMinimal_smul (Localization.AtPrime v.asIdeal) D hD]
+  exact hs.hasAdditiveReduction_iff (K := ℚ) hϖ
+
+/-! #### 11.a1: semistable, of symbol `I₁` at its only bad prime -/
+
+/-- **11.a1 has multiplicative reduction at `11`**: Tate's algorithm stops there at `I₁`, which is
+neither `I₀` nor an additive symbol. -/
+theorem hasMultiplicativeReduction_curve11a1 (hv : (11 : ℤ) ∈ v.asIdeal) :
+    ((curve11a1.baseChange ℚ).minimal (Localization.AtPrime v.asIdeal)).HasMultiplicativeReduction
+      (Localization.AtPrime v.asIdeal) := by
+  have hϖ : Irreducible (11 : Localization.AtPrime v.asIdeal) := by
+    exact_mod_cast irreducible_natCast_localizationAtPrime v (p := 11) (by norm_num) hv
+  have h := isMinimal_and_exists_isTateTerminal_curve11a1_11 ℚ hϖ
+  rcases hasGoodReduction_or_hasMultiplicativeReduction_or_hasAdditiveReduction
+    (R := Localization.AtPrime v.asIdeal)
+    (W := (curve11a1.baseChange ℚ).minimal (Localization.AtPrime v.asIdeal)) with hg | hm | ha
+  · exact absurd ((hasGoodReduction_minimal_iff_of_isTateTerminal v _ hϖ h).1 hg) nofun
+  · exact hm
+  · exact absurd rfl ((hasAdditiveReduction_minimal_iff_of_isTateTerminal v _ hϖ h).1 ha 1)
+
+/-- **11.a1 has good reduction exactly at the primes other than `11`.** Away from `11` its
+discriminant `-11` is a unit; at `11` its reduction is multiplicative. -/
+theorem hasGoodReduction_curve11a1_iff :
+    ((curve11a1.baseChange ℚ).minimal (Localization.AtPrime v.asIdeal)).HasGoodReduction
+      (Localization.AtPrime v.asIdeal) ↔ (11 : ℤ) ∉ v.asIdeal :=
+  ⟨fun h hv ↦ (hasMultiplicativeReduction_curve11a1 v hv).not_hasGoodReduction _ h,
+    fun hv ↦ hasGoodReduction_minimal_baseChange_of_Δ_notMem curve11a1 <| by
+      rwa [Δ_curve11a1, neg_mem_iff]⟩
+
+/-- The `c₄` invariant of 11.a1 is `375376 = 2⁴ · 23461`. -/
+theorem c₄_curve11a1 : curve11a1.c₄ = 375376 := by
+  simp [c₄, b₂, b₄]
+
+/-- **11.a1 is semistable**: its discriminant `-11` and its `c₄ = 375376` are coprime, so at every
+prime one of them is a unit. This agrees with the symbols: the reduction is good away from `11`
+and multiplicative, of symbol `I₁`, at `11` (`hasGoodReduction_curve11a1_iff`,
+`hasMultiplicativeReduction_curve11a1`). -/
+theorem isSemistable_curve11a1 : IsSemistable ℤ (curve11a1.baseChange ℚ) :=
+  isSemistable_baseChange_of_isCoprime curve11a1 <| by
+    rw [Δ_curve11a1, c₄_curve11a1, Int.isCoprime_iff_gcd_eq_one]
+    norm_num
+
+/-! #### 27.a4: not semistable, of symbol `II` at `3` -/
+
+/-- **27.a4 has additive reduction at `3`**: Tate's algorithm stops there at `II`. -/
+theorem hasAdditiveReduction_curve27a4 (hv : (3 : ℤ) ∈ v.asIdeal) :
+    ((curve27a4.baseChange ℚ).minimal (Localization.AtPrime v.asIdeal)).HasAdditiveReduction
+      (Localization.AtPrime v.asIdeal) := by
+  have hϖ : Irreducible (3 : Localization.AtPrime v.asIdeal) := by
+    exact_mod_cast irreducible_natCast_localizationAtPrime v (p := 3) (by norm_num) hv
+  exact (hasAdditiveReduction_minimal_iff_of_isTateTerminal v _ hϖ
+    (isMinimal_and_exists_isTateTerminal_curve27a4_3 ℚ hϖ)).2 fun _ ↦ nofun
+
+/-- **27.a4 has good reduction exactly at the primes other than `3`.** Away from `3` its
+discriminant `-3³` is a unit; at `3` its reduction is additive. -/
+theorem hasGoodReduction_curve27a4_iff :
+    ((curve27a4.baseChange ℚ).minimal (Localization.AtPrime v.asIdeal)).HasGoodReduction
+      (Localization.AtPrime v.asIdeal) ↔ (3 : ℤ) ∉ v.asIdeal := by
+  refine ⟨fun h hv ↦ (hasAdditiveReduction_curve27a4 v hv).not_hasGoodReduction _ h,
+    fun hv ↦ hasGoodReduction_minimal_baseChange_of_Δ_notMem curve27a4 ?_⟩
+  rw [Δ_curve27a4, neg_mem_iff, show (27 : ℤ) = 3 ^ 3 by norm_num]
+  exact fun h ↦ hv (v.isPrime.mem_of_pow_mem 3 h)
+
+/-- **27.a4 is not semistable**: its reduction at `3`, of symbol `II`, is additive. -/
+theorem not_isSemistable_curve27a4 : ¬ IsSemistable ℤ (curve27a4.baseChange ℚ) := fun h ↦ by
+  let v : HeightOneSpectrum ℤ :=
+    ⟨Ideal.span {(3 : ℤ)}, (Ideal.span_singleton_prime (by norm_num)).mpr Int.prime_three,
+      by simp⟩
+  exact h.not_hasAdditiveReduction v (hasAdditiveReduction_curve27a4 v
+    (Ideal.mem_span_singleton_self _))
+
+end Semistable
 
 end TauCeti.WorkedExamples

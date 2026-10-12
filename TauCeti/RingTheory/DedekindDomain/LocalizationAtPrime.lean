@@ -48,6 +48,8 @@ valuation ring — is the `v`-adic valuation itself. Without that identification
   any model of `Oᵥ` is the ring of integers of the `v`-adic valuation on `K`;
 * `IsDedekindDomain.HeightOneSpectrum.irreducible_algebraMap_localizationAtPrime`:
   a `v`-adic uniformiser of `O` is irreducible in `Oᵥ`;
+* `IsDedekindDomain.HeightOneSpectrum.irreducible_algebraMap_localizationAtPrime_of_prime`:
+  so is a prime element of `O` lying in `v`;
 * `IsDedekindDomain.HeightOneSpectrum.valuation_maximalIdeal_localizationAtPrime`:
   the valuation of `Oᵥ` as a discrete valuation ring is the `v`-adic valuation.
 -/
@@ -150,6 +152,16 @@ theorem irreducible_algebraMap_localizationAtPrime {ϖ : O}
     intro hu
     rw [hv.isUnit_iff_valuation_eq_one, hϖL] at hu
     simp at hu
+
+/-- **A prime element of `O` lying in `v` is irreducible in the localisation at `v`.** The ideal it
+generates is a nonzero prime, hence maximal, so it is `v` itself and the element is a `v`-adic
+uniformiser. -/
+theorem irreducible_algebraMap_localizationAtPrime_of_prime {ϖ : O} (hϖ : Prime ϖ)
+    (hv : ϖ ∈ v.asIdeal) : Irreducible (algebraMap O (Localization.AtPrime v.asIdeal) ϖ) := by
+  have hmax : (Ideal.span {ϖ}).IsMaximal :=
+    ((Ideal.span_singleton_prime hϖ.ne_zero).2 hϖ).isMaximal (by simpa using hϖ.ne_zero)
+  exact v.irreducible_algebraMap_localizationAtPrime (v.intValuation_singleton hϖ.ne_zero
+    (hmax.eq_of_le v.isPrime.ne_top ((Ideal.span_singleton_le_iff_mem _).2 hv)).symm)
 
 /-- **The valuation of the discrete valuation ring `Oᵥ` is the `v`-adic valuation.** Mathlib's
 theory of minimal Weierstrass equations, like every other statement it makes over a discrete
