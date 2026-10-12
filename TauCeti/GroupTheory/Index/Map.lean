@@ -19,6 +19,10 @@ quotient, for instance the contribution of principal ideles to an idele-class in
 
 * `TauCeti.subgroup_index_map_mul_relIndex_ker`: the image-index factorization for groups.
 * `TauCeti.addSubgroup_index_map_mul_relIndex_ker`: the same factorization for additive groups.
+
+For a subgroup `H` and a surjective homomorphism `f` with proof `hf`, use
+`TauCeti.subgroup_index_map_mul_relIndex_ker H f hf`. For an additive subgroup and homomorphism,
+use `TauCeti.addSubgroup_index_map_mul_relIndex_ker H f hf`.
 -/
 
 public section
