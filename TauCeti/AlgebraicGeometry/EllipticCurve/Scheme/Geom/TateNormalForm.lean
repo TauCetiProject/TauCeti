@@ -71,12 +71,14 @@ noncomputable def point : Spec (.of (ULift.{u} Ring)) ⟶ curveULift.{u}.projMod
   curveULift.projModelAffinePoint equation_curveULift_zero
 
 /-- The universal point is the point `[0 : 0 : 1]` of the projective model. -/
+@[simp]
 theorem point_def :
     point.{u} = curveULift.projModelAffinePoint equation_curveULift_zero :=
   (rfl)
 
 /-- The universal point is a section of the projective model of the universal Tate normal form. -/
-@[reassoc (attr := simp)]
+-- Not `@[simp]`: `simp` proves it from `point_def` and `projModelAffinePoint_projModelOver`.
+@[reassoc]
 theorem point_projModelOver : point.{u} ≫ curveULift.projModelOver = 𝟙 _ := by
   rw [point_def, projModelAffinePoint_projModelOver]
 
