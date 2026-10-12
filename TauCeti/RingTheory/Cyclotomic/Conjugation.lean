@@ -99,8 +99,9 @@ instance instStarRing : StarRing (Cyclotomic e) := by
         star_add := fun x y => ext fun j => Fin.elim0 j
         star_mul := fun x y => ext fun j => Fin.elim0 j }
   · let : NeZero e := ⟨he⟩
-    exact complexEmbedding_injective.starRing complexEmbedding complexEmbedding_star
-      complexEmbedding.map_add complexEmbedding.map_mul
+    exact fast_instance%
+      complexEmbedding_injective.starRing complexEmbedding complexEmbedding_star
+        complexEmbedding.map_add complexEmbedding.map_mul
 
 /-- Conjugation sends the distinguished generator to `ζ_e ^ (e - 1)`. -/
 @[simp]
