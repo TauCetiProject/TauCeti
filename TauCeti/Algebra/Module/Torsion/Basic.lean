@@ -72,8 +72,8 @@ theorem torsionBy_pow_succ_le_zmultiples {A : Type*} [AddCommGroup A] {n : ℤ} 
       refine ih (by rwa [smul_smul, ← pow_succ]) (mem.2 ?_)
       rw [smul_smul, ← pow_succ, mem.1 hx]
     -- so `x - m • y` is `n`-torsion, hence a multiple of `n ^ (k + 1) • y`
-    obtain ⟨m', hm'⟩ := h (mem.2 (show n • (x - m • y) = 0 by
-      rw [smul_sub, ← hm, smul_comm, sub_self]))
+    have hxm : n • (x - m • y) = 0 := by rw [smul_sub, ← hm, smul_comm, sub_self]
+    obtain ⟨m', hm'⟩ := h (mem.2 hxm)
     rw [← sub_add_cancel x (m • y), ← hm']
     exact add_mem (zsmul_mem (zsmul_mem_zmultiples y _) m') (zsmul_mem_zmultiples y m)
 
