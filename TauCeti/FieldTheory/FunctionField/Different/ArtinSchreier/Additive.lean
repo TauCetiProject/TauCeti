@@ -39,6 +39,8 @@ integral basis at the totally ramified place, and the different exponent is the 
 * `TauCeti.Place.differentExponent_eq_zero_of_exists_sub_aeval_additivePolynomial_mem_integers`
   and `TauCeti.Place.ramificationIdx_eq_one_of_exists_sub_aeval_additivePolynomial_mem_integers`:
   a place with a regular representative is unramified, with different exponent zero.
+* `TauCeti.Place.isWild_of_exists_reduced_additivePolynomial_pole`: for nontrivial `V`, a reduced
+  pole of order prime to `|V|` is wildly ramified.
 * `TauCeti.Place.differentExponent_eq_of_sub_aeval_additivePolynomial_ord_eq_neg`: at a reduced
   pole of order `m` prime to `|V|`, `d(P' ∣ P) = (|V| - 1) (m + 1)`.
 
@@ -97,6 +99,18 @@ theorem differentExponent_eq_zero_of_aeval_additivePolynomial_eq_of_mem_integers
   rw [coeff_sub, coeff_C]
   exact sub_mem (hcoeff i) (by split_ifs <;> simp [ha])
 
+/-- If `a_V (y) = a` with `a` regular below `P'` and `V` consisting of constants, then `P'` is
+unramified. -/
+theorem ramificationIdx_eq_one_of_aeval_additivePolynomial_eq_of_mem_integers
+    (hV : ∀ c ∈ V, IsAlgebraic k c) {y : F'} {a : F} (hgen : F⟮y⟯ = ⊤)
+    (hy : aeval y V.additivePolynomial = algebraMap F F' a)
+    (ha : a ∈ (P'.restrict k F).integers) :
+    ramificationIdx F P' = 1 := by
+  have hle := ramificationIdx_le_differentExponent_add_one k F P'
+  rw [differentExponent_eq_zero_of_aeval_additivePolynomial_eq_of_mem_integers k F V hV hgen hy
+    ha] at hle
+  exact le_antisymm hle (ramificationIdx_pos F P')
+
 /-- If the class of `u` has a representative `u - a_V (w)` regular below `P'`, where `a_V (y) = u`
 and `V` consists of constants, then the different exponent at `P'` is zero (Stichtenoth,
 Proposition 3.7.10(c)). -/
@@ -125,6 +139,27 @@ theorem ramificationIdx_eq_one_of_exists_sub_aeval_additivePolynomial_mem_intege
   rw [differentExponent_eq_zero_of_exists_sub_aeval_additivePolynomial_mem_integers k F V hV hgen
     hy hreg] at hle
   exact le_antisymm hle (ramificationIdx_pos F P')
+
+/-- A reduced pole of order prime to `|V|`, for a nontrivial `V` consisting of constants, is wildly
+ramified: its ramification index `|V|` vanishes in the residue field of the place below. -/
+theorem isWild_of_exists_reduced_additivePolynomial_pole [Nontrivial V]
+    (hV : ∀ c ∈ V, IsAlgebraic k c) {y : F'} {u : F} (hgen : F⟮y⟯ = ⊤)
+    (hy : aeval y V.additivePolynomial = algebraMap F F' u)
+    (hpole : ∃ w : F, (P'.restrict k F).ord (u - aeval w V.additivePolynomial) < 0 ∧
+      Int.gcd (Fintype.card V) ((P'.restrict k F).ord (u - aeval w V.additivePolynomial)) = 1) :
+    IsWild k F P' := by
+  let _ : Algebra.IsIntegral F F' := Algebra.IsIntegral.of_finite F F'
+  -- `|V|` kills a nonzero element of `F`, so it vanishes in `F`.
+  obtain ⟨c, hc⟩ := exists_ne (0 : V)
+  have hcard : (Fintype.card V : F) = 0 := by
+    have h := congrArg ((↑) : V → F) (card_nsmul_eq_zero (x := c))
+    rw [AddSubgroup.coe_nsmul, nsmul_eq_mul, AddSubgroup.coe_zero] at h
+    exact (mul_eq_zero.mp h).resolve_right (by simpa using hc)
+  have hcard' : (Fintype.card V : (P'.restrict k F).integers) = 0 :=
+    Subtype.ext (by simpa using hcard)
+  rw [isWild_iff, ramificationIdx_eq_card_of_exists_reduced_additivePolynomial_pole k F V hV hgen
+    hy hpole, ← map_natCast (Ideal.Quotient.mk _), hcard', map_zero]
+  exact Or.inr rfl
 
 /-- At a pole of `u` of order `m` prime to `|V|`, where `a_V (y) = u` and `V` consists of
 constants, the different exponent is `(|V| - 1) (m + 1)`. No hypothesis on the residue field is

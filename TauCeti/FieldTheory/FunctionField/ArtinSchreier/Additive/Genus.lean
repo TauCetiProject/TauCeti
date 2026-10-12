@@ -13,7 +13,6 @@ public import TauCeti.FieldTheory.FunctionField.RiemannRoch.Genus
 import TauCeti.FieldTheory.FunctionField.ArtinSchreier.Additive.Basic
 import TauCeti.FieldTheory.FunctionField.Different.ArtinSchreier.Additive
 import TauCeti.FieldTheory.FunctionField.Different.Hurwitz
-import TauCeti.FieldTheory.FunctionField.Place.Extension.ArtinSchreier.Additive
 
 /-!
 # The genus of elementary abelian Artin–Schreier extensions of function fields
