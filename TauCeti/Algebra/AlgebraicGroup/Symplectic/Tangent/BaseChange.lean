@@ -126,15 +126,13 @@ theorem tangentBaseChangeLieEquiv_symm_derivationComp
     HopfIdeal.quotientLieHom_apply, algEquivSelf_derivationComp_apply,
     tangentBaseChangeLieEquiv_symm_apply, AlgEquiv.apply_symm_apply,
     algEquivSelf_derivationComp_apply]
-  -- Quotient tangent maps use `mkBialgHom`; the base-change API uses `coordinateMap`.
-  rw [← CommHopfAlgCat.hom_mkQuotient, ← coordinateMap_def R m]
+  -- Identify both quotient maps with the constant-form coordinate maps for `JFin`.
+  simp only [← CommHopfAlgCat.hom_mkQuotient, ← ConstantForm.coordinateMap_def]
   -- Elaborated rewriting aligns the quotient-indexed scalar structures.
   erw [coordinateHopfAlgebraBaseChangeIso_hom_tmul_coordinateMap R K m,
     GeneralLinear.coordinateHopfAlgebraBaseChangeIso_hom_apply.{u, v}]
   simp only [MvPolynomial.map_X, one_smul, algEquivSelf_derivationComp_apply,
-    coordinateMap_def, CommHopfAlgCat.hom_mkQuotient]
-  -- The symplectic ideal is the constant-form ideal for `JFin`.
-  rfl
+    BialgHom.coe_toAlgHom]
 
 /-- The forward comparison intertwines extension of derivations with the
 canonical coordinate base-change isomorphism. -/

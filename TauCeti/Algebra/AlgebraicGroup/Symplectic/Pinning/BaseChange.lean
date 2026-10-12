@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.Symplectic.Pinning.Basic
+public import TauCeti.Algebra.AlgebraicGroup.Pinning.BaseChange
 public import TauCeti.Algebra.AlgebraicGroup.Symplectic.RootSubgroup.BaseChange
 
 /-!
@@ -56,36 +57,9 @@ def standardPinningRootSpaceBaseChangeEquiv (i : Fin m) :
         (Multiplicative.ofAdd (standardPinningSimpleRootEquiv (R := R) i).val) ≃ₗ[K]
       Derivation.adjointWeightSpace (standardPinning K m).torus.coordinateMap.hom
         (Multiplicative.ofAdd (standardPinningSimpleRootEquiv (R := K) i).val) :=
-  (((standardPinning R m).rootSpaceEquiv
-    (standardPinningSimpleRootEquiv (R := R) i)).symm.baseChange R K _ _).trans
-      ((TensorProduct.AlgebraTensorModule.rid R K K).trans
-        ((standardPinning K m).rootSpaceEquiv
-          (standardPinningSimpleRootEquiv (R := K) i)))
-
-/-- The simple-root comparison preserves the chosen scalar coordinates. -/
-@[simp↓]
-theorem standardPinningRootSpaceBaseChangeEquiv_tmul (i : Fin m) (c : K) (b : R) :
-    standardPinningRootSpaceBaseChangeEquiv R K m i
-        (c ⊗ₜ[R] (standardPinning R m).rootSpaceEquiv
-          (standardPinningSimpleRootEquiv (R := R) i) b) =
-      (standardPinning K m).rootSpaceEquiv (standardPinningSimpleRootEquiv (R := K) i)
-        (c * algebraMap R K b) := by
-  simp only [standardPinningRootSpaceBaseChangeEquiv, LinearEquiv.trans_apply,
-    LinearEquiv.baseChange_tmul, LinearEquiv.symm_apply_apply,
-    TensorProduct.AlgebraTensorModule.rid_tmul, Algebra.smul_def]
-  rw [mul_comm]
-
-/-- The inverse comparison expresses a chosen vector over the new base as its
-scalar coordinate times the chosen integral generator. -/
-@[simp↓]
-theorem standardPinningRootSpaceBaseChangeEquiv_symm_apply (i : Fin m) (c : K) :
-    (standardPinningRootSpaceBaseChangeEquiv R K m i).symm
-        ((standardPinning K m).rootSpaceEquiv
-          (standardPinningSimpleRootEquiv (R := K) i) c) =
-      c ⊗ₜ[R] (standardPinning R m).rootSpaceEquiv
-        (standardPinningSimpleRootEquiv (R := R) i) 1 := by
-  apply (standardPinningRootSpaceBaseChangeEquiv R K m i).symm_apply_eq.mpr
-  rw [standardPinningRootSpaceBaseChangeEquiv_tmul R K m, map_one, mul_one]
+  (standardPinning R m).rootSpaceBaseChangeEquiv (standardPinning K m)
+    (standardPinningSimpleRootEquiv (R := R) i)
+    (standardPinningSimpleRootEquiv (R := K) i)
 
 /-- On pure tensors, the root-space comparison is the geometric scalar extension
 of the ambient cotangent dual, not just an abstract rank-one identification. -/
@@ -99,7 +73,7 @@ theorem standardPinningRootSpaceBaseChangeEquiv_tmul_coe (i : Fin m) (c : K)
           (Bialgebra.CotangentSpace R (coordinateHopfAlgebra R m)))) := by
   obtain ⟨b, rfl⟩ := ((standardPinning R m).rootSpaceEquiv
     (standardPinningSimpleRootEquiv (R := R) i)).surjective x
-  rw [standardPinningRootSpaceBaseChangeEquiv_tmul]
+  rw [standardPinningRootSpaceBaseChangeEquiv, Pinning.rootSpaceBaseChangeEquiv_tmul]
   -- The root-space inclusions use the quotient-indexed cotangent presentation.
   erw [standardPinning_rootSpaceEquiv_apply_coe,
     standardPinning_rootSpaceEquiv_apply_coe, TensorProduct.tmul_smul,
