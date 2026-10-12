@@ -83,8 +83,11 @@ theorem conjugateResidues_omega (h : d.IsCyclotomicCharacterTableSpec e omega ta
     (hg : d.rep k ^ e = 1) :
     Cyclotomic.conjugateResidues α (omega i k) j =
       Cyclotomic.reduce p α (omega i (d.index (d.rep k ^ Cyclotomic.primitiveExponent e j))) := by
+  have hroot : (Polynomial.cyclotomic e ℤ).eval₂ (Int.castRingHom (ZMod p)) α = 0 := by
+    rw [← Polynomial.eval_map, Polynomial.map_cyclotomic]
+    exact hα.isRoot_cyclotomic (NeZero.pos e)
   rw [Cyclotomic.conjugateResidues_apply, Cyclotomic.conjugateRoot_def,
-    ← Cyclotomic.reduce_powRingHom (Cyclotomic.coprime_primitiveExponent e j) hα,
+    ← Cyclotomic.reduce_powRingHom (Cyclotomic.coprime_primitiveExponent e j) hroot,
     h.powRingHom_omega (Cyclotomic.coprime_primitiveExponent e j) i k hg]
 
 end TauCeti.ClassData.IsCyclotomicCharacterTableSpec
