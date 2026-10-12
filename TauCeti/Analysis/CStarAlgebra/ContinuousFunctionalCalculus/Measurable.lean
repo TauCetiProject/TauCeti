@@ -16,9 +16,8 @@ its defining predicate is measurable. On the predicate, Mathlib's
 `ContinuousOn.cfc_of_mem_nhdsSet` supplies continuity; elsewhere the calculus is zero.
 The resulting map need not be continuous on the whole algebra.
 
-The proof of `measurable_cfc` generalizes Gaëtan Serré's proof of `CFC.measurable_sqrt`
-in `Mathlib.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Rpow.Measurable`,
-using the same measurable-piecewise argument.
+The theorem `measurable_cfc` generalizes Gaëtan Serré's `CFC.measurable_sqrt`
+in `Mathlib.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Rpow.Measurable`.
 
 This lets continuous spectral functions be applied to random Hermitian matrices without
 choosing measurable eigenvectors. It also applies to random self-adjoint elements of
