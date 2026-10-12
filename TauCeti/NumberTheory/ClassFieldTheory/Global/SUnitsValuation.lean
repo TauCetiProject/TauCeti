@@ -73,4 +73,13 @@ def sUnitsValuation (S : Finset (HeightOneSpectrum (𝓞 K))) :
     simpa only [Set.unitValuation_apply, smul_inv_smul,
       GlobalNumberFields.coe_smul_unit_primesAbove] using congrArg Multiplicative.toAdd h⟩
 
+/-- The coefficient of the `S`-unit valuation vector at a prime is its additive valuation. -/
+@[simp]
+theorem coeff_sUnitsValuation (S : Finset (HeightOneSpectrum (𝓞 K)))
+    (u : Additive ((primesAbove (𝓞 K) (𝓞 L) ↑S).unit L))
+    (w : ↥(primesAbove (𝓞 K) (𝓞 L) ↑S)) :
+    (dsimp% only ((sUnitsValuation (K := K) (L := L) S).hom u)).coeff w =
+      Multiplicative.toAdd (Set.unitValuation (primesAbove (𝓞 K) (𝓞 L) ↑S) L u.toMul w) :=
+  (rfl)
+
 end TauCeti.ClassFieldTheory
