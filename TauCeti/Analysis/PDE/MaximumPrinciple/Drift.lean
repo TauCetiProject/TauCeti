@@ -58,8 +58,8 @@ every `f ∈ L²(Ω)` as soon as `c ≥ 0`.
 * `TauCeti.PDE.UniformlyEllipticOn.value_le_const_of_measure_ne_top`: the weak maximum principle
   on every open set of finite measure, in every dimension.
 * `TauCeti.PDE.UniformlyEllipticOn.value_le_of_measure_ne_top`: the comparison principle.
-* `TauCeti.PDE.UniformlyEllipticOn.eq_of_isWeakSolutionDirichlet`: uniqueness of weak solutions
-  of the Dirichlet problem.
+* `TauCeti.PDE.UniformlyEllipticOn.eq_of_isWeakSolutionDirichlet_of_mass_nonneg_of_measure_ne_top`:
+  uniqueness of weak solutions of the Dirichlet problem.
 * `TauCeti.PDE.UniformlyEllipticOn.existsUnique_isWeakSolutionDirichlet_of_mass_nonneg`:
   existence and uniqueness of the weak solution of the Dirichlet problem on a bounded domain when
   `c ≥ 0`.
@@ -375,7 +375,8 @@ theorem UniformlyEllipticOn.value_le_of_measure_ne_top [Nonempty ι]
 /-- **Uniqueness for the Dirichlet problem with bounded drift.** Under the hypotheses of
 `TauCeti.PDE.UniformlyEllipticOn.value_le_const_of_measure_ne_top`, two weak solutions
 `u, v ∈ H¹₀(Ω)` of `L u = f` are equal. -/
-theorem UniformlyEllipticOn.eq_of_isWeakSolutionDirichlet [Nonempty ι]
+theorem UniformlyEllipticOn.eq_of_isWeakSolutionDirichlet_of_mass_nonneg_of_measure_ne_top
+    [Nonempty ι]
     (h : UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam)
     (ha : AEStronglyMeasurable a (mu.restrict Omega))
     (hb : AEStronglyMeasurable b (mu.restrict Omega))
@@ -437,8 +438,9 @@ theorem UniformlyEllipticOn.existsUnique_isWeakSolutionDirichlet_of_mass_nonneg 
   rcases fredholmAlternative_isWeakSolutionDirichlet_sub_const hcoeff' hcoercive hOmega κ with
     ⟨w, hw0, hw⟩ | hall
   · rw [hshift] at hw
-    refine absurd (h.eq_of_isWeakSolutionDirichlet ha hb hc hb_bound hc_bound hc_nonneg
-      hOmega.measure_lt_top.ne hw ((isWeakSolutionDirichlet_iff 0 0).2 fun v ↦ ?_)) hw0
+    refine absurd (h.eq_of_isWeakSolutionDirichlet_of_mass_nonneg_of_measure_ne_top ha hb hc
+      hb_bound hc_bound hc_nonneg hOmega.measure_lt_top.ne hw
+      ((isWeakSolutionDirichlet_iff 0 0).2 fun v ↦ ?_)) hw0
     rw [ZeroMemClass.coe_zero, energyFormH1_zero_left]
     refine (integral_eq_zero_of_ae ?_).symm
     filter_upwards [Lp.coeFn_zero (E := ℝ) (p := 2) (μ := mu.restrict Omega)] with x hx
