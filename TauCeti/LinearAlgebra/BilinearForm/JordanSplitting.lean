@@ -86,7 +86,9 @@ theorem IsJordanSplitting.congr {M' : Type*} [AddCommMonoid M'] [Module R M'] {�
       DirectSum.coeLinearMap (fun i ↦ (N i).map e.toLinearMap) (E x) =
         e (DirectSum.coeLinearMap N x) := LinearMap.congr_fun hcoe x
   refine ⟨?_, ?_, ?_⟩
-  · change Function.Bijective (DirectSum.coeLinearMap (fun i ↦ (N i).map e.toLinearMap))
+  · -- IsInternal is bijectivity of additive recomposition; coeLinearMap has the same function.
+    -- The lattice characterization requires rings and groups, while this API allows semirings.
+    change Function.Bijective (DirectSum.coeLinearMap (fun i ↦ (N i).map e.toLinearMap))
     constructor
     · intro x y hxy
       obtain ⟨x, rfl⟩ := E.surjective x

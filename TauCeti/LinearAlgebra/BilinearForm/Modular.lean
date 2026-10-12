@@ -13,6 +13,7 @@ public import Mathlib.RingTheory.LocalRing.Basic
 import Mathlib.LinearAlgebra.Matrix.Notation
 import TauCeti.LinearAlgebra.PerfectPairing.Basis
 import TauCeti.LinearAlgebra.BilinearForm.Diagonalization
+import TauCeti.LinearAlgebra.BilinearForm.LinearIndependent
 import TauCeti.LinearAlgebra.BilinearForm.Orthogonal
 
 /-!
@@ -245,23 +246,6 @@ theorem IsModular.isCompl_orthogonal (hB : B.IsSymm) (ha : a ∈ nonZeroDivisors
       rw [mul_comm, mul_right_mem_nonZeroDivisors_eq_zero_iff ha]
   rw [horth]
   exact B'.isCompl_orthogonal_of_restrict_bijective S hB' (hCB ▸ hCp.bijective_left)
-
-/-- If the Gram matrix of a finite family `v` is `a` times a matrix of unit determinant, with `a` a
-non-zero-divisor, then `v` is linearly independent. -/
-theorem linearIndependent_of_isUnit_det {ι : Type*} [Fintype ι] [DecidableEq ι] {v : ι → M}
-    {G : Matrix ι ι R} (ha : a ∈ nonZeroDivisors R) (hG : ∀ i j, B (v i) (v j) = a * G i j)
-    (hdet : IsUnit G.det) : LinearIndependent R v := by
-  refine Fintype.linearIndependent_iff.mpr fun g hg ↦ ?_
-  have hgG : g ᵥ* G = 0 := funext fun j ↦ (mul_cancel_left_mem_nonZeroDivisors ha).mp (by
-    have := congrArg (fun x ↦ B x (v j)) hg
-    simp only [map_sum, map_smul, LinearMap.sum_apply, LinearMap.smul_apply, smul_eq_mul, hG,
-      map_zero, LinearMap.zero_apply] at this
-    rw [Pi.zero_apply, mul_zero, ← this, vecMul, dotProduct, Finset.mul_sum]
-    exact Finset.sum_congr rfl fun i _ ↦ by ring)
-  have hg0 : g = 0 := Matrix.vecMul_injective_of_isUnit
-    (G.isUnit_iff_isUnit_det.mpr hdet) (hgG.trans (Matrix.zero_vecMul G).symm)
-  intro i
-  simpa only [Pi.zero_apply] using congrFun hg0 i
 
 /-- **A Gram block of unit determinant spans a modular submodule.** If the Gram matrix of a finite
 family `v` is `a` times a matrix of unit determinant, with `a` a non-zero-divisor, then the

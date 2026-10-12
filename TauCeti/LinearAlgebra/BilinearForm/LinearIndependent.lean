@@ -18,6 +18,9 @@ linearly independent, over any commutative ring without zero divisors. A linear 
 square matrix with nonzero determinant has trivial kernel (`Matrix.eq_zero_of_mulVec_eq_zero`).
 Mathlib has the matrix statement but not the bilinear-form criterion.
 
+The more general unit-determinant criterion allows a common non-zero-divisor factor in the Gram
+matrix, without requiring the coefficient ring to have no zero divisors.
+
 ## Main results
 
 * `LinearMap.BilinForm.linearIndependent_of_det_ne_zero`: a family whose Gram matrix with respect
@@ -29,6 +32,7 @@ public section
 namespace LinearMap.BilinForm
 
 open LinearMap (BilinForm)
+open Matrix
 
 variable {R M : Type*} [CommRing R] [NoZeroDivisors R] [AddCommGroup M] [Module R M]
 
@@ -44,5 +48,24 @@ theorem linearIndependent_of_det_ne_zero {ι : Type*} [Fintype ι] [DecidableEq 
   calc Matrix.mulVec (Matrix.of fun x y => B (c x) (c y)) g y = B (c y) (∑ x, g x • c x) := by
         simp [Matrix.mulVec, dotProduct, mul_comm]
     _ = 0 := by rw [hg, map_zero]
+
+omit [NoZeroDivisors R] in
+/-- If the Gram matrix of a finite family `v` is `a` times a matrix of unit determinant, with `a` a
+non-zero-divisor, then `v` is linearly independent. -/
+theorem linearIndependent_of_isUnit_det {B : BilinForm R M} {a : R} {ι : Type*}
+    [Fintype ι] [DecidableEq ι] {v : ι → M}
+    {G : Matrix ι ι R} (ha : a ∈ nonZeroDivisors R) (hG : ∀ i j, B (v i) (v j) = a * G i j)
+    (hdet : IsUnit G.det) : LinearIndependent R v := by
+  refine Fintype.linearIndependent_iff.mpr fun g hg ↦ ?_
+  have hgG : g ᵥ* G = 0 := funext fun j ↦ (mul_cancel_left_mem_nonZeroDivisors ha).mp (by
+    have := congrArg (fun x ↦ B x (v j)) hg
+    simp only [map_sum, map_smul, LinearMap.sum_apply, LinearMap.smul_apply, smul_eq_mul, hG,
+      map_zero, LinearMap.zero_apply] at this
+    rw [Pi.zero_apply, mul_zero, ← this, vecMul, dotProduct, Finset.mul_sum]
+    exact Finset.sum_congr rfl fun i _ ↦ by ring)
+  have hg0 : g = 0 := Matrix.vecMul_injective_of_isUnit
+    (G.isUnit_iff_isUnit_det.mpr hdet) (hgG.trans (Matrix.zero_vecMul G).symm)
+  intro i
+  simpa only [Pi.zero_apply] using congrFun hg0 i
 
 end LinearMap.BilinForm
