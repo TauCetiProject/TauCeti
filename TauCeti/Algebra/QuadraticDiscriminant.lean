@@ -31,10 +31,9 @@ quantification needed.
 
 Together with the reverse implication this gives the upgrade that motivates the file: a form known
 to be non-negative only on some sparse subset of `ℤ ⨯ ℤ` — the locus where a fixed prime divides
-neither coordinate, which is all that the degree form on an elliptic curve is directly known to
-satisfy — is non-negative everywhere. `Int.discrim_le_zero_of_nonneg_of_not_dvd_of_not_dvd` pins
-the discriminant from that locus alone, and `nonneg_of_discrim_le_zero` then propagates the
-conclusion to every `(x, y)`.
+neither coordinate — is non-negative everywhere.
+`Int.discrim_le_zero_of_nonneg_of_not_dvd_of_not_dvd` pins the discriminant from that locus alone,
+and `nonneg_of_discrim_le_zero` then propagates the conclusion to every `(x, y)`.
 
 ## Main results
 

@@ -114,6 +114,9 @@ identity when `polar Q v = 0`; over a general ring it can be the identity in oth
 * `QuadraticMap.exists_isometryEquiv_apply_eq_of_map_eq`: **Witt transitivity**, the orthogonal
   group acts transitively on the vectors of a fixed nonzero value, by reflecting in `x - y` or in
   `x + y`.
+* `QuadraticMap.reflectionTransport`: a specified transport between equal nonzero norm vectors,
+  with its one-reflection and two-reflection characteristic equations. No nondegeneracy or
+  finite-dimensionality is needed.
 * `TauCeti.QuadraticMap.exists_reflectionOrthogonal_list_prod_mul_eqOn_sup_span_singleton`: at most
   two anisotropic reflections supply the one-step fixed-subspace correction used by
   Cartan--Dieudonne induction.
@@ -740,7 +743,7 @@ variable {R : Type u} [CommSemiring R] {n : Type v} [Fintype n] [DecidableEq n]
   {N : Type w} [AddCommMonoid N] [Module R N]
 
 /-- The coordinate inclusion of an orthogonal group into `GL(n, R)`. -/
-noncomputable def orthogonalToGeneralLinear
+def orthogonalToGeneralLinear
     (Q : QuadraticMap R (n → R) N) :
     orthogonalGroup Q →* Matrix.GeneralLinearGroup n R :=
   (matrixGeneralLinearEquiv (n := n) (R := R)).symm.toMonoidHom.comp
@@ -1189,20 +1192,93 @@ variable (Q : QuadraticForm K V) [NeZero (2 : K)]
 open TauCeti.QuadraticMap (isUnit_sub_or_add_of_map_eq orthogonalGroupEquivIsometryEquiv
   reflectionOrthogonal reflection_sub_apply_eq_of_map_eq reflection)
 
+/-- A specified orthogonal transport between vectors of the same nonzero quadratic value.
+It is the reflection in `x - y` when that vector is anisotropic; otherwise it is the reflection
+in `x + y` followed by the reflection in `y`. In particular it uses at most two reflections,
+even when the form is degenerate or the space is infinite-dimensional.
+
+This is the explicit transitivity construction of Artin, *Geometric Algebra*, Chapter III. -/
+noncomputable def reflectionTransport (x y : V) (hxy : Q x = Q y) (hy : Q y ≠ 0) :
+    TauCeti.QuadraticMap.orthogonalGroup Q := by
+  classical
+  by_cases hsub : Q (x - y) ≠ 0
+  · letI := (isUnit_iff_ne_zero.mpr hsub).invertible
+    exact reflectionOrthogonal Q (x - y)
+  · have hadd : IsUnit (Q (x + y)) :=
+      (isUnit_sub_or_add_of_map_eq Q x y hxy hy).resolve_left
+        (by simpa only [isUnit_iff_ne_zero] using hsub)
+    letI := hadd.invertible
+    letI := (isUnit_iff_ne_zero.mpr hy).invertible
+    exact reflectionOrthogonal Q y * reflectionOrthogonal Q (x + y)
+
+/-- The anisotropic-difference branch of the specified transport is one reflection. -/
+@[simp]
+theorem reflectionTransport_eq_reflection (x y : V) (hxy : Q x = Q y) (hy : Q y ≠ 0)
+    [Invertible (Q (x - y))] :
+    Q.reflectionTransport x y hxy hy = reflectionOrthogonal Q (x - y) := by
+  simp only [reflectionTransport,
+    dite_eq_left (isUnit_of_invertible (Q (x - y))).ne_zero]
+  congr 1
+  exact Subsingleton.elim _ _
+
+/-- The isotropic-difference branch of the specified transport is two reflections. -/
+@[simp]
+theorem reflectionTransport_eq_reflection_mul_reflection (x y : V) (hxy : Q x = Q y)
+    (hy : Q y ≠ 0) (hsub : Q (x - y) = 0)
+    [Invertible (Q y)] [Invertible (Q (x + y))] :
+    Q.reflectionTransport x y hxy hy =
+      reflectionOrthogonal Q y * reflectionOrthogonal Q (x + y) := by
+  simp only [reflectionTransport, dite_eq_right (not_ne_iff.mpr hsub)]
+  congr 2 <;> exact Subsingleton.elim _ _
+
+-- Branch normalization can erase the transport head before its application equation matches.
+/-- The specified product of at most two reflections sends `x` to `y`. -/
+@[simp↓]
+theorem reflectionTransport_apply (x y : V) (hxy : Q x = Q y) (hy : Q y ≠ 0) :
+    (Q.reflectionTransport x y hxy hy : V ≃ₗ[K] V) x = y := by
+  by_cases hsub : Q (x - y) ≠ 0
+  · let := (isUnit_iff_ne_zero.mpr hsub).invertible
+    simpa using reflection_sub_apply_eq_of_map_eq Q x y hxy
+  · have hadd := (isUnit_sub_or_add_of_map_eq Q x y hxy hy).resolve_left
+      (by simpa only [isUnit_iff_ne_zero] using hsub)
+    let := hadd.invertible
+    let := (isUnit_iff_ne_zero.mpr hy).invertible
+    let : Invertible (Q (x - -y)) := by simpa only [sub_neg_eq_add] using hadd.invertible
+    have hneg : reflection Q (x + y) x = -y := by
+      -- The public coefficient equation removes the dependent invertibility data before rewriting.
+      simpa only [TauCeti.QuadraticMap.reflection_apply_eq_sub_div, sub_neg_eq_add] using
+        reflection_sub_apply_eq_of_map_eq Q x (-y) (hxy.trans (Q.map_neg y).symm)
+    simp [reflectionTransport_eq_reflection_mul_reflection Q x y hxy hy
+      (not_ne_iff.mp hsub), hneg, map_neg]
+
+-- Match self-transport before normalizing its two-reflection branch.
+/-- Transporting a vector to itself gives the identity, although the specified factorization
+in this branch consists of two equal reflections. -/
+@[simp↓]
+theorem reflectionTransport_self (x : V) (hx : Q x ≠ 0) :
+    Q.reflectionTransport x x rfl hx = 1 := by
+  let := (isUnit_iff_ne_zero.mpr hx).invertible
+  let : Invertible (2 : K) := (isUnit_iff_ne_zero.mpr two_ne_zero).invertible
+  let : Invertible (Q (x + x)) := by
+    apply (isUnit_iff_ne_zero.mpr ?_).invertible
+    simpa only [← two_smul K x, Q.map_smul, smul_eq_mul] using
+      mul_ne_zero (mul_ne_zero two_ne_zero two_ne_zero) hx
+  have hrefl : reflectionOrthogonal Q (x + x) = reflectionOrthogonal Q x := by
+    apply Subtype.ext
+    apply LinearEquiv.ext
+    intro z
+    have hz := congrArg (fun r : TauCeti.QuadraticMap.orthogonalGroup Q ↦
+      (r : V ≃ₗ[K] V) z) (TauCeti.QuadraticMap.reflectionOrthogonal_smul_eq Q x (2 : K))
+    simpa only [TauCeti.QuadraticMap.coe_reflectionOrthogonal,
+      TauCeti.QuadraticMap.reflection_apply_eq_sub_div, two_smul] using hz
+  rw [reflectionTransport_eq_reflection_mul_reflection Q x x rfl hx (by simp), hrefl]
+  exact TauCeti.QuadraticMap.reflectionOrthogonal_mul_self Q x
+
 /-- **Witt transitivity** (Lam I.4.5): over a field of characteristic different from two, any two
 vectors with the same nonzero value are related by an isometry of the quadratic form. -/
 theorem exists_isometryEquiv_apply_eq_of_map_eq {x y : V} (hxy : Q x = Q y)
     (hy : Q y ≠ 0) : ∃ f : Q.IsometryEquiv Q, f x = y := by
-  rcases isUnit_sub_or_add_of_map_eq Q x y hxy hy with h | h
-  · have := h.invertible
-    exact ⟨orthogonalGroupEquivIsometryEquiv Q (reflectionOrthogonal Q (x - y)),
-      by simpa using reflection_sub_apply_eq_of_map_eq Q x y hxy⟩
-  · have : Invertible (Q y) := (isUnit_iff_ne_zero.mpr hy).invertible
-    have : Invertible (Q (x - -y)) := by simpa only [sub_neg_eq_add] using h.invertible
-    have hneg : reflection Q (x - -y) x = -y :=
-      reflection_sub_apply_eq_of_map_eq Q x (-y) (hxy.trans (Q.map_neg y).symm)
-    exact ⟨orthogonalGroupEquivIsometryEquiv Q
-      (reflectionOrthogonal Q y * reflectionOrthogonal Q (x - -y)), by simp [hneg, map_neg]⟩
+  exact ⟨orthogonalGroupEquivIsometryEquiv Q (Q.reflectionTransport x y hxy hy), by simp⟩
 
 end QuadraticMap
 
