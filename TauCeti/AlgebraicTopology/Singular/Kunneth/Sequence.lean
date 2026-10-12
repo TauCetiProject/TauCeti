@@ -91,14 +91,6 @@ def singularHomologyToTor (m : ℕ) :
   homologyMap (alexanderWhitney X Y M N) (m + 1) ≫
     homologyToTor ((toSSet.obj X).chainComplex M) ((toSSet.obj Y).chainComplex N) m
 
-/-- The map to `⨁ Tor₁(Hₚ(X; M), H_q(Y; N))` is the map induced by the Alexander–Whitney map
-followed by the algebraic map of the Künneth sequence of the singular chain complexes. -/
-lemma singularHomologyToTor_def (m : ℕ) :
-    singularHomologyToTor X Y M N m =
-      homologyMap (alexanderWhitney X Y M N) (m + 1) ≫
-        homologyToTor ((toSSet.obj X).chainComplex M) ((toSSet.obj Y).chainComplex N) m :=
-  (rfl)
-
 /-- The Künneth map followed by the map to `⨁ Tor₁(Hₚ(X; M), H_q(Y; N))` vanishes. -/
 @[reassoc (attr := simp)]
 lemma singularHomologyKunneth_comp_singularHomologyToTor (m : ℕ) :
