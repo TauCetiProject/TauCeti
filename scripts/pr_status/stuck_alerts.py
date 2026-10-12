@@ -312,8 +312,8 @@ def detect_stale_pin():
     if len(mathlib) != 1 or not re.fullmatch(r"[0-9a-f]{40}", mathlib[0].get("rev", "")):
         raise RuntimeError("main manifest must contain exactly one full Mathlib commit SHA")
     rev = mathlib[0]["rev"]
-    date = gh_scalar(f"/repos/leanprover-community/mathlib4/commits/{rev}",
-                     jq='.commit.committer.date // ""')
+    date = gh_scalar(f"/repos/leanprover-community/mathlib4/git/commits/{rev}",
+                     jq='.committer.date // ""')
     committed = parse_ts(date)
     if committed.tzinfo is None:
         raise RuntimeError("Mathlib commit timestamp has no timezone")
@@ -328,8 +328,8 @@ def detect_stale_pin():
         "body": (
             f"Main pins mathlib [`{rev[:10]}`]"
             f"(https://github.com/leanprover-community/mathlib4/commit/{rev}), "
-            f"committed at {date}. That commit is {age_days:.1f} days old, "
-            f"exceeding the {PIN_STALE_DAYS}-day freshness limit. "
+            f"committed at {date}. That commit exceeds the "
+            f"{PIN_STALE_DAYS}-day freshness limit. "
             f"A recent manifest edit does not reset this clock.\n\n"
             f"**Fix:** find why — a wedged bump PR (see any stuck-bump alert), an "
             f"unresolved first-known-bad freeze, failed integration, or `update.yml` "

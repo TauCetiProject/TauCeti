@@ -7,8 +7,8 @@ recurrence visibility. Pure logic only -- GitHub and Zulip are faked, so no netw
 or `gh` is needed. Run: python3 scripts/pr_status/test_stuck_alerts.py
 """
 
-import datetime
 import base64
+import datetime
 import json
 import os
 import unittest
@@ -386,17 +386,25 @@ class StalePinTest(unittest.TestCase):
         if date is None:
             date = (now - datetime.timedelta(hours=age_hours)).isoformat()
         return _install(self, [("/contents/lake-manifest.json?ref=main", content),
-                               (f"/mathlib4/commits/{self.REV}", date)])
+                               (f"/mathlib4/git/commits/{self.REV}", date)])
 
     def test_old_commit_alerts_despite_recent_manifest_change(self):
         fake = self.install(13 * 24)
         alert = sa.detect_stale_pin()[0]
         self.assertEqual(alert["key"], "stale-pin")
-        self.assertIn("13.0 days old", alert["body"])
         self.assertIn("3-day freshness limit", alert["body"])
         self.assertIn(f"/commit/{self.REV}", alert["body"])
         self.assertFalse(any("commits?path=" in path for path, _, _ in fake.requests))
         self.assertEqual(len(fake.requests), 2)
+        self.assertEqual(fake.requests[1][1], '.committer.date // ""')
+
+    def test_persistent_alert_body_does_not_change_with_time(self):
+        from unittest.mock import patch
+        self.install(13 * 24)
+        first = sa.detect_stale_pin()
+        tomorrow = sa.now_utc() + datetime.timedelta(days=1)
+        with patch.object(sa, "now_utc", return_value=tomorrow):
+            self.assertEqual(sa.detect_stale_pin(), first)
 
     def test_fresh_commit_does_not_alert(self):
         self.install(48)
