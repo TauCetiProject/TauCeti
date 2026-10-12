@@ -65,13 +65,14 @@ theorem wangConnecting_def (n : ℕ) :
 private lemma wangInclusion_eq (n : ℕ) :
     wangInclusion φ R n = ((singularHomologyFunctor A n).obj R).map (fiberPairIncl φ) ≫
       ((singularHomologyFunctor A n).obj R).map (fiberPair φ).map := by
-  rw [wangInclusion, ← fiberPairIncl_comp_fiberPair_map]
+  rw [wangInclusion, ← fiberPairIncl_comp_map]
   exact Functor.map_comp _ _ _
 
 /-- The ambient-to-relative composite of the pair sequence of `fiberPair φ` vanishes. -/
 @[reassoc (attr := simp)]
 theorem map_comp_wangConnecting (n : ℕ) :
-    ((singularHomologyFunctor A (n + 1)).obj R).map (fiberPair φ).map ≫
+    ((singularHomologyFunctor A (n + 1)).obj R).map
+      (TopCat.ofHom (ContinuousMap.subtypeVal (fiber φ))) ≫
       wangConnecting φ R n = 0 :=
   ((Category.assoc _ _ _).symm.trans
     (congrArg (· ≫ _) ((fiberPair φ).homologyMap_comp_singularHomologyπ R (n + 1)))).trans
