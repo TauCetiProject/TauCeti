@@ -56,12 +56,39 @@ private noncomputable def ellipticVertexCycleEquivRange
     σ.EllipticVertexCycle ≃
       Set.range (fun j : {i : Fin n // (P.vertex i).isLeft ∧ σ.cycleMap i ≠ 1} ↦
         (Quotient.mk'' ((P.vertex j).getLeft j.2.1) : orbitRel.Quotient Γ ℍ)) := by
-  let f : {i : Fin n // (P.vertex i).isLeft ∧ σ.cycleMap i ≠ 1} →
-      orbitRel.Quotient Γ ℍ := fun j ↦ Quotient.mk'' ((P.vertex j).getLeft j.2.1)
-  have hker : ∀ j k, σ.next.SameCycle j.val k.val ↔ Setoid.ker f j k :=
-    fun j k ↦ (σ.finiteVertex_quotientMk_eq_quotientMk_iff_sameCycle hmap hdisj
-      ⟨j, j.2.1⟩ ⟨k, k.2.1⟩).symm
-  exact (Quotient.congrRight hker).trans (Setoid.quotientKerEquivRange f)
+  let s : Setoid {i : Fin n // (P.vertex i).isLeft} :=
+    Setoid.comap Subtype.val (Equiv.Perm.SameCycle.setoid σ.next)
+  let e := σ.finiteVertexCycleEquiv hmap hdisj
+  let p : Quotient s → Prop := fun c ↦ (e c).val ∈ Γ.ellipticOrbits
+  have hp (j : {i : Fin n // (P.vertex i).isLeft}) : σ.cycleMap j ≠ 1 ↔ p ⟦j⟧ := by
+    dsimp only [p, e]
+    rw [σ.finiteVertexCycleEquiv_apply]
+    exact (σ.finiteVertexOrbit_mem_ellipticOrbits_iff hmap hdisj j).symm
+  let flatten := Equiv.subtypeSubtypeEquivSubtypeInter
+    (fun i ↦ (P.vertex i).isLeft) (fun i ↦ σ.cycleMap i ≠ 1)
+  let unflatten : σ.EllipticVertexCycle ≃
+      Quotient (s.comap (Subtype.val : {j : {i : Fin n // (P.vertex i).isLeft} //
+        σ.cycleMap j ≠ 1} → _)) :=
+    Quotient.congr flatten.symm (fun _ _ ↦ Iff.rfl)
+  have hr (q : orbitRel.Quotient Γ ℍ) :
+      (q ∈ Set.range (fun j : {i : Fin n // (P.vertex i).isLeft} ↦
+        (Quotient.mk'' ((P.vertex j).getLeft j.2) : orbitRel.Quotient Γ ℍ)) ∧
+        q ∈ Γ.ellipticOrbits) ↔
+      q ∈ Set.range (fun j : {i : Fin n // (P.vertex i).isLeft ∧ σ.cycleMap i ≠ 1} ↦
+        (Quotient.mk'' ((P.vertex j).getLeft j.2.1) : orbitRel.Quotient Γ ℍ)) := by
+    constructor
+    · rintro ⟨⟨j, rfl⟩, hj⟩
+      exact ⟨⟨j, j.2, (σ.finiteVertexOrbit_mem_ellipticOrbits_iff hmap hdisj j).mp hj⟩,
+        rfl⟩
+    · rintro ⟨j, rfl⟩
+      exact ⟨⟨⟨j, j.2.1⟩, rfl⟩,
+        (σ.finiteVertexOrbit_mem_ellipticOrbits_iff hmap hdisj ⟨j, j.2.1⟩).mpr j.2.2⟩
+  exact unflatten.trans
+    (((Equiv.subtypeQuotientEquivQuotientSubtype
+      (fun j : {i : Fin n // (P.vertex i).isLeft} ↦ σ.cycleMap j ≠ 1)
+      p hp (fun _ _ ↦ Iff.rfl)).symm.trans
+      (e.subtypeEquiv (fun _ ↦ Iff.rfl))).trans
+      ((Equiv.subtypeSubtypeEquivSubtypeInter _ _).trans (Equiv.subtypeEquivRight hr)))
 
 private theorem ellipticVertexCycleEquivRange_apply
     (hmap : ∀ i, σ.map i ∈ Γ)
@@ -71,15 +98,11 @@ private theorem ellipticVertexCycleEquivRange_apply
     (σ.ellipticVertexCycleEquivRange hmap hdisj (Quotient.mk'' j)).val =
       Quotient.mk'' ((P.vertex j).getLeft j.2.1) := by
   dsimp only [ellipticVertexCycleEquivRange]
-  erw [Equiv.trans_apply]
-  -- Pinned Mathlib has no representative computation lemmas for `quotientKerEquivRange`
-  -- or `congrRight`. Unfold their defining compositions here to reach the public
-  -- `Quot.congr_mk` and `Setoid.kerLift_mk` equations.
-  simp only [Setoid.quotientKerEquivRange, Setoid.quotientKerEquivRangeKerLift,
-    Equiv.trans_apply, Set.equivOfEq_apply, Equiv.ofInjective_apply]
-  dsimp only [Quotient.congrRight, Quot.congrRight]
-  erw [Quot.congr_mk]
-  exact Setoid.kerLift_mk _ _
+  simp only [Equiv.trans_apply, Equiv.subtypeEquivRight_apply,
+    Equiv.subtypeSubtypeEquivSubtypeInter_apply_coe, Equiv.subtypeEquiv_apply]
+  erw [Quotient.congr_mk, Equiv.subtypeQuotientEquivQuotientSubtype_symm_mk]
+  rw [σ.finiteVertexCycleEquiv_apply]
+  simp only [Equiv.subtypeSubtypeEquivSubtypeInter_symm_apply_coe_coe]
 
 private theorem ellipticVertexOrbit_mem
     (hmap : ∀ i, σ.map i ∈ Γ)
