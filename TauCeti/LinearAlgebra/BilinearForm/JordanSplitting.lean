@@ -9,7 +9,7 @@ public import Mathlib.Algebra.DirectSum.Module
 public import Mathlib.RingTheory.Finiteness.Basic
 public import Mathlib.RingTheory.DiscreteValuationRing.Basic
 public import TauCeti.LinearAlgebra.BilinearForm.Modular
-import Mathlib.Order.CompactlyGenerated.Basic
+import TauCeti.Algebra.DirectSum.Internal
 import Mathlib.LinearAlgebra.Dimension.Localization
 import Mathlib.LinearAlgebra.FreeModule.PID
 import TauCeti.LinearAlgebra.BilinearForm.Diagonalization
@@ -82,7 +82,7 @@ theorem IsJordanSplitting.congr {M' : Type*} [AddCommMonoid M'] [Module R M'] {�
     intro i
     ext x
     simp [E, eN, DirectSum.coe_congrLinearEquiv]
-  have hcomm (x : ⨁ i, N i) :
+  have hcomm (x : DirectSum ℕ (fun i ↦ N i)) :
       DirectSum.coeLinearMap (fun i ↦ (N i).map e.toLinearMap) (E x) =
         e (DirectSum.coeLinearMap N x) := LinearMap.congr_fun hcoe x
   refine ⟨?_, ?_, ?_⟩
@@ -120,25 +120,14 @@ theorem isJordanSplitting_congr_iff {M' : Type*} [AddCommMonoid M'] [Module R M'
       B.IsJordanSplitting π N :=
   ⟨fun h ↦ by
     simpa only [congr_congr, e.self_trans_symm, congr_refl, LinearEquiv.refl_apply,
-      Submodule.map_map, e.symm_comp, Submodule.map_id] using h.congr e.symm,
+      ← Submodule.map_comp, e.symm_comp, Submodule.map_id] using h.congr e.symm,
     fun h ↦ h.congr e⟩
 
 /-- A Jordan splitting of a finitely generated module has finitely many nonzero constituents. -/
 theorem IsJordanSplitting.finite_support [Module.Finite R M] {π : R}
     {N : ℕ → Submodule R M} (h : B.IsJordanSplitting π N) : {i | N i ≠ ⊥}.Finite := by
-  classical
-  have hcompact : IsCompactElement (⊤ : Submodule R M) :=
-    (Submodule.fg_iff_compact _).mp Module.Finite.fg_top
-  obtain ⟨s, hs⟩ := hcompact.exists_finset_of_le_iSup N
-    (by rw [h.isInternal.submodule_iSup_eq_top])
-  refine s.finite_toSet.subset fun i hi => ?_
-  by_contra his
-  have hsum : (⨆ j ∈ s, N j) ≤ ⨆ j, ⨆ (_ : j ≠ i), N j :=
-    iSup_le fun j => iSup_le fun hj =>
-      le_iSup_of_le j (le_iSup_of_le (ne_of_mem_of_not_mem hj his) le_rfl)
-  have hd := (h.isInternal.submodule_iSupIndep i).mono_right hsum
-  have hn : N i ≤ ⨆ j ∈ s, N j := le_top.trans hs
-  exact hi (disjoint_self.mp (hd.mono_right hn))
+  exact TauCeti.Submodule.finite_ne_bot_of_iSupIndep_of_fg h.isInternal.submodule_iSupIndep
+    (by rw [h.isInternal.submodule_iSup_eq_top]; exact Module.Finite.fg_top)
 
 end Basic
 
