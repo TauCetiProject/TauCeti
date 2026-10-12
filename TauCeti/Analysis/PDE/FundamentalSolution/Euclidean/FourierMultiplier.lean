@@ -39,8 +39,8 @@ For `φ` smooth with compact support, the Newtonian potential `u = Gₙ ⋆ φ` 
 functions, and `u` is not one, but its truncations `χ_R u` are: `χ_R` is a cutoff equal to `1` on
 `ball 0 R` with `‖Dχ_R‖ = O(1/R)` and `|Δχ_R| = O(1/R²)`
 (`TauCeti.exists_forall_contDiff_cutoff_ball_norm_laplacian_le`). Since `u = O(‖x‖ ^ (2 - n))` and
-`Du = O(‖x‖ ^ (2 - n))` (`TauCeti.norm_newtonianKernel_convolution_le`,
-`TauCeti.norm_fderiv_newtonianKernel_convolution_apply_le`), the error
+`Du = O(‖x‖ ^ (1 - n))` (`TauCeti.norm_newtonianKernel_convolution_le`,
+`TauCeti.norm_fderiv_newtonianKernel_convolution_le`), the error
 `Δ(χ_R u) + φ = 2 Du(∇χ_R) + (Δχ_R) u` lives on the annulus `R ≤ ‖x‖ ≤ 2R`, where it is
 `O(R ^ (1 - n))`, so its `L²` norm is `O(R ^ (1 - n/2))`, which tends to zero exactly because
 `n ≥ 3`. Hence `T_{m_{v,w}} φ = -∂_v ∂_w u` almost everywhere
@@ -100,25 +100,26 @@ private theorem norm_laplacian_smul_newtonianKernel_convolution_add_le [Complete
     (x : EuclideanSpace ℝ (Fin n)) :
     ‖Δ (fun y => χ y • (newtonianKernel n ⋆ φ) y) x + φ x‖ ≤
       (closedBall (0 : EuclideanSpace ℝ (Fin n)) (2 * R)).indicator (fun _ =>
-        ((n : ℝ) * ((n : ℝ) - 2) * volume.real (ball (0 : EuclideanSpace ℝ (Fin n)) 1))⁻¹ *
-          (C * (2 * (∫ y, ‖fderiv ℝ φ y‖) + ∫ y, ‖φ y‖)) * R⁻¹ * (R / 2) ^ (2 - (n : ℝ))) x := by
+        (4 * ((n : ℝ) * volume.real (ball (0 : EuclideanSpace ℝ (Fin n)) 1))⁻¹ +
+          ((n : ℝ) * ((n : ℝ) - 2) * volume.real (ball (0 : EuclideanSpace ℝ (Fin n)) 1))⁻¹) *
+          C * (∫ y, ‖φ y‖) * R⁻¹ * (R / 2) ^ (2 - (n : ℝ))) x := by
   set u := newtonianKernel n ⋆ φ
+  set Cd := ((n : ℝ) * volume.real (ball (0 : EuclideanSpace ℝ (Fin n)) 1))⁻¹
   set Cn := ((n : ℝ) * ((n : ℝ) - 2) * volume.real (ball (0 : EuclideanSpace ℝ (Fin n)) 1))⁻¹
   have hnℝ : (3 : ℝ) ≤ n := by exact_mod_cast hn
   have hR0 : 0 < R := zero_lt_one.trans_le hR
   have hC : 0 ≤ C := by
     have := (norm_nonneg _).trans (hχ' 0)
     rwa [le_div_iff₀ hR0, zero_mul] at this
+  have hCd : 0 ≤ Cd := inv_nonneg.2 (mul_nonneg (by linarith) (volume_real_unitBall_pos n).le)
   have hCn : 0 ≤ Cn := inv_nonneg.2 (mul_nonneg (mul_nonneg (by linarith) (by linarith))
     (volume_real_unitBall_pos n).le)
   have hu : ContDiff ℝ ∞ u := contDiff_newtonianKernel_convolution hφ hc
   have hΔu : Δ u = -φ := laplacian_newtonianKernel_convolution hn (hφ.of_le (by simp)) hc
   have hφx : ∀ y : EuclideanSpace ℝ (Fin n), R₀ < ‖y‖ → φ y = 0 := fun y hy =>
     image_eq_zero_of_notMem_tsupport fun h => (mem_closedBall_zero_iff.1 (hR₀ h)).not_gt hy
-  have hbound_nonneg : 0 ≤ Cn * (C * (2 * (∫ y, ‖fderiv ℝ φ y‖) + ∫ y, ‖φ y‖)) * R⁻¹ *
-      (R / 2) ^ (2 - (n : ℝ)) := by
-    have := integral_nonneg (μ := volume) (f := fun y => ‖fderiv ℝ φ y‖) fun y => norm_nonneg _
-    have := integral_nonneg (μ := volume) (f := fun y => ‖φ y‖) fun y => norm_nonneg _
+  have hA₀ := integral_nonneg (μ := volume) (f := fun y => ‖φ y‖) fun y => norm_nonneg _
+  have hbound_nonneg : 0 ≤ (4 * Cd + Cn) * C * (∫ y, ‖φ y‖) * R⁻¹ * (R / 2) ^ (2 - (n : ℝ)) := by
     positivity
   rcases lt_or_ge ‖x‖ R with hxR | hxR
   · -- Inside `ball 0 R` the truncation is `u` itself, and `Δu = -φ`.
@@ -139,6 +140,13 @@ private theorem norm_laplacian_smul_newtonianKernel_convolution_add_le [Complete
   have hxR₀ : R / 2 ≤ ‖x‖ - R₀ := by linarith
   have hpow : (‖x‖ - R₀) ^ (2 - (n : ℝ)) ≤ (R / 2) ^ (2 - (n : ℝ)) :=
     Real.rpow_le_rpow_of_nonpos (by positivity) hxR₀ (by linarith)
+  -- Since `1 ≤ R`, the faster decay `(R / 2) ^ (1 - n)` of `Du` is at most `2 (R / 2) ^ (2 - n)`.
+  have hpow₁ : (‖x‖ - R₀) ^ (1 - (n : ℝ)) ≤ 2 * (R / 2) ^ (2 - (n : ℝ)) := by
+    have hexp : 1 - (n : ℝ) = 2 - n - 1 := by ring
+    refine (Real.rpow_le_rpow_of_nonpos (by positivity) hxR₀ (by linarith)).trans ?_
+    rw [hexp, Real.rpow_sub_one (by positivity), div_le_iff₀ (by positivity)]
+    have : 0 ≤ (R / 2) ^ (2 - (n : ℝ)) := by positivity
+    nlinarith
   have hgrad : ‖∇ χ x‖ ≤ C / R := by
     rw [gradient, LinearIsometryEquiv.norm_map]
     exact hχ' x
@@ -146,22 +154,21 @@ private theorem norm_laplacian_smul_newtonianKernel_convolution_add_le [Complete
     (hχ.contDiffAt.of_le (by simp)).laplacian_fun_smul (hu.contDiffAt.of_le (by simp)), hΔu,
     Pi.neg_apply, hφx x (by linarith), neg_zero, smul_zero, zero_add, add_zero]
   have hR₀x : R₀ < ‖x‖ := by linarith
-  have h₁ := norm_fderiv_newtonianKernel_convolution_apply_le hn (hφ.of_le (by simp)) hc
-    ((subset_tsupport φ).trans hR₀) hR₀x (∇ χ x)
-  have h₂ := norm_newtonianKernel_convolution_le hn (hφ.continuous.integrable_of_hasCompactSupport
-    hc) ((subset_tsupport φ).trans hR₀) hR₀x
-  have hA₁ := integral_nonneg (μ := volume) (f := fun y => ‖fderiv ℝ φ y‖) fun y => norm_nonneg _
-  have hA₀ := integral_nonneg (μ := volume) (f := fun y => ‖φ y‖) fun y => norm_nonneg _
+  have hφi := hφ.continuous.integrable_of_hasCompactSupport (μ := volume) hc
+  have h₁ := norm_fderiv_newtonianKernel_convolution_le (by omega) hφi
+    ((subset_tsupport φ).trans hR₀) hR₀x
+  have h₂ := norm_newtonianKernel_convolution_le hn hφi ((subset_tsupport φ).trans hR₀) hR₀x
   have hΔχ : ‖Δ χ x‖ ≤ C / R := (hχ'' x).trans (div_le_div_of_nonneg_left hC hR0
     (by nlinarith))
   calc ‖(2 : ℝ) • fderiv ℝ u x (∇ χ x) + Δ χ x • u x‖
       ≤ 2 * ‖fderiv ℝ u x (∇ χ x)‖ + ‖Δ χ x‖ * ‖u x‖ := by
         refine (norm_add_le _ _).trans ?_
         rw [norm_smul, norm_smul, Real.norm_two]
-    _ ≤ 2 * (Cn * (R / 2) ^ (2 - (n : ℝ)) * ((∫ y, ‖fderiv ℝ φ y‖) * (C / R))) +
+    _ ≤ 2 * (Cd * (2 * (R / 2) ^ (2 - (n : ℝ))) * (∫ y, ‖φ y‖) * (C / R)) +
         C / R * (Cn * (R / 2) ^ (2 - (n : ℝ)) * ∫ y, ‖φ y‖) := by
         gcongr
-        · exact h₁.trans (by gcongr)
+        · exact (le_opNorm _ _).trans (mul_le_mul (h₁.trans (by gcongr)) hgrad (norm_nonneg _)
+            (by positivity))
         · exact h₂.trans (by gcongr)
     _ = _ := by ring
 
@@ -272,8 +279,9 @@ private theorem exists_schwartzMap_eventuallyEq_tendsto_toLp_laplacian_add (hn :
   · filter_upwards [hχ1 m x (hx.trans_le (hRm m))] with y hy
     simp [hy]
   -- The `L²` norm of `Δ Sₘ + φ` is bounded by the pointwise bound on its support.
-  set K := ((n : ℝ) * ((n : ℝ) - 2) * volume.real (ball (0 : EuclideanSpace ℝ (Fin n)) 1))⁻¹ *
-    (C * (2 * (∫ y, ‖fderiv ℝ φ y‖) + ∫ y, ‖φ y‖))
+  set K := (4 * ((n : ℝ) * volume.real (ball (0 : EuclideanSpace ℝ (Fin n)) 1))⁻¹ +
+    ((n : ℝ) * ((n : ℝ) - 2) * volume.real (ball (0 : EuclideanSpace ℝ (Fin n)) 1))⁻¹) *
+    C * (∫ y, ‖φ y‖)
   refine squeeze_zero_norm (fun m => ?_)
     ((tendsto_mul_rpow_mul_measureReal_closedBall_rpow hn K).comp hR)
   have hbound := fun x => norm_laplacian_smul_newtonianKernel_convolution_add_le hn hφ hc hR₀
