@@ -22,7 +22,8 @@ These operations supply the path index and multiplication of the path algebra, i
 coefficient semiring.
 
 When the quiver has arrow reversal, indexed paths can also be reversed, exchanging their source and
-target. Involutive arrow reversal makes path reversal involutive.
+target and reversing the order of partial concatenation. Involutive arrow reversal makes path
+reversal involutive.
 
 ## Main definitions
 
@@ -43,6 +44,7 @@ target. Involutive arrow reversal makes path reversal involutive.
   vertex exactly when both its factors are.
 * `TauCeti.Quiver.TotalPath.mul?_nil_left`, `TauCeti.Quiver.TotalPath.mul?_nil_right`, and
   `TauCeti.Quiver.TotalPath.mul?_assoc`: trivial-path units and associativity.
+* `TauCeti.Quiver.TotalPath.map_reverse_mul?`: reversal reverses the order of partial concatenation.
 * `TauCeti.Quiver.TotalPath.mk_cons_eq_mk_cons_iff`: a path into a vertex is determined by its
   last arrow and the path before it.
 
@@ -122,6 +124,18 @@ theorem mul?_eq_none_iff {x y : TotalPath Q} : mul? x y = none ↔ y.2.1 ≠ x.1
   refine ⟨fun h hne => ?_, mul?_eq_none⟩
   rw [mul?, dite_eq_left hne] at h
   exact Option.some_ne_none _ h
+
+/-- Reversal reverses the order of partial concatenation, preserving undefined products. -/
+@[simp]
+theorem map_reverse_mul? [HasReverse Q] (x y : TotalPath Q) :
+    (x.mul? y).map reverse = y.reverse.mul? x.reverse := by
+  obtain ⟨a, b, p⟩ := x
+  obtain ⟨c, d, q⟩ := y
+  by_cases h : d = a
+  · subst d
+    simp [Path.reverse_comp]
+  · rw [mul?_eq_none h, Option.map_none, reverse_mk, reverse_mk,
+      mul?_eq_none (fun he ↦ h he.symm)]
 
 /-- **Concatenation adds lengths**: a path produced by `mul?` is as long as its two factors
 together. -/

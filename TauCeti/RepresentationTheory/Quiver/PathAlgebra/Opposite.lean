@@ -44,16 +44,14 @@ private theorem reverseOp_hcomp {a b c : Q} (p : Path a b) (q : Path c a) :
     op (ofPath (Quiver.TotalPath.reverse ⟨a, b, p⟩) : pathAlgebra k Q) *
         op (ofPath (Quiver.TotalPath.reverse ⟨c, a, q⟩) : pathAlgebra k Q) =
       op (ofPath (Quiver.TotalPath.reverse ⟨c, b, q.comp p⟩) : pathAlgebra k Q) := by
-  simp only [← op_mul, Quiver.TotalPath.reverse_mk, ofPath_mul_ofPath_of_comp, Path.reverse_comp]
+  rw [← op_mul, ofPath_mul_ofPath, ← Quiver.TotalPath.map_reverse_mul?]
+  simp
 
 private theorem reverseOp_hzero {x y : Quiver.TotalPath Q} (h : y.2.1 ≠ x.1) :
     op (ofPath x.reverse : pathAlgebra k Q) * op (ofPath y.reverse : pathAlgebra k Q) = 0 := by
-  obtain ⟨a, b, p⟩ := x
-  obtain ⟨c, d, q⟩ := y
-  simp only [Quiver.TotalPath.reverse_mk]
-  rw [← op_mul, ofPath_mul_ofPath_of_not_composable]
-  · exact op_zero
-  · exact fun hxy ↦ h hxy.symm
+  rw [← op_mul, ofPath_mul_ofPath, ← Quiver.TotalPath.map_reverse_mul?,
+    Quiver.TotalPath.mul?_eq_none h]
+  simp
 
 private theorem reverseOp_hone :
     letI := Fintype.ofFinite Q
@@ -74,8 +72,8 @@ private theorem reverseOpAlgHom_ofPath (x : Quiver.TotalPath Q) :
     reverseOpAlgHom k Q (ofPath x) = op (ofPath x.reverse) := by
   rw [reverseOpAlgHom, liftAlgHom_ofPath]
 
-/-- Reversing paths identifies the path algebra of a quiver with involutive arrow reversal with
-its opposite algebra. -/
+/-- For a quiver with finitely many vertices and involutive arrow reversal, reversing paths
+identifies its path algebra with its opposite algebra. -/
 noncomputable def reverseOpAlgEquiv : pathAlgebra k Q ≃ₐ[k] (pathAlgebra k Q)ᵐᵒᵖ :=
   AlgEquiv.ofAlgHom (reverseOpAlgHom k Q) (AlgHom.opComm (reverseOpAlgHom k Q))
     (by
