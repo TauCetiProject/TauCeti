@@ -85,23 +85,28 @@ theorem affinePlaneDiffeomorph_apply (n : ℕ∞ω)
     Fan.coe_analyticProdDiffeomorph]
   rfl
 
-/-- On the maximal product chart, the two affine-plane coordinates are the standard character
-evaluations of the two affine-ray chart points. -/
+/-- On the maximal product chart, the affine-plane coordinates evaluate the standard
+characters of the two lattice factors. -/
 theorem affinePlaneDiffeomorph_analyticAffineChartι (n : ℕ∞ω)
-    (x y : AffineSemigroupComplexPoint
-      (dualSemigroup (isIntegralLattice_intCast 1) affineRayCone)) :
-    let z := (affineRayFan.analyticAffineChartProdHomeomorph affineRayFan
-      affineRayFanMaxCone affineRayFanMaxCone).symm (x, y)
+    (z : affinePlaneFan.analyticAffineChartDiagram.obj
+      (affineRayFan.prodCone affineRayFan affineRayFanMaxCone affineRayFanMaxCone)) :
+    let z' : AffineSemigroupComplexPoint
+      (dualSemigroup affinePlaneFan.lattice (affineRayCone.prod affineRayCone)) := z
     affinePlaneDiffeomorph n
       (affinePlaneFan.analyticAffineChartι isRegular_affinePlaneFan
         (affineRayFan.prodCone affineRayFan affineRayFanMaxCone affineRayFanMaxCone) z) =
-      (x (MonoidAlgebra.single (ofAdd affineRayCharacter) 1),
-        y (MonoidAlgebra.single (ofAdd affineRayCharacter) 1)) := by
-  dsimp only
-  rw [affinePlaneDiffeomorph_apply,
-    Fan.analyticProdHomeomorph_analyticAffineChartι]
-  simp only [Homeomorph.apply_symm_apply, Prod.map_apply,
-    affineRayFanDiffeomorph_analyticAffineChartι]
+      (z' (MonoidAlgebra.single (ofAdd ((dualSemigroupProdEquiv
+          affineRayFan.lattice affineRayFan.lattice affineRayCone affineRayCone).symm
+          (affineRayCharacter, 0))) 1),
+        z' (MonoidAlgebra.single (ofAdd ((dualSemigroupProdEquiv
+          affineRayFan.lattice affineRayFan.lattice affineRayCone affineRayCone).symm
+          (0, affineRayCharacter))) 1)) := by
+  rw [affinePlaneDiffeomorph_apply, Fan.analyticProdHomeomorph_analyticAffineChartι]
+  simp only [Prod.map_apply, affineRayFanDiffeomorph_analyticAffineChartι,
+    Fan.coe_analyticAffineChartProdHomeomorph]
+  -- The product comparison is expressed on the raw complex-point carrier.
+  erw [AffineSemigroupComplexPoint.prodEquiv_fst_apply_single,
+    AffineSemigroupComplexPoint.prodEquiv_snd_apply_single]
 
 /-! ### The blow-up of the affine plane at the origin -/
 
