@@ -23,11 +23,11 @@ certifies that this is the geometric comparison, not just an abstract isomorphis
 cotangent dual, used to compare normalized root vectors and pinnings.
 
 All comparisons include characteristic two, nonflat base changes and rank zero.
-The construction follows `SpecialLinear.Tangent.BaseChange`, using
-`Symplectic.tangentLieEquivSp` and `TauCeti.tangentBaseChangeLieEquiv`.
 
 ## References
 
+* `SpecialLinear.Tangent.BaseChange`: the corresponding tangent comparison for
+  special-linear groups.
 * J. S. Milne, *Algebraic Groups* (2017), §§10.a and 24.6.
 -/
 

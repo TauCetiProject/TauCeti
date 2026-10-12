@@ -17,11 +17,10 @@ assert that the second group is the base change of the first. For the standard
 special-linear and symplectic pinnings, their `Pinning.BaseChange` modules prove
 that this identification agrees with geometric tangent base change.
 
-This construction is shared from `SpecialLinear.Pinning.BaseChange` and
-`Symplectic.Pinning.BaseChange`.
-
 ## References
 
+* `SpecialLinear.Pinning.BaseChange` and `Symplectic.Pinning.BaseChange`:
+  the standard pinned root-space comparisons.
 * B. Conrad, *Reductive Group Schemes* (2014), §5.1.
 -/
 

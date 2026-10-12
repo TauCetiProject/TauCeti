@@ -25,12 +25,10 @@ and `Symplectic.IsotropicFlag.map_baseChangeHopfIdeal_definingHopfIdeal` treats 
 Borel. Together with the root-space comparison, these identify all the chosen data
 of the integral pinning after extension to a connected nontrivial base.
 
-The construction follows `SpecialLinear.Pinning.BaseChange`, using the symplectic
-root-vector normalization `standardPinning_rootSpaceEquiv_apply_coe` and the geometric
-comparison in `Symplectic.Tangent.BaseChange`.
-
 ## References
 
+* `SpecialLinear.Pinning.BaseChange`: the corresponding comparison for the
+  standard special-linear pinning.
 * B. Conrad, *Reductive Group Schemes* (2014), §5.1.
 * J. S. Milne, *Algebraic Groups* (2017), §§21.1 and 24.6.
 -/

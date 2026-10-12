@@ -19,16 +19,14 @@ families. In particular, the integral root maps retain their parameter and signs
 positive characteristic and over nonreduced rings. No flatness assumption is needed.
 
 This supplies the root-map compatibility used when transporting symplectic pinnings
-between bases. The calculation uses `rootSubgroupCoordinateMap_apply_X` and
-`RootSubgroupIndex.map_tangentMatrix`, so there is no new presentation of the root maps.
+between bases.
 The cotangent-dual comparison also preserves every normalized root vector,
 so the chosen root-space generators agree under geometric base change.
-It follows the quotient-cancellation construction in
-`SpecialLinear.RootSubgroup.BaseChange`, the coordinate calculation in
-`GeneralLinear.Root.BaseChange`, and `SpecialLinear.Root.BaseChange`.
 
 ## References
 
+* `SpecialLinear.RootSubgroup.BaseChange`, `GeneralLinear.Root.BaseChange`, and
+  `SpecialLinear.Root.BaseChange`: the corresponding root-map and root-vector comparisons.
 * B. Conrad, *Reductive Group Schemes* (2014), §5.1.
 * J. S. Milne, *Algebraic Groups* (2017), §§21 and 24.6.
 -/
