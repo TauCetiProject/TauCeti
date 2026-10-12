@@ -12,8 +12,9 @@ import Mathlib.MeasureTheory.Integral.Bochner.Set
 /-!
 # Integrals of `Lᵖ` functions against bounded multipliers on finite-measure sets
 
-If `h ∈ Lᵖ`, `1 ≤ p`, vanishes off a measurable set `W` of finite measure and `k` is a scalar
-multiplier bounded by `B` on `W`, then `k • h` is integrable and, by Hölder's inequality on `W`,
+If `h ∈ Lᵖ`, `1 ≤ p`, vanishes a.e. off a set `W` of finite measure and `k` is a scalar
+multiplier a.e. bounded by `B` on `W`, then `k • h` is integrable and, by Hölder's
+inequality on `W`,
 
 `‖∫ k • h‖ ≤ B μ(W) ^ (1 - 1/p) ‖h‖_p`
 
@@ -32,13 +33,13 @@ open scoped ENNReal
 variable {α F : Type*} [MeasurableSpace α] {μ : Measure α} [NormedAddCommGroup F]
   [NormedSpace ℝ F]
 
-/-- If `k` is bounded by `B` on a measurable set `W` of finite measure, and `h ∈ Lᵖ`, `1 ≤ p`,
-vanishes off `W`, then `k • h` is integrable and, by Hölder's inequality on `W`,
+/-- If `k` is a.e. bounded by `B` on a set `W` of finite measure, and `h ∈ Lᵖ`, `1 ≤ p`,
+vanishes a.e. off `W`, then `k • h` is integrable and, by Hölder's inequality on `W`,
 `‖∫ k • h‖ ≤ B μ(W) ^ (1 - 1/p) ‖h‖_p`. -/
-theorem integrable_smul_and_norm_integral_smul_le {k : α → ℝ} {W : Set α} (hW : MeasurableSet W)
-    (hμW : μ W ≠ ∞) {B : ℝ} (hB : 0 ≤ B) (hk : AEStronglyMeasurable k (μ.restrict W))
-    (hkB : ∀ y ∈ W, ‖k y‖ ≤ B) {p : ℝ≥0∞} (hp : 1 ≤ p) {h : α → F} (hh : MemLp h p μ)
-    (h0 : ∀ y, y ∉ W → h y = 0) :
+theorem integrable_smul_and_norm_integral_smul_le {k : α → ℝ} {W : Set α} (hμW : μ W ≠ ∞)
+    {B : ℝ} (hB : 0 ≤ B) (hk : AEStronglyMeasurable k (μ.restrict W))
+    (hkB : ∀ᵐ y ∂μ.restrict W, ‖k y‖ ≤ B) {p : ℝ≥0∞} (hp : 1 ≤ p) {h : α → F}
+    (hh : MemLp h p μ) (h0 : ∀ᵐ y ∂μ, y ∉ W → h y = 0) :
     Integrable (fun y => k y • h y) μ ∧
       ‖∫ y, k y • h y ∂μ‖ ≤ B * (μ W ^ (1 - 1 / p.toReal) * eLpNorm h p μ).toReal := by
   have : IsFiniteMeasure (μ.restrict W) := isFiniteMeasure_restrict.2 hμW
@@ -49,14 +50,14 @@ theorem integrable_smul_and_norm_integral_smul_le {k : α → ℝ} {W : Set α} 
         simpa using ENNReal.toReal_mono hp_top hp
       exact sub_nonneg.2 (div_le_one_of_le₀ h1p (by positivity))
   have hhW : IntegrableOn h W μ := (hh.restrict W).integrable hp
-  have hbound : ∀ᵐ y ∂μ.restrict W, ‖k y • h y‖ ≤ B * ‖h y‖ :=
-    (ae_restrict_iff' hW).2 (ae_of_all _ fun y hy => by
-      rw [norm_smul]
-      exact mul_le_mul_of_nonneg_right (hkB y hy) (norm_nonneg _))
+  have hbound : ∀ᵐ y ∂μ.restrict W, ‖k y • h y‖ ≤ B * ‖h y‖ := hkB.mono fun y hy => by
+    rw [norm_smul]
+    exact mul_le_mul_of_nonneg_right hy (norm_nonneg _)
   have hint : IntegrableOn (fun y => k y • h y) W μ :=
     (hhW.norm.const_mul B).mono' (hk.smul (hh.restrict W).aestronglyMeasurable) hbound
-  refine ⟨hint.integrable_of_ae_notMem_eq_zero (ae_of_all _ fun y hy => by simp [h0 y hy]), ?_⟩
-  rw [← setIntegral_eq_integral_of_forall_compl_eq_zero fun y hy => by simp [h0 y hy]]
+  have hkh0 : ∀ᵐ y ∂μ, y ∉ W → k y • h y = 0 := h0.mono fun y hy hyW => by simp [hy hyW]
+  refine ⟨hint.integrable_of_ae_notMem_eq_zero hkh0, ?_⟩
+  rw [← setIntegral_eq_integral_of_ae_compl_eq_zero hkh0]
   refine (norm_integral_le_of_norm_le (hhW.norm.const_mul B) hbound).trans ?_
   rw [integral_const_mul]
   refine mul_le_mul_of_nonneg_left ?_ hB

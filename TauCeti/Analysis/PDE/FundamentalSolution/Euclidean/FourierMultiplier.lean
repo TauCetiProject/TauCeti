@@ -432,13 +432,14 @@ theorem ae_fourierMultiplierCLM_hessianSymbolLp_eq_neg_integral (hn : 3 ≤ n)
       image_eq_zero_of_notMem_tsupport fun h => hy (hφW k hk h)
     have hW := hs.cthickening (r := η)
     have hkm := hkc.aestronglyMeasurable (μ := volume) hW.measurableSet
-    obtain ⟨hint₁, -⟩ := integrable_smul_and_norm_integral_smul_le hW.measurableSet
-      hW.measure_lt_top.ne hB hkm hkB one_le_two (hφL k) hφk0
-    obtain ⟨hint₂, -⟩ := integrable_smul_and_norm_integral_smul_le hW.measurableSet
-      hW.measure_lt_top.ne hB hkm hkB one_le_two hf'L hf'W
-    obtain ⟨-, hle⟩ := integrable_smul_and_norm_integral_smul_le hW.measurableSet
-      hW.measure_lt_top.ne hB hkm hkB one_le_two ((hφL k).sub hf'L)
-      fun y hy => by simp [hφk0 y hy, hf'W y hy]
+    have hkB' := ae_restrict_of_forall_mem (μ := volume) hW.measurableSet hkB
+    obtain ⟨hint₁, -⟩ := integrable_smul_and_norm_integral_smul_le hW.measure_lt_top.ne hB
+      hkm hkB' one_le_two (hφL k) (ae_of_all _ hφk0)
+    obtain ⟨hint₂, -⟩ := integrable_smul_and_norm_integral_smul_le hW.measure_lt_top.ne hB
+      hkm hkB' one_le_two hf'L (ae_of_all _ hf'W)
+    obtain ⟨-, hle⟩ := integrable_smul_and_norm_integral_smul_le hW.measure_lt_top.ne hB
+      hkm hkB' one_le_two ((hφL k).sub hf'L)
+      (ae_of_all _ fun y hy => by simp [hφk0 y hy, hf'W y hy])
     have h12 : (1 : ℝ) - 1 / (2 : ENNReal).toReal = 1 / 2 := by norm_num
     rw [h12] at hle
     rw [norm_norm, ← integral_sub hint₁ hint₂]
