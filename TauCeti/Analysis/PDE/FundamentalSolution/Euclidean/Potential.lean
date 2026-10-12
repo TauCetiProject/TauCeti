@@ -31,8 +31,8 @@ For `f : ℝⁿ → F` with compact support, the **Newtonian potential** of `f` 
 * `u` solves **Poisson's equation** `-Δu = f` on all of `ℝⁿ`;
 * `u` is harmonic off the support of `f`, where its second derivatives are obtained by
   integrating `f` against the Hessian of `Gₙ` (for this, too, any `n`);
-* `u` decays like `‖x‖ ^ (2 - n)`, and so tends to zero at infinity (already for integrable `f`
-  with bounded support);
+* `u` decays like `‖x‖ ^ (2 - n)` (this does need `n ≥ 3`, but already holds for integrable `f`
+  with bounded support), and so tends to zero at infinity;
 * `u` is the **unique** `C²` solution of `-Δv = f` that tends to zero at infinity.
 
 The Laplacian falls on `f` under the convolution (`HasCompactSupport.laplacian_convolution_right`),
@@ -48,11 +48,12 @@ from `f` onto the kernel, which is smooth there. Uniqueness holds because a harm
   compact support.
 * `TauCeti.laplacian_newtonianKernel_convolution`: `Δ (Gₙ ⋆ f) = -f`.
 * `TauCeti.harmonicOnNhd_newtonianKernel_convolution`: `Gₙ ⋆ f` is harmonic off `tsupport f`.
-* `TauCeti.norm_newtonianKernel_convolution_le`: the decay bound
+* `TauCeti.norm_newtonianKernel_convolution_le`: for `n ≥ 3`, the decay bound
   `‖(Gₙ ⋆ f) x‖ ≤ C (‖x‖ - R) ^ (2 - n) ∫ ‖f‖` off the ball `closedBall 0 R` containing the
   support of `f`, and the companion bound
   `TauCeti.norm_fderiv_newtonianKernel_convolution_apply_le` on its derivatives.
-* `TauCeti.tendsto_newtonianKernel_convolution_cocompact`: `Gₙ ⋆ f → 0` at infinity.
+* `TauCeti.tendsto_newtonianKernel_convolution_cocompact`: for `n ≥ 3`, `Gₙ ⋆ f → 0` at
+  infinity.
 * `TauCeti.eq_newtonianKernel_convolution_of_laplacian_eq_neg`: uniqueness among solutions
   vanishing at infinity.
 * `TauCeti.iteratedFDeriv_two_newtonianKernel_convolution_apply_of_notMem_tsupport`: off the
