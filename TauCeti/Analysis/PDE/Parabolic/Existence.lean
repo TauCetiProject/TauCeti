@@ -25,9 +25,10 @@ import TauCeti.MeasureTheory.Function.StronglyMeasurable.Caratheodory
 /-!
 # Existence for linear parabolic equations
 
-Let `V ↪ H ↪ V*` be a Gelfand triple, given by a continuous linear map `ι : V →L[ℝ] H` from a
-real Hilbert space `V` into a real inner product space `H` (`ContinuousLinearMap.gelfandDual`),
-and consider on a time interval `(a, b)` the abstract linear parabolic problem
+Let `ι : V →L[ℝ] H` be a continuous linear map from a real Hilbert space `V` into a real inner
+product space `H`, inducing `H → V*` (`ContinuousLinearMap.gelfandDual`). No injectivity or dense
+range is assumed; with both, `V ↪ H ↪ V*` is a Gelfand triple. Consider on a time interval
+`(a, b)` the abstract linear parabolic problem
 
 `u' + A(t) u = f`, `u(a) = u₀`,
 
@@ -382,7 +383,8 @@ private theorem exists_memLp_forall_setIntegral_eq_add_inner_of_coercive [Comple
   rwa [variationalForm_apply, hℓ_apply] at h
 
 /-- **Existence for linear parabolic equations, in variational form.** Let `ι : V →L[ℝ] H`
-define a Gelfand triple with `V` a Hilbert space, and let `A(t) : V →L[ℝ] V*` be weakly
+be any continuous linear map (neither injectivity nor dense range is assumed) with `V` a Hilbert
+space, and let `A(t) : V →L[ℝ] V*` be weakly
 measurable in `t` (`t ↦ A(t) u v` measurable for all `u, v`), bounded by `Λ` and satisfy
 **Gårding's inequality** `α ‖v‖² - β ‖ι v‖² ≤ A(t) v v` with `α > 0`, for almost every
 `t ∈ (a, b)`. Then for every
