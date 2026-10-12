@@ -91,7 +91,7 @@ theorem gradedExtEuler_gradedArrowSum (i : Q)
       (GradedModuleCat.shift (integerGrade k Q))
       ((gradedVertexProjective k Q j).shiftObj 1) Y := by
     simpa only [GradedModuleCat.shift_functor_obj] using (hP j).shiftSource
-  rw [gradedExtEuler_directSum _ _ Y h (fun a ↦ hshift a.1), Finset.mul_sum]
+  rw [gradedExtEuler_directSumObj _ _ Y h (fun a ↦ hshift a.1), Finset.mul_sum]
   apply Finset.sum_congr rfl
   intro a _
   have hval := gradedExtEuler_shiftSource (hP a.1)

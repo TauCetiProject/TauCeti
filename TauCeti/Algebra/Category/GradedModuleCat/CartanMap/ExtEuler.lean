@@ -79,7 +79,7 @@ omit [GradedAlgebra 𝒜] in
 /-- The q-Euler characteristic of a finite direct sum of projective graded modules is the sum
 of the characteristics of the summands, for any grading-shift autoequivalence and admissible
 pairs. -/
-theorem gradedExtEuler_directSum [HasExt.{w} (GradedModuleCat.{max uJ v} 𝒜)]
+theorem gradedExtEuler_directSumObj [HasExt.{w} (GradedModuleCat.{max uJ v} 𝒜)]
     {J : Type uJ} [Fintype J] (e : GradedModuleCat.{max uJ v} 𝒜 ≌ GradedModuleCat.{max uJ v} 𝒜)
     (M : J → GradedModuleCat.{max uJ v} 𝒜) [∀ j, Projective (M j)]
     (Y : GradedModuleCat.{max uJ v} 𝒜)
@@ -93,7 +93,7 @@ theorem gradedExtEuler_directSum [HasExt.{w} (GradedModuleCat.{max uJ v} 𝒜)]
   let _ (j : J) : Module.Finite k (M j ⟶ (e ^ (-p)).functor.obj Y) :=
     (((hj j).internallyFinite.finiteLaurentSupport 0).of_equiv
       fun _ ↦ CategoryTheory.Abelian.Ext.linearEquiv₀ (R := k)).finiteDimensional (-p)
-  rw [GradedModuleCat.finrank_hom_directSum, Nat.cast_sum,
+  rw [GradedModuleCat.finrank_hom_directSumObj, Nat.cast_sum,
     AddMonoidAlgebra.coeff_sum, Finsupp.finsetSum_apply]
   apply Finset.sum_congr rfl
   intro j _

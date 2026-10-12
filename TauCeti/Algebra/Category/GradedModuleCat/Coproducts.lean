@@ -144,7 +144,7 @@ instance projective_directSumObj [∀ j, Projective (M j)] : Projective (directS
 
 /-- The dimension of graded maps from a finite degreewise direct sum is the sum of the
 Hom dimensions of its summands. The Hom modules must be finite and free over `k`. -/
-theorem finrank_hom_directSum [Fintype J] [StrongRankCondition k]
+theorem finrank_hom_directSumObj [Fintype J] [StrongRankCondition k]
     (N : GradedModuleCat.{max w v} 𝒜)
     [∀ j, Module.Free k (M j ⟶ N)] [∀ j, Module.Finite k (M j ⟶ N)] :
     Module.finrank k (directSumObj M ⟶ N) = ∑ j, Module.finrank k (M j ⟶ N) := by
