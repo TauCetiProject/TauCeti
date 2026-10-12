@@ -38,9 +38,7 @@ open MeasureTheory
 
 open scoped ENNReal
 
-namespace TauCeti
-
-namespace Probability
+namespace MeasureTheory.Measure
 
 variable {α : Type*} [MeasurableSpace α]
 
@@ -134,6 +132,4 @@ theorem map_pi_deFinettiBarycenter {β : Type*} [MeasurableSpace β]
         rw [deFinettiBarycenter_def, TauCeti.MeasureTheory.bind_map hmap.aemeasurable
           TauCeti.MeasureTheory.measurable_infinitePi_const.aemeasurable, Function.comp_def]
 
-end Probability
-
-end TauCeti
+end MeasureTheory.Measure

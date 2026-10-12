@@ -52,7 +52,7 @@ variable {α : Type*} [MeasurableSpace α]
 The witness is the canonical conditionally i.i.d. construction `iidMixtureLaw π id`, whose
 coordinate process is exchangeable and whose path law is this barycenter. -/
 theorem exchangeableLaw_deFinettiBarycenter {π : Measure (ProbabilityMeasure α)}
-    [IsProbabilityMeasure π] : ExchangeableLaw (deFinettiBarycenter π) := by
+    [IsProbabilityMeasure π] : ExchangeableLaw (Measure.deFinettiBarycenter π) := by
   have := isProbabilityMeasure_iidMixtureLaw (π := π) (P := id) measurable_id
   have hX := exchangeable_iidMixtureLaw (π := π) (P := id) measurable_id
   have hcoord : ∀ n, AEMeasurable
@@ -61,7 +61,7 @@ theorem exchangeableLaw_deFinettiBarycenter {π : Measure (ProbabilityMeasure α
   have hlaw := (exchangeable_iff_exchangeableLaw_pathLaw
     (X := fun n (ω : ProbabilityMeasure α × (ℕ → α)) => ω.2 n) hcoord).mp hX
   rw [pathLaw_iidMixtureLaw (π := π) (P := id) measurable_id] at hlaw
-  simpa [deFinettiBarycenter_def] using hlaw
+  simpa [Measure.deFinettiBarycenter_def] using hlaw
 
 /-- **The mixing law of an exchangeable path law.** Over a standard Borel state space, an
 exchangeable probability measure on `ℕ → α` is the de Finetti barycenter of exactly one mixing
@@ -72,13 +72,13 @@ This is the path-law form of `deFinetti_mixture`, obtained by taking the coordin
 `deFinetti_mixture`, it needs no nonemptiness hypothesis on the state space. -/
 theorem ExchangeableLaw.existsUnique_mixingLaw [StandardBorelSpace α] {ρ : Measure (ℕ → α)}
     [IsProbabilityMeasure ρ] (hρ : ExchangeableLaw ρ) :
-    ∃! π : ProbabilityMeasure (ProbabilityMeasure α), ρ = deFinettiBarycenter π := by
+    ∃! π : ProbabilityMeasure (ProbabilityMeasure α), ρ = Measure.deFinettiBarycenter π := by
   have hcoord : ∀ n, Measurable fun x : ℕ → α => x n := fun n => measurable_pi_apply n
   have hpath : pathLaw ρ (fun n (x : ℕ → α) => x n) = ρ := by simp [pathLaw_def]
   have hexch : Exchangeable ρ (fun n (x : ℕ → α) => x n) :=
     (exchangeable_iff_exchangeableLaw_pathLaw fun n => (hcoord n).aemeasurable).2
       (by simpa [pathLaw_def] using hρ)
-  simpa [hpath, deFinettiBarycenter_def] using
+  simpa [hpath, Measure.deFinettiBarycenter_def] using
     deFinetti_mixture hexch fun n => (hcoord n).aemeasurable
 
 end Probability
