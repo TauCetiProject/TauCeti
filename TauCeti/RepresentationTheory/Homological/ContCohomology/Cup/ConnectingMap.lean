@@ -268,15 +268,15 @@ theorem explicitDelta1_explicitCup10_right [ContinuousMul G] (x : H1 G A) (y : H
   -- A double flip is definitionally the original pairing; only its proof witnesses differ.
   change SC.explicitDelta1 (explicitCup10 G A B'' C'' μ''.flip.flip _ _ x y) = _
   rw [← explicitCup01_eq_cup10_flip G B'' A C'' μ''.flip
-    (by simpa [Function.comp_def] using hμ''.comp continuous_swap)
-    (by simpa only [AddMonoidHom.flip_apply] using fun g b a => hequiv'' g a b),
+    (μ''.continuous_flip hμ'')
+    (μ''.flip_map_smul hequiv''),
     explicitDelta1_explicitCup01_left SB SC μ.flip μ'.flip μ''.flip
-      (by simpa [Function.comp_def] using hμ.comp continuous_swap)
-      (by simpa [Function.comp_def] using hμ'.comp continuous_swap)
-      (by simpa [Function.comp_def] using hμ''.comp continuous_swap)
-      (by simpa only [AddMonoidHom.flip_apply] using fun g b a => hequiv g a b)
-      (by simpa only [AddMonoidHom.flip_apply] using fun g b a => hequiv' g a b)
-      (by simpa only [AddMonoidHom.flip_apply] using fun g b a => hequiv'' g a b)
+      (μ.continuous_flip hμ)
+      (μ'.continuous_flip hμ')
+      (μ''.continuous_flip hμ'')
+      (μ.flip_map_smul hequiv)
+      (μ'.flip_map_smul hequiv')
+      (μ''.flip_map_smul hequiv'')
       (fun b a => hincl a b) (fun b a => hproj a b),
     ← neg_inj, neg_neg, explicitCup11_eq_neg_flip]
   simp only [neg_neg]

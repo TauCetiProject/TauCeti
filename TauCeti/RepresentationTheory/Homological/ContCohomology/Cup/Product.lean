@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Group.Hom.Instances
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.ExplicitFunctoriality
+public import TauCeti.Topology.Algebra.Group.Hom
 
 /-!
 # Cup products in low degrees on the explicit model
@@ -612,7 +614,7 @@ cochains, here two elements of `P`, are literally equal. -/
 theorem explicitCup00_comm (m : H0 G M) (n : H0 G N) :
     explicitCup00 G M N P μ hequiv m n =
       explicitCup00 G N M P μ.flip
-        (by simpa only [AddMonoidHom.flip_apply] using fun g n m => hequiv g m n) n m :=
+        (μ.flip_map_smul hequiv) n m :=
   Subtype.ext (by simp)
 
 end CommZeroZero
@@ -665,8 +667,8 @@ include hμ hequiv in
 theorem explicitCup01_eq_cup10_flip (m : H0 G M) (b : H1 G N) :
     explicitCup01 G M N P μ hμ hequiv m b =
       explicitCup10 G N M P μ.flip
-        (by simpa [Function.comp_def] using hμ.comp continuous_swap)
-        (by simpa only [AddMonoidHom.flip_apply] using fun g n m => hequiv g m n) b m := by
+        (μ.continuous_flip hμ)
+        (μ.flip_map_smul hequiv) b m := by
   induction b using QuotientAddGroup.induction_on with
   | _ c =>
     rw [explicitCup01_mk, explicitCup10_mk]
@@ -692,8 +694,8 @@ include hμ hequiv in
 theorem explicitCup02_eq_cup20_flip (m : H0 G M) (b : H2 G N) :
     explicitCup02 G M N P μ hμ hequiv m b =
       explicitCup20 G N M P μ.flip
-        (by simpa [Function.comp_def] using hμ.comp continuous_swap)
-        (by simpa only [AddMonoidHom.flip_apply] using fun g n m => hequiv g m n) b m := by
+        (μ.continuous_flip hμ)
+        (μ.flip_map_smul hequiv) b m := by
   induction b using QuotientAddGroup.induction_on with
   | _ c =>
     rw [explicitCup02_mk, explicitCup20_mk]
@@ -765,8 +767,8 @@ differ by the coboundary exhibited in
 theorem explicitCup11_eq_neg_flip (a : H1 G M) (b : H1 G N) :
     explicitCup11 G M N P μ hμ hequiv a b =
       -explicitCup11 G N M P μ.flip
-        (by simpa [Function.comp_def] using hμ.comp continuous_swap)
-        (by simpa only [AddMonoidHom.flip_apply] using fun g n m => hequiv g m n) b a := by
+        (μ.continuous_flip hμ)
+        (μ.flip_map_smul hequiv) b a := by
   induction a using QuotientAddGroup.induction_on with
   | _ x =>
     induction b using QuotientAddGroup.induction_on with
@@ -782,8 +784,8 @@ of `P` is its own negative the `(1,1)` cup is symmetric on classes. This is the 
 theorem explicitCup11_comm_of_neg_eq_self (hP : ∀ x : P, -x = x) (a : H1 G M) (b : H1 G N) :
     explicitCup11 G M N P μ hμ hequiv a b =
       explicitCup11 G N M P μ.flip
-        (by simpa [Function.comp_def] using hμ.comp continuous_swap)
-        (by simpa only [AddMonoidHom.flip_apply] using fun g n m => hequiv g m n) b a := by
+        (μ.continuous_flip hμ)
+        (μ.flip_map_smul hequiv) b a := by
   have hneg : ∀ y : H2 G P, -y = y := fun y => by
     induction y using QuotientAddGroup.induction_on with
     | _ z =>
