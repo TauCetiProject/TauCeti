@@ -147,6 +147,7 @@ theorem gaussValuationAway_eq_zero_iff (hv : v.Integers O) (hϖ : ϖ ≠ 0) {ρ 
 
 /-- The Gauss valuations of two localizations of `𝕎 O` away from `p [ϖ]` correspond under any
 `𝕎 O`-algebra homomorphism between them. -/
+@[simp]
 theorem gaussValuationAway_algHom (hv : v.Integers O) (hϖ : ϖ ≠ 0) {ρ : ℝ≥0}
     (hρ : ρ ∈ Set.Ioo 0 1) {B' : Type*} [CommRing B'] [Algebra (_root_.WittVector p O) B']
     [IsLocalization.Away ((p : _root_.WittVector p O) * teichmuller p ϖ) B'] (f : B →ₐ[𝕎 O] B')
