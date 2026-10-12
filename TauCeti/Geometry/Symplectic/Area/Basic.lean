@@ -45,7 +45,7 @@ namespace TauCeti
 bounded by the operator norm of the bilinear map times the angular energy. -/
 theorem norm_integral_apply_apply_circleMap_le {V G : Type*} [NormedAddCommGroup V]
     [InnerProductSpace ℝ V] [FiniteDimensional ℝ V] [NormedAddCommGroup G] [NormedSpace ℝ G]
-    [CompleteSpace G] (B : V →L[ℝ] V →L[ℝ] G) {u : ℂ → V} (z₀ : ℂ) (r : ℝ)
+    [CompleteSpace G] (u : ℂ → V) {B : V →L[ℝ] V →L[ℝ] G} (z₀ : ℂ) (r : ℝ)
     (hu : ∀ θ, ContDiffAt ℝ 1 u (circleMap z₀ r θ)) :
     ‖∫ θ in -π..π, B (u (circleMap z₀ r θ))
       (deriv (fun θ ↦ u (circleMap z₀ r θ)) θ)‖ ≤

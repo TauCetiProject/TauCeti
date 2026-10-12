@@ -75,7 +75,7 @@ theorem exists_tendsto_integral_apply_circleMap_nhds_zero (ω : SymplecticForm V
     squeeze_zero (fun n ↦ (hr n).1.le) (fun n ↦ (hr n).2.le) hδlim
   -- Wirtinger's inequality controls the action by the angular energy on each chosen circle.
   have haction (n : ℕ) : ‖action (r n)‖ ≤ ‖B‖ * δ n := by
-    have h := norm_integral_apply_apply_circleMap_le B z₀ (r n) fun θ ↦
+    have h := norm_integral_apply_apply_circleMap_le u (B := B) z₀ (r n) fun θ ↦
       hu _ (circleMap_mem_puncturedClosedDisc z₀ (hr n).1 ((hr n).2.le.trans (hδb n)) θ)
     exact h.trans (mul_le_mul_of_nonneg_left (hE n).le (norm_nonneg B))
   have hactionlim : Tendsto (fun n ↦ action (r n)) atTop (𝓝 0) :=
