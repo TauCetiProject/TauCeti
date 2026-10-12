@@ -83,6 +83,8 @@ a remainder of norm at most `‖y‖` that either has degree less than `m` or is
   have the same degree.
 * `TauCeti.WittVector.RadiusRing.degree_mul` : the degree is additive on products.
 * `TauCeti.WittVector.RadiusRing.exists_eq_mul_add` : Euclidean division in `A^r`.
+* `TauCeti.WittVector.RadiusRing.isUnit_iff_degree_eq_zero` : the units of `A^r` are its nonzero
+  elements of degree `0`.
 * `TauCeti.WittVector.RadiusRing.isNoetherianRing_isRestricted_subring` : the rings
   `A^r{T₁/ρ₁, …, Tₙ/ρₙ}` of restricted power series are noetherian.
 
@@ -878,6 +880,19 @@ theorem exists_eq_mul_add {x : RadiusRing p hv hϖ hϖ' hρ} (hx : x ≠ 0)
   by_contra hy
   obtain ⟨z, hz⟩ := Ideal.mem_span_singleton'.mp (by simpa using hS hy)
   exact hy ⟨z, 0, by rw [hz, add_zero], by simp, Or.inl rfl⟩
+
+/-- A nonzero element of `A^r` of degree `0` is a unit: dividing `1` by it leaves no remainder. -/
+theorem isUnit_of_degree_eq_zero {x : RadiusRing p hv hϖ hϖ' hρ} (hx : x ≠ 0)
+    (hdeg : degree p hv hϖ hϖ' hρ x = 0) : IsUnit x := by
+  obtain ⟨z, w, h, -, rfl | hw⟩ := exists_eq_mul_add p hv hϖ hϖ' hρ hx 1
+  · exact IsUnit.of_mul_eq_one_right z (by rw [h, add_zero])
+  · omega
+
+/-- The units of `A^r` are its nonzero elements of degree `0`. -/
+theorem isUnit_iff_degree_eq_zero {x : RadiusRing p hv hϖ hϖ' hρ} :
+    IsUnit x ↔ x ≠ 0 ∧ degree p hv hϖ hϖ' hρ x = 0 :=
+  ⟨fun hx ↦ ⟨hx.ne_zero, degree_eq_zero_of_isUnit p hv hϖ hϖ' hρ hx⟩,
+    fun ⟨hx, hdeg⟩ ↦ isUnit_of_degree_eq_zero p hv hϖ hϖ' hρ hx hdeg⟩
 
 /-- **Kedlaya's Hilbert basis theorem for `A^r`** (Kedlaya, Theorem 3.2). For finitely many
 variables and all positive radii `c`, the ring `A^r{T/c}` of restricted power series over the
