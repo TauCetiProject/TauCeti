@@ -85,6 +85,8 @@ theorem IsJordanSplitting.congr {M' : Type*} [AddCommMonoid M'] [Module R M'] {�
   have hcomm (x : DirectSum ℕ (fun i ↦ N i)) :
       DirectSum.coeLinearMap (fun i ↦ (N i).map e.toLinearMap) (E x) =
         e (DirectSum.coeLinearMap N x) := LinearMap.congr_fun hcoe x
+  have hInternal := h.isInternal
+  change Function.Bijective (DirectSum.coeLinearMap N) at hInternal
   refine ⟨?_, ?_, ?_⟩
   · -- IsInternal is bijectivity of additive recomposition; coeLinearMap has the same function.
     -- The lattice characterization requires rings and groups, while this API allows semirings.
@@ -93,18 +95,18 @@ theorem IsJordanSplitting.congr {M' : Type*} [AddCommMonoid M'] [Module R M'] {�
     · intro x y hxy
       obtain ⟨x, rfl⟩ := E.surjective x
       obtain ⟨y, rfl⟩ := E.surjective y
-      exact congrArg E (h.isInternal.1 (e.injective (by simpa only [hcomm] using hxy)))
+      exact congrArg E (hInternal.1 (e.injective (by simpa only [hcomm] using hxy)))
     · intro y
-      obtain ⟨x, hx⟩ := h.isInternal.2 (e.symm y)
+      obtain ⟨x, hx⟩ := hInternal.2 (e.symm y)
       refine ⟨E x, ?_⟩
       rw [hcomm, hx, e.apply_symm_apply]
   · intro i j hij x hx y hy
-    obtain ⟨x, hx, rfl⟩ := Submodule.mem_map.mp hx
-    obtain ⟨y, hy, rfl⟩ := Submodule.mem_map.mp hy
-    simpa using h.apply_eq_zero i j hij x hx y hy
+    obtain ⟨x, hxN, rfl⟩ := Submodule.mem_map.mp hx
+    obtain ⟨y, hyN, rfl⟩ := Submodule.mem_map.mp hy
+    simpa using h.apply_eq_zero i j hij x hxN y hyN
   · intro i
-    have hi : congr (eN i) (B.restrict (N i)) =
-        (congr e B).restrict ((N i).map e.toLinearMap) := by
+    have hi : LinearMap.BilinForm.congr (eN i) (B.restrict (N i)) =
+        (LinearMap.BilinForm.congr e B).restrict ((N i).map e.toLinearMap) := by
       ext x y
       obtain ⟨x, rfl⟩ := (eN i).surjective x
       obtain ⟨y, rfl⟩ := (eN i).surjective y
