@@ -118,6 +118,7 @@ theorem logSpaceExtend_eq_self {f : InfinitePlace L → ℝ} (hf : ∑ w, f w = 
 
 /-- The extension of the logarithmic embedding of a unit `x` is the full vector
 `(mult w * log w(x))_w` over all infinite places, by the product formula. -/
+@[simp]
 theorem logSpaceExtend_logEmbedding (x : (𝓞 L)ˣ) :
     logSpaceExtend L (logEmbedding L (Additive.ofMul x)) = fun w ↦ w.mult * Real.log (w x) :=
   logSpaceExtend_eq_self (sum_mult_mul_log x)
@@ -167,17 +168,20 @@ theorem logSpaceRep_apply (σ : L ≃ₐ[K] L) (y : logSpace L)
 
 /-- **`logSpaceRep` is the permutation of the infinite places**, read through the identification
 `logSpaceExtend L` of `logSpace L` with the sum-zero hyperplane. -/
+@[simp]
 theorem logSpaceExtend_logSpaceRep (σ : L ≃ₐ[K] L) (y : logSpace L) :
     logSpaceExtend L (logSpaceRep K L σ y) =
       fun w : InfinitePlace L ↦ logSpaceExtend L y (σ⁻¹ • w) := by
-  rw [show logSpaceRep K L σ y =
-      fun w : {w : InfinitePlace L // w ≠ w₀} ↦ logSpaceExtend L y (σ⁻¹ • w.1) from
-    funext (logSpaceRep_apply σ y)]
+  have hrep : logSpaceRep K L σ y =
+      fun w : {w : InfinitePlace L // w ≠ w₀} ↦ logSpaceExtend L y (σ⁻¹ • w.1) :=
+    funext (logSpaceRep_apply σ y)
+  rw [hrep]
   exact logSpaceExtend_eq_self (f := fun w ↦ logSpaceExtend L y (σ⁻¹ • w))
     (sum_logSpaceExtend_perm y (MulAction.toPerm σ⁻¹))
 
 /-- **The logarithmic embedding is Galois-equivariant**: the logarithmic embedding of `σ • x` is
 `logSpaceRep K L σ` applied to that of `x`. -/
+@[simp]
 theorem logEmbedding_smul (σ : L ≃ₐ[K] L) (x : (𝓞 L)ˣ) :
     logEmbedding L (Additive.ofMul (σ • x)) =
       logSpaceRep K L σ (logEmbedding L (Additive.ofMul x)) := by
@@ -195,7 +199,7 @@ def unitLatticeSubrep : Subrepresentation (logSpaceRep K L).restrictScalarsInt w
   apply_mem_toSubmodule σ y := by
     rintro ⟨x, -, rfl⟩
     exact ⟨Additive.ofMul (σ • x.toMul), trivial, by
-      simpa using logEmbedding_smul σ x.toMul⟩
+      simp⟩
 
 @[simp]
 theorem toSubmodule_unitLatticeSubrep : (unitLatticeSubrep K L).toSubmodule = unitLattice L :=

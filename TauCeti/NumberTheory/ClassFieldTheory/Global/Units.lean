@@ -145,9 +145,10 @@ private theorem augmentationToLogSpace_rho (σ : L ≃ₐ[K] L) (v : augmentatio
       logSpaceRep K L σ (augmentationToLogSpace K L v) := by
   have hext : logSpaceExtend L (augmentationToLogSpace K L v) =
       fun t ↦ ((v : MonoidAlgebra ℤ (InfinitePlace L)).coeff t : ℝ) := by
-    rw [show augmentationToLogSpace K L v = fun w : {w : InfinitePlace L // w ≠ w₀} ↦
-        ((v : MonoidAlgebra ℤ (InfinitePlace L)).coeff w.1 : ℝ) from
-      funext (augmentationToLogSpace_apply v)]
+    have hv : augmentationToLogSpace K L v = fun w : {w : InfinitePlace L // w ≠ w₀} ↦
+        ((v : MonoidAlgebra ℤ (InfinitePlace L)).coeff w.1 : ℝ) :=
+      funext (augmentationToLogSpace_apply v)
+    rw [hv]
     exact logSpaceExtend_eq_self
       (f := fun t ↦ ((v : MonoidAlgebra ℤ (InfinitePlace L)).coeff t : ℝ))
       (by exact_mod_cast sum_coeff_augmentationLattice v)
