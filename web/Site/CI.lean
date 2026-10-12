@@ -69,6 +69,10 @@ the most jobs waiting for a runner at any moment in each bin. The bottom panel s
 wait for a runner among jobs that started in the previous thirty minutes (or the previous bin,
 when bins are longer), for builds and for other jobs separately.
 
+GitHub merge-queue entries also run a performance-gate job, which bors staging builds do not.
+That difference affects the fleet and runner-minute totals across the transition. Pilot and
+unidentified bors builds remain in the other-job and cost totals.
+
 :::blob fleetGraphs
 :::
 
@@ -116,11 +120,11 @@ How is merge validation doing? The chart includes both GitHub's merge queue and 
 Both test combined changes before they land on main. GitHub rebuilds the entries behind a failed
 entry; bors splits failed batches to isolate the failing pull requests. The bars count build jobs,
 including retries, so a bors batch containing several PRs is one build. Pilot batches and bors
-builds whose target branch is unknown are excluded.
+builds whose target branch is unknown are excluded from this chart.
 
 The dashed line counts each PR once, on the date of the earliest recorded main-push event proving
-its commit reached main. This is an upper bound on arrival time when push events coalesce; the
-staging commit's creation time is not used. PRs without arrival evidence are excluded from that
+its commit reached main. The event time is an upper bound on arrival; coalesced pushes can
+make that bound looser for ancestor commits. The staging commit's creation time is not used. PRs without arrival evidence are excluded from that
 line. Direct merges of human-reviewed infrastructure PRs are included.
 
 :::blob queueGraph

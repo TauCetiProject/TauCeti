@@ -8,7 +8,7 @@ Every chart is one point (or bar) per complete UTC day, up to the database's cov
   ci-failures.svg         failed PR builds by cause, and the share of PR builds that failed
   ci-runner-minutes.svg   runner-minutes per day on each kind of runner, and those spent on
                           builds cancelled before finishing
-  ci-merge-queue.svg      merge-queue builds by outcome, and PRs landed
+  ci-merge-queue.svg      GitHub queue and bors builds by outcome, and PR arrivals
   ci-picker.svg           the share of PR builds that ran on GitHub-hosted runners
 """
 
@@ -86,8 +86,8 @@ def metrics(db: sqlite3.Connection, first: str, last: str) -> dict:
     """Per-day series for every daily chart, over complete UTC days first..last."""
     days = days_between(first, last)
     lo, hi = f"{first}T00:00:00Z", f"{last}T23:59:59Z"
-    # Every attempt's build job (jobs keeps all attempts; runs only the latest), PR and merge-queue
-    # builds only: manual dispatches are neither.
+    # Every attempt's build job (jobs keeps all attempts; runs only the latest):
+    # PR builds and both main-branch merge engines, excluding manual dispatches.
     builds = db.execute(f"""
         SELECT substr(j.created_at, 1, 10), r.trigger, j.runner_kind, j.conclusion, j.wait_s, j.run_s,
                j.failure_class, j.job_id, r.run_id
@@ -399,9 +399,9 @@ def charts(db: sqlite3.Connection, until: float) -> dict[str, str]:
     series = [(o, c, [m["mq"][d].get(o, 0) for d in days]) for o, c in outcomes]
     landed = [m["landed"].get(d, 0) for d in days]
     out["ci-merge-queue.svg"] = stacked_chart(
-        "The merge queue", f"GitHub queue + bors builds (bars); PR arrivals on main (dashed, right scale); "
+        "Merge validation", f"GitHub queue + bors builds (bars); PR arrivals on main (dashed, right scale); "
         f"{span}", days, series, "merge validation builds",
-        line=("PRs landed", TEXT, landed, max(landed + [1])))
+        line=("PR arrivals on main", TEXT, landed, max(landed + [1])))
 
     share = [m["picker"][d][0] / sum(m["picker"][d]) if sum(m["picker"][d]) else None for d in days]
     out["ci-picker.svg"] = lines_chart(

@@ -57,7 +57,6 @@ MAX_STALENESS = 36 * 3600
 SERIES = [
     ("gh-build-pr", "PR builds on GitHub", PALETTE[2]),
     ("gh-build-other", "main and scheduled builds on GitHub", PALETTE[10]),
-    ("gh-build-merge", "merge validation on GitHub", PALETTE[9]),
     ("gh-other", "other GitHub jobs", PALETTE[0]),
     ("ns-pr", "PR builds on Namespace", PALETTE[1]),
     ("ns-mq", "merge validation on Namespace", PALETTE[3]),
@@ -81,8 +80,7 @@ def classify(name: str, kind: str, trigger: str) -> tuple[str, str]:
         key = ("ns-mq" if trigger in ci_daily_graphs.MERGE_TRIGGERS
                else "ns-pr" if trigger == "pr" else "ns-other")
     elif build:
-        key = ("gh-build-merge" if trigger in ci_daily_graphs.MERGE_TRIGGERS
-               else "gh-build-pr" if trigger in ("pr", "workflow_dispatch") else "gh-build-other")
+        key = "gh-build-pr" if trigger in ("pr", "workflow_dispatch") else "gh-build-other"
     else:
         key = "gh-other"
     return key, "build" if build else "other"
@@ -213,7 +211,7 @@ def fmt_time(t: float, with_day: bool) -> str:
 def render(data: dict, title: str, subtitle: str, annotations: list[tuple[float, str]]) -> str:
     W, H = 980, 760
     L, R = 64, 20
-    panels = [(140, 370), (430, 540), (590, 700)]   # (top, bottom) for running, queued, wait
+    panels = [(120, 370), (430, 540), (590, 700)]   # (top, bottom) for running, queued, wait
     since, until, step = data["since"], data["until"], data["step"]
     n = len(data["running"][SERIES[0][0]])
     x = lambda t: L + (t - since) / (until - since) * (W - L - R)

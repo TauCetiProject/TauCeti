@@ -123,7 +123,7 @@ class MergeQueueChartsTest(unittest.TestCase):
             self.assertEqual(fleet.classify(daily.BUILD, "namespace", trigger),
                              ("ns-mq", "build"))
             self.assertEqual(fleet.classify(daily.BUILD, "github", trigger),
-                             ("gh-build-merge", "build"))
+                             ("gh-build-other", "build"))
         self.assertEqual(fleet.classify(daily.BUILD, "namespace", "bors_pilot"),
                          ("ns-other", "build"))
         self.assertEqual(fleet.classify(daily.BUILD, "github", "pr"),
