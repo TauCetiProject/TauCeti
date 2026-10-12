@@ -132,15 +132,14 @@ instance : PreservesColimit (Discrete.functor M) toModuleCat := by
 
 /-- A degreewise direct sum of projective graded modules is projective, with no finiteness
 assumption on the index type. -/
-instance projective_directSumObj [∀ j, Projective (M j)] : Projective (directSumObj M) where
-  factors f g _ := by
-    classical
-    let s := Cofan.mk _ fun j ↦ Projective.factorThru ((coproductCofan M).inj j ≫ f) g
-    refine ⟨coproductDesc M s, ?_⟩
-    apply Cofan.IsColimit.hom_ext (coproductCofanIsColimit M)
-    intro j
-    simp only [← Category.assoc, coproductCofan_inj_desc, s, cofan_mk_inj,
-      Projective.factorThru_comp]
+instance projective_directSumObj [∀ j, Projective (M j)] : Projective (directSumObj M) := by
+  -- Mathlib's coproduct-projectivity instance indexes in the morphism universe.
+  let e : ULift.{v} J ≃ J := Equiv.ulift
+  let hc := (Cofan.isColimitEquivOfEquiv e (coproductCofan M)) (coproductCofanIsColimit M)
+  let : HasCoproduct (M ∘ e) := HasColimit.mk ⟨_, hc⟩
+  let (j : ULift.{v} J) : Projective ((M ∘ e) j) := inferInstanceAs (Projective (M (e j)))
+  exact Projective.of_iso ((colimit.isColimit _).coconePointUniqueUpToIso hc)
+    (inferInstanceAs (Projective (∐ (M ∘ e))))
 
 /-- The dimension of graded maps from a finite degreewise direct sum is the sum of the
 Hom dimensions of its summands. The Hom modules must be finite and free over `k`. -/
