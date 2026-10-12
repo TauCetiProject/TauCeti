@@ -168,7 +168,7 @@ theorem le_exp_sinkhornErrorBound_mul_sinkhornPlan_apply {K : Matrix ι κ ℝ}
 
 /-- The certificate itself decreases geometrically along the iteration, starting from the
 observed initial step rather than the unknown limiting factors. -/
-theorem sinkhornErrorBound_iterate_le {K : Matrix ι κ ℝ} (hK : ∀ i j, 0 < K i j)
+theorem sinkhornErrorBound_sinkhornStep_iterate_le {K : Matrix ι κ ℝ} (hK : ∀ i j, 0 < K i j)
     {a : ι → ℝ} (ha : ∀ i, 0 < a i) {b : κ → ℝ} (hb : ∀ j, 0 < b j)
     {u : ι → ℝ} (hu : ∀ i, 0 < u i) (n : ℕ) :
     sinkhornErrorBound K a b ((K.sinkhornStep a b)^[n] u) ≤
