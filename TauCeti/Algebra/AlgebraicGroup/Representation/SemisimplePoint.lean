@@ -278,6 +278,7 @@ theorem isSemisimplePoint_pointsMulEquiv_iff
         IsSemisimplePoint (AffineGroup.Product.pointsMulEquiv g).2 := by
   constructor
   · intro hg
+    rw [AffineGroup.Product.pointsMulEquiv_apply]
     exact ⟨hg.mapDomain Bialgebra.TensorProduct.includeLeft,
       hg.mapDomain Bialgebra.TensorProduct.includeRight⟩
   · rintro ⟨hleft, hright⟩

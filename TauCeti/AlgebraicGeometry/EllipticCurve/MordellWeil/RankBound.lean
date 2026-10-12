@@ -23,25 +23,27 @@ into the **Mordell–Weil rank bound**
 `2 ^ rank W(F) * #W(F)[2] ≤ #Sel₂(W/F)`. The bound becomes an explicit numerical bound on the
 rank only once the Selmer group has been computed; no such computation is made here.
 
-The finiteness argument is short. At a finite place `v` at which `a₂`, `a₄` and `a₆` are
-integral and the discriminant `disc f` of the cubic is a unit, the local descent image over the
-completion `F_v` consists of unramified classes (`range_μ_le_selmerGroupA_empty`, which is Step 6
-`range_μ_le_selmerGroupA` applied over `F_v`), so a Selmer class localizes to an unramified class
-there. By the semilocal comparison (`mem_selmerGroupA_of_forall_localRes`) a Selmer class is then
-`S`-unramified globally, for any set `S` of places outside which these conditions hold. The bad
-primes of `W` over `𝓞 F` form such a set, so the `2`-Selmer group lies in `A(S, 2)` for that
-finite `S`, and `A(S, 2)` is finite by the class number theorem and Dirichlet's unit theorem for
-the field factors of the étale algebra (`finite_selmerGroupA`).
+The finiteness argument is short. At a finite place `v` at which `a₂`, `a₄` and `a₆` are integral
+and the discriminant `disc f` of the cubic has valuation at most `1`, the local descent image over
+the completion `F_v` consists of unramified classes (`range_μ_le_selmerGroupA_empty`, which is Step
+6 in the form `range_μ_le_selmerGroupA_of_exp_neg_one_le` applied over `F_v`), so a Selmer class
+localizes to an unramified class there. By the semilocal comparison
+(`mem_selmerGroupA_of_forall_localRes`) a Selmer class is then `S`-unramified globally, for any set
+`S` of places outside which these conditions hold. The bad primes of `W` over `𝓞 F` form such a set,
+so the `2`-Selmer group lies in `A(S, 2)` for that finite `S`, and `A(S, 2)` is finite by the class
+number theorem and Dirichlet's unit theorem for the field factors of the étale algebra
+(`finite_selmerGroupA`).
 
 No condition on the residue characteristic enters: since `Δ = 16 · disc f`, a place above `2` at
-which `f` has separable reduction can be left out of `S`, and the resulting smaller group
-`A(S, 2)` is a sharper bound on the `2`-Selmer group.
+which `f` has separable reduction can be left out of `S`, as can a place at which `disc f`
+vanishes to order exactly `1`, and the resulting smaller group `A(S, 2)` is a sharper bound on the
+`2`-Selmer group.
 
 ## Main results
 
 * `WeierstrassCurve.Affine.selmerGroup₂_le_selmerGroupA`: over a number field, every
   `2`-Selmer class is unramified outside any set `S` of places outside which the coefficients are
-  integral and `disc f` is a unit, `Sel₂(W/F) ≤ A(S, 2)`.
+  integral and `disc f` has valuation at most `1`, `Sel₂(W/F) ≤ A(S, 2)`.
 * `WeierstrassCurve.Affine.finite_selmerGroup₂`: the `2`-Selmer group of an elliptic curve
   over a number field is finite.
 * `WeierstrassCurve.Affine.pow_rank_le_card_selmerGroup₂`: the rank bound
@@ -76,12 +78,14 @@ variable {F : Type*} [Field F] [NumberField F] (W : Affine F) [W.IsElliptic] [W.
 open scoped Classical in
 /-- **The 2-Selmer group is unramified outside `S`**: over a number field `F`, every class in the
 `2`-Selmer group lies in `A(S, 2)`, for any set `S` of finite places outside which `a₂`, `a₄` and
-`a₆` are integral and `disc f` is a unit. The bad primes of `W` form such a set, but `S` need not
-contain the places above `2`. Only the local conditions at the finite places are used, so this
-holds for every auxiliary family `Loc`. -/
+`a₆` are integral and `disc f` has valuation at most `1`, that is `exp (-1) ≤ v (disc f)`. The bad
+primes of `W` form such a set, but `S` need not contain the places above `2`, nor the places at
+which `disc f` vanishes to order exactly `1`. Only the local conditions at the finite places are
+used, so this holds for every auxiliary family `Loc`. -/
 theorem selmerGroup₂_le_selmerGroupA {S : Set (HeightOneSpectrum (𝓞 F))}
     (ha₂ : ∀ v ∉ S, v.valuation F W.a₂ ≤ 1) (ha₄ : ∀ v ∉ S, v.valuation F W.a₄ ≤ 1)
-    (ha₆ : ∀ v ∉ S, v.valuation F W.a₆ ≤ 1) (hd : ∀ v ∉ S, v.valuation F W.f.discr = 1) :
+    (ha₆ : ∀ v ∉ S, v.valuation F W.a₆ ≤ 1)
+    (hd : ∀ v ∉ S, WithZero.exp (-1) ≤ v.valuation F W.f.discr) :
     W.selmerGroup₂ (𝓞 F) Loc ≤ W.selmerGroupA (𝓞 F) S :=
   fun _ hm ↦ W.mem_selmerGroupA_of_forall_localRes fun v hv ↦
     W.range_μ_le_selmerGroupA_empty (ha₂ v hv) (ha₄ v hv) (ha₆ v hv) (hd v hv) <|
@@ -96,7 +100,8 @@ theorem finite_selmerGroup₂ : Finite (W.selmerGroup₂ (𝓞 F) Loc) :=
     (fun _ ↦ W.valuation_a₂_le_one_of_notMem_badPrimes _)
     (fun _ ↦ W.valuation_a₄_le_one_of_notMem_badPrimes _)
     (fun _ ↦ W.valuation_a₆_le_one_of_notMem_badPrimes _)
-    (fun _ ↦ W.valuation_discr_f_eq_one_of_notMem_badPrimes _)))
+    (fun _ hv ↦ (W.valuation_discr_f_eq_one_of_notMem_badPrimes _ hv).symm ▸
+      WithZero.exp_le_one_iff.mpr (by norm_num))))
 
 open scoped Classical in
 /-- **The Mordell–Weil rank bound from the 2-Selmer group**: for an elliptic curve over a number

@@ -23,6 +23,8 @@ at every point.
 
 * `TauCeti.AlgebraicGeometry.FiniteLocallyFreeSheaf.exteriorPower X n`: the `n`-th exterior power
   of finite locally free sheaves on `X`;
+* `TauCeti.AlgebraicGeometry.FiniteLocallyFreeSheaf.exteriorPowerFreeIso`: the exterior power of
+  a finite free sheaf as the free sheaf on subsets of its basis;
 * `TauCeti.AlgebraicGeometry.FiniteLocallyFreeSheaf.rank_exteriorPower_apply`: the rank of
   `⋀ⁿ E` at `x` is `(E.rank x).choose n`.
 
@@ -64,6 +66,15 @@ exterior power of its underlying `𝒪_X`-module. -/
 lemma exteriorPower_obj_obj (n : ℕ) (E : FiniteLocallyFreeSheaf X) :
     ((exteriorPower X n).obj E).obj = (SheafOfModules.exteriorPower X.sheaf n).obj E.obj :=
   (rfl)
+
+/-- The exterior power of a free sheaf, expressed in the finite locally free category. -/
+noncomputable def exteriorPowerFreeIso (X : Scheme.{u}) (I : Type u) [LinearOrder I] [Finite I]
+    (n : ℕ) :
+    (exteriorPower X n).obj (free X I) ≅ free X (Set.powersetCard I n) :=
+  ObjectProperty.isoMk _
+    (eqToIso (by simp only [exteriorPower_obj_obj, free_obj]; rfl) ≪≫
+      SheafOfModules.exteriorPowerFreeIso (R := X.sheaf) I n ≪≫
+      eqToIso (free_obj X (Set.powersetCard I n)).symm)
 
 /-- The `n`-th exterior power acts on morphisms of finite locally free sheaves through the `n`-th
 exterior power of the underlying morphisms of `𝒪_X`-modules. -/

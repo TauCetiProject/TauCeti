@@ -25,6 +25,10 @@ ramification dichotomy for a representative reduced at a place `P`:
 * if it has a pole of order `m` not divisible by `p`, every place above `P` is totally ramified
   and its different exponent is `(p - 1) * (m + 1)`.
 
+So when every place has a reduced representative, the places of `F'` ramified over `F` are
+exactly those over the reduced poles
+(`TauCeti.Place.one_lt_ramificationIdx_iff_restrict_mem_of_pow_sub_self_eq`).
+
 The regular case follows from the derivative `-1` of `X ^ p - X - u`.  In the pole case, a
 Bezout construction supplies a generating uniformizer `z` such that every nonidentity Galois
 automorphism satisfies `ord (σ z - z) = m + 1`.  Its powers form an integral basis at the totally
@@ -269,5 +273,24 @@ theorem
   apply differentExponent_eq_zero_and_ramificationIdx_eq_one_or_p_le_differentExponent
     k F p hgen hy
   exact (P'.restrict k F).exists_reduced_artinSchreier_representative p u
+
+/-- **The ramified places of an Artin--Schreier extension.** Let `S` be a set of places of `F`
+at each of which some `u - (w ^ p - w)` has a pole of order prime to `p`, while at every other
+place some `u - (w ^ p - w)` is regular. Then a place of `F'` is ramified over `F` exactly when
+it lies over `S`, and its ramification index is then `p`
+(`TauCeti.Place.ramificationIdx_eq_of_exists_reduced_artinSchreier_pole`). -/
+theorem one_lt_ramificationIdx_iff_restrict_mem_of_pow_sub_self_eq
+    (p : ℕ) [Fact p.Prime] [CharP F p] {y : F'} {u : F}
+    (hgen : F⟮y⟯ = ⊤) (hy : y ^ p - y = algebraMap F F' u) {S : Set (Place k F)}
+    (hpole : ∀ P ∈ S, ∃ w : F, P.ord (u - (w ^ p - w)) < 0 ∧
+      ¬ (p : ℤ) ∣ P.ord (u - (w ^ p - w)))
+    (hreg : ∀ P ∉ S, ∃ w : F, u - (w ^ p - w) ∈ P.integers) :
+    1 < ramificationIdx F P' ↔ P'.restrict k F ∈ S := by
+  by_cases hP : P'.restrict k F ∈ S
+  · simp only [hP, iff_true,
+      ramificationIdx_eq_of_exists_reduced_artinSchreier_pole k F p hgen hy (hpole _ hP)]
+    exact (Fact.out : p.Prime).one_lt
+  · simp [hP, ramificationIdx_eq_one_of_exists_sub_pow_sub_self_mem_integers k F p hgen hy
+      (hreg _ hP)]
 
 end TauCeti.Place

@@ -80,6 +80,8 @@ of two operators `A` on `E` and `B` on `F`: a *separation* `δ ≤ |μ - ν|` wi
   opposite quadratic-form bounds, give an ordered gap.
 * `Module.End.exists_pos_pointSpectraSeparated_iff_disjoint`: in finite dimension, two restricted
   point spectra are separated by a positive distance exactly when they are disjoint.
+* `LinearMap.IsSymmetric.eigenvalues_ne_eigenvalues_of_disjoint`: for symmetric `A` and `B` with
+  disjoint point spectra, eigenbasis eigenvalues of `A` and of `B` are distinct.
 
 ## References
 
@@ -621,3 +623,21 @@ theorem PointOrderedGap.of_re_inner_apply_self
 end FormBound
 
 end Module.End
+
+namespace LinearMap.IsSymmetric
+
+variable {𝕜 E F : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
+  [NormedAddCommGroup F] [InnerProductSpace 𝕜 F] [FiniteDimensional 𝕜 E] [FiniteDimensional 𝕜 F]
+  {A : E →ₗ[𝕜] E} {B : F →ₗ[𝕜] F} {n m : ℕ}
+
+/-- If the real point spectra of symmetric `A` and `B` are disjoint, then no eigenvalue of an
+ordered eigenbasis of `A` equals one of an ordered eigenbasis of `B`. -/
+theorem eigenvalues_ne_eigenvalues_of_disjoint (hA : A.IsSymmetric) (hB : B.IsSymmetric)
+    (hn : Module.finrank 𝕜 E = n) (hm : Module.finrank 𝕜 F = m)
+    (h : Disjoint (restrictedPointSpectrum A ⊤) (restrictedPointSpectrum B ⊤)) (i : Fin n)
+    (j : Fin m) : hA.eigenvalues hn i ≠ hB.eigenvalues hm j := by
+  rw [restrictedPointSpectrum_top, restrictedPointSpectrum_top] at h
+  exact fun hij ↦ Set.disjoint_left.mp h (hA.hasEigenvalue_eigenvalues hn i)
+    (hij ▸ hB.hasEigenvalue_eigenvalues hm j)
+
+end LinearMap.IsSymmetric

@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.Lie.Weights.Root.CorootSpan
 public import TauCeti.Algebra.Lie.Weights.Root.KostantStability
-public import TauCeti.LinearAlgebra.RootSystem.EquivInvariance
+public import TauCeti.LinearAlgebra.RootSystem.HomInvariance
 public import TauCeti.RingTheory.DividedPowers.Associative
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.F4.RootString
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.RootSystem
@@ -118,7 +118,8 @@ theorem f4KillingRootSystem_chainBotCoeff (α β : Fin 48) :
   calc
     _ = (F4.rationalRootSystem valid_F4).chainBotCoeff
         (f4RootIndex α) (f4RootIndex β) :=
-      chainBotCoeff_indexEquiv (F4.rationalRootSystemEquiv valid_F4)
+      (F4.rationalRootSystemEquiv valid_F4).toHom.chainBotCoeff_indexEquiv
+        (F4.rationalRootSystemEquiv valid_F4).bijective_weightMap.injective
         (f4RootIndex α) (f4RootIndex β)
     _ = (F4.simplyConnectedRootDatum valid_F4).chainBotCoeff
         (f4RootIndex α) (f4RootIndex β) :=
@@ -137,7 +138,8 @@ theorem f4KillingRootSystem_chainTopCoeff (α β : Fin 48) :
   calc
     _ = (F4.rationalRootSystem valid_F4).chainTopCoeff
         (f4RootIndex α) (f4RootIndex β) :=
-      chainTopCoeff_indexEquiv (F4.rationalRootSystemEquiv valid_F4)
+      (F4.rationalRootSystemEquiv valid_F4).toHom.chainTopCoeff_indexEquiv
+        (F4.rationalRootSystemEquiv valid_F4).bijective_weightMap.injective
         (f4RootIndex α) (f4RootIndex β)
     _ = (F4.simplyConnectedRootDatum valid_F4).chainTopCoeff
         (f4RootIndex α) (f4RootIndex β) :=
@@ -388,7 +390,7 @@ theorem f4KillingRootLabel_f4OppositeRootIndex (α : Fin 48) :
       congrArg (F4.rationalRootSystemEquiv valid_F4).indexEquiv hsource.symm
     _ = (rootSystem (F4.cartanSubalgebra valid_F4)).reflectionPerm
         (f4KillingRootLabel α) (f4KillingRootLabel α) :=
-      indexEquiv_reflectionPerm (F4.rationalRootSystemEquiv valid_F4).toHom _ _
+      (F4.rationalRootSystemEquiv valid_F4).toHom.indexEquiv_reflectionPerm _ _
     _ = _ := rootSystem_reflectionPerm_self_eq_neg _
 
 /-- Distinct pinned indices define distinct rational Killing roots. -/
