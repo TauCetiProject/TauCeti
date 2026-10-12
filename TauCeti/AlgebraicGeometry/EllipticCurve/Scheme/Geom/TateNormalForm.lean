@@ -31,15 +31,6 @@ The coefficient ring `ℤ[A, B][Δ⁻¹]` (`WeierstrassCurve.UniversalTate.Ring`
 schemes in an arbitrary universe the universal Tate normal form is read over its copy
 `ULift.{u} ℤ[A, B][Δ⁻¹]` (`WeierstrassCurve.UniversalTate.curveULift`).
 
-Over an affine base on which `E` is the projective model of an elliptic Weierstrass curve, the
-result combines the Tate normal form of a pointed projective model,
-`WeierstrassCurve.existsUnique_tateNormalForm`, with the classifying homomorphism
-`WeierstrassCurve.UniversalTate.lift` of an elliptic Tate normal form. Over an arbitrary base, the
-classifying pairs of the restrictions of `E` to the bases of its pointed Weierstrass charts are
-unique, so they are compatible and glue along the charts
-(`TauCeti.AlgebraicGeometry.EllipticCurveGeom.glueMorphisms`). That the glued morphism is cartesian
-is checked over the bases of the charts of an atlas.
-
 ## Main definitions
 
 * `WeierstrassCurve.UniversalTate.point`: the point `(0, 0)` of the projective model of the
@@ -77,11 +68,11 @@ namespace WeierstrassCurve.UniversalTate
 
 /-- The point `(0, 0)` of the universal Tate normal form. -/
 noncomputable def point : Spec (.of (ULift.{u} Ring)) ⟶ curveULift.{u}.projModel :=
-  curveULift.projModelAffinePoint (equation_tateNormalForm_zero _ _)
+  curveULift.projModelAffinePoint equation_curveULift_zero
 
 /-- The universal point is the point `[0 : 0 : 1]` of the projective model. -/
 theorem point_def :
-    point.{u} = curveULift.projModelAffinePoint (equation_tateNormalForm_zero _ _) :=
+    point.{u} = curveULift.projModelAffinePoint equation_curveULift_zero :=
   (rfl)
 
 /-- The universal point is a section of the projective model of the universal Tate normal form. -/
@@ -94,9 +85,19 @@ theorem point_projModelOver : point.{u} ≫ curveULift.projModelOver = 𝟙 _ :=
 private theorem point_conditions :
     (∀ s, point.{u} s ≠ curveULift.projModelZero s) ∧
       (∀ s, (point.{u} ≫ curveULift.projModelMulBy 2) s ≠ curveULift.projModelZero s) ∧
-        ∀ s, (point.{u} ≫ curveULift.projModelMulBy 3) s ≠ curveULift.projModelZero s :=
-  (exists_iso_tateNormalForm_iff (point_projModelOver)).mp ⟨_, _, Iso.refl _, by simp, by simp,
-    by simp [point_def]⟩
+        ∀ s, (point.{u} ≫ curveULift.projModelMulBy 3) s ≠ curveULift.projModelZero s := by
+  -- `curveULift` is opaque, so the identity of a Tate normal form is applied through its
+  -- characterization `curveULift_eq_tateNormalForm`
+  have key {W : WeierstrassCurve (ULift.{u} Ring)} [W.IsElliptic]
+      (hW : W = tateNormalForm curveULift.a₁ curveULift.a₃) (h : W.toAffine.Equation 0 0) :
+      (∀ s, W.projModelAffinePoint h s ≠ W.projModelZero s) ∧
+        (∀ s, (W.projModelAffinePoint h ≫ W.projModelMulBy 2) s ≠ W.projModelZero s) ∧
+          ∀ s, (W.projModelAffinePoint h ≫ W.projModelMulBy 3) s ≠ W.projModelZero s := by
+    subst hW
+    exact (exists_iso_tateNormalForm_iff (projModelAffinePoint_projModelOver _)).mp
+      ⟨_, _, Iso.refl _, by simp, by simp, by simp⟩
+  rw [point_def]
+  exact key curveULift_eq_tateNormalForm equation_curveULift_zero
 
 /-- The universal point `(0, 0)` misses the zero section at every point of the base. -/
 theorem point_ne_projModelZero (s) : point.{u} s ≠ curveULift.projModelZero s :=
@@ -153,9 +154,9 @@ private theorem isTate_eqToHom_projModelBaseChange (φ : ULift.{u} UniversalTate
   subst hW'
   refine ⟨by simpa using curveULift.isPullback_projModelBaseChange φ, by simp, ?_⟩
   have h' : (curveULift.map φ).projModelAffinePoint h =
-      (curveULift.map φ).projModelAffinePoint ((equation_tateNormalForm_zero _ _).map φ) :=
+      (curveULift.map φ).projModelAffinePoint (equation_curveULift_zero.map φ) :=
     (projModelAffinePoint_inj h).mpr ⟨(map_zero φ).symm, (map_zero φ).symm⟩
-  simp [h', point_def]
+  rw [h', point_def, eqToHom_refl, Category.id_comp, projModelAffinePoint_projModelBaseChange]
 
 -- The classifying homomorphism `ULift ℤ[A, B][Δ⁻¹] →+* R` of an elliptic Tate normal form.
 private noncomputable def liftULift {a b : R} (h : IsUnit (tateNormalForm a b).Δ) :
@@ -371,9 +372,9 @@ private theorem hom_ext_baseMap (A : PointedWeierstrassAtlas E.structureMap E.ze
     {Z : Scheme.{u}} {x y : S ⟶ Z} (h : ∀ i, (A.chart i).baseMap ≫ x = (A.chart i).baseMap ≫ y) :
     x = y :=
   A.hom_ext (𝟙 S) x y fun i ↦ by
-    rw [show pullback.fst (𝟙 S) (A.chart i).baseMap = pullback.snd _ _ ≫ (A.chart i).baseMap by
-      simpa using pullback.condition (f := 𝟙 S) (g := (A.chart i).baseMap), Category.assoc,
-      Category.assoc, h]
+    have hc : pullback.fst (𝟙 S) (A.chart i).baseMap = pullback.snd _ _ ≫ (A.chart i).baseMap := by
+      simpa using pullback.condition (f := 𝟙 S) (g := (A.chart i).baseMap)
+    rw [hc, Category.assoc, Category.assoc, h]
 
 variable (h₁ : ∀ s, P s ≠ E.zero s) (h₂ : ∀ s, (P ≫ (E.mulBy 2).left) s ≠ E.zero s)
   (h₃ : ∀ s, (P ≫ (E.mulBy 3).left) s ≠ E.zero s)
