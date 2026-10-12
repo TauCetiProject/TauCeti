@@ -135,7 +135,7 @@ lemma twistedHomology₀IsoCoinvariants_hom_naturality
 
 /-- The inverse comparison sends a coefficient modulo monodromy to its homology class. -/
 @[reassoc (attr := simp)]
-lemma coinvariantsMk_twistedHomology₀IsoCoinvariants_inv :
+lemma coinvariants_mk_comp_twistedHomology₀IsoCoinvariants_inv :
     ModuleCat.ofHom (Representation.Coinvariants.mk (monodromyRepresentation L x)) ≫
         (twistedHomology₀IsoCoinvariants L x).inv = ιTwistedHomology₀ L x := by
   rw [← ιTwistedHomology₀_isoCoinvariants_hom, Category.assoc, Iso.hom_inv_id, Category.comp_id]
