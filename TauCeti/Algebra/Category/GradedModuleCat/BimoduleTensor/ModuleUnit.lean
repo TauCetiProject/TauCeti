@@ -33,38 +33,37 @@ variable {k : Type uk} {A : Type uA} [CommRing k] [Ring A] [Algebra k A]
   (Γ : InternalGrading k A) [GradedAlgebra Γ.piece]
   (N : GradedModuleCat.{max v uA} Γ.piece)
 
-private abbrev unitAction : bimoduleUnit.{v} Γ →ₗ[k] N →ₗ[k] N :=
+private def unitAction : bimoduleUnit.{v} Γ →ₗ[k] N →ₗ[k] N :=
   (Algebra.lsmul k k N (A := A)).toLinearMap.comp (bimoduleUnitEquiv.{v} Γ).symm.toLinearMap
+
+private theorem unitAction_apply (x : bimoduleUnit.{v} Γ) (n : N) :
+    unitAction.{v} Γ N x n = (bimoduleUnitEquiv.{v} Γ).symm x • n := by
+  simp only [unitAction, LinearMap.comp_apply, LinearEquiv.coe_toLinearMap,
+    AlgHom.toLinearMap_apply, Algebra.lsmul_apply]
 
 private theorem unitAction_degree {p q : ℤ} {x : bimoduleUnit.{v} Γ} {n : N}
     (hx : x ∈ (bimoduleUnit.{v} Γ).grading.piece p) (hn : n ∈ N.grading.piece q) :
-    unitAction.{v} Γ N x n ∈ N.grading.piece (p + q) :=
-  SetLike.GradedSMul.smul_mem ((mem_bimoduleUnit_piece_iff.{v} Γ p x).1 hx) hn
+    unitAction.{v} Γ N x n ∈ N.grading.piece (p + q) := by
+  rw [unitAction_apply]
+  exact SetLike.GradedSMul.smul_mem ((mem_bimoduleUnit_piece_iff.{v} Γ p x).1 hx) hn
 
 /-- Evaluate a regular-bimodule element by its left action on a graded module. -/
 def bimoduleModuleTensorLeftUnitorHom :
     bimoduleModuleTensorObj Γ Γ (bimoduleUnit.{v} Γ) N ⟶ N :=
   bimoduleModuleTensorLift Γ Γ (unitAction.{v} Γ N)
-    (fun a x n ↦ by
-      simp only [unitAction, LinearMap.comp_apply, LinearEquiv.coe_toLinearMap,
-        AlgHom.toLinearMap_apply, Algebra.lsmul_apply]
-      rw [bimoduleUnitEquiv_symm_smul.{v} Γ]
-      simp only [unop_op, one_mul]
-      exact mul_smul _ a n)
-    (fun a x n ↦ by
-      simp only [unitAction, LinearMap.comp_apply, LinearEquiv.coe_toLinearMap,
-        AlgHom.toLinearMap_apply, Algebra.lsmul_apply]
-      rw [bimoduleUnitEquiv_symm_smul.{v} Γ]
-      simp only [unop_one, mul_one]
-      exact mul_smul a _ n)
+    (fun a x n ↦ by simp [unitAction_apply, bimoduleUnitEquiv_symm_smul, mul_smul])
+    (fun a x n ↦ by simp [unitAction_apply, bimoduleUnitEquiv_symm_smul, mul_smul])
     (unitAction_degree.{v} Γ N)
 
 @[simp]
 theorem bimoduleModuleTensorLeftUnitorHom_tmul (x : bimoduleUnit.{v} Γ) (n : N) :
     (bimoduleModuleTensorLeftUnitorHom.{v} Γ N).hom
       (bimoduleModuleTensorTmul Γ Γ (bimoduleUnit.{v} Γ) N x n) =
-      (bimoduleUnitEquiv.{v} Γ).symm x • n :=
-  bimoduleModuleTensorLift_tmul Γ Γ _ _ _ _ x n
+      (bimoduleUnitEquiv.{v} Γ).symm x • n := by
+  unfold bimoduleModuleTensorLeftUnitorHom
+  calc
+    _ = unitAction.{v} Γ N x n := bimoduleModuleTensorLift_tmul Γ Γ _ _ _ _ x n
+    _ = _ := unitAction_apply.{v} Γ N x n
 
 /-- Balancing transfers a module scalar to the regular bimodule's unit element. -/
 @[simp]

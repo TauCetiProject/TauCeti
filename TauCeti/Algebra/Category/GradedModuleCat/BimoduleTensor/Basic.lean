@@ -167,6 +167,12 @@ theorem bimoduleModuleTensorObj_grading_piece (p : ℤ) :
       ((M.grading.tensorProduct N.grading).piece p).map (bimoduleModuleTensorMkQ Γ Δ M N) :=
   BalancedTensorProduct.grading_piece M.grading N.grading p
 
+/-- Membership in a degree piece has a homogeneous ground-ring tensor representative. -/
+theorem mem_bimoduleModuleTensorObj_piece_iff {p : ℤ} {z : bimoduleModuleTensorObj Γ Δ M N} :
+    z ∈ (bimoduleModuleTensorObj Γ Δ M N).grading.piece p ↔
+      ∃ x ∈ (M.grading.tensorProduct N.grading).piece p, bimoduleModuleTensorMkQ Γ Δ M N x = z :=
+  BalancedTensorProduct.mem_grading_piece_iff M.grading N.grading
+
 /-- A linear map shifts internal degrees if it does so on homogeneous pure left-module tensors. -/
 theorem bimoduleModuleTensorObj_map_mem_of_tmul {Q : Type*} [AddCommGroup Q] [Module k Q]
     (H : InternalGrading k Q) (f : bimoduleModuleTensorObj Γ Δ M N →ₗ[k] Q) (s : ℤ)
@@ -239,13 +245,12 @@ variable {P : GradedModuleCat.{max vM vN} Γ.piece}
     f ((a ⊗ₜ[k] (1 : Bᵐᵒᵖ)) • m) n = a • f m n)
 
 private noncomputable def moduleTensorLiftLinear :
-    BalancedTensorProduct k B M N →ₗ[A] P where
+    bimoduleModuleTensorObj Γ Δ M N →ₗ[A] P where
   toAddHom := (BalancedTensorProduct.lift f hbalance).toAddHom
   map_smul' a z := BalancedTensorProduct.lift_smul_left A f hbalance hleft a z
 
-omit [GradedAlgebra Γ.piece] [GradedAlgebra Δ.piece] in
 private theorem moduleTensorLiftLinear_tmul (m : M) (n : N) :
-    moduleTensorLiftLinear Γ Δ f hbalance hleft (BalancedTensorProduct.tmul k B m n) =
+    moduleTensorLiftLinear Γ Δ f hbalance hleft (bimoduleModuleTensorTmul Γ Δ M N m n) =
       f m n :=
   BalancedTensorProduct.lift_tmul f hbalance m n
 
@@ -259,16 +264,14 @@ noncomputable def bimoduleModuleTensorLift : bimoduleModuleTensorObj Γ Δ M N �
       bimoduleModuleTensorObj_map_mem_of_tmul Γ Δ M N P.grading
         ((moduleTensorLiftLinear Γ Δ f hbalance hleft).restrictScalars k) 0
         (fun {p q} {m n} hm hn ↦ by
-          have hvalue : (moduleTensorLiftLinear Γ Δ f hbalance hleft).restrictScalars k
-              (bimoduleModuleTensorTmul Γ Δ M N m n) = f m n :=
-            moduleTensorLiftLinear_tmul Γ Δ f hbalance hleft m n
-          exact hvalue.symm ▸ (by simpa only [add_zero] using hdegree hm hn)) hz)
+          rw [LinearMap.restrictScalars_apply, moduleTensorLiftLinear_tmul, add_zero]
+          exact hdegree hm hn) hz)
 
 @[simp]
 theorem bimoduleModuleTensorLift_tmul (m : M) (n : N) :
     (bimoduleModuleTensorLift Γ Δ f hbalance hleft hdegree).hom
-      (bimoduleModuleTensorTmul Γ Δ M N m n) = f m n :=
-  moduleTensorLiftLinear_tmul Γ Δ f hbalance hleft m n
+      (bimoduleModuleTensorTmul Γ Δ M N m n) = f m n := by
+  simp only [bimoduleModuleTensorLift, hom_ofHom, moduleTensorLiftLinear_tmul]
 
 /-- A homogeneous balanced left-module lift is determined by its pure-tensor values. -/
 theorem bimoduleModuleTensorLift_unique (g : bimoduleModuleTensorObj Γ Δ M N ⟶ P)
