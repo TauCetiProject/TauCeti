@@ -48,9 +48,6 @@ must instead detect infinitesimal points.
 
 * J. C. Jantzen, *Representations of Algebraic Groups*, I.2.
 * T. A. Springer, *Linear Algebraic Groups*, §2.4.
-
-This supplies the smooth case of the geometric definition required by Layer 5, "Unipotent
-groups", of the ReductiveGroups roadmap.
 -/
 
 public section
