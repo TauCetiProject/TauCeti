@@ -278,7 +278,7 @@ theorem edist_gromovWassersteinSize_le_wassersteinEDist_map_kernelEccentricity [
 
 /-- GW convergence implies Wasserstein convergence of eccentricity distributions, for every
 exponent `1 ≤ p`, including `∞`. The carriers and measures may vary with the index. -/
-theorem tendsto_wassersteinEDist_map_kernelEccentricity_zero [SigmaFinite μ] {ι : Type*}
+theorem tendsto_wassersteinEDist_map_kernelEccentricity_zero {ι : Type*}
     {l : Filter ι} {X' : ι → Type*} [∀ i, MeasurableSpace (X' i)]
     {μ' : (i : ι) → Measure (X' i)} [∀ i, SigmaFinite (μ' i)] {ω' : (i : ι) → X' i × X' i → Z}
     (hp : 1 ≤ p) (hω' : ∀ i, AEStronglyMeasurable (ω' i) ((μ' i).prod (μ' i)))
