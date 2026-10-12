@@ -398,7 +398,8 @@ variable {ι A M σA σM : Type*} [DecidableEq ι] [Add ι] [IsRightCancelAdd ι
 
 /-- For compatible decompositions of a semiring and its module, the degree-`i + j` component of
 `a • x`, for `x` homogeneous of degree `j`, is the degree-`i` component of `a` acting on `x`.
-Only right cancellation of addition on the degrees is needed. -/
+Only right cancellation of addition on the degrees is needed. This is the module analogue of
+Mathlib's `DirectSum.coe_decompose_mul_add_of_right_mem`. -/
 theorem coe_decompose_smul_add_of_right_mem {a : A} {x : M} {i j : ι} (hx : x ∈ ℳ j) :
     (decompose ℳ (a • x) (i + j) : M) = (decompose 𝒜 a i : A) • x := by
   induction a using Decomposition.inductionOn 𝒜 with
