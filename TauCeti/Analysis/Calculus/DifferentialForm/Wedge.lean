@@ -124,6 +124,8 @@ variable {X E F₁ F₂ F₃ : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X]
     Differentiable ℝ (fun y ↦ wedgeWith (μ y) (φ y) (ψ y)) :=
   fun x ↦ (hμ x).wedgeWith (hφ x) (hψ x)
 
+-- Nested operator spaces require deeper synthesis while elaborating the statement.
+set_option maxSynthPendingDepth 3 in
 /-- Derivative witnesses for a pairing and two forms give the three-term derivative of their
 paired wedge within an arbitrary set. -/
 theorem _root_.HasFDerivWithinAt.wedgeWith
@@ -131,23 +133,10 @@ theorem _root_.HasFDerivWithinAt.wedgeWith
     {φ' : X →L[ℝ] E [⋀^Fin k]→L[ℝ] F₁} {ψ' : X →L[ℝ] E [⋀^Fin l]→L[ℝ] F₂}
     (hμ : HasFDerivWithinAt μ μ' s x) (hφ : HasFDerivWithinAt φ φ' s x)
     (hψ : HasFDerivWithinAt ψ ψ' s x) :
-    -- Cache canonical operator-space instances for the nested continuous-linear-map calculus.
-    letI : NormedAddCommGroup
-        ((E [⋀^Fin l]→L[ℝ] F₂) →L[ℝ] (E [⋀^Fin (k + l)]→L[ℝ] F₃)) := inferInstance
-    letI : NormedSpace ℝ
-        ((E [⋀^Fin l]→L[ℝ] F₂) →L[ℝ] (E [⋀^Fin (k + l)]→L[ℝ] F₃)) := inferInstance
-    letI : NormedAddCommGroup
-        ((E [⋀^Fin k]→L[ℝ] F₁) →L[ℝ] (E [⋀^Fin l]→L[ℝ] F₂) →L[ℝ]
-          E [⋀^Fin (k + l)]→L[ℝ] F₃) := inferInstance
-    letI : NormedSpace ℝ
-        ((E [⋀^Fin k]→L[ℝ] F₁) →L[ℝ] (E [⋀^Fin l]→L[ℝ] F₂) →L[ℝ]
-          E [⋀^Fin (k + l)]→L[ℝ] F₃) := inferInstance
-    letI : NormedAddCommGroup (F₁ →L[ℝ] F₂ →L[ℝ] F₃) := inferInstance
-    letI : NormedSpace ℝ (F₁ →L[ℝ] F₂ →L[ℝ] F₃) := inferInstance
-    let W := wedgeWithCLM (E := E) (F₁ := F₁) (F₂ := F₂) (F₃ := F₃) (k := k) (l := l)
     HasFDerivWithinAt (fun y ↦ wedgeWith (μ y) (φ y) (ψ y))
-      ((W (μ x) (φ x)).comp ψ' +
-        ((W (μ x)).comp φ' + (W.comp μ').flip (φ x)).flip (ψ x)) s x := by
+      ((wedgeWithCLM (μ x) (φ x)).comp ψ' +
+        ((wedgeWithCLM (μ x)).comp φ' +
+          ((wedgeWithCLM (E := E) (k := k) (l := l)).comp μ').flip (φ x)).flip (ψ x)) s x := by
   -- Cache canonical operator-space instances for the nested continuous-linear-map calculus.
   let : NormedAddCommGroup
       ((E [⋀^Fin l]→L[ℝ] F₂) →L[ℝ] (E [⋀^Fin (k + l)]→L[ℝ] F₃)) := inferInstance
@@ -167,29 +156,18 @@ theorem _root_.HasFDerivWithinAt.wedgeWith
     hφ).clm_apply (H := E [⋀^Fin (k + l)]→L[ℝ] F₃) hψ
   simpa only [W, Function.comp_apply, wedgeWithCLM_apply] using h
 
+-- Nested operator spaces require deeper synthesis while elaborating the statement.
+set_option maxSynthPendingDepth 3 in
 /-- Derivative witnesses for a pairing and two forms give the three-term derivative of their
 paired wedge at a point. -/
 theorem _root_.HasFDerivAt.wedgeWith
     {μ' : X →L[ℝ] F₁ →L[ℝ] F₂ →L[ℝ] F₃}
     {φ' : X →L[ℝ] E [⋀^Fin k]→L[ℝ] F₁} {ψ' : X →L[ℝ] E [⋀^Fin l]→L[ℝ] F₂}
     (hμ : HasFDerivAt μ μ' x) (hφ : HasFDerivAt φ φ' x) (hψ : HasFDerivAt ψ ψ' x) :
-    -- Cache canonical operator-space instances for the nested continuous-linear-map calculus.
-    letI : NormedAddCommGroup
-        ((E [⋀^Fin l]→L[ℝ] F₂) →L[ℝ] (E [⋀^Fin (k + l)]→L[ℝ] F₃)) := inferInstance
-    letI : NormedSpace ℝ
-        ((E [⋀^Fin l]→L[ℝ] F₂) →L[ℝ] (E [⋀^Fin (k + l)]→L[ℝ] F₃)) := inferInstance
-    letI : NormedAddCommGroup
-        ((E [⋀^Fin k]→L[ℝ] F₁) →L[ℝ] (E [⋀^Fin l]→L[ℝ] F₂) →L[ℝ]
-          E [⋀^Fin (k + l)]→L[ℝ] F₃) := inferInstance
-    letI : NormedSpace ℝ
-        ((E [⋀^Fin k]→L[ℝ] F₁) →L[ℝ] (E [⋀^Fin l]→L[ℝ] F₂) →L[ℝ]
-          E [⋀^Fin (k + l)]→L[ℝ] F₃) := inferInstance
-    letI : NormedAddCommGroup (F₁ →L[ℝ] F₂ →L[ℝ] F₃) := inferInstance
-    letI : NormedSpace ℝ (F₁ →L[ℝ] F₂ →L[ℝ] F₃) := inferInstance
-    let W := wedgeWithCLM (E := E) (F₁ := F₁) (F₂ := F₂) (F₃ := F₃) (k := k) (l := l)
     HasFDerivAt (fun y ↦ wedgeWith (μ y) (φ y) (ψ y))
-      ((W (μ x) (φ x)).comp ψ' +
-        ((W (μ x)).comp φ' + (W.comp μ').flip (φ x)).flip (ψ x)) x := by
+      ((wedgeWithCLM (μ x) (φ x)).comp ψ' +
+        ((wedgeWithCLM (μ x)).comp φ' +
+          ((wedgeWithCLM (E := E) (k := k) (l := l)).comp μ').flip (φ x)).flip (ψ x)) x := by
   -- Cache canonical operator-space instances for the nested continuous-linear-map calculus.
   let : NormedAddCommGroup
       ((E [⋀^Fin l]→L[ℝ] F₂) →L[ℝ] (E [⋀^Fin (k + l)]→L[ℝ] F₃)) := inferInstance
