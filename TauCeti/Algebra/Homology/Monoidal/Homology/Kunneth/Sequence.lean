@@ -681,8 +681,10 @@ theorem homologyToTor_naturality (m : ℕ) :
     homologyTorToHomologyQuotient_naturality, homologyToTor_comp_homologyTorToHomologyQuotient,
     homologyToTor_comp_homologyTorToHomologyQuotient_assoc, ← homologyMap_comp,
     tensorHom_id_g_comp_tensorHom, homologyMap_comp]
-  exact (eqToHom_comp_homologyMap_tensorHom_assoc φ ψ L.cyclesComplexShortComplex_X₂
-    L'.cyclesComplexShortComplex_X₂ _ (cyclesComplexShortComplexMap_τ₂ ψ) _ _).symm
+  -- the `eqToHom`s identify the middle term `L.cyclesComplexShortComplex.X₂` with `L`; they are
+  -- not identities syntactically, since the body of `cyclesComplexShortComplex` is not exposed
+  rw [eqToHom_comp_homologyMap_tensorHom_assoc φ ψ L.cyclesComplexShortComplex_X₂
+    L'.cyclesComplexShortComplex_X₂ _ (cyclesComplexShortComplexMap_τ₂ ψ)]
 
 end Naturality
 
