@@ -13,16 +13,18 @@ public import Mathlib.Combinatorics.SimpleGraph.Basic
 
 A simple graph determines the Coxeter matrix with diagonal entries `1`,
 adjacent entries `3` and distinct nonadjacent entries `2`. A family of group
-elements satisfying the graph's commuting and three-generator braid relations
+elements satisfying the graph's commuting and length-three braid relations
 extends to its Artin group by the existing Artin-Tits universal property.
 
-This is the presentation bridge for the arbitrary finite-graph zigzag action.
+The rank-two entries specify the two types of alternating-word relators.
 -/
 
 public section
 noncomputable section
 
 namespace SimpleGraph
+
+open TauCeti
 
 universe u
 variable {V : Type u} (G : SimpleGraph V)
@@ -35,9 +37,7 @@ def coxeterMatrix : CoxeterMatrix V := by
       isSymm := by
         unfold Matrix.IsSymm
         ext i j
-        -- Transposition swaps the two vertex indices.
-        change (if j = i then (1 : ℕ) else if G.Adj j i then 3 else 2) =
-          (if i = j then 1 else if G.Adj i j then 3 else 2)
+        dsimp only [Matrix.transpose]
         by_cases hij : i = j
         · subst j
           simp
@@ -64,15 +64,11 @@ theorem coxeterMatrix_apply_of_not_adj {i j : V} (hij : i ≠ j) (h : ¬ G.Adj i
   classical
   simp [coxeterMatrix, hij, h]
 
-end SimpleGraph
-
-namespace TauCeti
-
-universe u v
-variable {V : Type u} (G : SimpleGraph V) {H : Type v} [Group H]
+universe v
+variable {H : Type v} [Group H]
 
 /-- A graph-braid family of group elements extends to the graph's Artin group. -/
-def ArtinGroup.liftGraph (f : V → H)
+def artinGroupLift (f : V → H)
     (commute : ∀ {i j}, i ≠ j → ¬ G.Adj i j → f i * f j = f j * f i)
     (braid : ∀ {i j}, G.Adj i j → f i * f j * f i = f j * f i * f j) :
     ArtinGroup G.coxeterMatrix →* H :=
@@ -92,8 +88,8 @@ def ArtinGroup.liftGraph (f : V → H)
 
 /-- The graph-presentation extension sends each standard generator to its supplied element. -/
 @[simp]
-theorem ArtinGroup.liftGraph_gen (f : V → H) (commute braid) (i : V) :
-    ArtinGroup.liftGraph G f commute braid (ArtinGroup.gen G.coxeterMatrix i) = f i := by
-  simp only [ArtinGroup.liftGraph, ArtinGroup.lift_gen]
+theorem artinGroupLift_gen (f : V → H) (commute braid) (i : V) :
+    artinGroupLift G f commute braid (ArtinGroup.gen G.coxeterMatrix i) = f i := by
+  simp only [artinGroupLift, ArtinGroup.lift_gen]
 
-end TauCeti
+end SimpleGraph
