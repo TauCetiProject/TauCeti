@@ -28,9 +28,10 @@ field, the tangent Lie algebra of the base-changed group is Mathlib's
 trace-free, so its Killing form is nondegenerate; this descends to the base field. Since `SOₙ` is
 geometrically connected, Weyl's complete reducibility theorem for comodules applies.
 
-The low dimensions need no Lie theory and are handled separately: `SO₀` and `SO₁` are the special
-linear groups `SL₀` and `SL₁`, and `SO₂` is a torus. The Lie-algebraic step genuinely needs
-`n ≥ 3`, since `so₂` is abelian in characteristic zero.
+The irreducibility of the standard module used here needs `n ≥ 3`, and dimension two is
+genuinely different: `so₂` is a nonzero abelian Lie algebra in characteristic zero, so its Killing
+form vanishes. The low dimensions are covered by existing results instead: `SO₀` and `SO₁` are the
+special linear groups `SL₀` and `SL₁`, and `SO₂` is a torus.
 
 This is a concrete case of, but does not prove, the general equivalence between reductivity and
 linear reductivity in characteristic zero.
@@ -97,7 +98,7 @@ theorem linearlyReductiveCommHopfAlgProperty_coordinateHopfAlgebra (n : ℕ) :
   | m + 3 =>
     have := isKilling_tangent_of_three_le k (m + 3) (by omega)
     rw [finiteTypeCoordinateHopfAlgebra_obj]
-    exact linearlyReductiveCommHopfAlgProperty.of_finiteType_of_isKilling
+    exact linearlyReductiveCommHopfAlgProperty.of_finiteType_of_connected_of_isKilling
       (by rw [← finiteTypeCoordinateHopfAlgebra_obj]
           exact (finiteTypeCoordinateHopfAlgebra k (m + 3)).property)
       (geometricallyConnectedCommHopfAlgProperty_coordinateHopfAlgebra k (m + 3))

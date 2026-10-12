@@ -34,8 +34,9 @@ The structure follows the symplectic case in `TauCeti/Algebra/Lie/Symplectic/Kil
 
 * `TauCeti.isIrreducible_so_standard`: the standard module of `so l K` is irreducible when `l`
   has at least three elements.
-* `TauCeti.hasTrivialRadical_so`: `so l K` has trivial radical in characteristic zero, given
-  triangularizability of its standard module; in particular its Killing form is nondegenerate.
+* `TauCeti.hasTrivialRadical_so`: `so l K` has trivial radical in characteristic zero when `l`
+  has at least three elements, given triangularizability of its standard module; in particular its
+  Killing form is nondegenerate.
 
 ## References
 
