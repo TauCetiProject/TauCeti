@@ -100,9 +100,7 @@ public theorem coe_inv_frickeGL :
   simp [Matrix.det_fin_two_of, NeZero.ne (N : K)]
 
 /-- `W² = (-N) • 1` as matrices. This is the entrywise identity behind the centrality of `W²`
-— its consumer is `frickeGL_sq_mul_comm` of
-`TauCeti/NumberTheory/ModularForms/Fricke/Conjugation.lean` — and, later, behind the scalar the
-normalized Fricke operator divides out. It is not itself a statement that `W²` is central.
+and the scalar the normalized Fricke operator divides out.
 
 Deliberately not `@[simp]`: the left-hand side `↑(W ^ 2)` is not in simp-normal form, since
 `Units.val_pow_eq_pow_val` and the in-file simp lemma `coe_frickeGL` already rewrite its head to
