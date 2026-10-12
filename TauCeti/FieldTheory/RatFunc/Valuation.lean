@@ -19,9 +19,10 @@ for Laurent-series pole obstructions over rational function fields.
 public section
 
 namespace TauCeti
+namespace RatFunc
 
 /-- The rational-function variable is not an `n`-th power when `n > 1`. -/
-theorem ratFunc_pow_ne_X {K : Type*} [Field K] {n : ℕ} (hn : 1 < n)
+theorem pow_ne_X {K : Type*} [Field K] {n : ℕ} (hn : 1 < n)
     (b : RatFunc K) : b ^ n ≠ RatFunc.X := by
   classical
   intro hb
@@ -33,4 +34,5 @@ theorem ratFunc_pow_ne_X {K : Type*} [Field K] {n : ℕ} (hn : 1 < n)
   have := Int.le_of_dvd (by omega : (0 : ℤ) < 1) (dvd_neg.mp hd)
   omega
 
+end RatFunc
 end TauCeti

@@ -36,7 +36,7 @@ variable {k : Type*} [Ring k] [IsDomain k] {n : ℕ} {a : k}
 integer order. -/
 theorem orderTop_pow_of_ne_zero (n : ℕ) {w : k⸨X⸩} (hw : w ≠ 0) :
     (w ^ n).orderTop = ((n : ℤ) * w.order : ℤ) := by
-  rw [hahnSeries_orderTop_pow, ← order_eq_orderTop_of_ne_zero hw,
+  rw [HahnSeries.orderTop_pow, ← order_eq_orderTop_of_ne_zero hw,
     ← WithTop.coe_nsmul, nsmul_eq_mul]
 
 /-- Raising a Laurent series of negative order to a power greater than one strictly lowers
@@ -62,7 +62,7 @@ theorem leadingCoeff_pow_sub_self_of_order_neg
     (hn : 1 < n) {w : k⸨X⸩} (hw : w.order < 0) :
     (w ^ n - w).leadingCoeff = w.leadingCoeff ^ n := by
   rw [leadingCoeff_sub (orderTop_pow_lt_orderTop_of_order_neg hn hw),
-    hahnSeries_leadingCoeff_pow]
+    HahnSeries.leadingCoeff_pow]
 
 /-- If the coefficient of `a T⁻ⁿ` is not an `n`-th power, subtracting `wⁿ - w` never
 cancels its pole. A pole of `w` of order greater than one only makes the pole worse. -/
@@ -117,7 +117,7 @@ theorem orderTop_single_sub_pow_sub_self
 
 /-- Every translate of `a T⁻ⁿ` by `wⁿ - w` is nonzero, has a pole of order at least `n`,
 and its order is divisible by `n`, if `a` is not an `n`-th power. -/
-theorem single_sub_pow_sub_self_pole
+theorem single_sub_pow_sub_self_ne_zero_and_order_le_and_dvd
     (hn : 1 < n) (ha : ∀ b : k, b ^ n ≠ a) (w : k⸨X⸩) :
     single (-(n : ℤ)) a - (w ^ n - w) ≠ 0 ∧
       (single (-(n : ℤ)) a - (w ^ n - w)).order ≤ -(n : ℤ) ∧
@@ -142,10 +142,10 @@ theorem not_exists_reduced_representative_single_sub_pow_sub_self
         ((single (-(n : ℤ)) a - (w ^ n - w)).order < 0 ∧
           ¬ (n : ℤ) ∣ (single (-(n : ℤ)) a - (w ^ n - w)).order) := by
   rintro ⟨w, hreg | hpole⟩
-  · obtain ⟨hne, hle, -⟩ := single_sub_pow_sub_self_pole hn ha w
+  · obtain ⟨hne, hle, -⟩ := single_sub_pow_sub_self_ne_zero_and_order_le_and_dvd hn ha w
     rw [← order_eq_orderTop_of_ne_zero hne, WithTop.coe_nonneg] at hreg
     have hnZ : (0 : ℤ) < n := by omega
     omega
-  · exact hpole.2 (single_sub_pow_sub_self_pole hn ha w).2.2
+  · exact hpole.2 (single_sub_pow_sub_self_ne_zero_and_order_le_and_dvd hn ha w).2.2
 
 end TauCeti
