@@ -81,6 +81,8 @@ algorithm is not certified here.
   companions, one for each row of the table.
 * `TauCeti.WorkedExamples.tateLocalIndex_curve11a2_11` and its seven companions, one for each
   row of the second table.
+* `TauCeti.WorkedExamples.not_hasTateTangentRoot_curve24a5_3`: the reduction of 24.a5 at `3` is
+  nonsplit, although its local index at `I₁` does not depend on this.
 
 ## References
 
@@ -312,14 +314,21 @@ theorem tateLocalIndex_curve11a2_11 :
   tateLocalIndex_I_add_one_of_hasTateTangentRoot
     (hasTateTangentRoot_def.2 ⟨5, ⟨1, by simp [variableChange_def]; ring⟩⟩) 4
 
-open Polynomial in
-/-- **The local index of 24.a5 at `3` is `1`**: the reduction is nonsplit multiplicative of the
-odd type `I₁`, the tangent quadratic `T² − 5` having no root modulo `3`. -/
-theorem tateLocalIndex_curve24a5_3 [IsDomain R] (h : Irreducible (3 : R))
-    (hR : ∀ x : R, ∃ n : ℤ, (3 : R) ∣ x - n) :
+/-- **The local index of 24.a5 at `3` is `1`**: the reduction is of type `I₁`, at which the local
+index is `1` whether or not the tangent quadratic splits. -/
+theorem tateLocalIndex_curve24a5_3 :
     (((⟨1, 2, 0, 0⟩ : VariableChange ℤ) • curve24a5).map (Int.castRingHom R)).tateLocalIndex 3
-      (.I 1) = 1 := by
-  refine (tateLocalIndex_I_add_one_of_not_hasTateTangentRoot (fun ht ↦ ?_) 0).trans rfl
+      (.I 1) = 1 :=
+  tateLocalIndex_I_one
+
+open Polynomial in
+/-- **The reduction of 24.a5 at `3` is nonsplit**: the tangent quadratic `T² − 5` has no root
+modulo `3`. -/
+theorem not_hasTateTangentRoot_curve24a5_3 [IsDomain R] (h : Irreducible (3 : R))
+    (hR : ∀ x : R, ∃ n : ℤ, (3 : R) ∣ x - n) :
+    ¬ (((⟨1, 2, 0, 0⟩ : VariableChange ℤ) • curve24a5).map
+      (Int.castRingHom R)).HasTateTangentRoot 3 := by
+  intro ht
   obtain ⟨t, ht⟩ := hasTateTangentRoot_def.1 ht
   obtain ⟨x, hx⟩ := (Nat.Prime.exists_dvd_eval_map_iff (p := 3) (by norm_num) h.ne_zero h.not_isUnit
     hR (X ^ 2 - C 5)).1 ⟨t, by simpa [variableChange_def] using ht⟩

@@ -162,13 +162,20 @@ theorem mem_tateCubicRoots {t : R ⧸ Ideal.span {ϖ}} :
 theorem tateLocalIndex_I_zero : W.tateLocalIndex ϖ (.I 0) = 1 :=
   (rfl)
 
+@[simp]
 theorem tateLocalIndex_I_add_one_of_hasTateTangentRoot (h : W.HasTateTangentRoot ϖ) (n : ℕ) :
     W.tateLocalIndex ϖ (.I (n + 1)) = n + 1 := by
   simp [tateLocalIndex, h]
 
+@[simp]
 theorem tateLocalIndex_I_add_one_of_not_hasTateTangentRoot (h : ¬ W.HasTateTangentRoot ϖ)
     (n : ℕ) : W.tateLocalIndex ϖ (.I (n + 1)) = Nat.gcd 2 (n + 1) := by
   simp [tateLocalIndex, h]
+
+/-- At `I₁` the local index is `1`, whether or not the tangent quadratic splits. -/
+@[simp]
+theorem tateLocalIndex_I_one : W.tateLocalIndex ϖ (.I 1) = 1 := by
+  simp [tateLocalIndex]
 
 @[simp]
 theorem tateLocalIndex_II : W.tateLocalIndex ϖ .II = 1 :=
@@ -178,10 +185,12 @@ theorem tateLocalIndex_II : W.tateLocalIndex ϖ .II = 1 :=
 theorem tateLocalIndex_III : W.tateLocalIndex ϖ .III = 2 :=
   (rfl)
 
+@[simp]
 theorem tateLocalIndex_IV_of_hasTateYRoot (h : W.HasTateYRoot ϖ 1) :
     W.tateLocalIndex ϖ .IV = 3 := by
   simp [tateLocalIndex, h]
 
+@[simp]
 theorem tateLocalIndex_IV_of_not_hasTateYRoot (h : ¬ W.HasTateYRoot ϖ 1) :
     W.tateLocalIndex ϖ .IV = 1 := by
   simp [tateLocalIndex, h]
@@ -206,10 +215,12 @@ theorem tateLocalIndex_IStar_even (k : ℕ) [Decidable (W.HasTateXRoot ϖ (k + 2
   have heq (j : ℕ) : 2 * k + 1 = 2 * j + 1 ↔ j = k := by omega
   simp only [tateLocalIndex, hne, false_and, exists_false, false_or, heq, exists_eq_left]
 
+@[simp]
 theorem tateLocalIndex_IVStar_of_hasTateYRoot (h : W.HasTateYRoot ϖ 2) :
     W.tateLocalIndex ϖ .IVStar = 3 := by
   simp [tateLocalIndex, h]
 
+@[simp]
 theorem tateLocalIndex_IVStar_of_not_hasTateYRoot (h : ¬ W.HasTateYRoot ϖ 2) :
     W.tateLocalIndex ϖ .IVStar = 1 := by
   simp [tateLocalIndex, h]
@@ -277,9 +288,10 @@ theorem mk_mem_tateCubicRoots_iff (hϖ : ϖ ≠ 0) {b₂ b₄ b₆ : R} (h₂ : 
     Ideal.Quotient.mk _ t₀ ∈ W.tateCubicRoots ϖ ↔ ϖ ∣ t₀ ^ 3 + b₂ * t₀ ^ 2 + b₄ * t₀ + b₆ := by
   have key (s : R) : ϖ ^ 4 ∣ (ϖ * s) ^ 3 + W.a₂ * (ϖ * s) ^ 2 + W.a₄ * (ϖ * s) + W.a₆ ↔
       ϖ ∣ s ^ 3 + b₂ * s ^ 2 + b₄ * s + b₆ := by
-    rw [h₂, h₄, h₆, show (ϖ * s) ^ 3 + ϖ * b₂ * (ϖ * s) ^ 2 + ϖ ^ 2 * b₄ * (ϖ * s) + ϖ ^ 3 * b₆ =
-      ϖ ^ 3 * (s ^ 3 + b₂ * s ^ 2 + b₄ * s + b₆) by ring, pow_succ ϖ 3,
-      mul_dvd_mul_iff_left (pow_ne_zero _ hϖ)]
+    have hexp : (ϖ * s) ^ 3 + ϖ * b₂ * (ϖ * s) ^ 2 + ϖ ^ 2 * b₄ * (ϖ * s) + ϖ ^ 3 * b₆ =
+        ϖ ^ 3 * (s ^ 3 + b₂ * s ^ 2 + b₄ * s + b₆) := by
+      ring
+    rw [h₂, h₄, h₆, hexp, pow_succ ϖ 3, mul_dvd_mul_iff_left (pow_ne_zero _ hϖ)]
   refine ⟨fun ⟨s, hs, h⟩ ↦ ?_, fun h ↦ ⟨t₀, rfl, (key t₀).2 h⟩⟩
   -- the test does not depend on the representative
   obtain ⟨c, hc⟩ := Ideal.mem_span_singleton.1 (Ideal.Quotient.eq.1 hs)
@@ -387,9 +399,11 @@ its reduction splits over the residue field. -/
 theorem hasTateTangentRoot_iff_splits (hϖ : Irreducible ϖ) :
     W.HasTateTangentRoot ϖ ↔
       (X ^ 2 + C (residue R W.a₁) * X - C (residue R W.a₂)).Splits := by
-  rw [show X ^ 2 + C (residue R W.a₁) * X - C (residue R W.a₂) =
-      C 1 * X ^ 2 + C (residue R W.a₁) * X + C (-residue R W.a₂) by simp [sub_eq_add_neg],
-    splits_quadratic_iff_exists_root one_ne_zero]
+  -- `splits_quadratic_iff_exists_root` is stated for `C a * X ^ 2 + C b * X + C c`
+  have hquad : X ^ 2 + C (residue R W.a₁) * X - C (residue R W.a₂) =
+      C 1 * X ^ 2 + C (residue R W.a₁) * X + C (-residue R W.a₂) := by
+    simp [sub_eq_add_neg]
+  rw [hquad, splits_quadratic_iff_exists_root one_ne_zero]
   constructor
   · rintro ⟨t, ht⟩
     refine ⟨residue R t, ?_⟩
