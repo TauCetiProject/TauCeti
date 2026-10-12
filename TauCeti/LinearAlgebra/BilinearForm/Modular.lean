@@ -95,6 +95,11 @@ uniformizer `π`, a `π ^ i`-modular lattice is one of scale `π ^ i` whose dual
 def IsModular (B : BilinForm R M) (a : R) : Prop :=
   ∃ C : BilinForm R M, a • C = B ∧ C.IsPerfPair
 
+/-- Modularity is equivalent to a scaled perfect-pairing witness. This characteristic lemma
+allows importing modules to construct and extract the witness without unfolding the definition. -/
+theorem isModular_def : B.IsModular a ↔ ∃ C : BilinForm R M, a • C = B ∧ C.IsPerfPair :=
+  (rfl)
+
 /-- A form is `1`-modular exactly when it is a perfect pairing. -/
 @[simp]
 theorem isModular_one_iff : B.IsModular 1 ↔ B.IsPerfPair :=
