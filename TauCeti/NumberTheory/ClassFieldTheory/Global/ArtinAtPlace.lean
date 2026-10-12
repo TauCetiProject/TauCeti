@@ -186,26 +186,25 @@ a finite place of `L` above `v`, the local Artin symbols at `v` are exactly the 
 theorem range_localArtinAt :
     (localArtinAt K L v).range =
       (MulAction.stabilizer Gal(L/K) w.asIdeal).map Abelianization.of := by
-  ext y
-  constructor
-  · rintro ⟨x, rfl⟩
-    rw [localArtinAt_eq_map_normResidue v w]
-    induction normResidue (v.adicCompletion K) (w.adicCompletion L)
-      (x : (v.adicCompletion K)ˣ ⧸ normGroup (v.adicCompletion K) (w.adicCompletion L))
-      using QuotientGroup.induction_on with
-    -- `↑ρ` is `Abelianization.of ρ` by definition, on which `Abelianization.map` computes by
-    -- `rfl` (`Abelianization.map_of`).
-    | H ρ => exact ⟨_, ((HeightOneSpectrum.decompositionEquiv v w).symm ρ).2, (rfl)⟩
-  · rintro ⟨s, hs, rfl⟩
-    -- `s` acts on `L_w` as some `ρ ∈ Gal(L_w/K_v)`, which is a norm residue symbol.
-    set ρ := HeightOneSpectrum.decompositionEquiv v w ⟨s, hs⟩
-    obtain ⟨q, hq⟩ := (normResidue (v.adicCompletion K) (w.adicCompletion L)).surjective
-      (Abelianization.of ρ)
-    obtain ⟨x, rfl⟩ := QuotientGroup.mk_surjective q
-    refine ⟨x, ?_⟩
-    rw [localArtinAt_eq_map_normResidue v w, hq, Abelianization.map_of]
-    simp only [ρ, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom, MulEquiv.symm_apply_apply,
-      Subgroup.coe_subtype]
+  set φ := (MulAction.stabilizer Gal(L/K) w.asIdeal).subtype.comp
+    (HeightOneSpectrum.decompositionEquiv v w).symm.toMonoidHom
+  -- The local Artin symbol factors as `K_vˣ ↠ K_vˣ ⧸ N(L_wˣ) ≃ Gal(L_w/K_v)^ab → Gal(L/K)^ab`.
+  have h : localArtinAt K L v = ((Abelianization.map φ).comp
+      (normResidue (v.adicCompletion K) (w.adicCompletion L)).toMonoidHom).comp
+        (QuotientGroup.mk' _) :=
+    MonoidHom.ext (localArtinAt_eq_map_normResidue v w)
+  -- `Abelianization G` is the quotient of `G` by its commutator subgroup.
+  have hof : Function.Surjective
+      (Abelianization.of (G := Gal(w.adicCompletion L/v.adicCompletion K))) :=
+    QuotientGroup.mk_surjective
+  rw [h, MonoidHom.range_comp, MonoidHom.range_eq_top.2 (QuotientGroup.mk'_surjective _),
+    Subgroup.map_top, MonoidHom.range_comp, MonoidHom.range_eq_top.2 (normResidue _ _).surjective,
+    Subgroup.map_top, ← Subgroup.map_top, ← MonoidHom.range_eq_top.2 hof, ← MonoidHom.range_comp,
+    show (Abelianization.map φ).comp Abelianization.of = Abelianization.of.comp φ from
+      MonoidHom.ext (Abelianization.map_of φ),
+    MonoidHom.range_comp, MonoidHom.range_comp,
+    MonoidHom.range_eq_top.2 (HeightOneSpectrum.decompositionEquiv v w).symm.surjective,
+    Subgroup.map_top, Subgroup.range_subtype]
 
 /-- **For an abelian extension, the kernel of the local Artin symbol is the local norm group.**
 If `Gal(L/K)` is commutative and `w` is a finite place of `L` above `v`, then `x ∈ K_vˣ` has
