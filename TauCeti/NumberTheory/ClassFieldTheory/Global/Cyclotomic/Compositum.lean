@@ -46,12 +46,12 @@ open IsDedekindDomain _root_.NumberField _root_.IntermediateField
 
 variable {ι : Type*} [Finite ι] (p : ι → ℕ) [∀ i, Fact (p i).Prime]
   {K : Type} [Field K] [NumberField K] (E : IntermediateField K (SeparableClosure K))
-  [Normal K E]
 
 /-- The local Artin symbols of a nonzero global element satisfy reciprocity on every normal
 subextension of a finite compositum of prime-power cyclotomic towers, after applying any
 additive character of its Galois group. -/
 theorem finsum_add_sum_apply_restrictNormalHom_eq_zero_of_le_iSup_adjoin
+    [Normal K E]
     (τ : ∀ v : HeightOneSpectrum (𝓞 K),
       SeparableClosure K →ₐ[K] SeparableClosure (v.adicCompletion K))
     (τ' : ∀ w : InfinitePlace K, SeparableClosure K →ₐ[K] SeparableClosure w.Completion)
