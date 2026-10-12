@@ -43,11 +43,11 @@ variable (σ : P.SidePairing)
 
 /-- A transformation carrying a point of the polygon to a nonendpoint point of side `i` is
 one of the two adjacent tile transformations: the identity or the map of the paired side. -/
-theorem eq_one_or_eq_map_pair_of_smul_mem_side
-    (hmap : ∀ i, σ.map i ∈ Γ)
+theorem eq_one_or_eq_map_pair_of_smul_mem_side {i : Fin n}
+    (hmap : σ.map (σ.pair i) ∈ Γ)
     (hdisj : ∀ γ : Γ, γ ≠ 1 →
       Disjoint ((γ : PSL(2, ℝ)) • interior P.carrier) (interior P.carrier))
-    {g : PSL(2, ℝ)} (hg : g ∈ Γ) {i : Fin n} {z w : ℍ} (hz : z ∈ P.carrier)
+    {g : PSL(2, ℝ)} (hg : g ∈ Γ) {z w : ℍ} (hz : z ∈ P.carrier)
     (hw : w ∈ P.side i) (hwp : P.vertex i ≠ .inl w)
     (hwq : P.vertex (i + 1) ≠ .inl w) (hgz : g • z = w) :
     g = 1 ∨ g = σ.map (σ.pair i) := by
@@ -62,7 +62,7 @@ theorem eq_one_or_eq_map_pair_of_smul_mem_side
   · exact Or.inl (P.eq_of_smul_interior_inter_smul_carrier_nonempty hdisj hg Γ.one_mem
       ⟨v, hvg, by simpa using hvP⟩)
   · exact Or.inr (P.eq_of_smul_interior_inter_smul_carrier_nonempty hdisj hg
-      (hmap _) ⟨v, hvg, hvP⟩)
+      hmap ⟨v, hvg, hvP⟩)
 
 /-- If a side-pairing map fixes a nonendpoint point of its side, that side is self-paired. -/
 theorem pair_eq_self_of_map_smul_eq_self {i : Fin n} {z : ℍ} (hz : z ∈ P.side i)
@@ -78,16 +78,17 @@ theorem pair_eq_self_of_map_smul_eq_self {i : Fin n} {z : ℍ} (hz : z ∈ P.sid
 
 /-- At a nonendpoint side point, an element of the acting group fixes the point exactly when
 it is the identity or the side-pairing map fixing that point. -/
-theorem smul_eq_self_iff_of_mem_side
-    (hmap : ∀ i, σ.map i ∈ Γ)
+theorem smul_eq_self_iff_of_mem_side {i : Fin n}
+    (hmap : σ.map i ∈ Γ)
     (hdisj : ∀ γ : Γ, γ ≠ 1 →
       Disjoint ((γ : PSL(2, ℝ)) • interior P.carrier) (interior P.carrier))
-    {i : Fin n} {z : ℍ} (hz : z ∈ P.side i)
+    {z : ℍ} (hz : z ∈ P.side i)
     (hzp : P.vertex i ≠ .inl z) (hzq : P.vertex (i + 1) ≠ .inl z)
     {g : PSL(2, ℝ)} (hg : g ∈ Γ) :
     g • z = z ↔ g = 1 ∨ g = σ.map i ∧ σ.map i • z = z := by
   refine ⟨fun hfix ↦ ?_, fun h ↦ ?_⟩
-  · rcases σ.eq_one_or_eq_map_pair_of_smul_mem_side hmap hdisj hg
+  · rcases σ.eq_one_or_eq_map_pair_of_smul_mem_side
+      (by simpa only [σ.map_pair] using Γ.inv_mem hmap) hdisj hg
       (P.side_subset_carrier i hz) hz hzp hzq hfix with h | h
     · exact Or.inl h
     · have hfix' : σ.map i • z = z := by
@@ -162,15 +163,15 @@ theorem existsUnique_mem_side_map_smul_eq_self_of_pair_eq_self {i : Fin n}
 
 /-- The stabilizer of a nonendpoint side point is trivial exactly when the side-pairing map
 does not fix it. -/
-theorem stabilizer_eq_bot_iff_of_mem_side
-    (hmap : ∀ i, σ.map i ∈ Γ)
+theorem stabilizer_eq_bot_iff_of_mem_side {i : Fin n}
+    (hmap : σ.map i ∈ Γ)
     (hdisj : ∀ γ : Γ, γ ≠ 1 →
       Disjoint ((γ : PSL(2, ℝ)) • interior P.carrier) (interior P.carrier))
-    {i : Fin n} {z : ℍ} (hz : z ∈ P.side i)
+    {z : ℍ} (hz : z ∈ P.side i)
     (hzp : P.vertex i ≠ .inl z) (hzq : P.vertex (i + 1) ≠ .inl z) :
     stabilizer Γ z = ⊥ ↔ σ.map i • z ≠ z := by
   refine ⟨fun h hfix ↦ ?_, fun h ↦ ?_⟩
-  · have hg : (⟨σ.map i, hmap i⟩ : Γ) ∈ stabilizer Γ z := mem_stabilizer_iff.mpr hfix
+  · have hg : (⟨σ.map i, hmap⟩ : Γ) ∈ stabilizer Γ z := mem_stabilizer_iff.mpr hfix
     rw [h, Subgroup.mem_bot] at hg
     exact σ.map_ne_one i (congrArg Subtype.val hg)
   · apply (Subgroup.eq_bot_iff_forall _).mpr
@@ -181,11 +182,11 @@ theorem stabilizer_eq_bot_iff_of_mem_side
 
 /-- The nontrivial stabilizer of a nonendpoint side point, viewed in `PSL(2, ℝ)`, is generated
 by its side-pairing involution. -/
-theorem map_stabilizer_eq_zpowers_map_of_mem_side
-    (hmap : ∀ i, σ.map i ∈ Γ)
+theorem map_stabilizer_eq_zpowers_map_of_mem_side {i : Fin n}
+    (hmap : σ.map i ∈ Γ)
     (hdisj : ∀ γ : Γ, γ ≠ 1 →
       Disjoint ((γ : PSL(2, ℝ)) • interior P.carrier) (interior P.carrier))
-    {i : Fin n} {z : ℍ} (hz : z ∈ P.side i)
+    {z : ℍ} (hz : z ∈ P.side i)
     (hzp : P.vertex i ≠ .inl z) (hzq : P.vertex (i + 1) ≠ .inl z)
     (hfix : σ.map i • z = z) :
     (stabilizer Γ z).map Γ.subtype = Subgroup.zpowers (σ.map i) := by
@@ -196,14 +197,14 @@ theorem map_stabilizer_eq_zpowers_map_of_mem_side
     · simpa only [Subgroup.coe_subtype, h] using (Subgroup.zpowers (σ.map i)).one_mem
     · simpa only [Subgroup.coe_subtype, h] using Subgroup.mem_zpowers (σ.map i)
   · apply Subgroup.zpowers_le.mpr
-    exact ⟨⟨σ.map i, hmap i⟩, mem_stabilizer_iff.mpr hfix, rfl⟩
+    exact ⟨⟨σ.map i, hmap⟩, mem_stabilizer_iff.mpr hfix, rfl⟩
 
 /-- A nonendpoint side point fixed by its side-pairing map has stabilizer order two. -/
-theorem natCard_stabilizer_eq_two_of_mem_side
-    (hmap : ∀ i, σ.map i ∈ Γ)
+theorem natCard_stabilizer_eq_two_of_mem_side {i : Fin n}
+    (hmap : σ.map i ∈ Γ)
     (hdisj : ∀ γ : Γ, γ ≠ 1 →
       Disjoint ((γ : PSL(2, ℝ)) • interior P.carrier) (interior P.carrier))
-    {i : Fin n} {z : ℍ} (hz : z ∈ P.side i)
+    {z : ℍ} (hz : z ∈ P.side i)
     (hzp : P.vertex i ≠ .inl z) (hzq : P.vertex (i + 1) ≠ .inl z)
     (hfix : σ.map i • z = z) : Nat.card (stabilizer Γ z) = 2 := by
   rw [← Subgroup.card_map_of_injective Γ.subtype_injective,
@@ -212,17 +213,17 @@ theorem natCard_stabilizer_eq_two_of_mem_side
 
 /-- A nonendpoint fixed point of a self-paired side is the only point of the polygon in its
 group orbit. Thus it cannot be identified with a vertex or a fixed point of another side. -/
-theorem mem_orbit_iff_eq_of_mem_side_map_smul_eq_self
-    (hmap : ∀ i, σ.map i ∈ Γ)
+theorem mem_orbit_iff_eq_of_mem_side_map_smul_eq_self {i : Fin n}
+    (hmap : σ.map i ∈ Γ)
     (hdisj : ∀ γ : Γ, γ ≠ 1 →
       Disjoint ((γ : PSL(2, ℝ)) • interior P.carrier) (interior P.carrier))
-    {i : Fin n} {z w : ℍ} (hz : z ∈ P.carrier) (hw : w ∈ P.side i)
+    {z w : ℍ} (hz : z ∈ P.carrier) (hw : w ∈ P.side i)
     (hwp : P.vertex i ≠ .inl w) (hwq : P.vertex (i + 1) ≠ .inl w)
     (hfix : σ.map i • w = w) : w ∈ orbit Γ z ↔ z = w := by
   refine ⟨fun h ↦ ?_, fun h ↦ h ▸ mem_orbit_self _⟩
   obtain ⟨g, hgz⟩ := mem_orbit_iff.mp h
-  rcases σ.eq_one_or_eq_map_pair_of_smul_mem_side hmap hdisj g.2 hz hw hwp hwq hgz with
-    hg | hg
+  rcases σ.eq_one_or_eq_map_pair_of_smul_mem_side
+    (by simpa only [σ.map_pair] using Γ.inv_mem hmap) hdisj g.2 hz hw hwp hwq hgz with hg | hg
   · simpa only [Subgroup.smul_def, hg, one_smul] using hgz
   · have hgw : g • w = w := by
       rw [Subgroup.smul_def, hg, σ.map_pair, inv_smul_eq_iff]
@@ -260,10 +261,10 @@ theorem exists_vertex_or_self_paired_side_of_stabilizer_ne_bot
     obtain ⟨i, hi⟩ := mem_iUnion.mp (P.frontier_carrier ▸ hwf)
     have hv' : ∀ i, P.vertex i ≠ .inl w := not_exists.mp hv
     have hfix : σ.map i • w = w := not_not.mp fun h ↦
-      hwne ((σ.stabilizer_eq_bot_iff_of_mem_side hmap hdisj hi (hv' i) (hv' (i + 1))).mpr h)
+      hwne ((σ.stabilizer_eq_bot_iff_of_mem_side (hmap i) hdisj hi (hv' i) (hv' (i + 1))).mpr h)
     exact Or.inr ⟨i, hi, hv' i, hv' (i + 1),
       σ.pair_eq_self_of_map_smul_eq_self hi (hv' i) (hv' (i + 1)) hfix, hfix,
-      σ.natCard_stabilizer_eq_two_of_mem_side hmap hdisj hi (hv' i) (hv' (i + 1)) hfix⟩
+      σ.natCard_stabilizer_eq_two_of_mem_side (hmap i) hdisj hi (hv' i) (hv' (i + 1)) hfix⟩
 
 end SidePairing
 
