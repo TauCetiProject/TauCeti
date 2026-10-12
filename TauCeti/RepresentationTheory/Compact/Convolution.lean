@@ -57,8 +57,9 @@ presupposing that any exist.
 * `TauCeti.isSelfAdjoint_convolutionOperator`: a symmetric kernel gives a self-adjoint operator.
 * `TauCeti.convolutionCLM_compMeasurePreserving_mul_right`: convolution commutes with right
   translation.
-* `TauCeti.convolutionOperator_compMeasurePreserving_mul_left`: convolution against a central
-  kernel commutes with left translation.
+* `TauCeti.convolutionOperator_compMeasurePreserving_mul_left`: convolution commutes with left
+  translation by `g₀` when the kernel is invariant under conjugation by `g₀`; in particular,
+  central kernels commute with every left translation.
 * `TauCeti.isCompactOperator_convolutionCLM` and `TauCeti.isCompactOperator_convolutionOperator`:
   convolution against a continuous kernel is a compact operator, into `C(G)` and into `L²(G)`.
 * `TauCeti.finiteDimensional_eigenspace_convolutionOperator`: consequently the eigenspace of
