@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Algebra.OpenSubgroup
+public import TauCeti.GroupTheory.PGroup
 import Mathlib.Topology.LocallyConstant.Basic
 
 /-!
@@ -39,6 +40,8 @@ the relevant quotients discrete; the preimage criterion needs it only on the tar
   on open normal subgroups are those of the underlying subgroups.
 * `OpenNormalSubgroup.continuous_mk_inf`, `OpenNormalSubgroup.continuous_mk_comap`: continuity of
   a map into the quotient by an intersection, and by a preimage, of open normal subgroups.
+* `IsPGroup.quotient_openNormalSubgroup_comap`: a quotient by the preimage of an open normal
+  subgroup is a `p`-group when the original quotient is.
 * `TauCeti.mem_openNormalSubgroupBot`: the trivial open normal subgroup contains only the
   identity.
 * `TauCeti.openNormalSubgroupBot_le`: the trivial open normal subgroup lies below every open
@@ -98,6 +101,14 @@ theorem comap_comap {K : Type*} [Group K] [TopologicalSpace K] (U : OpenNormalSu
     (f₂ : H →* K) (hf₂ : Continuous f₂) (f₁ : G →* H) (hf₁ : Continuous f₁) :
     comap (comap U f₂ hf₂) f₁ hf₁ = comap U (f₂.comp f₁) (hf₂.comp hf₁) :=
   (rfl)
+
+/-- The quotient by the preimage of an open normal subgroup is a `p`-group if the original
+quotient is a `p`-group. -/
+theorem _root_.IsPGroup.quotient_openNormalSubgroup_comap {p : ℕ}
+    {U : OpenNormalSubgroup H} (hU : IsPGroup p (H ⧸ U.toSubgroup))
+    (f : G →* H) (hf : Continuous f) : IsPGroup p (G ⧸ (U.comap f hf).toSubgroup) :=
+  (hU.quotient_comap f).of_equiv
+    (QuotientGroup.quotientMulEquivOfEq (U.toSubgroup_comap f hf)).symm
 
 /-- The product of two open normal subgroups, as an open normal subgroup of the product group. -/
 def prod (U : OpenNormalSubgroup G) (V : OpenNormalSubgroup H) : OpenNormalSubgroup (G × H) where

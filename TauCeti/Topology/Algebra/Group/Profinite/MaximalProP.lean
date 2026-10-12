@@ -188,8 +188,7 @@ theorem proPKernel_le_comap (f : G →* H) (hf : Continuous f) :
   rw [Subgroup.mem_comap, mem_proPKernel_iff]
   intro V hV
   exact OpenNormalSubgroup.mem_comap.mp <| mem_proPKernel_iff.mp hx (V.comap f hf)
-    ((hV.quotient_comap f).of_equiv
-      (QuotientGroup.quotientMulEquivOfEq (V.toSubgroup_comap f hf)).symm)
+    (hV.quotient_openNormalSubgroup_comap f hf)
 
 /-- The image of the pro-`p` kernel under a continuous homomorphism lies in the pro-`p`
 kernel of the target. -/
@@ -347,8 +346,7 @@ theorem proPKernel_le_ker (hP : IsProP p P) (f : G →* P) (hf : Continuous f) :
   rw [MonoidHom.mem_ker]
   refine Subgroup.eq_one_of_mem_iInf_openNormalSubgroup fun V ↦ ?_
   exact OpenNormalSubgroup.mem_comap.mp <| mem_proPKernel_iff.mp hx (V.comap f hf)
-    (((isProP_iff.mp hP V).quotient_comap f).of_equiv
-      (QuotientGroup.quotientMulEquivOfEq (V.toSubgroup_comap f hf)).symm)
+    ((isProP_iff.mp hP V).quotient_openNormalSubgroup_comap f hf)
 
 /-- The canonical factorisation of a continuous homomorphism to a profinite pro-`p` group
 through the maximal pro-`p` quotient. -/
