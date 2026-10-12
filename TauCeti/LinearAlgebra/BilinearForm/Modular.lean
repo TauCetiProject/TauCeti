@@ -98,7 +98,7 @@ def IsModular (B : BilinForm R M) (a : R) : Prop :=
 /-- Modularity is equivalent to a scaled perfect-pairing witness. This characteristic lemma
 allows importing modules to construct and extract the witness without unfolding the definition. -/
 theorem isModular_def : B.IsModular a ↔ ∃ C : BilinForm R M, a • C = B ∧ C.IsPerfPair :=
-  (rfl)
+  Iff.rfl
 
 /-- A form is `1`-modular exactly when it is a perfect pairing. -/
 @[simp]
