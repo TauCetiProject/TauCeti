@@ -25,8 +25,8 @@ meaning `a(u, v) ≤ ∫_Ω f v` for every nonnegative `v ∈ H¹₀(Ω)`, and `
 `u ≤ k + C ‖f‖_{Lʳ(Ω)} / λ · |Ω| ^ (2/n - 1/r)` almost everywhere in `Ω`,
 
 with `C` depending only on `n`, `r` and the normalization of the Haar measure. In particular the
-weak solution `u ∈ H¹₀(Ω)` of the Dirichlet problem `-∂ⱼ(aⁱʲ ∂ᵢu) + c u = f`, for
-`f ∈ L²(Ω) ∩ Lʳ(Ω)`, is bounded, with
+weak solution `u ∈ H¹₀(Ω)` of the Dirichlet problem `-∂ⱼ(aⁱʲ ∂ᵢu) + c u = f` with
+`f ∈ Lʳ(Ω)`, meaning `a(u, v) = ∫_Ω f v` for every `v ∈ H¹₀(Ω)`, is bounded, with
 `|u| ≤ C ‖f‖_{Lʳ} / λ · |Ω| ^ (2/n - 1/r)`. No regularity of `∂Ω` and no regularity of the
 coefficients beyond measurability is used, and the power of `|Ω|` makes the estimate invariant
 under dilations.
@@ -476,18 +476,20 @@ theorem exists_ae_value_le_add_mul_div_mul_rpow [Nonempty ι] {r : ℝ≥0} (hr 
 dimension and let `r > 1` with `r > n/2`. There is `C > 0`, depending only on `n`, `r` and the
 normalization of `mu`, such that on every `Ω` of finite measure, for measurable, uniformly
 elliptic `a` with constants `0 < λ ≤ Λ` and bounded, measurable, nonnegative `c`, the weak
-solution `u ∈ H¹₀(Ω)` of the Dirichlet problem `-∂ⱼ(aⁱʲ ∂ᵢu) + c u = f` with
-`f ∈ L²(Ω) ∩ Lʳ(Ω)` satisfies, almost everywhere in `Ω`,
+solution `u ∈ H¹₀(Ω)` of the Dirichlet problem `-∂ⱼ(aⁱʲ ∂ᵢu) + c u = f` with `f ∈ Lʳ(Ω)`,
+that is `a(u, v) = ∫_Ω f v` for every `v ∈ H¹₀(Ω)`, satisfies, almost everywhere in `Ω`,
 
 `|u| ≤ C ‖f‖_{Lʳ(Ω)} / λ · |Ω| ^ (2/n - 1/r)`.
 
+No integrability of `f` beyond `Lʳ` is assumed; for `f ∈ L²(Ω)` the hypothesis on `u` is
+`TauCeti.PDE.IsWeakSolutionDirichlet a 0 c f u`, by `TauCeti.PDE.isWeakSolutionDirichlet_iff`.
 This is the two-sided form of `TauCeti.PDE.exists_ae_value_le_add_mul_div_mul_rpow` at the level
 `k = 0`, applied to `u` and to `-u`. -/
 theorem exists_ae_abs_value_le_mul_div_mul_rpow [Nonempty ι] {r : ℝ≥0} (hr : 1 < r)
     (hrn : (Fintype.card ι : ℝ) < 2 * r) :
     ∃ C : ℝ, 0 < C ∧ ∀ {Omega : Opens (EuclideanSpace ℝ ι)}
       {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {c : EuclideanSpace ℝ ι → ℝ} {lam Lam gamma : ℝ}
-      {f : Lp ℝ 2 (mu.restrict Omega)} {u : W1p0 mu Omega 2},
+      {f : EuclideanSpace ℝ ι → ℝ} {u : W1p0 mu Omega 2},
       mu Omega ≠ ∞ →
       UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam →
       AEStronglyMeasurable a (mu.restrict Omega) →
@@ -495,13 +497,14 @@ theorem exists_ae_abs_value_le_mul_div_mul_rpow [Nonempty ι] {r : ℝ≥0} (hr 
       (∀ x ∈ (Omega : Set (EuclideanSpace ℝ ι)), ‖c x‖ ≤ gamma) →
       (∀ x ∈ (Omega : Set (EuclideanSpace ℝ ι)), 0 ≤ c x) →
       MemLp f r (mu.restrict Omega) →
-      IsWeakSolutionDirichlet a 0 c f u →
+      (∀ v : W1p0 mu Omega 2,
+        energyFormH1 a 0 c (u : W1p mu Omega 2) (v : W1p mu Omega 2) =
+          ∫ x in Omega, f x * W1p.value (v : W1p mu Omega 2) x ∂mu) →
       ∀ᵐ x ∂mu.restrict Omega, |W1p.value (u : W1p mu Omega 2) x| ≤
         C * (eLpNorm f r (mu.restrict Omega)).toReal / lam *
           mu.real Omega ^ (2 / (Fintype.card ι : ℝ) - (r : ℝ)⁻¹) := by
   obtain ⟨C, hC, hmain⟩ := exists_ae_value_le_add_mul_div_mul_rpow (mu := mu) hr hrn
   refine ⟨C, hC, fun {Omega a c lam Lam gamma f u} hOmega h ha hc hc_bound hc_nonneg hf hsol => ?_⟩
-  rw [isWeakSolutionDirichlet_iff] at hsol
   have hzero : ∀ w ∈ w1p0Submodule mu Omega 2,
       W1p.posPartAbove (by norm_num) (le_refl (0 : ℝ)) w ∈ w1p0Submodule mu Omega 2 :=
     fun w hw => by
