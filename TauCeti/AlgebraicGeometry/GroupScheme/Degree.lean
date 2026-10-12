@@ -47,6 +47,7 @@ isogeny constructible as a factorisation of multiplication by `n`.
 
 * `TauCeti.GroupScheme.isLocallyConstant_degree`: the degree is locally constant.
 * `TauCeti.GroupScheme.degree_pos`: the degree is positive.
+* `TauCeti.GroupScheme.degree_pullback_mapGrp_map`: the degree is stable under base change.
 * `TauCeti.GroupScheme.finrank_hom_hom_left`: for surjective `f`, the rank of `f` at a point is the
   degree at its image in the base.
 * `TauCeti.GroupScheme.degree_comp`: the degree is multiplicative under composition.
@@ -104,6 +105,24 @@ target lies in the image. -/
 theorem degree_pos (s : S) : 0 < degree f s := by
   rw [degree_eq_finrank, ← IsMonHom.one_hom f.hom.hom, Over.comp_left, Scheme.Hom.comp_apply]
   exact f.hom.hom.left.one_le_finrank_map _
+
+/-- **The degree is stable under base change.** For a finite flat homomorphism `f : G ⟶ H` over
+`S` and a morphism `s : T ⟶ S`, the degree of the base change of `f` to `T` at `t` is the degree
+of `f` at `s t`: the kernel of the base change is the base change of the kernel
+(`kernelBaseChangeIso`). -/
+theorem degree_pullback_mapGrp_map {T : Scheme.{u}} (s : T ⟶ S) (t : T) :
+    degree ((Over.pullback s).mapGrp.map f) t = degree f (s t) := by
+  -- The kernel of the base change is isomorphic over `T` to the base change `P` of the kernel,
+  -- which lies over `T` by the second projection.
+  let P := ((Over.pullback s).mapGrp.obj (kernel f)).X
+  have : Flat P.hom := inferInstanceAs (Flat (pullback.snd (kernel f).X.hom s))
+  have : IsFinite P.hom := inferInstanceAs (IsFinite (pullback.snd (kernel f).X.hom s))
+  have : IsIso (kernelBaseChangeIso s f).inv.hom.hom.left :=
+    inferInstanceAs
+      (IsIso ((Grp.forget (Over T) ⋙ Over.forget T).map (kernelBaseChangeIso s f).inv))
+  rw [degree, ← Over.w (kernelBaseChangeIso s f).inv.hom.hom,
+    Scheme.Hom.finrank_comp_left_of_isIso]
+  exact Scheme.Hom.finrank_pullback_snd _ _ t
 
 variable [Surjective f.hom.hom.left]
 
