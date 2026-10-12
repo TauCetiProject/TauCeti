@@ -194,6 +194,15 @@ theorem continuous_mapRight [TopologicalSpace E] [TopologicalSpace A] [Topologic
     Continuous (mapRight (G := G) (E := E) f hf) :=
   (continuous_id.prodMap hfc).quotient_map' _
 
+/-- An open equivariant label map induces an open map of balanced products. -/
+theorem isOpenMap_mapRight [TopologicalSpace E] [TopologicalSpace A] [TopologicalSpace B]
+    [ContinuousConstSMul G E] [ContinuousConstSMul G B]
+    (f : A → B) (hf : ∀ (g : G) a, f (g • a) = g • f a) (hfo : IsOpenMap f) :
+    IsOpenMap (mapRight (G := G) (E := E) f hf) := by
+  apply IsOpenMap.of_comp continuous_quotient_mk'
+    (@Quotient.mk'_surjective _ (MulAction.orbitRel G (E × A)))
+  exact isOpenMap_quotient_mk'_mul.comp (IsOpenMap.id.prodMap hfo)
+
 end Map
 
 variable (hq : ∀ (g : G) (e : E), q (g • e) = q e)

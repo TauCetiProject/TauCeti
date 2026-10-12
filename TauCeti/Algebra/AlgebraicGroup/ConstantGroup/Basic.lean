@@ -118,6 +118,7 @@ theorem counit_apply (f : coordinateRing R G) :
   rw [ConvolutionDual.counit_apply, functionAlgEquiv_apply]
   rw [MonoidAlgebra.one_def]
 
+omit [Monoid G] in
 private theorem dualDistribEquiv_apply_single
     (w : coordinateRing R G ⊗[R] coordinateRing R G) (g h : G) :
     ConvolutionDual.dualDistribEquiv R (MonoidAlgebra R G) w
