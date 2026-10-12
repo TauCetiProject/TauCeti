@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.BilinearForm.Basic
 public import Mathlib.LinearAlgebra.LinearIndependent.Defs
 public import Mathlib.LinearAlgebra.Matrix.Nondegenerate
+import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
 
 /-!
 # Linear independence from the Gram matrix of a bilinear form
@@ -64,7 +65,7 @@ theorem linearIndependent_of_isUnit_det {B : BilinForm R M} {a : R} {ι : Type*}
     rw [Pi.zero_apply, mul_zero, ← this, vecMul, dotProduct, Finset.mul_sum]
     exact Finset.sum_congr rfl fun i _ ↦ by ring)
   have hg0 : g = 0 := Matrix.vecMul_injective_of_isUnit
-    (G.isUnit_iff_isUnit_det.mpr hdet) (hgG.trans (Matrix.zero_vecMul G).symm)
+    ((Matrix.isUnit_iff_isUnit_det G).mpr hdet) (hgG.trans (Matrix.zero_vecMul G).symm)
   intro i
   simpa only [Pi.zero_apply] using congrFun hg0 i
 
