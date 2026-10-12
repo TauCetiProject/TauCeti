@@ -85,11 +85,12 @@ by `T`, does not increase under translation by `c`.
 * `TauCeti.ValuationSpectrum.discPointAbove_vle_iff` and
   `TauCeti.ValuationSpectrum.discPointBelow_vle_iff`: how `η_{a,r⁺}` and `η_{a,r⁻}` compare series.
 * `TauCeti.ValuationSpectrum.discPointAbove_eq_gaussPointAbove_iff` and
-  `TauCeti.ValuationSpectrum.discPointBelow_eq_gaussPointBelow_iff`: `η_{a,r⁺} = η_{r⁺}` exactly
-  when `‖a‖ ≤ r`, and `η_{a,r⁻} = η_{r⁻}` exactly when `‖a‖ < r`.
+  `TauCeti.ValuationSpectrum.discPointBelow_eq_gaussPointBelow_iff`: `η_{a,r⁺} = η_{s⁺}` exactly
+  when `r = s` and `‖a‖ ≤ r`, and `η_{a,r⁻} = η_{s⁻}` exactly when `r = s` and `‖a‖ < r`.
 * `TauCeti.ValuationSpectrum.discPointAbove_eq_discPointAbove_iff` and
-  `TauCeti.ValuationSpectrum.discPointBelow_eq_discPointBelow_iff`: `η_{a,r⁺} = η_{b,r⁺}` exactly
-  when `‖a - b‖ ≤ r`, and `η_{a,r⁻} = η_{b,r⁻}` exactly when `‖a - b‖ < r`.
+  `TauCeti.ValuationSpectrum.discPointBelow_eq_discPointBelow_iff`: `η_{a,r⁺} = η_{b,s⁺}` exactly
+  when `r = s` and `‖a - b‖ ≤ r`, and `η_{a,r⁻} = η_{b,s⁻}` exactly when `r = s` and
+  `‖a - b‖ < r`.
 * `TauCeti.ValuationSpectrum.discPoint_specializes_discPointAbove` and
   `TauCeti.ValuationSpectrum.discPoint_specializes_discPointBelow`: both points lie in the closure
   of `η_{a,r}`.
@@ -452,80 +453,100 @@ theorem comap_taylorHom_discPointBelow {b c : K} (hb : ‖b‖ ≤ 1) (hc : ‖c
   -- the tuple `(fun _ ↦ c) + (fun _ ↦ b)` is `fun _ ↦ c + b` by definition of `Pi.add`
   rfl
 
-/-- **`η_{a,r⁺}` is `η_{r⁺}` exactly when `‖a‖ ≤ r`.** If `‖a‖ > r`, then `η_{a,r⁺}` finds `T - a`
-strictly smaller than the constant `a`, while `η_{r⁺}` finds `a`, a monomial of `T - a`, at most
-`T - a`. -/
+/-- **`η_{a,r⁺}` is `η_{s⁺}` exactly when `r = s` and `‖a‖ ≤ r`.** If `‖a‖ > r`, then `η_{a,r⁺}`
+finds `T - a` strictly smaller than the constant `a`, while `η_{s⁺}` finds `a`, a monomial of
+`T - a`, at most `T - a`. -/
 theorem discPointAbove_eq_gaussPointAbove_iff {a : K} (ha : ‖a‖ ≤ 1) (hr₀ : 0 < r)
-    (hr₁ : r < 1) : discPointAbove a ha hr₀ hr₁ = gaussPointAbove hr₀ hr₁ ↔ ‖a‖ ≤ r := by
-  refine ⟨fun h ↦ ?_, fun har ↦ Subtype.ext <| ext' fun f g ↦ ?_⟩
+    (hr₁ : r < 1) (hs₀ : 0 < s) (hs₁ : s < 1) :
+    discPointAbove a ha hr₀ hr₁ = gaussPointAbove hs₀ hs₁ ↔ r = s ∧ ‖a‖ ≤ r := by
+  -- recentring within the disc, by translation invariance just above `r`
+  have hrec (har : ‖a‖ ≤ r) : discPointAbove a ha hr₀ hr₁ = gaussPointAbove hr₀ hr₁ :=
+    Subtype.ext <| ext' fun f g ↦ by
+      rw [discPointAbove_vle_iff, gaussPointAbove_vle_iff,
+        closedDiscGaussValuationAbove_taylorHom _ _ _ _ har,
+        closedDiscGaussValuationAbove_taylorHom _ _ _ _ har]
+  constructor
   swap
-  · rw [discPointAbove_vle_iff, gaussPointAbove_vle_iff,
-      closedDiscGaussValuationAbove_taylorHom _ _ _ _ har,
-      closedDiscGaussValuationAbove_taylorHom _ _ _ _ har]
-  by_contra! hlt
-  have key := congrArg (fun p : closedPolydisc 1 K ↦ p.1.toValuativeRel.vle
-    (weightedC _ isWeightFamily_one_weight a)
-    (weightedX (fun _ : Fin 1 ↦ ({1} : Set K)) isWeightFamily_one_weight 0 -
-      weightedC _ isWeightFamily_one_weight a)) h
-  simp only [discPointAbove_vle_iff, gaussPointAbove_vle_iff, taylorHom_weightedC, map_sub,
-    taylorHom_weightedX, add_sub_cancel_right, eq_iff_iff] at key
-  have hmono := closedDiscGaussValuationAbove_weightedC_mul_weightedX_pow_le hr₀ hr₁.le
-    (weightedX (fun _ : Fin 1 ↦ ({1} : Set K)) isWeightFamily_one_weight 0 -
-      weightedC _ isWeightFamily_one_weight a) 0
-  -- the degree-`0` monomial of `T - a` is the constant `-a`, which has the value of `a`
-  simp only [Finsupp.single_zero, AddSubgroupClass.coe_sub, coe_weightedX, coe_weightedC,
-    MvPowerSeries.coeff_zero_eq_constantCoeff, map_sub, MvPowerSeries.constantCoeff_X,
-    MvPowerSeries.constantCoeff_C, zero_sub, map_neg, pow_zero, mul_one, Valuation.map_neg] at hmono
-  -- about `a`, the variable `T` has Gauss norm `r < ‖a‖`, so it is strictly smaller than `a`
-  refine (closedDiscGaussValuationAbove_lt_of_lt hr₀ hr₁.le ?_).not_ge (key.mpr hmono)
-  rw [← NNReal.coe_lt_coe, coe_closedDiscGaussValuation_weightedX,
-    closedDiscGaussValuation_weightedC, coe_nnnorm]
-  exact hlt
-
-/-- **`η_{a,r⁻}` is `η_{r⁻}` exactly when `‖a‖ < r`.** If `‖a‖ ≥ r`, then `η_{a,r⁻}` finds `T - a`
-strictly smaller than the constant `a`, while `η_{r⁻}` finds `a`, a monomial of `T - a`, at most
-`T - a`. -/
-theorem discPointBelow_eq_gaussPointBelow_iff {a : K} (ha : ‖a‖ ≤ 1) (hr₀ : 0 < r)
-    (hr₁ : r ≤ 1) : discPointBelow a ha hr₀ hr₁ = gaussPointBelow hr₀ hr₁ ↔ ‖a‖ < r := by
-  refine ⟨fun h ↦ ?_, fun har ↦ Subtype.ext <| ext' fun f g ↦ ?_⟩
-  swap
-  · rw [discPointBelow_vle_iff, gaussPointBelow_vle_iff,
-      closedDiscGaussValuationBelow_taylorHom _ _ _ _ har,
-      closedDiscGaussValuationBelow_taylorHom _ _ _ _ har]
-  by_contra! hle
-  have key := congrArg (fun p : closedPolydisc 1 K ↦ p.1.toValuativeRel.vle
-    (weightedC _ isWeightFamily_one_weight a)
-    (weightedX (fun _ : Fin 1 ↦ ({1} : Set K)) isWeightFamily_one_weight 0 -
-      weightedC _ isWeightFamily_one_weight a)) h
-  simp only [discPointBelow_vle_iff, gaussPointBelow_vle_iff, taylorHom_weightedC, map_sub,
-    taylorHom_weightedX, add_sub_cancel_right, eq_iff_iff] at key
-  have hmono := closedDiscGaussValuationBelow_weightedC_mul_weightedX_pow_le hr₀ hr₁
-    (weightedX (fun _ : Fin 1 ↦ ({1} : Set K)) isWeightFamily_one_weight 0 -
-      weightedC _ isWeightFamily_one_weight a) 0
-  -- the degree-`0` monomial of `T - a` is the constant `-a`, which has the value of `a`
-  simp only [Finsupp.single_zero, AddSubgroupClass.coe_sub, coe_weightedX, coe_weightedC,
-    MvPowerSeries.coeff_zero_eq_constantCoeff, map_sub, MvPowerSeries.constantCoeff_X,
-    MvPowerSeries.constantCoeff_C, zero_sub, map_neg, pow_zero, mul_one, Valuation.map_neg] at hmono
-  -- about `a`, the constant `a` of norm at least `r` is strictly larger than `T` just below `r`
-  rcases hle.lt_or_eq with hlt | heq
-  · refine (closedDiscGaussValuationBelow_lt_of_lt hr₀ hr₁ ?_).not_ge (key.mpr hmono)
+  · rintro ⟨rfl, har⟩
+    exact hrec har
+  intro h
+  have har : ‖a‖ ≤ r := by
+    by_contra! hlt
+    have key := congrArg (fun p : closedPolydisc 1 K ↦ p.1.toValuativeRel.vle
+      (weightedC _ isWeightFamily_one_weight a)
+      (weightedX (fun _ : Fin 1 ↦ ({1} : Set K)) isWeightFamily_one_weight 0 -
+        weightedC _ isWeightFamily_one_weight a)) h
+    simp only [discPointAbove_vle_iff, gaussPointAbove_vle_iff, taylorHom_weightedC, map_sub,
+      taylorHom_weightedX, add_sub_cancel_right, eq_iff_iff] at key
+    have hmono := closedDiscGaussValuationAbove_weightedC_mul_weightedX_pow_le hs₀ hs₁.le
+      (weightedX (fun _ : Fin 1 ↦ ({1} : Set K)) isWeightFamily_one_weight 0 -
+        weightedC _ isWeightFamily_one_weight a) 0
+    -- the degree-`0` monomial of `T - a` is the constant `-a`, which has the value of `a`
+    simp only [Finsupp.single_zero, AddSubgroupClass.coe_sub, coe_weightedX, coe_weightedC,
+      MvPowerSeries.coeff_zero_eq_constantCoeff, map_sub, MvPowerSeries.constantCoeff_X,
+      MvPowerSeries.constantCoeff_C, zero_sub, map_neg, pow_zero, mul_one,
+      Valuation.map_neg] at hmono
+    -- about `a`, the variable `T` has Gauss norm `r < ‖a‖`, so it is strictly smaller than `a`
+    refine (closedDiscGaussValuationAbove_lt_of_lt hr₀ hr₁.le ?_).not_ge (key.mpr hmono)
     rw [← NNReal.coe_lt_coe, coe_closedDiscGaussValuation_weightedX,
       closedDiscGaussValuation_weightedC, coe_nnnorm]
     exact hlt
-  · exact not_closedDiscGaussValuationBelow_weightedC_le hr₀ hr₁ heq.symm (key.mpr hmono)
+  exact ⟨(gaussPointAbove_inj hr₀ hr₁ hs₀ hs₁).mp ((hrec har).symm.trans h), har⟩
+
+/-- **`η_{a,r⁻}` is `η_{s⁻}` exactly when `r = s` and `‖a‖ < r`.** If `‖a‖ ≥ r`, then `η_{a,r⁻}`
+finds `T - a` strictly smaller than the constant `a`, while `η_{s⁻}` finds `a`, a monomial of
+`T - a`, at most `T - a`. -/
+theorem discPointBelow_eq_gaussPointBelow_iff {a : K} (ha : ‖a‖ ≤ 1) (hr₀ : 0 < r)
+    (hr₁ : r ≤ 1) (hs₀ : 0 < s) (hs₁ : s ≤ 1) :
+    discPointBelow a ha hr₀ hr₁ = gaussPointBelow hs₀ hs₁ ↔ r = s ∧ ‖a‖ < r := by
+  -- recentring within the open disc, by translation invariance just below `r`
+  have hrec (har : ‖a‖ < r) : discPointBelow a ha hr₀ hr₁ = gaussPointBelow hr₀ hr₁ :=
+    Subtype.ext <| ext' fun f g ↦ by
+      rw [discPointBelow_vle_iff, gaussPointBelow_vle_iff,
+        closedDiscGaussValuationBelow_taylorHom _ _ _ _ har,
+        closedDiscGaussValuationBelow_taylorHom _ _ _ _ har]
+  constructor
+  swap
+  · rintro ⟨rfl, har⟩
+    exact hrec har
+  intro h
+  have har : ‖a‖ < r := by
+    by_contra! hle
+    have key := congrArg (fun p : closedPolydisc 1 K ↦ p.1.toValuativeRel.vle
+      (weightedC _ isWeightFamily_one_weight a)
+      (weightedX (fun _ : Fin 1 ↦ ({1} : Set K)) isWeightFamily_one_weight 0 -
+        weightedC _ isWeightFamily_one_weight a)) h
+    simp only [discPointBelow_vle_iff, gaussPointBelow_vle_iff, taylorHom_weightedC, map_sub,
+      taylorHom_weightedX, add_sub_cancel_right, eq_iff_iff] at key
+    have hmono := closedDiscGaussValuationBelow_weightedC_mul_weightedX_pow_le hs₀ hs₁
+      (weightedX (fun _ : Fin 1 ↦ ({1} : Set K)) isWeightFamily_one_weight 0 -
+        weightedC _ isWeightFamily_one_weight a) 0
+    -- the degree-`0` monomial of `T - a` is the constant `-a`, which has the value of `a`
+    simp only [Finsupp.single_zero, AddSubgroupClass.coe_sub, coe_weightedX, coe_weightedC,
+      MvPowerSeries.coeff_zero_eq_constantCoeff, map_sub, MvPowerSeries.constantCoeff_X,
+      MvPowerSeries.constantCoeff_C, zero_sub, map_neg, pow_zero, mul_one,
+      Valuation.map_neg] at hmono
+    -- about `a`, the constant `a` of norm at least `r` is strictly larger than `T` just below `r`
+    rcases hle.lt_or_eq with hlt | heq
+    · refine (closedDiscGaussValuationBelow_lt_of_lt hr₀ hr₁ ?_).not_ge (key.mpr hmono)
+      rw [← NNReal.coe_lt_coe, coe_closedDiscGaussValuation_weightedX,
+        closedDiscGaussValuation_weightedC, coe_nnnorm]
+      exact hlt
+    · exact not_closedDiscGaussValuationBelow_weightedC_le hr₀ hr₁ heq.symm (key.mpr hmono)
+  exact ⟨(gaussPointBelow_inj hr₀ hr₁ hs₀ hs₁).mp ((hrec har).symm.trans h), har⟩
 
 /-- **`η_{a,r⁺}` depends only on the closed disc `D(a, r)`**: for `‖a‖, ‖b‖ ≤ 1`,
-`η_{a,r⁺} = η_{b,r⁺}` if and only if `‖a - b‖ ≤ r`, that is, if and only if `η_{a,r} = η_{b,r}`
-(`TauCeti.ValuationSpectrum.discPoint_eq_discPoint_iff`). -/
+`η_{a,r⁺} = η_{b,s⁺}` if and only if `r = s` and `‖a - b‖ ≤ r`, that is, if and only if
+`η_{a,r} = η_{b,s}` (`TauCeti.ValuationSpectrum.discPoint_eq_discPoint_iff`). -/
 theorem discPointAbove_eq_discPointAbove_iff {a b : K} (ha : ‖a‖ ≤ 1) (hb : ‖b‖ ≤ 1)
-    (hr₀ : 0 < r) (hr₁ : r < 1) :
-    discPointAbove a ha hr₀ hr₁ = discPointAbove b hb hr₀ hr₁ ↔ ‖a - b‖ ≤ r := by
+    (hr₀ : 0 < r) (hr₁ : r < 1) (hs₀ : 0 < s) (hs₁ : s < 1) :
+    discPointAbove a ha hr₀ hr₁ = discPointAbove b hb hs₀ hs₁ ↔ r = s ∧ ‖a - b‖ ≤ r := by
   have hb' : ‖-b‖ ≤ 1 := by rwa [norm_neg]
   have hab : ‖a + -b‖ ≤ 1 :=
     (IsUltrametricDist.norm_add_le_max a (-b)).trans (max_le ha hb')
   rw [← sub_eq_add_neg] at hab
   -- pulling back along translation by `-b` is injective, and carries `η_{c,r⁺}` to `η_{c - b,r⁺}`
-  rw [← discPointAbove_eq_gaussPointAbove_iff hab hr₀ hr₁, Subtype.ext_iff, Subtype.ext_iff,
+  rw [← discPointAbove_eq_gaussPointAbove_iff hab hr₀ hr₁ hs₀ hs₁, Subtype.ext_iff, Subtype.ext_iff,
     ← (comap_injective (taylorHom_surjective (fun _ : Fin 1 ↦ -b)
       fun _ ↦ isPowerBounded_iff_norm_le_one.mpr hb')).eq_iff,
     comap_taylorHom_discPointAbove hb' ha (by rwa [← sub_eq_add_neg]),
@@ -533,17 +554,17 @@ theorem discPointAbove_eq_discPointAbove_iff {a b : K} (ha : ‖a‖ ≤ 1) (hb 
   simp only [← sub_eq_add_neg, sub_self, discPointAbove_zero]
 
 /-- **`η_{a,r⁻}` depends only on the open disc `D°(a, r)`**: for `‖a‖, ‖b‖ ≤ 1`,
-`η_{a,r⁻} = η_{b,r⁻}` if and only if `‖a - b‖ < r`. So the open discs of radius `r` inside
-`D(a, r)` give pairwise distinct points `η_{b,r⁻}`, all specializations of `η_{a,r}`. -/
+`η_{a,r⁻} = η_{b,s⁻}` if and only if `r = s` and `‖a - b‖ < r`. So the open discs of radius `r`
+inside `D(a, r)` give pairwise distinct points `η_{b,r⁻}`, all specializations of `η_{a,r}`. -/
 theorem discPointBelow_eq_discPointBelow_iff {a b : K} (ha : ‖a‖ ≤ 1) (hb : ‖b‖ ≤ 1)
-    (hr₀ : 0 < r) (hr₁ : r ≤ 1) :
-    discPointBelow a ha hr₀ hr₁ = discPointBelow b hb hr₀ hr₁ ↔ ‖a - b‖ < r := by
+    (hr₀ : 0 < r) (hr₁ : r ≤ 1) (hs₀ : 0 < s) (hs₁ : s ≤ 1) :
+    discPointBelow a ha hr₀ hr₁ = discPointBelow b hb hs₀ hs₁ ↔ r = s ∧ ‖a - b‖ < r := by
   have hb' : ‖-b‖ ≤ 1 := by rwa [norm_neg]
   have hab : ‖a + -b‖ ≤ 1 :=
     (IsUltrametricDist.norm_add_le_max a (-b)).trans (max_le ha hb')
   rw [← sub_eq_add_neg] at hab
   -- pulling back along translation by `-b` is injective, and carries `η_{c,r⁻}` to `η_{c - b,r⁻}`
-  rw [← discPointBelow_eq_gaussPointBelow_iff hab hr₀ hr₁, Subtype.ext_iff, Subtype.ext_iff,
+  rw [← discPointBelow_eq_gaussPointBelow_iff hab hr₀ hr₁ hs₀ hs₁, Subtype.ext_iff, Subtype.ext_iff,
     ← (comap_injective (taylorHom_surjective (fun _ : Fin 1 ↦ -b)
       fun _ ↦ isPowerBounded_iff_norm_le_one.mpr hb')).eq_iff,
     comap_taylorHom_discPointBelow hb' ha (by rwa [← sub_eq_add_neg]),
@@ -564,37 +585,15 @@ theorem discPoint_specializes_discPointBelow (a : K) (ha : ‖a‖ ≤ 1) (hr₀
   (((gaussPoint_specializes_gaussPointBelow hr₀ hr₁).map (Homeomorph.continuous _)).map
     (continuous_spaComap _ _ _ _ _)).map (Homeomorph.continuous _)
 
-/-- Pulling back along translation by `-a` carries `η_{a,r}` to the Gauss point `η_r`. -/
-private theorem comap_taylorHom_neg_discPoint {a : K} (ha : ‖a‖ ≤ 1) (ha' : ‖-a‖ ≤ 1)
-    (hr₀ : 0 < r) (hr₁ : r ≤ 1) :
-    comap (taylorHom (fun _ ↦ -a) fun _ ↦ isPowerBounded_iff_norm_le_one.mpr ha')
-      (discPoint a ha hr₀ hr₁).1 = (gaussPoint hr₀ hr₁).1 := by
-  rw [comap_taylorHom_discPoint ha' ha (by simp)]
-  simp only [add_neg_cancel, discPoint_zero]
-
-/-- Pulling back along translation by `-a` carries `η_{a,r⁺}` to `η_{r⁺}`. -/
-private theorem comap_taylorHom_neg_discPointAbove {a : K} (ha : ‖a‖ ≤ 1) (ha' : ‖-a‖ ≤ 1)
-    (hr₀ : 0 < r) (hr₁ : r < 1) :
-    comap (taylorHom (fun _ ↦ -a) fun _ ↦ isPowerBounded_iff_norm_le_one.mpr ha')
-      (discPointAbove a ha hr₀ hr₁).1 = (gaussPointAbove hr₀ hr₁).1 := by
-  rw [comap_taylorHom_discPointAbove ha' ha (by simp)]
-  simp only [add_neg_cancel, discPointAbove_zero]
-
-/-- Pulling back along translation by `-a` carries `η_{a,r⁻}` to `η_{r⁻}`. -/
-private theorem comap_taylorHom_neg_discPointBelow {a : K} (ha : ‖a‖ ≤ 1) (ha' : ‖-a‖ ≤ 1)
-    (hr₀ : 0 < r) (hr₁ : r ≤ 1) :
-    comap (taylorHom (fun _ ↦ -a) fun _ ↦ isPowerBounded_iff_norm_le_one.mpr ha')
-      (discPointBelow a ha hr₀ hr₁).1 = (gaussPointBelow hr₀ hr₁).1 := by
-  rw [comap_taylorHom_discPointBelow ha' ha (by simp)]
-  simp only [add_neg_cancel, discPointBelow_zero]
-
 /-- **`η_{a,r⁺}` is not `η_{a,r}`** when `r` is the norm of an element of `K`. -/
 theorem discPointAbove_ne_discPoint (a : K) (ha : ‖a‖ ≤ 1) (hr₀ : 0 < r) (hr₁ : r < 1)
     (hr : ∃ c : K, ‖c‖ = r) : discPointAbove a ha hr₀ hr₁ ≠ discPoint a ha hr₀ hr₁.le := by
   intro h
   have ha' : ‖-a‖ ≤ 1 := by rwa [norm_neg]
-  have hA := comap_taylorHom_neg_discPointAbove ha ha' hr₀ hr₁
-  rw [h, comap_taylorHom_neg_discPoint ha ha' hr₀ hr₁.le] at hA
+  -- pull back along translation by `-a`, which carries both points to the origin
+  have hA := comap_taylorHom_discPointAbove ha' ha (by simp) hr₀ hr₁
+  rw [h, comap_taylorHom_discPoint ha' ha (by simp)] at hA
+  simp only [add_neg_cancel, discPointAbove_zero, discPoint_zero] at hA
   exact gaussPointAbove_ne_gaussPoint hr₀ hr₁ hr (Subtype.ext hA.symm)
 
 /-- **`η_{a,r⁻}` is not `η_{a,r}`** when `r` is the norm of an element of `K`. -/
@@ -602,8 +601,10 @@ theorem discPointBelow_ne_discPoint (a : K) (ha : ‖a‖ ≤ 1) (hr₀ : 0 < r)
     (hr : ∃ c : K, ‖c‖ = r) : discPointBelow a ha hr₀ hr₁ ≠ discPoint a ha hr₀ hr₁ := by
   intro h
   have ha' : ‖-a‖ ≤ 1 := by rwa [norm_neg]
-  have hB := comap_taylorHom_neg_discPointBelow ha ha' hr₀ hr₁
-  rw [h, comap_taylorHom_neg_discPoint ha ha' hr₀ hr₁] at hB
+  -- pull back along translation by `-a`, which carries both points to the origin
+  have hB := comap_taylorHom_discPointBelow ha' ha (by simp) hr₀ hr₁
+  rw [h, comap_taylorHom_discPoint ha' ha (by simp)] at hB
+  simp only [add_neg_cancel, discPointBelow_zero, discPoint_zero] at hB
   exact gaussPointBelow_ne_gaussPoint hr₀ hr₁ hr (Subtype.ext hB.symm)
 
 /-- **`η_{a,r⁻}` and `η_{a,r⁺}` are distinct** when `r` is the norm of an element of `K`. -/
@@ -611,8 +612,10 @@ theorem discPointBelow_ne_discPointAbove (a : K) (ha : ‖a‖ ≤ 1) (hr₀ : 0
     (hr : ∃ c : K, ‖c‖ = r) : discPointBelow a ha hr₀ hr₁.le ≠ discPointAbove a ha hr₀ hr₁ := by
   intro h
   have ha' : ‖-a‖ ≤ 1 := by rwa [norm_neg]
-  have hB := comap_taylorHom_neg_discPointBelow ha ha' hr₀ hr₁.le
-  rw [h, comap_taylorHom_neg_discPointAbove ha ha' hr₀ hr₁] at hB
+  -- pull back along translation by `-a`, which carries both points to the origin
+  have hB := comap_taylorHom_discPointBelow ha' ha (by simp) hr₀ hr₁.le
+  rw [h, comap_taylorHom_discPointAbove ha' ha (by simp)] at hB
+  simp only [add_neg_cancel, discPointBelow_zero, discPointAbove_zero] at hB
   exact gaussPointBelow_ne_gaussPointAbove hr₀ hr₁ hr (Subtype.ext hB.symm)
 
 /-- **The support of `η_{a,r⁺}` is trivial.** -/

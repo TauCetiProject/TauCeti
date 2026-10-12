@@ -83,6 +83,9 @@ valuations need not differ from `η_r`.
   `TauCeti.ValuationSpectrum.gaussPointBelow_ne_gaussPoint` and
   `TauCeti.ValuationSpectrum.gaussPointBelow_ne_gaussPointAbove`: for `r` the norm of an element
   of `K`, the three points at radius `r` are pairwise distinct.
+* `TauCeti.ValuationSpectrum.gaussPointAbove_inj` and
+  `TauCeti.ValuationSpectrum.gaussPointBelow_inj`: distinct radii give distinct points `η_{r⁺}`,
+  respectively `η_{r⁻}`.
 * `TauCeti.ValuationSpectrum.gaussPoint_specializes_gaussPointAbove` and
   `TauCeti.ValuationSpectrum.gaussPoint_specializes_gaussPointBelow`: `η_{r⁺}` and `η_{r⁻}` lie in
   the closure of `η_r`.
@@ -550,6 +553,21 @@ theorem gaussPoint_ne_classicalPoint [CompleteSpace K] (hr₀ : 0 < r) (hr₁ : 
     gaussPoint hr₀ hr₁ ≠ classicalPoint x a ha :=
   ne_classicalPoint_of_supp_eq_bot _ (supp_gaussPoint hr₀ hr₁) x a ha
 
+omit [IsUltrametricDist K] [NonarchimedeanRing K] in
+/-- Between two radii `0 < r < s` there is a constant `c` and a power `m` with
+`rᵐ < ‖c‖ < sᵐ`, so that `Tᵐ` and `c` compare differently at the two radii. -/
+private theorem exists_pow_lt_norm_lt_pow {s : ℝ} (hr₀ : 0 < r) (hlt : r < s) :
+    ∃ (m : ℕ) (c : K), r ^ m < ‖c‖ ∧ ‖c‖ < s ^ m := by
+  -- choose `m` with `‖k‖ < (s / r)ᵐ` and `c` in the shell `sᵐ / ‖k‖ ≤ ‖c‖ < sᵐ`
+  obtain ⟨k, hk⟩ := NormedField.exists_one_lt_norm K
+  obtain ⟨m, hm⟩ := pow_unbounded_of_one_lt ‖k‖ ((one_lt_div hr₀).mpr hlt)
+  obtain ⟨c, -, hcs, hcr, -⟩ :=
+    rescale_to_shell hk (pow_pos (hr₀.trans hlt) m) (one_ne_zero' K)
+  rw [smul_eq_mul, mul_one] at hcs hcr
+  refine ⟨m, c, lt_of_lt_of_le ?_ hcr, hcs⟩
+  rw [lt_div_iff₀ (one_pos.trans hk), ← lt_div_iff₀' (pow_pos hr₀ m), ← div_pow]
+  exact hm
+
 /-- **Distinct radii `0 < r, s ≤ 1` give distinct Gauss points.** -/
 theorem gaussPoint_inj {s : ℝ} (hr₀ : 0 < r) (hr₁ : r ≤ 1) (hs₀ : 0 < s) (hs₁ : s ≤ 1) :
     gaussPoint (K := K) hr₀ hr₁ = gaussPoint hs₀ hs₁ ↔ r = s := by
@@ -557,22 +575,14 @@ theorem gaussPoint_inj {s : ℝ} (hr₀ : 0 < r) (hr₁ : r ≤ 1) (hs₀ : 0 < 
   by_contra hne
   wlog hlt : r < s generalizing r s
   · exact this hs₀ hs₁ hr₀ hr₁ h.symm (Ne.symm hne) ((not_lt.mp hlt).lt_of_ne (Ne.symm hne))
-  -- choose `m` with `‖k‖ ≤ (s / r)ᵐ` and `c` in the shell `sᵐ / ‖k‖ ≤ ‖c‖ < sᵐ`
-  obtain ⟨k, hk⟩ := NormedField.exists_one_lt_norm K
-  obtain ⟨m, hm⟩ := pow_unbounded_of_one_lt ‖k‖ ((one_lt_div hr₀).mpr hlt)
-  obtain ⟨c, -, hcs, hcr, -⟩ := rescale_to_shell hk (pow_pos hs₀ m) (one_ne_zero' K)
-  rw [smul_eq_mul, mul_one] at hcs hcr
-  have hrm : r ^ m ≤ ‖c‖ := by
-    refine le_trans ?_ hcr
-    rw [le_div_iff₀ (one_pos.trans hk), ← le_div_iff₀' (pow_pos hr₀ m), ← div_pow]
-    exact hm.le
+  obtain ⟨m, c, hrm, hcs⟩ := exists_pow_lt_norm_lt_pow (K := K) hr₀ hlt
   have key := congrArg (fun p : closedPolydisc 1 K ↦ p.1.toValuativeRel.vle
     (weightedX (fun _ : Fin 1 ↦ ({1} : Set K)) isWeightFamily_one_weight 0 ^ m)
     (weightedC _ isWeightFamily_one_weight c)) h
   simp only [gaussPoint_vle_iff, map_pow, closedDiscGaussValuation_weightedC, eq_iff_iff,
     ← NNReal.coe_le_coe, NNReal.coe_pow, coe_closedDiscGaussValuation_weightedX,
     coe_nnnorm] at key
-  exact (key.mp hrm).not_gt hcs
+  exact (key.mp hrm.le).not_gt hcs
 
 /-! ### The points just above and just below a Gauss point -/
 
@@ -798,6 +808,44 @@ theorem gaussPointBelow_ne_gaussPointAbove (hr₀ : 0 < r) (hr₁ : r < 1) (hr :
   simp only [gaussPointBelow_vle_iff, gaussPointAbove_vle_iff, eq_iff_iff] at key
   exact not_closedDiscGaussValuationAbove_weightedX_le hr₀ hr₁.le hc
     (key.mp (le_of_not_ge (not_closedDiscGaussValuationBelow_weightedC_le hr₀ hr₁.le hc)))
+
+/-- **Distinct radii `0 < r, s < 1` give distinct points `η_{r⁺}`**: they refine the distinct
+Gauss points `η_r` and `η_s`. -/
+theorem gaussPointAbove_inj {s : ℝ} (hr₀ : 0 < r) (hr₁ : r < 1) (hs₀ : 0 < s) (hs₁ : s < 1) :
+    gaussPointAbove (K := K) hr₀ hr₁ = gaussPointAbove hs₀ hs₁ ↔ r = s := by
+  refine ⟨fun h ↦ ?_, fun h ↦ by subst h; rfl⟩
+  by_contra hne
+  wlog hlt : r < s generalizing r s
+  · exact this hs₀ hs₁ hr₀ hr₁ h.symm (Ne.symm hne) ((not_lt.mp hlt).lt_of_ne (Ne.symm hne))
+  obtain ⟨m, c, hrm, hcs⟩ := exists_pow_lt_norm_lt_pow (K := K) hr₀ hlt
+  have key := congrArg (fun p : closedPolydisc 1 K ↦ p.1.toValuativeRel.vle
+    (weightedX (fun _ : Fin 1 ↦ ({1} : Set K)) isWeightFamily_one_weight 0 ^ m)
+    (weightedC _ isWeightFamily_one_weight c)) h
+  simp only [gaussPointAbove_vle_iff, eq_iff_iff] at key
+  -- `Tᵐ` is strictly below `c` at radius `r` and strictly above it at radius `s`
+  refine (closedDiscGaussValuationAbove_lt_of_lt hs₀ hs₁.le ?_).not_ge
+    (key.mp (closedDiscGaussValuationAbove_lt_of_lt hr₀ hr₁.le ?_).le) <;>
+  simpa only [← NNReal.coe_lt_coe, map_pow, NNReal.coe_pow, closedDiscGaussValuation_weightedC,
+    coe_closedDiscGaussValuation_weightedX, coe_nnnorm]
+
+/-- **Distinct radii `0 < r, s ≤ 1` give distinct points `η_{r⁻}`**: they refine the distinct
+Gauss points `η_r` and `η_s`. -/
+theorem gaussPointBelow_inj {s : ℝ} (hr₀ : 0 < r) (hr₁ : r ≤ 1) (hs₀ : 0 < s) (hs₁ : s ≤ 1) :
+    gaussPointBelow (K := K) hr₀ hr₁ = gaussPointBelow hs₀ hs₁ ↔ r = s := by
+  refine ⟨fun h ↦ ?_, fun h ↦ by subst h; rfl⟩
+  by_contra hne
+  wlog hlt : r < s generalizing r s
+  · exact this hs₀ hs₁ hr₀ hr₁ h.symm (Ne.symm hne) ((not_lt.mp hlt).lt_of_ne (Ne.symm hne))
+  obtain ⟨m, c, hrm, hcs⟩ := exists_pow_lt_norm_lt_pow (K := K) hr₀ hlt
+  have key := congrArg (fun p : closedPolydisc 1 K ↦ p.1.toValuativeRel.vle
+    (weightedX (fun _ : Fin 1 ↦ ({1} : Set K)) isWeightFamily_one_weight 0 ^ m)
+    (weightedC _ isWeightFamily_one_weight c)) h
+  simp only [gaussPointBelow_vle_iff, eq_iff_iff] at key
+  -- `Tᵐ` is strictly below `c` at radius `r` and strictly above it at radius `s`
+  refine (closedDiscGaussValuationBelow_lt_of_lt hs₀ hs₁ ?_).not_ge
+    (key.mp (closedDiscGaussValuationBelow_lt_of_lt hr₀ hr₁ ?_).le) <;>
+  simpa only [← NNReal.coe_lt_coe, map_pow, NNReal.coe_pow, closedDiscGaussValuation_weightedC,
+    coe_closedDiscGaussValuation_weightedX, coe_nnnorm]
 
 /-- A point refining the Gauss point `η_r`, in the sense that a strictly smaller Gauss norm gives
 a strictly smaller value and only zero vanishes, lies in the closure of `η_r`. -/

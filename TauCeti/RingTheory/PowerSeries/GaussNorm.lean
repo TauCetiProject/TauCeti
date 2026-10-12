@@ -1175,8 +1175,12 @@ theorem gaussValuationAbove_monomial_coeff_le (hc : 0 < c) (n : ℕ) :
     gaussValuationAbove hc ⟨PowerSeries.monomial n ((f : PowerSeries R).coeff n),
       PowerSeries.isRestricted_monomial c n _⟩ ≤ gaussValuationAbove hc f := by
   rcases eq_or_ne ((f : PowerSeries R).coeff n) 0 with ha | ha
-  · rw [show (⟨_, PowerSeries.isRestricted_monomial c n _⟩ :
-      PowerSeries.IsRestricted.subring (R := R) c) = 0 from Subtype.ext (by simp [ha]), map_zero]
+  · -- the monomial with zero coefficient is the zero element of the restricted subring
+    have h0 : (⟨PowerSeries.monomial n ((f : PowerSeries R).coeff n),
+        PowerSeries.isRestricted_monomial c n _⟩ : PowerSeries.IsRestricted.subring (R := R) c) =
+        0 :=
+      Subtype.ext (by simp [ha])
+    rw [h0, map_zero]
     exact zero_le
   obtain ⟨s, hs⟩ := exists_isDistinguished hc f.2 fun h ↦ ha (by simp [h])
   have hm := isDistinguished_monomial hc ha n
@@ -1194,8 +1198,12 @@ theorem gaussValuationBelow_monomial_coeff_le (hc : 0 < c) (n : ℕ) :
     gaussValuationBelow hc ⟨PowerSeries.monomial n ((f : PowerSeries R).coeff n),
       PowerSeries.isRestricted_monomial c n _⟩ ≤ gaussValuationBelow hc f := by
   rcases eq_or_ne ((f : PowerSeries R).coeff n) 0 with ha | ha
-  · rw [show (⟨_, PowerSeries.isRestricted_monomial c n _⟩ :
-      PowerSeries.IsRestricted.subring (R := R) c) = 0 from Subtype.ext (by simp [ha]), map_zero]
+  · -- the monomial with zero coefficient is the zero element of the restricted subring
+    have h0 : (⟨PowerSeries.monomial n ((f : PowerSeries R).coeff n),
+        PowerSeries.isRestricted_monomial c n _⟩ : PowerSeries.IsRestricted.subring (R := R) c) =
+        0 :=
+      Subtype.ext (by simp [ha])
+    rw [h0, map_zero]
     exact zero_le
   obtain ⟨s, hs⟩ := exists_isLowestDominant hc f.2 fun h ↦ ha (by simp [h])
   have hm := isLowestDominant_monomial hc ha n
