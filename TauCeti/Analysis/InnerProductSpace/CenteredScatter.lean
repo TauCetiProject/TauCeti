@@ -87,13 +87,14 @@ theorem sum_rankOne_sub_eq_centeredScatter_add (z : ι → E) (p : E) :
     ∑ i, rankOne 𝕜 (z i - p) (z i - p) =
       centeredScatter 𝕜 z +
         (Fintype.card ι : 𝕜) • rankOne 𝕜 (finiteMean 𝕜 z - p) (finiteMean 𝕜 z - p) := by
+  rw [centeredScatter_def]
   set m := finiteMean 𝕜 z
   have hsum : ∑ i, (z i - m) = 0 := sum_sub_finiteMean z
   have hz : ∀ i, z i - p = (z i - m) + (m - p) := fun i ↦ by abel
-  simp_rw [hz, map_add, add_apply, sum_add_distrib]
-  rw [← _root_.sum_apply, ← map_sum, ← map_sum, hsum, map_zero, map_zero, zero_apply, sum_const,
-    card_univ, ← Nat.cast_smul_eq_nsmul 𝕜, centeredScatter_def]
-  abel
+  -- Expand `zᵢ - p = (zᵢ - m) + (m - p)` bilinearly: each cross term sums to a rank-one operator
+  -- with `∑ᵢ (zᵢ - m) = 0` in one slot, so it vanishes.
+  simp_rw [hz, map_add, add_apply, sum_add_distrib, ← _root_.sum_apply, ← map_sum, hsum]
+  simp [← Nat.cast_smul_eq_nsmul 𝕜]
 
 /-- **The quadratic form of the centered scatter operator.**
 `Re ⟪S(z) x, x⟫ = ∑ᵢ ‖⟪zᵢ - m, x⟫‖²`, where `m` is the mean of `z`. -/
@@ -110,7 +111,7 @@ theorem isPositive_centeredScatter (z : ι → E) : (centeredScatter 𝕜 z).IsP
 /-- The weight `n / (n + 1)` of the rank-one update is real. -/
 private theorem natCast_div_natCast_add_one_eq_ofReal (n : ℕ) :
     (n : 𝕜) / ((n : 𝕜) + 1) = ((n / (n + 1) : ℝ) : 𝕜) := by
-  push_cast; rfl
+  simp only [RCLike.ofReal_div, RCLike.ofReal_add, RCLike.ofReal_natCast, RCLike.ofReal_one]
 
 /-- **Appending a point to a family.** If `y` is appended to a family `z` of `n` points with
 mean `m`, the centered scatter operator grows by the rank-one operator
@@ -146,9 +147,10 @@ theorem re_inner_centeredScatter_snoc_apply_self {n : ℕ} (z : Fin n → E) (y 
     RCLike.re ⟪centeredScatter 𝕜 (Fin.snoc z y : Fin (n + 1) → E) x, x⟫_𝕜 =
       RCLike.re ⟪centeredScatter 𝕜 z x, x⟫_𝕜 +
         n / (n + 1) * ‖⟪y - finiteMean 𝕜 z, x⟫_𝕜‖ ^ 2 := by
-  rw [centeredScatter_snoc, natCast_div_natCast_add_one_eq_ofReal, add_apply, inner_add_left,
-    map_add, smul_apply, rankOne_apply, inner_smul_left, inner_smul_left, RCLike.conj_ofReal,
-    RCLike.conj_mul, ← RCLike.ofReal_pow, ← RCLike.ofReal_mul, RCLike.ofReal_re]
+  rw [centeredScatter_snoc, natCast_div_natCast_add_one_eq_ofReal]
+  simp only [add_apply, smul_apply, rankOne_apply, inner_add_left, inner_smul_left,
+    RCLike.conj_ofReal, RCLike.conj_mul, map_add]
+  norm_cast
 
 /-- **Monotonicity of the scatter.** Appending a point to a family increases its centered scatter
 operator in the Loewner order. -/

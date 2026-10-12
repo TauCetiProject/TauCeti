@@ -28,6 +28,7 @@ mean by `(n + 1)⁻¹ (y - m)`, including for `n = 0`.
 ## Main declarations
 
 * `TauCeti.finiteMean`: the mean of a finite family.
+* `TauCeti.finiteMean_of_isEmpty`: the mean of the empty family is `0`.
 * `TauCeti.sum_eq_card_smul_finiteMean`: `∑ i, z i = card ι • m`.
 * `TauCeti.sum_sub_finiteMean`: `∑ i, (z i - m) = 0`.
 * `TauCeti.finiteMean_snoc`: the mean after appending a point.
@@ -53,6 +54,11 @@ theorem finiteMean_def (z : ι → E) : finiteMean R z = univ.centerMass (fun _ 
 theorem finiteMean_eq_inv_smul_sum (z : ι → E) :
     finiteMean R z = (Fintype.card ι : R)⁻¹ • ∑ i, z i := by
   simp [finiteMean_def, centerMass]
+
+/-- The mean of the empty family is `0`. -/
+@[simp]
+theorem finiteMean_of_isEmpty [IsEmpty ι] (z : ι → E) : finiteMean R z = 0 := by
+  simp [finiteMean_eq_inv_smul_sum]
 
 variable [CharZero R]
 
