@@ -26,8 +26,7 @@ acyclicity.
 
 ## References
 
-These results support the sink-admissible reflection-functor constructions in Layers 4 and 5 of
-`TauCetiRoadmap/RepresentationTheory/QuiverRepresentations/README.md`.
+These results support the sink-admissible reflection-functor constructions.
 -/
 
 public section
