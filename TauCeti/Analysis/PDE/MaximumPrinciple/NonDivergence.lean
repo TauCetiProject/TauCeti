@@ -8,10 +8,10 @@ module
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import Mathlib.LinearAlgebra.QuadraticForm.Basic
 public import TauCeti.Analysis.InnerProductSpace.Laplacian.DriftMaximumPrinciple
+public import TauCeti.Analysis.PDE.Ellipticity.Basic
 import Mathlib.Analysis.Calculus.FDeriv.Symmetric
 import Mathlib.Analysis.InnerProductSpace.Positive
 import TauCeti.Analysis.Calculus.DerivativeTest
-import TauCeti.LinearAlgebra.Matrix.ToQuadraticForm
 
 /-!
 # The weak maximum principle for elliptic operators in non-divergence form
@@ -33,9 +33,9 @@ If `c ≥ 0` and a function `u`, continuous on `K` and `C²` in its interior, sa
 The minimum principle, the two-sided bound for solutions, the comparison principle and uniqueness
 for the Dirichlet problem follow, and so does the quantitative form: if instead
 `c u - F ≤ L u` for a constant `F ≥ 0`, then `u ≤ m + (exp ((β / λ + 1) diam K) - 1) F / λ`, with
-a constant depending only on `β / λ`, `λ` and the diameter of `K`. This one-sided estimate, applied
-to `u` and `-u`, gives the bound on `sup |u|` in terms of the data that the Schauder theory of the
-Dirichlet problem uses.
+a constant depending only on `β / λ`, `λ` and the diameter of `K`. Applied to `-u` it gives the
+matching lower bound, and together the two give the bound on `sup |u|` in terms of
+`sup_{frontier K} |u|` and `sup |L u - c u|` that the Schauder theory of the Dirichlet problem uses.
 
 Only the lower ellipticity bound is used, so a coefficient field with
 `TauCeti.PDE.UniformlyEllipticOn (interior K) a λ Λ` supplies the hypotheses through
@@ -79,6 +79,10 @@ compares `u` with `m + (F / λ) (exp (α d) - exp (α (⟪e, ·⟫ - s)))`, wher
   for the Dirichlet problem.
 * `TauCeti.PDE.le_add_of_mul_sub_le_sum_mul_fderiv_fderiv_add_fderiv_le_frontier`: the a priori
   bound.
+* `TauCeti.PDE.sub_le_of_sum_mul_fderiv_fderiv_add_fderiv_le_mul_add_ge_frontier`: the a priori
+  lower bound.
+* `TauCeti.PDE.abs_le_add_of_abs_sum_mul_fderiv_fderiv_add_fderiv_sub_mul_le_abs_le_frontier`: the
+  a priori bound on `sup |u|`.
 
 ## References
 
@@ -492,6 +496,65 @@ theorem le_add_of_mul_sub_le_sum_mul_fderiv_fderiv_add_fderiv_le_frontier
   have hbound : (Real.exp (α * d) - 1) * F / lam = F / lam * Real.exp (α * d) - F / lam := by
     ring
   linarith [hg x, (hrwK x hxK).1]
+
+/-- **The a priori lower bound for elliptic operators in non-divergence form.** Under the
+hypotheses of `le_add_of_mul_sub_le_sum_mul_fderiv_fderiv_add_fderiv_le_frontier`, but with
+`∑ᵢⱼ aⁱʲ ∂ᵢ∂ⱼf + bⁱ ∂ᵢf ≤ c f + F` on the interior of `K`, every nonpositive lower bound `m` for
+`f` on `frontier K` gives
+
+`m - (exp ((β / λ + 1) diam K) - 1) F / λ ≤ f` on `K`. -/
+theorem sub_le_of_sum_mul_fderiv_fderiv_add_fderiv_le_mul_add_ge_frontier
+    {K : Set (EuclideanSpace ℝ ι)} (hK : IsCompact K) {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ}
+    {b : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι} {c f : EuclideanSpace ℝ ι → ℝ} {lam β m F : ℝ}
+    (hlam : 0 < lam)
+    (ha : ∀ ⦃x⦄, x ∈ interior K → ∀ ξ : EuclideanSpace ℝ ι,
+      lam * ‖ξ‖ ^ 2 ≤ (a x).toQuadraticForm' ξ)
+    (hb : ∀ ⦃x⦄, x ∈ interior K → ‖b x‖ ≤ β) (hc : ∀ ⦃x⦄, x ∈ interior K → 0 ≤ c x)
+    (hβ : 0 ≤ β) (hm : m ≤ 0) (hF : 0 ≤ F) (hcont : ContinuousOn f K)
+    (hcd : ∀ ⦃x⦄, x ∈ interior K → ContDiffAt ℝ 2 f x)
+    (hsuper : ∀ ⦃x⦄, x ∈ interior K →
+      ∑ i, ∑ j, a x i j * fderiv ℝ (fderiv ℝ f) x (EuclideanSpace.single i 1)
+        (EuclideanSpace.single j 1) + fderiv ℝ f x (b x) ≤ c x * f x + F)
+    (hbdry : ∀ ⦃x⦄, x ∈ frontier K → m ≤ f x) :
+    ∀ ⦃x⦄, x ∈ K → m - (Real.exp ((β / lam + 1) * Metric.diam K) - 1) * F / lam ≤ f x := by
+  intro x hx
+  have h := le_add_of_mul_sub_le_sum_mul_fderiv_fderiv_add_fderiv_le_frontier (f := -f) (m := -m)
+    hK hlam ha hb hc hβ (neg_nonneg.mpr hm) hF hcont.neg (fun y hy ↦ (hcd hy).neg)
+    (fun y hy ↦ by
+      rw [sum_mul_fderiv_fderiv_add_fderiv_neg, Pi.neg_apply, mul_neg]
+      linarith [hsuper hy])
+    (fun y hy ↦ by simpa using hbdry hy) hx
+  rw [Pi.neg_apply] at h
+  linarith
+
+/-- **The a priori bound on `sup |u|` for elliptic operators in non-divergence form.** Let `a`,
+`b`, `c` be as in `le_of_mul_le_sum_mul_fderiv_fderiv_add_fderiv_le_frontier`, and let `f`,
+continuous on `K` and `C²` on its interior, satisfy `|∑ᵢⱼ aⁱʲ ∂ᵢ∂ⱼf + bⁱ ∂ᵢf - c f| ≤ F` there.
+Then every bound `M` for `|f|` on `frontier K` gives
+
+`|f| ≤ M + (exp ((β / λ + 1) diam K) - 1) F / λ` on `K`. -/
+theorem abs_le_add_of_abs_sum_mul_fderiv_fderiv_add_fderiv_sub_mul_le_abs_le_frontier
+    {K : Set (EuclideanSpace ℝ ι)} (hK : IsCompact K) {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ}
+    {b : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι} {c f : EuclideanSpace ℝ ι → ℝ} {lam β M F : ℝ}
+    (hlam : 0 < lam)
+    (ha : ∀ ⦃x⦄, x ∈ interior K → ∀ ξ : EuclideanSpace ℝ ι,
+      lam * ‖ξ‖ ^ 2 ≤ (a x).toQuadraticForm' ξ)
+    (hb : ∀ ⦃x⦄, x ∈ interior K → ‖b x‖ ≤ β) (hc : ∀ ⦃x⦄, x ∈ interior K → 0 ≤ c x)
+    (hβ : 0 ≤ β) (hM : 0 ≤ M) (hF : 0 ≤ F) (hcont : ContinuousOn f K)
+    (hcd : ∀ ⦃x⦄, x ∈ interior K → ContDiffAt ℝ 2 f x)
+    (hL : ∀ ⦃x⦄, x ∈ interior K →
+      |∑ i, ∑ j, a x i j * fderiv ℝ (fderiv ℝ f) x (EuclideanSpace.single i 1)
+        (EuclideanSpace.single j 1) + fderiv ℝ f x (b x) - c x * f x| ≤ F)
+    (hbdry : ∀ ⦃x⦄, x ∈ frontier K → |f x| ≤ M) :
+    ∀ ⦃x⦄, x ∈ K → |f x| ≤ M + (Real.exp ((β / lam + 1) * Metric.diam K) - 1) * F / lam := by
+  intro x hx
+  have hle := le_add_of_mul_sub_le_sum_mul_fderiv_fderiv_add_fderiv_le_frontier hK hlam ha hb hc
+    hβ hM hF hcont hcd (fun _ hy ↦ by linarith [(abs_le.mp (hL hy)).1])
+    (fun _ hy ↦ (abs_le.mp (hbdry hy)).2) hx
+  have hge := sub_le_of_sum_mul_fderiv_fderiv_add_fderiv_le_mul_add_ge_frontier hK hlam ha hb hc
+    hβ (neg_nonpos.mpr hM) hF hcont hcd (fun _ hy ↦ by linarith [(abs_le.mp (hL hy)).2])
+    (fun _ hy ↦ (abs_le.mp (hbdry hy)).1) hx
+  exact abs_le.mpr ⟨by linarith, hle⟩
 
 end PDE
 
