@@ -16,11 +16,8 @@ function predicate on an involutive additive monoid. A star-preserving additive 
 function `F ∘ φ : N → ℂ`; if `φ` is surjective, positive-definiteness can also be descended
 from the pullback.
 
-This is part of the `OneParameterSemigroups` roadmap, Part C, whose positive-definite-function
-API asks for pullbacks alongside the PD-function/PD-kernel correspondence and the closure
-properties. The proofs are the finite-family reindexing argument: apply the defining
-nonnegativity of `F` to the image family under `φ`, using preservation of addition and star to
-identify the Gram entries.
+The proofs are the finite-family reindexing argument: apply the defining nonnegativity of `F` to the
+image family under `φ`, using preservation of addition and star to identify the Gram entries.
 
 ## Main declarations
 
