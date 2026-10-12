@@ -14,7 +14,7 @@ public import TauCeti.Algebra.CentralSimple.Splitting
 -- `TauCeti.Bimodule` supplies the left-right action transported to the orientation used here.
 public import TauCeti.Algebra.CentralSimple.Bimodule
 public import TauCeti.Algebra.Algebra.Opposite
-public import TauCeti.RingTheory.TensorProduct.Opposite
+public import Mathlib.RingTheory.TensorProduct.Maps
 -- Non-public: none of these appears in the type of an exported declaration. The tower law and the
 -- dimension of an endomorphism algebra, the injective-implies-surjective criterion, the matrix
 -- form of an endomorphism algebra and the faithfulness of a module over a simple ring are used
@@ -164,13 +164,14 @@ def of : A ≃ₗ[K] BaseChangeModule f :=
 
 noncomputable instance : Module (L ⊗[K] A) (BaseChangeModule f) :=
   Module.compHom (M := Bimodule (f.toOppositeOfComm))
-    (Algebra.TensorProduct.mapOpOpRight K L A).toRingHom
+    (Algebra.TensorProduct.lTensor (S := K) L (AlgEquiv.opOp K A).toAlgHom).toRingHom
 
 /-- The action of `L ⊗[K] A` on `A` defining `BaseChangeModule f`, as a `K`-algebra homomorphism
 into `Module.End K A`, transported from `TauCeti.Bimodule.toEnd`. -/
 noncomputable def toEnd : L ⊗[K] A →ₐ[K] Module.End K A :=
   ((MulOpposite.opLinearEquiv K).conjAlgEquiv K).symm.toAlgHom.comp
-    ((Bimodule.toEnd (f.toOppositeOfComm)).comp (Algebra.TensorProduct.mapOpOpRight K L A))
+    ((Bimodule.toEnd (f.toOppositeOfComm)).comp
+      (Algebra.TensorProduct.lTensor (S := K) L (AlgEquiv.opOp K A).toAlgHom))
 
 /-- A pure tensor `l ⊗ₜ a` acts on `x : A` through `toEnd f` by `x ↦ a * x * f l`. -/
 @[simp]
@@ -181,7 +182,7 @@ theorem toEnd_tmul_apply (l : L) (a x : A) : toEnd f (l ⊗ₜ a) x = a * x * f 
 equation of the module structure, and the single place it is unfolded: everything else rewrites
 with it instead of reasoning up to definitional equality. -/
 theorem smul_def (r : L ⊗[K] A) (x : A) : r • of f x = of f (toEnd f r x) := by
-  change Algebra.TensorProduct.mapOpOpRight K L A r •
+  change Algebra.TensorProduct.lTensor (S := K) L (AlgEquiv.opOp K A).toAlgHom r •
       Bimodule.of (f.toOppositeOfComm) (MulOpposite.op x) =
     Bimodule.of (f.toOppositeOfComm) (MulOpposite.op (toEnd f r x))
   rw [Bimodule.smul_def]
