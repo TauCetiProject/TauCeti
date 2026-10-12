@@ -32,6 +32,10 @@ Haar measure used for the `L²` norm. No regularity of the coefficients beyond m
 is used. This is the first half of the De Giorgi–Nash–Moser theorem; Hölder continuity is the
 second.
 
+The `_of_local_subsolution` and `_of_local_solution` forms allow an ambient Sobolev function
+while requiring the coefficient hypotheses and the weak equation only on the selected ball,
+with no assumptions on the coefficients or equation outside that ball.
+
 The energy recursion `setIntegral_sq_mul_max_sub_sq_le` is useful when a Sobolev inequality
 `‖v‖_q ≤ S ‖∇v‖₂` is available on `W^{1,2}_0(B(x₀, R))` for some `q > 2`. It controls higher
 truncation levels on smaller balls and yields the local bound below. The bound can be used as
@@ -690,10 +694,9 @@ theorem exists_ae_abs_value_le_mul_rpow_mul_sqrt_setIntegral [Nonempty ι] :
           pow_le_pow_left₀ (le_max_right _ _) (max_le (le_abs_self _) (abs_nonneg _)) 2
       _ = W1p.value w x ^ 2 := sq_abs _
   -- `-u` is a weak solution too, with the same `L²` norm on the ball.
-  have hneg : ⇑(W1p.value (-u)) =ᵐ[mu.restrict Omega] -W1p.value u := by
-    simpa only [← W1p.valueL_apply, map_neg] using Lp.coeFn_neg (W1p.value u)
+  have hneg := W1p.value_neg_ae u
   have hu' : ∀ v : W1p0 mu Omega 2, energyFormH1 a 0 0 (-u) (v : W1p mu Omega 2) = 0 := fun v => by
-    rw [← neg_one_smul ℝ u, energyFormH1_smul_left, hu v, mul_zero]
+    rw [energyFormH1_neg_left, hu v, neg_zero]
   have hint : ∫ x in Metric.ball x₀ R, W1p.value (-u) x ^ 2 ∂mu =
       ∫ x in Metric.ball x₀ R, W1p.value u x ^ 2 ∂mu := by
     refine integral_congr_ae ?_
@@ -1030,6 +1033,87 @@ theorem exists_ae_value_le_add_mul_rpow_mul_setIntegral_rpow [Nonempty ι] {p : 
   refine ⟨C, hC, fun {Omega a u k x₀ R} h ha hu hball => ?_⟩
   have := hmain (u := u) (k := k) hball fun y s hs hsub => hbound h ha hu hs hsub
   rwa [show 2 * (-(Fintype.card ι : ℝ) / 2) / p = -(Fintype.card ι : ℝ) / p by ring] at this
+
+/-- **Local boundedness with hypotheses only on the ball.** For every `0 < p ≤ 2` and every
+positive dimension,
+the coefficients need be elliptic and measurable only on `B(x₀, R)`, and the restriction of
+`u` to that ball need be a weak subsolution only there. The bound applies to the original
+ambient-domain representative of `u`; its constant is independent of the radius. -/
+theorem exists_ae_value_le_add_mul_rpow_mul_setIntegral_rpow_of_local_subsolution
+    [Nonempty ι] {p : ℝ} (hp : 0 < p) (hp2 : p ≤ 2) :
+    ∃ D : ℝ, 0 < D ∧ ∀ {Omega : Opens (EuclideanSpace ℝ ι)}
+      {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {u : W1p mu Omega 2} {k : ℝ}
+      {x₀ : EuclideanSpace ℝ ι} {R : ℝ}
+      (hball : Metric.ball x₀ R ⊆ (Omega : Set (EuclideanSpace ℝ ι))),
+      let U : Opens (EuclideanSpace ℝ ι) := ⟨Metric.ball x₀ R, Metric.isOpen_ball⟩
+      let uU : W1p mu U 2 := W1p.restrictL hball u
+      UniformlyEllipticOn (Metric.ball x₀ R) a lam Lam →
+      AEStronglyMeasurable a (mu.restrict (Metric.ball x₀ R)) →
+      (∀ v : W1p0 mu U 2,
+        (∀ᵐ x ∂mu.restrict U, 0 ≤ W1p.value (v : W1p mu U 2) x) →
+          energyFormH1 a 0 0 uU (v : W1p mu U 2) ≤ 0) →
+      ∀ᵐ x ∂mu.restrict (Metric.ball x₀ (R / 2)),
+        W1p.value u x ≤ k + D * R ^ (-(Fintype.card ι : ℝ) / p) *
+          (∫ x in Metric.ball x₀ R, max (W1p.value u x - k) 0 ^ p ∂mu) ^ p⁻¹ := by
+  obtain ⟨D, hD, hbound⟩ :=
+    exists_ae_value_le_add_mul_rpow_mul_setIntegral_rpow (mu := mu)
+      (lam := lam) (Lam := Lam) hp hp2
+  refine ⟨D, hD, fun {Omega a u k x₀ R} hball h ha hu => ?_⟩
+  let U : Opens (EuclideanSpace ℝ ι) := ⟨Metric.ball x₀ R, Metric.isOpen_ball⟩
+  have hU : U ≤ Omega := hball
+  let uU : W1p mu U 2 := W1p.restrictL hU u
+  have hlocal := hbound (u := uU) (k := k) h ha hu (by exact Set.Subset.rfl)
+  have hvalue : W1p.value uU =ᵐ[mu.restrict (Metric.ball x₀ R)] W1p.value u :=
+    W1p.value_restrictL_ae hU u
+  have hint : ∫ x in Metric.ball x₀ R, max (W1p.value uU x - k) 0 ^ p ∂mu =
+      ∫ x in Metric.ball x₀ R, max (W1p.value u x - k) 0 ^ p ∂mu := by
+    apply integral_congr_ae
+    filter_upwards [hvalue] with x hx
+    rw [hx]
+  have hhalf : Metric.ball x₀ (R / 2) ⊆ Metric.ball x₀ R :=
+    by
+      by_cases hR : 0 ≤ R
+      · exact Metric.ball_subset_ball (by linarith)
+      · rw [Metric.ball_eq_empty.mpr (by linarith : R / 2 ≤ 0)]
+        exact Set.empty_subset _
+  filter_upwards [hlocal, ae_restrict_of_ae_restrict_of_subset hhalf hvalue] with x hx hv
+  simpa only [hv, hint] using hx
+
+/-- **The two-sided local bound with hypotheses only on the ball.** A weak solution after
+restriction to `B(x₀, R)` satisfies the scale-invariant absolute-value estimate on its half
+ball, without ellipticity, measurability or the equation being required outside the ball. -/
+theorem exists_ae_abs_value_le_mul_rpow_mul_sqrt_setIntegral_of_local_solution
+    [Nonempty ι] :
+    ∃ D : ℝ, 0 < D ∧ ∀ {Omega : Opens (EuclideanSpace ℝ ι)}
+      {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {u : W1p mu Omega 2}
+      {x₀ : EuclideanSpace ℝ ι} {R : ℝ} (_ : 0 < R)
+      (hball : Metric.ball x₀ R ⊆ (Omega : Set (EuclideanSpace ℝ ι))),
+      let U : Opens (EuclideanSpace ℝ ι) := ⟨Metric.ball x₀ R, Metric.isOpen_ball⟩
+      let uU : W1p mu U 2 := W1p.restrictL hball u
+      UniformlyEllipticOn (Metric.ball x₀ R) a lam Lam →
+      AEStronglyMeasurable a (mu.restrict (Metric.ball x₀ R)) →
+      (∀ v : W1p0 mu U 2, energyFormH1 a 0 0 uU (v : W1p mu U 2) = 0) →
+      ∀ᵐ x ∂mu.restrict (Metric.ball x₀ (R / 2)),
+        |W1p.value u x| ≤ D * R ^ (-(Fintype.card ι : ℝ) / 2) *
+          √(∫ x in Metric.ball x₀ R, W1p.value u x ^ 2 ∂mu) := by
+  obtain ⟨D, hD, hbound⟩ :=
+    exists_ae_abs_value_le_mul_rpow_mul_sqrt_setIntegral (mu := mu) (lam := lam) (Lam := Lam)
+  refine ⟨D, hD, fun {Omega a u x₀ R} hR hball h ha hu => ?_⟩
+  let U : Opens (EuclideanSpace ℝ ι) := ⟨Metric.ball x₀ R, Metric.isOpen_ball⟩
+  have hU : U ≤ Omega := hball
+  let uU : W1p mu U 2 := W1p.restrictL hU u
+  have hlocal := hbound (u := uU) h ha hu hR (by exact Set.Subset.rfl)
+  have hvalue : W1p.value uU =ᵐ[mu.restrict (Metric.ball x₀ R)] W1p.value u :=
+    W1p.value_restrictL_ae hU u
+  have hint : ∫ x in Metric.ball x₀ R, W1p.value uU x ^ 2 ∂mu =
+      ∫ x in Metric.ball x₀ R, W1p.value u x ^ 2 ∂mu := by
+    apply integral_congr_ae
+    filter_upwards [hvalue] with x hx
+    rw [hx]
+  have hhalf : Metric.ball x₀ (R / 2) ⊆ Metric.ball x₀ R :=
+    Metric.ball_subset_ball (by linarith)
+  filter_upwards [hlocal, ae_restrict_of_ae_restrict_of_subset hhalf hvalue] with x hx hv
+  simpa only [hv, hint] using hx
 
 end PDE
 

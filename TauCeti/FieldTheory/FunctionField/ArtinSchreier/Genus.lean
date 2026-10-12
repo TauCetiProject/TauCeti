@@ -13,7 +13,7 @@ public import TauCeti.AlgebraicGeometry.WeilDivisor.FiniteSum
 public import TauCeti.FieldTheory.ArtinSchreier.Basic
 
 import TauCeti.FieldTheory.FunctionField.Different.Hurwitz
-import TauCeti.FieldTheory.FunctionField.Different.ArtinSchreier
+import TauCeti.FieldTheory.FunctionField.Different.ArtinSchreier.Basic
 import TauCeti.FieldTheory.FunctionField.Place.Extension.Existence
 import TauCeti.FieldTheory.FunctionField.ConstantExtension.Unramified
 
