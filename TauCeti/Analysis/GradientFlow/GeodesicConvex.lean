@@ -142,19 +142,6 @@ theorem ConvexAlongGeodesics.geodesicallyConvex [IsGeodesicSpace X]
     (h : ConvexAlongGeodesics m φ) : GeodesicallyConvex m φ := fun x y hx hy ↦
   (IsGeodesicSpace.exists_isGeodesicSegment x y).imp fun _ hγ ↦ ⟨hγ, h hx hy hγ⟩
 
-/-- Along a curve on which `φ` is `m`-convex, `φ` is `≠ ⊤` at every time in `[0, 1]` once it is
-`≠ ⊤` at both ends. -/
-theorem ConvexAlong.apply_ne_top (h : ConvexAlong m φ γ) (h₀ : φ (γ 0) ≠ ⊤) (h₁ : φ (γ 1) ≠ ⊤)
-    {t : ℝ} (ht : t ∈ Icc (0 : ℝ) 1) : φ (γ t) ≠ ⊤ := by
-  refine ne_top_of_le_ne_top ?_ (h t ht)
-  -- A nonnegative real multiple of an extended real `≠ ⊤` is `≠ ⊤`.
-  have hmul : ∀ a : ℝ, 0 ≤ a → ∀ E : EReal, E ≠ ⊤ → (a : EReal) * E ≠ ⊤ := fun a ha E hE ↦
-    (EReal.mul_ne_top _ _).2 ⟨.inl (EReal.coe_ne_bot a), .inl (EReal.coe_nonneg.2 ha),
-      .inl (EReal.coe_ne_top a), .inr hE⟩
-  rw [sub_eq_add_neg, ← EReal.coe_neg]
-  exact EReal.add_ne_top (EReal.add_ne_top (hmul _ (sub_nonneg.2 ht.2) _ h₀) (hmul _ ht.1 _ h₁))
-    (EReal.coe_ne_top _)
-
 /-- In a CAT(0) space the squared distance from a point is `2`-convex along geodesics: this is the
 CAT(0) comparison inequality `d(γ t, z)² ≤ (1 - t) d(x, z)² + t d(y, z)² - t (1 - t) d(x, y)²`. -/
 theorem convexAlongGeodesics_dist_sq [IsCATZeroSpace X] (z : X) :
