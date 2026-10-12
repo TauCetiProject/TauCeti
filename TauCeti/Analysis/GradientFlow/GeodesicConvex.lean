@@ -55,8 +55,6 @@ geodesically convex energy is lower semicontinuous on its effective domain `{x |
 
 * `TauCeti.ConvexAlongGeodesics.geodesicallyConvex`: in a geodesic space, convexity along every
   geodesic implies geodesic convexity.
-* `TauCeti.GeodesicallyConvex.exists_isGeodesicSegment_ne_top`: the effective domain of a
-  geodesically convex energy is geodesically convex.
 * `TauCeti.GeodesicallyConvex.descendingSlope_eq_iSup`: the descending slope of an
   `m`-geodesically convex energy is its global slope.
 * `TauCeti.GeodesicallyConvex.lowerSemicontinuousOn_descendingSlope`: the descending slope of a
@@ -156,14 +154,6 @@ theorem ConvexAlong.apply_ne_top (h : ConvexAlong m φ γ) (h₀ : φ (γ 0) ≠
   rw [sub_eq_add_neg, ← EReal.coe_neg]
   exact EReal.add_ne_top (EReal.add_ne_top (hmul _ (sub_nonneg.2 ht.2) _ h₀) (hmul _ ht.1 _ h₁))
     (EReal.coe_ne_top _)
-
-/-- **The effective domain of a geodesically convex energy is geodesically convex.** Two points
-with energy `≠ ⊤` are joined by a geodesic segment along which the energy stays `≠ ⊤`. -/
-theorem GeodesicallyConvex.exists_isGeodesicSegment_ne_top (h : GeodesicallyConvex m φ)
-    (hx : φ x ≠ ⊤) (hy : φ y ≠ ⊤) :
-    ∃ γ : ℝ → X, IsGeodesicSegment γ x y ∧ ∀ t ∈ Icc (0 : ℝ) 1, φ (γ t) ≠ ⊤ := by
-  obtain ⟨γ, hγ, hconv⟩ := h hx hy
-  exact ⟨γ, hγ, fun t ht ↦ hconv.apply_ne_top (hγ.source ▸ hx) (hγ.target ▸ hy) ht⟩
 
 /-- In a CAT(0) space the squared distance from a point is `2`-convex along geodesics: this is the
 CAT(0) comparison inequality `d(γ t, z)² ≤ (1 - t) d(x, z)² + t d(y, z)² - t (1 - t) d(x, y)²`. -/
