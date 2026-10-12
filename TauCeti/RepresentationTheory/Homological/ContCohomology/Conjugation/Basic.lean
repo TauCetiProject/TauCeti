@@ -12,7 +12,9 @@ public import TauCeti.RepresentationTheory.Homological.ContCohomology.ExplicitFu
 
 If `N` is a normal subgroup of a topological group `G`, conjugation by `g` on `N`, together
 with the action of `g` on coefficients, is a compatible pair.  This file packages the resulting
-map on the explicit quotient `H¹(N, M)`.  The map is written with the inverse conjugation
+map on the explicit quotient `H¹(N, M)`. The theorem `explicitMap1_eq_of_conj` identifies the
+maps on `H¹` of compatible pairs differing by conjugation and the corresponding coefficient
+action. The subgroup conjugation map is written with the inverse conjugation
 `h ↦ g⁻¹ h g`, so that its coefficient component is the left action `m ↦ g • m`.
 
 The construction is functorial in `g`, hence gives the expected `G`-action.  When `g` belongs to
@@ -33,7 +35,40 @@ namespace TauCeti.ContCohomology
 
 open _root_.Subgroup
 
-universe uG uM uK uA
+universe uG uH uM uN uK uA
+
+section Conjugation
+
+variable (G : Type uG) [Group G] [TopologicalSpace G]
+  (M : Type uM) [AddCommGroup M] [TopologicalSpace M] [IsTopologicalAddGroup M]
+  [DistribMulAction G M] [ContinuousSMul G M]
+  (H : Type uH) [Monoid H] [TopologicalSpace H]
+  (N : Type uN) [AddCommGroup N] [TopologicalSpace N] [IsTopologicalAddGroup N]
+  [DistribMulAction H N] [ContinuousSMul H N]
+
+/-- Conjugating the group map of a compatible pair and composing its coefficient map with the
+same group element's action leaves the map on explicit `H¹` unchanged. This is the
+compatible-pair form of the conjugation invariance in Neukirch, Schmidt and Wingberg,
+*Cohomology of Number Fields*, Chapter I, §5. -/
+theorem explicitMap1_eq_of_conj
+    (φ ψ : H →ₜ* G) (f q : M →+ N) (hf : Continuous f) (hq : Continuous q)
+    (hφ : ∀ (h : H) (m : M), f (φ h • m) = h • f m)
+    (hψ : ∀ (h : H) (m : M), q (ψ h • m) = h • q m)
+    (g : G) (hconj : ∀ h, ψ h = g⁻¹ * φ h * g)
+    (hqf : ∀ m, q m = f (g • m)) :
+    explicitMap1 G M H N ψ q hq hψ = explicitMap1 G M H N φ f hf hφ := by
+  apply AddMonoidHom.ext
+  intro x
+  induction x using QuotientAddGroup.induction_on with
+  | _ c =>
+    rw [explicitMap1_mk, explicitMap1_mk, H1pi_eq_iff]
+    refine mem_B1_iff.2 ⟨f ((c : G → M) g), fun h => ?_⟩
+    simp only [Pi.sub_apply, cocyclesMap1_apply, hqf, hconj]
+    rw [groupCohomology.smul_apply_inv_mul_mul_of_isCocycle₁ (mem_Z1_iff.1 c.2).2,
+      map_add, map_sub, hφ]
+    abel
+
+end Conjugation
 
 section
 

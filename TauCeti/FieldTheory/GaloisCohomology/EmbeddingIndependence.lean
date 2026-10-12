@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.Map
-public import TauCeti.RepresentationTheory.Homological.ContCohomology.ExplicitFunctoriality
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.Conjugation.Basic
 
 /-!
 # Independence of embeddings in first Galois cohomology

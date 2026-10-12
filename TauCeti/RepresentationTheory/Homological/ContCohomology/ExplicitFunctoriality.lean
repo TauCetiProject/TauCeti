@@ -26,9 +26,7 @@ degrees, and `explicitRes1_eq_explicitMap1`, `explicitRes2_eq_explicitMap2`,
 `explicitCoeff1_eq_explicitMap1` and `explicitCoeff2_eq_explicitMap2` exhibit each of them as the
 compatible pair it is, so that a theorem proved for a general pair specializes to all four. They
 are the positive-degree counterparts of `explicitRes0_eq_explicitMap0` and
-`explicitCoeff0_eq_explicitMap0`. The theorem `explicitMap1_eq_of_conj` identifies the maps on
-`H¹` of compatible pairs differing by conjugation and the corresponding coefficient action.
-The constructions `explicitCoeff1Equiv` and
+`explicitCoeff0_eq_explicitMap0`. The constructions `explicitCoeff1Equiv` and
 `explicitCoeff2Equiv` upgrade a continuous equivariant additive equivalence of coefficient modules
 to additive equivalences on explicit `H¹` and `H²`, and `explicitCoeff1_bijective` and
 `explicitCoeff2_bijective` record that a bijective equivariant homomorphism of discrete coefficient
@@ -591,39 +589,6 @@ theorem explicitMap2Equiv_symm_apply [ContinuousMul G] [ContinuousMul H]
   (rfl)
 
 end Cohomology
-
-section Conjugation
-
-variable (G : Type uG) [Group G] [TopologicalSpace G]
-  (M : Type uM) [AddCommGroup M] [TopologicalSpace M] [IsTopologicalAddGroup M]
-  [DistribMulAction G M] [ContinuousSMul G M]
-  (H : Type uH) [Monoid H] [TopologicalSpace H]
-  (N : Type uN) [AddCommGroup N] [TopologicalSpace N] [IsTopologicalAddGroup N]
-  [DistribMulAction H N] [ContinuousSMul H N]
-
-/-- Conjugating the group map of a compatible pair and composing its coefficient map with the
-same group element's action leaves the map on explicit `H¹` unchanged. This is the
-compatible-pair form of the conjugation invariance in Neukirch, Schmidt and Wingberg,
-*Cohomology of Number Fields*, Chapter I, §5. -/
-theorem explicitMap1_eq_of_conj
-    (φ ψ : H →ₜ* G) (f q : M →+ N) (hf : Continuous f) (hq : Continuous q)
-    (hφ : ∀ (h : H) (m : M), f (φ h • m) = h • f m)
-    (hψ : ∀ (h : H) (m : M), q (ψ h • m) = h • q m)
-    (g : G) (hconj : ∀ h, ψ h = g⁻¹ * φ h * g)
-    (hqf : ∀ m, q m = f (g • m)) :
-    explicitMap1 G M H N ψ q hq hψ = explicitMap1 G M H N φ f hf hφ := by
-  apply AddMonoidHom.ext
-  intro x
-  induction x using QuotientAddGroup.induction_on with
-  | _ c =>
-    rw [explicitMap1_mk, explicitMap1_mk, H1pi_eq_iff]
-    refine mem_B1_iff.2 ⟨f ((c : G → M) g), fun h => ?_⟩
-    simp only [Pi.sub_apply, cocyclesMap1_apply, hqf, hconj]
-    rw [groupCohomology.smul_apply_inv_mul_mul_of_isCocycle₁ (mem_Z1_iff.1 c.2).2,
-      map_add, map_sub, hφ]
-    abel
-
-end Conjugation
 
 section NamedMaps
 
