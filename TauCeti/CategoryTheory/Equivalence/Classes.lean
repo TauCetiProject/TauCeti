@@ -25,8 +25,9 @@ locally, as in Mathlib.
 
 public section
 noncomputable section
-namespace CategoryTheory
+namespace TauCeti
 
+open CategoryTheory
 universe v u
 variable (C : Type u) [Category.{v} C]
 attribute [local instance] endofunctorMonoidalCategory
@@ -34,7 +35,14 @@ attribute [local instance] endofunctorMonoidalCategory
 /-- Autoequivalence classes, with multiplication in functional composition order. -/
 abbrev AutoequivalenceClass := ((Skeleton (C ⥤ C))ˣ)ᵐᵒᵖ
 
-variable {C}
+end TauCeti
+
+namespace CategoryTheory
+
+open TauCeti
+universe v u
+variable {C : Type u} [Category.{v} C]
+attribute [local instance] endofunctorMonoidalCategory
 
 private def equivalenceSkeletonUnit (e : C ≌ C) : (Skeleton (C ⥤ C))ˣ where
   val := toSkeleton e.functor
