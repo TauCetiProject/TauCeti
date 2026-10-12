@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.MulBy
 public import TauCeti.CategoryTheory.Monoidal.Cartesian.CommGrp
+import TauCeti.AlgebraicGeometry.Morphisms.FinitePresentation
 
 /-!
 # Homomorphisms and endomorphisms of elliptic curves over a scheme
@@ -39,6 +40,8 @@ schemes over `S` is the homomorphism whose kernel is the `n`-torsion `E[n]`.
 
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.hom_ext_left`: a homomorphism of elliptic curves is
   determined by its morphism of schemes.
+* `TauCeti.AlgebraicGeometry.EllipticCurveGeom.locallyOfFinitePresentation_hom_hom_hom_left`: the
+  morphism of schemes underlying a homomorphism is locally of finite presentation.
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.add_hom_hom_hom_left`,
   `TauCeti.AlgebraicGeometry.EllipticCurveGeom.zero_hom_hom_hom_left` and
   `TauCeti.AlgebraicGeometry.EllipticCurveGeom.neg_hom_hom_hom_left`: the sum, zero and negative
@@ -93,6 +96,17 @@ homomorphism followed by the negation morphism of the target. -/
 theorem neg_hom_hom_hom_left (f : E.toCommGrp ⟶ E'.toCommGrp) :
     (-f).hom.hom.hom.left = f.hom.hom.hom.left ≫ E'.neg := by
   rw [CommGrp.neg_hom_hom_hom, hom_inv_left]
+
+/-- The underlying morphism of schemes of a homomorphism of elliptic curves over `S` is locally of
+finite presentation: it is a morphism over `S` between schemes smooth over `S`. -/
+instance locallyOfFinitePresentation_hom_hom_hom_left (f : E.toCommGrp ⟶ E'.toCommGrp) :
+    LocallyOfFinitePresentation f.hom.hom.hom.left :=
+  have : Smooth E.structureMap := SmoothOfRelativeDimension.smooth 1 _
+  have hw : f.hom.hom.hom.left ≫ E'.structureMap = E.structureMap := Over.w f.hom.hom.hom
+  have : LocallyOfFinitePresentation (f.hom.hom.hom.left ≫ E'.structureMap) := by
+    rw [hw]
+    infer_instance
+  locallyOfFinitePresentation_of_comp _ E'.structureMap
 
 /-! ### Multiplication by an integer in the endomorphism ring -/
 

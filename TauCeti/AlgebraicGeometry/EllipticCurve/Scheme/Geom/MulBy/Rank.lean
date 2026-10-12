@@ -7,6 +7,7 @@ module
 
 public import Mathlib.AlgebraicGeometry.Morphisms.FlatRank
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.MulBy.Finite
+public import TauCeti.AlgebraicGeometry.GroupScheme.Degree
 import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.MulBy
 import TauCeti.AlgebraicGeometry.Morphisms.Flat.Rank
 import TauCeti.AlgebraicGeometry.Morphisms.Flat.Fiber
@@ -40,6 +41,8 @@ a finite flat morphism is invariant under base change, so it is `n²` everywhere
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.flat_torsion_hom` and
   `TauCeti.AlgebraicGeometry.EllipticCurveGeom.finrank_torsion_hom`: for `n ≠ 0`, the `n`-torsion
   is finite locally free of rank `n²` over `S`.
+* `TauCeti.AlgebraicGeometry.EllipticCurveGeom.degree_ofHom_mulBy`: for `n ≠ 0`, `[n]` has degree
+  `n²` as a homomorphism of group schemes (`TauCeti.GroupScheme.degree`).
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.surjective_mulBy_left`: multiplication by a nonzero
   integer is surjective.
 
@@ -159,6 +162,18 @@ theorem finrank_torsion_hom {n : ℤ} (hn : n ≠ 0) (s : S) :
   have := E.isFinite_mulBy_left hn
   have := E.flat_mulBy_left hn
   rw [Scheme.Hom.finrank_of_isPullback _ _ _ _ (E.isPullback_torsion n), E.finrank_mulBy_left hn]
+
+/-- **Multiplication by `n` has degree `n²`** (Katz–Mazur 2.3.1). For `n ≠ 0`, the degree of
+`[n]` as a homomorphism of group schemes over `S`, the rank of its kernel `E[n]`, is `n²` at every
+point of `S`. -/
+@[simp]
+theorem degree_ofHom_mulBy {n : ℤ} (hn : n ≠ 0) (s : S) :
+    GroupScheme.degree (Grp.ofHom (E.mulBy n)) s = n.natAbs ^ 2 := by
+  -- `E[n]` is the kernel of `[n]`, read through `CommGrp.forget₂Grp`.
+  have h := congrArg (fun φ ↦ GroupScheme.degree φ s) (E.forget₂Grp_map_intCast n)
+  refine h.symm.trans ?_
+  rw [← GroupScheme.finrank_kernel_hom, ← torsion_eq_kernel]
+  exact E.finrank_torsion_hom hn s
 
 /-- **Multiplication by a nonzero integer is surjective** (Katz–Mazur 2.3.1), over any base `S`:
 it is finite and flat of rank `n² ≥ 1` at every point. -/

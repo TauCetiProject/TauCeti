@@ -6,6 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicGeometry.Limits
+public import Mathlib.AlgebraicGeometry.Morphisms.Finite
+public import Mathlib.AlgebraicGeometry.Morphisms.FinitePresentation
+public import Mathlib.AlgebraicGeometry.Morphisms.Flat
 public import Mathlib.CategoryTheory.Limits.Constructions.Over.Connected
 public import Mathlib.CategoryTheory.Limits.Preserves.Shapes.Kernels
 public import Mathlib.CategoryTheory.Monoidal.Cartesian.GrpLimits
@@ -30,6 +33,11 @@ recorded explicitly for downstream use.
 * `TauCeti.GroupScheme.isPullback_kernel`: a group-scheme kernel is the fibre over the identity.
 * `TauCeti.GroupScheme.isPullback_kernel_scheme`: the corresponding square of underlying schemes
   is a pullback.
+* `TauCeti.GroupScheme.isPullback_kernel_hom_left`: on underlying schemes, the kernel is the base
+  change of the homomorphism along the unit section; hence it is finite, flat, or locally of finite
+  presentation over the base when the homomorphism is (`TauCeti.GroupScheme.isFinite_kernel_hom`,
+  `TauCeti.GroupScheme.flat_kernel_hom`,
+  `TauCeti.GroupScheme.locallyOfFinitePresentation_kernel_hom`).
 * `TauCeti.GroupScheme.kernelPointsMulEquiv`: the points of a kernel with values in `Z` are the
   kernel of the induced homomorphism on points with values in `Z`.
 * `TauCeti.GroupScheme.isCommMonObj_kernel`: the kernel of a homomorphism out of a commutative
@@ -211,6 +219,37 @@ instance isCommMonObj_kernel [IsCommMonObj G.X] : IsCommMonObj (kernel f).X :=
     simp only [MonObj.mul_comp, mul_comm])⟩⟩
 
 end Points
+
+/-! ### Finiteness properties of the kernel -/
+
+section Properties
+
+open MonObj
+
+variable {S : Scheme.{u}} {G H : Grp (Over S)} (f : G ⟶ H)
+
+/-- On underlying schemes, the kernel of a homomorphism `f : G ⟶ H` of group schemes is the base
+change of `f` along the unit section of `H`, with the structure morphism of the kernel as the
+second projection. -/
+theorem isPullback_kernel_hom_left :
+    IsPullback (kernel.ι f).hom.hom.left (kernel f).X.hom f.hom.hom.left η[H.X].left :=
+  (isPullback_kernel_hom f).map (Over.forget S)
+
+/-- The kernel of a finite homomorphism of group schemes is finite over the base. -/
+instance isFinite_kernel_hom [IsFinite f.hom.hom.left] : IsFinite (kernel f).X.hom :=
+  MorphismProperty.of_isPullback (isPullback_kernel_hom_left f) ‹_›
+
+/-- The kernel of a flat homomorphism of group schemes is flat over the base. -/
+instance flat_kernel_hom [Flat f.hom.hom.left] : Flat (kernel f).X.hom :=
+  MorphismProperty.of_isPullback (isPullback_kernel_hom_left f) ‹_›
+
+/-- The kernel of a homomorphism of group schemes which is locally of finite presentation is
+locally of finite presentation over the base. -/
+instance locallyOfFinitePresentation_kernel_hom [LocallyOfFinitePresentation f.hom.hom.left] :
+    LocallyOfFinitePresentation (kernel f).X.hom :=
+  MorphismProperty.of_isPullback (isPullback_kernel_hom_left f) ‹_›
+
+end Properties
 
 /-- The underlying-scheme isomorphism from the base change of a scheme-theoretic kernel to the
 kernel of the base-changed homomorphism. -/
