@@ -113,6 +113,7 @@ theorem teichmullerCoeff_sum_teichmuller_mul_pow (a : ℕ → R) {i n : ℕ} (hi
 
 /-- The Teichmüller coordinates of a finite Teichmüller sum `∑_{j < n} [aⱼ] pʲ` are the `aᵢ` for
 `i < n`, and vanish from `n` on. -/
+@[simp]
 theorem teichmullerCoeff_sum_range_teichmuller_mul_pow (a : ℕ → R) (n i : ℕ) :
     (∑ j ∈ Finset.range n, teichmuller p (a j) * (p : 𝕎 R) ^ j).teichmullerCoeff i =
       if i < n then a i else 0 := by

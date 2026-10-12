@@ -14,6 +14,7 @@ public import TauCeti.RingTheory.Valuation.ExtendToLocalization
 public import TauCeti.RingTheory.WittVector.GaussValuation
 public import TauCeti.Topology.MetricSpace.Ultra.Completion
 import TauCeti.Analysis.Normed.Ring.Approximation
+import TauCeti.RingTheory.Valuation.Sum
 
 /-!
 # The radius rings `A^r`, their degree, and Euclidean division
@@ -48,9 +49,9 @@ Kedlaya's Theorem 4.10).
 ## Euclidean division
 
 Let `x ≠ 0` have degree `m`. Up to a power of `[ϖ]`, `x` is close to a Teichmüller sum
-`∑_{l ≤ m} [tₗ] pˡ` whose weighted coefficients `v(tₗ) ρˡ` are at most `v(t_m) ρᵐ`, the error
-and the other terms being bounded by `ε v(t_m) ρᵐ` for some `ε < 1` with `ρ ≤ ε`. Given `y`
-close to a Teichmüller sum `∑_{l ≤ n} [aₗ] pˡ` with `n ≥ m`, multiplying by the unit `[t_m]` and
+`∑_{l ≤ m} [tₗ] pˡ` whose weighted coefficients `v(tₗ) ρˡ` are at most `v(t_m) ρᵐ`, and the
+error is bounded by `ε v(t_m) ρᵐ` for some `ε < 1` with `ρ ≤ ε`. Given `y` close to a Teichmüller
+sum `∑_{l ≤ n} [aₗ] pˡ` with `n ≥ m`, multiplying by the unit `[t_m]` and
 subtracting `[a_n] p^(n - m) x` cancels the term of index `n`. Witt vector addition only carries
 into higher indices, and its carries are smaller by the factor `ρ ≤ ε`
 (`TauCeti.WittVector.gaussValuation_teichmuller_add_teichmuller_sub_le`), so the result is again
@@ -529,19 +530,6 @@ private theorem gaussValuation_teichSum_le (hρ : ρ < 1) {a : ℕ → O} {n : �
   exact Valuation.map_sum_le _ fun l _ ↦
     (gaussValuation_teichmuller_mul_pow hv hρ _ _).trans_le (h l)
 
-omit [CharP O p] [PerfectRing O p] in
-/-- A bound on the weighted valuations `v(a) ρˡ` and `v(b) ρˡ` bounds `v(a - b) ρˡ`. -/
-private theorem valuation_sub_mul_pow_le {a b : O} {l : ℕ} {B : ℝ≥0}
-    (ha : v (algebraMap O K a) * ρ ^ l ≤ B) (hb : v (algebraMap O K b) * ρ ^ l ≤ B) :
-    v (algebraMap O K (a - b)) * ρ ^ l ≤ B := by
-  rw [map_sub]
-  calc v (algebraMap O K a - algebraMap O K b) * ρ ^ l
-      ≤ max (v (algebraMap O K a)) (v (algebraMap O K b)) * ρ ^ l :=
-        mul_le_mul' (Valuation.map_sub _ _ _) le_rfl
-    _ = max (v (algebraMap O K a) * ρ ^ l) (v (algebraMap O K b) * ρ ^ l) :=
-        max_mul_of_nonneg _ _ zero_le
-    _ ≤ B := max_le ha hb
-
 variable {p hv} in
 /-- **Carries of a difference of Teichmüller sums.** If the weighted coefficients of `a` and `b`
 are at most `B`, then `∑_{l < n} ([aₗ] - [bₗ]) pˡ` differs from the Teichmüller sum
@@ -567,7 +555,8 @@ private theorem gaussValuation_sum_sub_teichSum_le (hρ : ρ < 1) {a b : ℕ →
         mul_le_mul' (gaussValuation_teichmuller_add_teichmuller_sub_le hv hρ _ _) le_rfl
     _ = ρ * max (v (algebraMap O K (a l - b l)) * ρ ^ l) (v (algebraMap O K (b l)) * ρ ^ l) := by
         rw [mul_assoc, max_mul_of_nonneg _ _ zero_le]
-    _ ≤ ρ * B := mul_le_mul' le_rfl (max_le (valuation_sub_mul_pow_le (ha l) (hb l)) (hb l))
+    _ ≤ ρ * B := mul_le_mul' le_rfl
+        (max_le ((v.comap (algebraMap O K)).map_sub_mul_le (ha l) (hb l)) (hb l))
 
 omit [CharP O p] [PerfectRing O p] in
 /-- The Witt vector identity behind a division step: with `c = t m` and `α = a (m + d)`,
@@ -631,7 +620,8 @@ private theorem exists_division_step {X Y : RadiusRing p hv hϖ hϖ' hρ} {m d :
         _ ≤ w α * ρ ^ d * (w c * ρ ^ m) := mul_le_mul' le_rfl (ht k)
         _ ≤ w c * M := hαM ▸ mul_le_mul' le_rfl (ha _)
     · simp [g, w, hl]
-  have hb (l : ℕ) : w (b l) * ρ ^ l ≤ w c * M := valuation_sub_mul_pow_le (hca l) (hg l)
+  have hb (l : ℕ) : w (b l) * ρ ^ l ≤ w c * M :=
+    (v.comap (algebraMap O K)).map_sub_mul_le (hca l) (hg l)
   have hQ : ‖ι (teichmuller p α * (p : 𝕎 O) ^ d)‖₊ = w α * ρ ^ d := by
     rw [nnnorm_algebraMap_radiusRing, gaussValuation_teichmuller_mul_pow]
   have hT : ‖ι (teichSum p t (m + 1))‖₊ ≤ w c * ρ ^ m := by
