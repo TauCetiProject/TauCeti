@@ -37,6 +37,8 @@ direction; having the same length, they are equal, and the two segments coincide
 
 ## Main statements
 
+* `TauCeti.eq_and_eq_of_smul_add_smul_eq`: two pairs satisfying the two-point swap inequality for
+  the cost `‖· - ·‖ ^ p`, `1 < p`, whose segments meet at an intermediate time are equal.
 * `TauCeti.IsCyclicallyMonotone.injOn_smul_add_smul`: for `1 < p` and `0 < t < 1`, the
   interpolation at time `t` is injective on every cyclically monotone set of the cost `d ^ p`.
 
@@ -56,9 +58,12 @@ namespace TauCeti
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [StrictConvexSpace ℝ E]
 
-/-- Two segments `[x, x']` and `[y, y']` satisfying the two-point monotonicity inequality for the
-cost `‖· - ·‖ ^ p`, `1 < p`, that meet at an intermediate time coincide. -/
-private theorem eq_and_eq_of_smul_add_smul_eq {p t : ℝ} (hp : 1 < p) (ht : t ∈ Ioo (0 : ℝ) 1)
+/-- **Two-point no-crossing.** In a strictly convex real normed space, let `1 < p` and
+`0 < t < 1`. If the pairs `(x, x')` and `(y, y')` satisfy the two-point swap inequality
+`‖x - x'‖ ^ p + ‖y - y'‖ ^ p ≤ ‖x - y'‖ ^ p + ‖y - x'‖ ^ p` for the cost `‖· - ·‖ ^ p` and their
+segments meet at time `t`, i.e. `(1 - t) • x + t • x' = (1 - t) • y + t • y'`, then `x = y` and
+`x' = y'`. -/
+theorem eq_and_eq_of_smul_add_smul_eq {p t : ℝ} (hp : 1 < p) (ht : t ∈ Ioo (0 : ℝ) 1)
     {x x' y y' : E} (h : ‖x - x'‖ ^ p + ‖y - y'‖ ^ p ≤ ‖x - y'‖ ^ p + ‖y - x'‖ ^ p)
     (he : (1 - t) • x + t • x' = (1 - t) • y + t • y') : x = y ∧ x' = y' := by
   obtain ⟨ht₀, ht₁⟩ := ht
