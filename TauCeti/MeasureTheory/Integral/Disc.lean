@@ -1,0 +1,152 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.MeasureTheory.Integral.PolarCoord
+public import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
+import Mathlib.MeasureTheory.Integral.Prod
+import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
+
+/-!
+# Radial differentiation of disc integrals
+
+For an integrable density on a disc, continuous away from its centre, the derivative of
+its integral with respect to the radius is the boundary integral, parametrized by
+`circleMap`. The density may have an integrable singularity at the centre. In particular,
+this formula applies to finite energy on a punctured disc before an extension is known.
+
+The annular polar formula is `Complex.integral_comp_polarCoord_symm_Icc`; the derivative
+uses Mathlib's fundamental theorem of calculus on a compact annulus around the radius.
+The target may be any real Banach space.
+
+## References
+
+* D. McDuff and D. Salamon, *J-holomorphic Curves and Symplectic Topology*, 2nd ed.,
+  Section 4.5 (the radial energy calculation).
+-/
+
+public section
+
+open Complex MeasureTheory Metric Set Filter
+open scoped Real Topology
+
+variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F]
+
+omit [CompleteSpace F] in
+/-- Angular integrals of a continuous density on a closed annulus depend continuously
+on the radius. Continuity at the centre is not required. -/
+theorem ContinuousOn.integral_comp_circleMap {f : ℂ → F} {z₀ : ℂ} {a b : ℝ}
+    (hf : ContinuousOn f {z : ℂ | a ≤ ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ b}) (ha : 0 ≤ a) :
+    ContinuousOn (fun r ↦ ∫ θ in -π..π, f (circleMap z₀ r θ)) (Icc a b) := by
+  let A := {z : ℂ | a ≤ ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ b}
+  have hcompact : IsCompact A := (isCompact_closedBall z₀ b).of_isClosed_subset
+    ((isClosed_le continuous_const (continuous_id.sub continuous_const).norm).inter
+      (isClosed_le (continuous_id.sub continuous_const).norm continuous_const))
+    (fun z hz ↦ by simpa only [mem_closedBall, dist_eq_norm] using hz.2)
+  obtain ⟨C, hC⟩ := hcompact.exists_bound_of_continuousOn hf
+  have hmem (r : ℝ) (hr : r ∈ Icc a b) (θ : ℝ) : circleMap z₀ r θ ∈ A := by
+    simpa only [A, mem_ofPred_eq, circleMap_sub_center, norm_circleMap_zero,
+      abs_of_nonneg (ha.trans hr.1)] using (mem_Icc.mp hr)
+  simp_rw [intervalIntegral.integral_of_le (by linarith [Real.pi_pos] : -π ≤ π)]
+  refine continuousOn_of_dominated (bound := fun _ ↦ C) (fun r hr ↦ ?_)
+    (fun r hr ↦ ae_of_all _ fun θ ↦ hC _ (hmem r hr θ))
+    (integrableOn_const (by simp)) (ae_of_all _ fun θ ↦ ?_)
+  · exact (hf.comp (by unfold circleMap; fun_prop : Continuous (circleMap z₀ r)).continuousOn
+      (fun θ _ ↦ hmem r hr θ)).aestronglyMeasurable measurableSet_Ioc
+  · exact hf.comp (by simp only [circleMap]; fun_prop) (fun r hr ↦ hmem r hr θ)
+
+namespace TauCeti
+
+omit [CompleteSpace F] in
+/-- Polar Fubini for a continuous normed-space-valued density on a closed annulus, with
+the radial integral outermost and the angular variable running once around the circle. -/
+theorem integral_annulus_eq_integral_circleMap {f : ℂ → F} {z₀ : ℂ} {a b : ℝ}
+    (ha : 0 < a) (hab : a ≤ b)
+    (hf : ContinuousOn f {z : ℂ | a ≤ ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ b}) :
+    (∫ z in {z : ℂ | a ≤ ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ b}, f z) =
+      ∫ r in a..b, r • ∫ θ in -π..π, f (circleMap z₀ r θ) := by
+  have hP : Continuous (fun p : ℝ × ℝ ↦ circleMap z₀ p.1 p.2) := by
+    simp only [circleMap]
+    fun_prop
+  have hmem (p : ℝ × ℝ) (hp : p ∈ Icc a b ×ˢ Icc (-π) π) :
+      circleMap z₀ p.1 p.2 ∈ {z : ℂ | a ≤ ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ b} := by
+    simpa only [mem_ofPred_eq, circleMap_sub_center, norm_circleMap_zero,
+      abs_of_pos (ha.trans_le hp.1.1)] using (mem_Icc.mp hp.1)
+  have hint : IntegrableOn (fun p : ℝ × ℝ ↦ p.1 • f (circleMap z₀ p.1 p.2))
+      (Icc a b ×ˢ Icc (-π) π) :=
+    (continuous_fst.continuousOn.smul (hf.comp hP.continuousOn hmem)).integrableOn_compact
+      (isCompact_Icc.prod isCompact_Icc)
+  rw [← Complex.integral_comp_polarCoord_symm_Icc f z₀ ha, Icc_prod_eq,
+    Measure.volume_eq_prod]
+  have hP_eq (p : ℝ × ℝ) : z₀ + Complex.polarCoord.symm p =
+      circleMap z₀ p.1 p.2 := by
+    simp [Complex.polarCoord_symm_apply, circleMap, Complex.exp_mul_I]
+  simp_rw [hP_eq]
+  rw [setIntegral_prod _ hint]
+  simp only [integral_smul, integral_Icc_eq_integral_Ioc]
+  rw [← intervalIntegral.integral_of_le hab]
+  simp_rw [intervalIntegral.integral_of_le (by linarith [Real.pi_pos] : -π ≤ π)]
+
+end TauCeti
+
+namespace MeasureTheory.IntegrableOn
+
+/-- The radial derivative of a disc integral is its boundary density integral. The density
+need only be continuous on the punctured disc and integrable on the whole disc, so the
+formula does not assume a removable singularity at the centre. -/
+theorem hasDerivAt_integral_ball {f : ℂ → F} {z₀ : ℂ} {R r : ℝ}
+    (hint : IntegrableOn f (ball z₀ R))
+    (hf : ContinuousOn f (ball z₀ R \ {z₀})) (hr : r ∈ Ioo 0 R) :
+    HasDerivAt (fun t ↦ ∫ z in ball z₀ t, f z)
+      (r • ∫ θ in -π..π, f (circleMap z₀ r θ)) r := by
+  -- Work on an annulus containing the radius, where the boundary density is continuous.
+  let a := r / 2
+  let b := (r + R) / 2
+  have ha : 0 < a := by dsimp [a]; linarith [hr.1]
+  have har : a < r := by dsimp [a]; linarith [hr.1]
+  have hrb : r < b := by dsimp [b]; linarith [hr.2]
+  have hbR : b < R := by dsimp [b]; linarith [hr.2]
+  have hsub : {z : ℂ | a ≤ ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ b} ⊆ ball z₀ R \ {z₀} := by
+    intro z hz
+    refine ⟨?_, ?_⟩
+    · simpa only [mem_ball, dist_eq_norm] using hz.2.trans_lt hbR
+    · rintro rfl
+      have : a ≤ 0 := by simpa using hz.1
+      linarith
+  let G (t : ℝ) := t • ∫ θ in -π..π, f (circleMap z₀ t θ)
+  have hG : ContinuousOn G (Icc a b) :=
+    continuous_id.continuousOn.smul ((hf.mono hsub).integral_comp_circleMap ha.le)
+  have hGc : ContinuousAt G r := hG.continuousAt (Icc_mem_nhds har hrb)
+  have hGmeas : AEStronglyMeasurable G (volume.restrict (Icc a b)) :=
+    hG.aestronglyMeasurable measurableSet_Icc
+  have hGr : IntervalIntegrable G volume a r :=
+    (hG.mono (by rw [uIcc_of_le har.le]; exact Icc_subset_Icc le_rfl hrb.le)).intervalIntegrable
+  have hd := intervalIntegral.integral_hasDerivAt_right hGr
+    (_root_.AEStronglyMeasurable.stronglyMeasurableAtFilter_of_mem hGmeas
+      (Icc_mem_nhds har hrb)) hGc
+  -- Locally the disc integral differs from this radial primitive by a fixed inner disc.
+  have heq : (fun t ↦ ∫ z in ball z₀ t, f z) =ᶠ[𝓝 r]
+      (fun t ↦ (∫ z in ball z₀ a, f z) + ∫ s in a..t, G s) := by
+    filter_upwards [Ioo_mem_nhds har hrb] with t ht
+    have hclosed : closedBall z₀ t =ᵐ[volume] ball z₀ t :=
+      (ae_eq_of_subset_of_measure_ge ball_subset_closedBall
+        (volume.addHaar_closedBall_eq_addHaar_ball z₀ t).le
+        measurableSet_ball.nullMeasurableSet measure_closedBall_lt_top.ne).symm
+    have hA : {z : ℂ | a ≤ ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ t} = closedBall z₀ t \ ball z₀ a := by
+      ext z
+      simp only [mem_ofPred_eq, Set.mem_sdiff, mem_closedBall, mem_ball, dist_eq_norm, not_lt]
+      exact and_comm
+    have hpolar := TauCeti.integral_annulus_eq_integral_circleMap ha ht.1.le
+      ((hf.mono hsub).mono (fun z hz ↦ ⟨hz.1, hz.2.trans ht.2.le⟩))
+    rw [hA, setIntegral_congr_set (ae_eq_set_sdiff hclosed Filter.EventuallyEq.rfl),
+      setIntegral_sdiff measurableSet_ball (hint.mono_set (ball_subset_ball
+        (ht.2.trans hbR).le)) (ball_subset_ball ht.1.le)] at hpolar
+    dsimp only [G]
+    rw [← hpolar]
+    abel
+  exact (hd.const_add (∫ z in ball z₀ a, f z)).congr_of_eventuallyEq heq
+
+end MeasureTheory.IntegrableOn
