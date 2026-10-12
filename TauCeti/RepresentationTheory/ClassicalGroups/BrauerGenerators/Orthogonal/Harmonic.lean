@@ -24,26 +24,29 @@ kernel of the cap (`TauCeti.harmonicTensors_two_eq_ker_orthogonalCap`).
 
 ## Why this submodule
 
-The two actions on `V^{⊗d}` — the diagonal action of the orthogonal group and the diagram action
-of the Brauer algebra — are each other's centralizers, and the arcs are exactly the generators of
-the Brauer algebra that are not permutations. So the harmonic tensors are the part of `V^{⊗d}` on
-which the Brauer algebra acts through its permutation quotient alone, and they are stable under
-*both* actions: under the orthogonal group because the arcs commute with it
+The arcs are exactly the generators of the Brauer algebra that are not permutations, so the
+harmonic tensors are the part of `V^{⊗d}` on which the diagram action factors through the
+permutation quotient alone, and they are stable under *both* of the commuting actions: under the
+orthogonal group because the arcs commute with it
 (`TauCeti.commute_orthogonalCupCapAt_tensorPower`), and under the symmetric group because
 permuting strands only renames the arc (`TauCeti.permTensorAction_mul_orthogonalCupCapAt`). The
 orthogonal stability is packaged as `TauCeti.harmonicTensorsSubrep`.
 
-Harmonic tensors are not themselves one irreducible: the irreducible orthogonal module of shape
-`λ` is the harmonic part of the shape-`λ` Schur piece, which is why the symmetric-group stability
-matters, and the arcs rebuild the rest of `V^{⊗d}` from cups on lower tensor powers. Two
-statements here bound how the harmonic part sits against that rebuilt part. An arc acts on its own
-image by the loop value `n`, so a harmonic tensor in the image of an arc vanishes whenever `n` is
-invertible (`TauCeti.harmonicTensors_inf_range_orthogonalCupCapAt`); and in the opposite
-direction, a tensor on which every transposition of strands acts by `-1` is harmonic when `2` is
-invertible (`TauCeti.mem_harmonicTensors_of_forall_swap_eq_neg`), because an arc absorbs the
-crossing of its own two strands. On two strands the second statement says that the antisymmetric
-square sits inside the traceless tensors, the `⋀²` summand of the worked example
-`(k³)^{⊗2} ≅ Sym²₀ ⊕ ⋀² ⊕ k`.
+Harmonic tensors are not themselves one irreducible. The classical reason to single them out is
+the Brauer duality over `ℂ`, where the two actions are each other's centralizers and the
+irreducible orthogonal modules occurring in `V^{⊗d}` are cut out shape by shape from the harmonic
+tensors — subject to the usual constraints tying the partition to `n` — which is why the
+symmetric-group stability matters; neither that duality nor any such decomposition is proved here,
+and over the general coefficient rings this file is stated over no such statement is available.
+What is proved here are two bounds on how the harmonic part sits against the part the arcs rebuild
+from cups on lower tensor powers. An arc acts on its own image by the loop value `n`, so a
+harmonic tensor in the image of an arc vanishes whenever `n` is invertible
+(`TauCeti.harmonicTensors_inf_range_orthogonalCupCapAt`); and in the opposite direction, a tensor
+on which every transposition of strands acts by `-1` is harmonic when `2` is invertible
+(`TauCeti.mem_harmonicTensors_of_forall_swap_eq_neg`), because an arc absorbs the crossing of its
+own two strands. On two strands the second statement says that the antisymmetric square sits
+inside the traceless tensors, the `⋀²` summand of the roadmap's worked example
+`(ℂ³)^{⊗2} ≅ Sym²₀ ⊕ ⋀² ⊕ ℂ`.
 
 Nothing here needs subtraction except the two statements that mention `-1` and the orthogonal
 group, so the definition and most of its API are stated over a commutative semiring.
@@ -138,7 +141,9 @@ theorem orthogonalCupCapAt_apply_eq_zero_of_mem_harmonicTensors
 
 /-- **A pure tensor with pairwise orthogonal factors is harmonic**: an arc contracts its two
 slots against the form, and that contraction is the scalar the arc multiplies by. In particular
-the harmonic tensors are nonzero as soon as `V` carries two orthogonal vectors. -/
+the harmonic tensors are nonzero as soon as some *nonzero* pure tensor of the degree at hand has
+pairwise orthogonal factors, which for `d` strands asks for `d` pairwise orthogonal vectors and so
+says nothing once `d` exceeds the supply of those in `V`. -/
 theorem tprod_mem_harmonicTensors {v : Fin d → (Fin n → k)}
     (hv : ∀ i j : Fin d, i ≠ j → v i ⬝ᵥ v j = 0) :
     PiTensorProduct.tprod k v ∈ harmonicTensors k n d := by
@@ -281,9 +286,10 @@ theorem map_tensorPower_harmonicTensors (g : Matrix.orthogonalGroup (Fin n) k) :
 
 variable (k n d)
 
-/-- **The harmonic tensors as an orthogonal subrepresentation of `V^{⊗d}`.** This is the module
-whose shape-`λ` pieces are the irreducible representations of the orthogonal group appearing in
-`V^{⊗d}`. -/
+/-- **The harmonic tensors as an orthogonal subrepresentation of `V^{⊗d}`.** Over `ℂ` this is
+classically the module from whose shape-`λ` pieces the irreducible representations of the
+orthogonal group occurring in `V^{⊗d}` are read off; that decomposition is not proved here, and
+the statement below is only the stability of the submodule under the action. -/
 noncomputable def harmonicTensorsSubrep :
     Subrepresentation ((stdOrthogonalRep k n).tensorPower d) where
   toSubmodule := harmonicTensors k n d
