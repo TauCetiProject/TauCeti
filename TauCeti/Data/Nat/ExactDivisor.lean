@@ -449,23 +449,14 @@ theorem prodPrimePow_gcd {N : ℕ} {s t : Finset ℕ} (hs : s ⊆ N.primeFactors
   by_cases hps : p ∈ s <;> by_cases hpt : p ∈ t <;>
     simp [hps, hpt, Finset.mem_inter]
 
-/-- Removing a contained prime support divides out its maximal-prime-power product. -/
-theorem prodPrimePow_sdiff {N : ℕ} {s t : Finset ℕ} (hs : s ⊆ N.primeFactors) (hts :
-    t ⊆ s) :
+/-- Removing a contained finite support divides out its maximal-prime-power product. -/
+theorem prodPrimePow_sdiff {N : ℕ} {s t : Finset ℕ} (hts : t ⊆ s) :
     TauCeti.Nat.prodPrimePow N (s \ t) =
       TauCeti.Nat.prodPrimePow N s / TauCeti.Nat.prodPrimePow N t := by
-  have := hs
-  have hdisj : Disjoint t (s \ t) := by
-    rw [Finset.disjoint_left]
-    intro p hp1 hp2
-    exact Finset.mem_sdiff.mp hp2 |>.2 hp1
-  have hunion : t ∪ (s \ t) = s :=
-    Finset.union_sdiff_of_subset hts
   have hpos : 0 < prodPrimePow N t := (isExactDivisor_prodPrimePow (N := N) (s := t)).pos
-  have hprod : prodPrimePow N s = prodPrimePow N t * prodPrimePow N (s \ t) := by
-    unfold prodPrimePow
-    rw [← Finset.prod_union hdisj, hunion]
-  rw [hprod, Nat.mul_div_cancel_left _ hpos]
+  simp only [prodPrimePow] at hpos
+  unfold prodPrimePow
+  rw [← Finset.prod_sdiff hts, Nat.mul_div_cancel _ hpos]
 
 /-- Divisibility between exact divisors is equivalent to inclusion of their prime supports. -/
 theorem IsExactDivisor.dvd_iff_primeFactors_subset {Q R N : ℕ} (hQ :
