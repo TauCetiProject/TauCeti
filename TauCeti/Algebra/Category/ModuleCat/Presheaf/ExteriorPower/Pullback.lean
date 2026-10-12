@@ -163,16 +163,16 @@ theorem pullbackExteriorPowerComparison_app_app_unit_mk (n : ℕ)
         (m i))) := by
   let η := (PresheafOfModulesOfCommRing.pullbackPushforwardAdjunction α).unit
   let P := (PresheafOfModulesOfCommRing.pullback α).obj M
-  have h := congrArg (fun f ↦ f.app' U (ModuleCat.exteriorPower.mk m))
-    (unit_comp_pushforward_pullbackExteriorPowerComparison α n M)
+  -- `erw` identifies presheaf exterior-power section objects with module exterior powers;
+  -- the composition and map formulas themselves are rewritten through the public API.
+  erw [← ModuleCat.comp_apply, ← PresheafOfModules.comp_app,
+    unit_comp_pushforward_pullbackExteriorPowerComparison, PresheafOfModules.comp_app,
+    ModuleCat.comp_apply, PresheafOfModulesOfCommRing.exteriorPower_map_app]
   have h₁ := congrArg (fun x ↦ ((pushforwardExteriorPowerComparison α n).app P).app' U x)
     (ModuleCat.exteriorPower.map_mk ((η.app M).app' U) m)
   have h₂ := pushforwardExteriorPowerComparison_app_app_mk α n P U
     (fun i ↦ (η.app M).app' U (m i))
-  -- Evaluating a composite at `U` applies its two section maps successively
-  -- (`PresheafOfModules.comp_app`, `ModuleCat.comp_apply`); `exteriorPower_map_app`
-  -- identifies the first section map on the right of `h` with the map used in `h₁`.
-  exact h.trans (h₁.trans h₂)
+  exact h₁.trans h₂
 
 end
 
