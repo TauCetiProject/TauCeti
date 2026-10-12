@@ -36,7 +36,7 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
 /-- A maximal integral curve of a `C¹` vector field vanishing off `K` stays in `K`
 together with its initial point. No closedness or compactness of `K` is required. -/
-theorem mapsTo_maximalIntegralCurve_insert_of_eq_zero
+theorem mapsTo_maximalIntegralCurve_insert_of_eq_zero_off
     (hv : CMDiff 1 (fun y ↦ (⟨y, v y⟩ : TangentBundle I M)))
     (hzero : ∀ y ∉ K, v y = 0) :
     MapsTo (maximalIntegralCurve v x) (maximalIntegralCurveInterval v x) (insert x K) := by
@@ -58,6 +58,6 @@ theorem maximalIntegralCurveInterval_eq_univ_of_isCompact_of_eq_zero_off [Comple
     maximalIntegralCurveInterval v x = univ :=
   maximalIntegralCurveInterval_eq_univ_of_isCompact_of_mapsTo hv
     (zero_mem_maximalIntegralCurveInterval hv.contMDiffAt) (hK.insert x)
-    (mapsTo_maximalIntegralCurve_insert_of_eq_zero hv hzero)
+    (mapsTo_maximalIntegralCurve_insert_of_eq_zero_off hv hzero)
 
 end TauCeti
