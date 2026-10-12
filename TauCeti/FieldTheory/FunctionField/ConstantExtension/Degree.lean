@@ -8,18 +8,24 @@ module
 public import TauCeti.FieldTheory.FunctionField.ConstantExtension.IntermediateField
 
 /-!
-# Rational-parameter degrees after extending constants
+# Degrees over subfields after extending constants
 
 For an exact constant field `k` in `F`, extending constants by a separable algebraic extension
-`k' / k` preserves `[F : k(x)]`. The ambient field `F'` is the compositum of `F` and `k'`,
-expressed by `constantCompositum F k' F' = ⊤`. The constant extension may be infinite;
-in particular this applies to an algebraic closure over a perfect constant field.
-No function-field hypothesis is needed.
+`k' / k` preserves `[F : k(x)]`, and more generally `[F : E]` for every subfield `E` of `F`
+containing `k`, with `E` replaced by its compositum `E · k'`. The ambient field `F'` is the
+compositum of `F` and `k'`, expressed by `constantCompositum F k' F' = ⊤`. The constant extension
+may be infinite; in particular this applies to an algebraic closure over a perfect constant
+field. No function-field hypothesis is needed.
 
 ## Main results
 
 * `TauCeti.finrank_over_adjoin_simple_eq_of_constantCompositum_eq_top`:
   `[F' : k'(x)] = [F : k(x)]` for every `x ∈ F`.
+* `TauCeti.finrank_over_constantCompositum_eq_finrank_of_constantCompositum_eq_top`:
+  `[F' : E · k'] = [F : E]` for every subfield `E` of `F` containing `k`.
+* `TauCeti.adjoin_simple_eq_top_of_constantCompositum_eq_top` and
+  `TauCeti.minpoly_algebraMap_eq_map_of_constantCompositum_eq_top`: a primitive element `y` of
+  `F / E` stays primitive over `E · k'`, with the same minimal polynomial.
 
 ## Reference
 
@@ -57,5 +63,74 @@ theorem finrank_over_adjoin_simple_eq_of_constantCompositum_eq_top
   have hdegree := Module.finrank_eq_nat_card_basis (constantExtensionBasis hex h k⟮x⟯ b)
   rwa [hrange, IntermediateField.adjoin_adjoin_right, ← Module.finrank_eq_nat_card_basis b]
     at hdegree
+
+/-- **A finite separable extension of an exact constant field preserves the degree over any
+subfield** (Stichtenoth, Proposition 3.6.1(c), for an arbitrary intermediate field): if `E` is a
+subfield of `F` containing `k`, then `[F · k' : E · k'] = [F : E]`. -/
+theorem finrank_over_constantCompositum_eq_finrank_of_constantCompositum_eq_top {E : Type*}
+    [Field E] [Algebra k E] [Algebra E F] [IsScalarTower k E F] [Algebra E F']
+    [IsScalarTower E F F'] [FiniteDimensional k k'] [Algebra.IsSeparable k k']
+    (hex : IsIntegrallyClosedIn k F) (h : constantCompositum F k' F' = ⊤) :
+    Module.finrank (constantCompositum E k' F') F' = Module.finrank E F := by
+  -- Both `[F · k' : F]` and `[E · k' : E]` are `[k' : k]`, the constants staying exact in `E`;
+  -- compare the towers `E ⊆ F ⊆ F · k'` and `E ⊆ E · k' ⊆ F · k'`.
+  have : IsScalarTower k E F' := IsScalarTower.of_algebraMap_eq fun c ↦ by
+    rw [IsScalarTower.algebraMap_apply E F F', ← IsScalarTower.algebraMap_apply k E F,
+      ← IsScalarTower.algebraMap_apply k F F']
+  have hexE : IsIntegrallyClosedIn k E :=
+    (IsScalarTower.toAlgHom k E F).isIntegrallyClosedIn (algebraMap E F).injective hex
+  have hE := finrank_constantCompositum_eq_finrank_of_isSeparable E k' F' hexE
+  have hF := finrank_constantCompositum_eq_finrank_of_isSeparable F k' F' hex
+  rw [h, IntermediateField.finrank_top'] at hF
+  have htower := (Module.finrank_mul_finrank E F F').trans
+    (Module.finrank_mul_finrank E (constantCompositum E k' F') F').symm
+  rw [hE, hF, mul_comm] at htower
+  exact (Nat.eq_of_mul_eq_mul_left Module.finrank_pos htower).symm
+
+section Subfield
+
+variable {E : Type*} [Field E] [Algebra E F] [Algebra E F'] [IsScalarTower E F F']
+
+/-- **A primitive element stays primitive after extending constants**: if `y` generates `F` over a
+subfield `E`, its image generates the compositum `F · k'` over `E · k'`. -/
+theorem adjoin_simple_eq_top_of_constantCompositum_eq_top (h : constantCompositum F k' F' = ⊤)
+    {y : F} (hy : E⟮y⟯ = ⊤) : (constantCompositum E k' F')⟮algebraMap F F' y⟯ = ⊤ := by
+  set L := (constantCompositum E k' F')⟮algebraMap F F' y⟯
+  -- `L` contains the image of `F = E(y)` and the image of `k'`, hence the compositum `F · k'`.
+  have hFL (x : F) : algebraMap F F' x ∈ L := by
+    have hx : IsScalarTower.toAlgHom E F F' x ∈ (E⟮y⟯).map (IsScalarTower.toAlgHom E F F') :=
+      ⟨x, hy ▸ IntermediateField.mem_top, rfl⟩
+    rw [IntermediateField.adjoin_map, Set.image_singleton] at hx
+    have hle : E⟮IsScalarTower.toAlgHom E F F' y⟯ ≤ L.restrictScalars E :=
+      IntermediateField.adjoin_simple_le_iff.mpr (IntermediateField.mem_adjoin_simple_self
+        (constantCompositum E k' F') _)
+    exact (IntermediateField.mem_restrictScalars E).mp (hle hx)
+  have hle := (constantCompositum_le_iff F k' F' (K := L.toSubfield.toIntermediateField hFL)).mpr
+    fun c ↦ L.algebraMap_mem ⟨_, algebraMap_mem_constantCompositum E k' F' c⟩
+  rw [h] at hle
+  exact top_le_iff.mp fun x _ ↦ hle IntermediateField.mem_top
+
+/-- **Extending constants keeps the minimal polynomial of a primitive element**: if `y` generates
+`F` over a subfield `E` containing `k`, over which `F` is finite, the minimal polynomial of its
+image over `E · k'` is that of `y` over `E`. -/
+theorem minpoly_algebraMap_eq_map_of_constantCompositum_eq_top [Algebra k E] [IsScalarTower k E F]
+    [FiniteDimensional E F] [FiniteDimensional k k'] [Algebra.IsSeparable k k']
+    (hex : IsIntegrallyClosedIn k F) (h : constantCompositum F k' F' = ⊤) {y : F} (hy : E⟮y⟯ = ⊤) :
+    minpoly (constantCompositum E k' F') (algebraMap F F' y) =
+      (minpoly E y).map (algebraMap E (constantCompositum E k' F')) := by
+  -- The minimal polynomial over `E · k'` divides that over `E`, and both have degree `[F : E]`.
+  have hn := finrank_over_constantCompositum_eq_finrank_of_constantCompositum_eq_top (E := E) hex h
+  have : FiniteDimensional (constantCompositum E k' F') F' :=
+    Module.finite_of_finrank_pos (hn ▸ Module.finrank_pos)
+  refine (Polynomial.eq_of_monic_of_dvd_of_natDegree_le (minpoly.monic (IsIntegral.of_finite _ _))
+    ((minpoly.monic (IsIntegral.of_finite E y)).map _)
+    (minpoly.dvd_map_of_isScalarTower' E _ F' y) ?_).symm
+  rw [(minpoly.monic (IsIntegral.of_finite E y)).natDegree_map,
+    ← IntermediateField.adjoin.finrank (IsIntegral.of_finite E y), hy,
+    IntermediateField.finrank_top', ← hn,
+    ← IntermediateField.adjoin.finrank (IsIntegral.of_finite _ _),
+    adjoin_simple_eq_top_of_constantCompositum_eq_top h hy, IntermediateField.finrank_top']
+
+end Subfield
 
 end TauCeti
