@@ -37,7 +37,7 @@ range, so the value is a `dite` rather than a plain application.
   transposition.
 * `TauCeti.forall_cons_swap_eq_zero_iff`: vanishing of the final coordinates after swapping
   coordinate zero with coordinate `d` in a vector built with `Fin.cons`.
-* `Fin.sum_univ_eq_sum_castLE_add`: a sum over `Fin (n + 1)` of a family vanishing beyond `i`
+* `Fin.sum_univ_eq_sum_castLE_add`: a sum over `Fin n` of a family vanishing beyond `i`
   splits as its sum over the first `i` indices plus its value at `i`.
 * `Fin.rev_finRotate_rev` and `Fin.rev_finRotate_symm`: reversal carries forward rotation to
   backward rotation and conversely.
@@ -158,12 +158,12 @@ theorem partialProd_last {M : Type*} [CommMonoid M] {n : ℕ} (f : Fin n → M) 
   rw [Fin.partialProd, Fin.val_last]
   rw [(List.take_eq_self_iff _).mpr (by simp), Fin.prod_ofFn]
 
-/-- A product over `Fin (n + 1)` of a family equal to `1` beyond `i` is its product over the first
+/-- A product over `Fin n` of a family equal to `1` beyond `i` is its product over the first
 `i` indices times its value at `i`. -/
-@[to_additive /-- A sum over `Fin (n + 1)` of a family vanishing beyond `i` is its sum over the
+@[to_additive /-- A sum over `Fin n` of a family vanishing beyond `i` is its sum over the
 first `i` indices plus its value at `i`. -/]
-theorem prod_univ_eq_prod_castLE_mul {M : Type*} [CommMonoid M] {n : ℕ} (i : Fin (n + 1))
-    (f : Fin (n + 1) → M) (hf : ∀ j, i < j → f j = 1) :
+theorem prod_univ_eq_prod_castLE_mul {M : Type*} [CommMonoid M] {n : ℕ} (i : Fin n)
+    (f : Fin n → M) (hf : ∀ j, i < j → f j = 1) :
     ∏ j, f j = (∏ j : Fin i, f (castLE i.is_lt.le j)) * f i := by
   have hIio : Finset.univ.map (castLEEmb i.is_lt.le) = Finset.Iio i := by
     simp [← Finset.coe_inj, Set.Iio_def]
