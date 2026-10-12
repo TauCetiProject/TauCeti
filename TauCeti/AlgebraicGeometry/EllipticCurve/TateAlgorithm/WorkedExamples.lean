@@ -15,6 +15,8 @@ import TauCeti.Data.Nat.Prime.IntCast
 import Mathlib.Tactic.NormNum.Prime
 -- Proof-only: a uniformiser of a Dedekind domain at `v` is one of its localisation at `v`.
 import TauCeti.RingTheory.DedekindDomain.LocalizationAtPrime
+-- Proof-only: base change commutes with a change of variables.
+import TauCeti.AlgebraicGeometry.EllipticCurve.VariableChange
 
 /-!
 # Worked examples: Tate's algorithm on curves over `ℚ`, one for each reduction symbol
@@ -323,75 +325,11 @@ instance : (curve27a4.baseChange ℚ).IsElliptic := by
 
 variable (v : HeightOneSpectrum ℤ)
 
-/-- An equation over `ℤ`, read over the localisation `ℤ_(v)` and then over `ℚ`, is the equation
-read over `ℚ`. -/
-private theorem baseChange_map_localizationAtPrime (W : WeierstrassCurve ℤ) :
-    (W.map (Int.castRingHom (Localization.AtPrime v.asIdeal))).baseChange ℚ = W.baseChange ℚ := by
-  rw [WeierstrassCurve.baseChange, WeierstrassCurve.baseChange, map_map]
-  congr 1
-  exact RingHom.ext_int _ _
-
 /-- A prime number `p` lying in `v` is a uniformiser of the localisation `ℤ_(v)`. -/
 private theorem irreducible_natCast_localizationAtPrime {p : ℕ} (hp : p.Prime)
     (hv : (p : ℤ) ∈ v.asIdeal) : Irreducible (p : Localization.AtPrime v.asIdeal) := by
   simpa using v.irreducible_algebraMap_localizationAtPrime_of_prime
     (Nat.prime_iff_prime_int.mp hp) hv
-
-/-- Let `W` be an equation over `ℤ` whose image over `ℤ_(v)` is minimal, and on which, after a
-change of variables over `ℤ_(v)`, Tate's algorithm stops at `s`. Then the chosen minimal equation
-of `W` at `v` is carried by a change of variables to the minimal equation the algorithm stops on. -/
-private theorem exists_smul_minimal_eq_isTateTerminal (W : WeierstrassCurve ℤ)
-    {ϖ : Localization.AtPrime v.asIdeal} {s : ReductionSymbol}
-    (h : IsMinimal (Localization.AtPrime v.asIdeal)
-        ((W.map (Int.castRingHom (Localization.AtPrime v.asIdeal))).baseChange ℚ) ∧
-      ∃ C : VariableChange (Localization.AtPrime v.asIdeal),
-        (C • W.map (Int.castRingHom (Localization.AtPrime v.asIdeal))).IsTateTerminal ϖ s) :
-    ∃ (W' : WeierstrassCurve (Localization.AtPrime v.asIdeal)) (D : VariableChange ℚ),
-      IsMinimal (Localization.AtPrime v.asIdeal) (W'.baseChange ℚ) ∧
-        D • (W.baseChange ℚ).minimal (Localization.AtPrime v.asIdeal) = W'.baseChange ℚ ∧
-          W'.IsTateTerminal ϖ s := by
-  set Rv := Localization.AtPrime v.asIdeal
-  set W₀ := W.map (Int.castRingHom Rv)
-  obtain ⟨hmin, C, hC⟩ := h
-  have hCW₀ : (C • W₀).baseChange ℚ = C.baseChange ℚ • W₀.baseChange ℚ := by
-    rw [WeierstrassCurve.baseChange, ← map_variableChange, ← WeierstrassCurve.baseChange,
-      VariableChange.baseChange]
-  obtain ⟨D, hD⟩ := (W.baseChange ℚ).exists_smul_eq_minimal Rv
-  refine ⟨C • W₀, C.baseChange ℚ * D⁻¹, hCW₀ ▸ inferInstance, ?_, hC⟩
-  rw [mul_smul, ← hD, inv_smul_smul, hCW₀, baseChange_map_localizationAtPrime]
-
-/-- In the situation of `exists_smul_minimal_eq_isTateTerminal`, the chosen minimal equation of `W`
-at `v` has good reduction exactly when `s = I₀`. -/
-private theorem hasGoodReduction_minimal_iff_of_isTateTerminal (W : WeierstrassCurve ℤ)
-    {ϖ : Localization.AtPrime v.asIdeal} (hϖ : Irreducible ϖ) {s : ReductionSymbol}
-    (h : IsMinimal (Localization.AtPrime v.asIdeal)
-        ((W.map (Int.castRingHom (Localization.AtPrime v.asIdeal))).baseChange ℚ) ∧
-      ∃ C : VariableChange (Localization.AtPrime v.asIdeal),
-        (C • W.map (Int.castRingHom (Localization.AtPrime v.asIdeal))).IsTateTerminal ϖ s) :
-    ((W.baseChange ℚ).minimal (Localization.AtPrime v.asIdeal)).HasGoodReduction
-      (Localization.AtPrime v.asIdeal) ↔ s = .I 0 := by
-  obtain ⟨W', D, _, hD, hs⟩ := exists_smul_minimal_eq_isTateTerminal v W h
-  rw [← hs.hasGoodReduction_iff (K := ℚ) hϖ, hasGoodReduction_minimal_iff,
-    ← valuation_Δ_eq_of_isMinimal_smul (Localization.AtPrime v.asIdeal) D hD]
-  exact ⟨fun h ↦ ⟨h⟩, fun h ↦ h.goodReduction⟩
-
-/-- In the situation of `exists_smul_minimal_eq_isTateTerminal`, the chosen minimal equation of `W`
-at `v` has additive reduction exactly when `s` is none of the `Iₙ`. -/
-private theorem hasAdditiveReduction_minimal_iff_of_isTateTerminal (W : WeierstrassCurve ℤ)
-    [(W.baseChange ℚ).IsElliptic] {ϖ : Localization.AtPrime v.asIdeal} (hϖ : Irreducible ϖ)
-    {s : ReductionSymbol}
-    (h : IsMinimal (Localization.AtPrime v.asIdeal)
-        ((W.map (Int.castRingHom (Localization.AtPrime v.asIdeal))).baseChange ℚ) ∧
-      ∃ C : VariableChange (Localization.AtPrime v.asIdeal),
-        (C • W.map (Int.castRingHom (Localization.AtPrime v.asIdeal))).IsTateTerminal ϖ s) :
-    ((W.baseChange ℚ).minimal (Localization.AtPrime v.asIdeal)).HasAdditiveReduction
-      (Localization.AtPrime v.asIdeal) ↔ ∀ n, s ≠ .I n := by
-  obtain ⟨W', D, _, hD, hs⟩ := exists_smul_minimal_eq_isTateTerminal v W h
-  have : ((W.baseChange ℚ).minimal (Localization.AtPrime v.asIdeal)).IsElliptic :=
-    ((W.baseChange ℚ).exists_smul_eq_minimal (Localization.AtPrime v.asIdeal)).choose_spec ▸
-      inferInstance
-  rw [← hasAdditiveReduction_iff_of_isMinimal_smul (Localization.AtPrime v.asIdeal) D hD]
-  exact hs.hasAdditiveReduction_iff (K := ℚ) hϖ
 
 /-! #### 11.a1: semistable, of symbol `I₁` at its only bad prime -/
 
@@ -402,13 +340,15 @@ theorem hasMultiplicativeReduction_curve11a1 (hv : (11 : ℤ) ∈ v.asIdeal) :
       (Localization.AtPrime v.asIdeal) := by
   have hϖ : Irreducible (11 : Localization.AtPrime v.asIdeal) := by
     exact_mod_cast irreducible_natCast_localizationAtPrime v (p := 11) (by norm_num) hv
-  have h := isMinimal_and_exists_isTateTerminal_curve11a1_11 ℚ hϖ
-  rcases hasGoodReduction_or_hasMultiplicativeReduction_or_hasAdditiveReduction
-    (R := Localization.AtPrime v.asIdeal)
-    (W := (curve11a1.baseChange ℚ).minimal (Localization.AtPrime v.asIdeal)) with hg | hm | ha
-  · exact absurd ((hasGoodReduction_minimal_iff_of_isTateTerminal v _ hϖ h).1 hg) nofun
-  · exact hm
-  · exact absurd rfl ((hasAdditiveReduction_minimal_iff_of_isTateTerminal v _ hϖ h).1 ha 1)
+  obtain ⟨_, C, hC⟩ := isMinimal_and_exists_isTateTerminal_curve11a1_11 ℚ hϖ
+  have : IsMinimal (Localization.AtPrime v.asIdeal)
+      ((C • curve11a1.map (Int.castRingHom (Localization.AtPrime v.asIdeal))).baseChange ℚ) := by
+    rw [← baseChange_smul_baseChange]; infer_instance
+  refine (hC.hasMultiplicativeReduction_minimal_iff (C.baseChange ℚ) ?_ hϖ).2 ⟨0, rfl⟩
+  rw [← baseChange_smul_baseChange,
+    RingHom.ext_int (Int.castRingHom _) (algebraMap ℤ (Localization.AtPrime v.asIdeal))]
+  exact congrArg _
+    (curve11a1.map_baseChange (IsScalarTower.toAlgHom ℤ (Localization.AtPrime v.asIdeal) ℚ)).symm
 
 /-- **11.a1 has good reduction exactly at the primes other than `11`.** Away from `11` its
 discriminant `-11` is a unit; at `11` its reduction is multiplicative. -/
@@ -440,8 +380,15 @@ theorem hasAdditiveReduction_curve27a4 (hv : (3 : ℤ) ∈ v.asIdeal) :
       (Localization.AtPrime v.asIdeal) := by
   have hϖ : Irreducible (3 : Localization.AtPrime v.asIdeal) := by
     exact_mod_cast irreducible_natCast_localizationAtPrime v (p := 3) (by norm_num) hv
-  exact (hasAdditiveReduction_minimal_iff_of_isTateTerminal v _ hϖ
-    (isMinimal_and_exists_isTateTerminal_curve27a4_3 ℚ hϖ)).2 fun _ ↦ nofun
+  obtain ⟨_, C, hC⟩ := isMinimal_and_exists_isTateTerminal_curve27a4_3 ℚ hϖ
+  have : IsMinimal (Localization.AtPrime v.asIdeal)
+      ((C • curve27a4.map (Int.castRingHom (Localization.AtPrime v.asIdeal))).baseChange ℚ) := by
+    rw [← baseChange_smul_baseChange]; infer_instance
+  refine (hC.hasAdditiveReduction_minimal_iff (C.baseChange ℚ) ?_ hϖ).2 fun _ ↦ nofun
+  rw [← baseChange_smul_baseChange,
+    RingHom.ext_int (Int.castRingHom _) (algebraMap ℤ (Localization.AtPrime v.asIdeal))]
+  exact congrArg _
+    (curve27a4.map_baseChange (IsScalarTower.toAlgHom ℤ (Localization.AtPrime v.asIdeal) ℚ)).symm
 
 /-- **27.a4 has good reduction exactly at the primes other than `3`.** Away from `3` its
 discriminant `-3³` is a unit; at `3` its reduction is additive. -/

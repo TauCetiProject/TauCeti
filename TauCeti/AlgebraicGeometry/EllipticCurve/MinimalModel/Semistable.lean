@@ -253,8 +253,8 @@ theorem hasGoodReduction_minimal_baseChange_of_Δ_notMem (W : WeierstrassCurve O
   have h : (W₀.baseChange F).HasGoodReduction (Localization.AtPrime v.asIdeal) := by
     rw [hasGoodReduction_iff_isUnit_integralModel_Δ, integralModel_baseChange_self, map_Δ]
     exact (IsLocalization.AtPrime.isUnit_to_map_iff _ v.asIdeal W.Δ).2 hv
-  have hW₀ : W₀.baseChange F = W.baseChange F := by
-    rw [baseChange, baseChange, map_map, ← IsScalarTower.algebraMap_eq]
+  have hW₀ : W₀.baseChange F = W.baseChange F :=
+    W.map_baseChange (IsScalarTower.toAlgHom O (Localization.AtPrime v.asIdeal) F)
   exact hW₀ ▸ h.hasGoodReduction_minimal
 
 /-- **An equation over `O` whose discriminant and `c₄` are coprime is semistable.** At each
