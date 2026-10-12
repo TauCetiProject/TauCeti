@@ -481,11 +481,12 @@ variable {R : Type u} {M : Type v} {N : Type w} [CommRing R] [AddCommGroup M] [M
 theorem neg_mem_orthogonalGroup : LinearEquiv.neg R ∈ TauCeti.QuadraticMap.orthogonalGroup Q :=
   fun m ↦ by simpa using Q.map_smul (-1) m
 
-/-- The isometry `x ↦ -x`, as an element of the orthogonal group. On a free module of rank one
-over a domain, it and `1` are the only isometries of a nonzero quadratic map valued in a
-torsion-free module (`TauCeti.QuadraticMap.eq_one_or_eq_negOrthogonal_of_finrank_eq_one`), and
-it differs from `1` when `2 ≠ 0`. There it is also the reflection in every vector of invertible
-norm (`QuadraticMap.reflectionOrthogonal_eq_negOrthogonal_of_finrank_eq_one`). -/
+/-- The isometry `x ↦ -x`, as an element of the orthogonal group. On a faithful module, it differs
+from `1` when `2 ≠ 0` (`QuadraticMap.negOrthogonal_ne_one`). On a free module of rank one over a
+domain, it and `1` are the only isometries of a nonzero quadratic map valued in a torsion-free
+module (`TauCeti.QuadraticMap.eq_one_or_eq_negOrthogonal_of_finrank_eq_one`). On any free module of
+rank one it is the reflection in every vector of invertible norm
+(`QuadraticMap.reflectionOrthogonal_eq_negOrthogonal_of_finrank_eq_one`). -/
 def negOrthogonal : TauCeti.QuadraticMap.orthogonalGroup Q :=
   ⟨LinearEquiv.neg R, neg_mem_orthogonalGroup Q⟩
 
@@ -501,6 +502,15 @@ theorem negOrthogonal_mul_self : negOrthogonal Q * negOrthogonal Q = 1 :=
 @[simp]
 theorem negOrthogonal_inv : (negOrthogonal Q)⁻¹ = negOrthogonal Q :=
   inv_eq_of_mul_eq_one_left (negOrthogonal_mul_self Q)
+
+/-- When `2 ≠ 0`, negation is a nontrivial isometry on a faithful module. -/
+@[simp]
+theorem negOrthogonal_ne_one [FaithfulSMul R M] [NeZero (2 : R)] : Q.negOrthogonal ≠ 1 := by
+  intro h
+  have hneg : (-1 : R) = 1 := eq_of_smul_eq_smul (α := M) fun m ↦ by
+    simpa using congrArg
+      (fun g : TauCeti.QuadraticMap.orthogonalGroup Q ↦ (g : M ≃ₗ[R] M) m) h
+  exact NeZero.ne (2 : R) (by simpa only [one_add_one_eq_two] using neg_eq_iff_add_eq_zero.mp hneg)
 
 end Neg
 
@@ -743,7 +753,7 @@ variable {R : Type u} [CommSemiring R] {n : Type v} [Fintype n] [DecidableEq n]
   {N : Type w} [AddCommMonoid N] [Module R N]
 
 /-- The coordinate inclusion of an orthogonal group into `GL(n, R)`. -/
-noncomputable def orthogonalToGeneralLinear
+def orthogonalToGeneralLinear
     (Q : QuadraticMap R (n → R) N) :
     orthogonalGroup Q →* Matrix.GeneralLinearGroup n R :=
   (matrixGeneralLinearEquiv (n := n) (R := R)).symm.toMonoidHom.comp
@@ -1152,6 +1162,16 @@ theorem reflection_sub_apply_eq_of_map_eq (x y : M) (hxy : Q x = Q y)
         ring
   rw [hpolar, invOf_mul_self, one_smul, sub_sub_cancel]
 
+/-- If `x` and `y` have the same quadratic value, reflecting `x` in `x + y` carries it to `-y`
+whenever `x + y` has invertible norm. -/
+theorem reflection_add_apply_eq_neg_of_map_eq (x y : M) (hxy : Q x = Q y)
+    [Invertible (Q (x + y))] :
+    reflection Q (x + y) x = -y := by
+  have key : ∀ (z : M) (_ : Invertible (Q z)), z = x - -y → reflection Q z x = -y := by
+    rintro z _ rfl
+    exact reflection_sub_apply_eq_of_map_eq Q x (-y) (hxy.trans (Q.map_neg y).symm)
+  exact key _ _ (sub_neg_eq_add x y).symm
+
 section Field
 
 variable {K : Type u} {V : Type v} [Field K] [AddCommGroup V] [Module K V]
@@ -1190,7 +1210,8 @@ variable {K : Type u} {V : Type v} [Field K] [AddCommGroup V] [Module K V]
 variable (Q : QuadraticForm K V) [NeZero (2 : K)]
 
 open TauCeti.QuadraticMap (isUnit_sub_or_add_of_map_eq orthogonalGroupEquivIsometryEquiv
-  reflectionOrthogonal reflection_sub_apply_eq_of_map_eq reflection)
+  reflectionOrthogonal reflection_add_apply_eq_neg_of_map_eq reflection_sub_apply_eq_of_map_eq
+  reflection)
 
 /-- A specified orthogonal transport between vectors of the same nonzero quadratic value.
 It is the reflection in `x - y` when that vector is anisotropic; otherwise it is the reflection
@@ -1243,11 +1264,7 @@ theorem reflectionTransport_apply (x y : V) (hxy : Q x = Q y) (hy : Q y ≠ 0) :
       (by simpa only [isUnit_iff_ne_zero] using hsub)
     let := hadd.invertible
     let := (isUnit_iff_ne_zero.mpr hy).invertible
-    let : Invertible (Q (x - -y)) := by simpa only [sub_neg_eq_add] using hadd.invertible
-    have hneg : reflection Q (x + y) x = -y := by
-      -- The public coefficient equation removes the dependent invertibility data before rewriting.
-      simpa only [TauCeti.QuadraticMap.reflection_apply_eq_sub_div, sub_neg_eq_add] using
-        reflection_sub_apply_eq_of_map_eq Q x (-y) (hxy.trans (Q.map_neg y).symm)
+    have hneg := reflection_add_apply_eq_neg_of_map_eq Q x y hxy
     simp [reflectionTransport_eq_reflection_mul_reflection Q x y hxy hy
       (not_ne_iff.mp hsub), hneg, map_neg]
 
@@ -1331,23 +1348,21 @@ theorem exists_reflectionOrthogonal_list_prod_mul_eqOn_sup_span_singleton
     · exact QuadraticMap.reflection_apply_of_polar_eq_zero Q _ (by
         rw [QuadraticMap.polar_sub_left, hgx w hw, (hx w hw).polar_eq_zero, sub_self])
     · exact QuadraticMap.reflection_sub_apply_eq_of_map_eq Q _ x hmap
-  · -- Two reflections: in `g x + x`, written `g x - -x`, and then in `x`.
-    let : Invertible (Q ((g : V ≃ₗ[K] V) x - -x)) := by
-      simpa only [sub_neg_eq_add] using haddUnit.invertible
+  · -- Two reflections: in `g x + x`, and then in `x`.
+    let : Invertible (Q ((g : V ≃ₗ[K] V) x + x)) := haddUnit.invertible
     refine ⟨[QuadraticMap.reflectionOrthogonal Q x,
-      QuadraticMap.reflectionOrthogonal Q ((g : V ≃ₗ[K] V) x - -x)], ?_, by simp, ?_⟩
+      QuadraticMap.reflectionOrthogonal Q ((g : V ≃ₗ[K] V) x + x)], ?_, by simp, ?_⟩
     · simp only [List.mem_cons, List.not_mem_nil, or_false]
       rintro r (rfl | rfl) <;> exact ⟨_, inferInstance, rfl⟩
     · rw [List.prod_cons, List.prod_singleton]
       refine key _ (fun w hw => ?_) ?_ <;>
         rw [Subgroup.coe_mul, LinearEquiv.mul_apply, QuadraticMap.coe_reflectionOrthogonal,
           QuadraticMap.coe_reflectionOrthogonal]
-      · rw [QuadraticMap.reflection_apply_of_polar_eq_zero Q ((g : V ≃ₗ[K] V) x - -x) (by
-            rw [QuadraticMap.polar_sub_left, QuadraticMap.polar_neg_left, hgx w hw,
-              (hx w hw).polar_eq_zero, neg_zero, sub_zero]),
+      · rw [QuadraticMap.reflection_apply_of_polar_eq_zero Q ((g : V ≃ₗ[K] V) x + x) (by
+            rw [QuadraticMap.polar_add_left, hgx w hw, (hx w hw).polar_eq_zero, add_zero]),
           QuadraticMap.reflection_apply_of_polar_eq_zero Q x (hx w hw).polar_eq_zero]
-      · rw [QuadraticMap.reflection_sub_apply_eq_of_map_eq Q _ (-x)
-          (hmap.trans (Q.map_neg x).symm), map_neg, QuadraticMap.reflection_apply_self, neg_neg]
+      · rw [QuadraticMap.reflection_add_apply_eq_neg_of_map_eq Q _ x hmap, map_neg,
+          QuadraticMap.reflection_apply_self, neg_neg]
 
 end FixedSubspace
 
