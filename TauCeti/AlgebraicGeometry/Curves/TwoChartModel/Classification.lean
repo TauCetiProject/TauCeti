@@ -74,33 +74,17 @@ private noncomputable def functionFieldIso :
       X.functionField :=
   (twoChartModel.functionFieldEquiv hxt).toRingEquiv.toCommRingCatIso
 
-/-- Through the generic points, `functionFieldIso` is compatible with the structure morphisms to
-`Spec k`. -/
-private theorem specMap_functionFieldIso_hom_comp_over :
-    (Spec.map (functionFieldIso X hx hxt).hom ≫ Scheme.fromSpecStalk _ _) ≫
-        twoChartModel _ hx ↘ Spec (.of k) = X.fromSpecStalk _ ≫ X ↘ Spec (.of k) := by
+/-- Through the generic points, `Spec` of a map of function fields compatible with the
+`k`-algebra structures is compatible with the structure morphisms to `Spec k`. -/
+private theorem specMap_comp_fromSpecStalk_comp_over {Y Z : Scheme.{u}} [Y.Over (Spec (.of k))]
+    [Z.Over (Spec (.of k))] [IsIntegral Y] [IsIntegral Z] (f : Z.functionField ⟶ Y.functionField)
+    (hf : ∀ c : k, f (algebraMap k Z.functionField c) = algebraMap k Y.functionField c) :
+    (Spec.map f ≫ Z.fromSpecStalk _) ≫ Z ↘ Spec (.of k) = Y.fromSpecStalk _ ≫ Y ↘ Spec (.of k) := by
   rw [Category.assoc, fromSpecStalk_genericPoint_comp_over (k := k),
     fromSpecStalk_genericPoint_comp_over (k := k), ← Spec.map_comp]
   congr 1
   ext c
-  exact (twoChartModel.functionFieldEquiv hxt).commutes c
-
-/-- Through the generic points, the inverse of `functionFieldIso` is compatible with the structure
-morphisms to `Spec k`. -/
-private theorem specMap_functionFieldIso_inv_comp_over :
-    (Spec.map (functionFieldIso X hx hxt).inv ≫ X.fromSpecStalk _) ≫ X ↘ Spec (.of k) =
-      Scheme.fromSpecStalk _ _ ≫ twoChartModel _ hx ↘ Spec (.of k) := by
-  rw [Category.assoc, fromSpecStalk_genericPoint_comp_over (k := k),
-    fromSpecStalk_genericPoint_comp_over (k := k), ← Spec.map_comp]
-  congr 1
-  ext c
-  exact (twoChartModel.functionFieldEquiv hxt).symm.commutes c
-
-include hxt in
-/-- The two-chart model of `k(X)` is proper over `k`. -/
-private theorem isProper_twoChartModel :
-    IsProper (twoChartModel (IsCurveOver.isFunctionField (k := k) (X := X)) hx ↘ Spec (.of k)) :=
-  twoChartModel.isProper hxt
+  exact hf c
 
 variable [∀ y : CodimensionOnePoint X, IsDiscreteValuationRing (X.presheaf.stalk (y : X))]
 
@@ -112,29 +96,29 @@ pullback of rational functions is the identification of the function field of th
 `k(X)` (`eq_isoTwoChartModel_hom_iff`). -/
 noncomputable def isoTwoChartModel :
     X ≅ twoChartModel (IsCurveOver.isFunctionField (k := k) (X := X)) hx :=
-  have := isProper_twoChartModel X hx hxt
+  have := twoChartModel.isProper (hF := IsCurveOver.isFunctionField (k := k) (X := X)) (hx := hx)
+    hxt
   { hom := homOfFunctionField
-      (TauCeti.AlgebraicGeometry.Scheme.valuationRing_stalk_of_topologicalKrullDim_le_one
+      (valuationRing_stalk_of_topologicalKrullDim_le_one
         (IsCurveOver.topologicalKrullDim_eq_one k).le) _
-      (specMap_functionFieldIso_hom_comp_over X hx hxt)
+      (specMap_comp_fromSpecStalk_comp_over (functionFieldIso X hx hxt).hom
+        (twoChartModel.functionFieldEquiv hxt).commutes)
     inv := homOfFunctionField (twoChartModel.valuationRing_stalk hxt) _
-      (specMap_functionFieldIso_inv_comp_over X hx hxt)
+      (specMap_comp_fromSpecStalk_comp_over (functionFieldIso X hx hxt).inv
+        (twoChartModel.functionFieldEquiv hxt).symm.commutes)
     hom_inv_id := by
       refine ext_of_isDominant_of_isSeparated' (Spec (.of k))
         (X.fromSpecStalk (genericPoint X)) ?_
-      rw [fromSpecStalk_homOfFunctionField_assoc, Category.assoc,
-        fromSpecStalk_homOfFunctionField, ← Spec.map_comp_assoc, Iso.inv_hom_id,
-        Spec.map_id, Category.id_comp, Category.comp_id]
+      simp [← Spec.map_comp_assoc, -Spec.map_comp]
     inv_hom_id := by
       refine ext_of_isDominant_of_isSeparated' (Spec (.of k))
         ((twoChartModel _ hx).fromSpecStalk (genericPoint _)) ?_
-      rw [fromSpecStalk_homOfFunctionField_assoc, Category.assoc,
-        fromSpecStalk_homOfFunctionField, ← Spec.map_comp_assoc, Iso.hom_inv_id,
-        Spec.map_id, Category.id_comp, Category.comp_id] }
+      simp [← Spec.map_comp_assoc, -Spec.map_comp] }
 
 /-- The isomorphism `X ⟶ M` of `isoTwoChartModel` is a morphism over `k`. -/
 instance : (X.isoTwoChartModel hx hxt).hom.IsOver (Spec (.of k)) := by
-  have := isProper_twoChartModel X hx hxt
+  have := twoChartModel.isProper (hF := IsCurveOver.isFunctionField (k := k) (X := X)) (hx := hx)
+    hxt
   -- Instance search does not see through `isoTwoChartModel` to `Scheme.homOfFunctionField`, so the
   -- instance is applied by name.
   exact isOver_homOfFunctionField _ _ _
@@ -148,7 +132,8 @@ instance : (X.isoTwoChartModel hx hxt).inv.IsOver (Spec (.of k)) := by
 `functionFieldIso`. -/
 private theorem functionFieldMap_isoTwoChartModel_hom_eq :
     (X.isoTwoChartModel hx hxt).hom.functionFieldMap = (functionFieldIso X hx hxt).hom := by
-  have := isProper_twoChartModel X hx hxt
+  have := twoChartModel.isProper (hF := IsCurveOver.isFunctionField (k := k) (X := X)) (hx := hx)
+    hxt
   refine ((Hom.eq_functionFieldMap_iff _ _).mpr ?_).symm
   exact (fromSpecStalk_homOfFunctionField _ _ _).symm
 
@@ -182,7 +167,8 @@ theorem eq_isoTwoChartModel_hom_iff
     f = (X.isoTwoChartModel hx hxt).hom ↔
       ∀ z, f.functionFieldMap ((twoChartModel.functionFieldEquiv hxt).symm z) = z := by
   refine ⟨fun h ↦ h ▸ functionFieldMap_isoTwoChartModel_hom X hx hxt, fun h ↦ ?_⟩
-  have := isProper_twoChartModel X hx hxt
+  have := twoChartModel.isProper (hF := IsCurveOver.isFunctionField (k := k) (X := X)) (hx := hx)
+    hxt
   refine Hom.ext_of_functionFieldMap_eq (Spec (.of k)) ?_
   ext a
   obtain ⟨z, rfl⟩ := (twoChartModel.functionFieldEquiv hxt).symm.surjective a

@@ -51,14 +51,12 @@ instance (priority := low) isDiscreteValuationRing_stalk {X : Scheme.{u}}
 
 end CodimensionOnePoint
 
-namespace Scheme
-
 /-- **The local rings of an integral scheme of dimension at most one are valuation rings** when
 its codimension-one local rings are discrete valuation rings (for instance when it is regular): at
 the generic point the local ring is the function field, and every other point has codimension
 one. -/
-theorem valuationRing_stalk_of_topologicalKrullDim_le_one {X : Scheme.{u}} [IsIntegral X]
-    (hX : topologicalKrullDim X ≤ 1)
+theorem _root_.AlgebraicGeometry.Scheme.valuationRing_stalk_of_topologicalKrullDim_le_one
+    {X : Scheme.{u}} [IsIntegral X] (hX : topologicalKrullDim X ≤ 1)
     [hDVR : ∀ y : CodimensionOnePoint X, IsDiscreteValuationRing (X.presheaf.stalk (y : X))]
     (x : X) :
     ValuationRing (X.presheaf.stalk x) := by
@@ -68,11 +66,9 @@ theorem valuationRing_stalk_of_topologicalKrullDim_le_one {X : Scheme.{u}} [IsIn
   · have hle : coheight x ≤ 1 := by
       exact_mod_cast (TauCeti.coheight_le_topologicalKrullDim x).trans hX
     have h1 : coheight x = 1 := hle.antisymm <| Order.one_le_iff_pos.mpr <|
-      Order.coheight_pos.mpr fun h ↦ hx (isMax_iff_eq_genericPoint.mp h)
+      Order.coheight_pos.mpr fun h ↦ hx (Scheme.isMax_iff_eq_genericPoint.mp h)
     have := hDVR ⟨x, h1⟩
     infer_instance
-
-end Scheme
 
 end AlgebraicGeometry
 
