@@ -181,7 +181,8 @@ theorem projectiveLinePartialDiffeomorph_transition (n : ℕ∞ω) (z : ℂ)
   rw [projectiveLineNegativePartialDiffeomorph_target] at hz
   obtain ⟨y, hy⟩ := hz
   have hxy := (projectiveLinePositivePartialDiffeomorph_apply n z).symm.trans hy.symm
-  have ht := projectiveLine_chart_transition ((affineRayPointHomeomorph gp).symm z) y hxy
+  have ht := eq_inv_of_mul_eq_one_right <|
+    projectiveLine_chart_coordinates_mul_of_eq ((affineRayPointHomeomorph gp).symm z) y hxy
   rw [Homeomorph.apply_symm_apply] at ht
   rw [← hy]
   exact (projectiveLineNegativePartialDiffeomorph_symm_analyticAffineChartι n y).trans
@@ -201,7 +202,8 @@ theorem projectiveLinePartialDiffeomorph_transition_symm (n : ℕ∞ω) (z : ℂ
   rw [projectiveLinePositivePartialDiffeomorph_target] at hz
   obtain ⟨x, hx⟩ := hz
   have hxy := hx.trans (projectiveLineNegativePartialDiffeomorph_apply n z)
-  have ht := projectiveLine_chart_transition x ((negativeRayPointHomeomorph gn).symm z) hxy
+  have ht := eq_inv_of_mul_eq_one_right <|
+    projectiveLine_chart_coordinates_mul_of_eq x ((negativeRayPointHomeomorph gn).symm z) hxy
   rw [Homeomorph.apply_symm_apply] at ht
   rw [← hx]
   exact (projectiveLinePositivePartialDiffeomorph_symm_analyticAffineChartι n x).trans
