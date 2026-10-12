@@ -9,7 +9,9 @@ public import TauCeti.FieldTheory.FunctionField.Differential.Comparison
 public import TauCeti.FieldTheory.FunctionField.PlaneCurve.Genus
 -- Proof-only: powers of a function lie in the multiples of its pole divisor.
 import TauCeti.FieldTheory.FunctionField.RiemannRoch.Principal
--- Proof-only: the powers of a transcendental element are linearly independent.
+-- Proof-only: the number of monomials of degree at most `n - 3`.
+import TauCeti.Data.Finset.NatAntidiagonal
+-- Proof-only: the products `x ^ i y ^ j` are linearly independent.
 import TauCeti.RingTheory.Algebraic.LinearIndependent
 
 /-!
@@ -41,11 +43,7 @@ the space of polynomials in `x` and `y` of degree at most `n - 3`, and the regul
 
 ## Main results
 
-* `TauCeti.Place.mem_integers_of_aeval_eq_zero`: a root `b` of `φ(a, Y)`, for `φ` monic in `Y`, is
-  regular wherever `a` is.
 * `TauCeti.mem_riemannRochSpace_poles_of_aeval_eq_zero`: `y ∈ L((x)_∞)`.
-* `TauCeti.linearIndepOn_pow_mul_pow`: the functions `x ^ i y ^ j` with `j` less than the degree of
-  `y` over `k(x)` are linearly independent over `k`.
 * `TauCeti.weilDifferentialDivisor_repartitionDualMul_inv_weilDifferentialCotrace_of_aeval_eq_zero`:
   the differential `dx / (∂g/∂Y (x, y))` has divisor `(n - 3) (x)_∞`.
 * `TauCeti.divisorClass_sub_three_zsmul_poles_eq_canonicalClass_of_aeval_eq_zero`:
@@ -61,6 +59,8 @@ the space of polynomials in `x` and `y` of degree at most `n - 3`, and the regul
   adjoint curves of degree `n - 3`.
 * H. Stichtenoth, *Algebraic Function Fields and Codes*, 2nd ed., GTM 254, Springer, 2009,
   Remark 4.3.7(c) and Theorem 3.5.10.
+* `TauCeti.FieldTheory.FunctionField.Hyperelliptic.RegularDifferential`, the corresponding
+  description of the regular differentials of `y² = f(x)`, whose proof this file follows.
 -/
 
 public section
@@ -71,30 +71,7 @@ open scoped IntermediateField
 
 namespace TauCeti
 
-variable {k F : Type*} [Field k] [Field F] [Algebra k F]
-
-/-- **A root of a polynomial monic in `Y` is regular wherever its first coordinate is**: if
-`φ ∈ k[X, Y]` is monic as a polynomial in `Y` over `k[X]`, `φ(a, b) = 0`, and `a` is regular at the
-place `P`, then so is `b`, which is integral over `k[a]`. -/
-theorem Place.mem_integers_of_aeval_eq_zero (P : Place k F) {φ : MvPolynomial (Fin 2) k}
-    (hmon : ((Bivariate.equivMvPolynomial k).symm φ).Monic) {a b : F}
-    (hab : MvPolynomial.aeval ![a, b] φ = 0) (ha : a ∈ P.integers) : b ∈ P.integers := by
-  -- View `F` as a `k[X]`-algebra through `X ↦ a`.
-  let _ : Algebra k[X] F := (aeval a).toAlgebra
-  have : IsScalarTower k k[X] F := .of_algebraMap_eq fun c ↦ by
-    simp [RingHom.algebraMap_toAlgebra]
-  have hX : algebraMap k[X] F X = a := by simp [RingHom.algebraMap_toAlgebra]
-  have hR (r : k[X]) : algebraMap k[X] F r ∈ P.integers := by
-    induction r using Polynomial.induction_on' with
-    | add p q hp hq => rw [map_add]; exact add_mem hp hq
-    | monomial n c =>
-      rw [← C_mul_X_pow_eq_monomial, map_mul, map_pow, hX, ← Polynomial.algebraMap_eq,
-        ← IsScalarTower.algebraMap_apply]
-      exact mul_mem (P.algebraMap_mem_integers c) (pow_mem ha n)
-  refine P.mem_integers_of_isIntegral hR ⟨_, hmon, ?_⟩
-  rw [← aeval_def, ← Bivariate.aeval_equivMvPolynomial, AlgEquiv.apply_symm_apply, hX, hab]
-
-variable [Algebra (RatFunc k) F]
+variable {k F : Type*} [Field k] [Field F] [Algebra k F] [Algebra (RatFunc k) F]
 
 /-- **The coordinate `y` of a plane curve has no worse poles than `x`**: let `g ∈ k[X, Y]` have
 total degree `n`, with the coefficient of `Yⁿ` equal to `1`, and let `g(x, y) = 0`. Then
@@ -146,25 +123,6 @@ theorem pow_mul_pow_mem_riemannRochSpace_zsmul_poles_of_aeval_eq_zero (hF : IsFu
   exact riemannRochSpace_mono ((Divisor.isEffective_poles hF _).zsmul_le_zsmul h) hmem
 
 variable [IsScalarTower k (RatFunc k) F]
-
-/-- **The functions `x ^ i y ^ j` are linearly independent**: for `y ∈ F`, the products
-`x ^ i y ^ j`, where `x` is the variable of `k(x)` and `j` is less than the degree of `y` over
-`k(x)`, are linearly independent over `k`. -/
-theorem linearIndepOn_pow_mul_pow (y : F) :
-    LinearIndepOn k (fun p : ℕ × ℕ ↦ algebraMap (RatFunc k) F RatFunc.X ^ p.1 * y ^ p.2)
-      {p | p.2 < (minpoly (RatFunc k) y).natDegree} := by
-  -- The powers of `x` are independent over `k`, those of `y` below its degree over `k(x)`.
-  have h := linearIndependent_smul (R := k) RatFunc.transcendental_X.linearIndependent_pow
-    (linearIndependent_pow (K := RatFunc k) y)
-  have hinj : Function.Injective fun p : {p : ℕ × ℕ | p.2 < (minpoly (RatFunc k) y).natDegree} ↦
-      ((p : ℕ × ℕ).1, (⟨(p : ℕ × ℕ).2, p.2⟩ : Fin (minpoly (RatFunc k) y).natDegree)) :=
-    fun p q hpq ↦ by
-      simp only [Prod.mk.injEq, Fin.mk.injEq] at hpq
-      exact Subtype.ext (Prod.ext hpq.1 hpq.2)
-  rw [← linearIndependent_set_coe_iff]
-  convert h.comp _ hinj using 1
-  ext p
-  simp [Algebra.smul_def]
 
 variable [Algebra.IsSeparable (RatFunc k) F] [FiniteDimensional (RatFunc k) F]
 
@@ -225,31 +183,11 @@ theorem divisorClass_sub_three_zsmul_poles_eq_canonicalClass_of_aeval_eq_zero
       hirr (Bivariate.monic_equivMvPolynomial_symm le_rfl hlead) hy)) rfl]
   exact divisorClass_weilDifferentialDivisor hF hex _ _
 
-/-- There are `(n - 1)(n - 2) / 2` monomials `X ^ i Y ^ j` of degree at most `n - 3`, for
-`n ≥ 1`: their exponents are the pairs on the antidiagonals `i + j = s` for `s < n - 2`. -/
-private theorem two_mul_card_biUnion_antidiagonal {n : ℕ} (hn : 1 ≤ n) :
-    (2 * ((Finset.range (n - 2)).biUnion Finset.antidiagonal).card : ℤ) =
-      ((n : ℤ) - 1) * ((n : ℤ) - 2) := by
-  rw [Finset.card_biUnion fun a _ b _ hab ↦ Finset.disjoint_left.mpr fun p ha hb ↦
-    hab ((Finset.mem_antidiagonal.mp ha).symm.trans (Finset.mem_antidiagonal.mp hb))]
-  simp_rw [Finset.Nat.card_antidiagonal]
-  have h (m : ℕ) : 2 * ∑ s ∈ Finset.range m, (s + 1) = m * (m + 1) := by
-    induction m with
-    | zero => simp
-    | succ m ih => rw [Finset.sum_range_succ, mul_add, ih]; ring
-  rcases Nat.lt_or_ge n 2 with h2 | h2
-  · rw [show n = 1 by omega]
-    simp
-  · have h' := h (n - 2)
-    zify [h2] at h'
-    push_cast
-    linear_combination h'
-
 /-- **The Riemann–Roch space of the canonical divisor of a smooth plane curve**: under the
 hypotheses of
 `TauCeti.weilDifferentialDivisor_repartitionDualMul_inv_weilDifferentialCotrace_of_aeval_eq_zero`,
 `L((n - 3) (x)_∞)` is spanned by the monomials `x ^ i y ^ j` with `i + j ≤ n - 3`. These are
-linearly independent (`TauCeti.linearIndepOn_pow_mul_pow`), so they form a basis, and
+linearly independent (`Transcendental.linearIndepOn_pow_mul_pow`), so they form a basis, and
 `L((n - 3) (x)_∞)` is the space of polynomials in `x` and `y` of degree at most `n - 3`. -/
 theorem riemannRochSpace_sub_three_zsmul_poles_eq_span_of_aeval_eq_zero
     (hF : IsFunctionField k F) (hex : IsIntegrallyClosedIn k F) {g : MvPolynomial (Fin 2) k}
@@ -288,7 +226,7 @@ theorem riemannRochSpace_sub_three_zsmul_poles_eq_span_of_aeval_eq_zero
       (Bivariate.monic_equivMvPolynomial_symm le_rfl hlead).natDegree_map,
       Bivariate.natDegree_equivMvPolynomial_symm le_rfl hlead]
   have hli : LinearIndepOn k f (S : Set (ℕ × ℕ)) :=
-    (linearIndepOn_pow_mul_pow y).mono fun p hp ↦ by
+    (RatFunc.transcendental_X.linearIndepOn_pow_mul_pow y).mono fun p hp ↦ by
       rw [hS] at hp
       simp only [Set.mem_ofPred_eq, hdeg] at hp ⊢
       omega
@@ -297,7 +235,16 @@ theorem riemannRochSpace_sub_three_zsmul_poles_eq_span_of_aeval_eq_zero
     simp
   -- There are `g` of them, and `ℓ((n - 3) (x)_∞) = g` since the divisor is canonical.
   have hcard : (S.card : ℤ) = genus k F := by
-    linarith [two_mul_card_biUnion_antidiagonal hn]
+    have hc : 2 * S.card = (n - 2) * (n - 2 + 1) :=
+      Finset.Nat.two_mul_card_biUnion_range_antidiagonal (n - 2)
+    rcases Nat.lt_or_ge n 2 with hn2 | hn2
+    · have hn1 : n = 1 := by omega
+      rw [hn1] at h2 hc
+      norm_num at h2 hc
+      simp [hc, h2]
+    · zify [hn2] at hc
+      have hA : ((n : ℤ) - 2) * (n - 2 + 1) = (n - 1) * (n - 2) := by ring
+      linarith
   rw [← hS]
   refine (Submodule.eq_of_le_of_finrank_eq (Submodule.span_le.mpr ?_) ?_).symm
   · rintro _ ⟨p, hp, rfl⟩
