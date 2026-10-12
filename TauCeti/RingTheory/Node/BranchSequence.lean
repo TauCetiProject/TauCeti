@@ -82,12 +82,13 @@ private lemma exists_eq_aeval_sum_add_mul [Nontrivial R] (z : NodeAlgebra R 0) :
   let pb := AdjoinRoot.powerBasis' (monic_quadratic (0 : R))
   obtain ⟨f, hf, he⟩ := pb.exists_eq_aeval (e.symm z)
   have hf2 : f.natDegree < 2 := by
-    simpa only [pb, AdjoinRoot.powerBasis', natDegree_quadratic] using hf
+    simpa only [pb, AdjoinRoot.powerBasis'_dim, natDegree_quadratic] using hf
+  simp only [pb, AdjoinRoot.powerBasis'_gen] at he
   refine ⟨f.coeff 0, f.coeff 1, ?_⟩
   have hz := congrArg e he
   rw [e.apply_symm_apply] at hz
   rw [Polynomial.aeval_eq_sum_range' hf2] at hz
-  simpa [e, pb, AdjoinRoot.powerBasis', Finset.sum_range_succ,
+  simpa [e, Finset.sum_range_succ,
     Algebra.smul_def, AdjoinRoot.algebraMap_eq] using hz
 
 /-- Restriction to the two branches loses no regular functions, over any commutative base. -/
@@ -147,9 +148,7 @@ def branchQuotientEquiv :
 /-- The quotient comparison takes a pair of branch functions to the difference at the origin. -/
 @[simp]
 lemma branchQuotientEquiv_mk (p : R[X] × R[X]) :
-    branchQuotientEquiv R (Submodule.Quotient.mk p) = p.1.coeff 0 - p.2.coeff 0 := by
-  change branchDifference R p = _
-  exact branchDifference_apply R p
+    branchQuotientEquiv R (Submodule.Quotient.mk p) = p.1.coeff 0 - p.2.coeff 0 := (rfl)
 
 /-- The inverse quotient comparison represents a value by the constant function on the first
 branch and zero on the second. -/
