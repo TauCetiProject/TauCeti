@@ -22,13 +22,12 @@ import TauCeti.Algebra.Lie.Orthogonal.Killing
 In characteristic zero every finite-dimensional representation of the standard special orthogonal
 group `SOₙ` is completely reducible, in every dimension.
 
-From dimension three on, the argument is Lie-algebraic. Over an algebraic closure `K` of the base
-field, the tangent Lie algebra of the base-changed group is Mathlib's
-`LieAlgebra.Orthogonal.so (Fin n) K`, whose standard module is faithful, irreducible and
-trace-free, so its Killing form is nondegenerate; this descends to the base field. Since `SOₙ` is
+From dimension three on, the argument is Lie-algebraic. The tangent Lie algebra of `SOₙ` is
+Mathlib's `LieAlgebra.Orthogonal.so (Fin n) k`, which has trivial radical
+(`TauCeti.hasTrivialRadical_so`) and hence nondegenerate Killing form. Since `SOₙ` is
 geometrically connected, Weyl's complete reducibility theorem for comodules applies.
 
-The irreducibility of the standard module used here needs `n ≥ 3`, and dimension two is
+The irreducibility of the standard module behind this needs `n ≥ 3`, and dimension two is
 genuinely different: `so₂` is a nonzero abelian Lie algebra in characteristic zero, so its Killing
 form vanishes. The low dimensions are covered by existing results instead: `SO₀` and `SO₁` are the
 special linear groups `SL₀` and `SL₁`, and `SO₂` is a torus.
@@ -70,14 +69,10 @@ theorem isKilling_tangent_of_three_le (n : ℕ) (hn : 3 ≤ n) :
     LieAlgebra.IsKilling k
       (Derivation k (coordinateHopfAlgebra k n)
         (Bialgebra.CounitAlgebra k (coordinateHopfAlgebra k n) k)) := by
-  let K := AlgebraicClosure k
-  let : Invertible (2 : K) := invertibleOfNonzero two_ne_zero
-  have : LieAlgebra.HasTrivialRadical K (LieAlgebra.Orthogonal.so (Fin n) K) :=
-    hasTrivialRadical_so K (by rwa [Fintype.card_fin])
-  refine (isKilling_lie_baseChange_iff (K := K)).1 ?_
-  exact LieAlgebra.isKilling_of_equiv
-    ((tangentBaseChangeLieEquiv (R := k) (K := K)).symm.trans
-      (tangentLieEquivSo (R := k) (B := K) n)).symm
+  let : Invertible (2 : k) := invertibleOfNonzero two_ne_zero
+  have : LieAlgebra.HasTrivialRadical k (LieAlgebra.Orthogonal.so (Fin n) k) :=
+    hasTrivialRadical_so k (by rwa [Fintype.card_fin])
+  exact LieEquiv.isKilling (tangentLieEquivSo (R := k) (B := k) n).symm
 
 /-- **`SOₙ` is linearly reductive in characteristic zero**, in every dimension. Every
 finite-dimensional comodule over its coordinate Hopf algebra is completely reducible.

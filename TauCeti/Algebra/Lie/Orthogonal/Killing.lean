@@ -10,16 +10,22 @@ public import Mathlib.Algebra.Lie.Classical
 public import Mathlib.Algebra.Lie.Matrix
 public import Mathlib.Algebra.Lie.Semisimple.Lemmas
 public import TauCeti.LinearAlgebra.Matrix.Alternating
+import Mathlib.FieldTheory.IsAlgClosed.AlgebraicClosure
+import TauCeti.Algebra.Lie.BaseChange.Radical
+import TauCeti.Algebra.Lie.SkewAdjoint.BaseChange
 
 /-!
 # The Killing form of the orthogonal Lie algebra
 
 The standard module `l → K` of the orthogonal Lie algebra `LieAlgebra.Orthogonal.so l K` of the
 standard symmetric form is irreducible over every field, as soon as `l` has at least three
-elements. In characteristic zero the standard module is also faithful and trace-free, so
-`LieAlgebra.hasTrivialRadical_of_isIrreducible_of_isFaithful` shows that `so l K` has trivial
-radical, provided each element acts triangularizably on the standard module (for instance over an
-algebraically closed field). Cartan's criterion turns this into nondegeneracy of the Killing form.
+elements. In characteristic zero it follows that `so l K` has trivial radical, so by Cartan's
+criterion its Killing form is nondegenerate. Over an algebraically closed field the standard
+module is faithful, trace-free and irreducible, and
+`LieAlgebra.hasTrivialRadical_of_isIrreducible_of_isFaithful` applies; over an arbitrary field of
+characteristic zero, `so l K` becomes the orthogonal Lie algebra of an algebraic closure after
+extension of scalars (`TauCeti.skewAdjointMatricesLieSubalgebraBaseChangeEquiv`), and triviality
+of the radical descends (`LieAlgebra.hasTrivialRadical_baseChange_iff`).
 
 The irreducibility argument uses the elements `E_ab - E_ba` of `so l K`, which send `v` to
 `v_b e_a - v_a e_b`. Given `v` with `vᵢ ≠ 0` and two further indices `j` and `m`, the element
@@ -34,9 +40,8 @@ The structure follows the symplectic case in `TauCeti/Algebra/Lie/Symplectic/Kil
 
 * `TauCeti.isIrreducible_so_standard`: the standard module of `so l K` is irreducible when `l`
   has at least three elements.
-* `TauCeti.hasTrivialRadical_so`: `so l K` has trivial radical in characteristic zero when `l`
-  has at least three elements, given triangularizability of its standard module; in particular its
-  Killing form is nondegenerate.
+* `TauCeti.hasTrivialRadical_so`: `so l K` has trivial radical over every field of characteristic
+  zero when `l` has at least three elements; in particular its Killing form is nondegenerate.
 
 ## References
 
@@ -50,7 +55,8 @@ public section
 
 namespace TauCeti
 
-open Matrix LieAlgebra LieModule
+open Matrix _root_.LieAlgebra LieModule
+open scoped TensorProduct
 
 attribute [local instance 100] LieRing.ofAssociativeRing
 
@@ -102,17 +108,24 @@ theorem isIrreducible_so_standard (hl : 3 ≤ Fintype.card l) :
 
 variable (K) [CharZero K]
 
-/-- **The orthogonal Lie algebra has trivial radical** in characteristic zero, for an index type
-with at least three elements, provided each of its elements acts triangularizably on the standard
-module, which holds over every algebraically closed field. By Cartan's criterion its Killing form
-is then nondegenerate. -/
-theorem hasTrivialRadical_so (hl : 3 ≤ Fintype.card l)
-    [IsTriangularizable K (Orthogonal.so l K) (l → K)] :
+/-- **The orthogonal Lie algebra has trivial radical** over every field of characteristic zero,
+for an index type with at least three elements. By Cartan's criterion its Killing form is then
+nondegenerate. -/
+theorem hasTrivialRadical_so (hl : 3 ≤ Fintype.card l) :
     HasTrivialRadical K (Orthogonal.so l K) := by
-  have : IsIrreducible K (Orthogonal.so l K) (l → K) := isIrreducible_so_standard hl
-  let : Invertible (2 : K) := invertibleOfNonzero two_ne_zero
-  exact hasTrivialRadical_of_isIrreducible_of_isFaithful K (Orthogonal.so l K) (l → K)
-    fun ⟨x, hx⟩ ↦ by
-      simpa using Matrix.trace_eq_zero_of_transpose_eq_neg x ((Orthogonal.mem_so l K x).mp hx)
+  let A := AlgebraicClosure K
+  let : Invertible (2 : A) := invertibleOfNonzero two_ne_zero
+  have : IsIrreducible A (Orthogonal.so l A) (l → A) := isIrreducible_so_standard hl
+  have : HasTrivialRadical A (Orthogonal.so l A) :=
+    hasTrivialRadical_of_isIrreducible_of_isFaithful A (Orthogonal.so l A) (l → A)
+      fun ⟨x, hx⟩ ↦ by
+        simpa using Matrix.trace_eq_zero_of_transpose_eq_neg x ((Orthogonal.mem_so l A x).mp hx)
+  -- After extension of scalars to `A`, `so l K` becomes `so l A`.
+  have e := skewAdjointMatricesLieSubalgebraBaseChangeEquiv A (1 : Matrix l l K)
+  rw [Matrix.map_one _ (map_zero _) (map_one _)] at e
+  have : HasTrivialRadical A (skewAdjointMatricesLieSubalgebra (1 : Matrix l l A)) :=
+    ‹HasTrivialRadical A (Orthogonal.so l A)›
+  have : HasTrivialRadical A (A ⊗[K] Orthogonal.so l K) := hasTrivialRadical_of_equiv e.symm
+  exact (hasTrivialRadical_baseChange_iff K (Orthogonal.so l K) A).mp this
 
 end TauCeti
