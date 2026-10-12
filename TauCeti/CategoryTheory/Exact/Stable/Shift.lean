@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.CategoryTheory.Exact.Stable.Autoequivalence
-public import TauCeti.CategoryTheory.Shift.Intertwining
+public import TauCeti.CategoryTheory.Shift.IntSequence
 
 /-!
 # The shift on the stable category of a Frobenius exact category
@@ -136,6 +136,33 @@ theorem commShiftOfIntertwiningStableSuspension_iso_one {D : Type u'} [Category.
   unfold commShiftOfIntertwiningStableSuspension stableShiftFunctorOneIso stableHasShift
   exact CategoryTheory.Functor.commShiftOfIntertwining_iso_one F
     hE.stableSuspension.asEquivalence e α
+
+/-- A stable functor intertwining suspension with an existing degree-one shift commutes
+coherently with every integral shift, retaining the specified shift on the target. -/
+@[instance_reducible]
+noncomputable def commShiftOfIntertwiningStableSuspensionWithShift
+    {D : Type u'} [Category.{v'} D] [HasShift D ℤ]
+    (F : E.ProjectiveStableCategory ⥤ D)
+    (α : hE.stableSuspension ⋙ F ≅ F ⋙ shiftFunctor D (1 : ℤ)) :
+    letI := hE.stableHasShift
+    F.CommShift ℤ := by
+  unfold stableHasShift
+  exact CategoryTheory.Functor.commShiftOfIntertwiningWithShift F
+    hE.stableSuspension.asEquivalence α
+
+/-- The stable comparison with an existing shift recovers the supplied suspension comparison
+at degree one. -/
+theorem commShiftOfIntertwiningStableSuspensionWithShift_iso_one
+    {D : Type u'} [Category.{v'} D] [HasShift D ℤ]
+    (F : E.ProjectiveStableCategory ⥤ D)
+    (α : hE.stableSuspension ⋙ F ≅ F ⋙ shiftFunctor D (1 : ℤ)) :
+    letI := hE.stableHasShift
+    letI := hE.commShiftOfIntertwiningStableSuspensionWithShift F α
+    F.commShiftIso (1 : ℤ) =
+      Functor.isoWhiskerRight hE.stableShiftFunctorOneIso F ≪≫ α := by
+  unfold commShiftOfIntertwiningStableSuspensionWithShift stableShiftFunctorOneIso stableHasShift
+  exact CategoryTheory.Functor.commShiftOfIntertwiningWithShift_iso_one F
+    hE.stableSuspension.asEquivalence α
 
 /-- The shift by `-1` on the stable category of a Frobenius exact structure is the stable loop
 functor. -/
