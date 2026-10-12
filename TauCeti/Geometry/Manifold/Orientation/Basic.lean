@@ -162,30 +162,10 @@ private theorem _root_.TauCeti.Manifold.Orientation.tangentOrientation_congr
         -l.sign x ⟨x, mem_chart_source H x⟩ := by
       simp [hs]
     rcases Int.units_eq_one_or (l.sign x ⟨x, mem_chart_source H x⟩) with hone | hneg
-    · have hsignneg : -l.sign x ⟨x, mem_chart_source H x⟩ ≠ (1 : ℤˣ) := by
-        rw [hone]
-        intro h
-        have := congrArg ((↑) : ℤˣ → ℤ) h
-        norm_num at this
-      rw [OrientationLift.tangentOrientation, OrientationLift.tangentOrientation,
-        hsign, ite_eq_left hone, ite_eq_right hsignneg, hm, Orientation.map_neg]
-      have hnn : -(-(Orientation.map ι (tangentSpaceCastModel I x).symm.toLinearEquiv
-          l.modelOrientation)) =
-          (Orientation.map ι (tangentSpaceCastModel I x).symm.toLinearEquiv
-            l.modelOrientation) := by
-        exact @InvolutiveNeg.neg_neg (_root_.Orientation ℝ (TangentSpace I x) ι)
-          inferInstance _
-      exact hnn.symm
-    · have hsignneg : l.sign x ⟨x, mem_chart_source H x⟩ ≠ (1 : ℤˣ) := by
-        intro h
-        rw [hneg] at h
-        have := congrArg ((↑) : ℤˣ → ℤ) h
-        norm_num at this
-      have hsignpos : -l.sign x ⟨x, mem_chart_source H x⟩ = (1 : ℤˣ) := by
-        rw [hneg]
-        simp
-      rw [OrientationLift.tangentOrientation, OrientationLift.tangentOrientation,
-        hsign, ite_eq_right hsignneg, ite_eq_left hsignpos, hm, Orientation.map_neg]
+    · simp only [OrientationLift.tangentOrientation, hone, hsign, hm, Orientation.map_neg]
+      let o := Orientation.map ι (tangentSpaceCastModel I x).symm.toLinearEquiv l.modelOrientation
+      exact (InvolutiveNeg.neg_neg o).symm
+    · simp [OrientationLift.tangentOrientation, hsign, hm, hneg, Orientation.map_neg]
 
 end Manifold
 
@@ -227,6 +207,155 @@ theorem _root_.TauCeti.Manifold.Orientation.orientationAt_mk
         -Orientation.map ι (tangentSpaceCastModel I x).symm.toLinearEquiv l.modelOrientation := by
   simp [Manifold.Orientation.orientationAt, Manifold.Orientation.mk,
     OrientationLift.tangentOrientation]
+
+/-- Two manifold orientations are equal when they induce equal orientations on every tangent
+space. -/
+@[ext]
+theorem _root_.TauCeti.Manifold.Orientation.ext {o o' : Manifold.Orientation I M ι}
+    (h : ∀ x, Manifold.Orientation.orientationAt o x =
+      Manifold.Orientation.orientationAt o' x) : o = o' := by
+  refine Manifold.Orientation.inductionOn (p := fun o => ∀ o',
+      (∀ x, Manifold.Orientation.orientationAt o x =
+        Manifold.Orientation.orientationAt o' x) → o = o') o ?_ o' h
+  intro l o' h
+  refine Manifold.Orientation.inductionOn (p := fun o' =>
+      (∀ x, Manifold.Orientation.orientationAt (Manifold.Orientation.mk l) x =
+        Manifold.Orientation.orientationAt o' x) → Manifold.Orientation.mk l = o') o' ?_ h
+  intro l' h
+  rw [Manifold.Orientation.mk_eq_mk_iff]
+  by_cases hM : Nonempty M
+  · have hsign_of_eq (hm : l.modelOrientation = l'.modelOrientation) : l'.sign = l.sign := by
+      funext y z
+      have hz := h (z : M)
+      rw [Manifold.Orientation.orientationAt_mk, Manifold.Orientation.orientationAt_mk] at hz
+      have hzmem : (z : M) ∈ (chartAt H (z : M)).source := mem_chart_source H (z : M)
+      rcases Int.units_eq_one_or (l.sign (z : M) ⟨(z : M), hzmem⟩) with hsz | hsz <;>
+        rcases Int.units_eq_one_or (l'.sign (z : M) ⟨(z : M), hzmem⟩) with hsz' | hsz' <;>
+        simp only [hsz, hsz', hm, ite_true] at hz
+      all_goals
+        try
+          let o :=
+            Orientation.map ι (tangentSpaceCastModel I (z : M)).symm.toLinearEquiv
+              l'.modelOrientation
+          first
+          | exact False.elim ((Module.Ray.ne_neg_self o) (by simpa [o] using hz))
+          | exact False.elim ((Module.Ray.ne_neg_self o) (by simpa [o] using hz.symm))
+      all_goals
+        have hprod : l'.sign y z * l'.sign (z : M) ⟨(z : M), hzmem⟩ =
+            l.sign y z * l.sign (z : M) ⟨(z : M), hzmem⟩ := by
+          apply Units.ext
+          rw [l'.sign_mul_sign y (z : M) (z : M) z.property hzmem,
+            l.sign_mul_sign y (z : M) (z : M) z.property hzmem]
+        rw [hsz'] at hprod
+        rw [hsz] at hprod
+        rcases Int.units_eq_one_or (l.sign y z) with hyz | hyz <;>
+          rcases Int.units_eq_one_or (l'.sign y z) with hyz' | hyz' <;>
+          simp [hyz, hyz'] at hprod ⊢
+    have hsign_of_neg (hm : l.modelOrientation = -l'.modelOrientation) :
+        l'.sign = fun x y ↦ -l.sign x y := by
+      funext y z
+      have hz := h (z : M)
+      rw [Manifold.Orientation.orientationAt_mk, Manifold.Orientation.orientationAt_mk] at hz
+      have hzmem : (z : M) ∈ (chartAt H (z : M)).source := mem_chart_source H (z : M)
+      rcases Int.units_eq_one_or (l.sign (z : M) ⟨(z : M), hzmem⟩) with hsz | hsz <;>
+        rcases Int.units_eq_one_or (l'.sign (z : M) ⟨(z : M), hzmem⟩) with hsz' | hsz' <;>
+        simp only [hsz, hsz', hm, Orientation.map_neg, ite_true] at hz
+      all_goals
+        try
+          let o :=
+            Orientation.map ι (tangentSpaceCastModel I (z : M)).symm.toLinearEquiv
+              l'.modelOrientation
+          first
+          | exact False.elim ((Module.Ray.ne_neg_self o) (by simpa [o] using hz))
+          | exact False.elim ((Module.Ray.ne_neg_self o) (by simpa [o] using hz.symm))
+          | have hznorm : o = -o := by
+              calc
+                o = -(-o) := (InvolutiveNeg.neg_neg o).symm
+                _ = -o := by simpa [o] using hz
+            exact False.elim ((Module.Ray.ne_neg_self o) hznorm)
+      all_goals
+        have hprod : l'.sign y z * l'.sign (z : M) ⟨(z : M), hzmem⟩ =
+            l.sign y z * l.sign (z : M) ⟨(z : M), hzmem⟩ := by
+          apply Units.ext
+          rw [l'.sign_mul_sign y (z : M) (z : M) z.property hzmem,
+            l.sign_mul_sign y (z : M) (z : M) z.property hzmem]
+        rw [hsz'] at hprod
+        rw [hsz] at hprod
+        rcases Int.units_eq_one_or (l.sign y z) with hyz | hyz <;>
+          rcases Int.units_eq_one_or (l'.sign y z) with hyz' | hyz' <;>
+          simp [hyz, hyz'] at hprod ⊢
+    let x : M := Classical.choice hM
+    have hx := h x
+    rw [Manifold.Orientation.orientationAt_mk, Manifold.Orientation.orientationAt_mk] at hx
+    rcases Int.units_eq_one_or (l.sign x ⟨x, mem_chart_source H x⟩) with hs | hs <;>
+      rcases Int.units_eq_one_or (l'.sign x ⟨x, mem_chart_source H x⟩) with hs' | hs' <;>
+      simp only [hs, hs', ite_true] at hx
+    · have hm : l.modelOrientation = l'.modelOrientation :=
+        (Orientation.map ι (tangentSpaceCastModel I x).symm.toLinearEquiv).injective hx
+      exact Or.inl (by
+        have hsign := hsign_of_eq hm
+        cases l; cases l'; cases hm; cases hsign; rfl)
+    · have hm : l.modelOrientation = -l'.modelOrientation := by
+        apply (Orientation.map ι (tangentSpaceCastModel I x).symm.toLinearEquiv).injective
+        simpa [Orientation.map_neg] using hx
+      exact Or.inr ⟨by
+        calc
+          l'.modelOrientation = -(-l'.modelOrientation) :=
+            (InvolutiveNeg.neg_neg l'.modelOrientation).symm
+          _ = -l.modelOrientation := by rw [hm], hsign_of_neg hm⟩
+    · have hm : l.modelOrientation = -l'.modelOrientation := by
+        have hx' :
+            (Orientation.map ι (tangentSpaceCastModel I x).symm.toLinearEquiv)
+                l.modelOrientation =
+              -(Orientation.map ι (tangentSpaceCastModel I x).symm.toLinearEquiv)
+                l'.modelOrientation :=
+          (InvolutiveNeg.neg_neg
+            ((Orientation.map ι (tangentSpaceCastModel I x).symm.toLinearEquiv)
+              l.modelOrientation)).symm.trans
+            (congrArg Neg.neg hx)
+        apply (Orientation.map ι (tangentSpaceCastModel I x).symm.toLinearEquiv).injective
+        simpa [Orientation.map_neg] using hx'
+      exact Or.inr ⟨by
+        calc
+          l'.modelOrientation = -(-l'.modelOrientation) :=
+            (InvolutiveNeg.neg_neg l'.modelOrientation).symm
+          _ = -l.modelOrientation := by rw [hm], hsign_of_neg hm⟩
+    · have hm : l.modelOrientation = l'.modelOrientation := by
+        apply (Orientation.map ι (tangentSpaceCastModel I x).symm.toLinearEquiv).injective
+        exact neg_injective hx
+      exact Or.inl (by
+        have hsign := hsign_of_eq hm
+        cases l; cases l'; cases hm; cases hsign; rfl)
+  · have hEmpty : IsEmpty M := ⟨fun x => hM ⟨x⟩⟩
+    let _ := hEmpty
+    rcases Orientation.eq_or_eq_neg l.modelOrientation l'.modelOrientation l.card_eq with hm | hm
+    · left
+      cases l with
+      | mk lm lc ls lcont lcomp =>
+        cases l' with
+        | mk lm' lc' ls' lcont' lcomp' =>
+          change lm = lm' at hm
+          have hs : ls' = ls := by
+            funext x
+            exact isEmptyElim x
+          cases hm
+          cases hs
+          rfl
+    · right
+      cases l with
+      | mk lm lc ls lcont lcomp =>
+        cases l' with
+        | mk lm' lc' ls' lcont' lcomp' =>
+          change lm = -lm' at hm
+          constructor
+          · change lm' = -lm
+            calc
+              lm' = -(-lm') := (InvolutiveNeg.neg_neg lm').symm
+              _ = -lm := by rw [hm]
+          · have hs : ls' = fun x y ↦ -ls x y := by
+              funext x
+              exact isEmptyElim x
+            exact hs
 
 /-- Flipping the model orientation reverses every induced tangent orientation. -/
 @[simp]
