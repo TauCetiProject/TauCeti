@@ -176,6 +176,14 @@ def singularHomologyKunnethSplitting
     (retraction (singularHomologyKunneth X Y M N (m + 1))) (IsSplitMono.id _)
     (singularHomologyKunnethShortComplex_shortExact X Y M N m).epi_g
 
+/-- The retraction of the Künneth splitting is the chosen retraction of the Künneth map. -/
+@[simp] lemma singularHomologyKunnethSplitting_r
+    [∀ p, IsSplitMono (((toSSet.obj X).chainComplex M).iCycles p)] (m : ℕ) :
+    (singularHomologyKunnethSplitting X Y M N m).r =
+      retraction (singularHomologyKunneth X Y M N (m + 1))
+        (hf := isSplitMono_singularHomologyKunneth X Y M N (m + 1)) :=
+  (rfl)
+
 end Kunneth
 
 section Unit
@@ -229,6 +237,17 @@ def singularHomologyKunnethUnitSplitting (m : ℕ) :
     (((singularHomologyFunctor _ (m + 1)).map (λ_ (𝟙_ (ModuleCat.{w} k))).inv).app (X ⊗ Y) ≫
       retraction (singularHomologyKunneth X Y (𝟙_ _) (𝟙_ _) (m + 1)))
     (by simp) (singularHomologyKunnethUnitShortComplex_shortExact k X Y m).epi_g
+
+/-- The retraction of the Künneth splitting with coefficients in `k` is the chosen retraction of
+the Künneth map, preceded by the map induced by the inverse unitor. -/
+@[simp] lemma singularHomologyKunnethUnitSplitting_r (m : ℕ) :
+    (singularHomologyKunnethUnitSplitting k X Y m).r =
+      ((singularHomologyFunctor _ (m + 1)).map (λ_ (𝟙_ (ModuleCat.{w} k))).inv).app (X ⊗ Y) ≫
+        retraction (singularHomologyKunneth X Y (𝟙_ _) (𝟙_ _) (m + 1))
+          (hf := have : Module.Projective k (𝟙_ (ModuleCat.{w} k)) :=
+            inferInstanceAs (Module.Projective k k)
+          isSplitMono_singularHomologyKunneth X Y (𝟙_ _) (𝟙_ _) (m + 1)) :=
+  (rfl)
 
 end Unit
 

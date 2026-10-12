@@ -113,13 +113,14 @@ def toHomologyComplex : K ⟶ K.homologyComplex where
   comm' i j _ := by simp
 
 /-- The components of the projection onto the complex of homology objects. -/
+@[simp]
 lemma toHomologyComplex_f (i : ι) :
     K.toHomologyComplex.f i = retraction (K.iCycles i) ≫ K.homologyπ i :=
   (rfl)
 
 /-- On the cycles, the projection onto the complex of homology objects is the projection onto
 homology. -/
-@[reassoc (attr := simp)]
+@[reassoc]
 lemma iCycles_toHomologyComplex_f (i : ι) :
     K.iCycles i ≫ K.toHomologyComplex.f i = K.homologyπ i := by
   simp [toHomologyComplex_f]

@@ -590,6 +590,12 @@ def homologyKunnethShortComplexSplitting (m : ℕ) : (homologyKunnethShortComple
     (retraction (homologyKunneth K L (m + 1))) (IsSplitMono.id _)
     (homologyKunnethShortComplex_shortExact K L m).epi_g
 
+/-- The retraction of the Künneth splitting is the chosen retraction of the Künneth map. -/
+@[simp] lemma homologyKunnethShortComplexSplitting_r (m : ℕ) :
+    (homologyKunnethShortComplexSplitting K L m).r =
+      retraction (homologyKunneth K L (m + 1)) (hf := isSplitMono_homologyKunneth K L (m + 1)) :=
+  (rfl)
+
 end Kunneth
 
 end HomologicalComplex
