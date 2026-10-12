@@ -14,7 +14,7 @@ import TauCeti.AlgebraicGeometry.Morphisms.FormallyUnramified
 /-!
 # Unramified elliptic torsion over an arbitrary base
 
-For an elliptic curve `E/S` and a nonzero integer `n` invertible in every residue field of `S`,
+For an elliptic curve `E/S` and an integer `n` invertible in every residue field of `S`,
 the torsion scheme `E[n]` is formally unramified over `S`. Together with local finite type,
 this is unramifiedness; combined with flatness and local finite presentation, it gives étaleness.
 
@@ -38,11 +38,19 @@ namespace TauCeti.AlgebraicGeometry.EllipticCurveGeom
 
 variable {S : Scheme.{u}} (E : EllipticCurveGeom S)
 
-/-- The torsion scheme `E[n]` is formally unramified over any base on which the nonzero integer
-`n` is invertible in every residue field. -/
-theorem formallyUnramified_torsion_hom {n : ℤ} [NeZero n]
+/-- The torsion scheme `E[n]` is formally unramified over any base on which the integer `n`
+is invertible in every residue field. -/
+theorem formallyUnramified_torsion_hom {n : ℤ}
     (hn : ∀ s : S, (n : S.residueField s) ≠ 0) : FormallyUnramified (E.torsion n).X.hom := by
-  have : IsFinite (E.torsion n).X.hom := E.isFinite_torsion_hom (NeZero.ne n)
+  rcases isEmpty_or_nonempty S with hS | hS
+  · have : IsEmpty (E.torsion n).X.left :=
+      ⟨fun x ↦ isEmptyElim ((E.torsion n).X.hom x)⟩
+    infer_instance
+  have hn0 : n ≠ 0 := by
+    obtain ⟨s⟩ := hS
+    intro h
+    exact hn s (by simp [h])
+  have : IsFinite (E.torsion n).X.hom := E.isFinite_torsion_hom hn0
   refine ((E.torsion n).X.hom).formallyUnramified_of_formallyUnramified_baseChange_field
     fun K _ t ↦ ?_
   let E' := E.baseChange t

@@ -43,6 +43,7 @@ theorem Scheme.Hom.formallyUnramified_of_formallyUnramified_baseChange_field
     (f : X ⟶ Y) [LocallyOfFiniteType f]
     (h : ∀ (K : Type u) [Field K] (s : Spec (.of K) ⟶ Y),
       FormallyUnramified (pullback.snd f s)) : FormallyUnramified f := by
+  -- Instance search needs the scheme universe and ring-hom property fixed explicitly here.
   have : IsZariskiLocalAtTarget @FormallyUnramified.{u} :=
     HasRingHomProperty.instIsZariskiLocalAtTarget @FormallyUnramified.{u}
       (Q := @RingHom.FormallyUnramified)
@@ -70,8 +71,11 @@ theorem Scheme.Hom.formallyUnramified_of_formallyUnramified_baseChange_field
     ← RingHom.algebraMap_toAlgebra φ.hom, RingHom.formallyUnramified_algebraMap]
   refine Algebra.FormallyUnramified.of_formallyUnramified_baseChange_field fun K _ _ ↦ ?_
   have hK := h K (Spec.map (CommRingCat.ofHom (algebraMap R K)))
-  have hφ : φ = CommRingCat.ofHom (algebraMap R S) := rfl
+  have hφ : φ = CommRingCat.ofHom (algebraMap R S) := by
+    ext
+    simp [RingHom.algebraMap_toAlgebra]
   rw [hφ, ← pullbackSpecIso_hom_snd R S K] at hK
+  -- Fixing the universe also lets instance search find isomorphism invariance.
   have : MorphismProperty.RespectsIso @FormallyUnramified.{u} :=
     MorphismProperty.IsStableUnderBaseChange.respectsIso
   have hmap := (MorphismProperty.cancel_left_of_respectsIso (P := @FormallyUnramified.{u})
@@ -81,12 +85,13 @@ theorem Scheme.Hom.formallyUnramified_of_formallyUnramified_baseChange_field
     CommRingCat.hom_ofHom, ← Algebra.TensorProduct.algebraMap_eq_includeRight,
     RingHom.formallyUnramified_algebraMap] at hmap
   let e : S ⊗[R] K ≃ₐ[K] K ⊗[R] S :=
-    { __ := Algebra.TensorProduct.comm R S K, commutes' _ := rfl }
+    { __ := Algebra.TensorProduct.comm R S K, commutes' _ := by
+        simp [Algebra.TensorProduct.algebraMap_eq_includeRight] }
   exact Algebra.FormallyUnramified.of_equiv e
 
 /-- A morphism locally of finite type is formally unramified if all its residue-field fibres
 are formally unramified. -/
-theorem Scheme.Hom.formallyUnramified_of_formallyUnramified_fiber
+theorem FormallyUnramified.of_formallyUnramified_fiberToSpecResidueField
     (f : X ⟶ Y) [LocallyOfFiniteType f]
     (h : ∀ y : Y, FormallyUnramified (f.fiberToSpecResidueField y)) :
     FormallyUnramified f := by
@@ -96,13 +101,13 @@ theorem Scheme.Hom.formallyUnramified_of_formallyUnramified_fiber
 
 /-- A morphism locally of finite type is formally unramified exactly when all its residue-field
 fibres are formally unramified. -/
-theorem Scheme.Hom.formallyUnramified_iff_formallyUnramified_fiber
+theorem FormallyUnramified.iff_formallyUnramified_fiberToSpecResidueField
     (f : X ⟶ Y) [LocallyOfFiniteType f] :
     FormallyUnramified f ↔ ∀ y : Y, FormallyUnramified (f.fiberToSpecResidueField y) := by
   constructor
   · intro hf y
     exact MorphismProperty.of_isPullback (P := @FormallyUnramified.{u})
       (.of_hasPullback f (Y.fromSpecResidueField y)) hf
-  · exact f.formallyUnramified_of_formallyUnramified_fiber
+  · exact FormallyUnramified.of_formallyUnramified_fiberToSpecResidueField f
 
 end AlgebraicGeometry
