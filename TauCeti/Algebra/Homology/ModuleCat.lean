@@ -89,7 +89,7 @@ theorem exists_homologyMap_eq_of_injective {κ : Type*}
   -- the lift `y` of the cycle is again a cycle, since its differential maps to zero injectively
   have hdy : (L i).d n (c.next n) y = 0 := hφ i <| by
     rw [← Hom.comm_apply, hy, map_zero, ← ModuleCat.comp_apply, K.iCycles_d]
-    rfl
+    simp only [ModuleCat.hom_zero, LinearMap.zero_apply]
   refine ⟨i, (L i).homologyπ n ((L i).moduleCatCyclesMk y _ rfl hdy), ?_⟩
   rw [← ModuleCat.comp_apply, homologyπ_naturality, ModuleCat.comp_apply]
   congr 1

@@ -40,7 +40,7 @@ the finite sets `S` of places, is computed from that of the `S`-ideles.
 
 public section
 
-open CategoryTheory groupHomology
+open CategoryTheory groupCohomology groupHomology
 
 universe u
 
@@ -53,9 +53,14 @@ every degree. -/
 theorem tateComplex_map_f_injective {M N : Rep k G} (f : M ⟶ N) (hf : Function.Injective f.hom)
     (n : ℤ) : Function.Injective ((tateComplex.map f).f n) := by
   rcases n with n | n
-  · -- in degree `n ≥ 0` the map is composition with `f` on functions `Gⁿ → M`
-    exact fun x y hxy ↦ funext fun g ↦ hf (congrFun hxy g)
-  · -- in degree `-n - 1` it is `Finsupp.mapRange f` on the inhomogeneous `n`-chains
+  · -- in degree `n ≥ 0` the map is `cochainsMap`, composition with `f` on functions `Gⁿ → M`
+    simp only [CochainComplex.ConnectData.map_f]
+    have : Function.Injective ((cochainsMap (MonoidHom.id G) f).f n).hom := by
+      rw [cochainsMap_id_f_hom_eq_compLeft]
+      exact hf.comp_left
+    exact this
+  · -- in degree `-n - 1` it is `chainsMap`, `Finsupp.mapRange f` on the inhomogeneous `n`-chains
+    simp only [CochainComplex.ConnectData.map_f]
     have : Function.Injective ((chainsMap (MonoidHom.id G) f).f n).hom := by
       rw [chainsMap_id_f_hom_eq_mapRange]
       exact Finsupp.mapRange_injective _ (map_zero _) hf
@@ -70,12 +75,21 @@ theorem exists_tateComplex_map_f_eq {κ : Type*} {M : Rep k G} {A : κ → Rep k
     (z : (tateComplex M).X n) : ∃ i y, (tateComplex.map (f i)).f n y = z := by
   classical
   rcases n with n | n
-  · -- `z` is a function on the finite set `Gⁿ`
+  · -- in degree `n ≥ 0` the Tate complex is the module of inhomogeneous cochains
+    -- (`CochainComplex.ConnectData.X_ofNat`), so `z` is a function on the finite set `Gⁿ`
     let z' : (Fin n → G) → M := z
     obtain ⟨i, hi⟩ := h (Finset.univ.image z')
     choose y hy using fun g ↦ hi (z' g) (Finset.mem_image_of_mem z' (Finset.mem_univ g))
-    exact ⟨i, (y : (Fin n → G) → A i), funext hy⟩
-  · -- `z` is a finitely supported function on `Gⁿ`; lift its values through a section of `f i`
+    refine ⟨i, (y : (Fin n → G) → A i), ?_⟩
+    -- the map is `cochainsMap`, composition with `f i`
+    simp only [CochainComplex.ConnectData.map_f]
+    have : ((cochainsMap (MonoidHom.id G) (f i)).f n).hom y = z' := by
+      rw [cochainsMap_id_f_hom_eq_compLeft]
+      exact funext hy
+    exact this
+  · -- in degree `-n - 1` the Tate complex is the module of inhomogeneous chains
+    -- (`CochainComplex.ConnectData.X_negSucc`), so `z` is a finitely supported function on `Gⁿ`;
+    -- lift its values through a section of `f i`
     let z' : (Fin n → G) →₀ M := z
     obtain ⟨i, hi⟩ := h (z'.support.image z')
     let g : M → A i := fun m ↦ if hm : m ∈ Set.range (f i).hom then hm.choose else 0
@@ -84,6 +98,8 @@ theorem exists_tateComplex_map_f_eq {κ : Type*} {M : Rep k G} {A : κ → Rep k
       exact hm.choose_spec
     have hg0 : g 0 = 0 := hf i (by rw [hg 0 ⟨0, map_zero _⟩, map_zero])
     refine ⟨i, (Finsupp.mapRange g hg0 z' : (Fin n → G) →₀ A i), ?_⟩
+    -- the map is `chainsMap`, `Finsupp.mapRange (f i)`
+    simp only [CochainComplex.ConnectData.map_f]
     have : ((chainsMap (MonoidHom.id G) (f i)).f n).hom (Finsupp.mapRange g hg0 z') = z' := by
       rw [chainsMap_id_f_hom_eq_mapRange]
       ext x

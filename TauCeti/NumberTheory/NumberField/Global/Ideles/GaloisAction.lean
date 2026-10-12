@@ -97,8 +97,16 @@ theorem toFiniteIdele_smul (σ : L ≃ₐ[K] L) (x : IdeleGroup (𝓞 L) L) :
       Units.map (finiteAdeleGaloisAction K L σ : _ →* _) (IdeleGroup.toFiniteIdele (𝓞 L) L x) :=
   Units.ext <| by
     rw [IdeleGroup.coe_toFiniteIdele, coe_idele_smul, adeleGaloisAction_snd, Units.coe_map,
-      IdeleGroup.coe_toFiniteIdele]
-    rfl
+      MonoidHom.coe_ofClass, IdeleGroup.coe_toFiniteIdele]
+
+/-- The infinite part of `σ • x` is the image of the infinite part of `x` under the Galois action
+on infinite adeles. -/
+theorem units_map_fst_idele_smul (σ : L ≃ₐ[K] L) (x : IdeleGroup (𝓞 L) L) :
+    Units.map (MonoidHom.fst (InfiniteAdeleRing L) (FiniteAdeleRing (𝓞 L) L)) (σ • x) =
+      Units.map (infiniteAdeleGaloisAction K L σ : _ →* _)
+        (Units.map (MonoidHom.fst (InfiniteAdeleRing L) (FiniteAdeleRing (𝓞 L) L)) x) :=
+  -- both sides have underlying infinite adele the infinite component of `adeleGaloisAction σ x`
+  Units.ext <| (congrArg Prod.fst (coe_idele_smul σ x)).trans (adeleGaloisAction_fst K L σ _)
 
 /-- The idele with finite part `σ a` and infinite part `1` is `σ` applied to the idele with
 finite part `a` and infinite part `1`. -/
@@ -112,8 +120,7 @@ theorem ofFiniteIdele_map_finiteAdeleGaloisAction (σ : L ≃ₐ[K] L)
   · rw [adeleGaloisAction_fst, IdeleGroup.coe_ofFiniteIdele, IdeleGroup.coe_ofFiniteIdele]
     exact (map_one _).symm
   · rw [adeleGaloisAction_snd, IdeleGroup.coe_ofFiniteIdele, IdeleGroup.coe_ofFiniteIdele,
-      Units.coe_map]
-    rfl
+      Units.coe_map, MonoidHom.coe_ofClass]
 
 /-- **The Galois action on principal ideles** is the Galois action on `Lˣ`. -/
 @[simp]

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.ClassFieldTheory.Global.SIdeles
 public import TauCeti.NumberTheory.ClassFieldTheory.Global.SemilocalUnits
+public import TauCeti.NumberTheory.NumberField.Discriminant.RamifiedSupport.Basic
 public import TauCeti.RepresentationTheory.Homological.TateCohomology.DirectedUnion
 public import TauCeti.RepresentationTheory.Homological.TateCohomology.Pi
 
@@ -34,7 +35,7 @@ The proof is Milne's (*Class Field Theory*, VII, Lemma 2.4 and Proposition 2.5).
 union of the `S`-ideles over the finite sets `S` of finite places, so every class comes from the
 `S`-ideles for a finite `S` that may be taken to contain the places ramified in `L`
 (`TauCeti.TateCohomology.exists_tateCohomologyFunctor_map_eq`). The `S`-ideles split as
-`I_{L,S} = L_∞ˣ × I_{L,S}^f` (`sIdelesInfiniteShortComplex`), the infinite ideles are the product
+`I_{L,S} = L_∞ˣ × I_{L,S}^f` (`sIdeles_hom_decomp`), the infinite ideles are the product
 of the archimedean semi-local unit groups (`TauCeti.GlobalNumberFields.infiniteIdelesPiIso`), and
 the finite `S`-ideles are the product of the semi-local unit groups at `S` and of the integral
 semi-local unit groups away from `S` (`TauCeti.finiteSIdelesPiIso`). Tate cohomology commutes with
@@ -44,13 +45,9 @@ in `L`, have no cohomology in positive degrees
 
 ## Main definitions
 
-* `TauCeti.ClassFieldTheory.idelesRep K L`: the ideles of `L` as an integral representation of
-  `Aut(L/K)`.
 * `TauCeti.ClassFieldTheory.idelesToSemilocalUnits L v`,
   `TauCeti.ClassFieldTheory.idelesToInfiniteSemilocalUnits L w`: the semi-local components of an
   idele at a finite place `v` and at an infinite place `w` of `K`.
-* `TauCeti.ClassFieldTheory.sIdelesToIdeles L S`: the inclusion of the `S`-ideles into the
-  ideles.
 
 ## Main results
 
@@ -76,42 +73,11 @@ namespace TauCeti.ClassFieldTheory
 
 open GlobalNumberFields
 
-variable (K : Type) [Field K] [NumberField K] (L : Type) [Field L] [NumberField L] [Algebra K L]
-
-/-- The ideles of `L`, as an integral representation of `Aut(L/K)`. -/
-abbrev idelesRep : Rep ℤ (L ≃ₐ[K] L) :=
-  Rep.ofMulDistribMulAction (L ≃ₐ[K] L) (IdeleGroup (𝓞 L) L)
-
-variable {K}
+variable {K : Type} [Field K] [NumberField K] (L : Type) [Field L] [NumberField L] [Algebra K L]
 
 /-! ### The semi-local components of an idele -/
 
 section Components
-
-omit [NumberField K] in
-/-- The infinite part of `σ • x` is `σ` applied to the infinite part of `x`. -/
-private theorem fst_smul (σ : L ≃ₐ[K] L) (x : IdeleGroup (𝓞 L) L) :
-    Units.map (MonoidHom.fst (InfiniteAdeleRing L) (FiniteAdeleRing (𝓞 L) L)) (σ • x) =
-      σ • Units.map (MonoidHom.fst (InfiniteAdeleRing L) (FiniteAdeleRing (𝓞 L) L)) x :=
-  -- both sides have underlying infinite adele the infinite component of `adeleGaloisAction σ x`
-  Units.ext <| (congrArg Prod.fst (coe_idele_smul σ x)).trans (adeleGaloisAction_fst K L σ _)
-
-variable (K) in
-/-- The infinite part `I_L → L_∞ˣ` of an idele, as a morphism of representations of
-`Aut(L/K)`. -/
-def idelesToInfiniteIdeles : idelesRep K L ⟶ infiniteIdelesRep K L :=
-  Rep.ofHom <| LinearMap.intertwiningMap_of_isIntertwiningMap _ _
-    (Units.map (MonoidHom.fst (InfiniteAdeleRing L) (FiniteAdeleRing (𝓞 L) L))
-      ).toAdditive.toIntLinearMap
-    fun σ x ↦ congrArg Additive.ofMul (fst_smul L σ x.toMul)
-
-omit [NumberField K] in
-/-- `idelesToInfiniteIdeles` takes the infinite part of an idele. -/
-@[simp]
-theorem idelesToInfiniteIdeles_hom_apply (x : Additive (IdeleGroup (𝓞 L) L)) :
-    (idelesToInfiniteIdeles K L).hom x = Additive.ofMul
-      (Units.map (MonoidHom.fst (InfiniteAdeleRing L) (FiniteAdeleRing (𝓞 L) L)) x.toMul) :=
-  (rfl)
 
 /-- **The semi-local component of an idele at a finite place** `v` of `K`, its components at the
 places `w ∣ v` of `L` as a unit of `K_v ⊗[K] L ≃ ∏_{w ∣ v} L_w`, as a morphism of representations
@@ -144,17 +110,23 @@ def idelesToInfiniteSemilocalUnits (w : InfinitePlace K) :
 
 /-- `idelesToInfiniteSemilocalUnits L w` is the semi-local component at `w` of the infinite
 part. -/
+-- Normalize the implicit restriction parameters so the simp rule matches after `Rep.res_obj_ρ`.
+@[simp]
 theorem coe_idelesToInfiniteSemilocalUnits_hom_apply (w : InfinitePlace K)
     (x : Additive (IdeleGroup (𝓞 L) L)) :
-    (Additive.toMul (α := (w.Completion ⊗[K] L)ˣ) ((idelesToInfiniteSemilocalUnits L w).hom x) :
-      w.Completion ⊗[K] L) =
-      infiniteAdeleSemilocalHom L w (x.toMul : AdeleRing (𝓞 L) L).1 :=
+    dsimp% only [Rep.ofAlgebraAutOnUnits, Rep.res_obj_ρ]
+      ((Additive.toMul (α := (w.Completion ⊗[K] L)ˣ) ((idelesToInfiniteSemilocalUnits L w).hom x) :
+        w.Completion ⊗[K] L) =
+        infiniteAdeleSemilocalHom L w (x.toMul : AdeleRing (𝓞 L) L).1) :=
   -- `idelesToInfiniteSemilocalUnits L w` is by definition the component at `w` of the image of
   -- the infinite part under `infiniteIdelesPiIso`, and the infinite part of `x` has underlying
   -- infinite adele the first component of `x`
   (congrArg (fun z ↦ ((Additive.toMul (α := (w.Completion ⊗[K] L)ˣ) z : _) : w.Completion ⊗[K] L))
-    (Rep.piProj_hom_apply _ _)).trans
-      (coe_infiniteIdelesPiIso_hom_apply ((idelesToInfiniteIdeles K L).hom x) w)
+    (Rep.piProj_hom_apply _ _)).trans <|
+      (coe_infiniteIdelesPiIso_hom_apply ((idelesToInfiniteIdeles K L).hom x) w).trans <|
+        congrArg (infiniteAdeleSemilocalHom L w) <|
+          congrArg (fun z ↦ ((Additive.toMul z : (InfiniteAdeleRing L)ˣ) : InfiniteAdeleRing L))
+            (idelesToInfiniteIdeles_hom_apply L x)
 
 end Components
 
@@ -164,90 +136,24 @@ section SIdeles
 
 variable (S : Finset (HeightOneSpectrum (𝓞 K)))
 
-/-- The inclusion `I_{L,S} → I_L` of the `S`-ideles, as a morphism of representations of
-`Aut(L/K)`. -/
-def sIdelesToIdeles : sIdelesRep (K := K) L S ⟶ idelesRep K L :=
-  Rep.ofHom <| LinearMap.intertwiningMap_of_isIntertwiningMap _ _
-    (sIdeles L (S : Set (HeightOneSpectrum (𝓞 K)))).subtype.toAdditive.toIntLinearMap
-    fun _ _ ↦ rfl
-
-/-- `sIdelesToIdeles` sends an `S`-idele to itself. -/
-@[simp]
-theorem sIdelesToIdeles_hom_apply (x : Additive (sIdeles L (S : Set (HeightOneSpectrum (𝓞 K))))) :
-    (sIdelesToIdeles L S).hom x = Additive.ofMul (x.toMul : IdeleGroup (𝓞 L) L) :=
-  (rfl)
-
-/-- The inclusion of the `S`-ideles into the ideles is injective. -/
-theorem sIdelesToIdeles_hom_injective : Function.Injective (sIdelesToIdeles L S).hom :=
-  fun x y h ↦ Additive.toMul.injective <| Subtype.ext <| Additive.ofMul.injective <|
-    (sIdelesToIdeles_hom_apply L S x).symm.trans (h.trans (sIdelesToIdeles_hom_apply L S y))
-
-/-- The idele `(1, a)` of a finite `S`-idele `a`, as a morphism of representations, a section of
-`sIdelesToFiniteSIdeles`. -/
-private def finiteSIdelesToSIdeles : finiteSIdelesRep L S ⟶ sIdelesRep (K := K) L S :=
-  Rep.ofHom <| LinearMap.intertwiningMap_of_isIntertwiningMap _ _
-    (((IdeleGroup.ofFiniteIdele (𝓞 L) L).comp (finiteSIdeles L S).subtype).codRestrict _
-      fun a ↦ toFiniteIdele_mem_finiteSIdeles_iff.1 (by simp)).toAdditive.toIntLinearMap
-    fun σ a ↦ congrArg Additive.ofMul <| Subtype.ext <|
-      ofFiniteIdele_map_finiteAdeleGaloisAction σ a.toMul.1
-
-private theorem finiteSIdelesToSIdeles_hom_apply (a : Additive (finiteSIdeles L S)) :
-    (finiteSIdelesToSIdeles L S).hom a = Additive.ofMul
-      ⟨IdeleGroup.ofFiniteIdele (𝓞 L) L a.toMul, toFiniteIdele_mem_finiteSIdeles_iff.1 (by simp)⟩ :=
-  (rfl)
-
-/-- An `S`-idele is the product of its infinite part and its finite part. -/
-private theorem sIdeles_hom_decomp :
-    𝟙 (sIdelesRep (K := K) L S) =
-      (sIdelesToIdeles L S ≫ idelesToInfiniteIdeles K L) ≫ infiniteIdelesToSIdeles L S +
-        sIdelesToFiniteSIdeles L S ≫ finiteSIdelesToSIdeles L S := by
-  ext x
-  -- the two summands, computed on the `S`-idele `a`
-  let a : sIdeles L (S : Set (HeightOneSpectrum (𝓞 K))) := Additive.toMul x
-  have h₁ : (infiniteIdelesToSIdeles L S).hom
-      ((idelesToInfiniteIdeles K L).hom ((sIdelesToIdeles L S).hom x)) =
-      Additive.ofMul ⟨IdeleGroup.ofInfiniteIdele (𝓞 L) L
-        (Units.map (MonoidHom.fst (InfiniteAdeleRing L) (FiniteAdeleRing (𝓞 L) L)) a.1),
-        ofInfiniteIdele_mem_sIdeles _ _⟩ :=
-    infiniteIdelesToSIdeles_hom_apply L S _
-  have hb : IdeleGroup.toFiniteIdele (𝓞 L) L
-      (IdeleGroup.ofFiniteIdele (𝓞 L) L (IdeleGroup.toFiniteIdele (𝓞 L) L a.1)) ∈
-        finiteSIdeles L S := by
-    rw [IdeleGroup.toFiniteIdele_ofFiniteIdele]
-    exact toFiniteIdele_mem_finiteSIdeles_iff.2 a.2
-  have h₂ : (finiteSIdelesToSIdeles L S).hom ((sIdelesToFiniteSIdeles L S).hom x) =
-      Additive.ofMul ⟨IdeleGroup.ofFiniteIdele (𝓞 L) L (IdeleGroup.toFiniteIdele (𝓞 L) L a.1),
-        toFiniteIdele_mem_finiteSIdeles_iff.1 hb⟩ :=
-    (congrArg _ (sIdelesToFiniteSIdeles_hom_apply L S x)).trans
-      (finiteSIdelesToSIdeles_hom_apply L S _)
-  -- multiplicatively, `a = (a_∞, 1) * (1, a_f)`
-  have ha : a = ⟨IdeleGroup.ofInfiniteIdele (𝓞 L) L
-        (Units.map (MonoidHom.fst (InfiniteAdeleRing L) (FiniteAdeleRing (𝓞 L) L)) a.1),
-        ofInfiniteIdele_mem_sIdeles _ _⟩ *
-      ⟨IdeleGroup.ofFiniteIdele (𝓞 L) L (IdeleGroup.toFiniteIdele (𝓞 L) L a.1),
-        toFiniteIdele_mem_finiteSIdeles_iff.1 hb⟩ := by
-    refine Subtype.ext (Units.ext (Prod.ext ?_ ?_))
-    -- the product of adeles is computed componentwise, and the infinite part of `a` has
-    -- underlying infinite adele the first component of `a`
-    · simp only [Subgroup.coe_mul, Units.val_mul, IdeleGroup.coe_ofInfiniteIdele,
-        IdeleGroup.coe_ofFiniteIdele, IdeleGroup.coe_toFiniteIdele]
-      exact (mul_one _).symm
-    · simp only [Subgroup.coe_mul, Units.val_mul, IdeleGroup.coe_ofInfiniteIdele,
-        IdeleGroup.coe_ofFiniteIdele, IdeleGroup.coe_toFiniteIdele]
-      exact (one_mul _).symm
-  exact (congrArg Additive.ofMul ha).trans (congrArg₂ (· + ·) h₁ h₂).symm
-
 /-- At a place `v ∈ S`, the semi-local component of an `S`-idele is read off its finite part
 through `finiteSIdelesPiIso`. -/
 private theorem sIdelesToFiniteSIdeles_comp_piProj_inl (v : S) :
     sIdelesToFiniteSIdeles L S ≫ (finiteSIdelesPiIso L S).hom ≫ Rep.piProj _ (Sum.inl v) =
-      sIdelesToIdeles L S ≫ idelesToSemilocalUnits L v.1 := by
+      sIdelesToIdeles (K := K) L S ≫ idelesToSemilocalUnits L v.1 := by
   ext x
-  -- the composite on the left takes the semi-local component at `v` of the finite part
-  exact (Rep.piProj_hom_apply _ _).trans <|
+  -- both composites take the semi-local component at `v` of the finite part
+  have h : (sIdelesToIdeles (K := K) L S ≫ idelesToSemilocalUnits L v.1).hom x =
+      Additive.ofMul (finiteIdeleSemilocalHom L v.1
+        (IdeleGroup.toFiniteIdele (𝓞 L) L
+          (Additive.toMul (α := sIdeles L (S : Set (HeightOneSpectrum (𝓞 K)))) x).1)) :=
+    (congrArg (idelesToSemilocalUnits L v.1).hom
+      (sIdelesToIdeles_hom_apply (K := K) L S x)).trans
+        (idelesToSemilocalUnits_hom_apply L v.1 _)
+  exact ((Rep.piProj_hom_apply _ _).trans <|
     (congrArg (fun z ↦ (finiteSIdelesPiIso L S).hom.hom z (Sum.inl v))
       (sIdelesToFiniteSIdeles_hom_apply L S x)).trans
-        (finiteSIdelesPiIso_hom_apply_inl L S _ v)
+        (finiteSIdelesPiIso_hom_apply_inl L S _ v)).trans h.symm
 
 /-- At a place `v ∉ S`, the semi-local component of an `S`-idele is integral; as a morphism of
 representations. -/
@@ -268,10 +174,12 @@ semi-local units. -/
 private theorem sIdelesToSemilocalIntegralUnits_comp_incl (v : HeightOneSpectrum (𝓞 K))
     (hv : v ∉ S) :
     sIdelesToSemilocalIntegralUnits L S v hv ≫ semilocalIntegralUnitsIncl L v =
-      sIdelesToIdeles L S ≫ idelesToSemilocalUnits L v := by
+      sIdelesToIdeles (K := K) L S ≫ idelesToSemilocalUnits L v := by
   ext x
   -- both send an `S`-idele to the semi-local component at `v` of its finite part
-  exact semilocalIntegralUnitsIncl_apply v _
+  exact (semilocalIntegralUnitsIncl_apply v _).trans ((congrArg (idelesToSemilocalUnits L v).hom
+    (sIdelesToIdeles_hom_apply (K := K) L S x)).trans
+      (idelesToSemilocalUnits_hom_apply L v _)).symm
 
 end SIdeles
 
@@ -281,41 +189,39 @@ section Cohomology
 
 variable [IsGalois K L]
 
-variable (K) in
-/-- The finite places of `K` below a place of `L` ramified over `K`. -/
-private def ramifiedPlaces : Finset (HeightOneSpectrum (𝓞 K)) :=
-  ((Ideal.finite_factors (differentIdeal_ne_bot (A := 𝓞 K) (B := 𝓞 L))).image
-    (HeightOneSpectrum.under (𝓞 K))).toFinset
-
 /-- At a finite place of `K` outside a set containing the ramified places, the integral
 semi-local units have no cohomology in positive degrees. -/
 private theorem isZero_tateCohomology_semilocalIntegralUnitsRep_of_notMem
-    {S : Finset (HeightOneSpectrum (𝓞 K))} (hS : ramifiedPlaces K L ⊆ S)
+    {S : Finset (HeightOneSpectrum (𝓞 K))} (hS : NumberField.ramifiedSupport K L ⊆ S)
     {v : HeightOneSpectrum (𝓞 K)} (hv : v ∉ S) (n : ℕ) [NeZero n] :
     IsZero (tateCohomology (semilocalIntegralUnitsRep L v) n) := by
   obtain ⟨w, rfl⟩ := under_surjective (𝓞 K) (𝓞 L) v
-  have : Algebra.IsUnramifiedAt (𝓞 K) w.asIdeal := not_dvd_differentIdeal_iff.1 fun h ↦
-    hv (hS ((Set.Finite.mem_toFinset _).2 ⟨w, h, rfl⟩))
+  have := NumberField.isUnramifiedAway_ramifiedSupport (w.under (𝓞 K)) (fun h ↦ hv (hS h))
+    w.asIdeal
   exact isZero_tateCohomology_semilocalIntegralUnitsRep_of_neZero (w.under (𝓞 K)) w n
 
 omit [IsGalois K L] in
 /-- Every class of `H^n(G, I_L)` comes from the `S`-ideles for a finite set `S` of finite places
 containing the ramified ones. -/
 private theorem exists_map_sIdelesToIdeles_eq (n : ℤ) (x : tateCohomology (idelesRep K L) n) :
-    ∃ S : Finset (HeightOneSpectrum (𝓞 K)), ramifiedPlaces K L ⊆ S ∧
-      ∃ y, ((tateCohomologyFunctor n).map (sIdelesToIdeles L S)).hom y = x := by
+    ∃ S : Finset (HeightOneSpectrum (𝓞 K)), NumberField.ramifiedSupport K L ⊆ S ∧
+      ∃ y, ((tateCohomologyFunctor n).map (sIdelesToIdeles (K := K) L S)).hom y = x := by
   classical
   -- a finite set of ideles lies in the `S`-ideles for the union of the sets that work for each
   have hcover (s : Finset (idelesRep K L)) : ∃ S : {S : Finset (HeightOneSpectrum (𝓞 K)) //
-      ramifiedPlaces K L ⊆ S}, ∀ x ∈ s, x ∈ Set.range (sIdelesToIdeles L S.1).hom := by
-    choose S hRS hS using fun x : idelesRep K L ↦
-      exists_finset_mem_sIdeles (ramifiedPlaces K L) (Additive.toMul x : IdeleGroup (𝓞 L) L)
-    refine ⟨⟨ramifiedPlaces K L ∪ s.sup S, Finset.subset_union_left⟩, fun x hx ↦
-      ⟨Additive.ofMul ⟨Additive.toMul x, sIdeles_mono ?_ (hS x)⟩, rfl⟩⟩
+      NumberField.ramifiedSupport K L ⊆ S},
+        ∀ x ∈ s, x ∈ Set.range (sIdelesToIdeles (K := K) L S.1).hom := by
+    choose S hRS hS using fun x : idelesRep K L ↦ exists_finset_mem_sIdeles
+      (NumberField.ramifiedSupport K L) (Additive.toMul x : IdeleGroup (𝓞 L) L)
+    let T := NumberField.ramifiedSupport K L ∪ s.sup S
+    refine ⟨⟨T, Finset.subset_union_left⟩, fun x hx ↦
+      ⟨Additive.ofMul ⟨Additive.toMul x, sIdeles_mono ?_ (hS x)⟩,
+        sIdelesToIdeles_hom_apply (K := K) L T _⟩⟩
     exact Finset.coe_subset.2 ((Finset.le_sup hx).trans Finset.subset_union_right)
   obtain ⟨⟨S, hS⟩, y, hy⟩ := TateCohomology.exists_tateCohomologyFunctor_map_eq
-    (fun S : {S : Finset (HeightOneSpectrum (𝓞 K)) // ramifiedPlaces K L ⊆ S} ↦
-      sIdelesToIdeles L S.1) (fun S ↦ sIdelesToIdeles_hom_injective L S.1) hcover n x
+    (fun S : {S : Finset (HeightOneSpectrum (𝓞 K)) // NumberField.ramifiedSupport K L ⊆ S} ↦
+      sIdelesToIdeles (K := K) L S.1) (fun S ↦ sIdelesToIdeles_hom_injective (K := K) L S.1)
+    hcover n x
   exact ⟨S, hS, y, hy⟩
 
 variable (n : ℕ) [NeZero n]
@@ -331,51 +237,45 @@ theorem eq_zero_of_forall_map_semilocal_eq_zero
     x = 0 := by
   classical
   obtain ⟨S, hS, y, rfl⟩ := exists_map_sIdelesToIdeles_eq L n x
-  -- read off the vanishing components of `y`
-  have hy {Y : Rep ℤ (L ≃ₐ[K] L)} (f : sIdelesRep (K := K) L S ⟶ Y) (g : idelesRep K L ⟶ Y)
-      (hfg : f = sIdelesToIdeles L S ≫ g)
-      (hg : ((tateCohomologyFunctor n).map g).hom
-        (((tateCohomologyFunctor n).map (sIdelesToIdeles L S)).hom y) = 0) :
+  -- a component of `y` that factors through the ideles vanishes when that of `x` does
+  have hy {Y Z : Rep ℤ (L ≃ₐ[K] L)} (f : sIdelesRep (K := K) L S ⟶ Y) (g : Y ⟶ Z)
+      (g' : idelesRep K L ⟶ Z) (hfg : f ≫ g = sIdelesToIdeles (K := K) L S ≫ g')
+      (hg : ((tateCohomologyFunctor n).map g').hom
+        (((tateCohomologyFunctor n).map (sIdelesToIdeles (K := K) L S)).hom y) = 0) :
+      ((tateCohomologyFunctor n).map g).hom (((tateCohomologyFunctor n).map f).hom y) = 0 := by
+    simpa only [Functor.map_comp, ModuleCat.hom_comp, LinearMap.comp_apply, hg] using
+      congrArg (fun φ ↦ ((tateCohomologyFunctor n).map φ).hom y) hfg
+  -- a component of `y` vanishes when its image under an isomorphism does
+  have hiso {Y Z : Rep ℤ (L ≃ₐ[K] L)} (f : sIdelesRep (K := K) L S ⟶ Y) (e : Y ≅ Z)
+      (he : ((tateCohomologyFunctor n).map (f ≫ e.hom)).hom y = 0) :
       ((tateCohomologyFunctor n).map f).hom y = 0 := by
-    rwa [hfg, Functor.map_comp, ModuleCat.hom_comp, LinearMap.comp_apply]
+    rw [Functor.map_comp, ModuleCat.hom_comp, LinearMap.comp_apply] at he
+    exact (map_eq_zero_iff _ ((ModuleCat.mono_iff_injective _).1 inferInstance)).1 he
   -- the finite part of `y` vanishes: its components at `S` are those of `x`, and the factors
   -- away from `S` have no cohomology
   have hfin' : ((tateCohomologyFunctor n).map (sIdelesToFiniteSIdeles L S)).hom y = 0 := by
-    suffices ((tateCohomologyFunctor n).map
-        (sIdelesToFiniteSIdeles L S ≫ (finiteSIdelesPiIso L S).hom)).hom y = 0 by
-      rw [← Category.comp_id (sIdelesToFiniteSIdeles L S), ← (finiteSIdelesPiIso L S).hom_inv_id,
-        ← Category.assoc, Functor.map_comp, ModuleCat.hom_comp, LinearMap.comp_apply, this,
-        map_zero]
-    refine (TateCohomology.linearEquivPi _ n).injective (funext fun i ↦ ?_)
-    rw [TateCohomology.linearEquivPi_apply, map_zero, Pi.zero_apply, ← LinearMap.comp_apply,
-      ← ModuleCat.hom_comp, ← Functor.map_comp, Category.assoc]
+    refine hiso _ (finiteSIdelesPiIso L S) <|
+      (TateCohomology.linearEquivPi _ n).injective (funext fun i ↦ ?_)
+    rw [TateCohomology.linearEquivPi_apply, map_zero, Pi.zero_apply]
     rcases i with v | v
-    · exact hy _ _ (sIdelesToFiniteSIdeles_comp_piProj_inl L S v) (hfin v)
+    · exact hy _ _ _ ((Category.assoc _ _ _).trans (sIdelesToFiniteSIdeles_comp_piProj_inl L S v))
+        (hfin v)
     · exact (ModuleCat.subsingleton_of_isZero
         (isZero_tateCohomology_semilocalIntegralUnitsRep_of_notMem L hS v.2 n)).elim _ _
   -- the infinite part of `y` vanishes: its components are those of `x`
   have hinf' : ((tateCohomologyFunctor n).map
-      (sIdelesToIdeles L S ≫ idelesToInfiniteIdeles K L)).hom y = 0 := by
-    suffices ((tateCohomologyFunctor n).map
-        ((sIdelesToIdeles L S ≫ idelesToInfiniteIdeles K L) ≫ (infiniteIdelesPiIso K L).hom)).hom
-          y = 0 by
-      rw [← Category.comp_id (sIdelesToIdeles L S ≫ idelesToInfiniteIdeles K L),
-        ← (infiniteIdelesPiIso K L).hom_inv_id, ← Category.assoc, Functor.map_comp,
-        ModuleCat.hom_comp, LinearMap.comp_apply, this, map_zero]
-    refine (TateCohomology.linearEquivPi _ n).injective (funext fun w ↦ ?_)
-    rw [TateCohomology.linearEquivPi_apply, map_zero, Pi.zero_apply, ← LinearMap.comp_apply,
-      ← ModuleCat.hom_comp, ← Functor.map_comp]
-    exact hy _ _ (by simp only [idelesToInfiniteSemilocalUnits, Category.assoc]) (hinf w)
+      (sIdelesToIdeles (K := K) L S ≫ idelesToInfiniteIdeles K L)).hom y = 0 := by
+    refine hiso _ (infiniteIdelesPiIso K L) <|
+      (TateCohomology.linearEquivPi _ n).injective (funext fun w ↦ ?_)
+    rw [TateCohomology.linearEquivPi_apply, map_zero, Pi.zero_apply]
+    exact hy _ _ _ (by simp only [idelesToInfiniteSemilocalUnits, Category.assoc]) (hinf w)
   -- an `S`-idele is the product of its infinite part and its finite part
   have hy0 : y = 0 := by
-    calc y = ((tateCohomologyFunctor n).map (𝟙 _)).hom y := by
-          rw [CategoryTheory.Functor.map_id, ModuleCat.hom_id, LinearMap.id_apply]
-      _ = 0 := by
-          rw [sIdeles_hom_decomp, Functor.map_add, ModuleCat.hom_add, LinearMap.add_apply,
-            Functor.map_comp (tateCohomologyFunctor n) (sIdelesToIdeles L S ≫ _),
-            Functor.map_comp (tateCohomologyFunctor n) (sIdelesToFiniteSIdeles L S),
-            ModuleCat.hom_comp, ModuleCat.hom_comp, LinearMap.comp_apply, LinearMap.comp_apply,
-            hinf', hfin', map_zero, map_zero, add_zero]
+    simp only [Functor.map_comp, ModuleCat.hom_comp, LinearMap.comp_apply] at hinf'
+    simpa only [CategoryTheory.Functor.map_id, ModuleCat.hom_id, LinearMap.id_apply,
+      Functor.map_add, ModuleCat.hom_add, LinearMap.add_apply, Functor.map_comp,
+      ModuleCat.hom_comp, LinearMap.comp_apply, hinf', hfin', map_zero, add_zero] using
+      congrArg (fun φ ↦ ((tateCohomologyFunctor n).map φ).hom y) (sIdeles_hom_decomp L S)
   rw [hy0, map_zero]
 
 /-- **The semi-local components of an idele class are finitely supported.** For a finite Galois
@@ -390,10 +290,11 @@ theorem finite_setOf_map_idelesToSemilocalUnits_ne_zero (x : tateCohomology (ide
   -- the image factors through the integral semi-local units, which have no cohomology
   have := ModuleCat.subsingleton_of_isZero
     (isZero_tateCohomology_semilocalIntegralUnitsRep_of_notMem L hS hvS n)
-  rw [← LinearMap.comp_apply, ← ModuleCat.hom_comp, ← Functor.map_comp,
-    ← sIdelesToSemilocalIntegralUnits_comp_incl L S v hvS, Functor.map_comp, ModuleCat.hom_comp,
-    LinearMap.comp_apply, Subsingleton.elim (((tateCohomologyFunctor n).map
-      (sIdelesToSemilocalIntegralUnits L S v hvS)).hom y) 0, map_zero]
+  simpa only [Functor.map_comp, ModuleCat.hom_comp, LinearMap.comp_apply,
+    Subsingleton.elim (((tateCohomologyFunctor n).map
+      (sIdelesToSemilocalIntegralUnits L S v hvS)).hom y) 0, map_zero] using
+    (congrArg (fun φ ↦ ((tateCohomologyFunctor n).map φ).hom y)
+      (sIdelesToSemilocalIntegralUnits_comp_incl L S v hvS)).symm
 
 end Cohomology
 
