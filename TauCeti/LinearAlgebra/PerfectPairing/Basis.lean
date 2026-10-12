@@ -57,6 +57,8 @@ omit [Finite ι] in
 pairing.** -/
 theorem isPerfPair_of_isUnit_det [Fintype ι] (b : Basis ι R M) (B : M →ₗ[R] M →ₗ[R] R)
     (h : IsUnit (LinearMap.toMatrix₂ b b B).det) : B.IsPerfPair := by
+  have : Module.Finite R M := .of_basis b
+  have : Module.Free R M := .of_basis b
   have hl : ∀ A : Matrix ι ι R, IsUnit A.det → ∀ C : M →ₗ[R] M →ₗ[R] R,
       (∀ i j, C (b i) (b j) = A i j) → Function.Bijective C := by
     intro A hA C hC
@@ -66,7 +68,7 @@ theorem isPerfPair_of_isUnit_det [Fintype ι] (b : Basis ι R M) (B : M →ₗ[R
     rw [hC', LinearMap.coe_comp]
     exact b.toDualEquiv.bijective.comp
       (Matrix.toLinearEquiv b Aᵀ (by rwa [Matrix.det_transpose])).bijective
-  exact ⟨hl _ h B fun i j ↦ (LinearMap.toMatrix₂_apply b b B i j).symm,
-    hl _ (by rwa [Matrix.det_transpose]) B.flip fun i j ↦ by simp [LinearMap.toMatrix₂_apply]⟩
+  exact LinearMap.IsPerfPair.of_bijective B
+    (hl _ h B fun i j ↦ (LinearMap.toMatrix₂_apply b b B i j).symm)
 
 end Module.Basis

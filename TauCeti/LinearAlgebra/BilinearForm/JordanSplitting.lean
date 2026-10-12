@@ -70,6 +70,57 @@ structure IsJordanSplitting (B : BilinForm R M) (π : R) (N : ℕ → Submodule 
   /-- The `i`-th constituent is `π ^ i`-modular. -/
   isModular : ∀ i, (B.restrict (N i)).IsModular (π ^ i)
 
+/-- A Jordan splitting is transported by a linear equivalence, mapping every constituent. -/
+theorem IsJordanSplitting.congr {M' : Type*} [AddCommMonoid M'] [Module R M'] {π : R}
+    {N : ℕ → Submodule R M} (h : B.IsJordanSplitting π N) (e : M ≃ₗ[R] M') :
+    (congr e B).IsJordanSplitting π (fun i ↦ (N i).map e.toLinearMap) := by
+  let eN (i : ℕ) := e.submoduleMap (N i)
+  let E := DirectSum.congrLinearEquiv eN
+  have hcoe : (DirectSum.coeLinearMap (fun i ↦ (N i).map e.toLinearMap)).comp E.toLinearMap =
+      e.toLinearMap.comp (DirectSum.coeLinearMap N) := by
+    apply DirectSum.linearMap_ext
+    intro i
+    ext x
+    simp [E, eN, DirectSum.coe_congrLinearEquiv]
+  have hcomm (x : ⨁ i, N i) :
+      DirectSum.coeLinearMap (fun i ↦ (N i).map e.toLinearMap) (E x) =
+        e (DirectSum.coeLinearMap N x) := LinearMap.congr_fun hcoe x
+  refine ⟨?_, ?_, ?_⟩
+  · change Function.Bijective (DirectSum.coeLinearMap (fun i ↦ (N i).map e.toLinearMap))
+    constructor
+    · intro x y hxy
+      obtain ⟨x, rfl⟩ := E.surjective x
+      obtain ⟨y, rfl⟩ := E.surjective y
+      exact congrArg E (h.isInternal.1 (e.injective (by simpa only [hcomm] using hxy)))
+    · intro y
+      obtain ⟨x, hx⟩ := h.isInternal.2 (e.symm y)
+      refine ⟨E x, ?_⟩
+      rw [hcomm, hx, e.apply_symm_apply]
+  · intro i j hij x hx y hy
+    obtain ⟨x, hx, rfl⟩ := Submodule.mem_map.mp hx
+    obtain ⟨y, hy, rfl⟩ := Submodule.mem_map.mp hy
+    simpa using h.apply_eq_zero i j hij x hx y hy
+  · intro i
+    have hi : congr (eN i) (B.restrict (N i)) =
+        (congr e B).restrict ((N i).map e.toLinearMap) := by
+      ext x y
+      obtain ⟨x, rfl⟩ := (eN i).surjective x
+      obtain ⟨y, rfl⟩ := (eN i).surjective y
+      simp [eN]
+    rw [← hi]
+    exact (h.isModular i).congr (eN i)
+
+/-- Jordan splitting is invariant under a linear equivalence of the underlying module. -/
+@[simp]
+theorem isJordanSplitting_congr_iff {M' : Type*} [AddCommMonoid M'] [Module R M'] {π : R}
+    {N : ℕ → Submodule R M} (e : M ≃ₗ[R] M') :
+    (congr e B).IsJordanSplitting π (fun i ↦ (N i).map e.toLinearMap) ↔
+      B.IsJordanSplitting π N :=
+  ⟨fun h ↦ by
+    simpa only [congr_congr, e.self_trans_symm, congr_refl, LinearEquiv.refl_apply,
+      Submodule.map_map, e.symm_comp, Submodule.map_id] using h.congr e.symm,
+    fun h ↦ h.congr e⟩
+
 /-- A Jordan splitting of a finitely generated module has finitely many nonzero constituents. -/
 theorem IsJordanSplitting.finite_support [Module.Finite R M] {π : R}
     {N : ℕ → Submodule R M} (h : B.IsJordanSplitting π N) : {i | N i ≠ ⊥}.Finite := by
@@ -184,7 +235,7 @@ nondegenerate symmetric bilinear form on a finite module is an orthogonal direct
 theorem IsSymm.exists_isJordanSplitting [Module.Finite R M] (hB : B.IsSymm)
     (hnd : B.Nondegenerate) {π : R} (hπ : Irreducible π) :
     ∃ N : ℕ → Submodule R M, B.IsJordanSplitting π N := by
-  letI : IsTorsionFree R M := Module.isTorsionFree_iff_smul_eq_zero.mpr fun r m h ↦ by
+  let : IsTorsionFree R M := Module.isTorsionFree_iff_smul_eq_zero.mpr fun r m h ↦ by
     by_cases hr : r = 0
     · exact Or.inl hr
     · refine Or.inr (hnd.1 m fun y ↦ ?_)
@@ -192,7 +243,7 @@ theorem IsSymm.exists_isJordanSplitting [Module.Finite R M] (hB : B.IsSymm)
         simpa only [LinearMap.map_smul₂, smul_eq_mul, map_zero, LinearMap.zero_apply] using
           congrArg (fun x ↦ B x y) h
       exact (mul_eq_zero.mp hb).resolve_left hr
-  letI : Free R M := inferInstance
+  let : Free R M := inferInstance
   exact exists_isJordanSplitting_of_free hB hnd hπ
 
 end LinearMap.BilinForm
