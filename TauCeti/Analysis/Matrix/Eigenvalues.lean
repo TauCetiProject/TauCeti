@@ -52,22 +52,13 @@ theorem _root_.Matrix.IsHermitian.abs_eigenvalues₀_sub_le_of_entry_le
     (hA : A.IsHermitian) (hB : B.IsHermitian) {ε : ℝ}
     (hentry : ∀ i j, ‖A i j - B i j‖ ≤ ε) (k : Fin (Fintype.card ι)) :
     |hA.eigenvalues₀ k - hB.eigenvalues₀ k| ≤ (Fintype.card ι : ℝ) * ε := by
-  have hbound (x : EuclideanSpace 𝕜 ι) :
-      ‖(A - B).toEuclideanLin x‖ ≤ (Fintype.card ι : ℝ) * ε * ‖x‖ := by
-    have h := norm_toEuclideanLin_le_of_entry_le hentry x
-    have hs : Real.sqrt (Fintype.card ι : ℝ) ^ 2 = (Fintype.card ι : ℝ) :=
-      Real.sq_sqrt (Nat.cast_nonneg _)
-    calc
-      ‖(A - B).toEuclideanLin x‖ ≤
-          Real.sqrt (Fintype.card ι) * ε * Real.sqrt (Fintype.card ι) * ‖x‖ := h
-      _ = Real.sqrt (Fintype.card ι) ^ 2 * ε * ‖x‖ := by ring
-      _ = (Fintype.card ι : ℝ) * ε * ‖x‖ := by rw [hs]
   -- Unfold only the sorted enumeration to use its defining operator-level API.
   simp only [Matrix.IsHermitian.eigenvalues₀]
   apply LinearMap.IsSymmetric.abs_eigenvalue_sub_eigenvalue_le
     (isSymmetric_toEuclideanLin_iff.mpr hA) (isSymmetric_toEuclideanLin_iff.mpr hB)
     finrank_euclideanSpace (fun x ↦ ?_) k
-  simpa only [map_sub] using hbound x
+  simpa only [map_sub] using
+    norm_toEuclideanLin_le_of_entry_le_square (A := A - B) hentry x
 
 /-- An entrywise bound on a Hermitian matrix bounds the absolute value of each sorted
 eigenvalue by the matrix size times that bound. -/
@@ -79,15 +70,17 @@ theorem _root_.Matrix.IsHermitian.abs_eigenvalues₀_le_of_entry_le (hA : A.IsHe
   have hv : ‖v‖ = 1 := hT.eigenvectorBasis finrank_euclideanSpace |>.orthonormal.1 k
   have he : A.toEuclideanLin v = (hA.eigenvalues₀ k : 𝕜) • v :=
     hT.apply_eigenvectorBasis finrank_euclideanSpace k
-  have h := norm_toEuclideanLin_le_of_entry_le hentry v
-  rw [he, norm_smul, RCLike.norm_ofReal, hv, mul_one] at h
-  have hs : Real.sqrt (Fintype.card ι : ℝ) ^ 2 = (Fintype.card ι : ℝ) :=
-    Real.sq_sqrt (Nat.cast_nonneg _)
-  calc
-    |hA.eigenvalues₀ k| ≤
-        Real.sqrt (Fintype.card ι) * β * Real.sqrt (Fintype.card ι) * 1 := h
-    _ = Real.sqrt (Fintype.card ι) ^ 2 * β := by ring
-    _ = (Fintype.card ι : ℝ) * β := by rw [hs]
+  have h := norm_toEuclideanLin_le_of_entry_le_square hentry v
+  simpa only [he, norm_smul, RCLike.norm_ofReal, hv, mul_one] using h
+
+/-- Reindexing a sorted eigenvalue by the canonical finite equivalence gives the
+corresponding matrix-indexed eigenvalue. -/
+@[simp]
+theorem _root_.Matrix.IsHermitian.eigenvalues_equivOfCardEq (hA : A.IsHermitian)
+    (i : Fin (Fintype.card ι)) :
+    hA.eigenvalues (Fintype.equivOfCardEq (Fintype.card_fin (Fintype.card ι)) i) =
+      hA.eigenvalues₀ i := by
+  simp only [IsHermitian.eigenvalues, Equiv.symm_apply_apply]
 
 /-- The rank of a Hermitian matrix counts its nonzero sorted eigenvalues, with multiplicity. -/
 theorem _root_.Matrix.IsHermitian.rank_eq_card_non_zero_eigenvalues₀ (hA : A.IsHermitian) :
@@ -96,15 +89,14 @@ theorem _root_.Matrix.IsHermitian.rank_eq_card_non_zero_eigenvalues₀ (hA : A.I
   rw [hA.rank_eq_card_non_zero_eigs]
   exact Fintype.card_congr
     ((Fintype.equivOfCardEq (Fintype.card_fin (Fintype.card ι))).symm.subtypeEquiv
-      (fun _ ↦ Iff.rfl))
+      (fun _ ↦ by rw [← hA.eigenvalues_equivOfCardEq, Equiv.apply_symm_apply]))
 
 /-- Every entry of the sorted eigenvalue list of a positive-semidefinite matrix is nonnegative. -/
 theorem _root_.Matrix.PosSemidef.eigenvalues₀_nonneg
     (hA : A.PosSemidef) (i : Fin (Fintype.card ι)) :
     0 ≤ hA.isHermitian.eigenvalues₀ i := by
-  let e := Fintype.equivOfCardEq (Fintype.card_fin (Fintype.card ι))
-  simpa only [IsHermitian.eigenvalues, e, Equiv.symm_apply_apply] using
-    hA.eigenvalues_nonneg (e i)
+  simpa only [hA.isHermitian.eigenvalues_equivOfCardEq] using
+    hA.eigenvalues_nonneg (Fintype.equivOfCardEq (Fintype.card_fin (Fintype.card ι)) i)
 
 /-- A sorted eigenvalue of a positive-semidefinite matrix vanishes from the rank onward. -/
 theorem _root_.Matrix.PosSemidef.eigenvalues₀_eq_zero_of_rank_le
