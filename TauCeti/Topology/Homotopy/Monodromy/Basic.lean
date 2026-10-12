@@ -46,6 +46,7 @@ subgroups differ, and it is the stabiliser, not the kernel, that the classificat
 
 ## Main declarations
 
+* `IsCoveringMap.coe_monodromy_mk`: monodromy along a path is the endpoint of its lift.
 * `TauCeti.coveringFiberEquiv`: monodromy along a homotopy class of paths is a bijection between
   the fibres over its endpoints.
 * `IsCoveringMap.toPermHom_eq_monodromyPerm`: the permutation representation of the monodromy
@@ -91,6 +92,14 @@ variable {E X : Type*} [TopologicalSpace E] [TopologicalSpace X] {p : E → X} {
 
 /-! ### Monodromy as a bijection between fibres -/
 
+/-- Monodromy along the class of a path `γ` sends a lift `e` of its source to the endpoint of the
+lift of `γ` starting at `e`. This is the defining formula of `IsCoveringMap.monodromy` on a
+representative path. -/
+theorem _root_.IsCoveringMap.coe_monodromy_mk (hp : IsCoveringMap p) {x y : X} (γ : Path x y)
+    (e : p ⁻¹' {x}) (h : γ.toContinuousMap 0 = p e) :
+    (hp.monodromy (.mk γ) e : E) = hp.liftPath γ.toContinuousMap e h 1 :=
+  (rfl)
+
 /-- **Monodromy along a homotopy class of paths is a bijection between the fibres** over its
 endpoints. It is `IsCoveringMap.monodromy`, whose bijectivity Mathlib records, packaged as an
 equivalence. -/
@@ -103,6 +112,14 @@ theorem coveringFiberEquiv_apply (hp : IsCoveringMap p) {x y : X}
     (γ : Path.Homotopic.Quotient x y) (e : ↥(p ⁻¹' {x})) :
     coveringFiberEquiv hp γ e = hp.monodromy γ e :=
   Equiv.ofBijective_apply _ _ _
+
+/-- The inverse of monodromy along `γ` is monodromy along the reversed class `γ.symm`. -/
+@[simp]
+theorem coveringFiberEquiv_symm_apply (hp : IsCoveringMap p) {x y : X}
+    (γ : Path.Homotopic.Quotient x y) (e : ↥(p ⁻¹' {y})) :
+    (coveringFiberEquiv hp γ).symm e = hp.monodromy γ.symm e := by
+  rw [Equiv.symm_apply_eq, coveringFiberEquiv_apply, ← hp.monodromy_trans_apply,
+    Path.Homotopic.Quotient.symm_trans, hp.monodromy_refl, id]
 
 /-- The permutation representation of the monodromy action of `π₁(X, x)` on the fibre over `x`
 is Mathlib's monodromy homomorphism `IsCoveringMap.monodromyPerm`, which is defined as it. -/

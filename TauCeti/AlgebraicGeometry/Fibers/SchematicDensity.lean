@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.Fibers
-public import TauCeti.AlgebraicGeometry.IdealSheaf.OfIdealTop
 public import TauCeti.AlgebraicGeometry.Morphisms.SchemeTheoreticallyDominant
 
 /-!
@@ -44,13 +43,7 @@ theorem isSchemeTheoreticallyDominant_genericFiberι
     IsSchemeTheoreticallyDominant (genericFiberι R K toBase) := by
   have : IsSchemeTheoreticallyDominant
       (Spec.map (CommRingCat.ofHom (algebraMap R K))) := by
-    constructor
-    rw [Scheme.Hom.ker_Spec_map, CommRingCat.hom_ofHom,
-      (RingHom.injective_iff_ker_eq_bot (algebraMap R K)).mp hRK,
-      Ideal.map_bot]
-    apply Scheme.IdealSheafData.ext
-    funext U
-    simp
+    rwa [isSchemeTheoreticallyDominant_SpecMap_iff, CommRingCat.hom_ofHom]
   exact IsSchemeTheoreticallyDominant.of_isPullback
     (isPullback_genericFiber R K toBase).flip
 

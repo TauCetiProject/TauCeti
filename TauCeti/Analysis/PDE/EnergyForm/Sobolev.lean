@@ -429,6 +429,13 @@ theorem energyFormH1_smul_left (a : EuclideanSpace ℝ ι → Matrix ι ι ℝ)
         .rfl .rfl .rfl (jetField_smul_ae r u) .rfl
     _ = r * energyFormH1 a b c u v := energyFormIntegral_smul_left _ _ _ _ _ _ r
 
+/-- The Sobolev energy form changes sign under negation of its left argument. -/
+@[simp]
+theorem energyFormH1_neg_left (a : EuclideanSpace ℝ ι → Matrix ι ι ℝ)
+    (b : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι) (c : EuclideanSpace ℝ ι → ℝ)
+    (u v : W1p mu Omega 2) : energyFormH1 a b c (-u) v = -energyFormH1 a b c u v := by
+  rw [← neg_one_smul ℝ u, energyFormH1_smul_left, neg_one_mul]
+
 /-- Homogeneity of the Sobolev energy form in its right argument. -/
 @[simp]
 theorem energyFormH1_smul_right (a : EuclideanSpace ℝ ι → Matrix ι ι ℝ)
@@ -546,6 +553,14 @@ theorem energyFormH1_add_left
   rw [← energyFormH1L_apply hcoeff]
   simp only [map_add, add_apply, energyFormH1L_apply]
 
+/-- Subtractivity of the Sobolev energy form in its left argument. -/
+theorem energyFormH1_sub_left
+    (hcoeff : MemLp (fun x => energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega))
+    (u v w : W1p mu Omega 2) :
+    energyFormH1 a b c (u - w) v = energyFormH1 a b c u v - energyFormH1 a b c w v := by
+  rw [← energyFormH1L_apply hcoeff]
+  simp only [map_sub, sub_apply, energyFormH1L_apply]
+
 /-- Additivity of the Sobolev energy form in its right argument. -/
 theorem energyFormH1_add_right
     (hcoeff : MemLp (fun x => energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega))
@@ -612,7 +627,8 @@ theorem energyFormH1L0_apply
     (u v : W1p0 mu Omega 2) :
     energyFormH1L0 hcoeff u v =
       energyFormH1 a b c (u : W1p mu Omega 2) (v : W1p mu Omega 2) := by
-  rw [energyFormH1L0, ContinuousLinearMap.bilinearComp_apply, energyFormH1L_apply]
+  unfold energyFormH1L0
+  rw [ContinuousLinearMap.bilinearComp_apply, energyFormH1L_apply]
   simp only [Submodule.subtypeL_apply]
 
 /-- **Symmetry of the bundled `H¹₀` energy form.**  Only symmetry of `energyFormH1` at the
@@ -995,7 +1011,7 @@ theorem mul_norm_sq_le_energyFormH1_self_of_subset_slab
     (lam ^ 2 - beta ^ 2 * (t - s) ^ 2) / (2 * lam * ((t - s) ^ 2 + 1)) * ‖u‖ ^ 2
       ≤ energyFormH1 a b c u u :=
   mul_norm_sq_le_energyFormH1_self_of_poincare h ha hb hc hb_bound hc_bound hc_nonneg
-    (W1p.norm_value_le_mul_norm_gradient_of_subset_slab (ENNReal.ofNat_ne_top) hst hslab hu)
+    (W1p.norm_value_le_mul_norm_gradient_of_subset_slab hst hslab hu)
 
 /-- **An energy-form lower bound on `H¹₀(Ω)` for a domain inside a ball.** For
 `Ω ⊆ B(z, R) ⊆ ℝ^{n+1}` every `u ∈ W^{1,2}_0(Ω)` satisfies
@@ -1019,7 +1035,7 @@ theorem mul_norm_sq_le_energyFormH1_self_of_subset_ball
     (lam ^ 2 - beta ^ 2 * (2 * R) ^ 2) / (2 * lam * ((2 * R) ^ 2 + 1)) * ‖u‖ ^ 2
       ≤ energyFormH1 a b c u u :=
   mul_norm_sq_le_energyFormH1_self_of_poincare h ha hb hc hb_bound hc_bound hc_nonneg
-    (W1p.norm_value_le_mul_norm_gradient_of_subset_ball (ENNReal.ofNat_ne_top) hball hu)
+    (W1p.norm_value_le_mul_norm_gradient_of_subset_ball hball hu)
 
 end UniformlyEllipticOn
 

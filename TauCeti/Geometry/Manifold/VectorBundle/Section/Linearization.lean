@@ -6,7 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.VectorBundle.MDifferentiable
-public import TauCeti.Analysis.Fredholm.Index
+public import TauCeti.Analysis.Fredholm.Basic
+public import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Index
 
 import TauCeti.Geometry.Manifold.MFDeriv.ContinuousLinearMap
 

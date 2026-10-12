@@ -36,10 +36,15 @@ trivial coefficient object for that subgroup.
 
 * `TauCeti.trivialF2`: trivial `𝔽₂` coefficients over an arbitrary
   universe.
+* `TauCeti.DiscreteRep.trivialF2`: the same coefficient object in the equivalent category of
+  discrete continuous representations.
 * `TauCeti.cohomF2`: continuous cohomology with trivial `𝔽₂` coefficients, with its canonical
   `ZMod 2`-module structure `TauCeti.cohomF2.instModule`.
 * `TauCeti.trivialF2ResMap`: restriction on continuous cohomology with trivial `𝔽₂`
   coefficients.
+* `TauCeti.trivialF2CoeffHom`: the identification of the trivial `𝔽₂` coefficients of two
+  monoids, with `TauCeti.trivialF2CoeffHom_smul` its equivariance along a monoid
+  homomorphism.
 * `TauCeti.trivialF2Map`: pullback along any continuous group homomorphism with trivial
   `𝔽₂` coefficients, and `TauCeti.trivialF2Iso` for a topological group isomorphism.
 * `TauCeti.trivialF2QuotientEquivFixedPoints`: trivial `𝔽₂` coefficients on a quotient `G ⧸ N`,
@@ -217,6 +222,11 @@ open CategoryTheory _root_.ContinuousCohomology
 
 variable [TopologicalSpace G] [IsTopologicalGroup G]
 
+/-- The canonical trivial `𝔽₂` coefficient object, read in the equivalent category of
+discrete continuous representations. -/
+noncomputable abbrev DiscreteRep.trivialF2 : DiscreteRep.{0, u, u} ℤ G :=
+  (ofSmoothDiscrete ℤ G).obj ⟨TauCeti.trivialF2 G, isSmoothDiscrete_trivialF2 G⟩
+
 /-- Restriction on continuous cohomology with trivial `𝔽₂` coefficients. This is the
 generic restriction map followed by the on-the-nose identification `res_trivialF2`. -/
 noncomputable def trivialF2ResMap (S : Subgroup G) (n : ℕ) :
@@ -245,6 +255,29 @@ noncomputable instance cohomF2.instModule (n : ℕ) : Module (ZMod 2) (cohomF2 G
   AddCommGroup.zmodModule (cohomF2.two_nsmul_eq_zero G n)
 
 end Group
+
+section CoeffHom
+
+variable {G H : Type u} [Monoid G] [Monoid H]
+
+attribute [local instance] TopRep.distribMulAction
+
+/-- The identification of the trivial `𝔽₂` coefficients of `G` with those of `H`. -/
+noncomputable def trivialF2CoeffHom : (trivialF2 G).V →+ (trivialF2 H).V :=
+  ((trivialF2Equiv G).trans (trivialF2Equiv H).symm).toAddMonoidHom
+
+/-- The coefficient identification sends an element to the one with the same underlying value. -/
+@[simp]
+theorem trivialF2CoeffHom_apply (m : (trivialF2 G).V) :
+    trivialF2CoeffHom m = (trivialF2Equiv H).symm (trivialF2Equiv G m) :=
+  (rfl)
+
+/-- The identification `trivialF2CoeffHom` is equivariant along every monoid homomorphism. -/
+theorem trivialF2CoeffHom_smul (φ : H →* G) (h : H) (m : (trivialF2 G).V) :
+    trivialF2CoeffHom (φ h • m) = h • (trivialF2CoeffHom m : (trivialF2 H).V) := by
+  simp only [TopRep.distribMulAction_smul, trivialF2_ρ_apply_apply]
+
+end CoeffHom
 
 section Hom
 

@@ -46,24 +46,6 @@ universe u v
 
 variable (R : Type u) [CommRing R] {N : ℕ}
 
-private theorem mapWeightLevi_id (w : Fin N → ℤ) (A : CommAlgCat.{v} R)
-    (g : Cocharacter.levi A (weightCocharacter (R := R) w)) :
-    Cocharacter.mapLevi (weightCocharacter (R := R) w) (𝟙 A) g = g := by
-  apply Subtype.ext
-  rw [Cocharacter.coe_mapLevi_apply, CommAlgCat.hom_id,
-    AlgHom.mapValue_id, MonoidHom.id_apply]
-
-private theorem mapWeightLevi_comp (w : Fin N → ℤ)
-    {A B C : CommAlgCat.{v} R} (φ : A ⟶ B) (ψ : B ⟶ C)
-    (g : Cocharacter.levi A (weightCocharacter (R := R) w)) :
-    Cocharacter.mapLevi (weightCocharacter (R := R) w) (φ ≫ ψ) g =
-      Cocharacter.mapLevi (weightCocharacter (R := R) w) ψ
-        (Cocharacter.mapLevi (weightCocharacter (R := R) w) φ g) := by
-  apply Subtype.ext
-  rw [Cocharacter.coe_mapLevi_apply, Cocharacter.coe_mapLevi_apply,
-    Cocharacter.coe_mapLevi_apply, CommAlgCat.hom_comp,
-    AlgHom.mapValue_comp, MonoidHom.comp_apply]
-
 private theorem mem_weightLeviSubgroup_iff (w : Fin N → ℤ)
     (A : CommAlgCat.{v} R)
     (g : HopfAlgebra.points (R := R) (H := coordinateHopfAlgebra R N) A) :
@@ -73,14 +55,6 @@ private theorem mem_weightLeviSubgroup_iff (w : Fin N → ℤ)
   by
     rw [GeneralLinear.mem_weightLeviDefiningPointsSubgroup_iff_apply_eq_zero,
       mem_levi_weightCocharacter_iff]
-
-private theorem coe_mapWeightLevi_apply (w : Fin N → ℤ)
-    {A B : CommAlgCat.{v} R} (φ : A ⟶ B)
-    (g : Cocharacter.levi A (weightCocharacter (R := R) w)) :
-    (Cocharacter.mapLevi (weightCocharacter (R := R) w) φ g :
-      HopfAlgebra.points (R := R) (H := coordinateHopfAlgebra R N) B) =
-      HopfAlgebra.mapPoints (H := coordinateHopfAlgebra R N) φ g :=
-  Cocharacter.coe_mapLevi_apply (weightCocharacter (R := R) w) φ g
 
 section Points
 
@@ -106,9 +80,7 @@ noncomputable def weightLeviPointsIso (w : Fin N → ℤ) :
   CommHopfAlgCat.quotientPointsSubgroupRepresentingIso
     (coordinateHopfAlgebra R N) (weightLeviDefiningHopfIdeal R w)
     (fun A ↦ Cocharacter.levi A (weightCocharacter (R := R) w))
-    (fun φ ↦ Cocharacter.mapLevi (weightCocharacter (R := R) w) φ)
-    (mapWeightLevi_id R w) (mapWeightLevi_comp R w)
-    (mem_weightLeviSubgroup_iff R w) (coe_mapWeightLevi_apply R w)
+    (mem_weightLeviSubgroup_iff R w)
 
 /-- The ambient point underlying the represented dynamic-Levi point is induced by the quotient
 coordinate map. -/
@@ -129,9 +101,7 @@ theorem coe_weightLeviPointsIso_hom_app_apply (w : Fin N → ℤ)
     (CommHopfAlgCat.coe_quotientPointsSubgroupRepresentingIso_hom_app_apply
       (coordinateHopfAlgebra R N) (weightLeviDefiningHopfIdeal R w)
       (fun B ↦ Cocharacter.levi B (weightCocharacter (R := R) w))
-      (fun φ ↦ Cocharacter.mapLevi (weightCocharacter (R := R) w) φ)
-      (mapWeightLevi_id R w) (mapWeightLevi_comp R w)
-      (mem_weightLeviSubgroup_iff R w) (coe_mapWeightLevi_apply R w)
+      (mem_weightLeviSubgroup_iff R w)
       (CommAlgCat.of R A) f) using 1
   rfl
 
@@ -149,9 +119,7 @@ theorem quotientPointsHom_weightLeviPointsIso_inv_app_apply (w : Fin N → ℤ)
     (CommHopfAlgCat.quotientPointsHom_quotientPointsSubgroupRepresentingIso_inv_app_apply
       (coordinateHopfAlgebra R N) (weightLeviDefiningHopfIdeal R w)
       (fun B ↦ Cocharacter.levi B (weightCocharacter (R := R) w))
-      (fun φ ↦ Cocharacter.mapLevi (weightCocharacter (R := R) w) φ)
-      (mapWeightLevi_id R w) (mapWeightLevi_comp R w)
-      (mem_weightLeviSubgroup_iff R w) (coe_mapWeightLevi_apply R w)
+      (mem_weightLeviSubgroup_iff R w)
       (CommAlgCat.of R A) g) using 1
 
 end TauCeti.GeneralLinear.Dynamic

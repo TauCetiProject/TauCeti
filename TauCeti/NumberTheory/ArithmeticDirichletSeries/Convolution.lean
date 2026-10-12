@@ -427,7 +427,7 @@ theorem normCoeff_convolution (f g : IdealArithmeticFunction K) :
   -- Reindex `(A, (B, C))` by `((N B, N C), (B, C))`, with inverse
   -- `(d, (B, C)) ↦ (B * C, (B, C))`; `map_mul` makes both maps preserve the norm fibre.
   refine Finset.sum_nbij'
-    (fun ⟨A, p⟩ ↦
+    (fun ⟨_, p⟩ ↦
       ⟨(Ideal.absNorm (p.1 : Ideal (𝓞 K)), Ideal.absNorm (p.2 : Ideal (𝓞 K))),
         ⟨p.1, p.2⟩⟩)
     (fun ⟨_d, ⟨B, C⟩⟩ ↦ ⟨B * C, (B, C)⟩) ?_ ?_ ?_ ?_ ?_ <;>

@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.CategoryTheory.Shift.Adjunction
 public import Mathlib.CategoryTheory.Shift.CommShift
 public import TauCeti.CategoryTheory.Shift.Autoequivalence
 
@@ -203,6 +204,108 @@ noncomputable instance mapFunctorCommShift
     simp
 
 end CategoryTheory.Equivalence.IntSequence
+
+namespace CategoryTheory.Equivalence
+
+open CategoryTheory.Functor IntSequence
+
+variable {C : Type u₁} [Category.{v₁} C] (e : C ≌ C)
+
+/-- The counit of the evaluation equivalence, with its source displayed as a degree-zero term. -/
+@[expose]
+noncomputable def evalCounitIso (X : C) : ((eval (e := e)).inv.obj X).X 0 ≅ X :=
+  (eval (e := e)).asEquivalence.counitIso.app X
+
+/-- Evaluation in degree zero of a morphism lifted through the inverse evaluation equivalence. -/
+private theorem evalInverse_map_f_zero {X Y : C} (f : X ⟶ Y) :
+    ((eval (e := e)).inv.map f).f 0 = (e.evalCounitIso X).hom ≫ f ≫ (e.evalCounitIso Y).inv :=
+  (eval (e := e)).asEquivalence.fun_inv_map X Y f
+
+/-- Evaluation's degree-one shift comparison, in terms of the sequence structure map. -/
+private theorem evalCommShiftIso_one_hom_app (Y : IntSequence e) :
+    letI := e.hasShift
+    letI := e.evalCommShift
+    ((eval (e := e)).commShiftIso (1 : ℤ)).hom.app Y =
+      (Y.iso 0 1 rfl).inv ≫ e.shiftFunctorOneIso.inv.app (Y.X 0) := by
+  let _ := e.hasShift
+  let _ := e.evalCommShift
+  have h := congr_app (congrArg Iso.hom e.evalCommShiftIso_one) Y
+  simp only [Iso.trans_hom, NatTrans.comp_app, isoWhiskerLeft_hom, Functor.whiskerLeft_app,
+    reindexOneCompEvalIso_hom_app] at h
+  exact (Iso.eq_comp_inv (e.shiftFunctorOneIso.app (Y.X 0))).2 h
+
+/-- The degree-zero component of the inverse evaluation functor's degree-one shift comparison. -/
+theorem evalInverseCommShiftIso_one_hom_app_f_zero (X : C) :
+    letI := e.hasShift
+    letI : (eval (e := e)).asEquivalence.functor.CommShift ℤ := e.evalCommShift
+    letI : (eval (e := e)).inv.CommShift ℤ := (eval (e := e)).asEquivalence.commShiftInverse ℤ
+    (((eval (e := e)).inv.commShiftIso (1 : ℤ)).hom.app X).f 0 =
+      (e.evalCounitIso ((shiftFunctor C 1).obj X)).hom ≫
+        (shiftFunctor C 1).map (e.evalCounitIso X).inv ≫
+          e.shiftFunctorOneIso.hom.app (((eval (e := e)).inv.obj X).X 0) ≫
+            (((eval (e := e)).inv.obj X).iso 0 1 rfl).hom := by
+  let _ := e.hasShift
+  let _ := e.evalCommShift
+  let _ : (eval (e := e)).asEquivalence.functor.CommShift ℤ := e.evalCommShift
+  let _ : (eval (e := e)).inv.CommShift ℤ := (eval (e := e)).asEquivalence.commShiftInverse ℤ
+  let _ : (eval (e := e)).asEquivalence.inverse.CommShift ℤ :=
+    (eval (e := e)).asEquivalence.commShiftInverse ℤ
+  let _ : (eval (e := e)).asEquivalence.CommShift ℤ :=
+    (eval (e := e)).asEquivalence.commShift_of_functor ℤ
+  have hc := (eval (e := e)).asEquivalence.toAdjunction.commShiftIso_hom_app_counit_app_shift
+    ℤ (1 : ℤ) X
+  rw [Functor.commShiftIso_comp_hom_app] at hc
+  simp only [Functor.asEquivalence_functor, Functor.asEquivalence_inverse,
+    Equivalence.toAdjunction_counit, evalCommShiftIso_one_hom_app] at hc
+  -- `hc` is stated through evaluation; its terms are the degree-zero terms used below.
+  have h : (e.evalCounitIso ((shiftFunctor C (1 : ℤ)).obj X)).hom =
+      ((((eval (e := e)).inv.commShiftIso (1 : ℤ)).hom.app X).f 0 ≫
+        (((eval (e := e)).inv.obj X).iso 0 1 rfl).inv ≫
+          e.shiftFunctorOneIso.inv.app (((eval (e := e)).inv.obj X).X 0)) ≫
+            (shiftFunctor C (1 : ℤ)).map (e.evalCounitIso X).hom :=
+    hc.symm
+  rw [h]
+  simp only [Category.assoc, ← Functor.map_comp_assoc, Iso.hom_inv_id, Functor.map_id,
+    Category.id_comp]
+  have hid : ((((eval (e := e)).inv.obj X).iso 0 1 rfl).inv ≫
+      e.shiftFunctorOneIso.inv.app (((eval (e := e)).inv.obj X).X 0)) ≫
+        e.shiftFunctorOneIso.hom.app (((eval (e := e)).inv.obj X).X 0) ≫
+          (((eval (e := e)).inv.obj X).iso 0 1 rfl).hom = 𝟙 _ := by
+    simp
+  -- The codomain of the degree-zero component is the degree-one term only after unfolding
+  -- `reindex`, so the cancellation is applied as a term rather than by rewriting.
+  exact (Category.comp_id _).symm.trans
+    (congrArg ((((eval (e := e)).inv.commShiftIso (1 : ℤ)).hom.app X).f 0 ≫ ·) hid.symm)
+
+/-- The degree-zero component of the inverse of the inverse evaluation functor's degree-one shift
+comparison. -/
+private theorem evalInverseCommShiftIso_one_inv_app_f_zero (X : C) :
+    letI := e.hasShift
+    letI : (eval (e := e)).asEquivalence.functor.CommShift ℤ := e.evalCommShift
+    letI : (eval (e := e)).inv.CommShift ℤ := (eval (e := e)).asEquivalence.commShiftInverse ℤ
+    (((eval (e := e)).inv.commShiftIso (1 : ℤ)).inv.app X).f 0 =
+      (((eval (e := e)).inv.obj X).iso 0 1 rfl).inv ≫
+        e.shiftFunctorOneIso.inv.app (((eval (e := e)).inv.obj X).X 0) ≫
+          (shiftFunctor C 1).map (e.evalCounitIso X).hom ≫
+            (e.evalCounitIso ((shiftFunctor C 1).obj X)).inv := by
+  let _ := e.hasShift
+  let _ : (eval (e := e)).asEquivalence.functor.CommShift ℤ := e.evalCommShift
+  let _ : (eval (e := e)).inv.CommShift ℤ := (eval (e := e)).asEquivalence.commShiftInverse ℤ
+  have h : (((eval (e := e)).inv.commShiftIso (1 : ℤ)).hom.app X).f 0 ≫
+      (((eval (e := e)).inv.commShiftIso (1 : ℤ)).inv.app X).f 0 = 𝟙 _ := by
+    rw [← comp_f, Iso.hom_inv_id_app, id_f]
+  rw [e.evalInverseCommShiftIso_one_hom_app_f_zero] at h
+  have h' := Iso.inv_ext (f := e.evalCounitIso ((shiftFunctor C (1 : ℤ)).obj X) ≪≫
+    (shiftFunctor C (1 : ℤ)).mapIso (e.evalCounitIso X).symm ≪≫
+      e.shiftFunctorOneIso.app (((eval (e := e)).inv.obj X).X 0) ≪≫
+        ((eval (e := e)).inv.obj X).iso 0 1 rfl) h
+  simp only [Iso.trans_inv, Iso.symm_inv, Functor.mapIso_inv, Iso.app_inv,
+    Category.assoc] at h'
+  exact h'.symm
+
+end CategoryTheory.Equivalence
+
+
 
 /-! ### Identities between the additivity isomorphisms of a shift -/
 

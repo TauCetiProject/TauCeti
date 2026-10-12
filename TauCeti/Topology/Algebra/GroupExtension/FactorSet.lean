@@ -126,12 +126,11 @@ instance [DiscreteTopology M] [DiscreteTopology G] : DiscreteTopology α.Extensi
 
 section TopologicalGroup
 
-variable [IsTopologicalGroup G] [IsTopologicalGroup M] [ContinuousSMul G M]
-  (hα : Continuous ⇑α)
+variable [ContinuousSMul G M] (hα : Continuous ⇑α)
 
 include hα
 
-private theorem continuous_mul_extension :
+private theorem continuous_mul_extension [ContinuousMul G] [ContinuousMul M] :
     Continuous fun p : α.Extension × α.Extension => p.1 * p.2 := by
   have hl₁ : Continuous fun p : α.Extension × α.Extension => p.1.left :=
     continuous_left.comp continuous_fst
@@ -145,7 +144,8 @@ private theorem continuous_mul_extension :
   simp only [Function.comp_def, mul_left, mul_right]
   exact ((hl₁.mul (hr₁.smul hl₂)).mul (hα.comp (hr₁.prodMk hr₂))).prodMk (hr₁.mul hr₂)
 
-private theorem continuous_inv_extension : Continuous fun x : α.Extension => x⁻¹ := by
+private theorem continuous_inv_extension [ContinuousInv G] [IsTopologicalGroup M] :
+    Continuous fun x : α.Extension => x⁻¹ := by
   refine isInducing_leftRight.continuous_iff.2 ?_
   simp only [Function.comp_def, inv_left, inv_right]
   exact ((continuous_right.inv).smul
@@ -157,7 +157,8 @@ The twisted multiplication of `TauCeti.FactorSet.Extension` is
 `⟨a, g⟩ * ⟨b, h⟩ = ⟨a * g • b * α (g, h), g * h⟩`, so it is continuous for the product topology
 exactly because the two things appearing in it beyond the group operations — the action and the
 factor set — are. -/
-theorem isTopologicalGroup : IsTopologicalGroup α.Extension where
+theorem isTopologicalGroup [IsTopologicalGroup G] [IsTopologicalGroup M] :
+    IsTopologicalGroup α.Extension where
   continuous_mul := continuous_mul_extension hα
   continuous_inv := continuous_inv_extension hα
 
@@ -179,6 +180,12 @@ theorem continuous_inl : Continuous (inl α) := by
 theorem continuous_rightHom : Continuous (rightHom α) :=
   Extension.continuous_right.congr fun x => (rightHom_apply α x).symm
 
+/-- The coefficient inclusion carries the topology of `M`, without any separation assumption
+on the quotient group. -/
+theorem isEmbedding_inl : Topology.IsEmbedding (inl α) :=
+  Topology.IsEmbedding.of_leftInverse (fun a => inl_left α a)
+    Extension.continuous_left (continuous_inl α)
+
 /-- The trivial factor set is continuous, being constant. -/
 theorem continuous_trivial : Continuous ⇑(trivial G M) :=
   continuous_const.congr fun p => (trivial_apply G M p).symm
@@ -195,21 +202,9 @@ theorem continuous_canonicalSection : Continuous ⇑α.canonicalSection := by
 `M`. Only `G` needs a separation assumption: under `TauCeti.FactorSet.Extension.homeomorphProd`
 the inclusion is `a ↦ (a, 1)`, whose range is the preimage of `{1}` under the projection to `G`. -/
 theorem isClosedEmbedding_inl [T1Space G] : Topology.IsClosedEmbedding (inl α) := by
-  have hcomp : (fun x : α.Extension => (x.left, x.right)) ∘ ⇑(inl α) = fun a : M => (a, (1 : G)) :=
-    funext fun a => by simp
-  have hrange : Set.range (inl α) = (Extension.right : α.Extension → G) ⁻¹' {1} := by
-    ext x
-    refine ⟨?_, fun hx => ⟨x.left, ?_⟩⟩
-    · rintro ⟨a, rfl⟩
-      simp
-    · simp only [Set.mem_preimage, Set.mem_singleton_iff] at hx
-      ext <;> simp [hx]
-  refine ⟨⟨Topology.IsInducing.of_comp (continuous_inl α)
-    Extension.isInducing_leftRight.continuous ?_, inl_injective α⟩, ?_⟩
-  · rw [hcomp]
-    exact isInducing_prodMkLeft 1
-  · rw [hrange]
-    exact isClosed_singleton.preimage Extension.continuous_right
+  refine ⟨isEmbedding_inl α, ?_⟩
+  rw [← MonoidHom.coe_range, range_inl_eq_ker_rightHom, MonoidHom.coe_ker]
+  exact isClosed_singleton.preimage (continuous_rightHom α)
 
 /-- The projection of the twisted product onto `G` is open: under
 `TauCeti.FactorSet.Extension.homeomorphProd` it is the projection `M × G → G`. -/
@@ -235,14 +230,14 @@ variable {N : Type*} [CommGroup N] [TopologicalSpace N] [MulDistribMulAction G N
 
 /-- The pushforward of a continuous factor set along a continuous equivariant homomorphism of
 coefficient modules is continuous. -/
-theorem continuous_map (f : M →*[G] N) (hf : Continuous f) {α : FactorSet G M}
+theorem continuous_map (α : FactorSet G M) (f : M →*[G] N) (hf : Continuous f)
     (hα : Continuous ⇑α) : Continuous ⇑(α.map f) :=
-  (hf.comp hα).congr fun p => (map_apply f α p).symm
+  (hf.comp hα).congr fun p => (map_apply α f p).symm
 
 /-- The homomorphism of twisted products induced by a continuous equivariant coefficient
 homomorphism is continuous: it is `f` on the `M`-coordinate and the identity on the
 `G`-coordinate. -/
-theorem continuous_mapExtension (f : M →*[G] N) (hf : Continuous f) (α : FactorSet G M) :
+theorem continuous_mapExtension (α : FactorSet G M) (f : M →*[G] N) (hf : Continuous f) :
     Continuous (α.mapExtension f) :=
   Extension.isInducing_leftRight.continuous_iff.2 <|
     ((hf.comp Extension.continuous_left).prodMk Extension.continuous_right).congr fun x => by
@@ -282,13 +277,6 @@ end Rescale
 
 section Cocycle
 
-omit [TopologicalSpace G] [TopologicalSpace M] in
-/-- A factor set, read additively, satisfies the additive `2`-cocycle identity: the two identities
-are the same statement in the two notations. -/
-theorem isCocycle₂_ofMul (α : FactorSet G M) :
-    groupCohomology.IsCocycle₂ fun p : G × G => Additive.ofMul (α p) := fun g h j =>
-  congrArg Additive.ofMul (α.isMulCocycle₂ g h j)
-
 variable [IsTopologicalGroup M]
 
 /-- **Continuity of a factor set is membership of the explicit complex of continuous cochains.**
@@ -298,7 +286,8 @@ theorem ofMul_mem_Z2_iff (α : FactorSet G M) :
     (fun p : G × G => Additive.ofMul (α p)) ∈ ContCohomology.Z2 G (Additive M) ↔
       Continuous ⇑α :=
   ContCohomology.mem_Z2_iff.trans
-    ⟨fun h => h.1, fun h => ⟨h, α.isCocycle₂_ofMul⟩⟩
+    ⟨fun h => h.1, fun h => ⟨h, fun g h j =>
+      congrArg Additive.ofMul (α.isMulCocycle₂ g h j)⟩⟩
 
 variable {z : G × G → Additive M}
 

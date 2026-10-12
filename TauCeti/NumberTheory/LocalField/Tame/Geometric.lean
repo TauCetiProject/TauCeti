@@ -129,24 +129,21 @@ def iwasawaGeometricEquiv : IwasawaGroup K ≃ₜ* IwasawaGroupGeometric K :=
 @[simp]
 theorem iwasawaGeometricEquiv_iwasawaSigma :
     iwasawaGeometricEquiv K (iwasawaSigma K) = (iwasawaSigmaGeometric K)⁻¹ := by
-  rw [iwasawaSigma, ← presentedProfiniteGroup.mk_of, iwasawaGeometricEquiv,
-    presentedProfiniteGroup.congr_mk]
+  rw [iwasawaSigma, iwasawaGeometricEquiv, presentedProfiniteGroup.congr_of]
   simp [iwasawaFreeGeometricEquiv, iwasawaGeneratorInversion]
 
 /-- Changing the Frobenius convention preserves the marked tame inertia generator. -/
 @[simp]
 theorem iwasawaGeometricEquiv_iwasawaTau :
     iwasawaGeometricEquiv K (iwasawaTau K) = iwasawaTauGeometric K := by
-  rw [iwasawaTau, ← presentedProfiniteGroup.mk_of, iwasawaGeometricEquiv,
-    presentedProfiniteGroup.congr_mk]
+  rw [iwasawaTau, iwasawaGeometricEquiv, presentedProfiniteGroup.congr_of]
   simp [iwasawaFreeGeometricEquiv, iwasawaGeneratorInversion]
 
 /-- Geometric Frobenius becomes the inverse of the arithmetic marked generator. -/
 @[simp]
 theorem iwasawaGeometricEquiv_symm_iwasawaSigmaGeometric :
     (iwasawaGeometricEquiv K).symm (iwasawaSigmaGeometric K) = (iwasawaSigma K)⁻¹ := by
-  rw [iwasawaSigmaGeometric, ← presentedProfiniteGroup.mk_of, iwasawaGeometricEquiv,
-    presentedProfiniteGroup.congr_symm_mk]
+  rw [iwasawaSigmaGeometric, iwasawaGeometricEquiv, presentedProfiniteGroup.congr_symm_of]
   rw [iwasawaFreeGeometricEquiv_symm]
   simp [iwasawaFreeGeometricEquiv, iwasawaGeneratorInversion]
 
@@ -154,8 +151,7 @@ theorem iwasawaGeometricEquiv_symm_iwasawaSigmaGeometric :
 @[simp]
 theorem iwasawaGeometricEquiv_symm_iwasawaTauGeometric :
     (iwasawaGeometricEquiv K).symm (iwasawaTauGeometric K) = iwasawaTau K := by
-  rw [iwasawaTauGeometric, ← presentedProfiniteGroup.mk_of, iwasawaGeometricEquiv,
-    presentedProfiniteGroup.congr_symm_mk]
+  rw [iwasawaTauGeometric, iwasawaGeometricEquiv, presentedProfiniteGroup.congr_symm_of]
   rw [iwasawaFreeGeometricEquiv_symm]
   simp [iwasawaFreeGeometricEquiv, iwasawaGeneratorInversion]
 

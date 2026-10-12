@@ -152,27 +152,12 @@ theorem pullbackDifferential_invariantDifferential [W₂.IsElliptic] (φ : Isoge
 @[simp]
 theorem pullbackDifferential_negIsogeny_invariantDifferential (W : WeierstrassCurve.Affine F) :
     (negIsogeny W).pullbackDifferential (invariantDifferential W) = -invariantDifferential W := by
-  -- Negation fixes `x` and sends `y` to `negY x y`.
-  have hx : (negIsogeny W).fieldPullback (genericX W) = genericX W := by
-    have : (negIsogeny W).fieldPullback (genericX W) = algebraMap W.CoordinateRing W.FunctionField
-        (CoordinateRing.conj W (AdjoinRoot.of W.polynomial Polynomial.X)) := by
-      rw [genericX_def, fieldPullback_algebraMap, negIsogeny_pullback, negPullback_apply,
-        AdjoinRoot.mk_C]
-    rw [this, CoordinateRing.conj_mk_C, ← genericX_def]
-  have hy : (negIsogeny W).fieldPullback (genericY W) =
-      (W⁄W.FunctionField).toAffine.negY (genericX W) (genericY W) := by
-    have : (negIsogeny W).fieldPullback (genericY W) = algebraMap W.CoordinateRing W.FunctionField
-        (CoordinateRing.conj W (AdjoinRoot.root W.polynomial)) := by
-      rw [genericY_def, fieldPullback_algebraMap, negIsogeny_pullback, negPullback_apply,
-        AdjoinRoot.mk_X]
-    rw [this, CoordinateRing.conj_mk_Y, ← evalEval_genericX_genericY, ← map_negPolynomial,
-      evalEval_negPolynomial]
-    simp only [WeierstrassCurve.baseChange]
-  rw [invariantDifferential_def, pullbackDifferential_smul, pullbackDifferential_D, map_inv₀, hx,
-    ← neg_smul, neg_inv]
+  rw [invariantDifferential_def, pullbackDifferential_smul, pullbackDifferential_D, map_inv₀,
+    fieldPullback_negIsogeny_genericX, ← neg_smul, neg_inv]
   congr 2
-  simp only [invariantDifferentialDenom_def, map_add, map_mul, map_ofNat, AlgHom.commutes, hx, hy,
-    negY, WeierstrassCurve.baseChange, WeierstrassCurve.map_a₁, WeierstrassCurve.map_a₃]
+  simp only [invariantDifferentialDenom_def, map_add, map_mul, map_ofNat, AlgHom.commutes,
+    fieldPullback_negIsogeny_genericX, fieldPullback_negIsogeny_genericY, negY,
+    WeierstrassCurve.baseChange, WeierstrassCurve.map_a₁, WeierstrassCurve.map_a₃]
   ring
 
 /-- **An isogeny is separable exactly when it pulls the invariant differential back to a nonzero
@@ -201,8 +186,8 @@ theorem isSeparable_iff_pullbackDifferential_ne_zero [W₁.IsElliptic] [W₂.IsE
   have hsep : Algebra.IsSeparable φ.fieldPullback.fieldRange W₁.FunctionField ↔
       Algebra.IsSeparable W₂.FunctionField W₁.FunctionField := by
     rw [← Field.finSepDegree_eq_finrank_iff, ← Field.finSepDegree_eq_finrank_iff,
-      TauCeti.AlgHom.finSepDegree_fieldRange φ.fieldPullback halg,
-      TauCeti.AlgHom.finrank_fieldRange φ.fieldPullback halg]
+      φ.fieldPullback.finSepDegree_fieldRange halg,
+      φ.fieldPullback.finrank_fieldRange halg]
   -- A finite extension is separable exactly when its module of differentials vanishes.
   have hunr : Algebra.IsSeparable W₂.FunctionField W₁.FunctionField ↔
       Subsingleton (KaehlerDifferential W₂.FunctionField W₁.FunctionField) := by

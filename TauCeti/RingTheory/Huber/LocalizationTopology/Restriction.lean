@@ -6,7 +6,6 @@ Authors: Chris Birkbeck
 module
 
 public import TauCeti.RingTheory.Huber.LocalizationTopology.Completion
-public import TauCeti.Topology.Algebra.Nonarchimedean.Completion.RingHom
 
 /-!
 # Restriction maps for a refined presentation

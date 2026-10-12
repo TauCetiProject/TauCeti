@@ -35,7 +35,9 @@ equality. Every statement here holds in any characteristic, including two and th
 * `WeierstrassCurve.Affine.isSingular_iff'` and `WeierstrassCurve.Affine.isSingular_iff`: the
   coefficient-level restatements, the second as the two equalities `Nonsingular` negates.
 * `WeierstrassCurve.Affine.isSingular_zero`: singularity at the origin is `a₃ = a₄ = a₆ = 0`.
-* `WeierstrassCurve.Affine.equation_iff_of_isSingular_zero`: the equation of a model singular at
+* `WeierstrassCurve.Affine.equation_iff_of_isSingular`: the equation expanded at a singular point
+  `(x₁, y₁)` has no constant or linear terms.
+* `WeierstrassCurve.Affine.equation_iff_of_isSingular_zero`: so the equation of a model singular at
   the origin is `y² + a₁ x y = x³ + a₂ x²`.
 * `WeierstrassCurve.Affine.c₄_eq_b₂_sq_of_isSingular_zero`: at such a model, `c₄ = b₂²`.
 * `WeierstrassCurve.Affine.isSingular_iff_variableChange`: singularity at a point is singularity at
@@ -55,6 +57,9 @@ equality. Every statement here holds in any characteristic, including two and th
   difference is nilpotent.
 * `WeierstrassCurve.Affine.subsingleton_singular`: over a reduced ring they coincide, so a
   Weierstrass model has at most one singular point.
+* `WeierstrassCurve.Affine.nonsingular_of_isSingular_zero` and
+  `WeierstrassCurve.Affine.ne_zero_of_isSingular_zero`: on a model singular at the origin, the
+  solutions with `x ≠ 0` are exactly the nonsingular points.
 
 ## References
 
@@ -125,11 +130,23 @@ theorem isSingular_zero (W : WeierstrassCurve.Affine R) :
     W.IsSingular 0 0 ↔ W.a₆ = 0 ∧ W.a₄ = 0 ∧ W.a₃ = 0 := by
   rw [IsSingular, equation_zero, evalEval_polynomialX_zero, evalEval_polynomialY_zero, neg_eq_zero]
 
+/-- **The equation expanded at a singular point**: at a singular point `(x₁, y₁)` the constant
+and linear terms of the equation vanish, so it reads
+`(y - y₁)² + a₁ (x - x₁) (y - y₁) = (x - x₁)³ + (3 x₁ + a₂) (x - x₁)²`. -/
+theorem equation_iff_of_isSingular (h : W.IsSingular x₁ y₁) (x y : R) :
+    W.Equation x y ↔ (y - y₁) ^ 2 + W.a₁ * (x - x₁) * (y - y₁) =
+      (x - x₁) ^ 3 + (3 * x₁ + W.a₂) * (x - x₁) ^ 2 := by
+  obtain ⟨hE, hX, hY⟩ := (isSingular_iff' _ _ _).mp h
+  rw [equation_iff] at hE ⊢
+  constructor <;> intro h'
+  · linear_combination h' - hE - (y - y₁) * hY - (x - x₁) * hX
+  · linear_combination h' + hE + (y - y₁) * hY + (x - x₁) * hX
+
 /-- At a model singular at the origin the equation reads `y² + a₁ x y = x³ + a₂ x²`. -/
 theorem equation_iff_of_isSingular_zero (h : W.IsSingular 0 0) (x y : R) :
     W.Equation x y ↔ y ^ 2 + W.a₁ * x * y = x ^ 3 + W.a₂ * x ^ 2 := by
-  obtain ⟨h₆, h₄, h₃⟩ := (isSingular_zero _).1 h
-  simp [equation_iff', h₆, h₄, h₃, sub_eq_zero]
+  simpa using equation_iff_of_isSingular h x y
+
 
 /-- For a model singular at the origin, `c₄` is the square of `b₂`, the discriminant of the
 tangent quadratic `T² + a₁ T - a₂`. -/
@@ -403,6 +420,23 @@ theorem subsingleton_singular [IsReduced R] (W : WeierstrassCurve.Affine R) (p q
     eq_of_isSingular_of_isSingular (isSingular_iff_equation_and_not_nonsingular.2 ⟨hp, hp'⟩)
       (isSingular_iff_equation_and_not_nonsingular.2 ⟨hq, hq'⟩)
   exact Prod.ext hx hy
+
+/-- **On a model over a reduced ring singular at the origin, a solution with `x ≠ 0` is a
+nonsingular point**, since the origin is the only singular point. -/
+theorem nonsingular_of_isSingular_zero [IsReduced R] (h0 : W.IsSingular 0 0) {x y : R}
+    (h : W.Equation x y) (hx : x ≠ 0) : W.Nonsingular x y := by
+  by_contra hn
+  exact hx (eq_of_isSingular_of_isSingular
+    (isSingular_iff_equation_and_not_nonsingular.2 ⟨h, hn⟩) h0).1
+
+/-- **On a model over a reduced ring singular at the origin, a nonsingular point has `x ≠ 0`**:
+the equation forces `y ^ 2 = 0`, hence `y = 0`, when `x = 0`. -/
+theorem ne_zero_of_isSingular_zero [IsReduced R] (h0 : W.IsSingular 0 0) {x y : R}
+    (h : W.Nonsingular x y) : x ≠ 0 := by
+  rintro rfl
+  have hy : y ^ 2 = 0 := by simpa using (equation_iff_of_isSingular_zero h0 0 y).1 h.1
+  obtain rfl : y = 0 := IsNilpotent.eq_zero ⟨2, hy⟩
+  exact (isSingular_iff_equation_and_not_nonsingular.1 h0).2 h
 
 end WeierstrassCurve.Affine
 

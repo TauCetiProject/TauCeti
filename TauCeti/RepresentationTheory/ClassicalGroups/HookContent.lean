@@ -130,8 +130,7 @@ private theorem prod_betaNumber_sub_eq_weylDimensionNumerator (n : ℕ) (μ : Yo
   rw [hIco, ← Fin.map_valEmbedding_Ioi, Finset.prod_map]
   refine Finset.prod_congr rfl fun j hj => ?_
   have hij : (i : ℕ) < (j : ℕ) := Fin.lt_def.mp (Finset.mem_Ioi.mp hj)
-  have hjn : (j : ℕ) < n := j.isLt
-  have hrow : μ.rowLen j ≤ μ.rowLen i := μ.rowLen_anti _ _ hij.le
+  have _ : μ.rowLen j ≤ μ.rowLen i := μ.rowLen_anti _ _ hij.le
   simp only [Fin.valEmbedding_apply, YoungDiagram.betaNumber_def, weightOfShape_apply]
   omega
 

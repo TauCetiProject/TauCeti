@@ -47,8 +47,9 @@ nonarchimedean local field, the steps of its unit filtration are read off from `
 * `IsDedekindDomain.HeightOneSpectrum.compactSpace_adicCompletionIntegers`: the local integer ring
   of an adic completion carrying a nonarchimedean local-field structure is compact.
 * `IsDedekindDomain.HeightOneSpectrum.mem_unitFiltration_adicCompletion_iff`: the unit filtration
-  `U(K_v, n)` consists of the units `u` of `𝒪_v` with `Valued.v (u - 1) ≤ exp (-n)`;
-  `unitsMap_algebraMap_mem_unitFiltration_zero_iff` reads its depth-zero step on the units of `K`.
+  `U(K_v, n)` consists of the units `u` of `𝒪_v` with `Valued.v (u - 1) ≤ exp (-n)`; its
+  depth-zero step is `Valued.v u = 1` (`mem_unitFiltration_zero_adicCompletion_iff`), which
+  `unitsMap_algebraMap_mem_unitFiltration_zero_iff` reads on the units of `K`.
 
 ## Implementation notes
 
@@ -280,6 +281,15 @@ theorem mem_unitFiltration_adicCompletion_iff [IsNonarchimedeanLocalField (v.adi
     refine ⟨hu.unit, (mem_maximalIdeal_integer_pow_iff v).mpr ?_, by rw [hu.unit_spec]⟩
     simpa [hu.unit_spec] using h2
 
+/-- **The units of `𝒪_v` in terms of the adic valuation.** A unit `u` of `K_v` lies in the
+depth-zero step `U(K_v, 0)` of the unit filtration exactly when `Valued.v u = 1`. -/
+theorem mem_unitFiltration_zero_adicCompletion_iff
+    [IsNonarchimedeanLocalField (v.adicCompletion K)] {u : (v.adicCompletion K)ˣ} :
+    u ∈ TauCeti.unitFiltration (v.adicCompletion K) 0 ↔ Valued.v (u : v.adicCompletion K) = 1 := by
+  rw [mem_unitFiltration_adicCompletion_iff, Nat.cast_zero, neg_zero, WithZero.exp_zero]
+  refine ⟨And.left, fun hu ↦ ⟨hu, (Valuation.map_sub _ _ _).trans ?_⟩⟩
+  rw [hu, map_one, max_self]
+
 /-- **Units of `K` of valuation one in the completion.** The image in `K_v` of a unit `a` of `K`
 lies in the depth-zero step `U(K_v, 0)` of the unit filtration exactly when `a` has `v`-adic
 valuation one. -/
@@ -288,13 +298,9 @@ theorem unitsMap_algebraMap_mem_unitFiltration_zero_iff
     Units.map (algebraMap K (v.adicCompletion K) : K →* v.adicCompletion K) a ∈
         TauCeti.unitFiltration (v.adicCompletion K) 0 ↔
       v.valuation K a = 1 := by
-  have h : Valued.v (algebraMap K (v.adicCompletion K) a) = v.valuation K a := by
-    rw [algebraMap_adicCompletion, Function.comp_apply, valuedAdicCompletion_eq_valuation',
-      Algebra.algebraMap_self_apply]
-  rw [mem_unitFiltration_adicCompletion_iff, Units.coe_map, MonoidHom.coe_ofClass, h, Nat.cast_zero,
-    neg_zero, WithZero.exp_zero]
-  refine ⟨And.left, fun ha ↦ ⟨ha, (Valuation.map_sub _ _ _).trans ?_⟩⟩
-  rw [h, ha, map_one, max_self]
+  rw [mem_unitFiltration_zero_adicCompletion_iff, Units.coe_map, MonoidHom.coe_ofClass,
+    algebraMap_adicCompletion, Function.comp_apply, valuedAdicCompletion_eq_valuation',
+    Algebra.algebraMap_self_apply]
 
 /-- **An element of odd order of vanishing at `v` is a nonsquare in the completion `K_v`.**
 

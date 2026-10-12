@@ -48,8 +48,6 @@ The body of `unitsFormation` is not exposed; its coefficient module is read thro
   `G_L → G_K` on a subgroup `U'` of the image of `U ≤ G_L`.
 * `TauCeti.ClassFieldTheory.unitsLevelEquiv ι hU`: the level of an open subgroup `U` whose fixed
   field is the image of `ι : E →ₐ[K] Kˢ` is `Eˣ`.
-* `TauCeti.ClassFieldTheory.layerCoeffEquiv L`: the coefficient module of a finite normal layer
-  `V ◁ U` is the subgroup `((Kˢ)ˣ)^V` of `(Kˢ)ˣ`.
 
 ## Main results
 
@@ -356,53 +354,6 @@ theorem unitsLevelEquiv_apply_coe (ι : E →ₐ[K] SeparableClosure K)
 
 end Level
 
-/-! ### The coefficients of a finite normal layer -/
-
-section LayerCoeff
-
-variable (L : NormalLayer (AbsoluteGaloisGroup K))
-
-/-- **The coefficient module of a layer** `V ◁ U` of the formation of units is the subgroup
-`((Kˢ)ˣ)^V` of fixed points of its top subgroup, read as a subgroup of the ground subgroup `U`.
-It moves no element of `(Kˢ)ˣ` (`layerCoeffEquiv_apply_coe`) and is equivariant for the Galois
-group of the layer (`layerCoeffEquiv_ρ`). -/
-def layerCoeffEquiv :
-    (L.rep (unitsFormation K)).V ≃+
-      FixedPoints.addSubgroup (L.top.toSubgroup.subgroupOf L.ground.toSubgroup)
-        (UnitsCoeff K) where
-  toFun x := ⟨(unitsCoeffEquivUnitsFormation K).symm (x : (unitsFormation K).level L.top),
-    (FixedPoints.mem_addSubgroup _ _ _).2 fun v =>
-      (Formation.mem_level _).1 x.2 _ (Subgroup.mem_subgroupOf.1 v.2)⟩
-  invFun m := ⟨unitsCoeffEquivUnitsFormation K m, (Formation.mem_level _).2 fun v hv =>
-    (unitsCoeffEquivUnitsFormation_smul K v m).symm.trans <| congrArg _ <|
-      (FixedPoints.mem_addSubgroup _ _ _).1 m.2 ⟨⟨v, L.top_le_ground hv⟩, hv⟩⟩
-  left_inv _ := Subtype.ext ((unitsCoeffEquivUnitsFormation K).apply_symm_apply _)
-  right_inv _ := Subtype.ext ((unitsCoeffEquivUnitsFormation K).symm_apply_apply _)
-  map_add' _ _ := Subtype.ext (map_add (unitsCoeffEquivUnitsFormation K).symm _ _)
-
-/-- `layerCoeffEquiv` moves no element of `(Kˢ)ˣ`: it only changes the coefficient dictionary. -/
-@[simp]
-theorem layerCoeffEquiv_apply_coe (x : (L.rep (unitsFormation K)).V) :
-    (layerCoeffEquiv L x : UnitsCoeff K) =
-      (unitsCoeffEquivUnitsFormation K).symm (x : (unitsFormation K).level L.top) :=
-  (rfl)
-
-/-- `layerCoeffEquiv` is equivariant for the Galois group of the layer. -/
-@[simp]
-theorem layerCoeffEquiv_ρ
-    (g : L.ground.toSubgroup ⧸ L.top.toSubgroup.subgroupOf L.ground.toSubgroup)
-    (x : (L.rep (unitsFormation K)).V) :
-    layerCoeffEquiv L ((L.rep (unitsFormation K)).ρ g x) = g • layerCoeffEquiv L x := by
-  induction g using QuotientGroup.induction_on with
-  | H u =>
-    refine Subtype.ext ?_
-    rw [layerCoeffEquiv_apply_coe, coe_quotient_smul_fixedPoints_addSubgroup,
-      coe_smul_fixedPoints_addSubgroup, layerCoeffEquiv_apply_coe, AddEquiv.symm_apply_eq,
-      Subgroup.smul_def, unitsCoeffEquivUnitsFormation_smul, AddEquiv.apply_symm_apply]
-    exact L.rep_ρ_mk_apply_coe _ u x
-
-end LayerCoeff
-
 /-! ### Hilbert 90 on the finite normal layers -/
 
 /-- Read a cocycle on a formation layer as a function valued in the corresponding fixed points
@@ -410,16 +361,18 @@ of `(Kˢ)ˣ`. -/
 private def unitsCocycle (L : NormalLayer (AbsoluteGaloisGroup K))
     (f : L.Gal → (L.rep (unitsFormation K)).V) :
     L.Gal → FixedPoints.addSubgroup L.relativeTop (UnitsCoeff K) := fun q =>
-  layerCoeffEquiv L (f q)
+  L.coeffFixedPointsEquiv (unitsCoeffEquivUnitsFormation K)
+    (unitsCoeffEquivUnitsFormation_smul K) (f q)
 
 /-- Reading a layer cocycle through the coefficient dictionary preserves the cocycle identity. -/
 private theorem isCocycle₁_unitsCocycle (L : NormalLayer (AbsoluteGaloisGroup K))
     {f : L.Gal → (L.rep (unitsFormation K)).V}
     (hf : ∀ σ τ, f (σ * τ) = (L.rep (unitsFormation K)).ρ σ (f τ) + f σ) :
     IsCocycle₁ (unitsCocycle L f) := fun σ τ => by
-  have h := congrArg (layerCoeffEquiv L) (hf σ τ)
+  have h := congrArg (L.coeffFixedPointsEquiv (unitsCoeffEquivUnitsFormation K)
+    (unitsCoeffEquivUnitsFormation_smul K)) (hf σ τ)
   rw [map_add] at h
-  exact h.trans (congrArg (· + _) (layerCoeffEquiv_ρ L σ (f τ)))
+  exact h.trans (congrArg (· + _) (L.coeffFixedPointsEquiv_ρ _ _ σ (f τ)))
 
 /-- Hilbert 90 on a finite layer `U ⧸ N` of a closed subgroup `U` of `G_K`, in the explicit form
 used by inflation. -/
@@ -451,8 +404,10 @@ theorem subsingleton_h1_unitsFormation (L : NormalLayer (AbsoluteGaloisGroup K))
   obtain ⟨m, hm⟩ := isCoboundary₁_of_isCocycle₁_quotient L.ground.toSubgroup L.ground.isClosed
     (L.top.toSubgroup.subgroupOf L.ground.toSubgroup) (L.top.isOpen.preimage continuous_subtype_val)
     (f := unitsCocycle L f) (isCocycle₁_unitsCocycle L ((mem_cocycles₁_iff f).1 f.2))
-  refine ⟨(layerCoeffEquiv L).symm m, funext fun σ => (layerCoeffEquiv L).injective ?_⟩
-  rw [d₀₁_hom_apply, map_sub, layerCoeffEquiv_ρ, AddEquiv.apply_symm_apply]
+  let e := L.coeffFixedPointsEquiv (unitsCoeffEquivUnitsFormation K)
+    (unitsCoeffEquivUnitsFormation_smul K)
+  refine ⟨e.symm m, funext fun σ => e.injective ?_⟩
+  rw [d₀₁_hom_apply, map_sub, NormalLayer.coeffFixedPointsEquiv_ρ, AddEquiv.apply_symm_apply]
   exact hm σ
 
 end TauCeti.ClassFieldTheory

@@ -34,10 +34,6 @@ The power-map description also reads off the character–cocharacter pairing dir
 a character `m` after a cocharacter `ψ` of `D(M)` raises a `𝔾ₘ`-point to the `⟨m, ψ⟩` power
 (`DiagonalizableGroup.charPoints_cocharPoints_apply`).
 
-This improves the existing power-endomorphism and character–cocharacter pairing API supporting
-the reductive-groups roadmap (`ReductiveGroups/README.md` in TauCetiRoadmap, Layer 4: "Tori ...
-the character lattice `X*(T)` and cocharacter lattice `X_*(T)` with their perfect pairing").
-
 ## Main results
 
 * `TauCeti.DiagonalizableGroup.powEnd_apply`: `powEnd z f = f ^ z`, the power endomorphism as the

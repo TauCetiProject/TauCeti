@@ -42,9 +42,6 @@ action laws, and identifies its action on the prime spectrum.
 
 * J. S. Milne, *Algebraic Groups* (2017), Proposition 2.37.
 * W. C. Waterhouse, *Introduction to Affine Group Schemes*, Section 6.7.
-
-This is translation infrastructure for Layer 3, "Identity component `G°` and component group
-`π₀(G)`", of the ReductiveGroups roadmap.
 -/
 
 public section
@@ -139,6 +136,13 @@ homomorphism. -/
 theorem rightTranslationAlgEquiv_toAlgHom (g : WithConv (H →ₐ[k] k)) :
     (rightTranslationAlgEquiv g).toAlgHom = rightTranslationAlgHom g :=
   AlgEquiv.toAlgHom_ofBijective _ _
+
+/-- The coordinate map of right translation is convolution of the universal point
+with the constant translating point. -/
+theorem toConv_rightTranslationAlgEquiv (g : WithConv (H →ₐ[k] k)) :
+    WithConv.toConv (rightTranslationAlgEquiv g).toAlgHom =
+      WithConv.toConv (AlgHom.id k H) * AlgHom.mapValue (Algebra.ofId k H) g := by
+  rw [rightTranslationAlgEquiv_toAlgHom, rightTranslationAlgHom, AlgHom.mapValue_apply]
 
 private theorem rightTranslationAlgEquiv_toLinearEquiv
     (g : WithConv (H →ₐ[k] k)) :

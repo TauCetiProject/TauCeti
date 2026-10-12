@@ -58,16 +58,14 @@ values as the **real**, **complex** and **quaternionic** types.
 
 ## References
 
-This discharges the `frobeniusSchurIndicator_trichotomy` target of Layer 6b of the
-[compact-groups roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/CompactGroups/README.md),
-the step that its
-[`Suggested.lean`](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/CompactGroups/Suggested.lean)
-pins on top of the indicator. The mathematical development follows Daniel Bump, *Lie Groups*,
+The mathematical development follows Daniel Bump, *Lie Groups*,
 second edition, Chapter 2, and T. Bröcker and T. tom Dieck, *Representations of Compact Lie
 Groups*, Springer GTM 98 (1985), Chapter II.
 -/
 
 public section
+
+open _root_.ContRepresentation
 
 open Module TauCeti TauCeti.ContRepresentation
 

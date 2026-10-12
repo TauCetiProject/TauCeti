@@ -32,6 +32,8 @@ Layer 9 CAR worked instance.
 * `CliffordAlgebra.bivector`: the half-normalized commutator of two Clifford
   generators.
 * `CliffordAlgebra.bivectorAlternating`: the corresponding alternating map.
+* `CliffordAlgebra.bivectorBilinear`: the same operation as a linear map in
+  each argument.
 * `CliffordAlgebra.bivectorExterior`: the induced linear map from the second
   exterior power.
 
@@ -142,6 +144,48 @@ private theorem bivectorAlternating_apply_internal (a b : M) :
 theorem bivectorAlternating_apply (a b : M) :
     bivectorAlternating Q ![a, b] = bivector Q a b :=
   bivectorAlternating_apply_internal Q a b
+
+/-- The half-normalized Clifford bivector, regarded as a linear map in each argument. -/
+noncomputable def bivectorBilinear : M →ₗ[R] M →ₗ[R] CliffordAlgebra Q :=
+  LinearMap.mk₂ R (bivector Q)
+    (fun x y z ↦ by
+      rw [← bivectorAlternating_apply, ← bivectorAlternating_apply,
+        ← bivectorAlternating_apply]
+      have hu (a b : M) : Function.update ![0, b] 0 a = ![a, b] := by
+        funext i
+        fin_cases i <;> simp
+      simpa only [hu] using
+        (bivectorAlternating Q).map_update_add (v := ![0, z]) 0 x y)
+    (fun c x y ↦ by
+      rw [← bivectorAlternating_apply, ← bivectorAlternating_apply]
+      have hu (a b : M) : Function.update ![0, b] 0 a = ![a, b] := by
+        funext i
+        fin_cases i <;> simp
+      simpa only [hu] using
+        (bivectorAlternating Q).map_update_smul (v := ![0, y]) 0 c x)
+    (fun x y z ↦ by
+      rw [← bivectorAlternating_apply, ← bivectorAlternating_apply,
+        ← bivectorAlternating_apply]
+      have hu (a b : M) : Function.update ![a, 0] 1 b = ![a, b] := by
+        funext i
+        fin_cases i <;> simp
+      simpa only [hu] using
+        (bivectorAlternating Q).map_update_add (v := ![x, 0]) 1 y z)
+    (fun c x y ↦ by
+      rw [← bivectorAlternating_apply, ← bivectorAlternating_apply]
+      have hu (a b : M) : Function.update ![a, 0] 1 b = ![a, b] := by
+        funext i
+        fin_cases i <;> simp
+      simpa only [hu] using
+        (bivectorAlternating Q).map_update_smul (v := ![x, 0]) 1 c y)
+
+private theorem bivectorBilinear_apply_internal (a b : M) :
+    bivectorBilinear Q a b = bivector Q a b := rfl
+
+/-- Evaluating the bilinear Clifford bivector map gives the half-normalized commutator. -/
+@[simp]
+theorem bivectorBilinear_apply (a b : M) : bivectorBilinear Q a b = bivector Q a b :=
+  bivectorBilinear_apply_internal Q a b
 
 /-- The linear map from the second exterior power induced by the Clifford bivector. -/
 noncomputable def bivectorExterior : ⋀[R]^2 M →ₗ[R] CliffordAlgebra Q :=

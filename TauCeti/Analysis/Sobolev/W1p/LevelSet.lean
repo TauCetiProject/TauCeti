@@ -20,6 +20,9 @@ The level may be any real number, including on domains of infinite measure. Thes
 statements apply to measurable level sets, which need not contain any open set. They remove
 the ambiguity of truncation gradients at a threshold and support continuity of positive
 truncation in the Sobolev norm.
+
+The same holds for the classical gradient of a `C¹` function, which is read off from the weak
+statement on small balls.
 -/
 
 public section
@@ -27,7 +30,7 @@ public section
 namespace TauCeti
 
 open Filter MeasureTheory Set TopologicalSpace
-open scoped ENNReal InnerProductSpace
+open scoped ENNReal InnerProductSpace Gradient
 
 variable {E : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [InnerProductSpace ℝ E]
   [FiniteDimensional ℝ E] [BorelSpace E] {mu : Measure E} [mu.IsAddHaarMeasure]
@@ -38,8 +41,7 @@ The level may be any real number, even when `Ω` has infinite measure. -/
 theorem W1p.gradient_ae_eq_zero_on_level_set (hp : p ≠ ∞) (u : W1p mu Omega p) (k : ℝ) :
     ∀ᵐ x ∂mu.restrict Omega, W1p.value u x = k → W1p.gradient u x = 0 := by
   classical
-  have hneg : ⇑(W1p.value (-u)) =ᵐ[mu.restrict Omega] -W1p.value u := by
-    simpa only [← W1p.valueL_apply, map_neg] using Lp.coeFn_neg (W1p.value u)
+  have hneg := W1p.value_neg_ae u
   have hconst : HasWeakFDerivOn mu Omega (fun _ : E => k) 0 :=
     hasWeakFDerivOn_iff.2 fun _ => hasWeakLineDerivOn_const k
   have hsplit := (W1p.hasWeakFDerivOn_posPartAbove hp k u).sub
@@ -79,5 +81,36 @@ theorem W1p.gradient_ae_eq_on_eq (hp : p ≠ ∞) (u v : W1p mu Omega p) :
   intro h
   apply sub_eq_zero.mp
   simpa only [hgx, Pi.sub_apply] using hx (by simp [hux, h])
+
+/-- The classical gradient of a function of class `C¹` on `Ω` vanishes almost everywhere on each
+of its level sets in `Ω`. This is read off from
+`TauCeti.W1p.gradient_ae_eq_zero_on_level_set` on small balls. -/
+theorem gradient_ae_eq_zero_on_level_set_of_contDiffOn {w : E → ℝ}
+    (hw : ContDiffOn ℝ 1 w Omega) (k : ℝ) :
+    ∀ᵐ x ∂mu.restrict Omega, w x = k → ∇ w x = 0 := by
+  have hO := Omega.isOpen
+  set N := {x | x ∈ (Omega : Set E) ∧ w x = k ∧ ∇ w x ≠ 0}
+  have hN : mu N = 0 := by
+    refine measure_null_of_locally_null N fun x hx => ?_
+    obtain ⟨r, hr, hrO⟩ := Metric.isOpen_iff.1 hO x hx.1
+    set V : Opens E := ⟨Metric.ball x (r / 2), Metric.isOpen_ball⟩
+    obtain ⟨U, hUv, hUg⟩ := W1p.exists_value_gradient_ae_eq_of_contDiffOn_of_isCompact
+      (mu := mu) (Omega := V) (p := 2) hO hw (isCompact_closedBall x (r / 2))
+      Metric.ball_subset_closedBall ((Metric.closedBall_subset_ball (by linarith)).trans hrO)
+    refine ⟨N ∩ V, inter_mem_nhdsWithin N
+      (Metric.isOpen_ball.mem_nhds (Metric.mem_ball_self (by linarith))), ?_⟩
+    have hae : ∀ᵐ y ∂mu.restrict V, w y = k → ∇ w y = 0 := by
+      filter_upwards [W1p.gradient_ae_eq_zero_on_level_set ENNReal.ofNat_ne_top U k, hUv, hUg]
+        with y hy hv hg hyk
+      rw [← hg]
+      exact hy (hv.trans hyk)
+    rw [ae_restrict_iff' V.isOpen.measurableSet, ae_iff] at hae
+    refine measure_mono_null (fun y hy => ?_) hae
+    obtain ⟨⟨-, hyk, hyg⟩, hyV⟩ := hy
+    exact fun h => hyg (h hyV hyk)
+  filter_upwards [ae_restrict_of_ae (measure_eq_zero_iff_ae_notMem.1 hN),
+    ae_restrict_mem hO.measurableSet] with x hx hxO hxk
+  by_contra h
+  exact hx ⟨hxO, hxk, h⟩
 
 end TauCeti

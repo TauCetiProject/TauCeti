@@ -27,7 +27,7 @@ homotopy; it does not assert a Künneth decomposition of cohomology.
 * S. Eilenberg and J. A. Zilber, *On products of complexes*, Amer. J. Math. 75 (1953).
 
 The construction uses `TauCeti.ChainComplex.cup`, and the comparison uses
-`TopCat.eilenbergZilberHomotopyEquiv` and `TauCeti.HomotopyEquiv.linearYonedaFunctorMap`.
+`TopCat.eilenbergZilberHomotopyEquiv` and `HomotopyEquiv.linearYonedaFunctorMap`.
 -/
 
 public section
@@ -150,7 +150,7 @@ def singularEilenbergZilberCohomologyIso (X Y : TopCat.{w}) (R S P : C) (n : ℕ
       (_root_.ChainComplex.linearYonedaObj
         (HomologicalComplex.tensorObj ((TopCat.toSSet.obj X).chainComplex R)
           ((TopCat.toSSet.obj Y).chainComplex S)) k P).homology n :=
-  (HomotopyEquiv.linearYonedaFunctorMap k P
+  (_root_.HomotopyEquiv.linearYonedaFunctorMap k P
     (TopCat.eilenbergZilberHomotopyEquiv X Y R S).symm).toHomologyIso n
 
 /-- The forward Eilenberg–Zilber comparison is induced by precomposition with the shuffle map. -/
@@ -164,7 +164,7 @@ lemma singularEilenbergZilberCohomologyIso_hom (X Y : TopCat.{w}) (R S P : C) (n
             ((TopCat.toSSet.obj Y).chainComplex S)) k P)
         ((ChainComplex.linearYonedaFunctor k P).map (TopCat.shuffle X Y R S).op) n := by
   simp only [singularEilenbergZilberCohomologyIso, _root_.HomotopyEquiv.toHomologyIso,
-    HomotopyEquiv.linearYonedaFunctorMap_hom, _root_.HomotopyEquiv.symm_hom,
+    _root_.HomotopyEquiv.linearYonedaFunctorMap_hom, _root_.HomotopyEquiv.symm_hom,
     TopCat.eilenbergZilberHomotopyEquiv_inv]
   rfl
 
@@ -180,7 +180,7 @@ lemma singularEilenbergZilberCohomologyIso_inv (X Y : TopCat.{w}) (R S P : C) (n
         ((ChainComplex.linearYonedaFunctor k P).map
           (TopCat.alexanderWhitney X Y R S).op) n := by
   simp only [singularEilenbergZilberCohomologyIso, _root_.HomotopyEquiv.toHomologyIso,
-    HomotopyEquiv.linearYonedaFunctorMap_inv, _root_.HomotopyEquiv.symm_inv,
+    _root_.HomotopyEquiv.linearYonedaFunctorMap_inv, _root_.HomotopyEquiv.symm_inv,
     TopCat.eilenbergZilberHomotopyEquiv_hom]
   rfl
 

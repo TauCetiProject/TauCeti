@@ -121,15 +121,25 @@ both backtracks of an arrow `a` by `u a`. -/
 def doubledLabelling (u : ∀ ⦃i j : Q⦄, (i ⟶ j) → k) : ∀ ⦃x y : Symmetrify Q⦄, (x ⟶ y) → k :=
   fun _ _ b => Sum.elim (fun a => u a) (fun _ => 1) b
 
+/-- The constant labelling one extends to the constant labelling one on the doubled quiver. -/
+@[simp]
+theorem doubledLabelling_one :
+    doubledLabelling (Q := Q) k (fun _ _ _ => 1) = fun _ _ _ => 1 := by
+  funext x y b
+  cases b <;> rfl
+
 variable {k}
 
+-- Simplify labels before `Symmetrify.of_map` erases the inclusion and its vertex types.
 /-- The gauge labelling on an arrow of `Q` is the given label. -/
+@[simp↓]
 theorem doubledLabelling_of (u : ∀ ⦃i j : Q⦄, (i ⟶ j) → k) {i j : Q} (a : i ⟶ j) :
     doubledLabelling k u (Symmetrify.of.map a) = u a := by
   rw [doubledLabelling]
   rfl
 
 /-- The gauge labelling on the formal reverse of an arrow of `Q` is one. -/
+@[simp↓]
 theorem doubledLabelling_reverse_of (u : ∀ ⦃i j : Q⦄, (i ⟶ j) → k) {i j : Q} (a : i ⟶ j) :
     doubledLabelling k u (Quiver.reverse (Symmetrify.of.map a)) = 1 := by
   rw [doubledLabelling]
@@ -139,10 +149,11 @@ end Labelling
 
 section LabellingMul
 
-variable [Monoid k]
+variable [MulOneClass k]
 
 /-- Pointwise multiplication of labels on the original arrows becomes pointwise multiplication
 of their gauge labellings on the doubled quiver. -/
+@[simp]
 theorem doubledLabelling_mul (u u' : ∀ ⦃i j : Q⦄, (i ⟶ j) → k) ⦃x y : Symmetrify Q⦄ (b : x ⟶ y) :
     doubledLabelling k (fun _ _ a => u a * u' a) b
       = doubledLabelling k u b * doubledLabelling k u' b := by
@@ -154,29 +165,23 @@ section RescaleBacktracks
 
 variable [CommSemiring k] [Finite Q]
 
-private theorem rescale_doubledLabelling_ofArrow_mul_ofArrow
-    (u : ∀ ⦃i j : Q⦄, (i ⟶ j) → k) {x y z : Symmetrify Q} (a : y ⟶ z) (b : x ⟶ y) :
-    rescale (doubledLabelling k u) (ofArrow a * ofArrow b)
-      = (doubledLabelling k u a * doubledLabelling k u b) • (ofArrow a * ofArrow b) := by
-  rw [map_mul, rescale_ofArrow, rescale_ofArrow, smul_mul_smul]
-
 /-- Rescaling by a gauge labelling multiplies the head backtrack of `a` by the label of `a`. -/
 @[simp]
 theorem rescale_doubledLabelling_headBacktrackElem (u : ∀ ⦃i j : Q⦄, (i ⟶ j) → k) {i j : Q}
     (a : i ⟶ j) :
     rescale (doubledLabelling k u) (headBacktrackElem k a) = u a • headBacktrackElem k a := by
-  rw [← ofArrow_mul_ofArrow_reverse_eq_headBacktrackElem,
-    rescale_doubledLabelling_ofArrow_mul_ofArrow, doubledLabelling_of,
-    doubledLabelling_reverse_of, mul_one, ofArrow_mul_ofArrow_reverse_eq_headBacktrackElem]
+  rw [← ofArrow_mul_ofArrow_reverse_eq_headBacktrackElem]
+  simp only [map_mul, rescale_ofArrow, doubledLabelling_of, doubledLabelling_reverse_of,
+    smul_mul_smul, mul_one]
 
 /-- Rescaling by a gauge labelling multiplies the tail backtrack of `a` by the label of `a`. -/
 @[simp]
 theorem rescale_doubledLabelling_tailBacktrackElem (u : ∀ ⦃i j : Q⦄, (i ⟶ j) → k) {i j : Q}
     (a : i ⟶ j) :
     rescale (doubledLabelling k u) (tailBacktrackElem k a) = u a • tailBacktrackElem k a := by
-  rw [← ofArrow_reverse_mul_ofArrow_eq_tailBacktrackElem,
-    rescale_doubledLabelling_ofArrow_mul_ofArrow, doubledLabelling_of,
-    doubledLabelling_reverse_of, one_mul, ofArrow_reverse_mul_ofArrow_eq_tailBacktrackElem]
+  rw [← ofArrow_reverse_mul_ofArrow_eq_tailBacktrackElem]
+  simp only [map_mul, rescale_ofArrow, doubledLabelling_of, doubledLabelling_reverse_of,
+    smul_mul_smul, one_mul]
 
 end RescaleBacktracks
 
@@ -190,11 +195,7 @@ theorem rescale_gaugedPreprojectiveRelator [Fintype Q] [∀ i j : Q, Fintype (i 
     (u ε : ∀ ⦃i j : Q⦄, (i ⟶ j) → k) :
     rescale (doubledLabelling k u) (gaugedPreprojectiveRelator k ε)
       = gaugedPreprojectiveRelator k (fun _ _ a => u a * ε a) := by
-  simp only [gaugedPreprojectiveRelator_def, map_sum, map_smul, map_sub,
-    rescale_doubledLabelling_headBacktrackElem, rescale_doubledLabelling_tailBacktrackElem,
-    ← smul_sub, smul_smul]
-  exact Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ =>
-    Finset.sum_congr rfl fun a _ => by rw [mul_comm]
+  simp [gaugedPreprojectiveRelator_def, ← smul_sub, smul_smul, mul_comm]
 
 end RescaleRelator
 
@@ -202,24 +203,24 @@ section RescaleComposition
 
 variable [CommSemiring k] [Finite Q]
 
-/-- Two gauge rescalings whose labellings are pointwise inverse compose to the identity. -/
-theorem rescale_doubledLabelling_comp (u u' : ∀ ⦃i j : Q⦄, (i ⟶ j) → k)
-    (h : ∀ ⦃i j : Q⦄ (a : i ⟶ j), u a * u' a = 1) :
+/-- Gauge rescalings compose by multiplying their labellings pointwise. -/
+-- Prefer the gauge labelling over the expanded product from `rescale_comp_rescale`.
+@[simp high]
+theorem rescale_doubledLabelling_comp (u u' : ∀ ⦃i j : Q⦄, (i ⟶ j) → k) :
     (rescale (doubledLabelling k u)).comp (rescale (doubledLabelling k u'))
-      = AlgHom.id k (pathAlgebra k (Symmetrify Q)) := by
-  rw [rescale_comp_rescale, ← rescale_one]
-  apply rescale_congr
-  intro _ _ b
-  rw [← doubledLabelling_mul]
-  cases b with
-  | inl a => simpa [doubledLabelling] using h a
-  | inr a => simp [doubledLabelling]
+      = rescale (doubledLabelling k fun _ _ a => u a * u' a) := by
+  rw [rescale_comp_rescale]
+  exact rescale_congr _ _ fun _ _ b => (doubledLabelling_mul k u u' b).symm
 
 /-- Two gauge rescalings whose labellings are pointwise inverse undo one another. -/
 theorem rescale_doubledLabelling_rescale_doubledLabelling (u u' : ∀ ⦃i j : Q⦄, (i ⟶ j) → k)
     (h : ∀ ⦃i j : Q⦄ (a : i ⟶ j), u a * u' a = 1) (z : pathAlgebra k (Symmetrify Q)) :
     rescale (doubledLabelling k u) (rescale (doubledLabelling k u') z) = z := by
-  rw [← AlgHom.comp_apply, rescale_doubledLabelling_comp k u u' h, AlgHom.id_apply]
+  apply rescale_rescale_of_mul_eq_one
+  intro _ _ b
+  cases b with
+  | inl a => exact h a
+  | inr a => exact one_mul 1
 
 end RescaleComposition
 

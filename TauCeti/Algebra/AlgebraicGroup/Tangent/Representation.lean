@@ -38,8 +38,7 @@ its corresponding comodule, and, after choosing a finite basis, the coordinate m
 
 * J. S. Milne, *Algebraic Groups* (2017), §14.
 
-This is the fixed-module packaging of the adjoint representation requested in Layer 2 of the
-ReductiveGroups roadmap.
+This is the fixed-module packaging of the adjoint representation.
 -/
 
 public section

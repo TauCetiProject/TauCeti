@@ -83,7 +83,6 @@ theorem groupScheme_X_left :
 
 /-- The structural morphism of the constant group scheme is induced by the scalar inclusion into
 its function algebra. -/
-@[simp]
 theorem groupScheme_X_hom :
     (groupScheme R G).X.hom =
       eqToHom (groupScheme_X_left R G) ≫
@@ -187,7 +186,8 @@ noncomputable def groupSchemePointMulEquiv (A : Type u) [CommRing A] [Algebra R 
     (CommHopfAlgCat.of R (coordinateRing R G)) A (groupScheme_def R G)
 
 /-- Under `groupSchemePointMulEquiv`, an algebra point is represented by its spectrum map. -/
-@[simp]
+-- Not `@[simp]`: `simp` rewrites with it but then cannot close its own statement, since the two
+-- `eqToHom` endpoints come out in different forms; use it by name.
 theorem groupSchemePointMulEquiv_apply_left (A : Type u) [CommRing A] [Algebra R A]
     (p : WithConv (coordinateRing R G →ₐ[R] A)) :
     (groupSchemePointMulEquiv R G A p).left =

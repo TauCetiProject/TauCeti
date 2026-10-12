@@ -156,9 +156,9 @@ private theorem realCliffordThreeOneEvenEquivComplexMatrix_vectorEven (v : Fin 4
 
 private theorem realCliffordThreeOneLastVector_negOne :
     realCliffordFormThreeOne realCliffordThreeOneLastVector = -1 := by
-  -- Expose the signature and basis vector so the coordinate formula applies.
+  -- Expose the signature and basis vector so the unit-vector formula applies.
   change realCliffordForm 3 1 (Pi.single 3 1) = -1
-  simp [realCliffordForm_three_one_apply]
+  rw [realCliffordForm_apply_single, realCliffordWeight_of_le (by simp), one_pow, mul_one]
 
 private noncomputable def realCliffordThreeOneConjugateLastEvenHom :
     CliffordAlgebra.even realCliffordFormThreeOne →ₐ[ℝ]

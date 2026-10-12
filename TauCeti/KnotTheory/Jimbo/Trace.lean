@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.KnotTheory.Jimbo.Enhancement
+public import TauCeti.KnotTheory.Jimbo.Enhancement.Basic
 public import Mathlib.LinearAlgebra.Trace
 
 /-!

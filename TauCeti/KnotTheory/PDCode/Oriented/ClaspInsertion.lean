@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.KnotTheory.PDCode.ClaspInsertion
+public import TauCeti.KnotTheory.PDCode.ClaspInsertion.Planar
 
 /-!
 # Clasp insertion on oriented PD-codes

@@ -31,6 +31,9 @@ invariant dual form by congruence. Points of the carrier satisfy both hypotheses
 * `TauCeti.G2ShortRoot.PrimeField.preservesG2Cross_carrierGenericMatrix` and
   `TauCeti.G2ShortRoot.PrimeField.preservesDualForm_carrierGenericMatrix`: the universal point
   does too.
+* `TauCeti.G2ShortRoot.PrimeField.constantMultiplicationDefiningHopfIdeal_le_definingIdeal`: the
+  carrier is a closed subgroup scheme of the stabilizer of the reduced cross product
+  `TauCeti.G2ShortRoot.PrimeField.crossOperatorPrime`.
 
 ## References
 
@@ -56,8 +59,16 @@ universe v
 
 variable {A : Type v} [CommRing A] [Algebra (ZMod 3) A]
 
-private noncomputable def crossOperatorPrime : Fin 7 → Matrix (Fin 7) (Fin 7) (ZMod 3) :=
+/-- The cross-product operators `TauCeti.G2ShortRoot.crossOperator` reduced to `𝔽₃`: the structure
+matrices of the cross product as a constant bilinear multiplication over the prime field. -/
+noncomputable def crossOperatorPrime : Fin 7 → Matrix (Fin 7) (Fin 7) (ZMod 3) :=
   fun a => (crossOperator a).map (Int.cast : ℤ → ZMod 3)
+
+/-- The entries of the reduced cross-product operators are the reductions of the integral ones. -/
+@[simp]
+theorem crossOperatorPrime_apply (a i j : Fin 7) :
+    crossOperatorPrime a i j = (crossOperator a i j : ZMod 3) :=
+  (rfl)
 
 private noncomputable def invariantDualFormPrime : Matrix (Fin 7) (Fin 7) (ZMod 3) :=
   invariantDualForm.map (Int.cast : ℤ → ZMod 3)
@@ -91,26 +102,27 @@ private theorem preserves_crossOperatorPrime_iff (g : Matrix (Fin 7) (Fin 7) A) 
       map_algebraMap_crossOperatorPrime] using h k
 
 /-- The generic matrix of `GL₇` pushed along the coordinate map of a numbered simple root
-subgroup is the matrix of a root-subgroup point at a universal parameter. -/
-theorem exists_map_genericMatrix_generator_inl (k : Fin 2 ⊕ Fin 2) :
-    ∃ u : Multiplicative (AdditiveGroup.coordinateHopfAlgebra (ZMod 3)),
-      (TauCeti.GeneralLinear.genericMatrix (ZMod 3) 7).map
-          (generator (.inl k)).hom.toAlgHom =
-        ((rootSubgroupPoints k
-          (AdditiveGroup.coordinateHopfAlgebra (ZMod 3)) u :
+subgroup is the matrix of the root-subgroup point at the coordinate function of `𝔾ₐ`. -/
+theorem map_genericMatrix_generator_inl (k : Fin 2 ⊕ Fin 2) :
+    (TauCeti.GeneralLinear.genericMatrix (ZMod 3) 7).map (generator (.inl k)).hom.toAlgHom =
+      ((rootSubgroupPoints k (AdditiveGroup.coordinateHopfAlgebra (ZMod 3))
+          (Multiplicative.ofAdd (SymmetricAlgebra.ι (ZMod 3) (ZMod 3) 1)) :
           _root_.Matrix.GeneralLinearGroup (Fin 7)
             (AdditiveGroup.coordinateHopfAlgebra (ZMod 3))) :
-          Matrix (Fin 7) (Fin 7) (AdditiveGroup.coordinateHopfAlgebra (ZMod 3))) := by
+        Matrix (Fin 7) (Fin 7) (AdditiveGroup.coordinateHopfAlgebra (ZMod 3))) := by
   set B : CommAlgCat (ZMod 3) :=
-    CommAlgCat.of (ZMod 3) (AdditiveGroup.coordinateHopfAlgebra (ZMod 3)) with hB
+    CommAlgCat.of (ZMod 3) (AdditiveGroup.coordinateHopfAlgebra (ZMod 3))
   set q : HopfAlgebra.points (R := ZMod 3)
       (H := AdditiveGroup.coordinateHopfAlgebra (ZMod 3)) B :=
     toConv (AlgHom.id (ZMod 3) (AdditiveGroup.coordinateHopfAlgebra (ZMod 3))) with hq
   have hid : (CommHopfAlgCat.mapPointsFunctor (generator (.inl k))).app B q =
       toConv (generator (.inl k)).hom.toAlgHom := by
     rw [CommHopfAlgCat.mapPointsFunctor_app_apply, hq, WithConv.ofConv_toConv, AlgHom.id_comp]
-  refine ⟨AdditiveGroup.gaPointsMulEquiv (R := ZMod 3) q, ?_⟩
-  rw [coe_rootSubgroupPoints_gaPointsMulEquiv, hid,
+  have hu : AdditiveGroup.gaPointsMulEquiv (R := ZMod 3) q =
+      Multiplicative.ofAdd (SymmetricAlgebra.ι (ZMod 3) (ZMod 3) 1) := by
+    rw [← ofAdd_toAdd (AdditiveGroup.gaPointsMulEquiv (R := ZMod 3) q),
+      AdditiveGroup.toAdd_gaPointsMulEquiv, hq, WithConv.ofConv_toConv, AlgHom.id_apply]
+  rw [← hu, coe_rootSubgroupPoints_gaPointsMulEquiv, hid,
     TauCeti.GeneralLinear.map_genericMatrix_eq_coe_pointToGeneralLinear,
     TauCeti.GeneralLinear.pointsMulEquiv_apply]
 
@@ -131,7 +143,7 @@ theorem exists_map_genericMatrix_generator_inr :
             (SplitTorus.characterGroup (Fin 2))).obj)) := by
   set B : CommAlgCat (ZMod 3) :=
     CommAlgCat.of (ZMod 3) ((DiagonalizableGroup.coordinateRing (ZMod 3)
-      (SplitTorus.characterGroup (Fin 2))).obj) with hB
+      (SplitTorus.characterGroup (Fin 2))).obj)
   set q : HopfAlgebra.points (R := ZMod 3)
       (H := (DiagonalizableGroup.coordinateRing (ZMod 3)
         (SplitTorus.characterGroup (Fin 2))).obj) B :=
@@ -226,23 +238,37 @@ private theorem preservesDualForm_rootSubgroupPoints (k : Fin 2 ⊕ Fin 2) (t : 
       rw [coe_rootSubgroupPoints_inr_one]
       exact one_add_smul_loweringMatrix_one_mul_invariantDualForm_mul_transpose t
 
+/-- The generic matrix of every generator of the carrier preserves the reduced cross product. -/
+private theorem preserves_crossOperatorPrime_map_genericMatrix_generator
+    (j : (Fin 2 ⊕ Fin 2) ⊕ Unit) :
+    ConstantMultiplication.Preserves (ZMod 3) 7 crossOperatorPrime
+      ((TauCeti.GeneralLinear.genericMatrix (ZMod 3) 7).map (generator j).hom.toAlgHom) := by
+  rcases j with k | ⟨⟩
+  · rw [map_genericMatrix_generator_inl, preserves_crossOperatorPrime_iff]
+    exact preservesG2Cross_rootSubgroupPoints k _
+  · obtain ⟨s, hs⟩ := exists_map_genericMatrix_generator_inr
+    rw [hs, preserves_crossOperatorPrime_iff,
+      coe_weightTorusPoints, IntegralToralClosure.coe_weightTorusPoints_eq_diagonal]
+    exact preservesG2Cross_diagonal_torusCharacter s
+
+/-- **The carrier preserves the cross product as a group scheme**: the Hopf ideal cutting out the
+subgroup scheme of `GL₇` preserving the reduced cross product is contained in the defining ideal
+of the carrier, so the carrier is a closed subgroup scheme of that stabilizer. -/
+theorem constantMultiplicationDefiningHopfIdeal_le_definingIdeal :
+    ConstantMultiplication.definingHopfIdeal (ZMod 3) 7 crossOperatorPrime ≤ definingIdeal := by
+  rw [definingIdeal_def]
+  exact TauCeti.GeneralLinear.constantMultiplicationDefiningHopfIdeal_le_commonKernelHopfIdeal 7
+    generator crossOperatorPrime preserves_crossOperatorPrime_map_genericMatrix_generator
+
 /-- Every point of the short-root type-`G₂` carrier preserves the invariant cross product. -/
 theorem preservesG2Cross_of_mem_points {g : _root_.Matrix.GeneralLinearGroup (Fin 7) A}
     (hg : g ∈ points A) :
     PreservesG2Cross ((g : _root_.Matrix.GeneralLinearGroup (Fin 7) A) :
       Matrix (Fin 7) (Fin 7) A) := by
   rw [← preserves_crossOperatorPrime_iff]
-  refine TauCeti.GeneralLinear.preserves_of_mem_generatedPointsSubgroup 7 generator
-    crossOperatorPrime (fun j => ?_) A (points_def A ▸ hg)
-  rcases j with k | ⟨⟩
-  · obtain ⟨u, hu⟩ := exists_map_genericMatrix_generator_inl k
-    obtain ⟨t, rfl⟩ : ∃ t, Multiplicative.ofAdd t = u := ⟨Multiplicative.toAdd u, rfl⟩
-    rw [hu, preserves_crossOperatorPrime_iff]
-    exact preservesG2Cross_rootSubgroupPoints k t
-  · obtain ⟨s, hs⟩ := exists_map_genericMatrix_generator_inr
-    rw [hs, preserves_crossOperatorPrime_iff,
-      coe_weightTorusPoints, IntegralToralClosure.coe_weightTorusPoints_eq_diagonal]
-    exact preservesG2Cross_diagonal_torusCharacter s
+  exact TauCeti.GeneralLinear.preserves_of_mem_generatedPointsSubgroup 7 generator
+    crossOperatorPrime preserves_crossOperatorPrime_map_genericMatrix_generator A
+    (points_def A ▸ hg)
 
 /-- Every point of the short-root type-`G₂` carrier fixes the invariant dual form by
 congruence. -/
@@ -256,10 +282,8 @@ theorem preservesDualForm_of_mem_points {g : _root_.Matrix.GeneralLinearGroup (F
     invariantDualFormPrime (fun j => ?_) A (points_def A ▸ hg)
   · rwa [map_algebraMap_invariantDualFormPrime] at key
   · rcases j with k | ⟨⟩
-    · obtain ⟨u, hu⟩ := exists_map_genericMatrix_generator_inl k
-      obtain ⟨t, rfl⟩ : ∃ t, Multiplicative.ofAdd t = u := ⟨Multiplicative.toAdd u, rfl⟩
-      rw [hu, map_algebraMap_invariantDualFormPrime]
-      exact preservesDualForm_rootSubgroupPoints k t
+    · rw [map_genericMatrix_generator_inl, map_algebraMap_invariantDualFormPrime]
+      exact preservesDualForm_rootSubgroupPoints k _
     · obtain ⟨s, hs⟩ := exists_map_genericMatrix_generator_inr
       rw [hs, map_algebraMap_invariantDualFormPrime,
         coe_weightTorusPoints, IntegralToralClosure.coe_weightTorusPoints_eq_diagonal]

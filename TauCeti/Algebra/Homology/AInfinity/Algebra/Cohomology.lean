@@ -188,6 +188,12 @@ through which maps out of cohomology are built by the universal property of the 
 theorem cohomologyClass_eq_mk (𝒜 : AInfinityAlgebra R A) {x : A} (hx : x ∈ 𝒜.cycles) :
     𝒜.cohomologyClass hx = Submodule.Quotient.mk ⟨x, hx⟩ := (rfl)
 
+/-- The quotient map sends a cycle to its cohomology class. -/
+@[simp]
+theorem cohomologyClassLinearMap_apply (𝒜 : AInfinityAlgebra R A) (x : 𝒜.cycles) :
+    𝒜.cohomologyClassLinearMap x = 𝒜.cohomologyClass x.property := by
+  rw [cohomologyClass]
+
 /-- If every element is a cycle, the differential and hence the boundaries vanish, so the class
 map is a linear equivalence with cohomology. -/
 noncomputable def cohomologyEquivOfCyclesEqTop
@@ -365,8 +371,8 @@ one. -/
 theorem differential_decompose (𝒜 : AInfinityAlgebra R A) (p : ℤ) (x : A) :
     𝒜.differential (decompose 𝒜.grading.piece x p : A) =
       (decompose 𝒜.grading.piece (𝒜.differential x) (p + 1) : A) :=
-  DirectSum.map_decompose_shift 𝒜.grading.piece 𝒜.grading.piece 𝒜.differential (· + 1)
-    (add_left_injective 1) (fun _ _ ↦ 𝒜.differential_mem_piece) p x
+  DirectSum.map_decompose_shift 𝒜.grading.piece 𝒜.grading.piece 𝒜.differential.toAddMonoidHom
+    (· + 1) (add_left_injective 1) (fun _ _ ↦ 𝒜.differential_mem_piece) p x
 
 /-- The cycles form a homogeneous submodule: the homogeneous components of a cycle are cycles. -/
 theorem isHomogeneous_cycles (𝒜 : AInfinityAlgebra R A) :

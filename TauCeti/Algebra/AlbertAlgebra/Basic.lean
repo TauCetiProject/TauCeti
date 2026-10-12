@@ -70,6 +70,10 @@ ring for the trace-zero subspace.
 * `TauCeti.AlbertAlgebra.diagIdempotent_mul_offDiagSingle`: the **Peirce relation** between the
   diagonal frame and the off-diagonal slots: `Eᵢ` annihilates its opposite slot and halves the other
   two.
+* `TauCeti.AlbertAlgebra.offDiagSingle_mul_offDiagSingle` and
+  `TauCeti.AlbertAlgebra.offDiagSingle_mul_offDiagSingle_add_one`: the off-diagonal **Peirce
+  products**. A same-slot product is the associated norm form times the sum of the other two
+  diagonal idempotents; a cyclic distinct-slot product is half the remaining slot of `conj (a * b)`.
 * `TauCeti.AlbertAlgebra.eq_sum_smul_diagIdempotent_add_sum_offDiagSingle`: the diagonal frame and
   the off-diagonal slots span `H₃(𝕆)`.
 
@@ -457,6 +461,25 @@ it, while the two other idempotents halve it. -/
         · simp [h]
         · simp [h]
       · simp [h, Pi.single_eq_of_ne hm]
+
+/-- **The product of two octonions in the same off-diagonal slot**: the symmetric bilinear form
+associated with the octonion norm multiplies the sum of the two other diagonal idempotents. -/
+@[simp] theorem offDiagSingle_mul_offDiagSingle [CommRing R] [Invertible (2 : R)]
+    (i : Fin 3) (a b : Octonion R) :
+    offDiagSingle i a * offDiagSingle i b =
+      QuadraticMap.associated (Octonion.normQuadraticForm R) a b •
+        (diagIdempotent R (i + 1) + diagIdempotent R (i + 2)) := by
+  refine AlbertAlgebra.ext (funext fun k => ?_) (funext fun k => ?_) <;>
+    fin_cases i <;> fin_cases k <;> simp
+
+/-- **The product of two cyclically adjacent off-diagonal slots**: half the remaining slot of
+`conj (a * b)`. The order of the octonion factors follows the cyclic order of the slots. -/
+@[simp] theorem offDiagSingle_mul_offDiagSingle_add_one [CommRing R] [Invertible (2 : R)]
+    (i : Fin 3) (a b : Octonion R) :
+    offDiagSingle i a * offDiagSingle (i + 1) b =
+      ⅟(2 : R) • offDiagSingle (i + 2) (Octonion.conj (a * b)) := by
+  refine AlbertAlgebra.ext (funext fun k => ?_) (funext fun k => ?_) <;>
+    fin_cases i <;> fin_cases k <;> simp
 
 /-- **The diagonal frame and the off-diagonal slots span `H₃(𝕆)`**: a Hermitian octonion matrix is
 the combination of the diagonal idempotents read off its diagonal, plus its three off-diagonal

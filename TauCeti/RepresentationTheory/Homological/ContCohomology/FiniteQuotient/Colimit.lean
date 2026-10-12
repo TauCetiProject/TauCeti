@@ -260,11 +260,8 @@ theorem explicitInfl1_comp_explicitFiniteQuotientTransition1 (U V : OpenNormalSu
     AddMonoidHom.ext fun m => coe_fixedPointsInclusion hVU m
   rw [explicitInfl1_eq_explicitMap1, explicitFiniteQuotientTransition1_eq_explicitMap1,
     explicitInfl1_eq_explicitMap1]
-  refine (explicitMap1_comp _ _ _ _ _ _ _ _ _ _ _ _ _ _ ?_).symm.trans
+  exact (explicitMap1_comp _ _ _ _ _ _ _ _ _ _ _ _ _ _).symm.trans
     (explicitMap1_congr_of_eq _ _ _ _ _ _ _ _ hquot hincl)
-  exact fun g m => comp_apply_smul _ _ _ _
-    (fixedPointsInclusion_continuousFiniteQuotientMap_smul G M hVU)
-    (subtype_quotientMk_smul G M V.toSubgroup) g m
 
 /-- Inflating a class from a level to a deeper one does not change it: the elementwise form of
 `TauCeti.ContCohomology.explicitInfl1_comp_explicitFiniteQuotientTransition1`. -/

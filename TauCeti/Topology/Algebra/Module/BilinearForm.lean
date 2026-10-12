@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Normed.Module.FiniteDimension
 public import Mathlib.LinearAlgebra.SesquilinearForm.Basic
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Invertible
+public import Mathlib.Topology.Algebra.Module.FiniteDimensionBilinear
 public import Mathlib.Topology.Algebra.Module.Spaces.ContinuousLinearMap
 -- Private: `ContinuousLinearMap.dual_finrank_eq` is used only inside proofs.
 import TauCeti.Analysis.Normed.Module.FiniteDimension
@@ -31,6 +32,9 @@ itself, rather than with any of its users.
   `ContinuousLinearMap.isInvertible_of_surjective`: in finite dimensions an injective, equivalently
   a surjective, map into the dual is already invertible, the dual having the same dimension as the
   space (`ContinuousLinearMap.dual_finrank_eq`).
+* `TauCeti.isInvertible_toContinuousBilinearMap_iff_separatingLeft`:
+  contraction with a bilinear form is invertible exactly when it is left-separating in
+  finite dimensions, identifying covectors with vectors for local contraction equations.
 -/
 
 public section
@@ -72,6 +76,21 @@ theorem _root_.ContinuousLinearMap.isInvertible_of_surjective
   ContinuousLinearMap.isInvertible_of_injective
     ((LinearMap.injective_iff_surjective_of_finrank_eq_finrank (V₂ := E →L[𝕜] 𝕜)
       ContinuousLinearMap.dual_finrank_eq.symm (f := (L : E →ₗ[𝕜] E →L[𝕜] 𝕜))).2 hsurj)
+
+/-- Contraction with a bilinear form on a finite-dimensional space is an invertible
+continuous linear map to the continuous dual exactly when the form is left-separating. -/
+@[simp low]
+theorem isInvertible_toContinuousBilinearMap_iff_separatingLeft
+    {b : LinearMap.BilinForm 𝕜 E} :
+    b.toContinuousBilinearMap.IsInvertible ↔ b.SeparatingLeft := by
+  have hround : b.toContinuousBilinearMap.toBilinForm = b := by
+    ext v w
+    simp
+  have hsep : b.SeparatingLeft ↔ Function.Injective b.toContinuousBilinearMap := by
+    simpa only [hround] using
+      b.toContinuousBilinearMap.separatingLeft_toBilinForm_iff_injective
+  exact ⟨fun hb ↦ hsep.mpr hb.injective,
+    fun hb ↦ _root_.ContinuousLinearMap.isInvertible_of_injective (hsep.mp hb)⟩
 
 end FiniteDimensional
 

@@ -10,13 +10,16 @@ public import Mathlib.Algebra.Group.Subgroup.Ker
 /-!
 # Ranges and equality loci of group homomorphisms
 
-This file supplies the characteristic membership equation for the subgroup equality locus and the
-invariance of the range of a group homomorphism under precomposition with a surjection.
+This file supplies the characteristic membership equation for the subgroup equality locus, the
+invariance of the range of a group homomorphism under precomposition with a surjection, and the
+range and kernel of the pointwise inverse of a homomorphism into a commutative group.
 
 ## Main results
 
 * `MonoidHom.mem_eqLocus`: membership in the equality locus is pointwise equality.
 * `MonoidHom.range_comp_of_surjective`: precomposition with a surjection preserves the range.
+* `MonoidHom.range_inv`, `MonoidHom.ker_inv`: the pointwise inverse `f⁻¹` has the same range and
+  kernel as `f`.
 -/
 
 public section
@@ -36,5 +39,19 @@ range. -/]
 theorem range_comp_of_surjective {N P : Type*} [Group N] [Group P] (g : N →* P) (f : G →* N)
     (hf : Function.Surjective f) : (g.comp f).range = g.range := by
   rw [range_comp, range_eq_top_of_surjective f hf, ← range_eq_map]
+
+/-- The pointwise inverse of a homomorphism into a commutative group has the same range. -/
+@[to_additive (attr := simp) /-- The pointwise negation of a homomorphism into a commutative
+additive group has the same range. -/]
+theorem range_inv {H : Type*} [CommGroup H] (f : G →* H) : f⁻¹.range = f.range := by
+  ext y
+  refine ⟨fun ⟨x, hx⟩ ↦ ⟨x⁻¹, ?_⟩, fun ⟨x, hx⟩ ↦ ⟨x⁻¹, ?_⟩⟩ <;> simpa using hx
+
+/-- The pointwise inverse of a homomorphism into a commutative group has the same kernel. -/
+@[to_additive (attr := simp) /-- The pointwise negation of a homomorphism into a commutative
+additive group has the same kernel. -/]
+theorem ker_inv {H : Type*} [CommGroup H] (f : G →* H) : f⁻¹.ker = f.ker := by
+  ext x
+  simp
 
 end MonoidHom

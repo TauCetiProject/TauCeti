@@ -55,9 +55,6 @@ commutative group functor exactly when `H` is cocommutative
 
 * J. S. Milne, *Algebraic Groups* (2017), §1.k and §2.
 * W. C. Waterhouse, *Introduction to Affine Group Schemes*, Chapter 2.
-
-This is a prerequisite for the center `Z(G)` in Layer 6, "Reductive and semisimple groups", of
-`TauCetiRoadmap/ReductiveGroups/README.md`.
 -/
 
 public section
@@ -82,8 +79,8 @@ of `Spec H`.
 Commuting with the points over `A` alone is a strictly weaker condition and does not describe a
 subgroup scheme; this is why the value algebra is quantified over. The quantified value algebras
 live in `Type (max v w)`, which contains the universal test algebra `A ⊗[R] H`.
-`TauCeti.HopfAlgebra.isCentralPoint_iff_commute_includeRight` shows, when the coordinate and value
-algebras are in the same universe, that this single value algebra already decides centrality. -/
+`TauCeti.HopfAlgebra.isCentralPoint_iff_commute_includeRight` shows that this single value algebra
+already decides centrality. -/
 def IsCentralPoint (g : WithConv (H →ₐ[R] A)) : Prop :=
   ∀ ⦃B : Type (max v w)⦄ [CommRing B] [Algebra R B] (φ : A →ₐ[R] B)
     (h : WithConv (H →ₐ[R] B)),
@@ -225,7 +222,7 @@ end Group
 
 section Universal
 
-variable {R : Type u} {H : Type v} {A : Type v}
+variable {R : Type u} {H : Type v} {A : Type w}
 variable [CommRing R] [CommRing H] [_root_.Bialgebra R H] [CommRing A] [Algebra R A]
 
 /-- **A single value algebra decides centrality.** A point `g` of `Spec H` over `A` is central
@@ -241,40 +238,15 @@ theorem isCentralPoint_iff_commute_includeRight (g : WithConv (H →ₐ[R] A)) :
           (Algebra.TensorProduct.includeLeft (R := R) (S := R) (A := A) (B := H)) g)
         (toConv (Algebra.TensorProduct.includeRight (R := R) (A := A) (B := H))) := by
   refine ⟨fun hg ↦ hg _ _, fun hg B _ _ φ h ↦ ?_⟩
-  have key := hg.map (AlgHom.mapValue (H := H) (Algebra.TensorProduct.productMap φ h.ofConv))
-  have h₁ : AlgHom.mapValue (H := H) (Algebra.TensorProduct.productMap φ h.ofConv)
-      (AlgHom.mapValue
-        (Algebra.TensorProduct.includeLeft (R := R) (S := R) (A := A) (B := H)) g) =
-      AlgHom.mapValue φ g := by
-    rw [← MonoidHom.comp_apply, ← AlgHom.mapValue_comp, Algebra.TensorProduct.productMap_left]
-  have h₂ : AlgHom.mapValue (H := H) (Algebra.TensorProduct.productMap φ h.ofConv)
-      (toConv (Algebra.TensorProduct.includeRight (R := R) (A := A) (B := H))) = h := by
-    rw [AlgHom.mapValue_apply, ofConv_toConv, Algebra.TensorProduct.productMap_right, toConv_ofConv]
-  rwa [h₁, h₂] at key
+  simpa [AlgHom.mapValue_apply, ← AlgHom.comp_assoc] using
+    hg.map (AlgHom.mapValue (H := H) (Algebra.TensorProduct.productMap φ h.ofConv))
 
 end Universal
 
 section Cocommutative
 
 variable {R : Type u} {H : Type v}
-variable [CommRing R] [CommRing H] [_root_.Bialgebra R H]
-
-private theorem coe_algebraTensorProductComm (y : H ⊗[R] H) :
-    (Algebra.TensorProduct.comm R H H) y = _root_.TensorProduct.comm R H H y := rfl
-
-private theorem comm_toAlgHom_comp_includeLeft :
-    (Algebra.TensorProduct.comm R H H).toAlgHom.comp
-        (Algebra.TensorProduct.includeLeft (R := R) (S := R) (A := H) (B := H)) =
-      Algebra.TensorProduct.includeRight := by
-  ext x
-  simp
-
-private theorem comm_toAlgHom_comp_includeRight :
-    (Algebra.TensorProduct.comm R H H).toAlgHom.comp
-        (Algebra.TensorProduct.includeRight (R := R) (A := H) (B := H)) =
-      Algebra.TensorProduct.includeLeft := by
-  ext x
-  simp
+variable [CommSemiring R] [CommSemiring H] [_root_.Bialgebra R H]
 
 /-- The convolution product of the two tensor-factor points, taken in the other order, is the
 comultiplication followed by the flip of the tensor factors. -/
@@ -283,18 +255,8 @@ theorem convMul_includeRight_includeLeft :
         toConv (Algebra.TensorProduct.includeLeft (R := R) (S := R) (A := H) (B := H)) =
       toConv ((Algebra.TensorProduct.comm R H H).toAlgHom.comp
         (_root_.Bialgebra.comulAlgHom R H)) := by
-  have key := map_mul (AlgHom.mapValue (H := H) (Algebra.TensorProduct.comm R H H).toAlgHom)
-    (toConv (Algebra.TensorProduct.includeLeft (R := R) (S := R) (A := H) (B := H)))
-    (toConv (Algebra.TensorProduct.includeRight (R := R) (A := H) (B := H)))
-  simp only [← Bialgebra.TensorProduct.includeLeft_toAlgHom,
-    ← Bialgebra.TensorProduct.includeRight_toAlgHom] at key
-  rw [← Bialgebra.comulPoint_eq_include_mul] at key
-  simp only [Bialgebra.TensorProduct.includeLeft_toAlgHom,
-    Bialgebra.TensorProduct.includeRight_toAlgHom] at key
-  rw [AlgHom.mapValue_apply, AlgHom.mapValue_apply, AlgHom.mapValue_apply, ofConv_toConv,
-    ofConv_toConv, ofConv_toConv, comm_toAlgHom_comp_includeLeft,
-    comm_toAlgHom_comp_includeRight] at key
-  exact key.symm
+  simpa using (Bialgebra.toConv_comp_comulAlgHom
+    (Algebra.TensorProduct.comm R H H).toAlgHom).symm
 
 variable (R H) in
 /-- **The two tensor-factor points of `H` commute exactly when `H` is cocommutative.** The two
@@ -314,10 +276,10 @@ theorem commute_includeLeft_includeRight_iff_isCocomm :
   · intro h
     refine ⟨LinearMap.ext fun x ↦ ?_⟩
     have hx := congrArg (fun f ↦ f.ofConv x) h
-    simpa [coe_algebraTensorProductComm] using hx.symm
+    simpa [← AlgEquiv.coe_toLinearEquiv, Algebra.TensorProduct.comm_toLinearEquiv] using hx.symm
   · intro _
     refine congrArg toConv (AlgHom.ext fun x ↦ ?_)
-    simp [coe_algebraTensorProductComm]
+    simp [← AlgEquiv.coe_toLinearEquiv, Algebra.TensorProduct.comm_toLinearEquiv]
 
 end Cocommutative
 
@@ -331,13 +293,8 @@ variable (R H) in
 when the group functor of `Spec H` is commutative. -/
 theorem isCentralPoint_id_iff_isCocomm :
     IsCentralPoint (toConv (AlgHom.id R H)) ↔ _root_.Coalgebra.IsCocomm R H := by
-  have h : AlgHom.mapValue (H := H)
-      (Algebra.TensorProduct.includeLeft (R := R) (S := R) (A := H) (B := H))
-        (toConv (AlgHom.id R H)) =
-      toConv (Algebra.TensorProduct.includeLeft (R := R) (S := R) (A := H) (B := H)) := by
-    rw [AlgHom.mapValue_apply, ofConv_toConv, AlgHom.comp_id]
-  rw [isCentralPoint_iff_commute_includeRight, h,
-    commute_includeLeft_includeRight_iff_isCocomm]
+  rw [isCentralPoint_iff_commute_includeRight]
+  simpa [AlgHom.mapValue_apply] using commute_includeLeft_includeRight_iff_isCocomm R H
 
 end Tautological
 

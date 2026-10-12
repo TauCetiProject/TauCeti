@@ -59,6 +59,14 @@ theorem orbitCoordinates_ι (m : M) (φ : Module.Dual R M) :
       matrixCoefficient (C := H) φ m := by
   simp [orbitCoordinates]
 
+/-- Scaling a vector by `c` scales its degree-`n` orbit coordinates by `c ^ n`. -/
+theorem orbitCoordinates_smul_of_mem_homogeneousSubmodule (m : M) (c : R) {n : ℕ}
+    {s : SymmetricAlgebra R (Module.Dual R M)}
+    (hs : s ∈ SymmetricAlgebra.homogeneousSubmodule R (Module.Dual R M) n) :
+    orbitCoordinates (H := H) (c • m) s = c ^ n • orbitCoordinates (H := H) m s := by
+  simp only [orbitCoordinates, map_smul,
+    SymmetricAlgebra.lift_smul_of_mem_homogeneousSubmodule R (Module.Dual R M) _ c hs]
+
 /-- At the identity point, orbit coordinates specialize to evaluation at the original vector. -/
 @[simp]
 theorem counitAlgHom_comp_orbitCoordinates (m : M) :

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Infinity.Covering
+import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.MultipleEnds.Covering
 import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Infinity.ExteriorPoint
 import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Infinity.Jordan
 import TauCeti.Analysis.Complex.Conformal.Jordan.Unbounded
@@ -20,6 +21,12 @@ parametrization forces the primitive's interior image to avoid the boundary. Con
 primitive maps the upper half-plane bijectively onto the complementary component containing the
 base-point image, and its frontier is the whole boundary chain. This gives the direct mapping
 theorem for simple unbounded polygons, including parallel-ended polygons.
+
+The same holds at total exponent `1`, an end of opening `2π`, when the logarithmic coefficient
+`((∑ i, e i * a i) ^ 2 - ∑ i, e i * a i ^ 2) / 2` is negative. Some sign condition is needed
+there: with exponents `-1 / 2` at `-1` and `3 / 2` at `1` the boundary is a simple chain of two
+parallel rays joined by a segment, but the corner of opening `5π / 2` makes the image overlap
+its boundary.
 
 Inversion about an exterior point reduces separation to the planar Jordan curve theorem: the
 inverted image is bounded, its frontier lies on the inverted boundary together with `0`, and
@@ -39,12 +46,14 @@ namespace TauCeti
 
 variable {ι : Type*} [Fintype ι]
 
-/-- A simple proper Schwarz--Christoffel boundary with opening less than `2π` is disjoint from
-the image of the open upper half-plane. The total exponent `-1` includes parallel outer sides. -/
+/-- A simple proper Schwarz--Christoffel boundary is disjoint from the image of the open upper
+half-plane, if the end at infinity has opening less than `2π`, or opening `2π` with negative
+logarithmic coefficient. The total exponents `-1` and `1` include parallel outer sides. -/
 theorem disjoint_image_schwarzChristoffelPrimitive_range_of_neg_one_le_sum
     (a e : ι → ℝ) (z₀ : UpperHalfPlane)
     (hfinite : ∀ j, -1 < ∑ i with a i = a j, e i)
-    (hlow : -1 ≤ ∑ i, e i) (hhigh : ∑ i, e i < 1)
+    (hlow : -1 ≤ ∑ i, e i)
+    (hhigh : ∑ i, e i < 1 ∨ ∑ i, e i = 1 ∧ (∑ i, e i * a i) ^ 2 < ∑ i, e i * a i ^ 2)
     (hinj : Function.Injective (schwarzChristoffelBoundary a e z₀)) :
     Disjoint (schwarzChristoffelPrimitive a e z₀ '' upperHalfPlaneSet)
       (range (schwarzChristoffelBoundary a e z₀)) := by
@@ -57,8 +66,12 @@ theorem disjoint_image_schwarzChristoffelPrimitive_range_of_neg_one_le_sum
     a e z₀ hfinite hlow hinj
   have hUb : ¬IsBounded U := fun h =>
     not_isBounded_of_isJordanCurve_insert_infty hJ (h.closure.subset hBcl)
-  obtain ⟨q, hq⟩ :=
-    exists_notMem_closure_image_schwarzChristoffelPrimitive_of_sum_lt_one a e z₀ hfinite hhigh
+  obtain ⟨q, hq⟩ : ∃ q, q ∉ closure U := by
+    rcases hhigh with hhigh | ⟨hsum, hC⟩
+    · exact exists_notMem_closure_image_schwarzChristoffelPrimitive_of_sum_lt_one
+        a e z₀ hfinite hhigh
+    · exact exists_notMem_closure_image_schwarzChristoffelPrimitive_of_sum_eq_one
+        a e z₀ hfinite hsum hC
   let κ : ℂ → ℂ := fun z => (z - q)⁻¹
   let C := insert (0 : ℂ) (κ '' B)
   have hC : IsJordanCurve C :=
@@ -79,20 +92,24 @@ theorem disjoint_image_schwarzChristoffelPrimitive_range_of_neg_one_le_sum
       (mem_insert_of_mem 0 (mem_image_of_mem κ hwB))
 
 /-- The image of a primitive with a simple proper boundary is the complementary component
-containing its base-point image, for total exponent in `[-1, 1)`. -/
+containing its base-point image, for total exponent in `[-1, 1)`, or total exponent `1` with
+negative logarithmic coefficient. -/
 theorem image_schwarzChristoffelPrimitive_eq_connectedComponentIn_of_neg_one_le_sum
     (a e : ι → ℝ) (z₀ : UpperHalfPlane)
     (hfinite : ∀ j, -1 < ∑ i with a i = a j, e i)
-    (hlow : -1 ≤ ∑ i, e i) (hhigh : ∑ i, e i < 1)
+    (hlow : -1 ≤ ∑ i, e i)
+    (hhigh : ∑ i, e i < 1 ∨ ∑ i, e i = 1 ∧ (∑ i, e i * a i) ^ 2 < ∑ i, e i * a i ^ 2)
     (hinj : Function.Injective (schwarzChristoffelBoundary a e z₀)) :
     schwarzChristoffelPrimitive a e z₀ '' upperHalfPlaneSet =
       connectedComponentIn (range (schwarzChristoffelBoundary a e z₀))ᶜ
         (schwarzChristoffelPrimitive a e z₀ z₀) := by
   have hdisj := disjoint_image_schwarzChristoffelPrimitive_range_of_neg_one_le_sum
     a e z₀ hfinite hlow hhigh hinj
-  refine image_schwarzChristoffelPrimitive_eq_of_subset_of_neg_one_le_sum
-    a e z₀ hfinite hlow isPreconnected_connectedComponentIn
-    (disjoint_left.mpr fun w hw => connectedComponentIn_subset _ _ hw) ?_
+  refine image_schwarzChristoffelPrimitive_eq_of_subset_of_neg_one_le_prevertex_sum
+    a e z₀ (fun j => (hfinite j).le) isPreconnected_connectedComponentIn ?_ ?_
+  · rw [disjoint_image_left,
+      preimage_range_schwarzChristoffelSphereBoundary_of_neg_one_le_sum a e z₀ hfinite hlow]
+    exact disjoint_left.mpr fun w hw => connectedComponentIn_subset _ _ hw
   exact ((convex_halfSpace_im_gt 0).isPreconnected.image _
     (differentiableOn_schwarzChristoffelPrimitive a e z₀).continuousOn).subset_connectedComponentIn
     (mem_image_of_mem _ z₀.im_pos) (subset_compl_iff_disjoint_right.mpr hdisj)
@@ -102,7 +119,8 @@ theorem image_schwarzChristoffelPrimitive_eq_connectedComponentIn_of_neg_one_le_
 theorem frontier_image_schwarzChristoffelPrimitive_eq_range_of_neg_one_le_sum
     (a e : ι → ℝ) (z₀ : UpperHalfPlane)
     (hfinite : ∀ j, -1 < ∑ i with a i = a j, e i)
-    (hlow : -1 ≤ ∑ i, e i) (hhigh : ∑ i, e i < 1)
+    (hlow : -1 ≤ ∑ i, e i)
+    (hhigh : ∑ i, e i < 1 ∨ ∑ i, e i = 1 ∧ (∑ i, e i * a i) ^ 2 < ∑ i, e i * a i ^ 2)
     (hinj : Function.Injective (schwarzChristoffelBoundary a e z₀)) :
     frontier (schwarzChristoffelPrimitive a e z₀ '' upperHalfPlaneSet) =
       range (schwarzChristoffelBoundary a e z₀) := by
@@ -111,12 +129,15 @@ theorem frontier_image_schwarzChristoffelPrimitive_eq_range_of_neg_one_le_sum
       a e z₀ hfinite hlow hhigh hinj).sdiff_eq_right]
 
 /-- A Schwarz--Christoffel primitive with a simple proper boundary and total exponent in
-`[-1, 1)` maps the upper half-plane bijectively onto the complementary region containing its
-base-point image. This allows reentrant finite corners and parallel outer sides. -/
+`[-1, 1)`, or total exponent `1` with negative logarithmic coefficient
+`((∑ i, e i * a i) ^ 2 - ∑ i, e i * a i ^ 2) / 2`, maps the upper half-plane bijectively onto the
+complementary region containing its base-point image. This allows reentrant finite corners,
+parallel outer sides, and ends of opening `2π`. -/
 theorem bijOn_schwarzChristoffelPrimitive_of_simple_boundary_of_neg_one_le_sum
     (a e : ι → ℝ) (z₀ : UpperHalfPlane)
     (hfinite : ∀ j, -1 < ∑ i with a i = a j, e i)
-    (hlow : -1 ≤ ∑ i, e i) (hhigh : ∑ i, e i < 1)
+    (hlow : -1 ≤ ∑ i, e i)
+    (hhigh : ∑ i, e i < 1 ∨ ∑ i, e i = 1 ∧ (∑ i, e i * a i) ^ 2 < ∑ i, e i * a i ^ 2)
     (hinj : Function.Injective (schwarzChristoffelBoundary a e z₀)) :
     BijOn (schwarzChristoffelPrimitive a e z₀) upperHalfPlaneSet
       (connectedComponentIn (range (schwarzChristoffelBoundary a e z₀))ᶜ
@@ -143,7 +164,10 @@ theorem bijOn_schwarzChristoffelPrimitive_of_simple_boundary_of_neg_one_le_sum
   have : SimplyConnectedSpace U := hsimply.simplyConnectedSpace
   rw [← image_schwarzChristoffelPrimitive_eq_connectedComponentIn_of_neg_one_le_sum
     a e z₀ hfinite hlow hhigh hinj]
-  exact bijOn_schwarzChristoffelPrimitive_of_subset_of_neg_one_le_sum
-    a e z₀ hfinite hlow hdisj subset_rfl
+  apply bijOn_schwarzChristoffelPrimitive_of_subset_of_neg_one_le_prevertex_sum
+    a e z₀ (fun j => (hfinite j).le) ?_ subset_rfl
+  rw [disjoint_image_left,
+    preimage_range_schwarzChristoffelSphereBoundary_of_neg_one_le_sum a e z₀ hfinite hlow]
+  exact hdisj
 
 end TauCeti

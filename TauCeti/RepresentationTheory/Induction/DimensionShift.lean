@@ -8,7 +8,6 @@ module
 import TauCeti.Algebra.Homology.ShortComplex.ShortExact
 import TauCeti.RepresentationTheory.Rep.TensorShortExact
 
-public import Mathlib.Algebra.Homology.ShortComplex.ShortExact
 public import Mathlib.Algebra.Homology.ShortComplex.FunctorEquivalence
 public import TauCeti.RepresentationTheory.Induction.TrivialSubgroup
 
@@ -22,11 +21,13 @@ representation give short exact sequences
 `0 ⟶ A ⟶ Coind_⊥^G A ⟶ dimensionShiftUp A ⟶ 0` and
 `0 ⟶ dimensionShiftDown A ⟶ Ind_⊥^G A ⟶ A ⟶ 0`,
 
-which stay short exact after restriction along any monoid homomorphism `H →* G`. The middle terms
-have vanishing positive-degree cohomology, respectively homology, and for a finite group vanishing
-Tate cohomology in every degree, so the connecting homomorphisms of these sequences shift degrees.
-This is the *dimension shifting* of Milne, *Class Field Theory*, II 1.13 and 1.28; this file
-provides the sequences themselves.
+which stay short exact after restriction along any monoid homomorphism `H →* G`. As
+representations of `G` itself, the middle terms have vanishing positive-degree cohomology
+(`groupCohomology.isZero_coindBot_succ`), respectively homology
+(`groupHomology.isZero_indBot_succ`), and for a finite group vanishing Tate cohomology in every
+degree (`TauCeti.TateCohomology.isZero_coindBot`, `TauCeti.TateCohomology.isZero_indBot`), so the
+connecting homomorphisms of these sequences shift degrees. This is the *dimension shifting* of
+Milne, *Class Field Theory*, II 1.13 and 1.28; this file provides the sequences themselves.
 
 The constructions follow `ClassFieldTheory/Cohomology/Functors/UpDown.lean` in
 `kbuzzard/ClassFieldTheory`, commit `ccc3323c6750abca25b49b35106f54eb3a398509`.
@@ -39,6 +40,13 @@ The constructions follow `ClassFieldTheory/Cohomology/Functors/UpDown.lean` in
   `Ind_⊥^G A ⟶ A` and its short complex.
 * `Rep.dimensionShiftUpπIsCokernel`, `Rep.dimensionShiftDownιIsKernel`: their universal
   properties. The definitions are opaque, so consumers construct maps through these properties.
+* `Rep.dimensionShiftUpMap`, `Rep.dimensionShiftDownMap`: the maps a morphism of coefficients
+  induces on the two shifts, and `Rep.dimensionShiftUpSESMap`, `Rep.dimensionShiftDownSESMap`: the
+  morphisms it induces between the short complexes.
+* `Rep.dimensionShiftUpFunctor`, `Rep.dimensionShiftDownFunctor`: the two shifts as endofunctors
+  of `Rep k G`, with the natural transformations `Rep.dimensionShiftUpπNatTrans` and
+  `Rep.dimensionShiftDownιNatTrans`, and `Rep.dimensionShiftUpSESFunctor`,
+  `Rep.dimensionShiftDownSESFunctor`: the two sequences as functors to short complexes.
 
 ## Main statements
 
@@ -49,10 +57,8 @@ The constructions follow `ClassFieldTheory/Cohomology/Functors/UpDown.lean` in
   restriction and after tensoring on the left with any representation.
 * `Rep.dimensionShiftDownSES_shortExact`, `Rep.dimensionShiftDownSES_res_shortExact`,
   `Rep.dimensionShiftDownSES_tensorLeft_shortExact`: the same for the downward sequence.
-* `Rep.dimensionShiftUpMap`, `Rep.dimensionShiftDownMap`: coefficient maps on both shifts,
-  characterized by commutation with the quotient projection and kernel inclusion.
-* `Rep.coindBotUnit_naturality`, `Rep.indBotCounit_naturality`: naturality of the maps defining
-  the two sequences.
+* `Rep.dimensionShiftUpπ_naturality`, `Rep.dimensionShiftDownι_naturality`: the coefficient maps
+  commute with the quotient projection and with the kernel inclusion.
 
 ## References
 
@@ -229,33 +235,21 @@ def dimensionShiftUpMap {A B : Rep k G} (f : A ⟶ B) :
 @[reassoc (attr := simp)]
 theorem dimensionShiftUpπ_naturality {A B : Rep k G} (f : A ⟶ B) :
     dimensionShiftUpπ A ≫ dimensionShiftUpMap f =
-      coindBotMap f ≫ dimensionShiftUpπ B := by
-  exact cokernel.π_desc _ _ _
+      coindBotMap f ≫ dimensionShiftUpπ B :=
+  cokernel.π_desc _ _ _
 
 /-- The upward shift map preserves identity morphisms. -/
 @[simp]
 theorem dimensionShiftUpMap_id (A : Rep k G) : dimensionShiftUpMap (𝟙 A) = 𝟙 _ := by
-  simp [dimensionShiftUpMap, dimensionShiftUp]
+  apply (cancel_epi (dimensionShiftUpπ A)).mp
+  simp
 
 /-- The upward shift map preserves composition. -/
 @[simp]
 theorem dimensionShiftUpMap_comp {A B C : Rep k G} (f : A ⟶ B) (g : B ⟶ C) :
     dimensionShiftUpMap (f ≫ g) = dimensionShiftUpMap f ≫ dimensionShiftUpMap g := by
   apply (cancel_epi (dimensionShiftUpπ A)).mp
-  calc
-    dimensionShiftUpπ A ≫ dimensionShiftUpMap (f ≫ g) =
-        coindBotMap (f ≫ g) ≫ dimensionShiftUpπ C :=
-      dimensionShiftUpπ_naturality (f ≫ g)
-    _ = (coindBotMap f ≫ coindBotMap g) ≫ dimensionShiftUpπ C := by
-      rw [coindBotMap_comp]
-    _ = coindBotMap f ≫ (coindBotMap g ≫ dimensionShiftUpπ C) :=
-      Category.assoc _ _ _
-    _ = coindBotMap f ≫ (dimensionShiftUpπ B ≫ dimensionShiftUpMap g) := by
-      rw [dimensionShiftUpπ_naturality g]
-    _ = (coindBotMap f ≫ dimensionShiftUpπ B) ≫ dimensionShiftUpMap g :=
-      (Category.assoc _ _ _).symm
-    _ = (dimensionShiftUpπ A ≫ dimensionShiftUpMap f) ≫ dimensionShiftUpMap g := by
-      rw [dimensionShiftUpπ_naturality f]
+  simp
 
 /-- A coefficient morphism induces a morphism of the public presentations of the upward
 dimension-shifting sequences (`dimensionShiftUpSES_def`). -/
@@ -295,24 +289,21 @@ def dimensionShiftDownMap {A B : Rep k G} (f : A ⟶ B) :
 @[reassoc (attr := simp)]
 theorem dimensionShiftDownι_naturality {A B : Rep k G} (f : A ⟶ B) :
     dimensionShiftDownMap f ≫ dimensionShiftDownι B =
-      dimensionShiftDownι A ≫ indBotMap f := by
-  exact kernel.lift_ι _ _ _
+      dimensionShiftDownι A ≫ indBotMap f :=
+  kernel.lift_ι _ _ _
 
 /-- The downward shift map preserves identity morphisms. -/
 @[simp]
 theorem dimensionShiftDownMap_id (A : Rep k G) : dimensionShiftDownMap (𝟙 A) = 𝟙 _ := by
-  simp only [dimensionShiftDownMap, dimensionShiftDown, indBotMap_id]
-  -- Unfold the kernel wrapper to apply the generic identity law for `kernel.map`.
-  change kernel.map (indBotCounit A) (indBotCounit A)
-    (𝟙 (indBot k G A.V)) (𝟙 A) _ = 𝟙 _
-  exact kernel.map_id (indBotCounit A) (𝟙 A) (by simp)
+  apply (cancel_mono (dimensionShiftDownι A)).mp
+  simp
 
 /-- The downward shift map preserves composition. -/
 @[simp]
 theorem dimensionShiftDownMap_comp {A B C : Rep k G} (f : A ⟶ B) (g : B ⟶ C) :
     dimensionShiftDownMap (f ≫ g) = dimensionShiftDownMap f ≫ dimensionShiftDownMap g := by
   apply (cancel_mono (dimensionShiftDownι C)).mp
-  simp [dimensionShiftDownMap, dimensionShiftDownι, dimensionShiftDown, kernel.map, indBotMap_comp]
+  simp
 
 /-- A coefficient morphism induces a morphism of the public presentations of the downward
 dimension-shifting sequences (`dimensionShiftDownSES_def`). -/
