@@ -69,7 +69,7 @@ theorem AtWorstNodalOfRelativeDimensionOne_iff {f : X ⟶ Spec (.of R)} :
             (PureRelativeDimension.of_syntomicOfRelativeDimension f)).subschemeι ≫ f) :=
   Iff.rfl
 
-/-- Construct a nodal relative curve from syntomicity and formal unramifiedness of its
+/-- Construct a nodal relative curve from syntomicity and unramifiedness of its
 singular subscheme. -/
 theorem AtWorstNodalOfRelativeDimensionOne.mk {f : X ⟶ Spec (.of R)}
     (hf : SyntomicOfRelativeDimension 1 f)
@@ -88,7 +88,7 @@ theorem AtWorstNodalOfRelativeDimensionOne.syntomic
     SyntomicOfRelativeDimension 1 f := h.choose
 
 /-- The singular subscheme of a nodal relative curve is unramified over the base. -/
-theorem AtWorstNodalOfRelativeDimensionOne.singularLocus_unramified
+theorem AtWorstNodalOfRelativeDimensionOne.unramified_singularLocus
     {f : X ⟶ Spec (.of R)} (h : AtWorstNodalOfRelativeDimensionOne f) :
     letI : SyntomicOfRelativeDimension 1 f := h.syntomic
     Unramified
@@ -123,12 +123,12 @@ theorem AtWorstNodalOfRelativeDimensionOne.of_isPullback
     (X := X) (X' := X') H
   have hs' := hs.flip.paste_vert H
   exact MorphismProperty.of_isPullback (P := @Unramified) hs'
-    h.singularLocus_unramified
+    h.unramified_singularLocus
 
 /-- A smooth morphism of relative dimension one over an affine base is at worst nodal. Its
 relative singular subscheme is empty, so the singular-locus condition in the nodal criterion
 holds automatically. -/
-private theorem smooth_singularLocus_unramified
+private theorem smooth_unramified_singularLocus
     [X.Over (Spec (.of R))]
     [SmoothOfRelativeDimension 1 (X ↘ Spec (.of R))]
     [SyntomicOfRelativeDimension 1 (X ↘ Spec (.of R))] :
@@ -147,7 +147,7 @@ theorem AtWorstNodalOfRelativeDimensionOne.of_smooth
     [SmoothOfRelativeDimension 1 (X ↘ Spec (.of R))] :
     AtWorstNodalOfRelativeDimensionOne (X ↘ Spec (.of R)) := by
   refine ⟨inferInstance, ?_⟩
-  exact smooth_singularLocus_unramified (R := R) (X := X)
+  exact smooth_unramified_singularLocus (R := R) (X := X)
 
 /-- The local model `xy = a` is a nodal relative curve over `Spec R`. -/
 theorem _root_.TauCeti.NodeAlgebra.atWorstNodalOfRelativeDimensionOne (a : R) :

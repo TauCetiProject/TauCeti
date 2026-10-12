@@ -95,6 +95,14 @@ instance {X Y S : Scheme.{u}} (f : X ⟶ S) (g : Y ⟶ S) [Unramified f] :
     Unramified (pullback.snd f g) :=
   isStableUnderBaseChange.of_isPullback (IsPullback.of_hasPullback f g) inferInstance
 
+instance (f : X ⟶ Y) (V : Y.Opens) [Unramified f] : Unramified (f ∣_ V) :=
+  IsZariskiLocalAtTarget.restrict ‹_› V
+
+instance (f : X ⟶ Y) (U : X.Opens) (V : Y.Opens) (e) [Unramified f] :
+    Unramified (f.resLE V U e) := by
+  delta Scheme.Hom.resLE
+  infer_instance
+
 instance (priority := 900) {X Y : Scheme} (f : X ⟶ Y)
     [AlgebraicGeometry.IsImmersion f] :
     Unramified f := by
