@@ -21,8 +21,8 @@ Their coefficient L-series therefore have abscissa of absolute convergence at mo
 The same bound holds after adding an arbitrary cusp form, by Hecke's cusp-form bound.
 
 The ε-family avoids asserting the false bound `σ₁(n) = O(n)`. The result concerns the
-corrected Eisenstein span; applying it to every weight-two modular form also requires
-identifying the full Eisenstein complement.
+corrected Eisenstein span, which covers only the trivial-character series. At nonsquarefree
+levels, the full Eisenstein complement also requires series with nontrivial characters.
 
 ## References
 
@@ -46,7 +46,8 @@ theorem norm_qExpansion_coeff_correctedE2_le (t : ℕ) [NeZero t] {s : ℝ} (hs 
   let C : ℝ := ∑' d : ℕ, ((d : ℝ) ^ s)⁻¹
   have hC : 0 ≤ C := tsum_nonneg fun d ↦ by positivity
   have hsig (m : ℕ) : ‖(σ 1 m : ℂ)‖ ≤ (m : ℝ) ^ s * C := by
-    simpa only [Complex.norm_natCast] using sigma_one_le_rpow_mul_tsum hs m
+    simpa only [Complex.norm_natCast] using
+      sigma_le_rpow_mul_tsum 1 (by simpa only [Nat.cast_one] using hs.le) hs m
   have hdiv : ‖(σ 1 (n / t) : ℂ)‖ ≤ (n : ℝ) ^ s * C := by
     refine (hsig _).trans ?_
     gcongr
@@ -80,22 +81,18 @@ theorem isBigO_qExpansion_coeff_correctedE2 (t : ℕ) [NeZero t] {ε : ℝ} (hε
   refine isBigO_iff.mpr
     ⟨24 * (1 + (t : ℝ)) * ∑' d : ℕ, ((d : ℝ) ^ (1 + ε))⁻¹, ?_⟩
   filter_upwards [eventually_ne_atTop 0] with n hn
-  simpa only [Real.norm_eq_abs, abs_of_nonneg (Real.rpow_nonneg (Nat.cast_nonneg n) _),
-    mul_assoc, mul_left_comm, mul_comm] using
-    norm_qExpansion_coeff_correctedE2_le t (by linarith : 1 < 1 + ε) hn
+  refine (norm_qExpansion_coeff_correctedE2_le t (by linarith : 1 < 1 + ε) hn).trans_eq ?_
+  rw [Real.norm_eq_abs, abs_of_nonneg (Real.rpow_nonneg (Nat.cast_nonneg n) _)]
+  ring
 
 /-- On a fixed level, every linear combination of corrected weight-two series at its
-nontrivial divisor levels has coefficients `O(n^(1+ε))` for every `ε > 0`.
-The nonzero-level binder restricts the domain of this statement; the finite-linear-combination
-estimate itself needs no arithmeticity of the ambient group. -/
+nontrivial divisor levels has coefficients `O(n^(1+ε))` for every `ε > 0`. -/
 theorem isBigO_qExpansion_coeff_of_mem_span_correctedE2AtLevel (N : ℕ) [_hN : NeZero N] {ε : ℝ}
     (hε : 0 < ε) {f : ModularForm ((Gamma0 N).map (mapGL ℝ)) 2}
     (hf : f ∈ Submodule.span ℂ (Set.range (correctedE2AtLevel N))) :
     (fun n ↦ (qExpansion 1 f).coeff n) =O[atTop]
       (fun n : ℕ ↦ (n : ℝ) ^ (1 + ε)) := by
-  let Q := ModularForm.qExpansionLinearMap one_pos
-    (by simp [CongruenceSubgroup.strictPeriods_Gamma0] :
-      (1 : ℝ) ∈ ((Gamma0 N).map (mapGL ℝ)).strictPeriods) 2
+  let Q := ModularForm.qExpansionLinearMap one_pos (one_mem_strictPeriods_Gamma0_map N) 2
   suffices (fun n ↦ (Q f).coeff n) =O[atTop]
       (fun n : ℕ ↦ (n : ℝ) ^ (1 + ε)) by
     simpa only [Q, ModularForm.qExpansionLinearMap_apply] using this
@@ -126,8 +123,7 @@ theorem abscissaOfAbsConv_qExpansion_coeff_le_of_mem_span_correctedE2AtLevel (N 
   simpa only [hexp] using hO
 
 /-- Adding a weight-two cusp form to a linear combination of corrected Eisenstein series
-preserves the abscissa bound `2`. A cusp--Eisenstein spanning theorem can therefore extend
-this estimate to the whole modular-form space. -/
+preserves the abscissa bound `2`. -/
 theorem abscissaOfAbsConv_qExpansion_coeff_le_of_mem_sup_span_correctedE2AtLevel
     (N : ℕ) [NeZero N] {f : ModularForm ((Gamma0 N).map (mapGL ℝ)) 2}
     (hf : f ∈ Submodule.span ℂ (Set.range (correctedE2AtLevel N)) ⊔
@@ -138,13 +134,13 @@ theorem abscissaOfAbsConv_qExpansion_coeff_le_of_mem_sup_span_correctedE2AtLevel
   have he' := abscissaOfAbsConv_qExpansion_coeff_le_of_mem_span_correctedE2AtLevel N he
   have hg : LSeries.abscissaOfAbsConv (fun n ↦ (qExpansion 1 g).coeff n) ≤ 2 := by
     have h := CuspForm.abscissaOfAbsConv_qExpansion_coeff_le g
-    norm_num at h ⊢
-    exact h
+    rw [strictWidthInfty_Gamma0] at h
+    have hcast : ((((2 : ℤ) : ℝ) / 2 : ℝ) : EReal) + 1 = 2 := by norm_num
+    rwa [hcast] at h
   have hcoe : ⇑(CuspForm.toModularFormₗ g) = ⇑g :=
     funext (CuspForm.toModularFormₗ_apply g)
-  have hp : (1 : ℝ) ∈ ((Gamma0 N).map (mapGL ℝ)).strictPeriods := by
-    simp [CongruenceSubgroup.strictPeriods_Gamma0]
-  simp only [FunLike.coe_add, ModularForm.qExpansion_add one_pos hp, map_add, hcoe]
+  simp only [FunLike.coe_add,
+    ModularForm.qExpansion_add one_pos (one_mem_strictPeriods_Gamma0_map N), map_add, hcoe]
   exact (LSeries.abscissaOfAbsConv_add_le _ _).trans (max_le he' hg)
 
 end TauCeti.EisensteinSeries
