@@ -9,7 +9,7 @@ public import TauCeti.NumberTheory.ClassFieldTheory.Brauer.Basic
 public import TauCeti.NumberTheory.ClassFieldTheory.Brauer.Unramified
 public import TauCeti.NumberTheory.LocalField.Unramified.Existence
 import TauCeti.LinearAlgebra.Submodule.DirectedUnion
-import TauCeti.NumberTheory.LocalField.FiniteExtension.Tower
+import TauCeti.NumberTheory.LocalField.AlgebraicExtension.Tower
 
 /-!
 # The invariant of the unramified Brauer group
@@ -56,9 +56,10 @@ Every Brauer class is in fact split by an unramified extension
 
 An unramified extension `E` of `K` inside `Kˢ` carries no preferred topology or valuative
 relation, but any two compatible with those of `K` agree
-(`TauCeti.finiteExtensionValuativeRel_eq`, `TauCeti.finiteExtensionNormedFieldTopology_eq`), so
+(`TauCeti.algebraicExtensionValuativeRel_eq`,
+`TauCeti.algebraicExtensionNormedFieldTopology_eq`), so
 `unramifiedInv K E` does not depend on the choice. The statements are made for an arbitrary
-compatible structure, and the construction uses that of `TauCeti.finiteExtensionValuativeRel`.
+compatible structure, and the construction uses that of `TauCeti.algebraicExtensionValuativeRel`.
 
 ## References
 
@@ -90,10 +91,10 @@ def unramifiedBr : AddSubgroup (Br K) :=
 canonical structure of nonarchimedean local field. -/
 private def layerInv (f : ℕ+) :
     groupCohomology (Rep.ofMulDistribMulAction Gal(𝓤 f/K) (𝓤 f)ˣ) 2 →+ AddCircle (1 : ℚ) :=
-  letI := finiteExtensionValuativeRel K (𝓤 f)
-  letI := finiteExtensionNormedFieldTopology K (𝓤 f)
+  letI := algebraicExtensionValuativeRel K (𝓤 f)
+  letI := algebraicExtensionNormedFieldTopology K (𝓤 f)
   haveI := finiteExtension_isNonarchimedeanLocalField K (𝓤 f)
-  haveI := finiteExtension_valuativeExtension K (𝓤 f)
+  haveI := algebraicExtension_valuativeExtension K (𝓤 f)
   haveI : IsUnramified K (𝓤 f) := isUnramified_unramifiedExtension f.ne_zero
   unramifiedInv K (𝓤 f)
 
@@ -104,10 +105,10 @@ private theorem unramifiedInv_eq_layerInv (f : ℕ+) [ValuativeRel (𝓤 f)]
     [IsUnramified K (𝓤 f)] :
     unramifiedInv K (𝓤 f) = layerInv K f := by
   -- Both the topology and the valuative relation are the canonical ones.
-  obtain rfl : ‹TopologicalSpace (𝓤 f)› = finiteExtensionNormedFieldTopology K (𝓤 f) :=
-    (finiteExtensionNormedFieldTopology_eq K _).symm
-  obtain rfl : ‹ValuativeRel (𝓤 f)› = finiteExtensionValuativeRel K (𝓤 f) :=
-    (finiteExtensionValuativeRel_eq K _).symm
+  obtain rfl : ‹TopologicalSpace (𝓤 f)› = algebraicExtensionNormedFieldTopology K (𝓤 f) :=
+    (algebraicExtensionNormedFieldTopology_eq K _).symm
+  obtain rfl : ‹ValuativeRel (𝓤 f)› = algebraicExtensionValuativeRel K (𝓤 f) :=
+    (algebraicExtensionValuativeRel_eq K _).symm
   rfl
 
 /-- A class inflated from the degree-`f` unramified extension is inflated from the degree-`g`
@@ -125,18 +126,18 @@ private theorem exists_relBrInfl_eq_layerInv_eq (f g : ℕ+) (hfg : (f : ℕ) �
   · have hσ : (𝓤 g).val.comp (IsScalarTower.toAlgHom K (𝓤 f) (𝓤 g)) = (𝓤 f).val :=
       AlgHom.ext fun _ => rfl
     rw [relBrInfl_map, hσ]
-  · let _ := finiteExtensionValuativeRel K (𝓤 f)
-    let _ := finiteExtensionNormedFieldTopology K (𝓤 f)
+  · let _ := algebraicExtensionValuativeRel K (𝓤 f)
+    let _ := algebraicExtensionNormedFieldTopology K (𝓤 f)
     have := finiteExtension_isNonarchimedeanLocalField K (𝓤 f)
-    have := finiteExtension_valuativeExtension K (𝓤 f)
+    have := algebraicExtension_valuativeExtension K (𝓤 f)
     have : IsUnramified K (𝓤 f) := isUnramified_unramifiedExtension f.ne_zero
-    let _ := finiteExtensionValuativeRel K (𝓤 g)
-    let _ := finiteExtensionNormedFieldTopology K (𝓤 g)
+    let _ := algebraicExtensionValuativeRel K (𝓤 g)
+    let _ := algebraicExtensionNormedFieldTopology K (𝓤 g)
     have := finiteExtension_isNonarchimedeanLocalField K (𝓤 g)
-    have := finiteExtension_valuativeExtension K (𝓤 g)
+    have := algebraicExtension_valuativeExtension K (𝓤 g)
     have : IsUnramified K (𝓤 g) := isUnramified_unramifiedExtension g.ne_zero
     have : ValuativeExtension (𝓤 f) (𝓤 g) :=
-      finiteExtension_valuativeExtension_tower K (𝓤 f) (𝓤 g)
+      algebraicExtension_valuativeExtension_tower K (𝓤 f) (𝓤 g)
     exact unramifiedInv_map K (𝓤 f) (𝓤 g) y
 
 /-- The classes inflated from the degree-`f` unramified extension are inflated from the degree-`g`
@@ -211,10 +212,10 @@ private theorem unramifiedBrInvHom_eq (x : unramifiedBr K) (f : ℕ+)
 
 /-- The invariant of an unramified layer is injective. -/
 private theorem layerInv_injective (f : ℕ+) : Function.Injective (layerInv K f) :=
-  let _ := finiteExtensionValuativeRel K (𝓤 f)
-  let _ := finiteExtensionNormedFieldTopology K (𝓤 f)
+  let _ := algebraicExtensionValuativeRel K (𝓤 f)
+  let _ := algebraicExtensionNormedFieldTopology K (𝓤 f)
   have := finiteExtension_isNonarchimedeanLocalField K (𝓤 f)
-  have := finiteExtension_valuativeExtension K (𝓤 f)
+  have := algebraicExtension_valuativeExtension K (𝓤 f)
   have : IsUnramified K (𝓤 f) := isUnramified_unramifiedExtension f.ne_zero
   unramifiedInv_injective K (𝓤 f)
 
@@ -222,10 +223,10 @@ private theorem layerInv_injective (f : ℕ+) : Function.Injective (layerInv K f
 private theorem exists_layerInv_eq (f : ℕ+) {q : AddCircle (1 : ℚ)}
     (hq : q ∈ AddSubgroup.torsionBy (AddCircle (1 : ℚ)) (f : ℕ)) :
     ∃ y, layerInv K f y = q := by
-  let _ := finiteExtensionValuativeRel K (𝓤 f)
-  let _ := finiteExtensionNormedFieldTopology K (𝓤 f)
+  let _ := algebraicExtensionValuativeRel K (𝓤 f)
+  let _ := algebraicExtensionNormedFieldTopology K (𝓤 f)
   have := finiteExtension_isNonarchimedeanLocalField K (𝓤 f)
-  have := finiteExtension_valuativeExtension K (𝓤 f)
+  have := algebraicExtension_valuativeExtension K (𝓤 f)
   have : IsUnramified K (𝓤 f) := isUnramified_unramifiedExtension f.ne_zero
   have h := range_unramifiedInv K (𝓤 f)
   rw [finrank_unramifiedExtension f.ne_zero] at h
