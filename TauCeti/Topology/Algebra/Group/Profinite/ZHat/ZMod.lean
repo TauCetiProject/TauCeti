@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Data.ZMod.Basic
 public import Mathlib.Topology.Instances.ZMod
+public import TauCeti.Data.ZMod.FinEquiv
 public import TauCeti.Topology.Algebra.Group.Profinite.ZHat.Ring
 
 /-!
@@ -326,6 +327,30 @@ theorem mk_modTransversal (n : ℕ+) (x : zHat.{u} ⧸ (modSubgroup n).toSubgrou
 theorem modTransversal_modQuotientEquiv_symm (n : ℕ+) (x : Multiplicative (ZMod n)) :
     modTransversal n ((modQuotientEquiv.{u} n).symm x) = gen ^ x.toAdd.val := by
   simp [modTransversal]
+
+attribute [local instance] Subgroup.fintypeQuotientOfFiniteIndex
+
+private theorem modTransversal_finEquiv (n : ℕ+) (i : Fin n) :
+    modTransversal n ((modQuotientEquiv.{u} n).symm
+      (Multiplicative.ofAdd (ZMod.finEquiv (n : ℕ) i))) = gen ^ (i : ℕ) := by
+  rw [modTransversal_modQuotientEquiv_symm, toAdd_ofAdd, ZMod.finEquiv_apply,
+    ZMod.val_natCast_of_lt i.isLt]
+
+/-- Summing over the cyclic transversal is summing over the generator powers with exponents
+from `0` to `n - 1`. -/
+theorem sum_modTransversal (n : ℕ+) {M : Type v} [AddCommMonoid M]
+    (f : zHat.{u} → M) :
+    ∑ x : zHat.{u} ⧸ (modSubgroup n).toSubgroup, f (modTransversal n x) =
+      ∑ i ∈ Finset.range (n : ℕ), f (gen ^ i) := by
+  classical
+  rw [← Fin.sum_univ_eq_sum_range]
+  let e := (modQuotientEquiv n).toEquiv.trans
+    (Multiplicative.toAdd : Multiplicative (ZMod n) ≃ ZMod n) |>.trans
+      (ZMod.finEquiv (n : ℕ)).symm.toEquiv
+  have he (i : Fin n) : modTransversal n (e.symm i) = gen ^ (i : ℕ) := by
+    exact modTransversal_finEquiv n i
+  exact (Fintype.sum_equiv e.symm (fun i ↦ f (gen ^ (i : ℕ)))
+    (fun x ↦ f (modTransversal n x)) (fun i ↦ congrArg f (he i).symm)).symm
 
 end ModSubgroup
 
