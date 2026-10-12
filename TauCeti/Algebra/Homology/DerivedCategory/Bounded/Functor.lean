@@ -138,7 +138,7 @@ noncomputable def mapBoundedDerivedCategory :
 @[simp]
 lemma mapBoundedDerivedCategory_functor :
     e.mapBoundedDerivedCategory.functor = e.functor.mapBoundedDerivedCategory := by
-  rw [mapBoundedDerivedCategory, congrFullSubcategory_functor_eq_lift,
+  simp only [mapBoundedDerivedCategory, congrFullSubcategory_functor_eq_lift,
     mapDerivedCategory_functor]
   rfl
 
@@ -146,7 +146,7 @@ lemma mapBoundedDerivedCategory_functor :
 @[simp]
 lemma mapBoundedDerivedCategory_inverse :
     e.mapBoundedDerivedCategory.inverse = e.inverse.mapBoundedDerivedCategory := by
-  rw [mapBoundedDerivedCategory, congrFullSubcategory_inverse_eq_lift,
+  simp only [mapBoundedDerivedCategory, congrFullSubcategory_inverse_eq_lift,
     mapDerivedCategory_inverse]
   rfl
 
@@ -157,13 +157,13 @@ private noncomputable def boundedFunctorCompιIso :
     e.functor.mapBoundedDerivedCategoryCompιIso
 
 noncomputable instance : e.mapBoundedDerivedCategory.functor.CommShift ℤ :=
-  Functor.CommShift.ofComp e.boundedFunctorCompιIso ℤ
+  Functor.CommShift.ofComp (boundedFunctorCompιIso e) ℤ
 
-noncomputable instance : NatTrans.CommShift e.boundedFunctorCompιIso.hom ℤ :=
+noncomputable instance : NatTrans.CommShift (boundedFunctorCompιIso e).hom ℤ :=
   Functor.CommShift.ofComp_compatibility _ _
 
 instance : e.mapBoundedDerivedCategory.functor.IsTriangulated := by
-  rw [Functor.isTriangulated_iff_comp_right e.boundedFunctorCompιIso]
+  rw [Functor.isTriangulated_iff_comp_right (boundedFunctorCompιIso e)]
   infer_instance
 
 end CategoryTheory.Equivalence
