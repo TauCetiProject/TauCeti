@@ -13,20 +13,19 @@ public import Mathlib.RingTheory.HahnSeries.Multiplication
 Over a domain, taking a power multiplies the order and raises the leading coefficient to that
 power. These formulas detect whether a leading pole term can be cancelled by a power.
 
-The formulas are `TauCeti.hahnSeries_leadingCoeff_pow (f := f) n` and
-`TauCeti.hahnSeries_orderTop_pow (f := f) n`; both are also simplification lemmas.
-The series argument is implicit and can be inferred from the equality being proved.
+The formulas are `TauCeti.hahnSeries_leadingCoeff_pow f n` and
+`TauCeti.hahnSeries_orderTop_pow f n`; both are also simplification lemmas.
 
 With the typeclasses below in scope, use the qualified names as follows:
 
 ```lean
 example (f : HahnSeries Γ R) (n : ℕ) :
     (f ^ n).leadingCoeff = f.leadingCoeff ^ n :=
-  TauCeti.hahnSeries_leadingCoeff_pow n
+  TauCeti.hahnSeries_leadingCoeff_pow f n
 
 example [Nontrivial R] (f : HahnSeries Γ R) (n : ℕ) :
     (f ^ n).orderTop = n • f.orderTop :=
-  TauCeti.hahnSeries_orderTop_pow n
+  TauCeti.hahnSeries_orderTop_pow f n
 ```
 -/
 
@@ -39,7 +38,7 @@ variable {Γ R : Type*} [AddCommMonoid Γ] [LinearOrder Γ] [IsOrderedCancelAddM
 
 /-- The leading coefficient of a power is the power of the leading coefficient. -/
 @[simp]
-theorem hahnSeries_leadingCoeff_pow {f : HahnSeries Γ R} (n : ℕ) :
+theorem hahnSeries_leadingCoeff_pow (f : HahnSeries Γ R) (n : ℕ) :
     (f ^ n).leadingCoeff = f.leadingCoeff ^ n := by
   induction n with
   | zero => simp
@@ -47,7 +46,7 @@ theorem hahnSeries_leadingCoeff_pow {f : HahnSeries Γ R} (n : ℕ) :
 
 /-- The order of a power is the corresponding multiple of the order, including at zero. -/
 @[simp]
-theorem hahnSeries_orderTop_pow [Nontrivial R] {f : HahnSeries Γ R} (n : ℕ) :
+theorem hahnSeries_orderTop_pow [Nontrivial R] (f : HahnSeries Γ R) (n : ℕ) :
     (f ^ n).orderTop = n • f.orderTop := by
   induction n with
   | zero => simp
