@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Data.ZMod.FinEquiv
 public import TauCeti.Topology.Algebra.Group.Profinite.ZHat.ZMod
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Corestriction.Basic
 
@@ -40,18 +41,11 @@ universe u v
 
 attribute [local instance] Subgroup.fintypeQuotientOfFiniteIndex
 
--- Mathlib's `ZMod.finEquiv` is the identity at positive successor levels, but has no
--- evaluation lemma. Isolate that definitional fact from the quotient computation.
-private theorem val_finEquiv (n : ℕ) [NeZero n] (i : Fin n) :
-    (ZMod.finEquiv n i).val = (i : ℕ) := by
-  cases n with
-  | zero => exact (NeZero.ne 0 rfl).elim
-  | succ n => rfl
-
 private theorem modTransversal_finEquiv (n : ℕ+) (i : Fin n) :
     modTransversal n ((modQuotientEquiv.{u} n).symm
       (Multiplicative.ofAdd (ZMod.finEquiv (n : ℕ) i))) = gen ^ (i : ℕ) := by
-  rw [modTransversal_modQuotientEquiv_symm, toAdd_ofAdd, val_finEquiv]
+  rw [modTransversal_modQuotientEquiv_symm, toAdd_ofAdd, ZMod.finEquiv_apply,
+    ZMod.val_natCast_of_lt i.isLt]
 
 /-- Summing over the cyclic transversal is summing over the generator powers with exponents
 from `0` to `n - 1`. -/
