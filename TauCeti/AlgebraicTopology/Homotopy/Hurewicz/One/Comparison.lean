@@ -101,21 +101,22 @@ theorem hurewicz_eq_neg_ιHomology₁ (p : Ω^ (Fin 1) X x) :
         (pairSSet x) (simplex₁ p) (δ_simplex₁ p)) ≫ g)
           (singularHomologyIsoOfSubsetSingleton_hom R 0 x).symm)))
 
-section Integer
-
-variable {X : Type} [TopologicalSpace X] {x : X}
-
 /-- The singular `1`-simplex traced by a generalized loop is the singular `1`-simplex of the
 corresponding loop (`TauCeti.TopCat.simplex₁`). -/
+@[simp]
 lemma simplex₁_eq_topCatSimplex₁ (p : Ω^ (Fin 1) X x) :
     simplex₁ p = TauCeti.TopCat.simplex₁ (genLoopEquivOfUnique (Fin 1) p).toContinuousMap := by
   apply ((TopCat.of X).toSSetObjEquiv _).injective
   refine ((TopCat.toSSetObjEquiv_toSSet_map_app
-    (TopPair.Hom.fst (toCubeBoundaryPairHom.{0} p)) cubeSimplex).trans ?_).trans
+    (TopPair.Hom.fst (toCubeBoundaryPairHom.{w} p)) cubeSimplex).trans ?_).trans
       (TauCeti.TopCat.toSSetObjEquiv_simplex₁ _).symm
   ext a
   rw [ContinuousMap.comp_apply, toSSetObjEquiv_cubeSimplex_apply]
   exact (toCubeBoundaryPairHom_fst_apply p _).trans (congrArg p (cubePoint_down _))
+
+section Integer
+
+variable {X : Type} [TopologicalSpace X] {x : X}
 
 /-- With integer coefficients, the class of the singular `1`-simplex traced by a generalized loop is
 the homology class of the corresponding loop. -/
