@@ -19,12 +19,15 @@ and two measure-preserving maps with equal pulled-back kernels give an exact cou
 
 The relation is defined for raw measures and kernels with arbitrary target. Symmetry and
 invariance under a.e. changes require only a sigma-finite first measure. The exact coupling then
-is sigma-finite, although the second measure need not be. If a carrier has measurable equality,
-every raw kernel on an s-finite measure is weakly isomorphic to itself and to its pullbacks along
-transport maps, without any structure on the kernel target. Common-space introduction and
-transitivity are proved for a.e. strongly measurable kernels with values in an extended metric
-space. Transitivity uses gluing; it requires a finite middle measure
-and a standard Borel outer carrier, rather than a topology on every carrier.
+is sigma-finite, although the second measure need not be. The carrier-side pullback law asks for
+measurable equality on the target carrier of the transport map and an s-finite source measure.
+Its identity case gives reflexivity when the kernel carrier has measurable equality. These laws
+allow arbitrary raw kernels without any structure on their value type.
+
+Common-space introduction, pullbacks, reflexivity and transitivity also hold for a.e. strongly
+measurable kernels with values in an extended metric space, without measurable equality on the
+carriers. Transitivity uses gluing; it requires a finite middle measure and a standard Borel outer
+carrier, rather than a topology on every carrier.
 
 For an extended metric target and every nonzero exponent, an exact coupling is precisely a
 coupling of zero distortion. Weakly isomorphic kernels have Gromov–Wasserstein distance zero
@@ -128,9 +131,6 @@ required. In particular this permits duplication of a measured carrier. -/
 theorem areWeaklyIsomorphicKernels_comp_prodMap_of_hasLaw [MeasurableEq Y] [SFinite μ]
     {f : X → Y} (ωY : Y × Y → Z) (hf : ProbabilityTheory.HasLaw f ν μ) :
     AreWeaklyIsomorphicKernels μ (ωY ∘ Prod.map f f) ν ωY := by
-  have : SFinite (graphPlan f μ) := by
-    rw [graphPlan_def]
-    infer_instance
   refine areWeaklyIsomorphicKernels_of_isCoupling (isCoupling_graphPlan hf) ?_
   have hgraph := ae_snd_eq_graphPlan hf.aemeasurable
   filter_upwards [Measure.quasiMeasurePreserving_fst.ae hgraph,
