@@ -36,7 +36,7 @@ variable {k : Type*} [Ring k] [IsDomain k] {n : ℕ} {a : k}
 integer order. -/
 theorem orderTop_pow_of_ne_zero (n : ℕ) {w : k⸨X⸩} (hw : w ≠ 0) :
     (w ^ n).orderTop = ((n : ℤ) * w.order : ℤ) := by
-  rw [HahnSeries.orderTop_pow, ← order_eq_orderTop_of_ne_zero hw,
+  rw [hahnSeries_orderTop_pow, ← order_eq_orderTop_of_ne_zero hw,
     ← WithTop.coe_nsmul, nsmul_eq_mul]
 
 /-- Raising a Laurent series of negative order to a power greater than one strictly lowers
@@ -62,7 +62,7 @@ theorem leadingCoeff_pow_sub_self_of_order_neg
     (hn : 1 < n) {w : k⸨X⸩} (hw : w.order < 0) :
     (w ^ n - w).leadingCoeff = w.leadingCoeff ^ n := by
   rw [leadingCoeff_sub (orderTop_pow_lt_orderTop_of_order_neg hn hw),
-    HahnSeries.leadingCoeff_pow]
+    hahnSeries_leadingCoeff_pow]
 
 /-- If the coefficient of `a T⁻ⁿ` is not an `n`-th power, subtracting `wⁿ - w` never
 cancels its pole. A pole of `w` of order greater than one only makes the pole worse. -/
