@@ -35,6 +35,24 @@ class SourceOptionsTests(unittest.TestCase):
             'example : True := by\n'
             '  set_option /- explanation -/ hygiene false in trivial\n'), [5])
 
+    def test_raw_strings_cannot_hide_following_options(self):
+        self.assertEqual(option_lines(
+            'def quoted := r#"""#\n'
+            'set_option hygiene false in\n'
+            'example : True := by trivial\n'), [2])
+        self.assertEqual(option_lines(
+            'def text := r###"set_option "# /- not a comment\n'
+            'set_option hygiene false "###\n'
+            '  set_option maxHeartbeats 0 in\n'), [3])
+
+    def test_quoted_identifiers_and_characters_cannot_hide_following_options(self):
+        self.assertEqual(option_lines(
+            'def «"» := 1\n'
+            'def «set_option» := 2\n'
+            'def quote := \'"\'\n'
+            'def primed\' := 3\n'
+            'set_option hygiene false in\n'), [5])
+
     def test_cli_checks_nested_files_and_root_and_fails_on_missing_input(self):
         checker = Path(__file__).with_name("check_source_options.py")
         with tempfile.TemporaryDirectory() as directory:

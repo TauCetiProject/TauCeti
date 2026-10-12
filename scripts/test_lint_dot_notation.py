@@ -410,6 +410,18 @@ end TauCeti
         cleaned = lint.strip_comments_and_strings("Homeomorph.prodAssoc F F' G' ''\ndef next := 1\n")
         self.assertIn("def next", cleaned)
 
+    def test_raw_strings_and_quoted_identifiers_preserve_following_declarations(self):
+        source = ('def «"» := r#"""#\n'
+                  'def text := r###"namespace Hidden "# /- text\n'
+                  'def hidden := 1 "###\n'
+                  'def next := 1\n')
+        cleaned = lint.strip_comments_and_strings(source)
+        self.assertEqual(len(cleaned), len(source))
+        self.assertEqual(cleaned.count("\n"), source.count("\n"))
+        self.assertIn("def next := 1", cleaned)
+        self.assertNotIn("Hidden", cleaned)
+        self.assertNotIn("hidden", cleaned)
+
     def test_main_rejects_new_and_reports_ratchetable_findings(self):
         with tempfile.TemporaryDirectory() as directory:
             root = pathlib.Path(directory)

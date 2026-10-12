@@ -45,6 +45,7 @@ MODIFIERS = {
 }
 IDENTIFIER = re.compile(r"(?:_root_\.)?[\w']+(?:\.[\w']+)*")
 WORD = re.compile(r"[A-Za-z_][\w']*")
+RAW_STRING_START = re.compile(r'r(#+)?"')
 PAIRS = {"(": ")", "[": "]", "{": "}", "⦃": "⦄"}
 OPENERS = set(PAIRS)
 CLOSERS = set(PAIRS.values())
@@ -167,11 +168,12 @@ class VariableBinding:
 
 
 def strip_comments_and_strings(text: str) -> str:
-    """Blank comments and strings while preserving offsets and newlines."""
+    """Blank comments, literals and quoted identifiers, preserving offsets and newlines."""
     chars = list(text)
     i = 0
     block_depth = 0
     in_string = False
+    raw_end = None
     while i < len(chars):
         if block_depth:
             if text.startswith("/-", i):
@@ -182,6 +184,16 @@ def strip_comments_and_strings(text: str) -> str:
                 chars[i] = chars[i + 1] = " "
                 block_depth -= 1
                 i += 2
+            else:
+                if chars[i] != "\n":
+                    chars[i] = " "
+                i += 1
+        elif raw_end is not None:
+            if text.startswith(raw_end, i):
+                for j in range(i, i + len(raw_end)):
+                    chars[j] = " "
+                i += len(raw_end)
+                raw_end = None
             else:
                 if chars[i] != "\n":
                     chars[i] = " "
@@ -206,6 +218,21 @@ def strip_comments_and_strings(text: str) -> str:
             chars[i] = chars[i + 1] = " "
             block_depth = 1
             i += 2
+        elif chars[i] == "«":
+            while i < len(chars):
+                closing = chars[i] == "»"
+                if chars[i] != "\n":
+                    chars[i] = " "
+                i += 1
+                if closing:
+                    break
+        elif chars[i] == "r" and (
+                i == 0 or not (text[i - 1].isalnum() or text[i - 1] in "_'")) and (
+                raw_match := RAW_STRING_START.match(text, i)):
+            raw_end = '"' + (raw_match.group(1) or "")
+            for j in range(i, raw_match.end()):
+                chars[j] = " "
+            i = raw_match.end()
         elif chars[i] == '"':
             chars[i] = " "
             in_string = True
