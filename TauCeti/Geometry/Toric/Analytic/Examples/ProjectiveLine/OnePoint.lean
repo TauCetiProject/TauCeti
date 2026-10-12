@@ -46,8 +46,6 @@ local notation "ιp" => projectiveLineFan.analyticAffineChartι
   isRegular_projectiveLineFan projectiveLinePositiveCone
 local notation "ιn" => projectiveLineFan.analyticAffineChartι
   isRegular_projectiveLineFan projectiveLineNegativeCone
-local notation "ι₀" => projectiveLineFan.analyticAffineChartι
-  isRegular_projectiveLineFan projectiveLineZeroCone
 
 private noncomputable instance positiveTopology :
     TopologicalSpace (AffineSemigroupComplexPoint
@@ -110,12 +108,6 @@ private theorem range_positiveChartMap : range projectiveLinePositiveChartMap = 
 private theorem range_negativeChartMap : range projectiveLineNegativeChartMap = range ιn := by
   exact (negativeRayPointHomeomorph gn).symm.surjective.range_comp _
 
-private theorem zeroCone_le_positive : projectiveLineZeroCone ≤ projectiveLinePositiveCone :=
-  Subtype.mk_le_mk.mpr bot_le
-
-private theorem zeroCone_le_negative : projectiveLineZeroCone ≤ projectiveLineNegativeCone :=
-  Subtype.mk_le_mk.mpr bot_le
-
 /-- A point in the positive chart and a point in the negative chart represent the same global
 point exactly when their coordinates multiply to one. In particular neither coordinate can be
 zero on the overlap. -/
@@ -124,33 +116,24 @@ theorem projectiveLinePositiveChartMap_eq_negativeChartMap_iff (z w : ℂ) :
     projectiveLinePositiveChartMap z = projectiveLineNegativeChartMap w ↔ z * w = 1 := by
   constructor
   · intro h
-    have hz : projectiveLinePositiveChartMap z ∈ range ι₀ := by
-      rw [← projectiveLine_chart_overlap]
-      exact ⟨⟨_, rfl⟩, ⟨_, h.symm⟩⟩
-    obtain ⟨x, hx⟩ := hz
-    have hp := projectiveLineFan.analyticAffineChartι_faceAffinePointMap
-      isRegular_projectiveLineFan zeroCone_le_positive x
-    have hn := projectiveLineFan.analyticAffineChartι_faceAffinePointMap
-      isRegular_projectiveLineFan zeroCone_le_negative x
-    have hxp := (projectiveLineFan.isOpenEmbedding_analyticAffineChartι
-      isRegular_projectiveLineFan projectiveLinePositiveCone).injective (hp.trans hx)
-    have hxn := (projectiveLineFan.isOpenEmbedding_analyticAffineChartι
-      isRegular_projectiveLineFan projectiveLineNegativeCone).injective (hn.trans (hx.trans h))
-    have hm := projectiveLine_chart_coordinates_mul («gp» := gp) (g := gn) x
-    rw [hxp, hxn, Homeomorph.apply_symm_apply, Homeomorph.apply_symm_apply] at hm
-    exact hm
+    simpa only [Homeomorph.apply_symm_apply] using
+      projectiveLine_chart_coordinates_mul_of_eq
+        ((affineRayPointHomeomorph gp).symm z) ((negativeRayPointHomeomorph gn).symm w) h
   · intro h
     have hz : z ≠ 0 := left_ne_zero_of_mul_eq_one h
     let x := (affineRayZeroFacePointHomeomorph g₀).symm (Units.mk0 z hz)
+    -- The fan lattice reduces to `isIntegralLattice_intCast 1`; the two proofs of the
+    -- zero-face inclusion agree by proof irrelevance. `zeroTopology` is `affinePointTopology g₀`,
+    -- the same topology used by the affine-ray coordinate lemma.
     have hp : affineRayPointHomeomorph gp
         (faceAffinePointMap projectiveLineFan.lattice
           (projectiveLineFan.isFaceOf_of_le projectiveLinePositiveCone.2
-            projectiveLineZeroCone.2 zeroCone_le_positive) x) = z :=
+            projectiveLineZeroCone.2 projectiveLineZeroCone_le_positiveCone) x) = z :=
       affineRayPointHomeomorph_faceAffinePointMap_symm gp g₀ (Units.mk0 z hz)
     have hn : negativeRayPointHomeomorph gn
         (faceAffinePointMap projectiveLineFan.lattice
           (projectiveLineFan.isFaceOf_of_le projectiveLineNegativeCone.2
-            projectiveLineZeroCone.2 zeroCone_le_negative) x) = w := by
+            projectiveLineZeroCone.2 projectiveLineZeroCone_le_negativeCone) x) = w := by
       have hm := projectiveLine_chart_coordinates_mul («gp» := gp) (g := gn) x
       rw [hp] at hm
       exact mul_left_cancel₀ hz (hm.trans h.symm)
@@ -158,12 +141,8 @@ theorem projectiveLinePositiveChartMap_eq_negativeChartMap_iff (z w : ℂ) :
       (hp.trans ((affineRayPointHomeomorph gp).apply_symm_apply z).symm)
     have hxn := (negativeRayPointHomeomorph gn).injective
       (hn.trans ((negativeRayPointHomeomorph gn).apply_symm_apply w).symm)
-    exact (congrArg ιp hxp.symm).trans
-      ((projectiveLineFan.analyticAffineChartι_faceAffinePointMap
-        isRegular_projectiveLineFan zeroCone_le_positive x).trans
-          ((projectiveLineFan.analyticAffineChartι_faceAffinePointMap
-            isRegular_projectiveLineFan zeroCone_le_negative x).symm.trans
-              (congrArg ιn hxn)))
+    rw [projectiveLinePositiveChartMap, projectiveLineNegativeChartMap, ← hxp, ← hxn]
+    exact projectiveLine_chart_faceAffinePointMap_eq x
 
 /-- The two complex-line parametrizations cover the toric projective line. -/
 theorem projectiveLineChartMap_cover :
