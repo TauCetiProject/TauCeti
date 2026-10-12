@@ -10,6 +10,7 @@ public import Mathlib.Analysis.InnerProductSpace.Calculus
 public import Mathlib.Analysis.InnerProductSpace.Laplacian
 public import Mathlib.Analysis.LocallyConvex.SeparatingDual
 public import Mathlib.Analysis.Normed.Affine.Isometry
+public import TauCeti.Analysis.Matrix.EuclideanLin
 
 /-!
 # Geometric invariance of the Laplacian
@@ -36,7 +37,8 @@ and for a translation by `a : E`,
 
 Under a general continuous linear equivalence `e : E ≃L[ℝ] E'` the Laplacian is no longer
 invariant: for an orthonormal basis `b` of `E`, `Δ (f ∘ e) x = ∑ᵢ D²f (e x) (e bᵢ, e bᵢ)`, a
-second-order operator with constant coefficients applied to `f`.
+second-order operator with constant coefficients applied to `f`. For the map of an invertible
+square matrix `T` on `EuclideanSpace ℝ ι`, the coefficient matrix of that operator is `T Tᵀ`.
 
 All of these identities hold with *no* differentiability hypothesis on `f`, because the underlying
 `iteratedFDeriv` composition laws are unconditional (the iterated derivative is junk-valued off
@@ -62,6 +64,8 @@ statement `tsupport_laplacian_subset` that `Δ f` vanishes wherever `f` vanishes
   isometry `l`.
 * `TauCeti.laplacian_comp_continuousLinearEquiv_right_apply`: for a general continuous linear
   equivalence `e`, `Δ (f ∘ e) x = ∑ᵢ D²f (e x) (e bᵢ, e bᵢ)` along an orthonormal basis `b`.
+* `TauCeti.laplacian_comp_toEuclideanCLE_apply`: for an invertible matrix `T`, the Laplacian of
+  `u ∘ T` is the constant-coefficient operator with matrix `T Tᵀ` applied to `u`.
 * `TauCeti.laplacian_comp_add_right`: translation invariance of `Δ`.
 * `TauCeti.laplacian_comp_homothety_right`: `Δ` scales by `c ^ 2` under
   `AffineMap.homothety a c`.
@@ -148,6 +152,39 @@ theorem laplacian_comp_continuousLinearEquiv_right_apply {ι : Type*} [Fintype �
   congr 1
   funext j
   fin_cases j <;> rfl
+
+open Matrix in
+/-- **The Laplacian after a linear change of variables by a matrix.** For a square matrix `T`
+with nonzero determinant, `Δ (u ∘ T) y = ∑ᵢⱼ (T Tᵀ)ᵢⱼ ∂ᵢ∂ⱼu (T y)`: composing with `T` turns the
+Laplacian into the constant-coefficient operator with coefficient matrix `T Tᵀ`. No
+differentiability hypothesis is needed. -/
+theorem laplacian_comp_toEuclideanCLE_apply {ι : Type*} [Fintype ι] [DecidableEq ι]
+    (T : Matrix ι ι ℝ) (hT : T.det ≠ 0) (u : EuclideanSpace ℝ ι → F) (y : EuclideanSpace ℝ ι) :
+    Δ (u ∘ T.toEuclideanCLE hT) y = ∑ i, ∑ j, (T * Tᵀ) i j •
+      fderiv ℝ (fderiv ℝ u) (T.toEuclideanCLE hT y) (EuclideanSpace.single i 1)
+        (EuclideanSpace.single j 1) := by
+  set e := T.toEuclideanCLE hT
+  set b := EuclideanSpace.basisFun ι ℝ
+  have hcol : ∀ k, e (b k) = ∑ i, T i k • b i := fun k => by
+    ext i
+    simp [e, b, Pi.single_apply]
+  -- Expand `e bₖ = ∑ᵢ Tᵢₖ bᵢ` in both slots of the second derivative and resum over `k`.
+  rw [laplacian_comp_continuousLinearEquiv_right_apply e b]
+  simp only [iteratedFDeriv_two_apply, Matrix.cons_val_zero, Matrix.cons_val_one, hcol, map_sum,
+    map_smul, _root_.sum_apply, _root_.smul_apply, Finset.smul_sum, smul_smul, Matrix.mul_apply,
+    Matrix.transpose_apply, Finset.sum_smul]
+  simp only [b, EuclideanSpace.basisFun_apply]
+  set H := fderiv ℝ (fderiv ℝ u) (e y)
+  calc _ = ∑ k, ∑ c, ∑ a, (T a k * T c k) •
+        H (EuclideanSpace.single c 1) (EuclideanSpace.single a 1) :=
+        Finset.sum_congr rfl fun k _ => Finset.sum_comm
+    _ = ∑ c, ∑ k, ∑ a, (T a k * T c k) •
+        H (EuclideanSpace.single c 1) (EuclideanSpace.single a 1) := Finset.sum_comm
+    _ = ∑ c, ∑ a, ∑ k, (T a k * T c k) •
+        H (EuclideanSpace.single c 1) (EuclideanSpace.single a 1) :=
+        Finset.sum_congr rfl fun c _ => Finset.sum_comm
+    _ = _ := Finset.sum_congr rfl fun c _ => Finset.sum_congr rfl fun a _ =>
+        Finset.sum_congr rfl fun k _ => by rw [mul_comm]
 
 /-- **Geometric invariance of the Laplacian under isometries.** For a linear isometry
 equivalence `l`, the Laplacian commutes with right composition by `l`:
