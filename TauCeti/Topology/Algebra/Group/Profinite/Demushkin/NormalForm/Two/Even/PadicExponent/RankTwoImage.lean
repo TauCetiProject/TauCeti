@@ -15,7 +15,8 @@ For the presentation `⟨x₁, x₂ ∣ x₁^{2+α}(x₁,x₂)⟩`, with `α ∈
 prescription property has image generated topologically by its value `-(1+α)⁻¹` on `x₂`.
 This file identifies that image with the twisted subgroup `U^[g]` exactly when `α` has
 valuation `g ≥ 2`, and with `{±1}` exactly when `α = 0`. These characterizations recover
-the parameter of a marked rank-two presentation from its orientation image.
+the exact divisibility depth of the parameter of a marked rank-two presentation from its
+orientation image, with a separate zero endpoint.
 
 The statements use the prescription property directly, so they also apply before choosing
 a proof that the presentation is Demushkin. The character exists by
@@ -40,7 +41,8 @@ variable {α : ℤ_[2]} {q : ℕ}
 
 /-- The orientation image of the rank-two dyadic presentation is `U^[g]` exactly when
 the `2`-adic exponent `α` has exact divisibility depth `g ≥ 2`. -/
-theorem range_eq_iff_of_hasPrescriptionProperty_demushkinWordTwoEvenPadic_two
+theorem
+    range_eq_topologicalClosure_zpowers_iff_of_hasPrescriptionProperty_demushkinWordTwoEvenPadic_two
     (hα : 4 ∣ α) {g : ℕ} (hg : 2 ≤ g) {w : ℤ_[2]ˣ}
     (hw : (w : ℤ_[2]) = -1 + (2 : ℤ_[2]) ^ g) (hχ : HasPrescriptionProperty χ) :
     χ.toMonoidHom.range = (zpowers w).topologicalClosure ↔
