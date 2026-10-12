@@ -17,7 +17,7 @@ Let `Ω ⊆ ℝⁿ` be open with finite measure, let `a` be measurable and unifo
 with constants `0 < λ ≤ Λ`, and let `c` be bounded, measurable and nonnegative. This file proves
 the weak maximum principle with a right-hand side: if `u ∈ H¹(Ω)` is a weak subsolution of
 
-`-∂ⱼ(aⁱʲ ∂ᵢu) + c u ≤ f` in `Ω`, with `f ∈ Lʳ(Ω)` and `r > n/2`,
+`-∂ⱼ(aⁱʲ ∂ᵢu) + c u ≤ f` in `Ω`, with `f ∈ Lʳ(Ω)`, `r > 1` and `r > n/2`,
 
 meaning `a(u, v) ≤ ∫_Ω f v` for every nonnegative `v ∈ H¹₀(Ω)`, and `u ≤ k` on `∂Ω` for a level
 `k ≥ 0`, in the sense that `(u - k)⁺ ∈ H¹₀(Ω)`, then
@@ -25,7 +25,8 @@ meaning `a(u, v) ≤ ∫_Ω f v` for every nonnegative `v ∈ H¹₀(Ω)`, and `
 `u ≤ k + C ‖f‖_{Lʳ(Ω)} / λ · |Ω| ^ (2/n - 1/r)` almost everywhere in `Ω`,
 
 with `C` depending only on `n`, `r` and the normalization of the Haar measure. In particular the
-weak solution `u ∈ H¹₀(Ω)` of the Dirichlet problem `-∂ⱼ(aⁱʲ ∂ᵢu) + c u = f` is bounded, with
+weak solution `u ∈ H¹₀(Ω)` of the Dirichlet problem `-∂ⱼ(aⁱʲ ∂ᵢu) + c u = f`, for
+`f ∈ L²(Ω) ∩ Lʳ(Ω)`, is bounded, with
 `|u| ≤ C ‖f‖_{Lʳ} / λ · |Ω| ^ (2/n - 1/r)`. No regularity of `∂Ω` and no regularity of the
 coefficients beyond measurability is used, and the power of `|Ω|` makes the estimate invariant
 under dilations.
@@ -149,8 +150,9 @@ private theorem toReal_eLpNorm_posPartAbove_le
   have hwA : ∀ᵐ x ∂ν, x ∉ A → W1p.value w x = 0 := by
     filter_upwards [hval] with x hx hxA
     rw [hx, max_eq_right (sub_nonpos.2 (not_lt.1 hxA))]
-  have hholder := MeasureTheory.integral_mul_le_eLpNorm_mul_eLpNorm_mul_measureReal_rpow hr hs hrs
-    hf hwLp hA (measure_ne_top ν A) hwA
+  have hholder := (le_abs_self _).trans <|
+    MeasureTheory.abs_integral_mul_le_eLpNorm_mul_eLpNorm_mul_measureReal_rpow hr hs hrs hf hwLp hA
+      (measure_ne_top ν A) hwA
   -- Absorb one factor of `‖w‖_{Lˢ}`.
   set W := (eLpNorm (W1p.value w) s ν).toReal
   set F := (eLpNorm f r ν).toReal
@@ -219,7 +221,8 @@ private theorem measureReal_lt_le_div_sub_rpow_mul_rpow
     refine measure_mono_ae ?_
     filter_upwards [W1p.value_posPartAbove_ae (by norm_num) (hk.trans hkl) u] with x hx hxt
     rw [hx, Real.enorm_of_nonneg (le_max_right _ _)]
-    exact ENNReal.ofReal_le_ofReal (le_max_of_le_left (by linarith [show t < _ from hxt]))
+    have hxt' : t < W1p.value u x := hxt
+    exact ENNReal.ofReal_le_ofReal (le_max_of_le_left (by linarith))
   have hfin : eLpNorm (W1p.value w) s ν ^ ((s : ℝ≥0∞).toReal) ≠ ∞ := by
     refine ENNReal.rpow_ne_top_of_nonneg (by positivity) ?_
     exact ((hS w (W1p.posPartAbove_mem_w1p0Submodule_of_le (by norm_num) hk hkl

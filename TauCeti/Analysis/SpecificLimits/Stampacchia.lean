@@ -93,9 +93,9 @@ theorem apply_add_eq_zero_of_le_div_sub_rpow_mul_rpow {φ : ℝ → ℝ} {k₀ M
       positivity
     have h := hrec (k j) (k (j + 1)) (hk₀ j) hlt
     rw [hgap] at h
+    have hdiv : M / (d / 2 / 2 ^ j) = 2 * M / d * 2 ^ j := by field_simp
     have hsplit : (M / (d / 2 / 2 ^ j)) ^ α = (2 * M / d) ^ α * (2 ^ α) ^ j := by
-      rw [show M / (d / 2 / 2 ^ j) = 2 * M / d * 2 ^ j by field_simp,
-        Real.mul_rpow (by positivity) (by positivity), ← Real.rpow_natCast,
+      rw [hdiv, Real.mul_rpow (by positivity) (by positivity), ← Real.rpow_natCast,
         ← Real.rpow_natCast, ← Real.rpow_mul zero_le_two, ← Real.rpow_mul zero_le_two,
         mul_comm α]
     simpa only [Y, hsplit, add_sub_cancel] using h
@@ -125,6 +125,7 @@ theorem apply_add_eq_zero_of_le_div_sub_rpow_mul_rpow {φ : ℝ → ℝ} {k₀ M
       hβ1.le hbq hstart hrecY
   -- `φ (k₀ + d)` lies below every `φ kⱼ`, and these tend to zero.
   refine le_antisymm (ge_of_tendsto' hlim fun j => ?_) (hφ _ (by linarith))
-  exact hanti (hk₀ j) (show k₀ ≤ k₀ + d by linarith) (hkd j)
+  have hk₀d : k₀ ≤ k₀ + d := by linarith
+  exact hanti (hk₀ j) hk₀d (hkd j)
 
 end TauCeti

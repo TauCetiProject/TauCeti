@@ -15,7 +15,7 @@ Let `w` vanish almost everywhere off a set `A` of finite measure. For exponents 
 `1/r + 1/s ≤ 1`, Hölder's inequality with the three exponents `r`, `s` and
 `(1 - 1/r - 1/s)⁻¹`, the last applied to the indicator of `A`, gives
 
-`∫ f w ≤ ‖f‖_{Lʳ} ‖w‖_{Lˢ} μ(A) ^ (1 - 1/r - 1/s)`.
+`|∫ f w| ≤ ‖f‖_{Lʳ} ‖w‖_{Lˢ} μ(A) ^ (1 - 1/r - 1/s)`.
 
 The factor `μ(A) ^ (1 - 1/r - 1/s)` is what makes the inequality useful when `A` is small. In
 Stampacchia's and De Giorgi's methods, `w` is a truncation `(u - k)⁺`, `A` is the superlevel set
@@ -24,7 +24,7 @@ iteration.
 
 ## Main declarations
 
-* `TauCeti.MeasureTheory.integral_mul_le_eLpNorm_mul_eLpNorm_mul_measureReal_rpow`: the
+* `TauCeti.MeasureTheory.abs_integral_mul_le_eLpNorm_mul_eLpNorm_mul_measureReal_rpow`: the
   inequality.
 -/
 
@@ -46,12 +46,12 @@ variable {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω}
 `1/r + 1/s ≤ 1`, let `f ∈ Lʳ` and `w ∈ Lˢ`, and suppose that `w` vanishes almost everywhere off a
 measurable set `A` of finite measure. Then
 
-`∫ f w ≤ ‖f‖_{Lʳ} ‖w‖_{Lˢ} μ(A) ^ (1 - 1/r - 1/s)`. -/
-theorem integral_mul_le_eLpNorm_mul_eLpNorm_mul_measureReal_rpow {f w : Ω → ℝ} {r s : ℝ≥0}
+`|∫ f w| ≤ ‖f‖_{Lʳ} ‖w‖_{Lˢ} μ(A) ^ (1 - 1/r - 1/s)`. -/
+theorem abs_integral_mul_le_eLpNorm_mul_eLpNorm_mul_measureReal_rpow {f w : Ω → ℝ} {r s : ℝ≥0}
     (hr : 0 < r) (hs : 0 < s) (hrs : (r : ℝ)⁻¹ + (s : ℝ)⁻¹ ≤ 1)
     (hf : MemLp f r μ) (hw : MemLp w s μ) {A : Set Ω} (hA : MeasurableSet A) (hAfin : μ A ≠ ∞)
     (hwA : ∀ᵐ x ∂μ, x ∉ A → w x = 0) :
-    ∫ x, f x * w x ∂μ ≤
+    |∫ x, f x * w x ∂μ| ≤
       (eLpNorm f r μ).toReal * (eLpNorm w s μ).toReal *
         μ.real A ^ (1 - (r : ℝ)⁻¹ - (s : ℝ)⁻¹) := by
   have hr0 : (0 : ℝ) < r := hr
@@ -95,10 +95,9 @@ theorem integral_mul_le_eLpNorm_mul_eLpNorm_mul_measureReal_rpow {f w : Ω → �
       (ENNReal.rpow_ne_top_of_nonneg (sub_nonneg.2 hτ) hAfin)) hw.eLpNorm_ne_top
   have hmeas : AEStronglyMeasurable ((A.indicator f) • w) μ :=
     (hf.aestronglyMeasurable.indicator hA).smul hw.aestronglyMeasurable
-  calc ∫ x, f x * w x ∂μ
-      ≤ ‖∫ x, ((A.indicator f) • w) x ∂μ‖ := by
-        rw [integral_congr_ae hind]
-        exact Real.le_norm_self _
+  calc |∫ x, f x * w x ∂μ|
+      = ‖∫ x, ((A.indicator f) • w) x ∂μ‖ := by
+        rw [integral_congr_ae hind, Real.norm_eq_abs]
     _ ≤ (eLpNorm ((A.indicator f) • w) 1 μ).toReal := by
         rw [eLpNorm_one_eq_lintegral_enorm hmeas]
         exact (norm_integral_le_lintegral_norm _).trans_eq (by simp_rw [ofReal_norm])
