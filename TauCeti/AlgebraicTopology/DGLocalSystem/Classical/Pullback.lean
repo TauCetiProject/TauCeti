@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicTopology.DGLocalSystem.Classical
+public import TauCeti.AlgebraicTopology.DGLocalSystem.Classical.Basic
 
 /-!
 # Classical local systems and pullback
@@ -16,7 +16,7 @@ Moore loop is the image of its class under `π₁(f)` (`MooreLoopSpace.loopClass
 degree-zero ring map `loopChainDegreeZero` intertwines `C_*(Ωf)` with the map of group rings
 (`loopChainDegreeZero_loopChainMap`).
 
-The module `Classical` builds the DG local system of a classical local system; the isomorphism
+The module `Classical.Basic` builds the DG local system of a classical local system; the isomorphism
 between the pullback of the DG local system of `L` and the DG local system of the pullback of `L`
 is not proved here: it is the combination of the naturality below with the monodromy of the
 pullback.
@@ -54,6 +54,13 @@ theorem MooreLoopSpace.loopClass_map (f : C(B, B')) (hf : f b = b') (γ : MooreL
   rw [h]
   rfl
 
+end Naturality
+
+section Ring
+
+variable {B B' : Type*} [TopologicalSpace B] [TopologicalSpace B'] {b : B} {b' : B'}
+  {R : Type*} [Ring R]
+
 /-- **Naturality of the class of `0`-chains**: the class of the image of a `0`-chain under
 `C_*(Ωf)` is the image of its class under the map of group rings of the opposite fundamental
 groups. -/
@@ -74,6 +81,13 @@ theorem zerothClass_map (f : C(B, B')) (hf : f b = b')
     simp [NormalizedCubicalChain.map_ofCube, h, zerothClass_ofCube_point,
       MooreLoopSpace.loopClass_map]
 
+end Ring
+
+section DegreeZero
+
+variable {B B' : Type*} [TopologicalSpace B] [TopologicalSpace B'] {b : B} {b' : B'}
+  {R : Type*} [CommRing R]
+
 /-- **Naturality of the degree-zero ring map**: it intertwines `C_*(Ωf)` with the map of group
 rings induced by `π₁(f)`. -/
 theorem loopChainDegreeZero_loopChainMap (f : C(B, B')) (hf : f b = b')
@@ -84,18 +98,22 @@ theorem loopChainDegreeZero_loopChainMap (f : C(B, B')) (hf : f b = b')
   induction a using DirectSum.induction_on with
   | zero => simp
   | of n y =>
+    have h : zerothComponent B' b' R n
+        (NormalizedCubicalChain.map R (MooreLoopSpace.map f hf).toContinuousMap n y) =
+        MonoidAlgebra.mapDomainRingHom R (FundamentalGroup.mapOfEq f hf).op
+          (zerothComponent B b R n y) := by
+      cases n with
+      | zero =>
+        rw [zerothComponent_zero, zerothComponent_zero]
+        exact zerothClass_map f hf y
+      | succ n =>
+        rw [zerothComponent_eq_zero n.succ_ne_zero, zerothComponent_eq_zero n.succ_ne_zero,
+          map_zero]
     rw [← DirectSum.lof_eq_of R]
-    change loopChainDegreeZero B' b' R (loopChainMap R f hf (cubicalChainLof _ R n y)) = _
-    rw [loopChainMap_lof, loopChainDegreeZero_lof, loopChainDegreeZero_lof]
-    cases n with
-    | zero =>
-      rw [zerothComponent_zero, zerothComponent_zero]
-      exact zerothClass_map f hf y
-    | succ n =>
-      rw [zerothComponent_eq_zero n.succ_ne_zero, zerothComponent_eq_zero n.succ_ne_zero,
-        map_zero]
+    exact ((congrArg _ (loopChainMap_lof R f hf n y)).trans (loopChainDegreeZero_lof n _)).trans
+      (h.trans (congrArg _ (loopChainDegreeZero_lof n y)).symm)
   | add x y hx hy => simp only [map_add, hx, hy]
 
-end Naturality
+end DegreeZero
 
 end TauCeti
