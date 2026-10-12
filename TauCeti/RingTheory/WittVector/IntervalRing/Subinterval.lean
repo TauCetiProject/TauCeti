@@ -108,19 +108,6 @@ theorem gaussValuationAway_le_max (hv : v.Integers O) (hϖ : ϖ ≠ 0) {ρ ρ₁
   rw [← max_mul_of_nonneg _ _ zero_le]
   exact mul_le_mul_left (gaussValuation_mul_inv_pow_le_max hv hρ.2 hρ₁.2 hρ₂.2 hρ₁.1 h₁ h₂ y m) _
 
-/-- The Gauss valuations of two localizations of `𝕎 O` away from `p [ϖ]` correspond under any
-`𝕎 O`-algebra homomorphism between them. -/
-private theorem gaussValuationAway_algHom (hv : v.Integers O) (hϖ : ϖ ≠ 0) {ρ : ℝ≥0}
-    (hρ : ρ ∈ Set.Ioo 0 1) {B' : Type*} [CommRing B'] [Algebra (_root_.WittVector p O) B']
-    [IsLocalization.Away ((p : _root_.WittVector p O) * teichmuller p ϖ) B'] (f : B →ₐ[𝕎 O] B')
-    (x : B) : gaussValuationAway p hv hϖ ρ hρ B' (f x) = gaussValuationAway p hv hϖ ρ hρ B x := by
-  obtain ⟨⟨y, s⟩, rfl⟩ :=
-    IsLocalization.mk'_surjective (Submonoid.powers ((p : 𝕎 O) * teichmuller p ϖ)) x
-  have h : f (IsLocalization.mk' B y s) = IsLocalization.mk' B' y s := by
-    rw [eq_comm, IsLocalization.mk'_eq_iff_eq_mul, ← f.commutes, ← f.commutes, ← map_mul,
-      IsLocalization.mk'_spec]
-  rw [h, gaussValuationAway_mk', gaussValuationAway_mk']
-
 end Away
 
 section Restrict
@@ -454,6 +441,12 @@ theorem norm_intervalRingRestrictedEval_le (h₁ : ρ₁ ≤ ρ₁') (h₁₂ : 
       (Fin.cons (ρ₁' : ℝ)⁻¹ c : Fin (k + 1) → ℝ)) :
     ‖intervalRingRestrictedEval p hv hϖ hϖ' hρ₁ hρ₂ hρ₁' c h₁ h₁₂ g‖ ≤ ‖g‖ :=
   norm_restrictedEval₂_le _ _ _ _ g
+
+/-- The presentation is continuous for the Gauss norms. -/
+theorem continuous_intervalRingRestrictedEval (h₁ : ρ₁ ≤ ρ₁') (h₁₂ : ρ₁' ≤ ρ₂)
+    [∀ j, Fact (0 < (Fin.cons (ρ₁' : ℝ)⁻¹ c : Fin (k + 1) → ℝ) j)] :
+    Continuous (intervalRingRestrictedEval p hv hϖ hϖ' hρ₁ hρ₂ hρ₁' c h₁ h₁₂) :=
+  continuous_restrictedEval₂ _ _ _ _
 
 /-- **Lifting constants from `𝕎 O[1/(p [ϖ])]`.** Every `d ∈ 𝕎 O[1/(p [ϖ])]`, viewed as a constant
 of `B^{[ρ₁', ρ₂]}{T/c}`, is the image of a polynomial in `U` of norm at most `λ_{[ρ₁', ρ₂]}(d)`,
