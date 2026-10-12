@@ -10,12 +10,13 @@ public import Mathlib.Topology.Algebra.Ring.Ideal
 public import Mathlib.Topology.Algebra.Group.Quotient
 
 /-!
-# The quotient of a topological ring by an ideal
+# Ideals and quotients of topological rings
 
-Two things about `R ⧸ I` that its algebraic theory does not record. It is `T1` exactly when `I` is
-closed, and hence `T0`; and when `f : R →+* S` presents `S` as a topological quotient of `R`, the
-first isomorphism theorem `R ⧸ ker f ≃+* S` is a homeomorphism, so `S` carries the quotient
-topology and not merely a coarser one.
+A ring homomorphism with a continuous inverse carries open ideals to open ideals. For quotients,
+we establish two things about `R ⧸ I` that its algebraic theory does not record. It is `T1` exactly
+when `I` is closed, and hence `T0`; and when `f : R →+* S` presents `S` as a topological quotient
+of `R`, the first isomorphism theorem `R ⧸ ker f ≃+* S` is a homeomorphism. Thus `S` carries the
+quotient topology and not merely a coarser one.
 
 Mathlib proves the corresponding statement for the quotient of a topological group by a
 subgroup, as `QuotientGroup.t1Space_iff` and `QuotientGroup.instT1Space`. Those are stated for
@@ -50,6 +51,8 @@ a point; it is not a further hypothesis of the theorem but a consequence for its
 
 ## Main results
 
+* `Ideal.isOpen_map_of_continuous_inverse`: a ring homomorphism with a continuous inverse maps
+  open ideals to open ideals, without any continuity assumption on the ring operations.
 * `Ideal.Quotient.t1Space_iff`: `T1Space (R ⧸ I) ↔ IsClosed (I : Set R)`.
 * `Ideal.Quotient.instT1Space`: the instance form, so that `T0Space (R ⧸ I)` is found
   automatically once `I` is known to be closed.
@@ -131,3 +134,18 @@ theorem isHomeomorph_kerLift (hq : IsQuotientMap (f : R → S)) : IsHomeomorph (
 end RingHom
 
 end FirstIsomorphism
+
+namespace Ideal
+
+variable {R S : Type*} [Semiring R] [TopologicalSpace R] [Semiring S] [TopologicalSpace S]
+
+/-- A ring homomorphism with a continuous inverse carries open ideals to open ideals. No
+continuity of the ring operations is required. -/
+theorem isOpen_map_of_continuous_inverse (I : Ideal R) {f : R →+* S} {g : S →+* R}
+    (hg : Continuous g) (hgf : Function.LeftInverse g f) (hfg : Function.RightInverse g f)
+    (hI : IsOpen (I : Set R)) : IsOpen (I.map f : Set S) := by
+  rw [le_antisymm (Ideal.map_le_comap_of_inverse f g I hgf)
+    (Ideal.comap_le_map_of_inverse g f I hfg), Ideal.coe_comap]
+  exact hI.preimage hg
+
+end Ideal
