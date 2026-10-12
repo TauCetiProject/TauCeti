@@ -54,6 +54,10 @@ localisations `S` and `S'` are arbitrary, as for
   localisations.
 * `TauCeti.Huber.PairOfDefinition.completionLocPairMap_comp_toCompletionLocHom`: the morphism of
   pairs is compatible with the structure morphisms.
+* `TauCeti.Huber.PairOfDefinition.completionLocMap_id`,
+  `TauCeti.Huber.PairOfDefinition.completionLocMap_comp_completionLocMap` and their analogues
+  `completionLocPairMap_id`, `completionLocPairMap_comp_completionLocPairMap` for morphisms of
+  pairs: the base change is functorial.
 
 ## References
 
@@ -275,6 +279,72 @@ private theorem completionLocMap_mem_completedPlusSubring (hplus : ∀ a ∈ Apl
 
 end RingHom
 
+/-! ### Functoriality of the base change -/
+
+section Functoriality
+
+variable (P : PairOfDefinition A) (T : Finset A) (s : A) (S : Type*) [CommRing S] [Algebra A S]
+  [IsLocalization.Away s S] (hden : HasDenominatorPower P T s S)
+
+/-- **The base change of the identity is the identity.** -/
+@[simp]
+theorem completionLocMap_id (hf : ContinuousAt (RingHom.id A) 0)
+    (hT : ∀ t ∈ T, RingHom.id A t ∈ T) :
+    letI := locUniformSpace P T s S hden
+    letI := isUniformAddGroup_locUniformSpace P T s S hden
+    letI := isTopologicalRing_locUniformSpace P T s S hden
+    completionLocMap P T s S hden P (RingHom.id A) hf T S hden hT = RingHom.id _ := by
+  let _ := locUniformSpace P T s S hden
+  have _ := isUniformAddGroup_locUniformSpace P T s S hden
+  have _ := isTopologicalRing_locUniformSpace P T s S hden
+  exact (eq_completionLocMap P T s S hden P (RingHom.id A) hf T S hden hT _ continuous_id
+    -- `RingHom.id A s` and `s` agree definitionally
+    (by rw [RingHom.id_comp, RingHom.comp_id]; rfl)).symm
+
+variable {C : Type*} [CommRing C] [TopologicalSpace C] [IsTopologicalRing C]
+  (P' : PairOfDefinition B) (f : A →+* B) (hf : ContinuousAt f 0) (T' : Finset B) (S' : Type*)
+  [CommRing S'] [Algebra B S'] [IsLocalization.Away (f s) S']
+  (hden' : HasDenominatorPower P' T' (f s) S') (hT : ∀ t ∈ T, f t ∈ T')
+  (P'' : PairOfDefinition C) (g : B →+* C) (hg : ContinuousAt g 0) (T'' : Finset C)
+  (S'' : Type*) [CommRing S''] [Algebra C S''] [IsLocalization.Away (g (f s)) S'']
+  (hden'' : HasDenominatorPower P'' T'' (g (f s)) S'') (hT' : ∀ t ∈ T', g t ∈ T'')
+
+/-- **The base change of a composite is the composite of the base changes.** -/
+@[simp]
+theorem completionLocMap_comp_completionLocMap :
+    letI := locUniformSpace P T s S hden
+    letI := isUniformAddGroup_locUniformSpace P T s S hden
+    letI := isTopologicalRing_locUniformSpace P T s S hden
+    letI := locUniformSpace P' T' (f s) S' hden'
+    letI := isUniformAddGroup_locUniformSpace P' T' (f s) S' hden'
+    letI := isTopologicalRing_locUniformSpace P' T' (f s) S' hden'
+    letI := locUniformSpace P'' T'' (g (f s)) S'' hden''
+    letI := isUniformAddGroup_locUniformSpace P'' T'' (g (f s)) S'' hden''
+    letI := isTopologicalRing_locUniformSpace P'' T'' (g (f s)) S'' hden''
+    (completionLocMap P' T' (f s) S' hden' P'' g hg T'' S'' hden'' hT').comp
+        (completionLocMap P T s S hden P' f hf T' S' hden' hT) =
+      completionLocMap P T s S hden P'' (g.comp f) (hg.comp_of_eq hf (map_zero f)) T'' S''
+        hden'' fun t ht ↦ hT' _ (hT t ht) := by
+  let _ := locUniformSpace P T s S hden
+  have _ := isUniformAddGroup_locUniformSpace P T s S hden
+  have _ := isTopologicalRing_locUniformSpace P T s S hden
+  let _ := locUniformSpace P' T' (f s) S' hden'
+  have _ := isUniformAddGroup_locUniformSpace P' T' (f s) S' hden'
+  have _ := isTopologicalRing_locUniformSpace P' T' (f s) S' hden'
+  let _ := locUniformSpace P'' T'' (g (f s)) S'' hden''
+  have _ := isUniformAddGroup_locUniformSpace P'' T'' (g (f s)) S'' hden''
+  have _ := isTopologicalRing_locUniformSpace P'' T'' (g (f s)) S'' hden''
+  refine eq_completionLocMap P T s S hden P'' (g.comp f) (hg.comp_of_eq hf (map_zero f)) T'' S''
+    hden'' (fun t ht ↦ hT' _ (hT t ht)) _
+    ((continuous_completionLocMap P' T' (f s) S' hden' P'' g hg T'' S'' hden'' hT').comp
+      (continuous_completionLocMap P T s S hden P' f hf T' S' hden' hT)) ?_
+  rw [RingHom.comp_assoc, completionLocMap_comp_toCompletionLoc, ← RingHom.comp_assoc,
+    completionLocMap_comp_toCompletionLoc, RingHom.comp_assoc]
+  -- `(g.comp f) s` and `g (f s)` agree definitionally
+  rfl
+
+end Functoriality
+
 /-! ### The base change as a morphism of Huber pairs -/
 
 section Pair
@@ -365,6 +435,76 @@ theorem completionLocPairMap_comp_toCompletionLocHom :
     toRingHom_toCompletionLocHom, toRingHom_toCompletionLocHom]
   exact completionLocMap_comp_toCompletionLoc P T s S hden P' f.toRingHom
     f.continuous_toRingHom.continuousAt T' S' hden' hT
+
+/-- **The base change of the identity morphism of Huber pairs is the identity.** The target is
+localised at `id(s)`, through the given localisation instance at `s`, which is definitionally the
+same. -/
+@[simp]
+theorem completionLocPairMap_id (hT : ∀ t ∈ T, (Pair.Hom.id U).toRingHom t ∈ T) :
+    letI := locUniformSpace P T s S hden
+    letI := isUniformAddGroup_locUniformSpace P T s S hden
+    letI := isTopologicalRing_locUniformSpace P T s S hden
+    letI := isHuberRing_completion_locTopology P T s S hden
+    letI : IsLocalization.Away ((Pair.Hom.id U).toRingHom s) S := ‹IsLocalization.Away s S›
+    completionLocPairMap P U hP T s S hden P U hP (Pair.Hom.id U) T S hden hT = Pair.Hom.id _ := by
+  let _ := locUniformSpace P T s S hden
+  have _ := isUniformAddGroup_locUniformSpace P T s S hden
+  have _ := isTopologicalRing_locUniformSpace P T s S hden
+  have _ := isHuberRing_completion_locTopology P T s S hden
+  -- the target pair carries its topology through the denominator `id s`
+  let _ : IsLocalization.Away ((Pair.Hom.id U).toRingHom s) S := ‹IsLocalization.Away s S›
+  have _ := isUniformAddGroup_locUniformSpace P T ((Pair.Hom.id U).toRingHom s) S hden
+  have _ := isTopologicalRing_locUniformSpace P T ((Pair.Hom.id U).toRingHom s) S hden
+  have _ := isHuberRing_completion_locTopology P T ((Pair.Hom.id U).toRingHom s) S hden
+  exact Pair.Hom.ext
+    (completionLocMap_id P T s S hden (Pair.Hom.id U).continuous_toRingHom.continuousAt hT)
+
+variable {C : Type*} [CommRing C] [TopologicalSpace C] [IsTopologicalRing C] [IsHuberRing C]
+  (P'' : PairOfDefinition C) (U'' : Pair C) (hP'' : P''.ringOfDefinition ≤ U''.plus)
+  (g : Pair.Hom U' U'') (T'' : Finset C) (S'' : Type*) [CommRing S''] [Algebra C S'']
+  [IsLocalization.Away (g.toRingHom (f.toRingHom s)) S'']
+  (hden'' : HasDenominatorPower P'' T'' (g.toRingHom (f.toRingHom s)) S'')
+  (hT' : ∀ t ∈ T', g.toRingHom t ∈ T'')
+
+/-- **The base change of a composite morphism of Huber pairs is the composite of the base
+changes.** The composite base change localises at `(g ∘ f)(s)` through the given localisation
+instance at `g(f(s))`, which is definitionally the same. -/
+@[simp]
+theorem completionLocPairMap_comp_completionLocPairMap :
+    letI := locUniformSpace P T s S hden
+    letI := isUniformAddGroup_locUniformSpace P T s S hden
+    letI := isTopologicalRing_locUniformSpace P T s S hden
+    letI := isHuberRing_completion_locTopology P T s S hden
+    letI := locUniformSpace P' T' (f.toRingHom s) S' hden'
+    letI := isUniformAddGroup_locUniformSpace P' T' (f.toRingHom s) S' hden'
+    letI := isTopologicalRing_locUniformSpace P' T' (f.toRingHom s) S' hden'
+    letI := isHuberRing_completion_locTopology P' T' (f.toRingHom s) S' hden'
+    letI := locUniformSpace P'' T'' (g.toRingHom (f.toRingHom s)) S'' hden''
+    letI := isUniformAddGroup_locUniformSpace P'' T'' (g.toRingHom (f.toRingHom s)) S'' hden''
+    letI := isTopologicalRing_locUniformSpace P'' T'' (g.toRingHom (f.toRingHom s)) S'' hden''
+    letI := isHuberRing_completion_locTopology P'' T'' (g.toRingHom (f.toRingHom s)) S'' hden''
+    letI : IsLocalization.Away ((g.comp f).toRingHom s) S'' :=
+      ‹IsLocalization.Away (g.toRingHom (f.toRingHom s)) S''›
+    (completionLocPairMap P' U' hP' T' (f.toRingHom s) S' hden' P'' U'' hP'' g T'' S'' hden''
+        hT').comp (completionLocPairMap P U hP T s S hden P' U' hP' f T' S' hden' hT) =
+      completionLocPairMap P U hP T s S hden P'' U'' hP'' (g.comp f) T'' S'' hden''
+        fun t ht ↦ hT' _ (hT t ht) := by
+  let _ := locUniformSpace P T s S hden
+  have _ := isUniformAddGroup_locUniformSpace P T s S hden
+  have _ := isTopologicalRing_locUniformSpace P T s S hden
+  have _ := isHuberRing_completion_locTopology P T s S hden
+  let _ := locUniformSpace P' T' (f.toRingHom s) S' hden'
+  have _ := isUniformAddGroup_locUniformSpace P' T' (f.toRingHom s) S' hden'
+  have _ := isTopologicalRing_locUniformSpace P' T' (f.toRingHom s) S' hden'
+  have _ := isHuberRing_completion_locTopology P' T' (f.toRingHom s) S' hden'
+  let _ := locUniformSpace P'' T'' (g.toRingHom (f.toRingHom s)) S'' hden''
+  have _ := isUniformAddGroup_locUniformSpace P'' T'' (g.toRingHom (f.toRingHom s)) S'' hden''
+  have _ := isTopologicalRing_locUniformSpace P'' T'' (g.toRingHom (f.toRingHom s)) S'' hden''
+  have _ := isHuberRing_completion_locTopology P'' T'' (g.toRingHom (f.toRingHom s)) S'' hden''
+  apply Pair.Hom.ext
+  exact completionLocMap_comp_completionLocMap P T s S hden P' f.toRingHom
+    f.continuous_toRingHom.continuousAt T' S' hden' hT P'' g.toRingHom
+    g.continuous_toRingHom.continuousAt T'' S'' hden'' hT'
 
 end Pair
 
