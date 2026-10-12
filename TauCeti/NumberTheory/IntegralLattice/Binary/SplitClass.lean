@@ -45,7 +45,7 @@ theorem binaryProperClass_eq_splitPrincipalForm_of_discriminant_eq_one
   exact (L.binaryDiscriminant_eq_discrim_primPart b hV).symm.trans hD
 
 /-- The hyperbolic plane has the principal split proper class, for either orientation. -/
-theorem hyperbolicPlane_binaryProperClass
+@[simp] theorem hyperbolicPlane_binaryProperClass
     (o : Orientation ℤ hyperbolicPlane (Fin 2)) :
     hyperbolicPlane.binaryProperClass (by simp) o =
       Quotient.mk'' BinaryQuadraticForm.splitPrincipalForm :=

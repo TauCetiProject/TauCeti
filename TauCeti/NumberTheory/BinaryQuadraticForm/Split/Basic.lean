@@ -8,7 +8,7 @@ module
 public import TauCeti.NumberTheory.BinaryQuadraticForm.Content
 public import TauCeti.NumberTheory.QuadraticOrder.Split
 public import Mathlib.GroupTheory.GroupAction.Quotient
-import TauCeti.Algebra.QuadraticAlgebra.NormTrace
+import TauCeti.RingTheory.NormTrace.Prod
 import Mathlib.RingTheory.Norm.Basic
 import Mathlib.RingTheory.Coprime.Lemmas
 import Mathlib.Tactic.LinearCombination
@@ -52,21 +52,14 @@ theorem splitPrincipalForm_def : splitPrincipalForm = ⟨0, 1, 0⟩ := by
   norm_num [splitPrincipalForm, discrim_def, discrim]
 
 /-- The principal split form is primitive. -/
-theorem isPrimitive_splitPrincipalForm : splitPrincipalForm.IsPrimitive := by
+@[simp] theorem isPrimitive_splitPrincipalForm : splitPrincipalForm.IsPrimitive := by
   norm_num [splitPrincipalForm, isPrimitive_iff, content_def]
 
 /-- The principal split form is the norm of the actual integer product algebra. -/
 theorem eval_splitPrincipalForm_eq_norm (x y : ℤ) :
     splitPrincipalForm.eval x y = Algebra.norm ℤ ((x, y) : ℤ × ℤ) := by
-  let e := TauCeti.QuadraticAlgebra.algEquivProdOfIdempotent (R := ℤ)
-  have he : e (⟨y, x - y⟩ : QuadraticAlgebra ℤ 0 1) = (x, y) := by
-    rw [QuadraticAlgebra.algEquivProdOfIdempotent_apply]
-    ext <;> simp
-  have h := Algebra.norm_eq_of_algEquiv e (⟨y, x - y⟩ : QuadraticAlgebra ℤ 0 1)
-  rw [he] at h
-  rw [eval_splitPrincipalForm, h, QuadraticAlgebra.algebraNorm_eq_norm]
-  simp only [QuadraticAlgebra.norm_def]
-  ring
+  simp only [eval_splitPrincipalForm, TauCeti.Algebra.norm_prod, Algebra.norm_self,
+    MonoidHom.id_apply]
 
 /-- The form computes the norm on the canonical discriminant-one order through its
 existing equivalence with the full integer product. -/
