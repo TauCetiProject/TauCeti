@@ -91,28 +91,21 @@ theorem complexEmbedding_star [NeZero e] (x : Cyclotomic e) :
 
 /-- Computable conjugation makes exact cyclotomic integers a star ring, including the zero ring
 at conductor zero. -/
-instance instStarRing : StarRing (Cyclotomic e) where
-  star_involutive x := by
+instance instStarRing : StarRing (Cyclotomic e) := by
+  -- Split only the laws, so the star projection remains the primitive computable operation.
+  have laws : Function.Involutive (star : Cyclotomic e → Cyclotomic e) ∧
+      (∀ x y : Cyclotomic e, star (x + y) = star x + star y) ∧
+      (∀ x y : Cyclotomic e, star (x * y) = star y * star x) := by
     by_cases he : e = 0
     · subst e
-      exact ext fun j => Fin.elim0 j
+      exact ⟨fun x => ext fun j => Fin.elim0 j,
+        fun x y => ext fun j => Fin.elim0 j, fun x y => ext fun j => Fin.elim0 j⟩
     · have : NeZero e := ⟨he⟩
-      exact (complexEmbedding_injective.starRing complexEmbedding complexEmbedding_star
-        complexEmbedding.map_add complexEmbedding.map_mul).star_involutive x
-  star_add x y := by
-    by_cases he : e = 0
-    · subst e
-      exact ext fun j => Fin.elim0 j
-    · have : NeZero e := ⟨he⟩
-      exact (complexEmbedding_injective.starRing complexEmbedding complexEmbedding_star
-        complexEmbedding.map_add complexEmbedding.map_mul).star_add x y
-  star_mul x y := by
-    by_cases he : e = 0
-    · subst e
-      exact ext fun j => Fin.elim0 j
-    · have : NeZero e := ⟨he⟩
-      exact (complexEmbedding_injective.starRing complexEmbedding complexEmbedding_star
-        complexEmbedding.map_add complexEmbedding.map_mul).star_mul x y
+      let transported : StarRing (Cyclotomic e) :=
+        complexEmbedding_injective.starRing complexEmbedding complexEmbedding_star
+          complexEmbedding.map_add complexEmbedding.map_mul
+      exact ⟨transported.star_involutive, transported.star_add, transported.star_mul⟩
+  exact { star_involutive := laws.1, star_add := laws.2.1, star_mul := laws.2.2 }
 
 /-- Conjugation sends the distinguished generator to `ζ_e ^ (e - 1)`. -/
 @[simp]
