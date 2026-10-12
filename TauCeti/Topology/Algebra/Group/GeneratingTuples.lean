@@ -39,6 +39,14 @@ theorem mem_generatingTuples (ι : Type*) (U : OpenNormalSubgroup G) (x : ι →
       Subgroup.closure (Set.range fun i ↦ (QuotientGroup.mk (x i) : G ⧸ U.toSubgroup)) = ⊤ :=
   Iff.rfl
 
+/-- A tuple generates the quotient exactly when the image of the subgroup it generates is the
+whole quotient. -/
+theorem mem_generatingTuples_iff_map_closure (ι : Type*) (U : OpenNormalSubgroup G) (x : ι → G) :
+    x ∈ generatingTuples ι U ↔
+      (Subgroup.closure (Set.range x)).map (QuotientGroup.mk' U.toSubgroup) = ⊤ := by
+  rw [mem_generatingTuples, MonoidHom.map_closure, ← Set.range_comp]
+  simp only [Function.comp_def, QuotientGroup.mk'_apply]
+
 /-- The finite tuples generating a quotient by an open normal subgroup form a closed set: the
 condition depends only on their image in a discrete quotient. -/
 theorem isClosed_generatingTuples [SeparatelyContinuousMul G] (ι : Type*) [Finite ι]

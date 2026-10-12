@@ -113,26 +113,19 @@ theorem exists_comp_eq_and_topologicalClosure_closure_range_eq_top {f : G →* H
       exact QuotientGroup.eq.mp hyi
     choose u hu hfu using fun i ↦ Subgroup.mem_map.mp (hmem i)
     refine ⟨fun i ↦ x₀ i * u i, ?_, Set.mem_iInter.mpr fun i ↦ ?_⟩
-    · rw [mem_generatingTuples]
+    · rw [mem_generatingTuples_iff_map_closure, MonoidHom.map_closure, ← Set.range_comp]
       have hcomp : (⇑(QuotientGroup.mk' U.toSubgroup) ∘ fun i ↦ x₀ i * u i) = y :=
         funext fun i ↦ by
           rw [Function.comp_apply, QuotientGroup.mk'_apply, QuotientGroup.mk_mul_of_mem _ (hu i),
             ← hx₀ i, QuotientGroup.mk'_apply]
-      have hgen : Subgroup.closure
-          (Set.range (⇑(QuotientGroup.mk' U.toSubgroup) ∘ fun i ↦ x₀ i * u i)) = ⊤ := by
-        rw [hcomp]
-        exact hygen
-      simpa only [Function.comp_def, QuotientGroup.mk'_apply] using hgen
+      rwa [hcomp]
     · rw [Set.mem_ofPred_eq, map_mul, hfu i, mul_inv_cancel_left]
   obtain ⟨x, hx⟩ := IsCompact.nonempty_iInter_of_directed_nonempty_isCompact_isClosed C hdir hne
     (fun U ↦ (hclosed U).isCompact) hclosed
   have hxU : ∀ U : OpenNormalSubgroup G, x ∈ C U := Set.mem_iInter.mp hx
   refine ⟨x, funext fun i ↦ Set.mem_iInter.mp (hxU (openNormalSubgroupTop G)).2 i,
-    topologicalClosure_closure_eq_top_iff.mpr fun U ↦ ?_⟩
-  have hgen : Subgroup.closure (Set.range (⇑(QuotientGroup.mk' U.toSubgroup) ∘ x)) = ⊤ := by
-    simpa only [Function.comp_def, QuotientGroup.mk'_apply] using
-      (mem_generatingTuples ι U x).mp (hxU U).1
-  rwa [Set.range_comp] at hgen
+    (Subgroup.topologicalClosure_eq_top_iff_forall_map_mk' _).mpr fun U ↦ ?_⟩
+  exact (mem_generatingTuples_iff_map_closure ι U x).mp (hxU U).1
 
 /-- **Gaschütz's lifting lemma, generator-rank form.** Along a continuous surjection `f : G →* H`
 from a topologically finitely generated profinite group onto a Hausdorff group, a topologically
