@@ -40,7 +40,9 @@ In particular every rational Weyl module restricts irreducibly. Exhaustion and d
 of the irreducible rational representations of `SL n ℂ` are separate classification statements.
 The irreducibility and simplicity statements here concern the complex Weyl modules used in that
 classification. The underlying restriction theorem `Representation.IsIrreducible.comp_toGL`
-is available over any algebraically closed field.
+is available over any algebraically closed field. Algebraic closure enters through that
+restriction theorem; `TauCeti.isIrreducible_weylRepOfShape_iff` for the original `GL` module
+requires only a field of characteristic zero.
 
 ## Main definitions
 
