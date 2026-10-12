@@ -50,32 +50,6 @@ noncomputable def coneTriangle :
     ((dgClosedToHomotopy R).map (coneInclusion f))
     ((dgClosedToHomotopy R).map (coneProjection f))
 
-/-- The first object of the cone triangle is its domain. -/
-@[simp]
-theorem coneTriangle_obj₁ : (coneTriangle f).obj₁ = DGHomotopyCategory.of R M := (rfl)
-
-/-- The second object of the cone triangle is its codomain. -/
-@[simp]
-theorem coneTriangle_obj₂ : (coneTriangle f).obj₂ = DGHomotopyCategory.of R N := (rfl)
-
-/-- The third object of the cone triangle is its cone. -/
-@[simp]
-theorem coneTriangle_obj₃ : (coneTriangle f).obj₃ = DGHomotopyCategory.of R (cone f) := (rfl)
-
-/-- The first arrow of the cone triangle is the class of the original closed map. -/
-@[simp]
-theorem coneTriangle_mor₁ : (coneTriangle f).mor₁ = (dgClosedToHomotopy R).map f := (rfl)
-
-/-- The second arrow of the cone triangle is the class of the inclusion. -/
-@[simp]
-theorem coneTriangle_mor₂ :
-    (coneTriangle f).mor₂ = (dgClosedToHomotopy R).map (coneInclusion f) := (rfl)
-
-/-- The last arrow of the cone triangle is the class of the projection to the actual shift. -/
-@[simp]
-theorem coneTriangle_mor₃ :
-    (coneTriangle f).mor₃ = (dgClosedToHomotopy R).map (coneProjection f) := (rfl)
-
 /-- Rotating the cone triangle gives the cone inclusion, projection, and negative shifted map. -/
 theorem coneTriangle_rotate :
     (coneTriangle f).rotate =

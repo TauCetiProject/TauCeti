@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.Homology.Curved.Module.Right.Biproduct
 public import TauCeti.Algebra.Homology.Curved.Module.Right.Homotopy
 public import TauCeti.Algebra.Homology.Curved.Module.Right.Shift
+public import TauCeti.Algebra.Homology.SquareZero
 
 /-!
 # Mapping cones of curved differential graded right modules
@@ -44,19 +45,15 @@ variable {R A : Type u} [CommRing R] [Ring A] [Algebra R A]
 variable (f : ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) M ⟶
   ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) N)
 
-/-- The cone differential is the shifted product differential plus the closed-map term. -/
+/-- The cone differential uses the linear mapping-cone construction on the ground-ring maps. -/
 noncomputable def coneDifferential : M × N →ₗ[R] M × N :=
-  ((LinearMap.inr Aᵐᵒᵖ M N).comp
-    ((closedHom f).comp (LinearMap.fst Aᵐᵒᵖ M N))).restrictScalars R +
-      (-M.differential).prodMap N.differential
+  LinearMap.mappingCone M.differential N.differential ((closedHom f).restrictScalars R)
 
 /-- The cone differential has diagonal entries `-dM` and `dN` and lower-left entry `f`. -/
 @[simp]
 theorem coneDifferential_apply (x : M × N) :
     coneDifferential f x = (-M.differential x.1, closedHom f x.1 + N.differential x.2) := by
-  -- Evaluate the sum of the restricted linear map and product map on the product carrier.
-  change (0, closedHom f x.1) + (-M.differential x.1, N.differential x.2) = _
-  exact Prod.ext (zero_add _) rfl
+  simp only [coneDifferential, LinearMap.mappingCone_apply, LinearMap.restrictScalars_apply]
 
 /-- The cone of a closed map, with grading `M[1] × N` and the original curvature. -/
 @[expose, implicit_reducible]
