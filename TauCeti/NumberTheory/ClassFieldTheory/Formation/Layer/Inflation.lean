@@ -158,7 +158,8 @@ Its class is `explicitInfl2 L e he [c]` (`explicitInfl2_H2π`). -/
 def inflCocycle2 (c : cocycles₂ (L.rep F)) : Z2 L.ground.toSubgroup M :=
   cocyclesMap2 _ _ _ _ (ContinuousMonoidHom.quotientMk _)
     (FixedPoints.addSubgroup (L.top.toSubgroup.subgroupOf L.ground.toSubgroup) M).subtype
-    (continuous_fixedPoints_addSubgroup_subtype _ _ _) (fun _ _ ↦ by simp)
+    (continuous_fixedPoints_addSubgroup_subtype _ _ _)
+    (L.top.toSubgroup.subgroupOf L.ground.toSubgroup).fixedPoints_subtype_quotientMk_smul
     (levelCocycle L e he c)
 
 omit [ContinuousSMul G M] in
@@ -168,8 +169,8 @@ two arguments, read in `M`. -/
 theorem inflCocycle2_apply (c : cocycles₂ (L.rep F)) (u v : L.ground.toSubgroup) :
     (inflCocycle2 L e he c : L.ground.toSubgroup × L.ground.toSubgroup → M) (u, v) =
       e.symm (c ((u : L.Gal), (v : L.Gal)) : F.level L.top) := by
-  exact (cocyclesMap2_apply _ _ _ _ _ _ _ _ (levelCocycle L e he c) u v).trans
-    (L.coeffFixedPointsEquiv_apply_coe e he _)
+  rw [inflCocycle2, cocyclesMap2_apply]
+  exact L.coeffFixedPointsEquiv_apply_coe e he _
 
 /-- **Inflation on cocycle classes**: `explicitInfl2 L e he` sends the class of a layer cocycle `c`
 to the class of the inflated cocycle `inflCocycle2 L e he c`. -/

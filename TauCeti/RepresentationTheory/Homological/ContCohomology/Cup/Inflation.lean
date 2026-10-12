@@ -195,7 +195,8 @@ theorem explicitInfl2_explicitCup20
             (((((g : G ⧸ N) * (h : G ⧸ N)) •
               (b : FixedPoints.addSubgroup N A)) : FixedPoints.addSubgroup N A) : A) =
               (g * h) • (b : A) := by
-          simp [← QuotientGroup.mk_mul]
+          simpa only [map_mul, QuotientGroup.mk'_apply, AddSubgroup.coe_subtype] using
+            N.fixedPoints_subtype_mk'_smul (g * h) (b : FixedPoints.addSubgroup N A)
         simpa [cocyclesMap2_coe] using congrArg (μ (↑((a : (G ⧸ N) × (G ⧸ N) →
           FixedPoints.addSubgroup N M) ((g : G ⧸ N), (h : G ⧸ N))) : M))
             hsmul

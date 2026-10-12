@@ -79,7 +79,7 @@ theorem delta_infl (N : Subgroup G) [N.Normal]
     coeffMap_ofDiscreteModuleQuotient_comp_infl_assoc]
   exact SN.delta_map S (ContinuousMonoidHom.quotientMk N) (FixedPoints.addSubgroup N A).subtype
     (FixedPoints.addSubgroup N B).subtype (FixedPoints.addSubgroup N C).subtype
-    (fun _ _ ↦ by simp) (fun _ _ ↦ by simp)
-    (fun _ _ ↦ by simp) hincl hproj n
+    N.fixedPoints_subtype_quotientMk_smul N.fixedPoints_subtype_quotientMk_smul
+    N.fixedPoints_subtype_quotientMk_smul hincl hproj n
 
 end TauCeti.ContCohomology.DiscreteShortExact

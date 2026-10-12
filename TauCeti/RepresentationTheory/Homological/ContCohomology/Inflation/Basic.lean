@@ -136,7 +136,7 @@ variable (G : Type u) [Group G]
 `G`-invariants of `M`. -/
 def explicitInfl0 : H0 (G ⧸ N) (FixedPoints.addSubgroup N M) →+ H0 G M :=
   explicitMap0 (G ⧸ N) (FixedPoints.addSubgroup N M) (QuotientGroup.mk' N)
-    (FixedPoints.addSubgroup N M).subtype (fun _ _ ↦ by simp)
+    (FixedPoints.addSubgroup N M).subtype N.fixedPoints_subtype_mk'_smul
 
 /-- Degree-zero inflation does not change the underlying coefficient. -/
 @[simp]
@@ -149,7 +149,7 @@ theorem coe_explicitInfl0 (m : H0 (G ⧸ N) (FixedPoints.addSubgroup N M)) :
 theorem explicitInfl0_eq_explicitMap0 :
     explicitInfl0 G M N =
       explicitMap0 (G ⧸ N) (FixedPoints.addSubgroup N M) (QuotientGroup.mk' N)
-        (FixedPoints.addSubgroup N M).subtype (fun _ _ ↦ by simp) := by
+        (FixedPoints.addSubgroup N M).subtype N.fixedPoints_subtype_mk'_smul := by
   rw [explicitInfl0]
 
 /-- Degree-zero inflation is injective. In fact it is an equivalence, as packaged by
@@ -204,7 +204,7 @@ noncomputable def explicitInfl1 :
     H1 (G ⧸ N) (FixedPoints.addSubgroup N M) →+ H1 G M :=
   explicitMap1 (G ⧸ N) (FixedPoints.addSubgroup N M) G M (ContinuousMonoidHom.quotientMk N)
     (FixedPoints.addSubgroup N M).subtype (continuous_fixedPoints_addSubgroup_subtype G M N)
-    (fun _ _ ↦ by simp)
+    N.fixedPoints_subtype_quotientMk_smul
 
 /-- Inflation sends the class of a continuous `1`-cocycle on `G ⧸ N` to the class of the cocycle
 it inflates to; `TauCeti.ContCohomology.cocyclesMap1_apply` evaluates the latter. -/
@@ -213,7 +213,7 @@ theorem explicitInfl1_mk (c : Z1 (G ⧸ N) (FixedPoints.addSubgroup N M)) :
     explicitInfl1 G M N (c : H1 (G ⧸ N) (FixedPoints.addSubgroup N M)) =
       (cocyclesMap1 (G ⧸ N) (FixedPoints.addSubgroup N M) G M (ContinuousMonoidHom.quotientMk N)
         (FixedPoints.addSubgroup N M).subtype (continuous_fixedPoints_addSubgroup_subtype G M N)
-        (fun _ _ ↦ by simp) c : H1 G M) :=
+        N.fixedPoints_subtype_quotientMk_smul c : H1 G M) :=
   explicitMap1_mk _ _ _ _ _ _ _ _ c
 
 /-- Inflation in degree one is the compatible-pair pullback along the quotient homomorphism
@@ -222,7 +222,7 @@ theorem explicitInfl1_eq_explicitMap1 :
     explicitInfl1 G M N =
       explicitMap1 (G ⧸ N) (FixedPoints.addSubgroup N M) G M (ContinuousMonoidHom.quotientMk N)
         (FixedPoints.addSubgroup N M).subtype (continuous_fixedPoints_addSubgroup_subtype G M N)
-        (fun _ _ ↦ by simp) := by
+        N.fixedPoints_subtype_quotientMk_smul := by
   rw [explicitInfl1]
 
 /-- **Restriction to `N` kills inflation in degree one**, the first half of the
@@ -384,7 +384,7 @@ noncomputable def explicitInfl2 :
     H2 (G ⧸ N) (FixedPoints.addSubgroup N M) →+ H2 G M :=
   explicitMap2 (G ⧸ N) (FixedPoints.addSubgroup N M) G M (ContinuousMonoidHom.quotientMk N)
     (FixedPoints.addSubgroup N M).subtype (continuous_fixedPoints_addSubgroup_subtype G M N)
-    (fun _ _ ↦ by simp)
+    N.fixedPoints_subtype_quotientMk_smul
 
 /-- Inflation sends the class of a continuous `2`-cocycle on `G ⧸ N` to the class of the cocycle
 it inflates to; `TauCeti.ContCohomology.cocyclesMap2_apply` evaluates the latter. -/
@@ -393,7 +393,7 @@ theorem explicitInfl2_mk (c : Z2 (G ⧸ N) (FixedPoints.addSubgroup N M)) :
     explicitInfl2 G M N (c : H2 (G ⧸ N) (FixedPoints.addSubgroup N M)) =
       (cocyclesMap2 (G ⧸ N) (FixedPoints.addSubgroup N M) G M (ContinuousMonoidHom.quotientMk N)
         (FixedPoints.addSubgroup N M).subtype (continuous_fixedPoints_addSubgroup_subtype G M N)
-        (fun _ _ ↦ by simp) c : H2 G M) :=
+        N.fixedPoints_subtype_quotientMk_smul c : H2 G M) :=
   explicitMap2_mk _ _ _ _ _ _ _ _ c
 
 /-- Inflation in degree two is the compatible-pair pullback along the quotient homomorphism
@@ -402,7 +402,8 @@ theorem explicitInfl2_eq_explicitMap2 :
     explicitInfl2 G M N =
       explicitMap2 (G ⧸ N) (FixedPoints.addSubgroup N M) G M
         (ContinuousMonoidHom.quotientMk N) (FixedPoints.addSubgroup N M).subtype
-        (continuous_fixedPoints_addSubgroup_subtype G M N) (fun _ _ ↦ by simp) := by
+        (continuous_fixedPoints_addSubgroup_subtype G M N)
+        N.fixedPoints_subtype_quotientMk_smul := by
   rw [explicitInfl2]
 
 /-- **Restriction to `N` kills inflation in degree two.** The inflated cocycle restricts to the
