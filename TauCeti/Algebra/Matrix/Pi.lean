@@ -20,8 +20,9 @@ import Mathlib.LinearAlgebra.Dimension.Finite
 /-!
 # Finite products of matrix algebras
 
-The dimension and the center of a product `Π i, Matₙᵢ(k)` of matrix algebras over a commutative
-semiring, read off the sizes `nᵢ` alone, together with the dimensions that an algebra equivalence
+The center of a product `Π i, Matₙᵢ(k)` of matrix algebras over a commutative semiring,
+and its dimension when the semiring satisfies the strong rank condition, read off the sizes
+`nᵢ` alone, together with the dimensions that an algebra equivalence
 `A ≃ₐ[k] ∏ᵢ Matₙᵢ(Dᵢ)` onto such a product — over an arbitrary family of coefficient algebras
 `Dᵢ` over a field `k` — transports back to the algebra `A` presented. Such a product is what a
 structure theorem of
