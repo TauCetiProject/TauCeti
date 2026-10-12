@@ -586,21 +586,22 @@ open Filter in
 open scoped Topology in
 /-- An injective homomorphism has nondiscrete range if the images of a family converge to the
 identity along a nontrivial filter while its terms are eventually nonidentity. No topology on
-the source group or continuity of the homomorphism is required. -/
-theorem _root_.MonoidHom.not_discreteTopology_range_of_tendsto_one {G H X : Type*} [Group G]
-    [Group H] [TopologicalSpace H] (f : G →* H) (hinj : Function.Injective f)
+the source monoid or continuity of the homomorphism is required. -/
+theorem _root_.MonoidHom.not_discreteTopology_range_of_tendsto_one {G H X : Type*} [Monoid G]
+    [Monoid H] [TopologicalSpace H] (f : G →* H) (hinj : Function.Injective f)
     {l : Filter X} [NeBot l] {s : X → G} (hs : Tendsto (fun x ↦ f (s x)) l (𝓝 1))
-    (hne : ∀ᶠ x in l, s x ≠ 1) : ¬ DiscreteTopology f.range := by
+    (hne : ∀ᶠ x in l, s x ≠ 1) : ¬ DiscreteTopology (Set.range f) := by
   intro hD
-  let : DiscreteTopology f.range := hD
-  have ht : Tendsto (fun x ↦ f.rangeRestrict (s x)) l (𝓝 1) :=
+  -- Mathlib defines the submonoid range carrier to be `Set.range f`.
+  let : DiscreteTopology (MonoidHom.mrange f) := hD
+  have ht : Tendsto (fun x ↦ f.mrangeRestrict (s x)) l (𝓝 1) :=
     tendsto_subtype_rng.mpr hs
-  have hev : ∀ᶠ x in l, f.rangeRestrict (s x) = 1 := by
+  have hev : ∀ᶠ x in l, f.mrangeRestrict (s x) = 1 := by
     simpa only [nhds_discrete, tendsto_pure] using ht
   obtain ⟨x, hxne, hxeq⟩ := (hne.and hev).exists
   apply hxne
   apply hinj
-  simpa only [MonoidHom.coe_rangeRestrict, OneMemClass.coe_one, map_one] using
+  simpa only [MonoidHom.coe_mrangeRestrict, OneMemClass.coe_one, map_one] using
     congrArg Subtype.val hxeq
 
 open scoped Topology in
