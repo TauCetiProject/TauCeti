@@ -81,7 +81,7 @@ namespace Subring
 open scoped Topology Pointwise
 
 variable {A : Type*} [CommRing A] [TopologicalSpace A] [SeparatelyContinuousMul A]
-  {M : Type*} [AddCommGroup M] [Module A M]
+  {M : Type*} [AddCommMonoid M] [Module A M]
 
 /-- A power of a topologically nilpotent scalar `s ∈ S` carries any element of the `A`-span
 of `M₀` into `M₀`. No spanning hypothesis on the whole module is needed. -/
