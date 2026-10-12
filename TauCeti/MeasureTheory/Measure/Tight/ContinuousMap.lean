@@ -23,7 +23,8 @@ of measures on `C(α, X)` is tight exactly when
   `dist s t < δ` and `η ≤ dist (γ s) (γ t)` have `P`-measure at most `ε`.
 
 The sufficiency result also holds for a Lindelöf pseudometric domain `α`, for instance `ℝ`,
-with the compact-open topology on `C(α, X)`. Compactness of `α` is needed for the converse.
+and a complete pseudometric target `X`, with the compact-open topology on `C(α, X)`.
+Compactness of `α` is needed for the converse.
 
 This is the tightness criterion used to extract limits of laws of random curves, for instance in
 the superposition principle for absolutely continuous curves of probability measures. The
