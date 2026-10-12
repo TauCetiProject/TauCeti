@@ -83,14 +83,11 @@ private theorem exists_homeomorph_levelSlice
       rw [hxy]
       exact hinvar y t
     · intro h
-      obtain ⟨a, ha⟩ := φ.mem_orbit_iff.mp (horbit x)
-      obtain ⟨b, hb⟩ := φ.mem_orbit_iff.mp (horbit y)
-      have heq : φ a x.1 = φ b y.1 := ha.trans ((congrArg Subtype.val h).trans hb.symm)
-      refine (connectingOrbitSetoid_iff x y).mpr ⟨-a + b, ?_⟩
-      calc
-        φ (-a + b) y.1 = φ (-a) (φ b y.1) := φ.map_add _ _ _
-        _ = φ (-a) (φ a x.1) := congrArg (φ (-a)) heq.symm
-        _ = x.1 := by simp only [← φ.map_add, neg_add_cancel, φ.map_zero_apply]
+      have horbit' (z : ↥(unstableSet φ p ∩ stableSet φ q)) :
+          connectingOrbitSetoid φ p q (i (s' z)) z := φ.mem_orbit_iff.mp (horbit z)
+      change s' x = s' y at h
+      exact (connectingOrbitSetoid φ p q).trans'
+        ((connectingOrbitSetoid φ p q).symm' (horbit' x)) (h.symm ▸ horbit' y)
   let e := (Homeomorph.Quotient.congrRight hrel).trans hright.homeomorph
   refine ⟨e, fun x ↦ ?_⟩
   rfl
