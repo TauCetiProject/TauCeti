@@ -270,7 +270,7 @@ lemma coe_toSSetPiMulEquivHomotopyGroup :
 
 @[simp]
 lemma toSSetPiMulEquivHomotopyGroup_toEquiv :
-    (toSSetPiMulEquivHomotopyGroup X x n).toEquiv = toSSetPiEquivHomotopyGroup X x (n + 1) :=
+    (toSSetPiMulEquivHomotopyGroup X x n : _ ≃ _) = toSSetPiEquivHomotopyGroup X x (n + 1) :=
   (rfl)
 
 end TopCat
