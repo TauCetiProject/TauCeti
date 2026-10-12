@@ -111,9 +111,8 @@ theorem measure_continuity_modulus_le_lintegral_curveAction (hab : a ≤ b)
   -- Markov's inequality for the measurable action.
   have hA : Measurable A := measurable_curveAction_IccExtend hab p a b
   refine (measure_mono_ae hbad).trans ?_
-  rw [ENNReal.le_div_iff_mul_le (Or.inl hηp) (Or.inl hηp'), mul_comm,
-    ← lintegral_const_mul _ hA]
-  exact mul_meas_ge_le_lintegral₀ (hA.const_mul _).aemeasurable _
+  rw [← lintegral_const_mul _ hA]
+  exact meas_ge_le_lintegral_div (hA.const_mul _).aemeasurable hηp hηp'
 
 /-- **Paths of bounded action are uniformly equicontinuous.** For `1 < p` and `M < ∞`, the paths
 `γ ∈ C([a, b], X)` that are absolutely continuous with `p`-action at most `M` form a uniformly
