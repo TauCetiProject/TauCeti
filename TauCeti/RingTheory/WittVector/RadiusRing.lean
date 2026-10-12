@@ -887,6 +887,7 @@ theorem isUnit_of_degree_eq_zero {x : RadiusRing p hv hϖ hϖ' hρ} (hx : x ≠ 
   · omega
 
 /-- The units of `A^r` are its nonzero elements of degree `0`. -/
+@[simp]
 theorem isUnit_iff_ne_zero_and_degree_eq_zero {x : RadiusRing p hv hϖ hϖ' hρ} :
     IsUnit x ↔ x ≠ 0 ∧ degree p hv hϖ hϖ' hρ x = 0 :=
   ⟨fun hx ↦ ⟨hx.ne_zero, degree_eq_zero_of_isUnit p hv hϖ hϖ' hρ hx⟩,
