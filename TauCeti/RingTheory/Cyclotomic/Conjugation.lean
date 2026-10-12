@@ -35,7 +35,7 @@ Burnside--Dixon--Schneider character-table solver.
 * `TauCeti.Cyclotomic.star_zeta`: conjugation sends `ζ_e` to `ζ_e ^ (e - 1)`.
 * `TauCeti.Cyclotomic.complexEmbedding_star`: the distinguished complex embedding intertwines
   exact and complex conjugation.
-* `TauCeti.Cyclotomic.map_star`: a ring homomorphism evaluates conjugates at the `(e - 1)`-st
+* `RingHom.map_star_eq_evalCoeffs`: a ring homomorphism evaluates conjugates at the `(e - 1)`-st
   power of the image of `ζ_e`.
 * `TauCeti.Cyclotomic.reduce_star`: reducing a conjugate at a cyclotomic root `r` is reduction of
   the original exact integer at `r ^ (e - 1)`.
@@ -67,7 +67,8 @@ theorem star_def (x : Cyclotomic e) :
 
 /-- A ring homomorphism evaluates conjugates at the `(e - 1)`-st power of the image of the
 distinguished generator. The target ring need not be commutative or carry a star operation. -/
-theorem map_star {R : Type*} [Ring R] (f : Cyclotomic e →+* R) (x : Cyclotomic e) :
+theorem _root_.RingHom.map_star_eq_evalCoeffs {R : Type*} [Ring R]
+    (f : Cyclotomic e →+* R) (x : Cyclotomic e) :
     f (star x) = evalCoeffs (Int.castRingHom R) (f (zeta e) ^ (e - 1)) x := by
   rw [star_def, evalCoeffs_eq_eval₂, Polynomial.hom_eval₂, evalCoeffs_eq_eval₂]
   congr 1
@@ -79,7 +80,7 @@ conjugation.** -/
 @[simp]
 theorem complexEmbedding_star [NeZero e] (x : Cyclotomic e) :
     complexEmbedding (star x) = star (complexEmbedding x) := by
-  rw [map_star, complexEmbedding_zeta]
+  rw [RingHom.map_star_eq_evalCoeffs, complexEmbedding_zeta]
   simp only [complexEmbedding_apply, Polynomial.aeval_def,
     algebraMap_int_eq, evalCoeffs_eq_eval₂]
   rw [← starRingEnd_apply, Polynomial.hom_eval₂]
@@ -131,7 +132,8 @@ theorem reduce_star (p : ℕ) (r : ZMod p)
     (hr : (Polynomial.cyclotomic e ℤ).eval₂ (Int.castRingHom (ZMod p)) r = 0)
     (x : Cyclotomic e) :
     reduce p r (star x) = reduce p (r ^ (e - 1)) x := by
-  rw [reduce, ← evalRingHom_eq_evalCoeffs _ _ hr, map_star, evalRingHom_zeta, reduce]
+  rw [reduce, ← evalRingHom_eq_evalCoeffs _ _ hr, RingHom.map_star_eq_evalCoeffs,
+    evalRingHom_zeta, reduce]
 
 /-! The exact operation reduces in the kernel. -/
 
