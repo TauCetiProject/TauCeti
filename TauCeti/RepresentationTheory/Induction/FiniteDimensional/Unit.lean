@@ -23,8 +23,9 @@ lying over a constituent.
 
 The scalar field and the group share one universe: `Rep.indResAdjunction` relates functors on a
 single `Rep` carrier universe, as does the comparison `TauCeti.indFDRepForgetIso` used here.
-The dimension identities in `TauCeti.RepresentationTheory.Induction.FrobeniusReciprocity` instead
-use the adjunctions on `FDRep` and allow separate scalar and group universes.
+The linear reciprocity maps in
+`TauCeti.RepresentationTheory.Induction.FiniteDimensional.Adjunction` instead use the adjunctions
+on `FDRep` and allow separate scalar and group universes.
 
 ## Main definitions
 
