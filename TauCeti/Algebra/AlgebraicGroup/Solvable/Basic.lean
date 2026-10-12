@@ -41,10 +41,6 @@ Lie--Kolchin theory and the construction of the solvable radical.
 
 * J. C. Jantzen, *Representations of Algebraic Groups*, I.2.
 * T. A. Springer, *Linear Algebraic Groups*, §2.4.
-
-This begins the "Lie--Kolchin; solvable groups" milestone in Layer 5 of the ReductiveGroups
-roadmap. The scheme-theoretic derived subgroup and its comparison with this geometric-points
-criterion remain to be constructed.
 -/
 
 public section

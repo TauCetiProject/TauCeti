@@ -189,21 +189,18 @@ theorem toLinearMap_zsmul {M N : ComoduleCat.{u, v, w} R C} (z : ℤ) (f : M ⟶
   Comodule.Hom.zsmul_toLinearMap z f
 
 /-- Negation of morphisms acts by pointwise negation. -/
-@[simp]
 theorem neg_apply {M N : ComoduleCat.{u, v, w} R C} (f : M ⟶ N) (m : M) :
     letI : AddCommGroup N := Module.addCommMonoidToAddCommGroup R
     (-f) m = -f m :=
   Comodule.Hom.neg_apply f m
 
 /-- Subtraction of morphisms acts by pointwise subtraction. -/
-@[simp]
 theorem sub_apply {M N : ComoduleCat.{u, v, w} R C} (f g : M ⟶ N) (m : M) :
     letI : AddCommGroup N := Module.addCommMonoidToAddCommGroup R
     (f - g) m = f m - g m :=
   Comodule.Hom.sub_apply f g m
 
 /-- Integer scalar multiplication of morphisms acts pointwise. -/
-@[simp]
 theorem zsmul_apply {M N : ComoduleCat.{u, v, w} R C} (z : ℤ) (f : M ⟶ N) (m : M) :
     letI : AddCommGroup N := Module.addCommMonoidToAddCommGroup R
     (z • f) m = z • f m :=

@@ -328,4 +328,46 @@ theorem projectiveLine_chart_transition
   rw [hpx, hny] at hm
   exact eq_inv_of_mul_eq_one_right hm
 
+namespace Fan
+
+variable (Φ : Fan ((Int.castAddHom ℝ).compLeft (Fin 1))) (hΦ : Φ.IsRegular)
+  (hσ : negativeRayCone ∈ Φ.cones)
+
+/-- The negative-ray chart inclusion is a biholomorphism onto its cone open, for the standard
+negative-character complex structure. -/
+noncomputable def negativeRayChartPartialDiffeomorph (n : ℕ∞ω) :
+    let _ := affinePointTopology g
+    let _ := negativeRayChartedSpace g
+    let _ := Φ.analyticChartedSpace hΦ
+    PartialDiffeomorph 𝓘(ℂ, (Fin 1 → ℂ) × (Fin 0 → ℂ))
+      𝓘(ℂ, Fin (Module.finrank ℤ (Fin 1 → ℤ)) → ℂ)
+      (AffineSemigroupComplexPoint (dualSemigroup (isIntegralLattice_intCast 1) negativeRayCone))
+      (Φ.analyticRealization hΦ) n :=
+  Φ.analyticAffineChartPartialDiffeomorph hΦ ⟨negativeRayCone, hσ⟩
+    negativeRayBasis_extends negativeRayNumbering g n
+
+/-- The standard negative-ray chart inclusion is defined everywhere. -/
+@[simp] theorem negativeRayChartPartialDiffeomorph_source (n : ℕ∞ω) :
+    (Φ.negativeRayChartPartialDiffeomorph g hΦ hσ n).source = Set.univ :=
+  Φ.analyticAffineChartPartialDiffeomorph_source hΦ ⟨negativeRayCone, hσ⟩
+    negativeRayBasis_extends negativeRayNumbering g n
+
+/-- The target of the standard negative-ray chart inclusion is its cone open. -/
+@[simp] theorem negativeRayChartPartialDiffeomorph_target (n : ℕ∞ω) :
+    (Φ.negativeRayChartPartialDiffeomorph g hΦ hσ n).target =
+      Set.range (Φ.analyticAffineChartι hΦ ⟨negativeRayCone, hσ⟩) :=
+  Φ.analyticAffineChartPartialDiffeomorph_target hΦ ⟨negativeRayCone, hσ⟩
+    negativeRayBasis_extends negativeRayNumbering g n
+
+/-- The standard negative-ray chart inclusion is the canonical map into the fan realization. -/
+@[simp] theorem negativeRayChartPartialDiffeomorph_apply (n : ℕ∞ω)
+    (x : AffineSemigroupComplexPoint
+      (dualSemigroup (isIntegralLattice_intCast 1) negativeRayCone)) :
+    Φ.negativeRayChartPartialDiffeomorph g hΦ hσ n x =
+      Φ.analyticAffineChartι hΦ ⟨negativeRayCone, hσ⟩ x :=
+  Φ.analyticAffineChartPartialDiffeomorph_apply hΦ ⟨negativeRayCone, hσ⟩
+    negativeRayBasis_extends negativeRayNumbering g n x
+
+end Fan
+
 end TauCeti.Toric

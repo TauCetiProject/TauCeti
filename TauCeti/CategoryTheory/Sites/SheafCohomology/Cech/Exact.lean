@@ -16,22 +16,23 @@ public import TauCeti.Algebra.Homology.HomologySequenceLemmas
 The Čech complex preserves short exact sequences of presheaves when the coefficient category
 has products and its products of the required sizes are exact. The exactness requirement is
 automatic for finite families in an abelian category, and for arbitrary families of abelian
-groups. Exactness here is objectwise exactness of presheaves, not exactness only after
-sheafification. For finite families, the exact-product hypothesis is supplied by locally
-enabling `Abelian.hasFiniteBiproducts`.
+groups. Exactness is tested in the presheaf values before sheafification, only at the
+objects specified below. For finite families, the exact-product hypothesis is supplied by
+locally enabling `Abelian.hasFiniteBiproducts`.
 
 Only the values at finite products of members matter: a sequence of presheaves that is short
 exact after evaluation at each such product has a short exact sequence of Čech complexes
 (`shortExact_map_cechComplexFunctor`). For an open cover, this asks for exactness only on the
 finite intersections of members.
 
-For a short exact coefficient sequence, acyclicity of its middle and right terms implies
-acyclicity of its left term. This is the coefficient-sequence descent used when iterating
+For a coefficient sequence that is short exact at the terminal object and at the finite
+products of members, acyclicity of its middle and right terms implies acyclicity of its left term.
+This is the coefficient-sequence descent used when iterating
 Mayer-Vietoris sequences for Laurent covers: the middle term is the pair of restrictions and
 the right term is the restriction to the intersection.
 
-The comparison uses Mathlib's `HomologicalComplex.HomologySequence.quasiIso_τ₃`, applied to
-opposite complexes, rather than a separate five-lemma argument.
+The comparison uses `HomologicalComplex.HomologySequence.quasiIso_τ₁` for the morphism of
+short exact sequences induced by the augmentations.
 
 Shifting dimension along such sequences gives Čech acyclicity from a resolution. If
 `0 ⟶ P ⟶ K⁰ ⟶ K¹ ⟶ ⋯` is a sequence of presheaves which is exact at the terminal object and at the
@@ -48,8 +49,9 @@ left and right terms agree up to a shift of one degree, by the degreewise lemmas
   preserves every limit that exists in the coefficient category.
 * `TauCeti.CategoryTheory.shortExact_map_cechComplexFunctor`: a sequence of presheaves short exact
   at the finite products of members has a short exact sequence of Čech complexes.
-* `TauCeti.CategoryTheory.quasiIso_cechAugmentation_of_shortExact`: acyclicity of the middle and
-  right terms of a short exact coefficient sequence implies acyclicity of the left term.
+* `TauCeti.CategoryTheory.quasiIso_cechAugmentation_of_shortExact`: for a coefficient sequence
+  short exact at the terminal object and at finite products of members, acyclicity of the middle
+  and right terms implies acyclicity of the left term.
 * `TauCeti.CategoryTheory.quasiIso_cechAugmentation_of_resolution`: a presheaf with a resolution by
   acyclic presheaves, exact at the terminal object and at the finite products of members, is
   acyclic.
@@ -263,28 +265,20 @@ private def cechAugmentationShortComplexHom (S : ShortComplex (Cᵒᵖ ⥤ A)) :
   comm₁₂ := cechAugmentation_naturality U hT S.X₁ S.f
   comm₂₃ := cechAugmentation_naturality U hT S.X₂ S.g
 
-/-- **Čech acyclicity descends to the kernel of an objectwise short exact coefficient
-sequence.** If a family is acyclic for the middle and right presheaves of a short exact
-sequence, then it is acyclic for the left presheaf as well. -/
+/-- **Čech acyclicity descends to the kernel of a locally short exact coefficient sequence.**
+If a sequence of presheaves is short exact at the terminal object and at every finite product of
+members of `U`, and `U` is acyclic for the middle and right presheaves, then `U` is acyclic for the
+left presheaf as well. Exactness at other objects is not required. -/
 theorem quasiIso_cechAugmentation_of_shortExact (S : ShortComplex (Cᵒᵖ ⥤ A))
-    (hS : S.ShortExact) (h₂ : QuasiIso (cechAugmentation U hT S.X₂))
+    (hST : (S.map ((evaluation Cᵒᵖ A).obj (op T))).ShortExact)
+    (hSU : ∀ (n : ℕ) (a : Fin (n + 1) → ι),
+      (S.map ((evaluation Cᵒᵖ A).obj (op (∏ᶜ fun j ↦ U (a j))))).ShortExact)
+    (h₂ : QuasiIso (cechAugmentation U hT S.X₂))
     (h₃ : QuasiIso (cechAugmentation U hT S.X₃)) :
-    QuasiIso (cechAugmentation U hT S.X₁) := by
-  let φ := cechAugmentationShortComplexHom U hT S
-  let F := HomologicalComplex.opFunctor A (ComplexShape.up ℕ)
-  have hsource := hS.map_of_exact ((evaluation Cᵒᵖ A).obj (op T) ⋙
-    HomologicalComplex.single A (ComplexShape.up ℕ) 0)
-  have htarget := hS.map_of_exact (cechComplexFunctor U)
-  have h₂' : QuasiIso φ.τ₂ := h₂
-  have h₃' : QuasiIso φ.τ₃ := h₃
-  -- Opposite complexes reverse the coefficient sequence, so Mathlib's right-term
-  -- comparison proves the required left-term comparison.
-  have h := HomologicalComplex.HomologySequence.quasiIso_τ₃
-    (F.mapShortComplex.map (ShortComplex.opMap φ))
-    (htarget.op.map_of_exact F) (hsource.op.map_of_exact F)
-    ((HomologicalComplex.quasiIso_opFunctor_map_iff φ.τ₃).mpr h₃')
-    ((HomologicalComplex.quasiIso_opFunctor_map_iff φ.τ₂).mpr h₂')
-  exact (HomologicalComplex.quasiIso_opFunctor_map_iff φ.τ₁).mp h
+    QuasiIso (cechAugmentation U hT S.X₁) :=
+  HomologicalComplex.HomologySequence.quasiIso_τ₁ (cechAugmentationShortComplexHom U hT S)
+    (hST.map_of_exact (HomologicalComplex.single A (ComplexShape.up ℕ) 0))
+    (shortExact_map_cechComplexFunctor U S hSU) h₂ h₃
 
 /-! ### Acyclic resolutions
 

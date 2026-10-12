@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.MeasureTheory.Function.L2Space
 public import Mathlib.MeasureTheory.Integral.Average
 import Mathlib.Analysis.Convex.Integral
 
@@ -28,7 +29,9 @@ The average of a function over a set `s` is also controlled by its average over 
 `t ⊇ s`, at the cost of the ratio `μ t / μ s` of their measures; together with the factor-`2`
 bound above this compares mean oscillations on nested sets, as in the theory of functions of
 bounded mean oscillation. In square mean the comparison with a constant reads
-`∫_s ‖f - f_s‖² ≤ 4 ∫_s ‖f - c‖²` on a set of finite measure.
+`∫_s ‖f - f_s‖² ≤ 4 ∫_s ‖f - c‖²` on a set of finite measure; in an inner product space the
+factor `4` drops to `1`, by the orthogonal splitting
+`∫_s ‖f - c‖² = ∫_s ‖f - f_s‖² + μ s ‖f_s - c‖²`.
 
 Averages are unchanged by a change of variables that rescales the measure by a constant factor,
 such as an affine homothety of a finite-dimensional space with its Haar measure: if a measurable
@@ -51,6 +54,12 @@ equivalence `e` pushes `μ` forward to `a • ν` with `0 < a < ∞`, then the a
   `TauCeti.norm_setAverage_sub_le_of_subset`.
 * `TauCeti.setIntegral_norm_sub_setAverage_sq_le`: the square mean oscillation of `f` about its
   average is at most four times its square mean oscillation about any constant.
+* `TauCeti.setIntegral_norm_sub_sq_eq_setIntegral_norm_sub_setAverage_sq_add` and
+  `TauCeti.setIntegral_norm_sub_setAverage_sq_le_setIntegral_norm_sub_sq`: in an inner product
+  space the square mean oscillation about a constant splits orthogonally, so the average is the
+  best constant, with no loss.
+* `TauCeti.sq_setAverage_norm_le_setAverage_norm_sq`: Jensen's inequality
+  `(⨍_s ‖g‖)² ≤ ⨍_s ‖g‖²`, bounding the mean oscillation by the square mean oscillation.
 * `TauCeti.setLIntegral_comp_preimage_of_map_eq_smul`,
   `TauCeti.setIntegral_comp_preimage_of_map_eq_smul`,
   `TauCeti.setLAverage_comp_preimage_of_map_eq_smul`,
@@ -63,7 +72,7 @@ public section
 namespace TauCeti
 
 open MeasureTheory
-open scoped ENNReal
+open scoped ENNReal InnerProductSpace
 
 section ENorm
 
@@ -124,6 +133,21 @@ theorem setLAverage_enorm_sub_setAverage_le (hf : IntegrableOn f s μ) (c : F) :
           ENNReal.add_div, ENNReal.mul_div_cancel_right h0 htop, ← setLAverage_eq, two_mul]
 
 end Oscillation
+
+section SquareIntegrable
+
+variable {X F : Type*} [MeasurableSpace X] {μ : Measure X} [NormedAddCommGroup F] {g : X → F}
+  {s : Set X}
+
+/-- **Jensen's inequality for the square of a mean.** On a set `s` of finite nonzero measure, the
+square of the mean of `‖g‖` is at most the mean of `‖g‖²`. -/
+theorem sq_setAverage_norm_le_setAverage_norm_sq (hs0 : μ s ≠ 0) (hs : μ s ≠ ⊤)
+    (hg : IntegrableOn g s μ) (hg2 : IntegrableOn (fun x ↦ ‖g x‖ ^ 2) s μ) :
+    (⨍ x in s, ‖g x‖ ∂μ) ^ 2 ≤ ⨍ x in s, ‖g x‖ ^ 2 ∂μ :=
+  (Even.convexOn_pow even_two).map_set_average_le (continuous_pow 2).continuousOn isClosed_univ
+    hs0 hs (ae_of_all _ fun _ ↦ Set.mem_univ _) hg.norm hg2
+
+end SquareIntegrable
 
 section Subset
 
@@ -187,8 +211,7 @@ theorem setIntegral_norm_sub_setAverage_sq_le (hs : μ s ≠ ⊤) (hf : Integrab
   have ha : a ≤ ⨍ x in s, ‖f x - c‖ ∂μ := by
     simpa [div_self hm.ne'] using norm_setAverage_sub_le_of_subset subset_rfl h0 hs hf c
   have hJ : (⨍ x in s, ‖f x - c‖ ∂μ) ^ 2 ≤ ⨍ x in s, ‖f x - c‖ ^ 2 ∂μ :=
-    (Even.convexOn_pow even_two).map_set_average_le (continuous_pow 2).continuousOn isClosed_univ
-      h0 hs (ae_of_all _ fun _ ↦ Set.mem_univ _) (hf.sub (integrableOn_const hs)).norm hfc
+    sq_setAverage_norm_le_setAverage_norm_sq h0 hs (hf.sub (integrableOn_const hs)) hfc
   have haJ : μ.real s * a ^ 2 ≤ J := by
     calc μ.real s * a ^ 2 ≤ μ.real s * ⨍ x in s, ‖f x - c‖ ^ 2 ∂μ := by
           gcongr
@@ -212,6 +235,49 @@ theorem setIntegral_norm_sub_setAverage_sq_le (hs : μ s ≠ ⊤) (hf : Integrab
     _ ≤ 4 * J := by linarith
 
 end Subset
+
+section InnerProduct
+
+variable {X F : Type*} [MeasurableSpace X] {μ : Measure X} [NormedAddCommGroup F]
+  [InnerProductSpace ℝ F] [CompleteSpace F] {s : Set X} {f : X → F}
+
+/-- In a real inner product space, the square mean oscillation of `f` on a set `s` of finite
+measure about a constant `c` splits orthogonally:
+`∫_s ‖f - c‖² = ∫_s ‖f - f_s‖² + μ s ‖f_s - c‖²`. -/
+theorem setIntegral_norm_sub_sq_eq_setIntegral_norm_sub_setAverage_sq_add (hs : μ s ≠ ⊤)
+    (hf : IntegrableOn f s μ) {c : F} (hfc : IntegrableOn (fun x ↦ ‖f x - c‖ ^ 2) s μ) :
+    ∫ x in s, ‖f x - c‖ ^ 2 ∂μ =
+      ∫ x in s, ‖f x - ⨍ y in s, f y ∂μ‖ ^ 2 ∂μ + μ.real s * ‖(⨍ y in s, f y ∂μ) - c‖ ^ 2 := by
+  set m := ⨍ y in s, f y ∂μ
+  have hfm : Integrable (fun x ↦ f x - m) (μ.restrict s) := hf.sub (integrableOn_const hs)
+  -- The cross term vanishes, since `∫_s (f - m) = 0`.
+  have hcross : ∫ x in s, ⟪f x - m, m - c⟫_ℝ ∂μ = 0 := by
+    simp_rw [real_inner_comm (m - c)]
+    rw [integral_inner hfm, integral_sub hf (integrableOn_const hs), setIntegral_const,
+      measure_smul_setAverage f hs, sub_self, inner_zero_right]
+  have hint : Integrable (fun x ↦ ⟪f x - m, m - c⟫_ℝ) (μ.restrict s) := hfm.inner_const _
+  -- Pointwise, `‖f - m‖² = ‖f - c‖² - 2 ⟪f - m, m - c⟫ - ‖m - c‖²`.
+  have hpt : ∀ x, ‖f x - m‖ ^ 2 = ‖f x - c‖ ^ 2 - 2 * ⟪f x - m, m - c⟫_ℝ - ‖m - c‖ ^ 2 :=
+    fun x ↦ by
+      have := norm_add_sq_real (f x - m) (m - c)
+      rw [sub_add_sub_cancel] at this
+      linarith
+  have h2 : Integrable (fun x ↦ ‖f x - c‖ ^ 2 - 2 * ⟪f x - m, m - c⟫_ℝ) (μ.restrict s) :=
+    hfc.sub (hint.const_mul 2)
+  simp_rw [hpt]
+  rw [integral_sub h2 (integrableOn_const hs), integral_sub hfc (hint.const_mul 2),
+    integral_const_mul, hcross, setIntegral_const, smul_eq_mul]
+  ring
+
+/-- In a real inner product space, the average of `f` over a set `s` of finite measure minimizes
+the square mean oscillation: `∫_s ‖f - f_s‖² ≤ ∫_s ‖f - c‖²` for every constant `c`. -/
+theorem setIntegral_norm_sub_setAverage_sq_le_setIntegral_norm_sub_sq (hs : μ s ≠ ⊤)
+    (hf : IntegrableOn f s μ) {c : F} (hfc : IntegrableOn (fun x ↦ ‖f x - c‖ ^ 2) s μ) :
+    ∫ x in s, ‖f x - ⨍ y in s, f y ∂μ‖ ^ 2 ∂μ ≤ ∫ x in s, ‖f x - c‖ ^ 2 ∂μ := by
+  rw [setIntegral_norm_sub_sq_eq_setIntegral_norm_sub_setAverage_sq_add hs hf hfc]
+  exact le_add_of_nonneg_right (by positivity)
+
+end InnerProduct
 
 section ChangeOfVariables
 

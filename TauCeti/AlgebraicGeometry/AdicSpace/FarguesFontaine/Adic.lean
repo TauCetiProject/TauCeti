@@ -26,11 +26,14 @@ adic spaces.
   Its structure presheaf is a sheaf because `𝒪_𝒴` is (`isSheafy_spaXPreAdicSpace`): the sheaf
   property of `𝒳` descends from `𝒴`, not from the affinoid charts.
 
-The sheaf condition on `𝒪_𝒴` is a hypothesis here, as it is for the pre-adic space `𝒳` itself;
-it is not proved in this file. It concerns the affinoid charts of `𝒴`: the Frobenius windows cover
-`𝒴`, and by `TauCeti.FarguesFontaine.windowPreAdicSpaceIso` each of them is `Spa(B^I, B^{I,+})`
-for an interval ring `B^I`, whose sheafiness Kedlaya deduces from the strong noetherianness of
-`B^I`.
+The sheaf condition on `𝒪_𝒴` is a hypothesis of the results on `𝒳`, as it is for the pre-adic
+space `𝒳` itself. This file reduces it to windows: `𝒴` is a pre-adic space, exhausted by the
+increasing windows `W_n = {v ∈ 𝒴 : p ^ (-n) ≤ κ(v) ≤ p ^ n}`, and every open affinoid subspace of
+`𝒴` is quasi-compact, so lies in one of them. Hence `𝒪_𝒴` is a sheaf as soon as its restriction to
+each `W_n` is (`isSheaf_spaYPresheaf_of_isSheafy_restrict`). When `R` is the ring of integers of a
+perfect nonarchimedean field, `TauCeti.FarguesFontaine.windowPreAdicSpaceIso` identifies such a
+window with `Spa(B^I, B^{I,+})` for an interval ring `B^I`, whose sheafiness Kedlaya deduces from
+the strong noetherianness of `B^I`.
 
 ## Main definitions
 
@@ -42,6 +45,9 @@ for an interval ring `B^I`, whose sheafiness Kedlaya deduces from the strong noe
 ## Main results
 
 * `TauCeti.FarguesFontaine.isLocallyAffinoid_spaYPreAdicSpace`: `𝒴` is locally affinoid.
+* `TauCeti.FarguesFontaine.isPreAdic_spaYPreAdicSpace`: `𝒴` is a pre-adic space.
+* `TauCeti.FarguesFontaine.isSheaf_spaYPresheaf_of_isSheafy_restrict`: `𝒪_𝒴` is a sheaf if its
+  restriction to every window `W_n` is.
 * `TauCeti.FarguesFontaine.isAdic_spaYPreAdicSpace_iff`: `𝒴` is an adic space exactly when `𝒪_𝒴`
   is a sheaf.
 * `TauCeti.FarguesFontaine.isLocallyAffinoid_spaXPreAdicSpace`: `𝒳` is locally affinoid.
@@ -51,7 +57,7 @@ for an interval ring `B^I`, whose sheafiness Kedlaya deduces from the strong noe
 
 ## References
 
-* T. Wedhorn, *Adic Spaces*, arXiv:1910.05934v1, Definition 8.22.
+* T. Wedhorn, *Adic Spaces*, arXiv:1910.05934v1, Definition 8.22 and Remark 8.27.
 * K. S. Kedlaya, *Sheaves, stacks, and shtukas*, Arizona Winter School 2017 notes, §3.1.
 * L. Fargues and J.-M. Fontaine, *Courbes et fibrés vectoriels en théorie de Hodge p-adique*,
   Astérisque 406 (2018), Chapter 1.
@@ -81,6 +87,22 @@ theorem isLocallyAffinoid_spaYPreAdicSpace :
     PreAdicSpace.isLocallyAffinoid (spaYPreAdicSpace P hI) :=
   PreAdicSpace.isLocallyAffinoid_restrict _
     (isPreAdic_presentationLimitPreAdicSpace P _ _ le_top).isLocallyAffinoid
+
+/-- **`𝒴` is a pre-adic space**, as the restriction of the pre-adic space `Spa(𝕎 R, 𝕎 R)` to an
+open. -/
+theorem isPreAdic_spaYPreAdicSpace : PreAdicSpace.isPreAdic (spaYPreAdicSpace P hI) :=
+  PreAdicSpace.isPreAdic_restrict _ (isPreAdic_presentationLimitPreAdicSpace P _ _ le_top)
+
+/-- **`𝒪_𝒴` is a sheaf if it is one on every window**: if the restriction of `𝒴` to each window
+`W_n = {v ∈ 𝒴 : p ^ (-n) ≤ κ(v) ≤ p ^ n}` is sheafy, then `𝒪_𝒴` is a sheaf. The windows are a
+directed family of opens exhausting the pre-adic space `𝒴`, so every open affinoid subspace of `𝒴`,
+being quasi-compact, lies in one of them. -/
+theorem isSheaf_spaYPresheaf_of_isSheafy_restrict
+    (h : ∀ n, PreAdicSpace.isSheafy ((spaYPreAdicSpace P hI).restrict
+      (spaYWindow ϖ hI n : Opens (spaYPreAdicSpace P hI)).isOpenEmbedding)) :
+    (spaYPresheaf P ϖ).IsSheaf :=
+  (isPreAdic_spaYPreAdicSpace P hI).isSheafy_of_directed (monotone_spaYWindow hI).directed_le
+    (iSup_spaYWindow hI) h
 
 /-- **`𝒴` is an adic space exactly when `𝒪_𝒴` is a sheaf**, since it is locally affinoid. -/
 theorem isAdic_spaYPreAdicSpace_iff :

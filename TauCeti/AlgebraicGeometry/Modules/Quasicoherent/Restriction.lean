@@ -8,13 +8,14 @@ module
 public import Mathlib.Algebra.Category.ModuleCat.Sheaf.Quasicoherent
 public import Mathlib.AlgebraicGeometry.AffineScheme
 public import Mathlib.AlgebraicGeometry.Modules.Sheaf
+public import Mathlib.AlgebraicGeometry.Modules.Tilde
 
 /-!
 # Restriction criteria for quasicoherent modules on schemes
 
-Quasicoherence of a module restricted to an open subscheme implies quasicoherence of the
-corresponding module on the slice site. Consequently, quasicoherence can be checked on
-restrictions to any open cover, or to all affine opens.
+The equivalence between modules on an open subscheme and modules on its slice site preserves
+quasicoherence in both directions. Consequently, quasicoherence can be checked on restrictions
+to any open cover, or to all affine opens.
 
 The criteria live in `TauCeti.AlgebraicGeometry` and use ordinary function application.
 They transport quasicoherence with Mathlib's open-subscheme equivalence and descend it
@@ -31,10 +32,44 @@ universe u
 
 noncomputable section
 
-/-- Quasicoherence on an open subscheme implies quasicoherence on its slice site. -/
-theorem isQuasicoherent_over_of_isQuasicoherent_restrict {X : Scheme.{u}}
-    (M : X.Modules) (U : X.Opens) [hM : (M.restrict U.ι).IsQuasicoherent] :
-    (M.over U).IsQuasicoherent := by
+/-- Quasicoherence can be checked after restriction along a scheme isomorphism. -/
+theorem isQuasicoherent_of_isQuasicoherent_restrict_iso {X Y : Scheme.{u}}
+    (e : X ≅ Y) (M : X.Modules) [hM : (M.restrict e.inv).IsQuasicoherent] :
+    M.IsQuasicoherent := by
+  let F := Scheme.Modules.restrictFunctor e.inv
+  let G := Scheme.Modules.restrictFunctor e.hom
+  have : (G.obj (F.obj M)).IsQuasicoherent :=
+    Scheme.Modules.isQuasicoherent_restrictFunctor e.hom _
+  let i : G.obj (F.obj M) ≅ M :=
+    (Scheme.Modules.restrictFunctorComp e.hom e.inv).symm.app _ ≪≫
+      (Scheme.Modules.restrictFunctorCongr e.hom_inv_id).app _ ≪≫
+      Scheme.Modules.restrictFunctorId.app _
+  exact (SheafOfModules.isQuasicoherent X.ringCatSheaf).prop_of_iso i inferInstance
+
+/-- The open-subscheme equivalence sends a quasicoherent module on the slice site to a
+quasicoherent module on the open subscheme. -/
+instance isQuasicoherent_overEquiv_functor {X : Scheme.{u}} (U : X.Opens)
+    (M : SheafOfModules.{u} (X.ringCatSheaf.over U)) [hM : M.IsQuasicoherent] :
+    ((Scheme.Modules.overEquiv U).functor.obj M).IsQuasicoherent := by
+  let G := U.overEquivalence.inverse
+  have hcont (V : TopologicalSpace.Opens {x : X // x ∈ U}) : (Over.post (X := V) G).IsContinuous
+      ((Opens.grothendieckTopology {x : X // x ∈ U}).over V)
+      (((Opens.grothendieckTopology X).over U).over (G.obj V)) :=
+    Functor.isContinuous_of_coverPreserving (compatiblePreservingOfFlat _ _)
+      ((CoverPreserving.of_isContinuous G _ _).overPost V)
+  let ψ := (U.overPullbackSheafEquivOver.app X.ringCatSheaf).inv
+  have hψ : IsIso ψ := by dsimp [ψ]; infer_instance
+  -- Pass the instances explicitly: the scheme and sheaf categories have different
+  -- instance heads, although their carriers agree.
+  exact @SheafOfModules.isQuasicoherent_pushforward_of_isLeftAdjoint.{u}
+    _ _ _ _ _ _ _ _ _ _ _ _ _ G _ _ ψ
+    (U.sheafOfModulesEquivOverUnit X.ringCatSheaf) _ hψ hcont _ _ M hM
+
+/-- The inverse open-subscheme equivalence sends quasicoherent modules to quasicoherent
+modules on the slice site. -/
+instance isQuasicoherent_overEquiv_inverse {X : Scheme.{u}} (U : X.Opens)
+    (M : U.toScheme.Modules) [hM : M.IsQuasicoherent] :
+    ((Scheme.Modules.overEquiv U).inverse.obj M).IsQuasicoherent := by
   let G := U.overEquivalence.functor
   have hcont (V : Over U) : (Over.post (X := V) G).IsContinuous
       (((Opens.grothendieckTopology X).over U).over V)
@@ -43,11 +78,17 @@ theorem isQuasicoherent_over_of_isQuasicoherent_restrict {X : Scheme.{u}}
       ((CoverPreserving.of_isContinuous G _ _).overPost V)
   let ψ := (U.sheafRestrictSheafEquivOver.app X.ringCatSheaf).inv
   have hψ : IsIso ψ := by dsimp [ψ]; infer_instance
-  -- Supply the slice-site continuity and module instance explicitly: the scheme and
-  -- sheaf categories have different instance heads, although their carriers agree.
-  have h := @SheafOfModules.isQuasicoherent_pushforward_of_isLeftAdjoint.{u}
+  -- Pass the instances explicitly: the scheme and sheaf categories have different
+  -- instance heads, although their carriers agree.
+  exact @SheafOfModules.isQuasicoherent_pushforward_of_isLeftAdjoint.{u}
     _ _ _ _ _ _ _ _ _ _ _ _ _ G _ _ ψ
-    (U.sheafOfModulesEquivOverInverseUnit X.ringCatSheaf) _ hψ hcont _ _ (M.restrict U.ι) hM
+    (U.sheafOfModulesEquivOverInverseUnit X.ringCatSheaf) _ hψ hcont _ _ M hM
+
+/-- Quasicoherence on an open subscheme implies quasicoherence on its slice site. -/
+theorem isQuasicoherent_over_of_isQuasicoherent_restrict {X : Scheme.{u}}
+    (M : X.Modules) (U : X.Opens) [hM : (M.restrict U.ι).IsQuasicoherent] :
+    (M.over U).IsQuasicoherent := by
+  have h := isQuasicoherent_overEquiv_inverse U (M.restrict U.ι)
   let e := (Scheme.Modules.overEquiv U).unitIso.app (M.over U) ≪≫
     (Scheme.Modules.overEquiv U).inverse.mapIso ((Scheme.Modules.overFunctorEquiv U).app M)
   exact (SheafOfModules.isQuasicoherent (X.ringCatSheaf.over U)).prop_of_iso e.symm h
