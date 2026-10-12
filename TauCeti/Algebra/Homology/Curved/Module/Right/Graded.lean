@@ -114,11 +114,12 @@ noncomputable def closedIsoOfGradedIso {M N : CurvedDGRightModuleCat.{u, u, u} h
       simpa only [e, LinearEquiv.coe_ofLinearMap, toGradedModuleCat_piece, add_zero] using
         g.hom.isHomogeneous.map_mem (by simpa only [toGradedModuleCat_piece] using hx)
     · intro hx
+      have hxN : e x ∈ (toGradedModuleCat N).grading.piece p := by
+        rw [toGradedModuleCat_piece]
+        exact hx
       have hx' : e.symm (e x) ∈ M.grading (p + 0) := by
         simpa only [e, LinearEquiv.symm_ofLinearMap, LinearEquiv.coe_ofLinearMap,
-          toGradedModuleCat_piece] using g.inv.isHomogeneous.map_mem
-          (show e x ∈ (toGradedModuleCat N).grading.piece p from
-            by simpa only [toGradedModuleCat_piece] using hx)
+          toGradedModuleCat_piece] using g.inv.isHomogeneous.map_mem hxN
       simpa only [e.symm_apply_apply, add_zero] using hx'
   · simpa only [e, LinearEquiv.coe_ofLinearMap] using hd x
 
