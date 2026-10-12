@@ -24,8 +24,9 @@ projective horseshoe in negative degrees, constructs extensions of complete reso
 The results here do not yet assert that Gorenstein-projective modules are extension closed.
 
 The prescribed horseshoe allows independent ring and module universes. The iteratable
-specialization uses a module universe containing the ring. Taking `A = Rᵐᵒᵖ` gives right
-modules. No noetherian or self-injectivity hypothesis is needed.
+specialization requires the ring to be small in the module universe, so categorical
+projectivity implies module projectivity. Taking `A = Rᵐᵒᵖ` gives right modules. No noetherian
+or self-injectivity hypothesis is needed.
 
 ## References
 
@@ -124,12 +125,13 @@ theorem IsGorensteinProjective.exists_copresentation_horseshoe
     apply biprod.hom_ext' <;> simp [e]
 
 /-- An extension of Gorenstein-projective modules embeds in a finite projective module, with
-cokernel again an extension of Gorenstein-projective modules. This is an iteratable positive
-horseshoe step, not yet a claim that the middle term or its cokernel is Gorenstein-projective. -/
+cokernel again an extension of Gorenstein-projective modules. The ring must be small in the
+module universe. This is an iteratable positive horseshoe step, not yet a claim that the middle
+term or its cokernel is Gorenstein-projective. -/
 theorem IsGorensteinProjective.exists_projectiveCopresentation_of_shortExact
-    {S : ShortComplex (ModuleCat.{max u v} A)} (hL : IsGorensteinProjective A S.X₁)
+    [Small.{v} A] {S : ShortComplex (ModuleCat.{v} A)} (hL : IsGorensteinProjective A S.X₁)
     (hN : IsGorensteinProjective A S.X₃) (hS : S.ShortExact) :
-    ∃ (T U : ShortComplex (ModuleCat.{max u v} A)), T.ShortExact ∧ Nonempty (T.X₁ ≅ S.X₂) ∧
+    ∃ (T U : ShortComplex (ModuleCat.{v} A)), T.ShortExact ∧ Nonempty (T.X₁ ≅ S.X₂) ∧
       Module.Finite A T.X₂ ∧ Projective T.X₂ ∧ U.ShortExact ∧ Nonempty (U.X₂ ≅ T.X₃) ∧
       IsGorensteinProjective A U.X₁ ∧ IsGorensteinProjective A U.X₃ := by
   obtain ⟨TX, hTX, ⟨eX⟩, hPX, hprojX, hKX⟩ := hL.exists_projectiveCopresentation
