@@ -35,10 +35,6 @@ single summand.
   nice spaces are equivalent to functors from its fundamental groupoid to types.**
 
 ## References
-
-This is the disconnected case of Stage 2, item 8 of
-`TauCetiRoadmap/UniversalCovers/README.md`, whose alternative lens asks for covers in general to
-be described as functors out of the fundamental groupoid.
 -/
 
 public section
