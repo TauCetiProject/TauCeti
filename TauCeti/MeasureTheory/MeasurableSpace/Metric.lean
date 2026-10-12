@@ -7,16 +7,20 @@ module
 
 public import Mathlib.MeasureTheory.Constructions.BorelSpace.Metric
 public import Mathlib.MeasureTheory.Function.SimpleFuncDense
+public import Mathlib.Topology.MetricSpace.HausdorffDistance
 public import Mathlib.Topology.UniformSpace.Cauchy
 
 /-!
-# Measurable discretization of totally bounded pseudometric spaces
+# Measurable discretization of pseudometric spaces
 
-This file provides a finite measurable approximation of a totally bounded pseudometric space whose
-open sets are measurable.
+This file provides measurable maps onto finitely many points of a pseudometric space whose open
+sets are measurable: a nearest-point projection onto any nonempty finite set, and a finite
+measurable approximation of a totally bounded space.
 
 ## Main statements
 
+* `TauCeti.exists_measurable_edist_eq_infEDist` — a nonempty finite set carries a measurable
+  nearest-point projection, sending every point to a point of the set at minimal distance.
 * `TauCeti.exists_measurable_dist_lt` — a totally bounded pseudometric space admits a measurable map
   to a finite type whose indexed approximation point is uniformly close to every point.
 -/
@@ -30,6 +34,30 @@ open Metric Set
 namespace TauCeti
 
 universe u
+
+/-- **A measurable nearest-point projection onto a finite set.** In a pseudo-extended-metric space
+whose open sets are measurable, every nonempty finite set `s` is the target of a measurable map
+`T` that sends each point `x` to a point of `s` nearest to it: `edist x (T x) = infEDist x s`. -/
+theorem exists_measurable_edist_eq_infEDist {X : Type u} [PseudoEMetricSpace X]
+    [MeasurableSpace X] [OpensMeasurableSpace X] {s : Finset X} (hs : s.Nonempty) :
+    ∃ T : X → X, Measurable T ∧ (∀ x, T x ∈ s) ∧ ∀ x, edist x (T x) = infEDist x s := by
+  obtain ⟨x₀, hx₀⟩ := hs
+  set e : ℕ → X := fun k ↦ s.toList.getD k x₀ with he
+  have he_mem (k : ℕ) : e k ∈ s := by
+    rcases lt_or_ge k s.toList.length with hk | hk
+    · simpa [he, List.getElem?_eq_getElem hk] using Finset.mem_toList.1 (List.getElem_mem hk)
+    · simpa [he, List.getElem?_eq_none hk] using hx₀
+  have he_surj {y : X} (hy : y ∈ s) : ∃ k ≤ s.card, e k = y := by
+    obtain ⟨k, hk, rfl⟩ := List.mem_iff_getElem.1 (Finset.mem_toList.2 hy)
+    exact ⟨k, (Finset.length_toList s ▸ hk).le, by simp [he, List.getElem?_eq_getElem hk]⟩
+  set T := MeasureTheory.SimpleFunc.nearestPt e s.card with hT
+  have hTe (x : X) : T x = e (MeasureTheory.SimpleFunc.nearestPtInd e s.card x) := by
+    simp [hT, MeasureTheory.SimpleFunc.nearestPt]
+  refine ⟨T, T.measurable, fun x ↦ hTe x ▸ he_mem _, fun x ↦ le_antisymm ?_ ?_⟩
+  · refine le_infEDist.2 fun y hy ↦ ?_
+    obtain ⟨k, hk, rfl⟩ := he_surj hy
+    simpa only [edist_comm] using MeasureTheory.SimpleFunc.edist_nearestPt_le e x hk
+  · exact infEDist_le_edist_of_mem (hTe x ▸ he_mem _)
 
 /-- A totally bounded pseudometric space admits, up to any positive error, an indexed finite family
 of approximation points and a measurable map assigning every point to a nearby one. -/
