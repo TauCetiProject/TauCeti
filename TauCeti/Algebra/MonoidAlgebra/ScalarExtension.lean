@@ -22,7 +22,9 @@ public noncomputable section
 
 namespace TauCeti
 
-variable (R S : Type*) [CommSemiring R] [CommSemiring S] [Algebra R S] (X : Type*)
+section ScalarMap
+
+variable (R S : Type*) [CommSemiring R] [Semiring S] [Algebra R S] (X : Type*)
 
 /-- Extend every coefficient along `R → S` in the free module on `X`. -/
 def monoidAlgebraScalarMap : MonoidAlgebra R X →ₗ[R] MonoidAlgebra S X :=
@@ -45,14 +47,6 @@ theorem monoidAlgebraScalarMap_single (x : X) (r : R) :
   ext y
   by_cases h : x = y <;> simp [h]
 
-/-- The free module on `X` commutes with extension of scalars. -/
-theorem isBaseChange_monoidAlgebraScalarMap : IsBaseChange S (monoidAlgebraScalarMap R S X) := by
-  have h := (IsBaseChange.linearMap R S).finsuppPow X
-  exact (IsBaseChange.iff_of_equiv_comm
-    (MonoidAlgebra.coeffLinearEquiv R).symm
-    (MonoidAlgebra.coeffLinearEquiv S).symm
-    (LinearMap.ext fun v => by simp [monoidAlgebraScalarMap])).mp h
-
 /-- Scalar extension preserves augmentation, that is, the sum of all coefficients. -/
 @[simp]
 theorem sumCoords_monoidAlgebraScalarMap (v : MonoidAlgebra R X) :
@@ -65,5 +59,17 @@ theorem sumCoords_monoidAlgebraScalarMap (v : MonoidAlgebra R X) :
     algebraMap R S (v.coeff.sum fun _ => id)
   rw [Finsupp.sum_mapRange_index (fun _ => rfl)]
   exact (map_finsuppSum (algebraMap R S) v.coeff (fun _ => id)).symm
+
+end ScalarMap
+
+variable (R S : Type*) [CommSemiring R] [CommSemiring S] [Algebra R S] (X : Type*)
+
+/-- The free module on `X` commutes with extension of scalars. -/
+theorem isBaseChange_monoidAlgebraScalarMap : IsBaseChange S (monoidAlgebraScalarMap R S X) := by
+  have h := (IsBaseChange.linearMap R S).finsuppPow X
+  exact (IsBaseChange.iff_of_equiv_comm
+    (MonoidAlgebra.coeffLinearEquiv R).symm
+    (MonoidAlgebra.coeffLinearEquiv S).symm
+    (LinearMap.ext fun v => by simp [monoidAlgebraScalarMap])).mp h
 
 end TauCeti

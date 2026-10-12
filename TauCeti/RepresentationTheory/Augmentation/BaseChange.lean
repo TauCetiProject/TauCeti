@@ -29,7 +29,9 @@ public noncomputable section
 
 namespace TauCeti
 
-variable (R S : Type*) [CommRing R] [CommRing S] [Algebra R S]
+section ScalarMap
+
+variable (R S : Type*) [CommSemiring R] [CommSemiring S] [Algebra R S]
   (G X : Type*) [Monoid G] [MulAction G X]
 
 /-- Extend the coefficients of a sum-zero permutation vector along `R → S`. -/
@@ -70,6 +72,11 @@ theorem augmentationScalarMap_action (g : G)
   simpa [Representation.ofMulAction_def, hcoeff] using
     (Finsupp.mapDomain_mapRange (g • ·) (v : MonoidAlgebra R X).coeff
       (algebraMap R S) (map_zero _) (map_add _)).symm
+
+end ScalarMap
+
+variable (R S : Type*) [CommRing R] [CommRing S] [Algebra R S]
+  (G X : Type*) [Monoid G] [MulAction G X]
 
 /-- Scalar extension commutes with the augmentation representation. No flatness, finiteness
 or nonemptiness assumption is required. -/
