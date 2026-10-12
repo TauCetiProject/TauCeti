@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Algebra.Homology.Curved.Module.Right.Shift
 public import TauCeti.Algebra.Category.GradedModuleCat.Basic
-public import TauCeti.CategoryTheory.DG.Preadditive
 
 /-!
 # Forgetting the differential of curved right modules
