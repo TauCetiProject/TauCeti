@@ -220,6 +220,15 @@ theorem fractionalIdeal_restrictScalars (f : BinaryQuadraticForm ℤ) (D : ℤ)
     f.idealGenerator D ∈ f.orderIdeal D hf :=
   (mem_orderIdeal_iff f D hf _).mpr ⟨0, 1, by simp⟩
 
+/-- The form order ideal is nonzero, in both field and split quadratic algebras. -/
+theorem orderIdeal_ne_bot (f : BinaryQuadraticForm ℤ) (D : ℤ) (hf : f.discrim = D) :
+    f.orderIdeal D hf ≠ ⊥ := by
+  intro h
+  have hβ := idealGenerator_mem_orderIdeal f D hf
+  rw [h, Submodule.mem_bot] at hβ
+  have hi := congrArg QuadraticAlgebra.im hβ
+  norm_num at hi
+
 /-- The two ideal generators are independent if the leading coefficient is nonzero. -/
 theorem idealGenerators_linearIndependent (f : BinaryQuadraticForm ℤ) (D : ℤ) (ha : f.a ≠ 0) :
     LinearIndependent ℤ ![(f.a : QuadraticAlgebra ℚ (D : ℚ) 0), f.idealGenerator D] := by
@@ -312,10 +321,13 @@ theorem fractionalIdeal_ne_zero (f : BinaryQuadraticForm ℤ) (D : ℤ)
     (hf : f.discrim = D) [Fact (¬ IsSquare D)] :
     f.fractionalIdeal D hf ≠ 0 := by
   intro h
-  have hβ := idealGenerator_mem_fractionalIdeal f D hf
-  rw [h, FractionalIdeal.mem_zero_iff] at hβ
-  have := congrArg QuadraticAlgebra.im hβ
-  norm_num at this
+  apply orderIdeal_ne_bot f D hf
+  ext z
+  rw [Submodule.mem_bot]
+  have hmem := Set.ext_iff.mp (coe_fractionalIdeal f D hf) z
+  simp only [SetLike.mem_coe] at hmem
+  rw [h, FractionalIdeal.mem_zero_iff] at hmem
+  exact hmem.symm
 
 /-- Norm on the ideal generators recovers the original form, with the second coordinate negated. -/
 theorem norm_idealGenerators (f : BinaryQuadraticForm ℤ) (D : ℤ)
