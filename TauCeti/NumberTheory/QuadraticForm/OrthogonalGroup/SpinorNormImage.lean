@@ -123,11 +123,13 @@ variable {V W : Type*} [AddCommGroup V] [Module ℚ V] [FiniteDimensional ℚ V]
 spinor-norm image. -/
 theorem OrthogonalCompactOpens.localSpinorNormImage_eq_of_isometry
     (U : OrthogonalCompactOpens Q) (U' : OrthogonalCompactOpens Q')
-    (hQ : Q.Nondegenerate) (hQ' : Q'.Nondegenerate) (p : Nat.Primes)
+    (hQ : Q.Nondegenerate) (p : Nat.Primes)
     (e : (Q.baseChange ℚ_[p]).IsometryEquiv (Q'.baseChange ℚ_[p]))
     (he : Set.BijOn e.specialOrthogonalGroupCongr (U.specialOrthogonal p)
       (U'.specialOrthogonal p)) :
-    U.localSpinorNormImage hQ p = U'.localSpinorNormImage hQ' p := by
+    U.localSpinorNormImage hQ p = U'.localSpinorNormImage
+      (QuadraticForm.Nondegenerate.of_baseChange
+        (e.nondegenerate_iff.mp (QuadraticForm.Nondegenerate.baseChange hQ))) p := by
   have hmap : (U.specialOrthogonal p).map (e.specialOrthogonalGroupCongr : _ →* _) =
       U'.specialOrthogonal p := SetLike.coe_injective he.image_eq
   simp only [localSpinorNormImage, localSpinorNorm, MonoidHom.range_comp,

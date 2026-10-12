@@ -43,17 +43,22 @@ variable {V W : Type*} [AddCommGroup V] [Module ℚ V] [FiniteDimensional ℚ V]
   [AddCommGroup W] [Module ℚ W] [FiniteDimensional ℚ W]
   {Q : QuadraticForm ℚ V} {Q' : QuadraticForm ℚ W}
   (U : OrthogonalCompactOpens Q) (U' : OrthogonalCompactOpens Q')
-  (hQ : Q.Nondegenerate) (hQ' : Q'.Nondegenerate)
+  (hQ : Q.Nondegenerate)
   (e : ∀ p : Nat.Primes, (Q.baseChange ℚ_[p]).IsometryEquiv (Q'.baseChange ℚ_[p]))
   (he : ∀ᶠ p in cofinite, Set.BijOn (e p).specialOrthogonalGroupCongr
     (U.specialOrthogonal p) (U'.specialOrthogonal p))
+
+-- A single local isometry suffices to recover nondegeneracy of the target rational form.
+local notation "hQ'" => QuadraticForm.Nondegenerate.of_baseChange
+  (Iff.mp (_root_.QuadraticMap.IsometryEquiv.nondegenerate_iff (e (Subtype.mk 2 Nat.prime_two)))
+    (QuadraticForm.Nondegenerate.baseChange hQ))
 
 include e he in
 /-- Almost-everywhere isometric transport of the special orthogonal reference family gives
 almost-everywhere equality of its spinor-norm image family. -/
 theorem eventually_localSpinorNormImage_eq_of_isometry :
     ∀ᶠ p in cofinite, U.localSpinorNormImage hQ p = U'.localSpinorNormImage hQ' p :=
-  he.mono fun p hp ↦ U.localSpinorNormImage_eq_of_isometry U' hQ hQ' p (e p) hp
+  he.mono fun p hp ↦ U.localSpinorNormImage_eq_of_isometry U' hQ p (e p) hp
 
 /-- The adelic spinor norm commutes with local isometric transport and the induced change of
 square-class reference family. -/
@@ -62,7 +67,7 @@ theorem adelicSpinorNorm_restrictedProductCongrRight (g : U.finiteAdelicSpecialO
         (restrictedProductCongrRight U.specialOrthogonal U'.specialOrthogonal
           (fun p ↦ (e p).specialOrthogonalGroupCongr) he g) =
       restrictedProductCongr (U.localSpinorNormImage hQ) (U'.localSpinorNormImage hQ')
-        (U.eventually_localSpinorNormImage_eq_of_isometry U' hQ hQ' e he)
+        (U.eventually_localSpinorNormImage_eq_of_isometry U' hQ e he)
         (U.adelicSpinorNorm hQ g) := by
   ext p : 1
   simp only [adelicSpinorNorm_apply, restrictedProductCongrRight_apply,
@@ -85,9 +90,9 @@ theorem map_adelicSpinorKernel_restrictedProductCongrRight :
           (restrictedProductCongrRight U.specialOrthogonal U'.specialOrthogonal
             (fun p ↦ (e p).specialOrthogonalGroupCongr) he : _ →* _) =
         (restrictedProductCongr (U.localSpinorNormImage hQ) (U'.localSpinorNormImage hQ')
-          (U.eventually_localSpinorNormImage_eq_of_isometry U' hQ hQ' e he) : _ →* _).comp
+          (U.eventually_localSpinorNormImage_eq_of_isometry U' hQ e he) : _ →* _).comp
           (U.adelicSpinorNorm hQ) :=
-    MonoidHom.ext (U.adelicSpinorNorm_restrictedProductCongrRight U' hQ hQ' e he)
+    MonoidHom.ext (U.adelicSpinorNorm_restrictedProductCongrRight U' hQ e he)
   rw [hnorm, MonoidHom.ker_comp_of_injective]
   exact MulEquiv.injective _
 
@@ -97,13 +102,13 @@ def adelicSpinorKernelCongr : U.adelicSpinorKernel hQ ≃* U'.adelicSpinorKernel
   TauCeti.Subgroup.congrOfMapEq
     (restrictedProductCongrRight U.specialOrthogonal U'.specialOrthogonal
       (fun p ↦ (e p).specialOrthogonalGroupCongr) he)
-    (U.map_adelicSpinorKernel_restrictedProductCongrRight U' hQ hQ' e he)
+    (U.map_adelicSpinorKernel_restrictedProductCongrRight U' hQ e he)
 
 /-- In each coordinate, adelic spinor-kernel transport is special orthogonal isometric
 transport. -/
 @[simp]
 theorem adelicSpinorKernelCongr_apply (g : U.adelicSpinorKernel hQ) (p : Nat.Primes) :
-    (U.adelicSpinorKernelCongr U' hQ hQ' e he g : U'.finiteAdelicSpecialOrthogonal) p =
+    (U.adelicSpinorKernelCongr U' hQ e he g : U'.finiteAdelicSpecialOrthogonal) p =
       (e p).specialOrthogonalGroupCongr ((g : U.finiteAdelicSpecialOrthogonal) p) := by
   rw [adelicSpinorKernelCongr, TauCeti.Subgroup.coe_congrOfMapEq_apply,
     restrictedProductCongrRight_apply]
@@ -112,17 +117,18 @@ theorem adelicSpinorKernelCongr_apply (g : U.adelicSpinorKernel hQ) (p : Nat.Pri
 isometric transport. -/
 @[simp]
 theorem adelicSpinorKernelCongr_symm_apply (g : U'.adelicSpinorKernel hQ') (p : Nat.Primes) :
-    ((U.adelicSpinorKernelCongr U' hQ hQ' e he).symm g : U.finiteAdelicSpecialOrthogonal) p =
+    ((U.adelicSpinorKernelCongr U' hQ e he).symm g : U.finiteAdelicSpecialOrthogonal) p =
       (e p).specialOrthogonalGroupCongr.symm ((g : U'.finiteAdelicSpecialOrthogonal) p) := by
   rw [adelicSpinorKernelCongr, TauCeti.Subgroup.coe_congrOfMapEq_symm_apply,
     restrictedProductCongrRight_symm_apply]
 
 /-- Transport of adelic spinor kernels intertwines the adelic Spin projections when the local
 isometries also carry the Spin reference family onto the target family at almost every prime. -/
+@[simp]
 theorem adelicSpinorKernelCongr_finiteAdelicSpinToSpinorKernel
     (hs : ∀ᶠ p in cofinite, Set.BijOn (e p).spinGroupEquiv (U.spin p) (U'.spin p))
     (x : U.finiteAdelicSpin) :
-    U.adelicSpinorKernelCongr U' hQ hQ' e he (U.finiteAdelicSpinToSpinorKernel hQ x) =
+    U.adelicSpinorKernelCongr U' hQ e he (U.finiteAdelicSpinToSpinorKernel hQ x) =
       U'.finiteAdelicSpinToSpinorKernel hQ'
         (restrictedProductCongrRight U.spin U'.spin (fun p ↦ (e p).spinGroupEquiv) hs x) := by
   apply Subtype.ext
