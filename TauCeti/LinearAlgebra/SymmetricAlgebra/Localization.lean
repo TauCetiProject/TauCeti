@@ -104,6 +104,40 @@ theorem coe_symmetricPowerEquiv_tmul (h : IsBaseChange A f) (n : ℕ)
   rw [ht, map_smul, map_smul]
   exact congrArg (a • ·) (RingHom.congr_fun he x.1)
 
+variable {M' N' : Type*} [AddCommMonoid M'] [Module R M'] [AddCommMonoid N']
+  [Module R N'] [Module A N'] [IsScalarTower R A N'] {f' : M' →ₗ[R] N'}
+
+/-- The symmetric-power scalar-extension comparison is natural in commuting maps of the
+original and extended modules. -/
+theorem symmetricPowerEquiv_naturality (h : IsBaseChange A f) (h' : IsBaseChange A f')
+    (n : ℕ) (g : M →ₗ[R] M') (g' : N →ₗ[A] N')
+    (comm : (g'.restrictScalars R) ∘ₗ f = f' ∘ₗ g) :
+    (homogeneousSubmoduleMapₛₗ g' n) ∘ₗ (h.symmetricPowerEquiv n).toLinearMap =
+      (h'.symmetricPowerEquiv n).toLinearMap ∘ₗ
+        (homogeneousSubmoduleMapₛₗ g n).baseChange A := by
+  have hc : g' ∘ₗ h.equiv.toLinearMap = h'.equiv.toLinearMap ∘ₗ g.baseChange A := by
+    apply TensorProduct.AlgebraTensorModule.ext
+    intro a m
+    simpa only [LinearMap.comp_apply, LinearEquiv.coe_coe, IsBaseChange.equiv_tmul,
+      LinearMap.baseChange_tmul, LinearMap.restrictScalars_apply, map_smul] using
+      congrArg (a • ·) (LinearMap.congr_fun comm m)
+  apply LinearMap.ext
+  intro x
+  induction x using TensorProduct.inductionOn with
+  | add x y hx hy => simp only [map_add, hx, hy]
+  | tmul a x =>
+    apply Subtype.ext
+    simp only [LinearMap.comp_apply, LinearEquiv.coe_coe,
+      coe_homogeneousSubmoduleMapₛₗ_apply, coe_symmetricPowerEquiv_apply,
+      LinearMap.baseChange_tmul, Submodule.subtype_apply, SymmetricAlgebra.mapₛₗ_eq_map,
+      RingHom.coe_coe]
+    rw [← AlgHom.comp_apply, SymmetricAlgebra.map_comp_map, hc,
+      ← SymmetricAlgebra.map_comp_map, AlgHom.comp_apply]
+    apply congrArg (SymmetricAlgebra.map A h'.equiv.toLinearMap)
+    simpa only [AlgHom.comp_apply, Algebra.TensorProduct.map_tmul, AlgHom.id_apply,
+      AlgEquiv.toAlgHom_apply, BialgEquiv.coe_toAlgEquiv] using
+      (AlgHom.congr_fun (g.scalarTensorBialgEquiv_comp_map (S := A)) (a ⊗ₜ[R] x.1)).symm
+
 end IsBaseChange
 
 namespace LinearMap
