@@ -34,17 +34,22 @@ polynomials in one distinguished variable over the base coordinates. Specializin
 coordinates is a ring homomorphism `φ : R →+* S`, and it can lower degrees. Truncation and
 principal coefficients are taken *before* specialization, and the reducta account for every
 possible drop in degree. The coefficients of `p.map φ` are the images of the coefficients of
-`p`, which lie in the projection, and the specialization lemmas below show that the principal
-subresultant coefficients of the specialized polynomials, at their actual specialized degrees,
-are also images under `φ` of elements of the projection. Thus the signs of the projection at a
-base point determine the degrees of the specialized polynomials and, through the subresultant
-gcd criterion, the degrees of their pairwise gcds and of their gcds with their derivatives; this
-is how the projection enters Collins' delineability theorem. The last section of this file
-proves this: whenever the same elements of the projection vanish under two specializations
-`φ : R →+* K` and `ψ : R →+* L` into characteristic-zero fields (for instance evaluation at two
-points of a base set on which the projection is sign-invariant), the specialized family has the
-same degrees, the same nullified members, the same pairwise gcd degrees and the same gcd degrees
-with derivatives.
+`p`, which lie in the projection. For commutative-ring targets, the specialization lemmas show
+that pairwise principal subresultant coefficients at the actual specialized degrees are also
+images under `φ` of elements of the projection; the derivative case requires an additively
+torsion-free target. Thus the signs of the projection at a base point determine the degrees of
+the specialized polynomials and, through the subresultant gcd criterion, the degrees of their
+pairwise gcds and of their gcds with their derivatives. This is how the projection enters
+Collins' delineability theorem.
+
+The last section compares two specializations under which the same elements of the projection
+vanish, for instance evaluation at two points of a base set on which the projection is
+sign-invariant. Degrees and nullified members agree for arbitrary semiring targets. Pairwise
+principal subresultant coefficients have the same zero patterns for commutative-ring targets;
+the derivative case requires additively torsion-free targets. Pairwise gcd degrees agree for
+field targets, and gcd degrees with derivatives agree for additively torsion-free field targets.
+In characteristic-zero fields, a member that splits under both specializations has the same
+number of distinct roots; algebraically closed fields satisfy the splitting hypotheses.
 
 ## Main definitions and results
 
@@ -59,16 +64,17 @@ with derivatives.
   image of the projection computed entirely over `ℤ`.
 * `Finset.psc_map_mem_image_collinsProjection`,
   `Finset.psc_map_derivative_mem_image_collinsProjection`: principal subresultant coefficients
-  of specialized polynomials, at the specialized degrees, come from the projection.
+  of specialized polynomials, at the specialized degrees, come from the projection. The
+  derivative case requires an additively torsion-free target.
 * `Finset.natDegree_map_eq_of_collinsProjection`, `Finset.map_eq_zero_iff_of_collinsProjection`:
-  two specializations under which the same elements of the projection vanish give every member
-  of the family the same degree, and nullify the same members.
+  two specializations into arbitrary semirings under which the same elements of the projection
+  vanish give every member of the family the same degree, and nullify the same members.
 * `Finset.natDegree_gcd_map_eq_of_collinsProjection`,
   `Finset.natDegree_gcd_map_derivative_eq_of_collinsProjection`: under the same hypothesis, the
-  specialized pairwise gcds, and the specialized gcds of each member with its derivative, have
-  the same degrees.
-* `Finset.card_roots_toFinset_map_eq_of_collinsProjection_of_splits`: in characteristic zero,
-  a member that splits under both specializations has the same number of distinct roots.
+  specialized pairwise gcds have the same degrees over fields. The gcds with derivatives have
+  the same degrees over additively torsion-free fields.
+* `Finset.card_roots_toFinset_map_eq_of_collinsProjection_of_splits`: over characteristic-zero
+  fields, a member that splits under both specializations has the same number of distinct roots.
 * `Finset.card_roots_toFinset_map_eq_of_collinsProjection`: the algebraically closed case.
 
 ## References
@@ -245,10 +251,12 @@ theorem psc_map_derivative_mem_image_collinsProjection [IsAddTorsionFree S] [Dec
 /-! ### Invariance of the specialized family
 
 Throughout, `φ` and `ψ` are two specializations under which the same elements of the Collins
-projection vanish. The degrees and the zero patterns of principal subresultant coefficients agree
-for specializations into commutative rings, with additively torsion-free targets for the derivative
-statements. Nullification and degree invariance allow arbitrary semiring targets. The gcd and
-root-count statements are over fields. -/
+projection vanish. Nullification and degree invariance allow arbitrary semiring targets. The zero
+patterns of pairwise principal subresultant coefficients agree for commutative-ring targets,
+with additively torsion-free targets required for the derivative case. Pairwise gcd degrees agree
+for field targets, and gcd degrees with derivatives agree for additively torsion-free field
+targets. Root-count invariance requires characteristic-zero fields and splitting of the member
+under both specializations; the algebraically closed case follows. -/
 
 section Invariance
 
