@@ -41,8 +41,6 @@ open scoped Real
 
 namespace TauCeti
 
-namespace ContinuousLinearMap
-
 /-- The bilinear action of a map that is `C¹` near each point of a parametrized circle is
 bounded by the operator norm of the bilinear map times the angular energy. -/
 theorem norm_integral_apply_apply_circleMap_le {V G : Type*} [NormedAddCommGroup V]
@@ -70,8 +68,6 @@ theorem norm_integral_apply_apply_circleMap_le {V G : Type*} [NormedAddCommGroup
     (congrArg u hends) hLp
   have hfactor : (π - -π) / (2 * π) = (1 : ℝ) := by field_simp; ring
   simpa only [hfactor, mul_one] using h
-
-end ContinuousLinearMap
 
 namespace SymplecticForm
 
