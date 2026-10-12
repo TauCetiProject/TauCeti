@@ -31,7 +31,7 @@ The comparison at a place `v` goes through Shapiro's lemma. For a place `w` of `
 semi-local units are coinduced from the units of the completion `L_w` as a representation of the
 decomposition group `D_w` (`semilocalUnitsCoindIso`, `infiniteSemilocalUnitsCoindIso`), so the
 semi-local component of `x` is determined by its restriction to `D_w`, read in `L_wˣ`
-(`TauCeti.groupCohomology.map_id_eq_zero_iff_of_comp_eq_resCoindToHom`). The decomposition group is
+(`groupCohomology.map_id_eq_zero_iff_of_comp_eq_resCoindToHom`). The decomposition group is
 the Galois group of `L_w/K_v` (`decompositionHom`), and there the restriction is the map
 `H²(Gal(L/K), Lˣ) → H²(Gal(L_w/K_v), L_wˣ)` along restriction of automorphisms and the inclusion
 `Lˣ → L_wˣ` (`map_unitsToIdeles_idelesToSemilocalUnits_eq_zero_iff`). That map is how base change

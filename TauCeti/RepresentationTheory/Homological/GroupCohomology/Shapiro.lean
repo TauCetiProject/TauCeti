@@ -42,7 +42,7 @@ a corestriction satisfying `cor ∘ res = [G : S]`.
   in the coefficients.
 * `TauCeti.groupCohomology.map_resCoindToHom_comp_coindIso_hom`: on the adjunct `B ⟶ Coind_S^G A`
   of `f : Res_S B ⟶ A`, Shapiro's isomorphism is the change-of-group map induced by `f`.
-* `TauCeti.groupCohomology.map_id_eq_zero_iff_of_comp_eq_resCoindToHom`: a morphism into a
+* `groupCohomology.map_id_eq_zero_iff_of_comp_eq_resCoindToHom`: a morphism into a
   representation coinduced from `S ≤ G` kills a class of `Hⁿ(G, -)` exactly when its adjunct does
   on `S`, read through a bijection `f : S → Γ` and a homomorphism `Γ → G` restricting along `f` to
   the inclusion of `S`.
@@ -173,6 +173,14 @@ theorem δ_comp_coindIso_hom {X : ShortComplex (Rep k S)} (hX : X.ShortExact)
       comm₁₂ := ((resCoindAdjunction k S.subtype).counit.naturality X.f).symm
       comm₂₃ := ((resCoindAdjunction k S.subtype).counit.naturality X.g).symm } i j hij
 
+end TauCeti.groupCohomology
+
+namespace groupCohomology
+
+open TauCeti.groupCohomology
+
+variable {k G : Type u} [CommRing k] [Group G] (S : Subgroup G)
+
 /-- **Shapiro's lemma through an identification of the subgroup.** Let `S ≤ G`, let `f : S →* Γ` be
 bijective and `r : Γ →* G` restrict back to the inclusion of `S` (`r (f s) = s`), and let
 `φ : Res_r X ⟶ B`. Suppose that `u : X ⟶ M`, followed by an isomorphism
@@ -206,4 +214,4 @@ theorem map_id_eq_zero_iff_of_comp_eq_resCoindToHom {Γ : Type u} [Group Γ] {X 
   rw [← hS, hD]
   exact map_eq_zero_iff _ hd
 
-end TauCeti.groupCohomology
+end groupCohomology
