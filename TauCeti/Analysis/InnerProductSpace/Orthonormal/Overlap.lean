@@ -43,7 +43,7 @@ assume it.
 * `TauCeti.cosPrincipalAngles`: the principal cosines, as singular values of the overlap operator,
   with `cosPrincipalAngles_nonneg`, `cosPrincipalAngles_le_one`, `cosPrincipalAngles_antitone`
   and `cosPrincipalAngles_comm`.
-* `TauCeti.sinThetaSq`: the squared Frobenius sine, with
+* `TauCeti.sinThetaSq`: the squared Frobenius sine (for orthonormal families), with
   `TauCeti.sinThetaSq_eq_card_sub_sum_norm_inner_sq` and `TauCeti.sinThetaSq_self`.
 
 ## References
@@ -217,8 +217,9 @@ theorem sum_range_sq_cosPrincipalAngles (u : ι → E) (v : κ → E) :
 /-! ### The squared Frobenius sine -/
 
 variable (𝕜) in
-/-- The squared Frobenius sine `sin²_F Θ = ∑ₖ (1 - cos² θₖ)` of two finite families of the same
-size `d`, the sum running over the first `d` principal cosines. -/
+/-- The sum `∑ₖ (1 - cos² θₖ)` over the first `d` principal cosines of two finite families of the
+same size `d`. When both families are orthonormal this is the squared Frobenius sine
+`sin²_F Θ` between their spans. -/
 noncomputable def sinThetaSq (u v : ι → E) : ℝ :=
   ∑ k ∈ Finset.range (Fintype.card ι), (1 - cosPrincipalAngles 𝕜 u v k ^ 2)
 
@@ -227,14 +228,15 @@ theorem sinThetaSq_def (u v : ι → E) :
       ∑ k ∈ Finset.range (Fintype.card ι), (1 - cosPrincipalAngles 𝕜 u v k ^ 2) :=
   (rfl)
 
-/-- For families of size `d`, `sin²_F Θ = d - ∑ₖ cos² θₖ`. -/
+/-- For families of size `d`, `sinThetaSq` equals `d - ∑ₖ cos² θₖ`. -/
 theorem sinThetaSq_eq_card_sub_sum_sq (u v : ι → E) :
     sinThetaSq 𝕜 u v =
       Fintype.card ι - ∑ k ∈ Finset.range (Fintype.card ι), cosPrincipalAngles 𝕜 u v k ^ 2 := by
   simp [sinThetaSq_def, Finset.sum_sub_distrib]
 
-/-- For families of size `d`, `sin²_F Θ = d - ∑ⱼ ∑ᵢ ‖⟪uᵢ, vⱼ⟫‖²`: the squared Frobenius sine is
-the size minus the squared Frobenius norm of the overlap matrix. -/
+/-- For families of size `d`, `sinThetaSq` equals `d - ∑ⱼ ∑ᵢ ‖⟪uᵢ, vⱼ⟫‖²`, the size minus the
+squared Frobenius norm of the overlap matrix. For orthonormal families this computes the squared
+Frobenius sine between the spans directly from the inner products. -/
 theorem sinThetaSq_eq_card_sub_sum_norm_inner_sq (u v : ι → E) :
     sinThetaSq 𝕜 u v = Fintype.card ι - ∑ j, ∑ i, ‖⟪u i, v j⟫_𝕜‖ ^ 2 := by
   rw [sinThetaSq_eq_card_sub_sum_sq, sum_range_sq_cosPrincipalAngles]
