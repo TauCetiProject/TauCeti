@@ -137,6 +137,18 @@ theorem hasOneCommonSide_of_left_eq_left (D : GridRectangleDecomposition x z)
     simp only [GridRectangleBetween.mem_sideColumns, ← hcommon] at hc
     grind
 
+/-- Two rectangles sharing their terminal side and having distinct initial sides share exactly
+one side column. -/
+theorem hasOneCommonSide_of_right_eq_right (D : GridRectangleDecomposition x z)
+    (hcommon : D.first.right = D.second.right)
+    (hother : D.first.left ≠ D.second.left) : D.HasOneCommonSide := by
+  apply D.hasOneCommonSide_iff_existsUnique.mpr
+  refine ⟨D.first.right, ?_, ?_⟩
+  · simp [GridRectangleBetween.mem_sideColumns, hcommon]
+  · intro c hc
+    simp only [GridRectangleBetween.mem_sideColumns, ← hcommon] at hc
+    grind
+
 /-- Two rectangles sharing their initial side, the second ending strictly inside the first's
 column interval, share exactly one side column. -/
 theorem hasOneCommonSide_of_left_eq_left_of_mem_cIoo (D : GridRectangleDecomposition x z)

@@ -34,56 +34,46 @@ namespace TauCeti
 
 variable {ι : Type*} [Fintype ι]
 
-private def chartSwap (v : Option (Option ι)) : (Option ι → ℝ) →ᴬ[ℝ] (Option ι → ℝ) :=
-  match v with
-  | none => ContinuousAffineMap.id ℝ _
-  | some j => coordinateSimplexVertexSwap j
-
-private theorem chartSwap_involutive (v : Option (Option ι)) (x : Option ι → ℝ) :
-    chartSwap v (chartSwap v x) = x := by
-  cases v <;> simp [chartSwap]
-
-private theorem chartSwap_mem_frontier_iff (v : Option (Option ι)) (x : Option ι → ℝ) :
-    chartSwap v x ∈ frontier (coordinateSimplex (Option ι)) ↔
-      x ∈ frontier (coordinateSimplex (Option ι)) := by
-  cases v with
-  | none => rfl
-  | some j => exact coordinateSimplexVertexSwap_mem_frontier_iff j x
-
 /-- Ambient affine coordinates in the simplex boundary chart at vertex `v`. The index `none`
 means the origin; `some j` means the coordinate vertex `j`. -/
 def coordinateSimplexBoundaryChartProjection (v : Option (Option ι)) :
     (Option ι → ℝ) →ᴬ[ℝ] (ι → ℝ) :=
-  (coordinateSimplexBoundaryProjection (ι := ι)).toContinuousAffineMap.comp (chartSwap v)
+  (coordinateSimplexBoundaryProjection (ι := ι)).toContinuousAffineMap.comp
+    (coordinateSimplexChartSwap v)
 
 /-- At the origin vertex, the chart uses the coordinate-difference projection. -/
 @[simp] theorem coordinateSimplexBoundaryChartProjection_none (x : Option ι → ℝ) :
     coordinateSimplexBoundaryChartProjection none x = coordinateSimplexBoundaryProjection x :=
-  (rfl)
+  by simp only [coordinateSimplexBoundaryChartProjection, ContinuousAffineMap.comp_apply,
+    ContinuousLinearMap.coe_toContinuousAffineMap, coordinateSimplexChartSwap_none]
 
 /-- At a coordinate vertex, first swap that vertex with the origin. -/
 @[simp] theorem coordinateSimplexBoundaryChartProjection_some (j : Option ι)
     (x : Option ι → ℝ) :
     coordinateSimplexBoundaryChartProjection (some j) x =
-      coordinateSimplexBoundaryProjection (coordinateSimplexVertexSwap j x) := (rfl)
+      coordinateSimplexBoundaryProjection (coordinateSimplexVertexSwap j x) := by
+  simp only [coordinateSimplexBoundaryChartProjection, ContinuousAffineMap.comp_apply,
+    ContinuousLinearMap.coe_toContinuousAffineMap, coordinateSimplexChartSwap_some]
 
 /-- Ambient inverse coordinates in the simplex boundary chart at vertex `v`. -/
 def coordinateSimplexBoundaryChartLift (v : Option (Option ι)) (y : ι → ℝ) : Option ι → ℝ :=
-  chartSwap v (coordinateSimplexBoundaryLift y)
+  coordinateSimplexChartSwap v (coordinateSimplexBoundaryLift y)
 
 /-- The origin chart inverse is minimum subtraction. -/
 @[simp] theorem coordinateSimplexBoundaryChartLift_none (y : ι → ℝ) :
-    coordinateSimplexBoundaryChartLift none y = coordinateSimplexBoundaryLift y := (rfl)
+    coordinateSimplexBoundaryChartLift none y = coordinateSimplexBoundaryLift y := by
+  simp only [coordinateSimplexBoundaryChartLift, coordinateSimplexChartSwap_none]
 
 /-- The other chart inverses swap the lifted point's origin vertex with the chosen vertex. -/
 @[simp] theorem coordinateSimplexBoundaryChartLift_some (j : Option ι) (y : ι → ℝ) :
     coordinateSimplexBoundaryChartLift (some j) y =
-      coordinateSimplexVertexSwap j (coordinateSimplexBoundaryLift y) := (rfl)
+      coordinateSimplexVertexSwap j (coordinateSimplexBoundaryLift y) := by
+  simp only [coordinateSimplexBoundaryChartLift, coordinateSimplexChartSwap_some]
 
 /-- The inverse coordinate formulas are piecewise affine on the entire model space. -/
 theorem isPiecewiseAffineOn_coordinateSimplexBoundaryChartLift (v : Option (Option ι)) :
     IsPiecewiseAffineOn (coordinateSimplexBoundaryChartLift v) univ :=
-  (isPiecewiseAffineOn_continuousAffineMap (chartSwap v) univ).comp
+  (isPiecewiseAffineOn_continuousAffineMap (coordinateSimplexChartSwap v) univ).comp
     isPiecewiseAffineOn_coordinateSimplexBoundaryLift (mapsTo_univ _ _)
 
 /-- The ambient projection is a left inverse to the lifted chart coordinates. -/
@@ -92,7 +82,7 @@ theorem isPiecewiseAffineOn_coordinateSimplexBoundaryChartLift (v : Option (Opti
     coordinateSimplexBoundaryChartProjection v (coordinateSimplexBoundaryChartLift v y) = y := by
   simp only [coordinateSimplexBoundaryChartProjection, coordinateSimplexBoundaryChartLift,
     ContinuousAffineMap.comp_apply, ContinuousLinearMap.coe_toContinuousAffineMap,
-    chartSwap_involutive, coordinateSimplexBoundaryProjection_lift]
+    coordinateSimplexChartSwap_involutive, coordinateSimplexBoundaryProjection_lift]
 
 /-- The chart source is the boundary with the facet opposite the chosen vertex deleted. -/
 def coordinateSimplexBoundaryChartSource (v : Option (Option ι)) :
@@ -111,11 +101,13 @@ def coordinateSimplexBoundaryChartSource (v : Option (Option ι)) :
 
 private theorem mem_chartSource_iff (v : Option (Option ι))
     (x : frontier (coordinateSimplex (Option ι))) :
-    x ∈ coordinateSimplexBoundaryChartSource v ↔ ∑ i, chartSwap v x.1 i < 1 := by
+    x ∈ coordinateSimplexBoundaryChartSource v ↔ ∑ i, coordinateSimplexChartSwap v x.1 i < 1 := by
   cases v with
-  | none => rfl
-  | some j => simp only [coordinateSimplexBoundaryChartSource, mem_ofPred_eq, chartSwap,
-      sum_coordinateSimplexVertexSwap]; constructor <;> intro h <;> linarith
+  | none => simp only [coordinateSimplexBoundaryChartSource, mem_ofPred_eq,
+      coordinateSimplexChartSwap_none]
+  | some j => simp only [coordinateSimplexBoundaryChartSource, mem_ofPred_eq,
+      coordinateSimplexChartSwap_some, sum_coordinateSimplexVertexSwap]
+              constructor <;> intro h <;> linarith
 
 /-- Projecting and lifting recover a boundary point in the chosen chart source. -/
 theorem coordinateSimplexBoundaryChartLift_projection (v : Option (Option ι))
@@ -125,15 +117,17 @@ theorem coordinateSimplexBoundaryChartLift_projection (v : Option (Option ι))
       (coordinateSimplexBoundaryChartProjection v x.1) = x.1 := by
   simp only [coordinateSimplexBoundaryChartLift, coordinateSimplexBoundaryChartProjection,
     ContinuousAffineMap.comp_apply, ContinuousLinearMap.coe_toContinuousAffineMap]
-  rw [coordinateSimplexBoundaryLift_projection ((chartSwap_mem_frontier_iff v x.1).2 x.2)
-    ((mem_chartSource_iff v x).1 hx), chartSwap_involutive]
+  rw [coordinateSimplexBoundaryLift_projection
+    ((coordinateSimplexChartSwap_mem_frontier_iff v x.1).2 x.2)
+    ((mem_chartSource_iff v x).1 hx), coordinateSimplexChartSwap_involutive]
 
 /-- If the minimum-subtraction lift of `y` has mass less than one (the common chart target
 condition), then every chart lift of `y` lies on the geometric simplex boundary. -/
 theorem coordinateSimplexBoundaryChartLift_mem_frontier (v : Option (Option ι)) {y : ι → ℝ}
     (hy : ∑ i, coordinateSimplexBoundaryLift y i < 1) :
     coordinateSimplexBoundaryChartLift v y ∈ frontier (coordinateSimplex (Option ι)) :=
-  (chartSwap_mem_frontier_iff v _).2 (coordinateSimplexBoundaryLift_mem_frontier hy)
+  (coordinateSimplexChartSwap_mem_frontier_iff v _).2
+    (coordinateSimplexBoundaryLift_mem_frontier hy)
 
 /-- Every vertex chart source is open in the simplex boundary. -/
 theorem isOpen_coordinateSimplexBoundaryChartSource (v : Option (Option ι)) :
@@ -149,12 +143,9 @@ theorem isOpen_coordinateSimplexBoundaryChartSource (v : Option (Option ι)) :
 theorem exists_mem_coordinateSimplexBoundaryChartSource
     (x : frontier (coordinateSimplex (Option ι))) :
     ∃ v, x ∈ coordinateSimplexBoundaryChartSource v := by
-  by_cases hx : ∑ i, x.1 i < 1
-  · exact ⟨none, hx⟩
-  · have hp : 0 < ∑ i, x.1 i := by linarith
-    obtain ⟨j, -, hj⟩ := Finset.sum_pos_iff_of_nonneg
-      (fun i _ => ((mem_frontier_coordinateSimplex _ _).1 x.2).1.1 i) |>.1 hp
-    exact ⟨some j, hj⟩
+  exact (sum_lt_one_or_exists_pos_of_mem_coordinateSimplex _
+    ((isClosed_coordinateSimplex _).frontier_subset x.2)).elim
+      (fun h => ⟨none, h⟩) (fun ⟨j, h⟩ => ⟨some j, h⟩)
 
 private theorem chartProjection_mem_target (v : Option (Option ι))
     (x : frontier (coordinateSimplex (Option ι)))
@@ -163,7 +154,8 @@ private theorem chartProjection_mem_target (v : Option (Option ι))
   have h := (mem_chartSource_iff v x).1 hx
   simpa only [coordinateSimplexBoundaryChartProjection, ContinuousAffineMap.comp_apply,
     ContinuousLinearMap.coe_toContinuousAffineMap,
-    coordinateSimplexBoundaryLift_projection ((chartSwap_mem_frontier_iff v x.1).2 x.2) h]
+    coordinateSimplexBoundaryLift_projection
+      ((coordinateSimplexChartSwap_mem_frontier_iff v x.1).2 x.2) h]
     using h
 
 private theorem zero_mem_frontier : (0 : Option ι → ℝ) ∈
@@ -186,7 +178,7 @@ def coordinateSimplexBoundaryChart (v : Option (Option ι)) :
     simp only [mem_ofPred_eq] at hy
     simp only [dite_eq_left hy]
     rw [mem_chartSource_iff]
-    simpa only [coordinateSimplexBoundaryChartLift, chartSwap_involutive] using hy
+    simpa only [coordinateSimplexBoundaryChartLift, coordinateSimplexChartSwap_involutive] using hy
   left_inv' x hx := by
     simp only [dite_eq_left (chartProjection_mem_target v x hx)]
     exact Subtype.ext (coordinateSimplexBoundaryChartLift_projection v x hx)
