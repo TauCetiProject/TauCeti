@@ -179,11 +179,8 @@ theorem isDiscreteValuationRing_stalk (hxt : Transcendental k x)
 discrete valuation ring. -/
 theorem valuationRing_stalk (hxt : Transcendental k x) (p : twoChartModel hF hx) :
     ValuationRing ((twoChartModel hF hx).presheaf.stalk p) := by
-  by_cases hp : p = genericPoint (twoChartModel hF hx)
-  · subst hp
-    exact inferInstanceAs (ValuationRing (twoChartModel hF hx).functionField)
-  · have := isDiscreteValuationRing_stalk hxt
-      ⟨p, (coheight_eq_one_iff_ne_genericPoint hxt).mpr hp⟩
-    infer_instance
+  have := isDiscreteValuationRing_stalk (hF := hF) (hx := hx) hxt
+  exact Scheme.valuationRing_stalk_of_topologicalKrullDim_le_one
+    (topologicalKrullDim_eq_one hxt).le p
 
 end TauCeti.AlgebraicGeometry.twoChartModel
