@@ -208,13 +208,7 @@ private theorem exists_isQuotientMapping_weightedMapCompletion {S : Pair A'} {U 
       (U.weighted (isWeightFamily_one_weight (k := m))).completion :=
     { toRingHom := F
       continuous_toRingHom := continuous_weightedMapCompletion ..
-      map_mem_plus := S.weighted_completion_plus_le_comap _ _ (continuous_weightedMapCompletion ..)
-        (fun a ha ↦ by
-          rw [hFC]
-          exact U.weightedC_mem_weighted_completion_plus _ (π.map_mem_plus a ha))
-        (fun i t ht ↦ by
-          rw [hFX i t ht]
-          exact U.weightedC_mul_weightedX_mem_weighted_completion_plus _ rfl) }
+      map_mem_plus := weighted_completion_plus_le_comap_weightedMapCompletion _ π _ _ }
   refine ⟨β, Hom.isQuotientMapping_of_isIntegral_weighted β
     hπ.isOpenQuotientMap.weightedMapCompletion_one_weight (fun b hb ↦ ?_) (fun i t ht ↦ ?_), rfl⟩
   · -- `b` is integral over `π(A'⁺)`, so its constant is integral over the constants of `π(A'⁺)`

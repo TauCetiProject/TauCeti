@@ -5,9 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.AlgebraicGeometry.AdicSpace.PreAdicSpace.Adic
 public import TauCeti.AlgebraicGeometry.AdicSpace.PreAdicSpace.Descent
-public import TauCeti.AlgebraicGeometry.AdicSpace.PreAdicSpace.OpenImmersion
 public import TauCeti.Geometry.RingedSpace.PresheafedSpace.Gluing
+public import TauCeti.Geometry.RingedSpace.PresheafedSpace.HasColimits
 public import TauCeti.Topology.Category.TopCommRingCat.CompleteSeparated.Limits
 
 /-!
@@ -32,7 +33,13 @@ as legs, is a colimit in `𝒱^pre` by the lifting statement above. As for schem
 is then `CategoryTheory.GlueData.glued`, its charts `ι i` are open immersions which are jointly
 surjective, and `V i j` is the intersection of the images of `U i` and `U j`.
 
-For gluing adic spaces, sheafiness and local affinoidness of the glued object are separate steps.
+Gluing adic spaces gives an adic space. The glued space is sheafy because a colimit of presheafed
+spaces with sheaf structure presheaves has a sheaf structure presheaf
+(`AlgebraicGeometry.PresheafedSpace.isSheaf_of_isColimit`). It is locally affinoid because its
+charts are open immersions covering it. Conversely its charts are open adic subspaces, so the
+glued space is adic exactly when every piece is (`TauCeti.PreAdicSpace.GlueData.isAdic_glued_iff`).
+Since `(Adic)` is a full subcategory of `𝒱^pre`, the glued adic space is then a colimit of the
+gluing diagram in `(Adic)`.
 
 ## Main definitions
 
@@ -45,6 +52,10 @@ For gluing adic spaces, sheafiness and local affinoidness of the glued object ar
   pre-adic space is the glued presheafed space.
 * `TauCeti.PreAdicSpace.GlueData.vPullbackConeIsLimit`: `V i j` is the pullback of the charts
   `U i` and `U j` of the glued space.
+* `TauCeti.PreAdicSpace.GlueData.gluedAdicι`: for adic pieces, the charts of the glued adic
+  space, as a natural transformation out of the gluing diagram in `(Adic)`.
+* `TauCeti.PreAdicSpace.GlueData.isColimitGluedAdicCocone`: the universal property of the glued
+  adic space in `(Adic)`.
 
 ## Main results
 
@@ -57,6 +68,10 @@ For gluing adic spaces, sheafiness and local affinoidness of the glued object ar
   surjective.
 * `TauCeti.PreAdicSpace.GlueData.ι_eq_iff_rel`: two points of the charts have the same image in
   the glued space exactly when they come from a common point of an overlap.
+* `TauCeti.PreAdicSpace.GlueData.isSheafy_glued_iff`,
+  `TauCeti.PreAdicSpace.GlueData.isLocallyAffinoid_glued_iff`,
+  `TauCeti.PreAdicSpace.GlueData.isAdic_glued_iff`: the glued space is sheafy, locally affinoid,
+  or adic exactly when every piece is.
 
 ## References
 
@@ -307,6 +322,79 @@ noncomputable def vPullbackConeIsLimit (i j : D.J) : IsLimit (𝖣.vPullbackCone
     reflectsLimit_of_reflectsIsomorphisms _ _
   𝖣.vPullbackConeIsLimitOfMap forgetToPresheafedSpace i j
     (D.toPresheafedSpaceGlueData.vPullbackConeIsLimit i j)
+
+/-! ### Gluing adic spaces -/
+
+/-- **A glued pre-adic space is sheafy exactly when the pieces are.** The overlaps `V i j` are
+sheafy as open subspaces of the `U i`, and the underlying presheafed space of the glued space is a
+colimit of the gluing diagram among presheafed spaces, whose structure presheaf is a limit of
+pushforwards of the structure sheaves of the `U i` and `V i j`. Conversely each `U i` is an open
+subspace of the glued space. -/
+@[simp]
+theorem isSheafy_glued_iff : isSheafy 𝖣.glued ↔ ∀ i, isSheafy (D.U i) :=
+  ⟨fun h i ↦ isSheafy_of_isOpenImmersion h (𝖣.ι i), fun hU ↦
+    PresheafedSpace.isSheaf_of_isColimit (𝖣.diagram.multispan ⋙ forgetToPresheafedSpace)
+      (fun
+        | .left (⟨i, j⟩ : D.J × D.J) =>
+          (isSheafy_of_isOpenImmersion (hU i) (D.f i j) : isSheafy (D.V (i, j)))
+        | .right i => hU i)
+      (isColimitOfPreserves forgetToPresheafedSpace (colimit.isColimit 𝖣.diagram.multispan))⟩
+
+/-- **A glued pre-adic space is locally affinoid exactly when the pieces are**, since the charts
+of the glued space are open immersions covering it. -/
+@[simp]
+theorem isLocallyAffinoid_glued_iff :
+    isLocallyAffinoid 𝖣.glued ↔ ∀ i, isLocallyAffinoid (D.U i) :=
+  ⟨fun h i ↦ isLocallyAffinoid_of_isOpenImmersion h (𝖣.ι i), fun hU ↦
+    isLocallyAffinoid_of_jointly_surjective 𝖣.ι hU D.ι_jointly_surjective⟩
+
+/-- **A glued pre-adic space is an adic space exactly when the pieces are**: gluing adic spaces
+gives an adic space, and conversely each `U i` is an open adic subspace of the glued space. -/
+@[simp]
+theorem isAdic_glued_iff : isAdic 𝖣.glued ↔ ∀ i, isAdic (D.U i) := by
+  simp only [isAdic_iff, isSheafy_glued_iff, isLocallyAffinoid_glued_iff, forall_and]
+
+/-- **The gluing diagram of adic pieces lies in `(Adic)`**: if every piece `U i` is an adic
+space, then so is every object of the gluing diagram, the overlaps `V i j` being open adic
+subspaces of the `U i`. So the gluing diagram lifts to `(Adic)` as
+`isAdic.lift 𝖣.diagram.multispan (D.isAdic_multispan_obj hU)`. -/
+theorem isAdic_multispan_obj (hU : ∀ i, isAdic (D.U i)) :
+    ∀ j, isAdic (𝖣.diagram.multispan.obj j)
+  | .left (⟨i, j⟩ : D.J × D.J) =>
+    (isAdic_of_isOpenImmersion (hU i) (D.f i j) : isAdic (D.V (i, j)))
+  | .right i => hU i
+
+/-- The charts of the glued adic space of glue data of pre-adic spaces whose pieces are adic
+spaces, as a natural transformation from the gluing diagram in `(Adic)` to the constant diagram
+at the glued adic space. Its legs are described by `gluedAdicι_app_right_hom` and
+`gluedAdicι_app_left_hom`. -/
+noncomputable def gluedAdicι (hU : ∀ i, isAdic (D.U i)) :
+    isAdic.lift 𝖣.diagram.multispan (D.isAdic_multispan_obj hU) ⟶
+      (Functor.const _).obj (⟨𝖣.glued, D.isAdic_glued_iff.mpr hU⟩ : AdicSpace.{u}) where
+  app j := ObjectProperty.homMk (colimit.ι 𝖣.diagram.multispan j)
+  naturality _ _ f := ObjectProperty.hom_ext (P := isAdic)
+    ((colimit.w 𝖣.diagram.multispan f).trans (Category.comp_id _).symm)
+
+/-- The leg of `gluedAdicι` at `U i` is the chart `ι i` of the glued pre-adic space. -/
+@[simp]
+theorem gluedAdicι_app_right_hom (hU : ∀ i, isAdic (D.U i)) (i : D.J) :
+    ((D.gluedAdicι hU).app (.right i)).hom = 𝖣.ι i := (rfl)
+
+/-- The leg of `gluedAdicι` at `V i j` is `f i j ≫ ι i`. -/
+@[simp]
+theorem gluedAdicι_app_left_hom (hU : ∀ i, isAdic (D.U i)) (i j : D.J) :
+    ((D.gluedAdicι hU).app (.left (i, j))).hom = D.f i j ≫ 𝖣.ι i :=
+  (congrArg (·.hom) ((Cocone.mk _ (D.gluedAdicι hU)).w (.fst (i, j)))).symm
+
+/-- **The universal property of the glued adic space**: gluing adic spaces along open immersions
+gives a colimit of the gluing diagram in the category `(Adic)` of adic spaces, with the charts
+`gluedAdicι` as legs. -/
+noncomputable def isColimitGluedAdicCocone (hU : ∀ i, isAdic (D.U i)) :
+    IsColimit (Cocone.mk _ (D.gluedAdicι hU)) :=
+  -- the image of this cocone in `𝒱^pre` is the colimit cocone of the gluing diagram, up to the
+  -- definitional equality `isAdic.lift 𝖣.diagram.multispan _ ⋙ isAdic.ι = 𝖣.diagram.multispan`
+  -- of `ObjectProperty.liftCompιIso`, and the fully faithful inclusion reflects colimits
+  isColimitOfReflects isAdic.ι (colimit.isColimit 𝖣.diagram.multispan)
 
 end GlueData
 

@@ -123,6 +123,7 @@ theorem antipode_apply (f : coordinateRing R G) (g : G) :
     MonoidAlgebra.antipode_single, functionAlgEquiv_apply]
   simp
 
+omit [Group G] in
 private theorem dualDistribEquiv_apply_single
     (w : coordinateRing R G ⊗[R] coordinateRing R G) (g h : G) :
     ConvolutionDual.dualDistribEquiv R (MonoidAlgebra R G) w
