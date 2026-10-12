@@ -481,11 +481,12 @@ variable {R : Type u} {M : Type v} {N : Type w} [CommRing R] [AddCommGroup M] [M
 theorem neg_mem_orthogonalGroup : LinearEquiv.neg R ∈ TauCeti.QuadraticMap.orthogonalGroup Q :=
   fun m ↦ by simpa using Q.map_smul (-1) m
 
-/-- The isometry `x ↦ -x`, as an element of the orthogonal group. On a free module of rank one
-over a domain, it and `1` are the only isometries of a nonzero quadratic map valued in a
-torsion-free module (`TauCeti.QuadraticMap.eq_one_or_eq_negOrthogonal_of_finrank_eq_one`), and
-it differs from `1` when `2 ≠ 0`. There it is also the reflection in every vector of invertible
-norm (`QuadraticMap.reflectionOrthogonal_eq_negOrthogonal_of_finrank_eq_one`). -/
+/-- The isometry `x ↦ -x`, as an element of the orthogonal group. On a faithful module, it differs
+from `1` when `2 ≠ 0` (`QuadraticMap.negOrthogonal_ne_one`). On a free module of rank one over a
+domain, it and `1` are the only isometries of a nonzero quadratic map valued in a torsion-free
+module (`TauCeti.QuadraticMap.eq_one_or_eq_negOrthogonal_of_finrank_eq_one`). On any free module of
+rank one it is the reflection in every vector of invertible norm
+(`QuadraticMap.reflectionOrthogonal_eq_negOrthogonal_of_finrank_eq_one`). -/
 def negOrthogonal : TauCeti.QuadraticMap.orthogonalGroup Q :=
   ⟨LinearEquiv.neg R, neg_mem_orthogonalGroup Q⟩
 
@@ -501,6 +502,15 @@ theorem negOrthogonal_mul_self : negOrthogonal Q * negOrthogonal Q = 1 :=
 @[simp]
 theorem negOrthogonal_inv : (negOrthogonal Q)⁻¹ = negOrthogonal Q :=
   inv_eq_of_mul_eq_one_left (negOrthogonal_mul_self Q)
+
+/-- When `2 ≠ 0`, negation is a nontrivial isometry on a faithful module. -/
+@[simp]
+theorem negOrthogonal_ne_one [FaithfulSMul R M] [NeZero (2 : R)] : Q.negOrthogonal ≠ 1 := by
+  intro h
+  have hneg : (-1 : R) = 1 := eq_of_smul_eq_smul (α := M) fun m ↦ by
+    simpa using congrArg
+      (fun g : TauCeti.QuadraticMap.orthogonalGroup Q ↦ (g : M ≃ₗ[R] M) m) h
+  exact NeZero.ne (2 : R) (by simpa only [one_add_one_eq_two] using neg_eq_iff_add_eq_zero.mp hneg)
 
 end Neg
 
