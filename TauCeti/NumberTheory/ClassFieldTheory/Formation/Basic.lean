@@ -644,6 +644,16 @@ theorem normQuotientMk_apply (x : F.level L.ground) :
     (dsimp% only (L.normQuotientMk F x)) = Submodule.Quotient.mk x :=
   (rfl)
 
+/-- **The norm quotient of a layer is killed by its degree**: on the ground level `A^U` the norm
+`N_{U/V}` is multiplication by `[U : V]`, so `[U : V] • a` is a norm for every `a ∈ A^U`. -/
+theorem degree_nsmul_eq_zero (x : L.NormQuotient F) : L.degree • x = 0 := by
+  induction x using Submodule.Quotient.induction_on with
+  | H a =>
+    rw [← Submodule.Quotient.mk_smul, Submodule.Quotient.mk_eq_zero]
+    refine ⟨⟨a, L.level_ground_le_level_top F a.2⟩, Subtype.ext ?_⟩
+    rw [L.norm_apply_coe_of_mem_level_ground F _ a.2]
+    simp
+
 /-- The image under `groundLevelEquiv` of the norm image inside the invariants is the norm
 subgroup. -/
 theorem map_groundLevelEquiv_submoduleOf :
