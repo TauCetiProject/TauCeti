@@ -103,10 +103,8 @@ instance (priority := 900) {X Y : Scheme} (f : X ⟶ Y)
 instance (priority := 900) {X Y : Scheme} (f : X ⟶ Y) [Etale f] : Unramified f := by
   exact ⟨⟩
 
-instance (f : X ⟶ Y) (V : Y.Opens) [Unramified f] : Unramified (f ∣_ V) where
-  toLocallyOfFiniteType := inferInstance
-  toFormallyUnramified :=
-    IsZariskiLocalAtTarget.restrict (P := @FormallyUnramified) ‹FormallyUnramified f› V
+instance (f : X ⟶ Y) (V : Y.Opens) [Unramified f] : Unramified (f ∣_ V) :=
+  MorphismProperty.of_isPullback (isPullback_morphismRestrict f V).flip ‹Unramified f›
 
 instance (f : X ⟶ Y) (U : X.Opens) (V : Y.Opens) (e) [Unramified f] :
     Unramified (f.resLE V U e) := by
