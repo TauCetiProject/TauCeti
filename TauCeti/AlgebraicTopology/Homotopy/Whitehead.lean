@@ -73,40 +73,27 @@ theorem subsingleton_relHomotopyGroup_mappingCylinder (hf : f.IsWeakHomotopyEqui
       ⟨TopPair.ofSubset (X := TopCat.of (TauCeti.MappingCylinder f))
         (range (TauCeti.MappingCylinder.incl f)), b⟩) := by
   open TauCeti.MappingCylinder in
-  let ψ := (isClosedEmbedding_incl (f := f)).isEmbedding.toHomeomorph
-  obtain ⟨x, rfl⟩ := ψ.surjective b
+  let ψ := inclHomeomorph f
   -- The inclusion `ι` of the bottom face, composed with `ψ : X ≃ₜ range (incl f)` and with the
   -- projection `M_f → Y`, is `f`; the outer two maps are homotopy equivalences.
   let ι := (TopPair.ofSubset (X := TopCat.of (TauCeti.MappingCylinder f))
     (range (incl f))).map.hom
   have hcomp : (proj f).comp (ι.comp (ψ : C(X, range (incl f)))) = f := by
     ext x'
-    -- `ι` is `Subtype.val`, and `ψ x'` is `incl f x'` as a point of `range (incl f)`.
-    exact (congrArg (proj f) (IsEmbedding.toHomeomorph_apply_coe
-      (isClosedEmbedding_incl (f := f)).isEmbedding x')).trans
-      (DFunLike.congr_fun (proj_comp_incl (f := f)) x')
+    change proj f (ψ x' : TauCeti.MappingCylinder f) = f x'
+    rw [inclHomeomorph_apply_coe, ← ContinuousMap.comp_apply (proj f), proj_comp_incl]
   have hproj : (homotopyEquiv f).toFun = proj f := ContinuousMap.ext homotopyEquiv_apply
-  have hι (M : Type w) [Finite M] :
-      Function.Bijective (HomotopyGroup.map (N := M) (x := ψ x) ι rfl) := by
-    have hfun : HomotopyGroup.map (N := M) (proj f) rfl ∘ HomotopyGroup.map ι rfl ∘
-        HomotopyGroup.map (ψ : C(X, range (incl f))) rfl =
-          HomotopyGroup.map f (DFunLike.congr_fun hcomp x).symm :=
-      (congrArg (HomotopyGroup.map (proj f) rfl ∘ ·) (HomotopyGroup.map_comp_map ι rfl _ rfl)).trans
-        ((HomotopyGroup.map_comp_map _ rfl _ rfl).trans
-          (funext (HomotopyGroup.map_congr hcomp _ _)))
-    have h : ∀ {y : Y} (hy : f x = y), Function.Bijective (HomotopyGroup.map (N := M) f hy) := by
-      rintro _ rfl
-      exact hf.map_bijective M x
-    have hcyl : Function.Bijective
-        (HomotopyGroup.map (N := M) (proj f) (rfl : proj f (ι (ψ x)) = _)) := by
-      rw [← hproj]
-      exact HomotopyGroup.map_bijective_of_homotopyEquiv _ _
-    have hψ := HomotopyGroup.map_bijective_of_homotopyEquiv (N := M) ψ.toHomotopyEquiv x
-    have h' := h (DFunLike.congr_fun hcomp x).symm
-    rw [← hfun] at h'
-    exact (Function.Bijective.of_comp_iff _ hψ).1 ((Function.Bijective.of_comp_iff' hcyl _).1 h')
-  exact TauCeti.RelHomotopyGroup.subsingleton_of_injective_of_surjective (hι N).injective
-    (hι (Option N)).surjective
+  -- By two out of three `ι ∘ ψ` is a weak homotopy equivalence, hence so is `ι = ι ∘ ψ ∘ ψ⁻¹`.
+  have hιψ : (ι.comp (ψ : C(X, range (incl f)))).IsWeakHomotopyEquivalence :=
+    (hproj ▸ (homotopyEquiv f).isWeakHomotopyEquivalence).of_comp (by rwa [hcomp])
+  have hι : ι.IsWeakHomotopyEquivalence := by
+    have h : (ι.comp (ψ : C(X, range (incl f)))).comp (ψ.symm : C(range (incl f), X)) = ι := by
+      ext m
+      exact congrArg ι (ψ.apply_symm_apply m)
+    rw [← h]
+    exact hιψ.comp ψ.symm.toHomotopyEquiv.isWeakHomotopyEquivalence
+  exact TauCeti.RelHomotopyGroup.subsingleton_of_injective_of_surjective
+    (hι.map_bijective N b).injective (hι.map_bijective (Option N) b).surjective
 
 variable {X' : Type*} [TopologicalSpace X'] [T2Space X'] {C : Set X'} [CWComplex C]
 
@@ -133,13 +120,12 @@ theorem exists_comp_homotopic (hf : f.IsWeakHomotopyEquivalence) (g : C(C, Y)) :
     (fun _ _ b ↦ hf.subsingleton_relHomotopyGroup_mappingCylinder _ b) ((mkBase f).comp g)
     (fun _ hx ↦ absurd hx (notMem_empty _))
   -- Read the compressed map in `X` through the homeomorphism `X ≃ₜ range (incl f)`.
-  let ψ := (isClosedEmbedding_incl (f := f)).isEmbedding.toHomeomorph
+  let ψ := inclHomeomorph f
   let g' : C(C, X) := (ψ.symm : C(range (incl f), X)).comp
     ⟨fun c ↦ (⟨g₁ c, hrange (mem_range_self c)⟩ : range (incl f)), g₁.continuous.subtype_mk _⟩
   have hg' : (incl f).comp g' = g₁ := by
     ext c
-    rw [ContinuousMap.comp_apply,
-      ← IsEmbedding.toHomeomorph_apply_coe (isClosedEmbedding_incl (f := f)).isEmbedding]
+    rw [ContinuousMap.comp_apply, ← inclHomeomorph_apply_coe]
     exact congrArg Subtype.val (ψ.apply_symm_apply ⟨g₁ c, hrange (mem_range_self c)⟩)
   -- Then `f ∘ g' = proj ∘ incl ∘ g' = proj ∘ g₁ ≃ proj ∘ mkBase ∘ g = g`.
   refine ⟨g', ?_⟩
