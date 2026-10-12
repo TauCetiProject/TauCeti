@@ -12,8 +12,8 @@ import Mathlib.MeasureTheory.Integral.IntegrableOn
 # Functions continuous on a compact set are essentially bounded
 
 A function continuous on a compact set `K` is bounded there, so it lies in `L^∞(μ.restrict s)` for
-every measurable `s ⊆ K` (`ContinuousOn.memLp_top_of_subset_isCompact`). Allowing `s ⊊ K` covers
-the usual case of an open interval `(a, b)` inside the compact interval `[a, b]`. This is the
+every measurable `s ⊆ K` (`ContinuousOn.memLp_top_restrict_of_subset_isCompact`). Allowing `s ⊊ K`
+covers the usual case of an open interval `(a, b)` inside the compact interval `[a, b]`. This is the
 continuous counterpart of Mathlib's `MonotoneOn.memLp_top`, and the restricted-measure counterpart
 of `Continuous.memLp_top_of_hasCompactSupport`.
 -/
@@ -28,7 +28,8 @@ variable {X E : Type*} [TopologicalSpace X] [MeasurableSpace X] [OpensMeasurable
 
 /-- A function continuous on a compact set `K` is essentially bounded on every measurable
 `s ⊆ K`. -/
-theorem ContinuousOn.memLp_top_of_subset_isCompact {f : X → E} {K s : Set X} {μ : Measure X}
+theorem ContinuousOn.memLp_top_restrict_of_subset_isCompact {f : X → E} {K s : Set X}
+    {μ : Measure X}
     (hf : ContinuousOn f K) (hK : IsCompact K) (hs : MeasurableSet s) (hsK : s ⊆ K) :
     MemLp f ∞ (μ.restrict s) := by
   obtain ⟨C, hC⟩ := hK.exists_bound_of_continuousOn hf

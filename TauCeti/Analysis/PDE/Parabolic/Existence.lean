@@ -69,10 +69,11 @@ right-hand side is bounded by `(‖f‖_{L²(V*)} + ‖u₀‖) p(φ)` by Cauchy
 In general, `u = e^{β (t - a)} w` solves the problem exactly when `w` solves it for the coercive
 operator `A(t) + β ι* ι` and the right-hand side `e^{-β (t - a)} f`.
 
-The coefficient `A` is only assumed weakly measurable, `t ↦ A(t) u v` measurable for all
-`u, v ∈ V` as in Lions and Showalter, and essentially bounded by `Λ`. This covers divergence-form
-operators with `L^∞` coefficients, which are in general not strongly measurable as maps into
-`V →L[ℝ] V*`. Measurability of `t ↦ A(t) u(t) φ(t)` for `u ∈ L²(a, b; V)` then follows from
+The coefficient `A` is only assumed weakly measurable, `t ↦ A(t) u v` almost everywhere strongly
+measurable on `(a, b)` for all `u, v ∈ V` as in Lions and Showalter, and essentially bounded by
+`Λ`. This covers divergence-form operators with `L^∞` coefficients, which are in general not
+strongly measurable as maps into `V →L[ℝ] V*`. Measurability of `t ↦ A(t) u(t) φ(t)` for
+`u ∈ L²(a, b; V)` then follows from
 `MeasureTheory.AEStronglyMeasurable.apply_of_forall_of_continuous`, which approximates `(u, φ)`
 with simple functions, so no separability of `V` is needed.
 
@@ -118,10 +119,10 @@ private theorem exists_forall_integrable_and_abs_integral_le (ι : V →L[ℝ] H
   set C₁ := lpNorm φ ∞ μ
   set C₂ := lpNorm (deriv φ) ∞ μ
   have hC₁ : ∀ᵐ t ∂μ, ‖φ t‖ ≤ C₁ := ae_le_lpNorm_exponent_top <|
-    hφ.continuous.continuousOn.memLp_top_of_subset_isCompact isCompact_Icc measurableSet_Ioo
-      Ioo_subset_Icc_self
+    hφ.continuous.continuousOn.memLp_top_restrict_of_subset_isCompact isCompact_Icc
+      measurableSet_Ioo Ioo_subset_Icc_self
   have hC₂ : ∀ᵐ t ∂μ, ‖deriv φ t‖ ≤ C₂ := ae_le_lpNorm_exponent_top <|
-    hφ'.continuousOn.memLp_top_of_subset_isCompact isCompact_Icc measurableSet_Ioo
+    hφ'.continuousOn.memLp_top_restrict_of_subset_isCompact isCompact_Icc measurableSet_Ioo
       Ioo_subset_Icc_self
   set K := |Λ| * C₁ + ‖ι‖ * ‖ι‖ * C₂
   have hK : 0 ≤ K := add_nonneg (mul_nonneg (abs_nonneg _) lpNorm_nonneg)
@@ -181,8 +182,8 @@ private theorem mul_setIntegral_norm_sq_add_le (ι : V →L[ℝ] H) (hab : a ≤
   have hAφφ : Integrable (fun t => A t (φ t) (φ t)) (volume.restrict (Ioo a b)) := by
     set C := lpNorm φ ∞ (volume.restrict (Ioo a b))
     have hC : ∀ᵐ t ∂volume.restrict (Ioo a b), ‖φ t‖ ≤ C := ae_le_lpNorm_exponent_top <|
-      hφ.continuous.continuousOn.memLp_top_of_subset_isCompact isCompact_Icc measurableSet_Ioo
-        Ioo_subset_Icc_self
+      hφ.continuous.continuousOn.memLp_top_restrict_of_subset_isCompact isCompact_Icc
+        measurableSet_Ioo Ioo_subset_Icc_self
     refine (MemLp.of_bound ((hφ.continuous.aestronglyMeasurable.prodMk
       hφ.continuous.aestronglyMeasurable).apply_of_forall_of_continuous
         (g := fun t p => A t p.1 p.2) (fun p => hA p.1 p.2) fun t => (A t).continuous₂)
@@ -216,7 +217,7 @@ private theorem mem_testFunctions {φ : ℝ → V} :
 
 private theorem memLp_testFunctions (φ : testFunctions V b) :
     MemLp (φ : ℝ → V) 2 (volume.restrict (Ioo a b)) := by
-  exact (φ.2.1.continuous.continuousOn.memLp_top_of_subset_isCompact isCompact_Icc
+  exact (φ.2.1.continuous.continuousOn.memLp_top_restrict_of_subset_isCompact isCompact_Icc
     measurableSet_Ioo Ioo_subset_Icc_self).mono_exponent le_top
 
 variable (a) in
@@ -385,7 +386,8 @@ private theorem exists_memLp_forall_setIntegral_eq_add_inner_of_coercive [Comple
 /-- **Existence for linear parabolic equations, in variational form.** Let `ι : V →L[ℝ] H`
 be any continuous linear map (neither injectivity nor dense range is assumed) with `V` a Hilbert
 space, and let `A(t) : V →L[ℝ] V*` be weakly
-measurable in `t` (`t ↦ A(t) u v` measurable for all `u, v`), bounded by `Λ` and satisfy
+measurable in `t` (`t ↦ A(t) u v` almost everywhere strongly measurable on `(a, b)` for all
+`u, v`), bounded by `Λ` and satisfy
 **Gårding's inequality** `α ‖v‖² - β ‖ι v‖² ≤ A(t) v v` with `α > 0`, for almost every
 `t ∈ (a, b)`. Then for every
 `f ∈ L²(a, b; V*)` and `u₀ ∈ H` there is `u ∈ L²(a, b; V)` with
@@ -418,7 +420,7 @@ theorem exists_memLp_forall_setIntegral_eq_add_inner [CompleteSpace V] {ι : V �
   -- Continuous functions are essentially bounded on `(a, b)`, so `e` and `e⁻¹` are multipliers
   -- of `L²(a, b)`.
   have htop : ∀ {g : ℝ → ℝ}, Continuous g → MemLp g ⊤ (volume.restrict (Ioo a b)) := fun hg =>
-    hg.continuousOn.memLp_top_of_subset_isCompact isCompact_Icc measurableSet_Ioo
+    hg.continuousOn.memLp_top_restrict_of_subset_isCompact isCompact_Icc measurableSet_Ioo
       Ioo_subset_Icc_self
   set B : V →L[ℝ] StrongDual ℝ V := ι.gelfandDual.comp ι
   have hB : ∀ v w, B v w = ⟪ι v, ι w⟫_ℝ := fun v w => ι.gelfandDual_apply _ _
