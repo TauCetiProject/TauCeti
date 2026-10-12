@@ -49,13 +49,14 @@ private theorem finiteVertexOrbit_mem_ellipticOrbits_iff
   exact (σ.stabilizer_eq_bot_iff_cycleMap_eq_one
     (Sum.inl_getLeft (P.vertex j) j.2).symm hmap hdisj).not
 
-private noncomputable def ellipticVertexCycleEquivRange
+private noncomputable def ellipticVertexCycleEquivSubtype
     (hmap : ∀ i, σ.map i ∈ Γ)
     (hdisj : ∀ γ : Γ, γ ≠ 1 →
       Disjoint ((γ : PSL(2, ℝ)) • interior P.carrier) (interior P.carrier)) :
     σ.EllipticVertexCycle ≃
-      Set.range (fun j : {i : Fin n // (P.vertex i).isLeft ∧ σ.cycleMap i ≠ 1} ↦
-        (Quotient.mk'' ((P.vertex j).getLeft j.2.1) : orbitRel.Quotient Γ ℍ)) := by
+      {c : Quotient (Setoid.comap Subtype.val (Equiv.Perm.SameCycle.setoid σ.next) :
+          Setoid {i : Fin n // (P.vertex i).isLeft}) //
+        (σ.finiteVertexCycleEquiv hmap hdisj c).val ∈ Γ.ellipticOrbits} := by
   let e := σ.finiteVertexCycleEquiv hmap hdisj
   let p₁ : {i : Fin n // (P.vertex i).isLeft} → Prop := fun j ↦ σ.cycleMap j ≠ 1
   let p₂ := fun c ↦ (e c).val ∈ Γ.ellipticOrbits
@@ -73,8 +74,32 @@ private noncomputable def ellipticVertexCycleEquivRange
     (rb := s₂) (fun _ _ ↦ Iff.rfl)
   let e₂ := Equiv.subtypeQuotientEquivQuotientSubtype
     p₁ (s₁ := s₁) (s₂ := s₂) p₂ hp₂ (fun _ _ ↦ Iff.rfl)
-  refine e₁.trans (e₂.symm.trans ((e.subtypeEquiv (p := p₂)
-    (q := fun q ↦ q.val ∈ Γ.ellipticOrbits) (fun _ ↦ Iff.rfl)).trans ?_))
+  exact e₁.trans e₂.symm
+
+private theorem ellipticVertexCycleEquivSubtype_apply
+    (hmap : ∀ i, σ.map i ∈ Γ)
+    (hdisj : ∀ γ : Γ, γ ≠ 1 →
+      Disjoint ((γ : PSL(2, ℝ)) • interior P.carrier) (interior P.carrier))
+    (j : {i : Fin n // (P.vertex i).isLeft ∧ σ.cycleMap i ≠ 1}) :
+    (σ.ellipticVertexCycleEquivSubtype hmap hdisj (Quotient.mk'' j)).val =
+      Quotient.mk'' ⟨j, j.2.1⟩ := by
+  dsimp only [ellipticVertexCycleEquivSubtype]
+  erw [Equiv.trans_apply, Quotient.congr_mk,
+    Equiv.subtypeQuotientEquivQuotientSubtype_symm_mk]
+  rfl
+
+private noncomputable def ellipticVertexSubtypeEquivRange
+    (hmap : ∀ i, σ.map i ∈ Γ)
+    (hdisj : ∀ γ : Γ, γ ≠ 1 →
+      Disjoint ((γ : PSL(2, ℝ)) • interior P.carrier) (interior P.carrier)) :
+    {c : Quotient (Setoid.comap Subtype.val (Equiv.Perm.SameCycle.setoid σ.next) :
+        Setoid {i : Fin n // (P.vertex i).isLeft}) //
+      (σ.finiteVertexCycleEquiv hmap hdisj c).val ∈ Γ.ellipticOrbits} ≃
+      Set.range (fun j : {i : Fin n // (P.vertex i).isLeft ∧ σ.cycleMap i ≠ 1} ↦
+        (Quotient.mk'' ((P.vertex j).getLeft j.2.1) : orbitRel.Quotient Γ ℍ)) := by
+  let e := σ.finiteVertexCycleEquiv hmap hdisj
+  refine (e.subtypeEquiv (p := fun c ↦ (e c).val ∈ Γ.ellipticOrbits)
+    (q := fun q ↦ q.val ∈ Γ.ellipticOrbits) (fun _ ↦ Iff.rfl)).trans ?_
   refine (Equiv.subtypeSubtypeEquivSubtypeInter _ _).trans
     (Equiv.subtypeEquivRight ?_)
   intro q
@@ -85,6 +110,28 @@ private noncomputable def ellipticVertexCycleEquivRange
     exact ⟨⟨⟨j, j.2.1⟩, rfl⟩,
       (σ.finiteVertexOrbit_mem_ellipticOrbits_iff hmap hdisj ⟨j, j.2.1⟩).mpr j.2.2⟩
 
+private theorem ellipticVertexSubtypeEquivRange_apply
+    (hmap : ∀ i, σ.map i ∈ Γ)
+    (hdisj : ∀ γ : Γ, γ ≠ 1 →
+      Disjoint ((γ : PSL(2, ℝ)) • interior P.carrier) (interior P.carrier))
+    (c : {c : Quotient (Setoid.comap Subtype.val (Equiv.Perm.SameCycle.setoid σ.next) :
+        Setoid {i : Fin n // (P.vertex i).isLeft}) //
+      (σ.finiteVertexCycleEquiv hmap hdisj c).val ∈ Γ.ellipticOrbits}) :
+    (σ.ellipticVertexSubtypeEquivRange hmap hdisj c).val =
+      (σ.finiteVertexCycleEquiv hmap hdisj c.val).val := by
+  simp only [ellipticVertexSubtypeEquivRange, Equiv.trans_apply, Equiv.subtypeEquiv_apply,
+    Equiv.subtypeSubtypeEquivSubtypeInter_apply_coe, Equiv.subtypeEquivRight_apply]
+
+private noncomputable def ellipticVertexCycleEquivRange
+    (hmap : ∀ i, σ.map i ∈ Γ)
+    (hdisj : ∀ γ : Γ, γ ≠ 1 →
+      Disjoint ((γ : PSL(2, ℝ)) • interior P.carrier) (interior P.carrier)) :
+    σ.EllipticVertexCycle ≃
+      Set.range (fun j : {i : Fin n // (P.vertex i).isLeft ∧ σ.cycleMap i ≠ 1} ↦
+        (Quotient.mk'' ((P.vertex j).getLeft j.2.1) : orbitRel.Quotient Γ ℍ)) :=
+  (σ.ellipticVertexCycleEquivSubtype hmap hdisj).trans
+    (σ.ellipticVertexSubtypeEquivRange hmap hdisj)
+
 private theorem ellipticVertexCycleEquivRange_apply
     (hmap : ∀ i, σ.map i ∈ Γ)
     (hdisj : ∀ γ : Γ, γ ≠ 1 →
@@ -92,12 +139,11 @@ private theorem ellipticVertexCycleEquivRange_apply
     (j : {i : Fin n // (P.vertex i).isLeft ∧ σ.cycleMap i ≠ 1}) :
     (σ.ellipticVertexCycleEquivRange hmap hdisj (Quotient.mk'' j)).val =
       Quotient.mk'' ((P.vertex j).getLeft j.2.1) := by
-  unfold ellipticVertexCycleEquivRange
-  erw [Equiv.trans_apply, Quotient.congr_mk, Equiv.trans_apply,
-    Equiv.subtypeQuotientEquivQuotientSubtype_symm_mk]
-  -- The remaining subtype transports preserve the orbit value definitionally.
-  change (σ.finiteVertexCycleEquiv hmap hdisj (Quotient.mk'' ⟨j, j.2.1⟩)).val = _
-  exact σ.finiteVertexCycleEquiv_apply hmap hdisj ⟨j, j.2.1⟩
+  calc
+    _ = (σ.finiteVertexCycleEquiv hmap hdisj
+        (σ.ellipticVertexCycleEquivSubtype hmap hdisj (Quotient.mk'' j)).val).val :=
+      σ.ellipticVertexSubtypeEquivRange_apply hmap hdisj _
+    _ = _ := by rw [σ.ellipticVertexCycleEquivSubtype_apply, σ.finiteVertexCycleEquiv_apply]
 
 private theorem ellipticVertexOrbit_mem
     (hmap : ∀ i, σ.map i ∈ Γ)
