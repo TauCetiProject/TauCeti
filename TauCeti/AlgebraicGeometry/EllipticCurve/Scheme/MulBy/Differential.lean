@@ -34,7 +34,7 @@ noncomputable section
 
 /-- The algebra structure on the projective function field transported from the affine
 function field. -/
-local instance : Algebra K W.projModel.functionField := by
+instance projModelFunctionFieldAlgebra : Algebra K W.projModel.functionField := by
   let f : K →+* W.projModel.functionField :=
     W.projModelFunctionFieldEquiv.symm.toRingHom.comp (algebraMap K W.toAffine.FunctionField)
   exact f.toAlgebra
@@ -45,6 +45,8 @@ noncomputable def projModelFunctionFieldAlgEquiv :
     W.projModel.functionField ≃ₐ[K] W.toAffine.FunctionField :=
   AlgEquiv.ofRingEquiv (f := W.projModelFunctionFieldEquiv) (by
     intro x
+    -- The transported algebra map is the affine algebra map followed by the inverse comparison.
+    -- Expose that composite so the ring equivalence and its inverse cancel by `simp`.
     change W.projModelFunctionFieldEquiv
       (W.projModelFunctionFieldEquiv.symm (algebraMap K W.toAffine.FunctionField x)) = _
     simp)
@@ -87,6 +89,8 @@ theorem mapSemilinear_projModelMulBy_invariantDifferential (n : ℤ) [NeZero n] 
         (KaehlerDifferential.mapSemilinear e.symm.toAlgHom ω) = ω := by
     rw [← KaehlerDifferential.mapSemilinear_comp_apply, AlgEquiv.comp_symm,
       KaehlerDifferential.mapSemilinear_id_apply]
+  -- Unfold only the conjugated pullback, folding the comparison and isogeny into `e` and `φ`.
+  -- This exposes the composite required by `mapSemilinear_comp_apply` without unfolding them.
   change KaehlerDifferential.mapSemilinear
         (e.symm.toAlgHom.comp (φ.fieldPullback.comp e.toAlgHom))
         (KaehlerDifferential.mapSemilinear e.symm.toAlgHom
