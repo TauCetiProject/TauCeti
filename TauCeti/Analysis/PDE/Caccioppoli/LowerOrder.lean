@@ -39,12 +39,15 @@ integrable.
 
 ## Main declarations
 
-All three are in the namespace `TauCeti.PDE`.
+All four are in the namespace `TauCeti.PDE`.
 
 * `UniformlyEllipticOn.setIntegral_sq_mul_norm_gradient_posPartAbove_sq_le_of_memLp_of_lowerOrder`:
   Caccioppoli's inequality for `(u - k)⁺` at an arbitrary level with an `L²` hypothesis.
 * `UniformlyEllipticOn.setIntegral_sq_mul_norm_gradient_posPartAbove_sq_le_of_lowerOrder`: the
   nonnegative-level specialization, whose `L²` hypothesis is automatic.
+* `UniformlyEllipticOn.setIntegral_sq_mul_norm_gradient_posPartAbove_sq_le_of_nonpos_of_lowerOrder`:
+  the cutoff form for subsolutions of `L u ≤ 0` with `c ≥ 0`, at a level `k ≥ 0`, where the
+  forcing and mass term drop out.
 * `exists_setIntegral_ball_norm_gradient_posPartAbove_sq_le_of_lowerOrder`: the form on
   concentric balls for subsolutions of `L u ≤ 0` with `c ≥ 0`.
 
@@ -85,8 +88,9 @@ private theorem mul_sq_mul_norm_sq_le_matrixBilinearForm_add_inner_mul_add {A : 
   have hkey := mul_sq_mul_norm_sq_le_matrixBilinearForm_add hlam z w g q hlower hupper
   -- `|⟪b, g⟫ z² w| ≤ β ‖g‖ z² |w|`.
   have hinner : -(⟪bx, g⟫_ℝ * (z * (z * w))) ≤ beta * ‖g‖ * (z ^ 2 * |w|) := by
+    have hzzw : z * (z * w) = z ^ 2 * w := by ring
     refine (neg_le_abs _).trans ?_
-    rw [abs_mul, show z * (z * w) = z ^ 2 * w by ring, abs_mul, abs_of_nonneg (sq_nonneg z)]
+    rw [abs_mul, hzzw, abs_mul, abs_of_nonneg (sq_nonneg z)]
     exact mul_le_mul_of_nonneg_right ((abs_real_inner_le_norm bx g).trans
       (mul_le_mul_of_nonneg_right hb (norm_nonneg g))) (by positivity)
   -- Young's inequality `β ‖g‖ z² |w| ≤ (λ/4) z² ‖g‖² + (β²/λ) z² w²`.
@@ -297,6 +301,58 @@ theorem UniformlyEllipticOn.setIntegral_sq_mul_norm_gradient_posPartAbove_sq_le_
     (W1p.memLp_posPartAbove hk u)] at hgeneral
   exact hgeneral
 
+/-- **The zero-forcing Caccioppoli inequality for a nonnegative-level truncation with
+lower-order terms.** Let `a` be measurable and uniformly elliptic on `Ω` with constants
+`0 < λ ≤ Λ`, let `b` and `c` be measurable with `‖b‖ ≤ β`, `‖c‖ ≤ γ` and `c ≥ 0` on `Ω`, and let
+`u ∈ H¹(Ω)` be a weak subsolution of `-∂ⱼ(aⁱʲ ∂ᵢu) + bⁱ ∂ᵢu + c u ≤ 0`. At any level `k ≥ 0`,
+with `w = (u - k)⁺`, every smooth `ψ` compactly supported in `Ω` satisfies
+
+`∫_Ω ψ² ‖∇w‖² ≤ 2 (2Λ/λ)² ∫_Ω ‖∇ψ‖² w² + (2β/λ)² ∫_Ω ψ² w²`.
+
+This specializes
+`UniformlyEllipticOn.setIntegral_sq_mul_norm_gradient_posPartAbove_sq_le_of_lowerOrder`: the
+mass term `c u w` is nonnegative because `w > 0` forces `u > k ≥ 0`. -/
+theorem
+    UniformlyEllipticOn.setIntegral_sq_mul_norm_gradient_posPartAbove_sq_le_of_nonpos_of_lowerOrder
+    (h : UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam)
+    (ha : AEStronglyMeasurable a (mu.restrict Omega))
+    (hb : AEStronglyMeasurable b (mu.restrict Omega))
+    (hc : AEStronglyMeasurable c (mu.restrict Omega))
+    (hb_bound : ∀ x ∈ (Omega : Set (EuclideanSpace ℝ ι)), ‖b x‖ ≤ beta)
+    (hc_bound : ∀ x ∈ (Omega : Set (EuclideanSpace ℝ ι)), ‖c x‖ ≤ gamma)
+    (hc_nonneg : ∀ x ∈ (Omega : Set (EuclideanSpace ℝ ι)), 0 ≤ c x) {u : W1p mu Omega 2}
+    (hu : ∀ v : W1p0 mu Omega 2,
+      (∀ᵐ x ∂mu.restrict Omega, 0 ≤ W1p.value (v : W1p mu Omega 2) x) →
+        energyFormH1 a b c u (v : W1p mu Omega 2) ≤ 0)
+    {k : ℝ} (hk : 0 ≤ k) {ψ : EuclideanSpace ℝ ι → ℝ} (hψ : ContDiff ℝ ∞ ψ)
+    (hcpt : HasCompactSupport ψ) (hts : tsupport ψ ⊆ (Omega : Set (EuclideanSpace ℝ ι))) :
+    let w := W1p.posPartAbove (by norm_num) hk u
+    ∫ x in Omega, ψ x ^ 2 * ‖W1p.gradient w x‖ ^ 2 ∂mu ≤
+      2 * (2 * Lam / lam) ^ 2 * ∫ x in Omega, ‖∇ ψ x‖ ^ 2 * W1p.value w x ^ 2 ∂mu
+        + (2 * beta / lam) ^ 2 * ∫ x in Omega, ψ x ^ 2 * W1p.value w x ^ 2 ∂mu := by
+  have hcacc := h.setIntegral_sq_mul_norm_gradient_posPartAbove_sq_le_of_lowerOrder ha hb hc
+    hb_bound hc_bound (f := 0) (fun v hv => (hu v hv).trans_eq (integral_eq_zero_of_ae (by
+      filter_upwards [Lp.coeFn_zero ℝ 2 (mu.restrict Omega)] with x hx
+      rw [hx, Pi.zero_apply, zero_mul])).symm) hk hψ hcpt hts
+  dsimp only at hcacc ⊢
+  set w := W1p.posPartAbove (by norm_num) hk u
+  have hmem : ∀ᵐ x ∂mu.restrict Omega, x ∈ (Omega : Set (EuclideanSpace ℝ ι)) :=
+    ae_restrict_mem Omega.isOpen.measurableSet
+  -- Under `c ≥ 0` and `k ≥ 0`, the mass term `c u w` is nonnegative, so the forcing term is not.
+  have hforce : ∫ x in Omega, ψ x ^ 2 * ((0 : Lp ℝ 2 (mu.restrict Omega)) x -
+      c x * W1p.value u x) * W1p.value w x ∂mu ≤ 0 := by
+    refine integral_nonpos_of_ae ?_
+    filter_upwards [hmem, W1p.value_posPartAbove_ae (by norm_num) hk u,
+      Lp.coeFn_zero ℝ 2 (mu.restrict Omega)] with x hx hwx hzero
+    rw [hwx, hzero, Pi.zero_apply, zero_sub]
+    by_cases hxu : k < W1p.value u x
+    · have hcu : 0 ≤ c x * W1p.value u x := mul_nonneg (hc_nonneg x hx) (by linarith)
+      exact mul_nonpos_of_nonpos_of_nonneg
+        (mul_nonpos_of_nonneg_of_nonpos (sq_nonneg _) (neg_nonpos.2 hcu)) (le_max_right _ _)
+    · rw [max_eq_right (sub_nonpos.2 (le_of_not_gt hxu)), mul_zero]
+  have hlam := h.pos
+  linarith [mul_nonpos_of_nonneg_of_nonpos (by positivity : (0 : ℝ) ≤ 4 / lam) hforce]
+
 /-- **The Caccioppoli inequality on concentric balls, with lower-order terms.** There is a
 constant `C > 0`, depending only on the dimension, such that the following holds for every
 additive Haar measure `μ`. Let `a` be measurable and uniformly elliptic on `Ω` with constants
@@ -345,25 +401,9 @@ theorem exists_setIntegral_ball_norm_gradient_posPartAbove_sq_le_of_lowerOrder :
   have hwv := W1p.value_posPartAbove_ae (by norm_num) hk u
   have hwLp : MemLp (fun x => max (W1p.value u x - k) 0) 2 (mu.restrict Omega) :=
     W1p.memLp_posPartAbove hk u
-  have hmem : ∀ᵐ x ∂mu.restrict Omega, x ∈ (Omega : Set (EuclideanSpace ℝ ι)) :=
-    ae_restrict_mem Omega.isOpen.measurableSet
-  -- Caccioppoli's inequality for `w`, with zero forcing.
-  have hcacc := h.setIntegral_sq_mul_norm_gradient_posPartAbove_sq_le_of_lowerOrder ha hb hc
-    hb_bound hc_bound (f := 0) (fun v hv => (hu v hv).trans_eq (integral_eq_zero_of_ae (by
-      filter_upwards [Lp.coeFn_zero ℝ 2 (mu.restrict Omega)] with x hx
-      rw [hx, Pi.zero_apply, zero_mul])).symm) hk hψ hcpt htsΩ
-  dsimp only at hcacc
-  -- Under `c ≥ 0` and `k ≥ 0`, the mass term `c u w` is nonnegative, so the forcing term is not.
-  have hforce : ∫ x in Omega, ψ x ^ 2 * ((0 : Lp ℝ 2 (mu.restrict Omega)) x -
-      c x * W1p.value u x) * W1p.value w x ∂mu ≤ 0 := by
-    refine integral_nonpos_of_ae ?_
-    filter_upwards [hmem, hwv, Lp.coeFn_zero ℝ 2 (mu.restrict Omega)] with x hx hwx hzero
-    rw [hwx, hzero, Pi.zero_apply, zero_sub]
-    by_cases hxu : k < W1p.value u x
-    · have hcu : 0 ≤ c x * W1p.value u x := mul_nonneg (hc_nonneg x hx) (by linarith)
-      exact mul_nonpos_of_nonpos_of_nonneg
-        (mul_nonpos_of_nonneg_of_nonpos (sq_nonneg _) (neg_nonpos.2 hcu)) (le_max_right _ _)
-    · rw [max_eq_right (sub_nonpos.2 (le_of_not_gt hxu)), mul_zero]
+  -- Caccioppoli's inequality for `w`, with the forcing and mass term dropped.
+  have hcacc := h.setIntegral_sq_mul_norm_gradient_posPartAbove_sq_le_of_nonpos_of_lowerOrder ha
+    hb hc hb_bound hc_bound hc_nonneg hu hk hψ hcpt htsΩ
   -- On `B(x₀, r)` the cutoff is one.
   have hleft : ∫ x in ball x₀ r, ‖W1p.gradient w x‖ ^ 2 ∂mu ≤
       ∫ x in Omega, ψ x ^ 2 * ‖W1p.gradient w x‖ ^ 2 ∂mu :=
@@ -403,7 +443,7 @@ theorem exists_setIntegral_ball_norm_gradient_posPartAbove_sq_le_of_lowerOrder :
   set I := ∫ x in ball x₀ R, max (W1p.value u x - k) 0 ^ 2 ∂mu
   have hlam := h.pos
   calc ∫ x in ball x₀ r, ‖W1p.gradient w x‖ ^ 2 ∂mu
-      ≤ 2 * (2 * Lam / lam) ^ 2 * (G ^ 2 * I) + (2 * beta / lam) ^ 2 * I + 4 / lam * 0 := by
+      ≤ 2 * (2 * Lam / lam) ^ 2 * (G ^ 2 * I) + (2 * beta / lam) ^ 2 * I := by
         refine hleft.trans (hcacc.trans ?_)
         gcongr
     _ = (2 * (2 * Lam / lam) ^ 2 * G ^ 2 + (2 * beta / lam) ^ 2) * I := by ring
