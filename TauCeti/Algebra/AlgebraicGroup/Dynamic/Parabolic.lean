@@ -326,7 +326,7 @@ variable (R A) in
 `A[T;T⁻¹] → A[T;T⁻¹][T';T'⁻¹]`. -/
 private noncomputable def prodSubst :
     LaurentPolynomial A →ₐ[R] LaurentPolynomial (LaurentPolynomial A) :=
-  (MultiplicativeGroup.point (R := A) (prodUnit R A)).restrictScalars R
+  (laurentEval (R := A) (prodUnit R A)).restrictScalars R
 
 variable (R A) in
 /-- The substitution `X ↦ T · X`, as an `R`-algebra homomorphism `A[X] → A[X][T;T⁻¹]`. -/
@@ -346,12 +346,12 @@ private theorem scaleSubst_X :
 
 private theorem prodSubst_C (a : A) :
     prodSubst R A (LaurentPolynomial.C a) = LaurentPolynomial.C (LaurentPolynomial.C a) :=
-  MultiplicativeGroup.point_C (R := A) _ a
+  laurentEval_C (R := A) _ a
 
 private theorem prodSubst_T :
     prodSubst R A (LaurentPolynomial.T 1) =
       (prodUnit R A : LaurentPolynomial (LaurentPolynomial A)) :=
-  (MultiplicativeGroup.point_T (R := A) (prodUnit R A) 1).trans (by rw [zpow_one])
+  (laurentEval_T (R := A) (prodUnit R A) 1).trans (by rw [zpow_one])
 
 private theorem map_prodSubst_genericUnit :
     Units.map (prodSubst R A).toMonoidHom (MultiplicativeGroup.genericUnit A) = prodUnit R A :=

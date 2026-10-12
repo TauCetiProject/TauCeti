@@ -7,7 +7,7 @@ module
 
 public import Mathlib.RingTheory.HopfAlgebra.MonoidAlgebra
 public import TauCeti.Algebra.AlgebraicGroup.FunctorOfPoints
-public import TauCeti.Algebra.AlgebraicGroup.MultiplicativeGroup.Basic
+public import TauCeti.Algebra.Polynomial.Laurent.Basic
 
 /-!
 # The diagonalizable group and its character functor of points
@@ -38,7 +38,7 @@ on the generator, and this agrees with the canonical Laurent-polynomial `𝔾ₘ
   characters `G →* Aˣ`.
 * `TauCeti.DiagonalizableGroup.pointsMulEquiv`: the same equivalence as a multiplicative
   equivalence from the convolution group of points to the character group.
-* `TauCeti.DiagonalizableGroup.multiplicativeGroup_pointEquiv_apply`: the bridge from the
+* `TauCeti.DiagonalizableGroup.charOfPoint_ofAdd_one`: the bridge from the
   `G = Multiplicative ℤ` specialization to the canonical Laurent-polynomial `𝔾ₘ` API of
   `TauCeti.MultiplicativeGroup`.
 
@@ -191,7 +191,7 @@ theorem pointsMulEquiv_symm_apply (χ : G →* Aˣ) :
 
 Specializing to `G = Multiplicative ℤ` recovers the multiplicative group on the group-algebra
 presentation `R[Multiplicative ℤ]`. The canonical `𝔾ₘ` points API remains
-`TauCeti.MultiplicativeGroup.pointEquiv` for Laurent polynomials; the theorem below records how
+`TauCeti.laurentEvalEquiv` for Laurent polynomials; the theorem below records how
 the group-algebra presentation compares to it through
 `AddMonoidAlgebra.toMultiplicativeAlgEquiv`. -/
 
@@ -208,15 +208,14 @@ private theorem toMultiplicativeAlgEquiv_T (n : ℤ) :
 Laurent-polynomial multiplicative group `𝔾ₘ` of `TauCeti.MultiplicativeGroup`: reading a point
 on the generator `single (ofAdd 1) 1` gives the same unit as first precomposing it with
 `AddMonoidAlgebra.toMultiplicativeAlgEquiv` and then using the canonical
-`TauCeti.MultiplicativeGroup.pointEquiv`. -/
-theorem multiplicativeGroup_pointEquiv_apply
+`TauCeti.laurentEvalEquiv`. -/
+theorem charOfPoint_ofAdd_one
     (f : MonoidAlgebra R (Multiplicative ℤ) →ₐ[R] A) :
     charOfPoint f (Multiplicative.ofAdd 1) =
-      MultiplicativeGroup.pointEquiv
+      laurentEvalEquiv.symm
         (f.comp (AddMonoidAlgebra.toMultiplicativeAlgEquiv (R := R) R ℤ).toAlgHom) := by
   ext
-  rw [charOfPoint_apply_coe, MultiplicativeGroup.pointEquiv_apply,
-    MultiplicativeGroup.unitOfPoint_val, AlgHom.comp_apply]
+  rw [charOfPoint_apply_coe, laurentEvalEquiv_symm_apply, AlgHom.comp_apply]
   congr 1
   exact (toMultiplicativeAlgEquiv_T 1).symm
 

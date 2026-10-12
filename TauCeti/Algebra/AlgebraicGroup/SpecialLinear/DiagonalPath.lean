@@ -37,18 +37,17 @@ theorem map_diag2nUnit_genericUnit
     {K : Type u} [Field K] {m : Type v} [Fintype m] [DecidableEq m]
     {i j : m} (hij : i ≠ j) (b : Kˣ) :
     Matrix.SpecialLinearGroup.map
-        (MultiplicativeGroup.point (R := K) b).toRingHom
+        (laurentEval (R := K) b).toRingHom
         (Matrix.SpecialLinearGroup.diag2nUnit hij (MultiplicativeGroup.genericUnit K)) =
       Matrix.SpecialLinearGroup.diag2n hij (b : K) (Units.ne_zero b) := by
   rw [Matrix.SpecialLinearGroup.map_diag2nUnit]
-  have hunit : Units.map (MultiplicativeGroup.point (R := K) b).toRingHom
+  have hunit : Units.map (laurentEval (R := K) b).toRingHom
       (MultiplicativeGroup.genericUnit K) = b := by
-    exact ((MultiplicativeGroup.map_genericUnit K
-      (MultiplicativeGroup.point (R := K) b)).trans
-        (MultiplicativeGroup.unitOfPoint_point b))
+    ext
+    simp
   calc
     Matrix.SpecialLinearGroup.diag2nUnit hij
-        (Units.map (MultiplicativeGroup.point (R := K) b).toRingHom
+        (Units.map (laurentEval (R := K) b).toRingHom
           (MultiplicativeGroup.genericUnit K)) =
         Matrix.SpecialLinearGroup.diag2nUnit hij b := congrArg _ hunit
     _ = Matrix.SpecialLinearGroup.diag2n hij (b : K) (Units.ne_zero b) := by

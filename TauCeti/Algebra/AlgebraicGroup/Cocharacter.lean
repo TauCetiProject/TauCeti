@@ -21,7 +21,7 @@ Throughout, the multiplicative group is `𝔾ₘ = D(Multiplicative ℤ)` in its
 presentation, so its `A`-points are the units `Aˣ` (its character group `Multiplicative ℤ →* Aˣ`
 being determined by the value on the generator, `Mathlib`'s `MonoidHom.apply_mint`). Its
 canonical Laurent-polynomial API is `TauCeti.MultiplicativeGroup`, matched to this presentation by
-`TauCeti.DiagonalizableGroup.multiplicativeGroup_pointEquiv_apply`.
+`TauCeti.DiagonalizableGroup.charOfPoint_ofAdd_one`.
 
 * A **character** of `D(M)` is an element `m : M`, giving the homomorphism of group functors
   `D(M) → 𝔾ₘ` whose action on points is evaluation of a character `χ : M →* Aˣ` at `m`.

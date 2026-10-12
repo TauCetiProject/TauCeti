@@ -138,9 +138,8 @@ noncomputable def pointsHom (l : H →ₐc[R] LaurentPolynomial R) :
 
 /-- A multiplicative-group morphism sends a unit to the `𝔾ₘ`-point precomposed with `l`. -/
 theorem pointsHom_apply (l : H →ₐc[R] LaurentPolynomial R) (u : Aˣ) :
-    pointsHom A l u = AlgHom.mapDomain l (toConv (MultiplicativeGroup.point (R := R) u)) := by
-  rw [pointsHom, MonoidHom.comp_apply]
-  congr 1
+    pointsHom A l u = AlgHom.mapDomain l (toConv (laurentEval (R := R) u)) := by
+  simp [pointsHom, MultiplicativeGroup.pointsMulEquiv_symm_apply]
 
 /-- Images of multiplicative-group points commute: they lie in the image of the commutative
 group `𝔾ₘ(A)`. -/
@@ -174,7 +173,7 @@ theorem mapValue_pointsHom (u : Aˣ) :
   rw [pointsHom_apply, pointsHom_apply, ← MonoidHom.comp_apply,
     ← AlgHom.mapValue_mapDomain, MonoidHom.comp_apply]
   congr 1
-  rw [AlgHom.mapValue_apply, MultiplicativeGroup.comp_point]
+  simp [AlgHom.mapValue_apply, comp_laurentEval]
 
 /-- The constant-point inclusion is natural in the value algebra. -/
 theorem mapValue_constPoint (g : WithConv (H →ₐ[R] A)) :

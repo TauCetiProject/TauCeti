@@ -135,6 +135,20 @@ lemma laurentEvalEquiv_symm_apply (f : R[T;T⁻¹] →ₐ[R] A) :
     ((laurentEvalEquiv.symm f : Aˣ) : A) = f (T 1) :=
   (rfl)
 
+/-- The inverse of the unit represented by a Laurent evaluation map is its value at `T⁻¹`. -/
+@[simp]
+lemma laurentEvalEquiv_symm_apply_inv (f : R[T;T⁻¹] →ₐ[R] A) :
+    (((laurentEvalEquiv.symm f : Aˣ)⁻¹ : Aˣ) : A) = f (T (-1)) :=
+  (rfl)
+
+/-- Reading a Laurent algebra map as a unit is natural in the target algebra. -/
+@[simp]
+theorem laurentEvalEquiv_symm_comp {B : Type*} [Semiring B] [Algebra R B]
+    (g : A →ₐ[R] B) (f : R[T;T⁻¹] →ₐ[R] A) :
+    laurentEvalEquiv.symm (g.comp f) = Units.map g.toMonoidHom (laurentEvalEquiv.symm f) := by
+  ext
+  simp
+
 /-- Evaluation at a unit is natural in the target algebra. -/
 @[simp]
 theorem comp_laurentEval {B : Type*} [Semiring B] [Algebra R B] (g : A →ₐ[R] B) (u : Aˣ) :
