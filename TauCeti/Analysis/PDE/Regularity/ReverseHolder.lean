@@ -278,18 +278,6 @@ section Iteration
 
 variable {mu : Measure (EuclideanSpace ℝ ι)} [mu.IsAddHaarMeasure] {lam Lam : ℝ}
 
-/-- For `(n - 2) s < n` there is a ratio `χ > max(s, 1)` that still satisfies `(n - 2) χ < n`:
-the factor by which Moser's iteration multiplies exponents. -/
-private theorem exists_one_lt_and_lt_and_sub_two_mul_lt {n s : ℝ} (hsn : (n - 2) * s < n) :
-    ∃ χ : ℝ, 1 < χ ∧ s < χ ∧ (n - 2) * χ < n := by
-  have hm : (n - 2) * max s 1 < n := by
-    rcases max_cases s 1 with ⟨h, -⟩ | ⟨h, -⟩ <;> rw [h] <;> linarith
-  have hev : ∀ᶠ χ in nhdsWithin (max s 1) (Ioi (max s 1)), (n - 2) * χ < n :=
-    (((continuous_const_mul (n - 2)).tendsto (max s 1)).eventually (gt_mem_nhds hm)).filter_mono
-      nhdsWithin_le_nhds
-  obtain ⟨χ, hχ, hmχ⟩ := (hev.and self_mem_nhdsWithin).exists
-  exact ⟨χ, (le_max_right s 1).trans_lt hmχ, (le_max_left s 1).trans_lt hmχ, hχ⟩
-
 /-- One step of Moser's iteration inside a ball `B(x₀, R) ⊆ Ω`, with the Sobolev inequality of
 `W^{1,2}_0(B(x₀, R))`. Let `χ > 1` with `(n - 2) χ < n`, and `δ = (χ - 1)/(2χ)`, so that
 `δ = 1/2 - 1/(2χ) < 1/n`. There is `C ≥ 0`, depending only on `χ`, the dimension and the
@@ -402,8 +390,14 @@ theorem exists_eLpNorm_le_mul_rpow_mul_eLpNorm [Nonempty ι] {p s : ℝ} (hp : 0
       eLpNorm (W1p.value u) (ENNReal.ofReal s) (mu.restrict (Metric.ball x₀ (R / 2))) ≤
         ENNReal.ofReal (D * R ^ ((Fintype.card ι : ℝ) / s - (Fintype.card ι : ℝ) / p)) *
           eLpNorm (W1p.value u) (ENNReal.ofReal p) (mu.restrict (Metric.ball x₀ R)) := by
-  -- The ratio `χ` of the iteration, with `χ > s` and `(n - 2) χ < n`.
-  obtain ⟨χ, hχ, hsχ, hχn⟩ := exists_one_lt_and_lt_and_sub_two_mul_lt hsn
+  -- The ratio `χ = max(s, 1) + c` of the iteration, with `χ > max(s, 1)` and `(n - 2) χ < n`.
+  have hm : ((Fintype.card ι : ℝ) - 2) * max s 1 < Fintype.card ι := by
+    rcases max_cases s 1 with ⟨h, -⟩ | ⟨h, -⟩ <;> rw [h] <;> linarith
+  obtain ⟨c, hc, hcn⟩ := exists_pos_mul_lt (sub_pos.2 hm) ((Fintype.card ι : ℝ) - 2)
+  obtain ⟨χ, hχ, hsχ, hχn⟩ : ∃ χ : ℝ, 1 < χ ∧ s < χ ∧
+      ((Fintype.card ι : ℝ) - 2) * χ < Fintype.card ι :=
+    ⟨max s 1 + c, by linarith [le_max_right s 1], by linarith [le_max_left s 1],
+      by rw [mul_add]; linarith⟩
   have hχ0 : 0 < χ := zero_lt_one.trans hχ
   obtain ⟨C, hC0, hstep⟩ := exists_eLpNorm_le_ofReal_rpow_mul_eLpNorm_of_ball_subset
     (mu := mu) (lam := lam) (Lam := Lam) hχ hχn
@@ -521,8 +515,11 @@ theorem exists_eLpNorm_le_mul_rpow_mul_eLpNorm [Nonempty ι] {p s : ℝ} (hp : 0
           eLpNorm (W1p.value u) (ENNReal.ofReal p) (mu.restrict (Metric.ball x₀ R)) := by
         rw [mul_comm (eLpNorm _ _ _), ← mul_assoc, ← ENNReal.ofReal_mul' (by positivity)]
         congr 2
-        rw [Real.mul_rpow (by positivity) measureReal_nonneg, ← Real.rpow_mul hR.le,
-          show n / s - n / p = (n / s - n / p₀) + n * e by simp only [e]; ring, Real.rpow_add hR]
+        have hexpo : n / s - n / p = (n / s - n / p₀) + n * e := by
+          simp only [e]
+          ring
+        rw [Real.mul_rpow (by positivity) measureReal_nonneg, ← Real.rpow_mul hR.le, hexpo,
+          Real.rpow_add hR]
         simp only [D']
         ring
     _ ≤ ENNReal.ofReal ((|D'| + 1) * R ^ (n / s - n / p)) *
