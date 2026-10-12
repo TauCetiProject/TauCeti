@@ -366,6 +366,13 @@ theorem X_notMem_integers_iff_eq_infty {P : Place k (RatFunc k)} :
   rw [mem_integers_iff_ord_nonneg, ord_infty, RatFunc.intDegree_X]
   omega
 
+/-- A place of `k(x)` has valuation greater than one on `x` exactly when it is the place at
+infinity. This is the simp-normal form of `X_notMem_integers_iff_eq_infty`. -/
+@[simp]
+theorem one_lt_valuation_X_iff_eq_infty {P : Place k (RatFunc k)} :
+    1 < P.valuation (RatFunc.X : RatFunc k) ↔ P = infty k := by
+  simpa only [mem_integers_iff, not_le] using X_notMem_integers_iff_eq_infty (k := k) (P := P)
+
 /-- A place of `k(x)` has valuation greater than one on a polynomial exactly when it is the
 place at infinity. This is the simp-normal form of
 `exists_algebraMap_notMem_integers_iff_eq_infty`. -/

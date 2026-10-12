@@ -127,12 +127,13 @@ theorem isSeparable_adjoin_algebraMap_of_constantCompositum_eq_top
         k⟮IsScalarTower.toAlgHom k F F' x⟯ ≤ L.restrictScalars k) ha
   let ψ : k⟮x⟯ →+* L :=
     ((algebraMap F F').comp (algebraMap k⟮x⟯ F)).codRestrict L.toSubfield hmem
+  have hψ : (algebraMap L F').comp ψ = (algebraMap F F').comp (algebraMap k⟮x⟯ F) :=
+    RingHom.ext fun a ↦ RingHom.codRestrict_apply _ _ hmem a
   -- Each element of `F` stays separable: its minimal polynomial over `k(x)`, mapped to `k'(x)`,
   -- is separable and vanishes at it.
   have hsep (z : F) : IsSeparable L (algebraMap F F' z) := by
     have hroot : Polynomial.aeval (algebraMap F F' z) ((minpoly k⟮x⟯ z).map ψ) = 0 := by
-      rw [Polynomial.aeval_def, Polynomial.eval₂_map,
-        show (algebraMap L F').comp ψ = (algebraMap F F').comp (algebraMap k⟮x⟯ F) from rfl,
+      rw [Polynomial.aeval_def, Polynomial.eval₂_map, hψ,
         ← Polynomial.hom_eval₂, ← Polynomial.aeval_def, minpoly.aeval, map_zero]
     have hp : (minpoly k⟮x⟯ z).Separable := Algebra.IsSeparable.isSeparable k⟮x⟯ z
     exact (hp.map (f := ψ)).of_dvd (minpoly.dvd L _ hroot)

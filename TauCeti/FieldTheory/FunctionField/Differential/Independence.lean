@@ -40,15 +40,12 @@ function `x - x(P)` is a prime element, since only finitely many places ramify o
 (`TauCeti.Place.finite_setOf_forall_ord_sub_algebraMap_ne_one`).
 
 Over a perfect constant field the chain rule holds with no condition on rational places, for
-instance over a finite field. Choose a place `P` at which `x` and `y` are units and some `q(x)` and
-`r(y)` are prime elements, with `q` and `r` irreducible over `k`
-(`TauCeti.Place.finite_setOf_forall_irreducible_ord_aeval_ne_one`). A finite separable constant
-field extension `F' = F · k'` has a rational place `P'` over `P`
-(`TauCeti.Place.exists_constantCompositum_eq_top_and_forall_degree_eq_one`). There `q(x)` splits
-off a prime element `x - a`, and `r(y)` a prime element `y - b`, so the chain rule holds in `F'`.
-The cotrace from `F` to `F'` is injective and carries `dx`, `dy` and `dy/dx` to their counterparts
-in `F'` (`TauCeti.weilDifferentialCotrace_weilDifferentialOfSeparating`,
-`TauCeti.derivativeOfSeparating_algebraMap`), so the chain rule descends to `F`.
+instance over a finite field. A finite separable constant field extension makes a suitable place
+rational (`TauCeti.Place.exists_constantCompositum_eq_top_and_forall_degree_eq_one`), so the chain
+rule holds after extending the constants. The cotrace to the extension is injective and carries
+`dx` and `dy/dx` to their counterparts
+(`TauCeti.weilDifferentialCotrace_weilDifferentialOfSeparating`,
+`TauCeti.derivativeOfSeparating_algebraMap`), so the chain rule descends.
 
 Consequently the Kähler–Weil comparison
 `TauCeti.kaehlerDifferentialEquivWeilDifferentialOfSeparating` does not depend on the separating
@@ -174,49 +171,6 @@ section PerfectField
 variable {k' F' : Type*} [Field k'] [Field F'] [Algebra k k'] [Algebra k F'] [Algebra k' F']
   [Algebra F F'] [IsScalarTower k k' F'] [IsScalarTower k F F']
 
-open _root_.Polynomial in
-/-- At a rational place `P'` of `F'` over a place `P` of `F` with `e(P' ∣ P) = 1`, a prime element
-`q(z)` of `P`, with `q` separable over `k` and `z` regular at `P`, gives a prime element `z - a` of
-`P'` for some constant `a`: `a` is the value of `z` at `P'`, a simple root of `q`. -/
-private theorem exists_ord_sub_algebraMap_eq_one [Algebra.IsIntegral F F'] {P' : Place k' F'}
-    (hdeg : P'.degree = 1) (he : P'.ramificationIdx F = 1) {z : F}
-    (hz : 0 ≤ (P'.restrict k F).ord z) {q : Polynomial k} (hq : q.Separable)
-    (hqz : (P'.restrict k F).ord (Polynomial.aeval z q) = 1) :
-    ∃ a : k', P'.ord (algebraMap F F' z - algebraMap k' F' a) = 1 := by
-  set z' := algebraMap F F' z
-  have hzint : z' ∈ P'.integers := (Place.mem_integers_restrict_iff k F P' z).mp
-    ((P'.restrict k F).mem_integers_iff_ord_nonneg.mpr hz)
-  obtain ⟨a, ha⟩ := (Place.degree_eq_one_iff_forall_exists_valuation_sub_lt_one P').mp hdeg z' hzint
-  refine ⟨a, ?_⟩
-  -- `Q(z')`, with `Q` the image of `q` over `k'`, is a prime element of `P'`.
-  set Q := q.map (algebraMap k k')
-  have hQz : P'.ord (aeval z' Q) = 1 := by
-    rw [aeval_map_algebraMap, aeval_algebraMap_apply, Place.ord_algebraMap_restrict k F P', he, hqz]
-    simp
-  have hord_eq_zero {w : F'} (hw : P'.valuation w = 1) : P'.ord w = 0 := by
-    rw [Place.ord_def, hw, WithZero.log_one, neg_zero]
-  -- `a` is a root of `Q`, simple because `Q` is separable, so `Q = (X - a) R` with `R(a) ≠ 0`.
-  have hQa : Q.eval a = 0 := by
-    by_contra hne
-    rw [hord_eq_zero (Place.valuation_aeval_eq_one_of_valuation_sub_lt_one ha hne)] at hQz
-    exact zero_ne_one hQz
-  set R := Q /ₘ (X - C a)
-  have hQR : (X - C a) * R = Q := mul_divByMonic_eq_iff_isRoot.mpr hQa
-  have hRa : R.eval a ≠ 0 := by
-    have hsep : Q.Separable := hq.map
-    have hder := hsep.aeval_derivative_ne_zero (x := a) (by rwa [coe_aeval_eq_eval])
-    rw [coe_aeval_eq_eval] at hder
-    rw [← hQR] at hder
-    simpa using hder
-  -- So `ord (z' - a) = ord Q(z') - ord R(z') = 1 - 0`.
-  have hRz := hord_eq_zero (Place.valuation_aeval_eq_one_of_valuation_sub_lt_one ha hRa)
-  have hfac : aeval z' Q = (z' - algebraMap k' F' a) * aeval z' R := by
-    rw [← hQR, map_mul, map_sub, aeval_X, aeval_C]
-  have hne : aeval z' Q ≠ 0 := fun h0 ↦ by rw [h0, Place.ord_zero] at hQz; exact zero_ne_one hQz
-  rw [hfac] at hQz hne
-  rw [P'.ord_mul (left_ne_zero_of_mul hne) (right_ne_zero_of_mul hne), hRz, add_zero] at hQz
-  exact hQz
-
 /-- The descent step of the chain rule: if a finite separable constant field extension `F' = F · k'`
 has a rational place `P'` lying over a place at which `q(x)` and `r(y)` are prime elements, then
 `dy = (dy/dx) · dx` in `F`. The chain rule holds in `F'` at `P'`, and the cotrace from `F` to `F'`
@@ -247,16 +201,16 @@ private theorem weilDifferentialOfSeparating_eq_derivativeOfSeparating_smul_of_c
   have := isSeparable_of_constantCompositum_eq_top (k := k) h
   let := weilDifferentialSpaceModule hF'
   have he := Place.ramificationIdx_eq_one_of_constantCompositum_eq_top (k := k) h P'
-  obtain ⟨a, ha⟩ := exists_ord_sub_algebraMap_eq_one hdeg he hx0
+  obtain ⟨a, ha⟩ := Place.exists_ord_sub_algebraMap_eq_one_of_ord_aeval_eq_one hdeg he hx0
     (PerfectField.separable_of_irreducible hq) hqx
-  obtain ⟨b, hb⟩ := exists_ord_sub_algebraMap_eq_one hdeg he hy0
+  obtain ⟨b, hb⟩ := Place.exists_ord_sub_algebraMap_eq_one_of_ord_aeval_eq_one hdeg he hy0
     (PerfectField.separable_of_irreducible hr) hry
   have hup := weilDifferentialOfSeparating_eq_derivativeOfSeparating_smul_of_ord_eq_one hF' hex' hx'
     hy' hdeg ha hb
   refine weilDifferentialCotrace_injective (k' := k') (F' := F') hF hF' ?_
   rw [weilDifferentialCotrace_smul,
-    weilDifferentialCotrace_weilDifferentialOfSeparating h hF hF' hy hy',
-    weilDifferentialCotrace_weilDifferentialOfSeparating h hF hF' hx hx',
+    weilDifferentialCotrace_weilDifferentialOfSeparating h hF hy,
+    weilDifferentialCotrace_weilDifferentialOfSeparating h hF hx,
     ← derivativeOfSeparating_algebraMap hx hx', hup]
 
 /-- **The chain rule for Weil differentials over a perfect field** (Stichtenoth,

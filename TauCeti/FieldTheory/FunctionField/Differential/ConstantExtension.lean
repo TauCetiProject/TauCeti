@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.FieldTheory.FunctionField.ConstantExtension.Algebraic
 public import TauCeti.FieldTheory.FunctionField.ConstantExtension.Basis
+public import TauCeti.FieldTheory.FunctionField.ConstantExtension.RatFunc
 public import TauCeti.FieldTheory.FunctionField.ConstantExtension.Unramified
 public import TauCeti.FieldTheory.FunctionField.Differential.Comparison
 
@@ -13,20 +15,12 @@ public import TauCeti.FieldTheory.FunctionField.Differential.Comparison
 # The differential `dx` under a constant field extension
 
 Let `F' = F · k'` be a finite separable constant field extension of an algebraic function field
-`F / k`, and let `x` be a separating element of `F / k` that stays separating for `F' / k'`. The
-Weil differential `dx` of `F` (`TauCeti.weilDifferentialOfSeparating`) is the cotrace of the
-canonical differential `η` of `k(X)`, and so is the Weil differential `dx` of `F'`, with `k'(X)` in
-place of `k(X)`. This file proves that the cotrace from `F` to `F'` carries the first to the
-second, and that the derivatives `dy/dx` of the two fields correspond.
-
-The heart of the matter is the rational function field. The cotrace from `k(X)` to `k'(X)` carries
-`η` to the canonical differential `η'` of `k'(X)`. Indeed `k'(X) / k(X)` is unramified with zero
-different, and the place at infinity of `k'(X)` is the only place over that of `k(X)`, so the
-cotrace has divisor `-2 P'_∞`; and its local component at `P'_∞` takes the value `-1` at `X⁻¹`,
-because after the trace of `k' / k` it computes `η_{P_∞}` on traces and the trace form of `k' / k`
-is nondegenerate. These are the two properties characterizing `η'`
-(`TauCeti.eq_ratFuncWeilDifferential`). The general case follows by transitivity of the cotrace in
-the two towers `k(X) ⊆ F ⊆ F'` and `k(X) ⊆ k'(X) ⊆ F'`.
+`F / k`, and let `x` be a separating element of `F / k`. Its image in `F'` is separating for
+`F' / k'`. This file proves that the cotrace from `F` to `F'` carries the Weil differential `dx` of
+`F` (`TauCeti.weilDifferentialOfSeparating`) to the Weil differential `dx` of `F'`, and that the
+derivatives `dy/dx` of the two fields correspond. The key case is the rational function field:
+the cotrace from `k(X)` to `k'(X)` carries the canonical differential `η` of `k(X)` to that of
+`k'(X)`.
 
 Since the cotrace is injective and `F`-semilinear, identities between Weil differentials of `F`
 can be checked after a constant field extension, where more places are rational. This is how the
@@ -35,7 +29,6 @@ chain rule `dy = (dy/dx) · dx` is proved over a perfect constant field
 
 ## Main results
 
-* `TauCeti.constantCompositum_ratFunc_eq_top`: `k'(X)` is the compositum of `k(X)` and `k'`.
 * `TauCeti.weilDifferentialCotrace_ratFuncWeilDifferential`: the cotrace from `k(X)` to `k'(X)`
   carries `η` to `η'`.
 * `TauCeti.weilDifferentialCotrace_weilDifferentialOfSeparating`: the cotrace from `F` to
@@ -60,43 +53,8 @@ namespace TauCeti
 section RatFunc
 
 variable {k k' : Type*} [Field k] [Field k']
-
-/-- **`k'(X)` is the compositum of `k(X)` with the constants `k'`**, for any `k(X)`-algebra
-structure on `k'(X)` sending `X` to `X`. -/
-theorem constantCompositum_ratFunc_eq_top [Algebra (RatFunc k) (RatFunc k')]
-    (hX : algebraMap (RatFunc k) (RatFunc k') RatFunc.X = RatFunc.X) :
-    constantCompositum (RatFunc k) k' (RatFunc k') = ⊤ := by
-  set K := constantCompositum (RatFunc k) k' (RatFunc k')
-  have hXK : (RatFunc.X : RatFunc k') ∈ K := hX ▸ K.algebraMap_mem RatFunc.X
-  -- Every polynomial over `k'` lies in `K`, hence so does every fraction of polynomials.
-  have hpoly (p : Polynomial k') : algebraMap (Polynomial k') (RatFunc k') p ∈ K := by
-    induction p using Polynomial.induction_on' with
-    | add p q hp hq => rw [map_add]; exact K.add_mem hp hq
-    | monomial n c =>
-      rw [← Polynomial.C_mul_X_pow_eq_monomial, map_mul, map_pow, RatFunc.algebraMap_X,
-        RatFunc.algebraMap_C]
-      exact K.mul_mem (by simpa [RatFunc.algebraMap_eq_C] using
-        algebraMap_mem_constantCompositum (RatFunc k) k' (RatFunc k') c) (K.pow_mem hXK n)
-  refine eq_top_iff.mpr fun f _ ↦ ?_
-  rw [← RatFunc.num_div_denom f]
-  exact K.div_mem (hpoly _) (hpoly _)
-
-variable [Algebra k k'] [FiniteDimensional k k']
+variable [Algebra k k'] [FiniteDimensional k k'] [Algebra.IsSeparable k k']
 variable [Algebra (RatFunc k) (RatFunc k')] [IsScalarTower k (RatFunc k) (RatFunc k')]
-
-/-- The place at infinity of `k'(X)` is the only place over the place at infinity of `k(X)`. -/
-private theorem restrict_eq_infty_iff
-    (hX : algebraMap (RatFunc k) (RatFunc k') RatFunc.X = RatFunc.X)
-    (P' : Place k' (RatFunc k')) :
-    letI := finiteDimensional_of_constantCompositum_eq_top (k := k)
-      (constantCompositum_ratFunc_eq_top hX)
-    P'.restrict k (RatFunc k) = Place.infty k ↔ P' = Place.infty k' := by
-  let := finiteDimensional_of_constantCompositum_eq_top (k := k)
-    (constantCompositum_ratFunc_eq_top hX)
-  rw [← Place.X_notMem_integers_iff_eq_infty, ← Place.X_notMem_integers_iff_eq_infty,
-    Place.mem_integers_restrict_iff, hX]
-
-variable [Algebra.IsSeparable k k']
 
 /-- **The cotrace of `η` under a constant field extension is `η`**: for a finite separable
 extension `k' / k`, the cotrace from `k(X)` to `k'(X)` carries the canonical Weil differential `η`
@@ -134,10 +92,11 @@ theorem weilDifferentialCotrace_ratFuncWeilDifferential
       Place.ramificationIdx_eq_one_of_constantCompositum_eq_top (k := k) h]
     simp only [AlgebraicGeometry.WeilDivisor.coeff_zsmul]
     by_cases hQ : Q' = Place.infty k'
-    · rw [hQ, (restrict_eq_infty_iff hX _).mpr rfl]
+    · rw [hQ, (Place.restrict_ratFunc_eq_infty_iff hX _).mpr rfl]
       simp
     · rw [AlgebraicGeometry.WeilDivisor.coeff_ofPoint_of_ne hQ,
-        AlgebraicGeometry.WeilDivisor.coeff_ofPoint_of_ne (mt (restrict_eq_infty_iff hX _).mp hQ)]
+        AlgebraicGeometry.WeilDivisor.coeff_ofPoint_of_ne
+          (mt (Place.restrict_ratFunc_eq_infty_iff hX _).mp hQ)]
       simp
   · -- After `Tr_{k'/k}`, the local components of `Cotr η` over `P_∞` add up to `η_{P_∞} ∘ Tr`, and
     -- `P'_∞` is alone over `P_∞`; evaluating at `α X⁻¹` gives `Tr (α c) = -Tr α` for every `α`,
@@ -149,7 +108,7 @@ theorem weilDifferentialCotrace_ratFuncWeilDifferential
         (IsFunctionField.ratFunc k) (IsFunctionField.ratFunc k')
         ⟨ratFuncWeilDifferential k, ratFuncWeilDifferential_mem k⟩ (Place.infty k)
         (algebraMap k' (RatFunc k') α * (RatFunc.X : RatFunc k')⁻¹)
-      simp_rw [restrict_eq_infty_iff hX] at hsum
+      simp_rw [Place.restrict_ratFunc_eq_infty_iff hX] at hsum
       rw [finsum_cond_eq_left, ← Algebra.smul_def, map_smul, smul_eq_mul] at hsum
       have hsmul : α • (RatFunc.X : RatFunc k')⁻¹ =
           (RatFunc.X : RatFunc k)⁻¹ • algebraMap k' (RatFunc k') α := by
@@ -176,20 +135,26 @@ variable [Algebra k k'] [Algebra k F] [Algebra k F'] [Algebra k' F'] [Algebra F 
 variable [IsScalarTower k k' F'] [IsScalarTower k F F']
 
 /-- **`dx` is stable under constant field extension**: for a finite separable constant field
-extension `F' = F · k'` and a separating element `x` of `F / k` whose image in `F'` is separating
+extension `F' = F · k'` and a separating element `x` of `F / k`, whose image in `F'` is separating
 over `k'`, the cotrace to `F'` of the Weil differential `dx` of `F` is the Weil differential `dx`
 of `F'`. -/
 theorem weilDifferentialCotrace_weilDifferentialOfSeparating [FiniteDimensional k k']
     [Algebra.IsSeparable k k'] (h : constantCompositum F k' F' = ⊤) (hF : IsFunctionField k F)
-    (hF' : IsFunctionField k' F') {x : F} (hx : Transcendental k x) [Algebra.IsSeparable k⟮x⟯ F]
-    (hx' : Transcendental k' (algebraMap F F' x))
-    [Algebra.IsSeparable k'⟮algebraMap F F' x⟯ F'] :
+    {x : F} (hx : Transcendental k x) [Algebra.IsSeparable k⟮x⟯ F] :
     letI := finiteDimensional_of_constantCompositum_eq_top (k := k) h
     letI := isSeparable_of_constantCompositum_eq_top (k := k) h
-    weilDifferentialCotrace k' F' hF hF' (weilDifferentialOfSeparating hF hx) =
-      weilDifferentialOfSeparating hF' hx' := by
+    letI := isSeparable_adjoin_algebraMap_of_constantCompositum_eq_top (k := k) (x := x) h
+    weilDifferentialCotrace k' F' hF (hF.of_constantCompositum_eq_top h)
+        (weilDifferentialOfSeparating hF hx) =
+      weilDifferentialOfSeparating (hF.of_constantCompositum_eq_top h)
+        (((transcendental_algebraMap_iff (algebraMap F F').injective).mpr hx).extendScalars
+          k') := by
   let := finiteDimensional_of_constantCompositum_eq_top (k := k) h
   let := isSeparable_of_constantCompositum_eq_top (k := k) h
+  let := isSeparable_adjoin_algebraMap_of_constantCompositum_eq_top (k := k) (x := x) h
+  have hF' : IsFunctionField k' F' := hF.of_constantCompositum_eq_top h
+  have hx' : Transcendental k' (algebraMap F F' x) :=
+    ((transcendental_algebraMap_iff (algebraMap F F').injective).mpr hx).extendScalars k'
   rw [weilDifferentialOfSeparating_def, weilDifferentialOfSeparating_def]
   -- The rational function fields `k(X) ⊆ k'(X)`, with `X` acting as `x` on `F` and on `F'`.
   have hX : Transcendental k (RatFunc.X : RatFunc k') := fun h ↦

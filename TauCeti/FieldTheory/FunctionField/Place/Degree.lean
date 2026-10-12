@@ -11,6 +11,7 @@ public import TauCeti.Algebra.Polynomial.CommonXPower
 public import TauCeti.FieldTheory.FunctionField.Basic
 public import TauCeti.FieldTheory.FunctionField.Place.Basic
 public import TauCeti.FieldTheory.IntermediateField.Adjoin.Inv
+import TauCeti.RingTheory.Valuation.Polynomial
 
 /-!
 # The degree of a place of an algebraic function field is finite
@@ -109,26 +110,14 @@ vanish at `c`**: if `v_P (z - c) < 1` and `R (c) ≠ 0`, then `v_P (R (z)) = 1`.
 theorem valuation_aeval_eq_one_of_valuation_sub_lt_one {z : F} {c : k}
     (hz : P.valuation (z - algebraMap k F c) < 1) {R : k[X]} (hR : R.eval c ≠ 0) :
     P.valuation (aeval z R) = 1 := by
-  -- `z` is regular at `P`, hence so is every polynomial in `z`.
-  have hzint : z ∈ P.integers := by
-    simpa using add_mem (P.mem_integers_iff.mpr hz.le) (P.algebraMap_mem_integers c)
-  have hint (T : k[X]) : P.valuation (aeval z T) ≤ 1 := by
-    induction T using Polynomial.induction_on with
-    | C a => rw [aeval_C]; exact P.mem_integers_iff.mp (P.algebraMap_mem_integers a)
-    | add p q hp hq => rw [map_add]; exact P.valuation.map_add_le hp hq
-    | monomial n a h =>
-      rw [pow_succ, ← mul_assoc, map_mul, aeval_X, map_mul]
-      exact mul_le_one' h (P.mem_integers_iff.mp hzint)
-  -- `R (z) = R (c) + (z - c) S (z)`, where the second term lies in the maximal ideal.
-  obtain ⟨S, hS⟩ := X_sub_C_dvd_sub_C_eval (p := R) (a := c)
-  have hzS : aeval z R = algebraMap k F (R.eval c) + (z - algebraMap k F c) * aeval z S := by
-    have := congrArg (aeval z) hS
-    simp only [map_sub, aeval_C, map_mul, aeval_X] at this
-    linear_combination this
-  have hc : P.valuation (algebraMap k F (R.eval c)) = 1 := Valuation.IsTrivialOn.eq_one _ hR
-  rw [hzS, Valuation.map_add_eq_of_lt_left, hc]
-  rw [hc, map_mul]
-  exact mul_lt_one_of_lt_of_le hz (hint S)
+  -- Shift the variable: `R (z)` is `R (X + c)` evaluated at `z - c`, with constant term `R (c)`.
+  have hv : P.valuation.IsEquiv P.integers.valuation := by
+    rw [integers_def]; exact Valuation.isEquiv_valuation_valuationSubring _
+  have h := valuation_aeval_eq_one P.algebraMap_mem_integers
+    ((Valuation.isEquiv_iff_val_lt_one.mp hv).mp hz) (p := R.comp (X + C c))
+    (by simpa [coeff_zero_eq_eval_zero] using hR)
+  rw [aeval_comp, map_add, aeval_X, aeval_C, sub_add_cancel] at h
+  exact (Valuation.isEquiv_iff_val_eq_one.mp hv).mpr h
 
 /-! ### Linear independence over `k(x)` of a lift of a `k`-independent family of residues -/
 
