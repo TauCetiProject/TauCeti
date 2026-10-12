@@ -82,11 +82,23 @@ def wedgeWithCLM : (F₁ →L[ℝ] F₂ →L[ℝ] F₃) →L[ℝ]
     (φ : E [⋀^Fin k]→L[ℝ] F₁) (ψ : E [⋀^Fin l]→L[ℝ] F₂) :
     wedgeWithCLM μ φ ψ = wedgeWith μ φ ψ := (rfl)
 
--- Nested operator spaces require deeper synthesis while elaborating the statement.
-set_option maxSynthPendingDepth 3 in
 /-- The operator norm of the bundled paired wedge is bounded by the binomial coefficient. -/
 theorem norm_wedgeWithCLM_le :
-    ‖wedgeWithCLM (E := E) (F₁ := F₁) (F₂ := F₂) (F₃ := F₃) (k := k) (l := l)‖ ≤
+    @norm _ (by
+      let : SeminormedAddCommGroup
+          ((E [⋀^Fin l]→L[ℝ] F₂) →L[ℝ] (E [⋀^Fin (k + l)]→L[ℝ] F₃)) := inferInstance
+      let : NormedSpace ℝ
+          ((E [⋀^Fin l]→L[ℝ] F₂) →L[ℝ] (E [⋀^Fin (k + l)]→L[ℝ] F₃)) := inferInstance
+      let : SeminormedAddCommGroup
+          ((E [⋀^Fin k]→L[ℝ] F₁) →L[ℝ] (E [⋀^Fin l]→L[ℝ] F₂) →L[ℝ]
+            E [⋀^Fin (k + l)]→L[ℝ] F₃) := inferInstance
+      let : NormedSpace ℝ
+          ((E [⋀^Fin k]→L[ℝ] F₁) →L[ℝ] (E [⋀^Fin l]→L[ℝ] F₂) →L[ℝ]
+            E [⋀^Fin (k + l)]→L[ℝ] F₃) := inferInstance
+      let : SeminormedAddCommGroup (F₁ →L[ℝ] F₂ →L[ℝ] F₃) := inferInstance
+      let : NormedSpace ℝ (F₁ →L[ℝ] F₂ →L[ℝ] F₃) := inferInstance
+      infer_instance)
+      (wedgeWithCLM (E := E) (F₁ := F₁) (F₂ := F₂) (F₃ := F₃) (k := k) (l := l)) ≤
       (k + l).choose k := by
   let : SeminormedAddCommGroup
       ((E [⋀^Fin l]→L[ℝ] F₂) →L[ℝ] (E [⋀^Fin (k + l)]→L[ℝ] F₃)) := inferInstance
