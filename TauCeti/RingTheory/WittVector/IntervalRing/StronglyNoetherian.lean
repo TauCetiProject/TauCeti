@@ -253,20 +253,6 @@ open TauCeti.Huber
 local notation "S" => weightedRestrictedSubring (fun _ : Fin 1 ↦ ({1} : Set A))
   isWeightFamily_one_weight
 
-/-- A monomial `c X ^ j` of the one-variable restricted series ring lies in `U⟨X⟩` when `c ∈ U`. -/
-private theorem weightedC_mul_weightedX_pow_mem_weightedNhd {U : AddSubgroup A} {c : A}
-    (hc : c ∈ U) (j : ℕ) :
-    weightedC _ isWeightFamily_one_weight c * weightedX _ isWeightFamily_one_weight 0 ^ j ∈
-      weightedNhd (fun _ : Fin 1 ↦ ({1} : Set A)) isWeightFamily_one_weight U := by
-  classical
-  refine mem_weightedNhd.mpr fun ν ↦ ?_
-  rw [weightMul_one_weight]
-  simp only [Subring.coe_mul, SubmonoidClass.coe_pow, coe_weightedC, coe_weightedX,
-    MvPowerSeries.coeff_C_mul, MvPowerSeries.coeff_X_pow]
-  split_ifs
-  · simpa using hc
-  · simp
-
 /-- **The interval ring is an open quotient of restricted series over the radius ring** (Kedlaya,
 Lemma 4.9, third isomorphism, surjectivity). Let `ρ₁ ≤ ρ₂`, `a ≠ 0` and `ρ₁ ^ a = v(ϖ) ^ b`. A
 continuous ring homomorphism `ψ : A^{ρ₂}⟨X⟩ → B^{[ρ₁, ρ₂]}` extending the coefficient map and
@@ -310,7 +296,8 @@ theorem isOpenQuotientMap_restrictedSeries_toIntervalRing (hρ : ρ₁ ≤ ρ₂
           ψ.toAddMonoidHom).comap (Completion.toCompl : B₀ →+ B)
     refine IntervalLocalization.mem_of_forall_toIntervalLocalization_mul_pow_mem p hv hϖ hϖ' hρ₁
       hρ₂ ha hab hz₀ (H := H) x fun e j he ↦ ⟨_, ?_, hψmono e j⟩
-    refine weightedC_mul_weightedX_pow_mem_weightedNhd p hv hϖ hϖ' hρ₂ ?_ j
+    refine weightedC_mul_weightedX_pow_mem_weightedNhd _ ?_
+    rw [weightMul_one_weight]
     have : ‖e‖ < r := lt_of_mul_lt_mul_right ((he.trans_lt hx).trans_eq (mul_comm _ _)) hρa.le
     simpa [IsUltrametricDist.closedBall_openAddSubgroup, Completion.norm_coe] using this.le
   -- the closure of the image of every neighbourhood of zero is a neighbourhood of zero
