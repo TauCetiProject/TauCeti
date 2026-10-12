@@ -11,9 +11,10 @@ public import Mathlib.RingTheory.DedekindDomain.Ideal.Lemmas
 /-!
 # Complements on the ideal class group
 
-Four facts about Mathlib's `ClassGroup R` and its principal-ideal map that Mathlib's own file does
-not carry: the kernel of `toPrincipalIdeal`, the generator form of triviality of a class, that a
-principal fractional ideal has trivial class, and the class `[v]` of a height one prime.
+Facts about Mathlib's `ClassGroup R` and its principal-ideal map that Mathlib's own file does
+not carry: the kernel and sign invariance of `toPrincipalIdeal`, the generator form of triviality
+of a class, that a principal fractional ideal has trivial class, and the class `[v]` of a height one
+prime.
 
 ## Main definitions
 
@@ -29,6 +30,7 @@ principal fractional ideal has trivial class, and the class `[v]` of a height on
 * `ClassGroup.mk_eq_one_iff_exists`: a class is trivial exactly when some `x : Kˣ` generates it.
   This is Mathlib's `ClassGroup.mk_eq_one_iff` with `Submodule.IsPrincipal` traded for the range
   of `toPrincipalIdeal`, which is the form a consumer that wants to *name* the generator can use.
+* `FractionalIdeal.toPrincipalIdeal_neg`: negating a generator preserves its principal ideal.
 * `ClassGroup.mk_toPrincipalIdeal`: a principal fractional ideal has trivial class. This is the
   `simp` form of `ClassGroup.mk_eq_one_iff` for the one witness that arises in practice, and it
   holds over any domain.
@@ -67,6 +69,14 @@ lemma FractionalIdeal.toPrincipalIdeal_eq_one_iff {R : Type*} [CommRing R]
   rw [← Units.val_inj, coe_toPrincipalIdeal, Units.val_one, ← coeToSubmodule_inj,
     coe_spanSingleton, coe_one, Submodule.span_singleton_eq_one_iff]
   exact ⟨fun ⟨a, ha⟩ ↦ ⟨a, Units.ext ha.symm⟩, fun ⟨a, ha⟩ ↦ ⟨a, by rw [← ha]; rfl⟩⟩
+
+/-- Negating a generator preserves its principal ideal, because `-1` is a unit of the base ring. -/
+@[simp] theorem FractionalIdeal.toPrincipalIdeal_neg {R : Type*} [CommRing R]
+    {K : Type*} [Field K] [Algebra R K] [IsFractionRing R K] (x : Kˣ) :
+    toPrincipalIdeal R K (-x) = toPrincipalIdeal R K x := by
+  have hneg : toPrincipalIdeal R K (-1 : Kˣ) = 1 :=
+    (toPrincipalIdeal_eq_one_iff _).mpr ⟨-1, Units.ext (by simp)⟩
+  rw [show -x = (-1 : Kˣ) * x by simp, map_mul, hneg, one_mul]
 
 /-- A unit fractional ideal has trivial class exactly when it is principal, with the generator
 delivered as a unit of `K`. This is Mathlib's `ClassGroup.mk_eq_one_iff` with

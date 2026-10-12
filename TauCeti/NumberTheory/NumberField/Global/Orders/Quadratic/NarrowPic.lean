@@ -47,12 +47,7 @@ theorem mem_narrowPrincipal_iff_exists_norm_pos (O : NumberFieldOrder K)
     rcases isTotallyPositive_or_isTotallyPositive_neg_of_norm_pos hmin hgen hx with h | h
     · exact ⟨x, h, hI⟩
     · refine ⟨-x, by simpa using h, ?_⟩
-      have hneg : toPrincipalIdeal O.toSubalgebra K (-x) =
-          toPrincipalIdeal O.toSubalgebra K x := by
-        apply Units.ext
-        rw [coe_toPrincipalIdeal, coe_toPrincipalIdeal, Units.val_neg]
-        exact spanSingleton_eq_spanSingleton.mpr ⟨-1, by simp⟩
-      exact hneg.trans hI
+      exact (toPrincipalIdeal_neg x).trans hI
 
 end NumberFieldOrder
 
