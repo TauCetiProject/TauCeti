@@ -161,6 +161,35 @@ theorem existsUnique_mem_side_map_smul_eq_self_of_pair_eq_self {i : Fin n}
     (Matrix.ProjectiveSpecialLinearGroup.eq_one_of_smul_eq_self_of_smul_eq_self
       hw.2.2.2 hfix (Ne.symm hwz))
 
+/-- The unique fixed point of the involution pairing a side with itself. It is an interior
+point of that side even when both endpoints are ideal. -/
+noncomputable def selfPairedSideFixedPoint (i : {i : Fin n // σ.pair i = i}) : ℍ :=
+  Classical.choose (σ.existsUnique_mem_side_map_smul_eq_self_of_pair_eq_self i.2)
+
+/-- The fixed point of a self-paired side lies on the side, avoids its endpoints, and is
+fixed by the pairing map. -/
+theorem selfPairedSideFixedPoint_spec (i : {i : Fin n // σ.pair i = i}) :
+    σ.selfPairedSideFixedPoint i ∈ P.side i ∧
+      P.vertex i ≠ .inl (σ.selfPairedSideFixedPoint i) ∧
+      P.vertex (i + 1) ≠ .inl (σ.selfPairedSideFixedPoint i) ∧
+      σ.map i • σ.selfPairedSideFixedPoint i = σ.selfPairedSideFixedPoint i := by
+  exact (Classical.choose_spec
+    (σ.existsUnique_mem_side_map_smul_eq_self_of_pair_eq_self i.2)).1
+
+/-- The self-pairing involution fixes its distinguished side point. -/
+@[simp]
+theorem map_smul_selfPairedSideFixedPoint (i : {i : Fin n // σ.pair i = i}) :
+    σ.map i • σ.selfPairedSideFixedPoint i = σ.selfPairedSideFixedPoint i :=
+  (σ.selfPairedSideFixedPoint_spec i).2.2.2
+
+/-- Any nonendpoint fixed point on a self-paired side is its distinguished fixed point. -/
+theorem selfPairedSideFixedPoint_eq (i : {i : Fin n // σ.pair i = i}) {z : ℍ}
+    (hz : z ∈ P.side i) (hzp : P.vertex i ≠ .inl z)
+    (hzq : P.vertex (i + 1) ≠ .inl z) (hfix : σ.map i • z = z) :
+    σ.selfPairedSideFixedPoint i = z := by
+  exact (σ.existsUnique_mem_side_map_smul_eq_self_of_pair_eq_self i.2).unique
+    (σ.selfPairedSideFixedPoint_spec i) ⟨hz, hzp, hzq, hfix⟩
+
 /-- The stabilizer of a nonendpoint side point is trivial exactly when the side-pairing map
 does not fix it. -/
 theorem stabilizer_eq_bot_iff_of_mem_side {i : Fin n}
