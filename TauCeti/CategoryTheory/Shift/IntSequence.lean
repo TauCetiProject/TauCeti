@@ -39,6 +39,8 @@ universe v u
 variable (C : Type u) [Category.{v} C] [HasShift C ℤ]
 
 /-- Associate to an object its integral shift sequence for the shift-by-one autoequivalence. -/
+-- The typed map and transition formulas use the functor's object fields; the pinned module
+-- system must expose those fields for their bare morphism equations to elaborate.
 @[expose]
 noncomputable def ofShiftFunctor : C ⥤ IntSequence (shiftEquiv C (1 : ℤ)) where
   obj X :=
@@ -57,6 +59,18 @@ noncomputable def ofShiftFunctor : C ⥤ IntSequence (shiftEquiv C (1 : ℤ)) wh
     exact (shiftFunctor C n).map_comp f g
 
 attribute [local implicit_reducible] ofShiftFunctor
+
+/-- The degree-`n` object of the canonical sequence is the specified shift by `n`. -/
+@[simp]
+theorem ofShiftFunctor_obj_X (X : C) (n : ℤ) :
+    ((ofShiftFunctor C).obj X).X n = X⟦n⟧ :=
+  (rfl)
+
+/-- The transition of the canonical sequence is the inverse shift-addition isomorphism. -/
+@[simp]
+theorem ofShiftFunctor_obj_iso (X : C) (n m : ℤ) (h : n + 1 = m) :
+    ((ofShiftFunctor C).obj X).iso n m h = (shiftFunctorAdd' C n 1 m h).symm.app X :=
+  (rfl)
 
 /-- The map of the canonical sequence functor in degree `n` is the shifted map. -/
 @[simp]
@@ -88,7 +102,6 @@ instance : (ofShiftFunctor C).IsEquivalence := by
   exact Functor.isEquivalence_of_comp_right (ofShiftFunctor C) eval
 
 /-- Shifting an object and then forming its sequence is reindexing its original sequence. -/
-@[expose]
 noncomputable def ofShiftFunctorShiftIso (k : ℤ) :
     shiftFunctor C k ⋙ ofShiftFunctor C ≅
       ofShiftFunctor C ⋙ shiftFunctor (IntSequence (shiftEquiv C (1 : ℤ))) k := by
@@ -106,6 +119,9 @@ noncomputable def ofShiftFunctorShiftIso (k : ℤ) :
   have : ∀ X, IsIso (α.app X) := by
     intro X
     have : IsIso (eval.map (α.app X)) := by
+      -- `eval_map` computes the value of this local component, but leaves its source/target
+      -- indexed by the composed sequence functors. Instance search needs the shift-addition
+      -- arrow's own indices, so convert the entire IsIso goal to that typed presentation.
       change IsIso ((shiftFunctorAdd' C k 0 (0 + k) (add_comm k 0)).inv.app X)
       infer_instance
     exact isIso_of_reflects_iso (α.app X) eval
@@ -133,7 +149,7 @@ theorem ofShiftFunctorShiftIso_inv_app_f (k : ℤ) (X : C) (n : ℤ) :
 private theorem ofShiftFunctor_iso_zero_one_hom (X : C) :
     (((ofShiftFunctor C).obj X).iso 0 1 rfl).hom =
       (shiftFunctor C (1 : ℤ)).map ((shiftFunctorZero C ℤ).hom.app X) := by
-  change (shiftFunctorAdd' C 0 1 1 rfl).inv.app X = _
+  rw [ofShiftFunctor_obj_iso]
   exact shiftFunctorAdd'_zero_add_inv_app (1 : ℤ) X
 
 /-- The canonical sequence functor commutes coherently with every integral shift. -/
@@ -206,6 +222,9 @@ private noncomputable def comparison :
 private lemma comparison_hom_app_f_zero (X : C) :
     ((comparison F α).hom.app X).f 0 =
       (shiftFunctorZero D ℤ).hom.app (F.obj X) ≫ F.map (e.evalCounitIso X).inv := by
+  -- Degree-zero projection rewrites retain the original sequence-object indices in the
+  -- equality's type. The preimage cancellation and typed counit equations are indexed by
+  -- the whiskering functor's objects, so convert the whole equality to that presentation.
   change (((whiskeringRight C (IntSequence (shiftEquiv D (1 : ℤ))) D).obj eval).map
     (comparison F α).hom).app X = _
   unfold comparison
@@ -224,6 +243,9 @@ private lemma comparison_hom_app_f_zero (X : C) :
 private lemma comparison_inv_app_f_zero (X : C) :
     ((comparison F α).inv.app X).f 0 =
       F.map (e.evalCounitIso X).hom ≫ (shiftFunctorZero D ℤ).inv.app (F.obj X) := by
+  -- The inverse has the same dependent-index boundary: scalar projection rewrites leave
+  -- sequence-object indices, while map_preimage and the typed counit equations use the
+  -- whiskering functor's object indices. Convert the entire equality before cancelling.
   change (((whiskeringRight C (IntSequence (shiftEquiv D (1 : ℤ))) D).obj eval).map
     (comparison F α).inv).app X = _
   unfold comparison
@@ -288,6 +310,9 @@ private lemma map_commShiftIso_one_hom_app_f_zero (F : C ⥤ D) (e : C ≌ C)
   let _ : (mapFunctor (e' := shiftEquiv D (1 : ℤ)) α).CommShift ℤ :=
     mapFunctorCommShift (e' := shiftEquiv D (1 : ℤ)) α
   let _ : F.CommShift ℤ := commShiftOfIntertwiningWithShift F e α
+  -- The chosen local instance is `CommShift.ofComp`. Its map equation is stated for
+  -- `OfComp.iso`, so compute that particular instance field before applying the equation;
+  -- the generic CommShift coherence lemmas do not identify the field chosen by this instance.
   change ((ofShiftFunctor D).map
     ((Functor.CommShift.OfComp.iso (comparison F α) (1 : ℤ)).hom.app X)).f 0 = _
   rw [Functor.CommShift.OfComp.map_iso_hom_app]
@@ -296,6 +321,8 @@ private lemma map_commShiftIso_one_hom_app_f_zero (F : C ⥤ D) (e : C ≌ C)
   rw [Functor.commShiftIso_comp_hom_app]
   simp only [comp_f]
   erw [mapFunctor_map_f (e' := shiftEquiv D (1 : ℤ))]
+  -- `mapFunctorCommShift` assigns this field to `mapFunctorShiftIso`; its component lemma
+  -- applies to that assigned value, while generic coherence alone cannot select it.
   rw [show (mapFunctor (e' := shiftEquiv D (1 : ℤ)) α).commShiftIso (1 : ℤ) =
     mapFunctorShiftIso (e' := shiftEquiv D (1 : ℤ)) α 1 from rfl]
   erw [mapFunctorShiftIso_hom_app_f (e' := shiftEquiv D (1 : ℤ)) α]
@@ -303,6 +330,9 @@ private lemma map_commShiftIso_one_hom_app_f_zero (F : C ⥤ D) (e : C ≌ C)
   rw [comparison_hom_app_f_zero]
   simp only [shiftFunctor_eq_reindex, reindex_obj_X, Int.reduceAdd]
   rw [comparison_inv_app_f_one, comparison_inv_app_f_zero]
+  -- `ofShiftFunctorCommShift` chooses `ofShiftFunctorShiftIso` as its field. Identifying
+  -- this concrete choice lets the public component formula apply; no generic coherence
+  -- equation rewrites an arbitrary commShiftIso to that construction.
   rw [show (ofShiftFunctor D).commShiftIso (1 : ℤ) = ofShiftFunctorShiftIso D 1 from rfl]
   rw [ofShiftFunctorShiftIso_inv_app_f, ofShiftFunctor_iso_zero_one_hom]
   simp only [mapFunctor, Functor.comp_obj, Iso.trans_inv, Functor.mapIso_inv,
