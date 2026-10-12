@@ -44,9 +44,8 @@ image inclusion.
 * J. S. Milne, *Algebraic Groups* (2017), Proposition 6.42 and §§6.45–6.46.
 * A. Borel, *Linear Algebraic Groups*, §11.21.
 
-This advances Layer 6, "Reductive and semisimple groups", of the ReductiveGroups roadmap. The
-radical `R(G)` required there is the greatest connected normal smooth solvable closed subgroup;
-the maximal-dimension candidate constructed here is the first step in that construction.
+The radical `R(G)` is the greatest connected normal smooth solvable closed subgroup; the
+maximal-dimension candidate constructed here is the first step in its construction.
 -/
 
 public section
