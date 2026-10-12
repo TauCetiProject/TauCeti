@@ -3,9 +3,11 @@ Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: The Tau Ceti contributors
 -/
-import TauCeti.Topology.Algebra.Group.Profinite.Demushkin.CupSquare
-import TauCeti.Topology.Algebra.Group.Profinite.Demushkin.NormalForm.IsDemushkin
-import TauCeti.Topology.Algebra.Group.Profinite.Demushkin.NormalForm.Two.Even.PadicExponent.Basic
+module
+
+public import TauCeti.Topology.Algebra.Group.Profinite.Demushkin.CupSquare
+public import TauCeti.Topology.Algebra.Group.Profinite.Demushkin.NormalForm.IsDemushkin
+public import TauCeti.Topology.Algebra.Group.Profinite.Demushkin.NormalForm.Two.Even.PadicExponent.Basic
 
 /-!
 # Demushkin recognition for the dyadic word with a `2`-adic exponent
@@ -26,6 +28,8 @@ classification by orientation image to be used without assuming that it is Demus
 * J. P. Labute, *Classification of Demushkin groups*, Canad. J. Math. 19 (1967),
   106–132, Proposition 3 and Theorem 3.
 -/
+
+public section
 
 open Subgroup
 
