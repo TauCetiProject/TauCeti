@@ -53,7 +53,6 @@ theorem connected (n : ℕ) (hn : 2 ≤ n) : (affineADiagram n hn).Connected := 
   exact SimpleGraph.cycleGraph_connected (n := n)
 
 /-- Adjacency in the affine `A` diagram is characterized by neighboring vertices. -/
-@[simp]
 theorem adj_iff (n : ℕ) (hn : 2 ≤ n) (i j : Fin (n + 1)) :
     (affineADiagram n hn).Adj i j ↔
       (i - j).val = 1 ∨ (j - i).val = 1 :=
