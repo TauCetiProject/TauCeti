@@ -164,19 +164,41 @@ theorem offDegreeSpan_le_ker {M N : GradedModuleCat.{v} 𝒜} (p : ℤ)
   have := map_mem f hx
   exact LinearMap.mem_ker.mpr (by simpa only [hN q hq, Submodule.mem_bot] using this)
 
-/-- Every graded map to a module concentrated in degree `p` factors uniquely through the
-universal degree quotient. -/
-theorem existsUnique_degreeQuotient_lift {M N : GradedModuleCat.{v} 𝒜} (p : ℤ)
+/-- The canonical factorization of a graded map to a module concentrated in degree `p`
+through the universal degree quotient. -/
+def degreeQuotientLift {M N : GradedModuleCat.{v} 𝒜} (p : ℤ)
     (hN : ∀ q, q ≠ p → N.grading.piece q = ⊥) (f : M ⟶ N) :
-    ∃! g : M.degreeQuotient p ⟶ N, M.degreeQuotientπ p ≫ g = f := by
+    M.degreeQuotient p ⟶ N := by
   have hf : M.offDegreeι p ≫ f = 0 := by
     apply hom_ext
     ext x
     exact M.offDegreeSpan_le_ker p hN f x.property
-  obtain ⟨g, hg⟩ := Limits.CokernelCofork.IsColimit.desc'
-    (cokernelIsColimit (M.offDegreeι p)) f hf
-  exact ⟨g, hg, fun g' hg' ↦ Limits.Cofork.IsColimit.hom_ext
-    (cokernelIsColimit (M.offDegreeι p)) (hg'.trans hg.symm)⟩
+  exact (Limits.CokernelCofork.IsColimit.desc'
+    (cokernelIsColimit (M.offDegreeι p)) f hf).1
+
+/-- Composing the canonical lift with the quotient projection recovers the original map. -/
+@[reassoc (attr := simp)]
+theorem degreeQuotientπ_degreeQuotientLift {M N : GradedModuleCat.{v} 𝒜} (p : ℤ)
+    (hN : ∀ q, q ≠ p → N.grading.piece q = ⊥) (f : M ⟶ N) :
+    M.degreeQuotientπ p ≫ degreeQuotientLift p hN f = f :=
+  Limits.Cofork.IsColimit.π_desc (cokernelIsColimit (M.offDegreeι p))
+
+/-- A map out of the degree quotient is uniquely determined by its composite with the
+quotient projection. -/
+theorem degreeQuotientLift_unique {M N : GradedModuleCat.{v} 𝒜} (p : ℤ)
+    (hN : ∀ q, q ≠ p → N.grading.piece q = ⊥) (f : M ⟶ N)
+    (g : M.degreeQuotient p ⟶ N) (hg : M.degreeQuotientπ p ≫ g = f) :
+    g = degreeQuotientLift p hN f :=
+  Limits.Cofork.IsColimit.hom_ext (cokernelIsColimit (M.offDegreeι p))
+    (hg.trans (degreeQuotientπ_degreeQuotientLift p hN f).symm)
+
+/-- Every graded map to a module concentrated in degree `p` factors uniquely through the
+universal degree quotient. -/
+theorem existsUnique_degreeQuotient_lift {M N : GradedModuleCat.{v} 𝒜} (p : ℤ)
+    (hN : ∀ q, q ≠ p → N.grading.piece q = ⊥) (f : M ⟶ N) :
+    ∃! g : M.degreeQuotient p ⟶ N, M.degreeQuotientπ p ≫ g = f :=
+  ⟨degreeQuotientLift p hN f, degreeQuotientπ_degreeQuotientLift p hN f,
+    fun g hg ↦ degreeQuotientLift_unique p hN f g hg⟩
 
 variable (hneg : ∀ i < 0, 𝒜 i = ⊥)
 
@@ -206,15 +228,12 @@ theorem piece_inf_offDegreeSpan_le_positive_smul_top (M : GradedModuleCat.{v} �
           (decompose 𝒜 (c t) (p - q)).property)) Submodule.mem_top
 
 include hneg in
-/-- Maps to concentrated modules detect a homogeneous piece modulo positive-degree action.
-The test module can be taken to be the universal degree quotient. -/
+/-- Vanishing of maps to the universal degree quotient detects a homogeneous piece modulo
+positive-degree action. -/
 theorem piece_le_positive_smul_top_of_subsingleton_hom (M : GradedModuleCat.{v} 𝒜) (p : ℤ)
-    (h : ∀ N : GradedModuleCat.{v} 𝒜,
-      (∀ q, q ≠ p → N.grading.piece q = ⊥) →
-      Subsingleton (M ⟶ N)) :
+    (h : Subsingleton (M ⟶ M.degreeQuotient p)) :
     M.grading.piece p ≤ (⨆ (i : ℤ) (_ : 0 < i), 𝒜 i) • (⊤ : Submodule k M) := by
-  have hs := h (M.degreeQuotient p) (fun _ hq ↦ M.degreeQuotient_piece_eq_bot hq)
-  have hz : M.degreeQuotientπ p = 0 := hs.elim _ _
+  have hz : M.degreeQuotientπ p = 0 := h.elim _ _
   intro x hx
   apply M.piece_inf_offDegreeSpan_le_positive_smul_top hneg p
   refine ⟨hx, (M.degreeQuotientπ_eq_zero_iff p x).mp ?_⟩

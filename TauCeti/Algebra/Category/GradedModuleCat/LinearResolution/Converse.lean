@@ -63,9 +63,11 @@ theorem IsMinimal.isLinear_iff_subsingleton_ext (hr : r.IsMinimal)
   · intro hExt
     apply (isLinear_iff_piece_le_positive_smul_top hneg b hbelow).mpr
     intro n p hpn
+    have hN := fun q hq ↦ (r.termObj n).degreeQuotient_piece_eq_bot (p := p) (q := q) hq
     exact (r.termObj n).piece_le_positive_smul_top_of_subsingleton_hom hneg p
-      fun N hN ↦ (hr.subsingleton_ext_iff
-        (N.positive_smul_top_eq_bot_of_concentrated p hN) n).mp (hExt n p hpn.symm N hN)
+      ((hr.subsingleton_ext_iff
+        (((r.termObj n).degreeQuotient p).positive_smul_top_eq_bot_of_concentrated p hN) n).mp
+        (hExt n p hpn.symm _ hN))
 
 /-- For a minimal resolution with terms finite over the scalar ring, diagonal Ext vanishing
 against all concentrated targets is equivalent to linearity.
