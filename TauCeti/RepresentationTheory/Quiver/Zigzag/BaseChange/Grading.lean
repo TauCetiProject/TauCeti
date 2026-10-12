@@ -7,7 +7,6 @@ module
 
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.BaseChange.TensorProduct
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Skew.Grading
-public import Mathlib.RingTheory.GradedAlgebra.TensorProduct
 
 /-!
 # Graded scalar extension of skew-zigzag algebras
