@@ -16,9 +16,6 @@ function predicate on an involutive additive monoid. A star-preserving additive 
 function `F ∘ φ : N → ℂ`; if `φ` is surjective, positive-definiteness can also be descended
 from the pullback.
 
-The proofs are the finite-family reindexing argument: apply the defining nonnegativity of `F` to the
-image family under `φ`, using preservation of addition and star to identify the Gram entries.
-
 ## Main declarations
 
 * `TauCeti.IsPositiveDefinite.comp`: positive-definiteness is preserved by precomposition with
