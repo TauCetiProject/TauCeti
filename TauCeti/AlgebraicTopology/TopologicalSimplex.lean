@@ -55,6 +55,7 @@ lemma toTopInitialVertex_down (n : SimplexCategory) :
 
 /-- A map of topological simplices carries the initial vertex to the vertex indexed by
 its value at zero. -/
+@[simp]
 lemma toTop_map_toTopInitialVertex_down {m n : SimplexCategory} (α : m ⟶ n) :
     (toTop.{u}.map α (toTopInitialVertex m)).down = StdSimplex.single (α.toOrderHom 0) := by
   -- The lifted affine map is read in standard-simplex coordinates.

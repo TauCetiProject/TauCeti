@@ -15,9 +15,8 @@ For a path-connected space, twisted zeroth homology is the coinvariants of the m
 representation on any chosen fibre. The comparison sends a coefficient at the basepoint to
 its class modulo monodromy. In particular, it keeps the map from the fibre visible.
 
-The proof uses the groupoid-colimit description of twisted zeroth homology and Mathlib's
-`Representation.Coinvariants.lift`. Paths used to construct the inverse disappear in the
-coinvariants, so the comparison is characterized by the basepoint fibre map.
+Paths used to construct the inverse disappear in the coinvariants, so the comparison is
+characterized by the basepoint fibre map.
 
 ## References
 
@@ -64,6 +63,8 @@ private def coinvariantsCocone : Cocone L where
         rw [Functor.const_obj_map]
         exact (map_coinvariantsLeg L x p).trans (Category.comp_id _).symm }
 
+-- The proof uses the groupoid-colimit description of twisted zeroth homology and Mathlib's
+-- `Representation.Coinvariants.lift`.
 private def isColimitCoinvariantsCocone : IsColimit (coinvariantsCocone L x) where
   desc s := ModuleCat.ofHom (Representation.Coinvariants.lift _
     (s.ι.app (FundamentalGroupoid.mk x)).hom (fun g ↦ by

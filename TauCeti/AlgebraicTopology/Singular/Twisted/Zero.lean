@@ -16,9 +16,6 @@ Its generators are the fibres at points, and its relations identify a coefficien
 parallel transport along a path. This describes degree-zero classes without choosing paths
 or basepoints, including for disconnected spaces.
 
-The construction uses Mathlib's opcycles and degree-zero homology isomorphism and the
-existing alternating-face twisted chain complex.
-
 ## References
 
 * A. Hatcher, *Algebraic Topology*, Section 3.H.
@@ -269,6 +266,8 @@ private lemma d_zeroChainsDesc (s : Cocone L) :
   intro σ
   simp [zeroChainsDesc, s.w, ← sub_eq_add_neg]
 
+-- The construction uses Mathlib's opcycles and degree-zero homology isomorphism and the
+-- existing alternating-face twisted chain complex.
 private def zeroHomologyDesc (s : Cocone L) : twistedHomology L 0 ⟶ s.pt :=
   (twistedChainComplex L).isoHomologyι₀.hom ≫
     (twistedChainComplex L).descOpcycles (zeroChainsDesc L s) 1 (by simp) (d_zeroChainsDesc L s)
