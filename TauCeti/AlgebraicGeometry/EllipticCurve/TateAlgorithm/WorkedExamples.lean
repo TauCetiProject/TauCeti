@@ -341,7 +341,7 @@ private theorem irreducible_natCast_localizationAtPrime {p : ℕ} (hp : p.Prime)
 change of variables over `ℤ_(v)`, Tate's algorithm stops at `s`. Then the chosen minimal equation
 of `W` at `v` is carried by a change of variables to the minimal equation the algorithm stops on. -/
 private theorem exists_smul_minimal_eq_isTateTerminal (W : WeierstrassCurve ℤ)
-    [(W.baseChange ℚ).IsElliptic] {ϖ : Localization.AtPrime v.asIdeal} {s : ReductionSymbol}
+    {ϖ : Localization.AtPrime v.asIdeal} {s : ReductionSymbol}
     (h : IsMinimal (Localization.AtPrime v.asIdeal)
         ((W.map (Int.castRingHom (Localization.AtPrime v.asIdeal))).baseChange ℚ) ∧
       ∃ C : VariableChange (Localization.AtPrime v.asIdeal),
@@ -363,8 +363,7 @@ private theorem exists_smul_minimal_eq_isTateTerminal (W : WeierstrassCurve ℤ)
 /-- In the situation of `exists_smul_minimal_eq_isTateTerminal`, the chosen minimal equation of `W`
 at `v` has good reduction exactly when `s = I₀`. -/
 private theorem hasGoodReduction_minimal_iff_of_isTateTerminal (W : WeierstrassCurve ℤ)
-    [(W.baseChange ℚ).IsElliptic] {ϖ : Localization.AtPrime v.asIdeal} (hϖ : Irreducible ϖ)
-    {s : ReductionSymbol}
+    {ϖ : Localization.AtPrime v.asIdeal} (hϖ : Irreducible ϖ) {s : ReductionSymbol}
     (h : IsMinimal (Localization.AtPrime v.asIdeal)
         ((W.map (Int.castRingHom (Localization.AtPrime v.asIdeal))).baseChange ℚ) ∧
       ∃ C : VariableChange (Localization.AtPrime v.asIdeal),
