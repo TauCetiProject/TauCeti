@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.MeasureTheory.OptimalTransport.Entropic.Basic
+import Mathlib.Probability.Moments.Basic
 
 /-!
 # The Schrödinger system for a bounded kernel
@@ -87,13 +88,6 @@ variable {A B : Type*} [MeasurableSpace A] [MeasurableSpace B] {ν : Measure B}
 private def logIntegralExp (h : A × B → ℝ) (ν : Measure B) (ψ : B → ℝ) (a : A) : ℝ :=
   Real.log (∫ b, Real.exp (h (a, b) + ψ b) ∂ν)
 
-private theorem integrable_exp_add [IsFiniteMeasure ν] (hh : Measurable h) (hM : ∀ z, |h z| ≤ M)
-    (hψ : Measurable ψ) {C : ℝ} (hC : ∀ b, |ψ b| ≤ C) (a : A) :
-    Integrable (fun b ↦ Real.exp (h (a, b) + ψ b)) ν := by
-  refine Integrable.of_bound (by fun_prop) (Real.exp (M + C)) (ae_of_all _ fun b ↦ ?_)
-  rw [Real.norm_eq_abs, abs_of_pos (Real.exp_pos _), Real.exp_le_exp]
-  linarith [(abs_le.1 (hM (a, b))).2, (abs_le.1 (hC b)).2]
-
 private theorem measurable_logIntegralExp [SFinite ν] (hh : Measurable h) (hψ : Measurable ψ) :
     Measurable (logIntegralExp h ν ψ) := by
   have : StronglyMeasurable fun z : A × B ↦ Real.exp (h z + ψ z.2) :=
@@ -106,7 +100,9 @@ private theorem lintegral_ofReal_exp_add [IsFiniteMeasure ν] (hν : ν ≠ 0) (
     ∫⁻ b, ENNReal.ofReal (Real.exp (h (a, b) + ψ b + t)) ∂ν =
       ENNReal.ofReal (Real.exp (t + logIntegralExp h ν ψ a)) := by
   have := NeZero.mk hν
-  have hint := integrable_exp_add (ν := ν) hh hM hψ hC a
+  have hint : Integrable (fun b ↦ Real.exp (h (a, b) + ψ b)) ν := by
+    simpa using ProbabilityTheory.integrable_exp_mul_of_le 1 (M + C) zero_le_one (by fun_prop)
+      (ae_of_all _ fun b ↦ by linarith [(abs_le.1 (hM (a, b))).2, (abs_le.1 (hC b)).2])
   have hsplit : (fun b ↦ Real.exp (h (a, b) + ψ b + t)) =
       fun b ↦ Real.exp (h (a, b) + ψ b) * Real.exp t := funext fun b ↦ Real.exp_add _ _
   rw [← ofReal_integral_eq_lintegral_ofReal (hsplit ▸ hint.mul_const _)
@@ -119,7 +115,9 @@ private theorem abs_logIntegralExp_le [IsFiniteMeasure ν] (hν : ν ≠ 0) (hh 
   have hν' : 0 < ν.real univ := by
     rw [measureReal_def]
     exact ENNReal.toReal_pos (Measure.measure_univ_ne_zero.2 hν) (measure_ne_top _ _)
-  have hint := integrable_exp_add (ν := ν) hh hM hψ hC a
+  have hint : Integrable (fun b ↦ Real.exp (h (a, b) + ψ b)) ν := by
+    simpa using ProbabilityTheory.integrable_exp_mul_of_le 1 (M + C) zero_le_one (by fun_prop)
+      (ae_of_all _ fun b ↦ by linarith [(abs_le.1 (hM (a, b))).2, (abs_le.1 (hC b)).2])
   have hlo : Real.exp (-(M + C)) * ν.real univ ≤ ∫ b, Real.exp (h (a, b) + ψ b) ∂ν := by
     rw [mul_comm, ← smul_eq_mul, ← integral_const]
     refine integral_mono (integrable_const _) hint fun b ↦ Real.exp_le_exp.2 ?_
@@ -138,36 +136,6 @@ private theorem abs_logIntegralExp_le [IsFiniteMeasure ν] (hν : ν ≠ 0) (hh 
   constructor <;>
     linarith [neg_abs_le (Real.log (ν.real univ)), le_abs_self (Real.log (ν.real univ))]
 
-/-- The real inequality behind the contraction of a Sinkhorn half-step. Here `A₁, A₂` and
-`B₁, B₂` are the partition functions of two potentials at two points, and `s` is the
-minorization constant of the kernel. -/
-private theorem mul_le_exp_mul_mul_of_add_le {A₁ A₂ B₁ B₂ s m ω : ℝ} (hA₁ : 0 < A₁)
-    (hB₂ : 0 < B₂) (hs0 : 0 < s) (hs1 : s ≤ 1)
-    (hkey : s * A₁ * B₂ + (1 - s) * Real.exp m * A₂ * B₂ ≤ B₁ * A₂)
-    (hA₁hi : A₁ ≤ Real.exp (m + ω) * A₂) :
-    A₁ * B₂ ≤ Real.exp ((1 - s) * ω) * (A₂ * B₁) := by
-  -- Convexity of `exp`: `exp (s * ω) ≤ s * exp ω + (1 - s)`.
-  have hconv : Real.exp (s * ω) ≤ s * Real.exp ω + (1 - s) := by
-    simpa using convexOn_exp.2 (mem_univ ω) (mem_univ 0) hs0.le (sub_nonneg.2 hs1) (by ring)
-  set E := Real.exp ((1 - s) * ω)
-  have hE : E * Real.exp (s * ω) = Real.exp ω := by
-    rw [← Real.exp_add]
-    ring_nf
-  have hEpos : 0 < E := Real.exp_pos _
-  have h₁ : A₁ * Real.exp ω ≤
-      E * (s * A₁ * Real.exp ω + (1 - s) * Real.exp m * Real.exp ω * A₂) := by
-    have h₁a : A₁ * Real.exp ω = E * A₁ * Real.exp (s * ω) := by
-      rw [← hE]
-      ring
-    have h₁b := mul_le_mul_of_nonneg_left hconv (mul_nonneg hEpos.le hA₁.le)
-    have h₁c := mul_le_mul_of_nonneg_left ((Real.exp_add m ω) ▸ hA₁hi)
-      (mul_nonneg hEpos.le (sub_nonneg.2 hs1))
-    linarith
-  have h₂ : A₁ ≤ E * (s * A₁ + (1 - s) * Real.exp m * A₂) := by
-    have hω0 := Real.exp_pos ω
-    nlinarith [h₁]
-  nlinarith [hkey, h₂, hB₂, hEpos]
-
 /-- **The half-step contracts oscillations**, in bracket form: if `m ≤ ψ₁ - ψ₂ ≤ m + ω`, then the
 difference of the log-partition functions of `ψ₁` and `ψ₂` has oscillation at most
 `(1 - exp (-4M)) * ω`, where `|h| ≤ M`. -/
@@ -184,8 +152,9 @@ private theorem logIntegralExp_sub_sub_le_of_le [IsFiniteMeasure ν] (hν : ν �
     exact (abs_nonneg _).trans (hM (a, b₀))
   -- The four partition functions `A₁, A₂` at `a` and `B₁, B₂` at `a'`.
   have hi (a : A) {ψ : B → ℝ} (hψ : Measurable ψ) {C : ℝ} (hC : ∀ b, |ψ b| ≤ C) :
-      Integrable (fun b ↦ Real.exp (h (a, b) + ψ b)) ν :=
-    integrable_exp_add hh hM hψ hC a
+      Integrable (fun b ↦ Real.exp (h (a, b) + ψ b)) ν := by
+    simpa using ProbabilityTheory.integrable_exp_mul_of_le 1 (M + C) zero_le_one (by fun_prop)
+      (ae_of_all _ fun b ↦ by linarith [(abs_le.1 (hM (a, b))).2, (abs_le.1 (hC b)).2])
   set A₁ := ∫ b, Real.exp (h (a, b) + ψ₁ b) ∂ν
   set A₂ := ∫ b, Real.exp (h (a, b) + ψ₂ b) ∂ν
   set B₁ := ∫ b, Real.exp (h (a', b) + ψ₁ b) ∂ν
@@ -243,8 +212,30 @@ private theorem logIntegralExp_sub_sub_le_of_le [IsFiniteMeasure ν] (hν : ν �
       ring
     rw [h₃] at h₂
     linarith
-  have hmain := mul_le_exp_mul_mul_of_add_le hA₁ hB₂ (Real.exp_pos _)
-    (Real.exp_le_one_iff.2 (by linarith)) hkey hA₁hi
+  -- With `E = exp ((1 - s) * ω)`, convexity of `exp` and `A₁ ≤ exp (m + ω) * A₂` give
+  -- `A₁ ≤ E * (s * A₁ + (1 - s) * exp m * A₂)`, which with `hkey` yields `A₁ * B₂ ≤ E * (A₂ * B₁)`.
+  have hs0 : 0 < s := Real.exp_pos _
+  have hs1 : s ≤ 1 := Real.exp_le_one_iff.2 (by linarith)
+  have hconv : Real.exp (s * ω) ≤ s * Real.exp ω + (1 - s) := by
+    simpa using convexOn_exp.2 (mem_univ ω) (mem_univ 0) hs0.le (sub_nonneg.2 hs1) (by ring)
+  set E := Real.exp ((1 - s) * ω)
+  have hE : E * Real.exp (s * ω) = Real.exp ω := by
+    rw [← Real.exp_add]
+    ring_nf
+  have hEpos : 0 < E := Real.exp_pos _
+  have h₁ : A₁ * Real.exp ω ≤
+      E * (s * A₁ * Real.exp ω + (1 - s) * Real.exp m * Real.exp ω * A₂) := by
+    have h₁a : A₁ * Real.exp ω = E * A₁ * Real.exp (s * ω) := by
+      rw [← hE]
+      ring
+    have h₁b := mul_le_mul_of_nonneg_left hconv (mul_nonneg hEpos.le hA₁.le)
+    have h₁c := mul_le_mul_of_nonneg_left ((Real.exp_add m ω) ▸ hA₁hi)
+      (mul_nonneg hEpos.le (sub_nonneg.2 hs1))
+    linarith
+  have h₂ : A₁ ≤ E * (s * A₁ + (1 - s) * Real.exp m * A₂) := by
+    have hω0 := Real.exp_pos ω
+    nlinarith [h₁]
+  have hmain : A₁ * B₂ ≤ E * (A₂ * B₁) := by nlinarith [hkey, h₂, hB₂, hEpos]
   unfold logIntegralExp
   have := Real.log_le_log (by positivity) hmain
   rw [Real.log_mul hA₁.ne' hB₂.ne', Real.log_mul (Real.exp_pos _).ne' (by positivity),
@@ -360,12 +351,6 @@ private theorem normalizedSweep_sub_sub_le [IsFiniteMeasure μ] [IsFiniteMeasure
   simp only [normalizedSweep]
   linarith
 
-/-- The contraction factor `(1 - exp (-4M)) ^ 2` of a sweep is less than one. -/
-private theorem one_sub_exp_sq_lt_one (hM : 0 ≤ M) : (1 - Real.exp (-(4 * M))) ^ 2 < 1 := by
-  have hs0 := Real.exp_pos (-(4 * M))
-  have hs1 : Real.exp (-(4 * M)) ≤ 1 := Real.exp_le_one_iff.2 (by linarith)
-  nlinarith
-
 private theorem measurable_normalizedSweep_iterate [IsFiniteMeasure μ] [IsFiniteMeasure ν]
     (hμ : μ ≠ 0) (hν : ν ≠ 0) (hg : Measurable g) (hgM : ∀ z, |g z| ≤ M) (y₀ : Y) (n : ℕ) :
     Measurable ((normalizedSweep g μ ν y₀)^[n] 0) ∧
@@ -389,7 +374,8 @@ private theorem exists_dist_normalizedSweep_iterate_le [IsFiniteMeasure μ] [IsF
   have hM0 : 0 ≤ M := (abs_nonneg _).trans (hgM (x₀, y₀))
   -- The contraction factor `r` of one sweep, and the iterates `χ n` started at `0`.
   set r := (1 - Real.exp (-(4 * M))) ^ 2
-  have hr1 : r < 1 := one_sub_exp_sq_lt_one hM0
+  have hr1 : r < 1 := pow_lt_one₀ (sub_nonneg.2 (Real.exp_le_one_iff.2 (by linarith)))
+    (sub_lt_self _ (Real.exp_pos _)) two_ne_zero
   set χ : ℕ → Y → ℝ := fun n ↦ (normalizedSweep g μ ν y₀)^[n] 0
   have hχ_succ (n : ℕ) : χ (n + 1) = normalizedSweep g μ ν y₀ (χ n) :=
     Function.iterate_succ_apply' _ n 0
@@ -445,7 +431,8 @@ private theorem exists_sinkhornSweep_eq_add [IsFiniteMeasure μ] [IsFiniteMeasur
   refine ⟨ψ, C, sinkhornSweep g μ ν ψ y₀, hψm, hψb, fun y ↦ ?_⟩
   set r := (1 - Real.exp (-(4 * M))) ^ 2
   have hr0 : 0 ≤ r := sq_nonneg _
-  have hr1 : r < 1 := one_sub_exp_sq_lt_one hM0
+  have hr1 : r < 1 := pow_lt_one₀ (sub_nonneg.2 (Real.exp_le_one_iff.2 (by linarith)))
+    (sub_lt_self _ (Real.exp_pos _)) two_ne_zero
   set χ : ℕ → Y → ℝ := fun n ↦ (normalizedSweep g μ ν y₀)^[n] 0
   have hmb := measurable_normalizedSweep_iterate hμ hν hg hgM y₀
   -- `χ (n + 1)` is the normalised sweep of `χ n`. It tends to `ψ`, and by the contraction it is
@@ -521,7 +508,8 @@ theorem exists_isCoupling_withDensity_exp_add [IsFiniteMeasure μ] [IsFiniteMeas
       hφ hφC y (ψ y)
     have hl : logIntegralExp (g ∘ Prod.swap) μ φ y = -(ψ y + c) := by
       rw [← hfix y, sinkhornSweep, neg_neg]
-    rw [hl, show ψ y + -(ψ y + c) = -c by ring] at this
+    have hc : ψ y + -(ψ y + c) = -c := by ring
+    rw [hl, hc] at this
     rw [← this]
     refine lintegral_congr fun x ↦ ?_
     rw [hf_def]
