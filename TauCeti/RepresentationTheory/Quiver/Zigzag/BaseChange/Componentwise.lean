@@ -73,16 +73,18 @@ private theorem scalarExtensionLinearEquiv_mul
 /-- Scalar extension of the public componentwise zigzag algebra, including its dual-number
 factors at isolated vertices. It fixes every vertex, arrow and volume basis vector. -/
 noncomputable def zigzagAlgebraScalarExtensionEquiv :
-    l ⊗[k] zigzagAlgebra k G ≃ₐ[l] zigzagAlgebra l G := by
+    l ⊗[k] zigzagAlgebra k G ≃ₐ[l] zigzagAlgebra l G :=
   let e := scalarExtensionLinearEquiv (k := k) (l := l) G
+  -- A bijective multiplicative map preserves the unit, by `MulEquiv.map_one`.
   let m : (l ⊗[k] zigzagAlgebra k G) ≃* zigzagAlgebra l G :=
     { e.toEquiv with map_mul' := scalarExtensionLinearEquiv_mul G }
-  exact AlgEquiv.ofLinearEquiv e m.map_one (scalarExtensionLinearEquiv_mul G)
+  AlgEquiv.ofLinearEquiv e m.map_one (scalarExtensionLinearEquiv_mul G)
 
 /-- The scalar-extension comparison on a pure tensor with a basis vector. The volume case
 includes the infinitesimal generator at every isolated vertex. -/
 @[simp]
-theorem zigzagAlgebraScalarExtensionEquiv_tmul_basis (a : l) (b : ZigzagBasisIndex G) :
+theorem zigzagAlgebraScalarExtensionEquiv_tmul_zigzagAlgebraBasis
+    (a : l) (b : ZigzagBasisIndex G) :
     zigzagAlgebraScalarExtensionEquiv G (a ⊗ₜ[k] zigzagAlgebraBasis k G b) =
       a • zigzagAlgebraBasis l G b := by
   calc
@@ -97,11 +99,23 @@ theorem zigzagAlgebraScalarExtensionEquiv_tmul_basis (a : l) (b : ZigzagBasisInd
 
 /-- The inverse comparison sends each basis vector to its unit pure tensor. -/
 @[simp]
-theorem zigzagAlgebraScalarExtensionEquiv_symm_basis (b : ZigzagBasisIndex G) :
+theorem zigzagAlgebraScalarExtensionEquiv_symm_zigzagAlgebraBasis
+    (b : ZigzagBasisIndex G) :
     (zigzagAlgebraScalarExtensionEquiv (k := k) (l := l) G).symm
       (zigzagAlgebraBasis l G b) = 1 ⊗ₜ[k] zigzagAlgebraBasis k G b := by
   apply (zigzagAlgebraScalarExtensionEquiv G).injective
   simp
+
+private theorem zigzagAlgebraScalarExtensionEquiv_repr (y : l ⊗[k] zigzagAlgebra k G) :
+    (zigzagAlgebraBasis l G).repr (zigzagAlgebraScalarExtensionEquiv G y) =
+      (Algebra.TensorProduct.basis l (zigzagAlgebraBasis k G)).repr y := by
+  have h : (zigzagAlgebraBasis l G).repr.toLinearMap.comp
+      (zigzagAlgebraScalarExtensionEquiv (k := k) (l := l) G).toLinearMap =
+      (Algebra.TensorProduct.basis l (zigzagAlgebraBasis k G)).repr.toLinearMap := by
+    apply (Algebra.TensorProduct.basis l (zigzagAlgebraBasis k G)).ext
+    intro b
+    simp [Algebra.TensorProduct.basis_apply]
+  exact LinearMap.congr_fun h y
 
 /-- On an arbitrary pure tensor, every basis coefficient is extended along the algebra map
 and multiplied by the tensor's coefficient. -/
@@ -110,9 +124,8 @@ theorem zigzagAlgebraScalarExtensionEquiv_repr_tmul (a : l) (x : zigzagAlgebra k
     (b : ZigzagBasisIndex G) :
     (zigzagAlgebraBasis l G).repr (zigzagAlgebraScalarExtensionEquiv G (a ⊗ₜ[k] x)) b =
       a * algebraMap k l ((zigzagAlgebraBasis k G).repr x b) := by
-  -- The basis equivalence identifies coordinates, and tensor-basis coordinates extend scalars.
-  simp [zigzagAlgebraScalarExtensionEquiv, scalarExtensionLinearEquiv,
-    Module.Basis.equiv, Algebra.TensorProduct.basis_repr_tmul]
+  rw [zigzagAlgebraScalarExtensionEquiv_repr, Algebra.TensorProduct.basis_repr_tmul]
+  simp
 
 /-- The inverse scalar-extension comparison is the basis expansion with coefficients in the
 left tensor factor. -/
@@ -122,7 +135,7 @@ theorem zigzagAlgebraScalarExtensionEquiv_symm_apply (x : zigzagAlgebra l G) :
         (fun b a => a ⊗ₜ[k] zigzagAlgebraBasis k G b) := by
   apply (zigzagAlgebraScalarExtensionEquiv G).injective
   rw [AlgEquiv.apply_symm_apply, Finsupp.sum, map_sum]
-  simp only [zigzagAlgebraScalarExtensionEquiv_tmul_basis]
+  simp only [zigzagAlgebraScalarExtensionEquiv_tmul_zigzagAlgebraBasis]
   simpa only [Finsupp.linearCombination_apply, Finsupp.sum] using
     ((zigzagAlgebraBasis l G).linearCombination_repr x).symm
 
