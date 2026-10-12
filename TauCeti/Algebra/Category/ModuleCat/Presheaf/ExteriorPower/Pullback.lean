@@ -43,6 +43,21 @@ variable {C : Type v} [Category.{w} C] {D : Type v'} [Category.{w'} D]
   {F : C ⥤ D} {S : Cᵒᵖ ⥤ CommRingCat.{u}} {R : Dᵒᵖ ⥤ CommRingCat.{u}}
   (α : S ⟶ F.op ⋙ R)
 
+/-- Restriction in the exterior power of a pushforward restricts each wedge factor along `F`. -/
+theorem exteriorPower_pushforward_obj_map_mk (n : ℕ)
+    (M : PresheafOfModulesOfCommRing.{u} R) {U V : Cᵒᵖ} (f : U ⟶ V)
+    (m : Fin n → ((PresheafOfModulesOfCommRing.pushforward α).obj M).obj U) :
+    ((PresheafOfModulesOfCommRing.exteriorPower n).obj
+        ((PresheafOfModulesOfCommRing.pushforward α).obj M)).map f
+        (ModuleCat.exteriorPower.mk m) =
+      ModuleCat.exteriorPower.mk
+        (M := ((PresheafOfModulesOfCommRing.pushforward α).obj M).obj V)
+        (fun j ↦ M.map (F.op.map f) (m j)) := by
+  refine (PresheafOfModulesOfCommRing.exteriorPower_obj_map_mk n _ f m).trans ?_
+  exact congrArg (ModuleCat.exteriorPower.mk
+    (M := ((PresheafOfModulesOfCommRing.pushforward α).obj M).obj V))
+    (funext fun j ↦ PresheafOfModules.pushforward_obj_map_apply _ _ _ (m j))
+
 private def exteriorPowerPushforwardMap (n : ℕ)
     (M : PresheafOfModulesOfCommRing.{u} R) :
     (PresheafOfModulesOfCommRing.exteriorPower n).obj
@@ -55,24 +70,18 @@ private def exteriorPowerPushforwardMap (n : ℕ)
     apply ModuleCat.exteriorPower.hom_ext (R := S.obj U)
     apply ModuleCat.AlternatingMap.ext
     intro m
-    -- `erw` identifies the carriers of bundled restriction-of-scalars objects when matching
-    -- the wedge formulas; ordinary `rw` cannot make these coercions match.
-    erw [ModuleCat.AlternatingMap.postcomp_apply, ModuleCat.comp_apply,
-      ModuleCat.restrictScalars.map_apply,
-      PresheafOfModulesOfCommRing.exteriorPower_obj_map_mk,
-      ModuleCat.restrictScalarsExteriorPowerComparison_app_mk (α.app V).hom n
-        (M.obj (F.op.obj V)),
-      ModuleCat.AlternatingMap.postcomp_apply, ModuleCat.comp_apply,
-      ModuleCat.restrictScalarsExteriorPowerComparison_app_mk (α.app U).hom n
-        (M.obj (F.op.obj U)),
-      PresheafOfModules.pushforward_obj_map_apply,
-      PresheafOfModulesOfCommRing.exteriorPower_obj_map_mk]
-    -- The pushforward lemma is stated using `.hom`, so make that coercion explicit on factors.
-    conv_lhs =>
-      arg 2
-      intro j
-      change (((PresheafOfModulesOfCommRing.pushforward α).obj M).map f).hom (m j)
-      erw [PresheafOfModules.pushforward_obj_map_apply]
+    refine ((congrArg
+      ((ModuleCat.restrictScalarsExteriorPowerComparison (α.app V).hom n).app
+        (M.obj (F.op.obj V)))
+      (exteriorPower_pushforward_obj_map_mk α n M f m)).trans
+        (ModuleCat.restrictScalarsExteriorPowerComparison_app_mk (α.app V).hom n
+          (M.obj (F.op.obj V)) _)).trans ?_
+    exact ((congrArg
+      (((PresheafOfModulesOfCommRing.pushforward α).obj
+        ((PresheafOfModulesOfCommRing.exteriorPower n).obj M)).map f)
+      (ModuleCat.restrictScalarsExteriorPowerComparison_app_mk (α.app U).hom n
+        (M.obj (F.op.obj U)) m)).trans
+      (PresheafOfModulesOfCommRing.exteriorPower_obj_map_mk n M (F.op.map f) m)).symm
 
 /-- Pushforward of module presheaves carries the canonical exterior-power comparison.
 It changes the coefficient ring of a wedge, without changing its factors. -/
