@@ -7,15 +7,13 @@ module
 
 public import TauCeti.Combinatorics.PermutationTriple.OrbitDecomposition.Basic
 public import TauCeti.Combinatorics.PermutationTriple.EulerCharacteristic
-import TauCeti.GroupTheory.Perm.SigmaCongr
 
 /-!
 # Additivity over the connected components of a permutation triple
 
-The cycle partitions, cycle counts and Euler characteristic of an indexed disjoint sum
-are the sums of those of its summands. Applying these calculations to the monodromy-orbit
-decomposition computes the invariants of any permutation triple from its connected
-restrictions.
+Applying indexed disjoint-sum additivity to the monodromy-orbit decomposition computes
+the cycle partitions, cycle counts and Euler characteristic of any permutation triple
+from its connected restrictions.
 
 In particular, if there are `c` monodromy orbits, the Euler characteristic is
 `2c - 2∑ g`, where the sum ranges over the genera of the connected restrictions. The genus
@@ -34,50 +32,9 @@ namespace TauCeti.PermutationTriple
 
 open Equiv Equiv.Perm
 
-section IndexedDisjointSum
-
-variable {N : ℕ} {ι : Type*} [Fintype ι] {d : ι → ℕ}
-  (t : ∀ i, PermutationTriple (d i)) (e : (Σ i, Fin (d i)) ≃ Fin N)
-
-/-- The three full cycle partitions of an indexed disjoint sum concatenate independently
-at each branch point. -/
-@[simp]
-theorem cycleData_indexedDisjointSum :
-    (indexedDisjointSum t e).cycleData =
-      (∑ i, (t i).cycleData.1, ∑ i, (t i).cycleData.2.1,
-        ∑ i, (t i).cycleData.2.2) := by
-  classical
-  apply Prod.ext
-  · simp
-  · apply Prod.ext <;> simp
-
-/-- Cycle counts, including the fixed points, add over indexed disjoint sums. -/
-@[simp]
-theorem cycleCounts_indexedDisjointSum :
-    (indexedDisjointSum t e).cycleCounts =
-      (∑ i, (t i).cycleCounts.1, ∑ i, (t i).cycleCounts.2.1,
-        ∑ i, (t i).cycleCounts.2.2) := by
-  apply Prod.ext
-  · simp
-  · apply Prod.ext <;> simp
-
-/-- The Euler characteristic adds over indexed disjoint sums, including an empty sum. -/
-@[simp]
-theorem eulerChar_indexedDisjointSum :
-    (indexedDisjointSum t e).eulerChar = ∑ i, (t i).eulerChar := by
-  classical
-  have hdegree : ∑ i, d i = N := by simpa using Fintype.card_congr e
-  have hdegree' : (∑ i, (d i : ℤ)) = N := by exact_mod_cast hdegree
-  simp only [eulerChar_def, indexedDisjointSum_σ0, indexedDisjointSum_σ1,
-    indexedDisjointSum_σinf, Equiv.orbitCount_permCongr, orbitCount_sigmaCongrRight,
-    Nat.cast_sum, Finset.sum_sub_distrib, Finset.sum_add_distrib]
-  rw [hdegree']
-
-end IndexedDisjointSum
-
 variable {n : ℕ} (t : PermutationTriple n)
 
-attribute [local instance] Fintype.ofFinite
+variable [Fintype t.MonodromyOrbit]
 
 /-- The degrees of the connected restrictions sum to the degree of the original triple. -/
 theorem sum_ncard_monodromyOrbit : ∑ O : t.MonodromyOrbit, O.orbit.ncard = n := by

@@ -37,6 +37,8 @@ theorem parts_partition_sigmaCongrRight (σ : ∀ i, Perm (α i)) :
   let τ := (sigmaCongrRight σ).subtypePerm (p := fun x => x.1 = i) (fun _ => Iff.rfl)
   have hτ : (Equiv.sigmaSubtype i).permCongr τ = σ i := by
     ext x
+    -- `sigmaSubtype` inserts the index `i` in its inverse and removes it in its forward
+    -- map. Restricting `sigmaCongrRight σ` to this fibre therefore acts exactly by `σ i`.
     rfl
   rw [← fullCycleType_def, ← hτ, fullCycleType_permCongr]
   -- The fibre has two inferred enumerations, both instances of the subsingleton `Fintype`.
