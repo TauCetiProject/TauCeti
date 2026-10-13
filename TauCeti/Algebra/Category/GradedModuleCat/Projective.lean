@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Algebra.Category.ModuleCat.Projective
 public import TauCeti.Algebra.Category.GradedModuleCat.Abelian
-public import TauCeti.Algebra.Module.GradedModule.DegreeZeroPart
+public import TauCeti.Algebra.Module.GradedModule.HomogeneousPart
 
 /-!
 # Projective objects in the category of graded modules
@@ -45,11 +45,11 @@ instance projective_of_module_projective (P : GradedModuleCat.{v} 𝒜)
   refine ⟨fun X E hE => ?_⟩
   obtain ⟨f, hf⟩ := Module.projective_lifting_property E.hom X.hom
     ((epi_iff_surjective E).mp hE)
-  refine ⟨ofHom (P.grading.degreeZeroPart _ 𝒜 f)
-    (P.grading.isHomogeneous_degreeZeroPart _ 𝒜 f), hom_ext ?_⟩
+  refine ⟨ofHom (P.grading.homogeneousPartOfGradedSMul _ 𝒜 f 0)
+    (P.grading.isHomogeneous_homogeneousPartOfGradedSMul _ 𝒜 f 0), hom_ext ?_⟩
   simp only [hom_comp]
-  exact (P.grading.comp_degreeZeroPart _ 𝒜 _ f E.isHomogeneous).trans
-    ((congrArg (P.grading.degreeZeroPart _ 𝒜) hf).trans
-      ((P.grading.degreeZeroPart_eq_self_iff _ 𝒜 X.hom).mpr X.isHomogeneous))
+  simpa using (P.grading.comp_homogeneousPartOfGradedSMul _ 𝒜 _ f 0 E.isHomogeneous).trans
+    ((congrArg (fun f ↦ P.grading.homogeneousPartOfGradedSMul _ 𝒜 f 0) hf).trans
+      (P.grading.homogeneousPartOfGradedSMul_eq_self _ 𝒜 X.hom 0 X.isHomogeneous))
 
 end TauCeti.GradedModuleCat
