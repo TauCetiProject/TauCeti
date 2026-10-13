@@ -212,6 +212,22 @@ theorem integralForm_glueRight (x y : M) :
   apply Int.cast_injective (α := ℚ)
   simp [glueAlongDiscriminant_form]
 
+/-- The two canonical inclusions have mutually orthogonal images. -/
+@[simp]
+theorem integralForm_glueLeft_glueRight (x : L) (y : M) :
+    (L.glueAlongDiscriminant M hL hM e).integralForm
+      (L.glueLeft M hL hM e x) (L.glueRight M hL hM e y) = 0 := by
+  apply Int.cast_injective (α := ℚ)
+  simp [glueAlongDiscriminant_form]
+
+/-- The mixed integral pairing also vanishes with the second inclusion first. -/
+@[simp]
+theorem integralForm_glueRight_glueLeft (x : M) (y : L) :
+    (L.glueAlongDiscriminant M hL hM e).integralForm
+      (L.glueRight M hL hM e x) (L.glueLeft M hL hM e y) = 0 :=
+  ((L.glueAlongDiscriminant M hL hM e).isSymm_integralForm.eq _ _).trans
+    (L.integralForm_glueLeft_glueRight M hL hM e y x)
+
 /-- The first coordinate inclusion is injective. -/
 theorem glueLeft_injective : Function.Injective (L.glueLeft M hL hM e) := by
   intro x y h
