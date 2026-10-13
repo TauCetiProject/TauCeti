@@ -64,10 +64,10 @@ The cases `c_v = 1` are `WeierstrassCurve.Affine.nonsingularReduction_eq_top_of_
 
 ## Main results
 
-* `WeierstrassCurve.Affine.add_mem_nonsingularReduction_of_tangentQuadratic_ne_zero` and
-  `WeierstrassCurve.Affine.index_nonsingularReduction_dvd_two_of_tangentQuadratic_ne_zero`: when the
-  tangent quadratic at the singular point has no root in the residue field, the sum of two points
-  with singular reduction has nonsingular reduction, and `[E(F) : E₀(F)]` divides `2`.
+* `WeierstrassCurve.Affine.add_mem_nonsingularReduction_of_tangentQuadratic_no_roots` and
+  `WeierstrassCurve.Affine.index_nonsingularReduction_dvd_two_of_tangentQuadratic_no_roots`: when
+  the tangent quadratic at the singular point has no root in the residue field, the sum of two
+  points with singular reduction has nonsingular reduction, and `[E(F) : E₀(F)]` divides `2`.
 * `WeierstrassCurve.Affine.add_mem_nonsingularReduction_of_isTateTerminal_III` and
   `WeierstrassCurve.Affine.index_nonsingularReduction_dvd_two_of_isTateTerminal_III`: the same at
   the reduction symbol `III`.
@@ -201,7 +201,7 @@ perfect, or `b₂` is a unit, the singular point is then a node whose tangent di
 rational, and for a discrete valuation, on a minimal equation, this is nonsplit multiplicative
 reduction. Over an imperfect residue field of characteristic `2` the singular point may instead be
 a cusp. -/
-theorem add_mem_nonsingularReduction_of_tangentQuadratic_ne_zero
+theorem add_mem_nonsingularReduction_of_tangentQuadratic_no_roots
     (h₃ : (integralModel v.valuationSubring W).a₃ ∈ maximalIdeal v.valuationSubring)
     (h₄ : (integralModel v.valuationSubring W).a₄ ∈ maximalIdeal v.valuationSubring)
     (h₆ : (integralModel v.valuationSubring W).a₆ ∈ maximalIdeal v.valuationSubring)
@@ -219,7 +219,7 @@ the integral model is singular at the origin and its tangent quadratic `T² + a�
 in the residue field. When the residue field is perfect, or `b₂` is a unit, this is a nonsplit node;
 for a discrete valuation, on a minimal equation with nonsplit multiplicative reduction of type
 `Iₙ`, Tate's algorithm reports the local index `gcd(2, n)`. -/
-theorem index_nonsingularReduction_dvd_two_of_tangentQuadratic_ne_zero
+theorem index_nonsingularReduction_dvd_two_of_tangentQuadratic_no_roots
     (h₃ : (integralModel v.valuationSubring W).a₃ ∈ maximalIdeal v.valuationSubring)
     (h₄ : (integralModel v.valuationSubring W).a₄ ∈ maximalIdeal v.valuationSubring)
     (h₆ : (integralModel v.valuationSubring W).a₆ ∈ maximalIdeal v.valuationSubring)
@@ -228,7 +228,7 @@ theorem index_nonsingularReduction_dvd_two_of_tangentQuadratic_ne_zero
         residue _ (integralModel v.valuationSubring W).a₂ ≠ 0) :
     (W.nonsingularReduction v).index ∣ 2 :=
   AddSubgroup.index_dvd_two_of_add_mem fun _ _ ↦
-    add_mem_nonsingularReduction_of_tangentQuadratic_ne_zero v h₃ h₄ h₆ hroot
+    add_mem_nonsingularReduction_of_tangentQuadratic_no_roots v h₃ h₄ h₆ hroot
 
 /-- Over a Henselian local ring, the cubic `−ϖ X³ + e₂ X² − e₁ X − γ` with `ϖ, e₂ ∈ 𝔪` and `e₁` a
 unit has a root `X`, at which its derivative `−3 ϖ X² + 2 e₂ X − e₁` is a unit: its reduction is

@@ -10,8 +10,6 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Singular
 public import TauCeti.AlgebraicGeometry.EllipticCurve.NodePolynomial
 
 import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Formula.VariableChange
--- Proof-only: the reduction is singular at the origin exactly when `a₃, a₄, a₆ ∈ 𝔪`.
-import TauCeti.AlgebraicGeometry.EllipticCurve.TateAlgorithm.Basic
 import TauCeti.AlgebraicGeometry.EllipticCurve.VariableChange
 
 /-!
@@ -302,7 +300,8 @@ theorem some_notMem_nonsingularReduction_iff
     (h₆ : (integralModel v.valuationSubring W).a₆ ∈ maximalIdeal v.valuationSubring)
     {x y : F} (h : W.Nonsingular x y) :
     Point.some x y h ∉ W.nonsingularReduction v ↔ v x < 1 ∧ v y < 1 := by
-  have h0 := (map_residue_isSingular_zero_iff (integralModel v.valuationSubring W)).2 ⟨h₆, h₄, h₃⟩
+  have h0 : ((integralModel v.valuationSubring W).map (residue _)).toAffine.IsSingular 0 0 :=
+    (isSingular_zero _).2 <| by simp [(residue_eq_zero_iff _).2, h₃, h₄, h₆]
   constructor
   · intro hn
     have hx : v x ≤ 1 := not_lt.1 fun hx ↦
