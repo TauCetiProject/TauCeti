@@ -91,7 +91,7 @@ theorem add {x : M} {v w : TangentSpace (𝓡∂ (n + 1)) x}
   rw [ContinuousLinearMap.map_add, map_add]
   simpa using add_neg hv hw
 
-/-- The outward-pointing vectors at a fixed point form a convex cone.  This is the pointwise
+/-- The outward-pointing vectors at a fixed point form a convex set.  This is the pointwise
 interface used when smooth local outward fields are glued by a partition of unity. -/
 theorem convex (x : M) :
     Convex ℝ {v : TangentSpace (𝓡∂ (n + 1)) x | IsOutwardPointing x v} := by
@@ -195,7 +195,7 @@ theorem smul {f : M → ℝ} (hV : IsOutwardPointingField V)
 
 /-- Smooth nonnegative convex combinations of outward-pointing fields remain outward-pointing.
 The coefficient sum is required only on the boundary, where the outward condition is tested. -/
-theorem combo {W : ∀ x : M, TangentSpace (𝓡∂ (n + 1)) x}
+theorem smul_add_smul {W : ∀ x : M, TangentSpace (𝓡∂ (n + 1)) x}
     (hV : IsOutwardPointingField V) (hW : IsOutwardPointingField W)
     {f g : M → ℝ} (hf : ContMDiff (𝓡∂ (n + 1)) 𝓘(ℝ) ∞ f)
     (hg : ContMDiff (𝓡∂ (n + 1)) 𝓘(ℝ) ∞ g)
