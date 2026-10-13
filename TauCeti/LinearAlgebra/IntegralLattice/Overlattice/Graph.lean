@@ -112,6 +112,7 @@ theorem isUnimodular_glueAlongDiscriminant :
   exact (L.isLagrangian_discriminantGraph M hL hM e).toFiniteBilinearModule
 
 /-- Membership of a pair of dual vectors is exactly the equality of their glue classes. -/
+@[simp]
 theorem mem_glueAlongDiscriminant_iff (x : L.dualCarrier) (y : M.dualCarrier) :
     (x.1, y.1) ∈ (L.glueAlongDiscriminant M hL hM e).carrier ↔
       e (Submodule.Quotient.mk x) = Submodule.Quotient.mk y := by
@@ -129,6 +130,7 @@ theorem orthogonalSum_carrier_le_glueAlongDiscriminant :
 
 /-- An arbitrary pair belongs to the glued carrier precisely when both coordinates are dual
 vectors and their discriminant classes correspond. -/
+@[simp low]
 theorem mem_glueAlongDiscriminant_iff_exists (x : V × W) :
     x ∈ (L.glueAlongDiscriminant M hL hM e).carrier ↔
       ∃ (hx : x.1 ∈ L.dualCarrier) (hy : x.2 ∈ M.dualCarrier),

@@ -47,10 +47,12 @@ theorem isIsotropic_graph_iff (f : A →+ B) :
 
 /-- An opposite-form equivalence's graph equals its orthogonal complement when the source
 is nondegenerate. -/
+@[simp]
 theorem orthogonalComplement_graph (e : A ≃+ B)
     (he : ∀ x, B.quadratic (e x) = -A.quadratic x) (hA : A.IsNondegenerate) :
-    (A.prod B).toFiniteBilinearModule.orthogonalComplement e.toAddMonoidHom.graph =
-      e.toAddMonoidHom.graph := by
+    (A.toFiniteBilinearModule.prod B.toFiniteBilinearModule).orthogonalComplement
+        (e : A →+ B).graph =
+      (e : A →+ B).graph := by
   apply le_antisymm
   · intro x hx
     apply AddMonoidHom.mem_graph.mpr
@@ -74,8 +76,9 @@ theorem orthogonalComplement_graph (e : A ≃+ B)
 
 /-- An additive equivalence's graph is Lagrangian exactly when it reverses quadratic values.
 Nondegeneracy is required only of the source. -/
+@[simp]
 theorem isLagrangian_graph_iff (e : A ≃+ B) (hA : A.IsNondegenerate) :
-    (A.prod B).IsLagrangian e.toAddMonoidHom.graph ↔
+    (A.prod B).IsLagrangian (e : A →+ B).graph ↔
       ∀ x, B.quadratic (e x) = -A.quadratic x := by
   constructor
   · intro h
