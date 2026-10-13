@@ -22,8 +22,9 @@ records the basic properties of the maps
 degree `i`, and are epimorphisms in degrees where the complex is exact. In a degree with no nonzero
 differential into it, the identification of the homology with the cycles is natural
 (`HomologicalComplex.isoHomologyπ_inv_naturality`). The sequence
-`Zᵢ ⟶ Kᵢ ⟶ Zⱼ` of cycles is exact (`HomologicalComplex.exact_iCycles_toCycles`), so the cycles of
-a complex exact in degree `j` fit into short exact sequences `0 ⟶ Zᵢ ⟶ Kᵢ ⟶ Zⱼ ⟶ 0`
+`Zᵢ ⟶ Kᵢ ⟶ Zⱼ` of cycles is exact when `j = c.next i`
+(`HomologicalComplex.exact_iCycles_toCycles`). For adjacent degrees `i` and `j`, the cycles of a
+complex exact in degree `j` fit into a short exact sequence `0 ⟶ Zᵢ ⟶ Kᵢ ⟶ Zⱼ ⟶ 0`
 (`HomologicalComplex.cyclesShortComplex_shortExact`). Constructing the bundled cycle sequence
 requires homology only in the two selected degrees.
 For chain complexes indexed by the natural numbers, the identification of zero chains with
