@@ -68,28 +68,30 @@ namespace TauCeti.GlobalNumberFields
 
 variable (K L : Type*) [Field K] [Field L] [Algebra K L]
 
-/-- `x ∈ Kˣ` is a **local norm at the infinite place `w`** for `L/K`: its image in Mathlib's
-completion `K_w` is the norm of a unit of the local étale algebra `K_w ⊗[K] L`. -/
-def IsInfiniteLocalNorm (w : InfinitePlace K) (x : Kˣ) : Prop :=
+/-- `x ∈ Kˣ` is a **local norm at the infinite place `w`** for a finite extension `L/K`: its
+image in Mathlib's completion `K_w` is the norm of a unit of the local étale algebra
+`K_w ⊗[K] L`. -/
+def IsInfiniteLocalNorm [_hKL : FiniteDimensional K L] (w : InfinitePlace K) (x : Kˣ) : Prop :=
   Units.map (algebraMap K w.Completion).toMonoidHom x ∈
     (Algebra.normUnits w.Completion (S := w.Completion ⊗[K] L)).range
 
 variable [NumberField K]
 
-/-- `x ∈ Kˣ` is a **local norm at the finite place `v`** for `L/K`: its image in `K_v` is the norm
-of a unit of the local étale algebra `K_v ⊗[K] L`, which accounts for every place of `L`
-above `v`. -/
-def IsFiniteLocalNorm (v : HeightOneSpectrum (𝓞 K)) (x : Kˣ) : Prop :=
+/-- `x ∈ Kˣ` is a **local norm at the finite place `v`** for a finite extension `L/K`: its image
+in `K_v` is the norm of a unit of the local étale algebra `K_v ⊗[K] L`, which accounts for every
+place of `L` above `v`. -/
+def IsFiniteLocalNorm [_hKL : FiniteDimensional K L] (v : HeightOneSpectrum (𝓞 K)) (x : Kˣ) :
+    Prop :=
   Units.map (algebraMap K (v.adicCompletion K)).toMonoidHom x ∈
     (Algebra.normUnits (v.adicCompletion K) (S := v.adicCompletion K ⊗[K] L)).range
 
-/-- `x ∈ Kˣ` is a **local norm everywhere** for `L/K`: it is a local norm at every finite place
-and at every infinite place of `K`, complex places included. -/
-def IsLocalNormEverywhere (x : Kˣ) : Prop :=
+/-- `x ∈ Kˣ` is a **local norm everywhere** for a finite extension `L/K`: it is a local norm at
+every finite place and at every infinite place of `K`, complex places included. -/
+def IsLocalNormEverywhere [FiniteDimensional K L] (x : Kˣ) : Prop :=
   (∀ v : HeightOneSpectrum (𝓞 K), IsFiniteLocalNorm K L v x) ∧
     ∀ w : InfinitePlace K, IsInfiniteLocalNorm K L w x
 
-variable {K L}
+variable {K L} [FiniteDimensional K L]
 
 omit [NumberField K] in
 /-- Unfolding `IsInfiniteLocalNorm`. -/
@@ -102,8 +104,7 @@ theorem isInfiniteLocalNorm_iff_mem_range (w : InfinitePlace K) (x : Kˣ) :
 omit [NumberField K] in
 /-- **The local norm condition at a complex place is automatic.** It is kept in
 `IsLocalNormEverywhere` rather than silently omitted, and this theorem discharges it. -/
-theorem isInfiniteLocalNorm_of_isComplex [FiniteDimensional K L] {w : InfinitePlace K}
-    (hw : w.IsComplex) (x : Kˣ) :
+theorem isInfiniteLocalNorm_of_isComplex {w : InfinitePlace K} (hw : w.IsComplex) (x : Kˣ) :
     IsInfiniteLocalNorm K L w x :=
   mem_range_normUnits_completion_of_isComplex L hw _
 
