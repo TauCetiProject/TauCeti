@@ -33,14 +33,6 @@ namespace Polynomial.Chebyshev
 
 variable {R : Type*}
 
-/-- The constant Taylor coefficient of `Cₙ` at `2`. -/
-theorem taylor_two_C_coeff_zero [CommRing R] (n : ℤ) : (taylor 2 (C R n)).coeff 0 = 2 := by
-  rw [taylor_coeff_zero, C_eval_two]
-
-/-- The constant Taylor coefficient of `Sₙ` at `2`. -/
-theorem taylor_two_S_coeff_zero [CommRing R] (n : ℤ) : (taylor 2 (S R n)).coeff 0 = n + 1 := by
-  rw [taylor_coeff_zero, S_eval_two]
-
 variable [Field R] [CharZero R]
 
 /-- The linear Taylor coefficient of `Cₙ` at `2`. -/
@@ -86,7 +78,7 @@ theorem exists_C_sub_two_eq (n : ℤ) : ∃ r : R[X],
       Polynomial.C ((n : R) ^ 2) * (X - Polynomial.C 2) +
         Polynomial.C ((n : R) ^ 2 * ((n : R) ^ 2 - 1) / 12) * (X - Polynomial.C 2) ^ 2 +
           (X - Polynomial.C 2) ^ 3 * r := by
-  have h₀ := taylor_two_C_coeff_zero (R := R) n
+  have h₀ : (taylor 2 (C R n)).coeff 0 = 2 := by rw [taylor_coeff_zero, C_eval_two]
   have h₁ := taylor_two_C_coeff_one (R := R) n
   have h₂ := taylor_two_C_coeff_two (R := R) n
   obtain ⟨r, hr⟩ : X ^ 3 ∣ taylor 2 (C R n) - Polynomial.C 2 - Polynomial.C ((n : R) ^ 2) * X -
@@ -105,7 +97,7 @@ theorem exists_S_eq (n : ℤ) : ∃ r : R[X],
     S R n = Polynomial.C ((n : R) + 1) +
       Polynomial.C (((n : R) + 2) * ((n : R) + 1) * n / 6) * (X - Polynomial.C 2) +
         (X - Polynomial.C 2) ^ 2 * r := by
-  have h₀ := taylor_two_S_coeff_zero (R := R) n
+  have h₀ : (taylor 2 (S R n)).coeff 0 = n + 1 := by rw [taylor_coeff_zero, S_eval_two]
   have h₁ := taylor_two_S_coeff_one (R := R) n
   obtain ⟨r, hr⟩ : X ^ 2 ∣ taylor 2 (S R n) - Polynomial.C ((n : R) + 1) -
       Polynomial.C (((n : R) + 2) * ((n : R) + 1) * n / 6) * X := by
