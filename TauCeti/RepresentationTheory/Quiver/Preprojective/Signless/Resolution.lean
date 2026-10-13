@@ -5,12 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Homology.ModuleCat.LengthTwo
 public import TauCeti.RepresentationTheory.Quiver.Preprojective.Signless.KoszulComplex
 public import TauCeti.RepresentationTheory.Quiver.Preprojective.Signless.Augmentation
 public import TauCeti.RingTheory.Idempotents.Projective
-public import Mathlib.Algebra.Category.ModuleCat.Projective
-public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
-public import Mathlib.CategoryTheory.Preadditive.Projective.Resolution
 public import Mathlib.LinearAlgebra.Isomorphisms
 import Mathlib.Algebra.DirectSum.Module
 
@@ -32,9 +30,8 @@ No bipartiteness or characteristic hypothesis is used. In particular this constr
 to the signless quadratic dual on odd cycles without identifying it with the signed algebra.
 The resolution here is ungraded.
 
-The chain-complex assembly follows
-`TauCeti.RepresentationTheory.Quiver.Preprojective.Resolution`; the relations and exactness
-are those of the signless Koszul complex.
+The chain-complex assembly uses `TauCeti.ModuleCatLengthTwo`, shared with the signed
+preprojective resolution; the relations and exactness are those of the signless Koszul complex.
 
 ## References
 
@@ -308,166 +305,43 @@ theorem signlessPreprojectiveKoszulLeft_injective {σ : ∀ v : R, Quiver.Star v
 
 /-! ### The augmented chain complex -/
 
-/-- The signless Koszul terms: the vertex projective in degrees zero and two, the
-incoming-arrow projective in degree one, and zero thereafter. -/
-noncomputable abbrev signlessPreprojectiveKoszulTerm (v : R) : ℕ → ModuleCat.{max u v w} Πᵐᵒᵖ
-  | 0 => ModuleCat.of _ (signlessPreprojectiveRightProjective k v)
-  | 1 => ModuleCat.of _ (signlessPreprojectiveKoszulMiddle k v)
-  | 2 => ModuleCat.of _ (signlessPreprojectiveRightProjective k v)
-  | _ + 3 => ModuleCat.of _ PUnit
-
-/-- The signless Koszul differentials in consecutive homological degrees. -/
-noncomputable def signlessPreprojectiveKoszulDifferential (v : R) : ∀ n : ℕ,
-    signlessPreprojectiveKoszulTerm k v (n + 1) ⟶ signlessPreprojectiveKoszulTerm k v n
-  | 0 => ModuleCat.ofHom (signlessPreprojectiveKoszulRight k v)
-  | 1 => ModuleCat.ofHom (signlessPreprojectiveKoszulLeft k v)
-  | _ + 2 => 0
-
-@[simp]
-theorem signlessPreprojectiveKoszulDifferential_zero (v : R) :
-    signlessPreprojectiveKoszulDifferential k v 0 =
-      ModuleCat.ofHom (signlessPreprojectiveKoszulRight k v) := (rfl)
-
-@[simp]
-theorem signlessPreprojectiveKoszulDifferential_one (v : R) :
-    signlessPreprojectiveKoszulDifferential k v 1 =
-      ModuleCat.ofHom (signlessPreprojectiveKoszulLeft k v) := (rfl)
-
-@[simp]
-theorem signlessPreprojectiveKoszulDifferential_add_two (v : R) (n : ℕ) :
-    signlessPreprojectiveKoszulDifferential k v (n + 2) = 0 := (rfl)
-
-private theorem signlessPreprojectiveKoszulDifferential_comp_succ (v : R) : ∀ n : ℕ,
-    signlessPreprojectiveKoszulDifferential k v (n + 1) ≫
-      signlessPreprojectiveKoszulDifferential k v n = 0
-  | 0 => by
-    apply ModuleCat.hom_ext
-    exact signlessPreprojectiveKoszulRight_comp_left k v
-  | 1 => by simp [signlessPreprojectiveKoszulDifferential]
-  | _ + 2 => by simp [signlessPreprojectiveKoszulDifferential]
-
-/-- The right-module Koszul chain complex over the signless preprojective algebra. -/
+/-- The right-module Koszul chain complex, supported in degrees zero, one and two.
+Its term identifications and differential formulas are those of `ModuleCatLengthTwo.complex`. -/
 noncomputable def signlessPreprojectiveKoszulComplex (v : R) :
     ChainComplex (ModuleCat.{max u v w} Πᵐᵒᵖ) ℕ :=
-  ChainComplex.of (signlessPreprojectiveKoszulTerm k v)
-    (signlessPreprojectiveKoszulDifferential k v)
-    (signlessPreprojectiveKoszulDifferential_comp_succ k v)
+  ModuleCatLengthTwo.complex (signlessPreprojectiveKoszulLeft k v)
+    (signlessPreprojectiveKoszulRight k v)
+    (signlessPreprojectiveKoszulRight_comp_left k v)
 
-/-- Identification of the bundled complex terms with the explicit vertex and arrow projectives. -/
-noncomputable def signlessPreprojectiveKoszulComplexXIso (v : R) (n : ℕ) :
-    (signlessPreprojectiveKoszulComplex k v).X n ≅ signlessPreprojectiveKoszulTerm k v n :=
-  Iso.refl _
-
-/-- The bundled differential is the explicit incoming-arrow or reverse-arrow map. -/
+/-- The Koszul complex is the common three-term construction on the Koszul maps. -/
 @[simp]
-theorem signlessPreprojectiveKoszulComplex_d (v : R) (n : ℕ) :
-    (signlessPreprojectiveKoszulComplex k v).d (n + 1) n =
-      (signlessPreprojectiveKoszulComplexXIso k v (n + 1)).hom ≫
-        signlessPreprojectiveKoszulDifferential k v n ≫
-          (signlessPreprojectiveKoszulComplexXIso k v n).inv := ChainComplex.of_d _ _ _
-
-private noncomputable def signlessPreprojectiveKoszulComplexπ (v : R) :
-    signlessPreprojectiveKoszulComplex k v ⟶
-      (ChainComplex.single₀ _).obj (ModuleCat.of Πᵐᵒᵖ (signlessPreprojectiveVertexModule k v)) :=
-  (ChainComplex.toSingle₀Equiv _ _).symm
-    ⟨ModuleCat.ofHom (signlessPreprojectiveVertexAugmentation k v), by
-      apply ModuleCat.hom_ext
-      exact LinearMap.range_mkQ_comp (signlessPreprojectiveKoszulRight k v)⟩
-
-private theorem signlessPreprojectiveKoszulComplexπ_f_zero (v : R) :
-    (signlessPreprojectiveKoszulComplexπ k v).f 0 =
-      ModuleCat.ofHom (signlessPreprojectiveVertexAugmentation k v) :=
-  ChainComplex.toSingle₀Equiv_symm_apply_f_zero _ _
-
-private theorem range_signlessPreprojectiveKoszulDifferential_succ_eq_ker
-    (v : R) (hinj : Function.Injective (signlessPreprojectiveKoszulLeft k v)) : ∀ n : ℕ,
-    LinearMap.range (signlessPreprojectiveKoszulDifferential k v (n + 1)).hom =
-      LinearMap.ker (signlessPreprojectiveKoszulDifferential k v n).hom
-  | 0 => range_signlessPreprojectiveKoszulLeft_eq_ker_right k v
-  | 1 => by
-    simp only [signlessPreprojectiveKoszulDifferential, ModuleCat.hom_zero, LinearMap.range_zero]
-    exact ((LinearMap.ker_eq_bot).2 hinj).symm
-  | _ + 2 => Subsingleton.elim _ _
+theorem signlessPreprojectiveKoszulComplex_def (v : R) :
+    signlessPreprojectiveKoszulComplex k v =
+      ModuleCatLengthTwo.complex (signlessPreprojectiveKoszulLeft k v)
+        (signlessPreprojectiveKoszulRight k v)
+        (signlessPreprojectiveKoszulRight_comp_left k v) := (rfl)
 
 /-- Injectivity of the left Koszul map gives a length-two projective resolution of the
-right vertex module of the signless preprojective algebra. -/
+right vertex module of the signless preprojective algebra.
+The term identifications and augmentation formula are supplied by
+`ModuleCatLengthTwo.projectiveResolutionXIso` and
+`ModuleCatLengthTwo.projectiveResolution_π_f_zero`. -/
 noncomputable def signlessPreprojectiveKoszulProjectiveResolution (v : R)
     (hinj : Function.Injective (signlessPreprojectiveKoszulLeft k v)) :
-    ProjectiveResolution (ModuleCat.of Πᵐᵒᵖ (signlessPreprojectiveVertexModule k v)) where
-  complex := signlessPreprojectiveKoszulComplex k v
-  projective n := by
-    rcases n with _ | (_ | (_ | n))
-    · exact inferInstanceAs (Projective (ModuleCat.of Πᵐᵒᵖ
-        (signlessPreprojectiveRightProjective k v)))
-    · exact inferInstanceAs (Projective (ModuleCat.of Πᵐᵒᵖ
-        (signlessPreprojectiveKoszulMiddle k v)))
-    · exact inferInstanceAs (Projective (ModuleCat.of Πᵐᵒᵖ
-        (signlessPreprojectiveRightProjective k v)))
-    · exact (ModuleCat.isZero_of_subsingleton (ModuleCat.of Πᵐᵒᵖ PUnit)).projective
-  «π» := signlessPreprojectiveKoszulComplexπ k v
-  quasiIso := by
-    constructor
-    intro n
-    cases n with
-    | zero =>
-      rw [ChainComplex.quasiIsoAt₀_iff, ShortComplex.quasiIso_iff_of_zeros' _ rfl rfl rfl]
-      refine ⟨?_, ?_⟩
-      · rw [ShortComplex.moduleCat_exact_iff_range_eq_ker]
-        simp only [HomologicalComplex.shortComplexFunctor'_obj_f]
-        exact (ker_signlessPreprojectiveVertexAugmentation k v).symm
-      · rw [ModuleCat.epi_iff_surjective]
-        exact signlessPreprojectiveVertexAugmentation_surjective k v
-    | succ n =>
-      rw [quasiIsoAt_iff_exactAt' (hL := ChainComplex.exactAt_succ_single_obj ..),
-        HomologicalComplex.exactAt_iff' _ (n + 2) (n + 1) n (by simp) (by simp),
-        ShortComplex.moduleCat_exact_iff_range_eq_ker]
-      simp only [HomologicalComplex.shortComplexFunctor'_obj_f,
-        HomologicalComplex.shortComplexFunctor'_obj_g]
-      rw [signlessPreprojectiveKoszulComplex_d k v (n + 1),
-        signlessPreprojectiveKoszulComplex_d k v n]
-      exact range_signlessPreprojectiveKoszulDifferential_succ_eq_ker k v hinj n
+    ProjectiveResolution (ModuleCat.of Πᵐᵒᵖ (signlessPreprojectiveVertexModule k v)) :=
+  ModuleCatLengthTwo.projectiveResolution (signlessPreprojectiveKoszulLeft k v)
+    (signlessPreprojectiveKoszulRight k v)
+    (range_signlessPreprojectiveKoszulLeft_eq_ker_right k v) hinj
 
-/-- The projective resolution uses the explicit signless Koszul complex. -/
+/-- The vertex resolution is the common length-two construction on the Koszul maps. -/
 @[simp]
-theorem signlessPreprojectiveKoszulProjectiveResolution_complex (v : R)
+theorem signlessPreprojectiveKoszulProjectiveResolution_def (v : R)
     (hinj : Function.Injective (signlessPreprojectiveKoszulLeft k v)) :
-    (signlessPreprojectiveKoszulProjectiveResolution k v hinj).complex =
-      signlessPreprojectiveKoszulComplex k v := (rfl)
-
-/-- The terms of the projective resolution identified with the explicit Koszul terms. -/
-noncomputable def signlessPreprojectiveKoszulProjectiveResolutionXIso
-    (v : R) (hinj : Function.Injective (signlessPreprojectiveKoszulLeft k v)) (n : ℕ) :
-    (signlessPreprojectiveKoszulProjectiveResolution k v hinj).complex.X n ≅
-      signlessPreprojectiveKoszulTerm k v n :=
-  eqToIso (congrArg (fun C => C.X n)
-    (signlessPreprojectiveKoszulProjectiveResolution_complex k v hinj)) ≪≫
-      signlessPreprojectiveKoszulComplexXIso k v n
-
-/-- The differentials of the projective resolution are the explicit Koszul maps, using
-its term identifications. -/
-@[simp]
-theorem signlessPreprojectiveKoszulProjectiveResolution_d
-    (v : R) (hinj : Function.Injective (signlessPreprojectiveKoszulLeft k v)) (n : ℕ) :
-    (signlessPreprojectiveKoszulProjectiveResolution k v hinj).complex.d (n + 1) n =
-      (signlessPreprojectiveKoszulProjectiveResolutionXIso k v hinj (n + 1)).hom ≫
-        signlessPreprojectiveKoszulDifferential k v n ≫
-          (signlessPreprojectiveKoszulProjectiveResolutionXIso k v hinj n).inv := by
-  -- The term identifications are identities after expanding the constructed resolution.
-  dsimp only [signlessPreprojectiveKoszulProjectiveResolutionXIso,
-    signlessPreprojectiveKoszulProjectiveResolution, eqToIso_refl, Iso.trans_refl]
-  exact signlessPreprojectiveKoszulComplex_d k v n
-
-/-- The augmentation of the resolution is the vertex quotient map. -/
-@[simp]
-theorem signlessPreprojectiveKoszulProjectiveResolution_π_f_zero
-    (v : R) (hinj : Function.Injective (signlessPreprojectiveKoszulLeft k v)) :
-    (signlessPreprojectiveKoszulProjectiveResolutionXIso k v hinj 0).inv ≫
-        (signlessPreprojectiveKoszulProjectiveResolution k v hinj).π.f 0 =
-      ModuleCat.ofHom (signlessPreprojectiveVertexAugmentation k v) := by
-  -- The resolution and term identifications reduce to identities by construction.
-  dsimp only [signlessPreprojectiveKoszulProjectiveResolutionXIso,
-    signlessPreprojectiveKoszulProjectiveResolution, eqToIso_refl, Iso.trans_refl]
-  exact signlessPreprojectiveKoszulComplexπ_f_zero k v
+    signlessPreprojectiveKoszulProjectiveResolution k v hinj =
+      ModuleCatLengthTwo.projectiveResolution (signlessPreprojectiveKoszulLeft k v)
+        (signlessPreprojectiveKoszulRight k v)
+        (range_signlessPreprojectiveKoszulLeft_eq_ker_right k v)
+        hinj := (rfl)
 
 end InvolutiveReverse
 
