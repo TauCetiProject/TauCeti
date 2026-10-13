@@ -446,17 +446,14 @@ theorem isRestricted_renameEquiv_iff (e : σ ≃ τ) {c : τ → ℝ} {f : MvPow
   -- the weighted coefficients of `f` are those of the renamed series, reindexed along `e`
   have h : (fun t : σ →₀ ℕ ↦ ‖coeff t f‖ * t.prod ((c ∘ e) · ^ ·)) =
       (fun u : τ →₀ ℕ ↦ ‖coeff u (renameEquiv R e f)‖ * u.prod (c · ^ ·)) ∘
-        Finsupp.equivMapDomain e := by
+        Finsupp.equivCongrLeft e := by
     funext t
     have hc : coeff (t.equivMapDomain e) (rename e f) = coeff t f := by
       simpa [Finsupp.embDomain_eq_mapDomain, Finsupp.equivMapDomain_eq_mapDomain] using
         coeff_embDomain_rename e.toEmbedding f t
     simp [hc, Finsupp.prod_equivMapDomain]
   rw [IsRestricted, IsRestricted, h, ← (Finsupp.equivCongrLeft e).injective.comap_cofinite_eq]
-  exact (tendsto_comap'_iff (by
-    rw [show Set.range (Finsupp.equivMapDomain e : (σ →₀ ℕ) → τ →₀ ℕ) = Set.univ from
-      (Finsupp.equivCongrLeft e).range_eq_univ]
-    exact univ_mem)).symm
+  exact (tendsto_comap'_iff (by rw [(Finsupp.equivCongrLeft e).range_eq_univ]; exact univ_mem)).symm
 
 end Rename
 
