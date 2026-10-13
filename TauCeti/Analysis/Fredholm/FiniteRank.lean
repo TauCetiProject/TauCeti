@@ -52,10 +52,12 @@ theorem _root_.ContinuousLinearMap.index_add_of_hasFiniteRange
     simp [hι, hx]
   have h₁ : ContinuousLinearMap.index ((T + K).comp ι) =
       ContinuousLinearMap.index (T + K) + ContinuousLinearMap.index ι := by
-    simpa only [ContinuousLinearMap.index_def] using (hT.add_hasFiniteRange hK).index_comp hιF
+    simpa only [ContinuousLinearMap.index_def, ContinuousLinearMap.toLinearMap_comp] using
+      (hT.add_hasFiniteRange hK).index_comp hιF
   have h₂ : ContinuousLinearMap.index (T.comp ι) =
       ContinuousLinearMap.index T + ContinuousLinearMap.index ι := by
-    simpa only [ContinuousLinearMap.index_def] using hT.index_comp hιF
+    simpa only [ContinuousLinearMap.index_def, ContinuousLinearMap.toLinearMap_comp] using
+      hT.index_comp hιF
   rw [hcomp, h₂] at h₁
   omega
 

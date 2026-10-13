@@ -65,7 +65,8 @@ theorem _root_.ContinuousLinearMap.index_pow (A : X →L[𝕜] X) (hA : Continuo
   | succ n ih =>
       have hcomp : ContinuousLinearMap.index ((A ^ n).comp A) =
           ContinuousLinearMap.index (A ^ n) + ContinuousLinearMap.index A := by
-        simpa only [ContinuousLinearMap.index_def] using (hA.pow n).index_comp hA
+        simpa only [ContinuousLinearMap.index_def, ContinuousLinearMap.toLinearMap_comp] using
+          (hA.pow n).index_comp hA
       rw [pow_succ, ContinuousLinearMap.mul_def, hcomp, ih]
       push_cast
       ring

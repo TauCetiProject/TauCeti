@@ -57,10 +57,12 @@ theorem _root_.ContinuousLinearMap.index_restrict (hE₁ : IsClosed (E₁ : Set 
     exact (congrArg Subtype.val (ContinuousLinearMap.restrict_apply hT x)).symm
   have hdom : ContinuousLinearMap.index (T.comp E₁.subtypeL) =
       ContinuousLinearMap.index T + ContinuousLinearMap.index E₁.subtypeL := by
-    simpa only [ContinuousLinearMap.index_def] using hTfull.index_comp hιE
+    simpa only [ContinuousLinearMap.index_def, ContinuousLinearMap.toLinearMap_comp] using
+      hTfull.index_comp hιE
   have hcod : ContinuousLinearMap.index (F₁.subtypeL.comp (T.restrict hT)) =
       ContinuousLinearMap.index F₁.subtypeL + ContinuousLinearMap.index (T.restrict hT) := by
-    simpa only [ContinuousLinearMap.index_def] using hιF.index_comp hT₁
+    simpa only [ContinuousLinearMap.index_def, ContinuousLinearMap.toLinearMap_comp] using
+      hιF.index_comp hT₁
   have hEindex : ContinuousLinearMap.index E₁.subtypeL = -(finrank K (E ⧸ E₁) : ℤ) := by
     rw [ContinuousLinearMap.index_of_injective E₁.subtypeL Subtype.val_injective,
       Submodule.toLinearMap_subtypeL, Submodule.range_subtype]
