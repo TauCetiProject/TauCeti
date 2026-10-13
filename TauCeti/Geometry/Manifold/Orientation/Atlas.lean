@@ -77,7 +77,7 @@ private def IsOrientedAtlas.orientationData {A : Set (OpenPartialHomeomorph M H)
       else -l.modelOrientation) = vb x := by
     have heq := Manifold.OrientationLift.orientationAt_ofVectorBundleOrientation model hι vb x
     rw [Manifold.OrientationLift.orientationAt_eq,
-      Manifold.OrientationLift.chartOrientation_def] at heq
+      Manifold.OrientationLift.chartOrientation_eq_ite] at heq
     exact heq
   have hread (j : atlas H M) (hj : j ∈ S) (x : M)
       (hxj : x ∈ (Z.localTriv j).baseSet) :

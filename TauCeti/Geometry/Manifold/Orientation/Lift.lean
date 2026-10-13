@@ -25,8 +25,7 @@ orientations unchanged.
   actual tangent-bundle trivializations.
 * J. M. Lee, *Introduction to Smooth Manifolds*, second edition, Chapter 15.
 * [TauCeti PR #15107](https://github.com/TauCetiProject/TauCeti/pull/15107): the earlier
-  chart-sign lift and diagonal-flip quotient formulation. The tangent interpretation here uses
-  the actual tangent-bundle trivializations.
+  formalization of the chart-sign lift and diagonal-flip quotient.
 -/
 
 public section
@@ -219,7 +218,7 @@ def chartOrientation (o : OrientationLift I M ι) (α : M)
 
 omit [IsManifold I 1 M] in
 /-- The chart orientation is the model orientation or its negative according to the chart sign. -/
-theorem chartOrientation_def (o : OrientationLift I M ι) (α : M)
+theorem chartOrientation_eq_ite (o : OrientationLift I M ι) (α : M)
     (x : (chartAt H α).source) : o.chartOrientation α x =
       if o.sign α x = 1 then o.modelOrientation else -o.modelOrientation :=
   _root_.Orientation.intCast_units_smul_eq_ite _ _
@@ -259,7 +258,8 @@ theorem orientationAt_flip (o : OrientationLift I M ι) (x : M) :
     exact _root_.neg_neg o.modelOrientation
   · simp only [h, _root_.neg_neg, hn, ite_true, ite_false]
 
-/-- At the base point of its own preferred chart, the tangent coordinates are the identity. -/
+/-- The tangent orientation at a point is its signed model orientation in that point's
+preferred chart. -/
 theorem orientationAt_eq (o : OrientationLift I M ι) (x : M) :
     o.orientationAt x = o.chartOrientation x ⟨x, mem_chart_source H x⟩ := by
   have he : (trivializationAt E (TangentSpace I) x).linearEquivAt ℝ x
@@ -400,7 +400,7 @@ theorem model_sign (o : _root_.Orientation ℝ E ι)
 theorem orientationAt_model (o : _root_.Orientation ℝ E ι)
     (hι : Fintype.card ι = Module.finrank ℝ E) (x : H) :
     (model (I := I) o hι).orientationAt x = o := by
-  rw [orientationAt_eq, chartOrientation_def]
+  rw [orientationAt_eq, chartOrientation_eq_ite]
   simp only [model_sign, ite_true, model_modelOrientation]
   rfl
 
@@ -428,7 +428,7 @@ theorem eq_or_eq_flip_of_orientationAt {o o' : OrientationLift I M ι}
 end Tangent
 
 @[simp]
-theorem neg_neg (o : OrientationLift I M ι) : - -o = o := by
+protected theorem neg_neg (o : OrientationLift I M ι) : - -o = o := by
   apply OrientationLift.ext (_root_.neg_neg o.modelOrientation)
   rfl
 

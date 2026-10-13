@@ -140,7 +140,7 @@ theorem orientationAt_mk (o : OrientationLift I M ι) (x : M) :
       else -o.modelOrientation := by
   simp only [orientationAt, Orientation.toVectorBundleOrientation_mk,
     OrientationLift.toVectorBundleOrientation_apply]
-  exact (o.orientationAt_eq x).trans (o.chartOrientation_def _ _)
+  exact (o.orientationAt_eq x).trans (o.chartOrientation_eq_ite _ _)
 
 @[simp]
 theorem orientationAt_neg (o : Orientation I M ι) (x : M) :
