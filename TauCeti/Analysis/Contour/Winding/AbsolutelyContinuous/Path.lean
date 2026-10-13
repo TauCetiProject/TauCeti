@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.Contour.Winding.Number.AbsolutelyContinuous
 public import Mathlib.MeasureTheory.Integral.CurveIntegral.Basic
-import TauCeti.Topology.Path.AbsolutelyContinuous
+import TauCeti.MeasureTheory.Function.AbsolutelyContinuous.Path
 import TauCeti.MeasureTheory.Integral.CurveIntegral.Basic
 
 /-!

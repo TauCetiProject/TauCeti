@@ -12,7 +12,7 @@ import TauCeti.MeasureTheory.Function.AbsolutelyContinuous.Trace
 import TauCeti.Algebra.BigOperators.Fin
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import Mathlib.Basic.Complex.BigOperators
-import TauCeti.MeasureTheory.Function.AbsolutelyContinuous.FiniteGluing
+import TauCeti.MeasureTheory.Function.AbsolutelyContinuous.Gluing
 
 /-!
 # Winding weights of polygonal triangle fans
@@ -92,6 +92,38 @@ theorem windingNumber_eq_sum_polygon_segments {γ : ℝ → ℂ} {a b : ℝ} {N 
   simp only [F, ha, hb, intervalIntegral.integral_same, mul_zero, sub_zero]
   exact Contour.windingNumber_eq_integral_of_absolutelyContinuousOnInterval hγ hz
 
+/-- Away from the polygon trace and all fan edges, the actual complex winding number of a
+closed raw polygon is the sum of the actual triangle winding numbers. -/
+theorem windingNumber_eq_sum_triangleCurve {γ : ℝ → ℂ} {a b : ℝ} {N : ℕ}
+    {s : Fin (N + 1) → ℝ} (hs : StrictMono s) (ha : s 0 = a) (hb : s (Fin.last N) = b)
+    (hsegments : ∀ i : Fin N, ∀ t ∈ Icc (s i.castSucc) (s i.succ),
+      γ t = γ (s i.castSucc) + ((t - s i.castSucc) / (s i.succ - s i.castSucc)) •
+        (γ (s i.succ) - γ (s i.castSucc)))
+    (hclosed : γ a = γ b) (c : ℂ) {z : ℂ} (hz : z ∉ γ '' uIcc a b)
+    (hzi : ∀ i : Fin N,
+      z ∉ segment ℝ c (γ (s i.castSucc)) ∪ segment ℝ (γ (s i.castSucc)) (γ (s i.succ)) ∪
+        segment ℝ (γ (s i.succ)) c) :
+    Contour.windingNumber γ a b z =
+      ∑ i : Fin N, Contour.windingNumber
+        (triangleCurve c (γ (s i.castSucc)) (γ (s i.succ))) 0 3 z := by
+  let R : Fin (N + 1) → ℂ := fun i ↦
+    Contour.windingNumber (fun t : ℝ ↦ c + t • (γ (s i) - c)) 0 1 z
+  have htriangle (i : Fin N) :
+      Contour.windingNumber (triangleCurve c (γ (s i.castSucc)) (γ (s i.succ))) 0 3 z =
+        Contour.windingNumber (fun t : ℝ ↦ γ (s i.castSucc) +
+          t • (γ (s i.succ) - γ (s i.castSucc))) 0 1 z + (R i.castSucc - R i.succ) := by
+    rw [windingNumber_triangleCurve_eq_sum (hzi i),
+      Contour.windingNumber_segment_swap (p := c) (q := γ (s i.succ)) (z := z) (by
+        rw [segment_symm]
+        exact fun h ↦ hzi i (Or.inr h))]
+    dsimp [R]
+    ring
+  simp_rw [htriangle]
+  rw [Finset.sum_add_distrib, Fin.sum_univ_castSucc_sub_succ]
+  have hR : R (Fin.last N) = R 0 := by simp only [R, ha, hb, hclosed]
+  rw [hR, sub_self, add_zero]
+  exact windingNumber_eq_sum_polygon_segments hs ha hb hsegments hz
+
 /-- For a closed raw polygon, the actual winding weight is almost everywhere the sum of the
 actual winding weights of the triangles in any fan. -/
 theorem windingWeight_eq_sum_triangleCurve {γ : ℝ → ℂ} {a b : ℝ} {N : ℕ}
@@ -119,42 +151,12 @@ theorem windingWeight_eq_sum_triangleCurve {γ : ℝ → ℂ} {a b : ℝ} {N : �
   rw [windingWeight_eq_of_notMem hz]
   have htriangle (i : Fin N) :
       windingWeight (triangleCurve c (γ (s i.castSucc)) (γ (s i.succ))) 0 3 z =
-        (Contour.windingNumber (fun t : ℝ ↦ c + t • (γ (s i.castSucc) - c)) 0 1 z +
-          Contour.windingNumber (fun t : ℝ ↦ γ (s i.castSucc) +
-            t • (γ (s i.succ) - γ (s i.castSucc))) 0 1 z -
-          Contour.windingNumber (fun t : ℝ ↦ c + t • (γ (s i.succ) - c)) 0 1 z).re := by
-    have hzi' : z ∉ triangleCurve c (γ (s i.castSucc)) (γ (s i.succ)) '' uIcc 0 3 := by
-      simpa only [uIcc_of_le (by norm_num : (0 : ℝ) ≤ 3), image_triangleCurve] using hzi i
-    rw [windingWeight_eq_of_notMem hzi', windingNumber_triangleCurve_eq_sum (hzi i)]
-    rw [Contour.windingNumber_segment_swap (p := c) (q := γ (s i.succ)) (z := z) (by
-      rw [segment_symm]
-      exact fun h ↦ hzi i (Or.inr h))]
-    simp only [sub_eq_add_neg]
+        (Contour.windingNumber (triangleCurve c (γ (s i.castSucc)) (γ (s i.succ))) 0 3 z).re := by
+    apply windingWeight_eq_of_notMem
+    simpa only [uIcc_of_le (by norm_num : (0 : ℝ) ≤ 3), image_triangleCurve] using hzi i
   simp_rw [htriangle]
   rw [← Complex.re_sum]
-  have htelescope : (∑ i : Fin N,
-      (Contour.windingNumber (fun t : ℝ ↦ c + t • (γ (s i.castSucc) - c)) 0 1 z +
-        Contour.windingNumber (fun t : ℝ ↦ γ (s i.castSucc) +
-          t • (γ (s i.succ) - γ (s i.castSucc))) 0 1 z -
-        Contour.windingNumber (fun t : ℝ ↦ c + t • (γ (s i.succ) - c)) 0 1 z)) =
-      ∑ i : Fin N, Contour.windingNumber
-        (fun t : ℝ ↦ γ (s i.castSucc) + t • (γ (s i.succ) - γ (s i.castSucc))) 0 1 z := by
-    let R : Fin (N + 1) → ℂ := fun i ↦
-      Contour.windingNumber (fun t : ℝ ↦ c + t • (γ (s i) - c)) 0 1 z
-    have hR : R (Fin.last N) = R 0 := by simp only [R, ha, hb, hclosed]
-    have he (i : Fin N) : R i.castSucc +
-        Contour.windingNumber (fun t : ℝ ↦ γ (s i.castSucc) +
-          t • (γ (s i.succ) - γ (s i.castSucc))) 0 1 z - R i.succ =
-        Contour.windingNumber (fun t : ℝ ↦ γ (s i.castSucc) +
-          t • (γ (s i.succ) - γ (s i.castSucc))) 0 1 z + (R i.castSucc - R i.succ) := by ring
-    change (∑ i : Fin N, (R i.castSucc + _ - R i.succ)) = _
-    simp_rw [he]
-    rw [Finset.sum_add_distrib]
-    have hdiff : (∑ i : Fin N, (R i.castSucc - R i.succ)) = 0 := by
-      rw [Fin.sum_univ_castSucc_sub_succ, hR, sub_self]
-    rw [hdiff, add_zero]
-  rw [htelescope]
-  exact congrArg Complex.re (windingNumber_eq_sum_polygon_segments hs ha hb hsegments hz)
+  exact congrArg Complex.re (windingNumber_eq_sum_triangleCurve hs ha hb hsegments hclosed c hz hzi)
 
 /-- The winding weight of a closed raw polygon is almost everywhere the signed indicator sum
 of the interiors of its fan triangles, including degenerate and overlapping triangles. -/

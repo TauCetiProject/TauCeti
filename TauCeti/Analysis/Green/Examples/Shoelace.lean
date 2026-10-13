@@ -72,13 +72,15 @@ theorem integral_windingWeight_shoelace {γ : ℝ → ℂ} {a b : ℝ} {N : ℕ}
       γ t = γ (s i.castSucc) + ((t - s i.castSucc) / (s i.succ - s i.castSucc)) •
         (γ (s i.succ) - γ (s i.castSucc)))
     (hclosed : γ a = γ b) :
-    (∫ z : ℂ, windingWeight γ a b z) =
+    Integrable (windingWeight γ a b) ∧
+      (∫ z : ℂ, windingWeight γ a b z) =
       (∑ i : Fin N, ((γ (s i.castSucc)).re * (γ (s i.succ)).im -
         (γ (s i.succ)).re * (γ (s i.castSucc)).im)) / 2 := by
   have h := (green_polygon_of_subdivision hs ha hb hsegments hclosed
-    (contDiff_areaP (n := 1)) (contDiff_areaQ (n := 1))).2.2
+    (contDiff_areaP (n := 1)) (contDiff_areaQ (n := 1))).2
   simp only [curl_area, mul_one] at h
-  rw [← h]
+  refine ⟨h.1, ?_⟩
+  rw [← h.2]
   exact integral_circulationFun_area_shoelace hs ha hb hsegments
 
 end TauCeti.Green.Examples

@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.Contour.PiecewiseC1On
 public import TauCeti.Analysis.Contour.Winding.Number.Basic
-public import TauCeti.Analysis.Contour.Winding.AbsolutelyContinuous.Path
+import TauCeti.Analysis.Contour.Winding.AbsolutelyContinuous.Path
 public import Mathlib.MeasureTheory.Integral.CurveIntegral.Basic
 public import Mathlib.Topology.Homotopy.Path
 import TauCeti.Analysis.Contour.AbsolutelyContinuous
@@ -26,9 +26,6 @@ the resulting smooth paths with proximity invariance of the winding number.
 
 ## Main results
 
-* `windingNumber_eq_two_pi_I_inv_mul_curveIntegral` identifies Tau Ceti's raw-function winding
-  number of an absolutely continuous path with Mathlib's curve integral of the
-  Cauchy-kernel `1`-form.
 * `windingNumber_eq_of_pathHomotopy` proves the Layer 0 homotopy invariance result without any
   regularity hypothesis on the homotopy.
 * `curveIntegral_inv_sub_smul_id_eq_of_pathHomotopy` is its curve-integral form: such a homotopy

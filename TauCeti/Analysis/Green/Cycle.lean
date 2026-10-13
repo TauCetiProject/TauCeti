@@ -107,7 +107,6 @@ private theorem normalized_circulation {γ : ℝ → ℂ} {a b : ℝ} {P Q : ℂ
   simpa only [normalizeParameter_zero, normalizeParameter_one, ← circulationFun_eq_oneForm]
     using hγ'.integral_oneForm_comp (normalizeParameter_ac a b) zero_le_one ho hint
 
-open Classical in
 /-- Green's theorem for an existing contour cycle, with its actual total winding number.
 The circulation uses the cycle's canonical support and coefficients. Only the total index must
 vanish outside the field domain. -/
@@ -118,12 +117,12 @@ theorem green_cycle_winding (C : Contour.Cycle) {U : Set ℂ} {P Q : ℂ → ℝ
     (∀ γ ∈ FreeAbelianGroup.support C,
       IntervalIntegrable (circulationFun P Q γ) volume γ.a γ.b) ∧
       IntegrableOn (fun z ↦
-        (if z ∈ Contour.Cycle.trace C then 0 else (Contour.Cycle.windingNumber z C).re) *
+        ((Contour.Cycle.trace C)ᶜ.indicator (fun z ↦ (Contour.Cycle.windingNumber z C).re) z) *
           curl P Q z) U ∧
       (∑ γ ∈ FreeAbelianGroup.support C, (FreeAbelianGroup.coeff γ C : ℝ) *
         ∫ t in γ.a..γ.b, circulationFun P Q γ t) =
         ∫ z in U,
-          (if z ∈ Contour.Cycle.trace C then 0 else (Contour.Cycle.windingNumber z C).re) *
+          ((Contour.Cycle.trace C)ᶜ.indicator (fun z ↦ (Contour.Cycle.windingNumber z C).re) z) *
             curl P Q z := by
   classical
   let η : Contour.PiecewiseC1ClosedCurve → ℝ → ℂ := fun γ ↦
@@ -157,13 +156,12 @@ theorem green_cycle_winding (C : Contour.Cycle) {U : Set ℂ} {P Q : ℂ → ℝ
     hU (fun γ hγ ↦ by rw [himage]; exact htr γ hγ) hP hQ hidx
   have hae : (fun z ↦ ∑ γ ∈ FreeAbelianGroup.support C,
       (FreeAbelianGroup.coeff γ C : ℝ) * windingWeight (η γ) 0 1 z) =ᵐ[volume]
-      (fun z ↦ if z ∈ Contour.Cycle.trace C then 0 else
-        (Contour.Cycle.windingNumber z C).re) := by
+      ((Contour.Cycle.trace C)ᶜ.indicator (fun z ↦ (Contour.Cycle.windingNumber z C).re)) := by
     have hnot : ∀ᵐ z ∂volume, z ∉ Contour.Cycle.trace C := by
       rw [ae_iff]
       simpa only [not_not, ofPred_mem_eq] using Contour.Cycle.measure_trace_eq_zero C volume
     filter_upwards [hnot] with z hz
-    rw [ite_eq_right hz, Contour.Cycle.windingNumber_eq_sum_support, Complex.re_sum]
+    rw [indicator_of_mem hz, Contour.Cycle.windingNumber_eq_sum_support, Complex.re_sum]
     apply Finset.sum_congr rfl
     intro γ hγ
     have hzγ : z ∉ γ '' uIcc γ.a γ.b := by
@@ -173,8 +171,8 @@ theorem green_cycle_winding (C : Contour.Cycle) {U : Set ℂ} {P Q : ℂ → ℝ
     simp
   have haeU : (fun z ↦ ∑ γ ∈ FreeAbelianGroup.support C,
       (FreeAbelianGroup.coeff γ C : ℝ) * windingWeight (η γ) 0 1 z) =ᵐ[volume.restrict U]
-      (fun z ↦ if z ∈ Contour.Cycle.trace C then 0 else
-        (Contour.Cycle.windingNumber z C).re) := hae.filter_mono ae_restrict_le
+      ((Contour.Cycle.trace C)ᶜ.indicator (fun z ↦ (Contour.Cycle.windingNumber z C).re)) :=
+    hae.filter_mono ae_restrict_le
   refine ⟨fun γ hγ ↦ intervalIntegrable_circulationFun (hac γ)
     (hP.continuousOn.mono (htr γ hγ)) (hQ.continuousOn.mono (htr γ hγ)), ?_, ?_⟩
   · exact hi.congr (haeU.mono fun z hz ↦ congrArg (· * curl P Q z) hz)

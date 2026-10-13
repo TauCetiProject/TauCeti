@@ -9,7 +9,7 @@ public import TauCeti.Analysis.Green.Polygonal.Basic
 public import TauCeti.Algebra.BigOperators.Fin
 public import TauCeti.Analysis.Green.AbsolutelyContinuous
 public import TauCeti.MeasureTheory.Function.AbsolutelyContinuous.PolygonalApproximation
-import TauCeti.MeasureTheory.Function.AbsolutelyContinuous.FiniteGluing
+import TauCeti.MeasureTheory.Function.AbsolutelyContinuous.Gluing
 
 /-!
 # Circulation of raw polygonal curves

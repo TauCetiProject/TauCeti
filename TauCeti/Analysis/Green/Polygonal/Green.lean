@@ -9,7 +9,7 @@ public import TauCeti.Analysis.Green.DegenerateTriangle
 public import TauCeti.Analysis.Green.Polygonal.Fan
 public import TauCeti.Analysis.Green.Polygonal.Circulation
 import Mathlib.Analysis.Convex.Measure
-import TauCeti.MeasureTheory.Function.AbsolutelyContinuous.FiniteGluing
+import TauCeti.MeasureTheory.Function.AbsolutelyContinuous.Gluing
 
 /-!
 # Winding-weighted Green for polygonal cycles

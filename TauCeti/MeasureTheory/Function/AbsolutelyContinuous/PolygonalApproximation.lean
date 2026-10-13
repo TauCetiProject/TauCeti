@@ -7,7 +7,7 @@ module
 
 public import TauCeti.MeasureTheory.Integral.IntervalIntegral.AbsolutelyContinuousFun
 public import Mathlib.Topology.UniformSpace.UniformConvergence
-import TauCeti.MeasureTheory.Function.AbsolutelyContinuous.FiniteGluing
+import TauCeti.MeasureTheory.Function.AbsolutelyContinuous.Gluing
 import TauCeti.MeasureTheory.Function.IntervalStep
 import Mathlib.Analysis.SpecificLimits.Basic
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.LebesgueDifferentiationThm
