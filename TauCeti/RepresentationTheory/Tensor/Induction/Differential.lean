@@ -14,7 +14,7 @@ public import TauCeti.LinearAlgebra.PiTensorProduct.Complex
 A differential commuting with a group representation induces a differential commuting with its
 finite wreath tensor representation and hence with tensor induction along a subgroup. In
 characteristic two the induced differential squares to zero. If the original action preserves
-a grading, the wreath action preserves each total-degree piece `PiTensorProduct.degreePiece`.
+a grading, both actions preserve each total-degree piece `PiTensorProduct.degreePiece`.
 
 These identities supply the permutation-compatible differential for tensor induction of
 complexes. The ground ring need not have characteristic two for equivariance or preservation of
@@ -133,5 +133,17 @@ theorem wreathTensor_mem_degreePiece (ℳ : ℤ → Submodule R M)
   rw [wreathTensor_apply, LinearMap.comp_apply]
   exact PiTensorProduct.map_mem_degreePiece _ _ _ (fun i ↦ hρ (a.left i))
     (PiTensorProduct.reindex_mem_degreePiece a.right (fun _ ↦ ℳ) hz)
+
+/-- A grading-preserving subgroup action gives a tensor-induced action preserving total degree. -/
+theorem tensorInducedRepresentation_mem_degreePiece {G : Type v} [Group G]
+    (U : Subgroup G) (s : U.LeftTransversal) [Fintype (G ⧸ U)]
+    (τ : Representation R U M) (ℳ : ℤ → Submodule R M)
+    (hτ : ∀ g, LinearMap.IsHomogeneous (τ g) ℳ ℳ 0)
+    (g : G) {n : ℤ} {z : ⨂[R] _ : G ⧸ U, M}
+    (hz : z ∈ PiTensorProduct.degreePiece (fun _ : G ⧸ U ↦ ℳ) n) :
+    U.tensorInducedRepresentation s τ g z ∈
+      PiTensorProduct.degreePiece (fun _ : G ⧸ U ↦ ℳ) n := by
+  rw [Subgroup.tensorInducedRepresentation_apply]
+  exact wreathTensor_mem_degreePiece τ (G ⧸ U) ℳ hτ (U.monomialHom s g) hz
 
 end TauCeti
