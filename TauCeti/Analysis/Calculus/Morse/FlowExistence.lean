@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Calculus.Morse.GradientFlow
 public import TauCeti.Dynamics.Flow.OfLipschitz
 import TauCeti.Analysis.Calculus.Gradient
+import TauCeti.Dynamics.Flow.Variational
 
 /-!
 # Existence of the negative gradient flow
@@ -91,6 +92,18 @@ theorem contDiff_negativeGradientFlow_apply (f : E → ℝ) (hf : LipschitzWith 
     ContDiff ℝ 1 (negativeGradientFlow f hf t) := by
   apply contDiff_flowOfLipschitz_apply 0 (fun x ↦ -∇ f x) hf.neg
   exact (hfs.gradient_right (m := 1) (by norm_num)).neg
+
+/-- **The variational equation of the negative-gradient flow**: for a globally `C²` function,
+`d/dt Dφₜ(x) = -D(∇f)(φₜ x) ∘ Dφₜ(x)`. -/
+theorem hasDerivAt_fderiv_negativeGradientFlow (f : E → ℝ) (hf : LipschitzWith K (∇ f))
+    (hfs : ContDiff ℝ 2 f) (x : E) (t : ℝ) :
+    HasDerivAt (fun τ ↦ fderiv ℝ (negativeGradientFlow f hf τ) x)
+      (-(fderiv ℝ (∇ f) (negativeGradientFlow f hf t x)).comp
+        (fderiv ℝ (negativeGradientFlow f hf t) x)) t := by
+  have h := hasDerivAt_fderiv_flowOfLipschitz hf.neg
+    (hfs.gradient_right (m := 1) (by norm_num)).neg x t
+  rw [fderiv_neg, ContinuousLinearMap.neg_comp] at h
+  exact h
 
 /-- **The negative gradient flow is a negative gradient flow**: each of its orbits solves
 `γ' = -∇f(γ)`. -/

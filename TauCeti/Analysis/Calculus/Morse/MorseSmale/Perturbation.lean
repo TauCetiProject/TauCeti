@@ -457,49 +457,6 @@ theorem hasDerivAt_fst_fderiv_perturbedFlow_apply (hfs : ContDiff ℝ 2 f)
   rw [hw2, fderiv_perturbedField_apply_zero hfs hh] at h0
   exact hasFDerivAt_fst.comp_hasDerivAt t h0
 
-/-- On the slice of parameter `0`, the derivative of the perturbed flow restricts to the derivative
-of the negative-gradient flow of `f`. -/
-private theorem fderiv_negativeGradientFlow_eq (hfs : ContDiff ℝ 2 f) (hf : LipschitzWith K (∇ f))
-    (hh : ∀ i, IsAdmissiblePerturbation f (h i)) (t : ℝ) (x : E) :
-    fderiv ℝ (negativeGradientFlow f hf t) x =
-      (ContinuousLinearMap.fst ℝ E (EuclideanSpace ℝ ι)).comp
-        ((fderiv ℝ (perturbedFlow f h hf hh t) (x, 0)).comp
-          (ContinuousLinearMap.inl ℝ E (EuclideanSpace ℝ ι))) := by
-  have e : negativeGradientFlow f hf t =
-      fun y ↦ (perturbedFlow f h hf hh t (y, (0 : EuclideanSpace ℝ ι))).1 := funext fun y ↦ by
-    rw [perturbedFlow_apply_zero (hfs.differentiable (by norm_num)) hf hh]
-  rw [e]
-  exact (hasFDerivAt_fst.comp x ((differentiableAt_perturbedFlow hfs hf hh t
-    (x, 0)).hasFDerivAt.comp x (hasFDerivAt_prodMk_left (𝕜 := ℝ) x _))).fderiv
-
-/-- **The variational equation of the negative-gradient flow**:
-`d/dt Dφₜ(x) = -D(∇f)(φₜ x) ∘ Dφₜ(x)`. -/
-private theorem hasDerivAt_fderiv_negativeGradientFlow (hfs : ContDiff ℝ 2 f)
-    (hf : LipschitzWith K (∇ f)) (x : E) (t : ℝ) :
-    HasDerivAt (fun τ ↦ fderiv ℝ (negativeGradientFlow f hf τ) x)
-      (-(fderiv ℝ (∇ f) (negativeGradientFlow f hf t x)).comp
-        (fderiv ℝ (negativeGradientFlow f hf t) x)) t := by
-  -- The empty perturbation family realizes the flow of `f` as a slice of an augmented flow.
-  let h₀ : Fin 0 → E → ℝ := fun _ _ ↦ 0
-  have hh : ∀ i, IsAdmissiblePerturbation f (h₀ i) := fun i ↦ i.elim0
-  have h0 := hasDerivAt_fderiv_flowOfLipschitz
-    (exists_lipschitzWith_perturbedField hf hh).choose_spec (contDiff_perturbedField hfs hh)
-    (x, 0) t
-  rw [← perturbedFlow_eq_flowOfLipschitz hf hh,
-    perturbedFlow_apply_zero (hfs.differentiable (by norm_num)) hf hh] at h0
-  have h1 := (hasDerivAt_const t (ContinuousLinearMap.fst ℝ E (EuclideanSpace ℝ (Fin 0)))).clm_comp
-    (h0.clm_comp (hasDerivAt_const t (ContinuousLinearMap.inl ℝ E (EuclideanSpace ℝ (Fin 0)))))
-  simp_rw [fderiv_negativeGradientFlow_eq hfs hf hh _ x]
-  refine h1.congr_deriv ?_
-  ext v
-  have hw : fderiv ℝ (perturbedFlow f h₀ hf hh t) (x, 0) (v, 0) =
-      ((fderiv ℝ (perturbedFlow f h₀ hf hh t) (x, 0) (v, 0)).1, 0) :=
-    Prod.ext rfl (snd_fderiv_perturbedFlow_apply hfs hf hh t (x, 0) (v, 0))
-  simp only [ContinuousLinearMap.zero_comp, ContinuousLinearMap.comp_zero, zero_add, add_zero,
-    ContinuousLinearMap.comp_apply, ContinuousLinearMap.inl_apply]
-  rw [hw, fderiv_perturbedField_apply_zero hfs hh]
-  simp
-
 /-- **Duhamel's formula for the parameter variation.** At the parameter `0`, the derivative of the
 perturbed flow in a parameter direction `e` is
 `-Dφ_T(x) ∫₀ᵀ Dφ_{-σ}(φ_σ x) (∑ᵢ eᵢ ∇hᵢ(φ_σ x)) dσ`, where `φ` is the negative-gradient flow of
@@ -520,24 +477,25 @@ theorem fst_fderiv_perturbedFlow_apply_eq_neg_integral (hfs : ContDiff ℝ 2 f)
   set N : ℝ → E →L[ℝ] E := fun t ↦ fderiv ℝ (φ (-t)) (φ t x)
   set u : ℝ → E := fun t ↦ (fderiv ℝ (perturbedFlow f h hf hh t) (x, 0) (0, e)).1
   set b : ℝ → E := fun t ↦ ∑ i, e i • ∇ (h i) (φ t x)
-  -- `Dφₜ(x)` is a unit with inverse `Dφ_{-t}(φₜ x)`.
-  let U : ℝ → (E →L[ℝ] E)ˣ := fun t ↦
-    ⟨M t, N t, fderiv_flow_comp_neg hφd t x, fderiv_flow_neg_comp hφd t x⟩
-  have hinv : ∀ t, Ring.inverse (M t) = N t := fun t ↦ Ring.inverse_unit (U t)
+  have hs : ∀ t, DifferentiableAt ℝ (φ (-t)) (φ t x) := fun t ↦ hφd (-t) _
+  have hinv : ∀ t, Ring.inverse (M t) = N t := fun t ↦ ring_inverse_fderiv_flow (hs t) (hφd t x)
   have hMN : ∀ t v, M t (N t v) = v := fun t v ↦
-    congrArg (· v) (fderiv_flow_comp_neg hφd t x)
+    fderiv_flow_apply_fderiv_flow_neg (hs t) (hφd t x) v
   have hM : ∀ t, HasDerivAt M (-(fderiv ℝ (∇ f) (φ t x)).comp (M t)) t :=
-    hasDerivAt_fderiv_negativeGradientFlow hfs hf x
+    hasDerivAt_fderiv_negativeGradientFlow f hf hfs x
   have hu : ∀ t, HasDerivAt u (-(fderiv ℝ (∇ f) (φ t x)) (u t) - b t) t := fun t ↦ by
     simpa using hasDerivAt_fst_fderiv_perturbedFlow_apply hfs hf hh x (0, e) t
   -- The inverse of `Dφₜ(x)` moves with derivative `Dφ_{-t}(φₜ x) ∘ D(∇f)(φₜ x)`.
   have hN : ∀ t, HasDerivAt (fun τ ↦ Ring.inverse (M τ))
       (N t * (fderiv ℝ (∇ f) (φ t x)).comp (M t) * N t) t := fun t ↦ by
-    refine ((hasFDerivAt_ringInverse (𝕜 := ℝ) (U t)).comp_hasDerivAt t (hM t)).congr_deriv ?_
+    let U : (E →L[ℝ] E)ˣ := ⟨M t, N t, fderiv_flow_comp_neg (hs t) (hφd t x),
+      fderiv_flow_neg_comp (hs t) (hφd t x)⟩
+    refine ((hasFDerivAt_ringInverse (𝕜 := ℝ) U).comp_hasDerivAt t (hM t)).congr_deriv ?_
     simp [U]
   have hW : ∀ t, HasDerivAt (fun τ ↦ Ring.inverse (M τ) (u τ)) (-(N t (b t))) t := fun t ↦ by
     refine ((hN t).clm_apply (hu t)).congr_deriv ?_
-    simp [hinv, hMN]
+    rw [hinv, mul_apply_eq_comp, mul_apply_eq_comp,
+      ContinuousLinearMap.comp_apply, hMN, map_sub, map_neg]
     abel
   have hcont : Continuous fun σ ↦ -(N σ (b σ)) := by
     have hN' : Continuous fun σ ↦ N σ := by
