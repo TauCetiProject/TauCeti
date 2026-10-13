@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: The Tau Ceti contributors, Wentao Li
 -/
 module
 
@@ -167,6 +167,40 @@ theorem index_specialOrthogonalGroup_le_two (L : IntegralLattice V) :
   calc Nat.card (Isometry.det L).range ≤ Nat.card ℤˣ := Nat.card_le_card_of_injective _
         Subtype.val_injective
     _ = 2 := Nat.card_eq_fintype_card.trans Fintype.card_units_int
+
+/-- The determinant-one subgroup has finite index, even when the isometry group is infinite. -/
+instance (L : IntegralLattice V) : (specialOrthogonalGroup L).FiniteIndex :=
+  Subgroup.finiteIndex_ker (Isometry.det L)
+
+/-- The index of the special orthogonal group is one or two. -/
+theorem index_specialOrthogonalGroup_eq_one_or_two (L : IntegralLattice V) :
+    (specialOrthogonalGroup L).index = 1 ∨ (specialOrthogonalGroup L).index = 2 := by
+  have h := index_specialOrthogonalGroup_le_two L
+  have h₀ := (inferInstance : (specialOrthogonalGroup L).FiniteIndex).index_ne_zero
+  omega
+
+/-- The special orthogonal group has index two exactly when an improper isometry exists. -/
+theorem index_specialOrthogonalGroup_eq_two_iff (L : IntegralLattice V) :
+    (specialOrthogonalGroup L).index = 2 ↔ ∃ e : Isometry L L, Isometry.det L e = -1 := by
+  constructor
+  · intro h
+    by_contra! hn
+    have ht : specialOrthogonalGroup L = ⊤ := by
+      apply top_unique
+      intro e _
+      exact mem_specialOrthogonalGroup_iff.mpr
+        ((Isometry.det_eq_one_or_neg_one e).resolve_right (hn e))
+    have h₁ := (Subgroup.index_eq_one.mpr ht)
+    omega
+  · rintro ⟨e, he⟩
+    rcases index_specialOrthogonalGroup_eq_one_or_two L with h | h
+    · have hm : e ∈ specialOrthogonalGroup L := by
+        rw [Subgroup.index_eq_one.mp h]
+        trivial
+      have : (1 : ℤˣ) = -1 := (mem_specialOrthogonalGroup_iff.mp hm).symm.trans he
+      have := congrArg Units.val this
+      norm_num at this
+    · exact h
 
 /-- Negation lies in `SO(L)` exactly when the rank of `L` is even. -/
 theorem neg_mem_specialOrthogonalGroup_iff (L : IntegralLattice V) :
