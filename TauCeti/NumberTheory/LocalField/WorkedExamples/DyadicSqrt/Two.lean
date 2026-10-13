@@ -61,7 +61,7 @@ extension with its quadratic subextension: the third lower group of `ℚ₂(√2
 ## Formal sources
 
 The construction is adapted from
-`TauCeti.NumberTheory.LocalField.WorkedExamples.DyadicSqrt.Five` and
+`TauCeti.NumberTheory.LocalField.WorkedExamples.DyadicSqrt.Five.Basic` and
 `TauCeti.NumberTheory.LocalField.WorkedExamples.NonGaloisCubic`.
 -/
 
