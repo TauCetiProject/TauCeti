@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.InnerProductSpace.Completion
-public import TauCeti.Analysis.InnerProductSpace.SpectralCutoff
 public import TauCeti.Analysis.OperatorIdeal.ApproximationNumber.KyFan
 
 /-!
@@ -20,29 +19,23 @@ Courant–Fischer max–min principle. This is the property `TauCeti.HasMinMaxLo
 it yields the Ky Fan triangle inequality `Kₖ(S + T) ≤ Kₖ(S) + Kₖ(T)` for the approximation
 numbers in arbitrary dimension.
 
-The proof works with the positive operator `A = T† T`, whose Rayleigh form is `‖T x‖²`. Choose
-`r < c < aₙ(T)` and let `B⁺` be the positive part of `B = A - c²`, defined by the continuous
-functional calculus. On the kernel of `B⁺` the Rayleigh form of `B` is nonpositive
-(`ContinuousLinearMap.re_inner_nonpos_of_posPart_apply_eq_zero`), so `T` has norm at most `c`
-there; since `B⁺` is self-adjoint, that kernel is the orthogonal complement of the range of `B⁺`.
-If the range had rank at most `n`, the orthogonal-tail bound
-`ContinuousLinearMap.singularValue_le_nnnorm_comp_orthogonal` would give `aₙ(T) ≤ c`. So the range
-has rank greater than `n`, and on it the Rayleigh form of `B` is nonnegative
-(`ContinuousLinearMap.re_inner_nonneg_of_mem_range_posPart`), that is, `T` is `c`-coercive. The
-target need not be complete: the adjoint is taken after composing `T` with the isometric embedding
-of `F` into its completion.
-
-The source carries the continuous functional calculus
-`ContinuousFunctionalCalculus ℝ (E →L[𝕜] E) IsSelfAdjoint` as a hypothesis, as in Mathlib's
-`ContinuousLinearMap.instStarOrderedRingRCLike`. Mathlib provides it on every complex Hilbert
-space, so over `ℂ` both results below hold for every complete source.
+The proof is elementary and needs no spectral theory, so it holds over every `RCLike` field.
+Choose `r < c < aₙ(T)` and take a maximal linearly independent family `v`, of length at most
+`n + 1`, on whose span `T` is strictly `c`-coercive, that is `c² ‖x‖² < ‖T x‖²` for `x ≠ 0`. If
+the family has `n + 1` vectors we are done. Otherwise apply `D = T† T - c²` to its span to get a
+subspace `U` of rank at most `n`. A vector `w ∈ Uᗮ` satisfies `⟪T w, T y⟫ = c² ⟪w, y⟫` for every
+`y` in the span, so the quadratic form `‖T x‖² - c² ‖x‖²` splits along `w` and the span. By
+maximality, `‖T w‖ ≤ c ‖w‖`. The orthogonal-tail bound
+`ContinuousLinearMap.singularValue_le_nnnorm_comp_orthogonal` then gives `aₙ(T) ≤ c`, a
+contradiction. The target need not be complete: the adjoint is taken after composing `T` with the
+isometric embedding of `F` into its completion.
 
 ## Main declarations
 
-* `TauCeti.HasMinMaxLowerBound.of_completeSpace`: a Hilbert space with the continuous functional
-  calculus has the converse min–max localization property towards every inner product space.
+* `TauCeti.HasMinMaxLowerBound.of_completeSpace`: a Hilbert space has the converse min–max
+  localization property towards every inner product space.
 * `ContinuousLinearMap.kyFanGauge_add_le`: the Ky Fan triangle inequality
-  `Kₖ(S + T) ≤ Kₖ(S) + Kₖ(T)` for operators out of such a space.
+  `Kₖ(S + T) ≤ Kₖ(S) + Kₖ(T)` for operators out of a Hilbert space.
 
 ## References
 
@@ -60,66 +53,90 @@ open scoped InnerProduct InnerProductSpace NNReal
 variable {𝕜 E F : Type*} [RCLike 𝕜]
   [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [CompleteSpace E]
   [NormedAddCommGroup F] [InnerProductSpace 𝕜 F]
-  [Algebra ℝ (E →L[𝕜] E)] [IsScalarTower ℝ 𝕜 (E →L[𝕜] E)]
-  [ContinuousFunctionalCalculus ℝ (E →L[𝕜] E) IsSelfAdjoint]
 
 namespace TauCeti
 
 open ContinuousLinearMap
 
-/-- **Converse min–max localization on Hilbert spaces.** If `E` is a Hilbert space carrying the
-continuous functional calculus (for instance any complex Hilbert space), then for every bounded
-`T : E →L[𝕜] F` into an inner product space and every `0 ≤ r < aₙ(T)`, the map `T` is
+/-- **Converse min–max localization on Hilbert spaces.** If `E` is a Hilbert space, then for every
+bounded `T : E →L[𝕜] F` into an inner product space and every `0 ≤ r < aₙ(T)`, the map `T` is
 `s`-coercive with `r < s` on the span of `n + 1` linearly independent vectors. -/
 theorem HasMinMaxLowerBound.of_completeSpace : HasMinMaxLowerBound 𝕜 E F := by
+  classical
   refine hasMinMaxLowerBound_iff.mpr fun T n r hr0 hr ↦ ?_
   obtain ⟨c, hrc, hca⟩ := exists_between hr
   have hc0 : 0 ≤ c := hr0.trans hrc.le
-  -- Compose with the completion of `F` so that `T` has an adjoint; norms are unchanged.
+  -- Compose with the completion of `F` so that `T` has an adjoint; inner products are unchanged.
   set T' : E →L[𝕜] UniformSpace.Completion F := UniformSpace.Completion.toComplL.comp T
-  set A : E →L[𝕜] E := T'† ∘L T'
-  have hA : IsSelfAdjoint A := T'.isPositive_adjoint_comp_self.isSelfAdjoint
-  -- The Rayleigh form of `B = T† T - c²` is `‖T x‖² - c² ‖x‖²`.
-  set B : E →L[𝕜] E := A - algebraMap ℝ (E →L[𝕜] E) (c ^ 2)
-  have hB : IsSelfAdjoint B := hA.sub (cfc_const (c ^ 2) A ▸ cfc_predicate _ A)
-  have hTB : ∀ x, re ⟪B x, x⟫_𝕜 = ‖T x‖ ^ 2 - c ^ 2 * ‖x‖ ^ 2 := fun x ↦ by
-    rw [sub_apply, inner_sub_left, map_sub, Algebra.algebraMap_eq_smul_one,
-      ← algebraMap_smul 𝕜 (c ^ 2) (1 : E →L[𝕜] E), smul_apply, one_apply_eq_self, inner_smul_left,
-      RCLike.algebraMap_eq_ofReal, conj_ofReal, re_ofReal_mul, inner_self_eq_norm_sq,
-      ← T'.apply_norm_sq_eq_inner_adjoint_left]
-    simp [T']
-  have := instStarOrderedRingRCLike (𝕜 := 𝕜) (H := E)
-  rcases le_or_gt (Module.rank 𝕜 B⁺.range) n with hV | hV
-  · -- If the range of `B⁺` had rank at most `n`, then `aₙ(T) ≤ c`: on its orthogonal complement,
-    -- the kernel of `B⁺`, the Rayleigh form of `B` is nonpositive.
-    have hbound : ‖T ∘L B⁺.rangeᗮ.subtypeL‖ ≤ c := by
-      refine opNorm_le_bound _ hc0 fun ⟨x, hx⟩ ↦ ?_
-      have hBx : B⁺ x = 0 := by
-        rwa [orthogonal_range, (CFC.posPart_nonneg B).isSelfAdjoint.adjoint_eq] at hx
-      have h := re_inner_nonpos_of_posPart_apply_eq_zero hB hBx
-      rw [← pow_le_pow_iff_left₀ (norm_nonneg _) (by positivity) two_ne_zero, mul_pow]
-      simp only [comp_apply, Submodule.subtypeL_apply, ← Submodule.norm_coe]
-      linarith [hTB x]
-    have h : (T.singularValue n : ℝ) ≤ ‖T ∘L B⁺.rangeᗮ.subtypeL‖ :=
-      T.singularValue_le_nnnorm_comp_orthogonal hV
-    linarith
-  · -- Otherwise the range of `B⁺` contains `n + 1` linearly independent vectors, and on it `T`
-    -- is `c`-coercive.
-    obtain ⟨v, hv⟩ := exists_linearIndependent_of_le_rank (n := n + 1)
-      (by exact_mod_cast Cardinal.natCast_add_one_le_iff.mpr hV)
-    refine ⟨c, hrc, fun i ↦ v i, hv.map' _ (Submodule.ker_subtype _), fun x hx ↦ ?_⟩
-    have hxB : x ∈ B⁺.range := Submodule.span_le.mpr (by rintro _ ⟨i, rfl⟩; exact (v i).2) hx
-    have h := re_inner_nonneg_of_mem_range_posPart hxB
+  set D : E →L[𝕜] E := T'† ∘L T' - ((c ^ 2 : ℝ) : 𝕜) • 1
+  have hD : ∀ y w, ⟪D y, w⟫_𝕜 = ⟪T y, T w⟫_𝕜 - ((c ^ 2 : ℝ) : 𝕜) * ⟪y, w⟫_𝕜 := fun y w ↦ by
+    simp [D, T', inner_sub_left, inner_smul_left, adjoint_inner_left]
+  -- `P k`: `T` is strictly `c`-coercive on the span of `k` linearly independent vectors.
+  let P : ℕ → Prop := fun k ↦ ∃ v : Fin k → E, LinearIndependent 𝕜 v ∧
+    ∀ x ∈ Submodule.span 𝕜 (Set.range v), x ≠ 0 → c ^ 2 * ‖x‖ ^ 2 < ‖T x‖ ^ 2
+  have hPk : P (Nat.findGreatest P (n + 1)) :=
+    Nat.findGreatest_spec (Nat.zero_le _) ⟨Fin.elim0, linearIndependent_empty_type, by simp⟩
+  rcases (Nat.findGreatest_le (P := P) (n + 1)).eq_or_lt with hk | hk
+  · -- A maximal family has `n + 1` vectors, on whose span `T` is `c`-coercive.
+    rw [hk] at hPk
+    obtain ⟨v, hv, hvc⟩ := hPk
+    refine ⟨c, hrc, v, hv, fun x hx ↦ ?_⟩
+    rcases eq_or_ne x 0 with rfl | hx0
+    · simp
     rw [← pow_le_pow_iff_left₀ (by positivity) (norm_nonneg _) two_ne_zero, mul_pow]
-    linarith [hTB x]
+    exact (hvc x hx hx0).le
+  · -- Otherwise a maximal family `v` has at most `n` vectors. The `D`-images of its span form a
+    -- subspace `U` of rank at most `n`, and `T` has norm at most `c` on `Uᗮ`: a vector `w` of
+    -- `Uᗮ` with `c ‖w‖ < ‖T w‖` would extend `v`. So `aₙ(T) ≤ c`.
+    obtain ⟨v, hv, hvc⟩ := hPk
+    set U := (Submodule.span 𝕜 (Set.range v)).map (D : E →ₗ[𝕜] E)
+    have hU : Module.rank 𝕜 U ≤ n := (rank_map_le _ _).trans <| by
+      rw [rank_span hv, Cardinal.mk_fintype, Set.card_range_of_injective hv.injective,
+        Fintype.card_fin]
+      exact_mod_cast Nat.lt_succ_iff.mp hk
+    have hbound : ‖T ∘L Uᗮ.subtypeL‖ ≤ c := by
+      refine opNorm_le_bound _ hc0 fun ⟨w, hw⟩ ↦ ?_
+      simp only [comp_apply, Submodule.subtypeL_apply, ← Submodule.norm_coe]
+      have hcross : ∀ y ∈ Submodule.span 𝕜 (Set.range v),
+          ⟪T w, T y⟫_𝕜 = ((c ^ 2 : ℝ) : 𝕜) * ⟪w, y⟫_𝕜 := fun y hy ↦ by
+        have h := Submodule.inner_right_of_mem_orthogonal (Submodule.mem_map_of_mem hy) hw
+        rw [ContinuousLinearMap.coe_coe, hD, sub_eq_zero] at h
+        rw [← inner_conj_symm, h, map_mul, conj_ofReal, inner_conj_symm]
+      by_contra! hlt
+      have hw2 : c ^ 2 * ‖w‖ ^ 2 < ‖T w‖ ^ 2 := by
+        rw [← mul_pow]; exact pow_lt_pow_left₀ hlt (by positivity) two_ne_zero
+      refine Nat.findGreatest_is_greatest (Nat.lt_succ_self _) hk ⟨Fin.cons w v,
+        linearIndependent_finCons.mpr ⟨hv, fun hwv ↦ ?_⟩, fun x hx hx0 ↦ ?_⟩
+      · have h := congrArg re (hcross w hwv)
+        rw [re_ofReal_mul, inner_self_eq_norm_sq, inner_self_eq_norm_sq] at h
+        linarith
+      · rw [Fin.range_cons, Submodule.mem_span_insert] at hx
+        obtain ⟨a, y, hy, rfl⟩ := hx
+        have hx : ‖T (a • w + y)‖ ^ 2 - c ^ 2 * ‖a • w + y‖ ^ 2 =
+            ‖a‖ ^ 2 * (‖T w‖ ^ 2 - c ^ 2 * ‖w‖ ^ 2) + (‖T y‖ ^ 2 - c ^ 2 * ‖y‖ ^ 2) := by
+          rw [map_add, map_smul, norm_add_sq (𝕜 := 𝕜), norm_add_sq (𝕜 := 𝕜), inner_smul_left,
+            inner_smul_left, hcross y hy, norm_smul, norm_smul, mul_left_comm, re_ofReal_mul]
+          ring
+        have hy0 : 0 ≤ ‖T y‖ ^ 2 - c ^ 2 * ‖y‖ ^ 2 := by
+          rcases eq_or_ne y 0 with rfl | hy0
+          · simp
+          · linarith [hvc y hy hy0]
+        rcases eq_or_ne a 0 with rfl | ha
+        · simp only [zero_smul, zero_add] at hx0 ⊢
+          linarith [hvc y hy hx0]
+        · have : 0 < ‖a‖ ^ 2 * (‖T w‖ ^ 2 - c ^ 2 * ‖w‖ ^ 2) :=
+            mul_pos (by positivity) (by linarith)
+          linarith
+    have h : (T.singularValue n : ℝ) ≤ ‖T ∘L Uᗮ.subtypeL‖ :=
+      T.singularValue_le_nnnorm_comp_orthogonal hU
+    linarith
 
 end TauCeti
 
 namespace ContinuousLinearMap
 
 /-- **The Ky Fan triangle inequality for approximation numbers.** For bounded operators out of a
-Hilbert space carrying the continuous functional calculus (for instance any complex Hilbert
-space) into an inner product space, `Kₖ(S + T) ≤ Kₖ(S) + Kₖ(T)`. -/
+Hilbert space into an inner product space, `Kₖ(S + T) ≤ Kₖ(S) + Kₖ(T)`. -/
 theorem kyFanGauge_add_le (S T : E →L[𝕜] F) (k : ℕ) :
     (S + T).kyFanGauge k ≤ S.kyFanGauge k + T.kyFanGauge k :=
   TauCeti.HasMinMaxLowerBound.of_completeSpace.kyFanGauge_add_le S T k
