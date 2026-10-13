@@ -302,6 +302,11 @@ def security_snapshot():
 
 
 def require_security_coverage(sha):
+    """Validate fresh remote coverage of sha and return the security-audit cursor SHA.
+
+    Raises RuntimeError if the cursor/ancestry cannot be checked or sha is outside
+    main's first-parent prefix ending at the cursor. Never trusts a saved report.
+    """
     cursor, covered = security_snapshot()
     if sha not in covered:
         raise RuntimeError(f"commit {sha} is not at or behind security-audit {cursor}")
