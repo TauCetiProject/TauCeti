@@ -172,6 +172,7 @@ original components with the target ring. -/
         d₁ := F.map X.obj.d₁
         d₀_comp_d₁ := by
           rw [← F.map_comp, X.obj.d₀_comp_d₁]
+          -- Expose scalar extension in order to use its curvature-transport formula.
           change (ModuleCat.extendScalars f).map
               (w • 𝟙 ((forget₂ (FGModuleCat.{u} S) (ModuleCat.{u} S)).obj X.obj.X₀)) =
             (0 : T) • 𝟙 _
@@ -179,6 +180,7 @@ original components with the target ring. -/
           simp only [zero_smul]
         d₁_comp_d₀ := by
           rw [← F.map_comp, X.obj.d₁_comp_d₀]
+          -- The odd component uses the same scalar-extension representation.
           change (ModuleCat.extendScalars f).map
               (w • 𝟙 ((forget₂ (FGModuleCat.{u} S) (ModuleCat.{u} S)).obj X.obj.X₁)) =
             (0 : T) • 𝟙 _

@@ -45,6 +45,16 @@ open CategoryTheory
 
 variable {S T : Type u} [CommRing S] [CommRing T] {w : S}
 
+-- Isolate the definitional identification of `extendScalars.map` with
+-- `LinearMap.baseChange`; the preservation proof below stays at the categorical interface.
+private theorem extendScalars_map_add (f : S →+* T) {M N : ModuleCat.{u} S}
+    (g h : M ⟶ N) :
+    (ModuleCat.extendScalars f).map (g + h) =
+      (ModuleCat.extendScalars f).map g + (ModuleCat.extendScalars f).map h := by
+  let _ : Algebra S T := f.toAlgebra
+  apply ModuleCat.hom_ext
+  exact LinearMap.baseChange_add _ _
+
 /-- Base change along a ring map killing the potential carries a null-homotopic
 matrix-factorization map to a null-homotopic map of square-zero curved duplexes. -/
 theorem baseChangeToCurvedDuplex_map_mem_nullHomotopic (f : S →+* T) (hw : f w = 0)
@@ -63,50 +73,22 @@ theorem baseChangeToCurvedDuplex_map_mem_nullHomotopic (f : S →+* T) (hw : f w
     simp only [CurvedDuplex.nullHomotopicMap_f₀, Functor.comp_map]
     rw [← (ModuleCat.extendScalars f).map_comp,
       ← (ModuleCat.extendScalars f).map_comp]
-    let _ : Algebra S T := f.toAlgebra
-    apply ModuleCat.hom_ext
-    change
-      (((forget₂ (FGModuleCat.{u} S) (ModuleCat.{u} S)).map X.obj.d₀ ≫
-          (forget₂ (FGModuleCat.{u} S) (ModuleCat.{u} S)).map h₁).hom'.baseChange T +
-        ((forget₂ (FGModuleCat.{u} S) (ModuleCat.{u} S)).map h₀ ≫
-          (forget₂ (FGModuleCat.{u} S) (ModuleCat.{u} S)).map Y.obj.d₁).hom'.baseChange T) =
-        ((forget₂ (FGModuleCat.{u} S) (ModuleCat.{u} S)).map g.hom.f₀).hom'.baseChange T
     have hEq₀ := congrArg
-      (fun k ↦ ((forget₂ (FGModuleCat.{u} S) (ModuleCat.{u} S)).map k).hom')
+      (fun k ↦ (forget₂ (FGModuleCat.{u} S) (ModuleCat.{u} S)).map k)
       (congrArg CurvedDuplex.Hom.f₀ hh)
     simp only [CurvedDuplex.nullHomotopicMap_f₀, Functor.map_add, Functor.map_comp] at hEq₀
-    change
-      ((forget₂ (FGModuleCat.{u} S) (ModuleCat.{u} S)).map X.obj.d₀ ≫
-          (forget₂ (FGModuleCat.{u} S) (ModuleCat.{u} S)).map h₁).hom' +
-        ((forget₂ (FGModuleCat.{u} S) (ModuleCat.{u} S)).map h₀ ≫
-          (forget₂ (FGModuleCat.{u} S) (ModuleCat.{u} S)).map Y.obj.d₁).hom' =
-        ((forget₂ (FGModuleCat.{u} S) (ModuleCat.{u} S)).map g.hom.f₀).hom' at hEq₀
-    have := congrArg (fun k ↦ k.baseChange T) hEq₀
-    simpa only [LinearMap.baseChange_add] using this
+    rw [← extendScalars_map_add]
+    exact congrArg (ModuleCat.extendScalars f).map hEq₀
   · unfold MatrixFactorization.baseChangeToCurvedDuplex
     simp only [CurvedDuplex.nullHomotopicMap_f₁, Functor.comp_map]
     rw [← (ModuleCat.extendScalars f).map_comp,
       ← (ModuleCat.extendScalars f).map_comp]
-    let _ : Algebra S T := f.toAlgebra
-    apply ModuleCat.hom_ext
-    change
-      (((forget₂ (FGModuleCat.{u} S) (ModuleCat.{u} S)).map X.obj.d₁ ≫
-          (forget₂ (FGModuleCat.{u} S) (ModuleCat.{u} S)).map h₀).hom'.baseChange T +
-        ((forget₂ (FGModuleCat.{u} S) (ModuleCat.{u} S)).map h₁ ≫
-          (forget₂ (FGModuleCat.{u} S) (ModuleCat.{u} S)).map Y.obj.d₀).hom'.baseChange T) =
-        ((forget₂ (FGModuleCat.{u} S) (ModuleCat.{u} S)).map g.hom.f₁).hom'.baseChange T
     have hEq₁ := congrArg
-      (fun k ↦ ((forget₂ (FGModuleCat.{u} S) (ModuleCat.{u} S)).map k).hom')
+      (fun k ↦ (forget₂ (FGModuleCat.{u} S) (ModuleCat.{u} S)).map k)
       (congrArg CurvedDuplex.Hom.f₁ hh)
     simp only [CurvedDuplex.nullHomotopicMap_f₁, Functor.map_add, Functor.map_comp] at hEq₁
-    change
-      ((forget₂ (FGModuleCat.{u} S) (ModuleCat.{u} S)).map X.obj.d₁ ≫
-          (forget₂ (FGModuleCat.{u} S) (ModuleCat.{u} S)).map h₀).hom' +
-        ((forget₂ (FGModuleCat.{u} S) (ModuleCat.{u} S)).map h₁ ≫
-          (forget₂ (FGModuleCat.{u} S) (ModuleCat.{u} S)).map Y.obj.d₀).hom' =
-        ((forget₂ (FGModuleCat.{u} S) (ModuleCat.{u} S)).map g.hom.f₁).hom' at hEq₁
-    have := congrArg (fun k ↦ k.baseChange T) hEq₁
-    simpa only [LinearMap.baseChange_add] using this
+    rw [← extendScalars_map_add]
+    exact congrArg (ModuleCat.extendScalars f).map hEq₁
 
 /-- Base change along a ring map killing the potential carries the matrix-factorization
 null-homotopy ideal into the null-homotopy ideal of square-zero curved duplexes. -/
@@ -153,6 +135,19 @@ theorem baseChangeToCurvedDuplex_obj_quotientFunctor_obj (f : S →+* T) (hw : f
         ((MatrixFactorization.baseChangeToCurvedDuplex f hw).obj X) :=
   MorphismIdeal.map_obj_quotientFunctor_obj ..
 
+/-- On a representative, curved-duplex base change sends a morphism to the homotopy class of
+its scalar extension. -/
+@[simp]
+theorem baseChangeToCurvedDuplex_map_quotientFunctor_map (f : S →+* T) (hw : f w = 0)
+    {X Y : MatrixFactorization S w} (g : X ⟶ Y) :
+    (baseChangeToCurvedDuplex f hw).map
+        ((nullHomotopic (S := S) (w := w)).quotientFunctor.map g) ≫
+          eqToHom (baseChangeToCurvedDuplex_obj_quotientFunctor_obj f hw Y) =
+      eqToHom (baseChangeToCurvedDuplex_obj_quotientFunctor_obj f hw X) ≫
+        (CurvedDuplex.nullHomotopic (ModuleCat.{u} T) (0 : T)).quotientFunctor.map
+          ((MatrixFactorization.baseChangeToCurvedDuplex f hw).map g) :=
+  MorphismIdeal.map_map_quotientFunctor_map ..
+
 /-- Base change from the matrix-factorization homotopy category to Mathlib's homotopy category
 of two-periodic complexes. -/
 noncomputable def baseChangeToPeriodicComplex (f : S →+* T) (hw : f w = 0) :
@@ -190,6 +185,7 @@ theorem baseChangeToPeriodicComplex_obj_quotientFunctor_obj (f : S →+* T) (hw 
 
 /-- On a representative, periodic base change sends a morphism to the homotopy class of its
 scalar extension. -/
+@[simp]
 theorem baseChangeToPeriodicComplex_map_quotientFunctor_map (f : S →+* T) (hw : f w = 0)
     {X Y : MatrixFactorization S w} (g : X ⟶ Y) :
     (baseChangeToPeriodicComplex f hw).map
