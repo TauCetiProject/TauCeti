@@ -44,8 +44,7 @@ private noncomputable def formalChartHom : W.toProjective.ChartRing 1 →ₐ[R] 
     · have h := (W.toProjective.equation_neg_one_iff_wEquation X W.formalW).mpr
         W.formalW_wEquation
       have h' := (Projective.equation_smul _ (isUnit_neg_one : IsUnit (-1 : R⟦X⟧))).mpr h
-      simpa [Projective.Equation, Projective.map_polynomial, MvPolynomial.eval_map,
-        MvPolynomial.aeval_def] using h'
+      simpa using (W.toProjective.equation_map_iff_aeval _).mp h'
     · simp) hp
 
 private theorem formalChartHom_mk_X (i : Fin 3) :
@@ -84,6 +83,8 @@ theorem zeroSectionDivisor_comap_projModelFormalPoint :
     (Ideal.mem_span_singleton.mpr (PowerSeries.X_dvd_iff.mpr W.constantCoeff_formalW)))
 
 /-- The ideal of `n[0]` at the formal point is `(Xⁿ)`, with its scheme-theoretic multiplicity. -/
+-- Use the coordinate formula before the general pullback-of-powers rule.
+@[simp 1100]
 theorem zeroSectionDivisor_pow_comap_projModelFormalPoint (n : ℕ) :
     (W.zeroSectionDivisor ^ n).comap W.projModelFormalPoint =
       ofIdealTop ((Ideal.span {(X : R⟦X⟧) ^ n}).map (Scheme.ΓSpecIso (.of R⟦X⟧)).inv.hom) := by
@@ -92,6 +93,8 @@ theorem zeroSectionDivisor_pow_comap_projModelFormalPoint (n : ℕ) :
 
 /-- After reparametrising the formal point by `X ↦ s`, the ideal of `n[0]` is `(sⁿ)`.
 The series `s` need only admit substitution; it need not be an invertible parameter. -/
+-- Compute the pullback before simplification changes the substitution morphism.
+@[simp↓]
 theorem zeroSectionDivisor_pow_comap_subst_projModelFormalPoint {s : R⟦X⟧} (hs : HasSubst s)
     (n : ℕ) :
     (W.zeroSectionDivisor ^ n).comap
