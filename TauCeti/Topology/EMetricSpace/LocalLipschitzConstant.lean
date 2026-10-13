@@ -27,8 +27,9 @@ It is the metric replacement for the norm of the gradient that enters the Cheege
 
 A `K`-Lipschitz map has local Lipschitz constant at most `K` everywhere, constants have local
 Lipschitz constant `0`, and for maps into a normed group the local Lipschitz constant is subadditive
-and positively homogeneous. For a continuous map, the local Lipschitz constant is the infimum over
-`n` of the suprema of the difference quotients over the balls of radius `1 / (n + 1)`, and each of
+and positively homogeneous. For a map that does not separate points at distance `0` (for instance a
+continuous map), the local Lipschitz constant is the infimum over `n` of the suprema of the
+difference quotients over the balls of radius `1 / (n + 1)`, and for a continuous map each of
 these suprema is a lower semicontinuous function of the point. This is what makes the local
 Lipschitz constant of a continuous map a Borel function, so that it can be integrated.
 
@@ -105,11 +106,12 @@ theorem localLipschitzConstant_const (c : Y) (x : X) :
     localLipschitzConstant (fun _ : X ↦ c) x = 0 :=
   nonpos_iff_eq_zero.1 <| localLipschitzConstant_le_of_eventually_le <| by simp
 
-/-- For a continuous map, the local Lipschitz constant is the infimum over `n` of the suprema of
+/-- If `f` does not separate from `x` the points at distance `0` from `x` (for instance, if `f`
+is continuous), the local Lipschitz constant of `f` at `x` is the infimum over `n` of the suprema of
 the difference quotients over the balls of radius `1 / (n + 1)`. The centre of the ball, and the
-points at distance `0` from it, contribute the value `0 / 0 = 0`, since `f` cannot separate them
-from the centre. -/
-theorem localLipschitzConstant_eq_iInf_iSup (hf : Continuous f) (x : X) :
+points at distance `0` from it, contribute the value `0 / 0 = 0`. -/
+theorem localLipschitzConstant_eq_iInf_iSup
+    (hf : ∀ y, edist y x = 0 → edist (f y) (f x) = 0) :
     localLipschitzConstant f x =
       ⨅ n : ℕ, ⨆ (y : X) (_ : edist y x < ((n : ℝ≥0∞) + 1)⁻¹), edist (f y) (f x) / edist y x := by
   have hb : (𝓝[≠] x).HasBasis (fun _ : ℕ ↦ True)
@@ -125,9 +127,7 @@ theorem localLipschitzConstant_eq_iInf_iSup (hf : Continuous f) (x : X) :
   · exact le_iSup₂_of_le (f := fun y (_ : edist y x < ((n : ℝ≥0∞) + 1)⁻¹) ↦
       edist (f y) (f x) / edist y x) y (Metric.mem_eball.1 hy.1) le_rfl
   · by_cases hyx : edist y x = 0
-    · have hfyx : edist (f y) (f x) = 0 :=
-        ((EMetric.inseparable_iff.2 hyx).map hf).edist_eq_zero
-      simp [hyx, hfyx]
+    · simp [hyx, hf y hyx]
     · refine le_iSup₂_of_le (f := fun y (_ : y ∈ Metric.eball x ((n : ℝ≥0∞) + 1)⁻¹ ∩ {x}ᶜ) ↦
         edist (f y) (f x) / edist y x) y ⟨hy, ?_⟩ le_rfl
       rintro rfl

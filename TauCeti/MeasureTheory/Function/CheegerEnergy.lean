@@ -8,7 +8,7 @@ module
 public import Mathlib.Analysis.MeanInequalitiesPow
 public import Mathlib.MeasureTheory.Constructions.BorelSpace.Order
 public import Mathlib.MeasureTheory.Function.LpSpace.Basic
-public import TauCeti.Topology.EMetricSpace.LocalLipschitzConstant
+public import TauCeti.MeasureTheory.Function.LocalLipschitzConstant
 public import TauCeti.Topology.Semicontinuity.Basic
 
 /-!
@@ -55,8 +55,6 @@ constant is subadditive and positively homogeneous and the square is convex, and
   `2`-homogeneity.
 * `TauCeti.cheegerEnergyDomain`: the Sobolev space `W^{1,2}(X, d, m)` of classes of finite Cheeger
   energy, a linear subspace of `L²(X, m)`.
-* `Continuous.measurable_localLipschitzConstant`: the local Lipschitz constant of a continuous
-  function is Borel, so that `∫ |D u|² dm` is additive in the integrand.
 
 ## References
 
@@ -77,14 +75,6 @@ open scoped ENNReal NNReal
 namespace TauCeti
 
 variable {X : Type*} [PseudoEMetricSpace X] [MeasurableSpace X] {m : Measure X}
-
-/-- The local Lipschitz constant of a continuous map into an extended pseudometric space is a Borel
-function. -/
-theorem _root_.Continuous.measurable_localLipschitzConstant [OpensMeasurableSpace X]
-    {Y : Type*} [PseudoEMetricSpace Y] {f : X → Y} (hf : Continuous f) :
-    Measurable (localLipschitzConstant f) := by
-  rw [funext (localLipschitzConstant_eq_iInf_iSup hf)]
-  exact Measurable.iInf fun n ↦ (hf.lowerSemicontinuous_iSup_edist_div _).measurable
 
 variable (m) in
 /-- The *Cheeger energy* of `f ∈ L²(X, m)`: the lower semicontinuous envelope on `L²(X, m)` of
