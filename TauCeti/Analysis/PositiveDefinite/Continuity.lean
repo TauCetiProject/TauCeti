@@ -20,9 +20,6 @@ the origin is uniformly continuous. The file also records the local estimates
 `x + star x = 0` and `y + star y = 0`, together with their specializations to additive groups
 whose involution is negation.
 
-This advances Part C of the `OneParameterSemigroups` roadmap, whose positive-definite-function
-API asks for the basic fact "continuity at `0` ⇒ uniform continuity" before Bochner's theorem.
-
 ## Main declarations
 
 In the namespace `TauCeti.IsPositiveDefinite`:
@@ -170,9 +167,6 @@ theorem norm_sub_sq_le_two_mul_map_zero_re_mul_re_sub_of_add_star_eq_zero
     exact hF.gram_three_add_star_re_eq hx hy rfl rfl rfl hCpos
   have hmain : Complex.normSq d ≤ (F 0).re *
       (2 * (F 0).re - 2 * (F (x + star y)).re) := by
-    have hnonneg : 0 ≤ 2 * (F 0).re - 2 * (F (x + star y)).re
-        - Complex.normSq d / (F 0).re := by
-      simpa [hQcalc] using hQre
     have hdiv :
         Complex.normSq d / (F 0).re ≤ 2 * (F 0).re - 2 * (F (x + star y)).re := by
       linarith

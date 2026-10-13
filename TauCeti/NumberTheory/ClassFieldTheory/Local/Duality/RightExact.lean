@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.ClassFieldTheory.Local.Duality.Perfect
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.ComparisonDegreeTwo
 
 import TauCeti.RepresentationTheory.Homological.ContCohomology.DegreeZero
 import TauCeti.Algebra.Module.ZMod.Extend
@@ -28,6 +29,8 @@ pairing then transports the extended character back to a second cohomology class
 
 * `TauCeti.ClassFieldTheory.coeffMap_two_surjective`: a surjective coefficient morphism induces
   a surjection on local `H²`.
+* `TauCeti.ClassFieldTheory.explicitCoeff2_surjective`: the corresponding surjectivity statement
+  for the explicit degree-two model.
 
 ## References
 
@@ -40,6 +43,8 @@ public noncomputable section
 namespace TauCeti.ClassFieldTheory
 
 open CategoryTheory ContCohomology
+
+attribute [local instance] TopRep.distribMulAction
 
 variable {n : ℕ} {F : Type} [Field F] [ValuativeRel F] [TopologicalSpace F]
   [IsNonarchimedeanLocalField F]
@@ -54,19 +59,7 @@ theorem coeffMap_two_surjective (hn : IsUnit (n : F)) {B C : GalRep n F}
     Function.Surjective (ContinuousCohomology.coeffMap f 2).hom := by
   have : NeZero n := NeZero.of_neZero_natCast F (h := ⟨hn.ne_zero⟩)
   have : Finite C.V := Finite.of_surjective f.hom hf
-  have : Fact (IsSmoothDiscrete (ZMod n) C) := by
-    let := B.distribMulAction
-    let := C.distribMulAction
-    refine ⟨⟨inferInstance, fun c ↦ ?_⟩⟩
-    obtain ⟨b, rfl⟩ := hf c
-    -- The target stabilizer contains the open stabilizer of any lift.
-    rw [← TopRep.coe_stabilizer]
-    apply Subgroup.isOpen_mono (H₁ := MulAction.stabilizer (Field.absoluteGaloisGroup F) b)
-    · intro g hg
-      simp only [MulAction.mem_stabilizer_iff, TopRep.distribMulAction_smul] at hg ⊢
-      rw [← f.hom.isIntertwining, hg]
-    · simpa only [TopRep.coe_stabilizer] using
-        (Fact.out : IsSmoothDiscrete (ZMod n) B).stabilizer_isOpen b
+  have : Fact (IsSmoothDiscrete (ZMod n) C) := ⟨.of_surjective f hf Fact.out⟩
   let tr := h2MuEquivZMod F hn
   let ι := (ContinuousCohomology.coeffMap (tateDualMap f) 0).hom.toAddMonoidHom
   -- On H⁰ the dual map is its restriction to invariants, hence is injective.
@@ -106,5 +99,33 @@ theorem coeffMap_two_surjective (hn : IsUnit (n : F)) {B C : GalRep n F}
     ((ContinuousCohomology.coeffMap f 2).hom b - y) y
   rw [sub_add_cancel, hpair] at hadd
   exact add_eq_right.mp hadd.symm
+
+/-- A surjection from a finite smooth discrete Galois representation to a discrete one induces a
+surjection on explicit `H²`, through any equivariant additive map `φ` with the same underlying
+function. This is `coeffMap_two_surjective` read through the explicit degree-two comparison. -/
+theorem explicitCoeff2_surjective (hn : IsUnit (n : F)) {B C : GalRep n F}
+    [Finite B.V] [Fact (IsSmoothDiscrete (ZMod n) B)] [DiscreteTopology C.V]
+    (g : B ⟶ C) (hg : Function.Surjective g.hom)
+    (φ : B.V →+[Field.absoluteGaloisGroup F] C.V) (hφ : ∀ b, φ b = g.hom b) :
+    haveI := (Fact.out : IsSmoothDiscrete (ZMod n) B).discreteTopology
+    haveI := (Fact.out : IsSmoothDiscrete (ZMod n) B).continuousSMul
+    haveI := (IsSmoothDiscrete.of_surjective g hg Fact.out).continuousSMul
+    Function.Surjective
+      (explicitCoeff2 (Field.absoluteGaloisGroup F) B.V φ continuous_of_discreteTopology) := by
+  have := (Fact.out : IsSmoothDiscrete (ZMod n) B).discreteTopology
+  have := (Fact.out : IsSmoothDiscrete (ZMod n) B).continuousSMul
+  have := (IsSmoothDiscrete.of_surjective g hg Fact.out).continuousSMul
+  intro y
+  obtain ⟨x, hx⟩ := coeffMap_two_surjective hn g hg
+    (C.explicitH2AddEquivContinuousCohomologyOfDiscrete y)
+  refine ⟨B.explicitH2AddEquivContinuousCohomologyOfDiscrete.symm x,
+    C.explicitH2AddEquivContinuousCohomologyOfDiscrete.injective ?_⟩
+  -- Naturality of the degree-two comparison carries the explicit map to `coeffMap g 2`.
+  have hnat := TopRep.explicitH2AddEquivContinuousCohomologyOfDiscrete_map B C
+    (ContinuousMonoidHom.id _) g φ.toAddMonoidHom (fun b ↦ (hφ b).symm) φ.map_smul
+    (B.explicitH2AddEquivContinuousCohomologyOfDiscrete.symm x)
+  rw [AddEquiv.apply_symm_apply, ← ContinuousCohomology.coeffMap_def, hx] at hnat
+  rw [explicitCoeff2_eq_explicitMap2]
+  exact hnat.symm
 
 end TauCeti.ClassFieldTheory

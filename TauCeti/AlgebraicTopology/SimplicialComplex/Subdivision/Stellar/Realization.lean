@@ -97,15 +97,8 @@ variable {ι : Type*} [DecidableEq ι] {K : PreAbstractSimplicialComplex ι}
 private theorem exists_zero_coordinate {x : ι →₀ ℝ} (hvσ : v ∉ σ)
     (hx : x.support ∈ stellarSubdivision K σ v) :
     ∃ i ∈ σ, x i = 0 := by
-  rcases mem_stellarSubdivision_iff.mp hx with ⟨hv, -, hσ⟩ | ⟨-, hσ, -⟩
-  · obtain ⟨i, hi, hix⟩ := Finset.not_subset.mp hσ
-    exact ⟨i, hi, Finsupp.notMem_support_iff.mp hix⟩
-  · obtain ⟨i, hi, hix⟩ := Finset.not_subset.mp hσ
-    by_cases hiv : i = v
-    · subst i
-      exact (hvσ hi).elim
-    · exact ⟨i, hi, Finsupp.notMem_support_iff.mp fun h =>
-        hix (Finset.mem_erase.mpr ⟨hiv, h⟩)⟩
+  obtain ⟨i, hi, hix⟩ := exists_notMem_of_mem_stellarSubdivision hvσ hx
+  exact ⟨i, hi, Finsupp.notMem_support_iff.mp hix⟩
 
 /-- The barycentric map sends the stellar polyhedron into the original polyhedron. -/
 theorem mapsTo_stellarSubdivisionLinearMap (hvσ : v ∉ σ) :

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.ExplicitFunctoriality
+public import TauCeti.Topology.Algebra.Group.Basic
 public import TauCeti.Topology.Algebra.Group.TransversalWord
 
 import Mathlib.Algebra.BigOperators.GroupWithZero.Action
@@ -53,10 +54,8 @@ openness of `U`: `TauCeti.continuous_lWord` makes `γ ↦ ℓᵗ_u(γ)` continuo
 word of the degree-two sum, whose coset index moves with the first variable.  So no continuity is
 required of the transversal itself.
 
-This is the degree-zero, degree-one and degree-two part of Layer 6 of the Profinite Cohomology
-roadmap.  The degree-zero formulas and proof organization are adapted from the earlier, unmerged
-degree-zero portion of Tau Ceti PR #4061, which was removed there because the canonical `H0`
-carrier had not yet landed.
+The degree-zero formulas and proof organization are adapted from the degree-zero portion of
+[Tau Ceti PR #4061](https://github.com/TauCetiProject/TauCeti/pull/4061).
 
 ## Main declarations
 
@@ -115,8 +114,7 @@ variable [U.FiniteIndex] {N : Type w} [AddCommMonoid N]
 
 attribute [local instance] Subgroup.fintypeQuotientOfFiniteIndex
 
-/-- Translating the index of a finite sum over `G ⧸ U` permutes its terms. Every corestriction
-formula below reindexes by translation exactly once. -/
+/-- Translating the index of a finite sum over `G ⧸ U` permutes its terms. -/
 private theorem sum_translate (F : G ⧸ U → N) (γ : G) :
     ∑ u : G ⧸ U, F (γ • u) = ∑ u : G ⧸ U, F u :=
   Fintype.sum_equiv (MulAction.toPerm γ) _ _ fun _ => rfl
@@ -166,14 +164,14 @@ theorem coe_explicitCor0Transversal_of_smul_eq_self
 theorem map_explicitCor0Transversal {N : Type w} [AddCommGroup N]
     [DistribMulAction G N] (f : M →+[G] N) (m : H0 U M) :
     explicitCoeff0 G M f (explicitCor0Transversal G M U t ht m) =
-      explicitCor0Transversal G N U t ht (fixedPointsMap f U m) := by
+      explicitCor0Transversal G N U t ht (f.fixedPointsMap U m) := by
   apply Subtype.ext
   rw [coe_explicitCoeff0, coe_explicitCor0Transversal]
-  -- `fixedPointsMap` is bundled on `addSubmonoid`, whereas `H0` uses `addSubgroup`;
+  -- `DistribMulActionHom.fixedPointsMap` uses `addSubmonoid`, whereas `H0` uses `addSubgroup`;
   -- expose the underlying coefficient after Lean inserts the carrier-preserving coercions.
   change f (∑ u : G ⧸ U, t u • (m : M)) =
-    ∑ u : G ⧸ U, t u • (fixedPointsMap f U m : N)
-  have hfm : (fixedPointsMap f U m : N) = f (m : M) := coe_fixedPointsMap f U m
+    ∑ u : G ⧸ U, t u • (f.fixedPointsMap U m : N)
+  have hfm : (f.fixedPointsMap U m : N) = f (m : M) := f.coe_fixedPointsMap U m
   rw [hfm]
   simp [map_sum]
 
@@ -231,7 +229,7 @@ theorem explicitCor0_eq_transversal (t : G ⧸ U → G)
 theorem map_explicitCor0 {N : Type w} [AddCommGroup N] [DistribMulAction G N]
     (f : M →+[G] N) (m : H0 U M) :
     explicitCoeff0 G M f (explicitCor0 G M U m) =
-      explicitCor0 G N U (fixedPointsMap f U m) :=
+      explicitCor0 G N U (f.fixedPointsMap U m) :=
   map_explicitCor0Transversal G M U Quotient.out Quotient.out_eq f m
 
 /-- **`cor⁰ ∘ res⁰ = (G : U) • id`** on `H⁰(G, M)`. -/
@@ -361,8 +359,8 @@ private theorem cochainsCor1_changeTransversal_summand (t' : G ⧸ U → G)
 
 /-- **Change of transversal in degree one, as an explicit coboundary.** Two transversals give
 corestriction cochains differing by `d⁰` of the degree-zero corestriction of the values of `f` on
-the transversal difference `TauCeti.transversalDiff`. Unlike in degree zero, the two cochains are
-genuinely different; only their classes in `H¹(G, M)` agree. -/
+the transversal difference `TauCeti.transversalDiff`. Unlike in degree zero, the two cochains need
+not agree; their classes in `H¹(G, M)` agree. -/
 theorem cochainsCor1_changeTransversal (t' : G ⧸ U → G)
     (ht' : ∀ u : G ⧸ U, (QuotientGroup.mk (t' u) : G ⧸ U) = u)
     {f : U → M} (hf : groupCohomology.IsCocycle₁ f) :
@@ -403,8 +401,10 @@ section DegreeOne
 Openness of `U` makes every corestriction cochain continuous, so the cochain layer above descends
 to `H¹ = Z¹/B¹`. -/
 
+section Continuity
+
 variable [TopologicalSpace G] [SeparatelyContinuousMul G]
-  [TopologicalSpace M] [IsTopologicalAddGroup M] [ContinuousSMul G M]
+  [TopologicalSpace M] [ContinuousAdd M] [ContinuousConstSMul G M]
   (t : G ⧸ U → G) (ht : ∀ u : G ⧸ U, (QuotientGroup.mk (t u) : G ⧸ U) = u)
   (hU : IsOpen (U : Set G))
 
@@ -418,6 +418,17 @@ theorem continuous_cochainsCor1 {f : U → M} (hf : Continuous f) :
   rw [funext (cochainsCor1_apply G M U t ht f)]
   exact continuous_finsetSum _ fun u _ =>
     ((hf.comp ((continuous_lWord U t hU u).subtype_mk _)).const_smul (t u))
+
+end Continuity
+
+section Cocycles
+
+variable [TopologicalSpace G] [SeparatelyContinuousMul G]
+  [TopologicalSpace M] [IsTopologicalAddGroup M] [ContinuousConstSMul G M]
+  (t : G ⧸ U → G) (ht : ∀ u : G ⧸ U, (QuotientGroup.mk (t u) : G ⧸ U) = u)
+  (hU : IsOpen (U : Set G))
+
+include hU
 
 /-- The degree-one corestriction cochain preserves continuous `1`-cocycles. -/
 theorem cochainsCor1_mem_Z1 {f : U → M} (hf : f ∈ Z1 U M) :
@@ -434,6 +445,15 @@ noncomputable def cocyclesCor1 : Z1 U M →+ Z1 G M :=
 @[simp]
 theorem coe_cocyclesCor1 (f : Z1 U M) :
     (cocyclesCor1 G M U t ht hU f : G → M) = cochainsCor1 G M U t ht f := (rfl)
+
+end Cocycles
+
+variable [TopologicalSpace G] [SeparatelyContinuousMul G]
+  [TopologicalSpace M] [IsTopologicalAddGroup M] [ContinuousSMul G M]
+  (t : G ⧸ U → G) (ht : ∀ u : G ⧸ U, (QuotientGroup.mk (t u) : G ⧸ U) = u)
+  (hU : IsOpen (U : Set G))
+
+include hU
 
 /-- **Corestriction in degree one for a variable transversal.** -/
 noncomputable def explicitCor1Transversal : H1 U M →+ H1 G M :=
@@ -614,9 +634,8 @@ theorem cochainsCor2_isCocycle₂ {f : U × U → M} (hf : groupCohomology.IsCoc
     sum_translate G U (fun u : G ⧸ U => t u • f (⟨lWord U t u η, lWord_mem U t ht u η⟩,
       ⟨lWord U t (η⁻¹ • u) ζ, lWord_mem U t ht (η⁻¹ • u) ζ⟩)) γ⁻¹]
 
-/-- **The degree-two corestriction is a chain map**: it turns the degree-one corestriction of a
-`1`-cochain into the degree-two corestriction of its coboundary. This is the identity that carries
-`2`-coboundaries to `2`-coboundaries. -/
+/-- **Corestriction commutes with the degree-one differential**: the degree-two corestriction of
+`d¹ c` is `d¹` of the degree-one corestriction of `c`. -/
 theorem cochainsCor2_d1 (c : U → M) :
     cochainsCor2 G M U t ht (d1 U M c) = d1 G M (cochainsCor1 G M U t ht c) := by
   ext q
@@ -689,7 +708,7 @@ degree-two corestriction cochains differing by `d¹` of the `1`-cochain
 ```
 
 built from the transversal difference `TauCeti.transversalDiff`. As in degree one the two cochains
-are genuinely different; only their classes in `H²(G, M)` agree. -/
+need not agree; their classes in `H²(G, M)` agree. -/
 theorem cochainsCor2_changeTransversal (t' : G ⧸ U → G)
     (ht' : ∀ u : G ⧸ U, (QuotientGroup.mk (t' u) : G ⧸ U) = u)
     {f : U × U → M} (hf : groupCohomology.IsCocycle₂ f) :
@@ -727,10 +746,10 @@ private theorem cochainsCor2_res_summand {c : G × G → M} (hc : groupCohomolog
     (transversal_mul_lWord U t (γ⁻¹ • u) η), lWord_mul_lWord, mul_inv_rev, mul_smul]
   abel
 
-/-- **`cor²_t ∘ res²` on cochains**, with its correction term: for a continuous `2`-cocycle `c` on
+/-- **`cor²_t ∘ res²` on cochains**, with its correction term: for a `2`-cocycle `c` on
 `G`, `cor²_t (res c) = (G : U) • c + d¹ k` with
 `k γ = ∑ u, (c (t u, ℓᵗ_u γ) - c (γ, t u))`.
-The correction term is again genuinely there, and it is a coboundary, which is what makes
+The correction term is a coboundary, which is what makes
 `TauCeti.ContCohomology.explicitCor2_comp_res2` true on classes. -/
 theorem cochainsCor2_res {c : G × G → M} (hc : groupCohomology.IsCocycle₂ c) :
     cochainsCor2 G M U t ht (fun q : U × U => c ((q.1 : G), (q.2 : G))) =
@@ -758,12 +777,15 @@ Openness of `U` makes every degree-two corestriction cochain continuous — thro
 `TauCeti.continuous_lWord` and `TauCeti.continuous_lWord_inv_smul`, one for each of the two
 transversal words — so the cochain layer above descends to `H² = Z²/B²`.
 
-Degree one needs separately continuous multiplication on `G`. This section uses the stronger bundled
-`IsTopologicalGroup G` to obtain `IsTopologicalGroup ↥U`, which `Z²(U, M)` needs: `B²` is the
-image of the *continuous* `1`-cochains on `U`. -/
+The cochain and cocycle maps need only separately continuous multiplication on `G` and continuity
+of each fixed scalar action on `M`. Passing to `H²` additionally needs jointly continuous
+multiplication on `G` and a jointly continuous action, so that coboundaries are continuous.
+Continuity of inversion is unnecessary. -/
 
-variable [TopologicalSpace G] [IsTopologicalGroup G]
-  [TopologicalSpace M] [IsTopologicalAddGroup M] [ContinuousSMul G M]
+section Continuity
+
+variable [TopologicalSpace G] [SeparatelyContinuousMul G]
+  [TopologicalSpace M] [ContinuousAdd M] [ContinuousConstSMul G M]
   (t : G ⧸ U → G) (ht : ∀ u : G ⧸ U, (QuotientGroup.mk (t u) : G ⧸ U) = u)
   (hU : IsOpen (U : Set G))
 
@@ -782,6 +804,17 @@ theorem continuous_cochainsCor2 {f : U × U → M} (hf : Continuous f) :
   refine continuous_finsetSum _ fun u _ => Continuous.const_smul ?_ (t u)
   exact hf.comp ((((continuous_lWord U t hU u).comp continuous_fst).subtype_mk _).prodMk
     ((continuous_lWord_inv_smul U t hU u).subtype_mk _))
+
+end Continuity
+
+section Cocycles
+
+variable [TopologicalSpace G] [SeparatelyContinuousMul G]
+  [TopologicalSpace M] [IsTopologicalAddGroup M] [ContinuousConstSMul G M]
+  (t : G ⧸ U → G) (ht : ∀ u : G ⧸ U, (QuotientGroup.mk (t u) : G ⧸ U) = u)
+  (hU : IsOpen (U : Set G))
+
+include hU
 
 /-- The degree-two corestriction cochain preserves continuous `2`-cocycles. -/
 theorem cochainsCor2_mem_Z2 {f : U × U → M} (hf : f ∈ Z2 U M) :
@@ -807,6 +840,15 @@ noncomputable def cocyclesCor2 : Z2 U M →+ Z2 G M :=
 @[simp]
 theorem coe_cocyclesCor2 (f : Z2 U M) :
     (cocyclesCor2 G M U t ht hU f : G × G → M) = cochainsCor2 G M U t ht f := (rfl)
+
+end Cocycles
+
+variable [TopologicalSpace G] [ContinuousMul G]
+  [TopologicalSpace M] [IsTopologicalAddGroup M] [ContinuousSMul G M]
+  (t : G ⧸ U → G) (ht : ∀ u : G ⧸ U, (QuotientGroup.mk (t u) : G ⧸ U) = u)
+  (hU : IsOpen (U : Set G))
+
+include hU
 
 /-- **Corestriction in degree two for a variable transversal.** -/
 noncomputable def explicitCor2Transversal : H2 U M →+ H2 G M :=
@@ -838,7 +880,7 @@ theorem explicitCor2_changeTransversal (t' : G ⧸ U → G)
     refine neg_mem (mem_B2_iff.2 ⟨_, ?_, rfl⟩)
     refine continuous_finsetSum _ fun u _ => Continuous.const_smul ?_ (t u)
     have hdiff : Continuous fun γ : G => transversalDiff U t t' (γ⁻¹ • u) :=
-      continuous_of_discreteTopology.comp (continuous_inv.smul continuous_const)
+      continuous_of_discreteTopology.comp (U.continuous_inv_smul_const u)
     exact ((mem_Z2_iff.1 f.2).1.comp
         (continuous_const.prodMk ((continuous_lWord U t' hU u).subtype_mk _))).sub
       ((mem_Z2_iff.1 f.2).1.comp

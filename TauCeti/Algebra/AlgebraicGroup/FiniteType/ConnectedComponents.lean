@@ -28,9 +28,8 @@ components.
 * J. S. Milne, *Algebraic Groups* (2017), Section 2.a.
 * The Stacks Project, Tag 0052, *Noetherian topological spaces*.
 
-This is the finiteness prerequisite for Layer 3 of the ReductiveGroups roadmap. The later
-component-group construction will put a finite group-scheme structure on these components; this
-file establishes the underlying finiteness and clopen decomposition.
+The component-group construction in `TauCeti.Algebra.AlgebraicGroup.Connected.ComponentGroup.Basic`
+uses this finiteness and clopen decomposition.
 -/
 
 public section

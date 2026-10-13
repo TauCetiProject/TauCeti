@@ -33,7 +33,7 @@ domain as their equality face, and are excluded from the boundary-covering state
 
 public section
 
-open Set Metric
+open Set Metric Filter
 open scoped Pointwise Topology
 
 namespace TauCeti
@@ -138,6 +138,35 @@ theorem inv_smul_mem_dirichletDomain_iff {p x : X} (hx : x ∈ dirichletDomain G
     g⁻¹ • x ∈ dirichletDomain G p ↔ x ∈ dirichletFace p g := by
   rw [dirichletFace_eq_inter_smul, mem_inter_iff, mem_smul_set_iff_inv_smul_mem]
   exact (and_iff_right hx).symm
+
+/-- If every orbit point other than `p` and `g • p` is strictly farther from `x` than `p`,
+the two corresponding Dirichlet domains cover a neighbourhood of `x`. In particular this
+describes the local tiling at a point incident to exactly two distinct orbit centres. -/
+theorem mem_interior_union_smul_dirichletDomain [ProperSpace X]
+    [ProperlyDiscontinuousSMul G X] {p x : X} (g : G)
+    (hx : ∀ h : G, h • p ≠ p → h • p ≠ g • p → dist x p < dist x (h • p)) :
+    x ∈ interior (dirichletDomain G p ∪ g • dirichletDomain G p) := by
+  refine mem_interior_iff_mem_nhds.mpr ?_
+  filter_upwards [eventually_forall_dist_lt_of_forall_dist_lt
+    (s := {h : G | h • p ≠ p ∧ h • p ≠ g • p})
+    (fun h hh ↦ hx h hh.1 hh.2)] with y hy
+  rcases le_total (dist y p) (dist y (g • p)) with hle | hle
+  · left
+    refine mem_dirichletDomain.mpr fun h ↦ ?_
+    by_cases hh : h • p = p
+    · simp [hh]
+    by_cases hhg : h • p = g • p
+    · simpa only [hhg] using hle
+    · exact (hy h ⟨hh, hhg⟩).le
+  · right
+    rw [smul_dirichletDomain]
+    refine mem_dirichletDomain.mpr fun h ↦ ?_
+    rw [← mul_smul]
+    by_cases hh : (h * g) • p = p
+    · simpa only [hh] using hle
+    by_cases hhg : (h * g) • p = g • p
+    · simp [hhg]
+    · exact hle.trans (hy (h * g) ⟨hh, hhg⟩).le
 
 end Group
 

@@ -109,11 +109,6 @@ noncomputable abbrev derivedGroupSchemeι (H : _root_.CommHopfAlgCat.{u} R) :
       (AlgebraicGeometry.hopfSpec (CommRingCat.of R)).obj (Opposite.op H) :=
   quotientSpecι H (derivedDefiningIdeal H)
 
-/-- The inclusion of the derived group scheme is a closed immersion. -/
-instance isClosedImmersion_derivedGroupSchemeι (H : _root_.CommHopfAlgCat.{u} R) :
-    AlgebraicGeometry.IsClosedImmersion (derivedGroupSchemeι H).hom.hom.left :=
-  inferInstance
-
 /-- Every commutator of algebra-valued points lies in the derived subgroup. -/
 theorem commutator_mem_derivedPointsSubgroup (H : _root_.CommHopfAlgCat.{v} R)
     (A : CommAlgCat.{w} R) (g h : HopfAlgebra.points (R := R) (H := H) A) :
@@ -207,7 +202,7 @@ theorem le_derivedDefiningIdeal_iff_isNormal_and_isMulCommutative_pointQuotient
     -- Their product map is the lifted identity on the tensor product.
     have hproduct : Algebra.TensorProduct.productMap g.ofConv h.ofConv =
         up := by
-      simp [g, h, AffineGroup.Product.productMap_restrict]
+      simp [g, h, _root_.AlgHom.productMap_comp_includeLeft_includeRight]
     have heval := DFunLike.congr_fun
       (HopfAlgebra.productMap_comp_commutatorAlgHom g h) x
     rw [hproduct] at heval

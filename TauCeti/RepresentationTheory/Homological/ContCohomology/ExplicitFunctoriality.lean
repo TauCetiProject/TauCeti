@@ -30,8 +30,10 @@ are the positive-degree counterparts of `explicitRes0_eq_explicitMap0` and
 `explicitCoeff2Equiv` upgrade a continuous equivariant additive equivalence of coefficient modules
 to additive equivalences on explicit `H¹` and `H²`, and `explicitCoeff1_bijective` and
 `explicitCoeff2_bijective` record that a bijective equivariant homomorphism of discrete coefficient
-modules induces bijections. Finally, `explicitCoeff2_eq_card_nsmul` records that the norm of a
-finite normal subgroup `N`, as a coefficient map, acts on `H²` as multiplication by `#N`.
+modules induces bijections. The lemmas `explicitCoeff1_eq_nsmul` and `explicitCoeff2_eq_nsmul`
+identify coefficient maps given by multiplication by a natural number, while
+`explicitCoeff2_eq_card_nsmul` records that the norm of a finite normal subgroup `N`, as a
+coefficient map, acts on `H²` as multiplication by `#N`.
 
 This is functoriality of the *explicit* model: the carriers are the quotients `Z¹/B¹` and `Z²/B²`
 of plain continuous cochains. Mathlib's `ContinuousCohomology.map` is the compatible-pair pullback
@@ -145,8 +147,8 @@ section Naturality
 
 /-! The naturality squares are where the differentials enter, so this is the first point at which
 the coefficients have to be commutative groups carrying a distributive scalar action. Commutativity
-is necessary because `d0` and `d1` are additive homomorphisms; their formulas are not additive for
-a general noncommutative additive group. -/
+is necessary because `d0`, `d1` and `d2` are additive homomorphisms; their formulas are not
+additive for a general noncommutative additive group. -/
 
 variable {G : Type uG} {H : Type uH} {M : Type uM} {N : Type uN}
   [Monoid G] [Monoid H] [AddCommGroup M] [AddCommGroup N]
@@ -168,6 +170,12 @@ theorem cochainsMap2_d1 (φ : H →* G) (f : M →+ N)
   simp only [cochainsMap2_apply, d1_apply, map_add, map_sub, hequiv, cochainsMap1_apply,
     map_mul]
 
+/-- The degree-two differential is natural in compatible pairs, evaluated at a point. -/
+theorem d2_cochainsMap2_apply (φ : H →* G) (f : M →+ N)
+    (hequiv : ∀ (h : H) (m : M), f (φ h • m) = h • f m) (c : G × G → M) (h k j : H) :
+    d2 H N (cochainsMap2 φ f c) (h, k, j) = f (d2 G M c (φ h, φ k, φ j)) := by
+  simp only [d2_apply, cochainsMap2_apply, map_add, map_sub, hequiv, map_mul]
+
 /-- A compatible pair sends degree-one coboundaries to degree-one coboundaries. -/
 theorem cochainsMap1_mem_B1 (φ : H →* G) (f : M →+ N)
     (hequiv : ∀ (h : H) (m : M), f (φ h • m) = h • f m)
@@ -177,8 +185,8 @@ theorem cochainsMap1_mem_B1 (φ : H →* G) (f : M →+ N)
   refine mem_B1_iff.2 ⟨f m, fun h => ?_⟩
   rw [cochainsMap1_apply, ← hm (φ h), map_sub, hequiv]
 
-/-- A compatible pair sends continuous degree-two coboundaries to continuous degree-two
-coboundaries. -/
+/-- A compatible pair sends degree-two coboundaries (coboundaries of continuous degree-one cochains)
+to degree-two coboundaries. -/
 theorem cochainsMap2_mem_B2 [TopologicalSpace G] [TopologicalSpace H]
     [TopologicalSpace M] [TopologicalSpace N] [IsTopologicalAddGroup M]
     [IsTopologicalAddGroup N] (φ : H →ₜ* G) (f : M →+ N)
@@ -215,12 +223,11 @@ theorem cochainsMap2_mem_Z2 (φ : H →ₜ* G) (f : M →+ N) (hf : Continuous f
     (hequiv : ∀ (h : H) (m : M), f (φ h • m) = h • f m)
     {c : G × G → M} (hc : c ∈ Z2 G M) :
     cochainsMap2 (φ : H →* G) f c ∈ Z2 H N := by
-  refine mem_Z2_iff.2 ⟨continuous_cochainsMap2 φ f hf (mem_Z2_iff.1 hc).1, ?_⟩
-  intro h k j
-  simp only [cochainsMap2_apply, map_mul]
-  rw [← hequiv h, ← map_add, ← map_add]
-  exact congrArg f ((mem_Z2_iff.1 hc).2 ((φ : H →* G) h) ((φ : H →* G) k)
-    ((φ : H →* G) j))
+  refine mem_Z2_iff.2 ⟨continuous_cochainsMap2 φ f hf (mem_Z2_iff.1 hc).1,
+    d2_apply_eq_zero_iff.1 ?_⟩
+  ext ⟨h, k, j⟩
+  rw [d2_cochainsMap2_apply (φ : H →* G) f hequiv, d2_apply_eq_zero_iff.2 (mem_Z2_iff.1 hc).2,
+    Pi.zero_apply, map_zero, Pi.zero_apply]
 
 /-- The pullback of continuous degree-one cocycles along a compatible pair, sending a cocycle `c`
 to `h ↦ f (c (φ h))`. -/
@@ -341,7 +348,7 @@ variable (G : Type uG) [Monoid G] [TopologicalSpace G]
   [DistribMulAction H N] [ContinuousSMul H N]
 
 /-- Pullback on the explicit first continuous cohomology group along a compatible pair. -/
-noncomputable def explicitMap1 (φ : H →ₜ* G) (f : M →+ N) (hf : Continuous f)
+def explicitMap1 (φ : H →ₜ* G) (f : M →+ N) (hf : Continuous f)
     (hequiv : ∀ (h : H) (m : M), f (φ h • m) = h • f m) : H1 G M →+ H1 H N :=
   QuotientAddGroup.map ((B1 G M).addSubgroupOf (Z1 G M))
     ((B1 H N).addSubgroupOf (Z1 H N)) (cocyclesMap1 G M H N φ f hf hequiv)
@@ -372,13 +379,8 @@ theorem explicitMap1_id (hid : ∀ (g : G) (m : M),
       fun _ _ => rfl) :
     explicitMap1 G M G M (ContinuousMonoidHom.id G) (AddMonoidHom.id M) continuous_id hid =
       AddMonoidHom.id _ := by
-  apply AddMonoidHom.ext
-  intro x
-  induction x using QuotientAddGroup.induction_on with
-  | _ c =>
-      rw [explicitMap1_mk, AddMonoidHom.id_apply]
-      exact congrArg (fun z : Z1 G M => (z : H1 G M))
-        (DFunLike.congr_fun (cocyclesMap1_id G M hid) c)
+  simp only [explicitMap1, cocyclesMap1_id G M hid]
+  exact QuotientAddGroup.map_id _
 
 /-- Pullback on explicit `H¹` respects composition of compatible pairs: it is contravariant in the
 group homomorphism and covariant in the coefficient map. The compatibility of the composite pair
@@ -396,14 +398,8 @@ theorem explicitMap1_comp
     explicitMap1 G M K P (φ.comp ψ) (q.comp f) (hq.comp hf) hcomp =
       (explicitMap1 H N K P ψ q hq hequivq).comp
         (explicitMap1 G M H N φ f hf hequiv) := by
-  apply AddMonoidHom.ext
-  intro x
-  induction x using QuotientAddGroup.induction_on with
-  | _ c =>
-      rw [explicitMap1_mk, AddMonoidHom.comp_apply, explicitMap1_mk, explicitMap1_mk]
-      exact congrArg (fun z : Z1 K P => (z : H1 K P))
-        (DFunLike.congr_fun
-          (cocyclesMap1_comp G M H N φ f hf hequiv K P ψ q hq hequivq hcomp) c)
+  simp only [explicitMap1, cocyclesMap1_comp G M H N φ f hf hequiv K P ψ q hq hequivq hcomp]
+  exact (QuotientAddGroup.map_comp_map _ _ _ _ _ _ _).symm
 
 /-- **Commuting squares of compatible pairs commute on explicit `H¹`**: if the composites
 `φ ∘ ψ = φ' ∘ ψ'` of the group homomorphisms and `q ∘ f = q' ∘ f'` of the coefficient maps agree,
@@ -437,7 +433,7 @@ theorem explicitMap1_explicitMap1_of_comp_eq
 equivalence of coefficients is an additive equivalence on explicit first continuous cohomology.
 Both directions of the coefficient equivalence are required to be continuous; for discrete
 coefficient modules this follows automatically from discreteness. -/
-noncomputable def explicitMap1Equiv
+def explicitMap1Equiv
     (φ : H ≃ₜ* G) (e : M ≃+ N) (he : Continuous e) (he' : Continuous e.symm)
     (hequiv : ∀ (h : H) (m : M), e (φ h • m) = h • e m) : H1 G M ≃+ H1 H N := by
   have hequiv' : ∀ (g : G) (n : N), e.symm (φ.symm g • n) = g • e.symm n :=
@@ -486,7 +482,7 @@ theorem explicitMap1Equiv_symm_apply
   (rfl)
 
 /-- Pullback on the explicit second continuous cohomology group along a compatible pair. -/
-noncomputable def explicitMap2 [ContinuousMul G] [ContinuousMul H]
+def explicitMap2 [ContinuousMul G] [ContinuousMul H]
     (φ : H →ₜ* G) (f : M →+ N) (hf : Continuous f)
     (hequiv : ∀ (h : H) (m : M), f (φ h • m) = h • f m) : H2 G M →+ H2 H N :=
   QuotientAddGroup.map ((B2 G M).addSubgroupOf (Z2 G M))
@@ -519,13 +515,8 @@ theorem explicitMap2_id [ContinuousMul G] (hid : ∀ (g : G) (m : M),
       fun _ _ => rfl) :
     explicitMap2 G M G M (ContinuousMonoidHom.id G) (AddMonoidHom.id M) continuous_id hid =
       AddMonoidHom.id _ := by
-  apply AddMonoidHom.ext
-  intro x
-  induction x using QuotientAddGroup.induction_on with
-  | _ c =>
-      rw [explicitMap2_mk, AddMonoidHom.id_apply]
-      exact congrArg (fun z : Z2 G M => (z : H2 G M))
-        (DFunLike.congr_fun (cocyclesMap2_id G M hid) c)
+  simp only [explicitMap2, cocyclesMap2_id G M hid]
+  exact QuotientAddGroup.map_id _
 
 /-- Pullback on explicit `H²` respects composition of compatible pairs. -/
 theorem explicitMap2_comp
@@ -542,20 +533,14 @@ theorem explicitMap2_comp
     explicitMap2 G M K P (φ.comp ψ) (q.comp f) (hq.comp hf) hcomp =
       (explicitMap2 H N K P ψ q hq hequivq).comp
         (explicitMap2 G M H N φ f hf hequiv) := by
-  apply AddMonoidHom.ext
-  intro x
-  induction x using QuotientAddGroup.induction_on with
-  | _ c =>
-      rw [explicitMap2_mk, AddMonoidHom.comp_apply, explicitMap2_mk, explicitMap2_mk]
-      exact congrArg (fun z : Z2 K P => (z : H2 K P))
-        (DFunLike.congr_fun
-          (cocyclesMap2_comp G M H N φ f hf hequiv K P ψ q hq hequivq hcomp) c)
+  simp only [explicitMap2, cocyclesMap2_comp G M H N φ f hf hequiv K P ψ q hq hequivq hcomp]
+  exact (QuotientAddGroup.map_comp_map _ _ _ _ _ _ _).symm
 
 /-- Pullback along a compatible pair made of a continuous multiplicative equivalence and an additive
 equivalence of coefficients is an additive equivalence on explicit second continuous cohomology.
 Both directions of the coefficient equivalence are required to be continuous; for discrete
 coefficient modules this follows automatically from discreteness. -/
-noncomputable def explicitMap2Equiv [ContinuousMul G] [ContinuousMul H]
+def explicitMap2Equiv [ContinuousMul G] [ContinuousMul H]
     (φ : H ≃ₜ* G) (e : M ≃+ N) (he : Continuous e) (he' : Continuous e.symm)
     (hequiv : ∀ (h : H) (m : M), e (φ h • m) = h • e m) : H2 G M ≃+ H2 H N := by
   have hequiv' : ∀ (g : G) (n : N), e.symm (φ.symm g • n) = g • e.symm n :=
@@ -613,7 +598,7 @@ variable (G : Type uG) [Group G] [TopologicalSpace G]
 
 /-- Restriction on explicit `H¹`, induced by the subgroup inclusion and the identity coefficient
 map. -/
-noncomputable def explicitRes1 (S : Subgroup G) : H1 G M →+ H1 S M :=
+def explicitRes1 (S : Subgroup G) : H1 G M →+ H1 S M :=
   explicitMap1 G M S M (ContinuousMonoidHom.subgroupSubtype S) (AddMonoidHom.id M)
     continuous_id (ContinuousMonoidHom.id_subgroupSubtype_smul M S)
 
@@ -641,15 +626,15 @@ theorem explicitRes1_comp (S : Subgroup G) (T : Subgroup S) :
       explicitMap1 G M T M
         ((ContinuousMonoidHom.subgroupSubtype S).comp
           (ContinuousMonoidHom.subgroupSubtype T))
-        (AddMonoidHom.id M) continuous_id (fun _ _ => rfl) := by
-  exact (explicitMap1_comp G M S M (ContinuousMonoidHom.subgroupSubtype S)
+        (AddMonoidHom.id M) continuous_id (fun _ _ => rfl) :=
+  (explicitMap1_comp G M S M (ContinuousMonoidHom.subgroupSubtype S)
     (AddMonoidHom.id M) continuous_id (ContinuousMonoidHom.id_subgroupSubtype_smul M S) T M
     (ContinuousMonoidHom.subgroupSubtype T) (AddMonoidHom.id M) continuous_id
     (ContinuousMonoidHom.id_subgroupSubtype_smul M T) (fun _ _ => rfl)).symm
 
 /-- Restriction on explicit `H²`, induced by the subgroup inclusion and the identity coefficient
 map. -/
-noncomputable def explicitRes2 (S : Subgroup G) [ContinuousMul G] [ContinuousMul S] :
+def explicitRes2 (S : Subgroup G) [ContinuousMul G] [ContinuousMul S] :
     H2 G M →+ H2 S M :=
   explicitMap2 G M S M (ContinuousMonoidHom.subgroupSubtype S) (AddMonoidHom.id M)
     continuous_id (ContinuousMonoidHom.id_subgroupSubtype_smul M S)
@@ -678,8 +663,8 @@ theorem explicitRes2_comp (S : Subgroup G) (T : Subgroup S)
       explicitMap2 G M T M
         ((ContinuousMonoidHom.subgroupSubtype S).comp
           (ContinuousMonoidHom.subgroupSubtype T))
-        (AddMonoidHom.id M) continuous_id (fun _ _ => rfl) := by
-  exact (explicitMap2_comp G M S M (ContinuousMonoidHom.subgroupSubtype S)
+        (AddMonoidHom.id M) continuous_id (fun _ _ => rfl) :=
+  (explicitMap2_comp G M S M (ContinuousMonoidHom.subgroupSubtype S)
     (AddMonoidHom.id M) continuous_id (ContinuousMonoidHom.id_subgroupSubtype_smul M S) T M
     (ContinuousMonoidHom.subgroupSubtype T) (AddMonoidHom.id M) continuous_id
     (ContinuousMonoidHom.id_subgroupSubtype_smul M T)).symm
@@ -694,7 +679,7 @@ variable (G : Type uG) [Monoid G] [TopologicalSpace G]
 
 /-- The coefficient map on explicit `H¹` induced by a continuous equivariant additive
 homomorphism. -/
-noncomputable def explicitCoeff1 {N : Type uN} [AddCommGroup N] [TopologicalSpace N]
+def explicitCoeff1 {N : Type uN} [AddCommGroup N] [TopologicalSpace N]
     [IsTopologicalAddGroup N] [DistribMulAction G N] [ContinuousSMul G N]
     (f : M →+[G] N) (hf : Continuous f) : H1 G M →+ H1 G N :=
   explicitMap1 G M G N (ContinuousMonoidHom.id G) f hf fun g m => f.map_smul g m
@@ -725,6 +710,16 @@ theorem explicitCoeff1_id :
     explicitCoeff1 G M (DistribMulActionHom.id G) continuous_id = AddMonoidHom.id _ :=
   explicitMap1_id G M fun _ _ => rfl
 
+/-- A coefficient map which is multiplication by `k` on `M` induces multiplication by `k` on
+explicit `H¹`: the class of a `1`-cocycle `c` goes to the class of `k • c`. -/
+theorem explicitCoeff1_eq_nsmul (f : M →+[G] M) (hf : Continuous f) {k : ℕ}
+    (hk : ∀ m, f m = k • m) (x : H1 G M) : explicitCoeff1 G M f hf x = k • x := by
+  induction x using QuotientAddGroup.induction_on with
+  | _ c =>
+    rw [explicitCoeff1_mk, ← QuotientAddGroup.mk_nsmul]
+    exact congrArg (fun z : Z1 G M ↦ (z : H1 G M))
+      (Subtype.ext (funext fun g ↦ (cocyclesMap1_apply _ _ _ _ _ _ _ _ c g).trans (hk _)))
+
 /-- Coefficient maps on explicit `H¹` respect composition. -/
 theorem explicitCoeff1_comp {N : Type uN} [AddCommGroup N] [TopologicalSpace N]
     [IsTopologicalAddGroup N] [DistribMulAction G N] [ContinuousSMul G N]
@@ -743,7 +738,7 @@ theorem explicitCoeff1_comp {N : Type uN} [AddCommGroup N] [TopologicalSpace N]
 /-- An equivariant additive equivalence of topological coefficient modules induces an additive
 equivalence on explicit first continuous cohomology. Both directions are required to be
 continuous; for discrete coefficient modules this follows automatically from discreteness. -/
-noncomputable def explicitCoeff1Equiv {N : Type uN} [AddCommGroup N] [TopologicalSpace N]
+def explicitCoeff1Equiv {N : Type uN} [AddCommGroup N] [TopologicalSpace N]
     [IsTopologicalAddGroup N] [DistribMulAction G N] [ContinuousSMul G N]
     (e : M ≃+ N) (he : Continuous e) (he' : Continuous e.symm)
     (hequiv : ∀ (g : G) (m : M), e (g • m) = g • e m) : H1 G M ≃+ H1 G N :=
@@ -790,7 +785,7 @@ theorem explicitCoeff1Equiv_mk {N : Type uN} [AddCommGroup N] [TopologicalSpace 
 
 /-- The coefficient map on explicit `H²` induced by a continuous equivariant additive
 homomorphism. -/
-noncomputable def explicitCoeff2 [ContinuousMul G]
+def explicitCoeff2 [ContinuousMul G]
     {N : Type uN} [AddCommGroup N] [TopologicalSpace N]
     [IsTopologicalAddGroup N] [DistribMulAction G N] [ContinuousSMul G N]
     (f : M →+[G] N) (hf : Continuous f) : H2 G M →+ H2 G N :=
@@ -852,7 +847,7 @@ theorem explicitCoeff2_comp [ContinuousMul G]
 /-- An equivariant additive equivalence of topological coefficient modules induces an additive
 equivalence on explicit second continuous cohomology. Both directions are required to be
 continuous; for discrete coefficient modules this follows automatically from discreteness. -/
-noncomputable def explicitCoeff2Equiv [ContinuousMul G] {N : Type uN} [AddCommGroup N]
+def explicitCoeff2Equiv [ContinuousMul G] {N : Type uN} [AddCommGroup N]
     [TopologicalSpace N] [IsTopologicalAddGroup N] [DistribMulAction G N] [ContinuousSMul G N]
     (e : M ≃+ N) (he : Continuous e) (he' : Continuous e.symm)
     (hequiv : ∀ (g : G) (m : M), e (g • m) = g • e m) : H2 G M ≃+ H2 G N :=
@@ -886,7 +881,7 @@ theorem explicitCoeff2Equiv_symm_apply [ContinuousMul G] {N : Type uN} [AddCommG
 /-- A bijective equivariant homomorphism of discrete coefficient modules induces a bijection on
 explicit first cohomology. -/
 theorem explicitCoeff1_bijective [DiscreteTopology M] {N : Type uN} [AddCommGroup N]
-    [TopologicalSpace N] [IsTopologicalAddGroup N] [DiscreteTopology N] [DistribMulAction G N]
+    [TopologicalSpace N] [DiscreteTopology N] [DistribMulAction G N]
     [ContinuousSMul G N] {f : M →+[G] N} (hf : Function.Bijective f) :
     Function.Bijective (explicitCoeff1 G M f continuous_of_discreteTopology) := by
   have h := (explicitCoeff1Equiv G M (AddEquiv.ofBijective (f : M →+ N) hf)
@@ -904,7 +899,7 @@ theorem explicitCoeff1_bijective [DiscreteTopology M] {N : Type uN} [AddCommGrou
 /-- A bijective equivariant homomorphism of discrete coefficient modules induces a bijection on
 explicit second cohomology. -/
 theorem explicitCoeff2_bijective [ContinuousMul G] [DiscreteTopology M] {N : Type uN}
-    [AddCommGroup N] [TopologicalSpace N] [IsTopologicalAddGroup N] [DiscreteTopology N]
+    [AddCommGroup N] [TopologicalSpace N] [DiscreteTopology N]
     [DistribMulAction G N] [ContinuousSMul G N] {f : M →+[G] N} (hf : Function.Bijective f) :
     Function.Bijective (explicitCoeff2 G M f continuous_of_discreteTopology) := by
   have h := (explicitCoeff2Equiv G M (AddEquiv.ofBijective (f : M →+ N) hf)

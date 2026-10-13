@@ -309,7 +309,8 @@ noncomputable def groupSchemePointMulEquiv :
     (coordinateHopfAlgebra R m) A (groupScheme_def R m)
 
 /-- The underlying spectrum map of the canonical algebra-to-scheme point equivalence. -/
-@[simp]
+-- Not `@[simp]`: `simp` rewrites with it but then cannot close its own statement, since the two
+-- `eqToHom` endpoints come out in different forms; use it by name.
 theorem groupSchemePointMulEquiv_apply_left
     (f : WithConv (coordinateHopfAlgebra R m →ₐ[R] A)) :
     (groupSchemePointMulEquiv m A f).left =
@@ -347,7 +348,6 @@ theorem schemePointsMulEquiv_apply
 
 /-- The inverse scheme-points equivalence presents an upper-unitriangular matrix as the
 corresponding spectrum point. -/
-@[simp]
 theorem schemePointsMulEquiv_symm_apply (g : upperUnitriangularGroup m A) :
     (schemePointsMulEquiv m A).symm g =
       groupSchemePointMulEquiv m A ((pointsMulEquiv R m).symm g) := by

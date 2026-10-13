@@ -187,3 +187,26 @@ theorem pbwBasis_single (i : ι) (k : ℕ) :
     simp [Finsupp.support_single _ hk]
 
 end Module.Basis
+
+namespace Module.Basis
+
+open TauCeti.UniversalEnvelopingAlgebra
+
+variable {R L M ι κ : Type*} [CommRing R]
+  [LieRing L] [LieAlgebra R L] [LieRing M] [LieAlgebra R M]
+  [LinearOrder ι] [LinearOrder κ]
+
+/-- A Lie map taking an ordered basis into another ordered basis carries each PBW monomial to
+the ambient monomial with its exponents extended by zero outside the embedded indices. -/
+theorem map_pbwBasis (b : Basis ι R L) (c : Basis κ R M)
+    (f : L →ₗ⁅R⁆ M) (e : ι ↪o κ) (h : ∀ i, f (b i) = c (e i)) (n : ι →₀ ℕ) :
+    map R f (b.pbwBasis n) = c.pbwBasis (n.embDomain e.toEmbedding) := by
+  have hsort : (n.toMultiset.sort (· ≤ ·)).map e =
+      (n.embDomain e.toEmbedding).toMultiset.sort (· ≤ ·) := by
+    rw [Finsupp.embDomain_eq_mapDomain, ← Finsupp.toMultiset_map]
+    exact Multiset.map_sort e n.toMultiset (· ≤ ·) (· ≤ ·)
+      (fun _ _ _ _ ↦ e.le_iff_le.symm)
+  rw [pbwBasis_apply, map_pbwMonomial, pbwBasis_apply, ← hsort]
+  simp only [pbwMonomial_def, List.map_map, Function.comp_def, h]
+
+end Module.Basis

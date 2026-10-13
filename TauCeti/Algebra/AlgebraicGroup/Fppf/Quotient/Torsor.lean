@@ -48,9 +48,6 @@ No representability of `G / V(I)` is asserted.
 
 * J. S. Milne, *Algebraic Groups* (2017), Section 5.
 * W. C. Waterhouse, *Introduction to Affine Group Schemes*, Section 14.
-
-This is the torsor and kernel-pair step of Layer 3, "Normality and quotients", of the
-ReductiveGroups roadmap.
 -/
 
 public section

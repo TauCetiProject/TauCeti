@@ -33,10 +33,9 @@ complement of `TauCeti.Comodule.fixedSubcomodule` can contain no nonzero fixed v
 zero, hence every vector of `V` is fixed. Kolchin's theorem supplies such vectors for a unipotent
 group, so this is the step that makes a linearly reductive unipotent group act trivially.
 
-For an abelian group `G`, `k[G]` is the coordinate Hopf algebra of the diagonalizable group
-`D(G)`. Thus every diagonalizable group, and in particular every split torus, is linearly
-reductive over an arbitrary field. This is the diagonalizable direction of the linear-reductivity
-milestone in Layer 6 of the ReductiveGroups roadmap.
+For an abelian group `G`, `k[G]` is the coordinate Hopf algebra of the diagonalizable group `D(G)`.
+Thus every diagonalizable group, and in particular every split torus, is linearly reductive over an
+arbitrary field.
 
 ## Main declarations
 
@@ -432,7 +431,7 @@ private theorem equivariantProjection_apply_of_mem
   rw [equivariantProjection_apply]
   have hterm : ∀ g ∈ (weightDecomposition k G V v).support,
       weightProj k G V g (p (weightProj k G V g v)) = weightProj k G V g v := by
-    intro g hg
+    intro g _
     rw [hp (weightProj_mem_subcomodule (R := k) (G := G) (V := V) N g hv),
       weightProj_weightProj_self]
   rw [Finsupp.sum]

@@ -46,61 +46,17 @@ theorem exists_mem_range_schwarzChristoffelBoundary_iff_of_sum_eq_neg_one
       (w ∈ range (schwarzChristoffelBoundary a e z₀) ↔
         w.im = (schwarzChristoffelLogConstantAtInfinity a e z₀).im ∨
         w.im = (schwarzChristoffelLogConstantAtInfinity a e z₀).im + Real.pi) := by
-  classical
-  let B := schwarzChristoffelBoundary a e z₀
-  let c := schwarzChristoffelLogConstantAtInfinity a e z₀
-  obtain ⟨A, hA, ha⟩ := (finite_range a).isBounded.exists_pos_norm_le
-  have ha' (i : ι) : -A ≤ a i ∧ a i ≤ A := by
-    exact abs_le.mp (by simpa using ha (a i) (mem_range_self i))
-  have hp : -1 < ∑ i with a i = -A, e i :=
-    lt_sum_filter_eq_of_forall_apply neg_one_lt_zero hfinite (-A)
-  have hq : -1 < ∑ i with a i = A, e i :=
-    lt_sum_filter_eq_of_forall_apply neg_one_lt_zero hfinite A
-  have hleft : B '' Iic (-A) = (fun t : ℝ => B (-A) + (t : ℂ)) '' Ici 0 := by
-    simpa [B, hsum, Complex.exp_neg, Complex.exp_pi_mul_I] using
-      schwarzChristoffelBoundary_image_Iic_eq_ray a e z₀ hp (fun i _ => (ha' i).1) hsum.ge
-  have hright := schwarzChristoffelBoundary_image_Ici_eq_ray a e z₀ hq
-    (fun i _ => (ha' i).2) hsum.ge
-  have hL : (B (-A)).im = c.im + Real.pi :=
-    im_schwarzChristoffelBoundary_of_forall_ge_of_sum_eq_neg_one a e z₀ hp
-      (fun i _ => (ha' i).1) hsum
-  have hR : (B A).im = c.im :=
-    im_schwarzChristoffelBoundary_of_forall_le_of_sum_eq_neg_one a e z₀ hq
-      (fun i _ => (ha' i).2) hsum
-  -- The compact middle arc has bounded image; beyond its bound only the outer rays remain.
-  have hBc := (isProperMap_schwarzChristoffelBoundary a e z₀ hfinite hsum.ge).continuous
-  obtain ⟨M, _, hM⟩ :=
-    ((isCompact_Icc : IsCompact (Icc (-A) A)).image hBc).isBounded.exists_pos_norm_le
-  have hLM : (B (-A)).re ≤ M := (re_le_norm _).trans
-    (hM _ (mem_image_of_mem B ⟨le_rfl, by linarith⟩))
-  have hRM : (B A).re ≤ M := (re_le_norm _).trans
-    (hM _ (mem_image_of_mem B ⟨by linarith, le_rfl⟩))
-  dsimp only [B, c] at hL hR hLM hRM
-  refine ⟨M, fun w hw => ⟨?_, ?_⟩⟩
-  · rintro ⟨x, rfl⟩
-    by_cases hxL : x ≤ -A
-    · have hx : x ∈ Iic (-A) := hxL
-      obtain ⟨t, _, ht⟩ := hleft ▸ mem_image_of_mem B hx
-      exact Or.inr (by simpa [B, hL] using (congrArg Complex.im ht).symm)
-    by_cases hxR : A ≤ x
-    · have hx : x ∈ Ici A := hxR
-      obtain ⟨t, _, ht⟩ := hright ▸ mem_image_of_mem B hx
-      exact Or.inl (by simpa [hR] using (congrArg Complex.im ht).symm)
-    have hx : x ∈ Icc (-A) A := ⟨(not_le.mp hxL).le, (not_le.mp hxR).le⟩
-    have hbound := hM _ (mem_image_of_mem B hx)
-    exact (not_lt_of_ge ((re_le_norm _).trans hbound) hw).elim
-  · -- Both full horizontal rays have begun before the chosen real-part bound.
-    rintro (hwR | hwL)
-    · have hmem : w ∈ B '' Ici A := by
-        rw [hright]
-        refine ⟨w.re - (B A).re, by simp only [mem_Ici, B]; linarith, ?_⟩
-        apply Complex.ext <;> simp [B, hwR, hR]
-      exact image_subset_range B _ hmem
-    · have hmem : w ∈ B '' Iic (-A) := by
-        rw [hleft]
-        refine ⟨w.re - (B (-A)).re, by simp only [mem_Ici, B]; linarith, ?_⟩
-        apply Complex.ext <;> simp [B, hwL, hL]
-      exact image_subset_range B _ hmem
+  obtain ⟨A, _, ha⟩ := (finite_range a).isBounded.exists_pos_norm_le
+  have ha' (i : ι) : -A ≤ a i ∧ a i ≤ A :=
+    abs_le.mp (by simpa using ha (a i) (mem_range_self i))
+  obtain ⟨R, hR⟩ := exists_mem_range_schwarzChristoffelBoundary_iff_of_sum_eq_neg_one_or_eq_one
+    a e z₀ hfinite (fun i _ => (ha' i).1) (fun i _ => (ha' i).2) (Or.inl hsum)
+  rw [im_schwarzChristoffelBoundary_of_forall_le_of_sum_eq_neg_one a e z₀
+      (lt_sum_filter_eq_of_forall_apply neg_one_lt_zero hfinite A) (fun i _ => (ha' i).2) hsum,
+    im_schwarzChristoffelBoundary_of_forall_ge_of_sum_eq_neg_one a e z₀
+      (lt_sum_filter_eq_of_forall_apply neg_one_lt_zero hfinite (-A)) (fun i _ => (ha' i).1)
+      hsum] at hR
+  exact ⟨R, hR⟩
 
 /-- The logarithmic asymptotic confines image points far to the right to a slightly wider
 strip. The finite part is bounded using the continuous extension at the prevertices. -/

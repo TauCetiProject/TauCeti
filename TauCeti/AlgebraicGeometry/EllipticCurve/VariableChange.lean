@@ -22,14 +22,18 @@ base-change facts that Galois descent runs on:
 variables does), `negVariableChange_baseChange_map` (`[-1]` is defined over the base, so a base
 automorphism fixes it) and `map_smul_baseChange_eq` (the conjugate of an isomorphism of base
 changes is again one). Comparing an isomorphism with its conjugate via the last of these is what
-produces the Galois cocycle used by the twist classification.
+produces the Galois cocycle used by the twist classification. A change of variables over an
+extension descends to the base field exactly when its four coefficients do
+(`VariableChange.mem_range_baseChange_iff`).
 
 That cocycle comparison lands on a product `C * [-1]`, whose four components are read off here as
 `mul_negVariableChange_u/_r/_s/_t` rather than by unfolding `VariableChange.mul_def` against the
-components of `[-1]` at each use.
+components of `[-1]` at each use. The negation automorphism of `C • E` is that of `E` conjugated
+by `C` (`negVariableChange_smul`).
 
 Similarly, the components of `C * D⁻¹`, the change of variables carrying `D • W` to `C • W`, are
-recorded as `VariableChange.mul_inv_u/_r/_s/_t`.
+recorded as `VariableChange.mul_inv_u/_r/_s/_t`. A translation `x ↦ x + r`, `y ↦ y + t` leaves the
+discriminant and `c₄` alone (`variableChange_translate_Δ`, `variableChange_translate_c₄`).
 
 The negation is the nontrivial automorphism in the `Aut (E, O)`
 milestone of `TauCetiRoadmap/EllipticCurves/README.md` §Layer 1, proved in
@@ -88,15 +92,12 @@ def negVariableChange : VariableChange R :=
 over a ring in which `2 = 0` cannot have `a₁ = a₃ = 0`. -/
 lemma negVariableChange_ne_one [Nontrivial R] [E.IsElliptic] : E.negVariableChange ≠ 1 := by
   intro h
-  rcases eq_or_ne (2 : R) 0 with h2 | h2
-  · have hs := congrArg VariableChange.s h
-    have ht := congrArg VariableChange.t h
-    simp only [negVariableChange, VariableChange.one_def, neg_eq_zero] at hs ht
-    grind [a₁_ne_zero_or_a₃_ne_zero_of_Δ_ne_zero_of_two_eq_zero E E.isUnit_Δ.ne_zero]
-  · contrapose h2
-    have hv : (-1 : R) = 1 := by
-      simpa [VariableChange.one_def] using congrArg (fun C : VariableChange R ↦ (C.u : R)) h
-    linear_combination -hv
+  have hv : (-1 : R) = 1 := by
+    simpa [VariableChange.one_def] using congrArg (fun C : VariableChange R ↦ (C.u : R)) h
+  have hs := congrArg VariableChange.s h
+  have ht := congrArg VariableChange.t h
+  simp only [negVariableChange, VariableChange.one_def, neg_eq_zero] at hs ht
+  grind [a₁_ne_zero_or_a₃_ne_zero_of_Δ_ne_zero_of_two_eq_zero E E.isUnit_Δ.ne_zero]
 
 namespace VariableChange
 
@@ -186,6 +187,35 @@ variable (C : VariableChange R)
 @[simp] lemma negVariableChange_inv : E.negVariableChange⁻¹ = E.negVariableChange :=
   inv_eq_of_mul_eq_one_left E.negVariableChange_mul_self
 
+/-- The negation automorphism of `C • E` is that of `E` conjugated by `C`: negating a point of
+`C • E` is carrying it to `E` by `C`, negating there, and carrying the result back by `C⁻¹`. -/
+lemma negVariableChange_smul : (C • E).negVariableChange = C * E.negVariableChange * C⁻¹ := by
+  rw [eq_mul_inv_iff_mul_eq]
+  ext
+  · simp [VariableChange.mul_def]
+  · simp [VariableChange.mul_def]
+  · simp [VariableChange.mul_def, variableChange_a₁]
+    ring
+  · have hu : (↑C.u⁻¹ : R) ^ 3 * (C.u : R) ^ 3 = 1 := by rw [← mul_pow, Units.inv_mul, one_pow]
+    simp [VariableChange.mul_def, variableChange_a₃]
+    linear_combination (-E.a₃ - C.r * E.a₁ - 2 * C.t) * hu
+
+section Translate
+
+variable (W : WeierstrassCurve R) (x y : R)
+
+/-- **A translation does not change the discriminant.** -/
+@[simp]
+theorem variableChange_translate_Δ : (VariableChange.mk 1 x 0 y • W).Δ = W.Δ := by
+  simp [variableChange_Δ]
+
+/-- **A translation does not change `c₄`.** -/
+@[simp]
+theorem variableChange_translate_c₄ : (VariableChange.mk 1 x 0 y • W).c₄ = W.c₄ := by
+  simp [variableChange_c₄]
+
+end Translate
+
 section BaseChange
 
 variable (L : Type*) [CommRing L] [Algebra R L]
@@ -258,6 +288,23 @@ lemma map_smul_baseChange_eq (σ : L →ₐ[R] L) {V W : WeierstrassCurve R}
   rwa [hρ, hV, hW] at hmv
 
 end BaseChange
+
+/-- **A change of variables descends exactly when its coefficients do.** A change of variables
+over a nontrivial `K`-algebra `L` is the base change of one over the field `K` if and only if its
+four coefficients `u, r, s, t` lie in the image of `K`. -/
+lemma VariableChange.mem_range_baseChange_iff {K L : Type*} [Field K] [CommRing L] [Nontrivial L]
+    [Algebra K L] (C : VariableChange L) :
+    C ∈ Set.range (fun D : VariableChange K ↦ D.baseChange L) ↔
+      (C.u : L) ∈ Set.range (algebraMap K L) ∧ C.r ∈ Set.range (algebraMap K L) ∧
+        C.s ∈ Set.range (algebraMap K L) ∧ C.t ∈ Set.range (algebraMap K L) := by
+  constructor
+  · rintro ⟨D, rfl⟩
+    exact ⟨⟨D.u, rfl⟩, ⟨D.r, rfl⟩, ⟨D.s, rfl⟩, ⟨D.t, rfl⟩⟩
+  · rintro ⟨⟨u, hu⟩, ⟨r, hr⟩, ⟨s, hs⟩, ⟨t, ht⟩⟩
+    have hu₀ : u ≠ 0 := by
+      rintro rfl
+      exact C.u.ne_zero (hu.symm.trans (map_zero _))
+    exact ⟨⟨Units.mk0 u hu₀, r, s, t⟩, VariableChange.ext (Units.ext hu) hr hs ht⟩
 
 end WeierstrassCurve
 

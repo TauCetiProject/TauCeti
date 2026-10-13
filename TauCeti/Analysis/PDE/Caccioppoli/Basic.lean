@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.PDE.EnergyForm.Sobolev
 public import TauCeti.Analysis.Sobolev.W1p.CompactSupport
 public import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
+import TauCeti.MeasureTheory.Integral.Bochner.Basic
 
 /-!
 # The Caccioppoli inequality for weak solutions
@@ -40,6 +41,8 @@ term `2ζu ⟨a ∇u, ∇ζ⟩`.
 
 * `TauCeti.PDE.W1p.setIntegral_sq_mul_norm_gradient_sq_le_of_pointwise`: the common
   integration and absorption step for Caccioppoli inequalities.
+* `TauCeti.PDE.exists_setIntegral_ball_norm_gradient_sq_le_of_cutoff`: the common
+  localization of a cutoff Caccioppoli inequality to concentric balls.
 * `TauCeti.PDE.UniformlyEllipticOn.setIntegral_sq_mul_norm_gradient_sq_le`: the Caccioppoli
   inequality.
 
@@ -113,7 +116,7 @@ theorem W1p.setIntegral_sq_mul_norm_gradient_sq_le_of_pointwise (hlam : 0 < lam)
   set X := ∫ x in Omega, ψ x ^ 2 * ‖W1p.gradient w x‖ ^ 2 ∂mu
   set Y := ∫ x in Omega, ‖∇ ψ x‖ ^ 2 * W1p.value w x ^ 2 ∂mu
   set F := ∫ x in Omega, force x ∂mu
-  have hmain : lam * X ≤ F + lam / 2 * X + 2 * Lam ^ 2 / lam * Y := by
+  have _ : lam * X ≤ F + lam / 2 * X + 2 * Lam ^ 2 / lam * Y := by
     calc
       lam * X ≤ (∫ x in Omega, e x ∂mu) + lam / 2 * X + 2 * Lam ^ 2 / lam * Y := by
         simpa [X, Y] using hint
@@ -163,6 +166,86 @@ theorem W1p.setIntegral_norm_gradient_sq_mul_value_sq_le (w : W1p mu Omega 2)
           simp [indicator_of_notMem hxS, _root_.gradient, hfd])
     _ = G ^ 2 * ∫ x in (Omega : Set (EuclideanSpace ℝ ι)) ∩ S, g x ∂mu := by
       rw [integral_const_mul, setIntegral_indicator hS]
+
+omit [DecidableEq ι] in
+open Filter Metric in
+/-- **Localizing a cutoff Caccioppoli inequality to concentric balls.** There is a constant
+`C > 0`, depending only on the dimension, such that the following holds for every additive Haar
+measure `μ`. Let `w ∈ H¹(Ω)` and `A, B ≥ 0`, and suppose that every smooth `ψ` compactly
+supported in `Ω` satisfies
+
+`∫_Ω ψ² ‖∇w‖² ≤ A ∫_Ω ‖∇ψ‖² w² + B ∫_Ω ψ² w²`.
+
+Then for every pair of balls `B(x₀, r) ⊆ B(x₀, R) ⊆ Ω` with `0 < r < R`,
+
+`∫_{B(x₀, r)} ‖∇w‖² ≤ (A (C / (R - r))² + B) ∫_{B(x₀, R)} w²`.
+
+The cutoff is one on `B(x₀, r)`, takes values in `[0, 1]`, is supported in `B(x₀, R)`, and has
+gradient at most `C / (R - r)`. -/
+theorem exists_setIntegral_ball_norm_gradient_sq_le_of_cutoff :
+    ∃ C : ℝ, 0 < C ∧ ∀ {mu : Measure (EuclideanSpace ℝ ι)} [mu.IsAddHaarMeasure]
+      {Omega : Opens (EuclideanSpace ℝ ι)} (w : W1p mu Omega 2) {A B : ℝ}
+      {x₀ : EuclideanSpace ℝ ι} {r R : ℝ},
+      0 ≤ A → 0 ≤ B → 0 < r → r < R → ball x₀ R ⊆ (Omega : Set (EuclideanSpace ℝ ι)) →
+      (∀ ψ : EuclideanSpace ℝ ι → ℝ, ContDiff ℝ ∞ ψ → HasCompactSupport ψ →
+        tsupport ψ ⊆ (Omega : Set (EuclideanSpace ℝ ι)) →
+        ∫ x in Omega, ψ x ^ 2 * ‖W1p.gradient w x‖ ^ 2 ∂mu ≤
+          A * ∫ x in Omega, ‖∇ ψ x‖ ^ 2 * W1p.value w x ^ 2 ∂mu
+            + B * ∫ x in Omega, ψ x ^ 2 * W1p.value w x ^ 2 ∂mu) →
+      ∫ x in ball x₀ r, ‖W1p.gradient w x‖ ^ 2 ∂mu ≤
+        (A * (C / (R - r)) ^ 2 + B) * ∫ x in ball x₀ R, W1p.value w x ^ 2 ∂mu := by
+  obtain ⟨C, hC0, hC⟩ := exists_forall_contDiff_cutoff_closedBall (E := EuclideanSpace ℝ ι)
+  refine ⟨2 * (C + 1), by positivity, ?_⟩
+  intro mu _ Omega w A B x₀ r R hA hB hr hrR hball hcacc
+  -- A cutoff equal to one on `ball x₀ r` and supported in
+  -- `closedBall x₀ ((r + R) / 2) ⊆ ball x₀ R`.
+  obtain ⟨ψ, hψ, hrange, hone, hts, hgrad⟩ := hC x₀ hr (by linarith : r < (r + R) / 2)
+  have htsR : tsupport ψ ⊆ ball x₀ R :=
+    hts.trans (closedBall_subset_ball (by linarith))
+  have hcpt : HasCompactSupport ψ :=
+    (isCompact_closedBall x₀ ((r + R) / 2)).of_isClosed_subset (isClosed_tsupport ψ) hts
+  set G : ℝ := 2 * (C + 1) / (R - r)
+  have hG : ∀ x, ‖∇ ψ x‖ ≤ G := fun x => (hgrad x).trans (by
+    rw [(by ring : (r + R) / 2 - r = (R - r) / 2), div_div_eq_mul_div]
+    exact div_le_div_of_nonneg_right (by linarith) (by linarith))
+  -- On `B(x₀, r)` the cutoff is one.
+  have hleft : ∫ x in ball x₀ r, ‖W1p.gradient w x‖ ^ 2 ∂mu ≤
+      ∫ x in Omega, ψ x ^ 2 * ‖W1p.gradient w x‖ ^ 2 ∂mu :=
+    MeasureTheory.setIntegral_le_setIntegral_sq_mul_of_eqOn (W1p.integrable_norm_gradient_sq w)
+      (fun x => sq_nonneg _) hψ.continuous.aestronglyMeasurable hrange measurableSet_ball
+      (hone.mono ball_subset_closedBall) ((ball_subset_ball hrR.le).trans hball)
+  -- `∇ψ` vanishes off `B(x₀, R)`, where it is bounded by `G`.
+  have hright : ∫ x in Omega, ‖∇ ψ x‖ ^ 2 * W1p.value w x ^ 2 ∂mu ≤
+      G ^ 2 * ∫ x in ball x₀ R, W1p.value w x ^ 2 ∂mu :=
+    (W1p.setIntegral_norm_gradient_sq_mul_value_sq_le w hψ hG measurableSet_ball htsR
+      (W1p.integrable_value_sq w) (Eventually.of_forall fun x => le_rfl)).trans_eq
+      (by rw [inter_eq_right.2 hball])
+  -- `ψ² ≤ 1` on `B(x₀, R)`, and `ψ` vanishes off it.
+  have hzeroth : ∫ x in Omega, ψ x ^ 2 * W1p.value w x ^ 2 ∂mu ≤
+      ∫ x in ball x₀ R, W1p.value w x ^ 2 ∂mu := by
+    have hψ1 : ∀ x, ψ x ^ 2 ≤ 1 := fun x => by
+      obtain ⟨h0, h1⟩ := hrange (mem_range_self x)
+      exact pow_le_one₀ h0 h1
+    calc ∫ x in Omega, ψ x ^ 2 * W1p.value w x ^ 2 ∂mu
+        ≤ ∫ x in Omega, (ball x₀ R).indicator (fun x => W1p.value w x ^ 2) x ∂mu :=
+          integral_mono ((W1p.integrable_value_sq w).bdd_mul
+            (hψ.continuous.pow 2).aestronglyMeasurable (c := 1) (Eventually.of_forall fun x => by
+              rw [Real.norm_eq_abs, abs_of_nonneg (sq_nonneg _)]
+              exact hψ1 x))
+            ((W1p.integrable_value_sq w).indicator measurableSet_ball) fun x => by
+              by_cases hxR : x ∈ ball x₀ R
+              · rw [indicator_of_mem hxR]
+                exact mul_le_of_le_one_left (sq_nonneg _) (hψ1 x)
+              · rw [indicator_of_notMem hxR,
+                  image_eq_zero_of_notMem_tsupport (fun hx' => hxR (htsR hx'))]
+                simp
+      _ = ∫ x in ball x₀ R, W1p.value w x ^ 2 ∂mu := by
+        rw [setIntegral_indicator measurableSet_ball, inter_eq_right.2 hball]
+  calc ∫ x in ball x₀ r, ‖W1p.gradient w x‖ ^ 2 ∂mu
+      ≤ A * (G ^ 2 * ∫ x in ball x₀ R, W1p.value w x ^ 2 ∂mu)
+          + B * ∫ x in ball x₀ R, W1p.value w x ^ 2 ∂mu :=
+        (hleft.trans (hcacc ψ hψ hcpt (htsR.trans hball))).trans (by gcongr)
+    _ = _ := by ring
 
 /-- **The Caccioppoli inequality.** Let `a` be measurable and uniformly elliptic on `Ω` with
 constants `0 < λ ≤ Λ`, and let `u ∈ H¹(Ω)` be a weak solution of `-∂ⱼ(aⁱʲ ∂ᵢu) = f` in `Ω`, in

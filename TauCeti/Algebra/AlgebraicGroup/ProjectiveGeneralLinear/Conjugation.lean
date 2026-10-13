@@ -24,15 +24,16 @@ from `TauCeti.Algebra.AlgebraicGroup.ProjectiveGeneralLinear.Basic`, and identif
 * its kernel: a point lies in the scheme-theoretic kernel exactly when its matrix is central, and
   over a field the kernel Hopf ideal is the defining ideal of the center `Z(GLₙ)` (which is
   `𝔾ₘ` when `n > 0`, and trivial when `n = 0`);
-* its image on field-valued points: by the Skolem–Noether theorem every automorphism of `Mₙ(K)`
-  over a field `K` is inner, so the map on `K`-points is surjective. Together with the kernel
-  computation, the `K`-points of `PGLₙ` are Mathlib's `PGL(n, K) = GLₙ(K) / Z(GLₙ(K))`
-  (`Matrix.ProjGenLinGroup.innerAut_bijective`).
+* its image on points with values in a local ring, in particular a field: by the Skolem–Noether
+  theorem every automorphism of `Mₙ(K)` over a local ring `K` is inner, so the map on `K`-points
+  is surjective. Together with the kernel computation, the `K`-points of `PGLₙ` are Mathlib's
+  `PGL(n, K) = GLₙ(K) / Z(GLₙ(K))` (`Matrix.ProjGenLinGroup.innerAut_bijective`).
 
 The pointwise facts about conjugation (`Matrix.GeneralLinearGroup.innerAut`, its kernel and its
-surjectivity over a field) are in `TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.InnerAut`. In
-coordinates, the inner automorphism by `g` has, in the matrix-unit basis, the matrix whose entry
-at `((p, q), (i, j))` is `gₚᵢ (g⁻¹)ⱼq`. Over the coordinate algebra of `GLₙ`, this
+surjectivity over a local ring) are in
+`TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.InnerAut`. In coordinates, the inner automorphism
+by `g` has, in the matrix-unit basis, the matrix whose entry at `((p, q), (i, j))` is
+`gₚᵢ (g⁻¹)ⱼq`. Over the coordinate algebra of `GLₙ`, this
 `conjugationMatrix` of the generic matrix is multiplicative, so it defines a coordinate morphism
 `O(GL_{n²}) → O(GLₙ)` which kills the defining ideal of `PGLₙ`.
 
@@ -48,7 +49,7 @@ at `((p, q), (i, j))` is `gₚᵢ (g⁻¹)ⱼq`. Over the coordinate algebra of 
 * `TauCeti.ProjectiveGeneralLinear.mem_quotientPointsSubgroup_kernelHopfIdeal_conjugationMap_iff`
   and `TauCeti.ProjectiveGeneralLinear.kernelHopfIdeal_conjugationMap`: its kernel is the center.
 * `TauCeti.ProjectiveGeneralLinear.mapPointsFunctor_conjugationMap_app_surjective`: it is
-  surjective on points with values in a field.
+  surjective on points with values in a local ring.
 
 ## References
 
@@ -288,10 +289,10 @@ theorem kernelHopfIdeal_conjugationMap (k : Type u) [Field k] :
     intro A g hg
     exact (CommHopfAlgCat.mem_centerPointsSubgroup_iff _ A g).mp ((hmem A g).mp hg)
 
-/-- **`GLₙ → PGLₙ` is surjective on field-valued points**: by the Skolem–Noether theorem, every
-point of `PGLₙ` with values in a field comes from a point of `GLₙ`. -/
+/-- **`GLₙ → PGLₙ` is surjective on points with values in a local ring**, in particular in a
+field: by the Skolem–Noether theorem, every such point of `PGLₙ` comes from a point of `GLₙ`. -/
 theorem mapPointsFunctor_conjugationMap_app_surjective {R : Type u} [CommRing R] (K : Type w)
-    [Field K] [Algebra R K] :
+    [CommRing K] [IsLocalRing K] [Algebra R K] :
     Function.Surjective
       ((CommHopfAlgCat.mapPointsFunctor (conjugationMap n R)).app (CommAlgCat.of R K)) := by
   intro q

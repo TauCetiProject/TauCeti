@@ -55,20 +55,14 @@ namespace TauCeti
 namespace PDE
 
 open Bornology MeasureTheory Set TopologicalSpace
-open scoped ENNReal InnerProduct InnerProductSpace
+open scoped ENNReal InnerProductSpace
 
 variable {ι : Type*} [Fintype ι] {mu : Measure (EuclideanSpace ℝ ι)} [mu.IsAddHaarMeasure]
   {Omega : Opens (EuclideanSpace ℝ ι)} {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ}
   {b : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι}
   {c : EuclideanSpace ℝ ι → ℝ}
 
-/-- Shortcut normed group instance on `H¹₀(Ω)`, needed by the inherited Hilbert structure. -/
-noncomputable local instance instNormedAddCommGroupH1ZeroFredholm :
-    NormedAddCommGroup (W1p0 mu Omega 2) := inferInstance
-
-/-- Shortcut inner-product instance on `H¹₀(Ω)`. -/
-noncomputable local instance instInnerProductSpaceH1ZeroFredholm :
-    InnerProductSpace ℝ (W1p0 mu Omega 2) := inferInstance
+attribute [local instance] W1p0.instNormedAddCommGroup W1p0.instInnerProductSpace
 
 /-- The Lax--Milgram operator representing the `L²` mass form on `H¹₀(Ω)`.  It is characterized
 by `TauCeti.PDE.energyFormH1_dirichletMassOperator`. -/
@@ -87,8 +81,9 @@ theorem energyFormH1_dirichletMassOperator
     energyFormH1 a b c (dirichletMassOperator hcoeff hcoercive u : W1p mu Omega 2)
         (v : W1p mu Omega 2) =
       ⟪W1p.value (u : W1p mu Omega 2), W1p.value (v : W1p mu Omega 2)⟫_ℝ := by
-  rw [← energyFormH1L0_apply hcoeff, dirichletMassOperator,
-    hcoercive.apply_formPerturbationOperator, W1p0.valueL_apply, W1p0.valueL_apply]
+  unfold dirichletMassOperator
+  rw [← energyFormH1L0_apply hcoeff, hcoercive.apply_formPerturbationOperator, W1p0.valueL_apply,
+    W1p0.valueL_apply]
 
 /-- On a bounded domain, the Dirichlet mass operator is compact by Rellich--Kondrachov. -/
 theorem isCompactOperator_dirichletMassOperator
@@ -157,8 +152,8 @@ theorem isWeakSolutionDirichletMassShift_iff_operator_eq
         (1 - kappa • dirichletMassOperator hcoeff hcoercive :
             W1p0 mu Omega 2 →L[ℝ] W1p0 mu Omega 2) u =
           hcoercive.solutionOfFunctional (dirichletForcing f) := by
-    simpa only [dirichletMassOperator, IsWeakSolutionDirichletMassShift,
-      energyFormH1L0_apply, W1p0.valueL_apply] using
+    unfold dirichletMassOperator
+    simpa only [IsWeakSolutionDirichletMassShift, energyFormH1L0_apply, W1p0.valueL_apply] using
       (hcoercive.one_sub_smul_formPerturbationOperator_apply_eq_iff_functional
         (W1p0.valueL (mu := mu) (Omega := Omega) (p := 2)) kappa (dirichletForcing f) u).symm
   have hsolution :

@@ -23,6 +23,10 @@ the addition law `addXYZ P Q` (resp. `dblAddXYZ P Q`) is a unit, then the additi
 the pair of these points to the point with homogeneous coordinates `addXYZ P Q`
 (resp. `dblAddXYZ P Q`).
 
+Every point of `E ×_{Spec R} E` with values in a local ring `S` is such a pair, for some ring
+homomorphism `g : R →+* S` and some solutions `P` and `Q` with a unit coordinate each. No
+ellipticity is needed for this.
+
 When `g : R →+* K` goes to a field, `P` and `Q` are nonsingular, since `W` is elliptic. One of the
 two laws then does not vanish at `P` and `Q`, and its value represents their sum `add P Q` in
 Mathlib's projective group law on `W.map g`: the addition morphism sends the pair of `K`-points to
@@ -37,6 +41,9 @@ points `W.toAffine.Point` of `W`, the addition morphism is the addition of these
   morphism sends the pair of points with homogeneous coordinates `P` and `Q` to the point with
   homogeneous coordinates `addXYZ P Q` (resp. `dblAddXYZ P Q`), when one of its coordinates is a
   unit.
+* `WeierstrassCurve.exists_eq_lift_projModelPoint`: a point of `E ×_{Spec R} E` with values in a
+  local ring is the pair of two points of `E` given by homogeneous coordinates, over the same ring
+  homomorphism.
 * `WeierstrassCurve.lift_projModelPoint_additionMorphism_eq_add`: for `g : R →+* K` to a field, the
   addition morphism sends the pair of `K`-points with homogeneous coordinates `P` and `Q` to the
   point with homogeneous coordinates their sum `add P Q`.
@@ -68,6 +75,14 @@ pair of points with unit coordinates, over any ring homomorphism, is factored di
 piece of the chart cover `WeierstrassCurve.additionCover`. The agreement with the group law is
 stated on homogeneous coordinates for every `g : R →+* K` to a field, and on `W.toAffine.Point`
 for a curve over the field `K` itself.
+
+`exists_eq_lift_projModelPoint` is not stated in the source. The source's proof of commutativity
+by evaluation on field-valued points, `mulModelHom_comm_atlas` in the file `GroupLawAxioms.lean`
+of the same directory, writes a point `p` of `E ×_{Spec R} E` with values in a field `K` as the
+pair of its two projections, read as elements of `SpecPoints` (file `WeierstrassModel.lean`), the
+`K`-points over the `R`-algebra structure that `p` induces on `K`. Here the point has values in any
+local ring, and the two projections are given by homogeneous coordinates, by
+`WeierstrassCurve.exists_eq_projModelPoint`.
 -/
 
 public section
@@ -195,6 +210,36 @@ theorem lift_projModelPoint_additionMorphism_of_isUnit_dblAddXYZ [W.IsElliptic] 
 
 end CommRing
 
+section LocalRing
+
+variable {R : Type u} [CommRing R] (W : WeierstrassCurve R)
+
+/-- **Points of `E ×_{Spec R} E` with values in a local ring.** Let `S` be a local ring and `p` a
+point `Spec S ⟶ E ×_{Spec R} E` of the fibre product of the projective model `E = projModel W`
+with itself. Then there are a ring homomorphism `g : R →+* S` and solutions `P` and `Q` of the
+projective Weierstrass equation of `W.map g`, with unit coordinates `Pᵢ` and `Qⱼ`, such that `p` is
+the pair of the `S`-points of `E` with homogeneous coordinates `P` and `Q`. Such a `g` is unique,
+and `P` and `Q` are unique up to units (`projModelPoint_eq_projModelPoint_iff`). For a single point
+of `E` over a given `g`, see `exists_eq_projModelPoint`. No ellipticity is assumed. -/
+theorem exists_eq_lift_projModelPoint {S : Type u} [CommRing S] [IsLocalRing S]
+    (p : Spec (.of S) ⟶ pullback W.projModelOver W.projModelOver) :
+    ∃ (g : R →+* S) (P Q : Fin 3 → S) (hP : (W.toProjective.map g).Equation P)
+      (hQ : (W.toProjective.map g).Equation Q) (i j : Fin 3) (hi : IsUnit (P i))
+      (hj : IsUnit (Q j)), p = pullback.lift (W.projModelPoint g hP hi) (W.projModelPoint g hQ hj)
+        ((W.projModelPoint_projModelOver g hP hi).trans
+          (W.projModelPoint_projModelOver g hQ hj).symm) := by
+  -- the two projections of `p` lie over the same morphism `Spec φ : Spec S ⟶ Spec R`
+  obtain ⟨φ, hφ⟩ := Spec.map_surjective (p ≫ pullback.fst _ _ ≫ W.projModelOver)
+  -- so each of them is a point with homogeneous coordinates, along `φ`
+  obtain ⟨P, hP, i, hi, h₁⟩ := W.exists_eq_projModelPoint (g := φ.hom) (x := p ≫ pullback.fst _ _)
+    (by rw [Category.assoc, ← hφ, CommRingCat.ofHom_hom])
+  obtain ⟨Q, hQ, j, hj, h₂⟩ := W.exists_eq_projModelPoint (g := φ.hom) (x := p ≫ pullback.snd _ _)
+    (by rw [Category.assoc, ← pullback.condition, ← hφ, CommRingCat.ofHom_hom])
+  exact ⟨φ.hom, P, Q, hP, hQ, i, j, hi, hj, pullback.hom_ext
+    (h₁.trans (pullback.lift_fst _ _ _).symm) (h₂.trans (pullback.lift_snd _ _ _).symm)⟩
+
+end LocalRing
+
 section Fibre
 
 variable {R : Type u} [CommRing R] (W : WeierstrassCurve R)
@@ -271,10 +316,8 @@ theorem projModelPointsEquiv_lift_additionMorphism [DecidableEq K]
   obtain ⟨P, hP, i, hi, hx, hxP⟩ := W.exists_nonsingular_eq_projModelPoint x
   obtain ⟨Q, hQ, j, hj, hy, hyQ⟩ := W.exists_nonsingular_eq_projModelPoint y
   -- their sum `add P Q` is nonsingular, so it has a unit coordinate
-  have hPQ := Projective.nonsingular_add hP hQ
-  have hne : W.toProjective.add P Q ≠ 0 := fun h ↦ by
-    simp [h, Projective.nonsingular_iff] at hPQ
-  obtain ⟨m, hm⟩ := Function.ne_iff.mp hne
+  obtain ⟨m, hm⟩ := Function.ne_iff.mp
+    (Projective.ne_zero_of_nonsingular (Projective.nonsingular_add hP hQ))
   rw [hxP, hyQ, ← Projective.Point.toAffine_add hP hQ]
   -- the pair `(x, y)` is the pair of points with homogeneous coordinates `P` and `Q`, which the
   -- addition morphism sends to the point with homogeneous coordinates `add P Q`

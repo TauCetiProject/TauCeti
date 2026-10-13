@@ -292,20 +292,12 @@ theorem pointsMulEquivGLSymplecticFin_weightTorusPoints
   obtain ⟨i | i, rfl⟩ := finSumFinEquiv.surjective i
   · rw [finSumFinEquiv_apply_left, GLSymplecticFin.diagonalCoordinates_castAdd,
       basisWeight_apply, finSumFinEquiv_symm_apply_castAdd]
-    have hweight :
-        weight n (.inl i) = DynkinType.TypeC.weight (n + 1) i := by
-      funext j
-      exact weight_inl n i j
-    rw [hweight]
+    rw [weight_inl]
   · rw [finSumFinEquiv_apply_right, Fin.natAdd_eq_addNat,
       GLSymplecticFin.diagonalCoordinates_addNat, basisWeight_apply,
       ← Fin.natAdd_eq_addNat,
       finSumFinEquiv_symm_apply_natAdd]
-    have hweight :
-        weight n (.inr i) = -DynkinType.TypeC.weight (n + 1) i := by
-      funext j
-      exact weight_inr n i j
-    rw [hweight, torusCharacter_neg]
+    rw [weight_inr, torusCharacter_neg]
 
 end Field
 

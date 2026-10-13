@@ -11,6 +11,7 @@ public import Mathlib.GroupTheory.QuotientGroup.Defs
 public import Mathlib.LinearAlgebra.Dimension.Finite
 public import TauCeti.Algebra.MonoidAlgebra.MapDomain
 import TauCeti.Algebra.Bialgebra.MonoidAlgebra.Augmentation
+import TauCeti.Algebra.MonoidAlgebra.Exactness
 
 /-!
 # Kernels of homomorphisms of diagonalizable groups

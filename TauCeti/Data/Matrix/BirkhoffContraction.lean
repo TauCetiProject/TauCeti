@@ -238,6 +238,14 @@ omit [Finite κ] in
 theorem projectiveDiameter_nonneg (K : Matrix ι κ ℝ) : 0 ≤ K.projectiveDiameter :=
   Real.iSup_nonneg fun _ ↦ Real.iSup_nonneg fun _ ↦ hilbertProjectiveDist_nonneg _ _
 
+omit [Finite κ] in
+/-- Birkhoff's contraction factor `tanh (K.projectiveDiameter / 4)` is nonnegative. -/
+theorem tanh_projectiveDiameter_div_four_nonneg (K : Matrix ι κ ℝ) :
+    0 ≤ tanh (K.projectiveDiameter / 4) := by
+  rw [tanh_eq]
+  exact div_nonneg (sub_nonneg.2 (exp_le_exp.2 (by linarith [projectiveDiameter_nonneg K])))
+    (by positivity)
+
 omit [Finite ι] [Finite κ] in
 /-- The projective diameter of a matrix is at most any nonnegative bound on all logarithmic cross
 ratios of its entries. -/
@@ -373,10 +381,7 @@ theorem hilbertProjectiveDist_mulVec_le {K : Matrix ι κ ℝ} (hK : ∀ i j, 0 
     have := exp_pos (K.projectiveDiameter / 4)
     rw [tanh_eq, exp_neg, h]
     field_simp
-  have hk : 0 ≤ tanh (K.projectiveDiameter / 4) := by
-    have := one_le_exp (by linarith [projectiveDiameter_nonneg K] : 0 ≤ K.projectiveDiameter / 2)
-    rw [htanh]
-    exact div_nonneg (by linarith) (by linarith)
+  have hk := tanh_projectiveDiameter_div_four_nonneg K
   have hkd := mul_nonneg hk (hilbertProjectiveDist_nonneg x y)
   refine hilbertProjectiveDist_le (fun i i' ↦ ?_) hkd
   rcases isEmpty_or_nonempty κ with hκ | hκ

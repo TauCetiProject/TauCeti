@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.Polynomial.Subresultant.Basic
+import TauCeti.Algebra.Polynomial.Coeff.Basic
 import TauCeti.GroupTheory.Perm.Inversion
 
 /-!
@@ -170,7 +171,6 @@ theorem subresultantCoeff_def [CommRing R]
 
 /-- At the smaller right terminal index, a coefficient minor reads a coefficient of the right
 input times a power of its coefficient at the bound. The empty determinant is excluded. -/
-@[simp]
 theorem subresultantCoeff_right_bound [CommRing R] (p q : R[X]) {m n k : ℕ}
     (hnm : n < m) (hk : k ≤ n) :
     subresultantCoeff p q m n n k = q.coeff k * q.coeff n ^ (m - n - 1) := by
@@ -216,7 +216,6 @@ theorem subresultantCoeff_comm [CommRing R]
 
 /-- At the smaller left terminal index, a coefficient minor reads a coefficient of the left
 input times a power of its coefficient at the bound. The empty determinant is excluded. -/
-@[simp]
 theorem subresultantCoeff_left_bound [CommRing R] (p q : R[X]) {m n k : ℕ}
     (hmn : m < n) (hk : k ≤ m) :
     subresultantCoeff p q m n m k = p.coeff k * p.coeff m ^ (n - m - 1) := by

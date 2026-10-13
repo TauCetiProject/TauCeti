@@ -70,15 +70,14 @@ lattices are trivial and the index is `1`), so the datum is a `RootDatum` carryi
 
 The coordinates and the node numbering follow Bourbaki, *Lie Groups and Lie Algebras, Chapters
 4--6*, Plate III, and Humphreys, *Introduction to Lie Algebras and Representation Theory*, section
-12.1. This is the `Cₙ` branch of the target "a named datum per valid type" in Layer 6 of
-`TauCetiRoadmap/RepresentationTheory/RootSystems/README.md`.
+12.1.
 -/
 
 public section
 
 namespace TauCeti
 
-open Function Set Submodule
+open Function Set
 
 namespace DynkinType
 
@@ -236,31 +235,24 @@ private lemma typeCCoroot_typeCMk {x y : Signed n} (h : y ≠ signedNeg x) :
 
 /-! ## Injectivity of the roots and of the coroots -/
 
-private lemma typeCRoot_injective : Injective (typeCRoot (n := n)) := by
-  intro i j hij
-  have hi := typeCSnd_ne_signedNeg_typeCFst i
-  have hj := typeCSnd_ne_signedNeg_typeCFst j
-  have hmem : ∀ z, (z = typeCFst i ∨ z = typeCSnd i) ↔ (z = typeCFst j ∨ z = typeCSnd j) := by
-    intro z
-    rw [← one_le_pairRoot_dotProduct_iff hi z, ← one_le_pairRoot_dotProduct_iff hj z]
-    exact Iff.of_eq (congrArg _ (congrArg (· ⬝ᵥ signedCoweight z) hij))
-  rcases Set.pair_eq_pair_iff.mp (Set.ext fun z => by simpa using hmem z) with
-    ⟨h1, h2⟩ | ⟨h1, h2⟩
+/-- A root index is determined by the unordered pair of its signed basis vectors. -/
+private lemma typeCIndex_eq_of_pair_mem_iff {i j : TypeCIndex n}
+    (h : ∀ z, (z = typeCFst i ∨ z = typeCSnd i) ↔ (z = typeCFst j ∨ z = typeCSnd j)) : i = j := by
+  rcases Set.pair_eq_pair_iff.mp (Set.ext fun z => by simpa using h z) with ⟨h1, h2⟩ | ⟨h1, h2⟩
   · exact typeCPair_injective (Prod.ext h1 h2)
   · exact typeCPair_swap_eq h1 h2
 
-private lemma typeCCoroot_injective : Injective (typeCCoroot (n := n)) := by
-  intro i j hij
-  have hi := typeCSnd_ne_signedNeg_typeCFst i
-  have hj := typeCSnd_ne_signedNeg_typeCFst j
-  have hmem : ∀ z, (z = typeCFst i ∨ z = typeCSnd i) ↔ (z = typeCFst j ∨ z = typeCSnd j) := by
-    intro z
-    rw [← one_le_dotProduct_pairCoroot_iff hi z, ← one_le_dotProduct_pairCoroot_iff hj z]
+private lemma typeCRoot_injective : Injective (typeCRoot (n := n)) := fun i j hij =>
+  typeCIndex_eq_of_pair_mem_iff fun z => by
+    rw [← one_le_pairRoot_dotProduct_iff (typeCSnd_ne_signedNeg_typeCFst i) z,
+      ← one_le_pairRoot_dotProduct_iff (typeCSnd_ne_signedNeg_typeCFst j) z]
+    exact Iff.of_eq (congrArg _ (congrArg (· ⬝ᵥ signedCoweight z) hij))
+
+private lemma typeCCoroot_injective : Injective (typeCCoroot (n := n)) := fun i j hij =>
+  typeCIndex_eq_of_pair_mem_iff fun z => by
+    rw [← one_le_dotProduct_pairCoroot_iff (typeCSnd_ne_signedNeg_typeCFst i) z,
+      ← one_le_dotProduct_pairCoroot_iff (typeCSnd_ne_signedNeg_typeCFst j) z]
     exact Iff.of_eq (congrArg _ (congrArg (signedWeight z ⬝ᵥ ·) hij))
-  rcases Set.pair_eq_pair_iff.mp (Set.ext fun z => by simpa using hmem z) with
-    ⟨h1, h2⟩ | ⟨h1, h2⟩
-  · exact typeCPair_injective (Prod.ext h1 h2)
-  · exact typeCPair_swap_eq h1 h2
 
 /-! ## The reflection on root indices -/
 
@@ -332,7 +324,7 @@ def typeCIndexEquiv (n : ℕ) : TypeCIndex n ≃ Fin (2 * n ^ 2) :=
 
 Both lattices are `Fin n → ℤ`: the character lattice in the fundamental-weight basis and the
 cocharacter lattice in the simple-coroot basis. The `2 * n ^ 2` roots are the classical
-`± e_a ± e_b` and `± 2 e_a`, enumerated with the simple roots first; see
+`± e_a ± e_b` with `a ≠ b` and `± 2 e_a`, enumerated with the simple roots first; see
 `TauCeti.DynkinType.root_typeCSimpleIndex`. -/
 def typeCSimplyConnectedRootDatum (n : ℕ) :
     RootDatum (Fin (2 * n ^ 2)) (Fin n → ℤ) (Fin n → ℤ) where
@@ -459,40 +451,26 @@ private lemma coroot_typeCSimpleIndex_eq (i : Fin n) :
   rw [coroot_typeCSimplyConnectedRootDatum, typeCIndexEquiv_symm_typeCSimpleIndex]
   rfl
 
-private lemma typeCFst_simple (i : Fin n) :
-    typeCFst ((i, Order.succ i, false) : TypeCIndex n) = (i, false) := rfl
-
-private lemma typeCSnd_simple_of_lt {i : Fin n} (h : (i : ℕ) + 1 < n) :
-    typeCSnd ((i, Order.succ i, false) : TypeCIndex n) = (Order.succ i, true) := by
-  have hlt : i < Order.succ i := by rw [Fin.lt_def, Fin.val_orderSucc_of_lt h]; omega
-  rw [typeCSnd_mk_of_lt hlt]
-  simp
-
-private lemma typeCSnd_simple_of_last {i : Fin n} (h : (i : ℕ) + 1 = n) :
-    typeCSnd ((i, Order.succ i, false) : TypeCIndex n) = (i, false) := by
-  rw [Fin.orderSucc_eq_self_of_not_lt (i := i) (by omega), typeCSnd_mk_of_not_lt (lt_irrefl i)]
-
 private lemma typeCSimpleRoot_of_lt {i : Fin n} (h : (i : ℕ) + 1 < n) :
     typeCSimpleRoot i = weight n (i : ℕ) - weight n ((i : ℕ) + 1) := by
-  rw [typeCSimpleRoot, typeCRoot, typeCFst_simple, typeCSnd_simple_of_lt h, pairRoot_def,
-    signedWeight_false, signedWeight_true, Fin.val_orderSucc_of_lt h]
-  exact (sub_eq_add_neg _ _).symm
+  have hlt : i < Order.succ i := by rw [Fin.lt_def, Fin.val_orderSucc_of_lt h]; omega
+  rw [typeCSimpleRoot, typeCRoot_mk_of_lt hlt, signedWeight_false, signedWeight_false,
+    Fin.val_orderSucc_of_lt h]
 
 private lemma typeCSimpleRoot_of_last {i : Fin n} (h : (i : ℕ) + 1 = n) :
     typeCSimpleRoot i = weight n (i : ℕ) + weight n (i : ℕ) := by
-  rw [typeCSimpleRoot, typeCRoot, typeCFst_simple, typeCSnd_simple_of_last h, pairRoot_def,
-    signedWeight_false]
+  rw [typeCSimpleRoot, Fin.orderSucc_eq_self_of_not_lt (i := i) (by omega),
+    typeCRoot_mk_of_not_lt (lt_irrefl i), signedWeight_false]
 
 private lemma typeCSimpleCoroot_eq (i : Fin n) :
     typeCSimpleCoroot i = coweight n (i : ℕ) - coweight n ((i : ℕ) + 1) := by
   rcases eq_or_lt_of_le (Nat.succ_le_of_lt i.isLt) with h | h
-  · rw [typeCSimpleCoroot, typeCCoroot, typeCFst_simple, typeCSnd_simple_of_last h,
-      pairCoroot_self, signedCoweight_false, coweight_eq_zero_of_le (a := (i : ℕ) + 1) (by omega),
-      sub_zero]
-  · have hne : ((i : Fin n), false) ≠ ((Order.succ i : Fin n), true) := by simp
-    rw [typeCSimpleCoroot, typeCCoroot, typeCFst_simple, typeCSnd_simple_of_lt h,
-      pairCoroot_of_ne hne, signedCoweight_false, signedCoweight_true, Fin.val_orderSucc_of_lt h]
-    exact (sub_eq_add_neg _ _).symm
+  · rw [typeCSimpleCoroot, Fin.orderSucc_eq_self_of_not_lt (i := i) (by omega),
+      typeCCoroot_mk_diag, signedCoweight_false,
+      coweight_eq_zero_of_le (a := (i : ℕ) + 1) (by omega), sub_zero]
+  · have hlt : i < Order.succ i := by rw [Fin.lt_def, Fin.val_orderSucc_of_lt h]; omega
+    rw [typeCSimpleCoroot, typeCCoroot_mk_of_lt hlt, signedCoweight_false,
+      signedCoweight_false, Fin.val_orderSucc_of_lt h]
 
 private lemma typeCSimpleCoroot_eq_single (i : Fin n) : typeCSimpleCoroot i = Pi.single i 1 := by
   rw [typeCSimpleCoroot_eq]
@@ -640,9 +618,11 @@ by `TauCeti.DynkinType.root_typeCSimpleIndex` carry the simple roots in Bourbaki
     k ∈ (typeCSimplyConnectedBase n).support ↔ (k : ℕ) < n :=
   mem_simpleSupport_iff_lt (typeCSimpleIndex_injective (n := n)) (fun _ ↦ typeCSimpleIndex_val _)
 
-private lemma pairing_typeCSimpleIndex (i j : Fin n) :
-    (typeCSimplyConnectedRootDatum n).pairing (typeCSimpleIndex n i) (typeCSimpleIndex n j)
-      = CartanMatrix.C n i j := by
+/-- The pairing of two Bourbaki-indexed simple roots and coroots is the corresponding entry of
+the type-`C` Cartan matrix. -/
+@[simp] lemma pairing_typeCSimpleIndex (i j : Fin n) :
+    (typeCSimplyConnectedRootDatum n).pairing (typeCSimpleIndex n i) (typeCSimpleIndex n j) =
+      CartanMatrix.C n i j := by
   rw [pairing_typeCSimplyConnectedRootDatum, root_typeCSimpleIndex, coroot_typeCSimpleIndex,
     dotProduct_single, mul_one]
 

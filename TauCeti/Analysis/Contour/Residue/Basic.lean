@@ -233,7 +233,7 @@ private theorem residue_eq_of_eventuallyEq_zpow_smul_of_order_lt_zero {f g : ℂ
   have hle : (n : WithTop ℤ) ≤ meromorphicOrderAt f z₀ :=
     hord_eq ▸ le_add_of_nonneg_right hg.meromorphicOrderAt_nonneg
   obtain ⟨g₀, hg₀_an, hg₀_ne, hf_eq⟩ := (meromorphicOrderAt_ne_top_iff hf).1 (ne_top_of_lt ha)
-  set a := (meromorphicOrderAt f z₀).untop₀ with ha_def
+  set a := (meromorphicOrderAt f z₀).untop₀ with _
   have hcoe : (a : WithTop ℤ) = meromorphicOrderAt f z₀ :=
     WithTop.coe_untop₀_of_ne_top (ne_top_of_lt ha)
   have ha_lt : a < 0 := by
@@ -325,7 +325,7 @@ lemma exists_analyticAt_eventuallyEq_zpow_smul {f : ℂ → ℂ} {z₀ : ℂ} {m
     filter_upwards [meromorphicOrderAt_eq_top_iff.1 htop] with z hz
     simp [hz]
   · obtain ⟨g₀, hg₀_an, _, hf_eq⟩ := (meromorphicOrderAt_ne_top_iff hf).1 htop
-    set a := (meromorphicOrderAt f z₀).untop₀ with ha_def
+    set a := (meromorphicOrderAt f z₀).untop₀ with _
     have hma : m ≤ a := by
       rw [← WithTop.coe_le_coe, WithTop.coe_untop₀_of_ne_top htop]
       exact hm
@@ -408,16 +408,6 @@ theorem residue_const_smul {f : ℂ → ℂ} {z₀ : ℂ} (c : ℂ) :
   -- `c • f` unfolds to `fun z ↦ c * f z` by `Pi.smul_apply`, and `c • r` to `c * r` in `ℂ` by
   -- `smul_eq_mul`; both are definitional, so `residue_const_mul` applies directly.
   residue_const_mul c
-
-/-- Compatibility wrapper for the former name of `residue_const_smul`. Stated with the signature
-that name carried, so existing `residue_smul c hf` calls keep elaborating; the meromorphy argument
-is ignored, that lemma now being unconditional. Migrate to `residue_const_smul`, dropping that
-argument — which is why no automatic replacement is named here: `residue_const_smul c hf` would not
-elaborate. -/
-@[deprecated "Use `residue_const_smul`, which is unconditional: drop the meromorphy argument."
-  (since := "2026-07-30")]
-theorem residue_smul {f : ℂ → ℂ} {z₀ : ℂ} (c : ℂ) (_hf : MeromorphicAt f z₀) :
-    residue (c • f) z₀ = c • residue f z₀ := residue_const_smul c
 
 /-- **Subtractivity of the residue.** The residue distributes over subtraction of meromorphic
 functions; the `−1` scaling case of `residue_add` and `residue_const_mul`. -/

@@ -6,13 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Category.FGModuleCat.Abelian
-public import Mathlib.Algebra.Category.FGModuleCat.Colimits
 public import Mathlib.Algebra.Category.FGModuleCat.EssentiallySmall
 public import Mathlib.Algebra.Category.ModuleCat.Biproducts
 public import Mathlib.Algebra.Category.ModuleCat.Projective
 public import Mathlib.RingTheory.Finiteness.Prod
 public import Mathlib.RingTheory.SimpleModule.InjectiveProjective
 public import TauCeti.CategoryTheory.GrothendieckGroup.ProjectiveResolution
+public import TauCeti.Algebra.Category.FGModuleCat.Basic
 
 /-!
 # The Cartan map of a ring
@@ -91,9 +91,9 @@ Artinian ring, in the indecomposable-projective and simple bases.
 * `TauCeti.exactK0_add_add_eq_add_add_of_exact`: along a six-term exact sequence of finitely
   generated modules, the odd-indexed and even-indexed classes have the same sum.
 * `CategoryTheory.Equivalence.isConflationExact_finiteModules_congrFullSubcategory_functor` and
-  its `finiteProjectiveModules` and `_inverse` companions: an exact equivalence of module
-  categories respecting the two object properties restricts to exact equivalences of the two
-  subcategories. These are dot notation on the equivalence.
+  its `finiteProjectiveModules` and `_inverse` companions: an equivalence of module categories
+  respecting the two object properties restricts to exact equivalences of the two subcategories.
+  These are dot notation on the equivalence.
 * `TauCeti.cartanMap_apply`: the Cartan map factors through the Grothendieck group of the modules
   admitting finite resolutions by finitely generated projectives, by the resolution theorem.
 * `TauCeti.moduleEulerClassOf_eq`: every finite projective resolution computes the module Euler
@@ -116,9 +116,9 @@ public section
 
 namespace TauCeti
 
-open CategoryTheory CategoryTheory.Limits CategoryTheory.ObjectProperty
+open CategoryTheory CategoryTheory.Limits
 
-universe u
+universe u v
 
 variable (R : Type u) [Ring R]
 
@@ -286,21 +286,15 @@ theorem exactK0_fgModuleCat_prod (M N : Type u) [AddCommGroup M] [Module R M] [M
     [AddCommGroup N] [Module R N] [Module.Finite R N] :
     (ExactK0.of (FGModuleCat.of R (M × N)) : ExactK0 (finiteModulesExactStructure R)) =
       ExactK0.of (FGModuleCat.of R M) + ExactK0.of (FGModuleCat.of R N) := by
-  let F := forget₂ (FGModuleCat.{u} R) (ModuleCat.{u} R)
-  let X := FGModuleCat.of R M
-  let Y := FGModuleCat.of R N
-  let _ : PreservesBinaryBiproduct X Y F := preservesBinaryBiproduct_of_preservesBinaryCoproduct F
-  let e : F.obj (X ⊞ Y) ≅ ModuleCat.of R (M × N) :=
-    F.mapBiprod X Y ≪≫ ModuleCat.biprodIsoProd X.obj Y.obj
   rw [← ExactK0.of_biprod]
-  exact ExactK0.of_congr (F.preimageIso e).symm
+  exact ExactK0.of_congr (FGModuleCat.biprodIsoProd (FGModuleCat.of R M) (FGModuleCat.of R N)).symm
 
 /-- **The class of the middle term of an exact pair.** If `M → N → P` is exact at `N`, with `M`
 and `N` finitely generated, then `[N]` is the sum of the classes of the images of the two maps in
 `G₀(mod R)`: `0 → range f → N → range g → 0` is a short exact sequence of finitely generated
 modules. Telescoping this along a longer exact sequence with zero ends makes its alternating sum of
 classes vanish. -/
-theorem exactK0_of_eq_range_add_range {M N P : Type u} [AddCommGroup M] [Module R M]
+theorem exactK0_of_eq_range_add_range {M : Type v} {N P : Type u} [AddCommGroup M] [Module R M]
     [Module.Finite R M] [AddCommGroup N] [Module R N] [Module.Finite R N] [AddCommGroup P]
     [Module R P] {f : M →ₗ[R] N} {g : N →ₗ[R] P} (hfg : Function.Exact f g) :
     (ExactK0.of (FGModuleCat.of R N) : ExactK0 (finiteModulesExactStructure R)) =
@@ -332,7 +326,7 @@ theorem exactK0_of_range_of_injective {M N : Type u} [AddCommGroup M] [Module R 
 
 /-- The image of a surjective linear map onto a finitely generated module has the class of its
 target in `G₀(mod R)`. -/
-theorem exactK0_of_range_of_surjective {M N : Type u} [AddCommGroup M] [Module R M]
+theorem exactK0_of_range_of_surjective {M : Type v} {N : Type u} [AddCommGroup M] [Module R M]
     [AddCommGroup N] [Module R N] [Module.Finite R N] {f : M →ₗ[R] N}
     (hf : Function.Surjective f) :
     letI := Module.Finite.equiv (LinearEquiv.ofTop _ (LinearMap.range_eq_top.mpr hf)).symm
@@ -341,6 +335,16 @@ theorem exactK0_of_range_of_surjective {M N : Type u} [AddCommGroup M] [Module R
       ExactK0.of (FGModuleCat.of R N) := by
   let := Module.Finite.equiv (LinearEquiv.ofTop _ (LinearMap.range_eq_top.mpr hf)).symm
   exact ExactK0.of_congr (LinearEquiv.ofTop _ (LinearMap.range_eq_top.mpr hf)).toFGModuleCatIso
+
+/-- In `G₀(mod R)`, the class of a finitely generated module is the sum of the classes of a
+finitely generated submodule and of the quotient by it. -/
+theorem exactK0_of_eq_submodule_add_quotient {M : Type u} [AddCommGroup M] [Module R M]
+    [Module.Finite R M] (N : Submodule R M) [Module.Finite R N] :
+    (ExactK0.of (FGModuleCat.of R M) : ExactK0 (finiteModulesExactStructure R)) =
+      ExactK0.of (FGModuleCat.of R N) + ExactK0.of (FGModuleCat.of R (M ⧸ N)) := by
+  rw [exactK0_of_eq_range_add_range R (LinearMap.exact_subtype_mkQ N),
+    exactK0_of_range_of_injective R N.injective_subtype,
+    exactK0_of_range_of_surjective R N.mkQ_surjective]
 
 /-- **The Euler relation of a six-term exact sequence.** For an exact sequence
 `0 → M₁ → M₂ → M₃ → M₄ → M₅ → M₆ → 0` of finitely generated modules, the classes of the odd-indexed
@@ -389,9 +393,10 @@ noncomputable def cartanMap :
   ExactK0.map _ (ExactStructure.isConflationExact_ιOfLE _ (isExtensionClosed_finiteModules R)
     (finiteProjectiveModules_le_finiteModules R))
 
-@[simp] theorem cartanMap_of {M : ModuleCat.{u} R} (hM : finiteProjectiveModules R M) :
-    cartanMap R (ExactK0.of ⟨M, hM⟩) =
-      ExactK0.of ⟨M, (ModuleCat.isFG_iff M).mpr (finiteProjectiveModules_iff.mp hM).1⟩ :=
+@[simp] theorem cartanMap_of (X : (finiteProjectiveModules R).FullSubcategory) :
+    cartanMap R (ExactK0.of X) =
+      ExactK0.of
+        ⟨X.obj, (ModuleCat.isFG_iff X.obj).mpr (finiteProjectiveModules_iff.mp X.property).1⟩ :=
   ExactK0.map_of _ _ _
 
 /-! ### Transport along exact equivalences -/
@@ -412,55 +417,51 @@ universe u u'
 variable {S : Type u} [Ring S] {R : Type u'} [Ring R] (e : ModuleCat.{u} S ≌ ModuleCat.{u'} R)
   [e.functor.Additive]
 
-/-- An exact equivalence of module categories pulling the finitely generated `R`-modules back to
+/-- An equivalence of module categories pulling the finitely generated `R`-modules back to
 the finitely generated `S`-modules restricts to a conflation-exact functor between the finitely
 generated modules. -/
 theorem isConflationExact_finiteModules_congrFullSubcategory_functor
-    (hF : (ExactStructure.abelian (ModuleCat.{u} S)).IsConflationExact
-      (ExactStructure.abelian (ModuleCat.{u'} R)) e.functor)
     (h : (ModuleCat.isFG R).inverseImage e.functor = ModuleCat.isFG S) :
     (finiteModulesExactStructure S).IsConflationExact (finiteModulesExactStructure R)
       (e.congrFullSubcategory h).functor :=
-  ExactStructure.isConflationExact_congrFullSubcategory_functor _ _ e hF h
+  ExactStructure.isConflationExact_congrFullSubcategory_functor _ _ e
+    (ExactStructure.isConflationExact_abelian _) h
 
-/-- The inverse of an exact equivalence of module categories pulling the finitely generated
+/-- The inverse of an equivalence of module categories pulling the finitely generated
 `R`-modules back to the finitely generated `S`-modules restricts to a conflation-exact functor
 between the finitely generated modules. -/
 theorem isConflationExact_finiteModules_congrFullSubcategory_inverse
-    (hG : (ExactStructure.abelian (ModuleCat.{u'} R)).IsConflationExact
-      (ExactStructure.abelian (ModuleCat.{u} S)) e.inverse)
     (h : (ModuleCat.isFG R).inverseImage e.functor = ModuleCat.isFG S) :
     (finiteModulesExactStructure R).IsConflationExact (finiteModulesExactStructure S)
       (e.congrFullSubcategory h).inverse :=
-  ExactStructure.isConflationExact_congrFullSubcategory_inverse _ _ e hG h
+  ExactStructure.isConflationExact_congrFullSubcategory_inverse _ _ e
+    (ExactStructure.isConflationExact_abelian _) h
 
-/-- An exact equivalence of module categories pulling the finitely generated projective
+/-- An equivalence of module categories pulling the finitely generated projective
 `R`-modules back to the finitely generated projective `S`-modules restricts to a conflation-exact
 functor between the finitely generated projective modules. -/
 theorem isConflationExact_finiteProjectiveModules_congrFullSubcategory_functor
-    (hF : (ExactStructure.abelian (ModuleCat.{u} S)).IsConflationExact
-      (ExactStructure.abelian (ModuleCat.{u'} R)) e.functor)
     (h : (finiteProjectiveModules R).inverseImage e.functor = finiteProjectiveModules S) :
     (finiteProjectiveModulesExactStructure S).IsConflationExact
       (finiteProjectiveModulesExactStructure R) (e.congrFullSubcategory h).functor :=
-  ExactStructure.isConflationExact_congrFullSubcategory_functor _ _ e hF h
+  ExactStructure.isConflationExact_congrFullSubcategory_functor _ _ e
+    (ExactStructure.isConflationExact_abelian _) h
 
-/-- The inverse of an exact equivalence of module categories pulling the finitely generated
+/-- The inverse of an equivalence of module categories pulling the finitely generated
 projective `R`-modules back to the finitely generated projective `S`-modules restricts to a
 conflation-exact functor between the finitely generated projective modules. -/
 theorem isConflationExact_finiteProjectiveModules_congrFullSubcategory_inverse
-    (hG : (ExactStructure.abelian (ModuleCat.{u'} R)).IsConflationExact
-      (ExactStructure.abelian (ModuleCat.{u} S)) e.inverse)
     (h : (finiteProjectiveModules R).inverseImage e.functor = finiteProjectiveModules S) :
     (finiteProjectiveModulesExactStructure R).IsConflationExact
       (finiteProjectiveModulesExactStructure S) (e.congrFullSubcategory h).inverse :=
-  ExactStructure.isConflationExact_congrFullSubcategory_inverse _ _ e hG h
+  ExactStructure.isConflationExact_congrFullSubcategory_inverse _ _ e
+    (ExactStructure.isConflationExact_abelian _) h
 
 end CategoryTheory.Equivalence
 
 namespace TauCeti
 
-open CategoryTheory CategoryTheory.Limits CategoryTheory.ObjectProperty
+open CategoryTheory
 
 universe u
 
@@ -522,10 +523,9 @@ noncomputable def moduleResolutionEquiv :
       ExactK0.{u} (finiteProjectiveResolutionExactStructure R) :=
   ExactStructure.resolutionEquiv.{u, u, u + 1} (finiteProjectiveModules_le_isProjective R)
 
-@[simp] theorem moduleResolutionEquiv_of {M : ModuleCat.{u} R}
-    (hM : finiteProjectiveModules R M) :
-    moduleResolutionEquiv R (ExactK0.of ⟨M, hM⟩) =
-      ExactK0.of ⟨M, ExactStructure.le_admitsFiniteResolution _ _ M hM⟩ :=
+@[simp] theorem moduleResolutionEquiv_of (X : (finiteProjectiveModules R).FullSubcategory) :
+    moduleResolutionEquiv R (ExactK0.of X) =
+      ExactK0.of ⟨X.obj, ExactStructure.le_admitsFiniteResolution _ _ X.obj X.property⟩ :=
   ExactStructure.resolutionEquiv_of.{u, u, u + 1} _ _
 
 /-- **The alternating class of a finite projective resolution**, as an element of `K₀(proj R)`:
@@ -598,10 +598,10 @@ own class. -/
   ExactStructure.eulerClassOf_of_prop.{u, u, u + 1}
     (finiteProjectiveModules_le_isProjective R) (finiteProjectiveModules_iff.mpr hM)
 
-@[simp] theorem moduleResolutionEquiv_symm_of {M : ModuleCat.{u} R}
-    (hM : (ExactStructure.abelian (ModuleCat.{u} R)).admitsFiniteResolution
-      (finiteProjectiveModules R) M) :
-    (moduleResolutionEquiv R).symm (ExactK0.of ⟨M, hM⟩) = moduleEulerClassOf R hM :=
+@[simp] theorem moduleResolutionEquiv_symm_of
+    (X : ((ExactStructure.abelian (ModuleCat.{u} R)).admitsFiniteResolution
+      (finiteProjectiveModules R)).FullSubcategory) :
+    (moduleResolutionEquiv R).symm (ExactK0.of X) = moduleEulerClassOf R X.property :=
   ExactStructure.resolutionEquiv_symm_of.{u, u, u + 1} _ _
 
 /-- The comparison map from the Grothendieck group of the modules admitting finite resolutions by
@@ -612,11 +612,11 @@ noncomputable def fromFiniteProjectiveResolution :
   ExactK0.map _ (ExactStructure.isConflationExact_ιOfLE _ (isExtensionClosed_finiteModules R)
     (admitsFiniteResolution_le_finiteModules R))
 
-@[simp] theorem fromFiniteProjectiveResolution_of {M : ModuleCat.{u} R}
-    (hM : (ExactStructure.abelian (ModuleCat.{u} R)).admitsFiniteResolution
-      (finiteProjectiveModules R) M) :
-    fromFiniteProjectiveResolution R (ExactK0.of ⟨M, hM⟩) =
-      ExactK0.of ⟨M, admitsFiniteResolution_le_finiteModules R M hM⟩ :=
+@[simp] theorem fromFiniteProjectiveResolution_of
+    (X : ((ExactStructure.abelian (ModuleCat.{u} R)).admitsFiniteResolution
+      (finiteProjectiveModules R)).FullSubcategory) :
+    fromFiniteProjectiveResolution R (ExactK0.of X) =
+      ExactK0.of ⟨X.obj, admitsFiniteResolution_le_finiteModules R X.obj X.property⟩ :=
   ExactK0.map_of _ _ _
 
 /-- **The Cartan map factors through the modules admitting finite resolutions by finitely
@@ -628,8 +628,17 @@ theorem cartanMap_apply (x : ExactK0.{u} (finiteProjectiveModulesExactStructure 
   refine DFunLike.congr_fun (ExactK0.hom_ext (f := cartanMap R)
     (g := (fromFiniteProjectiveResolution R).comp
       (moduleResolutionEquiv R).toAddMonoidHom) fun M => ?_) x
-  rcases M with ⟨M, hM⟩
   simp
+
+/-- The Cartan map sends the alternating class of a finite resolution of `M` by finitely
+generated projectives to the class of `M`. -/
+@[simp] theorem cartanMap_moduleEulerClassOf {M : ModuleCat.{u} R}
+    (hM : (ExactStructure.abelian (ModuleCat.{u} R)).admitsFiniteResolution
+      (finiteProjectiveModules R) M) :
+    cartanMap R (moduleEulerClassOf R hM) =
+      ExactK0.of ⟨M, admitsFiniteResolution_le_finiteModules R M hM⟩ := by
+  rw [cartanMap_apply, ← moduleResolutionEquiv_symm_of R ⟨M, hM⟩, AddEquiv.apply_symm_apply,
+    fromFiniteProjectiveResolution_of]
 
 section Inverse
 
@@ -646,9 +655,8 @@ noncomputable def toFiniteProjectiveResolution :
     (ExactStructure.isExtensionClosed_admitsFiniteResolution
       (finiteProjectiveModules_le_isProjective R)) h)
 
-@[simp] theorem toFiniteProjectiveResolution_of {M : ModuleCat.{u} R}
-    (hM : ModuleCat.isFG R M) :
-    toFiniteProjectiveResolution R h (ExactK0.of ⟨M, hM⟩) = ExactK0.of ⟨M, h M hM⟩ :=
+@[simp] theorem toFiniteProjectiveResolution_of (X : (ModuleCat.isFG R).FullSubcategory) :
+    toFiniteProjectiveResolution R h (ExactK0.of X) = ExactK0.of ⟨X.obj, h X.obj X.property⟩ :=
   ExactK0.map_of _ _ _
 
 /-- `fromFiniteProjectiveResolution` is a left inverse of `toFiniteProjectiveResolution`, since
@@ -660,7 +668,6 @@ under the hypothesis the two object properties agree. The other composite is
   refine DFunLike.congr_fun (ExactK0.hom_ext
     (f := (fromFiniteProjectiveResolution R).comp (toFiniteProjectiveResolution R h))
     (g := AddMonoidHom.id _) fun M => ?_) y
-  rcases M with ⟨M, hM⟩
   simp
 
 @[simp] theorem toFiniteProjectiveResolution_fromFiniteProjectiveResolution
@@ -669,7 +676,6 @@ under the hypothesis the two object properties agree. The other composite is
   refine DFunLike.congr_fun (ExactK0.hom_ext
     (f := (toFiniteProjectiveResolution R h).comp (fromFiniteProjectiveResolution R))
     (g := AddMonoidHom.id _) fun M => ?_) y
-  rcases M with ⟨M, hM⟩
   simp
 
 /-- The inverse of the Cartan map, under the hypothesis that every finitely generated module
@@ -680,8 +686,8 @@ noncomputable def cartanInverse :
       ExactK0.{u} (finiteProjectiveModulesExactStructure R) :=
   (moduleResolutionEquiv R).symm.toAddMonoidHom.comp (toFiniteProjectiveResolution R h)
 
-@[simp] theorem cartanInverse_of {M : ModuleCat.{u} R} (hM : ModuleCat.isFG R M) :
-    cartanInverse R h (ExactK0.of ⟨M, hM⟩) = moduleEulerClassOf R (h M hM) := by
+@[simp] theorem cartanInverse_of (X : (ModuleCat.isFG R).FullSubcategory) :
+    cartanInverse R h (ExactK0.of X) = moduleEulerClassOf R (h X.obj X.property) := by
   simp [cartanInverse]
 
 /-- **The resolution theorem for modules.** If every finitely generated `R`-module admits a finite
@@ -705,6 +711,17 @@ noncomputable def cartanEquiv :
 /-- The inverse of the Cartan equivalence is the alternating-resolution homomorphism. -/
 @[simp] theorem cartanEquiv_symm_apply (x : ExactK0.{u} (finiteModulesExactStructure R)) :
     (cartanEquiv R h).symm x = cartanInverse R h x := (rfl)
+
+/-- The Cartan map undoes the alternating-resolution homomorphism. -/
+@[simp] theorem cartanMap_cartanInverse (x : ExactK0.{u} (finiteModulesExactStructure R)) :
+    cartanMap R (cartanInverse R h x) = x := by
+  simpa using (cartanEquiv R h).apply_symm_apply x
+
+/-- The alternating-resolution homomorphism undoes the Cartan map. -/
+@[simp] theorem cartanInverse_cartanMap
+    (x : ExactK0.{u} (finiteProjectiveModulesExactStructure R)) :
+    cartanInverse R h (cartanMap R x) = x := by
+  simpa using (cartanEquiv R h).symm_apply_apply x
 
 include h in
 /-- **The Cartan map is an isomorphism** whenever every finitely generated `R`-module admits a

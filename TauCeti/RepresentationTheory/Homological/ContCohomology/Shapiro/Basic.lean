@@ -62,7 +62,7 @@ Shapiro image of the rebuilt cochain is then `c` on the nose
 (`TauCeti.ContCohomology.shapiroCocycles2_coindCocycle2`), where a factorization with `w 1 = s`
 would return the conjugate of `c` by `s` instead. Local constancy of both cochains in their group
 arguments is uniform local constancy of the underlying function on the compact groups `G × G` and
-`G × G × G` (`TauCeti.exists_isOpen_forall_mul_right_eq`).
+`G × G × G` (`IsLocallyConstant.exists_isOpen_forall_mul_right_eq`).
 
 ## Main definitions
 
@@ -604,7 +604,7 @@ theorem coindCochain2_mem_Z2 (hccoc : groupCohomology.IsCocycle₂ c) :
       (hw.comp continuous_fst) (hw.comp (continuous_fst.comp continuous_snd))
       (hw.comp (continuous_snd.comp continuous_snd)))
   refine (IsLocallyConstant.iff_exists_open _).2 fun q₀ => ?_
-  obtain ⟨V, hVopen, hq₀, hV⟩ := exists_isOpen_translate₃ hQ q₀
+  obtain ⟨V, hVopen, hq₀, hV⟩ := hQ.exists_isOpen_translate₃ q₀
   exact ⟨V, hVopen, hq₀, fun q hq => DiscreteCoind.ext fun y => hV q hq y⟩
 
 /-- **The inverse Shapiro cochain, as a continuous `2`-cocycle.** -/
@@ -652,7 +652,7 @@ theorem coindCochain2_mem_B2_of_mem_B2 (hcB : c ∈ B2 U A) :
       exact homogeneous1_smul α u (w y) (w (y * g))), ?_, ?_⟩
   · rw [← IsLocallyConstant.iff_continuous]
     refine (IsLocallyConstant.iff_exists_open _).2 fun g₀ => ?_
-    obtain ⟨V, hVopen, hg₀, hV⟩ := exists_isOpen_translate₂ hN g₀
+    obtain ⟨V, hVopen, hg₀, hV⟩ := hN.exists_isOpen_translate₂ g₀
     exact ⟨V, hVopen, hg₀, fun g hg => DiscreteCoind.ext fun y => hV g hg y⟩
   · refine funext fun q => ?_
     obtain ⟨g, h⟩ := q
@@ -688,7 +688,7 @@ theorem sub_coindCochain2_mem_B2 (f : Z2 G (DiscreteCoind G U A))
     ?_, ?_⟩
   · rw [← IsLocallyConstant.iff_continuous]
     refine (IsLocallyConstant.iff_exists_open _).2 fun g₀ => ?_
-    obtain ⟨V, hVopen, hg₀, hV⟩ := exists_isOpen_translate₂ hN g₀
+    obtain ⟨V, hVopen, hg₀, hV⟩ := hN.exists_isOpen_translate₂ g₀
     exact ⟨V, hVopen, hg₀, fun g hg => DiscreteCoind.ext fun y => hV g hg y⟩
   · refine funext fun q => ?_
     obtain ⟨g, h⟩ := q

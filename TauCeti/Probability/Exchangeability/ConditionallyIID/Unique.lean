@@ -11,8 +11,6 @@ public import TauCeti.Probability.Exchangeability.ConditionallyIID.Moments
 import TauCeti.MeasureTheory.Measure.ProbabilityMeasure.Ext
 -- Non-public: the countable set algebra that compares two random measures set by set.
 import Mathlib.MeasureTheory.SetAlgebra
--- Non-public: `tendsto_const_div_atTop_nhds_zero_nat` closes the `O(1/n)` squeeze.
-import Mathlib.Analysis.SpecificLimits.Basic
 
 /-!
 # Almost sure uniqueness of the directing measure
@@ -54,6 +52,9 @@ measures themselves.
 The hypothesis `[MeasurableSpace.CountablyGenerated α]` is what the final promotion needs, and is
 all it needs: no measure on `α` is constructed here, so no standard-Borel or non-empty structure
 is required.
+
+The base measure need only be finite, and may be zero: the integrated empirical errors converge
+to zero without normalizing the measure.
 
 Coordinatewise a.e. measurability is not assumed: it comes from the `ConditionallyIIDWith` witness
 through `ConditionallyIIDWith.aemeasurable`.  A.e. measurability is all that is ever needed, as
@@ -147,16 +148,19 @@ private theorem integrable_toReal_directing_sub_sq [IsFiniteMeasure μ]
       hρ').aemeasurable
     (ae_of_all _ (habs ρ)) (ae_of_all _ (habs ρ'))
 
-/-- **The `L²` rate between two directing measures.** Two directing measures of the same process
-are within `4 / n` of each other in mean square, for every `n ≥ 1`, on each fixed measurable set.
-This is the scaffolding for `ae_measure_apply_eq`, which is its `n → ∞` limit. It stays private:
-that theorem has the same hypotheses and makes the integrand a.e. zero, so once it is available
-this bound is a trivial consequence and carries no independent content. -/
-private theorem ConditionallyIIDWith.integral_directing_sub_sq_le_four_div
-    [IsProbabilityMeasure μ]
+/-- Compare two directing masses with the same empirical frequency. Private: its only consumer
+passes to the limit to obtain the stronger setwise uniqueness theorem. -/
+private theorem ConditionallyIIDWith.integral_directing_sub_sq_le
+    [IsFiniteMeasure μ]
     (h : ConditionallyIIDWith μ X ν)
-    (h' : ConditionallyIIDWith μ X ν') (hB : MeasurableSet B) {n : ℕ} (hn : n ≠ 0) :
-    ∫ ω, (((ν ω : Measure α) B).toReal - ((ν' ω : Measure α) B).toReal) ^ 2 ∂μ ≤ 4 / n := by
+    (h' : ConditionallyIIDWith μ X ν') (hB : MeasurableSet B) (n : ℕ) :
+    ∫ ω, (((ν ω : Measure α) B).toReal - ((ν' ω : Measure α) B).toReal) ^ 2 ∂μ
+      ≤ 2 * (∫ ω, ((n : ℝ)⁻¹ *
+          ∑ i ∈ Finset.range n, (X i ⁻¹' B).indicator (1 : Ω → ℝ) ω
+        - ((ν ω : Measure α) B).toReal) ^ 2 ∂μ)
+        + 2 * (∫ ω, ((n : ℝ)⁻¹ *
+          ∑ i ∈ Finset.range n, (X i ⁻¹' B).indicator (1 : Ω → ℝ) ω
+        - ((ν' ω : Measure α) B).toReal) ^ 2 ∂μ) := by
   have hqm : ∀ ρ : Ω → ProbabilityMeasure α, Measurable ρ →
       Measurable fun ω => ((ρ ω : Measure α) B).toReal := fun _ hρ =>
     (TauCeti.MeasureTheory.measurable_probabilityMeasure_toMeasure_apply_toReal hB).comp hρ
@@ -175,25 +179,19 @@ private theorem ConditionallyIIDWith.integral_directing_sub_sq_le_four_div
   have hdint : Integrable (fun ω =>
       (((ν ω : Measure α) B).toReal - ((ν' ω : Measure α) B).toReal) ^ 2) μ :=
     integrable_toReal_directing_sub_sq h.measurable_directing h'.measurable_directing hB
-  -- Both errors are bounded by `1 / n`, so the general `2c₁ + 2c₂` bound specializes to `4 / n`.
-  have hb : ∫ ω, (((ν ω : Measure α) B).toReal - ((ν' ω : Measure α) B).toReal) ^ 2 ∂μ
-      ≤ 2 * (n : ℝ)⁻¹ + 2 * (n : ℝ)⁻¹ :=
-    integral_sub_sq_le_two_mul_add_two_mul_of_integral_sub_sq_le_of_integral_sub_sq_le hdint
-      (integrable_sub_sq_of_abs_le_one (hem n) (hqm ν h.measurable_directing).aemeasurable
-        (ae_of_all _ (heb n)) (ae_of_all _ (habs ν)))
-      (integrable_sub_sq_of_abs_le_one (hem n) (hqm ν' h'.measurable_directing).aemeasurable
-        (ae_of_all _ (heb n)) (ae_of_all _ (habs ν')))
-      (h.integral_empiricalFrequency_sub_sq_le hB hn)
-      (h'.integral_empiricalFrequency_sub_sq_le hB hn)
-  rw [div_eq_mul_inv]
-  linarith
+  exact integral_sub_sq_le_two_mul_add_two_mul_of_integral_sub_sq_le_of_integral_sub_sq_le hdint
+    (integrable_sub_sq_of_abs_le_one (hem n) (hqm ν h.measurable_directing).aemeasurable
+      (ae_of_all _ (heb n)) (ae_of_all _ (habs ν)))
+    (integrable_sub_sq_of_abs_le_one (hem n) (hqm ν' h'.measurable_directing).aemeasurable
+      (ae_of_all _ (heb n)) (ae_of_all _ (habs ν')))
+    le_rfl le_rfl
 
 /-- Two directing measures of the same process assign the same mass to each fixed measurable set,
 almost everywhere.
 
-Both are approximated in `L²` by the *same* empirical frequencies, at a rate that does not depend
-on the witness, so the triangle inequality forces their difference to vanish in `L²`. -/
-theorem ConditionallyIIDWith.ae_measure_apply_eq [IsProbabilityMeasure μ]
+Both are approximated in `L²` by the *same* empirical frequencies. The triangle inequality forces
+their difference to vanish in `L²`, for any finite base measure, including the zero measure. -/
+theorem ConditionallyIIDWith.ae_measure_apply_eq [IsFiniteMeasure μ]
     (h : ConditionallyIIDWith μ X ν)
     (h' : ConditionallyIIDWith μ X ν') (hB : MeasurableSet B) :
     (fun ω => (ν ω : Measure α) B) =ᵐ[μ] fun ω => (ν' ω : Measure α) B := by
@@ -202,13 +200,12 @@ theorem ConditionallyIIDWith.ae_measure_apply_eq [IsProbabilityMeasure μ]
   have hdint : Integrable (fun ω => d ω ^ 2) μ := by
     simpa only [hd_def] using
       integrable_toReal_directing_sub_sq h.measurable_directing h'.measurable_directing hB
-  -- `hd_def` turns the `set` wrapper `d` into the explicit difference the rate lemma is stated for.
-  have hbound : ∀ n : ℕ, 1 ≤ n → ∫ ω, d ω ^ 2 ∂μ ≤ 4 / n := fun n hn => by
-    simpa only [hd_def] using
-      h.integral_directing_sub_sq_le_four_div h' hB (n := n) (by omega)
-  have hle : ∫ ω, d ω ^ 2 ∂μ ≤ 0 :=
-    ge_of_tendsto (tendsto_const_div_atTop_nhds_zero_nat (4 : ℝ))
-      (eventually_atTop.2 ⟨1, fun n hn => hbound n hn⟩)
+  have hlim := ((h.tendsto_integral_empiricalFrequency_sub_sq hB).const_mul 2).add
+    ((h'.tendsto_integral_empiricalFrequency_sub_sq hB).const_mul 2)
+  have hle : ∫ ω, d ω ^ 2 ∂μ ≤ 0 := by
+    apply ge_of_tendsto (by simpa only [mul_zero, add_zero] using hlim)
+    exact Eventually.of_forall fun n => by
+      simpa only [hd_def] using h.integral_directing_sub_sq_le h' hB (n + 1)
   have hae : (fun ω => d ω ^ 2) =ᵐ[μ] 0 :=
     (integral_eq_zero_iff_of_nonneg (fun ω => by positivity) hdint).mp
       (le_antisymm hle (integral_nonneg fun ω => by positivity))
@@ -253,8 +250,9 @@ directing measure is another mixing representative, and only the mixing law `μ.
 
 `[MeasurableSpace.CountablyGenerated α]` is the whole requirement on `α`: the proof compares two
 directing measures on a countable generating algebra and never constructs a measure, so neither
-standard-Borel structure nor non-emptiness is needed. -/
-theorem conditionallyIID_ae_unique [IsProbabilityMeasure μ] [CountablyGenerated α]
+standard-Borel structure nor non-emptiness is needed. The base measure may be any finite measure,
+including zero. -/
+theorem conditionallyIID_ae_unique [IsFiniteMeasure μ] [CountablyGenerated α]
     (h : ConditionallyIIDWith μ X ν)
     (h' : ConditionallyIIDWith μ X ν') : ν =ᵐ[μ] ν' :=
   ae_eq_of_forall_apply_ae_eq fun _ hs => h.ae_measure_apply_eq h' hs

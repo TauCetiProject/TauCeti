@@ -13,7 +13,7 @@ public import TauCeti.AlgebraicGeometry.WeilDivisor.FiniteSum
 public import TauCeti.FieldTheory.ArtinSchreier.Basic
 
 import TauCeti.FieldTheory.FunctionField.Different.Hurwitz
-import TauCeti.FieldTheory.FunctionField.Different.ArtinSchreier
+import TauCeti.FieldTheory.FunctionField.Different.ArtinSchreier.Basic
 import TauCeti.FieldTheory.FunctionField.Place.Extension.Existence
 import TauCeti.FieldTheory.FunctionField.ConstantExtension.Unramified
 
@@ -47,6 +47,10 @@ exactness of the constants over any function field with exact constants. For an 
 nontriviality, and exactness of the constants are derived from the equation and a pole.
 For a single pole, `two_mul_genus_eq_of_exists_reduced_artinSchreier_pole_ratFunc`
 gives `2g = (p - 1) ((m + 1) deg P - 2)` directly.
+
+Over a perfect constant field every residue field is perfect, so reduced representatives exist
+at every place and only finitely many of them have poles
+(`exists_reduced_artinSchreier_representatives`): the formula then needs no supplied data.
 
 ## References
 
@@ -227,10 +231,9 @@ theorem isIntegrallyClosedIn_of_exists_reduced_artinSchreier_pole
     simpa only [hP'] using hpole
   have he := Place.ramificationIdx_eq_of_exists_reduced_artinSchreier_pole
     k F p hgen hy hpole'
-  refine isIntegrallyClosedIn_of_finrank_prime_of_ramificationIdx_ne_one hex ?_
-    (P' := P') (he.trans_ne (Fact.out : p.Prime).ne_one)
-  rw [Place.finrank_eq_of_exists_reduced_artinSchreier_pole k F p hgen hy hpole']
-  exact Fact.out
+  refine isIntegrallyClosedIn_of_isTotallyRamified (F := F) (F' := F') hex (P' := P') ?_
+  rw [Place.isTotallyRamified_iff, he,
+    Place.finrank_eq_of_exists_reduced_artinSchreier_pole k F p hgen hy hpole']
 
 /-- An Artin--Schreier extension of a function field with exact constants and a finite
 nonempty set of supplied reduced poles has no new constants. Its genus is determined by
@@ -274,6 +277,46 @@ theorem two_mul_genus_sub_two_eq_of_exists_reduced_artinSchreier_poles
     artinSchreier_genus_formula hF hF' p hgen hy S m hpole hreg hex hex' hu
 
 end Poles
+
+section PerfectField
+
+variable {k : Type u} {F : Type v} [Field k] [Field F] [Algebra k F]
+
+/-- **Reduced Artin--Schreier representatives exist over a perfect constant field.** For `u` in
+an algebraic function field `F / k` of characteristic `p` with `k` perfect, there are a finite
+set `S` of places and pole orders `m P` such that at each `P ∈ S` some `u - (w ^ p - w)` has a
+pole of order `m P` prime to `p`, and at every other place some `u - (w ^ p - w)` is regular.
+These are the hypotheses of the genus formula `TauCeti.artinSchreier_genus_formula`, so over a
+perfect constant field it applies to every Artin--Schreier extension. Perfectness of `k` enters
+only through the perfectness of the residue fields
+(`TauCeti.Place.exists_reduced_artinSchreier_representative`). -/
+theorem exists_reduced_artinSchreier_representatives [PerfectField k] (hF : IsFunctionField k F)
+    (p : ℕ) [Fact p.Prime] [CharP F p] (u : F) :
+    ∃ (S : Finset (Place k F)) (m : Place k F → ℕ),
+      (∀ P ∈ S, ∃ w : F, P.ord (u - (w ^ p - w)) = -(m P : ℤ) ∧
+        ¬ (p : ℤ) ∣ P.ord (u - (w ^ p - w))) ∧
+      ∀ P ∉ S, ∃ w : F, u - (w ^ p - w) ∈ P.integers := by
+  classical
+  -- Choose a reduced representative at every place; only the poles of `u` can need a pole.
+  have hred (P : Place k F) : ∃ w : F, u - (w ^ p - w) ∈ P.integers ∨
+      (P.ord (u - (w ^ p - w)) < 0 ∧ ¬ (p : ℤ) ∣ P.ord (u - (w ^ p - w))) :=
+    have := P.perfectField_residueField hF
+    P.exists_reduced_artinSchreier_representative p u
+  choose w hw using hred
+  refine ⟨(Place.finite_setOf_ord_neg hF u).toFinset.filter
+      fun P ↦ u - (w P ^ p - w P) ∉ P.integers,
+    fun P ↦ (-P.ord (u - (w P ^ p - w P))).toNat, fun P hP ↦ ?_, fun P hP ↦ ?_⟩
+  · obtain ⟨hneg, hdvd⟩ := (hw P).resolve_left (Finset.mem_filter.mp hP).2
+    exact ⟨w P, by dsimp only; omega, hdvd⟩
+  · rw [Finset.mem_filter, Set.Finite.mem_toFinset, Set.mem_ofPred_eq, not_and_or, not_not] at hP
+    rcases hP with hP | hP
+    · refine ⟨0, ?_⟩
+      rw [zero_pow (Fact.out : p.Prime).ne_zero, sub_zero, sub_zero,
+        P.mem_integers_iff_ord_nonneg]
+      omega
+    · exact ⟨w P, hP⟩
+
+end PerfectField
 
 section RatFunc
 

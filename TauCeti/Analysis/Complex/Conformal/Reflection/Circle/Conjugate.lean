@@ -145,7 +145,7 @@ theorem differentiableOn_circleReflectionConjugate {c : ℂ} {r : ℝ} {d : ℂ}
     simpa [g, q, sub_eq_zero, conj_circleReflectionCoord] using hzero
   have hformula : EqOn (circleReflectionConjugate c r d s f)
       (fun z => d + (s : ℂ) ^ 2 / (g (q z) - (starRingEnd ℂ) d)) S := by
-    intro z hz
+    intro z _
     rw [circleReflectionConjugate_apply, inversion_eq_conj_reciprocal,
       map_sub]
     simp only [g, q, conj_circleReflectionCoord]

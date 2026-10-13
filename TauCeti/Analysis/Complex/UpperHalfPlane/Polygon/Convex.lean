@@ -173,6 +173,14 @@ theorem carrier_subset_closure_leftHalfPlane (i : Fin n) :
     P.carrier ⊆ closure (leftHalfPlane (P.sideGeodesic i)) :=
   fun _ hz ↦ (P.mem_carrier_iff _).mp hz i
 
+/-- The carrier contains the geodesic segment between any two of its points. -/
+theorem geodesicSegment_subset_carrier {z w : ℍ} (hz : z ∈ P.carrier) (hw : w ∈ P.carrier) :
+    geodesicSegment z w ⊆ P.carrier := by
+  intro v hv
+  exact (P.mem_carrier_iff v).mpr fun i ↦ geodesicSegment_subset_closure_leftHalfPlane
+    (P.carrier_subset_closure_leftHalfPlane i hz)
+    (P.carrier_subset_closure_leftHalfPlane i hw) hv
+
 /-- The carrier is cut out by the side forms of the edges. -/
 theorem mem_carrier_iff_sideForm_nonpos (z : ℍ) :
     z ∈ P.carrier ↔ ∀ i, sideForm (P.sideGeodesic i) z ≤ 0 :=
@@ -312,6 +320,21 @@ theorem interiorAngle_pos_of_isLeft_vertex {i : Fin n} (hi : (P.vertex i).isLeft
   rw [hray.extLeftHalfPlane_eq hg] at hleft
   rw [interiorAngle_def, hA, vertexAngle_comm]
   exact vertexAngle_pos_of_mem_extLeftHalfPlane hleft
+
+/-- Every interior angle of a convex polygon is less than `π`, including ideal vertices. -/
+theorem interiorAngle_lt_pi (i : Fin n) : P.interiorAngle i < π := by
+  rcases hA : P.vertex i with A | ξ
+  · have hleft := P.vertex_mem_extLeftHalfPlane i (i - 1)
+      (sub_one_ne_self (Nat.le_of_succ_le P.three_le) i)
+      (fun h ↦ add_one_add_one_ne_self P.three_le i (by rw [← h, sub_add_cancel]))
+    rw [hA] at hleft
+    have hg := isGeodesicFromTo_geodesicFromTo (hA ▸ P.vertex_ne_vertex_add_one i)
+    have hray := isGeodesicFromTo_rayToward (hA ▸ P.vertex_ne_vertex_add_one i)
+    rw [hray.extLeftHalfPlane_eq hg] at hleft
+    rw [interiorAngle_def, hA, vertexAngle_comm]
+    exact vertexAngle_lt_pi_of_mem_extLeftHalfPlane hleft
+  · rw [P.interiorAngle_eq_zero_of_vertex_eq_inr hA]
+    exact Real.pi_pos
 
 /-- The interior angles are at most `π`. -/
 theorem interiorAngle_le_pi (i : Fin n) : P.interiorAngle i ≤ π := by

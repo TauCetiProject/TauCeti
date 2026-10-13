@@ -7,16 +7,18 @@ module
 
 public import TauCeti.Algebra.GroupAction.FiniteSupportPerm
 public import TauCeti.Probability.Process.PathLaw.Basic
-public import TauCeti.Probability.Process.Tail.Basic
+public import TauCeti.Probability.Process.Tail.ShiftInvariant
 public import Mathlib.MeasureTheory.MeasurableSpace.Invariants
 
 /-!
 # Exchangeable σ-algebra on path space
 
-This file records the Layer 2 exchangeability-roadmap σ-algebra of path-space events invariant
-under finitely supported permutations of the time coordinate.  It also relates the one-sided path
+This file defines the σ-algebra of path-space events invariant under finitely supported
+permutations of the time coordinate.  It also relates the one-sided path
 tail σ-algebra to this exchangeable σ-algebra: a tail event is fixed by every finitely supported
-time permutation.
+time permutation.  Combined with `invariants_shift_le_pathTail`, this gives the chain
+
+`invariants (shift α) ≤ pathTail α ≤ exchangeableSigma α`.
 -/
 
 public section
@@ -138,7 +140,7 @@ private theorem preimage_permReindex_eq_of_measurable_tailFamily
   rw [MeasurableSpace.measurableSet_iSup] at hs
   induction hs with
   | basic u hu =>
-      rcases hu with ⟨k, t, ht, rfl⟩
+      rcases hu with ⟨k, t, _, rfl⟩
       ext x
       simp only [Set.mem_preimage]
       rw [permReindex_apply, hπ k.1 k.2]
@@ -162,6 +164,12 @@ theorem pathTail_le_exchangeableSigma :
     rcases TauCeti.finite_compl_fixedBy_eventually_eq_self hπ with ⟨N, hN⟩
     exact preimage_permReindex_eq_of_measurable_tailFamily
       ((pathTail_le_tailFamily (α := α) N) s hs) hN
+
+/-- A shift-invariant event is an exchangeable event: it is a tail event, and tail events are fixed
+by every finitely supported permutation of the time coordinate. -/
+theorem invariants_shift_le_exchangeableSigma :
+    MeasurableSpace.invariants (shift α) ≤ exchangeableSigma α :=
+  invariants_shift_le_pathTail.trans pathTail_le_exchangeableSigma
 
 end Probability
 

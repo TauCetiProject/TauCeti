@@ -16,10 +16,9 @@ subset `s : Set M` pointwise with the relative diffeomorphism group fixing any n
 subset `t : Set N` known to be `e '' s`. This file records that restriction of
 `Diffeomorph.diffCongr` to pointwise fixing subgroups.
 
-This is a small algebraic prerequisite for the geometric-topology roadmap
-(`TauCetiRoadmap/GeometricTopology/README.md`, layer 3, "diffeomorphism groups with the C^∞
-topology"), where relative groups such as `Diff(M, ∂M)` are pointwise fixing subgroups. The
-`C^∞` topology and closed-subgroup statements remain later layer-3 work.
+For compact manifolds with locally compact model spaces, this identification is a homeomorphic
+group isomorphism in the weak Whitney topology. This makes relative groups such as `Diff(M, ∂M)`
+independent of the chosen diffeomorphic model as spaces as well as abstract groups.
 
 The main subgroup-map statement and relative equivalence are the diffeomorphism-specialized
 analogues of Mathlib's pointwise-fixer conjugation API
@@ -34,6 +33,9 @@ analogues of Mathlib's pointwise-fixer conjugation API
   `Diff(M, s) ≃* Diff(N, t)` induced by conjugation with `e`, when `hst : e '' s = t`.
 * `Diffeomorph.relativeDiffCongr e s`: the specialization
   `Diff(M, s) ≃* Diff(N, e '' s)` induced by conjugation with `e`.
+* `Diffeomorph.relativeDiffCongrContinuousMulEquivOfImageEq e hst` and
+  `Diffeomorph.relativeDiffCongrContinuousMulEquiv e s`: the corresponding homeomorphic group
+  isomorphisms for the weak Whitney topologies.
 
 ## Main results
 
@@ -202,5 +204,70 @@ theorem relativeDiffCongr_symm_apply_apply (e : M ≃ₘ^n⟮I, J⟯ N) (s : Set
       e.symm ((ψ : N ≃ₘ^n⟮J, J⟯ N) (e x)) := by
   rw [relativeDiffCongr_symm_apply]
   exact diffCongr_apply_apply e.symm ψ x
+
+section Topology
+
+open scoped TauCeti.DiffeomorphWeakWhitney
+
+variable [CompactSpace M] [CompactSpace N] [LocallyCompactSpace E] [LocallyCompactSpace E']
+  [IsManifold I n M] [IsManifold J n N]
+
+/-- Conjugation gives a homeomorphic group isomorphism between the weak-Whitney spaces fixing `s`
+and `t` pointwise when the conjugating diffeomorphism carries `s` onto `t`. -/
+def relativeDiffCongrContinuousMulEquivOfImageEq (e : M ≃ₘ^n⟮I, J⟯ N)
+    {s : Set M} {t : Set N} (hst : e '' s = t) :
+    fixingSubgroup (I := I) (n := n) s ≃ₜ* fixingSubgroup (I := J) (n := n) t where
+  toMulEquiv := relativeDiffCongrOfImageEq e hst
+  continuous_toFun :=
+    ((continuous_diffCongr e).comp continuous_subtype_val).subtype_mk _
+  continuous_invFun := by
+    apply Continuous.subtype_mk
+    exact ((continuous_diffCongr e.symm).comp continuous_subtype_val).congr fun ψ ↦
+      (relativeDiffCongrOfImageEq_symm_apply e hst ψ).symm
+
+/-- Conjugation gives a homeomorphic group isomorphism between the weak-Whitney spaces fixing `s`
+and its image pointwise. -/
+def relativeDiffCongrContinuousMulEquiv (e : M ≃ₘ^n⟮I, J⟯ N) (s : Set M) :
+    fixingSubgroup (I := I) (n := n) s ≃ₜ*
+      fixingSubgroup (I := J) (n := n) (e '' s) :=
+  relativeDiffCongrContinuousMulEquivOfImageEq e rfl
+
+/-- Named-target relative topological conjugation applies the underlying diffeomorphism-group
+conjugation. -/
+@[simp]
+theorem relativeDiffCongrContinuousMulEquivOfImageEq_apply
+    (e : M ≃ₘ^n⟮I, J⟯ N) {s : Set M} {t : Set N} (hst : e '' s = t)
+    (φ : fixingSubgroup (I := I) (n := n) s) :
+    ((relativeDiffCongrContinuousMulEquivOfImageEq e hst φ :
+      fixingSubgroup (I := J) (n := n) t) : N ≃ₘ^n⟮J, J⟯ N) = diffCongr e φ :=
+  relativeDiffCongrOfImageEq_apply e hst φ
+
+/-- Relative topological conjugation applies the underlying diffeomorphism-group conjugation. -/
+@[simp]
+theorem relativeDiffCongrContinuousMulEquiv_apply (e : M ≃ₘ^n⟮I, J⟯ N) (s : Set M)
+    (φ : fixingSubgroup (I := I) (n := n) s) :
+    ((relativeDiffCongrContinuousMulEquiv e s φ :
+      fixingSubgroup (I := J) (n := n) (e '' s)) : N ≃ₘ^n⟮J, J⟯ N) = diffCongr e φ :=
+  relativeDiffCongr_apply e s φ
+
+/-- The inverse named-target relative topological conjugation is conjugation by the inverse
+diffeomorphism. -/
+@[simp]
+theorem relativeDiffCongrContinuousMulEquivOfImageEq_symm_apply
+    (e : M ≃ₘ^n⟮I, J⟯ N) {s : Set M} {t : Set N} (hst : e '' s = t)
+    (ψ : fixingSubgroup (I := J) (n := n) t) :
+    (((relativeDiffCongrContinuousMulEquivOfImageEq e hst).symm ψ :
+      fixingSubgroup (I := I) (n := n) s) : M ≃ₘ^n⟮I, I⟯ M) = diffCongr e.symm ψ :=
+  relativeDiffCongrOfImageEq_symm_apply e hst ψ
+
+/-- The inverse relative topological conjugation is conjugation by the inverse diffeomorphism. -/
+@[simp]
+theorem relativeDiffCongrContinuousMulEquiv_symm_apply (e : M ≃ₘ^n⟮I, J⟯ N) (s : Set M)
+    (ψ : fixingSubgroup (I := J) (n := n) (e '' s)) :
+    (((relativeDiffCongrContinuousMulEquiv e s).symm ψ :
+      fixingSubgroup (I := I) (n := n) s) : M ≃ₘ^n⟮I, I⟯ M) = diffCongr e.symm ψ :=
+  relativeDiffCongr_symm_apply e s ψ
+
+end Topology
 
 end Diffeomorph

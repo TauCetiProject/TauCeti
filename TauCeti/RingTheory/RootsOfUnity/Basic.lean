@@ -6,7 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Module.Torsion.Basic
-public import Mathlib.RingTheory.Ideal.Quotient.Basic
+public import Mathlib.RingTheory.Ideal.Defs
+public import Mathlib.RingTheory.RootsOfUnity.CyclotomicUnits
 public import Mathlib.RingTheory.RootsOfUnity.Minpoly
 
 /-!
@@ -16,6 +17,13 @@ This file records a criterion for a root of unity congruent to `1` modulo an ide
 and counts the square roots of unity in a domain in which `2 ≠ 0`. For a prime `p` it relates the
 triviality of the `p`th roots of unity to the absence of a primitive one. It also records that
 roots of unity, and hence the values of a character of a finite group, are integral over `ℤ`.
+Finally, it identifies the `n`-torsion of a unit group, written additively, with the `n`-th roots
+of unity.
+
+## Main definitions
+
+* `TauCeti.torsionByUnitsEquivRootsOfUnity`: the `n`-torsion of `Mˣ`, written additively, is
+  `μₙ(M)`, written additively.
 
 ## Main results
 
@@ -60,18 +68,9 @@ ideal not containing its order is equal to `1`. -/
 theorem eq_one_of_pow_eq_one_of_sub_one_mem [NoZeroDivisors R] {I : Ideal R} {n : ℕ}
     (hn : (n : R) ∉ I) {ζ : R} (hζ : ζ ^ n = 1) (hmem : ζ - 1 ∈ I) : ζ = 1 := by
   by_contra hne
-  have hgeom : ∑ i ∈ Finset.range n, ζ ^ i = 0 := by
-    have h := geom_sum_mul ζ n
-    rw [hζ, sub_self] at h
-    exact (mul_eq_zero.mp h).resolve_right (sub_ne_zero.mpr hne)
-  have hres : Ideal.Quotient.mk I ζ = 1 := by
-    have h : Ideal.Quotient.mk I (ζ - 1) = 0 := Ideal.Quotient.eq_zero_iff_mem.mpr hmem
-    rwa [map_sub, map_one, sub_eq_zero] at h
-  refine hn ?_
-  rw [← Ideal.Quotient.eq_zero_iff_mem, map_natCast]
-  have h := congrArg (Ideal.Quotient.mk I) hgeom
-  rw [map_sum, map_zero] at h
-  simpa [map_pow, hres] using h
+  have : Nontrivial R := ⟨⟨ζ, 1, hne⟩⟩
+  let : IsDomain R := NoZeroDivisors.to_isDomain R
+  exact hn (I.mem_of_dvd (sub_one_dvd_natCast_of_pow_eq_one hζ hne) hmem)
 
 /-- In a commutative ring in which `2 ≠ 0`, `-1` is a primitive square root of unity. -/
 theorem _root_.IsPrimitiveRoot.neg_one_of_two_ne_zero (h2 : (2 : R) ≠ 0) :
@@ -109,14 +108,37 @@ theorem rootsOfUnity_eq_bot_iff {M : Type*} [CommMonoid M] {p : ℕ} [Fact p.Pri
   rw [hζ.eq_orderOf, hu, orderOf_one] at hp
   exact lt_irrefl 1 hp
 
+/-- The `n`-torsion of the unit group of a commutative monoid, written additively, is the group of
+`n`-th roots of unity, written additively. -/
+def torsionByUnitsEquivRootsOfUnity {M : Type*} [CommMonoid M] (n : ℕ) :
+    Submodule.torsionBy ℤ (Additive Mˣ) (n : ℤ) ≃+ Additive (rootsOfUnity n M) where
+  toFun x := Additive.ofMul ⟨x.1.toMul, (mem_rootsOfUnity _ _).2 <| by
+    have hx := congrArg Additive.toMul ((Submodule.mem_torsionBy_iff _ _).1 x.2)
+    rwa [natCast_zsmul, toMul_nsmul, toMul_zero] at hx⟩
+  invFun ζ := ⟨Additive.ofMul (ζ.toMul : Mˣ), (Submodule.mem_torsionBy_iff _ _).2 <|
+    Additive.toMul.injective <| by
+      rw [natCast_zsmul, toMul_nsmul, toMul_ofMul, toMul_zero]
+      exact (mem_rootsOfUnity _ _).1 ζ.toMul.2⟩
+  left_inv _ := rfl
+  right_inv _ := rfl
+  map_add' _ _ := rfl
+
+@[simp]
+theorem coe_torsionByUnitsEquivRootsOfUnity_apply {M : Type*} [CommMonoid M] (n : ℕ)
+    (x : Submodule.torsionBy ℤ (Additive Mˣ) (n : ℤ)) :
+    ((torsionByUnitsEquivRootsOfUnity n x).toMul : Mˣ) = x.1.toMul :=
+  (rfl)
+
+@[simp]
+theorem coe_torsionByUnitsEquivRootsOfUnity_symm_apply {M : Type*} [CommMonoid M] (n : ℕ)
+    (ζ : Additive (rootsOfUnity n M)) :
+    ((torsionByUnitsEquivRootsOfUnity n).symm ζ : Additive Mˣ) = Additive.ofMul (ζ.toMul : Mˣ) :=
+  (rfl)
+
 /-- The `n`-torsion of the unit group of a commutative monoid, written additively, consists of the
 `n`-th roots of unity; so it is finite when they are, for instance in a domain for `n ≠ 0`. -/
 instance finite_torsionBy_additive_units {M : Type*} [CommMonoid M] (n : ℕ)
-    [Finite (rootsOfUnity n M)] : Finite (Submodule.torsionBy ℤ (Additive Mˣ) (n : ℤ)) := by
-  refine Finite.of_injective (β := rootsOfUnity n M)
-    (fun x ↦ ⟨x.1.toMul, (mem_rootsOfUnity _ _).2 ?_⟩) fun x y h ↦ ?_
-  · have hx := congrArg Additive.toMul ((Submodule.mem_torsionBy_iff _ _).mp x.2)
-    rwa [natCast_zsmul, toMul_nsmul, toMul_zero] at hx
-  · exact Subtype.ext (Additive.toMul.injective (congrArg Subtype.val h))
+    [Finite (rootsOfUnity n M)] : Finite (Submodule.torsionBy ℤ (Additive Mˣ) (n : ℤ)) :=
+  .of_equiv _ ((torsionByUnitsEquivRootsOfUnity n).toEquiv.trans Additive.toMul).symm
 
 end TauCeti

@@ -224,7 +224,7 @@ private theorem separable_ΨSq_two_of_isAlgClosed (hchar : ((2 : ℤ) : F) ≠ 0
         (zsmul_fromAffine_eq_zero_iff_zsmul_eq_zero.mpr (hQ ▸ (hTmem P).mp hPT))⟩
   -- a `2`-torsion point is its own negative, so distinct ones have distinct abscissae
   have hinj : Set.InjOn (fun P : (W⁄F).toAffine.Point ↦ P.xRep) (T.erase 0) := by
-    intro P hP Q hQ hPQ
+    intro P _ Q hQ hPQ
     obtain ⟨-, hQT⟩ := Finset.mem_erase.mp hQ
     rcases Point.eq_or_eq_neg_of_xRep_eq_xRep hPQ with h | h
     · exact h

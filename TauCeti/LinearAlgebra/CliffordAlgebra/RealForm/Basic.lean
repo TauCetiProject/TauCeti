@@ -581,7 +581,7 @@ theorem realCliffordZeroOneIsometry_apply (v : Fin (0 + 1) → ℝ) :
 
 /-- **`Cliff(0,1) ≅ ℂ`**, the second base entry of the real periodicity table: a single generator
 squaring to `-1` is a square root of `-1`. -/
-noncomputable def realCliffordZeroOneEquivComplex :
+def realCliffordZeroOneEquivComplex :
     CliffordAlgebra (realCliffordForm 0 1) ≃ₐ[ℝ] ℂ :=
   (CliffordAlgebra.equivOfIsometry realCliffordZeroOneIsometry).trans
     CliffordAlgebraComplex.equiv
@@ -614,7 +614,7 @@ theorem realCliffordZeroTwoIsometry_apply (v : Fin (0 + 2) → ℝ) :
 
 /-- **`Cliff(0,2) ≅ ℍ`**, the third base entry of the real periodicity table: two anticommuting
 generators squaring to `-1` are the quaternion units `i` and `j`. -/
-noncomputable def realCliffordZeroTwoEquivQuaternion :
+def realCliffordZeroTwoEquivQuaternion :
     CliffordAlgebra (realCliffordForm 0 2) ≃ₐ[ℝ] ℍ[ℝ] :=
   (CliffordAlgebra.equivOfIsometry realCliffordZeroTwoIsometry).trans
     CliffordAlgebraQuaternion.equiv

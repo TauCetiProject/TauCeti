@@ -28,8 +28,8 @@ index is `1`: the inertia group is everything, there is a single constituent, an
 `W` on `N` is `e` times that of `V`.  A subgroup of index two and an irreducible of odd dimension
 are coprime in that sense, which is the case arising for `alternatingGroup α ◁ Equiv.Perm α`,
 complementary to the linear-character computation of
-`TauCeti/RepresentationTheory/Induction/Clifford/Alternating.lean`, where the inertia group is as
-*small* as Clifford theory allows.  And when `dim W = 1` the right-hand side of the dimension
+`TauCeti/RepresentationTheory/Induction/Clifford/Alternating/Basic.lean`, where the inertia group
+is as *small* as Clifford theory allows.  And when `dim W = 1` the right-hand side of the dimension
 identity is a product of natural numbers equal to `1`, so every factor is `1`: a linear character
 of `G` restricts to a linear character of `N` that the whole group fixes.
 

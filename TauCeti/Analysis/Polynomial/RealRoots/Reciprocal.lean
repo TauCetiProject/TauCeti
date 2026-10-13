@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Polynomial.Reverse
-public import TauCeti.Analysis.Analytic.FiniteFamily
+public import TauCeti.Analysis.Polynomial.RealRoots.Normalization
 import TauCeti.Topology.Connected.FiniteFamily
 import Mathlib.Analysis.Analytic.Constructions
 import Mathlib.Algebra.Polynomial.Taylor
@@ -24,6 +24,11 @@ This allows a monic root construction in reciprocal coordinates to give finite r
 of a nonmonic family, even when its degree is smaller than the formal reflection bound.
 The root sections of the reflected family are inputs; no root enumeration of the original
 family is assumed. No continuity of the coefficients is needed for this transport.
+
+The integral-normalization variant descends directly from monic reciprocal preparation.
+Its only analytic coefficient hypothesis is the value at the translation center, which is
+the reflected leading coefficient. It allows the original degree to be below the reflection
+bound and removes the artificial zero root after undoing normalization.
 
 ## References
 
@@ -195,5 +200,55 @@ theorem exists_analyticOnNhd_ordered_roots_of_reflect_comp_X_add_C {τ : ℝ}
   · intro x hx i
     rw [← hmult_trans x (s i x), ← hmult_trans x₀ (s i x₀)]
     exact hm x hx i
+
+/-- Descend analytic roots of the integral normalization of a translated reflection.
+Undo monic normalization, discard the reflected zero root, and take translated reciprocals.
+The original family may have degree below the fixed reflection bound; its finite real roots
+have a strictly ordered analytic enumeration with constant positive multiplicities locally. -/
+theorem exists_analyticOnNhd_ordered_roots_of_integralNormalization_reflect_comp_X_add_C
+    {τ : ℝ} (hr : ∀ i, AnalyticAt ℝ (r i) x₀)
+    (hinj : Injective (fun i ↦ r i x₀)) (hdN : d ≤ N)
+    (hdeg : ∀ᶠ x in 𝓝 x₀, (F x).natDegree = d)
+    (hτA : AnalyticAt ℝ (fun x ↦ (F x).eval τ) x₀) (hτ0 : (F x₀).eval τ ≠ 0)
+    (hroots : ∀ᶠ x in 𝓝 x₀, ∀ t,
+      (((F x).comp (X + C τ)).reflect N).integralNormalization.IsRoot t ↔
+        ∃ i, r i x = t)
+    (hmult : ∀ᶠ x in 𝓝 x₀, ∀ i,
+      (((F x).comp (X + C τ)).reflect N).integralNormalization.rootMultiplicity (r i x) =
+        (((F x₀).comp (X + C τ)).reflect N).integralNormalization.rootMultiplicity (r i x₀)) :
+    ∃ k : ℕ, ∃ s : Fin k → E → ℝ, ∃ U : Set E, IsOpen U ∧ x₀ ∈ U ∧
+      (∀ i, AnalyticOnNhd ℝ (s i) U) ∧
+      (∀ x ∈ U, StrictMono (fun i ↦ s i x)) ∧
+      (∀ x ∈ U, ∀ t, (F x).IsRoot t ↔ ∃ i, s i x = t) ∧
+      (∀ i, 0 < (F x₀).rootMultiplicity (s i x₀)) ∧
+      ∀ x ∈ U, ∀ i,
+        (F x).rootMultiplicity (s i x) = (F x₀).rootMultiplicity (s i x₀) := by
+  let G : E → ℝ[X] := fun x ↦ ((F x).comp (X + C τ)).reflect N
+  have hτ : ∀ᶠ x in 𝓝 x₀, (F x).eval τ ≠ 0 := hτA.continuousAt.eventually_ne hτ0
+  have htop (x : E) : (G x).coeff N = (F x).eval τ := by
+    simp only [G, coeff_reflect, revAt_le le_rfl, Nat.sub_self,
+      ← taylor_apply, taylor_coeff_zero]
+  -- The nonroot center makes the reflected leading coefficient analytic even when
+  -- reflection introduces a zero root because its bound exceeds the fiber degree.
+  have hlc : (fun x ↦ (F x).eval τ) =ᶠ[𝓝 x₀] fun x ↦ (G x).leadingCoeff := by
+    filter_upwards [hdeg, hτ] with x hx hxτ
+    have hbound : ((F x).comp (X + C τ)).natDegree ≤ N := by
+      simpa only [← taylor_apply, natDegree_taylor, hx] using hdN
+    have hGbound : (G x).natDegree ≤ N :=
+      natDegree_reflect_le.trans_eq (max_eq_left hbound)
+    have hGdeg : (G x).natDegree = N :=
+      natDegree_eq_of_le_of_coeff_ne_zero hGbound (by rwa [htop])
+    rw [← htop x, ← hGdeg, coeff_natDegree]
+  have hG0 : G x₀ ≠ 0 := by
+    intro hz
+    exact hτ0 (by rw [← htop, hz]; simp)
+  obtain ⟨k, e, U, hU, hxU, ha, hmono, hcover, -, hm⟩ :=
+    exists_analyticOnNhd_ordered_roots_of_integralNormalization
+      (hτA.congr hlc) hG0 hr hinj hroots hmult
+  have hmem : ∀ᶠ x in 𝓝 x₀, x ∈ U := hU.mem_nhds hxU
+  apply exists_analyticOnNhd_ordered_roots_of_reflect_comp_X_add_C
+    (fun i ↦ ha i x₀ hxU) (hmono x₀ hxU).injective hdN hdeg hτ
+  · exact hmem.mono fun x hx ↦ hcover x hx
+  · exact hmem.mono fun x hx i _ ↦ hm x hx i
 
 end TauCeti

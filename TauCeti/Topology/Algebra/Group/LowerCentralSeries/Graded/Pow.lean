@@ -150,17 +150,6 @@ theorem gradedPow_gradedBracket_right_of_odd (hp : Odd p) {j k : ℕ}
     simpa only [add_zero] using h.symm
   · exact gradedPow_gradedBracket_right hk x y
 
-private theorem neg_gradedPiece_two {k : ℕ} (x : gradedPiece 2 G k) : -x = x := by
-  rw [neg_eq_iff_add_eq_zero]
-  exact (two_nsmul _).symm.trans (nsmul_gradedPiece_eq_zero _)
-
-private theorem gradedCast_trans {i j k : ℕ} (hij : i = j) (hjk : j = k)
-    (x : gradedPiece p G i) :
-    gradedCast p G hjk (gradedCast p G hij x) = gradedCast p G (hij.trans hjk) x := by
-  subst hij
-  subst hjk
-  simp only [gradedCast_rfl]
-
 /-- For `p = 2` and `x` of degree zero, `[π x, y] = π [x, y] + [[x, y], x]`.
 The last term has this orientation because every graded piece is killed by `2`. -/
 theorem gradedBracket_gradedPow_zero_left_of_two (hp : p = 2) {k : ℕ}
@@ -173,8 +162,8 @@ theorem gradedBracket_gradedPow_zero_left_of_two (hp : p = 2) {k : ℕ}
   rw [gradedBracket_gradedPow_zero_left, Nat.choose_self, one_nsmul]
   congr 1
   -- Skew-symmetry reverses the outer bracket up to a sign, which is trivial for `p = 2`.
-  rw [← neg_gradedPiece_two (gradedBracket 2 G 0 (0 + k + 1) x (gradedBracket 2 G 0 k x y)),
-    ← gradedCast_gradedBracket_swap, gradedCast_trans]
+  rw [← ZModModule.neg_eq_self (gradedBracket 2 G 0 (0 + k + 1) x (gradedBracket 2 G 0 k x y)),
+    ← gradedCast_gradedBracket_swap, gradedCast_gradedCast]
 
 /-- For `p = 2` and `y` of degree zero, `[x, π y] = π [x, y] + [[x, y], y]`.
 The inner bracket retains the order `[x, y]`. -/
@@ -188,8 +177,8 @@ theorem gradedBracket_gradedPow_zero_right_of_two (hp : p = 2) {j : ℕ}
   rw [gradedBracket_gradedPow_zero_right, Nat.choose_self, one_nsmul]
   congr 1
   -- Skew-symmetry reverses the outer bracket up to a sign, which is trivial for `p = 2`.
-  rw [← neg_gradedPiece_two (gradedBracket 2 G 0 (j + 0 + 1) y (gradedBracket 2 G j 0 x y)),
-    ← gradedCast_gradedBracket_swap, gradedCast_trans]
+  rw [← ZModModule.neg_eq_self (gradedBracket 2 G 0 (j + 0 + 1) y (gradedBracket 2 G j 0 x y)),
+    ← gradedCast_gradedBracket_swap, gradedCast_gradedCast]
 
 /-! ### Brackets with a degree-zero class, without transport of degrees -/
 
@@ -231,8 +220,7 @@ it is the class of the commutator `⁅g ^ (p ^ j), g⁆ = 1`. -/
 theorem gradedBracket_gradedPowIter_self (j : ℕ) (x : gradedPiece p G 0) :
     gradedBracket p G j 0 (gradedPowIter p G j x) x = 0 := by
   obtain ⟨g, rfl⟩ := gradedMkZero_surjective x
-  rw [gradedPowIter_gradedMkZero, ← gradedMk_zero ⟨g, mem_pLowerCentralSeries_zero p g⟩,
-    gradedBracket_gradedMk, gradedMk_eq_zero_iff]
+  rw [gradedPowIter_gradedMkZero, gradedBracket_gradedMk_gradedMkZero, gradedMk_eq_zero_iff]
   simp only [commutatorElement_eq_one_iff_commute.mpr (Commute.pow_self g _)]
   exact one_mem _
 

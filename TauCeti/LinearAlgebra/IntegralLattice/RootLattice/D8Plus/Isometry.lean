@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.IntegralLattice.Overlattice.OrthogonalQuotient.Quadratic
-public import TauCeti.LinearAlgebra.IntegralLattice.RootLattice.D8Plus.Basic
-public import TauCeti.LinearAlgebra.IntegralLattice.RootLattice.TypeE
+public import TauCeti.LinearAlgebra.IntegralLattice.RootLattice.TypeD.Plus
+public import TauCeti.LinearAlgebra.IntegralLattice.RootLattice.TypeE.Basic
 public import TauCeti.LinearAlgebra.RootSystem.E8Coordinates
 
 import Mathlib.Algebra.BigOperators.Field
@@ -79,7 +79,6 @@ general overlattice comparison `A_{L_H} ≅ H⊥ / H` predicts for the order-two
 * N. Bourbaki, *Lie Groups and Lie Algebras, Chapters 4--6*, plate VII.
 * J. H. Conway and N. J. A. Sloane, *Sphere Packings, Lattices and Groups*, §4.8.1.
 * W. Ebeling, *Lattices and Codes*, Chapter 3.
-* `TauCetiRoadmap/IntegralLattices/README.md`, Layer 5, the `D₈ ⊂ E₈` glue calculation.
 -/
 
 public section
@@ -172,19 +171,14 @@ private theorem e8GlueRoot_of_ne_zero (i : Fin 8) (hi : i ≠ 0) :
 
 /-- **Every glue root lies in `D₈⁺`**: the first differs from the spinor vector by a checkerboard
 vector, and the other seven are checkerboard vectors. -/
-theorem e8GlueRoot_mem_d8PlusCarrier (i : Fin 8) : e8GlueRoot i ∈ d8PlusCarrier.1 := by
-  rw [mem_d8PlusCarrier_iff]
+theorem e8GlueRoot_mem_d8PlusCarrier (i : Fin 8) :
+    e8GlueRoot i ∈ (checkerboardPlusCarrier 8).1 := by
+  rw [mem_checkerboardPlusCarrier_iff 8 (by decide)]
   rcases eq_or_ne i 0 with rfl | hi
   · exact Or.inr (e8GlueRoot_zero_sub_spinor ▸ e8GlueShift_mem_checkerboardLattice 0)
   · exact Or.inl (e8GlueRoot_of_ne_zero i hi ▸ e8GlueShift_mem_checkerboardLattice i)
 
 /-! ## The comparison map -/
-
-/-- The simple roots of the `E₈` root lattice are the standard coordinate vectors. -/
-private theorem typeE₈SimpleRoot_eq_basisFun (i : Fin 8) :
-    typeE₈SimpleRoot i = Pi.basisFun ℚ (Fin 8) i := by
-  funext j
-  rw [typeE₈SimpleRoot_apply, Pi.basisFun_apply, Pi.single_apply]
 
 /-- The rational linear map sending the `i`-th simple root of the `E₈` root lattice to the `i`-th
 glue root of `D₈⁺`. -/
@@ -255,7 +249,7 @@ private theorem map_carrier_e8GlueEquiv :
   rw [typeE₈RootLattice_carrier, Submodule.map_span, ← Set.range_comp, hrange]
 
 private theorem span_range_e8GlueRoot_le :
-    Submodule.span ℤ (Set.range e8GlueRoot) ≤ d8PlusCarrier.1 := by
+    Submodule.span ℤ (Set.range e8GlueRoot) ≤ (checkerboardPlusCarrier 8).1 := by
   rw [Submodule.span_le]
   rintro _ ⟨i, rfl⟩
   exact e8GlueRoot_mem_d8PlusCarrier i
@@ -267,23 +261,23 @@ pairs integrally with the whole `E₈` carrier, because `D₈⁺` is an integral
 image of that carrier; so the preimage lies in the dual of the `E₈` root lattice, which by
 unimodularity is the `E₈` root lattice itself. -/
 theorem span_range_e8GlueRoot :
-    Submodule.span ℤ (Set.range e8GlueRoot) = d8PlusCarrier.1 := by
+    Submodule.span ℤ (Set.range e8GlueRoot) = (checkerboardPlusCarrier 8).1 := by
   refine le_antisymm span_range_e8GlueRoot_le fun x hx ↦ ?_
-  have hxmem : x ∈ d8PlusLattice.carrier := by
-    rw [d8PlusLattice_carrier]
+  have hxmem : x ∈ (checkerboardPlusLattice 8 (by decide)).carrier := by
+    rw [checkerboardPlusLattice_carrier]
     exact hx
   have hxu : e8GlueMap (e8GlueEquiv.symm x) = x := by
     rw [← e8GlueEquiv_apply]
     exact e8GlueEquiv.apply_symm_apply x
   have hdual : e8GlueEquiv.symm x ∈ typeE₈RootLattice.dualCarrier := by
     intro v hv
-    have hv' : e8GlueMap v ∈ d8PlusLattice.carrier := by
-      rw [d8PlusLattice_carrier]
+    have hv' : e8GlueMap v ∈ (checkerboardPlusLattice 8 (by decide)).carrier := by
+      rw [checkerboardPlusLattice_carrier]
       refine span_range_e8GlueRoot_le ?_
       rw [← map_carrier_e8GlueEquiv]
       exact ⟨v, hv, (e8GlueEquiv_apply v).symm ▸ rfl⟩
-    have hpair := d8PlusLattice.le_dual hxmem (e8GlueMap v) hv'
-    rw [d8PlusLattice_form] at hpair
+    have hpair := (checkerboardPlusLattice 8 (by decide)).le_dual hxmem (e8GlueMap v) hv'
+    rw [checkerboardPlusLattice_form] at hpair
     rwa [← form_e8GlueMap _ v, hxu]
   rw [dualCarrier_typeE₈RootLattice] at hdual
   rw [← map_carrier_e8GlueEquiv]
@@ -295,14 +289,15 @@ theorem span_range_e8GlueRoot :
 
 The underlying rational equivalence sends the `i`-th simple root of `E₈` to the `i`-th vector of
 Bourbaki's plate VII in Conway--Sloane coordinates. -/
-noncomputable def typeE₈IsometryD8Plus : Isometry typeE₈RootLattice d8PlusLattice where
+noncomputable def typeE₈IsometryD8Plus :
+    Isometry typeE₈RootLattice (checkerboardPlusLattice 8 (by decide)) where
   toIsometryEquiv :=
     { toLinearEquiv := e8GlueEquiv
       map_app' := fun x y ↦ by
-        rw [d8PlusLattice_form]
+        rw [checkerboardPlusLattice_form]
         exact form_e8GlueMap x y }
   map_carrier := by
-    rw [map_carrier_e8GlueEquiv, span_range_e8GlueRoot, d8PlusLattice_carrier]
+    rw [map_carrier_e8GlueEquiv, span_range_e8GlueRoot, checkerboardPlusLattice_carrier]
 
 @[simp]
 theorem typeE₈IsometryD8Plus_apply (x : Fin 8 → ℚ) :
@@ -324,9 +319,12 @@ on a trivial group is recorded separately, by
 `instSubsingletonDiscriminantGroupTypeE₈RootLattice` and
 `discriminantQuadraticMap_typeE₈RootLattice`. -/
 noncomputable def d8PlusDiscriminantQuadraticIsometry :
-    FiniteQuadraticModule.Isometry (d8PlusLattice.discriminantQuadraticModule isEven_d8PlusLattice)
+    FiniteQuadraticModule.Isometry
+      ((checkerboardPlusLattice 8 (by decide)).discriminantQuadraticModule
+        (isEven_checkerboardPlusLattice 8 (by decide)))
       (typeE₈RootLattice.discriminantQuadraticModule isEven_typeE₈RootLattice) :=
-  typeE₈IsometryD8Plus.symm.discriminantQuadraticIsometry isEven_d8PlusLattice
+  typeE₈IsometryD8Plus.symm.discriminantQuadraticIsometry
+    (isEven_checkerboardPlusLattice 8 (by decide))
 
 /-- **The orthogonal quotient has the cardinality predicted by the direct `E₈` computation.**
 
@@ -335,13 +333,15 @@ Nikulin's comparison identifies the discriminant group of the glued lattice `D�
 discriminant group of `E₈`.  This theorem records the resulting cardinality of `H⊥ / H`. -/
 theorem natCard_orthogonalQuotient_d8SpinorSubgroup :
     Nat.card (((checkerboardLattice 8).discriminantQuadraticModule
-      (isEven_checkerboardLattice 8)).orthogonalQuotient d8SpinorSubgroup
-        isIsotropic_d8SpinorSubgroup) = 1 := by
+      (isEven_checkerboardLattice 8)).orthogonalQuotient (checkerboardSpinorSubgroup 8)
+        ((isIsotropic_checkerboardSpinorSubgroup_iff 8).mpr (by decide))) = 1 := by
   have hM := ((checkerboardLattice 8).isEven_intermediateCarrierOfDiscriminantSubgroup_iff
-    (isEven_checkerboardLattice 8) d8SpinorSubgroup).mpr isIsotropic_d8SpinorSubgroup
+    (isEven_checkerboardLattice 8) (checkerboardSpinorSubgroup 8)).mpr
+      ((isIsotropic_checkerboardSpinorSubgroup_iff 8).mpr (by decide))
   rw [natCard_orthogonalQuotient_of_subgroup (checkerboardLattice 8)
-    (isEven_checkerboardLattice 8) isIsotropic_d8SpinorSubgroup,
-    toIntegralLattice_eq_d8PlusLattice hM, discriminant_d8PlusLattice]
+    (isEven_checkerboardLattice 8) ((isIsotropic_checkerboardSpinorSubgroup_iff 8).mpr (by decide)),
+    toIntegralLattice_eq_checkerboardPlusLattice 8 (by decide) hM,
+    discriminant_checkerboardPlusLattice]
 
 end IntegralLattice
 

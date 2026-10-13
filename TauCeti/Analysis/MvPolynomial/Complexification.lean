@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Analysis.MvPolynomial.DirectionalOrder
 public import TauCeti.Analysis.Analytic.Complexification.Basic
+public import TauCeti.Topology.Algebra.MvPolynomial.Nonvanishing
+import Mathlib.Topology.Algebra.MvPolynomial
 
 /-!
 # Complex preparation of constant real polynomial order
@@ -15,6 +17,9 @@ Suppose a real polynomial has constant finite ambient order along a real paramet
 For any analytic complexification of that parametrization, there is a real affine direction
 in which the complex polynomial slices have the same constant order. Evaluation on these
 slices is therefore a power of the distinguished coordinate times a complex analytic unit.
+The directions can be chosen from an open dense set, with a shared complexification and
+a possibly smaller polydisc for each direction. This permits choosing finitely many
+preparable slices that also detect ambient order on root sections.
 In particular, the real constant-order hypothesis suffices to prepare a discriminant for
 complex analytic root splitting; constant order on complex points is a conclusion.
 
@@ -37,19 +42,20 @@ namespace MvPolynomial
 
 variable {σ ι : Type*} [Fintype ι]
 
-/-- Constant real ambient polynomial order gives constant complex slice order along a
-real direction, for any analytic complexification of the parametrization. -/
-theorem exists_eventually_analyticOrderAt_complex_eval_add_smul_eq
-    (p : MvPolynomial σ ℝ) {φ : (ι → ℝ) → σ → ℝ} {Φ : (ι → ℂ) → σ → ℂ}
+/-- A real direction detecting the finite ambient order at the central point also detects
+the complex slice order locally along any analytic complexification. -/
+theorem eventually_analyticOrderAt_complex_eval_add_smul_eq_of_coeff_ne_zero
+    (p : MvPolynomial σ ℝ) (v : σ → ℝ)
+    {φ : (ι → ℝ) → σ → ℝ} {Φ : (ι → ℂ) → σ → ℂ}
     {a : ι → ℝ} {m : ℕ}
     (hΦ : ∀ i, AnalyticAt ℂ (fun z ↦ Φ z i) (fun j ↦ (a j : ℂ)))
     (hreal : ∀ᶠ x in 𝓝 a, Φ (fun j ↦ (x j : ℂ)) = fun i ↦ (φ x i : ℂ))
-    (hm : ∀ᶠ x in 𝓝 a, p.orderAt (φ x) = m) :
-    ∃ v : σ → ℝ, ∀ᶠ z in 𝓝 (fun j ↦ (a j : ℂ)),
+    (hm : ∀ᶠ x in 𝓝 a, p.orderAt (φ x) = m)
+    (hv : (aeval (fun i ↦ Polynomial.C (φ a i) + Polynomial.C (v i) * Polynomial.X)
+      p).coeff m ≠ 0) :
+    ∀ᶠ z in 𝓝 (fun j ↦ (a j : ℂ)),
       analyticOrderAt (fun t : ℂ ↦
         eval (Φ z + t • (fun i ↦ (v i : ℂ))) (p.map Complex.ofRealHom)) 0 = m := by
-  obtain ⟨v, hn, hv⟩ := p.exists_natTrailingDegree_aeval_C_add_C_mul_X_eq
-    (φ a) hm.self_of_nhds
   let L (z : ι → ℂ) := aeval
     (fun i ↦ Polynomial.C (Φ z i) + Polynomial.C (v i : ℂ) * Polynomial.X)
     (p.map Complex.ofRealHom)
@@ -80,8 +86,7 @@ theorem exists_eventually_analyticOrderAt_complex_eval_add_smul_eq
   have hne : (L (fun j ↦ (a j : ℂ))).coeff m ≠ 0 := by
     rw [hmap a hreal.self_of_nhds, Polynomial.coeff_map]
     simpa only [Complex.ofRealHom_eq_coe, Complex.ofReal_ne_zero] using
-      (hv ▸ Polynomial.coeff_natTrailingDegree_ne_zero.2 hn)
-  refine ⟨v, ?_⟩
+      hv
   filter_upwards [(hcoeff m).continuousAt.eventually_ne hne,
     Filter.eventually_all.2 hzero] with z hz hzz
   have hnz : L z ≠ 0 := fun h ↦ hz (by simp [h])
@@ -94,22 +99,43 @@ theorem exists_eventually_analyticOrderAt_complex_eval_add_smul_eq
   rw [← _root_.funext heval, Polynomial.analyticOrderAt_eval_zero,
     Polynomial.trailingDegree_eq_natTrailingDegree hnz, hord]
 
-/-- For an analytic complexification of a real parametrization of constant finite ambient
-order, polynomial evaluation along a real direction is a complex power times an analytic
-unit near the central parameter and line coordinate zero. -/
-theorem exists_analyticAt_complex_eval_add_smul_eq_pow_mul
+/-- Constant real ambient polynomial order gives constant complex slice order along a
+real direction, for any analytic complexification of the parametrization. -/
+theorem exists_eventually_analyticOrderAt_complex_eval_add_smul_eq
     (p : MvPolynomial σ ℝ) {φ : (ι → ℝ) → σ → ℝ} {Φ : (ι → ℂ) → σ → ℂ}
     {a : ι → ℝ} {m : ℕ}
     (hΦ : ∀ i, AnalyticAt ℂ (fun z ↦ Φ z i) (fun j ↦ (a j : ℂ)))
     (hreal : ∀ᶠ x in 𝓝 a, Φ (fun j ↦ (x j : ℂ)) = fun i ↦ (φ x i : ℂ))
     (hm : ∀ᶠ x in 𝓝 a, p.orderAt (φ x) = m) :
-    ∃ v : σ → ℝ, ∃ u : (ι → ℂ) × ℂ → ℂ,
+    ∃ v : σ → ℝ, ∀ᶠ z in 𝓝 (fun j ↦ (a j : ℂ)),
+      analyticOrderAt (fun t : ℂ ↦
+        eval (Φ z + t • (fun i ↦ (v i : ℂ))) (p.map Complex.ofRealHom)) 0 = m := by
+  obtain ⟨v, hn, hv⟩ := p.exists_natTrailingDegree_aeval_C_add_C_mul_X_eq
+    (φ a) hm.self_of_nhds
+  refine ⟨v, p.eventually_analyticOrderAt_complex_eval_add_smul_eq_of_coeff_ne_zero
+    v hΦ hreal hm ?_⟩
+  rw [← hv]
+  exact Polynomial.coeff_natTrailingDegree_ne_zero.2 hn
+
+/-- A specified real direction detecting the central ambient order gives a complex
+power-times-unit factorization along an analytic complexification of the parametrization. -/
+theorem exists_analyticAt_complex_eval_add_smul_eq_pow_mul_of_coeff_ne_zero
+    (p : MvPolynomial σ ℝ) (v : σ → ℝ)
+    {φ : (ι → ℝ) → σ → ℝ} {Φ : (ι → ℂ) → σ → ℂ}
+    {a : ι → ℝ} {m : ℕ}
+    (hΦ : ∀ i, AnalyticAt ℂ (fun z ↦ Φ z i) (fun j ↦ (a j : ℂ)))
+    (hreal : ∀ᶠ x in 𝓝 a, Φ (fun j ↦ (x j : ℂ)) = fun i ↦ (φ x i : ℂ))
+    (hm : ∀ᶠ x in 𝓝 a, p.orderAt (φ x) = m)
+    (hv : (aeval (fun i ↦ Polynomial.C (φ a i) + Polynomial.C (v i) * Polynomial.X)
+      p).coeff m ≠ 0) :
+    ∃ u : (ι → ℂ) × ℂ → ℂ,
       AnalyticAt ℂ u ((fun j ↦ (a j : ℂ)), 0) ∧
       u ((fun j ↦ (a j : ℂ)), 0) ≠ 0 ∧
       ∀ᶠ z in 𝓝 ((fun j ↦ (a j : ℂ)), 0),
         eval (Φ z.1 + z.2 • (fun i ↦ (v i : ℂ))) (p.map Complex.ofRealHom) =
           z.2 ^ m * u z := by
-  obtain ⟨v, hv⟩ := p.exists_eventually_analyticOrderAt_complex_eval_add_smul_eq hΦ hreal hm
+  have horder := p.eventually_analyticOrderAt_complex_eval_add_smul_eq_of_coeff_ne_zero
+    v hΦ hreal hm hv
   have hG : AnalyticAt ℂ (fun z : (ι → ℂ) × ℂ ↦
       eval (Φ z.1 + z.2 • (fun i ↦ (v i : ℂ))) (p.map Complex.ofRealHom))
       ((fun j ↦ (a j : ℂ)), 0) := by
@@ -125,21 +151,43 @@ theorem exists_analyticAt_complex_eval_add_smul_eq_pow_mul
       simp only [Pi.add_apply, Pi.smul_apply, smul_eq_mul]
       exact ((hΦ i).comp hf).fun_add (hs.fun_mul (analyticAt_const (v := (v i : ℂ))))
     simpa only [aeval_eq_eval] using hGa
-  obtain ⟨u, hu, hu0, heq⟩ := hG.eventually_analyticOrderAt_eq_natCast_iff.1 hv
-  exact ⟨v, u, hu, hu0, by simpa only [sub_zero, smul_eq_mul] using heq⟩
+  obtain ⟨u, hu, hu0, heq⟩ := hG.eventually_analyticOrderAt_eq_natCast_iff.1 horder
+  exact ⟨u, hu, hu0, by simpa only [sub_zero, smul_eq_mul] using heq⟩
 
-/-- A finite-dimensional real analytic parametrization of constant finite polynomial order
-admits a conjugation-compatible complexification and a real direction on a polydisc where
-polynomial evaluation is a distinguished-coordinate power times a nowhere-zero analytic unit.
-Neither complex constant order nor a power-times-unit representation is assumed. -/
-theorem exists_complexification_eval_add_smul_eq_pow_mul [Fintype σ]
+/-- Constant finite real order gives a complex power-times-unit factorization along
+some real direction, for any analytic complexification of the parametrization. -/
+theorem exists_analyticAt_complex_eval_add_smul_eq_pow_mul
+    (p : MvPolynomial σ ℝ) {φ : (ι → ℝ) → σ → ℝ} {Φ : (ι → ℂ) → σ → ℂ}
+    {a : ι → ℝ} {m : ℕ}
+    (hΦ : ∀ i, AnalyticAt ℂ (fun z ↦ Φ z i) (fun j ↦ (a j : ℂ)))
+    (hreal : ∀ᶠ x in 𝓝 a, Φ (fun j ↦ (x j : ℂ)) = fun i ↦ (φ x i : ℂ))
+    (hm : ∀ᶠ x in 𝓝 a, p.orderAt (φ x) = m) :
+    ∃ v : σ → ℝ, ∃ u : (ι → ℂ) × ℂ → ℂ,
+      AnalyticAt ℂ u ((fun j ↦ (a j : ℂ)), 0) ∧
+      u ((fun j ↦ (a j : ℂ)), 0) ≠ 0 ∧
+      ∀ᶠ z in 𝓝 ((fun j ↦ (a j : ℂ)), 0),
+        eval (Φ z.1 + z.2 • (fun i ↦ (v i : ℂ))) (p.map Complex.ofRealHom) =
+          z.2 ^ m * u z := by
+  obtain ⟨v, hn, hv⟩ := p.exists_natTrailingDegree_aeval_C_add_C_mul_X_eq
+    (φ a) hm.self_of_nhds
+  refine ⟨v, p.exists_analyticAt_complex_eval_add_smul_eq_pow_mul_of_coeff_ne_zero
+    v hΦ hreal hm ?_⟩
+  rw [← hv]
+  exact Polynomial.coeff_natTrailingDegree_ne_zero.2 hn
+
+/-- Constant finite ambient order along a real analytic parametrization admits one
+conjugation-compatible complexification and an open dense set of real directions. Every
+such direction gives a power-times-unit factorization on a sufficiently small polydisc.
+The complexification is shared; the radius and unit may depend on the direction. -/
+theorem exists_complexification_dense_open_directions_eval_add_smul_eq_pow_mul [Fintype σ]
     (p : MvPolynomial σ ℝ) {φ : (ι → ℝ) → σ → ℝ} {a : ι → ℝ} {m : ℕ}
     (hφ : AnalyticAt ℝ φ a) (hm : ∀ᶠ x in 𝓝 a, p.orderAt (φ x) = m) :
-    ∃ r > (0 : ℝ), ∃ Φ : (ι → ℂ) → σ → ℂ, ∃ v : σ → ℝ,
-      ∃ u : (ι → ℂ) × ℂ → ℂ,
-        AnalyticOnNhd ℂ Φ (Metric.ball (fun j ↦ (a j : ℂ)) r) ∧
-        (∀ x ∈ Metric.ball a r, Φ (fun j ↦ (x j : ℂ)) = fun i ↦ (φ x i : ℂ)) ∧
-        (∀ z, Φ (star z) = star (Φ z)) ∧
+    ∃ ρ > (0 : ℝ), ∃ Φ : (ι → ℂ) → σ → ℂ, ∃ V : Set (σ → ℝ),
+      IsOpen V ∧ Dense V ∧
+      AnalyticOnNhd ℂ Φ (Metric.ball (fun j ↦ (a j : ℂ)) ρ) ∧
+      (∀ x ∈ Metric.ball a ρ, Φ (fun j ↦ (x j : ℂ)) = fun i ↦ (φ x i : ℂ)) ∧
+      (∀ z, Φ (star z) = star (Φ z)) ∧
+      ∀ v ∈ V, ∃ r > (0 : ℝ), r ≤ ρ ∧ ∃ u : (ι → ℂ) × ℂ → ℂ,
         AnalyticOnNhd ℂ u
           (Metric.ball (fun j ↦ (a j : ℂ)) r ×ˢ Metric.ball 0 r) ∧
         ∀ z ∈ Metric.ball (fun j ↦ (a j : ℂ)) r ×ˢ Metric.ball 0 r,
@@ -147,11 +195,22 @@ theorem exists_complexification_eval_add_smul_eq_pow_mul [Fintype σ]
             eval (Φ z.1 + z.2 • (fun i ↦ (v i : ℂ))) (p.map Complex.ofRealHom) =
               z.2 ^ m * u z := by
   obtain ⟨ρ, hρ, Φ, hΦ, hreal, hstar⟩ := hφ.exists_complexification_pi
+  let H := homogeneousComponent m (taylor (φ a) p)
+  have hH : H ≠ 0 :=
+    p.homogeneousComponent_ne_zero_of_orderAt_eq (φ a) hm.self_of_nhds
+  let V := {v : σ → ℝ | eval v H ≠ 0}
+  have hV : IsOpen V := isOpen_ne.preimage H.continuous_eval
+  refine ⟨ρ, hρ, Φ, V, hV, H.dense_setOf_eval_ne_zero hH, hΦ, hreal, hstar, ?_⟩
+  intro v hv
+  have hc : (aeval (fun i ↦ Polynomial.C (φ a i) + Polynomial.C (v i) * Polynomial.X)
+      p).coeff m ≠ 0 := by
+    simpa only [V, Set.mem_ofPred_eq, H, coeff_aeval_C_add_C_mul_X] using hv
   have hΦa := hΦ _ (Metric.mem_ball_self hρ)
   have hreal' : ∀ᶠ x in 𝓝 a, Φ (fun j ↦ (x j : ℂ)) = fun i ↦ (φ x i : ℂ) :=
     Filter.Eventually.mono (Metric.ball_mem_nhds a hρ) hreal
-  obtain ⟨v, u, hu, hu0, heq⟩ := p.exists_analyticAt_complex_eval_add_smul_eq_pow_mul
-    (analyticAt_pi_iff.1 hΦa) hreal' hm
+  obtain ⟨u, hu, hu0, heq⟩ :=
+    p.exists_analyticAt_complex_eval_add_smul_eq_pow_mul_of_coeff_ne_zero
+      v (analyticAt_pi_iff.1 hΦa) hreal' hm hc
   obtain ⟨s, hs, hsu⟩ := Metric.eventually_nhds_iff.1
     (hu.eventually_analyticAt.and ((hu.continuousAt.eventually_ne hu0).and heq))
   have hlocal : ∀ z ∈ Metric.ball (fun j ↦ (a j : ℂ)) (min ρ s) ×ˢ
@@ -162,10 +221,7 @@ theorem exists_complexification_eval_add_smul_eq_pow_mul [Fintype σ]
     have hz' := Metric.ball_subset_ball (min_le_right ρ s)
       (ball_prod_same (fun j ↦ (a j : ℂ)) (0 : ℂ) (min ρ s) ▸ hz)
     exact hsu (by simpa only [Metric.mem_ball, dist_comm] using hz')
-  refine ⟨min ρ s, lt_min hρ hs, Φ, v, u,
-    hΦ.mono (Metric.ball_subset_ball (min_le_left _ _)), ?_, hstar, ?_, ?_⟩
-  · exact fun x hx ↦ hreal x (Metric.ball_subset_ball (min_le_left _ _) hx)
-  · exact fun z hz ↦ (hlocal z hz).1
-  · exact fun z hz ↦ (hlocal z hz).2
+  exact ⟨min ρ s, lt_min hρ hs, min_le_left _ _, u,
+    fun z hz ↦ (hlocal z hz).1, fun z hz ↦ (hlocal z hz).2⟩
 
 end MvPolynomial

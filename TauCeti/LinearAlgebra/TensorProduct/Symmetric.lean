@@ -26,13 +26,13 @@ living outside it. That they really are those two modules, `f ⊗ f`-equivariant
 `TauCeti.antisymmetricTensorsEquivExteriorPower` in
 `TauCeti/LinearAlgebra/TensorSquare.lean`.
 
-The point of the file is the trace identity `TauCeti.trace_map_self_comp_comm`: composing
+The point of the file is the trace identity `LinearMap.trace_map_self_comp_comm`: composing
 `f ⊗ f` with the flip has trace `tr (f ∘ f)`, because on a basis the diagonal entry of the
 composite at `eᵢ ⊗ eⱼ` is `aᵢⱼ aⱼᵢ`, and summing those is
 `Module.Basis.trace_eq_trace_comp_self_of_toMatrix_diag`, the step shared with the `Fin 2`-indexed
 tensor square of `TauCeti/LinearAlgebra/TensorSquare.lean`. Splitting that trace along the
 symmetric and the antisymmetric tensors, where the flip is `+1` and `-1`, gives
-`TauCeti.trace_symmetricTensorsRestrict_sub_trace_antisymmetricTensorsRestrict`: the traces of
+`LinearMap.trace_symmetricTensorsRestrict_sub_trace_antisymmetricTensorsRestrict`: the traces of
 `f ⊗ f` on the symmetric and on the antisymmetric tensors differ by `tr (f ∘ f)`. That is the
 character identity `χ_{Sym²}(g) - χ_{⋀²}(g) = χ(g²)` behind the Frobenius-Schur indicator, read on
 the tensor square rather than on the symmetric and exterior powers.
@@ -50,8 +50,8 @@ the tensor square rather than on the symmetric and exterior powers.
 * `TauCeti.isCompl_symmetricTensors_antisymmetricTensors` and
   `TauCeti.isInternal_symmetricTensors_antisymmetricTensors`: with `2` invertible the two
   submodules are complementary, hence an internal direct sum decomposition of the tensor square.
-* `TauCeti.trace_map_self_comp_comm`: `tr ((f ⊗ f) ∘ flip) = tr (f ∘ f)`.
-* `TauCeti.trace_symmetricTensorsRestrict_sub_trace_antisymmetricTensorsRestrict`: the traces of
+* `LinearMap.trace_map_self_comp_comm`: `tr ((f ⊗ f) ∘ flip) = tr (f ∘ f)`.
+* `LinearMap.trace_symmetricTensorsRestrict_sub_trace_antisymmetricTensorsRestrict`: the traces of
   `f ⊗ f` on the symmetric and on the antisymmetric tensors differ by `tr (f ∘ f)`.
 
 ## Implementation notes
@@ -101,19 +101,20 @@ theorem add_comm_mem_symmetricTensors (z : M ⊗[R] M) :
   exact add_comm _ _
 
 /-- `f ⊗ f` preserves the symmetric tensors, because it commutes with the flip. -/
-theorem map_self_mem_symmetricTensors (f : M →ₗ[R] M) {x : M ⊗[R] M}
+theorem _root_.LinearMap.map_self_mem_symmetricTensors (f : M →ₗ[R] M) {x : M ⊗[R] M}
     (hx : x ∈ symmetricTensors R M) : TensorProduct.map f f x ∈ symmetricTensors R M := by
   rw [mem_symmetricTensors] at hx ⊢
   rw [← TensorProduct.map_comm, hx]
 
 /-- The restriction of `f ⊗ f` to the symmetric tensors, as an endomorphism. -/
-noncomputable def symmetricTensorsRestrict (f : M →ₗ[R] M) :
+noncomputable def _root_.LinearMap.symmetricTensorsRestrict (f : M →ₗ[R] M) :
     symmetricTensors R M →ₗ[R] symmetricTensors R M :=
-  (TensorProduct.map f f).restrict fun _ hx ↦ map_self_mem_symmetricTensors f hx
+  (TensorProduct.map f f).restrict fun _ hx ↦ f.map_self_mem_symmetricTensors hx
 
 @[simp]
-theorem coe_symmetricTensorsRestrict_apply (f : M →ₗ[R] M) (x : symmetricTensors R M) :
-    (symmetricTensorsRestrict f x : M ⊗[R] M) = TensorProduct.map f f x :=
+theorem _root_.LinearMap.coe_symmetricTensorsRestrict_apply (f : M →ₗ[R] M)
+    (x : symmetricTensors R M) :
+    (f.symmetricTensorsRestrict x : M ⊗[R] M) = TensorProduct.map f f x :=
   (rfl)
 
 end Symmetric
@@ -141,19 +142,20 @@ theorem sub_comm_mem_antisymmetricTensors (z : M ⊗[R] M) :
   rw [mem_antisymmetricTensors, map_sub, TensorProduct.comm_comm, neg_sub]
 
 /-- `f ⊗ f` preserves the antisymmetric tensors, because it commutes with the flip. -/
-theorem map_self_mem_antisymmetricTensors (f : M →ₗ[R] M) {x : M ⊗[R] M}
+theorem _root_.LinearMap.map_self_mem_antisymmetricTensors (f : M →ₗ[R] M) {x : M ⊗[R] M}
     (hx : x ∈ antisymmetricTensors R M) : TensorProduct.map f f x ∈ antisymmetricTensors R M := by
   rw [mem_antisymmetricTensors] at hx ⊢
   rw [← TensorProduct.map_comm, hx, map_neg]
 
 /-- The restriction of `f ⊗ f` to the antisymmetric tensors, as an endomorphism. -/
-noncomputable def antisymmetricTensorsRestrict (f : M →ₗ[R] M) :
+noncomputable def _root_.LinearMap.antisymmetricTensorsRestrict (f : M →ₗ[R] M) :
     antisymmetricTensors R M →ₗ[R] antisymmetricTensors R M :=
-  (TensorProduct.map f f).restrict fun _ hx ↦ map_self_mem_antisymmetricTensors f hx
+  (TensorProduct.map f f).restrict fun _ hx ↦ f.map_self_mem_antisymmetricTensors hx
 
 @[simp]
-theorem coe_antisymmetricTensorsRestrict_apply (f : M →ₗ[R] M) (x : antisymmetricTensors R M) :
-    (antisymmetricTensorsRestrict f x : M ⊗[R] M) = TensorProduct.map f f x :=
+theorem _root_.LinearMap.coe_antisymmetricTensorsRestrict_apply (f : M →ₗ[R] M)
+    (x : antisymmetricTensors R M) :
+    (f.antisymmetricTensorsRestrict x : M ⊗[R] M) = TensorProduct.map f f x :=
   (rfl)
 
 variable (R M) in
@@ -207,7 +209,8 @@ variable {K M : Type*} [CommSemiring K] [AddCommMonoid M] [Module K M]
 diagonal entry of the composite at `eᵢ ⊗ eⱼ` is `aᵢⱼ aⱼᵢ`, and summing those over all pairs is the
 trace of the square of the matrix of `f`, which is
 `Module.Basis.trace_eq_trace_comp_self_of_toMatrix_diag`. -/
-theorem trace_map_self_comp_comm [Module.Free K M] [Module.Finite K M] (f : M →ₗ[K] M) :
+theorem _root_.LinearMap.trace_map_self_comp_comm [Module.Free K M] [Module.Finite K M]
+    (f : M →ₗ[K] M) :
     LinearMap.trace K (M ⊗[K] M)
         (TensorProduct.map f f ∘ₗ (TensorProduct.comm K M M).toLinearMap)
       = LinearMap.trace K M (f ∘ₗ f) := by
@@ -227,20 +230,20 @@ variable {K M : Type*} [Field K] [AddCommGroup M] [Module K M] [FiniteDimensiona
 `tr (f ∘ f)`.** Both traces are read off the same splitting of `M ⊗ M`: composing `f ⊗ f` with the
 flip leaves it unchanged on the symmetric part and negates it on the antisymmetric part, so the
 trace of that composite — which is `tr (f ∘ f)` — is the difference of the two. -/
-theorem trace_symmetricTensorsRestrict_sub_trace_antisymmetricTensorsRestrict
+theorem _root_.LinearMap.trace_symmetricTensorsRestrict_sub_trace_antisymmetricTensorsRestrict
     [Invertible (2 : K)] (f : M →ₗ[K] M) :
-    LinearMap.trace K (symmetricTensors K M) (symmetricTensorsRestrict f)
-        - LinearMap.trace K (antisymmetricTensors K M) (antisymmetricTensorsRestrict f)
+    LinearMap.trace K (symmetricTensors K M) f.symmetricTensorsRestrict
+        - LinearMap.trace K (antisymmetricTensors K M) f.antisymmetricTensorsRestrict
       = LinearMap.trace K M (f ∘ₗ f) := by
   set F := TensorProduct.map f f ∘ₗ (TensorProduct.comm K M M).toLinearMap with hF
   have hmapsPos : ∀ x ∈ symmetricTensors K M, F x ∈ symmetricTensors K M := by
     intro x hx
     rw [hF, LinearMap.comp_apply, LinearEquiv.coe_coe, mem_symmetricTensors.1 hx]
-    exact map_self_mem_symmetricTensors f hx
+    exact f.map_self_mem_symmetricTensors hx
   have hmapsNeg : ∀ x ∈ antisymmetricTensors K M, F x ∈ antisymmetricTensors K M := by
     intro x hx
     rw [hF, LinearMap.comp_apply, LinearEquiv.coe_coe, mem_antisymmetricTensors.1 hx, map_neg]
-    exact Submodule.neg_mem _ (map_self_mem_antisymmetricTensors f hx)
+    exact Submodule.neg_mem _ (f.map_self_mem_antisymmetricTensors hx)
   have hmaps : ∀ i : Bool, Set.MapsTo F
       (cond i (symmetricTensors K M) (antisymmetricTensors K M) : Submodule K (M ⊗[K] M))
       (cond i (symmetricTensors K M) (antisymmetricTensors K M) : Submodule K (M ⊗[K] M)) := by
@@ -252,14 +255,14 @@ theorem trace_symmetricTensorsRestrict_sub_trace_antisymmetricTensorsRestrict
   -- restrictions are ascribed to the eigenspace they act on, so that the equations below rewrite
   -- the summands of `htrace` without unfolding the `Bool`-indexed family.
   have hpos : (F.restrict (hmaps true) : symmetricTensors K M →ₗ[K] symmetricTensors K M)
-      = symmetricTensorsRestrict f := by
+      = f.symmetricTensorsRestrict := by
     ext x
     exact congrArg (TensorProduct.map f f) (mem_symmetricTensors.1 x.2)
   have hneg : LinearMap.trace K (antisymmetricTensors K M) (F.restrict (hmaps false))
-      = -LinearMap.trace K (antisymmetricTensors K M) (antisymmetricTensorsRestrict f) := by
+      = -LinearMap.trace K (antisymmetricTensors K M) f.antisymmetricTensorsRestrict := by
     have h : (F.restrict (hmaps false) :
         antisymmetricTensors K M →ₗ[K] antisymmetricTensors K M)
-          = -antisymmetricTensorsRestrict f := by
+          = -f.antisymmetricTensorsRestrict := by
       ext x
       exact (congrArg (TensorProduct.map f f) (mem_antisymmetricTensors.1 x.2)).trans
         (map_neg (TensorProduct.map f f) _)
@@ -268,13 +271,13 @@ theorem trace_symmetricTensorsRestrict_sub_trace_antisymmetricTensorsRestrict
   have htrace := LinearMap.trace_eq_sum_trace_restrict
     (isInternal_symmetricTensors_antisymmetricTensors K M) hmaps
   rw [Fintype.sum_bool] at htrace
-  calc LinearMap.trace K (symmetricTensors K M) (symmetricTensorsRestrict f)
-        - LinearMap.trace K (antisymmetricTensors K M) (antisymmetricTensorsRestrict f)
+  calc LinearMap.trace K (symmetricTensors K M) f.symmetricTensorsRestrict
+        - LinearMap.trace K (antisymmetricTensors K M) f.antisymmetricTensorsRestrict
       = LinearMap.trace K (symmetricTensors K M) (F.restrict (hmaps true))
           + LinearMap.trace K (antisymmetricTensors K M) (F.restrict (hmaps false)) := by
         rw [hpos, hneg, ← sub_eq_add_neg]
     _ = LinearMap.trace K (M ⊗[K] M) F := htrace.symm
-    _ = LinearMap.trace K M (f ∘ₗ f) := trace_map_self_comp_comm f
+    _ = LinearMap.trace K M (f ∘ₗ f) := f.trace_map_self_comp_comm
 
 end TraceSplit
 

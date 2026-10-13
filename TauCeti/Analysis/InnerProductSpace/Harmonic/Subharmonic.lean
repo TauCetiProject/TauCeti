@@ -30,7 +30,7 @@ below `h` on all of `closure U`. Applied to balls, it shows that the definition 
 the one of Gilbarg–Trudinger, Section 2.8: a subharmonic function lies below every harmonic
 function that dominates it on the boundary sphere of a ball. The proof reduces to the maximum
 principle for the sub-mean-value property on a compact superlevel set
-(`TauCeti.exists_mem_frontier_isMaxOn_of_le_setAverage_ball`).
+(`IsCompact.exists_mem_frontier_isMaxOn_of_le_setAverage_ball`).
 
 The comparison principle also holds between a subharmonic function `u` and a *superharmonic*
 function `w` (one with `-w` subharmonic): if `u ≤ w` on `frontier U`, both continuous on
@@ -96,7 +96,7 @@ theorem SubharmonicOn.frequently_le_setAverage_of_le (hv : SubharmonicOn v U) (h
     ∃ᶠ r in 𝓝[>] 0, w x ≤ ⨍ y in ball x r, w y := by
   obtain ⟨ε, hε, hεU⟩ := nhds_basis_closedBall.mem_iff.1 (hU.mem_nhds hx)
   refine ((hv.frequently_le_setAverage x hx).and_eventually (Ioo_mem_nhdsGT hε)).mono
-    fun r ⟨hr, hrε⟩ ↦ ?_
+    fun r ⟨_, hrε⟩ ↦ ?_
   have hrU : closedBall x r ⊆ U := (closedBall_subset_closedBall hrε.2.le).trans hεU
   have hint : ∀ f : E → ℝ, ContinuousOn f U → IntegrableOn f (ball x r) := fun f hf ↦
     ((hf.mono hrU).integrableOn_compact (isCompact_closedBall x r)).mono_set ball_subset_closedBall
@@ -131,7 +131,7 @@ theorem SubharmonicOn.sub_harmonicOnNhd (hu : SubharmonicOn u U) (hh : HarmonicO
   refine ⟨hu.continuousOn.sub hh.continuousOn, fun x hx ↦ ?_⟩
   obtain ⟨ε, hε, hεU⟩ := nhds_basis_closedBall.mem_iff.1 (hU.mem_nhds hx)
   refine ((hu.frequently_le_setAverage x hx).and_eventually (Ioo_mem_nhdsGT hε)).mono
-    fun r ⟨hr, hrε⟩ ↦ ?_
+    fun r ⟨_, hrε⟩ ↦ ?_
   have hrU : closedBall x r ⊆ U := (closedBall_subset_closedBall hrε.2.le).trans hεU
   have hint : ∀ f : E → ℝ, ContinuousOn f U → IntegrableOn f (ball x r) := fun f hf ↦
     ((hf.mono hrU).integrableOn_compact (isCompact_closedBall x r)).mono_set ball_subset_closedBall
@@ -166,7 +166,7 @@ theorem SubharmonicOn.le_of_le_frontier (hU : IsOpen U) (hUb : Bornology.IsBound
     simp only [mem_preimage, mem_Ici] at hym
     linarith
   have hxK : x ∈ K := ⟨hx, by simp only [mem_preimage, mem_Ici, m]; linarith⟩
-  obtain ⟨z, hz, hzmax⟩ := exists_mem_frontier_isMaxOn_of_le_setAverage_ball (μ := volume) hKc
+  obtain ⟨z, hz, hzmax⟩ := hKc.exists_mem_frontier_isMaxOn_of_le_setAverage_ball (μ := volume)
     ⟨x, hxK⟩ (hwc.mono inter_subset_left)
     fun y hy ↦ hw.frequently_le_setAverage y (hKU (interior_subset hy))
   -- A maximum point `z` of `w` on `K` has `w z ≥ w x > m`, so a neighbourhood of `z` lies in

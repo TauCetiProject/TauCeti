@@ -6,10 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 import Mathlib.LinearAlgebra.Matrix.Block
+import TauCeti.Algebra.Polynomial.Coeff.Basic
 import TauCeti.GroupTheory.Perm.Inversion
 public import Mathlib.Algebra.Polynomial.OfFn
 public import Mathlib.RingTheory.Polynomial.Resultant.Basic
-public import TauCeti.Algebra.Polynomial.Coeff.Basic
 
 /-!
 # Principal subresultant coefficients
@@ -158,13 +158,13 @@ theorem _root_.Polynomial.subresultantMatrix_mulVec [CommSemiring R] [DecidableE
     (v : Fin ((m - j) + (n - j)) → R) (i : Fin ((m - j) + (n - j))) :
     (subresultantMatrix p q m n j).mulVec v i =
       (ofFn (m - j) (fun k => v (Fin.castAdd (n - j) k)) * q +
-        ofFn (n - j) (fun k => v (Fin.natAdd (m - j) k)) * p).coeff (i + j) := by
-  exact coefficientRow_dotProduct hm hn (m - j) (n - j) (i.val + j) v
+        ofFn (n - j) (fun k => v (Fin.natAdd (m - j) k)) * p).coeff (i + j) :=
+  coefficientRow_dotProduct hm hn (m - j) (n - j) (i.val + j) v
 
 /-- The principal subresultant coefficient at index `j` and formal degree bounds `m` and `n`.
 
 The bounds are part of the data: they are not recomputed after coefficient specialization. -/
-noncomputable def _root_.Polynomial.psc [CommRing R] (p q : R[X]) (m n j : ℕ) : R :=
+def _root_.Polynomial.psc [CommRing R] (p q : R[X]) (m n j : ℕ) : R :=
   (subresultantMatrix p q m n j).det
 
 /-- The principal subresultant coefficient is the determinant of the principal subresultant
@@ -226,7 +226,6 @@ both sides reduce to `1` because the index is beyond the subresultant range. -/
 theorem _root_.Polynomial.psc_left_bound [CommRing R]
     (p q : R[X]) (m n : ℕ) :
     psc p q m n m = p.coeff m ^ (n - m) := by
-  classical
   let M := subresultantMatrix p q m n m
   have htri : M.IsUpperTriangular := by
     intro i k hki
