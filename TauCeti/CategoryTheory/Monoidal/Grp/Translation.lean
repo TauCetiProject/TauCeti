@@ -20,15 +20,27 @@ For a group scheme `G` over `S`, these are the translations of `G` by its `S`-po
 closed subschemes of `G` around; a closed subgroup scheme is stable under translation by its own
 points.
 
+More generally, a point `φ : Y ⟶ G` with values in an object `Y` acts on `G ⊗ Y`, the base change
+of `G` to `Y`, by `(g, y) ↦ (φ y * g, y)`. For a group scheme `G` over `S` and a scheme `Y` over
+`S`, this is left translation of `G ×_S Y` over `Y` by the `Y`-point of `G ×_S Y` given by `φ`; it
+moves points of `G` that are not defined over the base, such as the tautological point `Y = G`,
+`φ = 𝟙 G`.
+
 ## Main definitions
 
 * `TauCeti.leftTranslation x`: left translation by `x`, as an isomorphism `G ≅ G`.
+* `TauCeti.leftTranslationProd φ`: left translation by a point `φ : Y ⟶ G`, as an isomorphism
+  `G ⊗ Y ≅ G ⊗ Y`.
 
 ## Main results
 
 * `TauCeti.comp_leftTranslation_hom`: translation by `x` sends a point `f` to `x * f`.
 * `TauCeti.leftTranslation_hom_comp`: a homomorphism `i` intertwines translation by `x` with
   translation by `x ≫ i`.
+* `TauCeti.lift_comp_leftTranslationProd_hom`: translation by `φ` sends a point `(a, b)` of
+  `G ⊗ Y` to `((b ≫ φ) * a, b)`.
+* `TauCeti.leftTranslationProd_hom_comp_whiskerRight`: a homomorphism `i` intertwines translation
+  by `φ` with translation by `φ ≫ i`.
 -/
 
 public section
@@ -76,5 +88,59 @@ theorem leftTranslation_hom_comp {H : C} [GrpObj H] (i : H ⟶ G) [IsMonHom i] (
     (leftTranslation x).hom ≫ i = i ≫ (leftTranslation (x ≫ i)).hom := by
   rw [leftTranslation_hom, MonObj.mul_comp, Category.assoc, Category.id_comp,
     comp_leftTranslation_hom]
+
+/-! ### Translation by a point with values in an object -/
+
+section Prod
+
+variable {Y : C}
+
+/-- **Left translation by a point with values in `Y`.** For a point `φ : Y ⟶ G`, the automorphism
+`(g, y) ↦ (φ y * g, y)` of `G ⊗ Y`, the base change of `G` to `Y`. Its inverse is the translation
+by `φ⁻¹`. -/
+noncomputable def leftTranslationProd (φ : Y ⟶ G) : G ⊗ Y ≅ G ⊗ Y where
+  hom := lift ((snd G Y ≫ φ) * fst G Y) (snd G Y)
+  inv := lift ((snd G Y ≫ φ⁻¹) * fst G Y) (snd G Y)
+  hom_inv_id := by ext <;> simp [MonObj.comp_mul, GrpObj.comp_inv, ← _root_.mul_assoc]
+  inv_hom_id := by ext <;> simp [MonObj.comp_mul, GrpObj.comp_inv, ← _root_.mul_assoc]
+
+/-- Translation by `φ` is `(g, y) ↦ (φ y * g, y)`. -/
+theorem leftTranslationProd_hom (φ : Y ⟶ G) :
+    (leftTranslationProd φ).hom = lift ((snd G Y ≫ φ) * fst G Y) (snd G Y) :=
+  (rfl)
+
+/-- The inverse of translation by `φ` is translation by `φ⁻¹`. -/
+@[simp]
+theorem leftTranslationProd_inv (φ : Y ⟶ G) :
+    (leftTranslationProd φ).inv = (leftTranslationProd φ⁻¹).hom :=
+  (rfl)
+
+/-- Translation by `φ` sends a point `(a, b)` of `G ⊗ Y` to `((b ≫ φ) * a, b)`. -/
+@[reassoc (attr := simp)]
+theorem lift_comp_leftTranslationProd_hom {Z : C} (a : Z ⟶ G) (b : Z ⟶ Y) (φ : Y ⟶ G) :
+    lift a b ≫ (leftTranslationProd φ).hom = lift ((b ≫ φ) * a) b := by
+  simp [leftTranslationProd_hom, MonObj.comp_mul]
+
+/-- The first component of the translate of `(g, y)` by `φ` is `φ y * g`. -/
+@[reassoc (attr := simp)]
+theorem leftTranslationProd_hom_fst (φ : Y ⟶ G) :
+    (leftTranslationProd φ).hom ≫ fst G Y = (snd G Y ≫ φ) * fst G Y := by
+  simp [leftTranslationProd_hom]
+
+/-- Translation by `φ` lies over `Y`. -/
+@[reassoc (attr := simp)]
+theorem leftTranslationProd_hom_snd (φ : Y ⟶ G) :
+    (leftTranslationProd φ).hom ≫ snd G Y = snd G Y := by
+  simp [leftTranslationProd_hom]
+
+/-- A homomorphism of group objects `i : G ⟶ H` intertwines translation by a point `φ` of `G` with
+translation by its image `φ ≫ i`. -/
+@[reassoc]
+theorem leftTranslationProd_hom_comp_whiskerRight {H : C} [GrpObj H] (i : G ⟶ H) [IsMonHom i]
+    (φ : Y ⟶ G) :
+    (leftTranslationProd φ).hom ≫ i ▷ Y = i ▷ Y ≫ (leftTranslationProd (φ ≫ i)).hom := by
+  ext <;> simp [leftTranslationProd_hom, MonObj.mul_comp, MonObj.comp_mul]
+
+end Prod
 
 end TauCeti

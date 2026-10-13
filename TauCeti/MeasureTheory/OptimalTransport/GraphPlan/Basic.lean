@@ -81,10 +81,8 @@ formulas need `T` to be a.e. measurable: `Measure.map` sends a function that is 
 measurable to a junk Dirac mass, which neither marginal formula survives.
 
 This module needs nothing from the transport cost, so it sits below it: the Monge-to-Kantorovich
-relaxation inequality of Layer 4, item 1, which the change of variables here supplies, is stated
+relaxation inequality, which the change of variables here supplies, is stated
 with the cost itself in `TauCeti/MeasureTheory/OptimalTransport/Cost/Basic.lean`.
-
-This is Layer 0, item 2 of the optimal-transport roadmap.
 
 ## References
 
@@ -123,6 +121,24 @@ def graphPlan (T : X → Y) (μ : Measure X) : Measure (X × Y) :=
 so this is the lemma downstream modules should rewrite with. -/
 theorem graphPlan_def (T : X → Y) (μ : Measure X) :
     graphPlan T μ = μ.map fun x ↦ (x, T x) := (rfl)
+
+/-- A graph plan over an s-finite measure is s-finite, with no measurability assumption on
+the map. -/
+instance [SFinite μ] : SFinite (graphPlan T μ) := by
+  rw [graphPlan_def]
+  infer_instance
+
+/-- A graph plan over a finite measure is finite, with no measurability assumption on the
+map. -/
+instance [IsFiniteMeasure μ] : IsFiniteMeasure (graphPlan T μ) := by
+  rw [graphPlan_def]
+  infer_instance
+
+/-- A graph plan over a probability measure is a probability measure, with no measurability
+assumption on the map, as for Mathlib's totalized pushforward. -/
+instance [IsProbabilityMeasure μ] : IsProbabilityMeasure (graphPlan T μ) := by
+  rw [graphPlan_def]
+  infer_instance
 
 /-- The graph map `x ↦ (x, T x)` is a.e. measurable as soon as `T` is. -/
 theorem aemeasurable_prodMk_self (hT : AEMeasurable T μ) :

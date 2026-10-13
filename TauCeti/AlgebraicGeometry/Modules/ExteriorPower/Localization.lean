@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.Modules.Localization
-public import TauCeti.Algebra.Category.ModuleCat.Presheaf.ExteriorPower
+public import TauCeti.Algebra.Category.ModuleCat.Presheaf.ExteriorPower.Basic
 public import TauCeti.LinearAlgebra.ExteriorPower.Localization
 
 /-!

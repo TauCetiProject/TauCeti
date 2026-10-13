@@ -26,9 +26,8 @@ the Chevalley generators, hence normalising the Cartan subalgebra they span, and
 Chevalley--Demazure construction has to know what it does to the remaining root vectors.
 
 The Weyl automorphism `TauCeti.weylAut` of an `sl₂` triple also permutes root spaces, by
-`TauCeti.weylAut_map_rootSpace`, which is proved directly from the exponential formula. This
-repository has no lemma `H.map weylAut = H`, so that statement is not currently derived from
-`TauCeti.map_rootSpace_eq`.
+`TauCeti.weylAut_map_rootSpace`, which is proved directly from the exponential formula; deriving it
+from `TauCeti.map_rootSpace_eq` would need `H.map weylAut = H`, which is not proved here.
 
 ## Main definitions
 
@@ -51,10 +50,6 @@ repository has no lemma `H.map weylAut = H`, so that statement is not currently 
 
 * J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*, §16.5.
 * R. W. Carter, *Simple Groups of Lie Type*, §12.2.
-
-This supplies part of the pinning data for the explicit Chevalley--Demazure construction in Layer
-9 of `TauCetiRoadmap/ReductiveGroups/README.md`, which is consumed by milestones L0 and L1 of the
-`CFSGStatement` roadmap.
 -/
 
 public section

@@ -20,11 +20,11 @@ standard size conditions on `L` relative to its complement organize the whole su
 * `L` is **Lagrangian** when `L^ω = L`, i.e. isotropic and coisotropic at once.
 
 Lagrangian subspaces are the linear model for the boundary conditions of Lagrangian Floer homology
-(Lane F3 of the analytic Heegaard Floer roadmap) and for the totally real tori in `Sym^g(Σ)`
-(Lane F4): the roadmap keeps *totally real* and *Lagrangian* as separate named hypotheses, so this
-file builds the Lagrangian notion on the symplectic form `ω` rather than on an almost complex
-structure. The two meet on the standard model `V × V`: its coordinate factors are simultaneously
-maximal totally real (`TauCeti.Submodule.isMaximalTotallyReal_prod_top_bot_product`) and Lagrangian
+and for the totally real tori in `Sym^g(Σ)`. *Totally real* and *Lagrangian* are kept as separate
+named hypotheses, so this file builds the Lagrangian notion on the symplectic form `ω` rather than
+on an almost complex structure. The two meet on the standard model `V × V`: its coordinate factors
+are simultaneously maximal totally real
+(`TauCeti.Submodule.isMaximalTotallyReal_prod_top_bot_product`) and Lagrangian
 (`isLagrangian_prod_top_bot` below).
 
 This is the pointwise linear-algebra layer, with no topology or smoothness bundled, built directly

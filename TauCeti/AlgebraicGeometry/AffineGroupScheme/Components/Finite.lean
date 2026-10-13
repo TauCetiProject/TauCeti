@@ -27,9 +27,8 @@ source is locally Noetherian; affineness makes the source compact, hence Noether
 * J. S. Milne, *Algebraic Groups* (2017), Section 2.a.
 * The Stacks Project, Tag 01T6, *Properties of schemes, more on morphisms*.
 
-This is the scheme-side finiteness prerequisite for the identity component and component group
-in Layer 3 of the ReductiveGroups roadmap. Constructing the finite group scheme `π₀` and proving
-it étale under the roadmap's smoothness hypotheses remain later steps.
+This is the scheme-side finiteness prerequisite for the identity component and component group. The
+finite group scheme `π₀`, and its étaleness under smoothness hypotheses, are not treated here.
 -/
 
 public section

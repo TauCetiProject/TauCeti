@@ -158,7 +158,8 @@ Its class is `explicitInfl2 L e he [c]` (`explicitInfl2_H2π`). -/
 def inflCocycle2 (c : cocycles₂ (L.rep F)) : Z2 L.ground.toSubgroup M :=
   cocyclesMap2 _ _ _ _ (ContinuousMonoidHom.quotientMk _)
     (FixedPoints.addSubgroup (L.top.toSubgroup.subgroupOf L.ground.toSubgroup) M).subtype
-    (continuous_fixedPoints_addSubgroup_subtype _ _ _) (subtype_quotientMk_smul _ _ _)
+    (continuous_fixedPoints_addSubgroup_subtype _ _ _)
+    (L.top.toSubgroup.subgroupOf L.ground.toSubgroup).fixedPoints_subtype_quotientMk_smul
     (levelCocycle L e he c)
 
 omit [ContinuousSMul G M] in
