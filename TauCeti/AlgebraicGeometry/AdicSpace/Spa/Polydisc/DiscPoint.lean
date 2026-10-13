@@ -494,28 +494,28 @@ theorem discPointBelow_weightedC_vle_iff (a : K) (ha : ‖a‖ ≤ 1) (hr₀ : 0
     taylorHom_weightedC, add_sub_cancel_right]
   exact closedDiscGaussValuationBelow_weightedC_le_iff hr₀ hr₁ c
 
-omit [IsUltrametricDist K] [CompleteSpace K] in
 /-- If `x(T - a)` is strictly larger than `x(c)` for the constants with `Q c` and strictly smaller
 for the others, then `x(T - b)` is `x(T - a)` when `Q (b - a)` and `x(b - a)` otherwise: write
 `T - b = (T - a) - (b - a)` and apply the ultrametric equality. -/
-theorem valuation_weightedX_sub_weightedC_of_lt {x : closedPolydisc 1 K} {a : K}
-    (Q : K → Prop) [DecidablePred Q]
-    (hlt : ∀ c : K, Q c →
-      x.1.valuation (weightedC (fun _ : Fin 1 ↦ ({1} : Set K)) isWeightFamily_one_weight c) <
-        x.1.valuation (weightedX (fun _ : Fin 1 ↦ ({1} : Set K)) isWeightFamily_one_weight 0 -
+theorem valuation_weightedX_sub_weightedC_of_lt {A : Type*} [CommRing A] [TopologicalSpace A]
+    [NonarchimedeanRing A] {x : closedPolydisc 1 A} {a : A}
+    (Q : A → Prop) [DecidablePred Q]
+    (hlt : ∀ c : A, Q c →
+      x.1.valuation (weightedC (fun _ : Fin 1 ↦ ({1} : Set A)) isWeightFamily_one_weight c) <
+        x.1.valuation (weightedX (fun _ : Fin 1 ↦ ({1} : Set A)) isWeightFamily_one_weight 0 -
           weightedC _ isWeightFamily_one_weight a))
-    (hgt : ∀ c : K, ¬ Q c →
-      x.1.valuation (weightedX (fun _ : Fin 1 ↦ ({1} : Set K)) isWeightFamily_one_weight 0 -
+    (hgt : ∀ c : A, ¬ Q c →
+      x.1.valuation (weightedX (fun _ : Fin 1 ↦ ({1} : Set A)) isWeightFamily_one_weight 0 -
           weightedC _ isWeightFamily_one_weight a) <
-        x.1.valuation (weightedC (fun _ : Fin 1 ↦ ({1} : Set K)) isWeightFamily_one_weight c))
-    (b : K) :
-    x.1.valuation (weightedX (fun _ : Fin 1 ↦ ({1} : Set K)) isWeightFamily_one_weight 0 -
+        x.1.valuation (weightedC (fun _ : Fin 1 ↦ ({1} : Set A)) isWeightFamily_one_weight c))
+    (b : A) :
+    x.1.valuation (weightedX (fun _ : Fin 1 ↦ ({1} : Set A)) isWeightFamily_one_weight 0 -
         weightedC _ isWeightFamily_one_weight b) =
       if Q (b - a) then
-        x.1.valuation (weightedX (fun _ : Fin 1 ↦ ({1} : Set K)) isWeightFamily_one_weight 0 -
+        x.1.valuation (weightedX (fun _ : Fin 1 ↦ ({1} : Set A)) isWeightFamily_one_weight 0 -
           weightedC _ isWeightFamily_one_weight a)
       else x.1.valuation (weightedC _ isWeightFamily_one_weight (b - a)) := by
-  have hsplit : weightedX (fun _ : Fin 1 ↦ ({1} : Set K)) isWeightFamily_one_weight 0 -
+  have hsplit : weightedX (fun _ : Fin 1 ↦ ({1} : Set A)) isWeightFamily_one_weight 0 -
       weightedC _ isWeightFamily_one_weight b =
       (weightedX _ isWeightFamily_one_weight 0 - weightedC _ isWeightFamily_one_weight a) -
         weightedC _ isWeightFamily_one_weight (b - a) := by
