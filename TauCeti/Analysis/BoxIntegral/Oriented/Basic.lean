@@ -220,6 +220,28 @@ theorem HenstockIntervalIntegrable.sub (hf : HenstockIntervalIntegrable f a b)
   obtain ⟨z, hz⟩ := henstockIntervalIntegrable_iff.mp hg
   exact (hy.sub hz).henstockIntervalIntegrable
 
+/-- A constant has oriented Henstock integral `(b - a) • v` for every pair of endpoints,
+without any completeness assumption on its values. -/
+theorem hasHenstockIntervalIntegral_const (v : E) (a b : ℝ) :
+    HasHenstockIntervalIntegral (fun _ ↦ v) a b ((b - a) • v) := by
+  rcases lt_trichotomy a b with hab | rfl | hba
+  · apply (hasHenstockIntervalIntegral_iff_of_lt hab).mpr
+    simpa [BoxAdditiveMap.volume_apply] using
+      (BoxIntegral.hasIntegral_const (I := intervalBox a b hab)
+        (l := IntegrationParams.Henstock) (vol := BoxAdditiveMap.volume) v)
+  · simp
+  · apply (hasHenstockIntervalIntegral_iff_of_gt hba).mpr
+    rw [← neg_smul, neg_sub]
+    simpa [BoxAdditiveMap.volume_apply] using
+      (BoxIntegral.hasIntegral_const (I := intervalBox b a hba)
+        (l := IntegrationParams.Henstock) (vol := BoxAdditiveMap.volume) v)
+
+/-- The zero function has oriented Henstock integral zero for every pair of endpoints. -/
+@[simp]
+theorem hasHenstockIntervalIntegral_zero (a b : ℝ) :
+    HasHenstockIntervalIntegral (0 : ℝ → E) a b 0 := by
+  simpa only [Pi.zero_def, smul_zero] using hasHenstockIntervalIntegral_const (0 : E) a b
+
 variable [CompleteSpace E]
 
 /-- Bochner integrability supplies the genuine oriented Henstock value, including zero and
@@ -237,13 +259,6 @@ theorem _root_.IntervalIntegrable.hasHenstockIntervalIntegral (hf : IntervalInte
 theorem HasHenstockIntervalIntegral.eq_intervalIntegral (h : HasHenstockIntervalIntegral f a b y)
     (hf : IntervalIntegrable f volume a b) : y = ∫ t in a..b, f t :=
   h.unique hf.hasHenstockIntervalIntegral
-
-/-- A constant has oriented Henstock integral `(b - a) • v` for every pair of endpoints. -/
-theorem hasHenstockIntervalIntegral_const (v : E) (a b : ℝ) :
-    HasHenstockIntervalIntegral (fun _ ↦ v) a b ((b - a) • v) := by
-  simpa only [intervalIntegral.integral_const] using
-    (intervalIntegrable_const : IntervalIntegrable (fun _ : ℝ ↦ v) volume a
-      b).hasHenstockIntervalIntegral
 
 private theorem restrict_of_lt (hab : a < b) (h : HasHenstockIntervalIntegral f a b y)
     (hcd : uIcc c d ⊆ Icc a b) : HenstockIntervalIntegrable f c d := by
