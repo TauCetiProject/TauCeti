@@ -49,6 +49,8 @@ separation `Module.End.PointSpectraSeparated A ⊤ B ⊤ δ` with `0 < δ` suppl
 
 * `OrthonormalBasis.sum_inner_smul_rankOne`: for orthonormal bases `(uᵢ)`, `(vⱼ)`, every operator
   `C` is the sum of `⟪uᵢ, C vⱼ⟫` times the rank-one operators `rankOne 𝕜 uᵢ vⱼ`.
+* `ContinuousLinearMap.sub_smul_one_sylvester_sub_smul_one`: the Sylvester operator is unchanged
+  when `A` and `B` are shifted by the same scalar.
 * `ContinuousLinearMap.add_mul_norm_le_norm_comp_add_comp`: if the forms of `A` and `B` are
   bounded below by `α` and `β`, then `(α + β) ‖X‖ ≤ ‖A X + X B‖`.
 * `ContinuousLinearMap.mul_norm_le_norm_sylvester_apply_of_le_re_inner_of_re_inner_le`,
@@ -117,6 +119,13 @@ noncomputable def sylvester (A : E →L[𝕜] E) (B : F →L[𝕜] F) : (F →L[
 theorem sylvester_apply (A : E →L[𝕜] E) (B : F →L[𝕜] F) (X : F →L[𝕜] E) :
     A.sylvester B X = A ∘L X - X ∘L B := by
   simp [sylvester]
+
+/-- The Sylvester operator is unchanged when both operators are shifted by the same scalar:
+`(A - c) X - X (B - c) = A X - X B`. -/
+theorem sub_smul_one_sylvester_sub_smul_one (A : E →L[𝕜] E) (B : F →L[𝕜] F) (c : 𝕜) :
+    (A - c • 1).sylvester (B - c • 1) = A.sylvester B := by
+  ext X y
+  simp [sub_comp, comp_sub]
 
 end Normed
 

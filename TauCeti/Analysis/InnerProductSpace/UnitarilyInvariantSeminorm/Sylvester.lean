@@ -127,15 +127,6 @@ variable {𝕜 E F : Type*} [RCLike 𝕜]
   [NormedAddCommGroup F] [InnerProductSpace 𝕜 F] [FiniteDimensional 𝕜 F]
   {A : E →L[𝕜] E} {B : F →L[𝕜] F} {c : 𝕜} {a b r δ : ℝ}
 
-omit [FiniteDimensional 𝕜 E] [FiniteDimensional 𝕜 F] in
-/-- The Sylvester operator is unchanged by shifting both operators by the same scalar. -/
-private theorem coe_sylvester_apply_eq_sub (c : 𝕜) (X : F →L[𝕜] E) :
-    ((A.sylvester B X : F →L[𝕜] E) : F →ₗ[𝕜] E) =
-      ((A : E →ₗ[𝕜] E) - c • LinearMap.id) ∘ₗ (X : F →ₗ[𝕜] E) -
-        (X : F →ₗ[𝕜] E) ∘ₗ ((B : F →ₗ[𝕜] F) - c • LinearMap.id) := by
-  ext y
-  simp [ContinuousLinearMap.sylvester_apply]
-
 /-- **Sylvester bound from a disc and the exterior of a larger disc.** If `‖A x - c x‖ ≤ r ‖x‖`
 for every `x` and `(r + δ) ‖y‖ ≤ ‖B y - c y‖` for every `y`, then `δ N(X) ≤ N(A X - X B)` for
 every unitarily invariant seminorm `N`. -/
@@ -143,15 +134,20 @@ theorem mul_map_le_map_sylvester_apply_of_norm_sub_smul_le_of_le_norm_sub_smul
     (N : UnitarilyInvariantSeminorm 𝕜 F E) (hA : ∀ x, ‖A x - c • x‖ ≤ r * ‖x‖)
     (hB : ∀ y, (r + δ) * ‖y‖ ≤ ‖B y - c • y‖) (X : F →L[𝕜] E) :
     δ * N X ≤ N (A.sylvester B X) := by
-  have hsyl := coe_sylvester_apply_eq_sub (A := A) (B := B) c X
-  set A' : E →ₗ[𝕜] E := (A : E →ₗ[𝕜] E) - c • LinearMap.id
-  set B' : F →ₗ[𝕜] F := (B : F →ₗ[𝕜] F) - c • LinearMap.id
-  have h₁ : (r + δ) * N X ≤ N ((X : F →ₗ[𝕜] E) ∘ₗ B') :=
+  set A' : E →L[𝕜] E := A - c • 1
+  set B' : F →L[𝕜] F := B - c • 1
+  have hsyl : ((A.sylvester B X : F →L[𝕜] E) : F →ₗ[𝕜] E) =
+      (A' : E →ₗ[𝕜] E) ∘ₗ (X : F →ₗ[𝕜] E) - (X : F →ₗ[𝕜] E) ∘ₗ (B' : F →ₗ[𝕜] F) := by
+    rw [← ContinuousLinearMap.sub_smul_one_sylvester_sub_smul_one A B c,
+      ContinuousLinearMap.sylvester_apply]
+    rfl
+  have h₁ : (r + δ) * N X ≤ N ((X : F →ₗ[𝕜] E) ∘ₗ (B' : F →ₗ[𝕜] F)) :=
     N.mul_map_le_map_comp_right _ _ (by simpa [B'] using hB)
-  have h₂ : N (A' ∘ₗ (X : F →ₗ[𝕜] E)) ≤ r * N X :=
+  have h₂ : N ((A' : E →ₗ[𝕜] E) ∘ₗ (X : F →ₗ[𝕜] E)) ≤ r * N X :=
     N.map_comp_le_left _ _ (by simpa [A'] using hA)
   -- `X (B - c) = (A - c) X - (A X - X B)`.
-  have h₃ := map_sub_le_add N (A' ∘ₗ (X : F →ₗ[𝕜] E)) (A' ∘ₗ X - X ∘ₗ B')
+  have h₃ := map_sub_le_add N ((A' : E →ₗ[𝕜] E) ∘ₗ (X : F →ₗ[𝕜] E))
+    ((A' : E →ₗ[𝕜] E) ∘ₗ X - X ∘ₗ (B' : F →ₗ[𝕜] F))
   rw [sub_sub_cancel, ← hsyl] at h₃
   linarith
 
@@ -162,15 +158,20 @@ theorem mul_map_le_map_sylvester_apply_of_le_norm_sub_smul_of_norm_sub_smul_le
     (N : UnitarilyInvariantSeminorm 𝕜 F E) (hA : ∀ x, (r + δ) * ‖x‖ ≤ ‖A x - c • x‖)
     (hB : ∀ y, ‖B y - c • y‖ ≤ r * ‖y‖) (X : F →L[𝕜] E) :
     δ * N X ≤ N (A.sylvester B X) := by
-  have hsyl := coe_sylvester_apply_eq_sub (A := A) (B := B) c X
-  set A' : E →ₗ[𝕜] E := (A : E →ₗ[𝕜] E) - c • LinearMap.id
-  set B' : F →ₗ[𝕜] F := (B : F →ₗ[𝕜] F) - c • LinearMap.id
-  have h₁ : (r + δ) * N X ≤ N (A' ∘ₗ (X : F →ₗ[𝕜] E)) :=
+  set A' : E →L[𝕜] E := A - c • 1
+  set B' : F →L[𝕜] F := B - c • 1
+  have hsyl : ((A.sylvester B X : F →L[𝕜] E) : F →ₗ[𝕜] E) =
+      (A' : E →ₗ[𝕜] E) ∘ₗ (X : F →ₗ[𝕜] E) - (X : F →ₗ[𝕜] E) ∘ₗ (B' : F →ₗ[𝕜] F) := by
+    rw [← ContinuousLinearMap.sub_smul_one_sylvester_sub_smul_one A B c,
+      ContinuousLinearMap.sylvester_apply]
+    rfl
+  have h₁ : (r + δ) * N X ≤ N ((A' : E →ₗ[𝕜] E) ∘ₗ (X : F →ₗ[𝕜] E)) :=
     N.mul_map_le_map_comp_left _ _ (by simpa [A'] using hA)
-  have h₂ : N ((X : F →ₗ[𝕜] E) ∘ₗ B') ≤ r * N X :=
+  have h₂ : N ((X : F →ₗ[𝕜] E) ∘ₗ (B' : F →ₗ[𝕜] F)) ≤ r * N X :=
     N.map_comp_le_right _ _ (by simpa [B'] using hB)
   -- `(A - c) X = X (B - c) + (A X - X B)`.
-  have h₃ := map_add_le_add N ((X : F →ₗ[𝕜] E) ∘ₗ B') (A' ∘ₗ X - X ∘ₗ B')
+  have h₃ := map_add_le_add N ((X : F →ₗ[𝕜] E) ∘ₗ (B' : F →ₗ[𝕜] F))
+    ((A' : E →ₗ[𝕜] E) ∘ₗ X - X ∘ₗ (B' : F →ₗ[𝕜] F))
   rw [add_sub_cancel, ← hsyl] at h₃
   linarith
 

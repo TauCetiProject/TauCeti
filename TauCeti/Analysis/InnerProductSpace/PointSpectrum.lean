@@ -444,12 +444,10 @@ private theorem sq_norm_apply_sub_smul_eq_sum (hT : T.IsSymmetric) (c : ℝ) (x 
     ‖T x - (c : 𝕜) • x‖ ^ 2 = ∑ i, (hT.eigenvalues rfl i - c) ^ 2 *
       ‖(hT.eigenvectorBasis rfl).repr x i‖ ^ 2 ∧
     ‖x‖ ^ 2 = ∑ i, ‖(hT.eigenvectorBasis rfl).repr x i‖ ^ 2 := by
-  have hS : (T - (c : 𝕜) • LinearMap.id).IsSymmetric :=
-    hT.sub (LinearMap.IsSymmetric.id.smul (RCLike.conj_ofReal c))
   have hw (i) : (T - (c : 𝕜) • LinearMap.id : E →ₗ[𝕜] E) (hT.eigenvectorBasis rfl i) =
       ((hT.eigenvalues rfl i - c : ℝ) : 𝕜) • hT.eigenvectorBasis rfl i := by
     simp [sub_smul]
-  refine ⟨by simpa using hS.sq_norm_apply_eq_sum_of_eigenbasis _ hw x, ?_⟩
+  refine ⟨by simpa using LinearMap.sq_norm_apply_eq_sum_of_eigenbasis _ _ hw x, ?_⟩
   rw [← (hT.eigenvectorBasis rfl).repr.norm_map, EuclideanSpace.norm_sq_eq]
 
 /-- The eigenvalues in an ordered eigenbasis of a symmetric `T` lie in its point spectrum. -/
