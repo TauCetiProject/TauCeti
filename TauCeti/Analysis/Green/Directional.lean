@@ -122,14 +122,14 @@ omit [NormedSpace ℝ E] in
 private theorem integrableOn_comp_coordinateSwap
     (hR : IntegrableOn R (horizontalRegion a b lower upper)) :
     IntegrableOn (R ∘ Complex.coordinateSwap) (verticalRegion a b lower upper) := by
-  rw [← preimage_horizontalRegion_coordinateSwap]
+  rw [← preimage_coordinateSwap_horizontalRegion]
   exact (Complex.measurePreserving_coordinateSwap.integrableOn_comp_preimage
     Complex.coordinateSwap.toMeasurableEquiv.measurableEmbedding).2 hR
 
 private theorem integral_comp_coordinateSwap_verticalRegion :
     (∫ z in verticalRegion a b lower upper, (R ∘ Complex.coordinateSwap) z) =
       ∫ z in horizontalRegion a b lower upper, R z := by
-  simpa only [preimage_horizontalRegion_coordinateSwap, Function.comp_apply] using
+  simpa only [preimage_coordinateSwap_horizontalRegion, Function.comp_apply] using
     Complex.measurePreserving_coordinateSwap.setIntegral_preimage_emb
       Complex.coordinateSwap.toMeasurableEquiv.measurableEmbedding R
       (horizontalRegion a b lower upper)

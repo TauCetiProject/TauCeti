@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.MeasureTheory.Integral.CurveIntegral.Basic
 public import TauCeti.Analysis.Calculus.Deriv.Complex
 

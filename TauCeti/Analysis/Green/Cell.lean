@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Complex.Basic
 public import TauCeti.MeasureTheory.Measure.Lebesgue.Complex
 import Mathlib.Topology.Order.Compact
 
@@ -47,7 +46,7 @@ theorem mem_horizontalRegion : z ∈ horizontalRegion a b lower upper ↔
     z.im ∈ Icc a b ∧ z.re ∈ Icc (lower z.im) (upper z.im) := Iff.rfl
 
 /-- In real product coordinates the vertical cell has the indicated interval fibers. -/
-theorem preimage_verticalRegion_measurableEquivRealProd_symm :
+theorem preimage_measurableEquivRealProd_symm_verticalRegion :
     Complex.measurableEquivRealProd.symm ⁻¹' verticalRegion a b lower upper =
         {p : ℝ × ℝ | p.1 ∈ Icc a b ∧ p.2 ∈ Icc (lower p.1) (upper p.1)} := (rfl)
 
@@ -145,14 +144,14 @@ theorem volume_frontier_verticalRegion_eq_zero (hl : ContinuousOn lower (Icc a b
         (Complex.volume_setOf_re_mem_Icc_im_eq hu)
 
 /-- The horizontal region is the coordinate swap of the vertical region. -/
-theorem preimage_verticalRegion_coordinateSwap :
+theorem preimage_coordinateSwap_verticalRegion :
     Complex.coordinateSwap ⁻¹' verticalRegion a b lower upper =
       horizontalRegion a b lower upper := by
   ext z
   simp
 
 /-- The vertical region is the coordinate swap of the horizontal region. -/
-theorem preimage_horizontalRegion_coordinateSwap :
+theorem preimage_coordinateSwap_horizontalRegion :
     Complex.coordinateSwap ⁻¹' horizontalRegion a b lower upper =
       verticalRegion a b lower upper := by
   ext z
@@ -161,7 +160,7 @@ theorem preimage_horizontalRegion_coordinateSwap :
 /-- A horizontal region with continuous graphs is compact. -/
 theorem isCompact_horizontalRegion (hl : ContinuousOn lower (Icc a b))
     (hu : ContinuousOn upper (Icc a b)) : IsCompact (horizontalRegion a b lower upper) := by
-  rw [← preimage_verticalRegion_coordinateSwap]
+  rw [← preimage_coordinateSwap_verticalRegion]
   exact Complex.coordinateSwap.isCompact_preimage.mpr (isCompact_verticalRegion hl hu)
 
 /-- A horizontal region with continuous graphs is measurable. -/
@@ -173,7 +172,7 @@ theorem measurableSet_horizontalRegion (hl : ContinuousOn lower (Icc a b))
 theorem volume_frontier_horizontalRegion_eq_zero (hl : ContinuousOn lower (Icc a b))
     (hu : ContinuousOn upper (Icc a b)) :
     volume (frontier (horizontalRegion a b lower upper)) = 0 := by
-  rw [← preimage_verticalRegion_coordinateSwap, ← Complex.coordinateSwap.preimage_frontier]
+  rw [← preimage_coordinateSwap_verticalRegion, ← Complex.coordinateSwap.preimage_frontier]
   exact (Complex.measurePreserving_coordinateSwap.measure_preimage
     isClosed_frontier.measurableSet.nullMeasurableSet).trans
       (volume_frontier_verticalRegion_eq_zero hl hu)
