@@ -8,6 +8,7 @@ module
 public import Mathlib.NumberTheory.NumberField.InfinitePlace.Ramification
 public import Mathlib.NumberTheory.NumberField.Units.DirichletTheorem
 public import Mathlib.RepresentationTheory.Subrepresentation
+public import TauCeti.Algebra.GroupAction.TypeTags
 public import TauCeti.RepresentationTheory.RestrictScalars
 public import TauCeti.NumberTheory.NumberField.AutomorphismAction
 
@@ -169,14 +170,17 @@ theorem logSpaceExtend_logSpaceRep (σ : L ≃ₐ[K] L) (y : logSpace L) :
 /-- **The logarithmic embedding is Galois-equivariant**: the logarithmic embedding of `σ • x` is
 `logSpaceRep K L σ` applied to that of `x`. -/
 @[simp]
-theorem logEmbedding_smul (σ : L ≃ₐ[K] L) (x : (𝓞 L)ˣ) :
-    logEmbedding L (Additive.ofMul (σ • x)) =
-      logSpaceRep K L σ (logEmbedding L (Additive.ofMul x)) := by
+theorem logEmbedding_smul (σ : L ≃ₐ[K] L) (x : Additive (𝓞 L)ˣ) :
+    logEmbedding L (σ • x) = logSpaceRep K L σ (logEmbedding L x) := by
+  change logEmbedding L (Additive.ofMul (σ • x.toMul)) =
+    logSpaceRep K L σ (logEmbedding L (Additive.ofMul x.toMul))
   ext w
   have hmult : (σ.symm • w.1).mult = w.1.mult := by
     unfold mult
     rw [isReal_smul_iff]
-  simp [logSpaceExtend_logEmbedding, hmult, AlgEquiv.aut_inv]
+  rw [logSpaceRep_apply, logSpaceExtend_logEmbedding x.toMul,
+    logEmbedding_component (σ • x.toMul)]
+  simp [hmult, AlgEquiv.aut_inv]
 
 variable (K L) in
 /-- The unit lattice `logEmbedding L ((𝓞 L)ˣ)` as an integral subrepresentation of `logSpaceRep`:

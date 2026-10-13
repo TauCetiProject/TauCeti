@@ -395,6 +395,14 @@ theorem le_gaussValuation (hv : v.Integers O) (hρ : ρ < 1) (x : 𝕎 O) (n : �
     v (algebraMap O K (x.teichmullerCoeff n)) * ρ ^ n ≤ gaussValuation p hv ρ hρ x :=
   le_ciSup (bddAbove_range_gaussTerm hv hρ.le x) n
 
+/-- Increasing the radius increases the Gauss valuation of a Witt vector. -/
+theorem gaussValuation_mono (hv : v.Integers O) {ρ₁ ρ₂ : ℝ≥0}
+    (hρ₁ : ρ₁ < 1) (hρ₂ : ρ₂ < 1) (hρ : ρ₁ ≤ ρ₂) (x : 𝕎 O) :
+    gaussValuation p hv ρ₁ hρ₁ x ≤ gaussValuation p hv ρ₂ hρ₂ x := by
+  rw [gaussValuation_apply]
+  exact ciSup_le fun n ↦ (mul_le_mul' le_rfl (pow_le_pow_left' hρ n)).trans
+    (le_gaussValuation hv hρ₂ x n)
+
 /-- The Gauss valuation is at most one. -/
 theorem gaussValuation_le_one (hv : v.Integers O) (hρ : ρ < 1) (x : 𝕎 O) :
     gaussValuation p hv ρ hρ x ≤ 1 :=
@@ -417,6 +425,27 @@ theorem gaussValuation_teichmuller (hv : v.Integers O) (hρ : ρ < 1) (a : O) :
 theorem gaussValuation_p (hv : v.Integers O) (hρ : ρ < 1) :
     gaussValuation p hv ρ hρ (p : 𝕎 O) = ρ := by
   simpa using gaussValuation_teichmuller_mul_pow (p := p) hv hρ 1 1
+
+/-- In the splitting `y = ∑_{i < m} [yᵢ] pⁱ + pᵐ b` of the Teichmüller expansion
+(`WittVector.exists_eq_sum_teichmullerCoeff_add_pow_mul`), the tail satisfies
+`λ_ρ(b) ρᵐ ≤ λ_ρ(y)`. -/
+theorem gaussValuation_mul_pow_le_of_eq_sum_add_pow_mul (hv : v.Integers O) (hρ : ρ < 1)
+    {y b : 𝕎 O} {m : ℕ}
+    (hb : y = ∑ i ∈ Finset.range m, teichmuller p (y.teichmullerCoeff i) * (p : 𝕎 O) ^ i +
+      (p : 𝕎 O) ^ m * b) :
+    gaussValuation p hv ρ hρ b * ρ ^ m ≤ gaussValuation p hv ρ hρ y := by
+  have hsum : gaussValuation p hv ρ hρ
+      (∑ i ∈ Finset.range m, teichmuller p (y.teichmullerCoeff i) * (p : 𝕎 O) ^ i) ≤
+        gaussValuation p hv ρ hρ y :=
+    Valuation.map_sum_le _ fun i _ ↦ by
+      rw [gaussValuation_teichmuller_mul_pow]
+      exact le_gaussValuation hv hρ y i
+  have h : (p : 𝕎 O) ^ m * b =
+      y - ∑ i ∈ Finset.range m, teichmuller p (y.teichmullerCoeff i) * (p : 𝕎 O) ^ i :=
+    eq_sub_iff_add_eq'.mpr hb.symm
+  calc gaussValuation p hv ρ hρ b * ρ ^ m = gaussValuation p hv ρ hρ ((p : 𝕎 O) ^ m * b) := by
+        rw [map_mul, map_pow, gaussValuation_p, mul_comm]
+    _ ≤ _ := h ▸ (Valuation.map_sub _ _ _).trans (max_le le_rfl hsum)
 
 /-- A Witt vector whose `0`-th coordinate vanishes, that is, a multiple of `p`, has Gauss
 valuation at most `ρ`. -/
