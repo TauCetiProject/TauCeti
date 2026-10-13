@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.Torsion.Etale.Basic
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.Torsion.Unramified
 public import TauCeti.AlgebraicGeometry.GroupScheme.Etale
 import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.MulBy.Rank
 
