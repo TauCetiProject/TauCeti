@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Analysis.Calculus.ContDiff.Operations
 public import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
-public import TauCeti.Analysis.Normed.Lp.GraphDomain
 import TauCeti.LinearAlgebra.Prod
 import TauCeti.Topology.Algebra.Module.ProjectionGraph
 import Mathlib.Topology.OpenPartialHomeomorph.Basic
