@@ -74,30 +74,32 @@ def reverseEven (Q : QuadraticForm R M) : ↥(even Q) →ₗ[R] ↥(even Q) :=
   apply Subtype.ext
   simpa only [coe_reverseEven_apply] using (reverse_reverse (Q := Q) (x : CliffordAlgebra Q))
 
-/-- Reversal identifies the opposite of the even Clifford algebra with the even Clifford
-algebra. -/
+/-- Reversal identifies the even Clifford algebra with its opposite algebra. -/
 noncomputable def reverseEvenOpEquiv (Q : QuadraticForm R M) :
-    (even Q)ᵐᵒᵖ ≃ₐ[R] even Q :=
+    even Q ≃ₐ[R] (even Q)ᵐᵒᵖ :=
   AlgEquiv.ofBijective
-    { toFun := fun x => reverseEven Q x.unop
+    { toFun := fun x => MulOpposite.op (reverseEven Q x)
       map_one' := by simp
       map_mul' := by intro x y; simp
       map_zero' := by simp
       map_add' := by intro x y; simp
-      commutes' := by intro r; simp }
-    ⟨fun x y h => MulOpposite.unop_injective <| by
-        have h' : reverseEven Q x.unop = reverseEven Q y.unop := h
+      commutes' := by
+        intro r
+        apply MulOpposite.unop_injective
+        simp }
+    ⟨fun x y h => by
+        have h' : reverseEven Q x = reverseEven Q y := MulOpposite.op_injective h
         simpa only [reverseEven_reverseEven] using congrArg (reverseEven Q) h',
-      fun x => ⟨MulOpposite.op (reverseEven Q x), by simp⟩⟩
+      fun x => ⟨reverseEven Q x.unop, by simp⟩⟩
 
-/-- The reversal equivalence from the opposite even Clifford algebra acts by reversal. -/
-@[simp] theorem reverseEvenOpEquiv_apply (x : (even Q)ᵐᵒᵖ) :
-    reverseEvenOpEquiv Q x = reverseEven Q x.unop := by
+/-- The even reversal equivalence acts by reversal and passage to the opposite algebra. -/
+@[simp] theorem reverseEvenOpEquiv_apply (x : even Q) :
+    reverseEvenOpEquiv Q x = MulOpposite.op (reverseEven Q x) := by
   rfl
 
-/-- The inverse reversal equivalence acts by reversal and then passage to the opposite algebra. -/
-@[simp] theorem reverseEvenOpEquiv_symm_apply (x : even Q) :
-    (reverseEvenOpEquiv Q).symm x = MulOpposite.op (reverseEven Q x) := by
+/-- The inverse even reversal equivalence acts by reversal. -/
+@[simp] theorem reverseEvenOpEquiv_symm_apply (x : (even Q)ᵐᵒᵖ) :
+    (reverseEvenOpEquiv Q).symm x = reverseEven Q x.unop := by
   apply (reverseEvenOpEquiv Q).injective
   simp
 

@@ -54,7 +54,7 @@ private noncomputable def reverseEvenProdEquiv
     (e : even Q ≃ₐ[K] Module.End K M × Module.End K N) :
     (Module.End K M × Module.End K N)ᵐᵒᵖ ≃ₐ[K]
       Module.End K M × Module.End K N :=
-  (AlgEquiv.op e.symm).trans ((CliffordAlgebra.reverseEvenOpEquiv Q).trans e)
+  (AlgEquiv.op e.symm).trans ((CliffordAlgebra.reverseEvenOpEquiv Q).symm.trans e)
 
 private theorem reverseEvenProdEquiv_apply
     (e : even Q ≃ₐ[K] Module.End K M × Module.End K N)
