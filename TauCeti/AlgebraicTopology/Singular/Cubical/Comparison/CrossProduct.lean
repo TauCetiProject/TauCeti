@@ -34,7 +34,8 @@ acyclic models they are naturally chain homotopic
   natural chain maps, on pairs of spaces.
 * `TauCeti.crossProductHomotopy`: the chain homotopy between them, natural in both spaces
   (`TauCeti.crossProductHomotopy_hom_naturality`).
-* `TauCeti.homologyMap_cubicalCrossProductToSingular`: they have the same map on homology.
+* `TauCeti.homologyMap_cubicalCrossProductToSingularApp_eq_singularCrossProductOfCubicalApp`:
+  they have the same map on homology.
 
 ## References
 
@@ -208,7 +209,8 @@ theorem crossProductHomotopy_hom_naturality {X X' Y Y' : TopCat.{u}} (f : X ⟶ 
 /-- **The cubical cross product is the simplicial cross product on homology**: the cubical cross
 product followed by the comparison map and the tensor product of the two comparison maps followed by
 the simplicial cross product induce the same map on homology. -/
-theorem homologyMap_cubicalCrossProductToSingular (X Y : TopCat.{u}) (n : ℕ) :
+theorem homologyMap_cubicalCrossProductToSingularApp_eq_singularCrossProductOfCubicalApp
+    (X Y : TopCat.{u}) (n : ℕ) :
     HomologicalComplex.homologyMap (cubicalCrossProductToSingularApp k X Y) n =
       HomologicalComplex.homologyMap (singularCrossProductOfCubicalApp k X Y) n :=
   (crossProductHomotopy k X Y).homologyMap_eq n
