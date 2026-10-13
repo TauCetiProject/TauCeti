@@ -5,10 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.FieldTheory.PurelyInseparable.PerfectClosure
 public import TauCeti.FieldTheory.FunctionField.Basic
-public import TauCeti.FieldTheory.RatFunc.Transcendental
 public import TauCeti.FieldTheory.Separable.TranscendenceDegreeOne
+import Mathlib.FieldTheory.PurelyInseparable.PerfectClosure
+import TauCeti.FieldTheory.RatFunc.Transcendental
 
 /-!
 # Separably generated algebraic function fields
