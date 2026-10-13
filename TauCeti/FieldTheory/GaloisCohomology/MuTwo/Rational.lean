@@ -41,7 +41,7 @@ namespace TauCeti
 
 /-- Rational units give the same Kummer class exactly when their product is nonnegative
 and all its prime valuations are even. Negative valuations are allowed. -/
-theorem kummerClass_rat_eq_iff (a b : ℚˣ) :
+theorem kummerClass_eq_kummerClass_iff_nonneg_and_even_padicValRat (a b : ℚˣ) :
     kummerClass a = kummerClass b ↔
       0 ≤ (a : ℚ) * b ∧ ∀ p : ℕ, p.Prime → Even (padicValRat p ((a : ℚ) * b)) := by
   rw [kummerClass_eq_kummerClass_iff_isSquare_mul, ← isSquare_units_val_iff,
