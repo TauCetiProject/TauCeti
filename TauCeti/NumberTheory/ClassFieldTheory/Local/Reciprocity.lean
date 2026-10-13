@@ -184,4 +184,17 @@ theorem index_normGroup_of_isMulCommutative [IsMulCommutative Gal(L/K)] :
     ← Nat.card_congr (Abelianization.equivOfComm (H := Gal(L/K))).toEquiv,
     IsGalois.card_aut_eq_finrank]
 
+/-- **`n`-th powers are norms when `n` kills the Galois group.** If `σ ^ n = 1` for every
+`σ ∈ Gal(L/K)`, then `(Kˣ)ⁿ ≤ N_{L/K}(Lˣ)`: the norm residue isomorphism identifies
+`Kˣ / N_{L/K}(Lˣ)` with `Gal(L/K)^ab`, a quotient of `Gal(L/K)`, so `n` kills it. -/
+theorem powerSubgroup_le_normGroup_of_exponent_dvd {n : ℕ}
+    (hn : Monoid.exponent Gal(L/K) ∣ n) : powerSubgroup Kˣ n ≤ normGroup K L := by
+  intro x hx
+  obtain ⟨y, rfl⟩ := (mem_powerSubgroup_iff n).1 hx
+  have hsurj : Function.Surjective
+      ((normResidue K L).symm.toMonoidHom.comp (Abelianization.of (G := Gal(L/K)))) :=
+    (normResidue K L).symm.surjective.comp (QuotientGroup.mk'_surjective _)
+  rw [← QuotientGroup.eq_one_iff, QuotientGroup.mk_pow]
+  exact Monoid.exponent_dvd_iff_forall_pow_eq_one.mp ((MonoidHom.exponent_dvd hsurj).trans hn) _
+
 end TauCeti.ClassFieldTheory

@@ -851,7 +851,9 @@ action. -/
 continuous `G`-action and the smooth discrete objects of `TopRep R G`. It is the identity on
 underlying modules in both directions, the action being read off by `TopRep.distribMulAction`, so
 every component of the unit and of the counit is an identity morphism. -/
-@[expose] def discreteRepEquivSmoothTopRep :
+@[expose, simps! functor inverse unitIso_hom_app unitIso_inv_app counitIso_hom_app
+  counitIso_inv_app]
+def discreteRepEquivSmoothTopRep :
     DiscreteRep.{u, v, w} R G ≌ SmoothDiscreteTopRep.{u, v, w} R G where
   functor := toSmoothDiscrete R G
   inverse := ofSmoothDiscrete R G
@@ -861,34 +863,6 @@ every component of the unit and of the counit is an identity morphism. -/
     Representation.IntertwiningMap.ext (LinearMap.ext fun _ ↦ rfl)
   counitIso := NatIso.ofComponents (fun X ↦ Iso.refl X) fun _ ↦
     ObjectProperty.hom_ext _ (TopRep.hom_ext (DFunLike.ext _ _ fun _ ↦ rfl))
-
-/-- The functor of `discreteRepEquivSmoothTopRep` is `toSmoothDiscrete`. -/
-@[simp] lemma discreteRepEquivSmoothTopRep_functor :
-    (discreteRepEquivSmoothTopRep R G).functor = toSmoothDiscrete R G := (rfl)
-
-/-- The inverse functor of `discreteRepEquivSmoothTopRep` is `ofSmoothDiscrete`. -/
-@[simp] lemma discreteRepEquivSmoothTopRep_inverse :
-    (discreteRepEquivSmoothTopRep R G).inverse = ofSmoothDiscrete R G := (rfl)
-
-/-- Each component of the unit of `discreteRepEquivSmoothTopRep` is an identity morphism. -/
-@[simp] lemma discreteRepEquivSmoothTopRep_unitIso_hom_app (X : DiscreteRep.{u, v, w} R G) :
-    (discreteRepEquivSmoothTopRep R G).unitIso.hom.app X = 𝟙 X := (rfl)
-
-/-- Each component of the inverse of the unit of `discreteRepEquivSmoothTopRep` is an identity
-morphism. -/
-@[simp] lemma discreteRepEquivSmoothTopRep_unitIso_inv_app (X : DiscreteRep.{u, v, w} R G) :
-    (discreteRepEquivSmoothTopRep R G).unitIso.inv.app X = 𝟙 X := (rfl)
-
-/-- Each component of the counit of `discreteRepEquivSmoothTopRep` is an identity morphism. -/
-@[simp] lemma discreteRepEquivSmoothTopRep_counitIso_hom_app
-    (X : SmoothDiscreteTopRep.{u, v, w} R G) :
-    (discreteRepEquivSmoothTopRep R G).counitIso.hom.app X = 𝟙 X := (rfl)
-
-/-- Each component of the inverse of the counit of `discreteRepEquivSmoothTopRep` is an identity
-morphism. -/
-@[simp] lemma discreteRepEquivSmoothTopRep_counitIso_inv_app
-    (X : SmoothDiscreteTopRep.{u, v, w} R G) :
-    (discreteRepEquivSmoothTopRep R G).counitIso.inv.app X = 𝟙 X := (rfl)
 
 /-- `toSmoothDiscrete` is an equivalence of categories, with inverse `ofSmoothDiscrete`. -/
 instance isEquivalence_toSmoothDiscrete : (toSmoothDiscrete.{u, v, w} R G).IsEquivalence :=

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.DirectSum.Decomposition
+public import Mathlib.Algebra.GradedMulAction
 public import Mathlib.RingTheory.Finiteness.Basic
 import TauCeti.Order.CompactlyGenerated
 
@@ -18,10 +19,10 @@ describe their componentwise inclusion and range, while `DirectSum.isInternal_of
 criterion for proving that a family of submodules is an internal direct sum by identifying its
 summands with the components of a linear equivalence.
 
-A second group of declarations restricts a decomposition along a linear map.
-`DirectSum.map_decompose_shift` says that a map carrying each summand of one decomposition into a
-summand of another, along an injective reindexing of the degrees, commutes with the homogeneous
-projections, while `DirectSum.isInternal_comap` and
+A second group of declarations concerns maps between decompositions.
+`DirectSum.map_decompose_shift` says that an additive map carrying each summand of one
+decomposition into a summand of another, along an injective reindexing of the degrees, commutes
+with the homogeneous projections, while `DirectSum.isInternal_comap` and
 `DirectSum.Decomposition.restrict` transport a decomposition backwards along an injective linear
 map whose range contains the homogeneous projections of its elements, with
 `DirectSum.map_decompose_restrict` computing the projections of the restricted decomposition.
@@ -34,8 +35,13 @@ The file also specializes the compactness bound
 `TauCeti.finite_ne_bot_of_iSupIndep_of_isCompactElement` to submodules,
 `TauCeti.Submodule.finite_ne_bot_of_iSupIndep_of_fg`.
 
-Finally, `DirectSum.IsInternal.iSup_inf_eq_of_component_mem` restricts an internal decomposition
-to any submodule that contains the canonical components of each of its elements.
+`DirectSum.IsInternal.iSup_fiber` collects an internal decomposition along the fibers of any map.
+
+`DirectSum.IsInternal.iSup_inf_eq_of_component_mem` restricts an internal decomposition to any
+submodule that contains the canonical components of each of its elements.
+
+Finally, `DirectSum.coe_decompose_smul_add_of_right_mem` computes the components of a scalar
+action on a homogeneous element when the scalar and module decompositions are compatible.
 -/
 
 public section
@@ -186,13 +192,19 @@ noncomputable def DirectSum.Decomposition.restrict {R ι M N : Type*} [Semiring 
     DirectSum.Decomposition 𝓝 :=
   (DirectSum.isInternal_comap ℳ 𝓝 f hf hmem hproj).chooseDecomposition
 
-/-- A linear map which carries the degree-`i` summand of one internal decomposition into the
+end TauCeti
+
+namespace DirectSum
+
+/-- An additive map which carries the degree-`i` summand of one internal decomposition into the
 degree-`σ i` summand of another, along an injective reindexing `σ` of the degrees, commutes with
-the homogeneous projections. -/
-theorem DirectSum.map_decompose_shift {R ι κ M N : Type*} [Semiring R]
-    [DecidableEq ι] [DecidableEq κ] [AddCommMonoid M] [Module R M] [AddCommMonoid N] [Module R N]
-    (ℳ : ι → Submodule R M) [DirectSum.Decomposition ℳ] (𝓝 : κ → Submodule R N)
-    [DirectSum.Decomposition 𝓝] (f : M →ₗ[R] N) (σ : ι → κ) (hσ : Function.Injective σ)
+the homogeneous projections. The summands may be any additive subobjects, including submodules
+over unrelated scalar semirings. -/
+theorem map_decompose_shift {ι κ M N S T : Type*}
+    [DecidableEq ι] [DecidableEq κ] [AddCommMonoid M] [AddCommMonoid N]
+    [SetLike S M] [AddSubmonoidClass S M] [SetLike T N] [AddSubmonoidClass T N]
+    (ℳ : ι → S) [DirectSum.Decomposition ℳ] (𝓝 : κ → T)
+    [DirectSum.Decomposition 𝓝] (f : M →+ N) (σ : ι → κ) (hσ : Function.Injective σ)
     (hf : ∀ (i : ι) (x : M), x ∈ ℳ i → f x ∈ 𝓝 (σ i)) (i : ι) (x : M) :
     f (DirectSum.decompose ℳ x i : M) = (DirectSum.decompose 𝓝 (f x) (σ i) : N) := by
   induction x using DirectSum.Decomposition.inductionOn ℳ with
@@ -207,6 +219,10 @@ theorem DirectSum.map_decompose_shift {R ι κ M N : Type*} [Semiring R]
         DirectSum.decompose_of_mem_ne 𝓝 hxN fun hc ↦ Ne.symm hij (hσ hc)]
   | add x y hx hy => simp [hx, hy]
 
+end DirectSum
+
+namespace TauCeti
+
 /-- Homogeneous projection in a restricted decomposition agrees with projection in the ambient
 module. -/
 @[simp]
@@ -217,7 +233,7 @@ theorem DirectSum.map_decompose_restrict {R ι M N : Type*} [Semiring R]
     (i : ι) (x : N) :
     f (DirectSum.decompose 𝓝 x i : N) =
       (DirectSum.decompose ℳ (f x) i : M) :=
-  DirectSum.map_decompose_shift 𝓝 ℳ f id Function.injective_id
+  DirectSum.map_decompose_shift 𝓝 ℳ f.toAddMonoidHom id Function.injective_id
     (fun i x hx ↦ (hmem i x).mp hx) i x
 
 -- The inverse congruence is definitionally the direct sum of the componentwise inverses; this
@@ -362,6 +378,55 @@ end TauCeti
 
 namespace DirectSum.IsInternal
 
+/-- Collecting an internal decomposition along the fibers of any map again gives an internal
+decomposition. Each new summand is the sum of the original summands over the corresponding fiber. -/
+theorem iSup_fiber {R M ι κ : Type*} [Semiring R] [AddCommMonoid M] [Module R M]
+    [DecidableEq ι] [DecidableEq κ] {P : ι → Submodule R M}
+    (hP : DirectSum.IsInternal P) (degree : ι → κ) :
+    DirectSum.IsInternal fun j ↦ ⨆ i, ⨆ _ : degree i = j, P i := by
+  -- For submodules, the additive recomposition map in `IsInternal` is the underlying function
+  -- of the canonical linear recomposition map.
+  change Function.Bijective (DirectSum.coeLinearMap fun j ↦ ⨆ i, ⨆ _ : degree i = j, P i)
+  refine ⟨?_, ?_⟩
+  · -- Projection onto each fiber recovers that component of the recomposed direct sum.
+    let Q : κ → Submodule R M := fun j ↦ ⨆ i, ⨆ _ : degree i = j, P i
+    let _ : DirectSum.Decomposition P := hP.chooseDecomposition
+    let projection (j : κ) : M →ₗ[R] M :=
+      (DirectSum.toModule R ι M fun i ↦
+        if degree i = j then (P i).subtype else 0) ∘ₗ
+          (DirectSum.decomposeLinearEquiv P).toLinearMap
+    have projection_piece (j : κ) (i : ι) (x : P i) :
+        projection j x = if degree i = j then (x : M) else 0 := by
+      simp only [projection, LinearMap.comp_apply, LinearEquiv.coe_coe,
+        DirectSum.decomposeLinearEquiv_apply_coe, DirectSum.toModule_lof]
+      split <;> rfl
+    have projection_mem (j k : κ) {x : M} (hx : x ∈ Q k) :
+        projection j x = if k = j then x else 0 := by
+      dsimp only [Q] at hx
+      rw [iSup_subtype'] at hx
+      refine Submodule.iSup_induction (fun i : {i // degree i = k} ↦ P i)
+        (motive := fun y ↦ projection j y = if k = j then y else 0) hx
+        (fun i x hx ↦ ?_) (by simp) (fun x y ihx ihy ↦ ?_)
+      · simpa only [i.property] using projection_piece j i ⟨x, hx⟩
+      · simp only [map_add, ihx, ihy, ite_add_zero]
+    have projection_coe (j : κ) (z : ⨁ k, ↥(Q k)) :
+        projection j (DirectSum.coeLinearMap Q z) = z j := by
+      induction z using DirectSum.induction_on with
+      | zero => simp
+      | of k x =>
+          rw [DirectSum.coeLinearMap_of, projection_mem j k x.property]
+          simp only [DirectSum.coe_of_apply]
+          split <;> rfl
+      | add x y ihx ihy =>
+          rw [map_add (DirectSum.coeLinearMap Q), map_add (projection j), ihx, ihy]
+          rfl
+    intro x y hxy
+    apply DirectSum.ext fun j ↦ Subtype.ext ?_
+    exact (projection_coe j x).symm.trans ((congrArg (projection j) hxy).trans
+      (projection_coe j y))
+  · rw [← LinearMap.range_eq_top, DirectSum.range_coeLinearMap, iSup_comm]
+    simpa only [iSup_iSup_eq_right] using hP.submodule_iSup_eq_top
+
 /-- **Restricting an internal decomposition to a component-stable subspace.** If a subspace
 contains every canonical component of each of its elements, then it is the internal sum of its
 intersections with the original summands. -/
@@ -383,3 +448,30 @@ theorem iSup_inf_eq_of_component_mem
     Submodule.mem_iSup_of_mem i ⟨hp m hm i, (e.symm m i).2⟩
 
 end DirectSum.IsInternal
+
+namespace DirectSum
+
+variable {ι A M σA σM : Type*} [DecidableEq ι] [Add ι] [IsRightCancelAdd ι]
+  [Semiring A] [AddCommMonoid M] [Module A M]
+  [SetLike σA A] [AddSubmonoidClass σA A] (𝒜 : ι → σA) [Decomposition 𝒜]
+  [SetLike σM M] [AddSubmonoidClass σM M] (ℳ : ι → σM) [Decomposition ℳ]
+  [SetLike.GradedSMul 𝒜 ℳ]
+
+/-- For compatible decompositions of a semiring and its module, the degree-`i + j` component of
+`a • x`, for `x` homogeneous of degree `j`, is the degree-`i` component of `a` acting on `x`.
+Only right cancellation of addition on the degrees is needed. This is the module analogue of
+Mathlib's `DirectSum.coe_decompose_mul_add_of_right_mem`. -/
+theorem coe_decompose_smul_add_of_right_mem {a : A} {x : M} {i j : ι} (hx : x ∈ ℳ j) :
+    (decompose ℳ (a • x) (i + j) : M) = (decompose 𝒜 a i : A) • x := by
+  induction a using Decomposition.inductionOn 𝒜 with
+  | zero => simp
+  | @homogeneous k a =>
+    have hmem : (a : A) • x ∈ ℳ (k + j) := SetLike.GradedSMul.smul_mem a.2 hx
+    by_cases hki : k = i
+    · subst k
+      rw [decompose_of_mem_same ℳ hmem, decompose_of_mem_same 𝒜 a.2]
+    · rw [decompose_of_mem_ne ℳ hmem (fun h ↦ hki (add_right_cancel h)),
+        decompose_of_mem_ne 𝒜 a.2 hki, zero_smul]
+  | add a b ha hb => simp [add_smul, ha, hb]
+
+end DirectSum

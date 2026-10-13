@@ -57,9 +57,6 @@ leaves the formula.
 
 ## References
 
-* [Classical groups roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/ClassicalGroups/README.md),
-  Layer 5, "The Weyl dimension formula", which asks for the hook-content form of
-  `TauCeti.weylDimension` and for the proof that the two agree.
 * W. Fulton and J. Harris, *Representation Theory: A First Course* (1991), Theorem 6.3 and
   Exercise 6.4, where the hook-content formula is stated for `GL n`.
 * [I. G. Macdonald, *Symmetric Functions and Hall Polynomials*][macdonald1995], Chapter I,

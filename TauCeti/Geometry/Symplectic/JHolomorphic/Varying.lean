@@ -10,16 +10,14 @@ public import TauCeti.Geometry.Symplectic.JHolomorphic.Basic
 /-!
 # J-holomorphic maps for varying almost complex structures
 
-This file defines J-holomorphic maps between real normed spaces equipped with point-dependent
-almost complex structures. At `x`, the Cauchy--Riemann equation is
-`dfₓ ∘ J(x) = J'(f(x)) ∘ dfₓ`; in particular, the target structure is evaluated at the image
-point. This is the local-coordinate model for J-holomorphic curves in Lane F2.1 of the analytic
-Heegaard Floer roadmap.
+This file defines J-holomorphic maps between real normed spaces equipped with point-dependent almost
+complex structures. At `x`, the Cauchy--Riemann equation is `dfₓ ∘ J(x) = J'(f(x)) ∘ dfₓ`; in
+particular, the target structure is evaluated at the image point. This is the local-coordinate model
+for J-holomorphic curves.
 
-The almost complex structures remain unbundled functions. No regularity is imposed on them by
-the definition: continuity or smoothness belongs among the separate hypotheses of analytic
-results that need it. The existing constant-structure API is recovered by specializing both
-functions to constants.
+The almost complex structures remain unbundled functions. No regularity is imposed on them by the
+definition: continuity or smoothness belongs among the separate hypotheses of analytic results that
+need it. The constant-structure API is recovered by specializing both functions to constants.
 
 ## Main declarations
 
@@ -274,7 +272,7 @@ lemma isJHolomorphicOn_univ (J : U → AlmostComplexStructure U)
   simp [IsJHolomorphicOn, IsJHolomorphic]
 
 /-- For constant structure functions, varying-structure pointwise J-holomorphicity is exactly
-the existing constant-structure predicate. -/
+the constant-structure predicate. -/
 @[simp]
 lemma isJHolomorphicAt_constStructure_iff (J : AlmostComplexStructure U)
     (J' : AlmostComplexStructure V) (f : U → V) (x : U) :
@@ -283,7 +281,7 @@ lemma isJHolomorphicAt_constStructure_iff (J : AlmostComplexStructure U)
   Iff.rfl
 
 /-- For constant structure functions, varying-structure within-set J-holomorphicity is exactly
-the existing constant-structure predicate. -/
+the constant-structure predicate. -/
 @[simp]
 lemma isJHolomorphicWithinAt_constStructure_iff (J : AlmostComplexStructure U)
     (J' : AlmostComplexStructure V) (f : U → V) (s : Set U) (x : U) :
@@ -291,7 +289,7 @@ lemma isJHolomorphicWithinAt_constStructure_iff (J : AlmostComplexStructure U)
       IsConstStructureJHolomorphicWithinAt J J' f s x :=
   Iff.rfl
 
-/-- For constant structure functions, setwise J-holomorphicity is exactly the existing
+/-- For constant structure functions, setwise J-holomorphicity is exactly the
 constant-structure predicate. -/
 @[simp]
 lemma isJHolomorphicOn_constStructure_iff (J : AlmostComplexStructure U)
@@ -304,7 +302,7 @@ lemma isJHolomorphicOn_constStructure_iff (J : AlmostComplexStructure U)
   · intro hf x hx
     exact hf.isConstStructureJHolomorphicWithinAt hx
 
-/-- For constant structure functions, global J-holomorphicity is exactly the existing
+/-- For constant structure functions, global J-holomorphicity is exactly the
 constant-structure predicate. -/
 @[simp]
 lemma isJHolomorphic_constStructure_iff (J : AlmostComplexStructure U)

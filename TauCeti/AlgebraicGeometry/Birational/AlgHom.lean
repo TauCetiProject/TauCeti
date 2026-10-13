@@ -58,17 +58,6 @@ namespace AlgebraicGeometry.Scheme
 variable {k : Type u} [CommRing k] {X Y Z : Scheme.{u}} [X.Over (Spec (.of k))]
   [Y.Over (Spec (.of k))] [Z.Over (Spec (.of k))] [IsIntegral X] [IsIntegral Y] [IsIntegral Z]
 
-/-- The morphism `Spec k(X) ⟶ Y` through which a `k`-algebra map `ψ : k(Y) → k(X)` moves the
-generic point of `X` to the generic point of `Y` is a morphism over `k`. -/
-theorem SpecMap_fromSpecStalk_genericPoint_comp_over (ψ : Y.functionField →ₐ[k] X.functionField) :
-    Spec.map (CommRingCat.ofHom ψ.toRingHom) ≫ Y.fromSpecStalk (genericPoint Y) ≫
-        Y ↘ Spec (.of k) =
-      X.fromSpecStalk (genericPoint X) ≫ X ↘ Spec (.of k) := by
-  rw [fromSpecStalk_genericPoint_comp_over, fromSpecStalk_genericPoint_comp_over, ← Spec.map_comp,
-    ← CommRingCat.ofHom_comp]
-  congr 2
-  exact ψ.comp_algebraMap
-
 variable [IsProper (Y ↘ Spec (.of k))] (hX : ∀ x : X, ValuationRing (X.presheaf.stalk x))
 
 /-- **The morphism induced by a map of function fields**: for an integral `k`-scheme `X` whose
@@ -77,9 +66,9 @@ dominant `k`-morphism `X ⟶ Y` whose pullback of rational functions is the `k`-
 `ψ : k(Y) → k(X)` (`functionFieldMap_homOfFunctionFieldAlgHom`,
 `eq_homOfFunctionFieldAlgHom_iff`). -/
 noncomputable def homOfFunctionFieldAlgHom (ψ : Y.functionField →ₐ[k] X.functionField) : X ⟶ Y :=
-  homOfFunctionField hX _ (by
-    rw [Category.assoc]
-    exact SpecMap_fromSpecStalk_genericPoint_comp_over ψ)
+  homOfFunctionField hX _
+    (specMap_comp_fromSpecStalk_genericPoint_comp_over k (CommRingCat.ofHom ψ.toRingHom)
+      ψ.commutes)
 
 variable (ψ : Y.functionField →ₐ[k] X.functionField)
 

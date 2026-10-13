@@ -227,17 +227,8 @@ the full subcoalgebra. -/
 theorem liftGroupLikeBialgHom_surjective_iff_groupLikeSetSpan_eq_top :
     Function.Surjective (MonoidAlgebra.liftGroupLikeBialgHom (R := R) (A := H)) ↔
       Subcoalgebra.groupLikeSetSpan (R := R) (C := H) Set.univ = ⊤ := by
-  rw [liftGroupLikeBialgHom_surjective_iff_span_eq_top]
-  constructor
-  · intro h
-    apply Subcoalgebra.ext
-    intro x
-    rw [Subcoalgebra.mem_groupLikeSetSpan]
-    simp [h]
-  · intro h
-    have hsubmodule := congrArg Subcoalgebra.toSubmodule h
-    simpa only [Subcoalgebra.groupLikeSetSpan_toSubmodule,
-      Subcoalgebra.top_toSubmodule, Set.image_univ] using hsubmodule
+  rw [Subcoalgebra.groupLikeSetSpan_eq_top_iff_span_eq_top,
+    liftGroupLikeBialgHom_surjective_iff_span_eq_top]
 
 /-- Evaluation is injective exactly when the underlying group-like elements are linearly
 independent. -/

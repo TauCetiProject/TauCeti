@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+import Mathlib.Analysis.Complex.Polynomial.Basic
 public import TauCeti.RepresentationTheory.ClassicalGroups.WeylModule.Rational
+public import TauCeti.RepresentationTheory.ClassicalGroups.SpecialLinear
 
 /-!
 # Weyl modules restricted to the special linear group
@@ -33,10 +35,14 @@ diagrams of at most `n - 1` rows
 already exhaust the restrictions.  On the bundled representations, where there is no carrier to
 rewrite, that invariance is stated outright as `TauCeti.rationalWeylSLFDRep_shift`.
 
-That these restrictions are *irreducible*, and that they exhaust the irreducible rational
-representations of `SL n k`, is the highest-weight classification for `SL n` and is not proved
-here; it needs more than the determinant twist, since recovering `GL n k` from `SL n k` and the
-scalars asks every unit of `k` to be an `n`-th power.
+Over `ℂ`, these restrictions are irreducible exactly when the shape has at most `n` rows.
+In particular every rational Weyl module restricts irreducibly. Exhaustion and distinctness
+of the irreducible rational representations of `SL n ℂ` are separate classification statements.
+The irreducibility and simplicity statements here concern the complex Weyl modules used in that
+classification. The underlying restriction theorem `Representation.isIrreducible_comp_toGL_iff`
+is available over any algebraically closed field. Algebraic closure enters through that
+restriction theorem; `TauCeti.isIrreducible_weylRepOfShape_iff` for the original `GL` module
+requires only a field of characteristic zero.
 
 ## Main definitions
 
@@ -52,6 +58,10 @@ scalars asks every unit of `k` to be an `n`-th power.
   part of `λ`.
 * `TauCeti.rationalWeylSLFDRep_shift`: **the restriction only depends on `λ` modulo the constant
   weights**.
+* `TauCeti.isIrreducible_weylSLRepOfShape_iff`: over `ℂ`, the restriction is irreducible
+  exactly when the shape has at most `n` rows.
+* `TauCeti.simple_rationalWeylSLFDRep`: every rational Weyl module over `ℂ` stays simple
+  on restriction.
 
 ## References
 
@@ -175,5 +185,44 @@ theorem char_weylSLRepOfShape (μ : YoungDiagram) (g : Matrix.SpecialLinearGroup
   (rfl)
 
 end Field
+
+section Complex
+
+/-- A Weyl module over `ℂ` stays irreducible upon restriction to `SL n ℂ` exactly when
+its shape has at most `n` rows. -/
+@[simp]
+theorem isIrreducible_weylSLRepOfShape_iff (n : ℕ) (μ : YoungDiagram) :
+    Representation.IsIrreducible (V := ↥(weylModuleOfShape ℂ n μ).toSubmodule)
+      (weylSLRepOfShape ℂ n μ) ↔ μ.colLen 0 ≤ n := by
+  refine ⟨fun h => ?_, fun hn => ?_⟩
+  · exact not_lt.mp fun hn =>
+      Submodule.nontrivial_iff_ne_bot.mp h.nontrivial
+        (by rw [(weylModuleOfShape_eq_bot_iff ℂ n μ).mpr hn,
+          Subrepresentation.toSubmodule_bot])
+  · exact (Representation.isIrreducible_comp_toGL_iff _).mpr
+      ((isIrreducible_weylRepOfShape_iff μ).mpr hn)
+
+/-- The Weyl module of a shape, bundled over `SL n ℂ`, is simple exactly when the shape
+has at most `n` rows. -/
+@[simp]
+theorem simple_weylSLFDRepOfShape_iff (n : ℕ) (μ : YoungDiagram) :
+    CategoryTheory.Simple (weylSLFDRepOfShape ℂ n μ) ↔ μ.colLen 0 ≤ n := by
+  rw [FDRep.simple_iff_isIrreducible]
+  exact isIrreducible_weylSLRepOfShape_iff n μ
+
+/-- Every rational Weyl module over `ℂ` restricts irreducibly to `SL n ℂ`. -/
+instance isIrreducible_rationalWeylSLRep (n : ℕ) (l : DominantWeight n) :
+    Representation.IsIrreducible (V := ↥(weylModuleOfShape ℂ n l.detShiftShape).toSubmodule)
+      (rationalWeylSLRep ℂ n l) := by
+  rw [rationalWeylSLRep_eq_weylSLRepOfShape]
+  exact (isIrreducible_weylSLRepOfShape_iff n l.detShiftShape).mpr
+    l.colLen_zero_detShiftShape_le
+
+/-- Every bundled rational Weyl module over `ℂ` restricts to a simple `SL n ℂ` representation. -/
+instance simple_rationalWeylSLFDRep (n : ℕ) (l : DominantWeight n) :
+    CategoryTheory.Simple (rationalWeylSLFDRep ℂ n l) :=
+  (FDRep.simple_iff_isIrreducible _).mpr (isIrreducible_rationalWeylSLRep n l)
+
+end Complex
 
 end TauCeti

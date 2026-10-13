@@ -5,12 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.AlgebraicGroup.BaseChange.Basic
-public import TauCeti.Algebra.AlgebraicGroup.ConstantGroup.Basic
-public import TauCeti.Algebra.AlgebraicGroup.Hopf.Map
+public import TauCeti.Algebra.AlgebraicGroup.ConstantGroup.Hom
 public import TauCeti.Algebra.AlgebraicGroup.Product
 public import TauCeti.Algebra.Bialgebra.Hom.Representable
-public import TauCeti.RingTheory.Norm.FullSetOfSections
+public import TauCeti.RingTheory.Norm.FullSetOfSections.Basic
 public import Mathlib.RingTheory.Finiteness.ModuleFinitePresentation
 
 /-!
@@ -18,22 +16,27 @@ public import Mathlib.RingTheory.Finiteness.ModuleFinitePresentation
 
 Let `H` be a commutative `R`-bialgebra, finite and free as an `R`-module, so that `G = Spec H` is
 a finite locally free monoid scheme over `Spec R`; its points with values in `R` form the
-convolution monoid `WithConv (H →ₐ[R] R)`. For a finite group `A`, a homomorphism
-`φ : A →* G(R)` is an *`A`-generator* of `G` (Katz–Mazur §1.10) when the `|A|` points `φ a` form a
-full set of sections of `G` over `R` (`TauCeti.IsFullSetOfSections`): after every base change, the
-norm of a function on `G` is the product of its values at the points `φ a`. This is how Katz and
-Mazur say, over an arbitrary base and counting multiplicities, that the points `φ a` exhaust `G`;
+convolution monoid `WithConv (H →ₐ[R] R)`. For a finite monoid `A`, a homomorphism
+`φ : A →* G(R)` is an *`A`-generator* of `G` when the `|A|` points `φ a` form a full set of sections
+of `G` over `R` (`TauCeti.IsFullSetOfSections`). Katz–Mazur §1.10 make this definition for a finite
+abelian group `A`; it uses only the monoid structure of `A`, so we state it for any finite monoid.
+Being a full set of sections means that after every base change, the norm of a function on `G` is
+the product of its values at the points `φ a`. This is how Katz and Mazur say, over an arbitrary
+base and counting multiplicities, that the points `φ a` exhaust `G`;
 they need not be distinct, since in characteristic `p` the identity, taken `p` times, is a full
 set of sections of `μ_p`. The Drinfeld level structures on elliptic curves are of this form: a
 `[Γ(N)]`-structure on `E` is a `(ℤ/N)²`-generator of `E[N]`.
 
 The second half of the file constructs the scheme of `A`-generators of `G`. The scheme of
-homomorphisms `A_R → G` from the constant group `A_R = Spec (coordinateRing R A)` is
+homomorphisms `A_R → G` from the constant monoid `A_R = Spec (coordinateRing R A)` is
 `Spec (HomAlgebra R H (coordinateRing R A))`. On it the universal homomorphism provides a universal
 family of `|A|` points of `G`, and the locus where these points form a full set of sections is a
 closed subscheme of finite presentation, `Spec (HomAlgebra R H (coordinateRing R A) ⧸ I)` with
 `I = generatorIdeal R H A`. Its points with values in `T` are the homomorphisms `A_T → G_T` of
-monoid schemes over `T` whose points `A →* G(T)` form an `A`-generator of `G_T`.
+monoid schemes over `T` whose points `A →* G(T)` form an `A`-generator of `G_T`. By the universal
+property of the constant monoid (`TauCeti.ConstantGroup.pointsOfBialgHom_bijective`), a homomorphism
+`A_T → G_T` is the same as a homomorphism `A →* G(T)`, so the scheme of `A`-generators represents
+the functor `T ↦ {φ : A →* G(T) // IsAGenerator φ}`.
 
 ## Main definitions
 
@@ -54,11 +57,13 @@ monoid schemes over `T` whose points `A →* G(T)` form an `A`-generator of `G_T
 * `TauCeti.IsAGenerator.prodMap`: an `A₁`-generator of `G₁` and an `A₂`-generator of `G₂` together
   give an `A₁ × A₂`-generator of the product `G₁ × G₂`.
 * `TauCeti.ConstantGroup.isAGenerator_toPoints`: the tautological homomorphism from `A` to the
-  points of the constant group `A_R` is an `A`-generator.
+  points of the constant monoid `A_R` is an `A`-generator.
 * `TauCeti.isAGenerator_pointsOfBialgHom_homEquiv_iff` and
   `TauCeti.quotientGeneratorIdealHomEquiv`: the universal property of the scheme of
   `A`-generators. `TauCeti.generatorIdeal_fg` and the accompanying instance show that it is of
   finite presentation over `R`.
+* `TauCeti.quotientGeneratorIdealHomEquivAGenerators`: the scheme of `A`-generators represents the
+  functor `T ↦ {φ : A →* G(T) // IsAGenerator φ}` of `A`-generators of `G_T`.
 
 ## References
 
@@ -79,9 +84,10 @@ section Generator
 variable {R : Type u} {H : Type v} [CommRing R] [CommRing H] [Bialgebra R H]
 variable {A : Type*} [Monoid A] [Fintype A]
 
-/-- A homomorphism `φ : A →* G(R)` from a finite group (only its monoid structure is used) to the
-points of `G = Spec H` is an *`A`-generator* of `G` (Katz–Mazur §1.10) if the points `φ a`, for
-`a ∈ A`, form a full set of sections of `G` over `R`. -/
+/-- A homomorphism `φ : A →* G(R)` from a finite monoid to the points of `G = Spec H` is an
+*`A`-generator* of `G` if the points `φ a`, for `a ∈ A`, form a full set of sections of `G` over
+`R`. This generalizes the definition of Katz–Mazur §1.10, where `A` is a finite abelian group, to
+finite monoids. -/
 def IsAGenerator (φ : A →* WithConv (H →ₐ[R] R)) : Prop :=
   IsFullSetOfSections fun a ↦ (φ a).ofConv
 
@@ -140,9 +146,9 @@ end Product
 
 namespace ConstantGroup
 
-variable (R : Type u) [CommRing R] (A : Type*) [Group A] [Fintype A]
+variable (R : Type u) [CommRing R] (A : Type*) [Monoid A] [Fintype A]
 
-/-- The tautological homomorphism from a finite group `A` to the points of its constant group
+/-- The tautological homomorphism from a finite monoid `A` to the points of its constant monoid
 `A_R` is an `A`-generator: the evaluations at the elements of `A` form a full set of sections of
 `A_R = ⨆_{a ∈ A} Spec R`. -/
 theorem isAGenerator_toPoints : IsAGenerator (toPoints R A) := by
@@ -151,26 +157,6 @@ theorem isAGenerator_toPoints : IsAGenerator (toPoints R A) := by
     ext; simp
   simpa only [isAGenerator_iff, h, isFullSetOfSections_comp_algEquiv_iff] using
     isFullSetOfSections_evalAlgHom
-
-variable {R A} (H : Type v) [CommRing H] [Bialgebra R H] {T : Type w} [CommRing T] [Algebra R T]
-
-/-- The homomorphism `A →* G(T)` attached to a homomorphism `A_T → G_T` of monoid schemes over
-`T` from the constant group, where `G = Spec H`. The homomorphism of monoid schemes is given as a
-`T`-bialgebra homomorphism `g : T ⊗[R] H →ₐc[T] T ⊗[R] coordinateRing R A`, and `a ∈ A` goes to
-the image under `g` of the point `a` of `A_T`. -/
-noncomputable def pointsOfBialgHom (g : T ⊗[R] H →ₐc[T] T ⊗[R] coordinateRing R A) :
-    A →* WithConv (T ⊗[R] H →ₐ[T] T) :=
-  (AlgHom.mapDomain (H₁ := T ⊗[R] H) (H₂ := T ⊗[R] coordinateRing R A) (A := T) g).comp
-    ((AlgHom.pointsBaseChange T).comp (toPoints R A))
-
-variable {H}
-
-/-- The point `pointsOfBialgHom g a` is the composite of `g` with the base change of evaluation
-at `a`. -/
-@[simp]
-theorem ofConv_pointsOfBialgHom (g : T ⊗[R] H →ₐc[T] T ⊗[R] coordinateRing R A) (a : A) :
-    (pointsOfBialgHom H g a).ofConv = ((eval R A a).sectionBaseChange T).comp (g : _ →ₐ[T] _) := by
-  simp [pointsOfBialgHom, AlgHom.ofConv_pointsBaseChange]
 
 end ConstantGroup
 
@@ -181,7 +167,7 @@ section Locus
 open ConstantGroup TauCeti.Bialgebra
 
 variable (R : Type u) (H : Type v) [CommRing R] [CommRing H] [Bialgebra R H]
-  [Module.Free R H] [Module.Finite R H] (A : Type*) [Group A] [Fintype A]
+  [Module.Free R H] [Module.Finite R H] (A : Type*) [Monoid A] [Fintype A]
 
 -- `HomAlgebra` asks for the target to be finitely presented as an algebra, which holds for a
 -- finite free `H`
@@ -271,6 +257,42 @@ theorem quotientGeneratorIdealHomEquiv_symm_apply_mk {T : Type w} [CommRing T] [
     (quotientGeneratorIdealHomEquiv R H A T).symm g (Ideal.Quotient.mk _ x) =
       (HomAlgebra.homEquiv R H _ T).symm g.1 x :=
   quotientFullSetIdealHomEquiv_symm_apply_mk _ _ x
+
+variable (R H A) in
+/-- **The scheme of `A`-generators represents `A`-generators.** `R`-algebra maps out of
+`HomAlgebra R H (coordinateRing R A) ⧸ generatorIdeal R H A` correspond to the `A`-generators
+`φ : A →* G(T)` of `G_T = Spec (T ⊗[R] H)`, for every `R`-algebra `T`. -/
+noncomputable def quotientGeneratorIdealHomEquivAGenerators (T : Type w) [CommRing T]
+    [Algebra R T] :
+    (HomAlgebra R H (coordinateRing R A) ⧸ generatorIdeal R H A →ₐ[R] T) ≃
+      {φ : A →* WithConv (T ⊗[R] H →ₐ[T] T) // IsAGenerator φ} :=
+  (quotientGeneratorIdealHomEquiv R H A T).trans <|
+    (pointsOfBialgHomEquiv R H A T).subtypeEquiv fun _ ↦ by rw [pointsOfBialgHomEquiv_apply]
+
+/-- The `A`-generator attached to `g : _ ⧸ generatorIdeal R H A →ₐ[R] T` is the homomorphism
+`A →* G(T)` given by the points of the homomorphism `A_T → G_T` classified by `g` composed with
+the quotient map. -/
+@[simp]
+theorem coe_quotientGeneratorIdealHomEquivAGenerators_apply {T : Type w} [CommRing T]
+    [Algebra R T] (g : HomAlgebra R H (coordinateRing R A) ⧸ generatorIdeal R H A →ₐ[R] T) :
+    (quotientGeneratorIdealHomEquivAGenerators R H A T g : A →* WithConv (T ⊗[R] H →ₐ[T] T)) =
+      pointsOfBialgHom H (HomAlgebra.homEquiv R H _ T (g.comp (Ideal.Quotient.mkₐ R _))) :=
+  (pointsOfBialgHomEquiv_apply _).trans <|
+    congrArg (pointsOfBialgHom H) (coe_quotientGeneratorIdealHomEquiv_apply g)
+
+/-- The map out of the scheme of `A`-generators attached to an `A`-generator `φ : A →* G(T)` is
+the map induced on the quotient by the `R`-algebra map classifying the homomorphism `A_T → G_T`
+with points `φ`. -/
+@[simp]
+theorem quotientGeneratorIdealHomEquivAGenerators_symm_apply_mk {T : Type w} [CommRing T]
+    [Algebra R T] (φ : {φ : A →* WithConv (T ⊗[R] H →ₐ[T] T) // IsAGenerator φ})
+    (x : HomAlgebra R H (coordinateRing R A)) :
+    (quotientGeneratorIdealHomEquivAGenerators R H A T).symm φ (Ideal.Quotient.mk _ x) =
+      (HomAlgebra.homEquiv R H _ T).symm ((pointsOfBialgHomEquiv R H A T).symm φ.1) x :=
+  quotientGeneratorIdealHomEquiv_symm_apply_mk
+    ⟨(pointsOfBialgHomEquiv R H A T).symm φ.1, by
+      rw [← pointsOfBialgHomEquiv_apply, Equiv.apply_symm_apply]
+      exact φ.2⟩ x
 
 end Locus
 
