@@ -41,7 +41,8 @@ convex.
 * `TauCeti.mem_subdifferential_coe_iff` — for a real-valued `f` the finiteness condition is
   automatic and membership is the subgradient inequality, and
   `TauCeti.mem_subdifferential_iff_forall_toReal_add_le` is the same statement between real
-  representatives for an `f` that is never `⊥`;
+  representatives for an `f` that is never `⊥`, whose forward direction is
+  `TauCeti.toReal_add_le_toReal_of_mem_subdifferential`;
 * `TauCeti.mem_subdifferential_ite_iff` — for a real function extended by `⊤` off `Ω`, a
   subgradient at a point of `Ω` is a `y` satisfying the subgradient inequality on `Ω`;
 * `TauCeti.apply_le_apply_of_mem_subdifferential` — the subdifferential is monotone;
@@ -159,6 +160,13 @@ theorem mem_subdifferential_iff_forall_toReal_add_le (hbot : ∀ x', f x' ≠ �
   · rw [hx']
     exact le_top
   exact (key x' hx').2 (h x' hx')
+
+/-- The subgradient inequality between real representatives: if `y ∈ ∂f(x)` and `f x'` is finite,
+then `(f x).toReal + B (x' - x) y ≤ (f x').toReal`. -/
+theorem toReal_add_le_toReal_of_mem_subdifferential (h : y ∈ subdifferential B f x) {x' : E}
+    (hx' : f x' ≠ ⊤) : (f x).toReal + B (x' - x) y ≤ (f x').toReal :=
+  (mem_subdifferential_iff_forall_toReal_add_le B (apply_ne_bot_of_mem_subdifferential B h)
+    (ne_top_of_mem_subdifferential B h)).1 h x' hx'
 
 /-- **Subgradients are monotone.** If `y₁ ∈ ∂f(x₁)` and `y₂ ∈ ∂f(x₂)`, then
 `B (x₂ - x₁) y₁ ≤ B (x₂ - x₁) y₂`; for the inner product this is the monotonicity

@@ -83,16 +83,10 @@ theorem IsGeodesicSegment.strongConvexOn_dist_sq (hγ : IsGeodesicSegment γ x y
     fun s hs t ht => ?_
   have hm : midpoint ℝ s t = (s + t) / 2 := by
     rw [midpoint_eq_smul_add, smul_eq_mul, invOf_eq_inv, ← div_eq_inv_mul]
-  have hmI : midpoint ℝ s t ∈ Icc (0 : ℝ) 1 := (convex_Icc 0 1).midpoint_mem hs ht
   -- `γ` at the parameter midpoint is a midpoint of `γ s` and `γ t`.
-  have hst : dist (γ s) (γ t) = |s - t| * dist x y := hγ.dist_eq s hs t ht
   have hcn := IsCATZeroSpace.dist_sq_le_of_dist_eq_half
-    (x := γ s) (y := γ t) (m := γ (midpoint ℝ s t))
-    (by rw [hγ.dist_eq s hs _ hmI, hst, hm, show s - (s + t) / 2 = (s - t) / 2 by ring, abs_div,
-      abs_two]; ring)
-    (by rw [hγ.dist_eq _ hmI t ht, hst, hm, show (s + t) / 2 - t = (s - t) / 2 by ring, abs_div,
-      abs_two]; ring) z
-  rw [hst, mul_pow, sq_abs] at hcn
+    (hγ.dist_apply_apply_midpoint hs ht) (hγ.dist_apply_midpoint_apply hs ht) z
+  rw [hγ.dist_eq s hs t ht, mul_pow, sq_abs] at hcn
   simp only [Real.norm_eq_abs, sq_abs, hm] at hcn ⊢
   linarith
 
