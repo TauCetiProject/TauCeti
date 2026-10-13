@@ -59,6 +59,9 @@ private theorem nonempty_layerTateModule_of_type (L K : Type) [Field L] [Field K
     [IsGalois K L] : Nonempty (LayerTateModule p L K) := by
   have : Module.Finite ℚ_[p] K := .left ℚ_[p] K L
   have : FiniteDimensional K L := .right ℚ_[p] K L
+  have : Nontrivial ℚ_[p] := DivisionRing.toNontrivial
+  have : Algebra.IsAlgebraic ℚ_[p] K := Algebra.IsAlgebraic.of_finite ℚ_[p] K
+  have : Algebra.IsAlgebraic ℚ_[p] L := Algebra.IsAlgebraic.of_finite ℚ_[p] L
   -- The local-field structures of `K` and `L`.
   let _ := algebraicExtensionValuativeRel ℚ_[p] K
   let _ := algebraicExtensionNormedFieldTopology ℚ_[p] K
