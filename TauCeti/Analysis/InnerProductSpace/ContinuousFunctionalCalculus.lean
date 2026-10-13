@@ -76,6 +76,12 @@ instance instStarOrderedRingReal : StarOrderedRing (X →L[ℝ] X) :=
 /-- Complexification preserves the spectrum of a self-adjoint operator on a real Hilbert space. -/
 theorem spectrum_complexifyL2 {T : X →L[ℝ] X} (hT : IsSelfAdjoint T) :
     spectrum ℝ T.complexifyL2 = spectrum ℝ T := by
+  -- Instance search finds `StarModule ℝ` on the complex operators only for the real scalar
+  -- action restricted from `ℂ`, not for the action of `ContinuousLinearMap.algebra`.
+  have : StarModule ℝ (WithLp 2 (TauCeti.Complexification X) →L[ℂ]
+      WithLp 2 (TauCeti.Complexification X)) :=
+    StarModule.complexToReal (E := WithLp 2 (TauCeti.Complexification X) →L[ℂ]
+      WithLp 2 (TauCeti.Complexification X))
   simpa using (complexifyL2StarAlgHom X).spectrum_apply_eq_of_isClosedEmbedding
     (isClosedEmbedding_complexifyL2StarAlgHom X) (q := IsSelfAdjoint) (by simpa using hT)
 

@@ -82,6 +82,18 @@ theorem spectrum_eq_of_predicate (S : StarSubalgebra 𝕜 B) [IsClosed (S : Set 
 
 end StarSubalgebra
 
+variable {A : Type*} [Ring A] [StarRing A] [Algebra 𝕜 A] [TopologicalSpace A]
+
+/-- **Spectral permanence** along a unital `⋆`-homomorphism `φ` which is a closed embedding: if the
+continuous functional calculus of `B` is defined at `φ a`, then `φ a` has the same spectrum as
+`a`. -/
+theorem StarAlgHom.spectrum_apply_eq_of_isClosedEmbedding (φ : A →⋆ₐ[𝕜] B)
+    (hφ : IsClosedEmbedding φ) {a : A} (ha : q (φ a)) : spectrum 𝕜 (φ a) = spectrum 𝕜 a := by
+  have : IsClosed (φ.range : Set B) := hφ.isClosed_range
+  let e := StarAlgEquiv.ofInjective φ hφ.injective
+  rw [← AlgEquiv.spectrum_eq e a]
+  exact (φ.range.spectrum_eq_of_predicate (x := e a) ha).symm
+
 end Spectrum
 
 section Banach
@@ -145,17 +157,6 @@ theorem coe_cfc [ContinuousMap.UniqueHom 𝕜 B] (f : 𝕜 → 𝕜) (x : S) :
       cfc_apply_of_not_predicate _ hx, ZeroMemClass.coe_zero]
 
 end StarSubalgebra
-
-omit [CompleteSpace B] in
-/-- **Spectral permanence** along a unital `⋆`-homomorphism `φ` which is a closed embedding: if the
-continuous functional calculus of `B` is defined at `φ a`, then `φ a` has the same spectrum as
-`a`. -/
-theorem StarAlgHom.spectrum_apply_eq_of_isClosedEmbedding (φ : A →⋆ₐ[𝕜] B)
-    (hφ : IsClosedEmbedding φ) {a : A} (ha : q (φ a)) : spectrum 𝕜 (φ a) = spectrum 𝕜 a := by
-  have : IsClosed (φ.range : Set B) := hφ.isClosed_range
-  let e := StarAlgEquiv.ofInjective φ hφ.injective
-  rw [← AlgEquiv.spectrum_eq e a]
-  exact (φ.range.spectrum_eq_of_predicate (x := e a) ha).symm
 
 /-- A unital `⋆`-homomorphism `φ : A →⋆ₐ[𝕜] B` which is a closed embedding pulls the continuous
 functional calculus of `B` back to `A`, for elements `a` such that `φ a` satisfies the predicate
