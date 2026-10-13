@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.FieldTheory.Normal.Closure
+public import TauCeti.FieldTheory.FunctionField.Place.Map
 public import TauCeti.FieldTheory.FunctionField.Place.Extension.Inertia
 
 /-!
@@ -27,8 +28,10 @@ intersection of the fixing subgroups, so a place is unramified in `E₁ E₂` ex
 unramified in `E₁` and in `E₂`. The Galois group permutes the places above `P` and carries their
 inertia fields along (`TauCeti.Place.inertiaField_smul`), so a place unramified in `E` is
 unramified in every conjugate of `E`, hence in the Galois closure of `E`, which those conjugates
-generate. Every finite separable extension of `F` embeds into a finite Galois one, so these
-statements cover the composita and Galois closures of finite separable extensions.
+generate. Every finite separable extension of `F` embeds into a finite Galois one, and
+unramifiedness is invariant under isomorphism over `F`
+(`TauCeti.Place.isUnramified_iff_of_algEquiv`), so these statements cover the composita and
+Galois closures of finite separable extensions.
 
 ## Main definitions
 
@@ -37,6 +40,8 @@ statements cover the composita and Galois closures of finite separable extension
 
 ## Main results
 
+* `TauCeti.Place.isUnramified_iff_of_algEquiv`: unramifiedness is invariant under an isomorphism
+  of the upstairs field over the base field.
 * `TauCeti.Place.isUnramified_iff_forall_le_inertiaField`: a place is unramified in `E` exactly
   when `E` lies in the inertia field of every place of `M` above it.
 * `TauCeti.Place.isUnramified_sup_iff`: **a place is unramified in a compositum exactly when it
@@ -85,6 +90,70 @@ theorem isUnramified_iff (P : Place k F) :
   Iff.rfl
 
 end Definition
+
+section Equiv
+
+variable {k F L L' : Type*} [Field k] [Field F] [Field L] [Field L']
+variable [Algebra k F] [Algebra k L] [Algebra k L'] [Algebra F L] [Algebra F L']
+variable [IsScalarTower k F L] [IsScalarTower k F L']
+variable [Algebra.IsIntegral F L] [Algebra.IsIntegral F L']
+
+/-- Residues of equal places agree along the cast between their residue fields. -/
+private theorem cast_residue {Q₁ Q₂ : Place k F} (hQ : Q₁ = Q₂) (x : Q₁.integers)
+    (y : Q₂.integers) (hy : (y : F) = x) :
+    RingEquiv.cast (R := fun R : Place k F ↦ R.ResidueField) hQ
+        (IsLocalRing.residue Q₁.integers x) = IsLocalRing.residue Q₂.integers y := by
+  subst hQ
+  obtain rfl : y = x := Subtype.ext hy
+  rfl
+
+/-- Transport along an isomorphism `e : L ≃ L'` over `F` does not change the place below. -/
+private theorem restrict_map_restrictScalars (e : L ≃ₐ[F] L') (Q : Place k L) :
+    (Q.map (e.restrictScalars k)).restrict k F = Q.restrict k F := by
+  apply integers_injective
+  ext x
+  rw [mem_integers_restrict_iff, mem_integers_restrict_iff, mem_integers_map_iff]
+  exact Iff.of_eq (congrArg (· ∈ Q.integers) (e.symm.commutes x))
+
+/-- Transport along an isomorphism `e : L ≃ L'` over `F` preserves both conditions defining an
+unramified place, place by place. -/
+private theorem unramified_map_iff (e : L ≃ₐ[F] L') (Q : Place k L) :
+    (ramificationIdx F (Q.map (e.restrictScalars k)) = 1 ∧
+      Algebra.IsSeparable ((Q.map (e.restrictScalars k)).restrict k F).ResidueField
+        (Q.map (e.restrictScalars k)).ResidueField) ↔
+    (ramificationIdx F Q = 1 ∧
+      Algebra.IsSeparable (Q.restrict k F).ResidueField Q.ResidueField) := by
+  set e' := e.restrictScalars k
+  have halg (x : F) : e'.symm (algebraMap F L' x) = algebraMap F L x := e.symm.commutes x
+  have hrestrict : (Q.map e').restrict k F = Q.restrict k F := restrict_map_restrictScalars e Q
+  have hram : ramificationIdx F (Q.map e') = ramificationIdx F Q :=
+    ramificationIdx_eq_of_forall_ord_eq k F _ fun f ↦ by
+      rw [ord_map, halg, hrestrict, ord_algebraMap_restrict k F Q]
+  refine and_congr (by rw [hram]) (Algebra.IsSeparable.iff_of_equiv_equiv
+    (RingEquiv.cast (R := fun R : Place k F ↦ R.ResidueField) hrestrict)
+    (residueFieldEquivMap e' Q).symm.toRingEquiv (RingHom.ext fun x ↦ ?_))
+  -- The residue fields below are identified by the cast along `hrestrict`, those above by `e`.
+  obtain ⟨x, rfl⟩ := IsLocalRing.residue_surjective x
+  rw [RingHom.comp_apply, RingHom.comp_apply, RingHom.coe_coe, RingHom.coe_coe,
+    cast_residue hrestrict x ⟨x, hrestrict ▸ x.2⟩ rfl, AlgEquiv.coe_toRingEquiv,
+    AlgEquiv.eq_symm_apply, IsLocalRing.ResidueField.algebraMap_residue,
+    IsLocalRing.ResidueField.algebraMap_residue, residueFieldEquivMap_residue]
+  congr 1
+  rw [Subtype.ext_iff, coe_integersEquivMap, coe_algebraMap_integers, coe_algebraMap_integers]
+  exact e.commutes (x : F)
+
+/-- **Unramifiedness depends only on the extension**: it is invariant under an isomorphism of the
+upstairs field over the base field. This moves a finite separable extension into a finite Galois
+overfield without changing which places are unramified in it. -/
+theorem isUnramified_iff_of_algEquiv (P : Place k F) (e : L ≃ₐ[F] L') :
+    P.IsUnramified (k' := k) (F' := L) ↔ P.IsUnramified (k' := k) (F' := L') := by
+  refine ⟨fun h R hR ↦ ?_, fun h Q hQ ↦ ?_⟩
+  · rw [← map_map_symm (e.restrictScalars k) R] at hR ⊢
+    rw [restrict_map_restrictScalars] at hR
+    exact (unramified_map_iff e _).mpr (h _ hR)
+  · exact (unramified_map_iff e Q).mp (h _ (by rw [restrict_map_restrictScalars, hQ]))
+
+end Equiv
 
 universe u v w
 

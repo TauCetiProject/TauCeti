@@ -665,9 +665,10 @@ theorem map_restrictScalarsHom_inertiaSubgroup (E : IntermediateField F F') :
     let τ := E.fixingSubgroupEquiv ⟨g, hE⟩
     have hτ (x : F') : τ x = (g : F' ≃ₐ[F] F') x :=
       congrFun (IntermediateField.coe_fixingSubgroupEquiv_apply E ⟨g, hE⟩) x
+    have hτg : τ.restrictScalars F = g := AlgEquiv.ext hτ
     have hZ : τ ∈ P.integers.decompositionSubgroup E := by
       rw [← stabilizer_eq_decompositionSubgroup, MulAction.mem_stabilizer_iff,
-        ← restrictScalars_smul E, show τ.restrictScalars F = g from AlgEquiv.ext hτ]
+        ← restrictScalars_smul E, hτg]
       exact MulAction.mem_stabilizer_iff.mp
         ((stabilizer_eq_decompositionSubgroup (F := F) P).symm ▸ g.2)
     exact ⟨τ, ⟨⟨τ, hZ⟩, (hiff hτ).mpr hg, rfl⟩, AlgEquiv.ext hτ⟩
@@ -694,6 +695,10 @@ theorem ramificationIdx_mul_finInsepDegree_restrict_eq_relIndex
       card_inertiaSubgroup_eq_ramificationIdx_mul_finInsepDegree E P]
   have hidx := E.fixingSubgroup.relIndex_mul_card
     ((P.integers.inertiaSubgroup F).map (P.integers.decompositionSubgroup F).subtype)
+  have : Algebra.IsAlgebraic ((P.restrict k E).restrict k F).ResidueField
+      (P.restrict k E).ResidueField :=
+    have := finiteDimensional_residueField_restrict k F (P.restrict k E)
+    Algebra.IsAlgebraic.of_finite _ _
   rw [hcard, Subgroup.card_map_of_injective (Subgroup.subtype_injective _),
     card_inertiaSubgroup_eq_ramificationIdx_mul_finInsepDegree F P,
     ramificationIdx_restrict_mul (k₁ := k) (F₀ := F) (F₁ := E),
