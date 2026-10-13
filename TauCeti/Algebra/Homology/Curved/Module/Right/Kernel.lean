@@ -143,9 +143,29 @@ theorem kernelι_comp : kernelι f ≫ f = 0 := by
   exact (kernelEquiv f x).2
 
 /-- The kernel fork in the closed category of curved right modules. -/
-@[expose]
 noncomputable def kernelCone : KernelFork f :=
   KernelFork.ofι (kernelι f) (kernelι_comp f)
+
+/-- The point of the sealed kernel fork is the characteristic kernel object. -/
+@[simp]
+theorem kernelCone_pt : (kernelCone f).pt =
+    ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) (kernelObj f) :=
+  (rfl)
+
+/-- The kernel fork's projection is the characteristic inclusion after identifying its point. -/
+@[simp]
+theorem kernelCone_ι : eqToHom (kernelCone_pt f).symm ≫ (kernelCone f).ι = kernelι f := by
+  -- This is the defining constructor equation, including its point transport.
+  change (𝟙 (ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) (kernelObj f))) ≫
+    kernelι f = kernelι f
+  exact Category.id_comp _
+
+/-- The transported kernel projection has the characteristic underlying subtype map. -/
+@[simp]
+theorem hom_kernelCone_ι :
+    closedHom (eqToHom (kernelCone_pt f).symm ≫ (kernelCone f).ι) =
+      (LinearMap.ker (closedHom f)).subtype.comp (kernelEquiv f).toLinearMap := by
+  rw [kernelCone_ι, hom_kernelι]
 
 /-- The curved kernel inclusion satisfies the kernel universal property. -/
 noncomputable def kernelIsLimit : IsLimit (kernelCone f) :=
