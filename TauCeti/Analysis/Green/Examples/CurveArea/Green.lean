@@ -59,6 +59,39 @@ theorem green_ellipse_area (a b : ℝ) :
   exact ⟨h.1, h.2.1, integral_circulationFun_area_ellipse a b,
     h.2.2.symm.trans (integral_circulationFun_area_ellipse a b)⟩
 
+/-- For positive axes, full Green identifies the actual ellipse-interior area, rather than
+only a signed winding-weight integral. Its Jacobian area is reconciled with the same result. -/
+theorem green_ellipse_region_area {a b : ℝ} (ha : 0 < a) (hb : 0 < b) :
+    let D := ellipseCoordinates a b ha.ne' hb.ne' '' Metric.ball (0 : ℂ) 1
+    IntervalIntegrable (circulationFun areaP areaQ (ellipse a b)) volume 0 (2 * Real.pi) ∧
+      IntegrableOn (fun _ : ℂ ↦ (1 : ℝ)) D ∧
+      (∫ _ in D, (1 : ℝ)) = Real.pi * a * b ∧
+      volume D = ENNReal.ofReal (Real.pi * a * b) := by
+  let A := ellipseCoordinates a b ha.ne' hb.ne'
+  let D := A '' Metric.ball (0 : ℂ) 1
+  have hD : MeasurableSet D :=
+    (A.toHomeomorph.isOpenMap _ Metric.isOpen_ball).measurableSet
+  have h := green_ellipse_area a b
+  have he : windingWeight (ellipse a b) 0 (2 * Real.pi) = D.indicator 1 := by
+    funext z
+    exact windingWeight_ellipse ha hb z
+  have hi : IntegrableOn (fun _ : ℂ ↦ (1 : ℝ)) D := by
+    rw [he] at h
+    exact (integrable_indicator_iff hD).mp h.2.1
+  have harea : (∫ _ in D, (1 : ℝ)) = Real.pi * a * b := by
+    have hh := h.2.2.2
+    rw [he, integral_indicator hD] at hh
+    exact hh
+  have hJac : volume D = ENNReal.ofReal (Real.pi * |a * b|) := by
+    simpa only [affineMap_apply, add_zero] using volume_ellipse_image_ball a b ha.ne' hb.ne'
+  have hfinite : volume D ≠ ⊤ := by rw [hJac]; exact ENNReal.ofReal_ne_top
+  refine ⟨h.1, hi, harea, ?_⟩
+  calc
+    volume D = ENNReal.ofReal (volume D).toReal := (ENNReal.ofReal_toReal hfinite).symm
+    _ = ENNReal.ofReal (Real.pi * a * b) := by
+      congr 1
+      simpa only [setIntegral_const, Measure.real, smul_eq_mul, mul_one] using harea
+
 /-- The actual twice-traversed circle satisfies full Green, with area counted twice. -/
 theorem green_double_circle_area (R : ℝ) :
     IntervalIntegrable (circulationFun areaP areaQ (circleMap 0 R)) volume 0 (4 * Real.pi) ∧
