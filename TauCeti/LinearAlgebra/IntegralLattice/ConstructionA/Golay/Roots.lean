@@ -21,17 +21,11 @@ forty-eight vectors `±2 eᵢ`. Its twenty-four positive coordinate roots have G
 so these roots form twenty-four mutually orthogonal copies of `A₁`. In particular its
 minimum is two and its kissing number is forty-eight.
 
-The proof uses the already computed weight distribution of the extended binary Golay code:
-a nonzero reduction has weight at least eight, whereas a norm-two integer lift has sum of
-squares four. Its reduction must therefore vanish, and dividing the lift by two leaves an
-integer vector with sum of squares one.
-
 ## References
 
 * G. Nebe,
   [*Extremal lattices*](https://www.math.rwth-aachen.de/homes/Gabriele.Nebe/talks/OW12.pdf),
   slides 10–11, for the Golay code lattice and its minimal vectors.
-* `TauCetiRoadmap/IntegralLattices/README.md`, milestone 6E, the `A₁²⁴` row.
 -/
 
 public section
@@ -69,6 +63,7 @@ theorem coe_coordinateRoot (i : Fin 24) :
 
 /-- The positive coordinate roots have Gram matrix `2 I`: different coordinates give
 orthogonal copies of the root system `A₁`. -/
+@[simp↓]
 theorem form_coordinateRoot_coordinateRoot (i j : Fin 24) :
     constructionALattice.form (coordinateRoot i) (coordinateRoot j) =
       if i = j then 2 else 0 := by
@@ -76,6 +71,7 @@ theorem form_coordinateRoot_coordinateRoot (i j : Fin 24) :
   by_cases h : i = j <;> simp [h, dotProduct_single]
 
 /-- Every positive coordinate root has norm two. -/
+@[simp↓]
 theorem norm_coordinateRoot (i : Fin 24) :
     constructionALattice.norm (coordinateRoot i) = 2 := by
   rw [IntegralLattice.norm_apply, form_coordinateRoot_coordinateRoot]
@@ -132,11 +128,12 @@ theorem norm_eq_two_iff {x : Fin 24 → ℚ} (hx : x ∈ constructionALattice.ca
     obtain ⟨i, hi⟩ : ∃ i, w i ≠ 0 := by
       by_contra! h
       simp [h] at hsumw
-    have hile : w i ^ 2 ≤ ∑ j, w j ^ 2 :=
-      single_le_sum (fun j _ ↦ sq_nonneg (w j)) (mem_univ i)
     have hieq : w i ^ 2 = 1 := by
-      have := sq_pos_of_ne_zero hi
-      omega
+      apply le_antisymm
+      · simpa only [hsumw] using
+          (single_le_sum (fun j _ ↦ sq_nonneg (w j)) (mem_univ i))
+      · have := sq_pos_of_ne_zero hi
+        omega
     have hsign := sq_eq_one_iff.mp hieq
     have hrest : ∑ j ∈ univ.erase i, w j ^ 2 = 0 := by
       have h := sum_erase_add (s := univ) (fun j ↦ w j ^ 2) (mem_univ i)
@@ -175,19 +172,17 @@ theorem span_vectorsOfNorm_two :
   refine le_antisymm (Submodule.span_le.mpr ?_) ?_
   · rintro _ ⟨x, hx, rfl⟩
     obtain ⟨i, rfl | rfl⟩ := (mem_vectorsOfNorm_two_iff x).mp hx
-    · change (coordinateRoot i : Fin 24 → ℚ) ∈ (ConstructionA.zeroLattice 2 (Fin 24)).carrier
-      rw [coe_coordinateRoot, ConstructionA.zeroLattice_carrier]
-      exact ConstructionA.single_mem_lattice 2 ⊥ i
-    · change -((coordinateRoot i : constructionALattice) : Fin 24 → ℚ) ∈
-        (ConstructionA.zeroLattice 2 (Fin 24)).carrier
-      rw [coe_coordinateRoot, ConstructionA.zeroLattice_carrier]
-      exact Submodule.neg_mem _ (ConstructionA.single_mem_lattice 2 ⊥ i)
+    · rw [ConstructionA.zeroLattice_carrier]
+      simpa only [SetLike.mem_coe, coe_coordinateRoot, PNat.val_ofNat, Nat.cast_ofNat] using
+        ConstructionA.single_mem_lattice 2 ⊥ i
+    · rw [ConstructionA.zeroLattice_carrier]
+      simpa only [SetLike.mem_coe, Submodule.coe_neg, coe_coordinateRoot,
+        PNat.val_ofNat, Nat.cast_ofNat] using
+        Submodule.neg_mem _ (ConstructionA.single_mem_lattice 2 ⊥ i)
   · intro x hx
-    rw [ConstructionA.zeroLattice_carrier] at hx
-    obtain ⟨z, hz, rfl⟩ := (ConstructionA.mem_lattice 2).mp hx
-    have heven (i : Fin 24) : (2 : ℤ) ∣ z i := by
-      have hzero : (fun i ↦ (z i : ZMod 2)) = 0 := AddSubgroup.mem_bot.mp hz
-      exact (ZMod.intCast_zmod_eq_zero_iff_dvd _ _).mp (congrFun hzero i)
+    obtain ⟨z, _, rfl⟩ := (ConstructionA.mem_lattice 2).mp
+      ((ConstructionA.zeroLattice_carrier 2 (Fin 24)) ▸ hx)
+    have heven := (ConstructionA.intCast_mem_zeroLattice_carrier_iff 2 (Fin 24) z).mp hx
     choose w hw using heven
     have hsum : (fun i ↦ (z i : ℚ)) =
         ∑ i, w i • (coordinateRoot i : Fin 24 → ℚ) := by
@@ -222,6 +217,7 @@ The ambient isometry doubles every coordinate. -/
 noncomputable def rootLatticeIsometry :
     IntegralLattice.Isometry (IntegralLattice.a1.coordinatePower (Fin 24))
       (ConstructionA.zeroLattice 2 (Fin 24)) := by
+  -- The zero lattice's definition is opaque across modules; use its exported carrier and form.
   have hzero : ConstructionA.integralLattice 2 (⊥ : AddSubgroup (Fin 24 → ZMod (2 : ℕ+)))
       (by rw [(AddSubgroup.toZModSubmodule ((2 : ℕ+) : ℕ)).map_bot]; exact bot_le) =
       ConstructionA.zeroLattice 2 (Fin 24) := by
@@ -237,7 +233,8 @@ theorem rootLatticeIsometry_apply (x : Fin 24 → ℚ) : rootLatticeIsometry x =
   rw [rootLatticeIsometry]
   simp only [IntegralLattice.Isometry.trans_apply, IntegralLattice.Isometry.ofEq_apply,
     ConstructionA.scaledStandardIsometry_apply]
-  rfl
+  ext i
+  simp
 
 /-- The forty-eight roots, indexed by a coordinate and a sign. The Boolean value `false`
 selects `2 eᵢ`, and `true` selects `-2 eᵢ`. -/
