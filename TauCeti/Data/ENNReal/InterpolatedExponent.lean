@@ -110,8 +110,6 @@ theorem inv_conjExponent_eq_of_inv_eq (hs₀ : 1 ≤ s₀) (hs₁ : 1 ≤ s₁)
     (by simpa using ENNReal.inv_le_one.2 hs₀)
   have hr₁ : r₁ ≤ 1 := ENNReal.toReal_le_of_le_ofReal zero_le_one
     (by simpa using ENNReal.inv_le_one.2 hs₁)
-  have hr₀' : 0 ≤ r₀ := ENNReal.toReal_nonneg
-  have hr₁' : 0 ≤ r₁ := ENNReal.toReal_nonneg
   have hθ0 := hθ.1
   have hθ1 := hθ.2
   have conj : ∀ {t : ℝ≥0∞}, 1 ≤ t → t⁻¹ ≠ ∞ →

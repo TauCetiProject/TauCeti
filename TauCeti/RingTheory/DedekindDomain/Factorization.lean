@@ -45,6 +45,9 @@ with unit-level factorization of invertible fractional ideals.
   defining an ideal as `∏ᵥ 𝔭ᵥ ^ e v` for exponents it only knows to be dominated by an actual
   factorisation — as the minimal discriminant ideal of an elliptic curve is dominated by the
   discriminant of any integral model — needs the bounded form to see that the product is finite.
+* `Ideal.count_finprod_asIdeal_pow`: an ideal defined as a finite product `∏ᵥ 𝔭ᵥ ^ e v` has
+  multiplicity `e v` at `v`. Mathlib's `FractionalIdeal.count_finprod` is the fractional-ideal form
+  with integer exponents.
 * `IsDedekindDomain.HeightOneSpectrum.unitOfPrime`: a height-one prime regarded as an invertible
   fractional ideal.
 * `FractionalIdeal.hasFiniteMulSupport_zpow_count`: a family of powers indexed by the height one
@@ -125,6 +128,26 @@ theorem hasFiniteMulSupport_asIdeal_pow_of_le_count {I : Ideal R} (hI : I ≠ 0)
   simp only [Function.mem_mulSupport, ne_eq, IsDedekindDomain.HeightOneSpectrum.maxPowDividing,
     Ideal.one_eq_top, Ideal.pow_eq_top_iff, v.isPrime.ne_top, false_or] at hv ⊢
   exact fun hcount => hv (Nat.le_zero.1 (hcount ▸ he v))
+
+/-- **The multiplicity of `v` in a finite product `∏ᵥ 𝔭ᵥ ^ e v` is `e v`.** This reads the
+exponents of an ideal defined by its prime-power factorisation back off the ideal. -/
+theorem count_finprod_asIdeal_pow {e : HeightOneSpectrum R → ℕ}
+    (he : Function.HasFiniteMulSupport fun v : HeightOneSpectrum R => v.asIdeal ^ e v)
+    (v : HeightOneSpectrum R) :
+    (Associates.mk v.asIdeal).count
+      (Associates.mk (∏ᶠ w : HeightOneSpectrum R, w.asIdeal ^ e w)).factors = e v := by
+  have hexp : ∀ᶠ w : HeightOneSpectrum R in Filter.cofinite, (e w : ℤ) = 0 := by
+    rw [Filter.eventually_cofinite]
+    refine he.subset fun w hw => ?_
+    simp only [Set.mem_ofPred_eq, Nat.cast_eq_zero, Function.mem_mulSupport, ne_eq,
+      Ideal.one_eq_top, Ideal.pow_eq_top_iff, w.isPrime.ne_top, false_or] at hw ⊢
+    exact hw
+  rw [← Nat.cast_inj (R := ℤ),
+    ← FractionalIdeal.count_coe (FractionRing R) v
+      (finprod_ne_zero fun w => pow_ne_zero _ w.ne_bot),
+    FractionalIdeal.coeIdeal_finprod (nonZeroDivisors R) (FractionRing R) le_rfl]
+  simp_rw [FractionalIdeal.coeIdeal_pow, ← zpow_natCast]
+  exact FractionalIdeal.count_finprod (FractionRing R) v _ hexp
 
 end Ideal
 

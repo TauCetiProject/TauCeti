@@ -126,7 +126,7 @@ private theorem discr_eq_neg_four_of_isCyclotomicExtension {K : Type*} [Field K]
     [NumberField K] [IsCyclotomicExtension {4} ℚ K] :
     NumberField.discr K = -4 := by
   classical
-  set ζ : K := IsCyclotomicExtension.zeta 4 ℚ K with hζdef
+  set ζ : K := IsCyclotomicExtension.zeta 4 ℚ K
   have hζ : IsPrimitiveRoot ζ 4 := IsCyclotomicExtension.zeta_spec 4 ℚ K
   -- `[ℚ(i) : ℚ] = φ 4 = 2`.
   have hfin : finrank ℚ K = 2 := by

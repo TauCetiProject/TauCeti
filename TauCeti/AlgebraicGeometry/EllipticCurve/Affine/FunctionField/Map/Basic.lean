@@ -64,7 +64,8 @@ statements here. A single map covers both readings, and neither is built in.
   in element and in composed form.
 * `WeierstrassCurve.Affine.FunctionField.map_genericX` and
   `WeierstrassCurve.Affine.FunctionField.map_genericY`: it sends the generic point of `W` to the
-  generic point of `W.map f`.
+  generic point of `W.map f`; `WeierstrassCurve.Affine.FunctionField.map_algebraMap_X` is the
+  first coordinate read through the polynomial variable.
 * `WeierstrassCurve.Affine.FunctionField.map_id`,
   `WeierstrassCurve.Affine.FunctionField.map_map`, and its homomorphism-level companion
   `map_comp_map`: functoriality in `f`.
@@ -148,6 +149,12 @@ theorem map_genericY : map W f W.genericY = (W.map f).genericY := by
   rw [genericY_def, genericY_def, map_algebraMap_coordinateRing]
   exact congr_arg _ (CoordinateRing.map_root W f)
 
+/-- `FunctionField.map` sends `x`, as the image of the polynomial variable, to `x`. -/
+@[simp]
+theorem map_algebraMap_X :
+    map W f (algebraMap F[X] W.FunctionField X) = algebraMap K[X] (W.map f).FunctionField X := by
+  rw [← genericX_eq_algebraMap, map_genericX, genericX_eq_algebraMap]
+
 /-- Changing the coefficient field of a Weierstrass function field commutes with the embedding
 of its rational-function subfield. -/
 @[simp]
@@ -166,7 +173,7 @@ theorem map_algebraMap_ratFunc (z : RatFunc F) :
       IsScalarTower.algebraMap_apply K[X] (W.map f).CoordinateRing (W.map f).FunctionField]
     exact congrArg (algebraMap (W.map f).CoordinateRing (W.map f).FunctionField) hcoord
   induction z using RatFunc.induction_on with
-  | f p q hq =>
+  | f p q _ =>
     rw [RatFunc.coe_mapRingHom_eq_coe_map, RatFunc.map_apply_div]
     simp only [map_div₀, ← IsScalarTower.algebraMap_apply, hpoly, Polynomial.coe_mapRingHom]
 

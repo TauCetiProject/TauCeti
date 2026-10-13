@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.GroupWithZero.Action.Regular
 public import Mathlib.Algebra.MonoidAlgebra.Grading
 public import Mathlib.Algebra.Polynomial.Degree.Support
 public import TauCeti.Algebra.Module.GradedModule.Internal
@@ -34,9 +35,8 @@ places `X ^ n` in degree `-n`.
   polynomial multiplication acts on the component by the constant coefficient.
 * `TauCeti.InternalGrading.le_of_forall_mem_piece_exists_sub_X_smul_mem`: graded Nakayama for an
   action lowering degree on a module with degrees bounded above.
-* `TauCeti.InternalGrading.smul_injective_of_coeff_zero_ne_zero`: a polynomial with nonzero constant
-  coefficient acts injectively when the coefficients form a domain and the module is torsion-free
-  over them.
+* `TauCeti.InternalGrading.isSMulRegular_of_coeff_zero`: a polynomial acts injectively when its
+  constant coefficient does.
 * `TauCeti.Polynomial.mem_negDegreeGrading_piece`: membership in a homogeneous piece is
   characterized coefficientwise.
 * `TauCeti.Polynomial.X_smul_mem_negDegreeGrading_piece`: multiplication by `X` lowers degree by
@@ -52,11 +52,12 @@ namespace TauCeti
 
 namespace InternalGrading
 
-variable {k M : Type*} [CommSemiring k]
-  [AddCommMonoid M] [Module k M] [Module k[X] M] [IsScalarTower k k[X] M]
+section Powers
+
+variable {k M : Type*} [Semiring k]
+  [AddCommMonoid M] [Module k M] [MulAction k[X] M]
   {G : InternalGrading k M} {d : ℕ}
 
-omit [IsScalarTower k k[X] M] in
 /-- If `X` lowers degree by `d`, then `X ^ n` lowers degree by `n * d`. -/
 theorem X_pow_smul_mem_piece
     (hX : ∀ ⦃p : ℤ⦄ ⦃x : M⦄, x ∈ G.piece p → (X : k[X]) • x ∈ G.piece (p - d)) (n : ℕ)
@@ -68,6 +69,12 @@ theorem X_pow_smul_mem_piece
     convert ih (hX hx) using 2
     push_cast
     ring
+
+end Powers
+
+variable {k M : Type*} [CommSemiring k]
+  [AddCommMonoid M] [Module k M] [Module k[X] M] [IsScalarTower k k[X] M]
+  {G : InternalGrading k M} {d : ℕ}
 
 /-- A finitely generated graded `k[X]`-module on which `X` lowers degree has no nonzero homogeneous
 elements above some degree: every element is a `k[X]`-combination of the finitely many homogeneous
@@ -140,6 +147,7 @@ theorem coe_decompose_smul_of_mem (hd : d ≠ 0)
     rw [notMem_support_iff.mp hn, zero_smul, DirectSum.decompose_zero, DirectSum.zero_apply,
       ZeroMemClass.coe_zero]
 
+omit [IsScalarTower k k[X] M] in
 /-- If `X` lowers degree by `d`, the component of `X ^ n • x` in degree `p` is `X ^ n` times the
 component of `x` in degree `p + n * d`. No homogeneity of `x` is assumed. -/
 theorem coe_decompose_X_pow_smul
@@ -188,7 +196,7 @@ end InternalGrading
 
 namespace InternalGrading
 
-variable {k M : Type*} [CommRing k] [AddCommGroup M] [Module k M] [Module k[X] M]
+variable {k M : Type*} [Semiring k] [AddCommGroup M] [Module k M] [Module k[X] M]
   {G : InternalGrading k M} {d : ℕ}
 
 /-- **Graded Nakayama for an action lowering degree.** Let the degrees of `M` be bounded above,
@@ -234,42 +242,38 @@ end InternalGrading
 
 namespace InternalGrading
 
-variable {k M : Type*} [CommRing k] [IsDomain k] [AddCommGroup M]
-  [Module k M] [Module k[X] M] [IsScalarTower k k[X] M] [Module.IsTorsionFree k M]
+variable {k M : Type*} [CommSemiring k] [AddCommGroup M]
+  [Module k M] [Module k[X] M] [IsScalarTower k k[X] M]
   {G : InternalGrading k M} {d : ℕ}
 
-/-- A polynomial with nonzero constant coefficient acts injectively on a module graded over a
-coefficient domain, if the module is torsion-free over the coefficients and `X` strictly lowers
-degree. Polynomial torsion in the module is permitted. -/
-theorem smul_injective_of_coeff_zero_ne_zero (hd : d ≠ 0)
+/-- A polynomial acts injectively on a graded module if its constant coefficient does and `X`
+strictly lowers degree. The coefficients may have zero divisors, and the module may have torsion. -/
+theorem isSMulRegular_of_coeff_zero (hd : d ≠ 0)
     (hX : ∀ ⦃p : ℤ⦄ ⦃x : M⦄, x ∈ G.piece p → (X : k[X]) • x ∈ G.piece (p - d))
-    {a : k[X]} (ha : a.coeff 0 ≠ 0) : Function.Injective (fun x : M ↦ a • x) := by
+    {a : k[X]} (ha : IsSMulRegular M (a.coeff 0)) : IsSMulRegular M a := by
   classical
-  have hzero : ∀ x : M, a • x = 0 → x = 0 := by
-    intro x hax
-    by_contra hx
-    have hs : (DirectSum.decompose G.piece x).support.Nonempty := by
-      rw [Finset.nonempty_iff_ne_empty]
-      intro hs
-      have hz := DFinsupp.support_eq_empty.mp hs
-      exact hx ((DirectSum.decompose G.piece).injective
-        (hz.trans (DirectSum.decompose_zero G.piece).symm))
-    -- The largest nonzero component detects multiplication by the constant coefficient.
-    let p := (DirectSum.decompose G.piece x).support.max' hs
-    have hp : (DirectSum.decompose G.piece x p : M) ≠ 0 := by
-      have hp' := DFinsupp.mem_support_iff.mp (Finset.max'_mem _ hs)
-      exact fun h ↦ hp' (Subtype.ext h)
-    have htop : ∀ q, p < q → (DirectSum.decompose G.piece x q : M) = 0 := by
-      intro q hq
-      by_contra h
-      have hmem : q ∈ (DirectSum.decompose G.piece x).support :=
-        DFinsupp.mem_support_iff.mpr (fun hz ↦ h (congrArg Subtype.val hz))
-      exact (not_le_of_gt hq) (Finset.le_max' _ q hmem)
-    have key := coe_decompose_smul_of_support_le hd hX htop a
-    rw [hax, DirectSum.decompose_zero] at key
-    exact hp ((smul_eq_zero.mp key.symm).resolve_left ha)
-  intro x y hxy
-  exact sub_eq_zero.mp (hzero (x - y) (by simp [smul_sub, hxy]))
+  refine IsSMulRegular.of_right_eq_zero_of_smul fun x hax ↦ ?_
+  by_contra hx
+  have hs : (DirectSum.decompose G.piece x).support.Nonempty := by
+    rw [Finset.nonempty_iff_ne_empty]
+    intro hs
+    have hz := DFinsupp.support_eq_empty.mp hs
+    exact hx ((DirectSum.decompose G.piece).injective
+      (hz.trans (DirectSum.decompose_zero G.piece).symm))
+  -- The largest nonzero component detects multiplication by the constant coefficient.
+  let p := (DirectSum.decompose G.piece x).support.max' hs
+  have hp : (DirectSum.decompose G.piece x p : M) ≠ 0 := by
+    have hp' := DFinsupp.mem_support_iff.mp (Finset.max'_mem _ hs)
+    exact fun h ↦ hp' (Subtype.ext h)
+  have htop : ∀ q, p < q → (DirectSum.decompose G.piece x q : M) = 0 := by
+    intro q hq
+    by_contra h
+    have hmem : q ∈ (DirectSum.decompose G.piece x).support :=
+      DFinsupp.mem_support_iff.mpr (fun hz ↦ h (congrArg Subtype.val hz))
+    exact (not_le_of_gt hq) (Finset.le_max' _ q hmem)
+  have key := coe_decompose_smul_of_support_le hd hX htop a
+  rw [hax, DirectSum.decompose_zero] at key
+  exact hp (ha.right_eq_zero_of_smul key.symm)
 
 end InternalGrading
 

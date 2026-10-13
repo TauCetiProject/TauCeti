@@ -51,7 +51,8 @@ private theorem coe_radical_smul (i : V) (n : ℕ) (c : k) (x : R i n) :
     (((c • x : R i n) : P i) : Z) = c • ((x : P i) : Z) :=
   (((P i).restrictScalars k).subtype.comp ((R i n).restrictScalars k).subtype).map_smul c x
 
-private noncomputable def headToSocle (i : V) : R i 0 →ₗ[Z] R i 2 where
+/-- Right multiplication by the volume maps the vertex projective to its second radical power. -/
+noncomputable def zigzagProjectiveMulVolume (i : V) : R i 0 →ₗ[Z] R i 2 where
   toFun x := ⟨⟨(x.1 : Z) * zigzagVolume k G i,
     (mem_zigzagProjective_iff k G).2 (by
       rw [mul_assoc, zigzagVolume_mul_zigzagMk_vertexIdempotent])⟩,
@@ -63,8 +64,10 @@ private noncomputable def headToSocle (i : V) : R i 0 →ₗ[Z] R i 2 where
   map_add' x y := Subtype.ext (Subtype.ext (add_mul _ _ _))
   map_smul' z x := Subtype.ext (Subtype.ext (mul_assoc _ _ _))
 
-private theorem headToSocle_apply (i : V) (x : R i 0) :
-    ((headToSocle k G hns i x : P i) : Z) =
+/-- Multiplication by the volume retains only the head coefficient of a projective element. -/
+@[simp]
+theorem zigzagProjectiveMulVolume_apply (i : V) (x : R i 0) :
+    ((zigzagProjectiveMulVolume k G hns i x : P i) : Z) =
       zigzagProjectiveHeadCoeff k G i x.1 • zigzagVolume k G i := by
   -- Expose the underlying multiplication, without depending on subtype proof terms.
   change (x.1 : Z) * zigzagVolume k G i =
@@ -72,8 +75,8 @@ private theorem headToSocle_apply (i : V) (x : R i 0) :
   rw [mul_zigzagVolume hns, zigzagProjectiveHeadCoeff_apply,
     zigzagTrivialCoeff_apply_eq_repr hns, Module.Basis.coord_apply]
 
-private theorem headToSocle_ker (i : V) :
-    LinearMap.ker (headToSocle k G hns i) = (R i 1).submoduleOf (R i 0) := by
+private theorem zigzagProjectiveMulVolume_ker (i : V) :
+    LinearMap.ker (zigzagProjectiveMulVolume k G hns i) = (R i 1).submoduleOf (R i 0) := by
   ext x
   rw [LinearMap.mem_ker]
   have hv := (zigzagVolume_ne_zero k G (hns i).choose_spec)
@@ -82,7 +85,7 @@ private theorem headToSocle_ker (i : V) :
   constructor
   · intro hx
     have hc := congrArg (fun y : R i 2 => ((y : P i) : Z)) hx
-    rw [headToSocle_apply] at hc
+    rw [zigzagProjectiveMulVolume_apply] at hc
     have hz : zigzagProjectiveHeadCoeff k G i x.1 = 0 :=
       (smul_eq_zero.mp hc).resolve_right hv
     have hm : x.1 ∈ LinearMap.ker (zigzagProjectiveHeadCoeff k G i) := hz
@@ -94,11 +97,12 @@ private theorem headToSocle_ker (i : V) :
       exact hx
     apply Subtype.ext
     apply Subtype.ext
-    rw [headToSocle_apply, hz, zero_smul]
+    rw [zigzagProjectiveMulVolume_apply, hz, zero_smul]
     rfl
 
-private theorem headToSocle_surjective (i : V) :
-    Function.Surjective (headToSocle k G hns i) := by
+/-- Every element of the second radical power is obtained by multiplication by the volume. -/
+theorem zigzagProjectiveMulVolume_surjective (i : V) :
+    Function.Surjective (zigzagProjectiveMulVolume k G hns i) := by
   intro x
   have hx : x.1 ∈ zigzagProjectiveVolumeLine k G i := by
     rw [← restrictScalars_zigzagProjectiveRadicalPower_two_eq_volumeLine hns]
@@ -107,7 +111,7 @@ private theorem headToSocle_surjective (i : V) :
   refine ⟨⟨c • zigzagProjectiveGenerator k G i, by simp⟩, ?_⟩
   apply Subtype.ext
   apply Subtype.ext
-  rw [headToSocle_apply, map_smul, zigzagProjectiveHeadCoeff_generator, smul_eq_mul,
+  rw [zigzagProjectiveMulVolume_apply, map_smul, zigzagProjectiveHeadCoeff_generator, smul_eq_mul,
     mul_one]
   have hcoe := congrArg (fun y : P i => (y : Z)) hc
   rw [coe_projective_smul] at hcoe
@@ -116,9 +120,9 @@ private theorem headToSocle_surjective (i : V) :
 /-- The head `P_i / J P_i` is isomorphic to the socle `J² P_i`. The isomorphism is induced
 by right multiplication by the volume at `i`. -/
 noncomputable def zigzagProjectiveHeadEquivSocle (i : V) : H i 0 ≃ₗ[Z] R i 2 :=
-  (Submodule.quotEquivOfEq _ _ (headToSocle_ker k G hns i).symm).trans
-    ((headToSocle k G hns i).quotKerEquivOfSurjective
-      (headToSocle_surjective k G hns i))
+  (Submodule.quotEquivOfEq _ _ (zigzagProjectiveMulVolume_ker k G hns i).symm).trans
+    ((zigzagProjectiveMulVolume k G hns i).quotKerEquivOfSurjective
+      (zigzagProjectiveMulVolume_surjective k G hns i))
 
 /-- On a representative, the head-to-socle isomorphism multiplies by the volume class. -/
 @[simp]
@@ -127,7 +131,7 @@ theorem zigzagProjectiveHeadEquivSocle_mk (i : V) (x : R i 0) :
       P i) : Z) = zigzagProjectiveHeadCoeff k G i x.1 • zigzagVolume k G i := by
   simp only [zigzagProjectiveHeadEquivSocle, LinearEquiv.trans_apply,
     Submodule.quotEquivOfEq_mk, LinearMap.quotKerEquivOfSurjective_apply_mk,
-    headToSocle_apply]
+    zigzagProjectiveMulVolume_apply]
 
 private noncomputable def socleVector (i : V) : R i 2 :=
   ⟨zigzagProjectiveVolume k G i, by

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicGeometry.EllipticCurve.Affine.Point
+public import TauCeti.Algebra.Module.Torsion.Snake
 
 /-!
 # The point map induced by a ring homomorphism
@@ -21,8 +22,8 @@ the points of the curve `W.map f` over `S`, with no fields and no tower involved
 * `WeierstrassCurve.Affine.Point.mapAlong`: the map `W.Point → (W.map f).Point`, over
   arbitrary commutative rings.
 * `WeierstrassCurve.Affine.Point.mapAlong_neg`, `mapAlong_id`,
-  `mapAlong_mapAlong` and `mapAlong_injective`: the functorial API, over arbitrary
-  commutative rings, mirroring Mathlib's
+  `mapAlong_mapAlong`, `mapAlong_injective` and `mapAlong_surjective` (for bijective `f`): the
+  functorial API, over arbitrary commutative rings, mirroring Mathlib's
   `Affine.Point.map_id`, `map_map` and `map_injective` for the `AlgHom` version. Both curve
   equalities — `W.map (RingHom.id R) = W` and `(W.map f).map g = W.map (g.comp f)` — hold by
   definition, so the identity and composition laws are stated with no transport.
@@ -32,7 +33,10 @@ the points of the curve `W.map f` over `S`, with no fields and no tower involved
   statement for `f`.
 * `WeierstrassCurve.Affine.Point.mapAlong_iterateFrobenius_some`: iterated Frobenius
   sends `(x, y)` to `(x ^ (p ^ n), y ^ (p ^ n))`.
-* `WeierstrassCurve.Affine.Point.mapAlong_add`: over fields the transport is additive.
+* `WeierstrassCurve.Affine.Point.mapAlong_add` and `mapAlong_zsmul`: over fields the transport is
+  additive and commutes with integer multiples.
+* `WeierstrassCurve.torsionMapAlong`: over fields, its restriction `E[N] → (W.map f)[N]` to the
+  `N`-torsion.
 
 `Affine.Point.map` is already an `AddMonoidHom`, so installing `f.toAlgebra` locally and rewriting
 with `mapAlong_eq_map` gives `map_add`, `map_zero` and `map_zsmul` from Mathlib directly, including
@@ -140,6 +144,17 @@ lemma _root_.WeierstrassCurve.Affine.Point.mapAlong_injective
   · obtain ⟨hx, hy⟩ := Affine.Point.some.inj hP
     simp only [hf hx, hf hy]
 
+/-- **The point map along a bijective ring homomorphism is surjective**: the coordinates of a
+point of `W.map f` have preimages under `f`, and nonsingularity transports back along
+`Affine.map_nonsingular`. Over a perfect field this applies to the iterated Frobenius. -/
+lemma _root_.WeierstrassCurve.Affine.Point.mapAlong_surjective (hf' : Function.Surjective f) :
+    Function.Surjective (WeierstrassCurve.Affine.Point.mapAlong f hf (W := W)) := by
+  rintro (_ | ⟨x, y, h⟩)
+  · exact ⟨0, rfl⟩
+  · obtain ⟨x, rfl⟩ := hf' x
+    obtain ⟨y, rfl⟩ := hf' y
+    exact ⟨.some x y ((Affine.map_nonsingular W.toAffine hf x y).mp h), rfl⟩
+
 section Field
 
 variable {F K : Type*} [Field F] [Field K] [DecidableEq F] [DecidableEq K] [Algebra F K]
@@ -184,6 +199,31 @@ theorem _root_.WeierstrassCurve.Affine.Point.mapAlong_add (P Q : W.toAffine.Poin
   rw [hmap, hmap, hmap]
   simpa only using!
     (Affine.Point.map (W' := W) (Algebra.ofId F K)).map_add P Q
+
+/-- **Over fields the point map commutes with integer multiples.** -/
+@[simp]
+theorem _root_.WeierstrassCurve.Affine.Point.mapAlong_zsmul (n : ℤ) (P : W.toAffine.Point) :
+    WeierstrassCurve.Affine.Point.mapAlong f hf (n • P) =
+      n • WeierstrassCurve.Affine.Point.mapAlong f hf P :=
+  map_zsmul (AddMonoidHom.mk' (WeierstrassCurve.Affine.Point.mapAlong f hf)
+    (WeierstrassCurve.Affine.Point.mapAlong_add f hf)) n P
+
+variable (W) in
+/-- **The `N`-torsion carried along a homomorphism of fields**: the point map `P ↦ f P` of
+`WeierstrassCurve.Affine.Point.mapAlong`, restricted to `E[N]`. -/
+noncomputable def _root_.WeierstrassCurve.torsionMapAlong (N : ℤ) :
+    Submodule.torsionBy ℤ W.toAffine.Point N →+ Submodule.torsionBy ℤ (W.map f).toAffine.Point N :=
+  (torsionByMap N (AddMonoidHom.mk' (WeierstrassCurve.Affine.Point.mapAlong f f.injective)
+    (WeierstrassCurve.Affine.Point.mapAlong_add f f.injective)).toIntLinearMap).toAddMonoidHom
+
+variable (W) in
+/-- The point underlying the image of an `N`-torsion point is its image under the point map. -/
+@[simp]
+theorem _root_.WeierstrassCurve.coe_torsionMapAlong_apply (N : ℤ)
+    (S : Submodule.torsionBy ℤ W.toAffine.Point N) :
+    (W.torsionMapAlong f N S : (W.map f).toAffine.Point) =
+      (S : W.toAffine.Point).mapAlong f f.injective := by
+  simp [WeierstrassCurve.torsionMapAlong]
 
 end FieldHom
 

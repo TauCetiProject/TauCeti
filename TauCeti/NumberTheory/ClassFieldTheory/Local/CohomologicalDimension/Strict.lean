@@ -54,6 +54,8 @@ under `ℓ`-th powers, which vanishes because `μ_{ℓ^∞}(E)` is finite.
   `scd_ℓ G_K = 2` for `ℓ` invertible in `K`.
 * `TauCeti.ClassFieldTheory.strictCohomologicalDimensionAt_absoluteGaloisGroup_eq_two`:
   **`scd_ℓ G_K = 2`** for a local field `K` of characteristic zero and every prime `ℓ`.
+* `TauCeti.ClassFieldTheory.strictCohomologicalDimensionAt_galSeparableClosure_eq_two`: the same
+  on `AbsoluteGaloisGroup K = Gal(Kˢ/K)`.
 
 ## References
 
@@ -236,5 +238,14 @@ theorem strictCohomologicalDimensionAt_absoluteGaloisGroup_eq_two [CharZero K] (
     [Fact ℓ.Prime] : strictCohomologicalDimensionAt.{0} ℓ (Field.absoluteGaloisGroup K) = 2 :=
   strictCohomologicalDimensionAt_absoluteGaloisGroup_eq_two_of_isUnit
     (Nat.cast_ne_zero.2 (Fact.out : ℓ.Prime).ne_zero).isUnit
+
+/-- **`scd_ℓ Gal(Kˢ/K) = 2`** for every prime `ℓ` and every nonarchimedean local field `K` of
+characteristic zero: `strictCohomologicalDimensionAt_absoluteGaloisGroup_eq_two`, read on
+`AbsoluteGaloisGroup K = Gal(Kˢ/K)` through the restriction isomorphism
+`absoluteGaloisGroupRestrictEquiv`. -/
+theorem strictCohomologicalDimensionAt_galSeparableClosure_eq_two [CharZero K] (ℓ : ℕ)
+    [Fact ℓ.Prime] : strictCohomologicalDimensionAt.{0} ℓ (AbsoluteGaloisGroup K) = 2 := by
+  rw [← strictCohomologicalDimensionAt_congr (absoluteGaloisGroupRestrictEquiv K),
+    strictCohomologicalDimensionAt_absoluteGaloisGroup_eq_two]
 
 end TauCeti.ClassFieldTheory

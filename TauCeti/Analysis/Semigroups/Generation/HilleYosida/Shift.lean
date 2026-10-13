@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Normed.Operator.Resolvent.Shift
+public import Mathlib.Analysis.Normed.Operator.NormedSpace
+import Mathlib.Tactic.Linarith
+public import TauCeti.Topology.Algebra.Module.LinearPMap.Resolvent.Shift
 
 /-!
 # The shift reduction for the Hille--Yosida theorem

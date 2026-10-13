@@ -32,7 +32,7 @@ nonzerodivisors generating `I` (`exists_mul_eq_of_forall_ideal_eq_span`). For a 
 valuation ring, multiplication by `a` trivializes `I` on all of `X`.
 
 The converse, that a closed subscheme whose ideal sheaf is invertible is an effective Cartier
-divisor, is not proved here.
+divisor, is proved in `TauCeti.AlgebraicGeometry.EffectiveCartierDivisor.Characterization`.
 
 ## Main declarations
 

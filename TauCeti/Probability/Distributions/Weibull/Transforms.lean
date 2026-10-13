@@ -187,7 +187,6 @@ private lemma integrable_exp_mul_id_weibullMeasure_of_one_lt_of_scale_pos
     rw [Real.norm_eq_abs,
       abs_of_nonneg (mul_nonneg (Real.exp_pos _).le (weibullPDFReal_nonneg k lam x)),
       weibullPDFReal_of_pos (lt_trans zero_lt_one hk) hlam hxpos]
-    have hcoef : 0 ≤ (k / lam) * (x / lam) ^ (k - 1) := by positivity
     calc
       Real.exp (t * x) *
           ((k / lam) * (x / lam) ^ (k - 1) * Real.exp (-(x / lam) ^ k))

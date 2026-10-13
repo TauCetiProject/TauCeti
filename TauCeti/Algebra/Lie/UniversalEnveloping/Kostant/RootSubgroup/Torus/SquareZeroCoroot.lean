@@ -104,8 +104,7 @@ theorem kostantRootSubgroupParam_val_of_sq_eq_zero (i : ι)
       -- divided power; the two agree on `V` by `coe_kostantRootOperator_apply`.
       refine congrArg (fun p : M => a ⊗ₜ[ℤ] m + (Multiplicative.toAdd t * a) ⊗ₜ[ℤ] p) ?_
       refine Subtype.ext ?_
-      rw [coe_integralDividedPower_apply, coe_kostantRootOperator_apply,
-        Associative.dividedPower_one, Module.End.smul_def]
+      rw [coe_integralDividedPower_one_apply, coe_kostantRootOperator_apply, Module.End.smul_def]
   | add z₁ z₂ h₁ h₂ => simp only [map_add, h₁, h₂]
 
 variable {i j : ι} {c : κ}

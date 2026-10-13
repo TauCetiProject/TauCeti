@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.InnerProductSpace.Positive
 public import Mathlib.Analysis.InnerProductSpace.Spectrum
 public import TauCeti.Analysis.InnerProductSpace.HilbertBasis.Basic
 import Mathlib.LinearAlgebra.Eigenspace.ContinuousLinearMap
@@ -29,7 +30,9 @@ into a Hilbert basis of `E`.
 In finite dimensions, this file also packages Mathlib's ordered eigenbasis into the spans of
 any chosen set of its eigenvectors. In particular, the negative and positive spectral subspaces,
 spanned by the eigenvectors with negative and with positive eigenvalue, are disjoint, invariant
-under the operator, and together span the whole space when the operator is injective.
+under the operator, and together span the whole space when the operator is injective. Writing
+the determinant as the product of the eigenvalues shows that a positive operator has nonnegative
+determinant.
 
 No separability is assumed anywhere: the basis is indexed by a set of vectors of `E`, exactly as
 in Mathlib's `exists_hilbertBasis`, and the eigenvalue `0` may well carry an infinite-dimensional
@@ -54,6 +57,8 @@ nonzero eigenvalue, which is the form the eigenvalue problem of an elliptic oper
 * `LinearMap.IsSymmetric.negativeSpectralSubspace` and
   `LinearMap.IsSymmetric.positiveSpectralSubspace`: the negative and positive halves of the
   finite-dimensional spectral splitting.
+* `LinearMap.IsPositive.det_nonneg`: a positive operator on a finite-dimensional space has
+  nonnegative determinant, the product of its eigenvalues.
 
 ## References
 
@@ -385,3 +390,17 @@ theorem isCompl_negativeSpectralSubspace_positiveSpectralSubspace_of_ker_eq_bot
   rw [hindices, hT.eigenvectorSpan_univ hn]
 
 end LinearMap.IsSymmetric
+
+namespace LinearMap.IsPositive
+
+open scoped ComplexOrder
+
+variable [FiniteDimensional 𝕜 E] {T : E →ₗ[𝕜] E}
+
+/-- A positive operator on a finite-dimensional inner product space has nonnegative determinant:
+the determinant is the product of the eigenvalues, which are nonnegative. -/
+theorem det_nonneg (hT : T.IsPositive) : 0 ≤ T.det := by
+  rw [hT.isSymmetric.det_eq_prod_eigenvalues rfl, ← RCLike.ofReal_prod]
+  exact RCLike.ofReal_nonneg.2 (Finset.prod_nonneg fun i _ => hT.nonneg_eigenvalues rfl i)
+
+end LinearMap.IsPositive

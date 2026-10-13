@@ -448,6 +448,14 @@ private theorem enorm_integral_mul_le_mul (T : SimpleFunc α ℂ →ₗ[ℂ] (β
         congr
         rw [← NNReal.coe_rpow, ← NNReal.coe_rpow, ← NNReal.coe_mul, ENNReal.ofReal_coe_nnreal]
 
+/-- An endpoint bound whose right side vanishes forces `g = 0` almost everywhere, so every
+bound on any `eLpNorm` of `g` holds. -/
+private theorem eLpNorm_le_of_le_mul_eq_zero {g : β →ₘ[ν] ℂ} {f : SimpleFunc α ℂ}
+    {r q p' : ℝ≥0∞} (hr : r ≠ 0) {M : ℝ≥0} (h : eLpNorm g r ν ≤ M * eLpNorm f p' μ)
+    (h0 : (M : ℝ≥0∞) * eLpNorm f p' μ = 0) (C : ℝ≥0∞) : eLpNorm g q ν ≤ C := by
+  rw [eLpNorm_congr_ae ((eLpNorm_eq_zero_iff hr).1 (nonpos_iff_eq_zero.1 (h.trans_eq h0)))]
+  simp
+
 /-- The Riesz–Thorin bound, assuming `ν` σ-finite only when the target exponent `q` is infinite,
 which is where the duality against simple functions needs it. -/
 private theorem eLpNorm_le_of_ne_top_or_sigmaFinite
@@ -467,29 +475,18 @@ private theorem eLpNorm_le_of_ne_top_or_sigmaFinite
   have := ENNReal.HolderConjugate.conjExponent hq1
   have hq₀0 : q₀ ≠ 0 := (zero_lt_one.trans_le hq₀).ne'
   have hq₁0 : q₁ ≠ 0 := (zero_lt_one.trans_le hq₁).ne'
-  -- A source exponent `0` makes the corresponding endpoint bound force `T f = 0`.
+  -- A source exponent `0`, or a vanishing constant `M₀ ^ (1 - θ) M₁ ^ θ`, makes an endpoint
+  -- bound vanish.
   rcases eq_or_ne p₀ 0 with rfl | hp₀
-  · have hT : ⇑(T f) =ᵐ[ν] 0 :=
-      (eLpNorm_eq_zero_iff hq₀0).1 (nonpos_iff_eq_zero.1
-        ((h₀ f).trans_eq (by rw [eLpNorm_exponent_zero f.aestronglyMeasurable, mul_zero])))
-    rw [eLpNorm_congr_ae hT]
-    simp
+  · exact eLpNorm_le_of_le_mul_eq_zero hq₀0 (h₀ f)
+      (by rw [eLpNorm_exponent_zero f.aestronglyMeasurable, mul_zero]) _
   rcases eq_or_ne p₁ 0 with rfl | hp₁
-  · have hT : ⇑(T f) =ᵐ[ν] 0 :=
-      (eLpNorm_eq_zero_iff hq₁0).1 (nonpos_iff_eq_zero.1
-        ((h₁ f).trans_eq (by rw [eLpNorm_exponent_zero f.aestronglyMeasurable, mul_zero])))
-    rw [eLpNorm_congr_ae hT]
-    simp
-  -- If `M₀ ^ (1 - θ) M₁ ^ θ = 0`, one endpoint bound already forces `T f = 0`.
+  · exact eLpNorm_le_of_le_mul_eq_zero hq₁0 (h₁ f)
+      (by rw [eLpNorm_exponent_zero f.aestronglyMeasurable, mul_zero]) _
   by_cases hM : M₀ ^ (1 - θ) * M₁ ^ θ = 0
-  · have hT : ⇑(T f) =ᵐ[ν] 0 := by
-      rcases mul_eq_zero.1 hM with h | h
-      · have hM₀ : M₀ = 0 := (NNReal.rpow_eq_zero_iff.1 h).1
-        exact (eLpNorm_eq_zero_iff hq₀0).1 (nonpos_iff_eq_zero.1 ((h₀ f).trans_eq (by simp [hM₀])))
-      · have hM₁ : M₁ = 0 := (NNReal.rpow_eq_zero_iff.1 h).1
-        exact (eLpNorm_eq_zero_iff hq₁0).1 (nonpos_iff_eq_zero.1 ((h₁ f).trans_eq (by simp [hM₁])))
-    rw [eLpNorm_congr_ae hT]
-    simp
+  · rcases mul_eq_zero.1 hM with h | h
+    · exact eLpNorm_le_of_le_mul_eq_zero hq₀0 (h₀ f) (by simp [(NNReal.rpow_eq_zero_iff.1 h).1]) _
+    · exact eLpNorm_le_of_le_mul_eq_zero hq₁0 (h₁ f) (by simp [(NNReal.rpow_eq_zero_iff.1 h).1]) _
   rcases eq_or_ne (eLpNorm f p μ) ∞ with hf | hf
   · rw [hf, ENNReal.mul_top (by exact_mod_cast hM)]
     exact le_top

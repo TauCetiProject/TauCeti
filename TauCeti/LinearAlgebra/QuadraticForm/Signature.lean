@@ -9,6 +9,7 @@ public import Mathlib.LinearAlgebra.Matrix.BilinearForm
 import Mathlib.LinearAlgebra.Projection
 public import Mathlib.LinearAlgebra.QuadraticForm.Signature
 public import TauCeti.LinearAlgebra.BilinearForm.PosSemidef
+public import TauCeti.LinearAlgebra.QuadraticForm.PosDef
 public import TauCeti.LinearAlgebra.QuadraticForm.Radical
 public import TauCeti.LinearAlgebra.Submodule.Prod
 
@@ -64,19 +65,6 @@ namespace QuadraticForm
 variable {K M : Type*} [Field K] [LinearOrder K] [IsStrictOrderedRing K]
   [AddCommGroup M] [Module K M] [FiniteDimensional K M]
 
-omit [FiniteDimensional K M] in
-/-- Multiplication by a positive scalar preserves positive-definiteness. Thus a quadratic form is
-positive-definite if and only if its positive scalar multiple is. -/
-@[simp]
-theorem posDef_smul_iff_of_pos (Q : _root_.QuadraticForm K M) {a : K} (ha : 0 < a) :
-    (a • Q).PosDef ↔ Q.PosDef := by
-  constructor
-  · intro hQ x hx
-    have h := hQ x hx
-    simp only [smul_apply, smul_eq_mul] at h
-    exact pos_of_mul_pos_right h ha.le
-  · exact fun hQ ↦ hQ.smul ha
-
 /-- Multiplication by a positive scalar preserves the positive index of inertia. -/
 @[simp]
 theorem sigPos_smul_of_pos (Q : _root_.QuadraticForm K M) {a : K} (ha : 0 < a) :
@@ -85,11 +73,11 @@ theorem sigPos_smul_of_pos (Q : _root_.QuadraticForm K M) {a : K} (ha : 0 < a) :
   · obtain ⟨U, hUrank, hU⟩ := exists_finrank_eq_sigPos_and_posDef (a • Q)
     rw [← hUrank]
     apply le_sigPos_of_posDef
-    exact (posDef_smul_iff_of_pos (Q.restrict U) ha).mp hU
+    exact (QuadraticMap.posDef_smul_iff_of_pos (Q.restrict U) ha).mp hU
   · obtain ⟨U, hUrank, hU⟩ := exists_finrank_eq_sigPos_and_posDef Q
     rw [← hUrank]
     apply le_sigPos_of_posDef
-    exact (posDef_smul_iff_of_pos (Q.restrict U) ha).mpr hU
+    exact (QuadraticMap.posDef_smul_iff_of_pos (Q.restrict U) ha).mpr hU
 
 /-- Multiplication by a positive scalar preserves the negative index of inertia. -/
 @[simp]
@@ -188,22 +176,10 @@ private theorem add_sigPos_le_sigPos_prod (Q : _root_.QuadraticForm K M)
   obtain ⟨U, hUrank, hUpos⟩ := exists_finrank_eq_sigPos_and_posDef Q
   obtain ⟨W, hWrank, hWpos⟩ := exists_finrank_eq_sigPos_and_posDef Q'
   have hprod : ((Q.prod Q').restrict (U.prod W)).PosDef := by
-    intro p hp
-    let u : U := ⟨p.1.1, p.2.1⟩
-    let w : W := ⟨p.1.2, p.2.2⟩
-    have hp' : u ≠ 0 ∨ w ≠ 0 := by
-      contrapose! hp
-      apply Subtype.ext
-      exact Prod.ext (congrArg Subtype.val hp.1) (congrArg Subtype.val hp.2)
-    rcases hp' with hp' | hp'
-    · have hpos := hUpos u hp'
-      have hnonneg := hWpos.nonneg w
-      simpa only [QuadraticMap.restrict_apply, QuadraticMap.prod_apply] using
-        add_pos_of_pos_of_nonneg hpos hnonneg
-    · have hnonneg := hUpos.nonneg u
-      have hpos := hWpos w hp'
-      simpa only [QuadraticMap.restrict_apply, QuadraticMap.prod_apply] using
-        add_pos_of_nonneg_of_pos hnonneg hpos
+    rintro ⟨⟨u, w⟩, hu, hw⟩ hp
+    simpa only [QuadraticMap.restrict_apply, QuadraticMap.prod_apply] using
+      (hUpos.prod hWpos) (⟨u, hu⟩, ⟨w, hw⟩)
+        (by simpa only [ne_eq, Subtype.ext_iff, Prod.mk_eq_zero, Submodule.coe_zero] using hp)
   calc
     sigPos Q + sigPos Q' = Module.finrank K U + Module.finrank K W := by
       rw [hUrank, hWrank]
@@ -265,26 +241,6 @@ private theorem isCompl_radical_radicalComplement (Q : _root_.QuadraticForm K M)
     IsCompl Q.radical (radicalComplement Q) :=
   (Submodule.exists_isCompl Q.radical).choose_spec
 
-/-- The quotient by the radical is isometric to the restriction to the chosen complement. -/
-private noncomputable def liftRadicalIsometryEquiv (Q : _root_.QuadraticForm K M) :
-    (Q.restrict (radicalComplement Q)).IsometryEquiv (Q.lift Q.radical le_rfl) where
-  toLinearEquiv :=
-    (Q.radical.quotientEquivOfIsCompl (radicalComplement Q)
-      (isCompl_radical_radicalComplement Q)).symm
-  map_app' x := by
-    have he :
-        (Q.radical.quotientEquivOfIsCompl (radicalComplement Q)
-          (isCompl_radical_radicalComplement Q)).symm x =
-          Submodule.Quotient.mk (x : M) :=
-      LinearMap.congr_fun (Submodule.toLinearMap_symm_quotientEquivOfIsCompl
-        (isCompl_radical_radicalComplement Q)) x
-    -- Expose the linear-equivalence application hidden by the isometry-equivalence coercion.
-    change Q.lift Q.radical le_rfl
-      ((Q.radical.quotientEquivOfIsCompl (radicalComplement Q)
-        (isCompl_radical_radicalComplement Q)).symm x) = _
-    rw [he]
-    simp only [QuadraticMap.lift_mk, QuadraticMap.restrict_apply]
-
 /-- The restriction to the chosen complement of the radical has trivial radical. -/
 private theorem radical_restrict_radicalComplement_eq_bot (Q : _root_.QuadraticForm K M)
     (h2 : Invertible (2 : K)) :
@@ -322,7 +278,8 @@ theorem sigPos_lift_radical (Q : _root_.QuadraticForm K M) :
   let _ : Invertible (2 : K) := invertibleOfNonzero (by norm_num)
   have hquot : sigPos (Q.lift Q.radical le_rfl) =
       sigPos (Q.restrict (radicalComplement Q)) :=
-    (QuadraticMap.Equivalent.sigPos_eq (⟨liftRadicalIsometryEquiv Q⟩ :
+    (QuadraticMap.Equivalent.sigPos_eq (⟨IsometryEquiv.restrictComplementLiftRadical Q
+      (radicalComplement Q) (isCompl_radical_radicalComplement Q)⟩ :
       (Q.restrict (radicalComplement Q)).Equivalent (Q.lift Q.radical le_rfl))).symm
   have hpos := sigPos_restrict_le Q (radicalComplement Q)
   have hneg := sigNeg_restrict_le Q (radicalComplement Q)

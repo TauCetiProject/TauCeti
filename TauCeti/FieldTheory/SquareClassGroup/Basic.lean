@@ -27,8 +27,8 @@ square. So linear independence of the classes is the **Finset form** of square-c
 * `TauCeti.squareClass`, `TauCeti.squareClassHom`: the class of a unit, as a function and a
   multiplicative homomorphism, with `squareClass_eq_zero_iff` characterising the trivial class as
   the squares, `ker_squareClassHom` identifying the kernel of the quotient map with the subgroup
-  of squares, and `squareClass_mul`, `squareClass_prod`, `squareClass_pow` computing it on
-  products and powers.
+  of squares, and `squareClass_mul`, `squareClass_prod`, `squareClass_pow`, `squareClass_zpow`
+  computing it on products and powers.
 * `TauCeti.squareClass_eq_iff_isSquare_mul`: equality of square classes read as a square product.
 * `TauCeti.SquareClassGroup.two_nsmul_eq_zero`: the square-class group is killed by two.
 * `TauCeti.linearIndependent_squareClass_iff`: the classes of `d : ι → Kˣ` are `ZMod 2`-linearly
@@ -75,20 +75,17 @@ def squareClassHom : Kˣ →* Multiplicative (SquareClassGroup K) :=
 
 @[simp]
 theorem squareClassHom_apply (u : Kˣ) :
-    squareClassHom u = Multiplicative.ofAdd (squareClass u) := by
-  rw [squareClassHom, squareClass]
-  rfl
+    squareClassHom u = Multiplicative.ofAdd (squareClass u) := (rfl)
 
 /-- A unit has trivial square class iff it is a square. -/
 @[simp] theorem squareClass_eq_zero_iff (u : Kˣ) : squareClass u = 0 ↔ IsSquare u := by
-  rw [squareClass, QuotientAddGroup.eq_zero_iff, Additive.mem_toAddSubgroup,
-    Subgroup.mem_square]
+  rw [squareClass, QuotientAddGroup.eq_zero_iff, Additive.mem_toAddSubgroup, Subgroup.mem_square]
   simp
 
 /-- The kernel of the square-class quotient map is the subgroup of squares. -/
 @[simp]
-theorem ker_squareClassHom : (squareClassHom (K := K)).ker = Subgroup.square Kˣ := by
-  ext u
+theorem ker_squareClassHom : squareClassHom.ker = Subgroup.square Kˣ := by
+  ext
   simp [squareClassHom_apply]
 
 /-- The unit `1` has trivial square class. -/
@@ -112,29 +109,26 @@ theorem squareClass_prod {ι : Type*} (S : Finset ι) (d : ι → Kˣ) :
 quotient-free reading of equality in the square-class group. -/
 theorem squareClass_eq_iff_isSquare_mul (u v : Kˣ) :
     squareClass u = squareClass v ↔ IsSquare (u * v) := by
-  have hvv : squareClass v + squareClass v = 0 := by
-    rw [← squareClass_mul, (squareClass_eq_zero_iff _).mpr ⟨v, rfl⟩]
-  rw [← squareClass_eq_zero_iff, squareClass_mul]
-  refine ⟨fun h => by rw [h]; exact hvv, fun h => ?_⟩
-  calc
-    squareClass u = squareClass u + (squareClass v + squareClass v) := by rw [hvv]; abel
-    _ = squareClass u + squareClass v + squareClass v := by abel
-    _ = squareClass v := by rw [h]; abel
+  rw [← squareClass_eq_zero_iff, squareClass_mul, add_eq_zero_iff_eq_neg,
+    ← neg_one_smul (ZMod 2) (squareClass v), show (-1 : ZMod 2) = 1 by decide, one_smul]
+
+/-- The square class of an integer power is the corresponding multiple of the square class. -/
+@[simp]
+theorem squareClass_zpow (u : Kˣ) (n : ℤ) : squareClass (u ^ n) = n • squareClass u := by
+  rw [← toAdd_ofAdd (squareClass _), ← squareClassHom_apply, map_zpow, squareClassHom_apply,
+    toAdd_zpow, toAdd_ofAdd]
 
 /-- The square class of a power is the corresponding multiple of the square class. -/
 @[simp]
 theorem squareClass_pow (u : Kˣ) (n : ℕ) : squareClass (u ^ n) = n • squareClass u := by
-  induction n with
-  | zero => simp
-  | succ n ih => rw [pow_succ, squareClass_mul, ih, succ_nsmul]
+  simpa using squareClass_zpow (u := u) (n := (n : ℤ))
 
-private theorem zmod_two_eq_zero_or_one (t : ZMod 2) : t = 0 ∨ t = 1 := by revert t; decide
+private theorem zmod_two_eq_zero_or_one : ∀ t : ZMod 2, t = 0 ∨ t = 1 := by decide
 
 /-- A `ZMod 2`-linear combination of square classes is the class of the corresponding subset
 product (the subset where the coefficient is `1`). -/
 private theorem sum_smul_squareClass {ι : Type*} [Fintype ι] (d : ι → Kˣ) (g : ι → ZMod 2) :
-    ∑ i, g i • squareClass (d i)
-      = squareClass (∏ i ∈ Finset.univ.filter (fun i => g i = 1), d i) := by
+    ∑ i, g i • squareClass (d i) = squareClass (∏ i with g i = 1, d i) := by
   rw [squareClass_prod, Finset.sum_filter]
   refine Finset.sum_congr rfl fun i _ => ?_
   rcases zmod_two_eq_zero_or_one (g i) with h | h
@@ -151,36 +145,28 @@ theorem linearIndependent_squareClass_iff {ι : Type*} [Finite ι] (d : ι → K
   classical
   let := Fintype.ofFinite ι
   rw [Fintype.linearIndependent_iff]
+  contrapose
+  push Not
   constructor
-  · -- A nonempty square subset product would give a nontrivial linear dependence.
-    intro H S hS hsq
-    set g : ι → ZMod 2 := fun i => if i ∈ S then 1 else 0 with hg
-    have hfilter : Finset.univ.filter (fun i => g i = 1) = S := by
-      ext i
-      rw [Finset.mem_filter]
-      constructor
-      · rintro ⟨-, hi⟩
-        by_contra hiS
-        rw [hg] at hi
-        simp only [hiS, ite_false] at hi
-        exact absurd hi (by decide)
-      · intro hiS
-        exact ⟨Finset.mem_univ i, by rw [hg]; simp [hiS]⟩
-    have hsum : ∑ i, g i • squareClass (d i) = 0 := by
-      rw [sum_smul_squareClass, hfilter, squareClass_eq_zero_iff]
-      exact hsq
-    obtain ⟨i, hiS⟩ := hS
-    have hi0 := H g hsum i
-    rw [hg] at hi0
-    simp only [hiS, ite_true] at hi0
-    exact absurd hi0 (by decide)
   · -- A linear dependence singles out a nonempty square subset product.
-    intro H g hsum i
-    by_contra hgi
-    have hg1 : g i = 1 := (zmod_two_eq_zero_or_one (g i)).resolve_left hgi
-    set S : Finset ι := Finset.univ.filter (fun j => g j = 1) with hS
-    have hiS : i ∈ S := by rw [hS, Finset.mem_filter]; exact ⟨Finset.mem_univ i, hg1⟩
-    rw [sum_smul_squareClass, squareClass_eq_zero_iff] at hsum
-    exact H S ⟨i, hiS⟩ hsum
+    intro ⟨g, _, i, hgi⟩
+    set S : Finset _ := { i | g i = 1 } with hS
+    use S
+    constructor
+    · use i
+      rw [hS, Finset.mem_filter]
+      exact ⟨Finset.mem_univ i, (zmod_two_eq_zero_or_one (g i)).resolve_left hgi⟩
+    · rwa [← squareClass_eq_zero_iff, ← sum_smul_squareClass]
+  · -- A nonempty square subset product would give a nontrivial linear dependence.
+    intro ⟨S, ⟨_, _⟩, _⟩
+    let g i : ZMod 2 := if i ∈ S then 1 else 0
+    use g
+    constructor
+    · have hS : ({ i | g i = 1 } : Finset _) = S := by
+        ext i
+        rw [Finset.mem_filter]
+        grind only [← Finset.mem_univ]
+      rwa [sum_smul_squareClass, hS, squareClass_eq_zero_iff]
+    · grind only
 
 end TauCeti

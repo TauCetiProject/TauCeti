@@ -7,7 +7,7 @@ module
 
 public import TauCeti.RepresentationTheory.GrothendieckGroup.Finrank
 public import TauCeti.RepresentationTheory.Irreducible
-public import TauCeti.RepresentationTheory.PGroupInvariants
+public import TauCeti.RepresentationTheory.Unipotent.PowerOrder
 public import TauCeti.RepresentationTheory.OfModule
 public import TauCeti.RepresentationTheory.AsModule
 
@@ -25,8 +25,8 @@ vectors, so it passes directly to submodules and quotients. The representation s
 endomorphisms instead. These results apply, for example, to permutation representations of
 quotients of `p`-power order and allow their induced classes to be computed additively.
 
-The simple-module argument uses the invariant-vector theorem in
-`TauCeti/RepresentationTheory/PGroupInvariants.lean`; finite-length induction supplies the
+The simple-module argument uses the trivial-line theorem for irreducible representations in
+`TauCeti/RepresentationTheory/Unipotent/PowerOrder.lean`; finite-length induction supplies the
 exact-sequence relations for arbitrary modules.
 
 ## References
@@ -38,7 +38,7 @@ public section
 
 namespace TauCeti
 
-open CategoryTheory CategoryTheory.Limits
+open CategoryTheory.Limits
 open scoped MonoidAlgebra ModuleCat
 
 universe u v
@@ -62,9 +62,9 @@ theorem nonempty_linearEquiv_trivial_of_forall_pow_eq_one
     rw [← map_pow]
     ext x
     exact hn x
-  have htriv := hρ.eq_trivial_of_forall_pow_eq_one p hpow
-  have hdim := hρ.finrank_eq_one_of_forall_pow_eq_one p hpow
   have := hρ.finiteDimensional
+  have htriv := hρ.eq_trivial_of_forall_pow_expChar_pow_eq_one p hpow
+  have hdim := hρ.finrank_eq_one_of_forall_pow_expChar_pow_eq_one p hpow
   let e := LinearEquiv.ofFinrankEq M k (hdim.trans (Module.finrank_self k).symm)
   have he : ρ.Equiv (Representation.trivial k G k) := Representation.Equiv.mk e (by
     intro g
@@ -134,20 +134,10 @@ theorem exactK0_of_eq_finrank_smul_of_forall_pow_eq_one (M : FGModuleCat.{u} k[G
     have hQ : (ExactK0.of (FGModuleCat.of k[G] (X ⧸ N)) :
         ExactK0 (finiteModulesExactStructure k[G])) = t := ExactK0.of_congr e.toFGModuleCatIso
     -- The quotient is a trivial line. Add its class to the induction hypothesis.
-    let T : ShortComplex (FGModuleCat k[G]) :=
-      ShortComplex.mk (FGModuleCat.ofHom N.subtype) (FGModuleCat.ofHom N.mkQ) (by
-        apply FGModuleCat.hom_ext
-        exact (LinearMap.exact_subtype_mkQ N).linearMap_comp_eq_zero)
-    have hconf : (finiteModulesExactStructure k[G]).Conflation T :=
-      (finiteModulesExactStructure_conflation_iff k[G] T).mpr <| by
-        apply ModuleCat.shortComplex_shortExact
-        · exact LinearMap.exact_subtype_mkQ N
-        · exact N.injective_subtype
-        · exact N.mkQ_surjective
     have hrel : (ExactK0.of (FGModuleCat.of k[G] X) :
         ExactK0 (finiteModulesExactStructure k[G])) =
         ExactK0.of (FGModuleCat.of k[G] N) + t := by
-      simpa only [T, hQ] using ExactK0.of_conflation hconf
+      rw [exactK0_of_eq_submodule_add_quotient k[G] N, hQ]
     calc
       ExactK0.of (FGModuleCat.of k[G] X) = ExactK0.of (FGModuleCat.of k[G] N) + t := hrel
       _ = (finrankK0 k k[G] (ExactK0.of (FGModuleCat.of k[G] N)) + 1) • t := by
