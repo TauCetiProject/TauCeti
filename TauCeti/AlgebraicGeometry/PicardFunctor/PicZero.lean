@@ -204,7 +204,6 @@ codimension-one local rings are discrete valuation rings and whose `H¹(X_ξ, �
 finite-dimensional, then the fibre degree at `ξ` is additive on `Pic(X_T) / Pic(T)`. -/
 lemma relativePicardFiberDegree_mul {T : (Over S)ᵒᵖ} {Ω : Type u} [Field Ω]
     (ξ : Spec (.of Ω) ⟶ T.unop.left) [IsIntegral (pullback (ξ ≫ T.unop.hom) f)]
-    [IsLocallyNoetherian (pullback (ξ ≫ T.unop.hom) f)]
     [∀ y : CodimensionOnePoint (pullback (ξ ≫ T.unop.hom) f),
       IsDiscreteValuationRing ((pullback (ξ ≫ T.unop.hom) f).presheaf.stalk (y : _))]
     [IsProper (pullback.fst (ξ ≫ T.unop.hom) f)]
@@ -218,6 +217,8 @@ lemma relativePicardFiberDegree_mul {T : (Over S)ᵒᵖ} {Ω : Type u} [Field Ω
   let _ : (pullback (ξ ≫ T.unop.hom) f).Over (Spec (.of Ω)) := ⟨pullback.fst _ _⟩
   have : IsProper (pullback (ξ ≫ T.unop.hom) f ↘ Spec (.of Ω)) :=
     inferInstanceAs (IsProper (pullback.fst (ξ ≫ T.unop.hom) f))
+  have : IsLocallyNoetherian (pullback (ξ ≫ T.unop.hom) f) :=
+    LocallyOfFiniteType.isLocallyNoetherian (pullback.fst (ξ ≫ T.unop.hom) f)
   exact relativePicardFiberDegree_mul_of_baseChangeEulerDegree_mul f ξ
     (LineBundleClass.eulerDegree_mul Ω hX) c d
 
@@ -249,7 +250,6 @@ finite-dimensional, then the class of a line bundle on `X_T` has fibre degree ze
 when its restriction to `X_ξ` lies in `Pic⁰ X_ξ` (`LineBundleClass.picZero`). -/
 lemma relativePicardFiberDegree_mk_eq_zero_iff {T : (Over S)ᵒᵖ} {Ω : Type u} [Field Ω]
     (ξ : Spec (.of Ω) ⟶ T.unop.left) [IsIntegral (pullback (ξ ≫ T.unop.hom) f)]
-    [IsLocallyNoetherian (pullback (ξ ≫ T.unop.hom) f)]
     [∀ y : CodimensionOnePoint (pullback (ξ ≫ T.unop.hom) f),
       IsDiscreteValuationRing ((pullback (ξ ≫ T.unop.hom) f).presheaf.stalk (y : _))]
     [IsProper (pullback.fst (ξ ≫ T.unop.hom) f)]
@@ -262,9 +262,10 @@ lemma relativePicardFiberDegree_mk_eq_zero_iff {T : (Over S)ᵒᵖ} {Ω : Type u
       letI : (pullback (ξ ≫ T.unop.hom) f).Over (Spec (.of Ω)) := ⟨pullback.fst _ _⟩
       haveI : IsProper (pullback (ξ ≫ T.unop.hom) f ↘ Spec (.of Ω)) :=
         inferInstanceAs (IsProper (pullback.fst (ξ ≫ T.unop.hom) f))
-      -- A proper scheme over a field is quasi-compact, so it is Noetherian.
+      -- A proper scheme over a field is of finite type and quasi-compact, so it is Noetherian.
       haveI : IsNoetherian (pullback (ξ ≫ T.unop.hom) f) :=
-        { toIsLocallyNoetherian := inferInstance
+        { toIsLocallyNoetherian :=
+            LocallyOfFiniteType.isLocallyNoetherian (pullback.fst (ξ ≫ T.unop.hom) f)
           toCompactSpace :=
             (quasiCompact_iff_compactSpace (pullback (ξ ≫ T.unop.hom) f ↘ Spec (.of Ω))).mp
               inferInstance }
