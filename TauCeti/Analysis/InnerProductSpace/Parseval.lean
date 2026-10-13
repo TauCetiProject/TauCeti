@@ -23,6 +23,8 @@ for the Hermite basis is `TauCeti.tsum_norm_sq_inner_hermiteFunctionLp`.
 
 * `HilbertBasis.hasSum_norm_sq_inner` — Parseval in norm-square form, as a `HasSum` statement.
 * `HilbertBasis.tsum_norm_sq_inner` — the same identity as an equation between a `tsum` and `‖x‖²`.
+* `HilbertBasis.tsum_enorm_sq_inner` — the same identity in `ℝ≥0∞`, where it needs no summability
+  bookkeeping and can be reordered freely against other unconditional sums.
 -/
 
 public section
@@ -49,5 +51,13 @@ theorem _root_.HilbertBasis.tsum_norm_sq_inner (b : _root_.HilbertBasis ι 𝕜 
 theorem _root_.HilbertBasis.summable_norm_sq_inner (b : _root_.HilbertBasis ι 𝕜 E) (x : E) :
     Summable fun i => ‖inner 𝕜 (b i) x‖ ^ 2 :=
   (b.hasSum_norm_sq_inner x).summable
+
+/-- **Parseval's identity, extended-nonnegative form.** The squared extended norms of the
+coordinates of `x` in a Hilbert basis sum to `‖x‖ₑ²`. -/
+theorem _root_.HilbertBasis.tsum_enorm_sq_inner (b : _root_.HilbertBasis ι 𝕜 E) (x : E) :
+    ∑' i : ι, ‖inner 𝕜 (b i) x‖ₑ ^ 2 = ‖x‖ₑ ^ 2 := by
+  simp_rw [← ofReal_norm, ← ENNReal.ofReal_pow (norm_nonneg _)]
+  rw [← ENNReal.ofReal_tsum_of_nonneg (fun _ ↦ by positivity) (b.summable_norm_sq_inner x),
+    b.tsum_norm_sq_inner]
 
 end TauCeti
