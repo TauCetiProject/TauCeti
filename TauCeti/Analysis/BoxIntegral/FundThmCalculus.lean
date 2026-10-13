@@ -18,8 +18,8 @@ set, the Henstock–Kurzweil integral of `f'` equals `f b - f a`. The derivative
 Bochner integrable, and its values at the exceptions are arbitrary.
 
 The FTC is derived from Mathlib's `BoxIntegral.hasIntegral_GP_pderiv` using the GP–Henstock
-equivalence in dimension one. The finite-exception case applies to piecewise differentiable
-parametrizations.
+equivalence in dimension one. Finite exceptional sets, such as break points of piecewise
+differentiable parametrizations, are a special case of the countable hypothesis.
 -/
 
 public section

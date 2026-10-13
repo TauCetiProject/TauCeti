@@ -11,7 +11,6 @@ import Mathlib.Analysis.SpecialFunctions.Trigonometric.Deriv
 import Mathlib.Analysis.Calculus.Deriv.Slope
 import Mathlib.Analysis.SpecialFunctions.Sqrt
 import Mathlib.NumberTheory.Harmonic.Bounds
-import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 
 /-!
 # A conditionally integrable derivative

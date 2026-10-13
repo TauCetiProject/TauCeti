@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.BoxIntegral.FundThmCalculus
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 public import Mathlib.Topology.Order.ProjIcc
+import Mathlib.Topology.Order.Compact
 
 /-!
 # Henstock–Kurzweil substitution with countably many singularities
@@ -26,15 +27,22 @@ namespace BoxIntegral
 
 /-- Substitution in the Henstock–Kurzweil integral, for a continuous parametrization
 differentiable outside a countable exceptional set. The integrand only needs to be continuous
-on a closed interval containing the image. -/
+on the image of the parametrization. -/
 theorem hasIntegral_Henstock_deriv_smul_comp {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-    [CompleteSpace E] {a b c d : ℝ} (hab : a < b) {f : ℝ → E} {θ θ' : ℝ → ℝ}
+    [CompleteSpace E] {a b : ℝ} (hab : a < b) {f : ℝ → E} {θ θ' : ℝ → ℝ}
     {s : Set ℝ} (hs : s.Countable) (hθ : ContinuousOn θ (Icc a b))
     (hdθ : ∀ t ∈ Ioo a b \ s, HasDerivAt θ (θ' t) t)
-    (hf : ContinuousOn f (Icc c d)) (hmap : MapsTo θ (Icc a b) (Icc c d)) :
+    (hf : ContinuousOn f (θ '' Icc a b)) :
     HasIntegral (intervalBox a b hab) IntegrationParams.Henstock
       (fun x ↦ θ' (x 0) • f (θ (x 0))) BoxAdditiveMap.volume
       (∫ x in θ a..θ b, f x) := by
+  let c := sInf (θ '' Icc a b)
+  let d := sSup (θ '' Icc a b)
+  have himage : θ '' Icc a b = Icc c d := hθ.image_Icc hab.le
+  have hmap : MapsTo θ (Icc a b) (Icc c d) := by
+    rw [← himage]
+    exact mapsTo_image _ _
+  have hf : ContinuousOn f (Icc c d) := by rwa [← himage]
   have ha : θ a ∈ Icc c d := hmap (left_mem_Icc.mpr hab.le)
   have hb : θ b ∈ Icc c d := hmap (right_mem_Icc.mpr hab.le)
   have hcd : c ≤ d := ha.1.trans ha.2

@@ -70,6 +70,18 @@ theorem henstockIntervalIntegrable_iff_of_lt (hab : a < b) :
       (fun x ↦ f (x 0)) BoxAdditiveMap.volume := by
   simp only [henstockIntervalIntegrable_iff, hasHenstockIntervalIntegral_iff_of_lt hab, Integrable]
 
+
+/-- On negative intervals, oriented gauge integrability is existing box integrability. -/
+theorem henstockIntervalIntegrable_iff_of_gt (hba : b < a) :
+    HenstockIntervalIntegrable f a b ↔ Integrable (intervalBox b a hba)
+      IntegrationParams.Henstock (fun x ↦ f (x 0)) BoxAdditiveMap.volume := by
+  rw [henstockIntervalIntegrable_iff, Integrable]
+  constructor
+  · rintro ⟨y, hy⟩
+    exact ⟨-y, (hasHenstockIntervalIntegral_iff_of_gt hba).mp hy⟩
+  · rintro ⟨y, hy⟩
+    exact ⟨-y, (hasHenstockIntervalIntegral_iff_of_gt hba).mpr (by simpa only [neg_neg] using hy)⟩
+
 @[simp]
 theorem hasHenstockIntervalIntegral_same : HasHenstockIntervalIntegral f a a y ↔ y = 0 := by
   simp [HasHenstockIntervalIntegral]
@@ -208,7 +220,7 @@ theorem HenstockIntervalIntegrable.sub (hf : HenstockIntervalIntegrable f a b)
 variable [CompleteSpace E]
 
 /-- Bochner integrability supplies the genuine oriented Henstock value, including zero and
-reversed intervals. The converse is deliberately not required. -/
+reversed intervals. -/
 theorem _root_.IntervalIntegrable.hasHenstockIntervalIntegral (hf : IntervalIntegrable f volume
   a b) :
     HasHenstockIntervalIntegral f a b (∫ t in a..b, f t) := by
@@ -223,7 +235,7 @@ theorem HasHenstockIntervalIntegral.eq_intervalIntegral (h : HasHenstockInterval
     (hf : IntervalIntegrable f volume a b) : y = ∫ t in a..b, f t :=
   h.unique hf.hasHenstockIntervalIntegral
 
-/-- Constants give nondegenerate witnesses to the oriented gauge predicate. -/
+/-- A constant has oriented Henstock integral `(b - a) • v` for every pair of endpoints. -/
 theorem hasHenstockIntervalIntegral_const (v : E) (a b : ℝ) :
     HasHenstockIntervalIntegral (fun _ ↦ v) a b ((b - a) • v) := by
   simpa only [intervalIntegral.integral_const] using
@@ -323,39 +335,6 @@ private theorem add_eq_of_mem (h : HasHenstockIntervalIntegral f a b y) (hc : c 
   obtain ⟨z₁, z₂, hz₁, hz₂, hz⟩ := h.split hc
   rwa [h₁.unique hz₁, h₂.unique hz₂]
 
-/-- Any finite ordered subdivision, in either orientation and allowing repeated nodes, admits
-actual gauge values on its pieces whose sum is the value on the entire interval. -/
-theorem HasHenstockIntervalIntegral.split_fin {N : ℕ} {s : Fin (N + 1) → ℝ}
-    (h : HasHenstockIntervalIntegral f (s 0) (s (Fin.last N)) y)
-    (hs : Monotone s ∨ Antitone s) :
-    ∃ v : Fin N → E, (∀ i, HasHenstockIntervalIntegral f (s i.castSucc) (s i.succ) (v i)) ∧
-      ∑ i, v i = y := by
-  have hmem (i j : Fin (N + 1)) (hij : i ≤ j) : s i ∈ uIcc (s 0) (s j) := by
-    rcases hs with hs | hs
-    · rw [uIcc_of_le (hs (Fin.zero_le j))]
-      exact ⟨hs (Fin.zero_le i), hs hij⟩
-    · rw [uIcc_of_ge (hs (Fin.zero_le j))]
-      exact ⟨hs hij, hs (Fin.zero_le i)⟩
-  have hprefix (i : Fin (N + 1)) : HenstockIntervalIntegrable f (s 0) (s i) :=
-    h.henstockIntervalIntegrable_of_subset (uIcc_subset_uIcc_left (hmem i (Fin.last N)
-      (Fin.le_last i)))
-  choose F hF using hprefix
-  refine ⟨fun i ↦ F i.succ - F i.castSucc, ?_, ?_⟩
-  · intro i
-    obtain ⟨z₁, z₂, hz₁, hz₂, hz⟩ := (hF i.succ).split
-      (hmem i.castSucc i.succ (Fin.castSucc_le_succ i))
-    convert hz₂ using 1
-    -- The chosen subdivision value is definitionally the difference of the prefix values.
-    change F i.succ - F i.castSucc = z₂
-    rw [← hz, (hF i.castSucc).unique hz₁, add_sub_cancel_left]
-  · have htel : ∑ i : Fin N, (F i.succ - F i.castSucc) = F (Fin.last N) - F 0 := by
-      cases N with
-      | zero => simp
-      | succ n =>
-        have hIic : Finset.Iic (Fin.last n) = Finset.univ := Finset.Iic_top
-        simpa only [hIic, Fin.succ_last] using Fin.sum_Iic_sub (Fin.last n) F
-    rw [htel, (hF (Fin.last N)).unique h, hasHenstockIntervalIntegral_same.mp (hF 0), sub_zero]
-
 private theorem trans_of_le (h₁ : HasHenstockIntervalIntegral f a c y)
     (h₂ : HasHenstockIntervalIntegral f c b z) (hac : a ≤ c) (hcb : c ≤ b) :
     HasHenstockIntervalIntegral f a b (y + z) := by
@@ -411,6 +390,27 @@ theorem HasHenstockIntervalIntegral.trans (h₁ : HasHenstockIntervalIntegral f 
   · simpa only [neg_add, neg_neg, add_comm] using
       (trans_forward h₂.symm h₁.symm hba).symm
 
+
+/-- Any finite subdivision whose nodes lie in the endpoint interval admits actual gauge values
+on its pieces whose sum is the value on the whole interval. Nodes may repeat and backtrack. -/
+theorem HasHenstockIntervalIntegral.split_fin {N : ℕ} {s : Fin (N + 1) → ℝ}
+    (h : HasHenstockIntervalIntegral f (s 0) (s (Fin.last N)) y)
+    (hs : ∀ i, s i ∈ uIcc (s 0) (s (Fin.last N))) :
+    ∃ v : Fin N → E, (∀ i, HasHenstockIntervalIntegral f (s i.castSucc) (s i.succ) (v i)) ∧
+      ∑ i, v i = y := by
+  have hprefix (i : Fin (N + 1)) : HenstockIntervalIntegrable f (s 0) (s i) :=
+    h.henstockIntervalIntegrable_of_subset (uIcc_subset_uIcc_left (hs i))
+  choose F hF using hprefix
+  refine ⟨fun i ↦ F i.succ - F i.castSucc, ?_, ?_⟩
+  · intro i
+    simpa only [sub_eq_add_neg, add_comm] using (hF i.castSucc).symm.trans (hF i.succ)
+  · have htel : ∑ i : Fin N, (F i.succ - F i.castSucc) = F (Fin.last N) - F 0 := by
+      cases N with
+      | zero => simp
+      | succ n =>
+        have hIic : Finset.Iic (Fin.last n) = Finset.univ := Finset.Iic_top
+        simpa only [hIic, Fin.succ_last] using Fin.sum_Iic_sub (Fin.last n) F
+    rw [htel, (hF (Fin.last N)).unique h, hasHenstockIntervalIntegral_same.mp (hF 0), sub_zero]
 
 /-- Gauge integrability on adjacent parameter intervals glues, including backtracking. -/
 theorem HenstockIntervalIntegrable.trans (h₁ : HenstockIntervalIntegrable f a c)

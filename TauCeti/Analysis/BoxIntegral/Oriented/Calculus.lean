@@ -43,22 +43,22 @@ theorem hasHenstockIntervalIntegral_of_hasDerivAt_off_countable {a b : ℝ} {f f
 
 /-- Oriented substitution for continuous integrands and continuous scalar parametrizations
 with countably many derivative exceptions. The parameter may reverse direction or backtrack. -/
-theorem hasHenstockIntervalIntegral_deriv_smul_comp {a b c d : ℝ} {f : ℝ → E} {θ θ' : ℝ → ℝ}
+theorem hasHenstockIntervalIntegral_deriv_smul_comp {a b : ℝ} {f : ℝ → E} {θ θ' : ℝ → ℝ}
     {s : Set ℝ} (hs : s.Countable) (hθ : ContinuousOn θ (uIcc a b))
     (hdθ : ∀ t ∈ uIoo a b \ s, HasDerivAt θ (θ' t) t)
-    (hf : ContinuousOn f (Icc c d)) (hmap : MapsTo θ (uIcc a b) (Icc c d)) :
+    (hf : ContinuousOn f (θ '' uIcc a b)) :
     HasHenstockIntervalIntegral (fun t ↦ θ' t • f (θ t)) a b (∫ x in θ a..θ b, f x) := by
   rcases lt_trichotomy a b with hab | rfl | hba
   · rw [hasHenstockIntervalIntegral_iff_of_lt hab]
     exact hasIntegral_Henstock_deriv_smul_comp hab hs
       (by simpa only [uIcc_of_le hab.le] using hθ)
-      (by simpa only [uIoo_of_le hab.le] using hdθ) hf
-      (by simpa only [uIcc_of_le hab.le] using hmap)
+      (by simpa only [uIoo_of_le hab.le] using hdθ)
+      (by simpa only [uIcc_of_le hab.le] using hf)
   · simp
   · rw [hasHenstockIntervalIntegral_iff_of_gt hba, ← intervalIntegral.integral_symm]
     exact hasIntegral_Henstock_deriv_smul_comp hba hs
       (by simpa only [uIcc_of_ge hba.le] using hθ)
-      (by simpa only [uIoo_of_ge hba.le] using hdθ) hf
-      (by simpa only [uIcc_of_ge hba.le] using hmap)
+      (by simpa only [uIoo_of_ge hba.le] using hdθ)
+      (by simpa only [uIcc_of_ge hba.le] using hf)
 
 end BoxIntegral
