@@ -9,29 +9,22 @@ public import TauCeti.Analysis.Fredholm.Basic
 public import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Index
 
 /-!
-# Composition of Fredholm operators
+# Powers of Fredholm operators
 
-This file proves that the index of a composite of Fredholm operators between normed spaces is the
-sum of their indices, over an arbitrary nontrivially normed scalar field. It also records the
-corresponding statements for powers of a Fredholm endomorphism, which do assume a complete scalar
-field, since they go through Mathlib's `ContinuousLinearMap.IsFredholm.comp`.
+This file records the compositional calculus of a Fredholm endomorphism under natural-number
+powers, over a complete nontrivially normed scalar field.
 
-That a composite is Fredholm is Mathlib's `ContinuousLinearMap.IsFredholm.comp`.
-Index additivity reuses Mathlib's `LinearMap.index_comp`, whose proof is the six-term exact
-sequence
-
-`0 → ker T → ker (S ∘ T) → ker S → coker T → coker (S ∘ T) → coker S → 0`.
-
-These results supply the compositional calculus of Fredholm operators and their index.
+That a composite is Fredholm is Mathlib's `ContinuousLinearMap.IsFredholm.comp`, and that the
+index of a composite of Fredholm operators is the sum of their indices is Mathlib's
+`ContinuousLinearMap.IsFredholm.index_comp`. Iterating these gives the statements for powers.
 
 ## Main declarations
 
-* `ContinuousLinearMap.index_comp`: the index of a composite is the sum of the indices.
 * `ContinuousLinearMap.IsFredholm.pow`: every power of a Fredholm endomorphism is Fredholm.
 * `ContinuousLinearMap.index_pow`: the index of the `n`th power is `n` times the index.
 
-The conventions and the composition theorem follow McDuff--Salamon,
-*J-holomorphic Curves and Symplectic Topology*, Appendix A.1.
+The conventions follow McDuff--Salamon, *J-holomorphic Curves and Symplectic Topology*,
+Appendix A.1.
 -/
 
 public section
@@ -41,25 +34,6 @@ namespace TauCeti
 open Module
 
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
-variable {E F G : Type*}
-variable [NormedAddCommGroup E] [NormedSpace 𝕜 E]
-variable [NormedAddCommGroup F] [NormedSpace 𝕜 F]
-variable [NormedAddCommGroup G] [NormedSpace 𝕜 G]
-
-
-omit [CompleteSpace 𝕜] in
-/-- The Fredholm index is additive under composition. -/
-@[simp]
-theorem _root_.ContinuousLinearMap.index_comp (S : F →L[𝕜] G) (T : E →L[𝕜] F)
-    (hS : ContinuousLinearMap.IsFredholm S) (hT : ContinuousLinearMap.IsFredholm T) :
-    ContinuousLinearMap.index (S.comp T) = ContinuousLinearMap.index S + ContinuousLinearMap.index T
-      := by
-  let := hT.finite_ker
-  let := hT.finite_coker
-  let := hS.finite_ker
-  let := hS.finite_coker
-  simpa only [ContinuousLinearMap.index_def, ContinuousLinearMap.toLinearMap_comp] using
-    (LinearMap.index_comp (f := (T : E →ₗ[𝕜] F)) (S : F →ₗ[𝕜] G))
 
 
 section Pow
@@ -89,8 +63,10 @@ theorem _root_.ContinuousLinearMap.index_pow (A : X →L[𝕜] X) (hA : Continuo
       simp only [pow_zero, ContinuousLinearMap.one_def, ContinuousLinearMap.index_id, Nat.cast_zero,
         zero_mul]
   | succ n ih =>
-      rw [pow_succ, ContinuousLinearMap.mul_def,
-        ContinuousLinearMap.index_comp (A ^ n) A (hA.pow n) hA, ih]
+      have hcomp : ContinuousLinearMap.index ((A ^ n).comp A) =
+          ContinuousLinearMap.index (A ^ n) + ContinuousLinearMap.index A := by
+        simpa only [ContinuousLinearMap.index_def] using (hA.pow n).index_comp hA
+      rw [pow_succ, ContinuousLinearMap.mul_def, hcomp, ih]
       push_cast
       ring
 
