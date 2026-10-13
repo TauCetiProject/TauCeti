@@ -22,9 +22,11 @@ Combined with the tower rule for linear independence, a family that is linearly 
 the simple extension `k⟮x⟯` stays linearly independent over `k` after multiplying by arbitrary
 powers of a transcendental element `x`.
 
-The finite-power statement is the source of dimension growth in the theory of algebraic function
-fields: multiplying a basis of `F / k⟮x⟯` by the powers `1, x, …, xⁿ` exhibits `(n + 1) [F : k(x)]`
-functions that are independent over `k` and whose poles are controlled by those of `x`.
+The finite-power statement supplies dimension growth in the theory of algebraic function fields:
+when `[F : k(x)]` is finite, multiplying a basis of `F / k⟮x⟯` by the powers `1, x, …, xⁿ`
+exhibits `(n + 1) [F : k(x)]` functions that are independent over `k`. Pole bounds for these
+functions depend on the poles of `x` together with the fixed poles of the chosen basis elements.
+The statements below assert linear independence; the valuation estimates are separate.
 
 ## Main results
 

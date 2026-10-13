@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.TensorProduct.RightExactness
 public import Mathlib.RingTheory.Flat.Basic
 public import TauCeti.Algebra.Coalgebra.Subcomodule.Basic
 
@@ -15,8 +14,8 @@ public import TauCeti.Algebra.Coalgebra.Subcomodule.Basic
 This file adds inverse images of subcomodules under comodule morphisms. If
 `f : M → N` is a morphism of right comodules and `B ≤ N` is a subcomodule, then
 `B.comap f` has underlying submodule `B.toSubmodule.comap f`. Stability under the
-coaction follows by applying tensor-product right exactness to the quotient map
-`N → N / B`.
+coaction follows because tensoring with the flat `R`-module `C` preserves the kernel of
+the composite `M → N → N / B`.
 
 Subobjects of representations need both images and inverse images: kernels,
 finite-subcomodule constructions and the dictionary between representations and comodules
@@ -36,7 +35,7 @@ are built from them.
 
 The construction is the standard inverse image of a subcomodule; see Sweedler,
 *Hopf Algebras*, Chapter 2. The exactness step reuses Mathlib's
-`TensorProduct.rTensor_exact` and `LinearMap.exact_subtype_ker_map`.
+`Module.Flat.rTensor_exact` and `LinearMap.exact_subtype_ker_map`.
 -/
 
 public section
@@ -55,61 +54,6 @@ variable [AddCommMonoid N] [Module R N] [Comodule R C N]
 
 namespace Subcomodule
 
-private theorem ker_rangeRestrict_mkQ_comp {M₁ : Type w} {N₁ : Type x}
-    [AddCommGroup M₁] [Module R M₁] [AddCommGroup N₁] [Module R N₁]
-    (B : Submodule R N₁) (f : M₁ →ₗ[R] N₁) :
-    LinearMap.ker (B.mkQ.comp f).rangeRestrict = B.comap f := by
-  ext m
-  simp [LinearMap.mem_ker, Submodule.mem_comap]
-
-omit [Coalgebra R C] [Comodule R C M] [Comodule R C N] in
-private theorem rTensor_rangeRestrict_eq_zero_of_rTensor_eq_zero {M₁ : Type w} {N₁ : Type x}
-    [AddCommGroup M₁] [Module R M₁] [AddCommGroup N₁] [Module R N₁]
-    {B : Submodule R N₁} {f : M₁ →ₗ[R] N₁} {t : M₁ ⊗[R] C}
-    (h : LinearMap.rTensor C (B.mkQ.comp f) t = 0) :
-    LinearMap.rTensor C (B.mkQ.comp f).rangeRestrict t = 0 := by
-  let : AddCommGroup C := Module.addCommMonoidToAddCommGroup R (M := C)
-  apply Module.Flat.rTensor_preserves_injective_linearMap
-    (LinearMap.range (B.mkQ.comp f)).subtype Subtype.val_injective
-  calc
-    LinearMap.rTensor C (LinearMap.range (B.mkQ.comp f)).subtype
-        (LinearMap.rTensor C (B.mkQ.comp f).rangeRestrict t)
-      = (LinearMap.rTensor C (LinearMap.range (B.mkQ.comp f)).subtype ∘ₗ
-          LinearMap.rTensor C (B.mkQ.comp f).rangeRestrict) t := rfl
-    _ = LinearMap.rTensor C
-          ((LinearMap.range (B.mkQ.comp f)).subtype.comp (B.mkQ.comp f).rangeRestrict) t := by
-          rw [← LinearMap.rTensor_comp]
-    _ = LinearMap.rTensor C (B.mkQ.comp f) t := by
-          rfl
-    _ = 0 := h
-
-omit [Coalgebra R C] [Comodule R C M] [Comodule R C N] in
-private theorem tensor_mem_range_comap {M₁ : Type w} {N₁ : Type x}
-    [AddCommGroup M₁] [Module R M₁] [AddCommGroup N₁] [Module R N₁]
-    (B : Submodule R N₁) (f : M₁ →ₗ[R] N₁)
-    {t : M₁ ⊗[R] C} (h : LinearMap.rTensor C (B.mkQ.comp f) t = 0) :
-    t ∈ LinearMap.range
-      (TensorProduct.map (B.comap f).subtype (LinearMap.id : C →ₗ[R] C)) := by
-  let : AddCommGroup C := Module.addCommMonoidToAddCommGroup R (M := C)
-  let g : M₁ →ₗ[R] LinearMap.range (B.mkQ.comp f) := (B.mkQ.comp f).rangeRestrict
-  have hker : LinearMap.ker g = B.comap f :=
-    ker_rangeRestrict_mkQ_comp (M₁ := M₁) (N₁ := N₁) B f
-  have hg : Function.Surjective g := by
-    rw [← LinearMap.range_eq_top]
-    exact LinearMap.range_rangeRestrict (B.mkQ.comp f)
-  have hexact : Function.Exact (LinearMap.ker g).subtype g :=
-    LinearMap.exact_subtype_ker_map g
-  have ht : t ∈ LinearMap.ker (LinearMap.rTensor C g) := by
-    rw [LinearMap.mem_ker]
-    exact rTensor_rangeRestrict_eq_zero_of_rTensor_eq_zero (R := R) (C := C)
-      (M₁ := M₁) (N₁ := N₁) h
-  have ht' :
-      t ∈ LinearMap.range (LinearMap.rTensor C (LinearMap.ker g).subtype) := by
-    simpa [Function.Exact.linearMap_ker_eq (rTensor_exact C hexact hg)] using ht
-  rw [← hker]
-  rw [LinearMap.rTensor_def] at ht'
-  simpa using ht'
-
 private theorem coact_mem_range_comap_toLinearMap (f : Comodule.Hom R C M N) (B : Subcomodule R C N)
     {m : M} (hm : m ∈ B.toSubmodule.comap f.toLinearMap) :
     Comodule.coact (R := R) (C := C) (M := M) m ∈
@@ -119,24 +63,24 @@ private theorem coact_mem_range_comap_toLinearMap (f : Comodule.Hom R C M N) (B 
   let : AddCommGroup C := Module.addCommMonoidToAddCommGroup R (M := C)
   let : AddCommGroup M := Module.addCommMonoidToAddCommGroup R (M := M)
   let : AddCommGroup N := Module.addCommMonoidToAddCommGroup R (M := N)
-  refine tensor_mem_range_comap (R := R) (C := C) (M₁ := M) (N₁ := N)
-    B.toSubmodule f.toLinearMap ?_
+  -- Flatness identifies tensors of the inverse image with the kernel of the tensor map.
+  have hexact := Module.Flat.rTensor_exact C
+    (LinearMap.exact_subtype_ker_map (B.toSubmodule.mkQ.comp f.toLinearMap))
+  have hker : LinearMap.ker (B.toSubmodule.mkQ.comp f.toLinearMap) =
+      B.toSubmodule.comap f.toLinearMap := by
+    rw [LinearMap.ker_comp, Submodule.ker_mkQ]
+  rw [← LinearMap.rTensor_def, ← hker, ← hexact.linearMap_ker_eq, LinearMap.mem_ker]
   rw [LinearMap.rTensor_comp_apply]
-  rw [LinearMap.rTensor_def, LinearMap.rTensor_def]
-  rw [Comodule.Hom.map_coact_apply f m]
-  -- The preceding rewrites expose the quotient-after-coaction calculation.  The public
-  -- `Subcomodule` API is monoid-level, while the tensor exactness proof temporarily uses the
-  -- additive-group instances derived from the `R`-module structures; this `change` is only the
-  -- resulting `rTensor`/`TensorProduct.map` wrapper conversion.
-  change LinearMap.rTensor C B.toSubmodule.mkQ
-    (Comodule.coact (R := R) (C := C) (M := N) (f.toLinearMap m)) = 0
+  simp only [LinearMap.rTensor_def, Comodule.Hom.map_coact_apply]
   rcases B.coact_mem hm with ⟨t, ht⟩
+  simp only [Comodule.Hom.coe_toLinearMap] at ht
   rw [← ht]
+  -- The quotient uses the derived additive-group instances, whereas `coact_mem` uses the
+  -- original monoid instances; this converts their tensor-map wrappers to `rTensor`.
   change LinearMap.rTensor C B.carrier.mkQ
     (LinearMap.rTensor C B.carrier.subtype t) = 0
   rw [← LinearMap.mem_ker, rTensor_mkQ]
-  exact
-    (LinearMap.mem_range_self (LinearMap.rTensor C B.carrier.subtype) t)
+  exact LinearMap.mem_range_self (LinearMap.rTensor C B.carrier.subtype) t
 
 /-- The inverse image of a subcomodule under a comodule morphism. -/
 @[expose] def comap (B : Subcomodule R C N) (f : Comodule.Hom R C M N) : Subcomodule R C M where
@@ -222,7 +166,6 @@ theorem comap_comap {P : Type y} [AddCommMonoid P] [Module R P] [Comodule R C P]
   rfl
 
 /-- The inverse image along the identity comodule morphism is the original subcomodule. -/
-@[simp]
 theorem comap_id (B : Subcomodule R C M) :
     B.comap (Comodule.Hom.id R C M) = B := by
   ext m

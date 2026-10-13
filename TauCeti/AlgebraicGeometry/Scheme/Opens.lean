@@ -20,6 +20,9 @@ This file records general-purpose facts about open subsets of schemes.
   structure-sheaf sections along the affine chart `Spec Γ(X, U)`.
 * `AlgebraicGeometry.Scheme.Hom.appLE_eq_id_of_eq_id` identifies the restriction maps of a scheme
   endomorphism equal to the identity.
+* `AlgebraicGeometry.IsAffineOpen.fromSpec_appLE_self` and
+  `AlgebraicGeometry.Scheme.Hom.appLE_ΓSpecIso_hom_naturality` compute the global sections of
+  affine charts `Spec R ⟶ X` and their precomposites with `Spec.map φ`.
 -/
 
 open TopologicalSpace AlgebraicGeometry
@@ -60,6 +63,29 @@ theorem _root_.AlgebraicGeometry.IsAffineOpen.presheaf_map_fromSpec_appIso_hom
     Iso.inv_hom_id, Category.comp_id, Scheme.Hom.appLE, hU.fromSpec_app_self, Category.assoc,
     ← Functor.map_comp]
   rfl
+
+/-- Pulling a section over an affine open `U` back to all of `Spec Γ(X, U)` along `hU.fromSpec`
+is the inverse of the global-sections isomorphism of `Spec`. -/
+theorem _root_.AlgebraicGeometry.IsAffineOpen.fromSpec_appLE_self (hU : IsAffineOpen U)
+    (e : ⊤ ≤ hU.fromSpec ⁻¹ᵁ U) :
+    hU.fromSpec.appLE U ⊤ e = (Scheme.ΓSpecIso Γ(X, U)).inv := by
+  rw [Scheme.Hom.appLE, hU.fromSpec_app_self, Category.assoc, ← Functor.map_comp]
+  exact (congrArg _ ((congrArg _ (Subsingleton.elim _ _)).trans
+    ((Spec Γ(X, U)).presheaf.map_id _))).trans (Category.comp_id _)
+
+/-- Global sections of an affine chart `f : Spec R ⟶ Y` are natural in `R`: precomposing `f` with
+`Spec.map φ` turns the induced map `Γ(Y, V) ⟶ R` into its composite with `φ`. -/
+theorem _root_.AlgebraicGeometry.Scheme.Hom.appLE_ΓSpecIso_hom_naturality {R S : CommRingCat.{u}}
+    {Y : Scheme.{u}} (f : Spec R ⟶ Y) {q : Spec S ⟶ Y} (φ : R ⟶ S) (h : q = Spec.map φ ≫ f)
+    {V : Y.Opens} (e : ⊤ ≤ f ⁻¹ᵁ V) (e' : ⊤ ≤ q ⁻¹ᵁ V) :
+    q.appLE V ⊤ e' ≫ (Scheme.ΓSpecIso S).hom =
+      (f.appLE V ⊤ e ≫ (Scheme.ΓSpecIso R).hom) ≫ φ := by
+  subst h
+  -- `Scheme.Hom.appLE_eq_app` at `⊤` applies because `Spec.map φ ⁻¹ᵁ ⊤` is `⊤` by definition.
+  have h : (Spec.map φ ≫ f).appLE V ⊤ e' = f.appLE V ⊤ e ≫ (Spec.map φ).appTop :=
+    (Scheme.Hom.appLE_comp_appLE (Spec.map φ) f V ⊤ ⊤ e le_top).symm.trans
+      (congrArg (f.appLE V ⊤ e ≫ ·) (Scheme.Hom.appLE_eq_app (Spec.map φ) (U := ⊤)))
+  rw [h, Category.assoc, Category.assoc, Scheme.ΓSpecIso_naturality]
 
 end
 

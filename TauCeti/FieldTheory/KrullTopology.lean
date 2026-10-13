@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Data.Matrix.Basic
 public import Mathlib.FieldTheory.KrullTopology
 public import Mathlib.Topology.LocallyConstant.Basic
 import Mathlib.Topology.Algebra.OpenSubgroup
@@ -25,6 +26,8 @@ asks for; `TauCeti.unitsCoeff_continuousSMul` is that consequence for a separabl
 
 * `IsIntegral.isLocallyConstant_apply`: for `x` integral over `K`, the orbit map
   `σ ↦ σ x` on `Gal(L/K)` is locally constant.
+* `Matrix.isLocallyConstant_map`: the orbit map of a finite matrix with integral entries is
+  locally constant.
 * `Units.stabilizer_isOpen_of_isIntegral`: the stabilizer of a unit of `L` whose underlying
   element is integral over `K` is open in `Gal(L/K)`.
 * `IntermediateField.isOpen_ker_comp_restrictNormalHom`: an additive homomorphism from
@@ -49,6 +52,16 @@ theorem IsIntegral.isLocallyConstant_apply {x : L} (hx : IsIntegral K x) :
   simp only [smul_eq_mul, AlgEquiv.mul_apply]
   rw [(IntermediateField.mem_fixingSubgroup_iff _ _).1 hτ x
     (IntermediateField.mem_adjoin_simple_self K x)]
+
+/-- **The orbit map of a finite matrix with integral entries is locally constant** for the Krull
+topology: `σ ↦ M.map σ`, the entrywise action of `Gal(L/K)` on `M`, is locally constant. -/
+theorem Matrix.isLocallyConstant_map {m n : Type*} [Finite m] [Finite n]
+    {M : Matrix m n L} (hM : ∀ i j, IsIntegral K (M i j)) :
+    IsLocallyConstant fun σ : Gal(L/K) ↦ M.map σ := by
+  refine (IsLocallyConstant.iff_eventually_eq _).2 fun σ₀ ↦ ?_
+  filter_upwards [Filter.eventually_all.2 fun i ↦ Filter.eventually_all.2 fun j ↦
+    (IsLocallyConstant.iff_eventually_eq _).1 (hM i j).isLocallyConstant_apply σ₀] with σ hσ
+  exact Matrix.ext fun i j ↦ hσ i j
 
 /-- The stabilizer of a unit whose underlying element is integral over `K` is open for the
 Krull topology. The extension `L/K` may be transcendental. -/

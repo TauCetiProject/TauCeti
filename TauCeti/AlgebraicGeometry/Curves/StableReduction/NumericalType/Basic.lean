@@ -276,6 +276,17 @@ lemma multiplicity_mul_weight_le_of_pos {i j : T.Component} (hij : 0 < T.interse
   (mul_le_mul_of_nonneg_left (Int.le_of_dvd hij (T.weight_dvd i j))
     (Int.natCast_nonneg _)).trans (T.multiplicity_mul_intersection_le i j)
 
+/-- Two components that meet have intersection number `aᵢⱼ = wᵢα = wⱼβ` for positive integers `α`
+and `β`. -/
+lemma exists_intersection_eq_weight_mul {i j : T.Component} (h : 0 < T.intersection i j) :
+    ∃ α β : ℤ, 0 < α ∧ 0 < β ∧
+      T.intersection i j = T.weight i * α ∧ T.intersection i j = T.weight j * β := by
+  obtain ⟨α, hα⟩ := T.weight_dvd i j
+  obtain ⟨β, hβ⟩ := T.weight_dvd j i
+  rw [T.intersection_comm j i] at hβ
+  exact ⟨α, β, pos_of_mul_pos_right (hα ▸ h) (Int.natCast_nonneg _),
+    pos_of_mul_pos_right (hβ ▸ h) (Int.natCast_nonneg _), hα, hβ⟩
+
 /-! ### Numerical types with one component -/
 
 /-- A numerical type with a single component has zero intersection matrix

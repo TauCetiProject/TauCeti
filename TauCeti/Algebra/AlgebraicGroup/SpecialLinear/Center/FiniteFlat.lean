@@ -38,9 +38,6 @@ finite flat but nonreduced, exactly as the group-scheme statement requires.
 
 * J. S. Milne, *Algebraic Groups* (2017), Examples 2.4 and 5.49, and §21.4.
 * W. C. Waterhouse, *Introduction to Affine Group Schemes*, Chapter 3.
-
-This advances Layer 6, "Reductive and semisimple groups", of the ReductiveGroups roadmap: it
-supplies the finite flat center needed for the `SLₙ` central-isogeny and adjoint-form example.
 -/
 
 public section

@@ -301,7 +301,7 @@ theorem weightUnipotentInclusion_def (w : Fin N → ℤ) :
     weightUnipotentInclusion R w =
       CommHopfAlgCat.quotientSpecι (coordinateHopfAlgebra R N)
           (weightUnipotentDefiningHopfIdeal R w) ≫
-        (eqToIso (groupScheme_def R N).symm).hom := by
+        eqToHom (groupScheme_def R N).symm := by
   rw [weightUnipotentInclusion, hopfIdealInclusion_def]
 
 /-- The weight-unipotent inclusion into `GL_N` is a closed immersion. -/
@@ -312,7 +312,7 @@ instance isClosedImmersion_weightUnipotentInclusion (w : Fin N → ℤ) :
 
 /-- The subgroup cut out by the weight-unipotent ideal consists exactly of matrices whose
 `(i,j)` entry agrees with the identity matrix whenever `w i ≤ w j`. -/
-@[simp]
+@[simp↓]
 theorem mem_weightUnipotentDefiningPointsSubgroup_iff (w : Fin N → ℤ)
     {A : Type*} [CommRing A] [Algebra R A]
     (g : HopfAlgebra.points (R := R) (H := coordinateHopfAlgebra R N)
