@@ -8,10 +8,8 @@ module
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.NonsingularReduction
 public import TauCeti.AlgebraicGeometry.EllipticCurve.TateAlgorithm.Terminal
 public import Mathlib.FieldTheory.Perfect
--- Proof-only: the singular point of the reduction is unique.
-import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Singular
--- Proof-only: Step 2 of Tate's algorithm, reduction singular at the origin.
-import TauCeti.AlgebraicGeometry.EllipticCurve.TateAlgorithm.Basic
+-- Proof-only: the points with singular reduction when the reduction is singular at the origin.
+import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.SingularReduction
 -- Proof-only: index two from the sums of points outside a subgroup.
 import TauCeti.GroupTheory.Index.Two
 -- Proof-only: Hensel's lemma for a polynomial that is not monic.
@@ -66,9 +64,6 @@ The cases `c_v = 1` are `WeierstrassCurve.Affine.nonsingularReduction_eq_top_of_
 
 ## Main results
 
-* `WeierstrassCurve.Affine.some_notMem_nonsingularReduction_iff`: when the reduction is singular
-  at the origin, an affine point has singular reduction exactly when both of its coordinates lie in
-  the maximal ideal.
 * `WeierstrassCurve.Affine.add_mem_nonsingularReduction_of_nonsplit` and
   `WeierstrassCurve.Affine.index_nonsingularReduction_dvd_two_of_nonsplit`: when the tangent
   quadratic at the singular point has no root in the residue field, the sum of two points with
@@ -117,35 +112,6 @@ variable {F Γ₀ : Type*} [Field F] [LinearOrderedCommGroupWithZero Γ₀] (v :
   {W : Affine F} [IsIntegral v.valuationSubring W]
 
 variable [DecidableEq F]
-
-/-- **When the reduction is singular at the origin, the points with singular reduction are the
-affine points with both coordinates in the maximal ideal.** Here `a₃`, `a₄` and `a₆` of the
-integral model lie in the maximal ideal, and `(x, y)` lies outside `E₀(F)` exactly when `v x < 1`
-and `v y < 1`. -/
-theorem some_notMem_nonsingularReduction_iff
-    (h₃ : (integralModel v.valuationSubring W).a₃ ∈ maximalIdeal v.valuationSubring)
-    (h₄ : (integralModel v.valuationSubring W).a₄ ∈ maximalIdeal v.valuationSubring)
-    (h₆ : (integralModel v.valuationSubring W).a₆ ∈ maximalIdeal v.valuationSubring)
-    {x y : F} (h : W.Nonsingular x y) :
-    Point.some x y h ∉ W.nonsingularReduction v ↔ v x < 1 ∧ v y < 1 := by
-  have h0 := (map_residue_isSingular_zero_iff (integralModel v.valuationSubring W)).2 ⟨h₆, h₄, h₃⟩
-  constructor
-  · intro hn
-    have hx : v x ≤ 1 := not_lt.1 fun hx ↦
-      hn (mem_nonsingularReduction_of_one_lt v (by rwa [Point.xCoord_some]))
-    rw [some_mem_nonsingularReduction_iff v h hx] at hn
-    have hy := valuation_y_le_one_of_valuation_x_le_one v h.left hx
-    have hE := ((equation_integralModel_iff v (x := ⟨x, (v.mem_valuationSubring_iff x).mpr hx⟩)
-      (y := ⟨y, (v.mem_valuationSubring_iff y).mpr hy⟩)).2 h.left).map (residue _)
-    obtain ⟨hx0, hy0⟩ := eq_of_isSingular_of_isSingular
-      (isSingular_iff_equation_and_not_nonsingular.2 ⟨hE, hn⟩) h0
-    exact ⟨(Valuation.mem_maximalIdeal_iff (v := v)).1 ((residue_eq_zero_iff _).1 hx0),
-      (Valuation.mem_maximalIdeal_iff (v := v)).1 ((residue_eq_zero_iff _).1 hy0)⟩
-  · rintro ⟨hx, hy⟩ hm
-    rw [some_mem_nonsingularReduction_iff v h hx.le,
-      (residue_eq_zero_iff _).2 ((Valuation.mem_maximalIdeal_iff (v := v)).2 hx),
-      (residue_eq_zero_iff _).2 ((Valuation.mem_maximalIdeal_iff (v := v)).2 hy)] at hm
-    exact (isSingular_iff_equation_and_not_nonsingular.1 h0).2 hm
 
 /-- If two points and their sum all have singular reduction, at a reduction singular at the
 origin, then the line through the two points has an integral slope `ℓ` whose residue is a root of

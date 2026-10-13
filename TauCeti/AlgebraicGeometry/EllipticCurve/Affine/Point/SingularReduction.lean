@@ -10,6 +10,8 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Singular
 public import TauCeti.AlgebraicGeometry.EllipticCurve.NodePolynomial
 
 import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Formula.VariableChange
+-- Proof-only: the reduction is singular at the origin exactly when `a₃, a₄, a₆ ∈ 𝔪`.
+import TauCeti.AlgebraicGeometry.EllipticCurve.TateAlgorithm.Basic
 import TauCeti.AlgebraicGeometry.EllipticCurve.VariableChange
 
 /-!
@@ -49,6 +51,9 @@ In each case Tate's algorithm reports the local index `1` (Silverman, *Advanced 
 Table 4.1), and the theorems here show that `E₀(F) = W(F)` there, for an arbitrary valuation and
 without completeness.
 
+When the reduction is singular at the origin, that is `a₃, a₄, a₆ ∈ 𝔪`, the points outside `E₀(F)`
+are the affine points `(x, y)` with `x, y ∈ 𝔪`, since the singular point of `W_k` is unique.
+
 ## Main results
 
 * `WeierstrassCurve.Δ_mem_maximalIdeal_sq_of_isSingular`: over a local ring, a solution
@@ -62,6 +67,9 @@ without completeness.
 * `WeierstrassCurve.Affine.nonsingularReduction_eq_top_of_Δ_notMem`,
   `WeierstrassCurve.Affine.nonsingularReduction_eq_top_of_not_splits` and
   `WeierstrassCurve.Affine.nonsingularReduction_eq_top_of_a₆_notMem`: the three criteria above.
+* `WeierstrassCurve.Affine.some_notMem_nonsingularReduction_iff`: when the reduction is singular
+  at the origin, an affine point has singular reduction exactly when both of its coordinates lie in
+  the maximal ideal.
 
 ## References
 
@@ -278,6 +286,40 @@ theorem nonsingularReduction_eq_top_of_a₆_notMem
     W.nonsingularReduction v = ⊤ :=
   nonsingularReduction_eq_top_of_forall_not_isSingular v fun _ _ hE hs ↦
     h (a₆_mem_maximalIdeal_sq_of_isSingular _ h₃ h₄ h₆ hE hs)
+
+/-! ### Points with singular reduction -/
+
+-- `↓`: tried before `simp` rewrites the membership inside `∉` with
+-- `mem_nonsingularReduction_iff`, after which this left-hand side no longer matches.
+/-- **When the reduction is singular at the origin, the points with singular reduction are the
+affine points with both coordinates in the maximal ideal.** Here `a₃`, `a₄` and `a₆` of the
+integral model lie in the maximal ideal, and `(x, y)` lies outside `E₀(F)` exactly when `v x < 1`
+and `v y < 1`. -/
+@[simp↓]
+theorem some_notMem_nonsingularReduction_iff
+    (h₃ : (integralModel v.valuationSubring W).a₃ ∈ maximalIdeal v.valuationSubring)
+    (h₄ : (integralModel v.valuationSubring W).a₄ ∈ maximalIdeal v.valuationSubring)
+    (h₆ : (integralModel v.valuationSubring W).a₆ ∈ maximalIdeal v.valuationSubring)
+    {x y : F} (h : W.Nonsingular x y) :
+    Point.some x y h ∉ W.nonsingularReduction v ↔ v x < 1 ∧ v y < 1 := by
+  have h0 := (map_residue_isSingular_zero_iff (integralModel v.valuationSubring W)).2 ⟨h₆, h₄, h₃⟩
+  constructor
+  · intro hn
+    have hx : v x ≤ 1 := not_lt.1 fun hx ↦
+      hn (mem_nonsingularReduction_of_one_lt v (by rwa [Point.xCoord_some]))
+    rw [some_mem_nonsingularReduction_iff v h hx] at hn
+    have hy := valuation_y_le_one_of_valuation_x_le_one v h.left hx
+    have hE := ((equation_integralModel_iff v (x := ⟨x, (v.mem_valuationSubring_iff x).mpr hx⟩)
+      (y := ⟨y, (v.mem_valuationSubring_iff y).mpr hy⟩)).2 h.left).map (residue _)
+    obtain ⟨hx0, hy0⟩ := eq_of_isSingular_of_isSingular
+      (isSingular_iff_equation_and_not_nonsingular.2 ⟨hE, hn⟩) h0
+    exact ⟨(Valuation.mem_maximalIdeal_iff (v := v)).1 ((residue_eq_zero_iff _).1 hx0),
+      (Valuation.mem_maximalIdeal_iff (v := v)).1 ((residue_eq_zero_iff _).1 hy0)⟩
+  · rintro ⟨hx, hy⟩ hm
+    rw [some_mem_nonsingularReduction_iff v h hx.le,
+      (residue_eq_zero_iff _).2 ((Valuation.mem_maximalIdeal_iff (v := v)).2 hx),
+      (residue_eq_zero_iff _).2 ((Valuation.mem_maximalIdeal_iff (v := v)).2 hy)] at hm
+    exact (isSingular_iff_equation_and_not_nonsingular.1 h0).2 hm
 
 end Affine
 

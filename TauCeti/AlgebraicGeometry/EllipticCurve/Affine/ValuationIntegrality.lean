@@ -253,6 +253,7 @@ theorem valuation_y_sq_eq_valuation_x_cube {x y : F} (hxy : W.Equation x y) (hx 
     valuation_rhs_eq (W := W) v hx]
 
 /-- **An integral solution of `W` is a solution of its integral model**, and conversely. -/
+@[simp]
 theorem equation_integralModel_iff {x y : v.valuationSubring} :
     (integralModel v.valuationSubring W).toAffine.Equation x y ↔ W.Equation x y := by
   have h : ((integralModel v.valuationSubring W).baseChange F).toAffine.Equation x y ↔
