@@ -20,10 +20,10 @@ arbitrary finite numbering only to break ties. Thus the mathematical property of
 does not depend on the tie-breaker: `orderedWeight_lt_of_eq_add_nsmul` proves that every positive
 weight shift moves strictly towards the beginning.
 
-The final results apply this construction to the existing triangularity API. In particular,
-`range_kostantRootSubgroupMatrix_le_upperUnitriangular_orderedWeightBasis` places each root
-subgroup whose root has positive degree in the upper-unitriangular group without retaining an
-ordering hypothesis.
+The final results apply this construction to the triangularity API. In particular,
+`range_kostantRootSubgroupMatrix_le_upperUnitriangular_orderedWeightBasis` places each root subgroup
+whose root has positive degree in the upper-unitriangular group without retaining an ordering
+hypothesis.
 
 ## Main definitions
 
@@ -44,10 +44,6 @@ ordering hypothesis.
 
 * J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*, §§21, 26--27.
 * R. W. Carter, *Simple Groups of Lie Type*, §§4.4 and 8.2.
-
-This supplies the ordered positive-root basis needed by the Borel component of the pinned
-Chevalley--Demazure construction in Layer 9 of `TauCetiRoadmap/ReductiveGroups/README.md`, which
-is consumed by milestone L0 of `TauCetiRoadmap/CFSGStatement/README.md`.
 -/
 
 public section

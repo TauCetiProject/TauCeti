@@ -38,6 +38,8 @@ public section
 
 namespace TauCeti.Hodge
 
+open IsBaseChange
+
 universe u v w
 
 variable {Vℤ : Type u} {Vℚ : Type v} {Vℂ : Type w}
@@ -121,10 +123,10 @@ theorem inducedForm_apply (x y : integralSubmodule ιℚ W.WQ) :
 
 /-- The complexification of the restricted integral form is the restriction of the ambient
 complex polarizing form. -/
-theorem integralFormBaseChange_inducedForm :
-    integralFormBaseChange (isBaseChange_integralSubmoduleToComplex hℚ hℂ W.WQ)
+theorem bilinForm_inducedForm :
+    bilinForm (isBaseChange_integralSubmoduleToComplex hℚ hℂ W.WQ)
         (W.inducedForm P) = P.Q.restrict (rationalToComplexSubmodule hℚ hℂ W.WQ) := by
-  apply (integralFormBaseChange_unique _ _ _ fun x y ↦ ?_).symm
+  apply (bilinForm_unique _ _ _ fun x y ↦ ?_).symm
   simp [inducedForm]
 
 /-- The restricted integral form is nondegenerate. -/
@@ -174,10 +176,10 @@ noncomputable def inducedPolarization :
       simpa [inducedForm] using P.isPolarization.symm_weight (x : Vℤ) (y : Vℤ)
     nondegenerate := W.inducedForm_nondegenerate P
     orthogonal := fun p x hx y hy ↦ by
-      rw [integralFormBaseChange_inducedForm]
+      rw [bilinForm_inducedForm]
       exact P.Q_orthogonal p (by simpa using hx) (by simpa using hy)
     positive := fun p x hx hx0 ↦ by
-      rw [integralFormBaseChange_inducedForm]
+      rw [bilinForm_inducedForm]
       simpa only [LinearMap.BilinForm.restrict_apply, LinearMap.domRestrict_apply,
         coe_latticeConj_integralSubmoduleToComplex] using
         P.Q_positive p (by simpa using hx) (Subtype.coe_ne_coe.mpr hx0) }
@@ -193,7 +195,7 @@ form. -/
 theorem inducedPolarization_Q :
     (W.inducedPolarization P).Q =
       P.Q.restrict (rationalToComplexSubmodule hℚ hℂ W.WQ) := by
-  rw [Polarization.Q_def, inducedPolarization_Qint, integralFormBaseChange_inducedForm]
+  rw [Polarization.Q_def, inducedPolarization_Qint, bilinForm_inducedForm]
 
 /-- A rational Hodge substructure of a polarizable pure Hodge structure is polarizable. -/
 theorem isPolarizable_hodgeStructure (hpol : IsPolarizable hℂ hs) :

@@ -49,16 +49,7 @@ Nothing here uses representation theory: the statement is about the class algebr
 over any commutative ring `k`. In the Burnside--Dixon--Schneider algorithm it is the step that turns
 a computed common eigenrow of the (integer, hence reducible mod `p`) matrices `Mᵢ` back into a
 central character; that identification of the algebra homomorphisms with the central characters of
-the irreducible representations is a separate statement, belonging to the layer that constructs
-central characters.
-
-## References
-
-This is the milestone `normalized_eigenrow_iff_algHom` of Layer 5 of the
-[character theory roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/CharacterTheory/README.md)
-and its
-[suggested declarations](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/CharacterTheory/Suggested.lean),
-stated over a general commutative ring and with the algebra homomorphism produced as a `def`.
+the irreducible representations is a separate statement, not made here.
 -/
 
 public section
