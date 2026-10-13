@@ -65,6 +65,16 @@ theorem cTransformSymmExtended_apply (c : X × Y → EReal) (ψ : Y → EReal) (
 theorem cTransformSymmExtended_eq_cTransformExtended (c : X × Y → EReal) (ψ : Y → EReal) :
     cTransformSymmExtended c ψ = cTransformExtended (fun z : Y × X ↦ c (z.2, z.1)) ψ := (rfl)
 
+/-- Each source point bounds the extended-cost transform at each target point. -/
+theorem cTransformExtended_le (c : X × Y → EReal) (φ : X → EReal) (x : X) (y : Y) :
+    cTransformExtended c φ y ≤ AddQuantale.rightAddResiduation (φ x) (c (x, y)) :=
+  iInf_le _ x
+
+/-- Each target point bounds the symmetric extended-cost transform at each source point. -/
+theorem cTransformSymmExtended_le (c : X × Y → EReal) (ψ : Y → EReal) (x : X) (y : Y) :
+    cTransformSymmExtended c ψ x ≤ AddQuantale.rightAddResiduation (ψ y) (c (x, y)) :=
+  iInf_le _ y
+
 /-- A lower bound for the transform is exactly a feasible constant partner at this target point. -/
 theorem le_cTransformExtended_apply_iff :
     a ≤ cTransformExtended c φ y ↔ ∀ x, φ x + a ≤ c (x, y) := by
@@ -214,9 +224,11 @@ theorem cTransformSymmExtended_top (ψ : Y → EReal) :
     cTransformSymmExtended (fun _ : X × Y ↦ ⊤) ψ = fun _ ↦ ⊤ :=
   funext fun _ ↦ cTransformSymmExtended_eq_top (fun _ ↦ rfl) ψ
 
+open scoped Classical in
 /-- The zero-diagonal, infinite-off-diagonal barrier transforms every potential to its negative. -/
-theorem cTransformExtended_diagonal [DecidableEq X] (φ : X → EReal) :
+theorem cTransformExtended_diagonal (φ : X → EReal) :
     cTransformExtended (fun z : X × X ↦ if z.1 = z.2 then 0 else ⊤) φ = fun x ↦ -φ x := by
+  classical
   funext x
   apply le_antisymm
   · exact (iInf_le _ x).trans_eq
