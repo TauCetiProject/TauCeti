@@ -62,7 +62,8 @@ an elliptic curve over a general base.
 ## Main definitions
 
 * `WeierstrassCurve.toLegendre`: the change of variables to Legendre form with scaling `u`,
-  centred at a point of order two.
+  centred at a point of order two; it commutes with base change
+  (`WeierstrassCurve.toLegendre_map`).
 * `WeierstrassCurve.UniversalLegendre.Ring`, `WeierstrassCurve.UniversalLegendre.curve`: the ring
   `ℤ[1/2][λ, 1/λ(λ - 1)]` and the universal Legendre curve over it.
 * `WeierstrassCurve.UniversalLegendre.lift`: the classifying homomorphism
@@ -258,6 +259,21 @@ variable (h2 : IsUnit (2 : R)) (u : Rˣ)
 
 @[simp] theorem toLegendre_t : (W.toLegendre h2 u x₁ y₁).t = y₁ := (rfl)
 
+/-- **Legendre form commutes with base change.** The image of `toLegendre` under a ring
+homomorphism `φ` is the change of variables to Legendre form of `W.map φ` with scaling `φ u` and
+centre `(φ x₁, φ y₁)`, where `2` is again a unit since it is the image of `2` under `φ`. -/
+theorem toLegendre_map {A : Type*} [CommRing A] (φ : R →+* A) :
+    (W.toLegendre h2 u x₁ y₁).map φ =
+      (W.map φ).toLegendre (map_ofNat φ 2 ▸ h2.map φ) (Units.map φ u) (φ x₁) (φ y₁) := by
+  have e (h : IsUnit (2 : A)) : Units.map (φ : R →* A) h2.unit = h.unit :=
+    Units.ext <| by simp [map_ofNat]
+  ext : 1
+  · rfl
+  · rfl
+  · simp only [VariableChange.map, toLegendre_s, ← e, Units.coe_map_inv, MonoidHom.coe_ofClass,
+      map_mul, map_neg, map_a₁]
+  · rfl
+
 variable {W}
 
 /-- **Existence of Legendre form.** Let `(x₁, y₁)` and `(x₂, y₂)` be points of `W` at which `ψ₂`
@@ -303,8 +319,9 @@ theorem toLegendre_smul (h₁ : W.toAffine.Equation x₁ y₁) (h₂ : W.toAffin
   · rw [variableChange_a₆, freyCurve_a₆, toLegendre_u, toLegendre_r, toLegendre_t]
     linear_combination -(↑u⁻¹ : R) ^ 6 * h₁
 
-/-- The change of variables `toLegendre` carries the second point `(x₂, y₂)` of order two to the
-point `(1, 0)` of the Legendre form: `u² · 1 + r = x₂` and `u³ · 0 + u² s · 1 + t = y₂`. -/
+/-- If `ψ₂` vanishes at the coordinate pairs `(x₁, y₁)` and `(x₂, y₂)` and `x₂ - x₁ = u²`, the
+change of variables `toLegendre` with centre `(x₁, y₁)` carries `(x₂, y₂)` to `(1, 0)`:
+`u² · 1 + r = x₂` and `u³ · 0 + u² s · 1 + t = y₂`. Neither pair need lie on `W`. -/
 theorem toLegendre_one_zero (hψ₁ : W.ψ₂.evalEval x₁ y₁ = 0) (hψ₂ : W.ψ₂.evalEval x₂ y₂ = 0)
     (hu : x₂ - x₁ = u ^ 2) :
     ((W.toLegendre h2 u x₁ y₁).u : R) ^ 2 + (W.toLegendre h2 u x₁ y₁).r = x₂ ∧
