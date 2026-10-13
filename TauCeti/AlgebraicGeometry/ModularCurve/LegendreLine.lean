@@ -171,6 +171,13 @@ theorem lift_lambda (x : S) (hx : IsUnit x) (hx₁ : IsUnit (x - 1)) :
     lift (R := R) x hx hx₁ (lambda R) = x :=
   AdjoinRoot.liftAlgHom_root _ _ _ _
 
+/-- The map `TauCeti.LegendreRing.lift` sends the coordinate `u` to `(x² - x + 1)³ / (x (x - 1))²`.
+This is not `@[simp]`: `simp` rewrites `algebraMap R[X] (LegendreRing R)` to `AdjoinRoot.of`. -/
+theorem lift_algebraMap_X (x : S) (hx : IsUnit x) (hx₁ : IsUnit (x - 1)) :
+    lift (R := R) x hx hx₁ (algebraMap R[X] (LegendreRing R) X) =
+      (x ^ 2 - x + 1) ^ 3 * ↑(hx.mul hx₁).unit⁻¹ ^ 2 := by
+  rw [AdjoinRoot.algebraMap_eq, lift, AdjoinRoot.liftAlgHom_of, aeval_X]
+
 /-- Two `R`-algebra maps out of the Legendre ring agree once they agree on `λ`. -/
 @[ext]
 theorem algHom_ext {φ ψ : LegendreRing R →ₐ[R] S} (h : φ (lambda R) = ψ (lambda R)) : φ = ψ := by
@@ -254,8 +261,11 @@ private noncomputable def invAlgHom : LegendreRing R →ₐ[R] LegendreRing R :=
     rw [h]
     exact ((Units.isUnit _).mul (isUnit_lambda_sub_one R)).neg)
 
-private theorem lambda_mul_invAlgHom_lambda : lambda R * invAlgHom R (lambda R) = 1 := by
+private theorem invAlgHom_lambda : invAlgHom R (lambda R) = ↑(isUnit_lambda R).unit⁻¹ := by
   rw [invAlgHom, lift_lambda]
+
+private theorem lambda_mul_invAlgHom_lambda : lambda R * invAlgHom R (lambda R) = 1 := by
+  rw [invAlgHom_lambda]
   exact (isUnit_lambda R).mul_val_inv
 
 private theorem invAlgHom_algebraMap_X :
@@ -298,6 +308,10 @@ noncomputable def invAut : LegendreRing R ≃ₐ[R[X]] LegendreRing R :=
 @[simp]
 theorem oneSubAut_lambda : oneSubAut R (lambda R) = 1 - lambda R :=
   oneSubAlgHom_lambda R
+
+@[simp]
+theorem invAut_lambda : invAut R (lambda R) = ↑(isUnit_lambda R).unit⁻¹ :=
+  invAlgHom_lambda R
 
 theorem lambda_mul_invAut_lambda : lambda R * invAut R (lambda R) = 1 :=
   lambda_mul_invAlgHom_lambda R
