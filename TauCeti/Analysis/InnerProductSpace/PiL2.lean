@@ -128,8 +128,9 @@ def consEquivL (n : ℕ) : (𝕜 × EuclideanSpace 𝕜 (Fin n)) ≃L[𝕜] Eucl
     ((Fin.consEquivL 𝕜 fun _ => 𝕜).trans (EuclideanSpace.equiv (Fin (n + 1)) 𝕜).symm)
 
 theorem consEquivL_apply {n : ℕ} (z : 𝕜 × EuclideanSpace 𝕜 (Fin n)) :
-    consEquivL 𝕜 n z = WithLp.toLp 2 (Fin.cons z.1 (WithLp.ofLp z.2)) :=
-  (rfl)
+    consEquivL 𝕜 n z = WithLp.toLp 2 (Fin.cons z.1 (WithLp.ofLp z.2)) := by
+  ext i
+  simp [consEquivL, Fin.consEquivL_apply, PiLp.coe_continuousLinearEquiv]
 
 @[simp]
 theorem consEquivL_apply_zero {n : ℕ} (z : 𝕜 × EuclideanSpace 𝕜 (Fin n)) :
