@@ -306,10 +306,10 @@ theorem cubicalTensorModelPresentation_coord (X : TopCat.{u} × TopCat.{u}) (n :
     (cubicalTensorModelPresentation.{u} k).coord X n = cubicalTensorCoord k X n :=
   (rfl)
 
-variable (k) in
 /-- The simplicial singular chains of the product of the two spaces, as a functor on pairs of
 spaces. -/
-abbrev singularChainsProduct : TopCat.{u} × TopCat.{u} ⥤ ChainComplex (ModuleCat.{u} k) ℕ :=
+abbrev singularChainsProduct (k : Type u) [Ring k] :
+    TopCat.{u} × TopCat.{u} ⥤ ChainComplex (ModuleCat.{u} k) ℕ :=
   MonoidalCategory.tensor TopCat.{u} ⋙ singularChains k
 
 /-- The product of two cubes is contractible. -/
@@ -320,7 +320,7 @@ instance (p q : ℕ) :
 
 /-- **The simplicial singular chains of the product are acyclic on any family of models whose
 products are contractible.** -/
-theorem isAcyclicOnMulti_singularChainsProduct (k : Type u) [CommRing k] {ι : ℕ → Type*}
+theorem isAcyclicOnMulti_singularChainsProduct (k : Type u) [Ring k] {ι : ℕ → Type*}
     (M : ∀ n, ι n → TopCat.{u} × TopCat.{u})
     [∀ n i, ContractibleSpace ((MonoidalCategory.tensor TopCat.{u}).obj (M n i))] :
     AcyclicModels.IsAcyclicOnMulti (singularChainsProduct k) M
