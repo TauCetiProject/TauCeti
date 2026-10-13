@@ -74,19 +74,16 @@ theorem linearIndependent_kummerClass_rat_primes {ι : Type*} (p : ι → ℕ)
     LinearIndependent (ZMod 2)
       (fun i ↦ kummerClass (Units.mk0 (p i : ℚ) (Nat.cast_ne_zero.mpr (hp i).ne_zero))) := by
   classical
-  rw [linearIndependent_iff_finset_linearIndependent]
-  intro S
-  simp only [Function.comp_def]
   rw [linearIndependent_kummerClass_iff]
   intro T hT hsq
   have hval := isSquare_units_val_iff.2 hsq
   simp only [Units.coe_prod, Units.val_mk0] at hval
   exact Multiquadratic.not_isSquare_prod_primes_of_injective
-    (fun i : S ↦ p i) (fun i ↦ hp i) (hinj.comp Subtype.val_injective) T hT hval
+    p hp hinj T hT hval
 
 /-- The classes of `2` and `3` are independent; in particular the square-root characters
 of `ℚ(√2)` and `ℚ(√3)` give two independent continuous cohomology classes. -/
-example : LinearIndependent (ZMod 2)
+theorem linearIndependent_kummerClass_two_three : LinearIndependent (ZMod 2)
     (fun i : Fin 2 ↦ kummerClass
       (Units.mk0 ((![2, 3] : Fin 2 → ℕ) i : ℚ) (by fin_cases i <;> norm_num))) := by
   apply linearIndependent_kummerClass_rat_primes
