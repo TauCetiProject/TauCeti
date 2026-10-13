@@ -19,6 +19,10 @@ symmetric linear map equals Mathlib's continuous functional calculus of the corr
 operator. The symbol may be any real function: the spectrum is finite, so its restriction is
 continuous. This lets explicit spectral sums and the abstract calculus share the same operator,
 in particular when comparing square-root constructions.
+
+The central matrix comparison is `Matrix.IsHermitian.cfc_eq` from
+`Mathlib.Analysis.Matrix.HermitianFunctionalCalculus`, by Jon Bannon and Jireh Loreaux.
+This file transports that result to symmetric operators through an orthonormal basis.
 -/
 
 public section
