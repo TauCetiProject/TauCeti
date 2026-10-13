@@ -6,6 +6,7 @@ Authors: Chris Birkbeck
 module
 
 public import TauCeti.RingTheory.Valuation.CofinalIdeal.Greatest
+public import TauCeti.RingTheory.Valuation.Continuous.Basic
 public import TauCeti.RingTheory.Valuation.RestrictToConvex
 
 /-!
@@ -37,6 +38,10 @@ The point-level map on `Spv A` that Wedhorn's retraction `r_I` is built from liv
 * `Valuation.restrictToIdeal_le_iff` : how restricted values compare, totally.
 * `Valuation.restrictToIdeal_ne_zero_of_le` : the restriction keeps every value above a
   kept value.
+* `Valuation.restrictToIdeal_lt_restrictToIdeal_iff` : below a kept value, the restriction
+  compares exactly as `v` does.
+* `Valuation.IsContinuous.restrictToIdeal` : the restriction of a continuous valuation is
+  continuous.
 * `Valuation.exists_mem_restrictToIdeal_ne_zero` : **Wedhorn Lemma 7.5(3)**, that the
   restriction does not vanish identically on `I` unless `v` does.
 * `Valuation.restrictToIdeal_ne_zero_of_isAdmissible` : it does not kill a denominator
@@ -431,6 +436,19 @@ theorem restrictToIdeal_ne_zero_of_le (v : Valuation A Γ₀) (I : Ideal A)
       ⟨_, mem_characteristicGenerators.mpr ⟨h1.le, a, v.restrict_eq_mk ha0⟩,
         Left.inv_le_self h1.le, le_rfl⟩
 
+/-- **Strict comparison below a kept value.** If the restriction keeps `b`, then `a` lies strictly
+below `b` after restriction exactly when it does under `v`: a value discarded by the restriction
+was already below `v b`, by `restrictToIdeal_ne_zero_of_le`. -/
+theorem restrictToIdeal_lt_restrictToIdeal_iff (v : Valuation A Γ₀) (I : Ideal A)
+    (hfg : ∃ J : Ideal A, J.FG ∧ I.radical = J.radical) {a b : A}
+    (hb : v.restrictToIdeal I hfg b ≠ 0) :
+    v.restrictToIdeal I hfg a < v.restrictToIdeal I hfg b ↔ v a < v b := by
+  rw [← not_le, ← not_le, restrictToIdeal_le_iff]
+  refine ⟨fun h hba ↦ h (Or.inr ⟨restrictToIdeal_ne_zero_of_le v I hfg hb hba, hba⟩), ?_⟩
+  rintro h (h0 | ⟨-, hba⟩)
+  · exact hb h0
+  · exact h hba
+
 /-- **Wedhorn Lemma 7.5(3).** If `v` does not vanish identically on `I`, neither does its
 restriction: `v(I) ≠ 0` implies `r_I(v)(I) ≠ 0`, so `I` is not contained in the support of the
 restricted valuation. This is the form Wedhorn's Theorem 7.10 consumes. -/
@@ -487,5 +505,15 @@ theorem restrictToIdeal_ne_zero_of_isAdmissible (v : Valuation A Γ₀) (I : Ide
       (characteristicSubgroupOfIdeal_eq_top_iff hfg).mpr
         (Or.inl fun a ha ↦ cofinalValueFor_top_iff.mp (cofinalValueFor_of_eq_zero (hne a ha)))
     exact restrictToIdeal_ne_zero_of_mem v I hfg hu0 (htop ▸ ConvexSubgroup.mem_top) hRu
+
+/-- **The restriction of a continuous valuation is continuous.** Below a kept value the
+restriction compares exactly as `v` does (`restrictToIdeal_lt_restrictToIdeal_iff`), so each set
+`{a | v|cΓ_v(I) (a) < v|cΓ_v(I) (b)}` cutting out continuity is the open set
+`{a | v a < v b}`. -/
+theorem IsContinuous.restrictToIdeal [TopologicalSpace A] {v : Valuation A Γ₀}
+    (hv : v.IsContinuous) (I : Ideal A) (hfg : ∃ J : Ideal A, J.FG ∧ I.radical = J.radical) :
+    (v.restrictToIdeal I hfg).IsContinuous := by
+  refine (isContinuous_iff_forall_ne_zero _).mpr fun b hb ↦ ?_
+  simpa only [restrictToIdeal_lt_restrictToIdeal_iff v I hfg hb] using isContinuous_def.mp hv b
 
 end Valuation
