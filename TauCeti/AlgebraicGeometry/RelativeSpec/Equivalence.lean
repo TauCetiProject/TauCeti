@@ -16,8 +16,9 @@ over it. The functors are `relativeSpec` and `affineFunctions`, the latter takin
 pushforward of the structure sheaf. The unit identifies an algebra with functions on its
 relative spectrum; the counit recovers an affine morphism from its function algebra.
 
-The affine chart formulas show that these existing comparisons satisfy the triangle identities.
-Thus the equivalence retains both comparisons without changing the unit by adjointification.
+The triangle identities make these recovery isomorphisms compatible with both functors.
+The anti-equivalence allows questions about affine schemes over the base to be translated into
+questions about quasi-coherent commutative algebras, with the direction of morphisms reversed.
 
 ## References
 
