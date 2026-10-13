@@ -106,25 +106,66 @@ theorem homotopyCategory_mem_distTriang_iff
 
 variable {C n}
 
-/-- On the stable image of a chain map, the comparison is its homotopy class, up to the
-identifications of objects. -/
-private lemma splitStableToHomotopy_map_projectiveStableFunctor_map
-    {X Y : CochainComplex C (ZMod n)} (f : X ⟶ Y) :
-    (F).map ((E).projectiveStableFunctor.map f) =
-      eqToHom (ExactStructure.homologicalComplexSplitStableToHomotopy_obj C _ _ X) ≫
-        (HomotopyCategory.quotient C (ComplexShape.up (ZMod n))).map f ≫
-          eqToHom (ExactStructure.homologicalComplexSplitStableToHomotopy_obj C _ _ Y).symm := by
-  rw [← cancel_mono (eqToHom (ExactStructure.homologicalComplexSplitStableToHomotopy_obj C _ _ Y)),
-    ExactStructure.homologicalComplexSplitStableToHomotopy_map]
-  simp
+section MappingCone
+
+omit [HasZeroObject C]
+
+/-- The mapping-cone triangle of a periodic chain map in the homotopy category. Its last
+morphism is the negative cone projection, followed by the quotient's shift comparison. -/
+@[expose, implicit_reducible]
+noncomputable def mappingConeTriangle {X Y : CochainComplex C (ZMod n)} (f : X ⟶ Y) :
+    Triangle (HomotopyCategory C (ComplexShape.up (ZMod n))) :=
+  (HomotopyCategory.quotient C (ComplexShape.up (ZMod n))).mapTriangle.obj
+    (Triangle.mk f (homotopyCofiber.inr f) (-coneProjection f))
+
+/-- The first vertex of the mapping-cone triangle is the source's homotopy class. -/
+@[simp]
+theorem mappingConeTriangle_obj₁ {X Y : CochainComplex C (ZMod n)} (f : X ⟶ Y) :
+    (mappingConeTriangle f).obj₁ =
+      (HomotopyCategory.quotient C (ComplexShape.up (ZMod n))).obj X := rfl
+
+/-- The second vertex of the mapping-cone triangle is the target's homotopy class. -/
+@[simp]
+theorem mappingConeTriangle_obj₂ {X Y : CochainComplex C (ZMod n)} (f : X ⟶ Y) :
+    (mappingConeTriangle f).obj₂ =
+      (HomotopyCategory.quotient C (ComplexShape.up (ZMod n))).obj Y := rfl
+
+/-- The third vertex of the mapping-cone triangle is the cone's homotopy class. -/
+@[simp]
+theorem mappingConeTriangle_obj₃ {X Y : CochainComplex C (ZMod n)} (f : X ⟶ Y) :
+    (mappingConeTriangle f).obj₃ =
+      (HomotopyCategory.quotient C (ComplexShape.up (ZMod n))).obj (homotopyCofiber f) := rfl
+
+/-- The first arrow of the mapping-cone triangle is the original chain map's homotopy class. -/
+@[simp]
+theorem mappingConeTriangle_mor₁ {X Y : CochainComplex C (ZMod n)} (f : X ⟶ Y) :
+    (mappingConeTriangle f).mor₁ =
+      (HomotopyCategory.quotient C (ComplexShape.up (ZMod n))).map f := rfl
+
+/-- The second arrow of the mapping-cone triangle is the cone inclusion's homotopy class. -/
+@[simp]
+theorem mappingConeTriangle_mor₂ {X Y : CochainComplex C (ZMod n)} (f : X ⟶ Y) :
+    (mappingConeTriangle f).mor₂ =
+      (HomotopyCategory.quotient C (ComplexShape.up (ZMod n))).map (homotopyCofiber.inr f) := rfl
+
+/-- The third arrow of the mapping-cone triangle is minus the cone projection, with the
+quotient's shift comparison. -/
+@[simp]
+theorem mappingConeTriangle_mor₃ {X Y : CochainComplex C (ZMod n)} (f : X ⟶ Y) :
+    (mappingConeTriangle f).mor₃ =
+      (HomotopyCategory.quotient C (ComplexShape.up (ZMod n))).map (-coneProjection f) ≫
+        ((HomotopyCategory.quotient C (ComplexShape.up (ZMod n))).commShiftIso (1 : ℤ)).hom.app X :=
+  rfl
+
+end MappingCone
 
 /-- **Mapping-cone triangles are distinguished.** For a morphism `f : X ⟶ Y` of periodic
 complexes, the image in the homotopy category of the triangle
 `X ⟶ Y ⟶ cone(f) ⟶ X⟦1⟧`, whose last map is minus the cone projection, is distinguished. -/
 theorem mappingCone_mem_distTriang {X Y : CochainComplex C (ZMod n)} (f : X ⟶ Y) :
-    (HomotopyCategory.quotient C (ComplexShape.up (ZMod n))).mapTriangle.obj
-        (Triangle.mk f (homotopyCofiber.inr f) (-coneProjection f)) ∈
+    mappingConeTriangle f ∈
       distTriang (HomotopyCategory C (ComplexShape.up (ZMod n))) := by
+  dsimp only [mappingConeTriangle]
   let := (hE).stableHasShift
   let := (hE).stableShiftFunctor_additive
   let := (hE).stablePretriangulated
@@ -132,8 +173,10 @@ theorem mappingCone_mem_distTriang {X Y : CochainComplex C (ZMod n)} (f : X ⟶ 
   have := stableToHomotopy_isTriangulated C n
   refine isomorphic_distinguished _ ((F).map_distinguished _ (mappingCone_distinguished f)) _ ?_
   refine Triangle.isoMk _ _ (eqToIso (by simp)) (eqToIso (by simp)) (eqToIso (by simp)) ?_ ?_ ?_
-  · simp [splitStableToHomotopy_map_projectiveStableFunctor_map]
-  · simp [splitStableToHomotopy_map_projectiveStableFunctor_map]
+  · simp [← Functor.comp_map, Functor.congr_hom
+      (ExactStructure.projectiveStableFunctor_comp_homologicalComplexSplitStableToHomotopy C _ _)]
+  · simp [← Functor.comp_map, Functor.congr_hom
+      (ExactStructure.projectiveStableFunctor_comp_homologicalComplexSplitStableToHomotopy C _ _)]
   · simp only [Triangle.mk_obj₁, Triangle.mk_obj₃, Functor.mapTriangle_obj, Triangle.mk_mor₃,
       eqToIso.hom, stableToHomotopyCommShift_iso_one, Iso.trans_hom, NatTrans.comp_app,
       Functor.isoWhiskerRight_hom, Functor.whiskerRight_app, splitStableShiftObjIso_hom,
@@ -143,7 +186,9 @@ theorem mappingCone_mem_distTriang {X Y : CochainComplex C (ZMod n)} (f : X ⟶ 
     -- The identity is typed at the image of the shifted complex, which is the displayed codomain
     -- of the cone projection only definitionally.
     erw [Category.comp_id]
-    simp [splitStableToHomotopy_map_projectiveStableFunctor_map, eqToHom_map]
+    simp [← Functor.comp_map, Functor.congr_hom
+      (ExactStructure.projectiveStableFunctor_comp_homologicalComplexSplitStableToHomotopy
+        C _ _), eqToHom_map]
 
 /-- **The triangulation of the periodic homotopy category is the mapping-cone triangulation.**
 A triangle is distinguished exactly when it is isomorphic to the image of a mapping-cone triangle
@@ -151,17 +196,15 @@ A triangle is distinguished exactly when it is isomorphic to the image of a mapp
 theorem mem_distTriang_iff (T : Triangle (HomotopyCategory C (ComplexShape.up (ZMod n)))) :
     T ∈ distTriang (HomotopyCategory C (ComplexShape.up (ZMod n))) ↔
       ∃ (X Y : CochainComplex C (ZMod n)) (f : X ⟶ Y),
-        Nonempty (T ≅ (HomotopyCategory.quotient C (ComplexShape.up (ZMod n))).mapTriangle.obj
-          (Triangle.mk f (homotopyCofiber.inr f) (-coneProjection f))) := by
+        Nonempty (T ≅ mappingConeTriangle f) := by
   refine ⟨fun hT ↦ ?_, fun ⟨X, Y, f, ⟨e⟩⟩ ↦
     isomorphic_distinguished _ (mappingCone_mem_distTriang f) _ e⟩
   obtain ⟨X, hX⟩ := HomotopyCategory.quotient_obj_surjective T.obj₁
   obtain ⟨Y, hY⟩ := HomotopyCategory.quotient_obj_surjective T.obj₂
   obtain ⟨f, hf⟩ := (HomotopyCategory.quotient C (ComplexShape.up (ZMod n))).map_surjective
     (eqToHom hX ≫ T.mor₁ ≫ eqToHom hY.symm)
-  obtain ⟨e, -, -⟩ := exists_iso_of_arrow_iso _ _ hT (mappingCone_mem_distTriang f)
-    (Arrow.isoMk (eqToIso hX.symm) (eqToIso hY.symm) (by simp [hf]))
-  exact ⟨X, Y, f, ⟨e⟩⟩
+  exact ⟨X, Y, f, ⟨(isoTriangleOfIso₁₂ _ _ (mappingCone_mem_distTriang f) hT
+    (eqToIso hX) (eqToIso hY) (by simp [hf])).symm⟩⟩
 
 
 end TauCeti.PeriodicComplex
