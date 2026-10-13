@@ -28,7 +28,7 @@ with passing to the opposite algebra, and composes in stages:
   distributing scalar extension over a tensor product.
 * `TauCeti.Algebra.TensorProduct.baseChangeTensorAlgEquiv`:
   `L ⊗[K] (A ⊗[K] B) ≃ₐ[L] (L ⊗[K] A) ⊗[L] (L ⊗[K] B)`;
-* `Algebra.TensorProduct.mulBaseChange`: the map
+* `TauCeti.Algebra.mulBaseChange`: the map
   `(L ⊗[K] A) ⊗[K] (L ⊗[K] B) →ₐ[L] L ⊗[K] (A ⊗[K] B)` multiplying the scalar factors;
 * `TauCeti.Algebra.TensorProduct.baseChangeOpAlgEquiv`: `L ⊗[K] Aᵐᵒᵖ ≃ₐ[L] (L ⊗[K] A)ᵐᵒᵖ`;
 * `TauCeti.Algebra.TensorProduct.baseChangeTowerAlgEquiv`:
@@ -135,29 +135,37 @@ theorem baseChangeTensorAlgEquiv_toLinearEquiv :
     (baseChangeTensorAlgEquiv K L A B).toLinearEquiv =
       _root_.TensorProduct.AlgebraTensorModule.distribBaseChange K L A B := (rfl)
 
+end Algebra.TensorProduct
+
+namespace Algebra
+
+open TauCeti.Algebra.TensorProduct (baseChangeTensorAlgEquiv baseChangeTensorAlgEquiv_toLinearEquiv)
+
+variable (K L A B : Type*) [CommSemiring K] [CommSemiring L] [Algebra K L]
+  [Semiring A] [Algebra K A] [Semiring B] [Algebra K B]
+
 /-- Tensoring two scalar extensions over the original base and multiplying their scalar
 factors. This factors through the tensor product over `L`, followed by the inverse of
-`baseChangeTensorAlgEquiv`. The algebras `A` and `B` need not be commutative. -/
-noncomputable def _root_.Algebra.TensorProduct.mulBaseChange :
+`TauCeti.Algebra.TensorProduct.baseChangeTensorAlgEquiv`. The algebras `A` and `B` need not be
+commutative. -/
+noncomputable def mulBaseChange :
     (L ⊗[K] A) ⊗[K] (L ⊗[K] B) →ₐ[L] L ⊗[K] (A ⊗[K] B) :=
   (baseChangeTensorAlgEquiv K L A B).symm.toAlgHom.comp
     (Algebra.TensorProduct.mapOfCompatibleSMul L K L _ _)
 
-open _root_.Algebra.TensorProduct (mulBaseChange)
-
 /-- Multiplying the scalar factors of a pure tensor. -/
 @[simp]
-theorem _root_.Algebra.TensorProduct.mulBaseChange_tmul (l₁ l₂ : L) (a : A) (b : B) :
+theorem mulBaseChange_tmul (l₁ l₂ : L) (a : A) (b : B) :
     mulBaseChange K L A B ((l₁ ⊗ₜ a) ⊗ₜ (l₂ ⊗ₜ b)) = (l₁ * l₂) ⊗ₜ (a ⊗ₜ b) := by
   simp [mulBaseChange]
 
 variable {K L A B} in
 /-- Multiplying scalar factors agrees with the inverse distribution of scalar extension,
 after changing the tensor-product base from `K` to `L`. -/
-theorem _root_.TensorProduct.distribBaseChange_symm_tmul
+theorem _root_.TensorProduct.mulBaseChange_tmul_eq_distribBaseChange_symm
     (u : L ⊗[K] A) (v : L ⊗[K] B) :
-    (TensorProduct.AlgebraTensorModule.distribBaseChange K L A B).symm (u ⊗ₜ[L] v) =
-      mulBaseChange K L A B (u ⊗ₜ[K] v) := by
+    mulBaseChange K L A B (u ⊗ₜ[K] v) =
+      (TensorProduct.AlgebraTensorModule.distribBaseChange K L A B).symm (u ⊗ₜ[L] v) := by
   simp only [mulBaseChange, AlgHom.comp_apply,
     Algebra.TensorProduct.mapOfCompatibleSMul_tmul, AlgEquiv.coe_toAlgHom,
     ← baseChangeTensorAlgEquiv_toLinearEquiv, ← AlgEquiv.toLinearEquiv_symm,
@@ -173,6 +181,13 @@ theorem _root_.AlgHom.map_comp_mulBaseChange {L' : Type*} [CommSemiring L'] [Alg
         (Algebra.TensorProduct.map (Algebra.TensorProduct.map f (AlgHom.id K A))
           (Algebra.TensorProduct.map f (AlgHom.id K B))) := by
   ext <;> simp [Algebra.TensorProduct.one_def]
+
+end Algebra
+
+namespace Algebra.TensorProduct
+
+variable (K L A B : Type*) [CommSemiring K] [CommSemiring L] [Algebra K L]
+  [Semiring A] [Algebra K A] [Semiring B] [Algebra K B]
 
 /-- Distributing scalar extension in both tensor factors commutes with interchanging the
 middle two factors of a fourfold tensor product, as an equality of algebra maps. -/

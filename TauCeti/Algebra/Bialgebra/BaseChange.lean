@@ -56,7 +56,8 @@ public section
 
 open scoped TensorProduct
 
-open Algebra.TensorProduct (map mulBaseChange)
+open Algebra.TensorProduct (map)
+open TauCeti.Algebra (mulBaseChange)
 
 section ScalarExtension
 
@@ -91,8 +92,8 @@ theorem _root_.AlgHom.map_comp_comulAlgHom_baseChange_iff (F : T ⊗[R] H →ₐ
     induction y using TensorProduct.inductionOn with
     | add y y' hy hy' => simp only [TensorProduct.tmul_add, map_add, hy, hy']
     | tmul x y =>
-      rw [Algebra.TensorProduct.map_tmul, ← TensorProduct.distribBaseChange_symm_tmul,
-        LinearEquiv.apply_symm_apply]
+      rw [Algebra.TensorProduct.map_tmul,
+        TensorProduct.mulBaseChange_tmul_eq_distribBaseChange_symm, LinearEquiv.apply_symm_apply]
       simp [f]
   -- both sides are determined by their values on `1 ⊗ h`, computed by `key` and
   -- `comulAlgHom_baseChange`

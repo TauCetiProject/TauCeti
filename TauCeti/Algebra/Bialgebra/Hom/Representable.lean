@@ -71,7 +71,8 @@ public noncomputable section
 
 open scoped TensorProduct
 
-open Algebra.TensorProduct (map mulBaseChange)
+open Algebra.TensorProduct (map)
+open TauCeti.Algebra (mulBaseChange)
 
 namespace TauCeti.Bialgebra
 
