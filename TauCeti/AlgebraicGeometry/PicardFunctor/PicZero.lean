@@ -39,7 +39,9 @@ Every field-valued fibre of a smooth proper geometrically connected family of cu
 curve, so for such `f` the fibre degree is additive at every point
 (`relativePicardFiberDegree_mul_of_smooth`) and the degree-zero subfunctor is closed under
 products and inverses (`mul_mem_relativePicardDegreeZeroSubfunctor_obj`,
-`inv_mem_relativePicardDegreeZeroSubfunctor_obj`). For a scheme over a field which is not a
+`inv_mem_relativePicardDegreeZeroSubfunctor_obj`). It is then a presheaf of commutative groups
+`relativePicardDegreeZeroFunctor`, with inclusion `relativePicardDegreeZeroFunctorι` into the
+relative Picard presheaf. For a scheme over a field which is not a
 proper curve, `LineBundleClass.eulerDegree` takes the same junk values as the truncated Euler
 characteristic `Scheme.Modules.eulerCharBelow`; the definitions here make sense in general, but
 they are only the degree and `Pic⁰` for families of curves. Local constancy of the degree in flat
@@ -63,6 +65,9 @@ families and representability are not treated here.
 * `TauCeti.AlgebraicGeometry.mul_mem_relativePicardDegreeZeroSubfunctor_obj`,
   `TauCeti.AlgebraicGeometry.inv_mem_relativePicardDegreeZeroSubfunctor_obj`: for a smooth proper
   geometrically connected family of curves, it is closed under products and inverses.
+* `TauCeti.AlgebraicGeometry.relativePicardDegreeZeroFunctor`: for such a family, `Pic⁰_{X/S}`
+  as a presheaf of commutative groups, with inclusion
+  `TauCeti.AlgebraicGeometry.relativePicardDegreeZeroFunctorι` into the relative Picard presheaf.
 
 ## References
 
@@ -172,6 +177,26 @@ lemma relativePicardFiberDegree_one {T : (Over S)ᵒᵖ} {Ω : Type u} [Field Ω
       rw [relativePicardFiberDegree_mk, LineBundleClass.pullback_one,
         LineBundleClass.eulerDegree_one]
 
+/-- Additivity of the fibre degree at `ξ : Spec Ω ⟶ T` on `Pic(X_T) / Pic(T)` reduces to
+additivity of the degree on the fibre `Spec Ω ×_S X`. -/
+private lemma relativePicardFiberDegree_mul_of_baseChangeEulerDegree_mul {T : (Over S)ᵒᵖ}
+    {Ω : Type u} [Field Ω] (ξ : Spec (.of Ω) ⟶ T.unop.left)
+    (h : ∀ a b : LineBundleClass (pullback (ξ ≫ T.unop.hom) f),
+      baseChangeEulerDegree f (ξ ≫ T.unop.hom) (a * b) =
+        baseChangeEulerDegree f (ξ ≫ T.unop.hom) a + baseChangeEulerDegree f (ξ ≫ T.unop.hom) b)
+    (c d : (relativePicardPresheaf f).obj T) :
+    relativePicardFiberDegree f ξ (c * d) =
+      relativePicardFiberDegree f ξ c + relativePicardFiberDegree f ξ d := by
+  obtain ⟨a, rfl⟩ := QuotientGroup.mk_surjective c
+  obtain ⟨b, rfl⟩ := QuotientGroup.mk_surjective d
+  -- The product in `(relativePicardPresheaf f).obj T` is the product of the quotient group.
+  calc relativePicardFiberDegree f ξ (QuotientGroup.mk a * QuotientGroup.mk b :
+          (relativePicardPresheaf f).obj T) =
+        relativePicardFiberDegree f ξ (QuotientGroup.mk (a * b)) := rfl
+    _ = _ := by
+      simp only [relativePicardFiberDegree_mk_eq_fiberDegree, fiberDegree,
+        LineBundleClass.pullback_mul, h]
+
 /-- **The fibre degree is additive on a fibre which is a curve.** If the fibre
 `X_ξ = Spec Ω ×_S X` over `ξ : Spec Ω ⟶ T` is a proper integral curve over `Ω` whose
 codimension-one local rings are discrete valuation rings and whose `H¹(X_ξ, 𝒪)` is
@@ -189,20 +214,11 @@ lemma relativePicardFiberDegree_mul {T : (Over S)ᵒᵖ} {Ω : Type u} [Field Ω
     (c d : (relativePicardPresheaf f).obj T) :
     relativePicardFiberDegree f ξ (c * d) =
       relativePicardFiberDegree f ξ c + relativePicardFiberDegree f ξ d := by
-  obtain ⟨a, rfl⟩ := QuotientGroup.mk_surjective c
-  obtain ⟨b, rfl⟩ := QuotientGroup.mk_surjective d
   let _ : (pullback (ξ ≫ T.unop.hom) f).Over (Spec (.of Ω)) := ⟨pullback.fst _ _⟩
   have : IsProper (pullback (ξ ≫ T.unop.hom) f ↘ Spec (.of Ω)) :=
     inferInstanceAs (IsProper (pullback.fst (ξ ≫ T.unop.hom) f))
-  -- The product in `(relativePicardPresheaf f).obj T` is the product of the quotient group.
-  calc relativePicardFiberDegree f ξ (QuotientGroup.mk a * QuotientGroup.mk b :
-          (relativePicardPresheaf f).obj T) =
-        relativePicardFiberDegree f ξ (QuotientGroup.mk (a * b)) := rfl
-    _ = _ := by
-      rw [relativePicardFiberDegree_mk_eq_fiberDegree, relativePicardFiberDegree_mk_eq_fiberDegree,
-        relativePicardFiberDegree_mk_eq_fiberDegree, fiberDegree, fiberDegree, fiberDegree,
-        LineBundleClass.pullback_mul]
-      exact LineBundleClass.eulerDegree_mul Ω hX _ _
+  exact relativePicardFiberDegree_mul_of_baseChangeEulerDegree_mul f ξ
+    (LineBundleClass.eulerDegree_mul Ω hX) c d
 
 /-- **The fibre degree of a family of curves is additive.** For a smooth proper geometrically
 connected morphism `f` of relative dimension one, the fibre degree at every point
@@ -212,18 +228,9 @@ lemma relativePicardFiberDegree_mul_of_smooth [IsProper f] [SmoothOfRelativeDime
     [GeometricallyConnected f] {T : (Over S)ᵒᵖ} {Ω : Type u} [Field Ω]
     (ξ : Spec (.of Ω) ⟶ T.unop.left) (c d : (relativePicardPresheaf f).obj T) :
     relativePicardFiberDegree f ξ (c * d) =
-      relativePicardFiberDegree f ξ c + relativePicardFiberDegree f ξ d := by
-  obtain ⟨a, rfl⟩ := QuotientGroup.mk_surjective c
-  obtain ⟨b, rfl⟩ := QuotientGroup.mk_surjective d
-  -- The product in `(relativePicardPresheaf f).obj T` is the product of the quotient group.
-  calc relativePicardFiberDegree f ξ (QuotientGroup.mk a * QuotientGroup.mk b :
-          (relativePicardPresheaf f).obj T) =
-        relativePicardFiberDegree f ξ (QuotientGroup.mk (a * b)) := rfl
-    _ = _ := by
-      rw [relativePicardFiberDegree_mk_eq_fiberDegree, relativePicardFiberDegree_mk_eq_fiberDegree,
-        relativePicardFiberDegree_mk_eq_fiberDegree, fiberDegree, fiberDegree, fiberDegree,
-        LineBundleClass.pullback_mul]
-      exact LineBundleClass.eulerDegree_mul_fieldValuedBaseChange f Ω _ _ _
+      relativePicardFiberDegree f ξ c + relativePicardFiberDegree f ξ d :=
+  relativePicardFiberDegree_mul_of_baseChangeEulerDegree_mul f ξ
+    (LineBundleClass.eulerDegree_mul_fieldValuedBaseChange f Ω _) c d
 
 /-- For a smooth proper geometrically connected family of curves, the fibre degree of an inverse
 is the negative of the fibre degree. -/
@@ -334,6 +341,69 @@ lemma inv_mem_relativePicardDegreeZeroSubfunctor_obj [IsProper f]
     {c : (relativePicardPresheaf f).obj T} (hc : c ∈ (relativePicardDegreeZeroSubfunctor f).obj T) :
     c⁻¹ ∈ (relativePicardDegreeZeroSubfunctor f).obj T := fun Ω _ _ ξ ↦ by
   rw [relativePicardFiberDegree_inv_of_smooth, hc Ω ξ, neg_zero]
+
+section Smooth
+
+variable [IsProper f] [SmoothOfRelativeDimension 1 f] [GeometricallyConnected f]
+
+/-- For a smooth proper geometrically connected family of curves, `Pic⁰_{X/S}(T)` as a subgroup
+of `Pic(X_T) / Pic(T)`: the classes of degree zero on every geometric fibre, that is the sections
+of `relativePicardDegreeZeroSubfunctor` at `T`. -/
+-- Expose the carrier so `relativePicardDegreeZeroFunctor` can restrict pullback to it.
+@[expose]
+def relativePicardDegreeZeroSubgroup (T : (Over S)ᵒᵖ) :
+    Subgroup ((relativePicardPresheaf f).obj T) where
+  carrier := (relativePicardDegreeZeroSubfunctor f).obj T
+  mul_mem' := mul_mem_relativePicardDegreeZeroSubfunctor_obj f
+  one_mem' := one_mem_relativePicardDegreeZeroSubfunctor_obj f T
+  inv_mem' := inv_mem_relativePicardDegreeZeroSubfunctor_obj f
+
+/-- A section of `T ↦ Pic(X_T) / Pic(T)` lies in the subgroup `Pic⁰_{X/S}(T)` exactly when it is
+a section of the degree-zero subfunctor. -/
+@[simp]
+lemma mem_relativePicardDegreeZeroSubgroup_iff {T : (Over S)ᵒᵖ}
+    {c : (relativePicardPresheaf f).obj T} :
+    c ∈ relativePicardDegreeZeroSubgroup f T ↔ c ∈ (relativePicardDegreeZeroSubfunctor f).obj T :=
+  Iff.rfl
+
+/-- **The degree-zero Picard functor `Pic⁰_{X/S}`** of a smooth proper geometrically connected
+family of curves `f : X ⟶ S`, as a presheaf of commutative groups on schemes over `S`: it sends
+`T` to the subgroup `relativePicardDegreeZeroSubgroup f T` of `Pic(X_T) / Pic(T)`, and a morphism
+over `S` to the restriction of the pullback map of the relative Picard presheaf. -/
+-- Expose the object type so sections can be used as sections of the relative Picard presheaf.
+@[expose]
+def relativePicardDegreeZeroFunctor : (Over S)ᵒᵖ ⥤ CommGrpCat.{u + 1} where
+  obj T := CommGrpCat.of (relativePicardDegreeZeroSubgroup f T)
+  map φ := CommGrpCat.ofHom <|
+    (((relativePicardPresheaf f).map φ).hom.comp (Subgroup.subtype _)).codRestrict _
+      fun c ↦ (relativePicardDegreeZeroSubfunctor f).map φ c.2
+  map_id T := CommGrpCat.ext fun c ↦ Subtype.ext <|
+    ConcreteCategory.congr_hom ((relativePicardPresheaf f).map_id T) c.1
+  map_comp φ ψ := CommGrpCat.ext fun c ↦ Subtype.ext <|
+    ConcreteCategory.congr_hom ((relativePicardPresheaf f).map_comp φ ψ) c.1
+
+/-- The value of the degree-zero Picard functor at `T` is the subgroup `Pic⁰_{X/S}(T)` of
+`Pic(X_T) / Pic(T)`. -/
+lemma relativePicardDegreeZeroFunctor_obj (T : (Over S)ᵒᵖ) :
+    (relativePicardDegreeZeroFunctor f).obj T =
+      CommGrpCat.of (relativePicardDegreeZeroSubgroup f T) :=
+  rfl
+
+/-- The inclusion of the degree-zero Picard functor `Pic⁰_{X/S}` into the relative Picard
+presheaf `T ↦ Pic(X_T) / Pic(T)`, as a morphism of presheaves of commutative groups. -/
+def relativePicardDegreeZeroFunctorι :
+    relativePicardDegreeZeroFunctor f ⟶ relativePicardPresheaf f where
+  app T := CommGrpCat.ofHom (relativePicardDegreeZeroSubgroup f T).subtype
+
+/-- The inclusion `relativePicardDegreeZeroFunctorι` sends a section of `Pic⁰_{X/S}` to itself
+as a section of `T ↦ Pic(X_T) / Pic(T)`. -/
+@[simp]
+lemma relativePicardDegreeZeroFunctorι_app_apply (T : (Over S)ᵒᵖ)
+    (c : relativePicardDegreeZeroSubgroup f T) :
+    (relativePicardDegreeZeroFunctorι f).app T c = (c : (relativePicardPresheaf f).obj T) :=
+  (rfl)
+
+end Smooth
 
 end
 
