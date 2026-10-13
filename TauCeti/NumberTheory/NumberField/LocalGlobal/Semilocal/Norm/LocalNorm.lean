@@ -61,7 +61,7 @@ abbrev infiniteLocalNormMap [_hKL : FiniteDimensional K L] (w : InfinitePlace K)
 /-- `x ∈ Kˣ` is a **local norm at the infinite place `w`** for a finite extension `L/K`: its
 image in Mathlib's completion `K_w` is the norm of a unit of the local étale algebra
 `K_w ⊗[K] L`. -/
-@[expose] def IsInfiniteLocalNorm [FiniteDimensional K L] (w : InfinitePlace K) (x : Kˣ) : Prop :=
+def IsInfiniteLocalNorm [FiniteDimensional K L] (w : InfinitePlace K) (x : Kˣ) : Prop :=
   Units.map (algebraMap K w.Completion).toMonoidHom x ∈ (infiniteLocalNormMap K L w).range
 
 variable [NumberField K]
@@ -76,15 +76,45 @@ abbrev finiteLocalNormMap [_hKL : FiniteDimensional K L] (v : HeightOneSpectrum 
 /-- `x ∈ Kˣ` is a **local norm at the finite place `v`** for a finite extension `L/K`: its image
 in `K_v` is the norm of a unit of the local étale algebra `K_v ⊗[K] L`, which accounts for every
 place of `L` above `v`. -/
-@[expose] def IsFiniteLocalNorm [FiniteDimensional K L] (v : HeightOneSpectrum (𝓞 K)) (x : Kˣ) :
+def IsFiniteLocalNorm [FiniteDimensional K L] (v : HeightOneSpectrum (𝓞 K)) (x : Kˣ) :
     Prop :=
   Units.map (algebraMap K (v.adicCompletion K)).toMonoidHom x ∈ (finiteLocalNormMap K L v).range
 
 /-- `x ∈ Kˣ` is a **local norm everywhere** for a finite extension `L/K`: it is a local norm at
 every finite place and at every infinite place of `K`, complex places included. -/
-@[expose] def IsLocalNormEverywhere [FiniteDimensional K L] (x : Kˣ) : Prop :=
+def IsLocalNormEverywhere [FiniteDimensional K L] (x : Kˣ) : Prop :=
   (∀ v : HeightOneSpectrum (𝓞 K), IsFiniteLocalNorm K L v x) ∧
     ∀ w : InfinitePlace K, IsInfiniteLocalNorm K L w x
+
+section Def
+
+variable {K L} [FiniteDimensional K L]
+
+omit [NumberField K] in
+/-- The defining characterization of `IsInfiniteLocalNorm`: membership in the range of
+`infiniteLocalNormMap`. -/
+theorem isInfiniteLocalNorm_def (w : InfinitePlace K) (x : Kˣ) :
+    IsInfiniteLocalNorm K L w x ↔
+      Units.map (algebraMap K w.Completion).toMonoidHom x ∈ (infiniteLocalNormMap K L w).range :=
+  Iff.rfl
+
+/-- The defining characterization of `IsFiniteLocalNorm`: membership in the range of
+`finiteLocalNormMap`. -/
+theorem isFiniteLocalNorm_def (v : HeightOneSpectrum (𝓞 K)) (x : Kˣ) :
+    IsFiniteLocalNorm K L v x ↔
+      Units.map (algebraMap K (v.adicCompletion K)).toMonoidHom x ∈
+        (finiteLocalNormMap K L v).range :=
+  Iff.rfl
+
+/-- The defining characterization of `IsLocalNormEverywhere`: a local norm at every finite and
+every infinite place. -/
+theorem isLocalNormEverywhere_def (x : Kˣ) :
+    IsLocalNormEverywhere K L x ↔
+      (∀ v : HeightOneSpectrum (𝓞 K), IsFiniteLocalNorm K L v x) ∧
+        ∀ w : InfinitePlace K, IsInfiniteLocalNorm K L w x :=
+  Iff.rfl
+
+end Def
 
 section Complex
 
