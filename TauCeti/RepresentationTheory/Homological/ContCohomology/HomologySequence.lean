@@ -12,7 +12,7 @@ public import TauCeti.Algebra.Category.ModuleCat.Topology.Iso
 public import TauCeti.Algebra.Category.ModuleCat.Topology.Zero
 public import TauCeti.Algebra.Homology.ShortComplex.PreservesHomology
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.CompactDiscrete
-public import TauCeti.RepresentationTheory.Homological.ContCohomology.ExactCochains
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.ExactCochains.Basic
 
 /-!
 # The long exact sequence of continuous cohomology in every degree
