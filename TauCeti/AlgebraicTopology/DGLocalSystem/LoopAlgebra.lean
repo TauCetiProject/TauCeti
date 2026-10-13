@@ -231,8 +231,7 @@ theorem loopChainToGroupAlgebra_eq_zero_of_mem {i : ℤ} (hi : i ≠ 0) {a : loo
   · obtain ⟨k, rfl⟩ := Nat.exists_eq_succ_of_ne_zero (by omega : n ≠ 0)
     exact loopChainToGroupAlgebra_lof_succ k y
 
-/-- **Naturality of the degree-zero ring map**: it intertwines `C_*(Ωf)` with the map of group
-rings induced by `π₁(f)`. -/
+-- The component-wise form of `loopChainToGroupAlgebra_loopChainMap`.
 private theorem loopChainToGroupAlgebraComponent_map {B' : Type u} [TopologicalSpace B']
     {b' : B'} (f : C(B, B')) (hf : f b = b') (n : ℕ)
     (y : NormalizedCubicalChain (MooreLoopSpace B b) R n) :
@@ -248,6 +247,8 @@ private theorem loopChainToGroupAlgebraComponent_map {B' : Type u} [TopologicalS
     rw [loopChainToGroupAlgebraComponent_eq_zero n.succ_ne_zero,
       loopChainToGroupAlgebraComponent_eq_zero n.succ_ne_zero, map_zero]
 
+/-- **Naturality of the degree-zero ring map**: it intertwines `C_*(Ωf)` with the map of group
+rings induced by `π₁(f)`. -/
 @[simp]
 theorem loopChainToGroupAlgebra_loopChainMap {B' : Type u} [TopologicalSpace B'] {b' : B'}
     (f : C(B, B')) (hf : f b = b') (a : loopChainAlgebra B b R) :
