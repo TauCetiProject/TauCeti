@@ -24,9 +24,11 @@ FAKE_GH = r'''#!/usr/bin/env python3
 import json, os, subprocess, sys
 args = sys.argv[1:]
 path = next(a for a in args[1:] if not a.startswith('-'))
+token = os.environ['GH_TOKEN']
 with open(os.environ['CALLS'], 'a') as f:
-    f.write(path + '\n')
-pages = json.load(open(os.environ['FIXTURE'])).get(path)
+    f.write(('repository:' if token == 'repository-token' else '') + path + '\n')
+fixture = json.load(open(os.environ['FIXTURE']))
+pages = fixture.get(token + ':' + path, fixture.get(path))
 if pages is None:
     print('API read failed: ' + path, file=sys.stderr)
     sys.exit(1)
@@ -60,7 +62,7 @@ class PickerTests(unittest.TestCase):
             "rate_limit": [dict(resources=dict(core=dict(remaining=5000)))],
         }
 
-    def pick(self, fixture, budget="18", app_token="installation-token"):
+    def pick(self, fixture, budget="18", app_token="installation-token", fallback_token=""):
         with tempfile.TemporaryDirectory() as directory:
             directory = Path(directory)
             (directory / "gh").write_text(FAKE_GH)
@@ -73,7 +75,8 @@ class PickerTests(unittest.TestCase):
                    "ORG": "Test", "BUDGET": budget, "GITHUB_OUTPUT": str(output),
                    "GITHUB_STEP_SUMMARY": str(summary), "CALLS": str(calls),
                    "FIXTURE": str(directory / "fixture.json"),
-                   "API_RESERVE": selected_reserve}
+                   "API_RESERVE": selected_reserve, "FALLBACK_TOKEN": fallback_token,
+                   "GH_TOKEN": app_token or "repository-token"}
             step = next(s for s in PICKER["jobs"]["pick"]["steps"] if s.get("id") == "pick")
             result = subprocess.run(["bash", "-c", step["run"]], env=env,
                                     text=True, capture_output=True, timeout=20)
@@ -152,6 +155,41 @@ class PickerTests(unittest.TestCase):
         output, _, _ = self.pick(fixture, app_token="")
         self.assertEqual(output["github"], "true")
         self.assertEqual(output["busy"], "2")
+
+    def test_shared_reserve_uses_repository_budget_and_still_checks_capacity(self):
+        for busy, expected in [(2, "true"), (18, "true"), (19, "false")]:
+            with self.subTest(busy=busy):
+                fixture = self.fixture(busy)
+                fixture["rate_limit"][0]["resources"]["core"]["remaining"] = 1500
+                fixture["repository-token:rate_limit"] = [
+                    dict(resources=dict(core=dict(remaining=1000)))]
+                output, summary, calls = self.pick(fixture, fallback_token="repository-token")
+                self.assertEqual(output["github"], expected)
+                self.assertEqual(output["busy"], str(busy))
+                self.assertIn("Shared App quota reserve protected", summary)
+                self.assertEqual(calls[0], "rate_limit")
+                self.assertTrue(all(path.startswith("repository:") for path in calls[1:]))
+
+    def test_repository_fallback_can_happen_before_parallel_job_reads(self):
+        fixture = self.fixture()
+        fixture["rate_limit"][0]["resources"]["core"]["remaining"] = 1501
+        fixture["repository-token:rate_limit"] = [dict(resources=dict(core=dict(remaining=1000)))]
+        output, _, calls = self.pick(fixture, fallback_token="repository-token")
+        self.assertEqual(output["github"], "true")
+        job_calls = [path for path in calls if "/jobs?" in path]
+        self.assertTrue(job_calls)
+        self.assertTrue(all(path.startswith("repository:") for path in job_calls))
+
+    def test_exhausted_or_unreadable_repository_budget_falls_back_to_namespace(self):
+        for remaining in [0, None]:
+            with self.subTest(remaining=remaining):
+                fixture = self.fixture()
+                fixture["rate_limit"][0]["resources"]["core"]["remaining"] = 1500
+                fixture["repository-token:rate_limit"] = [
+                    dict(resources=dict(core=dict(remaining=remaining)))]
+                output, _, calls = self.pick(fixture, fallback_token="repository-token")
+                self.assertEqual(output["github"], "false")
+                self.assertEqual(calls, ["rate_limit", "repository:rate_limit"])
 
     def test_projected_job_reads_preserve_reserve(self):
         fixture = self.fixture()
