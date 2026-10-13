@@ -170,14 +170,8 @@ theorem isSeparable_adjoin_algebraMap_X_iff [Algebra (RatFunc k) F]
       Algebra.IsSeparable (RatFunc k) F := by
   have hx : Transcendental k (algebraMap (RatFunc k) F RatFunc.X) := (transcendental_algebraMap_iff
     (FaithfulSMul.algebraMap_injective (RatFunc k) F)).mpr RatFunc.transcendental_X
-  -- Transport along `k(X) ≃ k⟮x⟯`, which is compatible with the two structure maps.
-  refine ⟨fun _ ↦ Algebra.IsSeparable.of_equiv_equiv
-      (RatFunc.algEquivOfTranscendental _ hx).symm.toRingEquiv (RingEquiv.refl F)
-      (RingHom.ext fun r ↦ ?_),
-    fun _ ↦ Algebra.IsSeparable.of_equiv_equiv (RatFunc.algEquivOfTranscendental _ hx).toRingEquiv
-      (RingEquiv.refl F) (RingHom.ext coe_algEquivOfTranscendental_algebraMap_X_apply)⟩
-  simpa using (coe_algEquivOfTranscendental_algebraMap_X_apply (F := F)
-    ((RatFunc.algEquivOfTranscendental _ hx).symm r)).symm
+  exact (Algebra.IsSeparable.iff_of_equiv_equiv (RatFunc.algEquivOfTranscendental _ hx).toRingEquiv
+    (RingEquiv.refl F) (RingHom.ext coe_algEquivOfTranscendental_algebraMap_X_apply)).symm
 
 /-- The `k`-algebra map `k⟮x⟯ → E` sending a transcendental `x` to a transcendental `z`: both
 `k⟮x⟯` and `k⟮z⟯` are identified with the rational function field `k(X)`. -/

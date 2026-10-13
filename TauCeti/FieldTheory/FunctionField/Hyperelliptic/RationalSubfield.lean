@@ -48,8 +48,8 @@ always holds, and the characterization is
   function field is separable over each of its rational subfields of index two.
 * `TauCeti.isHyperellipticFunctionField_iff_isSeparable_of_finrank_adjoin_eq_two`: in genus at
   least two, `F` is hyperelliptic exactly when it is separable over a given index-two `k(x)`.
-* `TauCeti.isHyperellipticFunctionField_iff_exists_degree_eq_two_and_forall_isSeparable`: the
-  intrinsic characterization, in every characteristic.
+* `isHyperellipticFunctionField_iff_two_le_genus_and_exists_degree_eq_two_and_forall_isSeparable`:
+  the intrinsic characterization, in every characteristic.
 
 ## References
 
@@ -211,7 +211,8 @@ Away from characteristic two the last condition always holds, and this is
 In every characteristic the first two conditions provide a rational subfield of index two
 (`TauCeti.exists_transcendental_finrank_adjoin_eq_two_of_degree_eq_two`); the third is what
 makes `F` separable over it. -/
-theorem isHyperellipticFunctionField_iff_exists_degree_eq_two_and_forall_isSeparable
+theorem
+    isHyperellipticFunctionField_iff_two_le_genus_and_exists_degree_eq_two_and_forall_isSeparable
     (hF : IsFunctionField k F) (hex : IsIntegrallyClosedIn k F) :
     IsHyperellipticFunctionField k F ↔
       2 ≤ genus k F ∧ (∃ A : Divisor k F, Divisor.degree A = 2 ∧ 2 ≤ Divisor.dim A) ∧
