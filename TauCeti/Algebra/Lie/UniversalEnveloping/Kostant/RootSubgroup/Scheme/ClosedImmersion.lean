@@ -47,6 +47,8 @@ left to the caller in the general construction.
 * `TauCeti.UniversalEnvelopingAlgebra.kostantRootGeneratorIntMatrix`: the represented generator
   in an integral lattice basis, shared with the matrix construction of
   `TauCeti.Algebra.Lie.Symplectic.StandardCarrier.AlternatingForm`.
+* `TauCeti.UniversalEnvelopingAlgebra.kostantRootGeneratorIntMatrix_eq_of_action`: the basis
+  action determines the integral root matrix.
 * `TauCeti.UniversalEnvelopingAlgebra.repr_kostantRootSubgroupPoints_baseChange`: the coordinates
   of a root-subgroup point on a base-changed basis vector.
 * `TauCeti.UniversalEnvelopingAlgebra.repr_kostantRootSubgroupPoints_of_isRootStep`: a root step
@@ -183,6 +185,20 @@ theorem kostantRootGeneratorIntMatrix_eq_toMatrix [Fintype η] [DecidableEq η] 
   congr 2
   apply Subtype.ext
   rw [coe_kostantRootOperator_apply]
+
+/-- If a represented root generator acts on the lattice basis by the columns of `X`, then its
+integral matrix is `X`. -/
+theorem kostantRootGeneratorIntMatrix_eq_of_action [Fintype η] (X : Matrix η η ℤ)
+    (haction : ∀ s, ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i)) (b s : V) =
+      ∑ r, X r s • (b r : V)) :
+    kostantRootGeneratorIntMatrix e h ρ M hM i b = X := by
+  have hcol (s : η) : (⟨ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i)) (b s),
+      hM _ (rootVector_mem_kostantForm e h i) _ (b s).2⟩ : M) = ∑ r, X r s • b r := by
+    apply Subtype.ext
+    simpa only [AddSubmonoidClass.coe_finsetSum, AddSubgroupClass.coe_zsmul] using haction s
+  ext r s
+  rw [kostantRootGeneratorIntMatrix, Module.Basis.toMatrix_apply, hcol]
+  exact congrFun (b.repr_sum_self (fun r => X r s)) r
 
 /-- A represented root generator acts on each lattice basis vector by its integral matrix column. -/
 theorem rep_rootGenerator_basis_eq_sum [Fintype η] (i : ι) (b : Module.Basis η ℤ M) (s : η) :

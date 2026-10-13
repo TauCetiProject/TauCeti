@@ -68,6 +68,10 @@ theorem IsRestricted.hasGaussNorm {c : σ → ℝ} {f : MvPowerSeries σ R}
     (hf : IsRestricted c f) : HasGaussNorm norm c f :=
   hf.bddAbove_range_of_cofinite
 
+/-- The weights `∏ i, |c i| ^ t i` of the absolute polyradii are nonnegative. -/
+theorem prod_abs_pow_nonneg {c : σ → ℝ} (t : σ →₀ ℕ) : 0 ≤ t.prod (|c| · ^ ·) :=
+  Finset.prod_nonneg fun _ _ ↦ pow_nonneg (abs_nonneg _) _
+
 variable [IsUltrametricDist R] {c : σ → ℝ} [hc : ∀ i, Fact (0 < c i)]
 
 /-- At positive polyradii, the weight `∏ i, c i ^ t i` of an exponent is positive. -/

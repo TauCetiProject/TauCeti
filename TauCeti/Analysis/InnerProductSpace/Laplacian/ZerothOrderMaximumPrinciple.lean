@@ -15,9 +15,8 @@ import TauCeti.Analysis.InnerProductSpace.Laplacian.BarrierMaximizer
 
 `TauCeti.Analysis.InnerProductSpace.Laplacian.WeakMaximumPrinciple` proves the weak maximum
 principle for the bare Laplacian: a subharmonic (`0 ≤ Δ f`) function on a compact set is bounded on
-all of `K` by any bound it satisfies on `frontier K`. The next step of the PDE roadmap (Lane C,
-item 13, "then for general elliptic `L` (sign condition `c ≥ 0`)") is to restore the zeroth-order
-term, i.e. to allow the operator `L u = -Δ u + c u` with a **nonnegative** coefficient `c`.
+all of `K` by any bound it satisfies on `frontier K`. This file restores the zeroth-order term, i.e.
+it allows the operator `L u = -Δ u + c u` with a **nonnegative** coefficient `c`.
 
 The sign condition `c ≥ 0` is load-bearing: it is exactly what lets the maximum principle survive
 the extra term. A subsolution of `L`, `L f ≤ 0`, is a function with `c · f ≤ Δ f` on the interior,

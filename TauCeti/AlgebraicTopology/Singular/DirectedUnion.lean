@@ -13,6 +13,9 @@ public import Mathlib.Geometry.Convex.ConvexSpace.CompactSpaceStdSimplex
 public import Mathlib.Algebra.Category.ModuleCat.FilteredColimits
 public import Mathlib.CategoryTheory.Limits.ConcreteCategory.WithAlgebraicStructures
 public import TauCeti.Topology.Category.TopCat.Subspace
+public import TauCeti.Topology.Category.TopPair
+public import TauCeti.AlgebraicTopology.Singular.Relative
+public import TauCeti.CategoryTheory.Limits.Shapes.Kernels
 
 /-!
 # Singular homology of a directed union
@@ -30,6 +33,11 @@ says that a class in the homology of a member which vanishes in the whole space 
 some larger member. This is the compactness step in the computation of the homology of the
 complement of an embedded cube or sphere (`TauCeti/AlgebraicTopology/Singular/CubeComplement`).
 
+The same holds for relative singular homology of a filtered diagram of topological pairs, provided
+compact subsets of both the ambient space and the subspace of the apex are absorbed.  The relative
+chains are the cokernel of the chains of the subspace in the chains of the ambient space, and
+cokernels commute with colimits (`TauCeti.isColimitOfIsColimitCokernelCofork`).
+
 ## Main definitions and results
 
 * `TauCeti.isColimitMapCoconeToSSet`: for a cocone over a filtered diagram of spaces whose legs
@@ -40,6 +48,11 @@ complement of an embedded cube or sphere (`TauCeti/AlgebraicTopology/Singular/Cu
 * `TauCeti.exists_singularHomologyMap_inclusion_eq_zero`: with coefficients in a module, a class of
   one member of an increasing cover of a subspace by relatively open sets that vanishes in the
   subspace already vanishes in some larger member.
+* `TopPair.isColimitMapCoconeSingularChainComplex` and `TopPair.isColimitMapCoconeSingularHomology`:
+  for a cocone over a filtered diagram of topological pairs whose legs are embeddings of the
+  ambient spaces, such that every compact subset of the ambient space and of the subspace of the
+  apex lies in the range of a leg, the relative singular chain complexes, and relative singular
+  homology for coefficients whose filtered colimits are exact, form colimit cocones.
 
 ## References
 
@@ -140,3 +153,69 @@ theorem exists_singularHomologyMap_inclusion_eq_zero {i : J}
 end Module
 
 end TauCeti
+
+namespace TopPair
+
+section Relative
+
+variable {C : Type u} [Category.{v} C] [HasCoproducts.{w} C] [Preadditive C] (R : C)
+  {J : Type*} [Category J] [IsFiltered J] [HasColimitsOfShape J (Type w)]
+  {F : J ⥤ TopPair.{w}} (c : Cocone F)
+
+/-- **Relative singular chains have compact supports.** Let `c` be a cocone over a filtered
+diagram of topological pairs whose legs are embeddings of the ambient spaces, such that every
+compact subset of the ambient space of the apex, and every compact subset of its subspace, lies in
+the range of some leg. Then the relative singular chain complexes form a colimit cocone with apex
+the relative singular chain complex of `c.pt`. -/
+def isColimitMapCoconeSingularChainComplex (hfst : ∀ j, IsEmbedding (Hom.fst (c.ι.app j)))
+    (hfstK : ∀ K : Set c.pt.fst, IsCompact K → ∃ j, K ⊆ Set.range (Hom.fst (c.ι.app j)))
+    (hsndK : ∀ K : Set c.pt.snd, IsCompact K → ∃ j, K ⊆ Set.range (Hom.snd (c.ι.app j))) :
+    IsColimit (((singularChainComplexFunctor C).obj R).mapCocone c) := by
+  rw [singularChainComplexFunctor_obj_eq_toSSetPair_comp]
+  -- The relative chains of each pair, and of the apex, are the cokernel of the chains of the
+  -- subspace in the chains of the ambient space, and both of these have compact supports; the
+  -- legs are embeddings on the subspaces too, since the subspaces are embedded.
+  refine TauCeti.isColimitOfIsColimitCokernelCofork
+    (α := Functor.whiskerLeft (F ⋙ toSSetPair)
+      ((SSetPair.chainComplexFunctorLeftToRight C).app R))
+    (π := Functor.whiskerLeft (F ⋙ toSSetPair) ((SSetPair.chainComplexFunctorπ C).app R))
+    (w := fun j ↦ (toSSetPair.obj (F.obj j)).chainComplex_condition R)
+    (wp := (toSSetPair.obj c.pt).chainComplex_condition R)
+    (fun j ↦ (toSSetPair.obj (F.obj j)).isColimitCokernelCoforkChainComplex R)
+    (isColimitOfPreserves ((SSet.chainComplexFunctor C).obj R)
+      (TauCeti.isColimitMapCoconeToSSet (proj₂.mapCocone c)
+        (fun j ↦ isEmbedding_snd_of_isEmbedding_fst _ (hfst j)) hsndK))
+    (isColimitOfPreserves ((SSet.chainComplexFunctor C).obj R)
+      (TauCeti.isColimitMapCoconeToSSet (proj₁.mapCocone c) hfst hfstK))
+    (fun j ↦ ?_) (fun j ↦ singularChainComplexπ_pair_naturality (c.ι.app j) R)
+    (c.pt.isColimitCokernelCoforkSingularChainComplex R)
+  -- The remaining goal is, by definition of the components involved, the square of chain maps
+  -- induced by the commuting square of the leg at `j`.
+  have h : SSet.chainComplexMap (TopCat.toSSet.map (Hom.snd (c.ι.app j))) R ≫
+      SSet.chainComplexMap (TopCat.toSSet.map c.pt.map) R =
+        SSet.chainComplexMap (TopCat.toSSet.map (F.obj j).map) R ≫
+          SSet.chainComplexMap (TopCat.toSSet.map (Hom.fst (c.ι.app j))) R := by
+    simp only [← Functor.map_comp]
+    exact congrArg _ (congrArg _ (Hom.w (c.ι.app j)))
+  exact h
+
+variable {C : Type u} [Category.{v} C] [HasCoproducts.{w} C] [Abelian C] (R : C) (n : ℕ)
+  {J : Type*} [Category J] [IsFiltered J] [HasColimitsOfShape J (Type w)]
+  [HasColimitsOfShape J C] [HasExactColimitsOfShape J C] {F : J ⥤ TopPair.{w}} (c : Cocone F)
+
+/-- **Relative singular homology has compact supports.** For a cocone over a filtered diagram of
+topological pairs whose legs are embeddings of the ambient spaces, such that every compact subset
+of the ambient space of the apex, and every compact subset of its subspace, lies in the range of
+some leg, relative singular homology of the apex is the colimit of relative singular homology of
+the diagram, provided filtered colimits of the coefficient category are exact. -/
+def isColimitMapCoconeSingularHomology (hfst : ∀ j, IsEmbedding (Hom.fst (c.ι.app j)))
+    (hfstK : ∀ K : Set c.pt.fst, IsCompact K → ∃ j, K ⊆ Set.range (Hom.fst (c.ι.app j)))
+    (hsndK : ∀ K : Set c.pt.snd, IsCompact K → ∃ j, K ⊆ Set.range (Hom.snd (c.ι.app j))) :
+    IsColimit ((singularHomologyFunctor R n).mapCocone c) := by
+  rw [singularHomologyFunctor_eq_chainComplexFunctor]
+  exact isColimitOfPreserves (HomologicalComplex.homologyFunctor C _ n)
+    (isColimitMapCoconeSingularChainComplex R c hfst hfstK hsndK)
+
+end Relative
+
+end TopPair

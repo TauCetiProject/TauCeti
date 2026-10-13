@@ -28,10 +28,6 @@ Lie subalgebra. `IsChevalleySystem.chevalleyLieLattice` packages that specializa
 Kostant constructions do not have to pass the integral-coefficient theorem as a separate argument.
 It is a finite free full `ℤ`-form of the characteristic-zero Lie algebra.
 
-These are the lattice properties required by the Chevalley-basis input to the explicit
-Chevalley--Demazure construction in Layer 9 of the `ReductiveGroups` roadmap. That construction is
-consumed by milestone L0 of the `CFSGStatement` roadmap.
-
 ## Main declarations
 
 * `TauCeti.finite_rootCorootGenerators`: the root--coroot generating set is finite.

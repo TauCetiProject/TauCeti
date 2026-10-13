@@ -13,15 +13,14 @@ public import TauCeti.Analysis.SpecialFunctions.Hermite.Orthogonality
 /-!
 # Orthonormality of the Hermite functions
 
-This file proves that the Hermite functions
-`ψₙ(x) = Hₙ(x√2) exp(-x²/2) / √(n!√π)` (`TauCeti.hermiteFunction`) form an orthonormal system in
-`L²(ℝ)`, the roadmap milestones **A2** (pointwise) and **A3** (the `Lp` orthonormality the
-`hermiteHilbertBasis` construction consumes) of `TauCetiRoadmap/OrthogonalL2Bases/README.md`.
+This file proves that the Hermite functions `ψₙ(x) = Hₙ(x√2) exp(-x²/2) / √(n!√π)`
+(`TauCeti.hermiteFunction`) form an orthonormal system in `L²(ℝ)`, both pointwise and as `Lp`
+vectors (the form the `hermiteHilbertBasis` construction consumes).
 
 * `TauCeti.integral_hermiteFunction_mul_hermiteFunction`:
   `∫ x, ψₘ(x) · ψₙ(x) = if m = n then 1 else 0`, the pointwise orthonormality relation. It is the
   polynomial orthogonality relation `TauCeti.integral_hermite_mul_hermite_mul_gaussian`
-  (`∫ Hₘ Hₙ e^{-x²/2} = if m = n then n!√(2π) else 0`, milestone A1) transported across the
+  (`∫ Hₘ Hₙ e^{-x²/2} = if m = n then n!√(2π) else 0`) transported across the
   dilation `u = x√2` (`MeasureTheory.Measure.integral_comp_mul_right`): the Gaussian envelope
   `exp(-x²/2)²` collapses to `exp(-(x√2)²/2)`, and the normalizations `√(n!√π)` cancel the
   `n!√(2π)` self-pairing up to the Jacobian `(√2)⁻¹`.
@@ -46,7 +45,7 @@ open MeasureTheory Polynomial Real
 
 /-! ## Pointwise orthonormality -/
 
-/-- **Target A2 (orthonormality).** The Hermite functions are pointwise orthonormal in `L²(ℝ)`:
+/-- **Orthonormality.** The Hermite functions are pointwise orthonormal in `L²(ℝ)`:
 `∫ x, ψₘ(x) · ψₙ(x) = if m = n then 1 else 0`. This is the polynomial orthogonality relation
 `integral_hermite_mul_hermite_mul_gaussian` pushed through the dilation `u = x√2`. -/
 theorem integral_hermiteFunction_mul_hermiteFunction (m n : ℕ) :
@@ -94,7 +93,7 @@ theorem integral_hermiteFunction_mul_hermiteFunction (m n : ℕ) :
 
 variable {𝕜 : Type*} [RCLike 𝕜]
 
-/-- **Target A3 (orthonormality, inner-product form).** The `Lp` Hermite vectors satisfy
+/-- **Orthonormality, inner-product form.** The `Lp` Hermite vectors satisfy
 `⟪ψₘ, ψₙ⟫ = if m = n then 1 else 0`, over any `RCLike` scalar field, by evaluating the `L²` inner
 product as the pointwise integral `integral_hermiteFunction_mul_hermiteFunction`. -/
 theorem inner_hermiteFunctionLp (m n : ℕ) :
@@ -112,14 +111,13 @@ theorem inner_hermiteFunctionLp (m n : ℕ) :
         rw [integral_ofReal, integral_hermiteFunction_mul_hermiteFunction]
         split_ifs <;> simp
 
-/-- **Target A3 (orthonormality).** The `Lp` Hermite functions form an orthonormal system in
-`L²(ℝ; 𝕜)`, for any `RCLike` scalar field `𝕜`. This is the orthonormality input the
-`hermiteHilbertBasis` construction feeds to `HilbertBasis.mkOfOrthogonalEqBot`. -/
+/-- **Orthonormality in `Lp`.** The `Lp` Hermite functions form an orthonormal system in `L²(ℝ; 𝕜)`,
+for any `RCLike` scalar field `𝕜`. This is the orthonormality input the `hermiteHilbertBasis`
+construction feeds to `HilbertBasis.mkOfOrthogonalEqBot`. -/
 theorem orthonormal_hermiteFunctionLp : Orthonormal 𝕜 (hermiteFunctionLp 𝕜) :=
   orthonormal_iff_ite.mpr inner_hermiteFunctionLp
 
-/-- **Target A2 (unit norm).** Every Hermite function has `L²` norm one, over any `RCLike`
-scalar field. -/
+/-- **Unit norm.** Every Hermite function has `L²` norm one, over any `RCLike` scalar field. -/
 @[simp]
 theorem norm_hermiteFunctionLp (n : ℕ) : ‖hermiteFunctionLp 𝕜 n‖ = 1 :=
   orthonormal_hermiteFunctionLp.norm_eq_one n

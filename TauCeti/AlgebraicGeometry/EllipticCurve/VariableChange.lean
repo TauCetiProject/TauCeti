@@ -14,7 +14,8 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.Weierstrass
 Material complementing `Mathlib/AlgebraicGeometry/EllipticCurve/VariableChange.lean`: the
 negation automorphism `[-1]` of a Weierstrass curve as an admissible change of variables, with
 its involution API, together with the compatibility of the action with base change
-(`baseChange_smul_baseChange`, whence the instance `isElliptic_baseChange_smul`: the base change of
+(`baseChange_smul_baseChange`, and `smul_baseChange_eq_baseChange_smul_map` for a curve defined
+over a ring mapping into `R`; whence the instance `isElliptic_baseChange_smul`: the base change of
 `C • V` is elliptic along with that of `V`, and `baseChange_smul_c₄` / `baseChange_smul_c₆`: a
 change of variables with `u = 1` leaves the `c`-invariants of a base change alone) and the three
 base-change facts that Galois descent runs on:
@@ -32,7 +33,8 @@ components of `[-1]` at each use. The negation automorphism of `C • E` is that
 by `C` (`negVariableChange_smul`).
 
 Similarly, the components of `C * D⁻¹`, the change of variables carrying `D • W` to `C • W`, are
-recorded as `VariableChange.mul_inv_u/_r/_s/_t`.
+recorded as `VariableChange.mul_inv_u/_r/_s/_t`. A translation `x ↦ x + r`, `y ↦ y + t` leaves the
+discriminant and `c₄` alone (`variableChange_translate_Δ`, `variableChange_translate_c₄`).
 
 The negation is the nontrivial automorphism in the `Aut (E, O)`
 milestone of `TauCetiRoadmap/EllipticCurves/README.md` §Layer 1, proved in
@@ -199,6 +201,22 @@ lemma negVariableChange_smul : (C • E).negVariableChange = C * E.negVariableCh
     simp [VariableChange.mul_def, variableChange_a₃]
     linear_combination (-E.a₃ - C.r * E.a₁ - 2 * C.t) * hu
 
+section Translate
+
+variable (W : WeierstrassCurve R) (x y : R)
+
+/-- **A translation does not change the discriminant.** -/
+@[simp]
+theorem variableChange_translate_Δ : (VariableChange.mk 1 x 0 y • W).Δ = W.Δ := by
+  simp [variableChange_Δ]
+
+/-- **A translation does not change `c₄`.** -/
+@[simp]
+theorem variableChange_translate_c₄ : (VariableChange.mk 1 x 0 y • W).c₄ = W.c₄ := by
+  simp [variableChange_c₄]
+
+end Translate
+
 section BaseChange
 
 variable (L : Type*) [CommRing L] [Algebra R L]
@@ -211,6 +229,19 @@ in the `baseChange` spelling, so it rewrites directly in goals phrased that way.
 lemma baseChange_smul_baseChange (C : VariableChange R) (V : WeierstrassCurve R) :
     (C.baseChange L) • V.baseChange L = (C • V).baseChange L :=
   map_variableChange (W := V) (C := C) (φ := algebraMap R L)
+
+variable {L} in
+/-- **Base change commutes with the action of a change of variables, through an intermediate
+ring.** Let `φ : A →+* R` be compatible with the structure maps to `L`. For a change of variables
+`C` over `R` and a curve `W₀` over `A`, acting by `Cᴸ` on `W₀ᴸ` gives the base change of `C`
+applied to the image of `W₀` in `R`. This extends `baseChange_smul_baseChange` to an equation
+over a ring mapping into `R`, such as an equation over `ℤ`. -/
+lemma smul_baseChange_eq_baseChange_smul_map {A : Type*} [CommRing A] [Algebra A L]
+    {φ : A →+* R} (hφ : (algebraMap R L).comp φ = algebraMap A L) (C : VariableChange R)
+    (W₀ : WeierstrassCurve A) :
+    C.baseChange L • W₀.baseChange L = (C • W₀.map φ).baseChange L := by
+  have hW₀ : W₀.baseChange L = (W₀.map φ).baseChange L := congrArg W₀.map hφ.symm
+  exact hW₀ ▸ map_variableChange ..
 
 variable {L} in
 /-- The base change of `C • V` to `L` is elliptic whenever that of `V` is, since it is
