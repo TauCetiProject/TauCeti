@@ -126,6 +126,19 @@ theorem cast_cast {n m k : ℕ} (h : n = m) (h' : m = k)
   subst h'
   rfl
 
+/-- Reindexing is injective. -/
+theorem cast_injective {n m : ℕ} (h : n = m) :
+    Function.Injective (cast X R A h) := fun a b hab ↦ by
+  simpa using congrArg (cast X R A h.symm) hab
+
+variable {X R A} in
+/-- Equal after reindexing implies heterogeneously equal. -/
+theorem heq_of_cast_eq {n m : ℕ} (h : n = m) {x : RelativeCubicalChain X A R n}
+    {y : RelativeCubicalChain X A R m} (hxy : cast X R A h x = y) : HEq x y := by
+  subst h
+  rw [cast_rfl] at hxy
+  exact heq_of_eq hxy
+
 /-- The boundary of relative chains, induced by the boundary of the chains of `X`. -/
 def boundary (n : ℕ) : RelativeCubicalChain X A R (n + 1) →ₗ[R] RelativeCubicalChain X A R n :=
   Submodule.mapQ _ _ (NormalizedCubicalChain.boundary X R n)
