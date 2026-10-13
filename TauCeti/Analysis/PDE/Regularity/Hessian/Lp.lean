@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.FundamentalSolution.Euclidean.FourierMultiplier
-public import TauCeti.MeasureTheory.Integral.CalderonZygmund.InnerProductSpace
+import TauCeti.MeasureTheory.Integral.CalderonZygmund.InnerProductSpace
 import TauCeti.Analysis.InnerProductSpace.Orthonormal.Multilinear
 import TauCeti.Analysis.PDE.FundamentalSolution.Euclidean.Hessian
 
