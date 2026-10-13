@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.DifferentialForm.Pullback
-public import TauCeti.Topology.Algebra.Module.Alternating.Wedge
+public import TauCeti.Topology.Algebra.Module.Alternating.Wedge.Basic
 
 /-!
 # Wedge products of bundle-valued rough differential forms
@@ -49,6 +49,13 @@ def bundleWedgeWith (μ : (x : M) → V₁ x →L[ℝ] V₂ x →L[ℝ] V₃ x)
     (φ : RoughBundleForm I M V₁ k) (ψ : RoughBundleForm I M V₂ l) :
     RoughBundleForm I M V₃ (k + l) :=
   fun x ↦ ContinuousAlternatingMap.pairedWedge (μ x) (hμ x) (φ x) (ψ x)
+
+/-- At each point, the bundle wedge is the paired wedge of the two fibre values. -/
+theorem bundleWedgeWith_apply' (μ : (x : M) → V₁ x →L[ℝ] V₂ x →L[ℝ] V₃ x)
+    (hμ : ∀ x, Continuous (fun p : V₁ x × V₂ x ↦ μ x p.1 p.2))
+    (φ : RoughBundleForm I M V₁ k) (ψ : RoughBundleForm I M V₂ l) (x : M) :
+    bundleWedgeWith μ hμ φ ψ x =
+      ContinuousAlternatingMap.pairedWedge (μ x) (hμ x) (φ x) (ψ x) := (rfl)
 
 /-- The fibrewise paired wedge is the signed permutation sum. -/
 theorem bundleWedgeWith_apply (μ : (x : M) → V₁ x →L[ℝ] V₂ x →L[ℝ] V₃ x)
@@ -269,6 +276,10 @@ theorem wedgeWith_zero_right (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
 def wedge (φ : RoughForm I M ℝ k) (ψ : RoughForm I M ℝ l) :
     RoughForm I M ℝ (k + l) :=
   φ.wedgeWith (ContinuousLinearMap.mul ℝ ℝ) ψ
+
+/-- The real-valued wedge specializes the paired wedge to multiplication. -/
+theorem wedge_def (φ : RoughForm I M ℝ k) (ψ : RoughForm I M ℝ l) :
+    φ.wedge ψ = φ.wedgeWith (ContinuousLinearMap.mul ℝ ℝ) ψ := (rfl)
 
 /-- Evaluation of the real-valued rough-form wedge in every degree. -/
 theorem wedge_apply (φ : RoughForm I M ℝ k) (ψ : RoughForm I M ℝ l)
