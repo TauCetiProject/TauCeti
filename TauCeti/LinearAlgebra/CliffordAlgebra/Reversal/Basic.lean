@@ -95,6 +95,12 @@ noncomputable def reverseEvenOpEquiv (Q : QuadraticForm R M) :
     reverseEvenOpEquiv Q x = reverseEven Q x.unop := by
   rfl
 
+/-- The inverse reversal equivalence acts by reversal and then passage to the opposite algebra. -/
+@[simp] theorem reverseEvenOpEquiv_symm_apply (x : even Q) :
+    (reverseEvenOpEquiv Q).symm x = MulOpposite.op (reverseEven Q x) := by
+  apply (reverseEvenOpEquiv Q).injective
+  simp
+
 /-! ### Naturality -/
 
 /-- An isometry-induced equivalence of even Clifford algebras commutes with reversal. -/

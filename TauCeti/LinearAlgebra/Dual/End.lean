@@ -195,8 +195,8 @@ noncomputable def dualEndAlgEquiv :
   exact AlgEquiv.ofBijective f (hfe ▸ e.bijective)
 
 /-- Under scalar duality, an endomorphism acts on the dual by precomposition. -/
-@[simp] theorem dualEndAlgEquiv_apply (g : Module.End R M) :
-    dualEndAlgEquiv R M (MulOpposite.op g) = g.dualMap := by
+@[simp] theorem dualEndAlgEquiv_apply (g : (Module.End R M)ᵐᵒᵖ) :
+    dualEndAlgEquiv R M g = g.unop.dualMap := by
   rw [dualEndAlgEquiv]
   rfl
 
