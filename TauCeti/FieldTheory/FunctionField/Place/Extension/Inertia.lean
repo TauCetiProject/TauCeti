@@ -59,8 +59,7 @@ order of the decomposition group, and the decomposition field — is in
 * `TauCeti.Place.decompositionQuotientInertiaEquivSeparableClosure`: the corresponding
   identification with the automorphism group of the separable part of the residue extension.
 * `TauCeti.Place.inertiaField`: the subfield of `F'` fixed by the inertia group of a place, with
-  `TauCeti.Place.inertiaField_def`, `TauCeti.Place.mem_inertiaField_iff` and
-  `TauCeti.Place.fixingSubgroup_inertiaField`.
+  `TauCeti.Place.mem_inertiaField_iff` and `TauCeti.Place.fixingSubgroup_inertiaField`.
 * `TauCeti.Place.inertiaFieldAutEquiv`: the identification of the Galois group over the inertia
   field with the inertia group, with `TauCeti.Place.coe_inertiaFieldAutEquiv_apply` computing it.
 
@@ -462,15 +461,6 @@ noncomputable def inertiaField : IntermediateField F F' :=
     ((P.integers.inertiaSubgroup F).map (P.integers.decompositionSubgroup F).subtype)
 
 omit [Algebra k F] [IsScalarTower k F F'] [FiniteDimensional F F'] [IsGalois F F'] in
-/-- The definition of the inertia field, restated for rewriting: it is the fixed field of the
-inertia group. -/
-theorem inertiaField_def :
-    inertiaField F P = IntermediateField.fixedField
-      ((P.integers.inertiaSubgroup F).map (P.integers.decompositionSubgroup F).subtype) :=
-  -- `(rfl)`, not `rfl`: the body of `inertiaField` is not `@[expose]`d.
-  (rfl)
-
-omit [Algebra k F] [IsScalarTower k F F'] [FiniteDimensional F F'] [IsGalois F F'] in
 /-- An element of `F'` lies in the inertia field of `P` exactly when the inertia group of `P`
 fixes it. -/
 @[simp]
@@ -622,7 +612,7 @@ omit [FiniteDimensional F F'] [IsGalois F F'] in
 @[simp]
 theorem inertiaField_smul (σ : F' ≃ₐ[F] F') :
     inertiaField F (σ • P) = (inertiaField F P).map σ.toAlgHom := by
-  rw [inertiaField_def, inertiaField_def, ← Subgroup.fixedField_map_conj]
+  rw [inertiaField, inertiaField, ← Subgroup.fixedField_map_conj]
   refine congrArg _ (le_antisymm ?_ (map_conj_le_map_inertiaSubgroup_smul F P σ))
   -- The reverse inclusion is the forward one for `σ⁻¹` and `σ • P`, conjugated back by `σ`.
   intro τ hτ
@@ -720,7 +710,7 @@ theorem le_inertiaField_iff (E : IntermediateField F F') :
         (P.restrict k E).ResidueField := by
   rw [isSeparable_iff_finInsepDegree_eq_one, ← mul_eq_one,
     ramificationIdx_mul_finInsepDegree_restrict_eq_relIndex, Subgroup.relIndex_eq_one,
-    inertiaField_def, IntermediateField.le_iff_le]
+    inertiaField, IntermediateField.le_iff_le]
 
 variable [Algebra.IsSeparable (P.restrict k F).ResidueField P.ResidueField]
 
