@@ -17,7 +17,7 @@ Mathlib's `cfc_mem` says that `cfc f x` lies in `S` whenever `x` does. This file
 consequences of that fact.
 
 * **Spectral permanence.** For `x ∈ S` with `q x`, the spectrum of `x` in `S` equals its
-  spectrum in `B` (`StarSubalgebra.spectrum_eq_of_isClosed`): if `r - x` is invertible in `B`,
+  spectrum in `B` (`StarSubalgebra.spectrum_eq_of_predicate`): if `r - x` is invertible in `B`,
   its inverse is `cfc (fun t ↦ (r - t)⁻¹) x`, which lies in `S`. This needs no norm on `B`.
 * **The calculus restricts.** `S` carries a continuous functional calculus for the elements
   satisfying `q` in `B` (`StarSubalgebra.continuousFunctionalCalculus`), computed by the
@@ -39,7 +39,7 @@ elements on which that calculus is defined.
 
 ## Main declarations
 
-* `StarSubalgebra.spectrum_eq_of_isClosed`: spectral permanence for the elements of a closed star
+* `StarSubalgebra.spectrum_eq_of_predicate`: spectral permanence for the elements of a closed star
   subalgebra satisfying the predicate of the calculus.
 * `StarSubalgebra.continuousFunctionalCalculus`: a closed star subalgebra inherits the continuous
   functional calculus.
@@ -65,7 +65,7 @@ namespace StarSubalgebra
 /-- **Spectral permanence** for a closed star subalgebra `S`: an element `x ∈ S` on which the
 continuous functional calculus of the ambient algebra is defined has the same spectrum in `S` as
 in the ambient algebra. -/
-theorem spectrum_eq_of_isClosed (S : StarSubalgebra 𝕜 B) [IsClosed (S : Set B)] {x : S}
+theorem spectrum_eq_of_predicate (S : StarSubalgebra 𝕜 B) [IsClosed (S : Set B)] {x : S}
     (hx : q x) : spectrum 𝕜 x = spectrum 𝕜 (x : B) := by
   refine (Set.Subset.antisymm (spectrum.subset_subalgebra x) fun r hr ↦ ?_).symm
   contrapose! hr
@@ -105,10 +105,10 @@ theorem continuousFunctionalCalculus : ContinuousFunctionalCalculus 𝕜 S (fun 
     exact isCompact_iff_compactSpace.1 (spectrum.isCompact x)
   spectrum_nonempty x hx := by
     have : Nontrivial B := Function.Injective.nontrivial (f := ((↑) : S → B)) Subtype.val_injective
-    rw [S.spectrum_eq_of_isClosed hx]
+    rw [S.spectrum_eq_of_predicate hx]
     exact ContinuousFunctionalCalculus.spectrum_nonempty _ hx
   exists_cfc_of_predicate x hx := by
-    have hsp := S.spectrum_eq_of_isClosed hx
+    have hsp := S.spectrum_eq_of_predicate hx
     let e : C(spectrum 𝕜 x, 𝕜) →⋆ₐ[𝕜] C(spectrum 𝕜 (x : B), 𝕜) :=
       ContinuousMap.compStarAlgHom' 𝕜 𝕜 ⟨Set.inclusion hsp.symm.subset, by fun_prop⟩
     have he : Function.Injective e := fun f g hfg ↦ by
@@ -123,7 +123,7 @@ theorem continuousFunctionalCalculus : ContinuousFunctionalCalculus 𝕜 S (fun 
     · exact (StarAlgHom.injective_codRestrict _ _ _).2 ((cfcHom_injective hx).comp he)
     · exact Subtype.ext ((hψ _).trans (cfcHom_id hx))
     · have hf : q (ψ f : B) := (hψ f).symm ▸ cfcHom_predicate hx _
-      rw [S.spectrum_eq_of_isClosed hf, hψ, cfcHom_map_spectrum]
+      rw [S.spectrum_eq_of_predicate hf, hψ, cfcHom_map_spectrum]
       ext t
       exact ⟨fun ⟨s, hs⟩ ↦ ⟨_, hs⟩, fun ⟨s, hs⟩ ↦ ⟨⟨s, hsp ▸ s.2⟩, hs⟩⟩
     · exact (hψ f).symm ▸ cfcHom_predicate hx _
@@ -139,7 +139,7 @@ theorem coe_cfc [ContinuousMap.UniqueHom 𝕜 B] (f : 𝕜 → 𝕜) (x : S) :
   · by_cases hf : ContinuousOn f (spectrum 𝕜 x)
     · exact S.subtype.map_cfc f x hf continuous_subtype_val hx hx
     · rw [cfc_apply_of_not_continuousOn _ hf,
-        cfc_apply_of_not_continuousOn _ (by rwa [← S.spectrum_eq_of_isClosed hx]),
+        cfc_apply_of_not_continuousOn _ (by rwa [← S.spectrum_eq_of_predicate hx]),
         ZeroMemClass.coe_zero]
   · rw [cfc_apply_of_not_predicate (p := fun x : S ↦ q x) _ hx,
       cfc_apply_of_not_predicate _ hx, ZeroMemClass.coe_zero]
@@ -155,7 +155,7 @@ theorem StarAlgHom.spectrum_apply_eq_of_isClosedEmbedding (φ : A →⋆ₐ[𝕜
   have : IsClosed (φ.range : Set B) := hφ.isClosed_range
   let e := StarAlgEquiv.ofInjective φ hφ.injective
   rw [← AlgEquiv.spectrum_eq e a]
-  exact (φ.range.spectrum_eq_of_isClosed (x := e a) ha).symm
+  exact (φ.range.spectrum_eq_of_predicate (x := e a) ha).symm
 
 /-- A unital `⋆`-homomorphism `φ : A →⋆ₐ[𝕜] B` which is a closed embedding pulls the continuous
 functional calculus of `B` back to `A`, for elements `a` such that `φ a` satisfies the predicate
