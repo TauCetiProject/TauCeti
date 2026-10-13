@@ -76,7 +76,7 @@ open Set Module Metric
 section Compact
 
 variable {ι V P : Type*} [Fintype ι] [NormedAddCommGroup V] [NormedSpace ℝ V]
-  [FiniteDimensional ℝ V] [MetricSpace P] [NormedAddTorsor V P]
+  [FiniteDimensional ℝ V] [PseudoMetricSpace P] [NormedAddTorsor V P]
 
 /-- **Affine bases with bounded barycentric coordinates.** A compact set `K` whose affine span is
 the whole finite-dimensional real affine space contains an affine basis `b`, indexed by any type
@@ -96,9 +96,12 @@ theorem IsCompact.exists_affineBasis_abs_coord_le_one {K : Set P} (hK : IsCompac
     exact hsK (Subtype.prop _)
   -- Choose vertices in `K` maximizing the volume `|det|` relative to `b₁`.
   let f : (ι → P) → ℝ := fun q => |(b₁.toMatrix q).det|
+  -- Continuity goes through the linear part: Mathlib's `continuous_barycentric_coord` assumes
+  -- `MetricSpace P`, which this pseudometric setting does not provide.
+  have hcoord : ∀ j, Continuous (b₁.coord j) := fun j =>
+    AffineMap.continuous_linear_iff.1 (b₁.coord j).linear.continuous_of_finiteDimensional
   have hf : Continuous f :=
-    ((continuous_matrix fun i j => (continuous_barycentric_coord b₁ j).comp
-      (continuous_apply i)).matrix_det).abs
+    ((continuous_matrix fun i j => (hcoord j).comp (continuous_apply i)).matrix_det).abs
   obtain ⟨q, hqK, hq⟩ := (isCompact_univ_pi fun _ => hK).exists_isMaxOn
     ⟨b₁, fun i _ => hb₁ i⟩ hf.continuousOn
   have hfq : 0 < f q := by
