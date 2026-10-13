@@ -40,6 +40,8 @@ variable (G : Type*) [TopologicalSpace G] [Group G] [IsTopologicalGroup G]
 
 /-- **`Map(S², G)` is homotopy equivalent to `G × Ω^M(ΩG)`**, with `Ω^M(ΩG)` the Moore loops in
 the fixed-interval loop space of `G`, based at the constant loop. -/
+-- `Ω² G = (iteratedLoopSpace ⟨G, 1⟩ 2).carrier` is `Path (refl 1) (refl 1)` by the definition of
+-- the iterated loop space, so the Moore comparison for the loops at `refl 1` in `ΩG` lands in it.
 def sphere2GroupHomotopyEquivMoore :
     ContinuousMap.HomotopyEquiv (G × MooreLoopSpace (Path (1 : G) 1) (Path.refl 1)) C(Sphere2, G) :=
   (ContinuousMap.HomotopyEquiv.prodCongr (ContinuousMap.HomotopyEquiv.refl G)
@@ -48,7 +50,18 @@ def sphere2GroupHomotopyEquivMoore :
 
 variable {G}
 
+/-- The forward map of `sphere2GroupHomotopyEquivMoore` reparametrizes the Moore loop to the unit
+interval and applies the decomposition `G × Ω²G ≃ₜ Map(S², G)`. -/
+theorem sphere2GroupHomotopyEquivMoore_apply (g : G)
+    (γ : MooreLoopSpace (Path (1 : G) 1) (Path.refl 1)) :
+    sphere2GroupHomotopyEquivMoore G (g, γ) =
+      sphere2GroupHomeomorphIteratedLoopSpace G
+        (g, MooreLoopSpace.homotopyEquivPath (Path.refl (1 : G)) γ) := by
+  rw [sphere2GroupHomotopyEquivMoore]
+  rfl
+
 /-- The value at the north pole of the image of `(g, γ)` is `g`. -/
+@[simp]
 theorem sphere2GroupHomotopyEquivMoore_apply_north (g : G)
     (γ : MooreLoopSpace (Path (1 : G) 1) (Path.refl 1)) :
     sphere2GroupHomotopyEquivMoore G (g, γ) Sphere2.north = g := by
