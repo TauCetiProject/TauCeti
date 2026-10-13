@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Germ
+public import TauCeti.Algebra.Algebra.Rat
 public import TauCeti.Analysis.Normed.Algebra.Logarithm.Basic
 
 /-!
@@ -59,24 +60,6 @@ theorem map_logSeries_apply {F : Type*} [FunLike F A B] [RingHomClass F A B]
 
 end Algebra
 
-section RatAlgebra
-
-variable {B : Type*} [Ring B]
-
-/-- The image of a rational number under a ring homomorphism is central. -/
-private theorem commute_ratHom (g : ℚ →+* B) (q : ℚ) (y : B) : Commute (g q) y := by
-  let u : ℚˣ := Units.mk0 (q.den : ℚ) (Nat.cast_ne_zero.mpr q.den_nz)
-  have hu : Commute (↑(Units.map (g : ℚ →* B) u)⁻¹ : B) y :=
-    Commute.units_inv_left (by simpa [u] using Nat.cast_commute q.den y)
-  rw [← Rat.num_div_den q, div_eq_mul_inv, map_mul, map_intCast]
-  exact (Int.cast_commute q.num y).mul_left (by simpa [u] using hu)
-
-/-- A ring homomorphism `ℚ →+* B` makes `B` a `ℚ`-algebra, since its image is central. -/
-private abbrev ratAlgebraOfRingHom (g : ℚ →+* B) : Algebra ℚ B :=
-  g.toAlgebra' fun q y ↦ (commute_ratHom g q y).eq
-
-end RatAlgebra
-
 section Normed
 
 variable {A B : Type*} [NormedRing A] [NormedAlgebra ℚ A] [CompleteSpace A]
@@ -86,7 +69,7 @@ variable [Ring B] [TopologicalSpace B] [IsTopologicalRing B] [T2Space B]
 theorem map_log_of_mem_ball {F : Type*} [FunLike F A B] [RingHomClass F A B]
     (f : F) (hf : Continuous f) {x : A} (hx : x ∈ Metric.ball (1 : A) 1) :
     f (log x) = log (f x) := by
-  let _ := ratAlgebraOfRingHom ((f : A →+* B).comp (algebraMap ℚ A))
+  let _ := ((f : A →+* B).comp (algebraMap ℚ A)).toRatAlgebra
   have hx' : ‖x - 1‖ < 1 := by simpa [Metric.mem_ball, dist_eq_norm] using hx
   rw [log_eq_tsum ℚ, log_eq_tsum ℚ,
     ← ((logSeries_summable_of_norm_lt_one ℚ A hx').hasSum.map f hf).tsum_eq]
