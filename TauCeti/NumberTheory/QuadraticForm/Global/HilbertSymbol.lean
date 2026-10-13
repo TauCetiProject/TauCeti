@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.NumberTheory.Padics.HeightOneSpectrum
 public import TauCeti.NumberTheory.HilbertSymbol.Basic
 public import TauCeti.NumberTheory.QuadraticForm.Global.Localization
 import TauCeti.NumberTheory.HilbertSymbol.Henselian
@@ -41,6 +42,8 @@ invariant of a global form.
   element, is `1` at all but finitely many finite places.
 * `TauCeti.hasFiniteMulSupport_hilbertSymbol_unitAtFinitePlace`: the localized symbol is `1` at
   all but finitely many finite places.
+* `TauCeti.hilbertSymbol_unitAtFinitePlace_rat`: for `K = ℚ`, the localized symbol at the place
+  above a prime `ℓ` is the Hilbert symbol over `ℚ_ℓ`.
 
 ## References
 
@@ -123,5 +126,28 @@ theorem hasFiniteMulSupport_hilbertSymbol_unitAtFinitePlace (a b : Kˣ) :
   hasFiniteMulSupport_hilbertSymbol_of_eventually_valued_eq_one
     (Filter.eventually_cofinite.mpr ((finite_setOfPred_valuation_ne_one a.ne_zero).subset
       fun v hv ↦ by rwa [Set.mem_ofPred_eq, valued_unitAtFinitePlace] at hv)) b
+
+section Rat
+
+/-- The prime `ℓ`, as a `Fact`, so that `ℚ_[ℓ]` can be written for `ℓ : Nat.Primes`. -/
+local instance (ℓ : Nat.Primes) : Fact ℓ.1.Prime := ⟨ℓ.2⟩
+
+/-- **The Hilbert symbol at a finite place of `ℚ` is the Hilbert symbol over `ℚ_ℓ`.** For a prime
+`ℓ` and `a, b ∈ ℚˣ`, the Hilbert symbol of the images of `a` and `b` in the completion of `ℚ` at
+the place above `ℓ` is their Hilbert symbol over `ℚ_ℓ`. -/
+theorem hilbertSymbol_unitAtFinitePlace_rat (ℓ : Nat.Primes) (a b : ℚˣ) :
+    hilbertSymbol (((Rat.HeightOneSpectrum.primesEquiv (R := 𝓞 ℚ)).symm ℓ).unitAtFinitePlace a)
+        (((Rat.HeightOneSpectrum.primesEquiv (R := 𝓞 ℚ)).symm ℓ).unitAtFinitePlace b) =
+      hilbertSymbol (Units.map (algebraMap ℚ ℚ_[ℓ]).toMonoidHom a)
+        (Units.map (algebraMap ℚ ℚ_[ℓ]).toMonoidHom b) := by
+  -- `Padic.adicCompletionEquiv` is stated for the `ℚ`-algebra structure of the completion, not for
+  -- the one every field of characteristic zero carries, which instance search finds first.
+  let _ : Algebra ℚ (((Rat.HeightOneSpectrum.primesEquiv (R := 𝓞 ℚ)).symm ℓ).adicCompletion ℚ) :=
+    instAlgebraAdicCompletion (𝓞 ℚ) ℚ _
+  let e := (Padic.adicCompletionEquiv (𝓞 ℚ) ℓ).toAlgEquiv.toRingEquiv
+  rw [← hilbertSymbol_units_map_ringEquiv e]
+  congr 1 <;> ext <;> simp [e, eq_ratCast]
+
+end Rat
 
 end TauCeti
