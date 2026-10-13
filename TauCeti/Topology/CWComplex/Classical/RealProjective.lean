@@ -459,15 +459,10 @@ theorem nat_card_cell_cwComplex (m : ℕ) :
 
 /-- A cell of dimension `m` of the CW structure on `RPⁿ` exists only for `m ≤ n`. -/
 theorem le_of_cell_cwComplex {m : ℕ}
-    (c : letI := cwComplex n; cell (univ : Set (RealProjectiveSpace n)) m) : m ≤ n := by
-  let := cwComplex n
-  have := finite_cwComplex (n := n)
-  have hpos : 0 < Nat.card (cell (univ : Set (RealProjectiveSpace n)) m) :=
-    Nat.card_pos_iff.2 ⟨⟨c⟩, RelCWComplex.FiniteType.finite_cell m⟩
-  rw [nat_card_cell_cwComplex] at hpos
-  split_ifs at hpos with h
-  · exact h
-  · exact absurd hpos (lt_irrefl 0)
+    (c : letI := cwComplex n; cell (univ : Set (RealProjectiveSpace n)) m) : m ≤ n :=
+  -- Unfolding the definition of `CWComplex.mkFinite`, the cells of `cwComplex n` in dimension `m`
+  -- are `Cell n m`, which stores the bound.
+  Nat.le_of_lt_succ (c : Cell n m).down
 
 /-- Real projective space has finite CW type. -/
 instance finiteCWType : FiniteCWType (RealProjectiveSpace n) :=
