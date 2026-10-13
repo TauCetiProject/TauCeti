@@ -40,8 +40,7 @@ divided-power coefficient vanishes.
 * R. W. Carter, *Simple Groups of Lie Type*, §4.4.
 * J. E. Humphreys, *Linear Algebraic Groups*, §26.
 
-This supplies the closed-root-subgroup condition in the pinning target of Layer 9 of the
-ReductiveGroups roadmap.
+This supplies the closed-root-subgroup condition of a pinning.
 -/
 
 public section

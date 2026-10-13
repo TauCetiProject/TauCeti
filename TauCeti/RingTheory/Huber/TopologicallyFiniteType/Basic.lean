@@ -13,7 +13,6 @@ import TauCeti.RingTheory.Huber.OpenMapping
 import TauCeti.RingTheory.Huber.WeightedEval.Completion
 import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.FirstCountable
 import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.PairOfDefinition
-import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.PowerBounded
 import TauCeti.Topology.Algebra.GroupCompletion
 
 /-!
