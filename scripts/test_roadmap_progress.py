@@ -593,7 +593,7 @@ class PagesFailurePath(unittest.TestCase):
             body.append(line[indent:])
         return "\n".join(body)
 
-    def publish_after_failure(self, restored):
+    def publish_after_failure(self, restored, restored_validator=None):
         """The JSON left for publication when generation fails over `restored` (None: no file)."""
         with tempfile.TemporaryDirectory() as d:
             root = pathlib.Path(d)
@@ -608,6 +608,8 @@ class PagesFailurePath(unittest.TestCase):
             subprocess.run(["git", "init", "-q", d], check=True)
             subprocess.run(git + ["add", "."], check=True)
             subprocess.run(git + ["commit", "-qm", "fallback"], check=True)
+            if restored_validator is not None:
+                (static / "progress.js").write_text(restored_validator)
             if restored is None:
                 (static / "progress.json").unlink()
             else:
@@ -628,6 +630,11 @@ class PagesFailurePath(unittest.TestCase):
     def test_a_current_restored_snapshot_is_kept(self):
         current = {**self.COMMITTED, "which": "last published"}
         self.assertEqual(self.publish_after_failure(current)["which"], "last published")
+
+    def test_a_current_snapshot_is_kept_when_the_cache_also_restores_legacy_javascript(self):
+        current = {**self.COMMITTED, "which": "last published"}
+        legacy_js = "document.getElementById('progress-board');"
+        self.assertEqual(self.publish_after_failure(current, legacy_js)["which"], "last published")
 
     def test_a_stamped_but_malformed_snapshot_is_replaced(self):
         broken = {"topic_scheme": rp.TOPIC_SCHEME, "which": "malformed"}

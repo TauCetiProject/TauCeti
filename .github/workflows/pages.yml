@@ -323,6 +323,8 @@ jobs:
             # above. Keep it only if it validates in the current topic scheme: one from before the switch
             # to arXiv categories carries the old hand-assigned topics, and the board would show
             # them under its "by arXiv category" label. Otherwise publish the committed fallback.
+            # The cache also restores front-end files; validate with this commit's board code.
+            git checkout -- web/static_files/progress.js
             if python3 scripts/roadmap_progress.py --check-snapshot web/static_files/progress.json; then
               echo "::warning::roadmap progress generation failed; keeping the last published JSON"
             else
