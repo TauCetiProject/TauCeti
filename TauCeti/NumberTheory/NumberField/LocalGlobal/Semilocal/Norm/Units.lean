@@ -9,6 +9,7 @@ public import TauCeti.NumberTheory.NumberField.Global.Places.Semilocal
 public import TauCeti.NumberTheory.NumberField.LocalGlobal.Semilocal.Norm.Trace
 public import TauCeti.NumberTheory.LocalField.Norm.Unramified.Basic
 import TauCeti.NumberTheory.NumberField.InfinitePlace.Completion.DecompositionGroup
+import TauCeti.NumberTheory.NumberField.InfinitePlace.Completion.Norm
 import TauCeti.RingTheory.DedekindDomain.AdicValuation.RamificationIndex
 public import TauCeti.RingTheory.DedekindDomain.AdicValuation.ValuativeRel
 
@@ -29,6 +30,8 @@ above the place, including split algebras and real and complex places.
   if one completion above the place has degree one.
 * `TauCeti.pow_mem_range_normUnits_completion`: at an infinite place every `n`-th power is a local
   norm once `n` kills `Gal(L/K)`.
+* `TauCeti.mem_range_normUnits_completion_of_isComplex`: at a complex place every unit is a local
+  norm, for every finite extension `L/K`.
 
 ## References
 
@@ -144,5 +147,24 @@ theorem pow_mem_range_normUnits_completion [IsGalois K L] {n : ℕ}
   rw [finprod_eq_single _ ⟨w, this⟩ fun w' hw' ↦ by simp [Pi.mulSingle_eq_of_ne hw']]
   ext
   simp [hb, hk, ← pow_mul, mul_comm]
+
+end TauCeti
+
+/-! ### Complex places -/
+
+namespace TauCeti
+
+variable {K : Type*} [Field K] (L : Type*) [Field L] [Algebra K L] [FiniteDimensional K L]
+
+/-- **Every unit is a local norm at a complex place.** At a complex place `w` of `K` every unit of
+`K_w ≅ ℂ` is the norm of a unit of the local étale algebra `K_w ⊗[K] L`: it is an `[L : K]`-th
+power, and the `[L : K]`-th power of `b ∈ K_wˣ` is the norm of `b ⊗ 1`. -/
+theorem mem_range_normUnits_completion_of_isComplex {w : InfinitePlace K} (hw : w.IsComplex)
+    (a : w.Completionˣ) :
+    a ∈ (Algebra.normUnits w.Completion (S := w.Completion ⊗[K] L)).range := by
+  obtain ⟨b, rfl⟩ := Completion.mem_range_powMonoidHom (Module.finrank_pos (R := K) (M := L)).ne'
+    a fun hr ↦ (not_isReal_iff_isComplex.mpr hw hr).elim
+  have hb := Algebra.pow_finrank_mem_range_normUnits w.Completion (S := w.Completion ⊗[K] L) b
+  rwa [Module.finrank_baseChange] at hb
 
 end TauCeti

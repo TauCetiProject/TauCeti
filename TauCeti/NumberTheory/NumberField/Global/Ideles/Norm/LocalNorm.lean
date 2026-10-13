@@ -6,34 +6,19 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.NumberField.Global.Ideles.Norm.Range
-public import TauCeti.NumberTheory.NumberField.InfinitePlace.Completion.Norm
+public import TauCeti.NumberTheory.NumberField.LocalGlobal.Semilocal.Norm.LocalNorm
 
 /-!
-# Elements that are norms at every place
+# Principal ideles that are idele norms
 
-For an extension `L/K` of number fields, an element `x ∈ Kˣ` is a *local norm* at a place of `K`
-when its image in the completion `K_v` is a norm from the local étale algebra `K_v ⊗[K] L`. Using
-the scalar extension, rather than one completion `L_w` above `v`, keeps every place of `L` above
-`v`: by `TauCeti.mem_range_normUnits_adicCompletion_iff` the local norms are the products of norms
-from all the completions `L_w` with `w ∣ v`. This file defines
-
-* `TauCeti.GlobalNumberFields.IsFiniteLocalNorm`, the local norm condition at a finite place;
-* `TauCeti.GlobalNumberFields.IsInfiniteLocalNorm`, the local norm condition at an infinite place,
-  on Mathlib's completion `w.Completion`;
-* `TauCeti.GlobalNumberFields.IsLocalNormEverywhere`, the conjunction of both conditions at every
-  finite and every infinite place.
-
-Complex places are not dropped from `IsLocalNormEverywhere`; instead their condition is proved to
-be automatic (`isInfiniteLocalNorm_of_isComplex`), since every complex number is an `[L : K]`-th
-power.
-
-The main result, `unitEmbedding_mem_range_ideleNormMap_iff`, says that `x` is a norm at every
-place exactly when its principal idele is the norm of an idele of `L`. It is the principal case of
-the placewise criterion `mem_range_ideleNormMap_iff`. With the Hasse norm theorem for cyclic
-extensions, which identifies global norms with principal ideles that are idele norms, it turns
-the Hasse norm principle into a statement about norm equations in the completions. The easy half
-of that principle holds for every extension: a global norm is a norm everywhere
-(`isLocalNormEverywhere_normUnits`).
+For an extension `L/K` of number fields, the main result,
+`unitEmbedding_mem_range_ideleNormMap_iff`, says that `x ∈ Kˣ` is a norm at every place
+(`TauCeti.GlobalNumberFields.IsLocalNormEverywhere`) exactly when its principal idele is the norm
+of an idele of `L`. It is the principal case of the placewise criterion
+`mem_range_ideleNormMap_iff`. With the Hasse norm theorem for cyclic extensions, which identifies
+global norms with principal ideles that are idele norms, it turns the Hasse norm principle into a
+statement about norm equations in the completions. The easy half of that principle holds for
+every extension: a global norm is a norm everywhere (`isLocalNormEverywhere_normUnits`).
 
 ## References
 
@@ -45,91 +30,11 @@ of that principle holds for every extension: a global norm is a norm everywhere
 public section
 noncomputable section
 
-open IsDedekindDomain IsDedekindDomain.HeightOneSpectrum NumberField NumberField.InfinitePlace
-open scoped TensorProduct AdicCompletionExtension NumberField.LiesOver
+open IsDedekindDomain IsDedekindDomain.HeightOneSpectrum NumberField
 
 namespace TauCeti.GlobalNumberFields
 
-variable (K L : Type*) [Field K] [Field L] [Algebra K L]
-
-/-- `x ∈ Kˣ` is a **local norm at the infinite place `w`** for a finite extension `L/K`: its
-image in Mathlib's completion `K_w` is the norm of a unit of the local étale algebra
-`K_w ⊗[K] L`. -/
-def IsInfiniteLocalNorm [_hKL : FiniteDimensional K L] (w : InfinitePlace K) (x : Kˣ) : Prop :=
-  Units.map (algebraMap K w.Completion).toMonoidHom x ∈
-    (Algebra.normUnits w.Completion (S := w.Completion ⊗[K] L)).range
-
-variable [NumberField K]
-
-/-- `x ∈ Kˣ` is a **local norm at the finite place `v`** for a finite extension `L/K`: its image
-in `K_v` is the norm of a unit of the local étale algebra `K_v ⊗[K] L`, which accounts for every
-place of `L` above `v`. -/
-def IsFiniteLocalNorm [_hKL : FiniteDimensional K L] (v : HeightOneSpectrum (𝓞 K)) (x : Kˣ) :
-    Prop :=
-  Units.map (algebraMap K (v.adicCompletion K)).toMonoidHom x ∈
-    (Algebra.normUnits (v.adicCompletion K) (S := v.adicCompletion K ⊗[K] L)).range
-
-/-- `x ∈ Kˣ` is a **local norm everywhere** for a finite extension `L/K`: it is a local norm at
-every finite place and at every infinite place of `K`, complex places included. -/
-def IsLocalNormEverywhere [FiniteDimensional K L] (x : Kˣ) : Prop :=
-  (∀ v : HeightOneSpectrum (𝓞 K), IsFiniteLocalNorm K L v x) ∧
-    ∀ w : InfinitePlace K, IsInfiniteLocalNorm K L w x
-
-section Unfold
-
-variable {K L} [FiniteDimensional K L]
-
-omit [NumberField K] in
-/-- Unfolding `IsInfiniteLocalNorm`. -/
-theorem isInfiniteLocalNorm_iff_mem_range (w : InfinitePlace K) (x : Kˣ) :
-    IsInfiniteLocalNorm K L w x ↔
-      Units.map (algebraMap K w.Completion).toMonoidHom x ∈
-        (Algebra.normUnits w.Completion (S := w.Completion ⊗[K] L)).range :=
-  Iff.rfl
-
-omit [NumberField K] in
-/-- **The local norm condition at a complex place is automatic.** It is kept in
-`IsLocalNormEverywhere` rather than silently omitted, and this theorem discharges it. -/
-theorem isInfiniteLocalNorm_of_isComplex {w : InfinitePlace K} (hw : w.IsComplex) (x : Kˣ) :
-    IsInfiniteLocalNorm K L w x :=
-  mem_range_normUnits_completion_of_isComplex L hw _
-
-/-- Unfolding `IsFiniteLocalNorm`. -/
-theorem isFiniteLocalNorm_iff_mem_range (v : HeightOneSpectrum (𝓞 K)) (x : Kˣ) :
-    IsFiniteLocalNorm K L v x ↔
-      Units.map (algebraMap K (v.adicCompletion K)).toMonoidHom x ∈
-        (Algebra.normUnits (v.adicCompletion K) (S := v.adicCompletion K ⊗[K] L)).range :=
-  Iff.rfl
-
-/-- Unfolding `IsLocalNormEverywhere`. -/
-theorem isLocalNormEverywhere_iff (x : Kˣ) :
-    IsLocalNormEverywhere K L x ↔
-      (∀ v : HeightOneSpectrum (𝓞 K), IsFiniteLocalNorm K L v x) ∧
-        ∀ w : InfinitePlace K, IsInfiniteLocalNorm K L w x :=
-  Iff.rfl
-
-end Unfold
-
-variable {K L} [NumberField L]
-
-/-- `x` is a local norm at the finite place `v` exactly when its image in `K_v` is a product of
-norms from the completions of `L` at the places above `v`. -/
-theorem isFiniteLocalNorm_iff (v : HeightOneSpectrum (𝓞 K)) (x : Kˣ) :
-    IsFiniteLocalNorm K L v x ↔
-      ∃ u : (w : {w : HeightOneSpectrum (𝓞 L) // w.asIdeal.LiesOver v.asIdeal}) →
-          (w.1.adicCompletion L)ˣ,
-        (∏ᶠ w, Algebra.normUnits (v.adicCompletion K) (u w)) =
-          Units.map (algebraMap K (v.adicCompletion K)).toMonoidHom x :=
-  mem_range_normUnits_adicCompletion_iff K L v _
-
-/-- `x` is a local norm at the infinite place `w` exactly when its image in `K_w` is a product of
-norms from the completions of `L` at the places above `w`. -/
-theorem isInfiniteLocalNorm_iff (w : InfinitePlace K) (x : Kˣ) :
-    IsInfiniteLocalNorm K L w x ↔
-      ∃ u : (w' : {w' : InfinitePlace L // w'.LiesOver w}) → w'.1.Completionˣ,
-        (∏ᶠ w', Algebra.normUnits w.Completion (u w')) =
-          Units.map (algebraMap K w.Completion).toMonoidHom x :=
-  mem_range_normUnits_completion_iff K L w _
+variable {K L : Type*} [Field K] [Field L] [Algebra K L] [NumberField K] [NumberField L]
 
 /-- **Principal idele norms are local norms everywhere.** For an extension `L/K` of number fields,
 the principal idele of `x ∈ Kˣ` is the norm of an idele of `L` exactly when `x` is a norm from the

@@ -23,8 +23,7 @@ infinite place `v` of `K`. Through the extension embeddings `K_v → ℂ` and `L
 * If `w` is ramified over `v`, so that `w` is complex and `v` is real, then the norm is
   `z ↦ |z|²`, and the norm group `N_{L_w/K_v}(L_wˣ)` consists of the positive elements.
 
-At a complex place every unit is moreover an `n`-th power for every `n ≠ 0`, hence a norm from
-the local étale algebra `K_v ⊗[K] L` for every finite extension `L / K`.
+At a complex place every unit is moreover an `n`-th power for every `n ≠ 0`.
 
 These formulas compute the archimedean components of the norm map of ideles. The norm preserves
 the normalized absolute value: at a complex place over a real place the source uses the square
@@ -47,8 +46,6 @@ of the ordinary absolute value, exactly as the norm does.
   a real place, the norms are the positive elements.
 * `NumberField.InfinitePlace.Completion.mem_range_powMonoidHom`: a unit of an archimedean
   completion that is positive at a real place is an `n`-th power.
-* `TauCeti.mem_range_normUnits_completion_of_isComplex`: at a complex place every unit is a norm
-  from the local étale algebra `K_w ⊗[K] L`.
 
 ## References
 
@@ -201,23 +198,3 @@ theorem mem_range_powMonoidHom {n : ℕ} (hn : n ≠ 0) (y : w.Completionˣ)
       RingEquiv.symm_apply_apply]
 
 end NumberField.InfinitePlace.Completion
-
-namespace TauCeti
-
-open NumberField.InfinitePlace
-open scoped TensorProduct
-
-variable {K : Type*} [Field K] (L : Type*) [Field L] [Algebra K L] [FiniteDimensional K L]
-
-/-- **Every unit is a local norm at a complex place.** At a complex place `w` of `K` every unit of
-`K_w ≅ ℂ` is the norm of a unit of the local étale algebra `K_w ⊗[K] L`: it is an `[L : K]`-th
-power, and the `[L : K]`-th power of `b ∈ K_wˣ` is the norm of `b ⊗ 1`. -/
-theorem mem_range_normUnits_completion_of_isComplex {w : InfinitePlace K} (hw : w.IsComplex)
-    (a : w.Completionˣ) :
-    a ∈ (Algebra.normUnits w.Completion (S := w.Completion ⊗[K] L)).range := by
-  obtain ⟨b, rfl⟩ := Completion.mem_range_powMonoidHom (Module.finrank_pos (R := K) (M := L)).ne'
-    a fun hr ↦ (not_isReal_iff_isComplex.mpr hw hr).elim
-  have hb := Algebra.pow_finrank_mem_range_normUnits w.Completion (S := w.Completion ⊗[K] L) b
-  rwa [Module.finrank_baseChange] at hb
-
-end TauCeti
