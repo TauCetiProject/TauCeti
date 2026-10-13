@@ -8,10 +8,12 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Complex.CircleMap
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Complex
 public import Mathlib.Order.LiminfLimsup
+import Mathlib.Analysis.Calculus.FDeriv.Measurable
 import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 import Mathlib.Analysis.SpecialFunctions.PolarCoord
 public import Mathlib.MeasureTheory.Integral.CircleIntegral
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.Periodic
+import TauCeti.Analysis.Fourier.Wirtinger
 import TauCeti.MeasureTheory.Function.Lp.LIntegralRpow
 import Mathlib.MeasureTheory.Integral.Prod
 import Mathlib.Topology.Order.LeftRightNhds
@@ -88,8 +90,12 @@ integral on the right need not be an area and the circle integral on the left ne
 * `TauCeti.lintegral_circleLIntegral_sq_div_le_lintegral_sq` — the **length–area inequality**.
 * `TauCeti.exists_mul_circleLIntegral_lt_of_lintegral_ne_top` — finite plane mass gives
   arbitrarily small radius-weighted circle integrals.
+* `TauCeti.norm_integral_apply_apply_circleMap_le` — the bilinear action of a `C¹` map on
+  a circle is bounded by the operator norm of the bilinear map times the angular energy.
 * `TauCeti.ofReal_integral_norm_deriv_comp_circleMap_sq_le` — circle integrals control
   the squared angular derivative of a differentiable map.
+* `TauCeti.exists_integral_norm_deriv_comp_circleMap_sq_lt` — finite energy supplies shrinking
+  circles with arbitrarily small angular energy.
 * `TauCeti.exists_circleLIntegral_sq_lt` — **Wolff's lemma**: a radius with small circle integral
   exists in every annulus whose logarithmic measure is large enough.
 * `TauCeti.exists_circleLIntegral_lt_of_lintegral_sq_ne_top` — its limiting form for a weight of
@@ -102,6 +108,8 @@ integral on the right need not be an area and the circle integral on the left ne
 
 * Ch. Pommerenke, *Boundary Behaviour of Conformal Maps*, §2.2 (the length–area method).
 * P. L. Duren, *Univalent Functions*, Ch. 3.
+* D. McDuff and D. Salamon, *J-holomorphic Curves and Symplectic Topology*, 2nd ed.,
+  Section 4.4 (the bilinear action estimate).
 -/
 
 public section
@@ -520,6 +528,34 @@ theorem exists_mul_circleLIntegral_lt_of_lintegral_ne_top (hg : Measurable g)
   rw [lintegral_circleLIntegral_eq_lintegral hg ζ] at hsub
   exact (not_le.mpr hlt) (hmass ▸ hmono.trans hsub)
 
+/-- The bilinear action of a map that is `C¹` near each point of a parametrized circle is
+bounded by the operator norm of the bilinear map times the angular energy. -/
+theorem norm_integral_apply_apply_circleMap_le {V G : Type*} [NormedAddCommGroup V]
+    [InnerProductSpace ℝ V] [FiniteDimensional ℝ V] [NormedAddCommGroup G] [NormedSpace ℝ G]
+    [CompleteSpace G] (u : ℂ → V) {B : V →L[ℝ] V →L[ℝ] G} (z₀ : ℂ) (r : ℝ)
+    (hu : ∀ θ, ContDiffAt ℝ 1 u (circleMap z₀ r θ)) :
+    ‖∫ θ in -π..π, B (u (circleMap z₀ r θ))
+      (deriv (fun θ ↦ u (circleMap z₀ r θ)) θ)‖ ≤
+      ‖B‖ * ∫ θ in -π..π, ‖deriv (fun θ ↦ u (circleMap z₀ r θ)) θ‖ ^ 2 := by
+  have : CompleteSpace V := FiniteDimensional.complete ℝ V
+  have hc : ContDiff ℝ 1 (fun θ ↦ u (circleMap z₀ r θ)) :=
+    contDiff_iff_contDiffAt.mpr fun θ ↦
+      (hu θ).comp θ (contDiff_circleMap z₀ r).contDiffAt
+  have hd := hc.continuous_deriv (by norm_num)
+  have hLp : MemLp (deriv (fun θ ↦ u (circleMap z₀ r θ))) 2
+      (volume.restrict (Ioc (-π) π)) :=
+    (memLp_two_iff_integrable_sq_norm hd.aestronglyMeasurable).mpr
+      (hd.norm.pow 2).integrableOn_Ioc
+  have hends : circleMap z₀ r (-π) = circleMap z₀ r π := by
+    convert (periodic_circleMap z₀ r (-π)).symm using 1
+    congr 1
+    ring
+  have h := B.norm_integral_apply_apply_le (by linarith [Real.pi_pos])
+    (fun θ _ ↦ (hc.differentiable (by norm_num) θ).hasDerivAt)
+    (congrArg u hends) hLp
+  have hfactor : (π - -π) / (2 * π) = (1 : ℝ) := by field_simp; ring
+  simpa only [hfactor, mul_one] using h
+
 /-- The squared angular derivative of a map on a circle is bounded by the radius times the
 circle integral of a weight dominating the squared operator norm of its differential. -/
 theorem ofReal_integral_norm_deriv_comp_circleMap_sq_le {V : Type*}
@@ -553,5 +589,46 @@ theorem ofReal_integral_norm_deriv_comp_circleMap_sq_le {V : Type*}
     _ ≤ ENNReal.ofReal ρ * ENNReal.ofReal ρ * g (circleMap ζ ρ θ) := by
         gcongr
         exact hg θ
+
+/-- The punctured closed disc is measurable, for every centre and radius. -/
+theorem measurableSet_puncturedClosedDisc (ζ : ℂ) (b : ℝ) :
+    MeasurableSet {z : ℂ | 0 < ‖z - ζ‖ ∧ ‖z - ζ‖ ≤ b} :=
+  (isOpen_lt continuous_const (continuous_id.sub continuous_const).norm).measurableSet.inter
+    (isClosed_le (continuous_id.sub continuous_const).norm continuous_const).measurableSet
+
+/-- A circle of positive radius at most `b` lies in the punctured closed disc of radius `b`. -/
+theorem circleMap_mem_puncturedClosedDisc (ζ : ℂ) {r b : ℝ} (hr : 0 < r) (hrb : r ≤ b)
+    (θ : ℝ) : circleMap ζ r θ ∈ {z : ℂ | 0 < ‖z - ζ‖ ∧ ‖z - ζ‖ ≤ b} := by
+  simpa only [mem_ofPred_eq, circleMap_sub_center, norm_circleMap_zero, abs_of_pos hr]
+    using And.intro hr hrb
+
+/-- Finite square-integral of the differential on a punctured disc gives arbitrarily small
+angular energies on shrinking circles. No extension over the puncture is assumed. -/
+theorem exists_integral_norm_deriv_comp_circleMap_sq_lt {V : Type*}
+    [NormedAddCommGroup V] [NormedSpace ℝ V] [CompleteSpace V]
+    {u : ℂ → V} (ζ : ℂ) {b R ε : ℝ}
+    (hR : 0 < R) (hRb : R ≤ b) (hε : 0 < ε)
+    (hu : ∀ z ∈ {z : ℂ | 0 < ‖z - ζ‖ ∧ ‖z - ζ‖ ≤ b}, DifferentiableAt ℝ u z)
+    (henergy : IntegrableOn (fun z ↦ ‖fderiv ℝ u z‖ ^ 2)
+      {z : ℂ | 0 < ‖z - ζ‖ ∧ ‖z - ζ‖ ≤ b}) :
+    ∃ r ∈ Ioo 0 R,
+      (∫ θ in -π..π, ‖deriv (fun θ ↦ u (circleMap ζ r θ)) θ‖ ^ 2) < ε := by
+  let D := {z : ℂ | 0 < ‖z - ζ‖ ∧ ‖z - ζ‖ ≤ b}
+  have hD : MeasurableSet D := measurableSet_puncturedClosedDisc ζ b
+  let g : ℂ → ℝ≥0∞ := D.indicator (fun z ↦ ENNReal.ofReal (‖fderiv ℝ u z‖ ^ 2))
+  have hg : Measurable g :=
+    (ENNReal.measurable_ofReal.comp ((measurable_fderiv ℝ u).norm.pow_const 2)).indicator hD
+  have hfin : (∫⁻ z, g z) ≠ ∞ := by
+    rw [lintegral_indicator hD]
+    have h := henergy.hasFiniteIntegral
+    rw [hasFiniteIntegral_iff_ofReal (ae_of_all _ fun _ ↦ sq_nonneg _)] at h
+    exact h.ne
+  obtain ⟨r, hr, hlt⟩ := exists_mul_circleLIntegral_lt_of_lintegral_ne_top hg hfin ζ
+    (ENNReal.ofReal_pos.mpr hε).ne' hR
+  have hmem (θ : ℝ) : circleMap ζ r θ ∈ D :=
+    circleMap_mem_puncturedClosedDisc ζ hr.1 (hr.2.le.trans hRb) θ
+  have hbound := ofReal_integral_norm_deriv_comp_circleMap_sq_le ζ hr.1
+    (fun θ ↦ hu _ (hmem θ)) (g := g) (fun θ ↦ by simp [g, hmem θ])
+  exact ⟨r, hr, (ENNReal.ofReal_lt_ofReal_iff hε).mp (hbound.trans_lt hlt)⟩
 
 end TauCeti

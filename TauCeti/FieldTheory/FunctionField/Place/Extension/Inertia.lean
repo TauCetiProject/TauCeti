@@ -38,6 +38,12 @@ separate: `P` is totally ramified over `T`, while `P ∩ T` is unramified over `
 residue extension.  Over both the decomposition and the inertia field the valuation ring of `P` is
 the integral closure of the valuation ring below it.
 
+With no hypothesis on the residue extension, the inertia field is the largest intermediate field
+`E` over which `P ∩ E` has ramification index one and separable residue extension over `F`.  The
+inertia group over `E` is the part of the inertia group over `F` fixing `E`, and its order is
+`e(P ∣ P ∩ E) · f_ins(P ∣ P ∩ E)`.  Both factors are multiplicative in towers, so the index of
+`Gal(F' / E)` in the inertia group is `e(P ∩ E ∣ P ∩ F) · f_ins(P ∩ E ∣ P ∩ F)`.
+
 This is Stichtenoth, Definition 3.8.1 and the second half of Theorem 3.8.2; the first half — the
 order of the decomposition group, and the decomposition field — is in
 `TauCeti/FieldTheory/FunctionField/Place/Extension/Decomposition.lean`.
@@ -82,6 +88,14 @@ order of the decomposition group, and the decomposition field — is in
   `TauCeti.Place.eq_of_restrict_inertiaField_eq`: over its inertia field a place is fixed by the
   whole Galois group, which acts trivially on its residues, and it is the only place above its
   restriction.
+* `TauCeti.Place.inertiaField_smul`: conjugate places have conjugate inertia fields.
+* `TauCeti.Place.map_restrictScalarsHom_inertiaSubgroup`: the inertia group over an intermediate
+  field `E` is the part of the inertia group over `F` fixing `E`.
+* `TauCeti.Place.ramificationIdx_mul_finInsepDegree_restrict_eq_relIndex` and
+  `TauCeti.Place.le_inertiaField_iff`: in an intermediate field `E`, the product of the
+  ramification index and the inseparable residue degree of `P ∩ E` over `F` is the index of
+  `Gal(F' / E)` in the inertia group; so `P ∩ E` has `e = 1` and separable residue extension over
+  `F` exactly when `E` lies in the inertia field. No hypothesis on the residue extension is needed.
 * `TauCeti.Place.finrank_inertiaField`, `TauCeti.Place.ramificationIdx_inertiaField`,
   `TauCeti.Place.ramificationIdx_restrict_inertiaField`,
   `TauCeti.Place.isTotallyRamified_inertiaField`, `TauCeti.Place.relativeDegree_inertiaField` and
@@ -574,6 +588,135 @@ theorem finrank_inertiaField_eq_card :
     Module.finrank (inertiaField F P) F' = Nat.card (P.integers.inertiaSubgroup F) := by
   rw [inertiaField, IntermediateField.finrank_fixedField_eq_card,
     Subgroup.card_map_of_injective (Subgroup.subtype_injective _)]
+
+omit [FiniteDimensional F F'] [IsGalois F F'] in
+/-- Conjugating the inertia group of a place by an automorphism lands in the inertia group of the
+conjugate place. -/
+private theorem map_conj_le_map_inertiaSubgroup_smul (σ : F' ≃ₐ[F] F') :
+    ((P.integers.inertiaSubgroup F).map (P.integers.decompositionSubgroup F).subtype).map
+        (MulAut.conj σ) ≤
+      ((σ • P).integers.inertiaSubgroup F).map
+        ((σ • P).integers.decompositionSubgroup F).subtype := by
+  rintro _ ⟨_, ⟨g, hg, rfl⟩, rfl⟩
+  have hZ : MulAut.conj σ (g : F' ≃ₐ[F] F') ∈ (σ • P).integers.decompositionSubgroup F := by
+    rw [decompositionSubgroup_integers_smul]
+    exact Subgroup.mem_map_of_mem _ g.2
+  refine ⟨⟨_, hZ⟩, ?_, rfl⟩
+  rw [SetLike.mem_coe, ValuationSubring.mem_inertiaSubgroup_iff] at hg ⊢
+  intro x
+  -- Write `x = σ y` with `y` regular at `P`; then `σ g σ⁻¹ x - x = σ (g y - y)`.
+  have hy : σ.symm (x : F') ∈ P.integers := (mem_integers_smul_iff σ P).mp x.2
+  have hgy := hg ⟨_, hy⟩
+  rw [← sub_eq_zero, ← map_sub, residue_eq_zero_iff_valuation_lt_one] at hgy ⊢
+  simp only [AddSubgroupClass.coe_sub, ValuationSubring.coe_decompositionSubgroup_smul,
+    MulAut.conj_apply, AlgEquiv.mul_apply] at hgy ⊢
+  rw [valuation_smul, map_sub, AlgEquiv.symm_apply_apply]
+  exact hgy
+
+omit [FiniteDimensional F F'] [IsGalois F F'] in
+/-- **The inertia field of a conjugate place is the image of the inertia field**. -/
+@[simp]
+theorem inertiaField_smul (σ : F' ≃ₐ[F] F') :
+    inertiaField F (σ • P) = (inertiaField F P).map σ.toAlgHom := by
+  rw [inertiaField, inertiaField, ← Subgroup.fixedField_map_conj]
+  refine congrArg _ (le_antisymm ?_ (map_conj_le_map_inertiaSubgroup_smul F P σ))
+  -- The reverse inclusion is the forward one for `σ⁻¹` and `σ • P`, conjugated back by `σ`.
+  intro τ hτ
+  have h := map_conj_le_map_inertiaSubgroup_smul F (σ • P) σ⁻¹ (Subgroup.mem_map_of_mem _ hτ)
+  rw [inv_smul_smul] at h
+  refine ⟨_, h, ?_⟩
+  simp [mul_assoc]
+
+omit [FiniteDimensional F F'] [IsGalois F F'] in
+/-- **The inertia group over an intermediate field**: the inertia group of `P` over an intermediate
+field `E`, read as automorphisms over `F`, is the part of the inertia group of `P` over `F` that
+fixes `E` pointwise. -/
+theorem map_restrictScalarsHom_inertiaSubgroup (E : IntermediateField F F') :
+    ((P.integers.inertiaSubgroup E).map (P.integers.decompositionSubgroup E).subtype).map
+        (AlgEquiv.restrictScalarsHom F) =
+      E.fixingSubgroup ⊓
+        (P.integers.inertiaSubgroup F).map (P.integers.decompositionSubgroup F).subtype := by
+  let f : (F' ≃ₐ[E] F') →* (F' ≃ₐ[F] F') := AlgEquiv.restrictScalarsHom F
+  -- Elements of the decomposition groups over `E` and over `F` acting alike on `F'` are inertial
+  -- together, since inertia is read on residues.
+  have hiff {g₁ : P.integers.decompositionSubgroup E} {g₂ : P.integers.decompositionSubgroup F}
+      (h : ∀ x, (g₁ : F' ≃ₐ[E] F') x = (g₂ : F' ≃ₐ[F] F') x) :
+      g₁ ∈ P.integers.inertiaSubgroup E ↔ g₂ ∈ P.integers.inertiaSubgroup F := by
+    have hx (x : P.integers) : g₁ • x = g₂ • x := Subtype.ext <| by
+      rw [ValuationSubring.coe_decompositionSubgroup_smul,
+        ValuationSubring.coe_decompositionSubgroup_smul, h]
+    simp only [ValuationSubring.mem_inertiaSubgroup_iff, hx]
+  ext σ
+  rw [Subgroup.mem_inf]
+  constructor
+  · rintro ⟨_, ⟨g, hg, rfl⟩, rfl⟩
+    have hZ : f g ∈ P.integers.decompositionSubgroup F := by
+      rw [← stabilizer_eq_decompositionSubgroup, MulAction.mem_stabilizer_iff]
+      simp only [f, AlgEquiv.restrictScalarsHom_apply, restrictScalars_smul]
+      exact MulAction.mem_stabilizer_iff.mp
+        ((stabilizer_eq_decompositionSubgroup (F := E) P).symm ▸ g.2)
+    exact ⟨(IntermediateField.mem_fixingSubgroup_iff _ _).mpr
+      fun x hx ↦ (g : F' ≃ₐ[E] F').commutes ⟨x, hx⟩, ⟨f g, hZ⟩, (hiff fun _ ↦ rfl).mp hg, rfl⟩
+  · rintro ⟨hE, g, hg, rfl⟩
+    let τ := E.fixingSubgroupEquiv ⟨g, hE⟩
+    have hτ (x : F') : τ x = (g : F' ≃ₐ[F] F') x :=
+      congrFun (IntermediateField.coe_fixingSubgroupEquiv_apply E ⟨g, hE⟩) x
+    have hτg : τ.restrictScalars F = g := AlgEquiv.ext hτ
+    have hZ : τ ∈ P.integers.decompositionSubgroup E := by
+      rw [← stabilizer_eq_decompositionSubgroup, MulAction.mem_stabilizer_iff,
+        ← restrictScalars_smul E, hτg]
+      exact MulAction.mem_stabilizer_iff.mp
+        ((stabilizer_eq_decompositionSubgroup (F := F) P).symm ▸ g.2)
+    exact ⟨τ, ⟨⟨τ, hZ⟩, (hiff hτ).mpr hg, rfl⟩, AlgEquiv.ext hτ⟩
+
+/-- **The inertia index in an intermediate field**: for a place `P` of `F'` and an intermediate
+field `E`, the product of `e(P ∩ E ∣ P ∩ F)` and the inseparable degree of the residue extension
+of `P ∩ E` over `F` is the index of `Gal(F' / E)` in the inertia group of `P`. No separability of
+the residue extension is required. -/
+theorem ramificationIdx_mul_finInsepDegree_restrict_eq_relIndex
+    (E : IntermediateField F F') :
+    ramificationIdx F (P.restrict k E) *
+        Field.finInsepDegree ((P.restrict k E).restrict k F).ResidueField
+          (P.restrict k E).ResidueField =
+      E.fixingSubgroup.relIndex
+        ((P.integers.inertiaSubgroup F).map (P.integers.decompositionSubgroup F).subtype) := by
+  have hcard : Nat.card (E.fixingSubgroup ⊓
+      (P.integers.inertiaSubgroup F).map (P.integers.decompositionSubgroup F).subtype :
+        Subgroup (F' ≃ₐ[F] F')) =
+      ramificationIdx E P *
+        Field.finInsepDegree (P.restrict k E).ResidueField P.ResidueField := by
+    rw [← map_restrictScalarsHom_inertiaSubgroup,
+      Subgroup.card_map_of_injective (AlgEquiv.restrictScalarsHom_injective F),
+      Subgroup.card_map_of_injective (Subgroup.subtype_injective _),
+      card_inertiaSubgroup_eq_ramificationIdx_mul_finInsepDegree E P]
+  have hidx := E.fixingSubgroup.relIndex_mul_card
+    ((P.integers.inertiaSubgroup F).map (P.integers.decompositionSubgroup F).subtype)
+  have : Algebra.IsAlgebraic ((P.restrict k E).restrict k F).ResidueField
+      (P.restrict k E).ResidueField :=
+    have := finiteDimensional_residueField_restrict k F (P.restrict k E)
+    Algebra.IsAlgebraic.of_finite _ _
+  rw [hcard, Subgroup.card_map_of_injective (Subgroup.subtype_injective _),
+    card_inertiaSubgroup_eq_ramificationIdx_mul_finInsepDegree F P,
+    ramificationIdx_restrict_mul (k₁ := k) (F₀ := F) (F₁ := E),
+    finInsepDegree_residueField_restrict_mul (k₀ := k) (k₁ := k) (F₀ := F) (F₁ := E)] at hidx
+  have hpos : 0 < ramificationIdx E P *
+      Field.finInsepDegree (P.restrict k E).ResidueField P.ResidueField :=
+    Nat.mul_pos (ramificationIdx_pos E P) (NeZero.pos _)
+  refine Nat.eq_of_mul_eq_mul_left hpos ?_
+  rw [mul_comm _ (E.fixingSubgroup.relIndex _), hidx]
+  ring
+
+/-- **The inertia field is the largest subfield in which a place is unramified**: the restriction
+of `P` to an intermediate field `E` has ramification index one and separable residue extension
+over `F` exactly when `E` lies in the inertia field of `P` (Stichtenoth, Theorem 3.8.2, here for
+arbitrary residue fields). -/
+theorem le_inertiaField_iff (E : IntermediateField F F') :
+    E ≤ inertiaField F P ↔ ramificationIdx F (P.restrict k E) = 1 ∧
+      Algebra.IsSeparable ((P.restrict k E).restrict k F).ResidueField
+        (P.restrict k E).ResidueField := by
+  rw [isSeparable_iff_finInsepDegree_eq_one, ← mul_eq_one,
+    ramificationIdx_mul_finInsepDegree_restrict_eq_relIndex, Subgroup.relIndex_eq_one,
+    inertiaField, IntermediateField.le_iff_le]
 
 variable [Algebra.IsSeparable (P.restrict k F).ResidueField P.ResidueField]
 
