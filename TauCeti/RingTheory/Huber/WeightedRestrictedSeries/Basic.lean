@@ -1368,6 +1368,15 @@ theorem _root_.RingHom.weightMul_map_le (φ : A →+* B) {T : Fin k → Set A} {
   exact mul_mem_weightMul S ν V
     (weightPow_mono hTS ν (image_weightPow φ T ν ▸ Set.mem_image_of_mem φ ht)) (hUV hu)
 
+/-- A ring homomorphism carries a weighted coefficient subgroup onto the corresponding
+subgroup for the image weights and the image coefficient subgroup. -/
+theorem _root_.RingHom.map_weightMul (φ : A →+* B) (T : Fin k → Set A)
+    (ν : Fin k →₀ ℕ) (U : AddSubgroup A) :
+    (weightMul T ν U).map (φ : A →+ B) =
+      weightMul (fun i ↦ φ '' T i) ν (U.map (φ : A →+ B)) := by
+  simp only [weightMul_def, AddMonoidHom.map_closure, AddSubgroup.coe_map,
+    AddMonoidHom.coe_ofClass, Set.image_mul, image_weightPow]
+
 variable [TopologicalSpace A] [TopologicalSpace B]
 
 /-- **A weight family pushes forward along a continuous open ring map**: if `φ : A → B` is

@@ -5,9 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Order.Filter.Cofinite
+public import TauCeti.Order.Filter.Cofinite.Lift
 public import Mathlib.Topology.Basic
-import Mathlib.Data.Nat.Find
 
 /-!
 # Lifting a convergent family along a surjection
@@ -63,24 +62,6 @@ public section
 
 variable {ι : Type*} [Countable ι] {M N : Type*} [TopologicalSpace M] [TopologicalSpace N]
 
-omit [Countable ι] [TopologicalSpace M] [TopologicalSpace N] in
-/-- Preimages chosen inside a prescribed neighbourhood **whenever one is available there**, and
-arbitrary otherwise. Surjectivity gives a preimage in every case; the second component is the part
-that matters, and it is vacuous exactly on the finitely many indices the main proof discards. -/
-private theorem exists_preimage_mem_of_mem_image (φ : M → N) (hsurj : Function.Surjective φ)
-    (V : ℕ → Set M) (g : ι → N) (n : ι → ℕ) :
-    ∃ f : ι → M, ∀ α, φ (f α) = g α ∧ (g α ∈ φ '' V (n α) → f α ∈ V (n α)) := by
-  classical
-  have pick : ∀ α, ∃ x : M, φ x = g α ∧ (g α ∈ φ '' V (n α) → x ∈ V (n α)) := by
-    intro α
-    by_cases h : g α ∈ φ '' V (n α)
-    · obtain ⟨x, hxV, hxg⟩ := h
-      exact ⟨x, hxg, fun _ ↦ hxV⟩
-    · obtain ⟨x, hx⟩ := hsurj (g α)
-      exact ⟨x, hx, fun hc ↦ absurd hc h⟩
-  choose f hf1 hf2 using pick
-  exact ⟨f, fun α ↦ ⟨hf1 α, hf2 α⟩⟩
-
 /-- **A convergent family lifts to a convergent family.** If `φ` is surjective and carries the
 neighbourhood filter of `m₀` into that of `n₀`, then any family tending to `n₀` cofinitely has a
 `φ`-preimage family tending to `m₀` cofinitely.
@@ -98,32 +79,11 @@ theorem exists_lift_tendsto_cofinite_nhds {m₀ : M} {n₀ : N} [(𝓝 m₀).IsC
     (φ : M → N) (hsurj : Function.Surjective φ) (hmap : 𝓝 n₀ ≤ Filter.map φ (𝓝 m₀))
     (g : ι → N) (hg : Tendsto g (Filter.cofinite : Filter ι) (𝓝 n₀)) :
     ∃ f : ι → M, (∀ α, φ (f α) = g α) ∧ Tendsto f (Filter.cofinite : Filter ι) (𝓝 m₀) := by
-  classical
   obtain ⟨V, hV⟩ := (𝓝 m₀).exists_antitone_basis
   have hVmem : ∀ i, φ '' V i ∈ 𝓝 n₀ := fun i ↦ hmap (Filter.image_mem_map (hV.mem i))
-  obtain ⟨r, hr⟩ := exists_injective_nat ι
-  replace hr : Tendsto r (Filter.cofinite : Filter ι) atTop :=
-    Nat.cofinite_eq_atTop ▸ hr.tendsto_cofinite
-  obtain ⟨f, hf⟩ := exists_preimage_mem_of_mem_image φ hsurj V g
-    (fun α ↦ Nat.findGreatest (fun m ↦ g α ∈ φ '' V m) (r α))
-  refine ⟨f, fun α ↦ (hf α).1, ?_⟩
-  rw [hV.toHasBasis.tendsto_right_iff]
-  intro i _
-  have hfin : {α | g α ∉ φ '' V i}.Finite := by
-    simpa [Filter.eventually_cofinite] using hg.eventually_mem (hVmem i)
-  have hfin2 : {α | r α < i}.Finite := by
-    simpa [Filter.eventually_cofinite, not_le] using hr.eventually_ge_atTop i
-  rw [Filter.eventually_cofinite]
-  refine (hfin.union hfin2).subset fun α hα ↦ ?_
-  by_cases h1 : g α ∈ φ '' V i
-  · by_cases h2 : i ≤ r α
-    · have hle : i ≤ Nat.findGreatest (fun m ↦ g α ∈ φ '' V m) (r α) := Nat.le_findGreatest h2 h1
-      have hspec : g α ∈ φ '' V (Nat.findGreatest (fun m ↦ g α ∈ φ '' V m) (r α)) :=
-        Nat.findGreatest_spec (P := fun m ↦ g α ∈ φ '' V m) h2 h1
-      have hmem : f α ∈ V i := hV.antitone hle ((hf α).2 hspec)
-      exact absurd hmem hα
-    · exact Or.inr (not_le.mp h2)
-  · exact Or.inl h1
+  obtain ⟨f, hf, hbound⟩ := exists_lift_eventually_mem_cofinite φ hsurj
+    (fun i _ ↦ V i) (fun _ ↦ hV.antitone) g (fun i ↦ hg.eventually_mem (hVmem i))
+  exact ⟨f, hf, hV.toHasBasis.tendsto_right_iff.mpr fun i _ ↦ hbound i⟩
 
 end
 

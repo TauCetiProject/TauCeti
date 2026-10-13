@@ -343,7 +343,7 @@ homomorphism is decided at zero. `IsOpenQuotientMap.isStronglyNoetherian` is the
 holding the bundled open-quotient structure.
 
 Openness of `π` is what carries the hypothesis: it is what makes `A⟨Y₁,…,Yₖ⟩ → B⟨Y₁,…,Yₖ⟩`
-surjective, by `TauCeti.Huber.weightedMap_one_weight_surjective`. Completeness and
+surjective, by `TauCeti.Huber.weightedMap_surjective`. Completeness and
 separation of both rings are what let `TauCeti.Huber.restrictedMvPowerSeriesCompletionEquiv` read
 that surjection back as one of the completed algebras. Countable generation of `𝓝 (0 : A)` is a
 further hypothesis, carried by the section: it is what supplies the shrinking family the lifted
@@ -366,7 +366,8 @@ theorem IsStronglyNoetherian.of_surjective [IsStronglyNoetherian A] {π : A →+
         fun _ ↦ by simp)).comp (restrictedMvPowerSeriesCompletionEquiv k A).toRingHom) ?_
   simp only [RingHom.coe_comp]
   exact ((restrictedMvPowerSeriesCompletionEquiv k B).symm.surjective.comp
-    (weightedMap_one_weight_surjective hπ hsurj hnhds)).comp
+    (weightedMap_surjective hπ hsurj hnhds isWeightFamily_one_weight
+      isWeightFamily_one_weight (fun _ ↦ by simp))).comp
     (restrictedMvPowerSeriesCompletionEquiv k A).surjective
 
 /-- **The open-quotient form of `TauCeti.Huber.IsStronglyNoetherian.of_surjective`**, for a caller
