@@ -22,8 +22,9 @@ The coordinate-change proof follows Floris van Doorn's smooth Hom-bundle constru
 in `Mathlib.Geometry.Manifold.VectorBundle.Hom`, using the topological alternating-map
 bundle of Yury Kudryashov, Heather Macbeth, and Floris van Doorn. Its domain pullback is
 polynomial, while its codomain postcomposition is continuous linear. The construction
-works over characteristic-zero normed fields, in particular over the real numbers,
-with arbitrary models with corners and no dimension or completeness assumptions.
+works over normed fields where the arity factorial is nonzero, automatically including
+characteristic-zero fields, with arbitrary models with corners and no dimension or
+completeness assumptions.
 -/
 
 public section
@@ -83,11 +84,9 @@ theorem contMDiffOn_continuousAlternatingMapCoordChange :
 variable [∀ x, IsTopologicalAddGroup (E₂ x)] [∀ x, ContinuousSMul 𝕜 (E₂ x)]
 
 /-- Mathlib's alternating-map vector prebundle has smooth coordinate changes. -/
-instance instIsContMDiffContinuousAlternatingMapVectorPrebundle [CharZero 𝕜] :
+instance instIsContMDiffContinuousAlternatingMapVectorPrebundle :
     (Bundle.ContinuousAlternatingMap.vectorPrebundle 𝕜 ι F₁ E₁ F₂ E₂).IsContMDiff IB n where
   exists_contMDiffCoordChange := by
-    let : NeZero ((Fintype.card ι).factorial : 𝕜) :=
-      ⟨by exact_mod_cast Nat.factorial_ne_zero (Fintype.card ι)⟩
     rintro _ ⟨e₁, e₂, he₁, he₂, rfl⟩ _ ⟨e₁', e₂', he₁', he₂', rfl⟩
     exact ⟨continuousAlternatingMapCoordChange 𝕜 ι e₁ e₁' e₂ e₂',
       contMDiffOn_continuousAlternatingMapCoordChange,
@@ -95,7 +94,7 @@ instance instIsContMDiffContinuousAlternatingMapVectorPrebundle [CharZero 𝕜] 
 
 /-- Continuous alternating maps between two `C^n` vector bundles form a `C^n` vector
 bundle with Mathlib's existing alternating-map topology and atlas. -/
-instance instContMDiffVectorBundleContinuousAlternatingMap [CharZero 𝕜] :
+instance instContMDiffVectorBundleContinuousAlternatingMap :
     ContMDiffVectorBundle n (F₁ [⋀^ι]→L[𝕜] F₂) (fun b ↦ E₁ b [⋀^ι]→L[𝕜] E₂ b) IB :=
   (Bundle.ContinuousAlternatingMap.vectorPrebundle 𝕜 ι F₁ E₁ F₂ E₂).contMDiffVectorBundle IB
 
