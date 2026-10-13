@@ -95,12 +95,6 @@ private lemma ιChainComplex_chainsTensorComparison {n : ℕ} (x : (K ⊗ L) _�
       K.ιChainComplex x.1 ⊗ₘ L.ιChainComplex x.2 :=
   Sigma.ι_comp_desc _ _
 
-omit [MonoidalCategory C] [MonoidalPreadditive C] in
-private lemma ιChainComplex_map {m n : ℕ} (x : K _⦋m⦌) (φ : Opposite.op ⦋m⦌ ⟶ Opposite.op ⦋n⦌) :
-    K.ιChainComplex x ≫ (((SimplicialObject.whiskering _ _).obj (sigmaConst.obj R)).obj K).map φ =
-      K.ιChainComplex (K.map φ x) := by
-  simp [ιChainComplex, sigmaConst]
-
 /-- The inclusion of a summand into the tensor product of the alternating face map complexes of
 the simplicial objects of chains of `K` and of `L` is the inclusion into the tensor product of
 the chain complexes of `K` and of `L`. -/
@@ -141,7 +135,9 @@ lemma ιChainComplex_alexanderWhitney_f {n : ℕ} (x : (K ⊗ L) _⦋n⦌) :
   -- the two inclusions of the summand into the tensor product agree by `ιTensorObj_chainComplex`.
   refine (Preadditive.comp_sum _ _ _).trans (Finset.sum_congr rfl fun p _ ↦ ?_)
   refine (tensorHom_comp_tensorHom_assoc _ _ _ _ _).trans ?_
-  rw [ιChainComplex_map, ιChainComplex_map, ιTensorObj_chainComplex]
+  rw [ιTensorObj_chainComplex]
+  simp only [sigmaConst, Functor.whiskeringRight_obj_obj, Functor.comp_obj, ιChainComplex,
+    Functor.comp_map, Sigma.ι_comp_map', Category.id_comp]
 
 variable {K L} in
 /-- The Alexander–Whitney map is natural in both simplicial sets. -/
