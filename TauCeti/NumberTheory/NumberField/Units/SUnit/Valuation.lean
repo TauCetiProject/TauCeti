@@ -201,7 +201,7 @@ theorem range_sUnitInclusion_eq_ker_sUnitValuation :
     exact (congrArg (· = 0) (sUnitValuation_hom_apply S u)).to_iff.trans
       ((LinearEquiv.map_eq_zero_iff _).trans
         (toMul_eq_one.symm.trans MonoidHom.mem_ker.symm))
-  rw [hzero, ← range_unitsToUnit]
+  rw [hzero, ← range_unitsToUnit_eq_ker_unitValuation]
   constructor
   · rintro ⟨v, rfl⟩
     exact ⟨v.toMul, congrArg Additive.toMul (sUnitInclusion_hom_apply S v).symm⟩
