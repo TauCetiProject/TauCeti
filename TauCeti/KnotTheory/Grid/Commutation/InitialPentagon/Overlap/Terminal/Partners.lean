@@ -18,10 +18,7 @@ pentagon's rows and the turn row lies below that bottom row.
 
 The characterization recognizes partners directly from their sides and rows, without
 searching for a source. It supplies one part of the partition of pentagon--rectangle terms
-in the commutation chain-map equation. In either configuration the generic empty-rectangle
-recut has a second piece starting on the replaced line and containing the turn row.
-Promoting that piece and reversing the corrected-square identity transports counting back
-to a terminal-overlap source.
+in the commutation chain-map equation.
 
 ## References
 
@@ -38,6 +35,29 @@ namespace TauCeti.GridInitialPentagonRectangleDecomposition
 
 variable {n : ℕ} {a s : Fin n} {x z : GridState n}
 
+private theorem terminalInverse_sides
+    (E : GridInitialPentagonRectangleDecomposition a s x z)
+    (D : GridRectangleDecomposition x z) {r t : Fin n}
+    (hm : D.middle = x.swapRows r t)
+    (hsb : D.second.bottom = E.first.bottom)
+    (hst : D.second.top = r) (hft : D.first.top = t)
+    (hne_r : E.first.bottom ≠ r) (hne_t : E.first.bottom ≠ t) :
+    D.first.right = D.second.right ∧ D.second.left = E.first.left := by
+  have hsecondLeft : D.second.left = E.first.left := by
+    apply x.toPerm.injective
+    have h := (congrArg (fun y : GridState n => y D.second.left) hm).symm.trans
+      (D.second.bottom_def.symm.trans hsb)
+    rw [GridState.swapRows_apply, Equiv.swap_apply_eq_iff,
+      Equiv.swap_apply_of_ne_of_ne hne_r hne_t] at h
+    exact h.trans E.first.bottom_def
+  have hright : D.first.right = D.second.right := by
+    apply x.toPerm.injective
+    have h := (congrArg (fun y : GridState n => y D.second.right) hm).symm.trans
+      (D.second.top_def.symm.trans hst)
+    rw [GridState.swapRows_apply, Equiv.swap_apply_eq_iff, Equiv.swap_apply_left] at h
+    exact (D.first.top_def.symm.trans hft).trans h.symm
+  exact ⟨hright, hsecondLeft⟩
+
 private theorem terminalInverse_rightLeft_geometry
     (E : GridInitialPentagonRectangleDecomposition a s x z)
     (hcommon : E.first.right = E.second.left) (hone : E.HasOneCommonSide)
@@ -50,20 +70,9 @@ private theorem terminalInverse_rightLeft_geometry
   have hdata := E.isRecutOfRightEqLeft_recut hcommon hone hf hs
   obtain ⟨hft, hst⟩ := hdata.recut_sides
   rcases hdata.recut_branch with ⟨-, hm, -, hsb⟩ | ⟨hrow', -⟩
-  · have hsecondLeft : D.second.left = E.first.left := by
-      apply x.toPerm.injective
-      have h := (congrArg (fun y : GridState n => y D.second.left) hm).symm.trans
-        (D.second.bottom_def.symm.trans hsb)
-      rw [GridState.swapRows_apply, Equiv.swap_apply_eq_iff,
-        Equiv.swap_apply_of_ne_of_ne E.first.bottom_ne_top
-          (Grid.ne_left_of_mem_cIoo (Grid.mem_cIoo_cyclic_right hrow))] at h
-      exact h.trans E.first.bottom_def
-    have hright : D.first.right = D.second.right := by
-      apply x.toPerm.injective
-      have h := (congrArg (fun y : GridState n => y D.second.right) hm).symm.trans
-        (D.second.top_def.symm.trans hst)
-      rw [GridState.swapRows_apply, Equiv.swap_apply_eq_iff, Equiv.swap_apply_left] at h
-      exact (D.first.top_def.symm.trans hft).trans h.symm
+  · obtain ⟨hright, hsecondLeft⟩ := E.terminalInverse_sides D hm hsb hst hft
+      E.first.bottom_ne_top
+      (Grid.ne_left_of_mem_cIoo (Grid.mem_cIoo_cyclic_right hrow))
     refine ⟨hright, hsecondLeft.trans E.first_left_eq, ?_⟩
     rw [hsb, hst]
     exact E.first_turn_mem
@@ -85,20 +94,8 @@ private theorem terminalInverse_leftRight_geometry
   rcases hdata.recut_branch with ⟨hrow', -⟩ | ⟨-, hm, hft, hst⟩
   · exact (Finset.disjoint_left.mp (Grid.disjoint_cIoo_swap E.first.bottom E.first.top)
       hrow (Grid.mem_cIoo_cyclic_right hrow')).elim
-  · have hsecondLeft : D.second.left = E.first.left := by
-      apply x.toPerm.injective
-      have h := (congrArg (fun y : GridState n => y D.second.left) hm).symm.trans
-        (D.second.bottom_def.symm.trans hsb)
-      rw [GridState.swapRows_apply, Equiv.swap_apply_eq_iff,
-        Equiv.swap_apply_of_ne_of_ne (Grid.ne_left_of_mem_cIoo hrow).symm
-          E.first.bottom_ne_top] at h
-      exact h.trans E.first.bottom_def
-    have hright : D.first.right = D.second.right := by
-      apply x.toPerm.injective
-      have h := (congrArg (fun y : GridState n => y D.second.right) hm).symm.trans
-        (D.second.top_def.symm.trans hst)
-      rw [GridState.swapRows_apply, Equiv.swap_apply_eq_iff, Equiv.swap_apply_left] at h
-      exact (D.first.top_def.symm.trans hft).trans h.symm
+  · obtain ⟨hright, hsecondLeft⟩ := E.terminalInverse_sides D hm hsb hst hft
+      (Grid.ne_left_of_mem_cIoo hrow).symm E.first.bottom_ne_top
     exact ⟨hright, hsecondLeft.trans E.first_left_eq, by rwa [hsb, hst]⟩
 
 end TauCeti.GridInitialPentagonRectangleDecomposition
