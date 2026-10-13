@@ -17,7 +17,8 @@ public import TauCeti.Topology.Discrete
 # Quotients of topological groups by subgroups
 
 Generic facts about quotients by subgroups of topological groups. Most results use
-`[IsTopologicalGroup G]`; forward translation of a fixed coset needs only
+`[IsTopologicalGroup G]`; multiplication on a normal quotient needs only `[ContinuousMul G]`,
+and forward translation of a fixed coset needs only
 `[SeparatelyContinuousMul G]`. The inverse-translation results additionally require
 `[DiscreteTopology (G ⧸ U)]`. Neither compactness nor total disconnectedness is needed.
 
@@ -33,6 +34,8 @@ Generic facts about quotients by subgroups of topological groups. Most results u
 
 ## Main results
 
+* `QuotientGroup.instContinuousMul`: jointly continuous multiplication descends to a normal
+  quotient without requiring continuous inversion, with an additive counterpart.
 * `Subgroup.continuous_smul_const`: translation of a fixed coset is continuous.
 * `Subgroup.continuous_inv_smul_const`: inverse translation of a fixed coset is
   continuous when the quotient is discrete.
@@ -51,6 +54,22 @@ Generic facts about quotients by subgroups of topological groups. Most results u
 -/
 
 public section
+
+namespace QuotientGroup
+
+/-- A normal quotient inherits jointly continuous multiplication without requiring continuous
+inversion. The proof is adapted from the multiplication component of Mathlib's
+`QuotientGroup.instIsTopologicalGroup`. -/
+@[to_additive /-- An additive quotient inherits jointly continuous addition without requiring
+continuous negation. The proof is adapted from the addition component of Mathlib's
+`QuotientAddGroup.instIsTopologicalAddGroup`. -/]
+instance instContinuousMul {G : Type*} [Group G] [TopologicalSpace G] [ContinuousMul G]
+    (N : Subgroup G) [N.Normal] : ContinuousMul (G ⧸ N) where
+  continuous_mul := by
+    rw [← (isOpenQuotientMap_mk.prodMap isOpenQuotientMap_mk).continuous_comp_iff]
+    exact continuous_mk.comp continuous_mul
+
+end QuotientGroup
 
 namespace Subgroup
 

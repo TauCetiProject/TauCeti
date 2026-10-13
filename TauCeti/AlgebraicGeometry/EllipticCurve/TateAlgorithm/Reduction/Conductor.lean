@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.MinimalModel.DiscriminantIdeal
 public import TauCeti.AlgebraicGeometry.EllipticCurve.TateAlgorithm.Reduction.Curve
+public import Mathlib.RingTheory.Ideal.Norm.AbsNorm
 public import Mathlib.RingTheory.Radical.Basic
 import TauCeti.RingTheory.DedekindDomain.Factorization
 
@@ -54,6 +55,8 @@ Like the minimal discriminant ideal, `𝔑` depends only on the `K`-isomorphism 
 * `WeierstrassCurve.isSemistable_iff_squarefree_algorithmicConductor` and
   `WeierstrassCurve.isSemistable_iff_algorithmicConductor_eq_radical`: `W` is semistable exactly
   when `𝔑` is squarefree, equivalently when `𝔑` is the radical of the minimal discriminant ideal.
+* `WeierstrassCurve.one_lt_absNorm_algorithmicConductor_iff`: over `ℚ`, the norm of `𝔑` exceeds `1`
+  exactly when `W` has bad reduction at some prime.
 
 ## References
 
@@ -207,6 +210,24 @@ theorem isSemistable_iff_algorithmicConductor_eq_radical (W : WeierstrassCurve K
     exact ⟨hirr, hnorm, (dvd_algorithmicConductor_iff_dvd_minimalDiscriminantIdeal W v).2 hdvd⟩
   · rw [isSemistable_iff_squarefree_algorithmicConductor, h]
     exact squarefree_radical
+
+section Rat
+
+variable (E : WeierstrassCurve ℚ) [E.IsElliptic]
+
+/-- **The algorithmic conductor of a curve over `ℚ` exceeds `1` exactly when the curve has bad
+reduction at some prime.** This is the condition under which the Szpiro ratio is defined. -/
+theorem one_lt_absNorm_algorithmicConductor_iff :
+    1 < Ideal.absNorm (algorithmicConductor ℤ E) ↔ ∃ v : IsDedekindDomain.HeightOneSpectrum ℤ,
+      ¬ (E.minimal (Localization.AtPrime v.asIdeal)).HasGoodReduction
+        (Localization.AtPrime v.asIdeal) := by
+  have h0 : Ideal.absNorm (algorithmicConductor ℤ E) ≠ 0 :=
+    Ideal.absNorm_eq_zero_iff.not.2 (algorithmicConductor_ne_bot ℤ E)
+  rw [← not_iff_not, not_exists, not_lt, Nat.le_one_iff_eq_zero_or_eq_one, or_iff_right h0,
+    Ideal.absNorm_eq_one_iff, algorithmicConductor_eq_top_iff]
+  simp only [not_not]
+
+end Rat
 
 end WeierstrassCurve
 
