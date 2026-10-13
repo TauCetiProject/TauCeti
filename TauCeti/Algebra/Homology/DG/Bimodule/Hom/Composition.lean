@@ -28,9 +28,10 @@ public section
 
 namespace TauCeti.dgBimoduleCochains
 
-universe u
+universe uR uA uB uM uN uP uQ
 
-variable {R A B M N P : Type u}
+variable {R : Type uR} {A : Type uA} {B : Type uB}
+  {M : Type uM} {N : Type uN} {P : Type uP}
   [CommRing R] [Ring A] [Ring B] [Algebra R A] [Algebra R B]
   [AddCommGroup M] [Module R M] [Module A M] [Module Bᵐᵒᵖ M]
   [IsScalarTower R Bᵐᵒᵖ M]
@@ -155,7 +156,7 @@ theorem id_comp {p : ℤ}
 omit [IsScalarTower R A M] in
 /-- Composition of homogeneous bimodule cochains is associative. -/
 @[simp]
-theorem comp_assoc {Q : Type u} [AddCommGroup Q] [Module R Q] [Module A Q] [Module Bᵐᵒᵖ Q]
+theorem comp_assoc {Q : Type uQ} [AddCommGroup Q] [Module R Q] [Module A Q] [Module Bᵐᵒᵖ Q]
     [IsScalarTower R A Q] [IsScalarTower R Bᵐᵒᵖ Q] {ℳQ : ℤ → Submodule R Q}
     {r p q j : ℤ}
     (k : dgBimoduleCochains (B := B) (𝒜 := 𝒜) (ℳ := ℳP) (𝒩 := ℳQ) r)
