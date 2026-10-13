@@ -115,12 +115,18 @@ theorem coe_conjSubgroupEquiv_symm_apply (s : G) (H : Subgroup G) (x : H) :
   simp [conjSubgroupEquiv]
 
 /-- Conjugating representations by `s` is restriction along the isomorphism
-`sHs⁻¹ ≃* H`. -/
+`sHs⁻¹ ≃* H`.
+
+`@[expose]`, like Mathlib's `Rep.resFunctor`, so that the conjugate of `A` has carrier `A.V` on
+the nose: this is what lets `conjRep_ρ` and its consequences be plain equalities in importing
+files. -/
+@[expose]
 def conjRepFunctor [Semiring k] (s : G) (H : Subgroup G) :
     Rep k H ⥤ Rep k (MulAut.conj s • H : Subgroup G) :=
   Rep.resFunctor (conjSubgroupEquiv s H).toMonoidHom
 
 /-- The conjugate representation `{}^s A` of `sHs⁻¹`. -/
+@[expose]
 def conjRep [Semiring k] (s : G) {H : Subgroup G} (A : Rep k H) :
     Rep k (MulAut.conj s • H : Subgroup G) :=
   (conjRepFunctor s H).obj A
@@ -133,44 +139,32 @@ theorem res_obj_eq_conjRep [Semiring k] (s : G) (H : Subgroup G) (A : Rep k H) :
 
 /-- Conjugation preserves the underlying module of a representation. -/
 @[simp]
-theorem conjRep_V [Semiring k] (s : G) {H : Subgroup G} (A : Rep k H) : (conjRep s A).V = A.V := by
-  -- Unfold the local wrappers to expose Mathlib's restriction carrier.
-  change (Rep.res (conjSubgroupEquiv s H).toMonoidHom A).V = A.V
-  exact Rep.res_obj_V _ _
+theorem conjRep_V [Semiring k] (s : G) {H : Subgroup G} (A : Rep k H) : (conjRep s A).V = A.V :=
+  (rfl)
 
 /-- Conjugation preserves the underlying linear map of a representation morphism. -/
 theorem conjRepFunctor_map_hom_toLinearMap [Semiring k] (s : G) {H : Subgroup G}
     {A B : Rep k H} (f : A ⟶ B) :
-    HEq ((conjRepFunctor s H).map f).hom.toLinearMap f.hom.toLinearMap := by
-  -- Unfold the local functor wrapper to expose Mathlib's restriction map.
-  change HEq (Rep.resMap (conjSubgroupEquiv s H).toMonoidHom f).hom.toLinearMap _
-  exact heq_of_eq (Rep.resMap_hom_toLinearMap _ _)
+    ((conjRepFunctor s H).map f).hom.toLinearMap = f.hom.toLinearMap :=
+  rfl
 
-/-- The conjugate action, as a heterogeneous equality: `conjRep` is opaque, so
-`(conjRep s A).V` and `A.V` are equal only via `conjRep_V`, not definitionally. -/
+/-- The conjugate action: `x` acts on `{}^s A` as `s⁻¹xs` acts on `A`. -/
 theorem conjRep_ρ [Semiring k] (s : G) {H : Subgroup G} (A : Rep k H)
     (x : (MulAut.conj s • H : Subgroup G)) :
-    HEq ((conjRep s A).ρ x) (A.ρ (conjSubgroupEquiv s H x)) := by
-  -- Unfold the local wrappers to expose Mathlib's restricted action.
-  change HEq ((Rep.res (conjSubgroupEquiv s H).toMonoidHom A).ρ x) _
-  exact heq_of_eq (Rep.coe_res_obj_ρ' _ _ _)
+    (conjRep s A).ρ x = A.ρ (conjSubgroupEquiv s H x) :=
+  rfl
 
-/-- The conjugate action on elements, transported along `conjRep_V`. -/
+/-- The conjugate action on elements. -/
 theorem conjRep_ρ_apply [Semiring k] (s : G) {H : Subgroup G} (A : Rep k H)
     (x : (MulAut.conj s • H : Subgroup G)) (v : A.V) :
-    cast (conjRep_V s A) ((conjRep s A).ρ x (cast (conjRep_V s A).symm v)) =
-      A.ρ (conjSubgroupEquiv s H x) v := by
-  -- Unfold the local wrapper to expose Mathlib's restricted action; both casts are along the
-  -- definitional carrier equality `Rep.res_obj_V`.
-  change (Rep.res (conjSubgroupEquiv s H).toMonoidHom A).ρ x v = _
-  exact LinearMap.congr_fun (Rep.coe_res_obj_ρ' _ _ x) v
+    (conjRep s A).ρ x v = A.ρ (conjSubgroupEquiv s H x) v :=
+  rfl
 
 /-- The action of the conjugate representation, written directly in the ambient group. -/
 theorem conjRep_ρ_mk [Semiring k] (s : G) {H : Subgroup G} (A : Rep k H)
     (x : (MulAut.conj s • H : Subgroup G)) :
-    HEq ((conjRep s A).ρ x)
-      (A.ρ ⟨s⁻¹ * (x : G) * s, (mem_conj_smul s H x).mp x.2⟩) := by
-  apply (conjRep_ρ s A x).trans
+    (conjRep s A).ρ x = A.ρ ⟨s⁻¹ * (x : G) * s, (mem_conj_smul s H x).mp x.2⟩ := by
+  rw [conjRep_ρ]
   congr 1
 
 /-- Conjugation identifies the invariant subspaces of a representation with those of its
@@ -187,19 +181,19 @@ def conjRepSubrepresentationOrderIso [Semiring k] (s : G) {H : Subgroup G} (A : 
 @[simp]
 theorem conjRepSubrepresentationOrderIso_apply_toSubmodule [Semiring k] (s : G)
     {H : Subgroup G} (A : Rep.{w} k H) (S : Subrepresentation (conjRep s A).ρ) :
-    HEq (conjRepSubrepresentationOrderIso s A S).toSubmodule S.toSubmodule := by
+    (conjRepSubrepresentationOrderIso s A S).toSubmodule = S.toSubmodule := by
   unfold conjRepSubrepresentationOrderIso
-  exact heq_of_eq (MonoidHom.resSubrepresentationOrderIso_apply_toSubmodule
-    (conjSubgroupEquiv s H).toMonoidHom (conjSubgroupEquiv s H).surjective A.ρ S)
+  exact MonoidHom.resSubrepresentationOrderIso_apply_toSubmodule
+    (conjSubgroupEquiv s H).toMonoidHom (conjSubgroupEquiv s H).surjective A.ρ S
 
 /-- The inverse invariant-subspace correspondence preserves the underlying submodule. -/
 @[simp]
 theorem conjRepSubrepresentationOrderIso_symm_apply_toSubmodule [Semiring k] (s : G)
     {H : Subgroup G} (A : Rep.{w} k H) (S : Subrepresentation A.ρ) :
-    HEq ((conjRepSubrepresentationOrderIso s A).symm S).toSubmodule S.toSubmodule := by
+    ((conjRepSubrepresentationOrderIso s A).symm S).toSubmodule = S.toSubmodule := by
   unfold conjRepSubrepresentationOrderIso
-  exact heq_of_eq (MonoidHom.resSubrepresentationOrderIso_symm_apply_toSubmodule
-    (conjSubgroupEquiv s H).toMonoidHom (conjSubgroupEquiv s H).surjective A.ρ S)
+  exact MonoidHom.resSubrepresentationOrderIso_symm_apply_toSubmodule
+    (conjSubgroupEquiv s H).toMonoidHom (conjSubgroupEquiv s H).surjective A.ρ S
 
 /-- A conjugate representation is irreducible exactly when the original representation is. -/
 @[simp]
@@ -327,12 +321,15 @@ variable [Ring k]
 
 /-- Conjugating finite-dimensional representations by `s` is restriction along the isomorphism
 `sHs⁻¹ ≃* H`.  The `FDRep` mirror of `conjRepFunctor`: `FDRep k H` is by definition
-`Action (FGModuleCat k) H`, so the restriction functor is Mathlib's `Action.res`. -/
+`Action (FGModuleCat k) H`, so the restriction functor is Mathlib's `Action.res`.  Exposed for the
+same reason as `conjRepFunctor`. -/
+@[expose]
 def conjFDRepFunctor (s : G) (H : Subgroup G) :
     FDRep k H ⥤ FDRep k (MulAut.conj s • H : Subgroup G) :=
   Action.res (FGModuleCat k) (conjSubgroupEquiv s H).toMonoidHom
 
 /-- The conjugate of a finite-dimensional representation. -/
+@[expose]
 def conjFDRep (s : G) {H : Subgroup G} (A : FDRep k H) :
     FDRep k (MulAut.conj s • H : Subgroup G) :=
   (conjFDRepFunctor s H).obj A
@@ -345,10 +342,8 @@ theorem res_obj_eq_conjFDRep (s : G) (H : Subgroup G) (A : FDRep k H) :
 
 /-- Conjugation preserves the underlying module of a finite-dimensional representation. -/
 @[simp]
-theorem conjFDRep_V (s : G) {H : Subgroup G} (A : FDRep k H) : (conjFDRep s A).V = A.V := by
-  -- Unfold the local wrappers to expose Mathlib's restriction carrier.
-  change ((Action.res (FGModuleCat k) (conjSubgroupEquiv s H).toMonoidHom).obj A).V = A.V
-  exact Action.res_obj_V _ _ _
+theorem conjFDRep_V (s : G) {H : Subgroup G} (A : FDRep k H) : (conjFDRep s A).V = A.V :=
+  (rfl)
 
 /-- Conjugating by `1` does nothing, as an equality of functors.  The `FDRep` mirror of
 `conjRepFunctor_one`. -/
@@ -440,26 +435,11 @@ section FDRepAction
 
 variable [CommRing k]
 
-/-- The conjugate finite-dimensional action, as a heterogeneous equality. -/
+/-- The conjugate finite-dimensional action: `x` acts on `{}^s A` as `s⁻¹xs` acts on `A`. -/
 theorem conjFDRep_ρ (s : G) {H : Subgroup G} (A : FDRep k H)
     (x : (MulAut.conj s • H : Subgroup G)) :
-    HEq ((conjFDRep s A).ρ x) (A.ρ (conjSubgroupEquiv s H x)) := by
-  -- Unfold the local wrappers to expose Mathlib's restriction, then read both sides through
-  -- `FDRep.hom_hom_action_ρ`, which turns `FDRep.ρ` into `Action.ρ`, so that Mathlib's
-  -- `Action.res_obj_ρ` supplies the precomposition and `MonoidHom.comp_apply` evaluates it.
-  change HEq (FDRep.ρ ((Action.res (FGModuleCat k) (conjSubgroupEquiv s H).toMonoidHom).obj A) x) _
-  refine heq_of_eq ?_
-  rw [← FDRep.hom_hom_action_ρ, ← FDRep.hom_hom_action_ρ, Action.res_obj_ρ]
-  exact congrArg (fun f : A.V ⟶ A.V => f.hom.hom)
-    (MonoidHom.comp_apply (Action.ρ A) (conjSubgroupEquiv s H).toMonoidHom x)
-
-/-- The conjugate action, transported along `conjFDRep_V`. -/
-theorem conjFDRep_ρ_cast (s : G) {H : Subgroup G} (A : FDRep k H)
-    (x : (MulAut.conj s • H : Subgroup G)) :
-    cast (congrArg (fun V : FGModuleCat k => V →ₗ[k] V) (conjFDRep_V s A))
-      ((conjFDRep s A).ρ x) = A.ρ (conjSubgroupEquiv s H x) :=
-  -- The cast only moves along the carrier equality, so this is `conjFDRep_ρ` read as an equality.
-  eq_of_heq ((cast_heq _ _).trans (conjFDRep_ρ s A x))
+    (conjFDRep s A).ρ x = A.ρ (conjSubgroupEquiv s H x) :=
+  rfl
 
 end FDRepAction
 
@@ -559,9 +539,8 @@ variable [Semiring k]
 subgroup is `N` again, so `conjRepFunctor` becomes an endofunctor, namely restriction along
 Mathlib's `MulAut.conjNormal g⁻¹`.  It is an autoequivalence; see `conjNormalRepEquiv`.
 
-`@[expose]` because the whole point of the normal-subgroup case is that the carrier is `A.V` on
-the nose, which is what lets `conjNormalRep_ρ` and its consequences be plain equalities rather
-than the heterogeneous ones `conjRep_ρ` is forced into. -/
+`@[expose]`, as `conjRepFunctor` is, so that the carrier is `A.V` on the nose, which is what lets
+`conjNormalRep_ρ` and its consequences be plain equalities. -/
 @[expose]
 def conjNormalRepFunctor (g : G) : Rep k N ⥤ Rep k N :=
   Rep.resFunctor (MulAut.conjNormal g⁻¹ : MulAut N).toMonoidHom
@@ -580,8 +559,7 @@ def conjNormalRep (g : G) (A : Rep k N) : Rep k N :=
 theorem conjNormalRep_V (g : G) (A : Rep k N) : (conjNormalRep g A).V = A.V :=
   rfl
 
-/-- The conjugate action on a normal subgroup.  Unlike `conjRep_ρ` this is an honest equality:
-the two representations are representations of the same group, on the same module. -/
+/-- The conjugate action on a normal subgroup: `x` acts on `{}^g A` as `g⁻¹xg` acts on `A`. -/
 @[simp]
 theorem conjNormalRep_ρ (g : G) (A : Rep k N) (x : N) :
     (conjNormalRep g A).ρ x = A.ρ (MulAut.conjNormal g⁻¹ x) :=
