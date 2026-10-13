@@ -297,8 +297,7 @@ theorem isUnramified_iff_isUnramifiedAt (P' : Place k F') :
       (centerIntegralClosure k F P').asIdeal := by
   have hle := ramificationIdx_le_differentExponent_add_one k F P'
   have hpos := ramificationIdx_pos F P'
-  unfold IsUnramified
-  rw [← differentExponent_eq_zero_iff]
+  rw [← differentExponent_eq_zero_iff, isUnramified_iff]
   constructor
   · rintro ⟨he, hsep⟩
     have htame := (isTame_iff_isSeparable_residueField k F P').mpr ⟨hsep, by simp [he]⟩

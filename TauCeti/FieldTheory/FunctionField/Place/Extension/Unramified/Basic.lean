@@ -59,8 +59,13 @@ residue field of `P` is perfect, for instance when the constant field is perfect
 needs only an integral extension `F' / F`; for a finite separable one it agrees with Mathlib's
 `Algebra.IsUnramifiedAt` for the local model at the centre of `P'`, by
 `TauCeti.Place.isUnramified_iff_isUnramifiedAt`. -/
-@[expose] def IsUnramified (P' : Place k' F') : Prop :=
-  ramificationIdx F P' = 1 ∧ Algebra.IsSeparable (P'.restrict k F).ResidueField P'.ResidueField
+@[mk_iff]
+structure IsUnramified (P' : Place k' F') : Prop where
+  /-- The ramification index of an unramified place is `1`. -/
+  ramificationIdx_eq_one : ramificationIdx F P' = 1
+  /-- The residue extension of an unramified place is separable. -/
+  isSeparable_residueField :
+    Algebra.IsSeparable (P'.restrict k F).ResidueField P'.ResidueField
 
 end Defs
 
@@ -78,8 +83,8 @@ theorem isUnramified_equivOfRingEquiv_iff (e : L ≃ₐ[F] L') (Q : Place k L) :
     IsUnramified k F (equivOfRingEquiv (RingEquiv.refl k) e.toRingEquiv (fun c ↦ by
       simp [IsScalarTower.algebraMap_apply k F L,
         IsScalarTower.algebraMap_apply k F L']) Q) ↔ IsUnramified k F Q := by
-  unfold IsUnramified
-  rw [ramificationIdx_equivOfRingEquiv, isSeparable_residueField_equivOfRingEquiv_iff]
+  rw [isUnramified_iff, isUnramified_iff, ramificationIdx_equivOfRingEquiv,
+    isSeparable_residueField_equivOfRingEquiv_iff]
 
 /-- Whether every place above a place `P` of `F` is unramified depends only on the extension up
 to isomorphism over `F`. -/
