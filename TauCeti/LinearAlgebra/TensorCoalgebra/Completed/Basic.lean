@@ -206,5 +206,19 @@ theorem existsUnique_of_compatible_truncations (x : ℕ → TensorWords R M)
   have h := congrArg (fun w : TensorWords R M ↦ w k) (hz (k + 1))
   simpa only [truncate_apply, Nat.lt_succ_self, ite_true] using h
 
+section AddCommGroup
+
+variable {S : Type u} [CommRing S] {A : Type v} [AddCommGroup A] [Module S A]
+
+/-- A completed word differs from its finite truncation by an element of the corresponding
+length-filtration step. -/
+theorem sub_truncate_mem_filtration (x : CompletedTensorWords S A) (n : ℕ) :
+    x - DFinsupp.coeFnLinearMap S (truncate S A n x) ∈ filtration S A n := by
+  rw [mem_filtration]
+  intro k hk
+  simp [DFinsupp.coeFnLinearMap_apply, truncate_apply, hk]
+
+end AddCommGroup
+
 end CompletedTensorWords
 end TauCeti
