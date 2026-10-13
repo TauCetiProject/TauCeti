@@ -439,6 +439,8 @@ theorem X_smul_mem_bigradedChainMinusPiece {R : Type*} [CommSemiring R] (i : Fin
   have h := G.monomial_smul_mem_bigradedChainMinusPiece (Finsupp.single i 1) (1 : R) hc
   rwa [Finsupp.degree_single, Nat.cast_one, mul_one, ← X] at h
 
+-- Use this equivalence for explicit rewriting: simp expands membership and variable support
+-- first, so its left-hand side is not in simp normal form.
 /-- Multiplication by a variable reflects homogeneity as well as lowering bidegree
 by `(2, 1)`. No condition on the coefficient semiring is needed. -/
 theorem X_smul_mem_bigradedChainMinusPiece_iff {R : Type*} [CommSemiring R]
