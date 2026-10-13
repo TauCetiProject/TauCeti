@@ -37,4 +37,18 @@ theorem measurable_blockAverage {n : ℕ} (k : Fin n → ℕ)
   simpa only [← Finset.sum_apply] using
     (Finset.measurable_sum Finset.univ fun i _ => hX i).const_smul (n : ℝ)⁻¹
 
+/-- A prefix average is measurable if its first `n` coordinates are measurable. -/
+@[fun_prop]
+theorem measurable_prefixAverage (n : ℕ) (hX : ∀ i : Fin n, Measurable (X i)) :
+    Measurable (prefixAverage X n) := by
+  rw [prefixAverage_def]
+  exact measurable_blockAverage _ hX
+
+/-- A following-block average is measurable if its sampled coordinates are measurable. -/
+@[fun_prop]
+theorem measurable_followingAverage (n : ℕ) (hX : ∀ i : Fin n, Measurable (X (n + i))) :
+    Measurable (followingAverage X n) := by
+  rw [followingAverage_def]
+  exact measurable_blockAverage _ hX
+
 end TauCeti.Probability
