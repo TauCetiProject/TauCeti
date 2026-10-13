@@ -147,17 +147,13 @@ instance baseChangeFunctor_additive (f : S →+* T) :
     apply ObjectProperty.hom_ext
     apply CurvedDuplex.hom_ext
     · apply (forget₂ (FGModuleCat.{u} T) (ModuleCat.{u} T)).map_injective
-      let _ : Algebra S T := f.toAlgebra
-      apply ModuleCat.hom_ext
       simp only [baseChangeFunctor_map_f₀, ObjectProperty.add_hom, CurvedDuplex.add_f₀,
         Functor.map_add]
-      exact LinearMap.baseChange_add _ _
+      rfl
     · apply (forget₂ (FGModuleCat.{u} T) (ModuleCat.{u} T)).map_injective
-      let _ : Algebra S T := f.toAlgebra
-      apply ModuleCat.hom_ext
       simp only [baseChangeFunctor_map_f₁, ObjectProperty.add_hom, CurvedDuplex.add_f₁,
         Functor.map_add]
-      exact LinearMap.baseChange_add _ _
+      rfl
 
 /-- Extension of scalars along a map killing the potential sends a finite-projective matrix
 factorization to a square-zero duplex. The target components are the tensor products of the
@@ -251,14 +247,10 @@ instance baseChangeToCurvedDuplex_additive (f : S →+* T) (hw : f w = 0) :
     apply CurvedDuplex.hom_ext
     · simp only [baseChangeToCurvedDuplex_map_f₀, ObjectProperty.add_hom,
         CurvedDuplex.add_f₀, Functor.map_add]
-      let _ : Algebra S T := f.toAlgebra
-      apply ModuleCat.hom_ext
-      exact LinearMap.baseChange_add _ _
+      rfl
     · simp only [baseChangeToCurvedDuplex_map_f₁, ObjectProperty.add_hom,
         CurvedDuplex.add_f₁, Functor.map_add]
-      let _ : Algebra S T := f.toAlgebra
-      apply ModuleCat.hom_ext
-      exact LinearMap.baseChange_add _ _
+      rfl
 
 /-- The two-periodic complex obtained by reducing a matrix factorization along a ring map
 that kills its potential. -/
