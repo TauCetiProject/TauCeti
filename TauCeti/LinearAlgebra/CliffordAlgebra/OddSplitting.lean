@@ -114,9 +114,6 @@ no membership proof has to appear in the statement.
 
 ## References
 
-* [Clifford algebras, Pin and Spin, and spin representations roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SpinRepresentations/README.md),
-  Layer 1, "The odd-dimensional case": the two central idempotents split the odd Clifford algebra,
-  while the even subalgebra stays a single block.
 * H. B. Lawson and M.-L. Michelsohn, *Spin Geometry*, Princeton University Press (1989), Chapter I,
   Proposition 3.7 and Theorem 4.3.
 * C. Chevalley, *The Algebraic Theory of Spinors*, Columbia University Press (1954), Chapter II.
