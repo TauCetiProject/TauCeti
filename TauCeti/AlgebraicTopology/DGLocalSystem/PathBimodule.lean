@@ -7,7 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.DGLocalSystem.LoopAlgebra
 public import TauCeti.AlgebraicTopology.Singular.Cubical.MonoidAlgebra.Bimodule
-public import TauCeti.Topology.PathSpace.Moore.Between
+public import TauCeti.Topology.PathSpace.Moore.Between.Equiv
 
 /-!
 # The chain bimodule of Moore paths between two basepoints

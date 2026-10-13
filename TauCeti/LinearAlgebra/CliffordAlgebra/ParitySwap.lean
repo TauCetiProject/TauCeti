@@ -73,9 +73,6 @@ dimension count that follows is `CliffordAlgebra.finrank_evenOdd` in
 
 * C. Chevalley, *The Algebraic Theory of Spinors* (1954), Chapter II, for the exterior
   multiplication and contraction operators and the Clifford relation between them.
-* [Clifford algebras, Pin and Spin, and spin representations roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SpinRepresentations/README.md),
-  Layer 5, "The half-spin representation of `𝔰𝔬(2l)` has dimension `2^{l-1}`", whose dimension
-  count this supplies.
 -/
 
 public section
