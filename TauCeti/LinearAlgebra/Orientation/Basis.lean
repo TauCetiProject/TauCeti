@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.Orientation
+public import TauCeti.LinearAlgebra.Orientation.Basic
 
 /-!
 # The sign of a basis relative to an orientation

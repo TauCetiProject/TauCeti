@@ -62,14 +62,15 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
 
 namespace TauCeti.Manifold
 
-omit [ChartedSpace H M] [IsManifold I 1 M] in
-/-- Changing the source atlas while retaining its preferred charts preserves chart derivatives. -/
+omit [ChartedSpace H M] [IsManifold I 1 M] [IsManifold I' 1 M'] in
+/-- Changing the source atlas while retaining its preferred charts preserves manifold derivatives
+for maps to any charted target. -/
 theorem mfderiv_eq_of_chartAt_eq {c c' : ChartedSpace H M} (h : c.chartAt = c'.chartAt)
-    (f : M → H) (x : M) :
-    (letI := c; mfderiv I I f x) = (letI := c'; mfderiv I I f x) := by
+    (f : M → M') (x : M) :
+    (letI := c; mfderiv I I' f x) = (letI := c'; mfderiv I I' f x) := by
   -- Manifold differentiation uses preferred charts, not the rest of the atlas.
-  have hd : (letI := c; MDifferentiableAt I I f x) ↔
-      (letI := c'; MDifferentiableAt I I f x) := by
+  have hd : (letI := c; MDifferentiableAt I I' f x) ↔
+      (letI := c'; MDifferentiableAt I I' f x) := by
     constructor
     · intro hf
       let := c'

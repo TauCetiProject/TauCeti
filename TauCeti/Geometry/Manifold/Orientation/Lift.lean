@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.VectorBundle.Tangent
-public import TauCeti.Topology.VectorBundle.Orientation
-public import TauCeti.Topology.VectorBundle.Coordinates
+public import TauCeti.Topology.VectorBundle.Orientation.Basic
+import TauCeti.Topology.VectorBundle.Coordinates
 public import Mathlib.Topology.LocallyConstant.Basic
 
 /-!

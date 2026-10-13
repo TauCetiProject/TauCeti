@@ -18,6 +18,10 @@ proved in coordinates centred at a point to be transported to fixed trivializati
 The corresponding range-transport theorem identifies the subspaces in different
 charts, as required for quotient-bundle coordinate changes.
 
+`VectorBundleCore.det_localTriv_coordChangeL` and
+`VectorBundleCore.det_trivializationAt_coordChangeL` identify the determinants of transitions
+between actual trivializations with their core coordinate-change determinants.
+
 The construction follows Mathlib's `ContinuousLinearMap.inCoordinates` and
 `Bundle.Trivialization.comp_continuousLinearEquivAt_eq_coord_change`.
 -/

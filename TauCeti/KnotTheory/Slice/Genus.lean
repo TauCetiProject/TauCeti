@@ -10,6 +10,7 @@ public import Mathlib.Algebra.Category.ModuleCat.Colimits
 public import Mathlib.AlgebraicTopology.SingularHomology.Basic
 public import Mathlib.Data.ENat.Lattice
 public import TauCeti.KnotTheory.Slice.Basic
+import TauCeti.Geometry.Manifold.Orientation.ClosedBall
 import Mathlib.Analysis.Convex.Contractible
 import TauCeti.AlgebraicTopology.Singular.Contractible
 
@@ -219,7 +220,7 @@ def IsSmoothSliceDisc.toSmoothSliceSurface {Φ : closedBall (0 : ℂ) 1 → clos
   compactSpace := isCompact_iff_compactSpace.1 (isCompact_closedBall 0 1)
   connectedSpace := isConnected_iff_connectedSpace.1
     ((convex_closedBall 0 1).isConnected (nonempty_closedBall.2 zero_le_one))
-  orientable := orientable_closedBall le_rfl
+  orientable := orientable_closedBall
   toFun := Φ
   isSmoothEmbedding := h.isSmoothEmbedding
   preimage_boundary := h.preimage_boundary

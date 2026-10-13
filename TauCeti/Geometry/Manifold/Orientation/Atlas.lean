@@ -7,8 +7,8 @@ module
 
 public import TauCeti.Geometry.Manifold.Orientation.OrientedAtlas
 public import TauCeti.Geometry.Manifold.Orientation.Basic
-public import TauCeti.Geometry.Manifold.MFDeriv.Chart
-public import TauCeti.Geometry.Manifold.VectorBundle.Tangent
+import TauCeti.Geometry.Manifold.MFDeriv.Chart
+import TauCeti.Geometry.Manifold.VectorBundle.Tangent
 public import TauCeti.Topology.VectorBundle.Orientation.Atlas
 public import Mathlib.Geometry.Manifold.MFDeriv.Atlas
 
@@ -134,7 +134,6 @@ private def IsOrientedAtlas.orientationData {A : Set (OpenPartialHomeomorph M H)
     _ = model := (congrArg (fun f : TangentSpace I x ≃ₗ[ℝ] E ↦
       Orientation.map ι f (vb x)) hlin).trans (hread j he x hxj)
 
-
 /-- An oriented subatlas defines the quotient orientation whose charts read the
 specified model orientation. It includes boundary and corner points. -/
 def IsOrientedAtlas.orientation {A : Set (OpenPartialHomeomorph M H)}
@@ -155,4 +154,16 @@ theorem IsOrientedAtlas.orientation_spec {A : Set (OpenPartialHomeomorph M H)}
   rw [IsOrientedAtlas.orientation, Manifold.Orientation.orientationAt_mk]
   exact (hA.orientationData model hι).property e he x hx
 
+/-- An oriented atlas gives orientability, including at boundary and corner points. -/
+theorem IsOrientedAtlas.orientable {n : ℕ∞ω} [NeZero n]
+    {A : Set (OpenPartialHomeomorph M H)} (hA : IsOrientedAtlas I n A) : Orientable I M :=
+  ⟨⟨hA.orientation (Module.finBasis ℝ E).orientation (Fintype.card_fin _)⟩⟩
+
+/-- A manifold whose given atlas has positive transition derivatives is orientable. -/
+theorem Orientable.of_hasGroupoid [HasGroupoid M (orientationPreservingGroupoid I)] :
+    Orientable I M := by
+  apply IsOrientedAtlas.orientable (n := 1) (A := atlas H M)
+  exact ⟨IsManifold.subset_maximalAtlas,
+    fun x ↦ ⟨chartAt H x, chart_mem_atlas H x, mem_chart_source H x⟩,
+    fun he he' ↦ HasGroupoid.compatible he he'⟩
 end TauCeti

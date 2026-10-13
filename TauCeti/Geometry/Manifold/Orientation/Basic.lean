@@ -13,6 +13,7 @@ public import TauCeti.Geometry.Manifold.Orientation.Lift
 A manifold orientation is a source-indexed orientation lift modulo simultaneous reversal of its
 model orientation and all chart signs. It induces an actual, locally constant orientation of the
 tangent bundle. This definition includes boundary and corner points.
+Orientability records existence; every model with corners is orientable.
 -/
 
 public section
@@ -248,3 +249,24 @@ theorem orientationAt_model (o : _root_.Orientation ℝ E ι)
 
 end Orientation
 end TauCeti.Manifold
+
+namespace TauCeti
+
+variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  [FiniteDimensional ℝ E] [TopologicalSpace H] (I : ModelWithCorners ℝ E H)
+  (M : Type*) [TopologicalSpace M] [ChartedSpace H M]
+
+/-- A manifold with corners is orientable when it carries an orientation of its tangent spaces
+compatible with the within-range chart Jacobians. -/
+class Orientable : Prop where
+  /-- A manifold orientation exists. -/
+  nonempty_orientation : Nonempty (Manifold.Orientation I M (Fin (Module.finrank ℝ E)))
+
+variable {I M}
+
+/-- Every model with corners carries its constant model orientation. -/
+instance : Orientable I H :=
+  ⟨⟨Manifold.Orientation.model (I := I) (Module.finBasis ℝ E).orientation
+    (Fintype.card_fin _)⟩⟩
+
+end TauCeti

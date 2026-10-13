@@ -161,7 +161,6 @@ theorem orientationAt_prod (o : Orientation I M (Fin m))
       · exact (_root_.Orientation.prod_neg_left l.modelOrientation l'.modelOrientation _ _).symm
       · exact (_root_.Orientation.prod_neg_neg l.modelOrientation l'.modelOrientation _ _).symm
 
-
 /-- Reversing the first factor reverses the product manifold orientation. -/
 @[simp]
 theorem prod_neg_left (o : Orientation I M (Fin m)) (o' : Orientation I' M' (Fin n)) :
@@ -188,3 +187,17 @@ theorem prod_neg_neg (o : Orientation I M (Fin m)) (o' : Orientation I' M' (Fin 
   rw [prod_neg_left, prod_neg_right, neg_neg]
 
 end TauCeti.Manifold.Orientation
+
+namespace TauCeti
+
+variable [FiniteDimensional ℝ E] [FiniteDimensional ℝ E']
+
+/-- Products of orientable manifolds with corners are orientable. -/
+instance [Orientable I M] [Orientable I' M'] : Orientable (I.prod I') (M × M') := by
+  obtain ⟨o⟩ := Orientable.nonempty_orientation (I := I) (M := M)
+  obtain ⟨o'⟩ := Orientable.nonempty_orientation (I := I') (M := M')
+  constructor
+  rw [Module.finrank_prod]
+  exact ⟨o.prod o'⟩
+
+end TauCeti

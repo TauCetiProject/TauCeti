@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.Normed.Module.FiniteDimension
 public import Mathlib.Topology.VectorBundle.Constructions
-public import TauCeti.LinearAlgebra.Orientation
+public import TauCeti.LinearAlgebra.Orientation.Basic
 
 /-!
 # Orientations of real vector bundles
