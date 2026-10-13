@@ -195,6 +195,13 @@ theorem classicalDGLocalSystemMap_apply {L L' : LocalCoefficientSystem.{u, u, w}
     classicalDGLocalSystemMap (x := x) φ m = (φ.app (FundamentalGroupoid.mk x)).hom m :=
   (rfl)
 
+@[simp]
+theorem classicalDGLocalSystemMap_comp_apply {L L' L'' : LocalCoefficientSystem.{u, u, w} R X}
+    (φ : L ⟶ L') (ψ : L' ⟶ L'') (m : L.obj (FundamentalGroupoid.mk x)) :
+    classicalDGLocalSystemMap (x := x) (φ ≫ ψ) m =
+      classicalDGLocalSystemMap (x := x) ψ (classicalDGLocalSystemMap (x := x) φ m) :=
+  (rfl)
+
 variable (x R) in
 /-- **The functor from classical local systems to DG local systems**: a classical local system
 goes to its fiber at the basepoint, concentrated in degree zero.
@@ -205,19 +212,18 @@ Exposed because the type of `classicalDGLocalSystemFunctor_map` needs `obj` to u
     LocalCoefficientSystem.{u, u, w} R X ⥤ DGLocalSystem X x R where
   obj L := classicalDGLocalSystem x L
   map φ := classicalDGLocalSystemMap φ
-  map_id L := DGRightModuleHom.toLinearMap_injective
-    (LinearMap.ext fun m ↦
-      (classicalDGLocalSystemMap_apply (x := x) (𝟙 L) m).trans
-        (DGRightModuleCat.id_apply (classicalDGLocalSystem x L) m).symm)
-  map_comp φ ψ := DGRightModuleHom.toLinearMap_injective
-    (LinearMap.ext fun m ↦
-      (classicalDGLocalSystemMap_apply (x := x) (φ ≫ ψ) m).trans
-        (((congrArg (ψ.app (FundamentalGroupoid.mk x)).hom
-            (classicalDGLocalSystemMap_apply (x := x) φ m).symm).trans
-          (classicalDGLocalSystemMap_apply (x := x) ψ _).symm).trans
-          (DGRightModuleCat.comp_apply (M := classicalDGLocalSystem x _)
-            (N := classicalDGLocalSystem x _) (P := classicalDGLocalSystem x _)
-            (classicalDGLocalSystemMap φ) (classicalDGLocalSystemMap ψ) m).symm))
+  map_id L := by
+    refine DGRightModuleCat.hom_ext (M := classicalDGLocalSystem x L)
+      (N := classicalDGLocalSystem x L) fun m ↦ ?_
+    rw [DGRightModuleCat.id_apply]
+    exact classicalDGLocalSystemMap_apply (𝟙 L) m
+  map_comp φ ψ := by
+    refine DGRightModuleCat.hom_ext (M := classicalDGLocalSystem x _)
+      (N := classicalDGLocalSystem x _) fun m ↦ ?_
+    exact (classicalDGLocalSystemMap_comp_apply φ ψ m).trans
+      (DGRightModuleCat.comp_apply (M := classicalDGLocalSystem x _)
+        (N := classicalDGLocalSystem x _) (P := classicalDGLocalSystem x _)
+        (classicalDGLocalSystemMap φ) (classicalDGLocalSystemMap ψ) m).symm
 
 @[simp]
 theorem classicalDGLocalSystemFunctor_obj (L : LocalCoefficientSystem.{u, u, w} R X) :
