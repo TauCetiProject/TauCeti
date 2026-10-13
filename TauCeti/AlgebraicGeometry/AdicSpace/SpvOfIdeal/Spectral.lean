@@ -50,7 +50,8 @@ closes the family.
 
 Note that `Spv (A, I)` is *not* pro-constructible in `Spv A` in general, so
 `TauCeti.IsProConstructible.spectralSpace` cannot be used: that would give a spectral inclusion
-(`TauCeti.IsProConstructible.isSpectralMap_subtypeVal`), which Wedhorn's Remark 7.6 denies.
+(`TauCeti.IsProConstructible.isSpectralMap_subtypeVal`), which Wedhorn's Remark 7.6 denies
+(`TauCeti.ValuationSpectrum.not_isSpectralMap_subtypeVal_spvOfIdeal_top_mvPolynomial`).
 
 ## Main definitions
 
@@ -74,6 +75,9 @@ below is the public neighbourhood interface that merges the two branches.)
 * `exists_one_mem_basicOpenFinset_subset_of_characteristicSubgroup_eq_top` : the branch
   `Γ_v = cΓ_v` of step (ii), for a finite numerator set: around a point with full characteristic
   group, every `Spv(A)(T/s)` contains a rational open whose numerators include `1`.
+* `TauCeti.ValuationSpectrum.exists_vle_one_mul_of_characteristicSubgroup_eq_top` : at a point
+  with full characteristic group, every `s` outside the support has a multiple `d * s` with
+  `v(d s) ≥ 1`, still outside the support.
 * `TauCeti.ValuationSpectrum.restrictToIdealCodRestrict_preimage` : **step (iii)**,
   `r_I⁻¹(Spv(A,I)(T/s)) = Spv(A)(T/s)`.
 * `TauCeti.ValuationSpectrum.isCompact_of_mem_rationalFamily` : the members of `R` are
@@ -192,7 +196,7 @@ theorem IsAdmissible.mul {I : Ideal A} {T₁ T₂ : Finset A} {u₁ u₂ : A}
 has a multiple `d * s` whose value is at least `1` and which is still outside the support. This
 is the witness Wedhorn takes at the start of the `Γ_v = cΓ_v` branch of 7.5(ii): full
 characteristic group means `(v s)⁻¹` is dominated by an attained value. -/
-private theorem exists_vle_one_mul_of_characteristicSubgroup_eq_top {v : Spv A}
+theorem exists_vle_one_mul_of_characteristicSubgroup_eq_top {v : Spv A}
     (htop : characteristicSubgroup v.valuation = ⊤) {s : A}
     (hs0 : ¬ v.toValuativeRel.vle s 0) :
     ∃ d : A, v.toValuativeRel.vle 1 (d * s) ∧ ¬ v.toValuativeRel.vle (d * s) 0 := by
