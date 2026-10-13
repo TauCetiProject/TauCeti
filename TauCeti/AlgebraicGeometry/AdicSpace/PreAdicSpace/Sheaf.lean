@@ -127,6 +127,13 @@ of rings is a sheaf because forgetting the topology preserves limits. Its stalks
 theorem forgetToRingSheafedSpace_obj_toPresheafedSpace (X : SheafyPreAdicSpace.{u}) :
     (forgetToRingSheafedSpace.obj X).toPresheafedSpace = X.obj.toRingPresheafedSpace := (rfl)
 
+/-- The underlying morphism of presheafed spaces of rings of the image of `f` is
+`PreAdicSpace.toRingPresheafedSpaceHom`. -/
+@[simp]
+theorem forgetToRingSheafedSpace_map_hom {X Y : SheafyPreAdicSpace.{u}} (f : X ⟶ Y) :
+    (forgetToRingSheafedSpace.map f).hom = PreAdicSpace.toRingPresheafedSpaceHom f.hom.toHom :=
+  (rfl)
+
 /-- A morphism of sheafy pre-adic spaces is determined by its morphism of underlying sheafed
 spaces of rings, since a continuous ring homomorphism is determined by its underlying ring
 homomorphism. -/
@@ -135,6 +142,7 @@ instance : forgetToRingSheafedSpace.{u}.Faithful where
     apply ObjectProperty.hom_ext
     apply PreAdicSpace.Hom.ext
     have h' := congrArg InducedCategory.Hom.hom h
+    rw [forgetToRingSheafedSpace_map_hom, forgetToRingSheafedSpace_map_hom] at h'
     exact Functor.map_injective (TopCommRingCat.isCompleteSeparated.ι ⋙
       forget₂ TopCommRingCat CommRingCat).mapPresheaf h'
 
