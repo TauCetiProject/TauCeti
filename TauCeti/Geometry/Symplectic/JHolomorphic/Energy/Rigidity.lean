@@ -6,9 +6,14 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Symplectic.JHolomorphic.Energy.Integral
+public import TauCeti.Geometry.Symplectic.JHolomorphic.Varying
+public import TauCeti.Geometry.Symplectic.Complex.Module.Basic
 public import Mathlib.Analysis.Calculus.ContDiff.Defs
 import Mathlib.Analysis.Calculus.MeanValue
+import Mathlib.Topology.Algebra.Module.FiniteDimensionBilinear
 public import Mathlib.MeasureTheory.Measure.OpenPos
+public import Mathlib.MeasureTheory.Integral.Bochner.Set
+public import Mathlib.MeasureTheory.Measure.Lebesgue.Complex
 
 /-!
 # Zero-energy rigidity for maps into tame symplectic spaces
@@ -22,6 +27,10 @@ may be any measure positive on nonempty open sets.
 This is the elementary rigidity input in the compactness theory of holomorphic disks and strips:
 nonconstant components must have positive energy. The energy convention is that of
 `TauCeti.SymplecticForm.stdComplexLineEnergy`.
+
+For a varying tame target structure, vanishing symplectic area likewise forces a holomorphic
+map from a connected open subset of `ℂ` to be constant. No regularity of the structure is
+needed: continuity of the area density follows from the map and the constant form.
 
 The mathematical argument is standard; see McDuff--Salamon, *J-holomorphic Curves and Symplectic
 Topology*, Section 4.1.
@@ -88,6 +97,58 @@ theorem stdComplexLineEnergy_pos_of_ne [μ.IsOpenPosMeasure]
   obtain ⟨c, hc⟩ :=
     (ω.stdComplexLineEnergy_eq_zero_iff_exists_eqOn_const hU hconn hf htame hmeas).mp hzero
   exact hxy ((hc x hx).trans (hc y hy).symm)
+
+/-- A `C¹` holomorphic map on a connected open subset of `ℂ` with zero symplectic area is
+constant. The target structure may vary, and needs only to be tamed at the image points.
+The measure must be positive on nonempty open sets, and integrability of the area density
+is explicit so a divergent integral cannot count as zero. -/
+theorem exists_eqOn_const_of_integral_eq_zero [FiniteDimensional ℝ V]
+    {ν : Measure ℂ} [ν.IsOpenPosMeasure]
+    {U : Set ℂ} {u : ℂ → V} {J : V → AlmostComplexStructure V}
+    (hU : IsOpen U) (hconn : IsPreconnected U) (hu : ContDiffOn ℝ 1 u U)
+    (hhol : ∀ z ∈ U,
+      IsJHolomorphicAt (fun _ ↦ AlmostComplexStructure.ofComplexModule ℂ) J u z)
+    (htame : ∀ z ∈ U, ω.Tames (J (u z)))
+    (hint : IntegrableOn (fun z ↦ ω (fderiv ℝ u z 1) (fderiv ℝ u z Complex.I)) U ν)
+    (hzero : ∫ z in U, ω (fderiv ℝ u z 1) (fderiv ℝ u z Complex.I) ∂ν = 0) :
+    ∃ c : V, EqOn u (fun _ ↦ c) U := by
+  have hCR (z : ℂ) (hz : z ∈ U) :
+      fderiv ℝ u z Complex.I = J (u z) (fderiv ℝ u z 1) := by
+    simpa [AlmostComplexStructure.ofComplexModule_apply] using
+      (hhol z hz).fderiv_apply_commute (v := 1)
+  -- Positivity of the area density turns zero total area into a.e. vanishing.
+  have hnonneg : ∀ z ∈ U, 0 ≤ ω (fderiv ℝ u z 1) (fderiv ℝ u z Complex.I) := by
+    intro z hz
+    rw [hCR z hz]
+    by_cases h : fderiv ℝ u z 1 = 0
+    · simp [h]
+    · exact (htame z hz _ h).le
+  have hae := (integral_eq_zero_iff_of_nonneg_ae
+    (ae_restrict_of_forall_mem hU.measurableSet hnonneg) hint).mp hzero
+  -- Continuity upgrades vanishing to every point of the open domain.
+  have hdu := hu.continuousOn_fderiv_of_isOpen hU (by norm_num)
+  have hcont : ContinuousOn (fun z ↦ ω (fderiv ℝ u z 1)
+      (fderiv ℝ u z Complex.I)) U :=
+    ω.toBilinForm.toContinuousBilinearMap.continuous₂.comp_continuousOn
+      ((hdu.clm_apply continuousOn_const).prodMk (hdu.clm_apply continuousOn_const))
+  have harea := ν.eqOn_open_of_ae_eq hae hU hcont continuousOn_const
+  have hderiv : EqOn (fderiv ℝ u) 0 U := by
+    intro z hz
+    have hone : fderiv ℝ u z 1 = 0 := by
+      by_contra h
+      have hpos := htame z hz _ h
+      have harea' : ω (fderiv ℝ u z 1) (fderiv ℝ u z Complex.I) = 0 := harea hz
+      rw [← hCR z hz, harea'] at hpos
+      exact lt_irrefl 0 hpos
+    have hI : fderiv ℝ u z Complex.I = 0 := by simp [hCR z hz, hone]
+    apply ContinuousLinearMap.ext
+    intro w
+    simp only [Pi.zero_apply, zero_apply]
+    have hw : w = w.re • (1 : ℂ) + w.im • Complex.I := by
+      simp [Complex.real_smul, Complex.re_add_im]
+    rw [hw]
+    simp only [map_add, map_smul, hone, hI, smul_zero, add_zero]
+  exact hU.exists_is_const_of_fderiv_eq_zero hconn hu.differentiableOn_one hderiv
 
 end SymplecticForm
 

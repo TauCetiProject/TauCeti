@@ -19,7 +19,7 @@ import Mathlib.Tactic.Module
 # Polar-coordinate derivatives and integration over a closed annulus
 
 The polar-coordinate change of variables for a translated closed annulus is the integral on
-`[a, b] × [-π, π]` with radial Jacobian `r`, when `a > 0`. The two angular endpoints have
+`[a, b] × [-π, π]` with radial Jacobian `r`, when `a ≥ 0`. The two angular endpoints have
 measure zero, so the closed polar rectangle gives the same integral as the slit-plane chart.
 This form of Mathlib's `Complex.integral_comp_polarCoord_symm` is suitable for combining polar
 integration with Green's formula on a rectangle, without extending a map across the inner disc.
@@ -96,8 +96,9 @@ namespace Complex
 variable {W : Type*} [NormedAddCommGroup W] [NormedSpace ℝ W]
 
 /-- Polar integration over the closed annulus of radii `a` and `b` about `z₀`, with radial
-Jacobian `p.1`. The angular interval includes both endpoints, whose contribution is null. -/
-theorem integral_comp_polarCoord_symm_Icc (f : ℂ → W) (z₀ : ℂ) {a b : ℝ} (ha : 0 < a) :
+Jacobian `p.1`, including the disc case `a = 0`. The angular interval includes both endpoints,
+whose contribution is null. -/
+theorem integral_comp_polarCoord_symm_Icc (f : ℂ → W) (z₀ : ℂ) {a b : ℝ} (ha : 0 ≤ a) :
     (∫ p in Icc (a, -π) (b, π), p.1 • f (z₀ + Complex.polarCoord.symm p)) =
       ∫ z in {z : ℂ | a ≤ ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ b}, f z := by
   let S : Set ℂ := {z | a ≤ ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ b}
@@ -119,16 +120,19 @@ theorem integral_comp_polarCoord_symm_Icc (f : ℂ → W) (z₀ : ℂ) {a b : �
   rw [setIntegral_congr_fun (by simp [_root_.polarCoord_target]; measurability) hEq,
     setIntegral_indicator (measurableSet_Icc.prod MeasurableSet.univ)]
   have he : _root_.polarCoord.target ∩ (Icc a b ×ˢ (univ : Set ℝ)) =
-      Icc a b ×ˢ Ioo (-π) π := by
+      (Ioi 0 ∩ Icc a b) ×ˢ Ioo (-π) π := by
     ext ⟨r, θ⟩
-    simp only [mem_inter_iff, _root_.polarCoord_target, mem_prod, mem_Ioi, mem_Ioo, mem_Icc,
-      mem_univ, and_true]
-    constructor
-    · exact fun h ↦ ⟨h.2, h.1.2⟩
-    · exact fun h ↦ ⟨⟨lt_of_lt_of_le ha h.1.1, h.2⟩, h.1⟩
+    simp only [_root_.polarCoord_target, mem_inter_iff, mem_prod, mem_univ, and_true]
+    tauto
+  have hrad : Ioi (0 : ℝ) ∩ Icc a b =ᵐ[volume] Icc a b := by
+    filter_upwards [Ioi_ae_eq_Ici (μ := (volume : Measure ℝ)) (a := 0)] with r hr
+    simp only [mem_inter_iff]
+    rw [hr]
+    apply propext
+    exact ⟨And.right, fun h ↦ ⟨ha.trans h.1, h⟩⟩
   rw [he, Icc_prod_eq, Measure.volume_eq_prod]
-  exact setIntegral_congr_set (Measure.set_prod_ae_eq (Filter.EventuallyEq.rfl)
-    Ioo_ae_eq_Icc).symm
+  exact setIntegral_congr_set
+    (Measure.set_prod_ae_eq hrad Ioo_ae_eq_Icc).symm
 
 end Complex
 
@@ -156,7 +160,7 @@ theorem integral_annulus_eq_integral_circleMap [CompleteSpace F] {f : ℂ → F}
       (Icc a b ×ˢ Icc (-π) π) :=
     (continuous_fst.continuousOn.smul (hf.comp hP.continuousOn hmem)).integrableOn_compact
       (isCompact_Icc.prod isCompact_Icc)
-  rw [← Complex.integral_comp_polarCoord_symm_Icc f z₀ ha, Icc_prod_eq,
+  rw [← Complex.integral_comp_polarCoord_symm_Icc f z₀ ha.le, Icc_prod_eq,
     Measure.volume_eq_prod]
   have hP_eq (p : ℝ × ℝ) : z₀ + Complex.polarCoord.symm p =
       circleMap z₀ p.1 p.2 := by
