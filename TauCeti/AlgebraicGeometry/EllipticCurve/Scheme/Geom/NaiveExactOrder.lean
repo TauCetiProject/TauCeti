@@ -350,7 +350,6 @@ noncomputable def naiveExactOrderRepresentableBy :
 /-- The point of naive exact order `N` corresponding to a morphism `u` into the open subscheme
 `naiveExactOrderOpens E hN` of `E[N]` is the composite of `u` with the inclusions into `E[N]` and
 into `E`. -/
-@[simp]
 theorem coe_naiveExactOrderRepresentableBy_homEquiv
     (u : Z ⟶ Over.mk ((E.naiveExactOrderOpens hN).ι ≫ (E.torsion N).X.hom)) :
     ((E.naiveExactOrderRepresentableBy hN).homEquiv u : Z ⟶ Over.mk E.structureMap) =
