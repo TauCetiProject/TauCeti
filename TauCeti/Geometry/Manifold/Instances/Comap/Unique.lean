@@ -20,6 +20,12 @@ projection a `C^n` local diffeomorphism.
 We use `IsLocalHomeomorph.chartedSpaceComap` for the lifted atlas and Mathlib's
 `OpenPartialHomeomorph.mem_maximalAtlas_of_contMDiffOn` to recognize its charts.
 
+For a covering map `hp : IsCoveringMap p`, equip its total space with
+`hp.isLocalHomeomorph.chartedSpaceComap`. A continuous lift `f` of a `C^n` map is then `C^n` by
+`hp.isLocalHomeomorph.contMDiff_chartedSpaceComap_iff.2 ⟨hf, hpf⟩`, where `hf : Continuous f`
+and `hpf : ContMDiff J I n (p ∘ f)`. For an arbitrary atlas making `p` a local diffeomorphism,
+use `TauCeti.contMDiff_of_comp_isLocalDiffeomorph` instead.
+
 ## References
 
 * John M. Lee, *Introduction to Smooth Manifolds*, second edition, Chapter 4,
