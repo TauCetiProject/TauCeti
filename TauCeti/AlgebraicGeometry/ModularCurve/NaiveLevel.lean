@@ -113,15 +113,17 @@ variable (B) in
 /-- **Restriction of naive structures.** An injective homomorphism `ψ : A' →* A` restricts naive
 `A`-structures to naive `A'`-structures, `φ ↦ φ ∘ ψ`. -/
 noncomputable def naiveLevelMap {A' : Type} [Group A'] (ψ : A' →* A)
-    (hψ : Function.Injective ψ) : naiveLevel B A ⟶ naiveLevel B A' where
-  app X := TypeCat.ofHom fun α ↦ ULift.up ⟨α.down.1.comp ψ, α.down.2.comp hψ⟩
+    (hψ : Function.Injective ψ) : naiveLevel B A ⟶ naiveLevel B A' :=
+  homLevelMap (hp := fun f h ↦ h.pointsPullback f.isPullback f.zero_total)
+    (hp' := fun f h ↦ h.pointsPullback f.isPullback f.zero_total) B ψ fun _ _ h ↦ h.comp hψ
 
 /-- Restriction along `ψ` composes a naive structure with `ψ`. -/
 @[simp]
 theorem naiveLevelEquiv_naiveLevelMap_app {A' : Type} [Group A'] (ψ : A' →* A)
     (hψ : Function.Injective ψ) (X : EllObj B) (α : (naiveLevel B A).obj (op X)) :
     (naiveLevelEquiv X ((naiveLevelMap B ψ hψ).app (op X) α)).1 = (naiveLevelEquiv X α).1.comp ψ :=
-  (rfl)
+  homLevelEquiv_homLevelMap_app (hp := fun f h ↦ h.pointsPullback f.isPullback f.zero_total)
+    (hp' := fun f h ↦ h.pointsPullback f.isPullback f.zero_total) ψ (fun _ _ h ↦ h.comp hψ) X α
 
 variable (B) (N : ℕ)
 
@@ -153,7 +155,7 @@ theorem naiveLevelEquiv_gammaNaiveToGammaOneNaive_app_apply (X : EllObj B)
     (α : (gammaNaive B N).obj (op X)) (z : Multiplicative (ZMod N)) :
     (naiveLevelEquiv X ((gammaNaiveToGammaOneNaive B N).app (op X) α)).1 z =
       (naiveLevelEquiv X α).1 (.ofAdd (z.toAdd, 0)) :=
-  (rfl)
+  DFunLike.congr_fun (naiveLevelEquiv_naiveLevelMap_app _ _ X α) z
 
 /-! ### Naive level structures as points of `E[N]` -/
 
