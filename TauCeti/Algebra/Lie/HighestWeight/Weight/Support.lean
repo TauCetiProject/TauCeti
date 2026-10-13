@@ -19,9 +19,10 @@ its root system, and let `M` be an `L`-module carrying a highest weight vector o
 This file describes the weights of `M` in two ways.
 
 If `M` is irreducible and `lam` is dominant integral, `M` has only **finitely many** weights. `M` is
-not assumed finite-dimensional, and that is the whole point: for the modules `L(lam)`,
-finite-dimensionality is the conclusion. Together with finite-dimensionality of the individual
-weight spaces it is what makes `L(lam)` finite-dimensional.
+not assumed finite-dimensional, and that is the whole point: for such a module finite-dimensionality
+is the conclusion. Together with finite-dimensionality of the individual weight spaces it is what
+makes such a module finite-dimensional
+(`TauCeti.finiteDimensional_of_isHighestWeightVector_of_isDominantIntegral`).
 
 If instead `M` is finite-dimensional, every weight of `M` has a **dominant integral Weyl
 conjugate** which is again a weight of `M`. That is the form in which a weight of `M` is compared

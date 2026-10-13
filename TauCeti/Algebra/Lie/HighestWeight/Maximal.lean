@@ -76,10 +76,11 @@ intrinsically, rather than as the sum of the submodules missing a chosen generat
 it manifestly independent of the choice of generator.
 
 Nothing here needs the module to be finite-dimensional: the Verma module
-`TauCeti.VermaModule b lam`, whose irreducible quotient is `L(lam)`, is infinite-dimensional, and it
-is the module this file is applied to. In particular the weight spaces are the *generalized* ones
-throughout, and the one place where an honest eigenvector is needed is the generator itself, which
-is one by the definition of `TauCeti.IsHighestWeightVector`.
+`TauCeti.VermaModule b lam`, whose quotient by `TauCeti.maximalSubmodule` is `L(lam)`
+(`TauCeti.irreducibleQuotient b lam`), is in general infinite-dimensional, and it is the module this
+file is applied to. In particular the weight spaces are the *generalized* ones throughout, and the
+one place where an honest eigenvector is needed is the generator itself, which is one by the
+definition of `TauCeti.IsHighestWeightVector`.
 
 ## References
 
