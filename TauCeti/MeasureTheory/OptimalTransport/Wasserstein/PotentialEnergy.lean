@@ -62,8 +62,9 @@ Jordan–Kinderlehrer–Otto step is unique.
 * `TauCeti.potentialEnergy_dirac`: the potential energy of a Dirac mass at `x` is `V x`.
 * `TauCeti.potentialEnergy_ne_bot_of_hasFiniteMoment`: a potential with at most quadratic negative
   part has potential energy `≠ ⊥` against every finite measure with finite second moment.
-* `TauCeti.potentialEnergy_eq_lintegral_add_sub`: for a measurable potential bounded below by
-  `-c`, the potential energy of a probability measure is `∫⁻ (V + c) - c`.
+* `TauCeti.potentialEnergy_eq_lintegral_add_sub`: for an almost everywhere measurable potential
+  almost everywhere bounded below by `-c`, the potential energy of a probability measure is
+  `∫⁻ (V + c) - c`.
 * `TauCeti.lowerSemicontinuous_potentialEnergy`: the potential energy of a lower semicontinuous
   potential bounded below is narrowly lower semicontinuous on probability measures.
 * `StrongConvexOn.potentialEnergy_map_le`: the convexity inequality of the potential energy of an
@@ -230,12 +231,13 @@ section LowerSemicontinuous
 
 variable {X : Type*} [MeasurableSpace X] {V : X → ℝ}
 
-/-- For a measurable potential bounded below by `-c`, the potential energy of a probability
-measure is the integral of the nonnegative potential `V + c`, minus `c`. -/
+/-- For a potential almost everywhere measurable and bounded below by `-c`, the potential energy
+of a probability measure is the integral of the almost everywhere nonnegative potential `V + c`,
+minus `c`. -/
 theorem potentialEnergy_eq_lintegral_add_sub {μ : Measure X} [IsProbabilityMeasure μ]
-    (hV : Measurable V) {c : ℝ} (hc : ∀ x, -c ≤ V x) :
+    (hV : AEMeasurable V μ) {c : ℝ} (hc : ∀ᵐ x ∂μ, -c ≤ V x) :
     potentialEnergy V μ = (∫⁻ x, ENNReal.ofReal (V x + c) ∂μ : EReal) - c := by
-  have h0 : ∀ x, 0 ≤ V x + c := fun x ↦ by linarith [hc x]
+  have h0 : ∀ᵐ x ∂μ, 0 ≤ V x + c := hc.mono fun x hx ↦ by linarith
   by_cases hs : ∫⁻ x, ENNReal.ofReal (V x + c) ∂μ = ∞
   · -- The positive part of `V` has infinite integral as well.
     rw [hs, EReal.coe_ennreal_top, EReal.top_sub_coe, potentialEnergy_eq_top_iff]
@@ -251,12 +253,12 @@ theorem potentialEnergy_eq_lintegral_add_sub {μ : Measure X} [IsProbabilityMeas
   -- Otherwise `V + c`, hence `V`, is integrable.
   have hint : Integrable (fun x ↦ V x + c) μ :=
     ⟨(hV.add_const c).aestronglyMeasurable,
-      (hasFiniteIntegral_iff_ofReal (.of_forall h0)).2 (lt_top_iff_ne_top.2 hs)⟩
+      (hasFiniteIntegral_iff_ofReal h0).2 (lt_top_iff_ne_top.2 hs)⟩
   have hVint : Integrable V μ :=
     (hint.sub (integrable_const c)).congr (.of_forall fun x ↦ by simp)
   rw [potentialEnergy_of_integrable hVint,
-    ← ofReal_integral_eq_lintegral_ofReal hint (.of_forall h0), EReal.coe_ennreal_ofReal,
-    max_eq_left (integral_nonneg h0), integral_add hVint (integrable_const c), integral_const,
+    ← ofReal_integral_eq_lintegral_ofReal hint h0, EReal.coe_ennreal_ofReal,
+    max_eq_left (integral_nonneg_of_ae h0), integral_add hVint (integrable_const c), integral_const,
     probReal_univ, one_smul, ← EReal.coe_sub, add_sub_cancel_right]
 
 /-- **The potential energy is narrowly lower semicontinuous.** For a lower semicontinuous
@@ -268,7 +270,8 @@ theorem lowerSemicontinuous_potentialEnergy [PseudoMetricSpace X] [OpensMeasurab
   obtain ⟨c, hc⟩ : ∃ c : ℝ, ∀ x, -c ≤ V x :=
     let ⟨b, hb⟩ := hb
     ⟨-b, fun x ↦ by simpa using hb (mem_range_self x)⟩
-  simp_rw [potentialEnergy_eq_lintegral_add_sub hV.measurable hc, sub_eq_add_neg, ← EReal.coe_neg]
+  simp_rw [potentialEnergy_eq_lintegral_add_sub hV.measurable.aemeasurable
+    (.of_forall hc), sub_eq_add_neg, ← EReal.coe_neg]
   have hf : LowerSemicontinuous fun x ↦ ENNReal.ofReal (V x + c) :=
     ENNReal.continuous_ofReal.comp_lowerSemicontinuous
       (hV.add continuous_const.lowerSemicontinuous) fun _ _ h ↦ ENNReal.ofReal_le_ofReal h
