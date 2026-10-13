@@ -45,6 +45,16 @@ scope do not coincide.
   axioms beyond `propext`, `Classical.choice`, `Quot.sound` (so no `native_decide`), no
   `meta import`, and the Mathlib linter set (style, file length, no `maxHeartbeats`
   overrides). Do not try to disable these.
+- Prefer named definitions, abbreviations, and lemmas to custom term syntax. Local tactic
+  macros should remove substantial repeated proof machinery, rather than just shorten a
+  couple of small proofs. Keep macro hygiene enabled: `set_option`, including
+  `set_option hygiene false`, is forbidden anywhere in library code. Heartbeat-measurement
+  syntax (`guard_min_heartbeats`, `#count_heartbeats`, and `#count_heartbeats!`) belongs in
+  tooling rather than library code; some command forms disable limits internally. The source
+  guard conservatively includes strings, qualified/quoted names, and comments containing
+  double quotes, because interpolation can confuse the approximate lexer. Put explanatory
+  references in comments without double quotes. A local syntax rule needed for elaboration performance
+  should document the concrete need at its declaration.
 - One topic per PR. Ship a prerequisite refactor as its own PR.
 - Tau Ceti does not preserve backwards compatibility. When declarations or modules are moved,
   renamed, replaced, or deleted — including when Mathlib supersedes them — update every

@@ -301,7 +301,7 @@ theorem weightUnipotentInclusion_def (w : Fin N → ℤ) :
     weightUnipotentInclusion R w =
       CommHopfAlgCat.quotientSpecι (coordinateHopfAlgebra R N)
           (weightUnipotentDefiningHopfIdeal R w) ≫
-        (eqToIso (groupScheme_def R N).symm).hom := by
+        eqToHom (groupScheme_def R N).symm := by
   rw [weightUnipotentInclusion, hopfIdealInclusion_def]
 
 /-- The weight-unipotent inclusion into `GL_N` is a closed immersion. -/
