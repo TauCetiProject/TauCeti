@@ -6,11 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.GroupTheory.Coxeter.Graph
+public import TauCeti.Combinatorics.SimpleGraph.AdditiveFunction
 public import Mathlib.LinearAlgebra.Reflection
 public import Mathlib.LinearAlgebra.Pi
-public import Mathlib.Combinatorics.SimpleGraph.AdjMatrix
 import Mathlib.Tactic.Module
-import Mathlib.Tactic.LinearCombination
+import Mathlib.Tactic.Ring
 
 /-!
 # Deformed simple reflections of a finite graph
@@ -20,11 +20,21 @@ For a unit `q` in a commutative ring, the graph Cartan rows have diagonal coeffi
 gives a linear automorphism. Its inverse subtracts `q⁻²` times the same row.
 
 These transformations satisfy the graph's Artin relations. At `q = -1` the Cartan rows
-are the rows of `2I - A`, and the transformations are the standard simple reflections.
+are the rows of `SimpleGraph.graphCartanMatrix`, and the transformations are the standard
+simple reflections.
 The construction uses Mathlib's `Module.preReflection` and `Module.reflection`.
 
 The vertex module and its operators are defined algebraically; identifying them with
 graded Grothendieck classes requires a separate comparison.
+
+## References
+
+* Huerfano--Khovanov, *A category for the adjoint representation*, Section 2.2, equation (11),
+  for the Cartan coefficients, and Section 4.6 for the evaluation-complex braid action.
+  The identity-minus-row sign here corresponds to placing the evaluation term in degree `-1`.
+* Khovanov--Seidel, *Quivers, Floer cohomology, and braid group actions*, Section 2e.1 and
+  Proposition 2.8, for the type-A reduced Burau formulas. Replace the grading parameter by `q²`;
+  rescaling the vertex vector at `j` by `qʲ` gives the symmetric edge coefficient used here.
 -/
 
 public section
@@ -33,7 +43,7 @@ noncomputable section
 namespace SimpleGraph
 
 universe u v
-variable {V : Type u} [Fintype V] [DecidableEq V] {R : Type v} [CommRing R]
+variable {V : Type u} [DecidableEq V] {R : Type v} [CommRing R]
   (G : SimpleGraph V)
 
 /-- The diagonal and edge coefficients of the deformed graph Cartan matrix. -/
@@ -41,31 +51,71 @@ def deformedCartanEntry (q : R) (i j : V) : R := by
   classical
   exact if i = j then 1 + q ^ 2 else if G.Adj i j then q else 0
 
+/-- The diagonal coefficient of a deformed Cartan row. -/
+@[simp]
+theorem deformedCartanEntry_self (q : R) (i : V) :
+    G.deformedCartanEntry q i i = 1 + q ^ 2 := by
+  classical
+  simp [deformedCartanEntry]
+
+/-- The coefficient at an adjacent vertex. -/
+@[simp]
+theorem deformedCartanEntry_of_adj (q : R) {i j : V} (h : G.Adj i j) :
+    G.deformedCartanEntry q i j = q := by
+  classical
+  simp [deformedCartanEntry, h.ne, h]
+
+/-- The coefficient at a distinct nonadjacent vertex. -/
+@[simp]
+theorem deformedCartanEntry_of_not_adj (q : R) {i j : V}
+    (hne : i ≠ j) (h : ¬ G.Adj i j) : G.deformedCartanEntry q i j = 0 := by
+  classical
+  simp [deformedCartanEntry, hne, h]
+
+variable [Fintype V]
+
 /-- A row of the deformed graph Cartan matrix as a linear functional on vertex coordinates. -/
 def deformedCartanRow (q : R) (i : V) : Module.Dual R (V → R) :=
   ∑ j, G.deformedCartanEntry q i j • LinearMap.proj j
+
+/-- A Cartan row is the sum of its coefficients times the vertex coordinates. -/
+theorem deformedCartanRow_apply (q : R) (i : V) (x : V → R) :
+    G.deformedCartanRow q i x = ∑ j, G.deformedCartanEntry q i j * x j := by
+  simp only [deformedCartanRow, LinearMap.sum_apply, LinearMap.smul_apply,
+    LinearMap.proj_apply, smul_eq_mul]
 
 @[simp]
 theorem deformedCartanRow_single (q : R) (i j : V) :
     G.deformedCartanRow q i (Pi.single j 1) = G.deformedCartanEntry q i j := by
   classical
-  simp [deformedCartanRow, LinearMap.sum_apply, LinearMap.proj_apply, Pi.single_apply]
+  rw [deformedCartanRow_apply]
+  simp [Pi.single_apply]
 
 theorem deformedCartanRow_single_self (q : R) (i : V) :
     G.deformedCartanRow q i (Pi.single i 1) = 1 + q ^ 2 := by
-  classical
-  simp [deformedCartanEntry]
+  simp only [deformedCartanRow_single, deformedCartanEntry_self]
 
 theorem deformedCartanRow_single_of_adj (q : R) {i j : V} (h : G.Adj i j) :
     G.deformedCartanRow q i (Pi.single j 1) = q := by
-  classical
-  simp [deformedCartanEntry, h.ne, h]
+  simp only [deformedCartanRow_single, G.deformedCartanEntry_of_adj q h]
 
 theorem deformedCartanRow_single_of_not_adj (q : R) {i j : V}
     (hne : i ≠ j) (h : ¬ G.Adj i j) :
     G.deformedCartanRow q i (Pi.single j 1) = 0 := by
-  classical
-  simp [deformedCartanEntry, hne, h]
+  simp only [deformedCartanRow_single, G.deformedCartanEntry_of_not_adj q hne h]
+
+private theorem preReflection_smul_comp {M : Type*} [AddCommGroup M] [Module R M]
+    (e : M) (f : Module.Dual R M) (c : R) (h : c * (f e - 1) = 1) :
+    Module.preReflection e (c • f) ∘ₗ Module.preReflection e f = LinearMap.id := by
+  apply LinearMap.ext
+  intro x
+  have hc : f x + (c * f x - f x * (c * f e)) = 0 := by
+    calc
+      _ = f x * (1 - c * (f e - 1)) := by ring
+      _ = 0 := by simp only [h, sub_self, mul_zero]
+  simp only [LinearMap.comp_apply, LinearMap.id_apply, Module.preReflection_apply]
+  simp only [map_sub, map_smul, LinearMap.smul_apply, smul_eq_mul]
+  rw [sub_sub, ← add_smul, hc, zero_smul, sub_zero]
 
 private theorem inverse_coefficient (q : Rˣ) :
     (↑q⁻¹ : R) ^ 2 * (q : R) ^ 2 = 1 := by
@@ -78,30 +128,37 @@ def deformedReflection (q : Rˣ) (i : V) : (V → R) ≃ₗ[R] (V → R) := by
   classical
   let e : V → R := Pi.single i 1
   let f := G.deformedCartanRow (q : R) i
+  let a : R := (↑q⁻¹ : R) ^ 2
+  let b : R := (q : R) ^ 2
+  have hab : a * b = 1 := inverse_coefficient q
+  have hba : b * a = 1 := by rw [mul_comm]; exact hab
+  have hfe : f e = 1 + b := G.deformedCartanRow_single_self (q : R) i
+  have hforward : a * (f e - 1) = 1 := by
+    rw [hfe, add_sub_cancel_left]
+    exact hab
+  have hinverse : b * ((a • f) e - 1) = 1 := by
+    rw [LinearMap.smul_apply, smul_eq_mul, hfe]
+    calc
+      _ = a * b + b * (a * b - 1) := by ring
+      _ = 1 := by simp only [hab, sub_self, mul_zero, add_zero]
   refine LinearEquiv.ofLinearMap (Module.preReflection e f)
-    (Module.preReflection e ((↑q⁻¹ : R) ^ 2 • f)) ?_ ?_
-  · apply LinearMap.ext
-    intro x
-    dsimp only [e, f]
-    simp only [LinearMap.comp_apply, LinearMap.id_apply, Module.preReflection_apply,
-      map_sub, map_smul, LinearMap.smul_apply, deformedCartanRow_single_self,
-      smul_eq_mul]
-    match_scalars <;>
-      first | ring1 | linear_combination (G.deformedCartanRow (q : R) i x) * inverse_coefficient q
-  · apply LinearMap.ext
-    intro x
-    dsimp only [e, f]
-    simp only [LinearMap.comp_apply, LinearMap.id_apply, Module.preReflection_apply,
-      map_sub, map_smul, LinearMap.smul_apply, deformedCartanRow_single_self,
-      smul_eq_mul]
-    match_scalars <;>
-      first | ring1 | linear_combination (G.deformedCartanRow (q : R) i x) * inverse_coefficient q
+    (Module.preReflection e (a • f)) ?_ ?_
+  · simpa only [smul_smul, hba, one_smul] using
+      preReflection_smul_comp e (a • f) b hinverse
+  · exact preReflection_smul_comp e f a hforward
 
 /-- A deformed reflection subtracts its Cartan-row value in the vertex direction. -/
 theorem deformedReflection_apply (q : Rˣ) (i : V) (x : V → R) :
     G.deformedReflection q i x =
       x - G.deformedCartanRow (q : R) i x • Pi.single i 1 := by
   simp only [deformedReflection, LinearEquiv.coe_ofLinearMap, Module.preReflection_apply]
+
+/-- The inverse subtracts `q⁻²` times the same Cartan-row value. -/
+theorem deformedReflection_symm_apply (q : Rˣ) (i : V) (x : V → R) :
+    (G.deformedReflection q i).symm x =
+      x - ((↑q⁻¹ : R) ^ 2 * G.deformedCartanRow (q : R) i x) • Pi.single i 1 := by
+  simp only [deformedReflection, LinearEquiv.symm_ofLinearMap, LinearEquiv.coe_ofLinearMap,
+    Module.preReflection_apply, LinearMap.smul_apply, smul_eq_mul]
 
 /-- Distinct nonadjacent vertex operators commute. -/
 theorem deformedReflection_commute (q : Rˣ) {i j : V}
@@ -141,24 +198,34 @@ theorem deformedReflectionRepresentation_gen (q : Rˣ) (i : V) :
       G.deformedReflection q i := by
   simp only [deformedReflectionRepresentation, artinGroupLift_gen]
 
+/-- An inverse Artin generator acts by the inverse vertex operator. -/
+@[simp]
+theorem deformedReflectionRepresentation_gen_inv (q : Rˣ) (i : V) :
+    G.deformedReflectionRepresentation q (TauCeti.ArtinGroup.gen G.coxeterMatrix i)⁻¹ =
+      (G.deformedReflection q i).symm := by
+  rw [map_inv, deformedReflectionRepresentation_gen]
+  rfl
+
 /-- The vertex direction is multiplied by `-q²`. -/
 @[simp]
 theorem deformedReflection_single_self (q : Rˣ) (i : V) :
     G.deformedReflection q i (Pi.single i 1) = -(q : R) ^ 2 • Pi.single i 1 := by
-  rw [deformedReflection_apply, deformedCartanRow_single_self]
+  rw [deformedReflection_apply, deformedCartanRow_single, deformedCartanEntry_self]
   module
 
 /-- An adjacent vertex direction acquires `-q` times the reflecting direction. -/
 theorem deformedReflection_single_of_adj (q : Rˣ) {i j : V} (h : G.Adj i j) :
     G.deformedReflection q i (Pi.single j 1) =
       Pi.single j 1 - (q : R) • Pi.single i 1 := by
-  rw [deformedReflection_apply, G.deformedCartanRow_single_of_adj (q : R) h]
+  rw [deformedReflection_apply, deformedCartanRow_single,
+    G.deformedCartanEntry_of_adj (q : R) h]
 
 /-- A distinct nonadjacent vertex direction is fixed. -/
 theorem deformedReflection_single_of_not_adj (q : Rˣ) {i j : V}
     (hne : i ≠ j) (h : ¬ G.Adj i j) :
     G.deformedReflection q i (Pi.single j 1) = Pi.single j 1 := by
-  rw [deformedReflection_apply, G.deformedCartanRow_single_of_not_adj (q : R) hne h]
+  rw [deformedReflection_apply, deformedCartanRow_single,
+    G.deformedCartanEntry_of_not_adj (q : R) hne h]
   simp
 
 /-- At `q = -1`, a deformed reflection is Mathlib's ordinary simple reflection. -/
@@ -173,17 +240,12 @@ theorem deformedReflection_neg_one (i : V) :
 
 variable [DecidableRel G.Adj]
 
-/-- The specialized Cartan row has the entries of `2I - A_G`. -/
+/-- The specialized Cartan row has the entries of the canonical graph Cartan matrix. -/
 theorem deformedCartanRow_neg_one_single (i j : V) :
     G.deformedCartanRow (-1 : R) i (Pi.single j 1) =
-      ((2 : R) • (1 : Matrix V V R) - G.adjMatrix R) i j := by
-  rw [deformedCartanRow_single]
-  by_cases hij : i = j
-  · subst j
-    simp [deformedCartanEntry]
-    ring
-  · by_cases h : G.Adj i j
-    · simp [deformedCartanEntry, hij, h, SimpleGraph.adjMatrix]
-    · simp [deformedCartanEntry, hij, h, SimpleGraph.adjMatrix]
+      G.graphCartanMatrix R i j := by
+  rw [deformedCartanRow_single, graphCartanMatrix_apply]
+  simp only [deformedCartanEntry, neg_one_sq, one_add_one_eq_two]
+  congr 2
 
 end SimpleGraph
