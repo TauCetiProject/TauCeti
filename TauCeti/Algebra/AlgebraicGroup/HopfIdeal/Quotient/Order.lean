@@ -27,8 +27,8 @@ already-defined point subgroup inclusions. The coordinate-level morphism itself 
 
 ## References
 
-This is point-level bookkeeping for the ReductiveGroups roadmap, Layer 3,
-"Hopf ideals ↔ closed subgroup schemes". It uses the quotient universal property from
+This is point-level bookkeeping for the correspondence between Hopf ideals and closed subgroup
+schemes. It uses the quotient universal property from
 `TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Quotient.Basic` and the cut-out subgroup order API from
 `TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Points.Order`.
 -/

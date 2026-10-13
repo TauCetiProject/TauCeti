@@ -385,6 +385,27 @@ theorem continuous_starLinkProjection
   · simp only [h, ↓reduceIte]
     exact hinv.mul (hc w)
 
+/-- Radial projection onto the link is continuous when the chosen closed star is compact.
+No hypothesis on the topology outside that star is needed. -/
+theorem continuous_starLinkProjection_of_isCompact
+    (hcompact : IsCompact (closedStarRealization K {v})) :
+    Continuous (starLinkProjection K v) := by
+  have hlink : Topology.IsEmbedding (fun x : geometricLink K v => (x.1.1 : ι → ℝ)) :=
+    (K.isClosedEmbedding_realization_coe_restrict hcompact).isEmbedding.comp
+      (Topology.IsEmbedding.inclusion fun _ hx => ((mem_geometricLink K v _).mp hx).2)
+  apply hlink.continuous_iff.mpr
+  apply continuous_pi
+  intro w
+  simp only [Function.comp_apply, starLinkProjection_apply]
+  have hc := continuous_puncturedStar_coordinate K v
+  have hinv := (continuous_const.sub (hc v)).inv₀
+    (fun x => (sub_pos.mpr x.2.2).ne')
+  by_cases h : w = v
+  · simp only [h, ↓reduceIte]
+    exact continuous_const
+  · simp only [h, ↓reduceIte]
+    exact hinv.mul (hc w)
+
 /-- The star rays vary continuously when the realization has its coordinate topology. -/
 theorem continuous_starRay
     (hK : Topology.IsInducing (fun x : Realization K => (x.1 : ι → ℝ))) :
