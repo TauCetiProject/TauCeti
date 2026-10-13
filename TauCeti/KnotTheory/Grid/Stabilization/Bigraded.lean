@@ -15,6 +15,9 @@ For the stabilization splitting an `X`-marking, the comparison on `GH⁻` is a b
 preserves both O-Maslov and Alexander degrees. Its inverse also preserves the bigrading,
 giving specified linear equivalences on every homogeneous homology piece.
 
+Chain-level preservation holds over a commutative ring. Homology-level preservation,
+reflection, and the piece equivalences require characteristic two (`[CommRing R] [CharP R 2]`).
+
 The equivalences are over the ground ring. The total comparison retains its semilinearity
 along the renaming that merges the two variables in the stabilization block. Only the
 stabilization `G.stabilizeX s.castSucc (G.X s).castSucc s` is treated here.

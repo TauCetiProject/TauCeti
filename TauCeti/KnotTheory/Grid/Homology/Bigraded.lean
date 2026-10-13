@@ -17,6 +17,10 @@ by `(O-Maslov, Alexander)` degree. The differential has degree `(-1, 0)`, and ea
 has degree `(-2, -1)`. Homogeneous projection preserves both cycles and boundaries, so a class
 has a homogeneous representative precisely when it belongs to the corresponding piece.
 
+The cycle pieces are defined over commutative semirings, and their internal direct sum
+decomposition is available over commutative rings. The homology grading and its consequences
+require a commutative ring of characteristic two (`[CommRing R] [CharP R 2]`).
+
 These pieces are modules over the ground ring, not over the polynomial coefficient ring.
 As for the chain bigrading, an odd number of link components ensures integral Alexander degrees.
 The decomposition allows degree-preserving homology comparisons to be restricted to each

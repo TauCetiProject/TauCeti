@@ -331,7 +331,7 @@ theorem linearEquiv_symm {ι : Type} [DecidableEq ι] [AddMonoid ι]
 
 section Decompose
 
-variable {ι : Type} [DecidableEq ι] [AddGroup ι]
+variable {ι : Type} [DecidableEq ι] [AddRightCancelMonoid ι]
   {R S : Type*} {M : Type v} {N : Type w} [Semiring R] [Semiring S]
   [AddCommMonoid M] [Module R M] [Module S M]
   [AddCommMonoid N] [Module R N] [Module S N]
@@ -356,13 +356,15 @@ theorem isHomogeneous_ker (hf : LinearMap.IsHomogeneous f G.piece H.piece r) :
   rw [_root_.LinearMap.mem_ker] at hx ⊢
   rw [hf.map_decompose, hx, DirectSum.decompose_zero, DirectSum.zero_apply, ZeroMemClass.coe_zero]
 
+end Decompose
+
 /-- The image of a homogeneous linear map is a homogeneous submodule. -/
-theorem isHomogeneous_range (hf : LinearMap.IsHomogeneous f G.piece H.piece r) :
+theorem isHomogeneous_range {ι : Type} [DecidableEq ι] [AddGroup ι]
+    {G : InternalGrading R M ι} {H : InternalGrading R N ι} {f : M →ₗ[S] N} {r : ι}
+    (hf : LinearMap.IsHomogeneous f G.piece H.piece r) :
     DirectSum.SetLike.IsHomogeneous H.piece (_root_.LinearMap.range f) := by
   rintro q _ ⟨x, rfl⟩
   exact ⟨_, (hf.map_decompose (q - r) x).trans (by rw [sub_add_cancel])⟩
-
-end Decompose
 
 end LinearMap.IsHomogeneous
 

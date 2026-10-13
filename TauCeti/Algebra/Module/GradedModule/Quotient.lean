@@ -129,7 +129,7 @@ end Submodule
 
 section Ker
 
-variable [AddGroup ι]
+variable [AddRightCancelMonoid ι]
 
 variable {S N : Type*} [Semiring R] [Semiring S] [SMul R S]
   [AddCommMonoid M] [Module R M] [Module S M] [IsScalarTower R S M]
