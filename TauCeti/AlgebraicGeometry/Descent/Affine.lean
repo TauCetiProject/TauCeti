@@ -535,10 +535,10 @@ theorem exists_isAffine_baseChange_hom_isIso {S S' : Scheme.{u}} {p : S' ⟶ S} 
   -- Present `p` as `Spec Γ(S', ⊤) ⟶ Spec Γ(S, ⊤)`, with `Γ(S', ⊤)` an algebra through `p`.
   let _ : Algebra Γ(S, ⊤) Γ(S', ⊤) := p.appTop.hom.toAlgebra
   have : Module.Flat Γ(S, ⊤) Γ(S', ⊤) := HasRingHomProperty.iff_of_isAffine.mp ‹Flat p›
-  let e : Arrow.mk p ≅ Arrow.mk (Spec.algebraMap Γ(S, ⊤) Γ(S', ⊤)) :=
-    Arrow.isoMk S'.isoSpec S.isoSpec <| by
-      simp [Spec.algebraMap, RingHom.algebraMap_toAlgebra, Scheme.isoSpec_hom_naturality]
-  have : IsAffine ((Over.map e.hom.left).obj X).left := ‹IsAffine X.left›
+  let e : Arrow.mk p ≅ Arrow.mk (Spec.algebraMap Γ(S, ⊤) Γ(S', ⊤)) := arrowIsoSpecΓOfIsAffine p
+  have : IsAffine ((Over.map e.hom.left).obj X).left := by
+    rw [Over.map_obj_left]
+    infer_instance
   obtain ⟨Y₀, hY₀, f, _⟩ := exists_isAffine_baseChange_hom_isIso_spec (D.transportArrow e)
   exact ⟨_, hY₀, exists_baseChange_hom_isIso_of_transportArrow e D f⟩
 
@@ -551,8 +551,9 @@ theorem exists_isAffine_baseChange_hom_isIso_pullbackAlong {S S' T : Scheme.{u}}
     (q : T ⟶ S) [IsAffine T] :
     ∃ X₀ : Over T, IsAffine X₀.left ∧
       ∃ f : Hom (baseChange (pullback.fst q p) X₀) (D.pullbackAlong q), IsIso f.hom := by
-  have : IsAffine (pullbackAlongObj (p := p) q X).left :=
-    inferInstanceAs (IsAffine (pullback X.hom (pullback.snd q p)))
+  have : IsAffine (pullbackAlongObj (p := p) q X).left := by
+    simp only [pullbackAlongObj, Over.pullback_obj_left]
+    infer_instance
   exact exists_isAffine_baseChange_hom_isIso (D.pullbackAlong q)
 
 end DescentDatum

@@ -528,13 +528,33 @@ section ArrowIso
 
 variable {T T' : C} {q : T' ⟶ T} (e : Arrow.mk p ≅ Arrow.mk q) {X Y : Over S'}
 
+/-- The comparison from the action space of a datum transported along
+`e : Arrow.mk p ≅ Arrow.mk q` to the original action space. On points it sends `(t, x)` to
+`(e⁻¹ t, x)`. -/
+noncomputable def transportArrowActionComparison (X : Over S') :
+    pullback q (((Over.map e.hom.left).obj X).hom ≫ q) ⟶ pullback p (X.hom ≫ p) :=
+  pullback.map q (((Over.map e.hom.left).obj X).hom ≫ q) p (X.hom ≫ p) e.inv.left (𝟙 X.left)
+    e.inv.right (Arrow.w_mk_right e.inv).symm (by simp)
+
+/-- The action-space comparison for transport moves the point of `T'` to `S'` along `e⁻¹`. -/
+@[reassoc (attr := simp)]
+theorem transportArrowActionComparison_fst (X : Over S') :
+    transportArrowActionComparison e X ≫ pullback.fst p (X.hom ≫ p) =
+      pullback.fst _ _ ≫ e.inv.left :=
+  pullback.lift_fst _ _ _
+
+/-- The action-space comparison for transport preserves the point of `X`. -/
+@[reassoc (attr := simp)]
+theorem transportArrowActionComparison_snd (X : Over S') :
+    transportArrowActionComparison e X ≫ pullback.snd p (X.hom ≫ p) = pullback.snd _ _ :=
+  (pullback.lift_snd _ _ _).trans (Category.comp_id _)
+
 /-- The transport of a descent datum along an isomorphism of arrows `e : Arrow.mk p ≅ Arrow.mk q`.
 If `D` acts on `X ⟶ S'` relative to `p : S' ⟶ S`, then `D.transportArrow e` acts on
 `X ⟶ S' ≅ T'` relative to `q : T' ⟶ T`, by `t · x = e⁻¹ t · x`. -/
 noncomputable def transportArrow (D : DescentDatum p X) :
     DescentDatum q ((Over.map e.hom.left).obj X) where
-  act := pullback.map q (((Over.map e.hom.left).obj X).hom ≫ q) p (X.hom ≫ p) e.inv.left
-    (𝟙 X.left) e.inv.right (Arrow.w_mk_right e.inv).symm (by simp) ≫ D.act
+  act := transportArrowActionComparison e X ≫ D.act
   act_hom := by simp
   lift_act := by
     refine Eq.trans ?_ D.lift_act
@@ -546,9 +566,7 @@ noncomputable def transportArrow (D : DescentDatum p X) :
     -- Compare both sides with the original twice-iterated action space, where `D.act_assoc`
     -- applies directly.
     have key := pullback.map q (pullback.fst q ((X.hom ≫ e.hom.left) ≫ q) ≫ q)
-      p (pullback.fst p (X.hom ≫ p) ≫ p) e.inv.left
-      (pullback.map q ((X.hom ≫ e.hom.left) ≫ q) p (X.hom ≫ p) e.inv.left (𝟙 X.left) e.inv.right
-        (Arrow.w_mk_right e.inv).symm (by simp))
+      p (pullback.fst p (X.hom ≫ p) ≫ p) e.inv.left (transportArrowActionComparison e X)
       e.inv.right (Arrow.w_mk_right e.inv).symm (by simp) ≫= D.act_assoc
     simp only [← Category.assoc] at key ⊢
     convert key using 2 <;> refine pullback.hom_ext ?_ ?_ <;> simp
@@ -556,9 +574,7 @@ noncomputable def transportArrow (D : DescentDatum p X) :
 /-- The transported action is the original action after moving the point of `T'` to `S'` along
 `e⁻¹`: `t · x = e⁻¹ t · x`. -/
 theorem transportArrow_act (D : DescentDatum p X) :
-    (D.transportArrow e).act =
-      pullback.map q (((Over.map e.hom.left).obj X).hom ≫ q) p (X.hom ≫ p) e.inv.left (𝟙 X.left)
-        e.inv.right (Arrow.w_mk_right e.inv).symm (by simp) ≫ D.act :=
+    (D.transportArrow e).act = transportArrowActionComparison e X ≫ D.act :=
   (rfl)
 
 /-- The transport of a morphism of descent data along an isomorphism of arrows. -/
@@ -608,7 +624,7 @@ noncomputable def transportArrowSymmHom (D : DescentDatum p X) :
     simp only [Over.isoMk_hom_left, Iso.refl_hom]
     refine Eq.trans ?_ ((Category.assoc _ _ _).trans (Category.comp_id _).symm)
     congr 1
-    ext <;> simp
+    ext <;> simp [transportArrowActionComparison]
 
 @[simp]
 theorem transportArrowSymmHom_hom_left (D : DescentDatum p X) :
@@ -630,7 +646,7 @@ noncomputable def baseChangeTransportArrowHom (Y₀ : Over S) :
     e.inv.left e.inv.right (by simp) (Arrow.w_mk_right e.inv).symm)) (by simp)).hom
   map_act := by
     rw [transportArrow_act]
-    refine pullback.hom_ext ?_ ?_ <;> simp [baseChange]
+    refine pullback.hom_ext ?_ ?_ <;> simp [baseChange, transportArrowActionComparison]
 
 @[simp]
 theorem baseChangeTransportArrowHom_hom_left (Y₀ : Over S) :
