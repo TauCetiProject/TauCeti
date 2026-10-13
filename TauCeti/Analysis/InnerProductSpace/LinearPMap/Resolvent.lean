@@ -11,11 +11,13 @@ public import TauCeti.Analysis.Normed.Operator.Resolvent.LowerBound
 /-!
 # Resolvents of self-adjoint partial linear maps
 
-Every nonreal scalar is a resolvent point of a self-adjoint partial linear map, with the
-sharp upper bound `‖R(z)‖ ≤ |im z|⁻¹`. Its spectrum is therefore real. Taking the adjoint of
-a resolvent conjugates its scalar parameter; in particular, resolvents at real points are
-self-adjoint. These facts provide the bounded inverses used in Cayley transforms and
-imaginary-shift approximations of unbounded self-adjoint operators.
+A scalar `z` at which the shift `x ↦ z • x - A x` of a self-adjoint partial linear map is
+bounded below by `c‖x‖`, with `c > 0`, is a resolvent point, and `‖R(z)‖ ≤ c⁻¹`; at a real `z`
+this is the quantitative form of `z ∉ σ(A)`. Every nonreal scalar `z` is such a point with
+`c = |im z|`, which gives the sharp upper bound `‖R(z)‖ ≤ |im z|⁻¹`. The spectrum is therefore
+real. Taking the adjoint of a resolvent conjugates its scalar parameter; in particular, resolvents
+at real points are self-adjoint. These facts provide the bounded inverses used in Cayley
+transforms and imaginary-shift approximations of unbounded self-adjoint operators.
 
 The off-real estimates and surjectivity come from
 `TauCeti.Analysis.InnerProductSpace.LinearPMap.SelfAdjoint`; the bounded inverse uses
@@ -48,11 +50,27 @@ theorem _root_.LinearPMap.IsFormalAdjoint.norm_resolvent_le
 
 variable [CompleteSpace E]
 
+/-- **Resolvent from a lower bound.** If the shift `x ↦ z • x - A x` of a self-adjoint partial
+linear map dominates `c * ‖x‖` on the domain for some `c > 0`, then `z` is a resolvent point. -/
+theorem _root_.IsSelfAdjoint.mem_resolventSet_of_norm_le (hA : IsSelfAdjoint A) {c : ℝ}
+    (hc : 0 < c) (hbound : ∀ x : A.domain, c * ‖(x : E)‖ ≤ ‖z • (x : E) - A x‖) :
+    z ∈ A.resolventSet :=
+  mem_resolventSet_of_surjective_of_norm_le (hA.smul_sub_surjective_of_norm_le hc hbound) hc
+    hbound
+
+/-- **Resolvent bound from a lower bound.** If the shift `x ↦ z • x - A x` of a self-adjoint
+partial linear map dominates `c * ‖x‖` on the domain for some `c > 0`, then the resolvent at `z`
+has norm at most `c⁻¹`. -/
+theorem _root_.IsSelfAdjoint.norm_resolvent_le_of_norm_le (hA : IsSelfAdjoint A) {c : ℝ}
+    (hc : 0 < c) (hbound : ∀ x : A.domain, c * ‖(x : E)‖ ≤ ‖z • (x : E) - A x‖) :
+    ‖A.resolvent z‖ ≤ c⁻¹ :=
+  (isResolventAt_resolvent (hA.mem_resolventSet_of_norm_le hc hbound)).norm_le_inv hc hbound
+
 /-- Every nonreal scalar is a resolvent point of a self-adjoint partial linear map. -/
 theorem _root_.IsSelfAdjoint.mem_resolventSet_of_im_ne_zero
     (hA : IsSelfAdjoint A) (him : RCLike.im z ≠ 0) : z ∈ A.resolventSet :=
-  mem_resolventSet_of_surjective_of_norm_le (hA.smul_sub_surjective him)
-    (abs_pos.mpr him) (hA.isFormalAdjoint.abs_im_mul_norm_le_norm_smul_sub z)
+  hA.mem_resolventSet_of_norm_le (abs_pos.mpr him)
+    (hA.isFormalAdjoint.abs_im_mul_norm_le_norm_smul_sub z)
 
 /-- The spectrum of a self-adjoint partial linear map is contained in the real axis. -/
 theorem _root_.IsSelfAdjoint.spectrum_subset_im_eq_zero (hA : IsSelfAdjoint A) :

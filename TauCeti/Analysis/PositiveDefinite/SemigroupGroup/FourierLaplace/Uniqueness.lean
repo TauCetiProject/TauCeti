@@ -34,8 +34,7 @@ through Laplace determinacy in the time variable.
 ## Main declarations
 
 * `TauCeti.Measure.ext_of_forall_laplaceFourierTransform_eq`: **finite measures on `ℝ≥0 × V`
-  are determined by their Laplace--Fourier transforms**. This is the statement the roadmap
-  calls `laplaceFourier_unique`.
+  are determined by their Laplace--Fourier transforms**.
 * `TauCeti.RepresentsLaplaceFourier.unique`: a function has at most one representing finite
   measure.
 
@@ -43,9 +42,6 @@ through Laplace determinacy in the time variable.
 
 * C. Berg, J. P. R. Christensen, P. Ressel, *Harmonic Analysis on Semigroups* (GTM 100, 1984),
   Theorem 4.1.13.
-
-* Roadmap: `TauCetiRoadmap/OneParameterSemigroups/README.md`, Part C, Milestone 2
-  ("BCR semigroup--Bochner"), whose uniqueness half this file is.
 -/
 
 public section
@@ -64,9 +60,9 @@ variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [Measurabl
 
 /-- **A finite measure on `ℝ≥0 × V` is determined by its Laplace--Fourier transform.**
 
-This is the uniqueness half of the Berg--Christensen--Ressel representation theorem; the
-roadmap calls it `laplaceFourier_unique`. Its proof uses no positive-definiteness: it is pure
-transform injectivity, Fourier in the spatial variable and Laplace in the time variable. -/
+This is the uniqueness half of the Berg--Christensen--Ressel representation theorem. Its proof uses
+no positive-definiteness: it is pure transform injectivity, Fourier in the spatial variable and
+Laplace in the time variable. -/
 theorem Measure.ext_of_forall_laplaceFourierTransform_eq {μ ν : Measure (ℝ≥0 × V)}
     [IsFiniteMeasure μ] [IsFiniteMeasure ν]
     (h : ∀ x, laplaceFourierTransform μ x = laplaceFourierTransform ν x) :

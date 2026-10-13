@@ -17,9 +17,9 @@ comodule morphisms live with the coefficient span and adjoin API in
 `TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient.Adjoin`; this file keeps the
 transport-specific consequences behind the `Comodule.Transport` import.
 
-These lemmas are bookkeeping for the reductive-groups roadmap's faithful-representation
-criterion: faithful representations are detected by whether their matrix coefficients
-generate the coordinate Hopf algebra.
+These lemmas are bookkeeping for the faithful-representation criterion: faithfulness is detected by
+whether the matrix coefficients, together with their antipode images, generate the coordinate Hopf
+algebra.
 
 ## Main declarations
 
@@ -31,11 +31,8 @@ generate the coordinate Hopf algebra.
 
 ## References
 
-This is standard matrix-coefficient functoriality for comodules; see Sweedler, *Hopf
-Algebras*, Chapter 2. It supplies a prerequisite for
-`ReductiveGroups/README.md` in TauCetiRoadmap, Layer 1, "Faithfulness done right", where
-faithful representations are characterized by their matrix coefficients generating the
-coordinate Hopf algebra.
+This is standard matrix-coefficient functoriality for comodules; see Sweedler, *Hopf Algebras*,
+Chapter 2.
 -/
 
 public section
