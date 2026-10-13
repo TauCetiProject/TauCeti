@@ -44,6 +44,8 @@ variables between globally minimal equations: they are exactly those defined ove
   through Mathlib's `[IsMinimal R W] : IsIntegral R W` at each prime and the descent.
 * `WeierstrassCurve.isMinimal_baseChange_of_Δ_notMem_or_c₄_notMem`: an equation over `O` is
   minimal at every height-one prime not containing both its discriminant and its `c₄`.
+* `WeierstrassCurve.isMinimal_baseChange_of_not_pow_twelve_dvd_span_Δ`: an equation over `O` is
+  minimal at every height-one prime `v` with `v¹² ∤ (Δ)`.
 * `WeierstrassCurve.isGlobalMinimal_baseChange_of_isCoprime`: an equation over `O` whose
   discriminant and `c₄` are coprime is globally minimal.
 * `WeierstrassCurve.IsGlobalMinimal.baseChange_smul`: a change of variables defined over `O`
@@ -219,6 +221,17 @@ theorem isMinimal_baseChange_of_Δ_notMem_or_c₄_notMem (W : WeierstrassCurve O
   refine isMinimal_baseChange_of_isUnit_Δ_or_isUnit_c₄ _ _ ?_
   simpa only [map_Δ, map_c₄, IsLocalization.AtPrime.isUnit_to_map_iff _ v.asIdeal,
     Ideal.mem_primeCompl_iff] using hv
+
+/-- **An equation over `O` is minimal at every height-one prime `v` with `v¹² ∤ (Δ)`.** Its
+discriminant then has `v`-adic valuation less than `12`
+(`isMinimal_of_exp_neg_twelve_lt_valuation_Δ`). -/
+theorem isMinimal_baseChange_of_not_pow_twelve_dvd_span_Δ (W : WeierstrassCurve O)
+    {v : HeightOneSpectrum O} (h : ¬ v.asIdeal ^ 12 ∣ Ideal.span {W.Δ}) :
+    IsMinimal (Localization.AtPrime v.asIdeal) (W.baseChange K) := by
+  refine isMinimal_of_exp_neg_twelve_lt_valuation_Δ _ _ ?_
+  rwa [HeightOneSpectrum.valuation_maximalIdeal_localizationAtPrime, baseChange, map_Δ,
+    HeightOneSpectrum.valuation_of_algebraMap, ← not_le,
+    show (-12 : ℤ) = -((12 : ℕ) : ℤ) by norm_num, HeightOneSpectrum.intValuation_le_pow_iff_dvd]
 
 /-- **An equation over `O` whose discriminant and `c₄` are coprime is globally minimal.** At each
 height-one prime one of the two is a unit of the local ring

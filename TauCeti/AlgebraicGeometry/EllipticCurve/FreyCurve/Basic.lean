@@ -11,10 +11,6 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.MinimalModel.DiscriminantI
 public import TauCeti.AlgebraicGeometry.EllipticCurve.MinimalModel.Semistable
 -- Proof-only: coprimality of `A B (A + B)` and `A² + A B + B²`.
 import TauCeti.RingTheory.Coprime.Lemmas
--- Proof-only: integrality over the localisations of `ℤ`.
-import TauCeti.AlgebraicGeometry.EllipticCurve.IntegralModel
--- Proof-only: an integral equation with `v(Δ) < 12` is minimal.
-import TauCeti.AlgebraicGeometry.EllipticCurve.MinimalModel.Basic
 
 /-!
 # The Frey–Hellegouarch curve
@@ -392,10 +388,8 @@ theorem isGlobalMinimal_baseChange_freyCurve {A B : ℤ} (hAB : IsCoprime A B)
     have hv : v.asIdeal = Ideal.span {2} :=
       (((Ideal.span_singleton_prime two_ne_zero).2 Int.prime_two).isMaximal (by simp)).eq_of_le
         v.isPrime.ne_top ((Ideal.span_singleton_le_iff_mem _).2 h2) |>.symm
-    refine isMinimal_of_exp_neg_twelve_lt_valuation_Δ _ _ ?_
-    rwa [valuation_maximalIdeal_localizationAtPrime, baseChange, map_Δ, valuation_of_algebraMap,
-      ← not_le, show (-12 : ℤ) = -((12 : ℕ) : ℤ) by norm_num, intValuation_le_pow_iff_dvd, hv,
-      Ideal.span_singleton_pow, Ideal.span_singleton_dvd_span_singleton_iff_dvd,
+    refine isMinimal_baseChange_of_not_pow_twelve_dvd_span_Δ _ ?_
+    rwa [hv, Ideal.span_singleton_pow, Ideal.span_singleton_dvd_span_singleton_iff_dvd,
       two_pow_twelve_dvd_freyCurve_Δ_iff]
   · exact isMinimal_baseChange_of_Δ_notMem_or_c₄_notMem _ (freyCurve_Δ_notMem_or_c₄_notMem hAB h2)
 
