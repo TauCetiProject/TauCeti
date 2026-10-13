@@ -123,10 +123,10 @@ theorem entropicGibbsFactor_of_eq_top {z : X × Y} (hz : c z = ∞) :
   Set.indicator_of_notMem (not_not.2 hz) _
 
 omit [MeasurableSpace X] [MeasurableSpace Y] in
-/-- A bounded cost is finite everywhere, so the Gibbs factor is the real exponential. -/
-theorem entropicGibbsFactor_eq_of_le {B : ℝ≥0} (hcB : ∀ z, c z ≤ B) :
+/-- For a cost that is finite everywhere, the Gibbs factor is the real exponential. -/
+theorem entropicGibbsFactor_eq_of_forall_ne_top (hc : ∀ z, c z ≠ ∞) :
     entropicGibbsFactor c ε φ ψ = fun z ↦ Real.exp ((φ z.1 + ψ z.2 - (c z).toReal) / ε) :=
-  funext fun z ↦ entropicGibbsFactor_of_ne_top (ne_top_of_le_ne_top ENNReal.coe_ne_top (hcB z))
+  funext fun z ↦ entropicGibbsFactor_of_ne_top (hc z)
 
 omit [MeasurableSpace X] [MeasurableSpace Y] in
 /-- The Gibbs factor is nonnegative. -/
@@ -364,7 +364,8 @@ theorem exists_entropicDualValue_eq_toReal_entropicTransportCost (hc : Measurabl
     (.of_bound hψ.aestronglyMeasurable C (ae_of_all _ hψC))
     (integrable_entropicGibbsFactor_of_abs_le hc hφ hψ hφC hψC)
     (hopt ▸ entropicTransportCost_ne_top_of_le hcB ε)).2 ?_
-  rwa [entropicGibbsFactor_eq_of_le hcB]
+  rwa [entropicGibbsFactor_eq_of_forall_ne_top fun z ↦
+    ne_top_of_le_ne_top ENNReal.coe_ne_top (hcB z)]
 
 /-- **Strong entropic duality for a bounded cost.** For probability measures, a bounded
 measurable cost and a positive temperature, the regularised transport cost is the greatest
