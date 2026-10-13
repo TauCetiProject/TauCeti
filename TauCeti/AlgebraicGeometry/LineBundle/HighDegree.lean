@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.AlgebraicGeometry.Morphisms.Separated
 public import TauCeti.AlgebraicGeometry.WeilDivisor.Scheme.SerreDuality
 public import TauCeti.AlgebraicGeometry.WeilDivisor.Scheme.RiemannRoch.Finiteness
 public import TauCeti.FieldTheory.FunctionField.Consequences.HighDegree
@@ -62,15 +63,12 @@ private theorem exists_divisor_of_high_degree (L : InvertibleSheaf X)
           Divisor.degree (SchemeWeilDivisor.equivFunctionFieldDivisor hex hdim D) =
             L.eulerDegree k ∧
           genus k X.functionField = finrank k (Scheme.Modules.Cohomology (trivial X).obj 1) := by
-  have : IsLocallyNoetherian X := LocallyOfFiniteType.isLocallyNoetherian (X ↘ Spec (.of k))
-  have : CompactSpace X := compactSpace_of_universallyClosed (X ↘ Spec (.of k))
-  have : IsNoetherian X := {}
-  have : X.IsSeparated :=
-    ⟨by rw [← terminal.comp_from (X ↘ Spec (.of k))]; infer_instance⟩
-  have hex : ValuativeCriterion.Existence (X ↘ Spec (.of k)) := by
-    have h : UniversallyClosed (X ↘ Spec (.of k)) := inferInstance
-    rw [UniversallyClosed.eq_valuativeCriterion] at h
-    exact h.1
+  have : IsNoetherian X :=
+    { toIsLocallyNoetherian := LocallyOfFiniteType.isLocallyNoetherian (X ↘ Spec (.of k))
+      toCompactSpace := compactSpace_of_universallyClosed (X ↘ Spec (.of k)) }
+  have := Scheme.IsSeparated.of_isSeparated (X ↘ Spec (.of k))
+  have hex :=
+    (UniversallyClosed.eq_valuativeCriterion.le _ _ (X ↘ Spec (.of k)) inferInstance).1
   have := finiteDimensional_cohomology_one_trivial_of_isProper k
     ((isFunctionField_functionField_iff k).mp hF)
   obtain ⟨D, ⟨e⟩⟩ := SchemeWeilDivisor.exists_nonempty_iso_sheaf hdim L

@@ -52,7 +52,6 @@ private theorem high_degree_hypotheses_of_smooth :
           IsIntegrallyClosedIn k X.functionField := by
   have := SmoothOfRelativeDimension.smooth 1 (X ↘ Spec (.of k))
   have : IsIntegral X := GeometricallyIntegral.isIntegral_of_subsingleton (X ↘ Spec (.of k))
-  have : IsLocallyNoetherian X := LocallyOfFiniteType.isLocallyNoetherian (X ↘ Spec (.of k))
   have : ∀ x : X, IsRegularLocalRing (X.presheaf.stalk x) :=
     isRegularLocalRing_stalk_of_smooth (X ↘ Spec (.of k))
   have : ∀ x : CodimensionOnePoint X,
