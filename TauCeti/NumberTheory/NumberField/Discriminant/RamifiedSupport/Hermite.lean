@@ -5,10 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.NumberTheory.NumberField.Discriminant.Different
 public import TauCeti.NumberTheory.NumberField.Discriminant.RamifiedSupport.Basic
-public import TauCeti.NumberTheory.NumberField.LocalGlobal.Different.Wild
-public import TauCeti.NumberTheory.RamificationInertia.Tower
+import TauCeti.NumberTheory.NumberField.LocalGlobal.Different.Wild
+import TauCeti.NumberTheory.RamificationInertia.Tower
 
 /-!
 # Extensions of bounded degree unramified outside a finite set
@@ -36,8 +35,8 @@ which is all the finiteness argument needs.
 
 * `TauCeti.NumberField.differentIdeal_dvd_map_span_factorial_mul_prod_ramifiedSupport`: the
   different of `L / K` divides `[L : K]!` times the product of the ramified primes of `K`.
-* `TauCeti.NumberField.natAbs_discr_dvd`: the resulting divisibility of the absolute
-  discriminant of `L`.
+* `natAbs_discr_dvd_absNorm_factorial_mul_prod_ramifiedSupport_mul_natAbs_discr_pow` (in
+  `TauCeti.NumberField`): the resulting divisibility of the absolute discriminant of `L`.
 * `TauCeti.NumberField.finite_of_finrank_le_of_ramifiedSupport_subset`: there are finitely many
   extensions of `K` in `A` of degree at most `d` and ramified only at places in `S`.
 
@@ -116,7 +115,7 @@ theorem differentIdeal_dvd_map_span_factorial_mul_prod_ramifiedSupport :
 /-- **A bound on the discriminant from the ramified primes.** The absolute discriminant of `L`
 divides `(N([L : K]! · ∏ 𝔭) · |d_K|) ^ [L : K]`, the product over the primes `𝔭` of `K`
 ramified in `L`. -/
-theorem natAbs_discr_dvd :
+theorem natAbs_discr_dvd_absNorm_factorial_mul_prod_ramifiedSupport_mul_natAbs_discr_pow :
     (discr L).natAbs ∣
       (Ideal.absNorm (Ideal.span {((finrank K L).factorial : 𝓞 K)} *
         ∏ v ∈ ramifiedSupport K L, v.asIdeal) * (discr K).natAbs) ^ finrank K L := by
@@ -150,11 +149,15 @@ theorem finite_of_finrank_le_of_ramifiedSupport_subset (A : Type*) [Field A] [Al
   refine ((finite_of_discr_bdd A (B ^ d)).preimage hφ.injOn).subset ?_
   rintro ⟨L, hL⟩ ⟨hd, hS⟩
   have : NumberField L := NumberField.of_module_finite K L
-  -- `L.restrictScalars ℚ` is `L` as a field, so the two discriminants agree by definition
-  change |discr L| ≤ ((B ^ d : ℕ) : ℤ)
-  rw [Int.abs_eq_natAbs, Nat.cast_le]
-  refine (Nat.le_of_dvd (pow_pos hB _) (natAbs_discr_dvd.trans (pow_dvd_pow_of_dvd ?_ _))).trans
-    (Nat.pow_le_pow_right hB hd)
+  -- `L.restrictScalars ℚ` and `L` have the same underlying subfield of `A`
+  let e : L.restrictScalars ℚ ≃+* L :=
+    .subfieldCongr (IntermediateField.restrictScalars_toSubfield ℚ)
+  have : NumberField (L.restrictScalars ℚ) := @NumberField.mk _ _ inferInstance (φ ⟨L, hL⟩).2
+  change |discr (L.restrictScalars ℚ)| ≤ ((B ^ d : ℕ) : ℤ)
+  rw [discr_eq_discr_of_ringEquiv _ e, Int.abs_eq_natAbs, Nat.cast_le]
+  refine (Nat.le_of_dvd (pow_pos hB _)
+    (natAbs_discr_dvd_absNorm_factorial_mul_prod_ramifiedSupport_mul_natAbs_discr_pow.trans
+      (pow_dvd_pow_of_dvd ?_ _))).trans (Nat.pow_le_pow_right hB hd)
   refine Nat.mul_dvd_mul_right (Ideal.absNorm_dvd_absNorm_of_le (Ideal.le_of_dvd ?_)) _
   refine mul_dvd_mul ?_ (Finset.prod_dvd_prod_of_subset _ _ _ hS)
   rw [Ideal.span_singleton_dvd_span_singleton_iff_dvd]
