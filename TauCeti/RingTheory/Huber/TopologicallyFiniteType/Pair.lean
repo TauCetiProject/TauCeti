@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.Huber.TopologicallyFiniteType.Basic
-public import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.QuotientMapping
+public import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Pair.QuotientMapping
 
 /-!
 # Morphisms of Huber pairs topologically of finite type
