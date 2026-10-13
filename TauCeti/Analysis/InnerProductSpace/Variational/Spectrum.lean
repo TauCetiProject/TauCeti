@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.InnerProductSpace.Completion
+public import Mathlib.Analysis.Normed.Group.HomCompletion
 public import TauCeti.Analysis.InnerProductSpace.Spectrum
 public import TauCeti.Analysis.InnerProductSpace.Variational.Fredholm
 
@@ -143,7 +144,7 @@ theorem formSolutionOperator_apply (hB : IsCoercive B) (J : V →L[ℝ] H) (h : 
 
 /-- Passing the target to its completion preserves the solution map on the original space. -/
 @[simp]
-theorem formSolutionMap_toComplL (hB : IsCoercive B) (J : V →L[ℝ] H) (h : H) :
+theorem formSolutionMap_toComplL_apply (hB : IsCoercive B) (J : V →L[ℝ] H) (h : H) :
     hB.formSolutionMap (Completion.toComplL.comp J) (h : Completion H) =
       hB.formSolutionMap J h := by
   apply (hB.eq_formSolutionMap (Completion.toComplL.comp J) ?_).symm
@@ -155,27 +156,33 @@ theorem formSolutionMap_toComplL (hB : IsCoercive B) (J : V →L[ℝ] H) (h : H)
 vectors. -/
 -- Rewrite the completion action before the generic `formSolutionOperator_apply` expansion.
 @[simp high]
-theorem formSolutionOperator_toComplL (hB : IsCoercive B) (J : V →L[ℝ] H) (h : H) :
+theorem formSolutionOperator_toComplL_apply (hB : IsCoercive B) (J : V →L[ℝ] H) (h : H) :
     hB.formSolutionOperator (Completion.toComplL.comp J) (h : Completion H) =
       (hB.formSolutionOperator J h : Completion H) := by
-  simp only [formSolutionOperator_apply, formSolutionMap_toComplL, ContinuousLinearMap.comp_apply,
-    Completion.coe_toComplL]
+  simp only [formSolutionOperator_apply, formSolutionMap_toComplL_apply,
+    ContinuousLinearMap.comp_apply, Completion.coe_toComplL]
 
 /-- Passing the target to its completion preserves the norm of the solution operator. -/
 @[simp]
 theorem norm_formSolutionOperator_toComplL (hB : IsCoercive B) (J : V →L[ℝ] H) :
     ‖hB.formSolutionOperator (Completion.toComplL.comp J)‖ = ‖hB.formSolutionOperator J‖ := by
-  apply le_antisymm
-  · apply ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg _)
-    intro x
-    induction x using Completion.induction_on with
-    | hp => exact isClosed_le (by fun_prop) (by fun_prop)
-    | ih h => simpa only [formSolutionOperator_toComplL, Completion.norm_coe] using
-        (hB.formSolutionOperator J).le_opNorm h
-  · apply ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg _)
+  let S := hB.formSolutionOperator J
+  -- Use the bounded-additive completion norm theorem through the underlying function.
+  let Sg := S.toAddMonoidHom.mkNormedAddGroupHom ‖S‖ S.le_opNorm
+  have hSg : ⇑Sg = S :=
+    (NormedAddGroupHom.coe_mkNormedAddGroupHom _ _ _).trans
+      ((LinearMap.toAddMonoidHom_coe _).trans (ContinuousLinearMap.coe_coe S))
+  have hext : ⇑(hB.formSolutionOperator (Completion.toComplL.comp J)) = Sg.completion := by
+    apply Completion.ext (hB.formSolutionOperator (Completion.toComplL.comp J)).continuous
+      Sg.completion.continuous
     intro h
-    simpa only [formSolutionOperator_toComplL, Completion.norm_coe] using
-      (hB.formSolutionOperator (Completion.toComplL.comp J)).le_opNorm (h : Completion H)
+    simp only [formSolutionOperator_toComplL_apply, NormedAddGroupHom.completion_coe, hSg, S]
+  calc
+    ‖hB.formSolutionOperator (Completion.toComplL.comp J)‖ = ‖Sg.completion‖ := by
+      rw [ContinuousLinearMap.norm_def, NormedAddGroupHom.norm_def, hext]
+    _ = ‖Sg‖ := Sg.norm_completion
+    _ = ‖hB.formSolutionOperator J‖ := by
+      simp only [NormedAddGroupHom.norm_def, ContinuousLinearMap.norm_def, hSg, S]
 
 /-! ### Compactness, symmetry, positivity -/
 
@@ -487,14 +494,14 @@ theorem orthogonalComplement_iSup_eigenspaces_formSolutionOperator_eq_bot (hB : 
       have hy_eigen : y ∈ eigenspace (hB.formSolutionOperator J : H →ₗ[ℝ] H) mu := by
         apply mem_eigenspace_iff.mpr
         apply Completion.coe_injective
-        simpa only [ContinuousLinearMap.coe_coe, ← formSolutionOperator_toComplL, hy,
+        simpa only [ContinuousLinearMap.coe_coe, ← formSolutionOperator_toComplL_apply, hy,
           Completion.coe_smul] using heq
       have hxy := (Submodule.mem_orthogonal' _ x).mp hx y (Submodule.mem_iSup_of_mem mu hy_eigen)
       rw [← hy, Completion.inner_coe, hxy, mul_zero]
   have hx_eigen : x ∈ eigenspace (hB.formSolutionOperator J : H →ₗ[ℝ] H) 0 := by
     apply mem_eigenspace_iff.mpr
     apply Completion.coe_injective
-    simpa only [ContinuousLinearMap.coe_coe, Sc, Jc, formSolutionOperator_toComplL,
+    simpa only [ContinuousLinearMap.coe_coe, Sc, Jc, formSolutionOperator_toComplL_apply,
       Completion.coe_smul, zero_smul, Completion.coe_zero] using hScx
   exact (Submodule.mem_bot ℝ).mpr (inner_self_eq_zero.mp
     ((Submodule.mem_orthogonal' _ x).mp hx x (Submodule.mem_iSup_of_mem 0 hx_eigen)))
