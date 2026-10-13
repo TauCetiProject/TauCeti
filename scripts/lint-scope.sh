@@ -12,6 +12,7 @@
 # Inputs (environment):
 #   GH_TOKEN, REPO   GitHub API access and the repository
 #   EVENT            pull_request_target | workflow_dispatch | merge_group | repository_dispatch | push
+#   DISPATCH_ACTION  repository_dispatch action; approved PRs use ordinary PR scope
 #   NUM              the PR number (pull_request_target, workflow_dispatch)
 #   BASE, HEAD       commit SHAs whose three-dot diff is the change: for a PR its base commit and
 #                    the exact head being built, so the scope is bound to that immutable commit
@@ -38,6 +39,14 @@ full() {
   echo "LINT_ONLY_MODULES=" >> "$GITHUB_ENV"
   exit 0
 }
+
+# Human approval dispatches CI for one PR, not a staging batch. Ordinary PR commit
+# titles need not contain squash-style (#N) suffixes; requiring those here would
+# incorrectly fall back to whole-library lint and report unrelated inherited errors.
+if [ "$EVENT" = "repository_dispatch" ] \
+    && [ "${DISPATCH_ACTION:-}" = "tauceti-bors-pr-approved" ]; then
+  EVENT=workflow_dispatch
+fi
 
 case "$EVENT" in
   pull_request_target|workflow_dispatch)

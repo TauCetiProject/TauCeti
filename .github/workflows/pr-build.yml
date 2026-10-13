@@ -853,6 +853,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           REPO: ${{ github.repository }}
           EVENT: ${{ github.event_name }}
+          DISPATCH_ACTION: ${{ github.event.action }}
           NUM: ${{ steps.pr.outputs.num }}
           # The immutable commits being built: the batch's base, or the PR's base commit
           # (a three-dot compare diffs from the merge base), and the exact head.
