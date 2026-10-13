@@ -364,6 +364,20 @@ theorem stasheff_arity_four (𝒜 : AInfinityAlgebra R A) (a b c d : A) (p q r :
     simpa [E, x, e] using h
   rw [hE, LinearMap.zero_apply]
 
+/-! ### Algebras concentrated in degree zero -/
+
+/-- An `A∞` algebra concentrated in degree zero has no operations besides `m₂`: the operation
+`mₙ` has degree `2 - n`, which is nonzero for `n ≠ 2`. -/
+theorem m_eq_zero_of_forall_mem_piece_zero (𝒜 : AInfinityAlgebra R A)
+    (h : ∀ x, x ∈ 𝒜.grading.piece 0) {n : ℕ} (hn : n ≠ 2) : 𝒜.m n = 0 := by
+  rcases n.eq_zero_or_pos with rfl | hpos
+  · exact 𝒜.m_zero
+  ext x
+  have hx := (𝒜.m_degree n hpos).map_mem (fun _ ↦ 0) x fun i ↦ h (x i)
+  rw [Finset.sum_const_zero, zero_add] at hx
+  exact Submodule.disjoint_def.mp
+    (𝒜.grading.isInternal.submodule_iSupIndep.pairwiseDisjoint (by omega)) _ hx (h _)
+
 /-! ### Low-arity identities for arbitrary inputs -/
 
 /-- The unary `A∞` operation, regarded as a linear differential on the total module. -/

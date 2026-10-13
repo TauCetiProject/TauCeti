@@ -37,9 +37,9 @@ flat scalar-extension theorem needed in the next descent step.
 
 * J. S. Milne, *Algebraic Groups* (2017), Theorem 12.23 and Appendix A.64.
 
-This is the invariant-algebra step in Layer 4, "Tori: split and non-split", of the
-ReductiveGroups roadmap. It follows the semilinear group-algebra action and precedes the theorem
-identifying scalar extension of the invariant algebra with the original split coordinate algebra.
+The invariant algebra comes from the semilinear group-algebra action;
+`TauCeti.Algebra.AlgebraicGroup.GroupAlgebra.Galois.BaseChange` identifies its scalar extension with
+the original split coordinate algebra.
 -/
 
 public section
