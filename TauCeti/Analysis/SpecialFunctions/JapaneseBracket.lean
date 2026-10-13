@@ -10,6 +10,7 @@ public import Mathlib.Analysis.SpecialFunctions.Gamma.Basic
 import Mathlib.MeasureTheory.Constructions.HaarToSphere
 import Mathlib.MeasureTheory.Measure.Lebesgue.VolumeOfBalls
 import TauCeti.Analysis.SpecialFunctions.Beta
+import TauCeti.MeasureTheory.Measure.Lebesgue.VolumeOfBalls
 
 /-!
 # The integral of the Japanese bracket
@@ -75,14 +76,9 @@ theorem integral_rpow_neg_one_add_norm_sq {r : ℝ} (hr : (finrank ℝ V : ℝ) 
     rw [← hpow]
     norm_num
     ring
-  have hω : volume.real (ball (0 : V) 1) = π ^ ((d : ℝ) / 2) / Gamma (d / 2 + 1) := by
-    rw [measureReal_def, InnerProductSpace.volume_ball, ENNReal.ofReal_one, one_pow, one_mul,
-      ENNReal.toReal_ofReal (by positivity), ← hd, Real.sqrt_eq_rpow, ← Real.rpow_natCast,
-      ← Real.rpow_mul pi_pos.le]
-    ring_nf
   have hΓ := Gamma_pos_of_pos (show 0 < (d : ℝ) / 2 by positivity)
-  rw [integral_fun_norm_addHaar volume (fun t ↦ (1 + t ^ 2) ^ (-r / 2)), hrad, hω, beta,
-    nsmul_eq_mul, smul_eq_mul, Gamma_add_one (by positivity), hsum, ← hd]
+  rw [integral_fun_norm_addHaar volume (fun t ↦ (1 + t ^ 2) ^ (-r / 2)), hrad, volume_real_unitBall,
+    beta, nsmul_eq_mul, smul_eq_mul, Gamma_add_one (by positivity), hsum, ← hd]
   field_simp
 
 end TauCeti

@@ -9,6 +9,7 @@ public import TauCeti.Analysis.PDE.GreenFunction.HalfSpace
 import TauCeti.Analysis.InnerProductSpace.Harmonic.MeanValue.Basic
 import TauCeti.Analysis.InnerProductSpace.Harmonic.MeanValue.Converse
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket
+import TauCeti.MeasureTheory.Measure.Lebesgue.VolumeOfBalls
 
 /-!
 # The Poisson integral of a Euclidean half-space and the Dirichlet problem
@@ -29,16 +30,16 @@ translating by `p` and rescaling by `t` reduce the integral to that of the Japan
 `(1 + ‖y‖ ^ 2) ^ (-n / 2)` over the `(n - 1)`-dimensional space `H`, which is
 `π ^ (n / 2) / Γ(n / 2) = n ωₙ / 2` (`TauCeti.integral_rpow_neg_one_add_norm_sq`).
 
-The other estimates all come from one comparison of kernels
+The other estimates all come from one comparison of kernels, proved alongside the kernel
 (`TauCeti.halfSpacePoissonKernel_le_mul`): `K(x, y) = 2 ⟪v, x⟫ / (n ωₙ ‖y - x‖ ⁿ)`, so a lower
 bound `‖y - x₁‖ ≤ A ‖y - x‖` on distances to the hyperplane point `y` bounds `K(x, ·)` by a
 multiple of the integrable `K(x₁, ·)`. Near a pole `x₀` this dominates the integrand uniformly,
 so `P[g]` is continuous and Fubini's theorem moves the mean-value property of each harmonic
 kernel `K(·, y)` onto `P[g]`, which is therefore harmonic by the converse of the mean-value
 property. Far from a boundary point `ξ` it bounds the kernel by `⟪v, x⟫` times a fixed integrable
-function, so mass one makes `K` an approximate identity: `P[g](x) → g ξ` as `x → ξ` wherever `g`
-is bounded and continuous at `ξ`. Together these solve the Dirichlet problem on the half-space for
-bounded continuous data.
+function, so mass one makes `K` an approximate identity: `P[g](x) → g ξ` as `x → ξ` whenever `g`
+is bounded, almost everywhere strongly measurable, and continuous at `ξ`. Together these solve the
+Dirichlet problem on the half-space for bounded continuous data.
 
 Uniqueness is not addressed here. Without a growth condition it fails: `x ↦ ⟪v, x⟫` is harmonic
 in the half-space, continuous up to `H` and zero there.
@@ -46,13 +47,12 @@ in the half-space, continuous up to `H` and zero there.
 ## Main declarations
 
 * `TauCeti.integral_halfSpacePoissonKernel`: the Poisson kernel of the half-space has mass one.
-* `TauCeti.halfSpacePoissonKernel_le_mul`: comparison of Poisson kernels with different poles.
 * `TauCeti.halfSpacePoissonIntegral`: the Poisson integral of data on the hyperplane.
 * `TauCeti.halfSpacePoissonIntegral_const`, `TauCeti.halfSpacePoissonIntegral_add`,
   `TauCeti.halfSpacePoissonIntegral_smul`, `TauCeti.halfSpacePoissonIntegral_mono`: in the open
   half-space the Poisson integral is a positive linear operator preserving constants.
-* `TauCeti.tendsto_halfSpacePoissonIntegral`: the Poisson integral of bounded data attains the
-  boundary value at every point of continuity.
+* `TauCeti.tendsto_halfSpacePoissonIntegral`: the Poisson integral of bounded almost everywhere
+  strongly measurable data attains the boundary value at every point of continuity.
 * `TauCeti.harmonicOnNhd_halfSpacePoissonIntegral`: the Poisson integral of bounded measurable
   data is harmonic in the open half-space.
 * `TauCeti.exists_harmonicOnNhd_continuousOn_halfSpace_eq`: existence of a solution of the
@@ -91,37 +91,12 @@ private theorem finrank_orthogonal_unit (v : U) : finrank ℝ (ℝ ∙ (v : E))�
       (pos_of_ne_zero_euclideanSpace (unit_ne_zero v))]⟩
   exact Submodule.finrank_orthogonal_span_singleton (unit_ne_zero v)
 
-/-- For a point `y` of the hyperplane `⟪v, ·⟫ = 0`, the squared distance from `y` to `x` splits
-into the squared distance from `y` to the foot `x - ⟪v, x⟫ v` of `x` and the squared height of
-`x`. -/
-private theorem norm_sub_sq_eq_of_inner_eq_zero (v : U) (x : E) {y : E} (hy : ⟪(v : E), y⟫ = 0) :
-    ‖y - x‖ ^ 2 = ‖y - (x - ⟪(v : E), x⟫ • (v : E))‖ ^ 2 + ⟪(v : E), x⟫ ^ 2 := by
-  have hv : ‖(v : E)‖ = 1 := v.2
-  have h : y - x = (y - (x - ⟪(v : E), x⟫ • (v : E))) + (-⟪(v : E), x⟫) • (v : E) := by
-    module
-  rw [h, norm_add_sq_real, norm_smul, hv, mul_one, Real.norm_eq_abs, sq_abs, neg_sq,
-    inner_smul_right, inner_sub_left, inner_sub_left, inner_smul_left, real_inner_comm _ y,
-    hy, real_inner_self_eq_norm_sq, hv, real_inner_comm x]
-  simp
-
 /-- The foot `x - ⟪v, x⟫ v` of `x` on the hyperplane `⟪v, ·⟫ = 0`. -/
 private def foot (v : U) (x : E) : (ℝ ∙ (v : E))ᗮ :=
   ⟨x - ⟪(v : E), x⟫ • (v : E), by
     rw [Submodule.mem_orthogonal_singleton_iff_inner_right, inner_sub_right, inner_smul_right,
       real_inner_self_eq_norm_sq, v.2]
     ring⟩
-
-/-- A point of the hyperplane is not a pole in the open half-space. -/
-private theorem ne_of_inner_eq_zero (v : U) {x y : E} (hx : 0 < ⟪(v : E), x⟫)
-    (hy : ⟪(v : E), y⟫ = 0) : y ≠ x := by
-  rintro rfl
-  exact hx.ne' hy
-
-/-- The Poisson kernel with a pole in the open half-space is positive on the hyperplane. -/
-theorem halfSpacePoissonKernel_pos_on_hyperplane (v : U) {x : E} (hx : 0 < ⟪(v : E), x⟫)
-    (y : (ℝ ∙ (v : E))ᗮ) : 0 < halfSpacePoissonKernel n v x y :=
-  halfSpacePoissonKernel_pos hx
-    (ne_of_inner_eq_zero v hx (Submodule.mem_orthogonal_singleton_iff_inner_right.1 y.2))
 
 /-- On the hyperplane, the Poisson kernel with a pole `x` at height `t > 0` is a rescaled and
 translated copy of the Japanese bracket `(1 + ‖·‖ ^ 2) ^ (-n / 2)`. -/
@@ -135,7 +110,7 @@ private theorem halfSpacePoissonKernel_eq_rpow_one_add (v : U) {x : E}
   have hnorm : ‖y - foot v x‖ = ‖(y : E) - (x - ⟪(v : E), x⟫ • (v : E))‖ := rfl
   have h1 : ‖(y : E) - x‖ ^ 2 =
       ⟪(v : E), x⟫ ^ 2 * (1 + ‖⟪(v : E), x⟫⁻¹ • (y - foot v x)‖ ^ 2) := by
-    rw [norm_smul, mul_pow, hnorm, norm_sub_sq_eq_of_inner_eq_zero v x hy, Real.norm_eq_abs,
+    rw [norm_smul, mul_pow, hnorm, norm_sub_sq_eq_of_inner_eq_zero v.2 x hy, Real.norm_eq_abs,
       abs_inv, abs_of_pos hx]
     field_simp
     ring
@@ -176,11 +151,6 @@ theorem integral_halfSpacePoissonKernel (v : U) {x : E} (hx : 0 < ⟪(v : E), x�
   simp_rw [halfSpacePoissonKernel_eq_rpow_one_add v hx]
   rw [integral_const_mul, hI]
   have : Nontrivial E := nontrivial_of_ne (v : E) 0 (unit_ne_zero v)
-  have hω : volume.real (ball (0 : E) 1) = π ^ ((n : ℝ) / 2) / Real.Gamma (n / 2 + 1) := by
-    rw [measureReal_def, InnerProductSpace.volume_ball, ENNReal.ofReal_one, one_pow, one_mul,
-      ENNReal.toReal_ofReal (by positivity), finrank_euclideanSpace_fin, Real.sqrt_eq_rpow,
-      ← Real.rpow_natCast, ← Real.rpow_mul pi_pos.le]
-    ring_nf
   have htpow : t * (t ^ 2) ^ (-(n : ℝ) / 2) * t ^ (n - 1) = 1 := by
     have h1 : ((n : ℝ) - 1) = ((n - 1 : ℕ) : ℝ) := by rw [Nat.cast_sub hn, Nat.cast_one]
     have h : t * (t ^ 2) ^ (-(n : ℝ) / 2) * t ^ (n - 1) =
@@ -194,62 +164,13 @@ theorem integral_halfSpacePoissonKernel (v : U) {x : E} (hx : 0 < ⟪(v : E), x�
     rw [Real.Gamma_one_half_eq, Real.sqrt_eq_rpow, ← Real.rpow_add pi_pos]
     ring_nf
   have hΓ := Real.Gamma_pos_of_pos (show 0 < (n : ℝ) / 2 by positivity)
-  rw [hω, Real.Gamma_add_one (by positivity)]
+  rw [volume_real_unitBall, finrank_euclideanSpace_fin, Real.Gamma_add_one (by positivity)]
   calc _ = 2 * ((n : ℝ) * (π ^ ((n : ℝ) / 2) / ((n : ℝ) / 2 * Real.Gamma (n / 2))))⁻¹ *
         (π ^ (((n : ℝ) - 1) / 2) * Real.Gamma (1 / 2) / Real.Gamma (n / 2)) *
         (t * (t ^ 2) ^ (-(n : ℝ) / 2) * t ^ (n - 1)) := by ring
     _ = 1 := by
       rw [hπ, htpow]
       field_simp
-
-/-- **Comparison of Poisson kernels.** If `y` lies on the hyperplane and
-`‖y - x₁‖ ≤ A ‖y - x‖`, then `K(x, y) ≤ (⟪v, x⟫ / ⟪v, x₁⟫) Aⁿ K(x₁, y)` for poles `x` in the
-closed and `x₁` in the open half-space. -/
-theorem halfSpacePoissonKernel_le_mul (v : U) {x x₁ y : E} {A : ℝ} (hy : ⟪(v : E), y⟫ = 0)
-    (hx : 0 ≤ ⟪(v : E), x⟫) (hx₁ : 0 < ⟪(v : E), x₁⟫) (h : ‖y - x₁‖ ≤ A * ‖y - x‖) :
-    halfSpacePoissonKernel n v x y ≤
-      ⟪(v : E), x⟫ / ⟪(v : E), x₁⟫ * A ^ n * halfSpacePoissonKernel n v x₁ y := by
-  have hyx₁ : 0 < ‖y - x₁‖ := norm_pos_iff.2 fun h ↦ by
-    rw [sub_eq_zero] at h
-    rw [h] at hy
-    exact hx₁.ne' hy
-  have hA : 0 < A * ‖y - x‖ := hyx₁.trans_le h
-  have hA0 : 0 < A := pos_of_mul_pos_left hA (norm_nonneg _)
-  have hyx : 0 < ‖y - x‖ := pos_of_mul_pos_right hA hA0.le
-  have hpow : ‖y - x‖ ^ (-(n : ℝ)) ≤ A ^ n * ‖y - x₁‖ ^ (-(n : ℝ)) := by
-    have := Real.rpow_le_rpow_of_nonpos hyx₁ h (neg_nonpos.2 n.cast_nonneg)
-    rw [Real.mul_rpow hA0.le hyx.le, Real.rpow_neg hA0.le, Real.rpow_natCast] at this
-    rwa [inv_mul_le_iff₀ (by positivity)] at this
-  rw [halfSpacePoissonKernel_def, halfSpacePoissonKernel_def]
-  have hc : 0 ≤ ((n : ℝ) * volume.real (ball (0 : E) 1))⁻¹ := by positivity
-  calc 2 * ⟪(v : E), x⟫ * (((n : ℝ) * volume.real (ball (0 : E) 1))⁻¹ * ‖y - x‖ ^ (-(n : ℝ)))
-      ≤ 2 * ⟪(v : E), x⟫ * (((n : ℝ) * volume.real (ball (0 : E) 1))⁻¹ *
-          (A ^ n * ‖y - x₁‖ ^ (-(n : ℝ)))) := by gcongr
-    _ = _ := by field_simp
-
-/-- Near a pole `x₀` of height `t₀ > 0`, at distance at most `t₀ / 2` from it, the Poisson
-kernel is dominated by a fixed multiple of the kernel with pole `x₀`. -/
-private theorem halfSpacePoissonKernel_le_of_norm_sub_le (v : U) {x x₀ y : E}
-    (hx₀ : 0 < ⟪(v : E), x₀⟫) (hx : ‖x - x₀‖ ≤ ⟪(v : E), x₀⟫ / 2) (hy : ⟪(v : E), y⟫ = 0) :
-    0 < ⟪(v : E), x⟫ ∧
-      halfSpacePoissonKernel n v x y ≤ 3 / 2 * 2 ^ n * halfSpacePoissonKernel n v x₀ y := by
-  have hv : ‖(v : E)‖ = 1 := v.2
-  have hinner : |⟪(v : E), x⟫ - ⟪(v : E), x₀⟫| ≤ ⟪(v : E), x₀⟫ / 2 := by
-    rw [← inner_sub_right]
-    exact (abs_real_inner_le_norm _ _).trans (by rwa [hv, one_mul])
-  have ht : 0 < ⟪(v : E), x⟫ ∧ ⟪(v : E), x⟫ ≤ 3 / 2 * ⟪(v : E), x₀⟫ := by
-    constructor <;> linarith [abs_le.1 hinner]
-  -- The height of `x₀` bounds its distance to every point of the hyperplane from below.
-  have hheight : ⟪(v : E), x₀⟫ ≤ ‖y - x₀‖ := by
-    have h := abs_real_inner_le_norm (v : E) (y - x₀)
-    rw [inner_sub_right, hy, zero_sub, abs_neg, abs_of_pos hx₀, hv, one_mul] at h
-    exact h
-  refine ⟨ht.1, ?_⟩
-  have hcomp := halfSpacePoissonKernel_le_mul (n := n) v (A := 2) hy ht.1.le hx₀ (by
-    linarith [norm_sub_le_norm_sub_add_norm_sub y x x₀])
-  refine hcomp.trans (mul_le_mul_of_nonneg_right ?_
-    (halfSpacePoissonKernel_pos (n := n) hx₀ (ne_of_inner_eq_zero v hx₀ hy)).le)
-  exact mul_le_mul_of_nonneg_right ((div_le_iff₀ hx₀).2 (by linarith [ht.2])) (by positivity)
 
 /-- The **Poisson integral** `P[g](x) = ∫ K(x, y) g(y) dy` of boundary data `g` on the
 hyperplane `⟪v, ·⟫ = 0`, against the Poisson kernel `K = TauCeti.halfSpacePoissonKernel` of the
@@ -281,15 +202,15 @@ theorem integrable_halfSpacePoissonKernel_mul (v : U) {g : (ℝ ∙ (v : E))ᗮ 
   simp only [halfSpacePoissonIntegral_def, Pi.smul_apply, smul_eq_mul, mul_left_comm _ a,
     integral_const_mul]
 
-/-- In the open half-space, the Poisson integral is additive in bounded measurable data. -/
-theorem halfSpacePoissonIntegral_add (v : U) {g₁ g₂ : (ℝ ∙ (v : E))ᗮ → ℝ} {C₁ C₂ : ℝ}
-    (hg₁ : AEStronglyMeasurable g₁) (hC₁ : ∀ y, |g₁ y| ≤ C₁) (hg₂ : AEStronglyMeasurable g₂)
-    (hC₂ : ∀ y, |g₂ y| ≤ C₂) {x : E} (hx : 0 < ⟪(v : E), x⟫) :
+/-- The Poisson integral is additive in boundary data whose Poisson integrands are integrable.
+-/
+theorem halfSpacePoissonIntegral_add (v : U) {g₁ g₂ : (ℝ ∙ (v : E))ᗮ → ℝ} {x : E}
+    (hg₁ : Integrable fun y : (ℝ ∙ (v : E))ᗮ ↦ halfSpacePoissonKernel n v x y * g₁ y)
+    (hg₂ : Integrable fun y : (ℝ ∙ (v : E))ᗮ ↦ halfSpacePoissonKernel n v x y * g₂ y) :
     halfSpacePoissonIntegral v (g₁ + g₂) x =
       halfSpacePoissonIntegral v g₁ x + halfSpacePoissonIntegral v g₂ x := by
   simp only [halfSpacePoissonIntegral_def, Pi.add_apply, mul_add]
-  exact integral_add (integrable_halfSpacePoissonKernel_mul v hg₁ hC₁ hx)
-    (integrable_halfSpacePoissonKernel_mul v hg₂ hC₂ hx)
+  exact integral_add hg₁ hg₂
 
 /-- The Poisson integral reproduces constants in the open half-space. -/
 @[simp] theorem halfSpacePoissonIntegral_const (v : U) {x : E} (hx : 0 < ⟪(v : E), x⟫)
@@ -297,32 +218,31 @@ theorem halfSpacePoissonIntegral_add (v : U) {g₁ g₂ : (ℝ ∙ (v : E))ᗮ �
   rw [halfSpacePoissonIntegral_def, integral_mul_const, integral_halfSpacePoissonKernel v hx,
     one_mul]
 
-/-- In the open half-space, the Poisson integral preserves order between bounded measurable
-data. -/
-theorem halfSpacePoissonIntegral_mono (v : U) {g₁ g₂ : (ℝ ∙ (v : E))ᗮ → ℝ} {C₁ C₂ : ℝ}
-    (hg₁ : AEStronglyMeasurable g₁) (hC₁ : ∀ y, |g₁ y| ≤ C₁) (hg₂ : AEStronglyMeasurable g₂)
-    (hC₂ : ∀ y, |g₂ y| ≤ C₂) (hle : g₁ ≤ g₂) {x : E} (hx : 0 < ⟪(v : E), x⟫) :
+/-- In the open half-space, the Poisson integral preserves order between boundary data whose
+Poisson integrands are integrable. -/
+theorem halfSpacePoissonIntegral_mono (v : U) {g₁ g₂ : (ℝ ∙ (v : E))ᗮ → ℝ} {x : E}
+    (hg₁ : Integrable fun y : (ℝ ∙ (v : E))ᗮ ↦ halfSpacePoissonKernel n v x y * g₁ y)
+    (hg₂ : Integrable fun y : (ℝ ∙ (v : E))ᗮ ↦ halfSpacePoissonKernel n v x y * g₂ y)
+    (hle : g₁ ≤ g₂) (hx : 0 < ⟪(v : E), x⟫) :
     halfSpacePoissonIntegral v g₁ x ≤ halfSpacePoissonIntegral v g₂ x :=
-  integral_mono (integrable_halfSpacePoissonKernel_mul v hg₁ hC₁ hx)
-    (integrable_halfSpacePoissonKernel_mul v hg₂ hC₂ hx) fun y ↦
-      mul_le_mul_of_nonneg_left (hle y) (halfSpacePoissonKernel_pos_on_hyperplane v hx y).le
+  integral_mono hg₁ hg₂ fun y ↦
+    mul_le_mul_of_nonneg_left (hle y) (halfSpacePoissonKernel_pos_on_hyperplane v hx y).le
 
 /-- Nonnegative boundary data have a nonnegative Poisson integral in the open half-space. -/
 theorem halfSpacePoissonIntegral_nonneg (v : U) {g : (ℝ ∙ (v : E))ᗮ → ℝ} (hg : 0 ≤ g) {x : E}
     (hx : 0 < ⟪(v : E), x⟫) : 0 ≤ halfSpacePoissonIntegral v g x :=
   integral_nonneg fun y ↦ mul_nonneg (halfSpacePoissonKernel_pos_on_hyperplane v hx y).le (hg y)
 
-/-- The Poisson integral minus a constant is the Poisson integral of the data minus that
-constant. -/
-theorem halfSpacePoissonIntegral_sub_const (v : U) {g : (ℝ ∙ (v : E))ᗮ → ℝ} {C : ℝ}
-    (hg : AEStronglyMeasurable g) (hC : ∀ y, |g y| ≤ C) (c : ℝ) {x : E}
-    (hx : 0 < ⟪(v : E), x⟫) :
+/-- In the open half-space, the Poisson integral minus a constant is the Poisson integral of the
+data minus that constant, for data whose Poisson integrand is integrable. -/
+theorem halfSpacePoissonIntegral_sub_const (v : U) {g : (ℝ ∙ (v : E))ᗮ → ℝ} {x : E}
+    (hg : Integrable fun y : (ℝ ∙ (v : E))ᗮ ↦ halfSpacePoissonKernel n v x y * g y)
+    (hx : 0 < ⟪(v : E), x⟫) (c : ℝ) :
     halfSpacePoissonIntegral v g x - c =
       ∫ y : (ℝ ∙ (v : E))ᗮ, halfSpacePoissonKernel n v x y * (g y - c) := by
   conv_lhs => rw [← halfSpacePoissonIntegral_const v hx c]
   simp only [halfSpacePoissonIntegral_def, mul_sub]
-  exact (integral_sub (integrable_halfSpacePoissonKernel_mul v hg hC hx)
-    ((integrable_halfSpacePoissonKernel v hx).mul_const c)).symm
+  exact (integral_sub hg ((integrable_halfSpacePoissonKernel v hx).mul_const c)).symm
 
 /-- The pointwise estimate behind boundary recovery at a point `ξ` of the hyperplane: where the
 data are `ε`-close to `g ξ`, the integrand is at most `ε` times the kernel; elsewhere, at distance
@@ -399,7 +319,8 @@ theorem tendsto_halfSpacePoissonIntegral (v : U) {g : (ℝ ∙ (v : E))ᗮ → �
   -- Positivity and mass one turn the pointwise majorant into the required integral estimate.
   have hKi := integrable_halfSpacePoissonKernel (n := n) v hx
   have hK₁i := integrable_halfSpacePoissonKernel (n := n) v hx₁
-  rw [Real.dist_eq, halfSpacePoissonIntegral_sub_const v hg hC _ hx]
+  rw [Real.dist_eq, halfSpacePoissonIntegral_sub_const v
+    (integrable_halfSpacePoissonKernel_mul v hg hC hx) hx]
   calc |∫ y : (ℝ ∙ (v : E))ᗮ, halfSpacePoissonKernel n v x y * (g y - g ξ)|
       ≤ ∫ y : (ℝ ∙ (v : E))ᗮ, |halfSpacePoissonKernel n v x y * (g y - g ξ)| :=
         abs_integral_le_integral_abs
@@ -448,7 +369,7 @@ private theorem continuousOn_halfSpacePoissonIntegral (v : U) {g : (ℝ ∙ (v :
       (mul_nonneg (by positivity) (halfSpacePoissonKernel_pos_on_hyperplane v hx₀ y).le)
   · have hy : ⟪(v : E), (y : E)⟫ = 0 := Submodule.mem_orthogonal_singleton_iff_inner_right.1 y.2
     exact ((harmonicAt_halfSpacePoissonKernel_left v hy
-      (ne_of_inner_eq_zero v hx₀ hy).symm).1.continuousAt).mul continuousAt_const
+      fun h ↦ hx₀.ne' (by rwa [h])).1.continuousAt).mul continuousAt_const
 
 /-- The Poisson integral has the mean-value property on small balls in the open half-space. -/
 private theorem setAverage_ball_halfSpacePoissonIntegral (v : U) {g : (ℝ ∙ (v : E))ᗮ → ℝ}
