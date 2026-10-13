@@ -125,7 +125,7 @@ private def unflattenL (hφ : ContDiff ℝ 1 φ) (hL : ∀ y, ‖fderiv ℝ φ y
       ext x
       exact (mem_normalHalfSpace 0 x).symm)
     (contDiff_graphFlattening hφ).contDiffOn
-    fun x _ => norm_fderiv_graphFlattening_le_one_add hφ hL x
+    fun x _ => norm_fderiv_graphFlattening_le_one_add (hφ.differentiable one_ne_zero) hL x
 
 private theorem norm_flattenL_le (hφ : ContDiff ℝ 1 φ) (hL : ∀ y, ‖fderiv ℝ φ y‖ ≤ L) :
     ‖(flattenL hφ hL : W1p volume (normalEpigraph φ) p →L[ℝ] _)‖ ≤ 1 + L :=

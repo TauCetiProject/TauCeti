@@ -203,10 +203,11 @@ theorem norm_fderiv_graphFlattening_le {γ : E → ℝ} (hγ : Continuous γ)
 /-- Graph flattening has derivative norm at most `1 + L` when the graph function
 has derivative norm bounded by `L`. -/
 theorem norm_fderiv_graphFlattening_le_one_add {γ : E → ℝ} {L : ℝ}
-    (hγ : ContDiff ℝ 1 γ) (hL : ∀ y, ‖fderiv ℝ γ y‖ ≤ L) (x : WithLp 2 (ℝ × E)) :
+    (hγ : Differentiable ℝ γ) (hL : ∀ y, ‖fderiv ℝ γ y‖ ≤ L)
+    (x : WithLp 2 (ℝ × E)) :
     ‖fderiv ℝ (graphFlattening γ hγ.continuous) x‖ ≤ 1 + L :=
   (norm_fderiv_graphFlattening_le hγ.continuous
-    (hγ.differentiable one_ne_zero _)).trans (add_le_add le_rfl (hL x.snd))
+    (hγ x.snd)).trans (add_le_add le_rfl (hL x.snd))
 
 /-- The derivative of inverse graph flattening has norm at most `1 + ‖Dγ(y)‖` at a
 differentiability point of the height. -/

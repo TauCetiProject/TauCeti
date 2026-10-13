@@ -49,7 +49,7 @@ private def unflattenWholeL (hφ : ContDiff ℝ 1 φ)
   W1p.compMeasurePreservingL (M := 1 + L)
     (measurePreserving_graphFlattening φ φ.continuous) (by simp)
     (contDiff_graphFlattening hφ).contDiffOn
-    fun x _ => norm_fderiv_graphFlattening_le_one_add hφ hL x
+    fun x _ => norm_fderiv_graphFlattening_le_one_add (hφ.differentiable one_ne_zero) hL x
 
 private theorem norm_unflattenWholeL_le (hφ : ContDiff ℝ 1 φ)
     (hL : ∀ y, ‖fderiv ℝ φ y‖ ≤ L)
@@ -71,7 +71,7 @@ private theorem value_unflattenWholeL_ae (hφ : ContDiff ℝ 1 φ)
     W1p.value_compMeasurePreservingL_ae (p := p) (M := 1 + L) (U := ⊤) (V := ⊤)
       (measurePreserving_graphFlattening φ φ.continuous) (by simp)
       (contDiff_graphFlattening hφ).contDiffOn
-      (fun x _ => norm_fderiv_graphFlattening_le_one_add hφ hL x) u
+      (fun x _ => norm_fderiv_graphFlattening_le_one_add (hφ.differentiable one_ne_zero) hL x) u
 
 /-- Extension from the region above a `C¹` graph with bounded derivative to the whole
 space: flatten the graph, extend by even reflection, and unflatten. It is a bounded
