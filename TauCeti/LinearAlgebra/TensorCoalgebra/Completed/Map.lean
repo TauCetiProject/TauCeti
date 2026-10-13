@@ -52,24 +52,25 @@ theorem HasLengthBound.mono {c d : ℕ} {f : TensorWords R M →ₗ[R] TensorWor
   have hcut : k + 1 + c ≤ k + 1 + d := Nat.add_le_add_left hcd _
   rw [← hf k (truncate R M (k + 1 + d) x), truncate_truncate, min_eq_left hcut, hf]
 
-/-- Extend a bounded-length finite-word map to the product of tensor powers by reading
-each output coordinate from a finite truncation of the input. -/
-noncomputable def extend (c : ℕ) (f : TensorWords R M →ₗ[R] TensorWords R N)
-    (_hf : HasLengthBound c f) : CompletedTensorWords R M →ₗ[R] CompletedTensorWords R N :=
+/-- Construct a linear map on completed tensor words by reading each output coordinate
+from a finite truncation of the input. It agrees with `f` on finite words when `f` has
+length bound `c`. -/
+noncomputable def extend (c : ℕ) (f : TensorWords R M →ₗ[R] TensorWords R N) :
+    CompletedTensorWords R M →ₗ[R] CompletedTensorWords R N :=
   LinearMap.pi fun k ↦ TensorWords.component R N k ∘ₗ f ∘ₗ truncate R M (k + 1 + c)
 
 /-- Each coordinate of the extension is computed from a finite input prefix. -/
 @[simp]
 theorem extend_apply (c : ℕ) (f : TensorWords R M →ₗ[R] TensorWords R N)
-    (hf : HasLengthBound c f) (x : CompletedTensorWords R M) (k : ℕ) :
-    extend c f hf x k = f (truncate R M (k + 1 + c) x) k := by
+    (x : CompletedTensorWords R M) (k : ℕ) :
+    extend c f x k = f (truncate R M (k + 1 + c) x) k := by
   simp [extend]
 
 /-- The extension agrees with the original map on finite tensor words. -/
 @[simp]
 theorem extend_coe (c : ℕ) (f : TensorWords R M →ₗ[R] TensorWords R N)
     (hf : HasLengthBound c f) (x : TensorWords R M) :
-    extend c f hf x = (f x : CompletedTensorWords R N) := by
+    extend c f x = (f x : CompletedTensorWords R N) := by
   funext k
   simpa only [extend_apply] using hf k x
 
@@ -77,13 +78,13 @@ theorem extend_coe (c : ℕ) (f : TensorWords R M →ₗ[R] TensorWords R N)
 theorem extend_apply_eq_of_le (c : ℕ) (f : TensorWords R M →ₗ[R] TensorWords R N)
     (hf : HasLengthBound c f) (x : CompletedTensorWords R M) (k n : ℕ)
     (hkn : k + 1 + c ≤ n) :
-    extend c f hf x k = f (truncate R M n x) k := by
+    extend c f x k = f (truncate R M n x) k := by
   rw [← hf k (truncate R M n x), truncate_truncate, min_eq_left hkn, extend_apply]
 
 /-- Truncating an extended value can be computed from one finite input prefix. -/
 theorem truncate_extend (c : ℕ) (f : TensorWords R M →ₗ[R] TensorWords R N)
     (hf : HasLengthBound c f) (x : CompletedTensorWords R M) (n : ℕ) :
-    truncate R N n (extend c f hf x) = truncate R N n (f (truncate R M (n + c) x)) := by
+    truncate R N n (extend c f x) = truncate R N n (f (truncate R M (n + c) x)) := by
   ext k
   rw [truncate_apply, truncate_apply]
   by_cases hk : k < n
@@ -94,10 +95,10 @@ theorem truncate_extend (c : ℕ) (f : TensorWords R M →ₗ[R] TensorWords R N
 /-- The completed extension lowers the descending length filtration by at most its bound. -/
 theorem map_extend_filtration_le (c : ℕ)
     (f : TensorWords R M →ₗ[R] TensorWords R N) (hf : HasLengthBound c f) (n : ℕ) :
-    Submodule.map (extend c f hf) (filtration R M (n + c)) ≤ filtration R N n := by
+    Submodule.map (extend c f) (filtration R M (n + c)) ≤ filtration R N n := by
   rintro _ ⟨x, hx, rfl⟩
   simp only [filtration_eq_ker_truncate, SetLike.mem_coe, LinearMap.mem_ker] at hx ⊢
-  rw [truncate_extend, hx]
+  rw [truncate_extend c f hf, hx]
   simp only [map_zero, DFinsupp.coe_zero]
 
 /-- Identity on finite words has every nonnegative length bound. -/
@@ -114,10 +115,24 @@ theorem hasLengthBound_zero (c : ℕ) :
   intro k x
   simp
 
+/-- Adding finite-word maps with a common length bound preserves that bound. -/
+theorem HasLengthBound.add {c : ℕ}
+    {f g : TensorWords R M →ₗ[R] TensorWords R N}
+    (hf : HasLengthBound c f) (hg : HasLengthBound c g) : HasLengthBound c (f + g) := by
+  intro k x
+  simp only [LinearMap.add_apply, DirectSum.add_apply, hf k x, hg k x]
+
+/-- The finite-prefix construction preserves addition at a common cutoff. -/
+@[simp]
+theorem extend_add (c : ℕ) (f g : TensorWords R M →ₗ[R] TensorWords R N) :
+    extend c (f + g) = extend c f + extend c g := by
+  ext x k
+  simp only [extend_apply, LinearMap.add_apply, DirectSum.add_apply, Pi.add_apply]
+
 /-- Extending the identity gives the identity on the completion. -/
 @[simp]
-theorem extend_id (c : ℕ) : extend c (LinearMap.id : TensorWords R M →ₗ[R] _)
-    (hasLengthBound_id c) = LinearMap.id := by
+theorem extend_id (c : ℕ) :
+    extend c (LinearMap.id : TensorWords R M →ₗ[R] _) = LinearMap.id := by
   ext x k
   have hk : k < k + 1 + c := by omega
   simp [truncate_apply, hk]
@@ -125,7 +140,7 @@ theorem extend_id (c : ℕ) : extend c (LinearMap.id : TensorWords R M →ₗ[R]
 /-- Extending zero gives zero on the completion. -/
 @[simp]
 theorem extend_zero (c : ℕ) :
-    extend c (0 : TensorWords R M →ₗ[R] TensorWords R N) (hasLengthBound_zero c) = 0 := by
+    extend c (0 : TensorWords R M →ₗ[R] TensorWords R N) = 0 := by
   ext x k
   simp
 
@@ -153,10 +168,10 @@ theorem extend_comp {c d : ℕ}
     {f : TensorWords R M →ₗ[R] TensorWords R N}
     {g : TensorWords R N →ₗ[R] TensorWords R P}
     (hg : HasLengthBound d g) (hf : HasLengthBound c f) :
-    extend (c + d) (g ∘ₗ f) (hg.comp hf) = extend d g hg ∘ₗ extend c f hf := by
+    extend (c + d) (g ∘ₗ f) = extend d g ∘ₗ extend c f := by
   ext x k
   simp only [LinearMap.comp_apply, extend_apply]
-  rw [truncate_extend]
+  rw [truncate_extend c f hf]
   rw [← hg k (f (truncate R M (k + 1 + (c + d)) x))]
   have hcut : k + 1 + (c + d) = (k + 1 + d) + c := by omega
   rw [hcut]
@@ -164,7 +179,7 @@ theorem extend_comp {c d : ℕ}
 /-- The extension is independent of the bound used to construct it. -/
 theorem extend_eq (c d : ℕ) (f : TensorWords R M →ₗ[R] TensorWords R N)
     (hc : HasLengthBound c f) (hd : HasLengthBound d f) :
-    extend c f hc = extend d f hd := by
+    extend c f = extend d f := by
   ext x k
   exact (extend_apply_eq_of_le c f hc x k (k + 1 + max c d) (by omega)).trans
     (extend_apply_eq_of_le d f hd x k (k + 1 + max c d) (by omega)).symm
@@ -192,10 +207,12 @@ theorem hasLengthBound_iff_truncate_eq_zero (c : ℕ)
     have ht : truncate R M (k + 1 + c) t = 0 := by
       ext j
       by_cases hj : j < k + 1 + c <;> simp [t, truncate_apply, hj]
-    have hx : truncate R M (k + 1 + c) x + t = x := by
+    have hprefix : truncate R M (k + 1 + c) x = x.filter (fun j ↦ j < k + 1 + c) := by
       ext j
-      simp only [DirectSum.add_apply, truncate_apply, DFinsupp.filter_apply, t]
-      split_ifs <;> simp_all
+      simp only [truncate_apply, DFinsupp.filter_apply]
+    have hx : truncate R M (k + 1 + c) x + t = x := by
+      rw [hprefix]
+      exact DFinsupp.filter_add_filter_not x (fun j ↦ j < k + 1 + c)
     have h := congrArg (fun z : TensorWords R N ↦ z k) (hf (k + 1) t ht)
     have hf0 : f t k = 0 := by
       simpa only [truncate_apply, Nat.lt_succ_self, ite_true, DFinsupp.zero_apply] using h
@@ -238,17 +255,17 @@ theorem extend_unique (c : ℕ) (f : TensorWords R M →ₗ[R] TensorWords R N)
     (g : CompletedTensorWords R M →ₗ[R] CompletedTensorWords R N) (d : ℕ)
     (hg : ∀ n, Submodule.map g (filtration R M (n + d)) ≤ filtration R N n)
     (hgf : ∀ x, g (DFinsupp.coeFnLinearMap R x) = DFinsupp.coeFnLinearMap R (f x)) :
-    g = extend c f hf := by
-  apply LinearMap.eq_of_coe_eq_of_filtration_bound g (extend c f hf) d c hg
+    g = extend c f := by
+  apply LinearMap.eq_of_coe_eq_of_filtration_bound g (extend c f) d c hg
     (map_extend_filtration_le c f hf)
   intro x
   rw [hgf]
-  simp only [DFinsupp.coeFnLinearMap_apply, extend_coe]
+  simpa only [DFinsupp.coeFnLinearMap_apply] using (extend_coe c f hf x).symm
 
 /-- A square-zero finite-word endomorphism remains square-zero on the length completion. -/
 theorem extend_comp_self_eq_zero (c : ℕ) (f : TensorWords R M →ₗ[R] TensorWords R M)
     (hf : HasLengthBound c f) (hsq : f ∘ₗ f = 0) :
-    extend c f hf ∘ₗ extend c f hf = 0 := by
+    extend c f ∘ₗ extend c f = 0 := by
   rw [← extend_comp hf hf]
   ext x k
   rw [extend_apply]
