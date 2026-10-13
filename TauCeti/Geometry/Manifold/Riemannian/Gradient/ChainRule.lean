@@ -46,60 +46,6 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
   [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
   {f : M → ℝ} {s : Set M} {x : M}
 
-variable (I) in
-/-- The Riemannian gradient within a set, obtained by taking the fibrewise Riesz dual of the
-manifold derivative within that set. Like the derivative, it is total. -/
-def riemannianGradientWithin (f : M → ℝ) (s : Set M)
-    (x : M) : TangentSpace I x :=
-  rieszDual x (mvfderivWithin I f s x)
-
-/-- The gradient within a set is the Riesz dual of the relative differential. -/
-theorem riemannianGradientWithin_def (f : M → ℝ) (s : Set M) (x : M) :
-    riemannianGradientWithin I f s x = rieszDual x (mvfderivWithin I f s x) := (rfl)
-
-/-- Pairing the relative gradient with a tangent vector evaluates the relative differential. -/
-@[simp]
-theorem inner_riemannianGradientWithin_left (v : TangentSpace I x) :
-    inner ℝ (riemannianGradientWithin I f s x) v = mvfderivWithin I f s x v := by
-  rw [riemannianGradientWithin_def, inner_rieszDual]
-
-/-- The symmetric form of the relative gradient's characteristic equation. -/
-@[simp]
-theorem inner_riemannianGradientWithin_right (v : TangentSpace I x) :
-    inner ℝ v (riemannianGradientWithin I f s x) = mvfderivWithin I f s x v := by
-  rw [real_inner_comm, inner_riemannianGradientWithin_left]
-
-/-- On the whole manifold the relative gradient is the gradient. -/
-@[simp]
-theorem riemannianGradientWithin_univ (f : M → ℝ) :
-    riemannianGradientWithin I f univ = riemannianGradient I f := by
-  funext x
-  apply ext_inner_right ℝ
-  intro v
-  simp only [inner_riemannianGradientWithin_left, inner_riemannianGradient_left,
-    mvfderivWithin_univ]
-
-/-- The relative gradient is uniquely characterized by its inner products. -/
-theorem eq_riemannianGradientWithin_iff {w : TangentSpace I x} :
-    w = riemannianGradientWithin I f s x ↔
-      ∀ v, inner ℝ w v = mvfderivWithin I f s x v := by
-  rw [riemannianGradientWithin_def]
-  exact eq_rieszDual_iff_inner_eq
-
-/-- The relative gradient vanishes exactly where the relative differential vanishes. -/
-@[simp]
-theorem riemannianGradientWithin_eq_zero_iff :
-    riemannianGradientWithin I f s x = 0 ↔ mvfderivWithin I f s x = 0 := by
-  rw [riemannianGradientWithin_def, LinearIsometryEquiv.map_eq_zero_iff]
-
-/-- Restriction to a neighbourhood does not change the gradient. -/
-theorem riemannianGradientWithin_of_mem_nhds (hs : s ∈ 𝓝 x) :
-    riemannianGradientWithin I f s x = riemannianGradient I f x := by
-  apply ext_inner_right ℝ
-  intro v
-  simp only [inner_riemannianGradientWithin_left, inner_riemannianGradient_left,
-    mvfderivWithin, mvfderiv, mfderivWithin_of_mem_nhds hs]
-
 section Composition
 
 variable {E' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [FiniteDimensional ℝ E']
