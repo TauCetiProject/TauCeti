@@ -307,6 +307,21 @@ instance : (curve11a1.baseChange ℚ).IsElliptic := by
   rw [isElliptic_iff, WeierstrassCurve.baseChange, map_Δ, Δ_curve11a1]
   norm_num
 
+/-- The discriminant of 11.a2 is `-11⁵`. -/
+@[simp]
+theorem Δ_curve11a2 : curve11a2.Δ = -161051 := by
+  simp [Δ, b₂, b₄, b₆, b₈]
+
+/-- 11.a2 is an elliptic curve over `ℚ`. -/
+instance : (curve11a2.baseChange ℚ).IsElliptic := by
+  rw [isElliptic_iff, WeierstrassCurve.baseChange, map_Δ, Δ_curve11a2]
+  norm_num
+
+/-- The `c₄` invariant of 11.a2 is `496 = 2⁴ ⋅ 31`. -/
+@[simp]
+theorem c₄_curve11a2 : curve11a2.c₄ = 496 := by
+  simp [c₄, b₂, b₄]
+
 /-- The discriminant of 27.a4 is `-3³`. -/
 theorem Δ_curve27a4 : curve27a4.Δ = -27 := by
   simp [Δ, b₂, b₄, b₆, b₈]

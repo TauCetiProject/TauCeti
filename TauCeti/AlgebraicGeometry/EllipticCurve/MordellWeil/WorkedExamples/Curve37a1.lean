@@ -71,6 +71,11 @@ instance : (curve37a1.baseChange ℚ).IsElliptic := by
   rw [isElliptic_iff, WeierstrassCurve.baseChange, map_Δ, Δ_curve37a1]
   norm_num
 
+/-- The `c₄` invariant of 37.a1 is `48 = 2⁴ ⋅ 3`. -/
+@[simp]
+theorem c₄_curve37a1 : curve37a1.c₄ = 48 := by
+  simp [c₄, b₂, b₄]
+
 /-- The rational points of 37.a1 are the solutions of `y² + y = x³ - x`. -/
 theorem equation_curve37a1_iff (x y : ℚ) :
     (curve37a1.baseChange ℚ).toAffine.Equation x y ↔ y ^ 2 + y = x ^ 3 - x := by
