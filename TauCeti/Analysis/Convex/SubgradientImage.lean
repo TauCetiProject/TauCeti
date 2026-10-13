@@ -13,6 +13,8 @@ public import TauCeti.Topology.UniformSpace.LocallyUniformConvergence
 import TauCeti.Analysis.Convex.Differentiability
 import Mathlib.Topology.MetricSpace.Thickening
 import Mathlib.Analysis.Convex.Continuous
+import Mathlib.Analysis.InnerProductSpace.Dual
+import Mathlib.Analysis.LocallyConvex.Separation
 
 /-!
 # Compactness of subgradient images of convex functions
@@ -23,6 +25,9 @@ Since `f` is continuous on `D`, its subgradients for the inner product are bound
 compact `K ⊆ D`, and the graph of the subdifferential over a closed `K ⊆ D` is closed. Hence
 the subgradient image `∂f(K) = ⋃ x ∈ K, ∂f(x)` of a compact subset of `D` is compact. The same
 compactness, with Rademacher's theorem, shows that `f` has a subgradient at every point of `D`.
+Conversely, slopes can be confined: on a Hilbert space, a conjugate `g⋆` of a function that is `⊤`
+off a closed convex set `K` is a supremum of affine functions with slopes in `K`, and by
+separation all of its subgradients lie in `K`.
 
 For a real function `u` continuous on the closure of a bounded set `Ω`, every slope of an affine
 function through a point of the graph over `Ω` that lies below `u` on the frontier of `Ω` is a
@@ -50,6 +55,10 @@ contains that of `K` under `F k`.
 * `TauCeti.nonempty_subdifferential_of_mem_interior` — the subdifferential is nonempty at every
   point of `D`, and `TauCeti.eventually_nonempty_subdifferential` at every point near a point
   around which `f` is finite;
+* `TauCeti.subdifferential_fenchelConjugate_subset_of_eq_top` — on a Hilbert space, the
+  subgradients of the conjugate of a function that is `⊤` off a closed convex set `K` lie in `K`,
+  and `TauCeti.exists_le_subdifferential_subset` — every function lies above a convex, lower
+  semicontinuous one with all slopes in `K` that keeps its slopes in `K`;
 * `TauCeti.exists_forall_add_inner_le_of_forall_frontier` — slopes of affine functions through a
   point of the graph that lie below the boundary values are subgradients at points of `Ω`;
 * `TauCeti.exists_forall_add_inner_add_le_of_forall_frontier_le` — if `w ≤ u` on the frontier of
@@ -206,6 +215,65 @@ theorem eventually_nonempty_subdifferential {x : E} (hdom : ∀ᶠ x' in 𝓝 x,
     ∀ᶠ x' in 𝓝 x, (subdifferential (innerₗ E) f x').Nonempty :=
   Filter.eventually_of_mem (isOpen_interior.mem_nhds (mem_interior_iff_mem_nhds.2 hdom))
     fun _ hx' => nonempty_subdifferential_of_mem_interior hf hbot hx'
+
+omit [FiniteDimensional ℝ E] hf hbot in
+/-- **A conjugate has its slopes in the closed convex set where its argument is finite.** On a
+real Hilbert space, let `g : E → EReal` be `⊤` off a closed convex set `K`, so that its conjugate
+`g⋆ x = ⨆ y ∈ K, (⟪y, x⟫ - g y)` is a supremum of affine functions with slopes in `K`. Then every
+subgradient of `g⋆` lies in `K`. -/
+theorem subdifferential_fenchelConjugate_subset_of_eq_top [CompleteSpace E] {K : Set E}
+    (hKc : Convex ℝ K) (hKcl : IsClosed K) {g : E → EReal} (hg : ∀ y ∉ K, g y = ⊤) (x : E) :
+    subdifferential (innerₗ E) (fenchelConjugate (innerₗ E) g) x ⊆ K := by
+  intro z hz
+  by_contra hzK
+  -- Separate `z` from `K` by a functional `ℓ = ⟪w, ·⟫`: `ℓ z < c < ℓ y` for `y ∈ K`.
+  obtain ⟨ℓ, c, hℓz, hℓK⟩ := geometric_hahn_banach_point_closed hKc hKcl hzK
+  set w := (InnerProductSpace.toDual ℝ E).symm ℓ
+  have hw : ∀ v, inner ℝ w v = ℓ v := fun _ => InnerProductSpace.toDual_symm_apply
+  obtain ⟨r, hr⟩ : ∃ r : ℝ, fenchelConjugate (innerₗ E) g x = r :=
+    ⟨_, (EReal.coe_toReal (ne_top_of_mem_subdifferential _ hz)
+      (ne_bot_of_mem_subdifferential _ hz)).symm⟩
+  -- Moving from `x` to `x - w` lowers every term of the supremum by more than `c`.
+  have hle : fenchelConjugate (innerₗ E) g (x - w) ≤ ((r - c : ℝ) : EReal) := by
+    refine fenchelConjugate_le _ fun y => ?_
+    by_cases hy : y ∈ K
+    · have h₁ := sub_le_fenchelConjugate (innerₗ E) g y x
+      rw [hr, EReal.coe_sub_le_comm] at h₁
+      rw [EReal.coe_sub_le_comm]
+      refine le_trans ?_ h₁
+      rw [← EReal.coe_sub, ← EReal.coe_sub, EReal.coe_le_coe_iff]
+      rw [innerₗ_apply_apply, innerₗ_apply_apply, inner_sub_right, real_inner_comm w y, hw]
+      linarith [hℓK y hy]
+    · rw [hg y hy, EReal.sub_top]
+      exact bot_le
+  have hsub := (add_le_of_mem_subdifferential (innerₗ E) hz (x - w)).trans hle
+  rw [hr, sub_sub_cancel_left, innerₗ_apply_apply, inner_neg_left, hw, ← EReal.coe_add,
+    EReal.coe_le_coe_iff] at hsub
+  linarith
+
+omit [FiniteDimensional ℝ E] hf hbot in
+/-- **Confining the slopes of a function to a closed convex set.** On a real Hilbert space, let
+`K` be closed and convex. Every `u : E → EReal` lies above a convex, lower semicontinuous `v`
+whose subgradients all lie in `K` and which keeps every subgradient of `u` that lies in `K`:
+`∂u(x) ∩ K ⊆ ∂v(x)` for every `x`. One such `v` is the conjugate of the function equal to `u⋆` on
+`K` and to `⊤` off `K`. -/
+theorem exists_le_subdifferential_subset [CompleteSpace E] (u : E → EReal) {K : Set E}
+    (hKc : Convex ℝ K) (hKcl : IsClosed K) :
+    ∃ v : E → EReal, Convex ℝ {p : E × ℝ | v p.1 ≤ p.2} ∧ LowerSemicontinuous v ∧ v ≤ u ∧
+      (∀ x, subdifferential (innerₗ E) v x ⊆ K) ∧
+      ∀ x, subdifferential (innerₗ E) u x ∩ K ⊆ subdifferential (innerₗ E) v x := by
+  classical
+  set φ : E → EReal := fun y => if y ∈ K then fenchelConjugate (innerₗ E) u y else ⊤
+  have hφ : fenchelConjugate (innerₗ E) u ≤ φ := fun y => by
+    simp only [φ]
+    split_ifs <;> simp
+  refine ⟨fenchelConjugate (innerₗ E) φ, convex_epigraph_fenchelConjugate (innerₗ E) φ,
+    lowerSemicontinuous_fenchelConjugate_innerₗ φ, (fenchelConjugate_antitone _ hφ).trans
+      (by simpa only [flip_innerₗ] using fenchelConjugate_flip_fenchelConjugate_le (innerₗ E) u),
+    subdifferential_fenchelConjugate_subset_of_eq_top hKc hKcl fun y hy => by simp [φ, hy],
+    fun x y hy => ?_⟩
+  simpa only [flip_innerₗ] using
+    mem_subdifferential_fenchelConjugate_flip_of_le (innerₗ E) hφ (by simp [φ, hy.2]) hy.1
 
 omit [FiniteDimensional ℝ E] hf hbot in
 /-- **Slopes below the boundary values are subgradients.** Let `Ω` be bounded and `u` continuous

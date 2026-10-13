@@ -45,6 +45,8 @@ convex.
   `TauCeti.toReal_add_le_toReal_of_mem_subdifferential`;
 * `TauCeti.mem_subdifferential_ite_iff` — for a real function extended by `⊤` off `Ω`, a
   subgradient at a point of `Ω` is a `y` satisfying the subgradient inequality on `Ω`;
+* `TauCeti.mem_subdifferential_fenchelConjugate_flip_of_le` — a subgradient `y` of `f` at `x` is
+  a subgradient of `g⋆` for every `g ≥ f⋆` agreeing with `f⋆` at `y`;
 * `TauCeti.apply_le_apply_of_mem_subdifferential` — the subdifferential is monotone;
 * `TauCeti.convex_subdifferential` and `TauCeti.isClosed_subdifferential` — the subdifferential
   is convex, and closed for a topology making every `B x` continuous;
@@ -276,6 +278,37 @@ theorem mem_subdifferential_iff_add_fenchelConjugate_eq :
       rw [EReal.coe_sub, ← h, EReal.add_sub_cancel_left]
     exact (mem_subdifferential_iff_forall_sub_le B hr).2 fun x' =>
       hF ▸ sub_le_fenchelConjugate B f x' y
+
+/-- **Subgradients survive raising the conjugate away from them.** Let `g ≥ f⋆` agree with `f⋆`
+at `y`. If `y ∈ ∂f(x)`, then `y` is also a subgradient at `x` of the conjugate `g⋆` (for the
+transposed pairing), which lies below `f` and agrees with `f` at `x`. Taking `g = f⋆` on a set
+`K ∋ y` and `g = ⊤` off it gives a function below `f` that keeps the slope `y`; on a Hilbert space
+with `K` closed and convex, all its slopes lie in `K`
+(`TauCeti.subdifferential_fenchelConjugate_subset_of_eq_top`). -/
+theorem mem_subdifferential_fenchelConjugate_flip_of_le {g : F → EReal}
+    (hg : fenchelConjugate B f ≤ g) (hgy : g y ≤ fenchelConjugate B f y)
+    (h : y ∈ subdifferential B f x) :
+    y ∈ subdifferential B (fenchelConjugate B.flip g) x := by
+  obtain ⟨r, hr⟩ : ∃ r : ℝ, f x = r :=
+    ⟨(f x).toReal, (EReal.coe_toReal (ne_top_of_mem_subdifferential B h)
+      (ne_bot_of_mem_subdifferential B h)).symm⟩
+  have hF : fenchelConjugate B f y = ((B x y - r : ℝ) : EReal) := by
+    rw [fenchelConjugate_eq_of_mem_subdifferential B h, hr, EReal.coe_sub]
+  -- Each term of the supremum defining `g⋆ x'` at `y` is at least the affine minorant of `f`
+  -- through `(x, r)` with slope `y`.
+  have hlow : ∀ x', ((B x' y - (B x y - r) : ℝ) : EReal) ≤ fenchelConjugate B.flip g x' :=
+    fun x' => le_trans (by rw [EReal.coe_sub]; exact EReal.sub_le_sub le_rfl (hgy.trans hF.le))
+      (sub_le_fenchelConjugate B.flip g y x')
+  -- At `x` this minorant is `r = f x`, and `g⋆ ≤ f⋆⋆ ≤ f`.
+  have hx : fenchelConjugate B.flip g x = r := by
+    refine le_antisymm ?_ (by simpa using hlow x)
+    rw [← hr]
+    exact (fenchelConjugate_antitone B.flip hg x).trans
+      (fenchelConjugate_flip_fenchelConjugate_le B f x)
+  refine ⟨by simp [hx], by simp [hx], fun x' => le_trans (le_of_eq ?_) (hlow x')⟩
+  rw [hx, map_sub, LinearMap.sub_apply, ← EReal.coe_add]
+  congr 1
+  ring
 
 /-! ### Convexity and closedness -/
 

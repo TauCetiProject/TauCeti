@@ -92,6 +92,10 @@ are those of `‖x - y‖ ^ 2`, whose transport cost is twice as large
   laws are absolutely continuous, the Brenier potential `u` is a weak solution of its transport
   equation: its Monge–Ampère measure weighted by `ν` is `μ`, and `ν` is carried by
   the subgradient image of the interior of its effective domain;
+* `TauCeti.exists_isKantorovichOptimalTransportMap_gradient_and_mongeAmpereMeasure_eq_withDensity` —
+  when the target has density `g` positive almost everywhere on a closed convex set `K` carrying
+  it, there is a Brenier potential `u` with all its slopes in `K`, and it is an Aleksandrov
+  solution: `MA_u = (g ∘ ∇u)⁻¹ μ`;
 * `TauCeti.transportCost_norm_sub_sq_div_two_ne_top` — laws with finite second moment have finite
   quadratic transport cost, so Brenier's theorem applies to them;
 * `TauCeti.IsCoupling.lintegral_norm_sub_sq_div_two` — for marginals with finite second moments,
@@ -677,6 +681,68 @@ theorem exists_isKantorovichOptimalTransportMap_gradient_and_mongeAmpereMeasure_
     (hasLaw_gradient_and_ae_ne_top_iff_mongeAmpereMeasure_eq_and_ae_mem_subgradientImage
       hconv hbot hμ hν).1 ⟨hT.toHasLaw, ?_⟩⟩
   filter_upwards [hdiff] with x hx using hx.1.self_of_nhds
+
+/-- **Brenier solutions with a convex target are Aleksandrov solutions.** Let `μ` and `ν` be
+probability measures on a finite-dimensional real inner product space `E`, with `μ` absolutely
+continuous with respect to an additive Haar measure `ρ` and `ν = g ρ`, and suppose the optimal
+cost for `‖x - y‖ ^ 2 / 2` is finite. Let `K` be a closed convex set carrying `ν` on which `g` is
+`ρ`-almost everywhere positive. Then there is a convex, lower semicontinuous `u : E → EReal` that
+never takes the value `⊥` such that:
+
+* the gradient `∇ u` is an optimal transport map from `μ` to `ν`;
+* every subgradient of `u`, at every point, lies in `K`;
+* `u` is an Aleksandrov solution of the Monge–Ampère equation `det D²u = g₀ / g(∇u)`, where
+  `μ = g₀ ρ`: its Aleksandrov measure is `MA_u = (g ∘ ∇u)⁻¹ μ`.
+
+For a general transporting potential, `TauCeti.mongeAmpereMeasure_eq_withDensity_inv_iff`
+identifies the obstruction: subgradient mass falling where `g` vanishes is singular for `MA_u`. -/
+theorem exists_isKantorovichOptimalTransportMap_gradient_and_mongeAmpereMeasure_eq_withDensity
+    [IsProbabilityMeasure μ] [IsProbabilityMeasure ν] (hμ : μ ≪ ρ) {g : E → ℝ≥0∞}
+    (hg : Measurable g) (hνg : ν = ρ.withDensity g) {K : Set E} (hKc : Convex ℝ K)
+    (hKcl : IsClosed K) (hνK : ν Kᶜ = 0) (hgK : ∀ᵐ y ∂ρ, y ∈ K → g y ≠ 0)
+    (hfin : transportCost (fun z : E × E => ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2)) μ ν ≠ ∞) :
+    ∃ u : E → EReal, Convex ℝ {p : E × ℝ | u p.1 ≤ p.2} ∧ LowerSemicontinuous u ∧
+      (∀ x, u x ≠ ⊥) ∧
+      IsKantorovichOptimalTransportMap (fun z : E × E => ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2))
+        μ ν (∇ fun x => (u x).toReal) ∧
+      (∀ x, subdifferential (innerₗ E) u x ⊆ K) ∧
+      mongeAmpereMeasure ρ u = μ.withDensity fun x => (g ((∇ fun x => (u x).toReal) x))⁻¹ := by
+  obtain ⟨u, hconv, -, hbot, hdiff, hT, -⟩ :=
+    exists_isKantorovichOptimalTransportMap_gradient hμ hfin
+  set T := ∇ fun x => (u x).toReal
+  -- Confine the slopes of `u` to `K`, keeping the slopes `T x ∈ ∂u(x) ∩ K`.
+  obtain ⟨v, hvconv, hvlsc, hvu, hK, hkeep⟩ := exists_le_subdifferential_subset u hKc hKcl
+  have hTK : ∀ᵐ x ∂μ, T x ∈ K := ae_of_ae_map hT.toHasLaw.aemeasurable
+    (by rw [hT.toHasLaw.map_eq]; exact mem_ae_iff.2 hνK)
+  have hsub : ∀ᵐ x ∂μ, T x ∈ subdifferential (innerₗ E) v x := by
+    filter_upwards [hdiff, hTK] with x hx hxK
+    exact hkeep x ⟨gradient_toReal_mem_subdifferential hconv hbot hx.1.self_of_nhds hx.2, hxK⟩
+  have hD : ∀ᵐ x ∂μ, x ∈ interior {x | v x ≠ ⊤} := by
+    filter_upwards [hdiff] with x hx
+    exact mem_interior_iff_mem_nhds.2 (hx.1.mono fun x' hx' => ne_top_of_le_ne_top hx' (hvu x'))
+  have hvbot : ∀ x, v x ≠ ⊥ := by
+    have : (ae μ).NeBot := ae_neBot.2 (IsProbabilityMeasure.ne_zero μ)
+    obtain ⟨x₀, hx₀⟩ := hsub.exists
+    exact apply_ne_bot_of_mem_subdifferential (innerₗ E) hx₀
+  -- By Rademacher's theorem `v` is differentiable at almost every point of `D`, where its
+  -- gradient is its slope `T x`.
+  have hgrad : (∇ fun x => (v x).toReal) =ᵐ[μ] T := by
+    filter_upwards [hμ.ae_le (ae_eventually_ne_top_and_differentiableAt_toReal hvconv hvbot), hD,
+      hsub] with x hx hxD hxs
+    have hdom : ∀ᶠ x' in 𝓝 x, v x' ≠ ⊤ := mem_interior_iff_mem_nhds.1 hxD
+    exact gradient_toReal_eq_of_mem_subdifferential hxs hdom (hx hdom.self_of_nhds).2
+  have hsub' : ∀ᵐ x ∂μ, (∇ fun x => (v x).toReal) x ∈ subdifferential (innerₗ E) v x := by
+    filter_upwards [hsub, hgrad] with x hx hx'
+    rwa [hx']
+  have hgtop : ∀ᵐ y ∂ρ, g y ≠ ⊤ := by
+    refine (ae_lt_top hg ?_).mono fun y hy => hy.ne
+    rw [← setLIntegral_univ, ← withDensity_apply _ MeasurableSet.univ, ← hνg]
+    exact measure_ne_top ν univ
+  refine ⟨v, hvconv, hvlsc, hvbot, hT.congr hgrad, hK,
+    mongeAmpereMeasure_eq_withDensity_inv_of_convex hvconv hvbot hg hgtop
+      (hνg ▸ hT.toHasLaw.congr hgrad) hD hsub' hKc (fun y hy => ?_) hgK⟩
+  obtain ⟨x, -, hxy⟩ := (mem_subgradientImage_iff _).1 hy
+  exact subset_closure (hK x hxy)
 
 end FiniteDimensional
 

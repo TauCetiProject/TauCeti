@@ -75,6 +75,7 @@ bounded below by `Convex.ofReal_dist_mul_pow_mul_addHaar_ball_le`.
   `TauCeti.aedisjoint_subgradientImage` — almost no point is a subgradient at two distinct points,
   so subgradient images of disjoint sets are almost disjoint;
 * `TauCeti.mongeAmpereMeasure_apply` — `MA_f(s) = μ(∂f(s ∩ D))` for measurable `s`;
+* `TauCeti.mongeAmpereMeasure_add` — `MA_f` is additive in the reference measure;
 * `TauCeti.mongeAmpereMeasure_compl_interior` — `MA_f` is concentrated on `D`;
 * `TauCeti.mongeAmpereMeasure_lt_top` and `TauCeti.isLocallyFiniteMeasure_comap_mongeAmpereMeasure`
   — when `μ` is finite on compact sets, `MA_f` is finite on compact subsets of `D`, so it is a
@@ -257,6 +258,21 @@ theorem mongeAmpereMeasure_eq_zero_of_not_absolutelyContinuous (hμ : ¬μ ≪ �
   rw [mongeAmpereMeasure, dite_eq_right]
   rintro ⟨-, -, ν', _, hμ'⟩
   exact hμ (hμ'.trans (absolutelyContinuous_isAddHaarMeasure ν' ν))
+
+omit μ in
+/-- The Aleksandrov Monge–Ampère measure is additive in the reference measure, among measures
+absolutely continuous with respect to an additive Haar measure. -/
+theorem mongeAmpereMeasure_add {μ₁ μ₂ : Measure E} (hμ₁ : μ₁ ≪ ν) (hμ₂ : μ₂ ≪ ν) :
+    mongeAmpereMeasure (μ₁ + μ₂) f = mongeAmpereMeasure μ₁ f + mongeAmpereMeasure μ₂ f := by
+  by_cases hf : Convex ℝ {p : E × ℝ | f p.1 ≤ p.2}
+  · by_cases hbot : ∀ x, f x ≠ ⊥
+    · ext s hs
+      rw [add_apply, mongeAmpereMeasure_apply _ hf hbot (hμ₁.add_left hμ₂) hs,
+        mongeAmpereMeasure_apply _ hf hbot hμ₁ hs, mongeAmpereMeasure_apply _ hf hbot hμ₂ hs,
+        add_apply]
+    · obtain ⟨x, hx⟩ := not_forall_not.1 hbot
+      simp only [mongeAmpereMeasure_eq_zero_of_eq_bot _ hx, add_zero]
+  · simp only [mongeAmpereMeasure_eq_zero_of_not_convex _ hf, add_zero]
 
 /-- The Aleksandrov Monge–Ampère measure is concentrated on the interior of the effective
 domain. -/
