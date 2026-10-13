@@ -224,7 +224,8 @@ end MemLp
 
 /-- Translation is continuous in the `L¹` distance from a fixed translate. -/
 theorem Integrable.continuous_integral_norm_translate_sub
-    {G E : Type*} [NormedAddCommGroup G] [MeasurableSpace G] [BorelSpace G]
+    {G E : Type*} [AddGroup G] [TopologicalSpace G] [IsTopologicalAddGroup G]
+    [MeasurableSpace G] [BorelSpace G]
     [NormedAddCommGroup E] {μ : Measure G} [μ.IsAddRightInvariant]
     [IsLocallyFiniteMeasure μ] [μ.InnerRegularCompactLTTop]
     {k : G → E} (hk : Integrable k μ) (b : G) :
@@ -245,7 +246,8 @@ theorem Integrable.continuous_integral_norm_translate_sub
 
 /-- Convergent shifts of an integrable function converge in `L¹`. -/
 theorem Integrable.tendsto_integral_norm_translate_sub
-    {G E α : Type*} [NormedAddCommGroup G] [MeasurableSpace G] [BorelSpace G]
+    {G E α : Type*} [AddGroup G] [TopologicalSpace G] [IsTopologicalAddGroup G]
+    [MeasurableSpace G] [BorelSpace G]
     [NormedAddCommGroup E] {μ : Measure G} [μ.IsAddRightInvariant]
     [IsLocallyFiniteMeasure μ] [μ.InnerRegularCompactLTTop]
     {k : G → E} (hk : Integrable k μ) {c : α → G} {b : G} {l : Filter α}

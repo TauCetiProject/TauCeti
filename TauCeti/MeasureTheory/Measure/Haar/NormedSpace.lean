@@ -46,26 +46,27 @@ theorem _root_.MeasureTheory.Measure.addHaar_real_ball_of_pos
   rw [measureReal_def, mu.addHaar_ball_of_pos x hr, ENNReal.toReal_mul,
     ENNReal.toReal_ofReal (by positivity), ← measureReal_def]
 
-/-- Closed and open balls agree up to a null set when the space is nontrivial or the radius
-is nonzero. The excluded zero-radius ball in a trivial space has positive measure. -/
+/-- Closed and open balls agree up to a null set in a nontrivial finite-dimensional space. -/
 theorem _root_.MeasureTheory.Measure.addHaar_closedBall_ae_eq_ball
     {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+    [Nontrivial E] [MeasurableSpace E] [BorelSpace E]
+    (mu : Measure E) [mu.IsAddHaarMeasure] (x : E) (r : ℝ) :
+    closedBall x r =ᵐ[mu] ball x r :=
+  (ae_eq_of_subset_of_measure_ge ball_subset_closedBall
+    (mu.addHaar_closedBall_eq_addHaar_ball x r).le
+    measurableSet_ball.nullMeasurableSet measure_closedBall_lt_top.ne).symm
+
+/-- At nonzero radius, closed and open balls agree up to a null set even in a trivial space. -/
+theorem _root_.MeasureTheory.Measure.addHaar_closedBall_ae_eq_ball_of_ne_zero
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
     [MeasurableSpace E] [BorelSpace E]
-    (mu : Measure E) [mu.IsAddHaarMeasure] (x : E) (r : ℝ)
-    (h : Nontrivial E ∨ r ≠ 0) : closedBall x r =ᵐ[mu] ball x r := by
+    (mu : Measure E) [mu.IsAddHaarMeasure] (x : E) (r : ℝ) (hr : r ≠ 0) :
+    closedBall x r =ᵐ[mu] ball x r := by
   rcases subsingleton_or_nontrivial E with hE | hE
-  · have hr : r ≠ 0 := by
-      rcases h with hnt | hr
-      · obtain ⟨u, v, huv⟩ := hnt.exists_pair_ne
-        exact False.elim (huv (Subsingleton.elim u v))
-      · exact hr
-    have heq : closedBall x r = ball x r := by
-      ext y
-      simp [mem_closedBall, mem_ball, Subsingleton.elim y x, le_iff_lt_or_eq, Ne.symm hr]
-    exact Filter.EventuallyEq.of_eq heq
-  · exact (ae_eq_of_subset_of_measure_ge ball_subset_closedBall
-      (mu.addHaar_closedBall_eq_addHaar_ball x r).le
-      measurableSet_ball.nullMeasurableSet measure_closedBall_lt_top.ne).symm
+  · apply Filter.EventuallyEq.of_eq
+    ext y
+    simp [mem_closedBall, mem_ball, Subsingleton.elim y x, le_iff_lt_or_eq, Ne.symm hr]
+  · exact mu.addHaar_closedBall_ae_eq_ball x r
 
 /-- A closed ball of radius `R ≤ c r` has at most `cⁿ` times the real measure of a closed ball of
 radius `r > 0`, whatever their centres, where `n` is the dimension. -/
