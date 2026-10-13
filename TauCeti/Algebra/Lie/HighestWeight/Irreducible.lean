@@ -62,14 +62,6 @@ their images are nonzero submodules of irreducible modules. So `M ≃ D ≃ N`.
 
 ## References
 
-This file supplies the classification half of the "irreducible quotient `L(λ)`" item of Layer 3 of
-`TauCetiRoadmap/RepresentationTheory/LieHighestWeight/README.md`: "`L(λ)` is the unique irreducible
-highest weight module of weight `λ`, and `L(λ) ≅ L(μ)` iff `λ = μ`. This is the classification of
-**all** irreducible highest weight modules, finite-dimensional or not." The target signature
-`irreducibleQuotient_nonempty_equiv_iff` of the accompanying `Suggested.lean` is the instance of
-`TauCeti.nonempty_lieModuleEquiv_iff_eq_of_isHighestWeightVector` at the irreducible quotients of
-two Verma modules.
-
 * J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*, GTM 9, §20.3.
 -/
 
