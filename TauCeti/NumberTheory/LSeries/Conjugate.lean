@@ -40,10 +40,14 @@ theorem LSeriesSummable_star_iff (f : ℕ → ℂ) (s : ℂ) :
     LSeriesSummable (star f) ((starRingEnd ℂ) s) ↔ LSeriesSummable f s := by
   simp only [LSeriesSummable, funext (term_star f s), summable_star_iff]
 
-/-- A convergent Dirichlet series reflects its sum when its coefficients are conjugated. -/
-theorem LSeriesHasSum_star {f : ℕ → ℂ} {s a : ℂ} (h : LSeriesHasSum f s a) :
-    LSeriesHasSum (star f) ((starRingEnd ℂ) s) (star a) := by
-  simpa only [LSeriesHasSum, funext (term_star f s)] using h.star
+/-- Conjugating coefficients and reflecting the argument conjugates a prescribed
+Dirichlet-series sum. -/
+@[simp]
+theorem LSeriesHasSum_star_iff (f : ℕ → ℂ) (s a : ℂ) :
+    LSeriesHasSum (star f) ((starRingEnd ℂ) s) ((starRingEnd ℂ) a) ↔
+      LSeriesHasSum f s a := by
+  simpa only [LSeriesHasSum, funext (term_star f s), Complex.star_def] using
+    (Complex.hasSum_conj' (f := LSeries.term f s) (x := a))
 
 /-- The totalized value of the conjugate Dirichlet series is the conjugate value. No convergence
 hypothesis is needed. -/
