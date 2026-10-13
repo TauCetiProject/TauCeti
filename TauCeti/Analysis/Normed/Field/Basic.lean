@@ -25,9 +25,9 @@ Over an algebraically closed field `m`-th roots exist, so the radii themselves a
 
 The same roots solve norm equations: over an algebraically closed normed field, for a multiset `s`
 containing `0` and any `c`, some `d` has `∏_{a ∈ s} max ‖d‖ ‖a‖ = ‖c‖`
-(`NormedField.exists_prod_map_max_norm_eq_of_isAlgClosed`). The left side is the Gauss norm at
-radius `‖d‖` of the polynomial with roots `s`, so `‖d‖` is a radius at which that Gauss norm
-equals `‖c‖`.
+(`NormedField.exists_prod_map_max_norm_eq_of_isAlgClosed`). For a nonarchimedean norm the left
+side is the Gauss norm at radius `‖d‖` of the polynomial with roots `s`, so `‖d‖` is a radius at
+which that Gauss norm equals `‖c‖`.
 -/
 
 public section
@@ -68,8 +68,9 @@ theorem exists_lt_norm_lt_of_isAlgClosed [IsAlgClosed 𝕜] {r s : ℝ} (hr₀ :
     (pow_lt_pow_iff_left₀ (norm_nonneg d) (hr'.trans hlt').le hm₀).mp hc⟩
 
 /-- **Solving `∏_{a ∈ s} max ‖d‖ ‖a‖ = ‖c‖` over an algebraically closed field**: if `0 ∈ s`, then
-for every `c` some `d` satisfies this equation. Its left side is the Gauss norm at radius `‖d‖` of
-the polynomial `∏_{a ∈ s} (T - a)`, so `‖d‖` is a radius at which that Gauss norm equals `‖c‖`. -/
+for every `c` some `d` satisfies this equation. For a nonarchimedean norm its left side is the
+Gauss norm at radius `‖d‖` of the polynomial `∏_{a ∈ s} (T - a)`, so `‖d‖` is a radius at which
+that Gauss norm equals `‖c‖`. -/
 theorem exists_prod_map_max_norm_eq_of_isAlgClosed {𝕜 : Type*} [NormedField 𝕜] [IsAlgClosed 𝕜]
     {s : Multiset 𝕜} (hs : 0 ∈ s) (c : 𝕜) :
     ∃ d : 𝕜, (s.map fun a ↦ max ‖d‖ ‖a‖).prod = ‖c‖ := by

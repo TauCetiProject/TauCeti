@@ -8,6 +8,8 @@ module
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Polydisc.Subdisc
 public import TauCeti.Analysis.Normed.Field.Basic
 
+import TauCeti.Algebra.Polynomial.Splits
+
 /-!
 # The domains `{|p| ≤ |c|}` and `{|c| ≤ |p|}` of one polynomial in the closed unit disc
 
@@ -96,9 +98,9 @@ private theorem valuation_eval₂RingHom_eq (x : closedPolydisc 1 K) {p : Polyno
     (hroots : Multiset.card p.roots = p.natDegree) :
     x.1.valuation (Polynomial.eval₂RingHom C T p) =
       x.1.valuation (C p.leadingCoeff) * (p.roots.map fun α ↦ x.1.valuation (T - C α)).prod := by
-  conv_lhs => rw [← Polynomial.C_leadingCoeff_mul_prod_multiset_X_sub_C hroots]
-  rw [map_mul, map_multiset_prod, Multiset.map_map, map_mul, map_multiset_prod, Multiset.map_map]
-  simp [Function.comp_def]
+  rw [Polynomial.coe_eval₂RingHom,
+    Polynomial.Splits.eval₂_eq_prod_roots (Polynomial.splits_iff_card_roots.mpr hroots), map_mul,
+    map_multiset_prod, Multiset.map_map, Function.comp_def]
 
 /-- **The bound at a centre `b`**: since `x(T - α) ≤ max (x(T - b)) (x(b - α))`, the value of a
 split polynomial is at most `x(u) ∏_α max (x(T - b)) (x(b - α))`. -/
@@ -141,19 +143,6 @@ private theorem exists_mem_roots_valuation_eval₂RingHom_eq (x : closedPolydisc
 
 variable [IsUltrametricDist K]
 
-/-- A point of the closed unit disc gives constants of equal norm equal values. -/
-private theorem valuation_weightedC_eq_of_norm_eq (x : closedPolydisc 1 K) {a b : K}
-    (h : ‖a‖ = ‖b‖) : x.1.valuation (C a) = x.1.valuation (C b) := by
-  refine le_antisymm ?_ ?_ <;>
-    rw [valuation_le_iff, closedPolydisc_vle_weightedC_iff]
-  exacts [h.le, h.ge]
-
-/-- A point of the closed unit disc vanishes on a constant only at `0`. -/
-private theorem valuation_weightedC_eq_zero_iff (x : closedPolydisc 1 K) (a : K) :
-    x.1.valuation (C a) = 0 ↔ a = 0 := by
-  rw [← le_zero_iff, ← map_zero (x.1.valuation), ← map_zero C, valuation_le_iff,
-    closedPolydisc_vle_weightedC_iff, norm_zero, norm_le_zero_iff]
-
 /-- **The bound is strictly increasing at a root**: if `b` is one of the `α ∈ S` and `u ≠ 0`, then
 replacing `x(f)` by a larger `x(g)` strictly increases `x(u) ∏_{α ∈ S} max (x(f)) (x(b - α))`,
 since the factor at `α = b` is `x(f)` itself. -/
@@ -163,7 +152,7 @@ private theorem valuation_mul_prod_map_max_lt (x : closedPolydisc 1 K) {S : Mult
       x.1.valuation (C u) *
         (S.map fun α ↦ max (x.1.valuation g) (x.1.valuation (C (b - α)))).prod := by
   refine mul_lt_mul_of_pos_left ?_
-    (zero_lt_iff.mpr fun h0 ↦ hu ((valuation_weightedC_eq_zero_iff x u).mp h0))
+    (zero_lt_iff.mpr fun h0 ↦ hu ((closedPolydisc_valuation_weightedC_eq_zero_iff x u).mp h0))
   obtain ⟨S, rfl⟩ := Multiset.exists_cons_of_mem hb
   simp only [Multiset.map_cons, Multiset.prod_cons, sub_self, map_zero, max_eq_left zero_le]
   have hpos : 0 < (S.map fun α ↦ max (x.1.valuation g) (x.1.valuation (C (b - α)))).prod := by
@@ -175,16 +164,6 @@ private theorem valuation_mul_prod_map_max_lt (x : closedPolydisc 1 K) {S : Mult
         mul_le_mul_right (Multiset.prod_map_le_prod_map _ _ fun _ _ ↦ max_le_max_right _ h.le) _
     _ < x.1.valuation g * (S.map fun α ↦ max (x.1.valuation g) (x.1.valuation (C (b - α)))).prod :=
         mul_lt_mul_of_pos_right h hpos
-
-/-- The larger of the values of two constants is the value of the one of larger norm. -/
-private theorem max_valuation_weightedC (x : closedPolydisc 1 K) (a b : K) :
-    max (x.1.valuation (C a)) (x.1.valuation (C b)) =
-      x.1.valuation (C (if ‖a‖ ≤ ‖b‖ then b else a)) := by
-  split_ifs with h
-  · exact max_eq_right ((valuation_le_iff _ _ _).mpr
-      ((closedPolydisc_vle_weightedC_iff x a b).mpr h))
-  · exact max_eq_left ((valuation_le_iff _ _ _).mpr
-      ((closedPolydisc_vle_weightedC_iff x b a).mpr (le_of_not_ge h)))
 
 /-- **The bound at the radius**: if `‖u‖ ∏_{α ∈ S} max ‖d‖ ‖b - α‖ = ‖c‖`, then
 `x(u) ∏_{α ∈ S} max (x(d)) (x(b - α)) = x(c)`. -/
@@ -202,8 +181,8 @@ private theorem valuation_mul_prod_map_max_eq (x : closedPolydisc 1 K) {S : Mult
       x.1.valuation (C (u * (S.map e).prod)) := by
     rw [map_mul, map_mul, map_multiset_prod, map_multiset_prod, Multiset.map_map, Multiset.map_map]
     simp only [Function.comp_def]
-  simp only [max_valuation_weightedC]
-  refine hprod.trans (valuation_weightedC_eq_of_norm_eq x ?_)
+  simp only [closedPolydisc_max_valuation_weightedC]
+  refine hprod.trans (closedPolydisc_valuation_weightedC_eq_of_norm_eq x ?_)
   rw [norm_mul, Multiset.norm_prod, Multiset.map_map, ← hd]
   simp only [Function.comp_def, he]
 
@@ -234,7 +213,8 @@ theorem setOf_eval₂RingHom_vle_weightedC_eq_iUnion_closedSubdisc
       have key := valuation_mul_prod_map_max_lt x hu hb hlt
       rw [valuation_mul_prod_map_max_eq x (hd b hb), ← hval] at key
       exact key.not_ge ((valuation_le_iff _ _ _).mpr h)
-    · rw [← map_zero C, closedPolydisc_vle_weightedC_iff, norm_zero, norm_le_zero_iff] at h0
+    · rw [← map_zero C, ← valuation_le_iff, map_zero C, map_zero, le_zero_iff,
+        closedPolydisc_valuation_weightedC_eq_zero_iff] at h0
       exact ne_zero_of_norm_mul_prod_map_max_eq hb (hd b hb) hc h0
   · rintro ⟨b, hb, h, -⟩
     rw [← valuation_le_iff] at h ⊢
