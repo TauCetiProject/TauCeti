@@ -112,7 +112,6 @@ theorem absNorm_minimalDiscriminantIdeal_curve11a1 :
   norm_num
 
 /-- **The minimal discriminant of 11.a2 is `-11⁵`**, of absolute value `161051`. -/
-@[simp]
 theorem absNorm_minimalDiscriminantIdeal_curve11a2 :
     Ideal.absNorm (minimalDiscriminantIdeal ℤ (curve11a2.baseChange ℚ)) = 161051 := by
   rw [absNorm_minimalDiscriminantIdeal_baseChange _ isReducedMinimal_curve11a2.isGlobalMinimal,
@@ -120,7 +119,6 @@ theorem absNorm_minimalDiscriminantIdeal_curve11a2 :
   norm_num
 
 /-- **The minimal discriminant of 37.a1 is `37`.** -/
-@[simp]
 theorem absNorm_minimalDiscriminantIdeal_curve37a1 :
     Ideal.absNorm (minimalDiscriminantIdeal ℤ (curve37a1.baseChange ℚ)) = 37 := by
   rw [absNorm_minimalDiscriminantIdeal_baseChange _ isReducedMinimal_curve37a1.isGlobalMinimal,
