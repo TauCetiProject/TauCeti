@@ -62,14 +62,6 @@ theorem coe_traceTransferDiagonal (i : Fin 4) (negative : Bool) (j : Fin 2) :
       else ![![2, 10], ![4, -20], ![6, -30 / 11], ![32, 160 / 11]] i j := by
   fin_cases i <;> cases negative <;> fin_cases j <;> simp [traceTransferDiagonal]
 
-private theorem sqrtFive_notMem_range :
-    sqrtFive ∉ Set.range (algebraMap ℚ_[2] DyadicSqrtFive) := by
-  rintro ⟨c, hc⟩
-  apply Padic.not_isSquare_five
-  refine ⟨c, ?_⟩
-  apply (algebraMap ℚ_[2] DyadicSqrtFive).injective
-  simp [hc, ← _root_.sq, map_ofNat]
-
 /-- The eight coefficients obtained from `1`, `2 + √5`, `3 + 2√5`, and `16 + 7√5`,
 with either sign, have the trace-transfer diagonalizations in `traceTransferDiagonal`.
 The statement applies to the transferred forms themselves, without a chosen presentation. -/
