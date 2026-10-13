@@ -174,7 +174,6 @@ theorem kostantTorusSubsystemToUpperTriangular_comp_inclusion :
   simp only [Category.assoc, eqToHom_refl, Category.id_comp]
   rw [← Category.assoc,
     CommHopfAlgCat.quotientSpecMapOfLe_comp_quotientSpecι]
-  rfl
 
 include α hwt hα hpos in
 /-- **Every algebra-valued point group of a torus-plus-positive-root Kostant subsystem is
