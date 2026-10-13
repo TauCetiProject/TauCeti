@@ -46,6 +46,8 @@ every exponent `f_p` is `0` or `1`, and `N` is the radical of `Δ_min`.
 
 ## Main results
 
+* `TauCeti.algorithmicSzpiroConjecture_iff`, `TauCeti.algorithmicModifiedSzpiroConjecture_iff`:
+  the defining characterizations of the two conjectures.
 * `WeierstrassCurve.rpow_algorithmicSzpiroRatio`: `N ^ σ = |Δ_min|` for the Szpiro ratio `σ`, and
   `WeierstrassCurve.algorithmicSzpiroRatio_le_iff`: `σ ≤ r` exactly when `|Δ_min| ≤ N ^ r`.
 * `WeierstrassCurve.one_le_algorithmicSzpiroRatio`: the Szpiro ratio is at least `1`.
@@ -139,6 +141,15 @@ def AlgorithmicSzpiroConjecture : Prop :=
     (Ideal.absNorm (minimalDiscriminantIdeal ℤ E) : ℝ) ≤
       C * (Ideal.absNorm (algorithmicConductor ℤ E) : ℝ) ^ (6 + ε)
 
+/-- The defining characterization of `TauCeti.AlgorithmicSzpiroConjecture`. This is the interface
+to it outside its defining module. -/
+theorem algorithmicSzpiroConjecture_iff :
+    AlgorithmicSzpiroConjecture ↔
+      ∀ ε : ℝ, 0 < ε → ∃ C : ℝ, ∀ (E : WeierstrassCurve ℚ) [E.IsElliptic],
+        (Ideal.absNorm (minimalDiscriminantIdeal ℤ E) : ℝ) ≤
+          C * (Ideal.absNorm (algorithmicConductor ℤ E) : ℝ) ^ (6 + ε) :=
+  Iff.rfl
+
 /-- **The modified Szpiro conjecture**, against the algorithmic conductor: for every `ε > 0` there
 is a constant `C` such that every elliptic curve over `ℚ` satisfies
 `max (|c₄|³, c₆²) ≤ C N ^ (6 + ε)`, where `c₄` and `c₆` are the invariants of the reduced minimal
@@ -149,6 +160,15 @@ def AlgorithmicModifiedSzpiroConjecture : Prop :=
   ∀ ε : ℝ, 0 < ε → ∃ C : ℝ, ∀ (E : WeierstrassCurve ℚ) [E.IsElliptic],
     max (|((reducedMinimalModel E).c₄ : ℝ)| ^ 3) (((reducedMinimalModel E).c₆ : ℝ) ^ 2) ≤
       C * (Ideal.absNorm (algorithmicConductor ℤ E) : ℝ) ^ (6 + ε)
+
+/-- The defining characterization of `TauCeti.AlgorithmicModifiedSzpiroConjecture`. This is the
+interface to it outside its defining module. -/
+theorem algorithmicModifiedSzpiroConjecture_iff :
+    AlgorithmicModifiedSzpiroConjecture ↔
+      ∀ ε : ℝ, 0 < ε → ∃ C : ℝ, ∀ (E : WeierstrassCurve ℚ) [E.IsElliptic],
+        max (|((reducedMinimalModel E).c₄ : ℝ)| ^ 3) (((reducedMinimalModel E).c₆ : ℝ) ^ 2) ≤
+          C * (Ideal.absNorm (algorithmicConductor ℤ E) : ℝ) ^ (6 + ε) :=
+  Iff.rfl
 
 /-- **The modified Szpiro conjecture implies Szpiro's conjecture**, with the same constants: the
 relation `1728 Δ = c₄³ - c₆²` on the reduced minimal model gives `|Δ_min| ≤ max (|c₄|³, c₆²)`. -/
