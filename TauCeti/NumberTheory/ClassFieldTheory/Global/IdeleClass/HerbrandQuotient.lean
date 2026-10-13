@@ -21,8 +21,8 @@ Let `L/K` be a cyclic extension of number fields. This file proves that the idel
 h(C_L) = [L : K]
 ```
 
-(`herbrandQuotient_ideleClassRep_eq_finrank`). Since `h(C_L) = #Ĥ⁰ / #Ĥ⁻¹` and the degree-zero
-Tate group is `C_L^G / N_G C_L`, this is the source of the first fundamental inequality
+(`herbrandQuotient_ideleClassRep_eq_finrank`). Since `h(C_L) = #H^0_T / #H^{-1}_T` and the
+degree-zero Tate group is `C_L^G / N_G C_L`, this is the source of the first fundamental inequality
 `[C_K : N_{L/K} C_L] ≥ [L : K]` for cyclic extensions; the passage from a Herbrand quotient to the
 norm index of a cyclic layer of a formation is
 `TauCeti.ClassFieldTheory.NormalLayer.degree_le_natCard_normQuotient_of_herbrandQuotient_eq`.
