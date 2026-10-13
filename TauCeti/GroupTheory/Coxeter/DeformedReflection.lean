@@ -84,6 +84,7 @@ def deformedCartanRow (q : R) (i : V) : Module.Dual R (V → R) :=
 theorem deformedCartanRow_apply (q : R) (i : V) (x : V → R) :
     G.deformedCartanRow q i x = ∑ j, G.deformedCartanEntry q i j * x j := by
   rw [deformedCartanRow.eq_def]
+  -- Unfold the linear-map composition/projection and `mulVecLin`: `mulVec` is this dot-product sum.
   rfl
 
 @[simp]
