@@ -122,6 +122,7 @@ theorem sylvester_apply (A : E →L[𝕜] E) (B : F →L[𝕜] F) (X : F →L[�
 
 /-- The Sylvester operator is unchanged when both operators are shifted by the same scalar:
 `(A - c) X - X (B - c) = A X - X B`. -/
+@[simp]
 theorem sub_smul_one_sylvester_sub_smul_one (A : E →L[𝕜] E) (B : F →L[𝕜] F) (c : 𝕜) :
     (A - c • 1).sylvester (B - c • 1) = A.sylvester B := by
   ext X y

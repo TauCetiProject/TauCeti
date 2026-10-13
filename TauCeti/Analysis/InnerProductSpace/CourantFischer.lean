@@ -68,17 +68,17 @@ private theorem sum_sq_norm_repr_eq_sq_norm (b : OrthonormalBasis (Fin n) 𝕜 E
 
 
 /-- The squared norm in any orthonormal eigenbasis: if `S (w i) = μ i • w i` for all `i`, then
-`‖S x‖ ^ 2 = ∑ i, μ i ^ 2 * ‖w.repr x i‖ ^ 2`. -/
+`‖S x‖ ^ 2 = ∑ i, ‖μ i‖ ^ 2 * ‖w.repr x i‖ ^ 2`. -/
 theorem LinearMap.sq_norm_apply_eq_sum_of_eigenbasis
-    (S : E →ₗ[𝕜] E) (w : OrthonormalBasis (Fin n) 𝕜 E) {μ : Fin n → ℝ}
-    (hw : ∀ i, S (w i) = (μ i : 𝕜) • w i) (x : E) :
-    ‖S x‖ ^ 2 = ∑ i : Fin n, μ i ^ 2 * ‖w.repr x i‖ ^ 2 := by
-  have hrepr : ∀ i, w.repr (S x) i = (μ i : 𝕜) * w.repr x i := by
+    (S : E →ₗ[𝕜] E) (w : OrthonormalBasis (Fin n) 𝕜 E) {μ : Fin n → 𝕜}
+    (hw : ∀ i, S (w i) = μ i • w i) (x : E) :
+    ‖S x‖ ^ 2 = ∑ i : Fin n, ‖μ i‖ ^ 2 * ‖w.repr x i‖ ^ 2 := by
+  have hrepr : ∀ i, w.repr (S x) i = μ i * w.repr x i := by
     intro i
     conv_lhs => rw [← w.sum_repr x]
     simp [map_sum, hw, smul_smul, mul_comm, Pi.single_apply]
   rw [← sum_sq_norm_repr_eq_sq_norm w (S x)]
-  simp_rw [hrepr, norm_mul, RCLike.norm_ofReal, mul_pow, sq_abs]
+  simp_rw [hrepr, norm_mul, mul_pow]
 
 namespace LinearMap.IsSymmetric
 

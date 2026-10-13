@@ -447,7 +447,9 @@ private theorem sq_norm_apply_sub_smul_eq_sum (hT : T.IsSymmetric) (c : ℝ) (x 
   have hw (i) : (T - (c : 𝕜) • LinearMap.id : E →ₗ[𝕜] E) (hT.eigenvectorBasis rfl i) =
       ((hT.eigenvalues rfl i - c : ℝ) : 𝕜) • hT.eigenvectorBasis rfl i := by
     simp [sub_smul]
-  refine ⟨by simpa using LinearMap.sq_norm_apply_eq_sum_of_eigenbasis _ _ hw x, ?_⟩
+  have h := LinearMap.sq_norm_apply_eq_sum_of_eigenbasis _ _ hw x
+  simp only [RCLike.norm_ofReal, sq_abs] at h
+  refine ⟨by simpa using h, ?_⟩
   rw [← (hT.eigenvectorBasis rfl).repr.norm_map, EuclideanSpace.norm_sq_eq]
 
 /-- The eigenvalues in an ordered eigenbasis of a symmetric `T` lie in its point spectrum. -/
