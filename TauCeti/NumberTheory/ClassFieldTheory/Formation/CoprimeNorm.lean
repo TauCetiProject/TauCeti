@@ -216,7 +216,7 @@ theorem compositum_top_le : (L.compositum W).top ≤ L.top := by
 
 /-- The homomorphism `(U ⊓ W) ⧸ (V ⊓ W) → U ⧸ V` from the Galois group of the base change to that of
 the layer, induced by the inclusion `U ⊓ W ≤ U`: in field notation, the restriction
-`Gal(KF'/F') → Gal(K/F)`. -/
+`Gal(LE/KE) → Gal(L/K)`. -/
 def compositumGalHom : (L.compositum W).Gal →* L.Gal :=
   @QuotientGroup.quotientMapSubgroupOfOfLe G _ (L.compositum W).top.toSubgroup
     (L.compositum W).ground.toSubgroup L.top.toSubgroup L.ground.toSubgroup
