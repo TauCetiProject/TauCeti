@@ -48,8 +48,9 @@ defined, it agrees with Mathlib's multipliers.
 * `SchwartzMap.coeFn_fourierMultiplierCLM_toLp`: for a Schwartz symbol `σ`, `T_σ` is
   convolution with the Schwartz kernel `𝓕⁻ σ`, that is `T_σ f x = ∫ 𝓕⁻ σ (x - y) • f y` for
   almost every `x`. On Schwartz functions this is `SchwartzMap.fourierMultiplierCLM_eq_convolution`.
-* `MeasureTheory.Lp.tendsto_fourierMultiplierCLM_apply`: if the symbols `m n` are eventually
-  uniformly bounded and converge to `m₀` almost everywhere, then `T_{m n} f → T_{m₀} f` in `L²`.
+* `MeasureTheory.Lp.tendsto_fourierMultiplierCLM_apply`: if the symbols `m i` are eventually
+  uniformly bounded and converge to `m₀` almost everywhere along a countably generated filter,
+  then `T_{m i} f → T_{m₀} f` in `L²`.
 
 ## Kernels of multipliers
 
@@ -276,14 +277,20 @@ theorem _root_.SchwartzMap.coeFn_fourierMultiplierCLM_toLp (σ : 𝓢(E, ℂ))
   exact ((((lsmul ℂ ℂ).lpPairing volume 2 2 ((hK x).toLp _)).continuous.tendsto f).comp hu).comp
     hns.tendsto_atTop
 
-/-- If the symbols `m n` are eventually bounded in `L^∞` uniformly in `n` and converge to `m₀`
-almost everywhere, then `T_{m n} f → T_{m₀} f` in `L²` for every `f ∈ L²`. -/
-theorem tendsto_fourierMultiplierCLM_apply {m : ℕ → Lp ℂ ∞ (volume : Measure E)}
-    {m₀ : Lp ℂ ∞ (volume : Measure E)} {C : ℝ} (hC : ∀ᶠ n in atTop, ‖m n‖ ≤ C)
-    (hm : ∀ᵐ ξ, Tendsto (fun n ↦ m n ξ) atTop (𝓝 (m₀ ξ))) (f : Lp F 2 (volume : Measure E)) :
-    Tendsto (fun n ↦ fourierMultiplierCLM F (m n) f) atTop
-      (𝓝 (fourierMultiplierCLM F m₀ f)) := by
-  simp only [fourierMultiplierCLM_apply]
+/-- If the symbols `m i` are eventually bounded in `L^∞` uniformly in `i` along a countably
+generated filter `l` and converge to `m₀` almost everywhere along `l`, then
+`T_{m i} f → T_{m₀} f` in `L²` along `l` for every `f ∈ L²`. -/
+theorem tendsto_fourierMultiplierCLM_apply {ι : Type*} {l : Filter ι} [l.IsCountablyGenerated]
+    {m : ι → Lp ℂ ∞ (volume : Measure E)} {m₀ : Lp ℂ ∞ (volume : Measure E)} {C : ℝ}
+    (hC : ∀ᶠ i in l, ‖m i‖ ≤ C) (hm : ∀ᵐ ξ, Tendsto (fun i ↦ m i ξ) l (𝓝 (m₀ ξ)))
+    (f : Lp F 2 (volume : Measure E)) :
+    Tendsto (fun i ↦ fourierMultiplierCLM F (m i) f) l (𝓝 (fourierMultiplierCLM F m₀ f)) := by
+  -- Reduce to sequences `s n → l`, so that the almost-everywhere statements below range over a
+  -- countable index set.
+  refine tendsto_iff_seq_tendsto.2 fun s hs ↦ ?_
+  replace hC := hs.eventually hC
+  replace hm := hm.mono fun ξ hξ ↦ hξ.comp hs
+  simp only [Function.comp_def, fourierMultiplierCLM_apply] at hm ⊢
   refine ((fourierInvCLM ℂ (Lp F 2 (volume : Measure E))).continuous.tendsto _).comp ?_
   rw [Lp.tendsto_Lp_iff_tendsto_eLpNorm']
   have hmb : ∀ g : Lp ℂ ∞ (volume : Measure E), ∀ᵐ ξ, ‖g ξ‖ₑ ≤ ‖g‖ₑ := fun g ↦ by
@@ -293,14 +300,14 @@ theorem tendsto_fourierMultiplierCLM_apply {m : ℕ → Lp ℂ ∞ (volume : Mea
   refine TauCeti.tendsto_eLpNorm_sub_of_ae_tendsto (by simp) (by simp)
     (Eventually.of_forall fun n ↦ Lp.aestronglyMeasurable _) (Lp.aestronglyMeasurable _)
     (Lp.memLp (𝓕 f)) (C := C.toNNReal + ‖m₀‖₊) (hC.mono fun n hn ↦ ?_) ?_
-  · filter_upwards [coeFn_lpSMul (r := 2) (m n) (𝓕 f), coeFn_lpSMul (r := 2) m₀ (𝓕 f), hmb (m n),
-      hmb m₀] with ξ h₁ h₂ h₃ h₄
+  · filter_upwards [coeFn_lpSMul (r := 2) (m (s n)) (𝓕 f), coeFn_lpSMul (r := 2) m₀ (𝓕 f),
+      hmb (m (s n)), hmb m₀] with ξ h₁ h₂ h₃ h₄
     rw [h₁, h₂, Pi.smul_apply', Pi.smul_apply', ← sub_smul, enorm_smul, ENNReal.coe_add,
       ← enorm_eq_nnnorm]
     gcongr
-    exact enorm_sub_le.trans (add_le_add (h₃.trans ((ofReal_norm (m n)).symm.trans_le
+    exact enorm_sub_le.trans (add_le_add (h₃.trans ((ofReal_norm (m (s n))).symm.trans_le
       (ENNReal.ofReal_le_ofReal hn))) h₄)
-  · filter_upwards [ae_all_iff.2 fun n ↦ coeFn_lpSMul (r := 2) (m n) (𝓕 f),
+  · filter_upwards [ae_all_iff.2 fun n ↦ coeFn_lpSMul (r := 2) (m (s n)) (𝓕 f),
       coeFn_lpSMul (r := 2) m₀ (𝓕 f), hm] with ξ h₁ h₂ h₃
     simp only [h₁, h₂, Pi.smul_apply']
     exact h₃.smul_const _
