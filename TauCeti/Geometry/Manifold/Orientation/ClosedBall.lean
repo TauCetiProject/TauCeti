@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.Orientation.ModelMap
+public import TauCeti.Geometry.Manifold.Orientation.MFDerivEquiv
 public import TauCeti.Geometry.Manifold.Instances.ClosedBall.Inclusion
 
 /-!
@@ -28,7 +28,7 @@ variable {n : ℕ} [NeZero n] {V : Type*} [NormedAddCommGroup V] [InnerProductSp
 /-- The closed unit ball's orientation induced by its inclusion derivative. -/
 def closedBall (o : _root_.Orientation ℝ V (Fin n)) :
     Orientation (𝓡∂ n) (Metric.closedBall (0 : V) 1) (Fin n) :=
-  ofModelMap (contMDiff_subtypeVal_closedBall (n := n) (k := 1))
+  ofMFDerivEquiv (contMDiff_subtypeVal_closedBall (n := n) (k := 1))
     (subtypeValClosedBallTangentEquiv (n := n))
     subtypeValClosedBallTangentEquiv_toContinuousLinearMap
     (EuclideanSpace.basisFun (Fin n) ℝ).toBasis.orientation (by simp) o
@@ -40,7 +40,7 @@ theorem map_orientationAt_closedBall (o : _root_.Orientation ℝ V (Fin n))
     _root_.Orientation.map (Fin n)
       (subtypeValClosedBallTangentEquiv (n := n) x).toLinearEquiv
       ((closedBall o).orientationAt x) = o :=
-  map_orientationAt_ofModelMap _ _ _ _ _ _ x
+  map_orientationAt_ofMFDerivEquiv _ _ _ _ _ _ x
 
 end TauCeti.Manifold.Orientation
 

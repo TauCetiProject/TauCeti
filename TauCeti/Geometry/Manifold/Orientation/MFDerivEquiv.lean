@@ -28,7 +28,7 @@ variable {E H M X : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [IsManifold I 1 M] [FiniteDimensional ℝ E]
   [NormedAddCommGroup X] [NormedSpace ℝ X] {ι : Type*} [Fintype ι]
 
-private theorem eventually_mapOrientation_modelMap {f : M → X}
+private theorem eventually_mapOrientation_mfDerivEquiv {f : M → X}
     (hf : ContMDiff I 𝓘(ℝ, X) 1 f) (F : ∀ x, TangentSpace I x ≃L[ℝ] X)
     (hF : ∀ x, (F x).toContinuousLinearMap =
       (NormedSpace.fromTangentSpace (𝕜 := ℝ) (f x)).toContinuousLinearMap.comp
@@ -107,7 +107,7 @@ private theorem eventually_mapOrientation_modelMap {f : M → X}
 
 /-- Pull back an orientation by a C¹ map with an everywhere invertible actual derivative.
 The model orientation chooses a representative; the tangent orientation is fixed by `o`. -/
-def ofModelMap {f : M → X} (hf : ContMDiff I 𝓘(ℝ, X) 1 f)
+def ofMFDerivEquiv {f : M → X} (hf : ContMDiff I 𝓘(ℝ, X) 1 f)
     (F : ∀ x, TangentSpace I x ≃L[ℝ] X)
     (hF : ∀ x, (F x).toContinuousLinearMap =
       (NormedSpace.fromTangentSpace (𝕜 := ℝ) (f x)).toContinuousLinearMap.comp
@@ -116,11 +116,11 @@ def ofModelMap {f : M → X} (hf : ContMDiff I 𝓘(ℝ, X) 1 f)
     (o : _root_.Orientation ℝ X ι) : Manifold.Orientation I M ι :=
   ofVectorBundleOrientation model hι
     ⟨fun x ↦ _root_.Orientation.map ι (F x).symm.toLinearEquiv o,
-      eventually_mapOrientation_modelMap hf F hF o hι⟩
+      eventually_mapOrientation_mfDerivEquiv hf F hF o hι⟩
 
 /-- The derivative sends the induced tangent orientation to the chosen target orientation,
 including at boundary and corner points. -/
-theorem map_orientationAt_ofModelMap {f : M → X} (hf : ContMDiff I 𝓘(ℝ, X) 1 f)
+theorem map_orientationAt_ofMFDerivEquiv {f : M → X} (hf : ContMDiff I 𝓘(ℝ, X) 1 f)
     (F : ∀ x, TangentSpace I x ≃L[ℝ] X)
     (hF : ∀ x, (F x).toContinuousLinearMap =
       (NormedSpace.fromTangentSpace (𝕜 := ℝ) (f x)).toContinuousLinearMap.comp
@@ -128,8 +128,8 @@ theorem map_orientationAt_ofModelMap {f : M → X} (hf : ContMDiff I 𝓘(ℝ, X
     (model : _root_.Orientation ℝ E ι) (hι : Fintype.card ι = Module.finrank ℝ E)
     (o : _root_.Orientation ℝ X ι) (x : M) :
     _root_.Orientation.map ι (F x).toLinearEquiv
-      ((ofModelMap hf F hF model hι o).orientationAt x) = o := by
-  simp only [ofModelMap, orientationAt_ofVectorBundleOrientation,
+      ((ofMFDerivEquiv hf F hF model hι o).orientationAt x) = o := by
+  simp only [ofMFDerivEquiv, orientationAt_ofVectorBundleOrientation,
     VectorBundleOrientation.coe_mk]
   rw [← _root_.Orientation.map_trans]
   simp
