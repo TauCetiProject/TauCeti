@@ -44,9 +44,10 @@ Over a perfect constant field the chain rule holds with no condition on rational
 instance over a finite field. A finite separable constant field extension makes a suitable place
 rational (`TauCeti.Place.exists_constantCompositum_eq_top_and_forall_degree_eq_one`), so the chain
 rule holds after extending the constants. The cotrace to the extension is injective and carries
-`dx` and `dy/dx` to their counterparts
-(`TauCeti.weilDifferentialCotrace_weilDifferentialOfSeparating`,
-`TauCeti.derivativeOfSeparating_algebraMap`), so the chain rule descends.
+`dx` and `dy` to their counterparts
+(`TauCeti.weilDifferentialCotrace_weilDifferentialOfSeparating`), while the algebra map carries
+`dy/dx` to its counterpart (`TauCeti.derivativeOfSeparating_algebraMap`), so the chain rule
+descends.
 
 Consequently the Kähler–Weil comparison
 `TauCeti.kaehlerDifferentialEquivWeilDifferentialOfSeparating` does not depend on the separating
@@ -174,8 +175,9 @@ variable {k' F' : Type*} [Field k'] [Field F'] [Algebra k k'] [Algebra k F'] [Al
 
 /-- The descent step of the chain rule: if a finite separable constant field extension `F' = F · k'`
 has a rational place `P'` lying over a place at which `q(x)` and `r(y)` are prime elements, then
-`dy = (dy/dx) · dx` in `F`. The chain rule holds in `F'` at `P'`, and the cotrace from `F` to `F'`
-is injective and carries `dx`, `dy` and `dy/dx` to their counterparts in `F'`. -/
+`dy = (dy/dx) · dx` in `F`. The chain rule holds in `F'` at `P'`, the cotrace from `F` to `F'` is
+injective and carries `dx` and `dy` to their counterparts in `F'`, and the algebra map carries
+`dy/dx` to its counterpart in `F'`. -/
 private theorem weilDifferentialOfSeparating_eq_derivativeOfSeparating_smul_of_constantCompositum
     [PerfectField k] [FiniteDimensional k k'] [Algebra.IsSeparable k k'] [FiniteDimensional F F']
     (h : constantCompositum F k' F' = ⊤) (hF : IsFunctionField k F)
