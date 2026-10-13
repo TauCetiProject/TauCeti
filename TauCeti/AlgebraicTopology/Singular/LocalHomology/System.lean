@@ -34,6 +34,7 @@ compatibility with composition characterizes the transport
 * `TauCeti.localHomology R S k`: the relative singular homology `Hₖ(M, M ∖ S)`.
 * `TauCeti.localHomologyRestriction`: for `S ⊆ T`, the map `Hₖ(M, M ∖ T) ⟶ Hₖ(M, M ∖ S)`
   induced by the identity of `M`.
+* `TauCeti.isZero_localHomology_empty`: local homology along the empty set vanishes.
 * `TauCeti.isIso_localHomologyRestriction_symm_image`: the restriction from a compact set in a
   chart, star-convex about one of its points, to that point is an isomorphism.
 * `TauCeti.localHomologyTransport`: the transport of local homology along a path class.
@@ -108,6 +109,13 @@ lemma localHomologyRestriction_comp {S T W : Set M} (h₁ : S ⊆ T) (h₂ : T �
   -- proofs; rewriting with `Category.id_comp` is blocked because those proofs depend on the map.
   exact congrArg (TopPair.singularHomologyMap · R k)
     (TopPair.ofSubsetMap_comp (𝟙 (TopCat.of M)) (𝟙 (TopCat.of M)) _ _ _).symm
+
+/-- The local homology `Hₖ(M, M ∖ ∅)` vanishes: it is the homology of `M` relative to itself. -/
+theorem isZero_localHomology_empty (k : ℕ) : IsZero (localHomology R (∅ : Set M) k) := by
+  rw [IsZero.iff_id_eq_zero, ← TopPair.singularHomologyMap_id]
+  exact TopPair.singularHomologyMap_eq_zero_of_fac _ R
+    (TopCat.ofHom (⟨fun x ↦ ⟨x, Set.notMem_empty x⟩, continuous_id.subtype_mk _⟩ :
+      C(M, ↥((∅ : Set M)ᶜ)))) rfl k
 
 /-- Let `S ⊆ T` contain `x` and `y`, and let the restrictions from `S` and from `T` to `x` be
 isomorphisms. Then comparing `x` with `y` through `T` and restricting from `S` to `x` gives the
