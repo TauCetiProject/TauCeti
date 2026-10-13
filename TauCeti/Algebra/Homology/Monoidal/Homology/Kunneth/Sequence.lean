@@ -670,7 +670,7 @@ theorem homologyToTor_naturality (m : ℕ) :
         homologyMap (tensorLeftShortComplex K' L'.cyclesComplexShortComplex).g (m + 1) := by
           simpa only [Category.assoc] using
             (eqToHom_comp_homologyMap_tensorHom_assoc φ ψ L.cyclesComplexShortComplex_X₂
-              L'.cyclesComplexShortComplex_X₂ _ (cyclesComplexShortComplexMap_τ₂ ψ)
+              L'.cyclesComplexShortComplex_X₂ _ (cyclesComplexShortComplexMap_τ₂ ψ) (m + 1)
               (homologyMap (tensorLeftShortComplex K' L'.cyclesComplexShortComplex).g
                 (m + 1))).symm
     _ = eqToHom (congrArg (fun N ↦ (tensorObj K N).homology (m + 1))
