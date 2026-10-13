@@ -92,28 +92,6 @@ variable
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
 
-omit [ChartedSpace H M] in
-/-- Changing the source atlas while retaining its preferred charts preserves chart derivatives. -/
-theorem mfderiv_eq_of_chartAt_eq {c c' : ChartedSpace H M} (h : c.chartAt = c'.chartAt)
-    (f : M → H) (x : M) :
-    (letI := c; mfderiv I I f x) = (letI := c'; mfderiv I I f x) := by
-  -- Manifold differentiation uses preferred charts, not the rest of the atlas.
-  have hd : (letI := c; MDifferentiableAt I I f x) ↔
-      (letI := c'; MDifferentiableAt I I f x) := by
-    constructor
-    · intro hf
-      let := c'
-      cases hf with
-      | mk hc hp => exact ⟨hc, by simpa only [chartAt, h] using hp⟩
-    · intro hf
-      let := c
-      cases hf with
-      | mk hc hp => exact ⟨hc, by simpa only [chartAt, h] using hp⟩
-  let := c'
-  simp only [mfderiv, writtenInExtChartAt, extChartAt, chartAt, h]
-  congr 1
-  exact propext hd
-
 section BasePoint
 
 variable [IsManifold I 1 M]

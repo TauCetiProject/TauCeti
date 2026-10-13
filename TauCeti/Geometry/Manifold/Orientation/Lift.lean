@@ -104,6 +104,7 @@ theorem congrChartAt_sign {c c' : ChartedSpace H M} (h : c.chartAt = c'.chartAt)
     (x : (c'.chartAt α).source) :
     (letI := c'; (o.congrChartAt h).sign α x) =
       (letI := c; o.sign α ⟨x.val, by
+        -- The local instance is c; expose its chart source before transporting along h.
         change x.val ∈ (c.chartAt α).source
         rw [h]
         exact x.property⟩) := (rfl)
