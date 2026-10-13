@@ -124,7 +124,7 @@ theorem entropicGibbsFactor_of_eq_top {z : X × Y} (hz : c z = ∞) :
 
 omit [MeasurableSpace X] [MeasurableSpace Y] in
 /-- For a cost that is finite everywhere, the Gibbs factor is the real exponential. -/
-theorem entropicGibbsFactor_eq_of_forall_ne_top (hc : ∀ z, c z ≠ ∞) :
+theorem entropicGibbsFactor_eq_exp_of_forall_ne_top (hc : ∀ z, c z ≠ ∞) :
     entropicGibbsFactor c ε φ ψ = fun z ↦ Real.exp ((φ z.1 + ψ z.2 - (c z).toReal) / ε) :=
   funext fun z ↦ entropicGibbsFactor_of_ne_top (hc z)
 
@@ -364,8 +364,8 @@ theorem exists_entropicDualValue_eq_toReal_entropicTransportCost (hc : Measurabl
     (.of_bound hψ.aestronglyMeasurable C (ae_of_all _ hψC))
     (integrable_entropicGibbsFactor_of_le hc hφ hψ (fun x ↦ le_of_abs_le (hφC x))
       (fun y ↦ le_of_abs_le (hψC y)))
-    (hopt ▸ entropicTransportCost_ne_top_of_le hcB ε)).2 ?_
-  rwa [entropicGibbsFactor_eq_of_forall_ne_top fun z ↦
+    (hopt ▸ entropicTransportCost_ne_top_of_forall_le hcB ε)).2 ?_
+  rwa [entropicGibbsFactor_eq_exp_of_forall_ne_top fun z ↦
     ne_top_of_le_ne_top ENNReal.coe_ne_top (hcB z)]
 
 /-- **Strong entropic duality for a bounded cost.** For probability measures, a bounded
@@ -385,7 +385,7 @@ theorem isGreatest_entropicDualValue_integrable (hc : Measurable c) (hcB : ∀ z
       (fun y ↦ le_of_abs_le (hψC y)), h⟩, ?_⟩
   rintro r ⟨φ', ψ', hφ', hψ', hexp', rfl⟩
   exact entropicDualValue_le_toReal_entropicTransportCost
-    (entropicTransportCost_ne_top_of_le hcB ε) hc.aemeasurable hε hφ' hψ' hexp'
+    (entropicTransportCost_ne_top_of_forall_le hcB ε) hc.aemeasurable hε hφ' hψ' hexp'
 
 /-- **Uniqueness of the entropic dual maximisers for a bounded cost.** For probability measures,
 a bounded measurable cost and a positive temperature, two pairs of integrable potentials whose
@@ -406,7 +406,7 @@ theorem exists_ae_eq_add_const_of_entropicDualValue_eq_toReal_entropicTransportC
   exact hπ.exists_ae_eq_add_const_of_entropicDualValue_eq
     (IsProbabilityMeasure.ne_zero μ) hc.aemeasurable
     (ae_of_all _ fun z ↦ ne_top_of_le_ne_top ENNReal.coe_ne_top (hcB z)) hε
-    (hopt ▸ entropicTransportCost_ne_top_of_le hcB ε) hφ hψ hexp h hφ' hψ' hexp' h'
+    (hopt ▸ entropicTransportCost_ne_top_of_forall_le hcB ε) hφ hψ hexp h hφ' hψ' hexp' h'
 
 end Bounded
 
