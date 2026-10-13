@@ -77,7 +77,7 @@ theorem normalizationDesc_app_normalizationObjIso (H : f = f₁ ≫ f₂) {U : Y
 /-- Over an affine open `U ⊆ Y`, the map of sections of `f.normalizationDesc f₁ f₂ H` is an
 isomorphism if and only if the restriction `Γ(T, f₂ ⁻¹ U) → Γ(X, f ⁻¹ U)` along `f₁` is injective
 and its image contains every element integral over `Γ(Y, U)`. -/
-theorem isIso_app_normalizationDesc_iff (H : f = f₁ ≫ f₂) {U : Y.Opens} (hU : IsAffineOpen U) :
+theorem isIso_normalizationDesc_app_iff (H : f = f₁ ≫ f₂) {U : Y.Opens} (hU : IsAffineOpen U) :
     IsIso ((f.normalizationDesc f₁ f₂ H).app (f₂ ⁻¹ᵁ U)) ↔
       Function.Injective (f₁.appLE (f₂ ⁻¹ᵁ U) (f ⁻¹ᵁ U) (by simp [H])) ∧
       ∀ s, (f.app U).hom.IsIntegralElem s →
@@ -121,10 +121,10 @@ theorem isIso_normalizationDesc_iff (H : f = f₁ ≫ f₂) :
   · have := h ⟨U, hU⟩
     rw [MorphismProperty.isomorphisms.iff,
       isIso_morphismRestrict_iff_isIso_app _ (hU.preimage f₂)] at this
-    exact (f.isIso_app_normalizationDesc_iff f₁ f₂ H hU).1 this
+    exact (f.isIso_normalizationDesc_app_iff f₁ f₂ H hU).1 this
   · rw [MorphismProperty.isomorphisms.iff,
       isIso_morphismRestrict_iff_isIso_app _ (U.2.preimage f₂)]
-    exact (f.isIso_app_normalizationDesc_iff f₁ f₂ H U.2).2 (h U U.2)
+    exact (f.isIso_normalizationDesc_app_iff f₁ f₂ H U.2).2 (h U U.2)
 
 end AlgebraicGeometry.Scheme.Hom
 
