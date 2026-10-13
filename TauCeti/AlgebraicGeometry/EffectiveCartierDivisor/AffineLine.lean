@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.EffectiveCartierDivisor.Relative
-public import Mathlib.AlgebraicGeometry.Morphisms.FlatRank
 public import TauCeti.RingTheory.Polynomial.Monic.Ideal
 
 /-!
@@ -151,18 +150,12 @@ lemma zeroIdealSheaf_map {S : Type u} [CommRing S] (φ : R →+* S) (p : R[X]) :
     Polynomial.coe_mapRingHom] at h
   exact congrArg (fun a ↦ Scheme.IdealSheafData.ofIdealTop (Ideal.span {a})) h.symm
 
-end Polynomial
-
-namespace TauCeti.Polynomial
-
-variable {R : Type u} [CommRing R] [Nontrivial R] {n : ℕ}
-
-/-- Two coefficient tuples define the same divisor on the relative affine line exactly when
-they agree, including over nonreduced coefficient rings. -/
-@[simp]
-theorem zeroIdealSheaf_monicOfCoeff_eq_iff (c d : Fin n → R) :
-    (monicOfCoeff c).zeroIdealSheaf = (monicOfCoeff d).zeroIdealSheaf ↔ c = d := by
+/-- Two monic polynomials define the same zero scheme on the relative affine line exactly
+when they agree, without a fixed-degree or reducedness assumption. -/
+theorem Monic.zeroIdealSheaf_eq_iff {p q : R[X]} (hp : p.Monic) (hq : q.Monic) :
+    p.zeroIdealSheaf = q.zeroIdealSheaf ↔ p = q := by
   refine ⟨fun h ↦ ?_, fun h ↦ h ▸ rfl⟩
+  nontriviality R
   have htop := congrArg Scheme.IdealSheafData.equivOfIsAffine h
   simp only [Polynomial.zeroIdealSheaf_eq_ofIdealTop,
     Scheme.IdealSheafData.equivOfIsAffine_apply, Scheme.IdealSheafData.ofIdealTop_ideal,
@@ -174,8 +167,24 @@ theorem zeroIdealSheaf_monicOfCoeff_eq_iff (c d : Fin n → R) :
     simpa only [CommRingCat.hom_comp, CommRingCat.hom_id] using
       congrArg CommRingCat.Hom.hom (Scheme.ΓSpecIso (.of R[X])).inv_hom_id
   simp only [Ideal.map_map, hid, Ideal.map_id] at hmap
-  apply (coeffEquivFiniteFreeIdeal R n).injective
-  apply Subtype.ext
-  simpa only [coeffEquivFiniteFreeIdeal_apply] using hmap
+  have hpq : p ∣ q := Ideal.span_singleton_le_span_singleton.mp hmap.symm.le
+  have hqp : q ∣ p := Ideal.span_singleton_le_span_singleton.mp hmap.le
+  exact eq_of_monic_of_dvd_of_natDegree_le hq hp hqp (hp.natDegree_le_of_dvd hq.ne_zero hpq)
+
+end Polynomial
+
+namespace TauCeti.Polynomial
+
+variable {R : Type u} [CommRing R] {n : ℕ}
+
+/-- Two coefficient tuples define the same divisor on the relative affine line exactly when
+they agree, including over nonreduced coefficient rings. -/
+@[simp]
+theorem zeroIdealSheaf_monicOfCoeff_eq_iff (c d : Fin n → R) :
+    (monicOfCoeff c).zeroIdealSheaf = (monicOfCoeff d).zeroIdealSheaf ↔ c = d := by
+  rw [(monic_monicOfCoeff c).zeroIdealSheaf_eq_iff (monic_monicOfCoeff d)]
+  refine ⟨fun h ↦ ?_, fun h ↦ h ▸ rfl⟩
+  exact funext fun i ↦ by
+    simpa only [coeff_monicOfCoeff] using congrArg (fun p : R[X] ↦ p.coeff i) h
 
 end TauCeti.Polynomial
