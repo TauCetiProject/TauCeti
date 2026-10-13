@@ -20,7 +20,9 @@ public section
 
 open MeasureTheory Set
 
-namespace BoxIntegral
+open BoxIntegral
+
+namespace TauCeti.BoxIntegral
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
 
@@ -61,4 +63,4 @@ theorem hasHenstockIntervalIntegral_deriv_smul_comp {a b : ℝ} {f : ℝ → E} 
       (by simpa only [uIoo_of_ge hba.le] using hdθ)
       (by simpa only [uIcc_of_ge hba.le] using hf)
 
-end BoxIntegral
+end TauCeti.BoxIntegral

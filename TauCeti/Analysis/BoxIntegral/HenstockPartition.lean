@@ -21,13 +21,15 @@ noncomputable section
 open Set Filter Metric
 open scoped Topology
 
-namespace BoxIntegral
+open BoxIntegral
+
+namespace TauCeti.BoxIntegral
 
 variable {ι E F : Type*} [Fintype ι] [NormedAddCommGroup E] [NormedSpace ℝ E]
   [NormedAddCommGroup F] [NormedSpace ℝ F] {I J K : Box ι}
 
 /-- A finite box prepartition admits a gauge preventing tags from crossing its faces. -/
-theorem Prepartition.exists_gauge_tag_mem_Icc (p : Prepartition I) :
+theorem _root_.BoxIntegral.Prepartition.exists_gauge_tag_mem_Icc (p : Prepartition I) :
     ∃ r : (ι → ℝ) → Ioi (0 : ℝ), ∀ x z, z ∈ closedBall x (r x) →
       ∀ J ∈ p, z ∈ Box.Icc J → x ∈ Box.Icc J := by
   have h (x : ι → ℝ) : ∃ r > 0, ∀ z ∈ closedBall x r,
@@ -48,7 +50,7 @@ theorem Prepartition.exists_gauge_tag_mem_Icc (p : Prepartition I) :
 
 omit [Fintype ι] in
 /-- A point in both closed boxes lies in the closed box representing their intersection. -/
-theorem Box.mem_Icc_of_coe_eq_inf {A B C : Box ι} {x : ι → ℝ}
+theorem _root_.BoxIntegral.Box.mem_Icc_of_coe_eq_inf {A B C : Box ι} {x : ι → ℝ}
     (h : (C : WithBot (Box ι)) = (A : WithBot (Box ι)) ⊓ B)
     (hxA : x ∈ Box.Icc A) (hxB : x ∈ Box.Icc B) : x ∈ Box.Icc C := by
   have hh : A.lower ⊔ B.lower = C.lower ∧ A.upper ⊓ B.upper = C.upper :=
@@ -57,7 +59,7 @@ theorem Box.mem_Icc_of_coe_eq_inf {A B C : Box ι} {x : ι → ℝ}
   exact ⟨sup_le hxA.1 hxB.1, le_inf hxA.2 hxB.2⟩
 
 /-- Refinement tags remain in the fixed piece when its gauge prevents face crossing. -/
-theorem Prepartition.infPrepartition_tag_mem_Icc_of_gauge (p : Prepartition I)
+theorem _root_.BoxIntegral.Prepartition.infPrepartition_tag_mem_Icc_of_gauge (p : Prepartition I)
     {π : TaggedPrepartition I}
     {r : (ι → ℝ) → Ioi (0 : ℝ)}
     (hr : ∀ x z, z ∈ closedBall x (r x) → ∀ J ∈ p,
@@ -79,7 +81,7 @@ theorem Prepartition.infPrepartition_tag_mem_Icc_of_gauge (p : Prepartition I)
     (Box.le_iff_Icc.mp ((π.toPrepartition.restrict J).le_of_mem hK) K.upper_mem_Icc)
 
 /-- A gauge preventing face crossing preserves the Henstock condition under refinement. -/
-theorem Prepartition.isHenstock_infPrepartition_of_gauge (p : Prepartition I)
+theorem _root_.BoxIntegral.Prepartition.isHenstock_infPrepartition_of_gauge (p : Prepartition I)
     {π : TaggedPrepartition I}
     {r : (ι → ℝ) → Ioi (0 : ℝ)}
     (hr : ∀ x z, z ∈ closedBall x (r x) → ∀ J ∈ p,
@@ -208,4 +210,4 @@ theorem hasIntegral_Henstock_of_partition {f : (ι → ℝ) → E} {vol : ι →
     _ ≤ ∑ _J ∈ p.boxes, ε := Finset.sum_le_sum hbound
     _ = (p.boxes.card : ℝ) * ε := by simp
 
-end BoxIntegral
+end TauCeti.BoxIntegral

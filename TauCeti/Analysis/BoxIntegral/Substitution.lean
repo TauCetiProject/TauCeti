@@ -23,7 +23,9 @@ public section
 
 open MeasureTheory Set
 
-namespace BoxIntegral
+open BoxIntegral
+
+namespace TauCeti.BoxIntegral
 
 /-- Substitution in the Henstock–Kurzweil integral, for a continuous parametrization
 differentiable outside a countable exceptional set. The integrand only needs to be continuous
@@ -74,4 +76,4 @@ theorem hasIntegral_Henstock_deriv_smul_comp {E : Type*} [NormedAddCommGroup E] 
     (fun x hx ↦ congrArg (θ' (x 0) • ·) (hgf (hmap (mem_Icc_intervalBox.mp hx))))
     (fun _ _ ↦ rfl) (∫ x in θ a..θ b, f x)).mp h
 
-end BoxIntegral
+end TauCeti.BoxIntegral

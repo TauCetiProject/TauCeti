@@ -11,7 +11,7 @@ public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
 /-!
 # One-dimensional box integrals and interval integrals
 
-`BoxIntegral.intervalBox` realizes a nondegenerate real interval as a box on `Fin 1`.
+`TauCeti.BoxIntegral.intervalBox` realizes a nondegenerate real interval as a box on `Fin 1`.
 For a Bochner integrable function, the box integral agrees with its interval integral for
 any non-Riemann integration parameters, in particular Henstock–Kurzweil parameters.
 -/
@@ -20,7 +20,9 @@ public section
 
 open MeasureTheory Set
 
-namespace BoxIntegral
+open BoxIntegral
+
+namespace TauCeti.BoxIntegral
 
 /-- The one-dimensional box corresponding to the half-open interval `(a, b]`. -/
 def intervalBox (a b : ℝ) (hab : a < b) : Box (Fin 1) :=
@@ -109,13 +111,14 @@ theorem setIntegral_intervalBox {a b : ℝ} (hab : a < b) (f : ℝ → E) :
   exact (volume_preserving_piUnique (fun _ : Fin 1 ↦ ℝ)).setIntegral_preimage_emb
     (MeasurableEquiv.piUnique _).measurableEmbedding f _
 
-end BoxIntegral
+end TauCeti.BoxIntegral
 
+open TauCeti.BoxIntegral in
 /-- Every Bochner integrable function has the same non-Riemann box integral on `Fin 1`. -/
 theorem IntervalIntegrable.hasBoxIntegral {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
     [CompleteSpace E] {f : ℝ → E} {a b : ℝ} (hf : IntervalIntegrable f volume a b)
     (hab : a < b) (l : BoxIntegral.IntegrationParams) (hl : l.bRiemann = false) :
-    BoxIntegral.HasIntegral (BoxIntegral.intervalBox a b hab) l (fun x ↦ f (x 0))
+    BoxIntegral.HasIntegral (TauCeti.BoxIntegral.intervalBox a b hab) l (fun x ↦ f (x 0))
       BoxIntegral.BoxAdditiveMap.volume (∫ x in a..b, f x) := by
-  rw [← BoxIntegral.setIntegral_intervalBox hab]
-  exact ((BoxIntegral.integrableOn_intervalBox_iff hab).2 hf).hasBoxIntegral l hl
+  rw [← TauCeti.BoxIntegral.setIntegral_intervalBox hab]
+  exact ((TauCeti.BoxIntegral.integrableOn_intervalBox_iff hab).2 hf).hasBoxIntegral l hl

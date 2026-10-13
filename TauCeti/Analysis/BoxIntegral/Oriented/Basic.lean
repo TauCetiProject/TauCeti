@@ -24,7 +24,9 @@ noncomputable section
 
 open MeasureTheory Set
 
-namespace BoxIntegral
+open BoxIntegral
+
+namespace TauCeti.BoxIntegral
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
@@ -68,14 +70,15 @@ theorem hasHenstockIntervalIntegral_iff_of_gt (hba : b < a) :
 theorem henstockIntervalIntegrable_iff_of_lt (hab : a < b) :
     HenstockIntervalIntegrable f a b ↔ Integrable (intervalBox a b hab) IntegrationParams.Henstock
       (fun x ↦ f (x 0)) BoxAdditiveMap.volume := by
-  simp only [henstockIntervalIntegrable_iff, hasHenstockIntervalIntegral_iff_of_lt hab, Integrable]
+  simp only [henstockIntervalIntegrable_iff, hasHenstockIntervalIntegral_iff_of_lt hab,
+    BoxIntegral.Integrable]
 
 
 /-- On negative intervals, oriented gauge integrability is existing box integrability. -/
 theorem henstockIntervalIntegrable_iff_of_gt (hba : b < a) :
     HenstockIntervalIntegrable f a b ↔ Integrable (intervalBox b a hba)
       IntegrationParams.Henstock (fun x ↦ f (x 0)) BoxAdditiveMap.volume := by
-  rw [henstockIntervalIntegrable_iff, Integrable]
+  rw [henstockIntervalIntegrable_iff, BoxIntegral.Integrable]
   constructor
   · rintro ⟨y, hy⟩
     exact ⟨-y, (hasHenstockIntervalIntegral_iff_of_gt hba).mp hy⟩
@@ -436,4 +439,4 @@ theorem hasHenstockIntervalIntegral_of_subdivision {N : ℕ} {s : Fin (N + 1) �
     have ht := ih (s := fun i ↦ s i.succ) (v := fun i ↦ v i.succ) (fun i ↦ hv i.succ)
     simpa only [Fin.sum_univ_succ, Fin.castSucc_zero, Fin.succ_last] using (hv 0).trans ht
 
-end BoxIntegral
+end TauCeti.BoxIntegral

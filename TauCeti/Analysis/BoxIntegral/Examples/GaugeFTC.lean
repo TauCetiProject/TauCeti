@@ -78,18 +78,20 @@ theorem hasDerivAt_oscillatoryPrimitive (t : ℝ) :
 
 /-- The derivative has Henstock–Kurzweil integral `sin 1` on the unit interval. -/
 theorem hasHenstockIntervalIntegral_deriv_oscillatoryPrimitive :
-    BoxIntegral.HasHenstockIntervalIntegral (deriv oscillatoryPrimitive) 0 1 (Real.sin 1) := by
+    TauCeti.BoxIntegral.HasHenstockIntervalIntegral (deriv oscillatoryPrimitive) 0 1
+      (Real.sin 1) := by
   have hd (t : ℝ) : HasDerivAt oscillatoryPrimitive (deriv oscillatoryPrimitive t) t :=
     (hasDerivAt_oscillatoryPrimitive t).differentiableAt.hasDerivAt
   have hc : Continuous oscillatoryPrimitive := continuous_iff_continuousAt.mpr
     (fun t ↦ (hd t).continuousAt)
   simpa only [oscillatoryPrimitive_zero, oscillatoryPrimitive_one, sub_zero] using
-    BoxIntegral.hasHenstockIntervalIntegral_of_hasDerivAt_off_countable
+    TauCeti.BoxIntegral.hasHenstockIntervalIntegral_of_hasDerivAt_off_countable
       (a := 0) (b := 1) (s := ∅) countable_empty hc.continuousOn (fun t _ ↦ hd t)
 
 /-- The same conditional derivative has the negative gauge value on the reversed interval. -/
 theorem hasHenstockIntervalIntegral_deriv_oscillatoryPrimitive_reverse :
-    BoxIntegral.HasHenstockIntervalIntegral (deriv oscillatoryPrimitive) 1 0 (-Real.sin 1) :=
+    TauCeti.BoxIntegral.HasHenstockIntervalIntegral (deriv oscillatoryPrimitive) 1 0
+      (-Real.sin 1) :=
   hasHenstockIntervalIntegral_deriv_oscillatoryPrimitive.symm
 
 /-- The primitive is strictly positive at the endpoint one. -/

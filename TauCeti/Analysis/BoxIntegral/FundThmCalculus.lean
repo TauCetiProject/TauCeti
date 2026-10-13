@@ -27,11 +27,13 @@ public section
 open scoped NNReal Topology
 open MeasureTheory Set
 
-namespace BoxIntegral
+open BoxIntegral
+
+namespace TauCeti.BoxIntegral
 
 /-- Every nondegenerate one-dimensional box has distortion one. -/
 @[simp]
-theorem Box.distortion_of_unique {ι : Type*} [Fintype ι] [Unique ι] (I : Box ι) :
+theorem _root_.BoxIntegral.Box.distortion_of_unique {ι : Type*} [Fintype ι] [Unique ι] (I : Box ι) :
     I.distortion = 1 := by
   simp only [Box.distortion, Finset.univ_unique, Finset.sup_singleton]
   have hx : nndist (I.lower default) (I.upper default) ≠ 0 :=
@@ -103,4 +105,4 @@ theorem hasIntegral_Henstock_of_hasDerivAt_off_countable {E : Type*} [NormedAddC
   exact (hd x ⟨⟨lt_of_le_of_ne hx.1.1 hxa.symm, lt_of_le_of_ne hx.1.2 hxb⟩,
     fun hxs ↦ hx.2 (Or.inl hxs)⟩).hasDerivWithinAt
 
-end BoxIntegral
+end TauCeti.BoxIntegral

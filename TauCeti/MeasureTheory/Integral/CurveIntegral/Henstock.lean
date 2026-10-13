@@ -28,16 +28,17 @@ variable {𝕜 E F : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [NormedSpace �
 Henstock integral of Mathlib's curve integrand on the unit parameter interval. -/
 theorem CurveIntegrable.hasHenstockIntervalIntegral (h : CurveIntegrable ω γ) :
     let : NormedSpace ℝ F := .restrictScalars ℝ 𝕜 F
-    BoxIntegral.HasHenstockIntervalIntegral (curveIntegralFun ω γ) 0 1 (curveIntegral ω γ) := by
+    TauCeti.BoxIntegral.HasHenstockIntervalIntegral (curveIntegralFun ω γ) 0 1
+      (curveIntegral ω γ) := by
   let : NormedSpace ℝ F := .restrictScalars ℝ 𝕜 F
   rw [curveIntegral_def]
   exact IntervalIntegrable.hasHenstockIntervalIntegral h
 
 /-- Under genuine curve integrability, any Henstock value of Mathlib's curve integrand
 agrees with its Bochner curve integral. -/
-theorem BoxIntegral.HasHenstockIntervalIntegral.eq_curveIntegral {y : F}
+theorem TauCeti.BoxIntegral.HasHenstockIntervalIntegral.eq_curveIntegral {y : F}
     (h : letI : NormedSpace ℝ F := .restrictScalars ℝ 𝕜 F
-      BoxIntegral.HasHenstockIntervalIntegral (curveIntegralFun ω γ) 0 1 y)
+      TauCeti.BoxIntegral.HasHenstockIntervalIntegral (curveIntegralFun ω γ) 0 1 y)
     (hω : CurveIntegrable ω γ) : y = curveIntegral ω γ := by
   let : NormedSpace ℝ F := .restrictScalars ℝ 𝕜 F
   exact h.unique hω.hasHenstockIntervalIntegral
