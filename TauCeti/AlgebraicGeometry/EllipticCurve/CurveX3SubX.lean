@@ -84,6 +84,14 @@ theorem map_curve {R S : Type*} [CommRing R] [CommRing S] (f : R →+* S) :
     (curve R).map f = curve S := by
   ext <;> simp
 
+/-- The affine points of `y² = x³ - x` are the solutions of `y² = x³ - x`. -/
+@[simp]
+theorem equation_iff {R : Type*} [CommRing R] (x y : R) :
+    (curve R).toAffine.Equation x y ↔ y ^ 2 = x ^ 3 - x := by
+  rw [Affine.equation_iff]
+  simp only [curve_a₁, curve_a₂, curve_a₃, curve_a₄, curve_a₆]
+  constructor <;> intro h <;> linear_combination h
+
 variable (K : Type*) [Field K]
 
 /-- Away from characteristic two, `y² = x³ - x` is an elliptic curve: its discriminant
@@ -92,17 +100,6 @@ instance [NeZero (2 : K)] : (curve K).IsElliptic := by
   rw [isElliptic_iff, Δ_curve]
   convert (Ne.isUnit (NeZero.ne (2 : K))).pow 6 using 1
   norm_num
-
-variable {K}
-
-/-- The affine points of `y² = x³ - x` are the solutions of `y² = x³ - x`. -/
-@[simp]
-theorem equation_iff (x y : K) : (curve K).toAffine.Equation x y ↔ y ^ 2 = x ^ 3 - x := by
-  rw [Affine.equation_iff]
-  simp only [curve_a₁, curve_a₂, curve_a₃, curve_a₄, curve_a₆]
-  constructor <;> intro h <;> linear_combination h
-
-variable (K)
 
 /-- The point `T₀ = (0, 0)` of `y² = x³ - x`. It is a nonsingular point in every characteristic,
 including two. -/
