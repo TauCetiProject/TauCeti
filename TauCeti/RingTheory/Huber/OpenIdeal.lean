@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.Huber.Basic
+public import TauCeti.Topology.Algebra.Group.DenseRange
 
 /-!
 # Open ideals of a Huber ring
@@ -306,7 +307,6 @@ theorem addSubgroupClosure_pow_mul_mem_nhds (P : PairOfDefinition A) {T U : Set 
 
 end PairOfDefinition
 
-
 section IsHuberRing
 
 open Topology
@@ -341,18 +341,12 @@ theorem exists_isOpen_span_forall_sub_mem_of_denseRange {B : Type*} [NonAssocRin
     ∃ (T' : Finset A) (s' : A), IsOpen (Ideal.span (T' : Set A) : Set A) ∧
       (∀ t ∈ T, ∃ u ∈ T'.image φ, t - u ∈ V) ∧ (∀ u ∈ T'.image φ, ∃ t ∈ T, u - t ∈ V) ∧
       s - φ s' ∈ V := by
-  -- `G ⊆ φ⁻¹(V)` generates an open ideal, and `φ (a b)` lies within `V ∩ -V` of each `b : B`
   obtain ⟨G, hGV, hGopen⟩ := exists_finset_subset_isOpen_span (V := φ ⁻¹' V)
     (hφc.continuousAt.preimage_mem_nhds (by rwa [map_zero]))
-  have happrox : ∀ b : B, ∃ x : A, φ x - b ∈ V ∧ b - φ x ∈ V := fun b ↦ by
-    simpa using mem_closure_iff_nhds_zero.mp (hφ b) _ (Filter.inter_mem hV (neg_mem_nhds_zero B hV))
-  choose a ha ha' using happrox
-  refine ⟨T.image a ∪ G, a s, Ideal.isOpen_of_isOpen_subideal (Ideal.span_mono (by simp)) hGopen,
-    fun t ht ↦ ⟨φ (a t), by grind, ha' t⟩, fun u hu ↦ ?_, ha' s⟩
-  simp only [Finset.mem_image, Finset.mem_union] at hu
-  -- the elements of `φ(G)` lie in `V`, so they are close to `0 ∈ T`
-  obtain ⟨x, ⟨t, ht, rfl⟩ | hx, rfl⟩ := hu
-  exacts [⟨t, ht, ha t⟩, ⟨0, hT, by simpa using hGV hx⟩]
+  obtain ⟨T', s', hGT', hTT', hT'T, hs'⟩ :=
+    exists_finset_superset_forall_sub_mem_of_denseRange hφ hV hT G (fun x hx ↦ hGV hx) s
+  exact ⟨T', s', Ideal.isOpen_of_isOpen_subideal (Ideal.span_mono hGT') hGopen,
+    hTT', hT'T, hs'⟩
 
 end IsHuberRing
 

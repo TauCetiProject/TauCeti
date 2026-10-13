@@ -23,11 +23,11 @@ image statement additionally needs `spaComap φ` to be surjective, which is not 
 Neither ring is assumed complete, and the plus rings `A⁺ ⊆ A` and `B⁺ ⊆ B` are arbitrary subrings
 with `φ(A⁺) ⊆ B⁺`.
 
-A dense ring need not carry a Huber topology itself. If its image contains a topologically
-nilpotent unit, every rational subset upstairs still has defining functions from that ring,
-with a power of the unit among the numerators. This applies to polynomial subrings of Tate
-algebras. The result uses the same small-perturbation and padding argument, without asserting
-that the source ring has an adic spectrum.
+For a homomorphism `φ : R →+* A` from a semiring with dense range, every rational subset
+of `Spa(A, A⁺)` has defining functions from `R`, with `u ^ n` among the numerators for any
+`u` whose image is topologically nilpotent. When `u` is a unit, these numerators generate
+the unit ideal of `R`. No topology on `R` is required. This applies to polynomial subrings
+of Tate algebras.
 
 ## Main results
 
@@ -104,23 +104,12 @@ theorem exists_pow_mem_rationalSubset_image_eq_of_denseRange [IsHuberRing A]
   obtain ⟨V, hV, hpert⟩ :=
     exists_mem_nhds_forall_rationalSubset_eq_of_sub_mem Aplus (insert 0 T)
       (by simpa using hT) s
-  have happrox : ∀ a : A, ∃ b : R, φ b - a ∈ V ∧ a - φ b ∈ V := fun a ↦ by
-    simpa using mem_closure_iff_nhds_zero.mp (hφ a) _
-      (Filter.inter_mem hV (neg_mem_nhds_zero A hV))
-  choose b hb hb' using happrox
   obtain ⟨n, hn⟩ := hnu.exists_pow_mem_of_mem_nhds hV
-  let G := insert (u ^ n) ((insert 0 T).image b)
-  refine ⟨n, G, b s, Finset.mem_insert_self _ _, ?_⟩
-  have heq := hpert (G.image φ) (φ (b s)) (fun t ht ↦
-    ⟨φ (b t), Finset.mem_image.mpr
-      ⟨b t, Finset.mem_insert_of_mem (Finset.mem_image.mpr ⟨t, ht, rfl⟩), rfl⟩,
-      hb' t⟩) (by
-    intro a ha
-    obtain ⟨g, hg, rfl⟩ := Finset.mem_image.mp ha
-    rcases Finset.mem_insert.mp hg with rfl | hg
-    · exact ⟨0, Finset.mem_insert_self _ _, by simpa using hn⟩
-    · obtain ⟨t, ht, rfl⟩ := Finset.mem_image.mp hg
-      exact ⟨t, ht, hb t⟩) (hb' s)
+  obtain ⟨G, p, hG, hTG, hGT, hs⟩ :=
+    exists_finset_superset_forall_sub_mem_of_denseRange hφ hV (Finset.mem_insert_self 0 T)
+      {u ^ n} (by simpa using hn) s
+  refine ⟨n, G, p, hG (Finset.mem_singleton_self _), ?_⟩
+  have heq := hpert (G.image φ) (φ p) hTG hGT hs
   rw [rationalSubset_insert_of_forall_vle Aplus T s 0
     (fun v _ ↦ v.toValuativeRel.zero_vle s)] at heq
   exact heq
