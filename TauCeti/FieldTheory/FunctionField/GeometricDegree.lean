@@ -36,6 +36,9 @@ Mathlib's predicate `IntermediateField.LinearDisjoint` also supplies the degree 
 
 * `TauCeti.constantCompositum`: the compositum `F · k'` inside `F'`.
 * `TauCeti.geometricDegree`: the geometric degree `n(F'/F) = [F' : F·k']`.
+* `TauCeti.constantCompositumAlgebra`: the `k'`-algebra structure on `F · k'`, with the scalar
+  towers `TauCeti.isScalarTower_constantCompositum` and
+  `TauCeti.isScalarTower_base_constantCompositum`.
 
 ## Main results
 
@@ -142,6 +145,20 @@ theorem constantCompositum_eq_top_iff (E : IntermediateField F F') [Algebra k' E
   rw [← map_val_constantCompositum F k' F' E, ← (IntermediateField.map_injective E.val).eq_iff,
     ← AlgHom.fieldRange_eq_map, IntermediateField.fieldRange_val]
 
+/-- The `k'`-algebra structure on the compositum `F · k'` formed inside `F'`, through which `k'`
+maps into `F · k'`. It is not an instance: `F · k'` may carry another `k'`-algebra structure, for
+instance one through `F` when `k'` is the original constant field. -/
+abbrev constantCompositumAlgebra : Algebra k' (constantCompositum F k' F') :=
+  ((algebraMap k' F').codRestrict _ (algebraMap_mem_constantCompositum F k' F')).toAlgebra
+
+/-- Through `TauCeti.constantCompositumAlgebra`, the maps `k' → F · k' → F'` form a scalar
+tower. -/
+theorem isScalarTower_constantCompositum :
+    letI := constantCompositumAlgebra F k' F'
+    IsScalarTower k' (constantCompositum F k' F') F' :=
+  letI := constantCompositumAlgebra F k' F'
+  .of_algebraMap_eq fun _ ↦ rfl
+
 /-- The **geometric degree** `n(F'/F)`: the degree `[F' : F·k']` of `F'` over the compositum
 `F · k'`, that is, what remains of `F' / F` once the image of `k'` has been adjoined to `F`.
 
@@ -237,6 +254,24 @@ theorem constantCompositum_eq_adjoin_of_adjoin_eq_top (S : Set k')
   rw [constantCompositum_def, hrange, IntermediateField.adjoin_adjoin_right]
 
 end GeneratedCompositum
+
+/-! ### The constants of the compositum over the original constants -/
+
+section ConstantCompositumAlgebra
+
+variable [CommSemiring k] [CommSemiring k'] [Algebra k k'] [Algebra k F] [Algebra k F']
+variable [Algebra k' F'] [Algebra F F'] [IsScalarTower k k' F'] [IsScalarTower k F F']
+variable (k F k' F')
+
+/-- Through `TauCeti.constantCompositumAlgebra`, the maps `k → k' → F · k'` form a scalar
+tower. -/
+theorem isScalarTower_base_constantCompositum :
+    letI := constantCompositumAlgebra F k' F'
+    IsScalarTower k k' (constantCompositum F k' F') :=
+  letI := constantCompositumAlgebra F k' F'
+  .of_algebraMap_eq fun c ↦ Subtype.ext (IsScalarTower.algebraMap_apply k k' F' c)
+
+end ConstantCompositumAlgebra
 
 /-! ### The degree of `F' / F` when `[F·k' : F]` is known -/
 

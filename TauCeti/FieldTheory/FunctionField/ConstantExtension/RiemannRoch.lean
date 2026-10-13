@@ -44,8 +44,9 @@ two dimensions agree.  An element of the larger space is defined over a finite s
   field extension, separable or not and over any constant field, the inequality
   `[F' : F] · ℓ(D) ≤ [k' : k] · ℓ(Con D)`.
 * `TauCeti.riemannRochSpace_nsmul_poles_eq_span_of_constantCompositum_eq_top` and
-  `TauCeti.Divisor.dim_nsmul_poles_of_constantCompositum_eq_top`: the same for `n (z)_∞` along an
-  arbitrary separable algebraic constant field extension.
+  `TauCeti.Divisor.dim_nsmul_poles_of_constantCompositum_eq_top`: along any separable algebraic
+  constant field extension, `L(n (z)_∞)` of `F' / k'` is the `k'`-span of the image of
+  `L(n (z)_∞)` of `F / k`, and the two dimensions are equal.
 
 ## Reference
 
@@ -131,26 +132,31 @@ theorem linearIndependent_algebraMap_riemannRochSpace (hex : IsIntegrallyClosedI
   linearIndependent_algebraMap_comp_of_isIntegrallyClosedIn_of_isSeparable hex
     (b.linearIndependent.map' (riemannRochSpace D).subtype (Submodule.ker_subtype _))
 
+omit [FiniteDimensional F F'] [Algebra.IsSeparable k k'] in
+/-- The `k'`-span of the image of `L(D)` in `F'` is the `k'`-span of the image of a `k`-basis of
+`L(D)`. -/
+theorem span_image_riemannRochSpace_eq_span_range {D : Divisor k F} {ι : Type*}
+    (b : Basis ι k (riemannRochSpace D)) :
+    Submodule.span k' (algebraMap F F' '' riemannRochSpace D) =
+      Submodule.span k' (Set.range fun i ↦ algebraMap F F' (b i)) := by
+  -- `L(D)` is the `k`-span of `b`
+  have hD : Submodule.span k (Set.range fun i ↦ (b i : F)) = riemannRochSpace D := by
+    have hb : (fun i ↦ (b i : F)) = (riemannRochSpace D).subtype ∘ b := by
+      ext
+      simp
+    rw [hb, Set.range_comp, ← Submodule.map_span, b.span_eq, Submodule.map_top,
+      Submodule.range_subtype]
+  conv_lhs => rw [← hD]
+  rw [← IsScalarTower.coe_toAlgHom' k F F', ← AlgHom.coe_toLinearMap, ← Submodule.map_coe,
+    Submodule.map_span, Submodule.span_span_of_tower, ← Set.range_comp, Function.comp_def]
+
 /-- The `k'`-span of the image of a `k`-basis of `L(D)` is `L(Con D)`. -/
 theorem span_range_algebraMap_eq_riemannRochSpace_conorm (hex : IsIntegrallyClosedIn k F)
     (h : constantCompositum F k' F' = ⊤) (hF' : IsFunctionField k' F') (D : Divisor k F)
     {ι : Type*} (b : Basis ι k (riemannRochSpace D)) :
     Submodule.span k' (Set.range fun i ↦ algebraMap F F' (b i)) =
       riemannRochSpace (Divisor.conorm k' F' D) := by
-  rw [riemannRochSpace_conorm_eq_span hex h hF']
-  refine le_antisymm (Submodule.span_mono ?_) (Submodule.span_le.2 ?_)
-  · rintro _ ⟨i, rfl⟩
-    exact ⟨b i, (b i).2, rfl⟩
-  rintro _ ⟨f, hf, rfl⟩
-  -- `L(D)` is the `k`-span of `b`, so the image of `f` lies in the `k`-span of the image of `b`
-  have hf' : f ∈ Submodule.span k (Set.range fun i ↦ (b i : F)) := by
-    rwa [← Submodule.map_subtype_top (riemannRochSpace D), ← b.span_eq, Submodule.map_span,
-      ← Set.range_comp] at hf
-  have hmem : algebraMap F F' f ∈
-      Submodule.span k (Set.range fun i ↦ algebraMap F F' (b i)) := by
-    have := Submodule.mem_map_of_mem (f := (IsScalarTower.toAlgHom k F F').toLinearMap) hf'
-    rwa [Submodule.map_span, ← Set.range_comp] at this
-  exact Submodule.span_le_restrictScalars k k' _ hmem
+  rw [riemannRochSpace_conorm_eq_span hex h hF', span_image_riemannRochSpace_eq_span_range b]
 
 /-- **A basis of `L(D)` is a basis of `L(Con D)`** (Stichtenoth, Theorem 3.6.3(d)): in a finite
 separable constant field extension, the image of a `k`-basis of the Riemann–Roch space of `D` is a
@@ -222,22 +228,15 @@ theorem riemannRochSpace_nsmul_poles_eq_span_of_constantCompositum_eq_top
         (Units.map (algebraMap F F' : F →* F') z)) =
       Submodule.span k' (algebraMap F F' '' riemannRochSpace (n • Divisor.poles hF z)) := by
   have hF' : IsFunctionField k' F' := hF.of_constantCompositum_eq_top h
-  have : Algebra.IsAlgebraic F F' := by
-    have halg := isAlgebraic_constantCompositum (k := k) (k' := k') (F := F) (F' := F')
-    rw [h] at halg
-    exact IntermediateField.topEquiv.isAlgebraic_iff.mp halg
+  have := isAlgebraic_of_constantCompositum_eq_top (k := k) h
   refine le_antisymm (fun g hg ↦ ?_) (Submodule.span_le.2 ?_)
   · -- `g` lies in `E = F · L` for a finite subextension `L` of `k' / k`
     obtain ⟨L, hL, hgL⟩ := exists_finiteDimensional_constantSubfield_of_mem_constantCompositum
       (k := k) (F := F) (h ▸ IntermediateField.mem_top : g ∈ constantCompositum F k' F')
     let E := constantCompositum F L F'
-    let : Algebra L E := ((algebraMap L F').codRestrict E.toSubring fun c ↦
-      algebraMap_mem_constantCompositum F L F' c).toAlgebra
-    have : IsScalarTower L E F' := .of_algebraMap_eq fun _ ↦ rfl
-    have : IsScalarTower k F E := .of_algebraMap_eq fun c ↦
-      Subtype.ext (IsScalarTower.algebraMap_apply k F F' c)
-    have : IsScalarTower k L E := .of_algebraMap_eq fun c ↦
-      Subtype.ext (IsScalarTower.algebraMap_apply k L F' c)
+    let : Algebra L E := constantCompositumAlgebra F L F'
+    have : IsScalarTower L E F' := isScalarTower_constantCompositum F L F'
+    have : IsScalarTower k L E := isScalarTower_base_constantCompositum k F L F'
     have hE : constantCompositum F L E = ⊤ := (constantCompositum_eq_top_iff F L F' E).2 rfl
     have : FiniteDimensional F E := finiteDimensional_of_constantCompositum_eq_top (k := k) hE
     have hFE : IsFunctionField L E := hF.of_constantCompositum_eq_top hE
@@ -276,20 +275,9 @@ theorem Divisor.dim_nsmul_poles_of_constantCompositum_eq_top
   set D := n • Divisor.poles hF z
   have := finiteDimensional_riemannRochSpace hF D
   let b := Module.finBasis k (riemannRochSpace D)
-  -- `L(D)` is the `k`-span of `b`, so its image spans the same `k'`-subspace as the image of `b`
-  have hD : Submodule.span k (Set.range fun i ↦ (b i : F)) = riemannRochSpace D := by
-    have hb : (fun i ↦ (b i : F)) = (riemannRochSpace D).subtype ∘ b := by
-      ext
-      simp
-    rw [hb, Set.range_comp, ← Submodule.map_span, b.span_eq, Submodule.map_top,
-      Submodule.range_subtype]
-  have hspan : Submodule.span k' (algebraMap F F' '' riemannRochSpace D) =
-      Submodule.span k' (Set.range fun i ↦ algebraMap F F' (b i)) := by
-    conv_lhs => rw [← hD]
-    rw [← IsScalarTower.coe_toAlgHom' k F F', ← AlgHom.coe_toLinearMap, ← Submodule.map_coe,
-      Submodule.map_span, Submodule.span_span_of_tower, ← Set.range_comp, Function.comp_def]
   rw [Divisor.dim_def, Divisor.dim_def,
-    riemannRochSpace_nsmul_poles_eq_span_of_constantCompositum_eq_top hF hex h, hspan,
+    riemannRochSpace_nsmul_poles_eq_span_of_constantCompositum_eq_top hF hex h,
+    span_image_riemannRochSpace_eq_span_range b,
     finrank_span_eq_card (linearIndependent_algebraMap_riemannRochSpace hex b),
     Fintype.card_fin]
 
