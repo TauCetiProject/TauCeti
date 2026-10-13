@@ -10,7 +10,7 @@ public import Mathlib.LinearAlgebra.Matrix.PosDef
 -- The Gram-congruence lemmas are used only inside the proofs below, so the import is private:
 -- nothing in this module's exported statements mentions `toMatrix₂Aux`.
 import TauCeti.LinearAlgebra.BilinearMap.GramCongruence
-import TauCeti.LinearAlgebra.Matrix.Northcott
+import TauCeti.LinearAlgebra.Matrix.PosDef.Northcott
 
 /-!
 # The regulator of an elliptic curve
@@ -131,7 +131,7 @@ theorem posDef_neronTateGramMatrix [W.toAffine.IsElliptic]
     neronTatePairingModTorsion W x x) C).preimage b.equivFun.symm.injective.injOn
 
 /-- The regulator is strictly positive under Northcott finiteness, including in rank zero,
-where it equals `1`. In particular this applies to elliptic curves over number fields. -/
+where it equals `1`. -/
 theorem regulator_pos [W.toAffine.IsElliptic] [Module.Finite ℤ (PointModTorsion W)]
     [Northcott (Point.canonicalHeight (W := W))] : 0 < regulator W := by
   rw [regulator_eq_abs_det_neronTateGramMatrix W (Module.finBasis ℤ (PointModTorsion W))]
