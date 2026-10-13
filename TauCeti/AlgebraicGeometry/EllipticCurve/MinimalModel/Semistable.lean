@@ -52,9 +52,9 @@ own, or over zero, where the curve has good reduction.
 * `WeierstrassCurve.isSemistable_smul`: semistability is invariant under a change of variables.
 * `WeierstrassCurve.hasGoodReduction_minimal_baseChange_of_Δ_notMem`: an equation over `O` has
   good reduction at every height-one prime not containing its discriminant.
-* `WeierstrassCurve.not_hasAdditiveReduction_minimal_baseChange_of_notMem`: an equation over `O`
-  has no additive reduction at a height-one prime not containing both its discriminant and its
-  `c₄`.
+* `WeierstrassCurve.not_hasAdditiveReduction_minimal_baseChange_of_Δ_notMem_or_c₄_notMem`: an
+  equation over `O` has no additive reduction at a height-one prime not containing both its
+  discriminant and its `c₄`.
 * `WeierstrassCurve.isSemistable_baseChange_of_isCoprime`: an equation over `O` whose
   discriminant and `c₄` are coprime is semistable.
 * `WeierstrassCurve.not_hasAdditiveReduction_minimal_iff_exists_isUnit`: no additive reduction
@@ -263,8 +263,8 @@ theorem hasGoodReduction_minimal_baseChange_of_Δ_notMem (W : WeierstrassCurve O
 /-- **An equation over `O` has no additive reduction at a height-one prime not containing both its
 discriminant and its `c₄`**: read over the localisation at such a prime, one of the two is a unit,
 so the reduction there is good or multiplicative. -/
-theorem not_hasAdditiveReduction_minimal_baseChange_of_notMem (W : WeierstrassCurve O)
-    [(W.baseChange F).IsElliptic] {v : HeightOneSpectrum O}
+theorem not_hasAdditiveReduction_minimal_baseChange_of_Δ_notMem_or_c₄_notMem
+    (W : WeierstrassCurve O) [(W.baseChange F).IsElliptic] {v : HeightOneSpectrum O}
     (hv : W.Δ ∉ v.asIdeal ∨ W.c₄ ∉ v.asIdeal) :
     ¬ ((W.baseChange F).minimal (Localization.AtPrime v.asIdeal)).HasAdditiveReduction
       (Localization.AtPrime v.asIdeal) :=
@@ -280,7 +280,7 @@ multiplicative. -/
 theorem isSemistable_baseChange_of_isCoprime (W : WeierstrassCurve O)
     [(W.baseChange F).IsElliptic] (h : IsCoprime W.Δ W.c₄) : IsSemistable O (W.baseChange F) :=
   IsSemistable.of_forall_not_hasAdditiveReduction fun v =>
-    not_hasAdditiveReduction_minimal_baseChange_of_notMem W <| by
+    not_hasAdditiveReduction_minimal_baseChange_of_Δ_notMem_or_c₄_notMem W <| by
       simpa only [IsLocalization.AtPrime.isUnit_to_map_iff (Localization.AtPrime v.asIdeal)
         v.asIdeal, Ideal.mem_primeCompl_iff] using
         (h.map (algebraMap O (Localization.AtPrime v.asIdeal))).isUnit_or_isUnit

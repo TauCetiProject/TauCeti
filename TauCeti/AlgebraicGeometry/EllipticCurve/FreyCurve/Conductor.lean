@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.EllipticCurve.FreyCurve.Basic
 public import TauCeti.AlgebraicGeometry.EllipticCurve.TateAlgorithm.Reduction.Conductor
 import Mathlib.RingTheory.Radical.NatInt
+import TauCeti.RingTheory.Ideal.Norm.AbsNorm
 import TauCeti.RingTheory.Radical.Ideal
 
 /-!
@@ -159,7 +160,7 @@ private theorem not_sq_dvd_absNorm_algorithmicConductor_freyCurve {A B : ℤ} (h
     rcases (Nat.dvd_prime Nat.prime_two).1 (by exact_mod_cast h) with h | h
     · exact hp.ne_one h
     · exact hp2 h
-  refine not_hasAdditiveReduction_minimal_baseChange_of_notMem (F := ℚ) _
+  refine not_hasAdditiveReduction_minimal_baseChange_of_Δ_notMem_or_c₄_notMem (F := ℚ) _
     (freyCurve_Δ_notMem_or_c₄_notMem hAB h2) ?_
   rw [← two_le_algorithmicOggExponent_iff, ← pow_dvd_algorithmicConductor_iff,
     ← Int.ideal_span_absNorm_eq_self (algorithmicConductor ℤ _), hv, Ideal.span_singleton_pow,
@@ -180,12 +181,11 @@ theorem algorithmicConductor_freyCurve_dvd {A B : ℤ} (hAB : IsCoprime A B)
   have hn := Ideal.absNorm_dvd_absNorm_of_le (Ideal.le_of_dvd
     ((algorithmicConductor_dvd_minimalDiscriminantIdeal ((freyCurve A B).baseChange ℚ)).trans
       (minimalDiscriminantIdeal_freyCurve_of_not_dvd hAB h16).dvd))
-  rw [Ideal.absNorm_span_singleton, Algebra.norm_self, MonoidHom.id_apply, Int.natAbs_mul,
-    Int.natAbs_pow] at hn
+  rw [Int.absNorm_span_singleton, Int.natAbs_mul, Int.natAbs_pow] at hn
   have h2 : ¬ 2 ^ 12 ∣ 16 * (A * B * (A + B)).natAbs ^ 2 := by
     have := (two_pow_twelve_dvd_freyCurve_Δ_iff (A := A) (B := B)).not.2 h16
     contrapose! this
-    rw [freyCurve_Δ, show 16 * A ^ 2 * B ^ 2 * (A + B) ^ 2 = 16 * (A * B * (A + B)) ^ 2 by ring]
+    rw [freyCurve_Δ_eq_mul_sq]
     exact Int.natAbs_dvd_natAbs.1 (by simpa [Int.natAbs_mul, Int.natAbs_pow] using this)
   rw [← Int.ideal_span_absNorm_eq_self (algorithmicConductor ℤ _),
     Ideal.span_singleton_dvd_span_singleton_iff_dvd, ← Int.radical_natAbs_eq_radical]

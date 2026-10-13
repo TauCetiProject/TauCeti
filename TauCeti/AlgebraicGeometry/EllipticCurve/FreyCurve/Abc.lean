@@ -9,6 +9,7 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.FreyCurve.Conductor
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Szpiro
 public import TauCeti.NumberTheory.AbcConjecture
 import Mathlib.RingTheory.Radical.NatInt
+import TauCeti.RingTheory.Ideal.Norm.AbsNorm
 import TauCeti.RingTheory.Radical.Ideal
 
 /-!
@@ -60,14 +61,6 @@ public section
 namespace TauCeti
 
 open WeierstrassCurve UniqueFactorizationMonoid
-
-/-- The Frey curve of integers `A` and `B` with `A B (A + B) ≠ 0` is elliptic over `ℚ`. -/
-private theorem isElliptic_baseChange_freyCurve {A B : ℤ} (h : A * B * (A + B) ≠ 0) :
-    ((freyCurve A B).baseChange ℚ).IsElliptic := by
-  rw [baseChange, map_freyCurve, isElliptic_freyCurve_iff_ne_zero two_ne_zero]
-  simp only [algebraMap_int_eq, eq_intCast, ne_eq, Int.cast_eq_zero, ← Int.cast_add]
-  exact ⟨left_ne_zero_of_mul (left_ne_zero_of_mul h), right_ne_zero_of_mul (left_ne_zero_of_mul h),
-    right_ne_zero_of_mul h⟩
 
 /-! ### Szpiro's conjecture for all Frey curves -/
 
@@ -129,8 +122,7 @@ private theorem natAbs_sq_eq_and_absNorm_algorithmicConductor_le {A B : ℤ}
     exact pow_dvd_pow_of_dvd (dvd_mul_of_dvd_left (dvd_mul_of_dvd_right hB A) _) 2
   have hD := minimalDiscriminantIdeal_freyCurve (F := ℚ) hA hB hAB (d := d) (by rw [← hd]; ring)
   refine ⟨?_, ?_⟩
-  · rw [hD, Ideal.absNorm_span_singleton, Algebra.norm_self, MonoidHom.id_apply,
-      ← Int.natAbs_pow, hd, Int.natAbs_mul]
+  · rw [hD, Int.absNorm_span_singleton, ← Int.natAbs_pow, hd, Int.natAbs_mul]
     norm_num
   -- `(d) ∣ (A B (A + B))²`, so the conductor `rad (d)` divides `rad (A B (A + B))`
   have hd₂ : Ideal.span {d} ∣ Ideal.span {A * B * (A + B)} ^ 2 := by
@@ -142,10 +134,8 @@ private theorem natAbs_sq_eq_and_absNorm_algorithmicConductor_le {A B : ℤ}
       (isSemistable_freyCurve (F := ℚ) hA hB hAB), hD, ← radical_span_singleton]
     exact (radical_dvd_radical hd₂ (pow_ne_zero 2 (by simpa using hP))).trans
       (radical_pow _ two_ne_zero).dvd
-  have := Nat.le_of_dvd (Nat.pos_of_ne_zero (by simp [radical_ne_zero]))
-    (Ideal.absNorm_dvd_absNorm_of_le (Ideal.le_of_dvd hN))
-  rwa [Ideal.absNorm_span_singleton, Algebra.norm_self, MonoidHom.id_apply,
-    ← Int.radical_natAbs_eq_radical, Int.natAbs_natCast] at this
+  have := Int.absNorm_le_natAbs_of_dvd_span_singleton radical_ne_zero hN
+  rwa [← Int.radical_natAbs_eq_radical, Int.natAbs_natCast] at this
 
 /-- **Some Frey curve of a coprime triple has small conductor against its discriminant.** For
 coprime integers `A` and `B` with `A B (A + B) ≠ 0` there is an elliptic curve `E` over `ℚ`, the
@@ -169,17 +159,14 @@ theorem exists_natAbs_sq_le_absNorm_minimalDiscriminantIdeal {A B : ℤ} (hAB : 
   · -- the minimal case: `|Δ_min| = 16 (A B (A + B))²` and `N ∣ 2¹¹ rad (A B (A + B))`
     have := isElliptic_baseChange_freyCurve hP
     refine ⟨_, this, ?_, ?_⟩
-    · rw [minimalDiscriminantIdeal_freyCurve_of_not_dvd hAB h16, Ideal.absNorm_span_singleton,
-        Algebra.norm_self, MonoidHom.id_apply]
+    · rw [minimalDiscriminantIdeal_freyCurve_of_not_dvd hAB h16, Int.absNorm_span_singleton]
       generalize A * B * (A + B) = P
       rw [Int.natAbs_mul, Int.natAbs_pow]
       calc P.natAbs ^ 2 ≤ 2 ^ 8 * 16 * P.natAbs ^ 2 := Nat.le_mul_of_pos_left _ (by norm_num)
         _ = _ := by norm_num; ring
-    · have := Nat.le_of_dvd (Nat.pos_of_ne_zero (by simp [radical_ne_zero]))
-        (Ideal.absNorm_dvd_absNorm_of_le (Ideal.le_of_dvd
-          (algorithmicConductor_freyCurve_dvd hAB h16)))
-      rwa [Ideal.absNorm_span_singleton, Algebra.norm_self, MonoidHom.id_apply, Int.natAbs_mul,
-        ← Int.radical_natAbs_eq_radical, Int.natAbs_natCast] at this
+    · have := Int.absNorm_le_natAbs_of_dvd_span_singleton (by simp)
+        (algorithmicConductor_freyCurve_dvd hAB h16)
+      rwa [Int.natAbs_mul, ← Int.radical_natAbs_eq_radical, Int.natAbs_natCast] at this
 
 /-- **Szpiro's conjecture for Frey curves.** Under `TauCeti.AlgorithmicSzpiroConjecture`, for every
 `ε > 0` there is a constant `C` such that `(A B (A + B))² ≤ C rad (A B (A + B)) ^ (6 + ε)` for all

@@ -59,10 +59,12 @@ the odd entries if necessary puts it in the `a` position. Then `A = aᵖ ≡ -1 
 ## Main results
 
 * `TauCeti.freyCurve_Δ` and `TauCeti.freyCurve_c₄`: `Δ = 16 A² B² (A + B)²` and
-  `c₄ = 16 (A² + A B + B²)`.
+  `c₄ = 16 (A² + A B + B²)`; `TauCeti.freyCurve_Δ_eq_mul_sq` writes `Δ = 16 (A B (A + B))²`.
 * `TauCeti.isElliptic_freyCurve_iff` and `TauCeti.isElliptic_freyCurve_iff_ne_zero`: the curve is
   elliptic exactly when `2`, `A`, `B` and `A + B` are units, respectively, over a field of
   characteristic not `2`, nonzero.
+* `TauCeti.isElliptic_baseChange_freyCurve`: the Frey curve of integers `A` and `B` is elliptic
+  over `ℚ` when `A B (A + B) ≠ 0`.
 * `TauCeti.freyCurve_j`: its `j`-invariant is `256 (A² + A B + B²)³ / (A² B² (A + B)²)`.
 * `TauCeti.smul_freyCurve_eq_freyCurveModel`: the change of variables `x = 4 x'`,
   `y = 8 y' + 4 x'` carries `freyCurve (4 α - 1) (16 β)` to `freyCurveModel α β`.
@@ -160,6 +162,11 @@ theorem freyCurve_Δ : (freyCurve A B).Δ = 16 * A ^ 2 * B ^ 2 * (A + B) ^ 2 := 
   simp [Δ]
   ring
 
+/-- The discriminant of the Frey curve is `16 (A B (A + B))²`. -/
+theorem freyCurve_Δ_eq_mul_sq : (freyCurve A B).Δ = 16 * (A * B * (A + B)) ^ 2 := by
+  rw [freyCurve_Δ]
+  ring
+
 /-- The image of a Frey curve under a ring homomorphism is the Frey curve of the images. -/
 @[simp]
 theorem map_freyCurve {S : Type*} [CommRing S] (f : R →+* S) :
@@ -236,8 +243,7 @@ theorem freyCurve_Δ_notMem_or_c₄_notMem {A B : R} (hAB : IsCoprime A B) {P : 
     [hP : P.IsPrime] (h2 : (2 : R) ∉ P) : (freyCurve A B).Δ ∉ P ∨ (freyCurve A B).c₄ ∉ P := by
   have h16 : (16 : R) ∉ P := fun h ↦ h2 (hP.mem_of_pow_mem 4 (by norm_num at h ⊢; exact h))
   obtain ⟨u, w, huw⟩ := hAB.mul_mul_add_sq_add_mul_add_sq
-  rw [freyCurve_Δ, freyCurve_c₄, or_iff_not_and_not, not_not, not_not,
-    show 16 * A ^ 2 * B ^ 2 * (A + B) ^ 2 = 16 * (A * B * (A + B)) ^ 2 by ring]
+  rw [freyCurve_Δ_eq_mul_sq, freyCurve_c₄, or_iff_not_and_not, not_not, not_not]
   rintro ⟨hΔ, hc₄⟩
   refine hP.ne_top ((Ideal.eq_top_iff_one P).2 (huw ▸ P.add_mem (P.mul_mem_left u ?_)
     (P.mul_mem_left w ((hP.mem_or_mem hc₄).resolve_left h16))))
@@ -358,12 +364,19 @@ section Int
 
 open IsDedekindDomain HeightOneSpectrum
 
+/-- The Frey curve of integers `A` and `B` with `A B (A + B) ≠ 0` is elliptic over `ℚ`. -/
+theorem isElliptic_baseChange_freyCurve {A B : ℤ} (h : A * B * (A + B) ≠ 0) :
+    ((freyCurve A B).baseChange ℚ).IsElliptic := by
+  rw [baseChange, map_freyCurve, isElliptic_freyCurve_iff_ne_zero two_ne_zero]
+  simp only [algebraMap_int_eq, eq_intCast, ne_eq, Int.cast_eq_zero, ← Int.cast_add]
+  exact ⟨left_ne_zero_of_mul (left_ne_zero_of_mul h), right_ne_zero_of_mul (left_ne_zero_of_mul h),
+    right_ne_zero_of_mul h⟩
+
 /-- **`2¹²` divides the discriminant `16 (A B (A + B))²` of the Frey curve over `ℤ` exactly when
 `16` divides `A B (A + B)`**, since `2¹² = 16 · 16²`. -/
 theorem two_pow_twelve_dvd_freyCurve_Δ_iff {A B : ℤ} :
     2 ^ 12 ∣ (freyCurve A B).Δ ↔ 16 ∣ A * B * (A + B) := by
-  rw [freyCurve_Δ, show (2 : ℤ) ^ 12 = 16 * 16 ^ 2 by norm_num,
-    show 16 * A ^ 2 * B ^ 2 * (A + B) ^ 2 = 16 * (A * B * (A + B)) ^ 2 by ring,
+  rw [freyCurve_Δ_eq_mul_sq, show (2 : ℤ) ^ 12 = 16 * 16 ^ 2 by norm_num,
     mul_dvd_mul_iff_left (by norm_num), Int.pow_dvd_pow_iff two_ne_zero]
 
 /-- **The Frey equation is globally minimal over `ℤ` when `16 ∤ A B (A + B)`**, for coprime `A`
@@ -384,7 +397,7 @@ theorem isGlobalMinimal_baseChange_freyCurve {A B : ℤ} (hAB : IsCoprime A B)
       ← not_le, show (-12 : ℤ) = -((12 : ℕ) : ℤ) by norm_num, intValuation_le_pow_iff_dvd, hv,
       Ideal.span_singleton_pow, Ideal.span_singleton_dvd_span_singleton_iff_dvd,
       two_pow_twelve_dvd_freyCurve_Δ_iff]
-  · exact isMinimal_baseChange_of_notMem _ (freyCurve_Δ_notMem_or_c₄_notMem hAB h2)
+  · exact isMinimal_baseChange_of_Δ_notMem_or_c₄_notMem _ (freyCurve_Δ_notMem_or_c₄_notMem hAB h2)
 
 /-- **The minimal discriminant of the Frey curve is `16 (A B (A + B))²` when
 `16 ∤ A B (A + B)`**, for coprime `A` and `B`: the Frey equation is then globally minimal. -/
@@ -394,8 +407,7 @@ theorem minimalDiscriminantIdeal_freyCurve_of_not_dvd {A B : ℤ} (hAB : IsCopri
       Ideal.span {16 * (A * B * (A + B)) ^ 2} := by
   rw [minimalDiscriminantIdeal_eq_span_of_isGlobalMinimal
     (isGlobalMinimal_baseChange_freyCurve hAB h16) (d := (freyCurve A B).Δ)
-    (by rw [baseChange, map_Δ]), freyCurve_Δ]
-  ring_nf
+    (by rw [baseChange, map_Δ]), freyCurve_Δ_eq_mul_sq]
 
 end Int
 

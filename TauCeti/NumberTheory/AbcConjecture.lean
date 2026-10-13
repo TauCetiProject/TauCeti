@@ -77,25 +77,10 @@ open UniqueFactorizationMonoid
 
 namespace TauCeti
 
-/-- **The abc conjecture** (Masser, Oesterlé): for every `ε > 0` there is a constant `C` such that
-`max(|a|, |b|, |c|) ≤ C · rad(a b c) ^ (1 + ε)` for all coprime integers `a` and `b` with
-`a + b = c`. The radical is taken in `ℕ`, of `|a b c|`. -/
-def AbcConjecture : Prop :=
-  ∀ ε : ℝ, 0 < ε → ∃ C : ℝ, ∀ a b c : ℤ, IsCoprime a b → a + b = c →
-    ((max (max a.natAbs b.natAbs) c.natAbs : ℕ) : ℝ) ≤
-      C * ((radical (a * b * c).natAbs : ℕ) : ℝ) ^ (1 + ε)
-
-/-- The abc conjecture, unfolded. -/
-theorem abcConjecture_iff : AbcConjecture ↔
-    ∀ ε : ℝ, 0 < ε → ∃ C : ℝ, ∀ a b c : ℤ, IsCoprime a b → a + b = c →
-      ((max (max a.natAbs b.natAbs) c.natAbs : ℕ) : ℝ) ≤
-        C * ((radical (a * b * c).natAbs : ℕ) : ℝ) ^ (1 + ε) :=
-  Iff.rfl
-
 /-- **The abc conjecture with exponent `κ`**: for every `ε > 0` there is a constant `C` such that
 `max(|a|, |b|, |c|) ≤ C · rad(a b c) ^ (κ + ε)` for all coprime integers `a` and `b` with
-`a + b = c`. The abc conjecture is the case `κ = 1`
-(`TauCeti.abcConjecture_iff_abcConjectureWithExponent_one`), and the statement becomes weaker as
+`a + b = c`. The radical is taken in `ℕ`, of `|a b c|`. The abc conjecture is the case `κ = 1`
+(`TauCeti.AbcConjecture`), and the statement becomes weaker as
 `κ` grows (`TauCeti.AbcConjectureWithExponent.mono`). -/
 def AbcConjectureWithExponent (κ : ℝ) : Prop :=
   ∀ ε : ℝ, 0 < ε → ∃ C : ℝ, ∀ a b c : ℤ, IsCoprime a b → a + b = c →
@@ -107,6 +92,19 @@ theorem abcConjectureWithExponent_iff (κ : ℝ) : AbcConjectureWithExponent κ 
     ∀ ε : ℝ, 0 < ε → ∃ C : ℝ, ∀ a b c : ℤ, IsCoprime a b → a + b = c →
       ((max (max a.natAbs b.natAbs) c.natAbs : ℕ) : ℝ) ≤
         C * ((radical (a * b * c).natAbs : ℕ) : ℝ) ^ (κ + ε) :=
+  Iff.rfl
+
+/-- **The abc conjecture** (Masser, Oesterlé): for every `ε > 0` there is a constant `C` such that
+`max(|a|, |b|, |c|) ≤ C · rad(a b c) ^ (1 + ε)` for all coprime integers `a` and `b` with
+`a + b = c`. It is the abc conjecture with exponent `1`. -/
+def AbcConjecture : Prop :=
+  AbcConjectureWithExponent 1
+
+/-- The abc conjecture, unfolded. -/
+theorem abcConjecture_iff : AbcConjecture ↔
+    ∀ ε : ℝ, 0 < ε → ∃ C : ℝ, ∀ a b c : ℤ, IsCoprime a b → a + b = c →
+      ((max (max a.natAbs b.natAbs) c.natAbs : ℕ) : ℝ) ≤
+        C * ((radical (a * b * c).natAbs : ℕ) : ℝ) ^ (1 + ε) :=
   Iff.rfl
 
 /-- The abc conjecture is the abc conjecture with exponent `1`. -/
