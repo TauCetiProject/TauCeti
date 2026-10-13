@@ -28,9 +28,6 @@ projective orbit morphisms across scalar extensions.
 ## References
 
 * M. Sweedler, *Hopf Algebras*, Chapter 2.
-
-This supplies the matrix-coefficient compatibility needed for base-change invariance of
-geometric unipotence in Layer 5 of the ReductiveGroups roadmap.
 -/
 
 public section

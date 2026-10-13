@@ -9,6 +9,7 @@ public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.RationalSubset.Basic
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Support
 
 import TauCeti.AlgebraicGeometry.AdicSpace.Spa.RationalSubset.Basis
+import TauCeti.AlgebraicGeometry.AdicSpace.SpvOfIdeal.Spectral
 import TauCeti.RingTheory.Huber.OpenIdeal
 import TauCeti.RingTheory.Valuation.ValuativeRel.BigOperators
 
@@ -33,21 +34,31 @@ bounds `v(t)` by `v(sₖ)`. No point kills all of `S`, so `S` generates the unit
 
 That last step uses, at each point, an element of every `Tᵢ` that the point does not kill, which is
 automatic when every `Tᵢ` generates the unit ideal. In a Tate ring every open ideal is the unit
-ideal, so every rational subset has such a presentation.
+ideal, so every rational subset has such a presentation. Over a general Huber ring a point need
+not have a rational neighbourhood inside the cover with numerators generating the unit ideal (in
+`Spa(ℤ_p, ℤ_p)` the generic point is open, and no such neighbourhood is contained in it). Instead,
+each point `x` is replaced by its restriction `x|cΓ_x` to its characteristic subgroup
+(`restrictToIdeal` along the unit ideal), a specialisation of `x` in `Spa (A, A⁺)` that lies in
+`Spv(A, A)`. Around a point of `Spv(A, A)` the denominator of a rational neighbourhood can be scaled
+to value at least `1` and `1` adjoined to its numerators, and the resulting rational subset also
+contains its generization `x`.
 
 ## Main results
 
 * `TauCeti.ValuationSpectrum.exists_span_eq_top_forall_rationalSubset_subset` : a cover of
   `Spa (A, A⁺)` by rational subsets `R(Tᵢ/sᵢ)`, each `Tᵢ` generating the unit ideal, has a standard
   rational refinement.
-* `TauCeti.ValuationSpectrum.exists_span_eq_top_forall_rationalSubset_subset_of_isTateRing` :
-  **Wedhorn Lemma 7.54** over a complete Hausdorff Tate ring, for an arbitrary open cover.
+* `ValuationSpectrum.exists_span_eq_top_forall_rationalSubset_subset_of_isOpen_of_iUnion_eq_univ`:
+  **Wedhorn Lemma 7.54** over a complete Hausdorff Huber ring, for an arbitrary open cover.
 
 ## References
 
 * [T. Wedhorn, *Adic Spaces*][wedhorn_adic] (arXiv:1910.05934v1), Corollary 7.53 and Lemma 7.54.
 * R. Huber, *A generalization of formal schemes and rigid analytic varieties*, Math. Z. 217 (1994),
   Lemma 2.6.
+* S. Morel, *Adic spaces*, lecture notes, Princeton, Proposition IV.2.3.3(i), whose proof supplies
+  the reduction of an arbitrary open cover to rational subsets with unit-ideal numerators, through
+  the minimal horizontal specialisation `x|cΓ_x` and Theorem I.4.2.4.
 * [AINTLIB](https://github.com/CBirkbeck/AINTLIB), branch `dev/adic-spaces`, at commit `37bbdaeb9`,
   `projects/AdicSpaces/Adic spaces/WedhornCechAcyclicity.lean`, section "Lemma 7.54".
 
@@ -134,10 +145,9 @@ inside one of the `R(Tᵢ/sᵢ)`. The cover may be infinite, since `Spa (A, A⁺
 `R(S/f)` cover `Spa (A, A⁺)` by `spa_eq_biUnion_rationalSubset_of_span_eq_top`, so they form a
 standard rational cover refining the given one.
 
-Wedhorn's rational subsets only ask the numerator ideals `Tᵢ · A` to be open, which is weaker. Over
-a Tate ring an open ideal is the unit ideal, and
-`exists_span_eq_top_forall_rationalSubset_subset_of_isTateRing` uses this to refine an arbitrary
-open cover of `spa Aplus` when `A` is a complete Hausdorff Tate ring. -/
+Wedhorn's rational subsets only ask the numerator ideals `Tᵢ · A` to be open, which is weaker.
+`exists_span_eq_top_forall_rationalSubset_subset_of_isOpen_of_iUnion_eq_univ` reduces an
+arbitrary open cover of `spa Aplus` to this case when `A` is a complete Hausdorff Huber ring. -/
 theorem exists_span_eq_top_forall_rationalSubset_subset [IsHuberRing A] (Aplus : Subring A)
     (hplus : IsRingOfIntegralElements Aplus) {ι : Type*} {T : ι → Finset A} {s : ι → A}
     (hT : ∀ i, Ideal.span (T i : Set A) = ⊤)
@@ -159,27 +169,49 @@ theorem exists_span_eq_top_forall_rationalSubset_subset [IsHuberRing A] (Aplus :
   obtain ⟨σ, hσ, ⟨k, hk⟩, rfl⟩ := mem_refinementProducts.mp hf
   exact ⟨k, rationalSubset_refinementProducts_subset Aplus hcov' hσ hk⟩
 
-/-- **Wedhorn Lemma 7.54** over a complete Hausdorff Tate ring: every open cover of `Spa (A, A⁺)`
-has a standard rational refinement, a finite `S` generating the unit ideal with every `R(S/f)`,
-`f ∈ S`, inside a member of the cover. The `R(S/f)` cover `Spa (A, A⁺)` by
-`spa_eq_biUnion_rationalSubset_of_span_eq_top`. Over any complete Hausdorff Huber ring,
-`exists_span_eq_top_forall_rationalSubset_subset` gives such a refinement of a cover by rational
-subsets whose numerator sets generate the unit ideal. -/
-theorem exists_span_eq_top_forall_rationalSubset_subset_of_isTateRing [IsTateRing A]
-    (Aplus : Subring A) (hplus : IsRingOfIntegralElements Aplus) {ι : Type*}
+/-- **Wedhorn Lemma 7.54** (Huber Lemma 2.6): over a complete Hausdorff Huber ring, every open
+cover of `Spa (A, A⁺)` has a standard rational refinement, a finite `S` generating the unit ideal
+with every `R(S/f)`, `f ∈ S`, inside a member of the cover. The `R(S/f)` cover `Spa (A, A⁺)` by
+`spa_eq_biUnion_rationalSubset_of_span_eq_top`.
+
+A point `x` need not have a rational neighbourhood inside the cover whose numerators generate the
+unit ideal. Its restriction `r(x) = x|cΓ_x` to the characteristic subgroup, the restriction
+`restrictToIdeal` along the unit ideal, does: `r(x)` lies again in `Spa (A, A⁺)` and has full
+characteristic group, so around it the denominator of a rational neighbourhood can be scaled to
+value at least `1` and `1` added to the numerators. The resulting rational subset also contains
+`x`, of which `r(x)` is a specialisation, and `exists_span_eq_top_forall_rationalSubset_subset`
+refines the cover by these subsets. -/
+theorem exists_span_eq_top_forall_rationalSubset_subset_of_isOpen_of_iUnion_eq_univ
+    [IsHuberRing A] (Aplus : Subring A) (hplus : IsRingOfIntegralElements Aplus) {ι : Type*}
     (V : ι → Set (spa Aplus)) (hV : ∀ i, IsOpen (V i)) (hcov : ⋃ i, V i = Set.univ) :
     ∃ S : Finset A, Ideal.span (S : Set A) = ⊤ ∧
       ∀ f ∈ S, ∃ i, Subtype.val ⁻¹' rationalSubset Aplus S f ⊆ V i := by
-  -- each point `x` has a rational neighbourhood `W x`, presented as `R(T x/s x)`, inside a member
+  have hfg : ∃ J : Ideal A, J.FG ∧ (⊤ : Ideal A).radical = J.radical := ⟨⊤, Ideal.fg_top A, rfl⟩
+  -- the restriction `r x` of each point to its characteristic subgroup stays in the spectrum
+  let r : spa Aplus → spa Aplus := fun x ↦
+    ⟨restrictToIdeal x ⊤ hfg, restrictToIdeal_mem_spa x.2 ⊤ hfg⟩
+  -- `r x` has a rational neighbourhood `W x`, presented as `R(T x/s x)`, inside a member
   -- `V (j x)` of the cover
-  choose j W hW hxW hWV using fun x ↦ (Set.iUnion_eq_univ_iff.mp hcov x).imp fun i hi ↦
+  choose j W hW hxW hWV using fun x ↦ (Set.iUnion_eq_univ_iff.mp hcov (r x)).imp fun i hi ↦
     (isTopologicalBasis_spaRationalFamily Aplus).exists_subset_of_mem_open hi (hV i)
-  choose T s hT hWT using fun x ↦ mem_spaRationalFamily_iff.mp (hW x)
+  choose T s _ hWT using fun x ↦ mem_spaRationalFamily_iff.mp (hW x)
   obtain rfl := funext hWT
-  -- in a Tate ring an open ideal is the unit ideal, so these rational neighbourhoods meet the
-  -- hypothesis of `exists_span_eq_top_forall_rationalSubset_subset`
+  -- since `r x` has full characteristic group, `R(T x/s x)` contains a rational open around
+  -- `r x` whose numerators contain `1`
+  choose T' u h1 hrT' hT'T using fun x : spa Aplus ↦
+    exists_one_mem_basicOpenFinset_subset_of_characteristicSubgroup_eq_top
+      (mem_spvOfIdeal_top_iff.mp (restrictToIdeal_mem_spvOfIdeal (x : Spv A) ⊤ hfg))
+      ((mem_basicOpenFinset_iff _ _ _).mpr ((mem_rationalSubset_iff _ _ _ _).mp (hxW x)).2)
+  -- `x` lies in the same rational open, since membership only depends on `r x`
+  have hx : ∀ x : spa Aplus, (x : Spv A) ∈ rationalSubset Aplus (T' x) (u x) := fun x ↦ by
+    rw [rationalSubset_def, ← restrictToIdealCodRestrict_preimage ⊤ hfg
+      (isAdmissible_of_one_mem (h1 x))]
+    exact ⟨x.2, by simpa only [Set.mem_preimage, coe_restrictToIdealCodRestrict] using hrT' x⟩
   obtain ⟨S, hS, hsub⟩ := exists_span_eq_top_forall_rationalSubset_subset Aplus hplus
-    (fun x ↦ IsTateRing.eq_top_of_isOpen (hT x)) fun v hv ↦ Set.mem_iUnion_of_mem _ (hxW ⟨v, hv⟩)
-  exact ⟨S, hS, fun f hf ↦ (hsub f hf).imp' j fun x hx ↦ (Set.preimage_mono hx).trans (hWV x)⟩
+    (fun x ↦ (Ideal.eq_top_iff_one _).mpr (Ideal.subset_span (h1 x)))
+    fun v hv ↦ Set.mem_iUnion_of_mem _ (hx ⟨v, hv⟩)
+  refine ⟨S, hS, fun f hf ↦ (hsub f hf).imp' j fun x hx' y hy ↦ hWV x ?_⟩
+  simp only [rationalSubset_def] at hx' hy ⊢
+  exact Set.inter_subset_inter_right _ (hT'T x) (hx' hy)
 
 end TauCeti.ValuationSpectrum
