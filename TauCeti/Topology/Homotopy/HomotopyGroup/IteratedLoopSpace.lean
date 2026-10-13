@@ -39,6 +39,10 @@ theorem add_succ_add_succ_eq (m k : ℕ) : m + 1 + 1 + k = m + 1 + (k + 1) := by
 
 /-- **The homotopy groups of the `k`-fold loop space are the homotopy groups of the space,
 shifted by `k`**: `π_(m + 1)(Ω^[k] X) ≃* π_(m + 1 + k)(X)`. -/
+-- Both cases typecheck by definitional unfolding of the exposed `iteratedLoopSpace` and
+-- `loopSpace`: `Ω^[0] X` is `X`, and `Ω^[k + 1] X` has carrier `Path _ _` (Mathlib's `Ω`) based
+-- at `Path.refl _`, which is the source of `pathLoopSpaceMulEquiv`; its target `π_ (m + 2)` is
+-- `π_ (m + 1 + 1)` by `Nat` literal reduction.
 noncomputable def piIteratedLoopSpaceMulEquiv (X : BasedTopologicalSpace.{u}) :
     (k m : ℕ) →
       π_ (m + 1) (X.iteratedLoopSpace k).carrier (X.iteratedLoopSpace k).basepoint ≃*
