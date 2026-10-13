@@ -200,14 +200,10 @@ theorem discreteTopology_range_fullAdelicSpecialOrthogonalDiagonal_of_finrank_le
     (hV : Module.finrank ℚ V ≤ 1) :
     DiscreteTopology U.fullAdelicSpecialOrthogonalDiagonal.range := by
   have hbot := specialOrthogonalGroup_eq_bot_of_finrank_le_one Q hV
-  have hfinite : (Set.univ : Set (specialOrthogonalGroup Q)).Finite :=
-    (Set.finite_singleton 1).subset fun g _ ↦ by
-      rw [Set.mem_singleton_iff]
-      apply Subtype.ext
-      exact Subgroup.mem_bot.mp (hbot ▸ g.2)
-  apply MonoidHom.discreteTopology_range_of_finite_preimage
-    U.fullAdelicSpecialOrthogonalDiagonal Filter.univ_mem
-  simpa only [Set.preimage_univ] using hfinite
+  let _ : Subsingleton (specialOrthogonalGroup Q) := hbot ▸ inferInstance
+  let _ : Subsingleton U.fullAdelicSpecialOrthogonalDiagonal.range :=
+    (Set.subsingleton_coe _).mpr U.fullAdelicSpecialOrthogonalDiagonal.subsingleton_coe_range
+  exact Subsingleton.discreteTopology
 
 /-- Rational isometries of a nondegenerate rational quadratic space form a discrete subgroup of
 the full adelic orthogonal group for every compatible compact-open reference family. -/
