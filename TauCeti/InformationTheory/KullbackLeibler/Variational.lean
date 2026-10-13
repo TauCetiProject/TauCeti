@@ -9,7 +9,6 @@ public import Mathlib.InformationTheory.KullbackLeibler.Basic
 public import Mathlib.MeasureTheory.Function.ContinuousMapDense
 public import Mathlib.MeasureTheory.Measure.ProbabilityMeasure
 public import Mathlib.MeasureTheory.Measure.Tight
-public import TauCeti.MeasureTheory.Measure.Decomposition.RadonNikodym
 
 /-!
 # The Donsker–Varadhan variational formula for relative entropy
@@ -144,11 +143,11 @@ theorem ae_mul_sub_indicator_exp_sub_one_le_klFun [SigmaFinite μ] [SigmaFinite 
     {s : Set α} (hs : ∀ᵐ x ∂μ, x ∈ s) :
     ∀ᵐ x ∂ν, (μ.rnDeriv ν x).toReal * f x - (s.indicator (fun x ↦ exp (f x)) x - 1) ≤
       klFun (μ.rnDeriv ν x).toReal := by
-  filter_upwards [Measure.ae_notMem_imp_rnDeriv_eq_zero hs] with x hx
+  filter_upwards [Measure.ae_rnDeriv_ne_zero_imp_of_ae ν hs] with x hx
   by_cases hxs : x ∈ s
   · rw [Set.indicator_of_mem hxs]
     exact mul_sub_exp_sub_one_le_klFun ENNReal.toReal_nonneg _
-  · simp [Set.indicator_of_notMem hxs, hx hxs, klFun_zero]
+  · simp [Set.indicator_of_notMem hxs, not_ne_iff.1 (mt hx hxs), klFun_zero]
 
 /-- **Variational lower bound with a truncated exponential.** If `μ` is concentrated on `s`,
 then `∫ f dμ - ∫ (s.indicator (exp ∘ f) - 1) dν ≤ klDiv μ ν`. The truncation reads `f` as `-∞`
@@ -195,13 +194,13 @@ theorem integral_sub_integral_indicator_exp_sub_one_eq_toReal_klDiv_iff [IsFinit
       hef.aemeasurable.ennreal_ofReal
   rw [hdens]
   refine Filter.eventually_congr (((Measure.rnDeriv_lt_top μ ν).and
-    (Measure.ae_notMem_imp_rnDeriv_eq_zero hs)).mono fun x ⟨hx, hx0⟩ ↦ ?_)
+    (Measure.ae_rnDeriv_ne_zero_imp_of_ae ν hs)).mono fun x ⟨hx, hx0⟩ ↦ ?_)
   simp only [Pi.zero_apply]
   by_cases hxs : x ∈ s
   · rw [Set.indicator_of_mem hxs, sub_eq_zero, eq_comm,
       mul_sub_exp_sub_one_eq_klFun_iff ENNReal.toReal_nonneg, ← ENNReal.ofReal_eq_ofReal_iff
         ENNReal.toReal_nonneg (exp_pos _).le, ENNReal.ofReal_toReal hx.ne]
-  · simp [Set.indicator_of_notMem hxs, hx0 hxs, klFun_zero]
+  · simp [Set.indicator_of_notMem hxs, not_ne_iff.1 (mt hx0 hxs), klFun_zero]
 
 /-- Against a probability measure, the mass-corrected objective is at most the
 Donsker–Varadhan objective, since `log z ≤ z - 1`. -/
