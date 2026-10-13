@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: The Tau Ceti contributors, Wentao Li
 -/
 module
 
@@ -85,18 +85,5 @@ theorem zigzagAlgebraGradedProjectiveClass_def (i : V) :
         ⟨zigzagAlgebraGradedProjective k G i,
           gradedFiniteProjectiveModules_zigzagAlgebraGradedProjective k G i⟩ :=
   zigzagAlgebraGradedProjectiveClass.eq_def k G i
-
-/-- Internal shift by `d` multiplies a vertex-projective class by `qᵈ`. -/
-theorem zigzagAlgebraGradedProjectiveClass_shift (i : V) (d : ℤ) :
-    LaurentK0.of.{max u w}
-      (gradedFiniteProjectiveModulesExactStructure (zigzagAlgebraIntegerGrade k G))
-      ⟨(zigzagAlgebraGradedProjective k G i).shiftObj d,
-        gradedFiniteProjectiveModules_shiftObj
-          (gradedFiniteProjectiveModules_zigzagAlgebraGradedProjective k G i) d⟩ =
-      (LaurentPolynomial.T d : LaurentPolynomial ℤ) •
-        zigzagAlgebraGradedProjectiveClass k G i := by
-  exact laurentK0_projective_of_shiftObj
-    ⟨zigzagAlgebraGradedProjective k G i,
-      gradedFiniteProjectiveModules_zigzagAlgebraGradedProjective k G i⟩ d
 
 end TauCeti
