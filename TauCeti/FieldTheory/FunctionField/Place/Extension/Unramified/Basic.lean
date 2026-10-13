@@ -55,7 +55,10 @@ variable (k F) in
 place `P = P' ∩ F` below it is one and its residue extension `F'_{P'} / F_P` is separable.
 
 Stichtenoth (Definition 3.1.5) only asks for `e(P' ∣ P) = 1`; the two notions agree when the
-residue field of `P` is perfect, for instance when the constant field is perfect. -/
+residue field of `P` is perfect, for instance when the constant field is perfect. The definition
+needs only an integral extension `F' / F`; for a finite separable one it agrees with Mathlib's
+`Algebra.IsUnramifiedAt` for the local model at the centre of `P'`, by
+`TauCeti.Place.isUnramified_iff_isUnramifiedAt`. -/
 def IsUnramified (P' : Place k' F') : Prop :=
   ramificationIdx F P' = 1 ∧ Algebra.IsSeparable (P'.restrict k F).ResidueField P'.ResidueField
 
