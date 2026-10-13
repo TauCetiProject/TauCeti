@@ -22,8 +22,10 @@ itself is controlled by the distance between the centres. The measure of an affi
 ## Main results
 
 * `MeasureTheory.Measure.addHaar_real_ball_of_pos`: the real measure of a positive-radius ball.
-* `MeasureTheory.Measure.addHaar_closedBall_ae_eq_ball`: a closed ball of positive radius agrees
-  with the open ball up to a null set.
+* `MeasureTheory.Measure.addHaar_closedBall_ae_eq_ball`: closed and open balls agree up to a null
+  set in a nontrivial space.
+* `MeasureTheory.Measure.addHaar_closedBall_ae_eq_ball_of_ne_zero`: the same agreement at nonzero
+  radius, including trivial spaces.
 * `MeasureTheory.Measure.addHaar_real_closedBall_div_le`: a closed ball of radius `R ≤ c r` has
   at most `cⁿ` times the measure of a closed ball of radius `r`.
 * `MeasureTheory.Measure.addHaar_real_ball_sdiff_ball_le`: the part of a ball outside a ball of the
@@ -50,16 +52,27 @@ theorem _root_.MeasureTheory.Measure.addHaar_real_ball_of_pos
   rw [measureReal_def, mu.addHaar_ball_of_pos x hr, ENNReal.toReal_mul,
     ENNReal.toReal_ofReal (by positivity), ← measureReal_def]
 
-/-- A closed ball of positive radius agrees with the open ball of the same radius up to a null
-set. -/
+/-- Closed and open balls agree up to a null set in a nontrivial finite-dimensional space. -/
 theorem _root_.MeasureTheory.Measure.addHaar_closedBall_ae_eq_ball
     {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
-    [MeasurableSpace E] [BorelSpace E] (mu : Measure E) [mu.IsAddHaarMeasure]
-    (x : E) {r : ℝ} (hr : 0 < r) :
+    [Nontrivial E] [MeasurableSpace E] [BorelSpace E]
+    (mu : Measure E) [mu.IsAddHaarMeasure] (x : E) (r : ℝ) :
     closedBall x r =ᵐ[mu] ball x r :=
   (ae_eq_of_subset_of_measure_ge ball_subset_closedBall
-    (by rw [mu.addHaar_closedBall x hr.le, mu.addHaar_ball_of_pos x hr])
+    (mu.addHaar_closedBall_eq_addHaar_ball x r).le
     measurableSet_ball.nullMeasurableSet measure_closedBall_lt_top.ne).symm
+
+/-- At nonzero radius, closed and open balls agree up to a null set even in a trivial space. -/
+theorem _root_.MeasureTheory.Measure.addHaar_closedBall_ae_eq_ball_of_ne_zero
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+    [MeasurableSpace E] [BorelSpace E]
+    (mu : Measure E) [mu.IsAddHaarMeasure] (x : E) (r : ℝ) (hr : r ≠ 0) :
+    closedBall x r =ᵐ[mu] ball x r := by
+  rcases subsingleton_or_nontrivial E with hE | hE
+  · apply Filter.EventuallyEq.of_eq
+    ext y
+    simp [mem_closedBall, mem_ball, Subsingleton.elim y x, le_iff_lt_or_eq, Ne.symm hr]
+  · exact mu.addHaar_closedBall_ae_eq_ball x r
 
 /-- A closed ball of radius `R ≤ c r` has at most `cⁿ` times the real measure of a closed ball of
 radius `r > 0`, whatever their centres, where `n` is the dimension. -/

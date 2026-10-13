@@ -7,9 +7,9 @@ module
 
 public import TauCeti.Probability.Exchangeability.CondExp
 public import TauCeti.Probability.Process.Cylinder
-public import TauCeti.Probability.DeFinetti.DirectingMeasure.Basic
+public import TauCeti.Probability.Process.Tail.ConditionalLaw.Basic
 import TauCeti.Probability.DeFinetti.ViaL2.WindowProduct
-import TauCeti.Probability.DeFinetti.DirectingMeasure.Integral
+import TauCeti.Probability.Process.Tail.ConditionalLaw.Integral
 
 /-!
 # The finite-block factorization, via `L²`
@@ -18,13 +18,13 @@ For a contractable process on a standard Borel state space, the conditional law 
 strictly monotone block, given the process tail, factorizes into the directing measure's marginals:
 
 ```text
-μ[blockIndicatorProd X k B | tailProcess X] =ᵐ[μ] ∏ i, (directingMeasure μ X ·).real (B i).
+μ[blockIndicatorProd X k B | tailProcess X] =ᵐ[μ] ∏ i, (tailConditionalMeasure μ X ·).real (B i).
 ```
 
 This is the single theorem the file provides. Integrating it over a tail event is what supplies
 `hcore`, the hypothesis of `conditionallyIIDWith_of_measure_inter_blockCylinder_eq_setLIntegral`,
-and hence `ConditionallyIIDWith μ X (directingProbabilityMeasure μ X)`; that integration step is
-separate and does not live here.
+and hence `ConditionallyIIDWith μ X (tailConditionalProbabilityMeasure μ X)`; that integration step
+is separate and does not live here.
 
 ## Why this route exists
 
@@ -43,8 +43,8 @@ tuple strictly monotone.
 
 *Averaging.* `prod_blockAverage_window_eq_expect` writes a product of disjoint-window block
 averages as a plain average over those tuples, so conditioning it on the tail returns the single
-common value. Meanwhile the same product converges in `L¹` to `∏ i, (directingMeasure ω).real (B i)`
-by the disjoint-window convergence theorem in `ViaL2/WindowProduct.lean`.
+common value. Meanwhile the same product converges in `L¹` to `∏ i, (tailConditionalMeasure ω).real
+(B i)` by the disjoint-window convergence theorem in `ViaL2/WindowProduct.lean`.
 A constant sequence that converges must equal its limit, which is the factorization.
 
 ## Relation to the martingale route
@@ -119,19 +119,19 @@ theorem condExp_blockIndicatorProd_strictMono_tailProcess_ae_eq_prod_directingMe
     (hX_meas : ∀ n, Measurable (X n)) {r : ℕ} {k : Fin r → ℕ} (hk : StrictMono k)
     {B : Fin r → Set α} (hB : ∀ i, MeasurableSet (B i)) :
     μ[blockIndicatorProd X k B | tailProcess X]
-      =ᵐ[μ] fun ω => ∏ i, (directingMeasure μ X ω).real (B i) := by
+      =ᵐ[μ] fun ω => ∏ i, (tailConditionalMeasure μ X ω).real (B i) := by
   classical
   rw [funext fun ω => blockIndicatorProd_apply X k B ω]
   have hTail : tailProcess X ≤ (inferInstance : MeasurableSpace Ω) :=
     tailProcess_le_ambient 0 fun c _ => hX_meas c
   set Y : Fin r → ℕ → Ω → ℝ := fun i c ω => (B i).indicator (fun _ => (1 : ℝ)) (X c ω)
   set Z : Ω → ℝ := fun ω => ∏ i, Y i (k i) ω
-  set W : Ω → ℝ := fun ω => ∏ i, (directingMeasure μ X ω).real (B i)
+  set W : Ω → ℝ := fun ω => ∏ i, (tailConditionalMeasure μ X ω).real (B i)
   -- `W` is tail-measurable, so it is its own conditional expectation.
   have hW_tail : Measurable[tailProcess X] W :=
     Finset.measurable_prod _ fun i _ =>
-      (measurable_tailProcess_directingMeasure_coe (hB i)).ennreal_toReal
-  have hW_int : Integrable W μ := integrable_prod_directingMeasure_real hTail hB
+      (measurable_tailProcess_tailConditionalMeasure_coe (hB i)).ennreal_toReal
+  have hW_int : Integrable W μ := integrable_prod_tailConditionalMeasure_real hTail hB
   have hcondW : μ[W | tailProcess X] =ᵐ[μ] W := by
     rw [condExp_of_stronglyMeasurable hTail hW_tail.stronglyMeasurable hW_int]
   -- Each indicator block is `blockIndicatorProd` along its own selection, hence integrable.
