@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.FieldTheory.FunctionField.ConstantExtension.Algebraic
+public import TauCeti.FieldTheory.FunctionField.ConstantExtension.FiniteDescent
 public import TauCeti.FieldTheory.FunctionField.ConstantExtension.IntegralBasis
 public import TauCeti.FieldTheory.FunctionField.RiemannRoch.Conorm
 
@@ -26,6 +27,12 @@ basis of constants lie in `𝒪_P`; running over all places, the coordinates lie
 Together with the preservation of divisor degrees, the dimension identity is what transports the
 genus, the Riemann–Roch theorem and its consequences between `F / k` and `F' / k'`.
 
+For a separable algebraic extension `k' / k` that need not be finite, the multiples `n (z)_∞` of
+a pole divisor are defined in `F'` directly, without a conorm, and the same comparison holds for
+them: `L(n (z)_∞)` of `F' / k'` is the `k'`-span of the image of `L(n (z)_∞)` of `F / k`, and the
+two dimensions agree.  An element of the larger space is defined over a finite subextension `L` of
+`k' / k` (`ConstantExtension.FiniteDescent`), where the finite theorem applies to `F · L / L`.
+
 ## Main results
 
 * `TauCeti.repr_constantBasis_mem_riemannRochSpace`: the coordinates of an element of `L(Con D)`
@@ -36,6 +43,9 @@ genus, the Riemann–Roch theorem and its consequences between `F / k` and `F' /
 * `TauCeti.Divisor.finrank_mul_dim_le_finrank_mul_dim_conorm`: for an arbitrary finite constant
   field extension, separable or not and over any constant field, the inequality
   `[F' : F] · ℓ(D) ≤ [k' : k] · ℓ(Con D)`.
+* `TauCeti.riemannRochSpace_nsmul_poles_eq_span_of_constantCompositum_eq_top` and
+  `TauCeti.Divisor.dim_nsmul_poles_of_constantCompositum_eq_top`: the same for `n (z)_∞` along an
+  arbitrary separable algebraic constant field extension.
 
 ## Reference
 
@@ -196,5 +206,91 @@ theorem Divisor.finrank_mul_dim_le_finrank_mul_dim_conorm [FiniteDimensional k k
     exact Submodule.smul_mem _ _ (mem_riemannRochSpace_iff.2 fun P ↦ by simp)
   have hdim := Divisor.card_mul_dim_le_finrank_mul_dim_conorm_add hF' hc hc0 D
   rwa [add_zero, hκ] at hdim
+
+/-! ### Separable algebraic constant field extensions -/
+
+omit [FiniteDimensional F F'] in
+/-- **`L(n (z)_∞)` along a separable algebraic constant field extension** (Stichtenoth,
+Theorem 3.6.3(d), for pole divisors): if `k` is the exact constant field of `F` and
+`F' = F · k'` for a separable algebraic, possibly infinite, extension `k' / k`, then the
+Riemann–Roch space of `n (z)_∞` in `F' / k'` is the `k'`-span of the image of the Riemann–Roch
+space of `n (z)_∞` in `F / k`. -/
+theorem riemannRochSpace_nsmul_poles_eq_span_of_constantCompositum_eq_top
+    (hF : IsFunctionField k F) (hex : IsIntegrallyClosedIn k F)
+    (h : constantCompositum F k' F' = ⊤) (n : ℕ) (z : Fˣ) :
+    riemannRochSpace (n • Divisor.poles (hF.of_constantCompositum_eq_top h)
+        (Units.map (algebraMap F F' : F →* F') z)) =
+      Submodule.span k' (algebraMap F F' '' riemannRochSpace (n • Divisor.poles hF z)) := by
+  have hF' : IsFunctionField k' F' := hF.of_constantCompositum_eq_top h
+  have : Algebra.IsAlgebraic F F' := by
+    have halg := isAlgebraic_constantCompositum (k := k) (k' := k') (F := F) (F' := F')
+    rw [h] at halg
+    exact IntermediateField.topEquiv.isAlgebraic_iff.mp halg
+  refine le_antisymm (fun g hg ↦ ?_) (Submodule.span_le.2 ?_)
+  · -- `g` lies in `E = F · L` for a finite subextension `L` of `k' / k`
+    obtain ⟨L, hL, hgL⟩ := exists_finiteDimensional_constantSubfield_of_mem_constantCompositum
+      (k := k) (F := F) (h ▸ IntermediateField.mem_top : g ∈ constantCompositum F k' F')
+    let E := constantCompositum F L F'
+    let : Algebra L E := ((algebraMap L F').codRestrict E.toSubring fun c ↦
+      algebraMap_mem_constantCompositum F L F' c).toAlgebra
+    have : IsScalarTower L E F' := .of_algebraMap_eq fun _ ↦ rfl
+    have : IsScalarTower k F E := .of_algebraMap_eq fun c ↦
+      Subtype.ext (IsScalarTower.algebraMap_apply k F F' c)
+    have : IsScalarTower k L E := .of_algebraMap_eq fun c ↦
+      Subtype.ext (IsScalarTower.algebraMap_apply k L F' c)
+    have hE : constantCompositum F L E = ⊤ := (constantCompositum_eq_top_iff F L F' E).2 rfl
+    have : FiniteDimensional F E := finiteDimensional_of_constantCompositum_eq_top (k := k) hE
+    have hFE : IsFunctionField L E := hF.of_constantCompositum_eq_top hE
+    have : Algebra.IsIntegral E F' := Algebra.IsIntegral.tower_top F
+    have : Algebra.IsIntegral L k' := Algebra.IsIntegral.tower_top k
+    have hzE : Units.map (algebraMap E F' : E →* F') (Units.map (algebraMap F E : F →* E) z) =
+        Units.map (algebraMap F F' : F →* F') z := by
+      ext
+      exact (IsScalarTower.algebraMap_apply F E F' _).symm
+    -- in `E`, the element lies in `L(Con (n (z)_∞))`, which the finite theorem describes
+    have hgE : (⟨g, hgL⟩ : E) ∈ riemannRochSpace
+        (Divisor.conorm L E (n • Divisor.poles hF z)) := by
+      rw [map_nsmul, Divisor.conorm_poles L E hF hFE,
+        ← mem_riemannRochSpace_nsmul_poles_map_iff (k' := k') hFE hF', hzE]
+      exact hg
+    rw [riemannRochSpace_conorm_eq_span hex hE hFE] at hgE
+    have hmap := Submodule.mem_map_of_mem (f := (IsScalarTower.toAlgHom L E F').toLinearMap) hgE
+    rw [Submodule.map_span, ← Set.image_comp] at hmap
+    have himg : ⇑(IsScalarTower.toAlgHom L E F').toLinearMap ∘ ⇑(algebraMap F E) =
+        ⇑(algebraMap F F') := funext fun f ↦ (IsScalarTower.algebraMap_apply F E F' f).symm
+    rw [himg] at hmap
+    exact Submodule.span_le_restrictScalars L k' _ hmap
+  · rintro _ ⟨f, hf, rfl⟩
+    exact (mem_riemannRochSpace_nsmul_poles_map_iff hF hF' n z f).2 hf
+
+omit [FiniteDimensional F F'] in
+/-- **`ℓ(n (z)_∞)` is unchanged by a separable algebraic constant field extension** (Stichtenoth,
+Theorem 3.6.3(d), for pole divisors): if `k` is the exact constant field of `F` and
+`F' = F · k'` for a separable algebraic, possibly infinite, extension `k' / k`, then
+`n (z)_∞` has the same dimension in `F' / k'` as in `F / k`. -/
+theorem Divisor.dim_nsmul_poles_of_constantCompositum_eq_top
+    (hF : IsFunctionField k F) (hex : IsIntegrallyClosedIn k F)
+    (h : constantCompositum F k' F' = ⊤) (n : ℕ) (z : Fˣ) :
+    (n • Divisor.poles (hF.of_constantCompositum_eq_top h)
+        (Units.map (algebraMap F F' : F →* F') z)).dim = (n • Divisor.poles hF z).dim := by
+  set D := n • Divisor.poles hF z
+  have := finiteDimensional_riemannRochSpace hF D
+  let b := Module.finBasis k (riemannRochSpace D)
+  -- `L(D)` is the `k`-span of `b`, so its image spans the same `k'`-subspace as the image of `b`
+  have hD : Submodule.span k (Set.range fun i ↦ (b i : F)) = riemannRochSpace D := by
+    have hb : (fun i ↦ (b i : F)) = (riemannRochSpace D).subtype ∘ b := by
+      ext
+      simp
+    rw [hb, Set.range_comp, ← Submodule.map_span, b.span_eq, Submodule.map_top,
+      Submodule.range_subtype]
+  have hspan : Submodule.span k' (algebraMap F F' '' riemannRochSpace D) =
+      Submodule.span k' (Set.range fun i ↦ algebraMap F F' (b i)) := by
+    conv_lhs => rw [← hD]
+    rw [← IsScalarTower.coe_toAlgHom' k F F', ← AlgHom.coe_toLinearMap, ← Submodule.map_coe,
+      Submodule.map_span, Submodule.span_span_of_tower, ← Set.range_comp, Function.comp_def]
+  rw [Divisor.dim_def, Divisor.dim_def,
+    riemannRochSpace_nsmul_poles_eq_span_of_constantCompositum_eq_top hF hex h, hspan,
+    finrank_span_eq_card (linearIndependent_algebraMap_riemannRochSpace hex b),
+    Fintype.card_fin]
 
 end TauCeti

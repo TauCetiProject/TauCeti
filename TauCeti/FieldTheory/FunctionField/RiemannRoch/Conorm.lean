@@ -15,6 +15,11 @@ For a finite extension of function fields, the functions in `L(D)` are exactly t
 functions from the smaller field whose images belong to `L(Con D)`. This gives the
 intersection of `L(Con D)` with the smaller field as a submodule equality.
 
+For multiples of a pole divisor the same holds along any integral extension, finite or not: a
+function `f` of `F` lies in `L(n (z)_∞)` exactly when its image lies in `L(n (z)_∞)` computed in
+`F'` (`TauCeti.mem_riemannRochSpace_nsmul_poles_map_iff`). Here no conorm is needed, because
+both pole divisors are read off from the orders of `z`.
+
 Multiplying a basis of `L(A)` by an `F`-linearly independent family of `r` functions in `L(C)`
 gives `r ℓ(A) ≤ [k' : k] ℓ(Con A + C)`
 (`TauCeti.Divisor.card_mul_dim_le_finrank_mul_dim_conorm_add`).
@@ -37,7 +42,44 @@ variable {k : Type u} {k' : Type u'} {F : Type v} {F' : Type v'}
 variable [Field k] [Field k'] [Field F] [Field F']
 variable [Algebra k k'] [Algebra k F] [Algebra k' F'] [Algebra F F'] [Algebra k F']
 variable [IsScalarTower k k' F'] [IsScalarTower k F F']
-variable [Algebra.IsIntegral k k'] [FiniteDimensional F F']
+variable [Algebra.IsIntegral k k']
+
+/-- **Pole bounds descend along integral extensions**: a function `f` of `F` lies in
+`L(n (z)_∞)` precisely when its image in `F'` lies in the Riemann–Roch space of `n` times the pole
+divisor of the image of `z`. The extension `F' / F` need only be integral, not finite. -/
+theorem mem_riemannRochSpace_nsmul_poles_map_iff [Algebra.IsIntegral F F']
+    (hF : IsFunctionField k F) (hF' : IsFunctionField k' F') (n : ℕ) (z : Fˣ) (f : F) :
+    algebraMap F F' f ∈
+        riemannRochSpace (n • Divisor.poles hF' (Units.map (algebraMap F F' : F →* F') z)) ↔
+      f ∈ riemannRochSpace (n • Divisor.poles hF z) := by
+  rcases eq_or_ne f 0 with rfl | hf
+  · simp
+  have hf' : algebraMap F F' f ≠ 0 := by
+    simpa using (algebraMap F F').injective.ne hf
+  rw [mem_riemannRochSpace_iff_neg_le_ord hf', mem_riemannRochSpace_iff_neg_le_ord hf]
+  simp only [WeilDivisor.coeff_nsmul, Divisor.coeff_poles, Units.coe_map,
+    MonoidHom.coe_ofClass, Place.ord_algebraMap_restrict k F]
+  -- at a place `P'` over `P` both orders scale by `e(P' ∣ P) > 0`
+  have hmax (P' : Place k' F') :
+      max (-(Place.ramificationIdx F P' * (P'.restrict k F).ord (z : F))) 0 =
+        Place.ramificationIdx F P' * max (-(P'.restrict k F).ord (z : F)) 0 := by
+    rw [mul_max_of_nonneg _ _ (Nat.cast_nonneg _), mul_zero, mul_neg]
+  constructor
+  · intro h P
+    obtain ⟨P', rfl⟩ := Place.restrict_surjective (k := k) (F := F) hF' P
+    have he : (0 : ℤ) < Place.ramificationIdx F P' := by
+      exact_mod_cast Place.ramificationIdx_pos F P'
+    have hbound := h P'
+    rw [hmax] at hbound
+    nlinarith
+  · intro h P'
+    have he : (0 : ℤ) < Place.ramificationIdx F P' := by
+      exact_mod_cast Place.ramificationIdx_pos F P'
+    have hbound := h (P'.restrict k F)
+    rw [hmax]
+    nlinarith
+
+variable [FiniteDimensional F F']
 
 /-- A function from `F` belongs to `L(D)` precisely when its image in `F'` belongs to the
 Riemann–Roch space of the conorm of `D`. -/
