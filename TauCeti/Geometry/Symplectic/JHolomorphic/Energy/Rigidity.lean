@@ -8,12 +8,12 @@ module
 public import TauCeti.Geometry.Symplectic.JHolomorphic.Energy.Integral
 public import TauCeti.Geometry.Symplectic.JHolomorphic.Varying
 public import TauCeti.Geometry.Symplectic.Complex.Module.Basic
+import TauCeti.Geometry.Symplectic.TameMetric
 public import Mathlib.Analysis.Calculus.ContDiff.Defs
 import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.Topology.Algebra.Module.FiniteDimensionBilinear
 public import Mathlib.MeasureTheory.Measure.OpenPos
 public import Mathlib.MeasureTheory.Integral.Bochner.Set
-public import Mathlib.MeasureTheory.Measure.Lebesgue.Complex
 
 /-!
 # Zero-energy rigidity for maps into tame symplectic spaces
@@ -30,7 +30,8 @@ nonconstant components must have positive energy. The energy convention is that 
 
 For a varying tame target structure, vanishing symplectic area likewise forces a holomorphic
 map from a connected open subset of `ℂ` to be constant. No regularity of the structure is
-needed: continuity of the area density follows from the map and the constant form.
+needed. Continuity of the area density is explicit for arbitrary normed targets and follows
+from the map and the constant form in finite dimension.
 
 The mathematical argument is standard; see McDuff--Salamon, *J-holomorphic Curves and Symplectic
 Topology*, Section 4.1.
@@ -101,14 +102,16 @@ theorem stdComplexLineEnergy_pos_of_ne [μ.IsOpenPosMeasure]
 /-- A `C¹` holomorphic map on a connected open subset of `ℂ` with zero symplectic area is
 constant. The target structure may vary, and needs only to be tamed at the image points.
 The measure must be positive on nonempty open sets, and integrability of the area density
-is explicit so a divergent integral cannot count as zero. -/
-theorem exists_eqOn_const_of_integral_eq_zero [FiniteDimensional ℝ V]
+is explicit so a divergent integral cannot count as zero. Continuity of the area density
+is assumed explicitly, allowing arbitrary real normed targets. -/
+theorem exists_eqOn_const_of_integral_eq_zero_of_continuousOn
     {ν : Measure ℂ} [ν.IsOpenPosMeasure]
     {U : Set ℂ} {u : ℂ → V} {J : V → AlmostComplexStructure V}
     (hU : IsOpen U) (hconn : IsPreconnected U) (hu : ContDiffOn ℝ 1 u U)
     (hhol : ∀ z ∈ U,
       IsJHolomorphicAt (fun _ ↦ AlmostComplexStructure.ofComplexModule ℂ) J u z)
     (htame : ∀ z ∈ U, ω.Tames (J (u z)))
+    (hcont : ContinuousOn (fun z ↦ ω (fderiv ℝ u z 1) (fderiv ℝ u z Complex.I)) U)
     (hint : IntegrableOn (fun z ↦ ω (fderiv ℝ u z 1) (fderiv ℝ u z Complex.I)) U ν)
     (hzero : ∫ z in U, ω (fderiv ℝ u z 1) (fderiv ℝ u z Complex.I) ∂ν = 0) :
     ∃ c : V, EqOn u (fun _ ↦ c) U := by
@@ -120,17 +123,10 @@ theorem exists_eqOn_const_of_integral_eq_zero [FiniteDimensional ℝ V]
   have hnonneg : ∀ z ∈ U, 0 ≤ ω (fderiv ℝ u z 1) (fderiv ℝ u z Complex.I) := by
     intro z hz
     rw [hCR z hz]
-    by_cases h : fderiv ℝ u z 1 = 0
-    · simp [h]
-    · exact (htame z hz _ h).le
+    exact (htame z hz).symplecticForm_apply_apply_self_nonneg (fderiv ℝ u z 1)
   have hae := (integral_eq_zero_iff_of_nonneg_ae
     (ae_restrict_of_forall_mem hU.measurableSet hnonneg) hint).mp hzero
   -- Continuity upgrades vanishing to every point of the open domain.
-  have hdu := hu.continuousOn_fderiv_of_isOpen hU (by norm_num)
-  have hcont : ContinuousOn (fun z ↦ ω (fderiv ℝ u z 1)
-      (fderiv ℝ u z Complex.I)) U :=
-    ω.toBilinForm.toContinuousBilinearMap.continuous₂.comp_continuousOn
-      ((hdu.clm_apply continuousOn_const).prodMk (hdu.clm_apply continuousOn_const))
   have harea := ν.eqOn_open_of_ae_eq hae hU hcont continuousOn_const
   have hderiv : EqOn (fderiv ℝ u) 0 U := by
     intro z hz
@@ -149,6 +145,26 @@ theorem exists_eqOn_const_of_integral_eq_zero [FiniteDimensional ℝ V]
     rw [hw]
     simp only [map_add, map_smul, hone, hI, smul_zero, add_zero]
   exact hU.exists_is_const_of_fderiv_eq_zero hconn hu.differentiableOn_one hderiv
+
+/-- In a finite-dimensional target, a `C¹` holomorphic map on a connected open subset of
+`ℂ` with zero symplectic area is constant. The target structure may vary, and needs only
+to be tamed at the image points. The measure must be positive on nonempty open sets, and
+the area density must be integrable. -/
+theorem exists_eqOn_const_of_integral_eq_zero [FiniteDimensional ℝ V]
+    {ν : Measure ℂ} [ν.IsOpenPosMeasure]
+    {U : Set ℂ} {u : ℂ → V} {J : V → AlmostComplexStructure V}
+    (hU : IsOpen U) (hconn : IsPreconnected U) (hu : ContDiffOn ℝ 1 u U)
+    (hhol : ∀ z ∈ U,
+      IsJHolomorphicAt (fun _ ↦ AlmostComplexStructure.ofComplexModule ℂ) J u z)
+    (htame : ∀ z ∈ U, ω.Tames (J (u z)))
+    (hint : IntegrableOn (fun z ↦ ω (fderiv ℝ u z 1) (fderiv ℝ u z Complex.I)) U ν)
+    (hzero : ∫ z in U, ω (fderiv ℝ u z 1) (fderiv ℝ u z Complex.I) ∂ν = 0) :
+    ∃ c : V, EqOn u (fun _ ↦ c) U := by
+  have hdu := hu.continuousOn_fderiv_of_isOpen hU (by norm_num)
+  exact exists_eqOn_const_of_integral_eq_zero_of_continuousOn hU hconn hu hhol htame
+    (ω.toBilinForm.toContinuousBilinearMap.continuous₂.comp_continuousOn
+      ((hdu.clm_apply continuousOn_const).prodMk (hdu.clm_apply continuousOn_const)))
+    hint hzero
 
 end SymplecticForm
 

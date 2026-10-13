@@ -105,7 +105,7 @@ theorem integral_strongDualCotangentSymplecticForm_disc_eq_zero (hr : 0 ≤ r)
 
 /-- A holomorphic disc with boundary on an exact cotangent graph is constant on the entire
 closed disc. The varying target structure need only be tamed along the interior image. -/
-theorem exists_eqOn_const_of_isJHolomorphicAt_differential_graph [FiniteDimensional ℝ V]
+theorem exists_eqOn_const_of_isJHolomorphicAt_differential_graph
     {J : (V × StrongDual ℝ V) → AlmostComplexStructure (V × StrongDual ℝ V)}
     (hr : 0 < r) (hu : ∀ z ∈ closedBall z₀ r, ContDiffAt ℝ 2 u z)
     (hhol : ∀ z ∈ ball z₀ r,
@@ -130,10 +130,11 @@ theorem exists_eqOn_const_of_isJHolomorphicAt_differential_graph [FiniteDimensio
       (fderiv ℝ u z 1) (fderiv ℝ u z I)) = 0 := by
     rw [setIntegral_congr_set hsets,
       integral_strongDualCotangentSymplecticForm_disc_eq_zero hr.le hu hh hgraph]
-  obtain ⟨c, hc⟩ := SymplecticForm.exists_eqOn_const_of_integral_eq_zero
+  obtain ⟨c, hc⟩ := SymplecticForm.exists_eqOn_const_of_integral_eq_zero_of_continuousOn
     isOpen_ball (convex_ball z₀ r).isPreconnected
     (fun z hz ↦ ((hu z (ball_subset_closedBall hz)).of_le (by norm_num)).contDiffWithinAt)
-    hhol htame ((hcont.integrableOn_compact (isCompact_closedBall z₀ r)).mono_set
+    hhol htame (hcont.mono ball_subset_closedBall)
+    ((hcont.integrableOn_compact (isCompact_closedBall z₀ r)).mono_set
       ball_subset_closedBall) hzero
   refine ⟨c, hc.of_subset_closure (fun z hz ↦ (hu z hz).continuousAt.continuousWithinAt)
     continuousOn_const ball_subset_closedBall ?_⟩
