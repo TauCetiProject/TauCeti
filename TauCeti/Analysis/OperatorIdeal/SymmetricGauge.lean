@@ -23,9 +23,11 @@ Every symmetric gauge lies between the supremum and the sum of the sequence,
 `⨆ n, a n ≤ Φ a ≤ ∑ n, a n`. It extends to arbitrary sequences `a : ℕ → ℝ≥0∞` as the supremum of
 `Φ b` over the finitely supported `b` dominated by `a`. The extension is total, lies between the
 supremum and the sum of the sequence, and keeps the monotonicity, homogeneity and subadditivity
-of `Φ`. These are the laws that make the induced gauge on operators an ideal norm. For a
-finite-valued sequence the extension is the supremum of `Φ` along the initial truncations of the
-sequence, with no monotonicity hypothesis on the sequence.
+of `Φ`, as well as its permutation invariance. These laws feed the ideal-norm properties of the
+induced gauge on operators; its triangle inequality additionally needs weak majorization of
+approximation numbers, which this file does not provide. For a finite-valued sequence the
+extension is the supremum of `Φ` along the initial truncations of the sequence, with no
+monotonicity hypothesis on the sequence.
 
 The finite counterpart, a permutation- and sign-invariant seminorm on `ι → ℝ`, is
 `Seminorm.IsSymmetricGauge` in `TauCeti.Analysis.Convex.Majorization`.
@@ -47,7 +49,8 @@ The finite counterpart, a permutation- and sign-invariant seminorm on `ι → �
 * `TauCeti.SymmetricGauge.extend_coe_eq_iSup_indicator`: the truncation formula for finite-valued
   sequences.
 * `TauCeti.SymmetricGauge.extend_mono`, `TauCeti.SymmetricGauge.extend_smul`,
-  `TauCeti.SymmetricGauge.extend_add_le`: the extension is monotone, homogeneous and subadditive.
+  `TauCeti.SymmetricGauge.extend_add_le`, `TauCeti.SymmetricGauge.extend_comp_perm`: the extension
+  is monotone, homogeneous, subadditive and permutation invariant.
 
 ## References
 
@@ -119,6 +122,9 @@ theorem monotone : Monotone Φ :=
 theorem mono {a b : ℕ →₀ ℝ≥0} (h : a ≤ b) : Φ a ≤ Φ b :=
   Φ.monotone h
 
+theorem map_single_zero_one : Φ (Finsupp.single 0 1) = 1 :=
+  Φ.map_single_zero_one'
+
 @[simp]
 theorem map_zero : Φ 0 = 0 := by
   simpa using Φ.map_smul 0 0
@@ -128,7 +134,7 @@ theorem map_zero : Φ 0 = 0 := by
 theorem map_single (n : ℕ) (c : ℝ≥0) : Φ (Finsupp.single n c) = c := by
   have : Finsupp.single n c = c • (Finsupp.single 0 1).equivMapDomain (Equiv.swap 0 n) := by
     simp [Finsupp.equivMapDomain_single, Finsupp.smul_single]
-  rw [this, map_smul, map_equivMapDomain, ← toFun_eq_coe, Φ.map_single_zero_one', mul_one]
+  rw [this, map_smul, map_equivMapDomain, map_single_zero_one, mul_one]
 
 /-- The lower end of the scale: a symmetric gauge dominates the supremum of the sequence. -/
 theorem iSup_le_apply (a : ℕ →₀ ℝ≥0) : ⨆ n, a n ≤ Φ a :=
@@ -170,6 +176,10 @@ theorem extend_coe (a : ℕ →₀ ℝ≥0) : Φ.extend (fun n => a n) = Φ a :=
 theorem extend_mono : Monotone Φ.extend := fun _ _ h =>
   (Φ.extend_le_iff).2 fun _ hb => Φ.apply_le_extend fun n => (hb n).trans (h n)
 
+@[gcongr]
+theorem extend_le_extend {a b : ℕ → ℝ≥0∞} (h : a ≤ b) : Φ.extend a ≤ Φ.extend b :=
+  Φ.extend_mono h
+
 /-- The extension dominates the supremum of the sequence. -/
 theorem iSup_le_extend (a : ℕ → ℝ≥0∞) : ⨆ n, a n ≤ Φ.extend a := by
   refine iSup_le fun n => ENNReal.le_of_forall_nnreal_lt fun r hr => ?_
@@ -189,6 +199,23 @@ theorem extend_le_tsum (a : ℕ → ℝ≥0∞) : Φ.extend a ≤ ∑' n, a n :=
 @[simp]
 theorem extend_zero : Φ.extend 0 = 0 :=
   nonpos_iff_eq_zero.1 <| by simpa using Φ.extend_le_tsum 0
+
+/-- The extension vanishes exactly on the zero sequence. -/
+@[simp]
+theorem extend_eq_zero_iff {a : ℕ → ℝ≥0∞} : Φ.extend a = 0 ↔ a = 0 :=
+  ⟨fun h => funext fun n => nonpos_iff_eq_zero.1 (h ▸ (le_iSup a n).trans (Φ.iSup_le_extend a)),
+    fun h => h ▸ Φ.extend_zero⟩
+
+private theorem extend_comp_perm_le (σ : Equiv.Perm ℕ) (a : ℕ → ℝ≥0∞) :
+    Φ.extend (a ∘ σ) ≤ Φ.extend a :=
+  (Φ.extend_le_iff).2 fun b hb => Φ.map_equivMapDomain σ b ▸ Φ.apply_le_extend fun n => by
+    simpa [Finsupp.equivMapDomain_apply] using hb (σ.symm n)
+
+/-- The extension is invariant under permutations of the indices. -/
+@[simp]
+theorem extend_comp_perm (σ : Equiv.Perm ℕ) (a : ℕ → ℝ≥0∞) : Φ.extend (a ∘ σ) = Φ.extend a :=
+  le_antisymm (Φ.extend_comp_perm_le σ a) <| by
+    simpa [Function.comp_assoc] using Φ.extend_comp_perm_le σ.symm (a ∘ σ)
 
 /-- The **truncation formula**: on a finite-valued sequence, the extension is the supremum of the
 gauge along the initial truncations `a^{<N}` of the sequence. -/
@@ -222,14 +249,10 @@ private theorem coe_mul_extend_le (r : ℝ≥0) (a : ℕ → ℝ≥0∞) :
 theorem extend_smul (c : ℝ≥0∞) (a : ℕ → ℝ≥0∞) : Φ.extend (c • a) = c * Φ.extend a := by
   induction c with
   | top =>
-    rcases eq_or_ne (Φ.extend a) 0 with h | h
-    · have ha : a = 0 := funext fun n =>
-        nonpos_iff_eq_zero.1 (h ▸ (le_iSup a n).trans (Φ.iSup_le_extend a))
-      simp [ha]
-    · obtain ⟨n, hn⟩ : ∃ n, a n ≠ 0 := by
-        by_contra! ha
-        exact h (by simp [show a = 0 from funext ha])
-      rw [ENNReal.top_mul h, eq_top_iff]
+    rcases eq_or_ne a 0 with rfl | ha
+    · simp
+    · obtain ⟨n, hn⟩ := Function.ne_iff.1 ha
+      rw [ENNReal.top_mul (Φ.extend_eq_zero_iff.not.2 ha), eq_top_iff]
       calc ⊤ = (⊤ • a) n := by simp [ENNReal.top_mul hn]
         _ ≤ Φ.extend (⊤ • a) := (le_iSup _ n).trans (Φ.iSup_le_extend _)
   | coe r =>
