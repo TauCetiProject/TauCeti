@@ -35,25 +35,15 @@ places: `(σ • ω)_{σ • P} (σ x) = ω_P (x)`. The divisor of a Weil differ
 
 ## Main results
 
-* `TauCeti.repartitionDualRepresentation_mem_weilDifferentialFiltration_smul_iff`: the action
+* `TauCeti.dual_repartitionRepresentation_mem_weilDifferentialFiltration_smul_iff`: the action
   carries `Ω_F(D)` onto `Ω_F(σ • D)`.
-* `TauCeti.repartitionDualRepresentation_repartitionDualMul` and
+* `TauCeti.dual_repartitionRepresentation_repartitionDualMul` and
   `TauCeti.weilDifferentialRepresentation_weilDifferentialSpaceMul`: the action is `σ`-semilinear
   over `F'`.
-* `TauCeti.repartitionDualComponent_repartitionDualRepresentation`: the local component of
-  `σ • ω` at `σ • P` is that of `ω` at `P`, transported by `σ`.
-* `TauCeti.weilDifferentialDivisor_repartitionDualRepresentation`: **the divisor of a Weil
+* `TauCeti.weilDifferentialDivisor_dual_repartitionRepresentation`: **the divisor of a Weil
   differential is equivariant**, `(σ • ω) = σ • (ω)`, with its coefficient form
-  `TauCeti.weilDifferentialOrder_repartitionDualRepresentation`.
+  `TauCeti.weilDifferentialOrder_dual_repartitionRepresentation`.
 * `TauCeti.smul_canonicalClass`: **automorphisms fix the canonical class**.
-
-## Implementation notes
-
-The action on linear forms is the named definition `TauCeti.repartitionDualRepresentation`, equal
-to `Representation.dual` by `TauCeti.repartitionDualRepresentation_eq_dual`, rather than
-`Representation.dual` itself: `simp` unfolds the latter into transposes through
-`Representation.dual_apply`, which would put every statement about the action out of simp-normal
-form.
 
 ## References
 
@@ -79,42 +69,20 @@ variable (σ : F' ≃ₐ[F] F')
 
 /-! ### The action on linear forms on repartitions -/
 
-variable (k F F') in
-/-- **The automorphism group acting on the `k`-linear forms on repartitions**: the dual, in the
-sense of `Representation.dual`, of the action `TauCeti.repartitionRepresentation` on `A_F`, so that
-`(σ • ω) a = ω (σ⁻¹ • a)`. -/
-noncomputable def repartitionDualRepresentation :
-    Representation k (F' ≃ₐ[F] F') (Module.Dual k ↥(repartitionSpace k F')) :=
-  (repartitionRepresentation k F F').dual
-
-/-- The action on linear forms on repartitions is the dual of the action on repartitions. -/
-theorem repartitionDualRepresentation_eq_dual :
-    repartitionDualRepresentation k F F' = (repartitionRepresentation k F F').dual :=
-  (rfl)
-
-/-- The action on linear forms evaluates the form after moving the repartition back:
-`(σ • ω) a = ω (σ⁻¹ • a)`. -/
-@[simp]
-theorem repartitionDualRepresentation_apply_apply
-    (ω : Module.Dual k ↥(repartitionSpace k F')) (a : ↥(repartitionSpace k F')) :
-    repartitionDualRepresentation k F F' σ ω a = ω (repartitionRepresentation k F F' σ⁻¹ a) :=
-  (rfl)
-
 /-- The action of an automorphism on linear forms is injective. -/
-@[simp]
-theorem repartitionDualRepresentation_eq_zero_iff {ω : Module.Dual k ↥(repartitionSpace k F')} :
-    repartitionDualRepresentation k F F' σ ω = 0 ↔ ω = 0 :=
-  map_eq_zero_iff _ ((repartitionDualRepresentation k F F').apply_bijective σ).injective
+theorem dual_repartitionRepresentation_eq_zero_iff {ω : Module.Dual k ↥(repartitionSpace k F')} :
+    (repartitionRepresentation k F F').dual σ ω = 0 ↔ ω = 0 :=
+  map_eq_zero_iff _ (((repartitionRepresentation k F F').dual).apply_bijective σ).injective
 
 /-- The action of an automorphism on linear forms sends a form bounded by `D` to one bounded by
 `σ • D`: it pulls back along `σ⁻¹`, which carries `A_F(σ • D)` into `A_F(D)` and constants to
 constants. -/
-private theorem repartitionDualRepresentation_mem_weilDifferentialFiltration_smul
+private theorem dual_repartitionRepresentation_mem_weilDifferentialFiltration_smul
     {D : Divisor k F'} {ω : Module.Dual k ↥(repartitionSpace k F')}
     (hω : ω ∈ weilDifferentialFiltration D) :
-    repartitionDualRepresentation k F F' σ ω ∈ weilDifferentialFiltration (σ • D) := by
+    (repartitionRepresentation k F F').dual σ ω ∈ weilDifferentialFiltration (σ • D) := by
   refine mem_weilDifferentialFiltration_of_apply_eq_zero (fun a ha ↦ ?_) (fun a ha ↦ ?_) <;>
-    rw [repartitionDualRepresentation_apply_apply]
+    rw [Representation.dual_apply, Module.Dual.transpose_apply, LinearMap.comp_apply]
   · refine weilDifferentialFiltration_apply_eq_zero_of_mem_adeleFiltration hω _ ?_
     rw [coe_repartitionRepresentation_apply, ← inv_smul_smul σ D,
       placeFamilyRepresentation_mem_adeleFiltration_smul_iff]
@@ -126,47 +94,35 @@ private theorem repartitionDualRepresentation_mem_weilDifferentialFiltration_smu
 
 /-- **The action carries `Ω_F(D)` onto `Ω_F(σ • D)`**: a linear form on `A_F` vanishes on
 `A_F(D) + F'` exactly when its image under `σ` vanishes on `A_F(σ • D) + F'`. -/
-theorem repartitionDualRepresentation_mem_weilDifferentialFiltration_smul_iff
+theorem dual_repartitionRepresentation_mem_weilDifferentialFiltration_smul_iff
     {D : Divisor k F'} {ω : Module.Dual k ↥(repartitionSpace k F')} :
-    repartitionDualRepresentation k F F' σ ω ∈ weilDifferentialFiltration (σ • D) ↔
+    (repartitionRepresentation k F F').dual σ ω ∈ weilDifferentialFiltration (σ • D) ↔
       ω ∈ weilDifferentialFiltration D := by
-  refine ⟨fun h ↦ ?_, repartitionDualRepresentation_mem_weilDifferentialFiltration_smul σ⟩
-  have h' := repartitionDualRepresentation_mem_weilDifferentialFiltration_smul σ⁻¹ h
+  refine ⟨fun h ↦ ?_, dual_repartitionRepresentation_mem_weilDifferentialFiltration_smul σ⟩
+  have h' := dual_repartitionRepresentation_mem_weilDifferentialFiltration_smul σ⁻¹ h
   rwa [Representation.inv_self_apply, inv_smul_smul] at h'
 
 /-- **The action preserves the space `Ω_F` of Weil differentials.** -/
-@[simp]
-theorem repartitionDualRepresentation_mem_weilDifferentialSpace_iff
+theorem dual_repartitionRepresentation_mem_weilDifferentialSpace_iff
     {ω : Module.Dual k ↥(repartitionSpace k F')} :
-    repartitionDualRepresentation k F F' σ ω ∈ weilDifferentialSpace k F' ↔
+    (repartitionRepresentation k F F').dual σ ω ∈ weilDifferentialSpace k F' ↔
       ω ∈ weilDifferentialSpace k F' := by
   simp only [mem_weilDifferentialSpace_iff]
   constructor
   · rintro ⟨D, hD⟩
     rw [← smul_inv_smul σ D,
-      repartitionDualRepresentation_mem_weilDifferentialFiltration_smul_iff] at hD
+      dual_repartitionRepresentation_mem_weilDifferentialFiltration_smul_iff] at hD
     exact ⟨_, hD⟩
   · rintro ⟨D, hD⟩
-    exact ⟨σ • D, (repartitionDualRepresentation_mem_weilDifferentialFiltration_smul_iff σ).mpr hD⟩
+    exact ⟨σ • D, (dual_repartitionRepresentation_mem_weilDifferentialFiltration_smul_iff σ).mpr hD⟩
 
 /-- **The action on linear forms is `σ`-semilinear over `F'`**: `σ • (f · ω) = σ f · (σ • ω)`. -/
-theorem repartitionDualRepresentation_repartitionDualMul (hF : IsFunctionField k F') (f : F')
+theorem dual_repartitionRepresentation_repartitionDualMul (hF : IsFunctionField k F') (f : F')
     (ω : Module.Dual k ↥(repartitionSpace k F')) :
-    repartitionDualRepresentation k F F' σ (repartitionDualMul hF f ω) =
-      repartitionDualMul hF (σ f) (repartitionDualRepresentation k F F' σ ω) := by
+    (repartitionRepresentation k F F').dual σ (repartitionDualMul hF f ω) =
+      repartitionDualMul hF (σ f) ((repartitionRepresentation k F F').dual σ ω) := by
   ext a
-  simp [repartitionRepresentation_repartitionMul, AlgEquiv.aut_inv]
-
-/-- **The local components move with the places**: the local component of `σ • ω` at `σ • P`,
-evaluated at `σ x`, is the local component of `ω` at `P` evaluated at `x`.
-
-This is not `@[simp]`: `simp` proves it from `TauCeti.repartitionDualComponent_apply` and
-`TauCeti.repartitionRepresentation_singleRepartition`. -/
-theorem repartitionDualComponent_repartitionDualRepresentation
-    (ω : Module.Dual k ↥(repartitionSpace k F')) (P : Place k F') (x : F') :
-    repartitionDualComponent (repartitionDualRepresentation k F F' σ ω) (σ • P) (σ x) =
-      repartitionDualComponent ω P x := by
-  simp
+  simp [Module.Dual.transpose_apply, repartitionRepresentation_repartitionMul, AlgEquiv.aut_inv]
 
 /-! ### The action on Weil differentials -/
 
@@ -176,16 +132,18 @@ the dual of `TauCeti.repartitionRepresentation` to the stable subspace `Ω_F`, s
 `(σ • ω) a = ω (σ⁻¹ • a)`. -/
 noncomputable def weilDifferentialRepresentation :
     Representation k (F' ≃ₐ[F] F') ↥(weilDifferentialSpace k F') where
-  toFun σ := (repartitionDualRepresentation k F F' σ).restrict fun _ hω ↦
-    (repartitionDualRepresentation_mem_weilDifferentialSpace_iff σ).mpr hω
-  map_one' := LinearMap.ext fun _ ↦ Subtype.ext (by simp)
-  map_mul' _ _ := LinearMap.ext fun _ ↦ Subtype.ext (by simp)
+  toFun σ := ((repartitionRepresentation k F F').dual σ).restrict fun _ hω ↦
+    (dual_repartitionRepresentation_mem_weilDifferentialSpace_iff σ).mpr hω
+  map_one' := LinearMap.ext fun ω ↦
+    Subtype.ext (LinearMap.congr_fun (map_one (repartitionRepresentation k F F').dual) ω.1)
+  map_mul' σ τ := LinearMap.ext fun ω ↦
+    Subtype.ext (LinearMap.congr_fun (map_mul (repartitionRepresentation k F F').dual σ τ) ω.1)
 
 /-- The action on Weil differentials is the action on the underlying linear forms. -/
 @[simp]
 theorem coe_weilDifferentialRepresentation_apply (ω : ↥(weilDifferentialSpace k F')) :
     ((weilDifferentialRepresentation k F F' σ ω : ↥(weilDifferentialSpace k F')) :
-      Module.Dual k ↥(repartitionSpace k F')) = repartitionDualRepresentation k F F' σ ω :=
+      Module.Dual k ↥(repartitionSpace k F')) = (repartitionRepresentation k F F').dual σ ω :=
   (rfl)
 
 /-- **The action on Weil differentials is `σ`-semilinear over `F'`**, for the multiplication
@@ -196,7 +154,7 @@ theorem weilDifferentialRepresentation_weilDifferentialSpaceMul (hF : IsFunction
       weilDifferentialSpaceMul hF (σ f) (weilDifferentialRepresentation k F F' σ ω) :=
   Subtype.ext <| by
     simp only [coe_weilDifferentialRepresentation_apply, coe_weilDifferentialSpaceMul_apply,
-      repartitionDualRepresentation_repartitionDualMul]
+      dual_repartitionRepresentation_repartitionDualMul]
 
 /-! ### The divisor of a moved Weil differential -/
 
@@ -204,34 +162,34 @@ theorem weilDifferentialRepresentation_weilDifferentialSpaceMul (hF : IsFunction
 carries the divisors bounding `ω` bijectively onto those bounding `σ • ω`, preserving the order,
 so it carries the greatest one to the greatest one. -/
 @[simp]
-theorem weilDifferentialDivisor_repartitionDualRepresentation (hF : IsFunctionField k F')
+theorem weilDifferentialDivisor_dual_repartitionRepresentation (hF : IsFunctionField k F')
     (hex : IsIntegrallyClosedIn k F') {ω : Module.Dual k ↥(repartitionSpace k F')}
     (hmem : ω ∈ weilDifferentialSpace k F') (hω : ω ≠ 0) :
     weilDifferentialDivisor hF hex
-        ((repartitionDualRepresentation_mem_weilDifferentialSpace_iff σ).mpr hmem)
-        ((repartitionDualRepresentation_eq_zero_iff σ).not.mpr hω) =
+        ((dual_repartitionRepresentation_mem_weilDifferentialSpace_iff σ).mpr hmem)
+        ((dual_repartitionRepresentation_eq_zero_iff σ).not.mpr hω) =
       σ • weilDifferentialDivisor hF hex hmem hω := by
   refine (isGreatest_weilDifferentialDivisor hF hex _ _).unique ⟨?_, fun D hD ↦ ?_⟩
-  · exact (repartitionDualRepresentation_mem_weilDifferentialFiltration_smul_iff σ).mpr
+  · exact (dual_repartitionRepresentation_mem_weilDifferentialFiltration_smul_iff σ).mpr
       (isGreatest_weilDifferentialDivisor hF hex hmem hω).1
   · rw [Set.mem_ofPred_eq, ← smul_inv_smul σ D,
-      repartitionDualRepresentation_mem_weilDifferentialFiltration_smul_iff,
+      dual_repartitionRepresentation_mem_weilDifferentialFiltration_smul_iff,
       mem_weilDifferentialFiltration_iff_le_weilDifferentialDivisor hF hex hmem hω] at hD
     rw [← smul_inv_smul σ D]
     exact (WeilDivisor.smul_le_smul_iff σ).mpr hD
 
 /-- The order of `σ • ω` at a place `Q` is the order of `ω` at `σ⁻¹ • Q`. This is the
-coefficient form of `TauCeti.weilDifferentialDivisor_repartitionDualRepresentation`. -/
+coefficient form of `TauCeti.weilDifferentialDivisor_dual_repartitionRepresentation`. -/
 @[simp]
-theorem weilDifferentialOrder_repartitionDualRepresentation (hF : IsFunctionField k F')
+theorem weilDifferentialOrder_dual_repartitionRepresentation (hF : IsFunctionField k F')
     (hex : IsIntegrallyClosedIn k F') {ω : Module.Dual k ↥(repartitionSpace k F')}
     (hmem : ω ∈ weilDifferentialSpace k F') (hω : ω ≠ 0) (Q : Place k F') :
     weilDifferentialOrder hF hex
-        ((repartitionDualRepresentation_mem_weilDifferentialSpace_iff σ).mpr hmem)
-        ((repartitionDualRepresentation_eq_zero_iff σ).not.mpr hω) Q =
+        ((dual_repartitionRepresentation_mem_weilDifferentialSpace_iff σ).mpr hmem)
+        ((dual_repartitionRepresentation_eq_zero_iff σ).not.mpr hω) Q =
       weilDifferentialOrder hF hex hmem hω (σ⁻¹ • Q) := by
   rw [← coeff_weilDifferentialDivisor, ← coeff_weilDifferentialDivisor,
-    weilDifferentialDivisor_repartitionDualRepresentation, WeilDivisor.coeff_smul]
+    weilDifferentialDivisor_dual_repartitionRepresentation, WeilDivisor.coeff_smul]
 
 /-- **Automorphisms fix the canonical class**: moving a nonzero Weil differential by `σ` gives a
 nonzero Weil differential, whose divisor is the moved divisor. -/
@@ -241,7 +199,7 @@ theorem smul_canonicalClass (hF : IsFunctionField k F') (hex : IsIntegrallyClose
   obtain ⟨ω, hmem, hω⟩ := (Submodule.ne_bot_iff _).mp (weilDifferentialSpace_ne_bot hF hex)
   conv_lhs => rw [← divisorClass_weilDifferentialDivisor hF hex hmem hω]
   rw [Divisor.smul_divisorClass,
-    ← weilDifferentialDivisor_repartitionDualRepresentation σ hF hex hmem hω,
+    ← weilDifferentialDivisor_dual_repartitionRepresentation σ hF hex hmem hω,
     divisorClass_weilDifferentialDivisor]
 
 end TauCeti
