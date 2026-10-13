@@ -49,6 +49,8 @@ function whose first weak derivatives lie in `W^{k+2,2}(V)` lies in `W^{k+3,2}(V
 
 ## Main declarations
 
+* `TauCeti.PDE.energyFormH1_ofTestFunctionₗ_eq_sum`: the constant-coefficient energy form against a
+  test function, written column by column as `∑ⱼ ∫ (∂_{cⱼ} φ) ∂ⱼw`.
 * `TauCeti.PDE.energyFormH1_ofTestFunctionₗ_eq_neg_of_hasWeakLineDerivOn`: a weak derivative
   moves from the solution to the test function across the constant-coefficient energy form.
 * `TauCeti.PDE.energyFormH1_eq_setIntegral_of_hasWeakLineDerivOn`: a weak derivative of a weak
@@ -84,7 +86,7 @@ variable {ι : Type*} [Fintype ι] {mu : Measure (EuclideanSpace ℝ ι)} [mu.Is
 
 /-- The constant-coefficient energy form of `w ∈ H¹(Ω)` against a test function `ψ` is
 `∑ⱼ ∫ (∂_{cⱼ} ψ) ∂ⱼw`, where `cⱼ = Aᵀ j` is the `j`-th column of `A`. -/
-private theorem energyFormH1_ofTestFunctionₗ_eq_sum (w : W1p mu Omega 2) (ψ : 𝓓(Omega, ℝ)) :
+theorem energyFormH1_ofTestFunctionₗ_eq_sum (w : W1p mu Omega 2) (ψ : 𝓓(Omega, ℝ)) :
     energyFormH1 (fun _ => A) 0 0 w (W1p.ofTestFunctionₗ mu Omega 2 ψ) =
       ∑ j, ∫ x, lineDeriv ℝ (ψ : EuclideanSpace ℝ ι → ℝ) x (WithLp.toLp 2 (Aᵀ j)) •
         innerSL ℝ (W1p.gradient w x) (EuclideanSpace.basisFun ι ℝ j) ∂mu := by

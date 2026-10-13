@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Sobolev.W1p.Basic
+public import TauCeti.Analysis.Sobolev.W1p.Zero
+import TauCeti.Analysis.Sobolev.W1p.MeasurePreserving
 import TauCeti.Analysis.Sobolev.WeakDeriv.Translation
 import TauCeti.MeasureTheory.Function.Lp.Translation
 
@@ -13,7 +15,8 @@ import TauCeti.MeasureTheory.Function.Lp.Translation
 # Local translations of `W^{1,p}` functions
 
 This file packages translation by a vector as an element of `W^{1,p}` on any smaller open set
-whose translate stays inside the original domain. Translation commutes with the weak gradient.
+whose translate stays inside the original domain. Translation commutes with the weak gradient,
+and on a domain mapped onto itself by the translation it preserves zero boundary values.
 
 ## Main declarations
 
@@ -21,6 +24,8 @@ whose translate stays inside the original domain. Translation commutes with the 
   `V + h ⊆ Ω`.
 * `TauCeti.W1p.value_translate_ae`: the value of a local translation.
 * `TauCeti.W1p.gradient_translate_ae`: the weak gradient of a local translation.
+* `TauCeti.W1p.translate_mem_w1p0Submodule`: translation preserves `W^{1,p}_0(Ω)` when it maps
+  `Ω` onto itself.
 -/
 
 public section
@@ -71,5 +76,28 @@ theorem W1p.gradient_translate_ae {Omega V : Opens E} {h : E}
       fun x => W1p.gradient u (x + h) := by
   simp only [W1p.translate, W1p.gradient_mk]
   exact MemLp.coeFn_toLp _
+
+/-- **Translation preserves zero boundary values.** If translation by `h` maps `Ω` onto itself,
+that is `x + h ∈ Ω ↔ x ∈ Ω`, then for `p < ∞` the translate `x ↦ u (x + h)` of
+`u ∈ W^{1,p}_0(Ω)` again lies in `W^{1,p}_0(Ω)`. A half-space, for instance, is mapped onto itself
+by every translation parallel to its boundary. -/
+theorem W1p.translate_mem_w1p0Submodule (hp : p ≠ ∞) {h : E} (hVO : MapsTo (· + h) Omega Omega)
+    (hΩ : ∀ x, x + h ∈ Omega → x ∈ Omega) {u : W1p mu Omega p}
+    (hu : u ∈ w1p0Submodule mu Omega p) :
+    W1p.translate hVO u ∈ w1p0Submodule mu Omega p := by
+  have hUV : (Omega : Set E) = (· + h) ⁻¹' Omega :=
+    Subset.antisymm (fun x hx => hVO hx) fun x hx => hΩ x hx
+  have hd : ContDiffOn ℝ 1 (· + h) (Omega : Set E) := (contDiff_id.add contDiff_const).contDiffOn
+  have hM : ∀ x ∈ (Omega : Set E), ‖fderiv ℝ (· + h) x‖ ≤ 1 := fun x _ => by
+    rw [fderiv_add_const, fderiv_fun_id]
+    exact ContinuousLinearMap.norm_id_le
+  -- The translate is the composition with the measure-preserving homeomorphism `x ↦ x + h`.
+  have heq : W1p.translate hVO u =
+      W1p.compMeasurePreservingL (measurePreserving_add_right mu h) hUV hd hM u :=
+    W1p.ext_value (Lp.ext ((W1p.value_translate_ae _ u).trans
+      (W1p.value_compMeasurePreservingL_ae _ hUV hd hM u).symm))
+  rw [heq]
+  exact W1p.compMeasurePreservingL_mem_w1p0Submodule hp (Homeomorph.addRight h).isProperMap
+    (measurePreserving_add_right mu h) hUV hd hM hu
 
 end TauCeti

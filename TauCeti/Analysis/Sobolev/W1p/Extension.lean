@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Sobolev.W1p.Zero
+public import TauCeti.Analysis.Sobolev.W1p.Restriction
 public import TauCeti.MeasureTheory.Function.Lp.ExtendByZero
 
 /-!
@@ -49,6 +50,9 @@ isometry of `Lᵖ` spaces, so the extension operator is an isometry of Sobolev s
   `TauCeti.W1p0.extendByZeroL_extendByZeroL`.
 * `TauCeti.W1p0.value_extendByZeroL_ae_eq_zero_compl`: the whole-space extension vanishes almost
   everywhere off `Ω`.
+* `TauCeti.W1p0.norm_value_extendByZeroL`, `TauCeti.W1p0.norm_gradient_extendByZeroL`: the
+  extension preserves the norms of both components.
+* `TauCeti.W1p0.restrictL_extendByZeroL`: restricting the extension back to `Ω` recovers `u`.
 * `TauCeti.W1p0.hasWeakFDerivOn_indicator`: the analytic content, that the
   zero-extension of `u` is weakly differentiable on `Ω'` with the zero-extension of `∇u` as its
   weak gradient.
@@ -290,6 +294,28 @@ theorem W1p0.gradient_extendByZeroL (hsub : Omega ≤ Omega') (u : W1p0 mu Omega
         (W1p.gradient (u : W1p mu Omega p)) := by
   rw [W1p.gradient_coe, W1p.gradient_coe, W1p0.coe_extendByZeroL,
     Sobolev1JetLp.gradient_extendByZeroₗᵢ]
+
+/-- Extension by zero preserves the `Lᵖ` norm of the value component. -/
+@[simp]
+theorem W1p0.norm_value_extendByZeroL (hsub : Omega ≤ Omega') (u : W1p0 mu Omega p) :
+    ‖W1p.value (W1p0.extendByZeroL hsub u : W1p mu Omega' p)‖ = ‖W1p.value (u : W1p mu Omega p)‖ :=
+  by rw [W1p0.value_extendByZeroL, LinearIsometry.norm_map]
+
+/-- Extension by zero preserves the `Lᵖ` norm of the weak gradient. -/
+@[simp]
+theorem W1p0.norm_gradient_extendByZeroL (hsub : Omega ≤ Omega') (u : W1p0 mu Omega p) :
+    ‖W1p.gradient (W1p0.extendByZeroL hsub u : W1p mu Omega' p)‖ =
+      ‖W1p.gradient (u : W1p mu Omega p)‖ := by
+  rw [W1p0.gradient_extendByZeroL, LinearIsometry.norm_map]
+
+/-- **Restricting a zero extension recovers the original function.** For `u ∈ W^{1,p}_0(Ω)` and
+`Ω ⊆ Ω'`, the restriction to `Ω` of the zero-extension of `u` to `Ω'` is `u`. -/
+@[simp]
+theorem W1p0.restrictL_extendByZeroL (hsub : Omega ≤ Omega') (u : W1p0 mu Omega p) :
+    W1p.restrictL hsub (W1p0.extendByZeroL hsub u : W1p mu Omega' p) = u :=
+  W1p.ext_value (Lp.ext ((W1p.value_restrictL_ae hsub _).trans (by
+    rw [W1p0.value_extendByZeroL]
+    exact coeFn_extendByZeroLpₗᵢ_restrict ℝ _ _ _)))
 
 /-- **The analytic content of the extension theorem.**  The zero-extension of `u ∈ W^{1,p}_0(Ω)`
 is weakly differentiable on the larger open set `Ω'`, with weak gradient the zero-extension of the
