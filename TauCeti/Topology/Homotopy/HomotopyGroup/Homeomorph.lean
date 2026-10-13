@@ -107,7 +107,6 @@ theorem mapHomeomorph_apply (e : X ≃ₜ Y) (h : e x = y) (p : Ω^ N X x) (t : 
     mapHomeomorph e h p t = e (p t) :=
   map_apply ⟨e, e.continuous⟩ h p t
 
-@[simp]
 theorem mapHomeomorph_symm_apply (e : X ≃ₜ Y) (h : e x = y) (p : Ω^ N Y y) (t : I^N) :
     (mapHomeomorph e h).symm p t = e.symm (p t) :=
   map_apply ⟨e.symm, e.symm.continuous⟩ (e.symm_apply_eq.mpr h.symm) p t
