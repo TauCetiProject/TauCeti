@@ -100,7 +100,7 @@ theorem semisimpleCommHopfAlgProperty_finiteTypeCoordinateHopfAlgebra
     (forget₂ (FiniteTypeCommHopfAlgCat K) (_root_.CommHopfAlgCat K)).mapIso
       (finiteTypeCoordinateHopfAlgebraBaseChangeIso k K m) ≪≫
         eqToIso (finiteTypeCoordinateHopfAlgebra_obj K m)
-  exact semisimpleCommHopfAlgProperty_of_geometricFiber_iso_of_forall_isReduced k _ G
+  exact semisimpleCommHopfAlgProperty_of_geometricFiber_iso_of_isReduced_isSolvable k _ G
     hred.smooth hred.geometricallyConnected e fun I hI _ _ _ ↦
       eq_augmentation_of_isNormal_of_isSolvable m I hI
 
