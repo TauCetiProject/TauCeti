@@ -194,17 +194,17 @@ theorem ring_inverse_fderiv_flow (hs : DifferentiableAt ℝ (ϕ (-t)) (ϕ t x))
   Ring.inverse_unit ⟨_, _, fderiv_flow_comp_neg hs ht, fderiv_flow_neg_comp hs ht⟩
 
 omit [CompleteSpace E] in
-/-- **The derivative of a flow carries its velocity field along**: if the orbit of each point `y`
-has velocity `v y` at time `0`, then `Dϕ_t(x) (v x) = v (ϕ_t x)`. -/
-theorem fderiv_flow_apply_of_hasDerivAt {v : E → E}
-    (hv : ∀ y, HasDerivAt (fun s ↦ ϕ s y) (v y) 0) (ht : DifferentiableAt ℝ (ϕ t) x) :
-    fderiv ℝ (ϕ t) x (v x) = v (ϕ t x) := by
-  have h1 : HasDerivAt (fun s ↦ ϕ t (ϕ s x)) (fderiv ℝ (ϕ t) x (v x)) 0 :=
-    ht.hasFDerivAt.comp_hasDerivAt_of_eq 0 (hv x) (Flow.map_zero_apply ϕ x).symm
+/-- **The derivative of a flow carries its velocity field along**: if the orbits of `x` and of
+`ϕ t x` have velocities `a` and `b` at time `0`, then `Dϕ_t(x) a = b`. -/
+theorem fderiv_flow_apply_of_hasDerivAt {a b : E} (hx : HasDerivAt (fun s ↦ ϕ s x) a 0)
+    (hy : HasDerivAt (fun s ↦ ϕ s (ϕ t x)) b 0) (ht : DifferentiableAt ℝ (ϕ t) x) :
+    fderiv ℝ (ϕ t) x a = b := by
+  have h1 : HasDerivAt (fun s ↦ ϕ t (ϕ s x)) (fderiv ℝ (ϕ t) x a) 0 :=
+    ht.hasFDerivAt.comp_hasDerivAt_of_eq 0 hx (Flow.map_zero_apply ϕ x).symm
   have h2 : (fun s ↦ ϕ t (ϕ s x)) = fun s ↦ ϕ s (ϕ t x) :=
     funext fun s ↦ by rw [← ϕ.map_add, ← ϕ.map_add, add_comm]
   rw [h2] at h1
-  exact h1.unique (hv _)
+  exact h1.unique hy
 
 end Composition
 

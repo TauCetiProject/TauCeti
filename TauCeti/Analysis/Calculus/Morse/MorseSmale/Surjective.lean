@@ -130,65 +130,6 @@ end Bump
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   {f : E → ℝ} {K : ℝ≥0}
 
-section Orbit
-
-/-- The orbit of `y` under the negative-gradient flow has velocity `-∇ f`. -/
-private theorem hasDerivAt_negativeGradientFlow_orbit (hf : LipschitzWith K (∇ f)) (y : E)
-    (t : ℝ) :
-    HasDerivAt (fun s ↦ negativeGradientFlow f hf s y)
-      (-∇ f (negativeGradientFlow f hf t y)) t :=
-  (isNegativeGradient_negativeGradientFlow f hf).isIntegralCurve y t
-
-/-- The derivative of the negative-gradient flow carries the gradient along the orbit. -/
-private theorem fderiv_negativeGradientFlow_apply_gradient (hfs : ContDiff ℝ 2 f)
-    (hf : LipschitzWith K (∇ f)) (t : ℝ) (x : E) :
-    fderiv ℝ (negativeGradientFlow f hf t) x (∇ f x) = ∇ f (negativeGradientFlow f hf t x) := by
-  have hv : ∀ y, HasDerivAt (fun s ↦ negativeGradientFlow f hf s y) (-∇ f y) 0 := fun y ↦ by
-    have := hasDerivAt_negativeGradientFlow_orbit hf y 0
-    rwa [Flow.map_zero_apply] at this
-  have := fderiv_flow_apply_of_hasDerivAt hv
-    ((contDiff_negativeGradientFlow_apply f hf hfs t).differentiable one_ne_zero x)
-  rwa [map_neg, neg_inj] at this
-
-/-- An orbit through a non-critical point meets no critical point. -/
-private theorem gradient_negativeGradientFlow_ne_zero (hf : LipschitzWith K (∇ f)) {x : E}
-    (hx : ∇ f x ≠ 0) (t : ℝ) : ∇ f (negativeGradientFlow f hf t x) ≠ 0 := by
-  intro h0
-  have hfix := (forall_negativeGradientFlow_eq_self_iff f hf _).2 h0 (-t)
-  rw [← Flow.map_add, neg_add_cancel, Flow.map_zero_apply] at hfix
-  exact hx (hfix ▸ h0)
-
-/-- Along an orbit through a non-critical point, `f` is strictly decreasing. -/
-private theorem strictAnti_comp_negativeGradientFlow (hfs : ContDiff ℝ 2 f)
-    (hf : LipschitzWith K (∇ f)) {x : E} (hx : ∇ f x ≠ 0) :
-    StrictAnti fun σ ↦ f (negativeGradientFlow f hf σ x) := by
-  refine strictAnti_of_deriv_neg fun σ ↦ ?_
-  have hd : HasDerivAt (fun σ ↦ f (negativeGradientFlow f hf σ x))
-      (fderiv ℝ f (negativeGradientFlow f hf σ x) (-∇ f (negativeGradientFlow f hf σ x))) σ :=
-    ((hfs.differentiable (by norm_num)) _).hasFDerivAt.comp_hasDerivAt σ
-      (hasDerivAt_negativeGradientFlow_orbit hf x σ)
-  rw [hd.deriv, map_neg, ← inner_gradient_left, real_inner_self_eq_norm_sq, neg_lt_zero]
-  exact pow_pos (norm_pos_iff.2 (gradient_negativeGradientFlow_ne_zero hf hx σ)) 2
-
-/-- The inverse `Dφ_{-σ}(φ_σ x)` of the derivative of the flow along an orbit is continuous in
-`σ`. -/
-private theorem continuous_fderiv_negativeGradientFlow_neg (hfs : ContDiff ℝ 2 f)
-    (hf : LipschitzWith K (∇ f)) (x : E) :
-    Continuous fun σ ↦
-      fderiv ℝ (negativeGradientFlow f hf (-σ)) (negativeGradientFlow f hf σ x) := by
-  have hφd : ∀ t, Differentiable ℝ (negativeGradientFlow f hf t) := fun t ↦
-    (contDiff_negativeGradientFlow_apply f hf hfs t).differentiable one_ne_zero
-  have hinv : ∀ σ, Ring.inverse (fderiv ℝ (negativeGradientFlow f hf σ) x) =
-      fderiv ℝ (negativeGradientFlow f hf (-σ)) (negativeGradientFlow f hf σ x) := fun σ ↦
-    ring_inverse_fderiv_flow (hφd _ _) (hφd σ x)
-  simp_rw [← hinv]
-  refine continuous_iff_continuousAt.2 fun σ ↦ ?_
-  let U : (E →L[ℝ] E)ˣ := ⟨_, _, fderiv_flow_comp_neg (hφd (-σ) _) (hφd σ x),
-    fderiv_flow_neg_comp (hφd (-σ) _) (hφd σ x)⟩
-  exact (NormedRing.inverse_continuousAt U).comp_of_eq
-    (hasDerivAt_fderiv_negativeGradientFlow f hf hfs x σ).continuousAt rfl
-
-end Orbit
 
 /-- The integral `∫₀ᵀ Dφ_{-σ}(φ_σ x) (∇g(φ_σ x)) dσ` that an admissible perturbation `g` contributes
 to the parameter derivative of the flow. -/
@@ -211,7 +152,7 @@ private theorem span_insert_gradient_range_contribution_eq_top (hfs : ContDiff �
   have hγ : Continuous fun σ ↦ φ σ x :=
     (contDiff_negativeGradientFlow f hf hfs).continuous.comp
       (continuous_id.prodMk continuous_const)
-  have hN : Continuous N := continuous_fderiv_negativeGradientFlow_neg hfs hf x
+  have hN : Continuous N := continuous_fderiv_negativeGradientFlow_neg f hf hfs x
   by_contra hV
   obtain ⟨y, hyV, hy0⟩ := Submodule.exists_mem_ne_zero_of_ne_bot
     fun h0 ↦ hV (Submodule.orthogonal_eq_bot_iff.1 h0)
@@ -228,7 +169,7 @@ private theorem span_insert_gradient_range_contribution_eq_top (hfs : ContDiff �
   -- They annihilate the flow direction.
   have hmgrad : ∀ σ, fderiv ℝ f (φ σ x) (m σ) = 0 := fun σ ↦ by
     have hNg : N σ (∇ f (φ σ x)) = ∇ f x := by
-      have := fderiv_negativeGradientFlow_apply_gradient hfs hf (-σ) (φ σ x)
+      have := fderiv_negativeGradientFlow_apply_gradient f hf hfs (-σ) (φ σ x)
       rwa [← Flow.map_add, neg_add_cancel, Flow.map_zero_apply] at this
     rw [← inner_gradient_left, ContinuousLinearMap.adjoint_inner_right, hNg, hyx]
   -- A bump around a point of the orbit, inside a region without critical points.
@@ -237,7 +178,7 @@ private theorem span_insert_gradient_range_contribution_eq_top (hfs : ContDiff �
   set z := φ σ₀ x
   have hgradc : Continuous (∇ f) := (hfs.gradient_right (m := 1) (by norm_num)).continuous
   obtain ⟨ρ, hρ, hρz⟩ := Metric.eventually_nhds_iff.1
-    (hgradc.continuousAt.eventually_ne (gradient_negativeGradientFlow_ne_zero hf hx σ₀))
+    (hgradc.continuousAt.eventually_ne (gradient_negativeGradientFlow_ne_zero f hf hx σ₀))
   let θ : ContDiffBump z := ⟨ρ / 4, ρ / 2, by positivity, by linarith⟩
   have hθr : θ.rOut = ρ / 2 := rfl
   have hθz : θ z = 1 := θ.one_of_mem_closedBall (Metric.mem_closedBall_self θ.rIn_pos.le)
@@ -295,7 +236,10 @@ private theorem span_insert_gradient_range_contribution_eq_top (hfs : ContDiff �
       ((θ.continuous.comp hγ).mul (continuous_const.inner hm) |>.add
         ((continuous_const.inner hγ).mul
           ((((θ.contDiff (n := 1)).continuous_fderiv one_ne_zero).comp hγ).clm_apply hm)))
-      hF (strictAnti_comp_negativeGradientFlow hfs hf hx) hσ₀ (hkey (m σ₀))
+      hF (IsIntegralCurve.strictAnti_comp_neg_gradient
+        ((isNegativeGradient_negativeGradientFlow f hf).isIntegralCurve x)
+        (fun _ ↦ (hfs.differentiable (by norm_num)) _)
+        (gradient_negativeGradientFlow_ne_zero f hf hx)) hσ₀ (hkey (m σ₀))
     have hθz' : θ (φ σ₀ x) = 1 := hθz
     have hθ'z' : fderiv ℝ θ (φ σ₀ x) = 0 := hθ'z
     simpa [hθz', hθ'z'] using h0
@@ -342,14 +286,13 @@ theorem exists_admissible_range_fderiv_perturbedFlow_sup_span_eq_top (hfs : Cont
       fun p ↦ by simp
     calc L (-EuclideanSpace.single i 1)
         = (fderiv ℝ (perturbedFlow f (fun i ↦ (g i).1) hf (fun i ↦ (g i).2) T) (x, 0)
-            (0, -EuclideanSpace.single i 1)).1 := rfl
+            (0, -EuclideanSpace.single i 1)).1 := by simp [L]
       _ = MT (v i) := by
         rw [hD, ← hg i]
-        simp only [hsum, map_neg, intervalIntegral.integral_neg, neg_neg]
-        rfl
+        simp only [hsum, map_neg, intervalIntegral.integral_neg, neg_neg, contribution, MT, φ]
   have hS : Submodule.span ℝ S ≤ (LinearMap.range L).comap (MT : E →ₗ[ℝ] E) :=
     hvspan.symm.le.trans (Submodule.span_le.2 (by rintro _ ⟨i, rfl⟩; exact hv i))
-  have hgrad : MT (∇ f x) = ∇ f (φ T x) := fderiv_negativeGradientFlow_apply_gradient hfs hf T x
+  have hgrad : MT (∇ f x) = ∇ f (φ T x) := fderiv_negativeGradientFlow_apply_gradient f hf hfs T x
   have htop := span_insert_gradient_range_contribution_eq_top hfs hf hx hT
   refine top_unique fun w _ ↦ ?_
   have hw : fderiv ℝ (φ (-T)) (φ T x) w ∈ Submodule.span ℝ (insert (∇ f x) S) := by

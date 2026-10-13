@@ -498,9 +498,7 @@ theorem fst_fderiv_perturbedFlow_apply_eq_neg_integral (hfs : ContDiff ℝ 2 f)
       ContinuousLinearMap.comp_apply, hMN, map_sub, map_neg]
     abel
   have hcont : Continuous fun σ ↦ -(N σ (b σ)) := by
-    have hN' : Continuous fun σ ↦ N σ := by
-      simp_rw [← hinv]
-      exact continuous_iff_continuousAt.2 fun t ↦ (hN t).continuousAt
+    have hN' : Continuous fun σ ↦ N σ := continuous_fderiv_negativeGradientFlow_neg f hf hfs x
     have horb : Continuous fun σ ↦ φ σ x :=
       (contDiff_negativeGradientFlow f hf hfs).continuous.comp
         (continuous_id.prodMk continuous_const)
