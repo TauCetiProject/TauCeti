@@ -150,7 +150,8 @@ def ContractionSemigroup.ofMeasureLpMultiplication {m : α → ℝ≥0}
   contracting := measureLpMultiplicationOperator_norm_le hm
 
 /-- The multiplication semigroup acts by `exp (-t * m)` almost everywhere. -/
-theorem ContractionSemigroup.ofMeasureLpMultiplication_ae {m : α → ℝ≥0}
+@[simp]
+theorem ContractionSemigroup.ofMeasureLpMultiplication_apply_apply_ae {m : α → ℝ≥0}
     (hm : AEMeasurable m μ) (hp : p ≠ ∞) (t : ℝ≥0) (f : Lp E p μ) :
     ofMeasureLpMultiplication hm hp t f =ᵐ[μ]
       fun a => Real.exp (-((t : ℝ) * m a)) • f a :=
@@ -165,15 +166,15 @@ theorem ContractionSemigroup.continuous_ofMeasureLpMultiplication {m : α → �
 
 /-- Almost everywhere equal multipliers define the same multiplication semigroup. -/
 theorem ContractionSemigroup.ofMeasureLpMultiplication_congr_ae {m n : α → ℝ≥0}
-    (hm : AEMeasurable m μ) (hn : AEMeasurable n μ) (hp : p ≠ ∞) (h : m =ᵐ[μ] n) :
-    ofMeasureLpMultiplication (E := E) hm hp = ofMeasureLpMultiplication hn hp := by
+    (hm : AEMeasurable m μ) (hp : p ≠ ∞) (h : m =ᵐ[μ] n) :
+    ofMeasureLpMultiplication (E := E) hm hp = ofMeasureLpMultiplication (hm.congr h) hp := by
   apply ContractionSemigroup.ext
   intro t
   apply ContinuousLinearMap.ext
   intro f
   apply Lp.ext
-  filter_upwards [ofMeasureLpMultiplication_ae hm hp t f,
-    ofMeasureLpMultiplication_ae hn hp t f, h] with a hm hn hmn
+  filter_upwards [ofMeasureLpMultiplication_apply_apply_ae hm hp t f,
+    ofMeasureLpMultiplication_apply_apply_ae (hm.congr h) hp t f, h] with a hm hn hmn
   rw [hm, hn, hmn]
 
 end TauCeti.Semigroups
