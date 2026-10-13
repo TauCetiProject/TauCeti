@@ -51,7 +51,7 @@ variable {𝕜 ι B F₁ F₂ : Type*} [NontriviallyNormedField 𝕜] [Fintype �
 
 section CoordinateChange
 
-variable [CharZero 𝕜]
+variable [NeZero ((Fintype.card ι).factorial : 𝕜)]
   [ContMDiffVectorBundle n F₁ E₁ IB] [ContMDiffVectorBundle n F₂ E₂ IB]
   {e₁ e₁' : Trivialization F₁ (π F₁ E₁)} {e₂ e₂' : Trivialization F₂ (π F₂ E₂)}
   [MemTrivializationAtlas e₁] [MemTrivializationAtlas e₁']
@@ -83,9 +83,11 @@ theorem contMDiffOn_continuousAlternatingMapCoordChange :
 variable [∀ x, IsTopologicalAddGroup (E₂ x)] [∀ x, ContinuousSMul 𝕜 (E₂ x)]
 
 /-- Mathlib's alternating-map vector prebundle has smooth coordinate changes. -/
-instance instIsContMDiffContinuousAlternatingMapVectorPrebundle :
+instance instIsContMDiffContinuousAlternatingMapVectorPrebundle [CharZero 𝕜] :
     (Bundle.ContinuousAlternatingMap.vectorPrebundle 𝕜 ι F₁ E₁ F₂ E₂).IsContMDiff IB n where
   exists_contMDiffCoordChange := by
+    let : NeZero ((Fintype.card ι).factorial : 𝕜) :=
+      ⟨by exact_mod_cast Nat.factorial_ne_zero (Fintype.card ι)⟩
     rintro _ ⟨e₁, e₂, he₁, he₂, rfl⟩ _ ⟨e₁', e₂', he₁', he₂', rfl⟩
     exact ⟨continuousAlternatingMapCoordChange 𝕜 ι e₁ e₁' e₂ e₂',
       contMDiffOn_continuousAlternatingMapCoordChange,
@@ -93,7 +95,7 @@ instance instIsContMDiffContinuousAlternatingMapVectorPrebundle :
 
 /-- Continuous alternating maps between two `C^n` vector bundles form a `C^n` vector
 bundle with Mathlib's existing alternating-map topology and atlas. -/
-instance instContMDiffVectorBundleContinuousAlternatingMap :
+instance instContMDiffVectorBundleContinuousAlternatingMap [CharZero 𝕜] :
     ContMDiffVectorBundle n (F₁ [⋀^ι]→L[𝕜] F₂) (fun b ↦ E₁ b [⋀^ι]→L[𝕜] E₂ b) IB :=
   (Bundle.ContinuousAlternatingMap.vectorPrebundle 𝕜 ι F₁ E₁ F₂ E₂).contMDiffVectorBundle IB
 

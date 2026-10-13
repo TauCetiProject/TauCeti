@@ -14,7 +14,8 @@ public import Mathlib.Analysis.Normed.Module.Multilinear.Curry
 Mathlib's `ContinuousMultilinearMap.alternatization` is the signed permutation sum.
 Here it is bundled as a continuous linear map, with its factorial norm bound and its
 value on alternating maps. Dividing by the factorial gives a retraction onto alternating
-maps in characteristic zero, useful for transporting smoothness from multilinear maps.
+maps when the factorial is nonzero in the scalar field, useful for transporting smoothness
+from multilinear maps.
 
 The construction uses Yury Kudryashov's alternatization in
 `Mathlib.Topology.Algebra.Module.Alternating.Basic`.

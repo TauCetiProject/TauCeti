@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Normed.Module.Alternating.Alternatization
+public import TauCeti.Topology.Algebra.Module.Alternating.Basic
 public import Mathlib.Analysis.Calculus.ContDiff.CPolynomial
 public import Mathlib.Analysis.Calculus.ContDiff.Operations
 
@@ -13,7 +14,7 @@ public import Mathlib.Analysis.Calculus.ContDiff.Operations
 # Smooth pullback of continuous alternating maps
 
 Pullback on alternating maps is polynomial in the continuous linear map used on the
-domain. In characteristic zero this follows from Mathlib's continuous multilinear
+domain. When the arity factorial is nonzero, this follows from Mathlib's continuous multilinear
 pullback: normalized alternatization recovers the alternating output. The result is
 operator-valued, so it controls smooth coordinate changes of alternating-map bundles.
 
@@ -27,10 +28,11 @@ noncomputable section
 
 namespace TauCeti
 
-variable {𝕜 E F G ι : Type*} [NontriviallyNormedField 𝕜] [CharZero 𝕜]
+variable {𝕜 E F G ι : Type*} [NontriviallyNormedField 𝕜]
   [NormedAddCommGroup E] [NormedSpace 𝕜 E]
   [NormedAddCommGroup F] [NormedSpace 𝕜 F]
   [NormedAddCommGroup G] [NormedSpace 𝕜 G] [Fintype ι]
+  [NeZero ((Fintype.card ι).factorial : 𝕜)]
 
 /-- Pullback on continuous alternating maps is smooth, as an operator-valued function of
 the continuous linear map on the domain. No completeness or finite dimensionality is needed. -/
@@ -54,14 +56,12 @@ theorem contDiff_compContinuousLinearMapCLM (n : WithTop ℕ∞) :
   -- Both inclusions use the underlying multilinear map; normalized alternatization
   -- returns the alternating pullback itself.
   simp only [A, J, P, ContinuousLinearMap.comp_apply, smul_apply,
+    ContinuousAlternatingMap.compContinuousLinearMapCLM_apply,
     ContinuousAlternatingMap.toContinuousMultilinearMapCLM_apply,
     ContinuousMultilinearMap.compContinuousLinearMapContinuousMultilinear_apply_apply]
-  -- The multilinear pullback is definitionally the underlying map of the alternating pullback.
-  change (φ.compContinuousLinearMap f) v =
-    (((Fintype.card ι).factorial : 𝕜)⁻¹ •
-      alternatizationCLM (φ.compContinuousLinearMap f).toContinuousMultilinearMap) v
-  rw [alternatizationCLM_apply, alternatization_toContinuousMultilinearMap,
+  rw [← toContinuousMultilinearMap_compContinuousLinearMap,
+    alternatizationCLM_apply, alternatization_toContinuousMultilinearMap,
     ← Nat.cast_smul_eq_nsmul 𝕜,
-    inv_smul_smul₀ (by exact_mod_cast Nat.factorial_ne_zero (Fintype.card ι))]
+    inv_smul_smul₀ (NeZero.ne ((Fintype.card ι).factorial : 𝕜))]
 
 end TauCeti
