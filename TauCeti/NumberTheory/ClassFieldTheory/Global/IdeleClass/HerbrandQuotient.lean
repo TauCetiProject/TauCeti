@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.ClassFieldTheory.Global.IdeleClass.Finite
+public import TauCeti.NumberTheory.ClassFieldTheory.Global.SIdeles
 import TauCeti.NumberTheory.ClassFieldTheory.Global.OrdinaryUnits
 import TauCeti.NumberTheory.ClassFieldTheory.Global.SUnitsCohomology
 import TauCeti.NumberTheory.ClassFieldTheory.Global.Units
@@ -84,8 +84,8 @@ theorem herbrandQuotient_ideleClassRep_eq_finrank :
   have hP := right_ne_zero_of_mul hU
   have hA : TateCohomology.herbrandQuotient
       (Rep.ofMulAction ℤ (L ≃ₐ[K] L) (InfinitePlace L)) ≠ 0 := by
-    rw [herbrandQuotient_ofMulAction_infinitePlace]
-    exact pow_ne_zero _ two_ne_zero
+    rw [← herbrandQuotient_infiniteIdelesRep_eq_herbrandQuotient_ofMulAction]
+    exact herbrandQuotient_infiniteIdelesRep_ne_zero
   have hn : (Module.finrank K L : ℚ) ≠ 0 := Nat.cast_ne_zero.2 Module.finrank_pos.ne'
   rw [herbrandQuotient_ideleClassRep L hgen,
     herbrandQuotient_sIdelesRep_eq_herbrandQuotient_ofMulAction hunram,
