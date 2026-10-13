@@ -30,18 +30,16 @@ namespace TauCeti
 
 namespace BasedTopologicalSpace
 
-/-- The loop space `Ω X`: loops at the basepoint, based at the constant loop. See
-`iteratedLoopSpace` for why it is `@[expose]`d. -/
+/-- The loop space `Ω X`: loops at the basepoint, based at the constant loop. -/
+-- Exposed so that equivalences out of `iteratedLoopSpace` can be defined by recursion in other
+-- modules; users should go through `iteratedLoopSpace_zero` and `iteratedLoopSpace_succ`.
 @[expose] def loopSpace (X : BasedTopologicalSpace.{u}) : BasedTopologicalSpace.{u} where
   carrier := Path X.basepoint X.basepoint
   basepoint := Path.refl X.basepoint
 
 /-- The `k`-fold iterated loop space `Ω^[k] X`, defined by `Ω^[0] X = X` and
-`Ω^[k + 1] X = Ω (Ω^[k] X)`.
-
-It is `@[expose]`d, with `loopSpace`, so that equivalences out of the homotopy groups of
-`Ω^[k] X` can be stated and proved by recursion on `k`; use `iteratedLoopSpace_zero`,
-`iteratedLoopSpace_succ` and the lemmas below rather than unfolding it. -/
+`Ω^[k + 1] X = Ω (Ω^[k] X)`. -/
+-- Exposed for the same reason as `loopSpace`.
 @[expose] def iteratedLoopSpace (X : BasedTopologicalSpace.{u}) : ℕ → BasedTopologicalSpace.{u}
   | 0 => X
   | k + 1 => (X.iteratedLoopSpace k).loopSpace

@@ -54,6 +54,7 @@ theorem piIteratedLoopSpaceMulEquiv_zero (X : BasedTopologicalSpace.{u}) (m : â„
 
 /-- The shift along `k + 1` loops is the one-loop shift `pathLoopSpaceMulEquiv` followed by the
 shift along `k` loops, reindexed. -/
+@[simp]
 theorem piIteratedLoopSpaceMulEquiv_succ (X : BasedTopologicalSpace.{u}) (k m : â„•) :
     X.piIteratedLoopSpaceMulEquiv (k + 1) m =
       (pathLoopSpaceMulEquiv (X := (X.iteratedLoopSpace k).carrier)
