@@ -101,11 +101,6 @@ theorem map_bot (f : C →ₗc[R] D) : (⊥ : Subcoalgebra R C).map f = ⊥ := b
   ext d
   simp only [← mem_toSubmodule, map_toSubmodule, bot_toSubmodule, Submodule.map_bot]
 
-/-- The image of the top subcoalgebra is the range of the coalgebra morphism as a submodule. -/
-theorem map_top_toSubmodule (f : C →ₗc[R] D) :
-    ((⊤ : Subcoalgebra R C).map f).toSubmodule = LinearMap.range f.toLinearMap := by
-  rw [map_toSubmodule, top_toSubmodule, Submodule.map_top]
-
 /-- The identity coalgebra morphism leaves a subcoalgebra unchanged. -/
 @[simp]
 theorem map_id (A : Subcoalgebra R C) : A.map (CoalgHom.id R C) = A := by

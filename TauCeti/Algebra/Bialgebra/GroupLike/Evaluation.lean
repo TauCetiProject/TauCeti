@@ -181,7 +181,9 @@ theorem map_top_liftGroupLikeBialgHom :
         LinearMap.range
           (MonoidAlgebra.liftGroupLikeBialgHom (R := R) (A := H) :
             MonoidAlgebra R (_root_.GroupLike R H) →ₗ[R] H) :=
-    Subcoalgebra.map_top_toSubmodule _
+    by
+      rw [Subcoalgebra.map_toSubmodule, Subcoalgebra.top_toSubmodule, Submodule.map_top]
+      rfl
   calc
     h ∈ Subcoalgebra.map
         (MonoidAlgebra.liftGroupLikeBialgHom (R := R) (A := H) :
