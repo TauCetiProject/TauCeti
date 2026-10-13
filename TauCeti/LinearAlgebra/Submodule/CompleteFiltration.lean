@@ -84,10 +84,11 @@ theorem pow_apply_mem_of_map_le (hT : ∀ n, (F n).map T ≤ F (n + 1)) {m : ℕ
     exact hT _ ⟨_, ih, rfl⟩
 
 /-- If `T` raises a decreasing filtration with `F 0 = ⊤`, then `(1 + T) u ∈ F k` forces
-`u ∈ F k`: writing `u = (1 + T) u - T u`, membership of `u` in `F j` improves to `F (j + 1)` until
-it reaches `F k`.  No completeness is needed. -/
+`u ∈ F k`.  No completeness is needed. -/
 theorem mem_of_one_add_apply_mem (hanti : Antitone F) (hF0 : F 0 = ⊤)
     (hT : ∀ n, (F n).map T ≤ F (n + 1)) {u : M} {k : ℕ} (hu : (1 + T) u ∈ F k) : u ∈ F k := by
+  -- Writing `u = (1 + T) u - T u`, membership of `u` in `F j` improves to `F (j + 1)` until it
+  -- reaches `F k`.
   have key : ∀ j, u ∈ F (min k j) := by
     intro j
     induction j with
