@@ -14,6 +14,13 @@ public import Mathlib.Topology.Separation.Hausdorff
 This file collects elementary topological facts about open partial homeomorphisms that are not
 in Mathlib.
 
+A chart of a manifold is an open partial homeomorphism `φ : M → E`, and subsets of `M` are often
+built by pulling back sets from the model space, as `φ.symm '' K` for some `K ⊆ φ.target`. When
+`K` is compact and `M` is Hausdorff, such a pulled-back set is closed in all of `M`, not just in
+`φ.source`. This lets arguments that need closed subsets of `M` (for instance, the relative
+Mayer–Vietoris sequence for the local homology groups `Hₖ(M, M ∖ A)`, whose complements must be
+open) be applied to compact convex pieces of a chart.
+
 ## Main statements
 
 * `OpenPartialHomeomorph.isClosed_image_symm_of_isCompact`: the inverse of an open partial
