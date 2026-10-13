@@ -27,8 +27,8 @@ gives; it is not claimed to be optimal.
 Only the prime `2` needs care. Exactly one of `a`, `b`, `c` is even.
 
 * If `16` divides it, the triple can be reordered and its signs changed so that the Frey curve is
-  semistable, with minimal discriminant `(a b c)² / 2⁸` and algorithmic conductor `rad (a b c)`
-  (`TauCeti.isSemistable_freyCurve`, `TauCeti.minimalDiscriminantIdeal_freyCurve`).
+  semistable, with minimal discriminant `(a b c)² / 2⁸` and algorithmic conductor dividing
+  `rad (a b c)` (`TauCeti.isSemistable_freyCurve`, `TauCeti.minimalDiscriminantIdeal_freyCurve`).
 * Otherwise the Frey equation is globally minimal, with minimal discriminant `16 (a b c)²`
   (`TauCeti.minimalDiscriminantIdeal_freyCurve_of_not_dvd`). Its reduction at `2` may be additive,
   but its algorithmic conductor still divides `2¹¹ rad (a b c)`
