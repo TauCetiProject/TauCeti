@@ -17,7 +17,11 @@ order `e * fᵢ`, so its triviality forces both ramification index one and resid
 
 The criterion for a prime of the base quantifies over all primes above it. It translates
 unramifiedness into an inertia condition without assuming finite or perfect residue fields,
-as needed when testing splitting in subextensions and composita.
+as needed when testing splitting in subextensions and composita over a general Dedekind base.
+The existing compositum criterion `Ideal.isUnramifiedIn_sup_iff` is for rings of integers of
+number fields. Extending that criterion to a general Dedekind base requires an
+inertia-containment criterion for intermediate integral closures; the trivial-inertia
+criterion here supplies its unramifiedness characterization without residue separability.
 
 ## References
 
