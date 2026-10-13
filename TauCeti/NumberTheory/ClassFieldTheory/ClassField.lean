@@ -27,11 +27,18 @@ way. Subgroup inclusion becomes reverse inclusion of fields, which is how an ord
 correspondence on subgroups becomes the classical order-reversing correspondence on fields.
 Finally `V` is an abelian layer exactly when its class field is an abelian extension.
 
+The same dictionary reads an arbitrary finite normal layer `V ◁ U` of `G_F`, whose ground `U` is
+any open subgroup: if `E` and `L` are the fixed fields of `U` and `V`, then `L/E` is Galois
+(`NormalLayer.isGalois_of_fixedField`) and restriction to `L` identifies the Galois group `U ⧸ V`
+of the layer with `Gal(L/E)` (`NormalLayer.galEquivOfFixedField`).
+
 ## Main definitions
 
 * `TauCeti.ClassFieldTheory.classField F V`: the fixed field of `V` in `Fˢ`.
 * `TauCeti.ClassFieldTheory.galClassFieldEquiv`: the Galois group of `classField F V` over `F` is
   the Galois group of the finite normal layer `V ◁ G_F`.
+* `TauCeti.ClassFieldTheory.NormalLayer.galEquivOfFixedField`: the Galois group of a finite
+  normal layer `V ◁ U` is `Gal(L/E)` for the fixed fields `E` of `U` and `L` of `V`.
 
 ## Main results
 
@@ -47,6 +54,8 @@ Finally `V` is an abelian layer exactly when its class field is an abelian exten
   of `V`.
 * `TauCeti.ClassFieldTheory.isAbelianGalois_classField_iff`: the class field of `V` is abelian
   over `F` if and only if `V` is an abelian layer.
+* `TauCeti.ClassFieldTheory.NormalLayer.isGalois_of_fixedField`: the fixed field of the top
+  subgroup of a layer is Galois over the fixed field of its ground subgroup.
 
 ## References
 
@@ -205,5 +214,108 @@ theorem isAbelianGalois_classField_iff {V : OpenNormalSubgroup (AbsoluteGaloisGr
     fun h ↦ { toIsMulCommutative := e.symm.surjective.isMulCommutative h }⟩
 
 end Layer
+
+/-! ### The fixed fields of an arbitrary layer -/
+
+section FixedField
+
+variable {F : Type} [Field F] (Lay : NormalLayer (AbsoluteGaloisGroup F))
+  {E L : IntermediateField F (SeparableClosure F)} [Algebra E L]
+  [IsScalarTower E L (SeparableClosure F)]
+
+namespace NormalLayer
+
+/-- The ground subgroup of a layer with fixed field `E`, read as `Gal(Fˢ/E)`. -/
+private def groundEquivOfFixedField (hE : fixedField Lay.ground.toSubgroup = E) :
+    Lay.ground ≃* Gal(SeparableClosure F/E) :=
+  (MulEquiv.subgroupCongr (toSubgroup_eq_fixingSubgroup_of_fixedField_eq hE)).trans
+    E.fixingSubgroupEquiv
+
+private theorem groundEquivOfFixedField_apply (hE : fixedField Lay.ground.toSubgroup = E)
+    (g : Lay.ground) (x : SeparableClosure F) :
+    Lay.groundEquivOfFixedField hE g x = (g : AbsoluteGaloisGroup F) x :=
+  (rfl)
+
+/-- An element of the ground subgroup lies in the top subgroup exactly when it fixes the fixed
+field of the top subgroup pointwise. -/
+private theorem mem_relativeTop_iff (hL : fixedField Lay.top.toSubgroup = L) (g : Lay.ground) :
+    g ∈ Lay.relativeTop ↔ ∀ x : L, (g : AbsoluteGaloisGroup F) x = x := by
+  rw [Subgroup.mem_subgroupOf, toSubgroup_eq_fixingSubgroup_of_fixedField_eq hL,
+    IntermediateField.mem_fixingSubgroup_iff]
+  exact ⟨fun h x ↦ h x x.2, fun h x hx ↦ h ⟨x, hx⟩⟩
+
+/-- Read in `Gal(Fˢ/E)`, the top subgroup of the layer is the subgroup fixing `L`. -/
+private theorem fixingSubgroup_fieldRange (hE : fixedField Lay.ground.toSubgroup = E)
+    (hL : fixedField Lay.top.toSubgroup = L) :
+    (IsScalarTower.toAlgHom E L (SeparableClosure F)).fieldRange.fixingSubgroup =
+      Lay.relativeTop.map (Lay.groundEquivOfFixedField hE).toMonoidHom := by
+  ext σ
+  obtain ⟨g, rfl⟩ := (Lay.groundEquivOfFixedField hE).surjective σ
+  rw [Subgroup.mem_map_equiv, MulEquiv.symm_apply_apply, Lay.mem_relativeTop_iff hL,
+    IntermediateField.mem_fixingSubgroup_iff]
+  simp only [AlgHom.mem_fieldRange, IsScalarTower.coe_toAlgHom', forall_exists_index,
+    forall_apply_eq_imp_iff, groundEquivOfFixedField_apply, IntermediateField.algebraMap_apply]
+
+/-- **A layer is Galois on fixed fields**: if the ground and top subgroups of a layer `V ◁ U` of
+`G_F` have fixed fields `E` and `L`, then `L/E` is a Galois extension. -/
+theorem isGalois_of_fixedField (hE : fixedField Lay.ground.toSubgroup = E)
+    (hL : fixedField Lay.top.toSubgroup = L) : IsGalois E L := by
+  have : IsGalois E (SeparableClosure F) := IsGalois.tower_top_of_isGalois F E _
+  have := (InfiniteGalois.normal_iff_isGalois
+    (IsScalarTower.toAlgHom E L (SeparableClosure F)).fieldRange).1 (by
+      rw [Lay.fixingSubgroup_fieldRange hE hL]
+      exact Subgroup.Normal.map inferInstance _ (Lay.groundEquivOfFixedField hE).surjective)
+  exact IsGalois.of_algEquiv
+    (IsScalarTower.toAlgHom E L (SeparableClosure F)).equivFieldRange.symm
+
+/-- Restriction from the ground subgroup of a layer to the automorphisms of the fixed field of
+its top subgroup over the fixed field of its ground subgroup. -/
+private def restrictFixedFieldHom (hE : fixedField Lay.ground.toSubgroup = E)
+    (hL : fixedField Lay.top.toSubgroup = L) : Lay.ground →* Gal(L/E) :=
+  have := Lay.isGalois_of_fixedField hE hL
+  (AlgEquiv.restrictNormalHom L).comp (Lay.groundEquivOfFixedField hE).toMonoidHom
+
+private theorem restrictFixedFieldHom_apply (hE : fixedField Lay.ground.toSubgroup = E)
+    (hL : fixedField Lay.top.toSubgroup = L) (g : Lay.ground) (x : L) :
+    ((Lay.restrictFixedFieldHom hE hL g x : L) : SeparableClosure F) =
+      (g : AbsoluteGaloisGroup F) x :=
+  have := Lay.isGalois_of_fixedField hE hL
+  AlgEquiv.restrictNormal_commutes (Lay.groundEquivOfFixedField hE g) L x
+
+private theorem ker_restrictFixedFieldHom (hE : fixedField Lay.ground.toSubgroup = E)
+    (hL : fixedField Lay.top.toSubgroup = L) :
+    (Lay.restrictFixedFieldHom hE hL).ker = Lay.relativeTop := by
+  have := Lay.isGalois_of_fixedField hE hL
+  rw [restrictFixedFieldHom, ← MonoidHom.comap_ker, AlgEquiv.ker_restrictNormalHom,
+    Lay.fixingSubgroup_fieldRange hE hL, Subgroup.comap_map_eq_self_of_injective
+      (Lay.groundEquivOfFixedField hE).injective]
+
+private theorem surjective_restrictFixedFieldHom (hE : fixedField Lay.ground.toSubgroup = E)
+    (hL : fixedField Lay.top.toSubgroup = L) :
+    Function.Surjective (Lay.restrictFixedFieldHom hE hL) := by
+  have := Lay.isGalois_of_fixedField hE hL
+  have : IsGalois E (SeparableClosure F) := IsGalois.tower_top_of_isGalois F E _
+  exact (AlgEquiv.restrictNormalHom_surjective _).comp (Lay.groundEquivOfFixedField hE).surjective
+
+/-- **The Galois group of a layer is the Galois group of its fixed fields**: if the ground and top
+subgroups of a layer `V ◁ U` of `G_F` have fixed fields `E` and `L`, restriction to `L` identifies
+the Galois group `U ⧸ V` of the layer with `Gal(L/E)`. -/
+def galEquivOfFixedField (hE : fixedField Lay.ground.toSubgroup = E)
+    (hL : fixedField Lay.top.toSubgroup = L) : Lay.Gal ≃* Gal(L/E) :=
+  (QuotientGroup.quotientMulEquivOfEq (Lay.ker_restrictFixedFieldHom hE hL).symm).trans
+    (QuotientGroup.quotientKerEquivOfSurjective _ (Lay.surjective_restrictFixedFieldHom hE hL))
+
+/-- `galEquivOfFixedField` sends the class of `g` in the ground subgroup to the restriction of `g`
+to `L`: its value at `x ∈ L` is `g x`. -/
+@[simp]
+theorem coe_galEquivOfFixedField_mk_apply (hE : fixedField Lay.ground.toSubgroup = E)
+    (hL : fixedField Lay.top.toSubgroup = L) (g : Lay.ground) (x : L) :
+    ((Lay.galEquivOfFixedField hE hL (g : Lay.Gal) x : L) : SeparableClosure F) =
+      (g : AbsoluteGaloisGroup F) x :=
+  Lay.restrictFixedFieldHom_apply hE hL g x
+
+end NormalLayer
+
+end FixedField
 
 end TauCeti.ClassFieldTheory

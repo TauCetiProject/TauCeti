@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Colimit.DirectLimit
 public import TauCeti.FieldTheory.Galois.GaloisClosure
+public import TauCeti.FieldTheory.IntermediateField.ScalarTower
 public import TauCeti.Algebra.GroupAction.QuotientAddGroup
 public import TauCeti.Algebra.GroupAction.TypeTags
 public import TauCeti.FieldTheory.GaloisCohomology.Coefficients
@@ -83,6 +84,8 @@ is exact by `principalIdele_injective`, `ideleClassMk_eq_zero_iff` and
   `Kˢ`.
 * `TauCeti.ClassFieldTheory.ideleCoeffOf_ideleExtension`: `ideleCoeffOfIntermediateField` may be
   computed through any finite Galois subextension containing `E`.
+* `TauCeti.ClassFieldTheory.ideleCoeffOfIntermediateField_ideleExtension`: extending an idele
+  from `F` to a larger finite subextension `E` does not change it as an idele of `Kˢ`.
 * `TauCeti.ClassFieldTheory.smul_ideleCoeffOfIntermediateField`: the action of `G_K` on the ideles
   of a finite subextension, through the automorphisms of `E` it restricts to.
 * `TauCeti.ClassFieldTheory.mem_range_ideleCoeffOfIntermediateField_iff`: **Galois descent**, an
@@ -524,6 +527,25 @@ theorem ideleCoeffOf_ideleExtension (M : Ω) (h : E ≤ M) (a : IdeleGroup (𝓞
   -- `adeleExtensionOfLE M h` is by definition the extension of adeles along `E → M`.
   rw [GlobalNumberFields.coe_ideleExtension]
   rfl
+
+/-- **`ideleCoeffOfIntermediateField` is compatible with extension of ideles**: if `F` and `E` are
+finite subextensions of `Kˢ/K` with `E` an algebra over `F` compatibly with `Kˢ`, then the
+extension to `E` of an idele of `F` is, as an idele of `Kˢ`, the idele of `F` itself. -/
+theorem ideleCoeffOfIntermediateField_ideleExtension {F : IntermediateField K (SeparableClosure K)}
+    [NumberField F] [Algebra F E] [IsScalarTower F E (SeparableClosure K)]
+    (b : IdeleGroup (𝓞 F) F) :
+    ideleCoeffOfIntermediateField K E (.ofMul (GlobalNumberFields.ideleExtension F E b)) =
+      ideleCoeffOfIntermediateField K F (.ofMul b) := by
+  -- Both sides are computed through the normal closure `M` of `E`, which contains `F`.
+  have hE := FiniteGaloisIntermediateField.le_normalClosure K E
+  have hF := (IntermediateField.le_of_isScalarTower (E := F) (E' := E)).trans hE
+  let := (IntermediateField.inclusion hE).toRingHom.toAlgebra
+  let := (IntermediateField.inclusion hF).toRingHom.toAlgebra
+  have : IsScalarTower F E (FiniteGaloisIntermediateField.normalClosure K E) :=
+    IsScalarTower.of_algebraMap_eq fun x ↦
+      Subtype.ext (IsScalarTower.algebraMap_apply F E (SeparableClosure K) x)
+  rw [← ideleCoeffOf_ideleExtension _ hE, ← ideleCoeffOf_ideleExtension _ hF,
+    ← MonoidHom.comp_apply, GlobalNumberFields.ideleExtension_comp]
 
 /-- For a finite Galois subextension `E`, `ideleCoeffOfIntermediateField` is `ideleCoeffOf`. -/
 @[simp]
