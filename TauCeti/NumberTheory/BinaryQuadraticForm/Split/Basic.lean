@@ -23,6 +23,12 @@ Thus all such forms have one proper class under the existing left `SL(2, ℤ)` a
 The order and its norm are the existing split product order. The proof is elementary
 and does not use a field ideal-class carrier.
 
+## Main results
+
+* `exists_isCoprime_eval_eq_zero_of_discrim_eq_one` gives a primitive isotropic vector.
+* `exists_smul_a_eq_zero_of_discrim_eq_one` moves it to a zero leading coefficient by a
+  proper change of variables.
+
 ## References
 
 * D. A. Cox, *Primes of the Form x² + ny²*, §7 (proper-equivalence conventions).
@@ -68,7 +74,8 @@ theorem eval_splitPrincipalForm_eq_order_norm
   rw [eval_splitPrincipalForm_eq_norm]
   exact Algebra.norm_eq_of_algEquiv QuadraticOrder.equivProdOfOne z
 
-private theorem exists_isCoprime_eval_eq_zero_of_discrim_eq_one
+/-- Every integral form of discriminant one has a primitive integral isotropic vector. -/
+theorem exists_isCoprime_eval_eq_zero_of_discrim_eq_one
     (f : BinaryQuadraticForm ℤ) (hf : f.discrim = 1) :
     ∃ x y : ℤ, IsCoprime x y ∧ f.eval x y = 0 := by
   by_cases ha : f.a = 0
@@ -87,7 +94,9 @@ private theorem exists_isCoprime_eval_eq_zero_of_discrim_eq_one
       (mul_ne_zero (by decide) ha)).ne'
   exact (mul_eq_zero.mp (hscale.symm.trans hval)).resolve_left (pow_ne_zero 2 hg0)
 
-private theorem exists_smul_a_eq_zero_of_discrim_eq_one
+/-- Every integral form of discriminant one has a proper representative with zero leading
+coefficient. -/
+theorem exists_smul_a_eq_zero_of_discrim_eq_one
     (f : BinaryQuadraticForm ℤ) (hf : f.discrim = 1) :
     ∃ γ : SL(2, ℤ), (γ • f).a = 0 := by
   obtain ⟨x, y, hxy, hzero⟩ := exists_isCoprime_eval_eq_zero_of_discrim_eq_one f hf
