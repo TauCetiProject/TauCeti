@@ -45,13 +45,6 @@ theorem TransitiveGroupLabel.image_fullCycleType_eq {n : ℕ} {j : TransitiveGro
   obtain ⟨τ, hτ⟩ := h.exists_map_permCongrHom_eq
   rw [← hτ, Equiv.image_fullCycleType_map_permCongrHom]
 
-private theorem image_fullCycleType_eq_of_computedCycleType {α : Type*} [Fintype α]
-    [LinearOrder α] {s : Finset (Perm α)} {t : Finset (Multiset ℕ)}
-    (h : s.image computedCycleType = t) :
-    fullCycleType '' (s : Set (Perm α)) = (t : Set (Multiset ℕ)) := by
-  simpa only [Finset.coe_image, computedCycleType_eq_fullCycleType] using
-    congrArg (fun u : Finset (Multiset ℕ) => (u : Set (Multiset ℕ))) h
-
 -- For the three solvable quintic references, enumerate the usual rotation–complement words.
 -- Their already-proved orders show that these lists exhaust the groups.
 private def quinticWords (s : Perm (Fin 5)) (m : ℕ) : Finset (Perm (Fin 5)) :=
