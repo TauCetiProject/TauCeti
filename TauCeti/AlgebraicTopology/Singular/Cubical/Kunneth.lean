@@ -144,7 +144,7 @@ theorem cubicalHomologyKunneth_naturality {X X' Y Y' : TopCat.{u}} (f : X ⟶ X'
   rw [cubicalHomologyKunneth_def, cubicalHomologyKunneth_def, ← Category.assoc,
     homologyKunneth_naturality, Category.assoc, ← homologyMap_comp, Category.assoc,
     ← homologyMap_comp, ← cubicalCrossProduct_naturality,
-    HomologicalComplex.tensorHom_eq_tensorHom]
+    HomologicalComplex.tensorHom_eq_mapBifunctorMap]
 
 /-- The cubical cross product induces an isomorphism on homology. -/
 instance isIso_homologyMap_cubicalCrossProduct (n : ℕ) :
@@ -198,7 +198,7 @@ theorem tensorHom_comp_homologyKunneth_comp_homologyMap_singularCrossProduct (n 
   rw [← Category.assoc, homologyKunneth_naturality, Category.assoc, ← homologyMap_comp,
     cubicalHomologyKunneth_def, Category.assoc, ← homologyMap_comp,
     ← cubicalCrossProductToSingularApp_def, homologyMap_cubicalCrossProductToSingular,
-    singularCrossProductOfCubicalApp_def, HomologicalComplex.tensorHom_eq_tensorHom]
+    singularCrossProductOfCubicalApp_def, HomologicalComplex.tensorHom_eq_mapBifunctorMap]
 
 /-- The same statement for the Künneth map of singular homology with coefficients in the ring
 (`TopCat.singularHomologyKunneth`, followed by the unitor `k ⊗ k ≅ k`). -/

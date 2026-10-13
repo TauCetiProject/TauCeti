@@ -198,13 +198,6 @@ lemma ι_tensorHom_apply {R : Type v} [CommRing R] {K₁ K₂ L₁ L₂ : ChainC
       (ιTensorObj L₁ L₂ p q n h).hom (f₁.f p a ⊗ₜ[R] f₂.f q b) :=
   LinearMap.congr_fun (congrArg ModuleCat.Hom.hom (ι_tensorHom f₁ f₂ p q n h)) (a ⊗ₜ[R] b)
 
-/-- The monoidal tensor product of morphisms of chain complexes of modules is
-`HomologicalComplex.tensorHom`, by definition of the monoidal structure. -/
-lemma tensorHom_eq_tensorHom {R : Type v} [CommRing R]
-    {K₁ K₂ L₁ L₂ : ChainComplex (ModuleCat.{v} R) ℕ} (f₁ : K₁ ⟶ L₁) (f₂ : K₂ ⟶ L₂) :
-    tensorHom f₁ f₂ = f₁ ⊗ₘ f₂ :=
-  (rfl)
-
 end ChainComplexOfModules
 
 end HomologicalComplex
