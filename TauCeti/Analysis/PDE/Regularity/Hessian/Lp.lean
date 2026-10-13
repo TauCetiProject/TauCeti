@@ -25,9 +25,11 @@ derivatives by the Laplacian on `ℝⁿ`: there is a constant `C` with
 for every Schwartz function `u` with values in a complex Hilbert space
 (`TauCeti.exists_eLpNorm_iteratedFDeriv_two_le_eLpNorm_laplacian`). This is the whole-space
 estimate at the heart of the Calderón–Zygmund `W^{2,p}` theory of strong solutions. For `p = 2` it
-follows from Plancherel's theorem; for `p ≠ 2` it is a genuine singular integral estimate, and it
-is false at the endpoints `p = 1` and `p = ∞`. A corollary gives the same estimate for real
-Schwartz functions (`TauCeti.exists_eLpNorm_iteratedFDeriv_two_le_eLpNorm_laplacian_real`).
+follows from Plancherel's theorem. For `n ≥ 2` and `p ≠ 2` it is a genuine singular integral
+estimate, and it is false at the endpoints `p = 1` and `p = ∞`. In dimension one it is
+elementary: `D²u` and `Δu` have the same pointwise norm `‖u''‖`, so it holds for every `p`. A
+corollary gives the same estimate for real Schwartz functions
+(`TauCeti.exists_eLpNorm_iteratedFDeriv_two_le_eLpNorm_laplacian_real`).
 
 ## The argument for `n ≥ 3`
 
