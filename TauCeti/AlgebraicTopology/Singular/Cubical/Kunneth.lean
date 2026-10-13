@@ -118,7 +118,21 @@ theorem cubicalHomologyKunneth_def (n : ℕ) :
         homologyMap (cubicalCrossProduct k X Y) n :=
   (rfl)
 
+/-- The cubical Künneth map restricts to the homology cross product followed by the map induced by
+the cubical cross product on each summand. -/
+@[reassoc (attr := simp)]
+theorem ι_cubicalHomologyKunneth (p q n : ℕ) (h : p + q = n) :
+    GradedObject.Monoidal.ιTensorObj
+        (fun p ↦ ((normalizedCubicalChainComplex k).obj X).homology p)
+        (fun q ↦ ((normalizedCubicalChainComplex k).obj Y).homology q) p q n h ≫
+      cubicalHomologyKunneth k X Y n =
+      homologyCross ((normalizedCubicalChainComplex k).obj X)
+          ((normalizedCubicalChainComplex k).obj Y) p q n h ≫
+        homologyMap (cubicalCrossProduct k X Y) n := by
+  rw [cubicalHomologyKunneth_def, ← Category.assoc, ι_homologyKunneth]
+
 /-- **Naturality of the cubical Künneth map** in both spaces. -/
+@[reassoc]
 theorem cubicalHomologyKunneth_naturality {X X' Y Y' : TopCat.{u}} (f : X ⟶ X') (g : Y ⟶ Y')
     (n : ℕ) :
     GradedObject.Monoidal.tensorHom
@@ -222,11 +236,30 @@ def cubicalHomologyToTor (m : ℕ) :
     homologyToTor ((normalizedCubicalChainComplex k).obj X)
       ((normalizedCubicalChainComplex k).obj Y) m
 
+/-- The map `cubicalHomologyToTor` is the inverse of the isomorphism induced by the cross product
+followed by the map to `Tor₁` of the algebraic Künneth sequence. -/
+theorem cubicalHomologyToTor_def (m : ℕ) :
+    cubicalHomologyToTor k X Y m =
+      inv (homologyMap (cubicalCrossProduct k X Y) (m + 1)) ≫
+        homologyToTor ((normalizedCubicalChainComplex k).obj X)
+          ((normalizedCubicalChainComplex k).obj Y) m :=
+  (rfl)
+
+/-- The map induced by the cross product followed by the cubical map to `Tor₁` is the map to
+`Tor₁` of the algebraic Künneth sequence. -/
+@[reassoc (attr := simp)]
+theorem homologyMap_cubicalCrossProduct_comp_cubicalHomologyToTor (m : ℕ) :
+    homologyMap (cubicalCrossProduct k X Y) (m + 1) ≫ cubicalHomologyToTor k X Y m =
+      homologyToTor ((normalizedCubicalChainComplex k).obj X)
+        ((normalizedCubicalChainComplex k).obj Y) m := by
+  rw [cubicalHomologyToTor_def, IsIso.hom_inv_id_assoc]
+
 /-- The cubical Künneth map followed by the map to `Tor₁` vanishes. -/
 @[reassoc (attr := simp)]
 theorem cubicalHomologyKunneth_comp_cubicalHomologyToTor (m : ℕ) :
     cubicalHomologyKunneth k X Y (m + 1) ≫ cubicalHomologyToTor k X Y m = 0 := by
-  rw [cubicalHomologyToTor, cubicalHomologyKunneth_def, Category.assoc, IsIso.hom_inv_id_assoc]
+  rw [cubicalHomologyToTor_def, cubicalHomologyKunneth_def, Category.assoc,
+    IsIso.hom_inv_id_assoc]
   exact homologyKunneth_comp_homologyToTor _ _ m
 
 /-- The Künneth short complex of cubical homology,
