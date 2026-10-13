@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.AlgebraicGeometry.Curves.Degree
 public import TauCeti.AlgebraicGeometry.WeilDivisor.Scheme.PicZero
 public import TauCeti.AlgebraicGeometry.LineBundle.LocalRing
 public import TauCeti.AlgebraicGeometry.PicardFunctor.Relative
@@ -34,12 +35,15 @@ On a fibre which is a proper integral curve over `Ω` with discrete valuation ri
 codimension-one local rings, the fibre degree is additive (`relativePicardFiberDegree_mul`), by
 Riemann–Roch on that curve, and a class has fibre degree zero there exactly when its restriction
 lies in `Pic⁰` of the fibre, `LineBundleClass.picZero` (`relativePicardFiberDegree_mk_eq_zero_iff`).
-For a scheme over a field which is not a proper curve,
-`LineBundleClass.eulerDegree` takes the same junk values as the truncated Euler characteristic
-`Scheme.Modules.eulerCharBelow`; the definitions here make sense in general, but they are only
-the degree and `Pic⁰` for families of curves. Verifying the curve hypotheses on the geometric
-fibres of a smooth proper family (which makes `Pic⁰` a subgroup functor), local constancy of the
-degree in flat families, and representability are not treated here.
+Every field-valued fibre of a smooth proper geometrically connected family of curves is such a
+curve, so for such `f` the fibre degree is additive at every point
+(`relativePicardFiberDegree_mul_of_smooth`) and the degree-zero subfunctor is closed under
+products and inverses (`mul_mem_relativePicardDegreeZeroSubfunctor_obj`,
+`inv_mem_relativePicardDegreeZeroSubfunctor_obj`). For a scheme over a field which is not a
+proper curve, `LineBundleClass.eulerDegree` takes the same junk values as the truncated Euler
+characteristic `Scheme.Modules.eulerCharBelow`; the definitions here make sense in general, but
+they are only the degree and `Pic⁰` for families of curves. Local constancy of the degree in flat
+families and representability are not treated here.
 
 ## Main declarations
 
@@ -52,8 +56,13 @@ degree in flat families, and representability are not treated here.
   a curve;
 * `TauCeti.AlgebraicGeometry.relativePicardFiberDegree_mk_eq_zero_iff`: on a fibre which is a
   curve, degree zero is membership in `Pic⁰` of the fibre;
+* `TauCeti.AlgebraicGeometry.relativePicardFiberDegree_mul_of_smooth`: its additivity at every
+  point, for a smooth proper geometrically connected family of curves;
 * `TauCeti.AlgebraicGeometry.relativePicardDegreeZeroSubfunctor`: the subfunctor of classes of
-  degree zero on every geometric fibre.
+  degree zero on every geometric fibre;
+* `TauCeti.AlgebraicGeometry.mul_mem_relativePicardDegreeZeroSubfunctor_obj`,
+  `TauCeti.AlgebraicGeometry.inv_mem_relativePicardDegreeZeroSubfunctor_obj`: for a smooth proper
+  geometrically connected family of curves, it is closed under products and inverses.
 
 ## References
 
@@ -195,6 +204,36 @@ lemma relativePicardFiberDegree_mul {T : (Over S)ᵒᵖ} {Ω : Type u} [Field Ω
         LineBundleClass.pullback_mul]
       exact LineBundleClass.eulerDegree_mul Ω hX _ _
 
+/-- **The fibre degree of a family of curves is additive.** For a smooth proper geometrically
+connected morphism `f` of relative dimension one, the fibre degree at every point
+`ξ : Spec Ω ⟶ T` is additive on `Pic(X_T) / Pic(T)`, since every field-valued fibre of `f` is a
+connected smooth proper curve (`LineBundleClass.eulerDegree_mul_fieldValuedBaseChange`). -/
+lemma relativePicardFiberDegree_mul_of_smooth [IsProper f] [SmoothOfRelativeDimension 1 f]
+    [GeometricallyConnected f] {T : (Over S)ᵒᵖ} {Ω : Type u} [Field Ω]
+    (ξ : Spec (.of Ω) ⟶ T.unop.left) (c d : (relativePicardPresheaf f).obj T) :
+    relativePicardFiberDegree f ξ (c * d) =
+      relativePicardFiberDegree f ξ c + relativePicardFiberDegree f ξ d := by
+  obtain ⟨a, rfl⟩ := QuotientGroup.mk_surjective c
+  obtain ⟨b, rfl⟩ := QuotientGroup.mk_surjective d
+  -- The product in `(relativePicardPresheaf f).obj T` is the product of the quotient group.
+  calc relativePicardFiberDegree f ξ (QuotientGroup.mk a * QuotientGroup.mk b :
+          (relativePicardPresheaf f).obj T) =
+        relativePicardFiberDegree f ξ (QuotientGroup.mk (a * b)) := rfl
+    _ = _ := by
+      rw [relativePicardFiberDegree_mk_eq_fiberDegree, relativePicardFiberDegree_mk_eq_fiberDegree,
+        relativePicardFiberDegree_mk_eq_fiberDegree, fiberDegree, fiberDegree, fiberDegree,
+        LineBundleClass.pullback_mul]
+      exact LineBundleClass.eulerDegree_mul_fieldValuedBaseChange f Ω _ _ _
+
+/-- For a smooth proper geometrically connected family of curves, the fibre degree of an inverse
+is the negative of the fibre degree. -/
+lemma relativePicardFiberDegree_inv_of_smooth [IsProper f] [SmoothOfRelativeDimension 1 f]
+    [GeometricallyConnected f] {T : (Over S)ᵒᵖ} {Ω : Type u} [Field Ω]
+    (ξ : Spec (.of Ω) ⟶ T.unop.left) (c : (relativePicardPresheaf f).obj T) :
+    relativePicardFiberDegree f ξ c⁻¹ = -relativePicardFiberDegree f ξ c := by
+  rw [eq_neg_iff_add_eq_zero, add_comm, ← relativePicardFiberDegree_mul_of_smooth, mul_inv_cancel,
+    relativePicardFiberDegree_one]
+
 /-- **On a fibre which is a curve, degree zero is membership in `Pic⁰` of the fibre.** If the
 fibre `X_ξ = Spec Ω ×_S X` over `ξ : Spec Ω ⟶ T` is a proper integral curve over `Ω` whose
 codimension-one local rings are discrete valuation rings and whose `H¹(X_ξ, 𝒪)` is
@@ -278,6 +317,23 @@ lemma mem_relativePicardDegreeZeroSubfunctor_obj_iff {T : (Over S)ᵒᵖ}
 lemma one_mem_relativePicardDegreeZeroSubfunctor_obj (T : (Over S)ᵒᵖ) :
     (1 : (relativePicardPresheaf f).obj T) ∈ (relativePicardDegreeZeroSubfunctor f).obj T :=
   fun _ _ _ ξ ↦ relativePicardFiberDegree_one f ξ
+
+/-- For a smooth proper geometrically connected family of curves, `Pic⁰_{X/S}` is closed under
+products in `Pic(X_T) / Pic(T)`. -/
+lemma mul_mem_relativePicardDegreeZeroSubfunctor_obj [IsProper f]
+    [SmoothOfRelativeDimension 1 f] [GeometricallyConnected f] {T : (Over S)ᵒᵖ}
+    {c d : (relativePicardPresheaf f).obj T} (hc : c ∈ (relativePicardDegreeZeroSubfunctor f).obj T)
+    (hd : d ∈ (relativePicardDegreeZeroSubfunctor f).obj T) :
+    c * d ∈ (relativePicardDegreeZeroSubfunctor f).obj T := fun Ω _ _ ξ ↦ by
+  rw [relativePicardFiberDegree_mul_of_smooth, hc Ω ξ, hd Ω ξ, add_zero]
+
+/-- For a smooth proper geometrically connected family of curves, `Pic⁰_{X/S}` is closed under
+inverses in `Pic(X_T) / Pic(T)`. -/
+lemma inv_mem_relativePicardDegreeZeroSubfunctor_obj [IsProper f]
+    [SmoothOfRelativeDimension 1 f] [GeometricallyConnected f] {T : (Over S)ᵒᵖ}
+    {c : (relativePicardPresheaf f).obj T} (hc : c ∈ (relativePicardDegreeZeroSubfunctor f).obj T) :
+    c⁻¹ ∈ (relativePicardDegreeZeroSubfunctor f).obj T := fun Ω _ _ ξ ↦ by
+  rw [relativePicardFiberDegree_inv_of_smooth, hc Ω ξ, neg_zero]
 
 end
 
