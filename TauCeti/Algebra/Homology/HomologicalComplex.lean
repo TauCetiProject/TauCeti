@@ -27,6 +27,7 @@ differential into it, the identification of the homology with the cycles is natu
 complex exact in degree `j` fit into a short exact sequence `0 ⟶ Zᵢ ⟶ Kᵢ ⟶ Zⱼ ⟶ 0`
 (`HomologicalComplex.cyclesShortComplex_shortExact`). Constructing the bundled cycle sequence
 requires homology only in the two selected degrees.
+The exactness results additionally require homology of the cycle sequence itself.
 For chain complexes indexed by the natural numbers, the identification of zero chains with
 cycles is natural (`ChainComplex.cycles₀Iso_inv_naturality`). The isomorphisms `homologyIsoSc'`
 are natural (`HomologicalComplex.homologyMap_comp_homologyIsoSc'_hom`).
@@ -151,7 +152,8 @@ variable {C : Type u} [Category.{v} C] [HasZeroMorphisms C] {ι : Type*}
 variable (K) in
 /-- The sequence `Zᵢ ⟶ Kᵢ ⟶ Zⱼ` of the cycles of a complex `K` is exact when `j` is the degree
 following `i`: the cycles in degree `i` are the kernel of the differential. -/
-lemma exact_iCycles_toCycles [CategoryWithHomology C] (i j : ι) (hij : c.next i = j) :
+lemma exact_iCycles_toCycles (i j : ι) [K.HasHomology i] [K.HasHomology j]
+    [(ShortComplex.mk _ _ (K.iCycles_toCycles i j)).HasHomology] (hij : c.next i = j) :
     (ShortComplex.mk _ _ (K.iCycles_toCycles i j)).Exact := by
   let S := ShortComplex.mk _ _ (K.iCycles_toCycles i j)
   have hS := isKernelOfComp (K.iCycles j) (K.d i j) (K.cyclesIsKernel i j hij)
@@ -181,9 +183,10 @@ lemma epi_toCycles_of_exactAt {i j : ι} [K.HasHomology j]
 
 /-- The cycle sequence `Zᵢ(K) ⟶ Kᵢ ⟶ Zⱼ(K)` is short exact when `i` and `j` are adjacent
 and `K` is exact in degree `j`. -/
-lemma cyclesShortComplex_shortExact [CategoryWithHomology C] (i j : ι)
+lemma cyclesShortComplex_shortExact (i j : ι) [K.HasHomology i] [K.HasHomology j]
+    [hS : (K.cyclesShortComplex i j).HasHomology]
     (hij : c.Rel i j) (hK : K.ExactAt j) : (K.cyclesShortComplex i j).ShortExact := by
-  rw [cyclesShortComplex_def]
+  rw [cyclesShortComplex_def] at hS ⊢
   exact ShortComplex.ShortExact.mk' (K.exact_iCycles_toCycles i j (c.next_eq' hij))
     inferInstance (epi_toCycles_of_exactAt hK (c.prev_eq' hij))
 
