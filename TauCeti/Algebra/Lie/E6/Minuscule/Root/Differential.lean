@@ -58,24 +58,19 @@ private theorem toMatrix_kostantRootOperator (k : Fin 6 ⊕ Fin 6) :
       (kostantRootOperator e h weightTable.rep (Λ).toAddSubgroup
         weightTable.rep_kostantForm_mem_lattice k) =
       Sum.elim raisingMatrix loweringMatrix k := by
-  have hcol (s : Fin 27) :
-      kostantRootOperator e h weightTable.rep (Λ).toAddSubgroup
-          weightTable.rep_kostantForm_mem_lattice k (𝓑 s) =
-        ∑ r, Sum.elim raisingMatrix loweringMatrix k r s • 𝓑 r := by
-    apply Subtype.ext
-    rw [coe_kostantRootOperator_apply, AddSubmonoidClass.coe_finsetSum]
-    cases k with
-    | inl i =>
-      simpa only [Sum.elim_inl, raisingMatrix_apply, MinusculeWeightTable.raisingMatrix_apply,
-        weightTable_weight, weightTable_reflection, AddSubgroupClass.coe_zsmul] using
-        weightTable.rep_serreRootGenerator_inl_coordinateLatticeBasis_eq_sum i s
-    | inr i =>
-      simpa only [Sum.elim_inr, loweringMatrix_apply, MinusculeWeightTable.loweringMatrix_apply,
-        weightTable_weight, weightTable_reflection, AddSubgroupClass.coe_zsmul] using
-        weightTable.rep_serreRootGenerator_inr_coordinateLatticeBasis_eq_sum i s
-  ext r s
-  rw [LinearMap.toMatrix_apply, hcol]
-  exact congrFun ((𝓑).repr_sum_self (fun r => Sum.elim raisingMatrix loweringMatrix k r s)) r
+  rw [← kostantRootGeneratorIntMatrix_eq_toMatrix e h weightTable.rep (Λ).toAddSubgroup
+    weightTable.rep_kostantForm_mem_lattice k 𝓑]
+  apply kostantRootGeneratorIntMatrix_eq_of_action
+  intro s
+  cases k with
+  | inl i =>
+    simpa only [Sum.elim_inl, raisingMatrix_apply, MinusculeWeightTable.raisingMatrix_apply,
+      weightTable_weight, weightTable_reflection] using
+      weightTable.rep_serreRootGenerator_inl_coordinateLatticeBasis_eq_sum i s
+  | inr i =>
+    simpa only [Sum.elim_inr, loweringMatrix_apply, MinusculeWeightTable.loweringMatrix_apply,
+      weightTable_weight, weightTable_reflection] using
+      weightTable.rep_serreRootGenerator_inr_coordinateLatticeBasis_eq_sum i s
 
 variable {B : Type*} [CommRing B]
 
