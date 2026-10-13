@@ -53,7 +53,7 @@ def toIntegralIdealsAway (S : Finset (HeightOneSpectrum (𝓞 K))) :
   (((Ideal (𝓞 K))⁰).subtype.comp
     (toIntegralIdeal.comp (integralFiniteIdelesAway S).subtype)).codRestrict _ fun x ↦ by
     simp only [MonoidHom.comp_apply, Submonoid.subtype_apply]
-    rw [NumberFieldArithmetic.mem_integralIdealsAway_iff_count_eq_zero]
+    rw [NumberFieldArithmetic.mem_integralIdealsAway_iff_count_eq_zero (K := K)]
     refine ⟨nonZeroDivisors.coe_ne_zero (toIntegralIdeal x.1), fun v hv ↦ ?_⟩
     rw [coe_toIntegralIdeal, count_coe_toFractionalIdeal]
     exact (mem_integralFiniteIdelesAway_iff S x.1).mp x.2 v hv
@@ -109,7 +109,7 @@ theorem toIntegralIdealsAway_eq_iff (S : Finset (HeightOneSpectrum (𝓞 K)))
 @[simp]
 theorem integralIdealsAwayHom_toIntegralIdealsAway
     (S : Finset (HeightOneSpectrum (𝓞 K))) (x : integralFiniteIdelesAway S) :
-    NumberFieldArithmetic.integralIdealsAwayHom S (toIntegralIdealsAway S x) =
+    NumberFieldArithmetic.integralIdealsAwayHom K S (toIntegralIdealsAway S x) =
       toIdealsAway S ⟨(x.1 : 𝔸ᶠ[𝓞 K, K]ˣ),
         (mem_adicOrdAway_iff S _).mpr ((mem_integralFiniteIdelesAway_iff S x.1).mp x.2)⟩ := by
   apply Subtype.ext
