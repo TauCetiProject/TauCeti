@@ -41,7 +41,7 @@ whose exponent is two whatever `p` is.  That is what makes the squared-norm iden
   `TauCeti.WeakDerivStep.prev` and `TauCeti.WeakDerivStep.weakFDeriv`, constructor
   `TauCeti.WeakDerivStep.mk`, and extensionality `TauCeti.WeakDerivStep.ext`.
 * `TauCeti.WeakDerivStep.restrictBaseL`: restriction of the selected field to an open subdomain,
-  with its almost-everywhere characteristic equation.
+  with its exact and almost-everywhere characteristic equations.
 
 ## References
 
@@ -232,11 +232,21 @@ def restrictBaseL (base : X →L[ℝ] Lp F p (mu.restrict Omega)) {V : Opens E} 
       Measure.restrict_mono_set mu (SetLike.coe_subset_coe.mpr hV))).comp
         (base.comp (prevL base))
 
+/-- Restriction is the canonical map between the two restricted-measure `Lᵖ` spaces. -/
+@[simp]
+theorem restrictBaseL_apply (base : X →L[ℝ] Lp F p (mu.restrict Omega))
+    {V : Opens E} (hV : V ≤ Omega) (u : WeakDerivStep mu Omega p base) :
+    restrictBaseL base hV u =
+      Lp.LpToLpOfMeasureLeSMul (c := 1) (by simp)
+        (by simpa only [one_smul] using
+          Measure.restrict_mono_set mu (SetLike.coe_subset_coe.mpr hV))
+        (base (prev base u)) := (rfl)
+
 /-- Restriction preserves the selected field almost everywhere on the smaller domain. -/
 theorem restrictBaseL_apply_ae (base : X →L[ℝ] Lp F p (mu.restrict Omega))
     {V : Opens E} (hV : V ≤ Omega) (u : WeakDerivStep mu Omega p base) :
     restrictBaseL base hV u =ᵐ[mu.restrict V] base (prev base u) := by
-  simp only [restrictBaseL, ContinuousLinearMap.comp_apply, prevL_apply]
+  rw [restrictBaseL_apply]
   exact Lp.coeFn_LpToLpOfMeasureLeSMul _ _ _
 
 /-- The continuous projection to the adjoined weak Fréchet derivative. -/

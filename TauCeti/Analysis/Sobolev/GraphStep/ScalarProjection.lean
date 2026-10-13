@@ -30,7 +30,38 @@ public section
 
 noncomputable section
 
-namespace TauCeti.WeakDerivStep
+namespace TauCeti
+
+open scoped InnerProductSpace
+
+section ScalarGradient
+
+variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteSpace E]
+  [NormedAddCommGroup F] [NormedSpace ℝ F]
+
+/-- Turn an `F`-valued derivative into the gradient of its scalar projection by `ℓ`,
+using the Riesz correspondence. -/
+def scalarGradientL (ℓ : F →L[ℝ] ℝ) : (E →L[ℝ] F) →L[ℝ] E :=
+  (InnerProductSpace.toDual ℝ E).symm.toContinuousLinearEquiv.toContinuousLinearMap.comp
+    (ContinuousLinearMap.compL ℝ E F ℝ ℓ)
+
+/-- Pairing a scalar-projected gradient with a direction evaluates the projected derivative. -/
+@[simp]
+theorem inner_scalarGradientL_apply (ℓ : F →L[ℝ] ℝ) (D : E →L[ℝ] F) (h : E) :
+    ⟪scalarGradientL ℓ D, h⟫_ℝ = ℓ (D h) :=
+  InnerProductSpace.toDual_symm_apply
+
+/-- Scalar projection of a derivative has operator norm at most the norm of the functional. -/
+theorem norm_scalarGradientL_le (ℓ : F →L[ℝ] ℝ) :
+    ‖scalarGradientL (E := E) ℓ‖ ≤ ‖ℓ‖ := by
+  refine (scalarGradientL ℓ).opNorm_le_bound (norm_nonneg ℓ) fun D ↦ ?_
+  simpa only [scalarGradientL, ContinuousLinearMap.comp_apply, ContinuousLinearMap.compL_apply,
+    ContinuousLinearEquiv.coe_coe, LinearIsometryEquiv.coe_toContinuousLinearEquiv,
+    LinearIsometryEquiv.norm_map] using ℓ.opNorm_comp_le D
+
+end ScalarGradient
+
+namespace WeakDerivStep
 
 open MeasureTheory TopologicalSpace
 open scoped InnerProductSpace
@@ -41,58 +72,60 @@ variable {E F X : Type*} [MeasurableSpace E] [NormedAddCommGroup E]
   [SeminormedAddCommGroup X] [NormedSpace ℝ X]
   {mu : Measure E} [mu.IsAddHaarMeasure] {Omega : Opens E} {p : ENNReal} [Fact (1 ≤ p)]
 
-/-- Apply a continuous linear functional to the field selected by `base`, obtaining a scalar
-Sobolev function. Its operator norm is at most `‖ℓ‖ * (‖base‖ + 1)`. -/
-def toW1pL (base : X →L[ℝ] Lp F p (mu.restrict Omega)) (ℓ : F →L[ℝ] ℝ) :
-    WeakDerivStep mu Omega p base →L[ℝ] W1p mu Omega p := by
-  let G : (E →L[ℝ] F) →L[ℝ] E :=
-    (InnerProductSpace.toDual ℝ E).symm.toContinuousLinearEquiv.toContinuousLinearMap.comp
-      (ContinuousLinearMap.compL ℝ E F ℝ ℓ)
-  let vL := (ℓ.compLpL p (mu.restrict Omega)).comp (base.comp (prevL base))
-  let gL := (G.compLpL p (mu.restrict Omega)).comp (weakFDerivL base)
-  have hg (u : WeakDerivStep mu Omega p base) :
-      HasWeakFDerivOn mu Omega (vL u) (fun x ↦ innerSL ℝ (gL u x)) := by
-    simp only [vL, ContinuousLinearMap.comp_apply, prevL_apply]
-    refine (((hasWeakFDerivOn_base_prev base u).clm_comp ℓ).congr_ae
-      (Filter.EventuallyEq.symm (ℓ.coeFn_compLpL (base (prev base u))))).congr_ae_deriv ?_
-    filter_upwards [G.coeFn_compLpL (weakFDeriv base u)] with x hx
-    ext h
-    simp only [gL, ContinuousLinearMap.comp_apply, weakFDerivL_apply]
-    rw [hx, innerSL_apply_apply]
-    simpa only [G, ContinuousLinearMap.comp_apply, ContinuousLinearMap.compL_apply,
-      ContinuousLinearEquiv.coe_coe, LinearIsometryEquiv.coe_toContinuousLinearEquiv] using
-      (InnerProductSpace.toDual_symm_apply (𝕜 := ℝ) (E := E)
-        (x := h) (y := ℓ.comp (weakFDeriv base u x))).symm
-  let T : WeakDerivStep mu Omega p base →ₗ[ℝ] W1p mu Omega p :=
-    { toFun := fun u ↦ W1p.mk (vL u) (gL u) (hg u)
-      map_add' := fun u v ↦ W1p.ext_value (by
-        simp only [← W1p.valueL_apply, map_add]
-        simp only [W1p.valueL_apply, W1p.value_mk])
-      map_smul' := fun c u ↦ W1p.ext_value (by
-        simp only [← W1p.valueL_apply, map_smul]
-        simp only [W1p.valueL_apply, W1p.value_mk, RingHom.id_apply]) }
-  have hG : ‖G‖ ≤ ‖ℓ‖ := by
-    refine G.opNorm_le_bound (norm_nonneg ℓ) fun D ↦ ?_
-    simpa only [G, ContinuousLinearMap.comp_apply, ContinuousLinearMap.compL_apply,
-      ContinuousLinearEquiv.coe_coe, LinearIsometryEquiv.coe_toContinuousLinearEquiv,
-      LinearIsometryEquiv.norm_map] using ℓ.opNorm_comp_le D
-  refine T.mkContinuous (‖ℓ‖ * (‖base‖ + 1)) fun u ↦ ?_
+/-- The scalar-projected field has the Riesz representative of its projected weak derivative
+as weak gradient. -/
+theorem hasWeakFDerivOn_scalarProjection (base : X →L[ℝ] Lp F p (mu.restrict Omega))
+    (ℓ : F →L[ℝ] ℝ) (u : WeakDerivStep mu Omega p base) :
+    HasWeakFDerivOn mu Omega (ℓ.compLpL p (mu.restrict Omega) (base (prev base u)))
+      (fun x ↦ innerSL ℝ ((scalarGradientL ℓ).compLpL p (mu.restrict Omega)
+        (weakFDeriv base u) x)) := by
+  refine (((hasWeakFDerivOn_base_prev base u).clm_comp ℓ).congr_ae
+    (Filter.EventuallyEq.symm (ℓ.coeFn_compLpL (base (prev base u))))).congr_ae_deriv ?_
+  filter_upwards [(scalarGradientL ℓ).coeFn_compLpL (weakFDeriv base u)] with x hx
+  ext h
+  rw [hx, innerSL_apply_apply, inner_scalarGradientL_apply]
+  simp only [ContinuousLinearMap.comp_apply]
+
+private theorem norm_mk_scalarProjection_le (base : X →L[ℝ] Lp F p (mu.restrict Omega))
+    (ℓ : F →L[ℝ] ℝ) (u : WeakDerivStep mu Omega p base) :
+    ‖W1p.mk (ℓ.compLpL p (mu.restrict Omega) (base (prev base u)))
+      ((scalarGradientL ℓ).compLpL p (mu.restrict Omega) (weakFDeriv base u))
+      (hasWeakFDerivOn_scalarProjection base ℓ u)‖ ≤ (‖ℓ‖ * (‖base‖ + 1)) * ‖u‖ := by
+  let G : (E →L[ℝ] F) →L[ℝ] E := scalarGradientL ℓ
+  have hG : ‖G‖ ≤ ‖ℓ‖ := norm_scalarGradientL_le ℓ
   calc
-    ‖T u‖ ≤ ‖vL u‖ + ‖gL u‖ := by
-      simpa only [T, LinearMap.coe_mk, AddHom.coe_mk, W1p.value_mk, W1p.gradient_mk]
-        using W1p.norm_le_norm_value_add_norm_gradient (T u)
+    _ ≤ ‖ℓ.compLpL p (mu.restrict Omega) (base (prev base u))‖ +
+        ‖G.compLpL p (mu.restrict Omega) (weakFDeriv base u)‖ := by
+      simpa only [W1p.value_mk, W1p.gradient_mk] using
+        W1p.norm_le_norm_value_add_norm_gradient (W1p.mk _ _
+          (hasWeakFDerivOn_scalarProjection base ℓ u))
     _ ≤ ‖ℓ‖ * (‖base‖ * ‖u‖) + ‖ℓ‖ * ‖u‖ := by
       apply add_le_add
-      · simp only [vL, ContinuousLinearMap.comp_apply, prevL_apply]
-        exact ((ℓ.compLpL p (mu.restrict Omega)).le_opNorm _).trans
+      · exact ((ℓ.compLpL p (mu.restrict Omega)).le_opNorm _).trans
           (mul_le_mul (ℓ.norm_compLpL_le)
             ((base.le_opNorm _).trans (mul_le_mul_of_nonneg_left
               (norm_prev_le base u) (norm_nonneg base))) (norm_nonneg _) (norm_nonneg ℓ))
-      · simp only [gL, ContinuousLinearMap.comp_apply, weakFDerivL_apply]
-        exact ((G.compLpL p (mu.restrict Omega)).le_opNorm _).trans
+      · exact ((G.compLpL p (mu.restrict Omega)).le_opNorm _).trans
           (mul_le_mul ((G.norm_compLpL_le).trans hG) (norm_weakFDeriv_le base u)
             (norm_nonneg _) (norm_nonneg ℓ))
     _ = (‖ℓ‖ * (‖base‖ + 1)) * ‖u‖ := by ring
+
+/-- Apply a continuous linear functional to the field selected by `base`, obtaining a scalar
+Sobolev function. Its operator norm is at most `‖ℓ‖ * (‖base‖ + 1)`. -/
+def toW1pL (base : X →L[ℝ] Lp F p (mu.restrict Omega)) (ℓ : F →L[ℝ] ℝ) :
+    WeakDerivStep mu Omega p base →L[ℝ] W1p mu Omega p :=
+  LinearMap.mkContinuous
+    { toFun := fun u ↦ W1p.mk (ℓ.compLpL p (mu.restrict Omega) (base (prev base u)))
+        ((scalarGradientL ℓ).compLpL p (mu.restrict Omega) (weakFDeriv base u))
+        (hasWeakFDerivOn_scalarProjection base ℓ u)
+      map_add' := fun u v ↦ W1p.ext_value (by
+        simp only [← W1p.valueL_apply, map_add]
+        simp only [W1p.valueL_apply, W1p.value_mk, ← prevL_apply, map_add])
+      map_smul' := fun c u ↦ W1p.ext_value (by
+        simp only [← W1p.valueL_apply, map_smul]
+        simp only [W1p.valueL_apply, W1p.value_mk, ← prevL_apply, map_smul,
+          RingHom.id_apply]) }
+    (‖ℓ‖ * (‖base‖ + 1)) (norm_mk_scalarProjection_le base ℓ)
 
 /-- Scalar projection commutes with the value map: its `Lᵖ` class is obtained by applying `ℓ`
 to the field selected by `base`. -/
@@ -101,18 +134,16 @@ theorem value_toW1pL (base : X →L[ℝ] Lp F p (mu.restrict Omega)) (ℓ : F �
     (u : WeakDerivStep mu Omega p base) :
     W1p.value (toW1pL base ℓ u) = ℓ.compLpL p (mu.restrict Omega) (base (prev base u)) := by
   simp only [toW1pL, LinearMap.mkContinuous_apply, LinearMap.coe_mk, AddHom.coe_mk,
-    W1p.value_mk, ContinuousLinearMap.comp_apply, prevL_apply]
+    W1p.value_mk]
 
 /-- The gradient of a scalar projection is the Riesz representative of `ℓ ∘ Du`. -/
 @[simp]
 theorem gradient_toW1pL (base : X →L[ℝ] Lp F p (mu.restrict Omega)) (ℓ : F →L[ℝ] ℝ)
     (u : WeakDerivStep mu Omega p base) :
     W1p.gradient (toW1pL base ℓ u) =
-      ((InnerProductSpace.toDual ℝ E).symm.toContinuousLinearEquiv.toContinuousLinearMap.comp
-        (ContinuousLinearMap.compL ℝ E F ℝ ℓ)).compLpL p (mu.restrict Omega)
-          (weakFDeriv base u) := by
+      (scalarGradientL ℓ).compLpL p (mu.restrict Omega) (weakFDeriv base u) := by
   simp only [toW1pL, LinearMap.mkContinuous_apply, LinearMap.coe_mk, AddHom.coe_mk,
-    W1p.gradient_mk, ContinuousLinearMap.comp_apply, weakFDerivL_apply]
+    W1p.gradient_mk]
 
 /-- Pairing the projected gradient with a direction applies `ℓ` to the original weak derivative
 in that direction, almost everywhere. -/
@@ -121,13 +152,10 @@ theorem inner_gradient_toW1pL_ae (base : X →L[ℝ] Lp F p (mu.restrict Omega))
     ∀ᵐ x ∂mu.restrict Omega, ∀ h : E,
       ⟪W1p.gradient (toW1pL base ℓ u) x, h⟫_ℝ = ℓ (weakFDeriv base u x h) := by
   rw [gradient_toW1pL]
-  let G : (E →L[ℝ] F) →L[ℝ] E :=
-    (InnerProductSpace.toDual ℝ E).symm.toContinuousLinearEquiv.toContinuousLinearMap.comp
-      (ContinuousLinearMap.compL ℝ E F ℝ ℓ)
-  filter_upwards [G.coeFn_compLpL (weakFDeriv base u)] with x hx
+  filter_upwards [(scalarGradientL ℓ).coeFn_compLpL (weakFDeriv base u)] with x hx
   intro h
   rw [hx]
-  exact InnerProductSpace.toDual_symm_apply
+  exact inner_scalarGradientL_apply ℓ _ h
 
 /-- The scalar projection has an explicit operator-norm bound. -/
 theorem norm_toW1pL_le (base : X →L[ℝ] Lp F p (mu.restrict Omega)) (ℓ : F →L[ℝ] ℝ) :
@@ -135,4 +163,6 @@ theorem norm_toW1pL_le (base : X →L[ℝ] Lp F p (mu.restrict Omega)) (ℓ : F 
   unfold toW1pL
   exact LinearMap.mkContinuous_norm_le _ (by positivity) _
 
-end TauCeti.WeakDerivStep
+end WeakDerivStep
+
+end TauCeti
