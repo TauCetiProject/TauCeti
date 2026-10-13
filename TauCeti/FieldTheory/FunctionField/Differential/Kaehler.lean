@@ -8,7 +8,6 @@ module
 public import Mathlib.RingTheory.Etale.Field
 public import Mathlib.RingTheory.Kaehler.Polynomial
 public import TauCeti.FieldTheory.FunctionField.SeparablyGenerated
-public import TauCeti.FieldTheory.RatFunc.Transcendental
 public import TauCeti.RingTheory.Kaehler.BaseChange
 public import TauCeti.RingTheory.Kaehler.FormallyEtale
 public import TauCeti.RingTheory.Kaehler.Separable
