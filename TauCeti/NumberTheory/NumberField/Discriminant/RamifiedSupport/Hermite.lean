@@ -84,7 +84,7 @@ theorem differentIdeal_dvd_map_span_factorial_mul_prod_ramifiedSupport :
   -- Above a ramified `𝔭`, the wild bound `e - 1 + v_P(e)` is less than `v_P(n!) + e`, and `e` is
   -- at most `v_P(𝔯)`. Above an unramified `𝔭`, `P` does not divide the different.
   by_cases hv : v ∈ ramifiedSupport K L
-  · set e := P.ramificationIdx (𝓞 K)
+  · set e := P.ramificationIdx (𝓞 K) with he
     have hen : e ≤ n := by
       have := RamificationInertia.ramificationIdx_le_finrank v.asIdeal P
       rwa [← IsFractionRing.finrank_eq (𝓞 K) K (𝓞 L) L] at this
@@ -102,9 +102,8 @@ theorem differentIdeal_dvd_map_span_factorial_mul_prod_ramifiedSupport :
     -- `e ≤ v_P(𝔯)`, since `𝔯 ≤ 𝔭` and `𝔭 𝓞_L ≤ P ^ e`
     have he𝔯 : e ≤ multiplicity P (𝔯.map (algebraMap (𝓞 K) (𝓞 L))) := by
       refine (FiniteMultiplicity.of_prime_left hP h𝔯).le_multiplicity_of_pow_dvd ?_
-      rw [Ideal.dvd_iff_le,
-        show e = v.asIdeal.ramificationIdx' P from
-          (Ideal.ramificationIdx'_eq_ramificationIdx v.asIdeal P v.ne_bot).symm]
+      rw [Ideal.dvd_iff_le, he,
+        ← Ideal.ramificationIdx'_eq_ramificationIdx v.asIdeal P v.ne_bot]
       exact (Ideal.map_mono (Ideal.prod_le_inf.trans
         (Finset.inf_le (f := HeightOneSpectrum.asIdeal) hv))).trans Ideal.le_pow_ramificationIdx'
     omega
@@ -153,8 +152,8 @@ theorem finite_of_finrank_le_of_ramifiedSupport_subset (A : Type*) [Field A] [Al
   let e : L.restrictScalars ℚ ≃+* L :=
     .subfieldCongr (IntermediateField.restrictScalars_toSubfield ℚ)
   have : NumberField (L.restrictScalars ℚ) := @NumberField.mk _ _ inferInstance (φ ⟨L, hL⟩).2
-  change |discr (L.restrictScalars ℚ)| ≤ ((B ^ d : ℕ) : ℤ)
-  rw [discr_eq_discr_of_ringEquiv _ e, Int.abs_eq_natAbs, Nat.cast_le]
+  rw [Set.mem_preimage, Set.mem_ofPred_eq, discr_eq_discr_of_ringEquiv _ e, Int.abs_eq_natAbs,
+    Nat.cast_le]
   refine (Nat.le_of_dvd (pow_pos hB _)
     (natAbs_discr_dvd_absNorm_factorial_mul_prod_ramifiedSupport_mul_natAbs_discr_pow.trans
       (pow_dvd_pow_of_dvd ?_ _))).trans (Nat.pow_le_pow_right hB hd)
