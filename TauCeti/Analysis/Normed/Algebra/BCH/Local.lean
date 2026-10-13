@@ -73,18 +73,14 @@ theorem localBCH_value [NormedAlgebra ℝ A] [CompleteSpace A] : (localBCH A).va
 
 variable [NormedAlgebra ℝ A] [CompleteSpace A]
 
-private theorem analyticAt_exp_mul_exp :
-    AnalyticAt ℝ (fun p : A × A ↦ exp p.1 * exp p.2) (0, 0) :=
-  ((exp_analytic (𝕂 := ℝ) 0).comp (x := (0, 0)) analyticAt_fst).mul
-    ((exp_analytic (𝕂 := ℝ) 0).comp (x := (0, 0)) analyticAt_snd)
-
 /-- Restricting the local Baker--Campbell--Hausdorff germ to the first coordinate axis gives the
 identity germ. -/
 @[simp]
 theorem localBCH_sliceLeft :
     (localBCH A).sliceLeft = (↑(fun x : A ↦ x) : Germ (𝓝 (0 : A)) A) := by
+  let _ : NormedAlgebra ℚ A := NormedAlgebra.restrictScalars ℚ ℝ A
   rw [localBCH_def, Germ.sliceLeft_coe, Germ.coe_eq]
-  filter_upwards [eventually_log_exp ℝ A] with x hx
+  filter_upwards [eventually_log_exp A] with x hx
   simpa using hx
 
 /-- Restricting the local Baker--Campbell--Hausdorff germ to the second coordinate axis gives the
@@ -92,15 +88,10 @@ identity germ. -/
 @[simp]
 theorem localBCH_sliceRight :
     (localBCH A).sliceRight = (↑(fun y : A ↦ y) : Germ (𝓝 (0 : A)) A) := by
+  let _ : NormedAlgebra ℚ A := NormedAlgebra.restrictScalars ℚ ℝ A
   rw [localBCH_def, Germ.sliceRight_coe, Germ.coe_eq]
-  filter_upwards [eventually_log_exp ℝ A] with y hy
+  filter_upwards [eventually_log_exp A] with y hy
   simpa using hy
-
-private theorem tendsto_exp_mul_exp :
-    Tendsto (fun p : A × A ↦ exp p.1 * exp p.2)
-      (𝓝 ((0, 0) : A × A)) (𝓝 (1 : A)) := by
-  simpa only [exp_zero, mul_one] using
-    (analyticAt_exp_mul_exp A).continuousAt.tendsto
 
 /-- Applying exponential to the local Baker--Campbell--Hausdorff germ gives the germ of the product
 of the two exponentials. -/
@@ -108,15 +99,20 @@ of the two exponentials. -/
 theorem localBCH_map_exp :
     (localBCH A).map exp =
       (↑(fun p : A × A ↦ exp p.1 * exp p.2) : Germ (𝓝 ((0, 0) : A × A)) A) := by
+  let _ : NormedAlgebra ℚ A := NormedAlgebra.restrictScalars ℚ ℝ A
+  have h : Tendsto (fun p : A × A ↦ exp p.1 * exp p.2) (𝓝 (0, 0)) (𝓝 1) := by
+    simpa only [exp_zero, mul_one] using
+      ((continuous_fst.tendsto ((0, 0) : A × A)).exp.mul (continuous_snd.tendsto (0, 0)).exp)
   rw [localBCH_def, Germ.map_coe, Germ.coe_eq]
-  filter_upwards [(tendsto_exp_mul_exp A).eventually (eventually_exp_log ℝ A)] with p hp
+  filter_upwards [h.eventually (eventually_exp_log A)] with p hp
   simpa [Function.comp_def] using hp
 
 /-- The representative defining `localBCH` is analytic at the origin. -/
 theorem analyticAt_localBCH_representative :
     AnalyticAt ℝ (fun p : A × A ↦ log (exp p.1 * exp p.2)) (0, 0) := by
   simpa [Function.comp_def] using (analyticAt_log_one ℝ A).comp_of_eq
-    (analyticAt_exp_mul_exp A) (by simp)
+    (((exp_analytic (𝕂 := ℝ) 0).comp (x := (0, 0)) analyticAt_fst).mul
+      ((exp_analytic (𝕂 := ℝ) 0).comp (x := (0, 0)) analyticAt_snd)) (by simp)
 
 /-- The local Baker--Campbell--Hausdorff germ tends to zero at the origin. -/
 theorem localBCH_tendsto : (localBCH A).Tendsto (𝓝 0) := by
@@ -127,6 +123,7 @@ theorem localBCH_tendsto : (localBCH A).Tendsto (𝓝 0) := by
 /-- A germ tending to zero with the same exponential image as `localBCH` equals `localBCH`. -/
 theorem eq_localBCH_of_tendsto_of_map_exp_eq (f : Germ (𝓝 ((0, 0) : A × A)) A)
     (hf : f.Tendsto (𝓝 0)) (hmap : f.map exp = (localBCH A).map exp) : f = localBCH A := by
+  let _ : NormedAlgebra ℚ A := NormedAlgebra.restrictScalars ℚ ℝ A
   induction f using Germ.inductionOn with
   | _ g =>
       rw [Germ.coe_tendsto] at hf
@@ -136,7 +133,7 @@ theorem eq_localBCH_of_tendsto_of_map_exp_eq (f : Germ (𝓝 ((0, 0) : A × A)) 
             (fun p => exp p.1 * exp p.2) := by
         rw [Germ.map_coe, localBCH_map_exp, Germ.coe_eq] at hmap
         simpa only [Function.comp_def] using hmap
-      filter_upwards [hf.eventually (eventually_log_exp ℝ A), hmap']
+      filter_upwards [hf.eventually (eventually_log_exp A), hmap']
         with p hp hmap_p
       rw [← hmap_p]
       exact hp.symm
@@ -157,7 +154,10 @@ theorem map_localBCH {F : Type*} [FunLike F A B] [RingHomClass F A B]
   let _ : NormedAlgebra ℚ A := NormedAlgebra.restrictScalars ℚ ℝ A
   let _ : NormedAlgebra ℚ B := NormedAlgebra.restrictScalars ℚ ℝ B
   rw [localBCH_def, Germ.map_coe, localBCH_def, Germ.coe_compTendsto, Germ.coe_eq]
-  filter_upwards [(tendsto_exp_mul_exp A).eventually (eventually_map_log ℝ f hf)] with p hp
+  have h : Tendsto (fun p : A × A ↦ exp p.1 * exp p.2) (𝓝 (0, 0)) (𝓝 1) := by
+    simpa only [exp_zero, mul_one] using
+      ((continuous_fst.tendsto ((0, 0) : A × A)).exp.mul (continuous_snd.tendsto (0, 0)).exp)
+  filter_upwards [h.eventually (eventually_map_log f hf)] with p hp
   dsimp only [Function.comp_apply, Prod.map]
   rw [hp]
   have hx : f (exp p.1) = exp (f p.1) := map_exp f hf p.1

@@ -14,8 +14,8 @@ import Mathlib.Analysis.SpecialFunctions.Complex.Analytic
 # Local inverse equations for the Banach algebra logarithm
 
 This file proves that `NormedSpace.log` and the exponential are inverse near zero and one, in
-a complete normed algebra over a characteristic-zero nontrivially normed field on which `ℚ` acts
-continuously (the setting of `NormedSpace.exp_hasFPowerSeriesAt_zero`).
+a complete normed `ℚ`-algebra (the setting of Mathlib's scalar-free exponential results such as
+`NormedSpace.exp_add_of_commute`).
 
 ## Main results
 
@@ -26,8 +26,7 @@ continuously (the setting of `NormedSpace.exp_hasFPowerSeriesAt_zero`).
 
 The power series of `NormedSpace.log` and of the exponential have rational coefficients, and so do
 their formal compositions. These rational coefficients are identified over `ℝ`, where `Real.log`
-and `Real.exp` are inverse, and the identities then hold over every characteristic-zero field and
-in every algebra over it.
+and `Real.exp` are inverse, and the identities then hold in every complete normed `ℚ`-algebra.
 -/
 
 public section
@@ -129,33 +128,30 @@ private theorem compCoeff_expCoeff_logCoeff : compCoeff expCoeff logCoeff = oneA
   filter_upwards [lt_mem_nhds (show (-1 : ℝ) < 0 by norm_num)] with x hx
   exact Real.exp_log (by linarith)
 
-variable (𝕂 A : Type*) [NontriviallyNormedField 𝕂] [CharZero 𝕂] [ContinuousSMul ℚ 𝕂]
-  [NormedRing A] [NormedAlgebra 𝕂 A] [CompleteSpace A]
+variable (A : Type*) [NormedRing A] [NormedAlgebra ℚ A] [CompleteSpace A]
 
-include 𝕂 in
 /-- Near zero, taking `log` after the exponential is the identity. -/
 theorem eventually_log_exp : ∀ᶠ x in 𝓝 (0 : A), log (exp x) = x := by
-  have hlog : HasFPowerSeriesAt (log : A → A) (logSeries 𝕂 A) (exp 0) := by
-    simpa only [exp_zero] using (hasFPowerSeriesOnBall_log 𝕂 A).hasFPowerSeriesAt
-  have h := hlog.comp (exp_hasFPowerSeriesAt_zero (𝕂 := 𝕂) (𝔸 := A))
+  have hlog : HasFPowerSeriesAt (log : A → A) (logSeries ℚ A) (exp 0) := by
+    simpa only [exp_zero] using (hasFPowerSeriesOnBall_log ℚ A).hasFPowerSeriesAt
+  have h := hlog.comp (exp_hasFPowerSeriesAt_zero (𝕂 := ℚ) (𝔸 := A))
   rw [logSeries_eq_ratSeries, expSeries_eq_ratSeries, ratSeries_comp,
     compCoeff_logCoeff_expCoeff] at h
-  have hzero := h.sub (hasFPowerSeriesAt_id_ratSeries 𝕂 A)
+  have hzero := h.sub (hasFPowerSeriesAt_id_ratSeries ℚ A)
   rw [sub_self] at hzero
   filter_upwards [hzero.eventually_eq_zero] with x hx
   exact sub_eq_zero.mp hx
 
-include 𝕂 in
 /-- Near one, exponentiating `log` is the identity. -/
 theorem eventually_exp_log : ∀ᶠ x in 𝓝 (1 : A), exp (log x) = x := by
-  have hexp : HasFPowerSeriesAt (exp : A → A) (expSeries 𝕂 A) (log 1) := by
-    simpa only [log_one] using exp_hasFPowerSeriesAt_zero (𝕂 := 𝕂) (𝔸 := A)
-  have h := hexp.comp (hasFPowerSeriesOnBall_log 𝕂 A).hasFPowerSeriesAt
+  have hexp : HasFPowerSeriesAt (exp : A → A) (expSeries ℚ A) (log 1) := by
+    simpa only [log_one] using exp_hasFPowerSeriesAt_zero (𝕂 := ℚ) (𝔸 := A)
+  have h := hexp.comp (hasFPowerSeriesOnBall_log ℚ A).hasFPowerSeriesAt
   rw [logSeries_eq_ratSeries, expSeries_eq_ratSeries, ratSeries_comp,
     compCoeff_expCoeff_logCoeff] at h
-  have hid : HasFPowerSeriesAt (fun x : A ↦ x) (ratSeries 𝕂 A oneAddCoeff) 1 := by
+  have hid : HasFPowerSeriesAt (fun x : A ↦ x) (ratSeries ℚ A oneAddCoeff) 1 := by
     simpa only [zero_add, add_sub_cancel] using
-      (hasFPowerSeriesAt_one_add_ratSeries 𝕂 A).comp_sub 1
+      (hasFPowerSeriesAt_one_add_ratSeries ℚ A).comp_sub 1
   have hzero := h.sub hid
   rw [sub_self] at hzero
   filter_upwards [hzero.eventually_eq_zero] with x hx

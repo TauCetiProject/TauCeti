@@ -140,8 +140,9 @@ theorem unitsLocalBCH_sliceLeft :
   have he : Tendsto e (nhds 0) (nhds 0) := by
     simpa only [LinearEquiv.coe_toContinuousLinearEquiv', map_zero] using
       e.toContinuousLinearEquiv.continuous.tendsto 0
+  let _ : NormedAlgebra ℚ R := NormedAlgebra.restrictScalars ℚ ℝ R
   rw [unitsLocalBCH_def, Germ.sliceLeft_coe, Germ.coe_eq]
-  filter_upwards [he.eventually (NormedSpace.eventually_log_exp ℝ R)] with X hX
+  filter_upwards [he.eventually (NormedSpace.eventually_log_exp R)] with X hX
   rw [map_zero, NormedSpace.exp_zero, mul_one, hX, e.symm_apply_apply]
 
 /-- Restricting `unitsLocalBCH` to the second coordinate axis gives the identity germ. -/
@@ -156,8 +157,9 @@ theorem unitsLocalBCH_sliceRight :
   have he : Tendsto e (nhds 0) (nhds 0) := by
     simpa only [LinearEquiv.coe_toContinuousLinearEquiv', map_zero] using
       e.toContinuousLinearEquiv.continuous.tendsto 0
+  let _ : NormedAlgebra ℚ R := NormedAlgebra.restrictScalars ℚ ℝ R
   rw [unitsLocalBCH_def, Germ.sliceRight_coe, Germ.coe_eq]
-  filter_upwards [he.eventually (NormedSpace.eventually_log_exp ℝ R)] with Y hY
+  filter_upwards [he.eventually (NormedSpace.eventually_log_exp R)] with Y hY
   rw [map_zero, NormedSpace.exp_zero, one_mul, hY, e.symm_apply_apply]
 
 /-- The representative defining `unitsLocalBCH` is analytic at the origin. -/

@@ -60,17 +60,13 @@ end Algebra
 
 section Normed
 
-variable (𝕂 : Type*) {A B : Type*} [NontriviallyNormedField 𝕂] [CharZero 𝕂]
-variable [ContinuousSMul ℚ≥0 𝕂]
-variable [NormedRing A] [NormedAlgebra 𝕂 A] [CompleteSpace A]
+variable {A B : Type*} [NormedRing A] [NormedAlgebra ℚ A] [CompleteSpace A]
 variable [Ring B] [TopologicalSpace B] [IsTopologicalRing B] [T2Space B]
 
-include 𝕂 in
 /-- Continuous ring homomorphisms commute with `log` on the open unit ball about one. -/
 theorem map_log_of_mem_ball {F : Type*} [FunLike F A B] [RingHomClass F A B]
     (f : F) (hf : Continuous f) {x : A} (hx : x ∈ Metric.ball (1 : A) 1) :
     f (log x) = log (f x) := by
-  let _ : Algebra ℚ A := RestrictScalars.algebra ℚ 𝕂 A
   -- The image of a rational scalar is central, so `f` makes `B` a `ℚ`-algebra.
   have hcomm (q : ℚ) (y : B) :
       f (algebraMap ℚ A q) * y = y * f (algebraMap ℚ A q) := by
@@ -90,22 +86,20 @@ theorem map_log_of_mem_ball {F : Type*} [FunLike F A B] [RingHomClass F A B]
       (Commute.units_inv_left (Nat.cast_commute q.den y))).eq
   let _ : Algebra ℚ B := ((f : A →+* B).comp (algebraMap ℚ A)).toAlgebra' hcomm
   have hx' : ‖x - 1‖ < 1 := by simpa [Metric.mem_ball, dist_eq_norm] using hx
-  rw [log_eq_tsum 𝕂, log_eq_tsum ℚ,
-    ← ((logSeries_summable_of_norm_lt_one 𝕂 A hx').hasSum.map f hf).tsum_eq]
+  rw [log_eq_tsum ℚ, log_eq_tsum ℚ,
+    ← ((logSeries_summable_of_norm_lt_one ℚ A hx').hasSum.map f hf).tsum_eq]
   refine tsum_congr fun n ↦ ?_
   simpa only [logSeries_apply, List.ofFn_const, List.prod_replicate, Function.comp_def,
     map_sub, map_one] using
-    map_logSeries_apply (𝕂 := 𝕂) (𝕃 := ℚ) f (fun _ : Fin n ↦ x - 1)
+    map_logSeries_apply (𝕂 := ℚ) (𝕃 := ℚ) f (fun _ : Fin n ↦ x - 1)
 
-include 𝕂 in
 /-- A continuous ring homomorphism commutes with `log` near one. -/
 theorem eventually_map_log {F : Type*} [FunLike F A B] [RingHomClass F A B]
     (f : F) (hf : Continuous f) :
     ∀ᶠ x in 𝓝 (1 : A), f (log x) = log (f x) := by
   filter_upwards [Metric.ball_mem_nhds (1 : A) zero_lt_one] with x hx
-  exact map_log_of_mem_ball 𝕂 f hf hx
+  exact map_log_of_mem_ball f hf hx
 
-include 𝕂 in
 /-- Continuous ring homomorphisms commute with the germ of `log` at one. -/
 theorem map_log_germ {F : Type*} [FunLike F A B] [RingHomClass F A B]
     (f : F) (hf : Continuous f) :
@@ -113,7 +107,7 @@ theorem map_log_germ {F : Type*} [FunLike F A B] [RingHomClass F A B]
       (↑(log : B → B) : Germ (𝓝 (1 : B)) B).compTendsto f (by
         exact hf.tendsto' 1 1 (map_one f)) := by
   rw [Germ.coe_compTendsto, Germ.coe_eq]
-  filter_upwards [eventually_map_log 𝕂 f hf] with x hx
+  filter_upwards [eventually_map_log f hf] with x hx
   exact hx
 
 end Normed

@@ -12,9 +12,10 @@ public import Mathlib.Analysis.Normed.Algebra.Logarithm
 # Convergence of the logarithm series in a Banach algebra
 
 Mathlib defines the logarithm `NormedSpace.log x = ∑ n ≥ 1, (-1)^(n+1) / n • (x - 1)^n` as the
-sum of `NormedSpace.logSeries` at `x - 1`, and leaves its convergence theory for later work.
-This file shows that, in a Banach algebra over a characteristic-zero normed field, the radius of
-convergence of `NormedSpace.logSeries` is at least one, so `NormedSpace.log` is analytic at one.
+sum of `NormedSpace.logSeries` at `x - 1`. This file establishes the convergence and analyticity
+of `NormedSpace.logSeries` and `NormedSpace.log`: in a Banach algebra over a characteristic-zero
+normed field, the radius of convergence of `NormedSpace.logSeries` is at least one, so
+`NormedSpace.log` is analytic at one.
 It supplies the local logarithm needed to define the Baker–Campbell–Hausdorff map near the
 origin.
 
