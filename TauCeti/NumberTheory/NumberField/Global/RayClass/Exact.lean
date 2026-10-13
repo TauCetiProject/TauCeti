@@ -97,7 +97,7 @@ noncomputable def principalRayClass (m : Modulus K) :
 theorem principalRayClass_eq_one_of_isCongrOne {m : Modulus K} {x : primeToSubgroup m}
     (hx : IsCongrOne m (x : Kˣ)) : principalRayClass m x = 1 := by
   rw [principalRayClass_apply, rayClassMk_eq_one_iff, mem_ray_iff]
-  exact ⟨(x : Kˣ), hx, coe_principalIdealPrimeTo m x |>.symm⟩
+  exact ⟨(x : Kˣ), hx, NumberFieldArithmetic.coe_principalIdealAway m.support x |>.symm⟩
 
 /-- The map from a ray class to its underlying ordinary ideal class. -/
 noncomputable def rayClassToClassGroup (m : Modulus K) :
@@ -182,7 +182,7 @@ theorem classMap_surjective {𝔪 𝔫 : Modulus K} (h : 𝔪 ∣ 𝔫) :
     apply Subtype.ext
     apply Units.ext
     rw [NumberFieldArithmetic.coe_idealsAwayInclusion, Subgroup.coe_mul,
-      coe_principalIdealPrimeTo]
+      NumberFieldArithmetic.coe_principalIdealAway]
   rw [hJ, map_mul]
   rw [← principalRayClass_apply, principalRayClass_eq_one_of_isCongrOne hxm, mul_one]
 
@@ -212,7 +212,8 @@ ray only sees an element of `primeToSubgroup 𝔪` up to the integer units. -/
 theorem principalRayClass_eq_one_iff {𝔪 : Modulus K} (x : primeToSubgroup 𝔪) :
     principalRayClass 𝔪 x = 1 ↔
       ∃ u : (𝓞 K)ˣ, IsCongrOne 𝔪 (Units.map (algebraMap (𝓞 K) K).toMonoidHom u * x) := by
-  rw [principalRayClass_apply, rayClassMk_eq_one_iff, mem_ray_iff, coe_principalIdealPrimeTo]
+  rw [principalRayClass_apply, rayClassMk_eq_one_iff, mem_ray_iff,
+    NumberFieldArithmetic.coe_principalIdealAway]
   refine ⟨fun ⟨y, hy, hyx⟩ ↦ ?_, fun ⟨u, hu⟩ ↦ ⟨_, hu, ?_⟩⟩
   · obtain ⟨u, hu⟩ := (FractionalIdeal.toPrincipalIdeal_eq_one_iff (y * (x : Kˣ)⁻¹)).mp
       (by rw [map_mul, map_inv, hyx, mul_inv_cancel])
@@ -345,14 +346,15 @@ theorem classMap_eq_one_iff_of_finitePart_eq {𝔪 𝔫 : Modulus K} (h : 𝔪 �
     · rw [modulusSignHom_apply, signHom_apply_eq_one_iff]
       exact hpos w.1 hw
     · have hI : principalIdealPrimeTo 𝔫 ⟨x, hxn⟩ = I :=
-        Subtype.ext (Units.ext (by rw [coe_principalIdealPrimeTo, hxI]))
+        Subtype.ext (Units.ext (by rw [NumberFieldArithmetic.coe_principalIdealAway, hxI]))
       rw [← hI, ← principalRayClass_apply, ← residueSignRayClass_residueSignHom]
       exact congrArg _ (Prod.ext (by rw [residueSignHom_fst, hres]) (by rw [residueSignHom_snd]))
   · rintro ⟨s, hs, rfl⟩
     obtain ⟨x, hx⟩ := residueSignHom_surjective 𝔫 (1, s)
     rw [← hx, residueSignRayClass_residueSignHom, principalRayClass_apply, classMap_rayClassMk,
       rayClassMk_eq_one_iff, mem_ray_iff]
-    refine ⟨x, ?_, by rw [NumberFieldArithmetic.coe_idealsAwayInclusion, coe_principalIdealPrimeTo]⟩
+    refine ⟨x, ?_, by rw [NumberFieldArithmetic.coe_idealsAwayInclusion,
+      NumberFieldArithmetic.coe_principalIdealAway]⟩
     refine (isCongrOne_iff_residueHom_eq_one_of_finitePart_eq hfin x.2).mpr
       ⟨by rw [← residueSignHom_fst, hx], fun w hw ↦ ?_⟩
     have hw' := congrArg (fun p ↦ p.2 ⟨w, (Modulus.dvd_iff.mp h).2 hw⟩) hx

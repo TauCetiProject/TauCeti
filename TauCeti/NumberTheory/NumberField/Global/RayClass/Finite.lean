@@ -96,14 +96,15 @@ instance unitsCongruenceSubgroup_finiteIndex (𝔪 : Modulus K) :
 private noncomputable def principalIdealHom (𝔪 : Modulus K) :
     primeToSubgroup 𝔪 →* (idealsPrimeToClassGroup 𝔪).ker :=
   MonoidHom.codRestrict (principalIdealPrimeTo 𝔪) (idealsPrimeToClassGroup 𝔪).ker fun x ↦ by
-    rw [MonoidHom.mem_ker, idealsPrimeToClassGroup_apply, coe_principalIdealPrimeTo]
+    rw [MonoidHom.mem_ker, idealsPrimeToClassGroup_apply,
+      NumberFieldArithmetic.coe_principalIdealAway]
     exact ClassGroup.mk_toPrincipalIdeal (x : Kˣ)
 
 @[simp] private theorem coe_principalIdealHom (𝔪 : Modulus K) (x : primeToSubgroup 𝔪) :
     (((principalIdealHom 𝔪 x : (idealsPrimeToClassGroup 𝔪).ker) : idealsPrimeTo 𝔪) :
         (FractionalIdeal (𝓞 K)⁰ K)ˣ) =
       toPrincipalIdeal (𝓞 K) K (x : Kˣ) := by
-  rw [principalIdealHom, MonoidHom.codRestrict_apply, coe_principalIdealPrimeTo]
+  rw [principalIdealHom, MonoidHom.codRestrict_apply, NumberFieldArithmetic.coe_principalIdealAway]
 
 private theorem principalIdealHom_surjective (𝔪 : Modulus K) :
     Function.Surjective (principalIdealHom 𝔪) := by

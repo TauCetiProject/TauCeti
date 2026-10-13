@@ -158,7 +158,7 @@ private theorem exists_zmodUnitsToRayClass_eq_idealClass
         exact Nat.cast_pos.mpr (Nat.pos_of_ne_zero (by exact_mod_cast ha))
     have hJ : NumberFieldArithmetic.integralIdealsAwayHom ℚ (ratModulus n hn).support I =
         principalIdealPrimeTo (ratModulus n hn) ⟨x, hx⟩ :=
-      Subtype.ext (by rw [coe_principalIdealPrimeTo]; exact hI.symm)
+      Subtype.ext (by rw [NumberFieldArithmetic.coe_principalIdealAway]; exact hI.symm)
     rw [idealClass_apply, hJ, ← principalRayClass_apply, ← residueSignRayClass_residueSignHom,
       zmodUnitsToRayClass_apply]
     refine congrArg _ (Prod.ext (Units.ext ?_) ((residueSignHom_snd _ _).trans hsign).symm)
