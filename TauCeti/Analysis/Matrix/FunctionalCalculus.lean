@@ -13,6 +13,8 @@ public import Mathlib.MeasureTheory.Constructions.BorelSpace.Metrizable
 public import TauCeti.Analysis.InnerProductSpace.PointSpectrum
 import Mathlib.LinearAlgebra.Lagrange
 import Mathlib.Topology.MetricSpace.ThickenedIndicator
+import TauCeti.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Continuity
+import TauCeti.Topology.Instances.Matrix
 
 /-!
 # Spectral projectors, continuity and measurability of the Hermitian functional calculus
@@ -25,8 +27,8 @@ relates it to the eigenspaces of `A` and studies its dependence on `A`.
 *Eigenvectors and spectral projectors.* The Euclidean operator of `cfc f A` multiplies an
 eigenvector of `A` with eigenvalue `μ` by `f μ`, so it is the functional calculus
 `LinearMap.IsSymmetric.cfc` of the symmetric operator `Matrix.toEuclideanLin A`. For a set
-`Ω ⊆ ℝ`, the matrix `cfc (Ω.indicator 1) A` is therefore a star projection whose Euclidean
-operator is the orthogonal projection onto the sum
+`Ω ⊆ ℝ`, the Euclidean operator of the star projection `cfc (Ω.indicator 1) A` (see
+`TauCeti.isStarProjection_cfc_indicator`) is therefore the orthogonal projection onto the sum
 `Module.End.pointSpectralSubspace A.toEuclideanLin Ω` of the eigenspaces of `A` at eigenvalues in
 `Ω`. For `Ω = [c, ∞)` this is the fixed-threshold spectral projector `P_[c,∞)(A)`, the cluster
 object used for spectral subspaces in the presence of eigenvalue multiplicity.
@@ -53,7 +55,6 @@ with a measurable random matrix `ω ↦ A ω` gives measurability of `ω ↦ cfc
 * `Matrix.IsHermitian.toEuclideanLin_cfc_indicator` — the Euclidean operator of
   `cfc (Ω.indicator 1) A` is the orthogonal projection onto the point-spectral subspace
   `Module.End.pointSpectralSubspace A.toEuclideanLin Ω`;
-* `Matrix.isStarProjection_cfc_indicator` — `cfc (Ω.indicator 1) A` is a star projection;
 * `TauCeti.continuousOn_matrix_cfc` — for continuous `f`, `A ↦ cfc f A` is continuous on the
   Hermitian matrices;
 * `TauCeti.tendsto_matrix_cfc_fun` — pointwise convergence of functions gives convergence of
@@ -97,10 +98,13 @@ theorem IsHermitian.toEuclideanLin_cfc_apply_of_apply_eq_smul (hA : A.IsHermitia
     exact cfc_congr fun t ht ↦ (hq t (by simp [s, ht])).symm
   have haeval : toEuclideanLin (aeval A (q.map (algebraMap ℝ 𝕜))) =
       aeval (toEuclideanLin A) (q.map (algebraMap ℝ 𝕜)) :=
+    -- `toLinAlgEquiv` at the standard basis of `EuclideanSpace 𝕜 n` is `toEuclideanLin` by
+    -- definition, so `aeval` commutes with `toEuclideanLin` as with any algebra homomorphism.
     (aeval_algHom_apply (toLinAlgEquiv (EuclideanSpace.basisFun n 𝕜).toBasis) A _).symm
   rw [hcfc, haeval,
-    Module.End.aeval_apply_of_hasEigenvector ⟨Module.End.mem_eigenspace_iff.mpr hx, hx0⟩,
-    ← RCLike.algebraMap_eq_ofReal, eval_map, eval₂_at_apply, hq μ (by simp [s])]
+    Module.End.aeval_apply_of_hasEigenvector ⟨Module.End.mem_eigenspace_iff.mpr hx, hx0⟩]
+  -- Both sides are `aeval μ q` once `f μ` is replaced by `q.eval μ`.
+  rw [← hq μ (by simp [s]), ofReal_eval, eval_map_algebraMap]
 
 /-- The Euclidean operator of the functional calculus `cfc f A` of a Hermitian matrix is the
 functional calculus `LinearMap.IsSymmetric.cfc f` of the symmetric operator `A.toEuclideanLin`. -/
@@ -116,18 +120,6 @@ theorem IsHermitian.toEuclideanLin_cfc_indicator (hA : A.IsHermitian) (Ω : Set 
     toEuclideanLin (cfc (Ω.indicator 1) A) =
       (Module.End.pointSpectralSubspace (toEuclideanLin A) Ω).starProjection := by
   rw [hA.toEuclideanLin_cfc, LinearMap.IsSymmetric.coe_starProjection_pointSpectralSubspace]
-
-/-- The spectral projector `cfc (Ω.indicator 1) A` is a star projection. (When `A` is not
-Hermitian it is the junk value `0`.) -/
-theorem isStarProjection_cfc_indicator (A : Matrix n n 𝕜) (Ω : Set ℝ) :
-    IsStarProjection (cfc (Ω.indicator (1 : ℝ → ℝ)) A) where
-  isIdempotentElem := by
-    have hcont : ContinuousOn (Ω.indicator (1 : ℝ → ℝ)) (spectrum ℝ A) :=
-      finite_real_spectrum.continuousOn _
-    rw [IsIdempotentElem, ← cfc_mul _ _ A hcont hcont]
-    refine cfc_congr fun t _ ↦ ?_
-    by_cases ht : t ∈ Ω <;> simp [ht]
-  isSelfAdjoint := cfc_predicate _ A
 
 end Matrix
 
@@ -156,16 +148,8 @@ theorem continuousOn_matrix_cfc {f : ℝ → ℝ} (hf : Continuous f) :
 matrix `A`. No continuity is needed, because the spectrum of a matrix is finite. -/
 theorem tendsto_matrix_cfc_fun {ι : Type*} {l : Filter ι} {F : ι → ℝ → ℝ} {f : ℝ → ℝ}
     (hFf : ∀ t, Tendsto (fun k ↦ F k t) l (𝓝 (f t))) (A : Matrix n n 𝕜) :
-    Tendsto (fun k ↦ cfc (F k) A) l (𝓝 (cfc f A)) := by
-  by_cases hA : A.IsHermitian
-  · refine tendsto_cfc_fun ?_
-      (Eventually.of_forall fun _ ↦ Matrix.finite_real_spectrum.continuousOn _)
-    rw [Metric.tendstoUniformlyOn_iff]
-    intro ε hε
-    exact Matrix.finite_real_spectrum.eventually_all.2 fun t _ ↦
-      (Metric.tendsto_nhds.1 (hFf t) ε hε).mono fun _ h ↦ by rwa [dist_comm]
-  · have hA' : ¬IsSelfAdjoint A := by rwa [← Matrix.isHermitian_iff_isSelfAdjoint]
-    simpa [cfc_apply_of_not_predicate A hA'] using tendsto_const_nhds
+    Tendsto (fun k ↦ cfc (F k) A) l (𝓝 (cfc f A)) :=
+  tendsto_cfc_fun_of_finite_spectrum Matrix.finite_real_spectrum fun t _ ↦ hFf t
 
 /-- **Measurability of the Hermitian functional calculus.** For a continuous `f : ℝ → ℝ`, the
 map `A ↦ cfc f A` is Borel measurable on `Matrix n n 𝕜`. It is continuous on the closed set of
@@ -188,8 +172,6 @@ measurable on `Matrix n n 𝕜`, although it need not be continuous on the Hermi
 theorem measurable_matrix_cfc_of_tendsto {F : ℕ → ℝ → ℝ} {f : ℝ → ℝ}
     (hF : ∀ k, Continuous (F k)) (hFf : ∀ t, Tendsto (fun k ↦ F k t) atTop (𝓝 (f t))) :
     Measurable (cfc f : Matrix n n 𝕜 → Matrix n n 𝕜) :=
-  letI : TopologicalSpace.PseudoMetrizableSpace (Matrix n n 𝕜) :=
-    inferInstanceAs (TopologicalSpace.PseudoMetrizableSpace (n → n → 𝕜))
   measurable_of_tendsto_metrizable (fun k ↦ measurable_matrix_cfc (hF k))
     (tendsto_pi_nhds.2 (tendsto_matrix_cfc_fun hFf))
 
