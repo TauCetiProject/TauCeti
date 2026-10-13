@@ -44,8 +44,9 @@ how it relates to the other points of the disc.
   point `η_{b,s}` (types (2) and (3)), and not one of the rank-two points `η_{r⁻}` and `η_{r⁺}`
   next to the Gauss points about the origin (type (5)).
 
-The support of `η` is not computed here, and neither is the classification of all points of the
-disc into Wedhorn's five types.
+The support of `η` is not computed here. That every point of the disc over an algebraically
+closed field is of one of Wedhorn's five types, these points supplying type (4), is proved in
+`TauCeti.AlgebraicGeometry.AdicSpace.Spa.Polydisc.Classification`.
 
 ## Main definitions
 
