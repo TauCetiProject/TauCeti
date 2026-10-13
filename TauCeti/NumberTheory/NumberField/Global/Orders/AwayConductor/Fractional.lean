@@ -130,7 +130,8 @@ theorem fractionalIdealsAwayConductorEquiv_integralIdealsAwayConductorHom
   simpa only [fractionalLocalizationMap_apply,
     NumberFieldArithmetic.integralIdealsAwayLocalizationMap_apply] using
     O.fractionalLocalizationMap.mulEquivOfMulEquiv_eq
-      (k := NumberFieldArithmetic.integralIdealsAwayLocalizationMap O.conductorModulus.support)
+      (k := NumberFieldArithmetic.integralIdealsAwayLocalizationMap (K := K)
+        O.conductorModulus.support)
       (j := O.integralIdealsAwayConductorEquiv) (by simp) I
 
 /-- Fractional contraction agrees with integral contraction on integral ideals prime to the

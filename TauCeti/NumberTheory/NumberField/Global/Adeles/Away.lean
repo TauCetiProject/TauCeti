@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.NumberField.Ideal.Away
+public import TauCeti.RingTheory.DedekindDomain.Ideal.Away
 public import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.ClassGroup
 
 /-!
@@ -113,12 +113,12 @@ theorem toIdealsAway_surjective (S : Finset (HeightOneSpectrum (𝓞 K))) :
 In particular, these orders are nonnegative everywhere and vanish on the excluded finite set. -/
 theorem exists_forall_adicOrd_eq_count_integralIdealsAway
     (S : Finset (HeightOneSpectrum (𝓞 K)))
-    (I : NumberFieldArithmetic.integralIdealsAway (K := K) S) :
+    (I : NumberFieldArithmetic.integralIdealsAway (R := 𝓞 K) S) :
     ∃ x : 𝔸ᶠ[(𝓞 K), K]ˣ,
       ∀ v : HeightOneSpectrum (𝓞 K),
         adicOrd x v = FractionalIdeal.count K v (I : FractionalIdeal (𝓞 K)⁰ K) := by
   obtain ⟨x, hx⟩ := exists_forall_adicOrd_eq_count
-    (R := 𝓞 K) (K := K) (NumberFieldArithmetic.integralIdealsAwayHom S I)
+    (R := 𝓞 K) (K := K) (NumberFieldArithmetic.integralIdealsAwayHom (K := K) S I)
   refine ⟨x, fun v ↦ ?_⟩
   exact (hx v).trans (congrArg (FractionalIdeal.count K v)
     (NumberFieldArithmetic.coe_integralIdealsAwayHom S I))

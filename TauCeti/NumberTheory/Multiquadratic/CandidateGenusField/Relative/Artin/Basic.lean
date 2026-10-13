@@ -499,7 +499,7 @@ theorem artinHomAwayIntegral_candidateGenusField_surjective
     Ideal.span_singleton_nonZeroDivisors.mpr (mem_nonZeroDivisors_iff_ne_zero.mpr hDne)
   obtain ⟨J, hJC, hcop⟩ := NarrowClassGroup.exists_mk0_eq_and_isCoprime C ⟨_, hM⟩
   have hmem : (J : Ideal (𝓞 (candidateGenusFieldBase hd))) ∈
-      NumberFieldArithmetic.integralIdealsAway (K := candidateGenusFieldBase hd)
+      NumberFieldArithmetic.integralIdealsAway (R := 𝓞 (candidateGenusFieldBase hd))
         (genusFieldArtinExcludedPrimes hd) := by
     rw [NumberFieldArithmetic.mem_integralIdealsAway_iff]
     refine ⟨mem_nonZeroDivisors_iff_ne_zero.mp J.2, fun v hv hdvdJ ↦ ?_⟩

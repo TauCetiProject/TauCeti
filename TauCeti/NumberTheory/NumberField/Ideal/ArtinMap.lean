@@ -7,7 +7,7 @@ module
 
 public import TauCeti.FieldTheory.Galois.Abelian.Basic
 public import TauCeti.NumberTheory.NumberField.ArtinSymbol
-public import TauCeti.NumberTheory.NumberField.Ideal.Away
+public import TauCeti.RingTheory.DedekindDomain.Ideal.Away
 import Mathlib.Algebra.Group.IsCommutative
 import TauCeti.Algebra.Group.Conj
 
@@ -298,13 +298,13 @@ variable {L : Type*} [Field L] [NumberField L] [Algebra K L] [IsGalois K L]
 
 /-- **The integral Artin homomorphism.** The Artin map read on the monoid of nonzero integral
 ideals divisible by no prime of `S`; this is the shape the classical statements take. -/
-noncomputable def artinHomAwayIntegral : integralIdealsAway (K := K) S →* (L ≃ₐ[K] L) :=
+noncomputable def artinHomAwayIntegral : integralIdealsAway (R := 𝓞 K) S →* (L ≃ₐ[K] L) :=
   (artinHomAway (L := L) hab S hur).comp (integralIdealsAwayHom S)
 
 /-- **The integral Artin homomorphism is the Artin map read through the inclusion of the integral
 ideals prime to `S` into `idealsAway S`.** -/
 @[simp]
-theorem artinHomAwayIntegral_apply (I : integralIdealsAway (K := K) S) :
+theorem artinHomAwayIntegral_apply (I : integralIdealsAway (R := 𝓞 K) S) :
     artinHomAwayIntegral (L := L) hab S hur I =
       artinHomAway (L := L) hab S hur (integralIdealsAwayHom S I) :=
   (rfl)
@@ -312,7 +312,7 @@ theorem artinHomAwayIntegral_apply (I : integralIdealsAway (K := K) S) :
 /-- **The value of the integral Artin homomorphism at a prime outside `S` is the Frobenius
 there.** -/
 theorem artinHomAwayIntegral_apply_prime (v : HeightOneSpectrum (𝓞 K)) (hv : v ∉ S)
-    (hmem : v.asIdeal ∈ integralIdealsAway (K := K) S)
+    (hmem : v.asIdeal ∈ integralIdealsAway (R := 𝓞 K) S)
     (Q : Ideal (𝓞 L)) [Q.IsPrime] [Q.LiesOver v.asIdeal] (σ : L ≃ₐ[K] L)
     (hσ : IsArithFrobAt (𝓞 K) σ Q) :
     artinHomAwayIntegral (L := L) hab S hur ⟨v.asIdeal, hmem⟩ = σ :=

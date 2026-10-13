@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.NumberField.Ideal.Away
+public import TauCeti.RingTheory.DedekindDomain.Ideal.Away
 public import TauCeti.NumberTheory.NumberField.TotallyPositive
 
 import Mathlib.RingTheory.Ideal.Norm.AbsNorm
@@ -549,7 +549,7 @@ theorem Modulus.isCoprimeTo_iff_sup_eq_top {𝔪 : Modulus K} {I : Ideal (𝓞 K
 /-- **The monoid of nonzero integral ideals prime to a modulus.**  There is one such monoid, the
 one built away from a finite set of primes; its membership predicate is `Modulus.IsCoprimeTo`. -/
 noncomputable abbrev integralIdealsPrimeTo (𝔪 : Modulus K) : Submonoid (Ideal (𝓞 K)) :=
-  NumberFieldArithmetic.integralIdealsAway (K := K) 𝔪.support
+  NumberFieldArithmetic.integralIdealsAway (R := 𝓞 K) 𝔪.support
 
 theorem Modulus.mem_integralIdealsPrimeTo {𝔪 : Modulus K} {I : Ideal (𝓞 K)} :
     I ∈ integralIdealsPrimeTo 𝔪 ↔ 𝔪.IsCoprimeTo I :=
