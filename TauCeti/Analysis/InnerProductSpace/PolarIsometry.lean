@@ -51,17 +51,11 @@ variable {𝕜 E F : Type*} [RCLike 𝕜]
   [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [FiniteDimensional 𝕜 E]
   [NormedAddCommGroup F] [InnerProductSpace 𝕜 F] [FiniteDimensional 𝕜 F]
 
-/-- The modulus of a map is injective exactly when the map is. -/
-@[simp]
-theorem injective_operatorAbs_iff {A : E →ₗ[𝕜] F} :
-    Function.Injective A.operatorAbs ↔ Function.Injective A := by
-  rw [← ker_eq_bot, ← ker_eq_bot, ker_operatorAbs]
-
 variable (A : E →ₗ[𝕜] F) (hA : Function.Injective A)
 
 /-- The modulus `|A|` of an injective map `A`, as a linear automorphism of the source. -/
 noncomputable def operatorAbsEquiv : E ≃ₗ[𝕜] E :=
-  LinearEquiv.ofInjectiveEndo A.operatorAbs (injective_operatorAbs_iff.2 hA)
+  LinearEquiv.ofInjectiveEndo A.operatorAbs (operatorAbs_injective_iff.2 hA)
 
 @[simp]
 theorem coe_operatorAbsEquiv : ⇑(A.operatorAbsEquiv hA) = A.operatorAbs :=
