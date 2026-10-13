@@ -16,8 +16,8 @@ the ordinary derivative. This identifies the weak directional derivatives of
 `TauCeti.HasWeakLineDerivOn` on the real line with one-variable derivatives.
 
 Outside the topological support of a function, its directional derivatives vanish. This is the
-directional counterpart of Mathlib's `fderiv_of_notMem_tsupport`, and unlike it needs no
-differentiability, which matters for Lipschitz functions.
+directional counterpart of Mathlib's `fderiv_of_notMem_tsupport`. Both results require no
+differentiability hypothesis, which matters for Lipschitz functions.
 -/
 
 public section

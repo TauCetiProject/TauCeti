@@ -53,7 +53,7 @@ theorem energyFormH1_ofTestFunctionₗ_eq_neg_setIntegral_divMatrixGradient
     (μ := mu) (hg.of_le one_le_two))
   have hgrad : W1p.gradient u =ᵐ[mu.restrict Omega] ∇ g := hderiv.mono fun x hx =>
     innerSL_inj.mp hx
-  rw [energyFormH1_const_eq_setIntegral]
+  rw [energyFormH1_zero_zero_eq_setIntegral]
   calc
     ∫ x in Omega, matrixBilinearForm A
         (W1p.gradient (W1p.ofTestFunctionₗ mu Omega 2 φ) x) (W1p.gradient u x) ∂mu =

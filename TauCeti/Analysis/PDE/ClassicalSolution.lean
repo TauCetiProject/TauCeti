@@ -89,7 +89,7 @@ theorem energyFormH1_one_zero_zero_eq_setIntegral_neg_laplacian_mul {u : W1p mu 
   · -- Against a test function: `∫ ⟪∇φ, ∇u⟫ = -∫ Δφ u = -∫ Δφ w = -∫ φ Δw`.
     have hgrad : energyFormH1 (fun _ => 1) 0 0 u (W1p.ofTestFunctionₗ mu Omega 2 φ) =
         ∫ x, ⟪∇ (φ : EuclideanSpace ℝ ι → ℝ) x, W1p.gradient u x⟫_ℝ ∂mu := by
-      rw [energyFormH1_const_eq_setIntegral]
+      rw [energyFormH1_zero_zero_eq_setIntegral]
       refine (integral_congr_ae ?_).trans
         (setIntegral_eq_integral_of_forall_compl_eq_zero fun x hx => ?_)
       · filter_upwards [gradientTestFunctionLp_apply_ae (mu := mu) 2 φ] with x hx

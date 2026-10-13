@@ -112,22 +112,17 @@ theorem smul_of_eq_zero {α Kc Kf Mc Mf : ℝ≥0} {c : X → 𝕜} {f : X → G
         rw [mul_comm _ (Mf : ℝ≥0∞), ← mul_assoc]
         gcongr
         exact_mod_cast le_add_self
+  let B : 𝕜 →L[𝕜] G →L[𝕜] G := ContinuousLinearMap.lsmul 𝕜 𝕜
+  have hconst : ‖B‖₊ * (Mc * Kf + Mf * Kc) ≤ Mc * Kf + Mf * Kc := by
+    calc
+      _ ≤ 1 * (Mc * Kf + Mf * Kc) :=
+        mul_le_mul_right' ContinuousLinearMap.opNNNorm_lsmul_le _
+      _ = _ := one_mul _
+  have hboth := (B.holderOnWith_comp₂ (hc.holderOnWith s) hf
+    (fun x _ ↦ hcnorm x) hfnorm).mono_const hconst
   intro x y
   by_cases hx : x ∈ s <;> by_cases hy : y ∈ s
-  · have hsplit : c x • f x - c y • f y = c x • (f x - f y) + (c x - c y) • f y := by
-      rw [smul_sub, sub_smul]
-      abel
-    calc
-      edist (c x • f x) (c y • f y) ≤ ‖c x‖₊ * edist (f x) (f y) + edist (c x) (c y) * ‖f y‖₊ := by
-        simp only [edist_nndist, nndist_eq_nnnorm, hsplit]
-        exact_mod_cast (nnnorm_add_le _ _).trans (by rw [nnnorm_smul, nnnorm_smul])
-      _ ≤ Mc * (Kf * edist x y ^ (α : ℝ)) + (Kc * edist x y ^ (α : ℝ)) * Mf := by
-        gcongr
-        · exact_mod_cast hcnorm x
-        · exact hf.edist_le hx hy
-        · exact hc.edist_le x y
-        · exact_mod_cast hfnorm y hy
-      _ = (Mc * Kf + Mf * Kc) * edist x y ^ (α : ℝ) := by ring
+  · simpa only [B, ContinuousLinearMap.lsmul_apply] using hboth.edist_le hx hy
   · exact hcross x hx y hy
   · rw [edist_comm, edist_comm x]
     exact hcross y hy x hx

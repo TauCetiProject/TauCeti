@@ -91,9 +91,8 @@ hypothesis is carried explicitly, and the interior estimates do not see the boun
 
 * `TauCeti.PDE.jetField`: the value-gradient jet field of a Sobolev function.
 * `TauCeti.PDE.energyFormH1`: the divergence-form energy form on `H¹(Ω) = W^{1,2}(Ω)`.
-* `TauCeti.PDE.energyFormH1_zero_zero_eq_setIntegral` and
-  `TauCeti.PDE.energyFormH1_const_eq_setIntegral`: the energy form with no lower-order terms is
-  the integral of `⟨a ∇u, ∇v⟩`.
+* `TauCeti.PDE.energyFormH1_zero_zero_eq_setIntegral`: the energy form with no lower-order
+  terms is the integral of `⟨a ∇u, ∇v⟩`.
 * `TauCeti.PDE.energyFormH1_comm_of_isSymm_ae`: symmetry of the drift-free energy form under an
   almost everywhere symmetric principal coefficient.
 * `TauCeti.PDE.energyFormH1L` and `TauCeti.PDE.energyFormH1L0`: the energy form bundled as a
@@ -424,14 +423,6 @@ theorem energyFormH1_zero_zero_eq_setIntegral (a : EuclideanSpace ℝ ι → Mat
       = ∫ x in Omega, matrixBilinearForm (a x) (W1p.gradient v x) (W1p.gradient u x) ∂mu := by
   rw [energyFormH1_def]
   simp
-
-/-- **The constant-coefficient Dirichlet energy form.** With a constant principal coefficient
-matrix and no drift or mass term, the energy form on `H¹(Ω)` is the integral of `⟨A ∇u, ∇v⟩`
-over `Ω`. -/
-theorem energyFormH1_const_eq_setIntegral (A : Matrix ι ι ℝ) (u v : W1p mu Omega 2) :
-    energyFormH1 (fun _ => A) 0 0 u v
-      = ∫ x in Omega, matrixBilinearForm A (W1p.gradient v x) (W1p.gradient u x) ∂mu :=
-  energyFormH1_zero_zero_eq_setIntegral _ u v
 
 /-- The Sobolev energy form vanishes at zero in its left argument. -/
 @[simp]

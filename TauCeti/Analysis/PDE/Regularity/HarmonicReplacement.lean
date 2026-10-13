@@ -127,7 +127,7 @@ theorem exists_harmonicOnNhd_ae_eq_of_forall_energyFormH1_eq_zero {w : W1p mu Om
   refine WeaklyHarmonicOn.exists_harmonicOnNhd_ae_eq ((weaklyHarmonicOn_iff).2
     ⟨(W1p.hasWeakFDerivOn w).locallyIntegrableOn, fun φ => ?_⟩)
   rw [(W1p.hasWeakFDerivOn w).integral_laplacian_smul_eq_neg_integral_inner φ, neg_eq_zero,
-    ← hw φ, energyFormH1_const_eq_setIntegral]
+    ← hw φ, energyFormH1_zero_zero_eq_setIntegral]
   simp_rw [real_inner_comm (W1p.gradient w _)]
   rw [← φ.setIntegral_inner_gradient_eq_integral_inner_gradient _ φ.tsupport_subset]
   refine integral_congr_ae ?_

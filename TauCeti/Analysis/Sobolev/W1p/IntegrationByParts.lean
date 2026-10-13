@@ -20,7 +20,8 @@ compact support in `Ω`:
 `∫_Ω (∂_v g) u = -∫_Ω g ⟪∇u, v⟫`,
 
 where `∂_v g = lineDeriv ℝ g · v` is the directional derivative of `g`, which exists almost
-everywhere by Rademacher's theorem and is bounded by the Lipschitz constant of `g`.
+everywhere by Rademacher's theorem and satisfies `|∂_v g| ≤ L ‖v‖`, where `L` is the
+Lipschitz constant of `g`.
 
 Test functions built from a Lipschitz coefficient field, such as `φ ⟪a ∇ψ, e⟫` for a smooth `φ`
 and a smooth cutoff `ψ`, are only Lipschitz. This identity is what lets such test functions be

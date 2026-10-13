@@ -99,7 +99,7 @@ private theorem energyFormH1_ofTestFunctionₗ_eq_sum (w : W1p mu Omega 2) (ψ :
       Matrix.transpose_apply, dotProduct, Matrix.mulVec, Finset.mul_sum, Finset.sum_mul]
     rw [Finset.sum_comm]
     exact Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => by ring
-  rw [energyFormH1_const_eq_setIntegral]
+  rw [energyFormH1_zero_zero_eq_setIntegral]
   calc ∫ x in Omega, matrixBilinearForm A
         (W1p.gradient (W1p.ofTestFunctionₗ mu Omega 2 ψ) x) (W1p.gradient w x) ∂mu
       = ∫ x in Omega, ∑ j, lineDeriv ℝ (ψ : EuclideanSpace ℝ ι → ℝ) x (WithLp.toLp 2 (Aᵀ j)) •
