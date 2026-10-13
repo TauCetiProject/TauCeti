@@ -45,8 +45,9 @@ open scoped InnerProductSpace Topology
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
   {A : ℝ → E →L[ℝ] E} {u : ℝ → E}
 
--- The two integrable coefficient terms shared by the identity and the estimate.
-private theorem integrable_energy_terms (hA : ContDiff ℝ 1 A) (hu : ContDiff ℝ 1 u)
+/-- The squared coefficient norm and coefficient-derivative quadratic form are integrable
+along a compactly supported `C¹` path. -/
+theorem integrable_energy_terms (hA : ContDiff ℝ 1 A) (hu : ContDiff ℝ 1 u)
     (hc : HasCompactSupport u) :
     Integrable (fun s ↦ ‖A s (u s)‖ ^ 2) ∧
       Integrable (fun s ↦ ⟪u s, deriv A s (u s)⟫_ℝ) := by

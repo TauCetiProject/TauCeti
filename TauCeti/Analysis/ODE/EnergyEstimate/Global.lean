@@ -61,18 +61,7 @@ theorem exists_nonneg_forall_integral_norm_deriv_sq_add_mul_integral_norm_sq_le
     hc.norm.comp_left (g := fun x : ℝ ↦ x ^ 2) (by norm_num)
   have hiu : Integrable (fun s ↦ ‖u s‖ ^ 2) :=
     (hu.continuous.norm.pow 2).integrable_of_hasCompactSupport hcu
-  have hcAu : HasCompactSupport (fun s ↦ A s (u s)) :=
-    hc.mono (fun s hs hz ↦ hs (by simp [hz]))
-  have hcA : HasCompactSupport (fun s ↦ ‖A s (u s)‖ ^ 2) :=
-    hcAu.norm.comp_left (g := fun x : ℝ ↦ x ^ 2) (by norm_num)
-  have hiA : Integrable (fun s ↦ ‖A s (u s)‖ ^ 2) :=
-    ((hA.continuous.clm_apply hu.continuous).norm.pow 2).integrable_of_hasCompactSupport
-      hcA
-  have hcCorr : HasCompactSupport (fun s ↦ ⟪u s, deriv A s (u s)⟫_ℝ) :=
-    hc.mono (fun s hs hz ↦ hs (by simp [hz]))
-  have hiCorr : Integrable (fun s ↦ ⟪u s, deriv A s (u s)⟫_ℝ) :=
-    Continuous.integrable_of_hasCompactSupport
-      (hu.continuous.inner (hA.continuous_deriv_one.clm_apply hu.continuous)) hcCorr
+  obtain ⟨hiA, hiCorr⟩ := integrable_energy_terms hA hu hc
   have hpoint (s : ℝ) : γ * ‖u s‖ ^ 2 ≤
       ‖A s (u s)‖ ^ 2 - ⟪u s, deriv A s (u s)⟫_ℝ +
         C * (Icc (-R) R).indicator (fun s ↦ ‖u s‖ ^ 2) s := by
