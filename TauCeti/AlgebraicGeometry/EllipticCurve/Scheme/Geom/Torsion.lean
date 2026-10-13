@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.Hom
 public import TauCeti.AlgebraicGeometry.GroupScheme.Kernel
+import TauCeti.Data.ZMod.MonoidHomEquiv
 
 /-!
 # The `n`-torsion of an elliptic curve over a scheme
@@ -41,6 +42,8 @@ free of rank `n²`, which rests on the finiteness and flatness of `[n]`.
   values in `Z` with `x ^ n = 1` are the points of `E[n]` with values in `Z`.
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.torsionMap`: the morphism `E'[n] ⟶ E[n]` induced
   by a base change square of elliptic curves.
+* `TauCeti.AlgebraicGeometry.EllipticCurveGeom.torsionPairHom E N`: the universal pair of points
+  of `E[N]`, the homomorphism `(ℤ/Nℤ)² →* E(E[N] ×_S E[N])` sending `(a, b)` to `aP + bQ`.
 
 ## Main results
 
@@ -57,6 +60,8 @@ free of rank `n²`, which rests on the finiteness and flatness of `[n]`.
   locally of finite presentation over `S`.
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.isPullback_torsionMap`: the `n`-torsion commutes
   with base change.
+* `TauCeti.AlgebraicGeometry.EllipticCurveGeom.existsUnique_comp_torsionPairHom`: for `N ≠ 0`,
+  `E[N] ×_S E[N]` represents homomorphisms `(ℤ/Nℤ)² →* E(Z)`.
 
 ## References
 
@@ -285,6 +290,67 @@ theorem isPullback_torsionMap :
     · simp [← h₂]
 
 end BaseChange
+
+/-! ### Pairs of points of `E[N]` -/
+
+section Pairs
+
+open MonoidalCategory CartesianMonoidalCategory
+
+variable (N : ℕ) [NeZero N]
+
+/-- **The universal pair of points of `E[N]`.** The homomorphism `(ℤ/Nℤ)² →* E(E[N] ×_S E[N])`
+sending `(a, b)` to `aP + bQ`, where `P` and `Q` are the two projections
+`E[N] ×_S E[N] ⟶ E[N]` followed by the inclusion of `E[N]` into `E`. Every homomorphism
+`(ℤ/Nℤ)² →* E(Z)`, for `Z` over `S`, factors uniquely through it
+(`existsUnique_comp_torsionPairHom`). -/
+noncomputable def torsionPairHom : Multiplicative (ZMod N × ZMod N) →*
+    ((E.torsion N).X ⊗ (E.torsion N).X ⟶ Over.mk E.structureMap) :=
+  (zmodProdMonoidHomEquiv N _).symm
+    (⟨fst _ _ ≫ E.torsionι N, by rw [← zpow_natCast, comp_torsionι_zpow]⟩,
+      ⟨snd _ _ ≫ E.torsionι N, by rw [← zpow_natCast, comp_torsionι_zpow]⟩)
+
+/-- The universal pair of points of `E[N]` sends `(a, b)` to `aP + bQ`. -/
+@[simp]
+theorem torsionPairHom_ofAdd (a b : ZMod N) :
+    E.torsionPairHom N (.ofAdd (a, b)) =
+      (fst _ _ ≫ E.torsionι N) ^ a.val * (snd _ _ ≫ E.torsionι N) ^ b.val :=
+  zmodProdMonoidHomEquiv_symm_apply _ _ _
+
+/-- The universal pair of points of `E[N]` sends `(1, 0)` to the first projection `P`. -/
+theorem torsionPairHom_ofAdd_one_zero :
+    E.torsionPairHom N (.ofAdd (1, 0)) = fst _ _ ≫ E.torsionι N :=
+  (coe_zmodProdMonoidHomEquiv_apply_fst _).symm.trans <| by
+    rw [torsionPairHom, Equiv.apply_symm_apply]
+
+/-- The universal pair of points of `E[N]` sends `(0, 1)` to the second projection `Q`. -/
+theorem torsionPairHom_ofAdd_zero_one :
+    E.torsionPairHom N (.ofAdd (0, 1)) = snd _ _ ≫ E.torsionι N :=
+  (coe_zmodProdMonoidHomEquiv_apply_snd _).symm.trans <| by
+    rw [torsionPairHom, Equiv.apply_symm_apply]
+
+/-- **`E[N] ×_S E[N]` represents homomorphisms from `(ℤ/Nℤ)²`.** Every homomorphism
+`φ : (ℤ/Nℤ)² →* E(Z)`, for `Z` over `S`, is `a ↦ x ≫ torsionPairHom E N a` for a unique point `x`
+of `E[N] ×_S E[N]` with values in `Z`, namely the pair of points of `E[N]` given by `φ (1, 0)` and
+`φ (0, 1)`. -/
+theorem existsUnique_comp_torsionPairHom {Z : Over S}
+    (φ : Multiplicative (ZMod N × ZMod N) →* (Z ⟶ Over.mk E.structureMap)) :
+    ∃! x : Z ⟶ (E.torsion N).X ⊗ (E.torsion N).X, ∀ a, x ≫ E.torsionPairHom N a = φ a := by
+  let e := zmodProdMonoidHomEquiv N (Z ⟶ Over.mk E.structureMap)
+  let P := E.torsionPointsEquiv N Z ⟨(e φ).1, by rw [zpow_natCast]; exact (e φ).1.2⟩
+  let Q := E.torsionPointsEquiv N Z ⟨(e φ).2, by rw [zpow_natCast]; exact (e φ).2.2⟩
+  refine ⟨lift P Q, fun a ↦ ?_, fun x hx ↦ ?_⟩
+  · -- write `a = (a₁, a₂)`, so that `φ a = φ (1, 0) ^ a₁ * φ (0, 1) ^ a₂`
+    obtain ⟨⟨a₁, a₂⟩, rfl⟩ : ∃ p : ZMod N × ZMod N, Multiplicative.ofAdd p = a := ⟨a.toAdd, rfl⟩
+    have hφ := zmodProdMonoidHomEquiv_symm_apply (e φ) a₁ a₂
+    rw [e.symm_apply_apply] at hφ
+    rw [hφ]
+    simp [P, Q, MonObj.comp_mul, MonObj.comp_pow]
+  · refine CartesianMonoidalCategory.hom_ext _ _ (torsion_hom_ext ?_) (torsion_hom_ext ?_)
+    · simpa [P, e, -torsionPairHom_ofAdd, torsionPairHom_ofAdd_one_zero] using hx (.ofAdd (1, 0))
+    · simpa [Q, e, -torsionPairHom_ofAdd, torsionPairHom_ofAdd_zero_one] using hx (.ofAdd (0, 1))
+
+end Pairs
 
 end EllipticCurveGeom
 
