@@ -55,7 +55,13 @@ theorem HasHomotopyExtensionProperty.isHurewiczFibration_restrict
   let G' : C(I × T, C(K, X)) :=
     (G.comp ⟨fun q : (I × T) × K ↦ (q.1.1, (q.1.2, q.2)), by fun_prop⟩).curry
   refine ⟨G', funext fun q ↦ ContinuousMap.ext fun a ↦ ?_, fun t ↦ ?_⟩
-  · exact hG₁ q.1 ⟨(q.2, a.val), ⟨mem_univ _, a.property⟩⟩
-  · exact ContinuousMap.ext fun k ↦ hG₀ (t, k)
+  · simpa only [G', H', Function.comp_apply, ContinuousMap.restrict_apply,
+      ContinuousMap.curry_apply, ContinuousMap.comp_apply, ContinuousMap.coe_mk] using
+      hG₁ q.1 ⟨(q.2, a.val), ⟨mem_univ _, a.property⟩⟩
+  · apply ContinuousMap.ext
+    intro k
+    simpa only [G', F, ContinuousMap.curry_apply, ContinuousMap.comp_apply,
+      ContinuousMap.coe_mk, ContinuousMap.uncurry_apply, Function.uncurry_apply_pair] using
+      hG₀ (t, k)
 
 end TauCeti
