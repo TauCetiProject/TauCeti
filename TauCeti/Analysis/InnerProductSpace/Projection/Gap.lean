@@ -36,8 +36,8 @@ plane.
 * `Submodule.projectionGap_comm`: the gap is symmetric.
 * `Submodule.directedProjectionGap_le_projectionGap`: each directed gap is at most the gap.
 * `Submodule.projectionGap_eq_max`: the gap is the larger of the two directed gaps.
-* `Submodule.directedProjectionGap_le_iff`: the directed gap from `U` to `V` is the least `s` with
-  `‖P_{Vᗮ} u‖ ≤ s ‖u‖` for every `u ∈ U`.
+* `Submodule.directedProjectionGap_le_iff`: the directed gap from `U` to `V` is the least
+  `s ≥ 0` with `‖P_{Vᗮ} u‖ ≤ s ‖u‖` for every `u ∈ U`.
 * `Submodule.directedProjectionGap_comm_of_finrank_eq` and
   `Submodule.projectionGap_eq_directedProjectionGap_of_finrank_eq`: for finite-dimensional
   subspaces of equal dimension the two directed gaps agree, and the gap equals either of them.
@@ -196,8 +196,8 @@ theorem projectionGap_eq_zero_iff : projectionGap U V = 0 ↔ U = V := by
   · rintro ⟨h₁, h₂⟩
     rw [h₁, h₂, max_self]
 
-/-- The directed gap from `U` to `V` is at most `s` exactly when every vector of `U` has its
-component orthogonal to `V` bounded by `s` times its norm. -/
+/-- For `s ≥ 0`, the directed gap from `U` to `V` is at most `s` exactly when every vector of `U`
+has its component orthogonal to `V` bounded by `s` times its norm. -/
 theorem directedProjectionGap_le_iff {s : ℝ} (hs : 0 ≤ s) :
     directedProjectionGap U V ≤ s ↔ ∀ u ∈ U, ‖Vᗮ.starProjection u‖ ≤ s * ‖u‖ := by
   rw [directedProjectionGap, opNorm_le_iff hs]
@@ -205,48 +205,6 @@ theorem directedProjectionGap_le_iff {s : ℝ} (hs : 0 ≤ s) :
   · simpa [starProjection_eq_self_iff.mpr hu] using h u
   · exact (h _ (U.starProjection_apply_mem x)).trans
       (mul_le_mul_of_nonneg_left (U.norm_starProjection_apply_le x) hs)
-
-/-- For finite-dimensional subspaces of equal dimension, a lower bound `k ‖u‖² ≤ ‖P_V u‖²` on
-the cosines of `U` towards `V` transfers to the same lower bound for `V` towards `U`. -/
-private theorem mul_norm_sq_le_norm_starProjection_sq_of_finrank_eq [FiniteDimensional 𝕜 U]
-    [FiniteDimensional 𝕜 V] (h : Module.finrank 𝕜 U = Module.finrank 𝕜 V) {k : ℝ}
-    (hU : ∀ u ∈ U, k * ‖u‖ ^ 2 ≤ ‖V.starProjection u‖ ^ 2) {v : E} (hv : v ∈ V) :
-    k * ‖v‖ ^ 2 ≤ ‖U.starProjection v‖ ^ 2 := by
-  rcases le_or_gt k 0 with hk | hk
-  · exact (mul_nonpos_of_nonpos_of_nonneg hk (sq_nonneg _)).trans (sq_nonneg _)
-  -- For `k > 0`, `P_V` maps `U` injectively, hence (by the dimension hypothesis) onto `V`.
-  let T : U →ₗ[𝕜] V := V.orthogonalProjectionOnto.toLinearMap ∘ₗ U.subtype
-  have hT : Function.Injective T := by
-    refine (injective_iff_map_eq_zero T).mpr fun u hu => ?_
-    have h0 : V.starProjection u = 0 := by
-      simpa [T] using congrArg (Subtype.val : V → E) hu
-    have := hU u u.2
-    rw [h0, norm_zero, zero_pow two_ne_zero] at this
-    have : ‖(u : E)‖ ^ 2 = 0 :=
-      le_antisymm (nonpos_of_mul_nonpos_right this hk) (sq_nonneg _)
-    simpa using this
-  obtain ⟨w, hw⟩ := (LinearMap.injective_iff_surjective_of_finrank_eq_finrank h).mp hT ⟨v, hv⟩
-  have hPw : V.starProjection w = v := by
-    simpa [T] using congrArg (Subtype.val : V → E) hw
-  -- The preimage `w ∈ U` of `v` gives `‖v‖² = ⟪P_U v, w⟫ ≤ ‖P_U v‖ ‖w‖`.
-  have hinner : ‖v‖ ^ 2 ≤ ‖U.starProjection v‖ * ‖(w : E)‖ := by
-    have : ⟪U.starProjection v, (w : E)⟫_𝕜 = ⟪v, v⟫_𝕜 := calc
-      _ = ⟪v, U.starProjection w⟫_𝕜 := inner_starProjection_left_eq_right U v w
-      _ = ⟪V.starProjection v, (w : E)⟫_𝕜 := by
-        rw [starProjection_eq_self_iff.mpr w.2, starProjection_eq_self_iff.mpr hv]
-      _ = ⟪v, v⟫_𝕜 := by rw [inner_starProjection_left_eq_right, hPw]
-    have h := norm_inner_le_norm (𝕜 := 𝕜) (U.starProjection v) (w : E)
-    rwa [this, inner_self_eq_norm_sq_to_K, norm_pow, RCLike.norm_ofReal, abs_norm] at h
-  -- Combined with `k ‖w‖² ≤ ‖P_V w‖² = ‖v‖²`, this gives `k ‖v‖⁴ ≤ ‖P_U v‖² ‖v‖²`.
-  have hw' := hU w w.2
-  rw [hPw] at hw'
-  rcases (norm_nonneg v).eq_or_lt with hv0 | hv0
-  · rw [← hv0, zero_pow two_ne_zero, mul_zero]
-    positivity
-  have hv2 : 0 < ‖v‖ ^ 2 := by positivity
-  nlinarith [norm_nonneg (U.starProjection v), norm_nonneg (w : E),
-    mul_le_mul_of_nonneg_left hw' (sq_nonneg ‖U.starProjection v‖),
-    pow_le_pow_left₀ (by positivity) hinner 2]
 
 /-- One half of `directedProjectionGap_comm_of_finrank_eq`. -/
 private theorem directedProjectionGap_le_of_finrank_eq [FiniteDimensional 𝕜 U]
