@@ -81,12 +81,14 @@ theorem piIteratedLoopSpaceMulEquiv_map :
           (X.piIteratedLoopSpaceMulEquiv k m a)
   -- The `k = 0` case is the identity on both sides, since `Ω^[0] f` is `f`.
   | 0, _, _, _, _, _ => by
-    rw [piIteratedLoopSpaceMulEquiv_zero, piIteratedLoopSpaceMulEquiv_zero]
+    rw [Hom.iteratedLoopSpace_zero, piIteratedLoopSpaceMulEquiv_zero,
+      piIteratedLoopSpaceMulEquiv_zero]
     rfl
   | k + 1, X, Y, f, m, a => by
     -- Four commuting squares: the induction hypothesis for `Ω f`, then `map_congrMulEquiv` for
     -- the first reindexing, `pathLoopSpaceMulEquiv_map` for the one-loop shift, and
     -- `map_congrMulEquiv` for the last reindexing.
+    rw [Hom.iteratedLoopSpace_succ]
     calc _ = _ := DFunLike.congr_fun (piIteratedLoopSpaceMulEquiv_succ Y k m) _
       _ = _ := congrArg (fun b => congrMulEquiv (finCongr (by omega : m + k + 2 =
             m + 1 + (k + 1)))

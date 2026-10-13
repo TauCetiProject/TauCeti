@@ -109,8 +109,7 @@ theorem loopSpace_comp (g : Hom Y Z) (f : Hom X Y) :
     simp only [loopSpace_apply, Hom.comp_apply]
 
 /-- The map `Ω^[k] f : Ω^[k] X → Ω^[k] Y` induced by a based map `f`. -/
--- Exposed so that proofs by recursion on `k` in other modules can unfold it.
-@[expose] def iteratedLoopSpace : (k : ℕ) → {X Y : BasedTopologicalSpace.{u}} → Hom X Y →
+def iteratedLoopSpace : (k : ℕ) → {X Y : BasedTopologicalSpace.{u}} → Hom X Y →
     Hom (X.iteratedLoopSpace k) (Y.iteratedLoopSpace k)
   | 0, _, _, f => f
   | k + 1, _, _, f => iteratedLoopSpace k f.loopSpace

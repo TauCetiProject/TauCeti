@@ -79,7 +79,9 @@ theorem iteratedLoopSpaceHomeomorph_basepoint :
       (iteratedLoopSpaceHomeomorph_basepoint k X.loopSpace)).trans
         (GenLoop.genLoopLoopHomeomorph_const X.basepoint k)
 
-private theorem genLoopLoopHomeomorph_map {X Y : BasedTopologicalSpace.{u}} (f : Hom X Y)
+/-- **Naturality of the currying homeomorphism**: `GenLoop.genLoopLoopHomeomorph` commutes with
+the maps induced on cube loops by a based map `f` and by `Ω f`. -/
+theorem genLoopLoopHomeomorph_map {X Y : BasedTopologicalSpace.{u}} (f : Hom X Y)
     (k : ℕ) (p : GenLoop (Fin k) X.loopSpace.carrier X.loopSpace.basepoint) :
     GenLoop.genLoopLoopHomeomorph Y.basepoint k
         (GenLoop.map f.loopSpace.toContinuousMap f.loopSpace.map_basepoint p) =
@@ -98,9 +100,12 @@ theorem iteratedLoopSpaceHomeomorph_map :
       (γ : (X.iteratedLoopSpace k).carrier) →
       iteratedLoopSpaceHomeomorph k Y (f.iteratedLoopSpace k γ) =
         GenLoop.map f.toContinuousMap f.map_basepoint (iteratedLoopSpaceHomeomorph k X γ)
-  | 0, _, _, _, _ => GenLoop.ext _ _ fun _ => rfl
-  | k + 1, _, _, f, γ =>
-    (congrArg (GenLoop.genLoopLoopHomeomorph _ k)
+  | 0, _, _, _, _ => by
+    rw [Hom.iteratedLoopSpace_zero]
+    exact GenLoop.ext _ _ fun _ => rfl
+  | k + 1, _, _, f, γ => by
+    rw [Hom.iteratedLoopSpace_succ]
+    exact (congrArg (GenLoop.genLoopLoopHomeomorph _ k)
       (iteratedLoopSpaceHomeomorph_map k f.loopSpace γ)).trans
         (genLoopLoopHomeomorph_map f k _)
 
