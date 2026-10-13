@@ -76,6 +76,7 @@ private theorem self_corner_expansion (i : V) (d : ℤ) (x : zigzagAlgebra k G)
   simpa only [smul_ite, smul_zero] using hp
 
 /-- A self corner has its vertex and volume spans in degrees zero and two, respectively. -/
+@[simp]
 theorem cornerSubmodule_zigzagAlgebra_self_inf_integerGrade (i : V) (d : ℤ) :
     cornerSubmodule k (e i) (e i) ⊓ A d =
       if d = 0 then k ∙ e i else if d = 2 then k ∙ v i else ⊥ := by
@@ -120,6 +121,7 @@ theorem cornerSubmodule_zigzagAlgebra_self_inf_integerGrade (i : V) (d : ℤ) :
         self_corner_expansion k G i d x hc hd
 
 /-- An adjacent corner is concentrated in signed degree one. -/
+@[simp]
 theorem cornerSubmodule_zigzagAlgebra_inf_integerGrade_of_adj {i j : V}
     (h : G.Adj j i) (d : ℤ) :
     cornerSubmodule k (e i) (e j) ⊓ A d =
@@ -153,6 +155,7 @@ local notation "A" => zigzagAlgebraIntegerGrade k G
 
 open scoped Classical in
 /-- The dimensions of all signed corners: self degrees zero and two, or an edge in degree one. -/
+@[simp]
 theorem finrank_cornerSubmodule_zigzagAlgebra_inf_integerGrade (i j : V) (d : ℤ) :
     Module.finrank k ↥(cornerSubmodule k (e i) (e j) ⊓ A d) =
       if i = j then if d = 0 ∨ d = 2 then 1 else 0
