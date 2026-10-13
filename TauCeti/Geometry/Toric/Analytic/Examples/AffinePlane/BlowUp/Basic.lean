@@ -361,6 +361,20 @@ noncomputable def affinePlaneBlowUpLowerChart (z : ℂ × ℂ) :
     ⟨affinePlaneBlowUpLowerCone, mem_affinePlaneBlowUpFan_cones.2 (Or.inl (.refl _))⟩
     (affinePlaneBlowUpLowerPointHomeomorph.symm z)
 
+/-- The upper chart is its point parametrization followed by the affine chart inclusion. -/
+theorem affinePlaneBlowUpUpperChart_def (z : ℂ × ℂ) :
+    affinePlaneBlowUpUpperChart z =
+      affinePlaneBlowUpFan.analyticAffineChartι isRegular_affinePlaneBlowUpFan
+        ⟨affinePlaneBlowUpUpperCone, mem_affinePlaneBlowUpFan_cones.2 (Or.inr (.refl _))⟩
+        (affinePlaneBlowUpUpperPointHomeomorph.symm z) := (rfl)
+
+/-- The lower chart is its point parametrization followed by the affine chart inclusion. -/
+theorem affinePlaneBlowUpLowerChart_def (z : ℂ × ℂ) :
+    affinePlaneBlowUpLowerChart z =
+      affinePlaneBlowUpFan.analyticAffineChartι isRegular_affinePlaneBlowUpFan
+        ⟨affinePlaneBlowUpLowerCone, mem_affinePlaneBlowUpFan_cones.2 (Or.inl (.refl _))⟩
+        (affinePlaneBlowUpLowerPointHomeomorph.symm z) := (rfl)
+
 /-- The upper parametrization is an open embedding for the existing monomial topology. -/
 theorem isOpenEmbedding_affinePlaneBlowUpUpperChart :
     Topology.IsOpenEmbedding affinePlaneBlowUpUpperChart :=
