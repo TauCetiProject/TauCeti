@@ -184,22 +184,11 @@ are `A`-linear, and their coefficient scalars are restricted to `R` for this hom
 def baseChangeHom : LieDerivation R L L →ₗ⁅R⁆
     RestrictScalars R A (LieDerivation A (A ⊗[R] L) (A ⊗[R] L)) where
   toFun := baseChange A
-  map_add' D E := by
-    apply LieDerivation.ext
-    intro z
-    have h := congrFun (coe_ofLieDerivation (A := A) (D + E)) z
-    rw [map_add] at h
-    simp only [LieDerivation.add_apply, coe_ofLieDerivation] at h
-    exact h.symm
+  map_add' D E := baseChange_add D E
   map_smul' r D := by
-    apply LieDerivation.ext
-    intro z
-    -- The scalar-restriction alias defines this action through `algebraMap`. Expose that
-    -- defining action beneath function coercion before applying `algebraMap_smul` below.
-    change (r • D).baseChange A z = algebraMap R A r • D.baseChange A z
-    have h := congrFun (coe_ofLieDerivation (A := A) (r • D)) z
-    rw [map_smul] at h
-    simpa only [LieDerivation.smul_apply, coe_ofLieDerivation, algebraMap_smul] using h.symm
+    -- RestrictScalars defines the target action through the coefficient algebra map.
+    change (r • D).baseChange A = algebraMap R A r • D.baseChange A
+    exact baseChange_smul r D
   map_lie' {D E} := by
     apply LieDerivation.ext
     intro z
