@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.MeasureTheory.OptimalTransport.Brenier
-public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.BarycenterUniqueness.Basic
+public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Barycenter.Uniqueness.Basic
 
 /-!
 # Strict convexity of `W₂ ^ 2` and uniqueness of quadratic Euclidean barycenters
