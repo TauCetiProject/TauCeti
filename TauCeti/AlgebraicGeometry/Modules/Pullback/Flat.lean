@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.Modules.Tilde.Basic
+public import Mathlib.Algebra.Category.ModuleCat.Descent
 public import Mathlib.AlgebraicGeometry.Morphisms.Flat
 
 /-!
@@ -15,8 +16,9 @@ Pullback along a flat morphism of schemes preserves monomorphisms between quasic
 module sheaves. Together with right exactness of pullback, this transports short exact
 sequences of quasicoherent coefficients under flat base change.
 
-The affine calculation uses `tildeFunctorCompPullbackIso` and Mathlib's injectivity theorem
-for tensoring with a flat module. No finiteness or Noetherian hypothesis is needed.
+The affine calculation uses `tildeFunctorCompPullbackIso` and Mathlib's finite-limit
+preservation theorem for flat extension of scalars. No finiteness or Noetherian hypothesis
+is needed.
 
 ## References
 
@@ -43,8 +45,8 @@ private theorem mono_pullback_specMap_of_flat (hφ : φ.hom.Flat)
   let F := pullback (Spec.map φ)
   let G := moduleSpecΓFunctor (R := R)
   have : G.IsRightAdjoint := (tilde.adjunction (R := R)).isRightAdjoint
-  have : (ModuleCat.extendScalars φ.hom).PreservesMonomorphisms :=
-    φ.hom.preservesMonomorphisms_extendScalars_of_flat hφ
+  have : PreservesFiniteLimits (ModuleCat.extendScalars φ.hom) :=
+    ModuleCat.preservesFiniteLimits_extendScalars_of_flat hφ
   have : Mono ((ModuleCat.extendScalars φ.hom ⋙ tilde.functor S).map (G.map g)) :=
     inferInstance
   let e := TauCeti.AlgebraicGeometry.tildeFunctorCompPullbackIso φ
