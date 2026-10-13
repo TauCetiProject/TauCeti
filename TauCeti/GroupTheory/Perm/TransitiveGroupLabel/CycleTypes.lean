@@ -45,6 +45,13 @@ theorem TransitiveGroupLabel.image_fullCycleType_eq {n : ℕ} {j : TransitiveGro
   obtain ⟨τ, hτ⟩ := h.exists_map_permCongrHom_eq
   rw [← hτ, Equiv.image_fullCycleType_map_permCongrHom]
 
+private theorem image_fullCycleType_eq_of_computedCycleType {α : Type*} [Fintype α]
+    [LinearOrder α] {s : Finset (Perm α)} {t : Finset (Multiset ℕ)}
+    (h : s.image computedCycleType = t) :
+    fullCycleType '' (s : Set (Perm α)) = (t : Set (Multiset ℕ)) := by
+  simpa only [Finset.coe_image, computedCycleType_eq_fullCycleType] using
+    congrArg (fun u : Finset (Multiset ℕ) => (u : Set (Multiset ℕ))) h
+
 -- For the three solvable quintic references, enumerate the usual rotation–complement words.
 -- Their already-proved orders show that these lists exhaust the groups.
 private def quinticWords (s : Perm (Fin 5)) (m : ℕ) : Finset (Perm (Fin 5)) :=
@@ -76,9 +83,8 @@ theorem image_fullCycleType_referenceSubgroup_five_zero :
   have hc : (quinticWords 1 1).image computedCycleType =
       {({1, 1, 1, 1, 1} : Multiset ℕ), {5}} := by decide +kernel
   rw [← he]
-  simpa only [Finset.coe_image, computedCycleType_eq_fullCycleType,
-    Finset.coe_singleton, Finset.coe_insert] using
-    congrArg (fun s : Finset (Multiset ℕ) => (s : Set (Multiset ℕ))) hc
+  simpa only [Finset.coe_singleton, Finset.coe_insert] using
+    image_fullCycleType_eq_of_computedCycleType hc
 
 /-- The dihedral group `5T2` adds the double-transposition type to the two cyclic types. -/
 @[simp↓]
@@ -94,9 +100,8 @@ theorem image_fullCycleType_referenceSubgroup_five_one :
   have hc : (quinticWords (swap 0 3 * swap 1 2) 2).image computedCycleType =
       {({1, 1, 1, 1, 1} : Multiset ℕ), {5}, {2, 2, 1}} := by decide +kernel
   rw [← he]
-  simpa only [Finset.coe_image, computedCycleType_eq_fullCycleType,
-    Finset.coe_singleton, Finset.coe_insert] using
-    congrArg (fun s : Finset (Multiset ℕ) => (s : Set (Multiset ℕ))) hc
+  simpa only [Finset.coe_singleton, Finset.coe_insert] using
+    image_fullCycleType_eq_of_computedCycleType hc
 
 /-- The Frobenius group `5T3` exhibits the identity, a five-cycle, a double transposition,
 and a four-cycle with one fixed point. -/
@@ -113,9 +118,8 @@ theorem image_fullCycleType_referenceSubgroup_five_two :
   have hc : (quinticWords [0, 1, 3, 2].formPerm 4).image computedCycleType =
       {({1, 1, 1, 1, 1} : Multiset ℕ), {5}, {2, 2, 1}, {4, 1}} := by decide +kernel
   rw [← he]
-  simpa only [Finset.coe_image, computedCycleType_eq_fullCycleType,
-    Finset.coe_singleton, Finset.coe_insert] using
-    congrArg (fun s : Finset (Multiset ℕ) => (s : Set (Multiset ℕ))) hc
+  simpa only [Finset.coe_singleton, Finset.coe_insert] using
+    image_fullCycleType_eq_of_computedCycleType hc
 
 /-- The alternating group `5T4` exhibits precisely the even partitions of five. -/
 @[simp↓]
@@ -129,9 +133,8 @@ theorem image_fullCycleType_referenceSubgroup_five_three :
   have hc : (Finset.univ.filter fun σ : Perm (Fin 5) => sign σ = 1).image computedCycleType =
       {({1, 1, 1, 1, 1} : Multiset ℕ), {5}, {2, 2, 1}, {3, 1, 1}} := by decide +kernel
   rw [← he]
-  simpa only [Finset.coe_image, computedCycleType_eq_fullCycleType,
-    Finset.coe_singleton, Finset.coe_insert] using
-    congrArg (fun s : Finset (Multiset ℕ) => (s : Set (Multiset ℕ))) hc
+  simpa only [Finset.coe_singleton, Finset.coe_insert] using
+    image_fullCycleType_eq_of_computedCycleType hc
 
 /-- The symmetric group `5T5` exhibits every partition of five. -/
 @[simp↓]
@@ -142,8 +145,8 @@ theorem image_fullCycleType_referenceSubgroup_five_four :
   have hc : (Finset.univ : Finset (Perm (Fin 5))).image computedCycleType =
       {({1, 1, 1, 1, 1} : Multiset ℕ), {5}, {2, 2, 1}, {4, 1}, {3, 1, 1}, {2, 1, 1, 1},
         {3, 2}} := by decide +kernel
-  simpa only [Finset.coe_image, computedCycleType_eq_fullCycleType, Finset.coe_univ,
-    Finset.coe_singleton, Finset.coe_insert, referenceSubgroup_five_four, Subgroup.coe_top] using
-    congrArg (fun s : Finset (Multiset ℕ) => (s : Set (Multiset ℕ))) hc
+  simpa only [Finset.coe_univ, Finset.coe_singleton, Finset.coe_insert,
+    referenceSubgroup_five_four, Subgroup.coe_top] using
+    image_fullCycleType_eq_of_computedCycleType hc
 
 end TauCeti
