@@ -47,16 +47,18 @@ section Class
 
 variable (R : Type) [CommRing R]
 
-private def eastPoint : Sphere1 := ⟨EuclideanSpace.single 0 1, by simp⟩
+/-- The point `(1, 0)` of the unit circle. -/
+def Sphere1.east : Sphere1 := ⟨EuclideanSpace.single 0 1, by simp⟩
 
-private def northPoint : Sphere1 := ⟨EuclideanSpace.single 1 1, by simp⟩
+/-- The point `(0, 1)` of the unit circle. -/
+def Sphere1.north : Sphere1 := ⟨EuclideanSpace.single 1 1, by simp⟩
 
-private theorem northPoint_mem : northPoint ∈ ({eastPoint}ᶜ ∩ {-eastPoint}ᶜ : Set Sphere1) := by
+theorem Sphere1.north_mem : Sphere1.north ∈ ({Sphere1.east}ᶜ ∩ {-Sphere1.east}ᶜ : Set Sphere1) := by
   refine ⟨fun h => ?_, fun h => ?_⟩
   · have := congrArg (fun q : Sphere1 => (q : EuclideanSpace ℝ (Fin 2)) 0) h
-    simp [northPoint, eastPoint] at this
+    simp [Sphere1.north, Sphere1.east] at this
   · have := congrArg (fun q : Sphere1 => (q : EuclideanSpace ℝ (Fin 2)) 0) h
-    simp [northPoint, eastPoint] at this
+    simp [Sphere1.north, Sphere1.east] at this
 
 /-- **The fundamental class of the circle**: the generator of `H₁(S¹; 𝟙)` determined by the
 Mayer–Vietoris isomorphism for the cover by the arcs `S¹ ∖ {(1, 0)}` and `S¹ ∖ {(-1, 0)}`, and the
@@ -65,7 +67,7 @@ def circleFundamentalClass :
     𝟙_ (ModuleCat.{0} R) ⟶
       ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} R) 1).obj (𝟙_ _)).obj
         (TopCat.of Sphere1) :=
-  (singularHomologySphereOneIso (𝟙_ (ModuleCat.{0} R)) (by simp) northPoint_mem).inv
+  (singularHomologySphereOneIso (𝟙_ (ModuleCat.{0} R)) (by simp) Sphere1.north_mem).inv
 
 end Class
 
@@ -75,10 +77,12 @@ open BasedTopologicalSpace
 
 variable (R : Type) [CommRing R] (X : BasedTopologicalSpace.{0}) (p n : ℕ) (h : 1 + p = n)
 
+-- The product in `TopCat` is the type product, so the evaluation map of spaces is a morphism of
+-- `TopCat`.
 /-- The evaluation `S¹ × Ω²X → ΩX` as a morphism of topological spaces. -/
 def evalCircleTop :
     TopCat.of Sphere1 ⊗ TopCat.of (X.iteratedLoopSpace 2).carrier ⟶ TopCat.of X.loopSpace.carrier :=
-  TopCat.ofHom (evalCircle X eastPoint)
+  TopCat.ofHom (evalCircle X Sphere1.east)
 
 /-- **The degree-raising map** `β_* : H_p(Ω²X; 𝟙) ⟶ H_n(ΩX; 𝟙)` for `1 + p = n`: the cross product
 with the fundamental class of the circle, followed by the map induced by the evaluation
@@ -95,17 +99,33 @@ def degreeRaising :
     ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} R) n).obj (𝟙_ _)).map
       (evalCircleTop X)
 
+/-- The degree-raising map is the left unitor inverse, the fundamental class of the circle, the
+homology cross product, the coefficient unitor, and the map induced by the evaluation. -/
+theorem degreeRaising_def :
+    degreeRaising R X p n h =
+      (λ_ _).inv ≫ (circleFundamentalClass R ▷ _) ≫
+        TopCat.singularHomologyCross (C := ModuleCat.{0} R) (TopCat.of Sphere1)
+          (TopCat.of (X.iteratedLoopSpace 2).carrier) (𝟙_ _) (𝟙_ _) 1 p n h ≫
+        ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} R) n).map
+          (λ_ (𝟙_ _)).hom).app _ ≫
+        ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} R) n).obj (𝟙_ _)).map
+          (evalCircleTop X) := by
+  rw [degreeRaising]
+
 variable {X} {Y : BasedTopologicalSpace.{0}}
 
+-- Both sides are continuous maps out of the type product, which is the `TopCat` product; the
+-- equality is checked on points.
 theorem evalCircleTop_naturality (f : Hom X Y) :
     (𝟙 (TopCat.of Sphere1) ⊗ₘ TopCat.ofHom (f.iteratedLoopSpace 2).toContinuousMap) ≫
         evalCircleTop Y =
       evalCircleTop X ≫ TopCat.ofHom f.loopSpace.toContinuousMap := by
   ext ⟨z, γ⟩
-  exact evalCircle_map eastPoint f z γ
+  exact evalCircle_map Sphere1.east f z γ
 
 /-- **Naturality of the degree-raising map** in the based space `X`: it commutes with the maps
 induced on homology by `Ω²f` and `Ωf`. -/
+@[reassoc]
 theorem degreeRaising_naturality (f : Hom X Y) :
     ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} R) p).obj (𝟙_ _)).map
           (TopCat.ofHom (f.iteratedLoopSpace 2).toContinuousMap) ≫
