@@ -99,8 +99,7 @@ instance instIsLocalRingStalk (x : X) :
 theorem maximalIdeal_stalk (x : X) :
     IsLocalRing.maximalIdeal ((holomorphicStructureSheaf I X).presheaf.stalk x) =
       RingHom.ker (eval I X x) := by
-  ext f
-  simp [IsLocalRing.mem_maximalIdeal, mem_nonunits_iff]
+  exact (IsLocalRing.ker_eq_maximalIdeal (eval I X x) (eval_surjective I X x)).symm
 
 /-- Evaluation identifies the residue field of a holomorphic stalk with `ℂ`. -/
 def residueFieldEquiv (x : X) :
