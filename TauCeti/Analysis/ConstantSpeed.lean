@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.ConstantSpeed
-public import Mathlib.Topology.MetricSpace.HausdorffDimension
+public import TauCeti.MeasureTheory.Measure.Haar.Hausdorff
 
 /-!
 # Constant speed and the dimension of curves of bounded variation
@@ -18,23 +18,24 @@ at most one. In particular this applies to absolutely continuous planar curves.
 
 public section
 
-open Set
+open MeasureTheory Set
 open scoped NNReal ENNReal
 
 /-- A curve with constant speed is Lipschitz with that speed as its Lipschitz constant. -/
-theorem HasConstantSpeedOnWith.lipschitzOnWith {E : Type*} [PseudoMetricSpace E]
+theorem HasConstantSpeedOnWith.lipschitzOnWith {E : Type*} [PseudoEMetricSpace E]
     {f : ℝ → E} {s : Set ℝ} {l : ℝ≥0} (hf : HasConstantSpeedOnWith f s l) :
     LipschitzOnWith l f s := by
-  apply LipschitzOnWith.of_dist_le_mul
   intro x hx y hy
   wlog hxy : x ≤ y generalizing x y
-  · simpa only [dist_comm] using this y hy x hx (le_of_not_ge hxy)
-  have hvar := hf.hasLocallyBoundedVariationOn x y hx hy
-  have hdist := hvar.dist_le (x := x) (y := y) ⟨hx, le_rfl, hxy⟩ ⟨hy, hxy, le_rfl⟩
+  · simpa only [edist_comm] using this hy hx (le_of_not_ge hxy)
+  have hdist := eVariationOn.edist_le f (s := s ∩ Icc x y)
+    ⟨hx, le_rfl, hxy⟩ ⟨hy, hxy, le_rfl⟩
   rw [hf hx hy] at hdist
-  have hdist' : dist (f x) (f y) ≤ (l : ℝ) * (y - x) :=
-    hdist.trans_eq (ENNReal.toReal_ofReal (mul_nonneg l.prop (sub_nonneg.mpr hxy)))
-  simpa only [Real.dist_eq, abs_of_nonpos (sub_nonpos.mpr hxy), neg_sub] using hdist'
+  have hmul : ENNReal.ofReal ((l : ℝ) * (y - x)) =
+      (l : ENNReal) * ENNReal.ofReal (y - x) := by
+    exact (ENNReal.ofReal_mul l.prop).trans (by simp)
+  simpa only [edist_dist, Real.dist_eq, abs_of_nonpos (sub_nonpos.mpr hxy), neg_sub]
+    using hdist.trans_eq hmul
 
 /-- The image of a curve of locally bounded variation has Hausdorff dimension at most one,
 because its natural parameterization is Lipschitz on a subset of the real line. -/
@@ -56,3 +57,13 @@ theorem LocallyBoundedVariationOn.dimH_image_le_one {α E : Type*} [LinearOrder 
     _ ≤ dimH (v '' s) := hφ.dimH_image_le
     _ ≤ dimH (univ : Set ℝ) := dimH_mono (subset_univ _)
     _ = 1 := Real.dimH_univ
+
+/-- The image of a curve of locally bounded variation has zero additive Haar measure in every
+finite-dimensional real normed space of dimension greater than one. -/
+theorem LocallyBoundedVariationOn.measure_image_eq_zero {α E : Type*} [LinearOrder α]
+    [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+    [MeasurableSpace E] [BorelSpace E] {f : α → E} {s : Set α}
+    (hf : LocallyBoundedVariationOn f s) (μ : Measure E) [μ.IsAddHaarMeasure]
+    (hd : 1 < Module.finrank ℝ E) : μ (f '' s) = 0 :=
+  addHaar_eq_zero_of_dimH_lt_finrank μ
+    (hf.dimH_image_le_one.trans_lt (by exact_mod_cast hd))
