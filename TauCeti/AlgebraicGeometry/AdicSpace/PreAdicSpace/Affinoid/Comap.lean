@@ -21,12 +21,6 @@ generating open ideals, the condition under which `Spa(φ)` is constructed. That
 for instance, when `A` is a Tate ring (`TauCeti.Huber.IsTateRing.isOpen_map_of_isOpen`). This is
 the affinoid case of the universal property of `Spa(A, A⁺)`.
 
-The proof that `f` is determined by its global sections compares maps of structure presheaves on
-the rational opens of `Spa(A, A⁺)`, which form a basis, and the target `f_* 𝒪_{Spa B}` is a sheaf.
-On a rational open `R(T/s)` the sections are `A⟨T/s⟩`, and maps out of it are determined on `A`
-(`presentationLimit_spaBasicOpen_hom_ext`); by naturality they are determined by the map on global
-sections.
-
 ## Main results
 
 * `TauCeti.ValuationSpectrum.presentationLimitPreAdicSpace_hom_ext`: two morphisms
@@ -97,6 +91,11 @@ private theorem toPresentationLimit_comp_app_spaBasicOpen {C : TopCat.{u}}
   rw [← c.naturality, presentationLimitPresheaf_map]
   simp
 
+-- The proof compares maps of structure presheaves on the rational opens of `Spa(A, A⁺)`, which
+-- form a basis, and the target `f_* 𝒪_{Spa B}` is a sheaf. On a rational open `R(T/s)` the
+-- sections are `A⟨T/s⟩`, and maps out of it are determined on `A`
+-- (`presentationLimit_spaBasicOpen_hom_ext`); by naturality they are determined by the map on
+-- global sections.
 /-- **A morphism into an affinoid pre-adic spectrum is determined by its map of global sections**:
 for complete Hausdorff `A` and `B`, two morphisms `Spa(B, B⁺) ⟶ Spa(A, A⁺)` of pre-adic spaces
 with the same global-sections map `A → B` are equal, provided the structure presheaf of
