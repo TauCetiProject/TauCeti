@@ -16,10 +16,10 @@ This file equips the universal enveloping algebra of a Lie algebra with its stan
 cocommutative bialgebra structure. Every element of the original Lie algebra is primitive:
 its comultiplication is `x ⊗ 1 + 1 ⊗ x`, and its counit is zero.
 
-The construction is needed for the Kostant integral form in the Chevalley--Demazure construction.
-The integral form is generated inside a universal enveloping algebra by divided powers of root
-vectors and binomial coefficients in coroots; its stability under this comultiplication is what
-eventually makes the corresponding distribution algebra a Hopf algebra over `ℤ`.
+The Kostant integral form is generated inside a universal enveloping algebra by divided powers of
+root vectors and binomial coefficients in coroots; its stability under this comultiplication is one
+of the facts that make it a Hopf algebra over `ℤ`
+(`TauCeti.UniversalEnvelopingAlgebra.instHopfAlgebraKostantForm`).
 
 ## Main definitions
 
@@ -43,10 +43,8 @@ eventually makes the corresponding distribution algebra a Hopf algebra over `ℤ
 
 ## References
 
-The construction follows J. E. Humphreys, *Introduction to Lie Algebras and Representation
-Theory*, §26, and J. C. Jantzen, *Representations of Algebraic Groups*, II.1. It supplies a
-prerequisite for the Kostant `ℤ`-form in Layer 9 of
-`TauCetiRoadmap/ReductiveGroups/README.md`.
+The construction follows J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*,
+§26, and J. C. Jantzen, *Representations of Algebraic Groups*, II.1.
 
 The formal development is modelled on the closest Mathlib analogue,
 `Mathlib/RingTheory/Bialgebra/SymmetricAlgebra.lean` by Robert Hawkins, which makes the generators

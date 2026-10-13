@@ -17,15 +17,14 @@ factored torus morphism into that closure is itself a closed immersion. It there
 split torus as a closed subgroup scheme of the assembled carrier, rather than only as a morphism
 to it.
 
-The proof compares the two existing constructions of the diagonal weight representation: the
-coordinate-map construction used by the toral closure and the comodule construction whose
-closed-immersion criterion is already available. Since the inclusion of the toral closure in
-`GL_n` is a closed immersion, closedness descends from their composite to the factored torus.
+The proof compares two constructions of the diagonal weight representation: the coordinate-map
+construction used by the toral closure and the comodule construction, which has a closed-immersion
+criterion. Since the inclusion of the toral closure in `GL_n` is a closed immersion, closedness
+descends from their composite to the factored torus.
 
-For Chevalley weight data this supplies the closed embedding needed toward constructing the torus
-component of a pinning on the assembled carrier. Identifying it as a maximal torus and constructing
-the compatible Borel remain part of Layer 9 of the ReductiveGroups roadmap, on the path to the
-ambient groups required by milestone L0 of the CFSGStatement roadmap.
+For Chevalley weight data this gives the closed embedding of the torus that a pinning on the
+assembled carrier requires; identifying it as a maximal torus and constructing the compatible Borel
+subgroup are not treated here.
 
 ## Main declarations
 

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.QuadraticForm.OrthogonalGroup.AdelicSpinorNorm
+public import TauCeti.NumberTheory.QuadraticForm.OrthogonalGroup.AdelicSpinorNorm.Basic
 public import TauCeti.FieldTheory.SquareClassGroup.Multiplicative
 public import TauCeti.Topology.Algebra.RestrictedProduct.Diagonal
 import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.SpinorNorm.BaseChange

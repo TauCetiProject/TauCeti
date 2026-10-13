@@ -22,8 +22,8 @@ closed field of characteristic zero. An irreducible highest weight `L`-module is
 finite-dimensional exactly when its highest weight is dominant integral.
 
 The forward implication is the rank-one argument of
-`TauCeti.IsHighestWeightVector.isDominantIntegral`. For the reverse implication, two earlier
-milestones supply the necessary finiteness:
+`TauCeti.IsHighestWeightVector.isDominantIntegral`. For the reverse implication, two results supply
+the necessary finiteness:
 
 * `TauCeti.finite_setOf_genWeightSpace_ne_bot_of_isHighestWeightVector` says that a dominant
   irreducible highest weight module has only finitely many nonzero weight spaces;
@@ -55,11 +55,6 @@ finite-dimensional irreducibles.
   finite-dimensional irreducible module is a copy of `L(lam)`** for a dominant integral `lam`.
 
 ## References
-
-This closes the **finite-dimensionality** milestone of Layer 4 of
-`TauCetiRoadmap/RepresentationTheory/LieHighestWeight/README.md`. It is the last assembly step in
-the proof that the irreducible highest weight module `L(lam)` is finite-dimensional precisely for
-dominant integral `lam`.
 
 * J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*, GTM 9, §21.2.
 -/
