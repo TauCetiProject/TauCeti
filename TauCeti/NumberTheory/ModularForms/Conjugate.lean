@@ -194,10 +194,11 @@ private lemma slash_conj_eq {f : ℍ → ℂ}
       (↑(χ ((Gamma0Map N).toHomUnits g)) : ℂ) • f) (g : ↥(Gamma0 N)) :
     (f ∣[k] J) ∣[k] mapGL ℝ (g : SL(2, ℤ)) =
       (↑(χ⁻¹ ((Gamma0Map N).toHomUnits g)) : ℂ) • (f ∣[k] J) := by
-  have hJg : J * mapGL ℝ (g : SL(2, ℤ)) = mapGL ℝ (conjJ g) * J := by
+  have hJg : J * mapGL ℝ (g : SL(2, ℤ)) = mapGL ℝ (conjJ (g : SL(2, ℤ))) * J := by
     rw [← J_mul_mapGL_mul_J, mul_assoc, ← sq, J_sq, mul_one]
   rw [← SlashAction.slash_mul, hJg, SlashAction.slash_mul,
-    hf ⟨conjJ g, conjJ_mem_Gamma0 g.2⟩, ModularForm.smul_slash, Gamma0Map_conjJ, sigma_J]
+    hf ⟨conjJ (g : SL(2, ℤ)), conjJ_mem_Gamma0 g.2⟩, ModularForm.smul_slash,
+    Gamma0Map_conjJ, sigma_J]
   congr 1
   rw [Complex.conjCAE_apply, ← MulChar.ofUnitHom_coe, ← MulChar.ofUnitHom_coe,
     MulChar.ofUnitHom_inv_eq_star, MulChar.star_apply, RCLike.star_def]
