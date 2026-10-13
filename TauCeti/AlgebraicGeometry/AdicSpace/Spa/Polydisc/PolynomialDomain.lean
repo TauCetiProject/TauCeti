@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Polydisc.HoledDisc
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Polydisc.Lemniscate
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Polydisc.RationalSubset
 import TauCeti.Topology.Homeomorph.SetCongr
@@ -46,8 +47,8 @@ not vanish.
 
 * `TauCeti.ValuationSpectrum.exists_finset_setOf_vle_eq_iUnion_closedSubdisc_inter_iInter`: for
   coprime `f` and `g`, the domain `X(f/g)` is a finite union of holed discs.
-* `exists_finset_eq_iUnion_closedSubdisc_inter_iInter_of_mem_spaRationalFamily` (in the same
-  namespace): every rational subset of `X` is a finite union of holed discs.
+* `TauCeti.ValuationSpectrum.exists_finset_eq_iUnion_holedDisc_of_mem_spaRationalFamily`: every
+  rational subset of `X` is a finite union of holed discs `TauCeti.ValuationSpectrum.holedDisc`.
 
 ## Implementation notes
 
@@ -488,17 +489,21 @@ private theorem setOf_forall_vle_eq_iInter_div_gcd [DecidableEq K] {G : Finset (
 be algebraically closed and a Tate ring, as is every algebraically closed field with a nontrivial
 ultrametric norm. Then for every rational subset `U` of the closed unit disc
 `Spa (K⟨T⟩, K⟨T⟩°)` there is a finite set `P` of triples `(a, c, H)`, with `H` a finite set of
-pairs `(b, d)`, such that a point lies in `U` exactly when, for some `(a, c, H) ∈ P`, it lies in the
-closed disc `D(a, |c|)` and satisfies `x(d) ≤ x(T - b)` for every `(b, d) ∈ H`, that is, lies
-outside the open disc of radius `‖d‖` about `b`. -/
-theorem exists_finset_eq_iUnion_closedSubdisc_inter_iInter_of_mem_spaRationalFamily
+pairs `(b, d)`, such that `U` is the union over `P` of the holed discs `holedDisc a c b d`: the
+closed disc `D(a, |c|)` with the open disc of radius `‖d‖` about `b` removed for every
+`(b, d) ∈ H`. -/
+theorem exists_finset_eq_iUnion_holedDisc_of_mem_spaRationalFamily
     [IsTateRing K] [IsAlgClosed K] {U : Set (closedPolydisc 1 K)}
     (hU : (Homeomorph.setCongr (closedPolydisc_def 1 K)).symm ⁻¹' U ∈
       spaRationalFamily (powerBoundedSubring (𝒯 K))) :
-    ∃ P : Finset (K × K × Finset (K × K)), U = ⋃ p ∈ P, closedSubdisc p.1 p.2.1 ∩
-      ⋂ q ∈ p.2.2, {x : closedPolydisc 1 K | x.1.toValuativeRel.vle (C q.2) (T - C q.1)} := by
+    ∃ P : Finset (K × K × Finset (K × K)),
+      U = ⋃ p ∈ P, holedDisc p.1 p.2.1 (fun q : p.2.2 ↦ q.1.1) (fun q : p.2.2 ↦ q.1.2) := by
   classical
-  suffices h : IsHoledDiscUnion U from h
+  suffices h : IsHoledDiscUnion U by
+    obtain ⟨P, hP⟩ := h
+    refine ⟨P, hP.trans (Set.iUnion₂_congr fun p _ ↦ ?_)⟩
+    ext x
+    simp
   -- present `U` by polynomials, with a unit constant `c` among the numerators
   obtain ⟨G, p, c, hc, hcG, hV⟩ := (mem_spaRationalFamily_iff_exists_polynomial _).mp hU
   have hU' : U = {x : closedPolydisc 1 K | (∀ g ∈ G, x.1.toValuativeRel.vle
