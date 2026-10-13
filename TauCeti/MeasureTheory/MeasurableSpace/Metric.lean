@@ -16,7 +16,7 @@ public import Mathlib.Topology.UniformSpace.Cauchy
 This file provides measurable maps onto finitely many points of a pseudometric space whose open
 sets are measurable: a nearest-point projection onto any nonempty finite set, a finite
 measurable approximation of a totally bounded space, and a measurable partition of a measurable
-compact set into finitely many small cells.
+totally bounded set into finitely many small cells.
 
 ## Main statements
 
@@ -24,9 +24,9 @@ compact set into finitely many small cells.
   nearest-point projection, sending every point to a point of the set at minimal distance.
 * `TauCeti.exists_measurable_dist_lt` — a totally bounded pseudometric space admits a measurable map
   to a finite type whose indexed approximation point is uniformly close to every point.
-* `IsCompact.exists_measurable_dist_lt` — a measurable compact set is the union of finitely many
-  measurable cells of small diameter, labelled by a measurable map that gives its complement a
-  label of its own.
+* `TotallyBounded.exists_measurable_dist_lt` — a measurable totally bounded set is the union of
+  finitely many measurable cells of small diameter, labelled by a measurable map that gives its
+  complement a label of its own.
 -/
 
 public section
@@ -115,19 +115,21 @@ theorem exists_measurable_dist_lt (X : Type u) [PseudoMetricSpace X] [Measurable
         rw [← edist_lt_ofReal, hqv, edist_comm]
         exact hnear.trans_lt (edist_lt_ofReal.2 (by simpa [he, dist_comm] using hi))
 
-/-- **A measurable partition of a compact set into small cells.** In a pseudometric space whose
-open sets are measurable, a measurable compact set `s` admits, for every `δ > 0`, a measurable map
-`q : X → Fin (n + 1)` that gives the complement of `s` the label `Fin.last n` and gives two points
-of `s` the same label only when they are at distance less than `δ`. -/
-theorem _root_.IsCompact.exists_measurable_dist_lt {X : Type u} [PseudoMetricSpace X]
-    [MeasurableSpace X] [OpensMeasurableSpace X] {s : Set X} (hs : IsCompact s)
+/-- **A measurable partition of a totally bounded set into small cells.** In a pseudometric space
+whose open sets are measurable, a measurable totally bounded set `s` admits, for every `δ > 0`, a
+measurable map `q : X → Fin (n + 1)` that gives the complement of `s` the label `Fin.last n` and
+gives two points of `s` the same label only when they are at distance less than `δ`. -/
+theorem _root_.TotallyBounded.exists_measurable_dist_lt {X : Type u} [PseudoMetricSpace X]
+    [MeasurableSpace X] [OpensMeasurableSpace X] {s : Set X} (hs : TotallyBounded s)
     (hsm : MeasurableSet s) {δ : ℝ} (hδ : 0 < δ) :
     ∃ (n : ℕ) (q : X → Fin (n + 1)), Measurable q ∧ (∀ x, q x = Fin.last n ↔ x ∉ s) ∧
       ∀ x ∈ s, ∀ y ∈ s, q x = q y → dist x y < δ := by
   classical
-  have : CompactSpace s := isCompact_iff_compactSpace.1 hs
-  obtain ⟨n, v, r, hr, hrv⟩ := TauCeti.exists_measurable_dist_lt s isCompact_univ.totallyBounded
-    (half_pos hδ)
+  have hs' : TotallyBounded (univ : Set s) := by
+    have :=
+      totallyBounded_preimage (isUniformEmbedding_subtype_val (p := (· ∈ s))).isUniformInducing hs
+    rwa [Subtype.coe_preimage_self] at this
+  obtain ⟨n, v, r, hr, hrv⟩ := TauCeti.exists_measurable_dist_lt s hs' (half_pos hδ)
   refine ⟨n, fun x ↦ if hx : x ∈ s then (r ⟨x, hx⟩).castSucc else Fin.last n,
     ((measurable_of_countable Fin.castSucc).comp hr).dite measurable_const hsm,
     fun x ↦ ?_, fun x hx y hy hxy ↦ ?_⟩

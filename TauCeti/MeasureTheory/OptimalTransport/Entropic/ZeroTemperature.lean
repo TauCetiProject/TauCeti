@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.MeasureTheory.Function.UniformIntegrable
 public import TauCeti.InformationTheory.KullbackLeibler.Projection
+public import TauCeti.MeasureTheory.Integral.Lebesgue.DominatedConvergence
 public import TauCeti.MeasureTheory.Measure.Decomposition.Prod
 public import TauCeti.MeasureTheory.Measure.LowerSemicontinuousLintegral
 public import TauCeti.MeasureTheory.MeasurableSpace.Metric
@@ -273,40 +273,6 @@ theorem tendsto_entropicTransportCost_transportCost [IsFiniteMeasure μ]
   obtain ⟨σ, hσ, hkl, hle⟩ := hπ.exists_isCoupling_klDiv_ne_top_lintegral_le hp hq hpq
   exact ⟨σ, hσ, hkl, hle.trans (add_le_add le_rfl hηδ.le)⟩
 
-/-- A cost bounded above by `cX x + cY y`, with `cX` and `cY` integrable, exceeds a large enough
-finite level `M` only by an amount bounded by functions `a x + b y` of total integral at most `δ`.
-This is the uniform control of the cost over all couplings that the truncation argument needs. -/
-private theorem exists_tsub_le_add_of_le_add {μ : Measure X} {ν : Measure Y} {c : X × Y → ℝ≥0}
-    {cX : X → ℝ} {cY : Y → ℝ} (hcX : Integrable cX μ) (hcY : Integrable cY ν)
-    (hle : ∀ x y, (c (x, y) : ℝ≥0∞) ≤ ENNReal.ofReal (cX x + cY y)) {δ : ℝ≥0∞} (hδ : δ ≠ 0) :
-    ∃ (M : ℝ≥0∞) (a : X → ℝ≥0∞) (b : Y → ℝ≥0∞), M ≠ ∞ ∧ AEMeasurable a μ ∧ AEMeasurable b ν ∧
-      ∫⁻ x, a x ∂μ ≤ δ ∧ ∫⁻ y, b y ∂ν ≤ δ ∧ ∀ x y, (c (x, y) : ℝ≥0∞) - M ≤ a x + b y := by
-  obtain ⟨M₁, -, hX⟩ := MemLp.integral_indicator_norm_ge_nonneg_le
-    (memLp_one_iff_integrable.2 hcX) (pos_iff_ne_zero.2 hδ)
-  obtain ⟨M₂, -, hY⟩ := MemLp.integral_indicator_norm_ge_nonneg_le
-    (memLp_one_iff_integrable.2 hcY) (pos_iff_ne_zero.2 hδ)
-  -- Above a level `M'`, a real number is bounded by its tail `{s | M' ≤ ‖s‖₊}.indicator id`.
-  have hcut (r M' : ℝ) :
-      ENNReal.ofReal r - ENNReal.ofReal M' ≤ ‖{s : ℝ | M' ≤ ‖s‖₊}.indicator id r‖ₑ := by
-    by_cases h : M' ≤ ‖r‖₊
-    · rw [indicator_of_mem (show r ∈ {s : ℝ | M' ≤ ‖s‖₊} from h), id, Real.enorm_eq_ofReal_abs]
-      exact tsub_le_self.trans (ENNReal.ofReal_le_ofReal (le_abs_self _))
-    · refine (tsub_eq_zero_of_le (ENNReal.ofReal_le_ofReal ?_)).trans_le zero_le
-      exact (le_abs_self _).trans (by simpa using (not_le.1 h).le)
-  have ha : AEMeasurable (fun x ↦ ‖{x | M₁ ≤ ‖cX x‖₊}.indicator cX x‖ₑ) μ :=
-    (hcX.1.indicator₀ (nullMeasurableSet_le aemeasurable_const
-      hcX.1.nnnorm.aemeasurable.coe_nnreal_real)).enorm
-  have hb : AEMeasurable (fun y ↦ ‖{y | M₂ ≤ ‖cY y‖₊}.indicator cY y‖ₑ) ν :=
-    (hcY.1.indicator₀ (nullMeasurableSet_le aemeasurable_const
-      hcY.1.nnnorm.aemeasurable.coe_nnreal_real)).enorm
-  refine ⟨ENNReal.ofReal M₁ + ENNReal.ofReal M₂, _, _, by simp, ha, hb, hX, hY, fun x y ↦ ?_⟩
-  calc (c (x, y) : ℝ≥0∞) - (ENNReal.ofReal M₁ + ENNReal.ofReal M₂)
-      ≤ ENNReal.ofReal (cX x) + ENNReal.ofReal (cY y) - (ENNReal.ofReal M₁ + ENNReal.ofReal M₂) :=
-        tsub_le_tsub_right ((hle x y).trans ENNReal.ofReal_add_le) _
-    _ ≤ (ENNReal.ofReal (cX x) - ENNReal.ofReal M₁) + (ENNReal.ofReal (cY y) - ENNReal.ofReal M₂) :=
-        add_tsub_add_le_tsub_add_tsub
-    _ ≤ _ := add_le_add (hcut (cX x) M₁) (hcut (cY y) M₂)
-
 section Metric
 
 variable {X Y : Type*} [PseudoMetricSpace X] [MeasurableSpace X] [OpensMeasurableSpace X]
@@ -366,8 +332,8 @@ private theorem IsCoupling.exists_isCoupling_klDiv_ne_top_lintegral_min_le {π :
   -- On `K ×ˢ L` the cost is uniformly continuous, so it varies by less than `η` on small cells.
   obtain ⟨ρ, hρ, hcρ⟩ := Metric.uniformContinuousOn_iff.1
     ((hK.prod hL).uniformContinuousOn_of_continuous hc.continuousOn) η (NNReal.coe_pos.2 hη)
-  obtain ⟨n, p, hp, hpK, hpρ⟩ := hK.exists_measurable_dist_lt hKm hρ
-  obtain ⟨m, q, hq, hqL, hqρ⟩ := hL.exists_measurable_dist_lt hLm hρ
+  obtain ⟨n, p, hp, hpK, hpρ⟩ := hK.totallyBounded.exists_measurable_dist_lt hKm hρ
+  obtain ⟨m, q, hq, hqL, hqρ⟩ := hL.totallyBounded.exists_measurable_dist_lt hLm hρ
   -- The cost truncated at `M` on `K ×ˢ L` and equal to `M` off it varies by at most `η` on every
   -- product cell, so the block approximation applies to it.
   obtain ⟨c', hc'⟩ : ∃ c' : X × Y → ℝ≥0∞,
@@ -436,7 +402,26 @@ theorem IsCoupling.exists_isCoupling_klDiv_ne_top_lintegral_le_of_le_add {π : M
   -- The error is split into four parts `δ / 4`: the two tails of the cost above a level `M`, the
   -- mass outside a compact rectangle charged at `M`, and the discretisation error on it.
   have hδ' : δ / 4 ≠ 0 := (ENNReal.div_pos hδ (by norm_num)).ne'
-  obtain ⟨M, a, b, hM, ha, hb, hai, hbi, hab⟩ := exists_tsub_le_add_of_le_add hcX hcY hle hδ'
+  -- Above a large finite level `M = M₁ + M₂`, the cost exceeds `M` by at most `a x + b y`, where
+  -- `a` and `b` are the excesses of `cX` and `cY` over `M₁` and `M₂`, of integrals at most `δ / 4`.
+  have hδ0 : (0 : ℝ≥0∞) < δ / 4 := pos_iff_ne_zero.2 hδ'
+  have hcX' := hcX.1.aemeasurable.ennreal_ofReal
+  have hcY' := hcY.1.aemeasurable.ennreal_ofReal
+  obtain ⟨M₁, hai⟩ := ((tendsto_lintegral_tsub_atTop hcX' hcX.lintegral_lt_top.ne).eventually
+    (eventually_le_nhds hδ0)).exists
+  obtain ⟨M₂, hbi⟩ := ((tendsto_lintegral_tsub_atTop hcY' hcY.lintegral_lt_top.ne).eventually
+    (eventually_le_nhds hδ0)).exists
+  set a : X → ℝ≥0∞ := fun x ↦ ENNReal.ofReal (cX x) - M₁
+  set b : Y → ℝ≥0∞ := fun y ↦ ENNReal.ofReal (cY y) - M₂
+  have ha : AEMeasurable a μ := hcX'.sub aemeasurable_const
+  have hb : AEMeasurable b ν := hcY'.sub aemeasurable_const
+  set M : ℝ≥0∞ := ((M₁ + M₂ : ℝ≥0) : ℝ≥0∞) with hM_def
+  have hM : M ≠ ∞ := ENNReal.coe_ne_top
+  have hab (x : X) (y : Y) : (c (x, y) : ℝ≥0∞) - M ≤ a x + b y :=
+    calc (c (x, y) : ℝ≥0∞) - M ≤ ENNReal.ofReal (cX x) + ENNReal.ofReal (cY y) - (M₁ + M₂) := by
+          rw [hM_def, ENNReal.coe_add]
+          exact tsub_le_tsub_right ((hle x y).trans ENNReal.ofReal_add_le) _
+      _ ≤ a x + b y := add_tsub_add_le_tsub_add_tsub
   obtain ⟨t, ht, htM⟩ := ENNReal.exists_nnreal_pos_mul_lt hM hδ'
   have ht2 : 0 < (t : ℝ≥0∞) / 2 := ENNReal.half_pos (ENNReal.coe_ne_zero.2 ht.ne')
   obtain ⟨K, hK, hμK⟩ := isTightMeasureSet_iff_exists_isCompact_measure_compl_le.1 hμ _ ht2
