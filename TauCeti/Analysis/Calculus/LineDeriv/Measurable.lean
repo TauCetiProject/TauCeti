@@ -40,8 +40,7 @@ namespace TauCeti
 
 /-- An almost-everywhere line derivative of a function a.e.-strongly measurable on an open set `s`
 is a.e.-strongly measurable on `s`: it is the almost-everywhere limit of difference quotients. -/
-theorem aestronglyMeasurable_of_ae_hasLineDerivAt
-    [SecondCountableTopologyEither E F] [μ.IsAddRightInvariant]
+theorem aestronglyMeasurable_of_ae_hasLineDerivAt [μ.IsAddRightInvariant]
     (hu : AEStronglyMeasurable u (μ.restrict s)) (hs : IsOpen s)
     (h : ∀ᵐ x ∂μ, x ∈ s → HasLineDerivAt ℝ u (u' x) x v) :
     AEStronglyMeasurable u' (μ.restrict s) := by
