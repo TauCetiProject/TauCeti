@@ -40,6 +40,7 @@ open scoped nonZeroDivisors NumberField
 variable {K : Type*} [Field K] [NumberField K]
 
 /-- Multiplying coefficients by `N(I) ^ (-s)` commutes with ideal convolution. -/
+@[simp]
 theorem idealTerm_convolution (f g : IdealArithmeticFunction K) (s : ℂ) :
     idealTerm K (f.convolution g) s =
       IdealArithmeticFunction.convolution (idealTerm K f s) (idealTerm K g s) := by
