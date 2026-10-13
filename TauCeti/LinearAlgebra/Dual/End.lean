@@ -200,6 +200,16 @@ noncomputable def dualEndAlgEquiv :
   rw [dualEndAlgEquiv]
   rfl
 
+/-- The inverse scalar-duality equivalence is characterized by moving an endomorphism across the
+evaluation pairing. -/
+@[simp] theorem dualEndAlgEquiv_symm_apply_apply (g : Module.End R (Module.Dual R M))
+    (φ : Module.Dual R M) (x : M) :
+    φ (((dualEndAlgEquiv R M).symm g).unop x) = g φ x := by
+  have h := congrArg (fun f : Module.End R (Module.Dual R M) ↦ f φ x)
+    ((dualEndAlgEquiv R M).apply_symm_apply g)
+  rw [dualEndAlgEquiv_apply] at h
+  exact h
+
 /-- The inverse scalar-duality equivalence sends a dual map back to its original endomorphism. -/
 @[simp] theorem dualEndAlgEquiv_symm_dualMap (g : Module.End R M) :
     (dualEndAlgEquiv R M).symm g.dualMap = MulOpposite.op g := by
