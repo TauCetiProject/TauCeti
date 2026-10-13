@@ -68,8 +68,8 @@ theorem ae_integrableOn_verticalRegion_fiber
   rw [Set.indicator_of_mem hxab]
 
 /-- A continuous graph lying inside a vertical cell has a Bochner-integrable field value along
-its base interval. In particular this applies to both boundary graphs, without any graph-speed
-bound. -/
+its base interval. It applies to both boundary graphs
+when `lower ≤ upper` on `[a,b]`, without any graph-speed bound. -/
 theorem intervalIntegrable_verticalRegion_graph {P : ℂ → E} {graph : ℝ → ℝ} (hab : a ≤ b)
     (hgraph : ContinuousOn graph (Icc a b))
     (hbetween : ∀ x ∈ Icc a b, graph x ∈ Icc (lower x) (upper x))
@@ -117,23 +117,35 @@ theorem integral_verticalRegion
   simp_rw [integral_indicator_coordinates]
   exact integral_indicator measurableSet_Icc
 
+omit [NormedSpace ℝ E] in
+private theorem integrableOn_comp_coordinateSwap
+    (hR : IntegrableOn R (horizontalRegion a b lower upper)) :
+    IntegrableOn (R ∘ Complex.coordinateSwap) (verticalRegion a b lower upper) := by
+  rw [← preimage_horizontalRegion_coordinateSwap]
+  exact (Complex.measurePreserving_coordinateSwap.integrableOn_comp_preimage
+    Complex.coordinateSwap.toMeasurableEquiv.measurableEmbedding).2 hR
+
+private theorem integral_comp_coordinateSwap_verticalRegion :
+    (∫ z in verticalRegion a b lower upper, (R ∘ Complex.coordinateSwap) z) =
+      ∫ z in horizontalRegion a b lower upper, R z := by
+  simpa only [preimage_horizontalRegion_coordinateSwap, Function.comp_apply] using
+    Complex.measurePreserving_coordinateSwap.setIntegral_preimage_emb
+      Complex.coordinateSwap.toMeasurableEquiv.measurableEmbedding R
+      (horizontalRegion a b lower upper)
+
 /-- Fubini's slicing formula for a horizontal graph cell, obtained by interchanging coordinates. -/
 theorem integral_horizontalRegion
     (hl : ContinuousOn lower (Icc a b)) (hu : ContinuousOn upper (Icc a b))
     (hR : IntegrableOn R (horizontalRegion a b lower upper)) :
     (∫ z in horizontalRegion a b lower upper, R z) =
       ∫ y in Icc a b, ∫ x in Icc (lower y) (upper y), R ⟨x, y⟩ := by
-  have hi : IntegrableOn (R ∘ coordinateSwap) (verticalRegion a b lower upper) := by
-    rw [← preimage_horizontalRegion_coordinateSwap]
-    exact (measurePreserving_coordinateSwap.integrableOn_comp_preimage
-      coordinateSwap.toMeasurableEquiv.measurableEmbedding).2 hR
-  have he := measurePreserving_coordinateSwap.setIntegral_preimage_emb
-    coordinateSwap.toMeasurableEquiv.measurableEmbedding R (horizontalRegion a b lower upper)
-  rw [preimage_horizontalRegion_coordinateSwap] at he
+  have hi := integrableOn_comp_coordinateSwap hR
   calc
-    _ = ∫ z in verticalRegion a b lower upper, (R ∘ coordinateSwap) z := he.symm
+    _ = ∫ z in verticalRegion a b lower upper, (R ∘ Complex.coordinateSwap) z :=
+      integral_comp_coordinateSwap_verticalRegion.symm
     _ = _ := by
-      simpa only [Function.comp_apply, coordinateSwap_apply] using integral_verticalRegion hl hu hi
+      simpa only [Function.comp_apply, Complex.coordinateSwap_apply] using
+        integral_verticalRegion hl hu hi
 
 variable [CompleteSpace E]
 
@@ -178,22 +190,18 @@ theorem integral_graphs_sub_eq_integral_horizontalRegion {Q : ℂ → E} (hab : 
     (hR : IntegrableOn R (horizontalRegion a b lower upper)) :
     (∫ y in a..b, Q ⟨upper y, y⟩ - Q ⟨lower y, y⟩) =
       ∫ z in horizontalRegion a b lower upper, R z := by
-  have hQ' : ContinuousOn (Q ∘ coordinateSwap) (verticalRegion a b lower upper) :=
-    hQ.comp coordinateSwap.continuous.continuousOn (fun z hz ↦ by
-      simpa only [mem_horizontalRegion, coordinateSwap_apply] using mem_verticalRegion.mp hz)
-  have hR' : IntegrableOn (R ∘ coordinateSwap) (verticalRegion a b lower upper) := by
-    rw [← preimage_horizontalRegion_coordinateSwap]
-    exact (measurePreserving_coordinateSwap.integrableOn_comp_preimage
-      coordinateSwap.toMeasurableEquiv.measurableEmbedding).2 hR
+  have hQ' : ContinuousOn (Q ∘ Complex.coordinateSwap) (verticalRegion a b lower upper) :=
+    hQ.comp Complex.coordinateSwap.continuous.continuousOn (fun z hz ↦ by
+      simpa only [mem_horizontalRegion, Complex.coordinateSwap_apply] using
+        mem_verticalRegion.mp hz)
+  have hR' := integrableOn_comp_coordinateSwap hR
   have hdQ' : ∀ x ∈ Icc a b, ∀ y ∈ Ioo (lower x) (upper x),
-      HasDerivAt (fun y ↦ (Q ∘ coordinateSwap) ⟨x, y⟩) ((R ∘ coordinateSwap) ⟨x, y⟩) y := by
+      HasDerivAt (fun y ↦ (Q ∘ Complex.coordinateSwap) ⟨x, y⟩)
+        ((R ∘ Complex.coordinateSwap) ⟨x, y⟩) y := by
     intro x hx y hy
-    simpa only [Function.comp_apply, coordinateSwap_apply] using hdQ x hx y hy
+    simpa only [Function.comp_apply, Complex.coordinateSwap_apply] using hdQ x hx y hy
   have hv := integral_graphs_sub_eq_neg_integral_verticalRegion hab hl hu hlu hQ' hdQ' hR'
-  have he := measurePreserving_coordinateSwap.setIntegral_preimage_emb
-    coordinateSwap.toMeasurableEquiv.measurableEmbedding R (horizontalRegion a b lower upper)
-  rw [preimage_horizontalRegion_coordinateSwap] at he
-  simp only [Function.comp_apply, coordinateSwap_apply] at hv
+  simp only [Function.comp_apply, Complex.coordinateSwap_apply] at hv
   calc
     (∫ y in a..b, Q ⟨upper y, y⟩ - Q ⟨lower y, y⟩) =
         -(∫ y in a..b, Q ⟨lower y, y⟩ - Q ⟨upper y, y⟩) := by
@@ -203,6 +211,8 @@ theorem integral_graphs_sub_eq_integral_horizontalRegion {Q : ℂ → E} (hab : 
       exact (neg_sub _ _).symm
     _ = ∫ z in horizontalRegion a b lower upper, R z := by
       rw [hv, neg_neg]
-      simpa only [coordinateSwap_apply] using he
+      simpa only [Function.comp_apply, Complex.coordinateSwap_apply] using
+        integral_comp_coordinateSwap_verticalRegion (a := a) (b := b)
+        (lower := lower) (upper := upper) (R := R)
 
 end TauCeti.Green

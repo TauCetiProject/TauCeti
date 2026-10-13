@@ -20,6 +20,8 @@ public section
 
 open MeasureTheory
 
+namespace TauCeti
+
 variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [NormedAddCommGroup F] [NormedSpace ℝ F]
 
@@ -38,3 +40,5 @@ theorem curveIntegral_segment_line (ω : E → E →L[ℝ] F) (c v : E) (a b : �
   rw [intervalIntegral.integral_smul]
   simpa using intervalIntegral.smul_integral_comp_mul_add (a := 0) (b := 1)
     (fun t : ℝ ↦ ω (c + t • v) v) (b - a) a
+
+end TauCeti

@@ -6,11 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Complex
+import Mathlib.Topology.Order.Compact
 
 /-!
-# Planar area of coordinate lines
+# Planar area of coordinate lines and graphs
 
-The level sets of the real and imaginary coordinates have zero planar Lebesgue measure.
+Coordinate lines and continuous graphs over compact intervals have zero planar Lebesgue measure.
+Interchanging the real and imaginary coordinates preserves planar area.
 -/
 
 public section
@@ -38,5 +40,41 @@ theorem volume_setOf_im_eq (c : ℝ) : volume {z : ℂ | z.im = c} = 0 := by
   ext z
   simp only [mem_preimage, measurableEquivRealProd_apply, mem_prod,
     mem_singleton_iff, mem_univ, true_and, mem_ofPred_eq]
+
+/-- A continuous graph over a compact interval has zero planar area. -/
+theorem volume_setOf_im_eq_graph_eq_zero {a b : ℝ} {f : ℝ → ℝ} (hf : ContinuousOn f (Icc a b)) :
+    volume {z : ℂ | z.re ∈ Icc a b ∧ z.im = f z.re} = 0 := by
+  let S := {p : ℝ × ℝ | p.1 ∈ Icc a b ∧ p.2 = f p.1}
+  have hS : MeasurableSet S := by
+    have hc : IsClosed {p : ℝ × ℝ | p.1 ∈ Icc a b} :=
+      isClosed_Icc.preimage continuous_fst
+    have hf' : ContinuousOn (fun p : ℝ × ℝ ↦ f p.1) {p : ℝ × ℝ | p.1 ∈ Icc a b} :=
+      hf.comp continuous_fst.continuousOn (fun _ hx ↦ hx)
+    exact (hc.isClosed_eq continuous_snd.continuousOn hf').measurableSet
+  have hzero : (volume.prod volume) S = 0 := by
+    apply Measure.measure_prod_null_of_ae_null hS
+    apply Filter.Eventually.of_forall
+    intro x
+    simp only [S, Set.preimage_ofPred_eq, Pi.zero_apply]
+    by_cases hx : x ∈ Icc a b
+    · simp only [hx, true_and, Set.ofPred_eq_eq_singleton, measure_singleton]
+    · simp only [hx, false_and, Set.ofPred_false, measure_empty]
+  have ht := Complex.volume_preserving_equiv_real_prod.measure_preimage_equiv S
+  simpa only [S, preimage_ofPred_eq, Complex.measurableEquivRealProd_apply] using ht.trans hzero
+
+/-- The homeomorphism interchanging the real and imaginary coordinates. -/
+noncomputable def coordinateSwap : ℂ ≃ₜ ℂ :=
+  (Complex.equivRealProdCLM.toHomeomorph.trans (Homeomorph.prodComm ℝ ℝ)).trans
+    Complex.equivRealProdCLM.toHomeomorph.symm
+
+/-- Coordinate swap sends `(x,y)` to `(y,x)`. -/
+@[simp]
+theorem coordinateSwap_apply (z : ℂ) : coordinateSwap z = ⟨z.im, z.re⟩ := (rfl)
+
+/-- Interchanging the coordinates preserves planar area. -/
+theorem measurePreserving_coordinateSwap :
+    MeasurePreserving coordinateSwap (volume : Measure ℂ) volume := by
+  exact Complex.volume_preserving_equiv_real_prod.symm.comp
+    (Measure.measurePreserving_swap.comp Complex.volume_preserving_equiv_real_prod)
 
 end Complex

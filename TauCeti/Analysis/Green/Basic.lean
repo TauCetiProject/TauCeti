@@ -7,8 +7,7 @@ module
 
 public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.MeasureTheory.Integral.CurveIntegral.Basic
-import Mathlib.Analysis.Calculus.Deriv.Prod
-import Mathlib.Analysis.Calculus.Deriv.Comp
+public import TauCeti.Analysis.Calculus.Deriv.Complex
 
 /-!
 # Planar circulation and curl
@@ -18,7 +17,7 @@ field with components `P, Q` uses the real 1-form `P dx + Q dy`; its curl is `�
 The raw-curve integrand agrees with Mathlib's `curveIntegral` on a `Path`, including for paths
 whose derivative is defined only almost everywhere.
 
-These conventions fix the signs for planar Green identities and their flux form.
+These conventions fix the signs for planar Green identities.
 -/
 
 public section
@@ -54,36 +53,14 @@ their slice derivatives separately. -/
 def curl (P Q : ℂ → ℝ) (z : ℂ) : ℝ :=
   fderiv ℝ Q z (1 : ℂ) - fderiv ℝ P z Complex.I
 
-/-- A real Fréchet derivative gives the derivative of the horizontal coordinate slice. -/
-theorem hasDerivAt_re_slice {P : ℂ → ℝ} {L : ℂ →L[ℝ] ℝ} {z : ℂ}
-    (hP : HasFDerivAt P L z) :
-    HasDerivAt (fun x : ℝ ↦ P ⟨x, z.im⟩) (L 1) z.re := by
-  have hp := Complex.equivRealProdCLM.symm.hasFDerivAt (x := (z.re, z.im)) |>.comp_hasDerivAt z.re
-    ((hasDerivAt_id z.re).prodMk (hasDerivAt_const z.re z.im))
-  convert hP.comp_hasDerivAt z.re hp using 1
-  · ext x
-    congr 1
-  · simp [Complex.equivRealProdCLM_symm_apply]
-
-/-- A real Fréchet derivative gives the derivative of the vertical coordinate slice. -/
-theorem hasDerivAt_im_slice {P : ℂ → ℝ} {L : ℂ →L[ℝ] ℝ} {z : ℂ}
-    (hP : HasFDerivAt P L z) :
-    HasDerivAt (fun y : ℝ ↦ P ⟨z.re, y⟩) (L Complex.I) z.im := by
-  have hp := Complex.equivRealProdCLM.symm.hasFDerivAt (x := (z.re, z.im)) |>.comp_hasDerivAt z.im
-    ((hasDerivAt_const z.im z.re).prodMk (hasDerivAt_id z.im))
-  convert hP.comp_hasDerivAt z.im hp using 1
-  · ext y
-    congr 1
-  · simp [Complex.equivRealProdCLM_symm_apply]
-
 /-- For differentiable fields the curl agrees with the difference of the directional slice
 derivatives used in the graph-cell identities. -/
 theorem curl_eq_deriv_slices {P Q : ℂ → ℝ} {z : ℂ}
     (hP : DifferentiableAt ℝ P z) (hQ : DifferentiableAt ℝ Q z) :
     curl P Q z = deriv (fun x : ℝ ↦ Q ⟨x, z.im⟩) z.re -
       deriv (fun y : ℝ ↦ P ⟨z.re, y⟩) z.im := by
-  rw [curl, (hasDerivAt_re_slice hQ.hasFDerivAt).deriv,
-    (hasDerivAt_im_slice hP.hasFDerivAt).deriv]
+  rw [curl, hQ.hasFDerivAt.hasDerivAt_re_slice.deriv,
+    hP.hasFDerivAt.hasDerivAt_im_slice.deriv]
 
 /-- Mathlib's curve integral is the circulation integral in real coordinates. -/
 theorem curveIntegral_oneForm_eq {p q : ℂ} (γ : Path p q) (P Q : ℂ → ℝ) :

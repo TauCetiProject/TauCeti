@@ -47,7 +47,7 @@ theorem mem_horizontalRegion : z ∈ horizontalRegion a b lower upper ↔
     z.im ∈ Icc a b ∧ z.re ∈ Icc (lower z.im) (upper z.im) := Iff.rfl
 
 /-- In real product coordinates the vertical cell has the indicated interval fibers. -/
-theorem preimage_verticalRegion_equivRealProd_symm :
+theorem preimage_verticalRegion_measurableEquivRealProd_symm :
     Complex.measurableEquivRealProd.symm ⁻¹' verticalRegion a b lower upper =
         {p : ℝ × ℝ | p.1 ∈ Icc a b ∧ p.2 ∈ Icc (lower p.1) (upper p.1)} := (rfl)
 
@@ -134,26 +134,6 @@ theorem frontier_verticalRegion_subset (hl : ContinuousOn lower (Icc a b))
     ⟨lt_of_le_of_ne hmem.1.1 (Ne.symm ha), lt_of_le_of_ne hmem.1.2 hb⟩
     ⟨lt_of_le_of_ne hmem.2.1 (Ne.symm hL), lt_of_le_of_ne hmem.2.2 hU⟩))
 
-/-- A continuous graph over a compact interval has zero planar area. -/
-theorem volume_setOf_im_eq_graph_eq_zero {f : ℝ → ℝ} (hf : ContinuousOn f (Icc a b)) :
-    volume {z : ℂ | z.re ∈ Icc a b ∧ z.im = f z.re} = 0 := by
-  let S := {p : ℝ × ℝ | p.1 ∈ Icc a b ∧ p.2 = f p.1}
-  have hS : MeasurableSet S := by
-    simpa only [S, verticalRegion, preimage_ofPred_eq, Complex.measurableEquivRealProd_symm_apply,
-      Icc_self, mem_singleton_iff] using
-      (measurableSet_verticalRegion hf hf).preimage
-        Complex.measurableEquivRealProd.symm.measurable
-  have hzero : (volume.prod volume) S = 0 := by
-    apply Measure.measure_prod_null_of_ae_null hS
-    apply Filter.Eventually.of_forall
-    intro x
-    change volume {y : ℝ | x ∈ Icc a b ∧ y = f x} = 0
-    by_cases hx : x ∈ Icc a b
-    · simp only [hx, true_and, Set.ofPred_eq_eq_singleton, measure_singleton]
-    · simp only [hx, false_and, Set.ofPred_false, measure_empty]
-  have ht := Complex.volume_preserving_equiv_real_prod.measure_preimage_equiv S
-  simpa only [S, preimage_ofPred_eq, Complex.measurableEquivRealProd_apply] using ht.trans hzero
-
 /-- The frontier of a vertical cell bounded by continuous graphs has zero planar area. -/
 theorem volume_frontier_verticalRegion_eq_zero (hl : ContinuousOn lower (Icc a b))
     (hu : ContinuousOn upper (Icc a b)) :
@@ -161,33 +141,20 @@ theorem volume_frontier_verticalRegion_eq_zero (hl : ContinuousOn lower (Icc a b
   apply measure_mono_null (frontier_verticalRegion_subset hl hu)
   exact measure_union_null
     (measure_union_null (measure_union_null (Complex.volume_setOf_re_eq a)
-      (Complex.volume_setOf_re_eq b)) (volume_setOf_im_eq_graph_eq_zero hl))
-        (volume_setOf_im_eq_graph_eq_zero hu)
-
-/-- The homeomorphism interchanging the real and imaginary coordinates. -/
-noncomputable def coordinateSwap : ℂ ≃ₜ ℂ :=
-  (Complex.equivRealProdCLM.toHomeomorph.trans (Homeomorph.prodComm ℝ ℝ)).trans
-    Complex.equivRealProdCLM.toHomeomorph.symm
-
-/-- Coordinate swap sends `(x,y)` to `(y,x)`. -/
-@[simp]
-theorem coordinateSwap_apply (z : ℂ) : coordinateSwap z = ⟨z.im, z.re⟩ := (rfl)
-
-/-- Interchanging the coordinates preserves planar area. -/
-theorem measurePreserving_coordinateSwap :
-    MeasurePreserving coordinateSwap (volume : Measure ℂ) volume := by
-  exact Complex.volume_preserving_equiv_real_prod.symm.comp
-    (Measure.measurePreserving_swap.comp Complex.volume_preserving_equiv_real_prod)
+      (Complex.volume_setOf_re_eq b)) (Complex.volume_setOf_im_eq_graph_eq_zero hl))
+        (Complex.volume_setOf_im_eq_graph_eq_zero hu)
 
 /-- The horizontal region is the coordinate swap of the vertical region. -/
 theorem preimage_verticalRegion_coordinateSwap :
-    coordinateSwap ⁻¹' verticalRegion a b lower upper = horizontalRegion a b lower upper := by
+    Complex.coordinateSwap ⁻¹' verticalRegion a b lower upper =
+      horizontalRegion a b lower upper := by
   ext z
   simp
 
 /-- The vertical region is the coordinate swap of the horizontal region. -/
 theorem preimage_horizontalRegion_coordinateSwap :
-    coordinateSwap ⁻¹' horizontalRegion a b lower upper = verticalRegion a b lower upper := by
+    Complex.coordinateSwap ⁻¹' horizontalRegion a b lower upper =
+      verticalRegion a b lower upper := by
   ext z
   simp
 
@@ -195,7 +162,7 @@ theorem preimage_horizontalRegion_coordinateSwap :
 theorem isCompact_horizontalRegion (hl : ContinuousOn lower (Icc a b))
     (hu : ContinuousOn upper (Icc a b)) : IsCompact (horizontalRegion a b lower upper) := by
   rw [← preimage_verticalRegion_coordinateSwap]
-  exact coordinateSwap.isCompact_preimage.mpr (isCompact_verticalRegion hl hu)
+  exact Complex.coordinateSwap.isCompact_preimage.mpr (isCompact_verticalRegion hl hu)
 
 /-- A horizontal region with continuous graphs is measurable. -/
 theorem measurableSet_horizontalRegion (hl : ContinuousOn lower (Icc a b))
@@ -206,8 +173,8 @@ theorem measurableSet_horizontalRegion (hl : ContinuousOn lower (Icc a b))
 theorem volume_frontier_horizontalRegion_eq_zero (hl : ContinuousOn lower (Icc a b))
     (hu : ContinuousOn upper (Icc a b)) :
     volume (frontier (horizontalRegion a b lower upper)) = 0 := by
-  rw [← preimage_verticalRegion_coordinateSwap, ← coordinateSwap.preimage_frontier]
-  exact (measurePreserving_coordinateSwap.measure_preimage
+  rw [← preimage_verticalRegion_coordinateSwap, ← Complex.coordinateSwap.preimage_frontier]
+  exact (Complex.measurePreserving_coordinateSwap.measure_preimage
     isClosed_frontier.measurableSet.nullMeasurableSet).trans
       (volume_frontier_verticalRegion_eq_zero hl hu)
 
