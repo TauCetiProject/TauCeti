@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Sobolev.LipschitzDomain.Basic
-public import TauCeti.Analysis.Sobolev.Trace.Epigraph
+public import TauCeti.Analysis.Calculus.GraphFlattening
 
 /-!
 # Lipschitz epigraphs are Lipschitz domains
@@ -39,7 +39,8 @@ namespace TauCeti
 open Metric Set TopologicalSpace
 open scoped NNReal
 
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+  [FiniteDimensional ℝ E]
 
 /-- A globally Lipschitz graph function defines a Lipschitz domain with the same constant. -/
 theorem _root_.LipschitzWith.isLipschitzDomainWith_normalEpigraph {L : ℝ≥0} {φ : C(E, ℝ)}
@@ -67,9 +68,7 @@ theorem _root_.LipschitzWith.isLipschitzDomainWith_normalEpigraph {L : ℝ≥0} 
     dsimp only [e, ψ]
     simp only [AffineIsometryEquiv.symm_symm, AffineIsometryEquiv.coe_vaddConst,
       vadd_eq_add, Set.mem_ofPred_eq]
-    have hfst : (z + x).fst = z.fst + x.fst := rfl
-    have hsnd : (z + x).snd = z.snd + x.snd := rfl
-    rw [hfst, hsnd]
+    rw [WithLp.add_fst, WithLp.add_snd]
     constructor <;> intro h <;> linarith
 
 /-- A normal half-space is a Lipschitz domain with Lipschitz constant zero. -/
