@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.AlgebraicGeometry.EllipticCurve.Reduction
 public import TauCeti.AlgebraicGeometry.EllipticCurve.TateAlgorithm.Reduction.Type
 -- Proof-only: `v (Δ) < 12` implies minimal.
 import TauCeti.AlgebraicGeometry.EllipticCurve.MinimalModel.Basic
@@ -13,8 +12,8 @@ import TauCeti.AlgebraicGeometry.EllipticCurve.MinimalModel.Basic
 import TauCeti.Data.Nat.Prime.IntCast
 -- Proof-only: `norm_num` decides primality of the small primes.
 import Mathlib.Tactic.NormNum.Prime
--- Proof-only: a prime number lying in `v` is a uniformiser of the localisation `ℤ_(v)`.
-import TauCeti.RingTheory.DedekindDomain.LocalizationAtPrime
+-- Proof-only: good reduction at the primes not dividing the discriminant.
+import TauCeti.AlgebraicGeometry.EllipticCurve.IntegralReduction
 
 /-!
 # Worked examples: Tate's algorithm on curves over `ℚ`, one for each reduction symbol
@@ -377,7 +376,8 @@ theorem hasGoodReduction_curve27a4_iff :
       (Localization.AtPrime v.asIdeal) ↔ (3 : ℤ) ∉ v.asIdeal := by
   refine ⟨fun h hv ↦ (hasAdditiveReduction_curve27a4 v hv).not_hasGoodReduction _ h,
     fun hv ↦ hasGoodReduction_minimal_baseChange_of_Δ_notMem curve27a4 ?_⟩
-  rw [Δ_curve27a4, neg_mem_iff, show (27 : ℤ) = 3 ^ 3 by norm_num]
+  have h27 : (27 : ℤ) = 3 ^ 3 := by norm_num
+  rw [Δ_curve27a4, neg_mem_iff, h27]
   exact fun h ↦ hv (v.isPrime.mem_of_pow_mem 3 h)
 
 /-- **27.a4 is not semistable**: its reduction at `3`, of symbol `II`, is additive. -/

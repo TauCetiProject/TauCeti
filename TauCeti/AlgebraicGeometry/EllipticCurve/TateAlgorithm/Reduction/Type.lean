@@ -49,7 +49,8 @@ reverse direction needs the residue fields to be perfect, so that the algorithm 
   `WeierstrassCurve.IsTateTerminal.hasAdditiveReduction_minimal_iff`: the same, for Mathlib's
   chosen minimal equation `E.minimal R` of a curve `E` with a minimal equation on which the
   algorithm stops.
-* `WeierstrassCurve.IsTateTerminal.hasMultiplicativeReduction_minimal_baseChange_iff` and
+* `WeierstrassCurve.IsTateTerminal.hasGoodReduction_minimal_baseChange_iff`,
+  `WeierstrassCurve.IsTateTerminal.hasMultiplicativeReduction_minimal_baseChange_iff` and
   `WeierstrassCurve.IsTateTerminal.hasAdditiveReduction_minimal_baseChange_iff`: the same, for an
   equation defined over a ring mapping into `R`, such as an equation over `ℤ`.
 * `WeierstrassCurve.IsTateTerminal.hasSplitMultiplicativeReduction_iff`: at `Iₙ` with `n ≥ 1`, the
@@ -231,6 +232,18 @@ private theorem isMinimal_baseChange_smul_map_and_smul_baseChange_eq
     map_variableChange ..
   have hW₀ : W₀.baseChange K = (W₀.map φ).baseChange K := congrArg W₀.map hφ.symm
   exact ⟨hC ▸ inferInstance, hW₀ ▸ hC⟩
+
+/-- **Tate's algorithm, run on an equation over a ring mapping into `R`, detects
+good reduction of its chosen minimal equation.** Let `W₀` be an equation over `A`,
+mapped into `R` by `φ` compatibly with `K`, and minimal over `R` once read over `K`. If a change
+of variables `C` over `R` carries it to an equation on which the algorithm stops at `s`, then
+`(W₀.baseChange K).minimal R` has good reduction exactly when `s = I₀`. -/
+theorem IsTateTerminal.hasGoodReduction_minimal_baseChange_iff
+    [IsMinimal R ((W₀.map φ).baseChange K)] (hφ : (algebraMap R K).comp φ = algebraMap A K)
+    (C : VariableChange R) (hϖ : Irreducible ϖ) (h : (C • W₀.map φ).IsTateTerminal ϖ s) :
+    ((W₀.baseChange K).minimal R).HasGoodReduction R ↔ s = .I 0 := by
+  obtain ⟨_, hD⟩ := isMinimal_baseChange_smul_map_and_smul_baseChange_eq (K := K) (W₀ := W₀) hφ C
+  exact h.hasGoodReduction_minimal_iff _ hD hϖ
 
 /-- **Tate's algorithm, run on an equation over a ring mapping into `R`, detects
 multiplicative reduction of its chosen minimal equation.** Let `W₀` be an equation over `A`,
