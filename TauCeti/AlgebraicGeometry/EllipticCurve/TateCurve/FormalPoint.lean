@@ -46,20 +46,11 @@ coordinates satisfy the equation of the specialised Tate curve.
   point `(X, Y)` to its negative `(X, -Y - X)`.
 * `TauCeti.equation_tateFormalX_tateFormalY`: the formal point `(X, Y)` lies on the Tate curve.
 
-## Implementation notes
-
-The proof is algebraic, over `ℚ`, and transfers to `ℤ`, hence to every `R`, by injectivity of
-`ℤ → ℚ`. It rests on a formal Liouville theorem: an element of `ℚ⟦u⟧⟦v⟧` symmetric in `u` and `v`
-whose `qᴺ` coefficients, as Laurent polynomials in `u`, are polynomials in `w = u - 2 + u⁻¹`
-without constant term vanishes.
-
 ## References
 
 * J. H. Silverman, *Advanced Topics in the Arithmetic of Elliptic Curves*, GTM 151, §V.1 and §V.3.
 * J. Tate, *A review of non-Archimedean elliptic functions*, in *Elliptic curves, modular forms,
-  & Fermat's last theorem* (Hong Kong, 1993), International Press (1995), 162–184. The formal
-  Liouville theorem above is a formal counterpart of the non-archimedean Liouville theorem used
-  there: an analytic function on `Kˣ` invariant under `u ↦ q u` is constant.
+  & Fermat's last theorem* (Hong Kong, 1993), International Press (1995), 162–184.
 -/
 
 public section
@@ -513,7 +504,11 @@ vanishing at `2`. Then `G = 0`.
 A symmetric Laurent polynomial `L_N` in `u` that is the `qᴺ` coefficient has no exponent of
 absolute value larger than `N`, and the symmetry in `u` and `v` moves the coefficient of `uᵐ` in
 `L_N` to that of `uᵐ` in `L_{N-m}`. By induction only the constant terms survive, and these
-vanish because `F(2) = 0`. -/
+vanish because `F(2) = 0`.
+
+This is a formal counterpart of the non-archimedean Liouville theorem in Tate, *A review of
+non-Archimedean elliptic functions*: an analytic function on `Kˣ` invariant under `u ↦ q u` is
+constant. -/
 private theorem eq_zero_of_swap_eq_self {G : ℚ⟦X⟧⟦X⟧} (hT : PowerSeries.swap G = G)
     {f : (Polynomial ℚ)⟦X⟧} (hj : toLaurent G = map psi (C wP * f)) : G = 0 := by
   set L : ℕ → LaurentPolynomial ℚ := fun N ↦ symmHom (coeff N (C wP * f)) with hLdef
@@ -670,6 +665,7 @@ variable (R) in
 Tate coordinates satisfy `y² + x y = x³ + a₄(q) x + a₆(q)` (Silverman, *Advanced Topics*, §V.1). -/
 theorem equation_tateFormalX_tateFormalY :
     (tateCurve.map (tateParamHom R)).toAffine.Equation (tateFormalX R) (tateFormalY R) := by
+  -- The identity holds over `ℚ`; it descends to `ℤ` by injectivity of `ℤ → ℚ`, then maps to `R`.
   have hinj : Function.Injective (map (map (Int.castRingHom ℚ))) :=
     map_injective _ (map_injective _ Int.cast_injective)
   have hℤ :
