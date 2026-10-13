@@ -14,17 +14,24 @@ import TauCeti.Analysis.InnerProductSpace.Harmonic.Weyl
 
 Let `E` be a finite-dimensional real inner product space. If `f : E → ℝ` is harmonic at `x`, then
 so is each of its directional derivatives `y ↦ Df(y) v`
-(`InnerProductSpace.HarmonicAt.fderiv_apply`). Since harmonicity only asks for two continuous
-derivatives, the identity `Δ (∂ᵥf) = ∂ᵥ(Δf)` is not available classically. Instead, `∂ᵥf` is a
-weak derivative of the weakly harmonic function `f`, hence weakly harmonic
-(`TauCeti.HasWeakLineDerivOn.weaklyHarmonicOn`), and being continuous it is harmonic by Weyl's
-lemma (`TauCeti.harmonicOnNhd_iff_weaklyHarmonicOn`).
+(`InnerProductSpace.HarmonicAt.fderiv_apply`). Consequently every estimate proved for harmonic
+functions, such as the decay of their oscillation and of their integrals on shrinking balls,
+applies verbatim to the partial derivatives of a harmonic function, and hence controls its
+gradient. This is how gradient decay estimates for solutions of constant-coefficient elliptic
+equations are reduced to the harmonic case.
 
 ## Main declarations
 
 * `InnerProductSpace.HarmonicAt.fderiv_apply`: a directional derivative of a function harmonic at
   `x` is harmonic at `x`.
 * `InnerProductSpace.HarmonicOnNhd.fderiv_apply`: the same on a set.
+
+## Implementation notes
+
+Since harmonicity only asks for two continuous derivatives, the identity `Δ (∂ᵥf) = ∂ᵥ(Δf)` is
+not available classically. Instead, `∂ᵥf` is a weak derivative of the weakly harmonic function
+`f`, hence weakly harmonic (`TauCeti.HasWeakLineDerivOn.weaklyHarmonicOn`), and being continuous
+it is harmonic by Weyl's lemma (`TauCeti.harmonicOnNhd_iff_weaklyHarmonicOn`).
 
 ## References
 
