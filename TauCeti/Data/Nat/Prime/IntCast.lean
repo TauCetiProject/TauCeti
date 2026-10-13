@@ -30,6 +30,8 @@ can be found by a finite search.
 * `Nat.Prime.pow_dvd_intCast_iff`: `(p : R) ^ n ∣ (x : R) ↔ (p : ℤ) ^ n ∣ x`.
 * `Nat.Prime.exists_dvd_eval_map_iff`: an integer polynomial has a root modulo `p` in `R` exactly
   when it has a root in `ZMod p`.
+* `Nat.Prime.not_dvd_eval_map_of_forall_ne_zero`: an integer polynomial with no root in `ZMod p`
+  has no root modulo `p` in `R`.
 -/
 
 public section
@@ -81,5 +83,16 @@ theorem exists_dvd_eval_map_iff {p : ℕ} (hp : p.Prime) {R : Type*} [CommRing R
     refine ⟨n, ?_⟩
     rw [eval_intCast_map, eq_intCast] at hx ⊢
     exact (hdvd _).2 hx
+
+open Polynomial in
+/-- **An integer polynomial with no root in `ZMod p` has no root modulo `p`** over a domain `R`
+as in `Nat.Prime.exists_dvd_eval_map_iff`. The hypothesis on `ZMod p` is a finite search. -/
+theorem not_dvd_eval_map_of_forall_ne_zero {p : ℕ} (hp : p.Prime) {R : Type*} [CommRing R]
+    [IsDomain R] (h₀ : (p : R) ≠ 0) (hu : ¬ IsUnit (p : R))
+    (hR : ∀ x : R, ∃ n : ℤ, (p : R) ∣ x - n) {f : ℤ[X]}
+    (hf : ∀ x : ZMod p, (f.map (Int.castRingHom (ZMod p))).eval x ≠ 0) (s : R) :
+    ¬ (p : R) ∣ (f.map (Int.castRingHom R)).eval s := fun hs ↦
+  let ⟨x, hx⟩ := (hp.exists_dvd_eval_map_iff h₀ hu hR f).1 ⟨s, hs⟩
+  hf x hx
 
 end Nat.Prime

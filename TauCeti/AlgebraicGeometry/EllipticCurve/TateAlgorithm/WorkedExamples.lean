@@ -446,9 +446,10 @@ theorem not_hasTateTangentRoot_curve24a5_3 [IsDomain R] (h : Irreducible (3 : R)
       (Int.castRingHom R)).HasTateTangentRoot 3 := by
   intro ht
   obtain ⟨t, ht⟩ := hasTateTangentRoot_def.1 ht
-  obtain ⟨x, hx⟩ := (Nat.Prime.exists_dvd_eval_map_iff (p := 3) (by norm_num) h.ne_zero h.not_isUnit
-    hR (X ^ 2 - C 5)).1 ⟨t, by simpa [variableChange_def] using ht⟩
-  exact (by decide : ∀ x : ZMod 3, x ^ 2 - 5 ≠ 0) x (by simpa using hx)
+  exact Nat.Prime.not_dvd_eval_map_of_forall_ne_zero (p := 3) (f := X ^ 2 - C 5) (by norm_num)
+    h.ne_zero h.not_isUnit hR
+    (by simpa using (by decide : ∀ x : ZMod 3, x ^ 2 - 5 ≠ 0)) t
+    (by simpa [variableChange_def] using ht)
 
 open Polynomial in
 /-- **The local index of 45.a8 at `5` is `2`**: the reduction is nonsplit multiplicative of the
@@ -459,9 +460,10 @@ theorem tateLocalIndex_curve45a8_5 [IsDomain R] (h : Irreducible (5 : R))
       (.I 8) = 2 := by
   refine (tateLocalIndex_I_add_one_of_not_hasTateTangentRoot (fun ht ↦ ?_) 7).trans rfl
   obtain ⟨t, ht⟩ := hasTateTangentRoot_def.1 ht
-  obtain ⟨x, hx⟩ := (Nat.Prime.exists_dvd_eval_map_iff (p := 5) (by norm_num) h.ne_zero h.not_isUnit
-    hR (X ^ 2 + X - C 8)).1 ⟨t, by simpa [variableChange_def] using ht⟩
-  exact (by decide : ∀ x : ZMod 5, x ^ 2 + x - 8 ≠ 0) x (by simpa using hx)
+  exact Nat.Prime.not_dvd_eval_map_of_forall_ne_zero (p := 5) (f := X ^ 2 + X - C 8) (by norm_num)
+    h.ne_zero h.not_isUnit hR
+    (by simpa using (by decide : ∀ x : ZMod 5, x ^ 2 + x - 8 ≠ 0)) t
+    (by simpa [variableChange_def] using ht)
 
 /-- **The local index of 20.a3 at `2` is `3`**: at the symbol `IV`, the residue quadratic
 `Y² + Y` of Step 5 splits. -/
@@ -483,9 +485,10 @@ theorem tateLocalIndex_curve32a1_2 [IsDomain R] (h : Irreducible (2 : R))
   rw [mk_mem_tateCubicRoots_iff (b₂ := 1) (b₄ := -2) (b₆ := -3) h.ne_zero
     (by simp [variableChange_def]) (by simp [variableChange_def]; norm_num)
     (by simp [variableChange_def]; norm_num)] at ht
-  obtain ⟨x, hx⟩ := (Nat.Prime.exists_dvd_eval_map_iff (p := 2) (by norm_num) h.ne_zero h.not_isUnit
-    hR (X ^ 3 + X ^ 2 - C 2 * X - C 3)).1 ⟨t₀, by convert ht using 1; simp; ring⟩
-  exact (by decide : ∀ x : ZMod 2, x ^ 3 + x ^ 2 - 2 * x - 3 ≠ 0) x (by simpa using hx)
+  exact Nat.Prime.not_dvd_eval_map_of_forall_ne_zero (p := 2)
+    (f := X ^ 3 + X ^ 2 - C 2 * X - C 3) (by norm_num) h.ne_zero h.not_isUnit hR
+    (by simpa using (by decide : ∀ x : ZMod 2, x ^ 3 + x ^ 2 - 2 * x - 3 ≠ 0)) t₀
+    (by convert ht using 1; simp; ring)
 
 /-- **The local index of 24.a4 at `2` is `4`**: at the symbol `I₁*`, the residue quadratic
 `Y² + Y` at which Step 7 stops splits. -/
@@ -494,8 +497,10 @@ theorem tateLocalIndex_curve24a4_2 :
       (.IStar 1) = 4 := by
   classical
   have h : (((⟨1, 0, 1, 2⟩ : VariableChange ℤ) • curve24a4).map (Int.castRingHom R)).HasTateYRoot 2
-      (0 + 2) := hasTateYRoot_def.2 ⟨0, by simp, by simp [variableChange_def]⟩
-  simp [tateLocalIndex_IStar_odd 0, h]
+      2 := hasTateYRoot_def.2 ⟨0, by simp, by simp [variableChange_def]⟩
+  -- `I₁*` is the odd stage `2k + 1` with `k = 0`, whose test is at level `k + 2 = 2`.
+  rw [show ReductionSymbol.IStar 1 = .IStar (2 * 0 + 1) from rfl, tateLocalIndex_IStar_odd]
+  simp [h]
 
 open Polynomial in
 /-- **The local index of 45.a8 at `3` is `2`**: at the symbol `I₂*`, the residue quadratic
@@ -506,14 +511,16 @@ theorem tateLocalIndex_curve45a8_3 [IsDomain R] (h : Irreducible (3 : R))
       (.IStar 2) = 2 := by
   classical
   suffices h : ¬ (((⟨1, 2, 1, 26⟩ : VariableChange ℤ) • curve45a8).map
-      (Int.castRingHom R)).HasTateXRoot 3 (0 + 2) by
-    simp [tateLocalIndex_IStar_even 0, h]
+      (Int.castRingHom R)).HasTateXRoot 3 2 by
+    -- `I₂*` is the even stage `2k + 2` with `k = 0`, whose test is at level `k + 2 = 2`.
+    rw [show ReductionSymbol.IStar 2 = .IStar (2 * 0 + 2) from rfl, tateLocalIndex_IStar_even]
+    simp [h]
   rw [hasTateXRoot_iff (b₂ := 1) (b₄ := 9) (b₆ := 4) h.ne_zero (by simp [variableChange_def])
     (by simp [variableChange_def]; norm_num) (by simp [variableChange_def]; norm_num)]
   rintro ⟨s, hs⟩
-  obtain ⟨x, hx⟩ := (Nat.Prime.exists_dvd_eval_map_iff (p := 3) (by norm_num) h.ne_zero h.not_isUnit
-    hR (X ^ 2 + C 9 * X + C 4)).1 ⟨s, by simpa using hs⟩
-  exact (by decide : ∀ x : ZMod 3, x ^ 2 + 9 * x + 4 ≠ 0) x (by simpa using hx)
+  exact Nat.Prime.not_dvd_eval_map_of_forall_ne_zero (p := 3) (f := X ^ 2 + C 9 * X + C 4)
+    (by norm_num) h.ne_zero h.not_isUnit hR
+    (by simpa using (by decide : ∀ x : ZMod 3, x ^ 2 + 9 * x + 4 ≠ 0)) s (by simpa using hs)
 
 open Polynomial in
 /-- **The local index of 20.a2 at `2` is `1`**: at the symbol `IV*`, the residue quadratic
@@ -526,8 +533,8 @@ theorem tateLocalIndex_curve20a2_2 [IsDomain R] (h : Irreducible (2 : R))
   rw [hasTateYRoot_iff (b₃ := 1) (b₆ := -9) h.ne_zero (by simp [variableChange_def]; norm_num)
     (by simp [variableChange_def]; norm_num)]
   rintro ⟨s, hs⟩
-  obtain ⟨x, hx⟩ := (Nat.Prime.exists_dvd_eval_map_iff (p := 2) (by norm_num) h.ne_zero h.not_isUnit
-    hR (X ^ 2 + X + C 9)).1 ⟨s, by simpa using hs⟩
-  exact (by decide : ∀ x : ZMod 2, x ^ 2 + x + 9 ≠ 0) x (by simpa using hx)
+  exact Nat.Prime.not_dvd_eval_map_of_forall_ne_zero (p := 2) (f := X ^ 2 + X + C 9) (by norm_num)
+    h.ne_zero h.not_isUnit hR
+    (by simpa using (by decide : ∀ x : ZMod 2, x ^ 2 + x + 9 ≠ 0)) s (by simpa using hs)
 
 end TauCeti.WorkedExamples
