@@ -22,8 +22,9 @@ as an inner product space over `ℝ` or `ℂ`, does not carry as an instance.
 
 Over a field of characteristic zero, this file records the identities of descriptive statistics
 used for sample means and scatter operators: the sum of a family is its size times its mean, the
-deviations `zᵢ - m` sum to zero, and appending a point `y` to a family of `n` points moves the
-mean by `(n + 1)⁻¹ (y - m)`, including for `n = 0`.
+deviations `zᵢ - m` sum to zero, subtracting a constant `c` from a nonempty family subtracts it
+from the mean, and appending a point `y` to a family of `n` points moves the mean by
+`(n + 1)⁻¹ (y - m)`, including for `n = 0`.
 
 ## Main declarations
 
@@ -31,6 +32,7 @@ mean by `(n + 1)⁻¹ (y - m)`, including for `n = 0`.
 * `TauCeti.finiteMean_of_isEmpty`: the mean of the empty family is `0`.
 * `TauCeti.sum_eq_card_smul_finiteMean`: `∑ i, z i = card ι • m`.
 * `TauCeti.sum_sub_finiteMean`: `∑ i, (z i - m) = 0`.
+* `TauCeti.finiteMean_sub_const`: the mean of the deviations `zᵢ - c` is `m - c`.
 * `TauCeti.finiteMean_snoc`: the mean after appending a point.
 -/
 
@@ -74,6 +76,12 @@ theorem sum_eq_card_smul_finiteMean (z : ι → E) :
 theorem sum_sub_finiteMean (z : ι → E) : ∑ i, (z i - finiteMean R z) = 0 := by
   rw [sum_sub_distrib, sum_const, card_univ, ← Nat.cast_smul_eq_nsmul R,
     ← sum_eq_card_smul_finiteMean, sub_self]
+
+/-- Subtracting a constant from every member of a nonempty family subtracts it from the mean. -/
+theorem finiteMean_sub_const [Nonempty ι] (z : ι → E) (c : E) :
+    finiteMean R (fun i ↦ z i - c) = finiteMean R z - c := by
+  simp [finiteMean_eq_inv_smul_sum, sum_sub_distrib, smul_sub, ← Nat.cast_smul_eq_nsmul R,
+    smul_smul]
 
 /-- **Appending a point.** Appending `y` to a family `z` of `n` points with mean `m` moves the
 mean by `(n + 1)⁻¹ • (y - m)`. For `n = 0` this says that the mean of the single point `y` is

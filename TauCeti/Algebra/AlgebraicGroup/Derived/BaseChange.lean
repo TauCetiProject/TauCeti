@@ -41,9 +41,6 @@ the commutator kernel; it is not proved here.
 
 * J. S. Milne, *Algebraic Groups* (2017), §6d, especially Propositions 6.17 and 6.18.
 * W. C. Waterhouse, *Introduction to Affine Group Schemes*, Chapters 10 and 16.
-
-This advances the base-change compatibility of `G_der` required in Layer 6, "Reductive and
-semisimple groups", of the ReductiveGroups roadmap.
 -/
 
 public section

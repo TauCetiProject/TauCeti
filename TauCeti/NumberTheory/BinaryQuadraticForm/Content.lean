@@ -10,7 +10,7 @@ public import Mathlib.RingTheory.Coprime.Lemmas
 import Mathlib.Data.Int.GCD
 
 /-!
-# Content and primitive parts of integral binary quadratic forms
+# Content and primitive forms of fixed discriminant
 
 The content of an integral binary quadratic form is the nonnegative gcd of its three
 coefficients. Dividing by it gives a primitive form whenever the original form is nonzero.
@@ -19,6 +19,10 @@ proper integral changes of variables. Scaling the form multiplies its content by
 absolute value of the scalar and its discriminant by the scalar's square.
 Dividing a nonzero integer vector by its gcd gives coprime coordinates and divides
 every represented value by the square of that gcd.
+
+The invariance of discriminant and primitivity packages primitive forms of a fixed
+discriminant in the subaction `primitiveForms D`, stable under `SL(2, ℤ)`. This gives the
+carrier for proper-equivalence and orbit constructions among forms of that discriminant.
 
 ## References
 
@@ -264,6 +268,19 @@ theorem dvd_content_iff_forall_eval (f : BinaryQuadraticForm ℤ) (n : ℕ) :
 @[simp] theorem isPrimitive_smul_iff (f : BinaryQuadraticForm ℤ)
     (γ : Matrix.SpecialLinearGroup (Fin 2) ℤ) : (γ • f).IsPrimitive ↔ f.IsPrimitive := by
   rw [isPrimitive_iff, isPrimitive_iff, content_smul]
+
+/-- Primitive forms of fixed discriminant, with the proper special-linear action. -/
+def primitiveForms (D : ℤ) :
+    SubMulAction (Matrix.SpecialLinearGroup (Fin 2) ℤ) (BinaryQuadraticForm ℤ) where
+  carrier := {f | f.discrim = D ∧ f.IsPrimitive}
+  smul_mem' γ f := by
+    rintro ⟨hf, hprim⟩
+    exact ⟨(discrim_smul γ f).trans hf, (isPrimitive_smul_iff f γ).mpr hprim⟩
+
+/-- Membership in the primitive fixed-discriminant forms. -/
+@[simp] theorem mem_primitiveForms (D : ℤ) (f : BinaryQuadraticForm ℤ) :
+    f ∈ primitiveForms D ↔ f.discrim = D ∧ f.IsPrimitive := by
+  rfl
 
 /-- Taking primitive parts commutes with proper integral changes of variables. -/
 theorem primPart_smul (f : BinaryQuadraticForm ℤ)

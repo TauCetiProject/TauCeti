@@ -222,6 +222,40 @@ theorem tendsto_eLpNorm_comp_add_sub [TopologicalSpace E] [ContinuousAdd E] [Bor
 
 end MemLp
 
+/-- Translation is continuous in the `L¹` distance from a fixed translate. -/
+theorem Integrable.continuous_integral_norm_translate_sub
+    {G E : Type*} [AddGroup G] [TopologicalSpace G] [IsTopologicalAddGroup G]
+    [MeasurableSpace G] [BorelSpace G]
+    [NormedAddCommGroup E] {μ : Measure G} [μ.IsAddRightInvariant]
+    [IsLocallyFiniteMeasure μ] [μ.InnerRegularCompactLTTop]
+    {k : G → E} (hk : Integrable k μ) (b : G) :
+    Continuous (fun c : G ↦ ∫ z : G, ‖k (z - c) - k (z - b)‖ ∂μ) := by
+  let f : G → Lp E 1 μ := fun c ↦
+    Lp.compMeasurePreserving (· + -c) (measurePreserving_add_right μ (-c)) (hk.toL1 k)
+  have hf : Continuous f :=
+    (Lp.continuous_compMeasurePreserving_add_right (by simp) (hk.toL1 k)).comp continuous_neg
+  have hae (c : G) : f c =ᵐ[μ] fun z ↦ k (z - c) := by
+    simpa only [f, sub_eq_add_neg, Function.comp_def] using
+      (Lp.coeFn_compMeasurePreserving (hk.toL1 k) (measurePreserving_add_right μ (-c))).trans
+        ((measurePreserving_add_right μ (-c)).quasiMeasurePreserving.ae_eq_comp hk.coeFn_toL1)
+  have heq (c : G) : ‖f c - f b‖ = ∫ z : G, ‖k (z - c) - k (z - b)‖ ∂μ := by
+    rw [L1.norm_eq_integral_norm]
+    exact integral_congr_ae
+      (((Lp.coeFn_sub (f c) (f b)).trans ((hae c).sub (hae b))).fun_comp (fun x : E ↦ ‖x‖))
+  exact ((hf.sub continuous_const).norm).congr heq
+
+/-- Convergent shifts of an integrable function converge in `L¹`. -/
+theorem Integrable.tendsto_integral_norm_translate_sub
+    {G E α : Type*} [AddGroup G] [TopologicalSpace G] [IsTopologicalAddGroup G]
+    [MeasurableSpace G] [BorelSpace G]
+    [NormedAddCommGroup E] {μ : Measure G} [μ.IsAddRightInvariant]
+    [IsLocallyFiniteMeasure μ] [μ.InnerRegularCompactLTTop]
+    {k : G → E} (hk : Integrable k μ) {c : α → G} {b : G} {l : Filter α}
+    (hc : Filter.Tendsto c l (nhds b)) :
+    Filter.Tendsto (fun a ↦ ∫ z : G, ‖k (z - c a) - k (z - b)‖ ∂μ) l (nhds 0) := by
+  simpa only [Function.comp_def, sub_self, norm_zero, integral_zero] using
+    (hk.continuous_integral_norm_translate_sub b).continuousAt.tendsto.comp hc
+
 end MeasureTheory
 
 section Calculus

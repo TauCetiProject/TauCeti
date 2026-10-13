@@ -137,7 +137,7 @@ private theorem exists_zmodUnitsToRayClass_eq_idealClass
   let x : ℚˣ := Units.mk0 a ha
   -- The principal ideal of the norm is `I` itself.
   have hI : toPrincipalIdeal (𝓞 ℚ) ℚ x =
-      (NumberFieldArithmetic.integralIdealsAwayHom (ratModulus n hn).support I :
+      (NumberFieldArithmetic.integralIdealsAwayHom ℚ (ratModulus n hn).support I :
         (FractionalIdeal (𝓞 ℚ)⁰ ℚ)ˣ) := by
     refine Units.ext ?_
     rw [coe_toPrincipalIdeal, NumberFieldArithmetic.coe_integralIdealsAwayHom]
@@ -145,7 +145,7 @@ private theorem exists_zmodUnitsToRayClass_eq_idealClass
     rw [FractionalIdeal.coeIdeal_span_singleton, map_natCast, Units.val_mk0]
   have hx : x ∈ primeToSubgroup (ratModulus n hn) :=
     toPrincipalIdeal_mem_idealsPrimeTo_iff.mp
-      (hI ▸ (NumberFieldArithmetic.integralIdealsAwayHom (ratModulus n hn).support I).2)
+      (hI ▸ (NumberFieldArithmetic.integralIdealsAwayHom ℚ (ratModulus n hn).support I).2)
   set r := residueHom (ratModulus n hn) ⟨x, hx⟩
   refine ⟨Units.mapEquiv (ratModulusResidueEquiv n hn).toMulEquiv r, ?_, ?_⟩
   · rw [Units.coe_mapEquiv, RingEquiv.toMulEquiv_eq_coe, RingEquiv.coe_toMulEquiv, coe_residueHom,
@@ -156,7 +156,7 @@ private theorem exists_zmodUnitsToRayClass_eq_idealClass
       (modulusSignHom_eq_one_iff x).mpr fun w _ ↦ by
         rw [Units.val_mk0, map_natCast]
         exact Nat.cast_pos.mpr (Nat.pos_of_ne_zero (by exact_mod_cast ha))
-    have hJ : NumberFieldArithmetic.integralIdealsAwayHom (ratModulus n hn).support I =
+    have hJ : NumberFieldArithmetic.integralIdealsAwayHom ℚ (ratModulus n hn).support I =
         principalIdealPrimeTo (ratModulus n hn) ⟨x, hx⟩ :=
       Subtype.ext (by rw [coe_principalIdealPrimeTo]; exact hI.symm)
     rw [idealClass_apply, hJ, ← principalRayClass_apply, ← residueSignRayClass_residueSignHom,

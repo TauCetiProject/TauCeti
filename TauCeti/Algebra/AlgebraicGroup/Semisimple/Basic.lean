@@ -51,9 +51,7 @@ The formal construction and proof structure were adapted from
 `TauCeti.Algebra.AlgebraicGroup.Reductive.Basic`; their common normal-subgroup-freeness
 infrastructure is factored through `TauCeti.Algebra.AlgebraicGroup.Radical.Basic`.
 
-This is the semisimple-group definition target in Layer 6, "Reductive and semisimple groups", of
-the ReductiveGroups roadmap. It states triviality of the geometric radical through its defining
-universal property while the radical construction is still being developed.
+The definition states triviality of the geometric radical through its defining universal property.
 -/
 
 public section
