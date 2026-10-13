@@ -387,10 +387,7 @@ private theorem range_signlessPreprojectiveKoszulDifferential_succ_eq_ker
   | 1 => by
     simp only [signlessPreprojectiveKoszulDifferential, ModuleCat.hom_zero, LinearMap.range_zero]
     exact ((LinearMap.ker_eq_bot).2 hinj).symm
-  | n + 2 => by
-    ext x
-    have hx : x = 0 := Subsingleton.elim x 0
-    simp [signlessPreprojectiveKoszulDifferential, hx]
+  | _ + 2 => Subsingleton.elim _ _
 
 /-- Injectivity of the left Koszul map gives a length-two projective resolution of the
 right vertex module of the signless preprojective algebra. -/
