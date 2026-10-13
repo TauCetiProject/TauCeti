@@ -45,7 +45,7 @@ ideal-theoretic smoothness of the affine charts that `TauCeti.genus_eq_of_aeval_
 than `d + 1` elements. A small finite constant field is first enlarged by a finite constant field
 extension, which preserves the genus; this needs the affine equation to stay irreducible, so the
 general theorem assumes it irreducible over `K`. That hypothesis holds for every nonsingular plane
-curve, by Bézout's theorem, which is not available here.
+curve, by Bézout's theorem.
 
 ## Main results
 
