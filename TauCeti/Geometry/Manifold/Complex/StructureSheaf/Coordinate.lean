@@ -39,22 +39,20 @@ namespace OpenPartialHomeomorph
 variable {X : Type} [TopologicalSpace X] [ChartedSpace ℂ X] [IsManifold 𝓘(ℂ) 1 X]
   (e : OpenPartialHomeomorph X ℂ) (he : e ∈ maximalAtlas 𝓘(ℂ) 1 X) (x : X)
 
-/-- The chart coordinate centered at `x`, as a holomorphic section on the chart source.
-The center must lie in the chart source so that `e x` is its chart coordinate. -/
--- Membership constrains the center of the public API; constructing the section needs only `e x`.
-def holomorphicCoordinateSection (_hx : x ∈ e.source) :
+/-- The chart coordinate translated by `z`, as a holomorphic section on the chart source. -/
+def holomorphicCoordinateSection (z : ℂ) :
     (holomorphicStructureSheaf 𝓘(ℂ) X).obj.obj (op ⟨e.source, e.open_source⟩) :=
-  ofMDifferentiable (fun y => e y - e x) fun y =>
+  ofMDifferentiable (fun y => e y - z) fun y =>
     ((mdifferentiableAt_of_mem_maximalAtlas he y.2).comp y
       (contMDiff_subtype_val (n := 1).mdifferentiable one_ne_zero y)).sub mdifferentiableAt_const
 
-/-- The centered coordinate section evaluates at `y` to `e y - e x`. -/
+/-- The translated coordinate section evaluates at `y` to `e y - z`. -/
 -- Index on evaluation rather than the unexposed section carrier and its dependent open set.
 @[simp]
-theorem holomorphicCoordinateSection_apply (hx : x ∈ e.source)
+theorem holomorphicCoordinateSection_apply (z : ℂ)
     (y : (⟨e.source, e.open_source⟩ : Opens X)) :
     toFun 𝓘(ℂ) X (no_index (op ⟨e.source, e.open_source⟩))
-      (no_index (holomorphicCoordinateSection e he x hx)) y = e y - e x := (by
+      (no_index (holomorphicCoordinateSection e he z)) y = e y - z := (by
   rw [holomorphicCoordinateSection]
   exact ofMDifferentiable_apply (U := ⟨e.source, e.open_source⟩) _ _ y)
 
@@ -62,14 +60,14 @@ theorem holomorphicCoordinateSection_apply (hx : x ∈ e.source)
 def holomorphicCoordinateGerm (hx : x ∈ e.source) :
     (holomorphicStructureSheaf 𝓘(ℂ) X).presheaf.stalk x :=
   (holomorphicStructureSheaf 𝓘(ℂ) X).presheaf.germ ⟨e.source, e.open_source⟩ x hx
-    (holomorphicCoordinateSection e he x hx)
+    (holomorphicCoordinateSection e he (e x))
 
 /-- The germ of a centered chart coordinate evaluates to zero at its center. -/
 @[simp]
 theorem eval_holomorphicCoordinateGerm (hx : x ∈ e.source) :
     eval 𝓘(ℂ) X x (holomorphicCoordinateGerm e he x hx) = 0 := by
   rw [holomorphicCoordinateGerm, eval_germ]
-  exact (holomorphicCoordinateSection_apply e he x hx ⟨x, hx⟩).trans (sub_self _)
+  exact (holomorphicCoordinateSection_apply e he (e x) ⟨x, hx⟩).trans (sub_self _)
 
 /-- A centered coordinate has a nonzero germ: a chart cannot be constant on a neighborhood
 of its center. -/
@@ -84,7 +82,7 @@ theorem holomorphicCoordinateGerm_ne_zero (hx : x ∈ e.source) :
   have heq (y : V) : e y = e x := by
     have hy := congrArg (fun s => toFun 𝓘(ℂ) X (op V) s y) hij
     simp only [map_apply, holomorphicStructureSheaf.zero_apply] at hy
-    rw [holomorphicCoordinateSection_apply e he x hx (Opens.inclusion (leOfHom i) y)] at hy
+    rw [holomorphicCoordinateSection_apply e he (e x) (Opens.inclusion (leOfHom i) y)] at hy
     exact sub_eq_zero.mp hy
   have hconst : ∀ᶠ z in 𝓝 (e x), z = e x := by
     filter_upwards [(e.tendsto_symm hx).eventually (V.isOpen.mem_nhds hxV),
@@ -144,13 +142,13 @@ theorem holomorphicCoordinateGerm_dvd_iff_eval_eq_zero (hx : x ∈ e.source)
       ((mdifferentiableAt_of_mem_maximalAtlas he (hWe y.2)).comp y
         (contMDiff_subtype_val (n := 1).mdifferentiable one_ne_zero y)))
   -- The division identity on this neighborhood passes through the ring germ map.
-  have hmul : S.map (homOfLE hWe).op (holomorphicCoordinateSection e he x hx) * q =
+  have hmul : S.map (homOfLE hWe).op (holomorphicCoordinateSection e he (e x)) * q =
       S.map (homOfLE hWU).op s := by
     dsimp only [S]
     apply holomorphicStructureSheaf.ext
     intro y
     simp only [mul_apply, map_apply]
-    rw [holomorphicCoordinateSection_apply e he x hx (Opens.inclusion hWe y)]
+    rw [holomorphicCoordinateSection_apply e he (e x) (Opens.inclusion hWe y)]
     have hq : q y = dslope A (e x) (e y) :=
       ofMDifferentiable_apply (U := W) _ _ y
     rw [hq]
