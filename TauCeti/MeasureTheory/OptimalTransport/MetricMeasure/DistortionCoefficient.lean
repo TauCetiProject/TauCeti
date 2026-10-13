@@ -54,8 +54,8 @@ decreases, as in the implication from `CD(K, N)` to `CD(K', N)` for `K' ≤ K`.
 
 * `TauCeti.distortionSigma_mono`: for `t ∈ [0, 1]`, `σ_{K,N}^{(t)}(θ) ≤ σ_{K',N'}^{(t)}(θ')`
   whenever `K θ² / N ≤ K' θ'² / N'`.
-* `TauCeti.distortionSigma_mono_left`, `TauCeti.distortionTau_mono_left`: both coefficients are
-  monotone in the curvature bound `K`.
+* `TauCeti.distortionSigma_left_monotone`, `TauCeti.distortionTau_left_monotone`: both
+  coefficients are monotone in the curvature bound `K`.
 * `TauCeti.antitoneOn_distortionSigma_of_nonneg`, `TauCeti.monotoneOn_distortionSigma_of_nonpos`:
   `σ_{K,N}` decreases with `N` for `K ≥ 0` and increases with `N` for `K ≤ 0`.
 * `TauCeti.distortionSigma_zero_left`, `TauCeti.distortionTau_zero_left`: the flat coefficients
@@ -210,7 +210,7 @@ theorem distortionSigma_mono {K' N' θ' : ℝ} (ht₀ : 0 ≤ t) (ht₁ : t ≤ 
   sigmaOf_mono ht₀ ht₁ h
 
 /-- For `t ∈ [0, 1]` and `N ≥ 0`, `σ_{K,N}^{(t)}(θ)` is monotone in the curvature bound `K`. -/
-theorem distortionSigma_mono_left (ht₀ : 0 ≤ t) (ht₁ : t ≤ 1) (hN : 0 ≤ N) :
+theorem distortionSigma_left_monotone (ht₀ : 0 ≤ t) (ht₁ : t ≤ 1) (hN : 0 ≤ N) :
     Monotone fun K ↦ distortionSigma K N t θ := fun _ _ hK ↦
   distortionSigma_mono ht₀ ht₁ (div_le_div_of_nonneg_right
     (mul_le_mul_of_nonneg_right hK (sq_nonneg θ)) hN)
@@ -234,12 +234,12 @@ theorem monotoneOn_distortionSigma_of_nonpos (ht₀ : 0 ≤ t) (ht₁ : t ≤ 1)
 /-- For `K ≥ 0` the coefficient `σ_{K,N}^{(t)}(θ)` is at least the flat value `t`. -/
 theorem ofReal_le_distortionSigma (ht₀ : 0 ≤ t) (ht₁ : t ≤ 1) (hN : 0 ≤ N) (hK : 0 ≤ K) :
     ENNReal.ofReal t ≤ distortionSigma K N t θ := by
-  simpa using distortionSigma_mono_left (θ := θ) ht₀ ht₁ hN hK
+  simpa using distortionSigma_left_monotone (θ := θ) ht₀ ht₁ hN hK
 
 /-- For `K ≤ 0` the coefficient `σ_{K,N}^{(t)}(θ)` is at most the flat value `t`. -/
 theorem distortionSigma_le_ofReal (ht₀ : 0 ≤ t) (ht₁ : t ≤ 1) (hN : 0 ≤ N) (hK : K ≤ 0) :
     distortionSigma K N t θ ≤ ENNReal.ofReal t := by
-  simpa using distortionSigma_mono_left (θ := θ) ht₀ ht₁ hN hK
+  simpa using distortionSigma_left_monotone (θ := θ) ht₀ ht₁ hN hK
 
 /-- The coefficient `σ_{K,N}^{(t)}(θ)` is infinite exactly when `N π² ≤ K θ²`. -/
 theorem distortionSigma_eq_top_iff (hN : 0 < N) :
@@ -320,14 +320,14 @@ theorem distortionTau_zero_right (hN : 1 ≤ N) : distortionTau K N t 0 = ENNRea
   · exact distortionTau_one_of_nonpos (by rw [zero_pow two_ne_zero, mul_zero])
 
 /-- For `t ∈ [0, 1]` and `N ≥ 1`, `τ_{K,N}^{(t)}(θ)` is monotone in the curvature bound `K`. -/
-theorem distortionTau_mono_left (ht₀ : 0 ≤ t) (ht₁ : t ≤ 1) (hN : 1 ≤ N) :
+theorem distortionTau_left_monotone (ht₀ : 0 ≤ t) (ht₁ : t ≤ 1) (hN : 1 ≤ N) :
     Monotone fun K ↦ distortionTau K N t θ := by
   intro K K' hK
   rcases hN.lt_or_eq with hN | rfl
   · simp only [distortionTau_of_one_lt hN]
     gcongr
     · exact sub_nonneg.2 ((div_le_one (zero_lt_one.trans hN)).2 hN.le)
-    · exact distortionSigma_mono_left ht₀ ht₁ (sub_nonneg.2 hN.le) hK
+    · exact distortionSigma_left_monotone ht₀ ht₁ (sub_nonneg.2 hN.le) hK
   · dsimp only
     rcases lt_or_ge 0 (K' * θ ^ 2) with hK' | hK'
     · simp [distortionTau_one_eq_top_of_pos hK']
@@ -337,12 +337,12 @@ theorem distortionTau_mono_left (ht₀ : 0 ≤ t) (ht₁ : t ≤ 1) (hN : 1 ≤ 
 /-- For `K ≥ 0` the coefficient `τ_{K,N}^{(t)}(θ)` is at least the flat value `t`. -/
 theorem ofReal_le_distortionTau (ht₀ : 0 ≤ t) (ht₁ : t ≤ 1) (hN : 1 ≤ N) (hK : 0 ≤ K) :
     ENNReal.ofReal t ≤ distortionTau K N t θ := by
-  simpa [hN] using distortionTau_mono_left (θ := θ) ht₀ ht₁ hN hK
+  simpa [hN] using distortionTau_left_monotone (θ := θ) ht₀ ht₁ hN hK
 
 /-- For `K ≤ 0` the coefficient `τ_{K,N}^{(t)}(θ)` is at most the flat value `t`. -/
 theorem distortionTau_le_ofReal (ht₀ : 0 ≤ t) (ht₁ : t ≤ 1) (hN : 1 ≤ N) (hK : K ≤ 0) :
     distortionTau K N t θ ≤ ENNReal.ofReal t := by
-  simpa [hN] using distortionTau_mono_left (θ := θ) ht₀ ht₁ hN hK
+  simpa [hN] using distortionTau_left_monotone (θ := θ) ht₀ ht₁ hN hK
 
 /-- For `N > 1` and `t > 0`, the coefficient `τ_{K,N}^{(t)}(θ)` is infinite exactly when
 `(N - 1) π² ≤ K θ²`. -/

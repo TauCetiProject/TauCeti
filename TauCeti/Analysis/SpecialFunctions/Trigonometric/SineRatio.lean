@@ -39,8 +39,7 @@ open Set
 
 namespace Real
 
-/-- The hyperbolic sine is strictly convex on `[0, ∞)`, as its derivative `cosh` is strictly
-increasing there. -/
+/-- The hyperbolic sine is strictly convex on `[0, ∞)`. -/
 theorem strictConvexOn_sinh_Ici : StrictConvexOn ℝ (Ici 0) sinh := by
   refine StrictMonoOn.strictConvexOn_of_deriv (convex_Ici 0) continuous_sinh.continuousOn ?_
   rw [interior_Ici, deriv_sinh]
@@ -48,15 +47,13 @@ theorem strictConvexOn_sinh_Ici : StrictConvexOn ℝ (Ici 0) sinh := by
   rw [mem_Ioi] at hx hy
   exact cosh_lt_cosh.2 (by rwa [abs_of_pos hx, abs_of_pos hy])
 
-/-- By concavity of the sine on `[0, π]`, `t * sin a ≤ sin (t * a)` for `t ∈ [0, 1]` and
-`a ∈ [0, π]`. -/
+/-- For `t ∈ [0, 1]` and `a ∈ [0, π]`, `t * sin a ≤ sin (t * a)`. -/
 theorem mul_sin_le_sin_mul {t a : ℝ} (ht₀ : 0 ≤ t) (ht₁ : t ≤ 1) (ha₀ : 0 ≤ a) (ha : a ≤ π) :
     t * sin a ≤ sin (t * a) := by
   simpa using strictConcaveOn_sin_Icc.concaveOn.2 ⟨ha₀, ha⟩ ⟨le_rfl, pi_pos.le⟩ ht₀
     (sub_nonneg.2 ht₁) (add_sub_cancel t 1)
 
-/-- By convexity of the hyperbolic sine on `[0, ∞)`, `sinh (t * b) ≤ t * sinh b` for `t ∈ [0, 1]`
-and `b ≥ 0`. -/
+/-- For `t ∈ [0, 1]` and `b ≥ 0`, `sinh (t * b) ≤ t * sinh b`. -/
 theorem sinh_mul_le_mul_sinh {t b : ℝ} (ht₀ : 0 ≤ t) (ht₁ : t ≤ 1) (hb : 0 ≤ b) :
     sinh (t * b) ≤ t * sinh b := by
   simpa using strictConvexOn_sinh_Ici.convexOn.2 (mem_Ici.2 hb) (mem_Ici.2 le_rfl) ht₀
