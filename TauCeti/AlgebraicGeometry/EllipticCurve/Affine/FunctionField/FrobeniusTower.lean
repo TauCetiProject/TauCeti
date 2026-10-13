@@ -71,7 +71,7 @@ isomorphism of the two towers. All of that is Mathlib's relative degree
 `IntermediateField.relfinrank` here: `relfinrank_map_map` says a relative degree is unchanged when
 both fields are carried along an embedding — used once for the embedding of `K(x)` into `K(W)` and
 once for the `q`-power map — and `relfinrank_mul_finrank_top` is the tower law. Neither needs a
-hand-built scalar tower, so no `set_option` is required. The source's commuting square
+hand-built scalar tower, so no option override is required. The source's commuting square
 `frobeniusAlgHom_comp_comm` of the `q`-power map with the embedding of the rational function field
 is not needed either: `ratFuncAdjoinXPowRange_eq_map_ratFuncRange` asks only for the value of the
 embedding at the affine coordinate, which is `FiniteField.coe_frobeniusAlgHom`.

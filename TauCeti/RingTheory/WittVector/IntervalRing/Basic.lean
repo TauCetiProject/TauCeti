@@ -56,6 +56,8 @@ extension to `B^I`. Hence the power-bounded elements of `B^I` are exactly its un
 
 ## Main results
 
+* `TauCeti.WittVector.gaussValuationAway_algHom` : the extended Gauss valuations are preserved by
+  `𝕎 O`-algebra homomorphisms between localisations away from `p [ϖ]`.
 * `TauCeti.WittVector.norm_algebraMap_intervalRing` : `‖x‖ = max(λ_{ρ₁}(x), λ_{ρ₂}(x))` for
   `x ∈ 𝕎 O`.
 * `TauCeti.WittVector.isPseudoUniformizer_natCast_intervalRing` : `p` is a pseudouniformiser of
@@ -142,6 +144,20 @@ theorem gaussValuationAway_eq_zero_iff (hv : v.Integers O) (hϖ : ϖ ≠ 0) {ρ 
     (hρ : ρ ∈ Set.Ioo 0 1) {x : B} : gaussValuationAway p hv hϖ ρ hρ B x = 0 ↔ x = 0 :=
   Valuation.extendToLocalization_eq_zero_iff _ _ fun _ ↦
     (gaussValuation_eq_zero_iff hv hρ.1 hρ.2).mp
+
+/-- The Gauss valuations of two localizations of `𝕎 O` away from `p [ϖ]` correspond under any
+`𝕎 O`-algebra homomorphism between them. -/
+@[simp]
+theorem gaussValuationAway_algHom (hv : v.Integers O) (hϖ : ϖ ≠ 0) {ρ : ℝ≥0}
+    (hρ : ρ ∈ Set.Ioo 0 1) {B' : Type*} [CommRing B'] [Algebra (_root_.WittVector p O) B']
+    [IsLocalization.Away ((p : _root_.WittVector p O) * teichmuller p ϖ) B'] (f : B →ₐ[𝕎 O] B')
+    (x : B) : gaussValuationAway p hv hϖ ρ hρ B' (f x) = gaussValuationAway p hv hϖ ρ hρ B x := by
+  obtain ⟨⟨y, s⟩, rfl⟩ :=
+    IsLocalization.mk'_surjective (Submonoid.powers ((p : 𝕎 O) * teichmuller p ϖ)) x
+  have h : f (IsLocalization.mk' B y s) = IsLocalization.mk' B' y s := by
+    rw [eq_comm, IsLocalization.mk'_eq_iff_eq_mul, ← f.commutes, ← f.commutes, ← map_mul,
+      IsLocalization.mk'_spec]
+  rw [h, gaussValuationAway_mk', gaussValuationAway_mk']
 
 end Away
 

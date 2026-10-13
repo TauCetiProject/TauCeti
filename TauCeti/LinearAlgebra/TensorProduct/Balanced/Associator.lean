@@ -199,4 +199,32 @@ theorem assoc_smul_right (s : T) (x : L) :
 
 end OuterRight
 
+section Naturality
+
+attribute [local instance 100] leftSMulCommClass rightSMulCommClass outerSMulCommClass
+
+variable {M' N' P' : Type*}
+  [AddCommGroup M'] [Module k M'] [Module Bᵐᵒᵖ M']
+  [AddCommGroup N'] [Module k N'] [Module B N'] [Module Cᵐᵒᵖ N']
+  [AddCommGroup P'] [Module k P'] [Module C P']
+  [SMulCommClass B k N'] [SMulCommClass Cᵐᵒᵖ k N'] [SMulCommClass B Cᵐᵒᵖ N']
+  (f : M →ₗ[k] M') (g : N →ₗ[k] N') (h : P →ₗ[k] P')
+  (hf : ∀ (b : B) m, f (op b • m) = op b • f m)
+  (hgB : ∀ (b : B) n, g (b • n) = b • g n)
+  (hgC : ∀ (c : C) n, g (op c • n) = op c • g n)
+  (hh : ∀ (c : C) p, h (c • p) = c • h p)
+
+/-- Mapping the three factors commutes with balanced reassociation. -/
+theorem map_map_comp_assoc_eq :
+    map f (map g h hgC hh) hf
+        (fun b z ↦ map_smul_left B g h hgC hh hgB b z) ∘ₗ assoc.toLinearMap =
+      assoc.toLinearMap ∘ₗ map (map f g hf hgB) h
+        (fun c z ↦ map_smul_right Cᵐᵒᵖ f g hf hgB (fun c n ↦ hgC c.unop n) (op c) z)
+        hh := by
+  apply ext_threefold
+  intro m n p
+  simp
+
+end Naturality
+
 end TauCeti.BalancedTensorProduct

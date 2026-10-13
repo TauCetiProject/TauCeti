@@ -26,9 +26,7 @@ classification.
 
 ## References
 
-This completes the Pin-kernel part of Layer 2 in
-`TauCetiRoadmap/RepresentationTheory/SpinRepresentations/README.md`. See H. B. Lawson and
-M.-L. Michelsohn, *Spin Geometry* (1989), Chapter I §2.
+See H. B. Lawson and M.-L. Michelsohn, *Spin Geometry* (1989), Chapter I §2.
 -/
 
 public section

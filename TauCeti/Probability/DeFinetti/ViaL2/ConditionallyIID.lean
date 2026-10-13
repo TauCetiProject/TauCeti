@@ -40,8 +40,6 @@ consumes one.
 
 ## References
 
-* Roadmap: `TauCetiRoadmap/Exchangeability/README.md`, **Layer 3** — the martingale-free
-  standard-Borel de Finetti route, `deFinetti_viaL2`.
 * The integration step is shared, not route-specific:
   `measure_inter_blockCylinder_eq_setLIntegral_of_condExp` in
   `DeFinetti/DirectingMeasure/BlockCylinder.lean` serves both this route and the prefix selection

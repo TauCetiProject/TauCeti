@@ -317,7 +317,7 @@ private theorem exists_setAverage_norm_gradient_sub_le {α : ℝ≥0} (hα : 0 <
   have hR : 0 < R := ht.trans_le htR
   have hsub := (ball_subset_ball htR).trans hball
   -- The averages over `closedBall x t` and `ball x t` agree.
-  rw [Measure.restrict_congr_set (volume.addHaar_closedBall_ae_eq_ball x ht)]
+  rw [Measure.restrict_congr_set (volume.addHaar_closedBall_ae_eq_ball x t)]
   -- Jensen's inequality bounds the mean oscillation by the square mean oscillation.
   have hJ : (⨍ y in ball x t, ‖W1p.gradient u y - ⨍ z in ball x t, W1p.gradient u z‖) ^ 2 ≤
       (∫ y in ball x t, ‖W1p.gradient u y - ⨍ z in ball x t, W1p.gradient u z‖ ^ 2) /
@@ -367,7 +367,7 @@ private theorem norm_setAverage_closedBall_gradient_le
         (R ^ (-((n : ℝ) + 1) / 2) * ‖W1p.gradient u‖) := by
   have hω : 0 < volume.real (ball (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) :=
     measureReal_ball_pos _ _ one_pos
-  rw [Measure.restrict_congr_set (volume.addHaar_closedBall_ae_eq_ball z hR)]
+  rw [Measure.restrict_congr_set (volume.addHaar_closedBall_ae_eq_ball z R)]
   -- Hölder's bound `‖⨍_B f‖ ≤ |B|^{-1/2} ‖f‖_{L²(B)}` on an average, with
   -- `‖f‖_{L²(B)} ≤ ‖f‖_{L²(Ω)}`.
   have h := (enorm_setAverage_le (mu := volume) (p := 2) one_le_two ENNReal.ofNat_ne_top
@@ -467,7 +467,8 @@ theorem exists_holderOnWith_preciseRepresentative_gradient {α : ℝ≥0} (hα :
           ((closedBall_subset_ball ht).trans (hball z hz)) measure_closedBall_lt_top.ne
       · rw [ht]
         exact ((Lp.memLp (W1p.gradient u)).integrableOn_of_subset one_le_two (hball z hz)
-          measure_ball_lt_top.ne).congr_set_ae (volume.addHaar_closedBall_ae_eq_ball z hR)
+          measure_ball_lt_top.ne).congr_set_ae
+            (volume.addHaar_closedBall_ae_eq_ball z R)
   obtain ⟨a, ha⟩ : ∃ a, a = R ^ (-(((n : ℝ) + 1) / 2 + α)) * ‖W1p.gradient u‖ := ⟨_, rfl⟩
   have ha0 : 0 ≤ a := ha ▸ by positivity
   rw [← ha]

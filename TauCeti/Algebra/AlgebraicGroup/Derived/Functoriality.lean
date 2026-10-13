@@ -38,9 +38,6 @@ subgroup schemes.
 
 * J. S. Milne, *Algebraic Groups* (2017), §6d, especially Proposition 6.17.
 * W. C. Waterhouse, *Introduction to Affine Group Schemes*, Chapter 10.
-
-This supplies the functoriality part of the derived-group target `G_der` in Layer 6,
-"Reductive and semisimple groups", of the ReductiveGroups roadmap.
 -/
 
 public section

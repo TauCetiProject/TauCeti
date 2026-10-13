@@ -125,7 +125,7 @@ law of the random path measure. -/
 @[simp]
 theorem map_snd_arrayRowCodingLaw (π : Measure (ProbabilityMeasure (ℕ → α))) :
     (arrayRowCodingLaw π).map Prod.snd =
-      (deFinettiBarycenter π).map Function.uncurry := by
+      (Measure.deFinettiBarycenter π).map Function.uncurry := by
   rw [arrayRowCodingLaw_def, Measure.map_map measurable_snd measurable_arrayRowCoding,
     ← map_prod_unitIntervalCoding_eq_deFinettiBarycenter (α := ℕ → α),
     Measure.map_map measurable_uncurry measurable_unitIntervalCodingPath]

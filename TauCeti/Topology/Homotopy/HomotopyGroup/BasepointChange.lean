@@ -54,10 +54,8 @@ product as the class of a concatenation `GenLoop.transAt i` in any cube directio
 
 ## References
 
-This closes the base-point-change part of the higher-homotopy API requested in
-`TauCetiRoadmap/UniversalCovers/README.md`, Stage 3, item 9. It is the higher-dimensional
-analogue of Mathlib's `FundamentalGroup.fundamentalGroupMulEquivOfPath`; see Hatcher,
-*Algebraic Topology*, Section 4.1.
+This is the higher-dimensional analogue of Mathlib's
+`FundamentalGroup.fundamentalGroupMulEquivOfPath`; see Hatcher, *Algebraic Topology*, Section 4.1.
 -/
 
 public section

@@ -113,21 +113,21 @@ noncomputable def hopfIdealInclusion
     (I : HopfIdeal R (coordinateHopfAlgebra R n)) :
     CommHopfAlgCat.quotientSpec (coordinateHopfAlgebra R n) I ⟶ groupScheme R n :=
   CommHopfAlgCat.quotientSpecι (coordinateHopfAlgebra R n) I ≫
-    (eqToIso (groupScheme_def R n).symm).hom
+    eqToHom (groupScheme_def R n).symm
 
 /-- A Hopf-ideal inclusion is the quotient-spectrum inclusion followed by the named
 identification with `GL_n`. -/
 theorem hopfIdealInclusion_def (I : HopfIdeal R (coordinateHopfAlgebra R n)) :
     hopfIdealInclusion R n I =
       CommHopfAlgCat.quotientSpecι (coordinateHopfAlgebra R n) I ≫
-        (eqToIso (groupScheme_def R n).symm).hom := by
+        eqToHom (groupScheme_def R n).symm := by
   rw [hopfIdealInclusion]
 
 /-- Every subgroup of `GL_n` cut out by a Hopf ideal is closed. -/
 instance isClosedImmersion_hopfIdealInclusion
     (I : HopfIdeal R (coordinateHopfAlgebra R n)) :
     IsClosedImmersion (hopfIdealInclusion R n I).hom.hom.left := by
-  rw [hopfIdealInclusion_def, eqToIso.hom, CommHopfAlgCat.quotientSpecι_def,
+  rw [hopfIdealInclusion_def, CommHopfAlgCat.quotientSpecι_def,
     CommHopfAlgCat.isClosedImmersion_hopfSpec_map_comp_eqToHom_iff (groupScheme_def R n)]
   exact CommHopfAlgCat.mkQuotient_surjective _ I
 

@@ -37,6 +37,8 @@ free of rank `n²`, which rests on the finiteness and flatness of `[n]`.
   of `E` killed by `[n]`.
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.torsionPointsMulEquiv`: the points of `E[n]` with
   values in `Z` are the kernel of `[n]` on the points of `E` with values in `Z`.
+* `TauCeti.AlgebraicGeometry.EllipticCurveGeom.torsionPointsEquiv`: the points `x` of `E` with
+  values in `Z` with `x ^ n = 1` are the points of `E[n]` with values in `Z`.
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.torsionMap`: the morphism `E'[n] ⟶ E[n]` induced
   by a base change square of elliptic curves.
 
@@ -170,6 +172,26 @@ theorem torsionPointsMulEquiv_symm_apply_torsionι
     (x : (IsMonHom.monoidHom (E.mulBy n) Z).ker) :
     (E.torsionPointsMulEquiv n Z).symm x ≫ E.torsionι n = x := by
   rw [← coe_torsionPointsMulEquiv_apply, MulEquiv.apply_symm_apply]
+
+/-- The points `x` of `E` with values in `Z` with `x ^ n = 1` are the points of `E[n]` with values
+in `Z`. This is `torsionPointsMulEquiv`, with the kernel of `[n]` written as a subtype. -/
+noncomputable def torsionPointsEquiv :
+    {x : Z ⟶ Over.mk E.structureMap // x ^ n = 1} ≃ (Z ⟶ (E.torsion n).X) :=
+  (Equiv.subtypeEquivRight fun x ↦ by
+    rw [MonoidHom.mem_ker, IsMonHom.monoidHom_apply, comp_mulBy]).trans
+    (E.torsionPointsMulEquiv n Z).symm.toEquiv
+
+/-- The point of `E[n]` corresponding to a point `x` of `E` with `x ^ n = 1` maps to `x` in `E`. -/
+@[simp]
+theorem torsionPointsEquiv_apply_torsionι (x : {x : Z ⟶ Over.mk E.structureMap // x ^ n = 1}) :
+    E.torsionPointsEquiv n Z x ≫ E.torsionι n = x :=
+  E.torsionPointsMulEquiv_symm_apply_torsionι n Z _
+
+/-- A point of `E[n]` corresponds to its image in `E`. -/
+@[simp]
+theorem coe_torsionPointsEquiv_symm_apply (y : Z ⟶ (E.torsion n).X) :
+    ((E.torsionPointsEquiv n Z).symm y : Z ⟶ Over.mk E.structureMap) = y ≫ E.torsionι n :=
+  E.coe_torsionPointsMulEquiv_apply n Z y
 
 end Points
 
