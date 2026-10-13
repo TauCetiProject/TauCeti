@@ -62,14 +62,6 @@ their images are nonzero submodules of irreducible modules. So `M ≃ D ≃ N`.
 
 ## References
 
-This file supplies the classification half of the "irreducible quotient `L(λ)`" item of Layer 3 of
-`TauCetiRoadmap/RepresentationTheory/LieHighestWeight/README.md`: "`L(λ)` is the unique irreducible
-highest weight module of weight `λ`, and `L(λ) ≅ L(μ)` iff `λ = μ`. This is the classification of
-**all** irreducible highest weight modules, finite-dimensional or not." The target signature
-`irreducibleQuotient_nonempty_equiv_iff` of the accompanying `Suggested.lean` is the instance of
-`TauCeti.nonempty_lieModuleEquiv_iff_eq_of_isHighestWeightVector` at the irreducible quotients of
-two Verma modules.
-
 * J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*, GTM 9, §20.3.
 -/
 
@@ -84,8 +76,8 @@ universe u v w w₁
 variable {K : Type u} {L : Type v} [Field K] [CharZero K] [LieRing L] [LieAlgebra K L]
   [IsKilling K L] [FiniteDimensional K L]
   {H : LieSubalgebra K L} [H.IsCartanSubalgebra] [IsTriangularizable K H L]
-  {M : Type w} [AddCommGroup M] [Module K M] [LieRingModule L M] [LieModule K L M]
-  {N : Type w₁} [AddCommGroup N] [Module K N] [LieRingModule L N] [LieModule K L N]
+  {M : Type w} [AddCommGroup M] [Module K M] [LieRingModule L M]
+  {N : Type w₁} [AddCommGroup N] [Module K N] [LieRingModule L N]
   {b : (IsKilling.rootSystem H).Base} {lam mu : Dual K H} {v : M} {w : N}
 
 /-! ### The diagonal highest weight vector
@@ -109,6 +101,8 @@ private theorem isHighestWeightVector_inl (hv : IsHighestWeightVector b lam v) :
   by
     simpa only [LieModuleHom.inl_apply] using
       hv.map (LieModuleHom.inl K L M N) (by simpa using hv.ne_zero)
+
+variable [LieModule K L M] [LieModule K L N]
 
 /-- **The diagonal generates a proper submodule of the product.** If it generated everything, then
 `M × N` would be a highest weight module of weight `lam`, whose `lam`-weight space is the line

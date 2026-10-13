@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RingTheory.Huber.LocalizationTopology.BaseChange
 public import TauCeti.RingTheory.Huber.LocalizationTopology.Evaluation
+public import TauCeti.RingTheory.Huber.LocalizationTopology.WeightedEvaluation
 public import TauCeti.RingTheory.Huber.TopologicallyFiniteType.Pair
 
 import TauCeti.RingTheory.Huber.TopologicallyFiniteType.Cancel
@@ -15,10 +16,18 @@ import TauCeti.RingTheory.Huber.TopologicallyFiniteType.Comp
 /-!
 # Finite-type presentations of rational localisation pairs
 
-The evaluation map `A⟨X₁, …, Xₖ⟩ → A⟨T/s⟩`, sending `Xᵢ` to `tᵢ/s`, is a quotient
-mapping of Huber pairs over a Tate ring when the listed fractions cover `T/s` and the
-numerators together with `s` generate the unit ideal. Thus rational localisation is
-topologically of finite type as a morphism of pairs, not just of underlying rings.
+Two presentations of a rational localisation pair `(A⟨T/s⟩, A_U⁺)` as a quotient of a completed
+restricted power-series pair are compared with the plus rings included.
+
+* Over a Tate ring, the evaluation map `A⟨X₁, …, Xₖ⟩ → A⟨T/s⟩`, sending `Xᵢ` to `tᵢ/s`, is a
+  quotient mapping of Huber pairs when the listed fractions cover `T/s` and the numerators
+  together with `s` generate the unit ideal.
+* Over any Huber ring, the evaluation map `A⟨X⟩_{T ∪ {s}} → A⟨T/s⟩` out of the weighted
+  restricted power series, sending `X` to `1/s`, is a quotient mapping of Huber pairs when
+  `T ∪ {s}` generates an open ideal. Hence the structure morphism `(A, A⁺) → (A⟨T/s⟩, A_U⁺)` is
+  topologically of finite type (`isTopologicallyFiniteType_toCompletionLocHom`) as a morphism of
+  pairs, not just of underlying rings, with no Tate hypothesis.
+
 This is the affine input for refining finite-type charts by rational opens.
 
 The plus-ring comparison uses the completed plus rings on both sides. The image of the
@@ -40,8 +49,10 @@ the map of coordinate rings over a rational open `R(T/s)` of `Spa(A, A⁺)` and 
 
 * T. Wedhorn, *Adic Spaces*, arXiv:1910.05934v1, Example 6.38, Remark and Definition 8.41,
   Definition 8.42, Proposition 8.46, Definition 8.48, and Proposition 8.50.
-* The ring presentation is `TauCeti.Huber.PairOfDefinition.rationalEvalHom` from
-  `TauCeti.RingTheory.Huber.LocalizationTopology.Evaluation`.
+* The ring presentations are `TauCeti.Huber.PairOfDefinition.rationalEvalHom` from
+  `TauCeti.RingTheory.Huber.LocalizationTopology.Evaluation` and
+  `TauCeti.Huber.PairOfDefinition.weightedRationalEvalHom` from
+  `TauCeti.RingTheory.Huber.LocalizationTopology.WeightedEvaluation`.
 -/
 
 public section
@@ -163,6 +174,48 @@ private theorem adjoin_plus_le_comap_map_rationalEvalPairHom
       U.weightedC_mul_weightedX_mem_weighted_plus isWeightFamily_one_weight
         (i := i) (t := 1) (by simp)
 
+/-- **A criterion for quotient mappings onto a rational localisation pair**: a morphism of Huber
+pairs `(B, B⁺) → (A⟨T/s⟩, A_U⁺)` whose underlying ring homomorphism is an open quotient map is a
+quotient mapping as soon as the image of `B⁺` contains the generators `A⁺` and `T/s` of
+`A⁺[T/s]`. -/
+theorem isQuotientMapping_of_adjoin_le {B : Type*} [CommRing B] [TopologicalSpace B]
+    [IsTopologicalRing B] [IsHuberRing B] {W : Pair B} :
+    letI := locUniformSpace P T s S hden
+    letI := isUniformAddGroup_locUniformSpace P T s S hden
+    letI := isTopologicalRing_locUniformSpace P T s S hden
+    letI := isHuberRing_completion_locTopology P T s S hden
+    ∀ π : Pair.Hom W (rationalLocalizationPair P U hP T s S hden),
+      IsOpenQuotientMap π.toRingHom →
+      (Algebra.adjoin U.plus (Set.range fun y : ↥T ↦ (divBy (y : A) s : S))).toSubring ≤
+        (W.plus.map π.toRingHom).comap Completion.coeRingHom →
+      π.IsQuotientMapping := by
+  let _ := locUniformSpace P T s S hden
+  have _ := isUniformAddGroup_locUniformSpace P T s S hden
+  have _ := isTopologicalRing_locUniformSpace P T s S hden
+  have _ := isHuberRing_completion_locTopology P T s S hden
+  intro π hopen hadj
+  let R := (integralClosure (W.plus.map π.toRingHom) (Completion S)).toSubring
+  have hR : W.plus.map π.toRingHom ≤ R := fun x hx ↦
+    isIntegral_algebraMap (R := W.plus.map π.toRingHom) (x := ⟨x, hx⟩)
+  have hRclosed : IsClosed (R : Set (Completion S)) := by
+    apply AddSubgroup.isClosed_of_isOpen R.toAddSubgroup
+    have himage : IsOpen (W.plus.map π.toRingHom : Set (Completion S)) := by
+      rw [Subring.coe_map]
+      exact hopen.isOpenMap _ W.isRingOfIntegralElements.isOpen
+    exact AddSubgroup.isOpen_mono (H₁ := (W.plus.map π.toRingHom).toAddSubgroup) hR himage
+  apply (Pair.Hom.isQuotientMapping_iff_isOpenQuotientMap_and_isIntegral π).mpr
+  refine ⟨hopen, fun x hx ↦ ?_⟩
+  have hle : completedPlusSubring P U.plus T s S hden ≤ R := by
+    apply (completedPlusSubring_le_iff P U.plus T s S hden hRclosed).mpr
+    have hbase : (Algebra.adjoin U.plus (Set.range fun y : ↥T ↦ (divBy (y : A) s : S))).toSubring ≤
+        R.comap Completion.coeRingHom :=
+      hadj.trans ((Subring.gc_map_comap Completion.coeRingHom).monotone_u hR)
+    have hIC : (integralClosure
+        ↥(Algebra.adjoin U.plus (Set.range fun y : ↥T ↦ (divBy (y : A) s : S))) S).toSubring ≤
+        R.comap Completion.coeRingHom := Subring.integralClosure_le_iff.mpr fun a ↦ hbase a.2
+    exact fun x hx ↦ hIC hx
+  exact hle ((rationalLocalizationPair_plus P U hP T s S hden) ▸ hx)
+
 end TauCeti.Huber.PairOfDefinition
 
 namespace TauCeti.Huber.PairOfDefinition
@@ -188,64 +241,168 @@ theorem isQuotientMapping_rationalEvalPairHom
   have _ := isUniformAddGroup_locUniformSpace P T s S hden
   have _ := isTopologicalRing_locUniformSpace P T s S hden
   have _ := isHuberRing_completion_locTopology P T s S hden
-  let π := rationalEvalPairHom P U hP T s S hden t ht
-  have hopen : IsOpenQuotientMap π.toRingHom := by
-    rw [toRingHom_rationalEvalPairHom]
-    exact isOpenQuotientMap_rationalEvalHom P T s S hden t ht hspan hTt
-  let Bplus := (U.weighted (isWeightFamily_one_weight (k := k))).completion.plus
-  let R := (integralClosure (Bplus.map π.toRingHom) (Completion S)).toSubring
-  have hR : Bplus.map π.toRingHom ≤ R := fun x hx ↦
-    isIntegral_algebraMap (R := Bplus.map π.toRingHom) (x := ⟨x, hx⟩)
-  have hRclosed : IsClosed (R : Set (Completion S)) := by
-    apply AddSubgroup.isClosed_of_isOpen R.toAddSubgroup
-    have himage : IsOpen (Bplus.map π.toRingHom : Set (Completion S)) := by
-      rw [Subring.coe_map]
-      exact hopen.isOpenMap _
-        (U.weighted isWeightFamily_one_weight).completion.isRingOfIntegralElements.isOpen
-    exact AddSubgroup.isOpen_mono (H₁ := (Bplus.map π.toRingHom).toAddSubgroup) hR himage
-  apply (Pair.Hom.isQuotientMapping_iff_isOpenQuotientMap_and_isIntegral π).mpr
-  refine ⟨hopen, fun x hx ↦ ?_⟩
-  have hle : completedPlusSubring P U.plus T s S hden ≤ R := by
-    apply (completedPlusSubring_le_iff P U.plus T s S hden hRclosed).mpr
-    have hbase : (Algebra.adjoin U.plus (Set.range fun y : ↥T ↦ (divBy (y : A) s : S))).toSubring ≤
-        R.comap Completion.coeRingHom :=
-      (adjoin_plus_le_comap_map_rationalEvalPairHom P U hP T s S hden t ht hTt).trans
-        ((Subring.gc_map_comap Completion.coeRingHom).monotone_u hR)
-    have hIC : (integralClosure
-        ↥(Algebra.adjoin U.plus (Set.range fun y : ↥T ↦ (divBy (y : A) s : S))) S).toSubring ≤
-        R.comap Completion.coeRingHom := Subring.integralClosure_le_iff.mpr fun a ↦ hbase a.2
-    exact fun x hx ↦ hIC hx
-  exact hle ((rationalLocalizationPair_plus P U hP T s S hden) ▸ hx)
+  refine isQuotientMapping_of_adjoin_le P U hP T s S hden _ ?_
+    (adjoin_plus_le_comap_map_rationalEvalPairHom P U hP T s S hden t ht hTt)
+  rw [toRingHom_rationalEvalPairHom]
+  exact isOpenQuotientMap_rationalEvalHom P T s S hden t ht hspan hTt
 
-/-- Rational localisation of a Tate Huber pair is topologically of finite type. The
-numerators together with the denominator must generate the unit ideal; for a rational open
-in a Tate spectrum this follows from openness of the numerator ideal. -/
-theorem isTopologicallyFiniteType_toCompletionLocHom
-    (hspan : Ideal.span (insert s (T : Set A)) = ⊤) :
+end TauCeti.Huber.PairOfDefinition
+
+/-! ### Rational localisation over a Huber ring -/
+
+namespace TauCeti.Huber.PairOfDefinition
+
+variable {A : Type*} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A] [IsHuberRing A]
+  (P : PairOfDefinition A) (U : Pair A) (hP : P.ringOfDefinition ≤ U.plus)
+  (T : Finset A) (s : A) (S : Type*) [CommRing S] [Algebra A S]
+  [IsLocalization.Away s S] (hden : HasDenominatorPower P T s S)
+  (hW : IsWeightFamily (rationalWeight T s))
+
+/-- The evaluation `X ↦ 1/s` as a morphism from the completed weighted pair
+`(A⟨X⟩_{T ∪ {s}}, A⟨X⟩_{T ∪ {s}}⁺)` to the rational localisation pair. The weighted variables
+`t X` go to the fractions `t/s` and to `s/s = 1`, which lie in the target plus ring. -/
+noncomputable def weightedRationalEvalPairHom :
     letI := locUniformSpace P T s S hden
     letI := isUniformAddGroup_locUniformSpace P T s S hden
     letI := isTopologicalRing_locUniformSpace P T s S hden
     letI := isHuberRing_completion_locTopology P T s S hden
-    (toCompletionLocHom P U hP T s S hden).IsTopologicallyFiniteType := by
+    Pair.Hom (U.weighted hW).completion (rationalLocalizationPair P U hP T s S hden) := by
   let _ := locUniformSpace P T s S hden
   have _ := isUniformAddGroup_locUniformSpace P T s S hden
   have _ := isTopologicalRing_locUniformSpace P T s S hden
   have _ := isHuberRing_completion_locTopology P T s S hden
-  let t : Fin T.card → A := fun i ↦ (T.equivFin.symm i : A)
-  have ht : ∀ i, t i ∈ T := fun i ↦ (T.equivFin.symm i).2
-  have hrange : Set.range t = (T : Set A) := by
-    simpa [t, Function.comp_def] using
-      T.equivFin.symm.surjective.range_comp (fun y : ↥T ↦ (y : A))
-  have hTt : Set.range (fun y : ↥T ↦ (divBy (y : A) s : S)) ⊆
-      Set.range fun i ↦ (divBy (t i) s : S) := by
-    simpa only [t, Function.comp_def] using
-      (T.equivFin.symm.surjective.range_comp (fun y : ↥T ↦ (divBy (y : A) s : S))).ge
-  refine Pair.Hom.isTopologicallyFiniteType_iff.mpr
-    ⟨T.card, fun _ ↦ {1}, fun _ ↦ Set.finite_singleton 1, isWeightFamily_one_weight,
-      rationalEvalPairHom P U hP T s S hden t ht, ?_,
-      rationalEvalPairHom_comp_weightedCompletionHom P U hP T s S hden t ht⟩
-  apply isQuotientMapping_rationalEvalPairHom P U hP T s S hden t ht _ hTt
-  rwa [hrange]
+  let V := rationalLocalizationPair P U hP T s S hden
+  let π := weightedRationalEvalHom P T s S hden hW
+  have hπ := continuous_weightedRationalEvalHom P T s S hden hW
+  have hmap : (U.weighted hW).plus ≤ V.plus.comap (π.comp Completion.coeRingHom) := by
+    apply U.weighted_plus_le_comap hW V (hπ.comp Completion.continuous_coeRingHom)
+    · intro a ha
+      simpa [V, π, RingHom.comp_apply] using
+        toCompletionLoc_mem_completedPlusSubring P U.plus T s S hden ha
+    · intro i t ht
+      have hcoe : (Completion.coeRingHom (weightedC _ hW t * weightedX _ hW i) :
+          Completion (weightedRestrictedSubring _ hW)) =
+            ((weightedC _ hW t : weightedRestrictedSubring _ hW) : Completion _) *
+              ((weightedX _ hW i : weightedRestrictedSubring _ hW) : Completion _) :=
+        Completion.coe_mul _ _
+      rw [RingHom.comp_apply, hcoe, map_mul, weightedRationalEvalHom_coe_weightedC,
+        weightedRationalEvalHom_coe_weightedX, toCompletionLoc_apply, ← Completion.coe_mul,
+        mul_comm, invSelf_mul_algebraMap]
+      rcases (rationalWeight_apply T s i ▸ ht : t ∈ insert s (T : Set A)) with ht | ht
+      · rw [ht, divBy_self, Completion.coe_one]
+        exact V.plus.one_mem
+      · rw [rationalLocalizationPair_plus]
+        exact divBy_mem_completedPlusSubring P U.plus T s S hden ht
+  refine ⟨π, hπ, fun x hx ↦ ?_⟩
+  rw [Pair.completion_plus, completionPlus_def] at hx
+  have hmap' : (U.weighted hW).plus.map Completion.coeRingHom ≤ V.plus.comap π :=
+    Subring.map_le_iff_le_comap.mpr hmap
+  exact Subring.topologicalClosure_minimal _ hmap'
+    ((V.plus.toAddSubgroup.isClosed_of_isOpen V.isRingOfIntegralElements.isOpen).preimage hπ) hx
+
+/-- The pair evaluation map is `TauCeti.Huber.PairOfDefinition.weightedRationalEvalHom` on
+underlying rings. -/
+@[simp]
+theorem toRingHom_weightedRationalEvalPairHom :
+    letI := locUniformSpace P T s S hden
+    letI := isUniformAddGroup_locUniformSpace P T s S hden
+    letI := isTopologicalRing_locUniformSpace P T s S hden
+    letI := isHuberRing_completion_locTopology P T s S hden
+    (weightedRationalEvalPairHom P U hP T s S hden hW).toRingHom =
+      weightedRationalEvalHom P T s S hden hW := (rfl)
+
+/-- Evaluation followed by the constant-series map is the structure morphism of the rational
+localisation pair. -/
+@[simp]
+theorem weightedRationalEvalPairHom_comp_weightedCompletionHom :
+    letI := locUniformSpace P T s S hden
+    letI := isUniformAddGroup_locUniformSpace P T s S hden
+    letI := isTopologicalRing_locUniformSpace P T s S hden
+    letI := isHuberRing_completion_locTopology P T s S hden
+    (weightedRationalEvalPairHom P U hP T s S hden hW).comp (U.weightedCompletionHom hW) =
+      toCompletionLocHom P U hP T s S hden := by
+  let _ := locUniformSpace P T s S hden
+  have _ := isUniformAddGroup_locUniformSpace P T s S hden
+  have _ := isTopologicalRing_locUniformSpace P T s S hden
+  have _ := isHuberRing_completion_locTopology P T s S hden
+  apply Pair.Hom.ext
+  rw [Pair.Hom.toRingHom_comp, toRingHom_weightedRationalEvalPairHom,
+    Pair.Hom.toRingHom_weightedCompletionHom, toRingHom_toCompletionLocHom]
+  exact weightedRationalEvalHom_comp_algebraMap P T s S hden hW
+
+-- The algebraic generators of `A⁺[T/s]` lift to the completed source plus ring.
+private theorem adjoin_plus_le_comap_map_weightedRationalEvalPairHom :
+    letI := locUniformSpace P T s S hden
+    letI := isUniformAddGroup_locUniformSpace P T s S hden
+    letI := isTopologicalRing_locUniformSpace P T s S hden
+    letI := isHuberRing_completion_locTopology P T s S hden
+    (Algebra.adjoin U.plus (Set.range fun y : ↥T ↦ (divBy (y : A) s : S))).toSubring ≤
+      (((U.weighted hW).completion.plus.map
+        (weightedRationalEvalPairHom P U hP T s S hden hW).toRingHom).comap
+          Completion.coeRingHom) := by
+  let _ := locUniformSpace P T s S hden
+  have _ := isUniformAddGroup_locUniformSpace P T s S hden
+  have _ := isTopologicalRing_locUniformSpace P T s S hden
+  have _ := isHuberRing_completion_locTopology P T s S hden
+  rw [Algebra.adjoin_eq_ring_closure, Subring.closure_le]
+  rintro a (⟨b, rfl⟩ | ⟨y, rfl⟩)
+  · rw [SetLike.mem_coe, Subring.mem_comap, toRingHom_weightedRationalEvalPairHom,
+      IsScalarTower.algebraMap_apply U.plus A S, Algebra.algebraMap_ofSubsemiring_apply]
+    refine Subring.mem_map.mpr ⟨((weightedC (rationalWeight T s) hW b :
+      weightedRestrictedSubring _ _) : Completion (weightedRestrictedSubring _ hW)), ?_, ?_⟩
+    · rw [Pair.completion_plus]
+      exact map_mem_completionPlus (U.weightedC_mem_weighted_plus hW b.2)
+    · simp [toCompletionLoc_apply, Completion.coeRingHom]
+  · rw [SetLike.mem_coe, Subring.mem_comap, toRingHom_weightedRationalEvalPairHom]
+    refine Subring.mem_map.mpr ⟨((weightedC (rationalWeight T s) hW y * weightedX _ hW 0 :
+      weightedRestrictedSubring _ _) : Completion (weightedRestrictedSubring _ hW)), ?_, ?_⟩
+    · rw [Pair.completion_plus]
+      exact map_mem_completionPlus
+        (U.weightedC_mul_weightedX_mem_weighted_plus hW
+          (rationalWeight_apply T s 0 ▸ Set.mem_insert_of_mem s y.2))
+    · rw [Completion.coe_mul, map_mul, weightedRationalEvalHom_coe_weightedC,
+        weightedRationalEvalHom_coe_weightedX, toCompletionLoc_apply, ← Completion.coe_mul,
+        mul_comm, invSelf_mul_algebraMap]
+      rfl
+
+/-- **Over a Huber ring, the evaluation `X ↦ 1/s` is a quotient mapping of Huber pairs**: its
+target plus ring is exactly the integral closure of the image of the completed source plus
+ring. -/
+theorem isQuotientMapping_weightedRationalEvalPairHom :
+    letI := locUniformSpace P T s S hden
+    letI := isUniformAddGroup_locUniformSpace P T s S hden
+    letI := isTopologicalRing_locUniformSpace P T s S hden
+    letI := isHuberRing_completion_locTopology P T s S hden
+    (weightedRationalEvalPairHom P U hP T s S hden hW).IsQuotientMapping := by
+  let _ := locUniformSpace P T s S hden
+  have _ := isUniformAddGroup_locUniformSpace P T s S hden
+  have _ := isTopologicalRing_locUniformSpace P T s S hden
+  have _ := isHuberRing_completion_locTopology P T s S hden
+  refine isQuotientMapping_of_adjoin_le P U hP T s S hden _ ?_
+    (adjoin_plus_le_comap_map_weightedRationalEvalPairHom P U hP T s S hden hW)
+  rw [toRingHom_weightedRationalEvalPairHom]
+  exact isOpenQuotientMap_weightedRationalEvalHom P T s S hden hW
+
+/-- **Rational localisation of a Huber pair is topologically of finite type** (Wedhorn,
+Definition 8.42, at Example 6.38): if `T ∪ {s}` generates an open ideal, the structure morphism
+`(A, A⁺) → (A⟨T/s⟩, A_U⁺)` is presented by the weighted pair `(A⟨X⟩_{T ∪ {s}}, A⟨X⟩_{T ∪ {s}}⁺)`,
+`X ↦ 1/s`. No Tate hypothesis is needed. -/
+theorem isTopologicallyFiniteType_toCompletionLocHom
+    (hT : IsOpen (Ideal.span (insert s (T : Set A)) : Set A)) :
+    letI := locUniformSpace P T s S hden
+    letI := isUniformAddGroup_locUniformSpace P T s S hden
+    letI := isTopologicalRing_locUniformSpace P T s S hden
+    letI := isHuberRing_completion_locTopology P T s S hden
+    (toCompletionLocHom P U hP T s S hden).IsTopologicallyFiniteType :=
+  letI := locUniformSpace P T s S hden
+  letI := isUniformAddGroup_locUniformSpace P T s S hden
+  letI := isTopologicalRing_locUniformSpace P T s S hden
+  letI := isHuberRing_completion_locTopology P T s S hden
+  Pair.Hom.isTopologicallyFiniteType_iff.mpr
+    ⟨1, rationalWeight T s, finite_rationalWeight T s, isWeightFamily_rationalWeight hT,
+      weightedRationalEvalPairHom P U hP T s S hden _,
+      isQuotientMapping_weightedRationalEvalPairHom P U hP T s S hden _,
+      weightedRationalEvalPairHom_comp_weightedCompletionHom P U hP T s S hden _⟩
 
 end TauCeti.Huber.PairOfDefinition
 
@@ -292,7 +449,7 @@ theorem isTopologicallyFiniteType_completionLocPairMap (hf : f.IsTopologicallyFi
   have _ := isHuberRing_completion_locTopology P' T' s' S' hden'
   have : IsTateRing B := IsTateRing.of_continuous f.continuous_toRingHom
   have h := (isTopologicallyFiniteType_toCompletionLocHom P' U' hP' T' s' S' hden'
-    hspan).comp hf
+    (by rw [hspan]; exact isOpen_univ)).comp hf
   rw [← completionLocPairMap_comp_toCompletionLocHom P U hP T s S hden P' U' hP' f T' s' S' hden'
     hs hT] at h
   exact h.of_comp

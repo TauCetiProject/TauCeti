@@ -88,7 +88,9 @@ the constructed one, so it is available before, and independently of, uniqueness
 * `TauCeti.PDE.forall_energyFormH1_eq_setIntegral_iff_forall_testFunction` and
   `TauCeti.PDE.isWeakSolutionDirichlet_iff_forall_testFunction`: for bounded coefficients it is
   enough to test the weak formulation against `C_c^∞(Ω)`.
-* `TauCeti.PDE.isCoercive_energyFormH1L0`: a diagonal lower bound packaged as `IsCoercive`.
+* `TauCeti.PDE.isCoercive_energyFormH1L0`: a diagonal lower bound packaged as `IsCoercive`, and
+  `TauCeti.PDE.UniformlyEllipticOn.isCoercive_energyFormH1L0_of_mass_lower_bound`: coercivity
+  when the potential absorbs the drift.
 * `TauCeti.PDE.weakSolutionDirichlet` and
   `TauCeti.PDE.existsUnique_isWeakSolutionDirichlet`: the Lax--Milgram solution and the
   existence-and-uniqueness theorem.
@@ -378,11 +380,12 @@ theorem existsUnique_sub_mem_w1p0Submodule_forall_energyFormH1_eq
     have := hwuniq _ hw'
     rw [← this, Submodule.coe_mk, add_sub_cancel]
 
-/-- Existence and uniqueness on an arbitrary open domain under the mass-floor condition
-`β² < 4λδ`. A Young parameter between `β²/(4δ)` and `λ` makes the gradient and value
-coefficients positive. No domain boundedness, Poincaré inequality, or symmetry of the
-principal coefficient is required. -/
-theorem UniformlyEllipticOn.existsUnique_isWeakSolutionDirichlet_of_mass_lower_bound
+/-- **Coercivity under the mass-floor condition** `β² < 4λδ`. A Young parameter between
+`β²/(4δ)` and `λ` makes the gradient and value coefficients of Gårding's inequality positive, so
+the energy form of a uniformly elliptic operator whose potential is at least `δ` is coercive on
+`H¹₀(Ω)`. No domain boundedness, Poincaré inequality, or symmetry of the principal coefficient
+is required. -/
+theorem UniformlyEllipticOn.isCoercive_energyFormH1L0_of_mass_lower_bound
     [DecidableEq ι] {lam Lam beta gamma delta : ℝ}
     (h : UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam)
     (ha : AEStronglyMeasurable a (mu.restrict Omega))
@@ -391,8 +394,9 @@ theorem UniformlyEllipticOn.existsUnique_isWeakSolutionDirichlet_of_mass_lower_b
     (hb_bound : ∀ x ∈ (Omega : Set (EuclideanSpace ℝ ι)), ‖b x‖ ≤ beta)
     (hc_bound : ∀ x ∈ (Omega : Set (EuclideanSpace ℝ ι)), ‖c x‖ ≤ gamma)
     (hc_lower : ∀ x ∈ (Omega : Set (EuclideanSpace ℝ ι)), delta ≤ c x)
-    (hmass : beta ^ 2 < 4 * lam * delta) (f : Lp ℝ 2 (mu.restrict Omega)) :
-    ∃! u : W1p0 mu Omega 2, IsWeakSolutionDirichlet a b c f u := by
+    (hmass : beta ^ 2 < 4 * lam * delta)
+    (hcoeff : MemLp (fun x => energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega)) :
+    IsCoercive (energyFormH1L0 hcoeff) := by
   have hdelta : 0 < delta := by
     have : 0 < 4 * lam * delta := lt_of_le_of_lt (sq_nonneg beta) hmass
     exact (mul_pos_iff_of_pos_left (mul_pos (by norm_num) h.pos)).mp this
@@ -405,12 +409,30 @@ theorem UniformlyEllipticOn.existsUnique_isWeakSolutionDirichlet_of_mass_lower_b
     apply (div_lt_iff₀ (mul_pos (by norm_num) heps)).mpr
     have hmul := (div_lt_iff₀ (mul_pos (by norm_num) hdelta)).mp hlo
     nlinarith [hmul]
-  exact existsUnique_isWeakSolutionDirichlet_of_mul_norm_sq_le
-    (memLp_energyIntegrand_of_bounds h.upper_nonneg ha hb hc
-      (fun _x hx eta xi => h.upper_bound hx eta xi) hb_bound hc_bound)
-    (lt_min (sub_pos.mpr hhi) (sub_pos.mpr hdefect))
+  exact isCoercive_energyFormH1L0 hcoeff (lt_min (sub_pos.mpr hhi) (sub_pos.mpr hdefect))
     (fun w => h.min_mul_norm_sq_le_energyFormH1_self_of_mass_lower_bound_with_parameter ha hb hc
-      hb_bound hc_bound hc_lower heps w) f
+      hb_bound hc_bound hc_lower heps w)
+
+/-- Existence and uniqueness on an arbitrary open domain under the mass-floor condition
+`β² < 4λδ`, which makes the energy form coercive
+(`TauCeti.PDE.UniformlyEllipticOn.isCoercive_energyFormH1L0_of_mass_lower_bound`). No domain
+boundedness, Poincaré inequality, or symmetry of the principal coefficient is required. -/
+theorem UniformlyEllipticOn.existsUnique_isWeakSolutionDirichlet_of_mass_lower_bound
+    [DecidableEq ι] {lam Lam beta gamma delta : ℝ}
+    (h : UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam)
+    (ha : AEStronglyMeasurable a (mu.restrict Omega))
+    (hb : AEStronglyMeasurable b (mu.restrict Omega))
+    (hc : AEStronglyMeasurable c (mu.restrict Omega))
+    (hb_bound : ∀ x ∈ (Omega : Set (EuclideanSpace ℝ ι)), ‖b x‖ ≤ beta)
+    (hc_bound : ∀ x ∈ (Omega : Set (EuclideanSpace ℝ ι)), ‖c x‖ ≤ gamma)
+    (hc_lower : ∀ x ∈ (Omega : Set (EuclideanSpace ℝ ι)), delta ≤ c x)
+    (hmass : beta ^ 2 < 4 * lam * delta) (f : Lp ℝ 2 (mu.restrict Omega)) :
+    ∃! u : W1p0 mu Omega 2, IsWeakSolutionDirichlet a b c f u := by
+  have hcoeff := memLp_energyIntegrand_of_bounds h.upper_nonneg ha hb hc
+    (fun _x hx eta xi => h.upper_bound hx eta xi) hb_bound hc_bound
+  exact existsUnique_isWeakSolutionDirichlet hcoeff
+    (h.isCoercive_energyFormH1L0_of_mass_lower_bound ha hb hc hb_bound hc_bound hc_lower hmass
+      hcoeff) f
 
 /-! ### The Laplacian model -/
 

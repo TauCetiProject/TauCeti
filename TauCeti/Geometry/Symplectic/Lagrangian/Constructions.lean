@@ -13,10 +13,8 @@ public import TauCeti.Geometry.Symplectic.SymplecticTransport
 # Products, transports, and graphs of Lagrangian subspaces
 
 This file collects the linear symplectic constructions that produce isotropic, coisotropic, and
-Lagrangian subspaces out of existing ones, used by the analytic Heegaard Floer roadmap before the
-manifold, bundle, and Floer-boundary layers restate them in local trivializations. All three
-groups are pointwise linear algebra over the symplectic-form API in
-`TauCeti.Geometry.Symplectic.Lagrangian.Basic`.
+Lagrangian subspaces out of existing ones. All three groups are pointwise linear algebra over the
+symplectic-form API in `TauCeti.Geometry.Symplectic.Lagrangian.Basic`.
 
 * **Products.** The direct-sum symplectic form `ω₁.prod ω₂` on `V × W` has the product
   orthogonal-complement formula `(L₁ × L₂)^(ω₁ ⊕ ω₂) = L₁^ω₁ × L₂^ω₂`, so isotropy, coisotropy,
@@ -28,7 +26,7 @@ groups are pointwise linear algebra over the symplectic-form API in
 * **Graphs.** In the twisted product `(V × W, ω₁ ⊖ ω₂)` the graph `{(v, e v)}` of a real-linear
   isomorphism `e : V ≃ W` is Lagrangian exactly when `e` is a symplectomorphism; the special case
   `e = id` makes the diagonal of `(V × V, ω ⊖ ω)` Lagrangian. This is the linear model of the
-  Lagrangian-correspondence principle needed by Lagrangian Floer homology (Lane F3): the boundary
+  Lagrangian-correspondence principle needed by Lagrangian Floer homology: the boundary
   conditions of Floer strips between two Lagrangians are packaged as a single Lagrangian in the
   twisted product, and the diagonal is the model boundary condition for the identity continuation.
 
