@@ -171,21 +171,48 @@ namespace Affine
 variable {F Γ₀ : Type*} [Field F] [LinearOrderedCommGroupWithZero Γ₀] (v : Valuation F Γ₀)
   {W : Affine F} [IsIntegral v.valuationSubring W] [DecidableEq F]
 
-/-- If Tate's algorithm stops at an additive symbol on the integral model with a nonzero
-generator `ϖ` of the maximal ideal, and no integral solution has both coordinates divisible by
-`ϖ`, then every point has nonsingular reduction. Such a `ϖ` is prime, which the hypothesis on
-solutions may use. -/
+/-- If Tate's algorithm stops at an additive symbol on the integral model with a generator `ϖ` of
+the maximal ideal, and no integral solution has both coordinates divisible by `ϖ`, then every point
+has nonsingular reduction. The stopping test forces `ϖ ≠ 0`, so `ϖ` is prime, which the hypothesis
+on solutions may use. -/
 private theorem nonsingularReduction_eq_top_of_isTateTerminal {ϖ : v.valuationSubring}
-    (hϖ : maximalIdeal v.valuationSubring = Ideal.span {ϖ}) (hϖ0 : ϖ ≠ 0)
+    (hϖ : maximalIdeal v.valuationSubring = Ideal.span {ϖ})
     {s : TauCeti.ReductionSymbol} (hs : (integralModel v.valuationSubring W).IsTateTerminal ϖ s)
     (hsI : ∀ n, s ≠ .I n)
     (h : Prime ϖ → ∀ x y : v.valuationSubring, ϖ ∣ x → ϖ ∣ y →
       ¬ (integralModel v.valuationSubring W).toAffine.Equation x y) :
     W.nonsingularReduction v = ⊤ := by
+  obtain ⟨-, h₃, h₄, h₆⟩ := hs.dvd_b₂_and_dvd_a₃_and_dvd_a₄_and_dvd_a₆ hsI
+  -- if `ϖ = 0`, then `a₃ = a₄ = a₆ = 0` and the stopping test `¬ 0 ^ k ∣ _` fails
+  have hϖ0 : ϖ ≠ 0 := by
+    rintro rfl
+    have hz {k : ℕ} (hk : k ≠ 0) {x : v.valuationSubring} : (0 : v.valuationSubring) ^ k ∣ x ↔
+        x = 0 := by
+      rw [zero_pow hk, zero_dvd_iff]
+    rw [zero_dvd_iff] at h₃ h₄ h₆
+    match s, hs with
+    | .I n, _ => exact hsI n rfl
+    | .II, hs => exact (isTateTerminal_II.1 hs).2.2.2.2 ((hz two_ne_zero).2 h₆)
+    | .III, hs =>
+      exact (isTateTerminal_III.1 hs).2.2.2.2 ((hz three_ne_zero).2 (by rw [b₈, h₃, h₄, h₆]; ring))
+    | .IV, hs =>
+      exact (isTateTerminal_IV.1 hs).2.2.2.2.2 ((hz three_ne_zero).2 (by rw [b₆, h₃, h₆]; ring))
+    | .IStar 0, hs =>
+      exact (isTateTerminal_IStar_zero.1 hs).2.2.2.2.2
+        ((hz (by norm_num)).2 (by rw [Cubic.discr, h₄, h₆]; ring))
+    | .IStar (_ + 1), hs =>
+      rcases isTateTerminal_IStar_add_one.1 hs with ⟨_, -, hW, -⟩ | ⟨_, -, hW, -⟩
+      · obtain ⟨-, h₂, h₂', -⟩ := isTateOddStage_iff.1 hW
+        exact h₂' ((hz two_ne_zero).2 (zero_dvd_iff.1 h₂))
+      · obtain ⟨-, h₂, h₂', -⟩ := isTateEvenStage_iff.1 hW
+        exact h₂' ((hz two_ne_zero).2 (zero_dvd_iff.1 h₂))
+    | .IVStar, hs =>
+      exact (isTateTerminal_IVStar.1 hs).2.2.2.2.2 ((hz (by norm_num)).2 (by rw [b₆, h₃, h₆]; ring))
+    | .IIIStar, hs => exact (isTateTerminal_IIIStar.1 hs).2.2.2.2.2 ((hz (by norm_num)).2 h₄)
+    | .IIStar, hs => exact (isTateTerminal_IIStar.1 hs).2.2.2.2.2 ((hz (by norm_num)).2 h₆)
   have hmem {z : v.valuationSubring} : z ∈ maximalIdeal v.valuationSubring ↔ ϖ ∣ z := by
     rw [hϖ, Ideal.mem_span_singleton]
   have hp : Prime ϖ := (Ideal.span_singleton_prime hϖ0).mp (hϖ ▸ (maximalIdeal.isMaximal _).isPrime)
-  obtain ⟨-, h₃, h₄, h₆⟩ := hs.dvd_b₂_and_dvd_a₃_and_dvd_a₄_and_dvd_a₆ hsI
   exact nonsingularReduction_eq_top_of_forall_mem_maximalIdeal_not_equation v (hmem.mpr h₃)
     (hmem.mpr h₄) (hmem.mpr h₆) fun x y hx hy ↦ h hp x y (hmem.mp hx) (hmem.mp hy)
 
@@ -203,10 +230,7 @@ theorem nonsingularReduction_eq_top_of_isTateTerminal_IStar_zero {ϖ : v.valuati
       t ^ 3 + residue _ A₂ * t ^ 2 + residue _ A₄ * t + residue _ A₆ ≠ 0) :
     W.nonsingularReduction v = ⊤ := by
   obtain ⟨h₁, -, h₃, -, -, hd⟩ := isTateTerminal_IStar_zero.1 h
-  have hϖ0 : ϖ ≠ 0 := by
-    rintro rfl
-    simp_all [Cubic.discr]
-  refine nonsingularReduction_eq_top_of_isTateTerminal v hϖ hϖ0 h (by simp)
+  refine nonsingularReduction_eq_top_of_isTateTerminal v hϖ h (by simp)
     fun hp x y hx hy hE ↦ ?_
   obtain ⟨t, ht⟩ := exists_dvd_cubic_of_equation _ hp h₁ h₂ h₃ h₄ h₆ hE hx hy
   have ht' : _ ∈ maximalIdeal v.valuationSubring := hϖ ▸ Ideal.mem_span_singleton.mpr ht
@@ -225,10 +249,7 @@ theorem nonsingularReduction_eq_top_of_isTateTerminal_IVStar {ϖ : v.valuationSu
       t ^ 2 + residue _ A₃ * t - residue _ A₆ ≠ 0) :
     W.nonsingularReduction v = ⊤ := by
   obtain ⟨h₁, h₂, -, h₄, -, hb₆⟩ := isTateTerminal_IVStar.1 h
-  have hϖ0 : ϖ ≠ 0 := by
-    rintro rfl
-    simp_all [b₆]
-  refine nonsingularReduction_eq_top_of_isTateTerminal v hϖ hϖ0 h (by simp)
+  refine nonsingularReduction_eq_top_of_isTateTerminal v hϖ h (by simp)
     fun hp x y hx hy hE ↦ ?_
   obtain ⟨t, ht⟩ := exists_dvd_quadratic_of_equation _ hp h₁ h₂ h₃ h₄ h₆ hE hx hy
   have ht' : _ ∈ maximalIdeal v.valuationSubring := hϖ ▸ Ideal.mem_span_singleton.mpr ht
@@ -241,10 +262,7 @@ theorem nonsingularReduction_eq_top_of_isTateTerminal_IIStar {ϖ : v.valuationSu
     (h : (integralModel v.valuationSubring W).IsTateTerminal ϖ .IIStar) :
     W.nonsingularReduction v = ⊤ := by
   obtain ⟨h₁, h₂, h₃, h₄, h₆, h₆'⟩ := isTateTerminal_IIStar.1 h
-  have hϖ0 : ϖ ≠ 0 := by
-    rintro rfl
-    simp_all
-  exact nonsingularReduction_eq_top_of_isTateTerminal v hϖ hϖ0 h (by simp)
+  exact nonsingularReduction_eq_top_of_isTateTerminal v hϖ h (by simp)
     fun hp x y hx hy hE ↦ h₆' (pow_six_dvd_a₆_of_equation _ hp h₁ h₂ h₃ h₄ h₆ hE hx hy)
 
 end Affine
