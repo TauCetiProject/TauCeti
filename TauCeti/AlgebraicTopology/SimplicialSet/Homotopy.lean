@@ -111,7 +111,7 @@ lemma map_mkOfLe_toSimplicialObjectHomotopy_h_zero (H : SSet.Homotopy f g) {n : 
   refine (NatTrans.naturality_apply H.h _ _).symm.trans (congrArg (H.h.app _) ?_)
   refine Prod.ext (α := X _⦋1⦌) (β := (Δ[1] : SSet.{w}) _⦋1⦌) ?_ ?_
   · -- The first components of the two pairs, both iterated reindexings of `x`.
-    change X.map _ (X.map _ x) = X.map _ (X.map _ x)
+    refine (prod_map_fst X Δ[1] _ _).trans ?_
     rw [← Functor.map_comp_apply, ← op_comp, ← Functor.map_comp_apply, ← op_comp]
     refine congrArg (fun φ : ⦋1⦌ ⟶ _ ↦ X.map φ.op x)
       (SimplexCategory.Hom.ext _ _ (OrderHom.ext _ _ (funext fun k ↦ ?_)))

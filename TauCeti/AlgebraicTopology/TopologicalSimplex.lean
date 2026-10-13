@@ -5,6 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.AlgebraicTopology.SimplicialSet.StdSimplexOne
+public import Mathlib.AlgebraicTopology.SimplicialSet.TopAdj
 public import Mathlib.AlgebraicTopology.SingularSet
 public import TauCeti.Geometry.Convex.ConvexSpace.ContractibleSpaceStdSimplex
 public import TauCeti.Geometry.Convex.ConvexSpace.LocallyPathConnectedSpaceStdSimplex
@@ -21,7 +23,9 @@ underlies a singular `n`-simplex of a space.
 
 * `SimplexCategory.toTopInitialVertex`: the initial vertex of the topological `n`-simplex, and
   `SimplexCategory.toTop_map_toTopInitialVertex_down`: its image under a morphism of simplices.
-* `TauCeti.TopCat.simplexMap`: the continuous map underlying a singular simplex.
+* `TauCeti.TopCat.simplexMap`: the continuous map underlying a singular simplex, with its
+  behaviour under reindexing, pushforward and the lax monoidal structure of `TopCat.toSSet`, and
+  the endpoints of the parametrization `SSet.stdSimplex.toSSetObjI` of the unit interval.
 -/
 
 public section
@@ -132,6 +136,56 @@ continuous map with that map. -/
 @[simp]
 lemma simplexMap_app (f : X ⟶ Y) (σ : (TopCat.toSSet.obj X).obj n) :
     simplexMap ((TopCat.toSSet.map f).app n σ) = f.hom.comp (simplexMap σ) := rfl
+
+/-- The singular simplex of a product built from two singular simplices by the lax monoidal
+structure of the singular simplicial set functor has these two simplices as components. -/
+lemma simplexMap_μ_apply (a : (TopCat.toSSet.obj X).obj n) (b : (TopCat.toSSet.obj Y).obj n)
+    (p : SimplexCategory.toTop.{u}.obj n.unop) :
+    simplexMap ((Functor.LaxMonoidal.μ TopCat.toSSet X Y).app n ⟨a, b⟩) p =
+      ((simplexMap a p, simplexMap b p) : X × Y) :=
+  Prod.ext congr(simplexMap $(congr($(Functor.Monoidal.μ_fst TopCat.toSSet X Y).app n ⟨a, b⟩)) p)
+    congr(simplexMap $(congr($(Functor.Monoidal.μ_snd TopCat.toSSet X Y).app n ⟨a, b⟩)) p)
+
+open Opposite in
+/-- The parametrization of the unit interval by the topological `1`-simplex underlying the
+nondegenerate `1`-simplex of `Δ[1]` sends the vertex `ε` to the point `ε` of `Δ[1]`. -/
+lemma simplexMap_toSSetObjI_objMk₁_toTop_map {ε : Fin 2} (v : ⦋0⦌ ⟶ ⦋1⦌)
+    (hv : v.toOrderHom 0 = ε) (p : SimplexCategory.toTop.{u}.obj ⦋0⦌) :
+    simplexMap (SSet.stdSimplex.toSSetObjI.{u}.app (op ⦋1⦌) (SSet.stdSimplex.objMk₁ 1))
+        (SimplexCategory.toTop.map v p) =
+      simplexMap (SSet.stdSimplex.toSSetObjI.{u}.app (op ⦋0⦌) (SSet.stdSimplex.const 1 ε _)) p := by
+  have hb : (Δ[1] : SSet.{u}).map v.op (SSet.stdSimplex.objMk₁ (1 : Fin 3)) =
+      SSet.stdSimplex.const 1 ε _ := by
+    ext k : 1
+    fin_cases k
+    refine (SSet.stdSimplex.objMk₁_apply.{u} _ _).trans ?_
+    dsimp
+    simp only [hv]
+    fin_cases ε <;> rfl
+  rw [← hb, NatTrans.naturality_apply SSet.stdSimplex.toSSetObjI.{u} v.op, simplexMap_map]
+  rfl
+
+open Opposite in
+/-- The parametrization of the unit interval by the topological `1`-simplex underlying the
+nondegenerate `1`-simplex of `Δ[1]` starts at `0`. -/
+lemma homeomorph_simplexMap_toSSetObjI_toTopInitialVertex :
+    TopCat.I.homeomorph (simplexMap (SSet.stdSimplex.toSSetObjI.{u}.app (op ⦋1⦌)
+      (SSet.stdSimplex.objMk₁ 1)) (SimplexCategory.toTopInitialVertex ⦋1⦌)) = 0 := by
+  rw [← SimplexCategory.toTop_map_toTopInitialVertex (SimplexCategory.const ⦋0⦌ ⦋1⦌ 0) rfl,
+    simplexMap_toSSetObjI_objMk₁_toTop_map _ (ε := 0) rfl,
+    SSet.stdSimplex.toSSetObj_app_const_zero]
+  rfl
+
+open Opposite in
+/-- The parametrization of the unit interval by the topological `1`-simplex underlying the
+nondegenerate `1`-simplex of `Δ[1]` ends at `1`. -/
+lemma homeomorph_simplexMap_toSSetObjI_toTop_map_δ_zero :
+    TopCat.I.homeomorph (simplexMap (SSet.stdSimplex.toSSetObjI.{u}.app (op ⦋1⦌)
+      (SSet.stdSimplex.objMk₁ 1)) (SimplexCategory.toTop.map (SimplexCategory.δ 0)
+        (SimplexCategory.toTopInitialVertex ⦋0⦌))) = 1 := by
+  rw [simplexMap_toSSetObjI_objMk₁_toTop_map _ (ε := 1) rfl,
+    SSet.stdSimplex.toSSetObj_app_const_one]
+  rfl
 
 end TauCeti.TopCat
 

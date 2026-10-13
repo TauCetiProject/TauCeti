@@ -278,6 +278,15 @@ lemma comp_ιTwistedChains_eq_of_heq {M : ModuleCat.{max v w} R}
   subst h
   rw [eq_of_heq hf]
 
+/-- Two identifications of a module with the coefficient modules of equal simplices, followed by
+the inclusions of the corresponding summands of twisted chains, agree. -/
+lemma eqToHom_comp_ιTwistedChains_eq {M : ModuleCat.{max v w} R}
+    {τ τ' : (TopCat.toSSet.obj X).obj n} (h : τ = τ') (e : M = L.obj (initialVertex τ))
+    (e' : M = L.obj (initialVertex τ')) :
+    eqToHom e ≫ ιTwistedChains L τ = eqToHom e' ≫ ιTwistedChains L τ' := by
+  subst h
+  rfl
+
 /-- The map out of a module of twisted chains given by a map out of the coefficient module of each
 singular simplex. -/
 def twistedChainsDesc {A : ModuleCat.{max v w} R}
@@ -301,6 +310,37 @@ lemma ιTwistedChains_map (α : m ⟶ n) (σ : (TopCat.toSSet.obj X).obj m) :
     ιTwistedChains L σ ≫ (twistedChains L).map α =
       L.map (vertexTransport α σ) ≫ ιTwistedChains L ((TopCat.toSSet.obj X).map α σ) :=
   Sigma.ι_comp_map' _ _ _
+
+/-- A structure map of twisted chains along a reindexing which fixes `0` sends the summand of a
+simplex `σ` identically onto the summand of the reindexed simplex. -/
+@[reassoc]
+lemma ιTwistedChains_map_of_toOrderHom_zero (α : m ⟶ n) (σ : (TopCat.toSSet.obj X).obj m)
+    (hα : α.unop.toOrderHom 0 = 0) :
+    ιTwistedChains L σ ≫ (twistedChains L).map α =
+      eqToHom (congrArg L.obj (initialVertex_eq_initialVertex_map α σ hα)) ≫
+        ιTwistedChains L ((TopCat.toSSet.obj X).map α σ) := by
+  rw [ιTwistedChains_map, vertexTransport_eq_eqToHom α σ hα, eqToHom_map]
+
+/-- A coface map other than the zeroth one sends the summand of a simplex `τ` of twisted chains
+identically onto the summand of its face. -/
+@[reassoc]
+lemma ιTwistedChains_map_δ_of_ne_zero {k : ℕ} {i : Fin (k + 2)} (hi : i ≠ 0)
+    (τ : (TopCat.toSSet.obj X) _⦋k + 1⦌) :
+    ιTwistedChains L τ ≫ (twistedChains L).map (δ i).op =
+      eqToHom (congrArg L.obj
+          (initialVertex_eq_initialVertex_map (δ i).op τ (δ_toOrderHom_zero hi))) ≫
+        ιTwistedChains L ((TopCat.toSSet.obj X).map (δ i).op τ) :=
+  ιTwistedChains_map_of_toOrderHom_zero L (δ i).op τ (δ_toOrderHom_zero hi)
+
+/-- A codegeneracy map sends the summand of a simplex `τ` of twisted chains identically onto the
+summand of its degeneracy. -/
+@[reassoc]
+lemma ιTwistedChains_map_σ {k : ℕ} (i : Fin (k + 1)) (τ : (TopCat.toSSet.obj X) _⦋k⦌) :
+    ιTwistedChains L τ ≫ (twistedChains L).map (σ i).op =
+      eqToHom (congrArg L.obj
+          (initialVertex_eq_initialVertex_map (σ i).op τ (σ_toOrderHom_zero i))) ≫
+        ιTwistedChains L ((TopCat.toSSet.obj X).map (σ i).op τ) :=
+  ιTwistedChains_map_of_toOrderHom_zero L (σ i).op τ (σ_toOrderHom_zero i)
 
 /-- The chain complex of singular chains of `X` twisted by the local coefficient system `L`. -/
 def twistedChainComplex : ChainComplex (ModuleCat.{max v w} R) ℕ :=

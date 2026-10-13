@@ -61,60 +61,6 @@ open scoped Simplicial
 
 universe u v w
 
-namespace TauCeti.TopCat
-
-variable {X Z : _root_.TopCat.{v}} {n : SimplexCategoryᵒᵖ}
-
-/-- The singular simplex of a product built from two singular simplices by the lax monoidal
-structure of the singular simplicial set functor has these two simplices as components. -/
-lemma simplexMap_μ_apply (a : (_root_.TopCat.toSSet.obj X).obj n)
-    (b : (_root_.TopCat.toSSet.obj Z).obj n) (p : SimplexCategory.toTop.{v}.obj n.unop) :
-    simplexMap ((Functor.LaxMonoidal.μ _root_.TopCat.toSSet X Z).app n ⟨a, b⟩) p =
-      ((simplexMap a p, simplexMap b p) : X × Z) :=
-  Prod.ext congr(simplexMap $(congr($(Functor.Monoidal.μ_fst _root_.TopCat.toSSet X Z).app n
-      ⟨a, b⟩)) p)
-    congr(simplexMap $(congr($(Functor.Monoidal.μ_snd _root_.TopCat.toSSet X Z).app n ⟨a, b⟩)) p)
-
-/-- The parametrization of the unit interval by the topological `1`-simplex underlying the
-nondegenerate `1`-simplex of `Δ[1]` starts at `0`. -/
-private lemma homeomorph_simplexMap_toSSetObjI_toTopInitialVertex :
-    _root_.TopCat.I.homeomorph (simplexMap (SSet.stdSimplex.toSSetObjI.{v}.app (op ⦋1⦌)
-      (SSet.stdSimplex.objMk₁ 1)) (toTopInitialVertex ⦋1⦌)) = 0 := by
-  rw [← toTop_map_toTopInitialVertex (SimplexCategory.const ⦋0⦌ ⦋1⦌ 0) rfl]
-  have h := congr(simplexMap $(NatTrans.naturality_apply SSet.stdSimplex.toSSetObjI.{v}
-    (SimplexCategory.const ⦋0⦌ ⦋1⦌ 0).op (SSet.stdSimplex.objMk₁ (1 : Fin 3)))
-    (toTopInitialVertex ⦋0⦌))
-  simp only [simplexMap_map, ContinuousMap.comp_apply] at h
-  refine (congrArg _root_.TopCat.I.homeomorph h.symm).trans ?_
-  have hb : (Δ[1] : SSet.{v}).map (SimplexCategory.const ⦋0⦌ ⦋1⦌ 0).op
-      (SSet.stdSimplex.objMk₁ (1 : Fin 3)) = SSet.stdSimplex.const 1 0 _ := by
-    ext k : 1
-    fin_cases k
-    rfl
-  rw [hb, SSet.stdSimplex.toSSetObj_app_const_zero]
-  rfl
-
-/-- The parametrization of the unit interval by the topological `1`-simplex underlying the
-nondegenerate `1`-simplex of `Δ[1]` ends at `1`. -/
-private lemma homeomorph_simplexMap_toSSetObjI_toTop_map_δ_zero :
-    _root_.TopCat.I.homeomorph (simplexMap (SSet.stdSimplex.toSSetObjI.{v}.app (op ⦋1⦌)
-      (SSet.stdSimplex.objMk₁ 1)) (toTop.map (SimplexCategory.δ 0) (toTopInitialVertex ⦋0⦌))) =
-      1 := by
-  have h := congr(simplexMap $(NatTrans.naturality_apply SSet.stdSimplex.toSSetObjI.{v}
-    (SimplexCategory.δ (0 : Fin 2)).op (SSet.stdSimplex.objMk₁ (1 : Fin 3)))
-    (toTopInitialVertex ⦋0⦌))
-  simp only [simplexMap_map, ContinuousMap.comp_apply] at h
-  refine (congrArg _root_.TopCat.I.homeomorph h.symm).trans ?_
-  have hb : (Δ[1] : SSet.{v}).map (SimplexCategory.δ (0 : Fin 2)).op
-      (SSet.stdSimplex.objMk₁ (1 : Fin 3)) = SSet.stdSimplex.const 1 1 _ := by
-    ext k : 1
-    fin_cases k
-    rfl
-  rw [hb, SSet.stdSimplex.toSSetObj_app_const_one]
-  rfl
-
-end TauCeti.TopCat
-
 namespace TopCat.Homotopy
 
 variable {R : Type u} [Ring R] {X Y : TopCat.{v}} {f g : X ⟶ Y} (H : TopCat.Homotopy f g)
@@ -266,68 +212,61 @@ def twistedChainsHomotopy :
   h_last_comp_δ_last n := by
     refine twistedChains_hom_ext _ fun σ ↦ ?_
     simp only [SimplicialObject.δ, ιTwistedChains_twistedChainsHomotopyApp_assoc,
-      ιTwistedChains_twistedChainsMap_app, ιTwistedChains_map]
-    rw [vertexTransport_δ_eq_eqToHom (by simp), eqToHom_map, eqToHom_trans_assoc,
-      ← Category.id_comp (ιTwistedChains L _)]
-    exact comp_ιTwistedChains_eq_of_heq L
-      congr($(H.toSSet.toSimplicialObjectHomotopy.h_last_comp_δ_last n) σ)
-      ((eqToHom_heq_id_dom _ _ _).trans HEq.rfl)
+      ιTwistedChains_twistedChainsMap_app, ιTwistedChains_map_δ_of_ne_zero L Fin.last_pos.ne']
+    rw [eqToHom_trans_assoc]
+    exact (eqToHom_comp_ιTwistedChains_eq L
+      congr($(H.toSSet.toSimplicialObjectHomotopy.h_last_comp_δ_last n) σ) _ rfl).trans
+      (Category.id_comp _)
   h_succ_comp_δ_castSucc_of_lt i j hij := by
     refine twistedChains_hom_ext _ fun σ ↦ ?_
-    simp only [SimplicialObject.δ, ιTwistedChains_twistedChainsHomotopyApp_assoc,
-      ιTwistedChains_map_assoc, ιTwistedChains_map, ιTwistedChains_twistedChainsHomotopyApp]
     have hτ := congr($(H.toSSet.toSimplicialObjectHomotopy.h_succ_comp_δ_castSucc_of_lt i j hij) σ)
-    rw [← Category.assoc, ← Category.assoc]
-    refine comp_ιTwistedChains_eq_of_heq L hτ ?_
     obtain rfl | hi := eq_or_ne i 0
     · -- The zeroth face moves the initial vertex: transport along the first edge.
-      exact (eqToHom_comp_heq _ _).trans ((Functor.map_heq L
+      simp only [SimplicialObject.δ, ιTwistedChains_twistedChainsHomotopyApp_assoc,
+        ιTwistedChains_map_assoc, ιTwistedChains_map, ιTwistedChains_twistedChainsHomotopyApp]
+      rw [← Category.assoc, ← Category.assoc]
+      exact comp_ιTwistedChains_eq_of_heq L hτ ((eqToHom_comp_heq _ _).trans ((Functor.map_heq L
         (initialVertex_toSimplicialObjectHomotopy_h H j.succ σ)
         ((congrArg initialVertex hτ).trans (initialVertex_toSimplicialObjectHomotopy_h H j _))
         (vertexTransport_δ_zero_toSimplicialObjectHomotopy_h_succ_heq H j σ)).trans
-        (comp_eqToHom_heq _ _).symm)
-    · rw [vertexTransport_δ_eq_eqToHom (by simpa using hi), vertexTransport_δ_eq_eqToHom hi]
-      simp only [eqToHom_map, eqToHom_trans]
-      exact (eqToHom_heq_id_dom _ _ _).trans (eqToHom_heq_id_dom _ _ _).symm
+        (comp_eqToHom_heq _ _).symm))
+    · simp only [SimplicialObject.δ, ιTwistedChains_twistedChainsHomotopyApp_assoc,
+        ιTwistedChains_map_δ_of_ne_zero L (Fin.castSucc_ne_zero_iff.mpr hi),
+        ιTwistedChains_map_δ_of_ne_zero_assoc _ hi, ιTwistedChains_twistedChainsHomotopyApp]
+      rw [eqToHom_trans_assoc, eqToHom_trans_assoc]
+      exact eqToHom_comp_ιTwistedChains_eq L hτ _ _
   h_succ_comp_δ_castSucc_succ j := by
     refine twistedChains_hom_ext _ fun σ ↦ ?_
     simp only [SimplicialObject.δ, ιTwistedChains_twistedChainsHomotopyApp_assoc,
-      ιTwistedChains_map]
-    rw [vertexTransport_δ_eq_eqToHom (by simp), vertexTransport_δ_eq_eqToHom (by simp)]
-    simp only [eqToHom_map, eqToHom_trans_assoc]
-    exact comp_ιTwistedChains_eq_of_heq L
-      congr($(H.toSSet.toSimplicialObjectHomotopy.h_succ_comp_δ_castSucc_succ j) σ)
-      ((eqToHom_heq_id_dom _ _ _).trans (eqToHom_heq_id_dom _ _ _).symm)
+      ιTwistedChains_map_δ_of_ne_zero L (Fin.succ_ne_zero _)]
+    rw [eqToHom_trans_assoc, eqToHom_trans_assoc]
+    exact eqToHom_comp_ιTwistedChains_eq L
+      congr($(H.toSSet.toSimplicialObjectHomotopy.h_succ_comp_δ_castSucc_succ j) σ) _ _
   h_castSucc_comp_δ_succ_of_lt i j hji := by
     refine twistedChains_hom_ext _ fun σ ↦ ?_
-    simp only [SimplicialObject.δ, ιTwistedChains_twistedChainsHomotopyApp_assoc,
-      ιTwistedChains_map_assoc, ιTwistedChains_map, ιTwistedChains_twistedChainsHomotopyApp]
     have hi : i ≠ 0 := by
       rintro rfl
       exact Fin.not_lt_zero _ hji
-    rw [vertexTransport_δ_eq_eqToHom (by simp), vertexTransport_δ_eq_eqToHom hi]
-    simp only [eqToHom_map, eqToHom_trans_assoc]
-    exact comp_ιTwistedChains_eq_of_heq L
-      congr($(H.toSSet.toSimplicialObjectHomotopy.h_castSucc_comp_δ_succ_of_lt i j hji) σ)
-      ((eqToHom_heq_id_dom _ _ _).trans (eqToHom_heq_id_dom _ _ _).symm)
+    simp only [SimplicialObject.δ, ιTwistedChains_twistedChainsHomotopyApp_assoc,
+      ιTwistedChains_map_δ_of_ne_zero L (Fin.succ_ne_zero _),
+      ιTwistedChains_map_δ_of_ne_zero_assoc _ hi, ιTwistedChains_twistedChainsHomotopyApp]
+    rw [eqToHom_trans_assoc, eqToHom_trans_assoc]
+    exact eqToHom_comp_ιTwistedChains_eq L
+      congr($(H.toSSet.toSimplicialObjectHomotopy.h_castSucc_comp_δ_succ_of_lt i j hji) σ) _ _
   h_comp_σ_castSucc_of_le i j hij := by
     refine twistedChains_hom_ext _ fun σ ↦ ?_
     simp only [SimplicialObject.σ, ιTwistedChains_twistedChainsHomotopyApp_assoc,
-      ιTwistedChains_map_assoc, ιTwistedChains_map, ιTwistedChains_twistedChainsHomotopyApp]
-    rw [vertexTransport_σ_eq_eqToHom, vertexTransport_σ_eq_eqToHom]
-    simp only [eqToHom_map, eqToHom_trans_assoc]
-    exact comp_ιTwistedChains_eq_of_heq L
-      congr($(H.toSSet.toSimplicialObjectHomotopy.h_comp_σ_castSucc_of_le i j hij) σ)
-      ((eqToHom_heq_id_dom _ _ _).trans (eqToHom_heq_id_dom _ _ _).symm)
+      ιTwistedChains_map_σ, ιTwistedChains_map_σ_assoc, ιTwistedChains_twistedChainsHomotopyApp]
+    rw [eqToHom_trans_assoc, eqToHom_trans_assoc]
+    exact eqToHom_comp_ιTwistedChains_eq L
+      congr($(H.toSSet.toSimplicialObjectHomotopy.h_comp_σ_castSucc_of_le i j hij) σ) _ _
   h_comp_σ_succ_of_lt i j hji := by
     refine twistedChains_hom_ext _ fun σ ↦ ?_
     simp only [SimplicialObject.σ, ιTwistedChains_twistedChainsHomotopyApp_assoc,
-      ιTwistedChains_map_assoc, ιTwistedChains_map, ιTwistedChains_twistedChainsHomotopyApp]
-    rw [vertexTransport_σ_eq_eqToHom, vertexTransport_σ_eq_eqToHom]
-    simp only [eqToHom_map, eqToHom_trans_assoc]
-    exact comp_ιTwistedChains_eq_of_heq L
-      congr($(H.toSSet.toSimplicialObjectHomotopy.h_comp_σ_succ_of_lt i j hji) σ)
-      ((eqToHom_heq_id_dom _ _ _).trans (eqToHom_heq_id_dom _ _ _).symm)
+      ιTwistedChains_map_σ, ιTwistedChains_map_σ_assoc, ιTwistedChains_twistedChainsHomotopyApp]
+    rw [eqToHom_trans_assoc, eqToHom_trans_assoc]
+    exact eqToHom_comp_ιTwistedChains_eq L
+      congr($(H.toSSet.toSimplicialObjectHomotopy.h_comp_σ_succ_of_lt i j hji) σ) _ _
 
 /-- The simplicial homotopy of twisted chains sends the summand of a simplex `σ` identically onto
 the summand of the simplex `h i σ` of the combinatorial homotopy. -/
