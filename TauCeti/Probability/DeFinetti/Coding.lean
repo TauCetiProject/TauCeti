@@ -67,7 +67,7 @@ standard Borel hypothesis and for an arbitrary parameter space and arbitrary exc
 
 Everything reduces to one identity about `Measure.prod`: a parameter drawn from `π` together with
 independent i.i.d. noise, pushed through a map carrying the noise law to `P t`, has the canonical
-law `iidMixtureLaw` (`map_prod_infinitePi_eq_iidMixtureLaw`). At the coding map this is
+law `iidMixtureLaw` (`Measure.map_prod_infinitePi_eq_iidMixtureLaw`). At the coding map this is
 `map_volume_unitIntervalCoding`, and forgetting the parameter gives the barycenter. No new measure
 theory is needed: the analytic content is Mathlib's
 `ProbabilityTheory.Kernel.exists_measurable_map_eq_unitInterval` and the probabilistic content is
@@ -112,7 +112,7 @@ theorem ConditionallyIIDWith.jointPathLaw_eq_map_unitIntervalCoding {μ : Measur
     jointPathLaw μ X ν =
       ((μ.map ν).prod (Measure.infinitePi fun _ : ℕ => (volume : Measure I))).map
         (fun p => (p.1, fun i => unitIntervalCoding α p.1 (p.2 i))) := by
-  rw [h.jointPathLaw_eq_iidMixtureLaw, map_prod_unitIntervalCoding_eq_iidMixtureLaw]
+  rw [h.jointPathLaw_eq_iidMixtureLaw, Measure.map_prod_unitIntervalCoding_eq_iidMixtureLaw]
 
 /-- **The coding representation of an exchangeable process.** An exchangeable sequence in a nonempty
 standard Borel space has a directing measure `ν` — it is conditionally i.i.d. `ν` — such that the
@@ -141,7 +141,7 @@ theorem ExchangeableLaw.exists_eq_map_unitIntervalCoding {ρ : Measure (ℕ → 
             (Measure.infinitePi fun _ : ℕ => (volume : Measure I))).map
           fun p i => unitIntervalCoding α p.1 (p.2 i) := by
   obtain ⟨π, hπ, -⟩ := hρ.existsUnique_mixingLaw
-  exact ⟨π, by rw [map_prod_unitIntervalCoding_eq_deFinettiBarycenter, ← hπ]⟩
+  exact ⟨π, by rw [Measure.map_prod_unitIntervalCoding_eq_deFinettiBarycenter, ← hπ]⟩
 
 /-- **Exchangeability is exactly codability.** A probability law on `ℕ → α`, with `α` nonempty
 standard Borel, is exchangeable iff it is the law of a jointly measurable function of a random

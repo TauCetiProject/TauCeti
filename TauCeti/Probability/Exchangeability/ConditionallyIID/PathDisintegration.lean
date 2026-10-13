@@ -39,7 +39,7 @@ prefix. For the joint law that prefix marginal is the defining identity of `Cond
 at the selection `Fin n → ℕ`, which is
 `map_prefixProjPair_jointPathLaw_eq_disintegration`. For the mixture law it is
 `map_prefixProjPair_iidMixtureLaw` — a general fact about `iidMixtureLaw`, and so kept with the
-construction in `Process/IIDMixture.lean` — proved fibrewise: over each point `t` of the
+construction in `Process/IIDMixture/Basic.lean` — proved fibrewise: over each point `t` of the
 mixing law the fibre `δ_t ⊗ (P t)^{⊗ℕ}` projects to `δ_t ⊗ (P t)^{⊗ Fin n}`, which is
 `map_infinitePi_pair_block` at the prefix selection — the tag `t` and the sampled law `P t`
 differ there, which is why that lemma carries an arbitrary tag. Instantiating at the identity

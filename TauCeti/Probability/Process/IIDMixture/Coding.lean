@@ -51,17 +51,19 @@ coordinate, the same construction produces the canonical conditionally i.i.d. la
 the parameter is not merely a mixing representative of the coded sequence but its directing
 measure. -/
 @[simp]
-theorem map_prod_unitIntervalCoding_eq_iidMixtureLaw (π : Measure (ProbabilityMeasure α)) :
+theorem _root_.MeasureTheory.Measure.map_prod_unitIntervalCoding_eq_iidMixtureLaw
+    (π : Measure (ProbabilityMeasure α)) :
     (π.prod (Measure.infinitePi fun _ : ℕ => (volume : Measure I))).map
         (fun p => (p.1, fun i => unitIntervalCoding α p.1 (p.2 i)))
       = iidMixtureLaw π id :=
-  map_prod_infinitePi_eq_iidMixtureLaw _ (measurable_uncurry_unitIntervalCoding α)
+  Measure.map_prod_infinitePi_eq_iidMixtureLaw _ (measurable_uncurry_unitIntervalCoding α)
     map_volume_unitIntervalCoding
 
 /-- **Coding a mixing law.** Drawing a probability measure from `π`, then coding an independent
 i.i.d. uniform sequence by it, produces the de Finetti barycenter of `π`. -/
 @[simp]
-theorem map_prod_unitIntervalCoding_eq_deFinettiBarycenter (π : Measure (ProbabilityMeasure α)) :
+theorem _root_.MeasureTheory.Measure.map_prod_unitIntervalCoding_eq_deFinettiBarycenter
+    (π : Measure (ProbabilityMeasure α)) :
     (π.prod (Measure.infinitePi fun _ : ℕ => (volume : Measure I))).map
         (fun p i => unitIntervalCoding α p.1 (p.2 i))
       = Measure.deFinettiBarycenter π := by
@@ -76,7 +78,7 @@ theorem map_prod_unitIntervalCoding_eq_deFinettiBarycenter (π : Measure (Probab
               rw [Measure.map_map measurable_snd hG]
               rfl
     _ = (iidMixtureLaw π id).map Prod.snd := by
-          rw [map_prod_unitIntervalCoding_eq_iidMixtureLaw]
+          rw [Measure.map_prod_unitIntervalCoding_eq_iidMixtureLaw]
     _ = Measure.deFinettiBarycenter π := by
           rw [iidMixtureLaw_def, TauCeti.MeasureTheory.map_bind
             (TauCeti.MeasureTheory.measurable_dirac_prod_infinitePi_const
