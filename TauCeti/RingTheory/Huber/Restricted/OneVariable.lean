@@ -27,8 +27,14 @@ renaming of power series, `MvPowerSeries.rename`, only over a commutative semiri
 ultrametric hypothesis is needed only for the target ring: Mathlib defines
 `PowerSeries.IsRestricted.subring` only under `[IsUltrametricDist R]`.
 
+Independently of any norm, the one-variable polynomials `A[T]`, evaluated at the variable, are
+dense in every one-variable weighted ring `A⟨T⟩_T`. This is how facts about `A[T]`, such as
+factorisation into linear factors over an algebraically closed field, reach `A⟨T⟩_T`.
+
 ## Main results
 
+* `TauCeti.Huber.denseRange_eval₂RingHom_weightedX`: evaluation of `A[T]` at the variable has
+  dense range in `A⟨T⟩_T`.
 * `TauCeti.Huber.isRestricted_renameEquiv_finOne_iff`: renaming the sole variable from `Fin 1`
   to `Unit` identifies the Huber restrictedness predicate with Mathlib's radius-one one.
 * `TauCeti.Huber.restrictedMvPowerSeriesSubringOneEquiv`: the two uncompleted one-variable
@@ -48,6 +54,27 @@ public section
 namespace TauCeti.Huber
 
 open Filter
+
+section Polynomial
+
+variable {A : Type*} [CommRing A] [TopologicalSpace A] [NonarchimedeanRing A]
+
+/-- **One-variable polynomials are dense in `A⟨T⟩_T`**: evaluating `A[T]` at the variable has
+dense range. See Wedhorn 5.49(1) and `TauCeti.Huber.dense_weightedPolynomials`. -/
+theorem denseRange_eval₂RingHom_weightedX {T : Fin 1 → Set A} (hT : IsWeightFamily T) :
+    DenseRange (Polynomial.eval₂RingHom (weightedC T hT) (weightedX T hT 0)) := by
+  -- the polynomial subring is the image of `MvPolynomial (Fin 1) A`, which factors through `A[T]`
+  have hcomp : weightedPolynomialHom T hT =
+      (Polynomial.eval₂RingHom (weightedC T hT) (weightedX T hT 0)).comp
+        (MvPolynomial.eval₂Hom Polynomial.C fun _ ↦ Polynomial.X) :=
+    MvPolynomial.ringHom_ext (fun c ↦ by simp [weightedPolynomialHom_C])
+      (fun i ↦ by simp [weightedPolynomialHom_X, Subsingleton.elim i 0])
+  refine (dense_weightedPolynomials hT).mono fun f hf ↦ ?_
+  refine ⟨MvPolynomial.eval₂Hom Polynomial.C (fun _ ↦ Polynomial.X)
+    ((weightedPolynomialsEquiv hT).symm ⟨f, hf⟩), ?_⟩
+  rw [← RingHom.comp_apply, ← hcomp, ← coe_weightedPolynomialsEquiv, RingEquiv.apply_symm_apply]
+
+end Polynomial
 
 section Comparison
 

@@ -75,11 +75,12 @@ theorem powRingHom_omega (h : d.IsCyclotomicCharacterTableSpec e omega table deg
   exact mul_left_cancel₀ (Nat.cast_ne_zero.mpr (h.degree_pos i).ne' : (degree i : ℂ) ≠ 0) hmap
 
 /-- Every conjugate residue of a certified central entry is obtained by powering its column
-representative in its reduction at one primitive root, when that representative has `e`-th power
-one. -/
+representative in its reduction at one cyclotomic root, over any modulus, when that representative
+has `e`-th power one. -/
 theorem conjugateResidues_omega (h : d.IsCyclotomicCharacterTableSpec e omega table degree)
-    {p : ℕ} [Fact p.Prime] {α : ZMod p}
-    (hα : IsPrimitiveRoot α e) (i k : Fin d.numClasses) (j : Fin e.totient)
+    {p : ℕ} {α : ZMod p}
+    (hα : (Polynomial.cyclotomic e ℤ).eval₂ (Int.castRingHom (ZMod p)) α = 0)
+    (i k : Fin d.numClasses) (j : Fin e.totient)
     (hg : d.rep k ^ e = 1) :
     Cyclotomic.conjugateResidues α (omega i k) j =
       Cyclotomic.reduce p α (omega i (d.index (d.rep k ^ Cyclotomic.primitiveExponent e j))) := by

@@ -12,7 +12,8 @@ public import TauCeti.Analysis.InnerProductSpace.Frame
 
 The synthesis map of an orthonormal family is an isometry from Euclidean coefficient space into
 the ambient inner-product space. Its coordinate formula and action on the standard basis make the
-identified finite-dimensional subspace directly usable in operator constructions.
+identified finite-dimensional subspace directly usable in operator constructions. In the other
+direction, Bessel's inequality makes the analysis map of an orthonormal family a contraction.
 -/
 
 public section
@@ -62,5 +63,13 @@ theorem synthesisMapIsometry_single (hv : Orthonormal 𝕜 v) (i : ι) (c : 𝕜
   classical
   rw [synthesisMapIsometry_apply]
   simp
+
+/-- **Bessel's inequality** for the analysis map of an orthonormal family: the coefficient vector
+`(⟪vᵢ, x⟫)ᵢ` has norm at most `‖x‖`. -/
+theorem norm_analysisMap_le (hv : Orthonormal 𝕜 v) (x : E) :
+    ‖TauCeti.analysisMap 𝕜 v x‖ ≤ ‖x‖ :=
+  (pow_le_pow_iff_left₀ (norm_nonneg _) (norm_nonneg x) two_ne_zero).mp <| by
+    rw [TauCeti.norm_analysisMap_sq]
+    exact hv.sum_inner_products_le x
 
 end Orthonormal

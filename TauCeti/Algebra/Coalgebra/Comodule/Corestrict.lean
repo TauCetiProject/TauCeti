@@ -264,7 +264,6 @@ theorem corestrictHom_comp_coalg_apply (f : C →ₗc[R] D) (g : D →ₗc[R] E)
   rfl
 
 /-- Corestriction sends identity morphisms to identity morphisms. -/
-@[simp]
 theorem corestrictHom_id (f : C →ₗc[R] D) :
     letI : Comodule R D M := Corestrict (R := R) (C := C) (D := D) (M := M) f
     corestrictHom (R := R) (C := C) (D := D) (M := M) (N := M) f (Hom.id R C M) =

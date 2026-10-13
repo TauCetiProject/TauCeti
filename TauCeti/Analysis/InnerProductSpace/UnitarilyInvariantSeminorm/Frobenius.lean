@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Order.Chebyshev
+public import Mathlib.Analysis.Matrix.Normed
 public import Mathlib.Analysis.InnerProductSpace.Trace
 public import TauCeti.Analysis.InnerProductSpace.UnitarilyInvariantSeminorm.KyFan
 
@@ -21,11 +22,23 @@ finite-dimensional as well, `‖A‖_F = √(∑ᵢ σᵢ(A)²)` in terms of the
 Frobenius seminorm controls the nuclear seminorm with the rank-sharp constant:
 `‖A‖₁ ≤ √(rank A) ‖A‖_F`.
 
+In finite orthonormal source and target bases, the Frobenius seminorm equals the Frobenius
+norm of the rectangular coordinate matrix. This comparison connects basis-independent
+operator estimates to entrywise matrix calculations. For a Sylvester equation `AX - XB = C`
+in orthonormal eigenbases,
+`ContinuousLinearMap.inner_sylvester_apply_eigenvectorBasis` gives the coordinate equation
+`(αᵢ - βⱼ)Xᵢⱼ = Cᵢⱼ`. A lower bound `δ ≤ |αᵢ - βⱼ|` then gives an entrywise norm bound.
+Summing its squares and using
+`LinearMap.frobenius_norm_toMatrix` for `X` and `C` converts that bound into
+`δ ‖X‖_F ≤ ‖C‖_F`.
+
 ## Main declarations
 
 * `LinearMap.trace_adjoint_comp_self_eq_sum_norm_apply_sq`: `tr (A† A) = ∑ᵢ ‖A bᵢ‖²` for every
   orthonormal basis `(bᵢ)`.
 * `LinearMap.trace_adjoint_comp_self_eq_sum_sq_singularValues`: `tr (A† A) = ∑ᵢ σᵢ(A)²`.
+* `LinearMap.frobenius_norm_toMatrix`: the Frobenius norm of the matrix in orthonormal
+  bases equals the operator Frobenius seminorm.
 * `LinearMap.sum_norm_apply_sq_eq_sum_norm_apply_sq`: `∑ᵢ ‖A bᵢ‖²` is independent of the
   orthonormal basis.
 * `TauCeti.UnitarilyInvariantSeminorm.frobenius`: the Frobenius seminorm.
@@ -120,6 +133,30 @@ theorem sq_frobenius_apply (b : OrthonormalBasis ι 𝕜 E) (A : E →ₗ[𝕜] 
   rw [frobenius_apply b, Real.sq_sqrt (by positivity)]
 
 end TauCeti.UnitarilyInvariantSeminorm
+
+namespace LinearMap
+
+open scoped InnerProductSpace Matrix.Norms.Frobenius
+
+variable {m n : Type*} [Fintype m] [Fintype n]
+
+/-- The Frobenius norm of the matrix of a rectangular operator in any orthonormal domain and
+codomain bases equals its unitarily invariant Frobenius seminorm. -/
+@[simp]
+theorem frobenius_norm_toMatrix [DecidableEq n] (A : E →ₗ[𝕜] F) (b : OrthonormalBasis n 𝕜 E)
+    (c : OrthonormalBasis m 𝕜 F) :
+    ‖A.toMatrix b.toBasis c.toBasis‖ = TauCeti.UnitarilyInvariantSeminorm.frobenius 𝕜 E F A := by
+  symm
+  rw [TauCeti.UnitarilyInvariantSeminorm.frobenius_apply b A,
+    Matrix.frobenius_norm_def, ← Real.sqrt_eq_rpow]
+  congr 1
+  rw [Finset.sum_comm]
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  simpa [LinearMap.toMatrix_apply, OrthonormalBasis.coe_toBasis_repr_apply,
+    OrthonormalBasis.repr_apply_apply, Real.rpow_two] using
+    (c.sum_sq_norm_inner_right (A (b i))).symm
+
+end LinearMap
 
 section SingularValues
 

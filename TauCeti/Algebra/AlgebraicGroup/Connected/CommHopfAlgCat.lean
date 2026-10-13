@@ -33,9 +33,6 @@ can impose it without introducing a separate bundled category of connected objec
 ## References
 
 * J. S. Milne, *Algebraic Groups* (2017), §2.a.
-
-This is the geometric-connectedness prerequisite for Layer 3, "Identity component and component
-group", of the ReductiveGroups roadmap.
 -/
 
 public section
