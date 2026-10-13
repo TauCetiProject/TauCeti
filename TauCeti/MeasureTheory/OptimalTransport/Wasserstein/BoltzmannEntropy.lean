@@ -77,8 +77,8 @@ variable {X : Type*} {p : ℝ≥0∞} [PseudoMetricSpace X] [MeasurableSpace X] 
 
 variable {m : Measure X} [SigmaFinite m] {a : ℝ} {x₀ : X}
 
-/-- **Change of reference on `P_p(X)`.** If `exp (-a d(x, x₀)^p)` is integrable against `m`, then
-for every law `μ` with finite `p`-moment,
+/-- **Change of reference on `P_p(X)`.** If `m ≠ 0` and `exp (-a d(x, x₀)^p)` is integrable
+against `m`, then for every law `μ` with finite `p`-moment,
 `Ent_m(μ) = klDiv μ m_a - a ∫ d(x, x₀)^p dμ - log Z`, where `m_a = Z⁻¹ exp (-a d(x, x₀)^p) m` is
 the tilted reference and `Z = ∫ exp (-a d(x, x₀)^p) dm`. -/
 theorem boltzmannEntropy_eq_klDiv_tilted_add (hp : p ≠ ∞)
@@ -132,8 +132,8 @@ private theorem klDiv_ne_top_and_toReal_klDiv_add_le (hp : p ≠ ∞)
     EReal.coe_le_coe_iff] at hμ
   linarith
 
-/-- **Moment bound on entropy sublevels.** If `exp (-a d(x, x₀)^p)` is integrable against `m` and
-`b > a`, then `Ent_m(μ) + b ∫ d(x, x₀)^p dμ ≤ C` bounds the `p`-moment:
+/-- **Moment bound on entropy sublevels.** If `m ≠ 0`, `exp (-a d(x, x₀)^p)` is integrable against
+`m` and `b > a`, then `Ent_m(μ) + b ∫ d(x, x₀)^p dμ ≤ C` bounds the `p`-moment:
 `∫ d(x, x₀)^p dμ ≤ (C + log Z) / (b - a)`, where `Z = ∫ exp (-a d(x, x₀)^p) dm`. -/
 theorem integral_dist_rpow_le_of_boltzmannEntropy_add_le (hp : p ≠ ∞)
     (hm : Integrable (fun x ↦ Real.exp (-(a * dist x x₀ ^ p.toReal))) m) [NeZero m] {b C : ℝ}
@@ -148,7 +148,7 @@ theorem integral_dist_rpow_le_of_boltzmannEntropy_add_le (hp : p ≠ ∞)
   linarith [ENNReal.toReal_nonneg (a := klDiv ((μ : ProbabilityMeasure X) : Measure X)
     (m.tilted fun x ↦ -(a * dist x x₀ ^ p.toReal)))]
 
-/-- **Tightness of entropy sublevels.** On a complete separable metric space, if
+/-- **Tightness of entropy sublevels.** On a complete separable metric space, if `m ≠ 0`,
 `exp (-a d(x, x₀)^p)` is integrable against `m` and `a ≤ b`, then every set of laws with finite
 `p`-moment along which `Ent_m(μ) + b ∫ d(x, x₀)^p dμ` is bounded above is tight. For an infinite
 reference such as Lebesgue measure, an entropy bound alone does not give tightness; the moment term
