@@ -65,10 +65,12 @@ namespace TauCeti.WorkedExamples
 /-! ### The curve 11.a2 (Cremona 11a1) -/
 
 /-- The discriminant of `y² + y = x³ - x² - 10 x - 20` is `-11⁵`. -/
+@[simp]
 theorem Δ_curve11a2 : curve11a2.Δ = -11 ^ 5 := by
   simp [Δ, b₂, b₄, b₆, b₈]
 
 /-- The invariant `c₄` of `y² + y = x³ - x² - 10 x - 20` is `496 = 2⁴ · 31`. -/
+@[simp]
 theorem c₄_curve11a2 : curve11a2.c₄ = 496 := by
   simp [c₄, b₂, b₄]
 
@@ -103,6 +105,7 @@ theorem isReducedMinimal_and_exists_smul_eq_curve11a2_iff {W : WeierstrassCurve 
   exact ⟨isReducedMinimal_curve11a2, 1, one_smul _ _⟩
 
 /-- **The minimal discriminant ideal of 11.a2 is `(11⁵)`.** -/
+@[simp]
 theorem minimalDiscriminantIdeal_curve11a2 :
     minimalDiscriminantIdeal ℤ (curve11a2.baseChange ℚ) = Ideal.span {11 ^ 5} := by
   rw [minimalDiscriminantIdeal_eq_span_of_isGlobalMinimal
@@ -112,6 +115,7 @@ theorem minimalDiscriminantIdeal_curve11a2 :
 /-! ### The curve 37.a1 -/
 
 /-- The invariant `c₄` of `y² + y = x³ - x` is `48 = 2⁴ · 3`. -/
+@[simp]
 theorem c₄_curve37a1 : curve37a1.c₄ = 48 := by
   simp [c₄, b₂, b₄]
 
@@ -140,6 +144,7 @@ theorem isReducedMinimal_and_exists_smul_eq_curve37a1_iff {W : WeierstrassCurve 
   exact ⟨isReducedMinimal_curve37a1, 1, one_smul _ _⟩
 
 /-- **The minimal discriminant ideal of 37.a1 is `(37)`.** -/
+@[simp]
 theorem minimalDiscriminantIdeal_curve37a1 :
     minimalDiscriminantIdeal ℤ (curve37a1.baseChange ℚ) = Ideal.span {37} := by
   rw [minimalDiscriminantIdeal_eq_span_of_isGlobalMinimal
