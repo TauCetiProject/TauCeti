@@ -173,7 +173,7 @@ end Semiring
 
 section Galois
 
-variable {R : Type u} {H : Type v} {A : Type w} [CommSemiring R] [CommSemiring H]
+variable {R : Type u} {H : Type v} {A : Type w} [CommSemiring R] [Semiring H]
   [Bialgebra R H] [CommSemiring A] [Algebra R A] [ComoduleAlgebra R H A]
   (B : Type x) [CommSemiring B] [Algebra R B] [Algebra B A] [IsScalarTower R B A]
 
@@ -190,7 +190,8 @@ algebra `A` over an algebra `B` acting by coinvariants. It is the coordinate map
 first copy of `A`. -/
 noncomputable def galoisMap (hB : ∀ b : B, algebraMap B A b ∈ coinvariants R H A) :
     A ⊗[B] A →ₐ[A] A ⊗[R] H :=
-  Algebra.TensorProduct.lift (Algebra.ofId A _) (coactAlgHomOver B hB) fun _ _ ↦ .all _ _
+  Algebra.TensorProduct.lift (Algebra.ofId A _) (coactAlgHomOver B hB) fun a _ ↦
+    Algebra.commutes a _
 
 variable {B}
 
@@ -220,7 +221,7 @@ end Galois
 
 section FaithfullyFlat
 
-variable {R : Type u} {H : Type v} {A : Type w} [CommSemiring R] [CommSemiring H] [Bialgebra R H]
+variable {R : Type u} {H : Type v} {A : Type w} [CommSemiring R] [Semiring H] [Bialgebra R H]
   [CommRing A] [Algebra R A] [ComoduleAlgebra R H A]
   {B : Type x} [CommRing B] [Algebra R B] [Algebra B A] [IsScalarTower R B A]
   [Module.FaithfullyFlat B A]
