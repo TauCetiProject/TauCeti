@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.DedekindDomain.Ideal.Away
+public import TauCeti.RingTheory.DedekindDomain.Ideal.Congruence
 public import TauCeti.NumberTheory.NumberField.TotallyPositive
 
 import Mathlib.RingTheory.Ideal.Norm.AbsNorm
@@ -323,6 +324,14 @@ theorem isCongrOne_iff {𝔪 : Modulus K} {x : Kˣ} :
         ∀ w ∈ 𝔪.infinitePart, 0 < InfinitePlace.embedding_of_isReal w.2 (x : K) :=
   Iff.rfl
 
+/-- Multiplicative congruence is the finite ideal congruence together with the selected
+real-place positivity conditions. -/
+theorem isCongrOne_iff_mem_idealCongruenceSubgroup {𝔪 : Modulus K} {x : Kˣ} :
+    IsCongrOne 𝔪 x ↔
+      x ∈ idealCongruenceSubgroup K 𝔪.finitePart 𝔪.finitePart_ne_bot ∧
+        ∀ w ∈ 𝔪.infinitePart, 0 < InfinitePlace.embedding_of_isReal w.2 (x : K) := by
+  simp only [isCongrOne_iff, mem_idealCongruenceSubgroup_iff, Modulus.exponent_def]
+
 namespace IsCongrOne
 
 variable {𝔪 : Modulus K} {x : Kˣ}
@@ -346,17 +355,16 @@ theorem valuation_sub_one_lt_one (hx : IsCongrOne 𝔪 x) {v : HeightOneSpectrum
 /-- **An element congruent to one is a unit at the primes dividing the finite part.** -/
 theorem valuation_eq_one (hx : IsCongrOne 𝔪 x) {v : HeightOneSpectrum (𝓞 K)}
     (hv : v.asIdeal ∣ 𝔪.finitePart) : v.valuation K (x : K) = 1 := by
-  have h := Valuation.map_one_add_of_lt (v.valuation K) (hx.valuation_sub_one_lt_one hv)
-  rwa [add_sub_cancel] at h
+  exact valuation_eq_one_of_mem_idealCongruenceSubgroup
+    (isCongrOne_iff_mem_idealCongruenceSubgroup.mp hx).1 hv
 
 /-- **Congruence is antitone in the modulus.**  An element congruent to one modulo the larger
 modulus `𝔫` is congruent to one modulo every divisor `𝔪` of `𝔫`: the exponents can only have
 shrunk and fewer real places are constrained. -/
 theorem mono {𝔫 : Modulus K} (h : 𝔪 ∣ 𝔫) (hx : IsCongrOne 𝔫 x) : IsCongrOne 𝔪 x := by
-  refine ⟨fun v hv ↦ ?_, fun w hw ↦ hx.pos ((Modulus.dvd_iff.mp h).2 hw)⟩
-  refine (hx.valuation_sub_one_le (hv.trans (Modulus.dvd_iff.mp h).1)).trans
-    (WithZero.exp_le_exp.mpr ?_)
-  exact neg_le_neg (Int.ofNat_le.mpr (Modulus.exponent_mono h v))
+  rw [isCongrOne_iff_mem_idealCongruenceSubgroup] at hx ⊢
+  exact ⟨idealCongruenceSubgroup_antitone (Modulus.dvd_iff.mp h).1 hx.1,
+    fun w hw ↦ hx.2 w ((Modulus.dvd_iff.mp h).2 hw)⟩
 
 end IsCongrOne
 
@@ -370,28 +378,14 @@ def congruenceSubgroup (𝔪 : Modulus K) : Subgroup Kˣ where
     · simp
   mul_mem' := by
     rintro x y hx hy
-    refine ⟨fun v hv ↦ ?_, fun w hw ↦ ?_⟩
-    · -- `xy - 1 = x (y - 1) + (x - 1)`, and `x` is a unit at `v`.
-      have hxy : ((x * y : Kˣ) : K) - 1 = (x : K) * ((y : K) - 1) + ((x : K) - 1) := by
-        push_cast; ring
-      refine le_trans (hxy ▸ Valuation.map_add (v.valuation K) _ _) (max_le ?_ ?_)
-      · rw [map_mul, hx.valuation_eq_one hv, one_mul]
-        exact hy.valuation_sub_one_le hv
-      · exact hx.valuation_sub_one_le hv
-    · have := mul_pos (hx.pos hw) (hy.pos hw)
-      rwa [← map_mul, ← Units.val_mul] at this
+    simp only [Set.mem_ofPred_eq, isCongrOne_iff_mem_idealCongruenceSubgroup] at hx hy ⊢
+    refine ⟨mul_mem hx.1 hy.1, fun w hw ↦ ?_⟩
+    simpa only [Units.val_mul, map_mul] using mul_pos (hx.2 w hw) (hy.2 w hw)
   inv_mem' := by
     rintro x hx
-    refine ⟨fun v hv ↦ ?_, fun w hw ↦ ?_⟩
-    · have hne : (x : K) ≠ 0 := x.ne_zero
-      have hxy : ((x⁻¹ : Kˣ) : K) - 1 = -(((x : K) - 1) * (x : K)⁻¹) := by
-        rw [Units.val_inv_eq_inv_val]
-        field_simp
-        ring
-      rw [hxy, Valuation.map_neg, map_mul, map_inv₀, hx.valuation_eq_one hv, inv_one, mul_one]
-      exact hx.valuation_sub_one_le hv
-    · have := inv_pos.mpr (hx.pos hw)
-      rwa [← map_inv₀, ← Units.val_inv_eq_inv_val] at this
+    simp only [Set.mem_ofPred_eq, isCongrOne_iff_mem_idealCongruenceSubgroup] at hx ⊢
+    refine ⟨inv_mem hx.1, fun w hw ↦ ?_⟩
+    simpa only [Units.val_inv_eq_inv_val, map_inv₀] using inv_pos.mpr (hx.2 w hw)
 
 @[simp] theorem mem_congruenceSubgroup {𝔪 : Modulus K} {x : Kˣ} :
     x ∈ congruenceSubgroup 𝔪 ↔ IsCongrOne 𝔪 x := Iff.rfl
