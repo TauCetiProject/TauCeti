@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.DGLocalSystem.Basic
+public import TauCeti.AlgebraicTopology.DGLocalSystem.Classical.DegreeZero
 public import TauCeti.AlgebraicTopology.LocalCoefficient
 public import TauCeti.Algebra.Module.GradedModule.Trivial
 public import TauCeti.CategoryTheory.Groupoid.ConnectedFunctor
@@ -16,7 +17,7 @@ public import TauCeti.CategoryTheory.Groupoid.ConnectedFunctor
 A classical local system on a pointed space `(B, b)` is a functor from the fundamental groupoid to
 `R`-modules.  Its fiber at `b` is a representation of `π₁(B, b)`, hence a module over the group
 ring `R[π₁(B, b)]`, and the chain algebra `C_*(Ω_b B; R)` acts on it from the right through the
-ring homomorphism `loopChainToGroupAlgebra` of the loop algebra, which keeps the degree-zero
+ring homomorphism `loopChainToGroupAlgebra`, which keeps the degree-zero
 component and sends it to the group ring by `loopZeroChainToGroupAlgebra`.  With the trivial
 grading and the zero differential, the fiber is a DG local system concentrated in degree zero (the
 source's Definition 1.8 in degree zero).
@@ -149,7 +150,7 @@ theorem classicalDGLocalSystem_differential (L : LocalCoefficientSystem.{u, u, w
 /-- A Moore loop acts on the fiber by the monodromy of its class: the point chain of a loop `γ`
 acts by the monodromy of the inverse of `fundamentalGroupHom γ`, that is of the class of `γ`. -/
 @[simp]
-theorem classicalAction_ofCube_point (L : LocalCoefficientSystem.{u, u, w} R X)
+theorem classicalAction_lof_ofCube (L : LocalCoefficientSystem.{u, u, w} R X)
     (c : SingularCube (MooreLoopSpace X x) 0) :
     classicalAction L (op (cubicalChainLof (MooreLoopSpace X x) R 0
         (NormalizedCubicalChain.ofCube (MooreLoopSpace X x) R c))) =
