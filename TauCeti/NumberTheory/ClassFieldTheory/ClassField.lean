@@ -248,62 +248,43 @@ private theorem mem_relativeTop_iff (hL : fixedField Lay.top.toSubgroup = L) (g 
 private theorem fixingSubgroup_fieldRange (hE : fixedField Lay.ground.toSubgroup = E)
     (hL : fixedField Lay.top.toSubgroup = L) :
     (IsScalarTower.toAlgHom E L (SeparableClosure F)).fieldRange.fixingSubgroup =
-      Lay.relativeTop.map (Lay.groundEquivOfFixedField hE).toMonoidHom := by
+      Lay.relativeTop.map (Lay.groundEquivOfFixedField hE) := by
   ext σ
   obtain ⟨g, rfl⟩ := (Lay.groundEquivOfFixedField hE).surjective σ
-  rw [Subgroup.mem_map_equiv, MulEquiv.symm_apply_apply, Lay.mem_relativeTop_iff hL,
+  rw [Subgroup.map_equiv_eq_comap_symm, Subgroup.mem_comap, MonoidHom.coe_ofClass,
+    MulEquiv.symm_apply_apply, Lay.mem_relativeTop_iff hL,
     IntermediateField.mem_fixingSubgroup_iff]
   simp only [AlgHom.mem_fieldRange, IsScalarTower.coe_toAlgHom', forall_exists_index,
     forall_apply_eq_imp_iff, groundEquivOfFixedField_apply, IntermediateField.algebraMap_apply]
 
+/-- The image of `L` in `Fˢ` is Galois over `E`: its fixing subgroup is the image of the top
+subgroup of the layer, normal in `Gal(Fˢ/E)`. -/
+private theorem isGalois_fieldRange (hE : fixedField Lay.ground.toSubgroup = E)
+    (hL : fixedField Lay.top.toSubgroup = L) :
+    IsGalois E (IsScalarTower.toAlgHom E L (SeparableClosure F)).fieldRange := by
+  have : IsGalois E (SeparableClosure F) := IsGalois.tower_top_of_isGalois F E _
+  refine (InfiniteGalois.normal_iff_isGalois _).1 ?_
+  rw [Lay.fixingSubgroup_fieldRange hE hL]
+  exact Subgroup.Normal.map inferInstance _ (Lay.groundEquivOfFixedField hE).surjective
+
 /-- **A layer is Galois on fixed fields**: if the ground and top subgroups of a layer `V ◁ U` of
 `G_F` have fixed fields `E` and `L`, then `L/E` is a Galois extension. -/
 theorem isGalois_of_fixedField (hE : fixedField Lay.ground.toSubgroup = E)
-    (hL : fixedField Lay.top.toSubgroup = L) : IsGalois E L := by
-  have : IsGalois E (SeparableClosure F) := IsGalois.tower_top_of_isGalois F E _
-  have := (InfiniteGalois.normal_iff_isGalois
-    (IsScalarTower.toAlgHom E L (SeparableClosure F)).fieldRange).1 (by
-      rw [Lay.fixingSubgroup_fieldRange hE hL]
-      exact Subgroup.Normal.map inferInstance _ (Lay.groundEquivOfFixedField hE).surjective)
-  exact IsGalois.of_algEquiv
-    (IsScalarTower.toAlgHom E L (SeparableClosure F)).equivFieldRange.symm
-
-/-- Restriction from the ground subgroup of a layer to the automorphisms of the fixed field of
-its top subgroup over the fixed field of its ground subgroup. -/
-private def restrictFixedFieldHom (hE : fixedField Lay.ground.toSubgroup = E)
-    (hL : fixedField Lay.top.toSubgroup = L) : Lay.ground →* Gal(L/E) :=
-  have := Lay.isGalois_of_fixedField hE hL
-  (AlgEquiv.restrictNormalHom L).comp (Lay.groundEquivOfFixedField hE).toMonoidHom
-
-private theorem restrictFixedFieldHom_apply (hE : fixedField Lay.ground.toSubgroup = E)
-    (hL : fixedField Lay.top.toSubgroup = L) (g : Lay.ground) (x : L) :
-    ((Lay.restrictFixedFieldHom hE hL g x : L) : SeparableClosure F) =
-      (g : AbsoluteGaloisGroup F) x :=
-  have := Lay.isGalois_of_fixedField hE hL
-  AlgEquiv.restrictNormal_commutes (Lay.groundEquivOfFixedField hE g) L x
-
-private theorem ker_restrictFixedFieldHom (hE : fixedField Lay.ground.toSubgroup = E)
-    (hL : fixedField Lay.top.toSubgroup = L) :
-    (Lay.restrictFixedFieldHom hE hL).ker = Lay.relativeTop := by
-  have := Lay.isGalois_of_fixedField hE hL
-  rw [restrictFixedFieldHom, ← MonoidHom.comap_ker, AlgEquiv.ker_restrictNormalHom,
-    Lay.fixingSubgroup_fieldRange hE hL, Subgroup.comap_map_eq_self_of_injective
-      (Lay.groundEquivOfFixedField hE).injective]
-
-private theorem surjective_restrictFixedFieldHom (hE : fixedField Lay.ground.toSubgroup = E)
-    (hL : fixedField Lay.top.toSubgroup = L) :
-    Function.Surjective (Lay.restrictFixedFieldHom hE hL) := by
-  have := Lay.isGalois_of_fixedField hE hL
-  have : IsGalois E (SeparableClosure F) := IsGalois.tower_top_of_isGalois F E _
-  exact (AlgEquiv.restrictNormalHom_surjective _).comp (Lay.groundEquivOfFixedField hE).surjective
+    (hL : fixedField Lay.top.toSubgroup = L) : IsGalois E L :=
+  have := Lay.isGalois_fieldRange hE hL
+  IsGalois.of_algEquiv (IsScalarTower.toAlgHom E L (SeparableClosure F)).equivFieldRange.symm
 
 /-- **The Galois group of a layer is the Galois group of its fixed fields**: if the ground and top
 subgroups of a layer `V ◁ U` of `G_F` have fixed fields `E` and `L`, restriction to `L` identifies
 the Galois group `U ⧸ V` of the layer with `Gal(L/E)`. -/
 def galEquivOfFixedField (hE : fixedField Lay.ground.toSubgroup = E)
     (hL : fixedField Lay.top.toSubgroup = L) : Lay.Gal ≃* Gal(L/E) :=
-  (QuotientGroup.quotientMulEquivOfEq (Lay.ker_restrictFixedFieldHom hE hL).symm).trans
-    (QuotientGroup.quotientKerEquivOfSurjective _ (Lay.surjective_restrictFixedFieldHom hE hL))
+  have : IsGalois E (SeparableClosure F) := IsGalois.tower_top_of_isGalois F E _
+  have := (Lay.isGalois_fieldRange hE hL).to_normal
+  (QuotientGroup.congr _ _ (Lay.groundEquivOfFixedField hE)
+      (Lay.fixingSubgroup_fieldRange hE hL).symm).trans
+    ((quotientFixingSubgroupEquiv E (SeparableClosure F) _).toMulEquiv.trans
+      (AlgEquiv.autCongr (IsScalarTower.toAlgHom E L (SeparableClosure F)).equivFieldRange.symm))
 
 /-- `galEquivOfFixedField` sends the class of `g` in the ground subgroup to the restriction of `g`
 to `L`: its value at `x ∈ L` is `g x`. -/
@@ -311,8 +292,23 @@ to `L`: its value at `x ∈ L` is `g x`. -/
 theorem coe_galEquivOfFixedField_mk_apply (hE : fixedField Lay.ground.toSubgroup = E)
     (hL : fixedField Lay.top.toSubgroup = L) (g : Lay.ground) (x : L) :
     ((Lay.galEquivOfFixedField hE hL (g : Lay.Gal) x : L) : SeparableClosure F) =
-      (g : AbsoluteGaloisGroup F) x :=
-  Lay.restrictFixedFieldHom_apply hE hL g x
+      (g : AbsoluteGaloisGroup F) x := by
+  have : IsGalois E (SeparableClosure F) := IsGalois.tower_top_of_isGalois F E _
+  have := (Lay.isGalois_fieldRange hE hL).to_normal
+  -- Read in `Fˢ`, a point of `L` and its image in the field range are the same point.
+  have he (y : (IsScalarTower.toAlgHom E L (SeparableClosure F)).fieldRange) :
+      (((IsScalarTower.toAlgHom E L (SeparableClosure F)).equivFieldRange.symm y : L) :
+        SeparableClosure F) = y := by
+    conv_rhs => rw [← AlgEquiv.apply_symm_apply
+      (IsScalarTower.toAlgHom E L (SeparableClosure F)).equivFieldRange y]
+    rw [AlgHom.equivFieldRange_apply_coe, IsScalarTower.coe_toAlgHom',
+      IntermediateField.algebraMap_apply]
+  rw [galEquivOfFixedField, MulEquiv.trans_apply, MulEquiv.trans_apply, AlgEquiv.autCongr_apply,
+    AlgEquiv.trans_apply, AlgEquiv.trans_apply, AlgEquiv.symm_symm, he, QuotientGroup.congr_mk,
+    ContinuousMulEquiv.toMulEquiv_eq_coe]
+  simp only [ContinuousMulEquiv.coe_toMulEquiv, quotientFixingSubgroupEquiv_mk,
+    AlgEquiv.restrictNormalHom_apply, AlgHom.equivFieldRange_apply_coe, IsScalarTower.coe_toAlgHom',
+    IntermediateField.algebraMap_apply, groundEquivOfFixedField_apply]
 
 end NormalLayer
 

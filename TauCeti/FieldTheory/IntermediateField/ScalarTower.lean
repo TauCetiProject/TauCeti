@@ -39,8 +39,8 @@ instance instIsScalarTower {k K L : Type*} [CommSemiring k] [Field K] [Field L]
 `x ∈ E` is the image in `L` of `algebraMap E E' x ∈ E'`. -/
 theorem le_of_isScalarTower {K L : Type*} [Field K] [Field L] [Algebra K L]
     {E E' : IntermediateField K L} [Algebra E E'] [IsScalarTower E E' L] : E ≤ E' := fun x hx ↦ by
-  rw [show x = (algebraMap E E' ⟨x, hx⟩ : L) from
-    (IsScalarTower.algebraMap_apply E E' L ⟨x, hx⟩).trans (algebraMap_apply _ _)]
-  exact (algebraMap E E' ⟨x, hx⟩).2
+  have h : ((algebraMap E E' ⟨x, hx⟩ : E') : L) = x := by
+    rw [← algebraMap_apply, ← IsScalarTower.algebraMap_apply, algebraMap_apply]
+  exact h ▸ (algebraMap E E' ⟨x, hx⟩).2
 
 end IntermediateField

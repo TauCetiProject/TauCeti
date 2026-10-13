@@ -267,9 +267,9 @@ omit [NumberField F] in
 `L` of its top subgroup through its restriction to `Gal(L/F)`. -/
 private theorem coe_rep_ρ_ideleClassLevelEquiv (hF : fixedField Lay.ground.toSubgroup = F)
     (hL : fixedField Lay.top.toSubgroup = L) (u : Lay.ground) (a : IdeleGroup (𝓞 L) L) :
-    (dsimp% only (((Lay.rep (globalFormation K)).ρ (u : Lay.Gal)
+    (((Lay.rep (globalFormation K)).ρ (u : Lay.Gal)
         (ideleClassLevelEquiv hL (.ofMul (a : IdeleClassGroup (𝓞 L) L))) :
-          (globalFormation K).level Lay.top) : (globalFormation K).toRep.V)) =
+          (globalFormation K).level Lay.top) : (globalFormation K).toRep.V) =
       ideleClassCoeffEquivGlobalFormation K (ideleClassMk K (ideleCoeffOfIntermediateField K L
         (.ofMul (Units.map (GlobalNumberFields.adeleGaloisAction F L
           (Lay.galEquivOfFixedField hF hL (u : Lay.Gal))) a)))) := by
