@@ -9,6 +9,7 @@ public import Mathlib.RingTheory.AdjoinRoot
 public import Mathlib.RingTheory.Invariant.Defs
 public import Mathlib.RingTheory.Localization.Away.Basic
 public import TauCeti.AlgebraicGeometry.EllipticCurve.FreyCurve
+import TauCeti.Algebra.Polynomial.AlgHom
 import Mathlib.RingTheory.IsAdjoinRoot
 import Mathlib.Tactic.ComputeDegree
 
@@ -201,7 +202,8 @@ theorem algHom_ext {φ ψ : LegendreRing R →ₐ[R] S} (h : φ (lambda R) = ψ 
 
 omit [Algebra R S] in
 /-- Two `R[u]`-algebra maps out of the Legendre ring agree once they agree on `λ`. -/
-private theorem algHom_ext_polynomial [Algebra R[X] S] {φ ψ : LegendreRing R →ₐ[R[X]] S}
+@[ext]
+theorem algHom_ext' [Algebra R[X] S] {φ ψ : LegendreRing R →ₐ[R[X]] S}
     (h : φ (lambda R) = ψ (lambda R)) : φ = ψ :=
   AdjoinRoot.algHom_ext h
 
@@ -231,23 +233,22 @@ theorem equivLocalization_lambda :
       algebraMap R[X] (Localization.Away (X * (X - 1) : R[X])) X := by
   simp [equivLocalization]
 
+@[simp]
+theorem equivLocalization_symm_algebraMap_X :
+    (equivLocalization R).symm (algebraMap R[X] (Localization.Away (X * (X - 1) : R[X])) X) =
+      lambda R :=
+  (equivLocalization R).symm_apply_eq.mpr (equivLocalization_lambda R).symm
+
+/-- The identification `TauCeti.LegendreRing.equivLocalization` sends the coordinate `u` to
+`(λ² - λ + 1)³ / (λ (λ - 1))²`. -/
+theorem equivLocalization_algebraMap_X :
+    equivLocalization R (algebraMap R[X] (LegendreRing R) X) =
+      IsLocalization.mk' (Localization.Away (X * (X - 1) : R[X])) ((X ^ 2 - X + 1) ^ 3 : R[X])
+        (⟨(X * (X - 1)) ^ 2, 2, rfl⟩ : Submonoid.powers (X * (X - 1) : R[X])) := by
+  rw [IsLocalization.eq_mk'_iff_mul_eq]
+  simpa using map_algebraMap_X_mul (equivLocalization R).toAlgHom
+
 section anharmonic
-
-/-- An `R`-algebra endomorphism of the Legendre ring fixing the coordinate `u` is an
-`R[u]`-algebra endomorphism. -/
-private noncomputable def toAlgHomOfMapAlgebraMapX (φ : LegendreRing R →ₐ[R] LegendreRing R)
-    (h : φ (algebraMap R[X] (LegendreRing R) X) = algebraMap R[X] (LegendreRing R) X) :
-    LegendreRing R →ₐ[R[X]] LegendreRing R where
-  __ := φ
-  commutes' p := by
-    have : φ.comp (IsScalarTower.toAlgHom R R[X] (LegendreRing R)) =
-        IsScalarTower.toAlgHom R R[X] (LegendreRing R) :=
-      Polynomial.algHom_ext h
-    exact congr($this p)
-
-private theorem toAlgHomOfMapAlgebraMapX_apply (φ : LegendreRing R →ₐ[R] LegendreRing R) (h)
-    (a : LegendreRing R) : toAlgHomOfMapAlgebraMapX R φ h a = φ a :=
-  rfl
 
 /-- The substitution `λ ↦ 1 - λ`, as an `R`-algebra endomorphism. -/
 private noncomputable def oneSubAlgHom : LegendreRing R →ₐ[R] LegendreRing R :=
@@ -265,9 +266,9 @@ private theorem oneSubAlgHom_algebraMap_X :
   linear_combination h + lambda_sq_sub_lambda_add_one_pow_three R
 
 private theorem oneSubAlgHom_comp_oneSubAlgHom :
-    (toAlgHomOfMapAlgebraMapX R _ (oneSubAlgHom_algebraMap_X R)).comp
-      (toAlgHomOfMapAlgebraMapX R _ (oneSubAlgHom_algebraMap_X R)) = AlgHom.id R[X] _ :=
-  algHom_ext_polynomial (by simp [toAlgHomOfMapAlgebraMapX_apply, oneSubAlgHom_lambda])
+    ((oneSubAlgHom R).toPolynomialAlgHom (oneSubAlgHom_algebraMap_X R)).comp
+      ((oneSubAlgHom R).toPolynomialAlgHom (oneSubAlgHom_algebraMap_X R)) = AlgHom.id R[X] _ :=
+  algHom_ext' (by simp [oneSubAlgHom_lambda])
 
 /-- The substitution `λ ↦ λ⁻¹`, as an `R`-algebra endomorphism. -/
 private noncomputable def invAlgHom : LegendreRing R →ₐ[R] LegendreRing R :=
@@ -302,10 +303,10 @@ private theorem invAlgHom_algebraMap_X :
     _ = u * (l * (l - 1)) ^ 2 := by rw [e₂]; exact lambda_sq_sub_lambda_add_one_pow_three R
 
 private theorem invAlgHom_comp_invAlgHom :
-    (toAlgHomOfMapAlgebraMapX R _ (invAlgHom_algebraMap_X R)).comp
-      (toAlgHomOfMapAlgebraMapX R _ (invAlgHom_algebraMap_X R)) = AlgHom.id R[X] _ := by
-  refine algHom_ext_polynomial ?_
-  simp only [AlgHom.comp_apply, toAlgHomOfMapAlgebraMapX_apply, AlgHom.id_apply]
+    ((invAlgHom R).toPolynomialAlgHom (invAlgHom_algebraMap_X R)).comp
+      ((invAlgHom R).toPolynomialAlgHom (invAlgHom_algebraMap_X R)) = AlgHom.id R[X] _ := by
+  refine algHom_ext' ?_
+  simp only [AlgHom.comp_apply, AlgHom.toPolynomialAlgHom_apply, AlgHom.id_apply]
   set i := invAlgHom R (lambda R)
   have hi : lambda R * i = 1 := lambda_mul_invAlgHom_lambda R
   have h₁ : i * invAlgHom R i = 1 := by
@@ -357,7 +358,7 @@ theorem invAut_mem_anharmonicGroup : invAut R ∈ anharmonicGroup R :=
 `σ τ σ = τ σ τ`: both send `λ` to `λ / (λ - 1)`. -/
 theorem oneSubAut_mul_invAut_mul_oneSubAut :
     oneSubAut R * invAut R * oneSubAut R = invAut R * oneSubAut R * invAut R := by
-  refine AlgEquiv.coe_toAlgHom_injective (algHom_ext_polynomial ?_)
+  refine AlgEquiv.coe_toAlgHom_injective (algHom_ext' ?_)
   simp only [AlgEquiv.coe_toAlgHom, AlgEquiv.mul_apply, oneSubAut_lambda, map_sub, map_one]
   set l := lambda R
   set i := invAut R l
