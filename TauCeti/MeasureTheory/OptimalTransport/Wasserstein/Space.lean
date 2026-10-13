@@ -411,18 +411,18 @@ theorem wassersteinEDist_ne_top
   (hasFiniteMoment_iff_wassersteinEDist_ne_top_of_hasFiniteMoment hd
     (hasFiniteMoment μ)).1 (hasFiniteMoment ν)
 
-/-- **`P_p(X)` is convex.** For a finite nonzero exponent and weights with `a + b = 1`, the mixture
-`a • μ + b • ν` of two laws of `P_p(X)` is again a law of `P_p(X)`. -/
-theorem exists_coe_eq_smul_add_smul [OpensMeasurableSpace X] (hp0 : p ≠ 0) (hp : p ≠ ∞)
-    {a b : ℝ≥0∞} (hab : a + b = 1) (μ ν : WassersteinSpace p X) :
+/-- **`P_p(X)` is convex.** For weights with `a + b = 1`, the mixture `a • μ + b • ν` of two laws
+of `P_p(X)` is again a law of `P_p(X)`. -/
+theorem exists_coe_eq_smul_add_smul [OpensMeasurableSpace X] {a b : ℝ≥0∞} (hab : a + b = 1)
+    (μ ν : WassersteinSpace p X) :
     ∃ ρ : WassersteinSpace p X, ((ρ : ProbabilityMeasure X) : Measure X) =
       a • ((μ : ProbabilityMeasure X) : Measure X) +
         b • ((ν : ProbabilityMeasure X) : Measure X) := by
   obtain ⟨ha, hb⟩ := ENNReal.add_ne_top.1 (hab ▸ ENNReal.one_ne_top)
   have := Measure.smul_finite ((μ : ProbabilityMeasure X) : Measure X) ha
   have := Measure.smul_finite ((ν : ProbabilityMeasure X) : Measure X) hb
-  have hmom := ((hasFiniteMoment μ).smul_measure ha).add_measure hp0 hp
-    ((hasFiniteMoment ν).smul_measure hb)
+  have hmom :=
+    ((hasFiniteMoment μ).smul_measure ha).add_measure ((hasFiniteMoment ν).smul_measure hb)
   exact ⟨mk ((μ : ProbabilityMeasure X).convexComb hab ν)
     (by rwa [ProbabilityMeasure.toMeasure_convexComb]), by simp⟩
 

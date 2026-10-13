@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.MeasureTheory.Measure.FrechetMean.Basic
-public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Mixture
+public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Mixture.Basic
 public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Space
 import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Borel
 
@@ -87,7 +87,7 @@ theorem subsingleton_frechetBarycenters (hp : p ≠ ∞) {P : Measure (Wasserste
   set μ₀ := ((ν₀ : ProbabilityMeasure X) : Measure X)
   set μ₁ := ((ν₁ : ProbabilityMeasure X) : Measure X)
   -- The midpoint mixture of the two barycenters is again a law of `P_p(X)`.
-  obtain ⟨ν, hν⟩ := exists_coe_eq_smul_add_smul hp0 hp ENNReal.inv_two_add_inv_two ν₀ ν₁
+  obtain ⟨ν, hν⟩ := exists_coe_eq_smul_add_smul ENNReal.inv_two_add_inv_two ν₀ ν₁
   -- Convexity: the cost of each input law to the mixture is at most the mean of its costs to the
   -- two barycenters, and integrating gives the minimal value, so `P`-almost everywhere equality.
   set g : WassersteinSpace p X → ℝ≥0∞ := fun m ↦ edist m ν ^ p.toReal

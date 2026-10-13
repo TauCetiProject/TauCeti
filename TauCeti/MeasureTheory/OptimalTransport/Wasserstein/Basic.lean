@@ -686,12 +686,22 @@ theorem hasFiniteMoment_iff_lintegral_edist_rpow_ne_top [OpensMeasurableSpace X]
       measurable_edist_right.aestronglyMeasurable, lt_top_iff_ne_top]
   simp only [enorm_eq_self]
 
-/-- For a finite nonzero exponent `p`, the sum of two finite measures with finite `p`-moments has
-finite `p`-moment. -/
-theorem HasFiniteMoment.add_measure [OpensMeasurableSpace X] (hp0 : p ≠ 0) (hp : p ≠ ∞)
-    {μ ν : Measure X} [IsFiniteMeasure μ] [IsFiniteMeasure ν] (hμ : HasFiniteMoment p μ)
+/-- The sum of two finite measures with finite `p`-moments has finite `p`-moment. -/
+theorem HasFiniteMoment.add_measure [OpensMeasurableSpace X] {μ ν : Measure X}
+    [IsFiniteMeasure μ] [IsFiniteMeasure ν] (hμ : HasFiniteMoment p μ)
     (hν : HasFiniteMoment p ν) : HasFiniteMoment p (μ + ν) := by
-  obtain ⟨x, -⟩ := id hμ
+  obtain ⟨x, hx⟩ := id hμ
+  rcases eq_or_ne p 0 with rfl | hp0
+  · exact ⟨x, memLp_zero_iff_aestronglyMeasurable.2 measurable_edist_right.aestronglyMeasurable⟩
+  rcases eq_or_ne p ∞ with rfl | hp
+  · -- At `p = ∞`, both moment conditions are essential bounds about `x`.
+    have hy := hν.memLp (x := x) measurable_edist_right.aestronglyMeasurable
+    refine ⟨x, MemLp.of_enorm_bound measurable_edist_right.aestronglyMeasurable
+      (C := max (eLpNormEssSup (fun y ↦ edist x y) μ) (eLpNormEssSup (fun y ↦ edist x y) ν))
+      (max_ne_top (eLpNormEssSup_le_eLpNorm_top.trans_lt hx.eLpNorm_lt_top).ne
+        (eLpNormEssSup_le_eLpNorm_top.trans_lt hy.eLpNorm_lt_top).ne) ?_⟩
+    exact ae_add_measure_iff.2 ⟨ae_le_eLpNormEssSup.mono fun _ h ↦ h.trans (le_max_left _ _),
+      ae_le_eLpNormEssSup.mono fun _ h ↦ h.trans (le_max_right _ _)⟩
   rw [hasFiniteMoment_iff_lintegral_edist_rpow_ne_top hp0 hp x] at hμ hν ⊢
   rw [lintegral_add_measure]
   exact ENNReal.add_ne_top.2 ⟨hμ, hν⟩
