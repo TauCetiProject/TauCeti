@@ -14,21 +14,27 @@ public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Moment
 
 The Boltzmann entropy `Ent_m(μ) = ∫ ρ log ρ dm` against an infinite reference measure `m`, such as
 Lebesgue measure on `ℝⁿ`, is neither bounded below nor lower semicontinuous for the weak topology
-of probability measures: mass escaping to infinity can drive it to `-∞`. Both defects are cured by
-a moment bound. If the confining weight `exp (-a d(x, x₀)^p)` is integrable against `m`, for some
-real `a` and basepoint `x₀`, then the tilted reference `m_a = Z⁻¹ exp (-a d(x, x₀)^p) m` is a
-probability measure, and for every law `μ` with finite `p`-moment the change of reference
-`TauCeti.boltzmannEntropy_tilted` gives
+of probability measures: mass escaping to infinity can drive it to `-∞`. Moments address the two
+defects separately. Under the integrability condition below, a finite `p`-moment only makes each
+individual value finite: the entropy is never `⊥` on `P_p(X)`, although for Lebesgue measure it
+remains unbounded below there. Lower semicontinuity comes from the stronger `p`-Wasserstein
+topology, in which the `p`-moment is continuous; a uniform bound on the moment is what yields
+coercivity (below).
+
+Suppose the confining weight `exp (-a d(x, x₀)^p)` is integrable against `m`, for some real `a`
+and basepoint `x₀`. If moreover `m ≠ 0`, then the tilted reference
+`m_a = Z⁻¹ exp (-a d(x, x₀)^p) m` is a probability measure, and for every law `μ` with finite
+`p`-moment the change of reference `TauCeti.boltzmannEntropy_tilted` gives
 
 `Ent_m(μ) = klDiv μ m_a - a ∫ d(x, x₀)^p dμ - log Z`.
 
 The relative entropy `klDiv μ m_a` is weakly lower semicontinuous
 (`TauCeti.lowerSemicontinuous_klDiv_probabilityMeasure`), and on the `p`-Wasserstein space the
 `p`-moment is continuous (`TauCeti.WassersteinSpace.continuous_lintegral_edist_rpow`). Hence the
-Boltzmann entropy is lower semicontinuous on `P_p(X)` for the `p`-Wasserstein distance, and never
-`⊥` there.
+Boltzmann entropy is lower semicontinuous on `P_p(X)` for the `p`-Wasserstein distance. The
+lower-semicontinuity theorem also covers `m = 0`, where every law has entropy `⊤`.
 
-The same identity gives coercivity once the moment enters with a coefficient `b` larger than `a`.
+The same identity gives coercivity once the moment enters with a coefficient `b ≥ a`.
 Along a set of laws on which `Ent_m(μ) + b ∫ d(x, x₀)^p dμ ≤ C`, the relative entropy against the
 fixed probability measure `m_a` stays bounded, so the set is tight on a complete separable metric
 space (`TauCeti.isTightMeasureSet_setOf_klDiv_le`), and for `b > a` the `p`-moments are uniformly
