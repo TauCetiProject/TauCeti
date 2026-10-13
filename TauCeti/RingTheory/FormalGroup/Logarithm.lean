@@ -177,8 +177,7 @@ theorem subst_invariantDifferential_mul_pderiv_one [F.IsComm] :
     PowerSeries.subst F.toPowerSeries F.invariantDifferential * pderiv 1 F.toPowerSeries =
       PowerSeries.subst (X 1) F.invariantDifferential := by
   have hF := PowerSeries.HasSubst.of_constantCoeff_zero F.zero_constantCoeff
-  have hsw : HasSubst (![X 1, X 0] : Fin 2 → MvPowerSeries (Fin 2) R) :=
-    hasSubst_of_constantCoeff_zero fun s ↦ by fin_cases s <;> simp
+  have hsw : HasSubst (![X 1, X 0] : Fin 2 → MvPowerSeries (Fin 2) R) := HasSubst.X_X
   have hc : F.toPowerSeries =
       subst (![X 1, X 0] : Fin 2 → MvPowerSeries (Fin 2) R) F.toPowerSeries := IsComm.comm
   -- `F_Y(X, Y) = F_X(Y, X)`, differentiating `F(X, Y) = F(Y, X)` in `Y`
@@ -237,8 +236,7 @@ theorem subst_toPowerSeries_log :
       PowerSeries.subst (X 0) F.log + PowerSeries.subst (X 1) F.log := by
   have hF := PowerSeries.HasSubst.of_constantCoeff_zero F.zero_constantCoeff
   have hX (i : Fin 2) := PowerSeries.HasSubst.X (S := R) i
-  have hb : HasSubst (![0, X 1] : Fin 2 → MvPowerSeries (Fin 2) R) :=
-    hasSubst_of_constantCoeff_zero fun s ↦ by fin_cases s <;> simp
+  have hb : HasSubst (![0, X 1] : Fin 2 → MvPowerSeries (Fin 2) R) := HasSubst.zero_X
   have : IsAddTorsionFree R := .of_isTorsionFree ℚ R
   rw [← sub_eq_zero]
   apply eq_zero_of_pderiv_eq_zero_of_subst_eq_zero (i := 0)
