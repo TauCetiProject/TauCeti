@@ -176,6 +176,14 @@ lemma hom_ext_of_fst {g : P ⟶ Q} (h : Hom.fst f = Hom.fst g) : f = g := by
   · exact Q.isEmbedding_map.injective (by rw [Hom.w_apply, Hom.w_apply, h])
   · exact ConcreteCategory.congr_hom h a
 
+/-- A map of topological pairs which is an embedding of the ambient spaces is an embedding of the
+subspaces, because the subspaces are embedded in the ambient spaces. -/
+lemma isEmbedding_snd_of_isEmbedding_fst (h : Topology.IsEmbedding (Hom.fst f)) :
+    Topology.IsEmbedding (Hom.snd f) := by
+  have hw : ⇑Q.map ∘ ⇑(Hom.snd f) = ⇑(Hom.fst f) ∘ ⇑P.map := funext (Hom.w_apply f)
+  rw [← Q.isEmbedding_map.of_comp_iff, hw]
+  exact h.comp P.isEmbedding_map
+
 /-- A map of topological pairs which is an isomorphism of the ambient spaces and is surjective
 on the subspaces is an isomorphism of pairs.  The inverse on the subspaces is continuous because
 the subspace of the source is embedded in its ambient space. -/

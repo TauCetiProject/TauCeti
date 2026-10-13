@@ -141,20 +141,20 @@ section OrthogonalTail
 variable {𝕜 E F : Type*} [RCLike 𝕜]
   [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [SeminormedAddCommGroup F] [NormedSpace 𝕜 F]
 
-/-- **Orthogonal-tail upper bound.** For every subspace `V` of rank at most `n`, `aₙ(T)` is at
-most the operator norm of `T` restricted to `Vᗮ`. -/
-theorem singularValue_le_nnnorm_comp_orthogonal (T : E →L[𝕜] F) {n : ℕ} {V : Submodule 𝕜 E}
-    (hV : Module.rank 𝕜 V ≤ n) : T.singularValue n ≤ ‖T ∘L Vᗮ.subtypeL‖₊ := by
-  have : FiniteDimensional 𝕜 V :=
-    Module.rank_lt_aleph0_iff.mp (hV.trans_lt (Cardinal.natCast_lt_aleph0))
-  -- The approximant `T ∘ P_V` has rank at most `rank V`, and its error is `T ∘ P_{Vᗮ}`.
-  have hrank : (T ∘L V.starProjection).rank ≤ n := by
-    have hP : (V.starProjection : E →ₗ[𝕜] E).rank ≤ n := by
-      rwa [LinearMap.rank, Submodule.range_starProjection]
-    have hle := (LinearMap.lift_rank_comp_le_right (V.starProjection : E →ₗ[𝕜] E)
-      (T : E →ₗ[𝕜] F)).trans (Cardinal.lift_le.mpr hP)
-    rwa [Cardinal.lift_natCast, Cardinal.lift_le_nat_iff] at hle
-  refine (T.singularValue_le_nnnorm_sub hrank).trans (opNNNorm_le_bound _ _ fun x ↦ ?_)
+/-- Composing with the projection onto a subspace of rank at most `n` has rank at most `n`. -/
+theorem rank_comp_starProjection_le (T : E →L[𝕜] F) {n : ℕ} {V : Submodule 𝕜 E}
+    [V.HasOrthogonalProjection] (hV : Module.rank 𝕜 V ≤ n) :
+    (T ∘L V.starProjection).rank ≤ n := by
+  have hP : (V.starProjection : E →ₗ[𝕜] E).rank ≤ n := by
+    rwa [LinearMap.rank, Submodule.range_starProjection]
+  have hle := (LinearMap.lift_rank_comp_le_right (V.starProjection : E →ₗ[𝕜] E)
+    (T : E →ₗ[𝕜] F)).trans (Cardinal.lift_le.mpr hP)
+  rwa [Cardinal.lift_natCast, Cardinal.lift_le_nat_iff] at hle
+
+/-- The projection approximant's error is bounded by the norm on the orthogonal complement. -/
+theorem nnnorm_sub_comp_starProjection_le (T : E →L[𝕜] F) (V : Submodule 𝕜 E)
+    [V.HasOrthogonalProjection] : ‖T - T ∘L V.starProjection‖₊ ≤ ‖T ∘L Vᗮ.subtypeL‖₊ := by
+  refine opNNNorm_le_bound _ _ fun x ↦ ?_
   have hx : x - V.starProjection x ∈ Vᗮ := V.sub_starProjection_mem_orthogonal x
   calc ‖(T - T ∘L V.starProjection) x‖₊ = ‖(T ∘L Vᗮ.subtypeL) ⟨_, hx⟩‖₊ := by simp
     _ ≤ ‖T ∘L Vᗮ.subtypeL‖₊ * ‖x - V.starProjection x‖₊ :=
@@ -163,6 +163,15 @@ theorem singularValue_le_nnnorm_comp_orthogonal (T : E →L[𝕜] F) {n : ℕ} {
       gcongr
       rw [← Submodule.starProjection_orthogonal_val]
       exact_mod_cast Vᗮ.norm_starProjection_apply_le x
+
+/-- **Orthogonal-tail upper bound.** For every subspace `V` of rank at most `n`, `aₙ(T)` is at
+most the operator norm of `T` restricted to `Vᗮ`. -/
+theorem singularValue_le_nnnorm_comp_orthogonal (T : E →L[𝕜] F) {n : ℕ} {V : Submodule 𝕜 E}
+    (hV : Module.rank 𝕜 V ≤ n) : T.singularValue n ≤ ‖T ∘L Vᗮ.subtypeL‖₊ := by
+  have : FiniteDimensional 𝕜 V :=
+    Module.rank_lt_aleph0_iff.mp (hV.trans_lt (Cardinal.natCast_lt_aleph0))
+  exact (T.singularValue_le_nnnorm_sub (T.rank_comp_starProjection_le hV)).trans
+    (T.nnnorm_sub_comp_starProjection_le V)
 
 /-- **Orthogonal-tail min–max formula.** On a complete inner product space, `aₙ(T)` is the
 infimum, over subspaces `V` of rank at most `n`, of the operator norm of `T` restricted
