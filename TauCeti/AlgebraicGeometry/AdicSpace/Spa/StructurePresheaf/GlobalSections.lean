@@ -62,16 +62,6 @@ public section
 
 universe v
 
-namespace TauCeti.Huber.PairOfDefinition
-
-/-- The trivial rational presentation `({1}, 1)`, whose rational subset is the whole spectrum. -/
-@[expose]
-noncomputable def Presentation.trivial {A : Type v} [CommRing A] [TopologicalSpace A]
-    (P : PairOfDefinition A) : Presentation P :=
-  ⟨{1}, 1, hasDenominatorPower_denom_one P {1} _⟩
-
-end TauCeti.Huber.PairOfDefinition
-
 namespace TauCeti.ValuationSpectrum
 
 open TauCeti.Huber TauCeti.Huber.PairOfDefinition
@@ -129,7 +119,9 @@ theorem toPresentationLimit_comp_presentationLimitMap {V W : Opens ↥(spa Aplus
 Hausdorff `A`. -/
 private theorem isIso_toCompletionLocObjHom_one :
     IsIso (Presentation.trivial P).toCompletionLocObjHom := by
-  unfold Presentation.trivial
+  -- The projection equations identify the presentation for the denominator-one API.
+  rw [show Presentation.trivial P =
+    ⟨{1}, 1, hasDenominatorPower_denom_one P {1} _⟩ from by ext <;> simp]
   have hpb : ∀ t ∈ ({1} : Finset A), IsPowerBounded t := fun t ht ↦ by
     rw [Finset.mem_singleton.mp ht]
     exact isPowerBounded_one
@@ -170,7 +162,7 @@ subset `R({1}/1)` is the whole adic spectrum. -/
 private noncomputable def trivialIndex :
     PresentationIndex (P := P) Aplus ⊤ where
   pres := Presentation.trivial P
-  isOpen_span := by simp [Presentation.trivial]
+  isOpen_span := by simp
   le_open := le_top
 
 /-- **On the whole spectrum the canonical map is an isomorphism**: for a complete Hausdorff Huber
@@ -181,7 +173,7 @@ theorem isIso_toPresentationLimit_top (hAplus : ∀ ⦃a⦄, a ∈ Aplus → IsP
   have hV : (⊤ : Opens ↥(spa Aplus)) ≤
       spaBasicOpen Aplus (trivialIndex (P := P) Aplus).pres.num
         (trivialIndex (P := P) Aplus).pres.den := fun v _ ↦
-    mem_spaBasicOpen.mpr (by simp [trivialIndex, Presentation.trivial])
+    mem_spaBasicOpen.mpr (by simp [trivialIndex])
   have := isIso_presentationLimitπ hAplus (trivialIndex Aplus) hV
   have : IsIso (trivialIndex (P := P) Aplus).pres.toCompletionLocObjHom :=
     isIso_toCompletionLocObjHom_one
