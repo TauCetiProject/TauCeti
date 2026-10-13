@@ -65,7 +65,7 @@ theorem chartedSpaceComap_atlas_subset_maximalAtlas [IsManifold I n M] [IsManifo
 /-- A maximal atlas making a local homeomorphism a `C^n` local diffeomorphism is compatible with
 the pulled-back atlas: every mixed transition belongs to the `C^n` structure groupoid.
 This applies in particular to the total space of a covering map. -/
-theorem chartedSpaceComap_compatible [IsManifold I n M] [IsManifold I n B]
+theorem compatible_chartedSpaceComap [IsManifold I n M] [IsManifold I n B]
     {p : M → B} (hp : IsLocalHomeomorph p) (hpd : IsLocalDiffeomorph I I n p)
     {e e' : OpenPartialHomeomorph M H} (he : e ∈ maximalAtlas I n M)
     (he' : e' ∈ hp.chartedSpaceComap.atlas) :
