@@ -99,8 +99,6 @@ coincident strands too.
 * R. Goodman and N. R. Wallach, *Symmetry, Representations, and Invariants*, Springer GTM 255
   (2009), Chapter 9, for the action of the Brauer algebra on a tensor power and its role as the
   centralizer of the symplectic group.
-* [Schur--Weyl roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SchurWeyl/README.md),
-  Layer 9, "The invariant form and the action on `V^{⊗k}`", the symplectic case.
 -/
 
 public section
