@@ -159,6 +159,18 @@ theorem baseChange_add (D E : LieDerivation R L L) :
     (D + E).baseChange A = D.baseChange A + E.baseChange A :=
   map_add (baseChangeHom A) D E
 
+/-- Extension of scalars preserves the negative of a derivation. -/
+@[simp]
+theorem baseChange_neg (D : LieDerivation R L L) :
+    (-D).baseChange A = -D.baseChange A :=
+  (baseChangeHom A).toLinearMap.map_neg D
+
+/-- Extension of scalars preserves the difference of two derivations. -/
+@[simp]
+theorem baseChange_sub (D E : LieDerivation R L L) :
+    (D - E).baseChange A = D.baseChange A - E.baseChange A :=
+  (baseChangeHom A).toLinearMap.map_sub D E
+
 /-- Extension of scalars preserves scalar multiplication by the original coefficient ring. -/
 @[simp]
 theorem baseChange_smul (r : R) (D : LieDerivation R L L) :

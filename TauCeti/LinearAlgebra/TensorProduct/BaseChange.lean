@@ -60,6 +60,7 @@ theorem baseChange_injective :
 
 /-- **An endomorphism is nilpotent exactly when its extension of scalars is**, over a faithfully
 flat coefficient algebra. -/
+@[simp]
 theorem isNilpotent_baseChange_iff (f : Module.End R M) :
     IsNilpotent (f.baseChange A) ↔ IsNilpotent f :=
   IsNilpotent.map_iff (f := Module.End.baseChangeHom R A M) baseChange_injective
