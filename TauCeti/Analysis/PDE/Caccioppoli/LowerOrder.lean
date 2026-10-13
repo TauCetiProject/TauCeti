@@ -96,13 +96,16 @@ private theorem mul_sq_mul_norm_sq_le_matrixBilinearForm_add_inner_mul_add {A : 
   -- Young's inequality `β ‖g‖ z² |w| ≤ (λ/4) z² ‖g‖² + (β²/λ) z² w²`.
   have hyoung : beta * ‖g‖ * (z ^ 2 * |w|) ≤
       lam / 4 * (z ^ 2 * ‖g‖ ^ 2) + beta ^ 2 / lam * (z ^ 2 * w ^ 2) := by
-    have hsq : 0 ≤ z ^ 2 * (lam * ‖g‖ - 2 * beta * |w|) ^ 2 := by positivity
-    have hrhs : lam / 4 * (z ^ 2 * ‖g‖ ^ 2) + beta ^ 2 / lam * (z ^ 2 * w ^ 2) =
-        (lam ^ 2 * (z ^ 2 * ‖g‖ ^ 2) + 4 * beta ^ 2 * (z ^ 2 * |w| ^ 2)) / (4 * lam) := by
-      rw [sq_abs]
+    have h := two_mul_le_add_mul_sq (a := |z| * ‖g‖) (b := beta * |z| * |w| / 2)
+      (by positivity : 0 < lam / 4)
+    have hlhs : 2 * (|z| * ‖g‖) * (beta * |z| * |w| / 2) = beta * ‖g‖ * (z ^ 2 * |w|) := by
+      rw [← sq_abs z]; ring
+    have hrhs : lam / 4 * (|z| * ‖g‖) ^ 2 + (lam / 4)⁻¹ * (beta * |z| * |w| / 2) ^ 2 =
+        lam / 4 * (z ^ 2 * ‖g‖ ^ 2) + beta ^ 2 / lam * (z ^ 2 * w ^ 2) := by
+      simp only [mul_pow, div_pow, sq_abs]
       field_simp
-    rw [hrhs, le_div_iff₀ (by positivity)]
-    nlinarith [hsq]
+      ring
+    rwa [hlhs, hrhs] at h
   linarith
 
 /-- **The Caccioppoli inequality for a positive truncation of a weak subsolution with
