@@ -87,6 +87,18 @@ theorem integral_norm_kernel_translation_sub_le (hk : Integrable k ν) (a b : G)
         integral_sub_right_eq_self (fun z : G ↦ ‖k z‖)]
       ring
 
+omit [SecondCountableTopology K] [MeasurableSub₂ G]
+  [MeasurableSpace K] [BorelSpace K] [SFinite ν]
+  [IsLocallyFiniteMeasure ν] [ν.InnerRegularCompactLTTop] in
+private theorem norm_weighted_kernel_translation_sub_le (hk : Integrable k ν)
+    (a b : G) (v : V) :
+    ‖(∫ z : G, ‖k (z - a) - k (z - b)‖ ∂ν) * ‖v‖‖ ≤
+      (2 * ∫ z : G, ‖k z‖ ∂ν) * ‖v‖ := by
+  rw [Real.norm_eq_abs,
+    abs_of_nonneg (mul_nonneg (integral_nonneg fun _ ↦ norm_nonneg _) (norm_nonneg _))]
+  exact mul_le_mul_of_nonneg_right (hk.integral_norm_kernel_translation_sub_le a b)
+    (norm_nonneg _)
+
 omit [SFinite μ] [IsLocallyFiniteMeasure ν]
   [ν.InnerRegularCompactLTTop] in
 /-- The translation error weighted by an integrable function is integrable. -/
@@ -104,10 +116,7 @@ theorem weighted_kernel_translation_sub (hk : Integrable k ν) (hmk : Measurable
     exact hprod.integral_prod_right'.mul hv.aestronglyMeasurable.norm
   apply (hv.norm.const_mul (2 * ∫ z : G, ‖k z‖ ∂ν)).mono' hm
   filter_upwards with t
-  rw [Real.norm_eq_abs,
-    abs_of_nonneg (mul_nonneg (integral_nonneg fun _ ↦ norm_nonneg _) (norm_nonneg _))]
-  exact mul_le_mul_of_nonneg_right (integral_norm_kernel_translation_sub_le hk _ _)
-    (norm_nonneg _)
+  exact norm_weighted_kernel_translation_sub_le hk (a t) (b t) (v t)
 
 omit [SFinite μ] in
 /-- Almost everywhere convergence of shifts gives weighted `L¹` translation convergence. -/
@@ -125,10 +134,7 @@ theorem tendsto_integral_weighted_kernel_translation_sub (hk : Integrable k ν) 
     (show ∀ᵐ t ∂μ, Tendsto
       (fun n ↦ (∫ z : G, ‖k (z - cn n t) - k (z - c t)‖ ∂ν) * ‖v t‖) atTop (𝓝 (0 : ℝ)) from ?_)
   · simpa using h
-  · rw [Real.norm_eq_abs,
-      abs_of_nonneg (mul_nonneg (integral_nonneg (fun _ ↦ norm_nonneg _)) (norm_nonneg _))]
-    exact mul_le_mul_of_nonneg_right (integral_norm_kernel_translation_sub_le hk _ _)
-      (norm_nonneg _)
+  · exact norm_weighted_kernel_translation_sub_le hk (cn n t) (c t) (v t)
   · filter_upwards [hlim] with t ht
     simpa using (hk.tendsto_integral_norm_translate_sub ht).mul_const ‖v t‖
 end Weighted

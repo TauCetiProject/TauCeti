@@ -77,15 +77,16 @@ private theorem real_volume_unitBall : volume.real (ball (0 : ℂ) 1) = Real.pi 
 theorem integral_norm_sub_inv_closedBall_le {w c : ℂ} {R : ℝ}
     (hw : w ∈ closedBall c R) :
     (∫ z in closedBall c R, ‖z - w‖⁻¹) ≤ 4 * Real.pi * R := by
-  rw [Measure.restrict_congr_set (volume.addHaar_closedBall_ae_eq_ball c R)]
+  rw [Measure.restrict_congr_set (volume.addHaar_closedBall_ae_eq_ball c R (Or.inl inferInstance))]
   have h := TauCeti.integral_norm_sub_rpow_one_sub_finrank_le (mu := volume) w hw
   norm_num only [Complex.finrank_real_complex, Nat.cast_ofNat, real_volume_unitBall] at h
-  simpa only [Real.rpow_neg_one, norm_sub_rev] using h.trans_eq (by ring)
+  simpa only [Real.rpow_neg_one, norm_sub_rev] using
+    h.trans_eq (by ring : _ = 4 * Real.pi * R)
 
 /-- The inverse-distance integral over a disk centered at its pole is `2πR`. -/
 theorem integral_norm_sub_inv_closedBall {R : ℝ} (hR : 0 ≤ R) (w : ℂ) :
     (∫ z in closedBall w R, ‖z - w‖⁻¹) = 2 * Real.pi * R := by
-  rw [Measure.restrict_congr_set (volume.addHaar_closedBall_ae_eq_ball w R)]
+  rw [Measure.restrict_congr_set (volume.addHaar_closedBall_ae_eq_ball w R (Or.inl inferInstance))]
   have h := TauCeti.integral_norm_sub_rpow_ball (mu := volume) (s := -1) (by simp) hR w
   norm_num only [Complex.finrank_real_complex, Nat.cast_ofNat, real_volume_unitBall] at h
   simpa only [Real.rpow_neg_one, norm_sub_rev, Real.rpow_one, div_one] using h

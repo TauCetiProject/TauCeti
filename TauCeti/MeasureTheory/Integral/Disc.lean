@@ -114,7 +114,7 @@ theorem hasDerivAt_integral_ball {f : ℂ → F} {z₀ : ℂ} {R r : ℝ}
   have heq : (fun t ↦ ∫ z in ball z₀ t, f z) =ᶠ[𝓝 r]
       (fun t ↦ (∫ z in ball z₀ a, f z) + ∫ s in a..t, G s) := by
     filter_upwards [Ioo_mem_nhds har hrb] with t ht
-    have hclosed := volume.addHaar_closedBall_ae_eq_ball z₀ t
+    have hclosed := volume.addHaar_closedBall_ae_eq_ball z₀ t (Or.inl inferInstance)
     have hA : {z : ℂ | a ≤ ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ t} = closedBall z₀ t \ ball z₀ a := by
       ext z
       simp only [mem_ofPred_eq, Set.mem_sdiff, mem_closedBall, mem_ball, dist_eq_norm, not_lt]
