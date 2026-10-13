@@ -203,7 +203,8 @@ theorem meromorphicAt_cuspExtension_zero (D : Γ.CuspDatum) (k : ℤ) (f : ℍ �
 
 /-- Twisting by `q^k` adds `k` to the cusp order. When the twisted extension is analytic
 at zero, the remaining order is its analytic order, including infinite order. -/
-theorem meromorphicOrderAt_cuspExtension_eq_neg_add (D : Γ.CuspDatum) (k : ℤ)
+theorem meromorphicOrderAt_cuspExtension_eq_neg_add_analyticOrderAt_twistedExtension
+    (D : Γ.CuspDatum) (k : ℤ)
     (f : ℍ → ℂ) (hf : ∀ (g : stabilizer Γ D.cusp) (z : ℍ), f (g • z) = f z)
     (han : AnalyticAt ℂ (twistedExtension D k f) 0) :
     meromorphicOrderAt (cuspExtension D f) 0 =
@@ -227,7 +228,7 @@ theorem neg_le_meromorphicOrderAt_cuspExtension (D : Γ.CuspDatum) (k : ℤ)
       fun z ↦ Real.exp (2 * Real.pi * (k : ℝ) * z.im / D.width)) :
     ((-k : ℤ) : WithTop ℤ) ≤ meromorphicOrderAt (cuspExtension D f) 0 := by
   have han := analyticAt_twistedExtension_zero D k f hf hhol hbound
-  rw [meromorphicOrderAt_cuspExtension_eq_neg_add D k f hf han,
+  rw [meromorphicOrderAt_cuspExtension_eq_neg_add_analyticOrderAt_twistedExtension D k f hf han,
     ← han.meromorphicOrderAt_eq]
   exact le_add_of_nonneg_right han.meromorphicOrderAt_nonneg
 

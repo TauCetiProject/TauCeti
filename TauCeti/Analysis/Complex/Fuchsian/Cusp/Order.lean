@@ -49,7 +49,7 @@ theorem meromorphicOrderAt_cuspExtension_eq_orderTop_laurentQExpansion
     rw [twistedQExpansion_def, twistedExtension_def, cuspExtension_def]
     rw [twistedExtension_def, cuspExtension_def] at han
     exact TauCeti.qExpansion_order_eq_analyticOrderAt_cuspFunction han
-  rw [meromorphicOrderAt_cuspExtension_eq_neg_add D k f hf han,
+  rw [meromorphicOrderAt_cuspExtension_eq_neg_add_analyticOrderAt_twistedExtension D k f hf han,
     laurentQExpansion_def, HahnSeries.orderTop_mul, HahnSeries.orderTop_single one_ne_zero,
     ← hord]
   congr 1
