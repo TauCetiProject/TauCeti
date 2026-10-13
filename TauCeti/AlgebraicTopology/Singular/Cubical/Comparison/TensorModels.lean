@@ -91,6 +91,15 @@ def tensorGen (n : ℕ) (i : BidegreeIndex n) :
     (NormalizedCubicalChain.ofCube (cubeModel.{u} i.1.1) k (upCube i.1.1) ⊗ₜ[k]
       NormalizedCubicalChain.ofCube (cubeModel.{u} i.1.2) k (upCube i.1.2))
 
+/-- The generator is the image of the tensor product of the two identity cubes. -/
+theorem tensorGen_def (n : ℕ) (i : BidegreeIndex n) :
+    tensorGen k n i =
+      (ιTensorObj ((normalizedCubicalChainComplex.{u} k).obj (cubeModel.{u} i.1.1))
+          ((normalizedCubicalChainComplex.{u} k).obj (cubeModel.{u} i.1.2)) i.1.1 i.1.2 n i.2).hom
+        (NormalizedCubicalChain.ofCube (cubeModel.{u} i.1.1) k (upCube i.1.1) ⊗ₜ[k]
+          NormalizedCubicalChain.ofCube (cubeModel.{u} i.1.2) k (upCube i.1.2)) :=
+  (rfl)
+
 /-- The coefficients of a chain of a summand of the tensor product are those of the summand. -/
 theorem tensorCoord_ι (X : TopCat.{u} × TopCat.{u}) (n p q : ℕ) (h : p + q = n)
     (z : NormalizedCubicalChain X.1 k p ⊗[k] NormalizedCubicalChain X.2 k q) :
