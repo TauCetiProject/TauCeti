@@ -53,6 +53,8 @@ equal exactly when their radii agree and each centre lies in the other disc. If
   `R({T - a, c} / c)`, hence open and, for `c` a unit, quasi-compact.
 * `TauCeti.ValuationSpectrum.closedSubdisc_zero_one`: `D(0, 1)` is the whole closed unit disc,
   and `TauCeti.ValuationSpectrum.closedSubdisc_zero_right`: `D(a, |0|)` is empty.
+* `TauCeti.ValuationSpectrum.closure_closedSubdisc_subset_closedSubdisc`: strictly enlarging
+  a radius contains the closure of the smaller disc.
 * `TauCeti.ValuationSpectrum.classicalPoint_mem_closedSubdisc_iff`,
   `TauCeti.ValuationSpectrum.gaussPoint_mem_closedSubdisc_iff`,
   `TauCeti.ValuationSpectrum.discPoint_mem_closedSubdisc_iff`,
@@ -168,6 +170,31 @@ theorem closedSubdisc_subset_closedSubdisc {a b c d : K} (hab : ‖a - b‖ ≤ 
   -- `T - b = (T - a) + (a - b)`, and both summands are dominated by `d`
   rw [← valuation_le_iff, show T - C b = (T - C a) + C (a - b) by rw [map_sub]; ring]
   exact (Valuation.map_add _ _ _).trans (max_le (h₁.trans h₂) h₃)
+
+/-- Strict enlargement of the radius contains the closure of a closed subdisc. -/
+theorem closure_closedSubdisc_subset_closedSubdisc {a c d : K} (hcd : ‖c‖ < ‖d‖) :
+    closure (closedSubdisc a c) ⊆ closedSubdisc a d := by
+  let F : Set (closedPolydisc 1 K) :=
+    (Subtype.val ⁻¹' basicOpen (C d) (T - C a))ᶜ
+  have hF : IsClosed F :=
+    ((isOpen_basicOpen _ _).preimage continuous_subtype_val).isClosed_compl
+  have hsub : closedSubdisc a c ⊆ F := by
+    intro x hx hmem
+    have h₁ := (mem_closedSubdisc a c x).mp hx
+    have h₂ := (mem_basicOpen_iff _ _ _).mp hmem
+    exact hcd.not_ge ((closedPolydisc_vle_weightedC_iff x d c).mp
+      (x.1.toValuativeRel.vle_trans h₂.1 h₁.1))
+  intro x hx
+  have hxF := closure_minimal hsub hF hx
+  have hd : ¬ x.1.toValuativeRel.vle (C d) 0 := by
+    rw [← map_zero C, closedPolydisc_vle_weightedC_iff, norm_zero]
+    exact not_le.mpr ((norm_nonneg c).trans_lt hcd)
+  refine (mem_closedSubdisc a d x).mpr ⟨?_, hd⟩
+  by_contra hn
+  have hrev := x.1.toValuativeRel.vle_total (T - C a) (C d)
+  have hda := hrev.resolve_left hn
+  exact hxF ((mem_basicOpen_iff _ _ _).mpr ⟨hda,
+    fun hzero ↦ hd (x.1.toValuativeRel.vle_trans hda hzero)⟩)
 
 /-- A disc whose radius parameter has norm at least one, about a centre in the closed unit disc,
 is the whole closed unit disc. -/
