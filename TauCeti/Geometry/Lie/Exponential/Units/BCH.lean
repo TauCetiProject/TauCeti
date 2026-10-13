@@ -186,7 +186,7 @@ theorem analyticAt_unitsLocalBCH_representative :
       (he.comp_of_eq (analyticAt_snd : AnalyticAt ℝ
         (fun p : LeftInvariantDerivation (modelWithCornersSelf ℝ R) Rˣ ×
             LeftInvariantDerivation (modelWithCornersSelf ℝ R) Rˣ ↦ p.2) (0, 0)) (by simp))
-  have hb := (NormedSpace.analyticAt_localBCH_representative R).comp_of_eq hc (by simp)
+  have hb := (NormedSpace.analyticAt_localBCH_representative R ℝ).comp_of_eq hc (by simp)
   have hs : AnalyticAt ℝ e.symm 0 := e.symm.toContinuousLinearEquiv.analyticAt 0
   simpa only [Function.comp_def, e, map_zero, NormedSpace.exp_zero, mul_one,
     NormedSpace.log_one] using hs.comp_of_eq hb (by simp)

@@ -18,8 +18,8 @@ that this expression is a local logarithm; its values away from the origin
 have no mathematical role.
 
 The exponential of this germ is the product of the two exponentials. Its
-restrictions to either coordinate axis are the identity germ, and over a real
-algebra its chosen representative is analytic at the origin.
+restrictions to either coordinate axis are the identity germ, and over any
+characteristic-zero normed field its chosen representative is analytic at the origin.
 
 ## Main declarations
 
@@ -66,18 +66,19 @@ theorem localBCH_def [NormedAlgebra ℚ A] [CompleteSpace A] :
 theorem localBCH_value [NormedAlgebra ℚ A] [CompleteSpace A] : (localBCH A).value = 0 := by
   simp [localBCH]
 
-section Real
+section Analytic
 
-variable [NormedAlgebra ℝ A] [CompleteSpace A]
+variable (𝕂 : Type*) [NontriviallyNormedField 𝕂] [CharZero 𝕂] [ContinuousSMul ℚ 𝕂]
+  [ContinuousSMul ℚ≥0 𝕂] [NormedAlgebra 𝕂 A] [CompleteSpace A]
 
 /-- The representative defining `localBCH` is analytic at the origin. -/
 theorem analyticAt_localBCH_representative :
-    AnalyticAt ℝ (fun p : A × A ↦ log (exp p.1 * exp p.2)) (0, 0) := by
-  simpa [Function.comp_def] using (analyticAt_log_one ℝ A).comp_of_eq
-    (((exp_analytic (𝕂 := ℝ) 0).comp (x := (0, 0)) analyticAt_fst).mul
-      ((exp_analytic (𝕂 := ℝ) 0).comp (x := (0, 0)) analyticAt_snd)) (by simp)
+    AnalyticAt 𝕂 (fun p : A × A ↦ log (exp p.1 * exp p.2)) (0, 0) := by
+  simpa [Function.comp_def] using (analyticAt_log_one 𝕂 A).comp_of_eq
+    (((exp_analytic (𝕂 := 𝕂) 0).comp (x := (0, 0)) analyticAt_fst).mul
+      ((exp_analytic (𝕂 := 𝕂) 0).comp (x := (0, 0)) analyticAt_snd)) (by simp)
 
-end Real
+end Analytic
 
 variable [NormedAlgebra ℚ A] [CompleteSpace A]
 
