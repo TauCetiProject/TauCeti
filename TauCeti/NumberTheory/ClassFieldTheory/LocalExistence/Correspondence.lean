@@ -51,15 +51,15 @@ variable {K : Type} [Field K] [ValuativeRel K] [TopologicalSpace K]
 
 /-! ### Uniqueness -/
 
-/-- For finite abelian local layers, inclusion of norm subgroups is equivalent to inclusion of
-the layer subgroups. On fixed fields the latter inclusion is reversed. -/
+/-- For a finite abelian local layer `W` and any finite local layer `V`, inclusion of norm
+subgroups is equivalent to inclusion of the layer subgroups. On fixed fields the latter inclusion
+is reversed. -/
 theorem localNormSubgroup_le_iff_of_isAbelian
-    {V W : OpenNormalSubgroup (AbsoluteGaloisGroup K)}
-    (hV : V.IsAbelianClassFieldLayer) (hW : W.IsAbelianClassFieldLayer) :
+    {V W : OpenNormalSubgroup (AbsoluteGaloisGroup K)} (hW : W.IsAbelianClassFieldLayer) :
     localNormSubgroup K V ≤ localNormSubgroup K W ↔ V ≤ W := by
   rw [← (localGroundOrderIso K).le_iff_le, localGroundOrderIso_localNormSubgroup,
     localGroundOrderIso_localNormSubgroup]
-  exact (localClassFormation K).normSubgroup_le_iff_of_isAbelian hV hW
+  exact (localClassFormation K).normSubgroup_le_iff_of_isAbelian hW
 
 /-- **Uniqueness of finite abelian local class fields.** Two abelian layers of a
 nonarchimedean local field with the same norm subgroup are equal. The abelianity hypotheses are
@@ -121,8 +121,8 @@ theorem localClassField_normSubgroup [CharZero K] (N : LocalNormSubgroups K) :
 subgroup corresponds to a larger subgroup of the absolute Galois group. -/
 theorem localClassField_le_iff [CharZero K] (N₁ N₂ : LocalNormSubgroups K) :
     N₁ ≤ N₂ ↔ (localClassField N₁).1 ≤ (localClassField N₂).1 := by
-  rw [← localNormSubgroup_le_iff_of_isAbelian (localClassField N₁).2
-    (localClassField N₂).2, localClassField_normSubgroup, localClassField_normSubgroup]
+  rw [← localNormSubgroup_le_iff_of_isAbelian (localClassField N₂).2,
+    localClassField_normSubgroup, localClassField_normSubgroup]
   rfl
 
 /-- On fixed fields, the local class-field correspondence reverses inclusions. -/
@@ -228,7 +228,6 @@ theorem localClassFieldPrimeToResidueCharacteristic_le_iff
       (localClassFieldPrimeToResidueCharacteristic p N₁).1.1 ≤
         (localClassFieldPrimeToResidueCharacteristic p N₂).1.1 := by
   rw [← localNormSubgroup_le_iff_of_isAbelian
-    (localClassFieldPrimeToResidueCharacteristic p N₁).1.2
     (localClassFieldPrimeToResidueCharacteristic p N₂).1.2,
     localClassFieldPrimeToResidueCharacteristic_normSubgroup,
     localClassFieldPrimeToResidueCharacteristic_normSubgroup]

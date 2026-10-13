@@ -148,17 +148,6 @@ theorem localGroundEquiv_mem_normSubgroup_iff
     fixingOpenNormalSubgroup_classField]
   rfl
 
-/-- The ground-level identification of the refinement `V ≤ W` is compatible with the two
-identifications of `Kˣ` with the ground levels of the layers of `W` and `V`. -/
-@[simp]
-theorem groundEquiv_localGroundEquiv {V W : OpenNormalSubgroup (AbsoluteGaloisGroup K)}
-    (h : V ≤ W) (x : Additive Kˣ) :
-    (LayerRefinement.ofOpenNormal h).groundEquiv (unitsFormation K) (localGroundEquiv K W x) =
-      localGroundEquiv K V x := by
-  apply Subtype.ext
-  rw [LayerRefinement.groundEquiv_apply_coe, localGroundEquiv_apply_coe,
-    localGroundEquiv_apply_coe]
-
 /-- **Subgroups of `Kˣ` are the subgroups of the ground level of the units formation.** The level
 of the whole group `G_K` is `Kˣ`, written additively, so taking preimages along that
 identification is an order isomorphism. It carries the concrete local norm subgroups to the norm
@@ -169,6 +158,15 @@ def localGroundOrderIso : Subgroup Kˣ ≃o Submodule ℤ ((unitsFormation K).le
     (unitsLevelEquiv (Algebra.ofId K (SeparableClosure K))
       (fixedField_toSubgroup_top_eq_fieldRange K)).symm.comapAddSubgroup.trans
         AddSubgroup.toIntSubmodule
+
+/-- An element of the ground level lies in the image of a subgroup `H ≤ Kˣ` under
+`localGroundOrderIso` exactly when the corresponding unit of `K` lies in `H`. -/
+@[simp]
+theorem mem_localGroundOrderIso {H : Subgroup Kˣ} {a : (unitsFormation K).level ⊤} :
+    a ∈ localGroundOrderIso K H ↔
+      ((unitsLevelEquiv (Algebra.ofId K (SeparableClosure K))
+        (fixedField_toSubgroup_top_eq_fieldRange K)).symm a).toMul ∈ H :=
+  Iff.rfl
 
 /-- `localGroundOrderIso` carries the local norm subgroup of `V` to the norm subgroup of the layer
 `V ◁ G_K` of the units formation. -/
@@ -181,8 +179,8 @@ theorem localGroundOrderIso_localNormSubgroup
   ext a
   obtain ⟨x, rfl⟩ : ∃ x : Kˣ, e (Additive.ofMul x) = a := ⟨(e.symm a).toMul, by simp⟩
   rw [Formation.mem_normSubgroup, groundEquivOfOpenNormal_unitsLevelEquiv,
-    localGroundEquiv_mem_normSubgroup_iff, ← SetLike.mem_coe]
-  simp [localGroundOrderIso, e, -mem_localNormSubgroup_iff]
+    localGroundEquiv_mem_normSubgroup_iff, mem_localGroundOrderIso, AddEquiv.symm_apply_apply,
+    toMul_ofMul]
 
 /-! ### Order properties -/
 

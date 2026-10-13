@@ -29,9 +29,9 @@ subgroups into the lattice of subgroups of a finite abelian group:
   subgroup (`ClassFormation.normSubgroup_inf_of_isAbelian`);
 * the intersection of any two layers has the sum of their norm subgroups as its norm subgroup
   (`ClassFormation.normSubgroup_sup`; by norm limitation no abelianity is needed);
-* abelian layers are ordered by their norm subgroups
-  (`ClassFormation.normSubgroup_le_iff_of_isAbelian`), so an abelian layer is determined by its
-  norm subgroup (`ClassFormation.eq_of_normSubgroup_eq_of_isAbelian`);
+* a layer lies below an abelian layer exactly when its norm subgroup lies in that of the abelian
+  layer (`ClassFormation.normSubgroup_le_iff_of_isAbelian`), so an abelian layer is determined by
+  its norm subgroup (`ClassFormation.eq_of_normSubgroup_eq_of_isAbelian`);
 * **upward closure**: a subgroup of `A^G` containing the norm subgroup of a layer is the norm
   subgroup of an abelian layer (`ClassFormation.exists_abelianLayer_normSubgroup_eq_of_le`).
 
@@ -53,8 +53,8 @@ statements with the arithmetic existence theorems of their own settings.
   abelian layer.
 * `TauCeti.ClassFieldTheory.ClassFormation.normSubgroup_inf_of_isAbelian` and
   `TauCeti.ClassFieldTheory.ClassFormation.normSubgroup_sup`: the lattice laws.
-* `TauCeti.ClassFieldTheory.ClassFormation.normSubgroup_le_iff_of_isAbelian`: abelian layers are
-  ordered by their norm subgroups.
+* `TauCeti.ClassFieldTheory.ClassFormation.normSubgroup_le_iff_of_isAbelian`: layers are ordered
+  against an abelian layer by their norm subgroups.
 * `TauCeti.ClassFieldTheory.ClassFormation.exists_abelianLayer_normSubgroup_eq_of_le`: upward
   closure of norm subgroups.
 
@@ -247,13 +247,10 @@ theorem normSubgroup_sup (V W : OpenNormalSubgroup G) :
 /-! ### Abelian layers are determined by their norm subgroups -/
 
 include cf in
-/-- **Abelian layers are ordered by their norm subgroups.** For abelian layers `V` and `W`, the
-norm subgroup of `V` lies in that of `W` exactly when `V ≤ W`; on the extensions they cut out,
-the inclusion is reversed. -/
-theorem normSubgroup_le_iff_of_isAbelian (hV : V.IsAbelianClassFieldLayer)
-    (hW : W.IsAbelianClassFieldLayer) :
-    F.normSubgroup V ≤ F.normSubgroup W ↔ V ≤ W := by
-  refine ⟨fun h ↦ ?_, fun h ↦ F.normSubgroup_mono h⟩
+/-- For abelian layers `V` and `W`, an inclusion of norm subgroups forces `V ≤ W`: the norm
+subgroup of the compositum `V ⊓ W` is then that of `V`, so the two layers have the same degree. -/
+private theorem le_of_normSubgroup_le_of_isAbelian (hV : V.IsAbelianClassFieldLayer)
+    (hW : W.IsAbelianClassFieldLayer) (h : F.normSubgroup V ≤ F.normSubgroup W) : V ≤ W := by
   have hinf : F.normSubgroup (V ⊓ W) = F.normSubgroup V := by
     rw [cf.normSubgroup_inf_of_isAbelian hV hW, inf_eq_left.mpr h]
   have hdegree : (ofOpenNormal (V ⊓ W)).degree = (ofOpenNormal V).degree := by
@@ -271,13 +268,25 @@ theorem normSubgroup_le_iff_of_isAbelian (hV : V.IsAbelianClassFieldLayer)
   exact inf_le_right
 
 include cf in
+/-- **Abelian layers are ordered by their norm subgroups.** For an abelian layer `W` and any
+layer `V`, the norm subgroup of `V` lies in that of `W` exactly when `V ≤ W`; on the extensions
+they cut out, the inclusion is reversed. No abelianity of `V` is needed: by norm limitation `V`
+has the norm subgroup of its maximal abelian sublayer. -/
+theorem normSubgroup_le_iff_of_isAbelian (hW : W.IsAbelianClassFieldLayer) :
+    F.normSubgroup V ≤ F.normSubgroup W ↔ V ≤ W := by
+  refine ⟨fun h ↦ ?_, fun h ↦ F.normSubgroup_mono h⟩
+  rw [← cf.normSubgroup_maximalAbelianLayer] at h
+  exact V.le_maximalAbelianLayer.trans <|
+    cf.le_of_normSubgroup_le_of_isAbelian V.isAbelianClassFieldLayer_maximalAbelianLayer hW h
+
+include cf in
 /-- **An abelian layer is determined by its norm subgroup.** The abelianity hypotheses are
 essential: by norm limitation every layer has the norm subgroup of its maximal abelian
 sublayer. -/
 theorem eq_of_normSubgroup_eq_of_isAbelian (hV : V.IsAbelianClassFieldLayer)
     (hW : W.IsAbelianClassFieldLayer) (h : F.normSubgroup V = F.normSubgroup W) : V = W :=
-  le_antisymm ((cf.normSubgroup_le_iff_of_isAbelian hV hW).1 h.le)
-    ((cf.normSubgroup_le_iff_of_isAbelian hW hV).1 h.ge)
+  le_antisymm ((cf.normSubgroup_le_iff_of_isAbelian hW).1 h.le)
+    ((cf.normSubgroup_le_iff_of_isAbelian hV).1 h.ge)
 
 end Lattice
 
@@ -325,13 +334,13 @@ theorem exists_abelianLayer_normSubgroup_eq_of_le {V : OpenNormalSubgroup G}
       exact Iff.rfl
   ext a
   rw [← Submodule.mem_toAddSubgroup, cf.toAddSubgroup_normSubgroup_eq_comap hU hle,
-    AddSubgroup.mem_comap, Additive.mem_toAddSubgroup, MonoidHom.mem_ker, hker]
+    AddSubgroup.mem_comap, Additive.mem_toAddSubgroup, MonoidHom.mem_ker, hker, Subgroup.mem_map]
+  simp only [Multiplicative.mem_toSubgroup, Submodule.mem_toAddSubgroup]
   refine ⟨fun ⟨b, hb, hba⟩ ↦ ?_, fun ha ↦ ⟨Multiplicative.ofAdd a, ha, rfl⟩⟩
   -- `a` and an element `b` of `N` have the same Artin symbol, so `a - b` is a norm from `U`
   have hab : a - b.toAdd ∈ F.normSubgroup U := by
     rw [← cf.abelianArtinMap_eq_zero_iff hU, map_sub, sub_eq_zero]
     exact Additive.toMul.injective ((galOfOpenNormalEquiv U).injective hba).symm
-  have hb' : b.toAdd ∈ N := hb
-  simpa using N.add_mem (h hab) hb'
+  simpa using N.add_mem (h hab) hb
 
 end TauCeti.ClassFieldTheory.ClassFormation

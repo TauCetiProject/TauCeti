@@ -62,6 +62,8 @@ abelian layer.
   along a refinement.
 * `TauCeti.ClassFieldTheory.LayerRefinement.normSubgroup_le_map`: refining a layer shrinks its
   norm subgroup.
+* `TauCeti.ClassFieldTheory.Formation.mem_normSubgroup_iff_mem_map`: the norm subgroup of `V ◁ G`
+  read in the ground level of a refinement `V' ◁ G`.
 * `TauCeti.ClassFieldTheory.Formation.normSubgroup_mono`: the norm subgroup of `V ◁ G` is monotone
   in `V`.
 * `TauCeti.ClassFieldTheory.ClassFormation.map_normSubgroup_eq_iff`: in a class formation a
@@ -190,18 +192,24 @@ theorem mem_normSubgroup {V : OpenNormalSubgroup G} {a : F.level ⊤} :
       NormalLayer.groundEquivOfOpenNormal F V a ∈ (NormalLayer.ofOpenNormal V).normSubgroup F :=
   Iff.rfl
 
+variable {F} in
+/-- For `V' ≤ V`, an element of `A^G` lies in the norm subgroup of `V` exactly when, read in the
+ground level of the finer layer `V' ◁ G`, it lies in the norm subgroup of `V ◁ G` moved there by
+the ground-level identification of the refinement. -/
+theorem mem_normSubgroup_iff_mem_map {V V' : OpenNormalSubgroup G} (h : V' ≤ V)
+    {a : F.level ⊤} :
+    a ∈ F.normSubgroup V ↔ NormalLayer.groundEquivOfOpenNormal F V' a ∈
+      ((NormalLayer.ofOpenNormal V).normSubgroup F).map
+        ((LayerRefinement.ofOpenNormal h).groundEquiv F).toLinearMap := by
+  rw [mem_normSubgroup, ← LayerRefinement.groundEquiv_groundEquivOfOpenNormal F h a]
+  exact ⟨fun ha ↦ ⟨_, ha, rfl⟩,
+    fun ⟨_, hy, hya⟩ ↦ (LayerRefinement.groundEquiv _ F).injective hya ▸ hy⟩
+
 /-- **Norm subgroups are monotone in the open normal subgroup.** If `V' ≤ V`, then the extension
 cut out by `V'` contains the one cut out by `V`, and every norm from the larger extension is a norm
 from the smaller one. -/
-theorem normSubgroup_mono : Monotone F.normSubgroup := by
-  intro V' V h a ha
-  let T := LayerRefinement.ofOpenNormal h
-  obtain ⟨y, hy, hya⟩ := T.normSubgroup_le_map F ha
-  have : y = NormalLayer.groundEquivOfOpenNormal F V a :=
-    (T.groundEquiv F).injective
-      (hya.trans (LayerRefinement.groundEquiv_groundEquivOfOpenNormal F h a).symm)
-  rw [mem_normSubgroup, ← this]
-  exact hy
+theorem normSubgroup_mono : Monotone F.normSubgroup := fun _ _ h _ ha ↦
+  (mem_normSubgroup_iff_mem_map h).2 ((LayerRefinement.ofOpenNormal h).normSubgroup_le_map F ha)
 
 /-- **The layer of the whole group has the whole level `A^G` as its norm subgroup**: it cuts out the
 ground field itself, whose norm to itself is the identity. -/
@@ -263,10 +271,8 @@ theorem normSubgroup_maximalAbelianLayer (V : OpenNormalSubgroup G) :
         (abelianizationGalEquiv V.isAbelianClassFieldLayer_maximalAbelianLayer).toEquiv,
       NormalLayer.degree_eq_natCard_gal]
   ext a
-  have hground := LayerRefinement.groundEquiv_groundEquivOfOpenNormal F V.le_maximalAbelianLayer a
-  rw [Formation.mem_normSubgroup, Formation.mem_normSubgroup, ← hlim]
-  refine ⟨fun ha ↦ ⟨_, ha, hground⟩, fun ⟨y, hy, hya⟩ ↦ ?_⟩
-  rwa [(T.groundEquiv F).injective (hya.trans hground.symm)] at hy
+  rw [Formation.mem_normSubgroup_iff_mem_map V.le_maximalAbelianLayer, hlim,
+    Formation.mem_normSubgroup]
 
 end ClassFormation
 

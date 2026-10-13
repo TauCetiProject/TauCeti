@@ -108,9 +108,9 @@ theorem of_localAbelianArtinHom (hV : V.IsAbelianClassFieldLayer) (x : Kˣ) :
 theorem ker_localAbelianArtinHom (hV : V.IsAbelianClassFieldLayer) :
     (localAbelianArtinHom K hV).ker = localNormSubgroup K V := by
   ext x
-  rw [MonoidHom.mem_ker, ← (abelianizationGalEquiv hV).symm.map_eq_one_iff,
-    abelianizationGalEquiv_symm_apply, ← ofMul_eq_zero, of_localAbelianArtinHom,
-    ClassFormation.artinMap_eq_zero_iff, localGroundEquiv_mem_normSubgroup_iff]
+  rw [MonoidHom.mem_ker, localAbelianArtinHom_apply, toMul_eq_one,
+    ClassFormation.abelianArtinMap_eq_zero_iff, Formation.mem_normSubgroup,
+    groundEquivOfOpenNormal_unitsLevelEquiv, localGroundEquiv_mem_normSubgroup_iff]
 
 /-- `localAbelianArtinHom` is surjective. -/
 theorem surjective_localAbelianArtinHom (hV : V.IsAbelianClassFieldLayer) :
