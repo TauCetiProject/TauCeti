@@ -73,8 +73,8 @@ private theorem isSheafFor_ofArrows_spaRationalOpens_of_iSup_eq_top_topCommRingC
         coyoneda.obj (op E)) := by
   classical
   subst hW
-  obtain ⟨S, hS, hSU⟩ := exists_span_eq_top_forall_rationalSubset_subset_of_isTateRing Aplus
-    hplus (fun i ↦ (U i : Set ↥(spa Aplus))) (fun i ↦ (U i).isOpen) (by
+  obtain ⟨S, hS, hSU⟩ := exists_span_eq_top_forall_rationalSubset_subset_of_isOpen_of_iUnion_eq_univ
+    Aplus hplus (fun i ↦ (U i : Set ↥(spa Aplus))) (fun i ↦ (U i).isOpen) (by
       rw [← Opens.coe_iSup, hcov, Opens.coe_top])
   rcases S.eq_empty_or_nonempty with rfl | hSne
   · have hspa : spa Aplus = ∅ := by
