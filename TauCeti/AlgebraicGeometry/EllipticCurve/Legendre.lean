@@ -418,6 +418,10 @@ from its base change along exactly one ring homomorphism (`existsUnique_legendre
 -- simp normal form of its base changes.
 noncomputable def curve : WeierstrassCurve Ring := freyCurve 1 (-param)
 
+/-- The universal Legendre curve is the Legendre form `y² = x (x - 1) (x - λ)` with parameter `λ`.
+Not `@[simp]`, so that `map_lift` stays the simp normal form of its base changes. -/
+theorem curve_def : curve = freyCurve 1 (-param) := (rfl)
+
 variable {R : Type*} [CommRing R]
 
 /-- The universal Legendre curve is an elliptic curve. -/
@@ -505,7 +509,7 @@ theorem existsUnique_legendre [W.IsElliptic] (h₁ : W.toAffine.Equation x₁ y�
   refine ⟨(lift hB, C), ⟨hCu, hCr, hCt, hCx, hCy, ?_⟩,
     fun ⟨f, D⟩ ⟨hDu, hDr, hDt, hDx, hDy, hD⟩ ↦ ?_⟩
   · rw [hC, map_lift, neg_neg]
-  rw [curve, map_freyCurve, map_one, map_neg] at hD
+  rw [curve_def, map_freyCurve, map_one, map_neg] at hD
   obtain rfl : D = C := hCuniq D ⟨hDu, hDr, hDt, hDx, hDy, _, hD⟩
   -- comparing `a₄` of the two Legendre forms gives `f λ = -B`
   have hf : f param = -B := by simpa using congrArg a₄ (hD.symm.trans hC)
