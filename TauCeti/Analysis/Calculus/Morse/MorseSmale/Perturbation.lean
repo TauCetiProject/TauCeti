@@ -37,7 +37,8 @@ for parameters in the closed unit ball.
 * `TauCeti.perturbedFlow f h hf hh`: the flow of the field
   `(x, s) ↦ (-∇ f x - ∑ᵢ a(s)ᵢ ∇ hᵢ x, 0)` on `E × EuclideanSpace ℝ ι`, where `a` is the cutoff of
   the parameter. `TauCeti.contDiff_perturbedFlow` says it is `C¹` jointly in time, space and
-  parameter, and `TauCeti.perturbedFlow_apply_of_norm_le` that, for `‖s‖ ≤ 1`, it is the
+  parameter (`TauCeti.contDiff_perturbedFlow_of_contDiff`: `C^{n+1}` for `C^{n+2}` data), and
+  `TauCeti.perturbedFlow_apply_of_norm_le` that, for `‖s‖ ≤ 1`, it is the
   negative-gradient flow of `perturb f h s`, with the parameter carried along
   (`TauCeti.snd_perturbedFlow_apply`). `TauCeti.exists_lipschitzWith_gradient_perturb` supplies
   the Lipschitz hypothesis needed to speak of that flow.
@@ -279,7 +280,8 @@ ball: it is the identity on the closed unit ball and has compact support. -/
 private noncomputable def perturbationCutoff (s : EuclideanSpace ℝ ι) : EuclideanSpace ℝ ι :=
   perturbationBump.toFun s • s
 
-private theorem contDiff_perturbationCutoff : ContDiff ℝ 1 (perturbationCutoff (ι := ι)) :=
+private theorem contDiff_perturbationCutoff {m : ℕ∞} :
+    ContDiff ℝ m (perturbationCutoff (ι := ι)) :=
   perturbationBump.contDiff.smul contDiff_id
 
 private theorem hasCompactSupport_perturbationCutoff :
@@ -298,15 +300,19 @@ private theorem perturbationCutoff_eq_self_of_norm_le {s : EuclideanSpace ℝ ι
 private noncomputable def coupling (h : ι → E → ℝ) (p : E × EuclideanSpace ℝ ι) : E :=
   ∑ i, perturbationCutoff p.2 i • ∇ (h i) p.1
 
-private theorem contDiff_coupling (hh : ∀ i, IsAdmissiblePerturbation f (h i)) :
-    ContDiff ℝ 1 (coupling h) := by
+private theorem contDiff_coupling_of {m : ℕ∞} (hh : ∀ i, ContDiff ℝ ((m : WithTop ℕ∞) + 1) (h i)) :
+    ContDiff ℝ m (coupling h) := by
   refine ContDiff.sum fun i _ ↦ ?_
-  have h1 : ContDiff ℝ 1 fun p : E × EuclideanSpace ℝ ι ↦ perturbationCutoff p.2 i :=
+  have h1 : ContDiff ℝ m fun p : E × EuclideanSpace ℝ ι ↦ perturbationCutoff p.2 i :=
     ((EuclideanSpace.proj i : EuclideanSpace ℝ ι →L[ℝ] ℝ).contDiff.comp
       contDiff_perturbationCutoff).comp contDiff_snd
-  have h2 : ContDiff ℝ 1 fun p : E × EuclideanSpace ℝ ι ↦ ∇ (h i) p.1 :=
-    ((hh i).contDiff.gradient_right (m := 1) (by norm_num)).comp contDiff_fst
+  have h2 : ContDiff ℝ m fun p : E × EuclideanSpace ℝ ι ↦ ∇ (h i) p.1 :=
+    ((hh i).gradient_right le_rfl).comp contDiff_fst
   exact h1.smul h2
+
+private theorem contDiff_coupling (hh : ∀ i, IsAdmissiblePerturbation f (h i)) :
+    ContDiff ℝ 1 (coupling h) :=
+  contDiff_coupling_of fun i ↦ by simpa [one_add_one_eq_two] using (hh i).contDiff
 
 private theorem hasCompactSupport_coupling (hh : ∀ i, IsAdmissiblePerturbation f (h i)) :
     HasCompactSupport (coupling h) := by
@@ -367,11 +373,16 @@ private theorem exists_lipschitzWith_perturbedField (hf : LipschitzWith K (∇ f
   unfold perturbedField
   exact ⟨_, ((hf.comp LipschitzWith.prod_fst).neg.sub hC).prodMk (LipschitzWith.const 0)⟩
 
-private theorem contDiff_perturbedField (hfs : ContDiff ℝ 2 f)
-    (hh : ∀ i, IsAdmissiblePerturbation f (h i)) : ContDiff ℝ 1 (perturbedField f h) := by
+private theorem contDiff_perturbedField_of {m : ℕ∞} (hfs : ContDiff ℝ ((m : WithTop ℕ∞) + 1) f)
+    (hh : ∀ i, ContDiff ℝ ((m : WithTop ℕ∞) + 1) (h i)) : ContDiff ℝ m (perturbedField f h) := by
   unfold perturbedField
-  exact (((hfs.gradient_right (m := 1) (by norm_num)).comp contDiff_fst).neg.sub
-    (contDiff_coupling hh)).prodMk contDiff_const
+  exact (((hfs.gradient_right le_rfl).comp contDiff_fst).neg.sub
+    (contDiff_coupling_of hh)).prodMk contDiff_const
+
+private theorem contDiff_perturbedField (hfs : ContDiff ℝ 2 f)
+    (hh : ∀ i, IsAdmissiblePerturbation f (h i)) : ContDiff ℝ 1 (perturbedField f h) :=
+  contDiff_perturbedField_of (by simpa [one_add_one_eq_two] using hfs)
+    fun i ↦ by simpa [one_add_one_eq_two] using (hh i).contDiff
 
 /-- **The flow of the cut-off augmented field** on `E × EuclideanSpace ℝ ι`: the field is
 `(x, s) ↦ (-∇ f x - ∑ᵢ a(s)ᵢ ∇ hᵢ x, 0)`, with `a` a smooth cutoff of the parameter equal to the
@@ -400,6 +411,21 @@ theorem contDiff_perturbedFlow (hfs : ContDiff ℝ 2 f) (hf : LipschitzWith K (�
   unfold perturbedFlow
   simpa using contDiff_flowOfLipschitz 0 (perturbedField f h)
     (exists_lipschitzWith_perturbedField hf hh).choose_spec hc
+
+/-- **Higher regularity of the perturbed flow**: if `f` and the perturbing functions are
+`C^{n+2}`, the perturbed flow is `C^{n+1}` jointly in time, the initial condition and the
+parameter. -/
+theorem contDiff_perturbedFlow_of_contDiff (n : ℕ) (hfs : ContDiff ℝ (n + 2) f)
+    (hf : LipschitzWith K (∇ f)) (hh : ∀ i, IsAdmissiblePerturbation f (h i))
+    (hhs : ∀ i, ContDiff ℝ (n + 2) (h i)) :
+    ContDiff ℝ (n + 1) (Function.uncurry (perturbedFlow f h hf hh)) := by
+  have e : (((n + 1 : ℕ) : ℕ∞) : WithTop ℕ∞) + 1 = n + 2 := by
+    push_cast
+    rw [add_assoc, one_add_one_eq_two]
+  have hc : ContDiff ℝ (((n + 1 : ℕ) : ℕ∞) : WithTop ℕ∞) (perturbedField f h) :=
+    contDiff_perturbedField_of (by rw [e]; exact hfs) fun i ↦ by rw [e]; exact hhs i
+  unfold perturbedFlow
+  exact contDiff_flowOfLipschitz n _ _ (by exact_mod_cast hc)
 
 /-- **The parameter is constant along the perturbed flow.** -/
 @[simp]
