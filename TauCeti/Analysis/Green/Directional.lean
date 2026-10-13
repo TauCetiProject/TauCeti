@@ -18,6 +18,10 @@ zero-extended fiber integral. Applying the one-dimensional FTC gives the directi
 identity, requiring only the vertical derivative of the horizontal field component.
 
 The horizontal identity follows by interchanging the coordinates, with its corresponding sign.
+
+## References
+
+* M. Abdulaziz and L. C. Paulson, *Green's Theorem*, Archive of Formal Proofs.
 -/
 
 public section
@@ -96,6 +100,7 @@ theorem integrable_verticalRegion_fiberIntegral
   convert (integrable_indicator_coordinates hl hu hR).integral_prod_left using 1
   ext x
   exact (integral_indicator_coordinates x).symm
+
 /-- Fubini's slicing formula for the area integral over a vertical graph cell. -/
 theorem integral_verticalRegion
     (hl : ContinuousOn lower (Icc a b)) (hu : ContinuousOn upper (Icc a b))
@@ -111,6 +116,7 @@ theorem integral_verticalRegion
   rw [integral_prod _ (integrable_indicator_coordinates hl hu hR)]
   simp_rw [integral_indicator_coordinates]
   exact integral_indicator measurableSet_Icc
+
 /-- Fubini's slicing formula for a horizontal graph cell, obtained by interchanging coordinates. -/
 theorem integral_horizontalRegion
     (hl : ContinuousOn lower (Icc a b)) (hu : ContinuousOn upper (Icc a b))
