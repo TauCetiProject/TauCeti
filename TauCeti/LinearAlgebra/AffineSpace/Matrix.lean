@@ -12,8 +12,8 @@ public import Mathlib.LinearAlgebra.AffineSpace.Matrix
 
 Fix an affine basis `b` of an affine space `P`. For a family `q` of points of `P`, the matrix
 `b.toMatrix q` has the barycentric coordinates of `q i` with respect to `b` as its rows, and when
-`q` is indexed like `b` its determinant is the volume of the simplex with vertices `q i`, measured
-relative to the simplex of `b`.
+`q` is indexed like `b` its determinant is the signed (oriented) volume of the simplex with vertices
+`q i`, measured relative to the simplex of `b`; the unsigned relative volume is its absolute value.
 
 Replacing the vertex `q i` of an affine basis `q` by a point `x` scales this determinant by the
 barycentric coordinate of `x` at `i` with respect to `q`

@@ -23,10 +23,11 @@ regularity theory of the Monge–Ampère equation it is applied to the sections
 
 The normalization comes from a simplex of maximal volume. Let `K` be a compact set whose affine
 span is the whole `n`-dimensional space, and choose `n + 1` points of `K` spanning a simplex of
-maximal volume, where volume is measured by the determinant of the matrix of barycentric
-coordinates relative to a fixed affine basis. Replacing the vertex `b i` by a point `x` multiplies
-this determinant by the barycentric coordinate `b.coord i x` (`AffineBasis.det_toMatrix_update`),
-so maximality forces `|b.coord i x| ≤ 1` for every `x ∈ K`
+maximal volume, where volume is measured by the absolute value of the determinant of the matrix of
+barycentric coordinates relative to a fixed affine basis (the determinant itself is the signed
+volume). Replacing the vertex `b i` by a point `x` multiplies this determinant by the barycentric
+coordinate `b.coord i x` (`AffineBasis.det_toMatrix_update`), so maximality of its absolute value
+forces `|b.coord i x| ≤ 1` for every `x ∈ K`
 (`IsCompact.exists_affineBasis_abs_coord_le_one`).
 
 In terms of the simplex `Δ = convexHull (range b)` with centroid `c`, the points whose barycentric
