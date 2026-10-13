@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Complex.Basic
-public import Mathlib.MeasureTheory.Measure.Lebesgue.Complex
+public import TauCeti.MeasureTheory.Measure.Lebesgue.Complex
 import Mathlib.Topology.Order.Compact
 
 /-!
@@ -134,8 +134,8 @@ theorem frontier_verticalRegion_subset (hl : ContinuousOn lower (Icc a b))
     ⟨lt_of_le_of_ne hmem.1.1 (Ne.symm ha), lt_of_le_of_ne hmem.1.2 hb⟩
     ⟨lt_of_le_of_ne hmem.2.1 (Ne.symm hL), lt_of_le_of_ne hmem.2.2 hU⟩))
 
-/-- A continuous graph over a compact interval has zero area, by its singleton fibers. -/
-theorem volume_verticalGraph_eq_zero {f : ℝ → ℝ} (hf : ContinuousOn f (Icc a b)) :
+/-- A continuous graph over a compact interval has zero planar area. -/
+theorem volume_setOf_im_eq_graph_eq_zero {f : ℝ → ℝ} (hf : ContinuousOn f (Icc a b)) :
     volume {z : ℂ | z.re ∈ Icc a b ∧ z.im = f z.re} = 0 := by
   let S := {p : ℝ × ℝ | p.1 ∈ Icc a b ∧ p.2 = f p.1}
   have hS : MeasurableSet S := by
@@ -154,24 +154,15 @@ theorem volume_verticalGraph_eq_zero {f : ℝ → ℝ} (hf : ContinuousOn f (Icc
   have ht := Complex.volume_preserving_equiv_real_prod.measure_preimage_equiv S
   simpa only [S, preimage_ofPred_eq, Complex.measurableEquivRealProd_apply] using ht.trans hzero
 
-/-- A vertical coordinate line has zero planar area. -/
-theorem volume_re_eq_zero (c : ℝ) : volume {z : ℂ | z.re = c} = 0 := by
-  have ht := Complex.volume_preserving_equiv_real_prod.measure_preimage_equiv
-    ({c} ×ˢ (univ : Set ℝ))
-  have hzero : (volume.prod volume) ({c} ×ˢ (univ : Set ℝ)) = 0 := by simp
-  convert ht.trans hzero using 2
-  ext z
-  simp only [mem_preimage, Complex.measurableEquivRealProd_apply, mem_prod,
-    mem_singleton_iff, mem_univ, and_true, mem_ofPred_eq]
-
 /-- The frontier of a vertical cell bounded by continuous graphs has zero planar area. -/
 theorem volume_frontier_verticalRegion_eq_zero (hl : ContinuousOn lower (Icc a b))
     (hu : ContinuousOn upper (Icc a b)) :
     volume (frontier (verticalRegion a b lower upper)) = 0 := by
   apply measure_mono_null (frontier_verticalRegion_subset hl hu)
   exact measure_union_null
-    (measure_union_null (measure_union_null (volume_re_eq_zero a) (volume_re_eq_zero b))
-      (volume_verticalGraph_eq_zero hl)) (volume_verticalGraph_eq_zero hu)
+    (measure_union_null (measure_union_null (Complex.volume_setOf_re_eq a)
+      (Complex.volume_setOf_re_eq b)) (volume_setOf_im_eq_graph_eq_zero hl))
+        (volume_setOf_im_eq_graph_eq_zero hu)
 
 /-- The homeomorphism interchanging the real and imaginary coordinates. -/
 noncomputable def coordinateSwap : ℂ ≃ₜ ℂ :=
