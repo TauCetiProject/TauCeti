@@ -249,12 +249,11 @@ theorem exists_ae_value_le_sub_mul_sub_or_add_mul_sub_le [Nonempty ι] :
   · -- Otherwise `{u ≥ k}` fills half of the ball: the infimum rises, by the same argument
     -- applied to the subsolution `-u`.
     right
-    have hneg : ⇑(W1p.value (-u)) =ᵐ[mu.restrict Omega] -W1p.value u := by
-      simpa only [← W1p.valueL_apply, map_neg] using Lp.coeFn_neg (W1p.value u)
+    have hneg := W1p.value_neg_ae u
     have hu' : ∀ v : W1p0 mu Omega 2,
         (∀ᵐ x ∂mu.restrict Omega, 0 ≤ W1p.value (v : W1p mu Omega 2) x) →
           energyFormH1 a 0 0 (-u) (v : W1p mu Omega 2) ≤ 0 := fun v _ => by
-      rw [← neg_one_smul ℝ u, energyFormH1_smul_left, hu v, mul_zero]
+      rw [energyFormH1_neg_left, hu v, neg_zero]
     have hM' : ∀ᵐ x ∂mu.restrict (ball x₀ (2 * R)), W1p.value (-u) x ≤ -m := by
       filter_upwards [hmM', ae_restrict_of_ae_restrict_of_subset hball hneg] with x hx hxn
       rw [hxn, Pi.neg_apply, neg_le_neg_iff]

@@ -30,7 +30,7 @@ det E₈ = 1,   A_{E₈} = 0,      E₈ is unimodular.
 ```
 
 Their levels are respectively `3`, `4`, and `1`, computed from these quadratic values
-using `IntegralLattice.IsEven.level_eq_addOrderOf` and the even-unimodular criterion.
+using `IntegralLattice.IsEven.level_eq_den` and the even-unimodular criterion.
 
 The generators are the classes of the minuscule fundamental weights, `ϖ₁` for `E₆` and `ϖ₇` for
 `E₇`, written in the simple-root coordinates that the inverse Cartan matrix dictates:
@@ -321,12 +321,9 @@ theorem discriminantQuadraticMap_typeE₆MinusculeWeightClass :
 
 /-- The level of the `E₆` root lattice is `3`. -/
 @[simp]
-theorem level_typeE₆RootLattice : typeE₆RootLattice.level = 3 := by
-  rw [isEven_typeE₆RootLattice.level_eq_addOrderOf _
-    zmultiples_typeE₆MinusculeWeightClass_eq_top,
-    discriminantQuadraticMap_typeE₆MinusculeWeightClass]
-  simpa only [Rat.cast_id, mul_one] using
-    (_root_.AddCircle.addOrderOf_coe_rat (p := (1 : ℚ)) (q := 2 / 3)).trans (by norm_num)
+theorem level_typeE₆RootLattice : typeE₆RootLattice.level = 3 :=
+  (isEven_typeE₆RootLattice.level_eq_den _ zmultiples_typeE₆MinusculeWeightClass_eq_top
+    discriminantQuadraticMap_typeE₆MinusculeWeightClass).trans (by norm_num)
 
 /-- **The discriminant bilinear value of the minuscule weight `ϖ₁` of type `E₆` is `1/3`.** -/
 @[simp]
@@ -602,12 +599,9 @@ theorem discriminantQuadraticMap_typeE₇MinusculeWeightClass :
 
 /-- The level of the `E₇` root lattice is `4`, not the exponent `2` of its discriminant group. -/
 @[simp]
-theorem level_typeE₇RootLattice : typeE₇RootLattice.level = 4 := by
-  rw [isEven_typeE₇RootLattice.level_eq_addOrderOf _
-    zmultiples_typeE₇MinusculeWeightClass_eq_top,
-    discriminantQuadraticMap_typeE₇MinusculeWeightClass]
-  simpa only [Rat.cast_id, mul_one] using
-    (_root_.AddCircle.addOrderOf_coe_rat (p := (1 : ℚ)) (q := 3 / 4)).trans (by norm_num)
+theorem level_typeE₇RootLattice : typeE₇RootLattice.level = 4 :=
+  (isEven_typeE₇RootLattice.level_eq_den _ zmultiples_typeE₇MinusculeWeightClass_eq_top
+    discriminantQuadraticMap_typeE₇MinusculeWeightClass).trans (by norm_num)
 
 /-- **The discriminant bilinear value of the minuscule weight `ϖ₇` of type `E₇` is `1/2`.** -/
 @[simp]

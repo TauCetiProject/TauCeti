@@ -18,10 +18,9 @@ This file packages the scalar extension `K ⊗[k] H` of a finite-type commutativ
 Hopf-algebra base-change API is in `CommHopfAlgCatBaseChange`; this file restricts it to the
 finite-type full subcategory, using Mathlib's finite-type base-change instance.
 
-It is the finite-type coordinate-Hopf-algebra wrapper for the ReductiveGroups roadmap Layer 0
-base-change item: geometric notions are studied after replacing the coordinate Hopf algebra
-`H` by `K ⊗[k] H`, and the functor of points of this base-changed object is identified with
-the original points evaluated on `K`-algebras.
+It is the finite-type coordinate-Hopf-algebra wrapper for base change: geometric notions are studied
+after replacing the coordinate Hopf algebra `H` by `K ⊗[k] H`, and the functor of points of this
+base-changed object is identified with the original points evaluated on `K`-algebras.
 
 ## Main declarations
 

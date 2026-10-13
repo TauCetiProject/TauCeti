@@ -234,7 +234,7 @@ lemma mkQuotient_comp_quotientIsoOfSurjective_hom (f : H ⟶ K)
 
 /-- The forward quotient isomorphism induced by a surjective morphism evaluates on quotient
 classes by applying the morphism before taking the target quotient. -/
-@[simp]
+@[simp↓]
 lemma quotientIsoOfSurjective_hom_mk (f : H ⟶ K) (hf : Function.Surjective f.hom)
     (I : HopfIdeal R K) (x : H) :
     (quotientIsoOfSurjective f hf I).hom.hom
@@ -332,7 +332,7 @@ lemma mkQuotient_comp_quotientIsoOfComapEq_inv (e : H ≅ K) (I : HopfIdeal R K)
 
 /-- The forward quotient isomorphism induced by an ambient isomorphism evaluates on quotient
 classes by applying the ambient isomorphism before taking the target quotient. -/
-@[simp]
+@[simp↓]
 lemma quotientIsoOfIso_hom_mk (e : H ≅ K) (I : HopfIdeal R K) (x : H) :
     (quotientIsoOfIso e I).hom.hom
         (Ideal.Quotient.mk
@@ -343,7 +343,7 @@ lemma quotientIsoOfIso_hom_mk (e : H ≅ K) (I : HopfIdeal R K) (x : H) :
 
 /-- The inverse quotient isomorphism induced by an ambient isomorphism evaluates on quotient
 classes by applying the inverse ambient isomorphism before taking the source quotient. -/
-@[simp]
+@[simp↓]
 lemma quotientIsoOfIso_inv_mk (e : H ≅ K) (I : HopfIdeal R K) (y : K) :
     (quotientIsoOfIso e I).inv.hom (Ideal.Quotient.mk I.toIdeal y) =
       Ideal.Quotient.mkₐ R
