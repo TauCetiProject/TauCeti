@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.Contour.Winding.AbsolutelyContinuous.Basic
 public import Mathlib.Topology.LocallyConstant.Basic
-import TauCeti.Analysis.Contour.Winding.Continuity
+import TauCeti.Analysis.Contour.Winding.LocallyConstant
 
 /-!
 # Local constancy of winding numbers for absolutely continuous curves
@@ -27,19 +27,16 @@ theorem isLocallyConstant_windingNumber_of_absolutelyContinuousOnInterval
     {γ : ℝ → ℂ} {a b : ℝ} (hγ : AbsolutelyContinuousOnInterval γ a b)
     (hclosed : γ a = γ b) :
     IsLocallyConstant (fun z : {z : ℂ // z ∉ γ '' uIcc a b} ↦ windingNumber γ a b z.1) := by
-  classical
-  choose n hn using fun z : {z : ℂ // z ∉ γ '' uIcc a b} ↦
-    exists_int_windingNumber_of_absolutelyContinuousOnInterval hγ hclosed z.2
-  have hcont : Continuous (fun z : {z : ℂ // z ∉ γ '' uIcc a b} ↦ windingNumber γ a b z.1) := by
-    refine continuous_iff_continuousAt.mpr fun z ↦ ?_
-    exact (continuousAt_windingNumber_of_avoidance hγ.continuousOn
-      (fun t ht heq ↦ z.2 ⟨t, ht, heq⟩)
-      (intervalIntegrable_inv_sub_mul_deriv_of_absolutelyContinuousOnInterval hγ z.2)).comp
-      continuous_subtype_val.continuousAt
-  have hncont : Continuous n := Complex.isClosedEmbedding_intCast.isEmbedding.continuous_iff.mpr
-    (by simpa only [Function.comp_def, ← hn] using hcont)
-  simpa only [Function.comp_def, ← hn] using
-    ((IsLocallyConstant.iff_continuous n).mpr hncont).comp (fun k : ℤ ↦ (k : ℂ))
+  have h := isLocallyConstant_windingNumber_of_integer hγ.continuousOn
+    hγ.intervalIntegrable_deriv_of_finiteDimensional fun z hz ↦
+      exists_int_windingNumber_of_absolutelyContinuousOnInterval hγ hclosed
+        (by rintro ⟨t, ht, heq⟩; exact hz t ht heq)
+  have heq : (fun z : ℂ ↦ ∀ t ∈ uIcc a b, γ t ≠ z) =
+      (fun z : ℂ ↦ z ∉ γ '' uIcc a b) := by
+    funext z
+    simp only [mem_image, not_exists, not_and]
+  rw [heq] at h
+  exact h
 
 /-- The winding number of a closed absolutely continuous curve is constant on each connected
 component of the complement of its trace. -/

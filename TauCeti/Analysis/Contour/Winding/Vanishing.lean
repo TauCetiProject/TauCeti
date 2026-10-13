@@ -22,8 +22,6 @@ the Dixon function agrees with `dixonH2` wherever the winding number is zero.
 
 ## Main results
 
-* `TauCeti.Contour.windingNumber_eq_zero_of_far` — a quantitative far-field vanishing bound
-  assuming the winding number at the point is an integer.
 * `TauCeti.Contour.windingNumber_eventually_zero_cocompact_of_integer` — far-field vanishing for
   a continuous curve with interval-integrable derivative and integer winding numbers off its trace.
 * `TauCeti.Contour.windingNumber_eventually_zero_cocompact` — off the curve, the winding number is
@@ -54,7 +52,7 @@ private theorem norm_inv_two_pi_I : ‖(2 * (Real.pi : ℂ) * Complex.I)⁻¹‖
 /-- **An integer winding number vanishes far from a bounded curve.** If the curve `γ` lies in the
 closed ball of radius `R` and `‖w‖` exceeds `R + (∫ ‖deriv γ‖) / (2π)`, then the
 integer-valued winding number about `w` has absolute value below `1`, hence is `0`. -/
-theorem windingNumber_eq_zero_of_far {γ : ℝ → ℂ} {a b R : ℝ} {w : ℂ}
+private theorem windingNumber_eq_zero_of_far {γ : ℝ → ℂ} {a b R : ℝ} {w : ℂ}
     (hγ_cont : ContinuousOn γ (uIcc a b))
     (hderiv_int : IntervalIntegrable (fun t ↦ deriv γ t) volume a b)
     (hint : ∃ n : ℤ, windingNumber γ a b w = n)

@@ -28,13 +28,13 @@ theorem windingNumber_eventually_zero_cocompact_of_absolutelyContinuousOnInterva
     {γ : ℝ → ℂ} {a b : ℝ} (hγ : AbsolutelyContinuousOnInterval γ a b)
     (hclosed : γ a = γ b) :
     ∀ᶠ z in Filter.cocompact ℂ,
-      (∀ t ∈ uIcc a b, γ t ≠ z) ∧ windingNumber γ a b z = 0 := by
-  apply windingNumber_eventually_zero_cocompact_of_integer hγ.continuousOn
-    hγ.intervalIntegrable_deriv_of_finiteDimensional
-  intro z hz
-  apply exists_int_windingNumber_of_absolutelyContinuousOnInterval hγ hclosed
-  rintro ⟨t, ht, heq⟩
-  exact hz t ht heq
+      z ∉ γ '' uIcc a b ∧ windingNumber γ a b z = 0 := by
+  have h := windingNumber_eventually_zero_cocompact_of_integer hγ.continuousOn
+    hγ.intervalIntegrable_deriv_of_finiteDimensional fun z hz ↦
+      exists_int_windingNumber_of_absolutelyContinuousOnInterval hγ hclosed
+        (by rintro ⟨t, ht, heq⟩; exact hz t ht heq)
+  filter_upwards [h] with z hz
+  exact ⟨by rintro ⟨t, ht, heq⟩; exact hz.1 t ht heq, hz.2⟩
 
 /-- The winding number of a closed absolutely continuous curve vanishes on every unbounded
 component of the complement of its trace. -/
