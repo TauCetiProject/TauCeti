@@ -34,18 +34,6 @@ namespace lp
 
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {p : ℝ≥0∞} [Fact (1 ≤ p)]
 
-/-- Retaining the first `n` coordinates gives an operator of rank at most `n`. -/
-theorem rank_diagonalTruncation_range_le (d : ℓ^∞(ℕ, 𝕜)) (n : ℕ) :
-    (diagonalTruncation (p := p) d (Finset.range n)).rank ≤ n := by
-  simpa using rank_diagonalTruncation_le (p := p) d (Finset.range n)
-
-/-- For decreasing coefficient magnitudes, the first discarded coefficient bounds the error. -/
-theorem nnnorm_diagonalCLM_sub_diagonalTruncation_range_le (d : ℓ^∞(ℕ, 𝕜))
-    (hd : Antitone fun i ↦ ‖d i‖) (n : ℕ) :
-    ‖diagonalCLM (p := p) d - diagonalTruncation d (Finset.range n)‖₊ ≤ ‖d n‖₊ := by
-  exact_mod_cast norm_diagonalCLM_sub_diagonalTruncation_le (p := p) d (Finset.range n)
-    (norm_nonneg _) (fun i hi ↦ hd (by simpa using hi))
-
 /-- The approximation numbers of a diagonal operator with decreasing coefficient magnitudes
 are exactly those magnitudes. No convergence-to-zero assumption is needed. -/
 @[simp]

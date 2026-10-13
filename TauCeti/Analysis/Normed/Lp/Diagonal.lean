@@ -185,6 +185,11 @@ theorem rank_diagonalTruncation_le (d : ℓ^∞(ι, 𝕜)) (s : Finset ι) :
       rw [← Finset.coe_image]
       exact (rank_span_finset_le _).trans (by exact_mod_cast Finset.card_image_le)
 
+/-- Retaining the first `n` coordinates gives an operator of rank at most `n`. -/
+theorem rank_diagonalTruncation_range_le (d : ℓ^∞(ℕ, 𝕜)) (n : ℕ) :
+    (diagonalTruncation (p := p) d (Finset.range n)).rank ≤ n := by
+  simpa using rank_diagonalTruncation_le (p := p) d (Finset.range n)
+
 /-- A bound on the discarded coefficients bounds the operator-norm truncation error. -/
 theorem norm_diagonalCLM_sub_diagonalTruncation_le (d : ℓ^∞(ι, 𝕜)) (s : Finset ι)
     {C : ℝ} (hC : 0 ≤ C) (hd : ∀ i ∉ s, ‖d i‖ ≤ C) :
@@ -200,6 +205,13 @@ theorem norm_diagonalCLM_sub_diagonalTruncation_le (d : ℓ^∞(ι, 𝕜)) (s : 
       · simpa [hi, norm_mul, abs_of_nonneg hC] using
           mul_le_mul_of_nonneg_right (hd i hi) (norm_nonneg (x i))
     _ = C * ‖x‖ := by simp [norm_smul, abs_of_nonneg hC, norm_toNorm]
+
+/-- For decreasing coefficient magnitudes, the first discarded coefficient bounds the error. -/
+theorem nnnorm_diagonalCLM_sub_diagonalTruncation_range_le (d : ℓ^∞(ℕ, 𝕜))
+    (hd : Antitone fun i ↦ ‖d i‖) (n : ℕ) :
+    ‖diagonalCLM (p := p) d - diagonalTruncation d (Finset.range n)‖₊ ≤ ‖d n‖₊ := by
+  exact_mod_cast norm_diagonalCLM_sub_diagonalTruncation_le (p := p) d (Finset.range n)
+    (norm_nonneg _) (fun i hi ↦ hd (by simpa using hi))
 
 omit [DecidableEq ι] in
 /-- A diagonal multiplier is compact if its coefficient norms tend to zero along cofinite. -/
