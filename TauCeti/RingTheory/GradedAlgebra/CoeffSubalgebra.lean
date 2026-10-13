@@ -108,7 +108,7 @@ theorem monomial_coeff_mem (f : coeffSubalgebra M) (n : ℕ) :
 
 variable (M) in
 /-- The degree `n` piece of `coeffSubalgebra M`: the monomials `b Xⁿ` with `b ∈ M n`. -/
-@[expose] noncomputable def grade (n : ℕ) : Submodule R (coeffSubalgebra M) :=
+noncomputable def grade (n : ℕ) : Submodule R (coeffSubalgebra M) :=
   Submodule.comap (coeffSubalgebra M).val.toLinearMap
     (Submodule.map ((Polynomial.monomial n).restrictScalars R) (M n))
 

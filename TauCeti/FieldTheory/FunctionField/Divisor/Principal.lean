@@ -280,8 +280,8 @@ theorem coeff_poles_eq_zero_iff (hF : IsFunctionField k F) (z : Fˣ) (P : Place 
 divisor allows, exactly when `z⁻¹` is regular at `P`. -/
 theorem valuation_eq_exp_coeff_poles_iff (hF : IsFunctionField k F) (z : Fˣ) (P : Place k F) :
     P.valuation (z : F) = WithZero.exp ((poles hF z).coeff P) ↔ (z : F)⁻¹ ∈ P.integers := by
-  rw [P.valuation_eq_exp_iff_ord_eq_neg z.ne_zero, coeff_poles, P.mem_integers_iff_ord_nonneg,
-    P.ord_inv]
+  rw [← neg_neg ((poles hF z).coeff P), ← P.ord_eq_iff_valuation_eq_exp_neg z.ne_zero,
+    coeff_poles, P.mem_integers_iff_ord_nonneg, P.ord_inv]
   omega
 
 @[simp]

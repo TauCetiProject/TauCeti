@@ -155,10 +155,6 @@ theorem ord_eq_iff_valuation_eq_exp_neg {f : F} (hf : f ≠ 0) {n : ℤ} :
     P.ord f = n ↔ P.valuation f = WithZero.exp (-n) :=
   Valuation.ord_eq_iff_valuation_eq_exp_neg P.valuation hf
 
-theorem valuation_eq_exp_iff_ord_eq_neg {f : F} (hf : f ≠ 0) {n : ℤ} :
-    P.valuation f = WithZero.exp n ↔ P.ord f = -n :=
-  Valuation.valuation_eq_exp_iff_ord_eq_neg P.valuation hf
-
 @[simp]
 theorem ord_zero : P.ord 0 = 0 := Valuation.ord_zero P.valuation
 

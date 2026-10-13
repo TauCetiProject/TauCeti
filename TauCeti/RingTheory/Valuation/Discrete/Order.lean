@@ -50,10 +50,6 @@ theorem ord_eq_iff_valuation_eq_exp_neg (v : _root_.Valuation F ℤᵐ⁰) {f : 
     (hf : f ≠ 0) {n : ℤ} : ord v f = n ↔ v f = WithZero.exp (-n) := by
   rw [valuation_eq_exp_neg_ord v hf, WithZero.exp_inj, neg_inj]
 
-theorem valuation_eq_exp_iff_ord_eq_neg (v : _root_.Valuation F ℤᵐ⁰) {f : F} (hf : f ≠ 0)
-    {n : ℤ} : v f = WithZero.exp n ↔ ord v f = -n := by
-  rw [ord_eq_iff_valuation_eq_exp_neg v hf, neg_neg]
-
 @[simp]
 theorem ord_zero (v : _root_.Valuation F ℤᵐ⁰) : ord v 0 = 0 := by
   simp [ord_def]

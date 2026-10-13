@@ -67,7 +67,7 @@ variable {I}
 /-- The elements of degree `n` of the Rees algebra are the monomials `r Xⁿ` with `r ∈ Iⁿ`. -/
 theorem mem_grade_iff {n : ℕ} {f : reesAlgebra I} :
     f ∈ grade I n ↔ ∃ r ∈ I ^ n, monomial n r = (f : R[X]) :=
-  Iff.rfl
+  TauCeti.coeffSubalgebra.mem_grade_iff
 
 /-- An element of the Rees algebra has degree `n` exactly when it is the monomial of degree `n`
 formed by its `n`-th coefficient. -/

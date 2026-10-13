@@ -140,8 +140,10 @@ theorem mem_holomorphyRing_iff_exists_mul_pow_mem_riemannRochSpace (hF : IsFunct
     have := (mem_riemannRochSpace_iff_neg_le_ord hf0).mp hf P
     rw [WeilDivisor.coeff_nsmul] at this
     omega
-  simp only [mem_holomorphyRing_iff_forall_ord_nonneg, Set.mem_ofPred_eq,
-    Place.valuation_eq_exp_iff_ord_eq_neg _ hf0]
+  have hval (P : Place k F) :
+      P.valuation f = WithZero.exp (n * D.coeff P) ↔ P.ord f = -(n * D.coeff P) := by
+    rw [P.ord_eq_iff_valuation_eq_exp_neg hf0, neg_neg]
+  simp only [mem_holomorphyRing_iff_forall_ord_nonneg, Set.mem_ofPred_eq, hval]
   constructor
   · intro hz
     rcases eq_or_ne z 0 with rfl | hz0
