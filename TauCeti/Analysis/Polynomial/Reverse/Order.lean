@@ -113,6 +113,7 @@ theorem orderAt_reverse (p : Polynomial (MvPolynomial (Fin n) 𝕜))
 rescaled by the leading coefficient: at a base point `a` where the leading coefficient of `p`
 does not vanish, the order of `p.integralNormalization` at `(p.leadingCoeff(a) * z, a)` is the
 order of `p` at `(z, a)`. -/
+@[simp]
 theorem orderAt_integralNormalization (p : Polynomial (MvPolynomial (Fin n) 𝕜))
     {a : Fin n → 𝕜} (ha : MvPolynomial.eval a p.leadingCoeff ≠ 0) (z : 𝕜) :
     ((finSuccEquiv 𝕜 n).symm p.integralNormalization).orderAt
@@ -161,6 +162,7 @@ theorem orderAt_integralNormalization (p : Polynomial (MvPolynomial (Fin n) 𝕜
 `c = p(τ)` of the family does not vanish at the base point `a`, then the normalized reversal
 `(p.comp (X + C τ)).reverse.integralNormalization` has order at `(c(a) / (t - τ), a)` equal to
 the order of `p` at `(t, a)`, for every `t ≠ τ`. -/
+@[simp]
 theorem orderAt_integralNormalization_reverse_comp_X_add_C
     (p : Polynomial (MvPolynomial (Fin n) 𝕜)) {τ : 𝕜} {a : Fin n → 𝕜}
     (ha : MvPolynomial.eval a (p.eval (MvPolynomial.C τ)) ≠ 0) {t : 𝕜} (ht : t ≠ τ) :
