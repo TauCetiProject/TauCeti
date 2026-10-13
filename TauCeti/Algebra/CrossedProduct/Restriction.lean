@@ -9,13 +9,14 @@ public import TauCeti.Algebra.CrossedProduct.Basic
 public import Mathlib.Algebra.Algebra.RestrictScalars
 
 /-!
-# Restriction of crossed products to an intermediate field
+# Restriction of crossed products to an intermediate scalar ring
 
-For a tower `K ⊆ L ⊆ E`, restricting a cocycle of `Aut_K(E)` to `Aut_L(E)` embeds its
-crossed product in the original crossed product. The embedding sends each coefficient to
-itself and each basis element `u_σ` to `u_{σ|K}`. Its image consists exactly of the elements
-whose supported automorphisms fix `L`. When `E` is a domain, this image is the centralizer
-of the embedded copy of `L`.
+For a scalar tower from commutative semirings `K` and `L` to a commutative ring `E`,
+restricting a cocycle of `Aut_K(E)` to `Aut_L(E)` embeds its crossed product in the original
+crossed product. The embedding sends each coefficient to itself and each basis element
+`u_σ` to `u_{σ|K}`. Its image consists exactly of the elements whose supported automorphisms
+fix the image of `algebraMap L E`. When `E` has no zero divisors, this image is the centralizer
+of the image of `L` under `inc c ∘ algebraMap L E`.
 
 This identifies the algebra of a restricted cocycle, the algebraic ingredient in comparing
 scalar extension of Brauer classes with restriction in Galois cohomology. Neither finiteness
@@ -67,6 +68,24 @@ theorem restrict_mul (c d : TwoCocycle K E) :
 theorem restrict_inv (c : TwoCocycle K E) : c⁻¹.restrict L = (c.restrict L)⁻¹ :=
   TwoCocycle.ext (funext₂ fun _ _ => by simp)
 
+/-- Restriction preserves division of cocycles. -/
+@[simp]
+theorem restrict_div (c d : TwoCocycle K E) :
+    (c / d).restrict L = c.restrict L / d.restrict L :=
+  TwoCocycle.ext (funext₂ fun _ _ => by simp)
+
+/-- Restriction preserves natural powers of cocycles. -/
+@[simp]
+theorem restrict_pow (c : TwoCocycle K E) (n : ℕ) :
+    (c ^ n).restrict L = c.restrict L ^ n :=
+  TwoCocycle.ext (funext₂ fun _ _ => by simp)
+
+/-- Restriction preserves integer powers of cocycles. -/
+@[simp]
+theorem restrict_zpow (c : TwoCocycle K E) (n : ℤ) :
+    (c ^ n).restrict L = c.restrict L ^ n :=
+  TwoCocycle.ext (funext₂ fun _ _ => by simp)
+
 end TwoCocycle
 
 namespace CrossedProduct
@@ -87,7 +106,7 @@ private theorem restrictionLinearMap_smul_basis (σ : E ≃ₐ[L] E) (x : E) :
 instance (priority := 100) instAlgebraRestrict : Algebra K (CrossedProduct (c.restrict L)) :=
   Algebra.restrictScalars K L _
 
-/-- The restricted crossed product carries the scalar tower `K ⊆ L`. -/
+/-- The restricted crossed product carries a scalar tower from `K` through `L`. -/
 instance (priority := 100) instIsScalarTowerRestrictBase :
     IsScalarTower K L (CrossedProduct (c.restrict L)) :=
   IsScalarTower.of_algebraMap_eq fun _ => rfl
@@ -178,9 +197,9 @@ theorem mem_range_restrictHom_iff (a : CrossedProduct c) :
   exact hr.trans (Finsupp.mem_range_mapDomain_iff (AlgEquiv.restrictScalars K)
     (AlgEquiv.restrictScalars_injective K) _)
 
-/-- The crossed product of the restricted cocycle is the centralizer of the copy of `L`
-in the original crossed product. This holds for any tower with domain `E`, without
-finiteness or Galois assumptions. -/
+/-- The image of the restricted crossed product is the centralizer of the image of `L`
+under `inc c ∘ algebraMap L E`. This holds for any scalar tower with no zero divisors in `E`,
+without finiteness or Galois assumptions. -/
 theorem range_restrictHom_eq_centralizer [NoZeroDivisors E] :
     (restrictHom (L := L) c).range =
       Subalgebra.centralizer K (Set.range fun x : L => inc c (algebraMap L E x)) := by
@@ -207,7 +226,7 @@ theorem range_restrictHom_eq_centralizer [NoZeroDivisors E] :
       AlgEquiv.ext fun _ => rfl⟩
 
 /-- The restricted crossed product is canonically equivalent as a `K`-algebra to the
-centralizer of the embedded copy of `L` in the original crossed product. -/
+centralizer of the image of `L` under `inc c ∘ algebraMap L E`. -/
 def restrictAlgEquivCentralizer [NoZeroDivisors E] :
     CrossedProduct (c.restrict L) ≃ₐ[K]
       Subalgebra.centralizer K (Set.range fun x : L => inc c (algebraMap L E x)) :=
