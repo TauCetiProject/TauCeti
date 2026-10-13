@@ -17,12 +17,8 @@ positive-definite kernel. The finitely supported Gram form from
 we define its radical, the submodule of finitely supported coefficient vectors that pair to zero
 with every vector. This is the submodule by which the free space is quotiented before completing.
 
-This advances `TauCetiRoadmap/OneParameterSemigroups/README.md`, Part C, the
-positive-definite-function API item "the PD-function ↔ PD-kernel equivalence (`K(a, b) =
-F(a + b⋆)`; `F(a − b)` for a group), pullbacks, and the GNS/Kolmogorov decomposition" as a
-clean prerequisite for quotienting the finitely supported space by the null space. No Mathlib
-code is vendored; the proofs reuse Tau Ceti's finitely supported Gram form and sesquilinear-form
-bundle.
+No Mathlib code is vendored; the proofs reuse Tau Ceti's finitely supported Gram form and
+sesquilinear-form bundle.
 
 ## Main declarations
 

@@ -81,7 +81,10 @@ and `Polynomial.taylorEquiv` for the same substitution on polynomials, the trans
   at `b` is evaluating at `b + a`; `TauCeti.ValuationSpectrum.comap_taylorHom_classicalPoint`
   is the resulting recentring of classical points.
 * `TauCeti.ValuationSpectrum.closedPolydisc_vle_weightedC_iff`: over an ultrametric normed field,
-  points of the closed polydisc compare constants by their norms.
+  points of the closed polydisc compare constants by their norms;
+  `TauCeti.ValuationSpectrum.closedPolydisc_valuation_weightedC_le_iff` is the same statement for
+  the values of a point, and the lemmas following it are its consequences for equal norms, for
+  vanishing and for maxima.
 
 ## References
 
@@ -485,6 +488,37 @@ theorem closedPolydisc_vle_weightedC_iff {k : ℕ} (v : closedPolydisc k K) (x y
     v.1.toValuativeRel.vle (weightedC (fun _ : Fin k ↦ ({1} : Set K)) isWeightFamily_one_weight x)
         (weightedC _ isWeightFamily_one_weight y) ↔ ‖x‖ ≤ ‖y‖ := by
   rw [← vle_iff_norm_le_of_mem_spa (comap_weightedC_mem_spa v), comap_vle]
+
+/-- A point of the closed polydisc compares the values of constants by their norms. -/
+theorem closedPolydisc_valuation_weightedC_le_iff {k : ℕ} (v : closedPolydisc k K) (x y : K) :
+    v.1.valuation (weightedC (fun _ : Fin k ↦ ({1} : Set K)) isWeightFamily_one_weight x) ≤
+        v.1.valuation (weightedC _ isWeightFamily_one_weight y) ↔ ‖x‖ ≤ ‖y‖ := by
+  rw [valuation_le_iff, closedPolydisc_vle_weightedC_iff]
+
+/-- A point of the closed polydisc gives constants of equal norm equal values. -/
+theorem closedPolydisc_valuation_weightedC_eq_of_norm_eq {k : ℕ} (v : closedPolydisc k K)
+    {x y : K} (h : ‖x‖ = ‖y‖) :
+    v.1.valuation (weightedC (fun _ : Fin k ↦ ({1} : Set K)) isWeightFamily_one_weight x) =
+      v.1.valuation (weightedC _ isWeightFamily_one_weight y) :=
+  le_antisymm ((closedPolydisc_valuation_weightedC_le_iff v x y).mpr h.le)
+    ((closedPolydisc_valuation_weightedC_le_iff v y x).mpr h.ge)
+
+/-- A point of the closed polydisc vanishes on a constant only at `0`. -/
+theorem closedPolydisc_valuation_weightedC_eq_zero_iff {k : ℕ} (v : closedPolydisc k K) (x : K) :
+    v.1.valuation (weightedC (fun _ : Fin k ↦ ({1} : Set K)) isWeightFamily_one_weight x) = 0 ↔
+      x = 0 := by
+  rw [← le_zero_iff, ← map_zero v.1.valuation, ← map_zero (weightedC _ _),
+    closedPolydisc_valuation_weightedC_le_iff, norm_zero, norm_le_zero_iff]
+
+/-- The larger of the values of two constants at a point of the closed polydisc is the value of
+the one of larger norm. -/
+theorem closedPolydisc_max_valuation_weightedC {k : ℕ} (v : closedPolydisc k K) (x y : K) :
+    max (v.1.valuation (weightedC (fun _ : Fin k ↦ ({1} : Set K)) isWeightFamily_one_weight x))
+        (v.1.valuation (weightedC _ isWeightFamily_one_weight y)) =
+      v.1.valuation (weightedC _ isWeightFamily_one_weight (if ‖x‖ ≤ ‖y‖ then y else x)) := by
+  split_ifs with h
+  · exact max_eq_right ((closedPolydisc_valuation_weightedC_le_iff v x y).mpr h)
+  · exact max_eq_left ((closedPolydisc_valuation_weightedC_le_iff v y x).mpr (le_of_not_ge h))
 
 end NormedField
 

@@ -10,14 +10,14 @@ public import TauCeti.RepresentationTheory.Homological.ContCohomology.ExplicitFu
 /-!
 # Conjugation on explicit first continuous cohomology
 
-If `N` is a normal subgroup of a topological group `G`, conjugation by `g` on `N`, together
-with the action of `g` on coefficients, is a compatible pair.  This file packages the resulting
-map on the explicit quotient `H¹(N, M)`.  The map is written with the inverse conjugation
+If `N` is a normal subgroup of a group `G` with separately continuous multiplication, conjugation
+by `g` on `N`, together with the action of `g` on coefficients, is a compatible pair. This file
+packages the resulting map on the explicit quotient `H¹(N, M)`. The map uses inverse conjugation
 `h ↦ g⁻¹ h g`, so that its coefficient component is the left action `m ↦ g • m`.
 
 The construction is functorial in `g`, hence gives the expected `G`-action.  When `g` belongs to
-`N`, the induced map is the identity: the difference of a cocycle and its conjugate is the
-principal cocycle attached to `c g`.  The file records the algebraic degree-one and degree-two
+`N`, the induced map is the identity: the conjugate of a cocycle minus the original is the
+principal cocycle attached to `c g`. The file records the algebraic degree-one and degree-two
 components of the corresponding bar homotopy and specializes their identities to continuous
 cocycles, including the degree-two cocycle identity that expresses the conjugation difference as
 a coboundary.
@@ -37,22 +37,9 @@ universe uG uM uK uA
 
 section
 
-variable {G : Type uG} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
+variable {G : Type uG} [Group G] [TopologicalSpace G] [SeparatelyContinuousMul G]
   {M : Type uM} [AddCommGroup M] [TopologicalSpace M] [IsTopologicalAddGroup M]
   [DistribMulAction G M] [ContinuousSMul G M]
-
-omit [TopologicalSpace M] [IsTopologicalAddGroup M] [ContinuousSMul G M] in
-/-- The conjugation compatible-pair identity on coefficients. -/
-theorem inverseConjugationHom_smul (N : Subgroup G) [N.Normal] (g : G) (n : N) (m : M) :
-    (DistribSMul.toAddMonoidHom M g)
-        (Subgroup.inverseConjugationHom N g n • m) =
-      n • (DistribSMul.toAddMonoidHom M g) m := by
-  -- Unfold the subgroup action so the compatible-pair identity is an identity for the ambient
-  -- `G`-action, where `mul_smul` applies directly.
-  simp only [DistribSMul.toAddMonoidHom_apply,
-    Subgroup.inverseConjugationHom_apply]
-  change g • ((g⁻¹ * (n : G) * g) • m) = (n : G) • (g • m)
-  simp [smul_smul, mul_assoc]
 
 /-- The degree-one component of the bar homotopy for inverse conjugation. -/
 def inverseConjugationHomotopy1 {K : Type uK} {A : Type uA} (g : K) (c : K → A) : A :=
@@ -78,16 +65,16 @@ theorem inverseConjugationHomotopy2_apply {K : Type uK} [Group K] {A : Type uA} 
 
 /-- The degree-two inverse-conjugation homotopy preserves continuity. -/
 theorem continuous_inverseConjugationHomotopy2 {K : Type uK} [Group K]
-    [TopologicalSpace K] [ContinuousMul K] {A : Type uA} [Sub A]
+    [TopologicalSpace K] [SeparatelyContinuousMul K] {A : Type uA} [Sub A]
     [TopologicalSpace A] [ContinuousSub A] (g : K) {c : K × K → A}
     (hc : Continuous c) : Continuous (inverseConjugationHomotopy2 g c) :=
   (hc.comp (continuous_const.prodMk
-    ((continuous_const.mul continuous_id).mul continuous_const))).sub
+    ((continuous_mul_const g).comp (continuous_const_mul g⁻¹)))).sub
     (hc.comp (continuous_id.prodMk continuous_const))
 
 /-- The degree-one algebraic cochain-homotopy identity for inverse conjugation. -/
 theorem inverseConjugationCochainHomotopy1 {K : Type uK} [Group K]
-    {A : Type uA} [AddCommGroup A] [DistribMulAction K A] (g : K) (c : K → A) :
+    {A : Type uA} [AddCommGroup A] [DistribSMul K A] (g : K) (c : K → A) :
     cochainsMap1 (MulAut.conj g⁻¹ : K →* K) (DistribSMul.toAddMonoidHom A g) c - c =
       d0 K A (inverseConjugationHomotopy1 g c) +
         inverseConjugationHomotopy2 g (d1 K A c) := by
@@ -95,9 +82,7 @@ theorem inverseConjugationCochainHomotopy1 {K : Type uK} [Group K]
   simp only [Pi.sub_apply, Pi.add_apply, cochainsMap1_apply, d0_apply, d1_apply,
     inverseConjugationHomotopy1_apply, inverseConjugationHomotopy2_apply,
     DistribSMul.toAddMonoidHom_apply]
-  -- The bundled additive hom and the scalar action have the same underlying function here.
-  change g • c ((MulAut.conj g⁻¹ : MulAut K) n) - c n = _
-  simp only [MulAut.conj_apply, inv_inv]
+  simp only [MonoidHom.coe_ofClass, MulAut.conj_apply, inv_inv]
   have hmul : g * (g⁻¹ * n * g) = n * g := by
     simp [mul_assoc]
   rw [hmul]
@@ -107,7 +92,7 @@ theorem inverseConjugationCochainHomotopy1 {K : Type uK} [Group K]
 /-- The degree-two component of the bar homotopy for an algebraic inverse conjugation, for a
 degree-two cocycle. -/
 theorem inverseConjugationCochainHomotopy2_of_isCocycle {K : Type uK} [Group K]
-    {A : Type uA} [AddCommGroup A] [DistribMulAction K A] (g : K) (c : K × K → A)
+    {A : Type uA} [AddCommGroup A] [DistribSMul K A] (g : K) (c : K × K → A)
     (hc : groupCohomology.IsCocycle₂ c) :
     cochainsMap2 (MulAut.conj g⁻¹ : K →* K) (DistribSMul.toAddMonoidHom A g) c - c =
       d1 K A (inverseConjugationHomotopy2 g c) := by
@@ -115,9 +100,7 @@ theorem inverseConjugationCochainHomotopy2_of_isCocycle {K : Type uK} [Group K]
   rintro ⟨n, k⟩
   simp only [Pi.sub_apply, cochainsMap2_apply, d1_apply, inverseConjugationHomotopy2_apply,
     DistribSMul.toAddMonoidHom_apply]
-  -- The cochain map is bundled, so expose its underlying conjugation before using `hc`.
-  change g • c ((MulAut.conj g⁻¹ : MulAut K) n, (MulAut.conj g⁻¹ : MulAut K) k) - c (n, k) = _
-  simp only [MulAut.conj_apply, inv_inv]
+  simp only [MonoidHom.coe_ofClass, MulAut.conj_apply, inv_inv]
   have hmul : g * (g⁻¹ * n * g) = n * g := by
     simp [mul_assoc]
   have hmul' : g * (g⁻¹ * k * g) = k * g := by
@@ -175,41 +158,29 @@ theorem smul_mk (N : Subgroup G) [N.Normal] (g : G) (c : Z1 N M) :
     change explicitConj1 N g (c : H1 N M) = _
     exact explicitMap1_mk N M N M _ _ _ _ c
 
+omit [ContinuousSMul G M] in
 /-- The degree-one bar-homotopy identity for inverse conjugation on continuous cocycles. -/
-theorem inverseConjugationHomotopy1_spec (N : Subgroup G) [N.Normal] (g : N) (c : Z1 N M) :
+theorem inverseConjugationHomotopy1_spec [ContinuousConstSMul G M] (N : Subgroup G) [N.Normal]
+    (g : N) (c : Z1 N M) :
     d0 N M (inverseConjugationHomotopy1 g c) =
       (cocyclesMap1 N M N M (inverseConjugationHom N (g : G))
         (DistribSMul.toAddMonoidHom M (g : G))
         ((continuous_const_smul (g : G)).congr fun _ => by
           simp only [DistribSMul.toAddMonoidHom_apply])
         (inverseConjugationHom_smul N (g : G)) c : N → M) - (c : N → M) := by
-  have hc : d1 N M (c : N → M) = 0 := by
-    apply funext
-    intro p
-    obtain ⟨n, k⟩ := p
-    exact congrFun (d1_apply_eq_zero_iff.2 ((mem_Z1_iff.1 c.property).2)) (n, k)
+  have hc := d1_apply_eq_zero_iff.2 (mem_Z1_iff.1 c.property).2
   have hconj :
       (inverseConjugationHom N (g : G) : N →* N) =
         (MulAut.conj (g⁻¹) : MulAut N) := by
     ext n
     simp [inverseConjugationHom_apply]
   have h := inverseConjugationCochainHomotopy1 (K := N) (A := M) g (c : N → M)
-  rw [← hconj] at h
-  -- Rewriting the bundled automorphism equality leaves the specialized cochain map only
-  -- definitionally equal to the continuous compatible-pair expression in the goal.
-  change cochainsMap1 (inverseConjugationHom N (g : G) : N →* N)
-      (DistribSMul.toAddMonoidHom M (g : G)) (c : N → M) - c = _ at h
-  rw [hc] at h
-  have hz : inverseConjugationHomotopy2 g (0 : N × N → M) = 0 := by
-    funext n
-    simp
-  rw [hz, add_zero] at h
+  rw [← hconj, hc] at h
   ext n
-  simp only [Pi.sub_apply]
-  rw [cocyclesMap1_apply]
-  have hp := congrFun h.symm n
-  rw [Pi.sub_apply, cochainsMap1_apply] at hp
-  exact hp
+  simpa only [Pi.sub_apply, Pi.add_apply, cochainsMap1_apply, cocyclesMap1_apply,
+    inverseConjugationHomotopy2_apply, Pi.zero_apply, sub_self, add_zero,
+    DistribSMul.toAddMonoidHom_apply, Subgroup.smul_def,
+    MonoidHom.coe_ofClass] using congrFun h.symm n
 
 omit [ContinuousSMul G M] in
 /-- The degree-two bar-homotopy identity for inverse conjugation on continuous cocycles. -/
@@ -225,11 +196,9 @@ theorem inverseConjugationHomotopy2_spec (N : Subgroup G) [N.Normal] (g : N) (c 
   have h := inverseConjugationCochainHomotopy2_of_isCocycle (K := N) (A := M) g (c : N × N → M)
       (mem_Z2_iff.1 c.property).2
   rw [← hconj] at h
-  -- As in degree one, the bundled continuous hom and the algebraic monoid hom have the same
-  -- underlying cochain map only definitionally, so expose the specialized form explicitly.
-  change cochainsMap2 (inverseConjugationHom N (g : G) : N →* N)
-      (DistribSMul.toAddMonoidHom M (g : G)) (c : N × N → M) - c = _ at h
-  exact h
+  ext ⟨n, k⟩
+  simpa only [Pi.sub_apply, cochainsMap2_apply, DistribSMul.toAddMonoidHom_apply,
+    Subgroup.smul_def] using congrFun h (n, k)
 
 /-- Conjugation by the identity gives the identity map on explicit `H¹`. -/
 @[simp]

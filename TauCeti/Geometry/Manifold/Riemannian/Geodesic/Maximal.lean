@@ -79,7 +79,7 @@ theorem exists_geodesicCurveOnFrom
   have hγu : IsMIntegralCurveOn γ (geodesicSpray I M) u := hγs.mono hu
   let base : ℝ → M := fun t => (γ t).proj
   refine ⟨u, huopen.mem_nhds hu0, base, ?_⟩
-  exact hγu.isGeodesicCurveOnFrom_proj huopen hu0 hγ₀
+  exact hγu.isGeodesicCurveOnFrom_proj huopen.uniqueDiffOn hu0 hγ₀
 
 /-- A neighbourhood of zero contains an interval of geodesic existence. -/
 theorem exists_geodesicCurveOnFrom_Ioo

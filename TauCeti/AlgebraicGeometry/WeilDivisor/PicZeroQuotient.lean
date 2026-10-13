@@ -11,11 +11,10 @@ public import TauCeti.AlgebraicGeometry.WeilDivisor.Principal.Basic
 /-!
 # The degree-zero divisor quotient model of abstract `Pic⁰`
 
-This file adds a small Layer A bridge for the Jacobian roadmap.  The file
-`TauCeti.AlgebraicGeometry.WeilDivisor.Principal.Basic` defines the abstract divisor class group
-`Cl(X)` of an order system and defines `Pic⁰` as the kernel of the descended weighted degree on
-`Cl(X)`.  Classically, the same group is also described as degree-zero divisors modulo
-principal divisors.  This file identifies those two descriptions.
+The file `TauCeti.AlgebraicGeometry.WeilDivisor.Principal.Basic` defines the abstract divisor class
+group `Cl(X)` of an order system and defines `Pic⁰` as the kernel of the descended weighted degree
+on `Cl(X)`. Classically, the same group is also described as degree-zero divisors modulo principal
+divisors. This file identifies those two descriptions.
 
 For an order system `S` whose principal divisors have weighted degree zero, the natural map from
 weighted-degree-zero divisors to `S.picZero w h`,
@@ -27,10 +26,8 @@ divisor is principal.  The first isomorphism theorem then gives
 
 `(weighted-degree-zero divisors) / (principal divisors) ≃+ Pic⁰`.
 
-This advances `TauCetiRoadmap/JacobianChallenge/README.md`, Layer A, specifically the item
-"Degree. ... Then `Pic⁰ X = ker deg` (as an abstract group; the functorial `Pic⁰` is defined
-in Layer D)."  No external mathematics is vendored; the proof uses Tau Ceti's existing
-`WeilDivisor`/`OrderSystem` API and Mathlib's quotient-group first isomorphism theorem.
+No external mathematics is vendored; the proof uses Tau Ceti's `WeilDivisor`/`OrderSystem` API and
+Mathlib's quotient-group first isomorphism theorem.
 -/
 
 public section

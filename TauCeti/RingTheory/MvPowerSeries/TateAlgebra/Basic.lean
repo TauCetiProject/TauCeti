@@ -41,6 +41,10 @@ largest summand, so Mathlib's dominant-antidiagonal theorem applies.
   constant smaller than its norm.
 * The restricted-series subring inherits `CompleteSpace`, `IsUltrametricDist`, and
   `NormMulClass` from its coefficient ring.
+* `MvPowerSeries.dense_closure_monomial`: polynomials with coefficients in a dense subset of the
+  coefficient ring are dense.
+* `MvPowerSeries.mk_monomial_eq_algebraMap_mul_prod`: a restricted monomial `r Xᵗ` is the constant
+  `r` times the product of the variables.
 * Over a normed field, the restricted-series subring is a `NormedAlgebra` over its coefficients.
 
 ## References
@@ -63,6 +67,10 @@ variable {σ R : Type*} [NormedRing R]
 theorem IsRestricted.hasGaussNorm {c : σ → ℝ} {f : MvPowerSeries σ R}
     (hf : IsRestricted c f) : HasGaussNorm norm c f :=
   hf.bddAbove_range_of_cofinite
+
+/-- The weights `∏ i, |c i| ^ t i` of the absolute polyradii are nonnegative. -/
+theorem prod_abs_pow_nonneg {c : σ → ℝ} (t : σ →₀ ℕ) : 0 ≤ t.prod (|c| · ^ ·) :=
+  Finset.prod_nonneg fun _ _ ↦ pow_nonneg (abs_nonneg _) _
 
 variable [IsUltrametricDist R] {c : σ → ℝ} [hc : ∀ i, Fact (0 < c i)]
 
@@ -179,6 +187,40 @@ theorem norm_X [NormOneClass R] (i : σ) :
       IsRestricted.subring (R := R) c)‖ = c i := by
   classical
   simp [X]
+
+/-- **Polynomials are dense in the restricted series**: every element of `R{X/c}` is a limit of
+finite sums of monomials whose coefficients lie in a given dense subset of `R`. -/
+theorem dense_closure_monomial {s : Set R} (hs : Dense s) :
+    Dense (AddSubgroup.closure ((fun x : (σ →₀ ℕ) × R ↦
+      (⟨monomial x.1 x.2, isRestricted_monomial c x.1 x.2⟩ : IsRestricted.subring (R := R) c)) ''
+        (Set.univ ×ˢ s)) :
+        Set (IsRestricted.subring (R := R) c)) := by
+  classical
+  refine Metric.dense_iff.mpr fun f ε hε ↦ ?_
+  set w : (σ →₀ ℕ) → ℝ := fun t ↦ ‖coeff t (f : MvPowerSeries σ R)‖ * t.prod (c · ^ ·)
+  -- only finitely many weighted coefficients are at least `ε / 2`
+  have hF : {t | ε / 2 ≤ w t}.Finite := by
+    simpa [Filter.eventually_cofinite, not_lt] using f.2.eventually (gt_mem_nhds (half_pos hε))
+  -- approximate each of these coefficients by an element of `s` up to `ε / 2` in weighted norm
+  have happrox (t : σ →₀ ℕ) : ∃ a ∈ s,
+      ‖coeff t (f : MvPowerSeries σ R) - a‖ * t.prod (c · ^ ·) < ε / 2 := by
+    obtain ⟨a, ha, has⟩ := Metric.dense_iff.mp hs (coeff t (f : MvPowerSeries σ R))
+      (ε / 2 / t.prod (c · ^ ·)) (div_pos (half_pos hε) (prod_pow_pos t))
+    exact ⟨a, has, by rwa [Metric.mem_ball, dist_comm, dist_eq_norm, lt_div_iff₀ (prod_pow_pos t)]
+      at ha⟩
+  choose a has ha using happrox
+  set q : IsRestricted.subring (R := R) c := ∑ t ∈ hF.toFinset,
+    ⟨monomial t (a t), isRestricted_monomial c _ _⟩
+  refine ⟨q, ?_, AddSubgroup.sum_mem _ fun t _ ↦
+    AddSubgroup.subset_closure ⟨(t, a t), ⟨trivial, has t⟩, rfl⟩⟩
+  rw [Metric.mem_ball, dist_comm, dist_eq_norm]
+  refine ((norm_le_iff (half_pos hε).le).mpr fun t ↦ ?_).trans_lt (half_lt_self hε)
+  have hq : coeff t (q : MvPowerSeries σ R) = if t ∈ hF.toFinset then a t else 0 := by
+    simp [q, coeff_monomial]
+  rw [AddSubgroupClass.coe_sub, map_sub, hq]
+  split_ifs with ht
+  · exact (ha t).le
+  · simpa [w] using (not_le.mp fun h ↦ ht (hF.mem_toFinset.mpr h)).le
 
 /-- The Gauss norm is ultrametric when the coefficient norm is. -/
 instance : IsUltrametricDist (IsRestricted.subring (R := R) c) :=
@@ -363,12 +405,33 @@ noncomputable instance instAlgebraIsRestrictedSubring :
 theorem coe_algebraMap_isRestrictedSubring (r : R) :
     (algebraMap R (IsRestricted.subring (R := R) c) r : MvPowerSeries σ R) = C r := (rfl)
 
+/-- A restricted monomial `r Xᵗ` is the constant `r` times the monomial `Xᵗ` in the variables. -/
+theorem mk_monomial_eq_algebraMap_mul_prod (t : σ →₀ ℕ) (r : R) :
+    (⟨monomial t r, isRestricted_monomial c t r⟩ : IsRestricted.subring (R := R) c) =
+      algebraMap R _ r * t.prod fun i k ↦
+        (⟨X i, isRestricted_monomial c (Finsupp.single i 1) 1⟩ :
+          IsRestricted.subring (R := R) c) ^ k := by
+  have h := map_finsuppProd (IsRestricted.subring (R := R) c).subtype t fun i k ↦
+    (⟨X i, isRestricted_monomial c (Finsupp.single i 1) 1⟩ : IsRestricted.subring (R := R) c) ^ k
+  simp only [Subring.coe_subtype, SubmonoidClass.coe_pow] at h
+  apply Subtype.ext
+  rw [Subring.coe_mul, h, coe_algebraMap_isRestrictedSubring]
+  exact monomial_eq' t r
+
 variable [∀ i, Fact (0 < c i)]
 
 /-- Over a commutative coefficient ring, the Gauss norm gives a normed commutative ring. -/
 noncomputable instance instNormedCommRingIsRestrictedSubring :
     NormedCommRing (IsRestricted.subring (R := R) c) :=
   { instNormedRingIsRestrictedSubring with mul_comm := mul_comm }
+
+/-- Constants retain their coefficient norm. -/
+@[simp]
+theorem norm_algebraMap_isRestrictedSubring (r : R) :
+    ‖algebraMap R (IsRestricted.subring (R := R) c) r‖ = ‖r‖ := by
+  have h : algebraMap R (IsRestricted.subring (R := R) c) r = ⟨C r, isRestricted_C c r⟩ :=
+    Subtype.ext (coe_algebraMap_isRestrictedSubring r)
+  rw [h, norm_C]
 
 end NormedCommRing
 

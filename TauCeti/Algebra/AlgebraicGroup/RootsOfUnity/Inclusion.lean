@@ -48,6 +48,9 @@ functors) and natural in the value algebra.
   `μ_n → 𝔾ₘ` is a monomorphism of group functors.
 * `TauCeti.RootsOfUnityGroup.mapValue_inclusion`: the inclusion is natural in the value algebra.
 
+This assembles the `μ_n` and `𝔾ₘ` examples through the diagonalizable-group functoriality
+`DiagonalizableGroup.pointsMap`.
+
 ## References
 
 The contravariant functoriality of the diagonalizable group is Tau Ceti's

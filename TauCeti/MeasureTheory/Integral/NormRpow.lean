@@ -9,6 +9,7 @@ public import Mathlib.Analysis.SpecialFunctions.Pow.Integral
 import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import TauCeti.Analysis.SpecialFunctions.Pow.NNReal
+import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 
 /-!
 # Integrals of a weakly singular norm power
@@ -40,8 +41,6 @@ at most `|x - Re e| ^ s`.
 * `TauCeti.setLIntegral_closedBall_enorm_sub_rpow`: the lower integral with any centre, over a
   closed ball.
 * `TauCeti.integral_norm_sub_rpow_one_sub_finrank_le`: the translated-ball bound, for `s = 1 - d`.
-* `Complex.locallyIntegrable_sub_inv`, `Complex.locallyIntegrable_inv`: the Cauchy kernels
-  `z ↦ (w - z)⁻¹` and `z ↦ z⁻¹` on `ℂ` are locally integrable (the case `d = 2`, `s = -1`).
 * `Complex.setLIntegral_closedBall_enorm_ofReal_sub_rpow_lt_top`: for `e ∈ ℂ` and `s > -1`,
   `∫⁻ x in closedBall c R, ‖(x : ℂ) - e‖ₑ ^ s < ∞` over the real line.
 
@@ -214,10 +213,7 @@ theorem setLIntegral_closedBall_enorm_sub_rpow {s : ℝ} (hs : -(Module.finrank 
     have h0 : (fun y : E => ‖x - y‖ₑ ^ s) = 0 := funext fun y => by
       rw [Subsingleton.elim (x - y) 0, enorm_zero, ENNReal.zero_rpow_of_pos hs0, Pi.zero_apply]
     simp [h0, lintegral_zero_fun, Module.finrank_zero_of_subsingleton]
-  have hball : closedBall x R =ᵐ[mu] ball x R :=
-    (ae_eq_of_subset_of_measure_ge ball_subset_closedBall
-      (Measure.addHaar_closedBall_eq_addHaar_ball mu x R).le measurableSet_ball.nullMeasurableSet
-      measure_closedBall_lt_top.ne).symm
+  have hball := mu.addHaar_closedBall_ae_eq_ball x R
   rw [Measure.restrict_congr_set hball, ← integral_norm_sub_rpow_ball hs hR x,
     ofReal_integral_eq_lintegral_ofReal (integrableOn_norm_sub_rpow_ball hs x)
       (ae_of_all _ fun y => Real.rpow_nonneg (norm_nonneg _) _)]
@@ -232,20 +228,6 @@ end TauCeti
 namespace Complex
 
 open MeasureTheory
-
-/-- The kernel `z ↦ (w - z)⁻¹` of the Cauchy transform is locally integrable on `ℂ`. -/
-theorem locallyIntegrable_sub_inv (w : ℂ) :
-    LocallyIntegrable (fun z : ℂ => (w - z)⁻¹) volume := by
-  refine (TauCeti.locallyIntegrable_norm_sub_rpow (mu := volume) (s := -1) (by simp) w).mono
-    (measurable_const.sub measurable_id).inv.aestronglyMeasurable (ae_of_all _ fun z => ?_)
-  rw [norm_inv, Real.norm_eq_abs, abs_of_nonneg (Real.rpow_nonneg (norm_nonneg _) _),
-    Real.rpow_neg_one]
-
-/-- The Cauchy kernel `z ↦ z⁻¹` is locally integrable on `ℂ`. -/
-theorem locallyIntegrable_inv : LocallyIntegrable (fun z : ℂ => z⁻¹) volume := by
-  convert (locallyIntegrable_sub_inv 0).neg using 1
-  ext z
-  simp
 
 /-- For a complex point `e` and an exponent `s > -1`, the kernel `x ↦ |x - e| ^ s` on the real line
 has finite lower integral over every closed interval. For `s ≤ 0` it is at most `|x - Re e| ^ s`,

@@ -10,6 +10,7 @@ public import TauCeti.NumberTheory.NumberField.Global.RayClass.CongruenceQuotien
 import TauCeti.NumberTheory.NumberField.Global.Approximation.Weak
 -- Private in `RayClass.Basic`; needed below for `ClassGroup.mk_toPrincipalIdeal`.
 import TauCeti.RingTheory.ClassGroup.Basic
+import TauCeti.RingTheory.FractionalIdeal.Operations
 
 /-!
 # The ray class exact sequence
@@ -176,7 +177,7 @@ theorem classMap_surjective {𝔪 𝔫 : Modulus K} (h : 𝔪 ∣ 𝔫) :
   rw [classMap_rayClassMk]
   let xm : primeToSubgroup 𝔪 :=
     ⟨x, congruenceSubgroup_le_primeToSubgroup 𝔪 (mem_congruenceSubgroup.mpr hxm)⟩
-  have hJ : NumberFieldArithmetic.idealsAwayInclusion (Modulus.support_mono h) J =
+  have hJ : NumberFieldArithmetic.idealsAwayInclusion K (Modulus.support_mono h) J =
       I * principalIdealPrimeTo 𝔪 xm := by
     apply Subtype.ext
     apply Units.ext

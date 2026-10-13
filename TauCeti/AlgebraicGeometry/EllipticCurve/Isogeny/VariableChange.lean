@@ -10,6 +10,7 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.VariableChang
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Aut
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Differential
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Hom.Basic
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Kernel
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Neg
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.TautologicalPoint
 -- Proof-only: a degree-one isogeny has an inverse, and pullbacks give `x` a pole at infinity.
@@ -76,12 +77,16 @@ one of them: `W.autGroup ≃* (Hom W W)ˣ`.
   coordinate ring back into the coordinate ring.
 * `TauCeti.Isogeny.exists_variableChangeIsogeny_eq_of_degree_eq_one`: **an isogeny of degree one
   between elliptic curves is the isogeny of a change of variables.**
+* `TauCeti.Isogeny.existsUnique_variableChangeIsogeny_comp_eq_of_ker_eq`: two isogenies out of
+  an elliptic curve with the same kernel, each kernel having as many points as the degree, differ
+  by a unique change of variables.
 * `TauCeti.Isogeny.Hom.autGroupToUnits_injective` and
   `TauCeti.Isogeny.Hom.autGroupToUnits_surjective`.
 
 ## References
 
-* [J. Silverman, *The Arithmetic of Elliptic Curves*][silverman2009], III.1, III.3.1 and III.10.
+* [J. Silverman, *The Arithmetic of Elliptic Curves*][silverman2009], III.1, III.3.1, III.4.12 and
+  III.10.
 -/
 
 public section
@@ -425,6 +430,25 @@ theorem exists_variableChangeIsogeny_eq_of_degree_eq_one (φ : Isogeny W₁ W₂
       variableChangeEquiv_of_X, hX, ← hu2, ← hr, map_pow]
   · rw [variableChangeIsogeny_pullback, variableChangePullback_apply, he,
       variableChangeEquiv_root, hY, ← hu3, ← hs, ← ht, map_mul, map_pow, map_pow]
+
+/-- **Two isogenies with the same kernel differ by a unique change of variables** (Silverman
+III.4.12): if `φ : W₁ → W₂` and `ψ : W₁ → W₃` have the same kernel, and each kernel has as many
+points as the degree of its isogeny, then there is exactly one change of variables `C` with
+`C • W₂ = W₃` whose isogeny carries `φ` to `ψ`. The kernel hypotheses hold for separable isogenies
+over a separably closed field (`TauCeti.Isogeny.card_ker_eq_degree`). -/
+theorem existsUnique_variableChangeIsogeny_comp_eq_of_ker_eq [DecidableEq F] [W₃.IsElliptic]
+    {φ : Isogeny W₁ W₂} {ψ : Isogeny W₁ W₃} (hφ : Nat.card φ.ker = φ.degree)
+    (hψ : Nat.card ψ.ker = ψ.degree) (h : φ.ker = ψ.ker) :
+    ∃! C : VariableChange F, ∃ hC : C • W₂ = W₃, (variableChangeIsogeny C hC).comp φ = ψ := by
+  obtain ⟨χ, hχ, -⟩ := (existsUnique_comp_eq_iff_ker_le hφ ψ).2 h.le
+  -- `deg ψ = deg χ · deg φ`, and `deg φ = #ker φ = #ker ψ = deg ψ`, so `χ` has degree one
+  have hdeg : χ.degree * φ.degree = φ.degree := by
+    rw [← degree_comp, hχ, ← hψ, ← h, hφ]
+  obtain ⟨C, hC, rfl⟩ :=
+    exists_variableChangeIsogeny_eq_of_degree_eq_one χ ((mul_eq_right₀ φ.degree_ne_zero).1 hdeg)
+  -- `φ` can be cancelled on the right, and a change of variables is determined by its isogeny
+  refine ⟨C, ⟨hC, hχ⟩, fun C' ⟨hC', hC'φ⟩ ↦ ?_⟩
+  exact (variableChangeIsogeny_inj C' C hC' hC).1 (φ.comp_right_injective (hC'φ.trans hχ.symm))
 
 end Converse
 
