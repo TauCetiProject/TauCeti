@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Symplectic.JHolomorphic.Varying
-public import Mathlib.Analysis.Calculus.FDeriv.Symmetric
+public import TauCeti.Analysis.Calculus.ParametricFDeriv
 public import Mathlib.Analysis.Calculus.FDeriv.CompCLM
 public import Mathlib.Analysis.Normed.Module.FiniteDimension
 
@@ -15,16 +15,16 @@ public import Mathlib.Analysis.Normed.Module.FiniteDimension
 
 The Cauchy–Riemann defect is `du ∘ j - J(u) ∘ du`. Its zero set recovers
 J-holomorphicity when the map is differentiable. We differentiate this actual nonlinear
-operator for a jointly twice continuously differentiable family of maps and a continuously
-differentiable family of target endomorphisms. The parameter derivative includes both the
+operator for a jointly twice continuously differentiable family of maps and a differentiable
+family of target endomorphisms. The parameter derivative includes both the
 variation of the map and the variation of the target almost complex structure.
 
 These are local-coordinate formulas, without a Sobolev completion or a transversality
 assertion. For square-minus-one structures, the defect equals twice the usual anti-complex-linear
 part composed with the source structure.
 The geometric linearization follows McDuff–Salamon, *J-holomorphic Curves and Symplectic
-Topology*, Section 3.1. The exchange of map and parameter derivatives uses Mathlib's
-`ContDiffAt.isSymmSndFDerivAt`.
+Topology*, Section 3.1. The exchange of map and parameter derivatives uses
+`TauCeti.hasFDerivAt_spatialFDeriv`, based on Mathlib's `ContDiffAt.isSymmSndFDerivAt`.
 -/
 
 public section
@@ -106,6 +106,7 @@ theorem cauchyRiemannLinearization_apply (j : U →L[ℝ] U) (J : V → V →L[�
   (rfl)
 
 /-- The local-coordinate linearization is additive on differentiable directions. -/
+@[simp]
 theorem cauchyRiemannLinearization_add (j : U →L[ℝ] U) (J : V → V →L[ℝ] V)
     (u ξ η : U → V) (x : U) (hξ : DifferentiableAt ℝ ξ x)
     (hη : DifferentiableAt ℝ η x) :
@@ -118,6 +119,7 @@ theorem cauchyRiemannLinearization_add (j : U →L[ℝ] U) (J : V → V →L[ℝ
 
 /-- The local-coordinate linearization respects real scaling, including for totalized
 derivatives. -/
+@[simp]
 theorem cauchyRiemannLinearization_smul (j : U →L[ℝ] U) (J : V → V →L[ℝ] V)
     (u ξ : U → V) (x : U) (c : ℝ) :
     cauchyRiemannLinearization j J u (c • ξ) x = c • cauchyRiemannLinearization j J u ξ x := by
@@ -125,18 +127,18 @@ theorem cauchyRiemannLinearization_smul (j : U →L[ℝ] U) (J : V → V →L[�
   simp only [cauchyRiemannLinearization_apply, fderiv_const_smul_field c,
     smul_apply, Pi.smul_apply, map_smul, smul_sub]
 
-/-- The nonlinear defect is differentiable along jointly `C²` map families and `C¹`
+/-- The nonlinear defect is differentiable along jointly `C²` map families and differentiable
 endomorphism families. This is a derivative in the parameter normed space. -/
 theorem differentiableAt_cauchyRiemannOperator
     (j : U →L[ℝ] U) (J : P → V → V →L[ℝ] V) (u : P → U → V)
     (p : P) (x : U) (hu : ContDiffAt ℝ 2 (Function.uncurry u) (p, x))
-    (hJ : ContDiffAt ℝ 1 (Function.uncurry J) (p, u p x)) :
+    (hJ : DifferentiableAt ℝ (Function.uncurry J) (p, u p x)) :
     DifferentiableAt ℝ (fun q ↦ cauchyRiemannOperator j (J q) (u q) x) p := by
   have hdu := (hu.fderiv (m := 1) contDiffAt_const (by norm_num)).differentiableAt
     (by norm_num)
   have huP := (hu.differentiableAt (by norm_num)).hasFDerivAt.comp p
     (hasFDerivAt_prodMk_left (𝕜 := ℝ) p x)
-  have hJP := (hJ.differentiableAt (by norm_num)).hasFDerivAt.comp p
+  have hJP := hJ.hasFDerivAt.comp p
     ((hasFDerivAt_id p).prodMk huP)
   simpa only [cauchyRiemannOperator, Function.comp_def, Function.uncurry_def, id_eq,
     Pi.sub_def] using
@@ -148,77 +150,43 @@ the actual parameter derivative of `u`; equality of mixed derivatives follows fr
 theorem fderiv_cauchyRiemannOperator_apply
     (j : U →L[ℝ] U) (J : P → V → V →L[ℝ] V) (u : P → U → V)
     (p : P) (x : U) (hu : ContDiffAt ℝ 2 (Function.uncurry u) (p, x))
-    (hJ : ContDiffAt ℝ 1 (Function.uncurry J) (p, u p x)) (h : P) (v : U) :
+    (hJ : DifferentiableAt ℝ (Function.uncurry J) (p, u p x)) (h : P) (v : U) :
     fderiv ℝ (fun q ↦ cauchyRiemannOperator j (J q) (u q) x) p h v =
       cauchyRiemannLinearization j (J p) (u p)
         (fun y ↦ fderiv ℝ (fun q ↦ u q y) p h) x v -
       fderiv ℝ (fun q ↦ J q (u p x)) p h (fderiv ℝ (u p) x v) := by
-  let F := Function.uncurry u
-  let A : P → U →L[ℝ] V := fun q ↦ (fderiv ℝ F (q, x)).comp (inr ℝ P U)
-  -- Nearby differentiability identifies partial derivatives with restrictions of the full one.
-  have hF : DifferentiableAt ℝ F (p, x) := hu.differentiableAt (by norm_num)
-  have hDF : DifferentiableAt ℝ (fderiv ℝ F) (p, x) :=
-    (hu.fderiv_right (m := 1) (by norm_num)).differentiableAt (by norm_num)
-  have hnear : ∀ᶠ z in 𝓝 (p, x), DifferentiableAt ℝ F z :=
-    (hu.eventually (by simp)).mono fun _ hz ↦ hz.differentiableAt (by norm_num)
-  have hx {q : P} {y : U} (hf : DifferentiableAt ℝ F (q, y)) :
-      fderiv ℝ (u q) y = (fderiv ℝ F (q, y)).comp (inr ℝ P U) := by
-    exact (hf.hasFDerivAt.comp y (hasFDerivAt_prodMk_right (𝕜 := ℝ) q y)).fderiv
-  have hp {q : P} {y : U} (hf : DifferentiableAt ℝ F (q, y)) :
-      fderiv ℝ (fun r ↦ u r y) q = (fderiv ℝ F (q, y)).comp (inl ℝ P U) := by
-    exact (hf.hasFDerivAt.comp q (hasFDerivAt_prodMk_left (𝕜 := ℝ) q y)).fderiv
-  have hA : HasFDerivAt A
-      (((compL ℝ U (P × U) V).flip (inr ℝ P U)).comp
-        ((fderiv ℝ (fderiv ℝ F) (p, x)).comp (inl ℝ P U))) p := by
-    exact ((compL ℝ U (P × U) V).flip (inr ℝ P U)).hasFDerivAt.comp p
-      (hDF.hasFDerivAt.comp p (hasFDerivAt_prodMk_left (𝕜 := ℝ) p x))
-  -- Differentiate the actual parameter velocity, using its neighborhood characteristic equation.
-  have hξRaw := (ContinuousLinearMap.apply ℝ V (h, (0 : U))).hasFDerivAt.comp x
-    (hDF.hasFDerivAt.comp x (hasFDerivAt_prodMk_right (𝕜 := ℝ) p x))
-  have hξ := hξRaw.congr_of_eventuallyEq (f₁ :=
-      fun y ↦ fderiv ℝ (fun q ↦ u q y) p h) (by
-    filter_upwards [(continuousAt_const.prodMk continuousAt_id).tendsto.eventually hnear]
-      with y hy
-    simp only [id_eq] at hy
-    simp only [hp hy, Function.comp_def, comp_apply, inl_apply,
-      ContinuousLinearMap.apply_apply])
-  have hmix (w : U) :
-      (fderiv ℝ (fderiv ℝ F) (p, x) (h, 0)) (0, w) =
-        fderiv ℝ (fun y ↦ fderiv ℝ (fun q ↦ u q y) p h) x w := by
-    rw [hξ.fderiv]
-    simpa only [comp_apply, ContinuousLinearMap.apply_apply, inr_apply] using
-      (hu.isSymmSndFDerivAt (by norm_num)).eq (h, 0) (0, w)
+  have hF := hu.differentiableAt (by norm_num)
+  have hA := hasFDerivAt_spatialFDeriv (𝕜 := ℝ) (F := Function.uncurry u)
+    (p := p) (x := x) (by simpa using hu)
+  have hswap : ContDiffAt ℝ 2 (Function.uncurry (fun y q ↦ u q y)) (x, p) :=
+    hu.comp (x, p) (contDiffAt_snd.prodMk contDiffAt_fst)
+  have hParameter :=
+    (hswap.fderiv (m := 1) contDiffAt_const (by norm_num)).differentiableAt one_ne_zero
+  have hξ : HasFDerivAt (fun y ↦ fderiv ℝ (fun q ↦ u q y) p h)
+      ((fderiv ℝ (fun y ↦ fderiv ℝ (fun q ↦ u q y) p) x).flip h) x := by
+    simpa only [comp_zero, zero_add] using
+      hParameter.hasFDerivAt.clm_apply (hasFDerivAt_const (x := x) h)
   have huP := hF.hasFDerivAt.comp p (hasFDerivAt_prodMk_left (𝕜 := ℝ) p x)
-  have hJP := (hJ.differentiableAt (by norm_num)).hasFDerivAt.comp p
-    ((hasFDerivAt_id p).prodMk huP)
-  have hres := (hA.clm_comp (hasFDerivAt_const (x := p) j)).sub (hJP.clm_comp hA)
-  have hresF := hres.fderiv
-  simp only [Function.comp_def, Function.uncurry_def, F, id_eq, Pi.sub_def] at hresF
-  -- Differentiate the nonlinear defect itself; only a neighborhood equality is needed.
-  have heq : (fun q ↦ cauchyRiemannOperator j (J q) (u q) x) =ᶠ[𝓝 p]
-      (fun q ↦ (A q).comp j - (J q (u q x)).comp (A q)) := by
-    filter_upwards [(continuousAt_id.prodMk continuousAt_const).tendsto.eventually hnear]
-      with q hq
-    simp only [id_eq] at hq
-    simp only [cauchyRiemannOperator, hx hq, A]
-  rw [heq.fderiv_eq, hresF]
+  have hJP := hJ.hasFDerivAt.comp p ((hasFDerivAt_id p).prodMk huP)
+  have hresF := ((hA.clm_comp (hasFDerivAt_const (x := p) j)).sub
+    (hJP.clm_comp hA)).fderiv
+  simp only [Function.comp_def, Function.uncurry_def, id_eq, Pi.sub_def] at hresF
+  simp only [cauchyRiemannOperator]
+  rw [hresF]
   simp only [cauchyRiemannLinearization_apply, sub_apply, add_apply, comp_apply,
-      compL_apply, flip_apply, inl_apply, inr_apply]
-  simp only [F, Function.uncurry_def] at hmix hx hp
-  simp only [A, comp_apply, inr_apply, hmix, zero_apply, map_zero, zero_add]
-  have hJp := (hJ.differentiableAt (by norm_num)).hasFDerivAt.comp p
-      (hasFDerivAt_prodMk_left (𝕜 := ℝ) p (u p x))
-  have hJx := (hJ.differentiableAt (by norm_num)).hasFDerivAt.comp (u p x)
-      (hasFDerivAt_prodMk_right (𝕜 := ℝ) p (u p x))
+    compL_apply, flip_apply, zero_apply, map_zero, zero_add]
+  rw [hξ.fderiv]
+  simp only [flip_apply]
+  have hJp := hJ.hasFDerivAt.comp p
+    (hasFDerivAt_prodMk_left (𝕜 := ℝ) p (u p x))
+  have hJx := hJ.hasFDerivAt.comp (u p x)
+    (hasFDerivAt_prodMk_right (𝕜 := ℝ) p (u p x))
   have eJp := hJp.fderiv
   have eJx := hJx.fderiv
-  simp only [Function.comp_def, Function.uncurry_def] at eJp eJx
-  rw [eJp, eJx, hp hF]
+  have euP := huP.fderiv
+  simp only [Function.comp_def, Function.uncurry_def] at eJp eJx euP
+  rw [eJp, eJx, euP]
   simp only [comp_apply, inl_apply, inr_apply, prod_apply, id_apply]
-  have hxv : fderiv ℝ F (p, x) (0, v) = fderiv ℝ (u p) x v := by
-    simpa only [F, Function.uncurry_def, comp_apply, inr_apply] using
-      congrArg (fun L : U →L[ℝ] V ↦ L v) (hx hF).symm
-  rw [hxv]
   have hsplit (a : V) : (h, a) = (0, a) + (h, (0 : V)) := by simp
   rw [hsplit, map_add]
   simp only [add_apply]
