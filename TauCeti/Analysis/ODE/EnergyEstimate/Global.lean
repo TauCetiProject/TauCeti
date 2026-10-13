@@ -61,7 +61,7 @@ theorem exists_nonneg_forall_integral_norm_deriv_sq_add_mul_integral_norm_sq_le
     hc.norm.comp_left (g := fun x : ℝ ↦ x ^ 2) (by norm_num)
   have hiu : Integrable (fun s ↦ ‖u s‖ ^ 2) :=
     (hu.continuous.norm.pow 2).integrable_of_hasCompactSupport hcu
-  obtain ⟨hiA, hiCorr⟩ := integrable_energy_terms hA hu hc
+  obtain ⟨hiA, hiCorr⟩ := integrable_norm_apply_sq_and_inner_deriv_apply hA hu hc
   have hpoint (s : ℝ) : γ * ‖u s‖ ^ 2 ≤
       ‖A s (u s)‖ ^ 2 - ⟪u s, deriv A s (u s)⟫_ℝ +
         C * (Icc (-R) R).indicator (fun s ↦ ‖u s‖ ^ 2) s := by

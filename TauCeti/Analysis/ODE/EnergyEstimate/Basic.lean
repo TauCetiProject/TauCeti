@@ -47,7 +47,7 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
 
 /-- The squared coefficient norm and coefficient-derivative quadratic form are integrable
 along a compactly supported `C¹` path. -/
-theorem integrable_energy_terms (hA : ContDiff ℝ 1 A) (hu : ContDiff ℝ 1 u)
+theorem integrable_norm_apply_sq_and_inner_deriv_apply (hA : ContDiff ℝ 1 A) (hu : ContDiff ℝ 1 u)
     (hc : HasCompactSupport u) :
     Integrable (fun s ↦ ‖A s (u s)‖ ^ 2) ∧
       Integrable (fun s ↦ ⟪u s, deriv A s (u s)⟫_ℝ) := by
@@ -73,7 +73,7 @@ theorem integral_norm_deriv_add_sq_eq (hA : ContDiff ℝ 1 A)
       (∫ s, ‖deriv u s‖ ^ 2) + (∫ s, ‖A s (u s)‖ ^ 2) -
         ∫ s, ⟪u s, deriv A s (u s)⟫_ℝ := by
   -- Compact support makes every term in the integration-by-parts identity integrable.
-  obtain ⟨hiA, hiCorr⟩ := integrable_energy_terms hA hu hc
+  obtain ⟨hiA, hiCorr⟩ := integrable_norm_apply_sq_and_inner_deriv_apply hA hu hc
   have hpot : HasCompactSupport (fun s ↦ ⟪u s, A s (u s)⟫_ℝ) :=
     hc.mono (fun s hs hu0 ↦ hs (by simp [hu0]))
   have hcross : HasCompactSupport (fun s ↦ ⟪deriv u s, A s (u s)⟫_ℝ) :=
@@ -118,7 +118,7 @@ theorem integral_norm_deriv_sq_add_mul_integral_norm_sq_le (hA : ContDiff ℝ 1 
     (hsmall : ∀ s ∈ Function.support u, ⟪u s, deriv A s (u s)⟫_ℝ ≤ β * ‖u s‖ ^ 2) :
     (∫ s, ‖deriv u s‖ ^ 2) + (α ^ 2 - β) * (∫ s, ‖u s‖ ^ 2) ≤
       ∫ s, ‖deriv u s + A s (u s)‖ ^ 2 := by
-  obtain ⟨hiA, hiCorr⟩ := integrable_energy_terms hA hu hc
+  obtain ⟨hiA, hiCorr⟩ := integrable_norm_apply_sq_and_inner_deriv_apply hA hu hc
   have hcu : HasCompactSupport (fun s ↦ ‖u s‖ ^ 2) :=
     hc.norm.comp_left (g := fun x : ℝ ↦ x ^ 2) (by norm_num)
   have hiu : Integrable (fun s ↦ ‖u s‖ ^ 2) :=
