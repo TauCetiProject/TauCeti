@@ -39,7 +39,9 @@ namespace OpenPartialHomeomorph
 variable {X : Type} [TopologicalSpace X] [ChartedSpace ℂ X] [IsManifold 𝓘(ℂ) 1 X]
   (e : OpenPartialHomeomorph X ℂ) (he : e ∈ maximalAtlas 𝓘(ℂ) 1 X) (x : X)
 
-/-- The chart coordinate centered at `x`, as a holomorphic section on the chart source. -/
+/-- The chart coordinate centered at `x`, as a holomorphic section on the chart source.
+The center must lie in the chart source so that `e x` is its chart coordinate. -/
+-- Membership constrains the center of the public API; constructing the section needs only `e x`.
 def holomorphicCoordinateSection (_hx : x ∈ e.source) :
     (holomorphicStructureSheaf 𝓘(ℂ) X).obj.obj (op ⟨e.source, e.open_source⟩) :=
   ofMDifferentiable (fun y => e y - e x) fun y =>
