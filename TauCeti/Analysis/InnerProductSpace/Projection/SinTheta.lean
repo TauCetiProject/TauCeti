@@ -29,7 +29,9 @@ separation hypotheses in both orientations, the sharp gap identity
 No completeness, finite dimension, or spectral theorem is used; the hypotheses are quadratic-form
 bounds, which on invariant subspaces of symmetric operators on finite-dimensional spaces are
 equivalent to spectral containment (`LinearMap.IsSymmetric.pointSpectrumIn_Iic_iff`,
-`LinearMap.IsSymmetric.pointSpectrumIn_Ici_iff`).
+`LinearMap.IsSymmetric.pointSpectrumIn_Ici_iff`). The theorem is a consequence of the separated
+Sylvester bound
+`ContinuousLinearMap.mul_norm_le_norm_sylvester_apply_of_re_inner_le_of_le_re_inner`.
 
 ## Main results
 
@@ -46,15 +48,6 @@ equivalent to spectral containment (`LinearMap.IsSymmetric.pointSpectrumIn_Iic_i
 * `Submodule.norm_starProjection_comp_starProjection_le_norm_sub_div`,
   `Submodule.directedProjectionGap_le_norm_sub_div`, `Submodule.projectionGap_le_norm_sub_div`:
   for `g > 0`, the same bounds in the form `‖·‖ ≤ ‖B - A‖ / g`.
-
-## Implementation notes
-
-The proof reduces to the separated Sylvester bound
-`ContinuousLinearMap.mul_norm_le_norm_sylvester_apply_of_re_inner_le_of_le_re_inner`. The
-operators `A' = A P_U + (c + g) P_{Uᗮ}` and `B' = B P_W + c P_{Wᗮ}` agree with `A` on `U` and
-with `B` on `W`, and their quadratic forms are bounded below by `c + g` and above by `c` on all of
-`E`. Since `U` is `A`-invariant and `W` reduces `B`, the operator `X = P_W P_U` satisfies
-`B' X - X A' = P_W (B - A) P_U`, whose norm is at most `‖B - A‖`.
 
 ## References
 
@@ -126,6 +119,9 @@ theorem mul_norm_starProjection_comp_starProjection_le_norm_sub {A B : E →L[�
     (hAU : ∀ x ∈ U, (c + g) * ‖x‖ ^ 2 ≤ RCLike.re ⟪A x, x⟫_𝕜)
     (hBW : ∀ x ∈ W, RCLike.re ⟪B x, x⟫_𝕜 ≤ c * ‖x‖ ^ 2) :
     g * ‖W.starProjection ∘L U.starProjection‖ ≤ ‖B - A‖ := by
+  -- Reduce to the separated Sylvester bound. The extensions `A' = A P_U + (c + g) P_{Uᗮ}` and
+  -- `B' = B P_W + c P_{Wᗮ}` have quadratic forms bounded below by `c + g` and above by `c` on all
+  -- of `E`, and `X = P_W P_U` satisfies `B' X - X A' = P_W (B - A) P_U`.
   -- `Wᗮ` is invariant under the symmetric operator `B`, so `B` commutes with `P_W`.
   have hW' : ∀ x ∈ Wᗮ, B x ∈ Wᗮ := fun x hx ↦
     LinearMap.IsSymmetric.orthogonalComplement_mem_invtSubmodule hB (p := W)
