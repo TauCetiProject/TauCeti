@@ -56,7 +56,7 @@ in `ShortExact.lean`.
 * `TauCeti.ContCohomology.DiscreteShortExact.continuousCochainsShortExact_f_injective`,
   `continuousCochainsShortExact_exact` and `continuousCochainsShortExact_g_surjective`: the
   degreewise exactness of the cochain sequence.
-* `TauCeti.ContCohomology.DiscreteShortExact.continuousCochainsShortExact_shortExact`:
+* `TauCeti.ContCohomology.DiscreteShortExact.continuousCochainsShortExact_shortExact_moduleCat`:
   after forgetting topologies, the cochain sequence is a short exact sequence of cochain complexes
   of `ℤ`-modules. `TopModuleCat ℤ` is not abelian, so the snake lemma
   (`HomologicalComplex.HomologySequence`) applies only after this step.
@@ -400,7 +400,7 @@ forgetting topologies, `0 → C•(G, A) → C•(G, B) → C•(G, C) → 0` is
 cochain complexes of `ℤ`-modules, for a locally compact group `G` acting continuously on `B`.
 This is the input to the snake lemma, and hence to the long exact sequence of continuous
 cohomology in every degree. -/
-theorem continuousCochainsShortExact_shortExact [LocallyCompactSpace G]
+theorem continuousCochainsShortExact_shortExact_moduleCat [LocallyCompactSpace G]
     [ContinuousSMul G B] :
     (S.continuousCochainsShortExact.map
       ((forget₂ (TopModuleCat.{u} ℤ) (ModuleCat.{u} ℤ)).mapHomologicalComplex _)).ShortExact :=
