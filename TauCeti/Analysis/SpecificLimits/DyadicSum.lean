@@ -75,7 +75,7 @@ theorem sum_min_zpow_mul_rpow_neg_le {δ u : ℝ} (hδ : 0 < δ) (hu : 0 < u) (s
             Real.rpow_le_rpow_of_nonpos (by positivity) hle (by linarith)
         _ = q ^ (j + m).toNat := by
             rw [hk, Int.toNat_natCast, zpow_natCast, ← Real.rpow_natCast,
-              ← Real.rpow_mul zero_le_two, mul_comm, Real.rpow_mul zero_le_two,
+              ← Real.rpow_mul zero_le_two, mul_comm (k : ℝ), Real.rpow_mul zero_le_two,
               Real.rpow_natCast]
   calc ∑ j ∈ s, min (2 ^ j * u) ((2 ^ j * u) ^ (-δ)) ≤ ∑ j ∈ s, f (j + m) :=
         sum_le_sum fun j _ ↦ hterm j
