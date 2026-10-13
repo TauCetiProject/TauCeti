@@ -91,6 +91,7 @@ theorem prod_basis_orientation (b : Basis (Fin m) R E) (c : Basis (Fin n) R F)
       ((b.prod c).reindex finSumFinEquiv).orientation := by
   rw [prod_eq_rayOfNeZero _ _ hm hn b c]
   simp only [signBasis_orientation, Units.val_one, Int.cast_one, mul_one, one_smul]
+  -- A basis orientation is by definition the ray of its nonzero determinant form.
   rfl
 
 /-- Reversing the first factor reverses the product orientation, including dimension zero. -/

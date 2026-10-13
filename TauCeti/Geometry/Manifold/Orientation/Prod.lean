@@ -39,20 +39,13 @@ variable [FiniteDimensional ℝ E] [FiniteDimensional ℝ E']
 /-- Product lifts use the product model orientation and the product of the source signs. -/
 def prod (o : OrientationLift I M (Fin m)) (o' : OrientationLift I' M' (Fin n)) :
     OrientationLift (I.prod I') (M × M') (Fin (m + n)) := by
+  let source (α : M × M') (x : (chartAt (ModelProd H H') α).source) :
+      x.val ∈ (chartAt H α.1).source ×ˢ (chartAt H' α.2).source := by
+    simpa only [prodChartedSpace_chartAt, OpenPartialHomeomorph.prod_source] using x.property
   let left (α : M × M') (x : (chartAt (ModelProd H H') α).source) :
-      (chartAt H α.1).source :=
-    ⟨x.val.1, by
-      have hx : x.val ∈ (chartAt H α.1).source ×ˢ (chartAt H' α.2).source := by
-        simpa only [prodChartedSpace_chartAt, OpenPartialHomeomorph.prod_source]
-          using x.property
-      exact hx.1⟩
+      (chartAt H α.1).source := ⟨x.val.1, (source α x).1⟩
   let right (α : M × M') (x : (chartAt (ModelProd H H') α).source) :
-      (chartAt H' α.2).source :=
-    ⟨x.val.2, by
-      have hx : x.val ∈ (chartAt H α.1).source ×ˢ (chartAt H' α.2).source := by
-        simpa only [prodChartedSpace_chartAt, OpenPartialHomeomorph.prod_source]
-          using x.property
-      exact hx.2⟩
+      (chartAt H' α.2).source := ⟨x.val.2, (source α x).2⟩
   refine {
     modelOrientation := _root_.Orientation.prod o.modelOrientation o'.modelOrientation
       (by simpa using o.card_eq.symm) (by simpa using o'.card_eq.symm)
@@ -144,7 +137,10 @@ theorem orientationAt_prod (o : Orientation I M (Fin m))
         ((TauCeti.finrank_tangentSpace (I := I') x.2).trans (by simpa using o'.card_eq.symm)) := by
   induction o using Orientation.inductionOn with | h l =>
     induction o' using Orientation.inductionOn with | h l' =>
-      rw [prod_mk, orientationAt_mk, orientationAt_mk, orientationAt_mk]
+      rw [prod_mk, orientationAt_mk, OrientationLift.orientationAt_eq,
+        OrientationLift.chartOrientation_eq_ite, orientationAt_mk, OrientationLift.orientationAt_eq,
+        OrientationLift.chartOrientation_eq_ite, orientationAt_mk, OrientationLift.orientationAt_eq,
+        OrientationLift.chartOrientation_eq_ite]
       -- Expand only the product lift fields; the chart-orientation equations above
       -- already identify each tangent orientation with its signed model orientation.
       change (if l.sign x.1 ⟨x.1, mem_chart_source H x.1⟩ *
@@ -173,6 +169,7 @@ theorem prod_neg_left (o : Orientation I M (Fin m)) (o' : Orientation I' M' (Fin
   apply ext
   intro x
   simp only [orientationAt_prod, orientationAt_neg, _root_.Orientation.prod_neg_left]
+  -- Tangent-space and model-space scalar structures coincide; rank proofs are proof-irrelevant.
   rfl
 
 /-- Reversing the second factor reverses the product manifold orientation. -/
@@ -182,6 +179,7 @@ theorem prod_neg_right (o : Orientation I M (Fin m)) (o' : Orientation I' M' (Fi
   apply ext
   intro x
   simp only [orientationAt_prod, orientationAt_neg, _root_.Orientation.prod_neg_right]
+  -- Tangent-space and model-space scalar structures coincide; rank proofs are proof-irrelevant.
   rfl
 
 /-- Reversing both factors preserves the product manifold orientation. -/

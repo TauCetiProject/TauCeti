@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Orientation.OrientedAtlas
 public import TauCeti.Geometry.Manifold.Orientation.Basic
+public import TauCeti.Geometry.Manifold.VectorBundle.Tangent
 public import TauCeti.Topology.VectorBundle.Orientation.Atlas
 public import Mathlib.Geometry.Manifold.MFDeriv.Atlas
 
@@ -14,7 +15,8 @@ public import Mathlib.Geometry.Manifold.MFDeriv.Atlas
 # Orientations determined by oriented atlases and model orientations
 
 An oriented subatlas of the maximal atlas determines an actual orientation, also at boundary and
-corner points. The converse requires a boundaryless hypothesis and is not used here.
+corner points. The converse, existence of an oriented atlas for every orientation,
+is not proved here.
 -/
 
 public section
@@ -39,9 +41,8 @@ private def IsOrientedAtlas.orientationData {A : Set (OpenPartialHomeomorph M H)
     {l : Manifold.OrientationLift I M ι //
       ∀ e ∈ A, ∀ x ∈ e.source, ∃ L : TangentSpace I x ≃L[ℝ] E,
         (L : TangentSpace I x →L[ℝ] E) = mfderiv I I e x ∧
-          Orientation.map ι L.toLinearEquiv
-            (if l.sign x ⟨x, mem_chart_source H x⟩ = 1 then l.modelOrientation
-              else -l.modelOrientation) = model} := by
+          Orientation.map ι L.toLinearEquiv (l.orientationAt x) = model} := by
+  -- First promote the positive subatlas to the C1 maximal atlas.
   have hsub : A ⊆ IsManifold.maximalAtlas I 1 M :=
     hA.subset_maximalAtlas.trans (IsManifold.maximalAtlas_subset_of_le
       (ENat.one_le_iff_ne_zero_withTop.mpr (NeZero.ne n)))
@@ -52,7 +53,11 @@ private def IsOrientedAtlas.orientationData {A : Set (OpenPartialHomeomorph M H)
         (e.extend I x)).det := by
     intro e e' he he' x hx hx'
     exact hA.det_fderivWithin_pos he he' hx hx'
-  have hcompat := @IsManifold.compatible_of_mem_maximalAtlas ℝ _ E _ _ H _ I 1 M _ _
+  have hcompat {e e' : OpenPartialHomeomorph M H}
+      (he : e ∈ IsManifold.maximalAtlas I 1 M) (he' : e' ∈ IsManifold.maximalAtlas I 1 M) :
+      e.symm.trans e' ∈ contDiffGroupoid 1 I :=
+    IsManifold.compatible_of_mem_maximalAtlas (I := I) (n := 1) he he'
+  -- Enlarge the atlas while retaining exactly the original preferred charts.
   let enlarged : ChartedSpace H M := {
     atlas := IsManifold.maximalAtlas I 1 M
     chartAt := chartAt H
@@ -61,6 +66,7 @@ private def IsOrientedAtlas.orientationData {A : Set (OpenPartialHomeomorph M H)
   let : ChartedSpace H M := enlarged
   let : HasGroupoid M (contDiffGroupoid 1 I) := ⟨fun he he' ↦ hcompat he he'⟩
   let : IsManifold I 1 M := IsManifold.mk' I 1 M
+  have enlargedManifold := (inferInstance : IsManifold I 1 M)
   let Z := tangentBundleCore I M
   let S : Set (atlas H M) := {e | e.val ∈ A}
   have hcover : ∀ x, ∃ e ∈ S, x ∈ Z.baseSet e := by
@@ -71,6 +77,7 @@ private def IsOrientedAtlas.orientationData {A : Set (OpenPartialHomeomorph M H)
       0 < (Z.coordChange e e' x).det := by
     intro e he e' he' x hx
     exact hAdet he he' hx.1 hx.2
+  -- The positive core subatlas constructs the fibre orientations and their chartwise equation.
   let vb := Z.orientationOfPositiveAtlas model hι hcover hpos
   let l := Manifold.OrientationLift.ofVectorBundleOrientation model hι vb
   have ho (x : M) : (if l.sign x ⟨x, mem_chart_source H x⟩ = 1 then l.modelOrientation
@@ -84,12 +91,13 @@ private def IsOrientedAtlas.orientationData {A : Set (OpenPartialHomeomorph M H)
       Orientation.map ι ((Z.localTriv j).linearEquivAt ℝ x hxj) (vb x) = model := by
     simpa only [Bundle.Trivialization.mapOrientation_apply] using
       Z.mapOrientation_orientationOfPositiveAtlas model hι hcover hpos j hj x hxj
-  let l' := @Manifold.OrientationLift.mk E H _ _ _ I M _ cM ι _ _
-    l.modelOrientation l.card_eq l.sign l.locallyConstant_sign l.compatible
+  -- Transfer source-indexed signs back using equality of preferred charts, not equality of atlases.
+  let l' := l.congrChartAt (c := enlarged) (c' := cM) rfl
   let : ChartedSpace H M := cM
   let : IsManifold I 1 M := mM
   refine ⟨l', ?_⟩
   intro e he x hx
+  -- Finally identify the chosen chart reading with its actual manifold derivative.
   let j : enlarged.atlas := ⟨e, hsub he⟩
   have hxj : x ∈ (Z.localTriv j).baseSet := hx
   have hd : e.MDifferentiable I I :=
@@ -97,21 +105,34 @@ private def IsOrientedAtlas.orientationData {A : Set (OpenPartialHomeomorph M H)
       fun y hy ↦
         (mdifferentiableAt_symm_of_mem_maximalAtlas (hsub he) hy).mdifferentiableWithinAt⟩
   let L : TangentSpace I x ≃L[ℝ] E := hd.mfderiv hx
+  have hmap : mfderiv I I e x = (Z.localTriv j).continuousLinearMapAt ℝ x := by
+    let : ChartedSpace H M := enlarged
+    have : IsManifold I 1 M := enlargedManifold
+    exact (Manifold.mfderiv_eq_of_chartAt_eq (I := I)
+      (c := cM) (c' := enlarged) rfl e x).trans
+      (Manifold.mfderiv_atlas_eq_continuousLinearMapAt (I := I) j hxj)
   have hlin : L.toLinearEquiv = (Z.localTriv j).linearEquivAt ℝ x hxj := by
     ext v
-    -- L is the derivative equivalence; compare it pointwise with the tangent chart map.
-    change mfderiv I I e x v = (Z.localTriv j).linearEquivAt ℝ x hxj v
-    erw [Bundle.Trivialization.linearEquivAt_apply]
-    erw [← Bundle.Trivialization.continuousLinearMapAt_apply_of_mem ℝ _ hxj]
-    erw [Z.localTriv_continuousLinearMapAt hxj]
-    have hmd := mdifferentiableAt_of_mem_maximalAtlas (I := I) (hsub he) hx
-    simp only [mfderiv, ite_eq_left hmd]
-    rfl
+    exact (congrArg (fun f : TangentSpace I x →L[ℝ] E ↦ f v) hmap).trans
+      ((Bundle.Trivialization.continuousLinearMapAt_apply_of_mem ℝ (Z.localTriv j) hxj v).trans
+        (Bundle.Trivialization.linearEquivAt_apply (Z.localTriv j) x hxj v).symm)
+  -- L was defined as the derivative equivalence, so its underlying map is mfderiv.
   refine ⟨L, rfl, ?_⟩
-  have hox : (if l'.sign x ⟨x, mem_chart_source H x⟩ = 1 then l'.modelOrientation
-      else -l'.modelOrientation) = vb x := ho x
-  erw [hox, hlin]
-  exact hread j he x hxj
+  have hox : l'.orientationAt x = vb x := by
+    rw [Manifold.OrientationLift.orientationAt_eq, Manifold.OrientationLift.chartOrientation_eq_ite]
+    -- At the preferred chart's centre, tangent and model orientations have the same scalar data.
+    change (if l'.sign x ⟨x, mem_chart_source H x⟩ = 1 then l'.modelOrientation
+      else -l'.modelOrientation) = vb x
+    simpa only [l', Manifold.OrientationLift.congrChartAt_sign,
+      Manifold.OrientationLift.congrChartAt_modelOrientation] using ho x
+  calc
+    Orientation.map ι L.toLinearEquiv (l'.orientationAt x) =
+        Orientation.map ι L.toLinearEquiv (vb x) :=
+      congrArg (fun o : Orientation ℝ (TangentSpace I x) ι ↦
+        Orientation.map ι L.toLinearEquiv o) hox
+    _ = model := (congrArg (fun f : TangentSpace I x ≃ₗ[ℝ] E ↦
+      Orientation.map ι f (vb x)) hlin).trans (hread j he x hxj)
+
 
 /-- An oriented subatlas defines the quotient orientation whose charts read the
 specified model orientation. It includes boundary and corner points. -/

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Geometry.Manifold.VectorBundle.Tangent
 public import TauCeti.Topology.VectorBundle.Orientation
+public import TauCeti.Topology.VectorBundle.Coordinates
 public import Mathlib.Topology.LocallyConstant.Basic
 
 /-!
@@ -69,6 +70,44 @@ variable [Fintype ι] [FiniteDimensional ℝ E]
 
 variable {I}
 
+omit [ChartedSpace H M] in
+/-- Changing the atlas without changing its preferred charts leaves the lift data unchanged. -/
+def congrChartAt {c c' : ChartedSpace H M} (h : c.chartAt = c'.chartAt)
+    (o : @OrientationLift E H _ _ _ I M _ c ι _ _) :
+    @OrientationLift E H _ _ _ I M _ c' ι _ _ := by
+  letI : ChartedSpace H M := c
+  let castSource (α : M) (x : (c'.chartAt α).source) : (c.chartAt α).source :=
+    ⟨x.val, by rw [h]; exact x.property⟩
+  refine @OrientationLift.mk E H _ _ _ I M _ c' ι _ _
+    o.modelOrientation o.card_eq (fun α x ↦ o.sign α (castSource α x)) ?_ ?_
+  · intro α
+    exact (o.locallyConstant_sign α).comp_continuous
+      (continuous_subtype_val.subtype_mk _)
+  · intro α β x hα hβ
+    have hα' : x ∈ (c.chartAt α).source := by rw [h]; exact hα
+    have hβ' : x ∈ (c.chartAt β).source := by rw [h]; exact hβ
+    simpa only [castSource, extChartAt, chartAt, h] using o.compatible α β x hα' hβ'
+
+omit [ChartedSpace H M] in
+/-- Changing only the atlas preserves the model orientation. -/
+@[simp]
+theorem congrChartAt_modelOrientation {c c' : ChartedSpace H M} (h : c.chartAt = c'.chartAt)
+    (o : @OrientationLift E H _ _ _ I M _ c ι _ _) :
+    (letI := c'; (o.congrChartAt h).modelOrientation) =
+      (letI := c; o.modelOrientation) := (rfl)
+
+omit [ChartedSpace H M] in
+/-- Changing only the atlas transports each source sign along equality of preferred charts. -/
+@[simp]
+theorem congrChartAt_sign {c c' : ChartedSpace H M} (h : c.chartAt = c'.chartAt)
+    (o : @OrientationLift E H _ _ _ I M _ c ι _ _) (α : M)
+    (x : (c'.chartAt α).source) :
+    (letI := c'; (o.congrChartAt h).sign α x) =
+      (letI := c; o.sign α ⟨x.val, by
+        change x.val ∈ (c.chartAt α).source
+        rw [h]
+        exact x.property⟩) := (rfl)
+
 /-- The product of the source signs is exactly the sign of the within-range transition
 Jacobian. -/
 theorem sign_mul_sign (o : OrientationLift I M ι) (α β x : M)
@@ -76,15 +115,20 @@ theorem sign_mul_sign (o : OrientationLift I M ι) (α β x : M)
     ((o.sign α ⟨x, hα⟩ * o.sign β ⟨x, hβ⟩ : ℤˣ) : ℤ) =
       (SignType.sign (fderivWithin ℝ (extChartAt I β ∘ (extChartAt I α).symm)
         (range I) (extChartAt I α x)).det : ℤ) := by
-  have hd := o.compatible α β x hα hβ
-  rcases Int.units_eq_one_or (o.sign α ⟨x, hα⟩) with h₁ | h₁ <;>
-    rcases Int.units_eq_one_or (o.sign β ⟨x, hβ⟩) with h₂ | h₂
-  all_goals rw [h₁, h₂] at hd ⊢
-  all_goals norm_num at hd ⊢
-  · rw [sign_pos hd]; rfl
-  · rw [sign_neg hd]; rfl
-  · rw [sign_neg hd]; rfl
-  · rw [sign_pos hd]; rfl
+  let u := o.sign α ⟨x, hα⟩ * o.sign β ⟨x, hβ⟩
+  have hd : 0 < (u : ℝ) * (fderivWithin ℝ
+      (extChartAt I β ∘ (extChartAt I α).symm) (range I) (extChartAt I α x)).det := by
+    simpa only [u, Units.val_mul, Int.cast_mul] using o.compatible α β x hα hβ
+  -- Treat the product of the two source signs as one integer unit.
+  change (u : ℤ) = _
+  rcases Int.units_eq_one_or u with h | h
+  · rw [h] at hd ⊢
+    norm_num only [Units.val_one, Int.cast_one, one_mul] at hd
+    simp only [sign_pos hd, SignType.coe_one, Units.val_one]
+  · rw [h] at hd ⊢
+    norm_num only [Units.val_neg, Units.val_one, Int.cast_neg, Int.cast_one, neg_one_mul,
+      neg_pos] at hd
+    simp only [sign_neg hd, SignType.coe_neg, SignType.coe_one, Units.val_neg, Units.val_one]
 
 /-- Signed transition determinants agree with the absolute Jacobian factor appearing in the
 change-of-variables theorem for top forms. -/
@@ -94,15 +138,20 @@ theorem sign_mul_det (o : OrientationLift I M ι) (α β x : M)
         (range I) (extChartAt I α x)).det =
       |(fderivWithin ℝ (extChartAt I β ∘ (extChartAt I α).symm)
         (range I) (extChartAt I α x)).det| * ((o.sign β ⟨x, hβ⟩ : ℤ) : ℝ) := by
-  have hd := o.compatible α β x hα hβ
-  rcases Int.units_eq_one_or (o.sign α ⟨x, hα⟩) with h₁ | h₁ <;>
-    rcases Int.units_eq_one_or (o.sign β ⟨x, hβ⟩) with h₂ | h₂
-  all_goals rw [h₁, h₂] at hd ⊢
-  all_goals norm_num at hd ⊢
-  · exact (abs_of_pos hd).symm
-  · rw [abs_of_neg hd, neg_neg]
-  · exact (abs_of_neg hd).symm
-  · rw [abs_of_pos hd]
+  let u := o.sign α ⟨x, hα⟩
+  let v := o.sign β ⟨x, hβ⟩
+  let D := (fderivWithin ℝ (extChartAt I β ∘ (extChartAt I α).symm)
+    (range I) (extChartAt I α x)).det
+  have hs : (u : ℝ) * (v : ℝ) = (SignType.sign D : ℝ) := by
+    exact_mod_cast o.sign_mul_sign α β x hα hβ
+  have hv : (v : ℝ) * (v : ℝ) = 1 := by
+    exact_mod_cast Int.isUnit_mul_self v.isUnit
+  calc
+    (u : ℝ) * D = ((u : ℝ) * (v : ℝ)) * D * (v : ℝ) := by
+      calc
+        (u : ℝ) * D = (u : ℝ) * D * ((v : ℝ) * (v : ℝ)) := by rw [hv, mul_one]
+        _ = _ := by ring
+    _ = |D| * (v : ℝ) := by rw [hs, sign_mul_self]
 
 /-- Simultaneously reverse the model orientation and all source signs. This changes only the
 representative lift, not any induced tangent orientation. -/
@@ -178,21 +227,6 @@ section Tangent
 
 variable [IsManifold I 1 M]
 
-omit [FiniteDimensional ℝ E] in
-private theorem baseSet_eq (α : M) :
-    (trivializationAt E (TangentSpace I) α).baseSet = (chartAt H α).source := by
-  exact TangentBundle.trivializationAt_baseSet α
-
-omit [FiniteDimensional ℝ E] in
-private theorem coordChange_eq {α β x : M} (hα : x ∈ (chartAt H α).source)
-    (hβ : x ∈ (chartAt H β).source) :
-    ((trivializationAt E (TangentSpace I) α).coordChangeL ℝ
-      (trivializationAt E (TangentSpace I) β) x : E →L[ℝ] E) =
-      tangentCoordChange I α β x := by
-  ext v
-  exact (tangentBundleCore I M).trivializationAt_coordChange_eq
-    ⟨hα, hβ⟩ v
-
 private theorem map_signedOrientation (o : OrientationLift I M ι) {α β x : M}
     (hα : x ∈ (chartAt H α).source) (hβ : x ∈ (chartAt H β).source) :
     _root_.Orientation.map ι
@@ -204,11 +238,9 @@ private theorem map_signedOrientation (o : OrientationLift I M ι) {α β x : M}
   have hd := o.compatible α β x hα hβ
   have hdet : LinearMap.det ((trivializationAt E (TangentSpace I) α).coordChangeL ℝ
       (trivializationAt E (TangentSpace I) β) x).toLinearEquiv.toLinearMap =
-      (tangentCoordChange I α β x).det := by
-    -- The continuous equivalence and its map have the same underlying linear determinant.
-    change (((trivializationAt E (TangentSpace I) α).coordChangeL ℝ
-      (trivializationAt E (TangentSpace I) β) x) : E →L[ℝ] E).det = _
-    rw [coordChange_eq hα hβ]
+      (tangentCoordChange I α β x).det :=
+    (tangentBundleCore I M).det_trivializationAt_coordChangeL
+      (α := α) (β := β) (x := x) ⟨hα, hβ⟩
   rwa [hdet]
 
 /-- The signed model orientation read in a preferred chart at a point of its source. -/
@@ -237,7 +269,7 @@ orientation. Thus the construction is independent of the chosen chart. -/
 theorem mapOrientation_orientationAt (o : OrientationLift I M ι) {α x : M}
     (hα : x ∈ (chartAt H α).source) :
     (trivializationAt E (TangentSpace I) α).mapOrientation ι
-      (by rwa [baseSet_eq (I := I)]) (o.orientationAt x) =
+      (by rwa [TangentBundle.trivializationAt_baseSet (I := I)]) (o.orientationAt x) =
         o.chartOrientation α ⟨x, hα⟩ := by
   rw [Bundle.Trivialization.mapOrientation_eq_map_coordChangeL
     (trivializationAt E (TangentSpace I) x) _ (FiberBundle.mem_baseSet_trivializationAt' x)]
@@ -286,7 +318,8 @@ def toVectorBundleOrientation (o : OrientationLift I M ι) :
       ⟨α, mem_chart_source H α⟩
     rcases (mem_nhds_subtype _ _ _).mp h with ⟨u, hu, hus⟩
     filter_upwards [hu] with x hx hxs
-    have hxs' : x ∈ (chartAt H α).source := by rwa [← baseSet_eq (I := I)]
+    have hxs' : x ∈ (chartAt H α).source := by
+      rwa [← TangentBundle.trivializationAt_baseSet (I := I)]
     rw [o.mapOrientation_orientationAt hxs',
       o.mapOrientation_orientationAt (mem_chart_source H α)]
     simp only [chartOrientation]
@@ -320,29 +353,31 @@ def ofVectorBundleOrientation (model : _root_.Orientation ℝ E ι)
   modelOrientation := model
   card_eq := hι
   sign α x := if ((trivializationAt E (TangentSpace I) α).mapOrientation ι
-    (by rw [baseSet_eq (I := I)]; exact x.property) (o x)) = model then 1 else -1
+    (by rw [TangentBundle.trivializationAt_baseSet (I := I)]; exact x.property) (o x)) = model
+      then 1 else -1
   locallyConstant_sign α := by
     rw [IsLocallyConstant.iff_eventually_eq]
     intro x
     have hx : x.val ∈ (trivializationAt E (TangentSpace I) α).baseSet := by
-      rw [baseSet_eq (I := I)]; exact x.property
+      rw [TangentBundle.trivializationAt_baseSet (I := I)]; exact x.property
     have he := o.eventually_mapOrientation_eq hι (trivializationAt E (TangentSpace I) α) hx
     have hp := (continuous_subtype_val.tendsto x).eventually he
     filter_upwards [hp] with y hy
-    rw [hy (by rw [baseSet_eq (I := I)]; exact y.property)]
+    rw [hy (by
+      rw [TangentBundle.trivializationAt_baseSet (I := I)]
+      exact y.property)]
   compatible α β x hα hβ := by
     let A := (trivializationAt E (TangentSpace I) α).coordChangeL ℝ
       (trivializationAt E (TangentSpace I) β) x
     have hdet : LinearMap.det A.toLinearEquiv.toLinearMap =
-        (tangentCoordChange I α β x).det := by
-      -- The linear equivalence uses the underlying map of the continuous equivalence.
-      change (A : E →L[ℝ] E).det = _
-      rw [coordChange_eq hα hβ]
+        (tangentCoordChange I α β x).det :=
+      (tangentBundleCore I M).det_trivializationAt_coordChangeL
+        (α := α) (β := β) (x := x) ⟨hα, hβ⟩
     rw [tangentCoordChange_def] at hdet
     let a := (trivializationAt E (TangentSpace I) α).mapOrientation ι
-      (by rwa [baseSet_eq (I := I)]) (o x)
+      (by rwa [TangentBundle.trivializationAt_baseSet (I := I)]) (o x)
     let b := (trivializationAt E (TangentSpace I) β).mapOrientation ι
-      (by rwa [baseSet_eq (I := I)]) (o x)
+      (by rwa [TangentBundle.trivializationAt_baseSet (I := I)]) (o x)
     let u : ℤˣ := if a = model then 1 else -1
     let v : ℤˣ := if b = model then 1 else -1
     have hmap : _root_.Orientation.map ι A.toLinearEquiv
@@ -352,7 +387,8 @@ def ofVectorBundleOrientation (model : _root_.Orientation ℝ E ι)
       rw [_root_.Orientation.intCast_units_smul_ite_eq _ _ hι,
         _root_.Orientation.intCast_units_smul_ite_eq _ _ hι]
       exact (Bundle.Trivialization.mapOrientation_eq_map_coordChangeL _ _
-        (by rwa [baseSet_eq (I := I)]) (by rwa [baseSet_eq (I := I)]) (o x)).symm
+        (by rwa [TangentBundle.trivializationAt_baseSet (I := I)])
+        (by rwa [TangentBundle.trivializationAt_baseSet (I := I)]) (o x)).symm
     rw [← hdet]
     exact (_root_.Orientation.map_units_smul_eq_iff_det_mul_pos model A.toLinearEquiv
       (Units.map (Int.castRingHom ℝ).toMonoidHom u)
@@ -402,6 +438,7 @@ theorem orientationAt_model (o : _root_.Orientation ℝ E ι)
     (model (I := I) o hι).orientationAt x = o := by
   rw [orientationAt_eq, chartOrientation_eq_ite]
   simp only [model_sign, ite_true, model_modelOrientation]
+  -- The model's tangent space carries its model-space scalar structure.
   rfl
 
 /-- Two lifts with the same model orientation and tangent orientations have the same signs. -/
@@ -412,7 +449,7 @@ theorem ext_of_orientationAt {o o' : OrientationLift I M ι}
   funext α x
   apply _root_.Orientation.intCast_units_smul_injective o'.modelOrientation
   have hx := congrArg ((trivializationAt E (TangentSpace I) α).mapOrientation ι
-    (by rw [baseSet_eq (I := I)]; exact x.property)) (h x)
+    (by rw [TangentBundle.trivializationAt_baseSet (I := I)]; exact x.property)) (h x)
   rw [mapOrientation_orientationAt _ x.property,
     mapOrientation_orientationAt _ x.property] at hx
   simpa only [chartOrientation, hm] using hx
@@ -430,12 +467,14 @@ end Tangent
 @[simp]
 protected theorem neg_neg (o : OrientationLift I M ι) : - -o = o := by
   apply OrientationLift.ext (_root_.neg_neg o.modelOrientation)
-  rfl
+  funext α x
+  simp only [neg_sign]
 
 @[simp]
 theorem flip_neg (o : OrientationLift I M ι) : (-o).flip = -o.flip := by
-  apply OrientationLift.ext rfl
-  rfl
+  apply OrientationLift.ext (by simp only [flip_modelOrientation, neg_modelOrientation])
+  funext α x
+  simp only [flip_sign, neg_sign]
 
 /-- The equivalence relation that forgets the simultaneous reversal of the model orientation
 and all chart signs. -/

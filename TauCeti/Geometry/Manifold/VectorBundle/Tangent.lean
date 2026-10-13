@@ -92,9 +92,42 @@ variable
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
 
+omit [ChartedSpace H M] in
+/-- Changing the source atlas while retaining its preferred charts preserves chart derivatives. -/
+theorem mfderiv_eq_of_chartAt_eq {c c' : ChartedSpace H M} (h : c.chartAt = c'.chartAt)
+    (f : M → H) (x : M) :
+    (letI := c; mfderiv I I f x) = (letI := c'; mfderiv I I f x) := by
+  -- Manifold differentiation uses preferred charts, not the rest of the atlas.
+  have hd : (letI := c; MDifferentiableAt I I f x) ↔
+      (letI := c'; MDifferentiableAt I I f x) := by
+    constructor
+    · intro hf
+      let := c'
+      cases hf with
+      | mk hc hp => exact ⟨hc, by simpa only [chartAt, h] using hp⟩
+    · intro hf
+      let := c
+      cases hf with
+      | mk hc hp => exact ⟨hc, by simpa only [chartAt, h] using hp⟩
+  let := c'
+  simp only [mfderiv, writtenInExtChartAt, extChartAt, chartAt, h]
+  congr 1
+  exact propext hd
+
 section BasePoint
 
 variable [IsManifold I 1 M]
+
+/-- The derivative of an atlas chart reads tangent vectors in that chart's core trivialization. -/
+theorem mfderiv_atlas_eq_continuousLinearMapAt (e : atlas H M) {x : M}
+    (hx : x ∈ e.val.source) :
+    mfderiv I I e.val x =
+      ((tangentBundleCore I M).localTriv e).continuousLinearMapAt 𝕜 x := by
+  rw [(tangentBundleCore I M).localTriv_continuousLinearMapAt hx,
+    (mdifferentiableAt_atlas e.property hx).mfderiv]
+  -- The core transition is precisely the chart's within-range derivative in the preferred
+  -- source chart. The model chart and both tangent casts are identities.
+  rfl
 
 /-- Read in the canonical trivialization at `x`, a tangent vector at `x` itself is its own
 coordinate vector: the trivialization is built from the chart at `x`, whose transition function

@@ -131,16 +131,13 @@ def orientationAt (o : Orientation I M ι) (x : M) :
 theorem toVectorBundleOrientation_apply (o : Orientation I M ι) (x : M) :
     o.toVectorBundleOrientation x = o.orientationAt x := (rfl)
 
-/-- At the base point of its own preferred chart, the representative's sign twists the model
-orientation. This equation also holds at boundary and corner points. -/
+/-- The tangent orientation of a represented manifold orientation is the representative's
+intrinsic tangent orientation, including at boundary and corner points. -/
 @[simp]
 theorem orientationAt_mk (o : OrientationLift I M ι) (x : M) :
-    orientationAt (Orientation.mk o) x =
-      if o.sign x ⟨x, mem_chart_source H x⟩ = 1 then o.modelOrientation
-      else -o.modelOrientation := by
+    orientationAt (Orientation.mk o) x = o.orientationAt x := by
   simp only [orientationAt, Orientation.toVectorBundleOrientation_mk,
     OrientationLift.toVectorBundleOrientation_apply]
-  exact (o.orientationAt_eq x).trans (o.chartOrientation_eq_ite _ _)
 
 @[simp]
 theorem orientationAt_neg (o : Orientation I M ι) (x : M) :
@@ -246,6 +243,7 @@ theorem orientationAt_model (o : _root_.Orientation ℝ E ι)
     orientationAt (model (I := I) o hι) x = o := by
   simp only [model, orientationAt, toVectorBundleOrientation_mk,
     OrientationLift.toVectorBundleOrientation_apply, OrientationLift.orientationAt_model]
+  -- The tangent space of the model uses its model-space scalar structure.
   rfl
 
 end Orientation

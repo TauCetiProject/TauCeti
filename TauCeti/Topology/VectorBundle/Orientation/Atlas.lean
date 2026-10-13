@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.VectorBundle.Orientation
+public import TauCeti.Topology.VectorBundle.Coordinates
 
 /-!
 # Orientations from positive bundle atlases
@@ -49,13 +50,7 @@ private theorem mapOrientation_orientationOfPositiveAtlasAt (i : κ) (hi : i ∈
   change Orientation.map ι ((Z.localTriv j).coordChangeL ℝ
     (Z.localTriv i) x).toLinearEquiv model = model
   rw [Orientation.map_eq_iff_det_pos _ _ hι]
-  have hd : (((Z.localTriv j).coordChangeL ℝ (Z.localTriv i) x) : F →L[ℝ] F) =
-      Z.coordChange j i x := by
-    ext v
-    exact Z.localTriv_coordChange_eq _ _ ⟨hxj, hxi⟩ v
-  -- Passing from the equivalence to its continuous map does not change its linear determinant.
-  change (((Z.localTriv j).coordChangeL ℝ (Z.localTriv i) x) : F →L[ℝ] F).det > 0
-  rw [hd]
+  rw [Z.det_localTriv_coordChangeL ⟨hxj, hxi⟩]
   exact hpos j hj i hi x ⟨hxj, hxi⟩
 
 /-- A positive subatlas that covers the base defines a vector bundle orientation. -/
@@ -80,6 +75,8 @@ theorem mapOrientation_orientationOfPositiveAtlas (i : κ) (hi : i ∈ S)
     (Z.localTriv i).mapOrientation ι hxi
       (Z.orientationOfPositiveAtlas model hι hcover hpos x) = model := by
   simp only [orientationOfPositiveAtlas]
+  -- The constructor installs point-dependent local atlas instances. The evaluation equation
+  -- identifies the same family after reducing these proof-only instance arguments.
   erw [TauCeti.VectorBundleOrientation.coe_ofEventually]
   exact mapOrientation_orientationOfPositiveAtlasAt Z model hι hcover hpos i hi x hxi
 
