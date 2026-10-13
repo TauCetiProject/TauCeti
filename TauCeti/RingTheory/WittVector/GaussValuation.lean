@@ -403,6 +403,39 @@ theorem gaussValuation_mono (hv : v.Integers O) {ρ₁ ρ₂ : ℝ≥0}
   exact ciSup_le fun n ↦ (mul_le_mul' le_rfl (pow_le_pow_left' hρ n)).trans
     (le_gaussValuation hv hρ₂ x n)
 
+/-- **The Hadamard three circles inequality for Gauss valuations.** For radii
+`0 < ρ₁ ≤ ρ ≤ ρ₂` and `m : ℕ`, the value `λ_ρ(x) / ρ ^ m`, which is the Gauss valuation at `ρ` of
+`x / p ^ m` once `p` is inverted, is at most the larger of its values at `ρ₁` and `ρ₂`: each term
+`v(xₙ) ρ ^ (n - m)` is monotone in `ρ`, increasing if `m ≤ n` and decreasing otherwise. -/
+theorem gaussValuation_mul_inv_pow_le_max (hv : v.Integers O) {ρ₁ ρ₂ : ℝ≥0} (hρ : ρ < 1)
+    (hρ₁ : ρ₁ < 1) (hρ₂ : ρ₂ < 1) (h₀ : 0 < ρ₁) (h₁ : ρ₁ ≤ ρ) (h₂ : ρ ≤ ρ₂) (x : 𝕎 O) (m : ℕ) :
+    gaussValuation p hv ρ hρ x * (ρ ^ m)⁻¹ ≤
+      max (gaussValuation p hv ρ₁ hρ₁ x * (ρ₁ ^ m)⁻¹)
+        (gaussValuation p hv ρ₂ hρ₂ x * (ρ₂ ^ m)⁻¹) := by
+  rw [gaussValuation_apply, NNReal.iSup_mul]
+  refine ciSup_le fun n ↦ ?_
+  rw [mul_assoc]
+  rcases le_or_gt m n with hmn | hnm
+  · -- `ρ ^ n / ρ ^ m = ρ ^ (n - m)` is at most `ρ₂ ^ (n - m)`
+    refine le_max_of_le_right ?_
+    rw [← pow_sub₀ _ (h₀.trans_le h₁).ne' hmn]
+    calc v (algebraMap O K (x.teichmullerCoeff n)) * ρ ^ (n - m)
+        ≤ v (algebraMap O K (x.teichmullerCoeff n)) * ρ₂ ^ (n - m) := by gcongr
+      _ = v (algebraMap O K (x.teichmullerCoeff n)) * ρ₂ ^ n * (ρ₂ ^ m)⁻¹ := by
+        rw [pow_sub₀ _ (h₀.trans_le (h₁.trans h₂)).ne' hmn, mul_assoc]
+      _ ≤ _ := by gcongr; exact le_gaussValuation hv hρ₂ x n
+  · -- `ρ ^ n / ρ ^ m = (ρ ^ (m - n))⁻¹` is at most `(ρ₁ ^ (m - n))⁻¹`
+    refine le_max_of_le_left ?_
+    have hρ₀ : 0 < ρ := h₀.trans_le h₁
+    have key (r : ℝ≥0) (hr : 0 < r) : r ^ n * (r ^ m)⁻¹ = (r ^ (m - n))⁻¹ := by
+      rw [pow_sub₀ _ hr.ne' hnm.le, mul_inv, inv_inv, mul_comm]
+    calc v (algebraMap O K (x.teichmullerCoeff n)) * (ρ ^ n * (ρ ^ m)⁻¹)
+        ≤ v (algebraMap O K (x.teichmullerCoeff n)) * (ρ₁ ^ n * (ρ₁ ^ m)⁻¹) := by
+          rw [key ρ hρ₀, key ρ₁ h₀]
+          gcongr
+      _ = v (algebraMap O K (x.teichmullerCoeff n)) * ρ₁ ^ n * (ρ₁ ^ m)⁻¹ := (mul_assoc ..).symm
+      _ ≤ _ := by gcongr; exact le_gaussValuation hv hρ₁ x n
+
 /-- The Gauss valuation is at most one. -/
 theorem gaussValuation_le_one (hv : v.Integers O) (hρ : ρ < 1) (x : 𝕎 O) :
     gaussValuation p hv ρ hρ x ≤ 1 :=

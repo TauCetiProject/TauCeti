@@ -7,7 +7,7 @@ module
 
 public import Mathlib.NumberTheory.ArithmeticFunction.LFunction
 public import Mathlib.NumberTheory.NumberField.Completion.FinitePlace
-public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Convolution
+public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Convolution.Basic
 public import TauCeti.RingTheory.DedekindDomain.Ideal
 import Mathlib.RingTheory.Ideal.Quotient.HasFiniteQuotients.Basic
 import Mathlib.RingTheory.Ideal.Quotient.HasFiniteQuotients.Norm
