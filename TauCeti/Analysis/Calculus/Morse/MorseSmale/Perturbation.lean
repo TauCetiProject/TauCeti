@@ -213,6 +213,12 @@ theorem perturbationCutoff_eq_self_of_norm_le {s : EuclideanSpace ℝ ι} (hs : 
     perturbationBump.one_of_mem_closedBall (by rw [mem_closedBall_zero_iff, hr]; exact hs)
   rw [perturbationCutoff, hb, one_smul]
 
+/-- Outside the supports of the family, every combination of the gradients vanishes. -/
+private theorem sum_smul_gradient_eq_zero {x : E} (c : ι → ℝ)
+    (hx : x ∉ ⋃ i, tsupport (h i)) : ∑ i, c i • ∇ (h i) x = 0 :=
+  Finset.sum_eq_zero fun i _ ↦ by
+    rw [gradient_of_notMem_tsupport (f := h i) fun hmem ↦ hx (mem_iUnion.2 ⟨i, hmem⟩), smul_zero]
+
 /-- The part of the augmented field that couples the state to the parameter. -/
 private noncomputable def coupling (h : ι → E → ℝ) (p : E × EuclideanSpace ℝ ι) : E :=
   ∑ i, perturbationCutoff p.2 i • ∇ (h i) p.1
@@ -233,12 +239,10 @@ private theorem hasCompactSupport_coupling (hh : ∀ i, IsAdmissiblePerturbation
     isCompact_iUnion fun i ↦ (hh i).hasCompactSupport
   refine HasCompactSupport.intro (hA.prod perturbationBump.hasCompactSupport) fun p hp ↦ ?_
   rw [mem_prod, not_and_or] at hp
-  refine Finset.sum_eq_zero fun i _ ↦ ?_
   rcases hp with hp | hp
-  · rw [gradient_of_notMem_tsupport (f := h i) fun hx ↦ hp (mem_iUnion.2 ⟨i, hx⟩),
-      smul_zero]
+  · exact sum_smul_gradient_eq_zero _ hp
   · have : perturbationBump.toFun p.2 = 0 := image_eq_zero_of_notMem_tsupport hp
-    simp [perturbationCutoff, this]
+    simp [coupling, perturbationCutoff, this]
 
 /-- **The augmented field.** The vector field on `E × EuclideanSpace ℝ ι` whose first component
 is `-∇ f x - ∑ᵢ a(s)ᵢ ∇ hᵢ x`, with `a` the cutoff of the parameter, and whose second component is
@@ -267,8 +271,7 @@ theorem exists_lipschitzWith_gradient_perturb (hfs : ContDiff ℝ 2 f) (hf : Lip
   have hA : IsCompact (⋃ i, tsupport (h i)) :=
     isCompact_iUnion fun i ↦ (hh i).hasCompactSupport
   have hcs : HasCompactSupport fun x ↦ ∑ i, s i • ∇ (h i) x := by
-    refine HasCompactSupport.intro hA fun x hx ↦ Finset.sum_eq_zero fun i _ ↦ ?_
-    rw [gradient_of_notMem_tsupport (f := h i) fun hmem ↦ hx (mem_iUnion.2 ⟨i, hmem⟩), smul_zero]
+    exact HasCompactSupport.intro hA fun x hx ↦ sum_smul_gradient_eq_zero _ hx
   have hc : ContDiff ℝ 1 fun x ↦ ∑ i, s i • ∇ (h i) x :=
     ContDiff.sum fun i _ ↦
       contDiff_const.smul ((hh i).contDiff.gradient_right (m := 1) (by norm_num))
@@ -278,16 +281,24 @@ theorem exists_lipschitzWith_gradient_perturb (hfs : ContDiff ℝ 2 f) (hf : Lip
       (fun i ↦ (hh i).contDiff.differentiable (by norm_num)) s)
   exact ⟨_, e ▸ hf.add hC⟩
 
+/-- The augmented field is the negative gradient minus the coupling term, with zero parameter
+component; this is the definition of `perturbedField`, unfolded. -/
+private theorem perturbedField_eq (f : E → ℝ) (h : ι → E → ℝ) :
+    perturbedField f h = fun p ↦ (-∇ f p.1 - coupling h p, 0) :=
+  (rfl)
+
 theorem exists_lipschitzWith_perturbedField (hf : LipschitzWith K (∇ f))
     (hh : ∀ i, IsAdmissiblePerturbation f (h i)) :
     ∃ K' : ℝ≥0, LipschitzWith K' (perturbedField f h) := by
   obtain ⟨C, hC⟩ := (contDiff_coupling hh).lipschitzWith_of_hasCompactSupport
     (hasCompactSupport_coupling hh) one_ne_zero
+  rw [perturbedField_eq]
   exact ⟨_, ((hf.comp LipschitzWith.prod_fst).neg.sub hC).prodMk (LipschitzWith.const 0)⟩
 
 theorem contDiff_perturbedField (hfs : ContDiff ℝ 2 f)
-    (hh : ∀ i, IsAdmissiblePerturbation f (h i)) : ContDiff ℝ 1 (perturbedField f h) :=
-  (((hfs.gradient_right (m := 1) (by norm_num)).comp contDiff_fst).neg.sub
+    (hh : ∀ i, IsAdmissiblePerturbation f (h i)) : ContDiff ℝ 1 (perturbedField f h) := by
+  rw [perturbedField_eq]
+  exact (((hfs.gradient_right (m := 1) (by norm_num)).comp contDiff_fst).neg.sub
     (contDiff_coupling hh)).prodMk contDiff_const
 
 /-- **The flow of the augmented field**: the negative-gradient flow of the perturbation
