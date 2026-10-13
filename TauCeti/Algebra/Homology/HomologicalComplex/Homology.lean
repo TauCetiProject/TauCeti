@@ -25,7 +25,7 @@ public section
 
 open CategoryTheory Limits
 
-namespace HomologicalComplex
+namespace TauCeti.HomologicalComplex
 
 variable {C ι : Type*} [Category* C] [HasZeroMorphisms C]
   [HasFiniteLimits C] [HasFiniteColimits C] [CategoryWithHomology C] (c : ComplexShape ι)
@@ -40,7 +40,7 @@ instance (priority := 100) categoryWithHomology :
   let h₂ := S.rightHomologyData
   let f := ShortComplex.leftRightHomologyComparison' h₁ h₂
   have hf (i : ι) : IsIso (f.f i) := by
-    let F := eval C c i
+    let F := HomologicalComplex.eval C c i
     have hmap : F.map f = ShortComplex.leftRightHomologyComparison' (h₁.map F) (h₂.map F) :=
       ShortComplex.map_leftRightHomologyComparison' F h₁ h₂
     -- Evaluation of a complex morphism is its component by definition.
@@ -49,4 +49,4 @@ instance (priority := 100) categoryWithHomology :
   have : IsIso f := HomologicalComplex.Hom.isIso_of_components f
   exact ShortComplex.HasHomology.mk' (.ofIsIsoLeftRightHomologyComparison' h₁ h₂)
 
-end HomologicalComplex
+end TauCeti.HomologicalComplex
