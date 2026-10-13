@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Contour.Winding.Number.Basic
 public import TauCeti.Analysis.Contour.PiecewiseC1On
 public import Mathlib.Analysis.Convex.Segment
+import TauCeti.Analysis.Complex.Proximity
 import TauCeti.Analysis.Contour.Winding.UnboundedComponent
 import Mathlib.Analysis.Calculus.Deriv.Add
 import Mathlib.Analysis.Calculus.Deriv.Inv
@@ -27,12 +28,12 @@ winding number about `0` therefore vanishes, because the closed left half-plane 
 connected subset of the complement of its image. Since the index integrands satisfy
 `σ' / σ = γ₁' / (γ₁ - w) - γ₀' / (γ₀ - w)` pointwise, that vanishing is the asserted equality.
 
-The application is homotopy invariance of the winding number off the curve.
-`Contour.IsPiecewiseC1On.windingNumber_eq_of_notMem_segment` deduces invariance along the
-straight-line homotopy `s ↦ (1 - s) • γ₀ + s • γ₁` from the purely geometric hypothesis that the
-segment `[γ₀ t, γ₁ t]` misses `w` for every parameter `t`: the intermediate curves are piecewise
-`C¹` because that predicate is stable under affine combinations, and a compactness estimate lets
-finitely many of them be chained together by the leash lemma.
+The Layer 0 item this serves is homotopy invariance of the winding number off the curve.
+`Contour.IsPiecewiseC1On.windingNumber_eq_of_notMem_segment` deduces invariance
+along the straight-line homotopy `s ↦ (1 - s) • γ₀ + s • γ₁` from the purely geometric hypothesis
+that the segment `[γ₀ t, γ₁ t]` misses `w` for every parameter `t`: the intermediate curves are
+piecewise `C¹` because that predicate is stable under affine combinations, and a compactness
+estimate lets finitely many of them be chained together by the leash lemma.
 
 ## Main results
 
@@ -49,8 +50,8 @@ finitely many of them be chained together by the leash lemma.
 ## Provenance
 
 The comparison-quotient argument is the standard proof of the "dog on a leash" lemma (equivalently,
-the homotopy form of Rouché's theorem); see, e.g., L. Ahlfors, *Complex Analysis*, Ch. 4. No formal
-source is vendored.
+the homotopy form of Rouché's theorem); see the references in the Contour Integration roadmap,
+e.g. L. Ahlfors, *Complex Analysis*, Ch. 4. No formal source is vendored.
 -/
 
 public section
@@ -68,36 +69,20 @@ The whole proximity argument is the observation that the leash hypothesis confin
 the disc of radius `1` about `1`. -/
 private def compRatio (γ₀ γ₁ : ℝ → ℂ) (w : ℂ) : ℝ → ℂ := fun t => (γ₁ t - w) / (γ₀ t - w)
 
+/-- The comparison quotient evaluated at a parameter. -/
 private theorem compRatio_apply (γ₀ γ₁ : ℝ → ℂ) (w : ℂ) (t : ℝ) :
-    compRatio γ₀ γ₁ w t = (γ₁ t - w) / (γ₀ t - w) := rfl
+    compRatio γ₀ γ₁ w t = (γ₁ t - w) / (γ₀ t - w) := (rfl)
 
 /-- Under the leash hypothesis at `t`, the base curve misses `w` there. -/
 private theorem ne_of_dist_lt_dist {t : ℝ} (h : dist (γ₁ t) (γ₀ t) < dist (γ₀ t) w) :
     γ₀ t ≠ w := fun heq => absurd ((dist_eq_zero.mpr heq) ▸ h) (by simp [dist_nonneg])
 
-/-- The leash hypothesis says exactly that the comparison quotient stays within distance `1`
-of `1`. -/
-private theorem dist_compRatio_one {t : ℝ} (h : dist (γ₁ t) (γ₀ t) < dist (γ₀ t) w) :
-    dist (compRatio γ₀ γ₁ w t) 1 < 1 := by
-  have hne : γ₀ t - w ≠ 0 := sub_ne_zero.mpr (ne_of_dist_lt_dist h)
-  have hsub : compRatio γ₀ γ₁ w t - 1 = (γ₁ t - γ₀ t) / (γ₀ t - w) := by
-    rw [compRatio_apply]
-    field_simp
-    ring
-  rw [dist_eq_norm, hsub, norm_div, div_lt_one (by positivity)]
-  simpa [dist_eq_norm] using h
-
 /-- The comparison quotient has positive real part: it lies in the disc of radius `1` about `1`,
 which is contained in the open right half-plane. -/
 private theorem re_compRatio_pos {t : ℝ} (h : dist (γ₁ t) (γ₀ t) < dist (γ₀ t) w) :
     0 < (compRatio γ₀ γ₁ w t).re := by
-  have hd := dist_compRatio_one h
-  rw [dist_eq_norm] at hd
-  have hre : (1 - compRatio γ₀ γ₁ w t).re ≤ ‖1 - compRatio γ₀ γ₁ w t‖ :=
-    Complex.re_le_norm _
-  rw [norm_sub_rev] at hre
-  simp only [Complex.sub_re, Complex.one_re] at hre
-  linarith
+  rw [compRatio_apply]
+  exact TauCeti.re_div_sub_pos_of_dist_lt_dist h
 
 /-- Under the leash hypothesis at `t`, the comparison curve also misses `w` there: otherwise the
 quotient would be `0`, contradicting the positivity of its real part. -/

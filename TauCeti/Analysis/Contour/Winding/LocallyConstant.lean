@@ -19,10 +19,10 @@ For a closed curve `γ` (so `γ a = γ b`) that is continuous on `Set.uIcc a b`,
 countable set, with interval-integrable derivative, the generalized winding number
 `fun w ↦ windingNumber γ a b w`, viewed as a function on the points off the curve, is locally
 constant (`isLocallyConstant_windingNumber_of_closed`). It is the ingredient Dixon's argument uses
-for the homology form of Cauchy's theorem. As a corollary, the winding number is constant on every
-connected component of the curve complement. Also, `exists_ball_windingNumber_zero` packages the
-local matching data Dixon needs: around an off-curve point where the winding number vanishes, it
-vanishes on a whole ball that stays off the curve.
+for the homology form of Cauchy's theorem (roadmap `homologyCauchyTheorem`). As a corollary,
+the winding number is constant on every connected component of the curve complement. Also,
+`exists_ball_windingNumber_zero` packages the local matching data Dixon needs: around an off-curve
+point where the winding number vanishes, it vanishes on a whole ball that stays off the curve.
 
 ## Main results
 
@@ -57,26 +57,26 @@ theorem eq_of_dist_intCast_lt_one {m n : ℤ} (h : dist (m : ℂ) (n : ℂ) < 1)
     rw [Complex.isometry_intCast.dist_eq]; exact Int.pairwise_one_le_dist hne
   linarith
 
-/-- **Near a point off a closed curve the winding number is an integer.** If `ρ` bounds the
-distance from `w₀` to the curve below, then every `w` within `ρ / 2` of `w₀` is itself off the
-curve, so the winding number of the closed curve about it is an integer. -/
-private theorem exists_int_windingNumber_of_closed_of_dist_lt {γ : ℝ → ℂ} {a b : ℝ} {P : Set ℝ}
-    {w₀ w : ℂ} {ρ : ℝ} (hclosed : γ a = γ b) (hP : P.Countable)
+/-- A continuous curve with interval-integrable derivative and integer winding numbers off its
+trace has locally constant winding number on the trace complement. -/
+theorem _root_.ContinuousOn.isLocallyConstant_windingNumber_of_integer {γ : ℝ → ℂ} {a b : ℝ}
     (hγ_cont : ContinuousOn γ (uIcc a b))
-    (hγ_diff : ∀ t ∈ Ioo (min a b) (max a b) \ P, DifferentiableAt ℝ γ t)
-    (hderiv_int : IntervalIntegrable (fun t ↦ deriv γ t) volume a b)
-    (h_dist : ∀ t ∈ uIcc a b, ρ ≤ ‖γ t - w₀‖) (hw : dist w w₀ < ρ / 2) :
-    ∃ n : ℤ, windingNumber γ a b w = n := by
-  rw [Complex.dist_eq] at hw
-  have h_avoid : ∀ t ∈ uIcc a b, γ t ≠ w := by
-    intro t ht heq
-    have hle := h_dist t ht
-    rw [heq] at hle
-    -- `‖w - w₀‖ = dist w w₀ ≥ 0`, which is what rules out a negative `ρ`.
-    have := norm_nonneg (w - w₀)
-    linarith
-  exact exists_int_windingNumber_of_closed hclosed hP hγ_cont hγ_diff h_avoid
-    (intervalIntegrable_inv_sub_mul_deriv hγ_cont h_avoid hderiv_int)
+    (hderiv_int : IntervalIntegrable (deriv γ) volume a b)
+    (hint : ∀ z, (∀ t ∈ uIcc a b, γ t ≠ z) → ∃ n : ℤ, windingNumber γ a b z = n) :
+    IsLocallyConstant
+      (fun z : {z : ℂ // ∀ t ∈ uIcc a b, γ t ≠ z} ↦ windingNumber γ a b z.1) := by
+  classical
+  choose n hn using fun z : {z : ℂ // ∀ t ∈ uIcc a b, γ t ≠ z} ↦ hint z.1 z.2
+  have hc : Continuous
+      (fun z : {z : ℂ // ∀ t ∈ uIcc a b, γ t ≠ z} ↦ windingNumber γ a b z.1) := by
+    refine continuous_iff_continuousAt.mpr fun z ↦ ?_
+    exact (continuousAt_windingNumber_of_avoidance hγ_cont z.2
+      (intervalIntegrable_inv_sub_mul_deriv hγ_cont z.2 hderiv_int)).comp
+        continuous_subtype_val.continuousAt
+  have hncont : Continuous n := Complex.isClosedEmbedding_intCast.isEmbedding.continuous_iff.mpr
+    (by simpa only [Function.comp_def, ← hn] using hc)
+  simpa only [Function.comp_def, ← hn] using
+    ((IsLocallyConstant.iff_continuous n).mpr hncont).comp (fun k : ℤ ↦ (k : ℂ))
 
 /-- **The winding number is locally constant off a closed curve.** Let `γ` be a closed curve
 (`γ a = γ b`), differentiable off a countable set `P`, continuous on `Set.uIcc a b`, with
@@ -87,32 +87,10 @@ theorem isLocallyConstant_windingNumber_of_closed {γ : ℝ → ℂ} {a b : ℝ}
     (hγ_diff : ∀ t ∈ Ioo (min a b) (max a b) \ P, DifferentiableAt ℝ γ t)
     (hderiv_int : IntervalIntegrable (fun t ↦ deriv γ t) volume a b) :
     IsLocallyConstant
-      (fun w : {w : ℂ // ∀ t ∈ uIcc a b, γ t ≠ w} ↦ windingNumber γ a b w.1) := by
-  rw [IsLocallyConstant.iff_eventually_eq]
-  rintro ⟨w₀, hw₀⟩
-  -- A uniform lower bound `ρ ≤ ‖γ t - w₀‖`, so the winding number is an integer on `ball w₀ (ρ/2)`.
-  obtain ⟨ρ, hρ_pos, h_dist⟩ := exists_curve_dist_lower_bound hγ_cont hw₀
-  have key : ∀ w'' : ℂ, dist w'' w₀ < ρ / 2 → ∃ n : ℤ, windingNumber γ a b w'' = n :=
-    fun _ hw'' ↦ exists_int_windingNumber_of_closed_of_dist_lt hclosed hP hγ_cont hγ_diff
-      hderiv_int h_dist hw''
-  obtain ⟨n₀, hn₀⟩ := key w₀ (by rw [dist_self]; exact half_pos hρ_pos)
-  -- Continuity of the winding number at `w₀` gives a tolerance-`1 / 2` ball.
-  have h_cont := continuousAt_windingNumber_of_avoidance hγ_cont hw₀
-    (intervalIntegrable_inv_sub_mul_deriv hγ_cont hw₀ hderiv_int)
-  rw [Metric.continuousAt_iff] at h_cont
-  obtain ⟨ε, hε_pos, h_close⟩ := h_cont (1 / 2) (by norm_num)
-  -- On the smaller ball both winding numbers are integers within `1 / 2`, hence equal.
-  have hball : ∀ᶠ w in 𝓝 w₀, windingNumber γ a b w = windingNumber γ a b w₀ := by
-    filter_upwards [Metric.ball_mem_nhds w₀ (lt_min hε_pos (half_pos hρ_pos))] with w' hw'
-    rw [Metric.mem_ball] at hw'
-    obtain ⟨n', hn'⟩ := key w' (hw'.trans_le (min_le_right _ _))
-    have h_dist_int : dist (n' : ℂ) (n₀ : ℂ) < 1 / 2 := by
-      rw [← hn', ← hn₀]; exact h_close (hw'.trans_le (min_le_left _ _))
-    rw [hn', hn₀, eq_of_dist_intCast_lt_one (h_dist_int.trans (by norm_num))]
-  -- Transport the neighbourhood statement to the subtype of off-curve points.
-  have hval : Filter.Tendsto (Subtype.val : {w : ℂ // ∀ t ∈ uIcc a b, γ t ≠ w} → ℂ)
-      (𝓝 ⟨w₀, hw₀⟩) (𝓝 w₀) := continuous_subtype_val.continuousAt
-  exact hval.eventually hball
+      (fun w : {w : ℂ // ∀ t ∈ uIcc a b, γ t ≠ w} ↦ windingNumber γ a b w.1) :=
+  ContinuousOn.isLocallyConstant_windingNumber_of_integer hγ_cont hderiv_int fun _ hz ↦
+    exists_int_windingNumber_of_closed hclosed hP hγ_cont hγ_diff hz
+      (intervalIntegrable_inv_sub_mul_deriv hγ_cont hz hderiv_int)
 
 /-- The points avoided by `γ` on `[[a, b]]` are exactly the complement of its image there. -/
 private theorem setOf_forall_ne_eq_compl_image {γ : ℝ → ℂ} {a b : ℝ} :
