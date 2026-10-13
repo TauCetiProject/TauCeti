@@ -41,10 +41,10 @@ theorem _root_.BoxIntegral.Box.distortion_of_unique {ι : Type*} [Fintype ι] [U
   simp only [nndist_pi_def, Finset.univ_unique, Finset.sup_singleton]
   exact div_self hx
 
-/-- In dimension one the distortion restriction in the `GP` integral imposes no extra condition. -/
-theorem hasIntegral_GP_iff_Henstock_fin_one {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-    [NormedAddCommGroup F] [NormedSpace ℝ F] {I : Box (Fin 1)} {f : (Fin 1 → ℝ) → E}
-    {vol : Fin 1 →ᵇᵃ E →L[ℝ] F} {y : F} :
+/-- On a finite unique-coordinate box the `GP` distortion restriction imposes no extra condition. -/
+theorem hasIntegral_GP_iff_Henstock_of_unique {ι E F : Type*} [Fintype ι] [Unique ι]
+    [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedAddCommGroup F] [NormedSpace ℝ F]
+    {I : Box ι} {f : (ι → ℝ) → E} {vol : ι →ᵇᵃ E →L[ℝ] F} {y : F} :
     HasIntegral I IntegrationParams.GP f vol y ↔
       HasIntegral I IntegrationParams.Henstock f vol y := by
   refine ⟨fun h ↦ ?_, fun h ↦ h.mono IntegrationParams.gp_le⟩
@@ -62,6 +62,14 @@ theorem hasIntegral_GP_iff_Henstock_fin_one {E F : Type*} [NormedAddCommGroup E]
     · rw [(TaggedPrepartition.isPartition_iff_iUnion_eq π).mp hπp]
       simp
     · simp
+
+/-- In dimension one the `GP` and Henstock integrals coincide. This is the interval-coordinate
+specialization used by the Henstock FTC. -/
+theorem hasIntegral_GP_iff_Henstock_fin_one {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    [NormedAddCommGroup F] [NormedSpace ℝ F] {I : Box (Fin 1)} {f : (Fin 1 → ℝ) → E}
+    {vol : Fin 1 →ᵇᵃ E →L[ℝ] F} {y : F} :
+    HasIntegral I IntegrationParams.GP f vol y ↔
+      HasIntegral I IntegrationParams.Henstock f vol y := hasIntegral_GP_iff_Henstock_of_unique
 
 /-- Henstock–Kurzweil FTC for continuous Banach-valued primitives, with a countable exceptional
 set. There is no integrability or boundedness requirement on the derivative; its values on the
