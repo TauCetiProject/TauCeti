@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.Valuation.Discrete.IsDiscreteValuationRing
 public import Mathlib.RingTheory.Valuation.ValuativeRel.Basic
+public import TauCeti.RingTheory.Valuation.ValuationRing
 
 /-!
 # The valuation of a discrete valuation ring on its own elements
@@ -93,28 +94,10 @@ theorem isEquiv_comap_valuation_maximalIdeal_of_isLocalHom
         w (algebraMap S M (algebraMap (ValuativeRel.valuation K).integer S ⟨y, hy⟩)) := by
     rw [← RingHom.comp_apply, h, RingHom.comp_apply, Algebra.algebraMap_ofSubsemiring_apply]
   refine Valuation.isEquiv_iff_val_le_one.2 fun {x} ↦ ⟨fun hx ↦ ?_, fun hx ↦ ?_⟩
-  · -- If `x` is not integral, then `x⁻¹` lies in the maximal ideal of the valuation ring of `K`,
-    -- hence of `S`.
-    by_contra hx'
-    have hx0 : x ≠ 0 := by
-      rintro rfl
-      simp at hx'
-    have hinv : ValuativeRel.valuation K x⁻¹ < 1 := by
-      rw [map_inv₀]
-      exact inv_lt_one_of_one_lt₀ (not_le.1 hx')
-    have hr : ¬IsUnit (⟨x⁻¹, hinv.le⟩ : (ValuativeRel.valuation K).integer) :=
-      (Valuation.Integer.not_isUnit_iff_valuation_lt_one).2 hinv
-    have hrS : ¬IsUnit (algebraMap (ValuativeRel.valuation K).integer S ⟨x⁻¹, hinv.le⟩) :=
-      fun hu ↦ hr (isUnit_of_map_unit _ _ hu)
-    have hlt : w (algebraMap K M x⁻¹) < 1 := by
-      rw [hw hinv.le, IsDiscreteValuationRing.valuation_algebraMap_lt_one_iff_mem]
-      exact (IsLocalRing.mem_maximalIdeal _).2 hrS
-    rw [map_inv₀, map_inv₀] at hlt
-    have hpos : 0 < w (algebraMap K M x) := by
-      rw [zero_lt_iff, Valuation.ne_zero_iff, map_ne_zero_iff _ (algebraMap K M).injective]
-      exact hx0
-    rw [Valuation.comap_apply] at hx
-    exact ((one_le_inv₀ hpos).2 hx).not_gt hlt
+  · -- The valuation ring of `K` is integrally closed against `S`, which dominates it.
+    obtain ⟨⟨y, hy⟩, rfl⟩ := ValuationRing.isInteger_of_isInteger_algebraMap
+      (IsFractionRing.injective S M) h (IsDiscreteValuationRing.exists_lift_of_le_one hx)
+    exact hy
   · rw [Valuation.comap_apply, hw hx]
     exact valuation_le_one _ _
 
