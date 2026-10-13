@@ -168,7 +168,7 @@ theorem idealClass_surjective (𝔪 : Modulus K) : Function.Surjective (idealCla
   -- The fractional ideals prime to `𝔪` whose ray class lies in `G`, viewed in the ambient group.
   let T : Subgroup (FractionalIdeal (𝓞 K)⁰ K)ˣ :=
     (G.comap (rayClassMk 𝔪)).map (idealsPrimeTo 𝔪).subtype
-  have hT : NumberFieldArithmetic.idealsAway (K := K) 𝔪.support ≤ T := by
+  have hT : NumberFieldArithmetic.idealsAway K 𝔪.support ≤ T := by
     rw [NumberFieldArithmetic.idealsAway_eq_closure_primes 𝔪.support]
     refine (Subgroup.closure_le _).mpr ?_
     rintro P ⟨v, hv, hPv⟩
@@ -177,7 +177,7 @@ theorem idealClass_surjective (𝔪 : Modulus K) : Function.Surjective (idealCla
       -- A prime dividing `v` equals `v`, by maximality; so it cannot lie in the support.
       exact hv (HeightOneSpectrum.ext
         (v.isMaximal.eq_of_le w.isPrime.ne_top (Ideal.le_of_dvd hdvd)) ▸ hw)
-    refine ⟨NumberFieldArithmetic.integralIdealsAwayHom 𝔪.support ⟨v.asIdeal, hvmem⟩,
+    refine ⟨NumberFieldArithmetic.integralIdealsAwayHom K 𝔪.support ⟨v.asIdeal, hvmem⟩,
       ⟨⟨v.asIdeal, hvmem⟩, idealClass_apply 𝔪 ⟨v.asIdeal, hvmem⟩⟩, Units.ext ?_⟩
     rw [Subgroup.coe_subtype, NumberFieldArithmetic.coe_integralIdealsAwayHom, hPv]
   intro c

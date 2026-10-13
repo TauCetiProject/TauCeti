@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Polydisc.ClassicalPoint
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Polydisc.DiscPoint
 
+import TauCeti.Algebra.Polynomial.Splits
 import TauCeti.Analysis.Normed.Field.Basic
 import TauCeti.RingTheory.Huber.Restricted.OneVariable
 
@@ -157,22 +158,13 @@ private theorem exists_valuation_eval₂RingHom_eq [IsAlgClosed K] {x y : closed
         · simp only [hb, ↓reduceIte, map_mul]
           ac_rfl
   obtain ⟨c, m, h₁, h₂⟩ := key p.roots
-  have hp := Polynomial.C_leadingCoeff_mul_prod_multiset_X_sub_C
-    (IsAlgClosed.card_roots_eq_natDegree (p := p))
   have hP : Polynomial.eval₂RingHom C T p =
-      C p.leadingCoeff * (p.roots.map fun b ↦ T - C b).prod := by
-    conv_lhs => rw [← hp]
-    rw [map_mul, map_multiset_prod, Multiset.map_map]
-    simp [Function.comp_def]
+      C p.leadingCoeff * (p.roots.map fun b ↦ T - C b).prod :=
+    (IsAlgClosed.splits p).eval₂_eq_prod_roots C T
   exact ⟨p.leadingCoeff * c, m, by rw [hP, map_mul, h₁, map_mul, map_mul, mul_assoc],
     by rw [hP, map_mul, h₂, map_mul, map_mul, mul_assoc]⟩
 
 variable [IsUltrametricDist K]
-
-/-- A point of the closed unit disc compares constants by their norms. -/
-private theorem valuation_weightedC_le_iff (x : closedPolydisc 1 K) (c d : K) :
-    x.1.valuation (C c) ≤ x.1.valuation (C d) ↔ ‖c‖ ≤ ‖d‖ := by
-  rw [valuation_le_iff, closedPolydisc_vle_weightedC_iff]
 
 /-- If two points compare `T - a` with every constant in the same way, they compare its powers
 `(T - a)^k` with every constant in the same way: take a `k`-th root of the constant in `K`. -/
@@ -187,8 +179,10 @@ private theorem pow_le_valuation_weightedC_iff_and_valuation_weightedC_le_pow_if
       (x.1.valuation (C e) ≤ x.1.valuation (T - C a) ^ k ↔
         y.1.valuation (C e) ≤ y.1.valuation (T - C a) ^ k) := by
   rcases Nat.eq_zero_or_pos k with rfl | hk
-  · have h₁ := (valuation_weightedC_le_iff x 1 e).trans (valuation_weightedC_le_iff y 1 e).symm
-    have h₂ := (valuation_weightedC_le_iff x e 1).trans (valuation_weightedC_le_iff y e 1).symm
+  · have h₁ := (closedPolydisc_valuation_weightedC_le_iff x 1 e).trans
+      (closedPolydisc_valuation_weightedC_le_iff y 1 e).symm
+    have h₂ := (closedPolydisc_valuation_weightedC_le_iff x e 1).trans
+      (closedPolydisc_valuation_weightedC_le_iff y e 1).symm
     simp only [map_one, pow_zero] at h₁ h₂ ⊢
     exact ⟨h₁, h₂⟩
   obtain ⟨e, rfl⟩ := IsAlgClosed.exists_pow_nat_eq e hk
@@ -224,7 +218,7 @@ private theorem valuation_mul_pow_le_iff_of_le [IsAlgClosed K] {x y : closedPoly
         z.1.valuation (C c) * z.1.valuation (T - C a) ^ n * z.1.valuation (C e) := by
     refine ⟨zero_lt_iff.mpr (mul_ne_zero (fun h0 ↦ hc ?_) (pow_ne_zero n hz₀)),
       by rw [pow_add, mul_assoc], by rw [map_mul, map_mul]; ac_rfl⟩
-    simpa [h0] using valuation_weightedC_le_iff z c 0
+    simpa [h0] using closedPolydisc_valuation_weightedC_le_iff z c 0
   obtain ⟨hx, hx₁, hx₂⟩ := key x hx₀
   obtain ⟨hy, hy₁, hy₂⟩ := key y hy₀
   simp only [hx₁, hx₂, hy₁, hy₂, mul_le_mul_iff_of_pos_left hx, mul_le_mul_iff_of_pos_left hy]
@@ -263,7 +257,7 @@ private theorem forall_lt_and_forall_gt_of_vle_weightedC_iff [IsAlgClosed K]
     exact hc.not_gt
   · obtain ⟨c', h₁, h₂⟩ := NormedField.exists_lt_norm_lt_of_isAlgClosed K hr₀.le (not_le.mp hc)
     exact ((valuation_le_iff _ _ _).mpr ((h c').mpr h₁)).trans_lt
-      (lt_of_not_ge fun h' ↦ h₂.not_ge ((valuation_weightedC_le_iff x c c').mp h'))
+      (lt_of_not_ge fun h' ↦ h₂.not_ge ((closedPolydisc_valuation_weightedC_le_iff x c c').mp h'))
 
 /-- If `x(c) ≤ x(T - a)` holds for exactly the constants with `‖c‖ < r`, then `x(T - a)` is
 strictly larger than the values of the constants with `‖c‖ < r` and strictly smaller than the
@@ -275,7 +269,8 @@ private theorem forall_lt_and_forall_gt_of_weightedC_vle_iff [IsAlgClosed K]
       ∀ c : K, ¬ ‖c‖ < r → x.1.valuation (T - C a) < x.1.valuation (C c) := by
   refine ⟨fun c hc ↦ ?_, fun c hc ↦ ?_⟩
   · obtain ⟨c', h₁, h₂⟩ := NormedField.exists_lt_norm_lt_of_isAlgClosed K (norm_nonneg c) hc
-    exact (lt_of_not_ge fun h' ↦ h₁.not_ge ((valuation_weightedC_le_iff x c' c).mp h')).trans_le
+    exact (lt_of_not_ge fun h' ↦
+      h₁.not_ge ((closedPolydisc_valuation_weightedC_le_iff x c' c).mp h')).trans_le
       ((valuation_le_iff _ _ _).mpr ((h c').mpr h₂))
   · rw [← not_le, valuation_le_iff, h]
     exact hc
@@ -300,7 +295,7 @@ private theorem valuation_eq_zero_iff_of_eq_ite [IsAlgClosed K] {x : closedPolyd
   rw [hb] at hb'
   split_ifs at hb' with hP
   · exact hx₀ hb'.symm
-  · have h0 := valuation_weightedC_le_iff x (b - a) 0
+  · have h0 := closedPolydisc_valuation_weightedC_le_iff x (b - a) 0
     rw [map_zero, map_zero, ← hb', norm_zero] at h0
     obtain rfl : b = a := sub_eq_zero.mp (norm_le_zero_iff.mp (h0.mp le_rfl))
     exact hx₀ hb
