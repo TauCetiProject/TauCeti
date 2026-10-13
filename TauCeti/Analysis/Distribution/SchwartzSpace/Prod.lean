@@ -113,15 +113,30 @@ theorem prodSMul_zero (ψ : 𝓢(D, ℝ)) : prodSMul ψ (0 : 𝓢(E, F)) = 0 := 
   ext z
   simp
 
+@[simp]
 theorem add_prodSMul (ψ φ : 𝓢(D, ℝ)) (u : 𝓢(E, F)) :
     prodSMul (ψ + φ) u = prodSMul ψ u + prodSMul φ u := by
   ext z
   simp [add_smul]
 
+@[simp]
 theorem prodSMul_add (ψ : 𝓢(D, ℝ)) (u v : 𝓢(E, F)) :
     prodSMul ψ (u + v) = prodSMul ψ u + prodSMul ψ v := by
   ext z
   simp [smul_add]
+
+@[simp]
+theorem smul_prodSMul (c : ℝ) (ψ : 𝓢(D, ℝ)) (u : 𝓢(E, F)) :
+    prodSMul (c • ψ) u = c • prodSMul ψ u := by
+  ext z
+  simp [mul_smul]
+
+@[simp]
+theorem prodSMul_smul {𝕜 : Type*} [NormedField 𝕜] [NormedSpace 𝕜 F] [SMulCommClass ℝ 𝕜 F]
+    (ψ : 𝓢(D, ℝ)) (c : 𝕜) (u : 𝓢(E, F)) :
+    prodSMul ψ (c • u) = c • prodSMul ψ u := by
+  ext z
+  simp [smul_comm (ψ z.1) c]
 
 /-- **Derivatives of a tensor product.** The directional derivative of `ψ ⊗ u` in the direction
 `(s, a)` is `(∂_s ψ) ⊗ u + ψ ⊗ ∂_a u`. -/

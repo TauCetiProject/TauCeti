@@ -269,9 +269,15 @@ private theorem eLpNorm_lineDerivOp_lineDerivOp_le_of_succ (v w : EuclideanSpace
       have h : δ 1 = R⁻¹ • (1 : ℝ) := by simp [δ]
       rw [lineDerivOp_compCLMOfContinuousLinearEquiv, ← map_smul, h,
         LineDeriv.lineDerivOp_left_smul]
-    have h := eLpNorm_mul_eLpNorm_lineDerivOp_lineDerivOp_le v w hp hC (D ψ) u
-    rw [hD_deriv, LineDeriv.lineDerivOp_smul, hD_deriv, smul_smul, FunLike.coe_smul,
-      eLpNorm_const_smul, hD_norm, hD_norm, ← hA, ← hB, ← ha, ← hb, ← hc] at h
+    have hD_deriv2 : ∂_{(1 : ℝ)} (∂_{(1 : ℝ)} (D ψ)) =
+        (R⁻¹ * R⁻¹) • D (∂_{(1 : ℝ)} (∂_{(1 : ℝ)} ψ)) := by
+      rw [hD_deriv, LineDeriv.lineDerivOp_smul, hD_deriv, smul_smul]
+    have hD_norm2 : eLpNorm (⇑(∂_{(1 : ℝ)} (∂_{(1 : ℝ)} (D ψ)) : 𝓢(ℝ, ℝ))) p volume =
+        ‖R⁻¹ * R⁻¹‖ₑ * (S * B) := by
+      rw [hD_deriv2, FunLike.coe_smul, eLpNorm_const_smul, hD_norm]
+    have h : S * A * a ≤ C * (S * A * b + ‖R⁻¹ * R⁻¹‖ₑ * (S * B) * c) := by
+      simpa only [hD_norm, hD_norm2] using
+        eLpNorm_mul_eLpNorm_lineDerivOp_lineDerivOp_le v w hp hC (D ψ) u
     refine (ENNReal.mul_le_mul_iff_right (by positivity : S ≠ 0) ENNReal.ofReal_ne_top).1 ?_
     calc S * (A * a) = S * A * a := by ring
       _ ≤ _ := h

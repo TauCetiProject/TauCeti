@@ -166,8 +166,8 @@ theorem eLpNorm_prod_eq_eLpNorm_eLpNorm [SFinite ν] {f : α × β → ε}
 /-- **The `Lᵖ` seminorm of a tensor product.** The `Lᵖ(μ ⊗ ν)` seminorm of `(x, y) ↦ f x • g y`
 is the product of the `Lᵖ(μ)` seminorm of `f` and the `Lᵖ(ν)` seminorm of `g`, for every
 exponent, including `p = ∞`. -/
-theorem eLpNorm_prod_smul [SFinite ν] {𝕜 E : Type*} [NormedField 𝕜] [NormedAddCommGroup E]
-    [NormedSpace 𝕜 E] {f : α → 𝕜} {g : β → E} (hf : AEStronglyMeasurable f μ)
+theorem eLpNorm_prod_smul [SFinite ν] {𝕜 E : Type*} [NormedDivisionRing 𝕜] [NormedAddCommGroup E]
+    [Module 𝕜 E] [NormSMulClass 𝕜 E] {f : α → 𝕜} {g : β → E} (hf : AEStronglyMeasurable f μ)
     (hg : AEStronglyMeasurable g ν) :
     eLpNorm (fun z : α × β ↦ f z.1 • g z.2) p (μ.prod ν) = eLpNorm f p μ * eLpNorm g p ν := by
   rw [eLpNorm_prod_eq_eLpNorm_eLpNorm (f := fun z : α × β ↦ f z.1 • g z.2)
