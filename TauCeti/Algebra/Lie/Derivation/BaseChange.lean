@@ -51,19 +51,6 @@ Mathlib's Lie theorem applies, and then descended.
   derivation maps one Lie ideal into another exactly when the extended derivation maps the
   extension of the first into the extension of the second.**
 
-## Implementation notes
-
-`LieDerivation.baseChange` and Mathlib's `Lie.Derivation.ofLieDerivation` have the same underlying
-function, recorded as `LieDerivation.coe_ofLieDerivation`; only the ring over which each is
-registered as linear differs.
-
-The containment descent reuses the canonical `Submodule.baseChange_map`,
-`Submodule.baseChange_le_iff` and `Submodule.map_le_iff_le_comap` directly, specialized to the
-submodules underlying the Lie ideals.
-`LinearMap.baseChange_injective` and `LinearMap.isNilpotent_baseChange_iff` in
-`TauCeti/LinearAlgebra/LinearMap/BaseChange.lean` reach a derivation through
-`LieDerivation.baseChange_toLinearMap`.
-
 The core construction, additive compatibility, pure-tensor formula, underlying-map formula,
 and injectivity apply to
 any Lie `L`-module `M`. The comparison with Mathlib's endomorphism extension, the Lie-homomorphism

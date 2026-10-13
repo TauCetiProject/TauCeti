@@ -20,12 +20,9 @@ This comparison allows a scalar-extended Hom representation to act on scalar-ext
 
 When the coefficient algebra is faithfully flat, extension of scalars is injective on linear
 maps (`LinearMap.baseChange_injective`) and reflects nilpotence of endomorphisms
-(`LinearMap.isNilpotent_baseChange_iff`). These statements use
-`Module.FaithfullyFlat.zero_iff_lTensor_zero` and `Module.End.baseChangeHom` from Mathlib.
-
-The equivalence uses Mathlib's `lTensorHomEquivHomLTensor` and
-`LinearMap.liftBaseChangeEquiv`, following the construction of
-`TauCeti.Module.Dual.baseChangeEvaluationEquiv`.
+(`LinearMap.isNilpotent_baseChange_iff`). Faithful flatness permits checking equality of linear
+maps after extension of scalars, and the nilpotence equivalence similarly permits checking
+nilpotence after extension.
 -/
 
 public section
@@ -80,6 +77,8 @@ theorem baseChangeTensorHom_distribBaseChange_symm_tmul
 variable [Module.Finite R M] [Module.Projective R M]
 
 /-- Scalar extension commutes with linear Hom out of a finite projective module. -/
+-- Construct the Hom comparison from Mathlib's `lTensorHomEquivHomLTensor` and
+-- `LinearMap.liftBaseChangeEquiv`, as in `TauCeti.Module.Dual.baseChangeEvaluationEquiv`.
 noncomputable def baseChangeTensorHomEquiv :
     A ⊗[R] (M →ₗ[R] N) ≃ₗ[A] (A ⊗[R] M →ₗ[A] A ⊗[R] N) :=
   LinearEquiv.ofBijective (baseChangeTensorHom R A M N) <| by
