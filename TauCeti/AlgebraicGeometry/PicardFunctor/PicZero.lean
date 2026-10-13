@@ -141,13 +141,15 @@ private lemma relativePicardFiberDegree_mk_eq_fiberDegree {T : (Over S)ᵒᵖ} {
 
 /-- The fibre degree of the class of a line bundle on `X_T` at `ξ : Spec Ω ⟶ T` is the
 Euler-characteristic degree over `Ω` of its pullback to the fibre `Spec Ω ×_S X`. -/
+@[simp]
 lemma relativePicardFiberDegree_mk {T : (Over S)ᵒᵖ} {Ω : Type u} [Field Ω]
     (ξ : Spec (.of Ω) ⟶ T.unop.left) (a : LineBundleClass (pullback T.unop.hom f)) :
     relativePicardFiberDegree f ξ (QuotientGroup.mk a) =
       letI : (pullback (ξ ≫ T.unop.hom) f).Over (Spec (.of Ω)) := ⟨pullback.fst _ _⟩
       LineBundleClass.eulerDegree Ω (LineBundleClass.pullback
-        (pullback.map (ξ ≫ T.unop.hom) f T.unop.hom f ξ (𝟙 X) (𝟙 S) (by simp) (by simp)) a) :=
-  (rfl)
+        (pullback.map (ξ ≫ T.unop.hom) f T.unop.hom f ξ (𝟙 X) (𝟙 S) (by simp) (by simp)) a) := by
+  rw [relativePicardFiberDegree_mk_eq_fiberDegree, fiberDegree, baseChangeEulerDegree,
+    fiberToBaseChange]
 
 /-- The identity of `Pic(X_T) / Pic(T)` has degree zero on every fibre. -/
 @[simp]
@@ -200,7 +202,7 @@ finite-dimensional, then the class of a line bundle on `X_T` has fibre degree ze
 when its restriction to `X_ξ` lies in `Pic⁰ X_ξ` (`LineBundleClass.picZero`). -/
 lemma relativePicardFiberDegree_mk_eq_zero_iff {T : (Over S)ᵒᵖ} {Ω : Type u} [Field Ω]
     (ξ : Spec (.of Ω) ⟶ T.unop.left) [IsIntegral (pullback (ξ ≫ T.unop.hom) f)]
-    [IsNoetherian (pullback (ξ ≫ T.unop.hom) f)]
+    [IsLocallyNoetherian (pullback (ξ ≫ T.unop.hom) f)]
     [∀ y : CodimensionOnePoint (pullback (ξ ≫ T.unop.hom) f),
       IsDiscreteValuationRing ((pullback (ξ ≫ T.unop.hom) f).presheaf.stalk (y : _))]
     [IsProper (pullback.fst (ξ ≫ T.unop.hom) f)]
@@ -213,13 +215,18 @@ lemma relativePicardFiberDegree_mk_eq_zero_iff {T : (Over S)ᵒᵖ} {Ω : Type u
       letI : (pullback (ξ ≫ T.unop.hom) f).Over (Spec (.of Ω)) := ⟨pullback.fst _ _⟩
       haveI : IsProper (pullback (ξ ≫ T.unop.hom) f ↘ Spec (.of Ω)) :=
         inferInstanceAs (IsProper (pullback.fst (ξ ≫ T.unop.hom) f))
+      -- A proper scheme over a field is quasi-compact, so it is Noetherian.
+      haveI : IsNoetherian (pullback (ξ ≫ T.unop.hom) f) :=
+        { toIsLocallyNoetherian := inferInstance
+          toCompactSpace :=
+            (quasiCompact_iff_compactSpace (pullback (ξ ≫ T.unop.hom) f ↘ Spec (.of Ω))).mp
+              inferInstance }
       haveI : Fact (∀ y : ↥(pullback (ξ ≫ T.unop.hom) f), Order.coheight y ≤ 1) := ⟨hX⟩
       haveI := hH
       Additive.ofMul (LineBundleClass.pullback
         (pullback.map (ξ ≫ T.unop.hom) f T.unop.hom f ξ (𝟙 X) (𝟙 S) (by simp) (by simp)) a) ∈
         LineBundleClass.picZero Ω (pullback (ξ ≫ T.unop.hom) f) := by
-  rw [LineBundleClass.mem_picZero_iff, relativePicardFiberDegree_mk]
-  rfl
+  rw [LineBundleClass.mem_picZero_iff, toMul_ofMul, relativePicardFiberDegree_mk]
 
 /-- **Naturality of the fibre degree.** For a morphism `T' ⟶ T` over `S` and a point
 `ξ' : Spec Ω ⟶ T'`, the fibre degree at `ξ'` of the pullback of a section from `T` to `T'` is
