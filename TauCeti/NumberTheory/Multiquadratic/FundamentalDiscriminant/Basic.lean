@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.NumberTheory.FundamentalDiscriminant
+public import TauCeti.NumberTheory.FundamentalDiscriminant
 public import TauCeti.NumberTheory.Multiquadratic.Prime.Discriminants
 
 /-!
@@ -46,11 +46,6 @@ identifications remain future work.
 
 ## Main results
 
-* `Int.isFundamentalDiscr_one`: `1`, the discriminant of `ℚ`, is a fundamental discriminant.
-* `Int.IsFundamentalDiscr.squarefree_of_emod_four_eq_one`,
-  `Int.IsFundamentalDiscr.squarefree_div_four` and
-  `Int.IsFundamentalDiscr.div_four_emod_four_eq_two_or_three`: accessors for the two branches of
-  Mathlib's `Int.isFundamentalDiscr_iff_squarefree`.
 * `TauCeti.Multiquadratic.IsPrimeDiscriminant.isFundamentalDiscr`: every prime
   discriminant is a fundamental discriminant.
 * `TauCeti.Multiquadratic.isFundamentalDiscr_prod`: a product of distinct prime
@@ -60,35 +55,15 @@ identifications remain future work.
 * `TauCeti.Multiquadratic.isFundamentalDiscr_prod_oddPrimeDiscriminant` and its even-factor
   companion `..._of_isEvenPrimeDiscriminant`: the two shape-specific component theorems that
   `isFundamentalDiscr_prod` assembles.
-* `Int.IsFundamentalDiscr.not_isSquare_rat`: a fundamental
-  discriminant other than `1` is not a rational square, so `ℚ(√D)` is a genuine quadratic field.
+
+The generic `Int.IsFundamentalDiscr` API used here (the base case `Int.isFundamentalDiscr_one`,
+the branch accessors and `Int.IsFundamentalDiscr.not_isSquare_rat`) lives in
+`TauCeti.NumberTheory.FundamentalDiscriminant`.
 -/
 
 public section
 
 namespace TauCeti.Multiquadratic
-
-/-- The discriminant of `ℚ` itself. It is the empty product of prime discriminants, and the
-degenerate case of the `D ≡ 1 (mod 4)` branch of `Int.isFundamentalDiscr_iff_squarefree`. -/
-@[simp] theorem _root_.Int.isFundamentalDiscr_one : Int.IsFundamentalDiscr 1 :=
-  Int.isFundamentalDiscr_iff_squarefree.mpr (Or.inl ⟨by norm_num, squarefree_one⟩)
-
-/-- The first branch accessor: a fundamental discriminant that is `1` modulo `4` is squarefree. -/
-theorem _root_.Int.IsFundamentalDiscr.squarefree_of_emod_four_eq_one {D : ℤ}
-    (hD : Int.IsFundamentalDiscr D) (h : D % 4 = 1) : Squarefree D :=
-  ((Int.isFundamentalDiscr_iff_squarefree.mp hD).resolve_right fun h' => by omega).2
-
-/-- The second branch accessor: for a fundamental discriminant divisible by `4`, the quotient
-`D / 4` is squarefree. -/
-theorem _root_.Int.IsFundamentalDiscr.squarefree_div_four {D : ℤ}
-    (hD : Int.IsFundamentalDiscr D) (h : D % 4 = 0) : Squarefree (D / 4) :=
-  ((Int.isFundamentalDiscr_iff_squarefree.mp hD).resolve_left fun h' => by omega).2.1
-
-/-- The second branch accessor: for a fundamental discriminant divisible by `4`, the quotient
-`D / 4` is `2` or `3` modulo `4`. -/
-theorem _root_.Int.IsFundamentalDiscr.div_four_emod_four_eq_two_or_three {D : ℤ}
-    (hD : Int.IsFundamentalDiscr D) (h : D % 4 = 0) : D / 4 % 4 = 2 ∨ D / 4 % 4 = 3 :=
-  ((Int.isFundamentalDiscr_iff_squarefree.mp hD).resolve_left fun h' => by omega).2.2
 
 /-- Every prime discriminant is a fundamental discriminant: the odd ones are `1` modulo `4` and
 squarefree, the even ones `-4, 8, -8` are `4` times the radicands `-1, 2, -2`. -/
@@ -179,12 +154,15 @@ theorem isFundamentalDiscr_mul_prod_oddPrimeDiscriminant_of_isEvenPrimeDiscrimin
       ⟨(Irreducible.isRelPrime_iff_not_dvd (Prime.irreducible Int.prime_two)).mpr hQ2,
         Prime.squarefree Int.prime_two, hQsf⟩
   rcases he with rfl | rfl | rfl
-  · rw [show (-4 : ℤ) * Q = 4 * -Q by ring]
-    exact Int.isFundamentalDiscr_four_mul.mpr ⟨hQsf.neg, Or.inr (by omega)⟩
-  · rw [show (8 : ℤ) * Q = 4 * (2 * Q) by ring]
-    exact Int.isFundamentalDiscr_four_mul.mpr ⟨hsf2, Or.inl (by omega)⟩
-  · rw [show (-8 : ℤ) * Q = 4 * -(2 * Q) by ring]
-    exact Int.isFundamentalDiscr_four_mul.mpr ⟨hsf2.neg, Or.inl (by omega)⟩
+  · convert (Int.isFundamentalDiscr_four_mul (m := -Q)).mpr
+      ⟨hQsf.neg, Or.inr (by omega)⟩ using 1
+    ring
+  · convert (Int.isFundamentalDiscr_four_mul (m := 2 * Q)).mpr
+      ⟨hsf2, Or.inl (by omega)⟩ using 1
+    ring
+  · convert (Int.isFundamentalDiscr_four_mul (m := -(2 * Q))).mpr
+      ⟨hsf2.neg, Or.inl (by omega)⟩ using 1
+    ring
 
 /-- The shared normalisation step of `isFundamentalDiscr_prod`: over a set `t` of prime
 discriminants, none of them even and with pairwise distinct values, each `D i` is
@@ -256,19 +234,5 @@ theorem isFundamentalDiscr_prod_of_pairwise_isCoprime {D : ι → ℤ}
       simp [Int.isUnit_iff] at h2
 
 end Products
-
-/-- A fundamental discriminant other than `1` is not a rational square. Consequently `ℚ(√D)` is a
-genuine quadratic field: this is what keeps the genus-field constructions non-degenerate. -/
-theorem _root_.Int.IsFundamentalDiscr.not_isSquare_rat {D : ℤ} (hD : Int.IsFundamentalDiscr D)
-    (h1 : D ≠ 1) : ¬ IsSquare ((D : ℤ) : ℚ) := by
-  rcases Int.isFundamentalDiscr_iff_squarefree.mp hD with ⟨-, hsf⟩ | ⟨h0, hmsf, hm4⟩
-  · exact not_isSquare_intCast_of_squarefree_of_ne_one hsf h1
-  · obtain ⟨m, rfl⟩ : (4 : ℤ) ∣ D := Int.dvd_of_emod_eq_zero h0
-    rw [Int.mul_ediv_cancel_left m four_ne_zero] at hmsf hm4
-    have hm1 : m ≠ 1 := by rcases hm4 with h | h <;> omega
-    have hcast : ((4 * m : ℤ) : ℚ) = 4 * ((m : ℤ) : ℚ) := by push_cast; ring
-    rw [hcast]
-    exact fun h => not_isSquare_intCast_of_squarefree_of_ne_one hmsf hm1
-      (by simpa using h.div (⟨2, by norm_num⟩ : IsSquare (4 : ℚ)))
 
 end TauCeti.Multiquadratic
