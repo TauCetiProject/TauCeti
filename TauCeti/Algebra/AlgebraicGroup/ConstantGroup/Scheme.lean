@@ -186,7 +186,8 @@ noncomputable def groupSchemePointMulEquiv (A : Type u) [CommRing A] [Algebra R 
     (CommHopfAlgCat.of R (coordinateRing R G)) A (groupScheme_def R G)
 
 /-- Under `groupSchemePointMulEquiv`, an algebra point is represented by its spectrum map. -/
-@[simp]
+-- Not `@[simp]`: `simp` rewrites with it but then cannot close its own statement, since the two
+-- `eqToHom` endpoints come out in different forms; use it by name.
 theorem groupSchemePointMulEquiv_apply_left (A : Type u) [CommRing A] [Algebra R A]
     (p : WithConv (coordinateRing R G →ₐ[R] A)) :
     (groupSchemePointMulEquiv R G A p).left =

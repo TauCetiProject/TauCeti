@@ -298,53 +298,13 @@ theorem unitsLevelEquiv_mem_normSubgroup_iff (a : Kˣ) :
     exact congrArg Additive.ofMul (Units.ext (by rw [Algebra.coe_normUnits]; exact hy))
 
 variable (K L) in
-/-- The map `Kˣ → A^U / N(A^V)` to the norm quotient of the layer of `L`, written
-multiplicatively. -/
-private def groundNormQuotientHom :
-    Kˣ →* Multiplicative
-      ((NormalLayer.ofOpenNormal (fixingOpenNormalSubgroup K L)).NormQuotient (unitsFormation K)) :=
-  AddMonoidHom.toMultiplicativeRight
-    (((NormalLayer.ofOpenNormal (fixingOpenNormalSubgroup K L)).normQuotientMk
-        (unitsFormation K)).toAddMonoidHom.comp
-      (unitsLevelEquiv (Algebra.ofId K (SeparableClosure K))
-        (fixedField_ground_ofOpenNormal K (fixingOpenNormalSubgroup K L))).toAddMonoidHom)
-
-omit [IsGalois K L] in
-private theorem groundNormQuotientHom_apply (a : Kˣ) :
-    groundNormQuotientHom K L a = Multiplicative.ofAdd
-      ((NormalLayer.ofOpenNormal (fixingOpenNormalSubgroup K L)).normQuotientMk (unitsFormation K)
-        (unitsLevelEquiv (Algebra.ofId K (SeparableClosure K))
-          (fixedField_ground_ofOpenNormal K (fixingOpenNormalSubgroup K L)) (Additive.ofMul a))) :=
-  (rfl)
-
-variable (K L) in
-private theorem ker_groundNormQuotientHom :
-    normGroup K L = (groundNormQuotientHom K L).ker := by
-  ext a
-  rw [MonoidHom.mem_ker, ← unitsLevelEquiv_mem_normSubgroup_iff K L, groundNormQuotientHom_apply,
-    ofAdd_eq_one, NormalLayer.normQuotientMk_apply, Submodule.Quotient.mk_eq_zero]
-
-omit [IsGalois K L] in
-variable (K L) in
-private theorem surjective_groundNormQuotientHom :
-    Function.Surjective (groundNormQuotientHom K L) := fun z => by
-  obtain ⟨x, hx⟩ := Submodule.Quotient.mk_surjective _ z.toAdd
-  obtain ⟨a, rfl⟩ := (unitsLevelEquiv (Algebra.ofId K (SeparableClosure K))
-    (fixedField_ground_ofOpenNormal K (fixingOpenNormalSubgroup K L))).surjective x
-  refine ⟨a.toMul, ?_⟩
-  rw [groundNormQuotientHom_apply, ofMul_toMul, NormalLayer.normQuotientMk_apply, hx, ofAdd_toAdd]
-
-variable (K L) in
 /-- **The norm quotient of the layer of `L` is `Kˣ / N_{L/K}(Lˣ)`**: the identification
 `unitsLevelEquiv` of the ground level of the layer with `Kˣ` descends to the quotients by
 `N_{L/K}(Lˣ)` and by the norm subgroup of the layer (`unitsLevelEquiv_mem_normSubgroup_iff`). -/
 def layerNormQuotientEquiv :
     Additive (Kˣ ⧸ normGroup K L) ≃+
       (NormalLayer.ofOpenNormal (fixingOpenNormalSubgroup K L)).NormQuotient (unitsFormation K) :=
-  MulEquiv.toAdditiveLeft
-    ((QuotientGroup.quotientMulEquivOfEq (ker_groundNormQuotientHom K L)).trans
-      (QuotientGroup.quotientKerEquivOfSurjective (groundNormQuotientHom K L)
-        (surjective_groundNormQuotientHom K L)))
+  NormalLayer.normQuotientEquivOfGroundEquiv _ _ _ (unitsLevelEquiv_mem_normSubgroup_iff K L)
 
 /-- `layerNormQuotientEquiv K L` sends the class of `a ∈ Kˣ` to the class of `a` in the norm
 quotient of the layer. -/
@@ -354,7 +314,7 @@ theorem layerNormQuotientEquiv_mk (a : Kˣ) :
       (NormalLayer.ofOpenNormal (fixingOpenNormalSubgroup K L)).normQuotientMk (unitsFormation K)
         (unitsLevelEquiv (Algebra.ofId K (SeparableClosure K))
           (fixedField_ground_ofOpenNormal K (fixingOpenNormalSubgroup K L)) (Additive.ofMul a)) :=
-  (rfl)
+  NormalLayer.normQuotientEquivOfGroundEquiv_mk _ _ _ _ a
 
 end Norm
 

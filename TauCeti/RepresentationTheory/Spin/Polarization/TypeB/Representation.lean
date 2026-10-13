@@ -192,7 +192,7 @@ section SimpleRoot
 variable {n : ℕ} (b : Module.Basis (Fin (n + 1)) K P.W)
   (z : P.line) (hz : Q (z : V) = 1)
 
-private theorem typeBQuadraticEquiv_typeBSimpleRootGenerator_mul_self
+private theorem typeBQuadraticEquiv_typeBSimpleRootGenerator_sq
     (i : Fin (n + 1)) :
     (P.typeBQuadraticEquiv b z hz (typeBSimpleRootGenerator i) : CliffordAlgebra Q) ^ 2 = 0 := by
   refine Fin.lastCases ?_ (fun j ↦ ?_) i
@@ -202,7 +202,7 @@ private theorem typeBQuadraticEquiv_typeBSimpleRootGenerator_mul_self
     exact P.typeBQuadraticEquiv_typeBDifferenceRootGenerator_mul_self b z hz
       j.castSucc j.succ (ne_of_lt j.castSucc_lt_succ)
 
-private theorem typeBQuadraticEquiv_typeBSimpleNegativeRootGenerator_mul_self
+private theorem typeBQuadraticEquiv_typeBSimpleNegativeRootGenerator_sq
     (i : Fin (n + 1)) :
     (P.typeBQuadraticEquiv b z hz
       (typeBSimpleNegativeRootGenerator i) : CliffordAlgebra Q) ^ 2 = 0 := by
@@ -217,14 +217,14 @@ private theorem typeBQuadraticEquiv_typeBSimpleNegativeRootGenerator_mul_self
 theorem typeBSpinRep_simpleRootGenerator_sq (k : Fin (n + 1) ⊕ Fin (n + 1)) :
     P.typeBSpinRep b z hz
         (_root_.UniversalEnvelopingAlgebra.ι K (typeBSimpleRootGeneratorFamily k)) ^ 2 = 0 := by
-  rw [_root_.UniversalEnvelopingAlgebra.ι_apply, P.typeBSpinRep_ι b z hz, pow_two, ← map_mul]
+  rw [_root_.UniversalEnvelopingAlgebra.ι_apply, P.typeBSpinRep_ι b z hz, ← map_pow]
   cases k with
   | inl i =>
-      rw [typeBSimpleRootGeneratorFamily_inl, ← pow_two,
-        P.typeBQuadraticEquiv_typeBSimpleRootGenerator_mul_self b z hz i, map_zero]
+      rw [typeBSimpleRootGeneratorFamily_inl,
+        P.typeBQuadraticEquiv_typeBSimpleRootGenerator_sq b z hz i, map_zero]
   | inr i =>
-      rw [typeBSimpleRootGeneratorFamily_inr, ← pow_two,
-        P.typeBQuadraticEquiv_typeBSimpleNegativeRootGenerator_mul_self b z hz i, map_zero]
+      rw [typeBSimpleRootGeneratorFamily_inr,
+        P.typeBQuadraticEquiv_typeBSimpleNegativeRootGenerator_sq b z hz i, map_zero]
 
 /-- A nonterminal positive simple-root operator moves the next exterior singleton one coordinate
 to the left. -/

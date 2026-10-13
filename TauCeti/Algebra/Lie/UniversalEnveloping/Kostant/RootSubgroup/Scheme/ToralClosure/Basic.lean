@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Weight.Torus
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.Generated.Basic
-public import TauCeti.AlgebraicGeometry.GroupScheme.ClosedSubgroup
+public import TauCeti.AlgebraicGeometry.GroupScheme.ClosedSubgroup.Basic
 import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.Internal
 
 /-!
@@ -124,7 +124,7 @@ theorem kostantToralDefiningIdeal_comapOfSurjective_le_of_comp_eq
     (ToralClosure.Internal.kostantToralGeneratorMap e h ρ M hM b wt id hnil) φ hφ
     (fun j => match j with | .inl i => .inl (s i) | .inr _ => .inr ())
     (fun j => match j with | .inl _ => 𝟙 _ | .inr _ => t) ?_ ?_
-  · rintro (i | u)
+  · rintro (i | _)
     · exact fun _ _ hxy => hxy
     · exact ht
   · rintro (i | u)

@@ -34,6 +34,8 @@ subsets of a Jacobson scheme, so they contain closed points.
   rings at closed points have dimension `n`;
 * `TauCeti.AlgebraicGeometry.smoothOfRelativeDimension_of_topologicalKrullDim_eq`: a smooth
   irreducible `k`-scheme of dimension `n` is smooth of relative dimension `n`;
+* `TauCeti.AlgebraicGeometry.topologicalKrullDim_eq_of_smoothOfRelativeDimension`: conversely,
+  a nonempty scheme smooth of relative dimension `n` over `k` has dimension `n`;
 * `TauCeti.AlgebraicGeometry.smoothOfRelativeDimension_one_of_isFunctionField`: a smooth curve is
   smooth of relative dimension one.
 
@@ -110,6 +112,27 @@ theorem smoothOfRelativeDimension_of_topologicalKrullDim_eq [Smooth f] [Irreduci
     {n : ℕ} (h : topologicalKrullDim X = n) : SmoothOfRelativeDimension n f :=
   (smoothOfRelativeDimension_iff_ringKrullDim_stalk_eq f n).mpr
     ⟨‹_›, fun _ hx ↦ (ringKrullDim_stalk_eq_topologicalKrullDim_of_isClosed f hx).trans h⟩
+
+/-- A nonempty scheme smooth of relative dimension `n` over a field has dimension `n`. -/
+theorem topologicalKrullDim_eq_of_smoothOfRelativeDimension [Nonempty X]
+    {n : ℕ} [SmoothOfRelativeDimension n f] : topologicalKrullDim X = n := by
+  have := SmoothOfRelativeDimension.smooth n f
+  have : JacobsonSpace X := LocallyOfFiniteType.jacobsonSpace f
+  have hdim := ((smoothOfRelativeDimension_iff_ringKrullDim_stalk_eq f n).mp inferInstance).2
+  refine le_antisymm ?_ ?_
+  · rw [topologicalKrullDim_eq_iSup_coheight]
+    refine iSup_le fun x ↦ ?_
+    -- Every point specializes to a closed point, whose local ring has dimension `n`.
+    obtain ⟨y, hy, hyc⟩ := nonempty_inter_closedPoints
+      (Set.singleton_nonempty x).closure isClosed_closure.isLocallyClosed
+    have hxy : y ≤ x := specializes_iff_mem_closure.mpr hy
+    calc
+      (coheight x : WithBot ℕ∞) ≤ coheight y := by exact_mod_cast coheight_anti hxy
+      _ = n := (ringKrullDim_stalk_eq_coheight y).symm.trans (hdim y hyc)
+  · obtain ⟨x, -, hx⟩ := nonempty_inter_closedPoints
+      (Set.univ_nonempty : (Set.univ : Set X).Nonempty) isOpen_univ.isLocallyClosed
+    rw [← hdim x hx, ringKrullDim_stalk_eq_coheight]
+    exact coheight_le_topologicalKrullDim x
 
 /-- A smooth curve over a field, an integral smooth scheme whose function field is an algebraic
 function field of one variable, is smooth of relative dimension one. -/

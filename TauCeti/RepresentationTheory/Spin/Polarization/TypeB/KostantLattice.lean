@@ -10,7 +10,6 @@ public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Torus
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.B.SpinWeight
 public import TauCeti.RepresentationTheory.Spin.Polarization.TypeB.Representation
 import TauCeti.LinearAlgebra.Eigenspace.Binomial
-import TauCeti.RingTheory.DividedPowers.Associative
 
 /-!
 # The coroot weights of the type-B spin module, and stability of its spinor lattice
@@ -38,8 +37,9 @@ indexed by `s` they are the coordinates of the simply connected type-`B` spin we
 the numbered simple coroots.
 
 The eigenvalue computation is stated over an arbitrary field in which `2` is invertible, which is
-all the underlying Clifford comparison needs; only the lattice statements are specific to `ℚ`, where
-the coordinate lattice lives.
+all the underlying Clifford comparison needs. The weight-basis statement and the lattice
+statements are over `ℚ`: `TauCeti.UniversalEnvelopingAlgebra.IsCartanWeightVector` is defined for
+`ℚ`-Lie algebras, and the coordinate lattice lives over `ℚ`.
 
 ## Main declarations
 
@@ -201,8 +201,8 @@ theorem typeBSpinRep_kostantForm_apply_mem_integralLattice
       (typeBSimpleRootGeneratorFamily (K := ℚ)) (typeBSimpleCorootGenerator (K := ℚ)))
     {v : ExteriorAlgebra ℚ P.W}
     (hv : v ∈ TauCeti.ExteriorAlgebra.integralLattice b) :
-    P.typeBSpinRep b z hz u v ∈ TauCeti.ExteriorAlgebra.integralLattice b := by
-  exact TauCeti.UniversalEnvelopingAlgebra.kostantForm_apply_mem
+    P.typeBSpinRep b z hz u v ∈ TauCeti.ExteriorAlgebra.integralLattice b :=
+  TauCeti.UniversalEnvelopingAlgebra.kostantForm_apply_mem
     (typeBSimpleRootGeneratorFamily (K := ℚ)) (typeBSimpleCorootGenerator (K := ℚ))
     (P.typeBSpinRep b z hz) (TauCeti.ExteriorAlgebra.integralLattice b)
     (fun k m _ hw ↦ by

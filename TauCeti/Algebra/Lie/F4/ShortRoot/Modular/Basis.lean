@@ -78,10 +78,7 @@ theorem f4ShortRootBasisCoordinate_injective :
   · apply congrArg Sum.inl
     have hab' := hab
     simp only [f4ShortRootBasisCoordinate, ha, hb] at hab'
-    apply Subtype.ext
-    apply Fin.cast_injective numRoots_F4.symm
-    apply (F4.rationalRootSystemEquiv valid_F4).indexEquiv.injective
-    exact Sum.inl.inj hab'
+    exact Subtype.ext (f4KillingRootLabel_injective (Sum.inl.inj hab'))
   · have hab' := hab
     simp only [f4ShortRootBasisCoordinate, ha, hb] at hab'
     cases hab'

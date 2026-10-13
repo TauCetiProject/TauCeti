@@ -48,8 +48,6 @@ equivalence.
   of an object with a left or right dual has the image of that dual as a dual;
 * `CategoryTheory.Functor.ihomComparison_isIso_of_exactPairing`: the internal Hom comparison of
   a strong monoidal functor is invertible at an object with a left dual;
-* `CategoryTheory.Functor.whiskerLeft_ihomComparison_app_unit_comp_map_η_comp_ev`: the
-  comparison of duals is compatible with evaluation;
 * `CategoryTheory.Functor.map_dualTensorIhom_app_comp_ihomComparison` and
   `CategoryTheory.Functor.isIso_map_dualTensorIhom_app`: the dual-tensor comparison under a
   strong monoidal functor.
@@ -165,17 +163,6 @@ theorem ihomComparison_isIso_of_exactPairing (X Y : C) [ExactPairing X Y] [Close
     MonoidalCategory.comp_whiskerRight, Functor.map_comp, map_whiskerLeft, map_associator_inv,
     map_whiskerRight, μ_δ_assoc, curriedTensor_obj_obj, LaxMonoidal.left_unitality,
     whiskerRight_η_ε_assoc]
-
-/-- The comparison `F.obj (Y ⟶[C] 𝟙_ C) ⟶ (F.obj Y ⟶[D] 𝟙_ D)` of the duals is compatible with
-evaluation: evaluating after it is the image of the evaluation of `Y`, preceded by the tensor
-comparison and followed by the inverse unit comparison. -/
-@[reassoc]
-theorem whiskerLeft_ihomComparison_app_unit_comp_map_η_comp_ev (Y : C) [Closed Y]
-    [Closed (F.obj Y)] :
-    F.obj Y ◁ ((F.ihomComparison Y).natTrans.app (𝟙_ C) ≫ (ihom (F.obj Y)).map (η F)) ≫
-        (ihom.ev (F.obj Y)).app (𝟙_ D) =
-      μ F Y (Y ⟶[C] 𝟙_ C) ≫ F.map ((ihom.ev Y).app (𝟙_ C)) ≫ η F := by
-  simp
 
 /-- A strong monoidal functor carries the dual-tensor comparison of `Y` to that of `F.obj Y`: after
 the internal Hom comparison, the image of `(Y ⟶[C] 𝟙_ C) ⊗ Z ⟶ (Y ⟶[C] Z)` is the dual-tensor

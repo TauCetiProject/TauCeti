@@ -104,7 +104,7 @@ theorem of_isFreePair {σ τ : Finset ι} (hfree : IsFreePair K σ τ)
 
 /-- An elementary collapse produces a subcomplex. -/
 theorem le (h : ElementaryCollapsesTo K L) : L ≤ K := by
-  obtain ⟨σ, τ, hfree, rfl⟩ := h
+  obtain ⟨σ, τ, _, rfl⟩ := h
   exact deletion_le
 
 /-- An elementary collapse is strict: its lower free face is lost. -/

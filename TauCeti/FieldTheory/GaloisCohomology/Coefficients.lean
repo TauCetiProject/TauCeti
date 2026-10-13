@@ -205,6 +205,22 @@ theorem kummerCoeffIncl_equivariant (g : AbsoluteGaloisGroup K) (x : KummerCoeff
     kummerCoeffIncl K n (g • x) = g • kummerCoeffIncl K n x :=
   Additive.toMul.injective (by simp)
 
+/-- The inclusion `μₙ ↪ (Kˢ)ˣ` as an equivariant additive homomorphism over `G_K`. -/
+def kummerCoeffInclHom : KummerCoeff K n →+[AbsoluteGaloisGroup K] UnitsCoeff K :=
+  { kummerCoeffIncl K n with map_smul' := kummerCoeffIncl_equivariant K n }
+
+/-- The additive homomorphism underlying `kummerCoeffInclHom` is `kummerCoeffIncl`. -/
+@[simp]
+theorem kummerCoeffInclHom_toAddMonoidHom :
+    (kummerCoeffInclHom K n).toAddMonoidHom = kummerCoeffIncl K n :=
+  (rfl)
+
+/-- The equivariant Kummer inclusion acts by the roots-of-unity inclusion. -/
+@[simp]
+theorem kummerCoeffInclHom_apply (x : KummerCoeff K n) :
+    kummerCoeffInclHom K n x = kummerCoeffIncl K n x :=
+  (rfl)
+
 theorem kummerCoeffIncl_injective : Function.Injective (kummerCoeffIncl K n) := fun x y h =>
   Additive.toMul.injective <| Subtype.ext <| by
     simpa only [toMul_kummerCoeffIncl] using congrArg Additive.toMul h
@@ -273,6 +289,14 @@ def kummerShortExact (hn : IsUnit (n : K)) :
 theorem kummerShortExact_incl (hn : IsUnit (n : K)) :
     (kummerShortExact K n hn).incl = kummerCoeffIncl K n :=
   (rfl)
+
+/-- The equivariant inclusion of the Kummer sequence is the canonical Kummer inclusion. -/
+@[simp]
+theorem kummerShortExact_inclDistribMulActionHom (hn : IsUnit (n : K)) :
+    (kummerShortExact K n hn).inclDistribMulActionHom = kummerCoeffInclHom K n := by
+  ext x
+  rw [DiscreteShortExact.inclDistribMulActionHom_apply, kummerShortExact_incl,
+    kummerCoeffInclHom_apply]
 
 @[simp]
 theorem kummerShortExact_proj (hn : IsUnit (n : K)) :

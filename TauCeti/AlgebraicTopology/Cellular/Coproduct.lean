@@ -57,42 +57,25 @@ section DiskPair
 
 variable (ι : Type w) (n : ℕ)
 
-/-- The rescaled coordinate homeomorphism from the Euclidean closed unit disk onto the closed unit
-ball of the sup norm on `Fin n → ℝ`. -/
-private def diskHomeomorph : TopCat.disk.{w} n ≃ₜ closedBall (0 : Fin n → ℝ) 1 :=
-  Homeomorph.ulift.trans <| ((EuclideanSpace.equiv (Fin n) ℝ).unitBallHomeomorph.image _).trans
-    (Homeomorph.setCongr (EuclideanSpace.equiv (Fin n) ℝ).image_unitBallHomeomorph_closedBall)
-
 /-- The disk homeomorphisms of all the summands, as an isomorphism in `TopCat` from the disjoint
 union of Euclidean disks to `(TauCeti.sigmaDiskPair ι n).fst`. -/
 private def sigmaDiskIso :
     TopCat.of (Σ _ : ι, TopCat.disk.{w} n) ≅
       TopCat.of (Σ _ : ι, closedBall (0 : Fin n → ℝ) 1) :=
   TopCat.isoOfHomeo
-    { toEquiv := Equiv.sigmaCongrRight fun _ ↦ (diskHomeomorph n).toEquiv
+    { toEquiv := Equiv.sigmaCongrRight fun _ ↦ (diskHomeomorphClosedBall n).toEquiv
       continuous_toFun := continuous_sigma fun _ ↦ continuous_sigmaMk.comp
-        (diskHomeomorph n).continuous
+        (diskHomeomorphClosedBall n).continuous
       continuous_invFun := continuous_sigma fun _ ↦ continuous_sigmaMk.comp
-        (diskHomeomorph n).symm.continuous }
-
-private lemma norm_diskHomeomorph_diskBoundaryInclusion (y : TopCat.diskBoundary.{w} n) :
-    ‖(diskHomeomorph n (TopCat.diskBoundaryInclusion n y) : Fin n → ℝ)‖ = 1 := by
-  obtain ⟨⟨y, hy⟩⟩ := y
-  -- On a point of the Euclidean unit sphere, the composite is the rescaled coordinate map.
-  have h : (diskHomeomorph n (TopCat.diskBoundaryInclusion n ⟨⟨y, hy⟩⟩) : Fin n → ℝ) =
-      (EuclideanSpace.equiv (Fin n) ℝ).unitBallHomeomorph y :=
-    rfl
-  rw [h, ← mem_sphere_zero_iff_norm,
-    ← (EuclideanSpace.equiv (Fin n) ℝ).image_unitBallHomeomorph_sphere]
-  exact mem_image_of_mem _ hy
+        (diskHomeomorphClosedBall n).symm.continuous }
 
 /-- The map of pairs `∐ᵢ (Dⁿ, Sⁿ⁻¹) ⟶ TauCeti.sigmaDiskPair ι n` from the disjoint union of
-Euclidean disk pairs, given by `diskHomeomorph` on every summand. -/
+Euclidean disk pairs, given by `TauCeti.diskHomeomorphClosedBall` on every summand. -/
 private def sigmaDiskBoundaryPairHom :
     TopPair.sigma (fun _ : ι ↦ diskBoundaryPair.{w} n) ⟶ sigmaDiskPair ι n :=
   TopPair.ofHom (sigmaDiskIso ι n).hom
     (TopCat.ofHom ⟨fun p ↦ ⟨(sigmaDiskIso ι n).hom ((TopPair.sigma _).map p),
-      norm_diskHomeomorph_diskBoundaryInclusion n p.2⟩,
+      (norm_diskHomeomorphClosedBall_eq_one_iff _).2 ⟨p.2, rfl⟩⟩,
       ((sigmaDiskIso ι n).hom.hom.continuous.comp
         (TopPair.sigma _).map.hom.continuous).subtype_mk _⟩)
     (by ext; rfl)
@@ -100,14 +83,12 @@ private def sigmaDiskBoundaryPairHom :
 private lemma surjective_snd_sigmaDiskBoundaryPairHom :
     Function.Surjective (TopPair.Hom.snd (sigmaDiskBoundaryPairHom ι n)) := by
   rintro ⟨⟨i, x⟩, hx : ‖(x : Fin n → ℝ)‖ = 1⟩
-  obtain ⟨y, hy, hyx⟩ : (x : Fin n → ℝ) ∈
-      (EuclideanSpace.equiv (Fin n) ℝ).unitBallHomeomorph '' sphere 0 1 := by
-    rw [(EuclideanSpace.equiv (Fin n) ℝ).image_unitBallHomeomorph_sphere]
-    simpa using hx
-  refine ⟨⟨i, (ULift.up ⟨y, hy⟩ : ULift.{w} (sphere (0 : EuclideanSpace ℝ (Fin n)) 1))⟩, ?_⟩
-  refine Subtype.ext (Sigma.ext rfl (heq_of_eq (Subtype.ext ?_)))
-  -- On a point of the Euclidean unit sphere, the map is the rescaled coordinate map.
-  exact hyx
+  obtain ⟨y, hy⟩ := (norm_diskHomeomorphClosedBall_eq_one_iff
+    ((diskHomeomorphClosedBall n).symm x)).1 (by rwa [Homeomorph.apply_symm_apply])
+  refine ⟨⟨i, y⟩, Subtype.ext (Sigma.ext rfl (heq_of_eq ?_))⟩
+  -- On the summand `i`, the ambient component of the map is `diskHomeomorphClosedBall n`.
+  change diskHomeomorphClosedBall n (TopCat.diskBoundaryInclusion n y) = x
+  rw [hy, Homeomorph.apply_symm_apply]
 
 /-- The disjoint union of copies, indexed by `ι`, of the Euclidean disk pair
 `TauCeti.diskBoundaryPair n` is isomorphic to `TauCeti.sigmaDiskPair ι n`, the disjoint union of
@@ -138,7 +119,7 @@ lemma coe_sigmaDiskBoundaryPairIso_hom_fst_apply_snd
       (EuclideanSpace.equiv (Fin n) ℝ).unitBallHomeomorph
         ((p.2 : ULift.{w} (closedBall (0 : EuclideanSpace ℝ (Fin n)) 1)).down :
           EuclideanSpace ℝ (Fin n)) :=
-  (rfl)
+  coe_diskHomeomorphClosedBall_apply p.2
 
 end DiskPair
 

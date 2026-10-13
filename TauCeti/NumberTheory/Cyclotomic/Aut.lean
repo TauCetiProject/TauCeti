@@ -12,12 +12,13 @@ public import Mathlib.RingTheory.ZMod.UnitsCyclic
 # Order and cyclicity of a cyclotomic Galois group
 
 For an `n`-th cyclotomic extension `L / K` whose cyclotomic polynomial `Φ_n` is irreducible over
-`K`, the Galois group has exactly `φ n` elements, and it is cyclic whenever the unit group
-`(ZMod n)ˣ` is — for instance whenever `n` is prime.
+`K`, the Galois group has exactly `φ n` elements. Over any base, the Galois group embeds in the unit
+group `(ZMod n)ˣ` through the action on a primitive `n`-th root of unity, so it is cyclic whenever
+`(ZMod n)ˣ` is — for instance whenever `n` is a power of an odd prime.
 
 ## Main results
 
-* `IsCyclotomicExtension.card_aut_eq_totient`: `#Gal(L / K) = φ n`.
+* `IsCyclotomicExtension.card_aut_eq_totient`: `#Gal(L / K) = φ n` when `Φ_n` is irreducible.
 * `IsCyclotomicExtension.isCyclic_aut`: the group is cyclic when `(ZMod n)ˣ` is.
 
 ## Implementation notes
@@ -56,9 +57,8 @@ theorem card_aut_eq_totient (h : Irreducible (cyclotomic n K)) :
     ZMod.card_units_eq_totient]
 
 /-- **A cyclotomic Galois group is cyclic when the unit group is.** The hypothesis holds at every
-prime `n`, where it is `ZMod.isCyclic_units_prime`. -/
-theorem isCyclic_aut [IsCyclic (ZMod n)ˣ] (h : Irreducible (cyclotomic n K)) :
-    IsCyclic (L ≃ₐ[K] L) :=
-  isCyclic_of_surjective _ (autEquivPow L h).symm.surjective
+power of an odd prime, where it is `ZMod.isCyclic_units_of_prime_pow`. -/
+theorem isCyclic_aut [IsCyclic (ZMod n)ˣ] : IsCyclic (L ≃ₐ[K] L) :=
+  isCyclic_of_injective _ ((zeta_spec n K L).autToPow_injective K)
 
 end IsCyclotomicExtension

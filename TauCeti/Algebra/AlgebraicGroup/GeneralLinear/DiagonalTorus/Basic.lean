@@ -54,10 +54,6 @@ by the same equation required of a pinned Chevalley--Demazure group scheme.
 * The points-map, natural-transformation, coordinate-morphism, and relative-spectrum
   constructions are adapted from the formal template in
   `TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Root.Subgroup`.
-
-This is the split-torus and root-subgroup pinning equation in Layer 9 of
-`TauCetiRoadmap/ReductiveGroups/README.md`, a prerequisite for milestone L0 of the
-`CFSGStatement` roadmap.
 -/
 
 public section

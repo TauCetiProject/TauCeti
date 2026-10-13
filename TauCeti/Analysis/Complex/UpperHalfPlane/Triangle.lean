@@ -181,8 +181,6 @@ theorem triangle_swap_left {A B C : ℍ}
     triangle B A C = triangle A B C := by
   rcases eq_or_ne A B with rfl | hAB
   · rfl
-  have hAC : A ≠ C := fun h ↦ hC (h ▸ mem_range_geodesicLine_geodesicBetween_left A B)
-  have hBC : B ≠ C := fun h ↦ hC (h ▸ mem_range_geodesicLine_geodesicBetween_right A B)
   -- `B` is off the line `A C`, and `A` is off the line `C B`: otherwise that line would be `A B`
   have hB : B ∉ Set.range (geodesicLine (geodesicBetween A C)) := fun hB ↦ hC
     ((range_geodesicLine_geodesicBetween_of_mem (mem_range_geodesicLine_geodesicBetween_left A C)
@@ -565,8 +563,6 @@ theorem volume_triangle_I_geodesicLine_one {d : ℝ} (hd : 0 < d) {C : ℍ} (hC 
     ring
   have hr₁0 : 0 < r₁ := Real.sqrt_pos.2 (by rw [hn₁]; positivity)
   have hr₂0 : 0 < r₂ := Real.sqrt_pos.2 (by rw [hn₂]; positivity)
-  have hr₁sq : r₁ ^ 2 = Complex.normSq ((C : ℂ) - c₁) := Real.sq_sqrt (Complex.normSq_nonneg _)
-  have hr₂sq : r₂ ^ 2 = Complex.normSq ((C : ℂ) - c₂) := Real.sq_sqrt (Complex.normSq_nonneg _)
   have h1a : c₁ - r₁ < 0 := by
     rw [sub_neg]
     exact Real.lt_sqrt_of_sq_lt (by rw [hn₁]; linarith)

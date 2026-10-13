@@ -19,7 +19,9 @@ adele ring. In particular, principal-idele membership can be tested on the under
 
 It also defines the finite component `NumberField.IdeleGroup.toFiniteIdele` of an idele, a unit of
 the finite adele ring, and the idele `NumberField.IdeleGroup.ofFiniteIdele` with a given finite
-component and trivial infinite components.  This is how ideles are handed to and from the
+component and trivial infinite components, and its counterpart
+`NumberField.IdeleGroup.ofInfiniteIdele` with a given infinite component and trivial finite
+components.  The finite component is how ideles are handed to and from the
 finite-idele theory of fractional ideals: on a principal idele the finite component is the
 principal finite idele of the same element.
 
@@ -111,6 +113,22 @@ theorem coe_ofFiniteIdele (a : (FiniteAdeleRing R K)ˣ) :
 @[simp]
 theorem toFiniteIdele_ofFiniteIdele (a : (FiniteAdeleRing R K)ˣ) :
     toFiniteIdele R K (ofFiniteIdele R K a) = a :=
+  Units.ext (rfl)
+
+/-- The idele with the given infinite component and all finite components equal to `1`. -/
+def ofInfiniteIdele : (InfiniteAdeleRing K)ˣ →* IdeleGroup R K :=
+  Units.map (MonoidHom.inl (InfiniteAdeleRing K) (FiniteAdeleRing R K))
+
+@[simp]
+theorem coe_ofInfiniteIdele (a : (InfiniteAdeleRing K)ˣ) :
+    (ofInfiniteIdele R K a : AdeleRing R K) =
+      ((a : InfiniteAdeleRing K), (1 : FiniteAdeleRing R K)) :=
+  (rfl)
+
+/-- The finite component of `ofInfiniteIdele R K a` is trivial. -/
+@[simp]
+theorem toFiniteIdele_ofInfiniteIdele (a : (InfiniteAdeleRing K)ˣ) :
+    toFiniteIdele R K (ofInfiniteIdele R K a) = 1 :=
   Units.ext (rfl)
 
 /-- The finite component of an idele concentrated at an infinite place is trivial. -/
