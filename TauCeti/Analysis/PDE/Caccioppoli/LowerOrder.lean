@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.Caccioppoli.Truncation
-import TauCeti.MeasureTheory.Integral.Bochner.Basic
 
 /-!
 # The Caccioppoli inequality for truncations with lower-order terms
@@ -22,7 +21,9 @@ constants `0 < λ ≤ Λ`, and let `b` and `c` be measurable and bounded, with `
 
 `∫_Ω ψ² ‖∇w‖² ≤ 2 (2Λ/λ)² ∫_Ω ‖∇ψ‖² w² + (2β/λ)² ∫_Ω ψ² w² + (4/λ) ∫_Ω ψ² (f - c u) w`.
 
-The drift is absorbed into the left-hand side by Young's inequality, at the cost of the
+Moving the drift and mass terms to the right-hand side makes `u` a subsolution of the principal
+part with the effective forcing `f - ⟪b, ∇u⟫ - c u`, so the principal-part inequality applies.
+The drift is then absorbed into the left-hand side by Young's inequality, at the cost of the
 zeroth-order term `(2β/λ)² ∫ ψ² w²`. The mass term is kept on the right-hand side next to the
 forcing, where its sign is visible: under the sign condition `c ≥ 0` and at a level `k ≥ 0`, the
 product `c u w` is nonnegative, because `w > 0` forces `u > k ≥ 0`, so the term can be dropped.
@@ -74,23 +75,17 @@ variable {ι : Type*} [Fintype ι] [DecidableEq ι] {mu : Measure (EuclideanSpac
   {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {b : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι}
   {c : EuclideanSpace ℝ ι → ℝ} {lam Lam beta gamma : ℝ}
 
-/-- The pointwise Caccioppoli estimate with a drift `‖b‖ ≤ β`: the principal part is bounded as
-in `mul_sq_mul_norm_sq_le_matrixBilinearForm_add`, and Young's inequality absorbs the drift
-term `⟪b, g⟫ z² w` into a quarter of the ellipticity floor and `(β²/λ) z² w²`. -/
-private theorem mul_sq_mul_norm_sq_le_matrixBilinearForm_add_inner_mul_add {A : Matrix ι ι ℝ}
-    {g q bx : EuclideanSpace ℝ ι} (hlam : 0 < lam) (z w : ℝ)
-    (hlower : lam * ‖g‖ ^ 2 ≤ A.toQuadraticForm' g)
-    (hupper : |q ⬝ᵥ (A *ᵥ g)| ≤ Lam * ‖q‖ * ‖g‖) (hb : ‖bx‖ ≤ beta) :
-    lam * (z ^ 2 * ‖g‖ ^ 2) ≤
-      (matrixBilinearForm A (z • (z • g + w • q) + (z * w) • q) g + ⟪bx, g⟫_ℝ * (z * (z * w))
-          + (lam / 4 * (z ^ 2 * ‖g‖ ^ 2) + beta ^ 2 / lam * (z ^ 2 * w ^ 2)))
-        + lam / 2 * (z ^ 2 * ‖g‖ ^ 2) + 2 * Lam ^ 2 / lam * (‖q‖ ^ 2 * w ^ 2) := by
-  have hkey := mul_sq_mul_norm_sq_le_matrixBilinearForm_add hlam z w g q hlower hupper
+omit [DecidableEq ι] in
+/-- Young's inequality for the drift term: `-⟪b, g⟫ z² w` is absorbed into a quarter of the
+ellipticity floor `λ z² ‖g‖²` and `(β²/λ) z² w²`. -/
+private theorem neg_inner_mul_le_add {g bx : EuclideanSpace ℝ ι} (hlam : 0 < lam) (z w : ℝ)
+    (hb : ‖bx‖ ≤ beta) :
+    -(⟪bx, g⟫_ℝ * (z ^ 2 * w)) ≤
+      lam / 4 * (z ^ 2 * ‖g‖ ^ 2) + beta ^ 2 / lam * (z ^ 2 * w ^ 2) := by
   -- `|⟪b, g⟫ z² w| ≤ β ‖g‖ z² |w|`.
-  have hinner : -(⟪bx, g⟫_ℝ * (z * (z * w))) ≤ beta * ‖g‖ * (z ^ 2 * |w|) := by
-    have hzzw : z * (z * w) = z ^ 2 * w := by ring
+  have hinner : -(⟪bx, g⟫_ℝ * (z ^ 2 * w)) ≤ beta * ‖g‖ * (z ^ 2 * |w|) := by
     refine (neg_le_abs _).trans ?_
-    rw [abs_mul, hzzw, abs_mul, abs_of_nonneg (sq_nonneg z)]
+    rw [abs_mul, abs_mul, abs_of_nonneg (sq_nonneg z)]
     exact mul_le_mul_of_nonneg_right ((abs_real_inner_le_norm bx g).trans
       (mul_le_mul_of_nonneg_right hb (norm_nonneg g))) (by positivity)
   -- Young's inequality `β ‖g‖ z² |w| ≤ (λ/4) z² ‖g‖² + (β²/λ) z² w²`.
@@ -144,43 +139,62 @@ theorem
       2 * (2 * Lam / lam) ^ 2 * ∫ x in Omega, ‖∇ ψ x‖ ^ 2 * W1p.value w x ^ 2 ∂mu
         + (2 * beta / lam) ^ 2 * ∫ x in Omega, ψ x ^ 2 * W1p.value w x ^ 2 ∂mu
         + 4 / lam * ∫ x in Omega, ψ x ^ 2 * (f x - c x * W1p.value u x) * W1p.value w x ∂mu := by
-  -- Test the subsolution inequality against `v = ψ² w`. Pointwise, the principal part and the
-  -- drift are bounded by `mul_sq_mul_norm_sq_le_matrixBilinearForm_add_inner_mul_add`, with the
-  -- mass term `c u v` moved next to the forcing. The integration and half-absorption step
-  -- `W1p.setIntegral_sq_mul_norm_gradient_sq_le_of_pointwise` then applies, with the drift's
-  -- quarter of the gradient term carried on both sides and absorbed at the end.
+  -- With the drift and mass terms moved to the right-hand side, `u` is a weak subsolution of
+  -- the principal part with the effective forcing `g = f - ⟪b, ∇u⟫ - c u`, so the
+  -- principal-part inequality applies. The drift part of `∫ ψ² g w` is then bounded by Young's
+  -- inequality and its gradient share absorbed into the left-hand side.
   dsimp only
   have hlam := h.pos
-  obtain ⟨M, hM, hψM, hgradM⟩ := (hψ.of_le (by simp)).exists_abs_le_and_norm_gradient_le hcpt
-  have hψM' : ∀ x ∈ Omega, |ψ x| ≤ M := fun x _ => hψM x
-  have hgradM' : ∀ x ∈ Omega, ‖∇ ψ x‖ ≤ M := fun x _ => hgradM x
-  -- Build the nonnegative test function `v = ψ² (u - k)⁺` in `H¹₀(Ω)`.
-  set w := W1p.posPartAboveOfMemLp (by norm_num) k u hwLp
-  set z := W1p.contDiffSMul ψ hψ hM hψM' hgradM' w
-  set v := W1p.contDiffSMul ψ hψ hM hψM' hgradM' z
-  have hv : v ∈ w1p0Submodule mu Omega 2 :=
-    W1p.contDiffSMul_mem_w1p0Submodule_of_hasCompactSupport (by norm_num) hψ hM hψM'
-      hgradM' hcpt hts z
-  have hvval : ∀ᵐ x ∂mu.restrict Omega, W1p.value v x = ψ x ^ 2 * W1p.value w x := by
-    filter_upwards [W1p.value_contDiffSMul_ae hψ hM hψM' hgradM' z,
-      W1p.value_contDiffSMul_ae hψ hM hψM' hgradM' w] with x hvx hzx
-    rw [hvx, hzx, smul_eq_mul, smul_eq_mul]
-    ring
-  have hnonneg : ∀ᵐ x ∂mu.restrict Omega, 0 ≤ W1p.value v x := by
-    filter_upwards [hvval, W1p.value_posPartAboveOfMemLp_ae (by norm_num) k u hwLp] with x hvx hwx
-    rw [hvx, hwx]
-    exact mul_nonneg (sq_nonneg _) (le_max_right _ _)
-  have hsub := hu ⟨v, hv⟩ hnonneg
-  simp only at hsub
   have hmem : ∀ᵐ x ∂mu.restrict Omega, x ∈ (Omega : Set (EuclideanSpace ℝ ι)) :=
     ae_restrict_mem Omega.isOpen.measurableSet
-  -- Integrability of the energy density, the mass term, and the weighted squares.
-  have hE := h.integrable_energyIntegrand_jetField ha hb hc hb_bound hc_bound u v
-  have hcu : MemLp (fun x => c x * W1p.value u x) 2 (mu.restrict Omega) :=
+  have hB : MemLp (fun x => ⟪b x, W1p.gradient u x⟫_ℝ) 2 (mu.restrict Omega) :=
+    MemLp.of_bilin (inner ℝ) 1 (memLp_top_of_bound hb beta
+      (ae_restrict_of_forall_mem Omega.isOpen.measurableSet hb_bound)) (Lp.memLp _)
+      continuous_inner
+      (.of_forall fun x => by simpa using nnnorm_inner_le_nnnorm (b x) (W1p.gradient u x))
+  have hC : MemLp (fun x => c x * W1p.value u x) 2 (mu.restrict Omega) :=
     (memLp_top_of_bound hc gamma (ae_restrict_of_forall_mem Omega.isOpen.measurableSet
       hc_bound)).fun_mul (Lp.memLp _)
-  have hmass : Integrable (fun x => c x * W1p.value u x * W1p.value v x) (mu.restrict Omega) :=
-    hcu.integrable_mul (Lp.memLp _)
+  set g := fun x => f x - ⟪b x, W1p.gradient u x⟫_ℝ - c x * W1p.value u x
+  have hg : MemLp g 2 (mu.restrict Omega) := ((Lp.memLp f).sub hB).sub hC
+  have hu' : ∀ v : W1p0 mu Omega 2,
+      (∀ᵐ x ∂mu.restrict Omega, 0 ≤ W1p.value (v : W1p mu Omega 2) x) →
+        energyFormH1 a 0 0 u (v : W1p mu Omega 2) ≤
+          ∫ x in Omega, hg.toLp g x * W1p.value (v : W1p mu Omega 2) x ∂mu := by
+    intro v hv
+    have hvLp := Lp.memLp (W1p.value (v : W1p mu Omega 2))
+    have hE := h.integrable_energyIntegrand_jetField (b := 0) (c := 0) (beta := 0)
+      (gamma := 0) ha aestronglyMeasurable_const aestronglyMeasurable_const
+      (fun _ _ => by simp) (fun _ _ => by simp) u v
+    have hfv : Integrable (fun x => f x * W1p.value (v : W1p mu Omega 2) x)
+        (mu.restrict Omega) := (Lp.memLp f).integrable_mul hvLp
+    have hBC : Integrable (fun x => ⟪b x, W1p.gradient u x⟫_ℝ * W1p.value (v : W1p mu Omega 2) x
+        + c x * W1p.value u x * W1p.value (v : W1p mu Omega 2) x) (mu.restrict Omega) :=
+      (hB.integrable_mul hvLp).add (hC.integrable_mul hvLp)
+    have hsplit : energyFormH1 a b c u (v : W1p mu Omega 2) =
+        energyFormH1 a 0 0 u (v : W1p mu Omega 2) + ∫ x in Omega,
+          (⟪b x, W1p.gradient u x⟫_ℝ * W1p.value (v : W1p mu Omega 2) x
+            + c x * W1p.value u x * W1p.value (v : W1p mu Omega 2) x) ∂mu := by
+      rw [energyFormH1_def, energyFormH1_def, ← integral_add hE hBC]
+      refine integral_congr_ae (Eventually.of_forall fun x => ?_)
+      simp [energyIntegrand_apply, jetField_apply, add_assoc]
+    have hforce : ∫ x in Omega, hg.toLp g x * W1p.value (v : W1p mu Omega 2) x ∂mu =
+        ∫ x in Omega, f x * W1p.value (v : W1p mu Omega 2) x ∂mu - ∫ x in Omega,
+          (⟪b x, W1p.gradient u x⟫_ℝ * W1p.value (v : W1p mu Omega 2) x
+            + c x * W1p.value u x * W1p.value (v : W1p mu Omega 2) x) ∂mu := by
+      rw [← integral_sub hfv hBC]
+      refine integral_congr_ae ?_
+      filter_upwards [hg.coeFn_toLp] with x hx
+      rw [hx]
+      simp only [g]
+      ring
+    linarith [hu v hv]
+  have hcacc := h.setIntegral_sq_mul_norm_gradient_posPartAbove_sq_le_of_memLp ha hu' hwLp hψ
+    hcpt hts
+  dsimp only at hcacc
+  set w := W1p.posPartAboveOfMemLp (by norm_num) k u hwLp
+  -- Integrability of the weighted squares and of the forcing terms.
+  obtain ⟨M, -, hψM, -⟩ := (hψ.of_le (by simp)).exists_abs_le_and_norm_gradient_le hcpt
   have hψ2 : AEStronglyMeasurable (fun x => ψ x ^ 2) (mu.restrict Omega) :=
     (hψ.continuous.pow 2).aestronglyMeasurable
   have hψ2M : ∀ᵐ x ∂mu.restrict Omega, ‖ψ x ^ 2‖ ≤ M ^ 2 := Eventually.of_forall fun x => by
@@ -192,79 +206,43 @@ theorem
     (W1p.integrable_value_sq w).bdd_mul hψ2 hψ2M
   have hF : Integrable (fun x => ψ x ^ 2 * (f x - c x * W1p.value u x) * W1p.value w x)
       (mu.restrict Omega) := by
-    refine ((((Lp.memLp f).sub hcu).integrable_mul (Lp.memLp (W1p.value w))).bdd_mul hψ2
+    refine ((((Lp.memLp f).sub hC).integrable_mul (Lp.memLp (W1p.value w))).bdd_mul hψ2
       hψ2M).congr (Eventually.of_forall fun x => ?_)
     simp only [Pi.sub_apply, Pi.mul_apply]
+    ring
+  have hG : Integrable (fun x => ψ x ^ 2 * hg.toLp g x * W1p.value w x) (mu.restrict Omega) := by
+    refine (((Lp.memLp (hg.toLp g)).integrable_mul (Lp.memLp (W1p.value w))).bdd_mul hψ2
+      hψ2M).congr (Eventually.of_forall fun x => ?_)
+    simp only [Pi.mul_apply]
     ring
   have hR : Integrable (fun x => lam / 4 * (ψ x ^ 2 * ‖W1p.gradient w x‖ ^ 2)
       + beta ^ 2 / lam * (ψ x ^ 2 * W1p.value w x ^ 2)) (mu.restrict Omega) :=
     (hX.const_mul _).add (hZ.const_mul _)
-  -- The energy density without its mass term, plus the drift's share of the absorption.
-  set e : EuclideanSpace ℝ ι → ℝ := fun x =>
-    energyIntegrand (a x) (b x) (c x) (jetField u x) (jetField v x)
-        - c x * W1p.value u x * W1p.value v x
-      + (lam / 4 * (ψ x ^ 2 * ‖W1p.gradient w x‖ ^ 2)
-        + beta ^ 2 / lam * (ψ x ^ 2 * W1p.value w x ^ 2))
-  have he : Integrable e (mu.restrict Omega) := (hE.sub' hmass).add hR
-  -- On the active set the truncation gradient is `∇u`; off it, the test jet vanishes.
-  have hpt : ∀ᵐ x ∂mu.restrict Omega,
-      lam * (ψ x ^ 2 * ‖W1p.gradient w x‖ ^ 2) ≤
-        e x + lam / 2 * (ψ x ^ 2 * ‖W1p.gradient w x‖ ^ 2)
-          + 2 * Lam ^ 2 / lam * (‖∇ ψ x‖ ^ 2 * W1p.value w x ^ 2) := by
-    filter_upwards [hmem, W1p.gradient_posPartAboveOfMemLp_ae (by norm_num) k u hwLp,
-      W1p.value_posPartAboveOfMemLp_ae (by norm_num) k u hwLp,
-      W1p.gradient_contDiffSMul_ae hψ hM hψM' hgradM' z,
-      W1p.gradient_contDiffSMul_ae hψ hM hψM' hgradM' w,
-      W1p.value_contDiffSMul_ae hψ hM hψM' hgradM' w,
-      W1p.value_contDiffSMul_ae hψ hM hψM' hgradM' z] with
-        x hx hwg hwv hgv hgz hzv hvv
-    by_cases hxu : k < W1p.value u x
-    · have hwg_active : W1p.gradient w x = W1p.gradient u x := by
-        rw [hwg]
-        have hxmem : x ∈ {y : EuclideanSpace ℝ ι | k < W1p.value u y} := hxu
-        exact Set.indicator_of_mem hxmem (⇑(W1p.gradient u))
-      have hkey := mul_sq_mul_norm_sq_le_matrixBilinearForm_add_inner_mul_add hlam (ψ x)
-        (W1p.value w x) (h.lower_bound hx (W1p.gradient u x))
-        (h.upper_bound hx (∇ ψ x) (W1p.gradient u x)) (hb_bound x hx)
-      simp only [e]
-      rw [energyIntegrand_apply, jetField_apply, jetField_apply, hgv, hgz, hvv, hzv, hwg_active]
-      simpa [massForm_apply, smul_eq_mul] using hkey
-    · have hwg_zero : W1p.gradient w x = 0 := by
-        rw [hwg]
-        have hxmem : x ∉ {y : EuclideanSpace ℝ ι | k < W1p.value u y} := hxu
-        exact Set.indicator_of_notMem hxmem (⇑(W1p.gradient u))
-      have hwv_zero : W1p.value w x = 0 := by
-        rw [hwv, max_eq_right (sub_nonpos.mpr (le_of_not_gt hxu))]
-      simp only [e]
-      rw [energyIntegrand_apply, jetField_apply, jetField_apply, hgv, hgz, hvv, hzv, hwg_zero,
-        hwv_zero]
-      simp [massForm_apply]
-  -- The weak subsolution inequality bounds `∫ e` by the forcing, the mass term and `∫ R`.
-  have hforce : ∫ x in Omega, e x ∂mu ≤
+  -- On the active set the truncation gradient is `∇u`; off it, `w` vanishes. So the drift
+  -- part of the forcing is `-⟪b, ∇w⟫ ψ² w`, which Young's inequality bounds.
+  have hdrift : ∫ x in Omega, ψ x ^ 2 * hg.toLp g x * W1p.value w x ∂mu ≤
       ∫ x in Omega, (ψ x ^ 2 * (f x - c x * W1p.value u x) * W1p.value w x
         + (lam / 4 * (ψ x ^ 2 * ‖W1p.gradient w x‖ ^ 2)
           + beta ^ 2 / lam * (ψ x ^ 2 * W1p.value w x ^ 2))) ∂mu := by
-    have hfv : Integrable (fun x => f x * W1p.value v x) (mu.restrict Omega) :=
-      (Lp.memLp f).integrable_mul (Lp.memLp _)
-    have hFeq : ∫ x in Omega, ψ x ^ 2 * (f x - c x * W1p.value u x) * W1p.value w x ∂mu =
-        ∫ x in Omega, f x * W1p.value v x ∂mu -
-          ∫ x in Omega, c x * W1p.value u x * W1p.value v x ∂mu := by
-      rw [← integral_sub hfv hmass]
-      refine integral_congr_ae ?_
-      filter_upwards [hvval] with x hvx
-      rw [hvx]
-      ring
-    simp only [e]
-    rw [integral_add (hE.sub' hmass) hR, integral_sub hE hmass, integral_add hF hR, hFeq,
-      ← energyFormH1_def]
-    linarith
-  have hcacc := W1p.setIntegral_sq_mul_norm_gradient_sq_le_of_pointwise hlam w hψ hψM hgradM he
-    hpt hforce
+    refine integral_mono_ae hG (hF.add hR) ?_
+    filter_upwards [hmem, hg.coeFn_toLp,
+      W1p.gradient_posPartAboveOfMemLp_ae (by norm_num) k u hwLp,
+      W1p.value_posPartAboveOfMemLp_ae (by norm_num) k u hwLp] with x hx hgx hwg hwv
+    have hactive : ⟪b x, W1p.gradient u x⟫_ℝ * W1p.value w x =
+        ⟪b x, W1p.gradient w x⟫_ℝ * W1p.value w x := by
+      by_cases hxu : k < W1p.value u x
+      · have hxmem : x ∈ {y : EuclideanSpace ℝ ι | k < W1p.value u y} := hxu
+        rw [hwg, Set.indicator_of_mem hxmem]
+      · rw [hwv, max_eq_right (sub_nonpos.mpr (le_of_not_gt hxu)), mul_zero, mul_zero]
+    have hyoung := neg_inner_mul_le_add (g := W1p.gradient w x) hlam (ψ x) (W1p.value w x)
+      (hb_bound x hx)
+    rw [hgx]
+    simp only [g]
+    linear_combination hyoung - ψ x ^ 2 * hactive
   rw [integral_add hF hR, integral_add (hX.const_mul _) (hZ.const_mul _), integral_const_mul,
-    integral_const_mul] at hcacc
+    integral_const_mul] at hdrift
   -- Absorb the drift's quarter of the gradient term into the left-hand side.
   set X := ∫ x in Omega, ψ x ^ 2 * ‖W1p.gradient w x‖ ^ 2 ∂mu
-  set Y := ∫ x in Omega, ‖∇ ψ x‖ ^ 2 * W1p.value w x ^ 2 ∂mu
   set Z := ∫ x in Omega, ψ x ^ 2 * W1p.value w x ^ 2 ∂mu
   set F := ∫ x in Omega, ψ x ^ 2 * (f x - c x * W1p.value u x) * W1p.value w x ∂mu
   have hsplit : 2 / lam * (F + (lam / 4 * X + beta ^ 2 / lam * Z)) =
@@ -272,7 +250,8 @@ theorem
     field_simp
     ring
   have h4 : 4 / lam * F = 2 * (2 / lam * F) := by ring
-  rw [hsplit] at hcacc
+  have hmono := mul_le_mul_of_nonneg_left hdrift (by positivity : (0 : ℝ) ≤ 2 / lam)
+  rw [hsplit] at hmono
   linarith
 
 /-- **The Caccioppoli inequality for a nonnegative-level truncation of a weak subsolution with
@@ -384,73 +363,21 @@ theorem exists_setIntegral_ball_norm_gradient_posPartAbove_sq_le_of_lowerOrder :
       ∫ x in ball x₀ r, ‖W1p.gradient (W1p.posPartAbove (by norm_num) hk u) x‖ ^ 2 ∂mu ≤
         (2 * (2 * Lam / lam) ^ 2 * (C / (R - r)) ^ 2 + (2 * beta / lam) ^ 2) *
           ∫ x in ball x₀ R, max (W1p.value u x - k) 0 ^ 2 ∂mu := by
-  obtain ⟨C, hC0, hC⟩ := exists_forall_contDiff_cutoff_closedBall (E := EuclideanSpace ℝ ι)
-  refine ⟨2 * (C + 1), by positivity, ?_⟩
+  obtain ⟨C, hC0, hC⟩ := W1p.exists_setIntegral_ball_norm_gradient_sq_le_of_cutoff (ι := ι)
+  refine ⟨C, hC0, ?_⟩
   intro mu _ Omega a b c lam Lam beta gamma u k hk x₀ r R h ha hb hc hb_bound hc_bound hc_nonneg
     hu hr hrR hball
-  -- A cutoff equal to one on `ball x₀ r` and supported in
-  -- `closedBall x₀ ((r + R) / 2) ⊆ ball x₀ R`.
-  obtain ⟨ψ, hψ, hrange, hone, hts, hgrad⟩ := hC x₀ hr (by linarith : r < (r + R) / 2)
-  have htsR : tsupport ψ ⊆ ball x₀ R :=
-    hts.trans (closedBall_subset_ball (by linarith))
-  have htsΩ : tsupport ψ ⊆ (Omega : Set (EuclideanSpace ℝ ι)) := htsR.trans hball
-  have hcpt : HasCompactSupport ψ :=
-    (isCompact_closedBall x₀ ((r + R) / 2)).of_isClosed_subset (isClosed_tsupport ψ) hts
-  set G : ℝ := 2 * (C + 1) / (R - r)
-  have hG : ∀ x, ‖∇ ψ x‖ ≤ G := fun x => (hgrad x).trans (by
-    rw [(by ring : (r + R) / 2 - r = (R - r) / 2), div_div_eq_mul_div]
-    exact div_le_div_of_nonneg_right (by linarith) (by linarith))
-  set w := W1p.posPartAbove (by norm_num) hk u
-  have hwv := W1p.value_posPartAbove_ae (by norm_num) hk u
-  have hwLp : MemLp (fun x => max (W1p.value u x - k) 0) 2 (mu.restrict Omega) :=
-    W1p.memLp_posPartAbove hk u
-  -- Caccioppoli's inequality for `w`, with the forcing and mass term dropped.
-  have hcacc := h.setIntegral_sq_mul_norm_gradient_posPartAbove_sq_le_of_nonpos_of_lowerOrder ha
-    hb hc hb_bound hc_bound hc_nonneg hu hk hψ hcpt htsΩ
-  -- On `B(x₀, r)` the cutoff is one.
-  have hleft : ∫ x in ball x₀ r, ‖W1p.gradient w x‖ ^ 2 ∂mu ≤
-      ∫ x in Omega, ψ x ^ 2 * ‖W1p.gradient w x‖ ^ 2 ∂mu :=
-    MeasureTheory.setIntegral_le_setIntegral_sq_mul_of_eqOn (W1p.integrable_norm_gradient_sq w)
-      (fun x => sq_nonneg _) hψ.continuous.aestronglyMeasurable hrange measurableSet_ball
-      (hone.mono ball_subset_closedBall) ((ball_subset_ball hrR.le).trans hball)
-  -- `∇ψ` vanishes off `B(x₀, R)`, where it is bounded by `G`.
-  have hright : ∫ x in Omega, ‖∇ ψ x‖ ^ 2 * W1p.value w x ^ 2 ∂mu ≤
-      G ^ 2 * ∫ x in ball x₀ R, max (W1p.value u x - k) 0 ^ 2 ∂mu :=
-    (W1p.setIntegral_norm_gradient_sq_mul_value_sq_le w hψ hG measurableSet_ball htsR
-      hwLp.integrable_sq (by
-        filter_upwards [hwv] with x hx
-        rw [hx])).trans_eq (by rw [inter_eq_right.2 hball])
-  -- `ψ² ≤ 1` on `B(x₀, R)`, and `ψ` vanishes off it.
-  have hzeroth : ∫ x in Omega, ψ x ^ 2 * W1p.value w x ^ 2 ∂mu ≤
-      ∫ x in ball x₀ R, max (W1p.value u x - k) 0 ^ 2 ∂mu := by
-    have hψ1 : ∀ x, ψ x ^ 2 ≤ 1 := fun x => by
-      obtain ⟨h0, h1⟩ := hrange (mem_range_self x)
-      exact pow_le_one₀ h0 h1
-    calc ∫ x in Omega, ψ x ^ 2 * W1p.value w x ^ 2 ∂mu
-        ≤ ∫ x in Omega, (ball x₀ R).indicator (fun x => max (W1p.value u x - k) 0 ^ 2) x ∂mu :=
-          integral_mono_ae ((W1p.integrable_value_sq w).bdd_mul
-            (hψ.continuous.pow 2).aestronglyMeasurable (c := 1) (Eventually.of_forall fun x => by
-              rw [Real.norm_eq_abs, abs_of_nonneg (sq_nonneg _)]
-              exact hψ1 x))
-            (hwLp.integrable_sq.indicator measurableSet_ball) (by
-              filter_upwards [hwv] with x hx
-              rw [hx]
-              by_cases hxR : x ∈ ball x₀ R
-              · rw [indicator_of_mem hxR]
-                exact mul_le_of_le_one_left (sq_nonneg _) (hψ1 x)
-              · rw [indicator_of_notMem hxR,
-                  image_eq_zero_of_notMem_tsupport (fun hx' => hxR (htsR hx'))]
-                simp)
-      _ = ∫ x in ball x₀ R, max (W1p.value u x - k) 0 ^ 2 ∂mu := by
-        rw [setIntegral_indicator measurableSet_ball, inter_eq_right.2 hball]
-  set I := ∫ x in ball x₀ R, max (W1p.value u x - k) 0 ^ 2 ∂mu
-  have hlam := h.pos
-  calc ∫ x in ball x₀ r, ‖W1p.gradient w x‖ ^ 2 ∂mu
-      ≤ 2 * (2 * Lam / lam) ^ 2 * (G ^ 2 * I) + (2 * beta / lam) ^ 2 * I := by
-        refine hleft.trans (hcacc.trans ?_)
-        gcongr
-    _ = (2 * (2 * Lam / lam) ^ 2 * G ^ 2 + (2 * beta / lam) ^ 2) * I := by ring
-    _ = _ := by rw [div_pow]
+  -- Caccioppoli's inequality for `w`, with the forcing and mass term dropped, localized to the
+  -- balls.
+  have hloc := hC (W1p.posPartAbove (by norm_num) hk u) (A := 2 * (2 * Lam / lam) ^ 2)
+    (B := (2 * beta / lam) ^ 2) (by positivity) (sq_nonneg _) hr hrR hball
+    fun ψ hψ hcpt hts =>
+      h.setIntegral_sq_mul_norm_gradient_posPartAbove_sq_le_of_nonpos_of_lowerOrder ha hb hc
+        hb_bound hc_bound hc_nonneg hu hk hψ hcpt hts
+  refine hloc.trans_eq ?_
+  rw [integral_congr_ae (ae_restrict_of_ae_restrict_of_subset hball (by
+    filter_upwards [W1p.value_posPartAbove_ae (by norm_num) hk u] with x hx
+    rw [hx]))]
 
 end PDE
 
