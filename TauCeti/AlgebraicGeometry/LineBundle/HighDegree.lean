@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.WeilDivisor.Scheme.SerreDuality
+public import TauCeti.AlgebraicGeometry.WeilDivisor.Scheme.RiemannRoch.Finiteness
 public import TauCeti.FieldTheory.FunctionField.Consequences.HighDegree
 
 /-!
@@ -25,7 +26,7 @@ of `finrank`.
 
 ## References
 
-* R. Hartshorne, *Algebraic Geometry*, Chapter IV, Corollary 1.3.4.
+* R. Hartshorne, *Algebraic Geometry*, Chapter IV, Example 1.3.4.
 * H. Stichtenoth, *Algebraic Function Fields and Codes*, 2nd ed., Theorem 1.5.17.
 -/
 
@@ -48,6 +49,44 @@ variable [IsIntegral X]
 
 include hdim hF hk
 
+private theorem exists_divisor_of_high_degree (L : InvertibleSheaf X)
+    (hL : 2 * (finrank k (Scheme.Modules.Cohomology (trivial X).obj 1) : ℤ) - 2 <
+      L.eulerDegree k) :
+    ∃ (hN : IsNoetherian X) (hS : X.IsSeparated),
+      have := hN
+      have := hS
+      ∃ (hex : ValuativeCriterion.Existence (X ↘ Spec (.of k))) (D : SchemeWeilDivisor X),
+        Nonempty (L.obj ≅ SchemeWeilDivisor.sheaf D) ∧
+          2 * (genus k X.functionField : ℤ) - 1 ≤
+            Divisor.degree (SchemeWeilDivisor.equivFunctionFieldDivisor hex hdim D) ∧
+          Divisor.degree (SchemeWeilDivisor.equivFunctionFieldDivisor hex hdim D) =
+            L.eulerDegree k ∧
+          genus k X.functionField = finrank k (Scheme.Modules.Cohomology (trivial X).obj 1) := by
+  have : IsLocallyNoetherian X := LocallyOfFiniteType.isLocallyNoetherian (X ↘ Spec (.of k))
+  have : CompactSpace X := compactSpace_of_universallyClosed (X ↘ Spec (.of k))
+  have : IsNoetherian X := {}
+  have : X.IsSeparated :=
+    ⟨by rw [← terminal.comp_from (X ↘ Spec (.of k))]; infer_instance⟩
+  have hex : ValuativeCriterion.Existence (X ↘ Spec (.of k)) := by
+    have h : UniversallyClosed (X ↘ Spec (.of k)) := inferInstance
+    rw [UniversallyClosed.eq_valuativeCriterion] at h
+    exact h.1
+  have := finiteDimensional_cohomology_one_trivial_of_isProper k
+    ((isFunctionField_functionField_iff k).mp hF)
+  obtain ⟨D, ⟨e⟩⟩ := SchemeWeilDivisor.exists_nonempty_iso_sheaf hdim L
+  have hdegree : Divisor.degree (SchemeWeilDivisor.equivFunctionFieldDivisor hex hdim D) =
+      L.eulerDegree k := by
+    rw [SchemeWeilDivisor.degree_equivFunctionFieldDivisor hex hdim,
+      ← eulerDegree_eq_relativeDegree k hdim e]
+  have hgenus : genus k X.functionField =
+      finrank k (Scheme.Modules.Cohomology (trivial X).obj 1) := by
+    rw [← SchemeWeilDivisor.genus_eq_genus_functionField hex hdim hF hk, Scheme.genus_def]
+  have hdeg : 2 * (genus k X.functionField : ℤ) - 1 ≤
+      Divisor.degree (SchemeWeilDivisor.equivFunctionFieldDivisor hex hdim D) := by
+    rw [hdegree, hgenus]
+    omega
+  exact ⟨inferInstance, inferInstance, hex, D, ⟨e⟩, hdeg, hdegree, hgenus⟩
+
 /-- A line bundle of degree greater than `2g - 2` on a proper integral curve with constant field
 `k` has no first cohomology. The genus is `dim H¹(X, 𝒪_X)`; a rational point is not needed. -/
 theorem subsingleton_cohomology_one_of_two_mul_genus_sub_two_lt_eulerDegree
@@ -55,29 +94,16 @@ theorem subsingleton_cohomology_one_of_two_mul_genus_sub_two_lt_eulerDegree
     (hL : 2 * (finrank k (Scheme.Modules.Cohomology (trivial X).obj 1) : ℤ) - 2 <
       L.eulerDegree k) :
     Subsingleton (Scheme.Modules.Cohomology L.obj 1) := by
-  have : IsLocallyNoetherian X := LocallyOfFiniteType.isLocallyNoetherian (X ↘ Spec (.of k))
-  have : CompactSpace X := compactSpace_of_universallyClosed (X ↘ Spec (.of k))
-  have : IsNoetherian X := {}
-  have : X.IsSeparated :=
-    ⟨by rw [← terminal.comp_from (X ↘ Spec (.of k))]; infer_instance⟩
-  let hex : ValuativeCriterion.Existence (X ↘ Spec (.of k)) :=
-    (UniversallyClosed.eq_valuativeCriterion ▸
-      (inferInstance : UniversallyClosed (X ↘ Spec (.of k)))).1
-  have := (Scheme.Modules.finiteDimensional_cohomology_congr k
-    (SchemeWeilDivisor.sheafZeroIsoTrivial hdim) 1).mp
-      (SchemeWeilDivisor.finiteDimensional_cohomology_one_sheaf_of_isFunctionField hex hdim hF 0)
-  obtain ⟨D, ⟨e⟩⟩ := SchemeWeilDivisor.exists_nonempty_iso_sheaf hdim L
-  have hdeg : 2 * (genus k X.functionField : ℤ) - 1 ≤
-      Divisor.degree (SchemeWeilDivisor.equivFunctionFieldDivisor hex hdim D) := by
-    rw [SchemeWeilDivisor.degree_equivFunctionFieldDivisor hex hdim,
-      ← eulerDegree_eq_relativeDegree k hdim e,
-      ← SchemeWeilDivisor.genus_eq_genus_functionField hex hdim hF hk, Scheme.genus_def]
-    omega
+  obtain ⟨hN, hS, hex, h⟩ := exists_divisor_of_high_degree hdim hF hk L hL
+  have := hN
+  have := hS
+  obtain ⟨D, ⟨e⟩, hdeg, _, _⟩ := h
   have hzero := Divisor.indexOfSpecialty_eq_zero_of_two_mul_genus_sub_one_le_degree hF hk hdeg
   have hdimzero := finrank_weilDifferentialFiltration hF hk
     (SchemeWeilDivisor.equivFunctionFieldDivisor hex hdim D)
   rw [hzero] at hdimzero
-  have := SchemeWeilDivisor.finiteDimensional_cohomology_one_sheaf_of_isFunctionField hex hdim hF D
+  have :=
+    SchemeWeilDivisor.finiteDimensional_cohomology_one_sheaf_of_isFunctionField hex hdim hF D
   have hdual := (SchemeWeilDivisor.cohomologyOneDualEquivWeilDifferentialFiltration
     hex hdim hF D).finrank_eq
   rw [Subspace.dual_finrank_eq] at hdual
@@ -85,7 +111,7 @@ theorem subsingleton_cohomology_one_of_two_mul_genus_sub_two_lt_eulerDegree
     omega
   have hLzero : finrank k (Scheme.Modules.Cohomology L.obj 1) = 0 :=
     (Scheme.Modules.finrank_cohomology_congr k e 1).trans hDzero
-  have := finiteDimensional_cohomology_one k hdim L
+  have := (Scheme.Modules.finiteDimensional_cohomology_congr k e 1).mpr inferInstance
   exact Module.finrank_zero_iff.mp hLzero
 
 /-- On a proper integral curve with constant field `k`, a line bundle of degree greater than
@@ -97,30 +123,14 @@ theorem finrank_cohomology_zero_eq_eulerDegree_add_one_sub_genus
       L.eulerDegree k) :
     (finrank k (Scheme.Modules.Cohomology L.obj 0) : ℤ) = L.eulerDegree k + 1 -
       finrank k (Scheme.Modules.Cohomology (trivial X).obj 1) := by
-  have : IsLocallyNoetherian X := LocallyOfFiniteType.isLocallyNoetherian (X ↘ Spec (.of k))
-  have : CompactSpace X := compactSpace_of_universallyClosed (X ↘ Spec (.of k))
-  have : IsNoetherian X := {}
-  have : X.IsSeparated :=
-    ⟨by rw [← terminal.comp_from (X ↘ Spec (.of k))]; infer_instance⟩
-  let hex : ValuativeCriterion.Existence (X ↘ Spec (.of k)) :=
-    (UniversallyClosed.eq_valuativeCriterion ▸
-      (inferInstance : UniversallyClosed (X ↘ Spec (.of k)))).1
-  have := (Scheme.Modules.finiteDimensional_cohomology_congr k
-    (SchemeWeilDivisor.sheafZeroIsoTrivial hdim) 1).mp
-      (SchemeWeilDivisor.finiteDimensional_cohomology_one_sheaf_of_isFunctionField hex hdim hF 0)
-  obtain ⟨D, ⟨e⟩⟩ := SchemeWeilDivisor.exists_nonempty_iso_sheaf hdim L
-  have hdeg : 2 * (genus k X.functionField : ℤ) - 1 ≤
-      Divisor.degree (SchemeWeilDivisor.equivFunctionFieldDivisor hex hdim D) := by
-    rw [SchemeWeilDivisor.degree_equivFunctionFieldDivisor hex hdim,
-      ← eulerDegree_eq_relativeDegree k hdim e,
-      ← SchemeWeilDivisor.genus_eq_genus_functionField hex hdim hF hk, Scheme.genus_def]
-    omega
+  obtain ⟨hN, hS, hex, h⟩ := exists_divisor_of_high_degree hdim hF hk L hL
+  have := hN
+  have := hS
+  obtain ⟨D, ⟨e⟩, hdeg, hdegree, hgenus⟩ := h
   rw [Scheme.Modules.finrank_cohomology_congr k e 0,
     SchemeWeilDivisor.finrank_cohomology_zero_sheaf_eq_dim hex hdim]
   have h := Divisor.dim_eq_degree_add_one_sub_genus_of_two_mul_genus_sub_one_le_degree hF hk hdeg
-  rw [SchemeWeilDivisor.degree_equivFunctionFieldDivisor hex hdim,
-    ← eulerDegree_eq_relativeDegree k hdim e,
-    ← SchemeWeilDivisor.genus_eq_genus_functionField hex hdim hF hk, Scheme.genus_def] at h
+  rw [hdegree, hgenus] at h
   exact h
 
 end TauCeti.AlgebraicGeometry.InvertibleSheaf

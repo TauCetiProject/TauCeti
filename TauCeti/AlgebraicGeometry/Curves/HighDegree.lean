@@ -27,7 +27,7 @@ Neither a rational point nor a perfectness assumption on `k` is required.
 
 ## References
 
-* R. Hartshorne, *Algebraic Geometry*, Chapter IV, Corollary 1.3.4.
+* R. Hartshorne, *Algebraic Geometry*, Chapter IV, Example 1.3.4.
 * J. S. Milne, *Jacobian Varieties*, Section 5 (large-degree Abel maps).
 -/
 
@@ -44,14 +44,12 @@ variable {k : Type u} [Field k] {X : Scheme.{u}} [X.Over (Spec (.of k))]
   [IsProper (X ↘ Spec (.of k))] [SmoothOfRelativeDimension 1 (X ↘ Spec (.of k))]
   [GeometricallyConnected (X ↘ Spec (.of k))]
 
-/-- On a smooth proper geometrically connected curve over any field, a line bundle of degree
-above `2g - 2` has vanishing first cohomology. All finiteness and regularity hypotheses are
-consequences of the geometric assumptions. -/
-theorem subsingleton_cohomology_one_of_smooth_of_two_mul_genus_sub_two_lt_eulerDegree
-    (L : InvertibleSheaf X)
-    (hL : 2 * (finrank k (Scheme.Modules.Cohomology (trivial X).obj 1) : ℤ) - 2 <
-      L.eulerDegree k) :
-    Subsingleton (Scheme.Modules.Cohomology L.obj 1) := by
+private theorem high_degree_hypotheses_of_smooth :
+    ∃ hI : IsIntegral X,
+      have := hI
+      (∀ x : CodimensionOnePoint X, IsDiscreteValuationRing (X.presheaf.stalk (x : X))) ∧
+        (∀ x : X, coheight x ≤ 1) ∧ IsFunctionField k X.functionField ∧
+          IsIntegrallyClosedIn k X.functionField := by
   have := SmoothOfRelativeDimension.smooth 1 (X ↘ Spec (.of k))
   have : IsIntegral X := GeometricallyIntegral.isIntegral_of_subsingleton (X ↘ Spec (.of k))
   have : IsLocallyNoetherian X := LocallyOfFiniteType.isLocallyNoetherian (X ↘ Spec (.of k))
@@ -63,9 +61,24 @@ theorem subsingleton_cohomology_one_of_smooth_of_two_mul_genus_sub_two_lt_eulerD
     topologicalKrullDim_eq_of_smoothOfRelativeDimension (X ↘ Spec (.of k))
   have hcoheight (x : X) : coheight x ≤ 1 := by
     exact_mod_cast (coheight_le_topologicalKrullDim x).trans hdim.le
+  exact ⟨inferInstance, inferInstance, hcoheight,
+    ((isFunctionField_functionField_iff k).mpr hdim),
+    isIntegrallyClosedIn_functionField_of_geometricallyIntegral⟩
+
+/-- On a smooth proper geometrically connected curve over any field, a line bundle of degree
+above `2g - 2` has vanishing first cohomology. All finiteness and regularity hypotheses are
+consequences of the geometric assumptions. -/
+theorem subsingleton_cohomology_one_of_smooth_of_two_mul_genus_sub_two_lt_eulerDegree
+    (L : InvertibleSheaf X)
+    (hL : 2 * (finrank k (Scheme.Modules.Cohomology (trivial X).obj 1) : ℤ) - 2 <
+      L.eulerDegree k) :
+    Subsingleton (Scheme.Modules.Cohomology L.obj 1) := by
+  obtain ⟨hI, h⟩ := high_degree_hypotheses_of_smooth (k := k) (X := X)
+  have := hI
+  obtain ⟨hDVR, hcoheight, hF, hk⟩ := h
+  have := hDVR
   exact subsingleton_cohomology_one_of_two_mul_genus_sub_two_lt_eulerDegree
-    hcoheight ((isFunctionField_functionField_iff k).mpr hdim)
-    isIntegrallyClosedIn_functionField_of_geometricallyIntegral L hL
+    hcoheight hF hk L hL
 
 /-- On a smooth proper geometrically connected curve over any field, a line bundle of degree
 above `2g - 2` has exactly `deg L + 1 - g` independent sections. The equality is over the integers
@@ -76,19 +89,10 @@ theorem finrank_cohomology_zero_eq_eulerDegree_add_one_sub_genus_of_smooth
       L.eulerDegree k) :
     (finrank k (Scheme.Modules.Cohomology L.obj 0) : ℤ) = L.eulerDegree k + 1 -
       finrank k (Scheme.Modules.Cohomology (trivial X).obj 1) := by
-  have := SmoothOfRelativeDimension.smooth 1 (X ↘ Spec (.of k))
-  have : IsIntegral X := GeometricallyIntegral.isIntegral_of_subsingleton (X ↘ Spec (.of k))
-  have : IsLocallyNoetherian X := LocallyOfFiniteType.isLocallyNoetherian (X ↘ Spec (.of k))
-  have : ∀ x : X, IsRegularLocalRing (X.presheaf.stalk x) :=
-    isRegularLocalRing_stalk_of_smooth (X ↘ Spec (.of k))
-  have : ∀ x : CodimensionOnePoint X,
-      IsDiscreteValuationRing (X.presheaf.stalk (x : X)) := fun x ↦ inferInstance
-  have hdim : topologicalKrullDim X = 1 :=
-    topologicalKrullDim_eq_of_smoothOfRelativeDimension (X ↘ Spec (.of k))
-  have hcoheight (x : X) : coheight x ≤ 1 := by
-    exact_mod_cast (coheight_le_topologicalKrullDim x).trans hdim.le
-  exact finrank_cohomology_zero_eq_eulerDegree_add_one_sub_genus
-    hcoheight ((isFunctionField_functionField_iff k).mpr hdim)
-    isIntegrallyClosedIn_functionField_of_geometricallyIntegral L hL
+  obtain ⟨hI, h⟩ := high_degree_hypotheses_of_smooth (k := k) (X := X)
+  have := hI
+  obtain ⟨hDVR, hcoheight, hF, hk⟩ := h
+  have := hDVR
+  exact finrank_cohomology_zero_eq_eulerDegree_add_one_sub_genus hcoheight hF hk L hL
 
 end TauCeti.AlgebraicGeometry.InvertibleSheaf
