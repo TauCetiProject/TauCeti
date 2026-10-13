@@ -109,12 +109,6 @@ theorem globalNormSubgroup_fixingOpenNormalSubgroup (L : Type*) [Field L] [Numbe
   ext c
   rw [mem_globalNormSubgroup_iff, globalGroundEquiv_mem_layerNormSubgroup_iff]
 
-/-- The class field of an open normal subgroup of `G_K` is a number field, being a finite extension
-of the number field `K`. -/
-instance numberField_classField (V : OpenNormalSubgroup (AbsoluteGaloisGroup K)) :
-    NumberField (classField K V) :=
-  .of_module_finite K _
-
 variable (K) in
 /-- **The global norm subgroup of `V` is `N_{E/K}(C_E)` for the class field `E` of `V`.** -/
 theorem globalNormSubgroup_eq_range_classField (V : OpenNormalSubgroup (AbsoluteGaloisGroup K)) :
