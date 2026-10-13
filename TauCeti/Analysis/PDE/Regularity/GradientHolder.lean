@@ -182,7 +182,8 @@ private theorem setIntegral_norm_gradient_sub_setAverage_sq_le
   obtain ⟨w, -, -, ⟨h, hh, hwh⟩, hest⟩ :=
     exists_sub_mem_w1p0Submodule_harmonicOnNhd_ae_eq_of_subset_ball (Omega := B) (z := x₀)
       (R := r) subset_rfl (W1p.restrictL hB u)
-  have hest' := hest hGc.toLp (forall_energyFormH1_restrictL_eq_inner hB hu hGc)
+  have hest' := hest hGc.toLp (forall_energyFormH1_restrictL_eq_inner hB
+    (memLp_top_const (energyIntegrand (1 : Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ) 0 0)) hu hGc)
   -- The gradient of the replacement is harmonic.
   obtain ⟨H, hH, hwH⟩ :=
     W1p.exists_harmonicOnNhd_ae_eq_gradient (hh.weaklyHarmonicOn.congr_ae hwh.symm)
