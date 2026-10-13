@@ -739,7 +739,7 @@ def build(rows: list[dict], prs: list[dict], exported_at: dt.datetime,
         "update_due_prs": UPDATE_DUE_PRS,
         "weeks": labels,
         "global": {**glob, "first_merge": min((p["merged_at"] for p in prs if p["merged_at"] and parse_ts(p["merged_at"]) <= cutoff), default=None)},
-        # The categories in use, by name, as arXiv lists them; "Unsorted" is never listed (the board
+        # The categories in use, by name, in alphabetical order; "Unsorted" is never listed (the board
         # appends it).
         "topic_scheme": TOPIC_SCHEME,
         "topics": sorted({r["topic"] for r in rows} - {UNSORTED}),
