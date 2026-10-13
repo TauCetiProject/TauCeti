@@ -41,10 +41,7 @@ prefunctors.
 
 ## References
 
-This is the doubled-graph construction in Layer 0 of
-`TauCetiRoadmap/ZigzagPreprojective/README.md`; its interface follows the target-signature
-prototype in `TauCetiRoadmap/ZigzagPreprojective/Suggested.lean`. See Huerfano--Khovanov,
-*A category for the adjoint representation*, Section 3.
+See Huerfano--Khovanov, *A category for the adjoint representation*, Section 3.
 -/
 
 public section
