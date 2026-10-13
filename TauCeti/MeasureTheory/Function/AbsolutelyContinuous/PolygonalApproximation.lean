@@ -40,34 +40,10 @@ def IsPolygonalOnInterval {F : Type*} [AddCommGroup F] [Module ℝ F]
           ((t - s i.castSucc) / (s i.succ - s i.castSucc)) •
             (f (s i.succ) - f (s i.castSucc))
 
-/-- A finite increasing subdivision with affine interpolation on each cell defines a polygonal
-curve. -/
-theorem IsPolygonalOnInterval.of_subdivision {F : Type*} [AddCommGroup F] [Module ℝ F]
-    {f : ℝ → F} {a b : ℝ} {N : ℕ}
-    (hN : 0 < N) {s : Fin (N + 1) → ℝ} (hs : StrictMono s) (ha : s 0 = a)
-    (hb : s (Fin.last N) = b)
-    (hsegments : ∀ i : Fin N, ∀ t ∈ Icc (s i.castSucc) (s i.succ),
-      f t = f (s i.castSucc) +
-        ((t - s i.castSucc) / (s i.succ - s i.castSucc)) •
-          (f (s i.succ) - f (s i.castSucc))) :
-    IsPolygonalOnInterval f a b := ⟨N, hN, s, hs, ha, hb, hsegments⟩
-
-/-- A polygonal curve admits a finite increasing subdivision and its explicit affine interpolation
-formula on each cell. -/
-theorem IsPolygonalOnInterval.exists_subdivision {F : Type*} [AddCommGroup F] [Module ℝ F]
-    {f : ℝ → F} {a b : ℝ}
-    (h : IsPolygonalOnInterval f a b) :
-    ∃ N : ℕ, 0 < N ∧ ∃ s : Fin (N + 1) → ℝ,
-      StrictMono s ∧ s 0 = a ∧ s (Fin.last N) = b ∧
-        ∀ i : Fin N, ∀ t ∈ Icc (s i.castSucc) (s i.succ),
-          f t = f (s i.castSucc) +
-            ((t - s i.castSucc) / (s i.succ - s i.castSucc)) •
-              (f (s i.succ) - f (s i.castSucc)) := h
-
 /-- A polygonal curve is absolutely continuous: its finitely many affine cells glue together. -/
 theorem IsPolygonalOnInterval.absolutelyContinuousOnInterval {f : ℝ → E} {a b : ℝ}
     (h : IsPolygonalOnInterval f a b) : AbsolutelyContinuousOnInterval f a b := by
-  obtain ⟨N, _, s, hs, ha, hb, hsegments⟩ := h.exists_subdivision
+  obtain ⟨N, _, s, hs, ha, hb, hsegments⟩ := h
   exact AbsolutelyContinuousOnInterval.of_affine_subdivision hs ha hb hsegments
 
 namespace AbsolutelyContinuousOnInterval
