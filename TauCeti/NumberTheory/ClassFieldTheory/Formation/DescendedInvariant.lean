@@ -26,10 +26,11 @@ invariant of a class is `σ` of a lift of an inflation of it, whichever refineme
 chosen (`descendedInv_eq`). It is characterized by the two equations `descendedInv_map` (on the
 image of `φ` it is `σ`) and `descendedInv_infl` (it does not change under inflation)
 (`descendedInv_unique`). This is the shape of Tate's definition of the invariant map of idele
-classes from the sum of the local invariants of ideles. That sum is defined only on the image of
-`H²(L, I_L) → H²(L, C_L)`, which can be a proper subgroup: for the biquadratic field
-`ℚ(√13, √17)` the image is killed by `2` while `H²(L, C_L)` is cyclic of order `4`. Classically,
-every class lifts after inflation to a suitable cyclotomic refinement.
+classes from the sum of the local invariants of ideles. That sum is defined on `H²(L, I_L)` and,
+because it vanishes on the kernel of `H²(L, I_L) → H²(L, C_L)`, induces an invariant only on the
+image of this map, which can be a proper subgroup: for the biquadratic field `ℚ(√13, √17)` the
+image is killed by `2` while `H²(L, C_L)` is cyclic of order `4`. Classically, every class lifts
+after inflation to a suitable cyclotomic refinement.
 
 The invariant inherits the restriction and conjugation laws of `σ` (`descendedInv_res`,
 `descendedInv_conj`), because restriction, conjugation and the maps induced by `φ` commute with
@@ -180,6 +181,7 @@ theorem descendedInv_unique (inv : ∀ L : NormalLayer G, L.H F' 2 →+ AddCircl
 
 include hres in
 /-- **Restriction multiplies the descended invariant by the relative degree**, as it does `σ`. -/
+@[simp]
 theorem descendedInv_res {small big : NormalLayer G} (R : LayerRestriction small big)
     (x : big.H F' 2) :
     descendedInv φ σ hσ hlift hker small (R.cohomologyRes F' 2 x) =
@@ -198,6 +200,7 @@ theorem descendedInv_res {small big : NormalLayer G} (R : LayerRestriction small
 
 include hconj in
 /-- **Conjugation preserves the descended invariant**, as it does `σ`. -/
+@[simp]
 theorem descendedInv_conj (L : NormalLayer G) (g : G) (x : L.H F' 2) :
     descendedInv φ σ hσ hlift hker (L.conjugate g) ((L.conjugateCohomologyIso F' g 2).hom x) =
       descendedInv φ σ hσ hlift hker L x := by
