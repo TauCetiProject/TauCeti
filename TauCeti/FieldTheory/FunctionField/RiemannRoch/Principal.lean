@@ -35,6 +35,8 @@ so that `ℓ` depends only on the linear equivalence class of a divisor.  It is 
   an effective divisor (Remark 1.4.5(b)).
 * `TauCeti.poles_le_iff_mem_riemannRochSpace`: for effective `D`, `z ∈ L(D)` exactly when the pole
   divisor of `z` is at most `D`.
+* `TauCeti.poles_eq_sup_poles_of_mem_riemannRochSpace`: if `u = x - c y` and `y ∈ L((u)_∞)`, then
+  `(u)_∞ = (x)_∞ ⊔ (y)_∞`.
 
 None of this needs the product formula `deg (div z) = 0` (Stichtenoth, Theorem 1.4.11), which is
 separate work; every statement here is independent of it.
@@ -225,6 +227,25 @@ theorem poles_le_iff_mem_riemannRochSpace (hF : IsFunctionField k F) {D : Diviso
   rw [Divisor.coeff_poles]
   have := (WeilDivisor.isEffective_iff D).mp hD P
   omega
+
+/-- **The poles of a linear combination `x - c y` with `y ∈ L((x - c y)_∞)`**: if `u = x - c y`
+and `y` has no worse poles than `u`, then `(u)_∞ = (x)_∞ ⊔ (y)_∞`. -/
+theorem poles_eq_sup_poles_of_mem_riemannRochSpace (hF : IsFunctionField k F) {x y u : Fˣ}
+    {c : k} (hu : (u : F) = x - c • (y : F))
+    (hy : (y : F) ∈ riemannRochSpace (Divisor.poles hF u)) :
+    Divisor.poles hF u = Divisor.poles hF x ⊔ Divisor.poles hF y := by
+  have hux : (x : F) = u + c • (y : F) := by
+    rw [hu, sub_add_cancel]
+  have hsup : WeilDivisor.IsEffective (Divisor.poles hF x ⊔ Divisor.poles hF y) :=
+    (Divisor.isEffective_poles hF x).sup
+  refine le_antisymm ((poles_le_iff_mem_riemannRochSpace hF hsup u).mpr ?_) (sup_le ?_ ?_)
+  · rw [hu]
+    exact sub_mem (riemannRochSpace_mono le_sup_left (mem_riemannRochSpace_poles hF x))
+      (Submodule.smul_mem _ c
+        (riemannRochSpace_mono le_sup_right (mem_riemannRochSpace_poles hF y)))
+  · rw [poles_le_iff_mem_riemannRochSpace hF (Divisor.isEffective_poles hF u), hux]
+    exact add_mem (mem_riemannRochSpace_poles hF u) (Submodule.smul_mem _ c hy)
+  · exact (poles_le_iff_mem_riemannRochSpace hF (Divisor.isEffective_poles hF u) y).mpr hy
 
 /-- The `n`-th power of a nonzero function has poles bounded by `n` times its pole divisor. -/
 theorem pow_mem_riemannRochSpace_zsmul_poles (hF : IsFunctionField k F) (z : Fˣ) (n : ℕ) :

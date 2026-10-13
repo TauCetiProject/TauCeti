@@ -43,7 +43,13 @@ the space of polynomials in `x` and `y` of degree at most `n - 3`, and the regul
 
 ## Main results
 
+* `TauCeti.finrank_span_pow_mul_pow_eq_genus` and
+  `TauCeti.riemannRochSpace_eq_span_pow_mul_pow_of_divisorClass_eq_canonicalClass`: if the
+  monomials `x ^ i y ^ j` with `i + j ≤ n - 3` are linearly independent and `2g = (n - 1)(n - 2)`,
+  they span a space of dimension `g`, and hence every canonical `L(D)` containing them.
 * `TauCeti.mem_riemannRochSpace_poles_of_aeval_eq_zero`: `y ∈ L((x)_∞)`.
+* `TauCeti.linearIndepOn_pow_mul_pow_of_aeval_eq_zero`: the monomials `x ^ i y ^ j` with
+  `i + j < n` are linearly independent.
 * `TauCeti.weilDifferentialDivisor_repartitionDualMul_inv_weilDifferentialCotrace_of_aeval_eq_zero`:
   the differential `dx / (∂g/∂Y (x, y))` has divisor `(n - 3) (x)_∞`.
 * `TauCeti.divisorClass_sub_three_zsmul_poles_eq_canonicalClass_of_aeval_eq_zero`:
@@ -71,7 +77,59 @@ open scoped IntermediateField
 
 namespace TauCeti
 
-variable {k F : Type*} [Field k] [Field F] [Algebra k F] [Algebra (RatFunc k) F]
+variable {k F : Type*} [Field k] [Field F] [Algebra k F]
+
+/-- **The monomials of degree at most `n - 3` span a space of dimension `g`**: if the products
+`x ^ i y ^ j` with `i + j ≤ n - 3` are linearly independent, `n ≥ 1` and `2g = (n - 1)(n - 2)`,
+then they span a space of dimension `g`, since there are `(n - 1)(n - 2) / 2` of them. -/
+theorem finrank_span_pow_mul_pow_eq_genus {x y : F} {n : ℕ}
+    (hli : LinearIndepOn k (fun p : ℕ × ℕ ↦ x ^ p.1 * y ^ p.2) {p | p.1 + p.2 + 3 ≤ n})
+    (hn : 1 ≤ n) (h2 : 2 * (genus k F : ℤ) = ((n : ℤ) - 1) * ((n : ℤ) - 2)) :
+    Module.finrank k (Submodule.span k
+      ((fun p : ℕ × ℕ ↦ x ^ p.1 * y ^ p.2) '' {p | p.1 + p.2 + 3 ≤ n})) = genus k F := by
+  classical
+  -- The exponents of the monomials of degree at most `n - 3`, as a finite set.
+  set S := (Finset.range (n - 2)).biUnion Finset.antidiagonal
+  have hS : (S : Set (ℕ × ℕ)) = {p | p.1 + p.2 + 3 ≤ n} := by
+    ext p
+    simp only [S, Finset.coe_biUnion, Finset.coe_range, Set.mem_iUnion, Set.mem_Iio,
+      Finset.mem_coe, Finset.mem_antidiagonal, Set.mem_ofPred_eq, exists_prop, exists_eq_right']
+    omega
+  rw [← hS] at hli ⊢
+  rw [Set.image_eq_range, finrank_span_eq_card hli]
+  simp only [Finset.coe_sort_coe, Fintype.card_coe]
+  -- There are `g` of them.
+  have hc : 2 * S.card = (n - 2) * (n - 2 + 1) :=
+    Finset.Nat.two_mul_card_biUnion_range_antidiagonal (n - 2)
+  rcases Nat.lt_or_ge n 2 with hn2 | hn2
+  · have hn1 : n = 1 := by omega
+    rw [hn1] at h2 hc
+    norm_num at h2 hc
+    simp [hc, h2]
+  · zify [hn2] at hc
+    have hA : ((n : ℤ) - 2) * (n - 2 + 1) = (n - 1) * (n - 2) := by ring
+    zify
+    linarith
+
+/-- **A canonical Riemann–Roch space spanned by monomials**: under the hypotheses of
+`TauCeti.finrank_span_pow_mul_pow_eq_genus`, if the monomials `x ^ i y ^ j` with `i + j ≤ n - 3`
+lie in `L(D)` for a divisor `D` in the canonical class, then they span `L(D)`, since
+`ℓ(D) = g`. -/
+theorem riemannRochSpace_eq_span_pow_mul_pow_of_divisorClass_eq_canonicalClass
+    (hF : IsFunctionField k F) (hex : IsIntegrallyClosedIn k F) {D : Divisor k F}
+    (hD : (Place.orderSystem hF).divisorClass D = canonicalClass hF hex) {x y : F} {n : ℕ}
+    (hli : LinearIndepOn k (fun p : ℕ × ℕ ↦ x ^ p.1 * y ^ p.2) {p | p.1 + p.2 + 3 ≤ n})
+    (hn : 1 ≤ n) (h2 : 2 * (genus k F : ℤ) = ((n : ℤ) - 1) * ((n : ℤ) - 2))
+    (hle : Submodule.span k ((fun p : ℕ × ℕ ↦ x ^ p.1 * y ^ p.2) '' {p | p.1 + p.2 + 3 ≤ n}) ≤
+      riemannRochSpace D) :
+    riemannRochSpace D =
+      Submodule.span k ((fun p : ℕ × ℕ ↦ x ^ p.1 * y ^ p.2) '' {p | p.1 + p.2 + 3 ≤ n}) := by
+  have := finiteDimensional_riemannRochSpace hF D
+  refine (Submodule.eq_of_le_of_finrank_eq hle ?_).symm
+  rw [finrank_span_pow_mul_pow_eq_genus hli hn h2, ← Divisor.dim_def,
+    (isRiemannRochDivisor_of_divisorClass_eq_canonicalClass hF hex hD).dim_eq hF hex]
+
+variable [Algebra (RatFunc k) F]
 
 /-- **The coordinate `y` of a plane curve has no worse poles than `x`**: let `g ∈ k[X, Y]` have
 total degree `n`, with the coefficient of `Yⁿ` equal to `1`, and let `g(x, y) = 0`. Then
@@ -123,6 +181,24 @@ theorem pow_mul_pow_mem_riemannRochSpace_zsmul_poles_of_aeval_eq_zero (hF : IsFu
   exact riemannRochSpace_mono ((Divisor.isEffective_poles hF _).zsmul_le_zsmul h) hmem
 
 variable [IsScalarTower k (RatFunc k) F]
+
+/-- **The monomials of degree less than `n` in the coordinates of a plane curve are
+independent**: let `g ∈ k[X, Y]` be irreducible of total degree `n`, with the coefficient of `Yⁿ`
+equal to `1`, and let `g(x, y) = 0`. Then the products `x ^ i y ^ j` with `i + j < n` are linearly
+independent over `k`, since `y` has degree `n` over `k(x)`. -/
+theorem linearIndepOn_pow_mul_pow_of_aeval_eq_zero {g : MvPolynomial (Fin 2) k}
+    (hirr : Irreducible g) (hlead : g.coeff (Finsupp.single 1 g.totalDegree) = 1) {y : F}
+    (hy : MvPolynomial.aeval ![algebraMap (RatFunc k) F RatFunc.X, y] g = 0) :
+    LinearIndepOn k (fun p : ℕ × ℕ ↦ algebraMap (RatFunc k) F RatFunc.X ^ p.1 * y ^ p.2)
+      {p | p.1 + p.2 < g.totalDegree} := by
+  have hdeg : (minpoly (RatFunc k) y).natDegree = g.totalDegree := by
+    rw [minpoly_ratFunc_eq_map_of_aeval_eq_zero hirr
+        (Bivariate.monic_equivMvPolynomial_symm le_rfl hlead) hy,
+      (Bivariate.monic_equivMvPolynomial_symm le_rfl hlead).natDegree_map,
+      Bivariate.natDegree_equivMvPolynomial_symm le_rfl hlead]
+  refine (RatFunc.transcendental_X.linearIndepOn_pow_mul_pow y).mono fun p hp ↦ ?_
+  simp only [Set.mem_ofPred_eq, hdeg] at hp ⊢
+  omega
 
 variable [Algebra.IsSeparable (RatFunc k) F] [FiniteDimensional (RatFunc k) F]
 
@@ -204,57 +280,18 @@ theorem riemannRochSpace_sub_three_zsmul_poles_eq_span_of_aeval_eq_zero
           (Units.mk0 RatFunc.X RatFunc.X_ne_zero))) =
       Submodule.span k ((fun p : ℕ × ℕ ↦ algebraMap (RatFunc k) F RatFunc.X ^ p.1 * y ^ p.2) ''
         {p | p.1 + p.2 + 3 ≤ g.totalDegree}) := by
-  classical
-  have h2 := two_mul_genus_eq_of_aeval_eq_zero hex hirr hlead hsm hsm' hgen hy
-  set n := g.totalDegree
-  set f := fun p : ℕ × ℕ ↦ algebraMap (RatFunc k) F RatFunc.X ^ p.1 * y ^ p.2
-  have hn : 1 ≤ n := MvPolynomial.totalDegree_pos_of_aeval_eq_zero hlead hy
-  have := finiteDimensional_riemannRochSpace hF (((n : ℤ) - 3) • Divisor.poles hF
-    (Units.map (algebraMap (RatFunc k) F : RatFunc k →* F)
-      (Units.mk0 RatFunc.X RatFunc.X_ne_zero)))
-  -- The exponents of the monomials of degree at most `n - 3`, as a finite set.
-  set S := (Finset.range (n - 2)).biUnion Finset.antidiagonal
-  have hS : (S : Set (ℕ × ℕ)) = {p | p.1 + p.2 + 3 ≤ n} := by
-    ext p
-    simp only [S, Finset.coe_biUnion, Finset.coe_range, Set.mem_iUnion, Set.mem_Iio,
-      Finset.mem_coe, Finset.mem_antidiagonal, Set.mem_ofPred_eq, exists_prop, exists_eq_right']
-    omega
-  -- These monomials are linearly independent, since their `y`-degree is less than `n`.
-  have hdeg : (minpoly (RatFunc k) y).natDegree = n := by
-    rw [minpoly_ratFunc_eq_map_of_aeval_eq_zero hirr
-        (Bivariate.monic_equivMvPolynomial_symm le_rfl hlead) hy,
-      (Bivariate.monic_equivMvPolynomial_symm le_rfl hlead).natDegree_map,
-      Bivariate.natDegree_equivMvPolynomial_symm le_rfl hlead]
-  have hli : LinearIndepOn k f (S : Set (ℕ × ℕ)) :=
-    (RatFunc.transcendental_X.linearIndepOn_pow_mul_pow y).mono fun p hp ↦ by
-      rw [hS] at hp
-      simp only [Set.mem_ofPred_eq, hdeg] at hp ⊢
-      omega
-  have hfin : Module.finrank k (Submodule.span k (f '' (S : Set (ℕ × ℕ)))) = S.card := by
-    rw [Set.image_eq_range, finrank_span_eq_card hli]
-    simp
-  -- There are `g` of them, and `ℓ((n - 3) (x)_∞) = g` since the divisor is canonical.
-  have hcard : (S.card : ℤ) = genus k F := by
-    have hc : 2 * S.card = (n - 2) * (n - 2 + 1) :=
-      Finset.Nat.two_mul_card_biUnion_range_antidiagonal (n - 2)
-    rcases Nat.lt_or_ge n 2 with hn2 | hn2
-    · have hn1 : n = 1 := by omega
-      rw [hn1] at h2 hc
-      norm_num at h2 hc
-      simp [hc, h2]
-    · zify [hn2] at hc
-      have hA : ((n : ℤ) - 2) * (n - 2 + 1) = (n - 1) * (n - 2) := by ring
-      linarith
-  rw [← hS]
-  refine (Submodule.eq_of_le_of_finrank_eq (Submodule.span_le.mpr ?_) ?_).symm
-  · rintro _ ⟨p, hp, rfl⟩
-    rw [Finset.mem_coe, ← Finset.mem_coe, hS] at hp
-    exact pow_mul_pow_mem_riemannRochSpace_zsmul_poles_of_aeval_eq_zero hF hlead hy
-      (by simp only [Set.mem_ofPred_eq] at hp; omega)
-  · rw [hfin, ← Divisor.dim_def, (isRiemannRochDivisor_of_divisorClass_eq_canonicalClass hF hex
-      (divisorClass_sub_three_zsmul_poles_eq_canonicalClass_of_aeval_eq_zero hF hex hirr hlead hsm
-        hsm' hgen hy)).dim_eq hF hex]
-    exact_mod_cast hcard
+  refine riemannRochSpace_eq_span_pow_mul_pow_of_divisorClass_eq_canonicalClass hF hex
+    (divisorClass_sub_three_zsmul_poles_eq_canonicalClass_of_aeval_eq_zero hF hex hirr hlead hsm
+      hsm' hgen hy)
+    ((linearIndepOn_pow_mul_pow_of_aeval_eq_zero hirr hlead hy).mono fun p hp ↦ by
+      simp only [Set.mem_ofPred_eq] at hp ⊢
+      omega)
+    (MvPolynomial.totalDegree_pos_of_aeval_eq_zero hlead hy)
+    (two_mul_genus_eq_of_aeval_eq_zero hex hirr hlead hsm hsm' hgen hy)
+    (Submodule.span_le.mpr ?_)
+  rintro _ ⟨p, hp, rfl⟩
+  exact pow_mul_pow_mem_riemannRochSpace_zsmul_poles_of_aeval_eq_zero hF hlead hy
+    (by simp only [Set.mem_ofPred_eq] at hp; omega)
 
 /-- **The regular differentials of a smooth plane curve**: under the hypotheses of
 `TauCeti.weilDifferentialDivisor_repartitionDualMul_inv_weilDifferentialCotrace_of_aeval_eq_zero`,
