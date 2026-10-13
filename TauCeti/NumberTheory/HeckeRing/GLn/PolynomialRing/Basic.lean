@@ -43,11 +43,11 @@ here.
 
 ## Implementation notes
 
-The roadmap records that general `n` needs two further steps (uniqueness of the leading
-double coset in the triangular expansion, and recovery of the generator exponents from the
-leading elementary-divisor vector); those are not formalised in the source and are not
-ported. Only the `n = 1` and `n = 2` cases below are proved, and they are the ones the
-classical theory consumes.
+For general `n`, `PolynomialRing/LeadingExponent.lean` proves that the leading
+elementary-divisor vector recovers the generator exponents. The remaining step is to establish
+the triangular expansion of products, including the coefficient-one leading term; the
+dimension-two proof below handles that expansion by direct calculation. Only the `n = 1` and
+`n = 2` polynomial presentations are proved here.
 
 Ported from the AINTLIB `LeanModularForms` project
 ([`LeanModularForms/HeckeRIngs/GLn/PolynomialRing.lean`](https://github.com/CBirkbeck/AINTLIB),

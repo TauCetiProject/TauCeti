@@ -264,7 +264,6 @@ theorem corestrictHom_comp_coalg_apply (f : C →ₗc[R] D) (g : D →ₗc[R] E)
   rfl
 
 /-- Corestriction sends identity morphisms to identity morphisms. -/
-@[simp]
 theorem corestrictHom_id (f : C →ₗc[R] D) :
     letI : Comodule R D M := Corestrict (R := R) (C := C) (D := D) (M := M) f
     corestrictHom (R := R) (C := C) (D := D) (M := M) (N := M) f (Hom.id R C M) =
@@ -328,7 +327,6 @@ theorem corestrict_map_toLinearMap (f : C →ₗc[R] D) {M N : ComoduleCat.{u, v
   rfl
 
 /-- The corestriction functor leaves the underlying function of a morphism unchanged. -/
-@[simp]
 theorem corestrict_map_apply (f : C →ₗc[R] D) {M N : ComoduleCat.{u, v, x} R C}
     (g : M ⟶ N) (m : M) : (corestrict (R := R) (C := C) (D := D) f).map g m = g m :=
   rfl
@@ -344,7 +342,6 @@ theorem corestrict_map_comp_coalg_toLinearMap (f : C →ₗc[R] D) (g : D →ₗ
   rfl
 
 /-- Corestriction functors compose in the coalgebra morphism on elements. -/
-@[simp]
 theorem corestrict_map_comp_coalg_apply (f : C →ₗc[R] D) (g : D →ₗc[R] E)
     {M N : ComoduleCat.{u, v, x} R C} (h : M ⟶ N) (m : M) :
     (corestrict (R := R) (C := C) (D := E) (g.comp f)).map h m =

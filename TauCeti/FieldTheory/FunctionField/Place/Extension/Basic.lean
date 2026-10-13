@@ -56,6 +56,8 @@ to the canonical fraction fields used by Mathlib's different API.
 ## Main results
 
 * `TauCeti.Place.ord_algebraMap_restrict`: the defining property `ord_{P'} = e · ord_P` on `F`.
+* `TauCeti.Place.ramificationIdx_eq_of_ringEquiv`: the ramification index is unchanged when the
+  field below is replaced by an isomorphic copy with the same image in `F'`.
 * `TauCeti.Place.restrict_eq_iff_integers_le`, `TauCeti.Place.restrict_eq_iff_forall_ord_pos`
   and `TauCeti.Place.restrict_eq_iff_exists_ord_eq`: the three characterizations of `P' ∣ P`
   (Stichtenoth, Proposition 3.1.4), by the containment of valuation rings, by the containment of
@@ -329,6 +331,18 @@ omit [Algebra.IsIntegral F F'] in
 lemma ramificationIdx_def :
     ramificationIdx F P' = Valuation.ordIndex (P'.valuation.comap (algebraMap F F')) := by
   rw [ramificationIdx]
+
+omit [Algebra.IsIntegral F F'] in
+/-- **The ramification index does not depend on how the field below is presented**: if
+`σ : F₀ ≃+* F` is compatible with the two maps into `F'`, then `P'` has the same ramification
+index over `F₀` as over `F`. -/
+theorem ramificationIdx_eq_of_ringEquiv {F₀ : Type*} [Field F₀] [Algebra F₀ F'] (σ : F₀ ≃+* F)
+    (hσ : ∀ c, algebraMap F F' (σ c) = algebraMap F₀ F' c) :
+    ramificationIdx F₀ P' = ramificationIdx F P' := by
+  have h : algebraMap F₀ F' = (algebraMap F F').comp σ.toRingHom :=
+    RingHom.ext fun c ↦ (hσ c).symm
+  rw [ramificationIdx_def, ramificationIdx_def, h, Valuation.comap_comp,
+    Valuation.ordIndex_comap_of_surjective _ σ.surjective]
 
 /-- The ramification index of a restricted place is positive. -/
 theorem ramificationIdx_pos : 0 < ramificationIdx F P' :=

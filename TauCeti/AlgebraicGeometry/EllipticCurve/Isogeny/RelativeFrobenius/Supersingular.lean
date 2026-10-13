@@ -47,6 +47,11 @@ Both implications go through the separable degree of `[p]`.
 Since `[p] = V ∘ F_{W/K}` with `F_{W/K}` purely inseparable, `[p]` and `V` have the same
 separable degree, which connects the two.
 
+The same comparison bounds the `p`-torsion of `W` over `K` itself: the kernel of `[p]` has at most
+as many points as its separable degree, which is at most `deg V = p`. So `E[p]` is either zero or
+cyclic of order `p`, and it is the latter over an algebraically closed field exactly when `W` is
+ordinary.
+
 ## Main results
 
 * `WeierstrassCurve.isSupersingular_iff_separableDegree_mulByIntIsogenyOfNeZero_eq_one` and
@@ -60,10 +65,12 @@ separable degree, which connects the two.
   `WeierstrassCurve.isOrdinary_iff_separableDegree_mulByIntIsogenyOfNeZero_pow_eq`: in
   characteristic `p > 0`, `W` is ordinary exactly when `[p ^ k]` has separable degree `p ^ k`, for
   `k = 1` or any `k ≠ 0`.
+* `WeierstrassCurve.natCard_torsionBy_le` and `WeierstrassCurve.torsionBy_eq_zmultiples`: `W` has
+  at most `p` points of order dividing `p`, so a nonzero one generates them all.
 
 ## References
 
-* [J. Silverman, *The Arithmetic of Elliptic Curves*][silverman2009], III.6.1 and V.3.1.
+* [J. Silverman, *The Arithmetic of Elliptic Curves*][silverman2009], III.6.1, III.6.4 and V.3.1.
 -/
 
 public section
@@ -209,6 +216,36 @@ theorem isOrdinary_iff_separableDegree_mulByIntIsogenyOfNeZero_pow_eq (hp : p.Pr
   rw [separableDegree_mulByIntIsogenyOfNeZero_pow _ (mod_cast expChar_ne_zero K p),
     Nat.pow_left_injective hk |>.eq_iff,
     isOrdinary_iff_separableDegree_mulByIntIsogenyOfNeZero_eq p W hp]
+
+open scoped Classical in
+/-- **An elliptic curve has at most `p` points of order dividing `p`** in characteristic `p`
+(Silverman III.6.4(c)): the `p`-torsion is the kernel of `[p]`, which has at most as many points as
+the separable degree of `[p]`, the separable degree of the Verschiebung, of degree `p`. So `E[p]` is
+zero or cyclic of order `p`. -/
+theorem natCard_torsionBy_le : Nat.card (AddSubgroup.torsionBy W.toAffine.Point p) ≤ p := by
+  have h := (mulByIntIsogenyOfNeZero W.toAffine
+    (mod_cast expChar_ne_zero K p : (p : ℤ) ≠ 0)).card_ker_le_separableDegree
+  rw [ker_mulByIntIsogeny_eq_torsionBy, Affine.baseChange_self,
+    ← separableDegree_verschiebungIsogeny] at h
+  -- the Verschiebung has degree `p`, a multiple of its separable degree
+  refine h.trans (Nat.le_of_dvd (expChar_pos K p) ?_)
+  have hV := (verschiebungIsogeny p W.toAffine).separableDegree_mul_inseparableDegree
+  rw [degree_verschiebungIsogeny] at hV
+  exact Dvd.intro _ hV
+
+open scoped Classical in
+/-- **A nonzero point of order dividing `p` generates the `p`-torsion** in characteristic `p`: the
+`p`-torsion has at most `p` points, and the point has order exactly `p`. -/
+theorem torsionBy_eq_zmultiples {Q : W.toAffine.Point} (hQ : p • Q = 0) (hQ₀ : Q ≠ 0) :
+    AddSubgroup.torsionBy W.toAffine.Point p = AddSubgroup.zmultiples Q := by
+  have hp : p.Prime := (expChar_is_prime_or_one K p).resolve_right fun h ↦ by
+    subst h
+    exact hQ₀ (by simpa using hQ)
+  have := W.finite_torsionBy (mod_cast hp.ne_zero : (p : ℤ) ≠ 0)
+  refine (AddSubgroup.eq_of_le_of_card_ge (AddSubgroup.zmultiples_le.2
+    ((Submodule.mem_torsionBy_iff _ _).2 (by rwa [natCast_zsmul]))) ?_).symm
+  rw [Nat.card_zmultiples, addOrderOf_eq_prime (hp := ⟨hp⟩) hQ hQ₀]
+  exact natCard_torsionBy_le p W
 
 end WeierstrassCurve
 

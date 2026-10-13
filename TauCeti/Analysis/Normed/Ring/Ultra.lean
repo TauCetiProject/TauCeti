@@ -11,18 +11,28 @@ public import Mathlib.Analysis.Normed.Ring.Ultra
 /-!
 # The closed unit ball and products of elements close to one in ultrametric normed rings
 
-In an ultrametric seminormed ring with `‖1‖ = 1`, the closed unit ball is an open subring. In an
-ultrametric normed ring, a finite product of elements each within `ε ≤ 1` of `1` is again
-within `ε` of `1`.
+An ultrametric seminormed ring is a nonarchimedean topological ring: its open balls about zero
+are open additive subgroups. In an ultrametric seminormed ring with `‖1‖ = 1`, the closed unit
+ball is an open subring. In an ultrametric normed ring, a finite product of elements each within
+`ε ≤ 1` of `1` is again within `ε` of `1`.
 
 ## Main results
 
+* `IsUltrametricDist.nonarchimedeanRing`: an ultrametric seminormed ring is a nonarchimedean
+  ring.
 * `Subring.unitClosedBall`: the closed unit ball of an ultrametric seminormed ring with
   `‖1‖ = 1`, an open subring.
 * `TauCeti.norm_mul_sub_one_lt` and `TauCeti.norm_prod_sub_one_lt`
 -/
 
 public section
+
+/-- **An ultrametric seminormed ring is a nonarchimedean ring.** This is the ring form of
+Mathlib's `IsUltrametricDist.nonarchimedeanAddGroup`: every neighbourhood of zero contains an open
+additive subgroup, namely a small open ball. -/
+instance IsUltrametricDist.nonarchimedeanRing {R : Type*} [SeminormedRing R]
+    [IsUltrametricDist R] : NonarchimedeanRing R where
+  is_nonarchimedean := NonarchimedeanAddGroup.is_nonarchimedean
 
 section UnitClosedBall
 
