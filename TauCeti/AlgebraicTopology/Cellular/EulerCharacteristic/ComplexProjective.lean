@@ -47,8 +47,8 @@ theorem cwEulerChar_cwComplex :
     induction N with
     | zero => rw [Finset.sum_range_one]; simp
     | succ N ih =>
-      rw [show 2 * (N + 1) + 1 = 2 * N + 1 + 1 + 1 by ring, Finset.sum_range_succ,
-        Finset.sum_range_succ, ih]
+      have hN : 2 * (N + 1) + 1 = 2 * N + 1 + 1 + 1 := by ring
+      rw [hN, Finset.sum_range_succ, Finset.sum_range_succ, ih]
       simp [Nat.even_add_one, parity_simps]
   rw [cwEulerChar_eq_sum_range (C := (univ : Set (ComplexProjectiveSpace n))) (N := 2 * n + 1)
       fun m hm ↦

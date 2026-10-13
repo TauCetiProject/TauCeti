@@ -41,6 +41,8 @@ connected as a continuous image of the sphere, and the projection is an open quo
 
 * A. Hatcher, [*Algebraic Topology*](https://pi.math.cornell.edu/~hatcher/AT/AT.pdf),
   Chapter 0, Example 0.6.
+* The quotient model and its API adapt Tau Ceti's real projective space in
+  `TauCeti/AlgebraicTopology/UniversalCover/RealProjective/Basic.lean`.
 -/
 
 public section
@@ -96,6 +98,7 @@ protected theorem inductionOn {motive : ComplexProjectiveSpace n → Prop}
 
 /-- Two unit vectors define the same point of complex projective space exactly when they differ
 by a unit complex scalar. -/
+@[simp]
 theorem mk_eq_mk_iff (x y : sphere (0 : EuclideanSpace ℂ (Fin (n + 1))) 1) :
     mk n x = mk n y ↔ ∃ c : sphere (0 : ℂ) 1, c • y = x := by
   unfold mk ComplexProjectiveSpace

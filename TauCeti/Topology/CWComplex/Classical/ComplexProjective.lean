@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Topology.CWComplex.Classical.Finite
 public import TauCeti.Analysis.InnerProductSpace.Euclidean.Space
-public import TauCeti.Analysis.Normed.Module.Ball.IntUnitsAction
+public import TauCeti.Analysis.Normed.Module.Ball.Action
 public import TauCeti.Analysis.Normed.Module.Ball.Homeomorph
 public import TauCeti.Data.Fin.Basic
 public import TauCeti.Topology.ComplexProjectiveSpace
@@ -51,6 +51,8 @@ of the real coordinates `TauCeti.complexEuclideanRealCoords`.
 
 * A. Hatcher, [*Algebraic Topology*](https://pi.math.cornell.edu/~hatcher/AT/AT.pdf),
   Chapter 0, Example 0.6.
+* The construction adapts Tau Ceti's CW structure on real projective space in
+  `TauCeti/Topology/CWComplex/Classical/RealProjective.lean`.
 -/
 
 public section
@@ -255,9 +257,10 @@ private theorem hemispherePoint_phase_smul_truncate {i : Fin (n + 1)}
   rcases lt_trichotomy (j : ℕ) i with h | h | h
   · rw [hemispherePoint_apply_of_lt _ h]
     simp [truncate, Fin.castLE]
-  · rw [hemispherePoint_apply_of_eq _ h, hw, show j = i from Fin.ext h, PiLp.smul_apply,
-      smul_eq_mul, phase_mul_self hyi, show 1 - ‖truncate i y.1‖ ^ 2 = ‖y.1 i‖ ^ 2 by linarith,
-      Real.sqrt_sq (norm_nonneg _)]
+  · have hji : j = i := Fin.ext h
+    have hsq : 1 - ‖truncate i y.1‖ ^ 2 = ‖y.1 i‖ ^ 2 := by linarith
+    rw [hemispherePoint_apply_of_eq _ h, hw, hji, PiLp.smul_apply, smul_eq_mul,
+      phase_mul_self hyi, hsq, Real.sqrt_sq (norm_nonneg _)]
   · rw [hemispherePoint_apply_of_gt _ h, PiLp.smul_apply, hy j (Fin.lt_def.2 h), smul_zero]
 
 open scoped Classical in
