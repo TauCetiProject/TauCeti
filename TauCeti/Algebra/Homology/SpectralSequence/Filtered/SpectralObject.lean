@@ -40,6 +40,9 @@ for a filtration, this is the cohomology `H^{p+q}(F_{q+1}/F_q)` of a graded piec
   transformation `α : F ⟶ G`, functorial in `α`.
 * `CochainComplex.filtrationFunctor F hF`: the functor `EInt ⥤ CochainComplex C ℤ` of an
   increasing filtration `F : ℤ → Subobject K`.
+* `CochainComplex.filtrationFunctorObjCoeIso F hF n`: its value at an integer `n` is the
+  subcomplex `F n`, with the inclusions of subcomplexes as transition maps
+  (`CochainComplex.filtrationFunctor_map_comp_objCoeIso_hom`).
 * `CochainComplex.spectralSequence F`: the spectral sequence of `F : EInt ⥤ CochainComplex C ℤ`.
 
 ## Main results
@@ -280,6 +283,21 @@ lemma filtrationFunctor_map_comp_objIso_hom {a b : EInt} (f : a ⟶ b) :
   dsimp [filtrationFunctorObjIso, filtrationFunctor]
   simp only [Category.comp_id, Category.id_comp]
   rfl
+
+/-- The object of the functor of a filtration at an integer `n` is the subcomplex `F n`. -/
+noncomputable def filtrationFunctorObjCoeIso (n : ℤ) :
+    (filtrationFunctor F hF).obj n ≅ (F n : CochainComplex C ℤ) :=
+  Iso.refl _
+
+/-- Between integer indices, the transition maps of the functor of a filtration are the inclusions
+`F i ⟶ F j` of subcomplexes. -/
+@[reassoc]
+lemma filtrationFunctor_map_comp_objCoeIso_hom {i j : ℤ} (f : (i : EInt) ⟶ j) :
+    (filtrationFunctor F hF).map f ≫ (filtrationFunctorObjCoeIso F hF j).hom =
+      (filtrationFunctorObjCoeIso F hF i).hom ≫
+        Subobject.ofLE (F i) (F j) (hF (WithBotTop.coe_le_coe.mp (leOfHom f))) := by
+  -- Both isomorphisms are identities, and `filtrationEInt F n` is `F n` by definition.
+  exact (Category.comp_id _).trans (Category.id_comp _).symm
 
 /-- The map `F_⊥ ⟶ F_⊤` of the functor of a filtration vanishes, its source being zero. -/
 lemma filtrationFunctor_map_bot_top :
