@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.Algebra.OpenMapping.Sequence
+public import TauCeti.Topology.Algebra.Nonarchimedean.FirstCountable
 public import Mathlib.Topology.Algebra.InfiniteSum.Nonarchimedean
 
 /-!
@@ -33,6 +34,9 @@ a subgroup and, being a neighbourhood of zero, is closed.
 
 * `TauCeti.mem_image_of_mem_closure_image`: `closure (f '' V 0) ⊆ f '' V 0`, in the presence of
   a basis of subgroups, completeness, and the neighbourhood hypothesis the Baire step supplies.
+* `TauCeti.isOpenMap_of_closure_image_mem_nhds`: so out of a complete first-countable
+  nonarchimedean group, an additive map is open as soon as the closure of the image of every open
+  subgroup is a neighbourhood of zero.
 
 ## References
 
@@ -98,6 +102,30 @@ theorem mem_image_of_mem_closure_image {F : Type*} [FunLike F M N] [AddMonoidHom
       (Set.image_preimage_subset _ _)) (hxres n)
   -- `-(y - f s) + y = f s` reassociates without commuting anything in `N`.
   simpa using hres.neg.add_const y
+
+/-- **Openness from the closure condition.** Out of a complete first-countable nonarchimedean
+group, an additive map continuous at zero is open as soon as the closure of the image of every
+subgroup that is a neighbourhood of zero is a neighbourhood of zero: the closure can be removed,
+by `TauCeti.mem_image_of_mem_closure_image` along a basis of subgroups inside the given
+neighbourhood. -/
+theorem isOpenMap_of_closure_image_mem_nhds [(𝓝 (0 : M)).IsCountablyGenerated]
+    [NonarchimedeanAddGroup M] {F : Type*} [FunLike F M N] [AddMonoidHomClass F M N] (f : F)
+    (hf : ContinuousAt (f : M → N) 0)
+    (h : ∀ V : AddSubgroup M, (V : Set M) ∈ 𝓝 (0 : M) → closure ((f : M → N) '' V) ∈ 𝓝 (0 : N)) :
+    IsOpenMap (f : M → N) := by
+  refine IsTopologicalAddGroup.isOpenMap_iff_nhds_zero.mpr fun S hS ↦ ?_
+  rw [Filter.mem_map] at hS
+  obtain ⟨V, hV⟩ := NonarchimedeanAddGroup.exists_antitone_basis_openAddSubgroup (G := M)
+  obtain ⟨n₀, -, hn₀⟩ := hV.toHasBasis.mem_iff.mp hS
+  -- Shift the basis so that its zeroth term already lies inside `f ⁻¹' S`.
+  have hW : (𝓝 (0 : M)).HasAntitoneBasis fun n ↦ ((V (n₀ + n)).toAddSubgroup : Set M) :=
+    hV.comp_mono (fun _ _ hab ↦ Nat.add_le_add_left hab _)
+      (by simpa [Nat.add_comm] using tendsto_add_atTop_nat n₀)
+  have hnhds : ∀ n, closure ((f : M → N) '' ((V (n₀ + n)).toAddSubgroup : Set M)) ∈ 𝓝 (0 : N) :=
+    fun n ↦ h _ (hW.toHasBasis.mem_of_mem (i := n) trivial)
+  refine Filter.mem_of_superset (hnhds 0) fun y hy ↦ ?_
+  obtain ⟨x, hx, rfl⟩ := mem_image_of_mem_closure_image f hf hW (fun n ↦ hnhds (n + 1)) hy
+  exact hn₀ hx
 
 end TauCeti
 
