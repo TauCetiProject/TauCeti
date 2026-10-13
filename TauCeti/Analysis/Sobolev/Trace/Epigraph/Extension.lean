@@ -37,8 +37,19 @@ open MeasureTheory Set TopologicalSpace
 open scoped ENNReal
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
-  [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
   {φ : C(E, ℝ)} {L : ℝ} {p : ℝ≥0∞} [Fact (1 ≤ p)]
+
+private theorem norm_fderiv_graphFlattening_le_one_add (hφ : ContDiff ℝ 1 φ)
+    (hL : ∀ y, ‖fderiv ℝ φ y‖ ≤ L) (x : WithLp 2 (ℝ × E)) :
+    ‖fderiv ℝ (graphFlattening φ φ.continuous) x‖ ≤ 1 + L :=
+  (norm_fderiv_graphFlattening_le φ.continuous
+    (hφ.differentiable one_ne_zero _)).trans (add_le_add le_rfl (hL x.snd))
+
+private theorem one_le_one_add (hL : ∀ y, ‖fderiv ℝ φ y‖ ≤ L) :
+    (1 : ℝ) ≤ 1 + L :=
+  le_add_of_nonneg_right ((norm_nonneg _).trans (hL 0))
+
+variable [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
 
 /-- Unflatten a whole-space Sobolev function. -/
 private def unflattenWholeL (hφ : ContDiff ℝ 1 φ)
@@ -47,24 +58,16 @@ private def unflattenWholeL (hφ : ContDiff ℝ 1 φ)
       W1p volume (⊤ : Opens (WithLp 2 (ℝ × E))) p :=
   W1p.compMeasurePreservingL (M := 1 + L)
     (measurePreserving_graphFlattening φ φ.continuous) (by simp)
-    (contDiff_graphFlattening hφ).contDiffOn fun x _ =>
-      (norm_fderiv_graphFlattening_le φ.continuous
-        (hφ.differentiable one_ne_zero _)).trans (add_le_add le_rfl (hL x.snd))
+    (contDiff_graphFlattening hφ).contDiffOn
+    fun x _ => norm_fderiv_graphFlattening_le_one_add hφ hL x
 
 private theorem norm_unflattenWholeL_le (hφ : ContDiff ℝ 1 φ)
     (hL : ∀ y, ‖fderiv ℝ φ y‖ ≤ L)
     (u : W1p volume (⊤ : Opens (WithLp 2 (ℝ × E))) p) :
     ‖unflattenWholeL hφ hL u‖ ≤ (1 + L) * ‖u‖ := by
-  have h1 : (1 : ℝ) ≤ 1 + L := by
-    linarith [norm_nonneg (fderiv ℝ φ 0), hL 0]
-  have hop : ‖unflattenWholeL (p := p) hφ hL‖ ≤ 1 + L := by
-    unfold unflattenWholeL
-    apply le_trans (W1p.norm_compMeasurePreservingL_le (p := p) (M := 1 + L)
-      (U := ⊤) (V := ⊤) (measurePreserving_graphFlattening φ φ.continuous) (by simp)
-      (contDiff_graphFlattening hφ).contDiffOn
-      (fun x _ => (norm_fderiv_graphFlattening_le φ.continuous
-        (hφ.differentiable one_ne_zero _)).trans (add_le_add le_rfl (hL x.snd))))
-    exact (max_eq_right h1).le
+  have hop : ‖unflattenWholeL (p := p) hφ hL‖ ≤ 1 + L :=
+    (W1p.norm_compMeasurePreservingL_le _ _ _ _).trans_eq
+      (max_eq_right (one_le_one_add hL))
   exact ((unflattenWholeL (p := p) hφ hL).le_opNorm u).trans
     (mul_le_mul_of_nonneg_right hop (norm_nonneg u))
 
@@ -78,8 +81,7 @@ private theorem value_unflattenWholeL_ae (hφ : ContDiff ℝ 1 φ)
     W1p.value_compMeasurePreservingL_ae (p := p) (M := 1 + L) (U := ⊤) (V := ⊤)
       (measurePreserving_graphFlattening φ φ.continuous) (by simp)
       (contDiff_graphFlattening hφ).contDiffOn
-      (fun x _ => (norm_fderiv_graphFlattening_le φ.continuous
-        (hφ.differentiable one_ne_zero _)).trans (add_le_add le_rfl (hL x.snd))) u
+      (fun x _ => norm_fderiv_graphFlattening_le_one_add hφ hL x) u
 
 /-- Extension from the region above a `C¹` graph with bounded derivative to the whole
 space: flatten the graph, extend by even reflection, and unflatten. It is a bounded
@@ -129,8 +131,13 @@ theorem W1p.value_normalEpigraphExtensionL_ae (hφ : ContDiff ℝ 1 φ)
   simp only [sub_pos]
   have hheight : φ x.snd - x.fst + φ x.snd = 2 * φ x.snd - x.fst := by ring
   rw [hheight]
-  split_ifs <;> simp_all only [add_zero, zero_add]
-  linarith
+  rcases lt_trichotomy (φ x.snd) x.fst with habove | hon | hbelow
+  · -- Above the graph, only the unreflected value contributes.
+    simp [habove, not_lt_of_gt habove]
+  · -- On the graph, both open-half-space indicators vanish.
+    simp [hon]
+  · -- Below the graph, only the reflected value contributes.
+    simp [hbelow, not_lt_of_gt hbelow]
 
 /-- Restricting the graph-domain extension back to the region above the graph recovers
 the original Sobolev function. -/
@@ -161,7 +168,7 @@ theorem W1p.norm_normalEpigraphExtensionL_le (hφ : ContDiff ℝ 1 φ)
       mul_le_mul_of_nonneg_left
         ((W1p.norm_extendByReflectionL_le 0 _).trans
           (mul_le_mul_of_nonneg_left (W1p.norm_normalEpigraphEquivL_le hφ hL u) zero_le_two))
-        (add_nonneg zero_le_one ((norm_nonneg _).trans (hL 0)))
+        (zero_le_one.trans (one_le_one_add hL))
     _ = (2 * (1 + L) ^ 2) * ‖u‖ := by ring
 
 /-- The graph-domain extension has operator norm at most `2 * (1 + L)²`. -/
