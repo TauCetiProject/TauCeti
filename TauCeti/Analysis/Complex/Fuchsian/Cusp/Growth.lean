@@ -210,7 +210,9 @@ theorem meromorphicOrderAt_cuspExtension_eq_neg_add (D : Γ.CuspDatum) (k : ℤ)
       ((-k : ℤ) : WithTop ℤ) + (analyticOrderAt (twistedExtension D k f) 0).map Nat.cast := by
   have hrepr := cuspExtension_eventuallyEq_zpow_mul_twistedExtension D k f hf
   have hfun : (fun q : ℂ ↦ q ^ (-k) * twistedExtension D k f q) =
-      id ^ (-k) * twistedExtension D k f := rfl
+      id ^ (-k) * twistedExtension D k f := by
+    funext q
+    simp only [Pi.mul_apply, Pi.pow_apply, id_eq]
   rw [meromorphicOrderAt_congr hrepr, hfun,
     meromorphicOrderAt_mul ((MeromorphicAt.id 0).zpow (-k)) han.meromorphicAt,
     meromorphicOrderAt_zpow (MeromorphicAt.id 0), meromorphicOrderAt_id]
