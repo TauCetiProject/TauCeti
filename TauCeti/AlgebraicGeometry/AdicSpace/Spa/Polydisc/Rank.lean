@@ -59,8 +59,6 @@ namespace TauCeti.ValuationSpectrum
 open TauCeti.Huber
 open scoped NNReal
 
-local notation "𝒯" K => weightedRestrictedSubring (fun _ : Fin 1 ↦ ({1} : Set K))
-  isWeightFamily_one_weight
 local notation "T" => weightedX (fun _ : Fin 1 ↦ ({1} : Set _)) isWeightFamily_one_weight 0
 local notation "C" => weightedC (fun _ : Fin 1 ↦ ({1} : Set _)) isWeightFamily_one_weight
 
@@ -120,29 +118,6 @@ theorem isRankLeOne_nestedDiscPoint (a : ℕ → K) (ha : ∀ n, ‖a n‖ ≤ 1
     (nestedDiscValuation a ha c hc₀ hc₁ hac hcc)
 
 /-! ### The points of type (5) -/
-
-omit [CompleteSpace K] in
-/-- At radius `r = ‖c‖`, the powers of `T` and of `c` have the same Gauss norm `rⁿ`. -/
-private theorem closedDiscGaussValuation_weightedX_pow (hr₀ : 0 < r) (hr₁ : r ≤ 1) {c : K}
-    (hc : ‖c‖ = r) (n : ℕ) :
-    closedDiscGaussValuation (R := K) hr₀ hr₁ (T ^ n) =
-      closedDiscGaussValuation hr₀ hr₁ (C c ^ n) := by
-  rw [map_pow, map_pow, closedDiscGaussValuation_weightedX_eq_weightedC hr₀ hr₁ hc]
-
-omit [CompleteSpace K] in
-/-- Multiplying by a constant of norm larger than `1` strictly increases a nonzero Gauss norm. -/
-private theorem closedDiscGaussValuation_lt_mul_weightedC (hr₀ : 0 < r) (hr₁ : r ≤ 1) {d : K}
-    (hd : 1 < ‖d‖) {f : 𝒯 K} (hf : 0 < closedDiscGaussValuation hr₀ hr₁ f) :
-    closedDiscGaussValuation hr₀ hr₁ f < closedDiscGaussValuation hr₀ hr₁ (f * C d) := by
-  rw [map_mul, closedDiscGaussValuation_weightedC]
-  exact lt_mul_of_one_lt_right hf (by rwa [← NNReal.coe_lt_coe, coe_nnnorm, NNReal.coe_one])
-
-omit [CompleteSpace K] in
-/-- At radius `r = ‖c‖ > 0` the powers of `c` have nonzero Gauss norm. -/
-private theorem closedDiscGaussValuation_weightedC_pow_pos (hr₀ : 0 < r) (hr₁ : r ≤ 1) {c : K}
-    (hc : ‖c‖ = r) (n : ℕ) : 0 < closedDiscGaussValuation hr₀ hr₁ (C c ^ n) := by
-  rw [map_pow, closedDiscGaussValuation_weightedC]
-  exact pow_pos (by rw [← NNReal.coe_pos, coe_nnnorm, hc]; exact hr₀) n
 
 /-- **The points `η_{a,r⁺}` do not have rank at most one** when `r` is the norm of an element `c`
 of `K`. The value of `T - a` is larger than that of `c`, but every power `(T - a)ⁿ` is at most
