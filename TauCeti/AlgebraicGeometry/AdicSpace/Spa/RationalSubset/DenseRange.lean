@@ -23,7 +23,17 @@ image statement additionally needs `spaComap φ` to be surjective, which is not 
 Neither ring is assumed complete, and the plus rings `A⁺ ⊆ A` and `B⁺ ⊆ B` are arbitrary subrings
 with `φ(A⁺) ⊆ B⁺`.
 
+A dense ring need not carry a Huber topology itself. If its image contains a topologically
+nilpotent unit, every rational subset upstairs still has defining functions from that ring,
+with a power of the unit among the numerators. This applies to polynomial subrings of Tate
+algebras. The result uses the same small-perturbation and padding argument, without asserting
+that the source ring has an adic spectrum.
+
 ## Main results
+
+* `TauCeti.ValuationSpectrum.exists_pow_mem_rationalSubset_image_eq_of_denseRange`: defining
+  functions in an arbitrary dense ring, with a power of a prescribed topologically nilpotent
+  image among the numerators. No topology on the source ring is required.
 
 * `TauCeti.ValuationSpectrum.exists_mem_spaRationalFamily_spaComap_preimage_eq_of_denseRange`: every
   member of the rational family of `Spa(B, B⁺)` is the preimage under `spaComap φ` of a member of
@@ -75,6 +85,47 @@ open Topology TauCeti.Huber
 
 variable {A B : Type*} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A]
   [CommRing B] [TopologicalSpace B] [IsTopologicalRing B]
+
+section DenseRing
+
+variable {R : Type*} [Semiring R]
+
+open scoped Classical in
+/-- A rational presentation can be chosen in a dense ring, with a power of any specified
+element whose image is topologically nilpotent among the numerators. When that element
+is a unit, these numerators generate the unit ideal in the source ring. -/
+theorem exists_pow_mem_rationalSubset_image_eq_of_denseRange [IsHuberRing A]
+    (φ : R →+* A) (hφ : DenseRange φ) {u : R}
+    (hnu : IsTopologicallyNilpotent (φ u)) (Aplus : Subring A)
+    (T : Finset A) (hT : IsOpen (Ideal.span (T : Set A) : Set A)) (s : A) :
+    ∃ (n : ℕ) (G : Finset R) (p : R), u ^ n ∈ G ∧
+      rationalSubset Aplus (G.image φ) (φ p) = rationalSubset Aplus T s := by
+  classical
+  obtain ⟨V, hV, hpert⟩ :=
+    exists_mem_nhds_forall_rationalSubset_eq_of_sub_mem Aplus (insert 0 T)
+      (by simpa using hT) s
+  have happrox : ∀ a : A, ∃ b : R, φ b - a ∈ V ∧ a - φ b ∈ V := fun a ↦ by
+    simpa using mem_closure_iff_nhds_zero.mp (hφ a) _
+      (Filter.inter_mem hV (neg_mem_nhds_zero A hV))
+  choose b hb hb' using happrox
+  obtain ⟨n, hn⟩ := hnu.exists_pow_mem_of_mem_nhds hV
+  let G := insert (u ^ n) ((insert 0 T).image b)
+  refine ⟨n, G, b s, Finset.mem_insert_self _ _, ?_⟩
+  have heq := hpert (G.image φ) (φ (b s)) (fun t ht ↦
+    ⟨φ (b t), Finset.mem_image.mpr
+      ⟨b t, Finset.mem_insert_of_mem (Finset.mem_image.mpr ⟨t, ht, rfl⟩), rfl⟩,
+      hb' t⟩) (by
+    intro a ha
+    obtain ⟨g, hg, rfl⟩ := Finset.mem_image.mp ha
+    rcases Finset.mem_insert.mp hg with rfl | hg
+    · exact ⟨0, Finset.mem_insert_self _ _, by simpa using hn⟩
+    · obtain ⟨t, ht, rfl⟩ := Finset.mem_image.mp hg
+      exact ⟨t, ht, hb t⟩) (hb' s)
+  rw [rationalSubset_insert_of_forall_vle Aplus T s 0
+    (fun v _ ↦ v.toValuativeRel.zero_vle s)] at heq
+  exact heq
+
+end DenseRing
 
 /-- **Rational subsets descend along a dense map (a generalization of the rational half of
 Wedhorn Proposition 7.48).** If `φ : A → B` is a continuous homomorphism of Huber rings with dense
