@@ -33,7 +33,9 @@ open scoped MatrixGroups
 namespace TauCeti.IntegralLattice
 
 variable {V : Type*} [AddCommGroup V] [Module ℚ V]
+variable {W : Type*} [AddCommGroup W] [Module ℚ W]
 variable {L : IntegralLattice V} (b : Basis (Fin 2) ℤ L)
+variable {M : IntegralLattice W}
 
 namespace Isometry
 
@@ -52,17 +54,17 @@ theorem orientation_map_eq_neg_iff (e : Isometry L L) :
 
 end Isometry
 
-/-- Transporting a carrier basis by an isometry leaves its norm form unchanged. -/
-@[simp] theorem binaryNormForm_map_isometry (e : Isometry L L) :
-    L.binaryNormForm (b.map e.carrierEquiv) = L.binaryNormForm b := by
+/-- Transporting a carrier basis between lattices by an isometry preserves its norm form. -/
+theorem binaryNormForm_map_isometry (e : Isometry L M) :
+    M.binaryNormForm (e.carrierBasisEquiv (Fin 2) b) = L.binaryNormForm b := by
   ext <;> simp only [binaryNormForm_a, binaryNormForm_b, binaryNormForm_c,
-    gramMatrix_apply, Basis.map_apply, Isometry.carrierEquiv_map_integralForm]
+    e.gramMatrix_carrierBasisEquiv]
 
 /-- Equal binary norm forms in two carrier bases determine a lattice isometry taking the first
 basis to the second. -/
-theorem exists_isometry_map_basis_iff (b' : Basis (Fin 2) ℤ L) :
-    (∃ e : Isometry L L, b.map e.carrierEquiv = b') ↔
-      L.binaryNormForm b' = L.binaryNormForm b := by
+theorem exists_isometry_map_basis_iff (b' : Basis (Fin 2) ℤ M) :
+    (∃ e : Isometry L M, e.carrierBasisEquiv (Fin 2) b = b') ↔
+      M.binaryNormForm b' = L.binaryNormForm b := by
   constructor
   · rintro ⟨e, rfl⟩
     exact binaryNormForm_map_isometry b e
@@ -71,23 +73,20 @@ theorem exists_isometry_map_basis_iff (b' : Basis (Fin 2) ℤ L) :
     have hb := congrArg BinaryQuadraticForm.b h
     have hc := congrArg BinaryQuadraticForm.c h
     simp only [binaryNormForm_a, binaryNormForm_b, binaryNormForm_c] at ha hb hc
-    have hb' : L.gramMatrix b' 0 1 = L.gramMatrix b 0 1 :=
+    have hb' : M.gramMatrix b' 0 1 = L.gramMatrix b 0 1 :=
       mul_left_cancel₀ (by norm_num : (2 : ℤ) ≠ 0) hb
-    have hg : L.gramMatrix b' = L.gramMatrix b := by
+    have hg : M.gramMatrix b' = L.gramMatrix b := by
       ext i j
       fin_cases i <;> fin_cases j
       · exact ha
       · exact hb'
-      · rw [gramMatrix_apply, gramMatrix_apply]
-        change L.integralForm (b' 1) (b' 0) = L.integralForm (b 1) (b 0)
-        rw [L.isSymm_integralForm.eq (b' 1) (b' 0),
-          L.isSymm_integralForm.eq (b 1) (b 0)]
-        simpa only [gramMatrix_apply] using hb'
+      · exact ((M.isSymm_gramMatrix b').apply 0 1).trans
+          (hb'.trans ((L.isSymm_gramMatrix b).apply 0 1).symm)
       · exact hc
     let e := Isometry.ofGramMatrixEq b b' hg.symm
     refine ⟨e, ?_⟩
     ext i
-    simp only [Basis.map_apply, Isometry.coe_carrierEquiv_apply]
+    simp only [Isometry.carrierBasisEquiv_apply, Basis.map_apply, Isometry.coe_carrierEquiv_apply]
     exact Isometry.ofGramMatrixEq_apply_basis b b' hg.symm i
 
 /-- An improper lattice automorphism exists exactly when the primitive norm form is properly
@@ -95,21 +94,24 @@ equivalent to its reflection. -/
 theorem exists_improper_isometry_iff :
     (∃ e : Isometry L L, Isometry.det L e = -1) ↔
       ∃ γ : SL(2, ℤ), (L.binaryNormForm b).primPart =
-        γ • (⟨(L.binaryNormForm b).primPart.a, -(L.binaryNormForm b).primPart.b,
-          (L.binaryNormForm b).primPart.c⟩ : BinaryQuadraticForm ℤ) := by
+        γ • (L.binaryNormForm b).primPart.reflected := by
   constructor
   · rintro ⟨e, he⟩
     obtain ⟨γ, hγ⟩ := L.exists_primPart_eq_smul_of_orientation_neg b
       (b.map e.carrierEquiv) ((e.orientation_map_eq_neg_iff b).mpr he)
-    exact ⟨γ, by simpa using hγ⟩
+    rw [← e.carrierBasisEquiv_apply, binaryNormForm_map_isometry] at hγ
+    exact ⟨γ, hγ⟩
   · rintro ⟨γ, hγ⟩
     let bRev := b.unitsSMul (Function.update 1 (1 : Fin 2) (-1))
     let f := Matrix.toLinearEquiv bRev ((γ⁻¹ : SL(2, ℤ)) : Matrix (Fin 2) (Fin 2) ℤ)
       (by rw [SpecialLinearGroup.det_coe]; exact isUnit_one)
     let b' := bRev.map f
+    have hf : f.toLinearMap = Matrix.toLin bRev bRev
+        ((γ⁻¹ : SL(2, ℤ)) : Matrix (Fin 2) (Fin 2) ℤ) := by
+      apply LinearMap.ext
+      intro x
+      exact Matrix.toLinearEquiv_apply bRev _ _ x
     have hm : bRev.toMatrix b' = ((γ⁻¹ : SL(2, ℤ)) : Matrix (Fin 2) (Fin 2) ℤ) := by
-      have hf : f.toLinearMap = Matrix.toLin bRev bRev
-          ((γ⁻¹ : SL(2, ℤ)) : Matrix (Fin 2) (Fin 2) ℤ) := rfl
       calc
         bRev.toMatrix b' = LinearMap.toMatrix bRev bRev f.toLinearMap := by
           ext i j
@@ -127,12 +129,10 @@ theorem exists_improper_isometry_iff :
         BinaryQuadraticForm.content_smul_primPart] using h
     obtain ⟨e, he⟩ := (exists_isometry_map_basis_iff b b').mpr hn
     refine ⟨e, (e.orientation_map_eq_neg_iff b).mp ?_⟩
-    rw [he]
+    rw [← e.carrierBasisEquiv_apply, he]
     have ho : b'.orientation = bRev.orientation := by
       apply (Basis.orientation_comp_linearEquiv_eq_iff_det_pos bRev f).mpr
-      change 0 < LinearMap.det (Matrix.toLin bRev bRev
-        ((γ⁻¹ : SL(2, ℤ)) : Matrix (Fin 2) (Fin 2) ℤ))
-      rw [LinearMap.det_toLin, SpecialLinearGroup.det_coe]
+      rw [hf, LinearMap.det_toLin, SpecialLinearGroup.det_coe]
       norm_num
     exact ho.trans (b.orientation_neg_single 1)
 
@@ -141,8 +141,7 @@ is properly equivalent to its reflection. -/
 theorem index_specialOrthogonalGroup_eq_two_iff_reflected :
     (specialOrthogonalGroup L).index = 2 ↔
       ∃ γ : SL(2, ℤ), (L.binaryNormForm b).primPart =
-        γ • (⟨(L.binaryNormForm b).primPart.a, -(L.binaryNormForm b).primPart.b,
-          (L.binaryNormForm b).primPart.c⟩ : BinaryQuadraticForm ℤ) :=
+        γ • (L.binaryNormForm b).primPart.reflected :=
   (index_specialOrthogonalGroup_eq_two_iff L).trans (exists_improper_isometry_iff b)
 
 end TauCeti.IntegralLattice
