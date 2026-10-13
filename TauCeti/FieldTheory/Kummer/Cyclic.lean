@@ -30,6 +30,8 @@ is compared with the cup product of Kummer classes.
 * `TauCeti.isGalois_of_pow_eq_of_adjoin_eq_top`: `L/K` is Galois.
 * `TauCeti.exists_forall_mem_zpowers_apply_eq`: `[L : K]` divides `n`, and some `g` generating
   `Gal(L/K)` satisfies `g s = ζ ^ (n / [L : K]) • s`.
+* `IntermediateField.exists_mem_pow_eq_pow_iff_mem`: an intermediate field contains an `n`-th root
+  of `sⁿ` exactly when it contains `s`.
 
 ## References
 
@@ -44,6 +46,21 @@ namespace TauCeti
 
 variable {K L : Type*} [Field K] [Field L] [Algebra K L] {n : ℕ} [NeZero n] {ζ : K}
   (hζ : IsPrimitiveRoot ζ n) {b : K} {s : L}
+
+include hζ in
+/-- **An intermediate field contains an `n`-th root of `sⁿ` exactly when it contains `s`**, when
+`K` contains a primitive `n`-th root of unity `ζ`: two `n`-th roots of the same element differ by a
+power of `ζ`, which lies in `K`. -/
+theorem _root_.IntermediateField.exists_mem_pow_eq_pow_iff_mem (F : IntermediateField K L) :
+    (∃ x ∈ F, x ^ n = s ^ n) ↔ s ∈ F := by
+  refine ⟨fun ⟨x, hxF, hx⟩ ↦ ?_, fun h ↦ ⟨s, h, rfl⟩⟩
+  have hζL := hζ.map_of_injective (algebraMap K L).injective
+  have hroot : x ∈ nthRoots n (s ^ n) := (mem_nthRoots (NeZero.pos n)).2 hx
+  rw [hζL.nthRoots_eq rfl, Multiset.mem_map] at hroot
+  obtain ⟨i, -, rfl⟩ := hroot
+  have hζi : algebraMap K L ζ ^ i ≠ 0 := pow_ne_zero _ (hζL.ne_zero (NeZero.ne n))
+  rw [← inv_mul_cancel_left₀ hζi s]
+  exact F.mul_mem (F.inv_mem (pow_mem (F.algebraMap_mem ζ) i)) hxF
 
 include hζ in
 /-- **A root of `Xⁿ - b` generating `L` makes `L` a splitting field of `Xⁿ - b`**, when `K`
