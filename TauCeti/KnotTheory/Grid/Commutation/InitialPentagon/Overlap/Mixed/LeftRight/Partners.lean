@@ -30,13 +30,6 @@ other common-initial-side order consists of self-pairs
 common-terminal-side order consists of the mixed `right = left` partners
 (`GridDiagram.mem_initialPentagonRightLeftOverlapPartners_iff_sides`).
 
-In both kinds the generic empty-rectangle recut starts with a rectangle and ends with a piece
-starting on `b`. The rows of that piece contain the pentagon's rows, so it promotes to an
-initial-side pentagon. Recut uniqueness shows that the original domain is the source's recut.
-The forward corrected-square identity then transports marking avoidance back to the source.
-For the converse, the two pieces of a partner differ in both their bottom and top rows. This
-rules out a mixed common side, and the source's side data selects the column order.
-
 ## References
 
 Ozsváth--Stipsicz--Szabó, *Grid Homology for Knots and Links*, Section 5.1, and
