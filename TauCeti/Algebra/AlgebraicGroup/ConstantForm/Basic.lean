@@ -349,7 +349,7 @@ theorem inclusion_eq_eqToHom_comp_hopfSpec_map :
         (AlgebraicGeometry.hopfSpec (CommRingCat.of R)).map (coordinateMap R n C).op ≫
         eqToHom (GeneralLinear.groupScheme_def R n).symm := by
   rw [inclusion_def, GeneralLinear.hopfIdealInclusion_def,
-    CommHopfAlgCat.quotientSpecι_def, coordinateMap_def, eqToIso.hom]
+    CommHopfAlgCat.quotientSpecι_def, coordinateMap_def]
   simp only [eqToHom_refl, Category.id_comp]
 
 /-- The inclusion into the named general linear group scheme is a closed immersion. -/
