@@ -92,6 +92,9 @@ are those of `‖x - y‖ ^ 2`, whose transport cost is twice as large
   laws are absolutely continuous, the Brenier potential `u` is a weak solution of its transport
   equation: its Monge–Ampère measure weighted by `ν` is `μ`, and `ν` is carried by
   the subgradient image of the interior of its effective domain;
+* `TauCeti.IsOptimalCoupling.exists_eq_graphPlan_of_absolutelyContinuous` — the same conclusion
+  for the cost `edist ^ 2` of the quadratic Wasserstein distance: out of an absolutely continuous
+  source, an optimal plan to a law at finite `W₂` distance is the graph plan of a measurable map;
 * `TauCeti.transportCost_norm_sub_sq_div_two_ne_top` — laws with finite second moment have finite
   quadratic transport cost, so Brenier's theorem applies to them;
 * `TauCeti.IsCoupling.lintegral_norm_sub_sq_div_two` — for marginals with finite second moments,
@@ -677,6 +680,35 @@ theorem exists_isKantorovichOptimalTransportMap_gradient_and_mongeAmpereMeasure_
     (hasLaw_gradient_and_ae_ne_top_iff_mongeAmpereMeasure_eq_and_ae_mem_subgradientImage
       hconv hbot hμ hν).1 ⟨hT.toHasLaw, ?_⟩⟩
   filter_upwards [hdiff] with x hx using hx.1.self_of_nhds
+
+/-- **Brenier's theorem for the cost `edist ^ 2`.** On a finite-dimensional real inner product
+space, an optimal plan for the cost `edist ^ 2` out of a finite measure `μ` that is absolutely
+continuous with respect to an additive Haar measure, to a law at finite `W₂` distance from `μ`,
+is the graph plan of a measurable map. -/
+theorem IsOptimalCoupling.exists_eq_graphPlan_of_absolutelyContinuous {μ ν : Measure E}
+    [IsFiniteMeasure μ] {π : Measure (E × E)} (hμ : μ ≪ ρ)
+    (h : IsOptimalCoupling (fun z : E × E ↦ edist z.1 z.2 ^ (2 : ℝ)) π μ ν)
+    (hfin : wassersteinEDist 2 μ ν ≠ ∞) :
+    ∃ T : E → E, Measurable T ∧ π = graphPlan T μ := by
+  -- The cost `‖x - y‖ ^ 2 / 2` of Brenier's theorem is half the cost `edist ^ 2`.
+  have hcost : (fun z : E × E ↦ ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2)) =
+      fun z ↦ 2⁻¹ * edist z.1 z.2 ^ (2 : ℝ) := by
+    funext z
+    rw [edist_dist, dist_eq_norm, ENNReal.ofReal_rpow_of_nonneg (norm_nonneg _) zero_le_two,
+      Real.rpow_two, ENNReal.ofReal_div_of_pos two_pos, ENNReal.ofReal_ofNat, div_eq_mul_inv,
+      mul_comm]
+  have hopt := h.const_mul (a := 2⁻¹) (ENNReal.inv_ne_top.2 two_ne_zero)
+  rw [← hcost] at hopt
+  have hfin' : transportCost (fun z : E × E ↦ ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2)) μ ν ≠ ∞ := by
+    have h2 := wassersteinEDist_rpow_eq_transportCost measurable_edist two_ne_zero
+      ENNReal.ofNat_ne_top μ ν
+    rw [ENNReal.toReal_ofNat] at h2
+    rw [hcost, transportCost_const_mul (ENNReal.inv_ne_zero.2 ENNReal.ofNat_ne_top)
+      (ENNReal.inv_ne_top.2 two_ne_zero), ← h2]
+    exact ENNReal.mul_ne_top (ENNReal.inv_ne_top.2 two_ne_zero)
+      (ENNReal.rpow_ne_top_of_nonneg zero_le_two hfin)
+  obtain ⟨u, -, -, -, -, hgraph⟩ := hopt.exists_eq_graphPlan_gradient hμ hfin'
+  exact ⟨_, measurable_gradient _, hgraph⟩
 
 end FiniteDimensional
 

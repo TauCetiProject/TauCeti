@@ -410,6 +410,27 @@ theorem wassersteinEDist_ne_top
   (hasFiniteMoment_iff_wassersteinEDist_ne_top_of_hasFiniteMoment hd
     (hasFiniteMoment μ)).1 (hasFiniteMoment ν)
 
+/-- **`P_p(X)` is convex.** For a finite nonzero exponent and weights with `a + b = 1`, the mixture
+`a • μ + b • ν` of two laws of `P_p(X)` is again a law of `P_p(X)`. -/
+theorem exists_coe_eq_smul_add_smul [OpensMeasurableSpace X] (hp0 : p ≠ 0) (hp : p ≠ ∞)
+    {a b : ℝ≥0∞} (hab : a + b = 1) (μ ν : WassersteinSpace p X) :
+    ∃ ρ : WassersteinSpace p X, ((ρ : ProbabilityMeasure X) : Measure X) =
+      a • ((μ : ProbabilityMeasure X) : Measure X) +
+        b • ((ν : ProbabilityMeasure X) : Measure X) := by
+  set m := a • ((μ : ProbabilityMeasure X) : Measure X) +
+    b • ((ν : ProbabilityMeasure X) : Measure X)
+  have hprob : IsProbabilityMeasure m := ⟨by simp [m, hab]⟩
+  obtain ⟨x, -⟩ := hasFiniteMoment_def.1 (hasFiniteMoment μ)
+  have hfin (μ' : WassersteinSpace p X) :=
+    (hasFiniteMoment_iff_lintegral_edist_rpow_ne_top hp0 hp x _).1 (hasFiniteMoment μ')
+  have hmom : HasFiniteMoment p m := by
+    rw [hasFiniteMoment_iff_lintegral_edist_rpow_ne_top hp0 hp x, lintegral_add_measure,
+      lintegral_smul_measure, lintegral_smul_measure]
+    exact ENNReal.add_ne_top.2
+      ⟨ENNReal.mul_ne_top (ne_top_of_le_ne_top ENNReal.one_ne_top (hab ▸ le_self_add)) (hfin μ),
+        ENNReal.mul_ne_top (ne_top_of_le_ne_top ENNReal.one_ne_top (hab ▸ le_add_self)) (hfin ν)⟩
+  exact ⟨mk ⟨_, hprob⟩ hmom, congrArg ProbabilityMeasure.toMeasure (coe_mk _ _)⟩
+
 variable [StandardBorelSpace X]
 
 /-- The Wasserstein extended distance equips finite-moment laws with a pseudoemetric space

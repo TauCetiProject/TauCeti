@@ -32,7 +32,9 @@ different statement not proved here.
 * `TauCeti.wassersteinEDist_finset_sum_smul_rpow_le` — the mixture bound for finitely many laws;
 * `TauCeti.wassersteinEDist_sum_smul_rpow_le` — the mixture bound for countably many laws, written
   with `MeasureTheory.Measure.sum`;
-* `TauCeti.wassersteinEDist_add_rpow_le` — subadditivity of `W_p ^ p` for two pairs of measures.
+* `TauCeti.wassersteinEDist_add_rpow_le` — subadditivity of `W_p ^ p` for two pairs of measures;
+* `TauCeti.wassersteinEDist_smul_add_smul_rpow_le` — convexity of `W_p ^ p` in one argument, the
+  other being fixed.
 
 ## References
 
@@ -83,5 +85,21 @@ theorem wassersteinEDist_add_rpow_le (hd : Measurable fun z : X × X ↦ edist z
       ≤ wassersteinEDist p μ ν ^ p.toReal + wassersteinEDist p μ' ν' ^ p.toReal := by
   simpa only [wassersteinEDist_rpow_eq_transportCost hd hp0 hp]
     using transportCost_add_le _ μ μ' ν ν'
+
+/-- **Convexity of `W_p ^ p` in one argument.** For a finite nonzero exponent and weights with
+`a + b = 1`, the `p`-th power of the Wasserstein distance from `μ` to the mixture `a • ν₀ + b • ν₁`
+is at most the mixture of the `p`-th powers of the distances from `μ` to `ν₀` and to `ν₁`. -/
+theorem wassersteinEDist_smul_add_smul_rpow_le (hd : Measurable fun z : X × X ↦ edist z.1 z.2)
+    (hp0 : p ≠ 0) (hp : p ≠ ∞) {a b : ℝ≥0∞} (hab : a + b = 1) (μ ν₀ ν₁ : Measure X) :
+    wassersteinEDist p μ (a • ν₀ + b • ν₁) ^ p.toReal
+      ≤ a * wassersteinEDist p μ ν₀ ^ p.toReal + b * wassersteinEDist p μ ν₁ ^ p.toReal := by
+  have ha : a ≠ ∞ := ne_top_of_le_ne_top ENNReal.one_ne_top (hab ▸ le_self_add)
+  have hb : b ≠ ∞ := ne_top_of_le_ne_top ENNReal.one_ne_top (hab ▸ le_add_self)
+  simp only [wassersteinEDist_rpow_eq_transportCost hd hp0 hp]
+  calc transportCost _ μ (a • ν₀ + b • ν₁) = transportCost _ (a • μ + b • μ) (a • ν₀ + b • ν₁) := by
+        rw [← add_smul, hab, one_smul]
+    _ ≤ transportCost _ (a • μ) (a • ν₀) + transportCost _ (b • μ) (b • ν₁) :=
+        transportCost_add_le _ _ _ _ _
+    _ = _ := by rw [transportCost_smul ha, transportCost_smul hb]
 
 end TauCeti
