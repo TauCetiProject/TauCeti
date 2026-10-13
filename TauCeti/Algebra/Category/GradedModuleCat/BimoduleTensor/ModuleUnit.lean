@@ -14,6 +14,11 @@ Evaluation identifies the balanced tensor of the regular graded bimodule with a 
 module with that module. Its inverse inserts the unit element. Both maps preserve the internal
 grading, and evaluation is natural in graded module maps.
 
+The construction adapts `bimoduleTensorLeftUnitor` from
+`TauCeti.Algebra.Category.GradedModuleCat.BimoduleTensor.Unit`, using the left-module
+analogue of its supporting `bimoduleTensorLift` from
+`TauCeti.Algebra.Category.GradedModuleCat.BimoduleTensor.Basic`.
+
 This is the unit comparison for the graded bimodule action on left modules. The module universe
 contains the algebra universe, as in the selected graded endobimodule monoidal category.
 -/
