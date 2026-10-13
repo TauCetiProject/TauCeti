@@ -52,6 +52,12 @@ abbrev cubicalTensor : TopCat.{u} × TopCat.{u} ⥤ ChainComplex (ModuleCat.{u} 
 /-- The bidegrees `(p, q)` with `p + q = n`: the index of the models in degree `n`. -/
 abbrev BidegreeIndex (n : ℕ) : Type := {pq : ℕ × ℕ // pq.1 + pq.2 = n}
 
+/-- The only bidegree of total degree `0` is `(0, 0)`. -/
+theorem BidegreeIndex.eq_zero (i : BidegreeIndex 0) : i = ⟨(0, 0), rfl⟩ := by
+  obtain ⟨⟨p, q⟩, h⟩ := i
+  have h' : p + q = 0 := h
+  exact Subtype.ext (Prod.ext (by simp only; omega) (by simp only; omega))
+
 /-- The model of bidegree `(p, q)`: the pair of cubes `(Iᵖ, I^q)`. -/
 abbrev cubicalBidegreeModel (n : ℕ) (i : BidegreeIndex n) : TopCat.{u} × TopCat.{u} :=
   (cubeModel.{u} i.1.1, cubeModel.{u} i.1.2)
@@ -93,8 +99,8 @@ def cubicalTensorGen (n : ℕ) (i : BidegreeIndex n) :
       NormalizedCubicalChain.ofCube (cubeModel.{u} i.1.2) k (upCube i.1.2))
 
 /-- The generator is the image of the tensor product of the two identity cubes. -/
-theorem tensorGen_def (n : ℕ) (i : BidegreeIndex n) :
-    tensorGen k n i =
+theorem cubicalTensorGen_def (n : ℕ) (i : BidegreeIndex n) :
+    cubicalTensorGen k n i =
       (ιTensorObj ((normalizedCubicalChainComplex.{u} k).obj (cubeModel.{u} i.1.1))
           ((normalizedCubicalChainComplex.{u} k).obj (cubeModel.{u} i.1.2)) i.1.1 i.1.2 n i.2).hom
         (NormalizedCubicalChain.ofCube (cubeModel.{u} i.1.1) k (upCube i.1.1) ⊗ₜ[k]

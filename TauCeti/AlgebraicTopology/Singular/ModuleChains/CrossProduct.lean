@@ -62,8 +62,7 @@ theorem singularCrossProduct_def (X Y : TopCat.{u}) :
 /-- The simplicial cross product is natural in both spaces. -/
 @[reassoc]
 theorem singularCrossProduct_naturality {X X' Y Y' : TopCat.{u}} (f : X ⟶ X') (g : Y ⟶ Y') :
-    HomologicalComplex.tensorHom ((singularChains k).map f) ((singularChains k).map g) ≫
-        singularCrossProduct k X' Y' =
+    ((singularChains k).map f ⊗ₘ (singularChains k).map g) ≫ singularCrossProduct k X' Y' =
       singularCrossProduct k X Y ≫ (singularChains k).map (f ⊗ₘ g) := by
   have h1 := TopCat.shuffle_naturality (C := ModuleCat.{u} k) f g (𝟙_ _) (𝟙_ _)
   have h2 := ((AlgebraicTopology.singularChainComplexFunctor (ModuleCat.{u} k)).map

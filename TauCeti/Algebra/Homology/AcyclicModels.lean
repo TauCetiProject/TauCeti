@@ -133,7 +133,7 @@ theorem NatLinear.compD_app {m n : ℕ} (φ : NatLinear F G n m) (X : C) (x : (F
   (rfl)
 
 /-- The component of a natural chain map in degree `n`, as a natural family. -/
-def NatLinear.ofHom (f : F ⟶ G) (n : ℕ) : NatLinear F G n n where
+@[expose] def NatLinear.ofHom (f : F ⟶ G) (n : ℕ) : NatLinear F G n n where
   app X := ((f.app X).f n).hom
   naturality g x := by
     rw [← ModuleCat.comp_apply, ← ModuleCat.comp_apply, ← HomologicalComplex.comp_f,

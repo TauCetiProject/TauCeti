@@ -69,8 +69,7 @@ variable (X Y : TopCat.{u}) in
 def singularCrossProductOfCubicalApp :
     (normalizedCubicalChainComplex k).obj X ⊗ (normalizedCubicalChainComplex k).obj Y ⟶
       (singularChains k).obj (X ⊗ Y) :=
-  HomologicalComplex.tensorHom ((cubicalToSingular k).app X) ((cubicalToSingular k).app Y) ≫
-    singularCrossProduct k X Y
+  ((cubicalToSingular k).app X ⊗ₘ (cubicalToSingular k).app Y) ≫ singularCrossProduct k X Y
 
 /-- The cubical cross product followed by the comparison map is a composite. -/
 theorem cubicalCrossProductToSingularApp_def (X Y : TopCat.{u}) :
@@ -82,7 +81,7 @@ theorem cubicalCrossProductToSingularApp_def (X Y : TopCat.{u}) :
 composite. -/
 theorem singularCrossProductOfCubicalApp_def (X Y : TopCat.{u}) :
     singularCrossProductOfCubicalApp k X Y =
-      HomologicalComplex.tensorHom ((cubicalToSingular k).app X) ((cubicalToSingular k).app Y) ≫
+      ((cubicalToSingular k).app X ⊗ₘ (cubicalToSingular k).app Y) ≫
         singularCrossProduct k X Y :=
   (rfl)
 
@@ -90,23 +89,10 @@ theorem singularCrossProductOfCubicalApp_def (X Y : TopCat.{u}) :
 transformation of functors on pairs of spaces. -/
 def cubicalCrossProductToSingular : cubicalTensor k ⟶ singularChainsProduct k where
   app X := cubicalCrossProductToSingularApp k X.1 X.2
-  naturality {X Y} f := by
-    have a := cubicalCrossProduct_naturality (R := k) f.1 f.2
-    have b := (cubicalToSingular k).naturality (f.1 ⊗ₘ f.2)
-    simp only [cubicalCrossProductToSingularApp]
-    calc HomologicalComplex.tensorHom ((normalizedCubicalChainComplex k).map f.1)
-          ((normalizedCubicalChainComplex k).map f.2) ≫
-          (cubicalCrossProduct k Y.1 Y.2 ≫ (cubicalToSingular k).app (Y.1 ⊗ Y.2))
-        = (HomologicalComplex.tensorHom ((normalizedCubicalChainComplex k).map f.1)
-          ((normalizedCubicalChainComplex k).map f.2) ≫ cubicalCrossProduct k Y.1 Y.2) ≫
-          (cubicalToSingular k).app (Y.1 ⊗ Y.2) := (Category.assoc _ _ _).symm
-      _ = (cubicalCrossProduct k X.1 X.2 ≫ (normalizedCubicalChainComplex k).map (f.1 ⊗ₘ f.2)) ≫
-          (cubicalToSingular k).app (Y.1 ⊗ Y.2) := congrArg (· ≫ _) a
-      _ = cubicalCrossProduct k X.1 X.2 ≫ ((normalizedCubicalChainComplex k).map (f.1 ⊗ₘ f.2) ≫
-          (cubicalToSingular k).app (Y.1 ⊗ Y.2)) := Category.assoc _ _ _
-      _ = cubicalCrossProduct k X.1 X.2 ≫ ((cubicalToSingular k).app (X.1 ⊗ X.2) ≫
-          (singularChains k).map (f.1 ⊗ₘ f.2)) := congrArg (_ ≫ ·) b
-      _ = _ := (Category.assoc _ _ _).symm
+  naturality {_ _} f :=
+    (cubicalCrossProduct_naturality_assoc (R := k) f.1 f.2 _).trans
+      ((congrArg (_ ≫ ·) ((cubicalToSingular k).naturality (f.1 ⊗ₘ f.2))).trans
+        (Category.assoc _ _ _).symm)
 
 /-- The component of `cubicalCrossProductToSingular` at a pair of spaces. -/
 @[simp]
@@ -119,41 +105,13 @@ natural transformation of functors on pairs of spaces. -/
 def singularCrossProductOfCubical : cubicalTensor k ⟶ singularChainsProduct k where
   app X := singularCrossProductOfCubicalApp k X.1 X.2
   naturality {X Y} f := by
-    have e1 : HomologicalComplex.tensorHom ((normalizedCubicalChainComplex k).map f.1)
-          ((normalizedCubicalChainComplex k).map f.2) ≫
-        HomologicalComplex.tensorHom ((cubicalToSingular k).app Y.1)
-          ((cubicalToSingular k).app Y.2) =
-        HomologicalComplex.tensorHom ((cubicalToSingular k).app X.1)
-          ((cubicalToSingular k).app X.2) ≫
-        HomologicalComplex.tensorHom ((singularChains k).map f.1) ((singularChains k).map f.2) :=
-      (tensorHom_comp_tensorHom _ _ _ _).trans
-        ((congrArg₂ (fun a b ↦ a ⊗ₘ b) ((cubicalToSingular k).naturality f.1)
-          ((cubicalToSingular k).naturality f.2)).trans
-        (tensorHom_comp_tensorHom _ _ _ _).symm)
-    have e2 := singularCrossProduct_naturality k f.1 f.2
-    simp only [singularCrossProductOfCubicalApp]
-    calc HomologicalComplex.tensorHom ((normalizedCubicalChainComplex k).map f.1)
-          ((normalizedCubicalChainComplex k).map f.2) ≫
-          (HomologicalComplex.tensorHom ((cubicalToSingular k).app Y.1)
-            ((cubicalToSingular k).app Y.2) ≫ singularCrossProduct k Y.1 Y.2)
-        = (HomologicalComplex.tensorHom ((normalizedCubicalChainComplex k).map f.1)
-          ((normalizedCubicalChainComplex k).map f.2) ≫
-          HomologicalComplex.tensorHom ((cubicalToSingular k).app Y.1)
-            ((cubicalToSingular k).app Y.2)) ≫ singularCrossProduct k Y.1 Y.2 :=
-          (Category.assoc _ _ _).symm
-      _ = (HomologicalComplex.tensorHom ((cubicalToSingular k).app X.1)
-          ((cubicalToSingular k).app X.2) ≫
-          HomologicalComplex.tensorHom ((singularChains k).map f.1) ((singularChains k).map f.2)) ≫
-          singularCrossProduct k Y.1 Y.2 := congrArg (· ≫ _) e1
-      _ = HomologicalComplex.tensorHom ((cubicalToSingular k).app X.1)
-          ((cubicalToSingular k).app X.2) ≫
-          (HomologicalComplex.tensorHom ((singularChains k).map f.1) ((singularChains k).map f.2) ≫
-          singularCrossProduct k Y.1 Y.2) := Category.assoc _ _ _
-      _ = HomologicalComplex.tensorHom ((cubicalToSingular k).app X.1)
-          ((cubicalToSingular k).app X.2) ≫
-          (singularCrossProduct k X.1 X.2 ≫ (singularChains k).map (f.1 ⊗ₘ f.2)) :=
-          congrArg (_ ≫ ·) e2
-      _ = _ := (Category.assoc _ _ _).symm
+    rw [singularCrossProductOfCubicalApp_def, singularCrossProductOfCubicalApp_def]
+    -- `(cubicalTensor k).map f` is `N f.1 ⊗ₘ N f.2` by definition of the functor
+    refine (tensorHom_comp_tensorHom_assoc ((normalizedCubicalChainComplex k).map f.1)
+      ((normalizedCubicalChainComplex k).map f.2) _ _ _).trans ?_
+    rw [(cubicalToSingular k).naturality, (cubicalToSingular k).naturality,
+      ← tensorHom_comp_tensorHom_assoc, singularCrossProduct_naturality, Category.assoc]
+    rfl
 
 /-- The component of `singularCrossProductOfCubical` at a pair of spaces. -/
 @[simp]
@@ -163,22 +121,19 @@ theorem singularCrossProductOfCubical_app (X Y : TopCat.{u}) :
 
 /-- The augmentation of the image of the generators of degree zero under the cubical cross product
 followed by the comparison is `1`. -/
-theorem singularAugment_cubicalCrossProductToSingular_gen (i : BidegreeIndex 0) :
-    singularAugment k ((bidegreeModel.{u} 0 i).1 ⊗ (bidegreeModel.{u} 0 i).2)
-      (((cubicalCrossProductToSingular k).app (bidegreeModel.{u} 0 i)).f 0
-        (tensorGen k 0 i)) = 1 := by
-  obtain ⟨⟨p, q⟩, h⟩ := i
-  obtain ⟨rfl, rfl⟩ : p = 0 ∧ q = 0 := by
-    have h' : p + q = 0 := h
-    omega
+private theorem singularAugment_cubicalCrossProductToSingular_gen (i : BidegreeIndex 0) :
+    singularAugment k ((cubicalBidegreeModel.{u} 0 i).1 ⊗ (cubicalBidegreeModel.{u} 0 i).2)
+      (((cubicalCrossProductToSingular k).app (cubicalBidegreeModel.{u} 0 i)).f 0
+        (cubicalTensorGen k 0 i)) = 1 := by
+  obtain rfl := BidegreeIndex.eq_zero i
   refine (singularAugment_cubicalToSingular (k := k) _ _).trans ?_
-  rw [tensorGen_def]
+  rw [cubicalTensorGen_def]
   -- the cross product chain map on the summand `(0, 0)` is the cross product of chains
   have e₀ := LinearMap.congr_fun (congrArg ModuleCat.Hom.hom
-    (ι_cubicalCrossProduct_f (R := k) (X := cubeModel.{u} 0) (Y := cubeModel.{u} 0) h))
+    (ι_cubicalCrossProduct_f (R := k) (X := cubeModel.{u} 0) (Y := cubeModel.{u} 0) rfl))
     (NormalizedCubicalChain.ofCube (cubeModel.{u} 0) k (upCube 0) ⊗ₜ[k]
       NormalizedCubicalChain.ofCube (cubeModel.{u} 0) k (upCube 0))
-  have e := cubicalCrossProductSummand_apply k (cubeModel.{u} 0) (cubeModel.{u} 0) 0 0 0 h
+  have e := cubicalCrossProductSummand_apply k (cubeModel.{u} 0) (cubeModel.{u} 0) 0 0 0 rfl
     (NormalizedCubicalChain.ofCube (cubeModel.{u} 0) k (upCube 0))
     (NormalizedCubicalChain.ofCube (cubeModel.{u} 0) k (upCube 0))
   refine (congrArg (cubicalAugment k _) (e₀.trans e)).trans ?_
@@ -188,7 +143,7 @@ theorem singularAugment_cubicalCrossProductToSingular_gen (i : BidegreeIndex 0) 
 
 /-- The augmentation of the tensor product of the comparison maps followed by the simplicial
 cross product, on the tensor product of two identity `0`-cubes, is `1`. -/
-theorem singularAugment_singularCrossProduct_zeroCube :
+private theorem singularAugment_singularCrossProduct_zeroCube :
     singularAugment k (cubeModel.{u} 0 ⊗ cubeModel.{u} 0)
       ((singularCrossProduct k (cubeModel.{u} 0) (cubeModel.{u} 0)).f 0
         ((HomologicalComplex.tensorHom ((cubicalToSingular k).app (cubeModel.{u} 0))
@@ -222,15 +177,12 @@ theorem singularAugment_singularCrossProduct_zeroCube :
 
 /-- The augmentation of the image of the generators of degree zero under the tensor product of the
 comparison maps followed by the simplicial cross product is `1`. -/
-theorem singularAugment_singularCrossProductOfCubical_gen (i : BidegreeIndex 0) :
-    singularAugment k ((bidegreeModel.{u} 0 i).1 ⊗ (bidegreeModel.{u} 0 i).2)
-      (((singularCrossProductOfCubical k).app (bidegreeModel.{u} 0 i)).f 0
-        (tensorGen k 0 i)) = 1 := by
-  obtain ⟨⟨p, q⟩, h⟩ := i
-  obtain ⟨rfl, rfl⟩ : p = 0 ∧ q = 0 := by
-    have h' : p + q = 0 := h
-    omega
-  rw [tensorGen_def]
+private theorem singularAugment_singularCrossProductOfCubical_gen (i : BidegreeIndex 0) :
+    singularAugment k ((cubicalBidegreeModel.{u} 0 i).1 ⊗ (cubicalBidegreeModel.{u} 0 i).2)
+      (((singularCrossProductOfCubical k).app (cubicalBidegreeModel.{u} 0 i)).f 0
+        (cubicalTensorGen k 0 i)) = 1 := by
+  obtain rfl := BidegreeIndex.eq_zero i
+  rw [cubicalTensorGen_def]
   exact singularAugment_singularCrossProduct_zeroCube k
 
 /-- The two natural chain maps from the tensor product of the cubical chains to the singular chains
@@ -239,23 +191,13 @@ theorem singularAugment_cubicalCrossProductToSingular_eq (X : TopCat.{u} × TopC
     (x : ((cubicalTensor k).obj X).X 0) :
     singularAugment k (X.1 ⊗ X.2) (((cubicalCrossProductToSingular k).app X).f 0 x) =
       singularAugment k (X.1 ⊗ X.2) (((singularCrossProductOfCubical k).app X).f 0 x) := by
-  let B := cubicalTensorModelPresentation.{u} k
-  conv_lhs => rw [← B.sum_coord X 0 x]
-  conv_rhs => rw [← B.sum_coord X 0 x]
-  rw [map_finsuppSum, map_finsuppSum, map_finsuppSum, map_finsuppSum]
-  refine Finsupp.sum_congr fun s _ ↦ ?_
-  rw [map_smul, map_smul, map_smul, map_smul]
-  refine congrArg (_ • ·) ?_
-  have n₁ := (AcyclicModels.NatLinear.ofHom (cubicalCrossProductToSingular k) 0).naturality s.2
-    (B.gen 0 s.1)
-  have n₂ := (AcyclicModels.NatLinear.ofHom (singularCrossProductOfCubical k) 0).naturality s.2
-    (B.gen 0 s.1)
-  simp only [AcyclicModels.NatLinear.ofHom_app] at n₁ n₂
-  rw [n₁, n₂]
-  refine Eq.trans (singularAugment_map (k := k) (s.2.1 ⊗ₘ s.2.2) _) ?_
-  refine Eq.trans ?_ (singularAugment_map (k := k) (s.2.1 ⊗ₘ s.2.2) _).symm
-  exact (singularAugment_cubicalCrossProductToSingular_gen k s.1).trans
-    (singularAugment_singularCrossProductOfCubical_gen k s.1).symm
+  exact (cubicalTensorModelPresentation.{u} k).augment_eq_of_gen
+    (εG := fun X ↦ singularAugment k (X.1 ⊗ X.2))
+    (fun f x ↦ singularAugment_map (f.1 ⊗ₘ f.2) x)
+    (AcyclicModels.NatLinear.ofHom (cubicalCrossProductToSingular k) 0)
+    (AcyclicModels.NatLinear.ofHom (singularCrossProductOfCubical k) 0)
+    (fun i ↦ (singularAugment_cubicalCrossProductToSingular_gen k i).trans
+      (singularAugment_singularCrossProductOfCubical_gen k i).symm) X x
 
 /-- **The cubical and the simplicial cross product are naturally chain homotopic**: the cubical
 cross product followed by the comparison map and the tensor product of the two comparison maps
@@ -263,7 +205,8 @@ followed by the simplicial cross product, `N(X; k) ⊗ N(Y; k) ⟶ C(X × Y; k)`
 The homotopy is natural in both spaces. -/
 def crossProductHomotopy (X Y : TopCat.{u}) :
     Homotopy (cubicalCrossProductToSingularApp k X Y) (singularCrossProductOfCubicalApp k X Y) :=
-  (cubicalTensorModelPresentation.{u} k).homotopy (isAcyclicOnMulti_singularChainsProduct k)
+  (cubicalTensorModelPresentation.{u} k).homotopy
+    (isAcyclicOnMulti_singularChainsProduct_cubicalTensorModelPresentation k)
     (cubicalCrossProductToSingular k) (singularCrossProductOfCubical k)
     (singularAugment_cubicalCrossProductToSingular_eq k) (X, Y)
 
