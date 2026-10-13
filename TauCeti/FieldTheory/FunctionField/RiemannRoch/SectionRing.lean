@@ -187,8 +187,9 @@ private noncomputable def evalOne (D : Divisor k F) : sectionRing D →ₐ[k] F 
   ((Polynomial.aeval (R := F) (1 : F)).restrictScalars k).comp (sectionRing D).val
 
 private theorem evalOne_apply (D : Divisor k F) (f : sectionRing D) :
-    evalOne D f = (f : F[X]).eval 1 :=
-  (rfl)
+    evalOne D f = (f : F[X]).eval 1 := by
+  rw [evalOne, AlgHom.comp_apply, Subalgebra.coe_val, AlgHom.restrictScalars_apply,
+    coe_aeval_eq_eval]
 
 /-- On a homogeneous element of degree `n`, evaluation at `X = 1` is the `n`-th coefficient. -/
 private theorem evalOne_of_mem {D : Divisor k F} {n : ℕ} {f : sectionRing D}
@@ -215,8 +216,8 @@ private noncomputable def awayLift : Away (sectionRingGrade D) f →ₐ[k] F whe
 
 private theorem awayLift_apply (w : Away (sectionRingGrade D) f) :
     awayLift hf hf0 w =
-      Away.lift (sectionRingGrade D) (evalOne D).toRingHom (isUnit_evalOne hf hf0) w :=
-  (rfl)
+      Away.lift (sectionRingGrade D) (evalOne D).toRingHom (isUnit_evalOne hf hf0) w := by
+  rw [awayLift, AlgHom.coe_mk]
 
 private theorem awayLift_mk (r : ℕ) (g : sectionRing D) (hg : g ∈ sectionRingGrade D (r • n)) :
     awayLift hf hf0 (Away.mk _ hf r g hg) =
@@ -282,8 +283,9 @@ noncomputable def sectionRingAwayEquiv :
 theorem sectionRingAwayEquiv_mk (r : ℕ) (g : sectionRing D)
     (hg : g ∈ sectionRingGrade D (r • n)) :
     (sectionRingAwayEquiv hF hf hf0 (Away.mk _ hf r g hg) : F) =
-      (g : F[X]).coeff (r • n) * ((f : F[X]).coeff n ^ r)⁻¹ :=
-  awayLift_mk hf hf0 r g hg
+      (g : F[X]).coeff (r • n) * ((f : F[X]).coeff n ^ r)⁻¹ := by
+  rw [sectionRingAwayEquiv, AlgEquiv.trans_apply, Subalgebra.equivOfEq_apply,
+    AlgEquiv.ofInjective_apply, awayLift_mk]
 
 /-! ### Sections without a common base point cover `Proj` -/
 
