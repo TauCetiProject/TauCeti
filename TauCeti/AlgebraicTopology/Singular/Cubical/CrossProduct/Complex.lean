@@ -51,6 +51,8 @@ def cubicalCrossProductSummand (p q n : ℕ) (h : p + q = n) :
     (LinearMap.compr₂ (NormalizedCubicalChain.crossProduct X Y R p q)
       (NormalizedCubicalChain.cast R h)))
 
+/-- The cross product map of a summand, evaluated on a pure tensor `a ⊗ b` of normalized chains of
+degrees `p` and `q`, is their cross product reindexed along `p + q = n`. -/
 @[simp]
 theorem cubicalCrossProductSummand_apply (p q n : ℕ) (h : p + q = n)
     (a : NormalizedCubicalChain X R p) (b : NormalizedCubicalChain Y R q) :
