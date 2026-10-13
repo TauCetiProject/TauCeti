@@ -8,7 +8,7 @@ module
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Corestriction.Basic
 public import TauCeti.GroupTheory.Index.Basic
 import TauCeti.Algebra.Group.Subgroup.Map
-public import Mathlib.Topology.Algebra.IsUniformGroup.DiscreteSubgroup
+public import TauCeti.Topology.Algebra.Group.Subgroup
 public import Mathlib.Topology.Algebra.OpenSubgroup
 
 /-!
@@ -107,22 +107,6 @@ section FiniteSums
 variable [U.FiniteIndex] [V.FiniteIndex]
 
 attribute [local instance] Subgroup.fintypeQuotientOfFiniteIndex
-
-private theorem sum_compositeTransversal (N : Type v) [AddCommMonoid N] [DistribMulAction G N]
-    (t : G ⧸ U → G)
-    (ht : ∀ u : G ⧸ U, (QuotientGroup.mk (t u) : G ⧸ U) = u)
-    (s : U ⧸ V.subgroupOf U → U) (m : N) :
-    ∑ q : G ⧸ V, Subgroup.compositeTransversal G U V (hVU := hVU) t ht s q • m =
-      ∑ a : G ⧸ U, t a • ∑ b : U ⧸ V.subgroupOf U, (s b : U) • m := by
-  let e := Subgroup.quotientEquivProdOfLE' hVU t ht
-  rw [← e.symm.sum_comp, Fintype.sum_prod_type]
-  apply Finset.sum_congr rfl
-  intro a _
-  rw [Finset.smul_sum]
-  apply Finset.sum_congr rfl
-  intro b _
-  simp only [Subgroup.compositeTransversal_apply, e, e.apply_symm_apply, mul_smul,
-    Subgroup.smul_def]
 
 private theorem cochainsCor1_composite (t : G ⧸ U → G)
     (ht : ∀ u : G ⧸ U, (QuotientGroup.mk (t u) : G ⧸ U) = u)
@@ -235,16 +219,6 @@ section Topological
 
 variable [TopologicalSpace G]
 
-/-- The identity map of `N` is equivariant along Mathlib's topological identification of
-`V.subgroupOf U` with `V`: that identification leaves ambient values in `G` unchanged, so the two
-subgroups act on `N` through the same elements. -/
-private theorem id_subgroupOfContinuousMulEquivOfLe_smul
-    (N : Type v) [AddZero N] [SMul G N] (x : V.subgroupOf U) (m : N) :
-    (AddMonoidHom.id N)
-        ((Subgroup.subgroupOfContinuousMulEquivOfLe hVU : V.subgroupOf U →ₜ* V) x • m) =
-      x • (AddMonoidHom.id N) m :=
-  rfl
-
 variable [TopologicalSpace M] [IsTopologicalAddGroup M]
   [ContinuousSMul U M] [ContinuousSMul V M]
 
@@ -262,7 +236,11 @@ noncomputable def explicitCor1Le [(V.subgroupOf U).FiniteIndex]
   (explicitCor1 U M (V.subgroupOf U) hV).comp
     (explicitMap1 V M (V.subgroupOf U) M
       (Subgroup.subgroupOfContinuousMulEquivOfLe hVU : V.subgroupOf U →ₜ* V)
-      (AddMonoidHom.id M) continuous_id (id_subgroupOfContinuousMulEquivOfLe_smul G U V hVU M))
+      (AddMonoidHom.id M) continuous_id
+      (by
+        simpa only [AddMonoidHom.id_apply, ContinuousMonoidHom.coe_coe,
+          MonoidHom.coe_ofClass] using
+          Subgroup.subgroupOfContinuousMulEquivOfLe_smul (M := M) hVU))
 
 /-- Relative degree-one corestriction sends the class of a continuous `1`-cocycle on `V` to the
 class of the degree-one corestriction cochain of its transport to `V.subgroupOf U`, taken over the
@@ -275,7 +253,10 @@ theorem explicitCor1Le_mk [(V.subgroupOf U).FiniteIndex]
         (cocyclesMap1 V M (V.subgroupOf U) M
           (Subgroup.subgroupOfContinuousMulEquivOfLe hVU : V.subgroupOf U →ₜ* V)
           (AddMonoidHom.id M) continuous_id
-          (by exact id_subgroupOfContinuousMulEquivOfLe_smul G U V hVU M) f) : H1 U M) := by
+          (by
+            simpa only [AddMonoidHom.id_apply, ContinuousMonoidHom.coe_coe,
+              MonoidHom.coe_ofClass] using
+              Subgroup.subgroupOfContinuousMulEquivOfLe_smul (M := M) hVU) f) : H1 U M) := by
   rw [explicitCor1Le, AddMonoidHom.comp_apply, explicitMap1_mk, explicitCor1_mk]
 
 end DegreeOne
@@ -292,7 +273,11 @@ noncomputable def explicitCor2Le [(V.subgroupOf U).FiniteIndex]
   (explicitCor2 U M (V.subgroupOf U) hV).comp
     (explicitMap2 V M (V.subgroupOf U) M
       (Subgroup.subgroupOfContinuousMulEquivOfLe hVU : V.subgroupOf U →ₜ* V)
-      (AddMonoidHom.id M) continuous_id (id_subgroupOfContinuousMulEquivOfLe_smul G U V hVU M))
+      (AddMonoidHom.id M) continuous_id
+      (by
+        simpa only [AddMonoidHom.id_apply, ContinuousMonoidHom.coe_coe,
+          MonoidHom.coe_ofClass] using
+          Subgroup.subgroupOfContinuousMulEquivOfLe_smul (M := M) hVU))
 
 /-- Relative degree-two corestriction sends the class of a continuous `2`-cocycle on `V` to the
 class of the degree-two corestriction cochain of its transport to `V.subgroupOf U`, taken over the
@@ -305,7 +290,10 @@ theorem explicitCor2Le_mk [(V.subgroupOf U).FiniteIndex]
         (cocyclesMap2 V M (V.subgroupOf U) M
           (Subgroup.subgroupOfContinuousMulEquivOfLe hVU : V.subgroupOf U →ₜ* V)
           (AddMonoidHom.id M) continuous_id
-          (by exact id_subgroupOfContinuousMulEquivOfLe_smul G U V hVU M) f) : H2 U M) := by
+          (by
+            simpa only [AddMonoidHom.id_apply, ContinuousMonoidHom.coe_coe,
+              MonoidHom.coe_ofClass] using
+              Subgroup.subgroupOfContinuousMulEquivOfLe_smul (M := M) hVU) f) : H2 U M) := by
   rw [explicitCor2Le, AddMonoidHom.comp_apply, explicitMap2_mk, explicitCor2_mk]
 
 /-- **`cor²_V^U ∘ res²_U^V = [U : V] • id`** on `H²(U, M)`: restricting along the inclusion
@@ -320,7 +308,11 @@ theorem explicitCor2Le_explicitMap2_subgroupInclusion [(V.subgroupOf U).FiniteIn
   -- `V.subgroupOf U`, since both pull back along the same inclusion into `U`.
   have hres : explicitMap2 V M (V.subgroupOf U) M
       (Subgroup.subgroupOfContinuousMulEquivOfLe hVU : V.subgroupOf U →ₜ* V)
-      (AddMonoidHom.id M) continuous_id (id_subgroupOfContinuousMulEquivOfLe_smul G U V hVU M)
+      (AddMonoidHom.id M) continuous_id
+      (by
+        simpa only [AddMonoidHom.id_apply, ContinuousMonoidHom.coe_coe,
+          MonoidHom.coe_ofClass] using
+          Subgroup.subgroupOfContinuousMulEquivOfLe_smul (M := M) hVU)
       (explicitMap2 U M V M (ContinuousMonoidHom.subgroupInclusion hVU) (AddMonoidHom.id M)
         continuous_id (fun _ _ => rfl) x) =
       explicitRes2 U M (V.subgroupOf U) x := by
@@ -330,7 +322,10 @@ theorem explicitCor2Le_explicitMap2_subgroupInclusion [(V.subgroupOf U).FiniteIn
       (fun _ _ => rfl) (V.subgroupOf U) M
       (Subgroup.subgroupOfContinuousMulEquivOfLe hVU : V.subgroupOf U →ₜ* V)
       (AddMonoidHom.id M) continuous_id
-      (id_subgroupOfContinuousMulEquivOfLe_smul G U V hVU M)) x).symm.trans ?_
+      (by
+        simpa only [AddMonoidHom.id_apply, ContinuousMonoidHom.coe_coe,
+          MonoidHom.coe_ofClass] using
+          Subgroup.subgroupOfContinuousMulEquivOfLe_smul (M := M) hVU)) x).symm.trans ?_
     exact DFunLike.congr_fun (explicitMap2_congr_of_eq _ _ _ _ _ _ _ _
       (ContinuousMonoidHom.ext fun _ => rfl) (AddMonoidHom.ext fun _ => rfl)) x
   rw [explicitCor2Le, AddMonoidHom.comp_apply, hres, explicitCor2_comp_res2, Subgroup.relIndex]
@@ -359,7 +354,7 @@ theorem explicitCor0_trans [U.FiniteIndex] [(V.subgroupOf U).FiniteIndex] :
   -- Forget the fixed-point membership proofs and expose the single and iterated norm sums.
   change (∑ q : G ⧸ V, r q • (m : M)) =
     ∑ a : G ⧸ U, t a • ∑ b : U ⧸ V.subgroupOf U, (s b : U) • (m : M)
-  exact sum_compositeTransversal G U V hVU M t Quotient.out_eq s (m : M)
+  exact Subgroup.sum_compositeTransversal U V hVU t Quotient.out_eq s (m : M)
 
 private theorem finsum_smul_quotient_trans (hVU : V ≤ U) (W : Subgroup G) (hUW : U ≤ W)
     [(U.subgroupOf W).FiniteIndex] [(V.subgroupOf U).FiniteIndex]
