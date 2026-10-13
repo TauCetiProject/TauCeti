@@ -398,16 +398,17 @@ private theorem orientationPreservingOn_closedBallChart_symm_trans
 
 /-- In dimension at least two, the closed-ball charts in a fixed orientation class form
 an oriented atlas. Their transitions are two inversions with a positive-determinant isometry. -/
-theorem isOrientedAtlas_closedBall (φ₀ : E ≃ₗᵢ[ℝ] EuclideanSpace ℝ (Fin n))
+theorem isOrientedAtlas_closedBall {k : ℕ∞ω} [NeZero k]
+    (φ₀ : E ≃ₗᵢ[ℝ] EuclideanSpace ℝ (Fin n))
     (hn : 2 ≤ n) :
-    IsOrientedAtlas (𝓡∂ n) ∞
+    IsOrientedAtlas (𝓡∂ n) k
       (closedBallChart '' {φ : E ≃ₗᵢ[ℝ] EuclideanSpace ℝ (Fin n) |
         0 < (LinearEquiv.det (φ₀.symm.trans φ).toLinearEquiv :
           ℝ)}) := by
   let S := {φ : E ≃ₗᵢ[ℝ] EuclideanSpace ℝ (Fin n) |
     0 < (LinearEquiv.det (φ₀.symm.trans φ).toLinearEquiv : ℝ)}
   -- Name the fixed orientation class in the atlas appearing in the conclusion.
-  change IsOrientedAtlas (𝓡∂ n) ∞ (closedBallChart '' S)
+  change IsOrientedAtlas (𝓡∂ n) k (closedBallChart '' S)
   refine ⟨?_, ?_, ?_⟩
   · rintro _ ⟨φ, -, rfl⟩
     exact IsManifold.maximalAtlas_subset_of_le le_top
