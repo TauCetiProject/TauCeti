@@ -68,8 +68,9 @@ an elliptic curve over a general base.
   `ℤ[1/2][λ, 1/λ(λ - 1)]` and the universal Legendre curve over it.
 * `WeierstrassCurve.UniversalLegendre.lift`: the classifying homomorphism
   `ℤ[1/2][λ, 1/λ(λ - 1)] →+* R` of an element `l` with `2l(l - 1)` a unit, along which the
-  universal curve becomes `y² = x (x - 1) (x - l)` (`WeierstrassCurve.UniversalLegendre.map_lift`),
-  naturally in `R` (`WeierstrassCurve.UniversalLegendre.comp_lift`).
+  universal curve becomes `y² = x (x - 1) (x - l)` (by `TauCeti.map_freyCurve` and
+  `WeierstrassCurve.UniversalLegendre.lift_param`), naturally in `R`
+  (`WeierstrassCurve.UniversalLegendre.comp_lift`).
 
 ## Main results
 
@@ -454,13 +455,6 @@ theorem lift_algebraMap {l : R} (h : IsUnit (2 * l * (l - 1))) (p : ℤ[X]) :
 @[simp]
 theorem lift_param {l : R} (h : IsUnit (2 * l * (l - 1))) : lift h param = l := by
   simp [lift]
-
-/-- Every Legendre form `y² = x (x - 1) (x - l)` with `2l(l - 1)` a unit is the base change of the
-universal Legendre curve along its classifying homomorphism. Not `@[simp]`: `simp` already proves
-it from `map_freyCurve` and `lift_param`. -/
-theorem map_lift {l : R} (h : IsUnit (2 * l * (l - 1))) :
-    curve.map (lift h) = freyCurve 1 (-l) := by
-  simp
 
 /-- The classifying homomorphism is natural in the base ring: followed by a ring homomorphism
 `φ : R →+* S`, the classifying homomorphism of `l` is that of `φ l`. -/
