@@ -110,11 +110,11 @@ theorem card_eq_two_of_apply_mul_apply_eq_three [Fintype B] (h : IsFiniteType A)
 For a preconnected finite-type matrix, a Cartan product of three first forces the index type to have
 two elements.  Rank-two classification supplies its unique valid Dynkin type.  The Cartan product
 is invariant under relabelling and distinguishes `G₂` from `A₂` and `B₂`. -/
-theorem exists_equiv_cartanMatrix_eq_G2_of_apply_mul_apply_eq_three [Finite B]
-    (h : IsFiniteType A)
+theorem exists_equiv_cartanMatrix_eq_G2_of_apply_mul_apply_eq_three (h : IsFiniteType A)
     (hconn : (diagramGraph A).Preconnected) {i j : B} (hij : A i j * A j i = 3) :
     ∃ e : B ≃ Fin DynkinType.G2.rank,
       ∀ x y, A x y = DynkinType.G2.cartanMatrix (e x) (e y) := by
+  have := h.finite
   have : Fintype B := Fintype.ofFinite B
   have hij_ne : i ≠ j := by
     rintro rfl
@@ -151,8 +151,7 @@ theorem exists_equiv_cartanMatrix_eq_G2_of_apply_mul_apply_eq_three [Finite B]
 The right side uses the same simultaneous row-and-column relabelling as `HasCartanType`.  No
 orientation is imposed on the witness edge on the left: reversing its endpoints does not change
 the Cartan product. -/
-theorem exists_apply_mul_apply_eq_three_iff_exists_equiv_cartanMatrix_eq_G2 [Finite B]
-    (h : IsFiniteType A)
+theorem exists_apply_mul_apply_eq_three_iff_exists_equiv_cartanMatrix_eq_G2 (h : IsFiniteType A)
     (hconn : (diagramGraph A).Preconnected) :
     (∃ i j, A i j * A j i = 3) ↔
       ∃ e : B ≃ Fin DynkinType.G2.rank,

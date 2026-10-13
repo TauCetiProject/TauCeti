@@ -86,6 +86,7 @@ theorem isFiniteType_graphCartanMatrix_of_posDef {R : Type*} [Field R] [LinearOr
   rw [← hcast, Rat.coe_castHom, Rat.cast_pos] at hpos
   rwa [star_trivial]
 
+omit [Finite V] in
 /-- **A connected graph of finite type is a simply-laced Dynkin diagram.** If the generalized
 Cartan matrix `2I - A` of a connected simple graph `G` is of finite type, then `G` is isomorphic to
 the diagram of the standard Cartan matrix of a valid Dynkin type, which is of type `A`, `D` or `E`:

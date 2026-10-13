@@ -30,8 +30,8 @@ denominators. The symmetrization itself is not redone here: Mathlib packages it 
 
 ## Main definitions
 
-* `TauCeti.IsFiniteType`: an integer matrix is a generalized Cartan matrix admitting a positive
-  rational symmetrizer whose symmetrization is positive definite.
+* `TauCeti.IsFiniteType`: an integer matrix over a finite index type is a generalized Cartan
+  matrix admitting a positive rational symmetrizer whose symmetrization is positive definite.
 
 ## Main results
 
@@ -111,23 +111,23 @@ namespace TauCeti
 
 variable {B : Type*} {A : Matrix B B ℤ}
 
-/-- A square integer matrix over an arbitrary index type is **of finite type** when it is a
+/-- A square integer matrix is **of finite type** when its index type is finite and it is a
 generalized Cartan matrix - diagonal entries `2`, nonpositive off-diagonal entries, and a symmetric
 vanishing pattern - which is symmetrizable with positive definite symmetrization: there is a
 positive rational vector `d` making `fun i j ↦ d i * A i j` positive definite (in particular
 symmetric).
 
-Finiteness of `B` is not part of the definition, because `Matrix.PosDef` tests only finitely
-supported vectors. For infinite `B` the condition is therefore weaker than being a finite-type
-Cartan matrix: it implies that every finite principal submatrix is of finite type, by
-`TauCeti.IsFiniteType.submatrix`, and the infinite path matrix on `ℕ` satisfies it. It is not
-equivalent to that implication, since a single symmetrizer has to serve every submatrix at once.
-Results that need a finite index type assume `[Finite B]` or `[Fintype B]` themselves.
+Finiteness of `B` is a conjunct of the condition rather than an instance argument. It has to be
+asked for explicitly: `Matrix.PosDef` tests only finitely supported vectors, so without the
+conjunct the condition would be strictly weaker than being a finite-type Cartan matrix, and the
+infinite path matrix on `ℕ` would satisfy it. Asking for it as a conjunct rather than as
+`[Finite B]` is what lets the consequences below read finiteness off the hypothesis instead of
+carrying an instance argument of their own.
 
 For finite `B` the Cartan matrices of finite root systems are exactly the matrices of this kind, up
 to irreducibility; `TauCeti.isFiniteType_cartanMatrix` proves one direction. -/
 def IsFiniteType (A : Matrix B B ℤ) : Prop :=
-  (∀ i, A i i = 2) ∧ (∀ i j, i ≠ j → A i j ≤ 0) ∧ (∀ i j, A i j = 0 → A j i = 0) ∧
+  Finite B ∧ (∀ i, A i i = 2) ∧ (∀ i j, i ≠ j → A i j ≤ 0) ∧ (∀ i j, A i j = 0 → A j i = 0) ∧
     ∃ d : B → ℚ, (∀ i, 0 < d i) ∧ (Matrix.of fun i j ↦ d i * (A i j : ℚ)).PosDef
 
 
@@ -136,10 +136,11 @@ def IsFiniteType (A : Matrix B B ℤ) : Prop :=
 `d j * A j i = d i * A i j`, so one entry of a transposed pair vanishes exactly when the other
 does. The clause is kept in the definition because it is one of the defining axioms of a
 generalized Cartan matrix. -/
-theorem isFiniteType_of (h2 : ∀ i, A i i = 2) (hle : ∀ i j, i ≠ j → A i j ≤ 0) {d : B → ℚ}
-    (hd : ∀ i, 0 < d i) (hpd : (Matrix.of fun i j ↦ d i * (A i j : ℚ)).PosDef) :
+theorem isFiniteType_of [Finite B] (h2 : ∀ i, A i i = 2) (hle : ∀ i j, i ≠ j → A i j ≤ 0)
+    {d : B → ℚ} (hd : ∀ i, 0 < d i)
+    (hpd : (Matrix.of fun i j ↦ d i * (A i j : ℚ)).PosDef) :
     IsFiniteType A := by
-  refine ⟨h2, hle, fun i j hij ↦ ?_, d, hd, hpd⟩
+  refine ⟨‹Finite B›, h2, hle, fun i j hij ↦ ?_, d, hd, hpd⟩
   have hsymm := hpd.isHermitian.apply i j
   simp only [Matrix.of_apply, star_trivial] at hsymm
   rw [hij] at hsymm
@@ -151,7 +152,8 @@ symmetrizer is the constant-one vector, whose symmetrization of `A` is `A` itsel
 so the diagonal and sign conditions of `TauCeti.isFiniteType_of` are still required, and only
 the symmetrizer is fixed. This is the constructor for the simply-laced Cartan matrices, which are
 symmetric and are the Gram matrices of their own simple roots. -/
-theorem isFiniteType_of_posDef_map_intCast (h2 : ∀ i, A i i = 2) (hle : ∀ i j, i ≠ j → A i j ≤ 0)
+theorem isFiniteType_of_posDef_map_intCast [Finite B] (h2 : ∀ i, A i i = 2)
+    (hle : ∀ i j, i ≠ j → A i j ≤ 0)
     (hpd : (A.map (Int.cast : ℤ → ℚ)).PosDef) : IsFiniteType A := by
   refine isFiniteType_of h2 hle (d := fun _ ↦ 1) (fun _ ↦ one_pos) ?_
   have h1 : (Matrix.of fun i j ↦ (1 : ℚ) * ((A i j : ℤ) : ℚ)) = A.map (Int.cast : ℤ → ℚ) :=
@@ -181,15 +183,20 @@ theorem isFiniteType_of_conjTranspose_mul_self_of_det_ne_zero [Fintype B] [Decid
 
 namespace IsFiniteType
 
+/-- The index type of a finite-type matrix is finite. The consequences below open with
+`have := h.finite` rather than carrying a `[Finite B]` argument of their own. -/
+lemma finite (h : IsFiniteType A) : Finite B := h.1
+
 /-- The diagonal entries of a finite-type matrix are `2`. -/
-lemma apply_self (h : IsFiniteType A) (i : B) : A i i = 2 := h.1 i
+lemma apply_self (h : IsFiniteType A) (i : B) : A i i = 2 := h.2.1 i
 
 /-- The off-diagonal entries of a finite-type matrix are nonpositive. -/
-lemma apply_le_zero_of_ne (h : IsFiniteType A) {i j : B} (hij : i ≠ j) : A i j ≤ 0 := h.2.1 i j hij
+lemma apply_le_zero_of_ne (h : IsFiniteType A) {i j : B} (hij : i ≠ j) : A i j ≤ 0 :=
+  h.2.2.1 i j hij
 
 /-- The vanishing pattern of a finite-type matrix is symmetric. -/
 lemma apply_eq_zero_symm (h : IsFiniteType A) {i j : B} (hij : A i j = 0) : A j i = 0 :=
-  h.2.2.1 i j hij
+  h.2.2.2.1 i j hij
 
 /-- An entry of a finite-type matrix vanishes exactly when its transpose does. -/
 lemma apply_eq_zero_iff (h : IsFiniteType A) {i j : B} : A i j = 0 ↔ A j i = 0 :=
@@ -197,7 +204,7 @@ lemma apply_eq_zero_iff (h : IsFiniteType A) {i j : B} : A i j = 0 ↔ A j i = 0
 
 /-- The symmetrizer of a finite-type matrix, together with its defining properties. -/
 lemma exists_symmetrizer (h : IsFiniteType A) :
-    ∃ d : B → ℚ, (∀ i, 0 < d i) ∧ (Matrix.of fun i j ↦ d i * (A i j : ℚ)).PosDef := h.2.2.2
+    ∃ d : B → ℚ, (∀ i, 0 < d i) ∧ (Matrix.of fun i j ↦ d i * (A i j : ℚ)).PosDef := h.2.2.2.2
 
 /-- **The symmetrizer intertwines the two entries of a transposed pair.** The symmetrization is
 symmetric, being positive definite, and this is what that says entrywise. -/
@@ -212,9 +219,12 @@ theorem submatrix {C : Type*} (h : IsFiniteType A) {e : C → B}
     (he : Function.Injective e) :
     IsFiniteType (A.submatrix e e) := by
   -- Restricting the symmetrizer along the same injection restricts the symmetrization, and
-  -- positive definiteness passes to principal submatrices.
+  -- positive definiteness passes to principal submatrices. The index type of the submatrix is
+  -- finite because it injects into the finite index type of `A`.
+  have := h.finite
   obtain ⟨d, hd, hpd⟩ := h.exists_symmetrizer
-  refine ⟨fun i ↦ h.apply_self _, fun i j hij ↦ h.apply_le_zero_of_ne fun hc ↦ hij (he hc),
+  refine ⟨Finite.of_injective e he, fun i ↦ h.apply_self _,
+    fun i j hij ↦ h.apply_le_zero_of_ne fun hc ↦ hij (he hc),
     fun i j hij ↦ h.apply_eq_zero_symm hij, d ∘ e, fun i ↦ hd _, ?_⟩
   exact hpd.submatrix he
 
@@ -223,46 +233,26 @@ the transpose. Its symmetrization is obtained from the original one by conjugati
 invertible diagonal matrix whose entries are those reciprocals. -/
 theorem transpose (h : IsFiniteType A) : IsFiniteType A.transpose := by
   classical
+  have := h.finite
+  have : Fintype B := Fintype.ofFinite B
   obtain ⟨d, hd, hpd⟩ := h.exists_symmetrizer
-  have hsymm := symmetrization_apply_comm hpd
   refine isFiniteType_of (fun i ↦ h.apply_self i)
     (fun i j hij ↦ h.apply_le_zero_of_ne hij.symm) (d := fun i ↦ (d i)⁻¹)
     (fun i ↦ inv_pos.mpr (hd i)) ?_
-  -- The two symmetrizations differ by conjugating with the diagonal of reciprocals, so the test
-  -- vectors correspond under `x i ↦ x i / d i`; this needs no finiteness, because `Matrix.PosDef`
-  -- quantifies over finitely supported vectors.
-  have hentry : ∀ i j, (d i)⁻¹ * (A.transpose i j : ℚ)
-      = (d i)⁻¹ * (d i * (A i j : ℚ)) * (d j)⁻¹ := by
-    intro i j
-    simp only [Matrix.transpose_apply]
-    field_simp [(hd i).ne', (hd j).ne']
-    linear_combination hsymm i j
-  refine ⟨?_, ?_⟩
-  · ext i j
-    simp only [Matrix.conjTranspose_apply, Matrix.of_apply, star_trivial, Matrix.transpose_apply]
-    field_simp [(hd i).ne', (hd j).ne']
-    linear_combination hsymm j i
-  · intro x hx
-    -- Rescale the test vector by the reciprocals.
-    set y : B →₀ ℚ := Finsupp.onFinset x.support (fun i ↦ x i * (d i)⁻¹) (fun i hi ↦ by
-      by_contra hc
-      simp [Finsupp.notMem_support_iff.mp hc] at hi) with hy
-    have hyapply : ∀ i, y i = x i * (d i)⁻¹ := fun i ↦ rfl
-    have hysub : y.support ⊆ x.support := Finsupp.support_onFinset_subset
-    have hy0 : y ≠ 0 := by
-      intro hc
-      refine hx (Finsupp.ext fun i ↦ ?_)
-      have := congrArg (fun f ↦ f i) hc
-      simp only [hyapply, Finsupp.coe_zero, Pi.zero_apply] at this
-      simpa [(hd i).ne'] using this
-    have hpos := hpd.2 hy0
-    rw [Finsupp.sum_of_support_subset y hysub _ (by simp)] at hpos
-    rw [Finsupp.sum_of_support_subset x (subset_refl _) _ (by simp)]
-    refine lt_of_lt_of_le hpos (le_of_eq (Finset.sum_congr rfl fun i _ ↦ ?_))
-    rw [Finsupp.sum_of_support_subset y hysub _ (by simp)]
-    refine Finset.sum_congr rfl fun j _ ↦ ?_
-    simp only [hyapply, star_trivial, Matrix.of_apply, hentry]
-    ring
+  have hdiag : Function.Injective (Matrix.diagonal fun i ↦ (d i)⁻¹).mulVec := by
+    intro x y hxy
+    funext i
+    apply mul_left_cancel₀ (inv_ne_zero (hd i).ne')
+    simpa only [Matrix.mulVec_diagonal] using congrFun hxy i
+  have hconj := hpd.conjTranspose_mul_mul_same hdiag
+  convert hconj using 1
+  ext i j
+  have hsymm := hpd.isHermitian.apply i j
+  simp only [Matrix.of_apply, Matrix.transpose_apply, Matrix.diagonal_conjTranspose, star_trivial,
+    Matrix.diagonal_mul, Matrix.mul_diagonal]
+  simp only [Matrix.of_apply, star_trivial] at hsymm
+  field_simp [(hd i).ne', (hd j).ne']
+  linarith
 
 /-- **A nonzero entry has Cartan product at least `1`.** Off the diagonal both entries of such a
 transposed pair are at most `-1`: they are nonpositive, and neither vanishes, because the vanishing
@@ -337,13 +327,19 @@ private theorem dotProduct_mulVec_symmetrization_eq_of_pairwise_apply_eq_zero [F
     field_simp [hd j hj]
     ring
 
-/-- The star bound over a finite index type, where the test vector can be written down on all of
-`B` at once. `TauCeti.IsFiniteType.sum_apply_mul_apply_lt_four` removes the finiteness. -/
-private theorem sum_apply_mul_apply_lt_four_of_finite [Finite B] (h : IsFiniteType A) {i : B}
-    {s : Finset B}
+/-- **The star bound.** If `i` is distinct from every index of `s` and the indices of `s` are
+pairwise non-adjacent, then the Cartan products of `i` with the indices of `s` sum to less than
+`4`.
+
+This is the first of the two positive-definiteness estimates behind the local shape of a finite-type
+diagram: inside a pairwise non-adjacent star at `i` there are at most three neighbours, at most one
+of the edges to them is multiple, and a triple edge among them stands alone. The second,
+`TauCeti.IsFiniteType.apply_eq_zero_of_apply_ne_zero`, removes the pairwise hypothesis. -/
+theorem sum_apply_mul_apply_lt_four (h : IsFiniteType A) {i : B} {s : Finset B}
     (his : i ∉ s) (hs : (s : Set B).Pairwise fun j k ↦ A j k = 0) :
     ∑ j ∈ s, A i j * A j i < 4 := by
   classical
+  have := h.finite
   have : Fintype B := Fintype.ofFinite B
   obtain ⟨d, hd, hpd⟩ := h.exists_symmetrizer
   have hsymm := symmetrization_apply_comm hpd
@@ -364,46 +360,6 @@ private theorem sum_apply_mul_apply_lt_four_of_finite [Finite B] (h : IsFiniteTy
     push_cast
     nlinarith [hd i]
   exact_mod_cast hcast
-
-/-- **The star bound.** If `i` is distinct from every index of `s` and the indices of `s` are
-pairwise non-adjacent, then the Cartan products of `i` with the indices of `s` sum to less than
-`4`.
-
-This is the first of the two positive-definiteness estimates behind the local shape of a finite-type
-diagram: inside a pairwise non-adjacent star at `i` there are at most three neighbours, at most one
-of the edges to them is multiple, and a triple edge among them stands alone. The second,
-`TauCeti.IsFiniteType.apply_eq_zero_of_apply_ne_zero`, removes the pairwise hypothesis. -/
-theorem sum_apply_mul_apply_lt_four (h : IsFiniteType A) {i : B} {s : Finset B}
-    (his : i ∉ s) (hs : (s : Set B).Pairwise fun j k ↦ A j k = 0) :
-    ∑ j ∈ s, A i j * A j i < 4 := by
-  classical
-  -- Only the indices `insert i s` carry the estimate, so restrict to the principal submatrix on
-  -- `Option ↥s`, with `none` naming `i`.
-  set e : Option {x // x ∈ s} → B := fun o ↦ o.elim i Subtype.val with he'
-  have hsome : ∀ x : {x // x ∈ s}, e (some x) = (x : B) := fun _ ↦ rfl
-  have hnone : e none = i := rfl
-  have hne : ∀ x : {x // x ∈ s}, e (some x) ≠ e none := by
-    intro x hc
-    rw [hsome, hnone] at hc
-    exact his (hc ▸ x.2)
-  have he : Function.Injective e := by
-    rintro (_ | a) (_ | b) hab
-    · rfl
-    · exact absurd hab.symm (hne b)
-    · exact absurd hab (hne a)
-    · exact congrArg some (Subtype.ext hab)
-  have key := sum_apply_mul_apply_lt_four_of_finite (h.submatrix he) (i := none)
-    (s := (Finset.univ : Finset {x // x ∈ s}).map Function.Embedding.some) (by simp)
-    (by
-      intro a ha b hb hab
-      simp only [Finset.coe_map, Finset.coe_univ, Set.image_univ, Set.mem_range] at ha hb
-      obtain ⟨x, rfl⟩ := ha
-      obtain ⟨y, rfl⟩ := hb
-      refine hs x.2 y.2 fun hc ↦ hab ?_
-      rw [Subtype.ext hc])
-  simp only [Finset.sum_map, Matrix.submatrix_apply, Function.Embedding.some_apply, hsome,
-    hnone] at key
-  rwa [Finset.sum_coe_sort s fun j ↦ A i j * A j i] at key
 
 /-- **The Cartan product of two distinct indices of a finite-type matrix is `0`, `1`, `2` or `3`.**
 These are exactly the values that name the orders `2, 3, 4, 6` of a product of two simple

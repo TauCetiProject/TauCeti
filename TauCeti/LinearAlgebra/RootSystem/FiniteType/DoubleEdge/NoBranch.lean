@@ -281,7 +281,7 @@ omit [DecidableEq B] in
 double edge reindexes to two nonempty chains of one of the admissible shapes: type `C` (the second
 chain is a singleton), type `B` (the first is a singleton), or type `F₄` (both have two vertices).
 -/
-theorem exists_equiv_forall_eq_doubleEdgeCartanMatrix_of_apply_mul_apply_eq_two [Finite B]
+theorem exists_equiv_forall_eq_doubleEdgeCartanMatrix_of_apply_mul_apply_eq_two
     (h : IsFiniteType A) (hconn : (diagramGraph A).Preconnected)
     {u v : B} (huv : A u v * A v u = 2) :
     ∃ p q : ℕ, 0 < p ∧ 0 < q ∧ (q = 1 ∨ p = 1 ∨ (p = 2 ∧ q = 2)) ∧
@@ -289,6 +289,7 @@ theorem exists_equiv_forall_eq_doubleEdgeCartanMatrix_of_apply_mul_apply_eq_two 
         ∀ i j, A i j = doubleEdgeCartanMatrix p q (e i) (e j) :=
   by
     classical
+    have := h.finite
     have : Fintype B := Fintype.ofFinite B
     exact h.exists_equiv_forall_eq_doubleEdgeCartanMatrix_eq_one_or_eq_one_or_eq_two_two
       hconn (h.degree_le_two_of_apply_mul_apply_eq_two hconn huv) huv
