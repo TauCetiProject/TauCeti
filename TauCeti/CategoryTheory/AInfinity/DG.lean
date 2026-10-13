@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Homology.AInfinity.Algebra.DG
-public import TauCeti.CategoryTheory.AInfinity.Basic
+public import TauCeti.CategoryTheory.AInfinity.Unit
 public import TauCeti.CategoryTheory.DG.Basic
 
 /-!
@@ -31,7 +31,8 @@ The structure is built on the total module of morphisms `⨁ (X, Y), Hom(X, Y)`,
 Keller-ordered composition, extended by zero on pairs of morphisms which are not composable, is a
 nonunital differential graded algebra.  Its `A∞` algebra
 (`TauCeti.IsNonUnitalDGAlgebra.toAInfinityAlgebra`) is path-compatible, hence an `A∞` category.
-The identities of `C` are not used.
+The identities of `C` are not used in the construction; they are strict identities of the
+resulting `A∞` category.
 
 ## Main definitions
 
@@ -47,6 +48,8 @@ The identities of `C` are not used.
   composition, with the Koszul sign `(-1) ^ (p * q)` relative to `TauCeti.dgComp`.
 * `TauCeti.DGCategory.toAInfinityCategory_m_of_three_le`: the operations of arity at least three
   vanish.
+* `TauCeti.DGCategory.strictUnit_toAInfinityCategory`: the identities of `C` are strict
+  identities.
 
 ## References
 
@@ -418,6 +421,60 @@ theorem toAInfinityCategory_m_of_three_le {n : ℕ} (hn : 3 ≤ n) :
 @[simp]
 theorem toAInfinityCategory_m_add_three (n : ℕ) : (toAInfinityCategory R C).m (n + 3) = 0 :=
   m_add_three_toAInfinityCategory n
+
+/-! ### Strict identities -/
+
+/-- Keller-ordered composition with a homogeneous morphism `f` of degree `p` on the right and an
+identity on the left, recorded at an arbitrary degree `n = p + 0`. -/
+private theorem comp_toAInfinityCategory_homLof_dgId {X Y : C} {p n : ℤ} (f : DGHom R p X Y)
+    (h : p + 0 = n) :
+    (toAInfinityCategory R C).comp X Y Y (homLof Y Y 0 (dgId R Y)) (homLof X Y p f) =
+      homLof X Y n (dgComp R f (dgId R Y) h) := by
+  subst h
+  rw [comp_toAInfinityCategory_homLof, mul_zero, Int.negOnePow_zero, one_smul]
+
+/-- Keller-ordered composition with a homogeneous morphism `g` of degree `q` on the left and an
+identity on the right, recorded at an arbitrary degree `n = 0 + q`. -/
+private theorem comp_toAInfinityCategory_dgId_homLof {X Y : C} {q n : ℤ} (g : DGHom R q X Y)
+    (h : 0 + q = n) :
+    (toAInfinityCategory R C).comp X X Y (homLof X Y q g) (homLof X X 0 (dgId R X)) =
+      homLof X Y n (dgComp R (dgId R X) g h) := by
+  subst h
+  rw [comp_toAInfinityCategory_homLof, zero_mul, Int.negOnePow_zero, one_smul]
+
+/-- **The identities of a differential graded category are strict identities** of its `A∞`
+category. -/
+theorem strictUnit_toAInfinityCategory :
+    (toAInfinityCategory R C).StrictUnit fun X ↦ homLof X X 0 (dgId R X) where
+  degree_zero X := homLof_mem_piece _
+  binary_left X Y f := by
+    induction f using homModule_induction with
+    | zero => rw [map_zero]
+    | add f f' hf hf' => rw [map_add, hf, hf']
+    | homLof p f => rw [comp_toAInfinityCategory_homLof_dgId f (add_zero p), dgComp_dgId]
+  binary_right X Y f := by
+    induction f using homModule_induction with
+    | zero => rw [map_zero, LinearMap.zero_apply]
+    | add f f' hf hf' => rw [map_add, LinearMap.add_apply, hf, hf']
+    | homLof q f => rw [comp_toAInfinityCategory_dgId_homLof f (zero_add q), dgId_dgComp]
+  higher n hn x := by
+    rintro ⟨i, X, hi⟩
+    match n, hn, x, i, hi with
+    | 0, _, _, _, _ => rw [(toAInfinityCategory R C).m_zero, _root_.zero_apply]
+    | 1, _, x, i, hi =>
+      obtain rfl : i = 0 := Subsingleton.elim i 0
+      have hx : x = ![homInclusion X X (homLof X X 0 (dgId R X))] := by
+        funext j
+        rw [Subsingleton.elim j 0, hi]
+        rfl
+      rw [hx, ← AInfinityAlgebra.differential_apply,
+        ← AInfinityCategory.homInclusion_homDifferential,
+        homDifferential_toAInfinityCategory_homLof, dgDifferential_dgId, map_zero, map_zero]
+    | n + 3, _, _, _, _ => rw [toAInfinityCategory_m_add_three, _root_.zero_apply]
+
+/-- The `A∞` category of a differential graded category is strictly unital. -/
+theorem strictlyUnital_toAInfinityCategory : (toAInfinityCategory R C).StrictlyUnital :=
+  ⟨_, strictUnit_toAInfinityCategory⟩
 
 end DGCategory
 
