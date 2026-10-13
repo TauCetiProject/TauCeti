@@ -60,6 +60,7 @@ def trajectoryOperator (A : Lp (F →L[ℝ] F) ∞ (mu.restrict Omega)) :
       (prevL (ContinuousLinearMap.id ℝ (Lp F p (mu.restrict Omega))))
 
 /-- The operator is the sum of the weak derivative in direction `1` and the coefficient action. -/
+@[simp]
 lemma trajectoryOperator_apply (A : Lp (F →L[ℝ] F) ∞ (mu.restrict Omega))
     (u : WeakDerivStep mu Omega p (ContinuousLinearMap.id ℝ (Lp F p (mu.restrict Omega)))) :
     trajectoryOperator A u =
@@ -90,14 +91,6 @@ theorem trajectoryOperator_apply_ae (A : Lp (F →L[ℝ] F) ∞ (mu.restrict Ome
       (prev (ContinuousLinearMap.id ℝ (Lp F p (mu.restrict Omega))) u)] with s hs hd hA
   exact hs.trans (by simp only [Pi.add_apply, hd, hA,
     ContinuousLinearMap.apply_apply, ContinuousLinearMap.id_apply])
-
-/-- The trajectory operator with zero coefficient is the weak derivative in direction `1`. -/
-@[simp]
-lemma trajectoryOperator_zero :
-    trajectoryOperator (0 : Lp (F →L[ℝ] F) ∞ (mu.restrict Omega)) =
-      ((ContinuousLinearMap.apply ℝ F (1 : ℝ)).compLpL p (mu.restrict Omega)).comp
-        (weakFDerivL (ContinuousLinearMap.id ℝ (Lp F p (mu.restrict Omega)))) := by
-  simp [trajectoryOperator]
 
 /-- The operator norm of the first-order trajectory operator is at most `1 + ‖A‖`. -/
 theorem norm_trajectoryOperator_le (A : Lp (F →L[ℝ] F) ∞ (mu.restrict Omega)) :
@@ -169,7 +162,6 @@ theorem norm_trajectoryOperator_sub_le (A B : Lp (F →L[ℝ] F) ∞ (mu.restric
 /-- Solving the bounded trajectory equation is equivalent to solving the weak ordinary
 differential equation `u' = f - A u`. -/
 theorem trajectoryOperator_eq_iff_hasWeakLineDerivOn
-    [IsLocallyFiniteMeasure (mu.restrict Omega)]
     (A : Lp (F →L[ℝ] F) ∞ (mu.restrict Omega))
     (u : WeakDerivStep mu Omega p (ContinuousLinearMap.id ℝ (Lp F p (mu.restrict Omega))))
     (f : Lp F p (mu.restrict Omega)) :
