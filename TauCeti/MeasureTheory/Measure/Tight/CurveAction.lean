@@ -209,12 +209,12 @@ theorem exists_continuity_modulus_le_of_absolutelyContinuousOnInterval_of_linteg
   gcongr
   exact hA P hP
 
-/-- **Tightness of laws of curves with bounded expected action.** Let `X` be a complete metric
+/-- **Tightness of laws of curves with bounded expected action.** Let `X` be a complete pseudometric
 space, `1 < p`, and `D ⊆ [a, b]` dense. A set `S` of measures on `C([a, b], X)` is tight if the time
 marginals at the times of `D` are tight and its members are concentrated on absolutely continuous
 paths with uniformly bounded expected `p`-action `∫ A_p dP ≤ C < ∞`. -/
 theorem isTightMeasureSet_of_map_eval_of_absolutelyContinuousOnInterval_of_lintegral_curveAction_le
-    [MeasurableSpace X] [BorelSpace X] [CompleteSpace X] [T2Space X] (hab : a ≤ b) (hp : 1 < p)
+    [MeasurableSpace X] [BorelSpace X] [CompleteSpace X] (hab : a ≤ b) (hp : 1 < p)
     {S : Set (Measure C(Icc a b, X))} {D : Set (Icc a b)} (hD : Dense D)
     (h_eval : ∀ t ∈ D,
       IsTightMeasureSet ((fun P : Measure C(Icc a b, X) ↦ P.map fun γ ↦ γ t) '' S))
