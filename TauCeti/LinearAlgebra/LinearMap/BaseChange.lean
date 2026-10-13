@@ -6,15 +6,22 @@ Authors: Codex
 module
 
 public import Mathlib.LinearAlgebra.Contraction
+public import Mathlib.RingTheory.Flat.FaithfullyFlat.Basic
+public import Mathlib.RingTheory.Nilpotent.Defs
 public import TauCeti.LinearAlgebra.Dual.BaseChange
 
 /-!
-# Scalar extension of linear Hom spaces
+# Scalar extension of linear maps and Hom spaces
 
 The canonical map from `A ⊗[R] Hom_R(M,N)` to `Hom_A(A ⊗[R] M, A ⊗[R] N)` sends
 `a ⊗ f` to `a • f.baseChange A`. It is an equivalence when `M` is finite projective;
 no finiteness condition is needed on `N` or on the commutative value algebra `A`.
 This comparison allows a scalar-extended Hom representation to act on scalar-extended vectors.
+
+When the coefficient algebra is faithfully flat, extension of scalars is injective on linear
+maps (`LinearMap.baseChange_injective`) and reflects nilpotence of endomorphisms
+(`LinearMap.isNilpotent_baseChange_iff`). These statements use
+`Module.FaithfullyFlat.zero_iff_lTensor_zero` and `Module.End.baseChangeHom` from Mathlib.
 
 The equivalence uses Mathlib's `lTensorHomEquivHomLTensor` and
 `LinearMap.liftBaseChangeEquiv`, following the construction of
@@ -107,5 +114,45 @@ theorem baseChangeTensorHomEquiv_symm_baseChange (f : M →ₗ[R] N) :
         (f.baseChange A) = 1 ⊗ₜ[R] f := by
   apply (baseChangeTensorHomEquiv (R := R) (A := A) (M := M) (N := N)).injective
   simp
+
+end LinearMap
+
+public section
+
+open TensorProduct
+
+namespace LinearMap
+
+universe u v w x
+
+variable {R : Type u} {A : Type v} {M : Type w} {N : Type x}
+variable [CommRing R] [Ring A] [Algebra R A]
+variable [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
+variable [Module.FaithfullyFlat R A]
+
+/-- Over a faithfully flat coefficient algebra, extension of scalars loses no information about a
+linear map: two maps agreeing after extension of scalars are equal.
+
+Mathlib's `LinearMap.baseChangeHom_injective` proves injectivity under the incomparable hypotheses
+that `A` is merely faithful over `R` and that the *target* module `N` is flat over `R`; faithful
+flatness of the coefficient algebra asks nothing of `N`. -/
+theorem baseChange_injective :
+    Function.Injective (baseChange A : (M →ₗ[R] N) → A ⊗[R] M →ₗ[A] A ⊗[R] N) := by
+  intro f g h
+  apply sub_eq_zero.mp
+  apply (Module.FaithfullyFlat.zero_iff_lTensor_zero R A (f - g)).mpr
+  have hTensor : f.lTensor A = g.lTensor A := by
+    apply LinearMap.ext
+    intro z
+    simpa only [← baseChange_eq_ltensor] using DFunLike.congr_fun h z
+  rw [lTensor_sub, hTensor]
+  exact _root_.sub_self (g.lTensor A)
+
+/-- **An endomorphism is nilpotent exactly when its extension of scalars is**, over a faithfully
+flat coefficient algebra. -/
+@[simp]
+theorem isNilpotent_baseChange_iff (f : Module.End R M) :
+    IsNilpotent (f.baseChange A) ↔ IsNilpotent f :=
+  IsNilpotent.map_iff (f := Module.End.baseChangeHom R A M) baseChange_injective
 
 end LinearMap

@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Algebra.Lie.AdjointAction.Derivation
 public import Mathlib.Algebra.Lie.Derivation.BaseChange
-public import TauCeti.LinearAlgebra.TensorProduct.BaseChange
+public import TauCeti.LinearAlgebra.LinearMap.BaseChange
 public import TauCeti.LinearAlgebra.TensorProduct.Submodule
 
 /-!
@@ -59,17 +59,15 @@ registered as linear differs.
 
 The containment descent reuses the canonical `Submodule.baseChange_map`,
 `Submodule.baseChange_le_iff` and `Submodule.map_le_iff_le_comap` directly, specialized to the
-submodules underlying the Lie ideals. No separate generic containment wrappers are introduced.
+submodules underlying the Lie ideals.
 `LinearMap.baseChange_injective` and `LinearMap.isNilpotent_baseChange_iff` in
-`TauCeti/LinearAlgebra/TensorProduct/BaseChange.lean` reach a derivation through
+`TauCeti/LinearAlgebra/LinearMap/BaseChange.lean` reach a derivation through
 `LieDerivation.baseChange_toLinearMap`.
 
 The core construction, additive compatibility, pure-tensor formula, underlying-map formula,
 and injectivity apply to
 any Lie `L`-module `M`. The comparison with Mathlib's endomorphism extension, the Lie-homomorphism
-bundle, inner derivations, and ideal descent specialize to `M = L`. The construction verifies
-the derivation identity on pure tensors using Mathlib's scalar-extended Lie-module bracket, then
-extends it by additivity.
+bundle, inner derivations, and ideal descent specialize to `M = L`.
 -/
 
 public section
@@ -160,6 +158,9 @@ theorem baseChange_smul (r : R) (D : LieDerivation R L M) :
   have hD : (r • D).toLinearMap = r • D.toLinearMap := by
     ext x
     rfl
+  -- Evaluation hides the derivation's defining linear map under its function coercion.
+  -- Expose that map so `hD` rewrites the source scalar action and `algebraMap_smul`
+  -- identifies the target coefficient action; ordinary rewriting cannot reach it underneath.
   change (r • D).toLinearMap.baseChange A z =
     algebraMap R A r • D.toLinearMap.baseChange A z
   rw [hD, LinearMap.baseChange_smul, LinearMap.smul_apply, algebraMap_smul]
@@ -183,6 +184,7 @@ end LieModule
 /-- The `R`-linear extension `Lie.Derivation.ofLieDerivation` supplied by Mathlib and the
 `A`-linear extension `LieDerivation.baseChange` are the same function: only the ring over which
 each is recorded as linear differs. -/
+@[simp]
 theorem coe_ofLieDerivation (D : LieDerivation R L L) :
     ⇑(Lie.Derivation.ofLieDerivation A D) = ⇑(D.baseChange A) := by
   funext z
@@ -246,9 +248,8 @@ variable [Module.FaithfullyFlat R A]
 
 variable (D : LieDerivation R L L)
 
-/-- **A containment of Lie ideals under a derivation may be checked after extending scalars.**
-This is the form in which the descent is used: a structural statement proved over an algebraic
-closure, where it is available, descends to the original coefficient field. -/
+/-- Over a faithfully flat coefficient algebra, the extended derivation sends the extension of
+`I` into the extension of `J` exactly when the original derivation sends `I` into `J`. -/
 theorem mapsTo_baseChange_lieIdeal_iff (I J : LieIdeal R L) :
     (∀ z ∈ I.baseChange A, D.baseChange A z ∈ J.baseChange A) ↔ ∀ x ∈ I, D x ∈ J := by
   have h := Submodule.baseChange_le_iff (A := A)
