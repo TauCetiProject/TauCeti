@@ -132,7 +132,6 @@ theorem exists_eqOn_const_of_isJHolomorphicAt_differential_graph
       integral_strongDualCotangentSymplecticForm_disc_eq_zero hr.le hu hh hgraph]
   obtain ⟨c, hc⟩ := SymplecticForm.exists_eqOn_const_of_integral_eq_zero_of_continuousOn
     isOpen_ball (convex_ball z₀ r).isPreconnected
-    (fun z hz ↦ ((hu z (ball_subset_closedBall hz)).of_le (by norm_num)).contDiffWithinAt)
     hhol htame (hcont.mono ball_subset_closedBall)
     ((hcont.integrableOn_compact (isCompact_closedBall z₀ r)).mono_set
       ball_subset_closedBall) hzero
