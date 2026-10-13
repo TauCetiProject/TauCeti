@@ -57,7 +57,7 @@ Both endpoints have no other neighbour by
 `TauCeti.IsFiniteType.apply_eq_zero_of_apply_mul_apply_eq_three`.  The induced subgraph on the two
 endpoints is therefore closed under taking neighbours.  Preconnectedness forces every vertex into
 that induced subgraph. -/
-theorem eq_or_eq_of_apply_mul_apply_eq_three [Finite B] (h : IsFiniteType A)
+theorem eq_or_eq_of_apply_mul_apply_eq_three (h : IsFiniteType A)
     (hconn : (diagramGraph A).Preconnected) {i j : B} (hij : A i j * A j i = 3) (k : B) :
     k = i ∨ k = j := by
   classical

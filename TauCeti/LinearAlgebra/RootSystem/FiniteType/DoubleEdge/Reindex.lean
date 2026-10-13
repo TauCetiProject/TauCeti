@@ -198,7 +198,7 @@ private theorem IsFiniteType.exists_equiv_forall_eq_doubleEdgeCartanMatrix_of_si
 
 /-- Starting from a multiple edge at position `a` in a path numbering, every later edge is
 single. -/
-private theorem apply_mul_apply_eq_one_of_isoPathGraph_of_lt [Finite B] (h : IsFiniteType A)
+private theorem apply_mul_apply_eq_one_of_isoPathGraph_of_lt (h : IsFiniteType A)
     (k : diagramGraph A ≃g pathGraph n)
     {a : ℕ} (ha : a + 1 < n)
     (hfirst : 2 ≤ A (k.symm ⟨a, by omega⟩) (k.symm ⟨a + 1, ha⟩) *
@@ -266,8 +266,7 @@ private theorem apply_mul_apply_eq_one_of_isoPathGraph_of_lt [Finite B] (h : IsF
 
 /-- In a path numbering, an edge lying strictly beyond a fixed multiple edge has Cartan product
 one. -/
-private theorem apply_mul_apply_eq_one_of_isoPathGraph_of_lt_min [Finite B]
-    (h : IsFiniteType A)
+private theorem apply_mul_apply_eq_one_of_isoPathGraph_of_lt_min (h : IsFiniteType A)
     (k : diagramGraph A ≃g pathGraph n) {u v : B} (huv : (k u : ℕ) + 1 = (k v : ℕ))
     (hfirst : 2 ≤ A u v * A v u) {i j : B}
     (hpath : (k i : ℕ) + 1 = (k j : ℕ) ∨ (k j : ℕ) + 1 = (k i : ℕ))
@@ -295,7 +294,7 @@ private theorem apply_mul_apply_eq_one_of_isoPathGraph_of_lt_min [Finite B]
     simpa only [hi, hj, mul_comm] using hone
 
 /-- In a path numbering, every edge other than a fixed multiple edge has Cartan product one. -/
-private theorem apply_mul_apply_eq_one_of_isoPathGraph [Finite B] (h : IsFiniteType A)
+private theorem apply_mul_apply_eq_one_of_isoPathGraph (h : IsFiniteType A)
     (k : diagramGraph A ≃g pathGraph n) {u v : B} (huv : (k u : ℕ) + 1 = (k v : ℕ))
     (hfirst : 2 ≤ A u v * A v u) {i j : B} (hij : (diagramGraph A).Adj i j)
     (hne : ¬ ((i = u ∧ j = v) ∨ (i = v ∧ j = u))) : A i j * A j i = 1 := by

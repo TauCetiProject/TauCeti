@@ -409,7 +409,7 @@ submatrices, so the chain may sit anywhere inside a larger diagram. The hypothes
 in the diagram of the matrix provides, the non-adjacency of non-consecutive vertices coming from
 the diagram of a finite-type matrix being a forest
 (`TauCeti.isAcyclic_diagramGraph`). -/
-theorem IsFiniteType.apply_mul_apply_le_one_of_chain_of_two_le [Finite B] (h : IsFiniteType A)
+theorem IsFiniteType.apply_mul_apply_le_one_of_chain_of_two_le (h : IsFiniteType A)
     {v : ℕ → B}
     (hv : Set.InjOn v (Set.Iio (m + 3)))
     (hzero : ∀ s t, s + 1 < t → t < m + 3 → A (v s) (v t) = 0)
