@@ -142,4 +142,32 @@ theorem exists_norm_iteratedGradient_le_mul_norm_of_traceCLM_compLpL_eq (hn : 3 
   exact le_of_tendsto_of_tendsto' hH.norm hlimT fun j =>
     (norm_iteratedGradient_ofTestFunctionₗ_le hC (φ j)).trans_eq (by rw [hTH j])
 
+/-- **The Calderón–Zygmund estimate in `W^{2,p}(ℝⁿ)`, against test functions.** Let `n ≥ 3` and
+`1 < p < ∞`. There is a constant `C` such that every `u ∈ W^{2,p}(ℝⁿ)` solving `Δu = f` with
+`f ∈ Lᵖ(ℝⁿ)`, in the sense that `∫ Δφ • u = ∫ φ • f` for every test function `φ`, satisfies
+
+`‖D²u‖_{Lᵖ} ≤ C ‖f‖_{Lᵖ}`,
+
+where `D²u` is the weak Hessian `TauCeti.Wkp.iteratedGradient 1 u`, with the operator norm on
+endomorphisms of `ℝⁿ`. -/
+theorem exists_norm_iteratedGradient_le_mul_norm_of_integral_laplacian_smul_eq (hn : 3 ≤ n)
+    (hp : 1 < p) (hp_top : p ≠ ∞) :
+    ∃ C : ℝ≥0, ∀ (u : Wkp (volume : Measure (EuclideanSpace ℝ (Fin n))) ⊤ p 2)
+      (f : Lp ℝ p ((volume : Measure (EuclideanSpace ℝ (Fin n))).restrict
+        (⊤ : Opens (EuclideanSpace ℝ (Fin n))))),
+      (∀ φ : 𝓓((⊤ : Opens (EuclideanSpace ℝ (Fin n))), ℝ),
+        ∫ x, Δ (φ : EuclideanSpace ℝ (Fin n) → ℝ) x • Wkp.value 2 u x = ∫ x, φ x • f x) →
+      ‖Wkp.iteratedGradient 1 u‖ ≤ C * ‖f‖ := by
+  obtain ⟨C, hC⟩ := exists_norm_iteratedGradient_le_mul_norm_of_traceCLM_compLpL_eq hn hp hp_top
+  refine ⟨C, fun u f hf => hC u f ?_⟩
+  -- A solution against test functions is a strong solution: the trace of its weak Hessian is `f`.
+  have hloc : LocallyIntegrableOn (f : EuclideanSpace ℝ (Fin n) → ℝ) ⊤ volume :=
+    (((Lp.memLp f).locallyIntegrable Fact.out).mono_measure
+      (by rw [Opens.coe_top, Measure.restrict_univ])).locallyIntegrableOn _
+  refine Lp.ext ?_
+  filter_upwards [(traceCLM ℝ (EuclideanSpace ℝ (Fin n))).coeFn_compLpL
+      (Wkp.iteratedGradient 1 u),
+    (Wkp.forall_integral_laplacian_smul_value_eq_iff u hloc).1 hf] with x hx htr
+  rw [hx, traceCLM_apply, htr]
+
 end TauCeti
