@@ -6,10 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.BaseChange.Points
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.NaiveLevel
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.Torsion
 public import Mathlib.CategoryTheory.Subfunctor.Basic
 import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.Torsion.Equalizer
 import TauCeti.AlgebraicGeometry.EqualizerCarrier
+import TauCeti.AlgebraicGeometry.RationalPoint.Basic
 
 /-!
 # Points of naive exact order `N` on an elliptic curve
@@ -23,11 +25,17 @@ has order exactly `N` in the group of points
 (`EllipticCurveGeom.isOfNaiveExactOrder_iff_orderOf_eq`); in general it is the scheme-theoretic
 form of asking that `x` have order exactly `N` in every geometric fibre.
 
-An `S`-point of naive exact order `N` is a *naive `[Γ₁(N)]`-structure* on `E`. Unlike the
-Drinfeld notion `EllipticCurveGeom.IsOfExactOrder`, which works over every base, the naive notion
-is only reasonable where `N` is invertible: over a field of characteristic `p`, a supersingular
-curve has no point of naive exact order `p`, while its zero section has exact order `p` in
-Drinfeld's sense. Points of naive exact order `N` are stable under base change, both along
+An `S`-point of naive exact order `N` is a *naive `[Γ₁(N)]`-structure* on `E`: an `S`-point `Q`
+has empty equalizer with the zero section exactly when it meets the zero section at no point of
+`S` (`EllipticCurveGeom.isEmpty_equalizer_one_iff`), so a homomorphism `φ : ℤ/Nℤ →* E(S)` is
+injective on every fibre, the condition defining `ModuliProblem.gammaOneNaive`, exactly when
+`φ 1` has naive exact order `N`
+(`EllipticCurveGeom.isFiberwiseInjective_iff_isOfNaiveExactOrder`).
+
+Unlike the Drinfeld notion `EllipticCurveGeom.IsOfExactOrder`, which works over every base, the
+naive notion is only reasonable where `N` is invertible: over a field of characteristic `p`, a
+supersingular curve has no point of naive exact order `p`, while its zero section has exact order
+`p` in Drinfeld's sense. Points of naive exact order `N` are stable under base change, both along
 morphisms `Z' ⟶ Z` (`EllipticCurveGeom.IsOfNaiveExactOrder.comp`) and along base change of the
 elliptic curve (`EllipticCurveGeom.IsOfNaiveExactOrder.pointsPullback`).
 
@@ -61,6 +69,9 @@ Following `EllipticCurveGeom.mulBy`, the group law on points of `E` is written m
   a point has naive exact order `N` exactly when its order in the group of points is `N`.
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.IsOfNaiveExactOrder.pointsPullback`: points of
   naive exact order `N` are stable under base change of the elliptic curve.
+* `TauCeti.AlgebraicGeometry.EllipticCurveGeom.isFiberwiseInjective_iff_isOfNaiveExactOrder`: a
+  homomorphism `ℤ/Nℤ →* E(S)` is a naive `[Γ₁(N)]`-structure exactly when the image of `1` has naive
+  exact order `N`.
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.isOfNaiveExactOrder_comp_torsionι_iff`: a point of
   `E[N]` has naive exact order `N` exactly when it lands in `naiveExactOrderLocus E N`.
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.isClopen_naiveExactOrderLocus`: if `N` is
@@ -192,6 +203,74 @@ theorem IsOfNaiveExactOrder.pointsPullback {P : 𝟙_ (Over S) ⟶ Over.mk E.str
   exact Function.isEmpty (equalizer.lift (toUnit V) hv).left
 
 end BaseChange
+
+/-! ### Comparison with injectivity on fibres -/
+
+/-- **Where an `S`-point meets the zero section.** For an `S`-point `Q` of `E`, the image of the
+equalizer of `Q` and the zero section is the set of points of `S` at which `Q` meets the zero
+section. -/
+theorem range_equalizer_ι_one_left (Q : 𝟙_ (Over S) ⟶ Over.mk E.structureMap) :
+    Set.range (equalizer.ι Q 1).left = {s | Q.left s = E.zero s} := by
+  ext s
+  refine ⟨?_, fun hs ↦ ?_⟩
+  · rintro ⟨w, rfl⟩
+    have h := congrArg (fun k ↦ k.left w) (equalizer.condition Q 1)
+    simp only [Over.comp_left, hom_one_left, Scheme.Hom.comp_apply] at h
+    exact h
+  · -- the point `t : Spec κ(s) ⟶ S` factors through the equalizer
+    let t := S.fromSpecResidueField s
+    obtain ⟨p⟩ : Nonempty (Spec (S.residueField s)) := inferInstance
+    have hp : t p = s := Scheme.fromSpecResidueField_apply s p
+    have ht : t ≫ Q.left = t ≫ E.zero :=
+      (comp_eq_comp_iff_of_section (left_comp_structureMap Q) E.zero_comp_structureMap t p).mpr
+        ((congrArg Q.left hp).trans (hs.trans (congrArg E.zero hp).symm))
+    have hy : toUnit (Over.mk t) ≫ Q = toUnit (Over.mk t) ≫ 1 := by
+      ext1
+      simpa [hom_one_left] using ht
+    refine ⟨(equalizer.lift _ hy).left p, ?_⟩
+    rw [← Scheme.Hom.comp_apply, ← Over.comp_left, equalizer.lift_ι]
+    exact hp
+
+/-- An `S`-point `Q` of `E` has empty equalizer with the zero section exactly when it meets the
+zero section at no point of `S`. -/
+theorem isEmpty_equalizer_one_iff (Q : 𝟙_ (Over S) ⟶ Over.mk E.structureMap) :
+    IsEmpty (equalizer Q 1).left ↔ ∀ s, Q.left s ≠ E.zero s := by
+  rw [← Set.range_eq_empty_iff, range_equalizer_ι_one_left, Set.eq_empty_iff_forall_notMem]
+  rfl
+
+/-- **Naive `[Γ₁(N)]`-structures are the `S`-points of naive exact order `N`.** A homomorphism
+`φ : ℤ/Nℤ →* E(S)` is injective on every fibre, that is, it is a naive `[Γ₁(N)]`-structure
+(`ModuliProblem.gammaOneNaive`), exactly when the `S`-point `φ 1` has naive exact order `N`. -/
+theorem isFiberwiseInjective_iff_isOfNaiveExactOrder
+    {φ : Multiplicative (ZMod N) →* (𝟙_ (Over S) ⟶ Over.mk E.structureMap)} :
+    E.IsFiberwiseInjective φ ↔ E.IsOfNaiveExactOrder (φ (.ofAdd 1)) N := by
+  have hφ (k : ℕ) : φ (.ofAdd 1) ^ k = φ (.ofAdd (k : ZMod N)) := by
+    rw [← map_pow, ← ofAdd_nsmul, nsmul_one]
+  have hN : φ (.ofAdd 1) ^ N = 1 := by simp [hφ]
+  simp only [isFiberwiseInjective_iff, isOfNaiveExactOrder_iff, hN, true_and,
+    isEmpty_equalizer_one_iff]
+  refine ⟨fun h d hd hdN s hs ↦ hdN ?_, fun h a ha s hs ↦ ha ?_⟩
+  · have h1 := by_contra fun h1 ↦ h _ h1 s (hφ d ▸ hs)
+    rw [← ofAdd_zero, Multiplicative.ofAdd.injective.eq_iff, ZMod.natCast_eq_zero_iff] at h1
+    exact Nat.dvd_antisymm hd h1
+  -- restricted to the fibre over `κ(s)`, the point `φ 1` has order `N`
+  let ψ := (pointsPullback (E.isPullback_baseChange (S.fromSpecResidueField s)) (by simp)).comp φ
+  obtain ⟨p⟩ : Nonempty (Spec (S.residueField s)) := inferInstance
+  have hψ (b : Multiplicative (ZMod N)) : ψ b = 1 ↔ (φ b).left s = E.zero s :=
+    (eq_one_iff_left_apply_eq_zero _ _ p).trans <|
+      (pointsPullback_left_apply_eq_zero_iff _ _ _ p).trans
+        (by rw [Scheme.fromSpecResidueField_apply])
+  have hord : orderOf (ψ (.ofAdd 1)) = N := by
+    refine by_contra fun hne ↦ h _ (orderOf_dvd_of_pow_eq_one ?_) hne s ?_
+    · rw [← map_pow, MonoidHom.comp_apply, map_pow, hN, map_one]
+    · rw [← map_pow, ← hψ, map_pow, pow_orderOf_eq_one]
+  -- `a` is `c • 1` for the integer `c` lifting `a`, and `ψ a = 1` forces `N ∣ c`
+  have hc : a = .ofAdd 1 ^ (ZMod.cast a.toAdd : ℤ) := by
+    rw [← ofAdd_zsmul, zsmul_one, ZMod.intCast_zmod_cast, ofAdd_toAdd]
+  have ha := (hψ a).mpr hs
+  rw [hc, map_zpow, ← orderOf_dvd_iff_zpow_eq_one, hord, ← ZMod.intCast_zmod_eq_zero_iff_dvd,
+    ZMod.intCast_zmod_cast] at ha
+  exact toAdd_eq_zero.mp ha
 
 /-! ### The functor of points of naive exact order `N` -/
 
