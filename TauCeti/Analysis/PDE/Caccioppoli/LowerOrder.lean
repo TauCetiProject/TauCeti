@@ -148,9 +148,19 @@ theorem
         energyFormH1 a 0 0 u (v : W1p mu Omega 2) + ∫ x in Omega,
           (⟪b x, W1p.gradient u x⟫_ℝ * W1p.value (v : W1p mu Omega 2) x
             + c x * W1p.value u x * W1p.value (v : W1p mu Omega 2) x) ∂mu := by
-      rw [energyFormH1_def, energyFormH1_def, ← integral_add hE hBC]
-      refine integral_congr_ae (Eventually.of_forall fun x => ?_)
-      simp [energyIntegrand_apply, jetField_apply, add_assoc]
+      have hlower : Integrable (fun x => energyIntegrand 0 (b x) (c x) (jetField u x)
+          (jetField (v : W1p mu Omega 2) x)) (mu.restrict Omega) := by
+        simpa [energyIntegrand_apply, jetField_apply] using hBC
+      -- Split off the lower-order part with `energyFormIntegral_principal_add_lowerOrder`, after
+      -- writing the `H¹` form as `energyFormIntegral` and its vanishing coefficients as
+      -- `fun _ => 0`, the form the split lemma uses.
+      have hH1 : ∀ b' c', energyFormH1 a b' c' u (v : W1p mu Omega 2) =
+          energyFormIntegral (mu.restrict Omega) a b' c' (jetField u)
+            (jetField (v : W1p mu Omega 2)) := fun b' c' => by
+        rw [energyFormH1_def, energyFormIntegral_def]
+      rw [hH1, hH1, Pi.zero_def, Pi.zero_def, energyFormIntegral_principal_add_lowerOrder _ a b c
+        _ _ (by simpa using hE) hlower, add_right_inj, energyFormIntegral_def]
+      simp [energyIntegrand_apply, jetField_apply]
     have hforce : ∫ x in Omega, hg.toLp g x * W1p.value (v : W1p mu Omega 2) x ∂mu =
         ∫ x in Omega, f x * W1p.value (v : W1p mu Omega 2) x ∂mu - ∫ x in Omega,
           (⟪b x, W1p.gradient u x⟫_ℝ * W1p.value (v : W1p mu Omega 2) x
