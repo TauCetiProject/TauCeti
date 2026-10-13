@@ -7,6 +7,7 @@ module
 
 public import Mathlib.AlgebraicGeometry.Normalization
 public import TauCeti.AlgebraicGeometry.Scheme.GenericPoint
+public import TauCeti.AlgebraicGeometry.Scheme.IntegrallyClosed
 
 /-!
 # Recognizing the relative normalization
@@ -30,8 +31,6 @@ the function field of `T`, along the generic point `Spec k(T) ⟶ T ⟶ Y`. On a
 * `AlgebraicGeometry.Scheme.Hom.isIso_normalizationDesc_iff`: `f.normalizationDesc f₁ f₂ H` is an
   isomorphism if and only if, over every affine open of `Y`, the sections of `T` map injectively
   onto the integral closure.
-* `AlgebraicGeometry.IsAffineOpen.isIntegrallyClosed`: on an integral scheme with integrally
-  closed local rings, the sections over a nonempty affine open are integrally closed.
 * `TauCeti.AlgebraicGeometry.isIso_normalizationDesc_fromSpecStalk_genericPoint`: an integral
   scheme with integrally closed local rings, integral over `Y`, is the normalization of `Y` in its
   function field.
@@ -128,31 +127,6 @@ theorem isIso_normalizationDesc_iff (H : f = f₁ ≫ f₂) :
     exact (f.isIso_app_normalizationDesc_iff f₁ f₂ H U.2).2 (h U U.2)
 
 end AlgebraicGeometry.Scheme.Hom
-
-namespace AlgebraicGeometry
-
-open CategoryTheory
-
-universe u
-
-variable {T Y : Scheme.{u}}
-
-/-- On an integral scheme, the ring of sections over a nonempty affine open `V` is integrally
-closed if the local rings at the points of `V` are: its localizations at maximal ideals are local
-rings of the scheme at points of `V`. -/
-theorem IsAffineOpen.isIntegrallyClosed [IsIntegral T] {V : T.Opens} (hV : IsAffineOpen V)
-    [Nonempty V] (hT : ∀ x ∈ V, IsIntegrallyClosed (T.presheaf.stalk x)) :
-    IsIntegrallyClosed Γ(T, V) := by
-  refine IsIntegrallyClosed.of_localization_maximal fun P _ _ ↦ ?_
-  let y : PrimeSpectrum Γ(T, V) := ⟨P, inferInstance⟩
-  have hy : hV.fromSpec y ∈ V := hV.range_fromSpec.subset (Set.mem_range_self y)
-  let := TopCat.Presheaf.algebra_section_stalk T.presheaf ⟨hV.fromSpec y, hy⟩
-  have : IsLocalization P.primeCompl (T.presheaf.stalk (hV.fromSpec y)) :=
-    hV.isLocalization_stalk' y hy
-  exact (hT (hV.fromSpec y) hy).of_equiv (IsLocalization.algEquiv P.primeCompl
-    (T.presheaf.stalk (hV.fromSpec y)) (Localization.AtPrime P)).toRingEquiv
-
-end AlgebraicGeometry
 
 namespace TauCeti.AlgebraicGeometry
 
