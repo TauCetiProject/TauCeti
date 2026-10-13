@@ -137,8 +137,13 @@ theorem GraphArc.hasIntegral {d : Coordinate} {g : ℝ → ℝ} {a b : ℝ} {γ 
   have heq : (γ.2.2.extend : ℝ → ℂ) = d.graph g ∘ (fun t ↦ d.proj (γ.2.2.extend t)) :=
     funext h.extend_eq
   have hdθ' := fun t ht ↦ (hdθ t ht).hasDerivAt
-  have hi := hasIntegral_graph_reparam d zero_lt_one hs hS h.continuous_graph hdg
-    hP hθ hdθ' hmap
+  have hi := hasIntervalIntegral_graph_reparam d (a := 0) (b := 1)
+    (θ := fun t ↦ d.proj (γ.2.2.extend t))
+    (θ' := deriv (fun t ↦ d.proj (γ.2.2.extend t))) hs hS h.continuous_graph hdg hP
+    (by simpa only [uIcc_of_le zero_le_one] using hθ)
+    (by simpa only [uIoo_of_le zero_le_one] using hdθ')
+    (by simpa only [uIcc_of_le zero_le_one] using hmap)
+  rw [BoxIntegral.hasIntervalIntegral_iff_of_lt zero_lt_one] at hi
   rw [← heq] at hi
   have hp := h.extend_eq
   simpa only [← hp, Path.extend_zero, Path.extend_one] using hi

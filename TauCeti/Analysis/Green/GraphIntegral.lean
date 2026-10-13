@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.BoxIntegral.Substitution
+public import TauCeti.Analysis.BoxIntegral.OrientedCalculus
 public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.Analysis.Calculus.Deriv.Prod
 import TauCeti.Analysis.Calculus.Deriv.CountableLevels
@@ -171,22 +171,22 @@ private theorem ae_deriv_projection {a b : ℝ} {θ θ' : ℝ → ℝ} {γ : ℝ
 /-- Gauge integration on a graph depends only on the endpoint graph coordinates. The
 parametrization may backtrack and have unbounded speed, and exceptional graph levels may have
 uncountable preimages. Both coordinate directions use this same substitution theorem. -/
-theorem hasIntegral_graph_reparam (d : Coordinate) {a b c e : ℝ} (hab : a < b)
+theorem hasIntervalIntegral_graph_reparam (d : Coordinate) {a b c e : ℝ}
     {graph θ θ' : ℝ → ℝ} {P : ℂ → ℝ} {s S : Set ℝ} (hs : s.Countable) (hS : S.Countable)
     (hgraph : ContinuousOn graph (Icc c e))
     (hdgraph : ∀ t ∈ Ioo c e \ S, DifferentiableAt ℝ graph t)
     (hP : ContinuousOn P (d.graph graph '' Icc c e))
-    (hθ : ContinuousOn θ (Icc a b)) (hdθ : ∀ t ∈ Ioo a b \ s, HasDerivAt θ (θ' t) t)
-    (hmap : MapsTo θ (Icc a b) (Icc c e)) :
-    BoxIntegral.HasIntegral (BoxIntegral.intervalBox a b hab) BoxIntegral.IntegrationParams.Henstock
-      (fun x ↦ P (d.graph graph (θ (x 0))) * d.proj (deriv (d.graph graph ∘ θ) (x 0)))
-      BoxIntegral.BoxAdditiveMap.volume (∫ t in θ a..θ b, P (d.graph graph t)) := by
+    (hθ : ContinuousOn θ (uIcc a b)) (hdθ : ∀ t ∈ uIoo a b \ s, HasDerivAt θ (θ' t) t)
+    (hmap : MapsTo θ (uIcc a b) (Icc c e)) :
+    BoxIntegral.HasIntervalIntegral
+      (fun t ↦ P (d.graph graph (θ t)) * d.proj (deriv (d.graph graph ∘ θ) t))
+      a b (∫ t in θ a..θ b, P (d.graph graph t)) := by
   have hc : ContinuousOn (P ∘ d.graph graph) (Icc c e) :=
     hP.comp (d.continuousOn_graph hgraph) (mapsTo_image _ _)
-  have hdγ : ∀ t ∈ Ioo a b \ s, θ t ∉ S ∪ {c, e} →
+  have hdγ : ∀ t ∈ uIoo a b \ s, θ t ∉ S ∪ {c, e} →
       DifferentiableAt ℝ (d.graph graph ∘ θ) t := by
     intro t ht havoid
-    have hm := hmap (Ioo_subset_Icc_self ht.1)
+    have hm := hmap (uIoo_subset_uIcc_self ht.1)
     have htc : θ t ≠ c := fun h ↦ havoid (Or.inr (by simp [h]))
     have hte : θ t ≠ e := fun h ↦ havoid (Or.inr (by simp [h]))
     have htθ : θ t ∈ Ioo c e \ S :=
@@ -196,36 +196,32 @@ theorem hasIntegral_graph_reparam (d : Coordinate) {a b c e : ℝ} (hab : a < b)
   have hcoord : d.proj ∘ (d.graph graph ∘ θ) = θ := by
     ext t
     simp only [Function.comp_apply, Coordinate.proj_graph]
-  have he := ae_deriv_projection d.proj hcoord hs
+  have he := ae_deriv_projection (a := min a b) (b := max a b) d.proj hcoord hs
     (hS.union (Set.toFinite ({c, e} : Set ℝ)).countable) hdθ hdγ
-  have h := BoxIntegral.hasIntegral_Henstock_substitution hab hs hθ hdθ hc hmap
-  apply h.congr_ae ?_ rfl
-  apply BoxIntegral.ae_eq_intervalBox hab
-    (f := fun t ↦ θ' t * P (d.graph graph (θ t)))
-    (g := fun t ↦ P (d.graph graph (θ t)) * d.proj (deriv (d.graph graph ∘ θ) t))
+  have h := BoxIntegral.hasIntervalIntegral_substitution hs hθ hdθ hc hmap
+  apply h.congr_ae
   filter_upwards [he] with t ht
-  rw [ht, mul_comm]
+  simp only [Function.comp_apply, smul_eq_mul, ht, mul_comm]
 
 /-- Gauge integration on a graph equals the ordinary integral over its base coordinate. -/
-theorem hasIntegral_graph (d : Coordinate) {a b : ℝ} (hab : a < b)
+theorem hasIntervalIntegral_graph (d : Coordinate) {a b : ℝ}
     {graph : ℝ → ℝ} {P : ℂ → ℝ} {S : Set ℝ} (hS : S.Countable)
-    (hgraph : ContinuousOn graph (Icc a b))
-    (hdgraph : ∀ t ∈ Ioo a b \ S, DifferentiableAt ℝ graph t)
-    (hP : ContinuousOn P (d.graph graph '' Icc a b)) :
-    BoxIntegral.HasIntegral (BoxIntegral.intervalBox a b hab) BoxIntegral.IntegrationParams.Henstock
-      (fun x ↦ P (d.graph graph (x 0)) * d.proj (deriv (d.graph graph) (x 0)))
-      BoxIntegral.BoxAdditiveMap.volume (∫ t in a..b, P (d.graph graph t)) := by
+    (hgraph : ContinuousOn graph (uIcc a b))
+    (hdgraph : ∀ t ∈ uIoo a b \ S, DifferentiableAt ℝ graph t)
+    (hP : ContinuousOn P (d.graph graph '' uIcc a b)) :
+    BoxIntegral.HasIntervalIntegral
+      (fun t ↦ P (d.graph graph t) * d.proj (deriv (d.graph graph) t))
+      a b (∫ t in a..b, P (d.graph graph t)) := by
   simpa only [Function.comp_id, id_eq] using
-    hasIntegral_graph_reparam d hab countable_empty hS hgraph hdgraph hP
+    hasIntervalIntegral_graph_reparam d countable_empty hS hgraph hdgraph hP
       (θ := id) (θ' := fun _ ↦ 1) continuousOn_id (fun t _ ↦ hasDerivAt_id t)
       (fun _ ht ↦ ht)
 
 /-- A raw curve with constant projection contributes zero to that coordinate one-form.
 No regularity of its other coordinate or of the field is needed. -/
-theorem hasIntegral_of_projection_constant (L : ℂ →L[ℝ] ℝ) {a b c : ℝ} (hab : a < b)
+theorem hasIntervalIntegral_of_projection_constant (L : ℂ →L[ℝ] ℝ) {a b c : ℝ}
     {γ : ℝ → ℂ} (hγ : ∀ t, L (γ t) = c) (P : ℂ → ℝ) :
-    BoxIntegral.HasIntegral (BoxIntegral.intervalBox a b hab) BoxIntegral.IntegrationParams.Henstock
-      (fun t ↦ P (γ (t 0)) * L (deriv γ (t 0))) BoxIntegral.BoxAdditiveMap.volume 0 := by
+    BoxIntegral.HasIntervalIntegral (fun t ↦ P (γ t) * L (deriv γ t)) a b 0 := by
   have hc : L ∘ γ = fun _ ↦ c := funext hγ
   have hd (t : ℝ) : L (deriv γ t) = 0 := by
     by_cases h : DifferentiableAt ℝ γ t
@@ -233,8 +229,7 @@ theorem hasIntegral_of_projection_constant (L : ℂ →L[ℝ] ℝ) {a b c : ℝ}
       rw [hc] at hp
       exact hp.unique (hasDerivAt_const t c)
     · rw [deriv_zero_of_not_differentiableAt h, map_zero]
-  simpa only [hd, mul_zero] using
-    (BoxIntegral.hasIntegral_zero (I := BoxIntegral.intervalBox a b hab)
-      (l := BoxIntegral.IntegrationParams.Henstock) (vol := BoxIntegral.BoxAdditiveMap.volume))
+  simpa only [hd, mul_zero, smul_zero] using
+    BoxIntegral.hasIntervalIntegral_const (0 : ℝ) a b
 
 end TauCeti.Green

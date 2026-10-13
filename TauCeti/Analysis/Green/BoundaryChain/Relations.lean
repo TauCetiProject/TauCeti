@@ -36,7 +36,10 @@ theorem hasIntegral_of_coordinate_constant (L : ℂ →L[ℝ] ℝ) {p q : ℂ} (
     ext t
     obtain ⟨u, hu⟩ := (γ.extend_range ▸ mem_range_self t : γ.extend t ∈ range γ)
     simpa only [Function.comp_apply, ← hu] using hγ u
-  exact hasIntegral_of_projection_constant L zero_lt_one (congrFun hc) P
+  have hi := hasIntervalIntegral_of_projection_constant L (a := 0) (b := 1)
+    (γ := γ.extend) (c := L p) (congrFun hc) P
+  rw [BoxIntegral.hasIntervalIntegral_iff_of_lt zero_lt_one] at hi
+  exact hi
 
 /-- The integral of a graph-supported chain is the integral primitive evaluated at its
 endpoint boundary. This is the telescoping mechanism behind all graph comparisons. -/

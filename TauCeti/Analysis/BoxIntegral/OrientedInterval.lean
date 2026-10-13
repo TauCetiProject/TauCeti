@@ -86,6 +86,30 @@ theorem HasIntervalIntegral.unique (h : HasIntervalIntegral f a b y)
 theorem HasIntervalIntegral.integrable (h : HasIntervalIntegral f a b y) :
     IntegrableOnInterval f a b := ⟨y, h⟩
 
+/-- Changing a raw integrand outside the unoriented interval changes no Henstock value. -/
+theorem HasIntervalIntegral.congr (h : HasIntervalIntegral f a b y) (hfg : EqOn f g (uIcc a b)) :
+    HasIntervalIntegral g a b y := by
+  rcases lt_trichotomy a b with hab | rfl | hba
+  · rw [hasIntervalIntegral_iff_of_lt hab] at h ⊢
+    apply (hasIntegral_congr _ _ ?_ (fun _ _ ↦ rfl) _).mp h
+    intro x hx
+    exact hfg (by simpa only [uIcc_of_le hab.le] using mem_Icc_intervalBox.mp hx)
+  · simpa only [hasIntervalIntegral_same] using h
+  · rw [hasIntervalIntegral_iff_of_gt hba] at h ⊢
+    apply (hasIntegral_congr _ _ ?_ (fun _ _ ↦ rfl) _).mp h
+    intro x hx
+    exact hfg (by simpa only [uIcc_of_ge hba.le] using mem_Icc_intervalBox.mp hx)
+
+/-- Almost-everywhere equal integrands have the same oriented Henstock value. -/
+theorem HasIntervalIntegral.congr_ae (h : HasIntervalIntegral f a b y)
+    (hfg : f =ᵐ[volume.restrict (uIoc a b)] g) : HasIntervalIntegral g a b y := by
+  rcases lt_trichotomy a b with hab | rfl | hba
+  · rw [hasIntervalIntegral_iff_of_lt hab] at h ⊢
+    exact h.congr_ae (ae_eq_intervalBox hab (by simpa only [uIoc_of_le hab.le] using hfg)) rfl
+  · simpa only [hasIntervalIntegral_same] using h
+  · rw [hasIntervalIntegral_iff_of_gt hba] at h ⊢
+    exact h.congr_ae (ae_eq_intervalBox hba (by simpa only [uIoc_of_ge hba.le] using hfg)) rfl
+
 /-- Addition is valid without absolute or Bochner integrability. -/
 theorem HasIntervalIntegral.add (hf : HasIntervalIntegral f a b y)
     (hg : HasIntervalIntegral g a b z) : HasIntervalIntegral (fun t ↦ f t + g t) a b (y + z) := by
@@ -122,7 +146,7 @@ variable [CompleteSpace E]
 
 /-- Bochner integrability supplies the genuine oriented Henstock value, including zero and
 reversed intervals. The converse is deliberately not required. -/
-theorem _root_.IntervalIntegrable.hasHenstockIntegral (hf : IntervalIntegrable f volume a b) :
+theorem _root_.IntervalIntegrable.hasIntervalIntegral (hf : IntervalIntegrable f volume a b) :
     HasIntervalIntegral f a b (∫ t in a..b, f t) := by
   rcases lt_trichotomy a b with hab | rfl | hba
   · exact (hasIntervalIntegral_iff_of_lt hab).mpr (hf.hasBoxIntegral hab _ rfl)
@@ -133,13 +157,13 @@ theorem _root_.IntervalIntegrable.hasHenstockIntegral (hf : IntervalIntegrable f
 /-- Under genuine Bochner integrability, the oriented gauge value agrees with `intervalIntegral`. -/
 theorem HasIntervalIntegral.eq_intervalIntegral (h : HasIntervalIntegral f a b y)
     (hf : IntervalIntegrable f volume a b) : y = ∫ t in a..b, f t :=
-  h.unique hf.hasHenstockIntegral
+  h.unique hf.hasIntervalIntegral
 
 /-- Constants give nondegenerate witnesses to the oriented gauge predicate. -/
 theorem hasIntervalIntegral_const (v : E) (a b : ℝ) :
     HasIntervalIntegral (fun _ ↦ v) a b ((b - a) • v) := by
   simpa only [intervalIntegral.integral_const] using
-    (intervalIntegrable_const : IntervalIntegrable (fun _ : ℝ ↦ v) volume a b).hasHenstockIntegral
+    (intervalIntegrable_const : IntervalIntegrable (fun _ : ℝ ↦ v) volume a b).hasIntervalIntegral
 
 private theorem intervalBox_le_intervalBox {a b c d : ℝ} (hab : a < b) (hcd : c < d)
     (hac : a ≤ c) (hdb : d ≤ b) : intervalBox c d hcd ≤ intervalBox a b hab := by
@@ -248,7 +272,7 @@ theorem HasIntervalIntegral.split (h : HasIntervalIntegral f a b y) (hc : c ∈ 
     rw [← neg_add, add_comm, hy, neg_neg]
 
 /-- Any independently established values on the two pieces agree with the subdivision values. -/
-theorem HasIntervalIntegral.eq_add (h : HasIntervalIntegral f a b y) (hc : c ∈ uIcc a b)
+private theorem eq_add_of_mem (h : HasIntervalIntegral f a b y) (hc : c ∈ uIcc a b)
     {y₁ y₂ : E} (h₁ : HasIntervalIntegral f a c y₁) (h₂ : HasIntervalIntegral f c b y₂) :
     y₁ + y₂ = y := by
   obtain ⟨z₁, z₂, hz₁, hz₂, hz⟩ := h.split hc
@@ -306,42 +330,49 @@ private theorem trans_of_le (h₁ : HasIntervalIntegral f a c y)
     (fun J ↦ integral J IntegrationParams.Henstock (fun x ↦ f (x 0)) BoxAdditiveMap.volume)
     (fun J hJ ↦ (hi J hJ).hasIntegral)
   have hg' := (hasIntervalIntegral_iff_of_lt (hac.trans hcb)).mpr hg
-  rwa [← hg'.eq_add (by rw [uIcc_of_le (hac.trans hcb).le]; exact ⟨hac.le, hcb.le⟩) h₁ h₂]
+  rwa [← eq_add_of_mem hg' (by rw [uIcc_of_le (hac.trans hcb).le]; exact ⟨hac.le, hcb.le⟩) h₁ h₂]
     at hg'
 
-/-- Local conditional Henstock integrals glue across a point of the oriented interval.
-This is the converse of subdivision and does not assume integrability on the whole interval. -/
-theorem HasIntervalIntegral.trans (h₁ : HasIntervalIntegral f a c y)
-    (h₂ : HasIntervalIntegral f c b z) (hc : c ∈ uIcc a b) :
+private theorem trans_forward (h₁ : HasIntervalIntegral f a c y)
+    (h₂ : HasIntervalIntegral f c b z) (hab : a ≤ b) :
     HasIntervalIntegral f a b (y + z) := by
-  rcases le_total a b with hab | hba
-  · rw [uIcc_of_le hab] at hc
-    exact trans_of_le h₁ h₂ hc.1 hc.2
-  · rw [uIcc_of_ge hba] at hc
-    simpa only [neg_add, neg_neg, add_comm] using
-      (trans_of_le h₂.symm h₁.symm hc.1 hc.2).symm
+  rcases le_or_gt a c with hac | hca
+  · rcases le_or_gt c b with hcb | hbc
+    · exact trans_of_le h₁ h₂ hac hcb
+    · obtain ⟨u, v, hu, hv, huv⟩ := h₁.split_of_le hab hbc.le
+      have hv' : v = -z := hv.unique h₂.symm
+      have hu' : u = y + z := by
+        rw [hv'] at huv
+        exact eq_add_of_sub_eq (by simpa only [sub_eq_add_neg] using huv)
+      simpa only [hu'] using hu
+  · obtain ⟨u, v, hu, hv, huv⟩ := h₂.split_of_le hca.le hab
+    have hu' : u = -y := hu.unique h₁.symm
+    have hv' : v = y + z := by rw [hu'] at huv; exact eq_add_of_neg_add_eq huv
+    simpa only [hv'] using hv
 
-/-- The conditional Henstock integrals on any finite ordered subdivision glue to an integral
-of their sum. Repeated nodes and either orientation are allowed. -/
+/-- Local conditional Henstock integrals glue across any intermediate parameter, including
+backtracking beyond either endpoint. No integrability on the whole interval is assumed. -/
+theorem HasIntervalIntegral.trans (h₁ : HasIntervalIntegral f a c y)
+    (h₂ : HasIntervalIntegral f c b z) : HasIntervalIntegral f a b (y + z) := by
+  rcases le_total a b with hab | hba
+  · exact trans_forward h₁ h₂ hab
+  · simpa only [neg_add, neg_neg, add_comm] using
+      (trans_forward h₂.symm h₁.symm hba).symm
+
+/-- The oriented additivity identity holds at any intermediate parameter, including backtracking. -/
+theorem HasIntervalIntegral.eq_add (h : HasIntervalIntegral f a b y)
+    {y₁ y₂ : E} (h₁ : HasIntervalIntegral f a c y₁) (h₂ : HasIntervalIntegral f c b y₂) :
+    y₁ + y₂ = y := (h₁.trans h₂).unique h
+
+/-- Conditional Henstock integrals on a finite sequence of parameter intervals glue to the
+sum of their values. The nodes may repeat, reverse direction, and leave the endpoint interval. -/
 theorem hasIntervalIntegral_of_subdivision {N : ℕ} {s : Fin (N + 1) → ℝ} {v : Fin N → E}
-    (hs : Monotone s ∨ Antitone s)
     (hv : ∀ i, HasIntervalIntegral f (s i.castSucc) (s i.succ) (v i)) :
     HasIntervalIntegral f (s 0) (s (Fin.last N)) (∑ i, v i) := by
   induction N with
   | zero => simp
   | succ N ih =>
-    have htail : Monotone (fun i : Fin (N + 1) ↦ s i.succ) ∨
-        Antitone (fun i : Fin (N + 1) ↦ s i.succ) := by
-      rcases hs with hs | hs
-      · exact Or.inl (fun i j hij ↦ hs (Fin.succ_le_succ_iff.mpr hij))
-      · exact Or.inr (fun i j hij ↦ hs (Fin.succ_le_succ_iff.mpr hij))
-    have ht := ih htail (fun i ↦ hv i.succ)
-    have hc : s (0 : Fin (N + 1)).succ ∈ uIcc (s 0) (s (Fin.last (N + 1))) := by
-      rcases hs with hs | hs
-      · rw [uIcc_of_le (hs (Fin.zero_le _))]
-        exact ⟨hs (Fin.zero_le _), hs (Fin.le_last _)⟩
-      · rw [uIcc_of_ge (hs (Fin.zero_le _))]
-        exact ⟨hs (Fin.le_last _), hs (Fin.zero_le _)⟩
-    simpa only [Fin.sum_univ_succ, Fin.castSucc_zero, Fin.succ_last] using (hv 0).trans ht hc
+    have ht := ih (s := fun i ↦ s i.succ) (v := fun i ↦ v i.succ) (fun i ↦ hv i.succ)
+    simpa only [Fin.sum_univ_succ, Fin.castSucc_zero, Fin.succ_last] using (hv 0).trans ht
 
 end BoxIntegral

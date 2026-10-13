@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.BoxIntegral.FundThmCalculus
+public import TauCeti.Analysis.BoxIntegral.OrientedCalculus
 public import TauCeti.MeasureTheory.Integral.IntervalIntegral.AbsolutelyContinuousFun
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Deriv
 import Mathlib.Analysis.Calculus.Deriv.Slope
@@ -75,18 +75,25 @@ theorem hasDerivAt_oscillatoryPrimitive (t : ℝ) :
     ring
 
 /-- The derivative has Henstock–Kurzweil integral `sin 1` on the unit interval. -/
-theorem hasIntegral_Henstock_deriv_oscillatoryPrimitive :
-    BoxIntegral.HasIntegral (BoxIntegral.intervalBox 0 1 zero_lt_one)
-      BoxIntegral.IntegrationParams.Henstock
-      (fun x ↦ deriv oscillatoryPrimitive (x 0))
-      BoxIntegral.BoxAdditiveMap.volume (Real.sin 1) := by
+theorem hasIntervalIntegral_deriv_oscillatoryPrimitive :
+    BoxIntegral.HasIntervalIntegral (deriv oscillatoryPrimitive) 0 1 (Real.sin 1) := by
   have hd (t : ℝ) : HasDerivAt oscillatoryPrimitive (deriv oscillatoryPrimitive t) t :=
     (hasDerivAt_oscillatoryPrimitive t).differentiableAt.hasDerivAt
   have hc : Continuous oscillatoryPrimitive := continuous_iff_continuousAt.mpr
     (fun t ↦ (hd t).continuousAt)
   simpa only [oscillatoryPrimitive_zero, oscillatoryPrimitive_one, sub_zero] using
-    BoxIntegral.hasIntegral_Henstock_of_hasDerivAt_off_countable zero_lt_one
-      (s := ∅) countable_empty hc.continuousOn (fun t _ ↦ hd t)
+    BoxIntegral.hasIntervalIntegral_of_hasDerivAt_off_countable
+      (a := 0) (b := 1) (s := ∅) countable_empty hc.continuousOn (fun t _ ↦ hd t)
+
+/-- The same conditional derivative has the negative gauge value on the reversed interval. -/
+theorem hasIntervalIntegral_deriv_oscillatoryPrimitive_reverse :
+    BoxIntegral.HasIntervalIntegral (deriv oscillatoryPrimitive) 1 0 (-Real.sin 1) :=
+  hasIntervalIntegral_deriv_oscillatoryPrimitive.symm
+
+/-- The conditional gauge value is strictly positive. -/
+theorem oscillatoryPrimitive_one_pos : 0 < oscillatoryPrimitive 1 := by
+  rw [oscillatoryPrimitive_one]
+  exact Real.sin_pos_of_pos_of_lt_pi zero_lt_one (by linarith [Real.two_le_pi])
 
 private def phase (n : ℕ) : ℝ := (n + 1 : ℕ) * Real.pi + Real.pi / 2
 
