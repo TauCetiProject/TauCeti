@@ -12,6 +12,7 @@ import Mathlib.Algebra.Order.Chebyshev
 import TauCeti.Data.EReal.Operations
 import Mathlib.Analysis.SpecialFunctions.Pow.NNReal
 import TauCeti.Analysis.SpecificLimits.DiscreteGronwall
+import TauCeti.Algebra.Order.Floor.Semifield
 public import TauCeti.MeasureTheory.Function.CurveAction.PiecewiseConstant
 
 /-!
@@ -286,12 +287,8 @@ theorem edist_ceil_sq_le_of_forall_mem_moreauYosidaResolvent
     linarith
   -- `(n - m) τ ≤ t - s + τ`, `φ (u m) ≤ E`, and the a priori lower bound on `φ (u n)`.
   have hkτ : ((n - m : ℕ) : ℝ) * τ ≤ t - s + τ := by
-    rw [Nat.cast_sub hmn]
-    have h1 := mul_lt_mul_of_pos_right (Nat.ceil_lt_add_one (div_nonneg (hs.trans hst) hτr.le)) hτr
-    have h2 := mul_le_mul_of_nonneg_right (Nat.le_ceil (s / τ)) hτr.le
-    rw [add_mul, div_mul_cancel₀ _ hτr.ne', one_mul] at h1
-    rw [div_mul_cancel₀ _ hτr.ne'] at h2
-    linarith
+    have h := natCast_ceil_div_sub_ceil_div_le hτr hs hst
+    rwa [div_add_one hτr.ne', le_div_iff₀ hτr] at h
   have hem' : em ≤ E := by
     have := antitone_comp_of_forall_mem_moreauYosidaResolvent hu (Nat.zero_le m)
     simp only [Function.comp_apply, hem, hE] at this
