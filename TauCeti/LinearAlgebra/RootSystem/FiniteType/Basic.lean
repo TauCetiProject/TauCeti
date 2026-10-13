@@ -121,7 +121,7 @@ Finiteness of `B` is a conjunct of the condition rather than an instance argumen
 asked for explicitly: `Matrix.PosDef` tests only finitely supported vectors, so without the
 conjunct the condition would be strictly weaker than being a finite-type Cartan matrix, and the
 infinite path matrix on `ℕ` would satisfy it. Asking for it as a conjunct rather than as
-`[Finite B]` is what lets the consequences below read finiteness off the hypothesis instead of
+`[Finite B]` is what lets the consequences below take finiteness from the hypothesis instead of
 carrying an instance argument of their own.
 
 For finite `B` the Cartan matrices of finite root systems are exactly the matrices of this kind, up
@@ -183,8 +183,8 @@ theorem isFiniteType_of_conjTranspose_mul_self_of_det_ne_zero [Fintype B] [Decid
 
 namespace IsFiniteType
 
-/-- The index type of a finite-type matrix is finite. The consequences below open with
-`have := h.finite` rather than carrying a `[Finite B]` argument of their own. -/
+/-- The index type of a finite-type matrix is finite. This is what lets the results below take
+finiteness from their finite-type hypothesis instead of assuming it separately. -/
 lemma finite (h : IsFiniteType A) : Finite B := h.1
 
 /-- The diagonal entries of a finite-type matrix are `2`. -/
