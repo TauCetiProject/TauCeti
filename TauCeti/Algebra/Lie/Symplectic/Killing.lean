@@ -23,7 +23,8 @@ algebraically closed field the standard module is faithful, trace-free and irred
 `LieAlgebra.hasTrivialRadical_of_isIrreducible_of_isFaithful` applies; over an arbitrary field of
 characteristic zero, `sp l K` becomes the symplectic Lie algebra of an algebraic closure after
 extension of scalars (`TauCeti.skewAdjointMatricesLieSubalgebraBaseChangeEquiv`), and triviality
-of the radical descends (`LieAlgebra.hasTrivialRadical_baseChange_iff`).
+of the radical descends (`LieAlgebra.hasTrivialRadical_baseChange_iff`). This descent follows the
+orthogonal case, `TauCeti.hasTrivialRadical_so` in `TauCeti/Algebra/Lie/Orthogonal/Killing.lean`.
 
 The irreducibility argument uses the elements `v ↦ ω(a, v) a` and `v ↦ ω(a, v) b + ω(b, v) a`
 of `sp l K`, where `ω(x, y) = x ⬝ᵥ (J *ᵥ y)` is the standard alternating form. Given a nonzero
