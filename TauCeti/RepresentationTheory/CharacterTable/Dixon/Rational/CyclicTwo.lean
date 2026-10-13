@@ -56,7 +56,7 @@ two outputs.
 This file supplies an executable test of the assembled rational solver.
 
 The worked computation follows
-`TauCeti.RepresentationTheory.CharacterTable.Dixon.Rational.DihedralFour`; the prime certificate
+`TauCeti.RepresentationTheory.CharacterTable.Dixon.Rational.Dihedral.Four`; the prime certificate
 follows `TauCeti.RepresentationTheory.CharacterTable.Dixon.Dihedral`.
 
 * J. D. Dixon, *High speed computation of group characters*, Numerische Mathematik 10 (1967),

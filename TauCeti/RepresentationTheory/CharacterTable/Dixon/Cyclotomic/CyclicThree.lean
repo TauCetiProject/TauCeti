@@ -12,8 +12,8 @@ public import TauCeti.RepresentationTheory.CharacterTable.Dixon.Cyclotomic.Solve
 /-!
 # The cyclotomic Dixon computation for the cyclic group of order three
 
-This file carries the Burnside--Dixon--Schneider computation beyond the rational-table stage for
-the first time.  For `C₃ = Multiplicative (ZMod 3)`, it displays the exact table
+This file carries the Burnside--Dixon--Schneider computation beyond the rational-table stage. For
+`C₃ = Multiplicative (ZMod 3)`, it displays the exact table
 
 ```
 1  1   1

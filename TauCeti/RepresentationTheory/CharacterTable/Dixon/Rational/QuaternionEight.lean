@@ -54,7 +54,7 @@ classical example of nonisomorphic groups with equal character tables.
 * G. Schneider, *Dixon's character table algorithm revisited*, J. Symbolic Comput. 9 (1990),
   601--606.
 * The formal template is
-  `TauCeti.RepresentationTheory.CharacterTable.Dixon.Rational.DihedralFour`; this file and its
+  `TauCeti.RepresentationTheory.CharacterTable.Dixon.Rational.Dihedral.Four`; this file and its
   quaternion class-data and good-prime prerequisites adapt the corresponding dihedral development.
 -/
 
