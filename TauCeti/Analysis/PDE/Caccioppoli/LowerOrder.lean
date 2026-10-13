@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.InnerProductSpace.Young
 public import TauCeti.Analysis.PDE.Caccioppoli.Truncation
 
 /-!
@@ -74,34 +75,6 @@ variable {ι : Type*} [Fintype ι] [DecidableEq ι] {mu : Measure (EuclideanSpac
   [mu.IsAddHaarMeasure] {Omega : Opens (EuclideanSpace ℝ ι)}
   {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {b : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι}
   {c : EuclideanSpace ℝ ι → ℝ} {lam Lam beta gamma : ℝ}
-
-omit [DecidableEq ι] in
-/-- Young's inequality for the drift term: `-⟪b, g⟫ z² w` is absorbed into a quarter of the
-ellipticity floor `λ z² ‖g‖²` and `(β²/λ) z² w²`. -/
-private theorem neg_inner_mul_le_add {g bx : EuclideanSpace ℝ ι} (hlam : 0 < lam) (z w : ℝ)
-    (hb : ‖bx‖ ≤ beta) :
-    -(⟪bx, g⟫_ℝ * (z ^ 2 * w)) ≤
-      lam / 4 * (z ^ 2 * ‖g‖ ^ 2) + beta ^ 2 / lam * (z ^ 2 * w ^ 2) := by
-  -- `|⟪b, g⟫ z² w| ≤ β ‖g‖ z² |w|`.
-  have hinner : -(⟪bx, g⟫_ℝ * (z ^ 2 * w)) ≤ beta * ‖g‖ * (z ^ 2 * |w|) := by
-    refine (neg_le_abs _).trans ?_
-    rw [abs_mul, abs_mul, abs_of_nonneg (sq_nonneg z)]
-    exact mul_le_mul_of_nonneg_right ((abs_real_inner_le_norm bx g).trans
-      (mul_le_mul_of_nonneg_right hb (norm_nonneg g))) (by positivity)
-  -- Young's inequality `β ‖g‖ z² |w| ≤ (λ/4) z² ‖g‖² + (β²/λ) z² w²`.
-  have hyoung : beta * ‖g‖ * (z ^ 2 * |w|) ≤
-      lam / 4 * (z ^ 2 * ‖g‖ ^ 2) + beta ^ 2 / lam * (z ^ 2 * w ^ 2) := by
-    have h := two_mul_le_add_mul_sq (a := |z| * ‖g‖) (b := beta * |z| * |w| / 2)
-      (by positivity : 0 < lam / 4)
-    have hlhs : 2 * (|z| * ‖g‖) * (beta * |z| * |w| / 2) = beta * ‖g‖ * (z ^ 2 * |w|) := by
-      rw [← sq_abs z]; ring
-    have hrhs : lam / 4 * (|z| * ‖g‖) ^ 2 + (lam / 4)⁻¹ * (beta * |z| * |w| / 2) ^ 2 =
-        lam / 4 * (z ^ 2 * ‖g‖ ^ 2) + beta ^ 2 / lam * (z ^ 2 * w ^ 2) := by
-      simp only [mul_pow, div_pow, sq_abs]
-      field_simp
-      ring
-    rwa [hlhs, hrhs] at h
-  linarith
 
 /-- **The Caccioppoli inequality for a positive truncation of a weak subsolution with
 lower-order terms.** Let `a` be measurable and uniformly elliptic on `Ω` with constants
@@ -234,11 +207,16 @@ theorem
       · have hxmem : x ∈ {y : EuclideanSpace ℝ ι | k < W1p.value u y} := hxu
         rw [hwg, Set.indicator_of_mem hxmem]
       · rw [hwv, max_eq_right (sub_nonpos.mpr (le_of_not_gt hxu)), mul_zero, mul_zero]
-    have hyoung := neg_inner_mul_le_add (g := W1p.gradient w x) hlam (ψ x) (W1p.value w x)
-      (hb_bound x hx)
+    have hyoung := two_mul_real_inner_le_add_mul_norm_sq (-(ψ x * W1p.value w x) • b x)
+      (ψ x • W1p.gradient w x) (by positivity : (0 : ℝ) < 2 / lam)
+    simp only [real_inner_smul_left, real_inner_smul_right, norm_smul, mul_pow, Real.norm_eq_abs,
+      sq_abs, inv_div] at hyoung
+    have hb2 : (ψ x * W1p.value w x) ^ 2 * ‖b x‖ ^ 2 ≤ (ψ x * W1p.value w x) ^ 2 * beta ^ 2 :=
+      mul_le_mul_of_nonneg_left (pow_le_pow_left₀ (norm_nonneg _) (hb_bound x hx) 2)
+        (sq_nonneg _)
     rw [hgx]
     simp only [g]
-    linear_combination hyoung - ψ x ^ 2 * hactive
+    linear_combination (hyoung + 2 / lam * hb2) / 2 - ψ x ^ 2 * hactive
   rw [integral_add hF hR, integral_add (hX.const_mul _) (hZ.const_mul _), integral_const_mul,
     integral_const_mul] at hdrift
   -- Absorb the drift's quarter of the gradient term into the left-hand side.
