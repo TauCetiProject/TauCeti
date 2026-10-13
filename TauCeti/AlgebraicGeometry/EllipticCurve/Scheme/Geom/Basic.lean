@@ -7,6 +7,7 @@ module
 
 public import Mathlib.AlgebraicGeometry.Morphisms.Smooth
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.BaseChange
+import TauCeti.AlgebraicGeometry.IdealSheaf.Section
 
 /-!
 # Elliptic curves over a scheme
@@ -56,6 +57,8 @@ affine opens `U` of `S` with Weierstrass curves over `Γ(S, U)` and the chosen p
   exists if and only if the local-model condition holds.
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.isLocallyWeierstrass`: an elliptic curve over `S`
   satisfies the local-model condition.
+* `TauCeti.AlgebraicGeometry.EllipticCurveGeom.isClosed_setOf_left_apply_eq_zero`: the points at
+  which a point of an elliptic curve meets the zero section form a closed set.
 
 ## Implementation notes
 
@@ -492,6 +495,24 @@ namespace EllipticCurveGeom
 theorem zero_comp_structureMap {S : Scheme.{u}} (E : EllipticCurveGeom S) :
     E.zero ≫ E.structureMap = 𝟙 S :=
   E.zero_comp
+
+/-- **Meeting the zero section is a closed condition.** For a point `x` of `E` with values in a
+scheme `Z` over `S`, the points of `Z` at which `x` meets the zero section form a closed set: the
+preimage of the image of the zero section, a closed immersion since `E` is separated over `S`. -/
+theorem isClosed_setOf_left_apply_eq_zero {S : Scheme.{u}} (E : EllipticCurveGeom S) {Z : Over S}
+    (x : Z ⟶ Over.mk E.structureMap) :
+    IsClosed {z | x.left z = E.zero (Z.hom z)} := by
+  have := E.zero.isClosedImmersion_of_comp_eq_id E.zero_comp_structureMap
+  convert E.zero.isClosedEmbedding.isClosed_range.preimage x.left.continuous using 1
+  ext z
+  refine ⟨fun h ↦ ⟨_, h.symm⟩, fun ⟨s, hs⟩ ↦ ?_⟩
+  -- a point of the zero section lying on `x` lies over the image of `z` in `S`
+  have hw : x.left ≫ E.structureMap = Z.hom := Over.w x
+  obtain rfl : s = Z.hom z :=
+    calc s = (E.zero ≫ E.structureMap) s := by simp
+      _ = (x.left ≫ E.structureMap) z := by rw [Scheme.Hom.comp_apply, Scheme.Hom.comp_apply, hs]
+      _ = Z.hom z := by rw [hw]
+  exact hs.symm
 
 /-- An elliptic curve over `S` satisfies the local-model condition `IsLocallyWeierstrass` for its
 structure morphism and zero section: the pointwise form of the atlas condition `localModel`. -/

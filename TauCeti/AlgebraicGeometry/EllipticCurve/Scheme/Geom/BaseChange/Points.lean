@@ -51,8 +51,6 @@ through divisors of points, such as points of exact order `N`, pull back along b
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.left_apply_eq_zero_iff_of_isPullback`: an
   `S'`-point of `E'` meets the zero section at `s'` exactly when its image in `E` meets the zero
   section of `E` at `f s'`.
-* `TauCeti.AlgebraicGeometry.EllipticCurveGeom.isClosed_setOf_left_apply_eq_zero`: the points at
-  which a point of `E` meets the zero section form a closed set.
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.ker_pointsPullback_left`: the ideal sheaf of `P'`
   is the inverse image of the ideal sheaf of `P` along `g`.
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.exists_grpObj_isMonHom_comap`: the inverse image of
@@ -329,24 +327,6 @@ theorem pointsMulEquivOfIsPullback_symm_apply_left_comp (x : T ⟶ Over.mk E.str
   hg.lift_fst _ _ _
 
 end OverPoints
-
-variable (E) in
-/-- **Meeting the zero section is a closed condition.** For a point `x` of `E` with values in a
-scheme `Z` over `S`, the points of `Z` at which `x` meets the zero section form a closed set: the
-preimage of the image of the zero section, a closed immersion since `E` is separated over `S`. -/
-theorem isClosed_setOf_left_apply_eq_zero {Z : Over S} (x : Z ⟶ Over.mk E.structureMap) :
-    IsClosed {z | x.left z = E.zero (Z.hom z)} := by
-  have := E.zero.isClosedImmersion_of_comp_eq_id E.zero_comp_structureMap
-  convert E.zero.isClosedEmbedding.isClosed_range.preimage x.left.continuous using 1
-  ext z
-  refine ⟨fun h ↦ ⟨_, h.symm⟩, fun ⟨s, hs⟩ ↦ ?_⟩
-  -- a point of the zero section lying on `x` lies over the image of `z` in `S`
-  have hw : x.left ≫ E.structureMap = Z.hom := Over.w x
-  obtain rfl : s = Z.hom z :=
-    calc s = (E.zero ≫ E.structureMap) s := by simp
-      _ = (x.left ≫ E.structureMap) z := by rw [Scheme.Hom.comp_apply, Scheme.Hom.comp_apply, hs]
-      _ = Z.hom z := by rw [hw]
-  exact hs.symm
 
 end EllipticCurveGeom
 
