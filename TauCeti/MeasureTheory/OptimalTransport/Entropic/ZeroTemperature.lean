@@ -42,8 +42,9 @@ transport cost when the cost has an integrable split upper bound `c (x, y) ≤ c
 marginals are tight, as all finite Borel measures on complete separable pseudometric spaces are. The
 bound gives a level `M` above which the cost carries little mass under every coupling at once, and
 tightness gives a compact rectangle `K ×ˢ L` outside which every coupling has little mass. The cost
-truncated at `M` is uniformly continuous on `K ×ˢ L` and is discretised there, the complement of
-the rectangle forming one further cell on which the truncated cost is replaced by `M`.
+truncated at `M` is uniformly continuous on `K ×ˢ L` and is discretised there. The complements of
+`K` and `L` each receive one further label in the partitions of `X` and `Y`, and the truncated cost
+is replaced by `M` on every resulting product cell outside `K ×ˢ L`.
 
 ## Main statements
 
@@ -387,16 +388,16 @@ private theorem IsCoupling.exists_isCoupling_klDiv_ne_top_lintegral_min_le {π :
     _ ≤ ∫⁻ z, c z ∂π + M * (μ Kᶜ + ν Lᶜ) + η * μ univ := by gcongr
 
 /-- **Finite-entropy approximation under an integrable split upper bound.** Let `c` be a
-continuous real cost on pseudometric spaces, bounded above by `cX x + cY y` for functions `cX` and
-`cY` integrable against tight finite measures `μ` and `ν` (in the sense
-`c (x, y) ≤ ENNReal.ofReal (cX x + cY y)`). Then every coupling `π` of `μ` and `ν` is approximated,
+continuous real cost on pseudometric spaces, bounded above by `cX x + cY y` for almost everywhere
+measurable functions `cX : X → ℝ≥0∞` and `cY : Y → ℝ≥0∞` of finite Lebesgue integral against tight
+finite measures `μ` and `ν`. Then every coupling `π` of `μ` and `ν` is approximated,
 up to any positive error in cost, by a coupling of finite relative entropy with respect to
 `μ ⊗ ν`. -/
 theorem IsCoupling.exists_isCoupling_klDiv_ne_top_lintegral_le_of_le_add {π : Measure (X × Y)}
     {μ : Measure X} {ν : Measure Y} [IsFiniteMeasure μ] (hμ : IsTightMeasureSet {μ})
-    (hν : IsTightMeasureSet {ν}) {c : X × Y → ℝ≥0} (hc : Continuous c) {cX : X → ℝ}
-    {cY : Y → ℝ} (hcX : Integrable cX μ) (hcY : Integrable cY ν)
-    (hle : ∀ x y, (c (x, y) : ℝ≥0∞) ≤ ENNReal.ofReal (cX x + cY y))
+    (hν : IsTightMeasureSet {ν}) {c : X × Y → ℝ≥0} (hc : Continuous c) {cX : X → ℝ≥0∞}
+    {cY : Y → ℝ≥0∞} (hcX : AEMeasurable cX μ) (hcXi : ∫⁻ x, cX x ∂μ ≠ ∞) (hcY : AEMeasurable cY ν)
+    (hcYi : ∫⁻ y, cY y ∂ν ≠ ∞) (hle : ∀ x y, (c (x, y) : ℝ≥0∞) ≤ cX x + cY y)
     (hπ : IsCoupling π μ ν) {δ : ℝ≥0∞} (hδ : δ ≠ 0) :
     ∃ σ, IsCoupling σ μ ν ∧ klDiv σ (μ.prod ν) ≠ ∞ ∧ ∫⁻ z, c z ∂σ ≤ ∫⁻ z, c z ∂π + δ := by
   -- The error is split into four parts `δ / 4`: the two tails of the cost above a level `M`, the
@@ -405,22 +406,20 @@ theorem IsCoupling.exists_isCoupling_klDiv_ne_top_lintegral_le_of_le_add {π : M
   -- Above a large finite level `M = M₁ + M₂`, the cost exceeds `M` by at most `a x + b y`, where
   -- `a` and `b` are the excesses of `cX` and `cY` over `M₁` and `M₂`, of integrals at most `δ / 4`.
   have hδ0 : (0 : ℝ≥0∞) < δ / 4 := pos_iff_ne_zero.2 hδ'
-  have hcX' := hcX.1.aemeasurable.ennreal_ofReal
-  have hcY' := hcY.1.aemeasurable.ennreal_ofReal
-  obtain ⟨M₁, hai⟩ := ((tendsto_lintegral_tsub_atTop hcX' hcX.lintegral_lt_top.ne).eventually
+  obtain ⟨M₁, hai⟩ := ((tendsto_lintegral_tsub_atTop hcX hcXi).eventually
     (eventually_le_nhds hδ0)).exists
-  obtain ⟨M₂, hbi⟩ := ((tendsto_lintegral_tsub_atTop hcY' hcY.lintegral_lt_top.ne).eventually
+  obtain ⟨M₂, hbi⟩ := ((tendsto_lintegral_tsub_atTop hcY hcYi).eventually
     (eventually_le_nhds hδ0)).exists
-  set a : X → ℝ≥0∞ := fun x ↦ ENNReal.ofReal (cX x) - M₁
-  set b : Y → ℝ≥0∞ := fun y ↦ ENNReal.ofReal (cY y) - M₂
-  have ha : AEMeasurable a μ := hcX'.sub aemeasurable_const
-  have hb : AEMeasurable b ν := hcY'.sub aemeasurable_const
+  set a : X → ℝ≥0∞ := fun x ↦ cX x - M₁
+  set b : Y → ℝ≥0∞ := fun y ↦ cY y - M₂
+  have ha : AEMeasurable a μ := hcX.sub aemeasurable_const
+  have hb : AEMeasurable b ν := hcY.sub aemeasurable_const
   set M : ℝ≥0∞ := ((M₁ + M₂ : ℝ≥0) : ℝ≥0∞) with hM_def
   have hM : M ≠ ∞ := ENNReal.coe_ne_top
   have hab (x : X) (y : Y) : (c (x, y) : ℝ≥0∞) - M ≤ a x + b y :=
-    calc (c (x, y) : ℝ≥0∞) - M ≤ ENNReal.ofReal (cX x) + ENNReal.ofReal (cY y) - (M₁ + M₂) := by
+    calc (c (x, y) : ℝ≥0∞) - M ≤ cX x + cY y - (M₁ + M₂) := by
           rw [hM_def, ENNReal.coe_add]
-          exact tsub_le_tsub_right ((hle x y).trans ENNReal.ofReal_add_le) _
+          exact tsub_le_tsub_right (hle x y) _
       _ ≤ a x + b y := add_tsub_add_le_tsub_add_tsub
   obtain ⟨t, ht, htM⟩ := ENNReal.exists_nnreal_pos_mul_lt hM hδ'
   have ht2 : 0 < (t : ℝ≥0∞) / 2 := ENNReal.half_pos (ENNReal.coe_ne_zero.2 ht.ne')
@@ -464,9 +463,9 @@ theorem IsCoupling.exists_isCoupling_klDiv_ne_top_lintegral_le_of_le_add {π : M
       rw [add_assoc (∫⁻ z, c z ∂π + δ / 4), add_assoc, h4]
 
 /-- **The zero-temperature limit under an integrable split upper bound.** Let `c` be a continuous
-real cost on pseudometric spaces, bounded above by `cX x + cY y` for functions `cX` and `cY`
-integrable against tight finite measures `μ` and `ν` (in the sense
-`c (x, y) ≤ ENNReal.ofReal (cX x + cY y)`). Then as `ε → 0⁺` the regularised transport cost
+real cost on pseudometric spaces, bounded above by `cX x + cY y` for almost everywhere measurable
+functions `cX : X → ℝ≥0∞` and `cY : Y → ℝ≥0∞` of finite Lebesgue integral against tight finite
+measures `μ` and `ν`. Then as `ε → 0⁺` the regularised transport cost
 converges to the transport cost.
 
 Finite Borel measures on complete separable pseudometric spaces are tight
@@ -476,12 +475,13 @@ between laws on `ℝⁿ` with finite `p`-th moments. With
 entropic optimizers are optimal transport plans. -/
 theorem tendsto_entropicTransportCost_transportCost_of_le_add {μ : Measure X} {ν : Measure Y}
     [IsFiniteMeasure μ] (hμ : IsTightMeasureSet {μ}) (hν : IsTightMeasureSet {ν})
-    {c : X × Y → ℝ≥0} (hc : Continuous c) {cX : X → ℝ} {cY : Y → ℝ} (hcX : Integrable cX μ)
-    (hcY : Integrable cY ν) (hle : ∀ x y, (c (x, y) : ℝ≥0∞) ≤ ENNReal.ofReal (cX x + cY y)) :
+    {c : X × Y → ℝ≥0} (hc : Continuous c) {cX : X → ℝ≥0∞} {cY : Y → ℝ≥0∞}
+    (hcX : AEMeasurable cX μ) (hcXi : ∫⁻ x, cX x ∂μ ≠ ∞) (hcY : AEMeasurable cY ν)
+    (hcYi : ∫⁻ y, cY y ∂ν ≠ ∞) (hle : ∀ x y, (c (x, y) : ℝ≥0∞) ≤ cX x + cY y) :
     Tendsto (fun ε ↦ entropicTransportCost (fun z ↦ c z) ε μ ν) (𝓝[>] 0)
       (𝓝 (transportCost (fun z ↦ c z) μ ν)) :=
   tendsto_entropicTransportCost_transportCost_of_forall_exists fun _ hπ _ hδ ↦
-    hπ.exists_isCoupling_klDiv_ne_top_lintegral_le_of_le_add hμ hν hc hcX hcY hle hδ
+    hπ.exists_isCoupling_klDiv_ne_top_lintegral_le_of_le_add hμ hν hc hcX hcXi hcY hcYi hle hδ
 
 end Metric
 
