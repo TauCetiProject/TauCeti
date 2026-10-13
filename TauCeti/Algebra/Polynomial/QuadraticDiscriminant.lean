@@ -10,7 +10,6 @@ public import Mathlib.FieldTheory.Perfect
 import TauCeti.Algebra.QuadraticDiscriminant
 
 import Mathlib.Algebra.Polynomial.SpecificDegree
-import Mathlib.FieldTheory.KummerPolynomial
 import Mathlib.Tactic
 
 /-!
@@ -25,8 +24,7 @@ an Artin-Schreier condition mention no discriminant at all.
 
 Over an ordered commutative ring, `TauCeti.quadratic_pos_iff_of_discrim_neg` and
 `TauCeti.quadratic_neg_iff_of_discrim_neg` identify the sign of a quadratic with negative
-discriminant from its leading coefficient, and over an ordered field
-`Polynomial.irreducible_X_sq_add_one` records that `X ^ 2 + 1` is irreducible.
+discriminant from its leading coefficient.
 
 Over a field, with `a ≠ 0`:
 
@@ -240,13 +238,6 @@ theorem card_rootSet_quadratic_of_discrim_eq_zero {k : Type*} [Field k] {a b c :
   have hpos : 0 < Fintype.card (p.rootSet k) :=
     Fintype.card_pos_iff.2 ⟨⟨x, mem_rootSet.2 ⟨hp0, by simpa using hx⟩⟩⟩
   omega
-
-/-- **`X ^ 2 + 1` is irreducible over an ordered field**: a square is never `-1`. -/
-theorem irreducible_X_sq_add_one (K : Type*) [Field K] [LinearOrder K]
-    [IsStrictOrderedRing K] : Irreducible (X ^ 2 + 1 : K[X]) := by
-  have h := X_pow_sub_C_irreducible_of_prime Nat.prime_two (a := (-1 : K))
-    fun b hb ↦ by nlinarith [sq_nonneg b]
-  simpa [sub_eq_add_neg] using h
 
 end Polynomial
 
