@@ -37,23 +37,22 @@ namespace BasedTopologicalSpace
   carrier := Path X.basepoint X.basepoint
   basepoint := Path.refl X.basepoint
 
-/-- The `k`-fold iterated loop space `Ω^[k] X`, defined by `Ω^[0] X = X` and
-`Ω^[k + 1] X = Ω (Ω^[k] X)`. -/
+/-- The `k`-fold iterated loop space `Ω^[k] X`, the `k`-th iterate of `loopSpace` at `X`. -/
 -- Exposed for the same reason as `loopSpace`.
-@[expose] def iteratedLoopSpace (X : BasedTopologicalSpace.{u}) : ℕ → BasedTopologicalSpace.{u}
-  | 0 => X
-  | k + 1 => (X.iteratedLoopSpace k).loopSpace
+@[expose] def iteratedLoopSpace (X : BasedTopologicalSpace.{u}) (k : ℕ) :
+    BasedTopologicalSpace.{u} :=
+  loopSpace^[k] X
 
 /-- The zeroth iterated loop space is the space itself. -/
 @[simp]
-theorem iteratedLoopSpace_zero (X : BasedTopologicalSpace.{u}) : X.iteratedLoopSpace 0 = X := by
-  rw [iteratedLoopSpace.eq_1]
+theorem iteratedLoopSpace_zero (X : BasedTopologicalSpace.{u}) : X.iteratedLoopSpace 0 = X :=
+  Function.iterate_zero_apply _ _
 
 /-- The `(k + 1)`-fold iterated loop space is the loop space of the `k`-fold one. -/
 @[simp]
 theorem iteratedLoopSpace_succ (X : BasedTopologicalSpace.{u}) (k : ℕ) :
-    X.iteratedLoopSpace (k + 1) = (X.iteratedLoopSpace k).loopSpace := by
-  rw [iteratedLoopSpace.eq_2]
+    X.iteratedLoopSpace (k + 1) = (X.iteratedLoopSpace k).loopSpace :=
+  Function.iterate_succ_apply' _ _ _
 
 @[simp]
 theorem loopSpace_carrier (X : BasedTopologicalSpace.{u}) :
