@@ -261,7 +261,7 @@ theorem not_contDiffGroupoid_le_orientationPreservingGroupoid (n : ℕ∞ω) :
     (hle hmem)
   norm_num [A] at hdet
 
-/-! ### Oriented atlases and orientable manifolds -/
+/-! ### Oriented atlases -/
 
 section Atlas
 

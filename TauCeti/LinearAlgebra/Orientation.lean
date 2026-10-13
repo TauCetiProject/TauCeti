@@ -11,10 +11,11 @@ public import Mathlib.LinearAlgebra.Orientation
 /-!
 # Transporting orientations along linear equivalences
 
-Two facts about `Orientation.map`, the transport of orientations along a linear equivalence:
+Facts about `Orientation.map`, the transport of orientations along a linear equivalence:
 it is compatible with composition of equivalences, and two self-equivalences of a
 finite-dimensional space transport an orientation to the same orientation exactly when their
-determinants have the same sign.
+determinants have the same sign. Unit scalars encode orientation signs and the signed Jacobian
+criterion, using Mathlib’s action on rays.
 
 ## Main results
 
@@ -63,5 +64,51 @@ theorem Orientation.map_eq_map_iff_det_mul_pos [FiniteDimensional R M] (x : Orie
       div_eq_mul_inv, mul_comm]
   rw [htransport, map_eq_iff_det_pos _ _ h, hdet]
   exact div_pos_iff.trans mul_pos_iff.symm
+
+
+omit [Fintype ι] in
+/-- Integral unit signs act on orientations by retaining or reversing the ray. -/
+theorem Orientation.intCast_units_smul_eq_ite (u : ℤˣ) (o : Orientation R M ι) :
+    (Units.map (Int.castRingHom R).toMonoidHom u) • o = if u = 1 then o else -o := by
+  rcases Int.units_eq_one_or u with rfl | rfl
+  · simp
+  · rw [ite_eq_right (by decide)]
+    exact Module.Ray.units_smul_of_neg _ (by norm_num) _
+
+omit [Fintype ι] in
+/-- Distinct integral unit signs induce distinct orientations. -/
+theorem Orientation.intCast_units_smul_injective (o : Orientation R M ι) :
+    Function.Injective (fun u : ℤˣ ↦ (Units.map (Int.castRingHom R).toMonoidHom u) • o) := by
+  intro u v huv
+  simp only [intCast_units_smul_eq_ite] at huv
+  rcases Int.units_eq_one_or u with rfl | rfl <;>
+    rcases Int.units_eq_one_or v with rfl | rfl <;>
+    simp_all [Module.Ray.ne_neg_self, (Module.Ray.ne_neg_self o).symm]
+
+/-- The signed Jacobian criterion for transporting orientations with arbitrary unit scalars. -/
+theorem Orientation.map_units_smul_eq_iff_det_mul_pos [FiniteDimensional R M]
+    (o : Orientation R M ι) (A : M ≃ₗ[R] M) (u v : Rˣ)
+    (hι : Fintype.card ι = finrank R M) :
+    Orientation.map ι A (u • o) = v • o ↔
+      0 < (u : R) * (v : R) * LinearMap.det A.toLinearMap := by
+  rw [map_eq_det_inv_smul _ _ hι, ← inv_smul_eq_iff, ← mul_smul,
+    ← mul_smul, units_smul_eq_self_iff]
+  simp only [Units.val_mul, Units.val_inv_eq_inv_val, LinearEquiv.coe_det]
+  have h := (div_pos_iff.trans mul_pos_iff.symm :
+    0 < (u : R) / ((v : R) * LinearMap.det A.toLinearMap) ↔
+      0 < (u : R) * ((v : R) * LinearMap.det A.toLinearMap))
+  simpa only [div_eq_mul_inv, mul_inv_rev, mul_comm, mul_left_comm, mul_assoc] using h
+
+open Classical in
+/-- The sign distinguishing two orientations reconstructs the second from the first when
+the index type has the dimension of the space. -/
+theorem Orientation.intCast_units_smul_ite_eq [FiniteDimensional R M]
+    (model o : Orientation R M ι) (hι : Fintype.card ι = finrank R M) :
+    (Units.map (Int.castRingHom R).toMonoidHom (if o = model then 1 else -1)) • model = o := by
+  rcases eq_or_eq_neg o model hι with h | h
+  · simp [h]
+  · rw [h]
+    rw [ite_eq_right (Module.Ray.ne_neg_self model).symm]
+    exact Module.Ray.units_smul_of_neg _ (by norm_num) _
 
 end Field

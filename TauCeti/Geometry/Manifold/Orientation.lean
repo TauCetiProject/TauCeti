@@ -43,7 +43,7 @@ variable [IsManifold I 1 M]
 /-- An oriented atlas gives canonical orientability, including at boundary and corner points. -/
 theorem IsOrientedAtlas.orientable {n : ℕ∞ω} [NeZero n]
     {A : Set (OpenPartialHomeomorph M H)} (hA : IsOrientedAtlas I n A) : Orientable I M :=
-  ⟨hA.nonempty_orientation⟩
+  ⟨⟨hA.orientation (Module.finBasis ℝ E).orientation (Fintype.card_fin _)⟩⟩
 
 /-- A manifold whose given atlas has positive transition derivatives is canonically orientable. -/
 theorem Orientable.of_hasGroupoid [HasGroupoid M (orientationPreservingGroupoid I)] :
@@ -66,8 +66,8 @@ variable {E' H' M' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E']
 instance [Orientable I M] [Orientable I' M'] : Orientable (I.prod I') (M × M') := by
   obtain ⟨o⟩ := Orientable.nonempty_orientation (I := I) (M := M)
   obtain ⟨o'⟩ := Orientable.nonempty_orientation (I := I') (M := M')
-  obtain ⟨l, rfl⟩ := o.exists_lift
-  obtain ⟨l', rfl⟩ := o'.exists_lift
-  exact ⟨l.nonempty_orientation_prod l'⟩
+  constructor
+  rw [Module.finrank_prod]
+  exact ⟨o.prod o'⟩
 
 end TauCeti

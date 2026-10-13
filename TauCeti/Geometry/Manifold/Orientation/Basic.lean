@@ -72,6 +72,7 @@ theorem card_eq (o : Orientation I M ι) : Fintype.card ι = Module.finrank ℝ 
 def neg (o : Orientation I M ι) : Orientation I M ι :=
   Quotient.map (sa := OrientationLift.setoid (I := I) (M := M) (ι := ι))
     (sb := OrientationLift.setoid (I := I) (M := M) (ι := ι)) Neg.neg (fun a b h ↦ by
+      -- Quotient.map hides the relation behind the two quotient setoid parameters.
       change OrientationLift.setoid.r a b at h
       change OrientationLift.setoid.r (-a) (-b)
       rw [OrientationLift.setoid_rel] at h ⊢
@@ -107,6 +108,8 @@ theorem toVectorBundleOrientation_neg (o : Orientation I M ι) :
   induction o using Quotient.inductionOn with | _ o =>
     apply TauCeti.VectorBundleOrientation.ext
     intro x
+    -- Quotient induction produces raw representatives; use the public constructor to
+    -- reduce tangent-bundle negation through its representative equation.
     change (mk (-o)).toVectorBundleOrientation x = -(mk o).toVectorBundleOrientation x
     simpa only [toVectorBundleOrientation_mk, OrientationLift.toVectorBundleOrientation_apply]
       using o.orientationAt_neg x
@@ -117,9 +120,16 @@ variable [IsManifold I 1 M]
 
 variable {I}
 
+namespace Orientation
+
 /-- The orientation of a tangent space induced by a manifold orientation. -/
 def orientationAt (o : Orientation I M ι) (x : M) :
     _root_.Orientation ℝ (TangentSpace I x) ι := o.toVectorBundleOrientation x
+
+/-- Evaluation of the tangent-bundle interpretation is the manifold's tangent orientation. -/
+@[simp]
+theorem toVectorBundleOrientation_apply (o : Orientation I M ι) (x : M) :
+    o.toVectorBundleOrientation x = o.orientationAt x := (rfl)
 
 /-- At the base point of its own preferred chart, the representative's sign twists the model
 orientation. This equation also holds at boundary and corner points. -/
@@ -138,8 +148,6 @@ theorem orientationAt_neg (o : Orientation I M ι) (x : M) :
   simp only [orientationAt, Orientation.toVectorBundleOrientation_neg,
     TauCeti.VectorBundleOrientation.neg_apply]
 
-namespace Orientation
-
 /-- A manifold orientation is determined by its actual tangent orientations. -/
 @[ext]
 theorem ext {o o' : Orientation I M ι}
@@ -147,10 +155,13 @@ theorem ext {o o' : Orientation I M ι}
   induction o using Quotient.inductionOn with | _ a =>
     induction o' using Quotient.inductionOn with | _ b =>
       apply Quotient.sound (s := OrientationLift.setoid)
+      -- Quotient induction exposes raw Quotient.mk terms; present them as Orientation.mk
+      -- so the public representative equations apply without unfolding the quotient lift.
       change ∀ x, (mk a).toVectorBundleOrientation x =
         (mk b).toVectorBundleOrientation x at h
       simp only [toVectorBundleOrientation_mk,
         OrientationLift.toVectorBundleOrientation_apply] at h
+      -- The quotient equality uses the same lift setoid as the representative constructor.
       change OrientationLift.setoid.r a b
       rw [OrientationLift.setoid_rel]
       rcases OrientationLift.eq_or_eq_flip_of_orientationAt (fun x ↦ (h x).symm) with h | h
@@ -169,7 +180,7 @@ theorem eq_or_eq_neg [PreconnectedSpace M] (o o' : Orientation I M ι) :
     exact congrArg (fun v ↦ v x) h
 
 /-- An orientation differs from its opposite on every nonempty manifold. -/
-theorem neg_ne [Nonempty M] (o : Orientation I M ι) : -o ≠ o := by
+theorem neg_ne_self [Nonempty M] (o : Orientation I M ι) : -o ≠ o := by
   intro h
   have hx := congrArg (fun v ↦ orientationAt v (Classical.arbitrary M)) h
   rw [orientationAt_neg] at hx
@@ -199,6 +210,16 @@ theorem orientationAt_ofVectorBundleOrientation (model : _root_.Orientation ℝ 
   simp only [ofVectorBundleOrientation, orientationAt, toVectorBundleOrientation_mk,
     OrientationLift.toVectorBundleOrientation_apply,
     OrientationLift.orientationAt_ofVectorBundleOrientation]
+
+/-- Interpreting the orientation reconstructed from tangent orientations recovers the bundle
+orientation. -/
+@[simp]
+theorem toVectorBundleOrientation_ofVectorBundleOrientation
+    (model : _root_.Orientation ℝ E ι) (hι : Fintype.card ι = Module.finrank ℝ E)
+    (o : TauCeti.VectorBundleOrientation E (TangentSpace I : M → Type _) ι) :
+    (ofVectorBundleOrientation model hι o).toVectorBundleOrientation = o := by
+  ext x
+  exact orientationAt_ofVectorBundleOrientation model hι o x
 
 /-- Recovering a manifold orientation from its tangent bundle orientations is independent of
 the chosen model orientation. -/

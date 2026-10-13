@@ -45,6 +45,7 @@ private theorem mapOrientation_orientationOfPositiveAtlasAt (i : κ) (hi : i ∈
   have hxj : x ∈ (Z.localTriv j).baseSet := (Classical.choose_spec (hcover x)).2
   rw [Trivialization.mapOrientation_eq_map_coordChangeL (Z.localTriv j) _ hxj]
   simp only [orientationOfPositiveAtlasAt, j, Equiv.apply_symm_apply]
+  -- The trivialization transport is Mathlib's orientation map of the coordinate equivalence.
   change Orientation.map ι ((Z.localTriv j).coordChangeL ℝ
     (Z.localTriv i) x).toLinearEquiv model = model
   rw [Orientation.map_eq_iff_det_pos _ _ hι]
@@ -52,6 +53,7 @@ private theorem mapOrientation_orientationOfPositiveAtlasAt (i : κ) (hi : i ∈
       Z.coordChange j i x := by
     ext v
     exact Z.localTriv_coordChange_eq _ _ ⟨hxj, hxi⟩ v
+  -- Passing from the equivalence to its continuous map does not change its linear determinant.
   change (((Z.localTriv j).coordChangeL ℝ (Z.localTriv i) x) : F →L[ℝ] F).det > 0
   rw [hd]
   exact hpos j hj i hi x ⟨hxj, hxi⟩
