@@ -7,7 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.DGLocalSystem.Basic
 public import TauCeti.AlgebraicTopology.LocalCoefficient
-public import TauCeti.RingTheory.GradedAlgebra.Trivial
+public import TauCeti.Algebra.Module.GradedModule.Trivial
 public import TauCeti.CategoryTheory.Groupoid.ConnectedFunctor
 
 /-!
@@ -16,10 +16,10 @@ public import TauCeti.CategoryTheory.Groupoid.ConnectedFunctor
 A classical local system on a pointed space `(B, b)` is a functor from the fundamental groupoid to
 `R`-modules.  Its fiber at `b` is a representation of `π₁(B, b)`, hence a module over the group
 ring `R[π₁(B, b)]`, and the chain algebra `C_*(Ω_b B; R)` acts on it from the right through the
-ring homomorphism `loopChainDegreeZero` of the loop algebra, which keeps the degree-zero component
-and sends it to the group ring by `loopZeroChainToGroupAlgebra`.  With the trivial grading and
-the zero differential, the fiber is a DG local system concentrated in degree zero (the source's
-Definition 1.8 in degree zero).
+ring homomorphism `loopChainToGroupAlgebra` of the loop algebra, which keeps the degree-zero
+component and sends it to the group ring by `loopZeroChainToGroupAlgebra`.  With the trivial
+grading and the zero differential, the fiber is a DG local system concentrated in degree zero (the
+source's Definition 1.8 in degree zero).
 
 ## Main definitions
 
@@ -65,6 +65,12 @@ def fiberRightAction (L : LocalCoefficientSystem.{u, u, w} R X) :
   map_one' := by rw [inv_one, map_one, op_one]
   map_mul' g h := by rw [mul_inv_rev, map_mul, op_mul]
 
+@[simp]
+theorem fiberRightAction_apply (L : LocalCoefficientSystem.{u, u, w} R X)
+    (g : FundamentalGroup X x) :
+    fiberRightAction L g = op (LocalCoefficientSystem.monodromyRepresentation L x g⁻¹) :=
+  (rfl)
+
 /-- **The action of the chain algebra on the fiber of a local system**: the algebra map from the
 opposite of `C_*(Ω_x X; R)` to the endomorphisms of the fiber at `x`, through the degree-zero ring
 map and the monodromy representation.  A Moore loop acts by the monodromy of its class. -/
@@ -73,10 +79,10 @@ def classicalAction (L : LocalCoefficientSystem.{u, u, w} R X) :
   ((AlgEquiv.opOp R (Module.End R (L.obj (FundamentalGroupoid.mk x)))).symm :
       _ ≃ₐ[R] _).toAlgHom.comp
     ((MonoidAlgebra.lift R (Module.End R (L.obj (FundamentalGroupoid.mk x)))ᵐᵒᵖ
-      (FundamentalGroup X x) (fiberRightAction L)).comp (loopChainDegreeZero X x R)).op
+      (FundamentalGroup X x) (fiberRightAction L)).comp (loopChainToGroupAlgebra X x R)).op
 
 theorem classicalAction_eq_zero (L : LocalCoefficientSystem.{u, u, w} R X)
-    {a : loopChainAlgebra X x R} (ha : loopChainDegreeZero X x R a = 0) :
+    {a : loopChainAlgebra X x R} (ha : loopChainToGroupAlgebra X x R a = 0) :
     classicalAction L (op a) = 0 := by
   simp [classicalAction, ha]
 
@@ -85,7 +91,8 @@ instance instModuleOpFiber (L : LocalCoefficientSystem.{u, u, w} R X) :
     Module (loopChainAlgebra X x R)ᵐᵒᵖ (L.obj (FundamentalGroupoid.mk x)) :=
   Module.compHom _ (classicalAction L).toRingHom
 
-theorem op_smul_fiber (L : LocalCoefficientSystem.{u, u, w} R X) (a : loopChainAlgebra X x R)
+theorem op_smul_eq_classicalAction (L : LocalCoefficientSystem.{u, u, w} R X)
+    (a : loopChainAlgebra X x R)
     (m : L.obj (FundamentalGroupoid.mk x)) : op a • m = classicalAction L (op a) m :=
   rfl
 
@@ -110,8 +117,8 @@ instance (L : LocalCoefficientSystem.{u, u, w} R X) :
       · left
         simp [hi]
       · right
-        rw [← op_unop a, op_smul_fiber,
-          classicalAction_eq_zero L (loopChainDegreeZero_eq_zero_of_mem hi ha)]
+        rw [← op_unop a, op_smul_eq_classicalAction,
+          classicalAction_eq_zero L (loopChainToGroupAlgebra_eq_zero_of_mem hi ha)]
         rfl
     · right
       simp
@@ -125,8 +132,8 @@ theorem isDGRightModule_fiber (L : LocalCoefficientSystem.{u, u, w} R X) :
   isHomogeneous := LinearMap.isHomogeneous_zero _ _ _
   sq_zero _ := rfl
   leibniz {_ _} _ a := by
-    rw [op_smul_fiber _ (cubicalChainDifferential _ R a),
-      classicalAction_eq_zero L (loopChainDegreeZero_differential a)]
+    rw [op_smul_eq_classicalAction _ (cubicalChainDifferential _ R a),
+      classicalAction_eq_zero L (loopChainToGroupAlgebra_differential a)]
     simp
 
 variable (x) in
@@ -151,11 +158,22 @@ theorem classicalDGLocalSystem_differential (L : LocalCoefficientSystem.{u, u, w
     (classicalDGLocalSystem x L).differential = 0 :=
   (rfl)
 
+/-- A Moore loop acts on the fiber by the monodromy of its class: the point chain of a loop `γ`
+acts by the monodromy of the inverse of `fundamentalGroupHom γ`, that is of the class of `γ`. -/
+@[simp]
+theorem classicalAction_ofCube_point (L : LocalCoefficientSystem.{u, u, w} R X)
+    (c : SingularCube (MooreLoopSpace X x) 0) :
+    classicalAction L (op (cubicalChainLof (MooreLoopSpace X x) R 0
+        (NormalizedCubicalChain.ofCube (MooreLoopSpace X x) R c))) =
+      LocalCoefficientSystem.monodromyRepresentation L x
+        (MooreLoopSpace.fundamentalGroupHom x (c 0))⁻¹ := by
+  simp [classicalAction]
+
 theorem classicalAction_op_apply (L : LocalCoefficientSystem.{u, u, w} R X)
     (a : loopChainAlgebra X x R) :
     classicalAction L (op a) =
       (MonoidAlgebra.lift R (Module.End R (L.obj (FundamentalGroupoid.mk x)))ᵐᵒᵖ
-        (FundamentalGroup X x) (fiberRightAction L) (loopChainDegreeZero X x R a)).unop := by
+        (FundamentalGroup X x) (fiberRightAction L) (loopChainToGroupAlgebra X x R a)).unop := by
   simp [classicalAction]
 
 theorem fiberRightAction_lift_naturality {L L' : LocalCoefficientSystem.{u, u, w} R X} (φ : L ⟶ L')
