@@ -59,11 +59,9 @@ where it is concentrated at the sink.
 
 ## References
 
-This is the uniqueness milestone of Layer 5 ("Gabriel's theorem") of
-`TauCetiRoadmap/RepresentationTheory/QuiverRepresentations/README.md`, that the reflection
-induction transports the dimension vector faithfully. See Bernstein--Gelfand--Ponomarev, *Coxeter
-functors and Gabriel's theorem*, and Derksen--Weyman, *An Introduction to Quiver Representations*,
-Ch. 2.
+This is the uniqueness step of the reflection induction for Gabriel's theorem. See
+Bernstein--Gelfand--Ponomarev, *Coxeter functors and Gabriel's theorem*, and Derksen--Weyman, *An
+Introduction to Quiver Representations*, Ch. 2.
 -/
 
 public section

@@ -21,8 +21,9 @@ height zero. Its inverse adds `γ(y)` to the normal coordinate.
 
 At points where `γ` is differentiable, the derivative is the linear shear
 `(s, z) ↦ (s - Dγ(y) z, z)`. Its determinant is one and its operator norm is at
-most `1 + ‖Dγ(y)‖`. These are the chart estimates used to transfer Sobolev trace
-and extension operators from a half-space to a domain with a graph boundary.
+most `1 + ‖Dγ(y)‖`, as is that of the derivative of the inverse. These are the chart
+estimates used to transfer Sobolev trace and extension operators from a half-space to a
+domain with a graph boundary.
 The shear also preserves Lebesgue measure, requiring only continuity of `γ`.
 The homeomorphism is the whole-space instance of
 `ContinuousLinearMap.projectionGraphChart`; the differential reuses Mathlib's
@@ -186,6 +187,22 @@ theorem contDiff_graphFlattening_symm {n : WithTop ℕ∞} {γ : E → ℝ}
   rw [graphFlattening_symm]
   exact contDiff_graphFlattening hγ.neg
 
+/-- The derivative of graph flattening has norm at most `1 + ‖Dγ(y)‖` at a differentiability
+point of the height. -/
+theorem norm_fderiv_graphFlattening_le {γ : E → ℝ} (hγ : Continuous γ)
+    {x : WithLp 2 (ℝ × E)} (hx : DifferentiableAt ℝ γ x.snd) :
+    ‖fderiv ℝ (graphFlattening γ hγ) x‖ ≤ 1 + ‖fderiv ℝ γ x.snd‖ := by
+  rw [fderiv_graphFlattening hγ hx]
+  exact norm_graphFlatteningL_le _
+
+/-- The derivative of inverse graph flattening has norm at most `1 + ‖Dγ(y)‖` at a
+differentiability point of the height. -/
+theorem norm_fderiv_graphFlattening_symm_le {γ : E → ℝ} (hγ : Continuous γ)
+    {x : WithLp 2 (ℝ × E)} (hx : DifferentiableAt ℝ γ x.snd) :
+    ‖fderiv ℝ (graphFlattening γ hγ).symm x‖ ≤ 1 + ‖fderiv ℝ γ x.snd‖ := by
+  rw [graphFlattening_symm]
+  simpa [fderiv_neg] using norm_fderiv_graphFlattening_le hγ.neg hx.neg
+
 variable [FiniteDimensional ℝ E]
 
 /-- A linear graph shear has determinant one. -/
@@ -235,6 +252,12 @@ theorem measurePreserving_graphFlattening (γ : E → ℝ) (hγ : Continuous γ)
   convert h using 1
   ext x
   simp [Function.comp_def]
+
+/-- Inverse graph flattening preserves Lebesgue measure. -/
+theorem measurePreserving_graphFlattening_symm (γ : E → ℝ) (hγ : Continuous γ) :
+    MeasurePreserving (graphFlattening γ hγ).symm := by
+  rw [graphFlattening_symm]
+  exact measurePreserving_graphFlattening _ _
 
 end Volume
 
