@@ -181,7 +181,7 @@ theorem inner_kernelMeanEmbedding (hk : Matrix.PosSemidef k) {μ ν : Measure X}
 
 /-- **The kernel energy of a difference of measures.** The squared distance of two kernel mean
 embeddings is the double integral of `k` against `(μ - ν) ⊗ (μ - ν)`, written out as
-`∬ k dμ dμ - 2 ∬ k dμ dν + ∬ k dν dν`, the two cross terms being equal by symmetry of `k`; in
+`∫∫ k dμ dμ - 2 ∫∫ k dμ dν + ∫∫ k dν dν`, the two cross terms being equal by symmetry of `k`; in
 particular this energy is nonnegative. -/
 theorem norm_kernelMeanEmbedding_sub_sq (hk : Matrix.PosSemidef k) {μ ν : Measure X}
     (hμ : Integrable hk.kolmogorovFeature μ) (hν : Integrable hk.kolmogorovFeature ν) :
