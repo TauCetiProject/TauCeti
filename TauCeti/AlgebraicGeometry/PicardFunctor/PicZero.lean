@@ -67,7 +67,8 @@ families and representability are not treated here.
   geometrically connected family of curves, it is closed under products and inverses.
 * `TauCeti.AlgebraicGeometry.relativePicardDegreeZeroFunctor`: for such a family, `Pic⁰_{X/S}`
   as a presheaf of commutative groups, with inclusion
-  `TauCeti.AlgebraicGeometry.relativePicardDegreeZeroFunctorι` into the relative Picard presheaf.
+  `TauCeti.AlgebraicGeometry.relativePicardDegreeZeroFunctorι` into the relative Picard presheaf
+  and sections built by `TauCeti.AlgebraicGeometry.relativePicardDegreeZeroFunctor.mk`.
 
 ## References
 
@@ -349,8 +350,6 @@ variable [IsProper f] [SmoothOfRelativeDimension 1 f] [GeometricallyConnected f]
 /-- For a smooth proper geometrically connected family of curves, `Pic⁰_{X/S}(T)` as a subgroup
 of `Pic(X_T) / Pic(T)`: the classes of degree zero on every geometric fibre, that is the sections
 of `relativePicardDegreeZeroSubfunctor` at `T`. -/
--- Expose the carrier so `relativePicardDegreeZeroFunctor` can restrict pullback to it.
-@[expose]
 def relativePicardDegreeZeroSubgroup (T : (Over S)ᵒᵖ) :
     Subgroup ((relativePicardPresheaf f).obj T) where
   carrier := (relativePicardDegreeZeroSubfunctor f).obj T
@@ -370,8 +369,6 @@ lemma mem_relativePicardDegreeZeroSubgroup_iff {T : (Over S)ᵒᵖ}
 family of curves `f : X ⟶ S`, as a presheaf of commutative groups on schemes over `S`: it sends
 `T` to the subgroup `relativePicardDegreeZeroSubgroup f T` of `Pic(X_T) / Pic(T)`, and a morphism
 over `S` to the restriction of the pullback map of the relative Picard presheaf. -/
--- Expose the object type so sections can be used as sections of the relative Picard presheaf.
-@[expose]
 def relativePicardDegreeZeroFunctor : (Over S)ᵒᵖ ⥤ CommGrpCat.{u + 1} where
   obj T := CommGrpCat.of (relativePicardDegreeZeroSubgroup f T)
   map φ := CommGrpCat.ofHom <|
@@ -386,8 +383,15 @@ def relativePicardDegreeZeroFunctor : (Over S)ᵒᵖ ⥤ CommGrpCat.{u + 1} wher
 `Pic(X_T) / Pic(T)`. -/
 lemma relativePicardDegreeZeroFunctor_obj (T : (Over S)ᵒᵖ) :
     (relativePicardDegreeZeroFunctor f).obj T =
-      CommGrpCat.of (relativePicardDegreeZeroSubgroup f T) :=
-  rfl
+      CommGrpCat.of (relativePicardDegreeZeroSubgroup f T) := by
+  unfold relativePicardDegreeZeroFunctor; rfl
+
+/-- The section of `Pic⁰_{X/S}` at `T` given by a section of `T ↦ Pic(X_T) / Pic(T)` of degree
+zero on every geometric fibre. -/
+def relativePicardDegreeZeroFunctor.mk {T : (Over S)ᵒᵖ} (c : (relativePicardPresheaf f).obj T)
+    (hc : c ∈ (relativePicardDegreeZeroSubfunctor f).obj T) :
+    (relativePicardDegreeZeroFunctor f).obj T :=
+  ⟨c, hc⟩
 
 /-- The inclusion of the degree-zero Picard functor `Pic⁰_{X/S}` into the relative Picard
 presheaf `T ↦ Pic(X_T) / Pic(T)`, as a morphism of presheaves of commutative groups. -/
@@ -395,13 +399,29 @@ def relativePicardDegreeZeroFunctorι :
     relativePicardDegreeZeroFunctor f ⟶ relativePicardPresheaf f where
   app T := CommGrpCat.ofHom (relativePicardDegreeZeroSubgroup f T).subtype
 
-/-- The inclusion `relativePicardDegreeZeroFunctorι` sends a section of `Pic⁰_{X/S}` to itself
-as a section of `T ↦ Pic(X_T) / Pic(T)`. -/
+/-- The inclusion `relativePicardDegreeZeroFunctorι` sends the section
+`relativePicardDegreeZeroFunctor.mk f c hc` of `Pic⁰_{X/S}` to `c`. -/
 @[simp]
-lemma relativePicardDegreeZeroFunctorι_app_apply (T : (Over S)ᵒᵖ)
-    (c : relativePicardDegreeZeroSubgroup f T) :
-    (relativePicardDegreeZeroFunctorι f).app T c = (c : (relativePicardPresheaf f).obj T) :=
-  (rfl)
+lemma relativePicardDegreeZeroFunctorι_app_mk {T : (Over S)ᵒᵖ}
+    (c : (relativePicardPresheaf f).obj T)
+    (hc : c ∈ (relativePicardDegreeZeroSubfunctor f).obj T) :
+    (relativePicardDegreeZeroFunctorι f).app T (relativePicardDegreeZeroFunctor.mk f c hc) = c := by
+  unfold relativePicardDegreeZeroFunctorι relativePicardDegreeZeroFunctor.mk; rfl
+
+/-- The inclusion `relativePicardDegreeZeroFunctorι` sends a section of `Pic⁰_{X/S}` to a section
+of `T ↦ Pic(X_T) / Pic(T)` of degree zero on every geometric fibre. -/
+lemma relativePicardDegreeZeroFunctorι_app_mem {T : (Over S)ᵒᵖ}
+    (c : (relativePicardDegreeZeroFunctor f).obj T) :
+    (relativePicardDegreeZeroFunctorι f).app T c ∈
+      (relativePicardDegreeZeroSubfunctor f).obj T := by
+  unfold relativePicardDegreeZeroFunctorι relativePicardDegreeZeroFunctor at *
+  exact c.2
+
+/-- The inclusion `relativePicardDegreeZeroFunctorι` is injective on sections. -/
+lemma relativePicardDegreeZeroFunctorι_app_injective (T : (Over S)ᵒᵖ) :
+    Function.Injective ((relativePicardDegreeZeroFunctorι f).app T) := by
+  unfold relativePicardDegreeZeroFunctorι relativePicardDegreeZeroFunctor
+  exact Subtype.val_injective
 
 end Smooth
 
