@@ -28,11 +28,6 @@ are Hopf algebras and these convolution monoids are the convolution groups of po
 (`TauCeti.AlgHom.instGroup`), so the points equivalence is automatically an isomorphism of
 groups: `D(G × H)(A) ≅ D(G)(A) × D(H)(A)`.
 
-This advances the reductive-groups roadmap (`ReductiveGroups/README.md` in TauCetiRoadmap,
-Layer 4 "Diagonalizable groups" and the "Worked examples / products" theme, together with the
-Layer 0 functor-of-points dictionary): this supplies the binary product step used in the
-calculation of split tori as iterated products of `𝔾ₘ`.
-
 ## Main definitions
 
 * `TauCeti.MonoidAlgebra.prodPointsMulEquiv`: on convolution points,

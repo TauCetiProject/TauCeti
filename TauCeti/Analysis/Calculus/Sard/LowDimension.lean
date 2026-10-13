@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.MetricSpace.HausdorffDimension
-import Mathlib.MeasureTheory.Measure.Haar.Unique
+import TauCeti.MeasureTheory.Measure.Haar.Hausdorff
 
 /-!
 # Sard's lemma when the source has smaller dimension
@@ -19,8 +19,8 @@ particular, the whole range is null.
 Every derivative in this dimension range is nonsurjective, so the range is exactly the set of
 critical values. The proof uses the Hausdorff-dimension route already developed in Mathlib:
 `DifferentiableOn.dimH_image_le` says that differentiable maps do not increase dimension, and
-`measure_zero_of_dimH_lt` turns the resulting strict dimension bound into nullity. Uniqueness of
-additive Haar measure transfers the statement from Hausdorff measure to any Haar normalization.
+`addHaar_eq_zero_of_dimH_lt_finrank` turns the strict dimension bound into nullity for every
+normalization of additive Haar measure.
 
 This supplies the source-dimension-smaller-than-target case of finite-dimensional Sard in Lane F0
 of the analytic Heegaard Floer roadmap. Together with the equal-dimensional case, it isolates the
@@ -65,12 +65,8 @@ the codomain sends that set to an additive-Haar-null set.
 The source may be any real normed space, the codomain may carry an arbitrary finite-dimensional
 norm, and `ν` may be any normalization of additive Haar measure. -/
 theorem _root_.DifferentiableOn.addHaar_image_eq_zero_of_dimH_lt_finrank
-    (hf : DifferentiableOn ℝ f s) (hsF : dimH s < finrank ℝ F) : ν (f '' s) = 0 := by
-  have hν : ν ≪ (μH[(finrank ℝ F : ℝ)] : Measure F) :=
-    absolutelyContinuous_isAddHaarMeasure ν _
-  apply measure_zero_of_dimH_lt (d := (finrank ℝ F : NNReal)) hν
-  simpa only [ENNReal.coe_natCast] using
-    hf.dimH_image_le.trans_lt hsF
+    (hf : DifferentiableOn ℝ f s) (hsF : dimH s < finrank ℝ F) : ν (f '' s) = 0 :=
+  addHaar_eq_zero_of_dimH_lt_finrank ν (hf.dimH_image_le.trans_lt hsF)
 
 /-- A differentiable map from a finite-dimensional real normed space to a strictly
 higher-dimensional one sends every subset of its domain to an additive-Haar-null set. -/

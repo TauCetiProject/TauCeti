@@ -40,7 +40,6 @@ arbitrary finite coefficient field satisfying those two conditions; `ZMod p` has
 
 * J. D. Dixon, *High speed computation of group characters*, Numerische Mathematik 10 (1967),
   446--450.
-* The roadmap `RepresentationTheory/CharacterTheory`, Layer 6, "The good-prime structure theorem".
 -/
 
 public section

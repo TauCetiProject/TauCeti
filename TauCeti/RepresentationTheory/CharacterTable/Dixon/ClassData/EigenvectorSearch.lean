@@ -53,9 +53,6 @@ specialization is
 
 ## References
 
-This advances Layer 6, "The eigenvector search", of the
-[character theory roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/CharacterTheory/README.md).
-
 * J. D. Dixon, *High speed computation of group characters*, Numerische Mathematik 10 (1967),
   446--450.
 * G. Schneider, *Dixon's character table algorithm revisited*, J. Symbolic Comput. 9 (1990),
