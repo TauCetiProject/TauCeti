@@ -13,21 +13,16 @@ import Mathlib.LinearAlgebra.Projection
 # Orthogonal complements of bilinear forms
 
 This file records facts about the orthogonal complement `LinearMap.BilinForm.orthogonal`
-that Mathlib lacks. A vector lies in the orthogonal complement of the span of one or two vectors
-exactly when it is orthogonal to each of them. Adjoining a vector `x` whose self-pairing is a
-non-zero-divisor dividing all its pairings (over a field: a non-isotropic vector) to an orthogonal
-basis of the orthogonal complement of `x` gives an orthogonal basis of the whole module, for a
-reflexive form; this is the inductive step of every diagonalization argument, over a field as over
-a valuation ring.
+that Mathlib lacks. Adjoining a vector `x` whose self-pairing is a non-zero-divisor dividing all
+its pairings (over a field: a non-isotropic vector) to an orthogonal basis of the orthogonal
+complement of `x` gives an orthogonal basis of the whole module, for a reflexive form; this is the
+inductive step of every diagonalization argument, over a field as over a valuation ring.
 Adjoining an orthogonal vector whose self-pairing is a right non-zero-divisor to a left-separating
 subspace of a reflexive bilinear space produces a nondegenerate restriction; this is the
 structural step used when a Cartan--Dieudonne argument enlarges a fixed subspace.
 
 ## Main results
 
-* `LinearMap.BilinForm.mem_orthogonal_span_singleton_iff`,
-  `LinearMap.BilinForm.mem_orthogonal_span_pair_iff`: membership in the orthogonal complement of
-  the span of one or two vectors.
 * `LinearMap.BilinForm.IsRefl.exists_orthogonal_basis_of_orthogonal_span_singleton`: an
   orthogonal basis of `x^⊥` extends by `x` to an orthogonal basis of the whole space.
 * `TauCeti.BilinForm.restrict_nondegenerate_sup_span_singleton`: adjoining an orthogonal vector
@@ -47,27 +42,6 @@ structural step used when a Cartan--Dieudonne argument enlarges a fixed subspace
 -/
 
 public section
-
-namespace LinearMap.BilinForm
-
-variable {K V : Type*} [CommSemiring K] [AddCommMonoid V] [Module K V]
-
-/-- A vector is orthogonal to the span of a vector `x` exactly when it is orthogonal to `x`. -/
-theorem mem_orthogonal_span_singleton_iff (B : LinearMap.BilinForm K V) {x y : V} :
-    y ∈ B.orthogonal (K ∙ x) ↔ B x y = 0 := by
-  rw [orthogonal, Submodule.orthogonalBilin_span_singleton, LinearMap.mem_ker]
-
-/-- A vector is orthogonal to the span of two vectors exactly when it is orthogonal to both. -/
-theorem mem_orthogonal_span_pair_iff (B : LinearMap.BilinForm K V) {x y z : V} :
-    z ∈ B.orthogonal (Submodule.span K {x, y}) ↔ B x z = 0 ∧ B y z = 0 := by
-  constructor
-  · intro hz
-    exact ⟨hz x (Submodule.subset_span (by simp)), hz y (Submodule.subset_span (by simp))⟩
-  · rintro ⟨hx, hy⟩ n hn
-    obtain ⟨a, b, rfl⟩ := Submodule.mem_span_pair.1 hn
-    simp [hx, hy]
-
-end LinearMap.BilinForm
 
 namespace TauCeti
 
@@ -270,8 +244,8 @@ theorem IsRefl.exists_orthogonal_basis_of_orthogonal_span_singleton {B : LinearM
   refine Fin.cases ?_ (fun i => ?_) i <;> refine Fin.cases ?_ (fun j => ?_) j <;> intro hij <;>
     simp only [Fin.cons_zero, Fin.cons_succ, Function.comp_apply]
   · exact (hij rfl).elim
-  · exact (mem_orthogonal_span_singleton_iff B).1 (v j).2
-  · exact hB.eq_zero ((mem_orthogonal_span_singleton_iff B).1 (v i).2)
+  · exact Submodule.mem_orthogonalBilin_span.1 (v j).2 (Set.mem_singleton x)
+  · exact hB.eq_zero (Submodule.mem_orthogonalBilin_span.1 (v i).2 (Set.mem_singleton x))
   · simpa using iIsOrtho_def.1 hv i j fun h => hij (congrArg Fin.succ h)
 
 /-- A vector with unit self-pairing spans an orthogonal direct summand. -/

@@ -275,14 +275,15 @@ theorem IsSymm.exists_orthogonal_basis_isUnit_of_isUnit_det [IsLocalRing R] (hB 
     have : Free R N := free_of_flat_of_isLocalRing
     have hli : ∀ a : R, ∀ y ∈ N, a • x + y = 0 → a = 0 := by
       intro a y hy hay
-      have hxy : B x y = 0 := (mem_orthogonal_span_singleton_iff B).mp hy
+      have hxy : B x y = 0 := Submodule.mem_orthogonalBilin_span.1 hy (Set.mem_singleton x)
       have := congrArg (B x) hay
       simp only [map_add, map_smul, smul_eq_mul, hxy, add_zero, map_zero] at this
       exact (mem_nonZeroDivisors_iff_right.mp hxx.mem_nonZeroDivisors) a this
     have hsp : ∀ z : M, ∃ a : R, z + a • x ∈ N := by
       intro z
       obtain ⟨a, ha⟩ := (hxx.dvd : B x x ∣ B x z)
-      refine ⟨-a, (mem_orthogonal_span_singleton_iff B).mpr ?_⟩
+      refine ⟨-a, Submodule.mem_orthogonalBilin_span.2 ?_⟩
+      rintro _ rfl
       simp only [map_add, map_smul, smul_eq_mul, ha]
       ring
     -- The split basis also computes the complement's rank and its unit Gram determinant.
@@ -301,7 +302,7 @@ theorem IsSymm.exists_orthogonal_basis_isUnit_of_isUnit_det [IsLocalRing R] (hB 
         intro j
         simpa only [toMatrix_apply, c₁, Basis.coe_mkFinCons, Fin.cons_zero,
           Fin.cons_succ, Function.comp_apply] using
-          (mem_orthogonal_span_singleton_iff B).mp (v j).property
+          Submodule.mem_orthogonalBilin_span.1 (v j).property (Set.mem_singleton x)
       simp only [hzero, mul_zero, zero_mul, Finset.sum_const_zero, add_zero,
         Fin.val_zero, pow_zero, one_mul, Fin.succAbove_zero]
       congr 1
@@ -360,8 +361,8 @@ private theorem IsSymm.exists_apply_self_ne_zero_and_not_isAlt_restrict_orthogon
   obtain ⟨u, w, huw⟩ : ∃ u w : B.orthogonal (K ∙ x), B u w ≠ 0 := by
     by_contra! h
     exact hne (LinearMap.ext fun u => LinearMap.ext fun w => by simpa using h u w)
-  have hxu : B x u = 0 := (mem_orthogonal_span_singleton_iff B).1 u.2
-  have hxw : B x w = 0 := (mem_orthogonal_span_singleton_iff B).1 w.2
+  have hxu : B x u = 0 := Submodule.mem_orthogonalBilin_span.1 u.2 (Set.mem_singleton x)
+  have hxw : B x w = 0 := Submodule.mem_orthogonalBilin_span.1 w.2 (Set.mem_singleton x)
   have huu : B u u = 0 := by simpa using halt u
   have hww : B w w = 0 := by simpa using halt w
   set z := x + u with hz
@@ -370,7 +371,7 @@ private theorem IsSymm.exists_apply_self_ne_zero_and_not_isAlt_restrict_orthogon
   refine ⟨z, hzz ▸ hx, fun halt' => huw ?_⟩
   obtain ⟨c, hc⟩ : ∃ c, c * B z z = B z w := ⟨B z w / B z z, div_mul_cancel₀ _ (hzz ▸ hx)⟩
   have hw' : w - c • z ∈ B.orthogonal (K ∙ z) :=
-    (mem_orthogonal_span_singleton_iff B).2 (by simp [hc])
+    Submodule.mem_orthogonalBilin_span.2 (by simp [hc])
   have h0 : B w w - c * B z w - c * (B z w - c * B z z) = 0 := by
     simpa [hB.eq w z] using halt' ⟨w - c • z, hw'⟩
   have hcb : c * B z w = 0 := by linear_combination -h0 + c * hc + hww

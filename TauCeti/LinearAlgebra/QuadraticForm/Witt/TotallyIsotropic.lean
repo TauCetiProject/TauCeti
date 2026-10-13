@@ -70,7 +70,7 @@ variable {V : Type v} [AddCommGroup V] [Module K V] {Q : QuadraticForm K V}
 private theorem mem_orthogonal_span_pair_iff_polar {v : V} :
     v ∈ LinearMap.BilinForm.orthogonal Q.polarBilin (Submodule.span K {w, f}) ↔
       polar Q w v = 0 ∧ polar Q f v = 0 := by
-  simp only [LinearMap.BilinForm.mem_orthogonal_span_pair_iff, polarBilin_apply_apply]
+  simp [LinearMap.BilinForm.orthogonal]
 
 /-- Subtracting `polar Q f v • w` moves `v ∈ W` into `U`. -/
 private theorem sub_polar_smul_mem_orthogonal_span_pair (hTI : Q.IsTotallyIsotropic W)
