@@ -39,8 +39,13 @@ class ScopeApprovalTests(unittest.TestCase):
                       2: [dict(filename='TauCeti/Example.lean', status='modified')]}
 
     def api(self, path):
-        if path.startswith('collaborators?'):
-            return copy.deepcopy(self.admins)
+        if path.startswith('/user/'):
+            actor = int(path.split('/')[-1])
+            return dict(id=actor, login=f'actor-{actor}')
+        if path.startswith('collaborators/'):
+            actor = int(path.split('/')[1].split('-')[-1])
+            is_admin = any(a['id'] == actor for a in self.admins)
+            return dict(user=dict(id=actor), permission='admin' if is_admin else 'write')
         if path.startswith('compare/'):
             return dict(merge_base_commit=dict(sha=BASE))
         parts = path.split('/')
@@ -84,23 +89,34 @@ class ScopeApprovalTests(unittest.TestCase):
         self.assertFalse(self.batch())
 
     def test_missing_or_malformed_roles_fail_closed(self):
-        for admins in [None, [dict(id=1001, permissions=dict(admin=False))],
-                       [dict(id='1001', permissions=dict(admin=True))]]:
-            self.admins = admins
-            with self.assertRaises(ValueError):
-                self.batch()
+        for result in [None, dict(user=dict(id=999), permission='admin')]:
+            def api(path):
+                return result if path.startswith('collaborators/') else self.api(path)
+            with self.assertRaises((ValueError, AttributeError)):
+                self.batch_with_api(api)
         def unavailable(path):
             raise subprocess.CalledProcessError(403, 'gh')
         with self.assertRaises(subprocess.CalledProcessError):
             policy.verify(self.data, HEAD, BASE, pr=1, api=unavailable)
 
-    def test_administrator_list_is_paginated(self):
-        first = [dict(id=i, permissions=dict(admin=True)) for i in range(1, 101)]
+    def batch_with_api(self, api):
+        return policy.verify(self.data, STAGING, BASE, batch_id=12,
+            combined_paths=['scripts/test.sh', 'TauCeti/Example.lean'], api=api)
+
+    def test_renamed_account_is_resolved_from_stable_id(self):
         def api(path):
-            if path.startswith('collaborators?'):
-                return first if path.endswith('page=1') else self.admins
+            if path == '/user/1001':
+                return dict(id=1001, login='new-name')
+            if path == 'collaborators/new-name/permission':
+                return dict(user=dict(id=1001), permission='admin')
             return self.api(path)
-        self.assertTrue(policy.verify(self.data, HEAD, BASE, pr=1, api=api))
+        self.assertTrue(self.batch_with_api(api))
+
+    def test_effective_permission_is_used_without_listing_collaborators(self):
+        def api(path):
+            self.assertNotIn('collaborators?', path)
+            return self.api(path)
+        self.assertTrue(self.batch_with_api(api))
 
     def test_only_actual_maintainer_and_exact_diff_count(self):
         for change in [dict(actor_id=999), dict(head_sha=SECOND), dict(merge_base_sha=SECOND), dict(pr=2)]:
