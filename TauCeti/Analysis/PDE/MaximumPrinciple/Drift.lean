@@ -304,40 +304,6 @@ theorem UniformlyEllipticOn.value_le_const_of_forall_eLpNorm_le
     h.ofReal_le_mul_measure_rpow_of_not_ae_value_le hcoeff hb_bound hc_nonneg hq hsob hk
       (hl j).1 hboundary hu (hl j).2) zero_le)
 
-omit [DecidableEq ι] in
-/-- On an open set of finite measure in `ℝⁿ`, `n ≥ 1`, the Sobolev inequality
-`‖w‖_q ≤ S ‖∇w‖₂` holds on `H¹₀(Ω)` for some exponent `q > 2`. -/
-private theorem exists_forall_eLpNorm_le_of_measure_ne_top [Nonempty ι] (hOmega : mu Omega ≠ ∞) :
-    ∃ q : ℝ≥0∞, 2 < q ∧ ∃ S : ℝ≥0, ∀ v ∈ w1p0Submodule mu Omega 2,
-      eLpNorm (W1p.value v) q (mu.restrict Omega) ≤ S * ‖W1p.gradient v‖ₑ := by
-  -- The Sobolev inequality on sets of finite measure, at `1/q = 1/2 - δ` with `δ = 1/(4n)`.
-  set n : ℝ := (Module.finrank ℝ (EuclideanSpace ℝ ι) : ℝ)
-  have hn : 1 ≤ n := by
-    simp only [n, finrank_euclideanSpace]
-    exact_mod_cast Fintype.card_pos
-  set δ : ℝ := (4 * n)⁻¹
-  have hδn : δ < n⁻¹ := by
-    rw [inv_lt_inv₀ (by positivity) (by positivity)]
-    linarith
-  have hδ2 : δ < 2⁻¹ := by
-    rw [inv_lt_inv₀ (by positivity) two_pos]
-    linarith
-  set q : ℝ≥0 := Real.toNNReal (2⁻¹ - δ)⁻¹
-  have hq : (q : ℝ) = (2⁻¹ - δ)⁻¹ := Real.coe_toNNReal _ (inv_nonneg.2 (by linarith))
-  have hq2 : (2 : ℝ≥0∞) < q := by
-    have : (2 : ℝ) < q := by
-      rw [hq, lt_inv_comm₀ two_pos (by linarith)]
-      linarith [(by positivity : 0 < δ)]
-    exact_mod_cast this
-  set C : ℝ≥0∞ := ENNReal.ofReal (n⁻¹ * mu.real (Metric.ball 0 1) ^ (-n⁻¹) *
-    ((1 - δ) / (n⁻¹ - δ)) ^ (1 - δ)) * mu Omega ^ (n⁻¹ - δ)
-  have hC : C ≠ ∞ := ENNReal.mul_ne_top ENNReal.ofReal_ne_top
-    (ENNReal.rpow_ne_top_of_nonneg (by linarith) hOmega)
-  refine ⟨q, hq2, C.toNNReal, fun v hv ↦ ?_⟩
-  rw [ENNReal.coe_toNNReal hC]
-  exact W1p.eLpNorm_value_le_mul_measure_rpow_mul_enorm_gradient_of_lt (by norm_num) hOmega
-    (by exact_mod_cast hq2.le) (by rw [ENNReal.toReal_ofNat, hq, inv_inv]; ring) hδn hv
-
 /-- **The weak maximum principle with bounded drift.** Let `Ω ⊆ ℝⁿ`, `n ≥ 1`, be open with finite
 measure, and let `L u = -∂ⱼ(aⁱʲ ∂ᵢu) + bⁱ ∂ᵢu + c u` have measurable, uniformly elliptic `a` with
 constants `λ, Λ`, measurable `b` with `‖b‖ ≤ β` and measurable `c` with `0 ≤ c ≤ γ`. If
@@ -358,7 +324,9 @@ theorem UniformlyEllipticOn.value_le_const_of_measure_ne_top [Nonempty ι]
       (∀ᵐ x ∂mu.restrict Omega, 0 ≤ W1p.value (v : W1p mu Omega 2) x) →
         energyFormH1 a b c u (v : W1p mu Omega 2) ≤ 0) :
     ∀ᵐ x ∂mu.restrict Omega, W1p.value u x ≤ k := by
-  obtain ⟨q, hq, S, hsob⟩ := exists_forall_eLpNorm_le_of_measure_ne_top hOmega
+  obtain ⟨q, hq, S, hsob⟩ :=
+    W1p.exists_forall_eLpNorm_value_le_mul_enorm_gradient_of_measure_ne_top (p := 2) (by norm_num)
+      hOmega
   exact h.value_le_const_of_forall_eLpNorm_le ha hb hc hb_bound hc_bound hc_nonneg hq hsob hk
     hboundary hu
 
@@ -415,7 +383,9 @@ theorem UniformlyEllipticOn.value_le_of_measure_ne_top [Nonempty ι]
         energyFormH1 a b c u (w : W1p mu Omega 2) ≤
           energyFormH1 a b c v (w : W1p mu Omega 2)) :
     ∀ᵐ x ∂mu.restrict Omega, W1p.value u x ≤ W1p.value v x := by
-  obtain ⟨q, hq, S, hsob⟩ := exists_forall_eLpNorm_le_of_measure_ne_top hOmega
+  obtain ⟨q, hq, S, hsob⟩ :=
+    W1p.exists_forall_eLpNorm_value_le_mul_enorm_gradient_of_measure_ne_top (p := 2) (by norm_num)
+      hOmega
   exact h.value_le_of_forall_eLpNorm_le ha hb hc hb_bound hc_bound hc_nonneg hq hsob hboundary huv
 
 /-- **Uniqueness for the Dirichlet problem with bounded drift**, under a Sobolev inequality.
@@ -462,7 +432,9 @@ theorem UniformlyEllipticOn.eq_of_isWeakSolutionDirichlet_of_mass_nonneg_of_meas
     (hOmega : mu Omega ≠ ∞) {f : Lp ℝ 2 (mu.restrict Omega)} {u v : W1p0 mu Omega 2}
     (hu : IsWeakSolutionDirichlet a b c f u) (hv : IsWeakSolutionDirichlet a b c f v) :
     u = v := by
-  obtain ⟨q, hq, S, hsob⟩ := exists_forall_eLpNorm_le_of_measure_ne_top hOmega
+  obtain ⟨q, hq, S, hsob⟩ :=
+    W1p.exists_forall_eLpNorm_value_le_mul_enorm_gradient_of_measure_ne_top (p := 2) (by norm_num)
+      hOmega
   exact h.eq_of_isWeakSolutionDirichlet_of_mass_nonneg_of_forall_eLpNorm_le ha hb hc hb_bound
     hc_bound hc_nonneg hq hsob hu hv
 
