@@ -108,6 +108,30 @@ theorem exists_pow_eq_of_residue_pow_eq {R : Type*} [CommRing R] [HenselianLocal
   refine ⟨x, by simpa [sub_eq_zero] using hx, ?_⟩
   exact (Ideal.Quotient.eq).mpr hres
 
+/-- The substitution `X = c / U` behind Hensel's lemma without monicity: if `g` has degree `k + 1`
+and constant coefficient `c`, and `V * U = 1`, then
+`g(c V) U^(k+1) = c (U^(k+1) + ∑ᵢ gᵢ₊₁ cⁱ U^(k−i))`. -/
+private theorem eval_mul_mul_pow_eq {R : Type*} [CommRing R] (g : R[X]) {k : ℕ}
+    (hk : g.natDegree = k + 1) {U V : R} (hVU : V * U = 1) :
+    g.eval (g.coeff 0 * V) * U ^ (k + 1) = g.coeff 0 * (X ^ (k + 1) +
+      ∑ i ∈ Finset.range (k + 1), C (g.coeff (i + 1) * g.coeff 0 ^ i) * X ^ (k - i)).eval U := by
+  rw [eval_eq_sum_range, hk, Finset.sum_range_succ']
+  simp only [eval_add, eval_pow, eval_X, eval_finsetSum, eval_mul, eval_C, pow_zero, mul_one,
+    add_mul, Finset.sum_mul, mul_add, Finset.mul_sum]
+  rw [add_comm]
+  congr 1
+  refine Finset.sum_congr rfl fun i hi ↦ ?_
+  have hik : U ^ (k + 1) = U ^ (k - i) * U ^ (i + 1) := by
+    rw [← pow_add]
+    congr 1
+    have := Finset.mem_range.1 hi
+    omega
+  rw [hik]
+  calc g.coeff (i + 1) * (g.coeff 0 * V) ^ (i + 1) * (U ^ (k - i) * U ^ (i + 1))
+      = g.coeff 0 * (g.coeff (i + 1) * g.coeff 0 ^ i * U ^ (k - i)) * (V * U) ^ (i + 1) := by ring
+    _ = g.coeff 0 * (g.coeff (i + 1) * g.coeff 0 ^ i * U ^ (k - i)) := by
+      rw [hVU, one_pow, mul_one]
+
 /-- Hensel's lemma without monicity at the approximate root `0`: if the constant coefficient of
 `g` lies in the maximal ideal and its linear coefficient is a unit, then `g` has a root in the
 maximal ideal. -/
@@ -130,10 +154,7 @@ private theorem exists_mem_maximalIdeal_eval_eq_zero {R : Type*} [CommRing R]
   -- The reduction of `m` is `X ^ k * (X + u)`, with the simple root `-u`.
   have hmap : m.map (residue R) = X ^ k * (X + C (residue R u)) := by
     have hc0 : residue R c = 0 := (residue_eq_zero_iff c).2 hc𝔪
-    simp only [hm, Polynomial.map_add, Polynomial.map_pow, map_X, Polynomial.map_sum,
-      Polynomial.map_mul, map_C, Finset.sum_range_succ', map_mul, map_pow, hc0, pow_succ,
-      mul_zero, map_zero, zero_mul, Finset.sum_const_zero, zero_add, pow_zero, mul_one,
-      Nat.sub_zero, ← hu]
+    simp [hm, Polynomial.map_sum, Finset.sum_range_succ', pow_succ, hc0, ← hu]
     ring
   have hres (p : R[X]) (x : R) : residue R (p.eval x) = (p.map (residue R)).eval (residue R x) := by
     rw [eval_map, eval₂_at_apply]
@@ -153,22 +174,7 @@ private theorem exists_mem_maximalIdeal_eval_eq_zero {R : Type*} [CommRing R]
     exact neg_ne_zero.2 hu0
   set V := hUunit.unit⁻¹
   have hVU : (V : R) * U = 1 := hUunit.val_inv_mul
-  have hkey : g.eval (c * V) * U ^ (k + 1) = c * m.eval U := by
-    rw [eval_eq_sum_range, hk, Finset.sum_range_succ', hm]
-    simp only [eval_add, eval_pow, eval_X, eval_finsetSum, eval_mul, eval_C, pow_zero, mul_one,
-      ← hc, add_mul, Finset.sum_mul, mul_add, Finset.mul_sum]
-    rw [add_comm]
-    congr 1
-    refine Finset.sum_congr rfl fun i hi ↦ ?_
-    have hik : U ^ (k + 1) = U ^ (k - i) * U ^ (i + 1) := by
-      rw [← pow_add]
-      congr 1
-      have := Finset.mem_range.1 hi
-      omega
-    rw [hik]
-    calc g.coeff (i + 1) * (c * V) ^ (i + 1) * (U ^ (k - i) * U ^ (i + 1))
-        = c * (g.coeff (i + 1) * c ^ i * U ^ (k - i)) * ((V : R) * U) ^ (i + 1) := by ring
-      _ = c * (g.coeff (i + 1) * c ^ i * U ^ (k - i)) := by rw [hVU, one_pow, mul_one]
+  have hkey : g.eval (c * V) * U ^ (k + 1) = c * m.eval U := eval_mul_mul_pow_eq g hk hVU
   refine ⟨c * V, (maximalIdeal R).mul_mem_right _ hc𝔪, ?_⟩
   rw [hU.eq_zero, mul_zero] at hkey
   exact ((hUunit.pow (k + 1)).mul_left_eq_zero).1 hkey

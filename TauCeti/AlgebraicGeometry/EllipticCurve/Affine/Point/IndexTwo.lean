@@ -12,6 +12,8 @@ public import Mathlib.FieldTheory.Perfect
 import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Singular
 -- Proof-only: Step 2 of Tate's algorithm, reduction singular at the origin.
 import TauCeti.AlgebraicGeometry.EllipticCurve.TateAlgorithm.Basic
+-- Proof-only: index two from the sums of points outside a subgroup.
+import TauCeti.GroupTheory.Index.Two
 -- Proof-only: Hensel's lemma for a polynomial that is not monic.
 import TauCeti.RingTheory.Henselian.Basic
 -- Proof-only: a double root of the tangent quadratic over a perfect residue field.
@@ -27,8 +29,9 @@ reduction form the subgroup `E₀(F)` of `W(F)` (`WeierstrassCurve.Affine.nonsin
 When `F` is complete for a discrete valuation with perfect residue field and the equation is
 minimal, the index `[E(F) : E₀(F)]` is the local index `c_v` that Tate's algorithm computes
 (Silverman, *Advanced Topics*, IV.9, Table 4.1). This file computes the index at the reduction
-symbol `III`, where `c_v = 2`, and shows that it divides `2` at a nonsplit node, where `c_v` is
-`1` or `2`.
+symbol `III`, where `c_v = 2`, and shows that it divides `2` when the tangent quadratic at the
+singular point has no root in the residue field. Over a perfect residue field this is a nonsplit
+node, where `c_v` is `1` or `2`.
 
 The points of `W(F)` outside `E₀(F)` are the affine points `(x, y)` with `x, y ∈ 𝔪`
 (`WeierstrassCurve.Affine.some_notMem_nonsingularReduction_iff`). Let `P = (x₁, y₁)` and
@@ -39,10 +42,10 @@ Weierstrass cubic restricted to the line, with `ν = y₁ − ℓ x₁`,
 
 `a₄ − a₃ ℓ − (2 ℓ + a₁) ν = x₁ x₂ + x₁ x₃ + x₂ x₃ ∈ 𝔪²`.
 
-So the residue of `ℓ` is a root of the tangent quadratic `T² + a₁ T − a₂`. At a nonsplit node there
-is no such root, and at the symbol `III`, where `ϖ ∣ b₂`, `ϖ ∣ a₃`, `ϖ ∣ a₄`, `ϖ² ∣ a₆` and
-`ϖ³ ∤ b₈` for a generator `ϖ` of `𝔪`, the root is double, so `2 ℓ + a₁ ∈ 𝔪` and `a₄ ≡ a₃ ℓ`
-modulo `ϖ²`. Then
+So the residue of `ℓ` is a root of the tangent quadratic `T² + a₁ T − a₂`. When that quadratic has
+no root in `k` this is impossible, and at the symbol `III`, where `ϖ ∣ b₂`, `ϖ ∣ a₃`, `ϖ ∣ a₄`,
+`ϖ² ∣ a₆` and `ϖ³ ∤ b₈` for a generator `ϖ` of `𝔪`, the root is double, so `2 ℓ + a₁ ∈ 𝔪` and
+`a₄ ≡ a₃ ℓ` modulo `ϖ²`. Then
 
 `b₈ = b₂ a₆ − (a₄ − a₃ ℓ) (a₄ + a₃ ℓ + a₁ a₃) − a₃² (ℓ² + a₁ ℓ − a₂)`
 
@@ -67,9 +70,9 @@ The cases `c_v = 1` are `WeierstrassCurve.Affine.nonsingularReduction_eq_top_of_
   at the origin, an affine point has singular reduction exactly when both of its coordinates lie in
   the maximal ideal.
 * `WeierstrassCurve.Affine.add_mem_nonsingularReduction_of_nonsplit` and
-  `WeierstrassCurve.Affine.index_nonsingularReduction_dvd_two_of_nonsplit`: at a node whose tangent
-  quadratic has no root in the residue field, the sum of two points with singular reduction has
-  nonsingular reduction, and `[E(F) : E₀(F)]` divides `2`.
+  `WeierstrassCurve.Affine.index_nonsingularReduction_dvd_two_of_nonsplit`: when the tangent
+  quadratic at the singular point has no root in the residue field, the sum of two points with
+  singular reduction has nonsingular reduction, and `[E(F) : E₀(F)]` divides `2`.
 * `WeierstrassCurve.Affine.add_mem_nonsingularReduction_of_isTateTerminal_III` and
   `WeierstrassCurve.Affine.index_nonsingularReduction_dvd_two_of_isTateTerminal_III`: the same at
   the reduction symbol `III`.
@@ -113,46 +116,6 @@ namespace Affine
 variable {F Γ₀ : Type*} [Field F] [LinearOrderedCommGroupWithZero Γ₀] (v : Valuation F Γ₀)
   {W : Affine F} [IsIntegral v.valuationSubring W]
 
-/-- An integral solution of `W` is a solution of its integral model. -/
-private theorem equation_integralModel {x y : v.valuationSubring}
-    (h : W.Equation (x : F) (y : F)) :
-    (integralModel v.valuationSubring W).toAffine.Equation x y := by
-  have h' : ((integralModel v.valuationSubring W).baseChange F).toAffine.Equation x y := by
-    rw [baseChange_integralModel_eq]
-    exact h
-  exact (map_equation _ Subtype.val_injective x y).mp h'
-
-/-- **The slope of a chord with integral `x`-coordinates is integral.** If `x₁`, `x₂` and the
-`x`-coordinate `x₃ = ℓ² + a₁ ℓ − a₂ − x₁ − x₂` of the third intersection point are integral, then
-so is `ℓ`: otherwise `ℓ⁻¹ ∈ 𝔪` and `1 = ℓ⁻² (x₃ + a₂ + x₁ + x₂) − a₁ ℓ⁻¹ ∈ 𝔪`. -/
-private theorem valuation_le_one_of_valuation_addX_le_one {x₁ x₂ ℓ : F} (h₁ : v x₁ ≤ 1)
-    (h₂ : v x₂ ≤ 1) (h₃ : v (W.addX x₁ x₂ ℓ) ≤ 1) : v ℓ ≤ 1 := by
-  set O := v.valuationSubring
-  by_contra hℓ
-  have hℓ0 : ℓ ≠ 0 := fun h0 ↦ hℓ (by simp [h0])
-  have hlt : v ℓ⁻¹ < 1 := (v.one_lt_val_iff hℓ0).1 (not_le.1 hℓ)
-  set w : O := ⟨ℓ⁻¹, (v.mem_valuationSubring_iff _).2 hlt.le⟩
-  have hw : w ∈ maximalIdeal O := (Valuation.mem_maximalIdeal_iff (v := v)).2 hlt
-  set X₁ : O := ⟨x₁, (v.mem_valuationSubring_iff _).2 h₁⟩
-  set X₂ : O := ⟨x₂, (v.mem_valuationSubring_iff _).2 h₂⟩
-  set X₃ : O := ⟨_, (v.mem_valuationSubring_iff _).2 h₃⟩
-  have h1 : (1 : O) =
-      w ^ 2 * (X₃ + (integralModel O W).a₂ + X₁ + X₂) - (integralModel O W).a₁ * w := by
-    have ha₁ : (((integralModel O W).a₁ : O) : F) = W.a₁ := by
-      simpa using integralModel_a₁_eq O W
-    have ha₂ : (((integralModel O W).a₂ : O) : F) = W.a₂ := by
-      simpa using integralModel_a₂_eq O W
-    apply Subtype.ext
-    push_cast
-    rw [ha₁, ha₂]
-    simp only [w, X₁, X₂, X₃, addX]
-    field_simp
-    ring
-  have hm : (1 : O) ∈ maximalIdeal O := h1 ▸ sub_mem
-    ((maximalIdeal O).mul_mem_right _ ((maximalIdeal O).pow_mem_of_mem hw 2 two_pos))
-    ((maximalIdeal O).mul_mem_left _ hw)
-  exact (mem_maximalIdeal _).1 hm isUnit_one
-
 variable [DecidableEq F]
 
 /-- **When the reduction is singular at the origin, the points with singular reduction are the
@@ -172,8 +135,8 @@ theorem some_notMem_nonsingularReduction_iff
       hn (mem_nonsingularReduction_of_one_lt v (by rwa [Point.xCoord_some]))
     rw [some_mem_nonsingularReduction_iff v h hx] at hn
     have hy := valuation_y_le_one_of_valuation_x_le_one v h.left hx
-    have hE := (equation_integralModel v (x := ⟨x, (v.mem_valuationSubring_iff x).mpr hx⟩)
-      (y := ⟨y, (v.mem_valuationSubring_iff y).mpr hy⟩) h.left).map (residue _)
+    have hE := ((equation_integralModel_iff v (x := ⟨x, (v.mem_valuationSubring_iff x).mpr hx⟩)
+      (y := ⟨y, (v.mem_valuationSubring_iff y).mpr hy⟩)).2 h.left).map (residue _)
     obtain ⟨hx0, hy0⟩ := eq_of_isSingular_of_isSingular
       (isSingular_iff_equation_and_not_nonsingular.2 ⟨hE, hn⟩) h0
     exact ⟨(Valuation.mem_maximalIdeal_iff (v := v)).1 ((residue_eq_zero_iff _).1 hx0),
@@ -263,13 +226,15 @@ private theorem exists_slope_of_notMem_nonsingularReduction
     exact add_mem (add_mem (Ideal.mul_mem_mul hX₁ hX₂) (Ideal.mul_mem_mul hX₁ hX₃))
       (Ideal.mul_mem_mul hX₂ hX₃)
 
-/-! ### A nonsplit node -/
+/-! ### A tangent quadratic with no root -/
 
-/-- **At a nonsplit node, the sum of two points with singular reduction has nonsingular
-reduction.** Here the reduction of the integral model is singular at the origin and its tangent
-quadratic `T² + a₁ T − a₂` has no root in the residue field, so that the tangent directions at the
-node are not rational. For a discrete valuation, on a minimal equation, this is nonsplit
-multiplicative reduction. -/
+/-- **When the tangent quadratic has no root, the sum of two points with singular reduction has
+nonsingular reduction.** Here the reduction of the integral model is singular at the origin and its
+tangent quadratic `T² + a₁ T − a₂` has no root in the residue field. When the residue field is
+perfect, or `b₂` is a unit, the singular point is then a node whose tangent directions are not
+rational, and for a discrete valuation, on a minimal equation, this is nonsplit multiplicative
+reduction. Over an imperfect residue field of characteristic `2` the singular point may instead be
+a cusp. -/
 theorem add_mem_nonsingularReduction_of_nonsplit
     (h₃ : (integralModel v.valuationSubring W).a₃ ∈ maximalIdeal v.valuationSubring)
     (h₄ : (integralModel v.valuationSubring W).a₄ ∈ maximalIdeal v.valuationSubring)
@@ -283,10 +248,11 @@ theorem add_mem_nonsingularReduction_of_nonsplit
   obtain ⟨ℓ, _, -, hℓ, -⟩ := exists_slope_of_notMem_nonsingularReduction v h₃ h₄ h₆ hP hQ hPQ
   exact hroot (residue _ ℓ) (by simpa using (residue_eq_zero_iff _).2 hℓ)
 
-/-- **At a nonsplit node, `[E(F) : E₀(F)]` divides `2`.** Here the reduction of the integral model
-is singular at the origin and its tangent quadratic `T² + a₁ T − a₂` has no root in the residue
-field. For a discrete valuation, on a minimal equation with nonsplit multiplicative reduction of
-type `Iₙ`, Tate's algorithm reports the local index `gcd(2, n)`. -/
+/-- **When the tangent quadratic has no root, `[E(F) : E₀(F)]` divides `2`.** Here the reduction of
+the integral model is singular at the origin and its tangent quadratic `T² + a₁ T − a₂` has no root
+in the residue field. When the residue field is perfect, or `b₂` is a unit, this is a nonsplit node;
+for a discrete valuation, on a minimal equation with nonsplit multiplicative reduction of type
+`Iₙ`, Tate's algorithm reports the local index `gcd(2, n)`. -/
 theorem index_nonsingularReduction_dvd_two_of_nonsplit
     (h₃ : (integralModel v.valuationSubring W).a₃ ∈ maximalIdeal v.valuationSubring)
     (h₄ : (integralModel v.valuationSubring W).a₄ ∈ maximalIdeal v.valuationSubring)
@@ -294,13 +260,9 @@ theorem index_nonsingularReduction_dvd_two_of_nonsplit
     (hroot : ∀ t : ResidueField v.valuationSubring,
       t ^ 2 + residue _ (integralModel v.valuationSubring W).a₁ * t -
         residue _ (integralModel v.valuationSubring W).a₂ ≠ 0) :
-    (W.nonsingularReduction v).index ∣ 2 := by
-  refine AddSubgroup.index_dvd_two_iff'.2 ?_
-  by_cases hP : ∃ P, P ∉ W.nonsingularReduction v
-  · obtain ⟨P, hP⟩ := hP
-    exact ⟨P, fun _ ↦ or_iff_not_imp_right.2
-      (add_mem_nonsingularReduction_of_nonsplit v h₃ h₄ h₆ hroot hP)⟩
-  · exact ⟨0, fun Q ↦ Or.inr (by_contra fun hQ ↦ hP ⟨Q, hQ⟩)⟩
+    (W.nonsingularReduction v).index ∣ 2 :=
+  AddSubgroup.index_dvd_two_of_add_mem fun _ _ ↦
+    add_mem_nonsingularReduction_of_nonsplit v h₃ h₄ h₆ hroot
 
 /-- Over a Henselian local ring, the cubic `−ϖ X³ + e₂ X² − e₁ X − γ` with `ϖ, e₂ ∈ 𝔪` and `e₁` a
 unit has a root `X`, at which its derivative `−3 ϖ X² + 2 e₂ X − e₁` is a unit: its reduction is
@@ -375,13 +337,9 @@ uniformiser `ϖ`, stops with the symbol `III`. -/
 theorem index_nonsingularReduction_dvd_two_of_isTateTerminal_III {ϖ : v.valuationSubring}
     (hϖ : maximalIdeal v.valuationSubring = Ideal.span {ϖ})
     (h : (integralModel v.valuationSubring W).IsTateTerminal ϖ .III) :
-    (W.nonsingularReduction v).index ∣ 2 := by
-  refine AddSubgroup.index_dvd_two_iff'.2 ?_
-  by_cases hP : ∃ P, P ∉ W.nonsingularReduction v
-  · obtain ⟨P, hP⟩ := hP
-    exact ⟨P, fun _ ↦ or_iff_not_imp_right.2
-      (add_mem_nonsingularReduction_of_isTateTerminal_III v hϖ h hP)⟩
-  · exact ⟨0, fun Q ↦ Or.inr (by_contra fun hQ ↦ hP ⟨Q, hQ⟩)⟩
+    (W.nonsingularReduction v).index ∣ 2 :=
+  AddSubgroup.index_dvd_two_of_add_mem fun _ _ ↦
+    add_mem_nonsingularReduction_of_isTateTerminal_III v hϖ h
 
 /-- **At the reduction symbol `III`, some point has singular reduction**, when the valuation ring
 is Henselian, for instance complete, and its residue field is perfect. Here `ϖ` generates the
@@ -449,8 +407,8 @@ theorem index_nonsingularReduction_eq_two_of_isTateTerminal_III
     (h : (integralModel v.valuationSubring W).IsTateTerminal ϖ .III) :
     (W.nonsingularReduction v).index = 2 := by
   obtain ⟨P, hP⟩ := exists_notMem_nonsingularReduction_of_isTateTerminal_III v hϖ h
-  exact AddSubgroup.index_eq_two_iff_exists_notMem_and'.2 ⟨P, hP, fun _ ↦
-    or_iff_not_imp_right.2 (add_mem_nonsingularReduction_of_isTateTerminal_III v hϖ h hP)⟩
+  exact AddSubgroup.index_eq_two_of_add_mem
+    (fun _ _ ↦ add_mem_nonsingularReduction_of_isTateTerminal_III v hϖ h) hP
 
 end Affine
 

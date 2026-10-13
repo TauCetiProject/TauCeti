@@ -232,11 +232,8 @@ theorem nonsingularReduction_eq_top_of_forall_not_isSingular
     set x₀ : v.valuationSubring := ⟨x, (v.mem_valuationSubring_iff x).mpr hx⟩
     set y₀ : v.valuationSubring := ⟨y, (v.mem_valuationSubring_iff y).mpr
       (valuation_y_le_one_of_valuation_x_le_one v hxy.left hx)⟩
-    have hE : (integralModel v.valuationSubring W).toAffine.Equation x₀ y₀ := by
-      have hxy' : ((integralModel v.valuationSubring W).baseChange F).toAffine.Equation x y := by
-        rw [baseChange_integralModel_eq]
-        exact hxy.left
-      exact (map_equation _ Subtype.val_injective x₀ y₀).mp hxy'
+    have hE : (integralModel v.valuationSubring W).toAffine.Equation x₀ y₀ :=
+      (equation_integralModel_iff v).2 hxy.left
     by_contra hn
     exact h x₀ y₀ hE (isSingular_iff_equation_and_not_nonsingular.mpr ⟨hE.map _, hn⟩)
   · exact mem_nonsingularReduction_of_one_lt v (by rwa [Point.xCoord_some])
