@@ -52,6 +52,12 @@ namespace TauCeti
 
 variable (k : Type u) [CommRing k]
 
+/-- The monoidal tensor product of morphisms of chain complexes is `HomologicalComplex.tensorHom`
+(by definition of the monoidal structure). -/
+private theorem tensorHom_eq_tensorHom {K₁ K₂ L₁ L₂ : ChainComplex (ModuleCat.{u} k) ℕ}
+    (φ : K₁ ⟶ L₁) (ψ : K₂ ⟶ L₂) : HomologicalComplex.tensorHom φ ψ = φ ⊗ₘ ψ :=
+  (rfl)
+
 /-- The tensor product of the two comparison maps is a quasi-isomorphism: they are homotopy
 equivalences, and the tensor product preserves homotopy equivalences. -/
 instance quasiIso_tensorHom_cubicalToSingular (X Y : TopCat.{u}) :
@@ -68,7 +74,7 @@ instance quasiIso_tensorHom_cubicalToSingular (X Y : TopCat.{u}) :
       (ComplexShape.down ℕ) (cubicalSingularHomotopyEquiv k X).symm
       (cubicalSingularHomotopyEquiv k Y).symm).hom := inferInstance
   rw [e] at this
-  -- `⊗ₘ` of chain complexes is `mapBifunctorMap` by definition
+  rw [HomologicalComplex.tensorHom_eq_mapBifunctorMap]
   exact this
 
 /-- The cubical cross product followed by the comparison map is a quasi-isomorphism: it is
@@ -167,12 +173,10 @@ theorem tensorHom_comp_homologyKunneth_comp_homologyMap_singularCrossProduct (n 
       homologyKunneth ((singularChains k).obj X) ((singularChains k).obj Y) n ≫
         homologyMap (singularCrossProduct k X Y) n =
       cubicalHomologyKunneth k X Y n ≫ homologyMap ((cubicalToSingular k).app (X ⊗ Y)) n := by
-  -- `⊗ₘ` of chain complexes is `HomologicalComplex.tensorHom` by definition
-  erw [← Category.assoc, homologyKunneth_naturality, Category.assoc, ← homologyMap_comp,
+  rw [← Category.assoc, homologyKunneth_naturality, Category.assoc, ← homologyMap_comp,
     cubicalHomologyKunneth_def, Category.assoc, ← homologyMap_comp,
     ← cubicalCrossProductToSingularApp_def, homologyMap_cubicalCrossProductToSingular,
-    singularCrossProductOfCubicalApp_def]
-  rfl
+    singularCrossProductOfCubicalApp_def, tensorHom_eq_tensorHom]
 
 /-- The same statement for the Künneth map of singular homology with coefficients in the ring
 (`TopCat.singularHomologyKunneth`, followed by the unitor `k ⊗ k ≅ k`). -/
