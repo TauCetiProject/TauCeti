@@ -89,6 +89,8 @@ and `T - c` by `T`, is invariant under translation by `c`.
   `TauCeti.ValuationSpectrum.discPointBelow_vle_weightedC_iff` and
   `TauCeti.ValuationSpectrum.discPointBelow_weightedC_vle_iff`: `η_{a,r⁺}` places `T - a` just
   above the constants of norm `r`, and `η_{a,r⁻}` just below them.
+* `TauCeti.ValuationSpectrum.valuation_weightedX_sub_weightedC_of_lt`: a point at which `T - a` is
+  never equal in value to a constant takes on `T - b` the value of `T - a` or of `b - a`.
 * `TauCeti.ValuationSpectrum.valuation_weightedX_sub_weightedC_discPointAbove` and
   `TauCeti.ValuationSpectrum.valuation_weightedX_sub_weightedC_discPointBelow`: the values of
   `η_{a,r±}` on every linear polynomial `T - b`.
@@ -492,6 +494,38 @@ theorem discPointBelow_weightedC_vle_iff (a : K) (ha : ‖a‖ ≤ 1) (hr₀ : 0
     taylorHom_weightedC, add_sub_cancel_right]
   exact closedDiscGaussValuationBelow_weightedC_le_iff hr₀ hr₁ c
 
+omit [IsUltrametricDist K] [CompleteSpace K] in
+/-- If `x(T - a)` is strictly larger than `x(c)` for the constants with `Q c` and strictly smaller
+for the others, then `x(T - b)` is `x(T - a)` when `Q (b - a)` and `x(b - a)` otherwise: write
+`T - b = (T - a) - (b - a)` and apply the ultrametric equality. -/
+theorem valuation_weightedX_sub_weightedC_of_lt {x : closedPolydisc 1 K} {a : K}
+    (Q : K → Prop) [DecidablePred Q]
+    (hlt : ∀ c : K, Q c →
+      x.1.valuation (weightedC (fun _ : Fin 1 ↦ ({1} : Set K)) isWeightFamily_one_weight c) <
+        x.1.valuation (weightedX (fun _ : Fin 1 ↦ ({1} : Set K)) isWeightFamily_one_weight 0 -
+          weightedC _ isWeightFamily_one_weight a))
+    (hgt : ∀ c : K, ¬ Q c →
+      x.1.valuation (weightedX (fun _ : Fin 1 ↦ ({1} : Set K)) isWeightFamily_one_weight 0 -
+          weightedC _ isWeightFamily_one_weight a) <
+        x.1.valuation (weightedC (fun _ : Fin 1 ↦ ({1} : Set K)) isWeightFamily_one_weight c))
+    (b : K) :
+    x.1.valuation (weightedX (fun _ : Fin 1 ↦ ({1} : Set K)) isWeightFamily_one_weight 0 -
+        weightedC _ isWeightFamily_one_weight b) =
+      if Q (b - a) then
+        x.1.valuation (weightedX (fun _ : Fin 1 ↦ ({1} : Set K)) isWeightFamily_one_weight 0 -
+          weightedC _ isWeightFamily_one_weight a)
+      else x.1.valuation (weightedC _ isWeightFamily_one_weight (b - a)) := by
+  have hsplit : weightedX (fun _ : Fin 1 ↦ ({1} : Set K)) isWeightFamily_one_weight 0 -
+      weightedC _ isWeightFamily_one_weight b =
+      (weightedX _ isWeightFamily_one_weight 0 - weightedC _ isWeightFamily_one_weight a) -
+        weightedC _ isWeightFamily_one_weight (b - a) := by
+    rw [map_sub]
+    ring
+  rw [hsplit]
+  split_ifs with hb
+  · exact Valuation.map_sub_eq_of_lt_left _ (hlt _ hb)
+  · exact Valuation.map_sub_eq_of_lt_right _ (hgt _ hb)
+
 /-- **The value of `η_{a,r⁺}` on `T - b`** is its value on `T - a` when `‖b - a‖ ≤ r`, and the
 value of the constant `b - a` otherwise: `T - b = (T - a) - (b - a)`, and `T - a` is strictly
 larger than the constants of norm at most `r` and strictly smaller than the others. -/
@@ -507,19 +541,12 @@ theorem valuation_weightedX_sub_weightedC_discPointAbove (a : K) (ha : ‖a‖ �
       else
         (discPointAbove a ha hr₀ hr₁).1.valuation
           (weightedC _ isWeightFamily_one_weight (b - a)) := by
-  have hsplit : weightedX (fun _ : Fin 1 ↦ ({1} : Set K)) isWeightFamily_one_weight 0 -
-      weightedC _ isWeightFamily_one_weight b =
-      (weightedX _ isWeightFamily_one_weight 0 - weightedC _ isWeightFamily_one_weight a) -
-        weightedC _ isWeightFamily_one_weight (b - a) := by
-    rw [map_sub]
-    ring
-  rw [hsplit]
-  split_ifs with hb
-  · refine Valuation.map_sub_eq_of_lt_left _ (lt_of_not_ge fun h ↦ ?_)
-    rw [valuation_le_iff, discPointAbove_vle_weightedC_iff] at h
-    exact h.not_ge hb
-  · refine Valuation.map_sub_eq_of_lt_right _ (lt_of_not_ge fun h ↦ hb ?_)
-    rwa [valuation_le_iff, discPointAbove_weightedC_vle_iff] at h
+  exact valuation_weightedX_sub_weightedC_of_lt (fun c ↦ ‖c‖ ≤ r)
+    (fun c hc ↦ lt_of_not_ge fun h ↦
+      ((discPointAbove_vle_weightedC_iff a ha hr₀ hr₁ c).mp ((valuation_le_iff _ _ _).mp h)).not_ge
+        hc)
+    (fun c hc ↦ lt_of_not_ge fun h ↦
+      hc ((discPointAbove_weightedC_vle_iff a ha hr₀ hr₁ c).mp ((valuation_le_iff _ _ _).mp h))) b
 
 /-- **The value of `η_{a,r⁻}` on `T - b`** is its value on `T - a` when `‖b - a‖ < r`, and the
 value of the constant `b - a` otherwise: `T - b = (T - a) - (b - a)`, and `T - a` is strictly
@@ -536,19 +563,12 @@ theorem valuation_weightedX_sub_weightedC_discPointBelow (a : K) (ha : ‖a‖ �
       else
         (discPointBelow a ha hr₀ hr₁).1.valuation
           (weightedC _ isWeightFamily_one_weight (b - a)) := by
-  have hsplit : weightedX (fun _ : Fin 1 ↦ ({1} : Set K)) isWeightFamily_one_weight 0 -
-      weightedC _ isWeightFamily_one_weight b =
-      (weightedX _ isWeightFamily_one_weight 0 - weightedC _ isWeightFamily_one_weight a) -
-        weightedC _ isWeightFamily_one_weight (b - a) := by
-    rw [map_sub]
-    ring
-  rw [hsplit]
-  split_ifs with hb
-  · refine Valuation.map_sub_eq_of_lt_left _ (lt_of_not_ge fun h ↦ ?_)
-    rw [valuation_le_iff, discPointBelow_vle_weightedC_iff] at h
-    exact h.not_gt hb
-  · refine Valuation.map_sub_eq_of_lt_right _ (lt_of_not_ge fun h ↦ hb ?_)
-    rwa [valuation_le_iff, discPointBelow_weightedC_vle_iff] at h
+  exact valuation_weightedX_sub_weightedC_of_lt (fun c ↦ ‖c‖ < r)
+    (fun c hc ↦ lt_of_not_ge fun h ↦
+      ((discPointBelow_vle_weightedC_iff a ha hr₀ hr₁ c).mp ((valuation_le_iff _ _ _).mp h)).not_gt
+        hc)
+    (fun c hc ↦ lt_of_not_ge fun h ↦
+      hc ((discPointBelow_weightedC_vle_iff a ha hr₀ hr₁ c).mp ((valuation_le_iff _ _ _).mp h))) b
 
 /-- **Translating recentres `η_{c,r⁺}`**: pulling `η_{c,r⁺}` back along the translation
 `T ↦ T + b` gives `η_{c+b,r⁺}`. -/

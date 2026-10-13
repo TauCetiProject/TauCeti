@@ -99,22 +99,6 @@ private theorem valuation_weightedX_sub_weightedC {x : closedPolydisc 1 K} {a : 
   · rw [hsplit, Valuation.map_sub_eq_of_lt_right]
     exact lt_of_not_ge fun h ↦ hb ((hge _).mp ((valuation_le_iff _ _ _).mp h))
 
-/-- If `x(T - a)` is strictly larger than `x(c)` for the constants with `Q c` and strictly smaller
-for the others, then `x(T - b)` is `x(T - a)` when `Q (b - a)` and `x(b - a)` otherwise. -/
-private theorem valuation_weightedX_sub_weightedC_of_lt {x : closedPolydisc 1 K} {a : K}
-    (Q : K → Prop) [DecidablePred Q]
-    (hlt : ∀ c : K, Q c → x.1.valuation (C c) < x.1.valuation (T - C a))
-    (hgt : ∀ c : K, ¬ Q c → x.1.valuation (T - C a) < x.1.valuation (C c)) (b : K) :
-    x.1.valuation (T - C b) =
-      if Q (b - a) then x.1.valuation (T - C a) else x.1.valuation (C (b - a)) := by
-  have hsplit : T - C b = (T - C a) - C (b - a) := by
-    rw [map_sub]
-    ring
-  rw [hsplit]
-  split_ifs with hb
-  · exact Valuation.map_sub_eq_of_lt_left _ (hlt _ hb)
-  · exact Valuation.map_sub_eq_of_lt_right _ (hgt _ hb)
-
 /-- Under the second condition characterising `η_{a,r}`, `x(T - a) ≠ 0`. -/
 private theorem valuation_weightedX_sub_weightedC_ne_zero {x : closedPolydisc 1 K} {a : K}
     (hr₀ : 0 < r) (hle : ∀ c : K, x.1.toValuativeRel.vle (T - C a) (C c) ↔ r ≤ ‖c‖) :

@@ -53,8 +53,8 @@ equal exactly when their radii agree and each centre lies in the other disc. If
   `TauCeti.ValuationSpectrum.isOpen_closedSubdisc`,
   `TauCeti.ValuationSpectrum.closedSubdisc_mem_spaRationalFamily` and
   `TauCeti.ValuationSpectrum.isCompact_closedSubdisc`: `D(a, |c|)` is the rational subset
-  `R({T - a, c} / c)`, hence open and, for `c` a unit, a member of the rational family and
-  quasi-compact.
+  `R({T - a, c} / c)`, hence open and, when `T - a` and `c` generate an open ideal (for instance
+  when `c` is a unit), a member of the rational family and quasi-compact.
 * `TauCeti.ValuationSpectrum.closedSubdisc_zero_one`: `D(0, 1)` is the whole closed unit disc,
   and `TauCeti.ValuationSpectrum.closedSubdisc_zero_right`: `D(a, |0|)` is empty.
 * `TauCeti.ValuationSpectrum.classicalPoint_mem_closedSubdisc_iff`,
@@ -124,21 +124,23 @@ theorem closedSubdisc_eq_rationalSubset (a c : K) :
   have hv : v.1 ∈ spa (powerBoundedSubring (𝒯 K)) := closedPolydisc_def 1 K ▸ v.2
   simp [hv]
 
-/-- **`D(a, |c|)` belongs to the rational family** of `Spa (K⟨T⟩, K⟨T⟩°)` when `c` is a unit:
-the numerators `T - a` and `c` of `R({T - a, c} / c)` then generate the unit ideal. -/
-theorem closedSubdisc_mem_spaRationalFamily (a : K) {c : K} (hc : IsUnit c) :
+/-- **`D(a, |c|)` belongs to the rational family** of `Spa (K⟨T⟩, K⟨T⟩°)` when the numerators
+`T - a` and `c` of `R({T - a, c} / c)` generate an open ideal, for instance when `c` is a unit. -/
+theorem closedSubdisc_mem_spaRationalFamily (a c : K)
+    (hT : IsOpen (Ideal.span ({T - C a, C c} : Set (𝒯 K)) : Set (𝒯 K))) :
     (Homeomorph.setCongr (closedPolydisc_def 1 K)).symm ⁻¹' closedSubdisc a c ∈
       spaRationalFamily (powerBoundedSubring (𝒯 K)) := by
   classical
-  have hspan : Ideal.span (({T - C a, C c} : Finset (𝒯 K)) : Set (𝒯 K)) = ⊤ :=
-    Ideal.eq_top_of_isUnit_mem _ (Ideal.subset_span (by simp)) (hc.map C)
   rw [closedSubdisc_eq_rationalSubset]
-  exact mem_spaRationalFamily_iff.mpr ⟨_, _, by rw [hspan]; simp, rfl⟩
+  exact mem_spaRationalFamily_iff.mpr
+    ⟨_, _, by rwa [Finset.coe_insert, Finset.coe_singleton], rfl⟩
 
-/-- `D(a, |c|)` is quasi-compact over a Huber ring when `c` is a unit. -/
-theorem isCompact_closedSubdisc [IsHuberRing K] (a : K) {c : K} (hc : IsUnit c) :
+/-- `D(a, |c|)` is quasi-compact over a Huber ring when `T - a` and `c` generate an open ideal,
+for instance when `c` is a unit. -/
+theorem isCompact_closedSubdisc [IsHuberRing K] (a c : K)
+    (hT : IsOpen (Ideal.span ({T - C a, C c} : Set (𝒯 K)) : Set (𝒯 K))) :
     IsCompact (closedSubdisc a c) := by
-  have h := isCompact_of_mem_spaRationalFamily (closedSubdisc_mem_spaRationalFamily a hc)
+  have h := isCompact_of_mem_spaRationalFamily (closedSubdisc_mem_spaRationalFamily a c hT)
   rwa [Homeomorph.isCompact_preimage] at h
 
 /-- **`D(0, 1)` is the whole closed unit disc**: the variable is power-bounded, so every point

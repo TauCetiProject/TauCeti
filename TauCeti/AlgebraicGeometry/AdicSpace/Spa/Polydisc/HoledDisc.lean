@@ -20,8 +20,9 @@ D(a, |c|) ∖ ⋃ᵢ D⁻(bᵢ, |dᵢ|) = {v : v(T - a) ≤ v(c) ≠ 0 and v(d�
 ```
 
 With no holes this is the closed subdisc `TauCeti.ValuationSpectrum.closedSubdisc`; with the single
-hole `(a, d)` it is the closed annulus `{|d| ≤ |T - a| ≤ |c|}`. When `c` and the `dᵢ` are units the
-holed disc is the intersection of the rational subsets `R({T - a, c} / c)` and `R({dᵢ} / (T - bᵢ))`,
+hole `(a, d)` it is the closed annulus `{|d| ≤ |T - a| ≤ |c|}`. When the `dᵢ` are units the holed
+disc is open, and when moreover `T - a` and `c` generate an open ideal (for instance when `c` is a
+unit) it is the intersection of the rational subsets `R({T - a, c} / c)` and `R({dᵢ} / (T - bᵢ))`,
 so it is rational and quasi-compact. Holed discs are the shapes that rational subdomains of the
 closed unit disc are made of: over an algebraically closed field, a connected affinoid subset of
 the projective line is the complement of finitely many open discs (Fresnel–van der Put,
@@ -47,9 +48,11 @@ one of its holes swallows the whole of `D(a, |c|)`, that is when `max ‖c‖ �
 
 ## Main results
 
+* `TauCeti.ValuationSpectrum.isOpen_holedDisc`: a holed disc whose holes have unit radius
+  parameters is open.
 * `TauCeti.ValuationSpectrum.holedDisc_mem_spaRationalFamily` and
-  `TauCeti.ValuationSpectrum.isCompact_holedDisc`: a holed disc with unit radius parameters is a
-  rational subset, hence quasi-compact.
+  `TauCeti.ValuationSpectrum.isCompact_holedDisc`: if moreover `T - a` and `c` generate an open
+  ideal, the holed disc is a rational subset, hence quasi-compact.
 * `TauCeti.ValuationSpectrum.classicalPoint_mem_holedDisc_iff`,
   `TauCeti.ValuationSpectrum.discPoint_mem_holedDisc_iff`,
   `TauCeti.ValuationSpectrum.discPointAbove_mem_holedDisc_iff` and
@@ -111,6 +114,17 @@ theorem holedDisc_of_isEmpty [IsEmpty ι] (a c : K) (b d : ι → K) :
   ext v
   simp
 
+/-- A hole whose radius parameter is a unit `d` is the basic open `{v : v(d) ≤ v(T - b) ≠ 0}`: the
+inequality `v(d) ≤ v(T - b)` already forces `v(T - b) ≠ 0`. -/
+private theorem setOf_vle_eq_basicOpen (b : K) {d : K} (hd : IsUnit d) :
+    {v : closedPolydisc 1 K | v.1.toValuativeRel.vle (C d) (T - C b)} =
+      Subtype.val ⁻¹' basicOpen (C d) (T - C b) := by
+  ext v
+  have hd₀ : v.1.valuation (C d) ≠ 0 := ((hd.map C).map v.1.valuation).ne_zero
+  rw [Set.mem_ofPred_eq, Set.mem_preimage, mem_basicOpen_iff, iff_self_and,
+    ← valuation_le_iff, ← valuation_le_iff, map_zero, le_zero_iff]
+  exact fun h h₀ ↦ hd₀ (le_zero_iff.mp (h₀ ▸ h))
+
 /-- A hole whose radius parameter is a unit `d` is the rational subset `R({d} / (T - b))`: the
 inequality `v(d) ≤ v(T - b)` already forces `v(T - b) ≠ 0`. -/
 private theorem setOf_vle_eq_rationalSubset (b : K) {d : K} (hd : IsUnit d) :
@@ -124,12 +138,21 @@ private theorem setOf_vle_eq_rationalSubset (b : K) {d : K} (hd : IsUnit d) :
   rw [← valuation_le_iff, ← valuation_le_iff, map_zero, le_zero_iff]
   exact fun h h₀ ↦ hd₀ (le_zero_iff.mp (h₀ ▸ h))
 
-/-- **A holed disc with unit radius parameters is a rational subset** of the closed unit disc over
-a Huber ring: it is the intersection of the rational subsets `R({T - a, c} / c)` and
-`R({dᵢ} / (T - bᵢ))`, and rational subsets are closed under finite intersection (Wedhorn,
-Remark 7.30(5)). -/
-theorem holedDisc_mem_spaRationalFamily [IsHuberRing K] [Finite ι] (a : K) {c : K}
-    (hc : IsUnit c) (b : ι → K) {d : ι → K} (hd : ∀ i, IsUnit (d i)) :
+/-- **A holed disc whose holes have unit radius parameters is open** in the closed unit disc: it
+is the intersection of the open disc `D(a, |c|)` with the finitely many basic opens
+`{v : v(dᵢ) ≤ v(T - bᵢ) ≠ 0}`. -/
+theorem isOpen_holedDisc [Finite ι] (a c : K) (b : ι → K) {d : ι → K} (hd : ∀ i, IsUnit (d i)) :
+    IsOpen (holedDisc a c b d) :=
+  (isOpen_closedSubdisc a c).inter <| isOpen_iInter_of_finite fun i ↦
+    setOf_vle_eq_basicOpen (b i) (hd i) ▸ (isOpen_basicOpen _ _).preimage continuous_subtype_val
+
+/-- **A holed disc is a rational subset** of the closed unit disc over a Huber ring when `T - a`
+and `c` generate an open ideal and the holes have unit radius parameters: it is the intersection
+of the rational subsets `R({T - a, c} / c)` and `R({dᵢ} / (T - bᵢ))`, and rational subsets are
+closed under finite intersection (Wedhorn, Remark 7.30(5)). -/
+theorem holedDisc_mem_spaRationalFamily [IsHuberRing K] [Finite ι] (a c : K)
+    (hT : IsOpen (Ideal.span ({T - C a, C c} : Set (𝒯 K)) : Set (𝒯 K))) (b : ι → K) {d : ι → K}
+    (hd : ∀ i, IsUnit (d i)) :
     (Homeomorph.setCongr (closedPolydisc_def 1 K)).symm ⁻¹' holedDisc a c b d ∈
       spaRationalFamily (powerBoundedSubring (𝒯 K)) := by
   classical
@@ -141,20 +164,15 @@ theorem holedDisc_mem_spaRationalFamily [IsHuberRing K] [Finite ι] (a : K) {c :
     rw [setOf_vle_eq_rationalSubset _ (hd i)]
     exact mem_spaRationalFamily_iff.mpr ⟨_, _, by rw [hspan]; simp, rfl⟩
   rw [holedDisc, Set.preimage_inter, Set.preimage_iInter]
-  exact inter_mem_spaRationalFamily (closedSubdisc_mem_spaRationalFamily a hc)
+  exact inter_mem_spaRationalFamily (closedSubdisc_mem_spaRationalFamily a c hT)
     (iInter_mem_spaRationalFamily hhole)
 
-/-- A holed disc with unit radius parameters is open in the closed unit disc. -/
-theorem isOpen_holedDisc [IsHuberRing K] [Finite ι] (a : K) {c : K} (hc : IsUnit c) (b : ι → K)
-    {d : ι → K} (hd : ∀ i, IsUnit (d i)) : IsOpen (holedDisc a c b d) := by
-  have h := (isTopologicalBasis_spaRationalFamily (powerBoundedSubring (𝒯 K))).isOpen
-    (holedDisc_mem_spaRationalFamily a hc b hd)
-  rwa [Homeomorph.isOpen_preimage] at h
-
-/-- **A holed disc with unit radius parameters is quasi-compact**, being rational. -/
-theorem isCompact_holedDisc [IsHuberRing K] [Finite ι] (a : K) {c : K} (hc : IsUnit c)
-    (b : ι → K) {d : ι → K} (hd : ∀ i, IsUnit (d i)) : IsCompact (holedDisc a c b d) := by
-  have h := isCompact_of_mem_spaRationalFamily (holedDisc_mem_spaRationalFamily a hc b hd)
+/-- **A holed disc is quasi-compact** when `T - a` and `c` generate an open ideal and the holes
+have unit radius parameters, being rational. -/
+theorem isCompact_holedDisc [IsHuberRing K] [Finite ι] (a c : K)
+    (hT : IsOpen (Ideal.span ({T - C a, C c} : Set (𝒯 K)) : Set (𝒯 K))) (b : ι → K) {d : ι → K}
+    (hd : ∀ i, IsUnit (d i)) : IsCompact (holedDisc a c b d) := by
+  have h := isCompact_of_mem_spaRationalFamily (holedDisc_mem_spaRationalFamily a c hT b hd)
   rwa [Homeomorph.isCompact_preimage] at h
 
 end TopologicalRing
@@ -174,9 +192,12 @@ theorem holedDisc_eq_empty_of_lt {a c : K} {b d : ι → K} (i : ι)
   rw [mem_holedDisc, mem_closedSubdisc] at hv
   have hT := (valuation_le_iff _ _ _).mpr hv.1.1
   have hd := (valuation_le_iff _ _ _).mpr (hv.2 i)
+  have hsplit : T - C (b i) = (T - C a) + C (a - b i) := by
+    rw [map_sub]
+    ring
   have key : v.1.valuation (C (d i)) ≤ max (v.1.valuation (C c)) (v.1.valuation (C (a - b i))) := by
     refine hd.trans ?_
-    rw [show T - C (b i) = (T - C a) + C (a - b i) by rw [map_sub]; ring]
+    rw [hsplit]
     exact (Valuation.map_add _ _ _).trans (max_le_max hT le_rfl)
   rcases le_max_iff.mp key with hc | hab
   · rw [valuation_le_iff, closedPolydisc_vle_weightedC_iff] at hc
