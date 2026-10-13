@@ -100,7 +100,8 @@
     return null;
   }
   // Drops from `data.rows` each row that fails `rowProblem`, then each row whose umbrella is not
-  // among the rows kept, and returns the dropped rows' ids with the reason.
+  // among the rows kept, and returns the dropped rows' ids with the reason. An umbrella left with
+  // no sub-roadmaps is a leaf again, so its own layers stand in for theirs in every total.
   function leaveOut(data) {
     var all = {}, kept = {}, left = [];
     data.rows.forEach(function (r) { all[r.id] = true; });
@@ -478,7 +479,8 @@
       legend() +
       '<p class="pb-lede">' + when + (age > 2 ? " That cutoff is <b>" + plural(age, "day") + " ago</b>; dates below are relative to it, not to today." : " Dates below are relative to the cutoff.") + "</p>" +
       (leftOut.length ? '<p class="pb-left-out">' + plural(leftOut.length, "roadmap") + " not shown, because the board’s data for " + (leftOut.length === 1 ? "it" : "them") + " is not in the expected shape: " +
-        leftOut.map(function (x) { return "<code>" + esc(x.id) + "</code> (" + esc(x.problem) + ")"; }).join(", ") + ". The figures below leave " + (leftOut.length === 1 ? "it" : "them") + " out too.</p>" : "") +
+        leftOut.map(function (x) { return "<code>" + esc(x.id) + "</code> (" + esc(x.problem) + ")"; }).join(", ") + ". The roadmap, layer and report figures below leave " + (leftOut.length === 1 ? "it" : "them") +
+        " out; the pull-request figures, which count all of Tau Ceti, do not.</p>" : "") +
       tiles() +
       '<div class="pb-controls" id="pb-roadmaps" aria-label="Group, sort and filter">' +
         '<label class="pb-group"><span>Group</span><select data-group><option value="topic">by topic</option><option value="none">no grouping</option></select></label>' +
