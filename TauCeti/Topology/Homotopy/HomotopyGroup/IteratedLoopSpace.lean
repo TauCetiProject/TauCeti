@@ -38,7 +38,8 @@ shifted by `k`**: `π_(m + 1)(Ω^[k] X) ≃* π_(m + 1 + k)(X)`. -/
 -- Both cases typecheck by definitional unfolding of the exposed `iteratedLoopSpace` and
 -- `loopSpace`: `Ω^[0] X` is `X`, and `Ω^[k + 1] X` has carrier `Path _ _` (Mathlib's `Ω`) based
 -- at `Path.refl _`, which is the source of `pathLoopSpaceMulEquiv`; its target `π_ (m + 2)` is
--- `π_ (m + 1 + 1)` by `Nat` literal reduction.
+-- `π_ (m + 1 + 1)` by `Nat` literal reduction. The ascription on the `omega` proof fixes the
+-- indices of `finCongr`, which are not determined by unification at that point.
 noncomputable def piIteratedLoopSpaceMulEquiv (X : BasedTopologicalSpace.{u}) :
     (k m : ℕ) →
       π_ (m + 1) (X.iteratedLoopSpace k).carrier (X.iteratedLoopSpace k).basepoint ≃*
@@ -48,8 +49,7 @@ noncomputable def piIteratedLoopSpaceMulEquiv (X : BasedTopologicalSpace.{u}) :
     (pathLoopSpaceMulEquiv (X := (X.iteratedLoopSpace k).carrier)
         (x := (X.iteratedLoopSpace k).basepoint) m).trans
       ((X.piIteratedLoopSpaceMulEquiv k (m + 1)).trans
-        (congrMulEquiv
-          (finCongr ((add_assoc (m + 1) 1 k).trans (congrArg (m + 1 + ·) (add_comm 1 k))))))
+        (congrMulEquiv (finCongr (by omega : m + 1 + 1 + k = m + 1 + (k + 1)))))
 
 /-- In degree `k = 0` the shift is the identity. -/
 @[simp]
@@ -65,8 +65,7 @@ theorem piIteratedLoopSpaceMulEquiv_succ (X : BasedTopologicalSpace.{u}) (k m : 
       (pathLoopSpaceMulEquiv (X := (X.iteratedLoopSpace k).carrier)
           (x := (X.iteratedLoopSpace k).basepoint) m).trans
         ((X.piIteratedLoopSpaceMulEquiv k (m + 1)).trans
-          (congrMulEquiv
-          (finCongr ((add_assoc (m + 1) 1 k).trans (congrArg (m + 1 + ·) (add_comm 1 k)))))) := by
+          (congrMulEquiv (finCongr (by omega : m + 1 + 1 + k = m + 1 + (k + 1))))) := by
   rw [piIteratedLoopSpaceMulEquiv.eq_2]
 
 end BasedTopologicalSpace
