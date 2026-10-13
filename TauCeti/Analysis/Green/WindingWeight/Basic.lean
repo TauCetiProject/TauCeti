@@ -54,6 +54,25 @@ theorem windingWeight_const (w : ℂ) (a b : ℝ) (z : ℂ) :
     windingWeight (fun _ : ℝ ↦ w) a b z = 0 := by
   simp [windingWeight]
 
+/-- The winding weight is constant on a neighborhood of any point off the trace of a closed
+absolutely continuous curve. -/
+theorem windingWeight_eventuallyEq_of_notMem
+    (hγ : AbsolutelyContinuousOnInterval γ a b) (hclosed : γ a = γ b)
+    (hz : z ∉ γ '' uIcc a b) :
+    windingWeight γ a b =ᶠ[nhds z] fun _ ↦ windingWeight γ a b z := by
+  have hK := isCompact_uIcc.image_of_continuousOn hγ.continuousOn
+  have hc := Contour.isLocallyConstant_windingNumber_of_absolutelyContinuousOnInterval
+    hγ hclosed
+  have hopen : IsOpen ((Subtype.val : ↥((γ '' uIcc a b)ᶜ) → ℂ) ''
+      {w | Contour.windingNumber γ a b w.1 = Contour.windingNumber γ a b z}) :=
+    hK.isClosed.isOpen_compl.isOpenMap_subtype_val _ (hc.isOpen_fiber _)
+  have hmem : z ∈ (Subtype.val : ↥((γ '' uIcc a b)ᶜ) → ℂ) ''
+      {w | Contour.windingNumber γ a b w.1 = Contour.windingNumber γ a b z} :=
+    ⟨⟨z, hz⟩, rfl, rfl⟩
+  filter_upwards [hopen.mem_nhds hmem] with w hw
+  obtain ⟨w, hw, rfl⟩ := hw
+  rw [windingWeight_eq_of_notMem w.2, hw, windingWeight_eq_of_notMem hz]
+
 /-- The winding weight of an absolutely continuous curve is measurable. -/
 theorem measurable_windingWeight (hγ : AbsolutelyContinuousOnInterval γ a b) :
     Measurable (windingWeight γ a b) := by
