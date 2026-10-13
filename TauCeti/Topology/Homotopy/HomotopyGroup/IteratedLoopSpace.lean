@@ -46,6 +46,22 @@ noncomputable def piIteratedLoopSpaceMulEquiv (X : BasedTopologicalSpace.{u}) :
       ((X.piIteratedLoopSpaceMulEquiv k (m + 1)).trans
         (congrMulEquiv (finCongr (show m + 1 + 1 + k = m + 1 + (k + 1) by omega))))
 
+/-- In degree `k = 0` the shift is the identity. -/
+@[simp]
+theorem piIteratedLoopSpaceMulEquiv_zero (X : BasedTopologicalSpace.{u}) (m : ℕ) :
+    X.piIteratedLoopSpaceMulEquiv 0 m = MulEquiv.refl _ := by
+  rw [piIteratedLoopSpaceMulEquiv.eq_1]
+
+/-- The shift along `k + 1` loops is the one-loop shift `pathLoopSpaceMulEquiv` followed by the
+shift along `k` loops, reindexed. -/
+theorem piIteratedLoopSpaceMulEquiv_succ (X : BasedTopologicalSpace.{u}) (k m : ℕ) :
+    X.piIteratedLoopSpaceMulEquiv (k + 1) m =
+      (pathLoopSpaceMulEquiv (X := (X.iteratedLoopSpace k).carrier)
+          (x := (X.iteratedLoopSpace k).basepoint) m).trans
+        ((X.piIteratedLoopSpaceMulEquiv k (m + 1)).trans
+          (congrMulEquiv (finCongr (show m + 1 + 1 + k = m + 1 + (k + 1) by omega)))) := by
+  rw [piIteratedLoopSpaceMulEquiv.eq_2]
+
 end BasedTopologicalSpace
 
 end TauCeti
