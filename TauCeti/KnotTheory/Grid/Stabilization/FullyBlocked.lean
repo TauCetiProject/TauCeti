@@ -318,14 +318,10 @@ private theorem reducedStabilizationHom_eq :
       (G.reducedConeIso s).hom ≫ G.reducedConeMap s ≫ G.reducedZeroConeIso.hom := by
   refine HomologicalComplex.hom_ext _ _ fun x => ?_
   cases x
-  simp only [reducedStabilizationHom, HomologicalComplex.comp_f,
-    reducedConeIso_hom_f, reducedConeMap_f, reducedZeroConeIso_hom_f]
-  simp only [Preadditive.add_comp, Preadditive.comp_add, Category.assoc,
-    homotopyCofiber.inlX_fstX_assoc, homotopyCofiber.inlX_sndX_assoc,
-    homotopyCofiber.inrX_fstX_assoc, homotopyCofiber.inrX_sndX_assoc,
-    Limits.zero_comp, Limits.comp_zero,
-    zero_add, add_zero]
-  ext c <;> simp [fullyBlockedStabilizeXMap]
+  ext c <;>
+    simp [reducedStabilizationHom, reducedConeIso_hom_f, reducedConeMap_f,
+      reducedZeroConeIso_hom_f, Preadditive.add_comp, Preadditive.comp_add, Category.assoc,
+      fullyBlockedStabilizeXMap]
 
 private instance quasiIso_reducedStabilizationHom : QuasiIso (G.reducedStabilizationHom s) := by
   rw [G.reducedStabilizationHom_eq s]
