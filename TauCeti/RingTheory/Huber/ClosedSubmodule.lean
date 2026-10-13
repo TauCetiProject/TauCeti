@@ -13,11 +13,13 @@ import Mathlib.Algebra.Module.FinitePresentation
 import TauCeti.Topology.Algebra.Nonarchimedean.Pi
 
 /-!
-# Submodules with a module-finite closure are closed
+# Closed submodules and noetherianity over Tate rings
 
 A submodule of a complete, metrisable module over a complete Tate ring whose topological closure
-is module-finite is itself closed. This is Bosch–Güntzer–Remmert §3.7.2/1 in its closure form, and
-it is the closedness prerequisite on the route to Wedhorn 6.17/6.18. Its consequence for a
+is module-finite is itself closed. This is Bosch–Güntzer–Remmert §3.7.2/1 in its closure form. It
+gives the *only if* direction of Wedhorn's Proposition 6.17, that every submodule of a noetherian
+module is closed; with the converse `TauCeti.HasZeroSequenceOfUnits.isNoetherian_of_forall_isClosed`
+this file proves Proposition 6.17 in both directions. Its consequence for a
 noetherian ring — every submodule of a finitely generated module is closed — is what makes a finite
 presentation of a finite module *strict*, which is the form in which Wedhorn's Remark 8.29 consumes
 Proposition 6.18(2).
