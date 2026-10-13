@@ -222,10 +222,7 @@ theorem IsDegenerateAt.isDegenerate {n : ℕ} {c : SingularCube X n} {i : Fin n}
 theorem isDegenerateAt_degeneracy {n : ℕ} (s : SingularCube X n) (i : Fin (n + 1)) :
     IsDegenerateAt (degeneracy s i) i := by
   intro x t
-  simp only [degeneracy_apply]
-  congr 1
-  funext k
-  simp
+  simp only [degeneracy_apply, Fin.removeNth_update]
 
 /-- Every coordinate-forgetting degeneracy is a degenerate singular cube. -/
 @[simp]
