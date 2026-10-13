@@ -7,7 +7,6 @@ module
 
 public import TauCeti.RingTheory.Huber.LocalizationTopology.BaseChange
 public import TauCeti.RingTheory.Huber.LocalizationTopology.Evaluation
-public import TauCeti.RingTheory.Huber.LocalizationTopology.Pair
 public import TauCeti.RingTheory.Huber.LocalizationTopology.WeightedEvaluation
 public import TauCeti.RingTheory.Huber.TopologicallyFiniteType.Pair
 
