@@ -11,6 +11,7 @@ public import TauCeti.NumberTheory.ClassFieldTheory.Global.IdeleLocalization
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Corestriction.Basic
 public import TauCeti.Topology.Algebra.Group.OpenSubgroup.FiniteIndex
 import TauCeti.RepresentationTheory.Homological.ContCohomology.Corestriction.Conjugation
+import TauCeti.RepresentationTheory.Homological.ContCohomology.Corestriction.Transitivity
 
 /-!
 # The local invariants of an idele layer and their sum
@@ -43,6 +44,14 @@ of places of `K`: classically, the invariant at `v` of a corestricted class is t
 invariants at the places of `F` above `v`, so `ideleSumLocalInv K L` is the sum of the local
 invariants over all places of `F`.
 
+The sum of the local invariants behaves under the operations on layers as the invariant of a class
+formation must. Restriction to an intermediate ground field `E` multiplies the class over `G_K`
+by `[E : F]` (`ideleLayerCorInfl_cohomologyRes`), because corestriction from `G_E` to `G_K`
+factors through `G_F` and corestriction after restriction is multiplication by the index; hence
+`Σ inv (res x) = [E : F] • Σ inv x` (`ideleSumLocalInv_res`). Conjugation by `g ∈ G_K` does not
+change the class over `G_K` (`ideleLayerCorInfl_conjugateCohomologyIso`), so it preserves every
+local invariant and their sum (`ideleSumLocalInv_conj`).
+
 ## Main definitions
 
 * `TauCeti.ClassFieldTheory.ideleLayerCorInfl K L`: the class over `G_K` of an idele-layer class.
@@ -61,6 +70,12 @@ invariants over all places of `F`.
   sum over any set of finite places containing the support, plus the archimedean invariants.
 * `TauCeti.ClassFieldTheory.ideleSumLocalInv_infl`: the sum of the local invariants is
   inflation-invariant.
+* `TauCeti.ClassFieldTheory.ideleLayerCorInfl_cohomologyRes`,
+  `TauCeti.ClassFieldTheory.ideleSumLocalInv_res`: restriction to an intermediate ground field
+  multiplies the class over `G_K`, and so the sum of the local invariants, by the relative degree.
+* `TauCeti.ClassFieldTheory.ideleLayerCorInfl_conjugateCohomologyIso`,
+  `TauCeti.ClassFieldTheory.ideleSumLocalInv_conj`: conjugation preserves the class over `G_K`,
+  and so the sum of the local invariants.
 
 ## References
 
@@ -111,6 +126,40 @@ theorem ideleLayerCorInfl_cohomologyInfl {old new : NormalLayer (AbsoluteGaloisG
     -- `(1 : MulAut G).toMonoidHom` is `MonoidHom.id G` by definition, so `Subgroup.map_id` applies.
     (by rw [map_one]; exact T.same_ground_toSubgroup.symm.trans (Subgroup.map_id _).symm)
     old.ground.isOpen new.ground.isOpen _
+
+/-- **Restriction multiplies the class over `G_K` by the relative degree**: for a restriction of
+a layer `L/F` to an intermediate ground field `E`, the class over `G_K` of the restricted class is
+`[E : F]` times the class over `G_K` of the original one. -/
+@[simp]
+theorem ideleLayerCorInfl_cohomologyRes {small big : NormalLayer (AbsoluteGaloisGroup K)}
+    (T : LayerRestriction small big) (x : big.H (ideleFormation K) 2) :
+    ideleLayerCorInfl K small (T.cohomologyRes (ideleFormation K) 2 x) =
+      T.relativeDegree • ideleLayerCorInfl K big x := by
+  -- The restricted class is inflated to the restriction to `U' ≤ U` of the class inflated to `U`;
+  -- corestriction from `U'` to `G_K` factors through `U`, and corestriction from `U'` to `U` after
+  -- restriction is multiplication by `[U : U']`.
+  rw [ideleLayerCorInfl_apply, NormalLayer.explicitInfl2_cohomologyRes,
+    explicitCor2_trans (AbsoluteGaloisGroup K) (IdeleCoeff K) big.ground.toSubgroup
+      small.ground.toSubgroup T.ground_toSubgroup_le big.ground.isOpen small.ground.isOpen,
+    AddMonoidHom.comp_apply, explicitCor2Le_explicitMap2_subgroupInclusion, map_nsmul,
+    LayerRestriction.relativeDegree_def, ideleLayerCorInfl_apply]
+
+/-- **Conjugation does not change the class over `G_K`**: for `g : G_K`, the conjugate class in
+the conjugate layer `gL/gF` has the same class over `G_K`. -/
+@[simp]
+theorem ideleLayerCorInfl_conjugateCohomologyIso (g : AbsoluteGaloisGroup K)
+    (x : L.H (ideleFormation K) 2) :
+    ideleLayerCorInfl K (L.conjugate g)
+        ((L.conjugateCohomologyIso (ideleFormation K) g 2).hom x) =
+      ideleLayerCorInfl K L x := by
+  -- Inflation carries the conjugation of layers to the conjugation
+  -- `H²(U, I_{Kˢ}) → H²(gUg⁻¹, I_{Kˢ})`, which corestriction to `G_K` does not see.
+  rw [ideleLayerCorInfl_apply, NormalLayer.explicitInfl2_conjugateCohomologyIso,
+    ideleLayerCorInfl_apply]
+  exact explicitCor2_explicitMap2_of_conj L.ground.toSubgroup (L.conjugate g).ground.toSubgroup
+    (IdeleCoeff K) g _ (L.conjugateGroundHom_apply_coe g) (DistribSMul.toAddMonoidHom _ g)
+    (DistribSMul.toAddMonoidHom_apply _ g) (L.toSubgroup_ground_conjugate g) L.ground.isOpen
+    (L.conjugate g).ground.isOpen _
 
 /-! ### The local invariants -/
 
@@ -170,6 +219,46 @@ theorem ideleInfiniteInvAt_infl {old new : NormalLayer (AbsoluteGaloisGroup K)}
       ideleInfiniteInvAt K old w x := by
   rw [ideleInfiniteInvAt_apply, ideleLayerCorInfl_cohomologyInfl, ideleInfiniteInvAt_apply]
 
+/-- **Restriction multiplies the local invariants at the finite places by the relative
+degree.** -/
+@[simp]
+theorem ideleLocalInvAt_res {small big : NormalLayer (AbsoluteGaloisGroup K)}
+    (T : LayerRestriction small big) (v : HeightOneSpectrum (𝓞 K))
+    (x : big.H (ideleFormation K) 2) :
+    ideleLocalInvAt K small v (T.cohomologyRes (ideleFormation K) 2 x) =
+      T.relativeDegree • ideleLocalInvAt K big v x := by
+  rw [ideleLocalInvAt_apply, ideleLayerCorInfl_cohomologyRes, map_nsmul, map_nsmul,
+    ideleLocalInvAt_apply]
+
+/-- **Restriction multiplies the local invariants at the infinite places by the relative
+degree.** -/
+@[simp]
+theorem ideleInfiniteInvAt_res {small big : NormalLayer (AbsoluteGaloisGroup K)}
+    (T : LayerRestriction small big) (w : InfinitePlace K) (x : big.H (ideleFormation K) 2) :
+    ideleInfiniteInvAt K small w (T.cohomologyRes (ideleFormation K) 2 x) =
+      T.relativeDegree • ideleInfiniteInvAt K big w x := by
+  rw [ideleInfiniteInvAt_apply, ideleLayerCorInfl_cohomologyRes, map_nsmul, map_nsmul,
+    ideleInfiniteInvAt_apply]
+
+/-- **Conjugation preserves the local invariants at the finite places.** -/
+@[simp]
+theorem ideleLocalInvAt_conj (g : AbsoluteGaloisGroup K) (v : HeightOneSpectrum (𝓞 K))
+    (x : L.H (ideleFormation K) 2) :
+    ideleLocalInvAt K (L.conjugate g) v
+        ((L.conjugateCohomologyIso (ideleFormation K) g 2).hom x) =
+      ideleLocalInvAt K L v x := by
+  rw [ideleLocalInvAt_apply, ideleLayerCorInfl_conjugateCohomologyIso, ideleLocalInvAt_apply]
+
+/-- **Conjugation preserves the local invariants at the infinite places.** -/
+@[simp]
+theorem ideleInfiniteInvAt_conj (g : AbsoluteGaloisGroup K) (w : InfinitePlace K)
+    (x : L.H (ideleFormation K) 2) :
+    ideleInfiniteInvAt K (L.conjugate g) w
+        ((L.conjugateCohomologyIso (ideleFormation K) g 2).hom x) =
+      ideleInfiniteInvAt K L w x := by
+  rw [ideleInfiniteInvAt_apply, ideleLayerCorInfl_conjugateCohomologyIso,
+    ideleInfiniteInvAt_apply]
+
 /-! ### Finite support -/
 
 /-- **An idele-layer class is unramified almost everywhere**: its local invariant vanishes at all
@@ -204,6 +293,13 @@ theorem ideleLocalInvAt_eq_zero_of_notMem_ideleSupport {x : L.H (ideleFormation 
 theorem ideleSupport_infl {old new : NormalLayer (AbsoluteGaloisGroup K)}
     (T : LayerRefinement old new) (x : old.H (ideleFormation K) 2) :
     ideleSupport K new (T.cohomologyInfl (ideleFormation K) 2 x) = ideleSupport K old x :=
+  Finset.ext fun v ↦ by simp
+
+/-- **Conjugation preserves the ramification set.** -/
+@[simp]
+theorem ideleSupport_conj (g : AbsoluteGaloisGroup K) (x : L.H (ideleFormation K) 2) :
+    ideleSupport K (L.conjugate g) ((L.conjugateCohomologyIso (ideleFormation K) g 2).hom x) =
+      ideleSupport K L x :=
   Finset.ext fun v ↦ by simp
 
 /-! ### The sum of the local invariants -/
@@ -242,5 +338,25 @@ theorem ideleSumLocalInv_infl {old new : NormalLayer (AbsoluteGaloisGroup K)}
     ideleSumLocalInv K new (T.cohomologyInfl (ideleFormation K) 2 x) =
       ideleSumLocalInv K old x := by
   rw [ideleSumLocalInv_apply, ideleLayerCorInfl_cohomologyInfl, ideleSumLocalInv_apply]
+
+/-- **Restriction multiplies the sum of the local invariants by the relative degree**: for a
+restriction of a layer `L/F` to an intermediate ground field `E`,
+`Σ inv (res x) = [E : F] • Σ inv x`. -/
+@[simp]
+theorem ideleSumLocalInv_res {small big : NormalLayer (AbsoluteGaloisGroup K)}
+    (T : LayerRestriction small big) (x : big.H (ideleFormation K) 2) :
+    ideleSumLocalInv K small (T.cohomologyRes (ideleFormation K) 2 x) =
+      T.relativeDegree • ideleSumLocalInv K big x := by
+  rw [ideleSumLocalInv_apply, ideleLayerCorInfl_cohomologyRes, map_nsmul, map_nsmul,
+    ideleSumLocalInv_apply]
+
+/-- **Conjugation preserves the sum of the local invariants**: for `g : G_K`, the conjugate class
+in the conjugate layer `gL/gF` has the same sum of local invariants. -/
+@[simp]
+theorem ideleSumLocalInv_conj (g : AbsoluteGaloisGroup K) (x : L.H (ideleFormation K) 2) :
+    ideleSumLocalInv K (L.conjugate g)
+        ((L.conjugateCohomologyIso (ideleFormation K) g 2).hom x) =
+      ideleSumLocalInv K L x := by
+  rw [ideleSumLocalInv_apply, ideleLayerCorInfl_conjugateCohomologyIso, ideleSumLocalInv_apply]
 
 end TauCeti.ClassFieldTheory

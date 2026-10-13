@@ -28,7 +28,14 @@ with `B = (z)_∞` the Riemann–Roch theorem gives `ℓ((g - 1)(x)_∞ - B) ≥
 has `u · L(B) ⊆ L((g - 1)(x)_∞) ⊆ k(x)`, and `z = (z u) / u`.
 
 In particular, for a hyperelliptic function field, `g ≥ 2`, the rational subfield of index two is
-unique: any `z` with `[F : k(z)] = 2` has `k(z) = k(x)`.
+unique: any `z` with `[F : k(z)] = 2` has `k(z) = k(x)`. So the separability of `F / k(x)`,
+which the definition `TauCeti.IsHyperellipticFunctionField` requires of one index-two subfield,
+holds for all of them, and once the genus is at least two it can be tested on any one of them.
+This gives the intrinsic characterization of hyperelliptic function fields in every
+characteristic: genus at least two, a divisor of degree two with `ℓ ≥ 2`, and separability of
+`F` over its rational subfields of index two. Away from characteristic two the last condition
+always holds, and the characterization is
+`TauCeti.isHyperellipticFunctionField_iff_two_le_genus_and_exists_degree_eq_two_and_two_le_dim`.
 
 ## Main results
 
@@ -37,6 +44,12 @@ unique: any `z` with `[F : k(z)] = 2` has `k(z) = k(x)`.
 * `TauCeti.mem_adjoin_of_finrank_adjoin_le_genus`: **`[F : k(z)] ≤ g` forces `z ∈ k(x)`**.
 * `TauCeti.adjoin_eq_adjoin_of_finrank_adjoin_eq_two`: **the rational subfield of index two of a
   hyperelliptic function field is unique**.
+* `TauCeti.IsHyperellipticFunctionField.isSeparable_of_finrank_adjoin_eq_two`: a hyperelliptic
+  function field is separable over each of its rational subfields of index two.
+* `TauCeti.isHyperellipticFunctionField_iff_isSeparable_of_finrank_adjoin_eq_two`: in genus at
+  least two, `F` is hyperelliptic exactly when it is separable over a given index-two `k(x)`.
+* `isHyperellipticFunctionField_iff_two_le_genus_and_exists_degree_eq_two_and_forall_isSeparable`:
+  the intrinsic characterization, in every characteristic.
 
 ## References
 
@@ -158,5 +171,57 @@ theorem adjoin_eq_adjoin_of_finrank_adjoin_eq_two (hF : IsFunctionField k F)
   refine IntermediateField.eq_of_le_of_finrank_eq' ?_ (by rw [hdeg, hdegz])
   exact IntermediateField.adjoin_simple_le_iff.mpr
     (mem_adjoin_of_finrank_adjoin_le_genus hF hex hx hdeg (by omega))
+
+/-! ### Separability of the index-two subextension -/
+
+/-- **A hyperelliptic function field is separable over each of its rational subfields of index
+two**: if `[F : k(z)] = 2` then `F / k(z)` is separable. The definition provides one such
+subfield, and it is the only one (`TauCeti.adjoin_eq_adjoin_of_finrank_adjoin_eq_two`). No
+hypothesis on the characteristic is made. -/
+theorem IsHyperellipticFunctionField.isSeparable_of_finrank_adjoin_eq_two
+    (hhyp : IsHyperellipticFunctionField k F) (hex : IsIntegrallyClosedIn k F) {z : F}
+    (hdegz : Module.finrank k⟮z⟯ F = 2) : Algebra.IsSeparable k⟮z⟯ F := by
+  obtain ⟨x, hx, hdeg, hsep⟩ := hhyp.exists_separable_finrank_adjoin_eq_two
+  have _ : FiniteDimensional k⟮x⟯ F := Module.finite_of_finrank_pos (by omega)
+  rwa [adjoin_eq_adjoin_of_finrank_adjoin_eq_two hx.isFunctionField_adjoin.finite_extension hex
+    hhyp.two_le_genus hx hdeg hdegz]
+
+/-- **Hyperellipticity can be tested on any rational subfield of index two**: if `k` is the exact
+constant field of `F`, the genus is at least two and `[F : k(x)] = 2`, then `F` is hyperelliptic
+exactly when `F / k(x)` is separable.
+
+Away from characteristic two, and over a perfect field, the separability always holds
+(`TauCeti.Algebra.isSeparable_of_finrank_eq_two`, `TauCeti.isSeparable_adjoin_of_finrank_prime`);
+in general it is a condition on `F` alone, which this reduces to one arbitrary choice of `x`. -/
+theorem isHyperellipticFunctionField_iff_isSeparable_of_finrank_adjoin_eq_two
+    (hex : IsIntegrallyClosedIn k F) (hg : 2 ≤ genus k F) {x : F} (hx : Transcendental k x)
+    (hdeg : Module.finrank k⟮x⟯ F = 2) :
+    IsHyperellipticFunctionField k F ↔ Algebra.IsSeparable k⟮x⟯ F :=
+  ⟨fun hhyp ↦ hhyp.isSeparable_of_finrank_adjoin_eq_two hex hdeg,
+    fun hsep ↦ ⟨hg, x, hx, hdeg, hsep⟩⟩
+
+/-- **The intrinsic characterization of hyperelliptic function fields in every characteristic**
+(Stichtenoth, Section VI.2, with the separability of the index-two subextension carried as a
+condition): `F` is hyperelliptic exactly when its genus is at least two, some divisor of degree
+two has a Riemann--Roch space of dimension at least two, and `F` is separable over each of its
+rational subfields of index two.
+
+Away from characteristic two the last condition always holds, and this is
+`TauCeti.isHyperellipticFunctionField_iff_two_le_genus_and_exists_degree_eq_two_and_two_le_dim`.
+In every characteristic the first two conditions provide a rational subfield of index two
+(`TauCeti.exists_transcendental_finrank_adjoin_eq_two_of_degree_eq_two`); the third is what
+makes `F` separable over it. -/
+theorem
+    isHyperellipticFunctionField_iff_two_le_genus_and_exists_degree_eq_two_and_forall_isSeparable
+    (hF : IsFunctionField k F) (hex : IsIntegrallyClosedIn k F) :
+    IsHyperellipticFunctionField k F ↔
+      2 ≤ genus k F ∧ (∃ A : Divisor k F, Divisor.degree A = 2 ∧ 2 ≤ Divisor.dim A) ∧
+        ∀ x : F, Module.finrank k⟮x⟯ F = 2 → Algebra.IsSeparable k⟮x⟯ F := by
+  refine ⟨fun hhyp ↦ ⟨hhyp.two_le_genus, hhyp.exists_degree_eq_two_and_two_le_dim,
+    fun _ ↦ hhyp.isSeparable_of_finrank_adjoin_eq_two hex⟩, ?_⟩
+  rintro ⟨hg, ⟨A, hA, hdim⟩, hsep⟩
+  obtain ⟨x, hx, hdeg⟩ :=
+    exists_transcendental_finrank_adjoin_eq_two_of_degree_eq_two hF hex (by omega) hA hdim
+  exact ⟨hg, x, hx, hdeg, hsep x hdeg⟩
 
 end TauCeti

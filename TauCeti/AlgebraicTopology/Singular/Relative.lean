@@ -129,6 +129,14 @@ lemma singularChainComplexFunctor_map_app {R R' : C} (g : R ⟶ R') :
   rw [singularChainComplexFunctor.eq_def, Functor.comp_map,
     Functor.whiskeringLeft_obj_map, Functor.whiskerLeft_app]
 
+/-- The relative singular chain complex functor is the relative chain complex functor of the
+singular simplicial-set pair. -/
+lemma singularChainComplexFunctor_obj_eq_toSSetPair_comp :
+    (singularChainComplexFunctor C).obj R =
+      toSSetPair ⋙ (SSetPair.chainComplexFunctor C).obj R := by
+  rw [singularChainComplexFunctor.eq_def]
+  rfl
+
 variable {P P'} in
 /-- The chain map on relative singular chains induced by a map of topological pairs. -/
 noncomputable abbrev singularChainComplexMap :

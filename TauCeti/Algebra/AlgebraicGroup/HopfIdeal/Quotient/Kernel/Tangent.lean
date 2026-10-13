@@ -67,7 +67,6 @@ private noncomputable def counitCoefficientEquiv :
     (Bialgebra.CounitAlgebra.algEquivSelf R H B).symm.toLinearEquiv
 
 /-- The coefficient identification is the identity after forgetting its Hopf-algebra index. -/
-@[simp]
 private theorem counitCoefficientEquiv_apply
     (b : Bialgebra.CounitAlgebra R K B) :
     Bialgebra.CounitAlgebra.algEquivSelf R H B (counitCoefficientEquiv b) =

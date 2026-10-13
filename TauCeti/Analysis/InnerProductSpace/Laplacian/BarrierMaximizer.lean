@@ -24,9 +24,9 @@ the two differ in how they produce the maximizer and in which barrier they use.
 This module holds that step, stated once for the operator `Δ + b·∇` with an arbitrary barrier. The
 `-Δ + c` principle runs it at `b = 0` with the quadratic barrier `‖·‖²`.
 
-It is a support module: `TauCeti.le_of_isMaxOn_add_smul` is support API for those two proofs rather
-than a result the roadmap asks for. Both principles import this module non-publicly, so neither
-re-exports it and nothing downstream of either principle sees the step in its interface.
+It is a support module: `TauCeti.le_of_isMaxOn_add_smul` is support API for those two proofs. Both
+principles import this module non-publicly, so neither re-exports it and nothing downstream of
+either principle sees the step in its interface.
 -/
 
 public section

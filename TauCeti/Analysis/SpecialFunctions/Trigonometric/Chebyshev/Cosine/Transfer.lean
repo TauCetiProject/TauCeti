@@ -15,9 +15,10 @@ import Mathlib.MeasureTheory.Integral.RieszMarkovKakutani.Real
 # Chebyshev `T` transfer to the cosine side
 
 This file packages the cosine-side consequences of Mathlib's change-of-variables identity
-`Polynomial.Chebyshev.integral_measureT_eq_integral_cos`. It provides the one-dimensional
-integral API, the equivalence between the Chebyshev and angular measures, and the induced
-`L²` equivalence under `x = cos θ`. The roadmap's Chebyshev Hilbert-basis target uses this
+`Polynomial.Chebyshev.integral_measureT_eq_integral_cos`. It provides the one-dimensional integral
+API, the equivalence between the Chebyshev and angular measures, and the induced `L²` equivalence
+under `x = cos θ`. The cosine Hilbert basis
+(`TauCeti.Analysis.SpecialFunctions.Trigonometric.Chebyshev.Cosine.HilbertBasis`) uses this
 infrastructure to identify the normalized Chebyshev functions on `measureT` with the cosine basis.
 
 ## Main declarations
@@ -205,8 +206,7 @@ lemma integral_chebyshevCosine_mul_chebyshevCosine_of_ne {m n : ℕ} (hmn : m �
   rw [← integral_eval_T_real_mul_eval_T_real_measureT_eq_integral_chebyshevCosine_mul]
   exact integral_eval_T_real_mul_eval_T_real_measureT_of_ne hmn
 
-/-- Cosine-side Chebyshev orthogonality in the Kronecker-delta form expected by
-the later Chebyshev Hilbert-basis construction. -/
+/-- Cosine-side Chebyshev orthogonality in Kronecker-delta form. -/
 lemma integral_chebyshevCosine_mul_chebyshevCosine_eq_ite (m n : ℕ) :
     ∫ θ in (0)..Real.pi, chebyshevCosine m θ * chebyshevCosine n θ =
       if m = n then chebyshevTNormSq n else 0 := by

@@ -33,9 +33,7 @@ coordinates in the simple-root basis.
 
 ## References
 
-This supports “Simple-root lowering” in Layer 1 of
-`TauCetiRoadmap/RepresentationTheory/RootSystems/README.md`. The argument follows Bourbaki,
-*Lie Groups and Lie Algebras*, Chapters 4--6.
+The argument follows Bourbaki, *Lie Groups and Lie Algebras*, Chapters 4--6.
 -/
 
 public section

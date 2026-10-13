@@ -38,9 +38,6 @@ general base-change theorem for Hopf-ideal quotients gives the result.
 The quotient-transport construction follows
 `TauCeti.SpecialLinear.coordinateHopfAlgebraBaseChangeIso`, replacing its determinant relation
 by the symplectic matrix relations.
-
-This is the scalar-extension compatibility needed before the `Sp₂ₘ` worked example can be
-proved reductive in Layer 6, "Reductive and semisimple groups", of the ReductiveGroups roadmap.
 -/
 
 public section

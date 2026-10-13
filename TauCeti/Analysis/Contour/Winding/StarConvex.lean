@@ -18,8 +18,8 @@ to the constant curve at the centre: for each parameter `t` the segment from `γ
 `TauCeti.Contour.IsPiecewiseC1On.windingNumber_eq_of_notMem_segment` equates `n_w(γ)` with the
 winding number of a constant curve, which is `0`.
 
-This discharges the `TauCeti.Contour.IsNullHomologous` hypothesis carried by the Layer 3 homology
-Cauchy theorem and by everything above it, on the domains that ordinary applications supply — a
+This discharges the `TauCeti.Contour.IsNullHomologous` hypothesis carried by the homology form of
+Cauchy's theorem and by everything built on it, on the domains that ordinary applications supply — a
 disc, a half-plane, a strip, a rectangle, the slit plane. Star-shapedness is a condition on the
 *domain* alone: nothing is asked of the curve beyond the piecewise-`C¹` regularity that the
 statements already carry. The homotopy route,
@@ -39,8 +39,7 @@ curve in `Ω` supplies `hconv.starConvex (hγΩ a left_mem_uIcc)`.
 ## Provenance
 
 No formalization is vendored. That a cycle in a star-shaped (indeed, in a simply connected) domain
-is null-homologous is standard complex analysis; see the references of the contour integration
-roadmap, e.g. Lang, *Complex Analysis*, Ch. IV.
+is null-homologous is standard complex analysis; see, e.g., Lang, *Complex Analysis*, Ch. IV.
 -/
 
 public section

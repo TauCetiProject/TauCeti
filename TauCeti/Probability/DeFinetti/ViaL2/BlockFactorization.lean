@@ -52,9 +52,9 @@ A constant sequence that converges must equal its limit, which is the factorizat
 `DeFinetti/BlockFactorization.lean` proves
 `condExp_blockIndicatorProd_prefix_ae_eq_prod_directingMeasure`, the same factorization for the
 *prefix* selection, through `TailFactorization` and reverse-martingale convergence. The overlap is
-intentional: the two are the corresponding steps of the two roadmap routes. Their names record the
-difference in what they *say* — `_prefix_` against `_strictMono_` — rather than how they are
-proved; the roadmap's `_viaL2` route suffix is reserved for the public route endpoints.
+intentional: the two are the corresponding steps of the two proof routes. Their names record the
+difference in what they *say* — `_prefix_` against `_strictMono_` — rather than how they are proved;
+the `_viaL2` suffix is reserved for the public route endpoints.
 
 This statement is strictly stronger than the prefix form: it holds for every strictly monotone
 selection, not only `i ↦ i`, and does not assume `StandardBorelSpace Ω`. So the implication does
@@ -71,8 +71,6 @@ that both routes import.
 
 ## References
 
-* Roadmap: `TauCetiRoadmap/Exchangeability/README.md`, **Layer 3** — the martingale-free
-  standard-Borel de Finetti route, `deFinetti_viaL2`.
 * Not adapted from the pinned `cameronfreer/exchangeability` sources: the argument here is built
   from this repository's `L²` averaging library and its tail-conditioned selection invariance,
   and deliberately diverges from that development's `ViaL2` material.
