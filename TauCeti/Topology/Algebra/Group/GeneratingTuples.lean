@@ -81,7 +81,8 @@ quotient has a generating tuple with the same index type. -/
 theorem generatingTuples_nonempty_iff (ι : Type*) (U : OpenNormalSubgroup G) :
     (generatingTuples ι U).Nonempty ↔
       ∃ x : ι → G ⧸ U.toSubgroup, Subgroup.closure (Set.range x) = ⊤ := by
-  refine ⟨fun ⟨x, hx⟩ ↦ ⟨fun i ↦ x i, hx⟩, fun ⟨x, hx⟩ ↦ ?_⟩
+  refine ⟨fun ⟨x, hx⟩ ↦ ⟨fun i ↦ x i, (mem_generatingTuples ι U x).mp hx⟩,
+    fun ⟨x, hx⟩ ↦ ?_⟩
   choose y hy using fun i ↦ QuotientGroup.mk_surjective (x i)
   have hyx : (fun i ↦ (y i : G ⧸ U.toSubgroup)) = x := funext hy
   exact ⟨y, by rwa [mem_generatingTuples, hyx]⟩
