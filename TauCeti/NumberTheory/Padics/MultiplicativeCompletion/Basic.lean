@@ -35,6 +35,7 @@ only the carrier, its `ℤ_p`-module structure, and its Galois action. Finite ge
 * `padicCompletionUnitsPadicModule`: its intrinsic `ℤ_p`-module structure.
 * `padicCompletionUnitsAut`: the coordinatewise Galois action.
 * `padicCompletionUnitsRepresentation`: the `ℤ_p`-linear Galois representation on `A(L)`.
+* `padicCompletionUnitsCongr`: the isomorphism `A(L) ≃* A(L')` induced by `L ≃+* L'`.
 * `padicCompletionUnitsModule`: the integral `ℤ_p[Gal(L/K)]`-module structure on `A(L)`, namely
   Mathlib's `Representation.asModule` structure of `padicCompletionUnitsRepresentation`.
 * `MonoidAlgebra.smul_padicCompletionUnitsOf`: a group-algebra element acts on the class of a unit
@@ -424,5 +425,80 @@ theorem _root_.MonoidAlgebra.smul_padicCompletionUnitsOf_of_forall_eq [Finite (L
   simp
 
 end GaloisAction
+
+/-! ### Transport along a field isomorphism -/
+
+section Congr
+
+variable {L} {L' : Type*} [Field L']
+
+private theorem congrRangePowMonoidHom_units_mk (e : L ≃+* L') (m : ℕ) (x : Lˣ) :
+    QuotientGroup.congrRangePowMonoidHom (Units.mapEquiv e.toMulEquiv) (p ^ m)
+        (x : Lˣ ⧸ (powMonoidHom (p ^ m) : Lˣ →* Lˣ).range) =
+      (Units.mapEquiv e.toMulEquiv x : L'ˣ ⧸ (powMonoidHom (p ^ m) : L'ˣ →* L'ˣ).range) :=
+  QuotientGroup.congrRangePowMonoidHom_mk _ _ x
+
+private theorem congrRangePowMonoidHom_transition (e : L ≃+* L') (m : ℕ)
+    (x : Lˣ ⧸ (powMonoidHom (p ^ (m + 1)) : Lˣ →* Lˣ).range) :
+    padicCompletionTransition p L' m
+        (QuotientGroup.congrRangePowMonoidHom (Units.mapEquiv e.toMulEquiv) (p ^ (m + 1)) x) =
+      QuotientGroup.congrRangePowMonoidHom (Units.mapEquiv e.toMulEquiv) (p ^ m)
+        (padicCompletionTransition p L m x) := by
+  induction x using QuotientGroup.induction_on with
+  | H x =>
+    rw [congrRangePowMonoidHom_units_mk, padicCompletionTransition_mk, padicCompletionTransition_mk,
+      congrRangePowMonoidHom_units_mk]
+
+/-- **`A(L)` is functorial in field isomorphisms**: a ring isomorphism `L ≃+* L'` induces
+`A(L) ≃* A(L')`, coordinatewise on the power-class groups. -/
+def padicCompletionUnitsCongr (e : L ≃+* L') :
+    ↑(padicCompletionUnits p L) ≃* ↑(padicCompletionUnits p L') where
+  toFun := padicCompletionUnitsLift p L L'
+    (fun m ↦
+      (QuotientGroup.congrRangePowMonoidHom (Units.mapEquiv e.toMulEquiv) (p ^ m)).toMonoidHom)
+    (congrRangePowMonoidHom_transition p e)
+  invFun := padicCompletionUnitsLift p L' L
+    (fun m ↦
+      (QuotientGroup.congrRangePowMonoidHom (Units.mapEquiv e.symm.toMulEquiv) (p ^ m)).toMonoidHom)
+    (congrRangePowMonoidHom_transition p e.symm)
+  left_inv x := Subtype.ext <| funext fun m ↦ by
+    simp [← Units.mapEquiv_symm, ← QuotientGroup.congrRangePowMonoidHom_symm]
+  right_inv x := Subtype.ext <| funext fun m ↦ by
+    simp [← Units.mapEquiv_symm, ← QuotientGroup.congrRangePowMonoidHom_symm]
+  map_mul' := map_mul _
+
+/-- `padicCompletionUnitsCongr` is computed coordinatewise. -/
+@[simp]
+theorem padicCompletionUnitsCongr_apply (e : L ≃+* L') (x : ↑(padicCompletionUnits p L)) (m : ℕ) :
+    (padicCompletionUnitsCongr p e x).1 m =
+      QuotientGroup.congrRangePowMonoidHom (Units.mapEquiv e.toMulEquiv) (p ^ m) (x.1 m) :=
+  padicCompletionUnitsLift_apply p L L' _ (congrRangePowMonoidHom_transition p e) x m
+
+/-- `padicCompletionUnitsCongr` is `ℤ_p`-linear. -/
+theorem padicCompletionUnitsCongr_smul [Fact p.Prime] (e : L ≃+* L') (a : ℤ_[p])
+    (x : Additive ↑(padicCompletionUnits p L)) :
+    Additive.ofMul (padicCompletionUnitsCongr p e (a • x).toMul) =
+      a • Additive.ofMul (padicCompletionUnitsCongr p e x.toMul) := by
+  apply Additive.toMul.injective
+  ext m
+  simp [padicCompletionUnitsCongr_apply, padicCompletionUnits_smul_apply, map_pow]
+
+variable (K : Type*) [Field K] [Algebra K L] {K' : Type*} [Field K'] [Algebra K' L']
+
+/-- `padicCompletionUnitsCongr` intertwines the actions of automorphisms `σ` of `L` and `σ'` of
+`L'` that correspond under the isomorphism. -/
+theorem padicCompletionUnitsCongr_aut (e : L ≃+* L') (σ : L ≃ₐ[K] L) (σ' : L' ≃ₐ[K'] L')
+    (hσ : ∀ y, σ' (e y) = e (σ y)) (x : ↑(padicCompletionUnits p L)) :
+    padicCompletionUnitsCongr p e (padicCompletionUnitsAut p L K σ x) =
+      padicCompletionUnitsAut p L' K' σ' (padicCompletionUnitsCongr p e x) := by
+  ext m
+  rw [padicCompletionUnitsCongr_apply, padicCompletionUnitsAut_apply,
+    padicCompletionUnitsAut_apply, padicCompletionUnitsCongr_apply]
+  obtain ⟨y, hy⟩ := QuotientGroup.mk_surjective (x.1 m)
+  rw [← hy, padicCompletionPowerClassMap_mk, QuotientGroup.congrRangePowMonoidHom_mk,
+    QuotientGroup.congrRangePowMonoidHom_mk, padicCompletionPowerClassMap_mk]
+  exact congrArg _ (Units.ext (hσ y).symm)
+
+end Congr
 
 end TauCeti

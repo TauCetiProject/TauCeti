@@ -29,11 +29,11 @@ subring of a rational algebra is torsion-free, hence flat over `ℤ`; this is th
 `Subring.tensorSquareMap_injective`. Its range is `kostantTensorForm e h`, so it gives the
 equivalence `kostantTensorEquiv` between the integral tensor square and that range.
 
-The coefficient-one coproduct formulas for divided powers and generalized binomial coefficients
-show that the rational comultiplication of every element of the Kostant form lies in this range.
+The coefficient-one coproduct formulas for divided powers and generalized binomial coefficients show
+that the rational comultiplication of every element of the Kostant form lies in this range.
 Transporting the range-valued restriction back through `kostantTensorEquiv` gives the canonical
-integral coproduct `kostantFormComul : U_ℤ →ₐ[ℤ] U_ℤ ⊗[ℤ] U_ℤ`. Thus integrality now means an
-actual algebra homomorphism, rather than only the existence of an integral tensor representative.
+integral coproduct `kostantFormComul : U_ℤ →ₐ[ℤ] U_ℤ ⊗[ℤ] U_ℤ`. Thus integrality is an actual
+algebra homomorphism, not only the existence of an integral tensor representative.
 
 The counit has no such issue. It sends every positive generator to zero and hence the entire form
 to the integer-cast subring of `ℚ`. The map `kostantFormCounit` is its canonical restriction to
@@ -61,11 +61,9 @@ to the integer-cast subring of `ℚ`. The map `kostantFormCounit` is its canonic
 
 ## References
 
-The coproduct formulas and the resulting Hopf order are standard; see J. E. Humphreys,
-*Introduction to Lie Algebras and Representation Theory*, §26, and J. C. Jantzen,
-*Representations of Algebraic Groups*, II.1. This supplies the comultiplication and counit part of
-the Kostant-form input to the Chevalley--Demazure construction in Layer 9 of
-`TauCetiRoadmap/ReductiveGroups/README.md`.
+The coproduct formulas and the resulting Hopf order are standard; see J. E. Humphreys, *Introduction
+to Lie Algebras and Representation Theory*, §26, and J. C. Jantzen, *Representations of Algebraic
+Groups*, II.1.
 -/
 
 public section

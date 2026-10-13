@@ -16,13 +16,12 @@ metric `g(v, w) = ω(v, J w)`. This file records the standard compatible-triple 
 `ω`, `J`, and `g` together, and packages the metric of a compatible pair as a genuine inner
 product through Mathlib's `InnerProductSpace.Core`.
 
-The metric is `TauCeti.SymplecticForm.associatedBilinForm`, already defined in
-`AlmostComplex.lean`. Compatibility makes it symmetric and positive definite (recorded there);
-here we add the relations that turn `(ω, J, g)` into a compatible triple: `J` is a `g`-isometry,
-`J` is `g`-skew-adjoint, and `ω` is recovered from `g` and `J`. The capstone
-`TauCeti.SymplecticForm.Compatible.innerProductCore` exhibits `g` as an inner product, the
-witness that the pointwise compatibility definition is non-vacuous and behaves as a metric
-should; the energy of a `J`-holomorphic curve in the analytic Heegaard Floer roadmap is measured
+The metric is `TauCeti.SymplecticForm.associatedBilinForm`, already defined in `AlmostComplex.lean`.
+Compatibility makes it symmetric and positive definite (recorded there); here we add the relations
+that turn `(ω, J, g)` into a compatible triple: `J` is a `g`-isometry, `J` is `g`-skew-adjoint, and
+`ω` is recovered from `g` and `J`. The capstone `TauCeti.SymplecticForm.Compatible.innerProductCore`
+exhibits `g` as an inner product, the witness that the pointwise compatibility definition is
+non-vacuous and behaves as a metric should; the energy of a `J`-holomorphic curve is measured
 against exactly this metric.
 
 ## Main declarations

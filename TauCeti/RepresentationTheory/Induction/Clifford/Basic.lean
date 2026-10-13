@@ -117,7 +117,7 @@ def conjSubrep (g : G) (σ : Subrepresentation (ρ.comp N.subtype)) :
   apply_mem_toSubmodule := by
     rintro n _ ⟨v, hv, rfl⟩
     exact ⟨_, σ.apply_mem_toSubmodule (MulAut.conjNormal g⁻¹ n) hv,
-      apply_conjNormal_inv ρ g n v⟩
+      ρ.apply_conjNormal_inv g n v⟩
 
 variable {ρ}
 
@@ -226,7 +226,7 @@ noncomputable def conjSubrepEquiv (g : G) (σ : Subrepresentation (ρ.comp N.sub
     (σ.toSubmodule.equivMapOfInjective (ρ g) (_root_.Representation.apply_bijective ρ g).injective)
     (fun n => by
       ext u
-      exact apply_conjNormal_inv ρ g n u)
+      exact ρ.apply_conjNormal_inv g n u)
 
 @[simp]
 theorem coe_conjSubrepEquiv_apply (g : G) (σ : Subrepresentation (ρ.comp N.subtype))
@@ -360,7 +360,7 @@ theorem apply_eq_smul_of_ne_bot [ρ.IsIrreducible] {σ : Subrepresentation (ρ.c
     refine iSup_le fun g => ?_
     rintro _ ⟨u, hu, rfl⟩
     rw [LinearMap.mem_ker, LinearMap.sub_apply, LinearMap.smul_apply, LinearMap.id_apply,
-      sub_eq_zero, ← apply_conjNormal_inv, hc _ u hu, map_smul, hconj]
+      sub_eq_zero, ← ρ.apply_conjNormal_inv, hc _ u hu, map_smul, hconj]
   simpa [sub_eq_zero] using hle (Submodule.mem_top (x := v))
 
 end Representation

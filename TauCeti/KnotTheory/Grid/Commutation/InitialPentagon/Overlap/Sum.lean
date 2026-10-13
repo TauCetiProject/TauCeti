@@ -8,7 +8,7 @@ module
 public import TauCeti.KnotTheory.Grid.Commutation.InitialPentagon.Overlap.Initial
 public import TauCeti.KnotTheory.Grid.Commutation.InitialPentagon.Overlap.Mixed.RightLeft.Basic
 public import TauCeti.KnotTheory.Grid.Commutation.InitialPentagon.Overlap.Mixed.SameSum
-public import TauCeti.KnotTheory.Grid.Commutation.InitialPentagon.Overlap.Terminal
+public import TauCeti.KnotTheory.Grid.Commutation.InitialPentagon.Overlap.Terminal.Basic
 public import TauCeti.KnotTheory.Grid.Commutation.TurnCut
 import Mathlib.Algebra.CharP.Two
 import Mathlib.RingTheory.MvPolynomial.Basic

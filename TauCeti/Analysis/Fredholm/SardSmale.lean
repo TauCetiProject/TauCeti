@@ -10,6 +10,7 @@ public import Mathlib.Analysis.Normed.Operator.Fredholm.Basic
 public import Mathlib.Topology.GDelta.Basic
 import Mathlib.Topology.Baire.Lemmas
 import Mathlib.Topology.Maps.Proper.CompactlyGenerated
+import TauCeti.Algebra.Group.Prod
 import TauCeti.Analysis.Calculus.Sard.OutermostStratum
 import TauCeti.Analysis.Fredholm.NormalForm
 import TauCeti.Analysis.Fredholm.Proper
@@ -114,45 +115,6 @@ private theorem interior_eq_empty_of_forall_interior_fiber_eq_empty {X Z : Type*
   rw [h x] at hz
   exact hz
 
-/-- Surjectivity of `w ↦ w.1 + D w`, where `D` takes values in a topological complement of the
-subspace `w.1` ranges over, is decided by the partial map `z ↦ D (0, z)`: the first coordinate is
-free, so only the complementary direction can obstruct. This is the linear core of the
-Lyapunov--Schmidt reduction of surjectivity to a finite-dimensional condition. -/
-private theorem surjective_add_coe_iff {X₁ Y₀ : Submodule ℝ F} (h : Submodule.IsTopCompl X₁ Y₀)
-    {Z : Type*} [NormedAddCommGroup Z] [NormedSpace ℝ Z] (D : (X₁ × Z) →L[ℝ] Y₀) :
-    Surjective (fun w : X₁ × Z ↦ ((w.1 : F) + (D w : F))) ↔ Surjective fun z : Z ↦ D (0, z) := by
-  have hu : ∀ (w₁ : X₁) (w₂ : Z), ((w₁ : F) + (D (w₁, w₂) : F)) =
-      Submodule.prodEquivOfIsTopCompl X₁ Y₀ h (w₁, D (w₁, w₂)) :=
-    fun w₁ w₂ ↦ (Submodule.prodEquivOfIsTopCompl_apply h (w₁, D (w₁, w₂))).symm
-  have hsplit : ∀ (w₁ : X₁) (w₂ : Z), D (w₁, w₂) = D (w₁, 0) + D (0, w₂) := by
-    intro w₁ w₂
-    rw [← map_add]
-    congr 1
-    simp
-  constructor
-  · intro hs v
-    obtain ⟨⟨w₁, w₂⟩, hw⟩ := hs (Submodule.prodEquivOfIsTopCompl X₁ Y₀ h (0, v))
-    have hw' : ((w₁ : F) + (D (w₁, w₂) : F)) =
-        Submodule.prodEquivOfIsTopCompl X₁ Y₀ h (0, v) := hw
-    rw [hu w₁ w₂] at hw'
-    have hpair := (Submodule.prodEquivOfIsTopCompl X₁ Y₀ h).injective hw'
-    rw [Prod.mk.injEq] at hpair
-    exact ⟨w₂, by rw [← hpair.2, hpair.1]⟩
-  · intro hs y
-    obtain ⟨⟨p₁, p₂⟩, hp⟩ := (Submodule.prodEquivOfIsTopCompl X₁ Y₀ h).surjective y
-    obtain ⟨z, hz⟩ := hs (p₂ - D (p₁, 0))
-    have hz' : D (0, z) = p₂ - D (p₁, 0) := hz
-    -- The goal is the value of the displayed function at `(p₁, z)`; state that value as a typed
-    -- `have`, which is rewritable, and let `exact` cross the beta reduction.
-    have hval : ((p₁ : F) + (D (p₁, z) : F)) = y := by
-      rw [hu p₁ z, ← hp]
-      congr 1
-      rw [Prod.mk.injEq]
-      refine ⟨rfl, ?_⟩
-      rw [hsplit, hz']
-      abel
-    exact ⟨(p₁, z), hval⟩
-
 section Local
 
 variable [CompleteSpace E] [CompleteSpace F] {T : E →L[ℝ] F} {f : E → F} {a : E}
@@ -213,8 +175,16 @@ private theorem surjective_fderiv_iff_slice (pkg : ContinuousLinearMap.FredholmP
       ((fderiv ℝ q y).comp (ContinuousLinearMap.inr ℝ pkg.decCodom.X₁ pkg.decDom.X₀)) y.2 := by
     rw [hqdef]
     exact pkg.hasFDerivAt_obstructionSlice hT hq
-  rw [hstep₁, hufun, surjective_add_coe_iff pkg.decCodom.isTopCompl, hslice.fderiv]
-  simp [ContinuousLinearMap.coe_comp, Function.comp_def]
+  rw [hstep₁, hufun, hslice.fderiv]
+  -- Identify the codomain with its algebraic splitting, then apply the triangular-map criterion.
+  let D := (fderiv ℝ q y).toLinearMap.toAddMonoidHom
+  simpa only [D, Function.comp_def, Submodule.coe_prodEquivOfIsCompl', AddMonoidHom.prod_apply,
+    AddMonoidHom.coe_fst, AddMonoidHom.coe_comp, AddMonoidHom.inr_apply,
+    LinearMap.toAddMonoidHom_coe, ContinuousLinearMap.coe_coe, ContinuousLinearMap.coe_comp,
+    ContinuousLinearMap.inr_apply] using
+    (EquivLike.comp_surjective ((AddMonoidHom.fst _ _).prod D)
+      (Submodule.prodEquivOfIsCompl _ _ pkg.decCodom.isTopCompl.isCompl)).trans
+      D.surjective_fst_prod_iff
 
 /-- **Sard--Smale, locally.** Near a point where a sufficiently smooth map has Fredholm
 derivative there is a neighbourhood on which the critical values form a closed nowhere dense set.
