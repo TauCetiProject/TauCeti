@@ -48,6 +48,7 @@ regulator is defined.
 public section
 
 open Height
+open scoped Matrix
 
 namespace WeierstrassCurve.Affine
 
@@ -151,6 +152,16 @@ theorem neronTateGramMatrix_apply [W.toAffine.IsElliptic] {ι : Type*}
     (b : Module.Basis ι ℤ (PointModTorsion W)) (i j : ι) :
     neronTateGramMatrix W b i j = neronTatePairingModTorsion W (b i) (b j) := by
   simp [neronTateGramMatrix]
+
+/-- Evaluating the Gram matrix at integer coordinates recovers the descended pairing. -/
+theorem neronTateGramMatrix_dotProduct_mulVec [W.toAffine.IsElliptic] {ι : Type*} [Fintype ι]
+    (b : Module.Basis ι ℤ (PointModTorsion W)) (z w : ι → ℤ) :
+    (fun i ↦ (z i : ℝ)) ⬝ᵥ neronTateGramMatrix W b *ᵥ (fun i ↦ (w i : ℝ)) =
+      neronTatePairingModTorsion W (b.equivFun.symm z) (b.equivFun.symm w) := by
+  classical
+  rw [← LinearMap.sum_repr_mul_repr_mul b b (b.equivFun.symm z) (b.equivFun.symm w)]
+  simp [Finsupp.sum_fintype, dotProduct, Matrix.mulVec, Finset.mul_sum,
+    Finsupp.single_apply, mul_comm, mul_left_comm]
 
 /-- **Reindexing the basis permutes the Gram matrix.** -/
 @[simp]

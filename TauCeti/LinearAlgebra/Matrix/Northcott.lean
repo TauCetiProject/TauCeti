@@ -8,17 +8,22 @@ module
 public import Mathlib.LinearAlgebra.Matrix.Symmetric
 public import Mathlib.Order.Northcott
 public import Mathlib.Basic.Real.Basic
-public import Mathlib.LinearAlgebra.Matrix.Determinant.Basic
-import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
+import Mathlib.Algebra.Order.Star.Real
+public import Mathlib.LinearAlgebra.Matrix.PosDef
+import Mathlib.LinearAlgebra.Matrix.ToLinearEquiv
+import Mathlib.RingTheory.Localization.FractionRing
+import Mathlib.RingTheory.Localization.Integer
+import Mathlib.Topology.Instances.Rat
 import Mathlib.Topology.Order.Compact
 import Mathlib.Topology.Instances.Real.Lemmas
 
 /-!
-# Nondegeneracy from Northcott finiteness
+# Positive definiteness from Northcott finiteness
 
 A symmetric real matrix whose quadratic form has finite sublevel sets on the integer lattice
-has nonzero determinant. A real null direction would give infinitely many integer vectors of
-bounded quadratic value by rounding its multiples. This criterion applies to Gram matrices of
+is positive definite. A negative direction contradicts finiteness by scaling integer vectors
+and density of rational vectors; a real null direction gives infinitely many integer vectors
+of bounded quadratic value by rounding its multiples. This criterion applies to Gram matrices of
 height pairings, where finiteness is supplied by Northcott's theorem.
 
 ## References
@@ -32,18 +37,60 @@ namespace Matrix
 
 open scoped Matrix
 
-variable {ι : Type*} [Fintype ι] [DecidableEq ι]
+variable {ι : Type*} [Fintype ι]
 
-/-- A symmetric real matrix has nonzero determinant if its quadratic form has the Northcott
+/-- A symmetric real matrix is positive definite if its quadratic form has the Northcott
 property on the integer lattice. No rationality assumption on its entries is needed. -/
-theorem IsSymm.det_ne_zero_of_northcott {A : Matrix ι ι ℝ} (hA : A.IsSymm)
-    [Northcott (fun z : ι → ℤ ↦ (fun i ↦ (z i : ℝ)) ⬝ᵥ A *ᵥ (fun i ↦ (z i : ℝ)))] :
-    A.det ≠ 0 := by
+theorem IsSymm.posDef_of_northcott {A : Matrix ι ι ℝ} (hA : A.IsSymm)
+    (hN : Northcott (fun z : ι → ℤ ↦
+      (fun i ↦ (z i : ℝ)) ⬝ᵥ A *ᵥ (fun i ↦ (z i : ℝ)))) : A.PosDef := by
   classical
+  let := hN
   let q : (ι → ℝ) → ℝ := fun x ↦ x ⬝ᵥ A *ᵥ x
   have hcont : Continuous q := by
     unfold q Matrix.mulVec dotProduct
     fun_prop
+  have hsmul (t : ℝ) (x : ι → ℝ) : q (t • x) = t ^ 2 * q x := by
+    simp [q, mulVec_smul, smul_dotProduct, dotProduct_smul, smul_eq_mul, pow_two,
+      mul_assoc]
+  have hint (z : ι → ℤ) : 0 ≤ q (fun i ↦ (z i : ℝ)) := by
+    by_contra hz
+    have hzneg := lt_of_not_ge hz
+    have hzne : z ≠ 0 := by
+      intro h
+      simp [h, q] at hzneg
+    obtain ⟨i, hi⟩ := Function.ne_iff.mp hzne
+    have hfinite : (Set.univ : Set ℤ).Finite := by
+      refine (Northcott.finite_le (h := fun z : ι → ℤ ↦ q (fun i ↦ (z i : ℝ))) 0).of_injOn
+        (f := fun n : ℤ ↦ n • z) ?_ ?_
+      · intro n _
+        have heq : (fun i ↦ ((n • z) i : ℝ)) = (n : ℝ) • (fun i ↦ (z i : ℝ)) := by
+          ext i
+          simp
+        change q (fun i ↦ ((n • z) i : ℝ)) ≤ 0
+        rw [heq, hsmul]
+        exact mul_nonpos_of_nonneg_of_nonpos (sq_nonneg _) hzneg.le
+      · intro n _ m _ h
+        exact mul_right_cancel₀ hi (by simpa using congrFun h i)
+    exact Set.infinite_univ hfinite
+  have hnonneg (x : ι → ℝ) : 0 ≤ q x := by
+    refine (DenseRange.piMap (fun _ : ι ↦ Rat.denseRange_cast)).induction_on x
+      (isClosed_le continuous_const hcont) ?_
+    intro y
+    obtain ⟨d, hd⟩ := IsLocalization.exist_integer_multiples_of_finite
+      (nonZeroDivisors ℤ) y
+    choose z hz using hd
+    have heq : (fun i ↦ (z i : ℝ)) = (d : ℤ) • (fun i ↦ (y i : ℝ)) := by
+      ext i
+      simpa [Algebra.smul_def] using congrArg (fun r : ℚ ↦ (r : ℝ)) (hz i)
+    have h := hint z
+    rw [heq, ← Int.cast_smul_eq_zsmul ℝ, hsmul] at h
+    exact nonneg_of_mul_nonneg_right h
+      (sq_pos_of_ne_zero (by exact_mod_cast (nonZeroDivisors.ne_zero d.property)))
+  have hsemi : A.PosSemidef := by
+    refine PosSemidef.of_dotProduct_mulVec_nonneg (by simpa using hA) ?_
+    simpa [q] using hnonneg
+  apply hsemi.posDef_iff_det_ne_zero.mpr
   obtain ⟨C, hC⟩ := (isCompact_Icc : IsCompact
     (Set.Icc (fun _ : ι ↦ (-1 : ℝ)) 0)).bddAbove_image hcont.continuousOn
   have hs : Set.Finite {z : ι → ℤ | q (fun i ↦ (z i : ℝ)) ≤ C} :=
@@ -65,9 +112,7 @@ theorem IsSymm.det_ne_zero_of_northcott {A : Matrix ι ι ℝ} (hA : A.IsSymm)
       have hcross : x ⬝ᵥ A *ᵥ (fun i ↦ (r t i : ℝ)) = 0 := by
         rw [hA.dotProduct_mulVec_comm, hx, dotProduct_zero]
       have hq : q e = q (fun i ↦ (r t i : ℝ)) := by
-        dsimp only [q, e]
-        rw [mulVec_sub, mulVec_smul, hx, smul_zero, sub_zero, sub_dotProduct,
-          smul_dotProduct, hcross, smul_zero, sub_zero]
+        simp [q, e, mulVec_sub, mulVec_smul, hx, sub_dotProduct, smul_dotProduct, hcross]
       simpa only [Set.mem_ofPred_eq, hq] using hC (Set.mem_image_of_mem q he)
     ext i
     by_contra hi
@@ -78,10 +123,8 @@ theorem IsSymm.det_ne_zero_of_northcott {A : Matrix ι ι ℝ} (hA : A.IsSymm)
     intro z _
     refine ⟨r ((z : ℝ) / x i), hr _, ?_⟩
     simp [r, div_mul_cancel₀ _ hi]
-  have hinj : Function.Injective A.mulVec := by
-    intro x y hxy
-    have h := hker (x - y) (by rw [mulVec_sub, hxy, sub_self])
-    exact sub_eq_zero.mp h
-  exact (A.isUnit_iff_isUnit_det.mp (mulVec_injective_iff_isUnit.mp hinj)).ne_zero
+  intro hdet
+  obtain ⟨v, hv, hAv⟩ := exists_mulVec_eq_zero_iff.mpr hdet
+  exact hv (hker v hAv)
 
 end Matrix
