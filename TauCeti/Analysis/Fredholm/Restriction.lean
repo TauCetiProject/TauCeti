@@ -12,12 +12,11 @@ public import TauCeti.Analysis.Fredholm.Criteria
 # Fredholm operators from finite-codimension restrictions
 
 Let `T : E →L[𝕜] F` carry a closed finite-codimensional subspace `E₁` into a closed
-finite-codimensional subspace `F₁`. Mathlib's `ContinuousLinearMap.IsFredholm.of_restrict`
-shows that `T` is Fredholm when the induced operator `E₁ →L[𝕜] F₁` is. This file records the
-accompanying index formula: the index of `T` is the index of the restriction plus
-`codim E₁ - codim F₁`. It is a basic reduction for the Fredholm-operator substrate in Lane F0
-of the analytic Heegaard Floer roadmap, in particular when an operator is first controlled
-after discarding finitely many modes.
+finite-codimensional subspace `F₁`. Mathlib's `ContinuousLinearMap.IsFredholm.of_restrict` shows
+that `T` is Fredholm when the induced operator `E₁ →L[𝕜] F₁` is. This file records the accompanying
+index formula: the index of `T` is the index of the restriction plus `codim E₁ - codim F₁`. It is a
+basic reduction, in particular when an operator is first controlled after discarding finitely many
+modes.
 
 ## Main declarations
 
