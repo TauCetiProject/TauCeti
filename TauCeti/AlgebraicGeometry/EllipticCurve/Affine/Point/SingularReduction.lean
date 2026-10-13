@@ -169,26 +169,15 @@ theorem sq_dvd_and_pow_three_dvd_of_equation (W : WeierstrassCurve R) {ϖ : R} (
     (h₁ : ϖ ∣ W.a₁) (h₂ : ϖ ^ 2 ∣ W.a₂) (h₃ : ϖ ^ 3 ∣ W.a₃) (h₄ : ϖ ^ 3 ∣ W.a₄)
     (h₆ : ϖ ^ 5 ∣ W.a₆) {x y : R} (h : W.toAffine.Equation x y) (hx : ϖ ∣ x) (hy : ϖ ∣ y) :
     ϖ ^ 2 ∣ x ∧ ϖ ^ 3 ∣ y := by
-  obtain ⟨A₁, hA₁⟩ := h₁
-  obtain ⟨A₂, hA₂⟩ := h₂
   obtain ⟨A₃, hA₃⟩ := h₃
-  obtain ⟨A₄, hA₄⟩ := h₄
   obtain ⟨A₆, hA₆⟩ := h₆
-  obtain ⟨X, rfl⟩ := hx
-  obtain ⟨Y, rfl⟩ := hy
-  rw [Affine.equation_iff, hA₁, hA₂, hA₃, hA₄, hA₆] at h
-  have hϖ0 := hϖ.ne_zero
-  -- comparing powers of `ϖ` in the equation gives `ϖ ∣ Y`, then `ϖ ∣ X`, then `ϖ ∣ Y / ϖ`
-  obtain ⟨Y, rfl⟩ : ϖ ∣ Y := hϖ.dvd_of_dvd_pow (n := 2)
-    ⟨X ^ 3 + ϖ * A₂ * X ^ 2 + ϖ * A₄ * X + ϖ ^ 2 * A₆ - A₁ * X * Y - ϖ * A₃ * Y,
-      mul_left_cancel₀ (pow_ne_zero 2 hϖ0) (by linear_combination h)⟩
-  obtain ⟨X, rfl⟩ : ϖ ∣ X := hϖ.dvd_of_dvd_pow (n := 3)
-    ⟨Y ^ 2 + A₁ * X * Y + ϖ * A₃ * Y - A₂ * X ^ 2 - A₄ * X - ϖ * A₆,
-      mul_left_cancel₀ (pow_ne_zero 3 hϖ0) (by linear_combination -h)⟩
-  obtain ⟨Y, rfl⟩ : ϖ ∣ Y := hϖ.dvd_of_dvd_pow (n := 2)
-    ⟨ϖ * X ^ 3 + ϖ * A₂ * X ^ 2 + A₄ * X + A₆ - A₁ * X * Y - A₃ * Y,
-      mul_left_cancel₀ (pow_ne_zero 4 hϖ0) (by linear_combination h)⟩
-  exact ⟨⟨X, by ring⟩, ⟨Y, by ring⟩⟩
+  -- this is the normal form at `IV*` with `ϖ A₃` and `ϖ A₆`, whose residue quadratic is `T²`
+  obtain ⟨X, Y, rfl, rfl, hY⟩ := W.exists_eq_sq_mul_of_equation hϖ h₁ h₂
+    (A₃ := ϖ * A₃) (A₆ := ϖ * A₆) (by rw [hA₃]; ring) h₄ (by rw [hA₆]; ring) h hx hy
+  obtain ⟨Y, rfl⟩ : ϖ ∣ Y := hϖ.dvd_of_dvd_pow (n := 2) <| by
+    rw [show Y ^ 2 = Y ^ 2 + ϖ * A₃ * Y - ϖ * A₆ - ϖ * (A₃ * Y - A₆) by ring]
+    exact dvd_sub hY (dvd_mul_right _ _)
+  exact ⟨dvd_mul_right _ _, ⟨Y, by ring⟩⟩
 
 end Domain
 

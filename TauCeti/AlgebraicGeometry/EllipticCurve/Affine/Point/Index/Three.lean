@@ -10,6 +10,8 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.TateAlgorithm.Terminal
 public import Mathlib.RingTheory.Henselian
 -- Proof-only: the points with singular reduction when the reduction is singular at the origin.
 import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.SingularReduction
+-- Proof-only: a root modulo `ϖ` of a quadratic with discriminant prime to `ϖ` is simple.
+import TauCeti.Algebra.QuadraticDiscriminant
 -- Proof-only: index three from a covering by three cosets.
 import TauCeti.GroupTheory.Index.Three
 
@@ -79,13 +81,14 @@ section CommRing
 
 variable {R : Type*} [CommRing R] {ϖ : R}
 
-/-- A root modulo the prime `ϖ` of `T² + A₃ T − A₆` is simple when `ϖ ∤ A₃² + 4 A₆`: the
-derivative `2 Y + A₃` is not divisible by `ϖ`, since
-`(2 Y + A₃)² = 4 (Y² + A₃ Y − A₆) + A₃² + 4 A₆`. -/
+/-- A root modulo `ϖ` of the residue quadratic `T² + A₃ T − A₆` is simple when
+`ϖ ∤ A₃² + 4 A₆`: the derivative `2 Y + A₃` is not divisible by `ϖ`. This is
+`not_dvd_two_mul_mul_add_of_not_dvd_discrim` for the monic quadratic, whose discriminant is
+`A₃² + 4 A₆`. -/
 private theorem not_dvd_two_mul_add {A₃ A₆ Y : R} (hb : ¬ ϖ ∣ A₃ ^ 2 + 4 * A₆)
-    (hY : ϖ ∣ Y ^ 2 + A₃ * Y - A₆) : ¬ ϖ ∣ 2 * Y + A₃ := fun hd ↦ hb <| by
-  rw [show A₃ ^ 2 + 4 * A₆ = (2 * Y + A₃) ^ 2 - 4 * (Y ^ 2 + A₃ * Y - A₆) by ring]
-  exact dvd_sub (dvd_pow hd two_ne_zero) (hY.mul_left 4)
+    (hY : ϖ ∣ Y ^ 2 + A₃ * Y - A₆) : ¬ ϖ ∣ 2 * Y + A₃ := by
+  simpa using not_dvd_two_mul_mul_add_of_not_dvd_discrim (a := 1) (c := -A₆)
+    (by rwa [discrim, mul_neg, sub_neg_eq_add, mul_one]) (by rwa [one_mul, ← sq, ← sub_eq_add_neg])
 
 end CommRing
 
