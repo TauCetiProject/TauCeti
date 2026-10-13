@@ -145,6 +145,18 @@ theorem riemannRochSpace_monotone :
     Monotone (riemannRochSpace : Divisor k F → Submodule k F) :=
   fun _ _ ↦ riemannRochSpace_mono
 
+/-- Taking the minimum of two pole bounds intersects their Riemann–Roch spaces. -/
+@[simp]
+theorem riemannRochSpace_inf (D E : Divisor k F) :
+    riemannRochSpace (D ⊓ E) = riemannRochSpace D ⊓ riemannRochSpace E := by
+  ext f
+  by_cases hf : f = 0
+  · simp [hf]
+  rw [Submodule.mem_inf, mem_riemannRochSpace_iff_neg_le_ord hf,
+    mem_riemannRochSpace_iff_neg_le_ord hf, mem_riemannRochSpace_iff_neg_le_ord hf]
+  simp only [WeilDivisor.coeff_inf, ← forall_and]
+  exact forall_congr' fun P ↦ by omega
+
 /-- If removing any single place of a finite set `T` leaves `L(D)` unchanged, then so does
 removing all of `T` at once: `L(D - ∑_{P ∈ T} P) = L(D)`. -/
 theorem riemannRochSpace_sub_ofFinset_eq {D : Divisor k F} {T : Finset (Place k F)}
