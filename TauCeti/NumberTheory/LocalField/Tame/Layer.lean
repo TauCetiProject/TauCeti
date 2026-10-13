@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.LocalField.Tame.Quotient
+import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.Quotient
 
 /-!
 # The finite tame layer attached to a finite Galois quotient
@@ -21,7 +22,7 @@ used in the pro-`p` class-module extension. The generating pair permits the tame
 relation-module construction to be applied to this layer of any finite Galois quotient.
 The local-field structures on `L` may be any structures compatible with `K`.
 
-The quotient comparison follows `TauCeti.quotientFixingSubgroupEquiv`, and the pair
+The quotient comparison specializes `TauCeti.absoluteGaloisGroupQuotientEquiv`, and the pair
 is the image of the frame supplied by `TauCeti.exists_tameFrame_quotient`.
 
 ## References
@@ -104,17 +105,17 @@ instance isGalois_tameLayer (U : OpenNormalSubgroup (Field.absoluteGaloisGroup K
 /-- The finite quotient by `P_K U` is the Galois group of the associated tame layer. -/
 def quotientTameLayerEquiv (U : OpenNormalSubgroup (Field.absoluteGaloisGroup K)) :
     Field.absoluteGaloisGroup K ⧸ (tameLayerSubgroup K U).toSubgroup ≃ₜ*
-      Gal(tameLayer K U/K) := by
-  let f : Field.absoluteGaloisGroup K →ₜ* Gal(tameLayer K U/K) :=
-    ⟨AlgEquiv.restrictNormalHom (tameLayer K U),
-      InfiniteGalois.restrictNormalHom_continuous _⟩
-  have hker : (tameLayerSubgroup K U).toSubgroup = f.toMonoidHom.ker :=
-    (fixingSubgroup_tameLayer K U).symm.trans
-      (IntermediateField.restrictNormalHom_ker _).symm
-  let e := QuotientGroup.liftEquiv (tameLayerSubgroup K U).toSubgroup
-    (AlgEquiv.restrictNormalHom_surjective (AlgebraicClosure K)) hker
-  have he : Continuous e := (QuotientGroup.isQuotientMap_mk _).continuous_iff.mpr f.continuous
-  exact { e with __ := Continuous.homeoOfEquivCompactToT2 (f := e.toEquiv) he }
+      Gal(tameLayer K U/K) :=
+  -- Specify both carriers: the fixing subgroup uses the automorphism group instances,
+  -- while the source quotient uses the derived absolute Galois group instances.
+  ((show Field.absoluteGaloisGroup K ≃ₜ* Gal(AlgebraicClosure K/K) from
+      ContinuousMulEquiv.refl _).quotientCongr
+    (tameLayerSubgroup K U).toSubgroup (tameLayer K U).fixingSubgroup
+    (by
+      change (tameLayerSubgroup K U).toSubgroup.map (MonoidHom.id _) = _
+      rw [Subgroup.map_id]
+      exact (fixingSubgroup_tameLayer K U).symm)).trans
+      (absoluteGaloisGroupQuotientEquiv K (tameLayer K U))
 
 /-- The quotient identification is restriction of automorphisms to the tame layer. -/
 @[simp]
@@ -122,7 +123,20 @@ theorem quotientTameLayerEquiv_mk (U : OpenNormalSubgroup (Field.absoluteGaloisG
     (σ : Field.absoluteGaloisGroup K) :
     quotientTameLayerEquiv K U (QuotientGroup.mk σ) =
       AlgEquiv.restrictNormalHom (tameLayer K U) σ := by
-  rfl
+  rw [quotientTameLayerEquiv, ContinuousMulEquiv.trans_apply,
+    ContinuousMulEquiv.quotientCongr_mk
+      (show Field.absoluteGaloisGroup K ≃ₜ* Gal(AlgebraicClosure K/K) from
+        ContinuousMulEquiv.refl _)]
+  exact absoluteGaloisGroupQuotientEquiv_mk σ
+
+/-- The inverse quotient identification sends a restricted automorphism back to its class. -/
+@[simp]
+theorem quotientTameLayerEquiv_symm_restrictNormalHom
+    (U : OpenNormalSubgroup (Field.absoluteGaloisGroup K))
+    (σ : Field.absoluteGaloisGroup K) :
+    (quotientTameLayerEquiv K U).symm (AlgEquiv.restrictNormalHom (tameLayer K U) σ) =
+      QuotientGroup.mk σ := by
+  rw [← quotientTameLayerEquiv_mk, ContinuousMulEquiv.symm_apply_apply]
 
 /-- The layer fixed by `P_K U` is tamely ramified for any compatible local-field structures. -/
 theorem isTamelyRamified_tameLayer (U : OpenNormalSubgroup (Field.absoluteGaloisGroup K))
