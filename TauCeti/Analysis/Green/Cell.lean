@@ -141,8 +141,8 @@ theorem volume_frontier_verticalRegion_eq_zero (hl : ContinuousOn lower (Icc a b
   apply measure_mono_null (frontier_verticalRegion_subset hl hu)
   exact measure_union_null
     (measure_union_null (measure_union_null (Complex.volume_setOf_re_eq a)
-      (Complex.volume_setOf_re_eq b)) (Complex.volume_setOf_im_eq_graph_eq_zero hl))
-        (Complex.volume_setOf_im_eq_graph_eq_zero hu)
+      (Complex.volume_setOf_re_eq b)) (Complex.volume_setOf_re_mem_Icc_im_eq hl))
+        (Complex.volume_setOf_re_mem_Icc_im_eq hu)
 
 /-- The horizontal region is the coordinate swap of the vertical region. -/
 theorem preimage_verticalRegion_coordinateSwap :

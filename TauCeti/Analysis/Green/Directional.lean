@@ -37,9 +37,10 @@ private theorem integrable_indicator_coordinates
     (hl : ContinuousOn lower (Icc a b)) (hu : ContinuousOn upper (Icc a b))
     (hR : IntegrableOn R (verticalRegion a b lower upper)) :
     Integrable (fun p : ℝ × ℝ ↦ (verticalRegion a b lower upper).indicator R ⟨p.1, p.2⟩) := by
-  exact (Complex.volume_preserving_equiv_real_prod.symm _).integrable_comp_emb
-    Complex.measurableEquivRealProd.symm.measurableEmbedding |>.2
-      (hR.integrable_indicator (measurableSet_verticalRegion hl hu))
+  simpa only [Function.comp_def, Complex.measurableEquivRealProd_symm_apply] using
+    (Complex.volume_preserving_equiv_real_prod.symm _).integrable_comp_emb
+      Complex.measurableEquivRealProd.symm.measurableEmbedding |>.2
+        (hR.integrable_indicator (measurableSet_verticalRegion hl hu))
 
 private theorem indicator_coordinates (x y : ℝ) :
     (verticalRegion a b lower upper).indicator R ⟨x, y⟩ =
@@ -110,9 +111,9 @@ theorem integral_verticalRegion
   rw [← integral_indicator (measurableSet_verticalRegion hl hu)]
   rw [← (Complex.volume_preserving_equiv_real_prod.symm _).integral_comp'
     (fun z ↦ (verticalRegion a b lower upper).indicator R z)]
-  -- Unfold the coordinate equivalence and the product-space volume instance for Fubini.
-  change (∫ p : ℝ × ℝ,
-    (verticalRegion a b lower upper).indicator R ⟨p.1, p.2⟩ ∂volume.prod volume) = _
+  -- Express the transported integral in product coordinates before applying Fubini.
+  rw [Measure.volume_eq_prod]
+  simp only [Complex.measurableEquivRealProd_symm_apply]
   rw [integral_prod _ (integrable_indicator_coordinates hl hu hR)]
   simp_rw [integral_indicator_coordinates]
   exact integral_indicator measurableSet_Icc

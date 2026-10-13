@@ -42,7 +42,7 @@ theorem volume_setOf_im_eq (c : ℝ) : volume {z : ℂ | z.im = c} = 0 := by
     mem_singleton_iff, mem_univ, true_and, mem_ofPred_eq]
 
 /-- A continuous graph over a compact interval has zero planar area. -/
-theorem volume_setOf_im_eq_graph_eq_zero {a b : ℝ} {f : ℝ → ℝ} (hf : ContinuousOn f (Icc a b)) :
+theorem volume_setOf_re_mem_Icc_im_eq {a b : ℝ} {f : ℝ → ℝ} (hf : ContinuousOn f (Icc a b)) :
     volume {z : ℂ | z.re ∈ Icc a b ∧ z.im = f z.re} = 0 := by
   let S := {p : ℝ × ℝ | p.1 ∈ Icc a b ∧ p.2 = f p.1}
   have hS : MeasurableSet S := by
