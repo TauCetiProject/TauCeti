@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Geometry.Manifold.Instances.ClosedBall.Basic
 public import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
-public import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 
 /-!
 # The actual tangent map of closed-ball inclusion
@@ -72,6 +71,7 @@ private theorem exists_subtypeValClosedBallTangentEquiv (x : closedBall (0 : V) 
   have hdiff := (contMDiff_subtypeVal_closedBall (n := n) (k := 1)).mdifferentiable one_ne_zero x
   refine ⟨(tangentSpaceCastModel (𝓡∂ n) x).trans L, ?_⟩
   rw [hdiff.mfderiv]
+  -- The normed-target tangent casts cancel, leaving composition with the source tangent cast.
   change L.toContinuousLinearMap.comp (tangentSpaceCastModel (𝓡∂ n) x).toContinuousLinearMap = _
   have hfw : fderivWithin ℝ (writtenInExtChartAt (𝓡∂ n) 𝓘(ℝ, V) x Subtype.val)
       (range (𝓡∂ n)) z = L.toContinuousLinearMap := by
@@ -96,17 +96,5 @@ theorem subtypeValClosedBallTangentEquiv_toContinuousLinearMap (x : closedBall (
       (NormedSpace.fromTangentSpace (𝕜 := ℝ) (x : V)).toContinuousLinearMap.comp
         (mfderiv (𝓡∂ n) 𝓘(ℝ, V) Subtype.val x) :=
   (exists_subtypeValClosedBallTangentEquiv (n := n) x).choose_spec
-
-/-- The closed complex unit disk uses its existing half-space atlas without a local dimension
-instance at each consumer. -/
-instance instChartedSpaceClosedBallComplex :
-    ChartedSpace (EuclideanHalfSpace 2) (closedBall (0 : ℂ) 1) :=
-  have : Fact (Module.finrank ℝ ℂ = 2) := ⟨Complex.finrank_real_complex⟩
-  instChartedSpaceClosedBall
-
-/-- The existing complex unit disk atlas is analytic. -/
-instance instIsManifoldClosedBallComplex : IsManifold (𝓡∂ 2) ω (closedBall (0 : ℂ) 1) :=
-  have : Fact (Module.finrank ℝ ℂ = 2) := ⟨Complex.finrank_real_complex⟩
-  instIsManifoldClosedBall
 
 end TauCeti

@@ -70,6 +70,7 @@ private theorem eventually_mapOrientation_modelMap {f : M → X}
   have hca : c a = ContinuousLinearMap.id ℝ E := by
     rw [heq a ha]
     ext v
+    -- Expose evaluation of the composed equivalences so their inverse laws apply.
     change (e.continuousLinearEquivAt ℝ a ha)
       ((F a).symm ((F a) ((e.continuousLinearEquivAt ℝ a ha).symm v))) = v
     simp only [ContinuousLinearEquiv.symm_apply_apply, ContinuousLinearEquiv.apply_symm_apply]
@@ -85,6 +86,7 @@ private theorem eventually_mapOrientation_modelMap {f : M → X}
         have hrefl : LinearMap.det (LinearEquiv.refl ℝ E : E →ₗ[ℝ] E) = 1 :=
           LinearMap.det_id
         rw [hrefl, mul_one]
+        -- The continuous-map determinant is the determinant of its underlying linear map.
         change 0 < K.toContinuousLinearMap.det
         exact (heq x hxmem) ▸ hx)
     simpa using h
@@ -95,6 +97,7 @@ private theorem eventually_mapOrientation_modelMap {f : M → X}
   have hcomp : ((F x).symm.toLinearEquiv.trans (e.linearEquivAt ℝ x hxmem)).trans
       K.toLinearEquiv = (F a).symm.toLinearEquiv.trans (e.linearEquivAt ℝ a ha) := by
     ext v
+    -- `linearEquivAt` is the linear part of `continuousLinearEquivAt`; expose composition.
     change (e.continuousLinearEquivAt ℝ a ha)
       ((F a).symm ((F x) ((e.continuousLinearEquivAt ℝ x hxmem).symm
         ((e.continuousLinearEquivAt ℝ x hxmem) ((F x).symm v))))) =
