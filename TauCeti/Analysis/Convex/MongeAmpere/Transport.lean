@@ -299,8 +299,9 @@ and never `⊥`, with `D` the interior of its effective domain, let `ρ` be an a
 and let `g` be a measurable density, finite almost everywhere. If `T` pushes `μ` to `g ρ`, `μ` is
 carried by `D`, and `T x ∈ ∂f(x)` for `μ`-almost every `x`, then `f` is an Aleksandrov solution
 of the Monge–Ampère equation `MA_f = (g ∘ T)⁻¹ μ` exactly when the subgradient image of `D` meets
-the zero set of the target density in a null set. Subgradient mass where `g` vanishes is not seen by
-the transport equation `MA_{f, g ρ} = μ`, and it is exactly the singular obstruction. -/
+the zero set of the target density in a null set. Subgradient mass where `g` vanishes is the
+zero-density remainder of `mongeAmpereMeasure_eq_withDensity_inv_add`, invisible to the weighted
+transport equation `MA_{f, g ρ} = μ`, and it is exactly the obstruction. -/
 theorem mongeAmpereMeasure_eq_withDensity_inv_iff (hf : Convex ℝ {p : E × ℝ | f p.1 ≤ p.2})
     (hbot : ∀ x, f x ≠ ⊥) {g : E → ℝ≥0∞} (hg : Measurable g) (hgtop : ∀ᵐ y ∂ρ, g y ≠ ⊤)
     {T : E → E} (hT : HasLaw T (ρ.withDensity g) μ) (hD : ∀ᵐ x ∂μ, x ∈ interior {x | f x ≠ ⊤})

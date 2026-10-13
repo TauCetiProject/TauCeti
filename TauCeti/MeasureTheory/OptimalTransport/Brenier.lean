@@ -700,7 +700,8 @@ never takes the value `⊥` such that:
   `μ = g₀ ρ`: its Aleksandrov measure is `MA_u = (g ∘ ∇u)⁻¹ μ`.
 
 For a general transporting potential, `TauCeti.mongeAmpereMeasure_eq_withDensity_inv_iff`
-identifies the obstruction: subgradient mass falling where `g` vanishes is singular for `MA_u`. -/
+identifies the obstruction: the zero-density remainder, the subgradient mass falling where `g`
+vanishes, which the weighted transport equation `MA_{u, g ρ} = μ` does not see. -/
 theorem exists_isKantorovichOptimalTransportMap_gradient_and_mongeAmpereMeasure_eq_withDensity
     [IsProbabilityMeasure μ] [IsProbabilityMeasure ν] (hμ : μ ≪ ρ) {g : E → ℝ≥0∞}
     (hg : Measurable g) (hνg : ν = ρ.withDensity g) {K : Set E} (hKc : Convex ℝ K)
