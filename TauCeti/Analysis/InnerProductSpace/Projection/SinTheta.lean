@@ -35,18 +35,18 @@ Sylvester bound
 
 ## Main results
 
-* `Submodule.le_re_inner_comp_starProjection_add_smul_apply_self`,
-  `Submodule.re_inner_comp_starProjection_add_smul_apply_self_le`: extending an operator from an
+* `TauCeti.le_re_inner_comp_starProjection_add_smul_apply_self`,
+  `TauCeti.re_inner_comp_starProjection_add_smul_apply_self_le`: extending an operator from an
   invariant subspace `U` by the scalar `r` on `Uᗮ` preserves a lower (upper) bound `r` on its
   quadratic form.
-* `Submodule.mul_norm_starProjection_comp_starProjection_le_norm_sub`: the directed `sin Θ` bound
+* `TauCeti.mul_norm_starProjection_comp_starProjection_le_norm_sub`: the directed `sin Θ` bound
   `g ‖P_W P_U‖ ≤ ‖B - A‖`.
-* `Submodule.mul_directedProjectionGap_le_norm_sub`: the same bound for the directed gap
+* `TauCeti.mul_directedProjectionGap_le_norm_sub`: the same bound for the directed gap
   `‖P_{Vᗮ} P_U‖` between an `A`-invariant subspace `U` and a `B`-invariant subspace `V`.
-* `Submodule.mul_projectionGap_le_norm_sub`: under the separation hypotheses in both orientations,
+* `TauCeti.mul_projectionGap_le_norm_sub`: under the separation hypotheses in both orientations,
   `g ‖P_U - P_V‖ ≤ ‖B - A‖`.
-* `Submodule.norm_starProjection_comp_starProjection_le_norm_sub_div`,
-  `Submodule.directedProjectionGap_le_norm_sub_div`, `Submodule.projectionGap_le_norm_sub_div`:
+* `TauCeti.norm_starProjection_comp_starProjection_le_norm_sub_div`,
+  `TauCeti.directedProjectionGap_le_norm_sub_div`, `TauCeti.projectionGap_le_norm_sub_div`:
   for `g > 0`, the same bounds in the form `‖·‖ ≤ ‖B - A‖ / g`.
 
 ## References
@@ -56,13 +56,19 @@ Sylvester bound
 * R. Bhatia, C. Davis, A. McIntosh, *Perturbation of spectral subspaces and solution of linear
   operator equations*, Linear Algebra Appl. **52/53** (1983), 45–67.
 * R. Bhatia, *Matrix Analysis*, Graduate Texts in Mathematics 169, Springer (1997), §VII.3.
+
+## Acknowledgements
+
+Material in the Sylvester and `sin Θ` lineage was adapted from the
+[Spectra Formalization Project](https://github.com/adambornemann-glitch/Spectra)
+(Adam Bornemann; Apache-2.0) at upstream revision `8dbaaf6728d1342ae16acf79fd7eef7c59b37e63`.
 -/
 
 public section
 
-namespace Submodule
+namespace TauCeti
 
-open ContinuousLinearMap
+open ContinuousLinearMap Submodule
 open scoped InnerProductSpace
 
 variable {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
@@ -227,4 +233,4 @@ theorem projectionGap_le_norm_sub_div {A B : E →L[𝕜] E} (hA : (A : E →ₗ
     projectionGap U V ≤ ‖B - A‖ / g :=
   (le_div_iff₀' hg).mpr (mul_projectionGap_le_norm_sub hA hB hU hV hAU hBV hBV' hAU')
 
-end Submodule
+end TauCeti
