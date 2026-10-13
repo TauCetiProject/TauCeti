@@ -703,7 +703,7 @@ theorem radical_lift_radical (Q : QuadraticMap R M P) :
 
 /-- The regular part of `Q` is computed by any surjection `f` whose kernel is the radical of `Q` and
 through which `Q` factors. -/
-theorem equivalent_lift_radical_of_comp_eq {Q : QuadraticMap R M P} {Q' : QuadraticMap R N P}
+theorem equivalent_lift_radical_of_comp_eq (Q : QuadraticMap R M P) {Q' : QuadraticMap R N P}
     (f : M →ₗ[R] N) (hf : Function.Surjective f) (hker : LinearMap.ker f = Q.radical)
     (hQ : Q'.comp f = Q) : (Q.lift Q.radical le_rfl).Equivalent Q' := by
   refine ⟨{ toLinearEquiv :=
@@ -718,8 +718,8 @@ a quadratic map `Q'` with trivial radical, then `Q'` is isometric to the regular
 theorem equivalent_lift_radical_of_equivalent_zero_prod {Q : QuadraticMap R M P}
     {Q' : QuadraticMap R N P} (h : Q.Equivalent ((0 : QuadraticMap R T P).prod Q'))
     (hQ' : Q'.radical = ⊥) : (Q.lift Q.radical le_rfl).Equivalent Q' :=
-  h.lift_radical.trans <| equivalent_lift_radical_of_comp_eq (LinearMap.snd R T N)
-    LinearMap.snd_surjective
+  h.lift_radical.trans <| ((0 : QuadraticMap R T P).prod Q').equivalent_lift_radical_of_comp_eq
+    (LinearMap.snd R T N) LinearMap.snd_surjective
     (by rw [radical_zero_prod, hQ', ← Submodule.comap_snd, Submodule.comap_bot])
     (by ext; simp)
 
