@@ -14,10 +14,6 @@ A morphism of cyclic cochain complexes is a quasi-isomorphism exactly when its m
 acyclic. This identifies the homology-based weak equivalences with the cone criterion used for
 the Verdier quotient of the periodic homotopy category by acyclic complexes.
 
-The proof compares the cone sequence of a morphism with the cone sequence of an identity. The
-identity cone is contractible, and two-out-of-three in the resulting morphism of short exact
-sequences detects the original morphism.
-
 No positivity hypothesis on the period is needed; at period zero this applies to integer-indexed
 cochain complexes.
 
@@ -38,17 +34,6 @@ open CategoryTheory CategoryTheory.Limits HomologicalComplex
 variable {C : Type u} [Category.{v} C] [Abelian C] {n : ℕ}
   {X Y : CochainComplex C (ZMod n)}
 
-private theorem coneSequence_shortExact (f : X ⟶ Y) : (coneSequence f).ShortExact :=
-  HomologicalComplex.shortExact_of_degreewise_shortExact _ fun i ↦
-    (coneSequenceSplitting f i).shortExact
-
-private theorem homotopyCofiber_id_acyclic (X : CochainComplex C (ZMod n)) :
-    (homotopyCofiber (𝟙 X)).Acyclic := by
-  intro i
-  rw [exactAt_iff_isZero_homology, IsZero.iff_id_eq_zero]
-  simpa only [homologyMap_id, homologyMap_zero] using
-    (homotopyCofiber.homotopyToZeroOfId X (fun j ↦ ⟨j - 1, by simp⟩)).homologyMap_eq i
-
 /-- A morphism of cyclic cochain complexes is a quasi-isomorphism if and only if its mapping
 cone is acyclic. -/
 theorem quasiIso_iff_acyclic_homotopyCofiber (f : X ⟶ Y) :
@@ -56,7 +41,8 @@ theorem quasiIso_iff_acyclic_homotopyCofiber (f : X ⟶ Y) :
   let α : Arrow.mk (𝟙 X) ⟶ Arrow.mk f := Arrow.homMk (𝟙 X) f (by simp)
   let coneMap := homotopyCofiber.mapArrowHom (𝟙 X) f
     (fun j ↦ ⟨j - 1, by simp⟩) α
-  have hId : (homotopyCofiber (𝟙 X)).Acyclic := homotopyCofiber_id_acyclic X
+  have hId : (homotopyCofiber (𝟙 X)).Acyclic :=
+    homotopyCofiber.acyclic_id X (fun j ↦ ⟨j - 1, by simp⟩)
   constructor
   · intro hf
     let _ : QuasiIso f := hf
@@ -88,7 +74,18 @@ theorem quasiIso_iff_acyclic_homotopyCofiber (f : X ⟶ Y) :
       infer_instance
     have h := HomologySequence.quasiIso_τ₁
       (coneSequenceMap (𝟙 X) f α)
-      (coneSequence_shortExact (𝟙 X)) (coneSequence_shortExact f) hConeMap' hShiftId'
+      ((HomologicalComplex.shortExact_iff_degreewise_shortExact _).mpr fun i ↦
+        (ExactStructure.abelian_conflation _).mp
+          ((ExactStructure.homologicalComplex_conflation_iff
+            (E := ExactStructure.abelian C) (c := ComplexShape.up (ZMod n))
+            (S := coneSequence (𝟙 X))).mp
+            (conflation_coneSequence (ExactStructure.abelian C) (𝟙 X)) i))
+      ((HomologicalComplex.shortExact_iff_degreewise_shortExact _).mpr fun i ↦
+        (ExactStructure.abelian_conflation _).mp
+          ((ExactStructure.homologicalComplex_conflation_iff
+            (E := ExactStructure.abelian C) (c := ComplexShape.up (ZMod n))
+            (S := coneSequence f)).mp
+            (conflation_coneSequence (ExactStructure.abelian C) f) i)) hConeMap' hShiftId'
     rw [coneSequenceMap_τ₁] at h
     exact h
 
