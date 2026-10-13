@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.PDE.DirichletProblem
 public import TauCeti.Analysis.Sobolev.Wkp.LineDeriv
-public import TauCeti.Analysis.Sobolev.W1p.DifferenceQuotient
 public import TauCeti.Analysis.PDE.EnergyForm.DifferenceQuotient
 import TauCeti.Analysis.Sobolev.DifferenceQuotient
 import TauCeti.Analysis.Sobolev.W1p.Density

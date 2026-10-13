@@ -21,6 +21,13 @@ Translation moves between the two arguments with the opposite shift and translat
 For Lipschitz coefficient fields, the resulting commutator has a bound independent of the
 difference-quotient step. These energy-form identities are used in weak-solution regularity,
 but require neither ellipticity nor a weak equation.
+
+## References
+
+* L. C. Evans, *Partial Differential Equations*, §6.3.1, Theorem 1, for the
+  difference-quotient argument with variable coefficients.
+* D. Gilbarg, N. S. Trudinger, *Elliptic Partial Differential Equations of Second Order*,
+  Theorem 8.8 and Lemma 7.23, for the difference-quotient coefficient estimates.
 -/
 
 public section
