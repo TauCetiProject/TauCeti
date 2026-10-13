@@ -23,15 +23,6 @@ of the derivative at interior points, gives the equality.
 * `TauCeti.eVariationOn_eq_lintegral_enorm_derivWithin`: metric variation
   equals the integral of the derivative norm.
 
-## Roadmap alignment
-
-This module advances the `Regular reparametrization and limits` target under
-`Layer 0: the reconciled Riemannian distance` in
-`roadmap/HopfRinow/README.md`. It supplies the vector metric-variation
-identity used as an analytic prerequisite by the lower-semicontinuity
-comparison; this file does not claim the broader
-Hopf--Rinow dependency path.
-
 ## References
 
 * M. P. do Carmo, *Riemannian Geometry*, Chapter 7, Section 2.

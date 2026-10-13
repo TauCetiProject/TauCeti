@@ -107,6 +107,26 @@ theorem integral_deriv_eq_sub_of_finiteDimensional [FiniteDimensional ℝ F]
   filter_upwards [hγ.boundedVariationOn.ae_differentiableAt_of_mem_uIcc] with t ht hmem
   exact (ht (uIoc_subset_uIcc hmem)).hasDerivAt
 
+/-- For two absolutely continuous curves with the same left endpoint, their pointwise distance
+is bounded by the `L¹` difference of their velocities over the whole interval. -/
+theorem norm_sub_le_integral_norm_deriv_sub [FiniteDimensional ℝ F] {p : ℝ → F}
+    (hp : AbsolutelyContinuousOnInterval p a b) (hγ : AbsolutelyContinuousOnInterval γ a b)
+    (ha : p a = γ a) {t : ℝ} (ht : t ∈ Icc a b) :
+    ‖p t - γ t‖ ≤ ∫ v in a..b, ‖deriv p v - deriv γ v‖ := by
+  have hpI := hp.intervalIntegrable_deriv_of_finiteDimensional
+  have hγI := hγ.intervalIntegrable_deriv_of_finiteDimensional
+  have hsub : uIcc a t ⊆ uIcc a b := uIcc_subset_uIcc left_mem_uIcc
+    ((uIcc_of_le (ht.1.trans ht.2)).symm ▸ ht)
+  have heq : ∫ v in a..t, deriv p v - deriv γ v = p t - γ t := by
+    rw [intervalIntegral.integral_sub (hpI.mono_set hsub) (hγI.mono_set hsub),
+      (hp.mono hsub).integral_deriv_eq_sub_of_finiteDimensional,
+      (hγ.mono hsub).integral_deriv_eq_sub_of_finiteDimensional, ha]
+    abel
+  rw [← heq]
+  exact (intervalIntegral.norm_integral_le_integral_norm ht.1).trans
+    (intervalIntegral.integral_mono_interval le_rfl ht.1 ht.2
+      (Filter.Eventually.of_forall fun _ ↦ norm_nonneg _) (hpI.sub hγI).norm)
+
 end AbsolutelyContinuousOnInterval
 
 /-- An indefinite interval integral in a real normed space is absolutely continuous on its

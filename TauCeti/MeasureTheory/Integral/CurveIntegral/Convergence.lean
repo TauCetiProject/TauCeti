@@ -14,6 +14,8 @@ import Mathlib.MeasureTheory.Function.Holder
 
 Bounded continuous 1-forms preserve convergence of actual integrals along absolutely
 continuous curves under uniform convergence of curves and `L¹` convergence of derivatives.
+The statements use the raw-curve integral `∫ t in a..b, ω (γ t) (deriv γ t)`.
+For a `Path`, Mathlib's `curveIntegral_eq_intervalIntegral_deriv` gives this representation.
 No uniform bound on the approximating velocities is assumed.
 -/
 
@@ -41,7 +43,8 @@ theorem intervalIntegrable_oneForm_of_continuous_bounded
 
 
 /-- Uniform convergence of AC curves and `L¹` convergence of their derivatives imply
-convergence of the actual integrals of any bounded continuous 1-form. -/
+convergence of the raw integrals `∫ t in a..b, ω (γ t) (deriv γ t)`
+of any bounded continuous 1-form. -/
 theorem tendsto_integral_oneForm_of_tendstoUniformlyOn {γn : ℕ → ℝ → E}
     (hγ : AbsolutelyContinuousOnInterval γ a b)
     (hγn : ∀ n, AbsolutelyContinuousOnInterval (γn n) a b) (hab : a ≤ b)

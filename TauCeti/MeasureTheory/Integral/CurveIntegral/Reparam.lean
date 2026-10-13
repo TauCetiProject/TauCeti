@@ -13,6 +13,8 @@ public import TauCeti.MeasureTheory.Function.AbsolutelyContinuous.DerivComp
 An absolutely continuous change of parameter that is monotone or antitone preserves the integral
 of a 1-form along an absolutely continuous curve. Integrability on the original interval implies
 integrability on the new interval. The oriented image interval records reversal of orientation.
+The statements use the raw-curve integral `∫ t in a..b, ω (γ t) (deriv γ t)`.
+For a `Path`, Mathlib's `curveIntegral_eq_intervalIntegral_deriv` gives this representation.
 The 1-form needs only the integrability of its pairing with the original velocity.
 -/
 
@@ -61,7 +63,7 @@ theorem intervalIntegrable_oneForm_comp (hγ : AbsolutelyContinuousOnInterval γ
   exact (ht hmem).symm
 
 /-- A monotone or antitone absolutely continuous change of parameter preserves the integral of
-a 1-form along an absolutely continuous curve, with its oriented image interval. -/
+the raw integral `∫ t in a..b, ω (γ t) (deriv γ t)`, with its oriented image interval. -/
 theorem integral_oneForm_comp (hγ : AbsolutelyContinuousOnInterval γ (θ a) (θ b))
     (hθ : AbsolutelyContinuousOnInterval θ a b) (hab : a ≤ b)
     (horder : MonotoneOn θ (Icc a b) ∨ AntitoneOn θ (Icc a b))

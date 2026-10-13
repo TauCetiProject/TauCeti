@@ -27,28 +27,28 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
 
 /-- The trace of an absolutely continuous curve is additive-Haar-null in ambient dimension
 greater than one. -/
-theorem measure_image_uIcc_eq_zero (hγ : AbsolutelyContinuousOnInterval γ a b)
+theorem addHaar_image_uIcc_eq_zero (hγ : AbsolutelyContinuousOnInterval γ a b)
     (μ : Measure E) [μ.IsAddHaarMeasure] (hd : 1 < Module.finrank ℝ E) :
     μ (γ '' uIcc a b) = 0 :=
-  hγ.boundedVariationOn.locallyBoundedVariationOn.measure_image_eq_zero μ hd
+  hγ.boundedVariationOn.locallyBoundedVariationOn.addHaar_image_eq_zero μ hd
 
 /-- Deleting an absolutely continuous curve's trace preserves set integrals in ambient dimension
 greater than one. -/
-theorem integral_sdiff_image_uIcc {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+theorem setIntegral_sdiff_image_uIcc {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
     (hγ : AbsolutelyContinuousOnInterval γ a b) (μ : Measure E) [μ.IsAddHaarMeasure]
     (hd : 1 < Module.finrank ℝ E) (f : E → F) (s : Set E) :
     ∫ z in s \ (γ '' uIcc a b), f z ∂μ = ∫ z in s, f z ∂μ :=
-  setIntegral_congr_set (sdiff_null_ae_eq_self (hγ.measure_image_uIcc_eq_zero μ hd))
+  setIntegral_congr_set (sdiff_null_ae_eq_self (hγ.addHaar_image_uIcc_eq_zero μ hd))
 
 /-- Adding an absolutely continuous curve's trace preserves set integrals in ambient dimension
 greater than one. -/
-theorem integral_union_image_uIcc {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+theorem setIntegral_union_image_uIcc {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
     (hγ : AbsolutelyContinuousOnInterval γ a b) (μ : Measure E) [μ.IsAddHaarMeasure]
     (hd : 1 < Module.finrank ℝ E) (f : E → F) (s : Set E) :
     ∫ z in s ∪ (γ '' uIcc a b), f z ∂μ = ∫ z in s, f z ∂μ := by
   apply setIntegral_congr_set
   rw [union_comm]
   exact union_ae_eq_right.mpr
-    (measure_mono_null sdiff_subset (hγ.measure_image_uIcc_eq_zero μ hd))
+    (measure_mono_null sdiff_subset (hγ.addHaar_image_uIcc_eq_zero μ hd))
 
 end AbsolutelyContinuousOnInterval

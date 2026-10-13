@@ -31,7 +31,7 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
 /-- A raw curve is polygonal on an interval if a finite increasing subdivision expresses it as
 the affine interpolation of its successive vertex values on every closed cell. -/
-def IsPolygonalOnInterval {F : Type*} [AddCommGroup F] [Module ℝ F]
+@[expose] def TauCeti.IsPolygonalOnInterval {F : Type*} [AddCommGroup F] [Module ℝ F]
     (f : ℝ → F) (a b : ℝ) : Prop :=
   ∃ N : ℕ, 0 < N ∧ ∃ s : Fin (N + 1) → ℝ,
     StrictMono s ∧ s 0 = a ∧ s (Fin.last N) = b ∧
@@ -41,8 +41,8 @@ def IsPolygonalOnInterval {F : Type*} [AddCommGroup F] [Module ℝ F]
             (f (s i.succ) - f (s i.castSucc))
 
 /-- A polygonal curve is absolutely continuous: its finitely many affine cells glue together. -/
-theorem IsPolygonalOnInterval.absolutelyContinuousOnInterval {f : ℝ → E} {a b : ℝ}
-    (h : IsPolygonalOnInterval f a b) : AbsolutelyContinuousOnInterval f a b := by
+theorem TauCeti.IsPolygonalOnInterval.absolutelyContinuousOnInterval {f : ℝ → E} {a b : ℝ}
+    (h : TauCeti.IsPolygonalOnInterval f a b) : AbsolutelyContinuousOnInterval f a b := by
   obtain ⟨N, _, s, hs, ha, hb, hsegments⟩ := h
   exact AbsolutelyContinuousOnInterval.of_affine_subdivision hs ha hb hsegments
 
@@ -65,7 +65,7 @@ private theorem integral_intervalStep_eq {δ : ℝ} (hδ : 0 < δ)
 
 private theorem polygonal_primitive (hab : a < b) (N : ℕ) (hN : 0 < N)
     (g : ℝ →ᵇ E) (x c : E) :
-    IsPolygonalOnInterval
+    TauCeti.IsPolygonalOnInterval
       (fun t ↦ x + ∫ v in a..t, intervalStep a ((b - a) / N) g v + c) a b := by
   let δ := (b - a) / N
   have hδ : 0 < δ := div_pos (sub_pos.mpr hab) (Nat.cast_pos.mpr hN)
@@ -82,16 +82,13 @@ private theorem polygonal_primitive (hab : a < b) (N : ℕ) (hN : 0 < N)
     rw [intervalIntegrable_iff, uIoc_of_le hab.le]
     exact (integrableOn_intervalStep a b δ g).add (integrable_const c)
   refine ⟨N, hN, s, hs, by simp [s], hlast, fun i t ht ↦ ?_⟩
-  have hleft : s i.castSucc ∈ uIcc a b := by
+  have hnode (j : Fin (N + 1)) : s j ∈ uIcc a b := by
     rw [uIcc_of_le hab.le]
     constructor
     · simpa only [show s 0 = a from by simp [s]] using hs.monotone (Fin.zero_le _)
     · simpa only [hlast] using hs.monotone (Fin.le_last _)
-  have hright : s i.succ ∈ uIcc a b := by
-    rw [uIcc_of_le hab.le]
-    constructor
-    · simpa only [show s 0 = a from by simp [s]] using hs.monotone (Fin.zero_le _)
-    · simpa only [hlast] using hs.monotone (Fin.le_last _)
+  have hleft := hnode i.castSucc
+  have hright := hnode i.succ
   have heq (u : ℝ) (hu : u ∈ Icc (s i.castSucc) (s i.succ)) :
       (∫ v in a..u, intervalStep a δ g v + c) =
         (∫ v in a..s i.castSucc, intervalStep a δ g v + c) +
@@ -114,21 +111,31 @@ private theorem polygonal_primitive (hab : a < b) (N : ℕ) (hN : 0 < N)
   rw [smul_smul, div_mul_cancel₀ _ (sub_pos.mpr (hs (by exact Nat.lt_succ_self i.val))).ne']
   abel
 
+private theorem ae_deriv_const_add_integral {v : ℝ → E} (hv : IntervalIntegrable v volume a b)
+    (hab : a ≤ b) (x : E) :
+    deriv (fun t ↦ x + ∫ u in a..t, v u) =ᵐ[volume.restrict (Ioc a b)] v := by
+  rw [Filter.EventuallyEq, ae_restrict_iff' measurableSet_Ioc]
+  filter_upwards [hv.ae_hasDerivAt_integral] with t ht hmem
+  exact ((ht ((uIcc_of_le hab).symm ▸ Ioc_subset_Icc_self hmem) a
+    left_mem_uIcc).const_add x).deriv
+
 omit [CompleteSpace E] in
 private theorem exists_polygonal_error_le [FiniteDimensional ℝ E] {γ : ℝ → E}
     (hγ : AbsolutelyContinuousOnInterval γ a b) (hab : a < b) {ε : ℝ} (hε : 0 < ε) :
-    ∃ p : ℝ → E, IsPolygonalOnInterval p a b ∧ AbsolutelyContinuousOnInterval p a b ∧
+    ∃ p : ℝ → E, TauCeti.IsPolygonalOnInterval p a b ∧ AbsolutelyContinuousOnInterval p a b ∧
       p a = γ a ∧ p b = γ b ∧ (∀ t ∈ Icc a b, ‖p t - γ t‖ ≤ 2 * ε) ∧
       (∫ t in a..b, ‖deriv p t - deriv γ t‖) ≤ 2 * ε := by
   have hγi := hγ.intervalIntegrable_deriv_of_finiteDimensional
   have hγi' : IntegrableOn (deriv γ) (Ioc a b) := by
     simpa only [uIoc_of_le hab.le] using hγi.def'
+  -- Approximate the velocity by a step function on a uniform subdivision.
   obtain ⟨N, hN, g, hg⟩ := hγi'.exists_intervalStep_integral_norm_sub_le hab hε
   let δ := (b - a) / N
   let s := intervalStep a δ g
   have hsi' : IntegrableOn s (Ioc a b) := integrableOn_intervalStep a b δ g
   have hsi : IntervalIntegrable s volume a b := by
     rwa [intervalIntegrable_iff, uIoc_of_le hab.le]
+  -- Correct the average velocity so its primitive has both prescribed endpoints.
   let D := γ b - γ a - ∫ t in a..b, s t
   let c := (b - a)⁻¹ • D
   let v := fun t ↦ s t + c
@@ -148,11 +155,9 @@ private theorem exists_polygonal_error_le [FiniteDimensional ℝ E] {γ : ℝ �
   have hpAC : AbsolutelyContinuousOnInterval p a b := by
     exact (LipschitzWith.const (α := ℝ) (γ a)).lipschitzOnWith.absolutelyContinuousOnInterval.add
       (hvi.absolutelyContinuousOnInterval_intervalIntegral' left_mem_uIcc)
-  have hpderiv : deriv p =ᵐ[volume.restrict (Ioc a b)] v := by
-    rw [Filter.EventuallyEq, ae_restrict_iff' measurableSet_Ioc]
-    filter_upwards [hvi.ae_hasDerivAt_integral] with t ht hmem
-    exact ((ht ((uIcc_of_le hab.le).symm ▸ Ioc_subset_Icc_self hmem) a
-      left_mem_uIcc).const_add (γ a)).deriv
+  have hpderiv : deriv p =ᵐ[volume.restrict (Ioc a b)] v :=
+    ae_deriv_const_add_integral hvi hab.le (γ a)
+  -- The mean correction costs at most the original velocity approximation error.
   have hD : ‖D‖ ≤ ε := by
     have hEq : D = ∫ t in a..b, deriv γ t - s t := by
       rw [intervalIntegral.integral_sub hγi hsi,
@@ -180,25 +185,12 @@ private theorem exists_polygonal_error_le [FiniteDimensional ℝ E] {γ : ℝ �
       _ = (∫ t in Ioc a b, ‖s t - deriv γ t‖) + ∫ _ in Ioc a b, ‖c‖ :=
         integral_add (hsi'.sub hγi').norm (integrable_const _)
       _ ≤ 2 * ε := by linarith
-  have hpγi := hpAC.intervalIntegrable_deriv_of_finiteDimensional.sub hγi
+  -- Velocity convergence implies uniform convergence through the AC fundamental theorem.
   have hderiv : (∫ t in a..b, ‖deriv p t - deriv γ t‖) ≤ 2 * ε := by
     rw [intervalIntegral.integral_of_le hab.le]
     apply le_trans (integral_congr_ae (hpderiv.mono fun t ht ↦ by rw [ht])).le herror
-  have hunif : ∀ t ∈ Icc a b, ‖p t - γ t‖ ≤ 2 * ε := by
-    intro t ht
-    have hsub : uIcc a t ⊆ uIcc a b := uIcc_subset_uIcc left_mem_uIcc
-      ((uIcc_of_le hab.le).symm ▸ ht)
-    have hEq : ∫ v in a..t, deriv p v - deriv γ v = p t - γ t := by
-      rw [intervalIntegral.integral_sub
-        (hpAC.intervalIntegrable_deriv_of_finiteDimensional.mono_set hsub) (hγi.mono_set hsub),
-        (hpAC.mono hsub).integral_deriv_eq_sub_of_finiteDimensional,
-        (hγ.mono hsub).integral_deriv_eq_sub_of_finiteDimensional, hpa]
-      abel
-    rw [← hEq]
-    apply (intervalIntegral.norm_integral_le_integral_norm ht.1).trans
-    apply le_trans _ hderiv
-    exact intervalIntegral.integral_mono_interval le_rfl ht.1 ht.2
-      (Eventually.of_forall fun _ ↦ norm_nonneg _) hpγi.norm
+  have hunif : ∀ t ∈ Icc a b, ‖p t - γ t‖ ≤ 2 * ε := fun t ht ↦
+    (hpAC.norm_sub_le_integral_norm_deriv_sub hγ hpa ht).trans hderiv
   exact ⟨p, polygonal_primitive hab N hN g (γ a) c, hpAC, hpa, hpb, hunif, hderiv⟩
 
 omit [CompleteSpace E] in
@@ -207,7 +199,7 @@ approximations with the same endpoints, converging uniformly and with their deri
 theorem exists_polygonal_approximation [FiniteDimensional ℝ E] {γ : ℝ → E}
     (hγ : AbsolutelyContinuousOnInterval γ a b) (hab : a < b) :
     ∃ γn : ℕ → ℝ → E,
-      (∀ n, IsPolygonalOnInterval (γn n) a b ∧
+      (∀ n, TauCeti.IsPolygonalOnInterval (γn n) a b ∧
         AbsolutelyContinuousOnInterval (γn n) a b ∧ γn n a = γ a ∧ γn n b = γ b) ∧
       TendstoUniformlyOn γn γ atTop (Icc a b) ∧
       Tendsto (fun n ↦ ∫ t in a..b, ‖deriv (γn n) t - deriv γ t‖) atTop (𝓝 0) := by

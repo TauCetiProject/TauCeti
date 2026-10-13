@@ -60,7 +60,7 @@ theorem LocallyBoundedVariationOn.dimH_image_le_one {α E : Type*} [LinearOrder 
 
 /-- The image of a curve of locally bounded variation has zero additive Haar measure in every
 finite-dimensional real normed space of dimension greater than one. -/
-theorem LocallyBoundedVariationOn.measure_image_eq_zero {α E : Type*} [LinearOrder α]
+theorem LocallyBoundedVariationOn.addHaar_image_eq_zero {α E : Type*} [LinearOrder α]
     [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
     [MeasurableSpace E] [BorelSpace E] {f : α → E} {s : Set α}
     (hf : LocallyBoundedVariationOn f s) (μ : Measure E) [μ.IsAddHaarMeasure]

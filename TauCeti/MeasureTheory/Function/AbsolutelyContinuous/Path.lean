@@ -23,9 +23,20 @@ public section
 
 open Set
 
-namespace Path
-
 variable {X : Type*} [PseudoMetricSpace X] {x y z : X}
+
+private theorem AbsolutelyContinuousOnInterval.comp_affine {γ : ℝ → X} {a b c d : ℝ}
+    (hγ : AbsolutelyContinuousOnInterval γ c d) (m k : ℝ)
+    (hmap : MapsTo (fun t : ℝ ↦ m * t + k) (uIcc a b) (uIcc c d)) :
+    AbsolutelyContinuousOnInterval (γ ∘ (fun t : ℝ ↦ m * t + k)) a b := by
+  have hc : ContDiffOn ℝ 1 (fun t : ℝ ↦ m * t + k) (uIcc a b) := by fun_prop
+  rcases le_total 0 m with hm | hm
+  · exact hγ.comp_monotoneOn hc.absolutelyContinuousOnInterval
+      (fun _ _ _ _ hst ↦ add_le_add (mul_le_mul_of_nonneg_left hst hm) le_rfl) hmap
+  · exact hγ.comp_antitoneOn hc.absolutelyContinuousOnInterval
+      (fun _ _ _ _ hst ↦ add_le_add (mul_le_mul_of_nonpos_left hst hm) le_rfl) hmap
+
+namespace Path
 
 /-- The constant extension of an absolutely continuous path is absolutely continuous on every
 real parameter interval. -/
@@ -42,26 +53,30 @@ theorem absolutelyContinuousOnInterval_extend {γ : Path x y}
     exact ⟨le_max_left _ _, max_le zero_le_one (min_le_left _ _)⟩
   apply (hγ.comp_monotoneOn hθ (hm.monotoneOn _) hmap).congr
   intro t _
-  change γ (projIcc 0 1 zero_le_one (θ t)) = γ (projIcc 0 1 zero_le_one t)
-  congr 1
-  apply Subtype.ext
-  dsimp [θ, projIcc]
-  simp only [min_max_distrib_left, min_eq_right zero_le_one,
-    ← max_assoc, max_self, ← min_assoc, min_self]
+  change γ.extend (θ t) = γ.extend t
+  by_cases ht₀ : t ≤ 0
+  · have hθt : θ t = 0 := by simp [θ, min_eq_right (ht₀.trans zero_le_one), max_eq_left ht₀]
+    rw [hθt, extend_zero, extend_of_le_zero γ ht₀]
+  by_cases ht₁ : 1 ≤ t
+  · have hθt : θ t = 1 := by simp [θ, min_eq_left ht₁]
+    rw [hθt, extend_one, extend_of_one_le γ ht₁]
+  have hθt : θ t = t := by
+    simp [θ, min_eq_right (le_of_not_ge ht₁), max_eq_right (le_of_not_ge ht₀)]
+  rw [hθt]
 
 /-- Reversing a path preserves absolute continuity of its standard real extension. -/
 theorem absolutelyContinuousOnInterval_extend_symm {γ : Path x y}
     (hγ : AbsolutelyContinuousOnInterval γ.extend 0 1) :
     AbsolutelyContinuousOnInterval γ.symm.extend 0 1 := by
-  have hθ : AbsolutelyContinuousOnInterval (fun t : ℝ ↦ 1 - t) 0 1 := by
-    have hc : ContDiffOn ℝ 1 (fun t : ℝ ↦ 1 - t) (uIcc (0 : ℝ) 1) := by fun_prop
-    exact hc.absolutelyContinuousOnInterval
   have hmap : MapsTo (fun t : ℝ ↦ 1 - t) (uIcc (0 : ℝ) 1) (uIcc (0 : ℝ) 1) := by
     simp only [uIcc_of_le zero_le_one, MapsTo, mem_Icc]
     intro t ht
     constructor <;> linarith [ht.1, ht.2]
-  have hm : Antitone (fun t : ℝ ↦ 1 - t) := by intro s t hst; linarith
-  simpa only [extend_symm, Function.comp_def] using hγ.comp_antitoneOn hθ (hm.antitoneOn _) hmap
+  have hmap' : MapsTo (fun t : ℝ ↦ (-1) * t + 1)
+      (uIcc (0 : ℝ) 1) (uIcc (0 : ℝ) 1) := by
+    simpa only [neg_one_mul, sub_eq_add_neg, add_comm] using hmap
+  simpa only [extend_symm, Function.comp_def, neg_one_mul, sub_eq_add_neg, add_comm]
+    using AbsolutelyContinuousOnInterval.comp_affine hγ (-1) 1 hmap'
 
 /-- Concatenating two absolutely continuous paths preserves absolute continuity. -/
 theorem absolutelyContinuousOnInterval_extend_trans {γ₁ : Path x y} {γ₂ : Path y z}
@@ -69,30 +84,28 @@ theorem absolutelyContinuousOnInterval_extend_trans {γ₁ : Path x y} {γ₂ : 
     (h₂ : AbsolutelyContinuousOnInterval γ₂.extend 0 1) :
     AbsolutelyContinuousOnInterval (γ₁.trans γ₂).extend 0 1 := by
   have hleft : AbsolutelyContinuousOnInterval (γ₁.trans γ₂).extend 0 (1 / 2) := by
-    have hc : ContDiffOn ℝ 1 (fun t : ℝ ↦ 2 * t) (uIcc (0 : ℝ) (1 / 2)) := by fun_prop
-    have hm : Monotone (fun t : ℝ ↦ 2 * t) := by intro s t hst; linarith
     have hmap : MapsTo (fun t : ℝ ↦ 2 * t) (uIcc (0 : ℝ) (1 / 2))
         (uIcc (0 : ℝ) 1) := by
       simp only [uIcc_of_le (by norm_num : (0 : ℝ) ≤ 1 / 2),
         uIcc_of_le zero_le_one, MapsTo, mem_Icc]
       intro t ht
       constructor <;> linarith [ht.1, ht.2]
-    apply (h₁.comp_monotoneOn hc.absolutelyContinuousOnInterval (hm.monotoneOn _) hmap).congr
+    apply (AbsolutelyContinuousOnInterval.comp_affine h₁ 2 0
+      (by simpa only [add_zero] using hmap)).congr
     intro t ht
-    exact (extend_trans_of_le_half γ₁ γ₂
+    simpa only [Function.comp_apply, add_zero] using (extend_trans_of_le_half γ₁ γ₂
       ((uIcc_of_le (by norm_num : (0 : ℝ) ≤ 1 / 2)) ▸ ht).2).symm
   have hright : AbsolutelyContinuousOnInterval (γ₁.trans γ₂).extend (1 / 2) 1 := by
-    have hc : ContDiffOn ℝ 1 (fun t : ℝ ↦ 2 * t - 1) (uIcc (1 / 2 : ℝ) 1) := by fun_prop
-    have hm : Monotone (fun t : ℝ ↦ 2 * t - 1) := by intro s t hst; linarith
     have hmap : MapsTo (fun t : ℝ ↦ 2 * t - 1) (uIcc (1 / 2 : ℝ) 1)
         (uIcc (0 : ℝ) 1) := by
       simp only [uIcc_of_le (by norm_num : (1 / 2 : ℝ) ≤ 1),
         uIcc_of_le zero_le_one, MapsTo, mem_Icc]
       intro t ht
       constructor <;> linarith [ht.1, ht.2]
-    apply (h₂.comp_monotoneOn hc.absolutelyContinuousOnInterval (hm.monotoneOn _) hmap).congr
+    apply (AbsolutelyContinuousOnInterval.comp_affine h₂ 2 (-1)
+      (by simpa only [sub_eq_add_neg] using hmap)).congr
     intro t ht
-    exact (extend_trans_of_half_le γ₁ γ₂
+    simpa only [Function.comp_apply, sub_eq_add_neg] using (extend_trans_of_half_le γ₁ γ₂
       ((uIcc_of_le (by norm_num : (1 / 2 : ℝ) ≤ 1)) ▸ ht).1).symm
   exact hleft.trans hright
 
@@ -112,7 +125,7 @@ theorem absolutelyContinuousOnInterval_extend_truncate {γ : Path x y}
     hθ (hm.monotoneOn _) hmap).congr
   intro t ht
   rw [uIcc_of_le zero_le_one] at ht
-  rw [extend_apply _ ht]
+  rw [extend_apply _ ht, truncate, coe_mk_mk]
   rfl
 
 end Path
