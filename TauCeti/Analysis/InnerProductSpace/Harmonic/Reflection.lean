@@ -49,11 +49,12 @@ Brezis, Lemma 9.2, used in `TauCeti.Analysis.Sobolev.Trace.Reflection` for the e
 
 ## Main declarations
 
-* `TauCeti.WeaklyHarmonicOn.sub_comp_normalReflection`: the odd reflection of a weakly harmonic
-  function vanishing on the flat boundary is weakly harmonic.
-* `TauCeti.WeaklyHarmonicOn.exists_harmonicOnNhd_ae_eq_of_inf_normalHalfSpace`: such a function
-  agrees almost everywhere on `U ∩ H` with a harmonic function on `U` that is odd under `ρ`, and
-  its weak gradient agrees there with the classical gradient.
+* `TauCeti.WeaklyHarmonicOn.sub_comp_normalReflection`: the odd reflection of a function weakly
+  harmonic on `U ∩ H`, weakly differentiable on `U` with weak gradient vanishing off `H`, is weakly
+  harmonic on `U`.
+* `TauCeti.WeaklyHarmonicOn.exists_harmonicOnNhd_ae_eq_of_inf_normalHalfSpace`: if such a function
+  also vanishes off `H`, it agrees almost everywhere on `U ∩ H` with a harmonic function on `U`
+  that is odd under `ρ`, and its weak gradient agrees there with the classical gradient.
 
 ## References
 
@@ -72,6 +73,28 @@ namespace TauCeti
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] {a : ℝ} {U : Opens (WithLp 2 (ℝ × E))}
   {w : WithLp 2 (ℝ × E) → ℝ} {G : WithLp 2 (ℝ × E) → WithLp 2 (ℝ × E)}
+
+/-- The reflection `φ ∘ ρ` of a test function `φ` on `U`, for `U` mapped into itself by `ρ`. -/
+private noncomputable def reflectTestFunction (hU : MapsTo (normalReflection E a) U U)
+    (φ : 𝓓(U, ℝ)) : 𝓓(U, ℝ) :=
+  ⟨fun x => φ (normalReflection E a x), φ.contDiff.comp (contDiff_normalReflection a),
+    φ.hasCompactSupport.comp_homeomorph (normalReflection E a).toHomeomorph, fun x hx => by
+      -- Rewrite the reflected function as a composition with a homeomorphism, so that its
+      -- topological support is the preimage of that of `φ`.
+      have hfun : (fun x => φ (normalReflection E a x)) =
+          (φ : WithLp 2 (ℝ × E) → ℝ) ∘ (normalReflection E a).toHomeomorph := by
+        funext x
+        simp only [Function.comp_apply, AffineIsometryEquiv.coe_toHomeomorph]
+      rw [hfun, tsupport_comp_eq_preimage] at hx
+      simpa only [AffineIsometryEquiv.coe_toHomeomorph, normalReflection_normalReflection] using
+        hU (φ.tsupport_subset hx)⟩
+
+omit [MeasurableSpace E] [BorelSpace E] in
+@[simp]
+private theorem reflectTestFunction_apply (hU : MapsTo (normalReflection E a) U U)
+    (φ : 𝓓(U, ℝ)) (x : WithLp 2 (ℝ × E)) :
+    reflectTestFunction hU φ x = φ (normalReflection E a x) :=
+  rfl
 
 /-- The pairing of the weak gradient with the gradient of a test function on `U` vanishing on the
 hyperplane `{a} × E` is zero, when `w` is weakly harmonic on `U ∩ H` and `G` vanishes off `H`. -/
@@ -143,20 +166,21 @@ private theorem integral_fderiv_apply_eq_zero
 
 /-- **The Schwarz reflection principle, weak form.** Let `U` be an open set mapped into itself by
 the reflection `ρ` in the hyperplane `{a} × E`, and let `w` be weakly harmonic on `U ∩ H`, where
-`H = {x | a < x.fst}`. Suppose that `w` vanishes on the flat boundary `U ∩ {a} × E` in the Sobolev
-sense: `w` is weakly differentiable on all of `U`, with weak gradient `G` vanishing almost
-everywhere off `H`. Then the odd reflection `x ↦ w x - w (ρ x)` is weakly harmonic on `U`. -/
+`H = {x | a < x.fst}`. Suppose that `w` is weakly differentiable on all of `U`, with weak gradient
+`G` vanishing almost everywhere on `U` off `H`; for instance, `w` has zero trace on the flat
+boundary `U ∩ {a} × E` and is extended by zero off `H`. Then the odd reflection
+`x ↦ w x - w (ρ x)` is weakly harmonic on `U`. -/
 theorem WeaklyHarmonicOn.sub_comp_normalReflection
     (hharm : WeaklyHarmonicOn volume (U ⊓ normalHalfSpace a) w)
     (hU : MapsTo (normalReflection E a) U U)
     (hw : HasWeakFDerivOn volume U w fun x => innerSL ℝ (G x))
-    (hG0 : ∀ᵐ x, x ∉ normalHalfSpace (E := E) a → G x = 0) :
+    (hG0 : ∀ᵐ x ∂volume.restrict U, x ∉ normalHalfSpace (E := E) a → G x = 0) :
     WeaklyHarmonicOn volume U fun x => w x - w (normalReflection E a x) := by
   set ρ := normalReflection E a with hρ
   -- Modify `G` on a null set so that it vanishes everywhere off the half-space.
   set G' := (normalHalfSpace (E := E) a : Set (WithLp 2 (ℝ × E))).indicator G
   have hw' : HasWeakFDerivOn volume U w fun x => innerSL ℝ (G' x) :=
-    hw.congr_ae_deriv <| ae_restrict_of_ae <| hG0.mono fun x hx => by
+    hw.congr_ae_deriv <| hG0.mono fun x hx => by
       by_cases hxH : x ∈ normalHalfSpace (E := E) a
       · simp [G', hxH]
       · simp [G', hxH, hx hxH]
@@ -168,16 +192,9 @@ theorem WeaklyHarmonicOn.sub_comp_normalReflection
       (contDiff_normalReflection a).contDiffOn hU).locallyIntegrableOn
   refine weaklyHarmonicOn_iff.2 ⟨hwl.sub hwρ, fun φ => ?_⟩
   -- The reflected test function `φ ∘ ρ` and the odd combination `ψ = φ - φ ∘ ρ`.
-  let φρ : 𝓓(U, ℝ) :=
-    ⟨fun x => φ (ρ x), φ.contDiff.comp (contDiff_normalReflection a),
-      φ.hasCompactSupport.comp_homeomorph ρ.toHomeomorph, fun x hx => by
-        have hx' : ρ x ∈ tsupport (φ : WithLp 2 (ℝ × E) → ℝ) := by
-          rw [show (fun x => φ (ρ x)) = (φ : WithLp 2 (ℝ × E) → ℝ) ∘ ρ.toHomeomorph from rfl,
-            tsupport_comp_eq_preimage] at hx
-          exact hx
-        have h := hU (φ.tsupport_subset hx')
-        rwa [hρ, normalReflection_normalReflection] at h⟩
-  have hφρ : (φρ : WithLp 2 (ℝ × E) → ℝ) = fun x => φ (ρ x) := rfl
+  set φρ := reflectTestFunction hU φ
+  have hφρ : (φρ : WithLp 2 (ℝ × E) → ℝ) = fun x => φ (ρ x) :=
+    funext (reflectTestFunction_apply hU φ)
   have hΔ (x : WithLp 2 (ℝ × E)) : Δ (φρ : WithLp 2 (ℝ × E) → ℝ) x = Δ (φ : _ → ℝ) (ρ x) :=
     congrFun (laplacian_comp_affineIsometryEquiv_right ρ φ) x
   have hint (v : WithLp 2 (ℝ × E) → ℝ) (hv : LocallyIntegrableOn v U volume) (θ : 𝓓(U, ℝ)) :
@@ -210,17 +227,17 @@ theorem WeaklyHarmonicOn.sub_comp_normalReflection
 
 /-- **The Schwarz reflection principle.** Let `U` be an open set mapped into itself by the
 reflection `ρ` in the hyperplane `{a} × E`, and let `w` be weakly harmonic on `U ∩ H`, where
-`H = {x | a < x.fst}`, and zero almost everywhere off `H`. Suppose that `w` is weakly
-differentiable on all of `U`, with weak gradient `G` vanishing almost everywhere off `H`, so that
-`w` vanishes on the flat boundary `U ∩ {a} × E` in the Sobolev sense. Then there is a function `h`
-harmonic on `U` and odd under `ρ` that agrees almost everywhere on `U ∩ H` with `w`, and whose
-gradient agrees almost everywhere on `U ∩ H` with `G`. -/
+`H = {x | a < x.fst}`, and zero almost everywhere on `U` off `H`. Suppose that `w` is weakly
+differentiable on all of `U`, with weak gradient `G` vanishing almost everywhere on `U` off `H`,
+so that `w` vanishes on the flat boundary `U ∩ {a} × E` in the Sobolev sense. Then there is a
+function `h` harmonic on `U` and odd under `ρ` that agrees almost everywhere on `U ∩ H` with `w`,
+and whose gradient agrees almost everywhere on `U ∩ H` with `G`. -/
 theorem WeaklyHarmonicOn.exists_harmonicOnNhd_ae_eq_of_inf_normalHalfSpace
     (hharm : WeaklyHarmonicOn volume (U ⊓ normalHalfSpace a) w)
     (hU : MapsTo (normalReflection E a) U U)
     (hw : HasWeakFDerivOn volume U w fun x => innerSL ℝ (G x))
-    (hG0 : ∀ᵐ x, x ∉ normalHalfSpace (E := E) a → G x = 0)
-    (hw0 : ∀ᵐ x, x ∉ normalHalfSpace (E := E) a → w x = 0) :
+    (hG0 : ∀ᵐ x ∂volume.restrict U, x ∉ normalHalfSpace (E := E) a → G x = 0)
+    (hw0 : ∀ᵐ x ∂volume.restrict U, x ∉ normalHalfSpace (E := E) a → w x = 0) :
     ∃ h : WithLp 2 (ℝ × E) → ℝ, HarmonicOnNhd h U ∧
       (∀ x ∈ U, h (normalReflection E a x) = -h x) ∧
       w =ᵐ[volume.restrict (U ⊓ normalHalfSpace a : Opens _)] h ∧
@@ -230,16 +247,18 @@ theorem WeaklyHarmonicOn.exists_harmonicOnNhd_ae_eq_of_inf_normalHalfSpace
   obtain ⟨h, hh, hae⟩ := (hharm.sub_comp_normalReflection hU hw hG0).exists_harmonicOnNhd_ae_eq
   have hae' : ∀ᵐ x, x ∈ U → w x - w (ρ x) = h x :=
     (ae_restrict_iff' U.isOpen.measurableSet).1 hae
+  have hw0' : ∀ᵐ x, x ∈ U → x ∉ normalHalfSpace (E := E) a → w x = 0 :=
+    (ae_restrict_iff' U.isOpen.measurableSet).1 hw0
   have hUH : ((U ⊓ normalHalfSpace a : Opens _) : Set (WithLp 2 (ℝ × E))) ⊆ U := by simp
   -- On `U ∩ H` the reflected point lies off `H`, where `w` vanishes.
   have hwh : w =ᵐ[volume.restrict (U ⊓ normalHalfSpace a : Opens _)] h := by
     rw [EventuallyEq, ae_restrict_iff' (U ⊓ normalHalfSpace a).isOpen.measurableSet]
-    filter_upwards [hae', hρ.ae hw0] with x hx hx0 hxUH
+    filter_upwards [hae', hρ.ae hw0'] with x hx hx0 hxUH
     rw [Opens.coe_inf] at hxUH
     have hρx : ρ x ∉ normalHalfSpace (E := E) a := by
       rw [hρdef, normalReflection_mem_normalHalfSpace_iff, not_lt]
       exact (mem_normalHalfSpace a x).1 hxUH.2 |>.le
-    rw [← hx hxUH.1, hx0 hρx, sub_zero]
+    rw [← hx hxUH.1, hx0 (hU hxUH.1) hρx, sub_zero]
   refine ⟨h, hh, ?_, hwh, ?_⟩
   · -- `h ∘ ρ` and `-h` are continuous on `U` and agree almost everywhere there.
     have hodd : (fun x => h (ρ x)) =ᵐ[volume.restrict U] fun x => -h x := by
