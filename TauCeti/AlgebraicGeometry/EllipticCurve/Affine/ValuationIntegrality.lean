@@ -261,6 +261,62 @@ theorem equation_integralModel_iff {x y : v.valuationSubring} :
     rw [baseChange_integralModel_eq]
   exact (map_equation _ Subtype.val_injective x y).symm.trans h
 
+/-- **An integral nonsingular point of `W` is a nonsingular point of its integral model**, and
+conversely. -/
+@[simp]
+theorem nonsingular_integralModel_iff {x y : v.valuationSubring} :
+    (integralModel v.valuationSubring W).toAffine.Nonsingular x y ↔ W.Nonsingular x y := by
+  have h : ((integralModel v.valuationSubring W).baseChange F).toAffine.Nonsingular x y ↔
+      W.Nonsingular x y := by
+    rw [baseChange_integralModel_eq]
+  exact (map_nonsingular _ Subtype.val_injective x y).symm.trans h
+
+/-- The coefficient `a₁` of the integral model is that of `W`. -/
+@[simp]
+theorem coe_integralModel_a₁ : ((integralModel v.valuationSubring W).a₁ : F) = W.a₁ := by
+  simpa using integralModel_a₁_eq v.valuationSubring W
+
+/-- The coefficient `a₂` of the integral model is that of `W`. -/
+@[simp]
+theorem coe_integralModel_a₂ : ((integralModel v.valuationSubring W).a₂ : F) = W.a₂ := by
+  simpa using integralModel_a₂_eq v.valuationSubring W
+
+/-- The coefficient `a₃` of the integral model is that of `W`. -/
+@[simp]
+theorem coe_integralModel_a₃ : ((integralModel v.valuationSubring W).a₃ : F) = W.a₃ := by
+  simpa using integralModel_a₃_eq v.valuationSubring W
+
+/-- The coefficient `a₄` of the integral model is that of `W`. -/
+@[simp]
+theorem coe_integralModel_a₄ : ((integralModel v.valuationSubring W).a₄ : F) = W.a₄ := by
+  simpa using integralModel_a₄_eq v.valuationSubring W
+
+/-- The coefficient `a₆` of the integral model is that of `W`. -/
+@[simp]
+theorem coe_integralModel_a₆ : ((integralModel v.valuationSubring W).a₆ : F) = W.a₆ := by
+  simpa using integralModel_a₆_eq v.valuationSubring W
+
+/-- The negated `y`-coordinate computed in the integral model is that computed in `W`. -/
+theorem coe_negY_integralModel (x y : v.valuationSubring) :
+    (((integralModel v.valuationSubring W).toAffine.negY x y : v.valuationSubring) : F) =
+      W.negY x y := by
+  conv_rhs => rw [← baseChange_integralModel_eq v.valuationSubring W]
+  exact (map_negY (algebraMap v.valuationSubring F) x y).symm
+
+/-- The `x`-coordinate of a sum computed in the integral model is that computed in `W`. -/
+theorem coe_addX_integralModel (x₁ x₂ ℓ : v.valuationSubring) :
+    (((integralModel v.valuationSubring W).toAffine.addX x₁ x₂ ℓ : v.valuationSubring) : F) =
+      W.addX x₁ x₂ ℓ := by
+  conv_rhs => rw [← baseChange_integralModel_eq v.valuationSubring W]
+  exact (map_addX (algebraMap v.valuationSubring F) x₁ x₂ ℓ).symm
+
+/-- The `y`-coordinate of a sum computed in the integral model is that computed in `W`. -/
+theorem coe_addY_integralModel (x₁ x₂ y₁ ℓ : v.valuationSubring) :
+    (((integralModel v.valuationSubring W).toAffine.addY x₁ x₂ y₁ ℓ : v.valuationSubring) : F) =
+      W.addY x₁ x₂ y₁ ℓ := by
+  conv_rhs => rw [← baseChange_integralModel_eq v.valuationSubring W]
+  exact (map_addY (algebraMap v.valuationSubring F) x₁ y₁ x₂ ℓ).symm
+
 /-- **The slope of a chord with integral `x`-coordinates is integral.** If `x₁`, `x₂` and the
 `x`-coordinate `x₃ = ℓ² + a₁ ℓ − a₂ − x₁ − x₂` of the third intersection point are integral, then
 so is `ℓ`: otherwise `v(ℓ + a₁) = v(ℓ)`, and `ℓ (ℓ + a₁) = x₃ + a₂ + x₁ + x₂` would have valuation

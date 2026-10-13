@@ -10,8 +10,6 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.TateAlgorithm.Terminal
 public import Mathlib.RingTheory.Henselian
 -- Proof-only: the points with singular reduction when the reduction is singular at the origin.
 import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.SingularReduction
--- Proof-only: the chord through two points whose sum has singular reduction.
-import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.IndexTwo
 -- Proof-only: index three from a covering by three cosets.
 import TauCeti.GroupTheory.Index.Three
 
@@ -81,31 +79,6 @@ section CommRing
 
 variable {R : Type*} [CommRing R] {ϖ : R}
 
-/-- On the normal form of Tate's algorithm at the symbol `IV*`, where `ϖ ∣ a₁`, `ϖ² ∣ a₂`,
-`a₃ = ϖ² A₃`, `ϖ³ ∣ a₄` and `a₆ = ϖ⁴ A₆`, a solution with both coordinates divisible by the prime
-`ϖ` is `(ϖ² X, ϖ² Y)` with `Y² + A₃ Y − A₆` divisible by `ϖ`. -/
-private theorem exists_eq_sq_mul_of_equation [IsDomain R] (W : WeierstrassCurve R)
-    (hϖ : Prime ϖ) (h₁ : ϖ ∣ W.a₁) (h₂ : ϖ ^ 2 ∣ W.a₂) {A₃ A₆ : R} (h₃ : W.a₃ = ϖ ^ 2 * A₃)
-    (h₄ : ϖ ^ 3 ∣ W.a₄) (h₆ : W.a₆ = ϖ ^ 4 * A₆) {x y : R} (h : W.toAffine.Equation x y)
-    (hx : ϖ ∣ x) (hy : ϖ ∣ y) :
-    ∃ X Y, x = ϖ ^ 2 * X ∧ y = ϖ ^ 2 * Y ∧ ϖ ∣ Y ^ 2 + A₃ * Y - A₆ := by
-  obtain ⟨A₁, hA₁⟩ := h₁
-  obtain ⟨A₂, hA₂⟩ := h₂
-  obtain ⟨A₄, hA₄⟩ := h₄
-  obtain ⟨X, rfl⟩ := hx
-  obtain ⟨Y, rfl⟩ := hy
-  rw [Affine.equation_iff, hA₁, hA₂, h₃, hA₄, h₆] at h
-  have hϖ0 := hϖ.ne_zero
-  -- comparing powers of `ϖ` in the equation gives `ϖ ∣ Y`, then `ϖ ∣ X`
-  obtain ⟨Y, rfl⟩ : ϖ ∣ Y := hϖ.dvd_of_dvd_pow (n := 2)
-    ⟨X ^ 3 + ϖ * A₂ * X ^ 2 + ϖ * A₄ * X + ϖ * A₆ - A₁ * X * Y - A₃ * Y,
-      mul_left_cancel₀ (pow_ne_zero 2 hϖ0) (by linear_combination h)⟩
-  obtain ⟨X, rfl⟩ : ϖ ∣ X := hϖ.dvd_of_dvd_pow (n := 3)
-    ⟨Y ^ 2 + A₁ * X * Y + A₃ * Y - A₂ * X ^ 2 - A₄ * X - A₆,
-      mul_left_cancel₀ (pow_ne_zero 3 hϖ0) (by linear_combination -h)⟩
-  exact ⟨X, Y, by ring, by ring, ϖ * X ^ 3 + ϖ * A₂ * X ^ 2 + A₄ * X - A₁ * X * Y,
-    mul_left_cancel₀ (pow_ne_zero 4 hϖ0) (by linear_combination h)⟩
-
 /-- A root modulo the prime `ϖ` of `T² + A₃ T − A₆` is simple when `ϖ ∤ A₃² + 4 A₆`: the
 derivative `2 Y + A₃` is not divisible by `ϖ`, since
 `(2 Y + A₃)² = 4 (Y² + A₃ Y − A₆) + A₃² + 4 A₆`. -/
@@ -114,30 +87,45 @@ private theorem not_dvd_two_mul_add {A₃ A₆ Y : R} (hb : ¬ ϖ ∣ A₃ ^ 2 +
   rw [show A₃ ^ 2 + 4 * A₆ = (2 * Y + A₃) ^ 2 - 4 * (Y ^ 2 + A₃ * Y - A₆) by ring]
   exact dvd_sub (dvd_pow hd two_ne_zero) (hY.mul_left 4)
 
-/-- At the symbol `IV*`, the uniformiser is prime and `ϖ ∤ A₃² + 4 A₆`, where `a₃ = ϖ² A₃` and
-`a₆ = ϖ⁴ A₆`. -/
-private theorem IsTateTerminal.prime_and_not_dvd_of_IVStar {W : WeierstrassCurve R}
-    (hϖ : (Ideal.span {ϖ}).IsPrime) (h : W.IsTateTerminal ϖ .IVStar) {A₃ A₆ : R}
-    (h₃ : W.a₃ = ϖ ^ 2 * A₃) (h₆ : W.a₆ = ϖ ^ 4 * A₆) :
-    Prime ϖ ∧ ¬ ϖ ∣ A₃ ^ 2 + 4 * A₆ := by
-  obtain ⟨-, -, -, -, -, hb₆⟩ := isTateTerminal_IVStar.1 h
-  have hb : W.b₆ = ϖ ^ 4 * (A₃ ^ 2 + 4 * A₆) := by
-    rw [b₆, h₃, h₆]
-    ring
-  -- `ϖ ≠ 0`, since otherwise `b₆ = 0`
-  have hϖ0 : ϖ ≠ 0 := by
-    rintro rfl
-    exact hb₆ (by simp [hb])
-  refine ⟨(Ideal.span_singleton_prime hϖ0).1 hϖ, fun hd ↦ hb₆ ?_⟩
-  rw [hb, pow_succ]
-  exact mul_dvd_mul_left _ hd
-
 end CommRing
 
 namespace Affine
 
 variable {F Γ₀ : Type*} [Field F] [LinearOrderedCommGroupWithZero Γ₀] (v : Valuation F Γ₀)
   {W : Affine F} [IsIntegral v.valuationSubring W]
+
+/-- At the symbol `IV*`, the uniformiser is prime and the reduction is singular at the origin:
+`a₃`, `a₄` and `a₆` lie in the maximal ideal. -/
+private theorem prime_and_mem_maximalIdeal_of_isTateTerminal_IVStar {ϖ : v.valuationSubring}
+    (hϖ : maximalIdeal v.valuationSubring = Ideal.span {ϖ})
+    (h : (integralModel v.valuationSubring W).IsTateTerminal ϖ .IVStar) :
+    Prime ϖ ∧ (integralModel v.valuationSubring W).a₃ ∈ maximalIdeal v.valuationSubring ∧
+      (integralModel v.valuationSubring W).a₄ ∈ maximalIdeal v.valuationSubring ∧
+      (integralModel v.valuationSubring W).a₆ ∈ maximalIdeal v.valuationSubring := by
+  obtain ⟨-, -, ⟨A₃, h₃⟩, -, ⟨A₆, h₆⟩, -⟩ := isTateTerminal_IVStar.1 h
+  obtain ⟨-, d₃, d₄, d₆⟩ := h.dvd_b₂_and_dvd_a₃_and_dvd_a₄_and_dvd_a₆ fun _ ↦ nofun
+  refine ⟨(IsTateTerminal.prime_and_not_dvd_of_IVStar
+    (hϖ ▸ (maximalIdeal.isMaximal _).isPrime) h h₃ h₆).1, ?_⟩
+  simp only [hϖ, Ideal.mem_span_singleton]
+  exact ⟨d₃, d₄, d₆⟩
+
+/-- **At the symbol `IV*`, negation exchanges the two classes.** The negative of a point
+`(ϖ² X, ϖ² Y)` is `(ϖ² X, ϖ² Y')` with `ϖ ∣ Y' + Y + A₃`, where `a₃ = ϖ² A₃`, since
+`-(x, y) = (x, -y - a₁ x - a₃)` and `ϖ ∣ a₁`. -/
+private theorem exists_neg_eq_of_isTateTerminal_IVStar {ϖ : v.valuationSubring}
+    (h : (integralModel v.valuationSubring W).IsTateTerminal ϖ .IVStar) {A₃ : v.valuationSubring}
+    (h₃ : (integralModel v.valuationSubring W).a₃ = ϖ ^ 2 * A₃) {x y X Y : v.valuationSubring}
+    {hxy : W.Nonsingular x y} (hx : x = ϖ ^ 2 * X) (hy : y = ϖ ^ 2 * Y) :
+    ∃ (Y' : v.valuationSubring) (h' : W.Nonsingular x ((ϖ ^ 2 * Y' : v.valuationSubring) : F)),
+      -Point.some _ _ hxy = Point.some _ _ h' ∧ ϖ ∣ Y' + Y + A₃ := by
+  obtain ⟨A₁, hA₁⟩ := (isTateTerminal_IVStar.1 h).1
+  have hneg : W.negY x y = ((ϖ ^ 2 * (-Y - A₃ - ϖ * A₁ * X) : v.valuationSubring) : F) := by
+    rw [← coe_negY_integralModel, negY, hx, hy, hA₁, h₃]
+    congr 1
+    ring
+  refine ⟨_, hneg ▸ (nonsingular_neg ..).2 hxy, ?_, ⟨-(A₁ * X), by ring⟩⟩
+  rw [Point.neg_some, Point.some.injEq]
+  exact ⟨rfl, hneg⟩
 
 variable [DecidableEq F]
 
@@ -151,13 +139,10 @@ private theorem exists_eq_sq_mul_of_notMem_of_isTateTerminal_IVStar {ϖ : v.valu
     {hxy : W.Nonsingular x y} (hP : Point.some _ _ hxy ∉ W.nonsingularReduction v) :
     ∃ X Y, x = ϖ ^ 2 * X ∧ y = ϖ ^ 2 * Y ∧ ϖ ∣ Y ^ 2 + A₃ * Y - A₆ := by
   obtain ⟨h₁, h₂, -, h₄, -, -⟩ := isTateTerminal_IVStar.1 h
+  obtain ⟨hp, m₃, m₄, m₆⟩ := prime_and_mem_maximalIdeal_of_isTateTerminal_IVStar v hϖ h
   have key (z : v.valuationSubring) : z ∈ maximalIdeal v.valuationSubring ↔ ϖ ∣ z := by
     rw [hϖ, Ideal.mem_span_singleton]
-  obtain ⟨hp, -⟩ := IsTateTerminal.prime_and_not_dvd_of_IVStar
-    (hϖ ▸ (maximalIdeal.isMaximal _).isPrime) h h₃ h₆
-  obtain ⟨hx, hy⟩ := (some_notMem_nonsingularReduction_iff v
-    ((key _).2 ⟨ϖ * A₃, by rw [h₃]; ring⟩) ((key _).2 ((dvd_pow_self ϖ three_ne_zero).trans h₄))
-    ((key _).2 ⟨ϖ ^ 3 * A₆, by rw [h₆]; ring⟩) hxy).1 hP
+  obtain ⟨hx, hy⟩ := (some_notMem_nonsingularReduction_iff v m₃ m₄ m₆ hxy).1 hP
   exact exists_eq_sq_mul_of_equation _ hp h₁ h₂ h₃ h₄ h₆
     ((equation_integralModel_iff v).2 hxy.left)
     ((key _).1 ((Valuation.mem_maximalIdeal_iff (v := v)).2 hx))
@@ -174,16 +159,14 @@ private theorem pow_three_dvd_sub_of_isTateTerminal_IVStar {ϖ : v.valuationSubr
     (hQ : Point.some _ _ h₂ ∉ W.nonsingularReduction v)
     (hPQ : Point.some _ _ h₁ + Point.some _ _ h₂ ∉ W.nonsingularReduction v) :
     ϖ ^ 3 ∣ y₁ - y₂ := by
-  obtain ⟨ha₁, ha₂, ⟨A₃, h₃⟩, h₄, ⟨A₆, h₆⟩, -⟩ := isTateTerminal_IVStar.1 h
+  obtain ⟨ha₁, ha₂, ⟨A₃, h₃⟩, -, ⟨A₆, h₆⟩, -⟩ := isTateTerminal_IVStar.1 h
+  obtain ⟨hp, m₃, m₄, m₆⟩ := prime_and_mem_maximalIdeal_of_isTateTerminal_IVStar v hϖ h
   have key (z : v.valuationSubring) : z ∈ maximalIdeal v.valuationSubring ↔ ϖ ∣ z := by
     rw [hϖ, Ideal.mem_span_singleton]
-  obtain ⟨hp, -⟩ := IsTateTerminal.prime_and_not_dvd_of_IVStar
-    (hϖ ▸ (maximalIdeal.isMaximal _).isPrime) h h₃ h₆
   obtain ⟨X₁, -, rfl, -, -⟩ := exists_eq_sq_mul_of_notMem_of_isTateTerminal_IVStar v hϖ h h₃ h₆ hP
   obtain ⟨X₂, -, rfl, -, -⟩ := exists_eq_sq_mul_of_notMem_of_isTateTerminal_IVStar v hϖ h h₃ h₆ hQ
-  obtain ⟨x₃, -, ℓ, -, hx₃, -, hs, hL, -⟩ := exists_chord_of_add_notMem_nonsingularReduction v
-    ((key _).2 ⟨ϖ * A₃, by rw [h₃]; ring⟩) ((key _).2 ((dvd_pow_self ϖ three_ne_zero).trans h₄))
-    ((key _).2 ⟨ϖ ^ 3 * A₆, by rw [h₆]; ring⟩) hPQ
+  obtain ⟨x₃, -, ℓ, -, -, -, hx₃, -, hs, hL, -⟩ :=
+    exists_chord_of_add_notMem_nonsingularReduction v m₃ m₄ m₆ hPQ
   -- the slope is divisible by `ϖ`, since `ℓ² = x₁ + x₂ + x₃ + a₂ − a₁ ℓ`
   have hℓ : ϖ ∣ ℓ := by
     refine hp.dvd_of_dvd_pow (n := 2) ?_
@@ -214,22 +197,10 @@ private theorem two_nsmul_notMem_of_slope_mem
           (integralModel v.valuationSubring W).a₁ * y) :
     2 • Point.some _ _ hxy ∉ W.nonsingularReduction v := by
   set Wo := integralModel v.valuationSubring W
-  have hneg : W.negY x y = ((Wo.toAffine.negY x y : v.valuationSubring) : F) := by
-    conv_lhs => rw [← baseChange_integralModel_eq v.valuationSubring W]
-    exact map_negY _ x y
   have hy' : (y : F) ≠ W.negY x y := by
-    rw [hneg, Ne, Subtype.coe_inj]
+    rw [← coe_negY_integralModel, Ne, Subtype.coe_inj]
     intro h
     exact hne (by rw [negY] at h; linear_combination h)
-  -- the coefficients of `W` are those of `Wo`
-  have ha₁ : ((Wo.a₁ : v.valuationSubring) : F) = W.a₁ := by
-    simpa using integralModel_a₁_eq v.valuationSubring W
-  have ha₂ : ((Wo.a₂ : v.valuationSubring) : F) = W.a₂ := by
-    simpa using integralModel_a₂_eq v.valuationSubring W
-  have ha₃ : ((Wo.a₃ : v.valuationSubring) : F) = W.a₃ := by
-    simpa using integralModel_a₃_eq v.valuationSubring W
-  have ha₄ : ((Wo.a₄ : v.valuationSubring) : F) = W.a₄ := by
-    simpa using integralModel_a₄_eq v.valuationSubring W
   have h2 : ((2 : v.valuationSubring) : F) = 2 := by
     simpa using map_ofNat (algebraMap v.valuationSubring F) 2
   have h3 : ((3 : v.valuationSubring) : F) = 3 := by
@@ -238,7 +209,8 @@ private theorem two_nsmul_notMem_of_slope_mem
     rw [slope_of_Y_ne rfl hy', div_eq_iff (sub_ne_zero.2 hy')]
     have := congrArg ((↑) : v.valuationSubring → F) hslope
     push_cast at this
-    rw [ha₁, ha₂, ha₃, ha₄, h2, h3] at this
+    rw [coe_integralModel_a₁, coe_integralModel_a₂, coe_integralModel_a₃, coe_integralModel_a₄, h2,
+      h3] at this
     rw [negY]
     linear_combination -this
   have hx₃ : Wo.toAffine.addX x x ℓ ∈ maximalIdeal v.valuationSubring :=
@@ -248,14 +220,8 @@ private theorem two_nsmul_notMem_of_slope_mem
     sub_mem (sub_mem (neg_mem (add_mem (Ideal.mul_mem_right _ _ hℓ) hy))
       (Ideal.mul_mem_left _ _ hx₃)) h₃
   -- the coordinates of `2 P` are the images of those computed in the integral model
-  have hX₃ : W.addX x x ℓ = ((Wo.toAffine.addX x x ℓ : v.valuationSubring) : F) := by
-    conv_lhs => rw [← baseChange_integralModel_eq v.valuationSubring W]
-    exact map_addX _ x x ℓ
-  have hY₃ : W.addY x x y ℓ = ((Wo.toAffine.addY x x y ℓ : v.valuationSubring) : F) := by
-    conv_lhs => rw [← baseChange_integralModel_eq v.valuationSubring W]
-    exact map_addY _ x y x ℓ
   rw [two_nsmul, Point.add_self_of_Y_ne hy', some_notMem_nonsingularReduction_iff v h₃ h₄ h₆,
-    hslopeF, hX₃, hY₃]
+    hslopeF, ← coe_addX_integralModel, ← coe_addY_integralModel]
   exact ⟨(Valuation.mem_maximalIdeal_iff (v := v)).1 hx₃,
     (Valuation.mem_maximalIdeal_iff (v := v)).1 hy₃⟩
 
@@ -269,6 +235,7 @@ private theorem two_nsmul_notMem_of_isTateTerminal_IVStar {ϖ : v.valuationSubri
     {hxy : W.Nonsingular x y} (hP : Point.some _ _ hxy ∉ W.nonsingularReduction v) :
     2 • Point.some _ _ hxy ∉ W.nonsingularReduction v := by
   obtain ⟨⟨A₁, hA₁⟩, ⟨A₂, hA₂⟩, ⟨A₃, h₃⟩, ⟨A₄, hA₄⟩, ⟨A₆, h₆⟩, -⟩ := isTateTerminal_IVStar.1 h
+  obtain ⟨-, m₃, m₄, m₆⟩ := prime_and_mem_maximalIdeal_of_isTateTerminal_IVStar v hϖ h
   have key (z : v.valuationSubring) : z ∈ maximalIdeal v.valuationSubring ↔ ϖ ∣ z := by
     rw [hϖ, Ideal.mem_span_singleton]
   obtain ⟨hp, hb⟩ := IsTateTerminal.prime_and_not_dvd_of_IVStar
@@ -286,10 +253,8 @@ private theorem two_nsmul_notMem_of_isTateTerminal_IVStar {ϖ : v.valuationSubri
     rw [hA₁, h₃]
     ring
   -- the slope is `ϖ N / D`, where the numerator `3 x² + 2 a₂ x + a₄ − a₁ y` is `ϖ³ N`
-  refine two_nsmul_notMem_of_slope_mem v ((key _).2 ⟨ϖ * A₂, by rw [hA₂]; ring⟩)
-    ((key _).2 ⟨ϖ * A₃, by rw [h₃]; ring⟩) ((key _).2 ⟨ϖ ^ 2 * A₄, by rw [hA₄]; ring⟩)
-    ((key _).2 ⟨ϖ ^ 3 * A₆, by rw [h₆]; ring⟩) ((key _).2 ⟨ϖ * X, by ring⟩)
-    ((key _).2 ⟨ϖ * Y, by ring⟩)
+  refine two_nsmul_notMem_of_slope_mem v ((key _).2 ⟨ϖ * A₂, by rw [hA₂]; ring⟩) m₃ m₄ m₆
+    ((key _).2 ⟨ϖ * X, by ring⟩) ((key _).2 ⟨ϖ * Y, by ring⟩)
     (ℓ := ϖ * ((3 * ϖ * X ^ 2 + 2 * ϖ * A₂ * X + A₄ - A₁ * Y) * ↑hDu.unit⁻¹))
     ((key _).2 (dvd_mul_right _ _)) ?_ ?_
   · rw [hden]
@@ -309,17 +274,10 @@ theorem index_nonsingularReduction_eq_three_of_isTateTerminal_IVStar_of_notMem
     {ϖ : v.valuationSubring} (hϖ : maximalIdeal v.valuationSubring = Ideal.span {ϖ})
     (h : (integralModel v.valuationSubring W).IsTateTerminal ϖ .IVStar) {P : W.Point}
     (hP : P ∉ W.nonsingularReduction v) : (W.nonsingularReduction v).index = 3 := by
-  obtain ⟨ha₁, -, ⟨A₃, h₃⟩, h₄, ⟨A₆, h₆⟩, -⟩ := isTateTerminal_IVStar.1 h
-  have key (z : v.valuationSubring) : z ∈ maximalIdeal v.valuationSubring ↔ ϖ ∣ z := by
-    rw [hϖ, Ideal.mem_span_singleton]
+  obtain ⟨-, -, ⟨A₃, h₃⟩, -, ⟨A₆, h₆⟩, -⟩ := isTateTerminal_IVStar.1 h
   obtain ⟨hp, hb⟩ := IsTateTerminal.prime_and_not_dvd_of_IVStar
     (hϖ ▸ (maximalIdeal.isMaximal _).isPrime) h h₃ h₆
-  have m₃ : (integralModel v.valuationSubring W).a₃ ∈ maximalIdeal v.valuationSubring :=
-    (key _).2 ⟨ϖ * A₃, by rw [h₃]; ring⟩
-  have m₄ : (integralModel v.valuationSubring W).a₄ ∈ maximalIdeal v.valuationSubring :=
-    (key _).2 ((dvd_pow_self ϖ three_ne_zero).trans h₄)
-  have m₆ : (integralModel v.valuationSubring W).a₆ ∈ maximalIdeal v.valuationSubring :=
-    (key _).2 ⟨ϖ ^ 3 * A₆, by rw [h₆]; ring⟩
+  obtain ⟨-, m₃, m₄, m₆⟩ := prime_and_mem_maximalIdeal_of_isTateTerminal_IVStar v hϖ h
   obtain ⟨x₀, y₀, h₀, rfl, -, -⟩ := exists_eq_some_of_notMem_nonsingularReduction v m₃ m₄ m₆ hP
   obtain ⟨X₀, Y₀, hx₀, hy₀, hY₀⟩ :=
     exists_eq_sq_mul_of_notMem_of_isTateTerminal_IVStar v hϖ h h₃ h₆ hP
@@ -339,30 +297,15 @@ theorem index_nonsingularReduction_eq_three_of_isTateTerminal_IVStar_of_notMem
     exact dvd_sub hY hY₀) with hd | hd
   · -- `Q` is in the class of `P`, so `-P + Q ∈ E₀(F)`
     refine Or.inr (Or.inl (by_contra fun hn ↦ hY₀' ?_))
-    -- the point `-P` in integral coordinates
-    set y₀' := (integralModel v.valuationSubring W).toAffine.negY x₀ y₀
-    have hy₀' : W.negY x₀ y₀ = y₀' := by
-      conv_lhs => rw [← baseChange_integralModel_eq v.valuationSubring W]
-      exact map_negY _ x₀ y₀
-    have h₀' : W.Nonsingular x₀ y₀' := hy₀' ▸ (nonsingular_neg ..).2 h₀
-    have hneg : -Point.some _ _ h₀ = Point.some _ _ h₀' := by
-      rw [Point.neg_some, Point.some.injEq]
-      exact ⟨rfl, hy₀'⟩
+    -- `-P = (x₀, ϖ² Y₀')` with `Y₀' ≡ -Y₀ - A₃`, and `-P`, `Q` are in the same class
+    obtain ⟨Y₀', h₀', hneg, hY₀''⟩ :=
+      exists_neg_eq_of_isTateTerminal_IVStar v h h₃ hx₀ hy₀ (hxy := h₀)
     rw [hneg] at hn
-    have hd' := pow_three_dvd_sub_of_isTateTerminal_IVStar v hϖ h
-      (by rwa [← hneg, neg_mem_iff]) hQ hn
-    -- so `ϖ³ ∣ y₀' - y = ϖ² (-Y₀ - A₃ - Y) - a₁ x₀`, with `ϖ³ ∣ a₁ x₀`
-    have hax : ϖ ^ 3 ∣ (integralModel v.valuationSubring W).a₁ * x₀ := by
-      rw [hx₀, pow_succ']
-      exact mul_dvd_mul ha₁ (dvd_mul_right _ _)
-    have hd'' := hcancel (show ϖ ^ 3 ∣ ϖ ^ 2 * (-Y₀ - A₃ - Y) by
-      rw [show ϖ ^ 2 * (-Y₀ - A₃ - Y) = (y₀' - y) + (integralModel v.valuationSubring W).a₁ * x₀ by
-        simp only [y₀', negY]
-        rw [hy₀, hy, h₃]
-        ring]
-      exact dvd_add hd' hax)
-    rw [show 2 * Y₀ + A₃ = -(-Y₀ - A₃ - Y) - (Y - Y₀) by ring]
-    exact dvd_sub (dvd_neg.2 hd'') hd
+    have hd' := hcancel (show ϖ ^ 3 ∣ ϖ ^ 2 * (Y₀' - Y) by
+      rw [mul_sub, ← hy]
+      exact pow_three_dvd_sub_of_isTateTerminal_IVStar v hϖ h (by rwa [← hneg, neg_mem_iff]) hQ hn)
+    rw [show 2 * Y₀ + A₃ = (Y₀' + Y₀ + A₃) - (Y₀' - Y) - (Y - Y₀) by ring]
+    exact dvd_sub (dvd_sub hY₀'' hd') hd
   · -- `Q` is in the class of `-P`, so `P + Q ∈ E₀(F)`
     refine Or.inr (Or.inr (by_contra fun hn ↦ hY₀' ?_))
     have hd' := hcancel (show ϖ ^ 3 ∣ ϖ ^ 2 * (Y₀ - Y) by
@@ -400,7 +343,7 @@ theorem exists_notMem_nonsingularReduction_of_isTateTerminal_IVStar
     (h₆ : (integralModel v.valuationSubring W).a₆ = ϖ ^ 4 * A₆)
     (hroot : ∃ t : ResidueField v.valuationSubring, t ^ 2 + residue _ A₃ * t - residue _ A₆ = 0) :
     ∃ P : W.Point, P ∉ W.nonsingularReduction v := by
-  obtain ⟨-, -, -, h₄, -, -⟩ := isTateTerminal_IVStar.1 h
+  obtain ⟨-, m₃, m₄, m₆⟩ := prime_and_mem_maximalIdeal_of_isTateTerminal_IVStar v hϖ h
   have key (z : v.valuationSubring) : z ∈ maximalIdeal v.valuationSubring ↔ ϖ ∣ z := by
     rw [hϖ, Ideal.mem_span_singleton]
   obtain ⟨hp, hb⟩ := IsTateTerminal.prime_and_not_dvd_of_IVStar
@@ -431,16 +374,10 @@ theorem exists_notMem_nonsingularReduction_of_isTateTerminal_IVStar
       linear_combination ϖ ^ 4 * hY, Or.inr ?_⟩
     rw [h₃, mul_zero, add_zero, show 2 * (ϖ ^ 2 * Y) + ϖ ^ 2 * A₃ = ϖ ^ 2 * (2 * Y + A₃) by ring]
     exact mul_ne_zero (pow_ne_zero 2 hp.ne_zero) fun h0 ↦ hY' (h0 ▸ dvd_zero ϖ)
-  have hF :
-      W.Nonsingular ((0 : v.valuationSubring) : F) ((ϖ ^ 2 * Y : v.valuationSubring) : F) := by
-    have := ((integralModel v.valuationSubring W).toAffine.map_nonsingular
-      (IsFractionRing.injective _ F) _ _).mpr hns
-    rwa [← baseChange_integralModel_eq v.valuationSubring W]
+  have hF := (nonsingular_integralModel_iff v).1 hns
   have hy : v ((ϖ ^ 2 * Y : v.valuationSubring) : F) < 1 :=
     (Valuation.mem_maximalIdeal_iff (v := v)).1 ((key _).2 (Dvd.intro (ϖ * Y) (by ring)))
-  exact ⟨Point.some _ _ hF, (some_notMem_nonsingularReduction_iff v
-    ((key _).2 ⟨ϖ * A₃, by rw [h₃]; ring⟩) ((key _).2 ((dvd_pow_self ϖ three_ne_zero).trans h₄))
-    ((key _).2 ⟨ϖ ^ 3 * A₆, by rw [h₆]; ring⟩) hF).2 ⟨by simp, hy⟩⟩
+  exact ⟨Point.some _ _ hF, (some_notMem_nonsingularReduction_iff v m₃ m₄ m₆ hF).2 ⟨by simp, hy⟩⟩
 
 /-- **At the reduction symbol `IV*`, `[E(F) : E₀(F)] = 3`** when the valuation ring is Henselian,
 for instance complete, and the residue quadratic `T² + A₃ T − A₆` has a root in the residue field,

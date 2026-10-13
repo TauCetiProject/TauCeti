@@ -69,6 +69,12 @@ are the affine points `(x, y)` with `x, y ∈ 𝔪`, since the singular point of
   at the origin, an affine point has singular reduction exactly when both of its coordinates lie in
   the maximal ideal, and `WeierstrassCurve.Affine.exists_eq_some_of_notMem_nonsingularReduction`
   writes such a point with integral coordinates.
+* `WeierstrassCurve.exists_eq_sq_mul_of_equation` and
+  `WeierstrassCurve.sq_dvd_and_pow_three_dvd_of_equation`: on the normal forms of Tate's algorithm
+  at `IV*` and `III*`, a solution with both coordinates in `(ϖ)` is `(ϖ² X, ϖ² Y)`, respectively
+  has `ϖ² ∣ x` and `ϖ³ ∣ y`.
+* `WeierstrassCurve.Affine.exists_chord_of_add_notMem_nonsingularReduction`: the identities
+  satisfied by the chord through two points whose sum has singular reduction.
 
 ## References
 
@@ -124,6 +130,67 @@ theorem a₆_mem_maximalIdeal_sq_of_isSingular (W : WeierstrassCurve R)
   · exact Ideal.mul_mem_mul (Ideal.mul_mem_left _ _ hx) hx
   · exact Ideal.mul_mem_mul (Ideal.mul_mem_left _ _ hx) hx
   · exact Ideal.mul_mem_mul h₄ hx
+
+/-! ### Solutions with coordinates in `(ϖ)` on the normal forms at `IV*` and `III*` -/
+
+section Domain
+
+variable {R : Type*} [CommRing R] [IsDomain R]
+
+/-- On the normal form of Tate's algorithm at the symbol `IV*`, where `ϖ ∣ a₁`, `ϖ² ∣ a₂`,
+`a₃ = ϖ² A₃`, `ϖ³ ∣ a₄` and `a₆ = ϖ⁴ A₆`, a solution with both coordinates divisible by the prime
+`ϖ` is `(ϖ² X, ϖ² Y)` with `Y² + A₃ Y − A₆` divisible by `ϖ`. -/
+theorem exists_eq_sq_mul_of_equation (W : WeierstrassCurve R) {ϖ : R} (hϖ : Prime ϖ)
+    (h₁ : ϖ ∣ W.a₁) (h₂ : ϖ ^ 2 ∣ W.a₂) {A₃ A₆ : R} (h₃ : W.a₃ = ϖ ^ 2 * A₃)
+    (h₄ : ϖ ^ 3 ∣ W.a₄) (h₆ : W.a₆ = ϖ ^ 4 * A₆) {x y : R} (h : W.toAffine.Equation x y)
+    (hx : ϖ ∣ x) (hy : ϖ ∣ y) :
+    ∃ X Y, x = ϖ ^ 2 * X ∧ y = ϖ ^ 2 * Y ∧ ϖ ∣ Y ^ 2 + A₃ * Y - A₆ := by
+  obtain ⟨A₁, hA₁⟩ := h₁
+  obtain ⟨A₂, hA₂⟩ := h₂
+  obtain ⟨A₄, hA₄⟩ := h₄
+  obtain ⟨X, rfl⟩ := hx
+  obtain ⟨Y, rfl⟩ := hy
+  rw [Affine.equation_iff, hA₁, hA₂, h₃, hA₄, h₆] at h
+  have hϖ0 := hϖ.ne_zero
+  -- comparing powers of `ϖ` in the equation gives `ϖ ∣ Y`, then `ϖ ∣ X`
+  obtain ⟨Y, rfl⟩ : ϖ ∣ Y := hϖ.dvd_of_dvd_pow (n := 2)
+    ⟨X ^ 3 + ϖ * A₂ * X ^ 2 + ϖ * A₄ * X + ϖ * A₆ - A₁ * X * Y - A₃ * Y,
+      mul_left_cancel₀ (pow_ne_zero 2 hϖ0) (by linear_combination h)⟩
+  obtain ⟨X, rfl⟩ : ϖ ∣ X := hϖ.dvd_of_dvd_pow (n := 3)
+    ⟨Y ^ 2 + A₁ * X * Y + A₃ * Y - A₂ * X ^ 2 - A₄ * X - A₆,
+      mul_left_cancel₀ (pow_ne_zero 3 hϖ0) (by linear_combination -h)⟩
+  exact ⟨X, Y, by ring, by ring, ϖ * X ^ 3 + ϖ * A₂ * X ^ 2 + A₄ * X - A₁ * X * Y,
+    mul_left_cancel₀ (pow_ne_zero 4 hϖ0) (by linear_combination h)⟩
+
+/-- On the normal form of Tate's algorithm at the symbol `III*`, where `ϖ ∣ a₁`, `ϖ² ∣ a₂`,
+`ϖ³ ∣ a₃`, `ϖ³ ∣ a₄` and `ϖ⁵ ∣ a₆`, a solution with both coordinates divisible by the prime `ϖ` has
+`ϖ² ∣ x` and `ϖ³ ∣ y`. -/
+theorem sq_dvd_and_pow_three_dvd_of_equation (W : WeierstrassCurve R) {ϖ : R} (hϖ : Prime ϖ)
+    (h₁ : ϖ ∣ W.a₁) (h₂ : ϖ ^ 2 ∣ W.a₂) (h₃ : ϖ ^ 3 ∣ W.a₃) (h₄ : ϖ ^ 3 ∣ W.a₄)
+    (h₆ : ϖ ^ 5 ∣ W.a₆) {x y : R} (h : W.toAffine.Equation x y) (hx : ϖ ∣ x) (hy : ϖ ∣ y) :
+    ϖ ^ 2 ∣ x ∧ ϖ ^ 3 ∣ y := by
+  obtain ⟨A₁, hA₁⟩ := h₁
+  obtain ⟨A₂, hA₂⟩ := h₂
+  obtain ⟨A₃, hA₃⟩ := h₃
+  obtain ⟨A₄, hA₄⟩ := h₄
+  obtain ⟨A₆, hA₆⟩ := h₆
+  obtain ⟨X, rfl⟩ := hx
+  obtain ⟨Y, rfl⟩ := hy
+  rw [Affine.equation_iff, hA₁, hA₂, hA₃, hA₄, hA₆] at h
+  have hϖ0 := hϖ.ne_zero
+  -- comparing powers of `ϖ` in the equation gives `ϖ ∣ Y`, then `ϖ ∣ X`, then `ϖ ∣ Y / ϖ`
+  obtain ⟨Y, rfl⟩ : ϖ ∣ Y := hϖ.dvd_of_dvd_pow (n := 2)
+    ⟨X ^ 3 + ϖ * A₂ * X ^ 2 + ϖ * A₄ * X + ϖ ^ 2 * A₆ - A₁ * X * Y - ϖ * A₃ * Y,
+      mul_left_cancel₀ (pow_ne_zero 2 hϖ0) (by linear_combination h)⟩
+  obtain ⟨X, rfl⟩ : ϖ ∣ X := hϖ.dvd_of_dvd_pow (n := 3)
+    ⟨Y ^ 2 + A₁ * X * Y + ϖ * A₃ * Y - A₂ * X ^ 2 - A₄ * X - ϖ * A₆,
+      mul_left_cancel₀ (pow_ne_zero 3 hϖ0) (by linear_combination -h)⟩
+  obtain ⟨Y, rfl⟩ : ϖ ∣ Y := hϖ.dvd_of_dvd_pow (n := 2)
+    ⟨ϖ * X ^ 3 + ϖ * A₂ * X ^ 2 + A₄ * X + A₆ - A₁ * X * Y - A₃ * Y,
+      mul_left_cancel₀ (pow_ne_zero 4 hϖ0) (by linear_combination h)⟩
+  exact ⟨⟨X, by ring⟩, ⟨Y, by ring⟩⟩
+
+end Domain
 
 /-! ### Solutions reducing to a nonsplit node -/
 
@@ -337,6 +404,70 @@ theorem exists_eq_some_of_notMem_nonsingularReduction
   exact ⟨⟨x, (v.mem_valuationSubring_iff x).2 hx.le⟩, ⟨y, (v.mem_valuationSubring_iff y).2 hy.le⟩,
     h, rfl, (Valuation.mem_maximalIdeal_iff (v := v)).2 hx,
     (Valuation.mem_maximalIdeal_iff (v := v)).2 hy⟩
+
+/-- **The chord through two points whose sum has singular reduction.** Let `(x₁, y₁)` and
+`(x₂, y₂)` be points of `W(F)` with integral coordinates, at a reduction singular at the origin, and
+suppose that their sum has singular reduction. Then the sum is an affine point `(x₃, y₃)` with
+`x₃, y₃ ∈ 𝔪`, and the slope `ℓ = W.slope x₁ x₂ y₁ y₂` of the line through the two points is
+integral, with
+
+* `ℓ² + a₁ ℓ − a₂ = x₁ + x₂ + x₃`,
+* `y₁ − y₂ = ℓ (x₁ − x₂)`, and
+* `a₄ − a₃ ℓ − (2 ℓ + a₁) (y₁ − ℓ x₁) = x₁ x₂ + x₁ x₃ + x₂ x₃`.
+
+The first and last identities compare coefficients in the Weierstrass cubic restricted to the line
+`y = ℓ (x − x₁) + y₁`, whose roots are `x₁`, `x₂` and `x₃`. The coefficients are those of the
+integral model. -/
+theorem exists_chord_of_add_notMem_nonsingularReduction
+    (h₃ : (integralModel v.valuationSubring W).a₃ ∈ maximalIdeal v.valuationSubring)
+    (h₄ : (integralModel v.valuationSubring W).a₄ ∈ maximalIdeal v.valuationSubring)
+    (h₆ : (integralModel v.valuationSubring W).a₆ ∈ maximalIdeal v.valuationSubring)
+    {x₁ y₁ x₂ y₂ : v.valuationSubring} {h₁ : W.Nonsingular x₁ y₁} {h₂ : W.Nonsingular x₂ y₂}
+    (hPQ : Point.some _ _ h₁ + Point.some _ _ h₂ ∉ W.nonsingularReduction v) :
+    ∃ (x₃ y₃ ℓ : v.valuationSubring) (h : W.Nonsingular x₃ y₃),
+      Point.some _ _ h₁ + Point.some _ _ h₂ = .some _ _ h ∧ (ℓ : F) = W.slope x₁ x₂ y₁ y₂ ∧
+      x₃ ∈ maximalIdeal v.valuationSubring ∧ y₃ ∈ maximalIdeal v.valuationSubring ∧
+      ℓ ^ 2 + (integralModel v.valuationSubring W).a₁ * ℓ -
+        (integralModel v.valuationSubring W).a₂ = x₁ + x₂ + x₃ ∧
+      y₁ - y₂ = ℓ * (x₁ - x₂) ∧
+      (integralModel v.valuationSubring W).a₄ - (integralModel v.valuationSubring W).a₃ * ℓ -
+        (2 * ℓ + (integralModel v.valuationSubring W).a₁) * (y₁ - ℓ * x₁) =
+          x₁ * x₂ + x₁ * x₃ + x₂ * x₃ := by
+  have hxy : ¬((x₁ : F) = x₂ ∧ (y₁ : F) = W.negY x₂ y₂) := by
+    rintro ⟨hx, hy⟩
+    exact hPQ (by rw [Point.add_of_Y_eq hx hy]; exact zero_mem _)
+  rw [Point.add_some hxy] at hPQ ⊢
+  obtain ⟨hx₃, hy₃⟩ := (some_notMem_nonsingularReduction_iff v h₃ h₄ h₆ _).1 hPQ
+  set ℓ := W.slope (x₁ : F) x₂ y₁ y₂
+  have hO {z : F} (hz : v z < 1) : z ∈ v.valuationSubring :=
+    (v.mem_valuationSubring_iff z).2 hz.le
+  have hint (z : v.valuationSubring) : v (z : F) ≤ 1 := (v.mem_valuationSubring_iff _).1 z.2
+  have hℓ : ℓ ∈ v.valuationSubring := (v.mem_valuationSubring_iff ℓ).2
+    (valuation_le_one_of_valuation_addX_le_one v (hint x₁) (hint x₂) hx₃.le)
+  -- the coefficient of `X` in `W(X, ℓ (X − x₁) + y₁) = −(X − x₁) (X − x₂) (X − x₃)`
+  have hc : 2 * (x₁ : F) * ℓ ^ 2 + (W.a₁ * x₁ - 2 * y₁ - W.a₃) * ℓ + (-W.a₁ * y₁ + W.a₄) =
+      x₁ * x₂ + x₁ * W.addX x₁ x₂ ℓ + x₂ * W.addX x₁ x₂ ℓ := by
+    have key := W.addPolynomial_slope h₁.left h₂.left hxy
+    rw [addPolynomial_eq, Cubic.prod_X_sub_C_eq, neg_inj] at key
+    exact congrArg Cubic.c ((Cubic.toPoly_injective _ _).1 key)
+  -- the line passes through both points; when `x₁ = x₂` the two points are equal
+  have hL : (y₁ : F) - y₂ = ℓ * (x₁ - x₂) := by
+    by_cases hx : (x₁ : F) = x₂
+    · rw [Y_eq_of_Y_ne h₁.left h₂.left hx fun hy ↦ hxy ⟨hx, hy⟩, hx]
+      ring
+    · have hℓ' : ℓ = (y₁ - y₂) / (x₁ - x₂) := slope_of_X_ne hx
+      rw [hℓ', div_mul_cancel₀ _ (sub_ne_zero.2 hx)]
+  have h2 : ((2 : v.valuationSubring) : F) = 2 := by
+    simpa using map_ofNat (algebraMap v.valuationSubring F) 2
+  refine ⟨⟨_, hO hx₃⟩, ⟨_, hO hy₃⟩, ⟨ℓ, hℓ⟩, nonsingular_add h₁ h₂ hxy, rfl, rfl,
+    (Valuation.mem_maximalIdeal_iff (v := v)).2 hx₃,
+    (Valuation.mem_maximalIdeal_iff (v := v)).2 hy₃, ?_, ?_, ?_⟩ <;> apply Subtype.ext <;>
+    push_cast
+  · rw [coe_integralModel_a₁, coe_integralModel_a₂, addX]
+    ring
+  · exact hL
+  · rw [coe_integralModel_a₁, coe_integralModel_a₃, coe_integralModel_a₄, h2]
+    linear_combination hc
 
 end Affine
 
