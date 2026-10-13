@@ -253,7 +253,7 @@ theorem torsionInclusion_one :
   simp
 
 /-- Successive torsion inclusions multiply their indices, with the associativity transport. -/
-@[reassoc]
+@[reassoc (attr := simp)]
 theorem torsionInclusion_comp (l : ℤ) :
     torsionInclusion G m n ≫ torsionInclusion G (m * n) l =
       torsionInclusion G m (n * l) ≫
@@ -270,7 +270,7 @@ theorem torsionMulBy_one :
   simp
 
 /-- Successive torsion transitions multiply their indices, with the associativity transport. -/
-@[reassoc]
+@[reassoc (attr := simp)]
 theorem torsionMulBy_comp (l : ℤ) :
     torsionMulBy G l (m * n) ≫ torsionMulBy G m n =
       eqToHom (congrArg (fun k ↦ (torsion G k).X) (mul_assoc l m n).symm) ≫

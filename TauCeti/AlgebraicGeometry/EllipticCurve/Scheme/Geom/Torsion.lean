@@ -327,7 +327,7 @@ theorem torsionMulBy_one :
   GroupScheme.torsionMulBy_one E.toCommGrp n
 
 /-- Successive torsion transitions multiply their indices, with the associativity transport. -/
-@[reassoc]
+@[reassoc (attr := simp)]
 theorem torsionMulBy_comp (l : ℤ) :
     E.torsionMulBy l (m * n) ≫ E.torsionMulBy m n =
       eqToHom (congrArg (fun k ↦ (E.torsion k).X) (mul_assoc l m n).symm) ≫
@@ -355,7 +355,7 @@ theorem torsionInclusion_one :
   GroupScheme.torsionInclusion_one E.toCommGrp m
 
 /-- Successive torsion inclusions multiply their indices, with the associativity transport. -/
-@[reassoc]
+@[reassoc (attr := simp)]
 theorem torsionInclusion_comp (l : ℤ) :
     E.torsionInclusion m n ≫ E.torsionInclusion (m * n) l =
       E.torsionInclusion m (n * l) ≫
