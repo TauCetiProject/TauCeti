@@ -101,7 +101,8 @@ theorem IsCompact.exists_affineBasis_abs_coord_le_one {K : Set P} (hK : IsCompac
   obtain ⟨q, hqK, hq⟩ := (isCompact_univ_pi fun _ => hK).exists_isMaxOn
     ⟨b₁, fun i _ => hb₁ i⟩ hf.continuousOn
   have hfq : 0 < f q := by
-    have := hq (show (b₁ : ι → P) ∈ univ.pi fun _ => K from fun i _ => hb₁ i)
+    have hb₁K : (b₁ : ι → P) ∈ univ.pi fun _ => K := fun i _ => hb₁ i
+    have := hq hb₁K
     simp only [mem_ofPred_eq, b₁.toMatrix_self, Matrix.det_one, abs_one, f] at this
     linarith
   -- A family of points of nonzero volume is an affine basis.
@@ -118,8 +119,9 @@ theorem IsCompact.exists_affineBasis_abs_coord_le_one {K : Set P} (hK : IsCompac
     rcases eq_or_ne j i with rfl | hj
     · simpa using hx
     · simpa [hj, hbq] using hbK j
-  rw [show f (Function.update b i x) = f b * |b.coord i x| by
-    simp only [f, b₁.det_toMatrix_update b, abs_mul]] at hle
+  have hupdate : f (Function.update b i x) = f b * |b.coord i x| := by
+    simp only [f, b₁.det_toMatrix_update b, abs_mul]
+  rw [hupdate] at hle
   exact (mul_le_iff_le_one_right (hbq ▸ hfq)).1 hle
 
 end Compact
