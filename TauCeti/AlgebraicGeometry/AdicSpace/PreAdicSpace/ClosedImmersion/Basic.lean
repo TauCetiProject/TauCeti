@@ -96,6 +96,21 @@ noncomputable def presentationLimitPreAdicSpaceQuotientComap
 variable (hsheaf : Presheaf.IsSheaf (Opens.grothendieckTopology ↥(spa (S.quotient J).plus))
   (presentationLimitPresheaf (P.quotient J) (S.quotient J).plus))
 
+/-- The quotient morphism is the morphism of pre-adic spaces induced by the quotient map
+`A → A ⧸ J`. -/
+theorem presentationLimitPreAdicSpaceQuotientComap_def :
+    presentationLimitPreAdicSpaceQuotientComap S P hP J hsheaf =
+      presentationLimitPreAdicSpaceComap (Ideal.Quotient.mk J)
+        (QuotientRing.isOpenQuotientMap_mk J).continuous
+        (fun I hI ↦ by
+          rw [Ideal.map_eq_image_of_surjective _ Ideal.Quotient.mk_surjective]
+          exact (QuotientRing.isOpenQuotientMap_mk J).isOpenMap _ hI)
+        (Pair.Hom.toRingHom_quotientHom S J ▸ (Pair.quotientHom S J).map_mem_plus)
+        S.isRingOfIntegralElements.isPowerBounded_of_mem
+        (S.quotient J).isRingOfIntegralElements.isPowerBounded_of_mem hP
+        (P.quotient_ringOfDefinition_le_quotient_plus hP J) hsheaf :=
+  (rfl)
+
 /-- The map of underlying spaces of the quotient morphism pulls valuations back along the
 quotient map `A → A ⧸ J`. -/
 @[simp]
