@@ -715,7 +715,7 @@ theorem equivalent_lift_radical_of_comp_eq (Q : QuadraticMap R M P) {Q' : Quadra
 
 /-- **Uniqueness of the regular part.** If `Q` is isometric to the orthogonal sum of a zero form and
 a quadratic map `Q'` with trivial radical, then `Q'` is isometric to the regular part of `Q`. -/
-theorem equivalent_lift_radical_of_equivalent_zero_prod {Q : QuadraticMap R M P}
+theorem equivalent_lift_radical_of_equivalent_zero_prod (Q : QuadraticMap R M P)
     {Q' : QuadraticMap R N P} (h : Q.Equivalent ((0 : QuadraticMap R T P).prod Q'))
     (hQ' : Q'.radical = ⊥) : (Q.lift Q.radical le_rfl).Equivalent Q' :=
   h.lift_radical.trans <| ((0 : QuadraticMap R T P).prod Q').equivalent_lift_radical_of_comp_eq
@@ -726,7 +726,7 @@ theorem equivalent_lift_radical_of_equivalent_zero_prod {Q : QuadraticMap R M P}
 /-- **Uniqueness of the totally isotropic part.** If `Q` is isometric to the orthogonal sum of the
 zero form on `T` and a quadratic map with trivial radical, then `T` is linearly equivalent to the
 radical of `Q`. -/
-theorem nonempty_linearEquiv_radical_of_equivalent_zero_prod {Q : QuadraticMap R M P}
+theorem nonempty_linearEquiv_radical_of_equivalent_zero_prod (Q : QuadraticMap R M P)
     {Q' : QuadraticMap R N P} (h : Q.Equivalent ((0 : QuadraticMap R T P).prod Q'))
     (hQ' : Q'.radical = ⊥) : Nonempty (T ≃ₗ[R] Q.radical) := by
   obtain ⟨e⟩ := h
