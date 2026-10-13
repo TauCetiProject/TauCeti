@@ -64,7 +64,8 @@ submodules underlying the Lie ideals. No separate generic containment wrappers a
 `TauCeti/LinearAlgebra/TensorProduct/BaseChange.lean` reach a derivation through
 `LieDerivation.baseChange_toLinearMap`.
 
-The core construction, pure-tensor formula, underlying-map formula, and injectivity apply to
+The core construction, additive compatibility, pure-tensor formula, underlying-map formula,
+and injectivity apply to
 any Lie `L`-module `M`. The comparison with Mathlib's endomorphism extension, the Lie-homomorphism
 bundle, inner derivations, and ideal descent specialize to `M = L`. The construction verifies
 the derivation identity on pure tensors using Mathlib's scalar-extended Lie-module bracket, then
@@ -115,6 +116,54 @@ theorem baseChange_tmul (D : LieDerivation R L M) (a : A) (x : L) :
 theorem baseChange_toLinearMap (D : LieDerivation R L M) :
     (D.baseChange A).toLinearMap = D.toLinearMap.baseChange A :=
   (rfl)
+
+
+/-- The zero derivation extends to the zero derivation. -/
+@[simp]
+theorem baseChange_zero : (0 : LieDerivation R L M).baseChange A = 0 := by
+  apply LieDerivation.ext
+  intro z
+  exact DFunLike.congr_fun (LinearMap.baseChange_zero (A := A) (M := L) (N := M)) z
+
+/-- Extension of scalars is additive in the derivation. -/
+@[simp]
+theorem baseChange_add (D E : LieDerivation R L M) :
+    (D + E).baseChange A = D.baseChange A + E.baseChange A := by
+  apply LieDerivation.ext
+  intro z
+  exact DFunLike.congr_fun (LinearMap.baseChange_add (A := A)
+    (f := D.toLinearMap) (g := E.toLinearMap)) z
+
+/-- Extension of scalars preserves the negative of a derivation. -/
+@[simp]
+theorem baseChange_neg (D : LieDerivation R L M) :
+    (-D).baseChange A = -D.baseChange A := by
+  apply LieDerivation.ext
+  intro z
+  exact DFunLike.congr_fun (LinearMap.baseChange_neg (A := A) (f := D.toLinearMap)) z
+
+/-- Extension of scalars preserves the difference of two derivations. -/
+@[simp]
+theorem baseChange_sub (D E : LieDerivation R L M) :
+    (D - E).baseChange A = D.baseChange A - E.baseChange A := by
+  apply LieDerivation.ext
+  intro z
+  exact DFunLike.congr_fun (LinearMap.baseChange_sub (A := A)
+    (f := D.toLinearMap) (g := E.toLinearMap)) z
+
+/-- Extension of scalars preserves scalar multiplication by the original coefficient ring. -/
+@[simp]
+theorem baseChange_smul (r : R) (D : LieDerivation R L M) :
+    (r • D).baseChange A = algebraMap R A r • D.baseChange A := by
+  apply LieDerivation.ext
+  intro z
+  have hD : (r • D).toLinearMap = r • D.toLinearMap := by
+    ext x
+    rfl
+  change (r • D).toLinearMap.baseChange A z =
+    algebraMap R A r • D.toLinearMap.baseChange A z
+  rw [hD, LinearMap.baseChange_smul, LinearMap.smul_apply, algebraMap_smul]
+
 
 
 variable [Module.FaithfullyFlat R A]
@@ -174,42 +223,6 @@ def baseChangeHom : LieDerivation R L L →ₗ⁅R⁆
 @[simp]
 theorem baseChangeHom_apply (D : LieDerivation R L L) : baseChangeHom A D = D.baseChange A :=
   (rfl)
-
-/-- The zero derivation extends to the zero derivation. -/
-@[simp]
-theorem baseChange_zero : (0 : LieDerivation R L L).baseChange A = 0 :=
-  (baseChangeHom A).toLinearMap.map_zero
-
-/-- Extension of scalars is additive in the derivation. -/
-@[simp]
-theorem baseChange_add (D E : LieDerivation R L L) :
-    (D + E).baseChange A = D.baseChange A + E.baseChange A :=
-  map_add (baseChangeHom A) D E
-
-/-- Extension of scalars preserves the negative of a derivation. -/
-@[simp]
-theorem baseChange_neg (D : LieDerivation R L L) :
-    (-D).baseChange A = -D.baseChange A :=
-  (baseChangeHom A).toLinearMap.map_neg D
-
-/-- Extension of scalars preserves the difference of two derivations. -/
-@[simp]
-theorem baseChange_sub (D E : LieDerivation R L L) :
-    (D - E).baseChange A = D.baseChange A - E.baseChange A :=
-  (baseChangeHom A).toLinearMap.map_sub D E
-
-/-- Extension of scalars preserves scalar multiplication by the original coefficient ring. -/
-@[simp]
-theorem baseChange_smul (r : R) (D : LieDerivation R L L) :
-    (r • D).baseChange A = r • D.baseChange A := by
-  apply LieDerivation.ext
-  intro z
-  have h := congrArg (fun E : LieDerivation A (A ⊗[R] L) (A ⊗[R] L) => E z)
-    (map_smul (baseChangeHom A) r D)
-  -- Evaluation hides the restricted scalar action inside the derivation function coercion.
-  -- Expose its defining action so `algebraMap_smul` can identify it with the existing `R` action.
-  change (r • D).baseChange A z = algebraMap R A r • D.baseChange A z at h
-  simpa only [LieDerivation.smul_apply, algebraMap_smul] using h
 
 /-- Extension of scalars is compatible with the bracket of derivations. -/
 @[simp]
