@@ -45,7 +45,7 @@ theorem chartedSpaceComap_atlas_subset_maximalAtlas [IsManifold I n M] [IsManifo
     {p : M → B} (hp : IsLocalHomeomorph p) (hpd : IsLocalDiffeomorph I I n p) :
     hp.chartedSpaceComap.atlas ⊆ maximalAtlas I n M := by
   intro e he
-  obtain ⟨x, rfl⟩ := (mem_atlas_chartedSpaceComap hp e).mp he
+  obtain ⟨x, rfl⟩ := (mem_atlas_chartedSpaceComap_iff hp e).mp he
   let L := hp.localInverseAt x
   let e := chartAt H (p x)
   have hL : ContMDiffOn I I n L L.source :=
