@@ -451,7 +451,9 @@ theorem gammaNaiveRelRepData_rep (X : EllObj B) :
 
 /-- The representing morphisms of the naive problem `[Γ(N)]` have every property of morphisms of
 schemes which is stable under base change and composition, holds for open immersions, and holds
-for the `N`-torsion of every elliptic curve: they are open immersions into `E[N] ×_S E[N]`. -/
+for the `N`-torsion of every elliptic curve: each representing scheme is an open subscheme of
+`E[N] ×_S E[N]`, whose structure morphism is the composite of that open immersion with the
+morphism from `E[N] ×_S E[N]` to the base. -/
 theorem hasProperty_gammaNaiveRelRepData {W : MorphismProperty Scheme.{u}}
     [W.IsStableUnderBaseChange] [W.IsStableUnderComposition] (hW : @IsOpenImmersion ≤ W)
     (h : ∀ X : EllObj B, W (X.curve.torsion N).X.hom) :

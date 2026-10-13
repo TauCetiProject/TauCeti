@@ -170,6 +170,7 @@ def naiveLocus : Set H.left :=
   {h | ∀ a, a ≠ 1 → (u a).left h ≠ E.zero (H.hom h)}
 
 /-- The defining condition of the naive locus. -/
+@[simp]
 theorem mem_naiveLocus_iff {h : H.left} :
     h ∈ naiveLocus u ↔ ∀ a, a ≠ 1 → (u a).left h ≠ E.zero (H.hom h) :=
   Iff.rfl
