@@ -66,13 +66,14 @@ variable {γ₀ γ₁ : ℝ → ℂ} {a b : ℝ} {w : ℂ}
 /-- The comparison quotient `t ↦ (γ₁ t - w) / (γ₀ t - w)` of two curves relative to the point `w`.
 The whole proximity argument is the observation that the leash hypothesis confines this quotient to
 the disc of radius `1` about `1`. -/
-private def compRatio (γ₀ γ₁ : ℝ → ℂ) (w : ℂ) : ℝ → ℂ := fun t => (γ₁ t - w) / (γ₀ t - w)
+def compRatio (γ₀ γ₁ : ℝ → ℂ) (w : ℂ) : ℝ → ℂ := fun t => (γ₁ t - w) / (γ₀ t - w)
 
-private theorem compRatio_apply (γ₀ γ₁ : ℝ → ℂ) (w : ℂ) (t : ℝ) :
-    compRatio γ₀ γ₁ w t = (γ₁ t - w) / (γ₀ t - w) := rfl
+/-- The comparison quotient evaluated at a parameter. -/
+theorem compRatio_apply (γ₀ γ₁ : ℝ → ℂ) (w : ℂ) (t : ℝ) :
+    compRatio γ₀ γ₁ w t = (γ₁ t - w) / (γ₀ t - w) := (rfl)
 
 /-- Under the leash hypothesis at `t`, the base curve misses `w` there. -/
-private theorem ne_of_dist_lt_dist {t : ℝ} (h : dist (γ₁ t) (γ₀ t) < dist (γ₀ t) w) :
+theorem ne_of_dist_lt_dist {t : ℝ} (h : dist (γ₁ t) (γ₀ t) < dist (γ₀ t) w) :
     γ₀ t ≠ w := fun heq => absurd ((dist_eq_zero.mpr heq) ▸ h) (by simp [dist_nonneg])
 
 /-- The leash hypothesis says exactly that the comparison quotient stays within distance `1`
@@ -101,11 +102,16 @@ private theorem re_compRatio_pos {t : ℝ} (h : dist (γ₁ t) (γ₀ t) < dist 
 
 /-- Under the leash hypothesis at `t`, the comparison curve also misses `w` there: otherwise the
 quotient would be `0`, contradicting the positivity of its real part. -/
-private theorem ne_of_dist_lt_dist' {t : ℝ} (h : dist (γ₁ t) (γ₀ t) < dist (γ₀ t) w) :
+theorem ne_of_dist_lt_dist' {t : ℝ} (h : dist (γ₁ t) (γ₀ t) < dist (γ₀ t) w) :
     γ₁ t ≠ w := by
   intro heq
   have hzero : compRatio γ₀ γ₁ w t = 0 := by rw [compRatio_apply, heq, sub_self, zero_div]
   simpa [hzero] using re_compRatio_pos h
+
+/-- Under the leash hypothesis the comparison quotient lies in the slit plane. -/
+theorem compRatio_mem_slitPlane {t : ℝ} (h : dist (γ₁ t) (γ₀ t) < dist (γ₀ t) w) :
+    compRatio γ₀ γ₁ w t ∈ Complex.slitPlane :=
+  Complex.mem_slitPlane_iff.mpr (Or.inl (re_compRatio_pos h))
 
 /-- **A set contained in the open right half-plane has `0` in an unbounded component of its
 complement**: the closed left half-plane is convex, hence connected, contains `0`, is unbounded,

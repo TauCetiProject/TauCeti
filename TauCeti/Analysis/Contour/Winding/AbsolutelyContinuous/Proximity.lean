@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Contour.Winding.Number.AbsolutelyContinuous
+import TauCeti.Analysis.Contour.Winding.Proximity
 import TauCeti.MeasureTheory.Function.AbsolutelyContinuous.Comp
 import Mathlib.Analysis.Calculus.ContDiff.Operations
 import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
@@ -36,35 +37,21 @@ theorem windingNumber_eq_of_dist_lt_dist_of_absolutelyContinuousOnInterval
     windingNumber γ₁ a b z = windingNumber γ₀ a b z := by
   have h₀ne : ∀ t ∈ uIcc a b, γ₀ t - z ≠ 0 := by
     intro t ht
-    apply sub_ne_zero.mpr
-    exact dist_pos.mp (lt_of_le_of_lt (dist_nonneg : 0 ≤ dist (γ₁ t) (γ₀ t)) (hlt t ht))
+    exact sub_ne_zero.mpr (ne_of_dist_lt_dist (hlt t ht))
   have h₁ne : ∀ t ∈ uIcc a b, γ₁ t - z ≠ 0 := by
     intro t ht
-    apply sub_ne_zero.mpr
-    intro heq
-    have h := hlt t ht
-    rw [heq, dist_comm] at h
-    exact (lt_irrefl _ h)
+    exact sub_ne_zero.mpr (ne_of_dist_lt_dist' (hlt t ht))
   have h₀off : z ∉ γ₀ '' uIcc a b := by
     rintro ⟨t, ht, heq⟩
     exact h₀ne t ht (sub_eq_zero.mpr heq)
   have h₁off : z ∉ γ₁ '' uIcc a b := by
     rintro ⟨t, ht, heq⟩
     exact h₁ne t ht (sub_eq_zero.mpr heq)
-  let σ : ℝ → ℂ := fun t ↦ (γ₁ t - z) / (γ₀ t - z)
+  let σ : ℝ → ℂ := compRatio γ₀ γ₁ z
+  have hσeq : σ = fun t ↦ (γ₁ t - z) / (γ₀ t - z) := funext (compRatio_apply γ₀ γ₁ z)
   have hσslit : ∀ t ∈ uIcc a b, σ t ∈ slitPlane := by
     intro t ht
-    have hsub : σ t - 1 = (γ₁ t - γ₀ t) / (γ₀ t - z) := by
-      dsimp [σ]
-      field_simp [h₀ne t ht]
-      ring
-    have hnorm : ‖σ t - 1‖ < 1 := by
-      rw [hsub, norm_div, div_lt_one (norm_pos_iff.mpr (h₀ne t ht))]
-      simpa only [dist_eq_norm] using hlt t ht
-    have hre := Complex.re_le_norm (1 - σ t)
-    rw [norm_sub_rev] at hre
-    simp only [Complex.sub_re, Complex.one_re] at hre
-    exact mem_slitPlane_iff.mpr (Or.inl (by linarith))
+    exact compRatio_mem_slitPlane (hlt t ht)
   have hconst : AbsolutelyContinuousOnInterval (fun _ : ℝ ↦ z) a b :=
     (LipschitzWith.const z).lipschitzOnWith.absolutelyContinuousOnInterval
   have hα₀ := h₀.fun_sub hconst
@@ -74,7 +61,7 @@ theorem windingNumber_eq_of_dist_lt_dist_of_absolutelyContinuousOnInterval
     rintro _ ⟨t, ht, rfl⟩
     exact contDiffAt_inv ℝ (h₀ne t ht)
   have hσ : AbsolutelyContinuousOnInterval σ a b := by
-    simpa only [σ, div_eq_mul_inv, smul_eq_mul] using hα₁.fun_smul hinv
+    simpa only [hσeq, div_eq_mul_inv, smul_eq_mul] using hα₁.fun_smul hinv
   have hlog : AbsolutelyContinuousOnInterval (Complex.log ∘ σ) a b := by
     apply hσ.comp_of_contDiffAt
     rintro _ ⟨t, ht, rfl⟩
@@ -86,14 +73,16 @@ theorem windingNumber_eq_of_dist_lt_dist_of_absolutelyContinuousOnInterval
       h₁.boundedVariationOn.ae_differentiableAt_of_mem_uIcc] with t ht₀ ht₁ ht
     have ht' := uIoc_subset_uIcc ht
     have hd : HasDerivAt σ
-        ((deriv γ₁ t * (γ₀ t - z) - (γ₁ t - z) * deriv γ₀ t) / (γ₀ t - z) ^ 2) t :=
-      ((ht₁ ht').hasDerivAt.sub_const z).div
-      ((ht₀ ht').hasDerivAt.sub_const z) (h₀ne t ht')
+        ((deriv γ₁ t * (γ₀ t - z) - (γ₁ t - z) * deriv γ₀ t) / (γ₀ t - z) ^ 2) t := by
+      rw [hσeq]
+      exact ((ht₁ ht').hasDerivAt.sub_const z).div
+        ((ht₀ ht').hasDerivAt.sub_const z) (h₀ne t ht')
     convert hd.clog_real (hσslit t ht') using 1
     · rfl
-    dsimp [σ]
+    rw [hσeq]
+    dsimp only
     field_simp [h₀ne t ht', h₁ne t ht']
-  have hσclosed : σ a = σ b := by dsimp [σ]; rw [h₀closed, h₁closed]
+  have hσclosed : σ a = σ b := by simp only [hσeq, h₀closed, h₁closed]
   have hint := hlog.integral_eq_sub_of_ae_hasDerivAt hlogderiv
   simp only [Function.comp_apply, hσclosed, sub_self] at hint
   have hint₀ := intervalIntegrable_inv_sub_mul_deriv_of_absolutelyContinuousOnInterval h₀ h₀off
