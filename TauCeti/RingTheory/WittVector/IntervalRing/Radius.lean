@@ -158,9 +158,10 @@ theorem exists_sum_eq_mul_inv_pow (d : B₀) :
   · -- multiply by the unit `s = (p [ϖ]) ^ m`: both sides become `y`
     set g := RadiusLocalization.toIntervalLocalization p hv hϖ hϖ' hρ₁ hρ₂
     set u := (isUnit_natCast p hv hϖ hϖ' hρ₁ hρ₂).unit
-    have hgw (x : 𝕎 O) : g (IsLocalization.mk' A₀ x w) * algebraMap (𝕎 O) B₀ (w : 𝕎 O) =
-        algebraMap (𝕎 O) B₀ x := by
-      simpa only [map_mul, AlgHom.commutes] using congrArg g (IsLocalization.mk'_spec A₀ x w)
+    have hgw (x : 𝕎 O) : g (IsLocalization.mk' A₀ x w) *
+        algebraMap (𝕎 O) B₀ (teichmuller p ϖ) ^ m = algebraMap (𝕎 O) B₀ x := by
+      simpa only [w, map_mul, map_pow, AlgHom.commutes] using
+        congrArg g (IsLocalization.mk'_spec A₀ x w)
     have hpu : (p : B₀) * (u⁻¹ : B₀ˣ) = 1 := by
       simp [u]
     have hpow (i : ℕ) (hi : i ≤ m) :
@@ -170,9 +171,10 @@ theorem exists_sum_eq_mul_inv_pow (d : B₀) :
         g (IsLocalization.mk' A₀ (t i) w) * ((u⁻¹ : B₀ˣ) : B₀) ^ (m - i) *
             algebraMap (𝕎 O) B₀ (s : 𝕎 O) =
           algebraMap (𝕎 O) B₀ (t i * (p : 𝕎 O) ^ i) := by
-      rw [← hm, map_pow, map_mul, mul_pow, map_natCast, mul_comm ((p : B₀) ^ m), ← mul_assoc,
-        mul_right_comm _ _ (algebraMap (𝕎 O) B₀ (teichmuller p ϖ) ^ m), ← map_pow, hgw,
-        mul_assoc, mul_comm _ ((p : B₀) ^ m), hpow i hi, map_mul, map_pow, map_natCast]
+      rw [← hm]
+      simp only [map_mul, map_pow, map_natCast]
+      linear_combination ((u⁻¹ : B₀ˣ) : B₀) ^ (m - i) * (p : B₀) ^ m * hgw (t i) +
+        algebraMap (𝕎 O) B₀ (t i) * hpow i hi
     apply (IsLocalization.map_units B₀ s).mul_right_cancel
     rw [IsLocalization.mk'_spec, Finset.sum_mul,
       Finset.sum_congr rfl fun i hi ↦ hterm i (Nat.lt_succ_iff.mp (Finset.mem_range.mp hi)),
