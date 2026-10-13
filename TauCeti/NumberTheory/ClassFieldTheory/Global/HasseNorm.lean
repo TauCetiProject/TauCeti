@@ -7,8 +7,7 @@ module
 
 public import TauCeti.FieldTheory.GaloisCohomology.Cyclic
 public import TauCeti.NumberTheory.ClassFieldTheory.Global.Brauer.LocalizationKernel
-public import TauCeti.NumberTheory.NumberField.Global.Ideles.GaloisDescent
-public import TauCeti.NumberTheory.NumberField.Global.Ideles.Norm.Galois
+public import TauCeti.NumberTheory.ClassFieldTheory.Global.IdeleClass.RepNorm
 
 /-!
 # Local norms, global norms and idele-class `H¹` in a cyclic extension
@@ -22,30 +21,30 @@ idele-class `H¹`.
 
 By two-periodicity of the cohomology of `G`, the class `cyclicClass hg a ∈ H²(G, Lˣ)` of `a`
 vanishes exactly when `a` is a global norm (`TauCeti.cyclicClass_eq_zero_iff`). The same
-periodicity for the ideles, together with the formula `N_{L/K}(x) = ∏_σ σ x` for the idele norm,
-shows that the image of this class in `H²(G, I_L)` vanishes exactly when `a` is a local norm
-everywhere (`map_unitsToIdeles_cyclicClass_eq_zero_iff`). The long exact sequence of
-`0 → Lˣ → I_L → C_L → 0` identifies the kernel of `H²(G, Lˣ) → H²(G, I_L)` with the image of the
-injective connecting map `H¹(G, C_L) → H²(G, Lˣ)`. Hence `a` is a local norm everywhere exactly
-when its class comes from `H¹(G, C_L)`
+periodicity for the ideles, together with the formula `N_{L/K}(x) = ∏_σ σ x` for the idele norm
+(`idelesRep_norm_apply`), shows that the image of this class in `H²(G, I_L)` vanishes exactly
+when `a` is a local norm everywhere (`map_unitsToIdeles_cyclicClass_eq_zero_iff`). The long
+exact sequence of `0 → Lˣ → I_L → C_L → 0` identifies the kernel of `H²(G, Lˣ) → H²(G, I_L)`
+with the image of the injective connecting map `H¹(G, C_L) → H²(G, Lˣ)`. Hence `a` is a local
+norm everywhere exactly when its class comes from `H¹(G, C_L)`
 (`unitEmbedding_mem_range_ideleNormMap_iff_cyclicClass_mem_range`). Since every class of
 `H²(G, Lˣ)` is the class of some `a` (`TauCeti.cyclicClass_surjective`), the local norms everywhere
 modulo the global norms thus correspond to `H¹(G, C_L)`.
 
 In particular `H¹(G, C_L)` vanishes exactly when every local norm everywhere is a global norm
-(`subsingleton_groupCohomology_one_ideleClassRep_iff_forall_mem_normGroup`). This reduces the
-global half of the cyclic Hasse norm theorem to the vanishing of `H¹(G, C_L)`, which comes from
-the fundamental inequalities (`mem_normGroup_iff_unitEmbedding_mem_range_ideleNormMap`).
+(`subsingleton_groupCohomology_one_ideleClassRep_iff_forall_mem_normGroup_of_mem_range`).
+Under the hypothesis `H¹(G, C_L) = 0`, `a` is therefore a global norm exactly when it is a local
+norm everywhere (`mem_normGroup_iff_unitEmbedding_mem_range_ideleNormMap`). This file reduces the
+global half of the cyclic Hasse norm theorem to that hypothesis; it does not prove the vanishing
+of `H¹(G, C_L)` itself.
 
 ## Main results
 
-* `idelesRep_norm_hom_apply`: the norm of the representation of `G` on
-  `I_L` is the idele norm, extended back to `L`.
 * `map_unitsToIdeles_cyclicClass_eq_zero_iff`: the class of `a` dies in
   `H²(G, I_L)` exactly when `a` is a local norm everywhere.
 * `unitEmbedding_mem_range_ideleNormMap_iff_cyclicClass_mem_range`: `a`
   is a local norm everywhere exactly when its class comes from `H¹(G, C_L)`.
-* `subsingleton_groupCohomology_one_ideleClassRep_iff_forall_mem_normGroup`:
+* `subsingleton_groupCohomology_one_ideleClassRep_iff_forall_mem_normGroup_of_mem_range`:
   `H¹(G, C_L) = 0` exactly when every local norm everywhere is a global norm.
 * `mem_normGroup_iff_unitEmbedding_mem_range_ideleNormMap`: if
   `H¹(G, C_L) = 0`, then `a` is a global norm exactly when it is a local norm everywhere.
@@ -69,30 +68,6 @@ open GlobalNumberFields
 
 variable {K : Type} [Field K] [NumberField K] {L : Type} [Field L] [NumberField L] [Algebra K L]
   [IsGalois K L]
-
-/-- **The representation norm on ideles is the idele norm.** For `L/K` Galois, the norm
-`∑_σ σ x` of the representation of `Gal(L/K)` on `I_L` is the idele norm `N_{L/K}(x)`, extended
-back to `L`. -/
-theorem idelesRep_norm_hom_apply (x : idelesRep K L) :
-    Rep.toAdditive ((idelesRep K L).norm.hom x) =
-      Additive.ofMul (ideleExtension K L (ideleNormMap K L (Rep.toAdditive x).toMul)) := by
-  apply Additive.toMul.injective
-  rw [ideleExtension_ideleNormMap, Rep.norm_apply]
-  exact (Representation.norm_ofMulDistribMulAction_eq (Rep.toAdditive x)).trans
-    (Finset.prod_congr rfl fun σ _ ↦ idele_smul_def σ _)
-
-/-- An idele of `K`, extended to `L`, lies in the image of the representation norm on `I_L`
-exactly when it is an idele norm from `L`. -/
-theorem ideleExtension_mem_range_idelesRep_norm_iff (x : IdeleGroup (𝓞 K) K) :
-    Rep.toAdditive.symm (Additive.ofMul (ideleExtension K L x)) ∈
-        LinearMap.range (idelesRep K L).norm.hom.toLinearMap ↔
-      x ∈ (ideleNormMap K L).toMonoidHom.range := by
-  refine ⟨fun ⟨y, hy⟩ ↦ ⟨(Rep.toAdditive y).toMul, ideleExtension_injective K L ?_⟩,
-    fun ⟨y, hy⟩ ↦ ⟨Rep.toAdditive.symm (Additive.ofMul y), ?_⟩⟩
-  · exact congrArg Additive.toMul ((idelesRep_norm_hom_apply y).symm.trans
-      (congrArg Rep.toAdditive hy))
-  · apply Rep.toAdditive.injective
-    exact (idelesRep_norm_hom_apply _).trans (by rw [← hy]; rfl)
 
 variable {g : L ≃ₐ[K] L} (hg : ∀ σ, σ ∈ Subgroup.zpowers g)
 
@@ -145,7 +120,7 @@ theorem unitEmbedding_mem_range_ideleNormMap_iff_cyclicClass_mem_range (a : Kˣ)
 /-- **Idele-class `H¹` vanishes exactly when local norms are global norms.** For `L/K` cyclic,
 `H¹(Gal(L/K), C_L) = 0` exactly when every `a ∈ Kˣ` whose principal idele is an idele norm from
 `L` lies in `N_{L/K}(Lˣ)`. -/
-theorem subsingleton_groupCohomology_one_ideleClassRep_iff_forall_mem_normGroup
+theorem subsingleton_groupCohomology_one_ideleClassRep_iff_forall_mem_normGroup_of_mem_range
     [IsCyclic (L ≃ₐ[K] L)] :
     Subsingleton (groupCohomology (ideleClassRep K L) 1) ↔
       ∀ a : Kˣ, IdeleGroup.unitEmbedding (𝓞 K) K a ∈ (ideleNormMap K L).toMonoidHom.range →
@@ -171,7 +146,7 @@ theorem mem_normGroup_iff_unitEmbedding_mem_range_ideleNormMap [IsCyclic (L ≃�
     a ∈ normGroup K L ↔
       IdeleGroup.unitEmbedding (𝓞 K) K a ∈ (ideleNormMap K L).toMonoidHom.range := by
   refine ⟨fun ha ↦ ?_,
-    subsingleton_groupCohomology_one_ideleClassRep_iff_forall_mem_normGroup.1 h a⟩
+    subsingleton_groupCohomology_one_ideleClassRep_iff_forall_mem_normGroup_of_mem_range.1 h a⟩
   -- A global norm `N(y)` is the idele norm of the principal idele of `y`.
   obtain ⟨y, hy⟩ := mem_normGroup_iff.1 ha
   refine ⟨IdeleGroup.unitEmbedding (𝓞 L) L y, (ideleNormMap_unitEmbedding K L y).trans ?_⟩
