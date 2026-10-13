@@ -24,7 +24,7 @@ namespace TauCeti
 
 open _root_.HahnSeries
 
-variable {k : Type*} [Ring k] [IsDomain k] {n : ℕ}
+variable {k : Type*} [Semiring k] [IsDomain k] {n : ℕ}
 
 /-- The order of a power of a nonzero Laurent series is the corresponding multiple of its
 integer order. -/
