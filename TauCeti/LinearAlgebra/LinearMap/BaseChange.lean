@@ -7,7 +7,6 @@ module
 
 public import Mathlib.LinearAlgebra.Contraction
 public import Mathlib.RingTheory.Flat.FaithfullyFlat.Basic
-public import Mathlib.RingTheory.Nilpotent.Defs
 public import TauCeti.LinearAlgebra.Dual.BaseChange
 
 /-!
@@ -19,10 +18,8 @@ no finiteness condition is needed on `N` or on the commutative value algebra `A`
 This comparison allows a scalar-extended Hom representation to act on scalar-extended vectors.
 
 When the coefficient algebra is faithfully flat, extension of scalars is injective on linear
-maps (`LinearMap.baseChange_injective`) and reflects nilpotence of endomorphisms
-(`LinearMap.isNilpotent_baseChange_iff`). Faithful flatness permits checking equality of linear
-maps after extension of scalars, and the nilpotence equivalence similarly permits checking
-nilpotence after extension.
+maps (`LinearMap.baseChange_injective`). Faithful flatness therefore permits checking equality of
+linear maps after extension of scalars.
 -/
 
 public section
@@ -146,12 +143,5 @@ theorem baseChange_injective :
     simpa only [← baseChange_eq_ltensor] using DFunLike.congr_fun h z
   rw [lTensor_sub, hTensor]
   exact _root_.sub_self (g.lTensor A)
-
-/-- **An endomorphism is nilpotent exactly when its extension of scalars is**, over a faithfully
-flat coefficient algebra. -/
-@[simp]
-theorem isNilpotent_baseChange_iff (f : Module.End R M) :
-    IsNilpotent (f.baseChange A) ↔ IsNilpotent f :=
-  IsNilpotent.map_iff (f := Module.End.baseChangeHom R A M) baseChange_injective
 
 end LinearMap
