@@ -64,19 +64,11 @@ instance (m : ℕ) : LieAlgebra.IsKilling k
 /-- **`Sp₂ₘ` is linearly reductive in characteristic zero.** Every finite-dimensional comodule
 over its coordinate Hopf algebra is completely reducible. -/
 theorem linearlyReductiveCommHopfAlgProperty_coordinateHopfAlgebra (m : ℕ) :
-    linearlyReductiveCommHopfAlgProperty k (coordinateHopfAlgebra k m) := by
-  -- The packaged quotient carries structure instances that cannot be transported across
-  -- `finiteTypeCoordinateHopfAlgebra_obj`; this wrapper keeps its object definitionally equal
-  -- to the coordinate Hopf algebra while reusing the existing finite-type property.
-  let H : FiniteTypeCommHopfAlgCat k :=
-    ⟨coordinateHopfAlgebra k m, by
-      rw [← finiteTypeCoordinateHopfAlgebra_obj]
-      exact (finiteTypeCoordinateHopfAlgebra k m).property⟩
-  have hconnected : geometricallyConnectedCommHopfAlgProperty k H.obj :=
-    geometricallyConnectedCommHopfAlgProperty_coordinateHopfAlgebra k m
-  exact @linearlyReductiveCommHopfAlgProperty.of_geometricallyConnected_of_isKilling k _ _ H
-    (inferInstance : LieAlgebra.IsKilling k
-      (Derivation k H.obj (Bialgebra.CounitAlgebra k H.obj k))) hconnected
+    linearlyReductiveCommHopfAlgProperty k (coordinateHopfAlgebra k m) :=
+  linearlyReductiveCommHopfAlgProperty.of_finiteType_of_connected_of_isKilling
+    (by rw [← finiteTypeCoordinateHopfAlgebra_obj]
+        exact (finiteTypeCoordinateHopfAlgebra k m).property)
+    (geometricallyConnectedCommHopfAlgProperty_coordinateHopfAlgebra k m)
 
 end Symplectic
 

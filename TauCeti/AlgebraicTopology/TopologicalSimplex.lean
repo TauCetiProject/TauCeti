@@ -60,11 +60,14 @@ noncomputable def toTopInitialVertex (n : SimplexCategory) : toTop.{u}.obj n :=
 lemma toTopInitialVertex_down (n : SimplexCategory) :
     (toTopInitialVertex.{u} n).down = StdSimplex.single 0 := (rfl)
 
-/-- The image of the initial vertex of a topological simplex under a morphism of simplices is the
-vertex indexed by the image of `0`. -/
+/-- A map of topological simplices carries the initial vertex to the vertex indexed by
+its value at zero. -/
+-- Compute the vertex image before `toTop_map` unfolds the inner map.
+@[simp↓]
 lemma toTop_map_toTopInitialVertex_down {m n : SimplexCategory} (α : m ⟶ n) :
     (toTop.{u}.map α (toTopInitialVertex m)).down = StdSimplex.single (α.toOrderHom 0) := by
-  -- The universe lift `toTop` acts on the underlying point of the standard simplex.
+  -- The lifted affine map is read in standard-simplex coordinates.
+  rw [toTop_map]
   change StdSimplex.map α.toOrderHom (toTopInitialVertex.{u} m).down = _
   rw [toTopInitialVertex_down, StdSimplex.map_single]
 

@@ -47,10 +47,6 @@ comparison of the two conjugation actions, and then applies the pointwise decomp
 
 * G. R. Kempf, *Instability in invariant theory*, Annals of Mathematics 108 (1978), §2.
 * J. S. Milne, *Algebraic Groups* (2017), Chapter 13.
-
-This completes the represented dynamic Levi decomposition for general-linear weight parabolics,
-in the dynamic route to parabolics and Levi decomposition in Layer 7, "Structure theory", of the
-ReductiveGroups roadmap.
 -/
 
 public section

@@ -10,6 +10,7 @@ public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Rearrangement
 public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Space
 import TauCeti.Analysis.Normed.Group.WeightedVariance
 import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Borel
+import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.FrechetMean
 
 /-!
 # Wasserstein barycenters on the real line
@@ -196,22 +197,14 @@ moment. -/
 theorem hasFiniteMoment_quantileBarycenter :
     HasFiniteMoment 2
       (quantileBarycenter w fun i ↦ ((μ i : ProbabilityMeasure ℝ) : Measure ℝ)) := by
-  set ν := quantileBarycenter w fun i ↦ ((μ i : ProbabilityMeasure ℝ) : Measure ℝ)
-  have hd : Measurable fun z : ℝ × ℝ ↦ edist z.1 z.2 := measurable_edist
   obtain ⟨i₀, -, hi₀⟩ := Finset.exists_ne_zero_of_sum_ne_zero (hw.trans_ne one_ne_zero)
-  have hfin : ∑ i, (w i : ℝ≥0∞) * wassersteinEDist 2 ν (μ i) ^ 2 ≠ ∞ := by
-    refine ne_top_of_le_ne_top ?_ (sum_mul_wassersteinEDist_sq_quantileBarycenter_le hw _ (μ i₀))
-    exact ENNReal.sum_ne_top.2 fun i _ ↦ ENNReal.mul_ne_top ENNReal.coe_ne_top
-      (ENNReal.pow_ne_top (WassersteinSpace.wassersteinEDist_ne_top hd _ _))
-  have hi : (w i₀ : ℝ≥0∞) * wassersteinEDist 2 ν (μ i₀) ^ 2 ≠ ∞ :=
-    ne_top_of_le_ne_top hfin
-      (Finset.single_le_sum (f := fun i ↦ (w i : ℝ≥0∞) * wassersteinEDist 2 ν (μ i) ^ 2)
-      (fun _ _ ↦ bot_le) (Finset.mem_univ i₀))
-  have hne : wassersteinEDist 2 ν (μ i₀) ≠ ∞ := by
-    simpa [ENNReal.mul_eq_top, hi₀] using hi
-  rw [hasFiniteMoment_iff_wassersteinEDist_ne_top_of_hasFiniteMoment hd (μ i₀).hasFiniteMoment,
-    wassersteinEDist_comm hd]
-  exact hne
+  refine hasFiniteMoment_of_sum_mul_wassersteinEDist_rpow_ne_top measurable_edist
+    (w := fun i ↦ (w i : ℝ≥0∞)) (μ := fun i ↦ ((μ i : ProbabilityMeasure ℝ) : Measure ℝ))
+    (Finset.mem_univ i₀) (ENNReal.coe_ne_zero.2 hi₀) (μ i₀).hasFiniteMoment two_pos ?_
+  simp only [ENNReal.rpow_ofNat]
+  refine ne_top_of_le_ne_top ?_ (sum_mul_wassersteinEDist_sq_quantileBarycenter_le hw _ (μ i₀))
+  simpa only [ENNReal.toReal_ofNat, ENNReal.rpow_ofNat] using
+    WassersteinSpace.sum_mul_wassersteinEDist_rpow_ne_top (w := w) μ (μ i₀)
 
 /-- The quantile barycenter of finitely many laws in `P₂ (ℝ)`, as an element of `P₂ (ℝ)`. -/
 private theorem exists_coe_eq_quantileBarycenter : ∃ b : WassersteinSpace 2 ℝ,
@@ -230,34 +223,18 @@ theorem isFrechetBarycenter_two_iff_eq_quantileBarycenter (ν : WassersteinSpace
     IsFrechetBarycenter 2 (∑ i, w i • Measure.dirac (μ i)) ν ↔
       ((ν : ProbabilityMeasure ℝ) : Measure ℝ) =
         quantileBarycenter w fun i ↦ ((μ i : ProbabilityMeasure ℝ) : Measure ℝ) := by
-  have := WassersteinSpace.borelSpace (X := ℝ) (p := 2) ENNReal.ofNat_ne_top
   set μ' := fun i ↦ ((μ i : ProbabilityMeasure ℝ) : Measure ℝ)
-  set P := ∑ i, w i • Measure.dirac (μ i)
-  have hd : Measurable fun z : ℝ × ℝ ↦ edist z.1 z.2 := measurable_edist
-  have hm (z : WassersteinSpace 2 ℝ) : AEMeasurable (fun y ↦ edist z y) P :=
-    (continuous_const.edist continuous_id).measurable.aemeasurable
-  have hF (z : WassersteinSpace 2 ℝ) : frechetPower 2 P z =
-      ∑ i, (w i : ℝ≥0∞) * wassersteinEDist 2 (z : ProbabilityMeasure ℝ) (μ' i) ^ 2 := by
-    simp only [P, μ', frechetPower_sum_smul_dirac, WassersteinSpace.edist_def, ENNReal.smul_def,
-      smul_eq_mul, ENNReal.toReal_ofNat, ENNReal.rpow_ofNat]
-  have hfinF (z : WassersteinSpace 2 ℝ) : frechetPower 2 P z ≠ ∞ := by
-    rw [hF]
-    exact ENNReal.sum_ne_top.2 fun i _ ↦ ENNReal.mul_ne_top ENNReal.coe_ne_top
-      (ENNReal.pow_ne_top (WassersteinSpace.wassersteinEDist_ne_top hd _ _))
-  have hR : frechetRadius 2 P ν ≠ ∞ := by
-    intro h
-    have := frechetRadius_rpow_eq_frechetPower two_ne_zero ENNReal.ofNat_ne_top (hm ν)
-    rw [h, ENNReal.top_rpow_of_pos (by simp)] at this
-    exact hfinF ν this.symm
   obtain ⟨b, hb⟩ := exists_coe_eq_quantileBarycenter hw μ
-  rw [isFrechetBarycenter_iff_forall_frechetPower_le two_ne_zero ENNReal.ofNat_ne_top (hm ν) hm,
-    and_iff_right hR]
+  rw [WassersteinSpace.isFrechetBarycenter_sum_smul_dirac_iff_isMinOn ENNReal.ofNat_ne_top μ ν,
+    isMinOn_univ_iff]
+  simp only [ENNReal.toReal_ofNat, ENNReal.rpow_ofNat]
   refine ⟨fun h ↦ ?_, fun h z ↦ ?_⟩
   · have hνb := h b
-    rw [hF, hF, hb] at hνb
-    exact (sum_mul_wassersteinEDist_sq_le_iff_eq_quantileBarycenter hw μ'
-      (by simpa only [hF, hb] using hfinF b) _).1 hνb
-  · rw [hF, hF, h]
+    rw [hb] at hνb
+    refine (sum_mul_wassersteinEDist_sq_le_iff_eq_quantileBarycenter hw μ' ?_ _).1 hνb
+    simpa only [hb, ENNReal.toReal_ofNat, ENNReal.rpow_ofNat] using
+      WassersteinSpace.sum_mul_wassersteinEDist_rpow_ne_top (w := w) μ b
+  · rw [h]
     exact sum_mul_wassersteinEDist_sq_quantileBarycenter_le hw μ' _
 
 /-- **The quantile formula for one-dimensional quadratic Wasserstein barycenters.** For weights
