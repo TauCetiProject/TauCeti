@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.AdicSpace.FarguesFontaine.IntervalChart
-public import TauCeti.AlgebraicGeometry.AdicSpace.PreAdicSpace.Plus
+public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.StructurePresheaf.Plus.PreAdicSpace
 
 import TauCeti.Analysis.SpecialFunctions.Pow.NNRat
 

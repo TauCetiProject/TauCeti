@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.AdicSpace.PreAdicSpace.Hom
-public import TauCeti.AlgebraicGeometry.AdicSpace.PreAdicSpace.PresentationLimit
-public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.StructurePresheaf.Plus.Basic
+
+import Mathlib.RingTheory.Valuation.Integers
 
 /-!
 # The integral sections `𝒪_X⁺` of a pre-adic space
@@ -21,7 +21,8 @@ Wedhorn, the *integral sections* over an open `U ⊆ X` are
 
 where `f_x` is the germ of `f` at `x`. This file defines `𝒪_X⁺(U)` as a subring of `𝒪_X(U)` and
 shows that it is functorial in the category `𝒱^pre` of pre-adic spaces: restriction maps carry
-`𝒪_X⁺(U)` into `𝒪_X⁺(V)` for `V ⊆ U`, and for a morphism `f : X ⟶ Y` the map on sections
+`𝒪_X⁺(U)` into `𝒪_X⁺(V)` for `V ⊆ U`, which packages `𝒪_X⁺` as a presheaf of commutative rings
+with a monomorphism `𝒪_X⁺ ⟶ 𝒪_X`, and for a morphism `f : X ⟶ Y` the map on sections
 `𝒪_Y(V) → 𝒪_X(f⁻¹V)` carries `𝒪_Y⁺(V)` into `𝒪_X⁺(f⁻¹V)`. Over an open `V` contained in the image
 of `f` the preimage of `𝒪_X⁺(f⁻¹V)` is exactly `𝒪_Y⁺(V)`; this applies to every isomorphism and
 to every open immersion over its image. So the plus subrings are determined by the stalk
@@ -29,12 +30,14 @@ valuations, and a morphism of `𝒱^pre` which is an isomorphism, or an open imm
 them.
 
 For the pre-adic space `Spa(A, A⁺)` of a Huber pair, `𝒪_X⁺(U)` is the plus subring
-`TauCeti.ValuationSpectrum.presentationLimitPlusSubring`, which on a rational open `R(T/s)` is the
-plus ring `A_U⁺` of the coordinate ring `A⟨T/s⟩` (Wedhorn, Proposition 8.16).
+`TauCeti.ValuationSpectrum.presentationLimitPlusSubring`
+(`Spa/StructurePresheaf/Plus/PreAdicSpace.lean`).
 
 ## Main definitions
 
 * `TauCeti.PreAdicSpace.plusSubring`: the subring `𝒪_X⁺(U)` of `𝒪_X(U)`.
+* `TauCeti.PreAdicSpace.plusPresheaf`: `𝒪_X⁺` as a presheaf of commutative rings on `X`.
+* `TauCeti.PreAdicSpace.plusPresheafι`: the inclusion `𝒪_X⁺ ⟶ 𝒪_X`, a monomorphism.
 
 ## Main results
 
@@ -44,14 +47,11 @@ plus ring `A_U⁺` of the coordinate ring `A⟨T/s⟩` (Wedhorn, Proposition 8.1
 * `TauCeti.PreAdicSpace.Hom.plusSubring_le_comap`: morphisms of pre-adic spaces preserve integral
   sections.
 * `TauCeti.PreAdicSpace.Hom.comap_plusSubring_of_subset_range`: over an open in the image of a
-  morphism, a section is integral exactly when its pullback is; the isomorphism case is
-  `TauCeti.PreAdicSpace.Hom.comap_plusSubring_of_isIso`.
-* `TauCeti.ValuationSpectrum.presentationLimitPreAdicSpace_plusSubring`: on `Spa(A, A⁺)` the
-  integral sections are `presentationLimitPlusSubring`.
+  morphism, a section is integral exactly when its pullback is.
 
 ## References
 
-* [T. Wedhorn, *Adic Spaces*][wedhorn_adic] (arXiv:1910.05934v1), §8.1 and Proposition 8.16.
+* [T. Wedhorn, *Adic Spaces*][wedhorn_adic] (arXiv:1910.05934v1), §8.1.
 -/
 
 public section
@@ -102,6 +102,62 @@ theorem plusSubring_le_comap {U V : Opens X} (i : V ⟶ U) :
     (TopCat.Presheaf.germ_res_apply X.toRingPresheafedSpace.presheaf i x hx f)).mpr
       (mem_plusSubring_iff.mp hf x (i.le hx))
 
+/-! ### The presheaf of integral sections -/
+
+variable (X) in
+/-- **The presheaf of integral sections `𝒪_X⁺`** of a pre-adic space: the presheaf of commutative
+rings whose sections over `U` are the subring `𝒪_X⁺(U)` of `𝒪_X(U)`, with the restriction maps of
+`𝒪_X`. -/
+noncomputable def plusPresheaf : X.toTopCat.Presheaf CommRingCat.{u} where
+  obj U := CommRingCat.of (X.plusSubring U.unop)
+  map i := CommRingCat.ofHom
+    ((X.toRingPresheafedSpace.presheaf.map i.unop.op).hom.restrict _ _
+      fun _ hf ↦ plusSubring_le_comap i.unop hf)
+  -- On underlying elements the restricted maps are the restriction maps of `𝒪_X`
+  -- (`RingHom.coe_restrict_apply` is `rfl`), so both laws are those of `𝒪_X`.
+  map_id U := CommRingCat.hom_ext <| RingHom.ext fun f ↦ Subtype.ext <|
+    RingHom.congr_fun (congrArg CommRingCat.Hom.hom
+      (X.toRingPresheafedSpace.presheaf.map_id U)) f.1
+  map_comp i j := CommRingCat.hom_ext <| RingHom.ext fun f ↦ Subtype.ext <|
+    RingHom.congr_fun (congrArg CommRingCat.Hom.hom
+      (X.toRingPresheafedSpace.presheaf.map_comp i j)) f.1
+
+/-- The sections of `𝒪_X⁺` over `U` are the subring `𝒪_X⁺(U)`. -/
+@[simp]
+theorem plusPresheaf_obj (U : (Opens X)ᵒᵖ) :
+    X.plusPresheaf.obj U = CommRingCat.of (X.plusSubring U.unop) := by
+  rfl
+
+/-- The restriction maps of `𝒪_X⁺` are those of `𝒪_X`, restricted to the integral sections. The
+equality transports account for the evaluation theorem `plusPresheaf_obj`. -/
+@[simp]
+theorem plusPresheaf_map {U V : (Opens X)ᵒᵖ} (i : U ⟶ V) :
+    X.plusPresheaf.map i ≫ eqToHom (plusPresheaf_obj V) =
+      eqToHom (plusPresheaf_obj U) ≫ CommRingCat.ofHom (S := X.plusSubring V.unop)
+        ((X.toRingPresheafedSpace.presheaf.map i.unop.op).hom.restrict _ _
+          fun _ hf ↦ plusSubring_le_comap i.unop hf) := by
+  rfl
+
+variable (X) in
+/-- **The inclusion `𝒪_X⁺ ⟶ 𝒪_X`** of the integral sections into the sections. -/
+noncomputable def plusPresheafι : X.plusPresheaf ⟶ X.toRingPresheafedSpace.presheaf where
+  app U := CommRingCat.ofHom (X.plusSubring U.unop).subtype
+  naturality _ _ _ := CommRingCat.hom_ext <| RingHom.ext fun _ ↦ rfl
+
+/-- The inclusion `𝒪_X⁺ ⟶ 𝒪_X` is, over each open `U`, the inclusion of the subring `𝒪_X⁺(U)`.
+The equality transport accounts for the evaluation theorem `plusPresheaf_obj`. -/
+@[simp]
+theorem plusPresheafι_app (U : (Opens X)ᵒᵖ) :
+    X.plusPresheafι.app U =
+      eqToHom (plusPresheaf_obj U) ≫ CommRingCat.ofHom (X.plusSubring U.unop).subtype := by
+  rfl
+
+/-- The inclusion `𝒪_X⁺ ⟶ 𝒪_X` is a monomorphism: `𝒪_X⁺` is a sub-presheaf of `𝒪_X`. -/
+instance : Mono X.plusPresheafι :=
+  haveI : ∀ U, Mono (X.plusPresheafι.app U) := fun U ↦
+    ConcreteCategory.mono_of_injective _ (Subring.subtype_injective (X.plusSubring U.unop))
+  NatTrans.mono_of_mono_app _
+
 namespace Hom
 
 variable {Y : PreAdicSpace.{u}} (f : X ⟶ Y)
@@ -149,39 +205,9 @@ theorem comap_plusSubring_of_subset_range {V : Opens Y} (hV : (V : Set Y) ⊆ Se
   obtain ⟨x, rfl⟩ := hV hy
   exact (f.vle_germ_c_app_iff V x hy s).mp (mem_plusSubring_iff.mp (Subring.mem_comap.mp hs) x hy)
 
-/-- **Isomorphisms identify integral sections**: for an isomorphism `f : X ⟶ Y` of pre-adic spaces
-and every open `V ⊆ Y`, a section of `𝒪_Y` over `V` is integral exactly when its pullback to
-`f⁻¹V` is. -/
-theorem comap_plusSubring_of_isIso [IsIso f] (V : Opens Y) :
-    (X.plusSubring ((Opens.map f.base).obj V)).comap
-        ((toRingPresheafedSpaceHom f.toHom).c.app (op V)).hom = Y.plusSubring V :=
-  f.comap_plusSubring_of_subset_range fun y _ ↦
-    (TopCat.homeoOfIso (forgetToTop.mapIso (asIso f))).surjective y
-
 end Hom
 
 end PreAdicSpace
-
-namespace ValuationSpectrum
-
-/-- **The integral sections of `Spa(A, A⁺)`** are the plus subrings `presentationLimitPlusSubring`
-of the presentation-limit presheaf. On a rational open `R(T/s)` these are the plus ring `A_U⁺` of
-`A⟨T/s⟩`, by `map_completedPlusSubring_eq_presentationLimitPlusSubring`. -/
-theorem presentationLimitPreAdicSpace_plusSubring {A : Type u} [CommRing A] [TopologicalSpace A]
-    [IsTopologicalRing A] (P : Huber.PairOfDefinition A) (Aplus : Subring A)
-    (hAplus : ∀ ⦃a⦄, a ∈ Aplus → Huber.IsPowerBounded a) (hP : P.ringOfDefinition ≤ Aplus)
-    (V : Opens ↥(spa Aplus)) :
-    (presentationLimitPreAdicSpace P Aplus hAplus hP).plusSubring V =
-      presentationLimitPlusSubring hAplus hP V := by
-  -- the stalks and germ maps of the two presheaves agree, and so do the stalk valuations
-  refine Subring.ext fun f ↦ PreAdicSpace.mem_plusSubring_iff.trans
-    (Iff.trans ?_ (mem_presentationLimitPlusSubring_iff hAplus hP).symm)
-  exact forall_congr' fun x ↦ forall_congr' fun hx ↦ Iff.of_eq
-    (congrArg (fun w ↦ w.toValuativeRel.vle
-      ((presentationLimitPresheafInCommRingCat P Aplus).germ V x hx f) 1)
-        (presentationLimitPreAdicSpace_stalkValuation P Aplus hAplus hP x))
-
-end ValuationSpectrum
 
 end TauCeti
 
