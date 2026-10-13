@@ -69,6 +69,11 @@ the odd entries if necessary puts it in the `a` position. Then `A = aᵖ ≡ -1 
   coprime to `e` and `p ≥ 2`, then `xᵖ` or `yᵖ` is `-1` modulo `4`.
 * `TauCeti.exists_perm_two_dvd_and_pow_modEq_neg_one`: a solution of `aᵖ + bᵖ + cᵖ = 0` with
   `a` and `b` coprime and `p ≥ 2` can be permuted so that `b` is even and `aᵖ ≡ -1 (mod 4)`.
+* `TauCeti.isCoprime_of_gcd_eq_one_of_add_pow_eq_pow`: if `aⁿ + bⁿ = cⁿ` and `a`, `b`, `c` have
+  no common factor, then `a` and `b` are coprime.
+* `TauCeti.exists_isCoprime_and_mul_mul_add_eq_pow`: a solution of `aⁿ + bⁿ = cⁿ` with `a` and
+  `b` coprime and `n ≥ 5`, of either parity, gives coprime `A ≡ -1 (mod 4)` and `B` with
+  `32 ∣ B` and `A B (A + B) = (a b c)ⁿ`.
 * `TauCeti.isSemistable_freyCurve_pow` and `TauCeti.minimalDiscriminantIdeal_freyCurve_pow`: for
   such a normalised solution with `p ≥ 4`, if the Frey curve of `(aᵖ, bᵖ)` is elliptic over `ℚ`,
   it is semistable over `ℤ` with minimal discriminant `(a b c)^(2 p) / 2⁸`.
@@ -394,6 +399,62 @@ theorem exists_perm_two_dvd_and_pow_modEq_neg_one {p : ℕ} (hp : 2 ≤ p) {a b 
     (by linear_combination h) with h' | h'
   · exact ⟨a, c, b, .cons _ (.swap _ _ _), hc, h'⟩
   · exact ⟨b, c, a, List.rotate_perm [a, b, c] 1, hc, h'⟩
+
+/-- If `aⁿ + bⁿ = cⁿ` and `a`, `b`, `c` have no common factor, then `a` and `b` are coprime: a
+prime dividing both divides `cⁿ`, hence `c`. This is the analogue of Mathlib's
+`isCoprime_of_gcd_eq_one_of_FLT` for the form `aⁿ + bⁿ = cⁿ`, which covers even exponents. -/
+theorem isCoprime_of_gcd_eq_one_of_add_pow_eq_pow {n : ℕ} {a b c : ℤ}
+    (hgcd : Finset.gcd {a, b, c} id = 1) (h : a ^ n + b ^ n = c ^ n) : IsCoprime a b := by
+  rcases eq_or_ne n 0 with rfl | hn
+  · norm_num at h
+  refine isCoprime_of_prime_dvd (fun ⟨ha, hb⟩ ↦ ?_) fun p hp hpa hpb ↦ ?_
+  · subst ha hb
+    obtain rfl : c = 0 := by simpa [zero_pow hn, eq_comm, hn] using h
+    simp at hgcd
+  · have hpc : p ∣ c :=
+      hp.dvd_of_dvd_pow (n := n) (h ▸ dvd_add (dvd_pow hpa hn) (dvd_pow hpb hn))
+    refine hp.not_dvd_one (hgcd ▸ Finset.dvd_gcd fun x hx ↦ ?_)
+    simp only [Finset.mem_insert, Finset.mem_singleton] at hx
+    rcases hx with rfl | rfl | rfl <;> assumption
+
+/-- A coprime pair `X`, `Y` with `32 ∣ Y` gives coprime `A` and `B` with `A ≡ -1 (mod 4)` and
+`32 ∣ B`: either `(X, Y)` or `(-(X + Y), Y)`, depending on whether `X ≡ -1` or `X ≡ 1 (mod 4)`,
+and both have `A B (A + B) = X Y (X + Y)`. -/
+private theorem exists_pair_of_isCoprime {X Y : ℤ} (hXY : IsCoprime X Y) (hY : 32 ∣ Y) :
+    ∃ A B : ℤ, IsCoprime A B ∧ 4 ∣ A + 1 ∧ 32 ∣ B ∧ A * B * (A + B) = X * Y * (X + Y) := by
+  -- `X` is odd, being coprime to the even `Y`
+  have hX : ¬ 2 ∣ X := fun h2 ↦ Int.prime_two.not_dvd_one
+    (hXY.isUnit_of_dvd' h2 (dvd_trans ⟨16, by norm_num⟩ hY)).dvd
+  by_cases h4 : 4 ∣ X + 1
+  · exact ⟨X, Y, hXY, h4, hY, rfl⟩
+  refine ⟨-(X + Y), Y, by simpa using (hXY.add_mul_left_left 1).neg_left, by omega, hY, by ring⟩
+
+/-- **The Frey curve of a Fermat triple.** If `aⁿ + bⁿ = cⁿ` with `a` and `b` coprime and `n ≥ 5`,
+there are coprime integers `A` and `B` with `A ≡ -1 (mod 4)`, `32 ∣ B` and
+`A B (A + B) = (a b c)ⁿ`. Here `B` is the even one of `aⁿ`, `bⁿ`, `cⁿ`, up to sign, and `A` is
+one of the other two, up to sign. -/
+theorem exists_isCoprime_and_mul_mul_add_eq_pow {n : ℕ} (hn : 5 ≤ n) {a b c : ℤ}
+    (hab : IsCoprime a b) (h : a ^ n + b ^ n = c ^ n) :
+    ∃ A B : ℤ, IsCoprime A B ∧ 4 ∣ A + 1 ∧ 32 ∣ B ∧ A * B * (A + B) = (a * b * c) ^ n := by
+  have h32 {x : ℤ} (hx : 2 ∣ x) : (32 : ℤ) ∣ x ^ n := by
+    simpa using (pow_dvd_pow_of_dvd hx 5).trans (pow_dvd_pow x hn)
+  have hn₀ : n ≠ 0 := by omega
+  by_cases hb : 2 ∣ b
+  · obtain ⟨A, B, h₁, h₂, h₃, h₄⟩ := exists_pair_of_isCoprime hab.pow (h32 hb)
+    exact ⟨A, B, h₁, h₂, h₃, by rw [h₄, h]; ring⟩
+  by_cases ha : 2 ∣ a
+  · obtain ⟨A, B, h₁, h₂, h₃, h₄⟩ := exists_pair_of_isCoprime hab.symm.pow (h32 ha)
+    exact ⟨A, B, h₁, h₂, h₃, by rw [h₄, add_comm, h]; ring⟩
+  -- otherwise `a` and `b` are odd, so `cⁿ = aⁿ + bⁿ` is even, and `B = -cⁿ`
+  have hc : 2 ∣ c := by
+    refine Int.prime_two.dvd_of_dvd_pow (n := n) (h ▸ ?_)
+    rw [← even_iff_two_dvd] at ha hb ⊢
+    rw [Int.not_even_iff_odd] at ha hb
+    exact (ha.pow).add_odd hb.pow
+  have hac : IsCoprime (a ^ n) (-c ^ n) := by
+    simpa [← h, add_comm] using (hab.pow.add_mul_left_right 1).neg_right
+  obtain ⟨A, B, h₁, h₂, h₃, h₄⟩ := exists_pair_of_isCoprime hac (dvd_neg.2 (h32 hc))
+  exact ⟨A, B, h₁, h₂, h₃, by rw [h₄, mul_pow, mul_pow, ← h]; ring⟩
 
 /-- **The Frey curve of a normalised Fermat triple is semistable.** If `a` and `b` are coprime,
 `b` is even, `aᵖ ≡ -1 (mod 4)`, `p ≥ 4` and `y² = x (x - aᵖ) (x + bᵖ)` is elliptic over `ℚ`, then

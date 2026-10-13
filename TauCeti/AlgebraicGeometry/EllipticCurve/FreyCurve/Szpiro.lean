@@ -25,7 +25,8 @@ The link is the Frey curve `y² = x (x - A) (x + B)`. For coprime integers `A` a
 
 A solution of `aⁿ + bⁿ = cⁿ` in nonzero coprime integers with `n ≥ 5` gives such a pair with
 `A B (A + B) = (a b c)ⁿ`: of the three `n`-th powers, the even one, or its negative, is `B`, and
-one of the two odd ones, or its negative, is `A`. Its radical is `rad (a b c) ≤ |a b c|`, so
+one of the two odd ones, or its negative, is `A`; this is
+`TauCeti.exists_isCoprime_and_mul_mul_add_eq_pow`. Its radical is `rad (a b c) ≤ |a b c|`, so
 Szpiro's bound with `ε = 1` reads `|a b c| ^ (2 n) ≤ C |a b c| ^ 7`, while `|a b c| ≥ 2` because
 one of `a`, `b`, `c` is even. This fails once `2 ^ (2 n - 7) > C`. The argument works for every
 exponent `n ≥ 5`, prime or not, and for both parities of `n`.
@@ -40,8 +41,6 @@ particular exponent.
   conjecture, for every `ε > 0` there is a constant `C` with
   `(A B (A + B))² ≤ C rad (A B (A + B)) ^ (6 + ε)` for all coprime `A` and `B` with
   `A ≡ -1 (mod 4)`, `32 ∣ B` and `B ≠ 0`.
-* `TauCeti.exists_isCoprime_and_mul_mul_add_eq_pow`: a solution of `aⁿ + bⁿ = cⁿ` with `a` and
-  `b` coprime and `n ≥ 5` gives such a pair with `A B (A + B) = (a b c)ⁿ`.
 * `TauCeti.AlgorithmicSzpiroConjecture.asymptoticFermat`: Szpiro's conjecture implies asymptotic
   Fermat.
 
@@ -86,52 +85,13 @@ theorem AlgorithmicSzpiroConjecture.exists_sq_le_mul_radical_rpow
     (d := (A * (2 * γ) * (A + 32 * γ)) ^ 2) (by ring)
   have hN := algorithmicConductor_freyCurve (F := ℚ) hA (dvd_mul_right 32 γ) hAB
   have key := hC ((freyCurve A (32 * γ)).baseChange ℚ)
-  rw [hD, hN, radical_span_singleton, Ideal.absNorm_span_singleton,
-    Ideal.absNorm_span_singleton, Algebra.norm_self, MonoidHom.id_apply, MonoidHom.id_apply,
-    Nat.cast_natAbs, Nat.cast_natAbs, abs_of_nonneg (sq_nonneg _),
-    abs_of_pos (Int.radical_pos _)] at key
-  push_cast at key ⊢
-  linear_combination 2 ^ 8 * key
-
-/-- A coprime pair `X`, `Y` with `32 ∣ Y` gives a pair `(A, B)` as in
-`TauCeti.AlgorithmicSzpiroConjecture.exists_sq_le_mul_radical_rpow`: either `(X, Y)` or
-`(-(X + Y), Y)`, depending on whether `X ≡ -1` or `X ≡ 1 (mod 4)`, and both have
-`A B (A + B) = X Y (X + Y)`. -/
-private theorem exists_pair_of_isCoprime {X Y : ℤ} (hXY : IsCoprime X Y) (hY : 32 ∣ Y) :
-    ∃ A B : ℤ, IsCoprime A B ∧ 4 ∣ A + 1 ∧ 32 ∣ B ∧ A * B * (A + B) = X * Y * (X + Y) := by
-  -- `X` is odd, being coprime to the even `Y`
-  have hX : ¬ 2 ∣ X := fun h2 ↦ Int.prime_two.not_dvd_one
-    (hXY.isUnit_of_dvd' h2 (dvd_trans ⟨16, by norm_num⟩ hY)).dvd
-  by_cases h4 : 4 ∣ X + 1
-  · exact ⟨X, Y, hXY, h4, hY, rfl⟩
-  refine ⟨-(X + Y), Y, by simpa using (hXY.add_mul_left_left 1).neg_left, by omega, hY, by ring⟩
-
-/-- **The Frey curve of a Fermat triple.** If `aⁿ + bⁿ = cⁿ` with `a` and `b` coprime and `n ≥ 5`,
-there are coprime integers `A` and `B` with `A ≡ -1 (mod 4)`, `32 ∣ B` and
-`A B (A + B) = (a b c)ⁿ`. Here `B` is the even one of `aⁿ`, `bⁿ`, `cⁿ`, up to sign, and `A` is
-one of the other two, up to sign. -/
-theorem exists_isCoprime_and_mul_mul_add_eq_pow {n : ℕ} (hn : 5 ≤ n) {a b c : ℤ}
-    (hab : IsCoprime a b) (h : a ^ n + b ^ n = c ^ n) :
-    ∃ A B : ℤ, IsCoprime A B ∧ 4 ∣ A + 1 ∧ 32 ∣ B ∧ A * B * (A + B) = (a * b * c) ^ n := by
-  have h32 {x : ℤ} (hx : 2 ∣ x) : (32 : ℤ) ∣ x ^ n := by
-    simpa using (pow_dvd_pow_of_dvd hx 5).trans (pow_dvd_pow x hn)
-  have hn₀ : n ≠ 0 := by omega
-  by_cases hb : 2 ∣ b
-  · obtain ⟨A, B, h₁, h₂, h₃, h₄⟩ := exists_pair_of_isCoprime hab.pow (h32 hb)
-    exact ⟨A, B, h₁, h₂, h₃, by rw [h₄, h]; ring⟩
-  by_cases ha : 2 ∣ a
-  · obtain ⟨A, B, h₁, h₂, h₃, h₄⟩ := exists_pair_of_isCoprime hab.symm.pow (h32 ha)
-    exact ⟨A, B, h₁, h₂, h₃, by rw [h₄, add_comm, h]; ring⟩
-  -- otherwise `a` and `b` are odd, so `cⁿ = aⁿ + bⁿ` is even, and `B = -cⁿ`
-  have hc : 2 ∣ c := by
-    refine Int.prime_two.dvd_of_dvd_pow (n := n) (h ▸ ?_)
-    rw [← even_iff_two_dvd] at ha hb ⊢
-    rw [Int.not_even_iff_odd] at ha hb
-    exact (ha.pow).add_odd hb.pow
-  have hac : IsCoprime (a ^ n) (-c ^ n) := by
-    simpa [← h, add_comm] using (hab.pow.add_mul_left_right 1).neg_right
-  obtain ⟨A, B, h₁, h₂, h₃, h₄⟩ := exists_pair_of_isCoprime hac (dvd_neg.2 (h32 hc))
-  exact ⟨A, B, h₁, h₂, h₃, by rw [h₄, mul_pow, mul_pow, ← h]; ring⟩
+  rw [hD, hN] at key
+  have hd : (((A * (2 * γ) * (A + 32 * γ)) ^ 2 : ℤ) : ℝ) ≤
+      C * ((radical (A * (32 * γ) * (A + 32 * γ)) : ℤ) : ℝ) ^ (6 + ε) := by
+    simpa [radical_span_singleton, Ideal.absNorm_span_singleton, abs_of_pos (Int.radical_pos _),
+      mul_pow] using key
+  push_cast at hd ⊢
+  linear_combination 2 ^ 8 * hd
 
 /-- **Szpiro's conjecture implies asymptotic Fermat.** If `TauCeti.AlgorithmicSzpiroConjecture`
 holds, there is an `N` such that `aⁿ + bⁿ = cⁿ` has no solution in positive integers for any
@@ -145,16 +105,8 @@ theorem AlgorithmicSzpiroConjecture.asymptoticFermat (h : AlgorithmicSzpiroConje
   rw [fermatLastTheoremFor_iff_int]
   refine fermatLastTheoremWith_of_fermatLastTheoremWith_coprime
     fun a b c ha hb hc hgcd habc ↦ ?_
-  -- a prime dividing `a` and `b` divides `cⁿ = aⁿ + bⁿ`, hence all three
-  have hab : IsCoprime a b := by
-    refine isCoprime_of_prime_dvd (fun h ↦ ha h.1) fun p hp hpa hpb ↦ ?_
-    have hpc : p ∣ c := hp.dvd_of_dvd_pow (n := n)
-      (habc ▸ dvd_add (dvd_pow hpa (by omega)) (dvd_pow hpb (by omega)))
-    refine hp.not_dvd_one (hgcd ▸ Finset.dvd_gcd fun x hx ↦ ?_)
-    simp only [Finset.mem_insert, Finset.mem_singleton] at hx
-    rcases hx with rfl | rfl | rfl <;> assumption
-  obtain ⟨A, B, hAB, hA, hB, hprod⟩ :=
-    exists_isCoprime_and_mul_mul_add_eq_pow (by omega) hab habc
+  obtain ⟨A, B, hAB, hA, hB, hprod⟩ := exists_isCoprime_and_mul_mul_add_eq_pow (by omega)
+    (isCoprime_of_gcd_eq_one_of_add_pow_eq_pow hgcd habc) habc
   set m := a * b * c
   have hm₀ : m ≠ 0 := mul_ne_zero (mul_ne_zero ha hb) hc
   have hB₀ : B ≠ 0 := by
