@@ -59,6 +59,13 @@ theorem quasiIso_iff_acyclic_homotopyCofiber (f : X ⟶ Y) :
     intro i
     exact (exactAt_iff_of_quasiIsoAt coneMap i).mp (hId i)
   · intro hCone
+    have coneSequence_shortExact {X' Y' : CochainComplex C (ZMod n)} (g : X' ⟶ Y') :
+        (coneSequence g).ShortExact :=
+      (HomologicalComplex.shortExact_iff_degreewise_shortExact _).mpr fun i ↦
+        (ExactStructure.abelian_conflation _).mp
+          ((ExactStructure.homologicalComplex_conflation_iff
+            (E := ExactStructure.abelian C) (c := ComplexShape.up (ZMod n))
+            (S := coneSequence g)).mp (conflation_coneSequence (ExactStructure.abelian C) g) i)
     have hConeMap : QuasiIso coneMap := by
       rw [quasiIso_iff]
       intro i
@@ -74,18 +81,7 @@ theorem quasiIso_iff_acyclic_homotopyCofiber (f : X ⟶ Y) :
       infer_instance
     have h := HomologySequence.quasiIso_τ₁
       (coneSequenceMap (𝟙 X) f α)
-      ((HomologicalComplex.shortExact_iff_degreewise_shortExact _).mpr fun i ↦
-        (ExactStructure.abelian_conflation _).mp
-          ((ExactStructure.homologicalComplex_conflation_iff
-            (E := ExactStructure.abelian C) (c := ComplexShape.up (ZMod n))
-            (S := coneSequence (𝟙 X))).mp
-            (conflation_coneSequence (ExactStructure.abelian C) (𝟙 X)) i))
-      ((HomologicalComplex.shortExact_iff_degreewise_shortExact _).mpr fun i ↦
-        (ExactStructure.abelian_conflation _).mp
-          ((ExactStructure.homologicalComplex_conflation_iff
-            (E := ExactStructure.abelian C) (c := ComplexShape.up (ZMod n))
-            (S := coneSequence f)).mp
-            (conflation_coneSequence (ExactStructure.abelian C) f) i)) hConeMap' hShiftId'
+      (coneSequence_shortExact (𝟙 X)) (coneSequence_shortExact f) hConeMap' hShiftId'
     rw [coneSequenceMap_τ₁] at h
     exact h
 
