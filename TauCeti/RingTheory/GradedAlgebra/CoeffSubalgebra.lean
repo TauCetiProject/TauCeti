@@ -19,14 +19,11 @@ in `B` stay apart. This file grades it by the power of `X`: the degree `n` piece
 monomials `b Xⁿ` with `b ∈ M n`, and the homogeneous components of a polynomial are its monomials.
 
 Two instances motivate the construction. For an ideal `I` of a commutative ring `R` and
-`M n = Iⁿ` it is Mathlib's Rees algebra `reesAlgebra I` (graded in
-`TauCeti.RingTheory.ReesAlgebra.Grading`). For a divisor `D` of an algebraic function field and
-`M n = L(nD)` it is the section ring `⨁ₙ L(nD)` of `D`
+`M n = Iⁿ` it is Mathlib's Rees algebra `reesAlgebra I`, whose grading in
+`TauCeti.RingTheory.ReesAlgebra.Grading` is the one constructed here. For a divisor `D` of an
+algebraic function field and `M n = L(nD)` it is the section ring `⨁ₙ L(nD)` of `D`
 (`TauCeti.FieldTheory.FunctionField.RiemannRoch.SectionRing`), the graded ring from which
 projective models of a curve are built as `Proj`.
-
-The decomposition into homogeneous components follows the grading of the Rees algebra in
-`TauCeti.RingTheory.ReesAlgebra.Grading`, written here for an arbitrary graded family.
 
 ## Main definitions
 
@@ -58,7 +55,7 @@ variable {R B : Type*} [CommSemiring R] [Semiring B] [Algebra R B]
 
 /-- The `R`-subalgebra of `B[X]` of polynomials whose `n`-th coefficient lies in `M n`, for a
 graded family `M` of submodules of `B`: the direct sum `⨁ₙ Mₙ Xⁿ` realized inside `B[X]`. -/
-def coeffSubalgebra : Subalgebra R B[X] where
+@[expose] def coeffSubalgebra : Subalgebra R B[X] where
   carrier := {f | ∀ n, f.coeff n ∈ M n}
   mul_mem' {f g} hf hg n := by
     rw [coeff_mul]
@@ -111,7 +108,7 @@ theorem monomial_coeff_mem (f : coeffSubalgebra M) (n : ℕ) :
 
 variable (M) in
 /-- The degree `n` piece of `coeffSubalgebra M`: the monomials `b Xⁿ` with `b ∈ M n`. -/
-noncomputable def grade (n : ℕ) : Submodule R (coeffSubalgebra M) :=
+@[expose] noncomputable def grade (n : ℕ) : Submodule R (coeffSubalgebra M) :=
   Submodule.comap (coeffSubalgebra M).val.toLinearMap
     (Submodule.map ((Polynomial.monomial n).restrictScalars R) (M n))
 

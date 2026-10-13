@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.GradedAlgebra.Homogeneous.Ideal
 public import Mathlib.RingTheory.ReesAlgebra
+public import TauCeti.RingTheory.GradedAlgebra.CoeffSubalgebra
 
 /-!
 # The grading of the Rees algebra
@@ -15,7 +16,9 @@ Mathlib realizes the Rees algebra `R[It] = ⨁ₙ Iⁿ tⁿ` of an ideal `I` of 
 the subalgebra `reesAlgebra I` of `R[X]` of polynomials whose `n`-th coefficient lies in `Iⁿ`,
 so that `t` is the variable `X`. This file equips it with its grading by the power of `X`: the
 degree `n` piece `reesAlgebra.grade I n` consists of the monomials `r Xⁿ` with `r ∈ Iⁿ`, and
-the homogeneous components of an element are its monomials. The degree zero piece is a copy of
+the homogeneous components of an element are its monomials. The Rees algebra is
+`TauCeti.coeffSubalgebra` of the graded family `n ↦ Iⁿ`, and its grading and decomposition are
+the ones of `TauCeti.RingTheory.GradedAlgebra.CoeffSubalgebra`. The degree zero piece is a copy of
 `R`, and the irrelevant ideal is generated in degree one by the elements `a t` with `a` running
 over generators of `I`.
 
@@ -53,9 +56,11 @@ namespace reesAlgebra
 
 variable {R : Type*} [CommRing R] (I : Ideal R)
 
-/-- The degree `n` piece of the Rees algebra `R[It]`: the monomials `r Xⁿ` with `r ∈ Iⁿ`. -/
-noncomputable def grade (n : ℕ) : Submodule R (reesAlgebra I) :=
-  Submodule.comap (reesAlgebra I).val.toLinearMap (Submodule.map (monomial n) (I ^ n))
+/-- The degree `n` piece of the Rees algebra `R[It]`: the monomials `r Xⁿ` with `r ∈ Iⁿ`. It is
+the degree `n` piece of `reesAlgebra I` viewed as `TauCeti.coeffSubalgebra` of the family
+`n ↦ Iⁿ`. -/
+@[expose] noncomputable def grade (n : ℕ) : Submodule R (reesAlgebra I) :=
+  TauCeti.coeffSubalgebra.grade (fun n ↦ I ^ n) n
 
 variable {I}
 
@@ -67,10 +72,8 @@ theorem mem_grade_iff {n : ℕ} {f : reesAlgebra I} :
 /-- An element of the Rees algebra has degree `n` exactly when it is the monomial of degree `n`
 formed by its `n`-th coefficient. -/
 theorem mem_grade_iff_monomial_coeff {n : ℕ} {f : reesAlgebra I} :
-    f ∈ grade I n ↔ monomial n ((f : R[X]).coeff n) = f := by
-  refine ⟨fun hf ↦ ?_, fun h ↦ mem_grade_iff.mpr ⟨_, (mem_reesAlgebra_iff I _).mp f.2 n, h⟩⟩
-  obtain ⟨r, -, hr⟩ := mem_grade_iff.mp hf
-  rw [← hr, coeff_monomial_same]
+    f ∈ grade I n ↔ monomial n ((f : R[X]).coeff n) = f :=
+  TauCeti.coeffSubalgebra.mem_grade_iff_monomial_coeff
 
 /-- The monomial `r Xⁿ` with `r ∈ Iⁿ` lies in degree `n`. -/
 theorem monomial_mem_grade {n : ℕ} {r : R} (hr : r ∈ I ^ n) :
@@ -79,87 +82,27 @@ theorem monomial_mem_grade {n : ℕ} {r : R} (hr : r ∈ I ^ n) :
 
 /-- The coefficients of an element of degree `n` vanish away from `n`. -/
 theorem coeff_eq_zero_of_mem_grade {m n : ℕ} {f : reesAlgebra I} (hf : f ∈ grade I n)
-    (hmn : m ≠ n) : (f : R[X]).coeff m = 0 := by
-  rw [← mem_grade_iff_monomial_coeff.mp hf, coeff_monomial_of_ne _ hmn]
+    (hmn : m ≠ n) : (f : R[X]).coeff m = 0 :=
+  TauCeti.coeffSubalgebra.coeff_eq_zero_of_mem_grade hf hmn
 
-instance gradedMonoid : SetLike.GradedMonoid (grade I) where
-  one_mem := mem_grade_iff.mpr ⟨1, by simp, by simp [monomial_zero_left]⟩
-  mul_mem m n f g hf hg := by
-    obtain ⟨r, hr, hf⟩ := mem_grade_iff.mp hf
-    obtain ⟨s, hs, hg⟩ := mem_grade_iff.mp hg
-    exact mem_grade_iff.mpr ⟨r * s, pow_add I m n ▸ Ideal.mul_mem_mul hr hs, by
-      rw [Subalgebra.coe_mul, ← hf, ← hg, monomial_mul_monomial]⟩
-
-/-- The degree `n` component of an element of the Rees algebra: the monomial of degree `n` formed
-by its `n`-th coefficient. -/
-private noncomputable def component (n : ℕ) (f : reesAlgebra I) : grade I n :=
-  ⟨⟨monomial n ((f : R[X]).coeff n), monomial_coeff_mem f n⟩,
-    monomial_mem_grade ((mem_reesAlgebra_iff I _).mp f.2 n)⟩
-
-private theorem component_add (n : ℕ) (f g : reesAlgebra I) :
-    component n (f + g) = component n f + component n g := by
-  ext1; ext1
-  simp [component]
-
-private theorem component_of_mem {m n : ℕ} {f : reesAlgebra I} (hf : f ∈ grade I m) :
-    component n f = if h : m = n then h ▸ ⟨f, hf⟩ else 0 := by
-  split_ifs with h
-  · subst h
-    exact Subtype.ext (Subtype.ext (mem_grade_iff_monomial_coeff.mp hf))
-  · ext1; ext1
-    simp [component, coeff_eq_zero_of_mem_grade hf (Ne.symm h)]
-
-/-- The decomposition of an element of the Rees algebra into its homogeneous components. -/
-private noncomputable def decomposeAux (f : reesAlgebra I) : ⨁ n, grade I n :=
-  ∑ n ∈ (f : R[X]).support, of (fun n ↦ grade I n) n (component n f)
-
-private theorem decomposeAux_apply (f : reesAlgebra I) (n : ℕ) :
-    decomposeAux f n = component n f := by
-  classical
-  rw [decomposeAux, DFinsupp.finsetSum_apply]
-  simp_rw [of_apply]
-  rw [Finset.sum_dite_eq']
-  split_ifs with h
-  · rfl
-  · ext1; ext1
-    simp [component, notMem_support_iff.mp h]
-
-private theorem coe_decomposeAux (f : reesAlgebra I) :
-    DirectSum.coeAddMonoidHom (fun n ↦ grade I n) (decomposeAux f) = f := by
-  rw [decomposeAux, map_sum]
-  simp_rw [coeAddMonoidHom_of]
-  exact (as_sum_support f).symm
-
-private theorem decomposeAux_coe (x : ⨁ n, grade I n) :
-    decomposeAux (DirectSum.coeAddMonoidHom (fun n ↦ grade I n) x) = x := by
-  ext n : 1
-  rw [decomposeAux_apply]
-  induction x using DirectSum.induction_on with
-  | zero => ext1; ext1; simp [component]
-  | of m y =>
-    rw [coeAddMonoidHom_of, component_of_mem y.2, of_apply]
-  | add x y hx hy => rw [map_add, component_add, hx, hy, add_apply]
+instance gradedMonoid : SetLike.GradedMonoid (grade I) :=
+  TauCeti.coeffSubalgebra.gradedMonoid
 
 variable (I) in
 /-- The Rees algebra is the internal direct sum of its graded pieces. -/
 theorem isInternal_grade : IsInternal (grade I) :=
-  Function.bijective_iff_has_inverse.mpr ⟨decomposeAux, decomposeAux_coe, coe_decomposeAux⟩
+  TauCeti.coeffSubalgebra.isInternal_grade _
 
 /-- The grading of the Rees algebra `R[It]` by the power of `t`. -/
 noncomputable instance gradedAlgebra : GradedAlgebra (grade I) :=
-  (isInternal_grade I).gradedAlgebra
+  TauCeti.coeffSubalgebra.gradedAlgebra
 
 /-- The degree `n` component of an element `f` of the Rees algebra is the monomial
 `f.coeff n • Xⁿ`. -/
 @[simp]
 theorem coe_decompose_apply (f : reesAlgebra I) (n : ℕ) :
-    ((decompose (grade I) f n : reesAlgebra I) : R[X]) = monomial n ((f : R[X]).coeff n) := by
-  have : decompose (grade I) f = decomposeAux f :=
-    (isInternal_grade I).1 <| by
-      rw [coe_decomposeAux]
-      exact (decompose (grade I)).symm_apply_apply f
-  rw [this, decomposeAux_apply]
-  rfl
+    ((decompose (grade I) f n : reesAlgebra I) : R[X]) = monomial n ((f : R[X]).coeff n) :=
+  TauCeti.coeffSubalgebra.coe_decompose_apply f n
 
 variable (I)
 

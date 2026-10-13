@@ -25,10 +25,10 @@ as `Proj`. This file computes the rings of the standard affine charts `D₊(f X�
 section ring, and which of these charts cover it. If `f Xⁿ` is homogeneous of degree `n`
 with `f ∈ L(nD)` nonzero, the degree-zero fractions `g Xⁿʳ / (f Xⁿ)ʳ`, with `g ∈ L(nrD)`, are
 the functions `g / fʳ`, and these are exactly the functions regular at every place `P` at which
-`f` has the largest pole order `n D(P)` allowed by `nD`, that is, every place outside the support
-of the effective divisor `div f + nD`. So the homogeneous localization at `f Xⁿ` is a holomorphy
-ring (`TauCeti.Divisor.sectionRingAwayEquiv`). Sections `sᵢ ∈ L(D)` without a common base point,
-meaning that at every place one of them has the largest allowed pole order `D(P)`, give elements
+`f` attains the bound `ord_P f ≥ -n D(P)` defining `L(nD)`, that is, every place outside the
+support of the effective divisor `div f + nD`. So the homogeneous localization at `f Xⁿ` is a
+holomorphy ring (`TauCeti.Divisor.sectionRingAwayEquiv`). Sections `sᵢ ∈ L(D)` without a common
+base point, meaning that at every place `P` one of them has order exactly `-D(P)`, give elements
 `sᵢ X` of degree one whose standard opens cover `Proj`
 (`TauCeti.Divisor.irrelevant_le_radical_span_monomialDegreeOne`).
 
@@ -51,8 +51,8 @@ charts from which `TauCeti.AlgebraicGeometry.twoChartModel` is glued.
 ## Main results
 
 * `TauCeti.Divisor.mem_holomorphyRing_iff_exists_mul_pow_mem_riemannRochSpace`: for `f ∈ L(nD)`,
-  a function `z` is regular at every place where `f` has the largest allowed pole order exactly
-  when `z fʳ ∈ L(nrD)` for some `r`.
+  a function `z` is regular at every place `P` where `ord_P f = -n D(P)` exactly when
+  `z fʳ ∈ L(nrD)` for some `r`.
 * `TauCeti.Divisor.sectionRingAwayEquiv_mk`: the isomorphism sends `g Xⁿʳ / (f Xⁿ)ʳ` to `g / fʳ`.
 * `TauCeti.Divisor.irrelevant_le_radical_span_monomialDegreeOne`: sections of `L(D)` without a
   common base point generate the irrelevant ideal up to radical.
@@ -117,18 +117,13 @@ theorem monomialDegreeOne_mem_sectionRingGrade {D : Divisor k F} {s : F}
     (hs : s ∈ riemannRochSpace D) : monomialDegreeOne hs ∈ sectionRingGrade D 1 :=
   coeffSubalgebra.monomial_mem_grade _ _ _
 
-/-! ### Functions regular where a section has its largest allowed pole order -/
+/-! ### Functions regular where a section attains its bound -/
 
-/-- For `f ≠ 0`, the valuation of `f` at `P` is `exp m` exactly when `ord_P f + m = 0`. -/
-private theorem valuation_eq_exp_iff {P : Place k F} {f : F} (hf : f ≠ 0) {m : ℤ} :
-    P.valuation f = WithZero.exp m ↔ P.ord f + m = 0 := by
-  rw [← neg_neg m, ← P.ord_eq_iff_valuation_eq_exp_neg hf]
-  omega
-
-/-- **Functions regular where a section has its largest allowed pole order.** Let `f ∈ L(nD)`.
-A function `z` is regular at every place `P` at which `f` has valuation `exp (n D(P))`, the
-largest pole order `nD` allows, exactly when `z fʳ ∈ L(nrD)` for some `r`: the other places are
-zeros of the effective divisor `div f + nD`, where a high power of `f` absorbs the poles of `z`.
+/-- **Functions regular where a section attains its bound.** Let `f ∈ L(nD)`. A function `z` is
+regular at every place `P` at which `f` has valuation `exp (n D(P))`, that is,
+`ord_P f = -n D(P)`, so that `f` attains the bound defining `L(nD)`, exactly when `z fʳ ∈ L(nrD)`
+for some `r`: the other places are zeros of the effective divisor `div f + nD`, where a high power
+of `f` absorbs the poles of `z`.
 
 At `f = 0` the set of places is empty and both sides hold for every `z`. -/
 theorem mem_holomorphyRing_iff_exists_mul_pow_mem_riemannRochSpace (hF : IsFunctionField k F)
@@ -146,7 +141,7 @@ theorem mem_holomorphyRing_iff_exists_mul_pow_mem_riemannRochSpace (hF : IsFunct
     rw [WeilDivisor.coeff_nsmul] at this
     omega
   simp only [mem_holomorphyRing_iff_forall_ord_nonneg, Set.mem_ofPred_eq,
-    valuation_eq_exp_iff hf0]
+    Place.valuation_eq_exp_iff_ord_eq_neg _ hf0]
   constructor
   · intro hz
     rcases eq_or_ne z 0 with rfl | hz0
@@ -267,7 +262,7 @@ private theorem awayLift_injective : Function.Injective (awayLift hf hf0) := by
 `f Xⁿ` be a nonzero homogeneous element of degree `n` of the section ring of `D`, so
 `f ∈ L(nD)`. Its homogeneous localization, the ring of fractions `g Xⁿʳ / (f Xⁿ)ʳ` with
 `g ∈ L(nrD)`, is isomorphic to the holomorphy ring of the places at which `f` has valuation
-`exp (n D(P))`, the largest pole order allowed by `nD`; the fraction corresponds to `g / fʳ`
+`exp (n D(P))`, that is, `ord_P f = -n D(P)`; the fraction corresponds to `g / fʳ`
 (`TauCeti.Divisor.sectionRingAwayEquiv_mk`).
 
 Geometrically, the standard open `D₊(f Xⁿ)` of `Proj` of the section ring is the spectrum of the
@@ -294,9 +289,9 @@ theorem sectionRingAwayEquiv_mk (r : ℕ) (g : sectionRing D)
 elements `sᵢ X` of degree one, when the sections `sᵢ ∈ L(D)` have no common base point.
 
 The functions `sᵢᵐ / f` generate the unit ideal of the ring of functions regular at the places
-where `f` has its largest allowed pole order `m D(P)`: by Stichtenoth's Theorem 1.1.19 a proper
-ideal would lie in the maximal ideal of such a place, but there some `sᵢ` has its largest allowed
-pole order `D(P)` and `sᵢᵐ / f` is a unit. Clearing denominators in `1 = ∑ cᵢ sᵢᵐ / f` gives
+`P` where `ord_P f = -m D(P)`: by Stichtenoth's Theorem 1.1.19 a proper ideal would lie in the
+maximal ideal of such a place, but there some `sᵢ` has `ord_P sᵢ = -D(P)` and `sᵢᵐ / f` is a
+unit. Clearing denominators in `1 = ∑ cᵢ sᵢᵐ / f` gives
 `fʳ⁺¹ = ∑ (cᵢ fʳ) sᵢᵐ` with `cᵢ fʳ ∈ L(mrD)`. -/
 private theorem pow_mem_span_monomialDegreeOne (hF : IsFunctionField k F) {D : Divisor k F}
     {ι : Type*} {s : ι → F} (hs : ∀ i, s i ∈ riemannRochSpace D)
@@ -313,7 +308,7 @@ private theorem pow_mem_span_monomialDegreeOne (hF : IsFunctionField k F) {D : D
     rw [(coeffSubalgebra.coeff_eq_zero_iff_of_mem_grade hy).mp ha0, pow_one]
     exact zero_mem _
   set O := holomorphyRing {P : Place k F | P.valuation a = WithZero.exp (m * D.coeff P)}
-  -- The generators `sᵢᵐ / a` are regular at the places where `a` has its largest pole order.
+  -- The generators `sᵢᵐ / a` are regular at the places where `ord_P a = -m D(P)`.
   have hgen (i : ι) : s i ^ m / a ∈ O.toSubring := by
     refine mem_holomorphyRing_iff.mpr fun P hP ↦ ?_
     rw [Set.mem_ofPred_eq] at hP
@@ -346,8 +341,10 @@ private theorem pow_mem_span_monomialDegreeOne (hF : IsFunctionField k F) {D : D
       div_self (pow_ne_zero m WithZero.exp_ne_zero)] at hlt
     exact lt_irrefl _ hlt
   -- Write `1 = ∑ cᵢ sᵢᵐ / a` and clear denominators with a common power of `a`.
-  obtain ⟨c, hc⟩ := (Finsupp.mem_span_range_iff_exists_finsupp).mp
-    (show (1 : O.toSubring) ∈ I from hI ▸ Submodule.mem_top)
+  have hone : (1 : O.toSubring) ∈ I := by
+    rw [hI]
+    exact Submodule.mem_top
+  obtain ⟨c, hc⟩ := (Finsupp.mem_span_range_iff_exists_finsupp).mp hone
   have hc' : ∑ i ∈ c.support, (c i : F) * (s i ^ m / a) = 1 := by
     simpa [Finsupp.sum] using congr_arg Subtype.val hc
   have hr (i : ι) : ∃ r : ℕ, (c i : F) * a ^ r ∈ riemannRochSpace ((m * r) • D) :=
@@ -383,9 +380,9 @@ private theorem pow_mem_span_monomialDegreeOne (hF : IsFunctionField k F) {D : D
 
 /-- **Sections without a common base point cover `Proj` of the section ring.** If the sections
 `sᵢ ∈ L(D)` have no common base point, that is, at every place `P` some `sᵢ` has valuation
-`exp (D(P))`, then the elements `sᵢ X` of degree one generate the irrelevant ideal of the section
-ring of `D` up to radical. Equivalently, the standard opens `D₊(sᵢ X)` cover `Proj` of the
-section ring. -/
+`exp (D(P))` (equivalently, `ord_P sᵢ = -D(P)`), then the elements `sᵢ X` of degree one generate
+the irrelevant ideal of the section ring of `D` up to radical. Equivalently, the standard opens
+`D₊(sᵢ X)` cover `Proj` of the section ring. -/
 theorem irrelevant_le_radical_span_monomialDegreeOne (hF : IsFunctionField k F)
     {D : Divisor k F} {ι : Type*} {s : ι → F} (hs : ∀ i, s i ∈ riemannRochSpace D)
     (hbase : ∀ P : Place k F, ∃ i, P.valuation (s i) = WithZero.exp (D.coeff P)) :
@@ -403,20 +400,6 @@ theorem irrelevant_le_radical_span_monomialDegreeOne (hF : IsFunctionField k F)
   · exact pow_mem_span_monomialDegreeOne hF hs hbase hm (SetLike.coe_mem _)
 
 /-! ### The pole divisor of a function -/
-
-/-- A place is outside the support of the pole divisor of `z` exactly when `z` is regular
-there. -/
-theorem coeff_poles_eq_zero_iff (hF : IsFunctionField k F) (z : Fˣ) (P : Place k F) :
-    (poles hF z).coeff P = 0 ↔ (z : F) ∈ P.integers := by
-  rw [coeff_poles, P.mem_integers_iff_ord_nonneg]
-  omega
-
-/-- The function `z` has valuation `exp ((z)_∞(P))` at `P`, the largest pole order that its pole
-divisor allows, exactly when `z⁻¹` is regular at `P`. -/
-theorem valuation_eq_exp_coeff_poles_iff (hF : IsFunctionField k F) (z : Fˣ) (P : Place k F) :
-    P.valuation (z : F) = WithZero.exp ((poles hF z).coeff P) ↔ (z : F)⁻¹ ∈ P.integers := by
-  rw [valuation_eq_exp_iff z.ne_zero, coeff_poles, P.mem_integers_iff_ord_nonneg, P.ord_inv]
-  omega
 
 /-- **The sections `1` and `z` of the pole divisor of `z` cover `Proj` of its section ring**:
 the elements `X` and `z X` of degree one generate the irrelevant ideal up to radical. -/
