@@ -216,21 +216,27 @@ private def cokernelFiltrationFunctorMapIso {a b : ℤ} (f : (a : EInt) ⟶ b) :
     cokernel ((CochainComplex.filtrationFunctor _ (monotone_singularChainFiltration R hX)).map f) ≅
       ((TopPair.ofInclusion (hX (WithBotTop.coe_le_coe.mp (leOfHom f)))).singularChainComplex
         R).extend ComplexShape.embeddingDownNat :=
-  cokernel.mapIso _ _ (CochainComplex.filtrationFunctorObjCoeIso _ _ a)
-      (CochainComplex.filtrationFunctorObjCoeIso _ _ b)
-      (CochainComplex.filtrationFunctor_map_comp_objCoeIso_hom _ _ f) ≪≫
+  cokernel.mapIso _ _
+      (CochainComplex.filtrationFunctorObjIso _ _ a ≪≫
+        Subobject.isoOfEq _ _ (CochainComplex.filtrationEInt_coe _ a))
+      (CochainComplex.filtrationFunctorObjIso _ _ b ≪≫
+        Subobject.isoOfEq _ _ (CochainComplex.filtrationEInt_coe _ b))
+      (by simp only [Iso.trans_hom, Subobject.isoOfEq_hom, Subobject.ofLE_comp_ofLE,
+        reassoc_of% CochainComplex.filtrationFunctor_map_comp_objIso_hom, Category.assoc]) ≪≫
     singularChainFiltrationCokernelIso R _
 
 @[reassoc]
 private lemma π_cokernelFiltrationFunctorMapIso_hom {a b : ℤ} (f : (a : EInt) ⟶ b) :
     cokernel.π _ ≫ (cokernelFiltrationFunctorMapIso R hX f).hom =
-      (CochainComplex.filtrationFunctorObjCoeIso _ _ b).hom ≫
-        (singularChainFiltrationIso R X b).hom ≫
-          extendMap ((TopPair.ofInclusion
-            (hX (WithBotTop.coe_le_coe.mp (leOfHom f)))).singularChainComplexπ R)
-            ComplexShape.embeddingDownNat :=
+      (CochainComplex.filtrationFunctorObjIso _ _ b).hom ≫
+        Subobject.ofLE _ _ (CochainComplex.filtrationEInt_coe _ b).le ≫
+          (singularChainFiltrationIso R X b).hom ≫
+            extendMap ((TopPair.ofInclusion
+              (hX (WithBotTop.coe_le_coe.mp (leOfHom f)))).singularChainComplexπ R)
+              ComplexShape.embeddingDownNat :=
   (cokernel.π_desc_assoc _ _ _ _).trans <| (Category.assoc _ _ _).trans <|
-    congrArg (_ ≫ ·) (π_singularChainFiltrationCokernelIso_hom R _)
+    (Category.assoc _ _ _).trans <|
+      congrArg (_ ≫ _ ≫ ·) (π_singularChainFiltrationCokernelIso_hom R _)
 
 /-- **The spectral sequence of a filtered space.** For an increasing family `X : ℤ → Set Y` of
 subsets of a space `Y`, this is the spectral sequence of the filtration of the singular chains of
@@ -298,7 +304,8 @@ private abbrev fMap {a b : ℤ} (h : (a : EInt) ≤ b) :=
   (CochainComplex.filtrationFunctor _ (monotone_singularChainFiltration R hX)).map (homOfLE h)
 
 /-- The sequence `F_q/F_{q-1} ⟶ F_{q+1}/F_{q-1} ⟶ F_{q+1}/F_q` of graded pieces, written with
-explicit cokernels. It is the last row of `kernelCokernelCompSequence.snakeInput`. -/
+explicit cokernels. It is the last row of `kernelCokernelCompSequence.snakeInput`, restated because
+with that row itself `rw` fails to match the comparisons in `gradedShortComplexHom`. -/
 private abbrev gradedShortComplex : ShortComplex (CochainComplex A ℤ) :=
   ShortComplex.mk
     (cokernel.map (fMap R hX (by simp : ((q - 1 : ℤ) : EInt) ≤ q))
@@ -310,9 +317,6 @@ private abbrev gradedShortComplex : ShortComplex (CochainComplex A ℤ) :=
       (fMap R hX (by simp : (q : EInt) ≤ ((q + 1 : ℤ) : EInt)))
       (fMap R hX (by simp : ((q - 1 : ℤ) : EInt) ≤ q)) (𝟙 _) (by simp))
     (kernelCokernelCompSequence.snakeInput _ _).L₃.zero
-
-private lemma gradedShortComplex_shortExact : (gradedShortComplex R hX q).ShortExact :=
-  kernelCokernelCompSequence_snakeInput_L₃_shortExact _ _
 
 /-- The reindexed relative singular chain sequence of the triple `(X (q + 1), X q, X (q - 1))`,
 written with the pairs of the filtration. -/
@@ -370,20 +374,23 @@ private def gradedShortComplexHom : gradedShortComplex R hX q ⟶ tripleShortCom
     refine (cancel_epi (cokernel.π _)).1 ?_
     rw [π_cokernelFiltrationFunctorMapIso_hom_assoc, cokernel.π_desc_assoc, Category.assoc,
       Iso.trans_hom, π_comp_cokernelIsoOfEq_hom_assoc, π_cokernelFiltrationFunctorMapIso_hom,
-      CochainComplex.filtrationFunctor_map_comp_objCoeIso_hom_assoc]
+      reassoc_of% CochainComplex.filtrationFunctor_map_comp_objIso_hom,
+      Subobject.ofLE_comp_ofLE_assoc, ← Subobject.ofLE_comp_ofLE_assoc _
+        (singularChainFiltration R X q) _ (CochainComplex.filtrationEInt_coe _ q).le
+        (singularChainFiltration_mono R (hX (by lia : q ≤ q + 1)))]
     -- The identification of `F_{q+1}` with the chains of `X (q + 1)` lands in the chains of the
     -- subspace `X (q + 1)` of `Y`, which are those of the ambient space of the pair
     -- `(X (q + 1), X (q - 1))` only up to unfolding `MorphismProperty.Arrow.mk`; `erw` matches
     -- the composite up to that unfolding.
     erw [ofLE_comp_singularChainFiltrationIso_hom_assoc R (hX (by lia : q ≤ q + 1))]
-    exact congrArg (_ ≫ ·) ((Category.assoc _ _ _).trans <|
+    exact congrArg (_ ≫ _ ≫ ·) ((Category.assoc _ _ _).trans <|
       (congrArg (_ ≫ ·) (extendMap_π_comp_innerToTotal R hX q)).trans (Category.assoc _ _ _).symm)
   comm₂₃ := by
     refine (cancel_epi (cokernel.π _)).1 ?_
     rw [Iso.trans_hom, Category.assoc, π_comp_cokernelIsoOfEq_hom_assoc,
       π_cokernelFiltrationFunctorMapIso_hom_assoc, cokernel.π_desc_assoc, Category.id_comp,
       π_cokernelFiltrationFunctorMapIso_hom]
-    exact congrArg (_ ≫ ·) ((Category.assoc _ _ _).trans <|
+    exact congrArg (_ ≫ _ ≫ ·) ((Category.assoc _ _ _).trans <|
       congrArg (_ ≫ ·) (extendMap_π_comp_totalToOuter R hX q))
 
 /-- The connecting maps of the sequence of graded pieces and of the triple
@@ -391,7 +398,8 @@ private def gradedShortComplexHom : gradedShortComplex R hX q ⟶ tripleShortCom
 singular chains. -/
 private lemma δ_comp_extendHomologyIso_hom (n : ℕ) (m₀ m₁ : ℤ) (h₀ : m₀ = -(n + 1 : ℕ))
     (h₁ : m₁ = -n) (h : (ComplexShape.up ℤ).Rel m₀ m₁) :
-    (gradedShortComplex_shortExact R hX q).δ m₀ m₁ h ≫
+    (show (gradedShortComplex R hX q).ShortExact from
+        kernelCokernelCompSequence_snakeInput_L₃_shortExact _ _).δ m₀ m₁ h ≫
         HomologicalComplex.homologyMap (gradedShortComplexHom R hX q).τ₁ m₁ ≫
           (extendHomologyIso _ ComplexShape.embeddingDownNat h₁.symm).hom =
       HomologicalComplex.homologyMap (gradedShortComplexHom R hX q).τ₃ m₀ ≫
