@@ -40,8 +40,14 @@ classical sequence
 
 (`TopCat.singularHomologyKunnethUnitShortComplex_shortExact`).
 
-The naturality of `TopCat.singularHomologyToTor` in `X` and `Y`, and the splitting of the
-sequence, which cannot be chosen naturally, are not proved in this file.
+If the cycles of `C(X; M)` split off its terms as well, for instance for projective `M` and `N`
+over a principal ideal domain, the Künneth map is a split monomorphism
+(`TopCat.isSplitMono_singularHomologyKunneth`) and the sequence splits
+(`TopCat.singularHomologyKunnethSplitting`, and `TopCat.singularHomologyKunnethUnitSplitting` for
+coefficients in a principal ideal domain).  The splitting is built from chosen splittings of the
+cycles of the singular chain complexes and need not be natural in `X` and `Y`; that no natural
+splitting exists is not proved here.  Nor is the naturality of `TopCat.singularHomologyToTor` in
+`X` and `Y`.
 
 ## Main definitions and results
 
@@ -53,6 +59,8 @@ sequence, which cannot be chosen naturally, are not proved in this file.
 * `TopCat.singularHomologyKunnethUnitShortComplex` and
   `TopCat.singularHomologyKunnethUnitShortComplex_shortExact`: its form with coefficients in a
   principal ideal domain.
+* `TopCat.singularHomologyKunnethSplitting` and `TopCat.singularHomologyKunnethUnitSplitting`:
+  **the splitting of the Künneth sequence**.
 
 ## References
 
@@ -155,6 +163,27 @@ theorem mono_singularHomologyKunneth (n : ℕ) : Mono (singularHomologyKunneth X
   exact @mono_comp _ _ _ _ _ _ (mono_homologyKunneth _ _ n) _ (@IsIso.mono_of_iso _ _ _ _ _
     ((eilenbergZilberHomotopyEquiv X Y M N).toHomologyIso n).isIso_inv)
 
+/-- **The Künneth short exact sequence for singular homology splits** when, in addition, the
+cycles of the singular chain complex `C(X; M)` split off its terms; for instance for projective
+modules `M` and `N` over a principal ideal domain.  The splitting comes from a retraction of the
+Künneth map (`TopCat.isSplitMono_singularHomologyKunneth`) built from chosen splittings of the
+cycles, so it need not be natural in `X` and `Y`. -/
+def singularHomologyKunnethSplitting
+    [∀ p, IsSplitMono (((toSSet.obj X).chainComplex M).iCycles p)] (m : ℕ) :
+    (singularHomologyKunnethShortComplex X Y M N m).Splitting :=
+  have := isSplitMono_singularHomologyKunneth X Y M N (m + 1)
+  .ofExactOfRetraction _ (singularHomologyKunnethShortComplex_shortExact X Y M N m).exact
+    (retraction (singularHomologyKunneth X Y M N (m + 1))) (IsSplitMono.id _)
+    (singularHomologyKunnethShortComplex_shortExact X Y M N m).epi_g
+
+/-- The retraction of the Künneth splitting is the chosen retraction of the Künneth map. -/
+@[simp] lemma singularHomologyKunnethSplitting_r
+    [∀ p, IsSplitMono (((toSSet.obj X).chainComplex M).iCycles p)] (m : ℕ) :
+    (singularHomologyKunnethSplitting X Y M N m).r =
+      retraction (singularHomologyKunneth X Y M N (m + 1))
+        (hf := isSplitMono_singularHomologyKunneth X Y M N (m + 1)) :=
+  (rfl)
+
 end Kunneth
 
 section Unit
@@ -192,6 +221,33 @@ theorem singularHomologyKunnethUnitShortComplex_shortExact (m : ℕ) :
   exact ShortComplex.isoMk (Iso.refl _)
     (((singularHomologyFunctor _ (m + 1)).mapIso (λ_ (𝟙_ (ModuleCat.{w} k)))).app (X ⊗ Y))
     (Iso.refl _) (Category.id_comp _).symm (by simp)
+
+/-- **The Künneth short exact sequence over a principal ideal domain splits**, so that
+`Hₘ₊₁(X × Y; k)` is the direct sum of `⨁_{p + q = m + 1} Hₚ(X; k) ⊗ H_q(Y; k)` and
+`⨁_{p + q = m} Tor₁(Hₚ(X; k), H_q(Y; k))`
+(`CategoryTheory.ShortComplex.Splitting.isoBinaryBiproduct`).
+The splitting depends on chosen splittings of the cycles of the singular chain complexes, and need
+not be natural in `X` and `Y`. -/
+def singularHomologyKunnethUnitSplitting (m : ℕ) :
+    (singularHomologyKunnethUnitShortComplex k X Y m).Splitting :=
+  have : Module.Projective k (𝟙_ (ModuleCat.{w} k)) := inferInstanceAs (Module.Projective k k)
+  have := isSplitMono_singularHomologyKunneth X Y (𝟙_ (ModuleCat.{w} k)) (𝟙_ _) (m + 1)
+  -- a retraction of the Künneth map, preceded by the map induced by the inverse unitor
+  .ofExactOfRetraction _ (singularHomologyKunnethUnitShortComplex_shortExact k X Y m).exact
+    (((singularHomologyFunctor _ (m + 1)).map (λ_ (𝟙_ (ModuleCat.{w} k))).inv).app (X ⊗ Y) ≫
+      retraction (singularHomologyKunneth X Y (𝟙_ _) (𝟙_ _) (m + 1)))
+    (by simp) (singularHomologyKunnethUnitShortComplex_shortExact k X Y m).epi_g
+
+/-- The retraction of the Künneth splitting with coefficients in `k` is the chosen retraction of
+the Künneth map, preceded by the map induced by the inverse unitor. -/
+@[simp] lemma singularHomologyKunnethUnitSplitting_r (m : ℕ) :
+    (singularHomologyKunnethUnitSplitting k X Y m).r =
+      ((singularHomologyFunctor _ (m + 1)).map (λ_ (𝟙_ (ModuleCat.{w} k))).inv).app (X ⊗ Y) ≫
+        retraction (singularHomologyKunneth X Y (𝟙_ _) (𝟙_ _) (m + 1))
+          (hf := have : Module.Projective k (𝟙_ (ModuleCat.{w} k)) :=
+            inferInstanceAs (Module.Projective k k)
+          isSplitMono_singularHomologyKunneth X Y (𝟙_ _) (𝟙_ _) (m + 1)) :=
+  (rfl)
 
 end Unit
 

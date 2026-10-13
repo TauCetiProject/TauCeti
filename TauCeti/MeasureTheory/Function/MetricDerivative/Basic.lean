@@ -9,7 +9,7 @@ public import Mathlib.Analysis.Calculus.FDeriv.Measurable
 public import Mathlib.MeasureTheory.Constructions.BorelSpace.ContinuousMap
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.AbsolutelyContinuousFun
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.DerivIntegrable
-public import TauCeti.MeasureTheory.Function.AbsolutelyContinuous
+public import TauCeti.MeasureTheory.Function.AbsolutelyContinuous.Basic
 public import TauCeti.MeasureTheory.Integral.IntervalIntegral.LebesgueDifferentiationThm
 public import TauCeti.Topology.Order.Interval
 
@@ -88,7 +88,8 @@ set of absolutely continuous paths, which the action functional of a dynamic pla
   measurable family of continuous curves.
 * `TauCeti.measurable_metricDerivative_IccExtend` and
   `TauCeti.measurableSet_absolutelyContinuousOnInterval_IccExtend`: the same statements on the
-  path space `C([a, b], X)`.
+  path space `C([a, b], X)`, with `TauCeti.measurable_metricDerivative_IccExtend_apply` and
+  `TauCeti.measurable_IccExtend_apply` for the speed and the position at a fixed time.
 
 ## References
 
@@ -509,6 +510,19 @@ theorem measurable_metricDerivative_IccExtend {a b : ℝ} (hab : a ≤ b) :
     (fun γ ↦ γ.continuous.Icc_extend') fun s u ↦ by
       simp only [IccExtend_apply]
       exact ((continuous_eval_const _).edist (continuous_eval_const _)).measurable
+
+/-- On the space `C([a, b], X)` of continuous paths, the metric derivative `γ ↦ |γ'|(t)` at a
+fixed time of the path extended by constants outside `[a, b]` is measurable. -/
+theorem measurable_metricDerivative_IccExtend_apply {a b : ℝ} (hab : a ≤ b) (t : ℝ) :
+    Measurable fun γ : C(Icc a b, X) ↦ metricDerivative (IccExtend hab γ) t :=
+  (measurable_metricDerivative_IccExtend hab).of_uncurry_right
+
+/-- On the space `C([a, b], X)` of continuous paths, evaluating the path extended by constants
+outside `[a, b]` at a fixed time is measurable. -/
+theorem measurable_IccExtend_apply [MeasurableSpace X] [BorelSpace X] {a b : ℝ} (hab : a ≤ b)
+    (t : ℝ) : Measurable fun γ : C(Icc a b, X) ↦ IccExtend hab γ t := by
+  simp only [IccExtend_apply]
+  exact (continuous_eval_const _).measurable
 
 end Measurable
 
