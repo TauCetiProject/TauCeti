@@ -42,7 +42,7 @@ variable {K : Type*} [Field K] [NumberField K]
 theorem localPowerSeries_star (D : EulerProductData K)
     (P : HeightOneSpectrum (𝓞 K)) :
     (star D).localPowerSeries P = (D.localPowerSeries P).map (starRingEnd ℂ) := by
-  simpa only [localPowerSeries_eq, toIdealArithmeticFunction_star] using
+  simpa only [localPowerSeries_def, toIdealArithmeticFunction_star] using
     IdealArithmeticFunction.localPowerSeries_star D.toIdealArithmeticFunction P
 
 /-- Conjugation of bundled Euler-product data conjugates each local arithmetic coefficient. -/
