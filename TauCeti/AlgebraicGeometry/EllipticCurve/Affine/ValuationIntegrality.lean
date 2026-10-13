@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicGeometry.EllipticCurve.Affine.Basic
+public import Mathlib.AlgebraicGeometry.EllipticCurve.Affine.Formula
 public import Mathlib.AlgebraicGeometry.EllipticCurve.Reduction
 public import Mathlib.Algebra.Order.GroupWithZero.Canonical
 public import Mathlib.RingTheory.Valuation.ValuationSubring
@@ -47,6 +48,10 @@ the `IsDedekindDomain.HeightOneSpectrum.valuation` of a varying prime, which can
   coordinates have poles in ratio two to three, over any value group.
 * `WeierstrassCurve.Affine.valuation_y_le_one_of_valuation_x_le_one`: an integral `x`-coordinate
   forces an integral `y`-coordinate, over any value group.
+* `WeierstrassCurve.Affine.equation_integralModel_iff`: an integral pair solves `W` exactly when it
+  solves the integral model.
+* `WeierstrassCurve.Affine.valuation_le_one_of_valuation_addX_le_one`: a chord whose two points and
+  third intersection point have integral `x`-coordinates has an integral slope.
 * `WeierstrassCurve.Affine.valuation_x_le_one_and_valuation_y_le_one_of_valuation_x_lt_exp_two`:
   an affine point whose `x`-coordinate has a pole of order less than two has both coordinates
   integral.
@@ -246,6 +251,31 @@ theorem valuation_y_sq_eq_valuation_x_cube {x y : F} (hxy : W.Equation x y) (hx 
   have hlt := valuation_x_lt_valuation_y v hxy hx
   rw [← valuation_lhs_eq (W := W) v hlt (hx.trans hlt), valuation_lhs_eq_rhs v hxy,
     valuation_rhs_eq (W := W) v hx]
+
+/-- **An integral solution of `W` is a solution of its integral model**, and conversely. -/
+@[simp]
+theorem equation_integralModel_iff {x y : v.valuationSubring} :
+    (integralModel v.valuationSubring W).toAffine.Equation x y ↔ W.Equation x y := by
+  have h : ((integralModel v.valuationSubring W).baseChange F).toAffine.Equation x y ↔
+      W.Equation x y := by
+    rw [baseChange_integralModel_eq]
+  exact (map_equation _ Subtype.val_injective x y).symm.trans h
+
+/-- **The slope of a chord with integral `x`-coordinates is integral.** If `x₁`, `x₂` and the
+`x`-coordinate `x₃ = ℓ² + a₁ ℓ − a₂ − x₁ − x₂` of the third intersection point are integral, then
+so is `ℓ`: otherwise `v(ℓ + a₁) = v(ℓ)`, and `ℓ (ℓ + a₁) = x₃ + a₂ + x₁ + x₂` would have valuation
+`v(ℓ)² > 1`. -/
+theorem valuation_le_one_of_valuation_addX_le_one {x₁ x₂ ℓ : F} (h₁ : v x₁ ≤ 1)
+    (h₂ : v x₂ ≤ 1) (h₃ : v (W.addX x₁ x₂ ℓ) ≤ 1) : v ℓ ≤ 1 := by
+  by_contra! hℓ
+  have hsum : ℓ * (ℓ + W.a₁) = W.addX x₁ x₂ ℓ + W.a₂ + x₁ + x₂ := by
+    rw [addX]
+    ring
+  have hle : v (ℓ * (ℓ + W.a₁)) ≤ 1 := by
+    rw [hsum]
+    exact v.map_add_le (v.map_add_le (v.map_add_le h₃ (valuation_a₂_le_one v)) h₁) h₂
+  rw [map_mul, v.map_add_eq_of_lt_left ((valuation_a₁_le_one v).trans_lt hℓ)] at hle
+  exact hle.not_gt (one_lt_mul_self_iff.mpr hℓ)
 
 /-- **An integral `x`-coordinate forces an integral `y`-coordinate**, over any value group. -/
 theorem valuation_y_le_one_of_valuation_x_le_one {x y : F} (hxy : W.Equation x y)

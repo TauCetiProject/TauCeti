@@ -46,9 +46,6 @@ derived subgroup is trivial.
 
 * J. S. Milne, *Algebraic Groups* (2017), §6d, especially Propositions 6.17 and 6.18.
 * W. C. Waterhouse, *Introduction to Affine Group Schemes*, Chapter 10.
-
-This supplies `G_der`, required in Layer 6 of the ReductiveGroups roadmap, and the
-scheme-theoretic derived subgroup left outstanding by the Layer 5 solvability development.
 -/
 
 public section

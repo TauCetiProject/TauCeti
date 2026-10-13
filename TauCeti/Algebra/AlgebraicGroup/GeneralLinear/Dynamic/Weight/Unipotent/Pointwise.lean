@@ -35,8 +35,7 @@ description of its coordinate ring and are not asserted here.
 * G. R. Kempf, *Instability in invariant theory*, Annals of Mathematics 108 (1978), §2.
 * J. S. Milne, *Algebraic Groups* (2017), Chapter 13.
 
-This advances the dynamic parabolic and Levi route in Layer 7, "Structure theory", of the
-ReductiveGroups roadmap by proving the unipotence property of the represented unipotent factor.
+This proves the unipotence property of the represented unipotent factor.
 -/
 
 public section

@@ -231,7 +231,7 @@ arbitrary ideals would hand back a junk class there.  Carrying the coprimality p
 argument also makes multiplicativity `map_mul` rather than a law with side conditions. -/
 noncomputable def idealClass (𝔪 : Modulus K) :
     integralIdealsPrimeTo 𝔪 →* RayClassGroup 𝔪 :=
-  (rayClassMk 𝔪).comp (NumberFieldArithmetic.integralIdealsAwayHom 𝔪.support)
+  (rayClassMk 𝔪).comp (NumberFieldArithmetic.integralIdealsAwayHom K 𝔪.support)
 
 /-- The ray class of a product is the product of the ray classes. -/
 @[simp] theorem idealClass_mul (𝔪 : Modulus K) (I J : integralIdealsPrimeTo 𝔪) :
@@ -240,7 +240,7 @@ noncomputable def idealClass (𝔪 : Modulus K) :
 
 /-- The ray class of an integral ideal is the ray class of the fractional ideal it generates. -/
 theorem idealClass_apply (𝔪 : Modulus K) (I : integralIdealsPrimeTo 𝔪) :
-    idealClass 𝔪 I = rayClassMk 𝔪 (NumberFieldArithmetic.integralIdealsAwayHom 𝔪.support I) :=
+    idealClass 𝔪 I = rayClassMk 𝔪 (NumberFieldArithmetic.integralIdealsAwayHom K 𝔪.support I) :=
   (rfl)
 
 /-- **The intrinsic triviality criterion for a ray class.**  An integral ideal prime to `𝔪` has
@@ -266,7 +266,7 @@ of `𝔪`. -/
 noncomputable def classMap {𝔪 𝔫 : Modulus K} (h : 𝔪 ∣ 𝔫) :
     RayClassGroup 𝔫 →* RayClassGroup 𝔪 :=
   QuotientGroup.map (ray 𝔫) (ray 𝔪)
-    (NumberFieldArithmetic.idealsAwayInclusion (Modulus.support_mono h)) <| by
+    (NumberFieldArithmetic.idealsAwayInclusion K (Modulus.support_mono h)) <| by
       intro J hJ
       obtain ⟨x, hx, hxJ⟩ := mem_ray_iff.mp hJ
       refine Subgroup.mem_comap.mpr (mem_ray_iff.mpr ⟨x, IsCongrOne.mono h hx, ?_⟩)
@@ -274,7 +274,7 @@ noncomputable def classMap {𝔪 𝔫 : Modulus K} (h : 𝔪 ∣ 𝔫) :
 
 @[simp] theorem classMap_rayClassMk {𝔪 𝔫 : Modulus K} (h : 𝔪 ∣ 𝔫) (I : idealsPrimeTo 𝔫) :
     classMap h (rayClassMk 𝔫 I) =
-      rayClassMk 𝔪 (NumberFieldArithmetic.idealsAwayInclusion (Modulus.support_mono h) I) := (rfl)
+      rayClassMk 𝔪 (NumberFieldArithmetic.idealsAwayInclusion K (Modulus.support_mono h) I) := (rfl)
 
 /-- **The transition map at a modulus and itself is the identity**, as an equality of
 homomorphisms. -/
