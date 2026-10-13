@@ -33,4 +33,26 @@ def conjJ (γ : SL(2, R)) : SL(2, R) :=
 @[simp] theorem coe_conjJ (γ : SL(2, R)) :
     (conjJ γ : Matrix (Fin 2) (Fin 2) R) = !![γ 0 0, -γ 0 1; -γ 1 0, γ 1 1] := (rfl)
 
+/-- Coordinate conjugation preserves the identity. -/
+@[simp] theorem conjJ_one : conjJ (1 : SL(2, R)) = 1 := by
+  ext i j
+  fin_cases i <;> fin_cases j <;> simp
+
+/-- Coordinate conjugation preserves multiplication. -/
+@[simp] theorem conjJ_mul (γ δ : SL(2, R)) : conjJ (γ * δ) = conjJ γ * conjJ δ := by
+  ext i j
+  fin_cases i <;> fin_cases j <;>
+    simp [Matrix.mul_apply, Fin.sum_univ_two, add_comm]
+
+/-- Coordinate conjugation is an involution. -/
+@[simp] theorem conjJ_conjJ (γ : SL(2, R)) : conjJ (conjJ γ) = γ := by
+  ext i j
+  fin_cases i <;> fin_cases j <;> simp
+
+/-- Coordinate conjugation commutes with a ring homomorphism on coefficients. -/
+@[simp] theorem map_conjJ {S : Type*} [CommRing S] (f : R →+* S) (γ : SL(2, R)) :
+    map f (conjJ γ) = conjJ (map f γ) := by
+  ext i j
+  fin_cases i <;> fin_cases j <;> simp
+
 end Matrix.SpecialLinearGroup
