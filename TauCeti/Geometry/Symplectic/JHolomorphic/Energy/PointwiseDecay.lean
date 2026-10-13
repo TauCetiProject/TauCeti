@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Symplectic.JHolomorphic.Energy.Decay
-import TauCeti.Geometry.Symplectic.JHolomorphic.Energy.MeanValue
+import TauCeti.Geometry.Symplectic.JHolomorphic.Energy.Puncture
 import TauCeti.Analysis.Complex.OperatorNorm
 import Mathlib.Analysis.SpecialFunctions.Integrability.Basic
 
@@ -23,8 +23,8 @@ is assumed here.
 The target structure may vary with the image point. A compact image in a neighbourhood
 where the structure is `C²` supplies the uniform small-energy mean-value inequality.
 The energy-decay input is `SymplecticForm.integral_norm_fderiv_one_sq_ball_le_rpow`;
-the mean-value input is
-`exists_pos_forall_pi_mul_sq_mul_norm_fderiv_one_sq_le_eight_mul_setIntegral_ball`.
+the punctured-disc mean-value input is
+`TauCeti.exists_pos_sq_norm_fderiv_one_le_energy`.
 
 ## References
 
@@ -50,70 +50,37 @@ private theorem exists_energy_power_bound
     (hCR : ∀ z ∈ ball z₀ R \ {z₀}, fderiv ℝ u z I = J (u z) (fderiv ℝ u z 1))
     (htame : ∀ z ∈ ball z₀ R \ {z₀}, ∀ v, c * ‖v‖ ^ 2 ≤ ω v (J (u z) v))
     (hJ : ∀ z ∈ ball z₀ R \ {z₀}, ‖J (u z)‖ ≤ M)
-    (henergy : IntegrableOn (fun z ↦ ‖fderiv ℝ u z‖ ^ 2) (ball z₀ R)) :
+    (henergy : IntegrableOn (fun z ↦ ‖fderiv ℝ u z 1‖ ^ 2) (ball z₀ R)) :
     ∃ A ≥ 0, ∀ r ∈ Ioo 0 (R / 2),
       (∫ z in ball z₀ r, ‖fderiv ℝ u z 1‖ ^ 2) ≤ A * r ^ (2 * c / (1 + M) ^ 2) := by
+  -- The Cauchy--Riemann equation bounds the full energy by the directional energy.
+  have hfull : IntegrableOn (fun z ↦ ‖fderiv ℝ u z‖ ^ 2) (ball z₀ R) := by
+    rw [IntegrableOn, ← Measure.restrict_congr_set (sdiff_null_ae_eq_self
+      (s := ball z₀ R) (measure_singleton z₀))]
+    refine ((henergy.mono_set sdiff_subset).const_mul ((1 + max M 0) ^ 2)).mono' ?_ ?_
+    · exact ((hu.continuousOn_fderiv_of_isOpen (isOpen_ball.sdiff isClosed_singleton)
+        (by norm_num)).norm.pow 2).aestronglyMeasurable
+          (measurableSet_ball.diff (measurableSet_singleton _))
+    · filter_upwards [ae_restrict_mem
+        (measurableSet_ball.diff (measurableSet_singleton z₀))] with z hz
+      rw [Real.norm_of_nonneg (sq_nonneg _)]
+      have hI : ‖fderiv ℝ u z I‖ ≤ max M 0 * ‖fderiv ℝ u z 1‖ := by
+        rw [hCR z hz]
+        exact ((J (u z)).le_opNorm _).trans
+          (mul_le_mul_of_nonneg_right ((hJ z hz).trans (le_max_left _ _)) (norm_nonneg _))
+      have hop : ‖fderiv ℝ u z‖ ≤ (1 + max M 0) * ‖fderiv ℝ u z 1‖ := by
+        refine ContinuousLinearMap.opNorm_le_bound _ (by positivity) fun w ↦ ?_
+        exact ((fderiv ℝ u z).norm_apply_le_norm_one_add_norm_I w).trans
+          (mul_le_mul_of_nonneg_right (by linarith) (norm_nonneg w))
+      simpa only [mul_pow] using pow_le_pow_left₀ (norm_nonneg _) hop 2
   let b := R / 2
   let α := 2 * c / (1 + M) ^ 2
   let E := ∫ z in ball z₀ b, ‖fderiv ℝ u z 1‖ ^ 2
   refine ⟨E / b ^ α, by dsimp [E, b]; positivity, fun r hr ↦ ?_⟩
-  have h := ω.integral_norm_fderiv_one_sq_ball_le_rpow hg hc hu hCR htame hJ henergy
+  have h := ω.integral_norm_fderiv_one_sq_ball_le_rpow hg hc hu hCR htame hJ hfull
     (b := b) hr.1 hr.2.le (by dsimp [b]; linarith)
   rw [Real.div_rpow hr.1.le (half_pos hR).le] at h
   simpa only [b, α, E, div_eq_mul_inv, mul_assoc, mul_left_comm, mul_comm] using h
-
-omit [FiniteDimensional ℝ V] in
-/-- Apply the small-energy estimate on a disc that misses the puncture. -/
-private theorem exists_pos_sq_norm_fderiv_one_le_energy
-    (hW : IsOpen W) (hJ : ContDiffOn ℝ 2 J W) (hK : IsCompact K) (hKW : K ⊆ W)
-    (hJsq : ∀ x ∈ K, ∀ v, J x (J x v) = -v)
-    (hu : ContDiffOn ℝ 3 u (ball z₀ R \ {z₀}))
-    (hCR : ∀ z ∈ ball z₀ R \ {z₀}, fderiv ℝ u z I = J (u z) (fderiv ℝ u z 1))
-    (huK : MapsTo u (ball z₀ R \ {z₀}) K)
-    (henergy : IntegrableOn (fun z ↦ ‖fderiv ℝ u z‖ ^ 2) (ball z₀ R)) :
-    ∃ δ > 0, ∀ z ∈ ball z₀ (R / 4) \ {z₀},
-      (∫ y in ball z₀ (2 * ‖z - z₀‖), ‖fderiv ℝ u y 1‖ ^ 2) < δ →
-      ‖z - z₀‖ ^ 2 * ‖fderiv ℝ u z 1‖ ^ 2 ≤
-        32 / Real.pi * ∫ y in ball z₀ (2 * ‖z - z₀‖), ‖fderiv ℝ u y 1‖ ^ 2 := by
-  obtain ⟨δ, hδ, hmean⟩ :=
-    exists_pos_forall_pi_mul_sq_mul_norm_fderiv_one_sq_le_eight_mul_setIntegral_ball
-      hW hJ hK hKW hJsq
-  refine ⟨δ, hδ, fun z hz hsmallE ↦ ?_⟩
-  let d := ‖z - z₀‖
-  have hd : 0 < d := norm_pos_iff.mpr (sub_ne_zero.mpr hz.2)
-  have hdR : d < R / 4 := by simpa only [mem_ball, dist_eq_norm] using hz.1
-  have hsub : closedBall z (d / 2) ⊆ ball z₀ R \ {z₀} := by
-    refine subset_inter ?_ ?_
-    · exact closedBall_subset_ball' (by rw [dist_eq_norm]; linarith)
-    · intro y hy hzero
-      have hdist := mem_closedBall.mp hy
-      rw [mem_singleton_iff.mp hzero, dist_comm, dist_eq_norm] at hdist
-      linarith
-  have hball : ball z (d / 2) ⊆ ball z₀ R \ {z₀} := ball_subset_closedBall.trans hsub
-  have houter : ball z (d / 2) ⊆ ball z₀ (2 * d) :=
-    ball_subset_ball' (by rw [dist_eq_norm]; linarith)
-  have hcont : ContinuousOn (fun y ↦ fderiv ℝ u y 1) (ball z₀ R \ {z₀}) :=
-    (hu.continuousOn_fderiv_of_isOpen (isOpen_ball.sdiff isClosed_singleton)
-      (by norm_num)).clm_apply continuousOn_const
-  have hInt : IntegrableOn (fun y ↦ ‖fderiv ℝ u y 1‖ ^ 2) (ball z₀ (2 * d)) := by
-    refine (henergy.mono_set (ball_subset_ball (by linarith))).mono' ?_
-      (ae_of_all _ fun y ↦ ?_)
-    · rw [← Measure.restrict_congr_set (sdiff_null_ae_eq_self
-        (s := ball z₀ (2 * d)) (measure_singleton z₀))]
-      exact ((hcont.norm.pow 2).mono (sdiff_subset_sdiff_left
-        (ball_subset_ball (by linarith)))).aestronglyMeasurable
-          (measurableSet_ball.diff (measurableSet_singleton _))
-    · rw [Real.norm_of_nonneg (sq_nonneg _)]
-      have := (fderiv ℝ u y).le_opNorm (1 : ℂ)
-      simp only [norm_one, mul_one] at this
-      gcongr
-  have hmono := setIntegral_mono_set hInt
-    (Eventually.of_forall fun _ ↦ sq_nonneg _) (Eventually.of_forall houter)
-  have hpoint := hmean (by positivity) (hu.mono hball) (hcont.mono hsub)
-    (fun y hy ↦ hCR y (hball hy)) (fun y hy ↦ huK (hball hy))
-    (hmono.trans_lt hsmallE)
-  rw [div_mul_eq_mul_div, le_div_iff₀ Real.pi_pos]
-  nlinarith
 
 /-- The differential of a finite-energy pseudoholomorphic curve on a punctured disc has a
 power bound with exponent strictly greater than `-1`. Both the radius and the bound are
@@ -128,7 +95,7 @@ theorem exists_pos_norm_fderiv_le_rpow
     (huK : MapsTo u (ball z₀ R \ {z₀}) K)
     (htame : ∀ z ∈ ball z₀ R \ {z₀}, ∀ v, c * ‖v‖ ^ 2 ≤ ω v (J (u z) v))
     (hbound : ∀ z ∈ ball z₀ R \ {z₀}, ‖J (u z)‖ ≤ M)
-    (henergy : IntegrableOn (fun z ↦ ‖fderiv ℝ u z‖ ^ 2) (ball z₀ R)) :
+    (henergy : IntegrableOn (fun z ↦ ‖fderiv ℝ u z 1‖ ^ 2) (ball z₀ R)) :
     ∃ ε > 0, ε < R ∧ ∃ C > 0, ∀ z ∈ ball z₀ ε \ {z₀},
       ‖fderiv ℝ u z‖ ≤ C * ‖z - z₀‖ ^ (c / (1 + M) ^ 2 - 1) := by
   have hmem : circleMap z₀ (R / 2) 0 ∈ ball z₀ R \ {z₀} := by
@@ -177,7 +144,9 @@ theorem exists_pos_norm_fderiv_le_rpow
     rw [Real.dist_eq, sub_zero, abs_of_pos hd]
     exact hdε.trans_le (min_le_left _ _))
   -- The estimate on a disc avoiding the puncture converts energy decay into derivative decay.
-  have hpoint := hmean z ⟨by simpa only [mem_ball, dist_eq_norm] using hdR, hz.2⟩
+  have hpoint := hmean z
+    ⟨by simpa only [mem_ball, dist_eq_norm] using
+      hdR.trans_le (by linarith : R / 4 ≤ R / 2), hz.2⟩
     (hpow.trans_lt hsmallE)
   have hsquare : d ^ 2 * ‖fderiv ℝ u z 1‖ ^ 2 ≤ B * d ^ (2 * β) := by
     have h := hpoint.trans (mul_le_mul_of_nonneg_left hpow (by positivity))
@@ -220,7 +189,7 @@ theorem exists_pos_integrableOn_deriv_radial
     (huK : MapsTo u (ball z₀ R \ {z₀}) K)
     (htame : ∀ z ∈ ball z₀ R \ {z₀}, ∀ v, c * ‖v‖ ^ 2 ≤ ω v (J (u z) v))
     (hbound : ∀ z ∈ ball z₀ R \ {z₀}, ‖J (u z)‖ ≤ M)
-    (henergy : IntegrableOn (fun z ↦ ‖fderiv ℝ u z‖ ^ 2) (ball z₀ R)) :
+    (henergy : IntegrableOn (fun z ↦ ‖fderiv ℝ u z 1‖ ^ 2) (ball z₀ R)) :
     ∃ ε > 0, ε < R ∧ ∀ v : ℂ, ‖v‖ = 1 →
       IntegrableOn (deriv (fun t : ℝ ↦ u (z₀ + t • v))) (Ioo 0 ε) := by
   obtain ⟨ε, hε, hεR, C, _, hC⟩ := ω.exists_pos_norm_fderiv_le_rpow

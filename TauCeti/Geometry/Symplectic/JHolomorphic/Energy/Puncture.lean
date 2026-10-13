@@ -58,6 +58,48 @@ open scoped ENNReal NNReal Real
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
 variable {J : V → V →L[ℝ] V} {W K : Set V} {u : ℂ → V} {z₀ : ℂ} {R : ℝ}
 
+/-- Near a puncture, sufficiently small directional energy on the outer disc controls
+the squared directional derivative, uniformly in the direction of approach. -/
+theorem exists_pos_sq_norm_fderiv_one_le_energy
+    (hW : IsOpen W) (hJ : ContDiffOn ℝ 2 J W) (hK : IsCompact K) (hKW : K ⊆ W)
+    (hJsq : ∀ x ∈ K, ∀ v, J x (J x v) = -v)
+    (hu : ContDiffOn ℝ 3 u (ball z₀ R \ {z₀}))
+    (hCR : ∀ z ∈ ball z₀ R \ {z₀}, fderiv ℝ u z I = J (u z) (fderiv ℝ u z 1))
+    (huK : MapsTo u (ball z₀ R \ {z₀}) K)
+    (henergy : IntegrableOn (fun z ↦ ‖fderiv ℝ u z 1‖ ^ 2) (ball z₀ R)) :
+    ∃ δ > 0, ∀ z ∈ ball z₀ (R / 2) \ {z₀},
+      (∫ y in ball z₀ (2 * ‖z - z₀‖), ‖fderiv ℝ u y 1‖ ^ 2) < δ →
+      ‖z - z₀‖ ^ 2 * ‖fderiv ℝ u z 1‖ ^ 2 ≤
+        32 / Real.pi * ∫ y in ball z₀ (2 * ‖z - z₀‖), ‖fderiv ℝ u y 1‖ ^ 2 := by
+  obtain ⟨δ, hδ, hmean⟩ :=
+    exists_pos_forall_pi_mul_sq_mul_norm_fderiv_one_sq_le_eight_mul_setIntegral_ball
+      hW hJ hK hKW hJsq
+  refine ⟨δ, hδ, fun z hz hsmallE ↦ ?_⟩
+  let d := ‖z - z₀‖
+  have hd : 0 < d := norm_pos_iff.mpr (sub_ne_zero.mpr hz.2)
+  have hdR : d < R / 2 := by simpa only [mem_ball, dist_eq_norm] using hz.1
+  have hsub : closedBall z (d / 2) ⊆ ball z₀ R \ {z₀} := by
+    refine subset_inter ?_ ?_
+    · exact closedBall_subset_ball' (by rw [dist_eq_norm]; linarith)
+    · intro y hy hzero
+      have hdist := mem_closedBall.mp hy
+      rw [mem_singleton_iff.mp hzero, dist_comm, dist_eq_norm] at hdist
+      linarith
+  have hball : ball z (d / 2) ⊆ ball z₀ R \ {z₀} := ball_subset_closedBall.trans hsub
+  have houter : ball z (d / 2) ⊆ ball z₀ (2 * d) :=
+    ball_subset_ball' (by rw [dist_eq_norm]; linarith)
+  have hcont : ContinuousOn (fun y ↦ fderiv ℝ u y 1) (ball z₀ R \ {z₀}) :=
+    (hu.continuousOn_fderiv_of_isOpen (isOpen_ball.sdiff isClosed_singleton)
+      (by norm_num)).clm_apply continuousOn_const
+  have hInt := henergy.mono_set (ball_subset_ball (by linarith : 2 * d ≤ R))
+  have hmono := setIntegral_mono_set hInt
+    (Eventually.of_forall fun _ ↦ sq_nonneg _) (Eventually.of_forall houter)
+  have hpoint := hmean (by positivity) (hu.mono hball) (hcont.mono hsub)
+    (fun y hy ↦ hCR y (hball hy)) (fun y hy ↦ huK (hball hy))
+    (hmono.trans_lt hsmallE)
+  rw [div_mul_eq_mul_div, le_div_iff₀ Real.pi_pos]
+  nlinarith
+
 /-- **Derivative decay at a puncture.** Let `J` be `C²` on an open set `W` containing a compact
 set `K`, with `J(x)² = -1` on `K`. A solution `u` of `∂ₜu = J(u) ∂ₛu` that is `C³` on the punctured
 disk `B_R(z₀) \ {z₀}`, maps it into `K` and has finite energy `∫_{B_R(z₀)} ‖∂ₛu‖² < ∞` satisfies
@@ -71,11 +113,7 @@ theorem tendsto_norm_sub_mul_norm_fderiv_one_nhdsNE
     (hE : IntegrableOn (fun z ↦ ‖fderiv ℝ u z 1‖ ^ 2) (ball z₀ R)) :
     Tendsto (fun z ↦ ‖z - z₀‖ * ‖fderiv ℝ u z 1‖) (𝓝[≠] z₀) (𝓝 0) := by
   obtain ⟨δ, hδ, hmean⟩ :=
-    exists_pos_forall_pi_mul_sq_mul_norm_fderiv_one_sq_le_eight_mul_setIntegral_ball
-      hW hJ hK hKW hJsq
-  have hDu : ContinuousOn (fun y ↦ fderiv ℝ u y 1) (ball z₀ R \ {z₀}) :=
-    (hu.continuousOn_fderiv_of_isOpen (isOpen_ball.sdiff isClosed_singleton)
-      (by norm_num)).clm_apply continuousOn_const
+    exists_pos_sq_norm_fderiv_one_le_energy hW hJ hK hKW hJsq hu hCR huK hE
   -- The energy `ε ρ` of `u` in the disk of radius `ρ` about the puncture tends to zero with `ρ`.
   set ε : ℝ → ℝ := fun ρ ↦
     ∫ y in ball z₀ ρ, ‖fderiv ℝ u y 1‖ ^ 2 ∂(volume.restrict (ball z₀ R)) with hεdef
@@ -99,31 +137,15 @@ theorem tendsto_norm_sub_mul_norm_fderiv_one_nhdsNE
     filter_upwards [self_mem_nhdsWithin, hεz.eventually (gt_mem_nhds hδ), hnear]
       with z hz hzε hzR
     rw [mem_ball, dist_eq_norm] at hzR
-    have hρ : 0 < ‖z - z₀‖ := norm_pos_iff.2 (sub_ne_zero.2 hz)
-    -- The closed disk of radius `|z - z₀| / 2` about `z` lies in the punctured disk.
-    have hsubc : closedBall z (‖z - z₀‖ / 2) ⊆ ball z₀ R \ {z₀} := by
-      intro y hy
-      rw [mem_closedBall, dist_eq_norm] at hy
-      refine ⟨?_, fun hy₀ ↦ ?_⟩
-      · rw [mem_ball, dist_eq_norm]
-        linarith [norm_sub_le_norm_sub_add_norm_sub y z z₀]
-      · rw [mem_singleton_iff.1 hy₀, norm_sub_rev] at hy
-        linarith
-    have hsub : ball z (‖z - z₀‖ / 2) ⊆ ball z₀ R \ {z₀} := ball_subset_closedBall.trans hsubc
-    -- Its energy is at most the energy of the disk of radius `2 |z - z₀|` about `z₀`.
-    have hle : ∫ y in ball z (‖z - z₀‖ / 2), ‖fderiv ℝ u y 1‖ ^ 2 ≤ ε (2 * ‖z - z₀‖) := by
-      simp only [hεdef]
-      rw [Measure.restrict_restrict measurableSet_ball]
-      refine setIntegral_mono_set (hE.mono_set inter_subset_right)
-        (Eventually.of_forall fun _ ↦ sq_nonneg _)
-        (Eventually.of_forall fun y (hy : y ∈ ball z (‖z - z₀‖ / 2)) ↦ ?_)
-      refine ⟨?_, (hsub hy).1⟩
-      rw [mem_ball, dist_eq_norm] at hy ⊢
-      linarith [norm_sub_le_norm_sub_add_norm_sub y z z₀]
-    have h := hmean (by positivity) (hu.mono hsub) (hDu.mono hsubc)
-      (fun y hy ↦ hCR y (hsub hy)) (fun y hy ↦ huK (hsub hy)) (hle.trans_lt hzε)
-    rw [mul_pow, div_mul_eq_mul_div, le_div_iff₀ Real.pi_pos]
-    nlinarith
+    have houter : ball z₀ (2 * ‖z - z₀‖) ⊆ ball z₀ R :=
+      ball_subset_ball (by linarith)
+    have hεeq : ε (2 * ‖z - z₀‖) =
+        ∫ y in ball z₀ (2 * ‖z - z₀‖), ‖fderiv ℝ u y 1‖ ^ 2 := by
+      simp only [hεdef, Measure.restrict_restrict measurableSet_ball,
+        inter_eq_left.mpr houter]
+    rw [hεeq] at hzε ⊢
+    simpa only [mul_pow] using hmean z
+      ⟨by simpa only [mem_ball, dist_eq_norm] using hzR, hz⟩ hzε
   have hlim : Tendsto (fun z ↦ √(32 / π * ε (2 * ‖z - z₀‖))) (𝓝[≠] z₀) (𝓝 0) := by
     simpa using (hεz.const_mul (32 / π)).sqrt
   refine squeeze_zero' (Eventually.of_forall fun z ↦ by positivity) ?_ hlim
