@@ -60,7 +60,7 @@ theorem IsWeightedRestricted.exists_coeff_mem_weightMul {T : Fin k → Set A}
     then MvPowerSeries.coeff ν f else u ν
   have hcoeff (ν) : MvPowerSeries.coeff ν g =
       if MvPowerSeries.coeff ν f ∈ weightMul T ν U.toAddSubgroup
-      then MvPowerSeries.coeff ν f else u ν := rfl
+      then MvPowerSeries.coeff ν f else u ν := MvPowerSeries.coeff_apply g ν
   refine ⟨g, ?_, ?_, hcoeff⟩
   · rw [isWeightedRestricted_iff]
     intro W
@@ -97,6 +97,7 @@ theorem _root_.IsOpenQuotientMap.weightedMap [(𝓝 (0 : A)).IsCountablyGenerate
   have hgU : ∀ ν, ∃ u ∈ weightMul T ν U.toAddSubgroup,
       φ u = MvPowerSeries.coeff ν (g : MvPowerSeries (Fin k) B) := by
     intro ν
+    -- Set.image membership unfolds to the existential witness statement above.
     change MvPowerSeries.coeff ν (g : MvPowerSeries (Fin k) B) ∈
       φ '' (weightMul T ν U.toAddSubgroup : Set A)
     rw [φ.image_weightMul_of_image_eq hTS]
