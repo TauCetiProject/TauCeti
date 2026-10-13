@@ -7,8 +7,8 @@ module
 
 public import TauCeti.Analysis.Calculus.Rademacher
 public import TauCeti.Analysis.Sobolev.WeakDeriv.Basic
+import Mathlib.Analysis.Calculus.ContDiff.RCLike
 import TauCeti.Analysis.Calculus.LineDeriv.Measurable
-import TauCeti.Analysis.Sobolev.DifferenceQuotient
 
 /-!
 # Locally Lipschitz functions are weakly differentiable
@@ -29,14 +29,13 @@ graph, needs: composed with such a map, a smooth function is only locally Lipsch
 
 ## The argument
 
-For a test function `φ`, the difference quotients `t⁻¹ (u (x + t • v) - u x)` paired with `φ`
-converge to `-∫ ∂_v φ • u` (`TauCeti.integral_inv_mul_sub_mul_tendsto_neg_integral_lineDeriv_mul`,
-for real `u`). On a compact neighbourhood of the support of `φ` inside `Ω`, `u` is Lipschitz, so
-the difference quotients are bounded there by a multiple of `‖v‖`, and they converge to `u'`
-almost everywhere; by dominated convergence the same pairing tends to `∫ φ • u'`. Measurability
-and local integrability of `u'` come from
-`LocallyLipschitzOn.locallyIntegrableOn_of_ae_hasLineDerivAt`. A vector-valued
-`u` is reduced to the real case by testing the identity against continuous linear functionals.
+For real `u` and a test function `φ`, `u` is Lipschitz on a compact neighbourhood of the support
+of `φ` inside `Ω`, so it agrees there with a globally Lipschitz function
+(`LipschitzOnWith.extend_real`). Mathlib's integration by parts for Lipschitz functions
+(`LipschitzWith.integral_lineDeriv_mul_eq`) applies to that extension, and near the support of `φ`
+its line derivative is `u'` almost everywhere. Measurability and local integrability of `u'`
+come from `LocallyLipschitzOn.locallyIntegrableOn_of_ae_hasLineDerivAt`. A vector-valued `u` is
+reduced to the real case by testing the identity against continuous linear functionals.
 
 ## Main declarations
 
@@ -65,54 +64,37 @@ variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensi
   [NormedAddCommGroup F] [NormedSpace ℝ F] {Ω : Opens E} {v : E} {u u' : E → F}
 
 /-- The real case of `LocallyLipschitzOn.hasWeakLineDerivOn`, as an integration-by-parts identity:
-the difference quotients of `g` paired with `φ` converge both to `-∫ ∂_v φ * g` and, by dominated
-convergence, to `∫ g' * φ`. -/
+`g` agrees near the support of `φ` with a globally Lipschitz function, to which Mathlib's
+`LipschitzWith.integral_lineDeriv_mul_eq` applies. -/
 private theorem integral_mul_eq_neg_integral_lineDeriv_mul {g g' : E → ℝ}
     (hg : LocallyLipschitzOn Ω g) (h : ∀ᵐ x ∂μ, x ∈ Ω → HasLineDerivAt ℝ g (g' x) x v)
     (φ : 𝓓(Ω, ℝ)) :
     ∫ x, g' x * φ x ∂μ = -∫ x, lineDeriv ℝ (φ : E → ℝ) x v * g x ∂μ := by
-  have hgi := hg.continuousOn.locallyIntegrableOn (μ := μ) Ω.isOpen.measurableSet
   have hK : IsCompact (tsupport (φ : E → ℝ)) := φ.hasCompactSupport.isCompact
   obtain ⟨δ, hδ, hδΩ⟩ := hK.exists_cthickening_subset_open Ω.isOpen φ.tsupport_subset
   obtain ⟨C, hC⟩ := (hg.mono hδΩ).exists_lipschitzOnWith_of_compact hK.cthickening
-  obtain ⟨w, hw, hwS, hwt⟩ := exists_integrable_eqOn_tsupport_add hgi φ v
-  refine tendsto_nhds_unique (tendsto_integral_filter_of_dominated_convergence
-    (fun x => C * ‖v‖ * ‖φ x‖) ?_ ?_ ?_ ?_)
-    (integral_inv_mul_sub_mul_tendsto_neg_integral_lineDeriv_mul hgi φ v)
-  · -- For small `t` the difference quotient only sees `g` where it agrees with the integrable `w`.
-    filter_upwards [hwt] with t ht
-    have hpt : (fun x => t⁻¹ * (g (x + t • v) - g x) * φ x) =
-        fun x => t⁻¹ * (w (x + t • v) - w x) * φ x := by
-      funext x
-      by_cases hx : x ∈ tsupport (φ : E → ℝ)
-      · rw [ht x hx, hwS hx]
-      · simp [image_eq_zero_of_notMem_tsupport hx]
-    rw [hpt]
-    exact ((((hw.comp_add_right (t • v)).aestronglyMeasurable.sub
-      hw.aestronglyMeasurable).const_mul _).mul φ.continuous.aestronglyMeasurable)
-  · -- For `|t| ‖v‖ ≤ δ`, both `x` and `x + t • v` lie where `g` is `C`-Lipschitz.
-    have htend : Tendsto (fun t : ℝ => t • v) (𝓝 0) (𝓝 0) := by
-      simpa using (tendsto_id (x := 𝓝 (0 : ℝ))).smul_const v
-    filter_upwards [self_mem_nhdsWithin,
-      nhdsWithin_le_nhds (htend.eventually (closedBall_mem_nhds 0 hδ))] with t ht0 ht
-    refine Eventually.of_forall fun x => ?_
-    by_cases hx : x ∈ tsupport (φ : E → ℝ)
-    · have hxt : x + t • v ∈ cthickening δ (tsupport (φ : E → ℝ)) :=
-        mem_cthickening_of_dist_le _ x δ _ hx (by simpa [dist_eq_norm] using ht)
-      have hlip := hC.norm_sub_le hxt (self_subset_cthickening _ hx)
-      rw [add_sub_cancel_left, norm_smul] at hlip
-      have ht0' : 0 < ‖t‖ := norm_pos_iff.2 ht0
-      have hq : ‖t‖⁻¹ * ‖g (x + t • v) - g x‖ ≤ C * ‖v‖ := by
-        rw [inv_mul_le_iff₀ ht0']
-        linarith
-      rw [norm_mul, norm_mul, norm_inv]
-      exact mul_le_mul_of_nonneg_right hq (norm_nonneg _)
-    · simp [image_eq_zero_of_notMem_tsupport hx]
-  · exact ((φ.continuous.integrable_of_hasCompactSupport φ.hasCompactSupport).norm.const_mul _)
-  · filter_upwards [h] with x hx
-    by_cases hxΩ : x ∈ (Ω : Set E)
-    · simpa [smul_eq_mul] using (hx hxΩ).tendsto_slope_zero.mul_const (φ x)
-    · simp [image_eq_zero_of_notMem_tsupport fun hmem => hxΩ (φ.tsupport_subset hmem)]
+  -- Extend `g` from the compact thickening of the support of `φ` to a Lipschitz function `G`.
+  obtain ⟨G, hG, hgG⟩ := hC.extend_real
+  obtain ⟨D, hD⟩ := φ.contDiff.lipschitzWith_of_hasCompactSupport φ.hasCompactSupport (by simp)
+  have hGg : ∀ x ∈ tsupport (φ : E → ℝ), G =ᶠ[𝓝 x] g := fun x hx =>
+    eventuallyEq_of_mem (mem_of_superset (isOpen_thickening.mem_nhds
+      (self_subset_thickening hδ _ hx)) (thickening_subset_cthickening _ _)) hgG.symm
+  have h1 : ∫ x, g' x * φ x ∂μ = ∫ x, lineDeriv ℝ G x v * φ x ∂μ := by
+    refine integral_congr_ae ?_
+    filter_upwards [h] with x hx
+    by_cases hxK : x ∈ tsupport (φ : E → ℝ)
+    · rw [((hx (φ.tsupport_subset hxK)).congr_of_eventuallyEq (hGg x hxK)).lineDeriv]
+    · simp [image_eq_zero_of_notMem_tsupport hxK]
+  have h2 : ∫ x, lineDeriv ℝ (φ : E → ℝ) x (-v) * G x ∂μ =
+      -∫ x, lineDeriv ℝ (φ : E → ℝ) x v * g x ∂μ := by
+    rw [← integral_neg]
+    congr 1
+    funext x
+    rw [lineDeriv_neg, neg_mul]
+    by_cases hxK : x ∈ tsupport (φ : E → ℝ)
+    · rw [hgG (self_subset_cthickening _ hxK)]
+    · simp [lineDeriv_eq_zero_of_notMem_tsupport φ hxK]
+  rw [h1, hG.integral_lineDeriv_mul_eq hD φ.hasCompactSupport v, h2]
 
 /-- **A locally Lipschitz function is weakly differentiable.** If `u` is locally Lipschitz on the
 open set `Ω` and has line derivative `u' x` in the direction `v` at almost every `x ∈ Ω`, then
