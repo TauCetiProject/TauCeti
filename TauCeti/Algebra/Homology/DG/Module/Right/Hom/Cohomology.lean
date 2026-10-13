@@ -108,8 +108,11 @@ noncomputable def cohomologyMap (f : DGRightModuleHom hM hN) :
   map_add' := map_add _
   map_smul' a x := by
     obtain ⟨z, hz⟩ := Ideal.Quotient.mk_surjective a.unop
+    -- Take the cycle representative in the opposite ring, which is the form
+    -- `op_quotientMk_smul` is stated in.
+    have hw : Ideal.Quotient.mk h.boundaries.asIdeal (op z).unop = a.unop := hz
     simp only [RingHom.id_apply]
-    rw [← op_unop a, ← hz, hM.op_quotientMk_smul, hN.op_quotientMk_smul]
+    rw [← op_unop a, ← hw, hM.op_quotientMk_smul, hN.op_quotientMk_smul]
     exact f.cohomologyCyclesMap.map_smul (op z) x
 
 /-- Cohomology maps send the class of a cycle to the class of its image. -/
