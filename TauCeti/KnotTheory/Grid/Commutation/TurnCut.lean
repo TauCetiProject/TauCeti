@@ -209,8 +209,8 @@ def toPentagonRectangle (D : GridRectangleInitialPentagonDecomposition a s x z)
     (hright : D.first.right = finRotate n a) (hturn : s ∈ Grid.cIco D.first.bottom D.first.top) :
     GridPentagonRectangleDecomposition a s x z where
   middle := D.middle
-  pentagon := GridPentagonBetween.ofRightEq D.first hright hturn
-  rectangle := D.second
+  first := GridPentagonBetween.ofRightEq D.first hright hturn
+  second := D.second
 
 /-- Reading the turn point the other way keeps the underlying rectangles. -/
 @[simp]
@@ -219,7 +219,7 @@ theorem toPentagonRectangle_toRectangleDecomposition
     (hright : D.first.right = finRotate n a) (hturn : s ∈ Grid.cIco D.first.bottom D.first.top) :
     (D.toPentagonRectangle hright hturn).toRectangleDecomposition =
       D.toGridRectangleDecomposition := by
-  ext <;> simp [toPentagonRectangle]
+  ext <;> simp [toPentagonRectangle, GridPentagonRectangleDecomposition.pentagon]
 
 end GridRectangleInitialPentagonDecomposition
 
@@ -312,8 +312,8 @@ def toRectanglePentagon (E : GridInitialPentagonRectangleDecomposition a s x z)
     (hturn : s ∈ Grid.cIco E.second.bottom E.second.top) :
     GridRectanglePentagonDecomposition a s x z where
   middle := E.middle
-  rectangle := E.first
-  pentagon := GridPentagonBetween.ofRightEq E.second hright hturn
+  first := E.first
+  second := GridPentagonBetween.ofRightEq E.second hright hturn
 
 /-- Reading the turn point the other way keeps the underlying rectangles. -/
 @[simp]
@@ -323,7 +323,7 @@ theorem toRectanglePentagon_toRectangleDecomposition
     (hturn : s ∈ Grid.cIco E.second.bottom E.second.top) :
     (E.toRectanglePentagon hright hturn).toRectangleDecomposition =
       E.toGridRectangleDecomposition := by
-  ext <;> simp [toRectanglePentagon]
+  ext <;> simp [toRectanglePentagon, GridRectanglePentagonDecomposition.pentagon]
 
 /-- Reading the turn point the other way and back gives the original decomposition. -/
 @[simp]
@@ -422,6 +422,7 @@ theorem toPentagonRectangle_mem_pentagonRectangleDecompositions
   rw [mem_pentagonRectangleDecompositions, mem_pentagons,
     (G.swapColumns C.column b).mem_unblockedRectangles, ← G.disjoint_map_swapColumns_XSet_iff]
   simp only [GridRectangleInitialPentagonDecomposition.toPentagonRectangle,
+    GridPentagonRectangleDecomposition.pentagon,
     GridPentagonBetween.ofRightEq_toGridRectangleBetween]
   refine ⟨⟨hD.1.1, hX.1⟩, ?_, hX.2⟩
   simpa only [GridRectangleInitialPentagonDecomposition.pentagon_toGridRectangleBetween] using
@@ -491,12 +492,14 @@ theorem toRectanglePentagon_mem_rectanglePentagonDecompositions
     (E.pentagon.coveredSquares_val_add_val_turnCut (E.toRectanglePentagon hright hturn).pentagon)
   simp only [Multiset.toFinset_add, Finset.val_toFinset,
     GridInitialPentagonRectangleDecomposition.toRectanglePentagon,
+    GridRectanglePentagonDecomposition.pentagon,
     GridInitialPentagonRectangleDecomposition.pentagon_toGridRectangleBetween,
     GridPentagonBetween.ofRightEq_toGridRectangleBetween] at hunion
   have hX := Finset.disjoint_union_left.mp
     (hunion ▸ Finset.disjoint_union_left.mpr ⟨hE.1.2, hE.2.2⟩)
   rw [mem_rectanglePentagonDecompositions, mem_unblockedRectangles, mem_pentagons]
   simp only [GridInitialPentagonRectangleDecomposition.toRectanglePentagon,
+    GridRectanglePentagonDecomposition.pentagon,
     GridPentagonBetween.ofRightEq_toGridRectangleBetween]
   exact ⟨⟨hE.1.1, hX.1⟩, hE.2.1, hX.2⟩
 
@@ -557,6 +560,7 @@ theorem rectanglePentagonWeight_toRectanglePentagon
   refine (G.initialPentagonRectangleWeight_eq_rectanglePentagonWeight_of_val_add_val_eq C R _ _
     ?_).symm
   simpa only [GridInitialPentagonRectangleDecomposition.toRectanglePentagon,
+    GridRectanglePentagonDecomposition.pentagon,
     GridInitialPentagonRectangleDecomposition.pentagon_toGridRectangleBetween,
     GridPentagonBetween.ofRightEq_toGridRectangleBetween] using
     E.pentagon.coveredSquares_val_add_val_turnCut (E.toRectanglePentagon hright hturn).pentagon

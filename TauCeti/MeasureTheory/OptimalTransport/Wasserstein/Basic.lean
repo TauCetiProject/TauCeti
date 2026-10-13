@@ -86,7 +86,7 @@ what the gluing lemma consumes.
   along a single coupling, and with
   `TauCeti.hasFiniteMoment_iff_forall_hasFiniteMoment_iff_wassersteinEDist_ne_top` recording that
   the finite-moment hypothesis on the anchor cannot be dropped;
-* `TauCeti.hasFiniteMoment_of_sum_mul_wassersteinEDist_pow_ne_top` — a law of finite weighted
+* `TauCeti.hasFiniteMoment_of_sum_mul_wassersteinEDist_rpow_ne_top` — a law of finite weighted
   Wasserstein cost against finitely many laws, one of positive weight and finite moment, has finite
   moment;
 * `TauCeti.exists_notMem_dist_sq_add_dist_sq_le_of_wassersteinEDist_le` — a probability measure
@@ -792,21 +792,21 @@ theorem hasFiniteMoment_iff_forall_hasFiniteMoment_iff_wassersteinEDist_ne_top
         (measurable_id.prodMk measurable_id).aemeasurable]
       exact eLpNorm_eq_zero_of_ae_zero (.of_forall fun x ↦ edist_self x))⟩
 
-/-- A probability law of finite weighted Wasserstein cost `∑ j ∈ s, w j * W_p(ν, μ j) ^ n` has
+/-- A probability law of finite weighted Wasserstein cost `∑ j ∈ s, w j * W_p(ν, μ j) ^ q` has
 finite `p`-moment, provided some law `μ i` with `i ∈ s` of positive weight has finite `p`-moment
-and `n ≠ 0`: the corresponding summand bounds `W_p(ν, μ i)`. -/
-theorem hasFiniteMoment_of_sum_mul_wassersteinEDist_pow_ne_top
+and `0 < q`: the corresponding summand bounds `W_p(ν, μ i)`. -/
+theorem hasFiniteMoment_of_sum_mul_wassersteinEDist_rpow_ne_top
     (hd : Measurable fun z : X × X ↦ edist z.1 z.2) {ι : Type*} {s : Finset ι} {w : ι → ℝ≥0∞}
     {μ : ι → Measure X} {ν : Measure X} [IsProbabilityMeasure ν] {i : ι} (hi : i ∈ s)
-    (hwi : w i ≠ 0) [IsProbabilityMeasure (μ i)] (hμ : HasFiniteMoment p (μ i)) {n : ℕ}
-    (hn : n ≠ 0) (h : ∑ j ∈ s, w j * wassersteinEDist p ν (μ j) ^ n ≠ ∞) :
+    (hwi : w i ≠ 0) [IsProbabilityMeasure (μ i)] (hμ : HasFiniteMoment p (μ i)) {q : ℝ}
+    (hq : 0 < q) (h : ∑ j ∈ s, w j * wassersteinEDist p ν (μ j) ^ q ≠ ∞) :
     HasFiniteMoment p ν := by
-  have hi' : w i * wassersteinEDist p ν (μ i) ^ n ≠ ∞ :=
-    ne_top_of_le_ne_top h (Finset.single_le_sum (f := fun j ↦ w j * wassersteinEDist p ν (μ j) ^ n)
+  have hi' : w i * wassersteinEDist p ν (μ i) ^ q ≠ ∞ :=
+    ne_top_of_le_ne_top h (Finset.single_le_sum (f := fun j ↦ w j * wassersteinEDist p ν (μ j) ^ q)
       (fun _ _ ↦ bot_le) hi)
   rw [hasFiniteMoment_iff_wassersteinEDist_ne_top_of_hasFiniteMoment hd hμ,
     wassersteinEDist_comm hd]
-  exact fun htop ↦ hi' (by rw [htop, ENNReal.top_pow hn, ENNReal.mul_top hwi])
+  exact fun htop ↦ hi' (by rw [htop, ENNReal.top_rpow_of_pos hq, ENNReal.mul_top hwi])
 
 end Anchor
 
