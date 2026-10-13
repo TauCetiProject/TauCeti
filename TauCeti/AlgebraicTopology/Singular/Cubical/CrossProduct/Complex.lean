@@ -221,7 +221,7 @@ theorem ι_cubicalCrossProduct_f {p q n : ℕ} (h : p + q = n) :
 
 /-- The continuous map underlying `f ⊗ₘ g`, for the cartesian monoidal structure on spaces, is the
 product map. -/
-private theorem hom_tensorHom_eq_prodMap {X X' Y Y' : TopCat.{u}} (f : X ⟶ X') (g : Y ⟶ Y') :
+theorem hom_tensorHom_eq_prodMap {X X' Y Y' : TopCat.{u}} (f : X ⟶ X') (g : Y ⟶ Y') :
     (f ⊗ₘ g).hom = f.hom.prodMap g.hom :=
   ContinuousMap.ext fun p ↦ TopCat.tensor_apply f g p
 
