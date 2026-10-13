@@ -393,6 +393,18 @@ def relativePicardDegreeZeroFunctor.mk {T : (Over S)ᵒᵖ} (c : (relativePicard
     (relativePicardDegreeZeroFunctor f).obj T :=
   ⟨c, hc⟩
 
+/-- The degree-zero Picard functor `Pic⁰_{X/S}` acts on the section
+`relativePicardDegreeZeroFunctor.mk f c hc` by the pullback map of the relative Picard presheaf
+`T ↦ Pic(X_T) / Pic(T)`. -/
+@[simp]
+lemma relativePicardDegreeZeroFunctor_map_mk {T T' : (Over S)ᵒᵖ} (φ : T ⟶ T')
+    (c : (relativePicardPresheaf f).obj T)
+    (hc : c ∈ (relativePicardDegreeZeroSubfunctor f).obj T) :
+    (relativePicardDegreeZeroFunctor f).map φ (relativePicardDegreeZeroFunctor.mk f c hc) =
+      relativePicardDegreeZeroFunctor.mk f ((relativePicardPresheaf f).map φ c)
+        ((relativePicardDegreeZeroSubfunctor f).map φ hc) := by
+  unfold relativePicardDegreeZeroFunctor relativePicardDegreeZeroFunctor.mk; rfl
+
 /-- The inclusion of the degree-zero Picard functor `Pic⁰_{X/S}` into the relative Picard
 presheaf `T ↦ Pic(X_T) / Pic(T)`, as a morphism of presheaves of commutative groups. -/
 def relativePicardDegreeZeroFunctorι :
