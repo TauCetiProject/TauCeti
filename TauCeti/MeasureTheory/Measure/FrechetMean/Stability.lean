@@ -8,13 +8,14 @@ module
 public import Mathlib.Topology.MetricSpace.Sequences
 public import TauCeti.MeasureTheory.Measure.FrechetMean.Basic
 public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Basic
+public import TauCeti.Topology.Instances.ENNReal
 
 /-!
 # Stability of Fréchet barycenters under Wasserstein convergence
 
-The `p`-Fréchet radius `R_p(μ, x) = ‖d(x, ·)‖_{Lᵖ(μ)}` of a law `μ` on an extended pseudometric
-space `X` depends `1`-Lipschitz continuously on `μ` for the `p`-Wasserstein distance on laws on
-`X`:
+Throughout, the exponent satisfies `1 ≤ p ≤ ∞`. The `p`-Fréchet radius
+`R_p(μ, x) = ‖d(x, ·)‖_{Lᵖ(μ)}` of a law `μ` on an extended pseudometric space `X` depends
+`1`-Lipschitz continuously on `μ` for the `p`-Wasserstein distance on laws on `X`:
 
 `R_p(μ, x) ≤ R_p(ν, x) + W_p(μ, ν)` and `R_p(ν, x) ≤ R_p(μ, x) + W_p(μ, ν)`.
 
@@ -72,16 +73,6 @@ universe u v
 
 variable {X : Type u} [PseudoEMetricSpace X] [MeasurableSpace X] [OpensMeasurableSpace X]
   {p : ℝ≥0∞}
-
-/-- In `ℝ≥0∞`, a family that is within `wᵢ` of a fixed value `b` from both sides converges to `b`
-when `wᵢ → 0`. -/
-private theorem tendsto_of_le_add_of_le_add {ι : Type*} {l : Filter ι} {a w : ι → ℝ≥0∞}
-    {b : ℝ≥0∞} (hw : Tendsto w l (𝓝 0)) (hle : ∀ᶠ i in l, a i ≤ b + w i)
-    (hge : ∀ᶠ i in l, b ≤ a i + w i) : Tendsto a l (𝓝 b) := by
-  refine tendsto_of_tendsto_of_tendsto_of_le_of_le' (g := fun i ↦ b - w i)
-    (h := fun i ↦ b + w i) ?_ ?_ (hge.mono fun i hi ↦ tsub_le_iff_right.2 hi) hle
-  · simpa using ENNReal.Tendsto.sub tendsto_const_nhds hw (Or.inr ENNReal.zero_ne_top)
-  · simpa using tendsto_const_nhds.add hw
 
 section Lipschitz
 
