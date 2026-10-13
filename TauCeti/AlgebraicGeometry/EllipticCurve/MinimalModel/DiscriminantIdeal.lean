@@ -9,6 +9,7 @@ public import Mathlib.RingTheory.DedekindDomain.Factorization
 public import TauCeti.AlgebraicGeometry.EllipticCurve.GlobalMinimalModel
 public import TauCeti.AlgebraicGeometry.EllipticCurve.MinimalModel.Valuation
 import TauCeti.AlgebraicGeometry.EllipticCurve.IntegralModel
+import TauCeti.AlgebraicGeometry.EllipticCurve.ShortWeierstrass
 import TauCeti.RingTheory.DedekindDomain.Factorization
 
 /-!
@@ -66,6 +67,8 @@ defect ideal they assemble into, and its class in `ClassGroup O` are not defined
   `WeierstrassCurve.isGlobalMinimal_iff_minimalDiscriminantIdeal_eq_span`: a globally minimal
   equation computes the ideal as `(Δ W)`, and among integral equations that identity holds only
   for the globally minimal ones.
+* `WeierstrassCurve.IsGlobalMinimal.dvd_six_of_pow_dvd`: a globally minimal equation admits no
+  integral rescaling of its short form beyond the factor `6`.
 
 ## References
 
@@ -294,6 +297,67 @@ theorem isGlobalMinimal_iff_minimalDiscriminantIdeal_eq_span {W : WeierstrassCur
     valuation_Δ_eq_exp_neg_localMinimalDiscriminantValuation O W v C hC,
     valuation_Δ_eq_exp_neg_count v hd, WithZero.exp_inj, neg_inj, Nat.cast_inj, ← h]
   exact count_minimalDiscriminantIdeal_eq_localMinimalDiscriminantValuation O W v
+
+/-- **A globally minimal equation admits no further integral rescaling**: if `u ^ 4 ∣ 27 c₄` and
+`u ^ 6 ∣ 54 c₆` for an integral model, then `u ∣ 6`. Otherwise the short equation
+`y² = x³ - (27 c₄ / u⁴) x - 54 c₆ / u⁶`, a model of the same curve, would be integral with
+discriminant `6¹² Δ / u¹²`, which the minimal discriminant `(Δ)` must divide. In residue
+characteristic `2` or `3` the conclusion holds trivially, as `6 = 0` there. -/
+theorem IsGlobalMinimal.dvd_six_of_pow_dvd {W : WeierstrassCurve K} [W.IsElliptic]
+    (h : IsGlobalMinimal O W) {W₀ : WeierstrassCurve O} (hW₀ : W₀.baseChange K = W) {u : O}
+    (h₄ : u ^ 4 ∣ 27 * W₀.c₄) (h₆ : u ^ 6 ∣ 54 * W₀.c₆) : u ∣ 6 := by
+  obtain ⟨A, hA⟩ := h₄
+  obtain ⟨B, hB⟩ := h₆
+  rcases eq_or_ne (6 : O) 0 with h6 | h6
+  · rw [h6]
+    exact dvd_zero u
+  have h2 : (2 : K) ≠ 0 := fun h0 ↦ h6 <| IsFractionRing.injective O K <| by
+    rw [map_ofNat, map_zero, show (6 : K) = 2 * 3 by norm_num, h0, zero_mul]
+  have h3 : (3 : K) ≠ 0 := fun h0 ↦ h6 <| IsFractionRing.injective O K <| by
+    rw [map_ofNat, map_zero, show (6 : K) = 3 * 2 by norm_num, h0, zero_mul]
+  let := invertibleOfNonzero h2
+  let := invertibleOfNonzero h3
+  have hΔ : algebraMap O K W₀.Δ = W.Δ := by rw [← hW₀, baseChange, map_Δ]
+  have hΔ₀ : W₀.Δ ≠ 0 := fun h0 ↦ W.isUnit_Δ.ne_zero (by rw [← hΔ, h0, map_zero])
+  -- the rescaled short equation `y² = x³ - A x - B` over `O`, with `u¹² Δ' = 6¹² Δ`
+  set W' : WeierstrassCurve O := shortCurve (-A) (-B)
+  have key : u ^ 12 * W'.Δ = 6 ^ 12 * W₀.Δ := by
+    have := W₀.c_relation
+    simp only [W', Δ_of_isShortNF, shortCurve_a₄, shortCurve_a₆]
+    linear_combination (-64 * ((u ^ 4 * A) ^ 2 + u ^ 4 * A * (27 * W₀.c₄) + (27 * W₀.c₄) ^ 2)) * hA
+      + 432 * (54 * W₀.c₆ + u ^ 6 * B) * hB - 1259712 * this
+  have hu : u ≠ 0 := by
+    rintro rfl
+    exact pow_ne_zero 12 h6 (by simpa [hΔ₀] using key.symm)
+  -- `W'` is the transform of `W` by the scaling `u / 6` of its canonical short equation, so the
+  -- minimal discriminant `(Δ W₀)` divides `(Δ W')`
+  have hdvd : W₀.Δ ∣ W'.Δ := by
+    have huK : algebraMap O K u ≠ 0 := (map_ne_zero_iff _ (IsFractionRing.injective O K)).2 hu
+    let w : Kˣ := Units.mk0 (algebraMap O K u / 6) (div_ne_zero huK (by
+      rw [show (6 : K) = 2 * 3 by norm_num]; exact mul_ne_zero h2 h3))
+    have hc₄ : algebraMap O K W₀.c₄ = W.c₄ := by rw [← hW₀, baseChange, map_c₄]
+    have hc₆ : algebraMap O K W₀.c₆ = W.c₆ := by rw [← hW₀, baseChange, map_c₆]
+    have hA' := congrArg (algebraMap O K) hA
+    have hB' := congrArg (algebraMap O K) hB
+    simp only [map_mul, map_pow, map_ofNat, hc₄, hc₆] at hA' hB'
+    have h48 : (48 : K) ≠ 0 := by
+      rw [show (48 : K) = 2 ^ 4 * 3 by norm_num]; exact mul_ne_zero (pow_ne_zero _ h2) h3
+    have h864 : (864 : K) ≠ 0 := by
+      rw [show (864 : K) = 2 ^ 5 * 3 ^ 3 by norm_num]
+      exact mul_ne_zero (pow_ne_zero _ h2) (pow_ne_zero _ h3)
+    have hC : ((⟨w, 0, 0, 0⟩ : VariableChange K) *
+        (⟨1, W.b₂ / 12, W.a₁ / 2, W.a₃ / 2⟩ : VariableChange K)⁻¹) • W = W'.baseChange K := by
+      rw [mul_smul, inv_smul_eq_iff.2 (smul_ofCInvariants W).symm, ofCInvariants_eq_shortCurve,
+        smul_shortCurve, baseChange_shortCurve]
+      congr 1 <;> simp only [w, Units.val_inv_eq_inv_val, Units.val_mk0, map_neg] <;> field_simp
+      · linear_combination (-48 : K) * hA'
+      · linear_combination (-864 : K) * hB'
+    have := minimalDiscriminantIdeal_dvd_span_of_smul_eq_baseChange hC
+    rwa [minimalDiscriminantIdeal_eq_span_of_isGlobalMinimal h hΔ,
+      Ideal.span_singleton_dvd_span_singleton_iff_dvd] at this
+  obtain ⟨k, hk⟩ := hdvd
+  rw [← IsIntegrallyClosed.pow_dvd_pow_iff (by norm_num : 12 ≠ 0)]
+  exact ⟨k, mul_left_cancel₀ hΔ₀ (by linear_combination -key + u ^ 12 * hk)⟩
 
 end WeierstrassCurve
 

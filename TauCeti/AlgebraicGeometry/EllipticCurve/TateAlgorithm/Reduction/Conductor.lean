@@ -57,6 +57,12 @@ Like the minimal discriminant ideal, `𝔑` depends only on the `K`-isomorphism 
   when `𝔑` is squarefree, equivalently when `𝔑` is the radical of the minimal discriminant ideal.
 * `WeierstrassCurve.one_lt_absNorm_algorithmicConductor_iff`: over `ℚ`, the norm of `𝔑` exceeds `1`
   exactly when `W` has bad reduction at some prime.
+* `WeierstrassCurve.pow_dvd_absNorm_algorithmicConductor_iff`: over `ℚ`, the exponent of `p` in the
+  norm of `𝔑` is the algorithmic Ogg exponent at `(p)`.
+* `WeierstrassCurve.IsGlobalMinimal.dvd_absNorm_algorithmicConductor_iff` and
+  `WeierstrassCurve.IsGlobalMinimal.sq_dvd_absNorm_algorithmicConductor_iff`: over `ℚ`, a prime `p`
+  divides the norm of `𝔑` exactly when it divides the discriminant of a globally minimal integral
+  equation, and `p²` does exactly when `p` also divides its `c₄`.
 
 ## References
 
@@ -226,6 +232,54 @@ theorem one_lt_absNorm_algorithmicConductor_iff :
   rw [← not_iff_not, not_exists, not_lt, Nat.le_one_iff_eq_zero_or_eq_one, or_iff_right h0,
     Ideal.absNorm_eq_one_iff, algorithmicConductor_eq_top_iff]
   simp only [not_not]
+
+variable {E}
+
+/-- **The local exponents of the algorithmic conductor over `ℚ` are `p`-adic valuations of its
+norm**: for the height-one prime `v = (p)` of `ℤ`, `p ^ n` divides `N = |𝔑|` exactly when
+`n ≤ f_p`. -/
+theorem pow_dvd_absNorm_algorithmicConductor_iff {p : ℕ} {v : HeightOneSpectrum ℤ}
+    (hv : v.asIdeal = Ideal.span {(p : ℤ)}) (n : ℕ) :
+    p ^ n ∣ Ideal.absNorm (algorithmicConductor ℤ E) ↔
+      n ≤ E.algorithmicOggExponent (Localization.AtPrime v.asIdeal) := by
+  rw [← pow_dvd_algorithmicConductor_iff E v n, hv, Ideal.span_singleton_pow,
+    ← Int.natCast_dvd_natCast, Nat.cast_pow, ← Ideal.span_singleton_dvd_span_singleton_iff_dvd,
+    Int.ideal_span_absNorm_eq_self]
+
+/-- **A prime divides the conductor of a globally minimal equation over `ℚ` exactly when it
+divides the discriminant** of its integral model, that is, when the curve has bad reduction
+there. -/
+theorem IsGlobalMinimal.dvd_absNorm_algorithmicConductor_iff (h : IsGlobalMinimal ℤ E)
+    {W₀ : WeierstrassCurve ℤ} (hW₀ : W₀.baseChange ℚ = E) {p : ℕ} (hp : p.Prime) :
+    p ∣ Ideal.absNorm (algorithmicConductor ℤ E) ↔ (p : ℤ) ∣ W₀.Δ := by
+  obtain ⟨v, hv⟩ : ∃ v : HeightOneSpectrum ℤ, v.asIdeal = Ideal.span {(p : ℤ)} :=
+    ⟨⟨_, (Ideal.span_singleton_prime (by exact_mod_cast hp.ne_zero)).2
+      (Nat.prime_iff_prime_int.1 hp), by simpa using hp.ne_zero⟩, rfl⟩
+  have hΔ : algebraMap ℤ ℚ W₀.Δ = E.Δ := by rw [← hW₀, baseChange, map_Δ]
+  have h₁ := pow_dvd_absNorm_algorithmicConductor_iff (E := E) hv 1
+  rw [pow_one] at h₁
+  rw [h₁, Nat.one_le_iff_ne_zero, ne_eq, algorithmicOggExponent_eq_zero_iff,
+    ← dvd_minimalDiscriminantIdeal_iff, minimalDiscriminantIdeal_eq_span_of_isGlobalMinimal h hΔ,
+    hv, Ideal.span_singleton_dvd_span_singleton_iff_dvd]
+
+/-- **The square of a prime divides the conductor of a globally minimal equation over `ℚ`
+exactly when the prime divides both the discriminant and `c₄`** of its integral model, that is,
+when the curve has additive reduction there. -/
+theorem IsGlobalMinimal.sq_dvd_absNorm_algorithmicConductor_iff (h : IsGlobalMinimal ℤ E)
+    {W₀ : WeierstrassCurve ℤ} (hW₀ : W₀.baseChange ℚ = E) {p : ℕ} (hp : p.Prime) :
+    p ^ 2 ∣ Ideal.absNorm (algorithmicConductor ℤ E) ↔ (p : ℤ) ∣ W₀.Δ ∧ (p : ℤ) ∣ W₀.c₄ := by
+  obtain ⟨v, hv⟩ : ∃ v : HeightOneSpectrum ℤ, v.asIdeal = Ideal.span {(p : ℤ)} :=
+    ⟨⟨_, (Ideal.span_singleton_prime (by exact_mod_cast hp.ne_zero)).2
+      (Nat.prime_iff_prime_int.1 hp), by simpa using hp.ne_zero⟩, rfl⟩
+  have hΔ : algebraMap ℤ ℚ W₀.Δ = E.Δ := by rw [← hW₀, baseChange, map_Δ]
+  have hc₄ : algebraMap ℤ ℚ W₀.c₄ = E.c₄ := by rw [← hW₀, baseChange, map_c₄]
+  have := h.isMinimal v
+  obtain ⟨C, hC⟩ := E.exists_smul_eq_minimal (Localization.AtPrime v.asIdeal)
+  rw [pow_dvd_absNorm_algorithmicConductor_iff hv, two_le_algorithmicOggExponent_iff,
+    hasAdditiveReduction_iff_of_isMinimal_smul _ C hC, hasAdditiveReduction_iff,
+    valuation_maximalIdeal_localizationAtPrime, valuation_maximalIdeal_localizationAtPrime,
+    ← hΔ, ← hc₄, valuation_lt_one_iff_mem, valuation_lt_one_iff_mem]
+  simp only [this, true_and, hv, Ideal.mem_span_singleton]
 
 end Rat
 
