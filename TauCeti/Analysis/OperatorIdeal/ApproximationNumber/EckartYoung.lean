@@ -27,6 +27,12 @@ Conversely `T` stretches every vector of the `(n + 1)`-dimensional span of the `
 by at least `σₙ`, so `σₙ ≤ aₙ(T)` by the coercive-subspace bound
 `ContinuousLinearMap.le_singularValue_of_lt_rank`.
 
+The same right singular vectors show that a finite-dimensional source space has the converse
+min–max localization property `TauCeti.HasMinMaxLowerBound`, whatever the inner product space
+receiving the map: corestricting `T` to its finite-dimensional range does not decrease `aₙ(T)`.
+When `aₙ(T) > 0` this forces `n < dim E` (the `n`-th singular value vanishes beyond the dimension),
+so the corestriction has `n + 1` right singular vectors and is `aₙ(T)`-coercive on their span.
+
 Two consequences are recorded for linear maps: the operator norm is the largest singular value,
 and singular values are `1`-Lipschitz in the operator norm (Weyl's perturbation bound for singular
 values), transferred from the corresponding facts `a₀(T) = ‖T‖` and `|aₙ(S) - aₙ(T)| ≤ ‖S - T‖`.
@@ -35,6 +41,8 @@ values), transferred from the corresponding facts `a₀(T) = ‖T‖` and `|aₙ
 
 * `ContinuousLinearMap.singularValue_eq_linearMap_singularValues`: **Eckart–Young**,
   `aₙ(T) = σₙ(T)` in finite dimension.
+* `TauCeti.HasMinMaxLowerBound.of_finiteDimensional`: a finite-dimensional inner product space
+  has the converse min–max localization property towards every inner product space.
 * `LinearMap.norm_toContinuousLinearMap_eq_singularValues_zero`: `‖A‖ = σ₀(A)`.
 * `LinearMap.abs_singularValues_sub_singularValues_le`: `|σₙ(A) - σₙ(B)| ≤ ‖A - B‖`.
 
@@ -69,16 +77,12 @@ theorem singularValue_eq_linearMap_singularValues (T : E →L[𝕜] F) (n : ℕ)
   refine le_antisymm ?_ ?_
   · -- Upper bound: `T` on the orthogonal complement of the first `n` right singular vectors.
     set V := v.spanIndices ↑({i | (i : ℕ) < n} : Finset (Fin (finrank 𝕜 E)))
-    have hV : Module.rank 𝕜 V ≤ n := by
-      rw [← finrank_eq_rank, v.finrank_spanIndices, Fin.card_filter_val_lt]
-      exact_mod_cast min_le_right _ _
-    refine (NNReal.coe_le_coe.mpr (T.singularValue_le_nnnorm_comp_orthogonal hV)).trans ?_
+    refine (NNReal.coe_le_coe.mpr
+      (T.singularValue_le_nnnorm_comp_orthogonal (v.rank_spanIndices_val_lt_le n))).trans ?_
     rw [coe_nnnorm]
-    refine opNorm_le_bound _ (A.singularValues_nonneg n) fun x ↦ ?_
-    have hx : (x : E) ∈ v.spanIndices {i | n ≤ (i : ℕ)} := by
-      refine v.spanIndices_mono (fun i hi ↦ ?_) ((v.orthogonal_spanIndices _).le x.2)
-      simpa using hi
-    simpa [A] using A.norm_apply_le_singularValues_mul_norm hx
+    exact T.norm_comp_orthogonal_spanIndices_le_of_adjoint_comp_self_eigenbasis v
+      (A.sq_singularValues_antitone.comp_monotone (Fin.valOrderEmb _).monotone)
+      A.adjoint_comp_self_rightSingularBasis n
   · -- Lower bound: `T` is `σₙ`-coercive on the span of the first `n + 1` right singular vectors.
     rcases lt_or_ge n (finrank 𝕜 E) with hn | hn
     · set V := v.spanIndices ↑({i | (i : ℕ) < n + 1} : Finset (Fin (finrank 𝕜 E)))
@@ -114,3 +118,41 @@ theorem abs_singularValues_sub_singularValues_le (A B : E →ₗ[𝕜] F) (n : �
       (LinearMap.toContinuousLinearMap A) (LinearMap.toContinuousLinearMap B) n
 
 end LinearMap
+
+namespace TauCeti
+
+variable {𝕜 E F : Type*} [RCLike 𝕜]
+  [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [FiniteDimensional 𝕜 E]
+  [NormedAddCommGroup F] [InnerProductSpace 𝕜 F]
+
+/-- **Converse min–max localization in finite dimension.** If `E` is a finite-dimensional inner
+product space, then for every bounded `T : E →L[𝕜] F` into an inner product space and every
+`0 ≤ r < aₙ(T)`, the map `T` is `s`-coercive with `r < s` on the span of `n + 1` linearly
+independent vectors: the first `n + 1` right singular vectors of the corestriction of `T` to its
+range. These exist because `0 ≤ r < aₙ(T)` makes `aₙ(T)` positive, which forces `n < dim E`. -/
+theorem HasMinMaxLowerBound.of_finiteDimensional : HasMinMaxLowerBound 𝕜 E F := by
+  refine hasMinMaxLowerBound_iff.mpr fun T n r hr0 hr ↦ ?_
+  -- Corestrict `T` to its finite-dimensional range, where Eckart–Young applies.
+  set W := LinearMap.range (T : E →ₗ[𝕜] F)
+  set T' : E →L[𝕜] W := T.codRestrict W fun x ↦ LinearMap.mem_range_self _ x
+  set A : E →ₗ[𝕜] W := (T' : E →ₗ[𝕜] W)
+  have hT : W.subtypeL.comp T' = T := rfl
+  have hle : (T.singularValue n : ℝ) ≤ A.singularValues n := by
+    rw [← T'.singularValue_eq_linearMap_singularValues, NNReal.coe_le_coe, ← hT]
+    exact (ContinuousLinearMap.singularValue_comp_le_left _ _ _).trans
+      (mul_le_of_le_one_left' (by exact_mod_cast W.norm_subtypeL_le))
+  have hn : n < finrank 𝕜 E := by
+    by_contra! hn
+    rw [A.singularValues_of_finrank_le hn] at hle
+    exact (hr0.trans_lt hr).not_ge hle
+  refine ⟨A.singularValues n, hr.trans_le hle,
+    fun j ↦ A.rightSingularBasis ⟨j, by omega⟩, ?_, fun x hx ↦ ?_⟩
+  · exact A.rightSingularBasis.orthonormal.linearIndependent.comp _
+      fun i j hij ↦ Fin.ext (by simpa using hij)
+  · have hx' : x ∈ A.rightSingularBasis.spanIndices {i | (i : ℕ) ≤ n} := by
+      refine Submodule.span_le.mpr ?_ hx
+      rintro _ ⟨j, rfl⟩
+      exact A.rightSingularBasis.mem_spanIndices_of_mem (Nat.lt_succ_iff.mp j.2)
+    exact A.singularValues_mul_norm_le_norm_apply hx'
+
+end TauCeti

@@ -8,7 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Dual.WeilPairing
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Hom.Torsion
 public import TauCeti.RingTheory.RootsOfUnity.ZMod
-import TauCeti.LinearAlgebra.Determinant
+import TauCeti.LinearAlgebra.Determinant.Basic
 
 /-!
 # The determinant of an endomorphism on torsion
@@ -22,17 +22,16 @@ Silverman III.8.6.
 
 This is how degrees become determinants of matrices over `ZMod N` in the Weil-pairing proof of the
 Hasse bound: once a basis of `E[ℓ]` is chosen, `LinearMap.toMatrix` turns the action of the
-pencil `r π - s` of the Frobenius `π`, for `s` not divisible by the characteristic (so that
-`r π - s` is separable), into a `2 × 2` matrix whose determinant is the degree of `r π - s`, as
-`TauCeti.Matrix.eq_quadratic_form_of_det_det_one_sub` requires.
+pencil `r π - s` of the Frobenius `π` into a `2 × 2` matrix whose determinant is the degree of
+`r π - s`, as `TauCeti.Matrix.eq_quadratic_form_of_det_det_one_sub` requires.
 
 ## Main results
 
 * `TauCeti.Isogeny.det_eq_of_weilPairing_eq_smul`: an endomorphism of `E[N]` scaling the Weil
   pairing by `d` has determinant `d`.
-* `TauCeti.Isogeny.Hom.det_torsionLinearMap_ofIsogeny`: the determinant of the action of a
+* `TauCeti.Isogeny.Hom.det_torsionLinearMap_ofIsogeny`: the determinant of the action of an
   isogeny on `E[N]` is its degree.
-* `TauCeti.Isogeny.Hom.det_torsionLinearMap`: the same for a nonzero morphism.
+* `TauCeti.Isogeny.Hom.det_torsionLinearMap`: the same for a morphism, the zero morphism included.
 
 ## References
 
@@ -48,7 +47,6 @@ open WeierstrassCurve.Affine
 variable {F : Type*} [Field F] [DecidableEq F] [IsSepClosed F]
   {W : WeierstrassCurve.Affine F} [W.IsElliptic] {N : ℕ} [NeZero N] (hN : (N : F) ≠ 0)
 
-include hN in
 /-- **An endomorphism of `E[N]` scaling the Weil pairing by `d` has determinant `d`**, over a
 separably closed field in which `N` is invertible. -/
 theorem det_eq_of_weilPairing_eq_smul
@@ -80,12 +78,15 @@ theorem det_torsionLinearMap_ofIsogeny (φ : Isogeny W W) :
       (Nat.cast_smul_eq_nsmul _ _ _).symm
 
 include hN in
-/-- The determinant of a nonzero morphism on `E[N]` is its degree modulo `N`,
-over a separably closed field in which `N` is invertible. -/
-theorem det_torsionLinearMap {f : Hom W W} (h : f ≠ 0) :
+/-- The determinant of a morphism on `E[N]` is its degree modulo `N`, over a separably closed field
+in which `N` is invertible. -/
+theorem det_torsionLinearMap (f : Hom W W) :
     LinearMap.det (f.torsionLinearMap N) = f.degree := by
-  simpa only [ofIsogeny_toIsogeny, ← degree_ofIsogeny] using
-    det_torsionLinearMap_ofIsogeny hN (toIsogeny h)
+  rcases eq_or_ne f 0 with rfl | h
+  · obtain ⟨b⟩ := WeierstrassCurve.nonempty_basis_torsionBy W N hN
+    rw [torsionLinearMap_zero, LinearMap.det_zero' b, degree_zero, Nat.cast_zero]
+  · simpa only [ofIsogeny_toIsogeny, ← degree_ofIsogeny] using
+      det_torsionLinearMap_ofIsogeny hN (toIsogeny h)
 
 end Hom
 

@@ -17,6 +17,8 @@ complex and `n ≥ 1`, two such morphisms are homotopic exactly when they are re
 (`SSet.KanComplex.π.group`): `mk p * mk q = mk pq` exactly when `p`, `pq` and `q` are faces of an
 `(n + 2)`-simplex as in `SSet.PtSimplex.MulStruct` (`SSet.KanComplex.π.mul_mk_eq_iff`).
 
+Functions on `π n X x` are defined by `SSet.KanComplex.π.lift` from functions on pointed simplices
+which agree on homotopic ones.
 A morphism `f : X ⟶ Y` sending `x` to `y` induces `SSet.KanComplex.π.map f : π n X x → π n Y y`,
 functorially, and a group homomorphism `SSet.KanComplex.π.mapHom f` between Kan complexes.
 
@@ -78,6 +80,18 @@ lemma one_def : (1 : π n X x) = mk .const := rfl
 /-- Homotopic pointed simplices have the same class. -/
 lemma mk_eq_mk_of_homotopy {p q : X.PtSimplex n x} (h : p.Homotopy q) : mk p = mk q :=
   h.eq
+
+/-- A function on pointed simplices which takes the same value on homotopic pointed simplices
+descends to `π n X x`. -/
+def lift {α : Sort*} (f : X.PtSimplex n x → α)
+    (hf : ∀ p q : X.PtSimplex n x, p.Homotopy q → f p = f q) : π n X x → α :=
+  Quot.lift f fun p q ⟨h⟩ => hf p q h
+
+@[simp]
+lemma lift_mk {α : Sort*} (f : X.PtSimplex n x → α)
+    (hf : ∀ p q : X.PtSimplex n x, p.Homotopy q → f p = f q) (p : X.PtSimplex n x) :
+    lift f hf (mk p) = f p :=
+  (rfl)
 
 section map
 

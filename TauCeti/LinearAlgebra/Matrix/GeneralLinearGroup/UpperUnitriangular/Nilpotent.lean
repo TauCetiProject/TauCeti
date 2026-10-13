@@ -21,8 +21,9 @@ gives the central-series estimate
 [U^r, U^s] ⊆ U^(r+s).
 ```
 
-The first term is all of `U_n(R)`, while the `n`-th term is trivial. Hence `U_n(R)` is
-nilpotent, and therefore solvable, over every ring.
+The first term is all of `U_n(R)`, while the `n`-th term is trivial. The `r`-th lower central
+subgroup lies in `U^(r+1)`, so `U_n(R)` has nilpotency class at most `n - 1` (with truncated
+subtraction when `n = 0`), and is therefore solvable, over every ring.
 
 ## Main declarations
 
@@ -32,17 +33,20 @@ nilpotent, and therefore solvable, over every ring.
   decreasing.
 * `TauCeti.UpperUnitriangularGroup.commutator_superdiagonalSubgroup_le`: the central-series
   estimate `[U^r, U^s] ≤ U^(r+s)`.
+* `TauCeti.UpperUnitriangularGroup.lowerCentralSeries_le_superdiagonalSubgroup`: the `r`-th
+  lower central subgroup lies in `U^(r+1)`.
 * `TauCeti.UpperUnitriangularGroup.instIsNilpotent`: upper-unitriangular matrix groups are
   nilpotent.
+* `TauCeti.UpperUnitriangularGroup.nilpotencyClass_le`: the nilpotency class is at most the
+  cardinality of the index type minus one.
 
 ## References
 
 * T. A. Springer, *Linear Algebraic Groups*, §2.4.
 * J. C. Jantzen, *Representations of Algebraic Groups*, I.2.
 
-This is the nilpotence input for Layer 5, "Lie--Kolchin; solvable groups", of the
-ReductiveGroups roadmap. Combined with the upper-unitriangular embedding characterization, it
-gives the implication from unipotence to solvability.
+Combined with the upper-unitriangular embedding characterization, this gives the implication
+from unipotence to solvability.
 -/
 
 public section
@@ -268,7 +272,9 @@ theorem commutator_superdiagonalSubgroup_le (r s : ℕ) :
       Matrix.GeneralLinearGroup (Fin n) R) : Matrix (Fin n) (Fin n) R)) - 1)
   exact heq.symm ▸ hright
 
-private theorem lowerCentralSeries_le_superdiagonalSubgroup (r : ℕ) :
+/-- The `r`-th lower central subgroup has zero entries on the first `r` superdiagonals.
+Mathlib numbers the lower central series starting with the whole group at `r = 0`. -/
+theorem lowerCentralSeries_le_superdiagonalSubgroup (r : ℕ) :
     (⊤ : Subgroup (upperUnitriangularGroup (Fin n) R)).lowerCentralSeries r ≤
       superdiagonalSubgroup (R := R) (n := n) (r + 1) := by
   induction r with
@@ -281,47 +287,14 @@ private theorem lowerCentralSeries_le_superdiagonalSubgroup (r : ℕ) :
       simpa only [superdiagonalSubgroup_one, Nat.succ_eq_add_one, add_assoc] using
         commutator_superdiagonalSubgroup_le (R := R) (n := n) (r + 1) 1
 
-private instance finIsNilpotent : Group.IsNilpotent (upperUnitriangularGroup (Fin n) R) := by
-  rw [Subgroup.nilpotent_iff_lowerCentralSeries]
-  refine ⟨n, le_antisymm ?_ bot_le⟩
-  refine (lowerCentralSeries_le_superdiagonalSubgroup (R := R) n).trans ?_
-  rw [superdiagonalSubgroup_eq_bot_of_le (R := R) (n := n) (Nat.le_add_right n 1)]
+private theorem lowerCentralSeries_pred_eq_bot :
+    (⊤ : Subgroup (upperUnitriangularGroup (Fin n) R)).lowerCentralSeries (n - 1) = ⊥ := by
+  apply le_antisymm _ bot_le
+  refine (lowerCentralSeries_le_superdiagonalSubgroup (R := R) (n - 1)).trans ?_
+  rw [superdiagonalSubgroup_eq_bot_of_le (R := R) (n := n) (by omega)]
 
-private theorem isUpperUnitriangular_reindexOrderIso
-    {m m' : Type*} [Fintype m] [Fintype m'] [LinearOrder m] [LinearOrder m']
-    (e : m ≃o m') (g : Matrix.GeneralLinearGroup m R)
-    (hg : ((g : Matrix.GeneralLinearGroup m R) : Matrix m m R).IsUpperUnitriangular) :
-    (((Units.mapEquiv (Matrix.reindexRingEquiv R e.toEquiv).toMulEquiv g :
-      Matrix.GeneralLinearGroup m' R)) : Matrix m' m' R).IsUpperUnitriangular := by
-  rw [Matrix.isUpperUnitriangular_def]
-  constructor
-  · intro i j hji
-    simp only [Units.coe_mapEquiv]
-    exact hg.isUpperTriangular (e.symm.lt_iff_lt.2 hji)
-  · intro i
-    simp only [Units.coe_mapEquiv]
-    exact hg.apply_diag (e.symm i)
-
-/-- Order-preserving reindexing identifies the corresponding upper-unitriangular groups. -/
-private noncomputable def reindexOrderIsoMulEquiv
-    {m m' : Type*} [Fintype m] [Fintype m'] [LinearOrder m] [LinearOrder m']
-    (e : m ≃o m') : upperUnitriangularGroup m R ≃* upperUnitriangularGroup m' R := by
-  let reindexEquiv : Matrix.GeneralLinearGroup m R ≃* Matrix.GeneralLinearGroup m' R :=
-    Units.mapEquiv (Matrix.reindexRingEquiv R e.toEquiv).toMulEquiv
-  let inverseReindexEquiv : Matrix.GeneralLinearGroup m' R ≃* Matrix.GeneralLinearGroup m R :=
-    Units.mapEquiv (Matrix.reindexRingEquiv R e.symm.toEquiv).toMulEquiv
-  refine (MulEquiv.subgroupMap reindexEquiv (upperUnitriangularGroup m R)).trans
-    (MulEquiv.subgroupCongr ?_)
-  ext g
-  constructor
-  · rintro ⟨h, hh, rfl⟩
-    apply mem_iff.mpr
-    exact isUpperUnitriangular_reindexOrderIso (R := R) e h (mem_iff.mp hh)
-  · intro hg
-    refine ⟨inverseReindexEquiv g, ?_, ?_⟩
-    · exact mem_iff.mpr
-        (isUpperUnitriangular_reindexOrderIso (R := R) e.symm g (mem_iff.mp hg))
-    · exact inverseReindexEquiv.symm_apply_apply g
+private instance finIsNilpotent : Group.IsNilpotent (upperUnitriangularGroup (Fin n) R) :=
+  Subgroup.nilpotent_iff_lowerCentralSeries.mpr ⟨n - 1, lowerCentralSeries_pred_eq_bot⟩
 
 /-- Upper-unitriangular matrices over every finite linearly ordered index type form a nilpotent
 group over every ring. -/
@@ -330,6 +303,19 @@ instance instIsNilpotent {m : Type*} [Fintype m] [LinearOrder m] :
   let e : Fin (Fintype.card m) ≃o m := Fintype.orderIsoFinOfCardEq m rfl
   let _ : Group.IsNilpotent (upperUnitriangularGroup (Fin (Fintype.card m)) R) :=
     finIsNilpotent
-  exact Group.nilpotent_of_mulEquiv (reindexOrderIsoMulEquiv (R := R) e)
+  exact Group.nilpotent_of_mulEquiv (e.reindexUpperUnitriangularGroup R)
+
+/-- The nilpotency class of an upper-unitriangular matrix group is at most the size of its
+index type minus one. The bound is zero for an empty or singleton index type. -/
+theorem nilpotencyClass_le {m : Type*} [Fintype m] [LinearOrder m] :
+    Group.nilpotencyClass (upperUnitriangularGroup m R) ≤ Fintype.card m - 1 := by
+  let e := (Fintype.orderIsoFinOfCardEq m rfl).reindexUpperUnitriangularGroup R
+  calc
+    Group.nilpotencyClass (upperUnitriangularGroup m R) ≤
+        Group.nilpotencyClass (upperUnitriangularGroup (Fin (Fintype.card m)) R) :=
+      Group.nilpotencyClass_le_of_surjective e.toMonoidHom e.surjective
+    _ ≤ Fintype.card m - 1 :=
+      Subgroup.lowerCentralSeries_eq_bot_iff_nilpotencyClass_le.mp
+        lowerCentralSeries_pred_eq_bot
 
 end TauCeti.UpperUnitriangularGroup

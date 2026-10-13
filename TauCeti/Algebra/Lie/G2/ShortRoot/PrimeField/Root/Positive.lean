@@ -21,8 +21,9 @@ roots.
 The height functional is `3a + 5b` in fundamental-weight coordinates. On the seven ordered
 weights of the short-root module its values are `3, 2, 1, 0, -1, -2, -3`. Upper triangularity
 therefore detects positivity without a classification of all adjoint weights. The results do
-not assert that the two roots exhaust the intrinsic simple roots, or that the positive subgroup
-is a Borel. No identification with an independently pinned group scheme is made.
+not assert that the two roots exhaust the intrinsic simple roots, which is proved in
+`TauCeti.Algebra.Lie.G2.ShortRoot.PrimeField.Root.Simple`, or that the positive subgroup is a
+Borel. No identification with an independently pinned group scheme is made.
 
 ## Main results
 

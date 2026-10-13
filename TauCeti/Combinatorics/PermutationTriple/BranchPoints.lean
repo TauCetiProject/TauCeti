@@ -567,6 +567,7 @@ theorem isConj_component_reindexBranchPoints (ρ : Perm (Fin 3)) (i : Fin 3) :
       hneg]
 
 /-- Permuting branch points leaves the unordered full cycle partitions unchanged. -/
+-- Apply invariance before `unorderedCycleData_def` expands the cycle partitions.
 @[simp 1100]
 theorem unorderedCycleData_reindexBranchPoints (ρ : Perm (Fin 3)) :
     (t.reindexBranchPoints ρ).unorderedCycleData = t.unorderedCycleData := by

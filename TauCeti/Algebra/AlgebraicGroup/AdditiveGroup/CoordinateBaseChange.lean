@@ -72,7 +72,6 @@ theorem connectedSpace_primeSpectrum_baseChange_coordinateHopfAlgebra
     ConnectedSpace (PrimeSpectrum
       (CommHopfAlgCat.baseChange (K := K) (coordinateHopfAlgebra k))) := by
   let e := coordinateHopfAlgebraBaseChangeIso k K
-  have := connectedSpace_primeSpectrum_coordinateHopfAlgebra K
   exact connectedSpace_primeSpectrum_of_injective e.hom.hom.toAlgHom.toRingHom
     (ConcreteCategory.bijective_of_isIso e.hom).1
 
