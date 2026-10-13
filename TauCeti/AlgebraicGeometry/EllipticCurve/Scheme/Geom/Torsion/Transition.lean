@@ -35,28 +35,6 @@ namespace TauCeti.AlgebraicGeometry.EllipticCurveGeom
 
 variable {S : Scheme.{u}} (E : EllipticCurveGeom S) (m n : ℤ)
 
-/-- On schemes, the torsion transition is the restriction of multiplication by `m`. -/
-@[reassoc (attr := simp)]
-theorem torsionMulBy_left_torsionι :
-    (E.torsionMulBy m n).left ≫ (E.torsionι n).left =
-      (E.torsionι (m * n)).left ≫ (E.mulBy m).left :=
-  congrArg Over.Hom.left (E.torsionMulBy_torsionι m n)
-
-/-- On schemes, inclusions between torsion levels preserve the point of `E`. -/
-@[reassoc (attr := simp)]
-theorem torsionInclusion_left_torsionι :
-    (E.torsionInclusion m n).left ≫ (E.torsionι (m * n)).left = (E.torsionι m).left :=
-  congrArg Over.Hom.left (E.torsionInclusion_torsionι m n)
-
-/-- The inclusion between torsion levels is a closed immersion. -/
-instance isClosedImmersion_torsionInclusion_left :
-    IsClosedImmersion (E.torsionInclusion m n).left := by
-  have : IsClosedImmersion
-      ((E.torsionInclusion m n).left ≫ (E.torsionι (m * n)).left) := by
-    rw [← Over.comp_left, torsionInclusion_torsionι]
-    infer_instance
-  exact .of_comp _ (E.torsionι (m * n)).left
-
 /-- For `m ≠ 0`, the torsion transition is finite. -/
 theorem isFinite_torsionMulBy_left (hm : m ≠ 0) :
     IsFinite (E.torsionMulBy m n).left :=
@@ -65,11 +43,6 @@ theorem isFinite_torsionMulBy_left (hm : m ≠ 0) :
 /-- For `m ≠ 0`, the torsion transition is flat. -/
 theorem flat_torsionMulBy_left (hm : m ≠ 0) : Flat (E.torsionMulBy m n).left :=
   MorphismProperty.of_isPullback (E.isPullback_torsionMulBy m n) (E.flat_mulBy_left hm)
-
-/-- The torsion transition is locally of finite presentation, even when `m = 0`. -/
-instance locallyOfFinitePresentation_torsionMulBy_left :
-    LocallyOfFinitePresentation (E.torsionMulBy m n).left :=
-  MorphismProperty.of_isPullback (E.isPullback_torsionMulBy m n) inferInstance
 
 /-- For `m ≠ 0`, the torsion transition is surjective, without a characteristic restriction. -/
 theorem surjective_torsionMulBy_left (hm : m ≠ 0) :
@@ -84,31 +57,5 @@ theorem finrank_torsionMulBy_left (hm : m ≠ 0) (x : (E.torsion n).X.left) :
   have := E.flat_mulBy_left hm
   rw [Scheme.Hom.finrank_of_isPullback _ _ _ _ (E.isPullback_torsionMulBy m n),
     E.finrank_mulBy_left hm]
-
-section BaseChange
-
-variable {S' : Scheme.{u}} {E} {E' : EllipticCurveGeom S'} {g : E'.carrier ⟶ E.carrier}
-  {f : S' ⟶ S} (hg : IsPullback g E'.structureMap E.structureMap f)
-  (h0 : E'.zero ≫ g = f ≫ E.zero)
-
-/-- Inclusions between torsion levels commute with arbitrary base change. -/
-@[reassoc (attr := simp)]
-theorem torsionInclusion_left_comp_torsionMap :
-    (E'.torsionInclusion m n).left ≫ torsionMap (m * n) hg h0 =
-      torsionMap m hg h0 ≫ (E.torsionInclusion m n).left := by
-  apply (E.isPullback_torsion (m * n)).hom_ext
-  · simp
-  · simp [Over.w]
-
-/-- Torsion transitions commute with arbitrary base change. -/
-@[reassoc (attr := simp)]
-theorem torsionMulBy_left_comp_torsionMap :
-    (E'.torsionMulBy m n).left ≫ torsionMap n hg h0 =
-      torsionMap (m * n) hg h0 ≫ (E.torsionMulBy m n).left := by
-  apply (E.isPullback_torsion n).hom_ext
-  · simp [mulBy_left_comp_of_isPullback hg h0]
-  · simp [Over.w]
-
-end BaseChange
 
 end TauCeti.AlgebraicGeometry.EllipticCurveGeom

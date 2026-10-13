@@ -345,6 +345,13 @@ theorem torsionMulBy_torsionι :
     rw [comp_mulBy]
     exact GroupScheme.torsionMulBy_torsionι E.toCommGrp m n
 
+/-- On schemes, the torsion transition is the restriction of multiplication by `m`. -/
+@[reassoc (attr := simp)]
+theorem torsionMulBy_left_torsionι :
+    (E.torsionMulBy m n).left ≫ (E.torsionι n).left =
+      (E.torsionι (m * n)).left ≫ (E.mulBy m).left :=
+  congrArg Over.Hom.left (E.torsionMulBy_torsionι m n)
+
 /-- The torsion transition is a homomorphism of group schemes. -/
 instance isMonHom_torsionMulBy : IsMonHom (E.torsionMulBy m n) :=
   GroupScheme.isMonHom_torsionMulBy E.toCommGrp m n
@@ -373,6 +380,12 @@ theorem torsionInclusion_torsionι :
     E.torsionInclusion m n ≫ E.torsionι (m * n) = E.torsionι m :=
   GroupScheme.torsionInclusion_torsionι E.toCommGrp m n
 
+/-- On schemes, inclusions between torsion levels preserve the point of `E`. -/
+@[reassoc (attr := simp)]
+theorem torsionInclusion_left_torsionι :
+    (E.torsionInclusion m n).left ≫ (E.torsionι (m * n)).left = (E.torsionι m).left :=
+  congrArg Over.Hom.left (E.torsionInclusion_torsionι m n)
+
 /-- The inclusion between torsion levels is a monomorphism. -/
 instance mono_torsionInclusion : Mono (E.torsionInclusion m n) :=
   GroupScheme.mono_torsionInclusion E.toCommGrp m n
@@ -380,6 +393,15 @@ instance mono_torsionInclusion : Mono (E.torsionInclusion m n) :=
 /-- The inclusion between torsion levels is a homomorphism of group schemes. -/
 instance isMonHom_torsionInclusion : IsMonHom (E.torsionInclusion m n) :=
   GroupScheme.isMonHom_torsionInclusion E.toCommGrp m n
+
+/-- The inclusion between torsion levels is a closed immersion. -/
+instance isClosedImmersion_torsionInclusion_left :
+    IsClosedImmersion (E.torsionInclusion m n).left := by
+  have : IsClosedImmersion
+      ((E.torsionInclusion m n).left ≫ (E.torsionι (m * n)).left) := by
+    rw [← Over.comp_left, torsionInclusion_torsionι]
+    infer_instance
+  exact .of_comp _ (E.torsionι (m * n)).left
 
 /-- Inclusion into the same torsion level is the identity, after identifying `m * 1` with `m`. -/
 @[simp]
@@ -408,12 +430,43 @@ theorem isPullback_torsionMulBy :
   simpa [torsion, torsionι, torsionMulBy, ← mulBy_eq_zpow] using
     (GroupScheme.isPullback_torsionMulBy E.toCommGrp m n).map (Over.forget S)
 
+/-- The torsion transition is locally of finite presentation, even when `m = 0`. -/
+instance locallyOfFinitePresentation_torsionMulBy_left :
+    LocallyOfFinitePresentation (E.torsionMulBy m n).left :=
+  MorphismProperty.of_isPullback (E.isPullback_torsionMulBy m n) inferInstance
+
 /-- The kernel of `E[mn] ⟶ E[n]` is precisely the included `E[m]`, scheme-theoretically. -/
 theorem isPullback_torsionInclusion :
     IsPullback (E.torsionInclusion m n).left (E.torsion m).X.hom
       (E.torsionMulBy m n).left (1 : Over.mk (𝟙 S) ⟶ (E.torsion n).X).left := by
   convert! (GroupScheme.isPullback_torsionInclusion E.toCommGrp m n).map (Over.forget S)
     using 1
+
+section BaseChange
+
+variable {S' : Scheme.{u}} {E} {E' : EllipticCurveGeom S'} {g : E'.carrier ⟶ E.carrier}
+  {f : S' ⟶ S} (hg : IsPullback g E'.structureMap E.structureMap f)
+  (h0 : E'.zero ≫ g = f ≫ E.zero)
+
+/-- Inclusions between torsion levels commute with arbitrary base change. -/
+@[reassoc (attr := simp)]
+theorem torsionInclusion_left_comp_torsionMap :
+    (E'.torsionInclusion m n).left ≫ torsionMap (m * n) hg h0 =
+      torsionMap m hg h0 ≫ (E.torsionInclusion m n).left := by
+  apply (E.isPullback_torsion (m * n)).hom_ext
+  · simp
+  · simp [Over.w]
+
+/-- Torsion transitions commute with arbitrary base change. -/
+@[reassoc (attr := simp)]
+theorem torsionMulBy_left_comp_torsionMap :
+    (E'.torsionMulBy m n).left ≫ torsionMap n hg h0 =
+      torsionMap (m * n) hg h0 ≫ (E.torsionMulBy m n).left := by
+  apply (E.isPullback_torsion n).hom_ext
+  · simp [mulBy_left_comp_of_isPullback hg h0]
+  · simp [Over.w]
+
+end BaseChange
 
 end Transitions
 

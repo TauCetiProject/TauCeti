@@ -280,9 +280,8 @@ theorem torsionMulBy_comp (l : ℤ) :
       eqToHom (congrArg (fun k ↦ (torsion G k).X) (mul_assoc l m n).symm) ≫
         torsionMulBy G (l * m) n := by
   apply torsion_hom_ext G
-  rw [Category.assoc, torsionMulBy_torsionι, GrpObj.comp_zpow, torsionMulBy_torsionι,
-    ← zpow_mul, Category.assoc, torsionMulBy_torsionι, GrpObj.comp_zpow,
-    eqToHom_torsionι G (mul_assoc l m n).symm]
+  simp only [Category.assoc, torsionMulBy_torsionι, GrpObj.comp_zpow,
+    eqToHom_torsionι G (mul_assoc l m n).symm, ← zpow_mul]
 
 end Transitions
 
