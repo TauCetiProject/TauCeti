@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PositiveDefinite.Kernel.Kolmogorov
+public import TauCeti.Analysis.PositiveDefinite.Kernel.Universal
 public import Mathlib.MeasureTheory.Measure.HasOuterApproxClosed
 public import Mathlib.Topology.ContinuousMap.Compact
 import Mathlib.MeasureTheory.Function.L2Space
@@ -30,7 +31,8 @@ a difference `μ - ν` of finite measures, so this is the energy of a signed mea
 positive-definite kernel. The mean embedding is defined for real kernels, whose Kolmogorov space is
 a real Hilbert space in which Bochner integrals are taken.
 
-A kernel is *universal* (`TauCeti.IsUniversalKernel`) when its continuous sections `k x` span a
+A kernel is *universal* (`TauCeti.IsUniversalKernel`, defined in
+`TauCeti.Analysis.PositiveDefinite.Kernel.Universal`) when its continuous sections `k x` span a
 dense subspace of `C(X, 𝕜)`. On a compact metrizable space the integrals of the sections against a
 finite Borel measure determine the measure, for any universal kernel. For a continuous universal
 positive-definite kernel the mean embedding is therefore injective on finite Borel measures, so the
@@ -45,8 +47,6 @@ Gibbs kernels `exp (-c / ε)` are required to be positive definite and universal
 ## Main definitions
 
 * `Matrix.PosSemidef.kernelMeanEmbedding`: the kernel mean embedding `∫ Φ dμ` of a measure.
-* `TauCeti.IsUniversalKernel`: the continuous sections of a kernel span a dense subspace of
-  `C(X, 𝕜)`.
 
 ## Main results
 
@@ -59,9 +59,6 @@ Gibbs kernels `exp (-c / ε)` are required to be positive definite and universal
   Borel measures with the same integrals of the sections of a universal kernel are equal.
 * `Matrix.PosSemidef.kernelMeanEmbedding_inj`: for a continuous universal positive-definite kernel
   on a compact metrizable space, the mean embedding separates finite Borel measures.
-* `TauCeti.isUniversalKernel_of_isUnit` and `Matrix.PosDef.isUniversalKernel`: on a finite
-  discrete space, kernels with invertible matrix, in particular positive-definite ones, are
-  universal.
 
 ## References
 
@@ -69,8 +66,6 @@ Gibbs kernels `exp (-c / ε)` are required to be positive definite and universal
   J. Mach. Learn. Res. 13 (2012), 723--773, Lemma 4 and Theorem 5.
 * B. K. Sriperumbudur, K. Fukumizu and G. R. G. Lanckriet, *Universality, characteristic kernels
   and RKHS embedding of measures*, J. Mach. Learn. Res. 12 (2011), 2389--2410.
-* I. Steinwart, *On the influence of the kernel on the consistency of support vector machines*,
-  J. Mach. Learn. Res. 2 (2001), 67--93, Definition 4.
 * J. Feydy, T. Séjourné, F.-X. Vialard, S. Amari, A. Trouvé and G. Peyré, *Interpolating between
   optimal transport and MMD using Sinkhorn divergences*, AISTATS 2019, §2 and Theorem 1.
 -/
@@ -85,17 +80,6 @@ open scoped InnerProductSpace ComplexOrder
 namespace TauCeti
 
 variable {𝕜 X : Type*} [RCLike 𝕜] [TopologicalSpace X]
-
-/-- A kernel `k : X → X → 𝕜` is *universal* when its continuous sections `k x` span a dense
-subspace of `C(X, 𝕜)`. On a compact space this says that every continuous function is a uniform
-limit of finite linear combinations `∑ i, c i • k (x i)` of sections, which is Steinwart's
-universality. -/
-def IsUniversalKernel (k : X → X → 𝕜) : Prop :=
-  Dense (Submodule.span 𝕜 {f : C(X, 𝕜) | ∃ x, ⇑f = k x} : Set C(X, 𝕜))
-
-theorem isUniversalKernel_def (k : X → X → 𝕜) :
-    IsUniversalKernel k ↔ Dense (Submodule.span 𝕜 {f : C(X, 𝕜) | ∃ x, ⇑f = k x} : Set C(X, 𝕜)) :=
-  Iff.rfl
 
 /-- **Universal kernels separate finite measures.** On a compact metrizable space, two finite
 Borel measures against which every section `k x` of a universal kernel has the same integral are
@@ -114,55 +98,20 @@ theorem IsUniversalKernel.ext_of_forall_integral_eq [CompactSpace X] [Measurable
       simpa only [hx] using h x
     | zero => simp
     | add f g _ _ hf hg =>
-      have hint (ρ : Measure X) [IsFiniteMeasure ρ] (f : C(X, 𝕜)) : Integrable f ρ :=
-        f.continuous.integrable_of_hasCompactSupport (.of_compactSpace _)
       simp only [ContinuousMap.coe_add, Pi.add_apply] at hf hg ⊢
-      rw [integral_add (hint μ f) (hint μ g), integral_add (hint ν f) (hint ν g), hf, hg]
+      rw [integral_add (f.integrable μ) (g.integrable μ),
+        integral_add (f.integrable ν) (g.integrable ν), hf, hg]
     | smul c f _ hf =>
       simp only [ContinuousMap.coe_smul, Pi.smul_apply, smul_eq_mul, integral_const_mul] at hf ⊢
       rw [hf]
-  have htop := Continuous.ext_on hk continuous_integral_continuousMap
-    continuous_integral_continuousMap hspan
+  have htop := Continuous.ext_on ((isUniversalKernel_def k).1 hk)
+    continuous_integral_continuousMap continuous_integral_continuousMap hspan
   refine ext_of_forall_integral_eq_of_IsFiniteMeasure fun f ↦ ?_
   have hf := congrFun htop ⟨fun x ↦ (f x : 𝕜), RCLike.continuous_ofReal.comp f.continuous⟩
   simp only [ContinuousMap.coe_mk, integral_ofReal] at hf
   exact_mod_cast hf
 
-open Matrix in
-/-- On a finite discrete space, a kernel whose matrix is invertible is universal: its sections are
-the rows of the matrix, which span every function. -/
-theorem isUniversalKernel_of_isUnit [Fintype X] [DecidableEq X] [DiscreteTopology X]
-    {k : X → X → 𝕜} (hk : IsUnit (Matrix.of k)) : IsUniversalKernel k := by
-  have htop : Submodule.span 𝕜 {f : C(X, 𝕜) | ∃ x, ⇑f = k x} = ⊤ := by
-    refine Submodule.eq_top_iff'.2 fun f ↦ ?_
-    -- `f` is the combination of the sections with coefficients `f ᵥ* k⁻¹`.
-    have hf : f = ∑ x, (⇑f ᵥ* (Matrix.of k)⁻¹) x •
-        (⟨k x, continuous_of_discreteTopology⟩ : C(X, 𝕜)) := by
-      ext y
-      have h := congrFun (show (⇑f ᵥ* (Matrix.of k)⁻¹) ᵥ* Matrix.of k = ⇑f by
-        rw [Matrix.vecMul_vecMul, Matrix.nonsing_inv_mul _ ((Matrix.isUnit_iff_isUnit_det _).1 hk),
-          Matrix.vecMul_one]) y
-      simpa [Matrix.vecMul, dotProduct] using h.symm
-    rw [hf]
-    exact Submodule.sum_mem _ fun x _ ↦ Submodule.smul_mem _ _ (Submodule.subset_span ⟨x, rfl⟩)
-  rw [isUniversalKernel_def, htop, Submodule.top_coe]
-  exact dense_univ
-
 end TauCeti
-
-namespace Matrix.PosDef
-
-variable {𝕜 X : Type*} [RCLike 𝕜] [TopologicalSpace X]
-
-/-- On a finite discrete space, a positive-definite kernel is universal. A positive-semidefinite
-kernel need not be: the constant kernel `1` on two points has only constant sections. -/
-theorem isUniversalKernel [Finite X] [DiscreteTopology X] {k : X → X → 𝕜}
-    (hk : Matrix.PosDef k) : TauCeti.IsUniversalKernel k := by
-  classical
-  have := Fintype.ofFinite X
-  exact TauCeti.isUniversalKernel_of_isUnit hk.isUnit
-
-end Matrix.PosDef
 
 namespace Matrix.PosSemidef
 
@@ -175,7 +124,7 @@ theorem integrable_kolmogorovFeature {𝕜 : Type*} [RCLike 𝕜] [TopologicalSp
     [OpensMeasurableSpace X] {k : X → X → 𝕜} (hk : Matrix.PosSemidef k)
     (hkc : Continuous (uncurry k)) (μ : Measure X) [IsFiniteMeasure μ] :
     Integrable hk.kolmogorovFeature μ :=
-  (hk.continuous_kolmogorovFeature hkc).integrable_of_hasCompactSupport (.of_compactSpace _)
+  ContinuousMap.integrable ⟨_, hk.continuous_kolmogorovFeature hkc⟩ μ
 
 variable {k : X → X → ℝ}
 
@@ -231,8 +180,9 @@ theorem inner_kernelMeanEmbedding (hk : Matrix.PosSemidef k) {μ ν : Measure X}
   exact integral_congr_ae (ae_of_all _ fun x ↦ hk.isHermitian.apply x y)
 
 /-- **The kernel energy of a difference of measures.** The squared distance of two kernel mean
-embeddings is the double integral of `k` against `(μ - ν) ⊗ (μ - ν)`, written out in its four
-terms; in particular this energy is nonnegative. -/
+embeddings is the double integral of `k` against `(μ - ν) ⊗ (μ - ν)`, written out as
+`∬ k dμ dμ - 2 ∬ k dμ dν + ∬ k dν dν`, the two cross terms being equal by symmetry of `k`; in
+particular this energy is nonnegative. -/
 theorem norm_kernelMeanEmbedding_sub_sq (hk : Matrix.PosSemidef k) {μ ν : Measure X}
     (hμ : Integrable hk.kolmogorovFeature μ) (hν : Integrable hk.kolmogorovFeature ν) :
     ‖hk.kernelMeanEmbedding μ - hk.kernelMeanEmbedding ν‖ ^ 2 =
