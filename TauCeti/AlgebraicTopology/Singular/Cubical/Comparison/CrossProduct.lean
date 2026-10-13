@@ -173,10 +173,15 @@ theorem singularAugment_cubicalCrossProductToSingular_gen (i : BidegreeIndex 0) 
     omega
   refine (singularAugment_cubicalToSingular (k := k) _ _).trans ?_
   rw [tensorGen_def]
-  have e := ι_cubicalCrossProduct_f_apply (R := k) (X := cubeModel.{u} 0) (Y := cubeModel.{u} 0) h
+  -- the cross product chain map on the summand `(0, 0)` is the cross product of chains
+  have e₀ := LinearMap.congr_fun (congrArg ModuleCat.Hom.hom
+    (ι_cubicalCrossProduct_f (R := k) (X := cubeModel.{u} 0) (Y := cubeModel.{u} 0) h))
+    (NormalizedCubicalChain.ofCube (cubeModel.{u} 0) k (upCube 0) ⊗ₜ[k]
+      NormalizedCubicalChain.ofCube (cubeModel.{u} 0) k (upCube 0))
+  have e := cubicalCrossProductSummand_apply k (cubeModel.{u} 0) (cubeModel.{u} 0) 0 0 0 h
     (NormalizedCubicalChain.ofCube (cubeModel.{u} 0) k (upCube 0))
     (NormalizedCubicalChain.ofCube (cubeModel.{u} 0) k (upCube 0))
-  refine (congrArg (cubicalAugment k _) e).trans ?_
+  refine (congrArg (cubicalAugment k _) (e₀.trans e)).trans ?_
   rw [NormalizedCubicalChain.crossProduct_ofCube]
   exact (congrArg (cubicalAugment k _) (NormalizedCubicalChain.cast_rfl k _)).trans
     (NormalizedCubicalChain.augment_ofCube k _)
