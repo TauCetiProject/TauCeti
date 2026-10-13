@@ -15,12 +15,11 @@ import TauCeti.Algebra.Lie.Symplectic.Killing
 /-!
 # Complete reducibility for symplectic groups in characteristic zero
 
-In characteristic zero, the Lie algebra of `Sp₂ₘ` has nondegenerate Killing form. Over an
-algebraic closure `K` of the base field, the tangent Lie algebra of the base-changed group is
-Mathlib's `LieAlgebra.Symplectic.sp (Fin m) K`, whose standard module is faithful, irreducible
-and trace-free, so its Killing form is nondegenerate; this descends to the base field. Since
-`Sp₂ₘ` is geometrically connected, Weyl's complete reducibility theorem for comodules then proves
-that every finite-dimensional representation of `Sp₂ₘ` is completely reducible.
+In characteristic zero, the Lie algebra of `Sp₂ₘ` has nondegenerate Killing form: its tangent Lie
+algebra is Mathlib's `LieAlgebra.Symplectic.sp (Fin m) k`, which has trivial radical
+(`TauCeti.hasTrivialRadical_sp`). Since `Sp₂ₘ` is geometrically connected, Weyl's complete
+reducibility theorem for comodules then proves that every finite-dimensional representation of
+`Sp₂ₘ` is completely reducible.
 
 This is a concrete case of, but does not prove, the general equivalence between reductivity and
 linear reductivity in characteristic zero.
@@ -54,12 +53,8 @@ variable (k : Type u) [Field k] [CharZero k]
 /-- The tangent Lie algebra of `Sp₂ₘ` has nondegenerate Killing form in characteristic zero. -/
 instance (m : ℕ) : LieAlgebra.IsKilling k
     (Derivation k (coordinateHopfAlgebra k m)
-      (Bialgebra.CounitAlgebra k (coordinateHopfAlgebra k m) k)) := by
-  let K := AlgebraicClosure k
-  refine (isKilling_lie_baseChange_iff (K := K)).1 ?_
-  exact LieAlgebra.isKilling_of_equiv
-    ((tangentBaseChangeLieEquiv (R := k) (K := K)).symm.trans
-      (tangentLieEquivSp (R := k) (B := K) m)).symm
+      (Bialgebra.CounitAlgebra k (coordinateHopfAlgebra k m) k)) :=
+  LieEquiv.isKilling (tangentLieEquivSp (R := k) (B := k) m).symm
 
 /-- **`Sp₂ₘ` is linearly reductive in characteristic zero.** Every finite-dimensional comodule
 over its coordinate Hopf algebra is completely reducible. -/
