@@ -168,11 +168,9 @@ theorem forall_mem_closure_smul_eq_self_iff [Group G] [MulSemiringAction G S]
     (hx : x ^ n = algebraMap R S a) (ha : ∀ i, algebraMap R S a ∉ Q i) :
     (∀ g ∈ Subgroup.closure (Set.range σ), g • x = x) ↔
       ∀ i, ∃ b : R ⧸ (Q i).under R, b ^ n = Ideal.Quotient.mk _ a := by
-  refine ⟨fun h i ↦ ?_, fun h g hg ↦ ?_⟩
-  · exact ((H i).smul_eq_self_iff hζ (hn i) hx (ha i)).mp
-      (h _ (Subgroup.subset_closure ⟨i, rfl⟩))
-  · refine (Subgroup.closure_le (MulAction.stabilizer G x)).mpr ?_ hg
-    rintro _ ⟨i, rfl⟩
-    exact ((H i).smul_eq_self_iff hζ (hn i) hx (ha i)).mpr (h i)
+  -- Present the fixed-point condition as stabilizer containment so `closure_le` applies.
+  change Subgroup.closure (Set.range σ) ≤ MulAction.stabilizer G x ↔ _
+  rw [Subgroup.closure_le, Set.subset_def, Set.forall_mem_range]
+  exact forall_congr' fun i ↦ (H i).smul_eq_self_iff hζ (hn i) hx (ha i)
 
 end IsArithFrobAt

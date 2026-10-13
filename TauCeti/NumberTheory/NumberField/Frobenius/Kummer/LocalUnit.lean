@@ -112,12 +112,10 @@ theorem mem_intermediateField_iff_forall_exists_pow_eq_adicCompletion
   have hfix : α ∈ L ↔ ∀ i, σ i α = α := by
     conv_lhs => rw [← InfiniteGalois.fixedField_fixingSubgroup L]
     rw [IntermediateField.mem_fixedField_iff, hL]
-    constructor
-    · intro h i
-      exact h _ (Subgroup.subset_closure ⟨i, rfl⟩)
-    · intro h g hg
-      exact (Subgroup.closure_le (MulAction.stabilizer (M ≃ₐ[K] M) α)).mpr
-        (by rintro _ ⟨i, rfl⟩; exact h i) hg
+    -- Present the fixed-point condition as stabilizer containment so `closure_le` applies.
+    change Subgroup.closure (Set.range σ) ≤ MulAction.stabilizer (M ≃ₐ[K] M) α ↔ _
+    rw [Subgroup.closure_le, Set.subset_def, Set.forall_mem_range]
+    rfl
   rw [hfix]
   exact forall_congr' fun i ↦
     (hσ i).apply_eq_self_iff_exists_pow_eq_adicCompletion hζ (hn i) (ha i) hα
