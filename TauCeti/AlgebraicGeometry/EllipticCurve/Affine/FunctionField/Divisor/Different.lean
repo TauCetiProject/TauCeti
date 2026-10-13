@@ -357,8 +357,8 @@ theorem different_eq_sum_of_card_eq_four (h2 : (2 : F) ≠ 0) {S : Finset W.Poin
   rw [← Finset.add_sum_erase S _ h0, heq, different_eq_zeros_add_of_two_ne_zero h2, add_comm,
     Point.zero_def, coe_pointEquivDegreeOnePlace_zero]
 
-/-- The coefficient of `Diff(F(W) / F(x))` at a place, when the points of order two are rational:
-`1` at the places of the points of `S` and `0` elsewhere. -/
+/-- The coefficient of `Diff(F(W) / F(x))` at a place, when the points of order dividing two are
+rational: `1` at the places of the points of `S` and `0` elsewhere. -/
 private theorem differentExponent_eq_ite_of_card_eq_four [DecidableEq (Place F W.FunctionField)]
     (h2 : (2 : F) ≠ 0) {S : Finset W.Point} (hS : ∀ T ∈ S, -T = T) (hcard : S.card = 4)
     (P : Place F W.FunctionField) :
@@ -370,9 +370,9 @@ private theorem differentExponent_eq_ite_of_card_eq_four [DecidableEq (Place F W
   simp only [Divisor.coeff_different] at h
   rwa [← Finset.sum_image fun _ _ _ _ h ↦ hpl h, WeilDivisor.coeff_sum_ofPoint] at h
 
-/-- **The different exponent at a point of order two**: away from characteristic two, if `S` is
-a set of four rational points of order dividing two, the place of each point of `S` has different
-exponent `1` over `F(x)`. -/
+/-- **The different exponent at a point of order dividing two**: away from characteristic two, if
+`S` is a set of four rational points of order dividing two, the place of each point of `S` has
+different exponent `1` over `F(x)`. -/
 theorem differentExponent_pointEquivDegreeOnePlace_of_card_eq_four (h2 : (2 : F) ≠ 0)
     {S : Finset W.Point} (hS : ∀ T ∈ S, -T = T) (hcard : S.card = 4) {T : W.Point}
     (hT : T ∈ S) :
@@ -383,9 +383,9 @@ theorem differentExponent_pointEquivDegreeOnePlace_of_card_eq_four (h2 : (2 : F)
     ↓reduceIte] at h
   exact_mod_cast h
 
-/-- **The different exponent away from the points of order two**: away from characteristic two,
-if `S` is a set of four rational points of order dividing two, every place other than the places
-of the points of `S` has different exponent `0` over `F(x)`. -/
+/-- **The different exponent away from the points of order dividing two**: away from characteristic
+two, if `S` is a set of four rational points of order dividing two, every place other than the
+places of the points of `S` has different exponent `0` over `F(x)`. -/
 theorem differentExponent_eq_zero_of_card_eq_four (h2 : (2 : F) ≠ 0) {S : Finset W.Point}
     (hS : ∀ T ∈ S, -T = T) (hcard : S.card = 4) {P : Place F W.FunctionField}
     (hP : ∀ T ∈ S, (pointEquivDegreeOnePlace W T).1 ≠ P) :
@@ -397,8 +397,8 @@ theorem differentExponent_eq_zero_of_card_eq_four (h2 : (2 : F) ≠ 0) {S : Fins
   simp only [hmem, ↓reduceIte] at h
   exact_mod_cast h
 
-/-- **The ramification index at a point of order two**: away from characteristic two, if `S` is
-a set of four rational points of order dividing two, the place of each point of `S` has
+/-- **The ramification index at a point of order dividing two**: away from characteristic two, if
+`S` is a set of four rational points of order dividing two, the place of each point of `S` has
 ramification index `2` over `F(x)`. -/
 theorem ramificationIdx_pointEquivDegreeOnePlace_of_card_eq_four (h2 : (2 : F) ≠ 0)
     {S : Finset W.Point} (hS : ∀ T ∈ S, -T = T) (hcard : S.card = 4) {T : W.Point}
@@ -419,7 +419,7 @@ theorem ramificationIdx_pointEquivDegreeOnePlace_of_card_eq_four (h2 : (2 : F) �
   rw [(Place.ramificationIdx_eq_differentExponent_add_one_iff _ _ _).mpr htame,
     differentExponent_pointEquivDegreeOnePlace_of_card_eq_four h2 hS hcard hT]
 
-/-- **The unramified places when the points of order two are rational**: away from
+/-- **The unramified places when the points of order dividing two are rational**: away from
 characteristic two, if `S` is a set of four rational points of order dividing two, every place
 of `F(W)` other than the places of the points of `S` is unramified over `F(x)`. -/
 theorem ramificationIdx_eq_one_of_card_eq_four (h2 : (2 : F) ≠ 0) {S : Finset W.Point}
@@ -431,9 +431,9 @@ theorem ramificationIdx_eq_one_of_card_eq_four (h2 : (2 : F) ≠ 0) {S : Finset 
   have hpos := Place.ramificationIdx_pos (RatFunc F) P
   omega
 
-/-- **The ramified places when the points of order two are rational**: away from characteristic
-two, if `S` is a set of four rational points of order dividing two, a place of `F(W)` is ramified
-over `F(x)` exactly when it is the place of a point of `S`. -/
+/-- **The ramified places when the points of order dividing two are rational**: away from
+characteristic two, if `S` is a set of four rational points of order dividing two, a place of `F(W)`
+is ramified over `F(x)` exactly when it is the place of a point of `S`. -/
 theorem one_lt_ramificationIdx_iff_of_card_eq_four (h2 : (2 : F) ≠ 0) {S : Finset W.Point}
     (hS : ∀ T ∈ S, -T = T) (hcard : S.card = 4) (P : Place F W.FunctionField) :
     1 < Place.ramificationIdx (RatFunc F) P ↔ ∃ T ∈ S, (pointEquivDegreeOnePlace W T).1 = P := by

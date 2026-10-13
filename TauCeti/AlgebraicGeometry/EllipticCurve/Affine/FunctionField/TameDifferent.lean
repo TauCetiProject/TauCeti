@@ -60,19 +60,13 @@ open AlgebraicGeometry
 
 variable {K : Type*} [Field K] [NeZero (2 : K)]
 
-/-- The three affine points of order two are pairwise distinct. -/
-private theorem pointZero_ne_pointOne_and :
-    pointZero K ≠ pointOne K ∧ pointZero K ≠ pointNegOne K ∧ pointOne K ≠ pointNegOne K := by
-  have h1 : (1 : K) ≠ -1 := fun h ↦ NeZero.ne (2 : K) (by linear_combination h)
-  simp [pointZero_def, pointOne_def, pointNegOne_def, Affine.Point.mk, h1]
-
 /-- The four points of order dividing two are pairwise distinct. -/
 private theorem card_twoTorsion [DecidableEq K] :
     ({0, pointZero K, pointOne K, pointNegOne K} : Finset (curve K).toAffine.Point).card = 4 := by
-  obtain ⟨h01, h0m, h1m⟩ := pointZero_ne_pointOne_and (K := K)
-  rw [Finset.card_insert_of_notMem, Finset.card_insert_of_notMem, Finset.card_pair h1m]
-  · simp [h01, h0m]
-  · simp [pointZero_def, pointOne_def, pointNegOne_def, Affine.Point.mk]
+  rw [Finset.card_insert_of_notMem, Finset.card_insert_of_notMem,
+    Finset.card_pair pointOne_ne_pointNegOne]
+  · simp
+  · simp [eq_comm (a := (0 : (curve K).toAffine.Point))]
 
 /-- Each listed point has order dividing two. -/
 private theorem neg_eq_self_of_mem [DecidableEq K] :
@@ -91,10 +85,9 @@ theorem different_eq :
         WeilDivisor.ofPoint ((curve K).toAffine.pointEquivDegreeOnePlace (pointOne K)).1 +
         WeilDivisor.ofPoint ((curve K).toAffine.pointEquivDegreeOnePlace (pointNegOne K)).1 := by
   classical
-  obtain ⟨h01, h0m, h1m⟩ := pointZero_ne_pointOne_and (K := K)
   rw [Affine.different_eq_sum_of_card_eq_four (NeZero.ne 2) neg_eq_self_of_mem card_twoTorsion,
-    Finset.sum_insert (by simp [pointZero_def, pointOne_def, pointNegOne_def, Affine.Point.mk]),
-    Finset.sum_insert (by simp [h01, h0m]), Finset.sum_pair h1m, Affine.Point.zero_def,
+    Finset.sum_insert (by simp [eq_comm (a := (0 : (curve K).toAffine.Point))]),
+    Finset.sum_insert (by simp), Finset.sum_pair pointOne_ne_pointNegOne, Affine.Point.zero_def,
     Affine.coe_pointEquivDegreeOnePlace_zero, add_assoc, add_assoc]
 
 /-- **The ramified places of `y² = x³ - x` over `K(x)`** are the places of the four points of
