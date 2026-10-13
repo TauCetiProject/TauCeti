@@ -102,11 +102,9 @@ noncomputable def frobenius (hX : (p : Γ(X, ⊤)) = 0) : X ⟶ X where
 theorem frobenius_base (hX : (p : Γ(X, ⊤)) = 0) : (X.frobenius p hX).base = 𝟙 _ := (rfl)
 
 /-- The absolute Frobenius fixes every point. -/
-@[simp]
 theorem frobenius_apply (hX : (p : Γ(X, ⊤)) = 0) (x : X) : X.frobenius p hX x = x := (rfl)
 
 /-- The absolute Frobenius pulls back every open to itself. -/
-@[simp]
 theorem frobenius_preimage (hX : (p : Γ(X, ⊤)) = 0) (U : X.Opens) :
     X.frobenius p hX ⁻¹ᵁ U = U :=
   (rfl)
