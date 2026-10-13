@@ -269,7 +269,7 @@ theorem pointsMulEquiv_toGL
 
 /-- The ambient point attached to a special-linear matrix is the general-linear point attached to
 its canonical inclusion. -/
-@[simp]
+@[simp↓]
 theorem quotientPointsHom_pointsMulEquiv_symm
     (s : Matrix.SpecialLinearGroup (Fin n) A) :
     CommHopfAlgCat.quotientPointsHom
