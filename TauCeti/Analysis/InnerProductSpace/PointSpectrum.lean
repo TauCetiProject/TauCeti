@@ -73,9 +73,10 @@ of two operators `A` on `E` and `B` on `F`: a *separation* `δ ≤ |μ - ν|` wi
   on a finite-dimensional invariant subspace, point-spectral containment in a half-line is a
   quadratic-form bound.
 * `LinearMap.IsSymmetric.norm_apply_sub_smul_le_of_pointSpectrumIn`,
-  `LinearMap.IsSymmetric.mul_norm_le_norm_apply_sub_smul_of_pointSpectrumIn`: in finite dimension,
-  if every eigenvalue lies within `r` of `c` then `‖T x - c x‖ ≤ r ‖x‖`, and if every eigenvalue
-  is at distance at least `r` from `c` then `r ‖x‖ ≤ ‖T x - c x‖`.
+  `LinearMap.IsSymmetric.mul_norm_le_norm_apply_sub_smul_of_pointSpectrumIn`: on a
+  finite-dimensional invariant subspace, if every eigenvalue lies within `r` of `c` then
+  `‖T x - c x‖ ≤ r ‖x‖`, and if every eigenvalue is at distance at least `r` from `c` then
+  `r ‖x‖ ≤ ‖T x - c x‖`.
 * `Module.End.PointOrderedGap.pointSpectraSeparated`,
   `Module.End.PointIntervalExteriorGap.pointSpectraSeparated`: ordered and interval/exterior gaps
   are separations.
@@ -437,10 +438,11 @@ end LinearMap.IsSymmetric
 namespace LinearMap.IsSymmetric
 
 variable {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
-  [FiniteDimensional 𝕜 E] {T : Module.End 𝕜 E} {c r : ℝ}
+  {T : Module.End 𝕜 E} {U : Submodule 𝕜 E} [FiniteDimensional 𝕜 U] {c r : ℝ}
 
 /-- `‖T x - c x‖²` and `‖x‖²` in an ordered eigenbasis of a symmetric `T`. -/
-private theorem sq_norm_apply_sub_smul_eq_sum (hT : T.IsSymmetric) (c : ℝ) (x : E) :
+private theorem sq_norm_apply_sub_smul_eq_sum [FiniteDimensional 𝕜 E] (hT : T.IsSymmetric) (c : ℝ)
+    (x : E) :
     ‖T x - (c : 𝕜) • x‖ ^ 2 = ∑ i, (hT.eigenvalues rfl i - c) ^ 2 *
       ‖(hT.eigenvectorBasis rfl).repr x i‖ ^ 2 ∧
     ‖x‖ ^ 2 = ∑ i, ‖(hT.eigenvectorBasis rfl).repr x i‖ ^ 2 := by
@@ -452,22 +454,22 @@ private theorem sq_norm_apply_sub_smul_eq_sum (hT : T.IsSymmetric) (c : ℝ) (x 
   refine ⟨by simpa using h, ?_⟩
   rw [← (hT.eigenvectorBasis rfl).repr.norm_map, EuclideanSpace.norm_sq_eq]
 
-/-- The eigenvalues in an ordered eigenbasis of a symmetric `T` lie in its point spectrum. -/
-private theorem eigenvalues_mem_restrictedPointSpectrum (hT : T.IsSymmetric)
-    (i : Fin (Module.finrank 𝕜 E)) : hT.eigenvalues rfl i ∈ T.restrictedPointSpectrum ⊤ := by
-  simpa using hT.hasEigenvalue_eigenvalues rfl i
-
-/-- **Norm bound from point spectrum.** If every eigenvalue of a symmetric operator `T` on a
-finite-dimensional space lies within `r` of `c`, then `‖T x - c x‖ ≤ r ‖x‖`. -/
-theorem norm_apply_sub_smul_le_of_pointSpectrumIn (hT : T.IsSymmetric)
-    (h : T.PointSpectrumIn ⊤ (Metric.closedBall c r)) (x : E) :
+/-- **Norm bound from point spectrum.** If `U` is a finite-dimensional subspace invariant under a
+symmetric operator `T`, and every eigenvalue of `T` on `U` lies within `r` of `c`, then
+`‖T x - c x‖ ≤ r ‖x‖` for every `x ∈ U`. -/
+theorem norm_apply_sub_smul_le_of_pointSpectrumIn (hT : T.IsSymmetric) (hU : ∀ x ∈ U, T x ∈ U)
+    (h : T.PointSpectrumIn U (Metric.closedBall c r)) {x : E} (hxU : x ∈ U) :
     ‖T x - (c : 𝕜) • x‖ ≤ r * ‖x‖ := by
-  have hev (i) : |hT.eigenvalues rfl i - c| ≤ r := by
-    simpa [Real.dist_eq] using h (hT.eigenvalues_mem_restrictedPointSpectrum i)
-  obtain ⟨hTx, hx⟩ := hT.sq_norm_apply_sub_smul_eq_sum c x
+  set hB := hT.restrict_invariant hU
+  suffices ‖T.restrict hU ⟨x, hxU⟩ - (c : 𝕜) • ⟨x, hxU⟩‖ ≤ r * ‖(⟨x, hxU⟩ : U)‖ by
+    simpa using this
+  generalize (⟨x, hxU⟩ : U) = x
+  have hev (i) : |hB.eigenvalues rfl i - c| ≤ r := by
+    simpa [Real.dist_eq] using h (hT.eigenvalues_restrict_mem hU i)
+  obtain ⟨hTx, hx⟩ := hB.sq_norm_apply_sub_smul_eq_sum c x
   -- Without eigenvalues the space is trivial; otherwise `r ≥ 0`.
   have hr : 0 ≤ r * ‖x‖ := by
-    rcases isEmpty_or_nonempty (Fin (Module.finrank 𝕜 E)) with hι | hι
+    rcases isEmpty_or_nonempty (Fin (Module.finrank 𝕜 U)) with hι | hι
     · rw [Finset.univ_eq_empty, Finset.sum_empty, sq_eq_zero_iff, norm_eq_zero] at hx
       simp [hx]
     · obtain ⟨i⟩ := hι
@@ -477,16 +479,21 @@ theorem norm_apply_sub_smul_le_of_pointSpectrumIn (hT : T.IsSymmetric)
   refine Finset.sum_le_sum fun i _ ↦ mul_le_mul_of_nonneg_right ?_ (sq_nonneg _)
   simpa only [sq_abs] using pow_le_pow_left₀ (abs_nonneg _) (hev i) 2
 
-/-- **Lower norm bound from point spectrum.** If every eigenvalue of a symmetric operator `T` on a
-finite-dimensional space is at distance at least `r` from `c`, then `r ‖x‖ ≤ ‖T x - c x‖`. -/
+/-- **Lower norm bound from point spectrum.** If `U` is a finite-dimensional subspace invariant
+under a symmetric operator `T`, and every eigenvalue of `T` on `U` is at distance at least `r`
+from `c`, then `r ‖x‖ ≤ ‖T x - c x‖` for every `x ∈ U`. -/
 theorem mul_norm_le_norm_apply_sub_smul_of_pointSpectrumIn (hT : T.IsSymmetric)
-    (h : T.PointSpectrumIn ⊤ (Metric.ball c r)ᶜ) (x : E) :
+    (hU : ∀ x ∈ U, T x ∈ U) (h : T.PointSpectrumIn U (Metric.ball c r)ᶜ) {x : E} (hxU : x ∈ U) :
     r * ‖x‖ ≤ ‖T x - (c : 𝕜) • x‖ := by
   rcases le_or_gt r 0 with hr | hr
   · exact (mul_nonpos_of_nonpos_of_nonneg hr (norm_nonneg x)).trans (norm_nonneg _)
-  have hev (i) : r ≤ |hT.eigenvalues rfl i - c| := by
-    simpa [Real.dist_eq] using h (hT.eigenvalues_mem_restrictedPointSpectrum i)
-  obtain ⟨hTx, hx⟩ := hT.sq_norm_apply_sub_smul_eq_sum c x
+  set hB := hT.restrict_invariant hU
+  suffices r * ‖(⟨x, hxU⟩ : U)‖ ≤ ‖T.restrict hU ⟨x, hxU⟩ - (c : 𝕜) • ⟨x, hxU⟩‖ by
+    simpa using this
+  generalize (⟨x, hxU⟩ : U) = x
+  have hev (i) : r ≤ |hB.eigenvalues rfl i - c| := by
+    simpa [Real.dist_eq] using h (hT.eigenvalues_restrict_mem hU i)
+  obtain ⟨hTx, hx⟩ := hB.sq_norm_apply_sub_smul_eq_sum c x
   refine (pow_le_pow_iff_left₀ (by positivity) (norm_nonneg _) two_ne_zero).mp ?_
   rw [hTx, mul_pow, hx, Finset.mul_sum]
   refine Finset.sum_le_sum fun i _ ↦ mul_le_mul_of_nonneg_right ?_ (sq_nonneg _)

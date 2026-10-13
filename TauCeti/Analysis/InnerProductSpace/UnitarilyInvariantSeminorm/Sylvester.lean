@@ -193,11 +193,12 @@ theorem mul_map_le_map_sylvester_apply_of_pointIntervalExteriorGap
     (h : End.PointIntervalExteriorGap (A : E →ₗ[𝕜] E) ⊤ (B : F →ₗ[𝕜] F) ⊤ a b δ)
     (X : F →L[𝕜] E) :
     δ * N X ≤ N (A.sylvester B X) := by
-  have hA' := hA.norm_apply_sub_smul_le_of_pointSpectrumIn
+  have hA' (x : E) := hA.norm_apply_sub_smul_le_of_pointSpectrumIn (fun _ _ ↦ Submodule.mem_top)
     (h.pointSpectrumIn_Icc.mono le_rfl (Real.Icc_eq_closedBall a b).subset)
-  have hB' := hB.mul_norm_le_norm_apply_sub_smul_of_pointSpectrumIn
-    (h.pointSpectrumIn_compl_Ioo.mono le_rfl
-      (Set.compl_subset_compl.mpr ball_eq_Ioo_sub_add.subset))
+    (Submodule.mem_top (x := x))
+  have hB' (y : F) := hB.mul_norm_le_norm_apply_sub_smul_of_pointSpectrumIn
+    (fun _ _ ↦ Submodule.mem_top) (h.pointSpectrumIn_compl_Ioo.mono le_rfl
+      (Set.compl_subset_compl.mpr ball_eq_Ioo_sub_add.subset)) (Submodule.mem_top (x := y))
   exact N.mul_map_le_map_sylvester_apply_of_norm_sub_smul_le_of_le_norm_sub_smul
     (c := (((a + b) / 2 : ℝ) : 𝕜))
     (fun x ↦ by simpa using hA' x) (fun y ↦ by simpa using hB' y) X
@@ -213,11 +214,12 @@ theorem mul_map_le_map_sylvester_apply_of_pointIntervalExteriorGap_swap
     (h : End.PointIntervalExteriorGap (B : F →ₗ[𝕜] F) ⊤ (A : E →ₗ[𝕜] E) ⊤ a b δ)
     (X : F →L[𝕜] E) :
     δ * N X ≤ N (A.sylvester B X) := by
-  have hA' := hA.mul_norm_le_norm_apply_sub_smul_of_pointSpectrumIn
-    (h.pointSpectrumIn_compl_Ioo.mono le_rfl
-      (Set.compl_subset_compl.mpr ball_eq_Ioo_sub_add.subset))
-  have hB' := hB.norm_apply_sub_smul_le_of_pointSpectrumIn
+  have hA' (x : E) := hA.mul_norm_le_norm_apply_sub_smul_of_pointSpectrumIn
+    (fun _ _ ↦ Submodule.mem_top) (h.pointSpectrumIn_compl_Ioo.mono le_rfl
+      (Set.compl_subset_compl.mpr ball_eq_Ioo_sub_add.subset)) (Submodule.mem_top (x := x))
+  have hB' (y : F) := hB.norm_apply_sub_smul_le_of_pointSpectrumIn (fun _ _ ↦ Submodule.mem_top)
     (h.pointSpectrumIn_Icc.mono le_rfl (Real.Icc_eq_closedBall a b).subset)
+    (Submodule.mem_top (x := y))
   exact N.mul_map_le_map_sylvester_apply_of_le_norm_sub_smul_of_norm_sub_smul_le
     (c := (((a + b) / 2 : ℝ) : 𝕜))
     (fun x ↦ by simpa using hA' x) (fun y ↦ by simpa using hB' y) X
