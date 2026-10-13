@@ -110,20 +110,20 @@ include hX
 theorem apply_starProjection (x : E) : X (U.starProjection x) = X x :=
   DFunLike.congr_fun hX.comp_starProjection x
 
-theorem starProjection_apply (x : E) : U.starProjection (X x) = 0 :=
+theorem starProjection_apply_eq_zero (x : E) : U.starProjection (X x) = 0 :=
   DFunLike.congr_fun hX.starProjection_comp x
 
 theorem apply_mem_orthogonal (x : E) : X x ∈ Uᗮ :=
-  (starProjection_apply_eq_zero_iff U).mp (hX.starProjection_apply x)
+  (starProjection_apply_eq_zero_iff U).mp (hX.starProjection_apply_eq_zero x)
 
 theorem apply_eq_zero_of_mem_orthogonal {x : E} (hx : x ∈ Uᗮ) : X x = 0 := by
   rw [← hX.apply_starProjection, (starProjection_apply_eq_zero_iff U).mpr hx, map_zero]
 
-theorem apply_apply (x : E) : X (X x) = 0 :=
+theorem apply_apply_eq_zero (x : E) : X (X x) = 0 :=
   hX.apply_eq_zero_of_mem_orthogonal (hX.apply_mem_orthogonal x)
 
 theorem starProjection_add_apply {u : E} (hu : u ∈ U) : U.starProjection (u + X u) = u := by
-  rw [map_add, hX.starProjection_apply, add_zero, starProjection_eq_self_iff.mpr hu]
+  rw [map_add, hX.starProjection_apply_eq_zero, add_zero, starProjection_eq_self_iff.mpr hu]
 
 theorem starProjection_orthogonal_add_apply {u : E} (hu : u ∈ U) :
     Uᗮ.starProjection (u + X u) = X u := by
@@ -145,7 +145,7 @@ theorem mem_graphSubspace_iff {y : E} : y ∈ U.graphSubspace X ↔ Uᗮ.starPro
   constructor
   · intro h
     obtain ⟨u, hu, rfl⟩ := mem_graphSubspace.1 h
-    rw [hX.starProjection_orthogonal_add_apply hu, map_add, hX.apply_apply, add_zero]
+    rw [hX.starProjection_orthogonal_add_apply hu, map_add, hX.apply_apply_eq_zero, add_zero]
   · intro h
     refine mem_graphSubspace.2 ⟨U.starProjection y, U.starProjection_apply_mem y, ?_⟩
     rw [hX.apply_starProjection, ← h, starProjection_add_starProjection_orthogonal]
@@ -186,6 +186,11 @@ end Angular
 
 section Gap
 
+/-- The value `r / √(1 + r²)` of the graph gap is always less than `1`. -/
+private theorem div_sqrt_one_add_sq_lt_one (r : ℝ) : r / √(1 + r ^ 2) < 1 :=
+  (div_lt_one (Real.sqrt_pos.2 (by positivity))).2 <| (le_abs_self r).trans_lt <|
+    (Real.lt_sqrt (abs_nonneg r)).2 (by rw [sq_abs]; linarith)
+
 variable {U : Submodule 𝕜 E} [U.HasOrthogonalProjection] {X : E →L[𝕜] E}
 
 namespace IsAngularOperator
@@ -198,11 +203,8 @@ include hX
 private theorem norm_apply_mul_sqrt_le {u : E} (hu : u ∈ U) :
     ‖X u‖ * √(1 + ‖X‖ ^ 2) ≤ ‖X‖ * ‖u + X u‖ := by
   refine (pow_le_pow_iff_left₀ (by positivity) (by positivity) two_ne_zero).mp ?_
-  have h : ‖X u‖ ^ 2 ≤ ‖X‖ ^ 2 * ‖u‖ ^ 2 := by
-    rw [← mul_pow]
-    exact pow_le_pow_left₀ (norm_nonneg _) (le_opNorm X u) 2
   rw [mul_pow, mul_pow, Real.sq_sqrt (by positivity), hX.norm_add_apply_sq hu]
-  nlinarith
+  nlinarith [mul_self_le_mul_self (norm_nonneg _) (le_opNorm X u)]
 
 /-- Conversely, a bound `‖X u‖ ≤ d ‖u + X u‖` on the graph subspace with `0 ≤ d < 1` forces
 `‖X‖ / √(1 + ‖X‖²) ≤ d`. -/
@@ -251,7 +253,7 @@ theorem directedProjectionGap_graphSubspace_left
           gcongr
           exact norm_starProjection_apply_le _ _
   refine le_antisymm hle (hX.div_sqrt_le_of_forall_norm_apply_le (norm_nonneg _) ?_ fun u hu => ?_)
-  · exact hle.trans_lt <| (div_lt_one hs).2 <| Real.lt_sqrt (norm_nonneg _) |>.2 <| by linarith
+  · exact hle.trans_lt (div_sqrt_one_add_sq_lt_one _)
   · -- On `u + X u ∈ G`, the operator `P_{Uᗮ} P_G` returns `X u`.
     have h := le_opNorm (Uᗮ.starProjection ∘L G.starProjection) (u + X u)
     rwa [comp_apply, starProjection_eq_self_iff.mpr (add_apply_mem_graphSubspace hu),
@@ -283,9 +285,6 @@ private theorem norm_sub_starProjection_graphSubspace_mul_sqrt_le
       abs_of_nonneg (norm_nonneg X)] at h
     rw [pow_two ‖(r ^ 2 : 𝕜) • u - X u‖, h]
     ring
-  have hXu : ‖X u‖ ^ 2 ≤ r ^ 2 * ‖u‖ ^ 2 := by
-    rw [← mul_pow]
-    exact pow_le_pow_left₀ (norm_nonneg _) (le_opNorm X u) 2
   have hdist : ‖u - G.starProjection u‖ ≤ ‖u - g‖ := by
     rw [starProjection_minimal]
     exact ciInf_le ⟨0, Set.forall_mem_range.2 fun _ => norm_nonneg _⟩ (⟨g, hg⟩ : G)
@@ -293,12 +292,13 @@ private theorem norm_sub_starProjection_graphSubspace_mul_sqrt_le
     _ ≤ r * ‖u‖ := by
         refine (pow_le_pow_iff_left₀ (by positivity) (by positivity) two_ne_zero).mp ?_
         have hpos : (0 : ℝ) < 1 + r ^ 2 := by positivity
-        rw [mul_pow, Real.sq_sqrt hpos.le, hug, norm_smul, mul_pow, hpyth, norm_inv]
-        rw [show ‖(1 + r ^ 2 : 𝕜)‖ = 1 + r ^ 2 by
-          exact_mod_cast (RCLike.norm_ofReal (K := 𝕜) (1 + r ^ 2)).trans (abs_of_pos hpos)]
-        rw [inv_pow, mul_pow]
+        have hnorm : ‖(1 + r ^ 2 : 𝕜)‖ = 1 + r ^ 2 := by
+          norm_cast
+          exact abs_of_pos hpos
+        rw [mul_pow, Real.sq_sqrt hpos.le, hug, norm_smul, mul_pow, hpyth, norm_inv, hnorm,
+          inv_pow, mul_pow]
         field_simp
-        nlinarith
+        nlinarith [mul_self_le_mul_self (norm_nonneg _) (le_opNorm X u)]
 
 /-- The directed gap from `U` to its graph subspace is at most `‖X‖ / √(1 + ‖X‖²)`. -/
 theorem directedProjectionGap_graphSubspace_right_le
@@ -323,8 +323,8 @@ theorem projectionGap_graphSubspace [(U.graphSubspace X).HasOrthogonalProjection
 /-- The gap between `U` and a graph subspace over it is less than `1`. -/
 theorem projectionGap_graphSubspace_lt_one [(U.graphSubspace X).HasOrthogonalProjection] :
     projectionGap U (U.graphSubspace X) < 1 := by
-  rw [hX.projectionGap_graphSubspace, div_lt_one (Real.sqrt_pos.2 (by positivity))]
-  exact Real.lt_sqrt (norm_nonneg _) |>.2 (by linarith)
+  rw [hX.projectionGap_graphSubspace]
+  exact div_sqrt_one_add_sq_lt_one _
 
 end IsAngularOperator
 
@@ -365,17 +365,25 @@ theorem IsAngularOperator.starProjection_graphSubspace (hX : U.IsAngularOperator
     exact DFunLike.congr_fun h y
   have hTT : ∀ y, (1 + X† ∘L X) (Ring.inverse (1 + X† ∘L X) y) = y := fun y =>
     DFunLike.congr_fun (Ring.mul_inverse_cancel _ hT) y
+  set A := U.starProjection + X
+  set T := 1 + X† ∘L X
   ext x
   refine eq_starProjection_of_mem_of_inner_eq_zero ?_ fun w hw => ?_
   · -- `A v = P_U v + X (P_U v)` lies in the graph subspace.
     rw [comp_apply, comp_apply, add_apply, ← hX.apply_starProjection]
     exact add_apply_mem_graphSubspace (U.starProjection_apply_mem _)
   · obtain ⟨u, hu, rfl⟩ := mem_graphSubspace.1 hw
-    have hAu : (U.starProjection + X) u = u + X u := by
+    have hAu : A u = u + X u := by
       rw [add_apply, starProjection_eq_self_iff.mpr hu]
-    rw [← hAu, inner_sub_left, comp_apply, comp_apply, ← adjoint_inner_left,
-      ← adjoint_inner_left (U.starProjection + X) u, hAA, hTT,
-      inner_starProjection_left_eq_right, starProjection_eq_self_iff.mpr hu, sub_self]
+    -- The key identity `⟪A T⁻¹ A† x, A u⟫ = ⟪x, A u⟫`, from `A† A = P_U T` and `P_U u = u`.
+    have key : ⟪(A ∘L Ring.inverse T ∘L A†) x, A u⟫_𝕜 = ⟪x, A u⟫_𝕜 :=
+      calc ⟪(A ∘L Ring.inverse T ∘L A†) x, A u⟫_𝕜
+          = ⟪adjoint A (A (Ring.inverse T (adjoint A x))), u⟫_𝕜 := (adjoint_inner_left A u _).symm
+        _ = ⟪U.starProjection (adjoint A x), u⟫_𝕜 := by rw [hAA, hTT]
+        _ = ⟪adjoint A x, u⟫_𝕜 := by
+          rw [inner_starProjection_left_eq_right, starProjection_eq_self_iff.mpr hu]
+        _ = ⟪x, A u⟫_𝕜 := adjoint_inner_left A u x
+    rw [← hAu, inner_sub_left, key, sub_self]
 
 end Projection
 
