@@ -8,6 +8,8 @@ module
 public import Mathlib.Algebra.Order.Chebyshev
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import Mathlib.Analysis.Normed.Lp.MeasurableSpace
+public import Mathlib.Topology.Algebra.Module.Equiv.Pi
+public import Mathlib.Topology.Algebra.Module.Equiv.Prod
 public import Mathlib.Topology.Algebra.Monoid.FunOnFinite
 
 /-!
@@ -45,6 +47,8 @@ distance of the coordinate vectors, which places cubes inside Euclidean balls.
   ball of radius `r` in `PiLp p β`, `1 ≤ p`, lies in the concentric sup-norm ball of radius `r`;
   for Euclidean space, in the concentric cube of half-side `r`.
 * `EuclideanSpace.sqrt_card_pos`: the square root of the dimension is positive.
+* `EuclideanSpace.consEquivL`: splitting off the first coordinate identifies `𝕜ⁿ⁺¹` with
+  `𝕜 × 𝕜ⁿ`.
 
 ## Source
 
@@ -114,6 +118,28 @@ theorem preimage_ofLp_ball_subset_ball [Nonempty ι] (x : EuclideanSpace 𝕜 ι
       Metric.ball x (Real.sqrt (Fintype.card ι) * r) := fun y hy =>
   (dist_le_sqrt_card_mul_dist_ofLp y x).trans_lt
     (mul_lt_mul_of_pos_left hy sqrt_card_pos)
+
+variable (𝕜) in
+/-- Splitting off the first coordinate identifies `𝕜ⁿ⁺¹` with `𝕜 × 𝕜ⁿ`: the continuous linear
+equivalence `(t, x) ↦ (t, x₀, …, xₙ₋₁)`. This is `Fin.consEquivL` read in Euclidean
+coordinates. -/
+def consEquivL (n : ℕ) : (𝕜 × EuclideanSpace 𝕜 (Fin n)) ≃L[𝕜] EuclideanSpace 𝕜 (Fin (n + 1)) :=
+  ((ContinuousLinearEquiv.refl 𝕜 𝕜).prodCongr (EuclideanSpace.equiv (Fin n) 𝕜)).trans
+    ((Fin.consEquivL 𝕜 fun _ => 𝕜).trans (EuclideanSpace.equiv (Fin (n + 1)) 𝕜).symm)
+
+theorem consEquivL_apply {n : ℕ} (z : 𝕜 × EuclideanSpace 𝕜 (Fin n)) :
+    consEquivL 𝕜 n z = WithLp.toLp 2 (Fin.cons z.1 (WithLp.ofLp z.2)) :=
+  (rfl)
+
+@[simp]
+theorem consEquivL_apply_zero {n : ℕ} (z : 𝕜 × EuclideanSpace 𝕜 (Fin n)) :
+    consEquivL 𝕜 n z 0 = z.1 :=
+  (rfl)
+
+@[simp]
+theorem consEquivL_apply_succ {n : ℕ} (z : 𝕜 × EuclideanSpace 𝕜 (Fin n)) (i : Fin n) :
+    consEquivL 𝕜 n z i.succ = z.2 i :=
+  (rfl)
 
 end EuclideanSpace
 
