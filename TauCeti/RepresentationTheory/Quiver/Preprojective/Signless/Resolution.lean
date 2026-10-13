@@ -424,16 +424,10 @@ noncomputable def signlessPreprojectiveKoszulProjectiveResolution (v : R)
       rw [quasiIsoAt_iff_exactAt' (hL := ChainComplex.exactAt_succ_single_obj ..),
         HomologicalComplex.exactAt_iff' _ (n + 2) (n + 1) n (by simp) (by simp),
         ShortComplex.moduleCat_exact_iff_range_eq_ker]
-      -- Identify the short-complex wrapper's module instances with the explicit terms
-      -- so `ChainComplex.of_d` can compute both maps.
-      change LinearMap.range (ChainComplex.of.d (signlessPreprojectiveKoszulTerm k v)
-        (signlessPreprojectiveKoszulDifferential k v) (n + 1 + 1) (n + 1)).hom =
-          LinearMap.ker (ChainComplex.of.d (signlessPreprojectiveKoszulTerm k v)
-            (signlessPreprojectiveKoszulDifferential k v) (n + 1) n).hom
-      rw [ChainComplex.of_d (signlessPreprojectiveKoszulTerm k v)
-        (signlessPreprojectiveKoszulDifferential k v) (n + 1),
-        ChainComplex.of_d (signlessPreprojectiveKoszulTerm k v)
-          (signlessPreprojectiveKoszulDifferential k v) n]
+      simp only [HomologicalComplex.shortComplexFunctor'_obj_f,
+        HomologicalComplex.shortComplexFunctor'_obj_g]
+      rw [signlessPreprojectiveKoszulComplex_d k v (n + 1),
+        signlessPreprojectiveKoszulComplex_d k v n]
       exact range_signlessPreprojectiveKoszulDifferential_succ_eq_ker k v hinj n
 
 /-- The projective resolution uses the explicit signless Koszul complex. -/
