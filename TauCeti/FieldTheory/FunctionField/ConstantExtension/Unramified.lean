@@ -18,9 +18,7 @@ import TauCeti.FieldTheory.FunctionField.Place.Extension.Tower
 Let `k' / k` be finite and separable and suppose that `F'` is the compositum `F k'`. Then
 `F' / F` is separable and is unramified at every place. The ramification-index statement extends
 to arbitrary separable algebraic extensions of constants, including algebraic closures over a
-perfect base field: every place still has index one. A uniformizer descends to a finite constant
-subextension, where the finite unramifiedness theorem applies; multiplicativity then controls the
-index in the whole extension.
+perfect base field: every place still has index one.
 
 These are the local inputs to the comparison of the divisor theories of `F / k` and `F' / k'`.
 Vanishing different exponents say that the different divisor of `F' / F` is zero, and
