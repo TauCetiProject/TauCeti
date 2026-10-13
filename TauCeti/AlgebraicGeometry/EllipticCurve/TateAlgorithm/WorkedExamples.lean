@@ -6,8 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.TateAlgorithm.Reduction.Type
--- Proof-only: `v (Δ) < 12` implies minimal.
-import TauCeti.AlgebraicGeometry.EllipticCurve.MinimalModel.Basic
 -- Proof-only: divisibility of integers by powers of `p` is read in `ℤ`.
 import TauCeti.Data.Nat.Prime.IntCast
 -- Proof-only: `norm_num` decides primality of the small primes.
