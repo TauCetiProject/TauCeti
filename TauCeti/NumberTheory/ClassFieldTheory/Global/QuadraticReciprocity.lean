@@ -97,12 +97,16 @@ theorem coe_finprod_hilbertSymbol_unitAtFinitePlace_eq_legendreSym (hp : p ≠ 2
     rw [Finset.prod_insert h2p, Finset.prod_insert (Finset.notMem_singleton.2 (hne hpq)),
       Finset.prod_singleton, Units.val_mul, Units.val_mul, mul_assoc]
     -- The three factors: the dyadic sign and the two Legendre symbols.
-    have hP := Padic.hilbertSymbol_natCast_self_eq_legendreSym hp hpq'
+    have hP := Padic.hilbertSymbol_intCast_self_eq_legendreSym hp (n := q)
+      (Int.natCast_dvd_natCast.not.2 hpq')
+    have hQ := Padic.hilbertSymbol_intCast_self_eq_legendreSym hq (n := p)
+      (Int.natCast_dvd_natCast.not.2 hqp')
+    simp only [Int.cast_natCast] at hP hQ
     rw [hilbertSymbol_comm] at hP
     congr 1
     · exact congrArg Units.val (hilbertSymbol_natCast_natCast_padicTwo (hpp.odd_of_ne_two hp)
         (hqp.odd_of_ne_two hq)) |>.trans (by simp)
-    · exact congrArg₂ (· * ·) hP (Padic.hilbertSymbol_natCast_self_eq_legendreSym hq hqp')
+    · exact congrArg₂ (· * ·) hP hQ
   · -- At every other prime both `p` and `q` are units and the symbol is `1`.
     by_contra hmem
     apply hℓ
@@ -111,7 +115,8 @@ theorem coe_finprod_hilbertSymbol_unitAtFinitePlace_eq_legendreSym (hp : p ≠ 2
       simp [show ℓ = Pp from Subtype.ext ((Nat.prime_dvd_prime_iff_eq ℓ.2 hpp).1 h)])
     have hℓq : ¬ (ℓ : ℕ) ∣ q := fun h ↦ hmem (by
       simp [show ℓ = Pq from Subtype.ext ((Nat.prime_dvd_prime_iff_eq ℓ.2 hqp).1 h)])
-    exact Padic.hilbertSymbol_natCast_natCast_eq_one hℓ2 hℓp hℓq
+    simpa only [Int.cast_natCast] using Padic.hilbertSymbol_intCast_intCast_eq_one hℓ2 (m := p)
+      (n := q) (Int.natCast_dvd_natCast.not.2 hℓp) (Int.natCast_dvd_natCast.not.2 hℓq)
 
 /-- **The Hilbert reciprocity sum of two odd primes.** For distinct odd primes `p` and `q`, the sign
 of the sum over all places of `ℚ` of the cohomological Hilbert invariants of `p` and `q` is

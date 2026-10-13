@@ -40,8 +40,8 @@ for some unit `w`. Read in `ℚ_2`, a unit of `ℤ_2` is a square of `ℚ_2` exa
 
 * `TauCeti.serreEps_eq_one_iff`, `TauCeti.serreOmega_eq_one_iff` (and the `_eq_zero_iff`
   variants): the values of `ε` and `ω` in terms of `u mod 8`.
-* `TauCeti.serreEps_of_coe_eq_natCast`: `ε(m) = (m − 1)/2 mod 2` for a natural number `m` that
-  is a unit of `ℤ_2`.
+* `TauCeti.serreEps_eq_natCast_div_two_of_coe_eq_natCast`: `ε(m) = (m − 1)/2 mod 2` for a
+  natural number `m` that is a unit of `ℤ_2`.
 * `TauCeti.serreEps_mul`, `TauCeti.serreOmega_mul`: `ε` and `ω` are homomorphisms to the
   additive group `ZMod 2`; `TauCeti.serreEps_pow`, `TauCeti.serreOmega_pow` are the power forms.
 * `TauCeti.coe_neg_one_uzpow_serreEps`, `TauCeti.coe_neg_one_uzpow_serreOmega`: `(-1) ^ ε(u)` is
@@ -140,7 +140,8 @@ theorem serreEps_eq_zero_of_coe_eq_five {u : ℤ_[2]ˣ} (hu : (u : ℤ_[2]) = 5)
 
 /-- `ε(m) = ⌊m/2⌋ mod 2` for a unit of `ℤ_2` that is a natural number `m`; as `m` is odd, this
 is Serre's `(m − 1)/2 mod 2`. -/
-theorem serreEps_of_coe_eq_natCast {u : ℤ_[2]ˣ} {m : ℕ} (hu : (u : ℤ_[2]) = m) :
+theorem serreEps_eq_natCast_div_two_of_coe_eq_natCast {u : ℤ_[2]ˣ} {m : ℕ}
+    (hu : (u : ℤ_[2]) = m) :
     serreEps u = ((m / 2 : ℕ) : ZMod 2) := by
   have h8 : PadicInt.toZModPow 3 (u : ℤ_[2]) = ((m % 8 : ℕ) : ZMod (2 ^ 3)) := by
     rw [hu, map_natCast, ZMod.natCast_mod]

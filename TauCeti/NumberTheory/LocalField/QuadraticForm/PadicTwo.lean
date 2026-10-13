@@ -208,7 +208,8 @@ theorem hilbertSymbol_natCast_natCast_padicTwo {m n : ℕ} (hm : Odd m) (hn : Od
   have hum := PadicInt.isUnit_natCast_of_coprime (p := 2) (Nat.coprime_two_left.2 hm)
   have hun := PadicInt.isUnit_natCast_of_coprime (p := 2) (Nat.coprime_two_left.2 hn)
   rw [hilbertSymbol_padicTwo (α := 0) (β := 0) (u := hum.unit) (v := hun.unit) (by simp)
-    (by simp), serreEps_of_coe_eq_natCast hum.unit_spec, serreEps_of_coe_eq_natCast hun.unit_spec]
+    (by simp), serreEps_eq_natCast_div_two_of_coe_eq_natCast hum.unit_spec,
+    serreEps_eq_natCast_div_two_of_coe_eq_natCast hun.unit_spec]
   simp only [Int.cast_zero, zero_mul, add_zero, ← Nat.cast_mul, uzpow_natCast]
 
 /-! ### The symbol on a basis of the square classes, and the `8 × 8` table -/

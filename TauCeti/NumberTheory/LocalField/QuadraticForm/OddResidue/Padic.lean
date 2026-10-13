@@ -21,8 +21,8 @@ Let `p` be an odd prime. The prime `p` is a uniformizer of `ℚ_p` and the resid
 is `𝔽_p`, so the odd-residue formulas for the Hilbert symbol become formulas in terms of
 residues modulo `p`.
 
-* Two natural numbers prime to `p` are units of `ℤ_p`, and their symbol is `1`.
-* For `n` prime to `p`, the symbol `(n, p)_p` is the Legendre symbol `(n / p)`: it is `1`
+* Two integers prime to `p` are units of `ℤ_p`, and their symbol is `1`.
+* For an integer `n` prime to `p`, the symbol `(n, p)_p` is the Legendre symbol `(n / p)`: it is `1`
   exactly when `n` is a square modulo `p`. Together with the dyadic value
   `TauCeti.hilbertSymbol_natCast_natCast_padicTwo`, these are the local factors of the product
   formula behind quadratic reciprocity.
@@ -34,8 +34,10 @@ residues modulo `p`.
 
 ## Main results
 
-* `Padic.hilbertSymbol_natCast_natCast_eq_one`: `(m, n)_p = 1` for `m, n` prime to `p`.
-* `Padic.hilbertSymbol_natCast_self_eq_legendreSym`: `(n, p)_p = (n / p)` for `n` prime to `p`.
+* `TauCeti.Padic.hilbertSymbol_intCast_intCast_eq_one`: `(m, n)_p = 1` for integers `m, n` prime
+  to `p`.
+* `TauCeti.Padic.hilbertSymbol_intCast_self_eq_legendreSym`: `(n, p)_p = (n / p)` for an integer
+  `n` prime to `p`.
 * `Padic.hilbertSymbol_neg_one_eq_neg_one_of_mod_four_eq_three`: `(-1, p)_p = -1` when
   `p ≡ 3 (mod 4)`.
 
@@ -48,46 +50,51 @@ public section
 
 open TauCeti ValuativeRel IsLocalRing
 
-namespace Padic
+namespace TauCeti.Padic
 
 variable (p : ℕ) [Fact p.Prime]
 
 variable {p} in
-/-- **The Hilbert symbol of two `p`-adic units.** For an odd prime `p` and natural numbers `m`
-and `n` prime to `p`, the Hilbert symbol `(m, n)` over `ℚ_p` is `1`. -/
-theorem hilbertSymbol_natCast_natCast_eq_one (hp : p ≠ 2) {m n : ℕ} (hm : ¬ p ∣ m)
-    (hn : ¬ p ∣ n) :
-    hilbertSymbol (Units.mk0 (m : ℚ_[p]) (Nat.cast_ne_zero.2 fun h ↦ hm (h ▸ dvd_zero p)))
-      (Units.mk0 (n : ℚ_[p]) (Nat.cast_ne_zero.2 fun h ↦ hn (h ▸ dvd_zero p))) = 1 := by
-  have hcop {k : ℕ} (hk : ¬ p ∣ k) : IsUnit (k : 𝒪[ℚ_[p]]) := by
-    simpa using (PadicInt.isUnit_natCast_of_coprime
-      (((Fact.out : p.Prime).coprime_iff_not_dvd).2 hk)).map (integerRingEquiv p).symm
-  have h2 : IsUnit (2 : 𝒪[ℚ_[p]]) := by
-    simpa using hcop fun h ↦ hp ((Nat.prime_dvd_prime_iff_eq Fact.out Nat.prime_two).1 h)
-  have h := hilbertSymbol_units_map_eq_one (K := ℚ_[p]) h2 (hcop hm).unit (hcop hn).unit
+/-- For an odd prime `p`, the integer `2` is a unit of the integer ring of `ℚ_p`. -/
+private theorem isUnit_two_integers (hp : p ≠ 2) : IsUnit (2 : 𝒪[ℚ_[p]]) :=
+  (natCastValuation_eq_zero_iff (K := ℚ_[p]) 2 (by norm_num)).mp
+    (_root_.Padic.natCastValuation_two p hp)
+
+variable {p} in
+/-- An integer prime to `p` is a unit of the integer ring of `ℚ_p`. -/
+private theorem isUnit_intCast_integers {m : ℤ} (hm : ¬ (p : ℤ) ∣ m) : IsUnit (m : 𝒪[ℚ_[p]]) := by
+  have h : IsUnit (m : ℤ_[p]) := PadicInt.isUnit_iff.2 <| (PadicInt.norm_le_one _).antisymm <|
+    not_lt.1 fun h ↦ hm ((PadicInt.norm_int_lt_one_iff_dvd m).1 h)
+  simpa using h.map (_root_.Padic.integerRingEquiv p).symm
+
+variable {p} in
+/-- **The Hilbert symbol of two `p`-adic units.** For an odd prime `p` and integers `m` and `n`
+prime to `p`, the Hilbert symbol `(m, n)` over `ℚ_p` is `1`. -/
+theorem hilbertSymbol_intCast_intCast_eq_one (hp : p ≠ 2) {m n : ℤ} (hm : ¬ (p : ℤ) ∣ m)
+    (hn : ¬ (p : ℤ) ∣ n) :
+    hilbertSymbol (Units.mk0 (m : ℚ_[p]) (Int.cast_ne_zero.2 fun h ↦ hm (h ▸ dvd_zero _)))
+      (Units.mk0 (n : ℚ_[p]) (Int.cast_ne_zero.2 fun h ↦ hn (h ▸ dvd_zero _))) = 1 := by
+  have h := hilbertSymbol_units_map_eq_one (K := ℚ_[p]) (isUnit_two_integers hp)
+    (isUnit_intCast_integers hm).unit (isUnit_intCast_integers hn).unit
   convert h using 2 <;> ext <;> simp
 
 variable {p} in
 /-- **The Hilbert symbol `(n, p)` over `ℚ_p` is the Legendre symbol `(n / p)`**, for an odd prime
-`p` and a natural number `n` prime to `p`: the integral unit `n` pairs with the uniformizer `p` to
-`1` exactly when its residue is a square in `𝔽_p`. -/
-theorem hilbertSymbol_natCast_self_eq_legendreSym (hp : p ≠ 2) {n : ℕ} (hn : ¬ p ∣ n) :
-    ((hilbertSymbol (Units.mk0 (n : ℚ_[p]) (Nat.cast_ne_zero.2 fun h ↦ hn (h ▸ dvd_zero p)))
+`p` and an integer `n` prime to `p`: the integral unit `n` pairs with the uniformizer `p` to `1`
+exactly when its residue is a square in `𝔽_p`. -/
+theorem hilbertSymbol_intCast_self_eq_legendreSym (hp : p ≠ 2) {n : ℤ} (hn : ¬ (p : ℤ) ∣ n) :
+    ((hilbertSymbol (Units.mk0 (n : ℚ_[p]) (Int.cast_ne_zero.2 fun h ↦ hn (h ▸ dvd_zero _)))
       (Units.mk0 (p : ℚ_[p]) (Nat.cast_ne_zero.2 (Fact.out : p.Prime).ne_zero)) : ℤˣ) : ℤ) =
       legendreSym p n := by
   classical
-  have h2 : IsUnit (2 : 𝒪[ℚ_[p]]) :=
-    (natCastValuation_eq_zero_iff (K := ℚ_[p]) 2 (by norm_num)).mp (natCastValuation_two p hp)
   -- `n` is an integral unit of `ℚ_[p]`.
-  have hu : IsUnit (n : 𝒪[ℚ_[p]]) := by
-    simpa using (PadicInt.isUnit_natCast_of_coprime
-      (((Fact.out : p.Prime).coprime_iff_not_dvd).2 hn)).map (integerRingEquiv p).symm
+  have hu := isUnit_intCast_integers hn
   have hmk : Units.map (Subring.subtype 𝒪[ℚ_[p]] : 𝒪[ℚ_[p]] →* ℚ_[p]) hu.unit =
-      Units.mk0 (n : ℚ_[p]) (Nat.cast_ne_zero.2 fun h ↦ hn (h ▸ dvd_zero p)) :=
+      Units.mk0 (n : ℚ_[p]) (Int.cast_ne_zero.2 fun h ↦ hn (h ▸ dvd_zero _)) :=
     Units.ext (by simp)
   -- The residue field of `ℚ_[p]` is `𝔽_p`, the residue of `n` going to `n`.
   let E : 𝓀[ℚ_[p]] ≃+* ZMod p :=
-    (ResidueField.mapEquiv (integerRingEquiv p)).trans PadicInt.residueField
+    (ResidueField.mapEquiv (_root_.Padic.integerRingEquiv p)).trans PadicInt.residueField
   have hres : IsSquare (Units.map (residue 𝒪[ℚ_[p]] : 𝒪[ℚ_[p]] →* 𝓀[ℚ_[p]]) hu.unit) ↔
       IsSquare (n : ZMod p) := by
     rw [← isSquare_units_val_iff]
@@ -96,23 +103,26 @@ theorem hilbertSymbol_natCast_self_eq_legendreSym (hp : p ≠ 2) {n : ℕ} (hn :
       simp
     rw [← hE]
     exact ⟨fun h ↦ h.map E, fun h ↦ by simpa using h.map E.symm⟩
-  have hn0 : ((n : ℤ) : ZMod p) ≠ 0 := by
-    rw [Int.cast_natCast, Ne, ZMod.natCast_eq_zero_iff]
-    exact hn
-  rw [← hmk,
-    hilbertSymbol_unit_uniformizer_eq_ite h2 _ (TauCeti.Padic.isUniformizer_natCast_self p)]
+  have hn0 : (n : ZMod p) ≠ 0 := by
+    rwa [Ne, ZMod.intCast_zmod_eq_zero_iff_dvd]
+  rw [← hmk, hilbertSymbol_unit_uniformizer_eq_ite (isUnit_two_integers hp) _
+    (isUniformizer_natCast_self p)]
   split_ifs with h <;> rw [hres] at h
-  · exact ((legendreSym.eq_one_iff p hn0).2 (by simpa using h)).symm
-  · exact ((legendreSym.eq_neg_one_iff p).2 (by simpa using h)).symm
+  · exact ((legendreSym.eq_one_iff p hn0).2 h).symm
+  · exact ((legendreSym.eq_neg_one_iff p).2 h).symm
+
+end TauCeti.Padic
+
+namespace Padic
+
+variable (p : ℕ) [Fact p.Prime]
 
 /-- If `p ≡ 3 (mod 4)`, then the Hilbert symbol `(-1, p)` over `ℚ_p` is `-1`: the prime `p` is not
 a sum of two squares in `ℚ_p`. -/
 theorem hilbertSymbol_neg_one_eq_neg_one_of_mod_four_eq_three (hp : p % 4 = 3) :
     hilbertSymbol (-1 : ℚ_[p]ˣ)
       (Units.mk0 (p : ℚ_[p]) (Nat.cast_ne_zero.2 (Fact.out : p.Prime).ne_zero)) = -1 := by
-  have h2 : IsUnit (2 : 𝒪[ℚ_[p]]) :=
-    (natCastValuation_eq_zero_iff (K := ℚ_[p]) 2 (by norm_num)).mp
-      (natCastValuation_two p (by omega))
+  have h2 := TauCeti.Padic.isUnit_two_integers (p := p) (by omega)
   have hu : (normalizedValuation ℚ_[p] (-1 : ℚ_[p]ˣ)).toAdd = 0 := by
     rw [toAdd_normalizedValuation_eq_valuation]
     simpa [padicValInt] using valuation_intCast (p := p) (-1)
