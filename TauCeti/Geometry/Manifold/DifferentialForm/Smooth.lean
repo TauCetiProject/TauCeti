@@ -119,6 +119,33 @@ abbrev SmoothBundleForm (I : ModelWithCorners ℝ E H) (F : Type*)
 
 section FixedCoefficients
 
+/-- A fixed-coefficient rough form is `C^n` when it is a `C^n` section of the existing
+alternating tangent bundle. Degree and coefficient space are inferred from the form. -/
+def IsSmoothForm (I : ModelWithCorners ℝ E H) [IsManifold I 1 M]
+    (n : WithTop ℕ∞) (φ : RoughForm I M F k) : Prop :=
+  IsSmoothBundleForm (I := I) (F := F) (V := Bundle.Trivial M F) (k := k) n φ
+
+/-- The fixed-coefficient regularity predicate is the existing section regularity predicate. -/
+theorem isSmoothForm_def [IsManifold I 1 M] (n : WithTop ℕ∞) (φ : RoughForm I M F k) :
+    IsSmoothForm I n φ ↔
+      ContMDiff I (I.prod 𝓘(ℝ, E [⋀^Fin k]→L[ℝ] F)) n
+        (fun x ↦ TotalSpace.mk' (E [⋀^Fin k]→L[ℝ] F) x (φ x)) :=
+  Iff.rfl
+
+/-- A regular fixed-coefficient form is a regular section of the alternating bundle. -/
+theorem IsSmoothForm.contMDiff [IsManifold I 1 M] {n : WithTop ℕ∞}
+    {φ : RoughForm I M F k} (hφ : IsSmoothForm I n φ) :
+    ContMDiff I (I.prod 𝓘(ℝ, E [⋀^Fin k]→L[ℝ] F)) n
+      (fun x ↦ TotalSpace.mk' (E [⋀^Fin k]→L[ℝ] F) x (φ x)) :=
+  (isSmoothForm_def n φ).mp hφ
+
+/-- Multiplication by a scalar `C^n` function preserves the regularity of a rough form. -/
+theorem IsSmoothForm.fun_smul [IsManifold I 1 M] {n : WithTop ℕ∞}
+    {φ : RoughForm I M F k} (hφ : IsSmoothForm I n φ) {f : M → ℝ}
+    (hf : ContMDiff I 𝓘(ℝ, ℝ) n f) : IsSmoothForm I n (fun x ↦ f x • φ x) := by
+  rw [isSmoothForm_def]
+  exact hf.smul_section hφ.contMDiff
+
 /-- The submodule of smooth fixed-coefficient `F`-valued rough forms. -/
 def smoothForms (I : ModelWithCorners ℝ E H) (M : Type*) [TopologicalSpace M]
     [ChartedSpace H M] [IsManifold I 1 M] (F : Type*)
