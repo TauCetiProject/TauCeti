@@ -20,7 +20,8 @@ name: pick-runner
 # cannot use. Set the variable to 20 to use every slot.
 #
 # The App-token path preserves `vars.PICKER_API_RESERVE` requests (default 1500) for merge
-# and review automation. The separate per-repository `github.token` budget uses no shared reserve.
+# and review automation. At the reserve, the picker tries the separate per-repository
+# `github.token` budget before falling back to Namespace; that budget uses no shared reserve.
 # Any failure (API error, timeout or rate limit) answers Namespace,
 # and a caller whose picker did not produce an answer at all also falls back to Namespace. The job is
 # `continue-on-error`, so even a picker that crashes leaves the caller's run green: review.yml and
@@ -81,6 +82,7 @@ jobs:
         id: pick
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token || github.token }}
+          FALLBACK_TOKEN: ${{ github.token }}
           ORG: ${{ github.repository_owner }}
           BUDGET: ${{ vars.HOSTED_RUNNER_BUDGET || '18' }}
           API_RESERVE: ${{ steps.app-token.outputs.token && (vars.PICKER_API_RESERVE || '1500') || '0' }}
@@ -101,6 +103,17 @@ jobs:
           quota_available() {
             remaining=$(api rate_limit --jq .resources.core.remaining) || return 1
             case "$remaining" in ''|*[!0-9]*) return 1 ;; esac
+            if [ "$remaining" -le "$((10#$API_RESERVE + $1))" ] \
+                && [ -n "$FALLBACK_TOKEN" ] && [ "$GH_TOKEN" != "$FALLBACK_TOKEN" ]; then
+              # Preserve the review App's reserve without giving up idle hosted capacity.
+              # Export the replacement so parallel child gh processes use the same token.
+              export GH_TOKEN="$FALLBACK_TOKEN"
+              API_RESERVE=0
+              echo "Shared App quota reserve protected; checking capacity with the repository API budget." \
+                | tee -a "$GITHUB_STEP_SUMMARY"
+              remaining=$(api rate_limit --jq .resources.core.remaining) || return 1
+              case "$remaining" in ''|*[!0-9]*) return 1 ;; esac
+            fi
             [ "$remaining" -gt "$((10#$API_RESERVE + $1))" ]
           }
           # The picker shares the installation budget with merge and review automation.
