@@ -336,7 +336,7 @@ theorem _root_.ContinuousOn.monotoneOn_of_integral_deriv_mul_nonpos {a b : ℝ} 
         rw [Real.dist_eq]; linarith [min_le_left δ ε, lt_min hδ hε])
   obtain ⟨rx, hrx, hxsub, hfx⟩ := hnear x hx
   obtain ⟨ry, hry, hysub, hfy⟩ := hnear y hy
-  set r := min rx ry with hr_def
+  set r := min rx ry with _
   have hr : 0 < r := lt_min hrx hry
   have hrx' : r ≤ rx := min_le_left _ _
   have hry' : r ≤ ry := min_le_right _ _

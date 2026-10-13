@@ -126,7 +126,7 @@ theorem exists_tendsto_atTop_of_antitone (φ : Flow ℝ α) {g : α → ℝ} (hg
     (hanti : ∀ y, Antitone fun t ↦ g (φ t y)) {C : Set α} (hC : C.Finite)
     (hrest : ∀ z, (∀ t, g (φ t z) = g z) → z ∈ C) (y : α) :
     ∃ x ∈ C, Tendsto (fun t ↦ φ t y) atTop (𝓝 x) := by
-  set γ : ℝ → α := fun t ↦ φ t y with hγdef
+  set γ : ℝ → α := fun t ↦ φ t y
   have hγc : Continuous γ := φ.continuous continuous_id continuous_const
   -- The values of `g` along the orbit converge.
   have hbdd : BddBelow (range fun t ↦ g (γ t)) := by

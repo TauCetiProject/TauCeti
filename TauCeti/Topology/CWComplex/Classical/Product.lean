@@ -55,17 +55,18 @@ noncomputable section
 
 open Metric Set Topology Topology.RelCWComplex
 
-universe u
+universe u v
 
 namespace TauCeti
 
-variable {X Y : Type u} [TopologicalSpace X] [TopologicalSpace Y] {C : Set X} {D : Set Y}
+variable {X : Type u} {Y : Type v} [TopologicalSpace X] [TopologicalSpace Y]
+  {C : Set X} {D : Set Y}
   [CWComplex C] [CWComplex D]
 
 variable (C D) in
 /-- The `n`-cells of the product of two CW complexes: a `p`-cell of `C` and a `q`-cell of `D`
 with `p + q = n`. -/
-private abbrev ProdCell (n : ℕ) : Type u :=
+private abbrev ProdCell (n : ℕ) : Type (max u v) :=
   Σ pq : Finset.antidiagonal n, cell C pq.1.1 × cell D pq.1.2
 
 /-- The identification of `Fin n → ℝ` with `(Fin p → ℝ) × (Fin q → ℝ)` used to parametrise the
@@ -277,9 +278,8 @@ instance FiniteCWType.prod [hX : FiniteCWType X] [hY : FiniteCWType Y] :
   obtain ⟨Y', _, _, D, _, _, ⟨f⟩⟩ := hY.exists_homotopyEquiv
   exact ((e.prodCongr f).trans (Homeomorph.Set.prod C D).symm.toHomotopyEquiv).finiteCWType
 
-/-- A finite product of spaces of finite CW type has finite CW type.  The index type lives in the
-universe of the factors, where `FiniteCWType` looks for its finite CW models. -/
-instance FiniteCWType.pi {ι : Type u} [Finite ι] (X : ι → Type u) [∀ i, TopologicalSpace (X i)]
+/-- A finite product of spaces of finite CW type has finite CW type. -/
+instance FiniteCWType.pi {ι : Type v} [Finite ι] (X : ι → Type u) [∀ i, TopologicalSpace (X i)]
     [∀ i, FiniteCWType (X i)] : FiniteCWType (∀ i, X i) := by
   induction ι using Finite.induction_empty_option with
   | of_equiv e ih => exact (Homeomorph.piCongrLeft (Y := X) e).symm.finiteCWType

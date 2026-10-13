@@ -158,9 +158,9 @@ private lemma lt_norm_sub_arc_of_far (ht : t ∈ Icc (1 : ℝ) 3) (ht₀ : t₀ 
 
 /-- Near the crossing along the arc, the chord distance is at most the excision chord. -/
 private lemma norm_sub_arc_le_of_near (ht : t ∈ Icc (1 : ℝ) 3) (ht₀ : t₀ ∈ Icc (1 : ℝ) 3)
-    (hδ2 : δ ≤ 2) (hnear : |t - t₀| ≤ δ) :
+    (_ : δ ≤ 2) (hnear : |t - t₀| ≤ δ) :
     ‖fdBoundary H t - fdBoundary H t₀‖ ≤ 2 * Real.sin (δ * (Real.pi / 12)) := by
-  have hδ0 : 0 ≤ δ := (abs_nonneg _).trans hnear
+  have : 0 ≤ δ := (abs_nonneg _).trans hnear
   rw [norm_fdBoundary_sub_fdBoundary_arc ht ht₀,
     Real.abs_sin_eq_sin_abs_of_abs_le_pi (by
       rw [abs_mul, abs_of_pos (by positivity : (0 : ℝ) < Real.pi / 12)]
@@ -239,7 +239,6 @@ private lemma log_sub_log_arc (ht₀ : t₀ ∈ Icc (1 : ℝ) 3) (hδ : 0 < δ) 
       Complex.log ((fdBoundary H (t₀ + δ) - fdBoundary H t₀) * (fdBoundary H t₀)⁻¹) =
       -((Real.pi + δ * (Real.pi / 6) : ℝ) : ℂ) * Complex.I := by
   have hπ := Real.pi_pos
-  have hδ2 : δ ≤ 2 := by linarith [ht₀.1, ht₀.2]
   have hsin : 0 < Real.sin (δ * (Real.pi / 12)) :=
     Real.sin_pos_of_pos_of_lt_pi (by positivity) (by nlinarith)
   rw [fdBoundary_sub_mul_inv_sub_eq ht₀ hδ hδ1, fdBoundary_sub_mul_inv_add_eq ht₀ hδ hδ3,
@@ -285,7 +284,7 @@ private lemma slit_branch_arc (hH : 1 < H) (hnorm : ‖w‖ = 1) (him : 0 < w.im
   rw [Complex.mem_slitPlane_iff] at hmem
   push Not at hmem
   obtain ⟨hre0, him0⟩ := hmem
-  set x := ((fdBoundary H t - w) * w⁻¹).re with hx
+  set x := ((fdBoundary H t - w) * w⁻¹).re
   have hxeq : (fdBoundary H t - w) * w⁻¹ = (x : ℂ) := Complex.ext rfl (by simpa using him0)
   have hγ : fdBoundary H t = (1 + (x : ℂ)) * w := by
     have h1 := congrArg (· * w) hxeq
@@ -465,7 +464,7 @@ theorem hasCauchyPVAt_fdBoundary_arc (hH : 1 < H) (hnorm : ‖w‖ = 1)
   obtain ⟨t₀, ht₀, hw⟩ := exists_arc_param (H := H) hnorm hre him
   set b := min (min (2 * Real.sin ((t₀ - 1) * (Real.pi / 12)))
       (2 * Real.sin ((3 - t₀) * (Real.pi / 12))))
-    (min (1 / 2 - w.re) (min (w.re + 1 / 2) (H - 1))) with hb_def
+    (min (1 / 2 - w.re) (min (w.re + 1 / 2) (H - 1)))
   have hb : 0 < b := arc_min_radius_pos hH hre ht₀
   have hIoo : Ioo (0 : ℝ) b ∈ 𝓝[>] (0 : ℝ) := Ioo_mem_nhdsGT hb
   have hspec : ∀ ε ∈ Ioo (0 : ℝ) b,

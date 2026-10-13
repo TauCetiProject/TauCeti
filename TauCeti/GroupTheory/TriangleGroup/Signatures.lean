@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Combinatorics.PermutationTriple.Orders
+public import TauCeti.Combinatorics.PermutationTriple.Orders.Basic
 public import TauCeti.GroupTheory.TriangleGroup.Hyperbolic
+import TauCeti.Algebra.Order.Field.Basic
 import TauCeti.GroupTheory.TriangleGroup.Cyclic
 import TauCeti.GroupTheory.TriangleGroup.Dihedral
 import TauCeti.GroupTheory.TriangleGroup.Polyhedral
@@ -98,6 +99,8 @@ works on a concrete signature, and a public characteristic lemma
   parameters are not a row of the spherical table gives an infinite triangle group.
 * `TauCeti.TriangleGroup.finite_iff_isSphericalParameterSignature`: a sorted positive signature
   gives a finite triangle group exactly when its parameters are a row of the spherical table.
+* `TauCeti.TriangleGroup.natCard_eq_two_div_orbifoldEulerChar`: an exact spherical signature
+  gives a triangle group of order `2 / χᵒʳᵇ`.
 * `TauCeti.PermutationTriple.geometryType_eq_spherical_iff_orbifoldEulerChar_pos` and its
   Euclidean and hyperbolic counterparts: the sign of the orbifold characteristic is the geometry
   type of a triple with exact orders `(a, b, c)`.
@@ -279,8 +282,8 @@ theorem isSphericalParameterSignature_iff {a b c : ℕ} (h₁ : 1 ≤ a) (h₂ :
     IsSphericalParameterSignature a b c ↔ 0 < orbifoldEulerChar a b c := by
   constructor
   · intro h
-    have h' := isSphericalParameterSignature_rows_iff a b c |>.mp h
-    rcases h' with ⟨-, -, -, h | h | h | h | h⟩
+    rcases isSphericalParameterSignature_rows_iff a b c |>.mp h with
+      ⟨-, -, -, h | h | ⟨rfl, rfl, rfl⟩ | ⟨rfl, rfl, rfl⟩ | ⟨rfl, rfl, rfl⟩⟩
     · -- the cyclic row: `χᵒʳᵇ(1, b, c) = 1/b + 1/c > 0`
       subst h
       have hb : (0 : ℚ) < b := by exact_mod_cast (by omega)
@@ -292,12 +295,8 @@ theorem isSphericalParameterSignature_iff {a b c : ℕ} (h₁ : 1 ≤ a) (h₂ :
       have hc : (0 : ℚ) < c := by exact_mod_cast (by omega)
       simp only [orbifoldEulerChar]
       linarith [inv_pos.mpr hc]
-    · obtain ⟨rfl, rfl, rfl⟩ := h
-      norm_num [orbifoldEulerChar]
-    · obtain ⟨rfl, rfl, rfl⟩ := h
-      norm_num [orbifoldEulerChar]
-    · obtain ⟨rfl, rfl, rfl⟩ := h
-      norm_num [orbifoldEulerChar]
+    -- the three polyhedral rows
+    all_goals norm_num [orbifoldEulerChar]
   · intro h
     have hsum : 1 < 1 / (a : ℚ) + 1 / (b : ℚ) + 1 / (c : ℚ) := by
       simpa only [orbifoldEulerChar, div_eq_mul_inv, one_mul] using
@@ -314,13 +313,9 @@ theorem isSphericalParameterSignature_iff {a b c : ℕ} (h₁ : 1 ≤ a) (h₂ :
     · have hbc : 1 / 2 + 1 / (b : ℚ) + 1 / (c : ℚ) > 1 := by simpa using hsum
       -- `1/b + 1/c > 1/2` and `1/c ≤ 1/b` force `b < 4`
       have hb4 : b < 4 := by
-        have hcb : 1 / (c : ℚ) ≤ 1 / (b : ℚ) := one_div_le_one_div_of_le hb h₃'
-        have h2 : (1 : ℚ) / 2 < 2 * (1 / (b : ℚ)) := by linarith
-        have h2' : (1 : ℚ) / 2 < 2 / (b : ℚ) := by
-          simpa only [div_eq_mul_inv, one_mul] using h2
-        have hlt : (b : ℚ) < 4 := by
-          linarith [(lt_div_iff₀ hb).mp h2']
-        exact_mod_cast hlt
+        have h := (lt_div_iff₀ hb).mp ((by linarith : (1 : ℚ) / 2 < 1 / b + 1 / c).trans_le
+          (one_div_add_one_div_le_two_div hb h₃'))
+        exact_mod_cast (by linarith : (b : ℚ) < 4)
       interval_cases b
       · exact ⟨h₁, h₂, h₃, Or.inr (Or.inl ⟨rfl, rfl⟩)⟩
       · -- `1/c > 1/6` forces `c ≤ 5`
@@ -333,7 +328,6 @@ theorem isSphericalParameterSignature_iff {a b c : ℕ} (h₁ : 1 ≤ a) (h₂ :
         · exact ⟨h₁, h₂, h₃, Or.inr (Or.inr (Or.inr (Or.inl rfl)))⟩
         · exact ⟨h₁, h₂, h₃, Or.inr (Or.inr (Or.inr (Or.inr rfl)))⟩
     · -- three parameters at least `3` have reciprocal sum at most one
-      have hbc : 1 / 3 + 1 / (b : ℚ) + 1 / (c : ℚ) > 1 := by simpa using hsum
       have hba : 1 / (b : ℚ) ≤ 1 / 3 := one_div_le_one_div_of_le (by norm_num : (0 : ℚ) < 3) h₂'
       have hca : 1 / (c : ℚ) ≤ 1 / 3 :=
         one_div_le_one_div_of_le (by norm_num : (0 : ℚ) < 3) (h₂'.trans h₃')
@@ -345,14 +339,8 @@ theorem isEuclideanSignature_iff {a b c : ℕ} (h₁ : 1 ≤ a) (h₂ : a ≤ b)
     IsEuclideanSignature a b c ↔ orbifoldEulerChar a b c = 0 := by
   constructor
   · intro h
-    have h' := isEuclideanSignature_rows_iff a b c |>.mp h
-    rcases h' with (h | h | h)
-    · obtain ⟨rfl, rfl, rfl⟩ := h
-      norm_num [orbifoldEulerChar]
-    · obtain ⟨rfl, rfl, rfl⟩ := h
-      norm_num [orbifoldEulerChar]
-    · obtain ⟨rfl, rfl, rfl⟩ := h
-      norm_num [orbifoldEulerChar]
+    rcases isEuclideanSignature_rows_iff a b c |>.mp h with
+      ⟨rfl, rfl, rfl⟩ | ⟨rfl, rfl, rfl⟩ | ⟨rfl, rfl, rfl⟩ <;> norm_num [orbifoldEulerChar]
   · intro h
     have hsum : 1 / (a : ℚ) + 1 / (b : ℚ) + 1 / (c : ℚ) = 1 := by
       simpa only [orbifoldEulerChar, div_eq_mul_inv, one_mul] using
@@ -371,13 +359,8 @@ theorem isEuclideanSignature_iff {a b c : ℕ} (h₁ : 1 ≤ a) (h₂ : a ≤ b)
     · have hbc : 1 / (b : ℚ) + 1 / (c : ℚ) = 1 / 2 := by linarith
       -- `1/b + 1/c = 1/2` and `1/c ≤ 1/b` force `b ≤ 4`
       have hb5 : b ≤ 4 := by
-        have hcb : 1 / (c : ℚ) ≤ 1 / (b : ℚ) := one_div_le_one_div_of_le hb h₃'
-        have h2 : (1 : ℚ) / 2 ≤ 2 * (1 / (b : ℚ)) := by linarith
-        have h2' : (1 : ℚ) / 2 ≤ 2 / (b : ℚ) := by
-          simpa only [div_eq_mul_inv, one_mul] using h2
-        have hlt : (b : ℚ) ≤ 4 := by
-          linarith [(le_div_iff₀ hb).mp h2']
-        exact_mod_cast hlt
+        have h := (le_div_iff₀ hb).mp (hbc.ge.trans (one_div_add_one_div_le_two_div hb h₃'))
+        exact_mod_cast (by linarith : (b : ℚ) ≤ 4)
       interval_cases b
       · have hzero : 1 / (c : ℚ) = 0 := by linarith
         linarith [one_div_pos.mpr hc, hzero]
@@ -392,13 +375,8 @@ theorem isEuclideanSignature_iff {a b c : ℕ} (h₁ : 1 ≤ a) (h₂ : a ≤ b)
     · have hbc : 1 / (b : ℚ) + 1 / (c : ℚ) = 2 / 3 := by linarith
       -- `1/b + 1/c = 2/3` and `1/c ≤ 1/b` force `b ≤ 3`
       have hb4 : b ≤ 3 := by
-        have hcb : 1 / (c : ℚ) ≤ 1 / (b : ℚ) := one_div_le_one_div_of_le hb h₃'
-        have h2 : (2 : ℚ) / 3 ≤ 2 * (1 / (b : ℚ)) := by linarith
-        have h2' : (2 : ℚ) / 3 ≤ 2 / (b : ℚ) := by
-          simpa only [div_eq_mul_inv, one_mul] using h2
-        have hlt : (b : ℚ) ≤ 3 := by
-          linarith [(le_div_iff₀ hb).mp h2']
-        exact_mod_cast hlt
+        have h := (le_div_iff₀ hb).mp (hbc.ge.trans (one_div_add_one_div_le_two_div hb h₃'))
+        exact_mod_cast (by linarith : (b : ℚ) ≤ 3)
       have hb3 : b = 3 := by omega
       subst hb3
       have hinv : (1 : ℚ) / c = 1 / 3 := by linarith
@@ -542,6 +520,27 @@ theorem finite_iff_isSphericalParameterSignature {a b c : ℕ} (h₁ : 1 ≤ a) 
       exact finite_two_three_four
     · obtain ⟨rfl, rfl, rfl⟩ := h
       exact finite_two_three_five
+
+/-- The order of a triangle group with an exact spherical signature is twice the reciprocal of
+its orbifold Euler characteristic. The exact-signature hypothesis includes the reduced cyclic row
+`(1, m, m)`; the formula need not hold for unreduced parameters `(1, b, c)` with `b ≠ c`. -/
+theorem natCard_eq_two_div_orbifoldEulerChar {a b c : ℕ}
+    (h : IsSphericalSignature a b c) :
+    (Nat.card (TriangleGroup a b c) : ℚ) = 2 / orbifoldEulerChar a b c := by
+  rcases (isSphericalSignature_rows_iff a b c).1 h with
+    ⟨h₁, h₂, h₃, ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | h | h | h⟩
+  · rw [natCard_one_self_self, orbifoldEulerChar_def]
+    norm_num
+    field_simp
+    ring_nf
+  · rw [natCard_two_two c h₃, orbifoldEulerChar_def]
+    norm_num
+  · obtain ⟨rfl, rfl, rfl⟩ := h
+    norm_num [natCard_two_three_three]
+  · obtain ⟨rfl, rfl, rfl⟩ := h
+    norm_num [natCard_two_three_four]
+  · obtain ⟨rfl, rfl, rfl⟩ := h
+    norm_num [natCard_two_three_five]
 
 end TriangleGroup
 

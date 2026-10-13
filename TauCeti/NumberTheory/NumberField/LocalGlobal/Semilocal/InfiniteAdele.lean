@@ -5,6 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.TensorProduct.BaseChange
+public import TauCeti.NumberTheory.NumberField.Global.Adeles.InfiniteBaseChange
 public import TauCeti.NumberTheory.NumberField.Global.Adeles.GaloisAction
 public import TauCeti.NumberTheory.NumberField.Global.Places.Semilocal
 
@@ -27,10 +29,17 @@ transport of infinite adeles along a `K`-isomorphism `e` to `id ⊗ e`. This is 
 counterpart of `TauCeti.finiteAdeleSemilocalHom`: it is how the components above `v` of adeles
 are mapped into extensions of `K_v`, for instance into a separable closure of `K_v`.
 
+Taken over all infinite places `v` of `K` at once, these components identify the infinite adeles
+of `L` with `∏_v K_v ⊗[K] L` (`infiniteAdeleSemilocalEquiv`), and the Galois action of
+`σ ∈ Aut(L/K)` on infinite adeles becomes `id ⊗ σ` on every factor. This is the decomposition of
+the infinite ideles `L_∞ˣ` into the semi-local units `(K_v ⊗[K] L)ˣ`.
+
 ## Main definitions
 
 * `TauCeti.GlobalNumberFields.infiniteAdeleSemilocalHom L v`: the components above `v` of an
   infinite adele of `L`, as an element of `K_v ⊗[K] L`.
+* `TauCeti.GlobalNumberFields.infiniteAdeleSemilocalEquiv K L`: the ring isomorphism
+  `L_∞ ≃ ∏_v K_v ⊗[K] L` given by the semi-local components above every infinite place of `K`.
 
 ## Main results
 
@@ -41,6 +50,8 @@ are mapped into extensions of `K_v`, for instance into a separable closure of `K
   a tower `L ⊆ M`.
 * `TauCeti.GlobalNumberFields.infiniteAdeleSemilocalHom_infiniteAdeleEquiv`: naturality under
   `K`-isomorphisms.
+* `TauCeti.GlobalNumberFields.infiniteAdeleSemilocalEquiv_infiniteAdeleGaloisAction`: under
+  `infiniteAdeleSemilocalEquiv`, the Galois action is `id ⊗ σ` on each factor.
 
 ## References
 
@@ -90,6 +101,34 @@ theorem infiniteAdeleSemilocalHom_algebraMap (x : L) :
   rw [infiniteAdeleSemilocalHom_apply, ← infiniteSemilocalEquiv_symm_algebraMap L v x]
   exact congrArg (infiniteSemilocalEquiv L v).symm
     (funext fun w ↦ InfiniteAdeleRing.algebraMap_apply L x w.1)
+
+/-! ### The product over all infinite places -/
+
+variable (K L) in
+/-- **The infinite adeles are the product of the semi-local algebras.** Grouping the infinite
+places of `L` by the infinite place of `K` below them (`infiniteAdelePiLiesOverEquiv`), the
+semi-local components identify the infinite adeles of `L` with `∏_v K_v ⊗[K] L`, the product
+over the infinite places `v` of `K`. -/
+def infiniteAdeleSemilocalEquiv :
+    InfiniteAdeleRing L ≃+* ∀ v : InfinitePlace K, v.Completion ⊗[K] L :=
+  (infiniteAdelePiLiesOverEquiv K L).trans
+    (RingEquiv.piCongrRight fun v ↦ (infiniteSemilocalEquiv L v).symm.toRingEquiv)
+
+/-- The component at `v` of `infiniteAdeleSemilocalEquiv` is the semi-local component above
+`v`. -/
+@[simp]
+theorem infiniteAdeleSemilocalEquiv_apply (a : InfiniteAdeleRing L) (v : InfinitePlace K) :
+    infiniteAdeleSemilocalEquiv K L a v = infiniteAdeleSemilocalHom L v a := by
+  simp [infiniteAdeleSemilocalEquiv, infiniteAdeleSemilocalHom_apply, funext_iff]
+
+/-- The inverse of `infiniteAdeleSemilocalEquiv` reads the component at a place `w` of `L` off the
+semi-local factor at the place below `w`. -/
+@[simp]
+theorem infiniteAdeleSemilocalEquiv_symm_apply (y : ∀ v : InfinitePlace K, v.Completion ⊗[K] L)
+    (w : InfinitePlace L) :
+    (infiniteAdeleSemilocalEquiv K L).symm y w = infiniteSemilocalEquiv L
+      (w.comap (algebraMap K L)) (y (w.comap (algebraMap K L))) ⟨w, inferInstance⟩ := by
+  simp [infiniteAdeleSemilocalEquiv]
 
 /-! ### Naturality -/
 
@@ -183,5 +222,19 @@ theorem infiniteAdeleSemilocalHom_infiniteAdeleExtension (a : InfiniteAdeleRing 
       Algebra.TensorProduct.map_tmul, map_one, IsScalarTower.coe_toAlgHom']
 
 end Naturality
+
+/-- **The Galois action on the semi-local decomposition.** Under `infiniteAdeleSemilocalEquiv`,
+the Galois action of `σ ∈ Aut(L/K)` on infinite adeles applies the base change `id ⊗ σ` to each
+semi-local factor `K_v ⊗[K] L`. -/
+theorem infiniteAdeleSemilocalEquiv_infiniteAdeleGaloisAction (σ : L ≃ₐ[K] L)
+    (a : InfiniteAdeleRing L) (v : InfinitePlace K) :
+    infiniteAdeleSemilocalEquiv K L (infiniteAdeleGaloisAction K L σ a) v =
+      Algebra.TensorProduct.baseChangeAutHom v.Completion L σ
+        (infiniteAdeleSemilocalEquiv K L a v) := by
+  rw [infiniteAdeleSemilocalEquiv_apply, infiniteAdeleGaloisAction_apply,
+    infiniteAdeleSemilocalHom_infiniteAdeleEquiv, infiniteAdeleSemilocalEquiv_apply]
+  induction infiniteAdeleSemilocalHom L v a using TensorProduct.inductionOn with
+  | tmul b x => simp
+  | add y z hy hz => simp only [map_add, hy, hz]
 
 end TauCeti.GlobalNumberFields

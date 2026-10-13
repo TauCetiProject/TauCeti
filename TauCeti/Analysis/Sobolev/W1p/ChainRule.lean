@@ -12,6 +12,7 @@ public import TauCeti.MeasureTheory.Function.Lp.L1Convergence
 
 import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.Analysis.SpecialFunctions.Log.Deriv
+import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 import Mathlib.Analysis.SpecialFunctions.SmoothTransition
 import Mathlib.MeasureTheory.Function.ConvergenceInMeasure
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
@@ -61,12 +62,17 @@ by approximation, and the *order* of the two limits matters.
   bounded below by a positive constant `ε` and `φ` is only `C¹` on some `(δ, ∞)` with `δ < ε`,
   as for `log u` and `u⁻¹`.
 * `TauCeti.W1p.exists_value_gradient_ae_eq_log`: its instance `log u`, with gradient `u⁻¹ ∇u`.
+* `TauCeti.W1p.exists_value_gradient_ae_eq_rpow`: its instance `u ^ r` for `r ≤ 1`, with gradient
+  `r u ^ (r - 1) ∇u`.
 * `TauCeti.W1p.hasWeakFDerivOn_posPart`: the weak gradient of the positive part.
 * `TauCeti.W1p.posPartAboveOfMemLp`: the shifted truncation `(u - k)⁺` at an arbitrary
   level, assuming its value is globally in `Lᵖ`.
-* `TauCeti.W1p.posPartAbove`: the shifted truncation `(u - k)⁺` for `k ≥ 0`.
+* `TauCeti.W1p.posPartAbove`: the shifted truncation `(u - k)⁺` for `k ≥ 0`, and
+  `TauCeti.W1p.posPartAbove_posPartAbove`: truncating twice adds the levels.
 * `TauCeti.W1p.posPart`: the positive part `u⁺` as an element of `W^{1,p}(Ω)`, with its value
   `TauCeti.W1p.value_posPart` and its weak gradient `TauCeti.W1p.gradient_posPart_ae`.
+* `TauCeti.W1p.posPart_eq_self_of_ae_nonneg`: the positive part of a nonnegative function is the
+  function itself.
 
 ## References
 
@@ -520,6 +526,22 @@ theorem W1p.exists_value_gradient_ae_eq_log (hp : p ≠ ∞) (hε : 0 < ε) {u :
       exact inv_anti₀ hε ht) hu
   exact ⟨w, hwv, hwg.mono fun x hx => by simp only [hx, Real.deriv_log]⟩
 
+/-- A real power `u ^ r`, `r ≤ 1`, of a Sobolev function bounded below by a positive constant is a
+Sobolev function, with weak gradient `r u ^ (r - 1) ∇u`. -/
+theorem W1p.exists_value_gradient_ae_eq_rpow (hp : p ≠ ∞) (hε : 0 < ε) {r : ℝ} (hr : r ≤ 1)
+    {u : W1p mu Omega p} (hu : ∀ᵐ x ∂mu.restrict Omega, ε ≤ W1p.value u x) :
+    ∃ w : W1p mu Omega p,
+      W1p.value w =ᵐ[mu.restrict Omega] (fun x => W1p.value u x ^ r) ∧
+        W1p.gradient w =ᵐ[mu.restrict Omega]
+          fun x => (r * W1p.value u x ^ (r - 1)) • W1p.gradient u x := by
+  obtain ⟨w, hwv, hwg⟩ := W1p.exists_value_gradient_ae_eq_comp_of_le (φ := fun t => t ^ r) hp hε
+    (fun t ht => (Real.contDiffAt_rpow_const_of_ne (ne_of_gt ht)).contDiffWithinAt) hε
+    (M := |r| * ε ^ (r - 1)) (fun t ht => by
+      rw [Real.deriv_rpow_const, abs_mul, abs_of_pos (Real.rpow_pos_of_pos (hε.trans_le ht) _)]
+      exact mul_le_mul_of_nonneg_left (Real.rpow_le_rpow_of_nonpos hε ht (sub_nonpos.2 hr))
+        (abs_nonneg r)) hu
+  exact ⟨w, hwv, hwg.mono fun x hx => by simp only [hx, Real.deriv_rpow_const]⟩
+
 omit [FiniteDimensional ℝ E] in
 /-- The squared norm `(‖∇u‖ / u)²` of the gradient of `log u` is integrable on `Ω` when
 `u ∈ H¹(Ω)` is bounded below by a positive constant. -/
@@ -951,6 +973,32 @@ theorem W1p.posPartAbove_zero (hp : p ≠ ∞) (u : W1p mu Omega p) :
   filter_upwards [W1p.value_posPartAbove_ae hp (le_refl 0) u,
     Lp.coeFn_posPart (W1p.value u)] with x hx hy
   rw [hx, hy, sub_zero]
+
+/-- Truncating `(u - k)⁺` above a further level `l ≥ 0` truncates `u` above `k + l`. -/
+@[simp]
+theorem W1p.posPartAbove_posPartAbove (hp : p ≠ ∞) {k l : ℝ} (hk : 0 ≤ k) (hl : 0 ≤ l)
+    (u : W1p mu Omega p) :
+    W1p.posPartAbove hp hl (W1p.posPartAbove hp hk u) =
+      W1p.posPartAbove hp (add_nonneg hk hl) u := by
+  refine W1p.ext_value (Lp.ext ?_)
+  filter_upwards [W1p.value_posPartAbove_ae hp hl (W1p.posPartAbove hp hk u),
+    W1p.value_posPartAbove_ae hp hk u, W1p.value_posPartAbove_ae hp (add_nonneg hk hl) u]
+    with x hx hy hz
+  rw [hx, hy, hz]
+  rcases le_or_gt (W1p.value u x) k with h | h
+  · rw [max_eq_right (sub_nonpos.2 h), zero_sub, max_eq_right (by linarith),
+      max_eq_right (by linarith)]
+  · rw [max_eq_left (sub_pos.2 h).le, sub_sub]
+
+/-- The positive part of an almost everywhere nonnegative Sobolev function is the function
+itself. -/
+theorem W1p.posPart_eq_self_of_ae_nonneg (hp : p ≠ ∞) {u : W1p mu Omega p}
+    (hu : ∀ᵐ x ∂mu.restrict Omega, 0 ≤ W1p.value u x) :
+    W1p.posPart hp u = u := by
+  refine W1p.ext_value (Lp.ext ?_)
+  rw [W1p.value_posPart]
+  filter_upwards [Lp.coeFn_posPart (W1p.value u), hu] with x hx hux
+  rw [hx, max_eq_left hux]
 
 end PosPart
 

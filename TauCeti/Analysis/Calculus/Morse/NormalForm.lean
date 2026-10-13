@@ -54,21 +54,20 @@ the identity for `v` close to `0`, so it has a unique square root there
 to the identity.  Self-adjointness is exactly what turns `R v * R v = C v` into the congruence
 identity.
 
-This is Lane M of the analytic Heegaard Floer roadmap, which asks for Morse homology built the
-way Floer homology is built.  The Morse lemma is what makes the local model of a Morse function
-available: the index of the critical point, the local handle structure, and the local form of the
-gradient flow are all read off it.  Everything here is stated for `C^∞` functions, which is the
-standing regularity of Morse theory; the refinement giving a `C^k` chart for a `C^{k+2}` function
-is not proved.
+The Morse lemma supplies the local model of a Morse function: the index of the critical point,
+the local handle structure, and the local form of the gradient flow are all read off it.  The
+averaged Hessian of a `C^{n+2}` function is `C^n`, and the congruence construction preserves the
+regularity of the family.  The Morse lemma itself is stated for `C^∞` functions; the refinement
+giving a `C^k` chart for a `C^{k+2}` function is not proved.
 
 ## Main declarations
 
 * `TauCeti.hessianAverage`: the averaged Hessian along a segment, normalised so that
   `TauCeti.hessianAverage_zero` identifies its value at `0` with the Hessian.
 * `TauCeti.map_add_eq_add_hessianAverage`: the second-order Taylor formula it satisfies.
-* `TauCeti.exists_congruence_of_symmetric_family`: a smooth family of symmetric continuous
-  bilinear forms whose value at `0` is invertible is, near `0`, the congruence of that value by a
-  smooth family of operators equal to the identity at `0`.
+* `TauCeti.exists_congruence_of_symmetric_family`: a `C^n` family of symmetric continuous
+  bilinear forms whose value at a basepoint is invertible is, near that point, the congruence of
+  that value by a `C^n` family of operators equal to the identity at the basepoint.
 * `TauCeti.IsNondegenerateCriticalPoint.exists_normal_form`: **the Morse lemma**, in the form of a
   smooth map `φ` fixing `0` with derivative the identity there.
 * `TauCeti.IsNondegenerateCriticalPoint.exists_morse_chart`: the Morse lemma as a chart at the
@@ -84,8 +83,6 @@ is not proved.
 * J. Milnor, *Morse Theory*, Annals of Mathematics Studies 51, 1963, Lemma 2.2, for the classical
   finite-dimensional statement.
 * M. Audin, M. Damian, *Morse Theory and Floer Homology*, Springer Universitext, 2014, Chapter 1.
-* [Heegaard Floer homology roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/HeegaardFloer/README.md),
-  Lane M, "Morse homology".
 -/
 
 public section
@@ -102,13 +99,6 @@ universe u v
 
 variable {E : Type u} {F : Type v} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [NormedAddCommGroup F] [NormedSpace ℝ F] {x : E}
-
--- `NormedSpace.toIsBoundedSMul` does not fire on an iterated space of continuous linear maps,
--- because the `SMul` instance found there is `ContinuousLinearMap.instSMul` rather than the one
--- coming from the module structure; the two are definitionally equal, and this restatement makes
--- the instance available to `ContDiff.smul` and `Continuous.smul` below.
-private theorem isBoundedSMul_clm : IsBoundedSMul ℝ (E →L[ℝ] E →L[ℝ] F) :=
-  @NormedSpace.toIsBoundedSMul ℝ (E →L[ℝ] E →L[ℝ] F) _ _ _
 
 section HessianAverage
 
@@ -142,17 +132,20 @@ theorem hessianAverage_zero (f : E → F) (x : E) :
     norm_num [integral_id]
   rw [hI, one_smul]
 
-/-- The averaged Hessian of a smooth function depends smoothly on the direction. -/
-theorem contDiff_hessianAverage (hf : ContDiff ℝ ∞ f) (x : E) :
-    ContDiff ℝ ∞ (hessianAverage f x) := by
-  have hd : ContDiff ℝ ∞ (fderiv ℝ (fderiv ℝ f)) :=
-    (hf.fderiv_right (m := ∞) (by simp)).fderiv_right (m := ∞) (by simp)
-  exact (by fun_prop : ContDiff ℝ ∞ fun t : ℝ ↦ 2 * (1 - t)).contDiff_segmentAverage hd x
+/-- The averaged Hessian of a `C^{n+2}` function is `C^n` in the direction. -/
+theorem contDiff_hessianAverage {n : ℕ∞} (hf : ContDiff ℝ (n + 2) f) (x : E) :
+    ContDiff ℝ n (hessianAverage f x) := by
+  have hd : ContDiff ℝ n (fderiv ℝ (fderiv ℝ f)) :=
+    (hf.fderiv_right (m := n + 1) (by norm_num [add_assoc])).fderiv_right (m := n) (by simp)
+  exact (by fun_prop : ContDiff ℝ n fun t : ℝ ↦ 2 * (1 - t)).contDiff_segmentAverage hd x
 
 omit [CompleteSpace F] in
 private theorem continuous_hessianAverage_integrand (hf : ContDiff ℝ 2 f) (x v : E) :
     Continuous fun t : ℝ ↦ (2 * (1 - t)) • fderiv ℝ (fderiv ℝ f) (x + t • v) := by
-  have := isBoundedSMul_clm (E := E) (F := F)
+  -- The scalar action on iterated continuous linear maps is definitionally equal to the
+  -- normed-space action, but instance search does not identify the two instances.
+  let : IsBoundedSMul ℝ (E →L[ℝ] E →L[ℝ] F) :=
+    @NormedSpace.toIsBoundedSMul ℝ (E →L[ℝ] E →L[ℝ] F) _ _ _
   have hd : Continuous (fderiv ℝ (fderiv ℝ f)) :=
     ((hf.fderiv_right (m := 1) (by norm_num)).fderiv_right (m := 0) (by norm_num)).continuous
   exact (by fun_prop : Continuous fun t : ℝ ↦ 2 * (1 - t)).smul (hd.comp (by fun_prop))
@@ -205,21 +198,18 @@ section Congruence
 
 variable [CompleteSpace E]
 
-/-- A smooth family `B` of symmetric continuous bilinear forms on a Banach space whose value at
-`0` is invertible is, near `0`, the congruence of that value by a smooth family of continuous
-linear operators equal to the identity at `0`: there is `R` with `R 0 = 1` and
-`B₀ (R v w) (R v w') = B v w w'`.
-
-This is the linear-algebraic heart of the Morse lemma, and it is where the square root of an
-operator close to the identity is used: the comparison operator `C v = B₀⁻¹ ∘ B v` is
-self-adjoint for the pairing `B₀`, hence so is its square root `R v`, hence
-`B₀ (R v w) (R v w') = B₀ w ((R v * R v) w') = B₀ w (C v w') = B v w w'`. -/
+/-- A `C^n` family `B` of symmetric continuous bilinear forms on a Banach space whose value at
+`a` is invertible is, near `a`, the congruence of that value by a `C^n` family of continuous
+linear operators equal to the identity at `a`: there is `R` with `R a = 1` and
+`B₀ (R v w) (R v w') = B v w w'`. The parameter space `F` is independent of the Banach
+space `E` on which the forms act. In particular, continuity of the family suffices to obtain
+continuous congruences. -/
 theorem exists_congruence_of_symmetric_family
-    {B : E → E →L[ℝ] E →L[ℝ] ℝ} (hB : ContDiff ℝ ∞ B)
+    {n : ℕ∞ω} {a : F} {B : F → E →L[ℝ] E →L[ℝ] ℝ} (hB : ContDiff ℝ n B)
     (hsymm : ∀ v w w', B v w w' = B v w' w)
-    (B₀ : E ≃L[ℝ] (E →L[ℝ] ℝ)) (hB₀ : (B₀ : E →L[ℝ] E →L[ℝ] ℝ) = B 0) :
-    ∃ (R : E → (E →L[ℝ] E)) (U : Set E), IsOpen U ∧ 0 ∈ U ∧ R 0 = 1 ∧
-      ContDiffOn ℝ ∞ R U ∧ ∀ v ∈ U, ∀ w w', B₀ (R v w) (R v w') = B v w w' := by
+    (B₀ : E ≃L[ℝ] (E →L[ℝ] ℝ)) (hB₀ : (B₀ : E →L[ℝ] E →L[ℝ] ℝ) = B a) :
+    ∃ (R : F → (E →L[ℝ] E)) (U : Set F), IsOpen U ∧ a ∈ U ∧ R a = 1 ∧
+      ContDiffOn ℝ n R U ∧ ∀ v ∈ U, ∀ w w', B₀ (R v w) (R v w') = B v w w' := by
   -- the adjoint of an operator for the pairing given by `B₀`
   set adj : (E →L[ℝ] E) →L[ℝ] (E →L[ℝ] E) :=
     (ContinuousLinearMap.compL ℝ E (E →L[ℝ] ℝ) E (B₀.symm : (E →L[ℝ] ℝ) →L[ℝ] E)).comp
@@ -245,19 +235,19 @@ theorem exists_congruence_of_symmetric_family
     rw [adj_spec, mul_apply_eq_comp, mul_apply_eq_comp, adj_spec, adj_spec]
   have hB₀symm : ∀ w w' : E, B₀ w w' = B₀ w' w := by
     intro w w'
-    have h := hsymm 0 w w'
+    have h := hsymm a w w'
     rw [← hB₀] at h
     simpa using h
   -- the comparison operator `B₀⁻¹ ∘ B v`
-  set C : E → (E →L[ℝ] E) := fun v ↦ (B₀.symm : (E →L[ℝ] ℝ) →L[ℝ] E).comp (B v) with hCdef
-  have hCapply : ∀ (v w w' : E), B₀ (C v w) w' = B v w w' := by
+  set C : F → (E →L[ℝ] E) := fun v ↦ (B₀.symm : (E →L[ℝ] ℝ) →L[ℝ] E).comp (B v) with hCdef
+  have hCapply : ∀ (v : F) (w w' : E), B₀ (C v w) w' = B v w w' := by
     intro v w w'
     simp [hCdef]
-  have hC0 : C 0 = 1 := by
+  have hCa : C a = 1 := by
     refine hdet _ _ fun w w' ↦ ?_
     rw [hCapply, ← hB₀]
     simp
-  have hCsmooth : ContDiff ℝ ∞ C := by
+  have hCsmooth : ContDiff ℝ n C := by
     have h := (ContinuousLinearMap.compL ℝ E (E →L[ℝ] ℝ) E
       (B₀.symm : (E →L[ℝ] ℝ) →L[ℝ] E)).contDiff.comp hB
     exact h
@@ -265,24 +255,17 @@ theorem exists_congruence_of_symmetric_family
     intro v
     refine hdet _ _ fun w w' ↦ ?_
     rw [adj_spec, hCapply, hB₀symm, hCapply, hsymm]
-  let R : E → (E →L[ℝ] E) := fun v ↦ sqrtNearOne (E →L[ℝ] E) (C v)
-  have hR0 : R 0 = 1 := by simp [R, hC0]
-  have hten : Filter.Tendsto C (𝓝 (0 : E)) (𝓝 1) :=
-    hC0 ▸ hCsmooth.continuous.continuousAt
-  have htenR : Filter.Tendsto R (𝓝 (0 : E)) (𝓝 1) := by
-    simpa [R, Function.comp_def] using
-      (continuousAt_sqrtNearOne (A := E →L[ℝ] E)).tendsto.comp hten
-  have htenA : Filter.Tendsto (fun v ↦ adj (R v)) (𝓝 (0 : E)) (𝓝 1) := by
-    simpa [adj_one, Function.comp_def] using (adj.continuous.tendsto 1).comp htenR
+  let R : F → (E →L[ℝ] E) := fun v ↦ sqrtNearOne (E →L[ℝ] E) (C v)
+  have hRa : R a = 1 := by simp [R, hCa]
+  have hten : Filter.Tendsto C (𝓝 (a : F)) (𝓝 1) :=
+    hCa ▸ hCsmooth.continuous.continuousAt
   have e1 := hten.eventually (eventually_mul_self_sqrtNearOne (A := E →L[ℝ] E))
-  have e2 := htenA.eventually (eventually_sqrtNearOne_mul_self (A := E →L[ℝ] E))
-  have hspec : ∀ᶠ v in 𝓝 (0 : E), ∀ w w', B₀ (R v w) (R v w') = B v w w' := by
+  have e2 := hten.eventually
+    (eventually_sqrtNearOne_fixed adj.continuous.continuousAt adj_one adj_mul)
+  have hspec : ∀ᶠ v in 𝓝 (a : F), ∀ w w', B₀ (R v w) (R v w') = B v w w' := by
     filter_upwards [e1, e2] with v h1 h2
-    have h3 : adj (sqrtNearOne (E →L[ℝ] E) (C v)) * adj (sqrtNearOne (E →L[ℝ] E) (C v)) = C v := by
-      rw [← adj_mul, h1, hCadj]
-    have h4 : sqrtNearOne (E →L[ℝ] E) (C v) = adj (sqrtNearOne (E →L[ℝ] E) (C v)) := by
-      rw [h3] at h2
-      exact h2
+    have h4 : sqrtNearOne (E →L[ℝ] E) (C v) = adj (sqrtNearOne (E →L[ℝ] E) (C v)) :=
+      (h2 (hCadj v)).symm
     have hself : ∀ w w' : E, B₀ (sqrtNearOne (E →L[ℝ] E) (C v) w) w'
         = B₀ w (sqrtNearOne (E →L[ℝ] E) (C v) w') := by
       intro w w'
@@ -298,16 +281,16 @@ theorem exists_congruence_of_symmetric_family
       _ = B v w w' := by
           rw [hB₀symm w (C v w'), hCapply v w' w]
           exact hsymm v w' w
-  obtain ⟨W, hWsub, hWopen, h0W⟩ := mem_nhds_iff.1 hspec
+  obtain ⟨W, hWsub, hWopen, haW⟩ := mem_nhds_iff.1 hspec
   let S : Set (E →L[ℝ] E) := {a | AnalyticAt ℝ (sqrtNearOne (E →L[ℝ] E)) a}
   have hSopen : IsOpen S := isOpen_analyticAt ℝ (sqrtNearOne (E →L[ℝ] E))
   have h1S : (1 : E →L[ℝ] E) ∈ S := analyticAt_sqrtNearOne
-  let U : Set E := W ∩ C ⁻¹' S
+  let U : Set F := W ∩ C ⁻¹' S
   have hUopen : IsOpen U := hWopen.inter (hSopen.preimage hCsmooth.continuous)
-  have h0U : (0 : E) ∈ U := ⟨h0W, by simpa [hC0] using h1S⟩
-  refine ⟨R, U, hUopen, h0U, hR0, ?_, ?_⟩
+  have haU : (a : F) ∈ U := ⟨haW, by simpa [hCa] using h1S⟩
+  refine ⟨R, U, hUopen, haU, hRa, ?_, ?_⟩
   · intro v hv
-    have hsqrt : ContDiffAt ℝ ∞ (sqrtNearOne (E →L[ℝ] E)) (C v) := hv.2.contDiffAt
+    have hsqrt : ContDiffAt ℝ n (sqrtNearOne (E →L[ℝ] E)) (C v) := hv.2.contDiffAt
     have hcomp := (hsqrt.comp v hCsmooth.contDiffAt).contDiffWithinAt (s := U)
     rwa [Function.comp_def] at hcomp
   · intro v hv
@@ -333,7 +316,9 @@ theorem IsNondegenerateCriticalPoint.exists_normal_form (hf : ContDiff ℝ ∞ f
       f (x + v) = f x + (2 : ℝ)⁻¹ * fderiv ℝ (fderiv ℝ f) x (φ v) (φ v) := by
   obtain ⟨B₀, hB₀⟩ := h.isInvertible
   obtain ⟨R, U, hUopen, h0U, hR0, hRsmooth, hRspec⟩ :=
-    exists_congruence_of_symmetric_family (B := hessianAverage f x) (contDiff_hessianAverage hf x)
+    exists_congruence_of_symmetric_family (a := (0 : E)) (B := hessianAverage f x)
+      (contDiff_hessianAverage (n := ⊤)
+        (by simpa [← one_add_one_eq_two, ← add_assoc] using hf) x)
       (fun v w w' ↦ hessianAverage_symm (hf.of_le (by norm_num)) x v w w') B₀
       (by rw [hB₀, hessianAverage_zero])
   have hRsmoothAt : ContDiffAt ℝ ∞ R 0 :=

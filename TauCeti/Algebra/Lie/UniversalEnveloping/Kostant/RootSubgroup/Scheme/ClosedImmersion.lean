@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.GroupScheme.ClosedSubgroup
+public import TauCeti.AlgebraicGeometry.GroupScheme.ClosedSubgroup.Basic
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.Basic
+public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Torus.Basic
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Transvection
 import TauCeti.LinearAlgebra.SymmetricAlgebra.Basic
 
@@ -114,7 +115,7 @@ private theorem integralDividedPower_one_apply_of_step
     (hstep : x (v : V) = c • (w : V)) :
     integralDividedPower x M 1 hmem v = c • w := by
   refine Subtype.ext ?_
-  rw [coe_integralDividedPower_apply, Associative.dividedPower_one, AddSubgroup.coe_zsmul]
+  rw [coe_integralDividedPower_one_apply, AddSubgroup.coe_zsmul]
   exact hstep
 
 /-- Beyond the first divided power, the column of a root step vanishes. -/
@@ -172,6 +173,16 @@ variable {η : Type*} (b : Module.Basis η ℤ M)
   b.toMatrix fun s ↦
     ⟨ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i)) (b s),
       hM _ (rootVector_mem_kostantForm e h i) _ (b s).2⟩
+
+/-- The represented integral root matrix is the matrix of its lattice endomorphism. -/
+theorem kostantRootGeneratorIntMatrix_eq_toMatrix [Fintype η] [DecidableEq η] :
+    kostantRootGeneratorIntMatrix e h ρ M hM i b =
+      LinearMap.toMatrix b b (kostantRootOperator e h ρ M hM i) := by
+  ext r s
+  rw [kostantRootGeneratorIntMatrix, Module.Basis.toMatrix_apply, LinearMap.toMatrix_apply]
+  congr 2
+  apply Subtype.ext
+  rw [coe_kostantRootOperator_apply]
 
 /-- A represented root generator acts on each lattice basis vector by its integral matrix column. -/
 theorem rep_rootGenerator_basis_eq_sum [Fintype η] (i : ι) (b : Module.Basis η ℤ M) (s : η) :
@@ -294,8 +305,7 @@ theorem kostantRootSubgroupPoints_apply_baseChange_basis_of_action
           (fun _ hv => dividedPower_apply_mem_of_kostantForm_apply_mem e h ρ hM i 1 hv)
           (b s) = if s = source then b target else 0 := by
     apply Subtype.ext
-    rw [coe_integralDividedPower_apply, Associative.dividedPower_one, Module.End.smul_def,
-      haction]
+    rw [coe_integralDividedPower_one_apply, Module.End.smul_def, haction]
     split <;> rfl
   rw [Module.Basis.baseChange_apply, kostantRootSubgroupPoints_tmul, hclass,
     Finset.sum_range_succ, Finset.sum_range_one, integralDividedPower_zero, hone]

@@ -56,7 +56,7 @@ theorem isBigO_sum_Icc_of_sum_Ioc_floor_mul_le {f : ℕ → ℝ} (hf : 0 ≤ f) 
   set x₁ : ℝ := max x₀ (1 / (1 - q))
   have hq1' : 0 < 1 - q := by linarith
   set K' : ℝ := max K 0 / (1 - q) with hK'
-  have hK'nn : 0 ≤ K' := by positivity
+  have _ : 0 ≤ K' := by positivity
   have hK'eq : K' * q + max K 0 = K' := by
     rw [hK']
     field_simp
@@ -113,8 +113,8 @@ theorem exists_sum_Icc_le_mul_of_isBigO {f : ℕ → ℝ}
     ∃ C : ℝ, ∀ N : ℕ, ∑ n ∈ Finset.Icc 1 N, f n ≤ C * N := by
   obtain ⟨c, hc⟩ := h.bound
   obtain ⟨x₀, hx₀⟩ := eventually_atTop.1 hc
-  set S : ℕ → ℝ := fun N ↦ ∑ n ∈ Finset.Icc 1 N, f n with hS
-  set B : ℝ := ∑ n ∈ Finset.Icc 1 ⌈x₀⌉₊, ‖f n‖ with hB
+  set S : ℕ → ℝ := fun N ↦ ∑ n ∈ Finset.Icc 1 N, f n with _hS
+  set B : ℝ := ∑ n ∈ Finset.Icc 1 ⌈x₀⌉₊, ‖f n‖ with _hB
   have hBnn : 0 ≤ B := Finset.sum_nonneg fun _ _ ↦ norm_nonneg _
   refine ⟨max c B, fun N ↦ ?_⟩
   have hN0 : (0 : ℝ) ≤ N := N.cast_nonneg

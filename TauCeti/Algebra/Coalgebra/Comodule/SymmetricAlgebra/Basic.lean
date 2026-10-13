@@ -225,7 +225,7 @@ theorem symmetricAlgebraMap_id :
     symmetricAlgebraMap (𝟙 (ComoduleCat.of R H M)) =
       𝟙 (ComoduleCat.of R H (SymmetricAlgebra R M)) := by
   ext x
-  simp [← ComoduleCat.ofHom_id]
+  simp [← ComoduleCat.ofHom_id, id_apply]
 
 /-- The symmetric-algebra functor on comodules preserves composition. -/
 @[simp]

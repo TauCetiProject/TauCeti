@@ -33,8 +33,7 @@ invariants only ever appears here through its image in `k`, so in characteristic
 of the invariant dimensions is an identity of residues. Over a field of characteristic zero it
 upgrades to an equality of natural numbers, and there the indicator is an integer.
 
-This is the module-level half of the roadmap's Layer 7 pair; the `FDRep`-level indicator and its
-agreement with this one are at the end of the file.
+The `FDRep`-level indicator and its agreement with this module-level one are at the end of the file.
 
 ## Main definitions
 
@@ -72,13 +71,6 @@ bare `rfl` does not compile here.
 
 ## References
 
-* [Character theory roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/CharacterTheory/README.md),
-  Layer 7, “The indicator on the module spine” and “The symmetric and exterior squares”. The
-  invariant bilinear forms of that layer, and the trichotomy `ν₂ ∈ {+1, 0, -1}` for an irreducible
-  representation over `ℂ`, are proved in the sibling module
-  `TauCeti/RepresentationTheory/CharacterTable/FrobeniusSchur/Trichotomy.lean`, which identifies
-  the invariant forms with the invariants of the duals of the symmetric and exterior squares.
-  What this file supplies is the counting identity those statements are read off from.
 * I. M. Isaacs, *Character Theory of Finite Groups* (1976), Lemma 4.4 and Theorem 4.5.
 * J.-P. Serre, *Linear Representations of Finite Groups*, GTM 42 (1977), §13.2.
 -/

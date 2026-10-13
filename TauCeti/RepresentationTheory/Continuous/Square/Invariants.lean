@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.InnerProductSpace.OrthonormalContraction
+public import TauCeti.Analysis.InnerProductSpace.Orthonormal.Contraction
 public import TauCeti.LinearAlgebra.Dimension.Sup
 public import TauCeti.RepresentationTheory.Continuous.Conjugate
 public import TauCeti.RepresentationTheory.Continuous.Schur

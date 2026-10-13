@@ -20,10 +20,10 @@ file states laws of that group for point representatives, where they hold up to 
 
 Commutativity holds over any commutative ring and for all point representatives: `add P Q` and
 `add Q P` are equivalent, because each coordinate of `addXYZ` changes sign when `P` and `Q` are
-swapped. Associativity is the one of Mathlib's group, for nonsingular point representatives over a
-field. Over a field, the group law also commutes with a change of variables `C`: the homogeneous
-coordinate map `P ↦ C.toMatrix *ᵥ P` from `C • W` to `W` carries `add P Q`, for nonsingular point
-representatives `P` and `Q` of `C • W`, to a representative of
+swapped. Associativity and the inverse law are those of Mathlib's group, for nonsingular point
+representatives over a field. Over a field, the group law also commutes with a change of variables
+`C`: the homogeneous coordinate map `P ↦ C.toMatrix *ᵥ P` from `C • W` to `W` carries `add P Q`,
+for nonsingular point representatives `P` and `Q` of `C • W`, to a representative of
 `add (C.toMatrix *ᵥ P) (C.toMatrix *ᵥ Q)`. This is read off the affine point groups, where the
 change of variables is the group isomorphism `WeierstrassCurve.Affine.Point.addEquivVariableChange`.
 
@@ -35,6 +35,8 @@ change of variables is the group isomorphism `WeierstrassCurve.Affine.Point.addE
   representatives are equivalent.
 * `WeierstrassCurve.Projective.add_assoc_equiv`: over a field, the sums `add (add P Q) T` and
   `add P (add Q T)` of three nonsingular point representatives are equivalent.
+* `WeierstrassCurve.Projective.add_neg_equiv`: over a field, the sum `add P (neg P)` of a
+  nonsingular point representative and its negation is equivalent to `![0, 1, 0]`.
 * `WeierstrassCurve.Projective.Point.toAffine_eq_toAffine_iff`: over a field, two nonsingular point
   representatives have the same affine point exactly when they are equivalent.
 * `WeierstrassCurve.Projective.Point.toAffine_toMatrix_mulVec`: over a field, the affine point of
@@ -102,6 +104,13 @@ theorem add_assoc_equiv (hP : W.Nonsingular P) (hQ : W.Nonsingular Q) (hT : W.No
     simpa only [Point.add_point, addMap_eq] using congrArg Point.point
       (add_assoc (⟨(nonsingularLift_iff P).mpr hP⟩ : W.Point) ⟨(nonsingularLift_iff Q).mpr hQ⟩
         ⟨(nonsingularLift_iff T).mpr hT⟩)
+
+/-- Over a field, the sum `W.add P (W.neg P)` of a nonsingular point representative and its
+negation is equivalent to the representative `![0, 1, 0]` of the point at infinity. -/
+theorem add_neg_equiv (hP : W.Nonsingular P) : W.add P (W.neg P) ≈ ![0, 1, 0] :=
+  Quotient.exact <| by
+    simpa only [Point.add_point, addMap_eq, Point.neg_point, negMap_eq, Point.zero_point] using
+      congrArg Point.point (add_neg_cancel (⟨(nonsingularLift_iff P).mpr hP⟩ : W.Point))
 
 /-- Over a field, two nonsingular point representatives have the same affine point exactly when
 they are equivalent. -/
