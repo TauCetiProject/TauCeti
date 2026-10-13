@@ -7,7 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.InfiniteOrder
 public import TauCeti.AlgebraicGeometry.EllipticCurve.MordellWeil.FinitelyGenerated
-public import TauCeti.AlgebraicGeometry.EllipticCurve.WorkedExamples.Curve37a1
+public import TauCeti.AlgebraicGeometry.EllipticCurve.WorkedExamples
 -- Proof-only: integral models over a tower, points carried along `ZMod p → k`, and membership
 -- in the maximal ideal of the valuation ring at a prime.
 import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.MapAlong

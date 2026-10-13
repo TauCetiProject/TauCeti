@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.TateAlgorithm.Terminal
-public import TauCeti.AlgebraicGeometry.EllipticCurve.WorkedExamples.Curve11a2
+public import TauCeti.AlgebraicGeometry.EllipticCurve.WorkedExamples
 -- Proof-only: `v (Δ) < 12` implies minimal.
 import TauCeti.AlgebraicGeometry.EllipticCurve.MinimalModel.Basic
 -- Proof-only: divisibility of integers by powers of `p` is read in `ℤ`.

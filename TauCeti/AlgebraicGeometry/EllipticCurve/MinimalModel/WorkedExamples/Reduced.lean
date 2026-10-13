@@ -7,8 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.MinimalModel.DiscriminantIdeal
 public import TauCeti.AlgebraicGeometry.EllipticCurve.MinimalModel.Reduced
-public import TauCeti.AlgebraicGeometry.EllipticCurve.WorkedExamples.Curve11a2
-public import TauCeti.AlgebraicGeometry.EllipticCurve.WorkedExamples.Curve37a1
+public import TauCeti.AlgebraicGeometry.EllipticCurve.WorkedExamples
 
 /-!
 # Worked examples: reduced minimal equations of curves over `ℚ`
@@ -64,11 +63,6 @@ namespace TauCeti.WorkedExamples
 
 /-! ### The curve 11.a2 (Cremona 11a1) -/
 
-/-- The invariant `c₄` of `y² + y = x³ - x² - 10 x - 20` is `496 = 2⁴ · 31`. -/
-@[simp]
-theorem c₄_curve11a2 : curve11a2.c₄ = 496 := by
-  simp [c₄, b₂, b₄]
-
 /-- **`y² + y = x³ - x² - 10 x - 20` is a reduced minimal equation.** Its discriminant `-11⁵` and
 its `c₄ = 496` are coprime, so it is minimal at every prime, and its coefficients are
 normalised. -/
@@ -103,11 +97,6 @@ theorem minimalDiscriminantIdeal_curve11a2 :
     Δ_curve11a2, Ideal.span_singleton_neg]
 
 /-! ### The curve 37.a1 -/
-
-/-- The invariant `c₄` of `y² + y = x³ - x` is `48 = 2⁴ · 3`. -/
-@[simp]
-theorem c₄_curve37a1 : curve37a1.c₄ = 48 := by
-  simp [c₄, b₂, b₄]
 
 /-- **`y² + y = x³ - x` is a reduced minimal equation.** Its discriminant `37` and its `c₄ = 48`
 are coprime, so it is minimal at every prime, and its coefficients are normalised. -/
