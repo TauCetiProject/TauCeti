@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.NumberField.WorkedExamples.Cubic23.Invariants
-import TauCeti.Algebra.Polynomial.SpecificDegree
+import TauCeti.RingTheory.Polynomial.Monic.Irreducible
 import Mathlib.RingTheory.Polynomial.GaussLemma
 
 /-!
@@ -39,18 +39,29 @@ open scoped NumberField
 
 namespace TauCeti.NumberField.Cubic23
 
-/-- The defining cubic `X³ - X² + 1` is irreducible over `ℤ`. -/
-theorem irreducible_polynomial : Irreducible (X ^ 3 - X ^ 2 + 1 : ℤ[X]) :=
-  Monic.irreducible_of_natDegree_eq_three_of_coeff_zero_eq_one (by monicity!)
-    (by compute_degree!) (by simp) (by norm_num) (by norm_num)
+/-- The defining cubic `X³ - X² + 1` is irreducible over `ℤ`: it has no root modulo `2`, so no
+integral root, and by Gauss's lemma irreducibility over `ℚ` descends to `ℤ`. -/
+theorem irreducible_polynomial : Irreducible (X ^ 3 - X ^ 2 + 1 : ℤ[X]) := by
+  have hm : (X ^ 3 - X ^ 2 + 1 : ℤ[X]).Monic := by monicity!
+  refine (hm.irreducible_iff_irreducible_map_fraction_map (K := ℚ)).mpr ?_
+  exact irreducible_map_intCast_of_natDegree_eq_three hm (by compute_degree!) fun m hr => by
+    have h2 := congrArg (Int.cast : ℤ → ZMod 2) hr
+    push_cast [eval_add, eval_sub, eval_pow, eval_X, eval_one] at h2
+    generalize (m : ZMod 2) = y at h2
+    revert y
+    decide
 
-/-- The cubic `X³ - X + 1` is irreducible over `ℚ`. -/
+/-- The cubic `X³ - X + 1` is irreducible over `ℚ`: it has no root modulo `2`, so no integral
+root. -/
 theorem irreducible_X_pow_three_sub_X_add_one : Irreducible (X ^ 3 - X + 1 : ℚ[X]) := by
-  have hm : (X ^ 3 - X + 1 : ℤ[X]).Monic := by monicity!
-  -- by Gauss's lemma it suffices to work over `ℤ`
-  simpa using (hm.irreducible_iff_irreducible_map_fraction_map (K := ℚ)).mp
-    (hm.irreducible_of_natDegree_eq_three_of_coeff_zero_eq_one (by compute_degree!) (by simp)
-      (by norm_num) (by norm_num))
+  have := irreducible_map_intCast_of_natDegree_eq_three (g := X ^ 3 - X + 1)
+    (by monicity!) (by compute_degree!) fun m hm => by
+      have h2 := congrArg (Int.cast : ℤ → ZMod 2) hm
+      push_cast [eval_add, eval_sub, eval_pow, eval_X, eval_one] at h2
+      generalize (m : ZMod 2) = y at h2
+      revert y
+      decide
+  simpa using this
 
 variable {K : Type*} [Field K] [NumberField K]
 
