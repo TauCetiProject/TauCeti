@@ -25,6 +25,10 @@ in `Z` killed by `[n]`, as a group. Its formation commutes with arbitrary base c
 morphism of elliptic curves `E' ⟶ E` forming a pullback square over a morphism of bases
 `S' ⟶ S` induces a morphism `E'[n] ⟶ E[n]` forming a pullback square over `S' ⟶ S`.
 
+Multiplication transitions `E[mn] ⟶ E[n]` and inclusions `E[m] ⟶ E[mn]` specialize the
+commutative group-scheme API. Their identity and composition laws include transports between
+equal indices, supplying the coherence of torsion towers.
+
 Nothing here asserts that `E[n]` is finite or flat over `S`: for `n ≠ 0` it is finite locally
 free of rank `n²`, which rests on the finiteness and flatness of `[n]`.
 
@@ -74,13 +78,16 @@ namespace TauCeti.AlgebraicGeometry
 
 namespace EllipticCurveGeom
 
-variable {S : Scheme.{u}} (E : EllipticCurveGeom S) (n : ℤ)
+variable {S : Scheme.{u}} (E : EllipticCurveGeom S)
+
+section Torsion
+
+variable (n : ℤ)
 
 /-! ### The `n`-torsion as a kernel -/
 
 /-- **The `n`-torsion `E[n]` of an elliptic curve** `E` over a scheme `S`: the scheme-theoretic
 kernel of multiplication by `n`, as a group object of `Over S`. -/
-@[expose]
 noncomputable def torsion : Grp (Over S) :=
   GroupScheme.torsion E.toCommGrp n
 
@@ -88,10 +95,9 @@ noncomputable def torsion : Grp (Over S) :=
 of the image in `Grp (Over S)` of the integer `n` of the endomorphism ring `End E.toCommGrp`. -/
 theorem torsion_eq_kernel :
     E.torsion n = kernel ((CommGrp.forget₂Grp (Over S)).map (n : End E.toCommGrp)) := by
-  rw [torsion, GroupScheme.torsion]
+  rw [torsion, GroupScheme.torsion_eq_kernel]
 
 /-- The inclusion `E[n] ⟶ E` of the `n`-torsion of `E`, a morphism of `Over S`. -/
-@[expose]
 noncomputable def torsionι : (E.torsion n).X ⟶ Over.mk E.structureMap :=
   GroupScheme.torsionι E.toCommGrp n
 
@@ -289,6 +295,80 @@ theorem isPullback_torsionMap :
     · simp [← h₂]
 
 end BaseChange
+
+end Torsion
+
+/-! ### Transitions between torsion levels -/
+
+section Transitions
+
+variable (m n : ℤ)
+
+/-- Multiplication by `m` restricted to `E[mn]`, with values in `E[n]`. -/
+noncomputable def torsionMulBy : (E.torsion (m * n)).X ⟶ (E.torsion n).X :=
+  GroupScheme.torsionMulBy E.toCommGrp m n
+
+/-- The transition `E[mn] ⟶ E[n]` sends a torsion point to its multiple by `m`. -/
+@[reassoc (attr := simp)]
+theorem torsionMulBy_torsionι :
+    E.torsionMulBy m n ≫ E.torsionι n = E.torsionι (m * n) ≫ E.mulBy m :=
+  by
+    rw [comp_mulBy]
+    exact GroupScheme.torsionMulBy_torsionι E.toCommGrp m n
+
+/-- The torsion transition is a homomorphism of group schemes. -/
+instance isMonHom_torsionMulBy : IsMonHom (E.torsionMulBy m n) :=
+  GroupScheme.isMonHom_torsionMulBy E.toCommGrp m n
+
+/-- Multiplication by one on torsion is the identity, after identifying `1 * n` with `n`. -/
+@[simp]
+theorem torsionMulBy_one :
+    E.torsionMulBy 1 n = eqToHom (congrArg (fun k ↦ (E.torsion k).X) (one_mul n)) :=
+  GroupScheme.torsionMulBy_one E.toCommGrp n
+
+/-- Successive torsion transitions multiply their indices, with the associativity transport. -/
+@[reassoc]
+theorem torsionMulBy_comp (l : ℤ) :
+    E.torsionMulBy l (m * n) ≫ E.torsionMulBy m n =
+      eqToHom (congrArg (fun k ↦ (E.torsion k).X) (mul_assoc l m n).symm) ≫
+        E.torsionMulBy (l * m) n :=
+  GroupScheme.torsionMulBy_comp E.toCommGrp m n l
+
+/-- The inclusion of `E[m]` in `E[mn]`. -/
+noncomputable def torsionInclusion : (E.torsion m).X ⟶ (E.torsion (m * n)).X :=
+  GroupScheme.torsionInclusion E.toCommGrp m n
+
+/-- The inclusion between torsion levels preserves the underlying point of `E`. -/
+@[reassoc (attr := simp)]
+theorem torsionInclusion_torsionι :
+    E.torsionInclusion m n ≫ E.torsionι (m * n) = E.torsionι m :=
+  GroupScheme.torsionInclusion_torsionι E.toCommGrp m n
+
+/-- The inclusion between torsion levels is a homomorphism of group schemes. -/
+instance isMonHom_torsionInclusion : IsMonHom (E.torsionInclusion m n) :=
+  GroupScheme.isMonHom_torsionInclusion E.toCommGrp m n
+
+/-- Inclusion into the same torsion level is the identity, after identifying `m * 1` with `m`. -/
+@[simp]
+theorem torsionInclusion_one :
+    E.torsionInclusion m 1 = eqToHom (congrArg (fun k ↦ (E.torsion k).X) (mul_one m).symm) :=
+  GroupScheme.torsionInclusion_one E.toCommGrp m
+
+/-- Successive torsion inclusions multiply their indices, with the associativity transport. -/
+@[reassoc]
+theorem torsionInclusion_comp (l : ℤ) :
+    E.torsionInclusion m n ≫ E.torsionInclusion (m * n) l =
+      E.torsionInclusion m (n * l) ≫
+        eqToHom (congrArg (fun k ↦ (E.torsion k).X) (mul_assoc m n l).symm) :=
+  GroupScheme.torsionInclusion_comp E.toCommGrp m n l
+
+/-- The transition kills the included `m`-torsion. -/
+@[reassoc (attr := simp)]
+theorem torsionInclusion_torsionMulBy :
+    E.torsionInclusion m n ≫ E.torsionMulBy m n = 1 :=
+  GroupScheme.torsionInclusion_torsionMulBy E.toCommGrp m n
+
+end Transitions
 
 end EllipticCurveGeom
 

@@ -35,56 +35,6 @@ namespace TauCeti.AlgebraicGeometry.EllipticCurveGeom
 
 variable {S : Scheme.{u}} (E : EllipticCurveGeom S) (m n : ℤ)
 
-/-- Multiplication by `m` restricted to `E[mn]`, with values in `E[n]`. -/
-noncomputable def torsionMulBy : (E.torsion (m * n)).X ⟶ (E.torsion n).X :=
-  GroupScheme.torsionMulBy E.toCommGrp m n
-
-/-- The transition `E[mn] ⟶ E[n]` sends a torsion point to its multiple by `m`. -/
-@[reassoc (attr := simp)]
-theorem torsionMulBy_torsionι :
-    E.torsionMulBy m n ≫ E.torsionι n = E.torsionι (m * n) ≫ E.mulBy m :=
-  by
-    rw [comp_mulBy]
-    exact GroupScheme.torsionMulBy_torsionι E.toCommGrp m n
-
-/-- The torsion transition is a homomorphism of group schemes. -/
-instance isMonHom_torsionMulBy : IsMonHom (E.torsionMulBy m n) :=
-  GroupScheme.isMonHom_torsionMulBy E.toCommGrp m n
-
-/-- Multiplication by one on torsion is the identity, after identifying `1 * n` with `n`. -/
-@[simp]
-theorem torsionMulBy_one :
-    E.torsionMulBy 1 n = eqToHom (congrArg (fun k ↦ (E.torsion k).X) (one_mul n)) :=
-  GroupScheme.torsionMulBy_one E.toCommGrp n
-
-/-- Successive torsion transitions multiply their indices, with the associativity transport. -/
-@[reassoc]
-theorem torsionMulBy_comp (l : ℤ) :
-    E.torsionMulBy l (m * n) ≫ E.torsionMulBy m n =
-      eqToHom (congrArg (fun k ↦ (E.torsion k).X) (mul_assoc l m n).symm) ≫
-        E.torsionMulBy (l * m) n :=
-  GroupScheme.torsionMulBy_comp E.toCommGrp m n l
-
-/-- The inclusion of `E[m]` in `E[mn]`. -/
-noncomputable def torsionInclusion : (E.torsion m).X ⟶ (E.torsion (m * n)).X :=
-  GroupScheme.torsionInclusion E.toCommGrp m n
-
-/-- The inclusion between torsion levels preserves the underlying point of `E`. -/
-@[reassoc (attr := simp)]
-theorem torsionInclusion_torsionι :
-    E.torsionInclusion m n ≫ E.torsionι (m * n) = E.torsionι m :=
-  GroupScheme.torsionInclusion_torsionι E.toCommGrp m n
-
-/-- The inclusion between torsion levels is a homomorphism of group schemes. -/
-instance isMonHom_torsionInclusion : IsMonHom (E.torsionInclusion m n) :=
-  GroupScheme.isMonHom_torsionInclusion E.toCommGrp m n
-
-/-- The transition kills the included `m`-torsion. -/
-@[reassoc (attr := simp)]
-theorem torsionInclusion_torsionMulBy :
-    E.torsionInclusion m n ≫ E.torsionMulBy m n = 1 :=
-  GroupScheme.torsionInclusion_torsionMulBy E.toCommGrp m n
-
 /-- On schemes, the torsion transition is the restriction of multiplication by `m`. -/
 @[reassoc (attr := simp)]
 theorem torsionMulBy_left_torsionι :

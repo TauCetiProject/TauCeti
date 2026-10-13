@@ -95,9 +95,13 @@ variable {S : Scheme.{u}} (G : CommGrp (Over S))
 /-- **The `n`-torsion `G[n]` of a commutative group scheme** `G` over `S`: the scheme-theoretic
 kernel of multiplication by `n`, the integer `n` of the endomorphism ring of `G`, as a group object
 of `Over S`. -/
-@[expose]
 noncomputable def torsion (n : ℤ) : Grp (Over S) :=
   kernel ((CommGrp.forget₂Grp (Over S)).map (n : End G))
+
+/-- The torsion group scheme is the kernel of multiplication by its index. -/
+theorem torsion_eq_kernel (n : ℤ) :
+    torsion G n = kernel ((CommGrp.forget₂Grp (Over S)).map (n : End G)) :=
+  (rfl)
 
 /-- The inclusion `G[n] ⟶ G` of the `n`-torsion of `G`, a morphism of `Over S`. -/
 noncomputable def torsionι (n : ℤ) : (torsion G n).X ⟶ G.X :=
@@ -221,6 +225,23 @@ theorem eqToHom_torsionι {a b : ℤ} (h : a = b) :
     eqToHom (congrArg (fun k ↦ (torsion G k).X) h) ≫ torsionι G b = torsionι G a := by
   subst b
   simp
+
+/-- Inclusion into the same torsion level is the identity, after identifying `m * 1` with `m`. -/
+@[simp]
+theorem torsionInclusion_one :
+    torsionInclusion G m 1 = eqToHom (congrArg (fun k ↦ (torsion G k).X) (mul_one m).symm) := by
+  apply torsion_hom_ext G
+  simp
+
+/-- Successive torsion inclusions multiply their indices, with the associativity transport. -/
+@[reassoc]
+theorem torsionInclusion_comp (l : ℤ) :
+    torsionInclusion G m n ≫ torsionInclusion G (m * n) l =
+      torsionInclusion G m (n * l) ≫
+        eqToHom (congrArg (fun k ↦ (torsion G k).X) (mul_assoc m n l).symm) := by
+  apply torsion_hom_ext G
+  simp only [Category.assoc, torsionInclusion_torsionι,
+    eqToHom_torsionι G (mul_assoc m n l).symm]
 
 /-- Multiplication by one on torsion is the identity, after identifying `1 * n` with `n`. -/
 @[simp]
