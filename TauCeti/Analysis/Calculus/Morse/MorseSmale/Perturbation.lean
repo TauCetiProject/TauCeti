@@ -17,9 +17,10 @@ product space `E`, and `h : ι → E → ℝ` a finite family of `C²` functions
 vanishing on a neighbourhood of the critical set of `f`. The perturbed function is
 `perturb f h s = f + ∑ᵢ sᵢ hᵢ` for a parameter `s : EuclideanSpace ℝ ι`.
 
-The negative-gradient flow of `perturb f h s` depends `C¹`-ly on `s`: the parameter is made a
-state variable of a flow on `E × EuclideanSpace ℝ ι`, using a smooth cutoff of the parameter so
-that the field is globally Lipschitz.
+To study the dependence on `s` of the negative-gradient flow of `perturb f h s`, the parameter is
+made a state variable: the flow of a cut-off augmented field on `E × EuclideanSpace ℝ ι` is `C¹`
+jointly in time, space and parameter, and agrees with the negative-gradient flow of `perturb f h s`
+for parameters in the closed unit ball.
 
 ## Main declarations
 
@@ -41,11 +42,9 @@ that the field is globally Lipschitz.
 
 ## References
 
-* M. Audin and M. Damian, *Morse Theory and Floer Homology*, Springer Universitext, 2014,
-  Chapter 3 (transversality of the unstable and stable manifolds by perturbation).
+* M. Audin and M. Damian, *Morse Theory and Floer Homology*, Springer Universitext, 2014
+  (transversality of the unstable and stable manifolds of a Morse function by perturbation).
 * S. Smale, *On gradient dynamical systems*, Ann. of Math. **74** (1961), 199--206.
-* [Heegaard Floer homology roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/HeegaardFloer/README.md),
-  Lane M, "Morse homology".
 -/
 
 public section
