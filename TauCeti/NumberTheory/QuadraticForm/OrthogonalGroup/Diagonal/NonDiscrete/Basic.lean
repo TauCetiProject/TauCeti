@@ -7,7 +7,6 @@ module
 
 public import TauCeti.NumberTheory.QuadraticForm.OrthogonalGroup.Diagonal.Finite
 public import TauCeti.LinearAlgebra.QuadraticForm.Transvection.BaseChange
-import TauCeti.Topology.Algebra.Group.Subgroup
 import TauCeti.LinearAlgebra.QuadraticForm.Transvection.Powers
 import TauCeti.Topology.Algebra.QuadraticForm.Transvection
 import TauCeti.NumberTheory.Padics.Factorial
@@ -117,10 +116,15 @@ theorem not_discreteTopology_range_finiteAdelicSpecialOrthogonalDiagonal_of_tran
     rw [← Nat.cast_smul_eq_nsmul ℚ, (ℚ ∙ u).smul_mem_iff
       (by exact_mod_cast n.factorial_ne_zero)] at hmem
     exact hw hmem
-  exact U.finiteAdelicSpecialOrthogonalDiagonal.not_discreteTopology_range_of_tendsto_one
+  intro hD
+  have heq := tendsto_nhdsWithin_of_tendsto_nhds_of_eventually_within _
     (U.tendsto_finiteAdelicSpecialOrthogonalDiagonal_transvection_factorial hu huw)
-    (Eventually.of_forall fun n ↦
-      (map_ne_one_iff _ U.finiteAdelicSpecialOrthogonalDiagonal_injective).mpr (hne n))
+    (Eventually.of_forall fun n ↦ Set.mem_range_self (g ^ n.factorial))
+  rw [← MonoidHom.coe_range,
+    nhdsWithin_of_mem_discrete ⟨hD⟩ U.finiteAdelicSpecialOrthogonalDiagonal.range.one_mem,
+    tendsto_pure] at heq
+  exact heq.frequently (Eventually.of_forall fun n ↦
+    (map_ne_one_iff _ U.finiteAdelicSpecialOrthogonalDiagonal_injective).mpr (hne n))
 
 /-- For a nondegenerate isotropic rational quadratic space of dimension at least three, the
 rational diagonal is not discrete in finite adelic `SO`. In dimension two the transvection

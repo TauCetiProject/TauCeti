@@ -103,10 +103,15 @@ theorem not_discreteTopology_range_finiteAdelicSpinDiagonal_of_transvection
     rw [← Nat.cast_smul_eq_nsmul ℚ, (ℚ ∙ u).smul_mem_iff
       (by exact_mod_cast n.factorial_ne_zero)] at hn
     exact hw hn
-  exact U.finiteAdelicSpinDiagonal.not_discreteTopology_range_of_tendsto_one
+  intro hD
+  have heq := tendsto_nhdsWithin_of_tendsto_nhds_of_eventually_within _
     (U.tendsto_finiteAdelicSpinDiagonal_spinTransvection_factorial hQ hu huw)
-    (Eventually.of_forall fun n ↦
-      (map_ne_one_iff _ U.finiteAdelicSpinDiagonal_injective).mpr (hne n))
+    (Eventually.of_forall fun n ↦ Set.mem_range_self (g ^ n.factorial))
+  rw [← MonoidHom.coe_range,
+    nhdsWithin_of_mem_discrete ⟨hD⟩ U.finiteAdelicSpinDiagonal.range.one_mem,
+    tendsto_pure] at heq
+  exact heq.frequently (Eventually.of_forall fun n ↦
+    (map_ne_one_iff _ U.finiteAdelicSpinDiagonal_injective).mpr (hne n))
 
 /-- For a nondegenerate isotropic rational quadratic space of dimension at least three, the
 rational Spin diagonal is not discrete in the finite adeles. -/
