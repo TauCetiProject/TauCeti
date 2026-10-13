@@ -14,8 +14,10 @@ import TauCeti.MeasureTheory.Measure.ProbabilityMeasure.Map
 /-!
 # Existence of optimal multi-marginal couplings
 
-The multi-marginal couplings of finitely many probability measures `μ i` on spaces `X i` form a
-weakly compact set of probability measures on the product `∀ i, X i`, and a lower semicontinuous
+The multi-marginal couplings of finitely many tight probability measures `μ i` on spaces `X i`
+(for instance, any probability measures on Polish spaces) form, under the separation hypotheses
+of Prokhorov's theorem, a weakly compact set of probability measures on the product `∀ i, X i`.
+If moreover the spaces `X i` are second countable metrizable Borel spaces, a lower semicontinuous
 cost `c : (∀ i, X i) → ℝ≥0∞` attains its infimum on it. This is the multi-marginal form of the
 existence theorem for optimal transport plans, and the argument is the same.
 
