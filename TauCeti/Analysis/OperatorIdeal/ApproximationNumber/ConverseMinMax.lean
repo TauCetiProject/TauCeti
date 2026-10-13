@@ -19,16 +19,8 @@ Courant–Fischer max–min principle. This is the property `TauCeti.HasMinMaxLo
 it yields the Ky Fan triangle inequality `Kₖ(S + T) ≤ Kₖ(S) + Kₖ(T)` for the approximation
 numbers in arbitrary dimension.
 
-The proof is elementary and needs no spectral theory, so it holds over every `RCLike` field.
-Choose `r < c < aₙ(T)` and take a maximal linearly independent family `v`, of length at most
-`n + 1`, on whose span `T` is strictly `c`-coercive, that is `c² ‖x‖² < ‖T x‖²` for `x ≠ 0`. If
-the family has `n + 1` vectors we are done. Otherwise apply `D = T† T - c²` to its span to get a
-subspace `U` of rank at most `n`. A vector `w ∈ Uᗮ` satisfies `⟪T w, T y⟫ = c² ⟪w, y⟫` for every
-`y` in the span, so the quadratic form `‖T x‖² - c² ‖x‖²` splits along `w` and the span. By
-maximality, `‖T w‖ ≤ c ‖w‖`. The orthogonal-tail bound
-`ContinuousLinearMap.singularValue_le_nnnorm_comp_orthogonal` then gives `aₙ(T) ≤ c`, a
-contradiction. The target need not be complete: the adjoint is taken after composing `T` with the
-isometric embedding of `F` into its completion.
+The result needs no spectral theory, so it holds over every `RCLike` field, and the target space
+need not be complete. In particular it covers every finite-dimensional source space.
 
 ## Main declarations
 
