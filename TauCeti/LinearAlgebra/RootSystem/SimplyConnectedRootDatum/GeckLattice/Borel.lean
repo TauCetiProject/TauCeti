@@ -86,8 +86,8 @@ representability or closedness in the carrier is proved, so none of these subgro
 the Borel member of a pinning; they are only its candidate on points. Nor is it asserted that they
 are *maximal* among solvable subgroups of the carrier's points, that `U(A)` consists of unipotent
 elements or is the unipotent radical, or that the Geck weight torus is a maximal torus; those are
-geometric statements about the group scheme and remain Layer 9 work, as does the construction of
-full-weight admissible lattices outside the three unimodular exceptional types. No finiteness or
+geometric statements about the group scheme and are not proved here, and neither is the construction
+of full-weight admissible lattices outside the three unimodular exceptional types. No finiteness or
 simplicity of any group appears.
 
 ## Main definitions
@@ -133,12 +133,6 @@ Kostant construction.
 * R. W. Carter, *Simple Groups of Lie Type*, §§4.4, 7.1 and 8.2.
 * J. E. Humphreys, *Linear Algebraic Groups*, §§26--28.
 * J. C. Jantzen, *Representations of Algebraic Groups*, II.1.
-
-This is a step towards the "Pinnings" target of Layer 9 of
-`TauCetiRoadmap/ReductiveGroups/README.md`, whose consumer is the pinned ambient group
-`TauCeti.ValidLieTypeIndex.AmbientGroup` of milestone L0 of
-`TauCetiRoadmap/CFSGStatement/README.md`; the Borel subgroup scheme that target asks for is still
-to be built.
 -/
 
 public section
