@@ -20,14 +20,14 @@ universal Tate normal form with its point `(0, 0)` along a unique morphism `S �
 (`TauCeti.AlgebraicGeometry.EllipticCurveGeom.existsUnique_tateNormalForm`). This file cuts the
 modular curve `Y₁(N)` out of `T`:
 
-* the **`N`-torsion locus** `WeierstrassCurve.UniversalTate.torsionLocus N` is the closed
-  subscheme of `T` on which `N • (0, 0) = 0`, the equalizer of `N • (0, 0)` and the zero section.
-  A morphism `t : S ⟶ T` factors through it exactly when the pullback of `N • (0, 0)` along `t` is
-  the pullback of the zero section, an equality of morphisms rather than a condition at points
-  (`WeierstrassCurve.UniversalTate.exists_comp_torsionLocusι_eq_iff`);
-* `WeierstrassCurve.UniversalTate.yOne N` is the open subscheme of the `N`-torsion locus at whose
-  points none of `(0, 0), 2 • (0, 0), …, (N - 1) • (0, 0)` meets the zero section
-  (`WeierstrassCurve.UniversalTate.exists_comp_yOneι_eq_iff`).
+* the **`N`-torsion locus** `TauCeti.AlgebraicGeometry.UniversalTate.torsionLocus N` is the
+  closed subscheme of `T` on which `N • (0, 0) = 0`, the equalizer of `N • (0, 0)` and the zero
+  section. A morphism `t : S ⟶ T` factors through it exactly when the pullback of `N • (0, 0)`
+  along `t` is the pullback of the zero section, an equality of morphisms rather than a condition
+  at points (`TauCeti.AlgebraicGeometry.UniversalTate.exists_comp_torsionLocusι_eq_iff`);
+* `TauCeti.AlgebraicGeometry.UniversalTate.yOne N` is the open subscheme of the `N`-torsion locus
+  at whose points none of `(0, 0), 2 • (0, 0), …, (N - 1) • (0, 0)` meets the zero section
+  (`TauCeti.AlgebraicGeometry.UniversalTate.exists_comp_yOneι_eq_iff`).
 
 The main result is that, for `N ≥ 4`, `Y₁(N)` is the fine moduli scheme of elliptic curves with an
 `S`-point `P` of exact order `N` in every fibre: `N • P = 0` and none of `P, 2P, …, (N - 1)P`
@@ -48,24 +48,24 @@ condition is a condition at the points of `S`.
 
 ## Main definitions
 
-* `WeierstrassCurve.UniversalTate.curveGeom`: the universal Tate normal form as an elliptic curve
-  over `Spec ℤ[A, B][Δ⁻¹]`.
-* `WeierstrassCurve.UniversalTate.pointHom`: its point `(0, 0)`, with values in the base.
-* `WeierstrassCurve.UniversalTate.torsionLocus n`, `WeierstrassCurve.UniversalTate.torsionLocusι
-  n`: the closed subscheme of `Spec ℤ[A, B][Δ⁻¹]` on which `n • (0, 0) = 0`, with its inclusion.
-* `WeierstrassCurve.UniversalTate.exactOrderOpens N`: the open subset of `Spec ℤ[A, B][Δ⁻¹]` at
-  whose points none of the multiples `k • (0, 0)`, `0 < k < N`, meets the zero section.
-* `WeierstrassCurve.UniversalTate.yOne N`, `WeierstrassCurve.UniversalTate.yOneι N`: the modular
-  curve `Y₁(N)`, the open subscheme `yOneOpens N` of the `N`-torsion locus lying over
-  `exactOrderOpens N`, with its immersion into `Spec ℤ[A, B][Δ⁻¹]`.
+* `TauCeti.AlgebraicGeometry.UniversalTate.torsionLocus n`,
+  `TauCeti.AlgebraicGeometry.UniversalTate.torsionLocusι n`: the closed subscheme of
+  `Spec ℤ[A, B][Δ⁻¹]` on which `n • (0, 0) = 0`, with its inclusion.
+* `TauCeti.AlgebraicGeometry.UniversalTate.exactOrderOpens N`: the open subset of
+  `Spec ℤ[A, B][Δ⁻¹]` at whose points none of the multiples `k • (0, 0)`, `0 < k < N`, meets the
+  zero section.
+* `TauCeti.AlgebraicGeometry.UniversalTate.yOne N`,
+  `TauCeti.AlgebraicGeometry.UniversalTate.yOneι N`: the modular curve `Y₁(N)`, the open subscheme
+  `yOneOpens N` of the `N`-torsion locus lying over `exactOrderOpens N`, with its immersion into
+  `Spec ℤ[A, B][Δ⁻¹]`.
 
 ## Main results
 
-* `WeierstrassCurve.UniversalTate.exists_comp_torsionLocusι_eq_iff`: the morphisms to the base
-  factoring through the `n`-torsion locus are those along which `n • (0, 0)` vanishes.
-* `WeierstrassCurve.UniversalTate.exists_comp_yOneι_eq_iff`: the morphisms to the base factoring
-  through `Y₁(N)` are those along which `N • (0, 0)` vanishes and no `k • (0, 0)`, `0 < k < N`,
-  meets the zero section.
+* `TauCeti.AlgebraicGeometry.UniversalTate.exists_comp_torsionLocusι_eq_iff`: the morphisms to
+  the base factoring through the `n`-torsion locus are those along which `n • (0, 0)` vanishes.
+* `TauCeti.AlgebraicGeometry.UniversalTate.exists_comp_yOneι_eq_iff`: the morphisms to the base
+  factoring through `Y₁(N)` are those along which `N • (0, 0)` vanishes and no `k • (0, 0)`,
+  `0 < k < N`, meets the zero section.
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.existsUnique_yOne`: for `N ≥ 4`, `Y₁(N)` is a fine
   moduli scheme for points of exact order `N` in every fibre.
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.exists_yOne_iff`: the pullback of `(0, 0)` along a
@@ -89,26 +89,9 @@ open CategoryTheory Limits MonoidalCategory CartesianMonoidalCategory AlgebraicG
 
 universe u
 
-namespace WeierstrassCurve.UniversalTate
+namespace TauCeti.AlgebraicGeometry.UniversalTate
 
-/-! ### The universal Tate normal form as an elliptic curve -/
-
-/-- The universal Tate normal form `Y² + AXY + BY = X³ + BX²` as an elliptic curve over
-`Spec ℤ[A, B][Δ⁻¹]`, whose total space is the projective model of `curveULift`. -/
-noncomputable abbrev curveGeom : EllipticCurveGeom (Spec (.of (ULift.{u} Ring))) :=
-  toEllipticCurveGeom curveULift
-
-/-- The point `(0, 0)` of the universal Tate normal form, as a point with values in the base of
-the elliptic curve `curveGeom`. -/
-noncomputable def pointHom :
-    𝟙_ (Over (Spec (.of (ULift.{u} Ring)))) ⟶ Over.mk curveGeom.{u}.structureMap :=
-  Over.homMk (point ≫ (toEllipticCurveGeomIso curveULift).inv) <| by
-    simp [← toEllipticCurveGeomIso_hom_projModelOver]
-
-/-- On the projective model, the point `(0, 0)` of `curveGeom` is `point`. -/
-@[simp]
-theorem pointHom_left : pointHom.{u}.left = point ≫ (toEllipticCurveGeomIso curveULift).inv :=
-  (rfl)
+open WeierstrassCurve
 
 /-! ### The torsion locus -/
 
@@ -119,7 +102,8 @@ noncomputable def torsionLocus (n : ℕ) : Scheme.{u} :=
   (equalizer (pointHom.{u} ^ n) 1).left
 
 /-- The inclusion of the `n`-torsion locus into `Spec ℤ[A, B][Δ⁻¹]`. -/
-noncomputable def torsionLocusι (n : ℕ) : torsionLocus.{u} n ⟶ Spec (.of (ULift.{u} Ring)) :=
+noncomputable def torsionLocusι (n : ℕ) :
+    torsionLocus.{u} n ⟶ Spec (.of (ULift.{u} UniversalTate.Ring)) :=
   (equalizer.ι (pointHom.{u} ^ n) 1).left
 
 /-- The `n`-torsion locus is a closed subscheme, since the universal Tate normal form is separated
@@ -142,11 +126,13 @@ theorem torsionLocusι_comp_pointHom_pow_left (n : ℕ) :
 factors through the `n`-torsion locus exactly when the pullback of `n • (0, 0)` along `t` is the
 pullback of the zero section. The factorization is unique, as `torsionLocusι n` is a closed
 immersion. -/
-theorem exists_comp_torsionLocusι_eq_iff {S : Scheme.{u}} (t : S ⟶ Spec (.of (ULift.{u} Ring)))
-    (n : ℕ) : (∃ h : S ⟶ torsionLocus.{u} n, h ≫ torsionLocusι n = t) ↔
+theorem exists_comp_torsionLocusι_eq_iff {S : Scheme.{u}}
+    (t : S ⟶ Spec (.of (ULift.{u} UniversalTate.Ring))) (n : ℕ) :
+    (∃ h : S ⟶ torsionLocus.{u} n, h ≫ torsionLocusι n = t) ↔
       t ≫ (pointHom ^ n).left = t ≫ curveGeom.zero := by
   refine ⟨fun ⟨h, ht⟩ ↦ ht ▸ by simp [torsionLocusι_comp_pointHom_pow_left], fun ht ↦ ?_⟩
-  let t' : Over.mk t ⟶ 𝟙_ (Over (Spec (.of (ULift.{u} Ring)))) := Over.homMk t (by simp)
+  let t' : Over.mk t ⟶ 𝟙_ (Over (Spec (.of (ULift.{u} UniversalTate.Ring)))) :=
+    Over.homMk t (by simp)
   refine ⟨(equalizer.lift t' ?_).left, congrArg Over.Hom.left (equalizer.lift_ι t' _)⟩
   ext1
   simpa [t', EllipticCurveGeom.hom_one_left] using ht
@@ -155,10 +141,11 @@ theorem exists_comp_torsionLocusι_eq_iff {S : Scheme.{u}} (t : S ⟶ Spec (.of 
 
 /-- The open subset of `Spec ℤ[A, B][Δ⁻¹]` at whose points none of the multiples
 `(0, 0), 2 • (0, 0), …, (N - 1) • (0, 0)` of the universal point meets the zero section. -/
-noncomputable def exactOrderOpens (N : ℕ) : (Spec (.of (ULift.{u} Ring))).Opens where
+noncomputable def exactOrderOpens (N : ℕ) :
+    (Spec (.of (ULift.{u} UniversalTate.Ring))).Opens where
   carrier := {t | ∀ k : ℕ, 0 < k → k < N → (pointHom ^ k).left t ≠ curveGeom.zero t}
   is_open' := by
-    have : {t : Spec (.of (ULift.{u} Ring)) | ∀ k : ℕ, 0 < k → k < N →
+    have : {t : Spec (.of (ULift.{u} UniversalTate.Ring)) | ∀ k : ℕ, 0 < k → k < N →
         (pointHom ^ k).left t ≠ curveGeom.zero t} =
         ⋂ k ∈ Finset.Ioo 0 N, {t | (pointHom ^ k).left t = curveGeom.zero t}ᶜ := by
       ext t
@@ -168,7 +155,8 @@ noncomputable def exactOrderOpens (N : ℕ) : (Spec (.of (ULift.{u} Ring))).Open
       (curveGeom.isClosed_setOf_left_apply_eq_zero (pointHom ^ k)).isOpen_compl
 
 /-- The defining property of `exactOrderOpens N`. -/
-theorem mem_exactOrderOpens_iff {N : ℕ} {t : Spec (.of (ULift.{u} Ring))} :
+@[simp]
+theorem mem_exactOrderOpens_iff {N : ℕ} {t : Spec (.of (ULift.{u} UniversalTate.Ring))} :
     t ∈ exactOrderOpens N ↔ ∀ k : ℕ, 0 < k → k < N → (pointHom ^ k).left t ≠ curveGeom.zero t :=
   Iff.rfl
 
@@ -177,6 +165,7 @@ noncomputable def yOneOpens (N : ℕ) : (torsionLocus.{u} N).Opens :=
   torsionLocusι N ⁻¹ᵁ exactOrderOpens N
 
 /-- The defining property of `yOneOpens N`. -/
+@[simp]
 theorem mem_yOneOpens_iff {N : ℕ} {z : torsionLocus.{u} N} :
     z ∈ yOneOpens N ↔ torsionLocusι N z ∈ exactOrderOpens N :=
   Iff.rfl
@@ -191,7 +180,7 @@ noncomputable abbrev yOne (N : ℕ) : Scheme.{u} :=
 
 /-- The morphism `Y₁(N) ⟶ Spec ℤ[A, B][Δ⁻¹]`: the inclusion of an open subscheme of the
 `N`-torsion locus followed by the inclusion of that closed subscheme. -/
-noncomputable def yOneι (N : ℕ) : yOne.{u} N ⟶ Spec (.of (ULift.{u} Ring)) :=
+noncomputable def yOneι (N : ℕ) : yOne.{u} N ⟶ Spec (.of (ULift.{u} UniversalTate.Ring)) :=
   (yOneOpens.{u} N).ι ≫ torsionLocusι N
 
 /-- `yOneι N` is the inclusion of `yOneOpens N` followed by that of the `N`-torsion locus. -/
@@ -208,15 +197,16 @@ through `Y₁(N)` exactly when the pullback of `N • (0, 0)` along `t` is the p
 section and `t` lands in `exactOrderOpens N`, that is, none of the multiples `k • (0, 0)`,
 `0 < k < N`, meets the zero section at a point of the image of `t`. The factorization is unique,
 as `yOneι N` is an immersion. -/
-theorem exists_comp_yOneι_eq_iff {S : Scheme.{u}} (t : S ⟶ Spec (.of (ULift.{u} Ring)))
-    (N : ℕ) : (∃ h : S ⟶ yOne.{u} N, h ≫ yOneι N = t) ↔
+theorem exists_comp_yOneι_eq_iff {S : Scheme.{u}}
+    (t : S ⟶ Spec (.of (ULift.{u} UniversalTate.Ring))) (N : ℕ) :
+    (∃ h : S ⟶ yOne.{u} N, h ≫ yOneι N = t) ↔
       t ≫ (pointHom ^ N).left = t ≫ curveGeom.zero ∧ ∀ s, t s ∈ exactOrderOpens N := by
   constructor
   · rintro ⟨h, rfl⟩
     refine ⟨(exists_comp_torsionLocusι_eq_iff _ _).mp ⟨h ≫ (yOneOpens N).ι, by
       rw [yOneι_def, Category.assoc]⟩, fun s ↦ ?_⟩
     have : (yOneOpens N).ι (h s) ∈ yOneOpens N := (h s).2
-    simpa [yOneι_def] using mem_yOneOpens_iff.mp this
+    simpa [yOneι_def] using this
   · rintro ⟨hN, ht⟩
     obtain ⟨h, rfl⟩ := (exists_comp_torsionLocusι_eq_iff _ _).mpr hN
     refine ⟨IsOpenImmersion.lift (yOneOpens N).ι h ?_, by
@@ -225,7 +215,7 @@ theorem exists_comp_yOneι_eq_iff {S : Scheme.{u}} (t : S ⟶ Spec (.of (ULift.{
     rw [Scheme.Opens.range_ι]
     exact ht s
 
-end WeierstrassCurve.UniversalTate
+end TauCeti.AlgebraicGeometry.UniversalTate
 
 namespace TauCeti.AlgebraicGeometry.EllipticCurveGeom
 
@@ -235,29 +225,8 @@ variable {S : Scheme.{u}} {E : EllipticCurveGeom S} {P : 𝟙_ (Over S) ⟶ Over
 
 /-! ### Classifying pairs -/
 
--- Reading the universal Tate normal form on its projective model through `toEllipticCurveGeomIso`
--- identifies classifying pairs into `curveGeom` with the classifying pairs of
--- `existsUnique_tateNormalForm`.
-private theorem isTate_iff {f : S ⟶ Spec (.of (ULift.{u} Ring))}
-    {g : E.carrier ⟶ curveGeom.{u}.carrier} :
-    (IsPullback g E.structureMap curveGeom.structureMap f ∧ E.zero ≫ g = f ≫ curveGeom.zero ∧
-      P.left ≫ g = f ≫ pointHom.left) ↔
-    (IsPullback (g ≫ (toEllipticCurveGeomIso curveULift).hom) E.structureMap
-        curveULift.projModelOver f ∧
-      E.zero ≫ g ≫ (toEllipticCurveGeomIso curveULift).hom = f ≫ curveULift.projModelZero ∧
-      P.left ≫ g ≫ (toEllipticCurveGeomIso curveULift).hom = f ≫ point) := by
-  have hiso : IsPullback (toEllipticCurveGeomIso curveULift.{u}).hom curveGeom.structureMap
-      curveULift.projModelOver (𝟙 _) :=
-    IsPullback.of_horiz_isIso ⟨by rw [toEllipticCurveGeomIso_hom_projModelOver, Category.comp_id]⟩
-  refine and_congr ⟨fun hg ↦ by simpa using hg.paste_horiz hiso, fun hg ↦ ?_⟩ ?_
-  · exact IsPullback.of_right (by simpa using hg) (by simpa using hg.w) hiso
-  · refine and_congr ?_ ?_
-    · rw [← cancel_mono (toEllipticCurveGeomIso curveULift).hom, Category.assoc, Category.assoc,
-        zero_toEllipticCurveGeomIso_hom]
-    · rw [← cancel_mono (toEllipticCurveGeomIso curveULift).hom, Category.assoc, Category.assoc,
-        pointHom_left, Category.assoc, Iso.inv_hom_id, Category.comp_id]
-
-variable {t : S ⟶ Spec (.of (ULift.{u} Ring))} {g : E.carrier ⟶ curveGeom.{u}.carrier}
+variable {t : S ⟶ Spec (.of (ULift.{u} UniversalTate.Ring))}
+  {g : E.carrier ⟶ curveGeom.{u}.carrier}
   (hg : IsPullback g E.structureMap curveGeom.structureMap t) (h₀ : E.zero ≫ g = t ≫ curveGeom.zero)
   (hP : P.left ≫ g = t ≫ pointHom.left)
 
@@ -304,22 +273,18 @@ theorem existsUnique_yOne {N : ℕ} (hN : 4 ≤ N) (hPN : P ^ N = 1)
     simpa only [← hmul, Nat.cast_ofNat] using hPk 2 (by omega) (by omega)
   have h₃ : ∀ s, (P.left ≫ (E.mulBy 3).left) s ≠ E.zero s := by
     simpa only [← hmul, Nat.cast_ofNat] using hPk 3 (by omega) (by omega)
-  obtain ⟨⟨f, g⟩, hfg, huniq⟩ :=
-    E.existsUnique_tateNormalForm (left_comp_structureMap P) h₁ h₂ h₃
-  obtain ⟨hg, h₀, hgP⟩ := (isTate_iff (g := g ≫ (toEllipticCurveGeomIso curveULift).inv)).mpr
-    (by simpa using hfg)
+  obtain ⟨⟨f, g⟩, ⟨hg, h₀, hgP⟩, huniq⟩ :=
+    E.existsUnique_tateNormalForm_curveGeom (left_comp_structureMap P) h₁ h₂ h₃
   -- the classifying morphism factors through `Y₁(N)`
   obtain ⟨h, rfl⟩ := (exists_comp_yOneι_eq_iff f N).mpr
     ⟨(pow_eq_one_iff_of_isTate hg h₀ hgP N).mp hPN, fun s k hk hkN hs ↦
       hPk k hk hkN s ((pow_left_apply_eq_zero_iff_of_isTate hg h₀ hgP k s).mpr hs)⟩
-  refine ⟨(h, g ≫ (toEllipticCurveGeomIso curveULift).inv), ⟨hg, h₀, hgP⟩, ?_⟩
+  refine ⟨(h, g), ⟨hg, h₀, hgP⟩, ?_⟩
   -- a second classifying pair through `Y₁(N)` is a second Tate normal form
   rintro ⟨h', g'⟩ hfg'
-  have := huniq (h' ≫ yOneι N, g' ≫ (toEllipticCurveGeomIso curveULift).hom)
-    (isTate_iff.mp hfg')
+  have := huniq (h' ≫ yOneι N, g') hfg'
   simp only [Prod.mk.injEq] at this
-  refine Prod.ext (by simpa using (cancel_mono (yOneι N)).mp this.1) ?_
-  simp [← this.2]
+  exact Prod.ext ((cancel_mono (yOneι N)).mp this.1) this.2
 
 /-- **The points classified by `Y₁(N)`.** For `N ≥ 4`, an `S`-point `P` of an elliptic curve `E`
 over `S` is the pullback of the point `(0, 0)` of the universal Tate normal form along some
@@ -353,6 +318,7 @@ theorem existsUnique_yOne_of_isFiberwiseInjective {N : ℕ} (hN : 4 ≤ N)
         (φ (.ofAdd 1)).left ≫ fg.2 = (fg.1 ≫ yOneι N) ≫ pointHom.left := by
   have : NeZero N := ⟨by omega⟩
   refine existsUnique_yOne hN ?_ (isFiberwiseInjective_zmod_iff.mp hφ)
-  rw [← map_pow, ← ofAdd_nsmul, nsmul_one, ZMod.natCast_self, ofAdd_zero, map_one]
+  rw [← map_pow, ← ofAdd_nsmul]
+  simp
 
 end TauCeti.AlgebraicGeometry.EllipticCurveGeom

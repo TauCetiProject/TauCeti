@@ -493,6 +493,15 @@ theorem zero_comp_structureMap {S : Scheme.{u}} (E : EllipticCurveGeom S) :
     E.zero ≫ E.structureMap = 𝟙 S :=
   E.zero_comp
 
+/-- The zero section of an elliptic curve is a closed immersion, being a section of the separated
+structure morphism. -/
+instance isClosedImmersion_zero {S : Scheme.{u}} (E : EllipticCurveGeom S) :
+    IsClosedImmersion E.zero := by
+  have : IsClosedImmersion (E.zero ≫ E.structureMap) := by
+    rw [zero_comp_structureMap]
+    infer_instance
+  exact .of_comp E.zero E.structureMap
+
 /-- An elliptic curve over `S` satisfies the local-model condition `IsLocallyWeierstrass` for its
 structure morphism and zero section: the pointwise form of the atlas condition `localModel`. -/
 theorem isLocallyWeierstrass {S : Scheme.{u}} (E : EllipticCurveGeom S) :
