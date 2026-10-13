@@ -88,6 +88,7 @@ namespace TauCeti.WorkedExamples
 /-! ### Reduced minimal equations -/
 
 /-- The discriminant of 11.a2 is `-11⁵`. -/
+@[simp]
 theorem Δ_curve11a2 : curve11a2.Δ = -161051 := by
   simp [Δ, b₂, b₄, b₆, b₈]
 
@@ -97,10 +98,12 @@ instance : (curve11a2.baseChange ℚ).IsElliptic := by
   norm_num
 
 /-- The `c₄` invariant of 11.a2 is `496 = 2⁴ ⋅ 31`. -/
+@[simp]
 theorem c₄_curve11a2 : curve11a2.c₄ = 496 := by
   simp [c₄, b₂, b₄]
 
 /-- The `c₄` invariant of 37.a1 is `48 = 2⁴ ⋅ 3`. -/
+@[simp]
 theorem c₄_curve37a1 : curve37a1.c₄ = 48 := by
   simp [c₄, b₂, b₄]
 
@@ -147,6 +150,7 @@ theorem reducedMinimalModel_eq_curve37a1 {E : WeierstrassCurve ℚ} [E.IsEllipti
   (eq_reducedMinimalModel isReducedMinimal_curve37a1 C hC).symm
 
 /-- **The minimal discriminant of 11.a1 is `-11`**, of absolute value `11`. -/
+@[simp]
 theorem absNorm_minimalDiscriminantIdeal_curve11a1 :
     Ideal.absNorm (minimalDiscriminantIdeal ℤ (curve11a1.baseChange ℚ)) = 11 := by
   rw [absNorm_minimalDiscriminantIdeal_baseChange _ isReducedMinimal_curve11a1.isGlobalMinimal,
@@ -154,6 +158,7 @@ theorem absNorm_minimalDiscriminantIdeal_curve11a1 :
   norm_num
 
 /-- **The minimal discriminant of 11.a2 is `-11⁵`**, of absolute value `161051`. -/
+@[simp]
 theorem absNorm_minimalDiscriminantIdeal_curve11a2 :
     Ideal.absNorm (minimalDiscriminantIdeal ℤ (curve11a2.baseChange ℚ)) = 161051 := by
   rw [absNorm_minimalDiscriminantIdeal_baseChange _ isReducedMinimal_curve11a2.isGlobalMinimal,
@@ -161,6 +166,7 @@ theorem absNorm_minimalDiscriminantIdeal_curve11a2 :
   norm_num
 
 /-- **The minimal discriminant of 37.a1 is `37`.** -/
+@[simp]
 theorem absNorm_minimalDiscriminantIdeal_curve37a1 :
     Ideal.absNorm (minimalDiscriminantIdeal ℤ (curve37a1.baseChange ℚ)) = 37 := by
   rw [absNorm_minimalDiscriminantIdeal_baseChange _ isReducedMinimal_curve37a1.isGlobalMinimal,
@@ -228,24 +234,28 @@ theorem isMinimalPairNF_minimalPairCurve37a1 : IsMinimalPairNF minimalPairCurve3
     interval_cases ℓ <;> first | exact absurd hp Nat.not_prime_one | norm_num at hp ⊢
 
 /-- **The minimal-pair equation of 11.a1** is `y² = x³ - 10135152x - 12419196912`. -/
+@[simp]
 theorem minimalPairModel_model_curve11a1 :
     (minimalPairModel (curve11a1.baseChange ℚ)).model = minimalPairCurve11a1 :=
   minimalPairModel_unique _ _ ⟨_, isMinimalPairNF_minimalPairCurve11a1, _,
     variableChangeElevenA_smul_minimalPairCurve11a1⟩
 
 /-- **The minimal-pair equation of 11.a2** is `y² = x³ - 13392x - 1080432`. -/
+@[simp]
 theorem minimalPairModel_model_curve11a2 :
     (minimalPairModel (curve11a2.baseChange ℚ)).model = minimalPairCurve11a2 :=
   minimalPairModel_unique _ _ ⟨_, isMinimalPairNF_minimalPairCurve11a2, _,
     variableChangeElevenA_smul_minimalPairCurve11a2⟩
 
 /-- **The minimal-pair equation of 37.a1** is `y² = x³ - 16x + 16`. -/
+@[simp]
 theorem minimalPairModel_model_curve37a1 :
     (minimalPairModel (curve37a1.baseChange ℚ)).model = minimalPairCurve37a1 :=
   minimalPairModel_unique _ _ ⟨_, isMinimalPairNF_minimalPairCurve37a1, _,
     variableChangeThirtySevenA_smul_minimalPairCurve37a1⟩
 
 /-- **The naïve height of 11.a1** is `27 ⋅ 12419196912²`. -/
+@[simp]
 theorem naiveHeight_curve11a1 :
     naiveHeight (curve11a1.baseChange ℚ) = 4164384202353819065088 := by
   rw [naiveHeight_eq ⟨_, isMinimalPairNF_minimalPairCurve11a1, _,
@@ -253,12 +263,14 @@ theorem naiveHeight_curve11a1 :
   norm_num
 
 /-- **The naïve height of 11.a2** is `27 ⋅ 1080432²`. -/
+@[simp]
 theorem naiveHeight_curve11a2 : naiveHeight (curve11a2.baseChange ℚ) = 31517999278848 := by
   rw [naiveHeight_eq ⟨_, isMinimalPairNF_minimalPairCurve11a2, _,
     variableChangeElevenA_smul_minimalPairCurve11a2⟩, MinimalPairModel.height_def]
   norm_num
 
 /-- **The naïve height of 37.a1** is `4 ⋅ 16³ = 16384`. -/
+@[simp]
 theorem naiveHeight_curve37a1 : naiveHeight (curve37a1.baseChange ℚ) = 16384 := by
   rw [naiveHeight_eq ⟨_, isMinimalPairNF_minimalPairCurve37a1, _,
     variableChangeThirtySevenA_smul_minimalPairCurve37a1⟩, MinimalPairModel.height_def]
