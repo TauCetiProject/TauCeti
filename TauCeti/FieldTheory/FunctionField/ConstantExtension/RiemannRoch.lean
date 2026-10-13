@@ -139,16 +139,22 @@ theorem span_image_riemannRochSpace_eq_span_range {D : Divisor k F} {ι : Type*}
     (b : Basis ι k (riemannRochSpace D)) :
     Submodule.span k' (algebraMap F F' '' riemannRochSpace D) =
       Submodule.span k' (Set.range fun i ↦ algebraMap F F' (b i)) := by
-  -- `L(D)` is the `k`-span of `b`
-  have hD : Submodule.span k (Set.range fun i ↦ (b i : F)) = riemannRochSpace D := by
-    have hb : (fun i ↦ (b i : F)) = (riemannRochSpace D).subtype ∘ b := by
-      ext
-      simp
-    rw [hb, Set.range_comp, ← Submodule.map_span, b.span_eq, Submodule.map_top,
-      Submodule.range_subtype]
-  conv_lhs => rw [← hD]
-  rw [← IsScalarTower.coe_toAlgHom' k F F', ← AlgHom.coe_toLinearMap, ← Submodule.map_coe,
-    Submodule.map_span, Submodule.span_span_of_tower, ← Set.range_comp, Function.comp_def]
+  refine le_antisymm (Submodule.span_le.2 ?_) (Submodule.span_le.2 ?_)
+  · -- every element of `L(D)` is a `k`-combination of `b`, and `F → F'` is `k`-linear
+    rintro _ ⟨f, hf, rfl⟩
+    lift f to riemannRochSpace D using hf
+    induction b.mem_span f using Submodule.span_induction with
+    | mem x hx =>
+      obtain ⟨i, rfl⟩ := hx
+      exact Submodule.subset_span ⟨i, rfl⟩
+    | zero => simp
+    | add x y _ _ hx hy => simpa using add_mem hx hy
+    | smul a x _ hx =>
+      rw [Submodule.coe_smul, Algebra.smul_def, map_mul, ← IsScalarTower.algebraMap_apply,
+        ← Algebra.smul_def]
+      exact Submodule.smul_of_tower_mem _ a hx
+  · rintro _ ⟨i, rfl⟩
+    exact Submodule.subset_span ⟨b i, (b i).2, rfl⟩
 
 /-- The `k'`-span of the image of a `k`-basis of `L(D)` is `L(Con D)`. -/
 theorem span_range_algebraMap_eq_riemannRochSpace_conorm (hex : IsIntegrallyClosedIn k F)
