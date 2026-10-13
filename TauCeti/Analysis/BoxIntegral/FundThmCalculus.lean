@@ -12,10 +12,10 @@ public import Mathlib.Analysis.Calculus.Deriv.Comp
 /-!
 # The Henstock–Kurzweil fundamental theorem of calculus
 
-In dimension one every box has distortion one, so Mathlib's `GP` integral agrees with the
-Henstock–Kurzweil integral. Specializing the gauge divergence theorem gives the fundamental
-theorem for continuous primitives differentiable off a countable exceptional set. The derivative
-need not be Bochner integrable, and its values at the exceptions are arbitrary.
+The `GP` integral agrees with the Henstock–Kurzweil integral on one-dimensional boxes.
+For a continuous Banach-valued function `f` with derivative `f'` outside a countable exceptional
+set, the Henstock–Kurzweil integral of `f'` equals `f b - f a`. The derivative need not be
+Bochner integrable, and its values at the exceptions are arbitrary.
 
 The finite-exception case applies in particular to piecewise differentiable parametrizations.
 -/
@@ -37,7 +37,7 @@ theorem Box.distortion_fin_one (I : Box (Fin 1)) : I.distortion = 1 := by
   exact div_self hx
 
 /-- In dimension one the distortion restriction in the `GP` integral imposes no extra condition. -/
-theorem hasIntegral_GP_iff_Henstock {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+theorem hasIntegral_GP_iff_Henstock_fin_one {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
     [NormedAddCommGroup F] [NormedSpace ℝ F] {I : Box (Fin 1)} {f : (Fin 1 → ℝ) → E}
     {vol : Fin 1 →ᵇᵃ E →L[ℝ] F} {y : F} :
     HasIntegral I IntegrationParams.GP f vol y ↔
@@ -61,41 +61,38 @@ theorem hasIntegral_GP_iff_Henstock {E F : Type*} [NormedAddCommGroup E] [Normed
 /-- Henstock–Kurzweil FTC for continuous Banach-valued primitives, with a countable exceptional
 set. There is no integrability or boundedness requirement on the derivative; its values on the
 exceptional set do not affect the integral. -/
-theorem hasIntegral_Henstock_derivWithin_of_countable {E : Type*} [NormedAddCommGroup E]
+theorem hasIntegral_Henstock_of_hasDerivWithinAt_off_countable {E : Type*} [NormedAddCommGroup E]
     [NormedSpace ℝ E] [CompleteSpace E] {a b : ℝ} (hab : a < b) {f f' : ℝ → E} {s : Set ℝ}
     (hs : s.Countable) (hc : ContinuousOn f (Icc a b))
     (hd : ∀ x ∈ Icc a b \ s, HasDerivWithinAt f (f' x) (Icc a b) x) :
     HasIntegral (intervalBox a b hab) IntegrationParams.Henstock
       (fun x ↦ f' (x 0)) BoxAdditiveMap.volume (f b - f a) := by
-  apply hasIntegral_GP_iff_Henstock.mp
-  let e : (Fin 1 → ℝ) →L[ℝ] ℝ := ContinuousLinearMap.proj 0
-  have hmap : MapsTo e (Box.Icc (intervalBox a b hab)) (Icc a b) := by
+  apply hasIntegral_GP_iff_Henstock_fin_one.mp
+  have hmap : MapsTo (fun x : Fin 1 → ℝ ↦ x 0) (Box.Icc (intervalBox a b hab)) (Icc a b) := by
     intro x hx
     exact mem_Icc_intervalBox.mp hx
   have h := hasIntegral_GP_pderiv (intervalBox a b hab) (fun x ↦ f (x 0))
-    (fun x ↦ (ContinuousLinearMap.toSpanSingleton ℝ (f' (x 0))).comp e)
-    (e ⁻¹' (s ∩ Icc a b))
+    (fun x ↦ (ContinuousLinearMap.toSpanSingleton ℝ (f' (x 0))).comp (ContinuousLinearMap.proj 0))
+    ((fun x : Fin 1 → ℝ ↦ x 0) ⁻¹' (s ∩ Icc a b))
     ((hs.mono inter_subset_left).preimage
-      (MeasurableEquiv.piUnique (fun _ : Fin 1 ↦ ℝ)).injective)
-    (fun x hx ↦ by
-      -- Express coordinate evaluation as the linear map used in the chain rule below.
-      change ContinuousWithinAt (f ∘ e) (Box.Icc (intervalBox a b hab)) x
-      exact (hc (e x) hx.2).comp e.continuous.continuousWithinAt hmap)
+      (fun x y hxy ↦ funext (Fin.forall_fin_one.mpr hxy)))
+    (fun x hx ↦ (hc (x 0) hx.2).comp (f := fun y : Fin 1 → ℝ ↦ y 0)
+      (continuous_apply 0).continuousWithinAt hmap)
     (fun x hx ↦
       (hd (x 0) ⟨hmap hx.1, fun hxs ↦ hx.2 ⟨hxs, hmap hx.1⟩⟩).hasFDerivWithinAt.comp x
-        e.hasFDerivAt.hasFDerivWithinAt hmap) 0
-  simpa [e, Fin.insertNth_apply_same, BoxIntegral.integral_const,
+        (hasFDerivWithinAt_apply 0 x _) hmap) 0
+  simpa [Fin.insertNth_apply_same, BoxIntegral.integral_const,
     BoxAdditiveMap.volume_apply] using h
 
 /-- Henstock–Kurzweil FTC assuming differentiability only in the interior, outside a countable
 exceptional set. No derivative is required at either endpoint. -/
-theorem hasIntegral_Henstock_deriv_of_countable {E : Type*} [NormedAddCommGroup E]
+theorem hasIntegral_Henstock_of_hasDerivAt_off_countable {E : Type*} [NormedAddCommGroup E]
     [NormedSpace ℝ E] [CompleteSpace E] {a b : ℝ} (hab : a < b) {f f' : ℝ → E} {s : Set ℝ}
     (hs : s.Countable) (hc : ContinuousOn f (Icc a b))
     (hd : ∀ x ∈ Ioo a b \ s, HasDerivAt f (f' x) x) :
     HasIntegral (intervalBox a b hab) IntegrationParams.Henstock
       (fun x ↦ f' (x 0)) BoxAdditiveMap.volume (f b - f a) := by
-  apply hasIntegral_Henstock_derivWithin_of_countable hab
+  apply hasIntegral_Henstock_of_hasDerivWithinAt_off_countable hab
     (hs.union (Set.toFinite ({a, b} : Set ℝ)).countable) hc
   intro x hx
   have hxa : x ≠ a := fun h ↦ hx.2 (Or.inr (by simp [h]))

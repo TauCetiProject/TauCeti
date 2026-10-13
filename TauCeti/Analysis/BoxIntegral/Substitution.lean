@@ -50,7 +50,7 @@ theorem hasIntegral_Henstock_substitution {E : Type*} [NormedAddCommGroup E] [No
   have hdF : ∀ x, HasDerivAt F (g x) x := fun x ↦
     intervalIntegral.integral_hasDerivAt_right (hg.intervalIntegrable c x)
       hg.aestronglyMeasurable.stronglyMeasurableAtFilter hg.continuousAt
-  have h := hasIntegral_Henstock_deriv_of_countable hab hs (hF.comp_continuousOn hθ)
+  have h := hasIntegral_Henstock_of_hasDerivAt_off_countable hab hs (hF.comp_continuousOn hθ)
     (fun t ht ↦ (hdF (θ t)).scomp t (hdθ t ht))
   have hvalue : F (θ b) - F (θ a) = ∫ x in θ a..θ b, f x := by
     calc
@@ -60,9 +60,7 @@ theorem hasIntegral_Henstock_substitution {E : Type*} [NormedAddCommGroup E] [No
           (hg.intervalIntegrable c (θ a)) (hg.intervalIntegrable (θ a) (θ b))).symm
       _ = ∫ x in θ a..θ b, f x :=
         intervalIntegral.integral_congr (hgf.mono (uIcc_subset_Icc ha hb))
-  -- Write the composed primitive explicitly before replacing its endpoint difference.
-  change HasIntegral (intervalBox a b hab) IntegrationParams.Henstock
-    (fun x ↦ θ' (x 0) • g (θ (x 0))) BoxAdditiveMap.volume (F (θ b) - F (θ a)) at h
+  simp only [Function.comp_apply] at h
   rw [hvalue] at h
   exact (hasIntegral_congr (intervalBox a b hab) IntegrationParams.Henstock
     (fun x hx ↦ congrArg (θ' (x 0) • ·) (hgf (hmap (mem_Icc_intervalBox.mp hx))))
