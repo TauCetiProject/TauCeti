@@ -25,7 +25,8 @@ and does not use a field ideal-class carrier.
 
 ## Main results
 
-* `exists_isCoprime_eval_eq_zero_of_discrim_eq_one` gives a primitive isotropic vector.
+* `exists_isCoprime_eval_eq_zero_of_discrim_eq_sq` gives a primitive isotropic vector
+  for every square discriminant.
 * `exists_smul_a_eq_zero_of_discrim_eq_one` moves it to a zero leading coefficient by a
   proper change of variables.
 
@@ -74,23 +75,23 @@ theorem eval_splitPrincipalForm_eq_order_norm
   rw [eval_splitPrincipalForm_eq_norm]
   exact Algebra.norm_eq_of_algEquiv QuadraticOrder.equivProdOfOne z
 
-/-- Every integral form of discriminant one has a primitive integral isotropic vector. -/
-theorem exists_isCoprime_eval_eq_zero_of_discrim_eq_one
-    (f : BinaryQuadraticForm ℤ) (hf : f.discrim = 1) :
+/-- Every integral form of square discriminant has a primitive integral isotropic vector. -/
+theorem exists_isCoprime_eval_eq_zero_of_discrim_eq_sq
+    (f : BinaryQuadraticForm ℤ) (d : ℤ) (hf : f.discrim = d ^ 2) :
     ∃ x y : ℤ, IsCoprime x y ∧ f.eval x y = 0 := by
   by_cases ha : f.a = 0
   · exact ⟨1, 0, isCoprime_one_left, by simpa using ha⟩
-  have hval : f.eval (1 - f.b) (2 * f.a) = 0 := by
-    have hdisc : f.b ^ 2 - 4 * f.a * f.c = 1 := by
+  have hval : f.eval (d - f.b) (2 * f.a) = 0 := by
+    have hdisc : f.b ^ 2 - 4 * f.a * f.c = d ^ 2 := by
       simpa only [discrim_def, _root_.discrim] using hf
     rw [eval_def]
     linear_combination -f.a * hdisc
   obtain ⟨x, y, hxy, _, _, hscale⟩ :=
-    exists_isCoprime_eval_eq_gcd_sq_mul f (1 - f.b) (2 * f.a)
+    exists_isCoprime_eval_eq_gcd_sq_mul f (d - f.b) (2 * f.a)
       (Or.inr (mul_ne_zero (by decide) ha))
   refine ⟨x, y, hxy, ?_⟩
-  have hg0 : (Int.gcd (1 - f.b) (2 * f.a) : ℤ) ≠ 0 := by
-    exact_mod_cast (Int.gcd_pos_of_ne_zero_right (1 - f.b)
+  have hg0 : (Int.gcd (d - f.b) (2 * f.a) : ℤ) ≠ 0 := by
+    exact_mod_cast (Int.gcd_pos_of_ne_zero_right (d - f.b)
       (mul_ne_zero (by decide) ha)).ne'
   exact (mul_eq_zero.mp (hscale.symm.trans hval)).resolve_left (pow_ne_zero 2 hg0)
 
@@ -99,7 +100,8 @@ coefficient. -/
 theorem exists_smul_a_eq_zero_of_discrim_eq_one
     (f : BinaryQuadraticForm ℤ) (hf : f.discrim = 1) :
     ∃ γ : SL(2, ℤ), (γ • f).a = 0 := by
-  obtain ⟨x, y, hxy, hzero⟩ := exists_isCoprime_eval_eq_zero_of_discrim_eq_one f hf
+  obtain ⟨x, y, hxy, hzero⟩ :=
+    exists_isCoprime_eval_eq_zero_of_discrim_eq_sq f 1 (by simpa only [one_pow] using hf)
   obtain ⟨γ, hγ⟩ := exists_smul_a_eq_eval f hxy
   exact ⟨γ, hγ.trans hzero⟩
 
