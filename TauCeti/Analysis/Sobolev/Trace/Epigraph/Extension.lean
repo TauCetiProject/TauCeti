@@ -73,6 +73,20 @@ private theorem value_unflattenWholeL_ae (hφ : ContDiff ℝ 1 φ)
       (contDiff_graphFlattening hφ).contDiffOn
       (fun x _ => norm_fderiv_graphFlattening_le_one_add (hφ.differentiable one_ne_zero) hL x) u
 
+/-- Unflattening transforms the weak gradient by the adjoint derivative of the graph chart. -/
+private theorem gradient_unflattenWholeL_ae (hφ : ContDiff ℝ 1 φ)
+    (hL : ∀ y, ‖fderiv ℝ φ y‖ ≤ L)
+    (u : W1p volume (⊤ : Opens (WithLp 2 (ℝ × E))) p) :
+    W1p.gradient (unflattenWholeL hφ hL u) =ᵐ[volume] fun x =>
+      ContinuousLinearMap.adjoint (fderiv ℝ (graphFlattening φ φ.continuous) x)
+        (W1p.gradient u (graphFlattening φ φ.continuous x)) := by
+  rw [unflattenWholeL]
+  simpa only [Opens.coe_top, Measure.restrict_univ] using
+    W1p.gradient_compMeasurePreservingL_ae (p := p) (M := 1 + L) (U := ⊤) (V := ⊤)
+      (measurePreserving_graphFlattening φ φ.continuous) (by simp)
+      (contDiff_graphFlattening hφ).contDiffOn
+      (fun x _ => norm_fderiv_graphFlattening_le_one_add (hφ.differentiable one_ne_zero) hL x) u
+
 /-- Extension from the region above a `C¹` graph with bounded derivative to the whole
 space: flatten the graph, extend by even reflection, and unflatten. It is a bounded
 right inverse of restriction, with norm at most `2 * (1 + L)²`. -/
@@ -142,6 +156,56 @@ theorem W1p.restrictL_normalEpigraphExtensionL (hφ : ContDiff ℝ 1 φ)
     ae_restrict_of_ae (W1p.value_normalEpigraphExtensionL_ae hφ hL u),
     ae_restrict_mem (normalEpigraph φ).isOpen.measurableSet] with x h1 h2 hx
   rw [h1, h2, ite_eq_left ((mem_normalEpigraph φ x).mp hx)]
+
+/-- The extension has the original weak gradient above the graph. Below the graph,
+the gradient at the reflected point is transformed by the adjoint derivatives of
+unflattening and flattening, with normal reflection between them. On the graph the
+formula is zero, almost everywhere with respect to volume. -/
+theorem W1p.gradient_normalEpigraphExtensionL_ae (hφ : ContDiff ℝ 1 φ)
+    (hL : ∀ y, ‖fderiv ℝ φ y‖ ≤ L) (u : W1p volume (normalEpigraph φ) p) :
+    let Φ := graphFlattening φ φ.continuous
+    W1p.gradient (W1p.normalEpigraphExtensionL hφ hL u) =ᵐ[volume] fun x =>
+      if φ x.snd < x.fst then W1p.gradient u x
+      else if x.fst < φ x.snd then
+        ContinuousLinearMap.adjoint (fderiv ℝ Φ x)
+          (normalLinearReflection E
+            (ContinuousLinearMap.adjoint (fderiv ℝ Φ.symm (normalReflection E 0 (Φ x)))
+              (W1p.gradient u (WithLp.toLp 2 (2 * φ x.snd - x.fst, x.snd)))))
+      else 0 := by
+  let Φ := graphFlattening φ φ.continuous
+  let H := (normalHalfSpace (E := E) 0 : Set (WithLp 2 (ℝ × E)))
+  let v := W1p.normalEpigraphEquivL hφ hL u
+  have hflat : H.indicator (W1p.gradient v) =ᵐ[volume]
+      H.indicator (fun z => ContinuousLinearMap.adjoint (fderiv ℝ Φ.symm z)
+        (W1p.gradient u (Φ.symm z))) :=
+    (ae_eq_restrict_iff_indicator_ae_eq (normalHalfSpace (E := E) 0).isOpen.measurableSet).mp
+      (W1p.gradient_normalEpigraphEquivL_ae hφ hL u)
+  have horiginal := W1p.gradient_restrictL_ae (le_top : normalEpigraph φ ≤ ⊤)
+    (W1p.normalEpigraphExtensionL hφ hL u)
+  rw [W1p.restrictL_normalEpigraphExtensionL] at horiginal
+  have habove := (ae_eq_restrict_iff_indicator_ae_eq
+    (normalEpigraph φ).isOpen.measurableSet).mp horiginal.symm
+  have hΦ := measurePreserving_graphFlattening φ φ.continuous
+  have hρ := measurePreserving_normalReflection (E := E) 0
+  have hwhole := gradient_unflattenWholeL_ae hφ hL (W1p.extendByReflectionL 0 v)
+  rw [← normalEpigraphExtensionL_apply] at hwhole
+  filter_upwards [habove, hwhole,
+    hΦ.quasiMeasurePreserving.ae_eq_comp (W1p.gradient_extendByReflectionL_ae 0 v),
+    hΦ.quasiMeasurePreserving.ae_eq_comp hflat,
+    (hρ.comp hΦ).quasiMeasurePreserving.ae_eq_comp hflat] with x hu hx hreflect h1 h2
+  by_cases hab : φ x.snd < x.fst
+  · -- Above the graph, restriction already identifies the weak gradient.
+    simpa only [Set.indicator_of_mem ((mem_normalEpigraph φ x).mpr hab), hab, ite_true] using hu
+  · -- Below or on the graph, use the chain rule and the reflected half-space gradient.
+    simp only [Function.comp_apply] at hreflect h1 h2
+    rw [hx, hreflect, h1, h2]
+    simp only [H, Φ, Set.indicator, SetLike.mem_coe, mem_normalHalfSpace,
+      graphFlattening_apply, graphFlattening_symm_apply, normalReflection_apply,
+      WithLp.toLp_fst, WithLp.toLp_snd, mul_zero, zero_sub, neg_sub, sub_pos]
+    have hheight : φ x.snd - x.fst + φ x.snd = 2 * φ x.snd - x.fst := by ring
+    rw [hheight]
+    by_cases hbelow : x.fst < φ x.snd <;>
+      simp only [hab, hbelow, ite_true, ite_false, map_zero, zero_add, add_zero]
 
 /-- The graph-domain extension multiplies the Sobolev norm by at most
 `2 * (1 + L)²`, uniformly in the exponent `p`. -/
