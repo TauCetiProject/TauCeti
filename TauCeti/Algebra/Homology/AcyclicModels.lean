@@ -233,6 +233,12 @@ def extendNat {m n : ℕ} (t : ∀ i : ι n, (G.obj (B.model n i)).X m) : NatLin
   app := B.extend t
   naturality := B.extend_map t
 
+/-- The map determined by elements on the models, as a natural family, evaluates as `extend`. -/
+@[simp]
+theorem extendNat_app {m n : ℕ} (t : ∀ i : ι n, (G.obj (B.model n i)).X m) (X : C)
+    (x : (F.obj X).X n) : (B.extendNat t).app X x = B.extend t X x :=
+  (rfl)
+
 /-- A natural map is determined by its values on the generators. -/
 theorem eq_extend {m n : ℕ} (φ : NatLinear F G n m) (X : C) (x : (F.obj X).X n) :
     φ.app X x = B.extend (fun i ↦ φ.app (B.model n i) (B.gen n i)) X x := by
@@ -424,7 +430,7 @@ private theorem d_homotopyGen_succ (n : ℕ) (i : ι (n + 1)) :
     have h := B.d_extend _ (target B f g n) ih (B.model (n + 2) i)
       ((F.obj (B.model (n + 2) i)).d (n + 2) (n + 1) (B.gen (n + 2) i))
     simp only [target, NatLinear.sub_app, NatLinear.ofHom_app, NatLinear.compD_app,
-      extendNat] at h ⊢
+      extendNat_app] at h ⊢
     rw [map_sub, map_sub, h, HomologicalComplex.d_comp_d_apply, map_zero, sub_zero,
       HomologicalComplex.Hom.comm_apply, HomologicalComplex.Hom.comm_apply, sub_self]
 
@@ -435,7 +441,7 @@ private theorem d_extend_homotopyGen_succ (n : ℕ) (X : C) (x : (F.obj X).X (n 
       (f.app X).f (n + 1) x - (g.app X).f (n + 1) x -
         B.extend (B.homotopyGen f g n) X ((F.obj X).d (n + 1) n x) := by
   have := B.d_extend _ (target B f g n) (d_homotopyGen_succ B hG f g hfg n) X x
-  simpa [target, extendNat] using this
+  simpa [target, extendNat_app] using this
 
 /-- The components of the chain homotopy: `Fᵢ(X) → Gⱼ(X)`, determined on the models when
 `j = i + 1`, and zero otherwise. -/
@@ -574,6 +580,12 @@ theorem extend_map {m n : ℕ} (t : (G.obj (B.model n)).X m) {X Y : C} (f : X �
 def extendNat {m n : ℕ} (t : (G.obj (B.model n)).X m) : NatLinear F G n m where
   app := B.extend t
   naturality := B.extend_map t
+
+/-- The map determined by an element on the model, as a natural family, evaluates as `extend`. -/
+@[simp]
+theorem extendNat_app {m n : ℕ} (t : (G.obj (B.model n)).X m) (X : C) (x : (F.obj X).X n) :
+    (B.extendNat t).app X x = B.extend t X x :=
+  (rfl)
 
 /-- A natural map is determined by its value on the generator. -/
 theorem eq_extend {m n : ℕ} (φ : NatLinear F G n m) (X : C) (x : (F.obj X).X n) :
