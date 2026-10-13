@@ -86,12 +86,12 @@ def mulInvariantFoliation (S : LieSubalgebra ℝ (LeftInvariantDerivation I G)) 
     exact isInvolutiveDistribution_mulInvariantDistribution fun v hv w hw ↦
       (tangentLieSubalgebra (I := I) S).lie_mem hv hw
 
-private theorem mulInvariantFoliation_distribution_def
-    (S : LieSubalgebra ℝ (LeftInvariantDerivation I G)) (g : G) :
-    (S.mulInvariantFoliation (I := I)).distribution g =
+private theorem mulInvariantFoliation_distribution_eq
+    (S : LieSubalgebra ℝ (LeftInvariantDerivation I G)) :
+    (S.mulInvariantFoliation (I := I)).distribution =
       mulInvariantDistribution (S.map
         (leftInvariantDerivationLieEquivGroupLieAlgebra (I := I) (G := G)
-          BoundarylessManifold.isInteriorPoint).toLieHom).toSubmodule g :=
+          BoundarylessManifold.isInteriorPoint).toLieHom).toSubmodule :=
   rfl
 
 /-- The tangent distribution of `S.mulInvariantFoliation` is the left-invariant distribution
@@ -103,7 +103,7 @@ theorem mulInvariantFoliation_distribution
       mulInvariantDistribution (S.map
         (leftInvariantDerivationLieEquivGroupLieAlgebra (I := I) (G := G)
           BoundarylessManifold.isInteriorPoint).toLieHom).toSubmodule g :=
-  mulInvariantFoliation_distribution_def S g
+  congrFun (mulInvariantFoliation_distribution_eq S) g
 
 /-- Left multiplication carries a tangent curve of `S.mulInvariantFoliation` to another tangent
 curve of the same foliation. -/
@@ -173,9 +173,9 @@ def integralLeafSubgroup (S : LieSubalgebra ℝ (LeftInvariantDerivation I G)) :
     exact TauCeti.Foliation.mem_leaf.mpr (by
       simpa using (S.sameLeaf_mul_left x⁻¹ hx').symm)
 
-private theorem coe_integralLeafSubgroup_def
+private theorem integralLeafSubgroup_carrier
     (S : LieSubalgebra ℝ (LeftInvariantDerivation I G)) :
-    (S.integralLeafSubgroup (I := I) : Set G) =
+    (S.integralLeafSubgroup (I := I)).carrier =
       (S.mulInvariantFoliation (I := I)).leaf 1 :=
   rfl
 
@@ -183,7 +183,7 @@ private theorem coe_integralLeafSubgroup_def
 theorem coe_integralLeafSubgroup (S : LieSubalgebra ℝ (LeftInvariantDerivation I G)) :
     (S.integralLeafSubgroup (I := I) : Set G) =
       (S.mulInvariantFoliation (I := I)).leaf 1 :=
-  coe_integralLeafSubgroup_def S
+  integralLeafSubgroup_carrier S
 
 /-- Membership in the integral leaf subgroup means lying on the same leaf as the identity. -/
 @[simp]
