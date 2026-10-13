@@ -43,6 +43,7 @@ variable {K : Type*} [Field K] [Algebra R K] [IsFractionRing R K]
 
 /-- A principal fractional ideal is away from `S` exactly when its generator is an `Sᶜ`-unit,
 that is, a local unit at every prime of `S`. -/
+@[simp↓]
 theorem toPrincipalIdeal_mem_idealsAway_iff {S : Finset (HeightOneSpectrum R)} {x : Kˣ} :
     toPrincipalIdeal R K x ∈ idealsAway K S ↔ x ∈ (S : Set (HeightOneSpectrum R))ᶜ.unit K := by
   rw [mem_idealsAway_iff, Set.mem_unit_iff]
