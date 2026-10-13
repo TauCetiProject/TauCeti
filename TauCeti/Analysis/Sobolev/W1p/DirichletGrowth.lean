@@ -81,7 +81,14 @@ theorem W1p.setAverage_norm_value_sub_setAverage_closedBall_le {x : E} {r : ℝ}
     (hball : ball x r ⊆ (Omega : Set E)) (u : W1p mu Omega p) :
     ⨍ y in closedBall x r, ‖W1p.value u y - ⨍ z in closedBall x r, W1p.value u z ∂mu‖ ∂mu ≤
       2 ^ (finrank ℝ E + 1) * r * ⨍ y in ball x r, ‖W1p.gradient u y‖ ∂mu := by
-  rw [Measure.restrict_congr_set (mu.addHaar_closedBall_ae_eq_ball x hr)]
+  have hballs : closedBall x r =ᵐ[mu] ball x r := by
+    rcases subsingleton_or_nontrivial E with hE | hE
+    · have heq : closedBall x r = ball x r := by
+        ext y
+        simp [mem_closedBall, mem_ball, Subsingleton.elim y x, hr.le, hr]
+      exact Filter.EventuallyEq.of_eq heq
+    · exact mu.addHaar_closedBall_ae_eq_ball x r
+  rw [Measure.restrict_congr_set hballs]
   set m := ⨍ z in ball x r, W1p.value u z ∂mu
   rw [setAverage_eq, setAverage_eq, smul_eq_mul, smul_eq_mul, mul_left_comm]
   simp_rw [Real.norm_eq_abs]

@@ -9,6 +9,7 @@ public import Mathlib.Analysis.SpecialFunctions.Pow.Integral
 import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import TauCeti.Analysis.SpecialFunctions.Pow.NNReal
+import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 
 /-!
 # Integrals of a weakly singular norm power
@@ -212,10 +213,7 @@ theorem setLIntegral_closedBall_enorm_sub_rpow {s : ℝ} (hs : -(Module.finrank 
     have h0 : (fun y : E => ‖x - y‖ₑ ^ s) = 0 := funext fun y => by
       rw [Subsingleton.elim (x - y) 0, enorm_zero, ENNReal.zero_rpow_of_pos hs0, Pi.zero_apply]
     simp [h0, lintegral_zero_fun, Module.finrank_zero_of_subsingleton]
-  have hball : closedBall x R =ᵐ[mu] ball x R :=
-    (ae_eq_of_subset_of_measure_ge ball_subset_closedBall
-      (Measure.addHaar_closedBall_eq_addHaar_ball mu x R).le measurableSet_ball.nullMeasurableSet
-      measure_closedBall_lt_top.ne).symm
+  have hball := mu.addHaar_closedBall_ae_eq_ball x R
   rw [Measure.restrict_congr_set hball, ← integral_norm_sub_rpow_ball hs hR x,
     ofReal_integral_eq_lintegral_ofReal (integrableOn_norm_sub_rpow_ball hs x)
       (ae_of_all _ fun y => Real.rpow_nonneg (norm_nonneg _) _)]

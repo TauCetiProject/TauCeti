@@ -11,6 +11,7 @@ public import Mathlib.MeasureTheory.Integral.IntegrableOn
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Complex
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
 import TauCeti.MeasureTheory.Integral.NormRpow
+import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 import Mathlib.MeasureTheory.Measure.Lebesgue.VolumeOfBalls
 import TauCeti.MeasureTheory.Function.Lp.Translation
 
@@ -69,12 +70,6 @@ theorem integrableOn_norm_sub_inv_closedBall (w c : ℂ) (R : ℝ) :
     (s := -1) (by simp) w).integrableOn_isCompact (isCompact_closedBall c R)
   simpa only [Real.rpow_neg_one, norm_sub_rev] using h
 
-private theorem closedBall_ae_eq_ball (c : ℂ) (R : ℝ) :
-    closedBall c R =ᵐ[volume] ball c R :=
-  (ae_eq_of_subset_of_measure_ge ball_subset_closedBall
-    (Measure.addHaar_closedBall_eq_addHaar_ball volume c R).le
-    measurableSet_ball.nullMeasurableSet measure_closedBall_lt_top.ne).symm
-
 private theorem real_volume_unitBall : volume.real (ball (0 : ℂ) 1) = Real.pi := by
   simp [measureReal_def, Complex.volume_ball]
 
@@ -82,7 +77,7 @@ private theorem real_volume_unitBall : volume.real (ball (0 : ℂ) 1) = Real.pi 
 theorem integral_norm_sub_inv_closedBall_le {w c : ℂ} {R : ℝ}
     (hw : w ∈ closedBall c R) :
     (∫ z in closedBall c R, ‖z - w‖⁻¹) ≤ 4 * Real.pi * R := by
-  rw [Measure.restrict_congr_set (closedBall_ae_eq_ball c R)]
+  rw [Measure.restrict_congr_set (volume.addHaar_closedBall_ae_eq_ball c R)]
   have h := TauCeti.integral_norm_sub_rpow_one_sub_finrank_le (mu := volume) w hw
   norm_num only [Complex.finrank_real_complex, Nat.cast_ofNat, real_volume_unitBall] at h
   simpa only [Real.rpow_neg_one, norm_sub_rev] using h.trans_eq (by ring)
@@ -90,7 +85,7 @@ theorem integral_norm_sub_inv_closedBall_le {w c : ℂ} {R : ℝ}
 /-- The inverse-distance integral over a disk centered at its pole is `2πR`. -/
 theorem integral_norm_sub_inv_closedBall {R : ℝ} (hR : 0 ≤ R) (w : ℂ) :
     (∫ z in closedBall w R, ‖z - w‖⁻¹) = 2 * Real.pi * R := by
-  rw [Measure.restrict_congr_set (closedBall_ae_eq_ball w R)]
+  rw [Measure.restrict_congr_set (volume.addHaar_closedBall_ae_eq_ball w R)]
   have h := TauCeti.integral_norm_sub_rpow_ball (mu := volume) (s := -1) (by simp) hR w
   norm_num only [Complex.finrank_real_complex, Nat.cast_ofNat, real_volume_unitBall] at h
   simpa only [Real.rpow_neg_one, norm_sub_rev, Real.rpow_one, div_one] using h
@@ -104,13 +99,6 @@ theorem integral_norm_truncatedCauchyKernel {R : ℝ} (hR : 0 ≤ R) :
     simp only [truncatedCauchyKernel, norm_indicator_eq_indicator_norm, norm_inv]
   rw [heq, integral_indicator isClosed_closedBall.measurableSet]
   simpa only [sub_zero] using integral_norm_sub_inv_closedBall hR (0 : ℂ)
-
-/-- The complex reciprocal kernel is integrable on every closed disk. -/
-theorem integrableOn_sub_inv_closedBall (w c : ℂ) (R : ℝ) :
-    IntegrableOn (fun z : ℂ ↦ (z - w)⁻¹) (closedBall c R) := by
-  refine (integrableOn_norm_sub_inv_closedBall w c R).mono'
-    ((measurable_id.sub_const w).inv.aestronglyMeasurable.restrict) ?_
-  exact Eventually.of_forall fun z ↦ by rw [norm_inv]
 
 /-- Moving the pole continuously gives local `L¹` convergence of the complex reciprocal kernel. -/
 theorem tendsto_integral_norm_sub_inv_sub_sub_inv_closedBall {ι : Type*} {l : Filter ι}
