@@ -61,7 +61,6 @@ def loopSpace2ToMapCircle : C((X.iteratedLoopSpace 2).carrier, C(Circle2, X.loop
   ⟨fun γ => (loopSpace2Homeomorph X s₀ γ).1,
     continuous_subtype_val.comp (loopSpace2Homeomorph X s₀).continuous⟩
 
-@[simp]
 theorem loopSpace2ToMapCircle_apply (γ : (X.iteratedLoopSpace 2).carrier) :
     loopSpace2ToMapCircle X s₀ γ = (loopSpace2Homeomorph X s₀ γ).1 := by
   rw [loopSpace2ToMapCircle]
@@ -76,7 +75,6 @@ def evalCircle : C(Circle2 × (X.iteratedLoopSpace 2).carrier, X.loopSpace.carri
     continuous_eval.comp (Continuous.prodMk
       ((loopSpace2ToMapCircle X s₀).continuous.comp continuous_snd) continuous_fst)⟩
 
-@[simp]
 theorem evalCircle_apply (z : Circle2) (γ : (X.iteratedLoopSpace 2).carrier) :
     evalCircle X s₀ (z, γ) = loopSpace2ToMapCircle X s₀ γ z := by
   rw [evalCircle]
