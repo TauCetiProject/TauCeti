@@ -248,9 +248,9 @@ noncomputable def stabilizeXHomologyEquiv :
     { toFun := G.stabilizeXHomologyMap s R
       map_add' := map_add _
       map_smul' := fun r y => by
-        rw [← algebraMap_smul (MvPolynomial (Fin (n + 1)) R), algebraMap_eq,
-          (G.stabilizeXHomologyMap s R).map_smulₛₗ, AlgHom.coe_toRingHom, rename_C,
-          ← algebraMap_eq, algebraMap_smul, RingHom.id_apply] }
+        simpa only [AlgHom.coe_toRingHom, AlgHom.commutes, algebraMap_smul,
+          RingHom.id_apply] using
+          (G.stabilizeXHomologyMap s R).map_smulₛₗ (algebraMap R S r) y }
     (G.stabilizeXHomologyMap_bijective s R)
 
 /-- The forward equivalence is the semilinear homology comparison. -/
