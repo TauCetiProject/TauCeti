@@ -12,9 +12,10 @@ public import TauCeti.RingTheory.LaurentSeries.Multiplication
 
 If `a` is not an `n`-th power in `k` and `n > 1`, the pole `a T⁻ⁿ` cannot be improved by
 subtracting `wⁿ - w` in `k((T))`. Every such representative still has a negative order divisible
-by `n`. In characteristic `p`, with `n = p`, this shows why the existence of a reduced
-Artin–Schreier representative requires a perfect residue field: neither an integral
-representative nor a prime-to-`p` pole need exist.
+by `n`. In characteristic `p`, with `n = p`, this shows why a general theorem guaranteeing
+reduced Artin–Schreier representatives for all classes needs a perfect-residue-field
+hypothesis: over an imperfect residue field, neither an integral representative nor a
+prime-to-`p` pole need exist.
 
 The argument uses the leading coefficient, and does not require a characteristic hypothesis.
 It complements the perfect-residue-field reduction in Stichtenoth, *Algebraic Function Fields
