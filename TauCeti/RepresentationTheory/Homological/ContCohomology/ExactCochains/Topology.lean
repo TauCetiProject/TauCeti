@@ -45,13 +45,13 @@ variable {G : Type u} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
 /-- The sequence of canonical continuous-cochain complexes is short exact in the category
 of cochain complexes of topological modules, for a locally compact group acting continuously
 on the discrete middle coefficient module. -/
-theorem continuousCochainsShortExact_shortExact_topModuleCat [LocallyCompactSpace G]
+theorem continuousCochainsShortExact_shortExact [LocallyCompactSpace G]
     [ContinuousSMul G B] : S.continuousCochainsShortExact.ShortExact := by
   have : (forget₂ (TopModuleCat.{u} ℤ) (ModuleCat.{u} ℤ)).Additive :=
     Functor.additive_of_preserves_binary_products _
   let F := (forget₂ (TopModuleCat.{u} ℤ) (ModuleCat.{u} ℤ)).mapHomologicalComplex
     (ComplexShape.up ℕ)
-  have hS := S.continuousCochainsShortExact_shortExact
+  have hS := S.continuousCochainsShortExact_shortExact_moduleCat
   exact
     { exact := (S.continuousCochainsShortExact.exact_map_iff_of_faithful F).mp hS.exact
       mono_f := Functor.mono_of_mono_map F hS.mono_f
@@ -64,7 +64,7 @@ theorem continuousCochainsShortExact_degreewise_shortExact [LocallyCompactSpace 
     [ContinuousSMul G B] (n : ℕ) :
     (S.continuousCochainsShortExact.map
       (HomologicalComplex.eval (TopModuleCat.{u} ℤ) (ComplexShape.up ℕ) n)).ShortExact :=
-  S.continuousCochainsShortExact_shortExact_topModuleCat.map_of_exact
+  S.continuousCochainsShortExact_shortExact.map_of_exact
     (HomologicalComplex.eval (TopModuleCat.{u} ℤ) (ComplexShape.up ℕ) n)
 
 end TauCeti.ContCohomology.DiscreteShortExact

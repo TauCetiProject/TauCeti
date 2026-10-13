@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Homology.HomologicalComplex
+public import TauCeti.Algebra.Homology.HomologicalComplex.Basic
 public import TauCeti.Algebra.Homology.HomotopyCategory.ShiftSequence
 public import TauCeti.LinearAlgebra.Exact
 public import Mathlib.Algebra.Category.ModuleCat.Abelian

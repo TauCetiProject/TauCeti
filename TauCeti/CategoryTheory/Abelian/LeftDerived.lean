@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Algebra.Homology.ShortComplex.ShortExact
 public import Mathlib.CategoryTheory.Abelian.LeftDerived
-public import TauCeti.Algebra.Homology.HomologicalComplex
+public import TauCeti.Algebra.Homology.HomologicalComplex.Basic
 
 /-!
 # Left derived functors on a projective presentation of length one
