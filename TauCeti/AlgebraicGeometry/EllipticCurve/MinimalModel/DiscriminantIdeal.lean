@@ -67,6 +67,8 @@ defect ideal they assemble into, and its class in `ClassGroup O` are not defined
   `WeierstrassCurve.isGlobalMinimal_iff_minimalDiscriminantIdeal_eq_span`: a globally minimal
   equation computes the ideal as `(Δ W)`, and among integral equations that identity holds only
   for the globally minimal ones.
+* `WeierstrassCurve.IsGlobalMinimal.hasAdditiveReduction_minimal_iff`: a globally minimal equation
+  has additive reduction at `v` exactly when `v` contains its discriminant and `c₄`.
 * `WeierstrassCurve.IsGlobalMinimal.dvd_six_of_pow_dvd`: a globally minimal equation admits no
   integral rescaling of its short form beyond the factor `6`.
 
@@ -298,10 +300,25 @@ theorem isGlobalMinimal_iff_minimalDiscriminantIdeal_eq_span {W : WeierstrassCur
     valuation_Δ_eq_exp_neg_count v hd, WithZero.exp_inj, neg_inj, Nat.cast_inj, ← h]
   exact count_minimalDiscriminantIdeal_eq_localMinimalDiscriminantValuation O W v
 
+/-- **A globally minimal equation has additive reduction at `v` exactly when `v` contains the
+discriminant and `c₄`** of its integral model. -/
+theorem IsGlobalMinimal.hasAdditiveReduction_minimal_iff {W : WeierstrassCurve K} [W.IsElliptic]
+    (h : IsGlobalMinimal O W) {W₀ : WeierstrassCurve O} (hW₀ : W₀.baseChange K = W)
+    (v : HeightOneSpectrum O) :
+    (W.minimal (Localization.AtPrime v.asIdeal)).HasAdditiveReduction
+        (Localization.AtPrime v.asIdeal) ↔ W₀.Δ ∈ v.asIdeal ∧ W₀.c₄ ∈ v.asIdeal := by
+  have hΔ : algebraMap O K W₀.Δ = W.Δ := by rw [← hW₀, baseChange, map_Δ]
+  have hc₄ : algebraMap O K W₀.c₄ = W.c₄ := by rw [← hW₀, baseChange, map_c₄]
+  have := h.isMinimal v
+  obtain ⟨C, hC⟩ := W.exists_smul_eq_minimal (Localization.AtPrime v.asIdeal)
+  rw [hasAdditiveReduction_iff_of_isMinimal_smul _ C hC, hasAdditiveReduction_iff]
+  simp only [this, true_and, valuation_maximalIdeal_localizationAtPrime, ← hΔ, ← hc₄,
+    valuation_lt_one_iff_mem]
+
 /-- **A globally minimal equation admits no further integral rescaling**: if `u ^ 4 ∣ 27 c₄` and
 `u ^ 6 ∣ 54 c₆` for an integral model, then `u ∣ 6`. Otherwise the short equation
 `y² = x³ - (27 c₄ / u⁴) x - 54 c₆ / u⁶`, a model of the same curve, would be integral with
-discriminant `6¹² Δ / u¹²`, which the minimal discriminant `(Δ)` must divide. In residue
+discriminant `6¹² Δ / u¹²`, which the minimal discriminant `(Δ)` must divide. When `O` has
 characteristic `2` or `3` the conclusion holds trivially, as `6 = 0` there. -/
 theorem IsGlobalMinimal.dvd_six_of_pow_dvd {W : WeierstrassCurve K} [W.IsElliptic]
     (h : IsGlobalMinimal O W) {W₀ : WeierstrassCurve O} (hW₀ : W₀.baseChange K = W) {u : O}

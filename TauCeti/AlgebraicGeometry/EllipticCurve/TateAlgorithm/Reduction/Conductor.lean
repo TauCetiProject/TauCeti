@@ -55,6 +55,10 @@ Like the minimal discriminant ideal, `𝔑` depends only on the `K`-isomorphism 
 * `WeierstrassCurve.isSemistable_iff_squarefree_algorithmicConductor` and
   `WeierstrassCurve.isSemistable_iff_algorithmicConductor_eq_radical`: `W` is semistable exactly
   when `𝔑` is squarefree, equivalently when `𝔑` is the radical of the minimal discriminant ideal.
+* `WeierstrassCurve.IsGlobalMinimal.dvd_algorithmicConductor_iff` and
+  `WeierstrassCurve.IsGlobalMinimal.sq_dvd_algorithmicConductor_iff`: for a globally minimal
+  equation, `𝔭ᵥ ∣ 𝔑` exactly when `v` contains its discriminant, and `𝔭ᵥ² ∣ 𝔑` exactly when `v`
+  also contains its `c₄`.
 * `WeierstrassCurve.one_lt_absNorm_algorithmicConductor_iff`: over `ℚ`, the norm of `𝔑` exceeds `1`
   exactly when `W` has bad reduction at some prime.
 * `WeierstrassCurve.pow_dvd_absNorm_algorithmicConductor_iff`: over `ℚ`, the exponent of `p` in the
@@ -217,6 +221,26 @@ theorem isSemistable_iff_algorithmicConductor_eq_radical (W : WeierstrassCurve K
   · rw [isSemistable_iff_squarefree_algorithmicConductor, h]
     exact squarefree_radical
 
+/-- **A prime divides the algorithmic conductor of a globally minimal equation exactly when it
+contains the discriminant** of its integral model, that is, when the curve has bad reduction
+there. -/
+theorem IsGlobalMinimal.dvd_algorithmicConductor_iff {W : WeierstrassCurve K} [W.IsElliptic]
+    (h : IsGlobalMinimal O W) {W₀ : WeierstrassCurve O} (hW₀ : W₀.baseChange K = W)
+    (v : HeightOneSpectrum O) : v.asIdeal ∣ algorithmicConductor O W ↔ W₀.Δ ∈ v.asIdeal := by
+  have hΔ : algebraMap O K W₀.Δ = W.Δ := by rw [← hW₀, baseChange, map_Δ]
+  rw [dvd_algorithmicConductor_iff_dvd_minimalDiscriminantIdeal,
+    minimalDiscriminantIdeal_eq_span_of_isGlobalMinimal h hΔ, Ideal.dvd_span_singleton]
+
+/-- **The square of a prime divides the algorithmic conductor of a globally minimal equation
+exactly when the prime contains both the discriminant and `c₄`** of its integral model, that is,
+when the curve has additive reduction there. -/
+theorem IsGlobalMinimal.sq_dvd_algorithmicConductor_iff {W : WeierstrassCurve K} [W.IsElliptic]
+    (h : IsGlobalMinimal O W) {W₀ : WeierstrassCurve O} (hW₀ : W₀.baseChange K = W)
+    (v : HeightOneSpectrum O) :
+    v.asIdeal ^ 2 ∣ algorithmicConductor O W ↔ W₀.Δ ∈ v.asIdeal ∧ W₀.c₄ ∈ v.asIdeal := by
+  rw [pow_dvd_algorithmicConductor_iff, two_le_algorithmicOggExponent_iff,
+    h.hasAdditiveReduction_minimal_iff hW₀]
+
 section Rat
 
 variable (E : WeierstrassCurve ℚ) [E.IsElliptic]
@@ -255,12 +279,8 @@ theorem IsGlobalMinimal.dvd_absNorm_algorithmicConductor_iff (h : IsGlobalMinima
   obtain ⟨v, hv⟩ : ∃ v : HeightOneSpectrum ℤ, v.asIdeal = Ideal.span {(p : ℤ)} :=
     ⟨⟨_, (Ideal.span_singleton_prime (by exact_mod_cast hp.ne_zero)).2
       (Nat.prime_iff_prime_int.1 hp), by simpa using hp.ne_zero⟩, rfl⟩
-  have hΔ : algebraMap ℤ ℚ W₀.Δ = E.Δ := by rw [← hW₀, baseChange, map_Δ]
-  have h₁ := pow_dvd_absNorm_algorithmicConductor_iff (E := E) hv 1
-  rw [pow_one] at h₁
-  rw [h₁, Nat.one_le_iff_ne_zero, ne_eq, algorithmicOggExponent_eq_zero_iff,
-    ← dvd_minimalDiscriminantIdeal_iff, minimalDiscriminantIdeal_eq_span_of_isGlobalMinimal h hΔ,
-    hv, Ideal.span_singleton_dvd_span_singleton_iff_dvd]
+  rw [← pow_one p, pow_dvd_absNorm_algorithmicConductor_iff hv, ← pow_dvd_algorithmicConductor_iff,
+    pow_one, h.dvd_algorithmicConductor_iff hW₀, hv, Ideal.mem_span_singleton, pow_one]
 
 /-- **The square of a prime divides the conductor of a globally minimal equation over `ℚ`
 exactly when the prime divides both the discriminant and `c₄`** of its integral model, that is,
@@ -271,15 +291,8 @@ theorem IsGlobalMinimal.sq_dvd_absNorm_algorithmicConductor_iff (h : IsGlobalMin
   obtain ⟨v, hv⟩ : ∃ v : HeightOneSpectrum ℤ, v.asIdeal = Ideal.span {(p : ℤ)} :=
     ⟨⟨_, (Ideal.span_singleton_prime (by exact_mod_cast hp.ne_zero)).2
       (Nat.prime_iff_prime_int.1 hp), by simpa using hp.ne_zero⟩, rfl⟩
-  have hΔ : algebraMap ℤ ℚ W₀.Δ = E.Δ := by rw [← hW₀, baseChange, map_Δ]
-  have hc₄ : algebraMap ℤ ℚ W₀.c₄ = E.c₄ := by rw [← hW₀, baseChange, map_c₄]
-  have := h.isMinimal v
-  obtain ⟨C, hC⟩ := E.exists_smul_eq_minimal (Localization.AtPrime v.asIdeal)
-  rw [pow_dvd_absNorm_algorithmicConductor_iff hv, two_le_algorithmicOggExponent_iff,
-    hasAdditiveReduction_iff_of_isMinimal_smul _ C hC, hasAdditiveReduction_iff,
-    valuation_maximalIdeal_localizationAtPrime, valuation_maximalIdeal_localizationAtPrime,
-    ← hΔ, ← hc₄, valuation_lt_one_iff_mem, valuation_lt_one_iff_mem]
-  simp only [this, true_and, hv, Ideal.mem_span_singleton]
+  rw [pow_dvd_absNorm_algorithmicConductor_iff hv, ← pow_dvd_algorithmicConductor_iff,
+    h.sq_dvd_algorithmicConductor_iff hW₀, hv, Ideal.mem_span_singleton, Ideal.mem_span_singleton]
 
 end Rat
 

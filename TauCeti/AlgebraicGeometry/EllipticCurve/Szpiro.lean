@@ -10,7 +10,8 @@ public import Mathlib.RingTheory.Ideal.Norm.AbsNorm
 public import TauCeti.AlgebraicGeometry.EllipticCurve.MinimalModel.Reduced
 public import TauCeti.AlgebraicGeometry.EllipticCurve.TateAlgorithm.Reduction.Conductor
 public import TauCeti.NumberTheory.AbcConjecture
-import Mathlib.Data.Nat.Squarefree
+import TauCeti.Data.Nat.Prime.Basic
+import TauCeti.RingTheory.Radical.NatInt
 
 /-!
 # The Szpiro ratio and Szpiro's conjectures over `ℚ`
@@ -208,35 +209,6 @@ theorem AlgorithmicModifiedSzpiroConjecture.algorithmicSzpiroConjecture
 
 open UniqueFactorizationMonoid
 
-/-- A prime at least `5` does not divide `6`. -/
-private theorem not_dvd_six_of_five_le {p : ℕ} (hp : p.Prime) (h5 : 5 ≤ p) : ¬ p ∣ 6 := fun h => by
-  have := Nat.le_of_dvd (by norm_num) h
-  obtain rfl | rfl : p = 5 ∨ p = 6 := by omega
-  · omega
-  · exact absurd hp (by decide)
-
-/-- The exponent of a prime `p` in `2 ^ a * 3 ^ b * n`. -/
-private theorem factorization_two_pow_mul_three_pow_mul {n : ℕ} (hn : n ≠ 0) (a b : ℕ) {p : ℕ}
-    (hp : p.Prime) : (2 ^ a * 3 ^ b * n).factorization p =
-      (if p = 2 then a else 0) + (if p = 3 then b else 0) + n.factorization p := by
-  rw [Nat.factorization_mul (by positivity) hn, Nat.factorization_mul (by positivity)
-    (by positivity), Nat.prime_two.factorization_pow, Nat.prime_three.factorization_pow]
-  simp only [Finsupp.add_apply, Finsupp.single_apply]
-  rcases eq_or_ne p 2 with rfl | h2
-  · simp
-  rcases eq_or_ne p 3 with rfl | h3
-  · simp
-  simp [h2, h3, h2.symm, h3.symm]
-
-/-- The exponent of a prime in a radical is at most `1`, and it vanishes unless the prime divides
-the number. -/
-private theorem factorization_radical_le (n p : ℕ) :
-    (radical n).factorization p ≤ if p ∣ n then 1 else 0 := by
-  have h1 := (squarefree_radical (a := n)).natFactorization_le_one p
-  split_ifs with h
-  · exact h1
-  · exact (Nat.factorization_eq_zero_of_not_dvd fun hd => h (hd.trans radical_dvd_self)).le
-
 /-- **The local bookkeeping behind abc implies modified Szpiro.** Let `x₄`, `x₆` and `D` be the
 absolute values of `c₄`, `c₆` and `Δ` of a minimal equation, and `N` its conductor. Then
 `g · rad (6 x₄ x₆ D)` divides `432 x₄ x₆ N`, where `g = gcd (x₄³, x₆²)`. At a prime `p ≥ 5` dividing
@@ -252,13 +224,15 @@ private theorem gcd_mul_radical_dvd {x₄ x₆ D N : ℕ} (h₄ : x₄ ≠ 0) (h
   refine (Nat.factorization_le_iff_dvd (by positivity) (by positivity)).1 fun p => ?_
   by_cases hp : p.Prime
   swap; · simp [Nat.factorization_eq_zero_of_not_prime _ hp]
-  have hrad := factorization_radical_le (6 * x₄ * x₆ * D) p
-  rw [factorization_two_pow_mul_three_pow_mul (by positivity) _ _ hp,
+  have hrad := Nat.factorization_radical_apply (6 * x₄ * x₆ * D) p
+  rw [Nat.factorization_mul (by positivity : 2 ^ 4 * 3 ^ 3 ≠ 0) (by positivity),
+    Nat.factorization_mul (by positivity : 2 ^ 4 ≠ 0) (by positivity),
+    Nat.prime_two.factorization_pow, Nat.prime_three.factorization_pow,
     Nat.factorization_mul (Nat.gcd_pos_of_pos_left _ (by positivity)).ne' (Nat.radical_pos _).ne',
     Finsupp.add_apply, Nat.factorization_gcd (by positivity) (by positivity), Finsupp.inf_apply,
     Nat.factorization_pow, Nat.factorization_pow, Nat.factorization_mul (by positivity) hN,
     Nat.factorization_mul h₄ h₆]
-  simp only [Finsupp.add_apply, Finsupp.smul_apply, smul_eq_mul]
+  simp only [Finsupp.add_apply, Finsupp.smul_apply, smul_eq_mul, Finsupp.single_apply]
   -- everything is now a statement about the exponents of `p`
   have hv {x : ℕ} (hx : x ≠ 0) (k : ℕ) : p ^ k ∣ x ↔ k ≤ x.factorization p :=
     hp.pow_dvd_iff_le_factorization hx
@@ -270,12 +244,12 @@ private theorem gcd_mul_radical_dvd {x₄ x₆ D N : ℕ} (h₄ : x₄ ≠ 0) (h
   · rcases eq_or_ne p 2 with rfl | h2
     · have : ¬ (8 ≤ x₄.factorization 2 ∧ 11 ≤ x₆.factorization 2) :=
         fun h => hm₂ ⟨(hv h₄ 8).2 h.1, (hv h₆ 11).2 h.2⟩
-      simp only [ite_true, show (2 : ℕ) ≠ 3 by norm_num, ite_false]
+      simp only [↓reduceIte]
       omega
     rcases eq_or_ne p 3 with rfl | h3
     · have : ¬ (5 ≤ x₄.factorization 3 ∧ 9 ≤ x₆.factorization 3) :=
         fun h => hm₃ ⟨(hv h₄ 5).2 h.1, (hv h₆ 9).2 h.2⟩
-      simp only [ite_true, show (3 : ℕ) ≠ 2 by norm_num, ite_false]
+      simp only [↓reduceIte]
       omega
     have h5 := hp.five_le_of_ne_two_of_ne_three h2 h3
     have : ¬ (4 ≤ x₄.factorization p ∧ 6 ≤ x₆.factorization p) :=
@@ -284,17 +258,18 @@ private theorem gcd_mul_radical_dvd {x₄ x₆ D N : ℕ} (h₄ : x₄ ≠ 0) (h
     -- as `p ∤ 6`, it divides `x₄`, `x₆` or `D`
     have hdiv : 1 ≤ x₄.factorization p ∨ 1 ≤ x₆.factorization p ∨ 1 ≤ D.factorization p := by
       rw [← hv₁ h₄, ← hv₁ h₆, ← hv₁ hD]
-      rcases (Nat.Prime.dvd_mul hp).1 hpR with h | h
+      rcases (Nat.Prime.dvd_mul hp).1 (Nat.dvd_of_mem_primeFactors hpR) with h | h
       · rcases (Nat.Prime.dvd_mul hp).1 h with h | h
         · exact Or.inl (((Nat.Prime.dvd_mul hp).1 h).resolve_left
-            (not_dvd_six_of_five_le hp h5))
+            (hp.not_dvd_six_of_five_le h5))
         · exact Or.inr (Or.inl h)
       · exact Or.inr (Or.inr h)
-    simp only [h2, h3, ite_false]
+    simp only [h2.symm, h3.symm, ite_false]
     omega
   · -- a prime not dividing `6 x₄ x₆ D` does not divide `x₄`
     have : ¬ 1 ≤ x₄.factorization p := fun h =>
-      hpR (Dvd.dvd.mul_right (Dvd.dvd.mul_right (Dvd.dvd.mul_left ((hv₁ h₄).2 h) 6) _) _)
+      hpR (Nat.mem_primeFactors.2 ⟨hp, Dvd.dvd.mul_right (Dvd.dvd.mul_right
+        (Dvd.dvd.mul_left ((hv₁ h₄).2 h) 6) _) _, by positivity⟩)
     omega
 
 /-- The bookkeeping when one of `c₄` and `c₆` vanishes: a number `x` with bounded exponents at `2`
@@ -307,24 +282,26 @@ private theorem dvd_two_pow_mul_three_pow_mul_pow {x N a b k m : ℕ} (hx : x �
   refine (Nat.factorization_le_iff_dvd hx (by positivity)).1 fun p => ?_
   by_cases hp : p.Prime
   swap; · simp [Nat.factorization_eq_zero_of_not_prime _ hp]
-  rw [factorization_two_pow_mul_three_pow_mul (by positivity) _ _ hp, Nat.factorization_pow,
-    Finsupp.smul_apply, smul_eq_mul]
+  rw [Nat.factorization_mul (by positivity) (by positivity), Nat.factorization_mul (by positivity)
+    (by positivity), Nat.prime_two.factorization_pow, Nat.prime_three.factorization_pow,
+    Nat.factorization_pow]
+  simp only [Finsupp.add_apply, Finsupp.smul_apply, smul_eq_mul, Finsupp.single_apply]
   have hv {y : ℕ} (hy : y ≠ 0) (j : ℕ) : p ^ j ∣ y ↔ j ≤ y.factorization p :=
     hp.pow_dvd_iff_le_factorization hy
   rcases eq_or_ne p 2 with rfl | h2
   · have := (hv hx (a + 1)).not.1 h₂
-    simp only [ite_true, show (2 : ℕ) ≠ 3 by norm_num, ite_false]
+    simp only [↓reduceIte]
     omega
   rcases eq_or_ne p 3 with rfl | h3
   · have := (hv hx (b + 1)).not.1 h₃
-    simp only [ite_true, show (3 : ℕ) ≠ 2 by norm_num, ite_false]
+    simp only [↓reduceIte]
     omega
   have h5 := hp.five_le_of_ne_two_of_ne_three h2 h3
   have := (hv hx m).not.1 (hm p hp h5)
   have hf : 1 ≤ x.factorization p → 2 * k ≤ k * N.factorization p := fun h =>
     (Nat.mul_comm 2 k).le.trans (Nat.mul_le_mul_left k ((hv hN 2).1
       (hN₂ p hp h5 (by simpa using (hv hx 1).2 h))))
-  simp only [h2, h3, ite_false]
+  simp only [h2.symm, h3.symm, ite_false]
   omega
 
 /-- The exponent bookkeeping: if `m ≤ C₀ y ^ (1 + ε₀)` and `y⁶ ≤ 432⁶ m⁵ n⁶`, then
@@ -493,7 +470,7 @@ private theorem not_pow_dvd_and_pow_dvd_of_dvd_six {c₄ c₆ : ℤ}
           exact mul_dvd_mul_left 27 (h₆.mul_left 2))
     norm_num at this
   · -- `u = p`
-    exact not_dvd_six_of_five_le hp h5 (by exact_mod_cast hmin p (h₄.mul_left 27) (h₆.mul_left 54))
+    exact hp.not_dvd_six_of_five_le h5 (by exact_mod_cast hmin p (h₄.mul_left 27) (h₆.mul_left 54))
 
 /-- A prime `p ≥ 5` dividing `c₄³ - c₆² = 1728 Δ` divides `Δ`. -/
 private theorem natCast_dvd_of_dvd_sub {c₄ c₆ Δ : ℤ} (hrel : 1728 * Δ = c₄ ^ 3 - c₆ ^ 2) {p : ℕ}
@@ -501,7 +478,7 @@ private theorem natCast_dvd_of_dvd_sub {c₄ c₆ Δ : ℤ} (hrel : 1728 * Δ = 
   rw [← hrel] at h
   refine ((Nat.prime_iff_prime_int.1 hp).dvd_mul.1 h).resolve_left fun h1728 => ?_
   have : p ∣ 6 ^ 6 := (show p ∣ 1728 by exact_mod_cast h1728).trans ⟨27, by norm_num⟩
-  exact not_dvd_six_of_five_le hp h5 (hp.dvd_of_dvd_pow this)
+  exact hp.not_dvd_six_of_five_le h5 (hp.dvd_of_dvd_pow this)
 
 /-- **The case `c₄ c₆ = 0`**, where `j` is `0` or `1728`: abc says nothing there, but minimality
 alone bounds the nonzero invariant by the conductor, `max (|c₄|³, c₆²) ≤ 2²¹ 3¹⁶ N⁶`. -/
