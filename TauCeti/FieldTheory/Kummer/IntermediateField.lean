@@ -6,29 +6,30 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.FieldTheory.Kummer.Degree
+public import TauCeti.FieldTheory.IntermediateField.RootsOfUnity
 
 import Mathlib.FieldTheory.Relrank
 import TauCeti.Algebra.Group.PowMonoidHom
-import TauCeti.RingTheory.RootsOfUnity.Basic
 
 /-!
 # Kummer extensions over an intermediate field
 
 Let `K` be a field, `Δ` a subgroup of `Kˣ`, and `L` an intermediate field of an extension `E/K`.
 Read in `Lˣ`, the subgroup `Δ` generates the Kummer field `L(Δ^{1/n})` over `L`, which is the
-compositum of `L` with `K(Δ^{1/n})` (`TauCeti.restrictScalars_kummerField_map_eq_sup`). Write
-`Δ ∩ (Lˣ)ⁿ` for the elements of `Δ` that are `n`-th powers in `L`. When `L` contains the `n`-th
-roots of unity, as it does when `K` does (`IntermediateField.hasEnoughRootsOfUnity`), the degree of
-`L(Δ^{1/n})` over `L` is
+compositum of `L` with `K(Δ^{1/n})` (`IntermediateField.restrictScalars_kummerField_map_eq_sup`).
+Write `Δ ∩ (Lˣ)ⁿ` for the elements of `Δ` that are `n`-th powers in `L`. Suppose that `n ≠ 0`,
+that every element of `Δ` has an `n`-th root in `E`, and that `L` contains the `n`-th roots of
+unity, as it does when `K` does (`IntermediateField.hasEnoughRootsOfUnity`). If `Δ ∩ (Lˣ)ⁿ` has
+finite index in `Δ`, then the degree of `L(Δ^{1/n})` over `L` is
 
 `[L(Δ^{1/n}) : L] = [Δ : Δ ∩ (Lˣ)ⁿ]`
 
-(`TauCeti.finrank_kummerField_map`). When `L` lies inside `K(Δ^{1/n})`, this computes the degree
-of `K(Δ^{1/n})` over `L` (`TauCeti.finrank_extendScalars_kummerField`). If moreover `K` contains
-the `n`-th roots of unity, then `L` is itself the Kummer field of `Δ ∩ (Lˣ)ⁿ`
-(`TauCeti.kummerField_inf_comap_eq`), and `[L : K] = [Δ ∩ (Lˣ)ⁿ : Δ ∩ (Kˣ)ⁿ]`
-(`TauCeti.finrank_eq_relIndex_inf_comap`): the intermediate fields of `K(Δ^{1/n})/K` are the
-Kummer fields of the subgroups between `Δ ∩ (Kˣ)ⁿ` and `Δ`.
+(`IntermediateField.finrank_kummerField_map`). When `L` lies inside `K(Δ^{1/n})`, this computes
+the degree of `K(Δ^{1/n})` over `L` (`TauCeti.finrank_extendScalars_kummerField`). If moreover `K`
+contains the `n`-th roots of unity and `Δ ∩ (Kˣ)ⁿ` has finite index in `Δ`, then `L` is itself the
+Kummer field of `Δ ∩ (Lˣ)ⁿ` (`TauCeti.kummerField_inf_comap_eq`), and
+`[L : K] = [Δ ∩ (Lˣ)ⁿ : Δ ∩ (Kˣ)ⁿ]` (`TauCeti.finrank_eq_relIndex_inf_comap`): the intermediate
+fields of `K(Δ^{1/n})/K` are the Kummer fields of the subgroups between `Δ ∩ (Kˣ)ⁿ` and `Δ`.
 
 Over a number field containing the `p`-th roots of unity, the degree formula is the count of the
 `S`-units that become `p`-th powers in a subfield `L` of `M = K(U(S)^{1/p})`, the index
@@ -37,10 +38,8 @@ theory.
 
 ## Main results
 
-* `IntermediateField.hasEnoughRootsOfUnity`: an intermediate field of `E/K` contains the `n`-th
-  roots of unity of `K`.
-* `TauCeti.restrictScalars_kummerField_map_eq_sup`: `L(Δ^{1/n}) = L ⊔ K(Δ^{1/n})`.
-* `TauCeti.finrank_kummerField_map`: `[L(Δ^{1/n}) : L] = [Δ : Δ ∩ (Lˣ)ⁿ]`.
+* `IntermediateField.restrictScalars_kummerField_map_eq_sup`: `L(Δ^{1/n}) = L ⊔ K(Δ^{1/n})`.
+* `IntermediateField.finrank_kummerField_map`: `[L(Δ^{1/n}) : L] = [Δ : Δ ∩ (Lˣ)ⁿ]`.
 * `TauCeti.kummerField_map_eq_extendScalars`, `TauCeti.finrank_extendScalars_kummerField`: for
   `L ≤ K(Δ^{1/n})`, the field `L(Δ^{1/n})` is `K(Δ^{1/n})`, and
   `[K(Δ^{1/n}) : L] = [Δ : Δ ∩ (Lˣ)ⁿ]`.
@@ -57,9 +56,9 @@ theory.
 
 public section
 
-open IntermediateField Module
+open IntermediateField Module TauCeti
 
-namespace TauCeti
+namespace IntermediateField
 
 variable {K : Type*} [Field K] {E : Type*} [Field E] [Algebra K E] {n : ℕ} {Δ : Subgroup Kˣ}
   (L : IntermediateField K E)
@@ -79,20 +78,7 @@ theorem restrictScalars_kummerField_map_eq_sup :
   · rintro ⟨a, ha, hx⟩
     exact ⟨_, ⟨a, ha, rfl⟩, by simpa using hx⟩
 
-variable {L} in
-/-- For `L ≤ K(Δ^{1/n})`, the Kummer field of `Δ` over `L` is `K(Δ^{1/n})` itself. -/
-theorem kummerField_map_eq_extendScalars (hL : L ≤ kummerField E n Δ) :
-    kummerField E n (Δ.map (Units.map (algebraMap K L : K →* L))) =
-      extendScalars hL :=
-  restrictScalars_injective K <| by
-    rw [restrictScalars_kummerField_map_eq_sup, extendScalars_restrictScalars, sup_eq_right.2 hL]
-
 variable [NeZero n]
-
-/-- An intermediate field of `E/K` contains the `n`-th roots of unity of `K`. -/
-instance _root_.IntermediateField.hasEnoughRootsOfUnity [HasEnoughRootsOfUnity K n] :
-    HasEnoughRootsOfUnity L n :=
-  .of_injective (f := (algebraMap K L : K →* L)) (algebraMap K L).injective
 
 /-- **The degree of a Kummer extension over an intermediate field.** If `L` contains the `n`-th
 roots of unity and every element of `Δ` has an `n`-th root in `E`, then `[L(Δ^{1/n}) : L]` is the
@@ -106,13 +92,27 @@ theorem finrank_kummerField_map [HasEnoughRootsOfUnity L n]
         Δ := by
   have : (powMonoidHom n : Lˣ →* Lˣ).range.IsFiniteRelIndex
       (Δ.map (Units.map (algebraMap K L : K →* L))) :=
-    ⟨by rw [← Subgroup.relIndex_comap]; exact Subgroup.relIndex_ne_zero⟩
+    Subgroup.isFiniteRelIndex_comap_iff.1 inferInstance
   rw [Subgroup.relIndex_comap]
   refine finrank_kummerField fun _ ⟨a, ha, h⟩ ↦ ?_
   obtain ⟨x, hx⟩ := hroots a ha
   exact ⟨x, by simpa [← h] using hx⟩
 
-variable {L}
+end IntermediateField
+
+namespace TauCeti
+
+variable {K : Type*} [Field K] {E : Type*} [Field E] [Algebra K E] {n : ℕ} {Δ : Subgroup Kˣ}
+  {L : IntermediateField K E}
+
+/-- For `L ≤ K(Δ^{1/n})`, the Kummer field of `Δ` over `L` is `K(Δ^{1/n})` itself. -/
+theorem kummerField_map_eq_extendScalars (hL : L ≤ kummerField E n Δ) :
+    kummerField E n (Δ.map (Units.map (algebraMap K L : K →* L))) =
+      extendScalars hL :=
+  restrictScalars_injective K <| by
+    rw [restrictScalars_kummerField_map_eq_sup, extendScalars_restrictScalars, sup_eq_right.2 hL]
+
+variable [NeZero n]
 
 /-- **The degree of a Kummer extension over an intermediate field.** If `L` contains the `n`-th
 roots of unity, every element of `Δ` has an `n`-th root in `E`, and `L ≤ K(Δ^{1/n})`, then the
@@ -125,7 +125,7 @@ theorem finrank_extendScalars_kummerField [HasEnoughRootsOfUnity L n]
     finrank L (extendScalars hL) =
       ((powMonoidHom n : Lˣ →* Lˣ).range.comap (Units.map (algebraMap K L : K →* L))).relIndex
         Δ := by
-  rw [← kummerField_map_eq_extendScalars, finrank_kummerField_map L hroots]
+  rw [← kummerField_map_eq_extendScalars, L.finrank_kummerField_map hroots]
 
 variable [HasEnoughRootsOfUnity K n]
 
@@ -169,8 +169,8 @@ theorem kummerField_inf_comap_eq [(powMonoidHom n : Kˣ →* Kˣ).range.IsFinite
     exact L.mul_mem (L.algebraMap_mem z) (b : L).2
   have : FiniteDimensional K L := .of_injective (IntermediateField.inclusion hL).toLinearMap
     (IntermediateField.inclusion hL).injective
-  have : (powMonoidHom n : Kˣ →* Kˣ).range.IsFiniteRelIndex Δ' :=
-    ⟨mt (Subgroup.relIndex_eq_zero_of_le_right inf_le_left) Subgroup.relIndex_ne_zero⟩
+  have := Subgroup.isFiniteRelIndex_of_le_right (powMonoidHom n : Kˣ →* Kˣ).range
+    (inf_le_left : Δ' ≤ Δ)
   refine eq_of_le_of_finrank_eq hle ?_
   rw [finrank_kummerField fun a ha ↦ hroots a (Subgroup.mem_inf.1 ha).1,
     finrank_eq_relIndex_inf_comap hroots hL]
