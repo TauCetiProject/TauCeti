@@ -57,24 +57,9 @@ theorem localNormSubgroup_le_iff_of_isAbelian
     {V W : OpenNormalSubgroup (AbsoluteGaloisGroup K)}
     (hV : V.IsAbelianClassFieldLayer) (hW : W.IsAbelianClassFieldLayer) :
     localNormSubgroup K V ≤ localNormSubgroup K W ↔ V ≤ W := by
-  refine ⟨fun h ↦ ?_, fun h ↦ localNormSubgroup_mono K h⟩
-  have hinf : localNormSubgroup K (V ⊓ W) = localNormSubgroup K V := by
-    rw [localNormSubgroup_inf_of_isAbelian hV hW, inf_eq_left.mpr h]
-  have hdegree : (ofOpenNormal (V ⊓ W)).degree = (ofOpenNormal V).degree := by
-    rw [← index_localNormSubgroup (K := K) (hV.inf hW), hinf,
-      index_localNormSubgroup (K := K) hV]
-  have hindex : (V ⊓ W).toSubgroup.index = V.toSubgroup.index := by
-    simpa only [NormalLayer.degree_eq_relIndex, NormalLayer.top_ofOpenNormal,
-      NormalLayer.ground_ofOpenNormal, OpenSubgroup.toSubgroup_top,
-      Subgroup.relIndex_top_right] using hdegree
-  have hle : (V ⊓ W).toSubgroup ≤ V.toSubgroup := by
-    exact fun _ hx ↦ (inf_le_left : V ⊓ W ≤ V) hx
-  have heq : (V ⊓ W).toSubgroup = V.toSubgroup := by
-    rcases hle.lt_or_eq with hlt | heq
-    · exact False.elim ((Subgroup.index_strictAnti hlt).ne hindex.symm)
-    · exact heq
-  rw [← OpenNormalSubgroup.toSubgroup_injective heq]
-  exact inf_le_right
+  rw [← (localGroundOrderIso K).le_iff_le, localGroundOrderIso_localNormSubgroup,
+    localGroundOrderIso_localNormSubgroup]
+  exact (localClassFormation K).normSubgroup_le_iff_of_isAbelian hV hW
 
 /-- **Uniqueness of finite abelian local class fields.** Two abelian layers of a
 nonarchimedean local field with the same norm subgroup are equal. The abelianity hypotheses are
@@ -85,9 +70,8 @@ theorem localClassField_unique
     (hV : V.IsAbelianClassFieldLayer) (hW : W.IsAbelianClassFieldLayer)
     (h : localNormSubgroup K V = localNormSubgroup K W) :
     V = W := by
-  exact le_antisymm
-    ((localNormSubgroup_le_iff_of_isAbelian hV hW).1 h.le)
-    ((localNormSubgroup_le_iff_of_isAbelian hW hV).1 h.ge)
+  refine (localClassFormation K).eq_of_normSubgroup_eq_of_isAbelian hV hW ?_
+  rw [← localGroundOrderIso_localNormSubgroup, ← localGroundOrderIso_localNormSubgroup, h]
 
 /-! ### The full correspondence in characteristic zero -/
 

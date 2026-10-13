@@ -312,6 +312,19 @@ theorem galOfOpenNormalEquiv_mk (V : OpenNormalSubgroup G) (u : (ofOpenNormal V)
     galOfOpenNormalEquiv V (QuotientGroup.mk u) = QuotientGroup.mk (u : G) :=
   (rfl)
 
+/-- The ground level of the layer `V ◁ G` of an open normal subgroup `V` is the level `A^G` of the
+whole group. -/
+def groundEquivOfOpenNormal (F : Formation G) (V : OpenNormalSubgroup G) :
+    F.level ⊤ ≃ₗ[ℤ] F.level (ofOpenNormal V).ground :=
+  LinearEquiv.ofEq _ _ (congrArg F.level (ground_ofOpenNormal V).symm)
+
+/-- The identification of `A^G` with the ground level of `V ◁ G` moves no element of the ambient
+module. -/
+@[simp]
+theorem groundEquivOfOpenNormal_apply_coe (F : Formation G) (V : OpenNormalSubgroup G)
+    (a : F.level ⊤) : (dsimp% only (groundEquivOfOpenNormal F V a : F.toRep.V)) = a :=
+  (rfl)
+
 section Finite
 
 /-- The top subgroup is open in the compact ground subgroup, so the Galois group is finite. -/

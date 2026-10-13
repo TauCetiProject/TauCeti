@@ -16,12 +16,9 @@ finite Galois extension is itself the norm subgroup of a finite **abelian** exte
 existence: once every open subgroup of finite index is known to contain some norm subgroup, it is
 a norm subgroup.
 
-The proof is by local reciprocity alone. By norm limitation the given layer may be replaced by its
-maximal abelian sublayer `U`, whose Artin map `Kˣ → G_K ⧸ U` is surjective with kernel the norm
-subgroup. The image of `N` is a subgroup of the abelian group `G_K ⧸ U`, and its preimage in
-`G_K` is an open normal subgroup `W ⊇ U`, an abelian layer whose norm subgroup is computed in the
-refinement `U ≤ W` by `localNormSubgroup_eq_comap_ker`: it is `N` enlarged by the kernel of the
-Artin map, which is `N` again.
+The proof is by local reciprocity alone: it is the upward closure of the norm subgroups of any
+class formation (`ClassFormation.exists_abelianLayer_normSubgroup_eq_of_le`), applied to the local
+class formation and read on `Kˣ` through `localGroundOrderIso`.
 
 ## Main results
 
@@ -54,41 +51,10 @@ theorem exists_abelianLayer_localNormSubgroup_eq_of_le
     (h : localNormSubgroup K V ≤ N) :
     ∃ W : OpenNormalSubgroup (AbsoluteGaloisGroup K),
       W.IsAbelianClassFieldLayer ∧ localNormSubgroup K W = N := by
-  -- replace `V` by its maximal abelian sublayer `U`, which has the same norm subgroup
-  set U := V.maximalAbelianLayer
-  have hU : U.IsAbelianClassFieldLayer := V.isAbelianClassFieldLayer_maximalAbelianLayer
-  rw [← localNormSubgroup_maximalAbelianLayer] at h
-  have : IsMulCommutative (AbsoluteGaloisGroup K ⧸ U.toSubgroup) :=
-    (U.isAbelianClassFieldLayer_iff_isMulCommutative).1 hU
-  -- the Artin map of `U`, read in `G_K ⧸ U`, and the image of `N` there
-  let ψ : Kˣ →* AbsoluteGaloisGroup K ⧸ U.toSubgroup :=
-    (galOfOpenNormalEquiv U : (ofOpenNormal U).Gal →* _).comp (localAbelianArtinHom K hU)
-  have hψ : ψ.ker = localNormSubgroup K U := by
-    rw [MonoidHom.ker_mulEquiv_comp, ker_localAbelianArtinHom]
-  let H : Subgroup (AbsoluteGaloisGroup K ⧸ U.toSubgroup) := N.map ψ
-  -- its preimage in `G_K` is an open normal subgroup containing `U`
-  have hUW : U.toSubgroup ≤ H.comap (QuotientGroup.mk' U.toSubgroup) := fun g hg ↦ by
-    rw [Subgroup.mem_comap, QuotientGroup.mk'_apply, (QuotientGroup.eq_one_iff g).2 hg]
-    exact H.one_mem
-  let W : OpenNormalSubgroup (AbsoluteGaloisGroup K) :=
-    { toSubgroup := H.comap (QuotientGroup.mk' U.toSubgroup)
-      isOpen' := Subgroup.isOpen_mono hUW U.isOpen
-      isNormal' := inferInstance }
-  -- the order on open normal subgroups is inclusion of the underlying subgroups
-  have hle : U ≤ W := hUW
-  refine ⟨W, hU.mono hle, ?_⟩
-  -- the kernel of `G_K ⧸ U → G_K ⧸ W` is the image of `H` in the Galois group of `U`
-  have hker :
-      (LayerRefinement.ofOpenNormal hle).galHom.ker = H.comap (galOfOpenNormalEquiv U) := by
-    ext γ
-    induction γ using QuotientGroup.induction_on with
-    | H w =>
-      rw [MonoidHom.mem_ker, LayerRefinement.galHom_mk_eq_one_iff, top_ofOpenNormal,
-        Subgroup.mem_comap, MonoidHom.coe_ofClass, galOfOpenNormalEquiv_mk]
-      -- membership in `W` is membership of the class in `H`
-      exact Iff.rfl
-  rw [localNormSubgroup_eq_comap_ker hU hle, hker, Subgroup.comap_comap, Subgroup.comap_map_eq,
-    hψ, sup_eq_left.2 h]
+  rw [← (localGroundOrderIso K).le_iff_le, localGroundOrderIso_localNormSubgroup] at h
+  obtain ⟨W, hW, -, hWN⟩ := (localClassFormation K).exists_abelianLayer_normSubgroup_eq_of_le h
+  refine ⟨W, hW, (localGroundOrderIso K).injective ?_⟩
+  rw [localGroundOrderIso_localNormSubgroup, hWN]
 
 /-- **Upward closure from a finite separable extension.** For a nonarchimedean local field `K`, a
 subgroup of `Kˣ` containing the norm group `N_{M/K}(Mˣ)` of a finite separable extension `M/K`
