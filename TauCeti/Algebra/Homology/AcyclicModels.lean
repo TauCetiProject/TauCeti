@@ -133,7 +133,7 @@ theorem NatLinear.compD_app {m n : ℕ} (φ : NatLinear F G n m) (X : C) (x : (F
   (rfl)
 
 /-- The component of a natural chain map in degree `n`, as a natural family. -/
-def NatLinear.ofHom (f : F ⟶ G) (n : ℕ) : NatLinear F G n n where
+@[expose] def NatLinear.ofHom (f : F ⟶ G) (n : ℕ) : NatLinear F G n n where
   app X := ((f.app X).f n).hom
   naturality g x := by
     rw [← ModuleCat.comp_apply, ← ModuleCat.comp_apply, ← HomologicalComplex.comp_f,
@@ -255,6 +255,21 @@ theorem augment_extend {εF : ∀ X : C, (F.obj X).X 0 →ₗ[k] k}
   rw [extend_apply, map_finsuppSum, map_finsuppSum]
   refine Finsupp.sum_congr fun p _ ↦ ?_
   rw [map_smul, map_smul, hεF, hεG, ht]
+
+/-- Two natural families `φ, ψ : F₀ → G₀` have the same augmentation as soon as they have the same
+augmentation on the generators of the models of degree zero, when the augmentation of `G` is
+natural. -/
+theorem augment_eq_of_gen {εG : ∀ X : C, (G.obj X).X 0 →ₗ[k] k}
+    (hεG : ∀ {X Y : C} (f : X ⟶ Y) x, εG Y ((G.map f).f 0 x) = εG X x)
+    (φ ψ : NatLinear F G 0 0)
+    (h : ∀ i : ι 0, εG (B.model 0 i) (φ.app (B.model 0 i) (B.gen 0 i)) =
+      εG (B.model 0 i) (ψ.app (B.model 0 i) (B.gen 0 i))) (X : C) (x : (F.obj X).X 0) :
+    εG X (φ.app X x) = εG X (ψ.app X x) := by
+  conv_lhs => rw [← B.sum_coord X 0 x]
+  conv_rhs => rw [← B.sum_coord X 0 x]
+  rw [map_finsuppSum, map_finsuppSum, map_finsuppSum, map_finsuppSum]
+  refine Finsupp.sum_congr fun p _ ↦ ?_
+  rw [map_smul, map_smul, map_smul, map_smul, φ.naturality, ψ.naturality, hεG, hεG, h]
 
 /-- **The boundary of a map determined on the models**: if the boundary of each `tᵢ` is the value
 on the generator `uᵢ` of a natural family `R`, then the boundary of the map determined by the
@@ -547,6 +562,31 @@ theorem augment_extend {εF : ∀ X : C, (F.obj X).X 0 →ₗ[k] k} {εG : ∀ X
   rw [← toMulti_extend]
   exact B.toMulti.augment_extend hεF hεG (fun _ ↦ t) (fun _ ↦ ht) X x
 
+/-- The map determined by an element on the model is natural. -/
+theorem extend_map {m n : ℕ} (t : (G.obj (B.model n)).X m) {X Y : C} (f : X ⟶ Y)
+    (x : (F.obj X).X n) : B.extend t Y ((F.map f).f n x) = (G.map f).f m (B.extend t X x) := by
+  rw [← toMulti_extend, ← toMulti_extend]
+  exact B.toMulti.extend_map (fun _ ↦ t) f x
+
+/-- The map determined by an element on the model, as a natural family. -/
+def extendNat {m n : ℕ} (t : (G.obj (B.model n)).X m) : NatLinear F G n m where
+  app := B.extend t
+  naturality := B.extend_map t
+
+/-- A natural map is determined by its value on the generator. -/
+theorem eq_extend {m n : ℕ} (φ : NatLinear F G n m) (X : C) (x : (F.obj X).X n) :
+    φ.app X x = B.extend (φ.app (B.model n) (B.gen n)) X x := by
+  rw [← toMulti_extend]
+  exact B.toMulti.eq_extend φ X x
+
+/-- **The boundary of a map determined on the model**: if the boundary of `t` is the value on
+the generator of a natural family `R`, then the boundary of the map determined by `t` is `R`. -/
+theorem d_extend {m m' n : ℕ} (t : (G.obj (B.model n)).X m) (R : NatLinear F G n m')
+    (ht : (G.obj (B.model n)).d m m' t = R.app (B.model n) (B.gen n)) (X : C)
+    (x : (F.obj X).X n) : (G.obj X).d m m' (B.extend t X x) = R.app X x := by
+  rw [← toMulti_extend]
+  exact B.toMulti.d_extend (fun _ ↦ t) R (fun _ ↦ ht) X x
+
 /-- Acyclicity on the models of a presentation by one model in each degree is acyclicity on the
 family of models of `toMulti`. -/
 theorem isAcyclicOnMulti {εG : ∀ X : C, (G.obj X).X 0 →ₗ[k] k}
@@ -573,7 +613,8 @@ def chainMap : F ⟶ G :=
 @[simp]
 theorem chainMap_app_f_zero_apply (X : C) (x : (F.obj X).X 0) :
     ((B.chainMap hG hεF t₀ ht₀).app X).f 0 x = B.extend t₀ X x :=
-  toMulti_extend B t₀ X x
+  (MultiModelPresentation.chainMap_app_f_zero_apply B.toMulti _ hεF _ _ X x).trans
+    (toMulti_extend B t₀ X x)
 
 end ChainMap
 
@@ -587,12 +628,6 @@ agree after augmentation in degree zero are chain homotopic, if `G` is acyclic o
 `F`.  The homotopy is natural (`ModelPresentation.homotopy_hom_naturality`). -/
 def homotopy (X : C) : Homotopy (f.app X) (g.app X) :=
   B.toMulti.homotopy (isAcyclicOnMulti B hG) f g hfg X
-
-/-- The components of the chain homotopy vanish off the shape of the complexes. -/
-@[simp]
-theorem homotopy_hom_eq_zero (X : C) {i j : ℕ} (h : i + 1 ≠ j) :
-    (B.homotopy hG f g hfg X).hom i j = 0 :=
-  MultiModelPresentation.homotopy_hom_eq_zero _ _ f g hfg X h
 
 /-- The chain homotopy is natural. -/
 theorem homotopy_hom_naturality {X Y : C} (φ : X ⟶ Y) (i j : ℕ) :
