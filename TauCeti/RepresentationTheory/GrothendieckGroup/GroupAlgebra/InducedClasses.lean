@@ -34,8 +34,8 @@ classes induced from cyclic subgroups, and `TauCeti.indCyclicCoprimeK0 ℓ`, the
 from cyclic subgroups of order prime to `ℓ`. Both are everything when `G` is itself cyclic (of
 order prime to `ℓ` in the second case), since the whole group is then a member of the family and
 induction from `⊤` is surjective (`TauCeti.indClassesK0_eq_top`). Induction from `⊤` is in fact
-inverse to restriction to `⊤`, which is an equivalence of representation categories with
-induction as its right adjoint (`Rep.resIndAdjunction`), so the computations at `⊤` are over a
+inverse to restriction to `⊤`, induction along an isomorphism of groups being restriction along
+its inverse (`TauCeti.Rep.indFunctorMulEquivIso`), so the computations at `⊤` are over a
 commutative ring, like the definitions; only the ideal property needs the ring structure of
 `G₀(k[G])` and hence a field.
 
@@ -119,25 +119,10 @@ theorem indClassesK0_congr {P Q : Subgroup G → Prop} (h : ∀ C, P C ↔ Q C) 
   le_antisymm (indClassesK0_le_indClassesK0 k fun C hC ↦ (h C).1 hC)
     (indClassesK0_le_indClassesK0 k fun C hC ↦ (h C).2 hC)
 
-/-- **Induction from `⊤` undoes restriction to `⊤`.** Restriction along `(⊤ : Subgroup G).subtype`
-is an equivalence of representation categories, with inverse restriction along
-`Subgroup.topEquiv.symm`, and induction is right adjoint to it (`Rep.resIndAdjunction`); a right
-adjoint is unique, so inducing a restricted representation gives it back. Private: it exists only
-to feed `TauCeti.indClassesK0_eq_top`. -/
-private noncomputable def indTopEquiv {W : Type u} [AddCommGroup W] [Module k W]
-    (σ : Representation k G W) :
-    (Representation.ind (⊤ : Subgroup G).subtype
-      (σ.comp (⊤ : Subgroup G).subtype)).Equiv σ := by
-  classical
-  exact Representation.equivOfIso
-    ((CategoryTheory.Adjunction.rightAdjointUniq (Rep.resIndAdjunction k ⊤)
-      (CategoryTheory.Equivalence.mk (Rep.resFunctor (⊤ : Subgroup G).subtype)
-        (Rep.resFunctor (Subgroup.topEquiv (G := G)).symm.toMonoidHom)
-        (CategoryTheory.eqToIso rfl) (CategoryTheory.eqToIso rfl)).toAdjunction).app
-      (Rep.of (σ.comp (⊤ : Subgroup G).subtype)))
-
-/-- **A family containing `⊤` induces everything.** Induction from the whole group is inverse to
-restriction to it, so every class, being the class of some module, is induced from `⊤`. -/
+/-- **A family containing `⊤` induces everything.** The classes of modules generate `G₀(k[G])`
+(`ExactK0.closure_range_of`), and each of them is induced from `⊤`: a module carries a
+representation, and inducing that representation back from its restriction to `⊤` returns it. So a
+subgroup containing every module class is the whole group, the virtual differences included. -/
 theorem indClassesK0_eq_top {P : Subgroup G → Prop} (hP : P ⊤) : indClassesK0 k G P = ⊤ := by
   rw [eq_top_iff, ← ExactK0.closure_range_of, AddSubgroup.closure_le]
   rintro _ ⟨M, rfl⟩
@@ -151,8 +136,14 @@ theorem indClassesK0_eq_top {P : Subgroup G → Prop} (hP : P ⊤) : indClassesK
   have hM : (ExactK0.of M : ExactK0 (finiteModulesExactStructure k[G])) =
       ExactK0.of (FGModuleCat.of _ σ.asModule) :=
     ExactK0.of_congr (Representation.ofModule'AsModuleEquiv M.obj).symm.toFGModuleCatIso
+  -- Induction from `⊤` undoes restriction to it: induction along the isomorphism
+  -- `Subgroup.topEquiv` is restriction along its inverse (`TauCeti.Rep.indFunctorMulEquivIso`).
+  let e : (Representation.ind (⊤ : Subgroup G).subtype
+      (σ.comp (⊤ : Subgroup G).subtype)).Equiv σ :=
+    Representation.equivOfIso ((Rep.indFunctorMulEquivIso (k := k)
+      (Subgroup.topEquiv (G := G))).app (Rep.of (σ.comp (⊤ : Subgroup G).subtype)))
   rw [SetLike.mem_coe, hM,
-    ← indK0_of_asModule_of_equiv k ⊤ (σ.comp (⊤ : Subgroup G).subtype) σ (indTopEquiv k σ)]
+    ← indK0_of_asModule_of_equiv k ⊤ (σ.comp (⊤ : Subgroup G).subtype) σ e]
   exact indK0_mem_indClassesK0 k hP _
 
 end CommRing
