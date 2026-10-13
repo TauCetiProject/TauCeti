@@ -23,7 +23,7 @@ degree `i`, and are epimorphisms in degrees where the complex is exact. In a deg
 differential into it, the identification of the homology with the cycles is natural
 (`HomologicalComplex.isoHomologyπ_inv_naturality`). The sequence
 `Zᵢ ⟶ Kᵢ ⟶ Zⱼ` of cycles is exact when `j = c.next i`
-(`HomologicalComplex.exact_iCycles_toCycles`). For adjacent degrees `i` and `j`, the cycles of a
+(`HomologicalComplex.cyclesShortComplex_exact`). For adjacent degrees `i` and `j`, the cycles of a
 complex exact in degree `j` fit into a short exact sequence `0 ⟶ Zᵢ ⟶ Kᵢ ⟶ Zⱼ ⟶ 0`
 (`HomologicalComplex.cyclesShortComplex_shortExact`). Constructing the bundled cycle sequence
 requires homology only in the two selected degrees.
@@ -152,9 +152,10 @@ variable {C : Type u} [Category.{v} C] [HasZeroMorphisms C] {ι : Type*}
 variable (K) in
 /-- The sequence `Zᵢ ⟶ Kᵢ ⟶ Zⱼ` of the cycles of a complex `K` is exact when `j` is the degree
 following `i`: the cycles in degree `i` are the kernel of the differential. -/
-lemma exact_iCycles_toCycles (i j : ι) [K.HasHomology i] [K.HasHomology j]
-    [(ShortComplex.mk _ _ (K.iCycles_toCycles i j)).HasHomology] (hij : c.next i = j) :
-    (ShortComplex.mk _ _ (K.iCycles_toCycles i j)).Exact := by
+lemma cyclesShortComplex_exact (i j : ι) [K.HasHomology i] [K.HasHomology j]
+    [hH : (K.cyclesShortComplex i j).HasHomology] (hij : c.next i = j) :
+    (K.cyclesShortComplex i j).Exact := by
+  rw [cyclesShortComplex_def] at hH ⊢
   let S := ShortComplex.mk _ _ (K.iCycles_toCycles i j)
   have hS := isKernelOfComp (K.iCycles j) (K.d i j) (K.cyclesIsKernel i j hij)
     (K.iCycles_toCycles i j) (K.toCycles_i i j)
@@ -184,10 +185,11 @@ lemma epi_toCycles_of_exactAt {i j : ι} [K.HasHomology j]
 /-- The cycle sequence `Zᵢ(K) ⟶ Kᵢ ⟶ Zⱼ(K)` is short exact when `i` and `j` are adjacent
 and `K` is exact in degree `j`. -/
 lemma cyclesShortComplex_shortExact (i j : ι) [K.HasHomology i] [K.HasHomology j]
-    [hS : (K.cyclesShortComplex i j).HasHomology]
+    [(K.cyclesShortComplex i j).HasHomology]
     (hij : c.Rel i j) (hK : K.ExactAt j) : (K.cyclesShortComplex i j).ShortExact := by
-  rw [cyclesShortComplex_def] at hS ⊢
-  exact ShortComplex.ShortExact.mk' (K.exact_iCycles_toCycles i j (c.next_eq' hij))
+  have hE := K.cyclesShortComplex_exact i j (c.next_eq' hij)
+  rw [cyclesShortComplex_def] at hE ⊢
+  exact ShortComplex.ShortExact.mk' hE
     inferInstance (epi_toCycles_of_exactAt hK (c.prev_eq' hij))
 
 end HomologicalComplex
