@@ -26,6 +26,8 @@ hypotheses of the statements that use it, as in the pointwise theorems it is mea
 
 * `TauCeti.IsMorseSmale f hf`: the unstable set of each critical point `p` and the stable set of
   each critical point `q` are transverse at each of their common points.
+* `TauCeti.isMorseSmale_iff`: the unfolded form of the predicate.
+* `TauCeti.IsMorseSmale.transverse`: its pointwise elimination.
 
 ## References
 
@@ -50,5 +52,26 @@ def IsMorseSmale (f : E → ℝ) {K : ℝ≥0} (hf : LipschitzWith K (∇ f)) : 
     y ∈ Flow.stableSet (negativeGradientFlow f hf) q →
     Submodule.span ℝ (tangentConeAt ℝ (Flow.unstableSet (negativeGradientFlow f hf) p) y) ⊔
       Submodule.span ℝ (tangentConeAt ℝ (Flow.stableSet (negativeGradientFlow f hf) q) y) = ⊤
+
+/-- The introduction and elimination rule for `IsMorseSmale`: transversality of the unstable set of
+each critical point `p` and the stable set of each critical point `q` at each common point. -/
+theorem isMorseSmale_iff (f : E → ℝ) {K : ℝ≥0} (hf : LipschitzWith K (∇ f)) :
+    IsMorseSmale f hf ↔ ∀ ⦃p q y : E⦄, fderiv ℝ f p = 0 → fderiv ℝ f q = 0 →
+      y ∈ Flow.unstableSet (negativeGradientFlow f hf) p →
+      y ∈ Flow.stableSet (negativeGradientFlow f hf) q →
+      Submodule.span ℝ (tangentConeAt ℝ (Flow.unstableSet (negativeGradientFlow f hf) p) y) ⊔
+        Submodule.span ℝ (tangentConeAt ℝ (Flow.stableSet (negativeGradientFlow f hf) q) y) = ⊤ :=
+  Iff.rfl
+
+/-- **Pointwise transversality.** For a Morse–Smale function, the tangent spaces at a common point
+of the unstable set of a critical point and the stable set of a critical point span the whole
+space. -/
+theorem IsMorseSmale.transverse {f : E → ℝ} {K : ℝ≥0} {hf : LipschitzWith K (∇ f)}
+    (h : IsMorseSmale f hf) {p q y : E} (hp : fderiv ℝ f p = 0) (hq : fderiv ℝ f q = 0)
+    (hyu : y ∈ Flow.unstableSet (negativeGradientFlow f hf) p)
+    (hys : y ∈ Flow.stableSet (negativeGradientFlow f hf) q) :
+    Submodule.span ℝ (tangentConeAt ℝ (Flow.unstableSet (negativeGradientFlow f hf) p) y) ⊔
+      Submodule.span ℝ (tangentConeAt ℝ (Flow.stableSet (negativeGradientFlow f hf) q) y) = ⊤ :=
+  h hp hq hyu hys
 
 end TauCeti
