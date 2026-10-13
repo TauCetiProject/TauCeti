@@ -19,13 +19,16 @@ underlies a singular `n`-simplex of a space.
 
 ## Main declarations
 
-* `SimplexCategory.toTopInitialVertex`: the initial vertex of the topological `n`-simplex.
+* `SimplexCategory.toTopInitialVertex`: the initial vertex of the topological `n`-simplex, and
+  `SimplexCategory.toTop_map_toTopInitialVertex_down`: its image under a morphism of simplices.
 * `TauCeti.TopCat.simplexMap`: the continuous map underlying a singular simplex.
 -/
 
 public section
 
 open CategoryTheory Convexity
+
+open scoped Simplicial
 
 universe u
 
@@ -52,6 +55,43 @@ noncomputable def toTopInitialVertex (n : SimplexCategory) : toTop.{u}.obj n :=
 @[simp]
 lemma toTopInitialVertex_down (n : SimplexCategory) :
     (toTopInitialVertex.{u} n).down = StdSimplex.single 0 := (rfl)
+
+/-- The image of the initial vertex of a topological simplex under a morphism of simplices is the
+vertex indexed by the image of `0`. -/
+lemma toTop_map_toTopInitialVertex_down {m n : SimplexCategory} (α : m ⟶ n) :
+    (toTop.{u}.map α (toTopInitialVertex m)).down = StdSimplex.single (α.toOrderHom 0) := by
+  -- The universe lift `toTop` acts on the underlying point of the standard simplex.
+  change StdSimplex.map α.toOrderHom (toTopInitialVertex.{u} m).down = _
+  rw [toTopInitialVertex_down, StdSimplex.map_single]
+
+/-- A morphism of simplices fixing `0` fixes the initial vertex of the topological simplex. -/
+lemma toTop_map_toTopInitialVertex {m n : SimplexCategory} (α : m ⟶ n)
+    (hα : α.toOrderHom 0 = 0) : toTop.{u}.map α (toTopInitialVertex m) = toTopInitialVertex n :=
+  ULift.ext (by rw [toTop_map_toTopInitialVertex_down, hα, toTopInitialVertex_down])
+
+/-- A coface map other than the zeroth one fixes `0`. -/
+lemma δ_toOrderHom_zero {n : ℕ} {i : Fin (n + 2)} (hi : i ≠ 0) : (δ i).toOrderHom 0 = 0 :=
+  Fin.succAbove_ne_zero_zero hi
+
+/-- Every codegeneracy map fixes `0`. -/
+lemma σ_toOrderHom_zero {n : ℕ} (i : Fin (n + 1)) : (σ i).toOrderHom 0 = 0 :=
+  Fin.predAbove_right_zero (i := i)
+
+/-- The first edge of a topological simplex starts at its initial vertex. -/
+lemma toTop_map_mkOfLe_toTopInitialVertex (k : ℕ) :
+    toTop.{u}.map (mkOfLe (n := k + 1) 0 1 (by simp)) (toTopInitialVertex ⦋1⦌) =
+      toTopInitialVertex ⦋k + 1⦌ :=
+  toTop_map_toTopInitialVertex _ rfl
+
+/-- The first edge of a topological simplex ends at the vertex opposite the zeroth face. -/
+lemma toTop_map_mkOfLe_toTop_map_δ_zero (k : ℕ) :
+    toTop.{u}.map (mkOfLe (n := k + 1) 0 1 (by simp))
+        (toTop.map (δ 0) (toTopInitialVertex ⦋0⦌)) =
+      toTop.map (δ 0) (toTopInitialVertex ⦋k⦌) := by
+  refine ULift.ext ?_
+  rw [← ConcreteCategory.comp_apply, ← Functor.map_comp, toTop_map_toTopInitialVertex_down,
+    toTop_map_toTopInitialVertex_down]
+  rfl
 
 end SimplexCategory
 
@@ -96,8 +136,6 @@ lemma simplexMap_app (f : X ⟶ Y) (σ : (TopCat.toSSet.obj X).obj n) :
 end TauCeti.TopCat
 
 namespace TauCeti
-
-open Simplicial
 
 /-- The topological `n`-simplex, the model of the simplicial singular chains in degree `n`. -/
 noncomputable abbrev simplexModel (n : ℕ) : TopCat.{u} := SimplexCategory.toTop.{u}.obj ⦋n⦌
