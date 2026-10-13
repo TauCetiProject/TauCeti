@@ -162,8 +162,10 @@ quotient because the projection is a continuous bijection out of a compact space
 theorem exists_continuous_section [T2Space G] (hinl : Continuous S.inl)
     (hrh : Continuous S.rightHom) : ∃ σ : S.Section, Continuous ⇑σ ∧ σ 1 = 1 := by
   -- identify `G` with the quotient of `E` by the kernel of the projection
-  set N := S.rightHom.ker
   let f : E →ₜ* G := ⟨S.rightHom, hrh⟩
+  set N := f.toMonoidHom.ker
+  -- Both the section and the equivalence use the bundled projection's kernel, which is
+  -- definitionally the original projection's kernel for the closedness proof below.
   -- Bundling continuity leaves the projection's values unchanged.
   have hf : ∀ x, f x = S.rightHom x := fun _ => rfl
   let e := f.quotientKerEquivOfSurjective S.rightHom_surjective
