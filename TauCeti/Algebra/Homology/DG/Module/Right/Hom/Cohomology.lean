@@ -107,10 +107,8 @@ noncomputable def cohomologyMap (f : DGRightModuleHom hM hN) :
   toFun := f.cohomologyCyclesMap
   map_add' := map_add _
   map_smul' a x := by
-    obtain ⟨w, hw⟩ : ∃ w : (h.cycles)ᵐᵒᵖ,
-        Ideal.Quotient.mk h.boundaries.asIdeal w.unop = a.unop := by
-      obtain ⟨z, hz⟩ := Ideal.Quotient.mk_surjective a.unop
-      exact ⟨op z, by simpa only [unop_op] using hz⟩
+    obtain ⟨w, hw⟩ := Ideal.Quotient.mk_surjective.comp MulOpposite.unop_surjective a.unop
+    simp only [Function.comp_apply] at hw
     simp only [RingHom.id_apply]
     rw [← op_unop a, ← hw, hM.op_quotientMk_smul, hN.op_quotientMk_smul]
     exact f.cohomologyCyclesMap.map_smul w x

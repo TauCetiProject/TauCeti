@@ -203,7 +203,7 @@ theorem op_quotientMk_smul (hM : IsDGRightModule h ℳ dM)
     (w : (h.cycles)ᵐᵒᵖ) (x : hM.Cohomology) :
     op (Ideal.Quotient.mk h.boundaries.asIdeal w.unop) • x = w • x := by
   rw [hM.op_quotientMk_smul_eq_quotientMk_op_smul]
-  exact hM.isTorsionBySet_boundaries.mk_smul w x
+  simpa only [op_unop] using hM.isTorsionBySet_boundaries.mk_smul w x
 
 section Grading
 
