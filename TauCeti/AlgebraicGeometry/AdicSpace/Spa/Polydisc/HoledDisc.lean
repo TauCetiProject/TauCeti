@@ -139,7 +139,7 @@ private theorem setOf_vle_eq_rationalSubset (b : K) {d : K} (hd : IsUnit d) :
   exact fun h h₀ ↦ hd₀ (le_zero_iff.mp (h₀ ▸ h))
 
 /-- **A holed disc whose holes have unit radius parameters is open** in the closed unit disc: it
-is the intersection of the open disc `D(a, |c|)` with the finitely many basic opens
+is the intersection of the open subset `closedSubdisc a c` with the finitely many basic opens
 `{v : v(dᵢ) ≤ v(T - bᵢ) ≠ 0}`. -/
 theorem isOpen_holedDisc [Finite ι] (a c : K) (b : ι → K) {d : ι → K} (hd : ∀ i, IsUnit (d i)) :
     IsOpen (holedDisc a c b d) :=
