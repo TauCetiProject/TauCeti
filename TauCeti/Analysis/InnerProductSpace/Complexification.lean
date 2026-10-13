@@ -328,8 +328,7 @@ is. -/
 @[simp]
 theorem isSelfAdjoint_complexifyL2_iff [CompleteSpace X] {T : X →L[ℝ] X} :
     IsSelfAdjoint T.complexifyL2 ↔ IsSelfAdjoint T := by
-  simp only [isSelfAdjoint_iff, star_eq_adjoint, adjoint_complexifyL2]
-  exact (complexifyL2ₗᵢ X X).injective.eq_iff
+  simpa using (complexifyL2ₗᵢ X X).injective.isSelfAdjoint_apply_iff (complexifyL2StarAlgHom X)
 
 end InnerProductSpace
 

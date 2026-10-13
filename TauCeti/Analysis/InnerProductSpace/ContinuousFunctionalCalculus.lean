@@ -27,10 +27,10 @@ for every real Hilbert space `X`, in any dimension, and with it Mathlib's star o
 The calculus is pulled back from the complexification. Complexification
 `T ↦ T_ℂ` (`ContinuousLinearMap.complexifyL2StarAlgHom`) is an isometric unital `⋆`-homomorphism
 from `X →L[ℝ] X` into the complex `C⋆`-algebra `X_ℂ →L[ℂ] X_ℂ`, so it is a closed embedding,
-and `ContinuousFunctionalCalculus.of_isClosedEmbedding` applies. Consequently complexification
-preserves the spectrum of a self-adjoint operator (`ContinuousLinearMap.spectrum_complexifyL2`)
-and intertwines the two calculi (`ContinuousLinearMap.complexifyL2_cfc`):
-`(f(T))_ℂ = f(T_ℂ)`.
+and `StarAlgHom.continuousFunctionalCalculus_of_isClosedEmbedding` applies. Consequently
+complexification preserves the spectrum of a self-adjoint operator
+(`ContinuousLinearMap.spectrum_complexifyL2`) and intertwines the two calculi
+(`ContinuousLinearMap.complexifyL2_cfc`): `(f(T))_ℂ = f(T_ℂ)`.
 
 ## Main declarations
 
@@ -74,7 +74,8 @@ theorem isClosedEmbedding_complexifyL2StarAlgHom :
 space**, pulled back from the complexification. -/
 instance instContinuousFunctionalCalculusRealIsSelfAdjoint :
     ContinuousFunctionalCalculus ℝ (X →L[ℝ] X) IsSelfAdjoint :=
-  .of_isClosedEmbedding _ (isClosedEmbedding_complexifyL2StarAlgHom X) fun _ ↦ by simp
+  (complexifyL2StarAlgHom X).continuousFunctionalCalculus_of_isClosedEmbedding
+    (isClosedEmbedding_complexifyL2StarAlgHom X) fun _ ↦ by simp
 
 /-- The bounded operators on a real Hilbert space form a star-ordered ring for the Loewner order:
 the positive operators are exactly the sums of operators `S† S`. -/

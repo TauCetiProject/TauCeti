@@ -26,7 +26,7 @@ consequences of that fact.
 Transferring the second statement along a star algebra isomorphism onto the range gives the form
 used in practice: a unital `⋆`-homomorphism `φ : A →⋆ₐ[𝕜] B` that is a closed embedding pulls the
 continuous functional calculus of `B` back to `A`
-(`ContinuousFunctionalCalculus.of_isClosedEmbedding`), and then commutes with it
+(`StarAlgHom.continuousFunctionalCalculus_of_isClosedEmbedding`), and then commutes with it
 (`StarAlgHom.map_cfc`). The motivating instance is a real `C⋆`-algebra embedded isometrically in
 a complex one, such as the bounded operators on a real Hilbert space inside the bounded operators
 on its complexification: the self-adjoint elements of the real algebra acquire a real continuous
@@ -46,8 +46,8 @@ elements on which that calculus is defined.
 * `StarSubalgebra.coe_cfc`: the inherited calculus is computed in the ambient algebra.
 * `StarAlgHom.spectrum_apply_eq_of_isClosedEmbedding`: spectral permanence along a closed
   embedding of `⋆`-algebras.
-* `ContinuousFunctionalCalculus.of_isClosedEmbedding`: a closed embedding of `⋆`-algebras pulls the
-  continuous functional calculus back.
+* `StarAlgHom.continuousFunctionalCalculus_of_isClosedEmbedding`: a closed embedding of
+  `⋆`-algebras pulls the continuous functional calculus back.
 -/
 
 public section
@@ -130,6 +130,7 @@ theorem continuousFunctionalCalculus : ContinuousFunctionalCalculus 𝕜 S (fun 
 
 /-- The continuous functional calculus that a closed star subalgebra inherits is computed in the
 ambient algebra. -/
+@[simp]
 theorem coe_cfc [ContinuousMap.UniqueHom 𝕜 B] (f : 𝕜 → 𝕜) (x : S) :
     letI := S.continuousFunctionalCalculus
     ((cfc f x : S) : B) = cfc f (x : B) := by
@@ -160,13 +161,13 @@ theorem StarAlgHom.spectrum_apply_eq_of_isClosedEmbedding (φ : A →⋆ₐ[𝕜
 functional calculus of `B` back to `A`, for elements `a` such that `φ a` satisfies the predicate
 of the calculus of `B`. The calculus of `A` is then intertwined with that of `B` by
 `StarAlgHom.map_cfc`. -/
-theorem ContinuousFunctionalCalculus.of_isClosedEmbedding (φ : A →⋆ₐ[𝕜] B)
+theorem StarAlgHom.continuousFunctionalCalculus_of_isClosedEmbedding (φ : A →⋆ₐ[𝕜] B)
     (hφ : IsClosedEmbedding φ) (hpq : ∀ a, p a ↔ q (φ a)) : ContinuousFunctionalCalculus 𝕜 A p :=
   have : IsClosed (φ.range : Set B) := hφ.isClosed_range
   have := φ.range.continuousFunctionalCalculus
   let e := StarAlgEquiv.ofInjective φ hφ.injective
   have he (y : φ.range) : φ (e.symm y) = y := congr_arg Subtype.val (e.apply_symm_apply y)
-  transfer e.symm (hφ.isInducing.continuous_iff.2 <| by
+  .transfer e.symm (hφ.isInducing.continuous_iff.2 <| by
       simpa [Function.comp_def, he] using continuous_subtype_val)
     fun y ↦ by rw [hpq, he]
 
