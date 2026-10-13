@@ -88,6 +88,7 @@ theorem sqrt_isSymmetric (hT : T.IsPositive) : hT.sqrt.IsSymmetric :=
   hT.sqrt_isPositive.isSymmetric
 
 /-- The square of the positive square root is the original endomorphism. -/
+@[simp]
 theorem sqrt_sq (hT : T.IsPositive) : hT.sqrt ∘ₗ hT.sqrt = T := by
   refine (hT.isSymmetric.eigenvectorBasis rfl).toBasis.ext fun i ↦ ?_
   simp [smul_smul, ← RCLike.ofReal_mul, Real.mul_self_sqrt (hT.nonneg_eigenvalues rfl i),
@@ -153,6 +154,7 @@ theorem isSymmetric_operatorAbs (A : E →ₗ[𝕜] F) : A.operatorAbs.IsSymmetr
   A.isPositive_operatorAbs.isSymmetric
 
 /-- The square of the finite-dimensional modulus is the source Gram operator. -/
+@[simp]
 theorem operatorAbs_sq (A : E →ₗ[𝕜] F) :
     A.operatorAbs ∘ₗ A.operatorAbs = A.adjoint ∘ₗ A :=
   (isPositive_adjoint_comp_self A).sqrt_sq
