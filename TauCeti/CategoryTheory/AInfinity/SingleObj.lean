@@ -134,6 +134,18 @@ theorem coe_pathOperation_aInfinityCategory_apply {n : ℕ} (X : Fin (n + 1) →
   obtain rfl : X = fun _ ↦ star 𝒜 := funext fun _ ↦ Subsingleton.elim _ _
   simp [AInfinityCategory.coe_pathOperation_apply, toAInfinityAlgebra_aInfinityCategory]
 
+/-- On an arbitrary string of endomorphisms, the total operation of the one-object category,
+projected to its Hom module, is the original algebra operation. -/
+@[simp]
+theorem homProjection_m_homInclusion_aInfinityCategory {n : ℕ}
+    (X : Fin (n + 1) → AInfinitySingleObj 𝒜) (f : Fin n → A) :
+    homProjection (R := R) (X 0) (X (Fin.last n))
+        ((aInfinityCategory 𝒜).m n fun i ↦
+          homInclusion (X i.rev.castSucc) (X i.rev.succ) (f i)) = 𝒜.m n f := by
+  obtain rfl : X = fun _ ↦ star 𝒜 := funext fun _ ↦ Subsingleton.elim _ _
+  simp only [toAInfinityAlgebra_aInfinityCategory, AInfinityAlgebra.map_m_apply,
+    totalHomEquiv_apply, totalHomEquiv_symm_apply, homProjection_homInclusion]
+
 /-- The differential of the one-object `A∞` category is the unary operation of the algebra. -/
 @[simp]
 theorem homDifferential_aInfinityCategory (X Y : AInfinitySingleObj 𝒜) (a : A) :

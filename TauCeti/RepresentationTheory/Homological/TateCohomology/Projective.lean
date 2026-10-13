@@ -14,6 +14,7 @@ import TauCeti.RepresentationTheory.Coinvariants
 import TauCeti.RepresentationTheory.Invariants
 import TauCeti.RepresentationTheory.NormSplit.PGroup
 import TauCeti.RepresentationTheory.Homological.TateCohomology.HomologySequence
+import TauCeti.RepresentationTheory.Rep.TensorShortExact
 
 /-!
 # Projectivity and cohomological triviality
@@ -24,13 +25,20 @@ of `G` (Serre, *Local Fields*, IX §5; Brown, *Cohomology of Groups*, VI §8). M
 does a representation of projective dimension at most one over `k[G]`. This is the easy half of
 the theorem of Nakayama and Rim, which for `k = ℤ` characterizes the cohomologically trivial
 `G`-modules of a finite group `G` as those of projective dimension at most one over `ℤ[G]`.
+Both statements survive tensoring, with the diagonal action, by an arbitrary representation `M`:
+`M ⊗ A` is cohomologically trivial for projective `A`, and for `A` with a projective resolution
+`0 → P₁ → P₀ → A → 0` of length one as soon as `M ⊗ P₁ → M ⊗ P₀` stays injective. This is the
+form in which cohomological triviality enters the Tate–Nakayama generalization of Tate's theorem.
 
 The projection `Ind_⊥^G A → A` from the representation induced from the trivial subgroup is an
-epimorphism, so a projective `A` is a retract of `Ind_⊥^G A`. The Tate cohomology of every finite
-subgroup with coefficients in `Ind_⊥^G A` vanishes
-(`TauCeti.TateCohomology.isZero_res_indBot`), hence so does that of its retract `A`. If
-`0 → P₁ → P₀ → A → 0` is exact with `P₀` and `P₁` projective, the Tate cohomology of `A` sits in
-the long exact sequence between that of `P₀` and that of `P₁`, both of which vanish.
+epimorphism, so a projective `A` is a retract of `Ind_⊥^G A`, and `M ⊗ A` is a retract of
+`M ⊗ Ind_⊥^G A`. The Tate cohomology of every finite subgroup with coefficients in
+`M ⊗ Ind_⊥^G A` vanishes (`TauCeti.TateCohomology.isZero_tensor_indBot`, after restricting the
+induced module to the subgroup), hence so does that of its retract `M ⊗ A`; for `M` the unit
+representation this is the statement for `A` itself. If `0 → P₁ → P₀ → A → 0` is exact with `P₀`
+and `P₁` projective, the Tate cohomology of `A` sits in the long exact sequence between that of
+`P₀` and that of `P₁`, both of which vanish; the same holds after tensoring with `M` whenever the
+tensored sequence is still short exact.
 
 Conversely, let `k` be an integral domain of characteristic zero in which every prime number is a
 unit or generates a maximal ideal, for instance `ℤ`, `ℤ_[p]`, `ℤ_(p)` or a field of characteristic
@@ -52,6 +60,9 @@ the degrees `0` and `-1` on one Sylow subgroup for each of them, are used
 
 ## Main statements
 
+* `Rep.isZero_res_tensor_of_projective`: if `P.ρ.asModule` is a projective `k[G]`-module, then
+  `H-hat^n(S, M ⊗ P) = 0` for every representation `M`, every finite subgroup `S` of `G` and every
+  `n : ℤ`.
 * `Rep.isZero_res_of_projective`: if `A.ρ.asModule` is a projective
   `k[G]`-module, then `H-hat^n(S, A) = 0` for every finite subgroup `S` of `G` and every `n : ℤ`.
 * `Rep.ker_norm_baseChange_le_coinvariantsKer`: if `H_Tate⁰(G, A) = H_Tate⁻¹(G, A) = 0` and `p`
@@ -63,6 +74,8 @@ the degrees `0` and `-1` on one Sylow subgroup for each of them, are used
   finite group whose underlying `k`-module is projective is projective over `k[G]`.
 * `Rep.isZero_res_of_exact`: the same vanishing when `A.ρ.asModule` has a projective resolution
   `0 → P₁ → P₀ → A → 0` of length one.
+* `Rep.isZero_res_tensor_of_shortExact`: `H-hat^n(S, M ⊗ A) = 0` when `A` has a projective
+  resolution `0 → P₁ → P₀ → A → 0` of length one with `M ⊗ P₁ → M ⊗ P₀` injective.
 
 ## References
 
@@ -75,26 +88,41 @@ public section
 
 universe u
 
-open CategoryTheory Limits Rep TauCeti.TateCohomology
+open CategoryTheory Limits MonoidalCategory Rep TauCeti.TateCohomology
 open scoped TensorProduct
 
 namespace Rep
 
 variable {k G : Type u} [CommRing k] [Group G]
 
+/-- **Tensoring with a projective module gives a cohomologically trivial module.** If the
+`k[G]`-module of a representation `P` is projective, then for every representation `M` the Tate
+cohomology of every finite subgroup `S` of `G` with coefficients in `M ⊗ P` vanishes in every
+degree. -/
+theorem isZero_res_tensor_of_projective (M P : Rep k G)
+    [Module.Projective (MonoidAlgebra k G) P.ρ.asModule] (S : Subgroup G) [Fintype S] (n : ℤ) :
+    IsZero (tateCohomology (res S.subtype (M ⊗ P)) n) := by
+  have : Projective P := by
+    rwa [← equivalenceModuleMonoidAlgebra.map_projective_iff, ← IsProjective.iff_projective]
+  -- `M ⊗ P` is a retract of `M ⊗ Ind_⊥^G P`, whose Tate cohomology on `S` vanishes.
+  have h := (((Retract.mk _ _ (Projective.factorThru_comp (𝟙 P) (indBotCounit P))).map
+    (tensorLeft M)).map (resFunctor (k := k) S.subtype)).map (tateCohomologyFunctor n)
+  -- The restriction of `Ind_⊥^G P` to `S` is induced from the trivial subgroup of `S`.
+  let e := whiskerLeftIso (res S.subtype M) (resIndBotIso S P.V)
+  have h₀ : IsZero (tateCohomology (res S.subtype (M ⊗ indBot k G P.V)) n) :=
+    (isZero_tensor_indBot (G := S) (G ⧸ S →₀ P.V) (res S.subtype M) n).of_iso
+      ((tateCohomologyFunctor n).mapIso e)
+  exact (IsZero.iff_id_eq_zero _).2
+    (h.retract.symm.trans (by rw [h₀.eq_zero_of_tgt h.i, zero_comp]))
+
 /-- **Projective modules are cohomologically trivial.** If the `k[G]`-module of a representation
 `A` is projective, then the Tate cohomology of every finite subgroup `S` of `G` with coefficients
 in `A` vanishes in every degree. -/
 theorem isZero_res_of_projective (A : Rep k G)
     [Module.Projective (MonoidAlgebra k G) A.ρ.asModule] (S : Subgroup G) [Fintype S] (n : ℤ) :
-    IsZero (tateCohomology (res S.subtype A) n) := by
-  have : Projective A := by
-    rwa [← equivalenceModuleMonoidAlgebra.map_projective_iff, ← IsProjective.iff_projective]
-  -- `A` is a retract of `Ind_⊥^G A`, whose Tate cohomology on `S` vanishes.
-  have h := (Retract.mk _ _ (Projective.factorThru_comp (𝟙 A) (indBotCounit A))).map
-    (resFunctor (k := k) S.subtype) |>.map (tateCohomologyFunctor n)
-  rw [IsZero.iff_id_eq_zero, ← h.retract,
-    (TauCeti.TateCohomology.isZero_res_indBot S A.V n).eq_zero_of_tgt h.i, zero_comp]
+    IsZero (tateCohomology (res S.subtype A) n) :=
+  (isZero_res_tensor_of_projective (𝟙_ (Rep k G)) A S n).of_iso
+    ((tateCohomologyFunctor n).mapIso ((resFunctor S.subtype).mapIso (λ_ A).symm))
 
 /-- **`H_Tate⁻¹` modulo `p`.** If `H_Tate⁰(G, A)` and `H_Tate⁻¹(G, A)` vanish and multiplication
 by `p` is injective on `A`, then every vector of `(k/pk) ⊗ A` of norm zero lies in the augmentation
@@ -232,5 +260,20 @@ theorem isZero_res_of_exact (A : Rep k G) {P₀ P₁ : Type u}
     (hP (.of _ P₀) n) (hP (.of _ P₁) (n + 1))).of_iso
       ((tateCohomologyFunctor n).mapIso ((resFunctor S.subtype).mapIso
         (equivalenceModuleMonoidAlgebra.unitIso.app A)))
+
+/-- **Tensoring a resolution of length one.** Let `0 → P₁ → P₀ → A → 0` be a short exact sequence of
+representations whose first two terms are projective `k[G]`-modules, and suppose that
+`M ⊗ P₁ → M ⊗ P₀` is injective. Then for every finite subgroup `S` of `G` the Tate cohomology of
+`S` with coefficients in `M ⊗ A` vanishes in every degree. -/
+theorem isZero_res_tensor_of_shortExact (M : Rep k G) {T : ShortComplex (Rep k G)}
+    (hT : T.ShortExact) [Module.Projective (MonoidAlgebra k G) T.X₁.ρ.asModule]
+    [Module.Projective (MonoidAlgebra k G) T.X₂.ρ.asModule]
+    (hf : Function.Injective (T.f.hom.toLinearMap.lTensor M.V)) (S : Subgroup G) [Fintype S]
+    (n : ℤ) : IsZero (tateCohomology (res S.subtype (M ⊗ T.X₃)) n) :=
+  have := hT.epi_g
+  TauCeti.TateCohomology.isZero_X₃_of_isZero_X₂_of_isZero_X₁
+    ((shortExact_map_tensorLeft_of_injective hT.exact M hf).map_of_exact (resFunctor S.subtype))
+    n (n + 1) rfl (isZero_res_tensor_of_projective M _ S n)
+    (isZero_res_tensor_of_projective M _ S (n + 1))
 
 end Rep

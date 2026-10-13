@@ -139,7 +139,7 @@ theorem map_minpoly_eq_prod_orbit (x : E) :
     rw [← pow_card_eq_self_iff_mem_range_algebraMap]
     simpa [Polynomial.coeff_map, hφ, _root_.FiniteField.coe_frobeniusAlgEquivOfAlgebraic] using
       congrArg (fun p : E[X] => p.coeff n) hmapP
-  obtain ⟨Q, hQmap, -, hQmonic⟩ :=
+  obtain ⟨Q, hQmap, -, _⟩ :=
     lifts_and_natDegree_eq_and_monic ((lifts_iff_coeff_lifts P).mpr hcoeff) hPmonic
   have hxs : x ∈ s := by simp [hs, mem_orbit_self]
   have hPx : P.eval x = 0 := by

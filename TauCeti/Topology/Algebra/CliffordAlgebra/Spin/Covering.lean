@@ -23,6 +23,8 @@ group `Multiplicative (ZMod 2)`, so the standard quotient-covering construction 
   compact real Spin projection as a quotient covering map by its kernel.
 * `CliffordAlgebra.isCoveringMap_realCliffordSpinDoubleCoverZero_rightHom` packages the projection
   as an ordinary covering map.
+* `CliffordAlgebra.isCoveringMap_realCliffordSpinProjectionZero` gives the same result for the
+  bundled continuous homomorphism.
 * `CliffordAlgebra.realCliffordSpinHomEquivKer` identifies continuous homomorphisms out of
   `SO(n)` with continuous homomorphisms out of `Spin(n)` that kill the double-cover kernel.
 
@@ -90,6 +92,13 @@ theorem isCoveringMap_realCliffordSpinDoubleCoverZero_rightHom
     (n : ℕ) [NeZero n] [CompactSpace (realCliffordSpinGroupZero n)] :
     IsCoveringMap (realCliffordSpinDoubleCoverZero n).rightHom :=
   (isQuotientCoveringMap_realCliffordSpinDoubleCoverZero_rightHom n).isCoveringMap
+
+/-- The bundled compact real Spin projection is a covering map. -/
+theorem isCoveringMap_realCliffordSpinProjectionZero
+    (n : ℕ) [NeZero n] [CompactSpace (realCliffordSpinGroupZero n)] :
+    IsCoveringMap (realCliffordSpinProjectionZero n) := by
+  rw [coe_realCliffordSpinProjectionZero]
+  exact isCoveringMap_realCliffordSpinDoubleCoverZero_rightHom n
 
 /-- Continuous homomorphisms out of `SO(n)` are equivalent to continuous homomorphisms out of
 compact `Spin(n)` that kill the kernel of the double-cover projection. -/

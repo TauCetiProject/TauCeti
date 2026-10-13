@@ -661,7 +661,7 @@ private theorem apply_comp_gradedCoderiv_eq_zero {G : InternalGrading R M}
                 (replaceBlock a p s (evalNat (AA.m s) fun j ↦ a (p + j))) = 0) :
     F ∘ₗ gradedCoderiv AA G F = 0 := by
   refine TensorProduct.ext (G.linearMap_ext fun e x hx ↦ DirectSum.linearMap_ext R fun n ↦
-    AA.grading.piTensorProduct_ext fun q ↦ ?_)
+    InternalGrading.piTensorProduct_ext (fun _ ↦ AA.grading) fun q ↦ ?_)
   let d : ℕ → ℤ := fun i ↦ if h : i < n then (q ⟨i, h⟩).1 else 0
   let a : ℕ → A := fun i ↦ if h : i < n then (q ⟨i, h⟩).2 else 0
   have ha : ∀ i < n, a i ∈ AA.grading.piece (d i) := by

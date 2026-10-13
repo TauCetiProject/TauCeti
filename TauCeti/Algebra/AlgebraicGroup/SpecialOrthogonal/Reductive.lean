@@ -47,7 +47,7 @@ torus, this makes every standard special orthogonal group reductive away from ch
 
 * J. S. Milne, *Algebraic Groups* (2017), §§ 4.a, 19.b, and 21.
 * T. A. Springer, *Linear Algebraic Groups*, §§ 2.2, 2.4, and Chapter 8.
-* Formal proof architecture: `TauCeti.Algebra.AlgebraicGroup.Symplectic.Reductive`.
+* Formal proof architecture: `TauCeti.Algebra.AlgebraicGroup.Symplectic.Reductive.Basic`.
 -/
 
 public section

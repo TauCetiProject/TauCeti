@@ -182,7 +182,7 @@ lemma cast_zero {V V' : WeierstrassCurve R} (h : V = V') :
 /-- Transport of affine points along an equality of Weierstrass curves keeps the coordinates of
 a point. Mathlib's `AddEquiv.cast` and `Equiv.cast` both reduce to this `cast`. It is used by
 the variable-change and quadratic-twist point isomorphisms and by the base-change point map
-`WeierstrassCurve.Affine.pointMap` (`MordellWeil/LocalCondition.lean`). -/
+`WeierstrassCurve.Affine.pointMap` (`Affine/BaseChange.lean`). -/
 lemma cast_some {V V' : WeierstrassCurve R} (h : V = V') {x y : R}
     (hns : V.toAffine.Nonsingular x y) :
     cast (congrArg (fun V : WeierstrassCurve R ↦ V.toAffine.Point) h) (some x y hns)

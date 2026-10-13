@@ -260,7 +260,7 @@ private theorem disjoint_range_chart {i j : Index p} (hij : i ≠ j) :
 
 /-- **The filled cover is Hausdorff.** -/
 theorem t2Space : T2Space (FilledCover p) := by
-  have : T2Space E := hp.isSeparatedMap.t2Space hp.continuous
+  have : T2Space E := hp.t2Space
   have : LocallyCompactSpace ThricePuncturedSphere := isOpenEmbedding_coe.locallyCompactSpace
   refine PunctureFilling.t2Space (isOpenEmbedding_chart hp hfin) (fun i x ↦ ?_) fun i j hij ↦ ?_
   · -- A point of `E` lies over a point of `ℂ ∖ {0, 1}`, while the ends of the charts go to

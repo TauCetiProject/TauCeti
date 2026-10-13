@@ -36,6 +36,9 @@ developed in `TauCeti/Topology/Algebra/GroupAction/FixedPoints.lean`.
   coercion lemmas `TauCeti.coe_smul_fixedPoints_addSubgroup` and
   `TauCeti.coe_quotient_smul_fixedPoints_addSubgroup`; a trivial `G`-action on `M` gives a trivial
   `G ⧸ H`-action on `M ^ H` (`TauCeti.quotient_smul_fixedPoints_addSubgroup_eq_of_smul_eq`).
+* `TauCeti.coe_quotient_smul_fixedPoints_subgroup`: the multiplicative counterpart of the last
+  coercion lemma, for the `G ⧸ H`-action on the fixed-point subgroup of a distributive action on
+  a group.
 * `TauCeti.fixedPointsInclusion`, `TauCeti.fixedPointsDistribMulActionInclusion`, and
   `Subgroup.fixedPointsDistribMulActionSubtype`: the additive and equivariant inclusions between
   fixed points and into the ambient additive monoid, with their functoriality laws.
@@ -177,6 +180,21 @@ theorem quotient_smul_fixedPoints_addSubgroup_eq_of_smul_eq (h : ∀ (g : G) (m 
   exact Subtype.ext ((coe_smul_fixedPoints_addSubgroup g m).trans (h g m))
 
 end AddGroup
+
+section Group
+
+variable {G : Type*} [Group G] {α : Type*} [Group α] [MulDistribMulAction G α]
+variable {H : Subgroup G} [H.Normal]
+
+/-- The `G ⧸ H`-action on the fixed-point subgroup `α ^ H` is the `G`-action through the quotient
+map. Mathlib's `coe_quotient_smul_fixedPoints` is stated for the carrier `↥(fixedPoints H α)` and
+so does not fire on `FixedPoints.subgroup`. -/
+@[simp]
+theorem coe_quotient_smul_fixedPoints_subgroup (g : G) (a : FixedPoints.subgroup H α) :
+    (((g : G ⧸ H) • a : FixedPoints.subgroup H α) : α) = g • (a : α) :=
+  rfl
+
+end Group
 
 section Functoriality
 

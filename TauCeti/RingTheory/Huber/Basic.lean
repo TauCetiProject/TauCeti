@@ -12,6 +12,7 @@ public import TauCeti.RingTheory.Huber.PowerBounded
 import TauCeti.RingTheory.Ideal.PowerStabilization
 import TauCeti.RingTheory.Subring.SpanSingleton
 public import TauCeti.Topology.Algebra.Group.FirstCountable
+public import TauCeti.Topology.Algebra.TopologicallyNilpotent
 
 /-!
 # Huber rings and Tate rings
@@ -59,8 +60,6 @@ Huber ring is nonarchimedean, which is exactly the hypothesis under which
 * `TauCeti.Huber.IsHuberRing.isCountablyGenerated_nhds_zero`: its neighbourhoods of zero are
   countably generated. With the previous bullet these are exactly the two hypotheses Henkel's open
   mapping theorem asks of the underlying group, so both are instances.
-* `TauCeti.Huber.PairOfDefinition.exists_pow_mul_mem`: a power of a topologically nilpotent `s`
-  carries any `c : A` into the ring of definition.
 * `IsTopologicallyNilpotent.exists_pow_mul` and
   `TauCeti.Huber.IsTateRing.exists_isTopologicallyNilpotent_pow_mul`: a power of a topologically
   nilpotent element — a pseudouniformiser, in the Tate case — rescales any element of `A` to a
@@ -68,6 +67,8 @@ Huber ring is nonarchimedean, which is exactly the hypothesis under which
   is an associate of the original.
 * `TauCeti.Huber.IsHuberRing.quotient` and `TauCeti.Huber.IsTateRing.quotient`: a quotient of a
   Huber ring is a Huber ring, and a quotient of a Tate ring is a Tate ring.
+* `TauCeti.Huber.PairOfDefinition.quotient_idealImage`: the neighbourhood basis of zero of the
+  quotient pair of definition is the image of that of the original pair.
 * `TauCeti.Huber.PairOfDefinition.isBounded_ringOfDefinition`: a ring of definition is bounded,
   hence `A₀ ≤ A°` (`TauCeti.Huber.PairOfDefinition.le_powerBoundedSubring`). This is the
   boundedness half of Wedhorn Corollary 6.4.
@@ -123,8 +124,8 @@ This is Mathlib's `Submodule.mem_ideal_smul_span_iff_exists_sum'` in the form th
 uses it: a `Finset.sum` over `G` itself, with cofactors given by a function on all of `R`, rather
 than a `Finsupp` on the subtype `↥G`. It is what bounds, uniformly in `k`, the number of terms
 needed to write an element of `Iⁿ⁺ᵏ = Iⁿ * Iᵏ` over generators of `Iⁿ`, both in Wedhorn Remark 6.8
-(`TauCeti.RingTheory.Huber.Completion`) and in the identification of the neighbourhood subgroups
-of `A⟨X⟩_T` with the powers of one finitely generated ideal
+(`TauCeti.RingTheory.Huber.Completion.Basic`) and in the identification of the neighbourhood
+subgroups of `A⟨X⟩_T` with the powers of one finitely generated ideal
 (`TauCeti.RingTheory.Huber.WeightedRestrictedSeries.PairOfDefinition`). -/
 theorem exists_sum_eq_of_mem_span_mul (G : Finset R) (K : Ideal R) {b : R}
     (hb : b ∈ Ideal.span (G : Set R) * K) :
@@ -546,16 +547,39 @@ theorem quotient_ringOfDefinition [IsTopologicalRing A] (P : PairOfDefinition A)
     (P.quotient J).ringOfDefinition = P.ringOfDefinition.map (Ideal.Quotient.mk J) :=
   (rfl)
 
-/-- **Some power of a topologically nilpotent `s` carries any `c : A` into the ring of
-definition.** The ring of definition is open and `sⁿ c → 0`, so `sⁿ c` is eventually inside it.
+/-- The ideal of definition of the quotient pair of definition is the image of the original one,
+under the map `A₀ → (A ⧸ J)₀` induced by the quotient map. -/
+private theorem quotient_idealOfDefinition [IsTopologicalRing A] (P : PairOfDefinition A)
+    (J : Ideal A) :
+    (P.quotient J).idealOfDefinition = P.idealOfDefinition.map
+      (((Ideal.Quotient.mk J).comp P.ringOfDefinition.subtype).codRestrict
+        (P.quotient J).ringOfDefinition fun a ↦ Subring.mem_map.mpr ⟨a, a.2, rfl⟩) :=
+  (rfl)
 
-This is the arbitrary-`c` generalisation of
-`TauCeti.Huber.IsPseudoUniformizer.eventually_pow_mem_ringOfDefinition`, which is the case
-`c = 1`; it also asks only for topological nilpotence rather than for a pseudouniformiser. -/
-theorem exists_pow_mul_mem [SeparatelyContinuousMul A] (P : PairOfDefinition A) {s : A}
-    (hs : IsTopologicallyNilpotent s) (c : A) : ∃ i : ℕ, s ^ i * c ∈ P.ringOfDefinition :=
-  ((hs.mul_const c).eventually
-    (P.isOpen_ringOfDefinition.mem_nhds (by simp))).exists
+/-- **The neighbourhood basis of the quotient pair is the image of the original one**: the image
+in `A ⧸ J` of the `n`-th power of the ideal of definition of the quotient pair is the image of
+`P.idealImage n` under the quotient map. -/
+theorem quotient_idealImage [IsTopologicalRing A] (P : PairOfDefinition A) (J : Ideal A)
+    (n : ℕ) :
+    (P.quotient J).idealImage n = (P.idealImage n).map (Ideal.Quotient.mk J).toAddMonoidHom := by
+  set q₀ : P.ringOfDefinition →+* (P.quotient J).ringOfDefinition :=
+    ((Ideal.Quotient.mk J).comp P.ringOfDefinition.subtype).codRestrict
+      (P.quotient J).ringOfDefinition fun a ↦ Subring.mem_map.mpr ⟨a, a.2, rfl⟩
+  have hq₀ : Function.Surjective q₀ := by
+    rintro ⟨x, hx⟩
+    obtain ⟨a, ha, rfl⟩ := Subring.mem_map.mp hx
+    exact ⟨⟨a, ha⟩, rfl⟩
+  ext x
+  simp only [mem_idealImage, AddSubgroup.mem_map, RingHom.toAddMonoidHom_eq_coe,
+    AddMonoidHom.coe_ofClass]
+  rw [quotient_idealOfDefinition, ← Ideal.map_pow]
+  constructor
+  · rintro ⟨y, hy, rfl⟩
+    obtain ⟨a, ha, rfl⟩ := (Ideal.mem_map_iff_of_surjective q₀ hq₀).mp hy
+    exact ⟨a, ⟨a, ha, rfl⟩, rfl⟩
+  · rintro ⟨_, ⟨a, ha, rfl⟩, rfl⟩
+    exact ⟨q₀ a, Ideal.mem_map_of_mem q₀ ha, rfl⟩
+
 
 end PairOfDefinition
 
@@ -573,7 +597,9 @@ theorem _root_.IsTopologicallyNilpotent.exists_pow_mul {A : Type*} [CommRing A]
     (hϖ : IsTopologicallyNilpotent ϖ) (s : A) : ∃ i : ℕ, IsTopologicallyNilpotent (ϖ ^ i * s) := by
   obtain ⟨P⟩ := IsHuberRing.nonempty_pairOfDefinition (A := A)
   have := P.toNonarchimedeanRing
-  obtain ⟨i, hi⟩ := P.exists_pow_mul_mem hϖ s
+  obtain ⟨i, hi⟩ := exists_mul_pow_mem_of_isTopologicallyNilpotent hϖ
+    P.isOpen_ringOfDefinition s
+  rw [mul_comm] at hi
   have hpb : IsPowerBounded (ϖ ^ i * s) :=
     mem_powerBoundedSubring.mp (P.le_powerBoundedSubring hi)
   exact ⟨i + 1, by simpa [pow_succ, mul_assoc, mul_comm, mul_left_comm] using

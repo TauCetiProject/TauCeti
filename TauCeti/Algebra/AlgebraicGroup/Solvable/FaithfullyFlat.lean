@@ -42,10 +42,8 @@ inclusion is faithfully flat.
 * J. C. Jantzen, *Representations of Algebraic Groups*, I.2.
 * T. A. Springer, *Linear Algebraic Groups*, Section 2.4.
 
-This supplies the image-descent step for the solvable radical in Layer 6 of the ReductiveGroups
-roadmap. Together with the semidirect-product source construction, it reduces binary-product
-closure of solvable subgroup schemes to faithful flatness of the canonical source-to-image
-morphism.
+Together with the semidirect-product source construction, this reduces binary-product closure of
+solvable subgroup schemes to faithful flatness of the canonical source-to-image morphism.
 -/
 
 public section

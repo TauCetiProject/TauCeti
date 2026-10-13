@@ -148,7 +148,7 @@ theorem localLift_swapForest_orbitCount (factor base : Perm (Fin 3 × Fin 4))
     simp only [List.map_map]
     congr 1
     apply List.map_congr_left
-    intro p hp
+    intro p _
     exact localLift_swap D c p.1 p.2
   rw [hprod, mul_assoc]
   have hcount := (hforest.map (triangleEmbedding D c)).orbitCount_prod_mul_add_length

@@ -186,14 +186,12 @@ theorem ofHom_hom {M N : Type w} [AddCommMonoid M] [Module R M] [Comodule R C M]
 
 /-- The categorical identity on a finitely generated bundled comodule is the bundled form of
 the identity comodule morphism. -/
-@[simp]
 theorem ofHom_id {M : Type w} [AddCommMonoid M] [Module R M] [Comodule R C M] [Module.Finite R M] :
     ofHom (R := R) (C := C) (Comodule.Hom.id R C M) = 𝟙 (of (R := R) (C := C) M) :=
   rfl
 
 /-- Categorical composition of finitely generated bundled comodule morphisms is the bundled
 form of composition of comodule morphisms. -/
-@[simp]
 theorem ofHom_comp {M N P : Type w} [AddCommMonoid M] [Module R M] [Comodule R C M]
     [Module.Finite R M] [AddCommMonoid N] [Module R N] [Comodule R C N]
     [Module.Finite R N] [AddCommMonoid P] [Module R P] [Comodule R C P]

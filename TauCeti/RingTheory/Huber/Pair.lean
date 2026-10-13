@@ -45,6 +45,8 @@ explicit.
   of the image of the original plus ring.
 * `TauCeti.Huber.Pair.Hom.quotientLift`: the universal factorisation of a morphism annihilating
   the quotient ideal.
+* `TauCeti.Huber.Pair.Hom.isOpen_map_quotientLift`: the factorisation carries open ideals to
+  ideals generating open ideals when the original morphism does.
 
 ## Provenance
 
@@ -347,6 +349,17 @@ theorem Hom.quotientLift_unique {S : Pair A} {T : Pair B} (J : Ideal A) (f : Hom
       (by
         rw [Hom.toRingHom_quotientLift]
         exact (Ideal.Quotient.lift_comp_mk J f.toRingHom _).symm)
+
+/-- If a morphism of Huber pairs annihilating `J` carries open ideals to ideals generating open
+ideals, then so does its factorisation through the quotient pair. -/
+theorem Hom.isOpen_map_quotientLift {S : Pair A} {T : Pair B} (J : Ideal A) (f : Hom S T)
+    (hJ : J ≤ RingHom.ker f.toRingHom)
+    (hopen : ∀ ⦃I : Ideal A⦄, IsOpen (I : Set A) → IsOpen (I.map f.toRingHom : Set B))
+    {I : Ideal (A ⧸ J)} (hI : IsOpen (I : Set (A ⧸ J))) :
+    IsOpen (I.map (f.quotientLift J hJ).toRingHom : Set B) := by
+  rw [← Ideal.map_comap_of_surjective _ Ideal.Quotient.mk_surjective I, Ideal.map_map,
+    ← Hom.toRingHom_quotientHom S J, ← Hom.toRingHom_comp, Hom.quotientLift_comp_quotientHom]
+  exact hopen (hI.preimage (quotientHom S J).continuous_toRingHom)
 
 end Quotient
 
