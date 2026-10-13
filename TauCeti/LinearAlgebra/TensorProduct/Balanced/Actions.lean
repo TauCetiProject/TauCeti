@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.TensorProduct.Balanced.Grading
+public import TauCeti.LinearAlgebra.TensorProduct.Balanced.Grading.Basic
 
 /-!
 # Outer actions on balanced tensor products
@@ -101,6 +101,16 @@ theorem map_smul_left (f : M →ₗ[k] M') (g : N →ₗ[k] N')
     rw [smul_tmul_left, map_tmul _ _ hf hg, map_tmul _ _ hf hg, hfs, smul_tmul_left]
   | ha x y hx hy => simp only [smul_add, map_add, hx, hy]
 
+/-- Tensor congruence respects an outer left action when the first equivalence does. -/
+theorem congr_smul_left (f : M ≃ₗ[k] M') (g : N ≃ₗ[k] N')
+    (hf : ∀ (a : A) m, f (op a • m) = op a • f m)
+    (hg : ∀ (a : A) n, g (a • n) = a • g n)
+    (hfs : ∀ (s : S) m, f (s • m) = s • f m)
+    (s : S) (z : BalancedTensorProduct k A M N) :
+    congr f g hf hg (s • z) = s • congr f g hf hg z := by
+  rw [congr_apply, congr_apply]
+  exact map_smul_left S f.toLinearMap g.toLinearMap hf hg hfs s z
+
 end Map
 
 section Lift
@@ -189,6 +199,16 @@ theorem map_smul_right (f : M →ₗ[k] M') (g : N →ₗ[k] N')
   | ht m n =>
     rw [smul_tmul_right, map_tmul _ _ hf hg, map_tmul _ _ hf hg, hgt, smul_tmul_right]
   | ha x y hx hy => simp only [smul_add, map_add, hx, hy]
+
+/-- Tensor congruence respects an outer right action when the second equivalence does. -/
+theorem congr_smul_right (f : M ≃ₗ[k] M') (g : N ≃ₗ[k] N')
+    (hf : ∀ (a : A) m, f (op a • m) = op a • f m)
+    (hg : ∀ (a : A) n, g (a • n) = a • g n)
+    (hgt : ∀ (t : T) n, g (t • n) = t • g n)
+    (t : T) (z : BalancedTensorProduct k A M N) :
+    congr f g hf hg (t • z) = t • congr f g hf hg z := by
+  rw [congr_apply, congr_apply]
+  exact map_smul_right T f.toLinearMap g.toLinearMap hf hg hgt t z
 
 end Map
 

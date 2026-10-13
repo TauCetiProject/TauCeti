@@ -195,19 +195,13 @@ theorem im_exp_neg_mul_schwarzChristoffelVertex_sub_pos_of_short_turn
         schwarzChristoffelVertex a e z₀ i.succ)).im := by
   let V : ℕ → ℂ := fun k ↦ if hk : k < n + 1 then
     schwarzChristoffelVertex a e z₀ ⟨k, hk⟩ else 0
+  have hV : ∀ m : Fin (n + 1), V m = schwarzChristoffelVertex a e z₀ m :=
+    fun m ↦ dite_eq_left m.isLt
   let u := Complex.exp (-schwarzChristoffelEdgeAngle a e (a i.castSucc) * Complex.I)
   have hle : i.val + 1 ≤ j.val := hij.le
   have htel := Finset.sum_Ico_sub V hle
-  have hVi : V (i.val + 1) = schwarzChristoffelVertex a e z₀ i.succ := by
-    dsimp only [V]
-    split
-    · congr 1
-    · omega
-  have hVj : V j.val = schwarzChristoffelVertex a e z₀ j.castSucc := by
-    dsimp only [V]
-    split
-    · congr 1
-    · omega
+  have hVi : V (i.val + 1) = schwarzChristoffelVertex a e z₀ i.succ := hV i.succ
+  have hVj : V j.val = schwarzChristoffelVertex a e z₀ j.castSucc := hV j.castSucc
   rw [hVi, hVj] at htel
   rw [← htel, Finset.mul_sum]
   -- Regard imaginary part as its bundled real-linear map so it distributes over the finite sum.
@@ -224,15 +218,11 @@ theorem im_exp_neg_mul_schwarzChristoffelVertex_sub_pos_of_short_turn
       apply Fin.mk_lt_mk.mpr
       omega
     have hkj : k' ≤ j := Fin.mk_le_mk.mpr hk.2.le
-    have hmemi : i.castSucc ∈ Icc i.castSucc j.castSucc := by
-      simp only [mem_Icc, Fin.le_def, Fin.val_castSucc]
-      omega
-    have hmemk : k'.castSucc ∈ Icc i.castSucc j.castSucc := by
-      simp only [mem_Icc, Fin.le_def, Fin.val_castSucc]
-      omega
-    have hmemj : j.castSucc ∈ Icc i.castSucc j.castSucc := by
-      simp only [mem_Icc, Fin.le_def, Fin.val_castSucc]
-      omega
+    have hmem : ∀ m : Fin n, i ≤ m → m ≤ j → m.castSucc ∈ Icc i.castSucc j.castSucc :=
+      fun m him hmj ↦ ⟨Fin.castSucc_le_castSucc_iff.mpr him, Fin.castSucc_le_castSucc_iff.mpr hmj⟩
+    have hmemi := hmem i le_rfl (Fin.mk_le_mk.mpr (by omega))
+    have hmemk := hmem k' hik'.le hkj
+    have hmemj := hmem j (Fin.mk_le_mk.mpr (by omega)) le_rfl
     have hturn' : schwarzChristoffelEdgeAngle a e (a i.castSucc) <
         schwarzChristoffelEdgeAngle a e (a k'.castSucc) :=
       hangle hmemi hmemk (Fin.castSucc_lt_castSucc_iff.mpr hik')
@@ -246,16 +236,8 @@ theorem im_exp_neg_mul_schwarzChristoffelVertex_sub_pos_of_short_turn
       constructor <;> apply Fin.mk_le_mk.mpr <;> omega
     have hkpos := im_exp_neg_mul_schwarzChristoffelVertex_succ_sub_pos
       a e z₀ ha i k' (hfinite _ hkleft) (hfinite _ hkright) hturn' hshort'
-    have hVk : V k = schwarzChristoffelVertex a e z₀ k'.castSucc := by
-      dsimp only [V]
-      split
-      · congr 1
-      · omega
-    have hVksucc : V (k + 1) = schwarzChristoffelVertex a e z₀ k'.succ := by
-      dsimp only [V]
-      split
-      · congr 1
-      · omega
+    have hVk : V k = schwarzChristoffelVertex a e z₀ k'.castSucc := hV k'.castSucc
+    have hVksucc : V (k + 1) = schwarzChristoffelVertex a e z₀ k'.succ := hV k'.succ
     simpa only [u, hVk, hVksucc] using hkpos
   · exact Finset.nonempty_Ico.mpr hij
 

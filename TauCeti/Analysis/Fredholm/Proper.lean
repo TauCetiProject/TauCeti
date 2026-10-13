@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Calculus.InverseFunctionTheorem.FDeriv
 public import Mathlib.Analysis.Normed.Module.FiniteDimension
+public import TauCeti.Analysis.Calculus.ApproximatesLinearOn
 public import TauCeti.Analysis.Normed.Operator.ClosedRange
 
 /-!
@@ -40,8 +41,6 @@ sends `N ∩ f ⁻¹' L` into a compact box; being anti-Lipschitz, it reflects t
 
 ## Main declarations
 
-* `TauCeti.one_sub_mul_norm_sub_le`: an a priori estimate survives a nonlinear
-  approximation, degraded by its quality — the absorption step behind Peetre's lemma.
 * `HasStrictFDerivAt.exists_mem_nhds_forall_isCompact_inter_preimage`: local properness.
 * `HasStrictFDerivAt.exists_mem_nhds_isCompact_inter_preimage_singleton`: an arbitrary fibre is
   compact near the point of differentiation.
@@ -66,54 +65,6 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] [ProperSpace 𝕜]
 variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E] [CompleteSpace E]
   [NormedAddCommGroup F] [NormedSpace 𝕜 F] [CompleteSpace F]
 variable {f : E → F} {f' : E →L[𝕜] F} {a : E}
-
-omit [ProperSpace 𝕜] [CompleteSpace E] [CompleteSpace F] in
-/-- **An a priori estimate survives a nonlinear approximation, degraded by its quality.** Suppose
-every vector is controlled by its image under `f'` together with an auxiliary additive map `P`,
-as `‖z‖ ≤ C * ‖f' z‖ + ‖P z‖`, and `f` approximates `f'` on `N` to within `ε`. Then the same
-control holds for `f` on `N`, with the left side scaled by `1 - C * ε`; it has content exactly
-when `C * ε < 1`, and taking `ε ≤ (2 * C)⁻¹` gives the factor-two form properness uses.
-
-Nothing about `P` beyond `map_sub` enters, so it need only be additive into a seminormed additive
-group — no scalar-linearity, no idempotence, no constraint on its target. Taking it to be the
-projection onto `ker f'` from `ContinuousLinearMap.exists_projection_norm_le` recovers the Peetre
-estimate, which characterises semi-Fredholm operators — see Wendl, *Fredholm operators*,
-Lemma 5.2. -/
-theorem one_sub_mul_norm_sub_le {G : Type*} [SeminormedAddGroup G]
-    {P : E →+ G} {C : ℝ} {N : Set E} {ε : ℝ≥0}
-    (hC : 0 ≤ C) (hest : ∀ z, ‖z‖ ≤ C * ‖f' z‖ + ‖P z‖)
-    (happ : ApproximatesLinearOn f f' N ε) {x : E} (hx : x ∈ N) {y : E} (hy : y ∈ N) :
-    (1 - C * (ε : ℝ)) * ‖x - y‖ ≤ C * ‖f x - f y‖ + ‖P x - P y‖ := by
-  have h1 := hest (x - y)
-  have h2 := happ x hx y hy
-  have h3 : ‖f' (x - y)‖ ≤ ‖f x - f y‖ + (ε : ℝ) * ‖x - y‖ := by
-    exact (norm_le_norm_add_norm_sub (f x - f y) _).trans (add_le_add le_rfl h2)
-  have h4 : C * ‖f' (x - y)‖ ≤ C * (‖f x - f y‖ + (ε : ℝ) * ‖x - y‖) :=
-    mul_le_mul_of_nonneg_left h3 hC
-  rw [map_sub P x y] at h1
-  nlinarith
-
-omit [ProperSpace 𝕜] [CompleteSpace E] [CompleteSpace F] in
-/-- The two-sided bound gives anti-Lipschitzness of the coordinate `x ↦ (g x, P x)`.
-The product norm is the maximum, so each component distance is at most the distance between
-the pairs, and the two constants add. -/
-private theorem antilipschitzWith_prodMk {G : Type*} [SeminormedAddCommGroup G] {N : Set E}
-    {g : E → F} {P : E → G} {C : ℝ} (hC : 0 ≤ C)
-    (key : ∀ x ∈ N, ∀ y ∈ N, ‖x - y‖ ≤ 2 * (C * ‖g x - g y‖) + 2 * ‖P x - P y‖) :
-    AntilipschitzWith ⟨2 * C + 2, by positivity⟩ fun x : N => (g (x : E), P (x : E)) := by
-  refine AntilipschitzWith.of_le_mul_dist fun x y => ?_
-  have hd1 : ‖g (x : E) - g (y : E)‖ ≤ dist (g (x : E), P (x : E)) (g (y : E), P (y : E)) := by
-    rw [Prod.dist_eq, ← dist_eq_norm]
-    exact le_max_left _ _
-  have hd2 : ‖P (x : E) - P (y : E)‖ ≤ dist (g (x : E), P (x : E)) (g (y : E), P (y : E)) := by
-    rw [Prod.dist_eq, ← dist_eq_norm]
-    exact le_max_right _ _
-  have hCd := mul_le_mul_of_nonneg_left hd1 hC
-  rw [Subtype.dist_eq, dist_eq_norm]
-  calc ‖(x : E) - (y : E)‖
-      ≤ 2 * (C * ‖g (x : E) - g (y : E)‖) + 2 * ‖P (x : E) - P (y : E)‖ :=
-        key (x : E) x.2 (y : E) y.2
-    _ ≤ (2 * C + 2) * dist (g (x : E), P (x : E)) (g (y : E), P (y : E)) := by nlinarith
 
 /-- **Local properness of a map with upper semi-Fredholm derivative.** If `f` is strictly
 differentiable at `a` and its derivative there has closed range and finite-dimensional
@@ -147,7 +98,7 @@ theorem _root_.HasStrictFDerivAt.exists_mem_nhds_forall_isCompact_inter_preimage
   have key : ∀ x ∈ N, ∀ y ∈ N,
       ‖x - y‖ ≤ 2 * (C * ‖f x - f y‖) + 2 * ‖P x - P y‖ := by
     intro x hx y hy
-    have h := one_sub_mul_norm_sub_le (P := P.toLinearMap.toAddMonoidHom) hC.le hest happN hx hy
+    have h := happN.one_sub_mul_norm_sub_le (P := P.toLinearMap.toAddMonoidHom) hC.le hest hx hy
     rw [hCε] at h
     simp only [LinearMap.toAddMonoidHom_coe, ContinuousLinearMap.coe_coe] at h
     linarith
@@ -166,8 +117,17 @@ theorem _root_.HasStrictFDerivAt.exists_mem_nhds_forall_isCompact_inter_preimage
   have hPN : ∀ x ∈ N, Pker x ∈ Kp := fun x hx => subset_closure ⟨x, hx, rfl⟩
   -- the anti-Lipschitz coordinate on `N`
   set Θ : N → F × f'.ker := fun x => (f (x : E), Pker (x : E))
-  have hanti : AntilipschitzWith ⟨2 * C + 2, by positivity⟩ Θ :=
-    antilipschitzWith_prodMk hC.le key
+  have hanti : AntilipschitzWith (.mk (2 * C + 2) (by positivity)) Θ := by
+    refine AntilipschitzWith.of_le_mul_dist fun x y => ?_
+    have hf : ‖f (x : E) - f (y : E)‖ ≤ ‖Θ x - Θ y‖ := by
+      simpa only [Prod.fst_sub, Θ] using norm_fst_le (Θ x - Θ y)
+    -- The kernel coordinate has the norm induced from `E`, and `Pker` coerces to `P`.
+    have hP : ‖P (x : E) - P (y : E)‖ ≤ ‖Θ x - Θ y‖ := by
+      simpa only [Prod.snd_sub, Θ, ← Submodule.norm_coe, Submodule.coe_sub, Pker,
+        ContinuousLinearMap.coe_codRestrict_apply] using norm_snd_le (Θ x - Θ y)
+    have hfC := mul_le_mul_of_nonneg_left hf hC.le
+    rw [Subtype.dist_eq, dist_eq_norm, dist_eq_norm, NNReal.coe_mk]
+    nlinarith [key (x : E) x.2 (y : E) y.2]
   have hΘcont : UniformContinuous Θ :=
     happN.lipschitzWith.uniformContinuous.prodMk
       (Pker.lipschitzWith.uniformContinuous.comp uniformContinuous_subtype_val)

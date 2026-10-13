@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Matrix.Charpoly.FiniteField
-public import Mathlib.RingTheory.Artinian.Module
+public import TauCeti.Algebra.MonoidAlgebra.Center
 public import TauCeti.Algebra.MonoidAlgebra.Trace
 public import TauCeti.FieldTheory.Finite.FrobeniusFixed
 public import TauCeti.RepresentationTheory.CharacterTable.ClassSum.Basis
@@ -56,7 +56,6 @@ general finite coefficient field; the specialization to `ZMod p` at a good Dixon
 
 * J. D. Dixon, *High speed computation of group characters*, Numerische Mathematik 10 (1967),
   446--450.
-* The roadmap `RepresentationTheory/CharacterTheory`, Layer 6, "The good-prime structure theorem".
 -/
 
 public section
@@ -112,22 +111,6 @@ end Frobenius
 
 /-! ### The splitting of the centre -/
 
-section Finiteness
-
-variable (K G : Type*) [CommRing K] [Finite K] [Group G] [Finite G]
-
-/-- The centre of a finite group algebra over a finite coefficient ring is finite: it is a finitely
-generated module over a finite ring, by its class-sum basis. -/
-instance instFiniteCenterMonoidAlgebra : Finite (Subalgebra.center K (MonoidAlgebra K G)) :=
-  Module.finite_of_finite K
-
-/-- The centre of a finite group algebra over a finite Artinian commutative ring is Artinian. -/
-instance instIsArtinianRingCenterMonoidAlgebra [IsArtinianRing K] :
-    IsArtinianRing (Subalgebra.center K (MonoidAlgebra K G)) :=
-  IsArtinianRing.of_finite K _
-
-end Finiteness
-
 section Splitting
 
 variable {K G : Type*} [Field K] [Fintype K] [Group G] [Finite G]
@@ -154,8 +137,6 @@ theorem algebraMap_center_quotient_bijective
     Function.Bijective
       (algebraMap K (Subalgebra.center K (MonoidAlgebra K G) ⧸ I.asIdeal)) := by
   have hmax := I.isMaximal
-  have : Finite (Subalgebra.center K (MonoidAlgebra K G) ⧸ I.asIdeal) :=
-    Finite.of_surjective _ Ideal.Quotient.mk_surjective
   refine algebraMap_bijective_of_pow_card_eq_self (K := K)
     (L := Subalgebra.center K (MonoidAlgebra K G) ⧸ I.asIdeal) fun x => ?_
   obtain ⟨z, rfl⟩ := Ideal.Quotient.mk_surjective x

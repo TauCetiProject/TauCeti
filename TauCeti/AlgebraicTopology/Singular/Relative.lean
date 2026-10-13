@@ -8,7 +8,7 @@ module
 public import Mathlib.AlgebraicTopology.SimplicialSet.Homology.Relative
 public import Mathlib.Topology.Category.TopCat.EpiMono
 public import Mathlib.Topology.Category.TopPair
-public import TauCeti.AlgebraicTopology.SimplicialSet.Homology.Relative
+public import TauCeti.AlgebraicTopology.SimplicialSet.Homology.Relative.Basic
 public import TauCeti.AlgebraicTopology.SimplicialSet.Restrict
 public import TauCeti.AlgebraicTopology.SimplicialSet.TopAdj
 public import TauCeti.AlgebraicTopology.Singular.Basic
@@ -23,6 +23,9 @@ category this gives the short exact sequence of chain complexes used to construc
 morphisms in relative singular homology.  A simplex of the singular pair restricted to a subcomplex
 of the ambient simplicial set comes from the subspace exactly when its image lies in the subspace
 (`TopPair.mem_range_restrict_hom_app_iff`).
+
+The quotient map on zeroth homology is an epimorphism already for preadditive coefficients with
+coproducts and homology.
 
 The construction follows the quotient-chain presentation in Eilenberg--Steenrod, *Foundations of
 Algebraic Topology*, Chapters I--III, and is implemented using Mathlib's `SSetPair` relative-chain
@@ -331,6 +334,10 @@ noncomputable abbrev singularHomologyπ (n : ℕ) :
     (toSSetPair.obj P).right.homology R n ⟶ P.singularHomology R n :=
   (toSSetPair.obj P).homologyπ R n
 
+/-- The map from ambient zeroth homology to relative zeroth homology is an epimorphism. -/
+instance : Epi (P.singularHomologyπ R 0) :=
+  HomologicalComplex.epi_homologyMap_of_epi_of_not_rel (P.singularChainComplexπ R) 0 (by simp)
+
 @[simp]
 lemma homologyMap_comp_singularHomologyπ (n : ℕ) :
     SSet.homologyMap (TopCat.toSSet.map P.map) R n ≫ P.singularHomologyπ R n = 0 := by
@@ -387,8 +394,29 @@ lemma singularHomologyδ_naturality {P P' : TopPair.{w}} (f : P ⟶ P') (n m : �
       TopPair.singularHomologyMap f R n ≫ P'.singularHomologyδ R n m h :=
   SSetPair.homologyδ_naturality (toSSetPair.map f) R n m h
 
-/-- The map from ambient zeroth homology to relative zeroth homology is an epimorphism. -/
-instance : Epi (P.singularHomologyπ R 0) := inferInstance
+/-- **The five lemma for relative singular homology.** A map of pairs `f : (X, A) ⟶ (X', A')`
+inducing isomorphisms `Hₙ(X) ≅ Hₙ(X')` and `Hₙ(A) ≅ Hₙ(A')`, and also `Hₘ(X) ≅ Hₘ(X')` and
+`Hₘ(A) ≅ Hₘ(A')` for `m + 1 = n`, induces an isomorphism `Hₙ(X, A) ≅ Hₙ(X', A')`. -/
+lemma isIso_singularHomologyMap_of_isIso {P P' : TopPair.{w}} (f : P ⟶ P') (n : ℕ)
+    (hfst : IsIso (SSet.homologyMap (TopCat.toSSet.map (Hom.fst f)) R n))
+    (hsnd : IsIso (SSet.homologyMap (TopCat.toSSet.map (Hom.snd f)) R n))
+    (hfst' : ∀ m, m + 1 = n → IsIso (SSet.homologyMap (TopCat.toSSet.map (Hom.fst f)) R m))
+    (hsnd' : ∀ m, m + 1 = n → IsIso (SSet.homologyMap (TopCat.toSSet.map (Hom.snd f)) R m)) :
+    IsIso (TopPair.singularHomologyMap f R n) := by
+  have := HomologicalComplex.HomologySequence.isIso_homologyMap_τ₃
+    (SSetPair.chainComplexShortComplexMap (toSSetPair.map f) R)
+    ((toSSetPair.obj P).shortExact_chainComplexShortComplex R)
+    ((toSSetPair.obj P').shortExact_chainComplexShortComplex R) n
+  simp only [SSetPair.chainComplexShortComplexMap_τ₁, SSetPair.chainComplexShortComplexMap_τ₂,
+    SSetPair.chainComplexShortComplexMap_τ₃, ComplexShape.down_Rel] at this
+  -- The homology maps of these chain maps are `SSet.homologyMap` and
+  -- `TopPair.singularHomologyMap` by definition.
+  have h₁ : IsIso (HomologicalComplex.homologyMap
+      (SSet.chainComplexMap (toSSetPair.map f).left R) n) := hsnd
+  exact this inferInstance hfst hsnd' fun m hm ↦
+    have : IsIso (HomologicalComplex.homologyMap
+        (SSet.chainComplexMap (toSSetPair.map f).right R) m) := hfst' m hm
+    inferInstance
 
 end LongExactSequence
 

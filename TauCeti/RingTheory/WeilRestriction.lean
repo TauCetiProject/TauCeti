@@ -386,11 +386,8 @@ theorem tensorHomEquiv_comp {T' : Type*} [CommRing T'] [Algebra A T']
     tensorHomEquiv A B D T' (k.comp g) =
       (Algebra.TensorProduct.map k (AlgHom.id A B)).comp (tensorHomEquiv A B D T g) := by
   ext d
-  rw [tensorHomEquiv_apply, homEquiv_comp, AlgHom.comp_apply, AlgHom.comp_apply,
-    tensorHomEquiv_apply]
-  induction homEquiv A B (B ⊗[A] D) T g (1 ⊗ₜ d) using TensorProduct.inductionOn with
-  | tmul b t => simp
-  | add x y hx hy => simp only [map_add, hx, hy]
+  simp only [tensorHomEquiv_apply, homEquiv_comp, AlgHom.comp_apply]
+  exact Algebra.TensorProduct.comm_comp_map_apply (AlgHom.id A B) k _
 
 end TensorHom
 

@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Analysis.Convex.Contractible
 public import Mathlib.GroupTheory.SemidirectProduct
-public import Mathlib.LinearAlgebra.UnitaryGroup
 public import TauCeti.GroupTheory.SpecificGroups.Heisenberg
 public import TauCeti.Geometry.Manifold.Riemannian.Coercive
 public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Action
@@ -36,7 +35,8 @@ automorphisms preserve `dx² + dy²` and multiply the form `dz - x dy` by `det g
 isometries.
 Together with left translations they give an injective homomorphism from the semidirect product
 `Nil ⋊ O(2)` into the isometry group of `Nil`. This is the whole isometry group of `Nil` (Scott,
-Section 4), but that every isometry is of this form is not proved here.
+Section 4): every isometry is of this form by `TauCeti.Nil.semidirectProductToIsom_surjective`, in
+`TauCeti.Geometry.Manifold.Riemannian.Nil.Stabilizer`.
 
 ## Main definitions
 
@@ -80,7 +80,7 @@ is a field of bilinear forms on that space (`TauCeti.coerciveRiemannianMetric`).
 
 public section
 
-open Bundle Manifold
+open Bundle
 open scoped ContDiff Manifold
 
 noncomputable section
@@ -485,8 +485,8 @@ private theorem inner_mfderiv_matrixHom {A : Matrix (Fin 2) (Fin 2) ℝ}
     simpa [Matrix.mul_apply] using congrFun (congrFun hA' 0) 1
   -- The determinant of an orthogonal matrix is `± 1`.
   have hdet : (A 0 0 * A 1 1 - A 0 1 * A 1 0) * (A 0 0 * A 1 1 - A 0 1 * A 1 0) = 1 := by
-    linear_combination (A 0 1 * A 0 1 + A 1 1 * A 1 1) * h₁ + h₂ -
-      (A 0 0 * A 0 1 + A 1 0 * A 1 1) * h₃
+    simpa only [Matrix.det_mul, Matrix.det_transpose, Matrix.det_one, Matrix.det_fin_two] using
+      congrArg Matrix.det hA'
   rw [inner_def, inner_def, tangentSpaceCastModel_mfderiv_matrixHom,
     tangentSpaceCastModel_mfderiv_matrixHom]
   set V := tangentSpaceCastModel 𝓘(ℝ, ℝ × ℝ × ℝ) q v
@@ -565,6 +565,22 @@ def orthogonalToIsom : Matrix.orthogonalGroup (Fin 2) ℝ →* Isom 𝓘(ℝ, �
 @[simp]
 theorem orthogonalToIsom_apply (g : Matrix.orthogonalGroup (Fin 2) ℝ) (p : Nil) :
     orthogonalToIsom g p = orthogonalMulAut g p := (rfl)
+
+/-- At the identity, an orthogonal Nil automorphism has differential `g` on the
+horizontal plane and multiplication by `det g` on the central line. -/
+@[simp]
+theorem tangentSpaceCastModel_mfderiv_orthogonalToIsom_one
+    (g : Matrix.orthogonalGroup (Fin 2) ℝ)
+    (v : TangentSpace 𝓘(ℝ, ℝ × ℝ × ℝ) (1 : Nil)) :
+    let u := tangentSpaceCastModel 𝓘(ℝ, ℝ × ℝ × ℝ) (1 : Nil) v
+    tangentSpaceCastModel 𝓘(ℝ, ℝ × ℝ × ℝ) (orthogonalToIsom g 1)
+      (mfderiv 𝓘(ℝ, ℝ × ℝ × ℝ) 𝓘(ℝ, ℝ × ℝ × ℝ) (orthogonalToIsom g) 1 v) =
+        (g.1 0 0 * u.1 + g.1 0 1 * u.2.1,
+          g.1 1 0 * u.1 + g.1 1 1 * u.2.1, g.1.det * u.2.2) := by
+  have hfun : (orthogonalToIsom g : Nil → Nil) = matrixHom g.1 := rfl
+  rw [hfun]
+  simpa [matrixDeriv, firstL, secondL, xL, yL, zL] using
+    tangentSpaceCastModel_mfderiv_matrixHom g.1 1 v
 
 /-- Distinct orthogonal matrices act by distinct isometries of `Nil`. -/
 theorem orthogonalToIsom_injective : Function.Injective orthogonalToIsom := fun _ _ h ↦

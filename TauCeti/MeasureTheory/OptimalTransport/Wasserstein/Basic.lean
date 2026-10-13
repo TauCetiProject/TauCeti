@@ -86,8 +86,16 @@ what the gluing lemma consumes.
   along a single coupling, and with
   `TauCeti.hasFiniteMoment_iff_forall_hasFiniteMoment_iff_wassersteinEDist_ne_top` recording that
   the finite-moment hypothesis on the anchor cannot be dropped;
+* `TauCeti.hasFiniteMoment_of_sum_mul_wassersteinEDist_pow_ne_top` — a law of finite weighted
+  Wasserstein cost against finitely many laws, one of positive weight and finite moment, has finite
+  moment;
 * `TauCeti.HasFiniteMoment.integrable_of_lipschitzWith` — a Lipschitz real function is integrable
   against a finite measure of finite first moment;
+* `TauCeti.HasFiniteMoment.memLp_id` — on a normed additive group, a finite measure of finite
+  `p`-moment has the identity in `L^p`, and `TauCeti.memLp_of_hasFiniteMoment_map` reads this off
+  for a function from its law; `TauCeti.integrable_norm_sub_sq_of_hasFiniteMoment` deduces that the
+  quadratic cost is integrable against a coupling of laws of finite second moment, and
+  `TauCeti.lintegral_edist_sq_eq_ofReal_integral` rewrites its transport integral as a real one;
 * `TauCeti.wassersteinEDist_rpow_eq_transportCost` and
   `TauCeti.wassersteinEDist_eq_transportCost_rpow` — for `0 < p < ∞`, the exact bridge to Layer 1's
   transport cost of `edist ^ p`, with `TauCeti.isOptimalCoupling_edist_rpow_iff` identifying the
@@ -763,9 +771,67 @@ theorem hasFiniteMoment_iff_forall_hasFiniteMoment_iff_wassersteinEDist_ne_top
         (measurable_id.prodMk measurable_id).aemeasurable]
       exact eLpNorm_eq_zero_of_ae_zero (.of_forall fun x ↦ edist_self x))⟩
 
+/-- A probability law of finite weighted Wasserstein cost `∑ j ∈ s, w j * W_p(ν, μ j) ^ n` has
+finite `p`-moment, provided some law `μ i` with `i ∈ s` of positive weight has finite `p`-moment
+and `n ≠ 0`: the corresponding summand bounds `W_p(ν, μ i)`. -/
+theorem hasFiniteMoment_of_sum_mul_wassersteinEDist_pow_ne_top
+    (hd : Measurable fun z : X × X ↦ edist z.1 z.2) {ι : Type*} {s : Finset ι} {w : ι → ℝ≥0∞}
+    {μ : ι → Measure X} {ν : Measure X} [IsProbabilityMeasure ν] {i : ι} (hi : i ∈ s)
+    (hwi : w i ≠ 0) [IsProbabilityMeasure (μ i)] (hμ : HasFiniteMoment p (μ i)) {n : ℕ}
+    (hn : n ≠ 0) (h : ∑ j ∈ s, w j * wassersteinEDist p ν (μ j) ^ n ≠ ∞) :
+    HasFiniteMoment p ν := by
+  have hi' : w i * wassersteinEDist p ν (μ i) ^ n ≠ ∞ :=
+    ne_top_of_le_ne_top h (Finset.single_le_sum (f := fun j ↦ w j * wassersteinEDist p ν (μ j) ^ n)
+      (fun _ _ ↦ bot_le) hi)
+  rw [hasFiniteMoment_iff_wassersteinEDist_ne_top_of_hasFiniteMoment hd hμ,
+    wassersteinEDist_comm hd]
+  exact fun htop ↦ hi' (by rw [htop, ENNReal.top_pow hn, ENNReal.mul_top hwi])
+
 end Anchor
 
 end MetricMoment
+
+section NormedMoment
+
+variable {E : Type*} [NormedAddCommGroup E] [MeasurableSpace E]
+
+/-- For an integrable quadratic cost, the transport integral of the squared extended distance is
+the real transport integral of the squared norm of the displacement. -/
+theorem lintegral_edist_sq_eq_ofReal_integral {π : Measure (E × E)}
+    (hπ : Integrable (fun z : E × E ↦ ‖z.1 - z.2‖ ^ 2) π) :
+    ∫⁻ z, edist z.1 z.2 ^ 2 ∂π = ENNReal.ofReal (∫ z, ‖z.1 - z.2‖ ^ 2 ∂π) := by
+  rw [ofReal_integral_eq_lintegral_ofReal hπ (.of_forall fun z ↦ by positivity)]
+  refine lintegral_congr fun z ↦ ?_
+  rw [edist_dist, dist_eq_norm, ENNReal.ofReal_pow (norm_nonneg _)]
+
+variable [OpensMeasurableSpace E] [SecondCountableTopology E]
+
+/-- On a normed additive group, a finite measure with finite `p`-moment has the identity in
+`L^p`: its distance from the basepoint `0` is the norm. -/
+theorem HasFiniteMoment.memLp_id {ν : Measure E} [IsFiniteMeasure ν] (h : HasFiniteMoment p ν) :
+    MemLp id p ν :=
+  (memLp_congr_enorm aestronglyMeasurable_id measurable_edist_right.aestronglyMeasurable
+    (.of_forall fun x ↦ by simp [edist_eq_enorm_sub])).2
+    (h.memLp (x := 0) measurable_edist_right.aestronglyMeasurable)
+
+/-- A function whose law under a finite measure has finite `q`-th moment lies in `Lq`. -/
+theorem memLp_of_hasFiniteMoment_map {α : Type*} [MeasurableSpace α] {π : Measure α}
+    [IsFiniteMeasure π] {f : α → E} (hf : Measurable f) (h : HasFiniteMoment q (π.map f)) :
+    MemLp f q π :=
+  (memLp_map_measure_iff aestronglyMeasurable_id hf.aemeasurable).1 h.memLp_id
+
+/-- The quadratic cost `‖x - y‖²` is integrable against a finite measure on `E × E` whose two
+marginals have finite second moment. -/
+theorem integrable_norm_sub_sq_of_hasFiniteMoment {π : Measure (E × E)} [IsFiniteMeasure π]
+    (h₁ : HasFiniteMoment 2 π.fst) (h₂ : HasFiniteMoment 2 π.snd) :
+    Integrable (fun z : E × E ↦ ‖z.1 - z.2‖ ^ 2) π := by
+  rw [Measure.fst] at h₁
+  rw [Measure.snd] at h₂
+  exact (memLp_two_iff_integrable_sq_norm (by fun_prop)).1 <|
+    (memLp_of_hasFiniteMoment_map measurable_fst h₁).sub
+      (memLp_of_hasFiniteMoment_map measurable_snd h₂)
+
+end NormedMoment
 
 section Bridge
 

@@ -13,8 +13,8 @@ import TauCeti.Algebra.CharP.Lemmas
 import TauCeti.Algebra.Group.Pow
 import TauCeti.FieldTheory.Finite.PowAddSelf
 import TauCeti.FieldTheory.IntermediateField.Adjoin.EqTop
-import TauCeti.FieldTheory.IntermediateField.Adjoin.Transcendental
 import TauCeti.FieldTheory.RatFunc.Transcendental
+import TauCeti.RingTheory.Algebraic.Basic
 
 /-!
 # The translations of the Hermitian function field

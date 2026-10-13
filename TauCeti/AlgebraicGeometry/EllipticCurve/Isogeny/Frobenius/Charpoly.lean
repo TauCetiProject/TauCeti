@@ -28,7 +28,7 @@ proves the Frobenius identities
 in the endomorphisms of `W` (Silverman V.2.3.1). The first says that `π` is a root of
 `X² - a_q X + q`; the second, with `π ∘ π̂ = [q]`, says that `π` and `π̂` are the two roots.
 
-The proof works on torsion over a separably closed algebraic extension `K` of `F`. For a prime
+The proof works on torsion over a separably closed extension `K` of `F`. For a prime
 `ℓ ≠ char F`, the base-changed Frobenius acts on `E[ℓ]` by a `2 × 2` matrix over `ZMod ℓ` of
 determinant `q`, through the Weil pairing, and with `det (1 - M) = deg (id - π) = #E(𝔽_q)`; so its
 trace is `a_q` modulo `ℓ`, and the Cayley–Hamilton theorem kills `π² - a_q π + q` on `E[ℓ]`. An
@@ -60,9 +60,9 @@ variable {F : Type*} [Field F] [Finite F] (W : WeierstrassCurve.Affine F) [W.IsE
 
 namespace Hom
 
-variable {K : Type*} [Field K] [Algebra F K] [IsSepClosed K] [Algebra.IsAlgebraic F K]
+variable {K : Type*} [Field K] [Algebra F K] [IsSepClosed K]
 
-/-- Over a separably closed algebraic extension, `π ∘ π` and `a_q π - q` act alike on `E[ℓ]` for
+/-- Over a separably closed extension, `π ∘ π` and `a_q π - q` act alike on `E[ℓ]` for
 every prime `ℓ` invertible in the field: the matrix of `π` there has determinant `q` and trace
 `a_q`, and satisfies its characteristic polynomial. -/
 private theorem torsionLinearMap_baseChangeFrobenius_comp [DecidableEq K] {ℓ : ℕ}
@@ -78,14 +78,11 @@ private theorem torsionLinearMap_baseChangeFrobenius_comp [DecidableEq K] {ℓ :
   have hdet : M.det = (Nat.card F : ZMod ℓ) := by
     rw [LinearMap.det_toMatrix]
     exact det_torsionLinearMap_ofIsogeny_baseChangeFrobenius W hℓK
-  -- `id - π` is the separable pencil at `r = s = -1`, so its determinant is its degree `#E(𝔽_q)`
+  -- the determinant of `id - π` is its degree `#E(𝔽_q)`
   have hdetOneSub : (1 - M).det = (W.pointCount : ZMod ℓ) := by
-    have h := det_torsionLinearMap_zsmul_ofIsogeny_baseChangeFrobenius_sub_zsmul_id W hℓK
-      (-1) (-1) (by simp)
-    rw [neg_one_zsmul, neg_one_zsmul, neg_sub_neg,
-      degree_id_sub_ofIsogeny_baseChangeFrobenius_eq_pointCount] at h
-    rw [← h, ← LinearMap.det_toMatrix b, torsionLinearMap_sub, torsionLinearMap_id,
-      _root_.map_sub, LinearMap.toMatrix_id]
+    rw [← degree_id_sub_ofIsogeny_baseChangeFrobenius_eq_pointCount (K := K) W,
+      ← det_torsionLinearMap hℓK, ← LinearMap.det_toMatrix b, torsionLinearMap_sub,
+      torsionLinearMap_id, _root_.map_sub, LinearMap.toMatrix_id]
   -- so the trace of `M` is `q + 1 - #E(𝔽_q) = a_q`
   have htrace : M.trace = (W.frobeniusTrace : ZMod ℓ) := by
     have h := TauCeti.Matrix.det_smul_sub_smul_one_fin_two M (-1) (-1)
@@ -103,7 +100,7 @@ private theorem torsionLinearMap_baseChangeFrobenius_comp [DecidableEq K] {ℓ :
     _root_.map_nsmul, LinearMap.toMatrix_id b, ← sub_eq_zero, ← hcayley]
   abel
 
-/-- Over a separably closed algebraic extension, the base-changed Frobenius satisfies
+/-- Over a separably closed extension, the base-changed Frobenius satisfies
 `π ∘ π = a_q π - q`, by rigidity on prime torsion. -/
 private theorem baseChangeFrobenius_comp_baseChangeFrobenius :
     (ofIsogeny (baseChangeFrobenius K W)).comp (ofIsogeny (baseChangeFrobenius K W)) =

@@ -53,6 +53,10 @@ cubic `y² = x³ − s` is singular only at `(s^{1/3}, 0)`, which is not rationa
   an equation, the reduction is split multiplicative exactly when `π ∤ b₂` and `T² + a₁ T − a₂`
   splits over the residue field.
 
+* `WeierstrassCurve.dvd_b₄_and_dvd_b₆_and_sq_dvd_b₈_of_dvd_b₂_of_dvd_a₃_of_dvd_a₄_of_dvd_a₆`
+  and `WeierstrassCurve.sq_dvd_Δ_of_dvd_b₂_of_dvd_a₃_of_dvd_a₄_of_dvd_a₆`: the invariant and
+  discriminant divisibilities of the additive Step 2 normal form.
+
 ## References
 
 * J. H. Silverman, *Advanced Topics in the Arithmetic of Elliptic Curves*, GTM 151, IV.9,
@@ -172,5 +176,45 @@ theorem hasSplitMultiplicativeReduction_iff_reduction_b₂_ne_zero_and_splits
 end DiscreteValuationRing
 
 end WeierstrassCurve
+
+namespace TauCeti
+
+variable {R : Type*} [CommRing R] (W : WeierstrassCurve R) (ϖ : R)
+
+/-- In the additive Step 2 normal form, `ϖ` divides `b₄` and `b₆`, and `ϖ²` divides
+`b₈`. The last assertion uses `ϖ ∣ b₂` as well as the singularity at the origin. -/
+theorem
+    _root_.WeierstrassCurve.dvd_b₄_and_dvd_b₆_and_sq_dvd_b₈_of_dvd_b₂_of_dvd_a₃_of_dvd_a₄_of_dvd_a₆
+    (hb₂ : ϖ ∣ W.b₂) (h₃ : ϖ ∣ W.a₃) (h₄ : ϖ ∣ W.a₄) (h₆ : ϖ ∣ W.a₆) :
+    ϖ ∣ W.b₄ ∧ ϖ ∣ W.b₆ ∧ ϖ ^ 2 ∣ W.b₈ := by
+  obtain ⟨B₂, hB₂⟩ := hb₂
+  obtain ⟨A₃, hA₃⟩ := h₃
+  obtain ⟨A₄, hA₄⟩ := h₄
+  obtain ⟨A₆, hA₆⟩ := h₆
+  refine ⟨⟨W.a₁ * A₃ + 2 * A₄, ?_⟩, ⟨ϖ * A₃ ^ 2 + 4 * A₆, ?_⟩,
+    ⟨B₂ * A₆ - W.a₁ * A₃ * A₄ + W.a₂ * A₃ ^ 2 - A₄ ^ 2, ?_⟩⟩
+  · rw [WeierstrassCurve.b₄, hA₃, hA₄]; ring
+  · rw [WeierstrassCurve.b₆, hA₃, hA₆]; ring
+  · rw [WeierstrassCurve.b₂] at hB₂
+    rw [WeierstrassCurve.b₈, hA₃, hA₄, hA₆]
+    linear_combination (ϖ * A₆) * hB₂
+
+/-- The additive Step 2 normal form has discriminant divisible by `ϖ²`. -/
+theorem _root_.WeierstrassCurve.sq_dvd_Δ_of_dvd_b₂_of_dvd_a₃_of_dvd_a₄_of_dvd_a₆
+    (hb₂ : ϖ ∣ W.b₂) (h₃ : ϖ ∣ W.a₃) (h₄ : ϖ ∣ W.a₄) (h₆ : ϖ ∣ W.a₆) :
+    ϖ ^ 2 ∣ W.Δ := by
+  obtain ⟨hb₄, hb₆, hb₈⟩ :=
+    W.dvd_b₄_and_dvd_b₆_and_sq_dvd_b₈_of_dvd_b₂_of_dvd_a₃_of_dvd_a₄_of_dvd_a₆
+      ϖ hb₂ h₃ h₄ h₆
+  obtain ⟨B₂, hB₂⟩ := hb₂
+  obtain ⟨B₄, hB₄⟩ := hb₄
+  obtain ⟨B₆, hB₆⟩ := hb₆
+  obtain ⟨B₈, hB₈⟩ := hb₈
+  refine ⟨-ϖ ^ 2 * B₂ ^ 2 * B₈ - 8 * ϖ * B₄ ^ 3 - 27 * B₆ ^ 2 +
+    9 * ϖ * B₂ * B₄ * B₆, ?_⟩
+  rw [WeierstrassCurve.Δ, hB₂, hB₄, hB₆, hB₈]
+  ring
+
+end TauCeti
 
 end

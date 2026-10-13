@@ -7,8 +7,12 @@ module
 
 public import Mathlib.AlgebraicGeometry.EllipticCurve.Reduction
 public import Mathlib.FieldTheory.Perfect
+import TauCeti.AlgebraicGeometry.EllipticCurve.IntegralModel
+import TauCeti.AlgebraicGeometry.EllipticCurve.TateAlgorithm.Basic
 import TauCeti.AlgebraicGeometry.EllipticCurve.MinimalModel.Basic
+import TauCeti.AlgebraicGeometry.EllipticCurve.VariableChange
 import TauCeti.RingTheory.LocalRing.QuadraticDoubleRoot
+import TauCeti.RingTheory.Valuation.Discrete.IsDiscreteValuationRing
 
 /-!
 # Tate's algorithm: the additive normal form and the non-minimality test
@@ -38,7 +42,12 @@ in characteristic `2` this is a square root, which is where perfectness enters. 
 
 The algorithm stops at Step 11 when `ϖⁱ ∣ aᵢ` for every `i`. The substitution `x ↦ ϖ² x`,
 `y ↦ ϖ³ y` then divides each `aᵢ` by `ϖⁱ` and the discriminant by `ϖ¹²`, so the equation was not
-minimal; `WeierstrassCurve.not_isMinimal_baseChange_of_pow_dvd` records this.
+minimal; `WeierstrassCurve.not_isMinimal_baseChange_of_pow_dvd` records this. Conversely, every
+non-minimal equation is carried to this form by a translation over `R`
+(`WeierstrassCurve.exists_variableChange_pow_dvd_a₁_a₂_a₃_a₄_a₆_of_not_isMinimal`): a change of
+variables to an integral model of smaller discriminant has `ϖ ∣ u`, and its translation part is
+integral. So an equation with nonzero discriminant is minimal exactly when no translation over `R`
+brings it to the form of Step 11.
 
 ## Main results
 
@@ -48,11 +57,21 @@ minimal; `WeierstrassCurve.not_isMinimal_baseChange_of_pow_dvd` records this.
 * `WeierstrassCurve.not_isMinimal_baseChange_of_pow_dvd`: **Step 11 of Tate's algorithm**. An
   equation over `R` with nonzero discriminant and `ϖⁱ ∣ aᵢ` for `i = 1, 2, 3, 4, 6` is not minimal
   over the fraction field.
+* `WeierstrassCurve.exists_variableChange_pow_dvd_a₁_a₂_a₃_a₄_a₆_of_not_isMinimal` and
+  `WeierstrassCurve.isMinimal_baseChange_iff_forall_not_pow_dvd_a₁_a₂_a₃_a₄_a₆`: conversely, a
+  non-minimal equation is carried to the form of Step 11 by a change of variables over `R`.
+
+* `WeierstrassCurve.pow_three_dvd_Δ_of_dvd_b₂_of_dvd_a₃_of_dvd_a₄_of_sq_dvd_a₆`,
+  `WeierstrassCurve.pow_four_dvd_Δ_of_dvd_b₂_of_sq_dvd_b₆_of_pow_three_dvd_b₈`, and
+  `WeierstrassCurve.pow_five_dvd_Δ_of_dvd_b₂_of_pow_three_dvd_b₆_of_pow_three_dvd_b₈`:
+  discriminant bounds at the early additive tests;
+  `WeierstrassCurve.sq_dvd_b₄_of_dvd_b₂_of_sq_dvd_b₆_of_pow_three_dvd_b₈` supplies the Step 4 bound.
 
 ## References
 
 * J. H. Silverman, *Advanced Topics in the Arithmetic of Elliptic Curves*, GTM 151, IV.9,
   Steps 3 to 6 and Step 11 of Tate's algorithm.
+* J. H. Silverman, *The Arithmetic of Elliptic Curves*, GTM 106, VII.1.3.
 * J. Tate, *Algorithm for determining the type of a singular fibre in an elliptic pencil*, in
   *Modular Functions of One Variable IV*, LNM 476 (1975), 33–52.
 -/
@@ -173,6 +192,170 @@ theorem not_isMinimal_baseChange_of_pow_dvd (hϖ : Irreducible ϖ) (W : Weierstr
   rw [one_mul] at this
   exact (this.trans_le hle).false
 
+open IsDiscreteValuationRing IsDedekindDomain.HeightOneSpectrum in
+/-- **The converse of Step 11 of Tate's algorithm.** If the base change of a Weierstrass equation
+over `R` to the fraction field `K` is not minimal over `R`, then a translation `x ↦ x + r`,
+`y ↦ y + s x + t` with `r`, `s`, `t ∈ R` carries it to an equation with `ϖ ∣ a₁`, `ϖ² ∣ a₂`,
+`ϖ³ ∣ a₃`, `ϖ⁴ ∣ a₄` and `ϖ⁶ ∣ a₆`. -/
+theorem exists_variableChange_pow_dvd_a₁_a₂_a₃_a₄_a₆_of_not_isMinimal (hϖ : Irreducible ϖ)
+    (W : WeierstrassCurve R) (h : ¬ IsMinimal R (W.baseChange K)) :
+    ∃ r s t : R, ϖ ∣ (VariableChange.mk 1 r s t • W).a₁ ∧
+      ϖ ^ 2 ∣ (VariableChange.mk 1 r s t • W).a₂ ∧ ϖ ^ 3 ∣ (VariableChange.mk 1 r s t • W).a₃ ∧
+      ϖ ^ 4 ∣ (VariableChange.mk 1 r s t • W).a₄ ∧ ϖ ^ 6 ∣ (VariableChange.mk 1 r s t • W).a₆ := by
+  have : IsIntegral R (W.baseChange K) := ⟨⟨W, rfl⟩⟩
+  -- Non-minimality provides an integral model `D • W` whose discriminant has larger valuation.
+  obtain ⟨D, hD, hlt⟩ : ∃ D : VariableChange K, IsIntegral R (D • W.baseChange K) ∧
+      valuation K (maximalIdeal R) (W.baseChange K).Δ <
+        valuation K (maximalIdeal R) (D • W.baseChange K).Δ := by
+    by_contra! hD
+    refine h ⟨⟨by simpa using ‹IsIntegral R (W.baseChange K)›, fun C hC _ ↦ ?_⟩⟩
+    have : IsIntegral R (C • W.baseChange K) := hC
+    simp only [one_smul, ← Subtype.coe_le_coe, valuation_Δ_aux_eq_of_isIntegral]
+    exact hD C hC
+  -- So `v (u⁻¹) > 1`, and `u` is the image of an element `u₀` of `R` divisible by `ϖ`.
+  rw [variableChange_Δ, map_mul, map_pow] at hlt
+  have hu : 1 < valuation K (maximalIdeal R) ↑D.u⁻¹ := by
+    by_contra! hu
+    exact (mul_le_of_le_one_left' (pow_le_one' hu 12)).not_gt hlt
+  obtain ⟨u₀, hu₀⟩ : IsLocalization.IsInteger R (D.u : K) := by
+    refine (ValuationRing.isInteger_or_isInteger R (D.u : K)).resolve_right fun ⟨w, hw⟩ ↦ ?_
+    rw [Units.val_inv_eq_inv_val, ← hw] at hu
+    exact (valuation_le_one _ w).not_gt hu
+  have hϖu : ϖ ∣ u₀ := by
+    rw [← hϖ.valuation_algebraMap_lt_one_iff_dvd (K := K), hu₀]
+    rw [Units.val_inv_eq_inv_val, map_inv₀] at hu
+    simpa using inv_lt_one_of_one_lt₀ hu
+  -- The translation part of `D` is integral, and `W` translated by it has the coefficients
+  -- `u₀ⁱ aᵢ'`, where `aᵢ'` are those of the integral model `D • W`.
+  obtain ⟨⟨r₀, hr⟩, ⟨s₀, hs⟩, ⟨t₀, ht⟩⟩ :=
+    VariableChange.isInteger_r_s_t_of_smul_eq R (W₁ := W.baseChange K) D rfl u₀ hu₀
+  have : IsIntegral R (D • W.baseChange K) := hD
+  set W' := (D • W.baseChange K).integralModel R
+  have hW' : W'.baseChange K = D • W.baseChange K := baseChange_integralModel_eq R _
+  have key (i : ℕ) (x y : R) (hxy : algebraMap R K x = algebraMap R K u₀ ^ i * algebraMap R K y) :
+      ϖ ^ i ∣ x := by
+    rw [← map_pow, ← map_mul] at hxy
+    rw [IsFractionRing.injective R K hxy]
+    exact dvd_mul_of_dvd_left (pow_dvd_pow_of_dvd hϖu i) _
+  have e₁ : algebraMap R K W'.a₁ = (D • W.baseChange K).a₁ := by rw [← hW', baseChange, map_a₁]
+  have e₂ : algebraMap R K W'.a₂ = (D • W.baseChange K).a₂ := by rw [← hW', baseChange, map_a₂]
+  have e₃ : algebraMap R K W'.a₃ = (D • W.baseChange K).a₃ := by rw [← hW', baseChange, map_a₃]
+  have e₄ : algebraMap R K W'.a₄ = (D • W.baseChange K).a₄ := by rw [← hW', baseChange, map_a₄]
+  have e₆ : algebraMap R K W'.a₆ = (D • W.baseChange K).a₆ := by rw [← hW', baseChange, map_a₆]
+  refine ⟨r₀, s₀, t₀, pow_one ϖ ▸ key 1 _ W'.a₁ ?_, key 2 _ W'.a₂ ?_, key 3 _ W'.a₃ ?_,
+    key 4 _ W'.a₄ ?_, key 6 _ W'.a₆ ?_⟩
+  all_goals
+    simp only [variableChange_a₁, variableChange_a₂, variableChange_a₃, variableChange_a₄,
+      variableChange_a₆, e₁, e₂, e₃, e₄, e₆, baseChange, map_a₁, map_a₂, map_a₃, map_a₄, map_a₆,
+      hu₀, hr, hs, ht, map_add, map_sub, map_mul, map_pow, map_ofNat, inv_one, Units.val_one,
+      one_mul, one_pow, Units.val_inv_eq_inv_val]
+    field_simp
+
+/-- **Step 11 of Tate's algorithm decides minimality.** A Weierstrass equation over `R` with
+nonzero discriminant is minimal over the fraction field exactly when no change of variables over
+`R` carries it to an equation with `ϖ ∣ a₁`, `ϖ² ∣ a₂`, `ϖ³ ∣ a₃`, `ϖ⁴ ∣ a₄` and `ϖ⁶ ∣ a₆`. -/
+theorem isMinimal_baseChange_iff_forall_not_pow_dvd_a₁_a₂_a₃_a₄_a₆ (hϖ : Irreducible ϖ)
+    (W : WeierstrassCurve R) (hΔ : W.Δ ≠ 0) :
+    IsMinimal R (W.baseChange K) ↔ ∀ C : VariableChange R, ¬ (ϖ ∣ (C • W).a₁ ∧
+      ϖ ^ 2 ∣ (C • W).a₂ ∧ ϖ ^ 3 ∣ (C • W).a₃ ∧ ϖ ^ 4 ∣ (C • W).a₄ ∧ ϖ ^ 6 ∣ (C • W).a₆) := by
+  refine ⟨fun _ C ⟨h₁, h₂, h₃, h₄, h₆⟩ ↦ ?_, fun h ↦ by_contra fun hmin ↦ ?_⟩
+  · refine not_isMinimal_baseChange_of_pow_dvd (K := K) hϖ (C • W)
+      (by simpa [variableChange_Δ] using hΔ) h₁ h₂ h₃ h₄ h₆ ?_
+    rw [← baseChange_smul_baseChange]
+    infer_instance
+  · obtain ⟨r, s, t, hC⟩ := exists_variableChange_pow_dvd_a₁_a₂_a₃_a₄_a₆_of_not_isMinimal hϖ W hmin
+    exact h _ hC
+
 end WeierstrassCurve
+
+namespace TauCeti
+
+variable {R : Type*} [CommRing R] (W : WeierstrassCurve R) (ϖ : R)
+
+/-- If the Step 3 test fails (`ϖ² ∣ a₆`), the discriminant is divisible by `ϖ³`.
+The coefficient conditions are those of the Step 2 normal form. -/
+theorem _root_.WeierstrassCurve.pow_three_dvd_Δ_of_dvd_b₂_of_dvd_a₃_of_dvd_a₄_of_sq_dvd_a₆
+    (hb₂ : ϖ ∣ W.b₂) (h₃ : ϖ ∣ W.a₃) (h₄ : ϖ ∣ W.a₄) (h₆ : ϖ ^ 2 ∣ W.a₆) :
+    ϖ ^ 3 ∣ W.Δ := by
+  have h₆one : ϖ ∣ W.a₆ := (dvd_pow_self ϖ (by decide : 2 ≠ 0)).trans h₆
+  have hb₈ : ϖ ^ 2 ∣ W.b₈ :=
+    (W.dvd_b₄_and_dvd_b₆_and_sq_dvd_b₈_of_dvd_b₂_of_dvd_a₃_of_dvd_a₄_of_dvd_a₆
+      ϖ hb₂ h₃ h₄ h₆one).2.2
+  obtain ⟨B₂, hB₂⟩ := hb₂
+  obtain ⟨A₃, hA₃⟩ := h₃
+  obtain ⟨A₄, hA₄⟩ := h₄
+  obtain ⟨A₆, hA₆⟩ := h₆
+  have hB₄ : W.b₄ = ϖ * (W.a₁ * A₃ + 2 * A₄) := by
+    rw [WeierstrassCurve.b₄, hA₃, hA₄]; ring
+  have hB₆ : W.b₆ = ϖ ^ 2 * (A₃ ^ 2 + 4 * A₆) := by
+    rw [WeierstrassCurve.b₆, hA₃, hA₆]; ring
+  obtain ⟨B₈, hB₈⟩ := hb₈
+  refine ⟨-ϖ * B₂ ^ 2 * B₈ - 8 * (W.a₁ * A₃ + 2 * A₄) ^ 3 -
+    27 * ϖ * (A₃ ^ 2 + 4 * A₆) ^ 2 +
+    9 * ϖ * B₂ * (W.a₁ * A₃ + 2 * A₄) * (A₃ ^ 2 + 4 * A₆), ?_⟩
+  rw [WeierstrassCurve.Δ, hB₂, hB₄, hB₆, hB₈]
+  ring
+
+/-- At Step 4, the failed `b₈` test forces `ϖ² ∣ b₄` from
+`4 b₈ = b₂ b₆ - b₄²`. No restriction on the residue characteristic is needed. -/
+theorem _root_.WeierstrassCurve.sq_dvd_b₄_of_dvd_b₂_of_sq_dvd_b₆_of_pow_three_dvd_b₈
+    [IsDomain R]
+    (hϖ : Prime ϖ) (hb₂ : ϖ ∣ W.b₂) (hb₆ : ϖ ^ 2 ∣ W.b₆)
+    (hb₈ : ϖ ^ 3 ∣ W.b₈) : ϖ ^ 2 ∣ W.b₄ := by
+  have heq : W.b₄ ^ 2 = W.b₂ * W.b₆ - 4 * W.b₈ := by
+    linear_combination W.b_relation
+  have hsq : ϖ ^ 3 ∣ W.b₄ ^ 2 := by
+    rw [heq]
+    obtain ⟨B₂, hB₂⟩ := hb₂
+    obtain ⟨B₆, hB₆⟩ := hb₆
+    obtain ⟨B₈, hB₈⟩ := hb₈
+    refine ⟨B₂ * B₆ - 4 * B₈, ?_⟩
+    rw [hB₂, hB₆, hB₈]
+    ring
+  have hp : ϖ ∣ W.b₄ := hϖ.dvd_of_dvd_pow
+    ((dvd_pow_self ϖ (by decide : 3 ≠ 0)).trans hsq)
+  obtain ⟨B₄, hB₄⟩ := hp
+  have hB₄sq : ϖ ∣ B₄ ^ 2 := by
+    rw [hB₄, mul_pow] at hsq
+    rw [pow_succ ϖ 2] at hsq
+    exact (mul_dvd_mul_iff_left (pow_ne_zero 2 hϖ.ne_zero)).1 hsq
+  obtain ⟨C₄, hC₄⟩ := hϖ.dvd_of_dvd_pow hB₄sq
+  exact ⟨C₄, by rw [hB₄, hC₄]; ring⟩
+
+/-- If the Step 4 test fails (`ϖ³ ∣ b₈`), then `ϖ⁴` divides the discriminant.
+The `ϖ² ∣ b₆` hypothesis already follows from the failed Step 3 test. -/
+theorem _root_.WeierstrassCurve.pow_four_dvd_Δ_of_dvd_b₂_of_sq_dvd_b₆_of_pow_three_dvd_b₈
+    [IsDomain R]
+    (hϖ : Prime ϖ) (hb₂ : ϖ ∣ W.b₂) (hb₆ : ϖ ^ 2 ∣ W.b₆)
+    (hb₈ : ϖ ^ 3 ∣ W.b₈) : ϖ ^ 4 ∣ W.Δ := by
+  have hb₄ := W.sq_dvd_b₄_of_dvd_b₂_of_sq_dvd_b₆_of_pow_three_dvd_b₈ ϖ hϖ hb₂ hb₆ hb₈
+  obtain ⟨B₂, hB₂⟩ := hb₂
+  obtain ⟨B₄, hB₄⟩ := hb₄
+  obtain ⟨B₆, hB₆⟩ := hb₆
+  obtain ⟨B₈, hB₈⟩ := hb₈
+  refine ⟨-ϖ * B₂ ^ 2 * B₈ - 8 * ϖ ^ 2 * B₄ ^ 3 - 27 * B₆ ^ 2 +
+    9 * ϖ * B₂ * B₄ * B₆, ?_⟩
+  rw [WeierstrassCurve.Δ, hB₂, hB₄, hB₆, hB₈]
+  ring
+
+/-- If the Step 5 test also fails (`ϖ³ ∣ b₆`), then `ϖ⁵` divides the discriminant.
+This is the discriminant bound at the entry to Step 6, before its normalising change of
+variables. -/
+theorem _root_.WeierstrassCurve.pow_five_dvd_Δ_of_dvd_b₂_of_pow_three_dvd_b₆_of_pow_three_dvd_b₈
+    [IsDomain R] (hϖ : Prime ϖ) (hb₂ : ϖ ∣ W.b₂) (hb₆ : ϖ ^ 3 ∣ W.b₆)
+    (hb₈ : ϖ ^ 3 ∣ W.b₈) : ϖ ^ 5 ∣ W.Δ := by
+  have hb₆two : ϖ ^ 2 ∣ W.b₆ :=
+    (pow_dvd_pow ϖ (by decide : 2 ≤ 3)).trans hb₆
+  have hb₄ := W.sq_dvd_b₄_of_dvd_b₂_of_sq_dvd_b₆_of_pow_three_dvd_b₈ ϖ hϖ hb₂ hb₆two hb₈
+  obtain ⟨B₂, hB₂⟩ := hb₂
+  obtain ⟨B₄, hB₄⟩ := hb₄
+  obtain ⟨B₆, hB₆⟩ := hb₆
+  obtain ⟨B₈, hB₈⟩ := hb₈
+  refine ⟨-B₂ ^ 2 * B₈ - 8 * ϖ * B₄ ^ 3 - 27 * ϖ * B₆ ^ 2 +
+    9 * ϖ * B₂ * B₄ * B₆, ?_⟩
+  rw [WeierstrassCurve.Δ, hB₂, hB₄, hB₆, hB₈]
+  ring
+
+end TauCeti
 
 end

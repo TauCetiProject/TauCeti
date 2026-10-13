@@ -51,4 +51,35 @@ theorem exists_unit_sq_eq_five_sub_four_mul {r : ZMod (2 ^ (k + 1))} (hr : IsUni
     rw [hu]
     ring
 
+/-- Odd integer coefficients congruent modulo eight differ by a unit square modulo
+any positive power of two. The square multiplies the second coefficient to the first. -/
+theorem exists_unit_sq_mul_intCast_eq_of_modEq_eight (k : ℕ) {θ η : ℤ}
+    (hη : Odd η) (h : θ ≡ η [ZMOD 8]) :
+    ∃ u : (ZMod (2 ^ (k + 1)))ˣ, (η : ZMod (2 ^ (k + 1))) * (u : ZMod (2 ^ (k + 1))) ^ 2 = θ := by
+  have hunit : IsUnit (η : ZMod (2 ^ (k + 1))) := by
+    obtain ⟨t, rfl⟩ := hη
+    convert isUnit_two_mul_add (c := (t : ZMod (2 ^ (k + 1)))) isUnit_one using 1
+    push_cast
+    ring
+  obtain ⟨Η, hΗ⟩ := hunit
+  obtain ⟨d, hd⟩ := Int.modEq_iff_dvd.mp h
+  have hcast : (η : ZMod (2 ^ (k + 1))) - θ = 8 * d := by
+    have hc := congrArg (fun z : ℤ ↦ (z : ZMod (2 ^ (k + 1)))) hd
+    push_cast at hc
+    exact hc
+  let c : ZMod (2 ^ (k + 1)) := -(d : ZMod (2 ^ (k + 1))) *
+    (Η⁻¹ : (ZMod (2 ^ (k + 1)))ˣ)
+  obtain ⟨u, hu⟩ := exists_unit_sq_eq_one_add_eight_mul c
+  refine ⟨u, ?_⟩
+  rw [hu]
+  dsimp [c]
+  have hinv : (η : ZMod (2 ^ (k + 1))) * (Η⁻¹ : (ZMod (2 ^ (k + 1)))ˣ) = 1 := by
+    rw [← hΗ, Units.mul_inv]
+  calc
+    (η : ZMod (2 ^ (k + 1))) * (1 + 8 * (-d * (Η⁻¹ : (ZMod (2 ^ (k + 1)))ˣ))) =
+        η - 8 * d * ((η : ZMod (2 ^ (k + 1))) * (Η⁻¹ : (ZMod (2 ^ (k + 1)))ˣ)) := by ring
+    _ = θ := by
+      rw [hinv, mul_one]
+      linear_combination hcast
+
 end ZMod

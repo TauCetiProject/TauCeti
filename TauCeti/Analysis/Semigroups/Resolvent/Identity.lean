@@ -193,7 +193,7 @@ theorem norm_generator_resolvent_le (S : StronglyContinuousSemigroup X) [Complet
 
 /-- Pointwise form of the resolvent identity
 `R(lambda) - R(mu) = (mu - lambda) R(lambda) R(mu)`; the abstract
-`TauCeti.LinearPMap.resolvent_sub_resolvent_apply` read through the bridge. -/
+`LinearPMap.resolvent_sub_resolvent_apply` read through the bridge. -/
 theorem resolvent_sub_resolvent_apply (S : StronglyContinuousSemigroup X)
     {omegaLambda MLambda omegaMu MMu : ℝ} [CompleteSpace X]
     (hbLambda : S.HasGrowthBound omegaLambda MLambda)
@@ -203,8 +203,8 @@ theorem resolvent_sub_resolvent_apply (S : StronglyContinuousSemigroup X)
       (mu - lambda) •
         S.resolvent hbLambda lambda hlambda (S.resolvent hbMu mu hmu x) := by
   rw [← S.generator_resolvent_eq hbLambda hlambda, ← S.generator_resolvent_eq hbMu hmu]
-  exact LinearPMap.resolvent_sub_resolvent_apply (S.mem_resolventSet_generator hbLambda hlambda)
-    (S.mem_resolventSet_generator hbMu hmu) x
+  exact _root_.LinearPMap.resolvent_sub_resolvent_apply
+    (S.mem_resolventSet_generator hbLambda hlambda) (S.mem_resolventSet_generator hbMu hmu) x
 
 /-- The resolvent identity
 `R(lambda) - R(mu) = (mu - lambda) R(lambda) R(mu)` as an equality of continuous linear maps. -/
@@ -217,7 +217,7 @@ theorem resolvent_sub_resolvent (S : StronglyContinuousSemigroup X)
       (mu - lambda) •
         (S.resolvent hbLambda lambda hlambda ∘L S.resolvent hbMu mu hmu) := by
   rw [← S.generator_resolvent_eq hbLambda hlambda, ← S.generator_resolvent_eq hbMu hmu]
-  exact LinearPMap.resolvent_sub_resolvent (S.mem_resolventSet_generator hbLambda hlambda)
+  exact _root_.LinearPMap.resolvent_sub_resolvent (S.mem_resolventSet_generator hbLambda hlambda)
     (S.mem_resolventSet_generator hbMu hmu)
 
 /-- The resolvent identity for `resolventFun`, written in the ring `X →L[ℝ] X`. -/
@@ -237,7 +237,7 @@ theorem resolvent_comm (S : StronglyContinuousSemigroup X) {omegaLambda MLambda 
     S.resolvent hbLambda lambda hlambda ∘L S.resolvent hbMu mu hmu =
       S.resolvent hbMu mu hmu ∘L S.resolvent hbLambda lambda hlambda := by
   rw [← S.generator_resolvent_eq hbLambda hlambda, ← S.generator_resolvent_eq hbMu hmu]
-  exact LinearPMap.resolvent_comm (S.mem_resolventSet_generator hbLambda hlambda)
+  exact _root_.LinearPMap.resolvent_comm (S.mem_resolventSet_generator hbLambda hlambda)
     (S.mem_resolventSet_generator hbMu hmu)
 
 end StronglyContinuousSemigroup

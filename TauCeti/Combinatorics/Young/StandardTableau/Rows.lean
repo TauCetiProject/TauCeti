@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.Young.StandardTableau.Basic
-public import TauCeti.Combinatorics.Young.Schensted
+public import TauCeti.Combinatorics.Young.Schensted.Basic
 import Mathlib.Data.List.FinRange
 import Mathlib.Data.List.OfFn
 

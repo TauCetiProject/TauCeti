@@ -277,6 +277,30 @@ lemma interPairMap_comp_excisionMap :
   · exact Subtype.ext (by simp)
   · exact (interPairMap_fst_apply g hA hB _).trans (ofSubsetMap_fst_apply g hB _).symm
 
+omit hA hB in
+/-- **Excision is compatible with shrinking the excised set.** Let `U` be open and let
+`L₂ ⊆ L₁ ⊆ U` be closed. The inclusion `(U, U ∖ L₁) ⟶ (U, U ∖ L₂)` induces isomorphisms on
+relative singular homology exactly when `(X, X ∖ L₁) ⟶ (X, X ∖ L₂)` does, since both pairs in `U`
+are carried isomorphically to the corresponding pairs in `X` by excision. -/
+theorem isIso_singularHomologyMap_ofSubsetMap_compl_iff {U L₁ L₂ : Set X} (hU : IsOpen U)
+    (hL₁ : IsClosed L₁) (hL₂ : IsClosed L₂) (hL₁U : L₁ ⊆ U) (h : L₂ ⊆ L₁) (n : ℕ) :
+    IsIso (TopPair.singularHomologyMap (ofSubsetMap (𝟙 (TopCat.of U))
+        (B := Subtype.val ⁻¹' L₁ᶜ) (B' := Subtype.val ⁻¹' L₂ᶜ)
+        fun _ hz ↦ Set.compl_subset_compl.2 h hz) R n) ↔
+      IsIso (TopPair.singularHomologyMap (ofSubsetMap (𝟙 X) (Set.compl_subset_compl.2 h)) R n) := by
+  have := isIso_singularHomologyMap_excisionMap_of_isClosed_subset R hU hL₁ hL₁U n
+  have := isIso_singularHomologyMap_excisionMap_of_isClosed_subset R hU hL₂ (h.trans hL₁U) n
+  -- The inclusion in `U` is `TopPair.interPairMap` for the identity of `X`.
+  have hU : ofSubsetMap (𝟙 (TopCat.of U)) (B := Subtype.val ⁻¹' L₁ᶜ) (B' := Subtype.val ⁻¹' L₂ᶜ)
+      (fun _ hz ↦ Set.compl_subset_compl.2 h hz) =
+      interPairMap (𝟙 X) (Set.mapsTo_id U) (Set.compl_subset_compl.2 h) := by
+    ext : 2 <;> rfl
+  have hw := congrArg (TopPair.singularHomologyMap · R n)
+    (interPairMap_comp_excisionMap (𝟙 X) (Set.mapsTo_id U) (Set.compl_subset_compl.2 h))
+  simp only [TopPair.singularHomologyMap_comp] at hw
+  rw [hU]
+  exact ⟨fun _ ↦ IsIso.of_isIso_fac_left hw.symm, fun _ ↦ IsIso.of_isIso_fac_right hw⟩
+
 end Subsets
 
 section Inter

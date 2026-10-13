@@ -36,8 +36,9 @@ Everything up to that point is stated for a bare `sl₂` triple over a commutati
 of brackets alone: no Cartan subalgebra, no weight-space decomposition and no finiteness. What it
 does need is a `ℚ`-Lie-algebra structure on `L`, carried as in
 `TauCeti/Algebra/Lie/InnerAutomorphism.lean` by an unbundled `[LieAlgebra ℚ L]` hypothesis, because
-the exponentials divide by factorials; that excludes positive characteristic and non-divisible
-bases such as `ℤ`. The final section specialises to a Lie algebra with non-degenerate Killing form
+the exponentials divide by factorials. The additive group of `L` must therefore be uniquely
+divisible, but the base ring `K` need not contain `ℚ`. The next section specialises to a Lie algebra
+with non-degenerate Killing form
 over a field of characteristic zero, where the eigenvector hypotheses are automatic for elements of
 the Cartan subalgebra and the conclusion becomes `TauCeti.weylAut_mem_rootSpace` and
 `TauCeti.weylAut_map_rootSpace`: the Weyl automorphism of the `sl₂` triple of a root `α` carries the
@@ -50,8 +51,9 @@ under the Weyl group: `weylAut` matches a root vector of `β` with one of `s_α 
 the triple of `α` itself it is the source of the relation `N (α, β) = -N (-α, -β)` between
 structure constants (Humphreys §25.2).
 
-A final section takes `L` to be the commutator algebra of an associative `ℚ`-algebra `A`, the case
-of a representation. There the Weyl automorphism is inner: `TauCeti.weylUnit` is the unit
+A final section takes `L` to be the commutator algebra of an associative `ℚ`-algebra `A`, with
+any commutative base ring `K` acting on `A`, as in a representation. There the Weyl automorphism
+over `K` is inner: `TauCeti.weylUnit` is the unit
 `exp E · exp (-F) · exp E` of `A`, Chevalley's group element `n_α = x_α(1) x_{-α}(-1) x_α(1)`, and
 `TauCeti.weylAut_apply_eq_weylUnit_conj` identifies the automorphism with conjugation by it. Every
 statement above then reads as a relation in the group of units rather than in the Lie algebra.
@@ -337,9 +339,8 @@ end Killing
 
 /-! ## The Weyl element of a triple in an associative algebra
 
-When the ambient Lie algebra is the commutator algebra of an associative `ℚ`-algebra `A` — the
-case of a representation, where `A = Module.End ℚ V` — the Weyl automorphism is *inner*: it is
-conjugation by the unit
+Let `A` be an associative `ℚ`-algebra with `[Algebra K A]` for a commutative ring `K`. In its
+commutator Lie algebra, the Weyl automorphism over `K` is *inner*: it is conjugation by the unit
 
 ```text
 n = exp E · exp (-F) · exp E,
@@ -347,7 +348,13 @@ n = exp E · exp (-F) · exp E,
 
 Chevalley's `n_α = x_α(1) x_{-α}(-1) x_α(1)`. This is the passage from the Lie algebra to the
 group, and it is what makes the reflection an element of a Chevalley group rather than only an
-automorphism of its Lie algebra. -/
+automorphism of its Lie algebra.
+
+For a `K`-linear representation, one can take `A = Module.End K V` when this endomorphism ring
+also has a rational algebra structure, for example when `K` is a `ℚ`-algebra. In general, `K`
+need not contain `ℚ`: only `A` must carry both algebra structures. The reflection and
+reflected-weight formulas use scalars in `K`, allowing nonrational weights in complex
+representations. -/
 
 section Associative
 
@@ -377,19 +384,18 @@ theorem coe_inv_weylUnit (hE : IsNilpotent E) (hF : IsNilpotent F) :
       IsNilpotent.exp (-E) * IsNilpotent.exp F * IsNilpotent.exp (-E) := by
   simp [weylUnit, mul_inv_rev, mul_assoc]
 
+variable {K : Type*} [CommRing K] [Algebra K A]
+
 /-- **The Weyl automorphism is conjugation by the Weyl element.** Each of the three exponentials
-of `TauCeti.weylAut` acts by conjugation on an associative algebra, so their composite does
-too. -/
+of `TauCeti.weylAut` over `K` acts by conjugation on an associative `ℚ`-algebra, so their
+composite does too. -/
 theorem weylAut_apply_eq_weylUnit_conj (t : IsSl2Triple H E F) (hE : IsNilpotent E)
     (hF : IsNilpotent F) (y : A) :
-    weylAut (K := ℚ) t (LieAlgebra.ad_nilpotent_of_nilpotent (R := ℚ) hE)
-        (LieAlgebra.ad_nilpotent_of_nilpotent (R := ℚ) hF) y =
+    weylAut (K := K) t (LieAlgebra.ad_nilpotent_of_nilpotent (R := K) hE)
+        (LieAlgebra.ad_nilpotent_of_nilpotent (R := K) hF) y =
       ((weylUnit hE hF : Aˣ) : A) * y * (((weylUnit hE hF)⁻¹ : Aˣ) : A) := by
-  rw [weylAut_apply (LieAlgebra.ad_nilpotent_of_nilpotent (R := ℚ) hE)
-      (LieAlgebra.ad_nilpotent_of_nilpotent (R := ℚ) hF) t,
-    expAd_apply_eq_exp_mul_exp_neg hE, expAd_apply_eq_exp_mul_exp_neg hF.neg,
-    expAd_apply_eq_exp_mul_exp_neg hE, coe_weylUnit, coe_inv_weylUnit]
-  simp only [neg_neg, mul_assoc]
+  simp [weylAut_apply, expAd_apply_eq_exp_mul_exp_neg (K := K) hE,
+    expAd_apply_eq_exp_mul_exp_neg (K := K) hF.neg, mul_assoc]
 
 /-- The Weyl element negates the Cartan element of the triple. -/
 @[simp]
@@ -397,7 +403,7 @@ theorem weylUnit_conj_h (t : IsSl2Triple H E F) (hE : IsNilpotent E) (hF : IsNil
     IsNilpotent.exp E * IsNilpotent.exp (-F) * IsNilpotent.exp E * H *
       (IsNilpotent.exp (-E) * IsNilpotent.exp F * IsNilpotent.exp (-E)) = -H := by
   rw [← coe_weylUnit hE hF, ← coe_inv_weylUnit hE hF]
-  rw [← weylAut_apply_eq_weylUnit_conj t hE hF]
+  rw [← weylAut_apply_eq_weylUnit_conj (K := ℚ) t hE hF]
   exact weylAut_apply_h _ _ t
 
 /-- The Weyl element carries the raising element of the triple to the negated lowering element.
@@ -406,7 +412,7 @@ theorem weylUnit_conj_e (t : IsSl2Triple H E F) (hE : IsNilpotent E) (hF : IsNil
     IsNilpotent.exp E * IsNilpotent.exp (-F) * IsNilpotent.exp E * E *
       (IsNilpotent.exp (-E) * IsNilpotent.exp F * IsNilpotent.exp (-E)) = -F := by
   rw [← coe_weylUnit hE hF, ← coe_inv_weylUnit hE hF]
-  rw [← weylAut_apply_eq_weylUnit_conj t hE hF]
+  rw [← weylAut_apply_eq_weylUnit_conj (K := ℚ) t hE hF]
   exact weylAut_apply_e _ _ t
 
 /-- The Weyl element carries the lowering element of the triple to the negated raising element. -/
@@ -414,7 +420,7 @@ theorem weylUnit_conj_f (t : IsSl2Triple H E F) (hE : IsNilpotent E) (hF : IsNil
     IsNilpotent.exp E * IsNilpotent.exp (-F) * IsNilpotent.exp E * F *
       (IsNilpotent.exp (-E) * IsNilpotent.exp F * IsNilpotent.exp (-E)) = -E := by
   rw [← coe_weylUnit hE hF, ← coe_inv_weylUnit hE hF]
-  rw [← weylAut_apply_eq_weylUnit_conj t hE hF]
+  rw [← weylAut_apply_eq_weylUnit_conj (K := ℚ) t hE hF]
   exact weylAut_apply_f _ _ t
 
 /-- **The reflection formula, at the group level.** An element `y` acting on the raising and
@@ -422,19 +428,19 @@ lowering elements by the opposite scalars `c` and `-c` — for a Cartan element 
 root `α`, an element with `α y = c` — is carried by conjugation with the Weyl element to
 `y - c • H`, the coreflection `y ↦ y - α y • α^∨`. -/
 theorem weylUnit_conj_of_lie_eq_smul (t : IsSl2Triple H E F) (hE : IsNilpotent E)
-    (hF : IsNilpotent F) {y : A} {c : ℚ} (hye : ⁅y, E⁆ = c • E) (hyf : ⁅y, F⁆ = -(c • F)) :
+    (hF : IsNilpotent F) {y : A} {c : K} (hye : ⁅y, E⁆ = c • E) (hyf : ⁅y, F⁆ = -(c • F)) :
     ((weylUnit hE hF : Aˣ) : A) * y * (((weylUnit hE hF)⁻¹ : Aˣ) : A) = y - c • H := by
-  rw [← weylAut_apply_eq_weylUnit_conj t hE hF]
+  rw [← weylAut_apply_eq_weylUnit_conj (K := K) t hE hF]
   exact weylAut_apply_of_lie_eq_smul _ _ t hye hyf
 
 /-- **The reflection formula for the inverse Weyl element.** The coreflection is an involution on
 the elements the reflection formula applies to, so conjugating by `n⁻¹` has the same effect as
 conjugating by `n`. -/
 theorem inv_weylUnit_conj_of_lie_eq_smul (t : IsSl2Triple H E F) (hE : IsNilpotent E)
-    (hF : IsNilpotent F) {y : A} {c : ℚ} (hye : ⁅y, E⁆ = c • E) (hyf : ⁅y, F⁆ = -(c • F)) :
+    (hF : IsNilpotent F) {y : A} {c : K} (hye : ⁅y, E⁆ = c • E) (hyf : ⁅y, F⁆ = -(c • F)) :
     (((weylUnit hE hF)⁻¹ : Aˣ) : A) * y * ((weylUnit hE hF : Aˣ) : A) = y - c • H := by
   have key : ((weylUnit hE hF : Aˣ) : A) * (y - c • H) * (((weylUnit hE hF)⁻¹ : Aˣ) : A) = y := by
-    rw [← weylAut_apply_eq_weylUnit_conj t hE hF]
+    rw [← weylAut_apply_eq_weylUnit_conj (K := K) t hE hF]
     exact weylAut_apply_sub_smul _ _ t hye hyf
   rw [Units.mul_inv_eq_iff_eq_mul] at key
   rw [mul_assoc, Units.inv_mul_eq_iff_eq_mul, key]
@@ -445,12 +451,12 @@ conjugate of `z` by the Weyl element is again an eigenvector of `y`, with eigenv
 
 For a Cartan element `y` this is the reflection `β ↦ β - β(α^∨) • α` of weights. -/
 theorem lie_weylUnit_conj (t : IsSl2Triple H E F) (hE : IsNilpotent E) (hF : IsNilpotent F)
-    {y z : A} {c d m : ℚ}
+    {y z : A} {c d m : K}
     (hye : ⁅y, E⁆ = c • E) (hyf : ⁅y, F⁆ = -(c • F))
     (hyz : ⁅y, z⁆ = d • z) (hhz : ⁅H, z⁆ = m • z) :
     ⁅y, ((weylUnit hE hF : Aˣ) : A) * z * (((weylUnit hE hF)⁻¹ : Aˣ) : A)⁆ =
       (d - c * m) • (((weylUnit hE hF : Aˣ) : A) * z * (((weylUnit hE hF)⁻¹ : Aˣ) : A)) := by
-  rw [← weylAut_apply_eq_weylUnit_conj t hE hF]
+  rw [← weylAut_apply_eq_weylUnit_conj (K := K) t hE hF]
   exact lie_weylAut_apply _ _ t hye hyf hyz hhz
 
 end Associative

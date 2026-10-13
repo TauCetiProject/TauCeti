@@ -23,21 +23,23 @@ Let `W : y² = f(x) = x³ + a₂x² + a₄x + a₆` be an elliptic curve in char
 form over a field `K`, and let `R` be a Dedekind domain with fraction field `K`. The **bad
 primes** of `W` over `R` are the primes dividing `2` or the discriminant `Δ`, together with those
 occurring in a denominator of `a₂`, `a₄` or `a₆`. There are finitely many of them, and away from
-them the Weierstrass equation is as well behaved as it can be: the coefficients are integral, the
-root `θ` of `f` in a field factor `K[X] ⧸ (p)` of the étale algebra is integral, and — this is the
-point of putting `Δ` in the set — the derivative `f' θ = 3θ² + 2a₂θ + a₄` is a *unit*.
+them the Weierstrass equation is as well behaved as it can be.
 
-That last statement is the arithmetic heart of Step 6 of the weak Mordell–Weil theorem. It is
-proved by evaluating at `θ` the Bézout identity behind `separable_f`, which exhibits `Δ` as
-`f' θ` times an explicit quadratic in `θ`. Both factors are integral at a good prime and their
-product is a unit, so both are units.
+The arithmetic of Step 6 of the weak Mordell–Weil theorem needs less than goodness. At a prime `w`
+of the ring of integers of a field factor `K[X] ⧸ (p)` of the étale algebra, it needs `a₂`, `a₄`
+and `a₆` to be integral at the prime of `R` under `w`, which makes the root `θ` of `f` integral at
+`w`, and it needs the derivative `f' θ = 3θ² + 2a₂θ + a₄` to be a `w`-unit. The latter holds as
+soon as the discriminant `disc f` of the cubic is a unit at the prime under `w`: evaluating at `θ`
+the Bézout identity between `f` and `f'` exhibits `disc f` as `f' θ` times an explicit quadratic
+in `θ`, and both factors are integral (`Valuation.map_cubic_deriv_eq_one`). Since
+`Δ = 16 · disc f`, this holds at every good prime, but also at a prime above `2` at which `f` has
+separable reduction.
 
-Everything here is stated at a prime `w` of the ring of integers of a field factor that does not
-lie above a bad prime of `R`. The estimates combine into `even_valuationOfNeZero_sub_root`: at
-such a prime the valuation of `x - θ` is **even**, for `(x, y)` any point of `W` with `f x ≠ 0`.
-That is the arithmetic content of Step 6 of the weak Mordell–Weil theorem with all the group
-theory stripped away; `TauCeti.AlgebraicGeometry.EllipticCurve.MordellWeil.SelmerGroupA` puts the
-group theory back and reads it as membership in a Selmer group.
+The lemmas here take exactly these hypotheses at the prime under `w`. They combine into
+`even_valuationOfNeZero_sub_root`: at such a prime the valuation of `x - θ` is **even**, for
+`(x, y)` any point of `W` with `f x ≠ 0`. That is the arithmetic content of Step 6 with all the
+group theory stripped away; `TauCeti.AlgebraicGeometry.EllipticCurve.MordellWeil.SelmerGroupA`
+puts the group theory back and reads it as membership in a Selmer group.
 
 ## Main definitions
 
@@ -48,16 +50,20 @@ group theory back and reads it as membership in a Selmer group.
 ## Main results
 
 * `WeierstrassCurve.Affine.finite_badPrimes`: there are only finitely many bad primes.
-* `WeierstrassCurve.Affine.valuation_root_le_one`: at a prime not above a bad prime, the root `θ`
-  is integral.
-* `WeierstrassCurve.Affine.valuation_deriv_root_eq_one`: at a prime not above a bad prime,
-  `f' θ` is a unit. This is where `Δ` earns its place in `badPrimes`.
-* `WeierstrassCurve.Affine.valuation_cofactor_eq_one`: at such a prime, if `x` is integral and
-  `x - θ` is not a unit, then the cofactor of `x - θ` in the Weierstrass equation is a unit.
-* `WeierstrassCurve.Affine.valuation_projFactor_torsion_eq_one`: at such a prime, the component
-  of the corrected `2`-torsion representative `x - T + fCofactor x` is a unit.
-* `WeierstrassCurve.Affine.even_valuationOfNeZero_sub_root`: at such a prime, the valuation of
-  `x - θ` is even. This is the arithmetic core of Step 6.
+* `WeierstrassCurve.Affine.valuation_discr_f_eq_one_of_notMem_badPrimes`: at a good prime,
+  `disc f` is a unit.
+* `WeierstrassCurve.Affine.valuation_root_le_one`: if `a₂`, `a₄`, `a₆` are integral at the prime
+  under `w`, the root `θ` is integral at `w`.
+* `WeierstrassCurve.Affine.valuation_deriv_root_le_one`: then `f' θ` is integral at `w` too.
+* `WeierstrassCurve.Affine.valuation_deriv_root_eq_one`: if moreover `disc f` is a unit there,
+  `f' θ` is a `w`-unit.
+* `WeierstrassCurve.Affine.valuation_cofactor_eq_one`: if `f' θ` is a `w`-unit, `x` is integral
+  and `x - θ` is not a unit, then the cofactor of `x - θ` in the Weierstrass equation is a unit.
+* `WeierstrassCurve.Affine.valuation_projFactor_torsion_eq_one`: at a root `x` of `f` with `f' x`
+  a unit, the component of the corrected `2`-torsion representative `x - T + fCofactor x` is a
+  unit.
+* `WeierstrassCurve.Affine.even_valuationOfNeZero_sub_root`: if `f' θ` is a `w`-unit, the
+  valuation of `x - θ` is even. This is the arithmetic core of Step 6.
 
 ## Implementation notes
 
@@ -70,12 +76,6 @@ coefficient helper they share stays `private` there.
 The `Core` section still lives in this file rather than in `SelmerGroupA` because it is the last
 consumer of the `RingOfIntegers` estimates above.
 
-## Roadmap
-
-`TauCetiRoadmap/EllipticCurves/README.md`, Layer 6 (Mordell–Weil), Step 6 of the weak
-Mordell–Weil theorem: the image of the descent map lies in `A(S,2)`, where `S` is the set of bad
-primes defined here.
-
 ## Provenance
 
 Adapted, with the author's proofs, from Michael Stoll's `EllipticCurves` project
@@ -86,6 +86,11 @@ source's `Cubic` section is now in `TauCeti.RingTheory.Valuation.RootMonic`). Th
 source carries its own `HeightOneSpectrum.below`; at our Mathlib pin that map is
 `HeightOneSpectrum.under`, which is used here instead. The source is written against Lean
 `v4.32.0`; this is a forward port.
+
+The per-prime hypotheses (integral `a₂`, `a₄`, `a₆` and a unit `disc f`, or a unit `f' θ`, resp.
+`f' x`, at the prime under `w`, in place of `w` not lying above a bad prime) and the Bézout
+identity with `disc f` rather than `Δ` on the right follow the later revision `3bfe124` of the
+same project, same file and sections.
 -/
 
 public section
@@ -172,42 +177,45 @@ lemma valuation_a₆_le_one_of_notMem_badPrimes (hv : v ∉ W.badPrimes R) :
   ((W.notMem_badPrimes_iff R).mp hv).2.2.2.2
 
 /-- At a good prime, the discriminant is a unit. This is the half of `badPrimes` that makes the
-reduction of `W` nonsingular there, and it is what `valuation_deriv_root_eq_one` consumes. -/
+reduction of `W` nonsingular there. -/
 lemma valuation_Δ_eq_one_of_notMem_badPrimes (hv : v ∉ W.badPrimes R) :
     v.valuation K W.Δ = 1 :=
   ((W.notMem_badPrimes_iff R).mp hv).2.1
 
-/-- At a good prime, `2` is a unit: the `2`-component of `badPrimes`, read off like the other four.
-
-Nothing in these files consumes it. Step 6 needs `Δ` to be a unit and `a₂`, `a₄`, `a₆` to be
-integral at a good prime, and never the valuation of `2`; it is recorded here so that the
-projections out of `badPrimes` are complete. In the source this file is adapted from, its uses are
-in the semilocal comparison (`EllipticCurves/SelmerGroup.lean`), a later rung of the descent. -/
+/-- At a good prime, `2` is a unit: the `2`-component of `badPrimes`, read off like the other
+four. -/
 lemma valuation_two_eq_one_of_notMem_badPrimes (hv : v ∉ W.badPrimes R) :
     v.valuation K 2 = 1 :=
   ((W.notMem_badPrimes_iff R).mp hv).1
+
+/-- At a good prime, the discriminant of the cubic `f` is a unit, since `Δ = 16 · disc f` and both
+`Δ` and `2` are units there. This is the form in which Step 6 consumes the goodness of a prime. -/
+lemma valuation_discr_f_eq_one_of_notMem_badPrimes [W.IsCharNeTwoNF] (hv : v ∉ W.badPrimes R) :
+    v.valuation K W.f.discr = 1 := by
+  have h16 : v.valuation K 16 = 1 := by
+    rw [show (16 : K) = 2 ^ 4 by norm_num, map_pow,
+      W.valuation_two_eq_one_of_notMem_badPrimes R hv, one_pow]
+  have hΔ := W.valuation_Δ_eq_one_of_notMem_badPrimes R hv
+  rwa [W.Δ_eq_sixteen_mul_discr_f, map_mul, h16, one_mul] at hΔ
 
 end BadPrimes
 
 section RingOfIntegers
 
-variable (R : Type*) [CommRing R] [IsDedekindDomain R] [Algebra R K] [IsFractionRing R K]
+variable (R : Type*) [CommRing R] [Algebra R K]
 
 /-- The ring of integers of the field factor `K[X] ⧸ (p)` over `R`. -/
 noncomputable abbrev ringOfIntegersFactor (p : W.f.Factors) : Type _ :=
   integralClosure R (𝕃 p)
 
-/-- The ring of integers of a field factor is a Dedekind domain: it is the integral closure of
-`R` in a finite separable extension of the fraction field `K`. -/
-instance isDedekindDomain_ringOfIntegersFactor [W.IsElliptic] [W.IsCharNeTwoNF]
-    (p : W.f.Factors) : IsDedekindDomain (W.ringOfIntegersFactor R p) :=
-  have := AdjoinRoot.isSeparable_of_separable (separable_f W) p
-  IsIntegralClosure.isDedekindDomain R K (𝕃 p) _
+section
 
-/-- A field factor is the fraction field of its ring of integers. -/
-instance isFractionRing_ringOfIntegersFactor [W.IsElliptic] [W.IsCharNeTwoNF]
-    (p : W.f.Factors) : IsFractionRing (W.ringOfIntegersFactor R p) (𝕃 p) :=
-  have := AdjoinRoot.isSeparable_of_separable (separable_f W) p
+variable [IsDomain R] [IsFractionRing R K]
+
+/-- A field factor is the fraction field of its ring of integers over any domain `R` with
+fraction field `K`. The finite extension need not be separable. -/
+instance isFractionRing_ringOfIntegersFactor (p : W.f.Factors) :
+    IsFractionRing (W.ringOfIntegersFactor R p) (𝕃 p) :=
   IsIntegralClosure.isFractionRing_of_finite_extension R K (𝕃 p) _
 
 /-- The ring of integers of a field factor is torsion-free over `R`, as `R` embeds into it. -/
@@ -218,6 +226,17 @@ instance instIsTorsionFreeRingOfIntegersFactor (p : W.f.Factors) :
     rw [IsScalarTower.algebraMap_eq R K (𝕃 p)]
     exact (ι p).injective.comp (IsFractionRing.injective R K)
   exact fun a b hab ↦ hinj (congrArg Subtype.val hab)
+
+end
+
+variable [IsDedekindDomain R] [IsFractionRing R K]
+
+/-- The ring of integers of a field factor is a Dedekind domain: it is the integral closure of
+`R` in a finite separable extension of the fraction field `K`. -/
+instance isDedekindDomain_ringOfIntegersFactor [W.IsElliptic] [W.IsCharNeTwoNF]
+    (p : W.f.Factors) : IsDedekindDomain (W.ringOfIntegersFactor R p) :=
+  have := AdjoinRoot.isSeparable_of_separable (separable_f W) p
+  IsIntegralClosure.isDedekindDomain R K (𝕃 p) _
 
 /-- The `w`-adic valuation of an element of `K` is the valuation at the prime of `R` under `w`,
 raised to the ramification index. -/
@@ -240,13 +259,6 @@ lemma valuation_algebraMap_le_one [W.IsElliptic] [W.IsCharNeTwoNF] (p : W.f.Fact
   rw [← W.valuation_algebraMap_eq R p w z]
   simpa using pow_le_pow_left' hz _
 
-/-- A prime `w` not lying above a bad prime lies over a good prime of `R`. -/
-lemma under_notMem_badPrimes (p : W.f.Factors)
-    {w : HeightOneSpectrum (W.ringOfIntegersFactor R p)}
-    (hw : w ∉ HeightOneSpectrum.primesAbove R (W.ringOfIntegersFactor R p) (W.badPrimes R)) :
-    HeightOneSpectrum.under R w ∉ W.badPrimes R :=
-  fun hv ↦ hw ((HeightOneSpectrum.mem_primesAbove_iff R _ _ w).mpr hv)
-
 /-- `θ` satisfies the Weierstrass cubic in the field factor `K[X] ⧸ (p)`. -/
 lemma root_cubic_eq_zero (p : W.f.Factors) :
     θ p ^ 3 + ι p W.a₂ * θ p ^ 2 + ι p W.a₄ * θ p + ι p W.a₆ = 0 := by
@@ -262,39 +274,20 @@ lemma mk_fCofactor_eq (p : W.f.Factors) (x : K) :
 
 variable [W.IsElliptic] [W.IsCharNeTwoNF] (p : W.f.Factors)
   {w : HeightOneSpectrum (W.ringOfIntegersFactor R p)}
+  (ha₂ : (HeightOneSpectrum.under R w).valuation K W.a₂ ≤ 1)
+  (ha₄ : (HeightOneSpectrum.under R w).valuation K W.a₄ ≤ 1)
+  (ha₆ : (HeightOneSpectrum.under R w).valuation K W.a₆ ≤ 1)
 
-/-- At a prime `w` not above a bad prime, `a₂` is integral. -/
-lemma valuation_a₂_le_one_of_notMem_primesAbove
-    (hw : w ∉ HeightOneSpectrum.primesAbove R (W.ringOfIntegersFactor R p) (W.badPrimes R)) :
-    w.valuation (𝕃 p) (ι p W.a₂) ≤ 1 :=
-  W.valuation_algebraMap_le_one R p w
-    (W.valuation_a₂_le_one_of_notMem_badPrimes R (W.under_notMem_badPrimes R p hw))
+include ha₂ ha₄ ha₆
 
-/-- At a prime `w` not above a bad prime, `a₄` is integral. -/
-lemma valuation_a₄_le_one_of_notMem_primesAbove
-    (hw : w ∉ HeightOneSpectrum.primesAbove R (W.ringOfIntegersFactor R p) (W.badPrimes R)) :
-    w.valuation (𝕃 p) (ι p W.a₄) ≤ 1 :=
-  W.valuation_algebraMap_le_one R p w
-    (W.valuation_a₄_le_one_of_notMem_badPrimes R (W.under_notMem_badPrimes R p hw))
-
-/-- At a prime `w` not above a bad prime, `a₆` is integral. -/
-lemma valuation_a₆_le_one_of_notMem_primesAbove
-    (hw : w ∉ HeightOneSpectrum.primesAbove R (W.ringOfIntegersFactor R p) (W.badPrimes R)) :
-    w.valuation (𝕃 p) (ι p W.a₆) ≤ 1 :=
-  W.valuation_algebraMap_le_one R p w
-    (W.valuation_a₆_le_one_of_notMem_badPrimes R (W.under_notMem_badPrimes R p hw))
-
-/-- At a prime `w` not above a bad prime, the root `θ` is integral: it satisfies the monic cubic
-`f`, whose coefficients are integral at `w`. -/
-lemma valuation_root_le_one
-    (hw : w ∉ HeightOneSpectrum.primesAbove R (W.ringOfIntegersFactor R p) (W.badPrimes R)) :
-    w.valuation (𝕃 p) (θ p) ≤ 1 :=
-  Valuation.le_one_of_root_cubic _
-    (W.valuation_a₂_le_one_of_notMem_primesAbove R p hw)
-    (W.valuation_a₄_le_one_of_notMem_primesAbove R p hw)
-    (W.valuation_a₆_le_one_of_notMem_primesAbove R p hw)
+/-- If `a₂`, `a₄` and `a₆` are integral at the prime under `w`, then the root `θ` is integral at
+`w`: it satisfies the monic cubic `f`, whose coefficients are integral at `w`. -/
+lemma valuation_root_le_one : w.valuation (𝕃 p) (θ p) ≤ 1 :=
+  Valuation.le_one_of_root_cubic _ (W.valuation_algebraMap_le_one R p w ha₂)
+    (W.valuation_algebraMap_le_one R p w ha₄) (W.valuation_algebraMap_le_one R p w ha₆)
     (W.root_cubic_eq_zero p)
 
+omit ha₂ ha₄ ha₆ in
 /-- An element of `K` with trivial valuation at the prime under `w` has trivial valuation
 at `w`. -/
 lemma valuation_algebraMap_eq_one {z : K}
@@ -302,73 +295,39 @@ lemma valuation_algebraMap_eq_one {z : K}
     w.valuation (𝕃 p) (ι p z) = 1 := by
   rw [← W.valuation_algebraMap_eq R p w z, hz, one_pow]
 
-/-- At a prime `w` not above a bad prime, `f' θ = 3θ² + 2a₂θ + a₄` is a unit.
+/-- If `a₂`, `a₄` and `a₆` are integral at the prime under `w`, then so is
+`f' θ = 3θ² + 2a₂θ + a₄`: it is a polynomial in `θ` and the coefficients. -/
+lemma valuation_deriv_root_le_one :
+    w.valuation (𝕃 p) (3 * θ p ^ 2 + 2 * ι p W.a₂ * θ p + ι p W.a₄) ≤ 1 := by
+  have h₂ := W.valuation_algebraMap_le_one R p w ha₂
+  have h₄ := W.valuation_algebraMap_le_one R p w ha₄
+  have hθ := W.valuation_root_le_one R p ha₂ ha₄ ha₆
+  have h₃ : (3 : 𝕃 p) ∈ (w.valuation (𝕃 p)).integer := ofNat_mem _ 3
+  have h₂' : (2 : 𝕃 p) ∈ (w.valuation (𝕃 p)).integer := ofNat_mem _ 2
+  exact add_mem (add_mem (mul_mem h₃ (pow_mem hθ 2)) (mul_mem (mul_mem h₂' h₂) hθ)) h₄
 
-This is where `Δ` earns its place in `badPrimes`: evaluating the Bézout identity behind
-`separable_f` at `θ` gives `v(θ) * f' θ = Δ` for an explicit quadratic `v`. Both factors are
-integral at `w` and the product is a unit, so both are units. -/
+/-- If `a₂`, `a₄` and `a₆` are integral and `disc f` is a unit at the prime under `w`, then
+`f' θ = 3θ² + 2a₂θ + a₄` is a unit at `w` (`Valuation.map_cubic_deriv_eq_one`). The hypothesis is
+on `disc f` rather than on `Δ = 16 · disc f`, so this applies at primes above `2` as well. -/
 lemma valuation_deriv_root_eq_one
-    (hw : w ∉ HeightOneSpectrum.primesAbove R (W.ringOfIntegersFactor R p) (W.badPrimes R)) :
+    (hd : (HeightOneSpectrum.under R w).valuation K W.f.discr = 1) :
     w.valuation (𝕃 p) (3 * θ p ^ 2 + 2 * ι p W.a₂ * θ p + ι p W.a₄) = 1 := by
-  set L := 𝕃 p
-  set ν := w.valuation L
-  set t := θ p
-  set A₂ := algebraMap K L W.a₂ with hA₂def
-  set A := algebraMap K L W.a₄ with hAdef
-  set B := algebraMap K L W.a₆ with hBdef
-  have hA₂ : ν A₂ ≤ 1 := W.valuation_a₂_le_one_of_notMem_primesAbove R p hw
-  have hA : ν A ≤ 1 := W.valuation_a₄_le_one_of_notMem_primesAbove R p hw
-  have hB : ν B ≤ 1 := W.valuation_a₆_le_one_of_notMem_primesAbove R p hw
-  have ht : ν t ≤ 1 := W.valuation_root_le_one R p hw
-  -- the Bézout identity, evaluated at `θ`
-  have hΔ : algebraMap K L W.Δ = -64 * A₂ ^ 3 * B + 16 * A₂ ^ 2 * A ^ 2 - 64 * A ^ 3
-      - 432 * B ^ 2 + 288 * A₂ * A * B := by
-    rw [Δ_of_isCharNeTwoNF W]
-    simp only [map_neg, map_sub, map_mul, map_add, map_pow, map_ofNat, hA₂def, hAdef, hBdef]
-  have hid : (3 * t ^ 2 + 2 * A₂ * t + A) * ((32 * A₂ ^ 2 - 96 * A) * t ^ 2
-        + (32 * A₂ ^ 3 - 112 * A₂ * A + 144 * B) * t
-        + (16 * A₂ ^ 2 * A - 64 * A ^ 2 + 48 * A₂ * B)) =
-      algebraMap K L W.Δ := by
-    rw [hΔ]
-    linear_combination (-(288 * A - 96 * A₂ ^ 2) * t - (240 * A₂ * A - 64 * A₂ ^ 3 - 432 * B)) *
-      W.root_cubic_eq_zero p
-  -- both factors are integral, and their product is a unit
-  have hD : 3 * t ^ 2 + 2 * A₂ * t + A ∈ ν.integer :=
-    add_mem (add_mem (mul_mem (ofNat_mem _ 3) (pow_mem ht 2))
-      (mul_mem (mul_mem (ofNat_mem _ 2) hA₂) ht)) hA
-  have hC : (32 * A₂ ^ 2 - 96 * A) * t ^ 2 + (32 * A₂ ^ 3 - 112 * A₂ * A + 144 * B) * t
-      + (16 * A₂ ^ 2 * A - 64 * A ^ 2 + 48 * A₂ * B) ∈ ν.integer := by
-    refine add_mem (add_mem (mul_mem ?_ (pow_mem ht 2)) (mul_mem ?_ ht)) ?_
-    · exact sub_mem (mul_mem (ofNat_mem _ 32) (pow_mem hA₂ 2)) (mul_mem (ofNat_mem _ 96) hA)
-    · exact add_mem (sub_mem (mul_mem (ofNat_mem _ 32) (pow_mem hA₂ 3))
-        (mul_mem (mul_mem (ofNat_mem _ 112) hA₂) hA)) (mul_mem (ofNat_mem _ 144) hB)
-    · exact add_mem (sub_mem (mul_mem (mul_mem (ofNat_mem _ 16) (pow_mem hA₂ 2)) hA)
-        (mul_mem (ofNat_mem _ 64) (pow_mem hA 2))) (mul_mem (mul_mem (ofNat_mem _ 48) hA₂) hB)
-  refine ν.eq_one_of_mul_eq_one hD hC ?_
-  rw [hid]
-  exact W.valuation_algebraMap_eq_one R p
-    (W.valuation_Δ_eq_one_of_notMem_badPrimes R (W.under_notMem_badPrimes R p hw))
+  refine Valuation.map_cubic_deriv_eq_one _ (W.valuation_algebraMap_le_one R p w ha₂)
+    (W.valuation_algebraMap_le_one R p w ha₄) (W.valuation_algebraMap_le_one R p w ha₆)
+    (W.root_cubic_eq_zero p) ?_
+  have h := W.valuation_algebraMap_eq_one R p hd
+  rw [W.discr_f] at h
+  simpa only [map_sub, map_add, map_mul, map_pow, map_ofNat] using h
 
-/-- The cofactor of `x - θ` in the Weierstrass cubic, rewritten around the derivative: it differs
-from `f' θ = 3θ² + 2a₂θ + a₄` by the multiple `(x - θ)(x + 2θ + a₂)`.
-
-Both `valuation_cofactor_eq_one` and `valuation_projFactor_torsion_eq_one` turn on this single
-identity — the first to see that the cofactor is a unit when `x - θ` is not, the second to see
-that the two coincide when `x = θ`. It is stated in the shape `mk_fCofactor_eq` produces, so that
-both call sites rewrite with it directly. -/
-private lemma cofactor_eq_sub_mul_add_deriv {L : Type*} [CommRing L] (s t A₂ A : L) :
-    t ^ 2 + (s + A₂) * t + (s ^ 2 + A₂ * s + A)
-      = (s - t) * (s + 2 * t + A₂) + (3 * t ^ 2 + 2 * A₂ * t + A) := by
-  ring
-
-/-- At a prime `w` not above a bad prime, if `x` is `w`-integral and `x - θ` is not a `w`-unit,
-then the cofactor `θ² + (x + a₂)θ + (x² + a₂x + a₄)` is a `w`-unit: modulo `x - θ` it equals
-`f' θ`.
+/-- If `a₂`, `a₄` and `a₆` are integral at the prime under `w` and `f' θ = 3θ² + 2a₂θ + a₄` is a
+`w`-unit, if `x` is `w`-integral and `x - θ` is not a `w`-unit, then the cofactor
+`θ² + (x + a₂)θ + (x² + a₂x + a₄)` is a `w`-unit: it differs from `f' θ` by the multiple
+`(x - θ)(x + 2θ + a₂)` of `x - θ`.
 
 Stated in the shape `mk_fCofactor_eq` produces, so that it applies to the image of `fCofactor x`
 in the field factor without reshaping. -/
 lemma valuation_cofactor_eq_one {x : K}
-    (hw : w ∉ HeightOneSpectrum.primesAbove R (W.ringOfIntegersFactor R p) (W.badPrimes R))
+    (hderiv : w.valuation (𝕃 p) (3 * θ p ^ 2 + 2 * ι p W.a₂ * θ p + ι p W.a₄) = 1)
     (hx : w.valuation (𝕃 p) (ι p x) ≤ 1)
     (hlt : w.valuation (𝕃 p) (ι p x - θ p) < 1) :
     w.valuation (𝕃 p) (θ p ^ 2 + (ι p x + ι p W.a₂) * θ p
@@ -379,25 +338,26 @@ lemma valuation_cofactor_eq_one {x : K}
   set s := algebraMap K L x
   set A₂ := algebraMap K L W.a₂
   set A := algebraMap K L W.a₄
-  have hA₂ : ν A₂ ≤ 1 := W.valuation_a₂_le_one_of_notMem_primesAbove R p hw
-  have ht : ν t ≤ 1 := W.valuation_root_le_one R p hw
-  have hderiv : ν (3 * t ^ 2 + 2 * A₂ * t + A) = 1 := W.valuation_deriv_root_eq_one R p hw
+  have hA₂ : ν A₂ ≤ 1 := W.valuation_algebraMap_le_one R p w ha₂
+  have ht : ν t ≤ 1 := W.valuation_root_le_one R p ha₂ ha₄ ha₆
   have h2t : s + 2 * t + A₂ ∈ ν.integer :=
     add_mem (add_mem hx (mul_mem (ofNat_mem _ 2) ht)) hA₂
   have hlt' : ν ((s - t) * (s + 2 * t + A₂)) < ν (3 * t ^ 2 + 2 * A₂ * t + A) := by
     rw [hderiv, map_mul]
     exact (mul_le_of_le_one_right' h2t).trans_lt hlt
-  rw [cofactor_eq_sub_mul_add_deriv s t A₂ A, ν.map_add_eq_of_lt_right hlt', hderiv]
+  rw [show t ^ 2 + (s + A₂) * t + (s ^ 2 + A₂ * s + A)
+      = (s - t) * (s + 2 * t + A₂) + (3 * t ^ 2 + 2 * A₂ * t + A) by ring,
+    ν.map_add_eq_of_lt_right hlt', hderiv]
 
-/-- If `x` is a root of `f`, then at a prime `w` not above a bad prime the `p`-component of the
-`x - T` representative is a unit.
+/-- If `x` is a root of `f`, if `a₂`, `a₄` and `a₆` are integral at the prime under `w` and
+`f' x = 3x² + 2a₂x + a₄` is a unit there, then the `p`-component of the `x - T` representative is
+a unit at `w`.
 
 Both `x` and `θ` are roots of `f`, so `x - θ` times the cofactor is `0` and, `L` being a field,
-one of the two factors vanishes. If `x = θ` the component is `f' θ`; if the cofactor vanishes the
-component is `x - θ` and `f' θ = -(x - θ)(x + 2θ + a₂)`. Either way `valuation_deriv_root_eq_one`
-makes it a unit. -/
+one of the two factors vanishes. If `x = θ` the component is `f' x`; if the cofactor vanishes the
+component is `x - θ`, and `f' x = (x - θ)(2x + θ + a₂)`. Either way it is a unit. -/
 lemma valuation_projFactor_torsion_eq_one {x : K} (hx : W.f.eval x = 0)
-    (hw : w ∉ HeightOneSpectrum.primesAbove R (W.ringOfIntegersFactor R p) (W.badPrimes R)) :
+    (hdx : (HeightOneSpectrum.under R w).valuation K (3 * x ^ 2 + 2 * W.a₂ * x + W.a₄) = 1) :
     w.valuation (𝕃 p) (ι p x - θ p + AdjoinRoot.mk (p : K[X]) (W.fCofactor x)) = 1 := by
   rw [W.mk_fCofactor_eq p x]
   set L := 𝕃 p
@@ -407,11 +367,13 @@ lemma valuation_projFactor_torsion_eq_one {x : K} (hx : W.f.eval x = 0)
   set A₂ := algebraMap K L W.a₂ with hA₂def
   set A := algebraMap K L W.a₄ with hAdef
   set B := algebraMap K L W.a₆ with hBdef
-  have hA₂ : ν A₂ ≤ 1 := W.valuation_a₂_le_one_of_notMem_primesAbove R p hw
-  have hA : ν A ≤ 1 := W.valuation_a₄_le_one_of_notMem_primesAbove R p hw
-  have hB : ν B ≤ 1 := W.valuation_a₆_le_one_of_notMem_primesAbove R p hw
-  have ht : ν t ≤ 1 := W.valuation_root_le_one R p hw
-  have hderiv : ν (3 * t ^ 2 + 2 * A₂ * t + A) = 1 := W.valuation_deriv_root_eq_one R p hw
+  have hA₂ : ν A₂ ≤ 1 := W.valuation_algebraMap_le_one R p w ha₂
+  have hA : ν A ≤ 1 := W.valuation_algebraMap_le_one R p w ha₄
+  have hB : ν B ≤ 1 := W.valuation_algebraMap_le_one R p w ha₆
+  have ht : ν t ≤ 1 := W.valuation_root_le_one R p ha₂ ha₄ ha₆
+  have hderiv : ν (3 * s ^ 2 + 2 * A₂ * s + A) = 1 := by
+    simpa only [map_add, map_mul, map_pow, map_ofNat] using
+      W.valuation_algebraMap_eq_one R p (w := w) hdx
   -- `x` is a root of the cubic too, hence integral at `w`
   have hs : s ^ 3 + A₂ * s ^ 2 + A * s + B = 0 := by
     rw [hsdef, hA₂def, hAdef, hBdef, ← W.map_eval_f, hx, map_zero]
@@ -419,17 +381,17 @@ lemma valuation_projFactor_torsion_eq_one {x : K} (hx : W.f.eval x = 0)
   have hprod : (s - t) * (t ^ 2 + (s + A₂) * t + (s ^ 2 + A₂ * s + A)) = 0 := by
     linear_combination hs - W.root_cubic_eq_zero p
   rcases mul_eq_zero.mp hprod with h0 | h0
-  · -- `x = θ`: the component is `f' θ`
-    rw [h0, zero_add, cofactor_eq_sub_mul_add_deriv s t A₂ A, h0, zero_mul, zero_add, hderiv]
-  · -- the cofactor vanishes: the component is `x - θ`, and `f' θ = -(x - θ)(x + 2θ + a₂)`
+  · -- `x = θ`: the component is `f' x`
+    rw [h0, zero_add, show t ^ 2 + (s + A₂) * t + (s ^ 2 + A₂ * s + A)
+        = 3 * s ^ 2 + 2 * A₂ * s + A by linear_combination -(t + 2 * s + A₂) * h0, hderiv]
+  · -- the cofactor vanishes: the component is `x - θ`, and `f' x = (x - θ)(2x + θ + a₂)`
     rw [h0, add_zero]
     have hst : s - t ∈ ν.integer := sub_mem hs1 ht
-    have h2t : s + 2 * t + A₂ ∈ ν.integer :=
-      add_mem (add_mem hs1 (mul_mem (ofNat_mem _ 2) ht)) hA₂
-    -- the same identity again: with the cofactor `0`, it reads `(x - θ)(x + 2θ + a₂) = -f' θ`
-    have hneg : (s - t) * (s + 2 * t + A₂) = -(3 * t ^ 2 + 2 * A₂ * t + A) := by
-      linear_combination h0
-    exact ν.eq_one_of_mul_eq_one hst h2t (by rw [hneg, Valuation.map_neg, hderiv])
+    have h2t : 2 * s + t + A₂ ∈ ν.integer :=
+      add_mem (add_mem (mul_mem (ofNat_mem _ 2) hs1) ht) hA₂
+    refine ν.eq_one_of_mul_eq_one hst h2t ?_
+    rw [show (s - t) * (2 * s + t + A₂) = 3 * s ^ 2 + 2 * A₂ * s + A by linear_combination -h0,
+      hderiv]
 
 end RingOfIntegers
 
@@ -443,9 +405,16 @@ variable [W.IsElliptic] [W.IsCharNeTwoNF]
   (hu : (u : AdjoinRoot (p : K[X])) =
     algebraMap K (AdjoinRoot (p : K[X])) x - AdjoinRoot.root (p : K[X]))
   (w : HeightOneSpectrum (W.ringOfIntegersFactor R p))
-  (hw : w ∉ HeightOneSpectrum.primesAbove R (W.ringOfIntegersFactor R p) (W.badPrimes R))
+  (ha₂ : (HeightOneSpectrum.under R w).valuation K W.a₂ ≤ 1)
+  (ha₄ : (HeightOneSpectrum.under R w).valuation K W.a₄ ≤ 1)
+  (ha₆ : (HeightOneSpectrum.under R w).valuation K W.a₆ ≤ 1)
+  -- `f' θ` is a `w`-unit; the local notation for `θ` is not available in a `variable` command
+  (hderiv : w.valuation (AdjoinRoot (p : K[X]))
+    (3 * AdjoinRoot.root (p : K[X]) ^ 2
+      + 2 * algebraMap K (AdjoinRoot (p : K[X])) W.a₂ * AdjoinRoot.root (p : K[X])
+      + algebraMap K (AdjoinRoot (p : K[X])) W.a₄) = 1)
 
-include h hx hu hw
+include h hx hu ha₂ ha₄ ha₆
 
 /-- Non-integral case: `x` has a pole at the prime of `R` under `w`.
 
@@ -470,18 +439,18 @@ private lemma even_valuationOfNeZero_sub_root_of_one_lt
     rw [← W.map_eval_f, (equation_iff_eval_f_eq_sq W x y).mp h, map_pow]
   have hval : ν (algebraMap K L y) ^ 2 = ν (algebraMap K L x) ^ 3 := by
     rw [← map_pow, heq,
-      ν.map_cubic_eq_of_one_lt (W.valuation_a₂_le_one_of_notMem_primesAbove R p hw)
-      (W.valuation_a₄_le_one_of_notMem_primesAbove R p hw)
-      (W.valuation_a₆_le_one_of_notMem_primesAbove R p hw) hx']
+      ν.map_cubic_eq_of_one_lt (W.valuation_algebraMap_le_one R p w ha₂)
+      (W.valuation_algebraMap_le_one R p w ha₄) (W.valuation_algebraMap_le_one R p w ha₆) hx']
   -- `ν (x - θ) = ν x`, since `θ` is integral and `x` is not
   have hu' : ν (u : L) = ν (algebraMap K L x) := by
     rw [hu]
-    exact Valuation.map_sub_eq_of_lt_left _ ((W.valuation_root_le_one R p hw).trans_lt hx')
+    exact Valuation.map_sub_eq_of_lt_left _ ((W.valuation_root_le_one R p ha₂ ha₄ ha₆).trans_lt hx')
   have hkey : ν (u : L) = ν ((Units.mk0 _ (div_ne_zero hy0 hx0) : Lˣ) : L) ^ 2 := by
     rw [hu', Units.val_mk0, map_div₀, div_pow, hval, eq_div_iff (pow_ne_zero 2 hx0'), mul_comm]
     exact (pow_succ _ 2).symm
   simpa using w.dvd_toAdd_valuationOfNeZero hkey
 
+include hderiv in
 /-- Integral case: `x` is integral at the prime of `R` under `w`.
 
 Over `L` the Weierstrass equation factors as `y ² = (x - θ) * c` with cofactor
@@ -496,7 +465,7 @@ private lemma even_valuationOfNeZero_sub_root_of_le_one
   set t := θ p
   set A₂ := algebraMap K L W.a₂ with hA₂def
   set A := algebraMap K L W.a₄ with hAdef
-  have ht : ν t ≤ 1 := W.valuation_root_le_one R p hw
+  have ht : ν t ≤ 1 := W.valuation_root_le_one R p ha₂ ha₄ ha₆
   -- `y ² = (x - θ) * (x ² + θ x + θ ² + a₂ (x + θ) + a₄)` over `L`
   have heqL : (algebraMap K L y) ^ 2 = algebraMap K L x ^ 3 + A₂ * algebraMap K L x ^ 2 +
       A * algebraMap K L x + algebraMap K L W.a₆ := by
@@ -516,22 +485,26 @@ private lemma even_valuationOfNeZero_sub_root_of_le_one
   rw [hu] at hlt
   have hcof : ν (t ^ 2 + (algebraMap K L x + A₂) * t
       + (algebraMap K L x ^ 2 + A₂ * algebraMap K L x + A)) = 1 :=
-    W.valuation_cofactor_eq_one R p hw hx' hlt
+    W.valuation_cofactor_eq_one R p ha₂ ha₄ ha₆ hderiv hx' hlt
   have hy0 : algebraMap K L y ≠ 0 := (_root_.map_ne_zero _).mpr (W.y_ne_zero_of_eval_f_ne_zero h hx)
   have hkey : ν (u : L) = ν ((Units.mk0 _ hy0 : Lˣ) : L) ^ 2 := by
     rw [Units.val_mk0, ← map_pow, ← hfac, map_mul, hcof, mul_one]
   simpa using w.dvd_toAdd_valuationOfNeZero hkey
 
+include hderiv in
 /-- The arithmetic core of Step 6, generic case, with all the group theory stripped away: for
 `(x, y)` on `W` with `f x ≠ 0`, and `w` a prime of the ring of integers of the field factor
-`K[X] ⧸ (p)` not lying above a bad prime, the `w`-adic valuation of `x - θ` is even.
+`K[X] ⧸ (p)` such that `a₂`, `a₄` and `a₆` are integral at the prime under `w` and `f' θ` is a
+`w`-unit, the `w`-adic valuation of `x - θ` is even. By `valuation_deriv_root_eq_one`, the last
+condition holds when `disc f` is a unit at the prime under `w`.
 
 The proof splits on whether `x` has a pole at the prime of `R` under `w`. -/
 lemma even_valuationOfNeZero_sub_root :
     (2 : ℤ) ∣ Multiplicative.toAdd (w.valuationOfNeZero u) := by
   by_cases hx' : 1 < w.valuation (𝕃 p) (ι p x)
-  · exact W.even_valuationOfNeZero_sub_root_of_one_lt R p h hx u hu w hw hx'
-  · exact W.even_valuationOfNeZero_sub_root_of_le_one R p h hx u hu w hw (not_lt.mp hx')
+  · exact W.even_valuationOfNeZero_sub_root_of_one_lt R p h hx u hu w ha₂ ha₄ ha₆ hx'
+  · exact W.even_valuationOfNeZero_sub_root_of_le_one R p h hx u hu w ha₂ ha₄ ha₆ hderiv
+      (not_lt.mp hx')
 
 end Core
 

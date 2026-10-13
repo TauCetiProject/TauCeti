@@ -106,6 +106,9 @@ Coefficients are an object `R` of an abelian category with coproducts.
 * `TauCeti.isZero_reducedSingularHomologyFunctor_topCatSphere_of_ne` and
   `TauCeti.reducedSingularHomologyTopCatSphereIso`: the same for Mathlib's `TopCat.sphere n`, with
   the standard generator determined by the standard basis.
+* `ModuleCat.finrank_singularHomology_sphere`: with coefficients in a free module `M` of finite
+  rank, `H_q(Sᵈ; M)` is free of rank `rank M` for `q = 0` and for `q = d` (of rank `2 rank M`
+  when `d = q = 0`), and vanishes otherwise.
 
 ## References
 
@@ -770,3 +773,76 @@ lemma reducedSingularHomologyTopCatSphereIso_hom (n : ℕ) :
 end TopCatSphere
 
 end TauCeti
+
+namespace ModuleCat
+
+open TauCeti AlgebraicTopology
+
+section Free
+
+variable {k : Type w} [Ring k] (M : ModuleCat.{w} k)
+
+/-- The reduced singular homology of a sphere with coefficients in a free module is free. -/
+instance free_reducedSingularHomology_sphere [Module.Free k M] (d q : ℕ) :
+    Module.Free k ((reducedSingularHomologyFunctor M q).obj (TopCat.sphere.{w} d)) := by
+  by_cases h : q = d
+  · subst h
+    exact .of_equiv (reducedSingularHomologyTopCatSphereIso M q).symm.toLinearEquiv
+  · have := ModuleCat.isZero_iff_subsingleton.mp
+      (isZero_reducedSingularHomologyFunctor_topCatSphere_of_ne M (n := d) h)
+    infer_instance
+
+/-- The reduced singular homology of a sphere with coefficients in a finitely generated module is
+finitely generated. -/
+instance finite_reducedSingularHomology_sphere [Module.Finite k M] (d q : ℕ) :
+    Module.Finite k ((reducedSingularHomologyFunctor M q).obj (TopCat.sphere.{w} d)) := by
+  by_cases h : q = d
+  · subst h
+    exact .equiv (reducedSingularHomologyTopCatSphereIso M q).symm.toLinearEquiv
+  · have := ModuleCat.isZero_iff_subsingleton.mp
+      (isZero_reducedSingularHomologyFunctor_topCatSphere_of_ne M (n := d) h)
+    infer_instance
+
+/-- The reduced homology of the sphere `Sᵈ` has the rank of the coefficients in degree `d` and
+vanishes in every other degree. -/
+@[simp]
+theorem finrank_reducedSingularHomology_sphere [StrongRankCondition k] (d q : ℕ) :
+    Module.finrank k ((reducedSingularHomologyFunctor M q).obj (TopCat.sphere.{w} d)) =
+      if q = d then Module.finrank k M else 0 := by
+  split_ifs with h
+  · subst h
+    exact (reducedSingularHomologyTopCatSphereIso M q).toLinearEquiv.finrank_eq
+  · have := ModuleCat.isZero_iff_subsingleton.mp
+      (isZero_reducedSingularHomologyFunctor_topCatSphere_of_ne M (n := d) h)
+    have := nontrivial_of_invariantBasisNumber k
+    exact Module.finrank_zero_of_subsingleton
+
+/-- The singular homology of a sphere with coefficients in a free module is free. -/
+instance free_singularHomology_sphere [Module.Free k M] (d q : ℕ) :
+    Module.Free k (((singularHomologyFunctor (ModuleCat.{w} k) q).obj M).obj
+      (TopCat.sphere.{w} d)) :=
+  free_singularHomology_of_free_reducedSingularHomology M q
+
+/-- The singular homology of a sphere with coefficients in a finitely generated module is finitely
+generated. -/
+instance finite_singularHomology_sphere [Module.Finite k M] (d q : ℕ) :
+    Module.Finite k (((singularHomologyFunctor (ModuleCat.{w} k) q).obj M).obj
+      (TopCat.sphere.{w} d)) :=
+  finite_singularHomology_of_finite_reducedSingularHomology M q
+
+/-- **The homology of a sphere.**  With coefficients in a free module `M` of finite rank,
+`H_q(Sᵈ; M)` has rank `rank M` in degree `d`, plus `rank M` in degree zero; so it has rank
+`rank M` in degrees `0` and `d` for `d > 0`, rank `2 rank M` in degree `0` for `d = 0`, and
+vanishes in every other degree. -/
+@[simp]
+theorem finrank_singularHomology_sphere [StrongRankCondition k] [Module.Free k M]
+    [Module.Finite k M] (d q : ℕ) :
+    Module.finrank k (((singularHomologyFunctor (ModuleCat.{w} k) q).obj M).obj
+      (TopCat.sphere.{w} d)) =
+      (if q = d then Module.finrank k M else 0) + if q = 0 then Module.finrank k M else 0 := by
+  rw [finrank_singularHomology_eq_finrank_reducedSingularHomology_add,
+    finrank_reducedSingularHomology_sphere]
+
+end Free
+
+end ModuleCat

@@ -204,34 +204,23 @@ theorem IsIndecomposableModule.isSimpleModule [IsSemisimpleModule A M]
 
 /-! ### Splitting off an indecomposable module -/
 
-/-- **A split injection into an indecomposable module is an isomorphism.** If `g ∘ₗ f` is bijective
-then `f ∘ₗ (g ∘ₗ f)⁻¹ ∘ₗ g` is an idempotent endomorphism of the indecomposable module `f` lands
-in, hence is `0` or `1`; it cannot be `0`, because that would force `f` to vanish on a nontrivial
-module, so it is the identity and `f` is surjective. -/
+/-- If `N` is nontrivial, `P` is indecomposable, and `g ∘ₗ f` is bijective for linear maps
+`f : N →ₗ[A] P` and `g : P →ₗ[A] N`, then `f` is bijective. -/
 theorem IsIndecomposableModule.bijective_of_bijective_comp {N P : Type*}
     [AddCommGroup N] [Module A N] [AddCommGroup P] [Module A P] [Nontrivial N]
     (hP : IsIndecomposableModule A P) {f : N →ₗ[A] P} {g : P →ₗ[A] N}
     (h : Function.Bijective (g ∘ₗ f)) : Function.Bijective f := by
-  set u : N ≃ₗ[A] N := LinearEquiv.ofBijective (g ∘ₗ f) h with _
-  have hgf : ∀ x : N, u.symm (g (f x)) = x := fun x ↦ u.symm_apply_apply x
-  set e : Module.End A P := f ∘ₗ (u.symm : N →ₗ[A] N) ∘ₗ g with he
-  have hidem : IsIdempotentElem e := by
-    ext x
-    simp only [he, Module.End.mul_apply, LinearMap.coe_comp, Function.comp_apply,
-      LinearEquiv.coe_coe]
-    rw [hgf]
-  have hinjf : Function.Injective f := fun x y hxy ↦ h.1 (by
-    simp only [LinearMap.coe_comp, Function.comp_apply, hxy])
-  rcases hP.eq_zero_or_eq_one_of_isIdempotentElem hidem with h0 | h1
-  · exfalso
-    have hzero : ∀ x : N, f x = 0 := fun x ↦ by
-      have hx := congrArg (fun t : Module.End A P ↦ t (f x)) h0
-      simpa [he, hgf] using hx
-    obtain ⟨x, y, hxy⟩ := exists_pair_ne N
-    exact hxy (hinjf (by rw [hzero x, hzero y]))
-  · refine ⟨hinjf, fun y ↦ ⟨u.symm (g y), ?_⟩⟩
-    have hy := congrArg (fun t : Module.End A P ↦ t y) h1
-    simpa [he] using hy
+  let u := LinearEquiv.ofBijective (g ∘ₗ f) h
+  have hinj : Function.Injective f := Function.Injective.of_comp (f := g) (g := f) h.1
+  let p := f.rangeRestrict ∘ₗ u.symm.toLinearMap ∘ₗ g
+  have hcompl : IsCompl f.range p.ker := LinearMap.isCompl_of_proj (f := p) (by
+    rintro ⟨_, x, rfl⟩
+    apply Subtype.ext
+    exact congrArg f (u.symm_apply_apply x))
+  have hker := (hP.eq_bot_or_eq_bot hcompl).resolve_left fun hf ↦
+    LinearMap.ne_zero_of_injective hinj (LinearMap.range_eq_bot.mp hf)
+  refine ⟨hinj, LinearMap.range_eq_top.mp ?_⟩
+  simpa [hker] using hcompl.sup_eq_top
 
 /-! ### Fitting's lemma -/
 

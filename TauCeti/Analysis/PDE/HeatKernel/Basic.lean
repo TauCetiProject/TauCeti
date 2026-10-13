@@ -35,10 +35,13 @@ a heat kernel assumes `0 < t`.
 
 * `TauCeti.heatKernel`: the heat kernel `K_t(x)`.
 * `TauCeti.heatKernel_pos`: `K_t > 0` for `t > 0`.
+* `TauCeti.heatKernel_le`: the pointwise bound by `(4πt)^(-n/2)`.
 * `TauCeti.heatKernel_eq_mul_heatKernel_one_smul`: the parabolic scaling
   `K_t(x) = (√t)⁻¹ ^ n K_1((√t)⁻¹ • x)`.
 * `TauCeti.contDiff_heatKernel`: `K_t` is smooth.
 * `TauCeti.integral_heatKernel`: `∫ K_t = 1` for `t > 0`.
+* `TauCeti.eLpNorm_heatKernel_le`: an explicit `Lᵠ` bound for `1 ≤ q ≤ ∞`.
+* `TauCeti.memLp_heatKernel`: `K_t` belongs to every `Lᵠ` with `1 ≤ q ≤ ∞`.
 * `TauCeti.laplacian_heatKernel`: `Δ K_t(x) = (‖x‖² / (4t²) - n / (2t)) K_t(x)`.
 * `TauCeti.hasDerivAt_heatKernel`: the heat equation `∂ₜ K_t(x) = Δ K_t(x)` for `t > 0`.
 * `TauCeti.heatKernel_convolution_heatKernel`: the semigroup identity `K_t ⋆ K_s = K_{t+s}`.
@@ -58,7 +61,7 @@ noncomputable section
 namespace TauCeti
 
 open InnerProductSpace Laplacian MeasureTheory Real
-open scoped RealInnerProductSpace Convolution FourierTransform ContDiff
+open scoped RealInnerProductSpace Convolution FourierTransform ContDiff ENNReal NNReal
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
 
@@ -77,6 +80,14 @@ theorem heatKernel_apply (t : ℝ) (x : E) :
 theorem heatKernel_pos {t : ℝ} (ht : 0 < t) (x : E) : 0 < heatKernel t x := by
   rw [heatKernel_apply]
   positivity
+
+/-- The heat kernel is bounded by its value at the origin. -/
+theorem heatKernel_le {t : ℝ} (ht : 0 < t) (x : E) :
+    heatKernel t x ≤ (4 * π * t) ^ (-(Module.finrank ℝ E : ℝ) / 2) := by
+  rw [heatKernel_apply]
+  exact mul_le_of_le_one_right (by positivity)
+    (exp_le_one_iff.mpr (div_nonpos_of_nonpos_of_nonneg
+      (neg_nonpos.mpr (sq_nonneg _)) (by positivity)))
 
 /-- The heat kernel is radial; in particular it is even. -/
 @[simp]
@@ -171,6 +182,61 @@ theorem integral_heatKernel {t : ℝ} (ht : 0 < t) : ∫ x : E, heatKernel t x =
 /-- The heat kernel is integrable at every positive time. -/
 theorem integrable_heatKernel {t : ℝ} (ht : 0 < t) : Integrable (heatKernel t : E → ℝ) :=
   Integrable.of_integral_ne_zero (by simp [integral_heatKernel ht])
+
+/-- The heat kernel has finite `Lᵠ` norm for every `1 ≤ q ≤ ∞`, with the explicit bound
+`‖K_t‖_q ≤ (4πt)^(-(n/2)(1 - 1/q))`. -/
+theorem eLpNorm_heatKernel_le {t : ℝ} (ht : 0 < t) {q : ℝ≥0∞} (hq : 1 ≤ q) :
+    eLpNorm (heatKernel t : E → ℝ) q volume ≤
+      ENNReal.ofReal ((4 * π * t) ^
+        (-(Module.finrank ℝ E : ℝ) / 2 * (1 - 1 / q.toReal))) := by
+  have hm : AEStronglyMeasurable (heatKernel t : E → ℝ) volume :=
+    (contDiff_heatKernel (k := ⊤) t).continuous.aestronglyMeasurable
+  set c : ℝ := (4 * π * t) ^ (-(Module.finrank ℝ E : ℝ) / 2)
+  have hc : 0 < c := by positivity
+  have hbound : ∀ x : E, ‖heatKernel t x‖ ≤ c := fun x => by
+    rw [norm_of_nonneg (heatKernel_pos ht x).le]
+    exact heatKernel_le ht x
+  by_cases hqt : q = (∞ : ℝ≥0∞)
+  · subst q
+    rw [eLpNorm_exponent_top hm]
+    simpa [c] using eLpNormEssSup_le_of_ae_bound (Filter.Eventually.of_forall hbound)
+  have hq0 : q ≠ 0 := ne_of_gt (zero_lt_one.trans_le hq)
+  have hqr : 1 ≤ q.toReal := by
+    exact_mod_cast ENNReal.toReal_mono hqt hq
+  have hpow (x : E) : ‖heatKernel t x‖ₑ ^ q.toReal ≤
+      ENNReal.ofReal (c ^ (q.toReal - 1)) * ENNReal.ofReal (heatKernel t x) := by
+    rw [Real.enorm_eq_ofReal (heatKernel_pos ht x).le, ENNReal.ofReal_rpow_of_nonneg
+      (heatKernel_pos ht x).le (by positivity), ← ENNReal.ofReal_mul (by positivity)]
+    apply ENNReal.ofReal_le_ofReal
+    calc (heatKernel t x) ^ q.toReal =
+        (heatKernel t x) ^ (q.toReal - 1) * heatKernel t x := by
+          rw [← rpow_add_one (heatKernel_pos ht x).ne', sub_add_cancel]
+      _ ≤ c ^ (q.toReal - 1) * heatKernel t x :=
+          mul_le_mul_of_nonneg_right
+            (rpow_le_rpow (heatKernel_pos ht x).le (heatKernel_le ht x) (by linarith))
+            (heatKernel_pos ht x).le
+  have hint : ∫⁻ x : E, ‖heatKernel t x‖ₑ ^ q.toReal ≤
+      ENNReal.ofReal (c ^ (q.toReal - 1)) := by
+    calc (∫⁻ x : E, ‖heatKernel t x‖ₑ ^ q.toReal) ≤
+        ∫⁻ x : E, ENNReal.ofReal (c ^ (q.toReal - 1)) * ENNReal.ofReal (heatKernel t x) :=
+          lintegral_mono hpow
+      _ = ENNReal.ofReal (c ^ (q.toReal - 1)) := by
+          rw [lintegral_const_mul' _ _ ENNReal.ofReal_ne_top,
+            ← ofReal_integral_eq_lintegral_ofReal (integrable_heatKernel ht)
+              (Filter.Eventually.of_forall fun x => (heatKernel_pos ht x).le),
+            integral_heatKernel ht, ENNReal.ofReal_one, mul_one]
+  rw [eLpNorm_eq_lintegral_rpow_enorm_toReal hq0 hqt hm]
+  refine (ENNReal.rpow_le_rpow hint (by positivity)).trans_eq ?_
+  rw [ENNReal.ofReal_rpow_of_pos (by positivity), ← rpow_mul hc.le]
+  have he : (q.toReal - 1) * (1 / q.toReal) = 1 - 1 / q.toReal := by
+    field_simp
+  rw [he]
+  simp only [c, ← rpow_mul (by positivity : 0 ≤ 4 * π * t)]
+
+/-- The heat kernel belongs to every `Lᵠ` with `1 ≤ q ≤ ∞`. -/
+theorem memLp_heatKernel {t : ℝ} (ht : 0 < t) {q : ℝ≥0∞} (hq : 1 ≤ q) :
+    MemLp (heatKernel t : E → ℝ) q volume :=
+  (eLpNorm_heatKernel_le ht hq).trans_lt ENNReal.ofReal_lt_top
 
 /-- **The semigroup property of the heat kernel** (Chapman–Kolmogorov):
 `K_t ⋆ K_s = K_{t+s}` for `t, s > 0`. -/
