@@ -173,10 +173,15 @@ theorem map_top_liftGroupLikeBialgHom :
       Subcoalgebra.groupLikeSetSpan (R := R) (C := H) Set.univ := by
   apply Subcoalgebra.ext
   intro h
-  let f : MonoidAlgebra R (_root_.GroupLike R H) →ₗc[R] H :=
-    MonoidAlgebra.liftGroupLikeBialgHom (R := R) (A := H)
-  have hmap : (Subcoalgebra.map f ⊤).toSubmodule = LinearMap.range f.toLinearMap := by
-    rw [Subcoalgebra.map_toSubmodule, Subcoalgebra.top_toSubmodule, Submodule.map_top]
+  have hmap :
+      (Subcoalgebra.map
+        (MonoidAlgebra.liftGroupLikeBialgHom (R := R) (A := H) :
+          MonoidAlgebra R (_root_.GroupLike R H) →ₗc[R] H)
+        (⊤ : Subcoalgebra R (MonoidAlgebra R (_root_.GroupLike R H)))).toSubmodule =
+        LinearMap.range
+          (MonoidAlgebra.liftGroupLikeBialgHom (R := R) (A := H) :
+            MonoidAlgebra R (_root_.GroupLike R H) →ₗ[R] H) :=
+    Subcoalgebra.map_top_toSubmodule _
   calc
     h ∈ Subcoalgebra.map
         (MonoidAlgebra.liftGroupLikeBialgHom (R := R) (A := H) :
@@ -192,8 +197,6 @@ theorem map_top_liftGroupLikeBialgHom :
         (MonoidAlgebra.liftGroupLikeBialgHom (R := R) (A := H) :
           MonoidAlgebra R (_root_.GroupLike R H) →ₗ[R] H) := by
       rw [hmap]
-      simp only [f, LinearMap.mem_range, CoalgHom.toLinearMap_eq_ofClass,
-        CoalgHom.coe_linearMapOfClass, BialgHom.coe_toCoalgHom, BialgHom.coe_toLinearMap]
     _ ↔ h ∈
         (Subcoalgebra.groupLikeSetSpan (R := R) (C := H) Set.univ).toSubmodule := by
       rw [range_liftGroupLikeBialgHom_eq_groupLikeSetSpan_toSubmodule]
