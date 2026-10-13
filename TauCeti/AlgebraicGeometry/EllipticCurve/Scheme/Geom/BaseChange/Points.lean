@@ -31,6 +31,9 @@ through divisors of points, such as points of exact order `N`, pull back along b
 
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.pointsPullback hg h0`: base change of `S`-points of
   `E` to `S'`-points of `E'`, as a group homomorphism.
+* `TauCeti.AlgebraicGeometry.EllipticCurveGeom.pointsMulEquivOfIsPullback hg h0`: for a base
+  change `E'` of `E` along a scheme `T` over `S`, the `T`-points of `E'` are the points of `E` with
+  values in `T`, as a group isomorphism.
 
 ## Main results
 
@@ -45,6 +48,11 @@ through divisors of points, such as points of exact order `N`, pull back along b
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.pointsPullback_left_apply_eq_zero_iff`: the base
   change `P'` of `P` meets the zero section at a point `s'` of `S'` exactly when `P` meets the
   zero section at `f s'`.
+* `TauCeti.AlgebraicGeometry.EllipticCurveGeom.left_apply_eq_zero_iff_of_isPullback`: an
+  `S'`-point of `E'` meets the zero section at `s'` exactly when its image in `E` meets the zero
+  section of `E` at `f s'`.
+* `TauCeti.AlgebraicGeometry.EllipticCurveGeom.isClosed_setOf_left_apply_eq_zero`: the points at
+  which a point of `E` meets the zero section form a closed set.
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.ker_pointsPullback_left`: the ideal sheaf of `P'`
   is the inverse image of the ideal sheaf of `P` along `g`.
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.exists_grpObj_isMonHom_comap`: the inverse image of
@@ -169,6 +177,37 @@ theorem comp_pointsPullback_left_eq_comp_zero_iff (P : 𝟙_ (Over S) ⟶ Over.m
   ⟨fun h ↦ by simpa [h0] using congr($h ≫ g),
     fun h ↦ hg.hom_ext (by simpa [h0] using h) (by simp)⟩
 
+include hg h0 in
+/-- **A point of a base change meets the zero section exactly where its image does.** For a
+pullback square of elliptic curves over `f : S' ⟶ S`, an `S'`-point `P` of `E'` meets the zero
+section at a point `s'` of `S'` exactly when its image `P ≫ g` in `E` meets the zero section of `E`
+at `f s'`. -/
+theorem left_apply_eq_zero_iff_of_isPullback (P : 𝟙_ (Over S') ⟶ Over.mk E'.structureMap)
+    (s' : S') : P.left s' = E'.zero s' ↔ g (P.left s') = E.zero (f s') := by
+  refine ⟨fun h ↦ by rw [h, ← Scheme.Hom.comp_apply, h0, Scheme.Hom.comp_apply], fun h ↦ ?_⟩
+  -- both sides are compared at the point `t : Spec κ(s') ⟶ S'`, where they become equalities of
+  -- morphisms
+  obtain ⟨p⟩ : Nonempty (Spec (.of (S'.residueField s'))) := inferInstance
+  -- `t` is typed with `Spec (.of _)`, the form of `hom_ext_of_isIso_residueFieldMap`
+  let t : Spec (.of (S'.residueField s')) ⟶ S' := S'.fromSpecResidueField s'
+  have hp : t p = s' := Scheme.fromSpecResidueField_apply s' p
+  -- the composites with `g` agree at the point of `Spec κ(s')` and lie over the same morphism to
+  -- `S`, and the residue field of `E` at a point of the zero section is that of `S`
+  have hmain : t ≫ P.left ≫ g = t ≫ f ≫ E.zero := by
+    obtain rfl : p = IsLocalRing.closedPoint (S'.residueField s') := Subsingleton.elim _ _
+    -- `(t ≫ P.left ≫ g) p` is `g (P.left (t p))` by definition, and `t p = s'`
+    have hpt : (t ≫ P.left ≫ g) (IsLocalRing.closedPoint (S'.residueField s')) =
+        (t ≫ f ≫ E.zero) (IsLocalRing.closedPoint (S'.residueField s')) :=
+      (congrArg (fun y ↦ g (P.left y)) hp).trans (h.trans (congrArg (fun y ↦ E.zero (f y)) hp.symm))
+    have : IsIso (E.structureMap.residueFieldMap
+        ((t ≫ P.left ≫ g) (IsLocalRing.closedPoint (S'.residueField s')))) := by
+      rw [hpt]
+      exact isIso_residueFieldMap_of_section E.zero_comp_structureMap _
+    exact hom_ext_of_isIso_residueFieldMap (f := E.structureMap) (by simp [t, hg.w]) hpt
+  refine hp ▸ (comp_eq_comp_iff_of_section (left_comp_structureMap P)
+    E'.zero_comp_structureMap t p).mp (hg.hom_ext ?_ (by simp))
+  simpa [h0] using hmain
+
 /-- **A base-changed point meets the zero section exactly over the points where the original
 point does.** For a pullback square of elliptic curves over `f : S' ⟶ S` and an `S`-point `P` of
 `E`, the base change `P'` of `P` agrees with the zero section of `E'` at a point `s'` of `S'` if and
@@ -176,19 +215,8 @@ only if `P` agrees with the zero section of `E` at `f s'`. -/
 theorem pointsPullback_left_apply_eq_zero_iff (P : 𝟙_ (Over S) ⟶ Over.mk E.structureMap)
     (s' : S') :
     (pointsPullback hg h0 P).left s' = E'.zero s' ↔ P.left (f s') = E.zero (f s') := by
-  -- both sides are read at the point `t : Spec κ(s') ⟶ S'`, where they become equalities of
-  -- morphisms; they are chained with `Iff.trans` since the point `p` of `Spec κ(s')` is typed in
-  -- `Spec (.of _)` by `comp_eq_comp_iff_of_section`, which blocks `rw`
-  obtain ⟨p⟩ : Nonempty (Spec (S'.residueField s')) := inferInstance
-  have key {T : Scheme.{u}} {X : Scheme.{u}} (a b : T ⟶ X) (z y : T) (hz : z = y) :
-      a z = b z ↔ a y = b y := by
-    rw [hz]
-  refine (key _ _ _ _ (Scheme.fromSpecResidueField_apply s' p)).symm.trans
-    ((comp_eq_comp_iff_of_section (left_comp_structureMap _) E'.zero_comp_structureMap
-      (S'.fromSpecResidueField s') p).symm.trans
-        ((comp_pointsPullback_left_eq_comp_zero_iff hg h0 P _).trans ((comp_eq_comp_iff_of_section
-          (left_comp_structureMap P) E.zero_comp_structureMap (S'.fromSpecResidueField s' ≫ f)
-            p).trans (key _ _ _ _ (congrArg f (Scheme.fromSpecResidueField_apply s' p))))))
+  rw [left_apply_eq_zero_iff_of_isPullback hg h0, ← Scheme.Hom.comp_apply,
+    pointsPullback_left_comp, Scheme.Hom.comp_apply]
 
 /-- **The divisor of a base-changed point.** The ideal sheaf of the base change `P'` of an
 `S`-point `P` of `E`, which cuts out the divisor `[P']` on `E'`, is the inverse image along `g` of
@@ -261,6 +289,64 @@ theorem exists_grpObj_isMonHom_comap (D : E.carrier.IdealSheafData)
       simp [i, i', neg_comp_of_isPullback hg h0, reassoc_of% hρ]
     rw [key]
     exact hj.trans (Scheme.Hom.le_ker_comp _ _)
+
+/-! ### Points of a base change as points of the original curve -/
+
+section OverPoints
+
+variable {T : Over S} {E' : EllipticCurveGeom T.left} {g : E'.carrier ⟶ E.carrier}
+  (hg : IsPullback g E'.structureMap E.structureMap T.hom) (h0 : E'.zero ≫ g = T.hom ≫ E.zero)
+
+/-- **Points of a base change are points of the original curve.** Let `T` be a scheme over `S` and
+`E'` an elliptic curve over `T` with a morphism `g : E' ⟶ E` lying over `T ⟶ S`, forming a pullback
+square with the structure morphisms and carrying the zero section of `E'` to that of `E`. Then the
+`T`-points of `E'` are the points of `E` with values in `T`: a `T`-point `P` of `E'` corresponds to
+`P ≫ g`. This is a group isomorphism. -/
+noncomputable def pointsMulEquivOfIsPullback :
+    (𝟙_ (Over T.left) ⟶ Over.mk E'.structureMap) ≃* (T ⟶ Over.mk E.structureMap) where
+  toFun P := Over.homMk (P.left ≫ g) (by simp [hg.w])
+  invFun x := Over.homMk (hg.lift x.left (𝟙 T.left) (by simpa using Over.w x)) (by simp)
+  left_inv P := point_ext hg (by simp)
+  right_inv x := by
+    ext1
+    simp
+  map_mul' P Q := by
+    ext1
+    simp only [Over.homMk_left]
+    rw [mul_left_comp_of_isPullback hg h0, hom_mul_left]
+    rfl
+
+/-- The point of `E` corresponding to a `T`-point `P` of `E'` is `P ≫ g`. -/
+@[simp]
+theorem pointsMulEquivOfIsPullback_apply_left (P : 𝟙_ (Over T.left) ⟶ Over.mk E'.structureMap) :
+    (pointsMulEquivOfIsPullback hg h0 P).left = P.left ≫ g :=
+  (rfl)
+
+/-- The `T`-point of `E'` corresponding to a point `x` of `E` with values in `T` lies over `x`. -/
+@[reassoc (attr := simp)]
+theorem pointsMulEquivOfIsPullback_symm_apply_left_comp (x : T ⟶ Over.mk E.structureMap) :
+    ((pointsMulEquivOfIsPullback hg h0).symm x).left ≫ g = x.left :=
+  hg.lift_fst _ _ _
+
+end OverPoints
+
+variable (E) in
+/-- **Meeting the zero section is a closed condition.** For a point `x` of `E` with values in a
+scheme `Z` over `S`, the points of `Z` at which `x` meets the zero section form a closed set: the
+preimage of the image of the zero section, a closed immersion since `E` is separated over `S`. -/
+theorem isClosed_setOf_left_apply_eq_zero {Z : Over S} (x : Z ⟶ Over.mk E.structureMap) :
+    IsClosed {z | x.left z = E.zero (Z.hom z)} := by
+  have := E.zero.isClosedImmersion_of_comp_eq_id E.zero_comp_structureMap
+  convert E.zero.isClosedEmbedding.isClosed_range.preimage x.left.continuous using 1
+  ext z
+  refine ⟨fun h ↦ ⟨_, h.symm⟩, fun ⟨s, hs⟩ ↦ ?_⟩
+  -- a point of the zero section lying on `x` lies over the image of `z` in `S`
+  have hw : x.left ≫ E.structureMap = Z.hom := Over.w x
+  obtain rfl : s = Z.hom z :=
+    calc s = (E.zero ≫ E.structureMap) s := by simp
+      _ = (x.left ≫ E.structureMap) z := by rw [Scheme.Hom.comp_apply, Scheme.Hom.comp_apply, hs]
+      _ = Z.hom z := by rw [hw]
+  exact hs.symm
 
 end EllipticCurveGeom
 

@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.NaiveLevel
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.Torsion.BaseChange
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.Torsion.Primitive
 public import TauCeti.AlgebraicGeometry.ModularCurve.ModuliProblem
 public import TauCeti.Data.ZMod.MonoidHomEquiv
 
@@ -35,6 +37,14 @@ The definitions make sense over every base `B`, but they are the naive level str
 Mazur only over a base on which `N` is invertible, where `E[N]` is finite étale. Over a general base
 the level structures are Drinfeld's (`ModuliProblem.gammaOne` for `[Γ₁(N)]`).
 
+For `N ≠ 0` the naive problem `[Γ₁(N)]` is relatively representable over `Ell/B`
+(`ModuliProblem.gammaOneNaiveRelRepData`): for an object `(E/S)`, the naive
+`[Γ₁(N)]`-structures on the base change `E_T` along a scheme `T` over `S` are the morphisms
+`T ⟶ E[N]^×` over `S` (`ModuliProblem.gammaOneNaiveBaseChangeEquiv`), where `E[N]^×` is the open
+subscheme of `E[N]` of points of exact order `N` in every fibre
+(`EllipticCurveGeom.primitiveTorsion`). When `N` is invertible on `B`, `E[N]` is étale over `S`, so
+`[Γ₁(N)]` is étale over `Ell/B` (`ModuliProblem.hasProperty_etale_gammaOneNaiveRelRepData`).
+
 ## Main definitions
 
 * `TauCeti.AlgebraicGeometry.ModuliProblem.naiveLevel B A`: the moduli problem of naive
@@ -50,6 +60,10 @@ the level structures are Drinfeld's (`ModuliProblem.gammaOne` for `[Γ₁(N)]`).
   `TauCeti.AlgebraicGeometry.ModuliProblem.gammaNaiveEquiv`: for `N ≠ 0`, the naive
   `[Γ₁(N)]`-structures are the `S`-points of `E[N]` of exact order `N` in every fibre, and the
   naive `[Γ(N)]`-structures are the pairs of `S`-points of `E[N]` independent in every fibre.
+* `TauCeti.AlgebraicGeometry.ModuliProblem.gammaOneNaiveBaseChangeEquiv`: the naive
+  `[Γ₁(N)]`-structures on the base change `E_T` are the morphisms `T ⟶ E[N]^×`.
+* `TauCeti.AlgebraicGeometry.ModuliProblem.gammaOneNaiveRelRepData`: the naive problem `[Γ₁(N)]`
+  is relatively representable, by `E[N]^×`.
 
 ## Main results
 
@@ -60,11 +74,17 @@ the level structures are Drinfeld's (`ModuliProblem.gammaOne` for `[Γ₁(N)]`).
 * `TauCeti.AlgebraicGeometry.ModuliProblem.gammaOneNaiveEquiv_map_torsionι` and
   `TauCeti.AlgebraicGeometry.ModuliProblem.gammaNaiveEquiv_map_fst_torsionι`: the points of `E[N]`
   of a pulled-back naive structure are the base changes of the original points.
+* `TauCeti.AlgebraicGeometry.ModuliProblem.gammaOneNaiveBaseChangeEquiv_map`: the correspondence
+  with morphisms to `E[N]^×` is natural in `T`.
+* `TauCeti.AlgebraicGeometry.ModuliProblem.hasProperty_etale_gammaOneNaiveRelRepData`: if `N` is
+  invertible on `B`, the naive problem `[Γ₁(N)]` is étale over `Ell/B`.
 
 ## References
 
 * N. M. Katz and B. Mazur, *Arithmetic Moduli of Elliptic Curves*, §3.7 (naive level structures
   where `N` is invertible) and Chapter 4.
+* D. Loeffler, *Modular curves*, lecture notes, Proposition 3.8.2 (naive level structures are
+  relatively representable and étale over `Ell/ℤ[1/N]`).
 -/
 
 public section
@@ -276,6 +296,148 @@ theorem gammaNaiveEquiv_map_snd_torsionι {X Y : EllObj B} (φ : X ⟶ Y)
   simp
 
 end Points
+
+/-! ### Relative representability of `[Γ₁(N)]` -/
+
+section RelRep
+
+variable {B N} [NeZero N]
+
+/-- The `T`-points of `E_T[N]` of exact order `N` in every fibre are the points of `E[N]` with
+values in `T` of exact order `N` in every fibre. The domain is written with
+`X.baseChangeFunctor.obj T`, as in `gammaOneNaiveEquiv`, and the codomain as in
+`EllipticCurveGeom.primitiveTorsionHomEquiv`. -/
+private noncomputable def gammaOneNaiveBaseChangeEquivAux (X : EllObj B) (T : Over X.base) :
+    {P : 𝟙_ (Over (X.baseChangeFunctor.obj T).base) ⟶
+        ((X.baseChangeFunctor.obj T).curve.torsion N).X //
+      ∀ k : ℕ, 0 < k → k < N → ∀ s,
+        ((P ≫ (X.baseChangeFunctor.obj T).curve.torsionι N) ^ k).left s ≠
+          (X.baseChangeFunctor.obj T).curve.zero s} ≃
+      {y : T ⟶ (X.curve.torsion N).X //
+        ∀ k : ℕ, 0 < k → k < N → ∀ z, ((y ≫ X.curve.torsionι N) ^ k).left z ≠
+          X.curve.zero (T.hom z)} :=
+  (EllipticCurveGeom.torsionPointsEquivOfIsPullback N (X.curve.isPullback_baseChange T.hom)
+    (by simp)).subtypeEquiv fun P ↦
+      forall_congr' fun k ↦ forall_congr' fun _ ↦ forall_congr' fun _ ↦ forall_congr' fun t ↦
+        not_congr <| by
+          rw [EllipticCurveGeom.torsionPointsEquivOfIsPullback_apply_torsionι, ← map_pow,
+            EllipticCurveGeom.pointsMulEquivOfIsPullback_apply_left]
+          exact EllipticCurveGeom.left_apply_eq_zero_iff_of_isPullback
+            (X.curve.isPullback_baseChange T.hom) (by simp) _ t
+
+omit [NeZero N] in
+private theorem gammaOneNaiveBaseChangeEquivAux_apply_comp_left (X : EllObj B) (T : Over X.base)
+    (P : {P : 𝟙_ (Over (X.baseChangeFunctor.obj T).base) ⟶
+        ((X.baseChangeFunctor.obj T).curve.torsion N).X //
+      ∀ k : ℕ, 0 < k → k < N → ∀ s,
+        ((P ≫ (X.baseChangeFunctor.obj T).curve.torsionι N) ^ k).left s ≠
+          (X.baseChangeFunctor.obj T).curve.zero s}) :
+    ((gammaOneNaiveBaseChangeEquivAux X T P : T ⟶ (X.curve.torsion N).X) ≫
+        X.curve.torsionι N).left =
+      (P.1 ≫ (X.baseChangeFunctor.obj T).curve.torsionι N).left ≫
+        (X.curve.baseChangeIso T.hom).hom ≫ pullback.fst _ _ :=
+  -- `gammaOneNaiveBaseChangeEquivAux` is `torsionPointsEquivOfIsPullback` on underlying points
+  (congrArg Over.Hom.left (EllipticCurveGeom.torsionPointsEquivOfIsPullback_apply_torsionι
+    N (X.curve.isPullback_baseChange T.hom) (by simp) P.1)).trans
+      (EllipticCurveGeom.pointsMulEquivOfIsPullback_apply_left _ _ _)
+
+/-- **Naive `[Γ₁(N)]`-structures on base changes are points of `E[N]^×`.** For an object
+`X = (E/S)` of `Ell/B` and a scheme `T` over `S`, the naive `[Γ₁(N)]`-structures on the base change
+`E_T` of `E` correspond to the morphisms `T ⟶ E[N]^×` over `S`: a structure `α` corresponds to the
+morphism whose composite with `E[N]^× ⟶ E[N] ⟶ E` is the point `α 1` of `E_T` followed by the
+projection `E_T ⟶ E` (`gammaOneNaiveBaseChangeEquiv_apply_comp_left`). -/
+noncomputable def gammaOneNaiveBaseChangeEquiv (X : EllObj B) (T : Over X.base) :
+    (gammaOneNaive B N).obj (op (X.baseChangeFunctor.obj T)) ≃
+      (T ⟶ X.curve.primitiveTorsion N) :=
+  (gammaOneNaiveEquiv _).trans <|
+    (gammaOneNaiveBaseChangeEquivAux X T).trans (X.curve.primitiveTorsionHomEquiv N T).symm
+
+/-- The morphism `T ⟶ E[N]^×` of a naive `[Γ₁(N)]`-structure `α` on `E_T`, followed by
+`E[N]^× ⟶ E[N] ⟶ E`, is the point `α 1` of `E_T` followed by the projection `E_T ⟶ E`. -/
+theorem gammaOneNaiveBaseChangeEquiv_apply_comp_left (X : EllObj B) (T : Over X.base)
+    (α : (gammaOneNaive B N).obj (op (X.baseChangeFunctor.obj T))) :
+    (gammaOneNaiveBaseChangeEquiv X T α ≫ X.curve.primitiveTorsionι N ≫ X.curve.torsionι N).left =
+      ((naiveLevelEquiv _ α).1 (.ofAdd 1)).left ≫ (X.curve.baseChangeIso T.hom).hom ≫
+        pullback.fst _ _ := by
+  rw [gammaOneNaiveBaseChangeEquiv, Equiv.trans_apply, Equiv.trans_apply,
+    EllipticCurveGeom.primitiveTorsionHomEquiv_symm_apply_comp_assoc,
+    gammaOneNaiveBaseChangeEquivAux_apply_comp_left, gammaOneNaiveEquiv_apply_torsionι]
+
+/-- **Naturality of `gammaOneNaiveBaseChangeEquiv`.** Along a morphism `k : T' ⟶ T` of schemes
+over the base of `X`, the morphism `T' ⟶ E[N]^×` of the pull-back to `E_{T'}` of a naive
+`[Γ₁(N)]`-structure on `E_T` is the composite of `k` with the morphism `T ⟶ E[N]^×` of the
+structure. -/
+theorem gammaOneNaiveBaseChangeEquiv_map (X : EllObj B) {T' T : Over X.base} (k : T' ⟶ T)
+    (α : (gammaOneNaive B N).obj (op (X.baseChangeFunctor.obj T))) :
+    gammaOneNaiveBaseChangeEquiv X T' ((gammaOneNaive B N).map (X.baseChangeFunctor.map k).op α) =
+      k ≫ gammaOneNaiveBaseChangeEquiv X T α := by
+  -- both sides are compared as points of `E` with values in `T'`
+  refine (cancel_mono (X.curve.primitiveTorsionι N ≫ X.curve.torsionι N)).mp ?_
+  rw [Category.assoc]
+  ext1
+  rw [Over.comp_left _ _ _ k, gammaOneNaiveBaseChangeEquiv_apply_comp_left,
+    gammaOneNaiveBaseChangeEquiv_apply_comp_left, naiveLevelEquiv_map, MonoidHom.comp_apply]
+  -- the morphism `E_{T'} ⟶ E_T` lies over `k` and composes with `E_T ⟶ E` to `E_{T'} ⟶ E`
+  have hk := congrArg EllObj.Hom.total (X.baseChangeFunctor_map_baseChangeFunctorHom k)
+  simp only [EllObj.comp_total, EllObj.baseChangeFunctorHom_total] at hk
+  -- the composites are formed by terms, since the base change `E_{T'}` appears both as
+  -- `(X.baseChangeFunctor.obj T').curve` and as `X.curve.baseChange T'.hom`
+  exact (congrArg (fun m ↦ (EllipticCurveGeom.pointsPullback (X.baseChangeFunctor.map k).isPullback
+    (X.baseChangeFunctor.map k).zero_total ((naiveLevelEquiv _ α).1 (.ofAdd 1))).left ≫ m)
+      hk.symm).trans (EllipticCurveGeom.pointsPullback_left_comp_assoc _ _ _ _)
+
+/-- Naturality of `gammaOneNaiveBaseChangeEquiv`, read backwards: the naive `[Γ₁(N)]`-structure on
+`E_{T'}` of the composite of `k : T' ⟶ T` with a morphism `T ⟶ E[N]^×` is the pull-back of the
+structure on `E_T` of that morphism. -/
+theorem gammaOneNaiveBaseChangeEquiv_symm_comp (X : EllObj B) {T' T : Over X.base}
+    (k : T' ⟶ T) (a : T ⟶ X.curve.primitiveTorsion N) :
+    (gammaOneNaiveBaseChangeEquiv X T').symm (k ≫ a) =
+      (gammaOneNaive B N).map (X.baseChangeFunctor.map k).op
+        ((gammaOneNaiveBaseChangeEquiv X T).symm a) := by
+  rw [Equiv.symm_apply_eq, gammaOneNaiveBaseChangeEquiv_map, Equiv.apply_symm_apply]
+
+variable (B N) in
+/-- **The naive moduli problem `[Γ₁(N)]` is relatively representable.** For an object
+`X = (E/S)` of `Ell/B`, the functor `T ↦ [Γ₁(N)](E_T/T)` on schemes over `S` is represented by the
+open subscheme `E[N]^×` of `E[N]` of points of exact order `N` in every fibre
+(`EllipticCurveGeom.primitiveTorsion`), through `gammaOneNaiveBaseChangeEquiv`. The body is
+exposed so that morphisms into the representing scheme are morphisms into `E[N]^×`. -/
+@[expose]
+noncomputable def gammaOneNaiveRelRepData : (gammaOneNaive B N).RelRepData where
+  rep X := X.curve.primitiveTorsion N
+  representableBy X :=
+    { homEquiv := (gammaOneNaiveBaseChangeEquiv X _).symm
+      homEquiv_comp k a := (gammaOneNaiveBaseChangeEquiv_symm_comp X k a).trans
+        -- the fibre of `[Γ₁(N)]` over `X` at `T` is `[Γ₁(N)](E_T/T)` after unfolding `fibre`
+        rfl }
+
+/-- The scheme representing naive `[Γ₁(N)]`-structures on base changes of `X = (E/S)` is
+`E[N]^×`. -/
+@[simp]
+theorem gammaOneNaiveRelRepData_rep (X : EllObj B) :
+    (gammaOneNaiveRelRepData B N).rep X = X.curve.primitiveTorsion N :=
+  (rfl)
+
+/-- The naive `[Γ₁(N)]`-structure on `E_T` of a morphism `T ⟶ E[N]^×` is the one given by
+`gammaOneNaiveBaseChangeEquiv`. -/
+@[simp]
+theorem gammaOneNaiveRelRepData_homEquiv (X : EllObj B) {T : Over X.base}
+    (a : T ⟶ X.curve.primitiveTorsion N) :
+    ((gammaOneNaiveRelRepData B N).representableBy X).homEquiv a =
+      (gammaOneNaiveBaseChangeEquiv X T).symm a :=
+  (rfl)
+
+/-- **The naive moduli problem `[Γ₁(N)]` is étale over `Ell/B` when `N` is invertible on `B`**:
+if `N` is invertible in every residue field of `B`, every representing scheme `E[N]^×` is étale over
+its base. -/
+theorem hasProperty_etale_gammaOneNaiveRelRepData (hN : ∀ b : B, (N : B.residueField b) ≠ 0) :
+    (gammaOneNaiveRelRepData B N).HasProperty @Etale :=
+  (RelRepData.hasProperty_iff _).mpr fun X ↦ X.curve.etale_primitiveTorsion_hom N fun s hs ↦
+    hN (X.structureMap s) <| (X.structureMap.residueFieldMap s).hom.injective <| by
+      rw [map_natCast, map_zero]
+      exact hs
+
+end RelRep
 
 end ModuliProblem
 
