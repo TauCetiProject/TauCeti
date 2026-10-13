@@ -41,38 +41,6 @@ namespace TauCeti.Huber
 
 variable {k : ℕ} {A : Type*} [CommRing A] [TopologicalSpace A]
 
-open scoped Classical in
-/-- Replace the coefficients of a restricted series that fail one open weighted bound by
-coefficients satisfying that bound. Only finitely many coefficients change, so the resulting
-series remains restricted. The coefficient equation retains every coefficient already in the
-bound. Openness of `U` ensures that the exceptional set is finite. -/
-theorem IsWeightedRestricted.exists_coeff_mem_weightMul {T : Fin k → Set A}
-    {f : MvPowerSeries (Fin k) A} (hf : IsWeightedRestricted T f) (U : OpenAddSubgroup A)
-    (u : (Fin k →₀ ℕ) → A) (hu : ∀ ν, u ν ∈ weightMul T ν U.toAddSubgroup) :
-    ∃ g : MvPowerSeries (Fin k) A, IsWeightedRestricted T g ∧
-      (∀ ν, MvPowerSeries.coeff ν g ∈ weightMul T ν U.toAddSubgroup) ∧
-      ∀ ν, MvPowerSeries.coeff ν g =
-        if MvPowerSeries.coeff ν f ∈ weightMul T ν U.toAddSubgroup
-        then MvPowerSeries.coeff ν f else u ν := by
-  classical
-  let g : MvPowerSeries (Fin k) A := fun ν ↦
-    if MvPowerSeries.coeff ν f ∈ weightMul T ν U.toAddSubgroup
-    then MvPowerSeries.coeff ν f else u ν
-  have hcoeff (ν) : MvPowerSeries.coeff ν g =
-      if MvPowerSeries.coeff ν f ∈ weightMul T ν U.toAddSubgroup
-      then MvPowerSeries.coeff ν f else u ν := MvPowerSeries.coeff_apply g ν
-  refine ⟨g, ?_, ?_, hcoeff⟩
-  · rw [isWeightedRestricted_iff]
-    intro W
-    filter_upwards [isWeightedRestricted_iff.mp hf U,
-      isWeightedRestricted_iff.mp hf W] with ν hU hW
-    rwa [hcoeff, ite_eq_left hU]
-  · intro ν
-    rw [hcoeff]
-    split_ifs with h
-    · exact h
-    · exact hu ν
-
 variable {B : Type*} [NonarchimedeanRing A] [CommRing B] [TopologicalSpace B]
   [NonarchimedeanRing B]
 
@@ -97,9 +65,7 @@ theorem _root_.IsOpenQuotientMap.weightedMap [(𝓝 (0 : A)).IsCountablyGenerate
   have hgU : ∀ ν, ∃ u ∈ weightMul T ν U.toAddSubgroup,
       φ u = MvPowerSeries.coeff ν (g : MvPowerSeries (Fin k) B) := by
     intro ν
-    -- Set.image membership unfolds to the existential witness statement above.
-    change MvPowerSeries.coeff ν (g : MvPowerSeries (Fin k) B) ∈
-      φ '' (weightMul T ν U.toAddSubgroup : Set A)
+    apply (Set.mem_image (φ : A → B) (weightMul T ν U.toAddSubgroup : Set A) _).mp
     rw [φ.image_weightMul_of_image_eq hTS]
     exact mem_weightedNhd.mp hg ν
   choose u huU hu using hgU
