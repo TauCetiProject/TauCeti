@@ -21,10 +21,7 @@ transcendental over `k`, and let `x' ∈ F'` be its image. The morphism of two-c
 the normalization of `twoChartModel hF hx` in its function field `F'`, along the generic point
 `Spec k(X') ⟶ X' ⟶ X`, where `X = twoChartModel hF hx` and `X' = twoChartModel hF' hx'`.
 
-For `F = k⟮x⟯` the two charts of `twoChartModel hF hx` are the affine lines `Spec k[x]` and
-`Spec k[x⁻¹]`, and the model is the projective line over `k`; the result then says that the
-two-chart model of `F'` is the normalization of the projective line in `F'`. Through the
-isomorphism `normalizationIso`, Mathlib's universal property of the relative normalization
+Through `normalizationIso`, Mathlib's universal property of relative normalization
 (`AlgebraicGeometry.Scheme.Hom.normalizationDesc` and
 `AlgebraicGeometry.Scheme.Hom.normalization.hom_ext`) applies to the two-chart model: if the generic
 point of `X'` factors through an integral morphism `T ⟶ X`, then `X' ⟶ X` factors uniquely
