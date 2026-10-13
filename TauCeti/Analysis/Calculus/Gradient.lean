@@ -81,12 +81,6 @@ does. -/
 theorem gradient_of_notMem_tsupport (h : x ∉ tsupport f) : ∇ f x = 0 := by
   rw [gradient, fderiv_of_notMem_tsupport 𝕜 h, map_zero]
 
-/-- A linear combination of gradients vanishes at a point outside the supports of all its terms. -/
-theorem sum_smul_gradient_eq_zero_of_forall_notMem_tsupport {ι : Type*} (s : Finset ι)
-    (c : ι → 𝕜) (g : ι → F → 𝕜) (hx : ∀ i ∈ s, x ∉ tsupport (g i)) :
-    ∑ i ∈ s, c i • ∇ (g i) x = 0 :=
-  Finset.sum_eq_zero fun i hi ↦ by rw [gradient_of_notMem_tsupport (hx i hi), smul_zero]
-
 /-- The gradient of an arbitrary function is Borel measurable, as is its Fréchet derivative
 (`measurable_fderiv`); no differentiability is assumed, the gradient being `0` where `f` is not
 differentiable. -/

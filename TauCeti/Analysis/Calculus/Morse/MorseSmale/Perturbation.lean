@@ -94,20 +94,20 @@ variable [NormedAddCommGroup E] [NormedSpace ℝ E] [Fintype ι] {f : E → ℝ}
 
 /-- The differential of a perturbation is the perturbed differential. -/
 @[simp]
-theorem fderiv_perturb (hf : Differentiable ℝ f) (hh : ∀ i, Differentiable ℝ (h i))
-    (s : EuclideanSpace ℝ ι) (x : E) :
+theorem fderiv_perturb {x : E} (hf : DifferentiableAt ℝ f x)
+    (hh : ∀ i, DifferentiableAt ℝ (h i) x) (s : EuclideanSpace ℝ ι) :
     fderiv ℝ (perturb f h s) x = fderiv ℝ f x + ∑ i, s i • fderiv ℝ (h i) x := by
   have hs : HasFDerivAt (fun y ↦ ∑ i, s i • h i y) (∑ i, s i • fderiv ℝ (h i) x) x :=
-    HasFDerivAt.fun_sum fun i _ ↦ ((hh i x).hasFDerivAt).const_smul (s i)
+    HasFDerivAt.fun_sum fun i _ ↦ (hh i).hasFDerivAt.const_smul (s i)
   have e : perturb f h s = fun y ↦ f y + ∑ i, s i • h i y :=
     funext fun y ↦ by simp [perturb_apply, smul_eq_mul]
   rw [e]
-  exact ((hf x).hasFDerivAt.add hs).fderiv
+  exact (hf.hasFDerivAt.add hs).fderiv
 
-/-- The perturbation of a `C²` function by `C²` functions is `C²`. -/
-theorem contDiff_perturb (hfs : ContDiff ℝ 2 f) (hh : ∀ i, ContDiff ℝ 2 (h i))
+/-- The perturbation of a `Cⁿ` function by `Cⁿ` functions is `Cⁿ`. -/
+theorem contDiff_perturb {n : WithTop ℕ∞} (hfs : ContDiff ℝ n f) (hh : ∀ i, ContDiff ℝ n (h i))
     (s : EuclideanSpace ℝ ι) :
-    ContDiff ℝ 2 (perturb f h s) :=
+    ContDiff ℝ n (perturb f h s) :=
   hfs.add (ContDiff.sum fun i _ ↦ contDiff_const.mul (hh i))
 
 omit [NormedSpace ℝ E] in
@@ -127,7 +127,7 @@ theorem perturb_eventuallyEq_of_fderiv_eq_zero (hh : ∀ i, IsAdmissiblePerturba
 
 /-- **Small perturbations keep the critical points.** For all sufficiently small parameters, the
 critical points of `perturb f h s` are those of `f`. -/
-theorem exists_pos_forall_fderiv_perturb_eq_zero_iff (hfs : ContDiff ℝ 2 f)
+theorem exists_pos_forall_fderiv_perturb_eq_zero_iff (hfs : ContDiff ℝ 1 f)
     (hh : ∀ i, IsAdmissiblePerturbation f (h i)) :
     ∃ δ > 0, ∀ s : EuclideanSpace ℝ ι, ‖s‖ < δ → ∀ x,
       (fderiv ℝ (perturb f h s) x = 0 ↔ fderiv ℝ f x = 0) := by
@@ -157,7 +157,7 @@ theorem exists_pos_forall_fderiv_perturb_eq_zero_iff (hfs : ContDiff ℝ 2 f)
   · -- On the supports both differentials are nonzero.
     have hne : fderiv ℝ f x ≠ 0 := hAcrit x hx
     refine iff_of_false ?_ hne
-    rw [fderiv_perturb hfd hhd]
+    rw [fderiv_perturb (hfd x) fun i ↦ hhd i x]
     intro h0
     have h1 : ‖∑ i, s i • fderiv ℝ (h i) x‖ ≤ Fintype.card ι * max C 0 * ‖s‖ := by
       calc ‖∑ i, s i • fderiv ℝ (h i) x‖ ≤ ∑ i, ‖s i • fderiv ℝ (h i) x‖ := norm_sum_le _ _
@@ -190,8 +190,8 @@ variable [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ
 
 /-- The gradient of a perturbation is the perturbed gradient. -/
 @[simp]
-theorem gradient_perturb (hf : Differentiable ℝ f) (hh : ∀ i, Differentiable ℝ (h i))
-    (s : EuclideanSpace ℝ ι) (x : E) :
+theorem gradient_perturb {x : E} (hf : DifferentiableAt ℝ f x)
+    (hh : ∀ i, DifferentiableAt ℝ (h i) x) (s : EuclideanSpace ℝ ι) :
     ∇ (perturb f h s) x = ∇ f x + ∑ i, s i • ∇ (h i) x := by
   simp only [gradient, fderiv_perturb hf hh, map_add, map_sum, map_smul]
 
@@ -241,8 +241,8 @@ private theorem hasCompactSupport_coupling (hh : ∀ i, IsAdmissiblePerturbation
   refine HasCompactSupport.intro (hA.prod perturbationBump.hasCompactSupport) fun p hp ↦ ?_
   rw [mem_prod, not_and_or] at hp
   rcases hp with hp | hp
-  · exact sum_smul_gradient_eq_zero_of_forall_notMem_tsupport _ _ _ fun i _ hmem ↦
-      hp (mem_iUnion.2 ⟨i, hmem⟩)
+  · exact Finset.sum_eq_zero fun i _ ↦ by
+      rw [gradient_of_notMem_tsupport fun hmem ↦ hp (mem_iUnion.2 ⟨i, hmem⟩), smul_zero]
   · have : perturbationBump.toFun p.2 = 0 := image_eq_zero_of_notMem_tsupport hp
     simp [coupling, perturbationCutoff, this]
 
@@ -263,8 +263,8 @@ perturbation, with zero parameter component. -/
 private theorem perturbedField_apply_of_norm_le (hf : Differentiable ℝ f)
     (hh : ∀ i, Differentiable ℝ (h i)) {s : EuclideanSpace ℝ ι} (hs : ‖s‖ ≤ 1)
     (x : E) : perturbedField f h (x, s) = (-∇ (perturb f h s) x, 0) := by
-  rw [perturbedField_apply, perturbationCutoff_eq_self_of_norm_le hs, gradient_perturb hf hh,
-    neg_add', sub_eq_add_neg]
+  rw [perturbedField_apply, perturbationCutoff_eq_self_of_norm_le hs,
+    gradient_perturb (hf x) (fun i ↦ hh i x), neg_add', sub_eq_add_neg]
 
 /-- The gradient of a perturbation of `f` by compactly supported `C²` functions is Lipschitz if
 the gradient of `f` is, so its negative-gradient flow is defined. -/
@@ -274,15 +274,15 @@ theorem exists_lipschitzWith_gradient_perturb (hf : Differentiable ℝ f)
     ∃ K' : ℝ≥0, LipschitzWith K' (∇ (perturb f h s)) := by
   have hA : IsCompact (⋃ i, tsupport (h i)) := isCompact_iUnion fun i ↦ hc i
   have hcs : HasCompactSupport fun x ↦ ∑ i, s i • ∇ (h i) x :=
-    HasCompactSupport.intro hA fun x hx ↦
-      sum_smul_gradient_eq_zero_of_forall_notMem_tsupport _ _ _ fun i _ hmem ↦
-        hx (mem_iUnion.2 ⟨i, hmem⟩)
+    HasCompactSupport.intro hA fun x hx ↦ Finset.sum_eq_zero fun i _ ↦ by
+      rw [gradient_of_notMem_tsupport fun hmem ↦ hx (mem_iUnion.2 ⟨i, hmem⟩), smul_zero]
   have hd : ContDiff ℝ 1 fun x ↦ ∑ i, s i • ∇ (h i) x :=
     ContDiff.sum fun i _ ↦
       contDiff_const.smul ((hh i).gradient_right (m := 1) (by norm_num))
   obtain ⟨C, hC⟩ := hd.lipschitzWith_of_hasCompactSupport hcs one_ne_zero
   have e : ∇ (perturb f h s) = fun x ↦ ∇ f x + ∑ i, s i • ∇ (h i) x :=
-    funext (gradient_perturb hf (fun i ↦ (hh i).differentiable (by norm_num)) s)
+    funext fun x ↦
+      gradient_perturb (hf x) (fun i ↦ (hh i).differentiable (by norm_num) x) s
   exact ⟨_, e ▸ hK.add hC⟩
 
 private theorem exists_lipschitzWith_perturbedField (hf : LipschitzWith K (∇ f))
