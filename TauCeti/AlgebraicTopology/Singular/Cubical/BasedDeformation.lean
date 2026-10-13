@@ -7,7 +7,6 @@ module
 
 public import TauCeti.AlgebraicTopology.Singular.Cubical.Basic
 public import TauCeti.Topology.Homotopy.Extension.Cube
-public import Mathlib.Algebra.BigOperators.Fin
 
 /-!
 # Deforming singular cubes into based cubes
