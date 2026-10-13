@@ -212,7 +212,11 @@ lemma relativePicardFiberDegree_map {T T' : (Over S)ᵒᵖ} (φ : T ⟶ T') {Ω 
 /-- **The degree-zero subfunctor `Pic⁰_{X/S}`** of the relative Picard presheaf
 `T ↦ Pic(X_T) / Pic(T)` of `f : X ⟶ S`: at a scheme `T` over `S`, the classes whose
 fibre degree vanishes at every geometric point `Spec Ω ⟶ T`, with `Ω` algebraically closed. It is
-a subfunctor by naturality of the fibre degree (`relativePicardFiberDegree_map`). -/
+a subfunctor by naturality of the fibre degree (`relativePicardFiberDegree_map`).
+
+The fibre degree is the degree of a line bundle on a fibre that is a proper curve, where it is
+additive (`relativePicardFiberDegree_mul`). So this is `Pic⁰_{X/S}` for families of such curves. For
+other `f`, the condition inherits the junk values of `LineBundleClass.eulerDegree`. -/
 def relativePicardDegreeZeroSubfunctor :
     Subfunctor (relativePicardPresheaf f ⋙ forget CommGrpCat) where
   obj T := {c | ∀ (Ω : Type u) [Field Ω] [IsAlgClosed Ω] (ξ : Spec (.of Ω) ⟶ T.unop.left),
