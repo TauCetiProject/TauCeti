@@ -87,7 +87,8 @@ lemma toTop_map_mkOfLe_toTopInitialVertex (k : ℕ) :
       toTopInitialVertex ⦋k + 1⦌ :=
   toTop_map_toTopInitialVertex _ rfl
 
-/-- The first edge of a topological simplex ends at the vertex opposite the zeroth face. -/
+/-- The first edge of a topological simplex ends at vertex `1`, the initial vertex of the zeroth
+face. -/
 lemma toTop_map_mkOfLe_toTop_map_δ_zero (k : ℕ) :
     toTop.{u}.map (mkOfLe (n := k + 1) 0 1 (by simp))
         (toTop.map (δ 0) (toTopInitialVertex ⦋0⦌)) =
