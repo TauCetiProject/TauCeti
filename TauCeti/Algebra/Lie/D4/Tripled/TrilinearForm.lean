@@ -23,6 +23,7 @@ are stated over an arbitrary commutative ring.
 
 * `TauCeti.D4Tripled.trialityCoefficient`: the signed integral coefficient of three basis
   vectors.
+* `TauCeti.D4Tripled.trialityCoefficient_apply`: computation through the signed lookup table.
 * `TauCeti.D4Tripled.trialityCoefficient_cyclic`: cyclic compatibility with triality.
 * `TauCeti.D4Tripled.trialityTrilinearForm`: the bundled trilinear form over a commutative ring.
 * `TauCeti.D4Tripled.trialityTrilinearForm_apply`: evaluation on arbitrary coordinate vectors.
@@ -47,7 +48,6 @@ open TauCeti.DynkinType
 /-- The signed integral coefficient of three basis vectors in the natural, odd half-spin, and
 even half-spin blocks. The absolute value stored in the table selects the third basis vector;
 its sign is the coefficient. -/
-@[expose]
 def trialityCoefficient (a : Block 0) (b : Block 1) (c : Block 2) : ℤ :=
   let table : Fin 8 → Fin 8 → ℤ := ![
     ![0, 0, 0, -8, 0, 7, -6, 4],
@@ -62,6 +62,25 @@ def trialityCoefficient (a : Block 0) (b : Block 1) (c : Block 2) : ℤ :=
     ⟨x.1.val % 8, Nat.mod_lt _ (by omega)⟩
   let q := table (localIndex a) (localIndex b)
   if q.natAbs = (localIndex c).val + 1 then q.sign else 0
+
+/-- Compute a coefficient from the signed lookup table and the local indices of the three
+coordinate blocks. -/
+theorem trialityCoefficient_apply (a : Block 0) (b : Block 1) (c : Block 2) :
+    trialityCoefficient a b c =
+      let table : Fin 8 → Fin 8 → ℤ := ![
+        ![0, 0, 0, -8, 0, 7, -6, 4],
+        ![0, 0, 8, 0, -7, 0, 5, -3],
+        ![0, -8, 0, 0, 6, -5, 0, 2],
+        ![8, 0, 0, 0, -4, 3, -2, 0],
+        ![0, 7, -6, 5, 0, 0, 0, -1],
+        ![-7, 0, 4, -3, 0, 0, 1, 0],
+        ![6, -4, 0, 2, 0, -1, 0, 0],
+        ![-5, 3, -2, 0, 1, 0, 0, 0]]
+      let localIndex {j : Fin 3} (x : Block j) : Fin 8 :=
+        ⟨x.1.val % 8, Nat.mod_lt _ (by omega)⟩
+      let q := table (localIndex a) (localIndex b)
+      if q.natAbs = (localIndex c).val + 1 then q.sign else 0 := by
+  rfl
 
 /-- The chosen integral normalization has a coefficient equal to `-1`; in particular, the form
 constructed below is nonzero over every nontrivial ring. -/
@@ -224,10 +243,6 @@ private theorem trialityTrilinearForm_invariant_of_coefficients
     trialityTrilinearForm_single_one_single_one_apply, Matrix.mulVec,
     dotProduct_single, mul_one] using h a b c
 
-private theorem intCastRingHom_apply (R : Type*) [CommRing R] (z : ℤ) :
-    (Int.castRingHom R) z = (z : R) := by
-  rfl
-
 private theorem trialityTrilinearForm_invariant_of_integer_coefficients
     (R : Type*) [CommRing R]
     (M₀ : Matrix (Block 0) (Block 0) ℤ)
@@ -245,7 +260,7 @@ private theorem trialityTrilinearForm_invariant_of_integer_coefficients
     (M₀.map (Int.castRingHom R)) (M₁.map (Int.castRingHom R))
     (M₂.map (Int.castRingHom R)) (fun a b c => by
       rw [← map_zero (Int.castRingHom R)]
-      simpa only [Matrix.map_apply, map_add, map_sum, map_mul, intCastRingHom_apply,
+      simpa only [Matrix.map_apply, map_add, map_sum, map_mul, Int.coe_castRingHom,
         mul_comm] using
         congrArg (Int.castRingHom R) (h a b c))
   have hApply := congrArg (fun T => T v₀ v₁ v₂) hMap
