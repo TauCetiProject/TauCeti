@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.PDE.FundamentalSolution.Euclidean.FourierMultiplier
 public import TauCeti.Analysis.PDE.FundamentalSolution.Euclidean.Hessian
 public import TauCeti.MeasureTheory.Integral.CalderonZygmund.InnerProductSpace
+import TauCeti.Analysis.Distribution.SchwartzSpace.Deriv
 
 /-!
 # Calderón–Zygmund estimates for the Laplacian
@@ -24,8 +25,11 @@ Newtonian potential.  The planar logarithmic kernel requires a separate identifi
 
 * `TauCeti.exists_eLpNorm_fourierMultiplierCLM_hessianSymbolLp_le`: for `1 < p < ∞`, the
   Hessian Fourier multiplier satisfies an `Lᵖ` estimate on its `L²` domain.
-* `TauCeti.exists_eLpNorm_lineDerivOp_lineDerivOp_le_laplacian`: for `1 < p < ∞`, every
-  second directional derivative has `Lᵖ` norm bounded by the `Lᵖ` norm of the Laplacian.
+* `SchwartzMap.exists_eLpNorm_lineDerivOp_lineDerivOp_le_laplacian`: for `1 < p < ∞`, every
+  second directional derivative of a complex Hilbert-space-valued Schwartz map has `Lᵖ` norm
+  bounded by the `Lᵖ` norm of the Laplacian.
+* `SchwartzMap.exists_eLpNorm_lineDerivOp_lineDerivOp_le_laplacian_real`: the corresponding
+  estimate for real-valued Schwartz maps.
 
 ## References
 
@@ -170,14 +174,14 @@ theorem exists_eLpNorm_fourierMultiplierCLM_hessianSymbolLp_le [CompleteSpace F]
   have hsymm := ContinuousLinearMap.isSelfAdjoint_iff_isSymmetric.mp
     (ContinuousLinearMap.isSelfAdjoint_iff'.mpr hTc)
   have hsymmRestrict := hsymm.restrictScalars
+  have real_inner_eq_re_inner_L2
+      (f g : Lp F 2 (volume : Measure (EuclideanSpace ℝ (Fin n)))) :
+      ⟪f, g⟫_ℝ = RCLike.re ⟪f, g⟫_ℂ := by
+    rw [L2.inner_def, L2.inner_def]
+    simp only [real_inner_eq_re_inner ℂ]
+    rw [integral_re (L2.integrable_inner (𝕜 := ℂ) f g)]
   have hsymmReal : T.toLinearMap.IsSymmetric := fun f g ↦ by
-    -- Bridge scalar restriction to the independently constructed real `L²` inner product.
-    change (∫ x, RCLike.re ⟪Lp.fourierMultiplierCLM F (hessianSymbolLp v w) f x, g x⟫_ℂ) =
-      ∫ x, RCLike.re ⟪f x, Lp.fourierMultiplierCLM F (hessianSymbolLp v w) g x⟫_ℂ
-    rw [integral_re (L2.integrable_inner (𝕜 := ℂ)
-      (Lp.fourierMultiplierCLM F (hessianSymbolLp v w) f) g),
-      integral_re (L2.integrable_inner (𝕜 := ℂ) f
-        (Lp.fourierMultiplierCLM F (hessianSymbolLp v w) g)), ← L2.inner_def, ← L2.inner_def]
+    rw [real_inner_eq_re_inner_L2, real_inner_eq_re_inner_L2]
     exact hsymmRestrict f g
   have hself : adjoint (𝕜 := ℝ) T = T := hsymmReal.clm_adjoint_eq
   have hrep' : ∀ (f : Lp F 2 (volume : Measure (EuclideanSpace ℝ (Fin n))))
@@ -216,6 +220,14 @@ theorem exists_eLpNorm_fourierMultiplierCLM_hessianSymbolLp_le [CompleteSpace F]
       (by norm_num) (by norm_num) hsize hsize hsmooth hsmooth
       hrep hrep' hp hp_top
 
+end TauCeti
+
+namespace SchwartzMap
+
+open TauCeti
+open MeasureTheory
+open scoped ENNReal Laplacian LineDeriv NNReal SchwartzMap
+
 variable {n : ℕ} {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℂ F] [CompleteSpace F]
 
 /-- **The whole-space Calderón–Zygmund estimate for the Laplacian.** In dimension at least three,
@@ -238,4 +250,37 @@ theorem exists_eLpNorm_lineDerivOp_lineDerivOp_le_laplacian (hn : 3 ≤ n)
   rw [← u.toLp_lineDerivOp_lineDerivOp_eq_fourierMultiplierCLM v w] at h
   exact h
 
-end TauCeti
+/-- **The real-valued whole-space Calderón–Zygmund estimate for the Laplacian.** In dimension at
+least three, every second directional derivative of a real-valued Schwartz function is bounded in
+`Lᵖ`, for `1 < p < ∞`, by its Laplacian. -/
+theorem exists_eLpNorm_lineDerivOp_lineDerivOp_le_laplacian_real (hn : 3 ≤ n)
+    {p : ℝ≥0∞} (hp : 1 < p) (hp_top : p ≠ ∞) (v w : EuclideanSpace ℝ (Fin n)) :
+    ∃ C : ℝ≥0, ∀ u : SchwartzMap (EuclideanSpace ℝ (Fin n)) ℝ,
+      eLpNorm ((∂_{v} (∂_{w} u) : SchwartzMap (EuclideanSpace ℝ (Fin n)) ℝ).toLp 2)
+          p volume ≤
+        C * eLpNorm ((Δ u : SchwartzMap (EuclideanSpace ℝ (Fin n)) ℝ).toLp 2) p volume := by
+  obtain ⟨C, hC⟩ := exists_eLpNorm_lineDerivOp_lineDerivOp_le_laplacian
+    (F := ℂ) hn hp hp_top v w
+  refine ⟨C, fun u ↦ ?_⟩
+  let uℂ := u.postcompCLM Complex.ofRealCLM
+  have h := hC uℂ
+  have hderiv : ∂_{v} (∂_{w} uℂ) =
+      (∂_{v} (∂_{w} u)).postcompCLM Complex.ofRealCLM := by
+    simp [uℂ, TauCeti.lineDerivOp_postcompCLM]
+  have hlaplacian : Δ uℂ = (Δ u).postcompCLM Complex.ofRealCLM := by
+    rw [SchwartzMap.laplacian_eq_sum (stdOrthonormalBasis ℝ _) uℂ,
+      SchwartzMap.laplacian_eq_sum (stdOrthonormalBasis ℝ _) u]
+    simp only [uℂ, TauCeti.lineDerivOp_postcompCLM, map_sum]
+  have eLpNorm_postcomp_ofReal
+      (f : SchwartzMap (EuclideanSpace ℝ (Fin n)) ℝ) :
+      eLpNorm ((f.postcompCLM Complex.ofRealCLM).toLp 2) p volume =
+        eLpNorm (f.toLp 2) p volume := by
+    apply eLpNorm_congr_norm_ae (Lp.aestronglyMeasurable _) (Lp.aestronglyMeasurable _)
+    filter_upwards [SchwartzMap.coeFn_toLp (f.postcompCLM Complex.ofRealCLM) 2,
+      SchwartzMap.coeFn_toLp f 2] with x hx hxf
+    rw [hx, hxf, SchwartzMap.postcompCLM_apply]
+    exact Complex.norm_real (f x)
+  rw [hderiv, hlaplacian, eLpNorm_postcomp_ofReal, eLpNorm_postcomp_ofReal] at h
+  exact h
+
+end SchwartzMap
