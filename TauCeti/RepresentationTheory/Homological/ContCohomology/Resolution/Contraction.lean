@@ -99,12 +99,6 @@ noncomputable def resolutionModuleProj :
   simp only [comp_f, resolutionModuleIncl_f_zero, resolutionModuleProj_f_zero, id_f]
   rfl
 
-/-- The differential of the underlying module complex is Mathlib's resolution differential. -/
-@[simp] theorem resolutionModuleComplex_d (n : ℕ) :
-    (resolutionModuleComplex X).d n (n + 1) =
-      ModuleCat.ofHom (d X (n + 1)).hom.toLinearMap := by
-  simp only [resolutionModuleComplex, CochainComplex.of_d]
-
 private theorem resolutionModule_contract_zero :
     (𝟙 (resolutionModuleComplex X) - resolutionModuleProj X ≫
       resolutionModuleIncl X).f 0 =
