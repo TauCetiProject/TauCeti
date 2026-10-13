@@ -93,7 +93,7 @@ public section
 
 noncomputable section
 
-open MeasureTheory TauCeti.MeasureTheory
+open MeasureTheory
 
 namespace TauCeti
 
@@ -234,7 +234,7 @@ Almost everywhere equality holds on `μ₁ ⊗ μ₁` while the overlaid differe
 two are related by the first-coordinate projection, which is measure preserving precisely because
 `π` is a coupling with left marginal `μ₁`. -/
 theorem cutNorm_overlayDiff_congr_ae_left {U U' : Graphon Ω₁ μ₁} {W : Graphon Ω₂ μ₂}
-    {π : Measure (Ω₁ × Ω₂)} (hπ : IsCoupling μ₁ μ₂ π)
+    {π : Measure (Ω₁ × Ω₂)} (hπ : IsCoupling π μ₁ μ₂)
     (h : ∀ᵐ p ∂(μ₁.prod μ₁), U p.1 p.2 = U' p.1 p.2) :
     @cutNorm _ _ π hπ.isFiniteMeasure (overlayDiff U W π) =
       @cutNorm _ _ π hπ.isFiniteMeasure (overlayDiff U' W π) := by

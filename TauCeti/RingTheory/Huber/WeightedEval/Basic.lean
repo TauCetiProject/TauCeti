@@ -32,10 +32,9 @@ it to summability, through Mathlib's
 * `TauCeti.Huber.weightedVar` and `TauCeti.Huber.IsWeightedVarPowerBounded`: Wedhorn's own
   coordinatewise hypothesis — each weighted variable `φ(Tᵢ) · bᵢ` is power-bounded as a set.
 * `TauCeti.Huber.IsWeightBounded`: the weighted monomials `φ(Tν) · bν` form a bounded set. This is
-  the hypothesis the summability proof uses, and
-  `TauCeti.Huber.isWeightBounded_of_isWeightedVarPowerBounded` derives it from the coordinatewise
-  one for an arbitrary `T`. At the one-weight family it is *equivalent* to each `bᵢ` being
-  power-bounded, which is Wedhorn's condition —
+  the hypothesis the summability proof uses, and it is equivalent to the coordinatewise one for an
+  arbitrary `T` (`TauCeti.Huber.isWeightBounded_iff_isWeightedVarPowerBounded`). At the one-weight
+  family it is *equivalent* to each `bᵢ` being power-bounded, which is Wedhorn's condition —
   `TauCeti.Huber.isWeightBounded_one_weight_iff_forall_isPowerBounded`.
 
 ## Main results
@@ -201,6 +200,25 @@ theorem isWeightBounded_of_isWeightedVarPowerBounded {φ : A →+* B} {T : Fin k
     (fun i _ ↦ (isWeightedVarPowerBounded_iff φ T b).mp h i)).subset (Set.iUnion_subset fun ν ↦ ?_)
   rw [image_weightPow_mul_monomial]
   exact Set.finsetProd_subset_finsetProd _ _ _ fun i _ ↦ Set.subset_iUnion _ _
+
+omit [TopologicalSpace A] in
+/-- **The uniform bound gives Wedhorn's coordinatewise hypothesis.** The `n`-th power of the
+weighted variable `φ(Tᵢ) · bᵢ` is the set of weighted monomials at the multi-index `n • eᵢ`. -/
+theorem IsWeightBounded.isWeightedVarPowerBounded {φ : A →+* B} {T : Fin k → Set A}
+    {b : Fin k → B} (h : IsWeightBounded φ T b) : IsWeightedVarPowerBounded φ T b := by
+  refine (isWeightedVarPowerBounded_iff φ T b).mpr fun i ↦
+    ((isWeightBounded_iff φ T b).mp h).subset (Set.iUnion_subset fun n ↦ ?_)
+  have hn : weightedVar φ T b i ^ n = ∏ l, weightedVar φ T b l ^ Finsupp.single i n l := by
+    simp [Finsupp.single_apply, pow_ite]
+  rw [hn, ← image_weightPow_mul_monomial]
+  exact Set.subset_iUnion_of_subset (Finsupp.single i n) subset_rfl
+
+omit [TopologicalSpace A] in
+/-- **The two hypotheses on the tuple agree**: the weighted monomials form a bounded set exactly
+when every weighted variable is power-bounded as a set. -/
+theorem isWeightBounded_iff_isWeightedVarPowerBounded {φ : A →+* B} {T : Fin k → Set A}
+    {b : Fin k → B} : IsWeightBounded φ T b ↔ IsWeightedVarPowerBounded φ T b :=
+  ⟨IsWeightBounded.isWeightedVarPowerBounded, isWeightBounded_of_isWeightedVarPowerBounded⟩
 
 variable [NonarchimedeanAddGroup A] [NonarchimedeanAddGroup B]
 

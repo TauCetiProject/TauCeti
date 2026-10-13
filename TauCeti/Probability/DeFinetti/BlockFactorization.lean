@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.DeFinetti.DirectingMeasure.Coord
-public import TauCeti.Probability.Exchangeability.Cylinder
+public import TauCeti.Probability.Process.Cylinder
 public import TauCeti.Probability.Exchangeability.Contractability
 public import TauCeti.Probability.Exchangeability.MixedIID.Basic
 public import TauCeti.Probability.DeFinetti.DirectingMeasure.Basic
@@ -112,7 +112,7 @@ theorem condExp_blockIndicatorProd_ae_eq_prod_of_iCondIndepFun_tailProcess
   have hfactor : ∀ i, (μ⟦X (k i) ⁻¹' C i | tailProcess X⟧)
       =ᵐ[μ] fun ω => (directingMeasure μ X ω).real (C i) := by
     intro i
-    have hind : (X (k i) ⁻¹' C i).indicator (fun ω => (1 : ℝ))
+    have hind : (X (k i) ⁻¹' C i).indicator (fun _ => (1 : ℝ))
         = Set.indicator (C i) (fun _ => (1 : ℝ)) ∘ X (k i) := by
       funext ω; by_cases h : X (k i) ω ∈ C i <;> simp [Set.indicator, Set.mem_preimage, h]
     rw [hind]
@@ -283,10 +283,9 @@ private theorem mixedIID_of_contractable_standardBorelOmega
   MixedIID.of_mixingRepresentative (mixedIIDWith_of_contractable hX hX_meas)
 
 /-- **de Finetti's theorem, mixture form: contractable ⇒ mixed i.i.d.** A contractable process
-valued in a standard Borel space, on an arbitrary measurable sample space, is mixed i.i.d. This is
-the roadmap's `mixedIID_of_contractable`; the sharp summit `conditionallyIID_of_contractable`,
-which concludes the joint-law disintegration rather than only the mixture identity, is in
-`TauCeti.Probability.DeFinetti.Theorem`. -/
+valued in a standard Borel space, on an arbitrary measurable sample space, is mixed i.i.d. The
+sharper `conditionallyIID_of_contractable`, which concludes the joint-law disintegration rather than
+only the mixture identity, is in `TauCeti.Probability.DeFinetti.Theorem`. -/
 theorem mixedIID_of_contractable {Ω α : Type*} [MeasurableSpace Ω] [MeasurableSpace α]
     [StandardBorelSpace α] [Nonempty α] {μ : Measure Ω} [IsFiniteMeasure μ] {X : ℕ → Ω → α}
     (hX : Contractable μ X) (hX_meas : ∀ n, Measurable (X n)) :

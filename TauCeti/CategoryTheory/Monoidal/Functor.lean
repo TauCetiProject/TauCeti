@@ -34,6 +34,18 @@ the oplax structures (`CategoryTheory.Adjunction.app_tensorUnit_comp_η_of_conju
 isomorphisms between left adjoints, such as the composition isomorphism of pullback functors, are
 shown to respect their oplax monoidal structures from the corresponding facts about the right
 adjoints.
+
+**Doctrinal adjunction** for tensorators: if `F ⊣ G` is an adjunction between lax monoidal
+functors whose unit and counit are compatible with the tensorators, then the tensorator of the
+left adjoint `F` is invertible (`CategoryTheory.Adjunction.isIso_μ_of_unit_of_counit`), and its
+inverse is the mate of the tensorator of `G` (`CategoryTheory.Adjunction.inv_μ_eq_homEquiv_symm`),
+the tensor comparison of `CategoryTheory.Adjunction.leftAdjointOplaxMonoidal`. This is how a
+left adjoint that is lax monoidal for an independent reason, such as restriction of sheaves to an
+open subset, is shown to have invertible oplax tensor comparisons.
+
+## References
+
+* G. M. Kelly, *Doctrinal adjunction*, Lecture Notes in Mathematics 420 (1974).
 -/
 
 public section
@@ -226,5 +238,54 @@ theorem app_tensor_comp_δ_of_conjugateEquiv (h : conjugateEquiv adj₁ adj₂ �
   simp only [homEquiv_unit, Functor.map_comp, reassoc_of% hσ, ← τ.naturality,
     unit_app_tensor_comp_map_δ_assoc, NatTrans.IsMonoidal.tensor, ← μ_natural,
     tensorHom_comp_tensorHom_assoc, hσ]
+
+section Doctrinal
+
+variable {F : C ⥤ D} {G : D ⥤ C} (adj : F ⊣ G) [F.LaxMonoidal] [G.LaxMonoidal]
+
+/-- If the counit of an adjunction between lax monoidal functors is compatible with the
+tensorators, then the tensorator of the left adjoint is a split monomorphism, split by the mate
+of the tensorator of the right adjoint. -/
+theorem μ_comp_homEquiv_symm_tensorHom_unit_comp_μ
+    (hcounit : ∀ X Y : D, μ F (G.obj X) (G.obj Y) ≫ F.map (μ G X Y) ≫ adj.counit.app (X ⊗ Y) =
+      (adj.counit.app X ⊗ₘ adj.counit.app Y)) (X Y : C) :
+    μ F X Y ≫ (adj.homEquiv _ _).symm ((adj.unit.app X ⊗ₘ adj.unit.app Y) ≫ μ G _ _) = 𝟙 _ := by
+  rw [homEquiv_counit, F.map_comp, Category.assoc, ← μ_natural_assoc]
+  simp [hcounit]
+
+/-- If the unit of an adjunction between lax monoidal functors is compatible with the
+tensorators, then the mate of the tensorator of the right adjoint is a section of the tensorator
+of the left adjoint. -/
+theorem homEquiv_symm_tensorHom_unit_comp_μ_comp_μ
+    (hunit : ∀ X Y : C, adj.unit.app (X ⊗ Y) =
+      (adj.unit.app X ⊗ₘ adj.unit.app Y) ≫ μ G _ _ ≫ G.map (μ F X Y)) (X Y : C) :
+    (adj.homEquiv _ _).symm ((adj.unit.app X ⊗ₘ adj.unit.app Y) ≫ μ G _ _) ≫ μ F X Y = 𝟙 _ := by
+  apply (adj.homEquiv _ _).injective
+  rw [homEquiv_naturality_right, Equiv.apply_symm_apply, Category.assoc, ← hunit]
+  simp [homEquiv_unit]
+
+/-- **Doctrinal adjunction** for tensorators: if the unit and the counit of an adjunction
+between lax monoidal functors are compatible with the tensorators, then the tensorator of the
+left adjoint is invertible. Its inverse is computed by `inv_μ_eq_homEquiv_symm`. -/
+theorem isIso_μ_of_unit_of_counit
+    (hunit : ∀ X Y : C, adj.unit.app (X ⊗ Y) =
+      (adj.unit.app X ⊗ₘ adj.unit.app Y) ≫ μ G _ _ ≫ G.map (μ F X Y))
+    (hcounit : ∀ X Y : D, μ F (G.obj X) (G.obj Y) ≫ F.map (μ G X Y) ≫ adj.counit.app (X ⊗ Y) =
+      (adj.counit.app X ⊗ₘ adj.counit.app Y)) (X Y : C) :
+    IsIso (μ F X Y) :=
+  ⟨_, μ_comp_homEquiv_symm_tensorHom_unit_comp_μ adj hcounit X Y,
+    homEquiv_symm_tensorHom_unit_comp_μ_comp_μ adj hunit X Y⟩
+
+/-- If the counit of an adjunction between lax monoidal functors is compatible with the
+tensorators, then an inverse of the tensorator of the left adjoint is the mate of the tensorator
+of the right adjoint, that is, the tensor comparison of the oplax monoidal structure
+`CategoryTheory.Adjunction.leftAdjointOplaxMonoidal`. -/
+theorem inv_μ_eq_homEquiv_symm
+    (hcounit : ∀ X Y : D, μ F (G.obj X) (G.obj Y) ≫ F.map (μ G X Y) ≫ adj.counit.app (X ⊗ Y) =
+      (adj.counit.app X ⊗ₘ adj.counit.app Y)) (X Y : C) [IsIso (μ F X Y)] :
+    inv (μ F X Y) = (adj.homEquiv _ _).symm ((adj.unit.app X ⊗ₘ adj.unit.app Y) ≫ μ G _ _) :=
+  IsIso.inv_eq_of_hom_inv_id (μ_comp_homEquiv_symm_tensorHom_unit_comp_μ adj hcounit X Y)
+
+end Doctrinal
 
 end CategoryTheory.Adjunction

@@ -206,7 +206,6 @@ private theorem integral_inv_log_sq_le {x : ℝ} (hx : 4 ≤ x) :
       (intervalIntegrable_inv_log_pow 2 (by linarith) (by linarith))).symm
   have hb₁ : (∫ t in (2 : ℝ)..√x, (Real.log t ^ 2)⁻¹) ≤ √x / Real.log 2 ^ 2 := by
     refine le_trans (integral_inv_log_pow_le 2 one_lt_two hsq) ?_
-    have hpos : (0 : ℝ) < Real.log 2 ^ 2 := by positivity
     gcongr
     linarith
   have hb₂ : (∫ t in √x..x, (Real.log t ^ 2)⁻¹) ≤ 4 * x / Real.log x ^ 2 := by
@@ -234,7 +233,6 @@ theorem tendsto_integral_inv_log_sq_mul_log_div_atTop :
   · filter_upwards [eventually_ge_atTop (4 : ℝ)] with x hx
     have hx0 : (0 : ℝ) < x := by linarith
     have hlogx : 0 < Real.log x := Real.log_pos (by linarith)
-    have hsqpos : (0 : ℝ) < √x := Real.sqrt_pos.mpr hx0
     have hsqx : √x * √x = x := Real.mul_self_sqrt hx0.le
     have hbound := integral_inv_log_sq_le hx
     rw [div_le_iff₀ hx0]
@@ -263,7 +261,6 @@ theorem tendsto_logIntegral_mul_log_div_atTop :
     simpa using h
   refine hmain.congr' ?_
   filter_upwards [eventually_ge_atTop (2 : ℝ)] with x hx
-  have hx0 : (0 : ℝ) < x := by linarith
   have hlogx : 0 < Real.log x := Real.log_pos (by linarith)
   rw [logIntegral_eq_div_log_sub_add hx]
   field_simp
@@ -394,7 +391,6 @@ theorem isLittleO_integral_div_mul_log_sq {f : ℝ → ℝ}
   obtain ⟨T, hT⟩ := eventually_atTop.mp (hc.and (eventually_ge_atTop (2 : ℝ)))
   have hT2 : (2 : ℝ) ≤ T := (hT T le_rfl).2
   have hbound : ∀ t, T ≤ t → |f t| ≤ c * t := fun t ht ↦ by
-    have h2t : (2 : ℝ) ≤ t := (hT t ht).2
     simpa [Real.norm_eq_abs, abs_of_nonneg (by linarith : (0 : ℝ) ≤ t)] using (hT t ht).1
   have hc0 : 0 ≤ c := by nlinarith [hbound T le_rfl, abs_nonneg (f T)]
   -- Both summands of `abs_integral_div_mul_log_sq_le` are `o (x / log x)`.

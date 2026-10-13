@@ -30,6 +30,8 @@ extension.
 * `Valuation.ordIndex_dvd_ord`: every order attained by `v` is a multiple of the index.
 * `Valuation.ordIndex_eq_mul_of_forall_ord_eq`: indices multiply when one order function is a
   natural-number multiple of another.
+* `Valuation.ordIndex_comap_of_surjective`: restriction along a surjective map preserves the
+  index.
 * `Valuation.ord_normalization_mul_ordIndex`: the order function of `v` is the index times the
   order function of its normalization — the defining relation between the two.
 * `Valuation.isEquiv_normalization`: a valuation is equivalent to its normalization; in
@@ -138,6 +140,13 @@ theorem ordIndex_ne_zero_of_isNontrivial [v.IsNontrivial] : ordIndex v ≠ 0 := 
   refine fun h ↦ hx1 ?_
   have hord := (ordIndex_eq_zero_iff v).mp h x
   rwa [ord_eq_iff_valuation_eq_exp_neg v hxne, neg_zero, WithZero.exp_zero] at hord
+
+/-- **The index is unchanged by restriction along a surjective map**: `v` and `v.comap f` attain
+the same orders. Applied to a ring isomorphism, this says that the index of a valuation does not
+depend on how its field is presented. -/
+theorem ordIndex_comap_of_surjective {K : Type*} [Field K] {f : K →+* F}
+    (hf : Function.Surjective f) : ordIndex (v.comap f) = ordIndex v := by
+  simp only [ordIndex, ord_comap, hf.exists]
 
 end OrdIndex
 

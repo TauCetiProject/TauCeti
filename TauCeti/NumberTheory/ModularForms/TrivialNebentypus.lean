@@ -251,13 +251,6 @@ theorem coe_cuspFormCharSpaceOneEquiv_symm_apply [NeZero N]
 
 section Trace
 
-/-- For `N ≠ 0`, `Γ₁(N)` has finite index in `Γ₀(N)`, so the trace from `Γ₁(N)` to `Γ₀(N)` is
-defined. -/
-instance instIsFiniteRelIndexGamma1MapGamma0Map (N : ℕ) [NeZero N] :
-    ((Gamma1 N).map (mapGL ℝ)).IsFiniteRelIndex ((Gamma0 N).map (mapGL ℝ)) :=
-  Subgroup.IsFiniteRelIndex.map (mapGL ℝ)
-    (Subgroup.isFiniteRelIndex_of_finiteIndex (H := Gamma1 N) (K := Gamma0 N))
-
 /-- A representative in `(Gamma0 N).map (mapGL ℝ)`, pulled back to `Γ₀(N)` and mapped forward
 again, is itself. -/
 private lemma mapGL_equivMapOfInjective_symm (y : (Gamma0 N).map (mapGL ℝ)) :

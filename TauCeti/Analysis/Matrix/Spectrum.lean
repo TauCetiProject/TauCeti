@@ -11,12 +11,14 @@ public import Mathlib.Analysis.Matrix.PosDef
 # Eigen-coordinates of a Hermitian matrix
 
 Let `B` be a Hermitian matrix over an `RCLike` field with orthonormal eigenvector basis
-`hB.eigenvectorBasis` and real eigenvalues `hB.eigenvalues`. This file reads four quantities
-off the eigen-coordinates: the quadratic form `x ↦ ⟪x, B x⟫`, which becomes a weighted sum of
-squared moduli, the diagonalization and the determinant of the pencil `1 - c • B`, which are
-read off the scalars `1 - c * hB.eigenvalues j`, and the trace of `B * B`, which is the sum of
-the squared eigenvalues. The pencil is diagonal in the eigenbasis for any scalar `c`; only its
-positive definiteness asks for a real one.
+`hB.eigenvectorBasis` and real eigenvalues `hB.eigenvalues`. Writing `U` for the eigenvector
+unitary `hB.eigenvectorUnitary`, whose columns are the eigenvectors, the spectral theorem
+`B = U * diagonal λ * Uᴴ` reads entrywise as `B i j = ∑ k, λ k * U i k * conj (U j k)`.
+This file also reads four quantities off the eigen-coordinates: the quadratic form
+`x ↦ ⟪x, B x⟫`, which becomes a weighted sum of squared moduli, the diagonalization and the
+determinant of the pencil `1 - c • B`, which are read off the scalars `1 - c * hB.eigenvalues j`,
+and the trace of `B * B`, which is the sum of the squared eigenvalues. The pencil is diagonal in
+the eigenbasis for any scalar `c`; only its positive definiteness asks for a real one.
 
 These are the spectral facts behind the moment-generating function of a Gaussian quadratic form,
 whose exponential-integrability domain is a positive-definiteness condition on such a pencil and
@@ -24,6 +26,8 @@ whose value is a power of its determinant.
 
 ## Main results
 
+* `Matrix.IsHermitian.apply_eq_sum_eigenvalues` — the entrywise spectral expansion
+  `B i j = ∑ k, λ k * U i k * conj (U j k)`;
 * `Matrix.IsHermitian.inner_toEuclideanLin_sum_smul_eigenvectorBasis` — the quadratic form of
   `B` at `∑ j, c j • b j` is `∑ j, hB.eigenvalues j * ‖c j‖ ^ 2`;
 * `Matrix.IsHermitian.posDef_one_sub_smul_iff` — `1 - c • B` is positive definite exactly when
@@ -49,6 +53,17 @@ namespace Matrix.IsHermitian
 variable {𝕜 : Type*} [RCLike 𝕜] {ι : Type*} [Fintype ι] [DecidableEq ι] {B : Matrix ι ι 𝕜}
   (hB : B.IsHermitian)
 include hB
+
+/-- The entrywise spectral expansion of a Hermitian matrix: with `U = hB.eigenvectorUnitary`,
+`B i j = ∑ k, λ k * U i k * conj (U j k)`, where `λ = hB.eigenvalues`. -/
+theorem apply_eq_sum_eigenvalues (i j : ι) :
+    B i j = ∑ k, (hB.eigenvalues k : 𝕜) * (hB.eigenvectorUnitary : Matrix ι ι 𝕜) i k *
+      star ((hB.eigenvectorUnitary : Matrix ι ι 𝕜) j k) := by
+  conv_lhs => rw [hB.spectral_theorem]
+  rw [conjStarAlgAut_apply, mul_apply]
+  refine Finset.sum_congr rfl fun k _ ↦ ?_
+  rw [mul_diagonal, star_apply, Function.comp_apply]
+  ring
 
 /-- In the eigen-coordinates of a Hermitian matrix, its quadratic form is the sum of the squared
 moduli of the coordinates weighted by the eigenvalues. -/

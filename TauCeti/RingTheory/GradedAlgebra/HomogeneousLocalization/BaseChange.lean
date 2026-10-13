@@ -6,7 +6,7 @@ Authors: Codex
 module
 
 public import TauCeti.RingTheory.GradedAlgebra.HomogeneousLocalization.Basic
-public import Mathlib.RingTheory.GradedAlgebra.TensorProduct
+public import TauCeti.RingTheory.GradedAlgebra.Homogeneous.Maps
 public import TauCeti.RingTheory.Localization.TensorProduct
 public import Mathlib.RingTheory.Flat.Basic
 
@@ -62,6 +62,13 @@ theorem Away.baseChangeMap_mk {d : ι} (hf : f ∈ 𝒜 d) (n : ℕ) (a : A)
         (Submodule.tmul_mem_baseChange_of_mem 1 ha) := by
   dsimp only [Away.baseChangeMap]
   exact Away.map_mk _ f hf n a ha
+
+/-- The chart coefficient map is the homogeneous-localization map of graded coefficient
+inclusion. -/
+theorem Away.baseChangeMap_eq_map :
+    Away.baseChangeMap 𝒜 S f = Away.map (TauCeti.GradedAlgebra.baseChangeMap S 𝒜) f := by
+  rw [Away.baseChangeMap]
+  congr 1
 
 /-- Coefficient extension on a chart respects the structure maps of the base rings. -/
 @[simp]

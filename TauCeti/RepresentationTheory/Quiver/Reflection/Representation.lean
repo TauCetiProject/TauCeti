@@ -389,7 +389,6 @@ private theorem reflectRepMapApp_self
   · rename_i h
     exact (h rfl).elim
 
-@[simp]
 private theorem reflectRepMapApp_of_ne
     {M N : QuiverRep.{u, v, w, max v w x} k Q} (η : M ⟶ N) {i : Q} (hi : IsSink i)
     {j : Reflect Q i} (hj : j ≠ i) :
@@ -401,34 +400,8 @@ private theorem reflectRepMapApp_of_ne
 
 /-! The components of the reflected morphism are transports of components of the original one, so
 every identity about them is an identity of the original conjugated by `eqToHom`. The general
-transport API is in `TauCeti.CategoryTheory.EqToHom`; the next three private lemmas specialize it
-to the identities, compositions, and sums used to construct the reflection functor. -/
-
-/-- A conjugated identity is the identity. -/
-private theorem eqToHom_conjugate_eq_id {C : Type*} [Category* C] {X Y : C} (h : X = Y)
-    (f : Y ⟶ Y) (hf : f = 𝟙 Y) : eqToHom h ≫ f ≫ eqToHom h.symm = 𝟙 X := by
-  subst h
-  simp [hf]
-
-/-- Conjugation distributes over composition. -/
-private theorem eqToHom_conjugate_eq_comp {C : Type*} [Category* C] {X X' Y Y' Z Z' : C}
-    (hX : X = X') (hY : Y = Y') (hZ : Z = Z') (f : X' ⟶ Z') (g : X' ⟶ Y') (h : Y' ⟶ Z')
-    (hf : f = g ≫ h) :
-    eqToHom hX ≫ f ≫ eqToHom hZ.symm =
-      (eqToHom hX ≫ g ≫ eqToHom hY.symm) ≫ eqToHom hY ≫ h ≫ eqToHom hZ.symm := by
-  subst hX
-  subst hY
-  subst hZ
-  simp [hf]
-
-/-- Conjugation by object equalities is additive. -/
-private theorem eqToHom_conjugate_add {C : Type*} [Category* C] [Preadditive C] {X X' Y Y' : C}
-    (hX : X = X') (hY : Y' = Y) {f g h : X' ⟶ Y'} (hfgh : f = g + h) :
-    eqToHom hX ≫ f ≫ eqToHom hY
-      = (eqToHom hX ≫ g ≫ eqToHom hY) + (eqToHom hX ≫ h ≫ eqToHom hY) := by
-  subst hX
-  subst hY
-  simp [hfgh]
+transport API is in `TauCeti.CategoryTheory.EqToHom`, including the conjugation rules for the
+identities, compositions, and sums used to construct the reflection functor. -/
 
 /-- The components of the reflected morphism are natural for every arrow of the reflected
 quiver. -/

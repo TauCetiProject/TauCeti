@@ -142,7 +142,7 @@ theorem repr_signlessPreprojectiveRelator_backtrackPath_self (v : V) {j : V} (h 
     rw [backtrackElem_eq_ofPath, ofPath_eq_single, pathAlgebraBasis_repr_single]
     refine Finsupp.single_eq_of_ne fun hpath => hw (Subtype.ext ?_)
     simp only [Sigma.mk.injEq, heq_eq_eq, true_and] at hpath
-    exact eq_of_backtrackPath_eq G hpath.symm
+    exact (backtrackPath_inj G).1 hpath.symm
   · intro hmem
     exact absurd (Finset.mem_univ _) hmem
 
@@ -212,7 +212,7 @@ theorem twoSidedIdeal_span_quadraticZigzagRelations_eq_quadraticZigzagIdeal :
 /-- For a connected graph with at least three vertices the quadratic relation space presents the
 zigzag algebra: the two-sided ideal it generates is the zigzag relation ideal. -/
 theorem twoSidedIdeal_span_quadraticZigzagRelations_eq_zigzagIdeal (hconn : G.Connected)
-    (hcard : 3 ≤ Nat.card V) :
+    (hcard : (3 : Cardinal) ≤ Cardinal.mk V) :
     TwoSidedIdeal.span (quadraticZigzagRelations k G : Set (pathAlgebra k (DoubledQuiver G)))
       = zigzagIdeal k G := by
   rw [twoSidedIdeal_span_quadraticZigzagRelations_eq_quadraticZigzagIdeal,
@@ -224,7 +224,7 @@ is the zigzag relation quotient. This is what makes the algebra dualised below t
 rather than the quadratic presentation alone, and it carries the hypotheses of
 `TauCeti.twoSidedIdeal_span_quadraticZigzagRelations_eq_zigzagIdeal`. -/
 noncomputable def quadraticZigzagPresentationEquivZigzagQuotient (hconn : G.Connected)
-    (hcard : 3 ≤ Nat.card V) :
+    (hcard : (3 : Cardinal) ≤ Cardinal.mk V) :
     (pathAlgebra k (DoubledQuiver G) ⧸
         (TwoSidedIdeal.span
           (quadraticZigzagRelations k G : Set (pathAlgebra k (DoubledQuiver G)))).asIdeal) ≃ₐ[k]
@@ -237,7 +237,7 @@ noncomputable def quadraticZigzagPresentationEquivZigzagQuotient (hconn : G.Conn
 class in the zigzag quotient. -/
 @[simp]
 theorem quadraticZigzagPresentationEquivZigzagQuotient_mk (hconn : G.Connected)
-    (hcard : 3 ≤ Nat.card V) (x : pathAlgebra k (DoubledQuiver G)) :
+    (hcard : (3 : Cardinal) ≤ Cardinal.mk V) (x : pathAlgebra k (DoubledQuiver G)) :
     quadraticZigzagPresentationEquivZigzagQuotient k G hconn hcard
         (Ideal.Quotient.mk
           (TwoSidedIdeal.span

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Data.Finsupp.Weight
+public import Mathlib.Data.Finsupp.Multiset
 
 /-!
 # Weights of finitely supported functions
@@ -15,18 +16,37 @@ If every variable has weight at most `c`, then the weight of a monomial `f : σ 
 negative weight has weight at most minus its total degree, which is how negatively graded
 variables bound the degree of elements of powers of the ideal of the variables.
 
+The weight of a multiset multiplicity function is the sum of the weights of its entries.
+
 Weights also respect scaling of the weight vector and decompose into contributions before, at,
 and after a chosen coordinate in a linear order. These identities support comparisons between
 lexicographic order and weighted degree.
 
 ## Main results
 
+* `Finsupp.weight_toFinsupp`: multiset multiplicities recover the sum of entry weights.
 * `Finsupp.weight_le_degree_nsmul`: if `w s ≤ c` for all `s`, then `weight w f ≤ degree f • c`.
 * `Finsupp.weight_filter_gt_add_smul_add_weight_filter_lt`: split a weight at a coordinate.
 * `Finsupp.weight_smul_left`: scaling the weight vector scales the weight.
 -/
 
 public section
+
+namespace Finsupp
+
+/-- The weight of the multiplicity function of a multiset is the sum of its entry weights. -/
+@[simp]
+theorem weight_toFinsupp {σ M : Type*} [DecidableEq σ] [AddCommMonoid M]
+    (w : σ → M) (s : Multiset σ) :
+    weight w s.toFinsupp = (s.map w).sum := by
+  induction s using Multiset.induction_on with
+  | empty => simp
+  | cons i s ih =>
+    rw [← Multiset.singleton_add, Multiset.toFinsupp_add,
+      Multiset.toFinsupp_singleton, map_add, weight_single]
+    simpa using congrArg (w i + ·) ih
+
+end Finsupp
 
 namespace Finsupp
 

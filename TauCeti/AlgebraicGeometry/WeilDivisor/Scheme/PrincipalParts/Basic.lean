@@ -620,9 +620,9 @@ theorem exists_toPrincipalParts_app_eq (D : SchemeWeilDivisor X) {U : X.Opens}
     · obtain ⟨f, hf⟩ := Submodule.Quotient.mk_surjective _ (t' ⟨⟨y, h⟩, hy⟩)
       exact ⟨f, fun _ ↦ hf⟩
     · exact ⟨0, fun h' ↦ absurd h' h⟩
-  have hfy : ∀ (w : CodimensionOnePoint X) (hw : (w : X) = y) (hwU : (w : X) ∈ U),
+  have hfy : ∀ (w : CodimensionOnePoint X) (_ : (w : X) = y) (hwU : (w : X) ∈ U),
       Submodule.Quotient.mk f = t' ⟨w, hwU⟩ := by
-    rintro ⟨w, hwc⟩ rfl hwU
+    rintro ⟨w, hwc⟩ rfl _
     exact hf hwc
   -- The codimension-one points other than `y` at which `t` or `f` has a nonzero principal part.
   let E : Set (CodimensionOnePoint X) := {x | (x : X) ≠ y ∧

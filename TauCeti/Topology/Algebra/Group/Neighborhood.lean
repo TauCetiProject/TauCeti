@@ -8,14 +8,18 @@ module
 public import Mathlib.Topology.Algebra.Group.Neighborhood
 
 /-!
-# Subgroup neighbourhoods under translation
+# Identity neighbourhoods under translation
 
-An identity-neighbourhood description of a subgroup transports to every point of the subgroup by
-left multiplication. The result is stated for an arbitrary local parametrisation, so it can be
-used both for exponential charts and for later subgroup atlases.
+Continuous left translations transport identity-neighbourhood descriptions to every point of a
+group. In particular, a group homomorphism is inducing exactly when it induces the neighbourhood
+filter at the identity. A local parametrisation of a subgroup likewise transports to every point
+of the subgroup, for use both in exponential charts and in subgroup atlases.
 
 ## Main results
 
+* `TauCeti.isInducing_iff_nhds_one` characterises inducing group homomorphisms by the neighbourhood
+  filters at the identity, assuming only continuous left translations on both groups.
+* `TauCeti.isInducing_iff_nhds_zero` is the additive counterpart.
 * `Subgroup.eventually_mem_iff_exists_mul_eq_of_mem` transports an eventual identity-neighbourhood
   characterisation `f y = x` to the translated form `g * f y = x` near `g ∈ K`.
 * `AddSubgroup.eventually_mem_iff_exists_add_eq_of_mem` is the additive counterpart.
@@ -31,6 +35,36 @@ open Filter
 open scoped Topology
 
 variable {G : Type*} [TopologicalSpace G] [Group G] [ContinuousConstSMul G G]
+
+namespace TauCeti
+
+/-- A homomorphism between groups with continuous left translations is inducing exactly when it
+induces the neighbourhood filter at the identity.
+
+This generalises Mathlib's `IsTopologicalGroup.isInducing_iff_nhds_one`. -/
+@[to_additive
+  /-- A homomorphism between additive groups with continuous left translations is inducing exactly
+  when it induces the neighbourhood filter at zero.
+
+  This generalises Mathlib's `IsTopologicalAddGroup.isInducing_iff_nhds_zero`. -/]
+theorem isInducing_iff_nhds_one {H : Type*} [Group H] [TopologicalSpace H]
+    [ContinuousConstSMul H H] {F : Type*} [FunLike F G H] [MonoidHomClass F G H] {f : F} :
+    Topology.IsInducing f ↔ 𝓝 (1 : G) = (𝓝 (1 : H)).comap f := by
+  rw [Topology.isInducing_iff_nhds]
+  refine ⟨(map_one f ▸ · 1), fun hf x ↦ ?_⟩
+  -- Left-translation homeomorphisms identify the neighbourhoods of `x` and `f x` with those of `1`.
+  have hG : 𝓝 x = comap (x⁻¹ * ·) (𝓝 (1 : G)) := by
+    simpa only [smul_eq_mul, inv_mul_cancel] using
+      (isHomeomorph_smul (α := G) x⁻¹).isInducing.nhds_eq_comap x
+  have hH : 𝓝 (f x) = comap ((f x)⁻¹ * ·) (𝓝 (1 : H)) := by
+    simpa only [smul_eq_mul, inv_mul_cancel] using
+      (isHomeomorph_smul (α := H) (f x)⁻¹).isInducing.nhds_eq_comap (f x)
+  rw [hG, hH, comap_comap, hf, comap_comap]
+  congr 1
+  ext y
+  simp
+
+end TauCeti
 
 namespace Subgroup
 

@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Algebra.GroupAction.TypeTags
 public import TauCeti.Algebra.Module.Torsion.Snake
+public import TauCeti.NumberTheory.LocalField.DeepUnits.Basic
+public import TauCeti.NumberTheory.LocalField.IntegerRing.LatticeDefect
 public import TauCeti.NumberTheory.LocalField.PowerSubgroup.Basic
 public import TauCeti.NumberTheory.LocalField.UnitFiltration.GaloisAction
 public import TauCeti.NumberTheory.LocalField.UnitFiltration.Graded
@@ -38,6 +40,16 @@ a unit of `𝒪[L]`, raising to the `ℓ`-th power is bijective on the principal
 therefore vanishes, and `[Lˣ ⧸ (Lˣ)^ℓ] = [k] + [μ_ℓ(L)]`
 (`TauCeti.reductionK0_quotSMulTop_units_of_isUnit`).
 
+At the residue characteristic `ℓ = p`, when `K` is a finite extension of `ℚ_[p]` and `L/K` is
+Galois, the defect of the principal units is `[K : ℚ_p] · [k[G]]`, so that
+`[Lˣ ⧸ (Lˣ)^p] = [k] + [μ_p(L)] + [K : ℚ_p] · [k[G]]`
+(`TauCeti.reductionK0_quotSMulTop_units_eq_add_finrank_smul`).
+For `(p - 1) n > e`, with `e` the absolute ramification index of `L`, the logarithm identifies the
+deep units `U(L,n)` Galois-equivariantly with `𝓂[L]^n` (`TauCeti.deepUnitExpLogEquiv`), which has
+finite index in `𝒪[L]`; so `U(L,n)` has the defect of `𝒪[L]`
+(`TauCeti.latticeDefect_unitFiltration_eq_integerRing`), computed in
+`TauCeti.latticeDefect_integerRing_eq_finrank_smul`.
+
 This is the computation of the units of `L` that enters the proof of the local Euler characteristic
 formula, where Kummer theory identifies `H¹(L, μ_ℓ)` with `Lˣ ⧸ (Lˣ)^ℓ`.
 
@@ -52,8 +64,11 @@ the snake lemma (`TauCeti.finite_quotSMulTop_of_exact`).
 * `TauCeti.latticeDefect_units_eq_one_add`: the defect of `Lˣ` is `1` plus that of `U(L,i)`.
 * `TauCeti.latticeDefect_unitFiltration_succ_eq_zero_of_isUnit`: away from the residue
   characteristic, the positive-depth steps have zero defect.
-* `TauCeti.reductionK0_quotSMulTop_units` and `TauCeti.reductionK0_quotSMulTop_units_of_isUnit`:
-  the class of `Lˣ ⧸ (Lˣ)^ℓ`.
+* `TauCeti.latticeDefect_unitFiltration_eq_integerRing`: deep units have the defect of `𝒪[L]`.
+* `TauCeti.latticeDefect_unitFiltration_eq_finrank_smul`: at `ℓ = p`, every step of the unit
+  filtration has defect `[K : ℚ_p] · [k[G]]`.
+* `TauCeti.reductionK0_quotSMulTop_units`, `TauCeti.reductionK0_quotSMulTop_units_of_isUnit` and
+  `TauCeti.reductionK0_quotSMulTop_units_eq_add_finrank_smul`: the class of `Lˣ ⧸ (Lˣ)^ℓ`.
 
 ## References
 
@@ -278,6 +293,72 @@ theorem reductionK0_quotSMulTop_units_of_isUnit [Field k] [Fact ℓ.Prime] [Char
   have : NeZero (ℓ : L) := ⟨natCast_ne_zero_of_isUnit hℓ⟩
   rw [reductionK0_quotSMulTop_units K L k ℓ (0 + 1),
     latticeDefect_unitFiltration_succ_eq_zero_of_isUnit K L k ℓ hℓ 0, add_zero]
+
+/-! ### The residue characteristic -/
+
+variable (p : ℕ) [Fact p.Prime] [FinitePadicExtension L p]
+
+/-- The deep-unit logarithm `U(L,n) → 𝒪[L]`, written additively, is Galois-equivariant. -/
+private noncomputable def deepUnitLogHom {n : ℕ}
+    (hn : absoluteRamificationIndex L p < (p - 1) * n) :
+    Additive (unitFiltration L n) →+[L ≃ₐ[K] L] 𝒪[L] where
+  toFun u := ((deepUnitExpLogEquiv L hn u.toMul).toAdd : 𝒪[L])
+  map_zero' := by simp
+  map_add' u v := by simp
+  map_smul' σ u := Subtype.ext <| by
+    have hn1 : 1 ≤ n := Nat.one_le_iff_ne_zero.mpr fun h ↦ by simp [h] at hn
+    rw [AlgEquiv.coe_smul_integerRing, coe_deepUnitExpLogEquiv_apply,
+      coe_deepUnitExpLogEquiv_apply, Additive.toMul_smul, AlgEquiv.val_coe_smul_unitFiltration]
+    exact (AlgEquiv.map_log_of_mem_unitFiltration_one σ p
+      (unitFiltration_antitone hn1 u.toMul.2)).symm
+
+/-- **The deep units have the defect of the integers**: for `(p - 1) n > e`, the logarithm
+identifies `U(L,n)` Galois-equivariantly with `𝓂[L]^n`, which has finite index in `𝒪[L]`, so
+`U(L,n)` and the lattice `𝒪[L]` have the same `p`-defect. -/
+theorem latticeDefect_unitFiltration_eq_integerRing [CommRing k] {n : ℕ}
+    (hn : absoluteRamificationIndex L p < (p - 1) * n) :
+    latticeDefect k (L ≃ₐ[K] L) p (Additive (unitFiltration L n)) =
+      latticeDefect k (L ≃ₐ[K] L) p 𝒪[L] := by
+  let e := deepUnitExpLogEquiv L hn
+  -- the logarithm maps `U(L,n)` onto `𝓂[L] ^ n`, which has finite index in `𝒪[L]`
+  have : (deepUnitLogHom K L p hn : Additive (unitFiltration L n) →+ 𝒪[L]).range.FiniteIndex := by
+    -- a quotient by an ideal is by definition the quotient by its additive subgroup
+    have : Finite (𝒪[L] ⧸ (𝓂[L] ^ n).toAddSubgroup) :=
+      Ring.HasFiniteQuotients.finiteQuotient (pow_ne_zero n (IsDiscreteValuationRing.not_a_field _))
+    have := AddSubgroup.finiteIndex_of_finite_quotient (H := (𝓂[L] ^ n).toAddSubgroup)
+    refine AddSubgroup.finiteIndex_of_le (H := (𝓂[L] ^ n).toAddSubgroup) fun x hx ↦
+      ⟨Additive.ofMul (e.symm (Multiplicative.ofAdd ⟨x, hx⟩)), ?_⟩
+    -- the underlying function of `deepUnitLogHom` is the logarithm `e`, read in `𝒪[L]`
+    change ((e (e.symm (Multiplicative.ofAdd ⟨x, hx⟩))).toAdd : 𝒪[L]) = x
+    rw [ContinuousMulEquiv.apply_symm_apply]
+    rfl
+  exact latticeDefect_eq_of_finiteIndex k _ p (deepUnitLogHom K L p hn) fun u v h ↦
+    Additive.toMul.injective (e.injective (Multiplicative.toAdd.injective (Subtype.ext h)))
+
+variable [FinitePadicExtension K p] [IsGalois K L]
+
+/-- **The `p`-defect of the unit filtration** of a finite Galois extension `L/K` of finite
+extensions of `ℚ_p`: every step `U(L,i)` has defect `[K:ℚ_p] · [k[G]]` in `G₀(k[G])`,
+`G = Gal(L/K)`, for `k` of characteristic `p`. -/
+theorem latticeDefect_unitFiltration_eq_finrank_smul [CommRing k] [CharP k p] (i : ℕ) :
+    latticeDefect k (L ≃ₐ[K] L) p (Additive (unitFiltration L i)) =
+      Module.finrank ℚ_[p] K • permK0 k (L ≃ₐ[K] L) (L ≃ₐ[K] L) := by
+  have hn : absoluteRamificationIndex L p < (p - 1) * (absoluteRamificationIndex L p + 1) :=
+    lt_of_lt_of_le (Nat.lt_succ_self _) (Nat.le_mul_of_pos_left _
+      (Nat.sub_pos_of_lt (Fact.out : p.Prime).one_lt))
+  rw [latticeDefect_unitFiltration_eq K L k p i _, latticeDefect_unitFiltration_eq_integerRing K L
+    k p hn, latticeDefect_integerRing_eq_finrank_smul]
+
+/-- **The class of `Lˣ ⧸ (Lˣ)^p`** in `G₀(k[Gal(L/K)])`, for `L/K` a finite Galois extension of
+finite extensions of `ℚ_p` and `k` of characteristic `p`:
+`[Lˣ ⧸ (Lˣ)^p] = [k] + [μ_p(L)] + [K:ℚ_p] · [k[G]]`. -/
+theorem reductionK0_quotSMulTop_units_eq_add_finrank_smul [Field k] [CharP k p] :
+    reductionK0 k
+        ((Representation.ofDistribMulAction ℤ (L ≃ₐ[K] L) (Additive Lˣ)).quotSMulTop p) =
+      1 + reductionK0 k
+          ((Representation.ofDistribMulAction ℤ (L ≃ₐ[K] L) (Additive Lˣ)).torsionBy p) +
+        Module.finrank ℚ_[p] K • permK0 k (L ≃ₐ[K] L) (L ≃ₐ[K] L) := by
+  rw [reductionK0_quotSMulTop_units K L k p 0, latticeDefect_unitFiltration_eq_finrank_smul]
 
 end Galois
 

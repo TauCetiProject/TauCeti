@@ -53,7 +53,7 @@ private noncomputable def characterEvaluationEquiv : D ≃ₐc[L] L ⊗[k] H :=
 
 private theorem characterEvaluationEquiv_apply (x : D) :
     characterEvaluationEquiv k L H hspan x =
-      GroupLike.evaluationBialgHom L (L ⊗[k] H)
+      MonoidAlgebra.liftGroupLikeBialgHom (R := L) (A := L ⊗[k] H)
         (MonoidAlgebra.domCongr L L (MulEquiv.multiplicativeAdditive C) x) :=
   -- The composite is defined above; evaluation's named equation identifies its second factor.
   GroupLike.evaluationBialgEquiv_apply L (L ⊗[k] H) hspan _
@@ -187,9 +187,10 @@ noncomputable def characterGroupAlgebraInvariantsEquiv : H ≃ₐc[k] groupAlgeb
 
 /-- Evaluation of the character expansion recovers the scalar extension of the original
 element. This characterizes the reconstruction without choosing a basis of characters. -/
-@[simp]
+-- Not `@[simp]`: Mathlib's simp lemma `MonoidAlgebra.liftGroupLikeBialgHom_apply` rewrites the
+-- left-hand side first.
 theorem characterGroupAlgebraInvariantsEquiv_evaluation (a : H) :
-    GroupLike.evaluationBialgHom L (L ⊗[k] H)
+    MonoidAlgebra.liftGroupLikeBialgHom (R := L) (A := L ⊗[k] H)
       (MonoidAlgebra.domCongr L L (MulEquiv.multiplicativeAdditive C)
         (characterGroupAlgebraInvariantsEquiv k L H hspan a : D)) = 1 ⊗ₜ[k] a := by
   rw [← characterEvaluationEquiv_apply k L H hspan]
@@ -200,7 +201,7 @@ original Hopf algebra. Its scalar extension is ordinary evaluation. -/
 @[simp]
 theorem characterGroupAlgebraInvariantsEquiv_symm_evaluation (x : groupAlgebraInvariants ρ) :
     1 ⊗ₜ[k] (characterGroupAlgebraInvariantsEquiv k L H hspan).symm x =
-      GroupLike.evaluationBialgHom L (L ⊗[k] H)
+      MonoidAlgebra.liftGroupLikeBialgHom (R := L) (A := L ⊗[k] H)
         (MonoidAlgebra.domCongr L L (MulEquiv.multiplicativeAdditive C) (x : D)) := by
   simpa only [BialgEquiv.apply_symm_apply] using
     (characterGroupAlgebraInvariantsEquiv_evaluation k L H hspan

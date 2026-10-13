@@ -25,8 +25,9 @@ since a root of unity is algebraic over `K` on its own.
 ## Main results
 
 * `IsPrimitiveRoot.adjoin_singleton_eq_adjoin_nth_roots`: `K(ζ) = K(μ_m)`.
-* `IsPrimitiveRoot.isCyclotomicExtension_adjoin_singleton`: `K(ζ) / K` is an `m`-th cyclotomic
-  extension.
+* `IsPrimitiveRoot.isCyclotomicExtension_adjoin_singleton` and
+  `IsPrimitiveRoot.isCyclotomicExtension_adjoin_nth_roots`: `K(ζ) = K(μ_m)` is an `m`-th cyclotomic
+  extension of `K`.
 -/
 
 public section
@@ -67,3 +68,10 @@ theorem IsPrimitiveRoot.isCyclotomicExtension_adjoin_singleton {K M : Type*} [Fi
   rw [adjoin_simple_toSubalgebra_of_isAlgebraic
     (IsAlgebraic.of_pow (NeZero.pos m) (by rw [hζ.pow_eq_one]; exact isAlgebraic_one))]
   exact hζ.adjoin_isCyclotomicExtension K
+
+/-- **`K(μ_m)` is an `m`-th cyclotomic extension of `K`** inside any extension of `K` containing a
+primitive `m`-th root of unity. -/
+theorem IsPrimitiveRoot.isCyclotomicExtension_adjoin_nth_roots {K M : Type*} [Field K] [Field M]
+    [Algebra K M] {m : ℕ} [NeZero m] {ζ : M} (hζ : IsPrimitiveRoot ζ m) :
+    IsCyclotomicExtension {m} K (adjoin K {b : M | b ^ m = 1}) :=
+  hζ.adjoin_singleton_eq_adjoin_nth_roots (K := K) ▸ hζ.isCyclotomicExtension_adjoin_singleton

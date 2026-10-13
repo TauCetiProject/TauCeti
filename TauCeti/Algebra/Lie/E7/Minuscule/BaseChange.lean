@@ -46,6 +46,11 @@ reductive, that its torus is maximal, or that its root datum has been identified
 
 * `TauCeti.E7Minuscule.mkQuotient_comp_baseChangeCoordinateIso_hom`: the coordinate
   isomorphism is compatible with the quotient presentations.
+* `TauCeti.E7Minuscule.coordinateMap_comp_rootSubgroupToBaseChangeCoordinateMap`: the factored
+  root-subgroup maps recover the transported ambient root-subgroup maps.
+* `pointToGeneralLinear_mapDomain_rootSubgroupToBaseChangeCoordinateMap_eq_rootSubgroupPoints`:
+  on points over any value algebra, the factored root-subgroup maps give the numbered root
+  matrices.
 * `TauCeti.E7Minuscule.baseChangeCoordinateIso_hom_comp_rootSubgroupBaseChangeMap` and
   `TauCeti.E7Minuscule.baseChangeCoordinateIso_hom_comp_weightTorusBaseChangeMap`: the numbered
   root-subgroup and weight-torus maps are the scalar extensions of their integral coordinate maps.
@@ -260,20 +265,41 @@ noncomputable def rootSubgroupToBaseChangeCoordinateMap (k : Fin 7 ⊕ Fin 7) :
 
 /-- The factored root-subgroup map recovers its ambient transported coordinate map. -/
 @[simp]
-theorem mkQuotient_comp_rootSubgroupToBaseChangeCoordinateMap (k : Fin 7 ⊕ Fin 7) :
-    CommHopfAlgCat.mkQuotient (GeneralLinear.coordinateHopfAlgebra A 56)
-          (baseChangeDefiningIdeal A) ≫
-        rootSubgroupToBaseChangeCoordinateMap A k =
+theorem coordinateMap_comp_rootSubgroupToBaseChangeCoordinateMap (k : Fin 7 ⊕ Fin 7) :
+    coordinateMap A ≫ rootSubgroupToBaseChangeCoordinateMap A k =
       kostantRootSubgroupBaseChangePresentationCoordinateMap
         (TauCeti.serreRootGenerator (CartanMatrix.E 7))
         (TauCeti.serreH ℚ (CartanMatrix.E 7)) rep lattice.toAddSubgroup
         rep_kostantForm_mem_lattice isNilpotent_rep_serreRootGenerator latticeBasis A k := by
-  unfold baseChangeDefiningIdeal rootSubgroupToBaseChangeCoordinateMap
+  unfold coordinateMap baseChangeDefiningIdeal rootSubgroupToBaseChangeCoordinateMap
   exact mkQuotient_comp_kostantRootSubgroupToralBaseChangePresentationCoordinateMap
     (TauCeti.serreRootGenerator (CartanMatrix.E 7))
     (TauCeti.serreH ℚ (CartanMatrix.E 7)) rep lattice.toAddSubgroup
     rep_kostantForm_mem_lattice isNilpotent_rep_serreRootGenerator latticeBasis
     e7MinusculeWeight A k
+
+/-- The specialized root-subgroup coordinate map sends an additive point to the numbered
+minuscule root matrix with the same parameter. -/
+-- Normalize the point before `AlgHom.mapDomain_apply` unfolds the inner map.
+@[simp↓]
+theorem pointToGeneralLinear_mapDomain_rootSubgroupToBaseChangeCoordinateMap_eq_rootSubgroupPoints
+    (i : Fin 7 ⊕ Fin 7) (B : CommAlgCat.{w} A)
+    (q : HopfAlgebra.points (R := A) (H := AdditiveGroup.coordinateHopfAlgebra A) B) :
+    GeneralLinear.pointToGeneralLinear 56
+        (AlgHom.mapDomain (coordinateMap A).hom
+          (WithConv.toConv
+            (q.ofConv.comp (rootSubgroupToBaseChangeCoordinateMap A i).hom.toAlgHom))) =
+      (rootSubgroupPoints i B (AdditiveGroup.gaPointsMulEquiv q) :
+        Matrix.GeneralLinearGroup (Fin 56) B) := by
+  rw [← GeneralLinear.pointsMulEquiv_apply, coe_rootSubgroupPoints]
+  -- Match the named specialized presentation to the generic Kostant point formula.
+  unfold coordinateMap baseChangeDefiningIdeal rootSubgroupToBaseChangeCoordinateMap
+  convert pointsMulEquiv_kostantRootSubgroupToralBaseChangeCoordinateMap
+      (TauCeti.serreRootGenerator (CartanMatrix.E 7))
+      (TauCeti.serreH ℚ (CartanMatrix.E 7)) rep lattice.toAddSubgroup
+      rep_kostantForm_mem_lattice isNilpotent_rep_serreRootGenerator latticeBasis
+      e7MinusculeWeight A definingIdeal_def i B q using 1
+  congr 1
 
 /-- Under the base-change coordinate isomorphism, the factored `k`th root-subgroup map is the
 scalar extension of its integral coordinate map. -/

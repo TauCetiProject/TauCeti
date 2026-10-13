@@ -30,6 +30,9 @@ subspaces is continuous because subspaces are embedded.
 The disjoint union `TopPair.sigma P = (Σ i, Xᵢ, Σ i, Aᵢ)` of a family of pairs `P i = (Xᵢ, Aᵢ)`,
 with the inclusions `TopPair.sigmaι P i` of the summands, is the coproduct of the family in
 `TopPair` (`TopPair.sigmaCofanIsColimit`).  Relative singular homology is additive along it.
+
+A continuous map into the ambient space of a pair with values in the subspace corestricts to a
+continuous map into the subspace, `TopPair.liftSnd`, because the subspace is embedded.
 -/
 
 public section
@@ -49,6 +52,10 @@ abbrev ofInclusion {X : TopCat.{u}} {s t : Set X} (h : s ⊆ t) : TopPair.{u} :=
 variable {X Y Z : TopCat.{u}} (g : X ⟶ Y) (g' : Y ⟶ Z) {B : Set X} {B' : Set Y} {B'' : Set Z}
   (hB : Set.MapsTo g B B') (hB' : Set.MapsTo g' B' B'')
 
+/-- The embedding of the pair `(X, B)` has range `B`. -/
+lemma range_ofSubset_map : Set.range (ofSubset B).map = B :=
+  Subtype.range_coe
+
 /-- A continuous map `g : X ⟶ Y` carrying `B` into `B'` induces a map of pairs
 `(X, B) ⟶ (Y, B')`. -/
 def ofSubsetMap : ofSubset B ⟶ ofSubset B' :=
@@ -56,6 +63,8 @@ def ofSubsetMap : ofSubset B ⟶ ofSubset B' :=
 
 @[simp]
 lemma ofSubsetMap_fst_apply (x : (ofSubset B).fst) : Hom.fst (ofSubsetMap g hB) x = g x := (rfl)
+
+lemma ofSubsetMap_fst : Hom.fst (ofSubsetMap g hB) = g := (rfl)
 
 @[simp]
 lemma ofSubsetMap_snd_apply (x : (ofSubset B).snd) :
@@ -69,6 +78,29 @@ lemma ofSubsetMap_id (h : Set.MapsTo (𝟙 X) B B) : ofSubsetMap (𝟙 X) h = �
 lemma ofSubsetMap_comp (h : Set.MapsTo (g ≫ g') B B'') :
     ofSubsetMap (g ≫ g') h = ofSubsetMap g hB ≫ ofSubsetMap g' hB' := by
   ext : 2 <;> rfl
+
+/-- A homeomorphism `e : X ≃ₜ Y` carrying `B` onto `B'` induces an isomorphism of pairs
+`(X, B) ≅ (Y, B')`. -/
+def ofSubsetIso (e : X ≃ₜ Y) (h : ∀ x, x ∈ B ↔ e x ∈ B') : ofSubset B ≅ ofSubset B' where
+  hom := ofSubsetMap (TopCat.ofHom e) fun x ↦ (h x).1
+  inv := ofSubsetMap (TopCat.ofHom e.symm) fun y hy ↦ (h _).2 (by simpa using hy)
+  hom_inv_id := by
+    ext a : 2
+    · exact Subtype.ext (e.symm_apply_apply a.1)
+    · exact e.symm_apply_apply a
+  inv_hom_id := by
+    ext a : 2
+    · exact Subtype.ext (e.apply_symm_apply a.1)
+    · exact e.apply_symm_apply a
+
+@[simp]
+lemma ofSubsetIso_hom (e : X ≃ₜ Y) (h : ∀ x, x ∈ B ↔ e x ∈ B') :
+    (ofSubsetIso e h).hom = ofSubsetMap (TopCat.ofHom e) fun x ↦ (h x).1 := (rfl)
+
+@[simp]
+lemma ofSubsetIso_inv (e : X ≃ₜ Y) (h : ∀ x, x ∈ B ↔ e x ∈ B') :
+    (ofSubsetIso e h).inv =
+      ofSubsetMap (TopCat.ofHom e.symm) fun y hy ↦ (h _).2 (by simpa using hy) := (rfl)
 
 /-- A homotopy between maps `X ⟶ Y` which keeps `B` inside `B'` at every time induces a homotopy
 between the induced maps of pairs `(X, B) ⟶ (Y, B')`. -/
@@ -136,6 +168,21 @@ end ofInclusion
 section isIso
 
 variable {P Q : TopPair.{u}} (f : P ⟶ Q)
+
+/-- A map of topological pairs is determined by its map of ambient spaces, because the subspace
+of the target is embedded. -/
+lemma hom_ext_of_fst {g : P ⟶ Q} (h : Hom.fst f = Hom.fst g) : f = g := by
+  ext a : 2
+  · exact Q.isEmbedding_map.injective (by rw [Hom.w_apply, Hom.w_apply, h])
+  · exact ConcreteCategory.congr_hom h a
+
+/-- A map of topological pairs which is an embedding of the ambient spaces is an embedding of the
+subspaces, because the subspaces are embedded in the ambient spaces. -/
+lemma isEmbedding_snd_of_isEmbedding_fst (h : Topology.IsEmbedding (Hom.fst f)) :
+    Topology.IsEmbedding (Hom.snd f) := by
+  have hw : ⇑Q.map ∘ ⇑(Hom.snd f) = ⇑(Hom.fst f) ∘ ⇑P.map := funext (Hom.w_apply f)
+  rw [← Q.isEmbedding_map.of_comp_iff, hw]
+  exact h.comp P.isEmbedding_map
 
 /-- A map of topological pairs which is an isomorphism of the ambient spaces and is surjective
 on the subspaces is an isomorphism of pairs.  The inverse on the subspaces is continuous because
@@ -210,5 +257,28 @@ def sigmaCofanIsColimit : IsColimit (sigmaCofan P) :=
       · exact ConcreteCategory.congr_hom (congrArg Hom.fst (hm i)) x)
 
 end sigma
+
+section liftSnd
+
+variable (X : TopPair.{u}) {Z : Type*} [TopologicalSpace Z]
+
+/-- A continuous map into the ambient space of a pair that takes values in the subspace, viewed
+as a continuous map into the subspace. It is continuous because `X.map` is an embedding. -/
+noncomputable def liftSnd (g : C(Z, X.fst)) (hg : ∀ z, g z ∈ Set.range X.map) : C(Z, X.snd) :=
+  (X.isEmbedding_map.toHomeomorph.symm : C(Set.range X.map, X.snd)).comp
+    ⟨fun z => ⟨g z, hg z⟩, by fun_prop⟩
+
+variable {X}
+
+@[simp]
+theorem map_liftSnd (g : C(Z, X.fst)) (hg : ∀ z, g z ∈ Set.range X.map) (z : Z) :
+    X.map (X.liftSnd g hg z) = g z :=
+  congrArg Subtype.val (X.isEmbedding_map.toHomeomorph.apply_symm_apply ⟨g z, hg z⟩)
+
+theorem liftSnd_apply_eq_iff (g : C(Z, X.fst)) (hg : ∀ z, g z ∈ Set.range X.map) (z : Z)
+    (a : X.snd) : X.liftSnd g hg z = a ↔ g z = X.map a := by
+  rw [← X.isEmbedding_map.injective.eq_iff, map_liftSnd]
+
+end liftSnd
 
 end TopPair

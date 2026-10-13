@@ -125,7 +125,7 @@ theorem finiteGraphGraphon_eq_const_zero (G : SimpleGraph (Fin 0)) :
   rw [finiteGraphGraphon_apply, Graphon.const_apply, ite_eq_right]
   · rfl
   · rw [SimpleGraph.map_adj]
-    rintro ⟨i, j, _⟩
+    rintro ⟨i, _, _⟩
     exact Fin.elim0 i
 
 private theorem map_valEmbedding_adj_iff (G : SimpleGraph (Fin m)) (i j : Fin m) :

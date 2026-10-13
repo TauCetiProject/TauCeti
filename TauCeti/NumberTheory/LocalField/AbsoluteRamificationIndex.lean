@@ -93,6 +93,13 @@ theorem charZero (K : Type*) [Field K] [ValuativeRel K] [TopologicalSpace K]
     CharZero K :=
   charZero_of_injective_algebraMap (algebraMap ℚ_[p] K).injective
 
+/-- The prime `p` is nonzero in a finite extension of `ℚ_[p]`. -/
+instance neZero_natCast (K : Type*) [Field K] [ValuativeRel K] [TopologicalSpace K]
+    [IsNonarchimedeanLocalField K] (p : ℕ) [Fact p.Prime] [FinitePadicExtension K p] :
+    NeZero (p : K) :=
+  have := charZero K p
+  ⟨Nat.cast_ne_zero.mpr (Fact.out : p.Prime).ne_zero⟩
+
 end FinitePadicExtension
 
 variable (K : Type*) [Field K] [ValuativeRel K] [TopologicalSpace K]

@@ -177,7 +177,6 @@ private lemma contractGenusNumerator_spec {i : T.Component} (hi : i ≠ e) :
     rw [hnum]
     refine ⟨dvd_mul_right _ _, ?_⟩
     have : 1 ≤ d * (c - 1) := by nlinarith
-    have hw' : 0 < w' := by positivity
     nlinarith [T.genus i]
   · -- Unchanged weight: `c` is odd or `d` is even, so `d(c - 1) = 2k` with `k ≥ 0`, and the
     -- quotient is `gᵢ - 1 + k`.

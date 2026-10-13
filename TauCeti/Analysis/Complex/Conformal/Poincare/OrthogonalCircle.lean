@@ -172,7 +172,7 @@ is the geodesic equation divided by `-A`. -/
 private lemma mul_normSq_sub_sub_sq {A R : ℝ} {B c : ℂ} (hA : A ≠ 0)
     (hc : conj c = -I * B / ((2 * A : ℝ) : ℂ)) (h1 : normSq c = R ^ 2 + 1) (z : ℂ) :
     A * (normSq (z - c) - R ^ 2) = A * (normSq z + 1) - (B * z).im := by
-  have h2A : (2 : ℝ) * A ≠ 0 := mul_ne_zero two_ne_zero hA
+  have : (2 : ℝ) * A ≠ 0 := mul_ne_zero two_ne_zero hA
   have hcc : (z * conj c).re = (B * z).im / (2 * A) := by
     rw [hc, ← mul_div_assoc, Complex.div_ofReal_re]
     congr 1
@@ -255,7 +255,7 @@ lemma norm_orthogonalCircleCenter_sq {u a : ℂ} (hu : ‖u‖ = 1) (hA : (conj 
   rw [hnu, one_mul] at hkey
   have hR : orthogonalCircleRadius u a = (1 - normSq a) / (2 * |(conj u * a).im|) := by
     rw [orthogonalCircleRadius_def, Complex.normSq_eq_norm_sq]
-  have h4 : (0 : ℝ) < 4 * (conj u * a).im ^ 2 := by positivity
+  have : (0 : ℝ) < 4 * (conj u * a).im ^ 2 := by positivity
   rw [orthogonalCircleCenter_def, hR, ← Complex.normSq_eq_norm_sq, Complex.normSq_div,
     Complex.normSq_mul, Complex.normSq_I, Complex.normSq_conj, Complex.normSq_ofReal, div_pow,
     mul_pow, sq_abs]
@@ -505,7 +505,7 @@ theorem mem_range_radialGeodesic_iff (u : Circle) (z : PoincareDisc) :
         _ = ((Real.tanh t : ℝ) : ℂ) := by rw [huu, one_mul]
     rw [h, Complex.ofReal_im]
   · intro h
-    set s : ℝ := (conj (u : ℂ) * (toUnitDisc z : ℂ)).re with hsdef
+    let s : ℝ := (conj (u : ℂ) * (toUnitDisc z : ℂ)).re
     have hus : conj (u : ℂ) * (toUnitDisc z : ℂ) = (s : ℂ) := Complex.ext rfl (by simpa using h)
     have hzu : (toUnitDisc z : ℂ) = (u : ℂ) * (s : ℂ) := by
       calc (toUnitDisc z : ℂ) = (u : ℂ) * conj (u : ℂ) * (toUnitDisc z : ℂ) := by

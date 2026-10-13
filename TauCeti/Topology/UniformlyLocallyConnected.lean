@@ -36,19 +36,15 @@ Local connectedness is a statement about one point at a time, and an argument th
 small connected set near *every* point of a set at once cannot use it directly. The uniform form is
 what such arguments actually consume, and on a compact set it costs nothing extra.
 
-The intended consumer is layer **L5** of the conformal-mapping roadmap
-(`TauCetiRoadmap/ConformalMapping/README.md`), Carathéodory's boundary correspondence. The
-sufficiency half of Carathéodory's continuity theorem — a conformal map of the disc onto a bounded
-domain with locally connected boundary extends continuously to the closed disc — controls the image
-of a crosscut, and what it asks of the boundary is exactly a uniform `ε`–`δ` supply of small
-connected sets joining nearby boundary points. The boundary of a bounded domain is compact, so the
-equivalence proved here converts the roadmap's hypothesis into that form once and for all; the
-conformal consequences are in `TauCeti/Analysis/Complex/Conformal/Jordan/Domain.lean` and
+In Carathéodory's continuity theorem, a conformal map of the disc onto a bounded domain with locally
+connected boundary extends continuously to the closed disc. Controlling the image of a crosscut
+uses a uniform `ε`–`δ` supply of small connected sets joining nearby boundary points. The boundary
+of a bounded plane domain is compact, so the equivalence proved here converts local connectedness
+into that uniform form. The conformal applications are in
+`TauCeti/Analysis/Complex/Conformal/Jordan/Domain.lean` and
 `TauCeti/Analysis/Complex/Conformal/LocallyConnectedBoundary.lean`.
 
-Nothing here is specific to that application: the definition and both implications are stated for
-an arbitrary pseudometric space. Mathlib has `LocallyConnectedSpace` but no metric refinement of
-it, and no Lebesgue-number consequence of this shape.
+The definition and both implications hold in an arbitrary pseudometric space.
 
 ## Main definitions
 
@@ -62,9 +58,9 @@ it, and no Lebesgue-number consequence of this shape.
 * `TauCeti.IsUniformlyLocallyConnected.locallyConnectedSpace` — a uniformly locally connected set
   is locally connected; no compactness is used.
 * `TauCeti.IsUniformlyLocallyConnected.exists_isConnected_superset` — a small enough subset is
-  enclosed in a small connected subset, at a rate independent of the subset.
+  enclosed in a bounded connected subset of small diameter, at a rate independent of the subset.
 * `IsCompact.isUniformlyLocallyConnected_iff` — on a compact set the two notions agree.
-* `Convex.isUniformlyLocallyConnected` — a convex set in a real normed space is uniformly
+* `Convex.isUniformlyLocallyConnected` — a convex set in a real seminormed space is uniformly
   locally connected, with the joining segment as the connected set.
 * `TauCeti.isUniformlyLocallyConnected_image_of_isCompact` — a continuous image of a compact,
   locally connected set is uniformly locally connected.
@@ -142,20 +138,12 @@ theorem isUniformlyLocallyConnected_iff_exists_isConnected_diam_le :
 /-- **A uniformly locally connected set encloses each of its small subsets in a small connected
 set.** For every `ε > 0` there is a single `δ > 0` — depending on `s` and `ε` alone — such that
 every nonempty bounded subset of `s` of diameter less than `δ` is contained in a connected subset
-of `s` of diameter at most `ε`.
-
-This upgrades the two-point statement `TauCeti.IsUniformlyLocallyConnected.exists_isConnected` from
-a pair of points to a whole small set, one connected set swallowing the subset entirely. The `δ`
-produced is the two-point modulus of `ε / 2`, not of `ε`: the enclosing set is reached from the
-fixed point `a` below, so each of its points is allowed only half of the budget.
-
-The enclosing set is built by taking every candidate at once, as in
-`TauCeti.IsUniformlyLocallyConnected.locallyConnectedSpace`: fix a point `a` of the subset and
-unite every preconnected subset of `s` that contains `a` and stays within `ε / 2` of it. -/
+of `s` that is bounded and has diameter at most `ε`. The explicit boundedness lets callers turn
+the diameter bound into a bound on the distance between any two points of the enclosing set. -/
 theorem IsUniformlyLocallyConnected.exists_isConnected_superset
     (h : IsUniformlyLocallyConnected s) {ε : ℝ} (hε : 0 < ε) :
     ∃ δ > 0, ∀ t ⊆ s, Bornology.IsBounded t → t.Nonempty → diam t < δ →
-      ∃ S ⊆ s, IsConnected S ∧ t ⊆ S ∧ diam S ≤ ε := by
+      ∃ S ⊆ s, IsConnected S ∧ t ⊆ S ∧ Bornology.IsBounded S ∧ diam S ≤ ε := by
   obtain ⟨δ, hδ, hjoin⟩ := h.exists_isConnected (by linarith : (0 : ℝ) < ε / 2)
   refine ⟨δ, hδ, fun t hts htb htne hdiam => ?_⟩
   obtain ⟨a, ha⟩ := htne
@@ -165,8 +153,14 @@ theorem IsUniformlyLocallyConnected.exists_isConnected_superset
   have haS : a ∈ ⋃₀ 𝒞 :=
     ⟨{a}, ⟨singleton_subset_iff.mpr (hts ha), isPreconnected_singleton, rfl,
       fun x hx => by rw [mem_singleton_iff.mp hx, dist_self]; linarith⟩, rfl⟩
+  have hSsmall : ∀ x ∈ ⋃₀ 𝒞, ∀ y ∈ ⋃₀ 𝒞, dist x y ≤ ε := by
+    rintro x ⟨T, hT, hxT⟩ y ⟨T', hT', hyT'⟩
+    have hx : dist x a ≤ ε / 2 := hT.2.2.2 x hxT
+    have hy : dist y a ≤ ε / 2 := hT'.2.2.2 y hyT'
+    linarith [dist_triangle_right x y a]
   refine ⟨⋃₀ 𝒞, ?_, ⟨⟨a, haS⟩, isPreconnected_sUnion a 𝒞 (fun T hT => hT.2.2.1)
-    fun T hT => hT.2.1⟩, ?_, ?_⟩
+    fun T hT => hT.2.1⟩, ?_, isBounded_iff.mpr ⟨ε, hSsmall⟩,
+    diam_le_of_forall_dist_le hε.le hSsmall⟩
   · rintro x ⟨T, hT, hxT⟩
     exact hT.1 hxT
   · -- uniform local connectedness joins each point of `t` to `a` by a set being united
@@ -174,27 +168,18 @@ theorem IsUniformlyLocallyConnected.exists_isConnected_superset
     obtain ⟨C, hCs, hCconn, hCa, hCb, hCsmall⟩ := hjoin a (hts ha) b (hts hbt)
       (lt_of_le_of_lt (dist_le_diam_of_mem htb ha hbt) hdiam)
     exact ⟨C, ⟨hCs, hCconn.isPreconnected, hCa, fun x hx => hCsmall x hx a hCa⟩, hCb⟩
-  · refine diam_le_of_forall_dist_le hε.le ?_
-    rintro x ⟨T, hT, hxT⟩ y ⟨T', hT', hyT'⟩
-    have hx : dist x a ≤ ε / 2 := hT.2.2.2 x hxT
-    have hy : dist y a ≤ ε / 2 := hT'.2.2.2 y hyT'
-    calc dist x y ≤ dist x a + dist a y := dist_triangle x a y
-      _ ≤ ε / 2 + ε / 2 := by rw [dist_comm a y]; linarith
-      _ = ε := by ring
 
 /-- The empty set is uniformly locally connected, vacuously. -/
 @[simp]
 theorem isUniformlyLocallyConnected_empty : IsUniformlyLocallyConnected (∅ : Set X) :=
   isUniformlyLocallyConnected_def.mpr fun ε hε => ⟨ε, hε, by simp⟩
 
-/-- **A convex set is uniformly locally connected**: two points at distance less than `ε / 2` are
-joined by the segment between them, which stays in the set by convexity and, by
-`segment_subset_closedBall_left`, inside the closed ball of radius `dist a b < ε / 2` about the
-first endpoint, so its points are pairwise within `ε`.
+/-- A convex set in a real seminormed space is uniformly locally connected.
 
-This is the basic example, and the one the closed disc supplies in the conformal application. -/
-protected theorem _root_.Convex.isUniformlyLocallyConnected {E : Type*} [NormedAddCommGroup E]
-    [NormedSpace ℝ E] {t : Set E} (ht : Convex ℝ t) : IsUniformlyLocallyConnected t := by
+This applies in particular to the closed disc in the conformal application. -/
+protected theorem _root_.Convex.isUniformlyLocallyConnected {E : Type*}
+    [SeminormedAddCommGroup E] [NormedSpace ℝ E] {t : Set E} (ht : Convex ℝ t) :
+    IsUniformlyLocallyConnected t := by
   refine isUniformlyLocallyConnected_def.mpr fun ε hε => ⟨ε / 2, by linarith,
     fun a ha b hb hab => ⟨segment ℝ a b,
     ht.segment_subset ha hb, (convex_segment a b).isConnected ⟨a, left_mem_segment ℝ a b⟩,

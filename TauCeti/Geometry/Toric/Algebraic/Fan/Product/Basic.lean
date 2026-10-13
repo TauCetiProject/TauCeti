@@ -338,6 +338,24 @@ theorem prodMap_realMap (f : FanHom Φ₁ Ψ₁) (g : FanHom Φ₂ Ψ₂) :
     (f.prodMap g).realMap = f.realMap.prodMap g.realMap := by
   rw [prodMap]
 
+/-- The first projection commutes with componentwise products of fan morphisms. -/
+@[simp]
+theorem fst_comp_prodMap (f : FanHom Φ₁ Ψ₁) (g : FanHom Φ₂ Ψ₂) :
+    (fst Ψ₁ Ψ₂).comp (f.prodMap g) = f.comp (fst Φ₁ Φ₂) := by
+  apply FanHom.ext
+  simp only [comp_latticeMap, fst_latticeMap, prodMap_latticeMap]
+  ext x
+  rfl
+
+/-- The second projection commutes with componentwise products of fan morphisms. -/
+@[simp]
+theorem snd_comp_prodMap (f : FanHom Φ₁ Ψ₁) (g : FanHom Φ₂ Ψ₂) :
+    (snd Ψ₁ Ψ₂).comp (f.prodMap g) = g.comp (snd Φ₁ Φ₂) := by
+  apply FanHom.ext
+  simp only [comp_latticeMap, snd_latticeMap, prodMap_latticeMap]
+  ext x
+  rfl
+
 /-- Products of identity fan morphisms are identity fan morphisms. -/
 @[simp]
 theorem prodMap_id :

@@ -8,9 +8,10 @@ module
 public import TauCeti.NumberTheory.QuadraticForm.Global.Localization
 public import TauCeti.Topology.Algebra.QuadraticForm.Continuity
 
+import TauCeti.FieldTheory.SquareClassGroup.Real
 import TauCeti.NumberTheory.LocalField.PowerSubgroup.Open
 import TauCeti.RingTheory.DedekindDomain.AdicValuation.ValuativeRel
-import TauCeti.Topology.Algebra.Field.Squares
+import TauCeti.Topology.Algebra.GroupWithZero.Squares
 
 /-!
 # Continuity of localized quadratic forms
@@ -42,11 +43,8 @@ theorem _root_.QuadraticForm.continuous_atFinitePlace [NumberField K]
     (Q : QuadraticForm K V) (v : HeightOneSpectrum (𝓞 K))
     [TopologicalSpace (v.FiniteScalarExtension (V := V))]
     [IsModuleTopology (v.adicCompletion K) (v.FiniteScalarExtension (V := V))] :
-    Continuous (Q.atFinitePlace v) := by
-  have : CharZero (v.adicCompletion K) :=
-    charZero_of_injective_algebraMap (algebraMap K (v.adicCompletion K)).injective
-  let : Invertible (2 : v.adicCompletion K) := invertibleOfNonzero two_ne_zero
-  exact (Q.atFinitePlace v).continuous
+    Continuous (Q.atFinitePlace v) :=
+  (Q.atFinitePlace v).continuous
 
 /-- A quadratic form localized at a real place is continuous for the module topology. -/
 @[continuity, fun_prop]
@@ -56,7 +54,6 @@ theorem _root_.QuadraticForm.continuous_atRealPlace
     [IsModuleTopology ℝ (RealScalarExtension (V := V) w)] :
     Continuous (Q.atRealPlace w) := by
   let : Algebra K ℝ := (embedding_of_isReal w.2).toAlgebra
-  let : Invertible (2 : ℝ) := invertibleOfNonzero two_ne_zero
   exact (Q.atRealPlace w).continuous
 
 /-- A quadratic form localized through a complex embedding is continuous for the module
@@ -68,7 +65,6 @@ theorem _root_.QuadraticForm.continuous_atComplexEmbedding
     [IsModuleTopology ℂ (w.ComplexScalarExtension (V := V))] :
     Continuous (Q.atComplexEmbedding w) := by
   let : Algebra K ℂ := w.embedding.toAlgebra
-  let : Invertible (2 : ℂ) := invertibleOfNonzero two_ne_zero
   exact (Q.atComplexEmbedding w).continuous
 
 /-- Around a real local vector with nonzero value there is an open neighborhood on which
@@ -81,9 +77,12 @@ theorem _root_.QuadraticForm.exists_isOpen_isSquare_div_atRealPlace
     ∃ U : Set (RealScalarExtension (V := V) w), IsOpen U ∧ x ∈ U ∧
       ∀ z ∈ U, Q.atRealPlace w z ≠ 0 ∧
         IsSquare (Q.atRealPlace w z / Q.atRealPlace w x) := by
-  let : Algebra K ℝ := (embedding_of_isReal w.2).toAlgebra
-  obtain ⟨U, hU, hUo, hxU⟩ :=
-    mem_nhds_iff.mp ((Q.atRealPlace w).eventually_isSquare_div hx)
+  obtain ⟨U, hU, hUo, hxU⟩ := mem_nhds_iff.mp
+    ((Q.continuous_atRealPlace w).continuousAt.eventually_isSquare_div_of_isOpen_squares
+      (by
+        simpa only [Units.isSquare_iff_pos] using
+          (isOpen_lt continuous_const Units.continuous_val : IsOpen {u : ℝˣ | 0 < (u : ℝ)}))
+      hx)
   exact ⟨U, hUo, hxU, fun z hz ↦ hU hz⟩
 
 /-- Around a finite local vector with nonzero value there is an open neighborhood on which
@@ -102,7 +101,9 @@ theorem _root_.QuadraticForm.exists_isOpen_isSquare_div_atFinitePlace [NumberFie
     exact two_ne_zero
   obtain ⟨U, hU, hUo, hxU⟩ := mem_nhds_iff.mp
     ((Q.continuous_atFinitePlace v).continuousAt.eventually_isSquare_div_of_isOpen_squares
-      (isOpen_range_powMonoidHom h2) hx)
+      (by
+        simpa only [← square_eq_range_powMonoidHom, Subgroup.coe_square]
+          using isOpen_range_powMonoidHom h2) hx)
   exact ⟨U, hUo, hxU, fun z hz ↦ hU hz⟩
 
 end TauCeti

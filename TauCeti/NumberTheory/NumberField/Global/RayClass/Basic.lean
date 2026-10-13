@@ -217,9 +217,9 @@ theorem rayClassLift_unique {M : Type*} [Monoid M] {𝔪 : Modulus K} (φ : idea
   obtain ⟨I, rfl⟩ := rayClassMk_surjective 𝔪 c
   rw [rayClassLift_rayClassMk, ← hψ, MonoidHom.comp_apply]
 
-/-- The kernel of `rayClassLift φ h` is the image under `rayClassMk 𝔪` of `φ.ker`.  This exposes
-`QuotientGroup.ker_lift` through the module-opaque `RayClassGroup` representation. -/
-theorem ker_rayClassLift {M : Type*} [Group M] {𝔪 : Modulus K}
+/-- For any target monoid, the kernel of `rayClassLift φ h` is the image under `rayClassMk 𝔪`
+of `φ.ker`. -/
+theorem ker_rayClassLift {M : Type*} [Monoid M] {𝔪 : Modulus K}
     (φ : idealsPrimeTo 𝔪 →* M) (h : ray 𝔪 ≤ φ.ker) :
     (rayClassLift φ h).ker = Subgroup.map (rayClassMk 𝔪) φ.ker :=
   QuotientGroup.ker_lift (ray 𝔪) φ h
@@ -231,7 +231,7 @@ arbitrary ideals would hand back a junk class there.  Carrying the coprimality p
 argument also makes multiplicativity `map_mul` rather than a law with side conditions. -/
 noncomputable def idealClass (𝔪 : Modulus K) :
     integralIdealsPrimeTo 𝔪 →* RayClassGroup 𝔪 :=
-  (rayClassMk 𝔪).comp (NumberFieldArithmetic.integralIdealsAwayHom 𝔪.support)
+  (rayClassMk 𝔪).comp (NumberFieldArithmetic.integralIdealsAwayHom K 𝔪.support)
 
 /-- The ray class of a product is the product of the ray classes. -/
 @[simp] theorem idealClass_mul (𝔪 : Modulus K) (I J : integralIdealsPrimeTo 𝔪) :
@@ -240,7 +240,7 @@ noncomputable def idealClass (𝔪 : Modulus K) :
 
 /-- The ray class of an integral ideal is the ray class of the fractional ideal it generates. -/
 theorem idealClass_apply (𝔪 : Modulus K) (I : integralIdealsPrimeTo 𝔪) :
-    idealClass 𝔪 I = rayClassMk 𝔪 (NumberFieldArithmetic.integralIdealsAwayHom 𝔪.support I) :=
+    idealClass 𝔪 I = rayClassMk 𝔪 (NumberFieldArithmetic.integralIdealsAwayHom K 𝔪.support I) :=
   (rfl)
 
 /-- **The intrinsic triviality criterion for a ray class.**  An integral ideal prime to `𝔪` has
@@ -266,7 +266,7 @@ of `𝔪`. -/
 noncomputable def classMap {𝔪 𝔫 : Modulus K} (h : 𝔪 ∣ 𝔫) :
     RayClassGroup 𝔫 →* RayClassGroup 𝔪 :=
   QuotientGroup.map (ray 𝔫) (ray 𝔪)
-    (NumberFieldArithmetic.idealsAwayInclusion (Modulus.support_mono h)) <| by
+    (NumberFieldArithmetic.idealsAwayInclusion K (Modulus.support_mono h)) <| by
       intro J hJ
       obtain ⟨x, hx, hxJ⟩ := mem_ray_iff.mp hJ
       refine Subgroup.mem_comap.mpr (mem_ray_iff.mpr ⟨x, IsCongrOne.mono h hx, ?_⟩)
@@ -274,7 +274,7 @@ noncomputable def classMap {𝔪 𝔫 : Modulus K} (h : 𝔪 ∣ 𝔫) :
 
 @[simp] theorem classMap_rayClassMk {𝔪 𝔫 : Modulus K} (h : 𝔪 ∣ 𝔫) (I : idealsPrimeTo 𝔫) :
     classMap h (rayClassMk 𝔫 I) =
-      rayClassMk 𝔪 (NumberFieldArithmetic.idealsAwayInclusion (Modulus.support_mono h) I) := (rfl)
+      rayClassMk 𝔪 (NumberFieldArithmetic.idealsAwayInclusion K (Modulus.support_mono h) I) := (rfl)
 
 /-- **The transition map at a modulus and itself is the identity**, as an equality of
 homomorphisms. -/
@@ -326,7 +326,7 @@ theorem classMap_comp_idealClass {𝔪 𝔫 : Modulus K} (h : 𝔪 ∣ 𝔫) :
 
 /-- **Every invertible fractional ideal is prime to a modulus with empty support**: no prime
 divides the finite part, so no multiplicity is required to vanish.  The trivial modulus and the
-narrow modulus are the two moduli of this kind. -/
+narrow modulus are examples of this kind. -/
 theorem idealsPrimeTo_eq_top {𝔪 : Modulus K} (h : 𝔪.support = ∅) : idealsPrimeTo 𝔪 = ⊤ :=
   Subgroup.eq_top_iff' _ |>.mpr fun _ ↦
     NumberFieldArithmetic.mem_idealsAway_iff.mpr fun v hv ↦

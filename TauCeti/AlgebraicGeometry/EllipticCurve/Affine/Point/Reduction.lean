@@ -6,9 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicGeometry.EllipticCurve.Projective.Point
+public import Mathlib.LinearAlgebra.Unimodular
 public import Mathlib.RingTheory.LocalRing.ResidueField.Defs
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.Basic
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.ValuationIntegrality
+-- Proof-only: over a local ring, a unimodular vector has a unit coordinate.
+import TauCeti.LinearAlgebra.Unimodular
 
 /-!
 # Reduction of points modulo a valuation
@@ -38,8 +41,11 @@ to `(0 : 1 : 0)`. That this agrees with reducing *any* primitive representative 
 
 ## Main results
 
-* `WeierstrassCurve.Affine.Point.reduction_some_eq_mk`: the reduction of a point is the reduction
-  of any primitive integral representative of it.
+* `WeierstrassCurve.Affine.Point.exists_isUnimodular_toProjective_point_eq`: every point has a
+  primitive integral representative solving the equation of the integral model.
+* `WeierstrassCurve.Affine.Point.reduction_some_eq_mk` and
+  `WeierstrassCurve.Affine.Point.reduction_eq_mk`: the reduction of a point is the reduction of any
+  primitive integral representative of it.
 * `WeierstrassCurve.Affine.Point.equation_of_reduction_eq`: every representative of the reduction
   lies on the reduced curve.
 * `WeierstrassCurve.Affine.Point.reduction_eq_zero_iff`: a point reduces to `(0 : 1 : 0)` exactly
@@ -150,6 +156,95 @@ theorem reduction_some_eq_mk {x y : F} (h : W.Nonsingular x y) {X Y Z : v.valuat
     congr 1
     ext i
     fin_cases i <;> simp
+
+/-- **Every point has a primitive integral representative.** A point of `W(F)` is the class of a
+solution of the projective equation of the integral model whose coordinates lie in the valuation
+ring and generate the unit ideal. -/
+theorem exists_isUnimodular_toProjective_point_eq (P : W.Point) :
+    ∃ X : Fin 3 → v.valuationSubring,
+      (integralModel v.valuationSubring W).toProjective.Equation X ∧
+        Module.IsUnimodular v.valuationSubring X ∧
+          P.toProjective.point = ⟦algebraMap v.valuationSubring F ∘ X⟧ := by
+  -- the equation of the integral model at an integral triple is the equation of `W`
+  have heq (X : Fin 3 → v.valuationSubring) :
+      (integralModel v.valuationSubring W).toProjective.Equation X ↔
+        W.toProjective.Equation (algebraMap v.valuationSubring F ∘ X) := by
+    rw [← (integralModel v.valuationSubring W).toProjective.map_equation
+      (IsFractionRing.injective v.valuationSubring F)]
+    exact Iff.of_eq (congrArg (fun W' : WeierstrassCurve F ↦ W'.toProjective.Equation _)
+      (baseChange_integralModel_eq v.valuationSubring W))
+  rcases P with _ | ⟨x, y, h⟩
+  · refine ⟨![0, 1, 0], Projective.equation_zero, IsUnit.isUnimodular_pi (i := 1) (by simp), ?_⟩
+    simp [toProjective, ← zero_def, Projective.Point.fromAffine_zero, Projective.Point.zero_point,
+      Projective.comp_fin3]
+  rcases le_or_gt (v x) 1 with hx | hx
+  · -- an integral affine point is the class of `(x : y : 1)`
+    have hy := valuation_y_le_one_of_valuation_x_le_one v h.left hx
+    set X : Fin 3 → v.valuationSubring := ![⟨x, (v.mem_valuationSubring_iff x).mpr hx⟩,
+      ⟨y, (v.mem_valuationSubring_iff y).mpr hy⟩, 1]
+    have hι : algebraMap v.valuationSubring F ∘ X = ![x, y, 1] := by
+      simp [X, Projective.comp_fin3]
+    refine ⟨X, (heq X).mpr ?_, IsUnit.isUnimodular_pi (i := 2) (by simp [X]), ?_⟩
+    · rw [hι, Projective.equation_some]
+      exact h.left
+    · simp only [hι, toProjective, Projective.Point.fromAffine_some, Projective.Point.mk_point]
+  · -- otherwise `y` has a larger pole than `x`, and the point is the class of `(x/y : 1 : 1/y)`
+    have hxy := valuation_x_lt_valuation_y v h.left hx
+    have hy : y ≠ 0 := by
+      rintro rfl
+      exact absurd (v.map_zero ▸ hxy) (not_lt_of_ge zero_le)
+    have hxy' : v (x / y) ≤ 1 := by
+      rw [map_div₀]
+      exact div_le_one_of_le₀ hxy.le zero_le
+    have hy' : v (1 / y) ≤ 1 := by
+      rw [map_div₀, map_one]
+      exact div_le_one_of_le₀ (hx.trans hxy).le zero_le
+    set X : Fin 3 → v.valuationSubring := ![⟨x / y, (v.mem_valuationSubring_iff _).mpr hxy'⟩, 1,
+      ⟨1 / y, (v.mem_valuationSubring_iff _).mpr hy'⟩]
+    have hι : algebraMap v.valuationSubring F ∘ X = y⁻¹ • ![x, y, 1] := by
+      ext i
+      fin_cases i <;> simp [X, div_eq_inv_mul, hy]
+    have hu : IsUnit y⁻¹ := isUnit_iff_ne_zero.mpr (inv_ne_zero hy)
+    refine ⟨X, (heq X).mpr ?_, IsUnit.isUnimodular_pi (i := 1) (by simp [X]), ?_⟩
+    · rw [hι, Projective.equation_smul _ hu, Projective.equation_some]
+      exact h.left
+    · simp only [hι, Projective.smul_eq _ hu, toProjective, Projective.Point.fromAffine_some,
+        Projective.Point.mk_point]
+
+/-- **Reduction is computed by any primitive representative of any point.** If the class of a
+vector `X` with coordinates in the valuation ring generating the unit ideal is the point `P`, then
+`P` reduces to the class of the residues of the coordinates of `X`. -/
+theorem reduction_eq_mk {P : W.Point} {X : Fin 3 → v.valuationSubring}
+    (hX : Module.IsUnimodular v.valuationSubring X)
+    (hP : P.toProjective.point = ⟦algebraMap v.valuationSubring F ∘ X⟧) :
+    reduction v P = ⟦residue v.valuationSubring ∘ X⟧ := by
+  obtain ⟨i, hi⟩ := TauCeti.Module.isUnimodular_iff_exists_isUnit.mp hX
+  rcases P with _ | ⟨x, y, h⟩
+  · -- `X` is a multiple of `(0, 1, 0)`, whose middle coordinate is then the unit
+    simp only [toProjective, ← zero_def, Projective.Point.fromAffine_zero,
+      Projective.Point.zero_point] at hP
+    obtain ⟨u, hu⟩ := Quotient.exact hP.symm
+    have hX₀ : X 0 = 0 := Subtype.ext (by simpa using (congrFun hu 0).symm)
+    have hX₂ : X 2 = 0 := Subtype.ext (by simpa using (congrFun hu 2).symm)
+    have hX₁ : IsUnit (X 1) := by
+      fin_cases i
+      · exact absurd (hX₀ ▸ hi) not_isUnit_zero
+      · exact hi
+      · exact absurd (hX₂ ▸ hi) not_isUnit_zero
+    have hres : residue v.valuationSubring ∘ X = residue v.valuationSubring (X 1) • ![0, 1, 0] := by
+      ext j
+      fin_cases j <;> simp [hX₀, hX₂]
+    rw [← zero_def, reduction_zero, hres, Projective.smul_eq _ (hX₁.map _)]
+  · -- `X` is a multiple `u • (x : y : 1)`, so `X 2 = u`
+    obtain ⟨u, hu⟩ := Quotient.exact hP.symm
+    have hXj (j : Fin 3) : (X j : F) = u * ![x, y, 1] j := by
+      simpa [Units.smul_def] using (congrFun hu j).symm
+    rw [reduction_some_eq_mk v h (X := X 0) (Y := X 1) (Z := X 2)
+      (by rw [hXj, hXj]; simp [mul_comm]) (by rw [hXj, hXj]; simp [mul_comm])
+      (by fin_cases i <;> simp_all)]
+    congr 1
+    ext j
+    fin_cases j <;> rfl
 
 /-- **The kernel of reduction.** A point reduces to `(0 : 1 : 0)` exactly when it is the point at
 infinity or its `x`-coordinate has a pole; these points form `E₁(F)`. -/

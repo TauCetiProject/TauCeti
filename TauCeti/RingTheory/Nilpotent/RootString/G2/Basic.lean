@@ -311,7 +311,7 @@ theorem baseChangeExp_mul_baseChangeExp_of_commutator_eq_three_nsmul
     hxw hxv hwv ⟨kx, hkx⟩
   obtain ⟨ks, hks⟩ := Associative.isNilpotent_of_commutator_eq_nsmul (by decide)
     hwz hws hzs ⟨kw, hkw⟩
-  set N := kx + ky + kz + 2 * kw + 3 * kv + 3 * ks with hNdef
+  set N := kx + ky + kz + 2 * kw + 3 * kv + 3 * ks
   have hxN : x ^ N = 0 := pow_eq_zero_of_le (by omega) hkx
   have hyN : y ^ N = 0 := pow_eq_zero_of_le (by omega) hky
   have hzN : z ^ N = 0 := pow_eq_zero_of_le (by omega) hkz

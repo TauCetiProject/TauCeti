@@ -17,8 +17,6 @@ characterizes unitarity through norm preservation, isometries, and Mathlib's `un
 continuous linear operators, and records the basic inner-product identities, the coefficient bound,
 and that unitarity passes to restrictions.
 
-The definition and its API implement the unitarity-predicate milestone in Layer 1 of the
-[compact-groups roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/roadmap/representation-theory/TauCetiRoadmap/RepresentationTheory/CompactGroups/README.md).
 The operator characterizations reuse Mathlib's adjoint and unitary-operator theory.
 
 The mathematical development follows Daniel Bump, *Lie Groups*, second edition, Chapters 2–4.
@@ -27,8 +25,6 @@ The mathematical development follows Daniel Bump, *Lie Groups*, second edition, 
 public section
 
 open scoped InnerProductSpace
-
-namespace TauCeti
 
 namespace ContRepresentation
 
@@ -136,7 +132,7 @@ end IsUnitary
 /-- The trivial continuous representation is unitary. -/
 theorem isUnitary_trivial :
     IsUnitary (ContRepresentation.trivial 𝕜 G V) := by
-  intro g v w
+  intro _ v w
   simp
 
 end Monoid
@@ -201,5 +197,3 @@ end IsUnitary
 end Group
 
 end ContRepresentation
-
-end TauCeti

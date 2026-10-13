@@ -7,6 +7,7 @@ module
 
 public import TauCeti.FieldTheory.FunctionField.GeometricDegree
 public import TauCeti.FieldTheory.FunctionField.ConstantField
+public import Mathlib.FieldTheory.Normal.Basic
 
 /-!
 # Finite extensions of the constant field
@@ -44,6 +45,14 @@ carried out after a finite constant field extension.
 * `TauCeti.isIntegrallyClosedIn_of_constantCompositum_eq_top`: for a separable constant field
   extension by a perfect `k'`, in particular over a perfect `k`, `k'` is the exact constant field
   of `F · k'` (Stichtenoth, Proposition 3.6.1(a)).
+* `TauCeti.adjoin_image_eq_top_of_constantCompositum_eq_top`: generators of `F` over `k` generate
+  `F · k'` over `k'`.
+* `TauCeti.isSeparable_adjoin_algebraMap_of_constantCompositum_eq_top`: if `F` is separable over
+  `k(x)`, then `F · k'` is separable over `k'(x)`.
+* `TauCeti.exists_finiteDimensional_lt_card_constantCompositum_eq_top` and
+  `TauCeti.exists_finiteDimensional_normal_splits_constantCompositum_eq_top`: finite constant field
+  extensions `F · k'` with more than a given number of constants, or with `k'` normal and
+  splitting a given polynomial.
 
 ## Reference
 
@@ -142,6 +151,63 @@ theorem isIntegrallyClosedIn_of_constantCompositum_eq_top [Algebra.IsSeparable k
   rw [← separableClosure_eq_bot_of_constantCompositum_eq_top hex h]
   exact PerfectField.separable_of_irreducible (minpoly.irreducible hz.isIntegral)
 
+/-- **Generators of `F` generate the compositum over `k'`**: if a set `S` generates `F` over `k`,
+then its image generates the compositum `F' = F · k'` over `k'`.  For instance, if
+`F = k(x, y)` then `F · k' = k'(x, y)`. -/
+theorem adjoin_image_eq_top_of_constantCompositum_eq_top {S : Set F}
+    (hS : IntermediateField.adjoin k S = ⊤) (h : constantCompositum F k' F' = ⊤) :
+    IntermediateField.adjoin k' (algebraMap F F' '' S) = ⊤ := by
+  set E := IntermediateField.adjoin k' (algebraMap F F' '' S)
+  -- `E` contains the image of `F = k(S)`, so it is an intermediate field of `F' / F`.
+  have hFE : ∀ f : F, algebraMap F F' f ∈ E := by
+    have hle : IntermediateField.adjoin k S ≤
+        (E.restrictScalars k).comap (IsScalarTower.toAlgHom k F F') :=
+      IntermediateField.adjoin_le_iff.mpr fun z hz ↦
+        IntermediateField.subset_adjoin k' _ ⟨z, hz, rfl⟩
+    exact fun f ↦ hle (hS ▸ IntermediateField.mem_top)
+  have hle := (constantCompositum_le_iff F k' F'
+    (K := E.toSubfield.toIntermediateField hFE)).mpr fun c ↦ E.algebraMap_mem c
+  rw [h] at hle
+  exact top_le_iff.mp fun z _ ↦ hle IntermediateField.mem_top
+
+/-- **A separating element stays separating in the compositum**: if `F` is separable over `k(x)`,
+then the compositum `F' = F · k'` is separable over `k'(x)`. No hypothesis on `k' / k` is needed,
+since the new constants lie in `k'(x)`. -/
+theorem isSeparable_adjoin_algebraMap_of_constantCompositum_eq_top
+    (h : constantCompositum F k' F' = ⊤) {x : F} [Algebra.IsSeparable k⟮x⟯ F] :
+    Algebra.IsSeparable k'⟮algebraMap F F' x⟯ F' := by
+  set L := k'⟮algebraMap F F' x⟯
+  -- `k(x)` maps into `k'(x)`.
+  have hmem (a : k⟮x⟯) : algebraMap F F' a ∈ L := by
+    have ha : algebraMap F F' a ∈ k⟮x⟯.map (IsScalarTower.toAlgHom k F F') := ⟨a, a.2, rfl⟩
+    rw [IntermediateField.adjoin_map, Set.image_singleton] at ha
+    exact (IntermediateField.adjoin_simple_le_iff.mpr
+      (IntermediateField.mem_adjoin_simple_self k' (algebraMap F F' x)) :
+        k⟮IsScalarTower.toAlgHom k F F' x⟯ ≤ L.restrictScalars k) ha
+  let ψ : k⟮x⟯ →+* L :=
+    ((algebraMap F F').comp (algebraMap k⟮x⟯ F)).codRestrict L.toSubfield hmem
+  have hψ : (algebraMap L F').comp ψ = (algebraMap F F').comp (algebraMap k⟮x⟯ F) :=
+    RingHom.ext fun a ↦ RingHom.codRestrict_apply _ _ hmem a
+  -- Each element of `F` stays separable: its minimal polynomial over `k(x)`, mapped to `k'(x)`,
+  -- is separable and vanishes at it.
+  have hsep (z : F) : IsSeparable L (algebraMap F F' z) := by
+    have hroot : Polynomial.aeval (algebraMap F F' z) ((minpoly k⟮x⟯ z).map ψ) = 0 := by
+      rw [Polynomial.aeval_def, Polynomial.eval₂_map, hψ,
+        ← Polynomial.hom_eval₂, ← Polynomial.aeval_def, minpoly.aeval, map_zero]
+    have hp : (minpoly k⟮x⟯ z).Separable := Algebra.IsSeparable.isSeparable k⟮x⟯ z
+    exact (hp.map (f := ψ)).of_dvd (minpoly.dvd L _ hroot)
+  -- The image of `F` generates `F'` over `k'`, hence over `k'(x)`.
+  have htop : IntermediateField.adjoin L (Set.range (algebraMap F F')) = ⊤ := by
+    have hk' := adjoin_image_eq_top_of_constantCompositum_eq_top
+      (IntermediateField.adjoin_univ k F) h
+    rw [Set.image_univ] at hk'
+    refine eq_top_iff.mpr fun w _ ↦ ?_
+    exact (IntermediateField.adjoin_le_iff.mpr (IntermediateField.subset_adjoin L _) :
+      IntermediateField.adjoin k' _ ≤ (IntermediateField.adjoin L _).restrictScalars k')
+        (hk' ▸ IntermediateField.mem_top)
+  rw [← IntermediateField.isSeparable_top, ← htop]
+  exact (IntermediateField.isSeparable_adjoin_iff_isSeparable L F').mpr fun _ ⟨z, hz⟩ ↦ hz ▸ hsep z
+
 /-! ### Large finite extensions of constants -/
 
 variable (k F) in
@@ -188,5 +254,44 @@ theorem exists_finiteDimensional_lt_card_constantCompositum_eq_top (n : ℕ) :
     rw [eq_top_iff, ← htop, constantCompositum_def]
     refine IntermediateField.adjoin.mono _ _ _ fun x hx ↦ ?_
     exact ⟨⟨x, IntermediateField.subset_adjoin k T' hx⟩, rfl⟩
+
+variable (F) in
+/-- **A finite normal constant field extension splitting a polynomial exists**: for every
+`f ∈ k[X]`, the splitting field `k'` of `f` over `k`, formed inside the algebraic closure of `F`, is
+a finite normal extension of `k`, and `F' = F(roots of f)` is the compositum `F · k'`. -/
+theorem exists_finiteDimensional_normal_splits_constantCompositum_eq_top (f : Polynomial k) :
+    ∃ (F' : IntermediateField F (AlgebraicClosure F)) (k' : IntermediateField k F'),
+      FiniteDimensional k k' ∧ Normal k k' ∧ (f.map (algebraMap k k')).Splits ∧
+        Polynomial.IsSplittingField k k' f ∧ constantCompositum F k' F' = ⊤ := by
+  let F' := IntermediateField.adjoin F ((f.map (algebraMap k F)).rootSet (AlgebraicClosure F))
+  have : Polynomial.IsSplittingField F F' (f.map (algebraMap k F)) :=
+    IntermediateField.adjoin_rootSet_isSplittingField (IsAlgClosed.splits _)
+  have hsplit : (f.map (algebraMap k F')).Splits := by
+    have := Polynomial.IsSplittingField.splits F' (f.map (algebraMap k F))
+    rwa [Polynomial.map_map, ← IsScalarTower.algebraMap_eq] at this
+  let k' : IntermediateField k F' := IntermediateField.adjoin k (f.rootSet F')
+  have : Polynomial.IsSplittingField k k' f :=
+    IntermediateField.adjoin_rootSet_isSplittingField hsplit
+  refine ⟨F', k', Polynomial.IsSplittingField.finiteDimensional k' f,
+    Normal.of_isSplittingField f, Polynomial.IsSplittingField.splits k' f, this, ?_⟩
+  -- Each root of `f` in the algebraic closure lies in `F'`, and there it lies in `k'`.
+  refine eq_top_iff.mpr fun x _ ↦ ?_
+  have hle : F' ≤ (constantCompositum F k' F').map F'.val := by
+    refine IntermediateField.adjoin_le_iff.mpr fun r hr ↦ ?_
+    have hrF' : r ∈ F' := IntermediateField.subset_adjoin _ _ hr
+    have hroot : (⟨r, hrF'⟩ : F') ∈ f.rootSet F' := by
+      rw [Polynomial.mem_rootSet] at hr ⊢
+      refine ⟨fun hf ↦ hr.1 (by rw [hf, Polynomial.map_zero]), Subtype.ext ?_⟩
+      rw [Polynomial.aeval_map_algebraMap] at hr
+      have hval := Polynomial.aeval_algHom_apply (F'.val.restrictScalars k) (⟨r, hrF'⟩ : F') f
+      simp only [AlgHom.coe_restrictScalars', IntermediateField.coe_val] at hval
+      rw [← hval, ZeroMemClass.coe_zero]
+      exact hr.2
+    exact ⟨⟨r, hrF'⟩,
+      algebraMap_mem_constantCompositum F k' F' ⟨_, IntermediateField.subset_adjoin k _ hroot⟩, rfl⟩
+  -- The preimage `w` of `x` under the inclusion `F · k' → F'` is `x` itself.
+  obtain ⟨w, hw, hwx⟩ := hle x.2
+  obtain rfl : w = x := Subtype.ext hwx
+  exact hw
 
 end TauCeti

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.Radical.Basic
 public import TauCeti.Algebra.AlgebraicGroup.Solvable.Basic
+import TauCeti.RingTheory.Smooth.GeometricallyReduced
 
 /-!
 # Semisimple affine groups
@@ -32,6 +33,10 @@ algebraic closure of the ground field via the counit.
   algebras over a field.
 * `TauCeti.SemisimpleCommHopfAlgCat`: the full subcategory of semisimple coordinate Hopf
   algebras.
+* `TauCeti.semisimpleCommHopfAlgProperty_of_geometricFiber_iso`: establish semisimplicity
+  using an isomorphic coordinate model of the geometric fibre.
+* `TauCeti.semisimpleCommHopfAlgProperty_of_geometricFiber_iso_of_isReduced_isSolvable`: the
+  same, with the candidate subgroups presented as reduced, connected, and with solvable points.
 * `TauCeti.semisimpleCommHopfAlgProperty.eq_augmentation`: every connected normal smooth
   solvable closed subgroup of a semisimple group's geometric fibre is trivial.
 * `TauCeti.semisimpleCommHopfAlgProperty.geometricFiberCounitBialgEquiv`: a semisimple group
@@ -46,9 +51,7 @@ The formal construction and proof structure were adapted from
 `TauCeti.Algebra.AlgebraicGroup.Reductive.Basic`; their common normal-subgroup-freeness
 infrastructure is factored through `TauCeti.Algebra.AlgebraicGroup.Radical.Basic`.
 
-This is the semisimple-group definition target in Layer 6, "Reductive and semisimple groups", of
-the ReductiveGroups roadmap. It states triviality of the geometric radical through its defining
-universal property while the radical construction is still being developed.
+The definition states triviality of the geometric radical through its defining universal property.
 -/
 
 public section
@@ -119,6 +122,56 @@ instance (k : Type u) [Field k] :
       geometricallySolvablePointsCommHopfAlgProperty (AlgebraicClosure k)).inverseImage
         (forget₂ (FiniteTypeCommHopfAlgCat.{u, u} (AlgebraicClosure k))
           (CommHopfAlgCat.{u} (AlgebraicClosure k))))).IsClosedUnderIsomorphisms)
+
+/-- Establish semisimplicity by identifying the geometric fibre with a coordinate model
+on which connected smooth normal solvable closed subgroups can be eliminated. -/
+theorem semisimpleCommHopfAlgProperty_of_geometricFiber_iso
+    (k : Type u) [Field k] (H : FiniteTypeCommHopfAlgCat.{u, u} k)
+    (G : CommHopfAlgCat.{u} (AlgebraicClosure k))
+    (hsmooth : Algebra.Smooth k H)
+    (hconnected : geometricallyConnectedCommHopfAlgProperty k H.obj)
+    (e : (FiniteTypeCommHopfAlgCat.baseChange (K := AlgebraicClosure k) H).obj ≅ G)
+    (htrivial : ∀ (I : HopfIdeal (AlgebraicClosure k) G), I.IsNormal →
+      geometricallyConnectedCommHopfAlgProperty (AlgebraicClosure k)
+        (CommHopfAlgCat.quotient G I) →
+      Algebra.Smooth (AlgebraicClosure k) (CommHopfAlgCat.quotient G I) →
+      geometricallySolvablePointsCommHopfAlgProperty (AlgebraicClosure k)
+        (CommHopfAlgCat.quotient G I) →
+      I = HopfIdeal.augmentation (AlgebraicClosure k) G) :
+    semisimpleCommHopfAlgProperty k H := by
+  apply geometricNormalSubgroupFreeCommHopfAlgProperty_of_geometricFiber_iso k
+    (smoothCommHopfAlgProperty (AlgebraicClosure k) ⊓
+      geometricallySolvablePointsCommHopfAlgProperty (AlgebraicClosure k))
+    H G hsmooth hconnected e
+  intro I hI hconn hP
+  exact htrivial I hI hconn ((smoothCommHopfAlgProperty_iff _).mp hP.1) hP.2
+
+/-- A form of `semisimpleCommHopfAlgProperty_of_geometricFiber_iso` whose triviality test
+receives the geometric conditions on a candidate subgroup in the form used by point-based
+arguments: its coordinate ring is reduced with connected prime spectrum, and its group of points
+over the algebraic closure is solvable. -/
+theorem semisimpleCommHopfAlgProperty_of_geometricFiber_iso_of_isReduced_isSolvable
+    (k : Type u) [Field k] (H : FiniteTypeCommHopfAlgCat.{u, u} k)
+    (G : CommHopfAlgCat.{u} (AlgebraicClosure k))
+    (hsmooth : Algebra.Smooth k H)
+    (hconnected : geometricallyConnectedCommHopfAlgProperty k H.obj)
+    (e : (FiniteTypeCommHopfAlgCat.baseChange (K := AlgebraicClosure k) H).obj ≅ G)
+    (htrivial : ∀ (I : HopfIdeal (AlgebraicClosure k) G), I.IsNormal →
+      IsReduced (CommHopfAlgCat.quotient G I) →
+      ConnectedSpace (PrimeSpectrum (CommHopfAlgCat.quotient G I)) →
+      Group.IsSolvable
+        (WithConv (CommHopfAlgCat.quotient G I →ₐ[AlgebraicClosure k] AlgebraicClosure k)) →
+      I = HopfIdeal.augmentation (AlgebraicClosure k) G) :
+    semisimpleCommHopfAlgProperty k H := by
+  let K := AlgebraicClosure k
+  apply semisimpleCommHopfAlgProperty_of_geometricFiber_iso k H G hsmooth hconnected e
+  intro I hI hconn hsmoothI hsolvable
+  let _ : Algebra.Smooth K (CommHopfAlgCat.quotient G I) := hsmoothI
+  have := (geometricallySolvablePointsCommHopfAlgProperty_iff K _).mp hsolvable
+  exact htrivial I hI (isReduced_of_smooth K _)
+    (geometricallyConnectedCommHopfAlgProperty.connectedSpace K _ hconn)
+    (Group.isSolvable_of_isSolvable_injective
+      (AlgHom.mapValue_injective (Algebra.ofId K (AlgebraicClosure K)).injective))
 
 /-- The category of semisimple finite-type commutative Hopf algebras over a field. -/
 abbrev SemisimpleCommHopfAlgCat (k : Type u) [Field k] :=

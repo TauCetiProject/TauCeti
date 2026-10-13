@@ -218,7 +218,7 @@ theorem coinvariantsMk_coindToInd_unit (M : Rep k G) (S : Subgroup G) [S.FiniteI
   induction c using Quotient.inductionOn with
   | h g =>
     set q : G ⧸ S := QuotientGroup.quotientRightRelEquivQuotientLeftRel S (Quotient.mk _ g)
-      with hq
+      with _
     have hq' : q = ((g⁻¹ : G) : G ⧸ S) := rfl
     have hs : (q.out : G)⁻¹ * g⁻¹ ∈ S := QuotientGroup.eq.mp (q.out_eq'.trans hq')
     have hg : (q.out : G)⁻¹ = ((⟨_, hs⟩ : S) : G) * g := by simp

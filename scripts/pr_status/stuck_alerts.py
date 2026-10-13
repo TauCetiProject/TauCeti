@@ -15,12 +15,12 @@ Detectors (each names the infra failure it implies):
 
   1. stuck-bump      The last-known-good bump PR (branch hopscotch/lkg-bump) has a
                      RED `build` check that has stayed red past a grace window. The
-                     daily bump cannot cross a mathlib breaking change on its own;
+                     hourly bump cannot cross a mathlib breaking change on its own;
                      something needs a fix, e.g. a proof, scripts/lint-env.sh, or a
                      guard.
-  2. stale-pin       main's mathlib pin has not moved in several days. The bump has
-                     stopped advancing, e.g. a wedged PR, an unresolved
-                     first-known-bad freeze, or update.yml silently broken.
+  2. stale-pin       main's pinned mathlib commit is over three days old. Bumps may
+                     be stalled or advancing too slowly through old incompatibilities;
+                     recent manifest edits do not restore freshness.
   3. stranded-pr     A PR that is in-scope (TauCeti/ + allowed roots, bump-guard
                      green for any pin change), `build` green, every blocking
                      rubric green at HEAD, not draft/hold, mergeable, and quiet for
@@ -143,7 +143,7 @@ BUMP_STUCK_HOURS = 24
 # A lint repair PR starts red by design and needs a worker round or two; two days open means the
 # worker is not getting it green on its own.
 LINT_REPAIR_STUCK_HOURS = 48
-PIN_STALE_DAYS = 4
+PIN_STALE_DAYS = 3
 STRANDED_HOURS = 6
 # Evictions since the current readiness, within the window, before a bounce counts as a loop.
 EVICTION_LOOP_MIN = 2
@@ -160,7 +160,7 @@ ABANDONED_CANCEL_HOURS = 24
 FKB_STALE_DAYS = 3
 SCHEDULERS = {
     # workflow file            (human name,               max age hours)
-    "update.yml":            ("daily mathlib bump",       30),
+    "update.yml":            ("hourly mathlib bump",       4),
     "lint-full.yml":         ("daily full lint",          30),
     "pages.yml":             ("pages / doc-gen publish",  30),
     # Hourly, but a run after a pin bump re-analyzes all of TauCeti and holds the
@@ -258,10 +258,10 @@ def detect_stuck_bump():
         # Clock off the PR's age, not the build-status timestamp. A HEALTHY LKG
         # bump PR merges within hours and a fresh one is created per advance, so an
         # open LKG PR older than the window is reliably stuck. The build-status
-        # `updated_at` is the wrong clock here: the daily bump force-pushes this
-        # branch, re-running the SAME red build and resetting that timestamp every
-        # day -- which would permanently mask a genuine multi-day wedge (observed
-        # on PR #1057). Requiring the build to be currently red avoids firing on a
+        # `updated_at` is the wrong clock here: repeated branch updates can
+        # re-run the same red build and reset that timestamp, masking a
+        # genuine multi-day wedge (observed on PR #1057). Requiring the build to
+        # be currently red avoids firing on a
         # PR that has since gone green and is merging.
         if state in ("failure", "error") and hours_since(pr["created_at"]) >= BUMP_STUCK_HOURS:
             out.append({
@@ -270,7 +270,7 @@ def detect_stuck_bump():
                 "body": (
                     f"The last-known-good bump PR "
                     f"https://github.com/{REPO}/pull/{pr['number']} has had a red "
-                    f"`build` check and has been open over {BUMP_STUCK_HOURS}h. The daily bump cannot "
+                    f"`build` check and has been open over {BUMP_STUCK_HOURS}h. The hourly bump cannot "
                     f"cross a mathlib breaking change on its own.\n\n"
                     f"**Fix:** open the failing build, and land whatever fix it needs "
                     f"together with the pin move in one human-owned PR, so the bump "
@@ -303,34 +303,38 @@ def detect_stuck_lint_repair():
 
 
 def detect_stale_pin():
-    # Staleness is "how long since the pin last MOVED", not the age of the pinned
-    # commit: right after a bump to an LKG commit that itself lags master, the
-    # pinned commit can be days old while the bump is perfectly healthy. The daily
-    # bump rewrites lake-manifest.json whenever mathlib advances, so the manifest's
-    # last-change date on main is a direct proxy for the bump cadence.
-    date = gh_scalar(f"/repos/{REPO}/commits?path=lake-manifest.json&sha=main&per_page=1",
-                     jq='.[0].commit.committer.date // ""')
-    if not date or hours_since(date) / 24.0 < PIN_STALE_DAYS:
-        return []
-    rev = ""
+    # A recent manifest edit can still leave main weeks behind upstream. Measure
+    # the actual pinned Mathlib commit, independently of when the bump landed.
+    # Missing evidence must raise so collect_alerts preserves an existing alert.
     content = gh_scalar(f"/repos/{REPO}/contents/lake-manifest.json?ref=main", jq='.content')
-    if content:
-        try:  # contents is base64 with embedded newlines; b64decode discards them
-            data = json.loads(base64.b64decode(content).decode())
-            rev = next((p["rev"] for p in data.get("packages", [])
-                        if p["name"] == "mathlib"), "")
-        except Exception:
-            rev = ""
-    pin = f" (mathlib `{rev[:10]}`)" if rev else ""
+    data = json.loads(base64.b64decode(content).decode())
+    mathlib = [p for p in data["packages"] if p.get("name") == "mathlib"]
+    if len(mathlib) != 1 or not re.fullmatch(r"[0-9a-f]{40}", mathlib[0].get("rev", "")):
+        raise RuntimeError("main manifest must contain exactly one full Mathlib commit SHA")
+    rev = mathlib[0]["rev"]
+    date = gh_scalar(f"/repos/leanprover-community/mathlib4/git/commits/{rev}",
+                     jq='.committer.date // ""')
+    committed = parse_ts(date)
+    if committed.tzinfo is None:
+        raise RuntimeError("Mathlib commit timestamp has no timezone")
+    age_days = (now_utc() - committed).total_seconds() / 86400.0
+    if age_days < 0:
+        raise RuntimeError("Mathlib commit timestamp is in the future")
+    if age_days <= PIN_STALE_DAYS:
+        return []
     return [{
         "key": "stale-pin",
-        "title": "Mathlib pin has stopped advancing",
+        "title": "Pinned Mathlib commit is too old",
         "body": (
-            f"`lake-manifest.json` on main{pin} has not changed in over "
-            f"{PIN_STALE_DAYS} days; the daily bump has stalled.\n\n"
+            f"Main pins mathlib [`{rev[:10]}`]"
+            f"(https://github.com/leanprover-community/mathlib4/commit/{rev}), "
+            f"committed at {date}. That commit exceeds the "
+            f"{PIN_STALE_DAYS}-day freshness limit. "
+            f"A recent manifest edit does not reset this clock.\n\n"
             f"**Fix:** find why — a wedged bump PR (see any stuck-bump alert), an "
-            f"unresolved first-known-bad freeze, or `update.yml` failing — and clear "
-            f"it so `hopscotch/lkg-bump` can move forward again."),
+            f"unresolved first-known-bad freeze, failed integration, or `update.yml` "
+            f"failing — and restore main to a Mathlib commit within "
+            f"{PIN_STALE_DAYS} days of the present."),
     }]
 
 
@@ -842,7 +846,7 @@ def detect_stale_fkb():
                 f"over {FKB_STALE_DAYS} days: https://github.com/{REPO}/issues/{i['number']}. "
                 f"The pin is frozen at the last-known-good commit until it is fixed.\n\n"
                 f"**Fix:** land the fix PR whose manifest is pinned at the first-known-bad commit so the "
-                f"freeze lifts and the daily bump resumes toward master."),
+                f"freeze lifts and the hourly bump resumes toward master."),
         })
     return out
 

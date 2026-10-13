@@ -74,20 +74,20 @@ theorem virtualCharacters_eq_map_of_isPrimitiveRoot {n : ℕ} [NeZero n] {ζ : K
       ⟨D.map E.subtype, Subgroup.map_subtype_le D,
         Subgroup.comap_map_eq_self_of_injective E.subtype_injective D⟩
     let ψ : H →* Lˣ := χ.comp (Subgroup.subgroupOfEquivOfLe hHE).symm.toMonoidHom
-    have hind : ((ClassFunction.ind E (ClassFunction.ofCharacter ρ) : ClassFunction L G) :
+    have hind : ((Subgroup.indClassFunction E (ClassFunction.ofCharacter ρ) : ClassFunction L G) :
         G → L) = (indFDRep (FDRep.ofLinearCharacter ψ)).character := by
-      rw [← indClassFun_ofFDRep_character]
+      rw [← Subgroup.indClassFun_ofFDRep_character]
       have hψχ : (FDRep.ofLinearCharacter ψ).character = fun h => (ψ h : L) :=
         funext (FDRep.char_ofLinearCharacter ψ)
       rw [hψχ]
       have hρχ : ((ClassFunction.ofCharacter ρ : ClassFunction L E) : E → L) =
           (FDRep.of ρ).character := funext fun g => by simp
-      have hInd : ((ClassFunction.ind E (ClassFunction.ofCharacter ρ) : ClassFunction L G) :
-          G → L) = indClassFun E (ClassFunction.ofCharacter ρ) :=
-        funext (ClassFunction.ind_apply (ClassFunction.ofCharacter ρ))
+      have hInd : ((Subgroup.indClassFunction E (ClassFunction.ofCharacter ρ) : ClassFunction L G) :
+          G → L) = Subgroup.indClassFun E (ClassFunction.ofCharacter ρ) :=
+        funext (Subgroup.indClassFunction_apply E (ClassFunction.ofCharacter ρ))
       rw [hInd, hρχ, hχ]
-      convert indClassFun_indClassFun_subgroupOf hHE
-        (MonoidHom.comp_mem_classFunction ψ Units.val) using 1
+      convert Subgroup.indClassFun_indClassFun_subgroupOf H hHE
+        (ClassFunction.mem_iff.mp (MonoidHom.comp_mem_classFunction ψ Units.val)) using 1
       simp [ψ]
     obtain ⟨f, hf, hdescent⟩ := exists_virtualCharacter_indFDRep_of_isPrimitiveRoot hζ hG ψ
     rw [hind, hdescent]

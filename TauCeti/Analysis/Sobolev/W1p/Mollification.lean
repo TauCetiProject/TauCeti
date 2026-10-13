@@ -8,7 +8,6 @@ module
 public import TauCeti.Analysis.Sobolev.Translation
 public import TauCeti.Analysis.Sobolev.W1p.Zero
 public import TauCeti.MeasureTheory.Function.Lp.ApproximateIdentity
-public import TauCeti.MeasureTheory.Function.Lp.MollificationBridge
 
 /-!
 # Mollification on `W^{1,p}(ℝⁿ)`

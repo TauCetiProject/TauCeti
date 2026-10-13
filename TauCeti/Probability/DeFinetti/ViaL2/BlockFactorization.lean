@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.Exchangeability.CondExp
-public import TauCeti.Probability.Exchangeability.Cylinder
+public import TauCeti.Probability.Process.Cylinder
 public import TauCeti.Probability.DeFinetti.DirectingMeasure.Basic
 import TauCeti.Probability.DeFinetti.ViaL2.WindowProduct
 import TauCeti.Probability.DeFinetti.DirectingMeasure.Integral
@@ -52,9 +52,9 @@ A constant sequence that converges must equal its limit, which is the factorizat
 `DeFinetti/BlockFactorization.lean` proves
 `condExp_blockIndicatorProd_prefix_ae_eq_prod_directingMeasure`, the same factorization for the
 *prefix* selection, through `TailFactorization` and reverse-martingale convergence. The overlap is
-intentional: the two are the corresponding steps of the two roadmap routes. Their names record the
-difference in what they *say* — `_prefix_` against `_strictMono_` — rather than how they are
-proved; the roadmap's `_viaL2` route suffix is reserved for the public route endpoints.
+intentional: the two are the corresponding steps of the two proof routes. Their names record the
+difference in what they *say* — `_prefix_` against `_strictMono_` — rather than how they are proved;
+the `_viaL2` suffix is reserved for the public route endpoints.
 
 This statement is strictly stronger than the prefix form: it holds for every strictly monotone
 selection, not only `i ↦ i`, and does not assume `StandardBorelSpace Ω`. So the implication does
@@ -71,8 +71,6 @@ that both routes import.
 
 ## References
 
-* Roadmap: `TauCetiRoadmap/Exchangeability/README.md`, **Layer 3** — the martingale-free
-  standard-Borel de Finetti route, `deFinetti_viaL2`.
 * Not adapted from the pinned `cameronfreer/exchangeability` sources: the argument here is built
   from this repository's `L²` averaging library and its tail-conditioned selection invariance,
   and deliberately diverges from that development's `ViaL2` material.
@@ -126,9 +124,9 @@ theorem condExp_blockIndicatorProd_strictMono_tailProcess_ae_eq_prod_directingMe
   rw [funext fun ω => blockIndicatorProd_apply X k B ω]
   have hTail : tailProcess X ≤ (inferInstance : MeasurableSpace Ω) :=
     tailProcess_le_ambient 0 fun c _ => hX_meas c
-  set Y : Fin r → ℕ → Ω → ℝ := fun i c ω => (B i).indicator (fun _ => (1 : ℝ)) (X c ω) with hY
-  set Z : Ω → ℝ := fun ω => ∏ i, Y i (k i) ω with hZ
-  set W : Ω → ℝ := fun ω => ∏ i, (directingMeasure μ X ω).real (B i) with hW
+  set Y : Fin r → ℕ → Ω → ℝ := fun i c ω => (B i).indicator (fun _ => (1 : ℝ)) (X c ω)
+  set Z : Ω → ℝ := fun ω => ∏ i, Y i (k i) ω
+  set W : Ω → ℝ := fun ω => ∏ i, (directingMeasure μ X ω).real (B i)
   -- `W` is tail-measurable, so it is its own conditional expectation.
   have hW_tail : Measurable[tailProcess X] W :=
     Finset.measurable_prod _ fun i _ =>
@@ -162,7 +160,7 @@ theorem condExp_blockIndicatorProd_strictMono_tailProcess_ae_eq_prod_directingMe
     set c : ℝ := (Fintype.card (Fin r → Fin (n + 1)) : ℝ) with hc
     have hcard : c ≠ 0 := Nat.cast_ne_zero.mpr Fintype.card_ne_zero
     set G : (Fin r → Fin (n + 1)) → Ω → ℝ :=
-      fun js ω => ∏ i, Y i (window (n + 1) (i : ℕ) (js i : ℕ)) ω with hG
+      fun js ω => ∏ i, Y i (window (n + 1) (i : ℕ) (js i : ℕ)) ω
     -- Every tuple is a strictly monotone selection, so all the terms share one conditional law.
     have hterm : ∀ js, μ[G js | tailProcess X] =ᵐ[μ] μ[Z | tailProcess X] :=
       fun js => hX.condExp_prod_indicator_ae_eq hX_meas (window_selection_strictMono js) hk hB

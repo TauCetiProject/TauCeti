@@ -61,6 +61,8 @@ prime `τ • Q` gives the other.
   prime is cyclic.
 * `Ideal.zpowers_sup_inertia_eq_stabilizer_of_isArithFrobAt`: at any nonzero prime `Q`, a
   Frobenius element together with the inertia subgroup generates the decomposition group.
+* `Ideal.stabilizer_le_of_forall_isArithFrobAt_mem`: a subgroup containing every Frobenius
+  element at a nonzero prime `Q` contains the decomposition group of `Q`.
 * `Ideal.inertiaDeg_dvd_orderOf_of_isArithFrobAt` and
   `Ideal.inertiaDeg_eq_one_iff_mem_inertia_of_isArithFrobAt`: at any prime `Q`, the inertia
   degree divides the order of a Frobenius element, and it is `1` exactly when that element lies in
@@ -315,6 +317,19 @@ theorem zpowers_sup_inertia_eq_stabilizer_of_isArithFrobAt (Q : Ideal (𝓞 L)) 
     ← MonoidHom.range_eq_map, Subgroup.range_subtype] at h
   exact h
 
+/-- **A subgroup containing every Frobenius at `Q` contains the decomposition group of `Q`.** For a
+nonzero prime `Q` of `𝓞 L`, if a subgroup `H` of `Gal(L/K)` contains every arithmetic Frobenius
+element at `Q`, then it contains the decomposition group of `Q`. At an unramified prime the
+Frobenius element is unique, so the hypothesis asks only that it lie in `H`. -/
+theorem stabilizer_le_of_forall_isArithFrobAt_mem (Q : Ideal (𝓞 L)) [Q.IsPrime] (hQ : Q ≠ ⊥)
+    {H : Subgroup (L ≃ₐ[K] L)} (hH : ∀ σ : L ≃ₐ[K] L, IsArithFrobAt (𝓞 K) σ Q → σ ∈ H) :
+    MulAction.stabilizer (L ≃ₐ[K] L) Q ≤ H := by
+  obtain ⟨σ, hσ⟩ := NumberField.exists_isArithFrobAt K Q hQ
+  rw [← zpowers_sup_inertia_eq_stabilizer_of_isArithFrobAt Q hσ]
+  refine sup_le (Subgroup.zpowers_le.mpr (hH σ hσ)) fun τ hτ ↦ ?_
+  -- `τ = σ⁻¹ (σ τ)` with both `σ` and the Frobenius `σ τ` in `H`
+  simpa using H.mul_mem (H.inv_mem (hH σ hσ)) (hH _ (hσ.mul_of_mem_inertia hτ))
+
 omit [IsGalois K L] in
 /-- **The orbit of a point fixed by inertia under the decomposition group is its orbit under a
 Frobenius.** Let `Gal(L/K)` act on a set, and let `x` be a point fixed by the inertia subgroup of
@@ -371,12 +386,11 @@ theorem inertiaDeg_eq_one_iff_mem_inertia_of_isArithFrobAt (Q : Ideal (𝓞 L)) 
 
 /-! ### Conjugation along the fibre -/
 
-/-- **Frobenius elements are conjugated by the Galois action on primes.** At an unramified prime
-`Q` with arithmetic Frobenius `σ`, an element of `Gal(L/K)` is an arithmetic Frobenius at the
+omit [NumberField K] [IsGalois K L] in
+/-- **Frobenius elements are conjugated by the automorphism action on primes.** At an unramified
+prime `Q` with arithmetic Frobenius `σ`, an element of `Gal(L/K)` is an arithmetic Frobenius at the
 translated prime `τ • Q` exactly when it is the conjugate `τ σ τ⁻¹`.
-
-Mathlib's `IsArithFrobAt.conj` gives that `τ σ τ⁻¹` is one; uniqueness at `τ • Q`, which is
-unramified by `Ideal.isUnramifiedAt_pointwise_smul_iff`, gives that it is the only one. -/
+The extension need not be normal. -/
 theorem isArithFrobAt_pointwise_smul_iff_eq_conj (Q : Ideal (𝓞 L)) [Q.IsPrime]
     [Algebra.IsUnramifiedAt (𝓞 K) Q] {σ : L ≃ₐ[K] L} (hσ : IsArithFrobAt (𝓞 K) σ Q)
     (τ ρ : L ≃ₐ[K] L) :

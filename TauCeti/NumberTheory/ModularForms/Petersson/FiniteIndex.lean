@@ -200,7 +200,7 @@ private theorem peterssonInnerCosets_summand_nonneg
     (f : CuspForm (Γ.map (mapGL ℝ)) k) (q : SL(2, ℤ) ⧸ Γ.withCenter) :
     ∃ r : ℝ, 0 ≤ r ∧
       UpperHalfPlane.peterssonInner k fd (⇑f ∣[k] (q.out)⁻¹) (⇑f ∣[k] (q.out)⁻¹) = (r : ℂ) := by
-  set h := ⇑f ∣[k] (q.out)⁻¹ with hh
+  set h := ⇑f ∣[k] (q.out)⁻¹ with _
   refine ⟨∫ τ in fd, normSq (h τ) * τ.im ^ k, ?_,
     UpperHalfPlane.peterssonInner_self_eq_ofReal k fd h⟩
   have hnn := UpperHalfPlane.peterssonInner_self_re_nonneg k fd h

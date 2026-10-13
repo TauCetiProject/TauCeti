@@ -8,6 +8,8 @@ module
 public import Mathlib.Data.Matrix.Basic
 public import Mathlib.Data.Matrix.Basis
 public import Mathlib.Algebra.CharP.Defs
+public import Mathlib.Algebra.Ring.Invertible
+public import Mathlib.LinearAlgebra.Matrix.Trace
 
 /-!
 # Matrices equal to the negative of their transpose
@@ -26,6 +28,7 @@ covers every ring of odd characteristic.
 * `Matrix.diag_eq_zero_of_transpose_eq_neg`: the diagonal vanishes when doubling is injective at
   zero, with `Matrix.diag_eq_zero_of_transpose_eq_neg_of_charP` reading that off an odd
   characteristic.
+* `Matrix.trace_eq_zero_of_transpose_eq_neg`: the trace vanishes when `2` is invertible.
 * `Matrix.ext_of_lt_of_transpose_eq_neg`: two such matrices with vanishing diagonals agree as soon
   as they agree above the diagonal.
 -/
@@ -62,6 +65,16 @@ theorem diag_eq_zero_of_transpose_eq_neg [AddGroup S] {M : Matrix n n S} (hM : M
   rw [Matrix.transpose_apply, Matrix.neg_apply] at h
   nth_rewrite 1 [h]
   rw [neg_add_cancel]
+
+/-- A skew-symmetric matrix has trace zero when `2` is invertible. -/
+theorem trace_eq_zero_of_transpose_eq_neg {R : Type*} [Fintype n] [Ring R]
+    [Invertible (2 : R)] (X : Matrix n n R) (hX : Xᵀ = -X) : trace X = 0 := by
+  have h2 : ∀ x : R, x + x = 0 → x = 0 := by
+    intro x hx
+    calc
+      x = ⅟(2 : R) * ((2 : R) * x) := by simp
+      _ = 0 := by rw [two_mul, hx, mul_zero]
+  exact Finset.sum_eq_zero fun a _ => diag_eq_zero_of_transpose_eq_neg hX h2 a
 
 /-- **In a ring of odd characteristic the diagonal of a matrix equal to the negative of its
 transpose vanishes**: odd characteristic implies that doubling is injective at zero, which

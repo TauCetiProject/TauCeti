@@ -106,7 +106,7 @@ private theorem exists_mem_affineBlowup_of_mem_pow {k : ℕ} {y : A} (hy : y ∈
       refine ⟨divBy i a * z, mul_mem (divBy_mem_affineBlowup hi) hz, ?_⟩
       rw [pow_succ', map_mul, ← hzj, ← algebraMap_mul_divBy (S := S) i a]
       ring
-    | add y y' _ _ hy hy' =>
+    | add y _ _ _ hy hy' =>
       obtain ⟨z, hz, hzy⟩ := hy
       obtain ⟨z', hz', hzy'⟩ := hy'
       exact ⟨z + z', add_mem hz hz', by rw [mul_add, hzy, hzy', map_add]⟩

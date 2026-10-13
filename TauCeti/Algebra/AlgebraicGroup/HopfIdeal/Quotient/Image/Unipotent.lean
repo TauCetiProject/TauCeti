@@ -35,9 +35,9 @@ apply to every scheme-theoretic image of a smooth unipotent affine group.
 
 * A. Borel, *Linear Algebraic Groups*, Proposition 14.4, for the unipotent-radical application.
 
-This is the image-unipotence step for Layer 5, "The unipotent radical", of the ReductiveGroups
-roadmap. In particular, it supplies the remaining geometric-unipotence input in the binary-product
-closure of connected normal smooth unipotent subgroup schemes.
+This is the image-unipotence step for the unipotent radical. In particular, it supplies the
+geometric-unipotence input in the binary-product closure of connected normal smooth unipotent
+subgroup schemes.
 -/
 
 public section

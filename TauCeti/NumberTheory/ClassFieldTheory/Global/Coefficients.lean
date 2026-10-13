@@ -6,13 +6,14 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Colimit.DirectLimit
-public import Mathlib.FieldTheory.Galois.GaloisClosure
+public import TauCeti.FieldTheory.Galois.GaloisClosure
 public import TauCeti.Algebra.GroupAction.QuotientAddGroup
 public import TauCeti.Algebra.GroupAction.TypeTags
 public import TauCeti.FieldTheory.GaloisCohomology.Coefficients
 public import TauCeti.NumberTheory.NumberField.FiniteGaloisIntermediateField
 public import TauCeti.NumberTheory.NumberField.Global.Adeles.GaloisAction
 public import TauCeti.NumberTheory.NumberField.Global.Ideles.Extension
+import TauCeti.NumberTheory.NumberField.Global.Ideles.GaloisDescent
 
 /-!
 # The ideles and idele classes of a separable closure of a number field
@@ -36,6 +37,17 @@ maps (`adeleTransition_adeleGaloisAction`), so they pass to the direct limit. Th
 fixed by the open subgroup of `G_K` fixing `E` (`smul_ideleCoeffOf_of_mem_fixingSubgroup`), so
 both modules are discrete with open point stabilizers.
 
+Conversely, the ideles of `E` embed in `I_{Kˢ}` (`ideleCoeffOf_injective`). More generally, the
+ideles of any finite subextension `E` of `Kˢ/K`, Galois over `K` or not, embed in `I_{Kˢ}` through
+the normal closure of `E` (`ideleCoeffOfIntermediateField`, `ideleCoeffOfIntermediateField_coe`),
+and they are exactly the ideles of `Kˢ` fixed by the subgroup `G_E` of `G_K` fixing `E`
+(`mem_range_ideleCoeffOfIntermediateField_iff`): `(I_{Kˢ})^{G_E} = I_E`. A fixed idele is defined
+over a finite Galois subextension `M ⊇ E`; every element of `Gal(M/E)` lifts to `G_E`, so it is
+fixed by `Gal(M/E)` and descends to `E` by Galois descent for the ideles of number fields
+(`TauCeti.GlobalNumberFields.mem_range_ideleExtension_iff`). An element of `G_K` that restricts to
+an automorphism `e` of `E` acts on these ideles by transport along `e`
+(`smul_ideleCoeffOfIntermediateField`).
+
 A unit of `Kˢ` lies in a finite Galois subextension `E`, and its principal idele in `I_E` does not
 depend on the choice of `E`; this is the equivariant embedding `principalIdele : (Kˢ)ˣ → I_{Kˢ}`
 (`principalIdele_ofMul_map_algebraMap`, `principalIdele_injective`). The sequence
@@ -53,6 +65,8 @@ is exact by `principalIdele_injective`, `ideleClassMk_eq_zero_iff` and
   ideles along an inclusion of finite Galois subextensions of `Kˢ/K`.
 * `TauCeti.ClassFieldTheory.IdeleCoeff K`: the ideles of `Kˢ`, written additively.
 * `TauCeti.ClassFieldTheory.ideleCoeffOf E`: the ideles of `E` as ideles of `Kˢ`.
+* `TauCeti.ClassFieldTheory.ideleCoeffOfIntermediateField K E`: the ideles of a finite
+  subextension `E`, not necessarily Galois over `K`, as ideles of `Kˢ`.
 * `TauCeti.ClassFieldTheory.IdeleCoeff.lift`: the homomorphism out of the ideles of `Kˢ` induced
   by compatible homomorphisms out of the ideles of the finite Galois subextensions.
 * `TauCeti.ClassFieldTheory.principalIdele K`: the principal ideles `(Kˢ)ˣ → I_{Kˢ}`.
@@ -65,6 +79,15 @@ is exact by `principalIdele_injective`, `ideleClassMk_eq_zero_iff` and
 
 * `TauCeti.ClassFieldTheory.exists_ideleCoeffOf_eq`: every idele of `Kˢ` comes from some `I_E`.
 * `TauCeti.ClassFieldTheory.smul_ideleCoeffOf`: the action of `G_K` on the ideles of `E`.
+* `TauCeti.ClassFieldTheory.ideleCoeffOf_injective`: the ideles of `E` embed in the ideles of
+  `Kˢ`.
+* `TauCeti.ClassFieldTheory.ideleCoeffOf_ideleExtension`: `ideleCoeffOfIntermediateField` may be
+  computed through any finite Galois subextension containing `E`.
+* `TauCeti.ClassFieldTheory.smul_ideleCoeffOfIntermediateField`: the action of `G_K` on the ideles
+  of a finite subextension, through the automorphisms of `E` it restricts to.
+* `TauCeti.ClassFieldTheory.mem_range_ideleCoeffOfIntermediateField_iff`: **Galois descent**, an
+  idele of `Kˢ` is an idele of the finite subextension `E` exactly when it is fixed by the
+  subgroup of `G_K` fixing `E`.
 * `TauCeti.ClassFieldTheory.principalIdele_injective`: the principal ideles embed `(Kˢ)ˣ`.
 
 ## Implementation notes
@@ -96,34 +119,6 @@ local notation "Ω" => FiniteGaloisIntermediateField K (SeparableClosure K)
 
 /-! ### The transition maps -/
 
-/-- The extension map of adele rings `𝔸_E → 𝔸_{E'}` along an inclusion `E ≤ E'` of finite
-Galois subextensions of `Kˢ/K`. -/
-def adeleTransition {E E' : Ω} (h : E ≤ E') : AdeleRing (𝓞 E) E →+* AdeleRing (𝓞 E') E' :=
-  letI := (IntermediateField.inclusion h).toRingHom.toAlgebra
-  adeleExtension (𝓞 E) E (𝓞 E') E'
-
-/-- The extension map of adele rings is continuous. -/
-theorem continuous_adeleTransition {E E' : Ω} (h : E ≤ E') :
-    Continuous (adeleTransition h) := by
-  let := (IntermediateField.inclusion h).toRingHom.toAlgebra
-  exact continuous_adeleExtension (𝓞 E) E (𝓞 E') E'
-
-/-- The extension map of adele rings extends the inclusion `E ≤ E'` on the diagonal fields. -/
-@[simp]
-theorem adeleTransition_algebraMap {E E' : Ω} (h : E ≤ E') (x : E) :
-    adeleTransition h (algebraMap E _ x) =
-      algebraMap E' _ (IntermediateField.inclusion h x) := by
-  let := (IntermediateField.inclusion h).toRingHom.toAlgebra
-  exact adeleExtension_algebraMap (𝓞 E) E (𝓞 E') E' x
-
-/-- The extension map of adele rings preserves the idempotent `(1, 0)`. -/
-private theorem adeleTransition_fst_snd {E E' : Ω} (h : E ≤ E') {a : AdeleRing (𝓞 E) E}
-    (h₁ : a.1 = 1) (h₂ : a.2 = 0) :
-    (adeleTransition h a).1 = 1 ∧ (adeleTransition h a).2 = 0 := by
-  let := (IntermediateField.inclusion h).toRingHom.toAlgebra
-  exact ⟨(adeleExtension_fst (B := 𝓞 E') (L := E') a).trans (by rw [h₁, map_one]),
-    (adeleExtension_snd (B := 𝓞 E') (L := E') a).trans (by rw [h₂, map_zero])⟩
-
 /-- The Galois action on adeles preserves the idempotent `(1, 0)`. -/
 private theorem adeleGaloisAction_fst_snd (E : Ω) (σ : E ≃ₐ[K] E) {a : AdeleRing (𝓞 E) E}
     (h₁ : a.1 = 1) (h₂ : a.2 = 0) :
@@ -131,27 +126,143 @@ private theorem adeleGaloisAction_fst_snd (E : Ω) (σ : E ≃ₐ[K] E) {a : Ade
       (GlobalNumberFields.adeleGaloisAction K E σ a).2 = 0 := by
   simp [GlobalNumberFields.adeleGaloisAction_apply, h₁, h₂]
 
+section Extension
+
+variable {E : IntermediateField K (SeparableClosure K)} [NumberField E]
+
+/-- The extension map of adele rings `𝔸_E → 𝔸_M` along the inclusion of a finite subextension `E`
+of `Kˢ/K` in a finite Galois subextension `M`. -/
+private def adeleExtensionOfLE (M : Ω) (h : E ≤ M) : AdeleRing (𝓞 E) E →+* AdeleRing (𝓞 M) M :=
+  letI := (IntermediateField.inclusion h).toRingHom.toAlgebra
+  adeleExtension (𝓞 E) E (𝓞 M) M
+
+private theorem continuous_adeleExtensionOfLE (M : Ω) (h : E ≤ M) :
+    Continuous (adeleExtensionOfLE M h) := by
+  let := (IntermediateField.inclusion h).toRingHom.toAlgebra
+  exact continuous_adeleExtension (𝓞 E) E (𝓞 M) M
+
+private theorem adeleExtensionOfLE_algebraMap (M : Ω) (h : E ≤ M) (x : E) :
+    adeleExtensionOfLE M h (algebraMap E _ x) =
+      algebraMap M _ (IntermediateField.inclusion h x) := by
+  let := (IntermediateField.inclusion h).toRingHom.toAlgebra
+  exact adeleExtension_algebraMap (𝓞 E) E (𝓞 M) M x
+
+/-- The extension map `𝔸_E → 𝔸_M` preserves the idempotent `(1, 0)`. -/
+private theorem adeleExtensionOfLE_fst_snd (M : Ω) (h : E ≤ M) {a : AdeleRing (𝓞 E) E}
+    (h₁ : a.1 = 1) (h₂ : a.2 = 0) :
+    (adeleExtensionOfLE M h a).1 = 1 ∧ (adeleExtensionOfLE M h a).2 = 0 := by
+  let := (IntermediateField.inclusion h).toRingHom.toAlgebra
+  exact ⟨(adeleExtension_fst (B := 𝓞 M) (L := M) a).trans (by rw [h₁, map_one]),
+    (adeleExtension_snd (B := 𝓞 M) (L := M) a).trans (by rw [h₂, map_zero])⟩
+
+/-- Extending from `E` to `M` and then to `M' ⊇ M` is extending from `E` to `M'`. -/
+private theorem adeleExtensionOfLE_adeleExtensionOfLE {M M' : Ω} (h : E ≤ M) (hM : M ≤ M')
+    (a : AdeleRing (𝓞 E) E) :
+    adeleExtensionOfLE (E := (M : IntermediateField K (SeparableClosure K))) M' hM
+        (adeleExtensionOfLE M h a) = adeleExtensionOfLE M' (h.trans hM) a := by
+  refine RingHom.congr_fun (AdeleRing.ringHom_ext
+    (f := (adeleExtensionOfLE (E := (M : IntermediateField K (SeparableClosure K))) M' hM).comp
+      (adeleExtensionOfLE M h))
+    (g := adeleExtensionOfLE M' (h.trans hM)) (𝓞 E) E
+    ((continuous_adeleExtensionOfLE _ _).comp (continuous_adeleExtensionOfLE _ _))
+    (continuous_adeleExtensionOfLE _ _) (fun x ↦ ?_) fun _ h₁ h₂ ↦ ?_) a
+  · simp only [RingHom.comp_apply, adeleExtensionOfLE_algebraMap]
+    rfl
+  · have r := adeleExtensionOfLE_fst_snd M h h₁ h₂
+    exact Prod.ext ((adeleExtensionOfLE_fst_snd M' hM r.1 r.2).1.trans
+        (adeleExtensionOfLE_fst_snd M' (h.trans hM) h₁ h₂).1.symm)
+      ((adeleExtensionOfLE_fst_snd M' hM r.1 r.2).2.trans
+        (adeleExtensionOfLE_fst_snd M' (h.trans hM) h₁ h₂).2.symm)
+
+/-- If `g ∈ G_K` restricts on `E` to `e`, extending from `E` to `M` intertwines transport of
+adeles along `e` with the action of `g` on the adeles of `M`. -/
+private theorem adeleGaloisAction_adeleExtensionOfLE {M : Ω} (h : E ≤ M)
+    (g : AbsoluteGaloisGroup K) (e : E ≃+* E)
+    (he : ∀ x : E, ((e x : E) : SeparableClosure K) = g x) (a : AdeleRing (𝓞 E) E) :
+    GlobalNumberFields.adeleGaloisAction K M (g.restrictNormal M) (adeleExtensionOfLE M h a) =
+      adeleExtensionOfLE M h (GlobalNumberFields.adeleEquiv E E e a) := by
+  refine RingHom.congr_fun (AdeleRing.ringHom_ext
+    (f := (GlobalNumberFields.adeleGaloisAction K M (g.restrictNormal M)).toRingHom.comp
+      (adeleExtensionOfLE M h))
+    (g := (adeleExtensionOfLE M h).comp (GlobalNumberFields.adeleEquiv E E e).toRingHom) (𝓞 E) E
+    ((GlobalNumberFields.continuous_adeleGaloisAction _ _ _).comp
+      (continuous_adeleExtensionOfLE _ _))
+    ((continuous_adeleExtensionOfLE _ _).comp (GlobalNumberFields.continuous_adeleEquiv _ _ _))
+    (fun x ↦ ?_) fun b h₁ h₂ ↦ ?_) a
+  · simp only [RingHom.comp_apply, RingEquiv.toRingHom_eq_coe, RingEquiv.coe_toRingHom,
+      adeleExtensionOfLE_algebraMap, GlobalNumberFields.adeleGaloisAction_algebraMap,
+      GlobalNumberFields.adeleEquiv_algebraMap]
+    congr 1
+    apply Subtype.ext
+    rw [AlgEquiv.restrictNormal_apply]
+    exact (he x).symm
+  · have r := adeleExtensionOfLE_fst_snd M h h₁ h₂
+    have l : (GlobalNumberFields.adeleEquiv E E e b).1 = 1 ∧
+        (GlobalNumberFields.adeleEquiv E E e b).2 = 0 := by
+      rw [GlobalNumberFields.adeleEquiv_fst, GlobalNumberFields.adeleEquiv_snd, h₁, h₂, map_one,
+        map_zero]
+      exact ⟨rfl, rfl⟩
+    exact Prod.ext ((adeleGaloisAction_fst_snd M (g.restrictNormal M) r.1 r.2).1.trans
+        (adeleExtensionOfLE_fst_snd M h l.1 l.2).1.symm)
+      ((adeleGaloisAction_fst_snd M (g.restrictNormal M) r.1 r.2).2.trans
+        (adeleExtensionOfLE_fst_snd M h l.1 l.2).2.symm)
+
+end Extension
+
+/-- The extension map of adele rings `𝔸_E → 𝔸_{E'}` along an inclusion `E ≤ E'` of finite
+Galois subextensions of `Kˢ/K`. -/
+def adeleTransition {E E' : Ω} (h : E ≤ E') : AdeleRing (𝓞 E) E →+* AdeleRing (𝓞 E') E' :=
+  adeleExtensionOfLE (E := (E : IntermediateField K (SeparableClosure K))) E' h
+
+/-- The extension map of adele rings along `E ≤ E'` is the extension map of adeles along the
+inclusion `E → E'`. -/
+theorem adeleTransition_apply {E E' : Ω} (h : E ≤ E') (a : AdeleRing (𝓞 E) E) :
+    letI := (IntermediateField.inclusion h).toRingHom.toAlgebra
+    adeleTransition h a = adeleExtension (𝓞 E) E (𝓞 E') E' a :=
+  (rfl)
+
+/-- The extension map of adele rings is continuous. -/
+theorem continuous_adeleTransition {E E' : Ω} (h : E ≤ E') :
+    Continuous (adeleTransition h) :=
+  continuous_adeleExtensionOfLE (E := (E : IntermediateField K (SeparableClosure K))) E' h
+
+/-- The extension map of adele rings extends the inclusion `E ≤ E'` on the diagonal fields. -/
+@[simp]
+theorem adeleTransition_algebraMap {E E' : Ω} (h : E ≤ E') (x : E) :
+    adeleTransition h (algebraMap E _ x) =
+      algebraMap E' _ (IntermediateField.inclusion h x) :=
+  adeleExtensionOfLE_algebraMap (E := (E : IntermediateField K (SeparableClosure K))) E' h x
+
+/-- The infinite component of the extension of an adele is the extension of its infinite
+component. -/
+theorem adeleTransition_fst {E E' : Ω} (h : E ≤ E') (a : AdeleRing (𝓞 E) E) :
+    letI := (IntermediateField.inclusion h).toRingHom.toAlgebra
+    (adeleTransition h a).1 = infiniteAdeleExtension E E' a.1 := by
+  let := (IntermediateField.inclusion h).toRingHom.toAlgebra
+  exact adeleExtension_fst (B := 𝓞 E') (L := E') a
+
+/-- The finite component of the extension of an adele is the extension of its finite
+component. -/
+theorem adeleTransition_snd {E E' : Ω} (h : E ≤ E') (a : AdeleRing (𝓞 E) E) :
+    letI := (IntermediateField.inclusion h).toRingHom.toAlgebra
+    (adeleTransition h a).2 = IsDedekindDomain.finiteAdeleExtension (𝓞 E) E (𝓞 E') E' a.2 := by
+  let := (IntermediateField.inclusion h).toRingHom.toAlgebra
+  exact adeleExtension_snd (B := 𝓞 E') (L := E') a
+
 /-- The extension map along `E ≤ E` is the identity. -/
 @[simp]
 theorem adeleTransition_self (E : Ω) : adeleTransition (le_refl E) = RingHom.id _ :=
   AdeleRing.ringHom_ext _ _ (continuous_adeleTransition _) continuous_id
     (fun x ↦ by rw [adeleTransition_algebraMap]; rfl) fun _ h₁ h₂ ↦
-      Prod.ext ((adeleTransition_fst_snd _ h₁ h₂).1.trans h₁.symm)
-        ((adeleTransition_fst_snd _ h₁ h₂).2.trans h₂.symm)
+      Prod.ext ((adeleExtensionOfLE_fst_snd _ _ h₁ h₂).1.trans h₁.symm)
+        ((adeleExtensionOfLE_fst_snd _ _ h₁ h₂).2.trans h₂.symm)
 
 /-- The extension maps compose along a tower `E ≤ E' ≤ E''`. -/
 @[simp]
 theorem adeleTransition_comp {E E' E'' : Ω} (h : E ≤ E') (h' : E' ≤ E'') :
     (adeleTransition h').comp (adeleTransition h) = adeleTransition (h.trans h') :=
-  AdeleRing.ringHom_ext _ _
-    ((continuous_adeleTransition _).comp (continuous_adeleTransition _))
-    (continuous_adeleTransition _)
-    (fun x ↦ by simp only [RingHom.comp_apply, adeleTransition_algebraMap]; rfl) fun _ h₁ h₂ ↦
-      have h₁' := adeleTransition_fst_snd h h₁ h₂
-      Prod.ext ((adeleTransition_fst_snd h' h₁'.1 h₁'.2).1.trans
-          (adeleTransition_fst_snd (h.trans h') h₁ h₂).1.symm)
-        ((adeleTransition_fst_snd h' h₁'.1 h₁'.2).2.trans
-          (adeleTransition_fst_snd (h.trans h') h₁ h₂).2.symm)
+  RingHom.ext <|
+    adeleExtensionOfLE_adeleExtensionOfLE (E := (E : IntermediateField K (SeparableClosure K))) h h'
 
 /-- **The extension maps are Galois equivariant**: for `g ∈ G_K`, extending from `E` to `E'` and
 then acting by the restriction of `g` to `E'` is acting by the restriction of `g` to `E` and
@@ -160,24 +271,9 @@ theorem adeleTransition_adeleGaloisAction {E E' : Ω} (h : E ≤ E') (g : Absolu
     (a : AdeleRing (𝓞 E) E) :
     adeleTransition h (GlobalNumberFields.adeleGaloisAction K E (g.restrictNormal E) a) =
       GlobalNumberFields.adeleGaloisAction K E' (g.restrictNormal E') (adeleTransition h a) := by
-  refine RingHom.congr_fun (AdeleRing.ringHom_ext (f := (adeleTransition h).comp
-      (GlobalNumberFields.adeleGaloisAction K E (g.restrictNormal E)).toRingHom)
-    (g := (GlobalNumberFields.adeleGaloisAction K E' (g.restrictNormal E')).toRingHom.comp
-      (adeleTransition h)) (𝓞 E) E
-    ((continuous_adeleTransition _).comp (GlobalNumberFields.continuous_adeleGaloisAction _ _ _))
-    ((GlobalNumberFields.continuous_adeleGaloisAction _ _ _).comp (continuous_adeleTransition _))
-    (fun x ↦ ?_) fun _ h₁ h₂ ↦ ?_) a
-  · simp only [RingHom.comp_apply, RingEquiv.toRingHom_eq_coe, RingEquiv.coe_toRingHom,
-      GlobalNumberFields.adeleGaloisAction_algebraMap, adeleTransition_algebraMap]
-    congr 1
-    apply Subtype.ext
-    simp [AlgEquiv.restrictNormal_apply]
-  · have l := adeleGaloisAction_fst_snd E (g.restrictNormal E) h₁ h₂
-    have r := adeleTransition_fst_snd h h₁ h₂
-    exact Prod.ext ((adeleTransition_fst_snd h l.1 l.2).1.trans
-        (adeleGaloisAction_fst_snd E' (g.restrictNormal E') r.1 r.2).1.symm)
-      ((adeleTransition_fst_snd h l.1 l.2).2.trans
-        (adeleGaloisAction_fst_snd E' (g.restrictNormal E') r.1 r.2).2.symm)
+  rw [GlobalNumberFields.adeleGaloisAction_apply K E]
+  exact (adeleGaloisAction_adeleExtensionOfLE (E := (E : IntermediateField K (SeparableClosure K)))
+    h g (g.restrictNormal E).toRingEquiv (AlgEquiv.restrictNormal_commutes g E) a).symm
 
 variable (K) in
 /-- **The action of `G_K` on the ideles of a finite Galois subextension `E`**, through the
@@ -361,6 +457,171 @@ instance : ContinuousSMul (AbsoluteGaloisGroup K) (IdeleCoeff K) := by
   exact Subgroup.isOpen_mono (fun g hg ↦ smul_ideleCoeffOf_of_mem_fixingSubgroup hg a)
     (E : IntermediateField K (SeparableClosure K)).fixingSubgroup_isOpen
 
+/-! ### Galois descent for the ideles of `Kˢ` -/
+
+/-- The extension map of ideles along an inclusion of finite Galois subextensions of `Kˢ/K` is
+injective. -/
+theorem ideleTransition_injective {E E' : Ω} (h : E ≤ E') :
+    Function.Injective (ideleTransition K E E' h) := fun a b hab ↦ by
+  let := (IntermediateField.inclusion h).toRingHom.toAlgebra
+  refine GlobalNumberFields.ideleExtension_injective E E' (Units.ext ?_)
+  rw [GlobalNumberFields.coe_ideleExtension, GlobalNumberFields.coe_ideleExtension,
+    ← adeleTransition_apply, ← adeleTransition_apply, ← coe_ideleTransition,
+    ← coe_ideleTransition, hab]
+
+/-- **The ideles of a finite Galois subextension `E` embed in the ideles of `Kˢ`.** -/
+theorem ideleCoeffOf_injective (E : Ω) : Function.Injective (ideleCoeffOf K E) := by
+  refine (injective_iff_map_eq_zero _).2 fun a ha ↦ ?_
+  obtain ⟨E', h, h1⟩ := ideleCoeffOf_eq_zero_iff.1 ha
+  exact Additive.toMul.injective (ideleTransition_injective h (h1.trans (map_one _).symm))
+
+/-! ### The ideles of a finite subextension -/
+
+section Subextension
+
+variable {E : IntermediateField K (SeparableClosure K)} [NumberField E]
+
+/-- The ideles of `E` extended to `M ⊇ E` and read in the ideles of `Kˢ`. -/
+private def ideleCoeffOfLE (M : Ω) (h : E ≤ M) : Additive (IdeleGroup (𝓞 E) E) →+ IdeleCoeff K :=
+  (ideleCoeffOf K M).comp (Units.map (adeleExtensionOfLE M h).toMonoidHom).toAdditive
+
+private theorem ideleCoeffOfLE_eq_of_le {M M' : Ω} (h : E ≤ M) (hM : M ≤ M') :
+    ideleCoeffOfLE M h = ideleCoeffOfLE M' (h.trans hM) := by
+  refine AddMonoidHom.ext fun a ↦ (ideleCoeffOf_ideleTransition hM _).symm.trans
+    (congrArg (fun c ↦ ideleCoeffOf K M' (.ofMul c)) (Units.ext ?_))
+  rw [coe_ideleTransition]
+  exact adeleExtensionOfLE_adeleExtensionOfLE h hM a.toMul
+
+private theorem ideleCoeffOfLE_eq {M M' : Ω} (h : E ≤ M) (h' : E ≤ M') :
+    ideleCoeffOfLE M h = ideleCoeffOfLE M' h' :=
+  (ideleCoeffOfLE_eq_of_le h (le_sup_left : M ≤ M ⊔ M')).trans
+    (ideleCoeffOfLE_eq_of_le h' (le_sup_right : M' ≤ M ⊔ M')).symm
+
+variable (K E) in
+/-- **The ideles of a finite subextension `E` of `Kˢ/K` as ideles of `Kˢ`**: an idele of `E` is
+extended to the normal closure of `E` and read in the ideles of `Kˢ`. It may be computed through
+any finite Galois subextension containing `E` (`ideleCoeffOf_ideleExtension`), it is
+`ideleCoeffOf K E` when `E` is itself Galois over `K` (`ideleCoeffOfIntermediateField_coe`), and
+its image is the set of ideles of `Kˢ` fixed by the subgroup of `G_K` fixing `E`
+(`mem_range_ideleCoeffOfIntermediateField_iff`). -/
+def ideleCoeffOfIntermediateField : Additive (IdeleGroup (𝓞 E) E) →+ IdeleCoeff K :=
+  ideleCoeffOfLE (FiniteGaloisIntermediateField.normalClosure K E)
+    (FiniteGaloisIntermediateField.le_normalClosure K E)
+
+private theorem ideleCoeffOfIntermediateField_eq_ideleCoeffOfLE (M : Ω) (h : E ≤ M) :
+    ideleCoeffOfIntermediateField K E = ideleCoeffOfLE M h :=
+  ideleCoeffOfLE_eq _ h
+
+/-- **`ideleCoeffOfIntermediateField` through any finite Galois subextension**: for `E ≤ M`, the
+extension to `M` of an idele of `E` is, as an idele of `Kˢ`, the idele of `E` itself. -/
+theorem ideleCoeffOf_ideleExtension (M : Ω) (h : E ≤ M) (a : IdeleGroup (𝓞 E) E) :
+    letI := (IntermediateField.inclusion h).toRingHom.toAlgebra
+    ideleCoeffOf K M (.ofMul (GlobalNumberFields.ideleExtension E M a)) =
+      ideleCoeffOfIntermediateField K E (.ofMul a) := by
+  let := (IntermediateField.inclusion h).toRingHom.toAlgebra
+  refine (congrArg (fun c ↦ ideleCoeffOf K M (.ofMul c)) (Units.ext ?_)).trans
+    (DFunLike.congr_fun (ideleCoeffOfIntermediateField_eq_ideleCoeffOfLE M h) (.ofMul a)).symm
+  -- `adeleExtensionOfLE M h` is by definition the extension of adeles along `E → M`.
+  rw [GlobalNumberFields.coe_ideleExtension]
+  rfl
+
+/-- For a finite Galois subextension `E`, `ideleCoeffOfIntermediateField` is `ideleCoeffOf`. -/
+@[simp]
+theorem ideleCoeffOfIntermediateField_coe (E : Ω) :
+    ideleCoeffOfIntermediateField K E = ideleCoeffOf K E := by
+  refine AddMonoidHom.ext fun a ↦ ?_
+  rw [← ofMul_toMul a, ← ideleCoeffOf_ideleExtension E le_rfl]
+  exact ideleCoeffOf_ideleTransition (le_refl E) a.toMul
+
+/-- **The ideles of a finite subextension `E` embed in the ideles of `Kˢ`.** -/
+theorem ideleCoeffOfIntermediateField_injective :
+    Function.Injective (ideleCoeffOfIntermediateField K E) := by
+  have h := FiniteGaloisIntermediateField.le_normalClosure K E
+  let := (IntermediateField.inclusion h).toRingHom.toAlgebra
+  intro a b hab
+  rw [← ofMul_toMul a, ← ofMul_toMul b, ← ideleCoeffOf_ideleExtension _ h,
+    ← ideleCoeffOf_ideleExtension _ h] at hab
+  exact Additive.toMul.injective (GlobalNumberFields.ideleExtension_injective E _
+    (Additive.ofMul.injective (ideleCoeffOf_injective _ hab)))
+
+/-- **The Galois action on the ideles of a finite subextension `E`**: if `g ∈ G_K` restricts on
+`E` to the automorphism `e` of `E`, then `g` acts on the ideles of `E`, read in the ideles of `Kˢ`,
+by transport of adeles along `e`. -/
+theorem smul_ideleCoeffOfIntermediateField (g : AbsoluteGaloisGroup K) (e : E ≃+* E)
+    (he : ∀ x : E, ((e x : E) : SeparableClosure K) = g x) (a : IdeleGroup (𝓞 E) E) :
+    g • ideleCoeffOfIntermediateField K E (.ofMul a) = ideleCoeffOfIntermediateField K E
+      (.ofMul (Units.map (GlobalNumberFields.adeleEquiv E E e).toMonoidHom a)) := by
+  have h := FiniteGaloisIntermediateField.le_normalClosure K E
+  rw [ideleCoeffOfIntermediateField_eq_ideleCoeffOfLE _ h]
+  refine (smul_ideleCoeffOf g _ _).trans
+    (congrArg (fun c ↦ ideleCoeffOf K _ (.ofMul c)) (Units.ext ?_))
+  exact adeleGaloisAction_adeleExtensionOfLE h g e he a
+
+/-- **The Galois action on the ideles of a normal finite subextension `E`**: `g ∈ G_K` acts on the
+ideles of `E`, read in the ideles of `Kˢ`, through its restriction to `Gal(E/K)`. -/
+theorem smul_ideleCoeffOfIntermediateField_of_normal [Normal K E] (g : AbsoluteGaloisGroup K)
+    (a : IdeleGroup (𝓞 E) E) :
+    g • ideleCoeffOfIntermediateField K E (.ofMul a) = ideleCoeffOfIntermediateField K E
+      (.ofMul (Units.map (GlobalNumberFields.adeleGaloisAction K E (g.restrictNormal E)) a)) := by
+  rw [smul_ideleCoeffOfIntermediateField g (g.restrictNormal E).toRingEquiv
+    (AlgEquiv.restrictNormal_commutes g E) a]
+  exact congrArg (fun c ↦ ideleCoeffOfIntermediateField K E (.ofMul c))
+    (Units.ext (GlobalNumberFields.adeleGaloisAction_apply K E _ a).symm)
+
+/-- The subgroup of `G_K` fixing a finite subextension `E` fixes the ideles of `E`. -/
+theorem smul_ideleCoeffOfIntermediateField_of_mem_fixingSubgroup {g : AbsoluteGaloisGroup K}
+    (hg : g ∈ E.fixingSubgroup) (a : IdeleGroup (𝓞 E) E) :
+    g • ideleCoeffOfIntermediateField K E (.ofMul a) =
+      ideleCoeffOfIntermediateField K E (.ofMul a) := by
+  rw [smul_ideleCoeffOfIntermediateField g (RingEquiv.refl E) (fun x ↦ (hg x).symm),
+    GlobalNumberFields.adeleEquiv_refl]
+  exact congrArg (fun c ↦ ideleCoeffOfIntermediateField K E (.ofMul c)) (Units.ext rfl)
+
+omit [NumberField E] in
+/-- An idele of a finite Galois subextension `M` that is fixed by the subgroup of `G_K` fixing
+a smaller `E` is fixed by `Gal(M/E)`. -/
+private theorem adeleGaloisAction_eq_self {M : Ω} (h : E ≤ M) {a : IdeleGroup (𝓞 M) M}
+    (ha : ∀ g ∈ E.fixingSubgroup, g • ideleCoeffOf K M (.ofMul a) = ideleCoeffOf K M (.ofMul a)) :
+    letI := (IntermediateField.inclusion h).toRingHom.toAlgebra
+    ∀ σ : M ≃ₐ[E] M, GlobalNumberFields.adeleGaloisAction E M σ a = a := by
+  let := (IntermediateField.inclusion h).toRingHom.toAlgebra
+  have : IsScalarTower K E M := IsScalarTower.of_algebraMap_eq fun _ ↦ rfl
+  intro σ
+  -- Lift `σ` to an element `g` of `G_K`; it fixes `E`, because `σ` does.
+  set g := (σ.restrictScalars K).liftNormal (SeparableClosure K)
+  have hg : g.restrictNormal M = σ.restrictScalars K := AlgEquiv.restrict_liftNormal _ _
+  have hgE : g ∈ E.fixingSubgroup := by
+    rintro ⟨y, hy⟩
+    have := AlgEquiv.restrictNormal_commutes g M (IntermediateField.inclusion h ⟨y, hy⟩)
+    rw [hg, AlgEquiv.restrictScalars_apply] at this
+    exact this.symm.trans (congrArg Subtype.val (σ.commutes ⟨y, hy⟩))
+  have hfix := ha g hgE
+  rw [smul_ideleCoeffOf] at hfix
+  have hfix := congrArg Units.val (Additive.ofMul.injective (ideleCoeffOf_injective M hfix))
+  rw [Units.coe_map, MonoidHom.coe_ofClass, hg, GlobalNumberFields.adeleGaloisAction_apply] at hfix
+  rwa [AlgEquiv.toRingEquiv_restrictScalars, ← GlobalNumberFields.adeleGaloisAction_apply] at hfix
+
+/-- **Galois descent for the ideles of `Kˢ`**: an idele of `Kˢ` is an idele of the finite
+subextension `E` exactly when it is fixed by the subgroup of `G_K` fixing `E`. -/
+theorem mem_range_ideleCoeffOfIntermediateField_iff {x : IdeleCoeff K} :
+    x ∈ (ideleCoeffOfIntermediateField K E).range ↔ ∀ g ∈ E.fixingSubgroup, g • x = x := by
+  refine ⟨?_, fun hx ↦ ?_⟩
+  · rintro ⟨a, rfl⟩ g hg
+    exact smul_ideleCoeffOfIntermediateField_of_mem_fixingSubgroup hg a.toMul
+  -- Write `x` as an idele of a finite Galois subextension `M` containing `E`.
+  obtain ⟨E₀, a₀, rfl⟩ := exists_ideleCoeffOf_eq x
+  let M : Ω := FiniteGaloisIntermediateField.normalClosure K E ⊔ E₀
+  have h : E ≤ M := (FiniteGaloisIntermediateField.le_normalClosure K E).trans le_sup_left
+  rw [← ideleCoeffOf_ideleTransition (le_sup_right : E₀ ≤ M)] at hx ⊢
+  let := (IntermediateField.inclusion h).toRingHom.toAlgebra
+  have : IsScalarTower K E M := IsScalarTower.of_algebraMap_eq fun _ ↦ rfl
+  have : IsGalois E M := IsGalois.tower_top_of_isGalois K E _
+  obtain ⟨b, hb⟩ := (GlobalNumberFields.mem_range_ideleExtension_iff E M).2
+    (adeleGaloisAction_eq_self h hx)
+  exact ⟨.ofMul b, (ideleCoeffOf_ideleExtension M h b).symm.trans (by rw [hb])⟩
+
+end Subextension
+
 /-! ### The principal ideles -/
 
 /-- The principal ideles of two units of finite Galois subextensions agree in the ideles of `Kˢ`
@@ -443,7 +704,7 @@ def principalIdele : UnitsCoeff K →+[AbsoluteGaloisGroup K] IdeleCoeff K where
       principalIdeleAt, smul_ideleCoeffOf]
     congr 2
     apply Units.ext
-    simp only [Units.coe_map, MonoidHom.coe_ofClass, IdeleGroup.coe_unitEmbedding,
+    simp only [Units.coe_map, MonoidHom.coe_ofClass, IdeleGroup.val_unitEmbedding_apply,
       GlobalNumberFields.adeleGaloisAction_algebraMap]
     congr 1
     exact Subtype.ext hgx
@@ -453,13 +714,18 @@ private theorem principalIdele_eq_ideleCoeffOf (E : Ω) (x : UnitsCoeff K) (hx) 
       ideleCoeffOf K E (.ofMul (IdeleGroup.unitEmbedding (𝓞 E) E (unitOfMem E x hx))) :=
   principalIdeleAt_eq x _ hx
 
-/-- **The principal idele of a unit of a finite Galois subextension `E`** is its principal idele
-in the ideles of `E`. -/
-theorem principalIdele_ofMul_map_algebraMap (E : Ω) (u : Eˣ) :
+/-- **The principal idele of a unit of a finite subextension `E`** is its principal idele in the
+ideles of `E`. -/
+theorem principalIdele_ofMul_map_algebraMap {E : IntermediateField K (SeparableClosure K)}
+    [NumberField E] (u : Eˣ) :
     principalIdele K (.ofMul (Units.map (algebraMap E (SeparableClosure K)).toMonoidHom u)) =
-      ideleCoeffOf K E (.ofMul (IdeleGroup.unitEmbedding (𝓞 E) E u)) := by
-  rw [principalIdele_eq_ideleCoeffOf E
-    (.ofMul (Units.map (algebraMap E (SeparableClosure K)).toMonoidHom u)) (u : E).property]
+      ideleCoeffOfIntermediateField K E (.ofMul (IdeleGroup.unitEmbedding (𝓞 E) E u)) := by
+  have h := FiniteGaloisIntermediateField.le_normalClosure K E
+  let := (IntermediateField.inclusion h).toRingHom.toAlgebra
+  rw [← ideleCoeffOf_ideleExtension _ h, GlobalNumberFields.ideleExtension_unitEmbedding,
+    principalIdele_eq_ideleCoeffOf _
+      (.ofMul (Units.map (algebraMap E (SeparableClosure K)).toMonoidHom u))
+      (h (u : E).property)]
   congr 3
   exact Units.ext (Subtype.ext rfl)
 
@@ -472,7 +738,7 @@ theorem principalIdele_injective : Function.Injective (principalIdele K) := by
   obtain ⟨E', hEE', h1⟩ := ideleCoeffOf_eq_zero_iff.1 hx
   rw [ideleTransition_unitEmbedding, ← map_one (IdeleGroup.unitEmbedding (𝓞 E') E')] at h1
   have h2 := congrArg (fun u : IdeleGroup (𝓞 E') E' ↦ (u : AdeleRing (𝓞 E') E')) h1
-  simp only [IdeleGroup.coe_unitEmbedding] at h2
+  simp only [IdeleGroup.val_unitEmbedding_apply] at h2
   exact Additive.toMul.injective (Units.ext
     (congrArg Subtype.val ((AdeleRing.algebraMap_injective (𝓞 E') E') h2)))
 

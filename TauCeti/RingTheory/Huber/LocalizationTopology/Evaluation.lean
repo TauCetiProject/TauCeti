@@ -13,7 +13,7 @@ public import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.FirstCountable
 public import TauCeti.Topology.Algebra.Nonarchimedean.Basic
 public import TauCeti.Topology.Algebra.Nonarchimedean.Completion.Surjective
 public import TauCeti.Topology.Algebra.IsUniformGroup.Subring
-public import TauCeti.RingTheory.Huber.TopologicallyFiniteType
+public import TauCeti.RingTheory.Huber.TopologicallyFiniteType.Basic
 
 import TauCeti.RingTheory.Huber.OpenMapping
 import TauCeti.Topology.Algebra.GroupCompletion

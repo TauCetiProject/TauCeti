@@ -36,6 +36,8 @@ definition and characteristic formulas follow the mate-based development in
 * `CategoryTheory.Functor.ihomComparison`: the internal Hom comparison of a lax monoidal
   functor;
 * `CategoryTheory.Functor.ihomComparison_ev`: its characteristic equation against evaluation;
+* `CategoryTheory.Functor.whiskerLeft_ihomComparison_app_unit_comp_map_η_comp_ev`: the
+  comparison of duals is compatible with evaluation when the functor also has an oplax structure;
 * `CategoryTheory.Functor.ihomComparison_app_eq_curry`: its componentwise curry formula;
 * `CategoryTheory.Functor.ihomComparison_isIso_of_tensor_comparison`: an explicit
   compatibility criterion which turns that formula into an isomorphism;
@@ -93,6 +95,19 @@ theorem ihomComparison_ev (A B : C) [Closed A] [Closed (F.obj A)] :
       F.map ((ihom.adjunction A).counit.app B)
   exact mateEquiv_counit (ihom.adjunction A) (ihom.adjunction (F.obj A))
     (laxCommTensorLeft F A) B
+
+variable [F.OplaxMonoidal] in
+/-- The comparison `F.obj (Y ⟶[C] 𝟙_ C) ⟶ (F.obj Y ⟶[D] 𝟙_ D)` of the duals is compatible with
+evaluation: evaluating after it is the image of the evaluation of `Y`, preceded by the tensor
+comparison and followed by the oplax unit comparison. -/
+@[reassoc]
+theorem whiskerLeft_ihomComparison_app_unit_comp_map_η_comp_ev (Y : C) [Closed Y]
+    [Closed (F.obj Y)] :
+    F.obj Y ◁
+        ((F.ihomComparison Y).natTrans.app (𝟙_ C) ≫ (ihom (F.obj Y)).map (OplaxMonoidal.η F)) ≫
+        (ihom.ev (F.obj Y)).app (𝟙_ D) =
+      LaxMonoidal.μ F Y (Y ⟶[C] 𝟙_ C) ≫ F.map ((ihom.ev Y).app (𝟙_ C)) ≫ OplaxMonoidal.η F := by
+  simp
 
 /-- The image of coevaluation followed by the internal Hom comparison is coevaluation followed
 by the internal Hom of the tensorator. -/

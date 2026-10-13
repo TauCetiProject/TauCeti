@@ -27,7 +27,7 @@ Because it lives over the **value** space `α`, it needs only `[StandardBorelSpa
 This is the tail-conditioned directing measure: the object the martingale route proves to be a
 `ConditionallyIIDWith` witness, and the one any route conditioning on `tailProcess X` will use. A
 route conditioning on a different σ-algebra builds its own conditional law — see
-`DeFinetti.ViaKoopman.InvariantConditionalLaw` for the shift-invariant one, which
+`TauCeti.Probability.Process.PathLaw.InvariantConditionalLaw` for the shift-invariant one, which
 `ContractableLaw.conditionallyIIDWith_invariantConditionalProbabilityMeasure` proves is a witness in
 its own right — and whether two such objects agree a.e. is a theorem about them, not a property of
 this file.

@@ -83,8 +83,8 @@ theorem transportCost_le_sum_of_partition {ι : Type*} [Fintype ι] {A : ι → 
   have : IsFiniteMeasure ν := ⟨h ▸ measure_lt_top μ univ⟩
   -- the common mass of the two measures in each cell, and the matching scaling factors
   set m : ι → ℝ≥0∞ := fun i ↦ min (μ (A i)) (ν (B i)) with hm
-  set s : ι → ℝ≥0∞ := fun i ↦ m i / μ (A i) with hs
-  set t : ι → ℝ≥0∞ := fun i ↦ m i / ν (B i) with ht
+  set s : ι → ℝ≥0∞ := fun i ↦ m i / μ (A i) with _
+  set t : ι → ℝ≥0∞ := fun i ↦ m i / ν (B i) with _
   have hs1 (i : ι) : s i ≤ 1 := ENNReal.div_le_of_le_mul (by rw [one_mul]; exact min_le_left _ _)
   have ht1 (i : ι) : t i ≤ 1 := ENNReal.div_le_of_le_mul (by rw [one_mul]; exact min_le_right _ _)
   have hsμ (i : ι) : s i * μ (A i) = m i := by

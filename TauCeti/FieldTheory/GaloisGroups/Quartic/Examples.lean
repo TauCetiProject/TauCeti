@@ -150,7 +150,7 @@ theorem irreducible_X_pow_four_add_eight_mul_X_add_twelve :
     (by compute_degree!)
     (fun m hm => by
       simp only [eval_add, eval_pow, eval_X, eval_mul, eval_ofNat] at hm
-      have hpos : 0 < (m ^ 2 - 2) ^ 2 + 4 * (m + 1) ^ 2 + 4 := by positivity
+      have _ : 0 < (m ^ 2 - 2) ^ 2 + 4 * (m + 1) ^ 2 + 4 := by positivity
       nlinarith)
     (fun a b hab => by
       have hform : (X ^ 4 + 8 * X + 12 : ℤ[X]) = X ^ 4 + C 0 * X ^ 2 + C 8 * X + C 12 := by

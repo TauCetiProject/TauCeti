@@ -70,7 +70,7 @@ lemma intersectionGraph_connected : T.intersectionGraph.Connected := by
   rw [SimpleGraph.reachable_iff_reflTransGen]
   induction T.reflTransGen_adj i j with
   | refl => exact .refl
-  | tail hab hbc ih => exact ih.tail ((intersectionGraph_adj_iff T).mpr hbc)
+  | tail _ hbc ih => exact ih.tail ((intersectionGraph_adj_iff T).mpr hbc)
 
 /-! ### Topological genus -/
 
@@ -93,9 +93,6 @@ theorem topologicalGenus_nonneg : 0 ≤ T.topologicalGenus := by
   have hcard' : Nat.card T.Component ≤ T.intersectionGraph.edgeSet.ncard + 1 := by
     simpa only [Nat.card_coe_set_eq] using hcard
   rw [topologicalGenus_def]
-  have hcard'' : (Nat.card T.Component : ℤ) ≤
-      (T.intersectionGraph.edgeSet.ncard : ℤ) + 1 := by
-    exact_mod_cast hcard'
   omega
 
 /-- The topological genus vanishes exactly when the intersection graph is a tree. -/
@@ -120,6 +117,15 @@ theorem topologicalGenus_eq_zero_iff :
       exact_mod_cast hcardNat
     rw [topologicalGenus_def]
     omega
+
+/-- If three components pairwise meet, the intersection graph contains a triangle, so it is not a
+tree and its topological genus is positive. -/
+theorem topologicalGenus_pos_of_adj_of_adj_of_adj {a b c : T.Component} (hab : T.Adj a b)
+    (hac : T.Adj a c) (hbc : T.Adj b c) : 0 < T.topologicalGenus := by
+  refine T.topologicalGenus_nonneg.lt_of_ne fun h ↦ ?_
+  exact (T.topologicalGenus_eq_zero_iff.mp h.symm).isAcyclic.cliqueFree le_rfl {a, b, c}
+    (SimpleGraph.is3Clique_triple_iff.mpr ⟨(T.intersectionGraph_adj_iff).mpr hab,
+      (T.intersectionGraph_adj_iff).mpr hac, (T.intersectionGraph_adj_iff).mpr hbc⟩)
 
 end NumericalType
 

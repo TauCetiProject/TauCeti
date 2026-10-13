@@ -382,15 +382,38 @@ theorem energyFormH1_def (a : EuclideanSpace ℝ ι → Matrix ι ι ℝ)
       ∫ x in Omega, energyIntegrand (a x) (b x) (c x) (jetField u x) (jetField v x) ∂mu :=
   energyFormIntegral_def _ _ _ _ _ _
 
-/-- **The constant-coefficient Dirichlet energy form.** With a constant principal coefficient
-matrix and no drift or mass term, the energy form on `H¹(Ω)` is the integral of `⟨A ∇u, ∇v⟩`
-over `Ω`. This is the shape the difference-quotient arguments of elliptic regularity work
-with. -/
-theorem energyFormH1_const_eq_setIntegral (A : Matrix ι ι ℝ) (u v : W1p mu Omega 2) :
-    energyFormH1 (fun _ => A) 0 0 u v
-      = ∫ x in Omega, matrixBilinearForm A (W1p.gradient v x) (W1p.gradient u x) ∂mu := by
+/-- Essential boundedness of the drift- and mass-free energy densities is invariant under
+translating the coefficients, by translation invariance of the Haar measure. -/
+theorem memLp_energyIntegrand_comp_add_right
+    {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ}
+    (hcoeff : MemLp (fun x => energyIntegrand (a x) 0 0) ⊤
+      (mu.restrict ((⊤ : Opens (EuclideanSpace ℝ ι)) : Set (EuclideanSpace ℝ ι))))
+    (h : EuclideanSpace ℝ ι) :
+    MemLp (fun x => energyIntegrand (a (x + h)) 0 0) ⊤
+      (mu.restrict ((⊤ : Opens (EuclideanSpace ℝ ι)) : Set (EuclideanSpace ℝ ι))) := by
+  -- Name the normed structure on bilinear forms so that `MemLp` can be transported.
+  let : NormedAddCommGroup
+      ((ℝ × EuclideanSpace ℝ ι) →L[ℝ] (ℝ × EuclideanSpace ℝ ι) →L[ℝ] ℝ) := inferInstance
+  simp only [Opens.coe_top, Measure.restrict_univ] at hcoeff ⊢
+  exact hcoeff.comp_measurePreserving (measurePreserving_add_right mu h)
+
+/-- **The drift- and mass-free energy form.** With no drift or mass term, the energy form on
+`H¹(Ω)` is the integral of `⟨a ∇u, ∇v⟩` over `Ω`. This is the shape the difference-quotient
+arguments of elliptic regularity work with. -/
+theorem energyFormH1_zero_zero_eq_setIntegral (a : EuclideanSpace ℝ ι → Matrix ι ι ℝ)
+    (u v : W1p mu Omega 2) :
+    energyFormH1 a 0 0 u v
+      = ∫ x in Omega, matrixBilinearForm (a x) (W1p.gradient v x) (W1p.gradient u x) ∂mu := by
   rw [energyFormH1_def]
   simp
+
+/-- **The constant-coefficient Dirichlet energy form.** With a constant principal coefficient
+matrix and no drift or mass term, the energy form on `H¹(Ω)` is the integral of `⟨A ∇u, ∇v⟩`
+over `Ω`. -/
+theorem energyFormH1_const_eq_setIntegral (A : Matrix ι ι ℝ) (u v : W1p mu Omega 2) :
+    energyFormH1 (fun _ => A) 0 0 u v
+      = ∫ x in Omega, matrixBilinearForm A (W1p.gradient v x) (W1p.gradient u x) ∂mu :=
+  energyFormH1_zero_zero_eq_setIntegral _ u v
 
 /-- The Sobolev energy form vanishes at zero in its left argument. -/
 @[simp]
@@ -428,6 +451,13 @@ theorem energyFormH1_smul_left (a : EuclideanSpace ℝ ι → Matrix ι ι ℝ)
       energyFormIntegral_congr_ae (mu.restrict Omega) a b c (jetField (r • u)) (jetField v)
         .rfl .rfl .rfl (jetField_smul_ae r u) .rfl
     _ = r * energyFormH1 a b c u v := energyFormIntegral_smul_left _ _ _ _ _ _ r
+
+/-- The Sobolev energy form changes sign under negation of its left argument. -/
+@[simp]
+theorem energyFormH1_neg_left (a : EuclideanSpace ℝ ι → Matrix ι ι ℝ)
+    (b : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι) (c : EuclideanSpace ℝ ι → ℝ)
+    (u v : W1p mu Omega 2) : energyFormH1 a b c (-u) v = -energyFormH1 a b c u v := by
+  rw [← neg_one_smul ℝ u, energyFormH1_smul_left, neg_one_mul]
 
 /-- Homogeneity of the Sobolev energy form in its right argument. -/
 @[simp]
@@ -546,6 +576,14 @@ theorem energyFormH1_add_left
   rw [← energyFormH1L_apply hcoeff]
   simp only [map_add, add_apply, energyFormH1L_apply]
 
+/-- Subtractivity of the Sobolev energy form in its left argument. -/
+theorem energyFormH1_sub_left
+    (hcoeff : MemLp (fun x => energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega))
+    (u v w : W1p mu Omega 2) :
+    energyFormH1 a b c (u - w) v = energyFormH1 a b c u v - energyFormH1 a b c w v := by
+  rw [← energyFormH1L_apply hcoeff]
+  simp only [map_sub, sub_apply, energyFormH1L_apply]
+
 /-- Additivity of the Sobolev energy form in its right argument. -/
 theorem energyFormH1_add_right
     (hcoeff : MemLp (fun x => energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega))
@@ -612,7 +650,8 @@ theorem energyFormH1L0_apply
     (u v : W1p0 mu Omega 2) :
     energyFormH1L0 hcoeff u v =
       energyFormH1 a b c (u : W1p mu Omega 2) (v : W1p mu Omega 2) := by
-  rw [energyFormH1L0, ContinuousLinearMap.bilinearComp_apply, energyFormH1L_apply]
+  unfold energyFormH1L0
+  rw [ContinuousLinearMap.bilinearComp_apply, energyFormH1L_apply]
   simp only [Submodule.subtypeL_apply]
 
 /-- **Symmetry of the bundled `H¹₀` energy form.**  Only symmetry of `energyFormH1` at the
@@ -995,7 +1034,7 @@ theorem mul_norm_sq_le_energyFormH1_self_of_subset_slab
     (lam ^ 2 - beta ^ 2 * (t - s) ^ 2) / (2 * lam * ((t - s) ^ 2 + 1)) * ‖u‖ ^ 2
       ≤ energyFormH1 a b c u u :=
   mul_norm_sq_le_energyFormH1_self_of_poincare h ha hb hc hb_bound hc_bound hc_nonneg
-    (W1p.norm_value_le_mul_norm_gradient_of_subset_slab (ENNReal.ofNat_ne_top) hst hslab hu)
+    (W1p.norm_value_le_mul_norm_gradient_of_subset_slab hst hslab hu)
 
 /-- **An energy-form lower bound on `H¹₀(Ω)` for a domain inside a ball.** For
 `Ω ⊆ B(z, R) ⊆ ℝ^{n+1}` every `u ∈ W^{1,2}_0(Ω)` satisfies
@@ -1019,7 +1058,7 @@ theorem mul_norm_sq_le_energyFormH1_self_of_subset_ball
     (lam ^ 2 - beta ^ 2 * (2 * R) ^ 2) / (2 * lam * ((2 * R) ^ 2 + 1)) * ‖u‖ ^ 2
       ≤ energyFormH1 a b c u u :=
   mul_norm_sq_le_energyFormH1_self_of_poincare h ha hb hc hb_bound hc_bound hc_nonneg
-    (W1p.norm_value_le_mul_norm_gradient_of_subset_ball (ENNReal.ofNat_ne_top) hball hu)
+    (W1p.norm_value_le_mul_norm_gradient_of_subset_ball hball hu)
 
 end UniformlyEllipticOn
 

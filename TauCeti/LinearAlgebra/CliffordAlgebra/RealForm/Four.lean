@@ -142,7 +142,7 @@ private noncomputable def realCliffordZeroFourAugmentedIsometry :
 private theorem realCliffordFormNegIsometry_four_zero (v : Fin 4 → ℝ) :
     realCliffordFormNegIsometry 4 0 v = v := by
   funext i
-  simpa using realCliffordFormNegIsometry_neg_of_pos 4 0 v i
+  simpa using realCliffordFormNegIsometry_apply_natAdd 4 0 v i
 
 private theorem realCliffordZeroFourAugmentedIsometry_apply (v : Fin 4 → ℝ) :
     realCliffordZeroFourAugmentedIsometry v = (![v 0, v 1, v 2], v 3) := by

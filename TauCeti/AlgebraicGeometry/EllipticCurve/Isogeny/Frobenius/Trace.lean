@@ -76,14 +76,14 @@ theorem degree_id_sub_ofIsogeny_baseChangeFrobenius_eq_pointCount [IsSepClosed K
     pointMap_ofIsogeny_baseChangeFrobenius, sub_eq_zero, eq_comm]
 
 /-- **The middle coefficient of the Frobenius pencil's degree form is the Frobenius trace.** Over a
-separably closed algebraic extension, `deg (r π - s) = q r² - a_q r s + s²` whenever `s` is
-nonzero in the field. Compare `degree_zsmul_ofIsogeny_baseChangeFrobenius_sub_zsmul_id`, which has
-`q + 1 - deg (id - π)` in place of `a_q`. -/
+separably closed extension, `deg (r π - s) = q r² - a_q r s + s²`. Compare
+`degree_zsmul_ofIsogeny_baseChangeFrobenius_sub_zsmul_id`, which has `q + 1 - deg (id - π)` in
+place of `a_q`. -/
 theorem degree_zsmul_ofIsogeny_baseChangeFrobenius_sub_zsmul_id_eq_frobeniusTrace [IsSepClosed K]
-    [Algebra.IsAlgebraic F K] (r s : ℤ) (hs : (s : K) ≠ 0) :
+    (r s : ℤ) :
     ((r • ofIsogeny (baseChangeFrobenius K W) - s • id (W⁄K).toAffine).degree : ℤ) =
       (Nat.card F : ℤ) * r ^ 2 - W.frobeniusTrace * (r * s) + s ^ 2 := by
-  rw [degree_zsmul_ofIsogeny_baseChangeFrobenius_sub_zsmul_id W r s hs,
+  rw [degree_zsmul_ofIsogeny_baseChangeFrobenius_sub_zsmul_id W r s,
     degree_id_sub_ofIsogeny_baseChangeFrobenius_eq_pointCount, WeierstrassCurve.frobeniusTrace_def]
 
 end TauCeti.Isogeny.Hom

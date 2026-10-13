@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.G2.ShortRoot.PrimeField.Frobenius
-public import TauCeti.Algebra.Lie.G2.ShortRoot.PrimeField.RootDatum
+public import TauCeti.Algebra.Lie.G2.ShortRoot.PrimeField.Root.Datum
 public import TauCeti.GroupTheory.SpecificGroups.CFSG.Frobenius
 public import TauCeti.GroupTheory.SpecificGroups.CFSG.ReeG2.Closure
 

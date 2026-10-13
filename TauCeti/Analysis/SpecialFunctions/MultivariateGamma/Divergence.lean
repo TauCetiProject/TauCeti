@@ -127,7 +127,6 @@ private theorem tsum_setLIntegral_add_smul_le {g : selfAdjoint.submodule ℝ
 private theorem min_rpow_mul_inv_le_rpow {d₁ d D w c e : ℝ} (hd₁ : 0 < d₁) (hd₁d : d₁ ≤ d)
     (hdD : d ≤ D) (hw : 0 ≤ w) (hwc : w ≤ c) (he : -1 ≤ e) (k : ℕ) :
     min (d₁ ^ e) ((D * (1 + c)) ^ e) * ((k : ℝ) + 1)⁻¹ ≤ (d * (1 + k * w)) ^ e := by
-  have hk0 : (0 : ℝ) ≤ k := Nat.cast_nonneg k
   have hlo : d₁ ≤ d * (1 + k * w) :=
     hd₁d.trans (le_mul_of_one_le_right (hd₁.le.trans hd₁d) (by nlinarith))
   have hhi : d * (1 + k * w) ≤ D * (1 + c) * (k + 1) := by

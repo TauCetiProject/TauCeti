@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.LocalField.UnitsDecomposition
 public import TauCeti.NumberTheory.LocalField.UnitFiltration.Graded
+public import Mathlib.GroupTheory.ResiduallyFinite
 
 /-!
 # The multiplicative group of a nonarchimedean local field
@@ -62,6 +63,7 @@ the graded pieces of the unit filtration. This is the shape used to count power 
   which are what is left after dividing by the image of the section.
 * `TauCeti.exists_forall_pow_eq_mem_unitFiltration_mul_zpow`: for any `ϖ` of nonzero valuation
   and any depth `i`, the quotient `Kˣ / (U(K,i) · ϖ ^ ℤ)` has finite exponent.
+* `TauCeti.residuallyFinite_units`: `Kˣ` is residually finite.
 
 ## References
 
@@ -287,5 +289,39 @@ theorem exists_forall_pow_eq_mem_unitFiltration_mul_zpow (i : ℕ) {ϖ : Kˣ}
   refine ⟨w₀ ^ R, Subgroup.pow_relIndex_mem _ hw₀, k * e.sign * R, ?_⟩
   rw [mul_pow, mul_assoc, ← zpow_natCast (ϖ ^ _), ← zpow_mul, ← zpow_add, pow_mul]
   simp
+
+/-! ### Residual finiteness -/
+
+variable (K) in
+/-- **The multiplicative group of a nonarchimedean local field is residually finite**: the
+subgroups of finite index of `Kˣ` intersect in `1`. Through the splitting `Kˣ ≃ ℤ × U(K,0)`
+attached to a uniformizer, `x` lies in the kernel of the reduction of its valuation modulo every
+`n ≥ 1`, so it is a unit, and in the kernel of `U(K,0) → U(K,0) / U(K,i)` for every `i`, so it lies
+in `⨅ i, U(K,i) = 1`. -/
+instance residuallyFinite_units : Group.ResiduallyFinite Kˣ := by
+  rw [Group.residuallyFinite_iff_forall_finiteIndex]
+  intro x hx
+  -- the valuation of `x` is divisible by every positive integer, so it vanishes
+  have hv : normalizedValuation K x = 1 := by
+    set k := (normalizedValuation K x).toAdd
+    let f : Kˣ →* Multiplicative (ZMod (k.natAbs + 1)) :=
+      (normalizedValuationMod K (k.natAbs + 1)).toMultiplicativeRight
+    have hk : (k : ZMod (k.natAbs + 1)) = 0 := by
+      simpa [f] using congrArg Multiplicative.toAdd (hx f.ker)
+    rw [ZMod.intCast_zmod_eq_zero_iff_dvd] at hk
+    rw [← toAdd_eq_zero]
+    exact Int.eq_zero_of_dvd_of_natAbs_lt_natAbs hk (by omega)
+  -- `x` lies in every step of the unit filtration
+  obtain ⟨ϖ, hϖ⟩ := normalizedValuation_surjective (K := K) (.ofAdd 1)
+  have hU (i : ℕ) : x ∈ unitFiltration K i := by
+    let f : Kˣ →* unitFiltration K 0 ⧸ (unitFiltration K i).subgroupOf (unitFiltration K 0) :=
+      (QuotientGroup.mk' _).comp
+        ((MonoidHom.snd _ _).comp (unitsEquivIntProd K ϖ hϖ).toMulEquiv.toMonoidHom)
+    have hx' : ((unitsEquivIntProd K ϖ hϖ x).2 : Kˣ) ∈ unitFiltration K i :=
+      Subgroup.mem_subgroupOf.1 ((QuotientGroup.eq_one_iff _).1 (hx f.ker))
+    rwa [coe_unitsEquivIntProd_apply_snd, hv, toAdd_one, neg_zero,
+      zpow_zero, mul_one] at hx'
+  rw [← Subgroup.mem_bot, ← iInf_unitFiltration, Subgroup.mem_iInf]
+  exact hU
 
 end TauCeti

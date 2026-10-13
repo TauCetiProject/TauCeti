@@ -43,9 +43,6 @@ universal property determines it uniquely.
 The packaging and characteristic API follow the existing formal construction in
 `TauCeti.Algebra.AlgebraicGroup.Unipotent.Radical.Construction`, with solvability replacing
 unipotence.
-
-This completes the solvable-radical construction in Layer 6, "Reductive and semisimple groups",
-of the ReductiveGroups roadmap.
 -/
 
 public section
@@ -220,12 +217,6 @@ theorem solvableRadicalSpecMapOfCandidate_comp_solvableRadicalSpecι
       CommHopfAlgCat.quotientSpecι H.obj I :=
   CommHopfAlgCat.quotientSpecMapOfLe_comp_quotientSpecι H.obj
     (solvableRadicalDefiningIdeal_le H I hI)
-
-/-- The inclusion of the solvable radical is a closed immersion. -/
-instance isClosedImmersion_solvableRadicalSpecι
-    (H : FiniteTypeCommHopfAlgCat.{u, u} k) :
-    IsClosedImmersion (solvableRadicalSpecι H).hom.hom.left :=
-  inferInstance
 
 end FiniteTypeCommHopfAlgCat
 

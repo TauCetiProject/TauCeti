@@ -253,7 +253,7 @@ theorem HasCauchyPVWith.of_integrable_of_crossings_measure_zero {γ : ℝ → �
     (h_null : MeasureTheory.volume (⋃ s ∈ S, Set.uIoc a b ∩ γ ⁻¹' {s}) = 0) :
     HasCauchyPVWith γ a b f S (∫ t in a..b, f (γ t) * deriv γ t) := by
   classical
-  set g : ℝ → ℂ := fun t => f (γ t) * deriv γ t with hg
+  set g : ℝ → ℂ := fun t => f (γ t) * deriv γ t with _hg
   have hmeas : ∀ ε : ℝ, MeasureTheory.NullMeasurableSet {t | ∃ s ∈ S, ‖γ t - s‖ ≤ ε}
       (MeasureTheory.volume.restrict (Set.uIoc a b)) := fun ε => nullMeasurableSet_excision hγ S ε
   have hsm : ∀ ε : ℝ, MeasureTheory.AEStronglyMeasurable
@@ -439,9 +439,9 @@ private theorem exists_pos_separating_intervalIntegrable_truncatedIntegrand {γ 
   have hdist : ∀ᶠ ε in 𝓝[>] (0 : ℝ),
       ∀ s₁ ∈ S₁, ∀ s₂ ∈ S₂, s₁ ≠ s₂ → 2 * ε < ‖s₁ - s₂‖ := by
     rw [Filter.eventually_all_finset]
-    intro s₁ hs₁
+    intro s₁ _
     rw [Filter.eventually_all_finset]
-    intro s₂ hs₂
+    intro s₂ _
     rcases eq_or_ne s₁ s₂ with hEq | hNe
     · exact Filter.Eventually.of_forall fun ε hne => absurd hEq hne
     · have hpos : (0 : ℝ) < ‖s₁ - s₂‖ := by rw [norm_pos_iff, sub_ne_zero]; exact hNe
