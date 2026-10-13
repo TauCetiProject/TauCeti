@@ -11,6 +11,7 @@ public import TauCeti.AlgebraicTopology.Singular.Cech
 public import TauCeti.AlgebraicTopology.Singular.Subdivision.Small.Equiv
 
 import Mathlib.AlgebraicTopology.SimplicialSet.Homology.Relative
+import TauCeti.AlgebraicTopology.Singular.Subspace
 
 /-!
 # The ordered Čech--singular total complex computes singular homology
@@ -172,57 +173,6 @@ lemma cechSmallAugmentation_f_zero_comp_chainComplexMap_ι :
 
 /-! ### The rows of the double complex -/
 
-/-- A singular simplex of `X` whose image lies in an open set `V`, as a singular simplex of `V`. -/
-private def restrictSimplex {V : Opens X} {n : SimplexCategoryᵒᵖ}
-    (σ : (TopCat.toSSet.obj X).obj n) (h : Set.range (X.toSSetObjEquiv n σ) ⊆ V) :
-    (TopCat.toSSet.obj ((Opens.toTopCat X).obj V)).obj n :=
-  (TopCat.toSSetObjEquiv _ n).symm
-    ⟨Set.codRestrict _ _ fun z ↦ h ⟨z, rfl⟩, (map_continuous _).codRestrict _⟩
-
-omit [LinearOrder ι] in
-private lemma restrictSimplex_congr {V : Opens X} {n : SimplexCategoryᵒᵖ}
-    {σ σ' : (TopCat.toSSet.obj X).obj n} (e : σ = σ') (h : Set.range (X.toSSetObjEquiv n σ) ⊆ V) :
-    restrictSimplex σ h = restrictSimplex σ' (e ▸ h) := by
-  subst e
-  rfl
-
-omit [LinearOrder ι] in
-private lemma toSSet_map_restrictSimplex {V W : Opens X} (hVW : V ≤ W) {n : SimplexCategoryᵒᵖ}
-    (σ : (TopCat.toSSet.obj X).obj n) (h : Set.range (X.toSSetObjEquiv n σ) ⊆ V) :
-    (TopCat.toSSet.map ((Opens.toTopCat X).map (homOfLE hVW))).app n (restrictSimplex σ h) =
-      restrictSimplex σ (h.trans hVW) := by
-  apply (TopCat.toSSetObjEquiv _ n).injective
-  rw [TopCat.toSSetObjEquiv_toSSet_map_app, restrictSimplex, restrictSimplex,
-    Equiv.apply_symm_apply, Equiv.apply_symm_apply]
-  -- Both sides corestrict the same map out of the standard simplex.
-  rfl
-
-omit [LinearOrder ι] in
-private lemma toSSet_map_inclusion'_restrictSimplex {V : Opens X} {n : SimplexCategoryᵒᵖ}
-    (σ : (TopCat.toSSet.obj X).obj n) (h : Set.range (X.toSSetObjEquiv n σ) ⊆ V) :
-    (TopCat.toSSet.map (Opens.inclusion' V)).app n (restrictSimplex σ h) = σ := by
-  apply (X.toSSetObjEquiv n).injective
-  rw [TopCat.toSSetObjEquiv_toSSet_map_app, restrictSimplex, Equiv.apply_symm_apply]
-  -- Composing a corestriction with the inclusion of `V` recovers the map.
-  rfl
-
-omit [LinearOrder ι] in
-private lemma range_toSSet_map_inclusion' {V : Opens X} {n : SimplexCategoryᵒᵖ}
-    (τ : (TopCat.toSSet.obj ((Opens.toTopCat X).obj V)).obj n) :
-    Set.range (X.toSSetObjEquiv n ((TopCat.toSSet.map (Opens.inclusion' V)).app n τ)) ⊆ V := by
-  rintro _ ⟨z, rfl⟩
-  exact (TopCat.toSSetObjEquiv _ n τ z).2
-
-omit [LinearOrder ι] in
-private lemma restrictSimplex_toSSet_map_inclusion' {V : Opens X} {n : SimplexCategoryᵒᵖ}
-    (τ : (TopCat.toSSet.obj ((Opens.toTopCat X).obj V)).obj n) :
-    restrictSimplex ((TopCat.toSSet.map (Opens.inclusion' V)).app n τ)
-      (range_toSSet_map_inclusion' τ) = τ := by
-  apply (TopCat.toSSetObjEquiv _ n).injective
-  rw [restrictSimplex, Equiv.apply_symm_apply]
-  -- Corestricting the composite with the inclusion of `V` recovers the map into `V`.
-  rfl
-
 /-- The summand inclusion of a singular `q`-simplex of `U_s` into `C_q(U_s; R)`, with its target
 stated in terms of `TauCeti.cechSingularChains`. -/
 private def simplexι {s : Finset ι} {q : ℕ}
@@ -294,41 +244,28 @@ private lemma smallSimplex_mem {s : Finset ι} (hs : s.Nonempty) {q : ℕ}
     (τ : (TopCat.toSSet.obj ((Opens.toTopCat X).obj (s.inf U))) _⦋q⦌) :
     ∀ i ∈ s, smallSimplex U hs τ ∈ simplexCover U q i := fun _ hi ↦ by
   simpa only [simplexCover, Set.mem_ofPred_eq, smallSimplex, smallLift_app_coe] using
-    (range_toSSet_map_inclusion' τ).trans (Finset.inf_le hi : s.inf U ≤ U _)
+    (TopCat.range_toSSetObjEquiv_toSSet_map_inclusion'_subset τ).trans
+      (Finset.inf_le hi : s.inf U ≤ U _)
 
 omit [LinearOrder ι] in
-private lemma smallLift_app_restrictSimplex {V : Opens X} {i : ι} (hV : V ≤ U i) {q : ℕ}
+private lemma smallLift_app_toSSetObjCodRestrict {V : Opens X} {i : ι} (hV : V ≤ U i) {q : ℕ}
     (σ : (X.smallSingularSubcomplex (fun i ↦ (U i : Set X)) : SSet) _⦋q⦌)
     (h : Set.range (X.toSSetObjEquiv _ σ.1) ⊆ V) :
-    (smallLift U hV).app _ (restrictSimplex σ.1 h) = σ :=
-  Subtype.ext ((smallLift_app_coe U hV _).trans (toSSet_map_inclusion'_restrictSimplex σ.1 h))
+    (smallLift U hV).app _ (TopCat.toSSetObjCodRestrict σ.1 h) = σ :=
+  Subtype.ext ((smallLift_app_coe U hV _).trans
+    (TopCat.toSSet_map_inclusion'_toSSetObjCodRestrict σ.1 h))
 
-private lemma smallSimplex_restrictSimplex {s : Finset ι} (hs : s.Nonempty) {q : ℕ}
+private lemma smallSimplex_toSSetObjCodRestrict {s : Finset ι} (hs : s.Nonempty) {q : ℕ}
     (σ : (X.smallSingularSubcomplex (fun i ↦ (U i : Set X)) : SSet) _⦋q⦌)
     (h : Set.range (X.toSSetObjEquiv _ σ.1) ⊆ (s.inf U : Opens X)) :
-    smallSimplex U hs (restrictSimplex σ.1 h) = σ :=
-  smallLift_app_restrictSimplex U _ σ h
+    smallSimplex U hs (TopCat.toSSetObjCodRestrict σ.1 h) = σ :=
+  smallLift_app_toSSetObjCodRestrict U _ σ h
 
-private lemma restrictSimplex_smallSimplex {s : Finset ι} (hs : s.Nonempty) {q : ℕ}
+private lemma toSSetObjCodRestrict_smallSimplex {s : Finset ι} (hs : s.Nonempty) {q : ℕ}
     (τ : (TopCat.toSSet.obj ((Opens.toTopCat X).obj (s.inf U))) _⦋q⦌)
     (h : Set.range (X.toSSetObjEquiv _ (smallSimplex U hs τ).1) ⊆ (s.inf U : Opens X)) :
-    restrictSimplex (smallSimplex U hs τ).1 h = τ :=
-  (restrictSimplex_congr (smallLift_app_coe U _ τ) h).trans
-    (restrictSimplex_toSSet_map_inclusion' τ)
-
-omit [HasZeroObject C] in
-/-- The vertical differential of the double complex in singular degree `q`, on the summand of
-`s`. -/
-private lemma cechDoubleComplexι_f_d_f {p q : ℕ} (s : {s : Finset ι // #s = p + 1 + 1}) :
-    (cechDoubleComplexι U R s).f q ≫ ((cechDoubleComplex U R).d (p + 1) p).f q =
-      -- `Finset.filter` is spelled out: the set-builder bar clashes with simplicial notation.
-      ∑ i : s.1, ((-1 : ℤ) ^ #(s.1.filter fun j ↦ j < i.1)) •
-        ((cechSingularChains U R).map (homOfLE (s.1.erase_subset i.1)).op).f q ≫
-          (cechDoubleComplexι U R
-            ⟨s.1.erase i, by rw [Finset.card_erase_of_mem i.2, s.2, Nat.add_sub_cancel]⟩).f q := by
-  rw [← HomologicalComplex.comp_f, ι_cechDoubleComplex_d]
-  simp only [← HomologicalComplex.Hom.fAddMonoidHom_apply, map_sum, map_zsmul]
-  simp only [HomologicalComplex.Hom.fAddMonoidHom_apply, HomologicalComplex.comp_f]
+    TopCat.toSSetObjCodRestrict (smallSimplex U hs τ).1 h = τ :=
+  TopCat.toSSetObjCodRestrict_eq h (smallLift_app_coe U _ τ).symm
 
 /-- The comparison of the ordered Čech complex of `simplexCover U q` with the `q`-th row of the
 ordered Čech double complex: the summand of `(s, σ)` goes to the singular simplex `σ` of `U_s`. -/
@@ -337,26 +274,26 @@ private def rowHom (q : ℕ) :
       ((HomologicalComplex.eval C (ComplexShape.down ℕ) q).mapHomologicalComplex _).obj
         (cechDoubleComplex U R) where
   f p := Functor.orderedCechComplexDesc _ fun s ↦ freeCechDesc R fun σ hσ ↦
-    simplexι U R (restrictSimplex σ.1 (range_subset_finset_inf U hσ)) ≫
+    simplexι U R (TopCat.toSSetObjCodRestrict σ.1 (range_subset_finset_inf U hσ)) ≫
       (cechDoubleComplexι U R s).f q
   comm' := by
     rintro _ p rfl
     ext s : 1
     refine freeCechFunctor_hom_ext R fun σ hσ ↦ ?_
     rw [Functor.ι_orderedCechComplexDesc_assoc, ι_freeCechDesc_assoc, Category.assoc,
-      Functor.mapHomologicalComplex_obj_d, HomologicalComplex.eval_map, cechDoubleComplexι_f_d_f,
-      Preadditive.comp_sum, Functor.ι_orderedCechComplex_d_assoc, Preadditive.sum_comp,
-      Preadditive.comp_sum]
+      Functor.mapHomologicalComplex_obj_d, HomologicalComplex.eval_map,
+      cechDoubleComplexι_f_comp_d_f, Preadditive.comp_sum, Functor.ι_orderedCechComplex_d_assoc,
+      Preadditive.sum_comp, Preadditive.comp_sum]
     refine Finset.sum_congr rfl fun i _ ↦ ?_
     rw [Preadditive.comp_zsmul, Preadditive.zsmul_comp, Preadditive.comp_zsmul, Category.assoc,
       ι_freeCechFunctor_map_assoc, Functor.ι_orderedCechComplexDesc, ι_freeCechDesc,
-      ← Category.assoc, simplexι_map, toSSet_map_restrictSimplex]
+      ← Category.assoc, simplexι_map, TopCat.toSSet_map_homOfLE_toSSetObjCodRestrict]
 
 omit [HasZeroObject C] in
 private lemma ι_rowHom_f {q p : ℕ} (s : {s : Finset ι // #s = p + 1}) {σ} (hσ) :
     freeCechι R σ hσ ≫ (freeCechFunctor R (simplexCover U q)).orderedCechComplexι s ≫
         (rowHom U R q).f p =
-      simplexι U R (restrictSimplex σ.1 (range_subset_finset_inf U hσ)) ≫
+      simplexι U R (TopCat.toSSetObjCodRestrict σ.1 (range_subset_finset_inf U hσ)) ≫
         (cechDoubleComplexι U R s).f q := by
   rw [rowHom, Functor.ι_orderedCechComplexDesc, ι_freeCechDesc]
 
@@ -394,10 +331,10 @@ private instance isIso_rowHom (q : ℕ) : IsIso (rowHom U R q) := by
     · ext s : 1
       refine freeCechFunctor_hom_ext R fun σ hσ ↦ ?_
       rw [reassoc_of% ι_rowHom_f, ι_rowInvX]
-      simp only [smallSimplex_restrictSimplex, Category.comp_id]
+      simp only [smallSimplex_toSSetObjCodRestrict, Category.comp_id]
     · refine cechDoubleComplex_X_X_hom_ext U R fun s ↦ simplexι_hom_ext U R fun τ ↦ ?_
       rw [reassoc_of% ι_rowInvX, ι_rowHom_f]
-      simp only [restrictSimplex_smallSimplex]
+      simp only [toSSetObjCodRestrict_smallSimplex]
       exact (Category.comp_id (_ ≫ _)).symm.trans (Category.assoc _ _ _)
   exact HomologicalComplex.Hom.isIso_of_components _
 
@@ -409,14 +346,9 @@ private def rowTargetIso (q : ℕ) :
       ((HomologicalComplex.eval C (ComplexShape.down ℕ) q).mapHomologicalComplex _).obj
         ((ChainComplex.single₀ (ChainComplex C ℕ)).obj
           ((X.smallSingularSubcomplex (fun i ↦ (U i : Set X)) : SSet).chainComplex R)) :=
-  HomologicalComplex.Hom.isoOfComponents
-    (fun i ↦ match i with
-      | 0 => Iso.refl _
-      | _ + 1 => (HomologicalComplex.isZero_single_obj_X _ _ _ _ (by simp)).iso
-          ((HomologicalComplex.eval C (ComplexShape.down ℕ) q).map_isZero
-            (HomologicalComplex.isZero_single_obj_X _ _ _ _ (by simp))))
-    (fun i j _ ↦ (HomologicalComplex.isZero_single_obj_X _ _ _ _ (by
-      simp only [ComplexShape.down_Rel] at *; omega)).eq_of_src _ _)
+  ((HomologicalComplex.singleMapHomologicalComplex
+    (HomologicalComplex.eval C (ComplexShape.down ℕ) q) (ComplexShape.down ℕ) 0).app
+      ((X.smallSingularSubcomplex (fun i ↦ (U i : Set X)) : SSet).chainComplex R)).symm
 
 private lemma rowHom_comp_map_cechSmallAugmentation (q : ℕ) :
     rowHom U R q ≫ ((HomologicalComplex.eval C (ComplexShape.down ℕ) q).mapHomologicalComplex
@@ -432,11 +364,13 @@ private lemma rowHom_comp_map_cechSmallAugmentation (q : ℕ) :
             Functor.mapHomologicalComplex_map_f, HomologicalComplex.eval_map,
             ← HomologicalComplex.comp_f, ι_cechSmallAugmentation_f_zero U R s hi]
           exact (simplexι_smallLiftChains U R hi _).trans
-            (congrArg _ (smallLift_app_restrictSimplex U _ σ _))
+            (congrArg _ (smallLift_app_toSSetObjCodRestrict U _ σ _))
       _ = _ := by
-          rw [HomologicalComplex.comp_f]
-          -- The isomorphism `rowTargetIso` is the identity in degree `0`.
-          exact (h.trans (Category.comp_id _)).symm
+          rw [HomologicalComplex.comp_f, h]
+          simp only [rowTargetIso, Iso.symm_hom]
+          -- The identity is on the summand `∐ R` of the small `q`-chains, which is their degree `q`
+          -- only up to unfolding `SSet.chainComplex`.
+          exact (Category.comp_id _).symm
   · exact ((HomologicalComplex.eval C (ComplexShape.down ℕ) q).map_isZero
       (HomologicalComplex.isZero_single_obj_X (ComplexShape.down ℕ) 0 _ (p + 1)
         (by simp))).eq_of_tgt _ _
@@ -480,40 +414,22 @@ category, the augmentation of the total complex of the ordered Čech double comp
 singular chains of `X` is a quasi-isomorphism. -/
 theorem quasiIso_cechTotalAugmentation (hU : ⋃ i, (U i : Set X) = Set.univ) :
     QuasiIso (cechTotalAugmentation U R) := by
-  -- The total complex is quasi-isomorphic to the chains which are small for `U`, since the rows
-  -- of the double complex resolve them.
-  have h₁ := HomologicalComplex₂.quasiIso_totalAugmentation_of_rows
-    (cechSmallAugmentation U R) fun q ↦ by
-      rw [← cechSmallAugmentationRowHomotopyEquiv_hom]
-      infer_instance
   -- The small chains include into all singular chains by a chain homotopy equivalence.
-  have h₂ : QuasiIso (SSet.chainComplexMap (X.smallSingularSubcomplex (fun i ↦ (U i : Set X))).ι
+  have : QuasiIso (SSet.chainComplexMap (X.smallSingularSubcomplex (fun i ↦ (U i : Set X))).ι
       R) := by
     rw [← smallSingularChainHomotopyEquiv_hom R (fun i ↦ (U i : Set X)) (fun i ↦ (U i).isOpen) hU]
     infer_instance
-  have e : cechTotalAugmentation U R =
-      (cechDoubleComplex U R).totalAugmentation
-          ((cechSmallAugmentation U R).f 0 ≫ (HomologicalComplex.singleObjXSelf _ 0 _).hom)
-          (HomologicalComplex₂.d_comp_f_zero_singleObjXSelf_hom _ (cechSmallAugmentation U R)) ≫
-        SSet.chainComplexMap (X.smallSingularSubcomplex (fun i ↦ (U i : Set X))).ι R := by
-    have e₁ : cechTotalAugmentation U R = (cechDoubleComplex U R).totalAugmentation
-        (cechAugmentation U R) (cechDoubleComplex_d_comp_cechAugmentation U R) := by
-      ext n : 1
-      refine HomologicalComplex₂.total.hom_ext _ fun p q h ↦ ?_
-      rcases p with _ | p
-      · obtain rfl : q = n := by simpa using h
-        rw [ιTotal_cechTotalAugmentation_f_zero,
-          HomologicalComplex₂.ιTotal_totalAugmentation_f_zero]
-      · rw [ιTotal_cechTotalAugmentation_f_succ,
-          HomologicalComplex₂.ιTotal_totalAugmentation_f_succ]
-    rw [HomologicalComplex₂.totalAugmentation_comp, e₁]
-    congr 1
-    simp only [ChainComplex.single₀ObjXSelf, Iso.refl_hom]
-    -- The two sides are typed by the two defeq forms of the singular chains of `X`.
-    exact ((congrArg (· ≫ _) (Category.comp_id _)).trans
-      (cechSmallAugmentation_f_zero_comp_chainComplexMap_ι U R)).symm
-  rw [e]
-  exact quasiIso_comp _ _ (hφ := h₁) (hφ' := h₂)
+  -- The rows of the double complex resolve the chains which are small for `U`.
+  rw [cechTotalAugmentation_def]
+  refine HomologicalComplex₂.quasiIso_totalAugmentation_of_rows_of_quasiIso
+    (cechSmallAugmentation U R) (fun q ↦ by
+      rw [← cechSmallAugmentationRowHomotopyEquiv_hom]
+      infer_instance)
+    (SSet.chainComplexMap (X.smallSingularSubcomplex (fun i ↦ (U i : Set X))).ι R) _ ?_
+  simp only [ChainComplex.single₀ObjXSelf, Iso.refl_hom]
+  -- The two sides are typed by the two defeq forms of the singular chains of `X`.
+  exact (congrArg (· ≫ _) (Category.comp_id _)).trans
+    (cechSmallAugmentation_f_zero_comp_chainComplexMap_ι U R)
 
 end Abelian
 

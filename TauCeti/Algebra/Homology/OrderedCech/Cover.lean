@@ -65,12 +65,13 @@ variable {C : Type u} [Category.{v} C] [HasCoproducts.{w} C]
 /-- The coproduct of copies of `R` indexed by the points of `⋂_{i ∈ s} P i`, as a functor of the
 finite set `s` of indices; an inclusion `t ⊆ s` goes to the map induced by the inclusion of
 `⋂_{i ∈ s} P i` in `⋂_{i ∈ t} P i`. The empty set goes to the coproduct of copies of `R` indexed
-by all of `A`. It is characterised by the summand inclusions `TauCeti.freeCechι`, which form a
-coproduct cocone (`TauCeti.isColimitFreeCechCofan`), and by `TauCeti.ι_freeCechFunctor_map`. -/
-def freeCechFunctor : (Finset ι)ᵒᵖ ⥤ C where
-  obj s := ∐ fun _ : {a : A // ∀ i ∈ s.unop, a ∈ P i} ↦ R
-  map f := Sigma.desc fun a ↦ Sigma.ι (fun _ : {a : A // ∀ i ∈ _, a ∈ P i} ↦ R)
-    ⟨a.1, fun i hi ↦ a.2 i (leOfHom f.unop hi)⟩
+by all of `A`. It is `sigmaConst.obj R` applied to the functor `s ↦ ⋂_{i ∈ s} P i` to types. It
+is characterised by the summand inclusions `TauCeti.freeCechι`, which form a coproduct cocone
+(`TauCeti.isColimitFreeCechCofan`), and by `TauCeti.ι_freeCechFunctor_map`. -/
+def freeCechFunctor : (Finset ι)ᵒᵖ ⥤ C :=
+  { obj s := {a : A // ∀ i ∈ s.unop, a ∈ P i}
+    map f := TypeCat.ofHom fun a ↦ ⟨a.1, fun i hi ↦ a.2 i (leOfHom f.unop hi)⟩ } ⋙
+    sigmaConst.obj R
 
 variable {P}
 
@@ -113,7 +114,7 @@ summand of a point to the summand of the same point. -/
 lemma ι_freeCechFunctor_map {s t : Finset ι} (f : op s ⟶ op t) (a : A) (ha : ∀ i ∈ s, a ∈ P i) :
     freeCechι R a ha ≫ (freeCechFunctor R P).map f =
       freeCechι R a fun i hi ↦ ha i (leOfHom f.unop hi) :=
-  Sigma.ι_comp_desc _ _
+  (Sigma.ι_comp_map' _ _ _).trans (Category.id_comp _)
 
 variable [Preadditive C] [LinearOrder ι] [HasZeroObject C]
 
@@ -202,8 +203,10 @@ private lemma single_freeCechAugmentation {s : Finset ι} (hs : #s = 0 + 1) {a :
     single R 0 s a ha ≫ (freeCechAugmentation R P).f 0 ≫
         (HomologicalComplex.singleObjXSelf _ 0 _).hom =
       Sigma.ι (fun _ : A ↦ R) a := by
-  rw [single_of_card_eq R ha hs, Category.assoc]
-  simp [freeCechAugmentation]
+  rw [single_of_card_eq R ha hs, Category.assoc, ChainComplex.single₀ObjXSelf, Iso.refl_hom]
+  -- The identity is on degree `0` of the single complex, which is `∐ fun _ : A ↦ R` only up to
+  -- definitional unfolding of `HomologicalComplex.single`.
+  exact (freeCechι_freeCechAugmentation_f_zero_assoc R ⟨s, hs⟩ a ha _).trans (Category.comp_id _)
 
 variable (hP : ⋃ i, P i = Set.univ)
 

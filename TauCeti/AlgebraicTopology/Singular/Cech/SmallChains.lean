@@ -197,14 +197,9 @@ noncomputable def openCoverSmallSingularAugmentationRowHomotopyEquiv (q : ℕ) :
       (HomologicalComplex.eval C (ComplexShape.down ℕ) q)).app (openCoverSingularNerve U R))).trans
     ((((openCoverSmallAugmentedSingularNerveExtraDegeneracy U q).map
       (sigmaConst.obj R)).homotopyEquiv).trans
-      (HomotopyEquiv.ofIso (HomologicalComplex.Hom.isoOfComponents
-        (fun i ↦ match i with
-          | 0 => Iso.refl _
-          | _ + 1 => (HomologicalComplex.isZero_single_obj_X _ _ _ _ (by simp)).iso
-              ((HomologicalComplex.eval C (ComplexShape.down ℕ) q).map_isZero
-                (HomologicalComplex.isZero_single_obj_X _ _ _ _ (by simp))))
-        (fun i j _ ↦ (HomologicalComplex.isZero_single_obj_X _ _ _ _ (by
-          simp only [ComplexShape.down_Rel] at *; omega)).eq_of_src _ _))))
+      (HomotopyEquiv.ofIso ((HomologicalComplex.singleMapHomologicalComplex
+        (HomologicalComplex.eval C (ComplexShape.down ℕ) q) (ComplexShape.down ℕ) 0).app
+          ((X.smallSingularSubcomplex (fun i ↦ (U i : Set X)) : SSet).chainComplex R)).symm))
 
 /-- The homotopy equivalence of a row is the row of the augmentation onto small chains. -/
 @[simp]
