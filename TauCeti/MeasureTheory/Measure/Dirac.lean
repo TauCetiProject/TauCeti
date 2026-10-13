@@ -117,11 +117,9 @@ namespace MeasureTheory
 probability measure. -/
 theorem isProbabilityMeasure_sum_smul_dirac {J X : Type*} [Fintype J] [MeasurableSpace X]
     {w : J → ℝ≥0} (hw : ∑ j, w j = 1) (y : J → X) :
-    IsProbabilityMeasure (∑ j, w j • Measure.dirac (y j)) := by
-  constructor
-  simp only [Measure.coe_finsetSum, Finset.sum_apply, Measure.smul_apply, measure_univ,
-    ENNReal.smul_def, smul_eq_mul, mul_one]
-  rw [← ENNReal.ofNNReal_finsetSum, hw, ENNReal.coe_one]
+    IsProbabilityMeasure (∑ j, w j • Measure.dirac (y j)) :=
+  Measure.sum_fintype (fun j ↦ w j • Measure.dirac (y j)) ▸
+    (hw ▸ hasSum_fintype w).isProbabilityMeasure_sum_dirac_nnreal
 
 end MeasureTheory
 

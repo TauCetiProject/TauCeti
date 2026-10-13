@@ -41,8 +41,8 @@ pseudo-extended-metric space.
   points depends jointly continuously on the points and the center;
 * `TauCeti.IsFrechetBarycenter.sum_mul_edist_rpow_eq_iInf` and
   `TauCeti.isFrechetBarycenter_sum_smul_dirac_iff` — a barycenter of a weighted family of points
-  attains the least value of the power functional, and in a metric space every point attaining it
-  is a barycenter;
+  attains the least value of the power functional, and in a pseudometric space every point
+  attaining it is a barycenter;
 * `TauCeti.frechetRadius_sum_smul_dirac_le_add` and
   `TauCeti.continuous_iInf_frechetPower_sum_smul_dirac` — the Fréchet radius is `1`-Lipschitz in
   the family of points, and the least value of the power functional is continuous in it;
@@ -154,10 +154,12 @@ theorem continuous_iInf_frechetPower_sum_smul_dirac (hp : 1 ≤ p) (hp_top : p �
 
 end WeightedPoints
 
-variable [MetricSpace X] [MeasurableSpace X] [BorelSpace X]
+section PseudoMetric
 
-/-- In a metric space, the `p`-Fréchet radius of a weighted law of finitely many points is finite
-at every center, for a finite nonzero exponent. -/
+variable [PseudoMetricSpace X] [MeasurableSpace X] [OpensMeasurableSpace X]
+
+/-- In a pseudometric space, the `p`-Fréchet radius of a weighted law of finitely many points is
+finite at every center, for a finite nonzero exponent. -/
 theorem frechetRadius_sum_smul_dirac_ne_top {p : ℝ≥0∞} (hp₀ : p ≠ 0) (hp_top : p ≠ ⊤)
     (w : J → ℝ≥0) (y : J → X) (x : X) :
     frechetRadius p (∑ j, w j • Measure.dirac (y j)) x ≠ ⊤ := by
@@ -173,8 +175,8 @@ theorem frechetRadius_sum_smul_dirac_ne_top {p : ℝ≥0∞} (hp₀ : p ≠ 0) (
     ENNReal.top_rpow_of_pos (ENNReal.toReal_pos hp₀ hp_top)] at hpower
   exact hpower rfl
 
-/-- In a metric space and for a finite nonzero exponent, a point is a `p`-Fréchet barycenter of
-the weighted law `∑ j, w j • δ_{y j}` exactly when it attains the least value
+/-- In a pseudometric space and for a finite nonzero exponent, a point is a `p`-Fréchet barycenter
+of the weighted law `∑ j, w j • δ_{y j}` exactly when it attains the least value
 `inf_z ∑ j, w j * d(z, y j) ^ p` of the power functional. -/
 theorem isFrechetBarycenter_sum_smul_dirac_iff {p : ℝ≥0∞} (hp₀ : p ≠ 0) (hp_top : p ≠ ⊤)
     {w : J → ℝ≥0} {y : J → X} {x : X} :
@@ -188,6 +190,10 @@ theorem isFrechetBarycenter_sum_smul_dirac_iff {p : ℝ≥0∞} (hp₀ : p ≠ 0
     ⟨frechetRadius_sum_smul_dirac_ne_top hp₀ hp_top w y x, fun z ↦ ?_⟩
   simp only [frechetPower_sum_smul_dirac, ENNReal.smul_def, smul_eq_mul, h]
   exact iInf_le _ z
+
+end PseudoMetric
+
+variable [MetricSpace X] [MeasurableSpace X] [BorelSpace X]
 
 /-- **Measurable barycenter application** (Le Gouic–Loubes). On a proper metric space, for
 `1 ≤ p < ∞` and finitely many weights summing to `1`, a `p`-Fréchet barycenter of the weighted

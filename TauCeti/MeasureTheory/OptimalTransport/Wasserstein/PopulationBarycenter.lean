@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.MeasureTheory.OptimalTransport.MultiMarginal.Barycenter
+import TauCeti.Data.ENNReal.Weights
 import TauCeti.MeasureTheory.Measure.Dirac
 import TauCeti.MeasureTheory.Measure.FrechetMean.Selection
 import TauCeti.MeasureTheory.Measure.FrechetMean.Stability
@@ -68,33 +69,6 @@ open scoped ENNReal NNReal Topology
 
 namespace TauCeti
 
-/-- For weights summing to `1` and a threshold `t < ∞` with `2 t ≤ ∑ j, w j * a j`, the weighted
-sum is at most twice its part over the indices with `t ≤ a j`: the other terms contribute at most
-`t`. -/
-private theorem sum_mul_le_two_mul_sum_mul_ite {J : Type*} [Fintype J] {w : J → ℝ≥0}
-    (hw : ∑ j, w j = 1) (a : J → ℝ≥0∞) {t : ℝ≥0∞} (ht : t ≠ ∞)
-    (h : 2 * t ≤ ∑ j, (w j : ℝ≥0∞) * a j) :
-    ∑ j, (w j : ℝ≥0∞) * a j ≤ 2 * ∑ j, (w j : ℝ≥0∞) * if t ≤ a j then a j else 0 := by
-  set B := ∑ j, (w j : ℝ≥0∞) * if t ≤ a j then a j else 0
-  have hsplit : ∑ j, (w j : ℝ≥0∞) * a j ≤ B + t := by
-    calc ∑ j, (w j : ℝ≥0∞) * a j
-        ≤ ∑ j, ((w j : ℝ≥0∞) * (if t ≤ a j then a j else 0) + (w j : ℝ≥0∞) * t) := by
-          gcongr with j
-          split_ifs with hj
-          · exact le_self_add
-          · rw [mul_zero, zero_add]
-            gcongr
-            exact (not_le.1 hj).le
-      _ = B + t := by
-          rw [Finset.sum_add_distrib, ← Finset.sum_mul, ← ENNReal.ofNNReal_finsetSum, hw,
-            ENNReal.coe_one, one_mul]
-  have htB : t ≤ B := (ENNReal.add_le_add_iff_right ht).1 <| by
-    rw [← two_mul]
-    exact h.trans hsplit
-  calc ∑ j, (w j : ℝ≥0∞) * a j ≤ B + t := hsplit
-    _ ≤ B + B := by gcongr
-    _ = 2 * B := (two_mul B).symm
-
 variable {X : Type*} [MetricSpace X] [MeasurableSpace X] [BorelSpace X] [ProperSpace X]
   {p : ℝ≥0∞}
 
@@ -126,14 +100,8 @@ private theorem indicator_edist_rpow_le_of_isFrechetBarycenter {J : Type*} [Fint
     simp only [ENNReal.smul_def, smul_eq_mul, H, f]
   -- The barycenter `y` of `m` is within twice the Fréchet radius of `z`.
   have hD : f y ≤ 2 ^ p.toReal * H := by
-    have h₁ : edist z y ≤ 2 * frechetRadius p m z :=
-      calc edist z y ≤ frechetRadius p m z + frechetRadius p m y :=
-            edist_le_frechetRadius_add hp m z y
-        _ ≤ frechetRadius p m z + frechetRadius p m z := by
-            gcongr
-            exact isFrechetMinimizer_iff.1 (isFrechetBarycenter_iff.1 hy).2 z
-        _ = 2 * frechetRadius p m z := (two_mul _).symm
-    calc f y ≤ (2 * frechetRadius p m z) ^ p.toReal := ENNReal.rpow_le_rpow h₁ hpos.le
+    calc f y ≤ (2 * frechetRadius p m z) ^ p.toReal :=
+          ENNReal.rpow_le_rpow (hy.edist_le_two_mul_frechetRadius hp z) hpos.le
       _ = 2 ^ p.toReal * H := by rw [ENNReal.mul_rpow_of_nonneg _ _ hpos.le, hH]
   -- Since `d(z, y) ≥ 4 R`, the weighted cost is at least `2 R ^ p`.
   have h₂ : 2 * (R : ℝ≥0∞) ^ p.toReal ≤ H := by
