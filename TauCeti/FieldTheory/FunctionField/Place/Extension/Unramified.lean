@@ -37,7 +37,8 @@ follows the proof of `TauCeti.Place.isSplitCompletely_sup_iff` in
 
 ## Main definitions
 
-* `TauCeti.Place.IsUnramified`: a place is unramified in an extension, with the projections
+* `TauCeti.Place.IsUnramified`: a place is unramified in an extension, with the characteristic
+  property `TauCeti.Place.isUnramified_iff` and the projections
   `IsUnramified.exists_restrict_eq`, `IsUnramified.ramificationIdx_eq_one` and
   `IsUnramified.isSeparable`.
 
@@ -86,6 +87,15 @@ def IsUnramified (P : Place k F) : Prop :=
     ∀ P' : Place k' F', P'.restrict k F = P →
       ramificationIdx F P' = 1 ∧
         Algebra.IsSeparable (P'.restrict k F).ResidueField P'.ResidueField
+
+/-- The characteristic property of an unramified place. -/
+theorem isUnramified_iff (P : Place k F) :
+    P.IsUnramified (k' := k') (F' := F') ↔
+      (∃ P' : Place k' F', P'.restrict k F = P) ∧
+        ∀ P' : Place k' F', P'.restrict k F = P →
+          ramificationIdx F P' = 1 ∧
+            Algebra.IsSeparable (P'.restrict k F).ResidueField P'.ResidueField :=
+  Iff.rfl
 
 /-- An unramified place has a place above it. -/
 theorem IsUnramified.exists_restrict_eq {P : Place k F}
@@ -157,6 +167,7 @@ upstairs field over the base field. This moves a finite separable extension into
 overfield without changing which places are unramified in it. -/
 theorem isUnramified_iff_of_algEquiv (P : Place k F) (e : L ≃ₐ[F] L') :
     P.IsUnramified (k' := k) (F' := L) ↔ P.IsUnramified (k' := k) (F' := L') := by
+  rw [isUnramified_iff, isUnramified_iff]
   refine ⟨fun ⟨⟨Q, hQ⟩, h⟩ ↦ ⟨⟨Q.map (e.restrictScalars k), ?_⟩, fun R hR ↦ ?_⟩,
     fun ⟨⟨R, hR⟩, h⟩ ↦ ⟨⟨R.map (e.symm.restrictScalars k), ?_⟩, fun Q hQ ↦ ?_⟩⟩
   · rwa [restrict_map_restrictScalars]
@@ -184,6 +195,7 @@ theorem isUnramified_iff_forall_le_inertiaField
     (hF : TauCeti.IsFunctionField k F) (P : Place k F) (E : IntermediateField F M) :
     P.IsUnramified (k' := k) (F' := E) ↔
       ∀ Q : Place k M, Q.restrict k F = P → E ≤ inertiaField F Q := by
+  rw [isUnramified_iff]
   refine ⟨fun h Q hQ ↦ (le_inertiaField_iff F Q E).mpr (h.2 _ ?_),
     fun h ↦ ⟨restrict_surjective_of_finiteDimensional hF (hF.finite_extension (E := E)) P,
       fun R hR ↦ ?_⟩⟩
