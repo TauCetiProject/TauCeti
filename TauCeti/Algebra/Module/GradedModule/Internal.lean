@@ -64,9 +64,8 @@ operations use integer degrees, while decomposition and transport allow any inde
 * `TauCeti.LinearMap.IsHomogeneous.twistedTuple_map`: a degree-zero homogeneous map commutes with
   twisting a block of a tuple.
 
-This is the first graded-module target in Layer 0 of the `DGAInfinity` roadmap.  Later files use
-Mathlib's decomposition API to define maps of nonzero degree, shifts, tensor-product gradings, and
-signed multilinear operations.
+Later files use Mathlib's decomposition API to define maps of nonzero degree, shifts,
+tensor-product gradings, and signed multilinear operations.
 -/
 
 public section
@@ -127,17 +126,6 @@ theorem isHomogeneous_ofDecomposition_piece_iff (ℳ : ι → Submodule R M)
   Iff.of_eq (congrArg (fun d ↦ @DirectSum.SetLike.IsHomogeneous _ _ _ _ _ _ _ ℳ d _ _ U)
     (Subsingleton.elim _ _))
 
-/-- Two linear maps on an internally graded module agree if they agree on homogeneous elements. -/
-theorem linearMap_ext {N : Type w} [AddCommMonoid N] [Module R N]
-    (G : InternalGrading R M ι) {f g : M →ₗ[R] N}
-    (h : ∀ (p : ι) (x : M), x ∈ G.piece p → f x = g x) : f = g := by
-  apply (Submodule.linearMap_eq_iff_of_span_eq_top f g ?_).2
-  · rintro ⟨x, hx⟩
-    obtain ⟨p, hp⟩ := Set.mem_iUnion.mp hx
-    exact h p x hp
-  · rw [← Submodule.iSup_eq_span]
-    exact G.isInternal.submodule_iSup_eq_top
-
 /-- The homogeneous elements of an internally graded module span it over any scalar semiring
 acting on the total module. No compatibility between that action and the grading is needed. -/
 theorem span_setOf_exists_mem_piece_eq_top (S : Type*) [Semiring S] [Module S M]
@@ -148,6 +136,17 @@ theorem span_setOf_exists_mem_piece_eq_top (S : Type*) [Semiring S] [Module S M]
   rw [← DirectSum.sum_support_decompose G.piece y]
   exact Submodule.sum_mem _ fun p _ => Submodule.subset_span
     ⟨p, (DirectSum.decompose G.piece y p).property⟩
+
+/-- Two linear maps over any scalar semiring on an internally graded module agree if they agree
+on homogeneous elements. No compatibility between the scalar action and the grading is needed. -/
+theorem linearMap_ext {S : Type*} [Semiring S] [Module S M]
+    {N : Type w} [AddCommMonoid N] [Module S N]
+    (G : InternalGrading R M ι) {f g : M →ₗ[S] N}
+    (h : ∀ (p : ι) (x : M), x ∈ G.piece p → f x = g x) : f = g := by
+  apply (Submodule.linearMap_eq_iff_of_span_eq_top f g
+    (G.span_setOf_exists_mem_piece_eq_top S)).2
+  rintro ⟨x, p, hx⟩
+  exact h p x hx
 
 section Map
 

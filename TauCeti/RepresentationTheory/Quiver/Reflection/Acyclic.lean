@@ -13,7 +13,7 @@ public import TauCeti.RepresentationTheory.Quiver.Reflection.Basic
 
 This file develops the interaction between acyclicity and reflection at a sink or source. A
 nonempty finite acyclic quiver has a sink and a source, and reflecting at either one preserves
-acyclicity.
+acyclicity. These results support the sink-admissible reflection-functor constructions.
 
 ## Main results
 
@@ -23,11 +23,6 @@ acyclicity.
   acyclic.
 * `TauCeti.Quiver.IsAcyclic.reflect_of_isSource`: reflecting an acyclic quiver at a source leaves it
   acyclic.
-
-## References
-
-These results support the sink-admissible reflection-functor constructions in Layers 4 and 5 of
-`TauCetiRoadmap/RepresentationTheory/QuiverRepresentations/README.md`.
 -/
 
 public section
