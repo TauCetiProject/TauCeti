@@ -9,18 +9,20 @@ public import TauCeti.AlgebraicTopology.Homotopy.Relative.Disk
 public import TauCeti.AlgebraicTopology.Homotopy.Relative.Exact
 public import TauCeti.Topology.Homotopy.HomotopyGroup.WeakHomotopyEquivalence
 public import TauCeti.Topology.Homotopy.MappingCylinder
+public import TauCeti.Topology.CWComplex.Classical.CWType
 
 /-!
 # Whitehead's theorem
 
 **Whitehead's theorem** says that a weak homotopy equivalence between CW complexes is a homotopy
-equivalence (Hatcher, *Algebraic Topology*, Theorem 4.5). This file proves it for Mathlib's
-classical CW complexes, as `ContinuousMap.IsWeakHomotopyEquivalence.homotopyEquiv`, whose
+equivalence (Hatcher, *Algebraic Topology*, Theorem 4.5). This file proves it for spaces of
+CW type, using Mathlib's classical CW complexes as models, as
+`ContinuousMap.IsWeakHomotopyEquivalence.homotopyEquiv`, whose
 forward map is the given weak homotopy equivalence.
 
 The proof goes through the surjectivity half of Hatcher's Proposition 4.22, i.e. surjectivity of
 `[K, X] → [K, Y]`: if `f : X → Y` is a weak homotopy equivalence, then every map `g : K → Y` out of
-a CW complex `K` lifts through `f` up to homotopy
+a space `K` of CW type lifts through `f` up to homotopy
 (`ContinuousMap.IsWeakHomotopyEquivalence.exists_comp_homotopic`).
 
 * In the mapping cylinder `M_f`, which contains `X` as the bottom face `incl f` and deformation
@@ -31,10 +33,13 @@ a CW complex `K` lifts through `f` up to homotopy
   (`TauCeti.RelHomotopyGroup.subsingleton_of_injective_of_surjective`).
 * The compression lemma (`TauCeti.exists_homotopicRel_range_subset_of_relHomotopyGroup`) then
   deforms `K → Y ↪ M_f` into `X`, and retracting back to `Y` gives the lift.
+* For a space homotopy equivalent to a CW complex, compose with the inverse of the
+  equivalence, lift on the CW complex, and compose back. The inverse law gives the
+  required homotopy on the original space.
 
-Applied to the identity of `Y`, when `Y` is a CW complex, the lift is a map `g : Y → X` with
-`f ∘ g ≃ id`. By two out of three, `g` is again a weak homotopy equivalence, so when `X` is a CW
-complex `g` has a right homotopy inverse `h` in turn. Then `f ≃ f ∘ g ∘ h ≃ h`, and so
+Applied to the identity of `Y`, when `Y` has CW type, the lift is a map `g : Y → X` with
+`f ∘ g ≃ id`. By two out of three, `g` is again a weak homotopy equivalence, so when `X` has CW
+type `g` has a right homotopy inverse `h` in turn. Then `f ≃ f ∘ g ∘ h ≃ h`, and so
 `g ∘ f ≃ g ∘ h ≃ id`. Unlike Hatcher's proof of Theorem 4.5, this argument needs neither a CW
 structure on the mapping cylinder nor cellular approximation: the only cell-by-cell argument is
 the skeletal induction inside the compression lemma.
@@ -43,8 +48,8 @@ the skeletal induction inside the compression lemma.
 
 * `ContinuousMap.IsWeakHomotopyEquivalence.subsingleton_relHomotopyGroup_mappingCylinder`: the
   relative homotopy groups of the mapping cylinder of a weak homotopy equivalence vanish.
-* `ContinuousMap.IsWeakHomotopyEquivalence.exists_comp_homotopic`: maps out of CW complexes lift
-  through a weak homotopy equivalence up to homotopy.
+* `ContinuousMap.IsWeakHomotopyEquivalence.exists_comp_homotopic`: maps out of spaces of CW
+  type lift through a weak homotopy equivalence up to homotopy.
 * `ContinuousMap.IsWeakHomotopyEquivalence.homotopyEquiv`: **Whitehead's theorem**.
 
 ## References
@@ -101,7 +106,7 @@ variable {X' : Type*} [TopologicalSpace X'] [T2Space X'] {C : Set X'} [CWComplex
 (the surjectivity half of Hatcher, Proposition 4.22). If `f : X → Y` is a weak homotopy
 equivalence and `C` is a CW complex, then every map `g : C → Y` is homotopic to `f ∘ g'` for some
 `g' : C → X`. -/
-theorem exists_comp_homotopic (hf : f.IsWeakHomotopyEquivalence) (g : C(C, Y)) :
+private theorem exists_comp_homotopic_cwComplex (hf : f.IsWeakHomotopyEquivalence) (g : C(C, Y)) :
     ∃ g' : C(C, X), (f.comp g').Homotopic g := by
   open TauCeti TauCeti.MappingCylinder in
   -- Every point `m` of the mapping cylinder is joined by a path to the bottom face: the
@@ -132,24 +137,37 @@ theorem exists_comp_homotopic (hf : f.IsWeakHomotopyEquivalence) (g : C(C, Y)) :
   have h := (ContinuousMap.Homotopic.refl (proj f)).comp hg₁.homotopic.symm
   rwa [← comp_assoc, proj_comp_mkBase, id_comp, ← hg', ← comp_assoc, proj_comp_incl] at h
 
-variable {Y' : Type*} [TopologicalSpace Y'] [T2Space Y'] {D : Set Y'} [CWComplex D]
-  {f : C(C, D)}
+variable {K : Type*} [TopologicalSpace K] [hK : TauCeti.CWType K]
 
-/-- **Whitehead's theorem** (Hatcher, Theorem 4.5). A weak homotopy equivalence `f` between CW
-complexes is a homotopy equivalence. This is the homotopy equivalence whose forward map is `f`
+/-- Maps out of a space of CW type lift through a weak homotopy equivalence up to homotopy
+(the surjectivity half of Hatcher, Proposition 4.22). -/
+theorem exists_comp_homotopic (hf : f.IsWeakHomotopyEquivalence) (g : C(K, Y)) :
+    ∃ g' : C(K, X), (f.comp g').Homotopic g := by
+  obtain ⟨Z, _, _, C, _, ⟨e⟩⟩ := hK.exists_homotopyEquiv
+  obtain ⟨g', hg'⟩ := hf.exists_comp_homotopic_cwComplex (g.comp e.invFun)
+  refine ⟨g'.comp e.toFun, ?_⟩
+  have h := hg'.comp (ContinuousMap.Homotopic.refl e.toFun)
+  rw [ContinuousMap.comp_assoc, ContinuousMap.comp_assoc] at h
+  exact h.trans (by simpa only [ContinuousMap.comp_id] using
+    (ContinuousMap.Homotopic.refl g).comp e.left_inv)
+
+variable [TauCeti.CWType X] [TauCeti.CWType Y]
+
+/-- **Whitehead's theorem** (Hatcher, Theorem 4.5). A weak homotopy equivalence `f` between spaces
+of CW type is a homotopy equivalence. This is the homotopy equivalence whose forward map is `f`
 itself (`ContinuousMap.IsWeakHomotopyEquivalence.homotopyEquiv_toFun`); its homotopy inverse is a
 lift of the identity through `f` given by
 `ContinuousMap.IsWeakHomotopyEquivalence.exists_comp_homotopic`. -/
-noncomputable def homotopyEquiv (hf : f.IsWeakHomotopyEquivalence) : C ≃ₕ D :=
-  have hfg := (hf.exists_comp_homotopic (ContinuousMap.id D)).choose_spec
+noncomputable def homotopyEquiv (hf : f.IsWeakHomotopyEquivalence) : X ≃ₕ Y :=
+  have hfg := (hf.exists_comp_homotopic (ContinuousMap.id Y)).choose_spec
   { toFun := f
-    invFun := (hf.exists_comp_homotopic (ContinuousMap.id D)).choose
+    invFun := (hf.exists_comp_homotopic (ContinuousMap.id Y)).choose
     left_inv := by
       -- The homotopy inverse `g` is a weak homotopy equivalence by two out of three, so it has a
       -- right homotopy inverse `h`; then `f ≃ f ∘ g ∘ h ≃ h` and `g ∘ f ≃ g ∘ h ≃ id`.
-      set g := (hf.exists_comp_homotopic (ContinuousMap.id D)).choose
+      set g := (hf.exists_comp_homotopic (ContinuousMap.id Y)).choose
       obtain ⟨h, hgh⟩ := (hf.of_postcomp (IsWeakHomotopyEquivalence.id.of_homotopic hfg.symm))
-        |>.exists_comp_homotopic (ContinuousMap.id C)
+        |>.exists_comp_homotopic (ContinuousMap.id X)
       have hfh : f.Homotopic h := by
         have := (ContinuousMap.Homotopic.refl f).comp hgh.symm
         have hfgh := hfg.comp (ContinuousMap.Homotopic.refl h)
@@ -164,3 +182,12 @@ theorem homotopyEquiv_toFun (hf : f.IsWeakHomotopyEquivalence) : hf.homotopyEqui
   (rfl)
 
 end ContinuousMap.IsWeakHomotopyEquivalence
+
+/-- Between spaces of CW type, a map is a weak homotopy equivalence exactly when it is
+the forward map of a homotopy equivalence. -/
+theorem ContinuousMap.isWeakHomotopyEquivalence_iff_exists_homotopyEquiv
+    {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y]
+    [TauCeti.CWType X] [TauCeti.CWType Y] (f : C(X, Y)) :
+    f.IsWeakHomotopyEquivalence ↔ ∃ e : ContinuousMap.HomotopyEquiv X Y, e.toFun = f :=
+  ⟨fun hf ↦ ⟨hf.homotopyEquiv, hf.homotopyEquiv_toFun⟩,
+    fun ⟨e, he⟩ ↦ he ▸ e.isWeakHomotopyEquivalence⟩

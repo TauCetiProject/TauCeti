@@ -7,7 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.Torsion
 public import Mathlib.AlgebraicGeometry.Morphisms.FormallyUnramified
-import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.Torsion.Etale
+import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.Torsion.Etale.Basic
 import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.MulBy.Finite
 import TauCeti.AlgebraicGeometry.Morphisms.FormallyUnramified
 

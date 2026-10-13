@@ -25,9 +25,6 @@ diagonal split torus.
 
 * J. S. Milne, *Algebraic Groups* (2017), Chapters 12--13.
 * T. A. Springer, *Linear Algebraic Groups*, Sections 6.2--6.3.
-
-This advances the dynamic approach to parabolics and Levi decomposition in Layer 7,
-"Structure theory", of the ReductiveGroups roadmap.
 -/
 
 public section

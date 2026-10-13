@@ -41,7 +41,7 @@ class modulo squares. The excluded set may be any finite set of primes. -/
 theorem autCandidateGenusFieldRealEquivElementaryTwoQuotient_artinHomAway
     (hd : Squarefree d) (hnsq : ¬ IsSquare ((d : ℤ) : ℚ)) (hpos : 0 < d)
     (S : Finset (IsDedekindDomain.HeightOneSpectrum (𝓞 (candidateGenusFieldBase hd))))
-    (I : NumberFieldArithmetic.idealsAway (K := candidateGenusFieldBase hd) S) :
+    (I : NumberFieldArithmetic.idealsAway (candidateGenusFieldBase hd) S) :
     letI := candidateGenusFieldRealAlgebra hd hpos
     letI := candidateGenusFieldRealIsScalarTower hd hpos
     letI := isAbelianGalois_candidateGenusFieldReal_over_base hd hpos
@@ -84,7 +84,7 @@ condition on principal generators is needed. -/
 theorem artinHomAway_candidateGenusFieldReal_eq_one_iff
     (hd : Squarefree d) (hnsq : ¬ IsSquare ((d : ℤ) : ℚ)) (hpos : 0 < d)
     (S : Finset (IsDedekindDomain.HeightOneSpectrum (𝓞 (candidateGenusFieldBase hd))))
-    (I : NumberFieldArithmetic.idealsAway (K := candidateGenusFieldBase hd) S) :
+    (I : NumberFieldArithmetic.idealsAway (candidateGenusFieldBase hd) S) :
     letI := candidateGenusFieldRealAlgebra hd hpos
     letI := candidateGenusFieldRealIsScalarTower hd hpos
     letI := isAbelianGalois_candidateGenusFieldReal_over_base hd hpos
@@ -132,7 +132,7 @@ theorem artinHomAwayIntegral_candidateGenusFieldReal_surjective
       (genusFieldArtinExcludedPrimes hd)
       (fun v _ Q _ _ ↦ isUnramifiedIn_candidateGenusField hd hnsq v.asIdeal Q
         inferInstance inferInstance) (candidateGenusFieldReal hd))
-    (NumberFieldArithmetic.integralIdealsAwayHom _ I)
+    (NumberFieldArithmetic.integralIdealsAwayHom (candidateGenusFieldBase hd) _ I)
   rw [NumberFieldArithmetic.artinHomAwayIntegral_apply] at hI ⊢
   rw [MonoidHom.comp_apply, ← candidateGenusFieldRestrictionToReal_def hd hpos] at hrestrict
   exact hrestrict.symm.trans (congrArg (candidateGenusFieldRestrictionToReal hd hpos) hI)
@@ -157,7 +157,7 @@ theorem artinHomAway_candidateGenusFieldReal_surjective
   let _ := isAbelianGalois_candidateGenusFieldReal_over_base hd hpos
   intro σ
   obtain ⟨I, hI⟩ := artinHomAwayIntegral_candidateGenusFieldReal_surjective hd hnsq hpos σ
-  refine ⟨NumberFieldArithmetic.integralIdealsAwayHom _ I, ?_⟩
+  refine ⟨NumberFieldArithmetic.integralIdealsAwayHom (candidateGenusFieldBase hd) _ I, ?_⟩
   simpa only [NumberFieldArithmetic.artinHomAwayIntegral_apply] using hI
 
 end TauCeti.Multiquadratic

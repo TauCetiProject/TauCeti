@@ -9,7 +9,7 @@ public import Mathlib.Analysis.Calculus.FDeriv.Measurable
 public import Mathlib.MeasureTheory.Constructions.BorelSpace.ContinuousMap
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.AbsolutelyContinuousFun
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.DerivIntegrable
-public import TauCeti.MeasureTheory.Function.AbsolutelyContinuous
+public import TauCeti.MeasureTheory.Function.AbsolutelyContinuous.Basic
 public import TauCeti.MeasureTheory.Integral.IntervalIntegral.LebesgueDifferentiationThm
 public import TauCeti.Topology.Order.Interval
 
@@ -66,8 +66,9 @@ set of absolutely continuous paths, which the action functional of a dynamic pla
   difference quotients converge to the norm of the derivative, which is the metric derivative.
 * `TauCeti.continuousAt_of_metricDerivative_ne_top`: a curve is continuous wherever its metric
   derivative is finite.
-* `LipschitzWith.metricDerivative_le` and `LipschitzWith.metricDerivative_comp_le`: Lipschitz
-  bounds on a curve and under Lipschitz post-composition.
+* `LipschitzWith.metricDerivative_le`, `LipschitzOnWith.metricDerivative_le` and
+  `LipschitzWith.metricDerivative_comp_le`: Lipschitz bounds on a curve, globally or near a time,
+  and under Lipschitz post-composition.
 * `BoundedVariationOn.ae_metricDerivative_le_enorm_deriv_variationOnFromTo`: for a curve of bounded
   variation, the metric derivative is almost everywhere at most the derivative of the variation.
 * `TauCeti.ae_metricDerivative_le`: minimality of the metric derivative among the integrable
@@ -87,7 +88,8 @@ set of absolutely continuous paths, which the action functional of a dynamic pla
   measurable family of continuous curves.
 * `TauCeti.measurable_metricDerivative_IccExtend` and
   `TauCeti.measurableSet_absolutelyContinuousOnInterval_IccExtend`: the same statements on the
-  path space `C([a, b], X)`.
+  path space `C([a, b], X)`, with `TauCeti.measurable_metricDerivative_IccExtend_apply` and
+  `TauCeti.measurable_IccExtend_apply` for the speed and the position at a fixed time.
 
 ## References
 
@@ -142,11 +144,19 @@ theorem continuousAt_of_metricDerivative_ne_top (h : metricDerivative γ t ≠ �
   exact tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds hlim
     (Eventually.of_forall fun _ ↦ bot_le) hbound
 
+/-- The metric derivative at `t` of a curve that is `K`-Lipschitz on a neighbourhood of `t` is at
+most `K`. -/
+theorem _root_.LipschitzOnWith.metricDerivative_le {K : ℝ≥0} {s : Set ℝ}
+    (hγ : LipschitzOnWith K γ s) (hs : s ∈ 𝓝 t) : metricDerivative γ t ≤ K := by
+  rw [metricDerivative_def]
+  refine limsup_le_of_le (h := ?_)
+  filter_upwards [nhdsWithin_le_nhds hs] with r hr
+  exact ENNReal.div_le_of_le_mul (hγ hr (mem_of_mem_nhds hs))
+
 /-- The metric derivative of a `K`-Lipschitz curve is at most `K` everywhere. -/
 theorem _root_.LipschitzWith.metricDerivative_le {K : ℝ≥0} (hγ : LipschitzWith K γ) (t : ℝ) :
-    metricDerivative γ t ≤ K := by
-  rw [metricDerivative_def]
-  exact limsup_le_of_le (h := Eventually.of_forall fun s ↦ ENNReal.div_le_of_le_mul (hγ s t))
+    metricDerivative γ t ≤ K :=
+  hγ.lipschitzOnWith.metricDerivative_le univ_mem
 
 /-- Post-composing a curve with a `K`-Lipschitz map multiplies its metric derivative by at most
 `K`. -/
@@ -500,6 +510,19 @@ theorem measurable_metricDerivative_IccExtend {a b : ℝ} (hab : a ≤ b) :
     (fun γ ↦ γ.continuous.Icc_extend') fun s u ↦ by
       simp only [IccExtend_apply]
       exact ((continuous_eval_const _).edist (continuous_eval_const _)).measurable
+
+/-- On the space `C([a, b], X)` of continuous paths, the metric derivative `γ ↦ |γ'|(t)` at a
+fixed time of the path extended by constants outside `[a, b]` is measurable. -/
+theorem measurable_metricDerivative_IccExtend_apply {a b : ℝ} (hab : a ≤ b) (t : ℝ) :
+    Measurable fun γ : C(Icc a b, X) ↦ metricDerivative (IccExtend hab γ) t :=
+  (measurable_metricDerivative_IccExtend hab).of_uncurry_right
+
+/-- On the space `C([a, b], X)` of continuous paths, evaluating the path extended by constants
+outside `[a, b]` at a fixed time is measurable. -/
+theorem measurable_IccExtend_apply [MeasurableSpace X] [BorelSpace X] {a b : ℝ} (hab : a ≤ b)
+    (t : ℝ) : Measurable fun γ : C(Icc a b, X) ↦ IccExtend hab γ t := by
+  simp only [IccExtend_apply]
+  exact (continuous_eval_const _).measurable
 
 end Measurable
 
