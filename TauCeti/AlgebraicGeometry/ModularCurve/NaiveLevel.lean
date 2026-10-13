@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.NaiveLevel
-public import TauCeti.AlgebraicGeometry.ModularCurve.ModuliProblem
+public import TauCeti.AlgebraicGeometry.ModularCurve.HomLevel
 public import TauCeti.Data.ZMod.MonoidHomEquiv
 
 /-!
@@ -17,7 +17,7 @@ homomorphism `φ : A →* E(S)` to the group of `S`-points of `E` which is injec
 of `E` over `S` (`EllipticCurveGeom.IsFiberwiseInjective`): for `a ≠ 1` the section `φ a` misses
 the zero section everywhere. The condition is pointwise, so it is stable under base change
 (`EllipticCurveGeom.IsFiberwiseInjective.pointsPullback`), and the naive `A`-structures form a
-moduli problem over `Ell/B` (`ModuliProblem.naiveLevel`).
+moduli problem over `Ell/B` (`ModuliProblem.naiveLevel`), an instance of `ModuliProblem.homLevel`.
 
 For `A = ℤ/Nℤ` this is the naive moduli problem `[Γ₁(N)]` (`ModuliProblem.gammaOneNaive`): for
 `N ≠ 0`, a naive `[Γ₁(N)]`-structure is an `S`-point `P` of `E[N]` none of whose multiples
@@ -87,21 +87,9 @@ object `(E/S)` of `Ell/B` is a homomorphism `A →* E(S)` injective on every fib
 (`naiveLevelEquiv`), and it pulls back along an arrow of `Ell/B` by base change of points
 (`naiveLevelEquiv_map`). The group `A` lies in `Type`, as the groups `(ℤ/Nℤ)ʳ` of level structures
 do, so that the naive structures lie in the universe `Type (u + 1)` of moduli problems. -/
-noncomputable def naiveLevel : ModuliProblem B where
-  obj X := ULift.{u + 1}
-    {φ : A →* (𝟙_ (Over X.unop.base) ⟶ Over.mk X.unop.curve.structureMap) //
-      X.unop.curve.IsFiberwiseInjective φ}
-  map φ := TypeCat.ofHom fun α ↦
-    ⟨⟨(EllipticCurveGeom.pointsPullback φ.unop.isPullback φ.unop.zero_total).comp α.down.1,
-      α.down.2.pointsPullback φ.unop.isPullback φ.unop.zero_total⟩⟩
-  map_id X := by
-    ext α a
-    exact congrArg Over.Hom.left ((EllipticCurveGeom.eq_pointsPullback_iff _ _).mpr
-      (by simp)).symm
-  map_comp φ ψ := by
-    ext α a
-    exact congrArg Over.Hom.left ((EllipticCurveGeom.eq_pointsPullback_iff _ _).mpr
-      (by simp)).symm
+noncomputable def naiveLevel : ModuliProblem B :=
+  homLevel B A (fun X φ ↦ X.curve.IsFiberwiseInjective φ) fun f h ↦
+    h.pointsPullback f.isPullback f.zero_total
 
 variable {B A}
 
@@ -111,7 +99,7 @@ noncomputable def naiveLevelEquiv (X : EllObj B) :
     (naiveLevel B A).obj (op X) ≃
       {φ : A →* (𝟙_ (Over X.base) ⟶ Over.mk X.curve.structureMap) //
         X.curve.IsFiberwiseInjective φ} :=
-  Equiv.ulift
+  homLevelEquiv (hp := fun f h ↦ h.pointsPullback f.isPullback f.zero_total) X
 
 /-- The pull-back of a naive `A`-structure along an arrow `φ` of `Ell/B` is its composite with
 base change of points along `φ`. -/
@@ -119,14 +107,14 @@ base change of points along `φ`. -/
 theorem naiveLevelEquiv_map {X Y : EllObj B} (φ : X ⟶ Y) (α : (naiveLevel B A).obj (op Y)) :
     (naiveLevelEquiv X ((naiveLevel B A).map φ.op α)).1 =
       (EllipticCurveGeom.pointsPullback φ.isPullback φ.zero_total).comp (naiveLevelEquiv Y α).1 :=
-  (rfl)
+  homLevelEquiv_map φ α
 
 variable (B) in
 /-- **Restriction of naive structures.** An injective homomorphism `ψ : A' →* A` restricts naive
 `A`-structures to naive `A'`-structures, `φ ↦ φ ∘ ψ`. -/
 noncomputable def naiveLevelMap {A' : Type} [Group A'] (ψ : A' →* A)
     (hψ : Function.Injective ψ) : naiveLevel B A ⟶ naiveLevel B A' where
-  app X := TypeCat.ofHom fun α ↦ ⟨⟨α.down.1.comp ψ, α.down.2.comp hψ⟩⟩
+  app X := TypeCat.ofHom fun α ↦ ULift.up ⟨α.down.1.comp ψ, α.down.2.comp hψ⟩
 
 /-- Restriction along `ψ` composes a naive structure with `ψ`. -/
 @[simp]

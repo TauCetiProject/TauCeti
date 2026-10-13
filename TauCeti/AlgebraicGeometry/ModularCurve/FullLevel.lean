@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.DrinfeldBasis
-public import TauCeti.AlgebraicGeometry.ModularCurve.ModuliProblem
+public import TauCeti.AlgebraicGeometry.ModularCurve.HomLevel
 
 /-!
 # The moduli problem `[Γ(N)]`
@@ -21,9 +21,9 @@ base, including bases on which `N` is not invertible; there the naive `[Γ(N)]`-
 An arrow `(E'/S') ⟶ (E/S)` of `Ell/B` exhibits `E'` as the base change of `E`, and Drinfeld bases
 pull back to Drinfeld bases under base change of points
 (`EllipticCurveGeom.IsDrinfeldBasis.pointsPullback`). Base change of points is functorial, so the
-`[Γ(N)]`-structures form a moduli problem over `Ell/B` (`ModuliProblem.gamma`). For `N = 1` every
-homomorphism from the trivial group is a Drinfeld basis, so `[Γ(1)]` is the trivial moduli problem
-(`ModuliProblem.gammaLevelOneIso`).
+`[Γ(N)]`-structures form a moduli problem over `Ell/B` (`ModuliProblem.gamma`), an instance of
+`ModuliProblem.homLevel`. For `N = 1` every homomorphism from the trivial group is a Drinfeld
+basis, so `[Γ(1)]` is the trivial moduli problem (`ModuliProblem.gammaLevelOneIso`).
 
 ## Main definitions
 
@@ -62,22 +62,9 @@ variable (B) (N : ℕ) [NeZero N]
 /-- **The moduli problem `[Γ(N)]`** over `Ell/B` (Katz–Mazur, §3.1). A `[Γ(N)]`-structure on an
 object `(E/S)` of `Ell/B` is a Drinfeld basis `φ : (ℤ/Nℤ)² →* E(S)` of `E[N]` (`gammaEquiv`), and
 it pulls back along an arrow of `Ell/B` by base change of points (`gammaEquiv_map`). -/
-noncomputable def gamma : ModuliProblem B where
-  obj X := ULift.{u + 1}
-    {φ : Multiplicative (ZMod N × ZMod N) →*
-        (𝟙_ (Over X.unop.base) ⟶ Over.mk X.unop.curve.structureMap) //
-      X.unop.curve.IsDrinfeldBasis N φ}
-  map φ := TypeCat.ofHom fun α ↦
-    ⟨⟨(EllipticCurveGeom.pointsPullback φ.unop.isPullback φ.unop.zero_total).comp α.down.1,
-      α.down.2.pointsPullback φ.unop.isPullback φ.unop.zero_total⟩⟩
-  map_id X := by
-    ext α a
-    exact congrArg Over.Hom.left ((EllipticCurveGeom.eq_pointsPullback_iff _ _).mpr
-      (by simp)).symm
-  map_comp φ ψ := by
-    ext α a
-    exact congrArg Over.Hom.left ((EllipticCurveGeom.eq_pointsPullback_iff _ _).mpr
-      (by simp)).symm
+noncomputable def gamma : ModuliProblem B :=
+  homLevel B (Multiplicative (ZMod N × ZMod N)) (fun X φ ↦ X.curve.IsDrinfeldBasis N φ)
+    fun f h ↦ h.pointsPullback f.isPullback f.zero_total
 
 variable {B N}
 
@@ -87,7 +74,7 @@ noncomputable def gammaEquiv (X : EllObj B) :
     (gamma B N).obj (op X) ≃
       {φ : Multiplicative (ZMod N × ZMod N) →* (𝟙_ (Over X.base) ⟶ Over.mk X.curve.structureMap) //
         X.curve.IsDrinfeldBasis N φ} :=
-  Equiv.ulift
+  homLevelEquiv (hp := fun f h ↦ h.pointsPullback f.isPullback f.zero_total) X
 
 /-- The pull-back of a `[Γ(N)]`-structure along an arrow `φ` of `Ell/B` is its composite with base
 change of points along `φ`. -/
@@ -95,7 +82,7 @@ change of points along `φ`. -/
 theorem gammaEquiv_map {X Y : EllObj B} (φ : X ⟶ Y) (α : (gamma B N).obj (op Y)) :
     (gammaEquiv X ((gamma B N).map φ.op α)).1 =
       (EllipticCurveGeom.pointsPullback φ.isPullback φ.zero_total).comp (gammaEquiv Y α).1 :=
-  (rfl)
+  homLevelEquiv_map φ α
 
 /-- Every homomorphism from the trivial group `(ℤ/1ℤ)²` is a Drinfeld basis of `E[1]`, so an object
 of `Ell/B` has exactly one `[Γ(1)]`-structure. -/
@@ -107,13 +94,8 @@ noncomputable instance (X : (EllObj B)ᵒᵖ) : Unique ((gamma B 1).obj X) where
 variable (B) in
 /-- **`[Γ(1)]` is the trivial moduli problem**: every homomorphism from the trivial group is a
 Drinfeld basis of `E[1]`. -/
-noncomputable def gammaLevelOneIso : gamma B 1 ≅ 𝟙_ (ModuliProblem B) where
-  hom := toUnit _
-  inv :=
-    { app X := TypeCat.ofHom fun _ ↦ default
-      naturality _ _ _ := by ext; exact Subsingleton.elim _ _ }
-  hom_inv_id := by ext; exact Subsingleton.elim _ _
-  inv_hom_id := toUnit_unique _ _
+noncomputable def gammaLevelOneIso : gamma B 1 ≅ 𝟙_ (ModuliProblem B) :=
+  isoTensorUnitOfUnique _
 
 end ModuliProblem
 

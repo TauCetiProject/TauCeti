@@ -5,11 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.BaseChange.Points
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.PointsDivisor
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.Torsion
-public import TauCeti.AlgebraicGeometry.EffectiveCartierDivisor.Section
-import TauCeti.AlgebraicGeometry.EffectiveCartierDivisor.Sum
-import TauCeti.AlgebraicGeometry.IdealSheaf.Comap
 
 /-!
 # Drinfeld bases of the `N`-torsion of an elliptic curve
@@ -32,9 +29,9 @@ whose points are the zero section is a Drinfeld basis of `E[p]`. It is the integ
 of the naive `[Γ(N)]`-structures (`EllipticCurveGeom.IsFiberwiseInjective`), which ask instead
 that the `φ a` be distinct in every fibre and are the right notion only where `N` is invertible.
 
-The divisor `∑_{a ∈ A} [x a]` of a finite family `x` of `S`-points of `E`
-(`EllipticCurveGeom.pointsDivisor`) is the product of the ideal sheaves of the sections `x a`; it
-is a relative effective Cartier divisor on `E` over `S`. The `N`-torsion `E[N]` is the inverse
+The divisor `∑_a [φ a]` is the divisor of a finite family of `S`-points of `E`
+(`EllipticCurveGeom.pointsDivisor`), the product of the ideal sheaves of the sections `φ a`; it is
+a relative effective Cartier divisor on `E` over `S`. The `N`-torsion `E[N]` is the inverse
 image `[N]⁻¹[0]` of the zero-section divisor (`EllipticCurveGeom.ker_torsionι_left`), so a Drinfeld
 basis is a homomorphism with `∑_a [φ a] = [N]⁻¹[0]` (`EllipticCurveGeom.isDrinfeldBasis_iff`).
 
@@ -51,17 +48,11 @@ Following `EllipticCurveGeom.mulBy`, the group law on points of `E` is written m
 
 ## Main definitions
 
-* `TauCeti.AlgebraicGeometry.EllipticCurveGeom.pointsDivisor E x`: the divisor `∑_a [x a]` of a
-  finite family of `S`-points of `E`, as an ideal sheaf on `E`.
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.IsDrinfeldBasis E N φ`: the homomorphism
   `φ : (ℤ/Nℤ)² →* E(S)` is a Drinfeld basis of `E[N]`.
 
 ## Main results
 
-* `TauCeti.AlgebraicGeometry.EllipticCurveGeom.isRelativeEffectiveCartier_pointsDivisor`:
-  `∑_a [x a]` is a relative effective Cartier divisor on `E` over `S`.
-* `TauCeti.AlgebraicGeometry.EllipticCurveGeom.pointsDivisor_pointsPullback`: `∑_a [x a]`
-  commutes with base change.
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.isDrinfeldBasis_iff`: a Drinfeld basis is a
   homomorphism with `∑_a [φ a] = [N]⁻¹[0]`.
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.IsDrinfeldBasis.pointsPullback`: Drinfeld bases
@@ -89,71 +80,7 @@ namespace TauCeti.AlgebraicGeometry
 
 namespace EllipticCurveGeom
 
-variable {S : Scheme.{u}} (E : EllipticCurveGeom S)
-
-/-! ### The divisor of a finite family of points -/
-
-section PointsDivisor
-
-variable {A : Type*} [Fintype A]
-
-/-- The divisor `∑_{a ∈ A} [x a]` of a finite family `x` of `S`-points of an elliptic curve `E`
-over `S`, as an ideal sheaf on `E`: the product of the ideal sheaves of the sections `x a`. Points
-occurring several times in the family are counted with multiplicity. -/
-noncomputable def pointsDivisor (x : A → (𝟙_ (Over S) ⟶ Over.mk E.structureMap)) :
-    E.carrier.IdealSheafData :=
-  ∏ a, (x a).left.ker
-
-variable {E}
-
-/-- The divisor `∑_a [x a]` is the product of the ideal sheaves of the sections `x a`. -/
-theorem pointsDivisor_def (x : A → (𝟙_ (Over S) ⟶ Over.mk E.structureMap)) :
-    E.pointsDivisor x = ∏ a, (x a).left.ker :=
-  (rfl)
-
-/-- **`∑_a [x a]` is a relative effective Cartier divisor** on `E` over `S`, as a sum of the
-divisors of sections of the smooth separated curve `E ⟶ S`. -/
-theorem isRelativeEffectiveCartier_pointsDivisor (x : A → (𝟙_ (Over S) ⟶ Over.mk E.structureMap)) :
-    (E.pointsDivisor x).IsRelativeEffectiveCartier E.structureMap :=
-  isRelativeEffectiveCartier_prod fun a _ ↦
-    Scheme.Hom.isRelativeEffectiveCartier_ker_of_smoothOfRelativeDimension (f := E.structureMap)
-      _ (Over.w (x a))
-
-/-- Each of the points `x a` lies on the divisor `∑_a [x a]`. -/
-theorem pointsDivisor_le_ker (x : A → (𝟙_ (Over S) ⟶ Over.mk E.structureMap)) (a : A) :
-    E.pointsDivisor x ≤ (x a).left.ker := by
-  classical
-  rw [pointsDivisor, ← Finset.mul_prod_erase _ _ (Finset.mem_univ a)]
-  exact mul_le_of_le_one_right bot_le le_top
-
-/-- **The divisor `∑_a [x a]` does not depend on the indexing** of the family of points. -/
-@[simp]
-theorem pointsDivisor_comp_equiv {A' : Type*} [Fintype A']
-    (x : A → (𝟙_ (Over S) ⟶ Over.mk E.structureMap)) (e : A' ≃ A) :
-    E.pointsDivisor (x ∘ e) = E.pointsDivisor x :=
-  Fintype.prod_equiv e _ _ fun _ ↦ rfl
-
-section BaseChange
-
-variable {S' : Scheme.{u}} {E' : EllipticCurveGeom S'} {g : E'.carrier ⟶ E.carrier}
-  {f : S' ⟶ S} (hg : IsPullback g E'.structureMap E.structureMap f)
-  (h0 : E'.zero ≫ g = f ≫ E.zero)
-
-/-- **The divisor `∑_a [x a]` commutes with base change**: for the base changes `x' a` of the
-`S`-points `x a` of `E`, the divisor `∑_a [x' a]` on `E'` is the inverse image along `g` of the
-divisor `∑_a [x a]` on `E`. -/
-theorem pointsDivisor_pointsPullback (x : A → (𝟙_ (Over S) ⟶ Over.mk E.structureMap)) :
-    E'.pointsDivisor (pointsPullback hg h0 ∘ x) = (E.pointsDivisor x).comap g := by
-  simp only [pointsDivisor, Scheme.IdealSheafData.comap_prod, Function.comp_apply,
-    ker_pointsPullback_left]
-
-end BaseChange
-
-end PointsDivisor
-
-/-! ### Drinfeld bases -/
-
-variable (N : ℕ) [NeZero N]
+variable {S : Scheme.{u}} (E : EllipticCurveGeom S) (N : ℕ) [NeZero N]
 
 /-- **Drinfeld bases of `E[N]`** (Drinfeld; Katz–Mazur §3.1). A homomorphism
 `φ : (ℤ/Nℤ)² →* E(S)` to the group of `S`-points of an elliptic curve `E` over `S` is a Drinfeld
@@ -170,8 +97,8 @@ variable {E N}
 /-- **A Drinfeld basis is a homomorphism with `∑_a [φ a] = [N]⁻¹[0]`.** -/
 theorem isDrinfeldBasis_iff
     {φ : Multiplicative (ZMod N × ZMod N) →* (𝟙_ (Over S) ⟶ Over.mk E.structureMap)} :
-    E.IsDrinfeldBasis N φ ↔ ∏ a, (φ a).left.ker = E.zero.ker.comap (E.mulBy N).left := by
-  rw [IsDrinfeldBasis, pointsDivisor, ker_torsionι_left]
+    E.IsDrinfeldBasis N φ ↔ E.pointsDivisor φ = E.zero.ker.comap (E.mulBy N).left := by
+  rw [IsDrinfeldBasis, ker_torsionι_left]
 
 /-- **Drinfeld bases are stable under automorphisms of `(ℤ/Nℤ)²`.** Precomposing with an
 automorphism `σ`, for instance the right action of an element of `GL₂(ℤ/Nℤ)`, reindexes the
@@ -189,7 +116,7 @@ section. -/
 theorem isDrinfeldBasis_one
     (φ : Multiplicative (ZMod 1 × ZMod 1) →* (𝟙_ (Over S) ⟶ Over.mk E.structureMap)) :
     E.IsDrinfeldBasis 1 φ := by
-  rw [isDrinfeldBasis_iff, Fintype.prod_subsingleton _ 1]
+  rw [isDrinfeldBasis_iff, pointsDivisor_def, Fintype.prod_subsingleton _ 1]
   simp [mulBy_one, hom_one_left]
 
 section BaseChange
