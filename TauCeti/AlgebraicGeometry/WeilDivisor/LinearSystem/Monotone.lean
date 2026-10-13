@@ -16,13 +16,8 @@ divisors. If `D ≤ D'` coefficientwise, then adding the effective difference `D
 `|D|` into `|D'|`; in particular nonemptiness of complete linear systems is monotone under
 the divisor order.
 
-This is the divisor-level bookkeeping behind the later symmetric-power and Abel-map lane in
-the Jacobian roadmap: increasing an effective divisor by fixed effective base conditions
-should not destroy the existence of effective representatives.  It advances
-`TauCetiRoadmap/JacobianChallenge/README.md`, Layer A, "Divisors on a curve" and "Degree", as
-a clean prerequisite for the Layer C/D Abel-map construction from symmetric powers.  No
-external mathematics is vendored; the proofs reuse Tau Ceti's existing complete-linear-system
-addition API and the coefficientwise order on formal Weil divisors.
+No external mathematics is vendored; the proofs reuse Tau Ceti's complete-linear-system addition API
+and the coefficientwise order on formal Weil divisors.
 -/
 
 public section

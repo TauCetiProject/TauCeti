@@ -16,7 +16,8 @@ radius raised to the dimension times the real measure of the unit ball, independ
 centre. It agrees with the measure of the closed ball, which therefore differs from the open ball
 by a null set. Consequently the ratio of the measures of two closed balls is controlled by the
 ratio of their radii raised to the dimension, and the part of a ball outside a translate of
-itself is controlled by the distance between the centres.
+itself is controlled by the distance between the centres. The measure of an affine image
+`y + r • S` relative to a ball of radius `r` is that of `S` relative to the unit ball.
 
 ## Main results
 
@@ -28,6 +29,9 @@ itself is controlled by the distance between the centres.
 * `MeasureTheory.Measure.addHaar_real_ball_sdiff_ball_le`: the part of a ball outside a ball of the
   same radius `s` whose centre is at distance `d` is no larger than a spherical shell of radii `s`
   and `s + d`.
+* `MeasureTheory.Measure.addHaar_image_add_smul_div_addHaar_closedBall`: the measure of
+  `y + r • S` relative to a closed ball of radius `r > 0` is the measure of `S` relative to the
+  unit ball.
 -/
 
 public section
@@ -91,6 +95,21 @@ theorem _root_.MeasureTheory.Measure.addHaar_real_ball_sdiff_ball_le
         rw [measureReal_sdiff hss measurableSet_ball measure_ball_lt_top.ne,
           mu.addHaar_real_ball_of_pos z (by positivity), mu.addHaar_real_ball_of_pos z hs]
         ring
+
+open scoped Pointwise in
+/-- The measure of `y + r • S`, relative to that of a closed ball of radius `r > 0`, is the measure
+of `S` relative to that of the closed unit ball. -/
+theorem _root_.MeasureTheory.Measure.addHaar_image_add_smul_div_addHaar_closedBall
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+    [MeasurableSpace E] [BorelSpace E] (mu : Measure E) [mu.IsAddHaarMeasure]
+    (x y : E) {r : ℝ} (hr : 0 < r) (S : Set E) :
+    mu ((fun w => y + r • w) '' S) / mu (closedBall x r) = mu S / mu (closedBall 0 1) := by
+  have himage : (fun w => y + r • w) '' S = y +ᵥ r • S := by
+    rw [← Set.image_smul, ← Set.image_vadd, Set.image_image]
+    rfl
+  rw [himage, measure_vadd, addHaar_smul, addHaar_closedBall' mu x hr.le,
+    abs_of_pos (pow_pos hr _)]
+  exact ENNReal.mul_div_mul_left _ _ (by simpa using pow_pos hr _) ENNReal.ofReal_ne_top
 
 end TauCeti
 

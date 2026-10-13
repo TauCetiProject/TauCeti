@@ -439,6 +439,32 @@ theorem X_smul_mem_bigradedChainMinusPiece {R : Type*} [CommSemiring R] (i : Fin
   have h := G.monomial_smul_mem_bigradedChainMinusPiece (Finsupp.single i 1) (1 : R) hc
   rwa [Finsupp.degree_single, Nat.cast_one, mul_one, ← X] at h
 
+-- Use this equivalence for explicit rewriting: simp expands membership and variable support
+-- first, so its left-hand side is not in simp normal form.
+/-- Multiplication by a variable reflects homogeneity as well as lowering bidegree
+by `(2, 1)`. No condition on the coefficient semiring is needed. -/
+theorem X_smul_mem_bigradedChainMinusPiece_iff {R : Type*} [CommSemiring R]
+    (i : Fin n) {g : ℤ × ℤ} {c : GridChainMinus R n} :
+    (X i : MvPolynomial (Fin n) R) • c ∈ G.bigradedChainMinusPiece R (g - (2, 1)) ↔
+      c ∈ G.bigradedChainMinusPiece R g := by
+  refine ⟨fun hc => ?_, G.X_smul_mem_bigradedChainMinusPiece i⟩
+  rw [mem_bigradedChainMinusPiece] at hc ⊢
+  intro x e he
+  have hmem : Finsupp.single i 1 + e ∈
+      (((X i : MvPolynomial (Fin n) R) • c) x).support := by
+    simpa only [Finsupp.smul_apply, smul_eq_mul, MvPolynomial.mem_support_iff,
+      coeff_X_mul] using MvPolynomial.mem_support_iff.mp he
+  have h := hc x _ hmem
+  have hdeg : ((Finsupp.single i 1 + e).degree : ℤ) = 1 + (e.degree : ℤ) := by
+    simp
+  apply Prod.ext
+  · have hf := congrArg Prod.fst h
+    simp only [monomialBidegree_fst, Prod.fst_sub, hdeg] at hf ⊢
+    omega
+  · have hs := congrArg Prod.snd h
+    simp only [monomialBidegree_snd, Prod.snd_sub, hdeg] at hs ⊢
+    omega
+
 /-! ### `GC⁻` is the direct sum of its homogeneous pieces -/
 
 /-- The homogeneous pieces of `GC⁻` span it: every chain is a finite sum of monomial multiples of
