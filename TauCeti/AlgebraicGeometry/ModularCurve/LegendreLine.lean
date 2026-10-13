@@ -135,6 +135,7 @@ noncomputable def lambda : LegendreRing R :=
 
 /-- The defining identity `(λ² - λ + 1)³ = u (λ (λ - 1))²` of the coordinate `u` of the `u`-line,
 pulled back to the Legendre line. -/
+@[simp]
 theorem lambda_sq_sub_lambda_add_one_pow_three :
     (lambda R ^ 2 - lambda R + 1) ^ 3 =
       algebraMap R[X] (LegendreRing R) X * (lambda R * (lambda R - 1)) ^ 2 := by
