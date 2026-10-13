@@ -225,10 +225,7 @@ def normQuotientCor : (L.baseChange hU').NormQuotient F →ₗ[ℤ] L.NormQuotie
     refine Submodule.mem_comap.2 ((L.mem_normSubgroup F).2
       ⟨F.levelNorm (L.baseChange_top_le hU') b, ?_⟩)
     -- `N_{U/U'} ∘ N_{U'/(V ⊓ U')} = N_{U/(V ⊓ U')} = N_{U/V} ∘ N_{V/(V ⊓ U')}`.
-    have hn (L₀ : NormalLayer G) (x : F.level L₀.top) :
-        L₀.norm F x = F.levelNorm L₀.top_le_ground x :=
-      DFunLike.congr_fun (L₀.toAddMonoidHom_norm F) x
-    rw [hn, hn, AddMonoidHom.coe_toIntLinearMap,
+    rw [norm_apply_eq_levelNorm, norm_apply_eq_levelNorm, AddMonoidHom.coe_toIntLinearMap,
       ← AddMonoidHom.comp_apply, ← AddMonoidHom.comp_apply, ← Formation.levelNorm_trans,
       ← Formation.levelNorm_trans]
 

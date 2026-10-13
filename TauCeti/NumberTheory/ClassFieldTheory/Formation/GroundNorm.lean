@@ -42,6 +42,8 @@ The ground-level norm of a restriction is its instance `W = U`, `W' = U'`.
   tower of open subgroups.
 * `TauCeti.ClassFieldTheory.NormalLayer.toAddMonoidHom_norm`: the norm of a layer is the norm
   `Formation.levelNorm` between its top and ground levels.
+* `TauCeti.ClassFieldTheory.NormalLayer.norm_apply_eq_levelNorm`: the same statement, evaluated at
+  an element of the top level.
 * `TauCeti.ClassFieldTheory.LayerRestriction.groundNorm_apply_coe`: the norm is the sum of the
   translates by coset representatives.
 * `TauCeti.ClassFieldTheory.LayerRestriction.groundNorm_groundInclusion`: the norm of an element of
@@ -180,6 +182,12 @@ theorem toAddMonoidHom_norm : (L.norm F).toAddMonoidHom = F.levelNorm L.top_le_g
   refine Fintype.sum_equiv (Equiv.refl _) _ _ fun γ ↦ ?_
   conv_lhs => rw [← QuotientGroup.out_eq' γ]
   rw [Equiv.refl_apply, NormalLayer.rep_ρ_mk_apply_coe]
+
+/-- The norm `N_{U/V} x` of an element `x ∈ A^V` is its norm `Formation.levelNorm` from the top to
+the ground level of the layer. -/
+theorem norm_apply_eq_levelNorm (x : F.level L.top) :
+    L.norm F x = F.levelNorm L.top_le_ground x :=
+  DFunLike.congr_fun (L.toAddMonoidHom_norm F) x
 
 end NormalLayer
 
