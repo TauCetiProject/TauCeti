@@ -45,11 +45,11 @@ defined, it agrees with Mathlib's multipliers.
   `MeasureTheory.Lp.fourierMultiplierCLM_toTemperedDistribution_eq`: for a bounded symbol of
   temperate growth, `T_m` agrees with Mathlib's multipliers on Schwartz functions and, as a
   tempered distribution, on every `f ∈ L²`.
-* `MeasureTheory.Lp.coeFn_fourierMultiplierCLM_toLp`: for a Schwartz symbol `σ`, `T_σ` is
+* `SchwartzMap.coeFn_fourierMultiplierCLM_toLp`: for a Schwartz symbol `σ`, `T_σ` is
   convolution with the Schwartz kernel `𝓕⁻ σ`, that is `T_σ f x = ∫ 𝓕⁻ σ (x - y) • f y` for
   almost every `x`. On Schwartz functions this is `SchwartzMap.fourierMultiplierCLM_eq_convolution`.
-* `MeasureTheory.Lp.tendsto_fourierMultiplierCLM_apply`: if the symbols `m n` are uniformly
-  bounded and converge to `m₀` almost everywhere, then `T_{m n} f → T_{m₀} f` in `L²`.
+* `MeasureTheory.Lp.tendsto_fourierMultiplierCLM_apply`: if the symbols `m n` are eventually
+  uniformly bounded and converge to `m₀` almost everywhere, then `T_{m n} f → T_{m₀} f` in `L²`.
 
 ## Kernels of multipliers
 
@@ -57,8 +57,8 @@ A bounded symbol `m` is in general not the Fourier transform of an integrable fu
 is not a convolution with an integrable kernel. The Calderón–Zygmund theory instead asks for a
 kernel representation off the support of the argument, and the proof of the Mihlin–Hörmander
 multiplier theorem obtains it by approximation: `m` is cut into Schwartz symbols `σ`, for which
-`T_σ` is convolution with `𝓕⁻ σ` at every point, and `T_m` is recovered as the strong limit of
-the operators `T_σ`.
+`T_σ` is convolution with `𝓕⁻ σ` almost everywhere, the convolution integral converging at every
+point, and `T_m` is recovered as the strong limit of the operators `T_σ`.
 
 ## References
 
@@ -237,7 +237,8 @@ integral converges for every `x`, since `y ↦ 𝓕⁻ σ (x - y)` lies in `L²`
 With `k x y = 𝓕⁻ σ (x - y) • id`, this is the kernel representation of `T_σ` that the
 Calderón–Zygmund theorems take as hypothesis, valid at almost every point and not only off the
 support of `f`. -/
-theorem coeFn_fourierMultiplierCLM_toLp (σ : 𝓢(E, ℂ)) (f : Lp F 2 (volume : Measure E)) :
+theorem _root_.SchwartzMap.coeFn_fourierMultiplierCLM_toLp (σ : 𝓢(E, ℂ))
+    (f : Lp F 2 (volume : Measure E)) :
     fourierMultiplierCLM F (σ.toLp ∞) f =ᵐ[volume] fun x ↦ ∫ y, 𝓕⁻ σ (x - y) • f y := by
   have hK : ∀ x, MemLp (fun y ↦ 𝓕⁻ σ (x - y)) 2 volume := fun x ↦
     ((𝓕⁻ σ).memLp 2 volume).comp_measurePreserving (volume.measurePreserving_sub_left x)
@@ -275,10 +276,10 @@ theorem coeFn_fourierMultiplierCLM_toLp (σ : 𝓢(E, ℂ)) (f : Lp F 2 (volume 
   exact ((((lsmul ℂ ℂ).lpPairing volume 2 2 ((hK x).toLp _)).continuous.tendsto f).comp hu).comp
     hns.tendsto_atTop
 
-/-- If the symbols `m n` are bounded in `L^∞` uniformly in `n` and converge to `m₀` almost
-everywhere, then `T_{m n} f → T_{m₀} f` in `L²` for every `f ∈ L²`. -/
+/-- If the symbols `m n` are eventually bounded in `L^∞` uniformly in `n` and converge to `m₀`
+almost everywhere, then `T_{m n} f → T_{m₀} f` in `L²` for every `f ∈ L²`. -/
 theorem tendsto_fourierMultiplierCLM_apply {m : ℕ → Lp ℂ ∞ (volume : Measure E)}
-    {m₀ : Lp ℂ ∞ (volume : Measure E)} {C : ℝ} (hC : ∀ n, ‖m n‖ ≤ C)
+    {m₀ : Lp ℂ ∞ (volume : Measure E)} {C : ℝ} (hC : ∀ᶠ n in atTop, ‖m n‖ ≤ C)
     (hm : ∀ᵐ ξ, Tendsto (fun n ↦ m n ξ) atTop (𝓝 (m₀ ξ))) (f : Lp F 2 (volume : Measure E)) :
     Tendsto (fun n ↦ fourierMultiplierCLM F (m n) f) atTop
       (𝓝 (fourierMultiplierCLM F m₀ f)) := by
@@ -291,14 +292,14 @@ theorem tendsto_fourierMultiplierCLM_apply {m : ℕ → Lp ℂ ∞ (volume : Mea
   -- Dominated convergence on the Fourier side, with dominating function `‖𝓕 f‖`.
   refine TauCeti.tendsto_eLpNorm_sub_of_ae_tendsto (by simp) (by simp)
     (Eventually.of_forall fun n ↦ Lp.aestronglyMeasurable _) (Lp.aestronglyMeasurable _)
-    (Lp.memLp (𝓕 f)) (C := C.toNNReal + ‖m₀‖₊) (Eventually.of_forall fun n ↦ ?_) ?_
+    (Lp.memLp (𝓕 f)) (C := C.toNNReal + ‖m₀‖₊) (hC.mono fun n hn ↦ ?_) ?_
   · filter_upwards [coeFn_lpSMul (r := 2) (m n) (𝓕 f), coeFn_lpSMul (r := 2) m₀ (𝓕 f), hmb (m n),
       hmb m₀] with ξ h₁ h₂ h₃ h₄
     rw [h₁, h₂, Pi.smul_apply', Pi.smul_apply', ← sub_smul, enorm_smul, ENNReal.coe_add,
       ← enorm_eq_nnnorm]
     gcongr
     exact enorm_sub_le.trans (add_le_add (h₃.trans ((ofReal_norm (m n)).symm.trans_le
-      (ENNReal.ofReal_le_ofReal (hC n)))) h₄)
+      (ENNReal.ofReal_le_ofReal hn))) h₄)
   · filter_upwards [ae_all_iff.2 fun n ↦ coeFn_lpSMul (r := 2) (m n) (𝓕 f),
       coeFn_lpSMul (r := 2) m₀ (𝓕 f), hm] with ξ h₁ h₂ h₃
     simp only [h₁, h₂, Pi.smul_apply']
