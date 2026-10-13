@@ -28,6 +28,13 @@ is not cosmetic — it is what the base-change argument runs on — so the gener
 it as a hypothesis. For a one-variable function field over a perfect field, the final theorem also
 proves the converse: `x` is separating exactly when `d x` is nonzero.
 
+Over an arbitrary field the one-dimensionality characterizes separable generation: an algebraic
+function field has `dim_F Ω[F⁄k] = 1` exactly when it has a separating element, and otherwise
+`dim_F Ω[F⁄k] ≥ 2`. Here `Ω[F⁄k]` differs from Stichtenoth's differential module, which sets
+`d t = 0` for every non-separating `t` and is one-dimensional by construction; the two agree only
+under separable generation. A function field containing an element outside `k` with a `p`-power
+in `k` has no separating element, so its Kähler differentials have dimension at least two.
+
 The proof is the base-change route: `k(x)/k` is a localization of the polynomial ring, whose
 differentials are free of rank one on `d X`, and `F/k(x)` is separable, hence formally étale
 (`Algebra.FormallyEtale.of_isSeparable`), so `Ω[F⁄k]` is the base change of `Ω[k(x)⁄k]` along
@@ -47,6 +54,11 @@ differentials are free of rank one on `d X`, and `F/k(x)` is separable, hence fo
   every derivation `D` of `F` over `k`.
 * `TauCeti.IsFunctionField.isSeparable_adjoin_iff_D_ne_zero`: the differential criterion for a
   fixed parameter over a perfect field.
+* `TauCeti.IsFunctionField.finrank_kaehlerDifferential_eq_one_iff`: `dim_F Ω[F⁄k] = 1` exactly
+  when `F / k` has a separating element.
+* `TauCeti.IsFunctionField.two_le_finrank_kaehlerDifferential_iff`: without a separating element,
+  `dim_F Ω[F⁄k] ≥ 2`; `TauCeti.IsFunctionField.two_le_finrank_kaehlerDifferential_of_pow_mem`
+  produces this from an element outside `k` with a `p`-power in `k`.
 
 ## References
 
@@ -213,6 +225,87 @@ theorem derivativeOfSeparating_eq_zero_iff [CharZero k] [Algebra.IsSeparable k�
       exact False.elim (D_ne_zero_of_separating halg hDy)
   · rintro ⟨a, rfl⟩
     exact (derivativeOfSeparating hx).map_algebraMap a
+
+namespace IsFunctionField
+
+/-! ### Separable generation and the dimension of `Ω[F⁄k]` -/
+
+section Dimension
+
+variable (hF : IsFunctionField k F)
+include hF
+
+/-- The Kähler differentials of an algebraic function field are nonzero. -/
+theorem nontrivial_kaehlerDifferential : Nontrivial Ω[F⁄k] := by
+  -- Were they zero, `F` would be formally unramified, hence separable algebraic, over `k`.
+  have : Algebra.EssFiniteType k F := hF.essFiniteType
+  refine not_subsingleton_iff_nontrivial.mp fun h ↦ ?_
+  have : Algebra.FormallyUnramified k F := ⟨h⟩
+  have := Algebra.FormallyUnramified.isSeparable k F
+  obtain ⟨y, hy⟩ := hF.exists_transcendental
+  exact hy (Algebra.IsAlgebraic.isAlgebraic y)
+
+/-- The Kähler differentials of an algebraic function field form a nonzero finite-dimensional
+`F`-vector space. -/
+theorem finrank_kaehlerDifferential_pos : 0 < finrank F Ω[F⁄k] := by
+  have : Algebra.EssFiniteType k F := hF.essFiniteType
+  have := hF.nontrivial_kaehlerDifferential
+  exact Module.finrank_pos
+
+/-- **The Kähler differentials of an algebraic function field are one-dimensional exactly when it
+is separably generated**: `dim_F Ω[F⁄k] = 1` if and only if some `x` transcendental over `k`
+makes `F / k(x)` separable. -/
+theorem finrank_kaehlerDifferential_eq_one_iff :
+    finrank F Ω[F⁄k] = 1 ↔ ∃ x : F, Transcendental k x ∧ Algebra.IsSeparable k⟮x⟯ F := by
+  refine ⟨fun h ↦ ?_, fun ⟨x, hx, _⟩ ↦ finrank_kaehlerDifferential_eq_one_of_separating hx⟩
+  -- Some `d y` is nonzero, so it spans `Ω[F⁄k]`. Then `Ω[F⁄k(y)]` vanishes and `F / k(y)` is
+  -- separable; `y` is transcendental, since otherwise `F` would be algebraic over `k`.
+  have : Algebra.EssFiniteType k F := hF.essFiniteType
+  obtain ⟨y, hy⟩ : ∃ y : F, D k F y ≠ 0 := by
+    by_contra! H
+    have := hF.nontrivial_kaehlerDifferential
+    refine (top_ne_bot : (⊤ : Submodule F Ω[F⁄k]) ≠ ⊥) ?_
+    rw [← KaehlerDifferential.span_range_derivation k F, Submodule.span_eq_bot]
+    rintro _ ⟨z, rfl⟩
+    exact H z
+  have hrange : (KaehlerDifferential.mapBaseChange k k⟮y⟯ F).range = ⊤ := by
+    rw [eq_top_iff, ← (span_singleton_eq_top_iff_ne_zero_of_finrank_eq_one h _).mpr hy,
+      Submodule.span_le, Set.singleton_subset_iff]
+    refine ⟨1 ⊗ₜ D k k⟮y⟯ (IntermediateField.AdjoinSimple.gen k y), ?_⟩
+    simp
+  have : Algebra.FormallyUnramified k⟮y⟯ F :=
+    ⟨(subsingleton_kaehlerDifferential_iff_range_mapBaseChange_eq_top k k⟮y⟯ F).mpr hrange⟩
+  have : Algebra.EssFiniteType k⟮y⟯ F := .of_comp k k⟮y⟯ F
+  have := Algebra.FormallyUnramified.isSeparable k⟮y⟯ F
+  refine ⟨y, fun halg ↦ ?_, this⟩
+  have : FiniteDimensional k k⟮y⟯ := IntermediateField.adjoin.finiteDimensional halg.isIntegral
+  have : Algebra.IsAlgebraic k F := Algebra.IsAlgebraic.trans k k⟮y⟯ F
+  obtain ⟨z, hz⟩ := hF.exists_transcendental
+  exact hz (Algebra.IsAlgebraic.isAlgebraic z)
+
+/-- **The Kähler differentials jump in dimension without a separating element**: an algebraic
+function field `F / k` has `dim_F Ω[F⁄k] ≥ 2` exactly when no `x` transcendental over `k` makes
+`F / k(x)` separable. -/
+theorem two_le_finrank_kaehlerDifferential_iff :
+    2 ≤ finrank F Ω[F⁄k] ↔ ∀ x : F, Transcendental k x → ¬ Algebra.IsSeparable k⟮x⟯ F := by
+  have := hF.finrank_kaehlerDifferential_pos
+  rw [show 2 ≤ finrank F Ω[F⁄k] ↔ ¬ finrank F Ω[F⁄k] = 1 by omega,
+    hF.finrank_kaehlerDifferential_eq_one_iff]
+  simp only [not_exists, not_and]
+
+/-- An element `α` of `F` outside `k` with a power `α ^ q ^ n` in `k`, `q` the exponential
+characteristic of `k`, forces `dim_F Ω[F⁄k] ≥ 2`: such an `α` rules out every separating element
+(`TauCeti.not_isSeparable_adjoin_of_pow_mem`). For instance `α = t^{1/p}` in `F = 𝔽_p(t^{1/p})(X)`
+over `k = 𝔽_p(t)`. -/
+theorem two_le_finrank_kaehlerDifferential_of_pow_mem (q : ℕ) [ExpChar k q] {α : F}
+    (hα : α ∉ (algebraMap k F).range) {n : ℕ} (hn : α ^ q ^ n ∈ (algebraMap k F).range) :
+    2 ≤ finrank F Ω[F⁄k] :=
+  hF.two_le_finrank_kaehlerDifferential_iff.mpr fun _ hx ↦
+    not_isSeparable_adjoin_of_pow_mem q hα hn hx
+
+end Dimension
+
+end IsFunctionField
 
 variable [PerfectField k]
 
