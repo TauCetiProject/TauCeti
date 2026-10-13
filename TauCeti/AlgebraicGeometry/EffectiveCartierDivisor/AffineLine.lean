@@ -152,6 +152,7 @@ lemma zeroIdealSheaf_map {S : Type u} [CommRing S] (φ : R →+* S) (p : R[X]) :
 
 /-- Two monic polynomials define the same zero scheme on the relative affine line exactly
 when they agree, without a fixed-degree or reducedness assumption. -/
+-- A simp attribute here would make `zeroIdealSheaf_monicOfCoeff_eq_iff` fail `simpNF`.
 theorem Monic.zeroIdealSheaf_eq_iff {p q : R[X]} (hp : p.Monic) (hq : q.Monic) :
     p.zeroIdealSheaf = q.zeroIdealSheaf ↔ p = q := by
   refine ⟨fun h ↦ ?_, fun h ↦ h ▸ rfl⟩

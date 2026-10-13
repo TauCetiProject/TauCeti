@@ -112,6 +112,8 @@ lemma coeffEquivFiniteFreeIdeal_symm_apply
     monicOfCoeff_coeff hp hdeg, hI]
 
 /-- Arbitrary extension of the coefficient ring acts coordinatewise on the ideal chart. -/
+-- The left-hand side already simplifies via `coeffEquivFiniteFreeIdeal_apply`, so a simp
+-- attribute here would fail `simpNF`.
 lemma map_coeffEquivFiniteFreeIdeal {S : Type*} [CommRing S] [Nontrivial S]
     (φ : R →+* S) (c : Fin n → R) :
     ((coeffEquivFiniteFreeIdeal R n c).1).map (Polynomial.mapRingHom φ) =
