@@ -209,7 +209,7 @@ private theorem exists_glue_wassersteinEDist_rpow_eq [Finite J] (hp0 : p ≠ 0) 
 omit [CompleteSpace X] in
 /-- The weighted `p`-Wasserstein cost against finitely many points of `P_p(X)` is finite at every
 point of `P_p(X)`. -/
-private theorem WassersteinSpace.sum_mul_wassersteinEDist_rpow_ne_top (μ : J → WassersteinSpace p X)
+theorem WassersteinSpace.sum_mul_wassersteinEDist_rpow_ne_top (μ : J → WassersteinSpace p X)
     (z : WassersteinSpace p X) :
     ∑ j, (w j : ℝ≥0∞) * wassersteinEDist p ((z : ProbabilityMeasure X) : Measure X)
       ((μ j : ProbabilityMeasure X) : Measure X) ^ p.toReal ≠ ∞ :=
