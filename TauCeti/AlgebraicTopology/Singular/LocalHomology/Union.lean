@@ -137,14 +137,9 @@ private lemma Detected.union {A B : Set M} (hA : IsClosed A) (hB : IsClosed B)
   · simpa only [Category.assoc, localHomologyRestriction_comp] using h x (subset_union_left hx)
   · simpa only [Category.assoc, localHomologyRestriction_comp] using h x (subset_union_right hx)
 
-omit [NormedSpace ℝ E] [FiniteDimensional ℝ E] in
-/-- The image under `φ.symm` of a compact subset of `φ.target` is closed. -/
-private lemma isClosed_symm_image {K : Set E} (hKk : IsCompact K) (hKφ : K ⊆ φ.target) :
-    IsClosed (φ.symm '' K) :=
-  (hKk.image_of_continuousOn (φ.continuousOn_symm.mono hKφ)).isClosed
-
-/-- Lemma 3.27 for one compact convex set in a chart: the restriction to any of its points is an
-isomorphism. -/
+/-- Lemma 3.27 for one compact convex set `K` in a chart: local homology along `φ.symm '' K`
+vanishes above degree `n` and is detected at points in degree `n`. Detection follows by choosing a
+point `x` of `φ.symm '' K`: the restriction to `x` is an isomorphism, hence a monomorphism. -/
 private lemma detected_symm_image_of_convex (hn : finrank ℝ E = n) {K : Set E}
     (hK : Convex ℝ K) (hKk : IsCompact K) (hKφ : K ⊆ φ.target) :
     Detected R n (φ.symm '' K) := by
@@ -155,7 +150,8 @@ private lemma detected_symm_image_of_convex (hn : finrank ℝ E = n) {K : Set E}
   have hxK : φ (φ.symm y) ∈ K := (φ.right_inv (hKφ hy)).symm ▸ hy
   have := isIso_localHomologyRestriction_symm_image R φ (hK.starConvex hxK) hKk hKφ hx hxK n
   refine ⟨fun k hk ↦ isZero_singularHomology_compl_symm_image_of_ne R φ hx (hK.starConvex hxK)
-    hxK hKk.isBounded hKk.isClosed (isClosed_symm_image φ hKk hKφ) hKφ hn (by lia),
+    hxK hKk.isBounded hKk.isClosed (φ.isClosed_image_symm_of_isCompact hKk hKφ) hKφ hn
+    (by lia),
     fun T g₁ g₂ h ↦ ?_⟩
   exact (cancel_mono (localHomologyRestriction R
     (singleton_subset_iff.2 ⟨φ (φ.symm y), hxK, φ.left_inv hx⟩ : {φ.symm y} ⊆ φ.symm '' K) n)).1
@@ -180,7 +176,8 @@ private lemma detected_symm_image_biUnion (hn : finrank ℝ E = n) {ι : Type*} 
     have hsk : IsCompact (⋃ i ∈ s, K i) := s.isCompact_biUnion fun i hi ↦ (hKs i hi).2.1
     rw [Finset.set_biUnion_insert, image_union]
     refine (detected_symm_image_of_convex R φ hn hKa hKak hKaφ).union R
-      (isClosed_symm_image φ hKak hKaφ) (isClosed_symm_image φ hsk hsφ)
+      (φ.isClosed_image_symm_of_isCompact hKak hKaφ)
+      (φ.isClosed_image_symm_of_isCompact hsk hsφ)
       (ih K hKs) ?_
     -- The intersection of the new piece with the others is the union of the convex sets
     -- `K a ∩ K i`, since `φ.symm` is injective on `φ.target`.
