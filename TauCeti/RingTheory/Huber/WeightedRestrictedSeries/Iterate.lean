@@ -10,7 +10,7 @@ public import TauCeti.RingTheory.Huber.WeightedEval.Completion
 public import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Completion
 public import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.PowerBounded
 
-import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.PairOfDefinition
+import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Pair.OfDefinition
 
 /-!
 # Comparing `A⟨X₁,…,X_{k+m}⟩` with `A⟨X₁,…,Xₖ⟩⟨Y₁,…,Y_m⟩`

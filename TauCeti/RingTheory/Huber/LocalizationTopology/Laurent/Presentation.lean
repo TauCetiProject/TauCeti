@@ -10,7 +10,7 @@ public import TauCeti.RingTheory.Huber.StronglyNoetherian
 public import TauCeti.RingTheory.Huber.WeightedEval.Quotient
 
 import TauCeti.RingTheory.Huber.ClosedSubmodule
-import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.PairOfDefinition
+import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Pair.OfDefinition
 import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.PowerBounded
 
 /-!

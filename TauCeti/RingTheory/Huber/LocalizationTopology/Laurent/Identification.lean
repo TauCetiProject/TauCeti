@@ -8,7 +8,7 @@ module
 public import TauCeti.RingTheory.Huber.LocalizationTopology.Laurent.Presentation
 
 import TauCeti.RingTheory.Huber.ClosedSubmodule
-import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.PairOfDefinition
+import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Pair.OfDefinition
 import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.PowerBounded
 
 /-!

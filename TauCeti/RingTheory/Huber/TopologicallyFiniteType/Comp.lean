@@ -9,7 +9,7 @@ public import TauCeti.RingTheory.Huber.TopologicallyFiniteType.Pair
 
 import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Iterate
 import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.OpenQuotient
-import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.PairOfDefinition
+import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Pair.OfDefinition
 
 /-!
 # Composition of topological finite type
