@@ -72,20 +72,13 @@ theorem minorsIdeal_one_le_iff {N : Submodule A M} {𝔞 : Ideal A} :
 
 variable [Projective A M]
 
-/-- An element of a projective module is the combination `∑ₘ (s x)(m) • m` for a linear map
-`s : M →ₗ[A] M →₀ A`, chosen once and for all. -/
-private theorem exists_sum_smul_eq :
-    ∃ s : M →ₗ[A] M →₀ A, ∀ x, ((s x).sum fun m c ↦ c • m) = x := by
-  obtain ⟨s, hs⟩ := projective_def'.1 (inferInstance : Projective A M)
-  exact ⟨s, fun x ↦ by simpa [Finsupp.linearCombination_apply] using LinearMap.congr_fun hs x⟩
-
 /-- For projective `M`, an `A`-linear map `χ : M →ₗ[A] A'` to an `A`-algebra carries `N` into the
 extension of the content of `N`. -/
 theorem apply_mem_map_minorsIdeal_one {A' : Type*} [CommRing A'] [Algebra A A']
     {N : Submodule A M} (χ : M →ₗ[A] A') {x : M} (hx : x ∈ N) :
     χ x ∈ Ideal.map (algebraMap A A') (N.minorsIdeal 1) := by
-  obtain ⟨s, hs⟩ := exists_sum_smul_eq (A := A) (M := M)
-  rw [← hs x, Finsupp.sum, map_sum]
+  obtain ⟨s, hs⟩ := Projective.out (R := A) (P := M)
+  rw [← hs x, Finsupp.linearCombination_apply, Finsupp.sum, map_sum]
   refine Submodule.sum_mem _ fun m _ ↦ ?_
   rw [map_smul, Algebra.smul_def]
   exact Ideal.mul_mem_right _ _ (Ideal.mem_map_of_mem _
@@ -93,9 +86,9 @@ theorem apply_mem_map_minorsIdeal_one {A' : Type*} [CommRing A'] [Algebra A A']
 
 /-- For projective `M`, every submodule `N` lies in `N.minorsIdeal 1 • ⊤`. -/
 theorem le_minorsIdeal_one_smul_top (N : Submodule A M) : N ≤ N.minorsIdeal 1 • ⊤ := by
-  obtain ⟨s, hs⟩ := exists_sum_smul_eq (A := A) (M := M)
+  obtain ⟨s, hs⟩ := Projective.out (R := A) (P := M)
   intro x hx
-  rw [← hs x, Finsupp.sum]
+  rw [← hs x, Finsupp.linearCombination_apply, Finsupp.sum]
   exact sum_mem fun m _ ↦
     smul_mem_smul (apply_mem_minorsIdeal_one ((Finsupp.lapply m).comp s) hx) mem_top
 
@@ -125,8 +118,8 @@ theorem minorsIdeal_one_le_ker_iff (h : IsBaseChange A' f) [Projective A M] {N :
     N.minorsIdeal 1 ≤ RingHom.ker (algebraMap A A') ↔ ∀ x ∈ N, f x = 0 := by
   refine ⟨fun hN x hx ↦ ?_, fun hN ↦ minorsIdeal_one_le_iff.2 fun φ x hx ↦ ?_⟩
   · -- `x` is a combination of elements of `M` with coefficients in the content of `N`
-    obtain ⟨s, hs⟩ := Submodule.exists_sum_smul_eq (A := A) (M := M)
-    rw [← hs x, Finsupp.sum, map_sum]
+    obtain ⟨s, hs⟩ := Projective.out (R := A) (P := M)
+    rw [← hs x, Finsupp.linearCombination_apply, Finsupp.sum, map_sum]
     refine Finset.sum_eq_zero fun m _ ↦ ?_
     have hm := hN (apply_mem_minorsIdeal_one ((Finsupp.lapply m).comp s) hx)
     simp only [LinearMap.comp_apply, Finsupp.lapply_apply, RingHom.mem_ker] at hm
@@ -199,6 +192,7 @@ theorem minorsIdeal_one_restrictScalars_map [h : Algebra.IsPushout A A' B B'] [P
     ((Ideal.map (algebraMap B B') J).restrictScalars A').minorsIdeal 1 =
       Ideal.map (algebraMap A A') ((J.restrictScalars A).minorsIdeal 1) := by
   rw [restrictScalars_map_eq_span (A := A), ← h.out.minorsIdeal_one_span_image]
-  rfl
+  -- the base change map of the pushout is `algebraMap B B'`, and `J` has the same elements over `A`
+  rw [AlgHom.coe_toLinearMap, IsScalarTower.coe_toAlgHom', Submodule.coe_restrictScalars]
 
 end Algebra.IsPushout
