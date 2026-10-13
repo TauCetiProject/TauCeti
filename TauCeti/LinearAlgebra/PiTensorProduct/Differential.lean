@@ -136,7 +136,7 @@ theorem differential_comp_reindex {κ : Type*} [Fintype κ] (e : ι ≃ κ)
 
 omit [Fintype ι] in
 /-- Single-coordinate tensor maps multiply by composing in that coordinate. -/
-theorem map_update_id_mul [DecidableEq ι] (i : ι) (f g : Module.End R (M i)) :
+private theorem map_update_id_mul [DecidableEq ι] (i : ι) (f g : Module.End R (M i)) :
     _root_.PiTensorProduct.map (Function.update (fun _ ↦ LinearMap.id) i f) *
         _root_.PiTensorProduct.map (Function.update (fun _ ↦ LinearMap.id) i g) =
       _root_.PiTensorProduct.map (Function.update (fun _ ↦ LinearMap.id) i (f * g)) := by

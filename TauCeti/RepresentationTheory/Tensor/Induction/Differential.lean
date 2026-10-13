@@ -64,12 +64,6 @@ theorem wreathTensorDifferential_apply_tprod [DecidableEq ι] (x : ι → M) :
       ∑ i, _root_.PiTensorProduct.tprod R (Function.update x i (d (x i))) := by
   exact TauCeti.PiTensorProduct.differential_tprod (fun _ ↦ d.toLinearMap) x
 
-/-- The wreath tensor differential commutes with the wreath tensor action. -/
-theorem wreathTensorDifferential_comp_wreathTensor (a : WreathProduct D ι) :
-    (wreathTensorDifferential d ι).toLinearMap ∘ₗ ρ.wreathTensor ι a =
-      ρ.wreathTensor ι a ∘ₗ (wreathTensorDifferential d ι).toLinearMap :=
-  (wreathTensorDifferential d ι).isIntertwining' a
-
 /-- The induced differential squares to zero in characteristic two. -/
 theorem wreathTensorDifferential_comp_self [CharP R 2]
     (hd : d.comp d = 0) :
@@ -110,13 +104,6 @@ theorem tensorInducedDifferential_apply_tprod (d : τ.IntertwiningMap τ)
     tensorInducedDifferential d s (_root_.PiTensorProduct.tprod R x) =
       ∑ i, _root_.PiTensorProduct.tprod R (Function.update x i (d (x i))) :=
   wreathTensorDifferential_apply_tprod d (G ⧸ U) x
-
-/-- The tensor-induced differential commutes with the tensor-induced action. -/
-theorem tensorInducedDifferential_comp_tensorInducedRepresentation (d : τ.IntertwiningMap τ)
-    (s : U.LeftTransversal) [Fintype (G ⧸ U)] (g : G) :
-    (tensorInducedDifferential d s).toLinearMap ∘ₗ U.tensorInducedRepresentation s τ g =
-      U.tensorInducedRepresentation s τ g ∘ₗ (tensorInducedDifferential d s).toLinearMap :=
-  (tensorInducedDifferential d s).isIntertwining' g
 
 /-- The tensor-induced differential squares to zero in characteristic two. -/
 theorem tensorInducedDifferential_comp_self [CharP R 2] (d : τ.IntertwiningMap τ)
