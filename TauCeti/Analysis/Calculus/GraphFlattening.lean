@@ -14,7 +14,7 @@ import Mathlib.Topology.OpenPartialHomeomorph.Basic
 /-!
 # Flattening a graph boundary
 
-For a continuous real function `γ` on a normed space `E`, the shear
+For a continuous real function `γ` on a topological additive commutative group `E`, the shear
 `(t, y) ↦ (t - γ(y), y)` is an ambient homeomorphism of the product `WithLp 2 (ℝ × E)`.
 It carries the region `γ(y) < t` to the positive normal half-space and its graph to
 height zero. Its inverse adds `γ(y)` to the normal coordinate.
@@ -30,9 +30,11 @@ The homeomorphism is the whole-space instance of
 `ContinuousLinearEquiv.skewProd`.
 
 The ambient product is `WithLp 2 (ℝ × E)`, so it has the Euclidean norm when `E`
-is an inner product space. The topology, derivative and norm estimates do not require
-finite dimension or an inner product. The determinant results require finite dimension;
-volume preservation additionally requires an inner product.
+is an inner product space. The linear shear and its determinant require only a real module
+with a topology, with finite dimension for the determinant. The norm estimate needs only a real
+seminormed space; the differential results are stated for real normed spaces, without finite
+dimension or an inner product. Volume preservation requires a finite-dimensional real inner
+product space.
 
 ## References
 
@@ -48,14 +50,19 @@ namespace TauCeti
 
 open MeasureTheory
 
-variable {E : Type*} [NormedAddCommGroup E]
+section Topology
+
+variable {E : Type*} [AddCommGroup E] [TopologicalSpace E] [IsTopologicalAddGroup E]
 
 /-- The ambient homeomorphism subtracting the height of a continuous graph from the normal
 coordinate. -/
 def graphFlattening (γ : E → ℝ) (hγ : Continuous γ) :
     WithLp 2 (ℝ × E) ≃ₜ WithLp 2 (ℝ × E) :=
-  -- The integer-linear projection works for every normed additive commutative group.
+  -- The integer-linear projection does not require a real scalar action.
   let e := WithLp.prodContinuousLinearEquiv 2 ℤ ℝ E
+  letI : IsTopologicalAddGroup (WithLp 2 (ℝ × E)) :=
+    Topology.IsInducing.isTopologicalAddGroup e.toLinearEquiv.toAddEquiv
+      e.toHomeomorph.isInducing
   let P := e.symm.toContinuousLinearMap.comp
     ((ContinuousLinearMap.prod (0 : WithLp 2 (ℝ × E) →L[ℤ] ℝ)
       (WithLp.sndL 2 ℤ ℝ E)))
@@ -104,15 +111,18 @@ theorem graphFlattening_image_eq (γ : E → ℝ) (hγ : Continuous γ) :
   rw [(graphFlattening γ hγ).image_eq_preimage_symm]
   simp
 
-section Differential
-
-variable [NormedSpace ℝ E]
-
+variable [Module ℝ E] in
 private theorem coe_graphFlattening_eq_comp (γ : E → ℝ) (hγ : Continuous γ) :
     ⇑(graphFlattening γ hγ) = (WithLp.prodContinuousLinearEquiv 2 ℝ ℝ E).symm ∘
       (fun x : WithLp 2 (ℝ × E) => (x.fst - γ x.snd, x.snd)) := by
   funext x
   simp
+
+end Topology
+
+section Linear
+
+variable {E : Type*} [AddCommGroup E] [TopologicalSpace E] [Module ℝ E]
 
 /-- The linear shear subtracting `L z` from the normal coordinate. This is the derivative of
 `graphFlattening` when the graph height has derivative `L`. -/
@@ -134,6 +144,29 @@ def graphFlatteningL (L : E →L[ℝ] ℝ) :
   ext x
   simp [graphFlatteningL, sub_eq_add_neg]
 
+/-- A linear graph shear has determinant one. -/
+@[simp] theorem det_graphFlatteningL [FiniteDimensional ℝ E] (L : E →L[ℝ] ℝ) :
+    LinearMap.det (graphFlatteningL L).toLinearEquiv.toLinearMap = 1 := by
+  let c := ((WithLp.prodContinuousLinearEquiv 2 ℝ ℝ E).trans
+    (ContinuousLinearEquiv.prodComm ℝ ℝ E)).toLinearEquiv
+  have he : (graphFlatteningL L).toLinearEquiv =
+      (c.trans ((LinearEquiv.refl ℝ E).skewProd
+        (LinearEquiv.refl ℝ ℝ) (-L.toLinearMap))).trans c.symm := by
+    apply LinearEquiv.ext
+    intro x
+    simp [c, LinearEquiv.skewProd_apply, sub_eq_add_neg]
+  rw [← LinearEquiv.coe_det, he]
+  simpa only [LinearEquiv.symm_symm, LinearEquiv.det_skewProd, LinearEquiv.det_refl,
+    mul_one, Units.val_one] using congrArg Units.val
+      (LinearEquiv.det_conj ((LinearEquiv.refl ℝ E).skewProd
+        (LinearEquiv.refl ℝ ℝ) (-L.toLinearMap)) c.symm)
+
+end Linear
+
+section Norm
+
+variable {E : Type*} [SeminormedAddCommGroup E] [NormedSpace ℝ E]
+
 /-- The norm of the linear graph shear is bounded by one plus the norm of the height
 functional, in the `WithLp 2` (L²) product norm. -/
 theorem norm_graphFlatteningL_le (L : E →L[ℝ] ℝ) :
@@ -152,6 +185,12 @@ theorem norm_graphFlatteningL_le (L : E →L[ℝ] ℝ) :
       gcongr
       exact WithLp.norm_snd_le (x := x)
     _ = (1 + ‖L‖) * ‖x‖ := by ring
+
+end Norm
+
+section Differential
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
 /-- The derivative of graph flattening is the linear shear of the height derivative. -/
 theorem hasFDerivAt_graphFlattening {γ : E → ℝ} (hγ : Continuous γ)
@@ -205,23 +244,6 @@ theorem norm_fderiv_graphFlattening_symm_le {γ : E → ℝ} (hγ : Continuous �
 
 variable [FiniteDimensional ℝ E]
 
-/-- A linear graph shear has determinant one. -/
-@[simp] theorem det_graphFlatteningL (L : E →L[ℝ] ℝ) :
-    LinearMap.det (graphFlatteningL L).toLinearEquiv.toLinearMap = 1 := by
-  let c := ((WithLp.prodContinuousLinearEquiv 2 ℝ ℝ E).trans
-    (ContinuousLinearEquiv.prodComm ℝ ℝ E)).toLinearEquiv
-  have he : (graphFlatteningL L).toLinearEquiv =
-      (c.trans ((LinearEquiv.refl ℝ E).skewProd
-        (LinearEquiv.refl ℝ ℝ) (-L.toLinearMap))).trans c.symm := by
-    apply LinearEquiv.ext
-    intro x
-    simp [c, LinearEquiv.skewProd_apply, sub_eq_add_neg]
-  rw [← LinearEquiv.coe_det, he]
-  simpa only [LinearEquiv.symm_symm, LinearEquiv.det_skewProd, LinearEquiv.det_refl,
-    mul_one, Units.val_one] using congrArg Units.val
-      (LinearEquiv.det_conj ((LinearEquiv.refl ℝ E).skewProd
-        (LinearEquiv.refl ℝ ℝ) (-L.toLinearMap)) c.symm)
-
 /-- The Jacobian determinant of graph flattening is one wherever the height is differentiable. -/
 theorem det_fderiv_graphFlattening {γ : E → ℝ} (hγ : Continuous γ)
     {x : WithLp 2 (ℝ × E)} (hx : DifferentiableAt ℝ γ x.snd) :
@@ -233,8 +255,8 @@ end Differential
 
 section Volume
 
-variable [MeasurableSpace E] [InnerProductSpace ℝ E] [BorelSpace E]
-  [FiniteDimensional ℝ E]
+variable {E : Type*} [NormedAddCommGroup E] [MeasurableSpace E] [InnerProductSpace ℝ E]
+  [BorelSpace E] [FiniteDimensional ℝ E]
 
 /-- A continuous graph-flattening shear preserves Lebesgue measure. Differentiability of the
 height function is unnecessary for this change of variables. -/
