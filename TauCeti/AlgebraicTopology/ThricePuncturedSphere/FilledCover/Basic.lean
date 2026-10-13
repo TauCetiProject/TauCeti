@@ -51,9 +51,9 @@ topological space underlying the branched cover of the Riemann sphere attached t
   second countable when `E` is.
 * `TauCeti.FilledCover.finite_filledPoint`: a finite cover has finitely many added points.
 * `TauCeti.FilledCover.indexEquiv`: the added points are the cycles of `σ0`, `σ1` and `σinf`.
-* `TauCeti.FilledCover.degree_indexEquiv_symm_inl`,
-  `TauCeti.FilledCover.degree_indexEquiv_symm_inr_inl`,
-  `TauCeti.FilledCover.degree_indexEquiv_symm_inr_inr`: the local degree of the component of a
+* `TauCeti.FilledCover.degree_overZero_mk_monodromy`,
+  `TauCeti.FilledCover.degree_overOne_mk_monodromy`,
+  `TauCeti.FilledCover.degree_overInf_mk_monodromy`: the local degree of the component of a
   cycle is its length.
 * `TauCeti.FilledCover.card_range_center`: there are `c(σ0) + c(σ1) + c(σinf)` added points.
 
@@ -97,7 +97,7 @@ theorem mem_component_iff {i : FilledPoint p} {y : p ⁻¹' (sigmaEquiv p i).1.n
 basepoint of `𝔻*` in the standard coordinate of `D_q*`. When `p` is a covering map with finite
 fibres, it is nonzero (`FilledCover.degree_ne_zero`), `p` is `w ↦ w ^ degree p i` along the
 filling chart (`FilledCover.exists_homeomorph_chart_eq`), and it is the length of the cycle of the
-monodromy labelling `i` (`FilledCover.degree_indexEquiv_symm_inl` and its analogues). -/
+monodromy labelling `i` (`FilledCover.degree_overZero_mk_monodromy` and its analogues). -/
 def degree (i : FilledPoint p) : ℕ :=
   Nat.card ((component p i).domRestrict
     ((sigmaEquiv p i).1.coord ∘ (sigmaEquiv p i).1.neighborhood.restrictPreimage p) ⁻¹'
@@ -289,13 +289,16 @@ theorem t2Space : T2Space (FilledCover p) := by
       range_mem_map
 
 omit hfin in
-/-- **The local degree over `0` is the cycle length.** The component of `p ⁻¹' D₀*` labelled by
-the cycle of the sheet `j` under `σ0` has local degree the length of that cycle. -/
-theorem degree_indexEquiv_symm_inl {n : ℕ} (ν : p ⁻¹' {basePt} ≃ Fin n) (j : Fin n) :
-    degree p ((indexEquiv hp ν).symm (.inl (Quotient.mk _ j))) =
+/-- **The local degree over `0` is the cycle length.** The component of `p ⁻¹' D₀*` containing the
+endpoint of the lift of `αZero` from the sheet `ν.symm j` has local degree the length of the cycle
+of `j` under `σ0`. This is the component that `FilledCover.indexEquiv` labels by that cycle, so
+`simp` rewrites `degree p ((indexEquiv hp ν).symm (.inl (Quotient.mk _ j)))` to the cycle length. -/
+@[simp]
+theorem degree_overZero_mk_monodromy {n : ℕ} (ν : p ⁻¹' {basePt} ≃ Fin n) (j : Fin n) :
+    degree p (overZero p (ConnectedComponents.mk ⟨hp.monodromy (.mk αZero) (ν.symm j),
+      hp.monodromy_αZero_mem_preimage (ν.symm j)⟩)) =
       minimalPeriod (hp.monodromyTriple ν).σ0 j := by
   have hfin : Finite (p ⁻¹' {basePt}) := .of_equiv _ ν.symm
-  rw [indexEquiv_symm_inl, hp.sameCycleQuotientσ0EquivConnectedComponents_mk]
   have key := (exists_homeomorph_chart_eq hp hfin (overZero p
     (ConnectedComponents.mk ⟨_, hp.monodromy_αZero_mem_preimage (ν.symm j)⟩))).imp fun _ h ↦ h.1
   rw [component, sigmaEquiv_overZero] at key
@@ -305,13 +308,16 @@ theorem degree_indexEquiv_symm_inl {n : ℕ} (ν : p ⁻¹' {basePt} ≃ Fin n) 
   exact key
 
 omit hfin in
-/-- **The local degree over `1` is the cycle length.** The component of `p ⁻¹' D₁*` labelled by
-the cycle of the sheet `j` under `σ1` has local degree the length of that cycle. -/
-theorem degree_indexEquiv_symm_inr_inl {n : ℕ} (ν : p ⁻¹' {basePt} ≃ Fin n) (j : Fin n) :
-    degree p ((indexEquiv hp ν).symm (.inr (.inl (Quotient.mk _ j)))) =
+/-- **The local degree over `1` is the cycle length.** The component of `p ⁻¹' D₁*` containing the
+endpoint of the lift of `αOne` from the sheet `ν.symm j` has local degree the length of the cycle of
+`j` under `σ1`. This is the component that `FilledCover.indexEquiv` labels by that cycle, so `simp`
+rewrites `degree p ((indexEquiv hp ν).symm (.inr (.inl (Quotient.mk _ j))))` to the cycle length. -/
+@[simp]
+theorem degree_overOne_mk_monodromy {n : ℕ} (ν : p ⁻¹' {basePt} ≃ Fin n) (j : Fin n) :
+    degree p (overOne p (ConnectedComponents.mk ⟨hp.monodromy (.mk αOne) (ν.symm j),
+      hp.monodromy_αOne_mem_preimage (ν.symm j)⟩)) =
       minimalPeriod (hp.monodromyTriple ν).σ1 j := by
   have hfin : Finite (p ⁻¹' {basePt}) := .of_equiv _ ν.symm
-  rw [indexEquiv_symm_inr_inl, hp.sameCycleQuotientσ1EquivConnectedComponents_mk]
   have key := (exists_homeomorph_chart_eq hp hfin (overOne p
     (ConnectedComponents.mk ⟨_, hp.monodromy_αOne_mem_preimage (ν.symm j)⟩))).imp fun _ h ↦ h.1
   rw [component, sigmaEquiv_overOne] at key
@@ -321,13 +327,17 @@ theorem degree_indexEquiv_symm_inr_inl {n : ℕ} (ν : p ⁻¹' {basePt} ≃ Fin
   exact key
 
 omit hfin in
-/-- **The local degree over `∞` is the cycle length.** The component of `p ⁻¹' D∞*` labelled by
-the cycle of the sheet `j` under `σinf` has local degree the length of that cycle. -/
-theorem degree_indexEquiv_symm_inr_inr {n : ℕ} (ν : p ⁻¹' {basePt} ≃ Fin n) (j : Fin n) :
-    degree p ((indexEquiv hp ν).symm (.inr (.inr (Quotient.mk _ j)))) =
+/-- **The local degree over `∞` is the cycle length.** The component of `p ⁻¹' D∞*` containing the
+endpoint of the lift of `αPlus` from the sheet `ν.symm j` has local degree the length of the cycle
+of `j` under `σinf`. This is the component that `FilledCover.indexEquiv` labels by that cycle, so
+`simp` rewrites `degree p ((indexEquiv hp ν).symm (.inr (.inr (Quotient.mk _ j))))` to the cycle
+length. -/
+@[simp]
+theorem degree_overInf_mk_monodromy {n : ℕ} (ν : p ⁻¹' {basePt} ≃ Fin n) (j : Fin n) :
+    degree p (overInf p (ConnectedComponents.mk ⟨hp.monodromy (.mk αPlus) (ν.symm j),
+      hp.monodromy_αPlus_mem_preimage (ν.symm j)⟩)) =
       minimalPeriod (hp.monodromyTriple ν).σinf j := by
   have hfin : Finite (p ⁻¹' {basePt}) := .of_equiv _ ν.symm
-  rw [indexEquiv_symm_inr_inr, hp.sameCycleQuotientσinfEquivConnectedComponents_mk]
   have key := (exists_homeomorph_chart_eq hp hfin (overInf p
     (ConnectedComponents.mk ⟨_, hp.monodromy_αPlus_mem_preimage (ν.symm j)⟩))).imp fun _ h ↦ h.1
   rw [component, sigmaEquiv_overInf] at key
