@@ -166,12 +166,11 @@ theorem disjoint_congruenceEisensteinSubspace_cuspFormSubmodule (hΓ : Gamma N �
       (cuspFormSubmodule (Γ.map (mapGL ℝ)) k) := by
   rw [Submodule.disjoint_def]
   intro f hfE hfS
-  apply ModularForm.restrict_injective (Subgroup.map_mono hΓ)
   have hzero := (Submodule.disjoint_def.mp
     (disjoint_primitiveEisensteinSubspace_cuspFormSubmodule hk)) _
       ((mem_congruenceEisensteinSubspace_iff hΓ hk f).mp hfE)
       (ModularForm.restrict_mem_cuspFormSubmodule _ hfS)
-  simpa only [← ModularForm.restrictₗ_apply k ℂ, map_zero] using hzero
+  exact (ModularForm.restrict_eq_zero_iff _).mp hzero
 
 /-- In weight at least three, the Eisenstein subspace of `M_k(Γ)` and the cusp forms together
 span all modular forms on `Γ`. -/

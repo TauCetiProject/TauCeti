@@ -398,7 +398,7 @@ def restrictₗ (h : Γ' ≤ Γ) : CuspForm Γ k →ₗ[R] CuspForm Γ' k where
   map_add' _ _ := rfl
   map_smul' _ _ := by ext; simp
 
-/-- The same unapplied form as Mathlib's `ModularForm.restrictₗ_apply`. -/
+/-- The underlying function of `CuspForm.restrictₗ k R h` is `CuspForm.restrict h`. -/
 @[simp]
 lemma restrictₗ_apply (h : Γ' ≤ Γ) : ⇑(restrictₗ k R h) = restrict h := (rfl)
 

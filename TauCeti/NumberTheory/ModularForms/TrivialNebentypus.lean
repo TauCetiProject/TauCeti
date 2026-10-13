@@ -20,14 +20,15 @@ two isomorphic, then use `M_k(Γ₀(N))` as the default spelling and convert to 
 that milestone, for modular forms (`TauCeti.modFormCharSpaceOneEquiv`) and for cusp forms
 (`TauCeti.cuspFormCharSpaceOneEquiv`), both stated for `N ≠ 0`.
 
-Both directions are instances of the generic subgroup-change API of
-`TauCeti.NumberTheory.ModularForms.Basic`. Restricting a `Γ₀(N)`-form to `Γ₁(N)`
-(`ModularForm.restrict`) is unconditional, and the resulting form has trivial nebentypus because
-the diamond operators are slashes by elements of `Γ₀(N)`. Conversely, a `Γ₁(N)`-form with
-trivial nebentypus is `Γ₀(N)`-slash invariant by the nebentypus criterion
+Both directions are instances of generic subgroup-change constructions. Restricting a
+`Γ₀(N)`-form to `Γ₁(N)` is Mathlib's `ModularForm.restrict` (resp. `CuspForm.restrict`) and is
+unconditional, and the resulting form has trivial nebentypus because the diamond operators
+are slashes by elements of `Γ₀(N)`. Conversely, a `Γ₁(N)`-form with trivial nebentypus is
+`Γ₀(N)`-slash invariant by the nebentypus criterion
 `mem_modFormCharSpace_iff_nebentypus`, and it is bounded (resp. zero) at every cusp of `Γ₀(N)`
 because for `N ≠ 0` the groups `Γ₀(N)` and `Γ₁(N)` are arithmetic, hence share the cusps of
-`SL(2, ℤ)` (`Subgroup.IsArithmetic.isCusp_of_isCusp`); this is `ModularForm.ofSlashInvariant`.
+`SL(2, ℤ)` (`Subgroup.IsArithmetic.isCusp_of_isCusp`); this is `ModularForm.ofSlashInvariant`
+from `TauCeti.NumberTheory.ModularForms.Basic`.
 Both constructions preserve the underlying function `ℍ → ℂ`, so the resulting bijections are
 `ℂ`-linear and conversion in either direction costs nothing: see the `coe_…_apply` lemmas
 below.

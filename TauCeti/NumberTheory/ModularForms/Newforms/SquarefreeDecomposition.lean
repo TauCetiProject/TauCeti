@@ -277,7 +277,7 @@ private theorem squarefreeDecomposition_mul {m : ℕ}
       simp only [MonoidHom.comp_assoc, ZMod.unitsMap_comp] at this ⊢
       exact this
     · rw [hsplit n, hFcoeff n, hcoeff' n]
-      congr 1
+      simp only [CuspForm.coe_restrict]
 
 /-- **Miyake's Lemma 4.6.7: the squarefree decomposition.** If `f ∈ S_k(Γ₁(N), χ)` vanishes at
 every index coprime to a squarefree `l`, then `a_n(f) = ∑_{q ∈ l.primeFactors, q ∣ n} a_{n/q}(F q)`,
