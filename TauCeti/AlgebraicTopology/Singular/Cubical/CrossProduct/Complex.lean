@@ -219,6 +219,12 @@ theorem ι_cubicalCrossProduct_f {p q n : ℕ} (h : p + q = n) :
       cubicalCrossProductSummand R X Y p q n h :=
   ι_cubicalCrossProductX h
 
+/-- The continuous map underlying `f ⊗ₘ g`, for the cartesian monoidal structure on spaces, is the
+product map. -/
+private theorem hom_tensorHom_eq_prodMap {X X' Y Y' : TopCat.{u}} (f : X ⟶ X') (g : Y ⟶ Y') :
+    (f ⊗ₘ g).hom = f.hom.prodMap g.hom :=
+  (rfl)
+
 /-- **Naturality** of the cross product chain map in both spaces. -/
 @[reassoc]
 theorem cubicalCrossProduct_naturality {X X' Y Y' : TopCat.{u}} (f : X ⟶ X') (g : Y ⟶ Y') :
@@ -233,15 +239,25 @@ theorem cubicalCrossProduct_naturality {X X' Y Y' : TopCat.{u}} (f : X ⟶ X') (
   erw [HomologicalComplex.ι_tensorHom_assoc]
   rw [ι_cubicalCrossProduct_f, ι_cubicalCrossProduct_f_assoc]
   refine ModuleCat.hom_ext (TensorProduct.ext' fun a b ↦ ?_)
-  -- both sides are the class of `a × b`, once the components of the chain maps induced by `f` and
-  -- `g` are read as `NormalizedCubicalChain.map` (the definition of the functor on morphisms) and
-  -- `(f ⊗ₘ g).hom` as the product map `f.hom.prodMap g.hom` (the definition of the cartesian
-  -- monoidal structure on spaces); both are definitional, so `exact` sees through them
-  refine (cubicalCrossProductSummand_apply R X' Y' p q n h
-    (NormalizedCubicalChain.map R f.hom p a) (NormalizedCubicalChain.map R g.hom q b)).trans ?_
-  exact (congrArg (NormalizedCubicalChain.cast R h)
+  have h₁ := cubicalCrossProductSummand_apply R X' Y' p q n h
+    (((normalizedCubicalChainComplex R).map f).f p a)
+    (((normalizedCubicalChainComplex R).map g).f q b)
+  have hf : (((normalizedCubicalChainComplex R).map f).f p) a =
+      NormalizedCubicalChain.map R f.hom p a := normalizedCubicalChainComplex_map_f_apply f p a
+  have hg : (((normalizedCubicalChainComplex R).map g).f q) b =
+      NormalizedCubicalChain.map R g.hom q b := normalizedCubicalChainComplex_map_f_apply g q b
+  rw [hf, hg] at h₁
+  have h₂ : (((normalizedCubicalChainComplex R).map (f ⊗ₘ g)).f n)
+      ((cubicalCrossProductSummand R X Y p q n h).hom (a ⊗ₜ[R] b)) =
+      NormalizedCubicalChain.map R (f ⊗ₘ g).hom n
+        ((cubicalCrossProductSummand R X Y p q n h).hom (a ⊗ₜ[R] b)) :=
+    normalizedCubicalChainComplex_map_f_apply (f ⊗ₘ g) n _
+  rw [hom_tensorHom_eq_prodMap] at h₂
+  exact h₁.trans ((congrArg (NormalizedCubicalChain.cast R h)
     (NormalizedCubicalChain.map_crossProduct (R := R) f.hom g.hom a b).symm).trans
-    (NormalizedCubicalChain.map_cast (R := R) (f.hom.prodMap g.hom) h _).symm
+    ((NormalizedCubicalChain.map_cast (R := R) (f.hom.prodMap g.hom) h _).symm.trans
+      ((congrArg (NormalizedCubicalChain.map R (f.hom.prodMap g.hom) n)
+        (cubicalCrossProductSummand_apply R X Y p q n h a b)).symm.trans h₂.symm)))
 
 end TauCeti
 
