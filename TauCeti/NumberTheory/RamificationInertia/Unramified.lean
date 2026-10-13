@@ -49,7 +49,7 @@ theorem card_inertia_eq_one_iff_isUnramifiedAt (P : Ideal S) [P.IsMaximal] :
   let := Localization.AtPrime.algebraOfLiesOver (P.under R) P
   rw [card_inertia_eq_ramificationIdx_mul_finInsepDegree (R := R) (G := G),
     mul_eq_one,
-    isUnramifiedAt_iff_ramificationIdx_eq_one_and_isSeparable]
+    isUnramifiedAt_iff_ramificationIdx_eq_one_and_isSeparable_residueField]
   exact and_congr_right fun _ ↦
     (isSeparable_iff_finInsepDegree_eq_one (F := R ⧸ P.under R) (K := S ⧸ P)).symm.trans
       Algebra.isSeparable_residueField_iff.symm

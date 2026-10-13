@@ -24,7 +24,7 @@ variable {R S : Type*} [CommRing R] [CommRing S] [Algebra R S]
 
 /-- Unramifiedness at a prime is ramification index one together with separability of the
 selected residue extension. No separability assumption is imposed at other primes. -/
-theorem isUnramifiedAt_iff_ramificationIdx_eq_one_and_isSeparable
+theorem isUnramifiedAt_iff_ramificationIdx_eq_one_and_isSeparable_residueField
     (q : Ideal S) [q.IsPrime] [Algebra.EssFiniteType R S] :
     Algebra.IsUnramifiedAt R q ↔ q.ramificationIdx R = 1 ∧
       let := Localization.AtPrime.algebraOfLiesOver (q.under R) q
