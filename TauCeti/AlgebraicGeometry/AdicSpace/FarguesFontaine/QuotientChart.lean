@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.AdicSpace.FarguesFontaine.IntervalChart
+public import TauCeti.AlgebraicGeometry.AdicSpace.PreAdicSpace.Plus
 
 import TauCeti.Analysis.SpecialFunctions.Pow.NNRat
 
@@ -47,6 +48,9 @@ affinoid subspaces, each isomorphic to the adic spectrum of an interval ring.
 * `TauCeti.FarguesFontaine.isOpenImmersion_spaXWindowChart` : for a wandering window the chart is
   an open immersion.
 * `TauCeti.FarguesFontaine.range_spaXWindowChart_base` : the image of the chart is `q(W)`.
+* `TauCeti.FarguesFontaine.comap_presentationLimitPlusSubring_spaXWindowChart` : over an open of
+  `q(W)`, the chart identifies the integral sections `𝒪_𝒳⁺` with the plus subrings of
+  `Spa(B^I, B^{I,+})`.
 * `TauCeti.FarguesFontaine.quotientMap_image_window_mem_affinoidOpens` : the image `q(W)` of a
   wandering window is an open affinoid subspace of `𝒳`.
 * `TauCeti.FarguesFontaine.quotientMap_image_windowU_mem_affinoidOpens` and
@@ -278,6 +282,28 @@ theorem range_spaXWindowChart_base :
     rw [← hq, ← hxy]
     -- the chart is `i.inv ≫ l ≫ q`, and its base is the composite of the bases
     exact congrArg (fun z ↦ (quotientPreAdicHom P hI hY).base (l.base z)) hix
+
+/-- **The window chart identifies integral sections.** Over an open `V ⊆ q(W)` of `𝒳`, a section of
+`𝒪_𝒳` over `V` lies in `𝒪_𝒳⁺(V)` exactly when its pullback along the chart lies in the plus subring
+`𝒪⁺(V')` of `Spa(B^I, B^{I,+})` over the preimage `V'` of `V`. On a rational open `V'` this plus
+subring is the plus ring of the rational localisation of `(B^I, B^{I,+})`, by Wedhorn's
+Proposition 8.16 (`map_completedPlusSubring_eq_presentationLimitPlusSubring`). -/
+theorem comap_presentationLimitPlusSubring_spaXWindowChart {V : Opens (spaXPreAdicSpace P hI hY)}
+    (hV : (V : Set (spaXPreAdicSpace P hI hY)) ⊆ quotientMap hI '' (Subtype.val ⁻¹'
+        {v | v ∈ spaY p ϖ ∧ IsRadiusLowerBound p ϖ q v ∧ IsRadiusUpperBound p ϖ q' v})) :
+    (presentationLimitPlusSubring (fun _ ha ↦ mem_powerBoundedSubring.mp ha)
+        P'.le_powerBoundedSubring ((Opens.map
+          (spaXWindowChart hv hϖ hϖ' hρ₁ hρ₂ hI P hden hY h₁ h₂ h₁₂ P').base).obj V)).comap
+        ((PreAdicSpace.toRingPresheafedSpaceHom
+          (spaXWindowChart hv hϖ hϖ' hρ₁ hρ₂ hI P hden hY h₁ h₂ h₁₂ P').toHom).c.app
+            (Opposite.op V)).hom =
+      (spaXPreAdicSpace P hI hY).plusSubring V := by
+  -- the integral sections of `Spa(B^I, B^{I,+})` as a pre-adic space are its plus subrings
+  refine (congrArg _ (presentationLimitPreAdicSpace_plusSubring P' _ _ P'.le_powerBoundedSubring
+    _).symm).trans ?_
+  exact PreAdicSpace.Hom.comap_plusSubring_of_subset_range
+    (spaXWindowChart hv hϖ hϖ' hρ₁ hρ₂ hI P hden hY h₁ h₂ h₁₂ P') (hV.trans
+      (range_spaXWindowChart_base hv hϖ hϖ' hρ₁ hρ₂ hI P hden hY h₁ h₂ h₁₂ P').ge)
 
 end Chart
 
