@@ -92,6 +92,13 @@ variable {M} in
 theorem smul_addEquiv (g : G) (x : M) : g • addEquiv M x = addEquiv M (g • x) :=
   (rfl)
 
+variable {M} in
+/-- Read back in `M`, the action of `G` on `ForcedDiscrete M` is the action on `M`. -/
+@[simp]
+theorem addEquiv_symm_smul (g : G) (x : ForcedDiscrete M) :
+    (addEquiv M).symm (g • x) = g • (addEquiv M).symm x :=
+  (rfl)
+
 end Monoid
 
 section Group
