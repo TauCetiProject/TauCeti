@@ -60,6 +60,7 @@ structure ImmersedLieSubgroupData
     {E : Type u} [NormedAddCommGroup E] [NormedSpace ℝ E]
     {H : Type v} [TopologicalSpace H] (I : ModelWithCorners ℝ E H)
     {G : Type w} [TopologicalSpace G] [ChartedSpace H G] [Group G]
+    [LieGroup I ∞ G]
     (K : Subgroup G) where
   /-- The connected Lie group which parametrizes the immersed subgroup. -/
   X : Type w
@@ -96,7 +97,7 @@ structure ImmersedLieSubgroupData
 
 variable {E : Type u} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {H : Type v} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
-  {G : Type w} [TopologicalSpace G] [ChartedSpace H G] [Group G]
+  {G : Type w} [TopologicalSpace G] [ChartedSpace H G] [Group G] [LieGroup I ∞ G]
 
 namespace ImmersedLieSubgroupData
 
@@ -151,6 +152,7 @@ def IsImmersedLieSubgroup (K : Subgroup G) : Prop :=
   Nonempty (ImmersedLieSubgroupData I K)
 
 /-- Characterization of `TauCeti.Lie.IsImmersedLieSubgroup` by the data it forgets. -/
+@[simp]
 theorem isImmersedLieSubgroup_iff {K : Subgroup G} :
     IsImmersedLieSubgroup (I := I) K ↔ Nonempty (ImmersedLieSubgroupData I K) :=
   Iff.rfl
@@ -160,9 +162,8 @@ theorem ImmersedLieSubgroupData.isImmersedLieSubgroup {K : Subgroup G}
     (d : ImmersedLieSubgroupData I K) : IsImmersedLieSubgroup (I := I) K :=
   ⟨d⟩
 
-variable [LieGroup I ∞ G]
-
 /-- A connected Lie group is an immersed Lie subgroup of itself via the identity homomorphism. -/
+@[simp 1100]
 theorem isImmersedLieSubgroup_top [ConnectedSpace G] :
     IsImmersedLieSubgroup (I := I) (⊤ : Subgroup G) := by
   exact ⟨{
