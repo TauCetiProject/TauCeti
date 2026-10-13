@@ -251,19 +251,6 @@ lemma continuous_of_continuous_matrixBilinearForm {a : X → Matrix n n ℝ}
   ext i j
   simp
 
-/-- A principal coefficient field is continuous exactly when its field of bilinear forms is,
-since the entries of each matrix are the values of its form on the standard basis. -/
-lemma continuous_matrixBilinearForm_comp_iff {a : X → Matrix n n ℝ} :
-    Continuous (fun x => matrixBilinearForm (a x)) ↔ Continuous a := by
-  classical
-  refine ⟨fun h => continuous_pi fun i => continuous_pi fun j => ?_,
-    continuous_matrixBilinearForm.comp⟩
-  have hentry : (fun x => a x i j) = fun x =>
-      matrixBilinearForm (a x) (EuclideanSpace.single i 1) (EuclideanSpace.single j 1) :=
-    funext fun x => (matrixBilinearForm_single_single (a x) i j).symm
-  rw [hentry]
-  exact (h.clm_apply continuous_const).clm_apply continuous_const
-
 end Continuity
 
 /-- A pointwise bilinear upper bound gives the corresponding norm estimate for the bundled

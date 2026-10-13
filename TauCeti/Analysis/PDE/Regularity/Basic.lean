@@ -315,21 +315,6 @@ theorem energyFormH1_differenceQuotient_eq_neg (A : Matrix ι ι ℝ) (w : Eucli
   linarith
 
 omit [DecidableEq ι] in
-/-- Essential boundedness of the drift- and mass-free energy densities is invariant under
-translating the coefficients, by translation invariance of the Haar measure. -/
-private theorem memLp_energyIntegrand_comp_add_right
-    (hcoeff : MemLp (fun x => energyIntegrand (a x) 0 0) ⊤
-      (mu.restrict ((⊤ : Opens (EuclideanSpace ℝ ι)) : Set (EuclideanSpace ℝ ι))))
-    (h : EuclideanSpace ℝ ι) :
-    MemLp (fun x => energyIntegrand (a (x + h)) 0 0) ⊤
-      (mu.restrict ((⊤ : Opens (EuclideanSpace ℝ ι)) : Set (EuclideanSpace ℝ ι))) := by
-  -- Name the normed structure on bilinear forms so that `MemLp` can be transported.
-  let : NormedAddCommGroup
-      ((ℝ × EuclideanSpace ℝ ι) →L[ℝ] (ℝ × EuclideanSpace ℝ ι) →L[ℝ] ℝ) := inferInstance
-  simp only [Opens.coe_top, Measure.restrict_univ] at hcoeff ⊢
-  exact hcoeff.comp_measurePreserving (measurePreserving_add_right mu h)
-
-omit [DecidableEq ι] in
 /-- **Discrete integration by parts for the energy form.** Testing the difference quotient of
 `u` against `v` with the translated coefficients `aₜ = a(· + t w)` is, up to sign, testing `u`
 against the difference quotient of `v` with the opposite step, plus a commutator term:
@@ -438,7 +423,16 @@ theorem norm_inv_mul_energyFormH1_comp_add_sub_le
     _ ≤ K * ‖w‖ * (‖W1p.gradient v‖ * ‖W1p.gradient u‖) := by
         rw [integral_const_mul]
         gcongr
-        exact Lp.integral_norm_mul_norm_le (W1p.gradient v) (W1p.gradient u)
+        have hf : MemLp (fun x => ‖W1p.gradient v x‖) (ENNReal.ofReal 2)
+            (mu.restrict ((⊤ : Opens (EuclideanSpace ℝ ι)) : Set (EuclideanSpace ℝ ι))) := by
+          simpa using (Lp.memLp (W1p.gradient v)).norm
+        have hg : MemLp (fun x => ‖W1p.gradient u x‖) (ENNReal.ofReal 2)
+            (mu.restrict ((⊤ : Opens (EuclideanSpace ℝ ι)) : Set (EuclideanSpace ℝ ι))) := by
+          simpa using (Lp.memLp (W1p.gradient u)).norm
+        have key := integral_mul_norm_le_Lp_mul_Lq Real.HolderConjugate.two_two hf hg
+        simp only [norm_norm, Real.rpow_two, Lp.integral_norm_sq_eq_norm_sq] at key
+        rwa [← Real.sqrt_eq_rpow, ← Real.sqrt_eq_rpow, Real.sqrt_sq (norm_nonneg _),
+          Real.sqrt_sq (norm_nonneg _)] at key
 
 /-- **The difference quotients of the gradient of a weak solution are uniformly bounded.** Let
 `a` be uniformly elliptic on the whole space with lower constant `λ`, and let `x ↦ a(x)` be

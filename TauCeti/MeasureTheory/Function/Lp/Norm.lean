@@ -28,9 +28,6 @@ bounds.
   `Lᵖ` function, `1 ≤ p`, is at most `μ(univ)^{1 - 1/p}` times its `Lᵖ` norm.
 * `MeasureTheory.Lp.norm_integral_le_of_ae_norm_le_mul`: the resulting bound on the integral of a
   function dominated pointwise by a multiple of the norm of an `Lᵖ` function.
-
-* `MeasureTheory.Lp.integral_norm_mul_norm_le`: Cauchy–Schwarz for the pointwise norms of two
-  `L²` functions.
 * `MeasureTheory.Lp.setIntegral_norm_sq_le_norm_sq`: so its integral over a subset of the set it
   lives on is at most its squared `L²` norm.
 * `MeasureTheory.MemLp.integrableOn_of_subset` and
@@ -133,20 +130,6 @@ theorem Lp.norm_integral_le_of_ae_norm_le_mul {alpha F G : Type*} [MeasurableSpa
         gcongr
         exact Lp.integral_norm_le_mul_norm f
     _ = K * (m Set.univ ^ (1 - 1 / p.toReal)).toReal * ‖f‖ := (mul_assoc _ _ _).symm
-
-/-- **Cauchy–Schwarz for `L²` functions.** The integral of the product of the pointwise norms of
-two `L²` functions, possibly with different targets, is at most the product of their `L²`
-norms. -/
-theorem Lp.integral_norm_mul_norm_le {alpha F G : Type*} [MeasurableSpace alpha]
-    {m : Measure alpha} [NormedAddCommGroup F] [NormedAddCommGroup G] (f : Lp F 2 m)
-    (g : Lp G 2 m) :
-    ∫ x, ‖f x‖ * ‖g x‖ ∂m ≤ ‖f‖ * ‖g‖ := by
-  have hf : MemLp (fun x => ‖f x‖) (ENNReal.ofReal 2) m := by simpa using (Lp.memLp f).norm
-  have hg : MemLp (fun x => ‖g x‖) (ENNReal.ofReal 2) m := by simpa using (Lp.memLp g).norm
-  have key := integral_mul_norm_le_Lp_mul_Lq Real.HolderConjugate.two_two hf hg
-  simp only [norm_norm, Real.rpow_two, Lp.integral_norm_sq_eq_norm_sq] at key
-  rwa [← Real.sqrt_eq_rpow, ← Real.sqrt_eq_rpow, Real.sqrt_sq (norm_nonneg _),
-    Real.sqrt_sq (norm_nonneg _)] at key
 
 /-- For an `L²` function `f` on `t`, the integral of `‖f‖²` over a subset `s ⊆ t` is at most the
 squared `L²` norm of `f`. -/
