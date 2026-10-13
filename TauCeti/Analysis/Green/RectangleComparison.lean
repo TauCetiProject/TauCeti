@@ -30,7 +30,7 @@ gauge integrability. This comparison requires only continuity of the two coeffic
 theorem integral_rectangle_boundary {a b c e : ℝ} (hab : a < b) (hce : c < e)
     {P Q : ℂ → ℝ} (hP : ContinuousOn P (verticalRegion a b (fun _ ↦ c) (fun _ ↦ e)))
     (hQ : ContinuousOn Q (verticalRegion a b (fun _ ↦ c) (fun _ ↦ e))) :
-    let C := (Division.rectangle_re a b c e hab hce).boundary
+    let C := (Division.rectangleRe a b c e hab hce).boundary
     BoundaryChain.Integrable Complex.reCLM P C ∧ BoundaryChain.Integrable Complex.imCLM Q C ∧
       BoundaryChain.integral Complex.reCLM P C + BoundaryChain.integral Complex.imCLM Q C =
         ((∫ x in a..b, P ⟨x, c⟩) - ∫ x in a..b, P ⟨x, e⟩) +
@@ -47,7 +47,7 @@ theorem integral_rectangle_boundary {a b c e : ℝ} (hab : a < b) (hce : c < e)
     (hQ.mono (by rintro _ ⟨y, hy, rfl⟩; simpa [hy] using hab.le))
     (hQ.mono (by rintro _ ⟨y, hy, rfl⟩; simpa [hy] using hab.le))
   dsimp only
-  rw [Division.boundary_rectangle_re]
+  rw [Division.boundary_rectangleRe]
   rw [← BoundaryChain.cellBoundary_rectangle_re_eq_im a b c e] at hdy
   simp only [Coordinate.proj_re, Coordinate.orientation_re, one_smul,
     Coordinate.graph_re_apply] at hdx
@@ -73,7 +73,7 @@ theorem integral_rectangle_boundary_eq_divergence (f g : ℝ × ℝ → ℝ)
     (hdf : ∀ x ∈ Ioo a.1 b.1 ×ˢ Ioo a.2 b.2 \ s, HasFDerivAt f (f' x) x)
     (hdg : ∀ x ∈ Ioo a.1 b.1 ×ˢ Ioo a.2 b.2 \ s, HasFDerivAt g (g' x) x)
     (hi : IntegrableOn (fun x ↦ f' x (1, 0) + g' x (0, 1)) (Icc a b)) :
-    let C := (Division.rectangle_re a.1 b.1 a.2 b.2 hx hy).boundary
+    let C := (Division.rectangleRe a.1 b.1 a.2 b.2 hx hy).boundary
     BoundaryChain.Integrable Complex.reCLM (fun z ↦ -g (z.re, z.im)) C ∧
       BoundaryChain.Integrable Complex.imCLM (fun z ↦ f (z.re, z.im)) C ∧
       BoundaryChain.integral Complex.reCLM (fun z ↦ -g (z.re, z.im)) C +
@@ -95,7 +95,7 @@ theorem integral_rectangle_boundary_eq_bilinear {V : Type*} [NormedAddCommGroup 
     [NormedSpace ℝ V] (B : V →L[ℝ] V →L[ℝ] ℝ) {u : ℝ × ℝ → V} {a b : ℝ × ℝ}
     (hx : a.1 < b.1) (hy : a.2 < b.2)
     (hu : ∀ z ∈ Icc a b, ContDiffAt ℝ 2 u z) :
-    let C := (Division.rectangle_re a.1 b.1 a.2 b.2 hx hy).boundary
+    let C := (Division.rectangleRe a.1 b.1 a.2 b.2 hx hy).boundary
     let P := fun z : ℂ ↦ B (u (z.re, z.im)) (fderiv ℝ u (z.re, z.im) (1, 0))
     let Q := fun z : ℂ ↦ B (u (z.re, z.im)) (fderiv ℝ u (z.re, z.im) (0, 1))
     BoundaryChain.Integrable Complex.reCLM P C ∧ BoundaryChain.Integrable Complex.imCLM Q C ∧

@@ -24,11 +24,6 @@ open MeasureTheory Set
 
 namespace TauCeti.Green
 
-/-- The standard triangle is compact. -/
-theorem isCompact_standardTriangle : IsCompact standardTriangle := by
-  simpa only [GraphCell.region_standardTriangleCell] using
-    GraphCell.standardTriangleCell.isCompact_region .re
-
 /-- Green on the standard triangle for fields `C¹` on any open neighborhood. The three
 Bochner curve integrals are the actual straight edges, with the diagonal signed negatively. -/
 theorem green_standardTriangle {U : Set ℂ} (hU : IsOpen U) (hTU : standardTriangle ⊆ U)
@@ -62,26 +57,26 @@ theorem green_standardTriangle {U : Set ℂ} (hU : IsOpen U) (hTU : standardTria
   have h₀ : (0 : ℂ) ∈ standardTriangle := by simp [mem_standardTriangle]
   have h₁ : (1 : ℂ) ∈ standardTriangle := by simp [mem_standardTriangle]
   have hI : Complex.I ∈ standardTriangle := by simp [mem_standardTriangle]
-  have h := Division.green_curveIntegral (Division.standardTriangle .re)
-    (Division.standardTriangle .im) (Division.standardTriangle_null_re hTU)
+  have h := Division.green_curveIntegral (Division.standardTriangleDivision .re)
+    (Division.standardTriangleDivision .im) (Division.standardTriangle_null_re hTU)
     (Division.standardTriangle_null_im U) hTU hPc hQc
     (RP := fun z ↦ fderiv ℝ P z Complex.I) (RQ := fun z ↦ fderiv ℝ Q z (1 : ℂ))
     (by
       intro K hK x hx y hy
       have hz : (⟨x, y⟩ : ℂ) ∈ standardTriangle :=
-        (Division.standardTriangle .re).region_subset hK (by
+        (Division.standardTriangleDivision .re).region_subset hK (by
           rw [GraphCell.region_re, mem_verticalRegion]
           exact ⟨hx, Ioo_subset_Icc_self hy⟩)
       exact hasDerivAt_im_slice (hPd _ hz).hasFDerivAt)
     (by
       intro K hK y hy x hx
       have hz : (⟨x, y⟩ : ℂ) ∈ standardTriangle :=
-        (Division.standardTriangle .im).region_subset hK (by
+        (Division.standardTriangleDivision .im).region_subset hK (by
           rw [GraphCell.region_im, mem_horizontalRegion]
           exact ⟨hy, Ioo_subset_Icc_self hx⟩)
       exact hasDerivAt_re_slice (hQd _ hz).hasFDerivAt)
-    (fun K hK ↦ hRP.mono_set ((Division.standardTriangle .re).region_subset hK))
-    (fun K hK ↦ hRQ.mono_set ((Division.standardTriangle .im).region_subset hK))
+    (fun K hK ↦ hRP.mono_set ((Division.standardTriangleDivision .re).region_subset hK))
+    (fun K hK ↦ hRQ.mono_set ((Division.standardTriangleDivision .im).region_subset hK))
     (by
       classical
       intro γ hγ

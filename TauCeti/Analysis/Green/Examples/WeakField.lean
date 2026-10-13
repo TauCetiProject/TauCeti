@@ -29,22 +29,22 @@ namespace TauCeti.Green.Examples
 gauge components are integrable, and its circulation and the area integral are one. -/
 theorem green_abs_unitSquare :
     let D := verticalRegion 0 1 (fun _ ↦ 0) (fun _ ↦ 1)
-    let C := (Division.rectangle_re 0 1 0 1 zero_lt_one zero_lt_one).boundary
+    let C := (Division.rectangleRe 0 1 0 1 zero_lt_one zero_lt_one).boundary
     BoundaryChain.Integrable Complex.reCLM (fun z ↦ |z.re - 1 / 2|) C ∧
       BoundaryChain.Integrable Complex.imCLM Complex.re C ∧
       IntegrableOn (fun _ : ℂ ↦ (1 : ℝ)) D ∧
       BoundaryChain.integral Complex.reCLM (fun z ↦ |z.re - 1 / 2|) C +
         BoundaryChain.integral Complex.imCLM Complex.re C = 1 ∧
       (∫ _ : ℂ in D, (1 : ℝ)) = 1 := by
-  let V := Division.rectangle_re 0 1 0 1 zero_lt_one zero_lt_one
-  let H := Division.rectangle_im 0 1 0 1 zero_lt_one zero_lt_one
+  let V := Division.rectangleRe 0 1 0 1 zero_lt_one zero_lt_one
+  let H := Division.rectangleIm 0 1 0 1 zero_lt_one zero_lt_one
   have hP : Continuous (fun z : ℂ ↦ |z.re - 1 / 2|) := by fun_prop
   have hQ : Continuous (Complex.re : ℂ → ℝ) := Complex.continuous_re
   have hV : BoundaryChain.NullChain .re univ (V.boundary - V.boundary) := by
     rw [sub_self]
     exact .zero
   have hH : BoundaryChain.NullChain .im univ (H.boundary - V.boundary) := by
-    rw [Division.boundary_rectangle_re_eq_im, sub_self]
+    rw [Division.boundary_rectangleRe_eq_rectangleIm, sub_self]
     exact .zero
   have hg := Division.green V H hV hH (subset_univ _) hP.continuousOn hQ.continuousOn
     (RP := fun _ ↦ 0) (RQ := fun _ ↦ 1)

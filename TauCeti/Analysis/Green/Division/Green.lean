@@ -38,9 +38,7 @@ theorem integral_boundary (V : Division d D) {P R : ℂ → ℝ}
     (hR : ∀ K ∈ V.cells, IntegrableOn R (K.region d)) :
     BoundaryChain.Integrable d.proj P V.boundary ∧ IntegrableOn R D ∧
       BoundaryChain.integral d.proj P V.boundary =
-        match d with
-        | .re => -(∫ z in D, R z)
-        | .im => ∫ z in D, R z := by
+        -(d.orientation : ℝ) * ∫ z in D, R z := by
   have hc (K : GraphCell) (hK : K ∈ V.cells) :=
     K.integral_boundary d (hP.mono (V.region_subset hK)) (hdP K hK) (hR K hK)
   refine ⟨?_, V.integrableOn_iff.mpr hR, ?_⟩
@@ -50,7 +48,7 @@ theorem integral_boundary (V : Division d D) {P R : ℂ → ℝ}
   · rw [boundary_def, map_sum]
     have hs := Finset.sum_congr (s₁ := V.cells) rfl (fun K hK ↦ (hc K hK).2)
     rw [hs]
-    cases d <;> simp only [Finset.sum_neg_distrib, ← V.integral_eq_sum hR]
+    rw [← Finset.mul_sum, ← V.integral_eq_sum hR]
 
 /-- Full Green from separate type-I and type-II divisions and geometric comparisons to a
 common boundary. Gauge boundary integrability and integrability of the directional curl are
@@ -77,8 +75,9 @@ theorem green (V : Division .re D) (H : Division .im D) {c : BoundaryChain}
     (by simpa only [Coordinate.graph_im_apply] using hdQ) hRQ
   have hcx := (hV.integrable_iff hP).mp hdx.1
   have hcy := (hH.integrable_iff hQ).mp hdy.1
-  simp only [Coordinate.proj_re] at hdx hcx
-  simp only [Coordinate.proj_im] at hdy hcy
+  simp only [Coordinate.proj_re, Coordinate.orientation_re, Int.cast_one, neg_one_mul] at hdx hcx
+  simp only [Coordinate.proj_im, Coordinate.orientation_im, Int.cast_neg, Int.cast_one,
+    neg_neg, one_mul] at hdy hcy
   refine ⟨hcx, hcy, hdy.2.1.sub hdx.2.1, ?_⟩
   have hx := hV.integral_eq hP
   have hy := hH.integral_eq hQ

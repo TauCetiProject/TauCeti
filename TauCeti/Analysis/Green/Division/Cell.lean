@@ -81,13 +81,13 @@ private theorem differentiableAt_off_finite {a b : ℝ} {f : ℝ → ℝ}
     (hs.isClosed.isOpen_compl.mem_nhds ht.2))).differentiableAt (by norm_num)
 
 /-- Finite-exception `C¹` regularity supplies the graph-arc hypothesis for the lower edge. -/
-theorem differentiable_lowerFun (K : GraphCell) :
+theorem exists_countable_differentiableAt_lowerFun (K : GraphCell) :
     ∃ s : Set ℝ, s.Countable ∧
       ∀ t ∈ Ioo K.a K.b \ s, DifferentiableAt ℝ K.lowerFun t :=
   differentiableAt_off_finite K.lower_regular
 
 /-- Finite-exception `C¹` regularity supplies the graph-arc hypothesis for the upper edge. -/
-theorem differentiable_upperFun (K : GraphCell) :
+theorem exists_countable_differentiableAt_upperFun (K : GraphCell) :
     ∃ s : Set ℝ, s.Countable ∧
       ∀ t ∈ Ioo K.a K.b \ s, DifferentiableAt ℝ K.upperFun t :=
   differentiableAt_off_finite K.upper_regular
@@ -142,23 +142,23 @@ theorem integral_boundary (K : GraphCell) (d : Coordinate) {P R : ℂ → ℝ}
     (hR : IntegrableOn R (K.region d)) :
     BoundaryChain.Integrable d.proj P (K.boundary d) ∧
       BoundaryChain.integral d.proj P (K.boundary d) =
-        match d with
-        | .re => -(∫ z in K.region d, R z)
-        | .im => ∫ z in K.region d, R z := by
+        -(d.orientation : ℝ) * ∫ z in K.region d, R z := by
   cases d with
   | re =>
     simp only [Coordinate.graph_re_apply] at hdP
-    simpa only [boundary, region, Coordinate.proj_re] using
+    simpa only [boundary, region, Coordinate.proj_re, Coordinate.orientation_re, Int.cast_one,
+      neg_one_mul] using
       BoundaryChain.integral_cellBoundary_re K.a_lt_b.le
       K.continuous_lowerFun.continuousOn K.continuous_upperFun.continuousOn
-      K.differentiable_lowerFun K.differentiable_upperFun
+      K.exists_countable_differentiableAt_lowerFun K.exists_countable_differentiableAt_upperFun
       (fun _ hx ↦ K.lowerFun_le_upperFun hx) hP hdP hR
   | im =>
     simp only [Coordinate.graph_im_apply] at hdP
-    simpa only [boundary, region, Coordinate.proj_im] using
+    simpa only [boundary, region, Coordinate.proj_im, Coordinate.orientation_im, Int.cast_neg,
+      Int.cast_one, neg_neg, one_mul] using
       BoundaryChain.integral_cellBoundary_im K.a_lt_b.le
       K.continuous_lowerFun.continuousOn K.continuous_upperFun.continuousOn
-      K.differentiable_lowerFun K.differentiable_upperFun
+      K.exists_countable_differentiableAt_lowerFun K.exists_countable_differentiableAt_upperFun
       (fun _ hx ↦ K.lowerFun_le_upperFun hx) hP hdP hR
 
 /-- Build a cell from raw graph functions by storing only their restrictions to the base

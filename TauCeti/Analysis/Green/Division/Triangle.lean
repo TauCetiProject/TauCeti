@@ -221,29 +221,34 @@ private theorem boundary_standardTriangleCell_im :
 
 end GraphCell
 
+/-- The standard triangle is compact. -/
+theorem isCompact_standardTriangle : IsCompact standardTriangle := by
+  simpa only [GraphCell.region_standardTriangleCell] using
+    GraphCell.standardTriangleCell.isCompact_region .re
+
 namespace Division
 
 /-- Independent singleton divisions of the standard triangle in either coordinate direction. -/
-def standardTriangle (d : Coordinate) : Division d Green.standardTriangle where
+def standardTriangleDivision (d : Coordinate) : Division d Green.standardTriangle where
   cells := {GraphCell.standardTriangleCell}
   covers := by simp
   aedisjoint := by simp
 
 @[simp]
-theorem standardTriangle_cells (d : Coordinate) :
-    (standardTriangle d).cells = {GraphCell.standardTriangleCell} := (rfl)
+theorem standardTriangleDivision_cells (d : Coordinate) :
+    (standardTriangleDivision d).cells = {GraphCell.standardTriangleCell} := (rfl)
 
 /-- The triangle division has the actual four-edge cell boundary. -/
 @[simp]
-theorem boundary_standardTriangle (d : Coordinate) :
-    (standardTriangle d).boundary = GraphCell.standardTriangleCell.boundary d := by
+theorem boundary_standardTriangleDivision (d : Coordinate) :
+    (standardTriangleDivision d).boundary = GraphCell.standardTriangleCell.boundary d := by
   simp [boundary_def]
 
 /-- The type-II cell differs from the three-edge cycle only by a collapsed constant edge. -/
 theorem standardTriangle_null_im (U : Set ℂ) :
     BoundaryChain.NullChain .im U
-      ((standardTriangle .im).boundary - BoundaryChain.triangle 0 1 Complex.I) := by
-  rw [boundary_standardTriangle, GraphCell.boundary_standardTriangleCell_im,
+      ((standardTriangleDivision .im).boundary - BoundaryChain.triangle 0 1 Complex.I) := by
+  rw [boundary_standardTriangleDivision, GraphCell.boundary_standardTriangleCell_im,
     sub_sub_cancel_left]
   exact (BoundaryChain.NullChain.segment (by rfl)).neg
 
@@ -251,7 +256,7 @@ theorem standardTriangle_null_im (U : Set ℂ) :
 removing a collapsed edge. The graph used for reversal is contained in the triangle. -/
 theorem standardTriangle_null_re {U : Set ℂ} (hU : Green.standardTriangle ⊆ U) :
     BoundaryChain.NullChain .re U
-      ((standardTriangle .re).boundary - BoundaryChain.triangle 0 1 Complex.I) := by
+      ((standardTriangleDivision .re).boundary - BoundaryChain.triangle 0 1 Complex.I) := by
   let K := GraphCell.standardTriangleCell
   have h₀ : (0 : ℝ) ∈ Icc (0 : ℝ) 1 := ⟨le_rfl, zero_le_one⟩
   have h₁ : (1 : ℝ) ∈ Icc (0 : ℝ) 1 := ⟨zero_le_one, le_rfl⟩
@@ -262,7 +267,7 @@ theorem standardTriangle_null_re {U : Set ℂ} (hU : Green.standardTriangle ⊆ 
     rw [GraphCell.standardTriangleCell_upperFun ht]
     exact ⟨ht.1, sub_nonneg.mpr ht.2, by simp⟩
   have hγ := BoundaryChain.graphArc_graphPath .re K.continuous_upperFun.continuousOn
-    (by simpa [K] using K.differentiable_upperFun) h₀ h₁
+    (by simpa [K] using K.exists_countable_differentiableAt_upperFun) h₀ h₁
   have hrev := BoundaryChain.NullChain.graph_reverse hγ hgraph
   have he : BoundaryChain.ofPath
       (BoundaryChain.graphPath .re K.upperFun 0 1 K.continuous_upperFun.continuousOn) =
@@ -284,7 +289,7 @@ theorem standardTriangle_null_re {U : Set ℂ} (hU : Green.standardTriangle ⊆ 
       GraphCell.standardTriangleCell_upperFun (unitInterval.symm t).prop]
     apply Complex.ext <;> simp [Path.segment_apply, AffineMap.lineMap_apply_module]
   rw [he, her] at hrev
-  rw [boundary_standardTriangle, GraphCell.boundary_standardTriangleCell_re,
+  rw [boundary_standardTriangleDivision, GraphCell.boundary_standardTriangleCell_re,
     BoundaryChain.triangle_def]
   convert (BoundaryChain.NullChain.segment (d := .re) (U := U) (p := 1) (q := 1)
     rfl).add hrev.neg using 1
