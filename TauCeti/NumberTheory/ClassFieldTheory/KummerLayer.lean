@@ -104,9 +104,9 @@ theorem kummerLayer_antitone {Δ' : Subgroup Kˣ}
   rw [← classField_le_classField_iff, classField_kummerLayer, classField_kummerLayer]
   exact kummerField_mono h
 
-/-- **The Kummer layer has exponent dividing `n`**: for every `σ ∈ G_K`, the power `σ ^ n` lies in
-the Kummer layer, since `σ` multiplies each `n`-th root of an element of `Δ` by an `n`-th root of
-unity. -/
+/-- **The quotient `G_K ⧸ kummerLayer n Δ` has exponent dividing `n`**: for every `σ ∈ G_K`, the
+power `σ ^ n` lies in the Kummer layer, since `σ` multiplies each `n`-th root of an element of `Δ`
+by an `n`-th root of unity. -/
 theorem pow_mem_kummerLayer (σ : AbsoluteGaloisGroup K) : σ ^ n ∈ kummerLayer n Δ := by
   refine mem_kummerLayer_iff.2 fun a _ x hx ↦ ?_
   have hx0 : x ≠ 0 := ne_zero_of_pow_eq_algebraMap hx
