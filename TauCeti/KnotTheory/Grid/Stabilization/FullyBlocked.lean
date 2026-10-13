@@ -292,18 +292,11 @@ private theorem reducedStabilizationHom_eq :
       (G.reducedConeIso s).hom ≫ G.reducedConeMap s ≫ G.reducedZeroConeIso.hom := by
   refine HomologicalComplex.hom_ext _ _ fun x => ?_
   cases x
-  simp only [HomologicalComplex.comp_f, reducedStabilizationHom, reducedConeIso,
-    Iso.symm_hom, homotopyCofiber.isoOfSplitting_inv_f, reducedConeMap,
-    reducedZeroConeIso, homotopyCofiber.isoOfSplitting_hom_f,
-    reducedSplitting, reducedProductSplitting, Preadditive.add_comp,
-    Preadditive.comp_add, Category.assoc]
-  simp only [homotopyCofiber.inlX_mapArrowHom_f_assoc,
-    homotopyCofiber.inrX_mapArrowHom_f_assoc, reducedArrowHom,
-    Arrow.homMk'_left, Arrow.homMk'_right, reducedComparisonHom,
-    HomologicalComplex.id_f, Category.id_comp,
-    homotopyCofiber.inlX_fstX_assoc, homotopyCofiber.inlX_sndX_assoc,
-    homotopyCofiber.inrX_fstX_assoc, homotopyCofiber.inrX_sndX_assoc,
-    zero_comp, comp_zero, add_zero, zero_add]
+  suffices ModuleCat.ofHom (G.fullyBlockedStabilizeXMap s) =
+      ModuleCat.ofHom P ≫ ModuleCat.ofHom (LinearMap.inl F C C) +
+        ModuleCat.ofHom Q ≫ ModuleCat.ofHom H ≫ ModuleCat.ofHom (LinearMap.inr F C C) by
+    simpa [reducedStabilizationHom, reducedConeIso, reducedConeMap, reducedZeroConeIso,
+      reducedSplitting, reducedProductSplitting, reducedArrowHom, reducedComparisonHom]
   ext c <;> simp [fullyBlockedStabilizeXMap]
 
 private instance quasiIso_reducedStabilizationHom : QuasiIso (G.reducedStabilizationHom s) := by
