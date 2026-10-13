@@ -5,14 +5,17 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Green.Main
+public import TauCeti.Analysis.Green.Basic
+public import TauCeti.Analysis.Green.WindingWeight.Basic
+import TauCeti.Analysis.Green.Main
 import Mathlib.Analysis.Calculus.FDeriv.Add
+import Mathlib.Analysis.Calculus.ContDiff.Operations
 
 /-!
 # Green and flux for index-one AC curves
 
 Index one on all bounded complementary components identifies the winding weight with the
-indicator of the filled hull minus the trace. Green's theorem then gives the unweighted area
+indicator of the filled hull minus the trace. Green's theorem then gives the unweighted curl
 formula without simplicity or a finite division. Substitution of `(-Y, X)` gives flux with
 the outward sign `X dy − Y dx` and divergence `∂x X + ∂y Y`.
 -/
@@ -24,24 +27,6 @@ noncomputable section
 open MeasureTheory Set
 
 namespace TauCeti.Green
-
-/-- Index one throughout the bounded complementary region makes the winding weight its indicator. -/
-theorem windingWeight_eq_indicator_of_index_one {γ : ℝ → ℂ} {a b : ℝ}
-    (hγ : AbsolutelyContinuousOnInterval γ a b) (hclosed : γ a = γ b)
-    (hindex : ∀ z ∈ filledHull (γ '' uIcc a b) \ (γ '' uIcc a b),
-      Contour.windingNumber γ a b z = 1) :
-    windingWeight γ a b =
-      (filledHull (γ '' uIcc a b) \ (γ '' uIcc a b)).indicator (fun _ ↦ (1 : ℝ)) := by
-  classical
-  ext z
-  by_cases hz : z ∈ filledHull (γ '' uIcc a b) \ (γ '' uIcc a b)
-  · rw [indicator_of_mem hz, windingWeight_eq_of_notMem hz.2, hindex z hz]
-    rfl
-  · rw [indicator_of_notMem hz]
-    by_cases ht : z ∈ γ '' uIcc a b
-    · exact windingWeight_eq_zero_of_mem ht
-    · exact windingWeight_eq_zero_of_notMem_filledHull hγ hclosed
-        (fun h ↦ hz ⟨h, ht⟩)
 
 /-- The index-one AC Green theorem over the entire bounded complementary region.
 Both integrabilities are conclusions, with no simplicity or finite-component hypothesis. -/
@@ -99,6 +84,7 @@ theorem green_ac_flux {γ : ℝ → ℂ} {a b : ℝ} {U : Set ℂ} {X Y : ℂ �
       fun z ↦ fderiv ℝ X z 1 + fderiv ℝ Y z Complex.I := by
     ext z
     rw [curl_def]
+    -- Pointwise negation and the negation of the function have the same values.
     change fderiv ℝ X z 1 - fderiv ℝ (-Y) z Complex.I = _
     rw [fderiv_neg, neg_apply, sub_neg_eq_add]
   rwa [hc, hd] at h

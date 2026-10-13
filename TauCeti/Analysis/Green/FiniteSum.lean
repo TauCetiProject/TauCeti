@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Green.Main
 public import TauCeti.Analysis.Green.WindingWeight.FiniteSum
+import TauCeti.Analysis.Green.Main
 
 /-!
 # Green's theorem for finite integer-weighted AC families

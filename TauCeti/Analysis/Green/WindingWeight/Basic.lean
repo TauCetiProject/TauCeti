@@ -106,6 +106,24 @@ theorem windingWeight_eq_zero_of_notMem_filledHull (hγ : AbsolutelyContinuousOn
     Contour.windingNumber_eq_zero_of_unbounded_component_of_absolutelyContinuousOnInterval
       hγ hclosed (fun h ↦ hz (mem_filledHull_iff.mpr h)), Complex.zero_re]
 
+/-- Index one throughout the bounded complementary region makes the winding weight its indicator. -/
+theorem windingWeight_eq_indicator_of_index_one
+    (hγ : AbsolutelyContinuousOnInterval γ a b) (hclosed : γ a = γ b)
+    (hindex : ∀ z ∈ filledHull (γ '' uIcc a b) \ (γ '' uIcc a b),
+      Contour.windingNumber γ a b z = 1) :
+    windingWeight γ a b =
+      (filledHull (γ '' uIcc a b) \ (γ '' uIcc a b)).indicator (fun _ ↦ (1 : ℝ)) := by
+  classical
+  ext z
+  by_cases hz : z ∈ filledHull (γ '' uIcc a b) \ (γ '' uIcc a b)
+  · rw [indicator_of_mem hz, windingWeight_eq_of_notMem hz.2, hindex z hz]
+    exact Complex.one_re
+  · rw [indicator_of_notMem hz]
+    by_cases ht : z ∈ γ '' uIcc a b
+    · exact windingWeight_eq_zero_of_mem ht
+    · exact windingWeight_eq_zero_of_notMem_filledHull hγ hclosed
+        (fun h ↦ hz ⟨h, ht⟩)
+
 /-- The support of the winding weight lies in the intrinsic planar inside. -/
 theorem support_windingWeight_subset (hγ : AbsolutelyContinuousOnInterval γ a b)
     (hclosed : γ a = γ b) :

@@ -5,10 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Green.Polygonal.Green
-public import TauCeti.Analysis.Green.Approximation
-public import TauCeti.Analysis.Green.Localization
-public import TauCeti.Analysis.Green.Limit
+public import TauCeti.Analysis.Green.AbsolutelyContinuous
+public import TauCeti.Analysis.Green.WindingWeight.Basic
+import TauCeti.Analysis.Green.Polygonal.Green
+import TauCeti.Analysis.Green.Approximation
+import TauCeti.Analysis.Green.Localization
+import TauCeti.Analysis.Green.Limit
 
 /-!
 # Green's theorem for absolutely continuous curves
