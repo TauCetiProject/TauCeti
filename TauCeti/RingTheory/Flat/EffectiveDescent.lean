@@ -301,6 +301,17 @@ theorem baseChangeEquiv_symm_coe [Module.Flat R S] (a : D.descended) :
     D.baseChangeEquiv.symm a = 1 ⊗ₜ a := by
   rw [AlgEquiv.symm_apply_eq, baseChangeEquiv_tmul, one_smul]
 
+/-- The effectivity comparison carries the right tensor inclusion to the inclusion of the
+descended subalgebra. -/
+theorem baseChangeEquiv_comp_includeRight [Module.Flat R S] :
+    D.baseChangeEquiv.toRingHom.comp
+      (Algebra.TensorProduct.includeRight : D.descended →ₐ[R] S ⊗[R] D.descended).toRingHom =
+      (D.descended.val : D.descended →+* B) := by
+  ext a
+  -- Evaluate the bundled composite at the right inclusion to use the inverse comparison lemma.
+  change D.baseChangeEquiv (1 ⊗ₜ a) = (a : B)
+  rw [← D.baseChangeEquiv_symm_coe, AlgEquiv.apply_symm_apply]
+
 /-! ### Morphisms of descent data -/
 
 section Hom
@@ -380,7 +391,7 @@ theorem descend_comp (g : Hom D' D'') (f : Hom D D') :
 change of the induced morphism of descended algebras. -/
 theorem toAlgHom_baseChangeEquiv [Module.Flat R S] (f : Hom D D') (x : S ⊗[R] D.descended) :
     f.toAlgHom (D.baseChangeEquiv x) =
-      D'.baseChangeEquiv (Algebra.TensorProduct.map (AlgHom.id S S) f.descend x) := by
+      D'.baseChangeEquiv (Algebra.TensorProduct.map (AlgHom.id R S) f.descend x) := by
   induction x using TensorProduct.inductionOn with
   | tmul s a => simp
   | add x y hx hy => simp only [map_add, hx, hy]

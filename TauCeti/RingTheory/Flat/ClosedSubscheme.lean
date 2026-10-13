@@ -54,11 +54,13 @@ variable [Ring B] [Algebra R B] [Algebra S B] [IsScalarTower R S B]
 /-- Surjectivity of a morphism of algebras with faithfully flat descent data is equivalent
 to surjectivity of the descended morphism. -/
 @[simp]
-theorem Hom.surjective_descend_iff [Module.FaithfullyFlat R S] (f : Hom D D') :
+theorem Hom.descend_surjective_iff [Module.FaithfullyFlat R S] (f : Hom D D') :
     Function.Surjective f.descend ↔ Function.Surjective f.toAlgHom := by
   have h : f.toAlgHom ∘ D.baseChangeEquiv =
       D'.baseChangeEquiv ∘ f.descend.toLinearMap.lTensor S :=
-    funext f.toAlgHom_baseChangeEquiv
+    funext fun x ↦ by
+      rw [Function.comp_apply, Function.comp_apply, AlgHom.lTensor_toLinearMap_apply]
+      exact f.toAlgHom_baseChangeEquiv x
   refine (Module.FaithfullyFlat.lTensor_surjective_iff_surjective R S
     f.descend.toLinearMap).symm.trans ?_
   rw [← EquivLike.comp_surjective _ D'.baseChangeEquiv, ← h,
@@ -70,60 +72,46 @@ of its descended morphism. No surjectivity hypothesis is needed. -/
 theorem Hom.map_ker_descend [Module.Flat R S] (f : Hom D D') :
     Ideal.map (D.descended.val : D.descended →+* B) (RingHom.ker f.descend) =
       RingHom.ker f.toAlgHom := by
-  have hval : D.baseChangeEquiv.toRingHom.comp
-      (Algebra.TensorProduct.includeRight : D.descended →ₐ[R] S ⊗[R] D.descended).toRingHom =
-      (D.descended.val : D.descended →+* B) := by
-    ext a
-    simp
-  rw [← hval, ← Ideal.map_map]
+  rw [← D.baseChangeEquiv_comp_includeRight, ← Ideal.map_map]
   have hker : Ideal.map
       (Algebra.TensorProduct.includeRight : D.descended →ₐ[R] S ⊗[R] D.descended).toRingHom
       (RingHom.ker f.descend) =
       RingHom.ker (Algebra.TensorProduct.map (AlgHom.id R S) f.descend) :=
     (Algebra.TensorProduct.lTensor_ker_of_flat f.descend).symm
   rw [hker]
-  have hmap : (Algebra.TensorProduct.map (AlgHom.id S S) f.descend).toRingHom =
-      (Algebra.TensorProduct.map (AlgHom.id R S) f.descend).toRingHom := by
-    ext <;> simp
-  have hbase (x : S ⊗[R] D.descended) : f.toAlgHom (D.baseChangeEquiv x) =
-      D'.baseChangeEquiv (Algebra.TensorProduct.map (AlgHom.id R S) f.descend x) :=
-    (f.toAlgHom_baseChangeEquiv x).trans <| congrArg D'.baseChangeEquiv <|
-      congrArg (fun g : S ⊗[R] D.descended →+* S ⊗[R] D'.descended ↦ g x) hmap
+  rw [RingEquiv.toRingHom_eq_coe,
+    Ideal.map_comap_of_equiv D.baseChangeEquiv.toRingEquiv]
+  -- Ideal.comap accepts any RingHomClass, but RingHom.comap_ker requires bundled ring maps.
+  change Ideal.comap D.baseChangeEquiv.symm.toRingHom
+      (RingHom.ker (Algebra.TensorProduct.map (AlgHom.id R S) f.descend).toRingHom) =
+    RingHom.ker f.toAlgHom.toRingHom
+  rw [RingHom.comap_ker,
+    ← RingHom.ker_comp_of_injective (f := D'.baseChangeEquiv.toRingHom) _
+      D'.baseChangeEquiv.injective]
+  congr 1
   ext b
-  rw [Ideal.mem_map_iff_of_surjective D.baseChangeEquiv.toRingHom
-    D.baseChangeEquiv.surjective]
-  constructor
-  · rintro ⟨x, hx, rfl⟩
-    rw [RingHom.mem_ker] at hx ⊢
-    exact (hbase x).trans (by rw [hx, map_zero])
-  · intro hb
-    refine ⟨D.baseChangeEquiv.symm b, ?_, D.baseChangeEquiv.apply_symm_apply b⟩
-    rw [RingHom.mem_ker] at hb ⊢
-    apply D'.baseChangeEquiv.injective
-    rw [← hbase, D.baseChangeEquiv.apply_symm_apply, hb, map_zero]
+  -- Evaluate the bundled ring maps as algebra maps to apply the effectivity comparison.
+  change D'.baseChangeEquiv
+    (Algebra.TensorProduct.map (AlgHom.id R S) f.descend (D.baseChangeEquiv.symm b)) =
+    f.toAlgHom b
+  simpa only [AlgEquiv.apply_symm_apply] using
+    (f.toAlgHom_baseChangeEquiv (D.baseChangeEquiv.symm b)).symm
 
 end
 
 variable [CommRing B] [Algebra R B] [Algebra S B] [IsScalarTower R S B]
   {D : DescentDatum R S B} {D' : DescentDatum R S B'}
 
-/-- The original kernel has a unique ideal of definition in the descended algebra.
-Its existence includes the infinitesimal structure, not merely the underlying closed set. -/
-theorem Hom.existsUnique_ideal_map_eq_ker [Module.FaithfullyFlat R S] (f : Hom D D') :
-    ∃! I : Ideal D.descended, Ideal.map (D.descended.val : D.descended →+* B) I =
-      RingHom.ker f.toAlgHom := by
-  refine ⟨RingHom.ker f.descend, f.map_ker_descend, fun I hI ↦ ?_⟩
+/-- Under faithful flatness, extension of ideals from the descended subalgebra is injective. -/
+theorem map_val_injective [Module.FaithfullyFlat R S] (D : DescentDatum R S B) :
+    Function.Injective (Ideal.map (D.descended.val : D.descended →+* B)) := by
+  intro I J hIJ
   let j : D.descended →+* S ⊗[R] D.descended :=
     (Algebra.TensorProduct.includeRight : D.descended →ₐ[R] S ⊗[R] D.descended).toRingHom
-  have hval : D.baseChangeEquiv.toRingHom.comp j =
-      (D.descended.val : D.descended →+* B) := by
-    ext a
-    simp [j]
   have hext : Ideal.map D.baseChangeEquiv.toRingHom (Ideal.map j I) =
-      Ideal.map D.baseChangeEquiv.toRingHom (Ideal.map j (RingHom.ker f.descend)) := by
-    rw [Ideal.map_map, Ideal.map_map, hval]
-    exact hI.trans f.map_ker_descend.symm
-  have hmap : Ideal.map j I = Ideal.map j (RingHom.ker f.descend) := by
+      Ideal.map D.baseChangeEquiv.toRingHom (Ideal.map j J) := by
+    simpa only [j, Ideal.map_map, D.baseChangeEquiv_comp_includeRight] using hIJ
+  have hmap : Ideal.map j I = Ideal.map j J := by
     have h := congrArg (Ideal.map D.baseChangeEquiv.symm.toRingHom) hext
     simpa only [RingEquiv.toRingHom_eq_coe, ← AlgEquiv.toRingEquiv_symm,
       Ideal.map_of_equiv] using h
@@ -134,5 +122,13 @@ theorem Hom.existsUnique_ideal_map_eq_ker [Module.FaithfullyFlat R S] (f : Hom D
   have hcomm := congrArg (Ideal.map (Algebra.TensorProduct.comm R S D.descended).toRingHom) hmap
   rw [Ideal.map_map, Ideal.map_map, hc] at hcomm
   exact Ideal.map_injective_of_faithfullyFlat hcomm
+
+/-- The original kernel has a unique ideal of definition in the descended algebra.
+Its existence includes the infinitesimal structure, not merely the underlying closed set. -/
+theorem Hom.existsUnique_ideal_map_eq_ker [Module.FaithfullyFlat R S] (f : Hom D D') :
+    ∃! I : Ideal D.descended, Ideal.map (D.descended.val : D.descended →+* B) I =
+      RingHom.ker f.toAlgHom :=
+  ⟨RingHom.ker f.descend, f.map_ker_descend,
+    fun _ hI ↦ D.map_val_injective (hI.trans f.map_ker_descend.symm)⟩
 
 end TauCeti.Algebra.DescentDatum
