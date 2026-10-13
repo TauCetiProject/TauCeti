@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.DGLocalSystem.Basic
-public import TauCeti.AlgebraicTopology.DGLocalSystem.Classical.DegreeZero
 public import TauCeti.AlgebraicTopology.LocalCoefficient
 public import TauCeti.Algebra.Module.GradedModule.Trivial
 public import TauCeti.CategoryTheory.Groupoid.ConnectedFunctor
