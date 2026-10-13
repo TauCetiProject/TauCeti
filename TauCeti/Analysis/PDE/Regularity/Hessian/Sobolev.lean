@@ -7,10 +7,10 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.Laplacian
 public import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
+public import TauCeti.Analysis.Normed.Module.Trace
 public import TauCeti.Analysis.Sobolev.Wkp.Basic
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Trace
-import TauCeti.Analysis.Normed.Module.Trace
 import TauCeti.Analysis.PDE.Regularity.Hessian.Lp
 import TauCeti.Analysis.Sobolev.Wkp.Classical
 import TauCeti.Analysis.Sobolev.Wkp.Density
@@ -24,14 +24,15 @@ Laplacian on the whole space: there is a constant `C` such that
 
 `‖D²u‖_{Lᵖ(ℝⁿ)} ≤ C ‖f‖_{Lᵖ(ℝⁿ)}`
 
-for every `u ∈ W^{2,p}(ℝⁿ)` and `f ∈ Lᵖ(ℝⁿ)` with `Δu = f` against test functions, that is
-`∫ Δφ • u = ∫ φ • f` for every `φ ∈ C_c^∞(ℝⁿ)`
-(`TauCeti.exists_norm_iteratedGradient_le_mul_norm_of_integral_laplacian_smul_eq`). Here `D²u` is
-the highest recorded weak derivative `TauCeti.Wkp.iteratedGradient 1 u`, the weak Hessian as an
-`Lᵖ` field of endomorphisms of `ℝⁿ` with the operator norm. The hypothesis says that `u` is a
-strong solution of `Δu = f`: the trace of its weak Hessian is `f` almost everywhere
-(`TauCeti.Wkp.forall_integral_laplacian_smul_value_eq_iff`). The constant depends
-only on `n` and `p`.
+for every `u ∈ W^{2,p}(ℝⁿ)` and `f ∈ Lᵖ(ℝⁿ)` with `Δu = f`. Here `D²u` is the highest recorded
+weak derivative `TauCeti.Wkp.iteratedGradient 1 u`, the weak Hessian as an `Lᵖ` field of
+endomorphisms of `ℝⁿ` with the operator norm. The equation `Δu = f` is taken either strongly, the
+trace of the weak Hessian of `u` being `f` in `Lᵖ`
+(`TauCeti.exists_norm_iteratedGradient_le_mul_norm_of_traceCLM_compLpL_eq`), or against test
+functions, `∫ Δφ • u = ∫ φ • f` for every `φ ∈ C_c^∞(ℝⁿ)`
+(`TauCeti.exists_norm_iteratedGradient_le_mul_norm_of_integral_laplacian_smul_eq`); the two agree
+by `TauCeti.Wkp.forall_integral_laplacian_smul_value_eq_iff`. The constant depends only on `n`
+and `p`.
 
 ## The argument
 
@@ -47,8 +48,10 @@ of the weak Hessian of `u`, which is `f`. The estimate for `φⱼ` passes to the
 
 ## Main declarations
 
+* `TauCeti.exists_norm_iteratedGradient_le_mul_norm_of_traceCLM_compLpL_eq`:
+  `‖D²u‖_p ≤ C ‖f‖_p` for `u ∈ W^{2,p}(ℝⁿ)` with `tr D²u = f` in `Lᵖ`.
 * `TauCeti.exists_norm_iteratedGradient_le_mul_norm_of_integral_laplacian_smul_eq`:
-  `‖D²u‖_p ≤ C ‖f‖_p` for `u ∈ W^{2,p}(ℝⁿ)` with `Δu = f`.
+  the same estimate for `u ∈ W^{2,p}(ℝⁿ)` with `Δu = f` against test functions.
 
 ## References
 
@@ -94,33 +97,24 @@ private theorem norm_iteratedGradient_ofTestFunctionₗ_le {C : ℝ≥0}
 
 /-- **The Calderón–Zygmund estimate for strong solutions in `W^{2,p}(ℝⁿ)`.** Let `n ≥ 3` and
 `1 < p < ∞`. There is a constant `C` such that every `u ∈ W^{2,p}(ℝⁿ)` solving `Δu = f` with
-`f ∈ Lᵖ(ℝⁿ)`, in the sense that `∫ Δφ • u = ∫ φ • f` for every test function `φ`, satisfies
+`f ∈ Lᵖ(ℝⁿ)` strongly, in the sense that the trace of the weak Hessian of `u` is `f` in `Lᵖ`,
+satisfies
 
 `‖D²u‖_{Lᵖ} ≤ C ‖f‖_{Lᵖ}`,
 
 where `D²u` is the weak Hessian `TauCeti.Wkp.iteratedGradient 1 u`, with the operator norm on
 endomorphisms of `ℝⁿ`. -/
-theorem exists_norm_iteratedGradient_le_mul_norm_of_integral_laplacian_smul_eq (hn : 3 ≤ n)
+theorem exists_norm_iteratedGradient_le_mul_norm_of_traceCLM_compLpL_eq (hn : 3 ≤ n)
     (hp : 1 < p) (hp_top : p ≠ ∞) :
     ∃ C : ℝ≥0, ∀ (u : Wkp (volume : Measure (EuclideanSpace ℝ (Fin n))) ⊤ p 2)
       (f : Lp ℝ p ((volume : Measure (EuclideanSpace ℝ (Fin n))).restrict
         (⊤ : Opens (EuclideanSpace ℝ (Fin n))))),
-      (∀ φ : 𝓓((⊤ : Opens (EuclideanSpace ℝ (Fin n))), ℝ),
-        ∫ x, Δ (φ : EuclideanSpace ℝ (Fin n) → ℝ) x • Wkp.value 2 u x = ∫ x, φ x • f x) →
+      (traceCLM ℝ (EuclideanSpace ℝ (Fin n))).compLpL p _ (Wkp.iteratedGradient 1 u) = f →
       ‖Wkp.iteratedGradient 1 u‖ ≤ C * ‖f‖ := by
   obtain ⟨C, hC⟩ := exists_eLpNorm_iteratedFDeriv_two_le_eLpNorm_laplacian_real hn hp hp_top
-  refine ⟨C, fun u f hf => ?_⟩
+  refine ⟨C, fun u f hf' => ?_⟩
   -- The trace of endomorphisms, which is continuous because `ℝⁿ` is finite-dimensional.
   set T := traceCLM ℝ (EuclideanSpace ℝ (Fin n))
-  -- The trace of the weak Hessian of `u` is `f`.
-  have hf' : T.compLpL p _ (Wkp.iteratedGradient 1 u) = f := by
-    have hloc : LocallyIntegrableOn (f : EuclideanSpace ℝ (Fin n) → ℝ) ⊤ volume :=
-      (((Lp.memLp f).locallyIntegrable Fact.out).mono_measure
-        (by rw [Opens.coe_top, Measure.restrict_univ])).locallyIntegrableOn _
-    refine Lp.ext ?_
-    filter_upwards [T.coeFn_compLpL (Wkp.iteratedGradient 1 u),
-      (Wkp.forall_integral_laplacian_smul_value_eq_iff u hloc).1 hf] with x hx htr
-    rw [hx, traceCLM_apply, htr]
   -- Approximate `u` by test functions in the Sobolev norm.
   obtain ⟨v, hv, hlim⟩ :=
     mem_closure_iff_seq_limit.1 (Wkp.denseRange_ofTestFunctionₗ_top hp_top 2 u)
