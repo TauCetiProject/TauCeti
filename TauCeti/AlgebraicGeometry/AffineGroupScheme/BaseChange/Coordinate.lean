@@ -34,12 +34,6 @@ anti-equivalence.
 
 This is the base-change compatibility in the Hopf-algebra/affine-group-scheme dictionary; see
 J. S. Milne, *Algebraic Groups* (2017), Section 1.f.
-
-## Roadmap
-
-This synchronizes the coordinate and scheme models in the base-change part of Layer 0 of the
-ReductiveGroups roadmap. In particular, it lets later scheme-side constructions, including the
-Layer 4 dictionary for groups of multiplicative type, reuse coordinate scalar extension.
 -/
 
 public section
