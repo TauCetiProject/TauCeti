@@ -94,12 +94,18 @@ theorem truncate_extend (c : ℕ) (f : TensorWords R M →ₗ[R] TensorWords R N
 
 /-- The completed extension lowers the descending length filtration by at most its bound. -/
 theorem map_extend_filtration_le (c : ℕ)
-    (f : TensorWords R M →ₗ[R] TensorWords R N) (hf : HasLengthBound c f) (n : ℕ) :
+    (f : TensorWords R M →ₗ[R] TensorWords R N) (n : ℕ) :
     Submodule.map (extend c f) (filtration R M (n + c)) ≤ filtration R N n := by
   rintro _ ⟨x, hx, rfl⟩
-  simp only [filtration_eq_ker_truncate, SetLike.mem_coe, LinearMap.mem_ker] at hx ⊢
-  rw [truncate_extend c f hf, hx]
-  simp only [map_zero, DFinsupp.coe_zero]
+  simp only [SetLike.mem_coe, mem_filtration] at hx ⊢
+  intro k hk
+  have ht : truncate R M (k + 1 + c) x = 0 := by
+    ext j
+    by_cases hj : j < k + 1 + c
+    · simp only [truncate_apply, ite_eq_left hj, DFinsupp.zero_apply]
+      exact hx j (by omega)
+    · simp [truncate_apply, hj]
+  rw [extend_apply, ht, map_zero, DFinsupp.zero_apply]
 
 /-- Identity on finite words has every nonnegative length bound. -/
 @[simp]
@@ -177,6 +183,7 @@ theorem HasLengthBound.comp {c d : ℕ}
   rw [← hg k (f (truncate R M (k + 1 + (c + d)) x)), h, hg]
 
 /-- Extending a composite agrees with composing the extensions. -/
+@[simp]
 theorem extend_comp {c d : ℕ}
     {f : TensorWords R M →ₗ[R] TensorWords R N}
     {g : TensorWords R N →ₗ[R] TensorWords R P}
@@ -270,7 +277,7 @@ theorem extend_unique (c : ℕ) (f : TensorWords R M →ₗ[R] TensorWords R N)
     (hgf : ∀ x, g (DFinsupp.coeFnLinearMap R x) = DFinsupp.coeFnLinearMap R (f x)) :
     g = extend c f := by
   apply LinearMap.eq_of_coe_eq_of_filtration_bound g (extend c f) d c hg
-    (map_extend_filtration_le c f hf)
+    (map_extend_filtration_le c f)
   intro x
   rw [hgf]
   simpa only [DFinsupp.coeFnLinearMap_apply] using (extend_coe c f hf x).symm
