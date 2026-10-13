@@ -29,7 +29,7 @@ The paths of free loops are taken on the fixed interval `I`.
 * `TauCeti.ConstLoopPath Q`: the space of paths `I → C(S¹, Q)` from a constant loop to a constant
   loop.
 * `TauCeti.sphere2HomeomorphConstLoopPath`: `Map(S², Q) ≃ₜ ConstLoopPath Q`.
-* `TauCeti.basedMapSphere2HomeomorphConstLoopPath`: `Map_*(S², Q) ≃ₜ` the subspace of
+* `TauCeti.basedMapSphere2HomeomorphBasedConstLoopPath`: `Map_*(S², Q) ≃ₜ` the subspace of
   `ConstLoopPath Q` of paths starting at the constant loop at `⋆`.
 
 ## References
@@ -60,6 +60,7 @@ private theorem factorsThrough_suspensionToSphere_iff (g : C(I × Circle, Q)) :
     Function.FactorsThrough g suspensionToSphere ↔
       (∃ q, Homeomorph.curry g 0 = ContinuousMap.const Circle q) ∧
         ∃ q, Homeomorph.curry g 1 = ContinuousMap.const Circle q := by
+  -- currying evaluates a map on the product pointwise
   have hc (t : I) (z : Circle) : Homeomorph.curry g t z = g (t, z) := rfl
   constructor
   · intro h
@@ -78,7 +79,7 @@ private theorem factorsThrough_suspensionToSphere_iff (g : C(I × Circle, Q)) :
     have e₁ (p : I × Circle) (hp : p.1 = 1) : g p = q₁ := by
       have := DFunLike.congr_fun h₁ p.2
       rwa [hc, ← hp] at this
-    rcases eq_of_suspensionToSphere_eq hp with rfl | ⟨h, h'⟩ | ⟨h, h'⟩
+    rcases eq_or_of_suspensionToSphere_eq hp with rfl | ⟨h, h'⟩ | ⟨h, h'⟩
     · rfl
     · rw [e₀ _ h, e₀ _ h']
     · rw [e₁ _ h, e₁ _ h']
@@ -103,7 +104,7 @@ abbrev BasedConstLoopPath (x : Q) : Type _ :=
 
 /-- **`Map_*(S², Q)` is the space of paths of free loops from the constant loop at `x` to a
 constant loop.** The north pole of `S²` goes to `x`; the south pole is free. -/
-def basedMapSphere2HomeomorphConstLoopPath (x : Q) :
+def basedMapSphere2HomeomorphBasedConstLoopPath (x : Q) :
     BasedMap Sphere2 Q Sphere2.north x ≃ₜ BasedConstLoopPath Q x :=
   Homeomorph.subtype sphere2HomeomorphConstLoopPath fun f => by
     constructor

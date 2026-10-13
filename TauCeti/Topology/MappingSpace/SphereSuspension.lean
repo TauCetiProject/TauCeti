@@ -24,7 +24,7 @@ circle `{0} × S¹` to the north pole `(1, 0, 0)` and the circle `{1} × S¹` to
 * `TauCeti.suspensionToSphere_surjective`: it is surjective.
 * `TauCeti.suspensionToSphere_eq_north_iff` and `TauCeti.suspensionToSphere_eq_south_iff`: it
   collapses exactly the two ends to the poles.
-* `TauCeti.eq_of_suspensionToSphere_eq`: its other fibres are single points.
+* `TauCeti.eq_or_of_suspensionToSphere_eq`: its other fibres are single points.
 -/
 
 public section
@@ -130,7 +130,7 @@ theorem suspensionToSphere_eq_south_iff (p : I × Circle) :
 
 /-- Two points with the same image under the suspension map are equal, or both lie in the end
 `{0} × S¹`, or both lie in the end `{1} × S¹`. -/
-theorem eq_of_suspensionToSphere_eq {p p' : I × Circle}
+theorem eq_or_of_suspensionToSphere_eq {p p' : I × Circle}
     (h : suspensionToSphere p = suspensionToSphere p') :
     p = p' ∨ (p.1 = 0 ∧ p'.1 = 0) ∨ (p.1 = 1 ∧ p'.1 = 1) := by
   have hc := congrArg (fun x : Sphere2 => (x : EuclideanSpace ℝ (Fin 3)) 0) h
@@ -145,7 +145,7 @@ theorem eq_of_suspensionToSphere_eq {p p' : I × Circle}
   · exact Or.inr (Or.inr ⟨h1', ht ▸ h1'⟩)
   refine Or.inl (Prod.ext ht (Circle.ext (Complex.ext ?_ ?_)))
   · rw [← ht] at h1
-    exact mul_left_cancel₀ (sin_pi_mul_pos h0 h1').ne' h1 |>.symm.symm
+    exact mul_left_cancel₀ (sin_pi_mul_pos h0 h1').ne' h1
   · rw [← ht] at h2
     exact mul_left_cancel₀ (sin_pi_mul_pos h0 h1').ne' h2
 
