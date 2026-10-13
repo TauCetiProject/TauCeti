@@ -145,7 +145,7 @@ private theorem unramified_map_iff (e : L ≃ₐ[F] L') (Q : Place k L) :
       Algebra.IsSeparable (Q.restrict k F).ResidueField Q.ResidueField) := by
   set e' := e.restrictScalars k
   have halg (x : F) : e'.symm (algebraMap F L' x) = algebraMap F L x := e.symm.commutes x
-  have hrestrict : (Q.map e').restrict k F = Q.restrict k F := restrict_map_restrictScalars e Q
+  have hrestrict : (Q.map e').restrict k F = Q.restrict k F := restrict_map_restrictScalars Q e
   have hram : ramificationIdx F (Q.map e') = ramificationIdx F Q :=
     ramificationIdx_eq_of_forall_ord_eq k F _ fun f ↦ by
       rw [ord_map, halg, hrestrict, ord_algebraMap_restrict k F Q]

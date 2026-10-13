@@ -240,7 +240,7 @@ variable [Algebra.IsIntegral F F'] (σ : F' ≃ₐ[F] F') (P : Place k F')
 `F / k` as `P` does, because `σ` fixes `F` pointwise. -/
 @[simp]
 theorem restrict_smul : (σ • P).restrict k F = P.restrict k F :=
-  restrict_map_restrictScalars σ P
+  restrict_map_restrictScalars P σ
 
 /-- The ramification index is invariant under the action. -/
 @[simp]

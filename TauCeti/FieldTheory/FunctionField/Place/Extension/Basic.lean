@@ -459,7 +459,7 @@ over `F`, the place `P.map e` of `F''` lies over the same place of `F / k` as `P
 `e` fixes `F` pointwise. -/
 @[simp]
 theorem restrict_map_restrictScalars {F'' : Type*} [Field F''] [Algebra k F''] [Algebra F F'']
-    [IsScalarTower k F F''] [Algebra.IsIntegral F F''] (e : F' ≃ₐ[F] F'') (P : Place k F') :
+    [IsScalarTower k F F''] [Algebra.IsIntegral F F''] (P : Place k F') (e : F' ≃ₐ[F] F'') :
     (P.map (e.restrictScalars k)).restrict k F = P.restrict k F := by
   apply integers_injective
   ext x
