@@ -17,9 +17,8 @@ The trivial grading `TauCeti.trivialGrading` of `TauCeti.Algebra.Module.GradedMo
 concentrated in degree zero, is an internal `GradedAlgebra` when the module is an algebra.  This
 file records that instance, whose decomposition and degree projection come from the module-level
 file, and the graded actions of the trivially graded base ring and of the opposite of a trivially
-graded algebra.  It is the canonical target grading
-for augmentations of integer-graded algebras, and the grading of the coefficients in degree-zero
-examples.
+graded algebra.  It is the canonical target grading for augmentations of integer-graded
+algebras, and the grading of the coefficients in degree-zero examples.
 
 ## Main results
 

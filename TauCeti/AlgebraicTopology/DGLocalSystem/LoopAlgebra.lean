@@ -27,6 +27,9 @@ A based map `f : (B, b) → (B', b')` induces the continuous monoid homomorphism
 * `TauCeti.loopChainAlgebra B b R`: the algebra `C_*(Ω_b B; R)`.
 * `TauCeti.loopChainAugmentation B b R`: its augmentation.
 * `TauCeti.loopChainMap R f hf`: the DG algebra morphism `C_*(Ωf)` of a based map.
+* `TauCeti.loopChainToGroupAlgebra B b R`: the algebra map to the group algebra `R[π₁(B, b)]`,
+  the zeroth-homology projection `loopZeroChainToGroupAlgebra` in dimension zero and zero in
+  positive dimension.
 
 ## Main results
 
@@ -35,12 +38,10 @@ A based map `f : (B, b) → (B', b')` induces the continuous monoid homomorphism
   `TauCeti.loopChainAugmentation_lof_succ`: the values on chains of a given dimension.
 * `TauCeti.loopChainMap_id`, `TauCeti.loopChainMap_comp`: functoriality.
 * `TauCeti.loopChainAugmentation_comp_loopChainMap`: compatibility with the augmentations.
-* `TauCeti.loopChainToGroupAlgebra`: the algebra map to the group algebra `R[π₁(B, b)]` of the
-  fundamental group, which is the zeroth-homology projection `loopZeroChainToGroupAlgebra` in
-  degree zero; it kills boundaries and positive degrees
-  (`TauCeti.loopChainToGroupAlgebra_differential`,
-  `TauCeti.loopChainToGroupAlgebra_eq_zero_of_mem`), and is natural in based maps
-  (`TauCeti.loopChainToGroupAlgebra_loopChainMap`).
+* `TauCeti.loopChainToGroupAlgebra_differential`,
+  `TauCeti.loopChainToGroupAlgebra_eq_zero_of_mem`: it kills boundaries and elements of nonzero
+  cohomological degree.
+* `TauCeti.loopChainToGroupAlgebra_loopChainMap`: naturality in based maps.
 
 ## References
 
