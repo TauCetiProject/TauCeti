@@ -20,10 +20,11 @@ commutative. It sends the class of the straight loop `TauCeti.torusLoop p n`, wh
 times around the `i`-th circle, to `n` (`TauCeti.torusFirstHomologyEquiv_loopClass`).
 
 For a common period `p`, an integer matrix `A : Matrix κ ι ℤ` induces the map of tori
-`Matrix.torusMap A p : Tⁱ → Tᵏ`, and under these identifications the map it induces on first
-homology is `n ↦ A *ᵥ n` (`TauCeti.torusFirstHomologyEquiv_homologyMap_torusMap`). This is the
-action of integer matrices on the first homology of a torus; the higher homology of a torus is the
-exterior algebra on it, which is not proved here. The torus is modelled here as a product of
+`Matrix.smulVecHom A (AddCircle p) : Tⁱ → Tᵏ`, and under these identifications the map it
+induces on first homology is `n ↦ A *ᵥ n`
+(`TauCeti.torusFirstHomologyEquiv_homologyMap_smulVecHom`). This is the action of integer matrices
+on the first homology of a torus; the higher homology of a torus is the exterior algebra on it,
+which is not proved here. The torus is modelled here as a product of
 additive circles, on which integer matrices act. The ranks of all homology groups of the
 homeomorphic product of unit spheres are computed in `ModuleCat.finrank_singularHomology_torus`.
 
@@ -32,7 +33,7 @@ homeomorphic product of unit spheres are computed in `ModuleCat.finrank_singular
 * `TauCeti.torusFirstHomologyEquiv`: the isomorphism `H₁(Tⁱ; ℤ) ≃ₗ[ℤ] (ι → ℤ)`.
 * `TauCeti.torusFirstHomologyEquiv_loopClass`, `TauCeti.torusFirstHomologyEquiv_symm_apply`: the
   class of the straight loop of `n` corresponds to `n`.
-* `TauCeti.torusFirstHomologyEquiv_homologyMap_torusMap`: naturality in integer matrices.
+* `TauCeti.torusFirstHomologyEquiv_homologyMap_smulVecHom`: naturality in integer matrices.
 
 ## References
 
@@ -82,12 +83,13 @@ theorem torusFirstHomologyEquiv_symm_apply (n : ι → ℤ) :
 
 /-- **The first homology of a torus is natural in integer matrices.** Under the identifications
 `H₁(Tⁱ; ℤ) ≅ ℤⁱ` of `TauCeti.torusFirstHomologyEquiv`, the map induced on first homology by the
-map of tori `Matrix.torusMap A p` is multiplication by the matrix `A`. -/
-theorem torusFirstHomologyEquiv_homologyMap_torusMap [Fintype ι] {κ : Type} (A : Matrix κ ι ℤ)
+map of tori `Matrix.smulVecHom A (AddCircle p)` is multiplication by the matrix `A`. -/
+theorem torusFirstHomologyEquiv_homologyMap_smulVecHom [Fintype ι] {κ : Type} (A : Matrix κ ι ℤ)
     {p : ℝ} (hp : p ≠ 0) (x : ((singularChains ℤ).obj (TopCat.of (ι → AddCircle p))).homology 1) :
     torusFirstHomologyEquiv (fun _ : κ ↦ p) (fun _ ↦ hp)
         ((HomologicalComplex.homologyMap ((singularChains ℤ).map
-          (TopCat.ofHom (A.torusMap p : C(ι → AddCircle p, κ → AddCircle p)))) 1).hom x) =
+          (TopCat.ofHom
+            (A.smulVecHom (AddCircle p) : C(ι → AddCircle p, κ → AddCircle p)))) 1).hom x) =
       A *ᵥ torusFirstHomologyEquiv (fun _ : ι ↦ p) (fun _ ↦ hp) x := by
   obtain ⟨n, rfl⟩ := (torusFirstHomologyEquiv (fun _ : ι ↦ p) (fun _ ↦ hp)).symm.surjective x
   rw [torusFirstHomologyEquiv_symm_apply, homologyMap_H₁AddEquivHomology_loopClass]
@@ -95,9 +97,11 @@ theorem torusFirstHomologyEquiv_homologyMap_torusMap [Fintype ι] {κ : Type} (A
   -- of `0`; loops with the same underlying map have the same homology class. The underlying map
   -- of `Path.map` is the composite (`Path.map_coe`), so its chain is that of the composite.
   have h : loopClass ((torusLoop (fun _ : ι ↦ p) n).map
-      (TopCat.ofHom (A.torusMap p : C(ι → AddCircle p, κ → AddCircle p))).hom.continuous) =
+      (TopCat.ofHom
+        (A.smulVecHom (AddCircle p) : C(ι → AddCircle p, κ → AddCircle p))).hom.continuous) =
       loopClass (X := TopCat.of (κ → AddCircle p)) (torusLoop (fun _ ↦ p) (A *ᵥ n)) := by
-    rw [loopClass_eq_iff, sub_eq_zero.2 (congrArg (pathChain ℤ) (torusMap_comp_torusLoop A p n))]
+    rw [loopClass_eq_iff,
+      sub_eq_zero.2 (congrArg (pathChain ℤ) (smulVecHom_comp_torusLoop A p n))]
     exact zero_mem _
   rw [h, torusFirstHomologyEquiv_loopClass, torusFirstHomologyEquiv_loopClass]
 
