@@ -517,9 +517,7 @@ private theorem mem_skeletonLT_sphereMappingCone_iff
 `Sⁿ`, included by `a ↦ (a, 0)` (`TauCeti.coe_skeletonLT_sphereMappingCone`). -/
 def sphereMappingConeSkeletonHomeomorph :
     letI := sphereMappingConeCWComplex h f
-    sphere (0 : EuclideanSpace ℝ ι) 1 ≃ₜ
-      (skeletonLT (sphereMappingCone f) ((n + 1 : ℕ) : ℕ∞) :
-        Set (EuclideanSpace ℝ ι × EuclideanSpace ℝ (Fin (n + 1)))) where
+    sphere (0 : EuclideanSpace ℝ ι) 1 ≃ₜ skeletonLT (sphereMappingCone f) ((n + 1 : ℕ) : ℕ∞) where
   toFun a := ⟨((a : EuclideanSpace ℝ ι), 0),
     (mem_skeletonLT_sphereMappingCone_iff h f).2 ⟨a.2, rfl⟩⟩
   invFun p := ⟨(p : EuclideanSpace ℝ ι × EuclideanSpace ℝ (Fin (n + 1))).1,
@@ -540,8 +538,7 @@ theorem coe_sphereMappingConeSkeletonHomeomorph_apply (a : sphere (0 : Euclidean
 @[simp]
 theorem coe_sphereMappingConeSkeletonHomeomorph_symm_apply
     (p : letI := sphereMappingConeCWComplex h f
-      (skeletonLT (sphereMappingCone f) ((n + 1 : ℕ) : ℕ∞) :
-        Set (EuclideanSpace ℝ ι × EuclideanSpace ℝ (Fin (n + 1))))) :
+      skeletonLT (sphereMappingCone f) ((n + 1 : ℕ) : ℕ∞)) :
     ((sphereMappingConeSkeletonHomeomorph h f).symm p : EuclideanSpace ℝ ι) =
       (p : EuclideanSpace ℝ ι × EuclideanSpace ℝ (Fin (n + 1))).1 :=
   (rfl)
