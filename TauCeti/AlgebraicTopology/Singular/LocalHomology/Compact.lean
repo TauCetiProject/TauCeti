@@ -24,25 +24,6 @@ compatible family of local classes `αₓ ∈ Hₙ(M, M ∖ {x})`, `x ∈ A`, co
 here. For compact `M` itself, `A = M` shows that the singular homology `Hₖ(M)` vanishes for
 `k > n` (`TauCeti.isZero_singularHomology_of_compactSpace`).
 
-The proof is an induction on the shape of `A`, carried by the relative Mayer–Vietoris sequence
-`Hₖ₊₁(M, M ∖ (A ∩ B)) ⟶ Hₖ(M, M ∖ (A ∪ B)) ⟶ Hₖ(M, M ∖ A) ⊞ Hₖ(M, M ∖ B)` of two closed sets.
-
-* **Unions.** If the first term vanishes, the second map is a monomorphism
-  (`TauCeti.localHomology_hom_ext_of_union`), so both statements pass from `A` and `B` to
-  `A ∪ B` once `Hₖ(M, M ∖ (A ∩ B))` vanishes above the dimension.
-* **Convex sets in a chart.** For a compact convex set `K` in the target of a chart `φ`,
-  restriction from `φ.symm '' K` to any of its points is an isomorphism
-  (`TauCeti.isIso_localHomologyRestriction_symm_image`), and local homology at a point vanishes
-  outside the dimension. Finite unions of such sets follow by induction, since the intersection
-  of a finite union of convex sets with a convex set is again such a union.
-* **Compact sets in a chart.** A class of `Hₖ(M, M ∖ A)` is the restriction of a class of
-  `Hₖ(M, M ∖ U)` for a neighbourhood `U` of `A`
-  (`TauCeti.exists_mem_nhdsSet_localHomologyRestriction_eq`), and between `A` and `U` lies a
-  finite union of closed balls of the chart centred at points of `A`. On each ball, restriction
-  to its centre is an isomorphism.
-* **Compact sets.** A compact set is a finite union of compact sets each lying in the source of
-  a chart, and the intersection of two such pieces lies in a chart again.
-
 ## Main results
 
 * `TauCeti.isZero_localHomology_of_isCompact`: `Hₖ(M, M ∖ A) = 0` for compact `A` and `k > n`.
@@ -71,6 +52,28 @@ namespace TauCeti
 section Module
 
 variable {Λ : Type w} [Ring Λ] (N : ModuleCat.{w} Λ) (n : ℕ) {M : Type w} [TopologicalSpace M]
+
+/-
+The main results are proved by induction on the shape of `A`, carried by the relative
+Mayer–Vietoris sequence `Hₖ₊₁(M, M ∖ (A ∩ B)) ⟶ Hₖ(M, M ∖ (A ∪ B)) ⟶ Hₖ(M, M ∖ A) ⊞ Hₖ(M, M ∖ B)`
+of two closed sets.
+
+* **Unions.** If the first term vanishes, the second map is a monomorphism
+  (`TauCeti.localHomology_hom_ext_of_union`), so both statements pass from `A` and `B` to
+  `A ∪ B` once `Hₖ(M, M ∖ (A ∩ B))` vanishes above the dimension.
+* **Convex sets in a chart.** For a compact convex set `K` in the target of a chart `φ`,
+  restriction from `φ.symm '' K` to any of its points is an isomorphism
+  (`TauCeti.isIso_localHomologyRestriction_symm_image`), and local homology at a point vanishes
+  outside the dimension. Finite unions of such sets follow by induction, since the intersection
+  of a finite union of convex sets with a convex set is again such a union.
+* **Compact sets in a chart.** A class of `Hₖ(M, M ∖ A)` is the restriction of a class of
+  `Hₖ(M, M ∖ U)` for a neighbourhood `U` of `A`
+  (`TauCeti.exists_mem_nhdsSet_localHomologyRestriction_eq`), and between `A` and `U` lies a
+  finite union of closed balls of the chart centred at points of `A`. On each ball, restriction
+  to its centre is an isomorphism.
+* **Compact sets.** A compact set is a finite union of compact sets each lying in the source of
+  a chart, and the intersection of two such pieces lies in a chart again.
+-/
 
 /-- The conclusion of Hatcher's Lemma 3.27 for a set `S`, apart from existence: local homology
 along `S` vanishes above degree `n`, and a class in degree `n` is zero once its restriction to

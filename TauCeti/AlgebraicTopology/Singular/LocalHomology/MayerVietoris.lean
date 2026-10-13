@@ -38,9 +38,7 @@ variable {A : Type u} [Category.{v} A] [HasCoproducts.{w} A] [Abelian A] {R : A}
 
 /-- **Maps into local homology of a union are detected on the pieces.** Let `S` and `T` be closed
 and let `Hₖ₊₁(M, M ∖ (S ∩ T))` vanish. Two maps into `Hₖ(M, M ∖ (S ∪ T))` that agree after
-restriction to `S` and to `T` are equal: by the relative Mayer–Vietoris sequence of the open sets
-`M ∖ S` and `M ∖ T`, the map `Hₖ(M, M ∖ (S ∪ T)) ⟶ Hₖ(M, M ∖ S) ⊞ Hₖ(M, M ∖ T)` is a
-monomorphism. -/
+restriction to `S` and to `T` are equal. -/
 theorem localHomology_hom_ext_of_union {S T : Set M} (hS : IsClosed S) (hT : IsClosed T) {k : ℕ}
     (h : IsZero (localHomology R (S ∩ T) (k + 1))) {Z : A}
     {f g : Z ⟶ localHomology R (S ∪ T) k}

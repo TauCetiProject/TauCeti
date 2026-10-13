@@ -110,8 +110,7 @@ lemma localHomologyRestriction_comp {S T W : Set M} (h₁ : S ⊆ T) (h₂ : T �
   exact congrArg (TopPair.singularHomologyMap · R k)
     (TopPair.ofSubsetMap_comp (𝟙 (TopCat.of M)) (𝟙 (TopCat.of M)) _ _ _).symm
 
-/-- **Local homology along the empty set vanishes**: `Hₖ(M, M) = 0`, because the identity of the
-pair `(M, M)` factors through its subspace. -/
+/-- **Local homology along the empty set vanishes**: `Hₖ(M, M) = 0`. -/
 theorem isZero_localHomology_empty (k : ℕ) : IsZero (localHomology R (∅ : Set M) k) := by
   rw [IsZero.iff_id_eq_zero, ← TopPair.singularHomologyMap_id]
   exact TopPair.singularHomologyMap_eq_zero_of_fac _ R
