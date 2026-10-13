@@ -253,6 +253,33 @@ theorem isHomogeneous_homogeneousPartPolynomial (f : M →ₗ[k[X]] N) (r : ℤ)
   rw [G.homogeneousPartPolynomial_apply_of_mem H hX hY f r hx]
   exact (DirectSum.decompose H.piece (f x) (p + r)).property
 
+/-- Taking the component at the degree of a homogeneous polynomial-linear map recovers the map. -/
+@[simp]
+theorem homogeneousPartPolynomial_eq_self (f : M →ₗ[k[X]] N) (r : ℤ)
+    (hf : TauCeti.LinearMap.IsHomogeneous f G.piece H.piece r) :
+    G.homogeneousPartPolynomial H hX hY f r = f := by
+  apply _root_.LinearMap.restrictScalars_injective k
+  rw [G.homogeneousPartPolynomial_restrictScalars H hX hY f r]
+  apply G.homogeneousPart_eq_self H (f.restrictScalars k) r
+  rw [TauCeti.LinearMap.isHomogeneous_def]
+  intro p x hx
+  simpa only [_root_.LinearMap.restrictScalars_apply] using hf.map_mem hx
+
+/-- Every homogeneous part of the zero polynomial-linear map is zero. This also simplifies
+using `homogeneousPartPolynomial_eq_self`, since zero is homogeneous in every degree. -/
+theorem homogeneousPartPolynomial_zero (r : ℤ) :
+    G.homogeneousPartPolynomial H hX hY 0 r = 0 := by
+  apply _root_.LinearMap.restrictScalars_injective k
+  simp
+
+/-- Taking a homogeneous part preserves addition of polynomial-linear maps. -/
+@[simp]
+theorem homogeneousPartPolynomial_add (f g : M →ₗ[k[X]] N) (r : ℤ) :
+    G.homogeneousPartPolynomial H hX hY (f + g) r =
+      G.homogeneousPartPolynomial H hX hY f r + G.homogeneousPartPolynomial H hX hY g r := by
+  apply _root_.LinearMap.restrictScalars_injective k
+  simp
+
 end HomogeneousParts
 
 end InternalGrading

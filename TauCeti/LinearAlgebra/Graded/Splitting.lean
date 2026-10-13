@@ -45,12 +45,6 @@ theorem exists_rightInverse [Module.Projective R N] (hf : IsHomogeneous f G.piec
     ∃ g : N →ₗ[R] M, f ∘ₗ g = LinearMap.id ∧ IsHomogeneous g H.piece G.piece (-r) := by
   obtain ⟨s, hs⟩ := f.exists_rightInverse_of_surjective (LinearMap.range_eq_top.mpr hsurj)
   refine ⟨H.homogeneousPart G s (-r), ?_, H.isHomogeneous_homogeneousPart G s (-r)⟩
-  apply H.linearMap_ext
-  intro q y hy
-  rw [LinearMap.comp_apply, H.homogeneousPart_apply_of_mem G s (-r) hy,
-    hf.map_decompose, neg_add_cancel_right]
-  have hsy : f (s y) = y := LinearMap.congr_fun hs y
-  rw [hsy]
-  exact DirectSum.decompose_of_mem_same (ℳ := H.piece) hy
+  simpa [hs] using H.comp_homogeneousPart G H s (-r) hf
 
 end TauCeti.LinearMap.IsHomogeneous
