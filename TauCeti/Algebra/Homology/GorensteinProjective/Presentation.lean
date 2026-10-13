@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Homology.GorensteinProjective.Basic
-public import TauCeti.Algebra.Homology.ModuleCat
+public import TauCeti.Algebra.Homology.ModuleCat.Basic
 
 /-!
 # Presentations from complete resolutions

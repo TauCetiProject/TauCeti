@@ -124,6 +124,7 @@ noncomputable def signlessPreprojectiveKoszulRight (v : R) :
   map_add' x y := by ext; simp [add_mul, Finset.sum_add_distrib]
   map_smul' a y := by ext; simp [mul_assoc, Finset.mul_sum]
 
+/-- Under `unop`, each component of the left Koszul map is multiplication by the reverse arrow. -/
 @[simp]
 theorem unop_signlessPreprojectiveKoszulLeft_apply (v : R)
     (y : signlessPreprojectiveRightProjective k v) (i : R) (b : i ⟶ v) :
@@ -131,6 +132,7 @@ theorem unop_signlessPreprojectiveKoszulLeft_apply (v : R)
       π (ofArrow (reverse b)) * unop (y : Πᵐᵒᵖ) := by
   exact unop_mul _ _
 
+/-- Under `unop`, the right Koszul map is the sum of incoming-arrow multiplications. -/
 @[simp]
 theorem unop_signlessPreprojectiveKoszulRight_apply (v : R)
     (z : signlessPreprojectiveKoszulMiddle k v) :

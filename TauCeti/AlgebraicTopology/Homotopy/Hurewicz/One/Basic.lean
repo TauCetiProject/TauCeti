@@ -7,7 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.Singular.ModuleChains.Basic
 public import TauCeti.Topology.Homotopy.Path
-public import TauCeti.Algebra.Homology.ModuleCat
+public import TauCeti.Algebra.Homology.ModuleCat.Basic
 public import TauCeti.Algebra.Homology.ShortComplex.ModuleCat
 public import TauCeti.Geometry.Convex.ConvexSpace.ContractibleSpaceStdSimplex
 public import TauCeti.Geometry.Convex.ConvexSpace.Defs

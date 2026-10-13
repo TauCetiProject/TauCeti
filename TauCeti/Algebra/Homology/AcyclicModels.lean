@@ -8,7 +8,7 @@ module
 public import Mathlib.Algebra.Category.ModuleCat.Basic
 public import Mathlib.Algebra.Homology.Homotopy
 public import Mathlib.LinearAlgebra.Finsupp.LinearCombination
-public import TauCeti.Algebra.Homology.ModuleCat
+public import TauCeti.Algebra.Homology.ModuleCat.Basic
 
 /-!
 # The method of acyclic models

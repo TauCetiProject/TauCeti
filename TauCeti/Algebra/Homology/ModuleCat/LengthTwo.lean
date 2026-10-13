@@ -18,8 +18,12 @@ If the modules are projective, `f` is injective and `range f = ker g`,
 `ModuleCatLengthTwo.projectiveResolution` resolves `P₀ ⧸ range g`.
 
 This packages the categorical assembly used by the signed and signless preprojective Koszul
-resolutions. The assembly is extracted from
-`TauCeti.RepresentationTheory.Quiver.Preprojective.Resolution`.
+resolutions.
+
+## References
+
+* `TauCeti.RepresentationTheory.Quiver.Preprojective.Resolution`, for the categorical assembly
+  of the signed preprojective Koszul resolution.
 -/
 
 public section
