@@ -255,7 +255,6 @@ private theorem baseChangePresentationSymplecticIso_hom_comp_inclusion :
   rw [Symplectic.inclusion_eq_constantForm,
     ConstantForm.inclusion_eq_eqToHom_comp_hopfSpec_map,
     GeneralLinear.hopfIdealInclusion_def, baseChangePresentationSymplecticIso_hom]
-  rw [eqToIso.hom]
   simp only [eqToHom_refl, Category.id_comp]
   rw [← Category.assoc]
   rw [cancel_mono]

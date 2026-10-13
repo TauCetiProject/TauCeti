@@ -388,6 +388,5 @@ theorem toSymplectic_comp_inclusion :
   rw [toSymplectic, Symplectic.inclusion_def, GeneralLinear.hopfIdealInclusion_def,
     carrierι_def, TauCeti.UniversalEnvelopingAlgebra.kostantToralGroupSchemeι_def,
     ← Category.assoc, CommHopfAlgCat.quotientSpecMapOfLe_comp_quotientSpecι]
-  simp
 
 end TauCeti.SpStd
