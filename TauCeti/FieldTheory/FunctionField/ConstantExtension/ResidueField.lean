@@ -47,8 +47,6 @@ place when `k` is perfect.
   `k' / k` is normal and `F_P` embeds into `k'` over `k`.
 * `TauCeti.Place.exists_constantCompositum_eq_top_and_forall_degree_eq_one`: a place with
   separable residue field becomes rational after a finite separable extension of constants.
-* `TauCeti.Place.degree_eq_one_of_constantCompositum_eq_top_of_isSepClosed`: over a separable
-  closure `k'` of `k`, a place over `P` is rational when `F_P / k` is separable.
 
 ## Reference
 
@@ -74,9 +72,8 @@ variable [Algebra.IsSeparable k k']
 
 attribute [local instance 10] algebraIntegersExtension isScalarTowerIntegersExtension
 
-/-- The finite case of
-`TauCeti.Place.span_range_algebraMap_residueField_eq_top_of_constantCompositum_eq_top`, through a
-basis of constants which is a local integral basis at every place. -/
+/-- In a finite separable constant field extension, the residues of constants span the residue
+field over the residue field of the restricted place. -/
 private theorem span_range_algebraMap_residueField_eq_top_of_finiteDimensional
     [FiniteDimensional k k'] (hF : IsFunctionField k F) (hex : IsIntegrallyClosedIn k F)
     (h : constantCompositum F k' F' = ⊤) (P' : Place k' F') :
@@ -282,19 +279,6 @@ theorem exists_constantCompositum_eq_top_and_forall_degree_eq_one (hF : IsFuncti
   refine ⟨F', k', inferInstance, inferInstance, htop, fun P' hP' ↦ ?_⟩
   exact degree_eq_one_of_constantCompositum_eq_top hF hex htop P' (hP' ▸ φ)
 
-/-- **Places become rational over a separable closure of the constants**: if `k'` is a separable
-closure of `k` and `F' = F · k'`, where `F / k` has exact constant field `k`, then a place `P'` of
-`F' / k'` has degree one as soon as the residue field of the place below is separable over `k`.
-Over a perfect `k` this is every place of `F'`. -/
-theorem degree_eq_one_of_constantCompositum_eq_top_of_isSepClosed [IsSepClosed k']
-    (hF : IsFunctionField k F) (hex : IsIntegrallyClosedIn k F)
-    (h : constantCompositum F k' F' = ⊤) (P' : Place k' F')
-    (hsep : letI := isAlgebraic_of_constantCompositum_eq_top (k := k) (k' := k') h
-      Algebra.IsSeparable k (P'.restrict k F).ResidueField) :
-    P'.degree = 1 := by
-  let := isAlgebraic_of_constantCompositum_eq_top (k := k) (k' := k') h
-  have : IsSepClosure k k' := ⟨inferInstance, inferInstance⟩
-  exact degree_eq_one_of_constantCompositum_eq_top hF hex h P' IsSepClosed.lift
 
 end Place
 
