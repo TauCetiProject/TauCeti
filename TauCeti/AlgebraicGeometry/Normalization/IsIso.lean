@@ -136,11 +136,11 @@ universe u
 
 variable {T Y : Scheme.{u}}
 
-/-- On an integral scheme whose local rings are integrally closed, the ring of sections over a
-nonempty affine open is integrally closed: its localizations at maximal ideals are local rings of
-the scheme. -/
+/-- On an integral scheme, the ring of sections over a nonempty affine open `V` is integrally
+closed if the local rings at the points of `V` are: its localizations at maximal ideals are local
+rings of the scheme at points of `V`. -/
 theorem IsAffineOpen.isIntegrallyClosed [IsIntegral T] {V : T.Opens} (hV : IsAffineOpen V)
-    [Nonempty V] (hT : ∀ x : T, IsIntegrallyClosed (T.presheaf.stalk x)) :
+    [Nonempty V] (hT : ∀ x ∈ V, IsIntegrallyClosed (T.presheaf.stalk x)) :
     IsIntegrallyClosed Γ(T, V) := by
   refine IsIntegrallyClosed.of_localization_maximal fun P _ _ ↦ ?_
   let y : PrimeSpectrum Γ(T, V) := ⟨P, inferInstance⟩
@@ -148,7 +148,7 @@ theorem IsAffineOpen.isIntegrallyClosed [IsIntegral T] {V : T.Opens} (hV : IsAff
   let := TopCat.Presheaf.algebra_section_stalk T.presheaf ⟨hV.fromSpec y, hy⟩
   have : IsLocalization P.primeCompl (T.presheaf.stalk (hV.fromSpec y)) :=
     hV.isLocalization_stalk' y hy
-  exact (hT (hV.fromSpec y)).of_equiv (IsLocalization.algEquiv P.primeCompl
+  exact (hT (hV.fromSpec y) hy).of_equiv (IsLocalization.algEquiv P.primeCompl
     (T.presheaf.stalk (hV.fromSpec y)) (Localization.AtPrime P)).toRingEquiv
 
 /-- The generic point `Spec k(T) ⟶ T` of an integral scheme is quasi-compact, since `Spec k(T)` is
@@ -201,7 +201,7 @@ theorem isIso_normalizationDesc_fromSpecStalk_genericPoint [IsIntegral T]
         refine ⟨p.map (g.app U).hom, hp.map _, hι.1 ?_⟩
         rw [Polynomial.eval₂_map, map_zero, Polynomial.hom_eval₂]
         exact hpe
-      have := hV.isIntegrallyClosed hT
+      have := hV.isIntegrallyClosed fun x _ ↦ hT x
       have := functionField_isFractionRing_of_isAffineOpen T _ hV
       obtain ⟨b, rfl⟩ := (IsIntegrallyClosed.isIntegral_iff (K := T.functionField)).mp ht
       -- The algebra structure of `Γ(T, V)` on `k(T)` is the germ map, so this is `key` at `b`.

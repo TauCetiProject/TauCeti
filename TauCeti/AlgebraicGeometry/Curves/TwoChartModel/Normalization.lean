@@ -41,6 +41,9 @@ through `T` compatibly with it.
   `X`.
 * `TauCeti.AlgebraicGeometry.twoChartModel.toNormalization_normalizationIso_hom`: it is compatible
   with the generic point of `X'`.
+* `TauCeti.AlgebraicGeometry.twoChartModel.normalizationIso_inv_fromNormalization` and
+  `TauCeti.AlgebraicGeometry.twoChartModel.fromSpecStalk_normalizationIso_inv`: the same
+  compatibilities for the inverse.
 
 ## References
 
@@ -95,5 +98,21 @@ theorem toNormalization_normalizationIso_hom (hxt : Transcendental k x) :
       (twoChartModel hF' hx').fromSpecStalk (genericPoint _) :=
   have := isFinite_map hF hF' hx hx' h hxt
   Scheme.Hom.toNormalization_normalizationDesc _ _ _ rfl
+
+/-- The inverse of `normalizationIso` lies over the two-chart model of `F`. -/
+@[reassoc (attr := simp)]
+theorem normalizationIso_inv_fromNormalization (hxt : Transcendental k x) :
+    (normalizationIso hF hF' hx hx' h hxt).inv ≫ Scheme.Hom.fromNormalization _ =
+      map hF hF' hx hx' h := by
+  rw [Iso.inv_comp_eq, normalizationIso_hom_map]
+
+/-- The inverse of `normalizationIso` carries the generic point of the two-chart model of `F'` to
+the canonical morphism into the relative normalization. -/
+@[reassoc (attr := simp)]
+theorem fromSpecStalk_normalizationIso_inv (hxt : Transcendental k x) :
+    (twoChartModel hF' hx').fromSpecStalk (genericPoint _) ≫
+        (normalizationIso hF hF' hx hx' h hxt).inv =
+      Scheme.Hom.toNormalization _ := by
+  rw [Iso.comp_inv_eq, toNormalization_normalizationIso_hom]
 
 end TauCeti.AlgebraicGeometry.twoChartModel
