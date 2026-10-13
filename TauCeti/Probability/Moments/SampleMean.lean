@@ -18,7 +18,8 @@ with a common mean `m`. Their sample mean `S = r⁻¹ ∑ₖ Xₖ` has mean-squa
 `∫ ‖S - m‖² dP = r⁻² ∑ₖ ∫ ‖Xₖ - m‖² dP`,
 
 so that averaging `r` samples with a common per-sample error `γ` divides it by `r`. Together with
-Chebyshev's inequality for the second moment, this is the scale `1 / r` behind the elementary
+Chebyshev's inequality for the second moment, `TauCeti.meas_ge_le_integral_norm_sq_div_sq` in
+`TauCeti.Probability.Moments.Chebyshev`, this is the scale `1 / r` behind the elementary
 concentration of empirical moments.
 
 The identity rests on Bienaymé's identity for random vectors: the squared norm of a sum of
@@ -30,10 +31,6 @@ case `E = ℝ`.
 
 ## Main statements
 
-* `TauCeti.meas_ge_le_integral_norm_sq_div_sq`: Chebyshev's inequality for the second moment,
-  `μ {c ≤ ‖Y‖} ≤ (∫ ‖Y‖²) / c²`, for any measure and without centering.
-* `TauCeti.meas_gt_le_div_sq_of_integral_sq_le`: the uncentered Chebyshev inequality
-  `μ {η < Y} ≤ v / η²` for a real `Y` with `∫ Y² ≤ v`.
 * `TauCeti.integral_norm_sum_sq_of_pairwise_indepFun`: Bienaymé's identity for random vectors.
 * `TauCeti.integral_norm_finiteMean_sub_sq`: the mean-square error of a sample mean.
 * `TauCeti.integral_finiteMean_sub_sq`: the same identity for real random variables.
@@ -43,8 +40,8 @@ case `E = ℝ`.
 
 ## References
 
-* R. Vershynin, *High-Dimensional Probability* (2018), §1.2–1.3: Chebyshev's inequality and the
-  variance of sums of independent random variables.
+* R. Vershynin, *High-Dimensional Probability* (2018), §1.3: the variance of sums of independent
+  random variables.
 -/
 
 public section
@@ -55,42 +52,6 @@ open scoped RealInnerProductSpace
 namespace TauCeti
 
 variable {Ω ι E : Type*} {mΩ : MeasurableSpace Ω} {μ : Measure Ω}
-
-section Chebyshev
-
-/-- **Chebyshev's inequality for the second moment.** For any measure, if `‖Y‖²` is integrable
-and `0 < c`, the set where `‖Y‖` is at least `c` has measure at most `(∫ ‖Y‖²) / c²`. Unlike
-`ProbabilityTheory.meas_ge_le_variance_div_sq`, `Y` is not centered at its mean. -/
-theorem meas_ge_le_integral_norm_sq_div_sq [NormedAddCommGroup E] {Y : Ω → E}
-    (hY : Integrable (fun ω ↦ ‖Y ω‖ ^ 2) μ) {c : ℝ} (hc : 0 < c) :
-    μ {ω | c ≤ ‖Y ω‖} ≤ ENNReal.ofReal ((∫ ω, ‖Y ω‖ ^ 2 ∂μ) / c ^ 2) := by
-  have hc2 : 0 < c ^ 2 := pow_pos hc 2
-  calc μ {ω | c ≤ ‖Y ω‖}
-      ≤ μ {ω | ENNReal.ofReal (c ^ 2) ≤ ENNReal.ofReal (‖Y ω‖ ^ 2)} :=
-        measure_mono fun ω (hω : c ≤ ‖Y ω‖) ↦
-          ENNReal.ofReal_le_ofReal (pow_le_pow_left₀ hc.le hω 2)
-    _ ≤ (∫⁻ ω, ENNReal.ofReal (‖Y ω‖ ^ 2) ∂μ) / ENNReal.ofReal (c ^ 2) :=
-        meas_ge_le_lintegral_div hY.1.aemeasurable.ennreal_ofReal
-          (ENNReal.ofReal_pos.2 hc2).ne' ENNReal.ofReal_ne_top
-    _ = ENNReal.ofReal ((∫ ω, ‖Y ω‖ ^ 2 ∂μ) / c ^ 2) := by
-        rw [← ofReal_integral_eq_lintegral_ofReal hY (.of_forall fun ω ↦ by positivity),
-          ENNReal.ofReal_div_of_pos hc2]
-
-/-- **The uncentered Chebyshev inequality.** If `Y²` is integrable with `∫ Y² ≤ v` and `0 < η`,
-then the set where `Y` exceeds `η` has measure at most `v / η²`. -/
-theorem meas_gt_le_div_sq_of_integral_sq_le {Y : Ω → ℝ} (hY : Integrable (fun ω ↦ Y ω ^ 2) μ)
-    {v η : ℝ} (hv : ∫ ω, Y ω ^ 2 ∂μ ≤ v) (hη : 0 < η) :
-    μ {ω | η < Y ω} ≤ ENNReal.ofReal (v / η ^ 2) := by
-  have hY' : Integrable (fun ω ↦ ‖Y ω‖ ^ 2) μ := by simpa only [Real.norm_eq_abs, sq_abs] using hY
-  calc μ {ω | η < Y ω}
-      ≤ μ {ω | η ≤ ‖Y ω‖} :=
-        measure_mono fun ω (hω : η < Y ω) ↦ hω.le.trans (Real.le_norm_self (Y ω))
-    _ ≤ ENNReal.ofReal ((∫ ω, ‖Y ω‖ ^ 2 ∂μ) / η ^ 2) := meas_ge_le_integral_norm_sq_div_sq hY' hη
-    _ ≤ ENNReal.ofReal (v / η ^ 2) := by
-        simp only [Real.norm_eq_abs, sq_abs]
-        gcongr
-
-end Chebyshev
 
 variable [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteSpace E] [MeasurableSpace E]
   [BorelSpace E]
@@ -135,18 +96,13 @@ theorem integral_norm_finiteMean_sub_sq [IsProbabilityMeasure μ] {X : ι → Ω
     (hindep : Pairwise fun i j ↦ X i ⟂ᵢ[μ] X j) :
     ∫ ω, ‖finiteMean ℝ (X · ω) - m‖ ^ 2 ∂μ =
       ((Fintype.card ι : ℝ) ^ 2)⁻¹ * ∑ i, ∫ ω, ‖X i ω - m‖ ^ 2 ∂μ := by
-  have hr : (Fintype.card ι : ℝ) ≠ 0 := Nat.cast_ne_zero.2 Fintype.card_ne_zero
   -- The deviation of the sample mean is the sample mean of the deviations.
-  have hdev (ω : Ω) :
-      finiteMean ℝ (X · ω) - m = (Fintype.card ι : ℝ)⁻¹ • ∑ i, (X i ω - m) := by
-    rw [finiteMean_eq_inv_smul_sum, sum_sub_distrib, sum_const, card_univ,
-      ← Nat.cast_smul_eq_nsmul ℝ, smul_sub, smul_smul, inv_mul_cancel₀ hr, one_smul]
-  simp_rw [hdev, norm_smul, mul_pow, norm_inv, Real.norm_natCast, inv_pow]
+  simp_rw [← finiteMean_sub_const, finiteMean_eq_inv_smul_sum, norm_smul, mul_pow, norm_inv,
+    Real.norm_natCast, inv_pow]
   rw [integral_const_mul, integral_norm_sum_sq_of_pairwise_indepFun (X := fun i ω ↦ X i ω - m)
     (fun i _ ↦ (hX i).sub (memLp_const m)) (fun i _ ↦ ?_)
     (fun i _ j _ hij ↦ (hindep hij).comp (measurable_sub_const m) (measurable_sub_const m))]
-  rw [integral_sub ((hX i).integrable one_le_two) (integrable_const m), hmean i, integral_const,
-    probReal_univ, one_smul, sub_self]
+  simp [integral_sub ((hX i).integrable one_le_two) (integrable_const m), hmean i]
 
 /-- **The mean-square error of a sample mean of real random variables.** If the real random
 variables `Z i` are square-integrable, pairwise independent and have a common mean `c`, then their
