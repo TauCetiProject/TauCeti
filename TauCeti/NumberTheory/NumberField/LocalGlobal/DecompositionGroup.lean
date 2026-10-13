@@ -314,9 +314,10 @@ theorem finrank_adicCompletion_fixedField (H : Subgroup (L ≃ₐ[K] L))
     Ideal.ramificationIdx_mul_inertiaDeg_under_fixedField_eq_relIndex]
 
 omit [w.asIdeal.LiesOver v.asIdeal] in
-/-- **A fixed field has local degree one exactly when it contains the decomposition group.** Let
-`L/K` be Galois, `H` a subgroup of `Gal(L/K)` and `E = L ^ H`. For a place `u` of `E` between `v`
-and `w`, the local degree `[E_u : K_v]` is one if and only if `D(w) ≤ H`. -/
+/-- **A fixed field has local degree one exactly when its defining subgroup contains the
+decomposition group.** Let `L/K` be Galois, `H` a subgroup of `Gal(L/K)` and `E = L ^ H`. For a
+place `u` of `E` between `v` and `w`, the local degree `[E_u : K_v]` is one if and only if
+`D(w) ≤ H`. -/
 theorem finrank_adicCompletion_fixedField_eq_one_iff (H : Subgroup (L ≃ₐ[K] L))
     (u : HeightOneSpectrum (𝒪 (IntermediateField.fixedField H))) [u.asIdeal.LiesOver v.asIdeal]
     [w.asIdeal.LiesOver u.asIdeal] :
