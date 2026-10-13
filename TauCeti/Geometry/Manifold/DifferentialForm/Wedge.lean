@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.DifferentialForm.Pullback
-public import TauCeti.Analysis.Normed.Module.Alternating.Wedge
+public import TauCeti.Topology.Algebra.Module.Alternating.Wedge
 
 /-!
 # Wedge products of bundle-valued rough differential forms
@@ -279,10 +279,7 @@ theorem wedgeWith_flip (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
         convert μ.continuous₂ using 1
         ext p
         rfl)
-      (by
-        convert μ.flip.continuous₂ using 1
-        ext p
-        rfl) (φ x) (ψ x) v
+      (φ x) (ψ x) v
 
 /-- A symmetric fibrewise pairing gives the graded-commutativity identity for rough forms. -/
 theorem wedgeWith_comm (μ : F₁ →L[ℝ] F₁ →L[ℝ] F₃)
@@ -356,15 +353,6 @@ theorem wedge_zero_left (ψ : RoughForm I M ℝ l) :
 theorem wedge_zero_right (φ : RoughForm I M ℝ k) :
     φ.wedge (0 : RoughForm I M ℝ l) = 0 :=
   wedgeWith_zero_right (ContinuousLinearMap.mul ℝ ℝ) φ
-
-/-- The real-valued rough-form wedge has the graded flip identity. -/
-theorem wedge_flip (φ : RoughForm I M ℝ k) (ψ : RoughForm I M ℝ l) (x : M)
-    (v : Fin (k + l) → TangentSpace I x) :
-    φ.wedge ψ x v =
-      (-1 : ℝ) ^ (k * l) • ψ.wedge φ x (v ∘ Fin.cast (Nat.add_comm l k)) := by
-  have hflip : (ContinuousLinearMap.mul ℝ ℝ).flip = ContinuousLinearMap.mul ℝ ℝ := by
-    exact ContinuousLinearMap.flip_mul
-  simpa only [wedge, hflip] using wedgeWith_flip (ContinuousLinearMap.mul ℝ ℝ) φ ψ x v
 
 /-- Real-valued rough forms commute with the usual graded sign. -/
 theorem wedge_comm (φ : RoughForm I M ℝ k) (ψ : RoughForm I M ℝ l) (x : M)

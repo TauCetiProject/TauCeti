@@ -21,6 +21,8 @@ import TauCeti.GroupTheory.Perm.Inversion
 This file defines the paired wedge product of continuous alternating maps on real seminormed
 spaces. Given a continuous bilinear pairing `μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃`, it combines a `k`-form
 with values in `F₁` and an `l`-form with values in `F₂` into a `(k + l)`-form with values in `F₃`.
+The domain-norm-free flip bridge is provided by
+`ContinuousAlternatingMap.pairedWedge_flip` in the topology-level wedge module.
 
 The normalization is the determinant convention: the signed sum over all permutations is divided
 by `k! l!`. Equivalently, this is the unscaled sum over `(k, l)`-shuffles. In particular, the wedge
@@ -39,6 +41,8 @@ The paired construction follows the design of Yury Kudryashov's
 * `TauCeti.norm_wedgeWith_le`: the sharp binomial norm bound.
 * `TauCeti.wedgeWith_compContinuousLinearMap`: compatibility with pullback by a continuous linear
   map.
+* `ContinuousAlternatingMap.pairedWedge_flip`: the domain-norm-free flip identity for the
+  underlying paired wedge.
 * `TauCeti.wedgeWith_flip`: swapping the two forms flips the pairing and costs the sign
   `(-1) ^ (k * l)`; `TauCeti.wedgeWith_comm` is graded commutativity for a symmetric pairing.
 * `TauCeti.wedgeWith_wedgeWith_left_apply`, `TauCeti.wedgeWith_wedgeWith_right_apply`: an iterated
@@ -342,66 +346,6 @@ theorem wedgeWith_compContinuousLinearMap {E' : Type*} [SeminormedAddCommGroup E
   simp only [wedgeWith_apply, ContinuousAlternatingMap.compContinuousLinearMap_apply,
     Function.comp_def]
 
-section TopologicalFlip
-
-variable {X G₁ G₂ G₃ : Type*}
-  [AddCommGroup X] [Module ℝ X] [TopologicalSpace X]
-  [SeminormedAddCommGroup G₁] [NormedSpace ℝ G₁]
-  [SeminormedAddCommGroup G₂] [NormedSpace ℝ G₂]
-  [SeminormedAddCommGroup G₃] [NormedSpace ℝ G₃]
-
-/-- Swapping the two factors of a paired wedge flips the pairing and contributes the graded sign.
-This identity is valid for every continuous bilinear pairing and requires no norm on the domain. -/
-theorem _root_.ContinuousAlternatingMap.pairedWedge_flip {k l : ℕ}
-    (μ : G₁ →L[ℝ] G₂ →L[ℝ] G₃)
-    (hμ : Continuous (fun p : G₁ × G₂ ↦ μ p.1 p.2))
-    (hμflip : Continuous (fun p : G₂ × G₁ ↦ μ.flip p.1 p.2))
-    (φ : X [⋀^Fin k]→L[ℝ] G₁) (ψ : X [⋀^Fin l]→L[ℝ] G₂) (v : Fin (k + l) → X) :
-    ContinuousAlternatingMap.pairedWedge μ hμ φ ψ v =
-      (-1 : ℝ) ^ (k * l) •
-        ContinuousAlternatingMap.pairedWedge μ.flip hμflip ψ φ
-          (v ∘ Fin.cast (Nat.add_comm l k)) := by
-  classical
-  -- Reindex the permutation sum by the block swap, whose sign is `(-1) ^ (k * l)`.
-  set c : Fin (l + k) ≃ Fin (k + l) := finCongr (Nat.add_comm l k)
-  set B : Equiv.Perm (Fin (k + l)) := finAddFlip.trans c
-  have hsum : ∑ tau : Equiv.Perm (Fin (l + k)), Equiv.Perm.sign tau •
-        μ.flip (ψ (fun i => (v ∘ Fin.cast (Nat.add_comm l k)) (tau (Fin.castAdd k i))))
-          (φ (fun j => (v ∘ Fin.cast (Nat.add_comm l k)) (tau (Fin.natAdd l j)))) =
-      Equiv.Perm.sign B • ∑ sigma : Equiv.Perm (Fin (k + l)), Equiv.Perm.sign sigma •
-        μ (φ (fun i => v (sigma (Fin.castAdd l i))))
-          (ψ (fun j => v (sigma (Fin.natAdd k j)))) := by
-    let f : Equiv.Perm (Fin (k + l)) → G₃ := fun sigma =>
-      μ (φ (fun i => v (sigma (Fin.castAdd l i))))
-        (ψ (fun j => v (sigma (Fin.natAdd k j))))
-    calc
-      _ = ∑ tau : Equiv.Perm (Fin (l + k)), Equiv.Perm.sign tau •
-          f (c.permCongr tau * B) := by
-        apply Finset.sum_congr rfl
-        intro tau _
-        have hleft : (fun i => v ((c.permCongr tau * B) (Fin.castAdd l i))) =
-            fun j => v (Fin.cast (Nat.add_comm l k) (tau (Fin.natAdd l j))) := by
-          funext i
-          simp [B, c, finAddFlip_apply_castAdd]
-        have hright : (fun j => v ((c.permCongr tau * B) (Fin.natAdd k j))) =
-            fun i => v (Fin.cast (Nat.add_comm l k) (tau (Fin.castAdd k i))) := by
-          funext j
-          simp [B, c, finAddFlip_apply_natAdd]
-        simp only [f, Function.comp_apply, ContinuousLinearMap.flip_apply]
-        rw [← hright, ← hleft]
-      _ = _ := TauCeti.sum_sign_smul_permCongr_mul c B f
-  rw [ContinuousAlternatingMap.pairedWedge_apply μ hμ φ ψ v,
-    ContinuousAlternatingMap.pairedWedge_apply μ.flip hμflip ψ φ
-      (v ∘ Fin.cast (Nat.add_comm l k))]
-  rw [hsum, TauCeti.sign_finAddFlip_trans_finCongr]
-  generalize (∑ sigma : Equiv.Perm (Fin (k + l)), (_ : G₃)) = S
-  rw [Units.smul_def, ← Int.cast_smul_eq_zsmul ℝ]
-  match_scalars
-  ring_nf
-  simp
-
-end TopologicalFlip
-
 /-- The flip identity: swapping the two forms of a paired wedge flips the pairing and costs the
 graded sign `(-1) ^ (k * l)`. This holds for every pairing. -/
 theorem wedgeWith_flip {k l : ℕ} (mu : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
@@ -414,10 +358,7 @@ theorem wedgeWith_flip {k l : ℕ} (mu : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
         convert mu.continuous₂ using 1
         ext p
         rfl)
-      (by
-        convert mu.flip.continuous₂ using 1
-        ext p
-        rfl) phi psi v
+      phi psi v
 
 /-- A skew-symmetric continuous bilinear map is negated by flipping its arguments. -/
 theorem flip_eq_neg_of_skew {mu : F₁ →L[ℝ] F₁ →L[ℝ] F₃}
