@@ -17,18 +17,19 @@ space `X` with its Borel structure and a reference measure `m` finite on bounded
 Sturm and Lott–Villani, `M` satisfies the *curvature-dimension condition* `CD(K, ∞)`, for `K : ℝ`,
 when `m` has full support and the Boltzmann entropy `μ ↦ Ent_m(μ)` relative to `m` is weakly
 `K`-convex on the quadratic Wasserstein space `P₂(X)`: any two laws `μ₀`, `μ₁` of finite second
-moment and finite entropy, `Ent_m(μᵢ) ∉ {⊥, ⊤}`, are joined by a `W₂`-geodesic `(μ_t)` along which
+moment with `Ent_m(μᵢ) < ∞` are joined by a `W₂`-geodesic `(μ_t)` along which
 
 `Ent_m(μ_t) ≤ (1 - t) Ent_m(μ₀) + t Ent_m(μ₁) - (K / 2) t (1 - t) W₂(μ₀, μ₁)²`.
 
 This is the synthetic form of the lower Ricci bound `Ric ≥ K`: on a smooth Riemannian manifold
 with its volume measure the two are equivalent, by a theorem of von Renesse and Sturm. As in
-Sturm's definition, the endpoints range over the laws of finite entropy. The entropy may be `⊥`
-when `m` is infinite and grows fast at infinity, and such laws are not endpoints. In the usual
-setting, where `m` satisfies a growth bound such as `∫ exp (-c d(x₀, x)²) dm(x) < ∞` (for instance
-when `m` is finite), the entropy is never `⊥` on `P₂(X)`. The condition is then
-`TauCeti.GeodesicallyConvex` for the energy `TauCeti.boltzmannEntropy m` on
-`TauCeti.WassersteinSpace 2 X`
+Sturm's definition, the endpoints range over the laws with `Ent_m(μᵢ) < ∞`, the effective domain
+of the entropy, and the inequality is read in `[-∞, ∞]`. The entropy may be `⊥` when `m` is
+infinite and grows fast at infinity, and such laws are endpoints too. In the usual setting, where
+`m` satisfies a growth bound such as `∫ exp (-c d(x₀, x)²) dm(x) < ∞` (for instance when `m` is
+finite), the entropy is never `⊥` on `P₂(X)`, so the endpoints are the laws of finite entropy.
+Given full support, the condition is `TauCeti.GeodesicallyConvex` for the energy
+`TauCeti.boltzmannEntropy m` on `TauCeti.WassersteinSpace 2 X`
 (`TauCeti.MetricMeasureSpace.curvatureDimensionInfinity_iff_geodesicallyConvex`), and the slope
 formula and the rest of the theory of geodesically convex energies apply to it.
 
@@ -61,8 +62,7 @@ The condition constrains the geometry of `X`:
 * `TauCeti.MetricMeasureSpace.CurvatureDimensionInfinity.mono`: `CD(K, ∞)` implies `CD(K', ∞)`
   for `K' ≤ K`.
 * `TauCeti.MetricMeasureSpace.curvatureDimensionInfinity_iff_geodesicallyConvex`: for a reference
-  measure of full support whose entropy is never `⊥` at a law of `P₂(X)` where it is `≠ ⊤`,
-  `CD(K, ∞)` is the `K`-geodesic convexity of the entropy.
+  measure of full support, `CD(K, ∞)` is the `K`-geodesic convexity of the entropy.
 * `TauCeti.MetricMeasureSpace.CurvatureDimensionInfinity.exists_dist_sq_add_dist_sq_le`: under
   `CD(K, ∞)`, any two points have approximate midpoints.
 * `TauCeti.MetricMeasureSpace.not_curvatureDimensionInfinity_of_support_eq_pair`: a reference
@@ -160,7 +160,7 @@ variable {X : Type*} [MetricSpace X] [MeasurableSpace X] [CompleteSpace X]
 /-- The **curvature-dimension condition** `CD(K, ∞)` of Sturm and Lott–Villani for the
 metric-measure space `M`: the reference measure has full support, and the Boltzmann entropy
 relative to it is `K`-geodesically convex on the quadratic Wasserstein space `P₂(X)`. That is, any
-two laws of finite second moment and finite entropy, `Ent_m(μᵢ) ∉ {⊥, ⊤}`, are joined by a
+two laws of finite second moment with `Ent_m(μᵢ) < ∞` (the entropy may be `⊥`) are joined by a
 `W₂`-geodesic `(μ_t)` along which
 `Ent_m(μ_t) ≤ (1 - t) Ent_m(μ₀) + t Ent_m(μ₁) - (K / 2) t (1 - t) W₂(μ₀, μ₁)²`.
 
@@ -170,35 +170,28 @@ condition to the support reduction `TauCeti.MetricMeasureSpace.supportSpace`. -/
 structure CurvatureDimensionInfinity (M : MetricMeasureSpace X) (K : ℝ) : Prop where
   /-- The reference measure has full support. -/
   support_eq_univ : M.support = univ
-  /-- Any two laws of finite second moment and finite entropy are joined by a `W₂`-geodesic
+  /-- Any two laws of finite second moment and entropy `< ∞` are joined by a `W₂`-geodesic
   along which the entropy is `K`-convex. -/
   exists_isGeodesicSegment_convexAlong : ∀ ⦃μ₀ μ₁ : WassersteinSpace 2 X⦄,
     boltzmannEntropy M.reference ((μ₀ : ProbabilityMeasure X) : Measure X) ≠ ⊤ →
-    boltzmannEntropy M.reference ((μ₀ : ProbabilityMeasure X) : Measure X) ≠ ⊥ →
     boltzmannEntropy M.reference ((μ₁ : ProbabilityMeasure X) : Measure X) ≠ ⊤ →
-    boltzmannEntropy M.reference ((μ₁ : ProbabilityMeasure X) : Measure X) ≠ ⊥ →
     ∃ γ : ℝ → WassersteinSpace 2 X, IsGeodesicSegment γ μ₀ μ₁ ∧
       ConvexAlong K (fun μ : WassersteinSpace 2 X ↦
         boltzmannEntropy M.reference ((μ : ProbabilityMeasure X) : Measure X)) γ
 
-/-- For a reference measure of full support whose Boltzmann entropy is never `⊥` at a law of
-`P₂(X)` where it is `≠ ⊤` (for instance a finite one), `CD(K, ∞)` is the `K`-geodesic convexity of
-the entropy. -/
-theorem curvatureDimensionInfinity_iff_geodesicallyConvex (hM : M.support = univ)
-    (hm : ∀ μ : WassersteinSpace 2 X,
-      boltzmannEntropy M.reference ((μ : ProbabilityMeasure X) : Measure X) ≠ ⊤ →
-      boltzmannEntropy M.reference ((μ : ProbabilityMeasure X) : Measure X) ≠ ⊥) :
+/-- For a reference measure of full support, `CD(K, ∞)` is the `K`-geodesic convexity of the
+Boltzmann entropy. -/
+theorem curvatureDimensionInfinity_iff_geodesicallyConvex (hM : M.support = univ) :
     M.CurvatureDimensionInfinity K ↔ GeodesicallyConvex K fun μ : WassersteinSpace 2 X ↦
       boltzmannEntropy M.reference ((μ : ProbabilityMeasure X) : Measure X) :=
-  ⟨fun h ↦ geodesicallyConvex_def.2 fun _ _ h₀ h₁ ↦
-      h.exists_isGeodesicSegment_convexAlong h₀ (hm _ h₀) h₁ (hm _ h₁),
-    fun h ↦ ⟨hM, fun _ _ h₀ _ h₁ _ ↦ geodesicallyConvex_def.1 h h₀ h₁⟩⟩
+  ⟨fun h ↦ geodesicallyConvex_def.2 h.exists_isGeodesicSegment_convexAlong,
+    fun h ↦ ⟨hM, geodesicallyConvex_def.1 h⟩⟩
 
 /-- `CD(K, ∞)` implies `CD(K', ∞)` for every `K' ≤ K`. -/
 theorem CurvatureDimensionInfinity.mono (h : M.CurvatureDimensionInfinity K) (hK : K' ≤ K) :
     M.CurvatureDimensionInfinity K' :=
-  ⟨h.support_eq_univ, fun _ _ h₀ h₀' h₁ h₁' ↦
-    (h.exists_isGeodesicSegment_convexAlong h₀ h₀' h₁ h₁').imp fun _ hγ ↦
+  ⟨h.support_eq_univ, fun _ _ h₀ h₁ ↦
+    (h.exists_isGeodesicSegment_convexAlong h₀ h₁).imp fun _ hγ ↦
       ⟨hγ.1, hγ.2.mono hK⟩⟩
 
 /-- **Approximate midpoints under `CD(K, ∞)`.** If `M` satisfies `CD(K, ∞)`, any two points
@@ -221,11 +214,11 @@ theorem CurvatureDimensionInfinity.exists_dist_sq_add_dist_sq_le
   have hsupp (x : X) : x ∈ M.reference.support := by
     rw [← M.support_def, h.support_eq_univ]
     exact mem_univ x
-  obtain ⟨μ₀, hE₀, hE₀', hW₀⟩ :=
+  obtain ⟨μ₀, hE₀, -, hW₀⟩ :=
     exists_boltzmannEntropy_ne_top_and_ne_bot_and_wassersteinEDist_dirac_le (hsupp x₀) hr
-  obtain ⟨μ₁, hE₁, hE₁', hW₁⟩ :=
+  obtain ⟨μ₁, hE₁, -, hW₁⟩ :=
     exists_boltzmannEntropy_ne_top_and_ne_bot_and_wassersteinEDist_dirac_le (hsupp x₁) hr
-  obtain ⟨γ, hγ, -⟩ := h.exists_isGeodesicSegment_convexAlong hE₀ hE₀' hE₁ hE₁'
+  obtain ⟨γ, hγ, -⟩ := h.exists_isGeodesicSegment_convexAlong hE₀ hE₁
   have ht : (1 / 2 : ℝ) ∈ Icc (0 : ℝ) 1 := ⟨by norm_num, by norm_num⟩
   set ν := ((γ (1 / 2) : ProbabilityMeasure X) : Measure X)
   -- `W₂(μ₀, μ₁) ≤ d + 2 r`, so the midpoint is within `d / 2 + 2 r` of both `δ_{x₀}` and `δ_{x₁}`.
