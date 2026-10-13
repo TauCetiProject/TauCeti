@@ -51,6 +51,8 @@ theorem, turns `∫ φ' t • ∫ s in α..t, u' s` into `-∫ φ s • u' s`. T
 
 * `TauCeti.hasWeakLineDerivOn_intervalIntegral`: the primitive of a locally integrable function
   is weakly differentiable, with weak derivative the function.
+* `TauCeti.hasWeakLineDerivOn_intervalIntegral_left`: the same for the primitive from the left
+  endpoint of the interval, when the function is integrable on the whole interval.
 * `TauCeti.HasWeakLineDerivOn.exists_ae_eq_const`: a function with weak derivative `0` on an
   interval is almost everywhere constant there.
 * `TauCeti.HasWeakLineDerivOn.exists_ae_eq_add_intervalIntegral` and
@@ -145,6 +147,29 @@ theorem hasWeakLineDerivOn_intervalIntegral (hu' : LocallyIntegrableOn u' (Ioo a
         rw [hconst, sub_zero,
           TauCeti.intervalIntegral.integral_deriv_smul_primitive_eq_sub_of_le hle hφ hint]
     _ = -∫ t, (φ : ℝ → ℝ) t • u' t := by simp [hφ0 β (by simp), hR]
+
+/-- **The primitive from an endpoint is weakly differentiable.** If `u'` is integrable on
+`Ioo a b`, then `u'` is the weak derivative of its primitive `t ↦ ∫ s in a..t, u' s` on
+`Ioo a b`. -/
+theorem hasWeakLineDerivOn_intervalIntegral_left (hu' : IntegrableOn u' (Ioo a b)) :
+    HasWeakLineDerivOn volume ⟨Ioo a b, isOpen_Ioo⟩ (fun t ↦ ∫ s in a..t, u' s) u' 1 := by
+  rcases le_or_gt b a with hba | hab
+  · -- On an empty interval every pair of functions is a weak derivative pair.
+    have h0 : volume.restrict (Ioo a b) = 0 := by simp [Ioo_eq_empty_of_le hba]
+    exact (hasWeakLineDerivOn_zero.congr_ae (by simp [h0, EventuallyEq])).congr_ae_deriv
+      (by simp [h0, EventuallyEq])
+  have ht₀ : (a + b) / 2 ∈ Ioo a b := ⟨by linarith, by linarith⟩
+  have hint : IntervalIntegrable u' volume a b :=
+    (intervalIntegrable_iff_integrableOn_Ioo_of_le hab.le).2 hu'
+  have hsub : Ioo a b ⊆ uIcc a b := Ioo_subset_Icc_self.trans Icc_subset_uIcc
+  -- Rebase the primitive at the midpoint, where `TauCeti.hasWeakLineDerivOn_intervalIntegral`
+  -- applies.
+  refine (((hasWeakLineDerivOn_const (∫ s in a..(a + b) / 2, u' s)).add
+    (hasWeakLineDerivOn_intervalIntegral hu'.locallyIntegrableOn ht₀)).congr_ae
+    ((ae_restrict_iff' measurableSet_Ioo).2 (Eventually.of_forall fun t ht ↦ ?_))).congr_ae_deriv
+    (EventuallyEq.of_eq (zero_add u'))
+  exact integral_add_adjacent_intervals (hint.mono_set (uIcc_subset_uIcc left_mem_uIcc
+    (hsub ht₀))) (hint.mono_set (uIcc_subset_uIcc (hsub ht₀) (hsub ht)))
 
 end Primitive
 

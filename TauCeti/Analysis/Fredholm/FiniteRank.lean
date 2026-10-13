@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Fredholm.Comp
 public import TauCeti.Analysis.Fredholm.Criteria
+public import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Index
 
 /-!
 # The index under finite-rank perturbations of Fredholm operators
@@ -50,8 +50,14 @@ theorem _root_.ContinuousLinearMap.index_add_of_hasFiniteRange
     ext x
     have hx : K (x : E) = 0 := LinearMap.mem_ker.mp x.2
     simp [hι, hx]
-  have h₁ := ContinuousLinearMap.index_comp (T + K) ι (hT.add_hasFiniteRange hK) hιF
-  have h₂ := ContinuousLinearMap.index_comp T ι hT hιF
+  have h₁ : ContinuousLinearMap.index ((T + K).comp ι) =
+      ContinuousLinearMap.index (T + K) + ContinuousLinearMap.index ι := by
+    simpa only [ContinuousLinearMap.index_def, ContinuousLinearMap.toLinearMap_comp] using
+      (hT.add_hasFiniteRange hK).index_comp hιF
+  have h₂ : ContinuousLinearMap.index (T.comp ι) =
+      ContinuousLinearMap.index T + ContinuousLinearMap.index ι := by
+    simpa only [ContinuousLinearMap.index_def, ContinuousLinearMap.toLinearMap_comp] using
+      hT.index_comp hιF
   rw [hcomp, h₂] at h₁
   omega
 

@@ -20,7 +20,9 @@ name: pick-runner
 # cannot use. Set the variable to 20 to use every slot.
 #
 # The App-token path preserves `vars.PICKER_API_RESERVE` requests (default 1500) for merge
-# and review automation. The separate per-repository `github.token` budget uses no shared reserve.
+# and review automation. At the reserve, the picker tries the separate per-repository
+# `github.token` budget before falling back to Namespace. That repository budget also serves
+# required CI status publication, so preserve `vars.PICKER_REPOSITORY_API_RESERVE` (default 250) there.
 # Any failure (API error, timeout or rate limit) answers Namespace,
 # and a caller whose picker did not produce an answer at all also falls back to Namespace. The job is
 # `continue-on-error`, so even a picker that crashes leaves the caller's run green: review.yml and
@@ -81,9 +83,11 @@ jobs:
         id: pick
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token || github.token }}
+          FALLBACK_TOKEN: ${{ github.token }}
           ORG: ${{ github.repository_owner }}
           BUDGET: ${{ vars.HOSTED_RUNNER_BUDGET || '18' }}
-          API_RESERVE: ${{ steps.app-token.outputs.token && (vars.PICKER_API_RESERVE || '1500') || '0' }}
+          API_RESERVE: ${{ steps.app-token.outputs.token && (vars.PICKER_API_RESERVE || '1500') || (vars.PICKER_REPOSITORY_API_RESERVE || '250') }}
+          REPOSITORY_API_RESERVE: ${{ vars.PICKER_REPOSITORY_API_RESERVE || '250' }}
         run: |
           set -uo pipefail
           decide() {
@@ -97,13 +101,28 @@ jobs:
 
           case "$BUDGET" in ''|*[!0-9]*) decide false "HOSTED_RUNNER_BUDGET='$BUDGET' is not a number: using Namespace." ;; esac
 
-          case "$API_RESERVE" in ''|*[!0-9]*) decide false "Invalid picker API reserve: using Namespace." ;; esac
+          case "$API_RESERVE" in ''|*[!0-9]*|?????????*) decide false "Invalid picker API reserve: using Namespace." ;; esac
+          case "$REPOSITORY_API_RESERVE" in ''|*[!0-9]*|?????????*) decide false "Invalid repository API reserve: using Namespace." ;; esac
+          api_pool=installation
+          [ "$GH_TOKEN" != "$FALLBACK_TOKEN" ] || api_pool=repository
           quota_available() {
             remaining=$(api rate_limit --jq .resources.core.remaining) || return 1
             case "$remaining" in ''|*[!0-9]*) return 1 ;; esac
+            if [ "$remaining" -le "$((10#$API_RESERVE + $1))" ] \
+                && [ -n "$FALLBACK_TOKEN" ] && [ "$GH_TOKEN" != "$FALLBACK_TOKEN" ]; then
+              # Preserve the review App's reserve without giving up idle hosted capacity.
+              # Export the replacement so parallel child gh processes use the same token.
+              export GH_TOKEN="$FALLBACK_TOKEN"
+              API_RESERVE="$REPOSITORY_API_RESERVE"
+              api_pool=repository
+              echo "Shared App quota reserve protected; checking capacity with the repository API budget." \
+                | tee -a "$GITHUB_STEP_SUMMARY"
+              remaining=$(api rate_limit --jq .resources.core.remaining) || return 1
+              case "$remaining" in ''|*[!0-9]*) return 1 ;; esac
+            fi
             [ "$remaining" -gt "$((10#$API_RESERVE + $1))" ]
           }
-          # The picker shares the installation budget with merge and review automation.
+          # Both API pools serve merge and review automation; protect the active reserve.
           quota_available 0 || decide false "Preserving the shared API quota reserve: using Namespace."
 
           repos=$(api --paginate "orgs/$ORG/repos?per_page=100" --jq '.[] | select(.archived | not) | .name') \
@@ -133,7 +152,7 @@ jobs:
             || decide false "Could not list the jobs of the active runs in $ORG: using Namespace."
           busy=$(printf '%s\n' "$counts" | awk '{ s += $1 } END { print s + 0 }')
           # A drained API budget turns every answer into Namespace, so keep it visible.
-          echo "API requests left this hour: $(api rate_limit --jq .resources.core.remaining || echo unknown)" \
+          echo "$api_pool API requests left this hour (reserve $API_RESERVE): $(api rate_limit --jq .resources.core.remaining || echo unknown)" \
             >> "$GITHUB_STEP_SUMMARY"
 
           if [ "$busy" -le "$BUDGET" ]; then
