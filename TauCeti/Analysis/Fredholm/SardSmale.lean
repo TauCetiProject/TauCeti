@@ -100,60 +100,6 @@ namespace TauCeti
 variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [NormedAddCommGroup F] [NormedSpace ℝ F]
 
-/-- Surjectivity of `w ↦ w.1 + D w`, where `D` takes values in a topological complement of the
-subspace `w.1` ranges over, is decided by the partial map `z ↦ D (0, z)`: the first coordinate is
-free, so only the complementary direction can obstruct. This is the linear core of the
-Lyapunov--Schmidt reduction of surjectivity to a finite-dimensional condition. -/
-private theorem surjective_add_coe_iff {X₁ Y₀ : Submodule ℝ F} (h : Submodule.IsTopCompl X₁ Y₀)
-    {Z : Type*} [NormedAddCommGroup Z] [NormedSpace ℝ Z] (D : (X₁ × Z) →L[ℝ] Y₀) :
-    Surjective (fun w : X₁ × Z ↦ ((w.1 : F) + (D w : F))) ↔ Surjective fun z : Z ↦ D (0, z) := by
-  have hu : ∀ (w₁ : X₁) (w₂ : Z), ((w₁ : F) + (D (w₁, w₂) : F)) =
-      Submodule.prodEquivOfIsTopCompl X₁ Y₀ h (w₁, D (w₁, w₂)) :=
-    fun w₁ w₂ ↦ (Submodule.prodEquivOfIsTopCompl_apply h (w₁, D (w₁, w₂))).symm
-  have hsplit : ∀ (w₁ : X₁) (w₂ : Z), D (w₁, w₂) = D (w₁, 0) + D (0, w₂) := by
-    intro w₁ w₂
-    rw [← map_add]
-    congr 1
-    simp
-  constructor
-  · intro hs v
-    obtain ⟨⟨w₁, w₂⟩, hw⟩ := hs (Submodule.prodEquivOfIsTopCompl X₁ Y₀ h (0, v))
-    have hw' : ((w₁ : F) + (D (w₁, w₂) : F)) =
-        Submodule.prodEquivOfIsTopCompl X₁ Y₀ h (0, v) := hw
-    rw [hu w₁ w₂] at hw'
-    have hpair := (Submodule.prodEquivOfIsTopCompl X₁ Y₀ h).injective hw'
-    rw [Prod.mk.injEq] at hpair
-    exact ⟨w₂, by rw [← hpair.2, hpair.1]⟩
-  · intro hs y
-    obtain ⟨⟨p₁, p₂⟩, hp⟩ := (Submodule.prodEquivOfIsTopCompl X₁ Y₀ h).surjective y
-    obtain ⟨z, hz⟩ := hs (p₂ - D (p₁, 0))
-    have hz' : D (0, z) = p₂ - D (p₁, 0) := hz
-    -- The goal is the value of the displayed function at `(p₁, z)`; state that value as a typed
-    -- `have`, which is rewritable, and let `exact` cross the beta reduction.
-    have hval : ((p₁ : F) + (D (p₁, z) : F)) = y := by
-      rw [hu p₁ z, ← hp]
-      congr 1
-      rw [Prod.mk.injEq]
-      refine ⟨rfl, ?_⟩
-      rw [hsplit, hz']
-      abel
-    exact ⟨(p₁, z), hval⟩
-/-- A subset of a product has empty interior as soon as all of its vertical fibres do: an
-interior point of the subset would supply a whole box, whose second factor is an open subset of a
-fibre. This is the step of the Sard--Smale argument where the infinite dimension of the first
-factor is harmless. -/
-private theorem interior_eq_empty_of_forall_interior_fiber_eq_empty {X Z : Type*}
-    [TopologicalSpace X] [TopologicalSpace Z] {A : Set (X × Z)}
-    (h : ∀ x : X, interior {z | (x, z) ∈ A} = ∅) : interior A = ∅ := by
-  rw [Set.eq_empty_iff_forall_notMem]
-  rintro ⟨x, z⟩ hxz
-  have hopen : IsOpen {z' : Z | (x, z') ∈ interior A} := isOpen_interior.preimage (by fun_prop)
-  have hsub : {z' : Z | (x, z') ∈ interior A} ⊆ {z' : Z | (x, z') ∈ A} :=
-    fun _ hz' ↦ interior_subset (s := A) hz'
-  have hz : z ∈ interior {z' : Z | (x, z') ∈ A} := interior_maximal hsub hopen hxz
-  rw [h x] at hz
-  exact hz
-
 section Local
 
 variable [CompleteSpace E] [CompleteSpace F] {T : E →L[ℝ] F} {f : E → F} {a : E}
