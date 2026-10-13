@@ -116,6 +116,16 @@ theorem homogeneousPart_eq_self (f : M →ₗ[k] N) (r : ℤ)
   rw [G.homogeneousPart_apply_of_mem H f r hx]
   exact DirectSum.decompose_of_mem_same H.piece (hf.map_mem hx)
 
+/-- A map is fixed by its degree-`r` component exactly when it is homogeneous of degree `r`. -/
+@[simp]
+theorem homogeneousPart_eq_self_iff (f : M →ₗ[k] N) (r : ℤ) :
+    G.homogeneousPart H f r = f ↔ TauCeti.LinearMap.IsHomogeneous f G.piece H.piece r := by
+  constructor
+  · intro hf
+    rw [← hf]
+    exact G.isHomogeneous_homogeneousPart H f r
+  · exact G.homogeneousPart_eq_self H f r
+
 /-- Taking a homogeneous part preserves addition of maps. -/
 @[simp]
 theorem homogeneousPart_add (f g : M →ₗ[k] N) (r : ℤ) :
@@ -220,6 +230,17 @@ theorem homogeneousPartOfGradedSMul_eq_self (f : M →ₗ[A] N) (r : ℤ)
   refine G.linearMap_ext fun p x hx ↦ ?_
   rw [G.homogeneousPartOfGradedSMul_apply_of_mem H 𝒜 f r hx]
   exact DirectSum.decompose_of_mem_same H.piece (hf.map_mem hx)
+
+/-- A graded-scalar map is fixed by its degree-`r` component exactly when it has degree `r`. -/
+@[simp]
+theorem homogeneousPartOfGradedSMul_eq_self_iff (f : M →ₗ[A] N) (r : ℤ) :
+    G.homogeneousPartOfGradedSMul H 𝒜 f r = f ↔
+      TauCeti.LinearMap.IsHomogeneous f G.piece H.piece r := by
+  constructor
+  · intro hf
+    rw [← hf]
+    exact G.isHomogeneous_homogeneousPartOfGradedSMul H 𝒜 f r
+  · exact G.homogeneousPartOfGradedSMul_eq_self H 𝒜 f r
 
 /-- Taking a graded-scalar homogeneous part preserves addition. -/
 @[simp]

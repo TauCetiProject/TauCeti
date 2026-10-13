@@ -265,6 +265,17 @@ theorem homogeneousPartPolynomial_eq_self (f : M →ₗ[k[X]] N) (r : ℤ)
   intro p x hx
   simpa only [_root_.LinearMap.restrictScalars_apply] using hf.map_mem hx
 
+/-- A polynomial-linear map is fixed by its degree-`r` component exactly when it has degree `r`. -/
+@[simp]
+theorem homogeneousPartPolynomial_eq_self_iff (f : M →ₗ[k[X]] N) (r : ℤ) :
+    G.homogeneousPartPolynomial H hX hY f r = f ↔
+      TauCeti.LinearMap.IsHomogeneous f G.piece H.piece r := by
+  constructor
+  · intro hf
+    rw [← hf]
+    exact G.isHomogeneous_homogeneousPartPolynomial H hX hY f r
+  · exact G.homogeneousPartPolynomial_eq_self H hX hY f r
+
 /-- Every homogeneous part of the zero polynomial-linear map is zero. This also simplifies
 using `homogeneousPartPolynomial_eq_self`, since zero is homogeneous in every degree. -/
 theorem homogeneousPartPolynomial_zero (r : ℤ) :
