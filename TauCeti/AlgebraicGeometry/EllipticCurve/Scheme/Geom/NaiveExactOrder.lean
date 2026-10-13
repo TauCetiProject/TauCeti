@@ -33,11 +33,12 @@ injective on every fibre, the condition defining `ModuliProblem.gammaOneNaive`, 
 (`EllipticCurveGeom.isFiberwiseInjective_iff_isOfNaiveExactOrder`).
 
 Unlike the Drinfeld notion `EllipticCurveGeom.IsOfExactOrder`, which works over every base, the
-naive notion is only reasonable where `N` is invertible: over a field of characteristic `p`, a
+naive notion behaves poorly where `N` is not invertible: over a field of characteristic `p`, a
 supersingular curve has no point of naive exact order `p`, while its zero section has exact order
-`p` in Drinfeld's sense. Points of naive exact order `N` are stable under base change, both along
-morphisms `Z' ⟶ Z` (`EllipticCurveGeom.IsOfNaiveExactOrder.comp`) and along base change of the
-elliptic curve (`EllipticCurveGeom.IsOfNaiveExactOrder.pointsPullback`).
+`p` in Drinfeld's sense. The open and closed representability construction below accordingly
+requires `N` to be invertible on `S`. Points of naive exact order `N` are stable under base
+change, both along morphisms `Z' ⟶ Z` (`EllipticCurveGeom.IsOfNaiveExactOrder.comp`) and along
+base change of the elliptic curve (`EllipticCurveGeom.IsOfNaiveExactOrder.pointsPullback`).
 
 A point of `E[N]` with values in `Z` has naive exact order `N` exactly when it maps `Z` into the
 set `EllipticCurveGeom.naiveExactOrderLocus E N` of points of `E[N]` at which no `d`-th multiple
