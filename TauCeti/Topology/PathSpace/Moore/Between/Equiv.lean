@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Topology.PathSpace.Moore.Between
+public import TauCeti.Topology.PathSpace.Moore.Between.Basic
 public import TauCeti.Topology.PathSpace.Moore.Truncate
 public import Mathlib.Topology.Homotopy.Equiv
 
