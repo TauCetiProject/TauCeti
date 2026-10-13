@@ -29,22 +29,42 @@ for the local series is transported through the existing arithmetic-function API
 
 public section
 
-namespace TauCeti.EulerProductData
+namespace TauCeti
 
 open IsDedekindDomain
 open scoped NumberField
 
 variable {K : Type*} [Field K] [NumberField K]
 
+namespace IdealArithmeticFunction
+
+/-- Ideal convolution multiplies the evaluated local arithmetic factors wherever both local
+Dirichlet series converge absolutely, without requiring multiplicativity. -/
+theorem LSeries_localArithmeticFactor_convolution (f g : IdealArithmeticFunction K)
+    (P : HeightOneSpectrum (𝓞 K)) {s : ℂ}
+    (hf : LSeriesSummable (f.localArithmeticFactor P) s)
+    (hg : LSeriesSummable (g.localArithmeticFactor P) s) :
+    LSeries ((f.convolution g).localArithmeticFactor P) s =
+      LSeries (f.localArithmeticFactor P) s * LSeries (g.localArithmeticFactor P) s := by
+  rw [localArithmeticFactor_convolution]
+  exact ArithmeticFunction.LSeries_mul' hf hg
+
+end IdealArithmeticFunction
+
+namespace EulerProductData
+
 /-- Convolution multiplies evaluated Euler factors wherever the two local Dirichlet series
 converge absolutely. No convergence at other primes is required. -/
+@[simp]
 theorem eulerFactor_convolution (D E : EulerProductData K)
     (P : HeightOneSpectrum (𝓞 K)) {s : ℂ}
     (hD : LSeriesSummable (D.localArithmeticFactor P) s)
     (hE : LSeriesSummable (E.localArithmeticFactor P) s) :
     (D.convolution E).eulerFactor P s = D.eulerFactor P s * E.eulerFactor P s := by
-  simp only [eulerFactor_def, localArithmeticFactor_convolution]
-  exact ArithmeticFunction.LSeries_mul' hD hE
+  simp only [eulerFactor_def, localArithmeticFactor_eq,
+    toIdealArithmeticFunction_convolution] at hD hE ⊢
+  exact IdealArithmeticFunction.LSeries_localArithmeticFactor_convolution
+    D.toIdealArithmeticFunction E.toIdealArithmeticFunction P hD hE
 
 /-- The Euler factors of a convolution have an unrestricted product equal to the product of
 the original norm-regrouped Dirichlet series, whenever both ideal-indexed series converge
@@ -61,4 +81,6 @@ theorem hasProd_eulerFactor_convolution (D E : EulerProductData K) {s : ℂ}
     (D.LSeriesSummable_localArithmeticFactor hD P)
     (E.LSeriesSummable_localArithmeticFactor hE P)
 
-end TauCeti.EulerProductData
+end EulerProductData
+
+end TauCeti
