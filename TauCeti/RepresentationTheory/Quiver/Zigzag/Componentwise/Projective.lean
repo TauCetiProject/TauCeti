@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Category.GradedModuleCat.CartanMap.Ideal
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Componentwise.Grading
+public import TauCeti.RepresentationTheory.Quiver.Zigzag.Componentwise.Multiplication
 
 /-!
 # Graded vertex projectives of the componentwise zigzag algebra
