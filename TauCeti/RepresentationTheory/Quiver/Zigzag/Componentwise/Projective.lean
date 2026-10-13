@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors, Wentao Li
 module
 
 public import TauCeti.Algebra.Category.GradedModuleCat.CartanMap.Ideal
-public import TauCeti.RepresentationTheory.Quiver.Zigzag.Componentwise.Corner.Basic
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Componentwise.Grading
 
 /-!
