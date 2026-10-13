@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.WittVector.IntervalRing.Radius
+public import TauCeti.RingTheory.WittVector.IntervalRing.Presentation
 public import TauCeti.Topology.MetricSpace.Ultra.Completion
 
 /-!
