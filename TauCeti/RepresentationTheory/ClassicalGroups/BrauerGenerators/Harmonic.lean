@@ -74,7 +74,9 @@ purely combinatorial reasons: the cap sends `e₀ ⊗ e₀` to `1`, and the `e�
   `TauCeti.orthogonalTraceProjection_apply_of_mem_orthogonalTraceLine` and
   `TauCeti.isIdempotentElem_orthogonalTraceProjection`: **`n⁻¹ • e` is the projection onto the
   trace line along the harmonic tensors** — it kills the harmonic tensors, fixes the trace line
-  pointwise, and is idempotent.
+  pointwise, and is idempotent. `TauCeti.ker_orthogonalTraceProjection` and
+  `TauCeti.range_orthogonalTraceProjection` record its kernel and range as the two summands
+  themselves, so submodule-level consumers never unfold the normalization.
 * `TauCeti.commute_orthogonalTraceProjection_tensorPower`: **the projection is equivariant**, so
   the splitting it effects is one of representations.
 * `TauCeti.finrank_orthogonalHarmonicTensors`: **the harmonic tensors have codimension one**,
@@ -312,6 +314,37 @@ theorem orthogonalTraceProjection_apply_mem_orthogonalTraceLine (hn : IsUnit (n 
     orthogonalTraceProjection k n hn x ∈ orthogonalTraceLine k n := by
   rw [mem_orthogonalTraceLine_iff, orthogonalTraceProjection_apply]
   exact ⟨((hn.unit⁻¹ : kˣ) : k) * orthogonalCap k n x, by rw [← smul_eq_mul, map_smul]⟩
+
+/-- **The kernel of the projection is the harmonic tensors.** Scaling the Brauer generator `e` by
+the invertible loop value changes neither its kernel nor its image, so this is
+`TauCeti.ker_orthogonalCupCap` read off the normalization. -/
+@[simp]
+theorem ker_orthogonalTraceProjection (hn : IsUnit (n : k)) :
+    LinearMap.ker (orthogonalTraceProjection k n hn) =
+      (orthogonalHarmonicTensors k n).toSubmodule := by
+  -- Mathlib's `LinearMap.ker_smul` and `LinearMap.range_smul` are stated over a division ring;
+  -- here the scalar is only a unit of the commutative ring `k`, so the two inclusions are redone.
+  rw [orthogonalHarmonicTensors_toSubmodule, ← ker_orthogonalCupCap]
+  ext x
+  rw [LinearMap.mem_ker, LinearMap.mem_ker, orthogonalTraceProjection_apply,
+    hn.unit⁻¹.isUnit.smul_eq_zero, orthogonalCupCap_apply]
+
+/-- **The range of the projection is the trace line**, by
+`TauCeti.range_orthogonalCupCap`: the normalization `n⁻¹` is a unit, so it moves through the
+Brauer generator without changing its image. -/
+@[simp]
+theorem range_orthogonalTraceProjection (hn : IsUnit (n : k)) :
+    LinearMap.range (orthogonalTraceProjection k n hn) =
+      (orthogonalTraceLine k n).toSubmodule := by
+  rw [orthogonalTraceLine_toSubmodule, ← range_orthogonalCupCap]
+  refine le_antisymm (fun y hy => ?_) (fun y hy => ?_)
+  · obtain ⟨x, rfl⟩ := hy
+    exact ⟨((hn.unit⁻¹ : kˣ) : k) • x, by
+      rw [map_smul, orthogonalCupCap_apply, orthogonalTraceProjection_apply]⟩
+  · obtain ⟨x, rfl⟩ := hy
+    exact ⟨(n : k) • x, by
+      rw [orthogonalTraceProjection_apply, map_smul, map_smul, smul_smul, hn.val_inv_mul, one_smul,
+        orthogonalCupCap_apply]⟩
 
 /-- **The normalized Brauer generator is idempotent**: it lands in the trace line, which it fixes
 pointwise. -/
