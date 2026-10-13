@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.InnerProductSpace.Spectrum
 public import TauCeti.Analysis.InnerProductSpace.Variational.Fredholm
+public import TauCeti.Analysis.Normed.Operator.Compact.Eigenspace
 
 /-!
 # The spectrum of a coercive variational problem

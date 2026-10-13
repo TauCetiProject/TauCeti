@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Normed.Operator.Compact.Estimate
-public import TauCeti.Analysis.Normed.Operator.Compact.Eigenspace
 import Mathlib.RingTheory.Finiteness.Cofinite
 import TauCeti.Analysis.Normed.Module.RieszLemma
 import TauCeti.LinearAlgebra.End.RangePow
@@ -169,8 +168,7 @@ theorem _root_.IsCompactOperator.finiteDimensional_quotient_range_one_sub
       simpa only [hA] using hK.isCompactOperator_one_sub_pow n
     have h := (A ^ n).isClosed_range_of_compact_estimate hKn (C := 1)
       (fun x ↦ by simpa using norm_le_norm_add_norm_sub' x ((A ^ n) x))
-    change IsClosed (LinearMap.range ((A ^ n : X →L[𝕜] X) : X →ₗ[𝕜] X) : Set X) at h
-    rwa [ContinuousLinearMap.toLinearMap_pow] at h
+    simpa only [ContinuousLinearMap.toLinearMap_pow] using h
   have hVmono : ∀ n, LinearMap.range ((A : X →ₗ[𝕜] X) ^ (n + 1)) ≤
       LinearMap.range ((A : X →ₗ[𝕜] X) ^ n) := fun n => by
     rw [pow_succ, Module.End.mul_eq_comp]
@@ -189,8 +187,8 @@ theorem _root_.IsCompactOperator.finiteDimensional_quotient_range_one_sub
       simpa only [hA] using hK.isCompactOperator_one_sub_pow p
     have h := (A ^ p).finiteDimensional_ker_of_compact_estimate hKp (C := 1)
       (fun x ↦ by simpa using norm_le_norm_add_norm_sub' x ((A ^ p) x))
-    change FiniteDimensional 𝕜 (LinearMap.ker ((A ^ p : X →L[𝕜] X) : X →ₗ[𝕜] X)) at h
-    rwa [ContinuousLinearMap.toLinearMap_pow] at h
+    rw [← ContinuousLinearMap.toLinearMap_pow]
+    exact h
   exact Submodule.FG.cofg_of_codisjoint hcod (Module.Finite.iff_fg.mp hkerfin)
 
 end IsCompactOperator
