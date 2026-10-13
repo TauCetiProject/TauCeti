@@ -20,10 +20,6 @@ Sufficiently far to the left, it maps bijectively onto the whole half-strip. In 
 this identifies the interior geometry of an individual parallel-sided end, without global
 univalence or assumptions on the other prevertices.
 
-The exponential coordinate and the local image theorem for real-symmetric holomorphic maps
-supply a full upper half-disc in the coordinate image. Taking its principal logarithm gives
-the half-strip, including points arbitrarily close to either horizontal boundary.
-
 ## References
 
 * L. Ahlfors, *Complex Analysis*, Chapter 6, Section 2.
@@ -141,20 +137,20 @@ theorem exists_bijOn_normalized_schwarzChristoffelPrimitive_halfStrip_of_sum_eq_
       exp_log (UpperHalfPlane.ne_zero ⟨G z, hmaps hz.1⟩),
       exp_log (UpperHalfPlane.ne_zero ⟨G w, hmaps hw.1⟩)] using h
   · intro w hw
-    have hexpupper : exp w ∈ upperHalfPlaneSet := by
-      simpa only [upperHalfPlaneSet, mem_ofPred_eq, exp_im] using
-        mul_pos (Real.exp_pos _) (Real.sin_pos_of_pos_of_lt_pi hw.2.1 hw.2.2)
-    have hexpball : exp w ∈ ball (0 : ℂ) δ := by
-      rw [mem_ball_zero_iff, norm_exp]
+    obtain ⟨u, hu, hlu⟩ := bijOn_log_upperHalfPlaneSet.surjOn hw.2
+    have huexp : u = exp w := by
+      rw [← hlu, exp_log (UpperHalfPlane.ne_zero ⟨u, hu⟩)]
+    have huball : u ∈ ball (0 : ℂ) δ := by
+      rw [huexp, mem_ball_zero_iff, norm_exp]
       exact (Real.exp_lt_exp.mpr hw.1).trans_eq (Real.exp_log hδ)
-    have hexpimage : exp w ∈ G '' (ball (p : ℂ) r ∩ upperHalfPlaneSet) := by
-      have hmem : exp w ∈ ball (0 : ℂ) δ ∩ upperHalfPlaneSet := ⟨hexpball, hexpupper⟩
+    have huimage : u ∈ G '' (ball (p : ℂ) r ∩ upperHalfPlaneSet) := by
+      have hmem : u ∈ ball (0 : ℂ) δ ∩ upperHalfPlaneSet := ⟨huball, hu⟩
       rw [← himage] at hmem
       exact hmem.1
-    obtain ⟨z, hz, hGz⟩ := hexpimage
+    obtain ⟨z, hz, hGz⟩ := huimage
     have hNz : N z = w := by
       rw [hNlog hz]
-      simpa only [hGz] using log_exp (by linarith [hw.2.1, Real.pi_pos]) hw.2.2.le
+      simpa only [hGz] using hlu
     refine ⟨z, ⟨hz, ?_⟩, hNz⟩
     simpa only [mem_ofPred_eq, ← hNz, N] using hw.1
 
