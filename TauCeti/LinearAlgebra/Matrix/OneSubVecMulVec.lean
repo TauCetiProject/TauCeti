@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.Matrix.ToLin
+public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 public import Mathlib.LinearAlgebra.Matrix.SchurComplement
 
 /-!
@@ -128,8 +128,8 @@ theorem oneSubVecMulVecGL_toLinearEquiv_apply (t : Rˣ) (u v x : α → R)
     (LinearMap.GeneralLinearGroup.generalLinearEquiv R (α → R)
       (Matrix.GeneralLinearGroup.toLin (oneSubVecMulVecGL t u v h))) x =
         x - (v ⬝ᵥ x) • u := by
-  rw [← matrixGeneralLinearEquiv_eq_toLin, matrixGeneralLinearEquiv_apply]
-  simp only [coe_oneSubVecMulVecGL,
+  simp only [LinearMap.GeneralLinearGroup.coeFn_generalLinearEquiv,
+    Matrix.GeneralLinearGroup.toLin_apply, Matrix.mulVecLin_apply, coe_oneSubVecMulVecGL,
     Matrix.sub_mulVec, Matrix.one_mulVec, Matrix.vecMulVec_mulVec, op_smul_eq_smul]
 
 /-- The inverse induced automorphism rescales the same row pairing by the inverse unit. -/
@@ -145,8 +145,8 @@ theorem oneSubVecMulVecGL_toLinearEquiv_symm_apply (t : Rˣ) (u v x : α → R)
     _ = L (oneSubVecMulVecGL t u v h)⁻¹ x := by
       simp only [L, map_inv, MulEquiv.trans_apply, LinearEquiv.coe_inv]
     _ = _ := by
-      simp only [L, MulEquiv.trans_apply, ← matrixGeneralLinearEquiv_eq_toLin,
-        matrixGeneralLinearEquiv_apply,
+      simp only [L, MulEquiv.trans_apply, LinearMap.GeneralLinearGroup.coeFn_generalLinearEquiv,
+        Matrix.GeneralLinearGroup.toLin_apply, Matrix.mulVecLin_apply,
         Matrix.GeneralLinearGroup.coe_inv, coe_oneSubVecMulVecGL, inv_one_sub_vecMulVec t h,
         Matrix.sub_mulVec, Matrix.one_mulVec, Matrix.smul_mulVec, Matrix.vecMulVec_mulVec,
         op_smul_eq_smul, smul_smul]

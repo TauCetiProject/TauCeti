@@ -52,12 +52,6 @@ def matrixGeneralLinearEquiv {R : Type*} [CommSemiring R] {n : Type*} [Fintype n
     Matrix.GeneralLinearGroup n R ≃* LinearMap.GeneralLinearGroup R (n → R) :=
   Units.mapEquiv Matrix.toLinAlgEquiv'.toMulEquiv
 
-/-- Over a commutative ring, the semiring matrix equivalence agrees with Mathlib's transport. -/
-theorem matrixGeneralLinearEquiv_eq_toLin {R : Type*} [CommRing R] {n : Type*}
-    [Fintype n] [DecidableEq n] :
-    matrixGeneralLinearEquiv (R := R) (n := n) = Matrix.GeneralLinearGroup.toLin := by
-  rw [matrixGeneralLinearEquiv, Matrix.GeneralLinearGroup.toLin.eq_def]
-
 /-- A general linear matrix acts on coordinate vectors by matrix-vector multiplication. -/
 @[simp]
 theorem matrixGeneralLinearEquiv_apply {R : Type*} [CommSemiring R] {n : Type*}
