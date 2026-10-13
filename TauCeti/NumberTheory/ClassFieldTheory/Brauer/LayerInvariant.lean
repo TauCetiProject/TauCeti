@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.ClassFieldTheory.Brauer.OpenSubgroup
-public import TauCeti.NumberTheory.ClassFieldTheory.Formation.Conjugation
 public import TauCeti.NumberTheory.ClassFieldTheory.Formation.Layer.Inflation
 public import TauCeti.NumberTheory.ClassFieldTheory.Formation.Units
 public import TauCeti.Topology.Algebra.Group.OpenSubgroup.FiniteIndex
