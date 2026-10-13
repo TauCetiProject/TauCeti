@@ -73,7 +73,7 @@ private theorem mono_pullback_map_of_flat_of_isAffine [IsAffine X] [IsAffine Y]
   let A := pullback Y.isoSpec.inv
   let B := pullback (Spec.map f.appTop)
   let C := pullback X.isoSpec.hom
-  have : PreservesLimits C := preservesLimits_pullback_of_isOpenImmersion _
+  have : PreservesLimits C := X.isoSpec.hom.preservesLimits_pullback_of_isOpenImmersion
   have : Mono (B.map (A.map g)) :=
     mono_pullback_specMap_of_flat f.appTop f.flat_appTop (A.map g)
   have : Mono ((A ⋙ B ⋙ C).map g) :=

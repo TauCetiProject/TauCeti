@@ -59,7 +59,8 @@ namespace AlgebraicGeometry.Scheme.Modules
 open CategoryTheory Limits
 
 /-- Pullback along an open immersion preserves limits, since it is restriction. -/
-noncomputable instance preservesLimits_pullback_of_isOpenImmersion
+noncomputable instance
+    _root_.AlgebraicGeometry.Scheme.Hom.preservesLimits_pullback_of_isOpenImmersion
     {X Y : Scheme.{u}} (f : X ⟶ Y) [IsOpenImmersion f] :
     PreservesLimits (pullback f) :=
   preservesLimits_of_natIso (restrictFunctorIsoPullback f)
