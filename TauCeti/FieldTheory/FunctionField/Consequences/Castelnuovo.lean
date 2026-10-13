@@ -409,7 +409,6 @@ private theorem genus_le_of_constantCompositum_eq_top [PerfectField k] {k' F' : 
   have hex₂ : IsIntegrallyClosedIn k F₂ :=
     (IsScalarTower.toAlgHom k F₂ F).isIntegrallyClosedIn (algebraMap F₂ F).injective hex
   have : Algebra.IsSeparable k k' := Algebra.IsAlgebraic.isSeparable_of_perfectField
-  have : PerfectField k' := Algebra.IsAlgebraic.perfectField k
   have : FiniteDimensional F F' := finiteDimensional_of_constantCompositum_eq_top (k := k) h
   have hF' : IsFunctionField k' F' := hF.of_constantCompositum_eq_top h
   have hex' : IsIntegrallyClosedIn k' F' := isIntegrallyClosedIn_of_constantCompositum_eq_top hex h
