@@ -53,9 +53,7 @@ These are the norm estimates behind the Hilbert–Schmidt class of operators: it
   `ContinuousLinearMap.hilbertSchmidtNorm_comp_comp_le`: domination of the operator norm and the
   two-sided ideal inequality for the Hilbert–Schmidt norm of a finite-energy operator.
 * `ContinuousLinearMap.hilbertSchmidtEnergy_eq_ofReal_sq_frobenius`: on a finite-dimensional
-  source, `E_b(T) = ‖T‖_F²`. (The roadmap draft calls this `..._ofReal_frobenius_sq`; the name
-  here follows `TauCeti.UnitarilyInvariantSeminorm.sq_frobenius_apply` and
-  `sq_hilbertSchmidtNorm`, which read `x ^ 2` as `sq_x`.)
+  source, `E_b(T) = ‖T‖_F²`.
 
 ## References
 
