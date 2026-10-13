@@ -211,13 +211,11 @@ def singularChainComplexPermutationIso :
     rintro _ k rfl
     refine SSet.chainComplex_hom_ext fun τ ↦ ?_
     -- Taking the faces of `τ` moves its initial sheet by monodromy inside `p ∘ τ`.
-    dsimp only [singularChainComplexPermutationIsoX]
-    rw [SSet.ιChainComplex_d_assoc, ιChainComplex_singularChainComplexPermutationHomX_assoc,
-      ιTwistedChainComplex_d, Preadditive.sum_comp, Preadditive.comp_sum]
-    refine Finset.sum_congr rfl fun i _ ↦ ?_
-    rw [Preadditive.zsmul_comp, Preadditive.comp_zsmul,
-      ιChainComplex_singularChainComplexPermutationHomX]
-    exact congrArg _ (single_initialSheet_map_vertexTransport hp R (SimplexCategory.δ i) τ)
+    simp only [singularChainComplexPermutationIsoX, SSet.ιChainComplex_d_assoc,
+      SimplicialObject.δ, ιChainComplex_singularChainComplexPermutationHomX_assoc,
+      ιChainComplex_singularChainComplexPermutationHomX, ιTwistedChainComplex_d,
+      Preadditive.sum_comp, Preadditive.comp_sum, Preadditive.zsmul_comp,
+      Preadditive.comp_zsmul, single_initialSheet_map_vertexTransport]
 
 /-- The comparison of singular chains of a covering space with twisted chains of the base sends
 the summand of a simplex `τ` to the coefficients at the initial sheet of `τ` in the twisted summand
@@ -240,8 +238,7 @@ lemma single_ιTwistedChainComplex_singularChainComplexPermutationIso_inv_f {k :
         ιTwistedChainComplex (hp.permutationLocalSystem R) k ((TopCat.toSSet.map p).app _ τ) ≫
           (hp.singularChainComplexPermutationIso R).inv.f k =
       (TopCat.toSSet.obj E).ιChainComplex τ := by
-  rw [← ιChainComplex_singularChainComplexPermutationIso_hom_f_assoc,
-    ← HomologicalComplex.comp_f, Iso.hom_inv_id, HomologicalComplex.id_f, Category.comp_id]
+  simp [← ιChainComplex_singularChainComplexPermutationIso_hom_f_assoc]
 
 /-- **Projection as a coefficient map**: under the comparison of singular chains of `E` with
 chains of `B` twisted by the permutation local system, `p_* : C(E; R) ⟶ C(B; R)` is induced by the
@@ -252,10 +249,12 @@ theorem singularChainComplexPermutationIso_hom_comp_augmentation :
           (twistedChainComplexConstantIso B (ModuleCat.of R R)).hom =
       SSet.chainComplexMap (TopCat.toSSet.map p) (ModuleCat.of R R) := by
   refine HomologicalComplex.hom_ext _ _ fun k ↦ SSet.chainComplex_hom_ext fun τ ↦ ?_
-  rw [HomologicalComplex.comp_f, HomologicalComplex.comp_f,
+  simp only [HomologicalComplex.comp_f,
     ιChainComplex_singularChainComplexPermutationIso_hom_f_assoc,
     ιTwistedChainComplex_twistedChainComplexCoefficientMap_f_assoc,
     hp.permutationLocalSystemSingle_augmentation_app_assoc]
+  -- The fibre of the constant system is `R` only after unfolding `constantFunctor`, which `simp`
+  -- does not do, so the two summand inclusions of `p ∘ τ` are identified explicitly.
   exact (Category.id_comp _).trans <|
     (ιTwistedChainComplex_twistedChainComplexConstantIso_hom_f B _ k _).trans
       (SSet.ι_chainComplexMap_f _ _ (TopCat.toSSet.map p) (ModuleCat.of R R) τ).symm
