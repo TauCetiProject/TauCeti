@@ -62,6 +62,8 @@ structure ImmersedLieSubgroupData
     {G : Type w} [TopologicalSpace G] [ChartedSpace H G] [Group G]
     [LieGroup I ∞ G]
     (K : Subgroup G) where
+  /-- The smooth manifold structure on the ambient group. -/
+  [ambientIsManifold : IsManifold I ∞ G]
   /-- The connected Lie group which parametrizes the immersed subgroup. -/
   X : Type w
   /-- The group structure on the source. -/
@@ -82,6 +84,8 @@ structure ImmersedLieSubgroupData
   I' : ModelWithCorners ℝ E' H'
   /-- The charted-space structure on the source. -/
   [chartedSpace : ChartedSpace H' X]
+  /-- The smooth manifold structure on the source. -/
+  [isManifold : IsManifold I' ∞ X]
   /-- The smooth Lie-group structure on the source. -/
   [lieGroup : LieGroup I' ∞ X]
   /-- The source is connected. -/
@@ -111,6 +115,7 @@ theorem contMDiff_toHom (d : ImmersedLieSubgroupData I K) :
     let _ : NormedSpace ℝ d.E' := d.normedSpace
     let _ : TopologicalSpace d.H' := d.modelTopology
     let _ : ChartedSpace d.H' d.X := d.chartedSpace
+    let _ : IsManifold d.I' ∞ d.X := d.isManifold
     let _ : LieGroup d.I' ∞ d.X := d.lieGroup
     ContMDiff d.I' I ∞ (d.toHom : d.X → G) := by
   dsimp only
@@ -120,6 +125,7 @@ theorem contMDiff_toHom (d : ImmersedLieSubgroupData I K) :
   let _ : NormedSpace ℝ d.E' := d.normedSpace
   let _ : TopologicalSpace d.H' := d.modelTopology
   let _ : ChartedSpace d.H' d.X := d.chartedSpace
+  let _ : IsManifold d.I' ∞ d.X := d.isManifold
   let _ : LieGroup d.I' ∞ d.X := d.lieGroup
   exact d.isImmersion.contMDiff
 
@@ -132,6 +138,7 @@ theorem injective_mfderiv_toHom (d : ImmersedLieSubgroupData I K) (x : d.X) :
     let _ : NormedSpace ℝ d.E' := d.normedSpace
     let _ : TopologicalSpace d.H' := d.modelTopology
     let _ : ChartedSpace d.H' d.X := d.chartedSpace
+    let _ : IsManifold d.I' ∞ d.X := d.isManifold
     let _ : LieGroup d.I' ∞ d.X := d.lieGroup
     Function.Injective (mfderiv d.I' I (d.toHom : d.X → G) x) := by
   dsimp only
@@ -141,6 +148,7 @@ theorem injective_mfderiv_toHom (d : ImmersedLieSubgroupData I K) (x : d.X) :
   let _ : NormedSpace ℝ d.E' := d.normedSpace
   let _ : TopologicalSpace d.H' := d.modelTopology
   let _ : ChartedSpace d.H' d.X := d.chartedSpace
+  let _ : IsManifold d.I' ∞ d.X := d.isManifold
   let _ : LieGroup d.I' ∞ d.X := d.lieGroup
   exact d.isImmersion.mfderiv_injective (by simp) x
 
@@ -167,10 +175,12 @@ theorem ImmersedLieSubgroupData.isImmersedLieSubgroup {K : Subgroup G}
 theorem isImmersedLieSubgroup_top [ConnectedSpace G] :
     IsImmersedLieSubgroup (I := I) (⊤ : Subgroup G) := by
   exact ⟨{
+    ambientIsManifold := IsManifold.mk' I ∞ G
     X := G
     E' := E
     H' := H
     I' := I
+    isManifold := IsManifold.mk' I ∞ G
     toHom := MonoidHom.id G
     injective := Function.injective_id
     range_eq := MonoidHom.range_eq_top.mpr Function.surjective_id
