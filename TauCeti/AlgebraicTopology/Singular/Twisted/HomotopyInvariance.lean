@@ -33,6 +33,15 @@ This is the homotopy axiom for homology with local coefficients. The cohomologic
 
 ## Implementation notes
 
+The argument follows Mathlib's proof of homotopy invariance of untwisted singular homology by
+F. Odermatt and J. Riou (`TopCat.Homotopy.singularChainComplexFunctorObjMap` in
+`Mathlib/AlgebraicTopology/SingularHomology/HomotopyInvariance.lean`, which goes through
+`SSet.Homotopy.chainComplexMap` and `SimplicialObject.Homotopy.sSetChainComplexMap` in
+`Mathlib/AlgebraicTopology/SimplicialSet/Homology/HomotopyInvariance.lean`), with coefficients in
+a local coefficient system. As there, the chain homotopy is obtained from a simplicial homotopy by
+Mathlib's `SimplicialObject.Homotopy.toChainHomotopy` (F. Odermatt), here through
+`SimplicialObject.Homotopy.toTwistedChainComplexHomotopy`.
+
 The chain homotopy comes from a simplicial homotopy of twisted chains, which lifts the
 combinatorial homotopy `H.toSSet.toSimplicialObjectHomotopy` of singular simplicial sets, obtained
 from `TopCat.Homotopy.toSSet` by Mathlib's `SSet.Homotopy.toSimplicialObjectHomotopy` (J. Riou).
