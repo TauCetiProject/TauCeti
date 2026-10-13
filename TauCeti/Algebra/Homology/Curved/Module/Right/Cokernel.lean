@@ -189,7 +189,6 @@ theorem cokernelCocone_π :
   exact Category.comp_id _
 
 /-- The transported cofork projection has the characteristic underlying quotient map. -/
-@[simp]
 theorem hom_cokernelCocone_π :
     closedHom ((cokernelCocone f).π ≫ eqToHom (cokernelCocone_pt f)) =
       (cokernelEquiv f).symm.toLinearMap.comp (LinearMap.range (closedHom f)).mkQ := by

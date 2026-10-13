@@ -160,13 +160,6 @@ theorem kernelCone_ι : eqToHom (kernelCone_pt f).symm ≫ (kernelCone f).ι = k
     kernelι f = kernelι f
   exact Category.id_comp _
 
-/-- The transported kernel projection has the characteristic underlying subtype map. -/
-@[simp]
-theorem hom_kernelCone_ι :
-    closedHom (eqToHom (kernelCone_pt f).symm ≫ (kernelCone f).ι) =
-      (LinearMap.ker (closedHom f)).subtype.comp (kernelEquiv f).toLinearMap := by
-  rw [kernelCone_ι, hom_kernelι]
-
 /-- The curved kernel inclusion satisfies the kernel universal property. -/
 noncomputable def kernelIsLimit : IsLimit (kernelCone f) :=
   KernelFork.IsLimit.ofι (kernelι f) (kernelι_comp f)
