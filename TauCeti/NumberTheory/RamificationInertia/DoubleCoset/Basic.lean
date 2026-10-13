@@ -19,7 +19,8 @@ decomposition group of `Q`, that is, the stabilizer of `Q` in `G`.  This file pr
 primes of `𝓞 E` above `p` are in bijection with the double cosets `H \ G / D`, the class of `σ`
 corresponding to the contraction `σ Q ∩ 𝓞 E`.
 
-The bijection specializes `Ideal.doubleCosetEquivPrimesOver`, the invariant-ring construction in
+The bijection specializes `Ideal.doubleCosetQuotientEquivPrimesOverOfIsInvariant`,
+the invariant-ring construction in
 `TauCeti.NumberTheory.RamificationInertia.DoubleCoset.Invariant`. It separates into two ingredients.
 Two primes of `𝓞 M` have the same contraction to
 `𝓞 E` exactly when they lie in one `H`-orbit, because `H` is the Galois group of `M / E` and a
@@ -139,7 +140,7 @@ noncomputable def doubleCosetQuotientEquivPrimesOver [IsGalois K M] (p : Ideal (
       NumberField.RingOfIntegers.ext (by
         simp [Subgroup.smul_def, NumberField.algebraMap_smul_eq_apply])
   have : IsGaloisGroup (M ≃ₐ[K] M) K M := IsGaloisGroup.of_isGalois _ M
-  exact Q.doubleCosetEquivPrimesOver p H (𝓞 ↥(fixedField H))
+  exact Q.doubleCosetQuotientEquivPrimesOverOfIsInvariant p H (𝓞 ↥(fixedField H))
 
 /-- The double coset law sends the class of `σ` to the contraction `σ Q ∩ 𝓞 (M ^ H)`. -/
 @[simp]
@@ -148,7 +149,8 @@ theorem doubleCosetQuotientEquivPrimesOver_mk [IsGalois K M] (p : Ideal (𝓞 K)
     (doubleCosetQuotientEquivPrimesOver p Q H (DoubleCoset.mk H _ σ) :
         Ideal (𝓞 ↥(fixedField H)))
       = (σ • Q).under (𝓞 ↥(fixedField H)) := by
-  simp only [doubleCosetQuotientEquivPrimesOver, doubleCosetEquivPrimesOver_mk]
+  simp only [doubleCosetQuotientEquivPrimesOver,
+    doubleCosetQuotientEquivPrimesOverOfIsInvariant_mk]
 
 /-- **The double coset law is compatible with the action of `G`.** Indexing the primes of
 `𝓞 (M ^ H)` above `p` through the translate `τ Q` instead of `Q` sends the class of `σ` to the

@@ -27,16 +27,19 @@ including `FixedPoints.subalgebra A B H`.
 
 ## Main definitions
 
-* `Ideal.doubleCosetEquivPrimesOver`: the contraction bijection over an invariant ring.
+* `Ideal.doubleCosetQuotientEquivPrimesOverOfIsInvariant`: the contraction bijection over
+  an invariant ring.
 
 ## Main results
 
 * `Ideal.under_smul_eq_iff_doubleCosetMk_eq`: the fibres of translated contraction are exactly
   the double cosets.
-* `Ideal.doubleCosetEquivPrimesOver_mk`: the value at a double-coset representative.
-* `Ideal.doubleCosetEquivPrimesOver_symm_eq_mk_iff`: characterization of the inverse.
-* `Ideal.doubleCosetEquivPrimesOver_natural`: enlarging the subgroup agrees with contracting
-  primes to the smaller invariant ring.
+* `Ideal.doubleCosetQuotientEquivPrimesOverOfIsInvariant_mk`: the value at a double-coset
+  representative.
+* `Ideal.doubleCosetQuotientEquivPrimesOverOfIsInvariant_symm_apply_eq_mk_iff`:
+  characterization of the inverse.
+* `Ideal.doubleCosetQuotientEquivPrimesOverOfIsInvariant_natural`: enlarging the subgroup
+  agrees with contracting primes to the smaller invariant ring.
 * `Ideal.ramificationIdx_mul_inertiaDeg_under_eq_relIndex`: the local degree below `Q` is
   `[D(Q) : H ∩ D(Q)]`, including inseparable residue extensions.
 
@@ -98,7 +101,7 @@ private def translatedPrime (σ : G) : p.primesOver C :=
 /-- **The double-coset splitting law over invariant rings.** The primes of the intermediate
 `H`-invariant ring `C` above `p` are indexed by `H \ G / stabilizer G Q`. The class of `σ`
 is sent to the contraction of `σ • Q`, without any residue-field hypothesis. -/
-noncomputable def doubleCosetEquivPrimesOver :
+noncomputable def doubleCosetQuotientEquivPrimesOverOfIsInvariant :
     DoubleCoset.Quotient (H : Set G) (stabilizer G Q : Set G) ≃ p.primesOver C :=
   Equiv.ofBijective
     (fun q ↦ q.liftOn' (translatedPrime Q p C) fun σ τ hστ ↦
@@ -124,32 +127,35 @@ noncomputable def doubleCosetEquivPrimesOver :
 include hAB hCB in
 /-- The class of `σ` is sent to the contraction of `σ • Q`. -/
 @[simp]
-theorem doubleCosetEquivPrimesOver_mk (σ : G) :
-    (Q.doubleCosetEquivPrimesOver p H C (DoubleCoset.mk H _ σ) : Ideal C) = (σ • Q).under C :=
+theorem doubleCosetQuotientEquivPrimesOverOfIsInvariant_mk (σ : G) :
+    (Q.doubleCosetQuotientEquivPrimesOverOfIsInvariant p H C
+      (DoubleCoset.mk H _ σ) : Ideal C) = (σ • Q).under C :=
   (rfl)
 
 /-- The inverse sends a prime `q` to the class of `σ` exactly when `q` is the contraction of
 `σ • Q`. This characterizes the inverse without exposing the choice of a prime above `q`. -/
 @[simp]
-theorem doubleCosetEquivPrimesOver_symm_eq_mk_iff (q : p.primesOver C) (σ : G) :
-    (Q.doubleCosetEquivPrimesOver p H C).symm q = DoubleCoset.mk H _ σ ↔
+theorem doubleCosetQuotientEquivPrimesOverOfIsInvariant_symm_apply_eq_mk_iff
+    (q : p.primesOver C) (σ : G) :
+    (Q.doubleCosetQuotientEquivPrimesOverOfIsInvariant p H C).symm q = DoubleCoset.mk H _ σ ↔
       q.1 = (σ • Q).under C := by
-  rw [Equiv.symm_apply_eq, Subtype.ext_iff, doubleCosetEquivPrimesOver_mk]
+  rw [Equiv.symm_apply_eq, Subtype.ext_iff, doubleCosetQuotientEquivPrimesOverOfIsInvariant_mk]
 
 /-- Enlarging the subgroup and contracting to its invariant ring give the same prime under
 the double-coset splitting bijection. The scalar towers express the two inclusions of `C'`
 into `B` through `A` and `C`. -/
-theorem doubleCosetEquivPrimesOver_natural {H' : Subgroup G} (h : H ≤ H')
+theorem doubleCosetQuotientEquivPrimesOverOfIsInvariant_natural {H' : Subgroup G} (h : H ≤ H')
     (C' : Type*) [CommRing C'] [Algebra A C'] [Algebra C' C] [Algebra C' B]
     [IsScalarTower A C' B] [IsScalarTower C' C B]
     [FaithfulSMul C' B] [Algebra.IsInvariant C' B H'] [SMulCommClass H' C' B]
     (q : DoubleCoset.Quotient (H : Set G) (stabilizer G Q : Set G)) :
-    (Q.doubleCosetEquivPrimesOver p H' C'
+    (Q.doubleCosetQuotientEquivPrimesOverOfIsInvariant p H' C'
         (DoubleCoset.quotientMapOfLELeft h (stabilizer G Q) q)).1 =
-      (Q.doubleCosetEquivPrimesOver p H C q).1.under C' := by
+      (Q.doubleCosetQuotientEquivPrimesOverOfIsInvariant p H C q).1.under C' := by
   induction q using Quotient.inductionOn' with
   | h σ =>
-    simp only [DoubleCoset.quotientMapOfLELeft_apply_mk, doubleCosetEquivPrimesOver_mk,
+    simp only [DoubleCoset.quotientMapOfLELeft_apply_mk,
+      doubleCosetQuotientEquivPrimesOverOfIsInvariant_mk,
       under_under]
 
 end Equivalence
