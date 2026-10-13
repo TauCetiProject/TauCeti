@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.TensorCoalgebra.Completed
+public import TauCeti.LinearAlgebra.TensorCoalgebra.Completed.Basic
 
 /-!
 # Completed reduced tensor coalgebras
