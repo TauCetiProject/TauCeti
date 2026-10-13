@@ -36,6 +36,7 @@ in an integral family is supplied explicitly.
 
 In rank at most one, `SO(V)(ℚ)` is trivial even for a degenerate form, so its full adelic
 diagonal is discrete without either nondegeneracy or an eventual-integrality hypothesis.
+The corresponding `O` and `Spin` results below retain their nondegeneracy hypothesis.
 
 ## Main results
 
