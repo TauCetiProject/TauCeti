@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.NumberField.Global.Ideles.Norm.Surjective
+public import TauCeti.NumberTheory.NumberField.Global.Ideles.Norm.Range
+public import TauCeti.NumberTheory.NumberField.InfinitePlace.Completion.Norm
 
 /-!
 # Elements that are norms at every place
@@ -47,23 +48,6 @@ noncomputable section
 open IsDedekindDomain IsDedekindDomain.HeightOneSpectrum NumberField NumberField.InfinitePlace
 open scoped TensorProduct AdicCompletionExtension NumberField.LiesOver
 
-namespace TauCeti
-
-variable {K : Type*} [Field K] (L : Type*) [Field L] [Algebra K L] [FiniteDimensional K L]
-
-/-- **Every unit is a local norm at a complex place.** At a complex place `w` of `K` every unit of
-`K_w ≅ ℂ` is the norm of a unit of the local étale algebra `K_w ⊗[K] L`: it is an `[L : K]`-th
-power, and the `[L : K]`-th power of `b ∈ K_wˣ` is the norm of `b ⊗ 1`. -/
-theorem mem_range_normUnits_completion_of_isComplex {w : InfinitePlace K} (hw : w.IsComplex)
-    (a : w.Completionˣ) :
-    a ∈ (Algebra.normUnits w.Completion (S := w.Completion ⊗[K] L)).range := by
-  obtain ⟨b, rfl⟩ := Completion.mem_range_powMonoidHom (Module.finrank_pos (R := K) (M := L)).ne'
-    a fun hr ↦ (not_isReal_iff_isComplex.mpr hw hr).elim
-  have hb := Algebra.pow_finrank_mem_range_normUnits w.Completion (S := w.Completion ⊗[K] L) b
-  rwa [Module.finrank_baseChange] at hb
-
-end TauCeti
-
 namespace TauCeti.GlobalNumberFields
 
 variable (K L : Type*) [Field K] [Field L] [Algebra K L]
@@ -90,6 +74,8 @@ every finite place and at every infinite place of `K`, complex places included. 
 def IsLocalNormEverywhere [FiniteDimensional K L] (x : Kˣ) : Prop :=
   (∀ v : HeightOneSpectrum (𝓞 K), IsFiniteLocalNorm K L v x) ∧
     ∀ w : InfinitePlace K, IsInfiniteLocalNorm K L w x
+
+section Unfold
 
 variable {K L} [FiniteDimensional K L]
 
@@ -122,7 +108,9 @@ theorem isLocalNormEverywhere_iff (x : Kˣ) :
         ∀ w : InfinitePlace K, IsInfiniteLocalNorm K L w x :=
   Iff.rfl
 
-variable [NumberField L]
+end Unfold
+
+variable {K L} [NumberField L]
 
 /-- `x` is a local norm at the finite place `v` exactly when its image in `K_v` is a product of
 norms from the completions of `L` at the places above `v`. -/

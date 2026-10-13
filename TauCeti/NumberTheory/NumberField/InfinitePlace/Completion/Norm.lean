@@ -23,6 +23,9 @@ infinite place `v` of `K`. Through the extension embeddings `K_v → ℂ` and `L
 * If `w` is ramified over `v`, so that `w` is complex and `v` is real, then the norm is
   `z ↦ |z|²`, and the norm group `N_{L_w/K_v}(L_wˣ)` consists of the positive elements.
 
+At a complex place every unit is moreover an `n`-th power for every `n ≠ 0`, hence a norm from
+the local étale algebra `K_v ⊗[K] L` for every finite extension `L / K`.
+
 These formulas compute the archimedean components of the norm map of ideles. The norm preserves
 the normalized absolute value: at a complex place over a real place the source uses the square
 of the ordinary absolute value, exactly as the norm does.
@@ -42,6 +45,10 @@ of the ordinary absolute value, exactly as the norm does.
   complex place over a real place, the norm is `Complex.normSq`.
 * `NumberField.InfinitePlace.Completion.mem_normGroup_iff_of_isRamified`: at a complex place over
   a real place, the norms are the positive elements.
+* `NumberField.InfinitePlace.Completion.mem_range_powMonoidHom`: a unit of an archimedean
+  completion that is positive at a real place is an `n`-th power.
+* `TauCeti.mem_range_normUnits_completion_of_isComplex`: at a complex place every unit is a norm
+  from the local étale algebra `K_w ⊗[K] L`.
 
 ## References
 
@@ -161,3 +168,56 @@ theorem completionNormalizedAbsValue_norm (v : InfinitePlace K) (w : InfinitePla
       (isometry_extensionEmbedding w).norm_map_of_map_zero (map_zero _)]
 
 end NumberField.InfinitePlace
+
+/-! ### `n`-th powers at an infinite place -/
+
+namespace NumberField.InfinitePlace.Completion
+
+variable {K : Type*} [Field K] {w : InfinitePlace K}
+
+/-- **Units of an archimedean completion that are positive at a real place are `n`-th powers.**
+At a real place this is the existence of real `n`-th roots of positive numbers; at a complex place
+every unit is an `n`-th power. -/
+theorem mem_range_powMonoidHom {n : ℕ} (hn : n ≠ 0) (y : w.Completionˣ)
+    (hy : ∀ hw : w.IsReal, 0 < extensionEmbeddingOfIsReal hw y) :
+    y ∈ (powMonoidHom n : w.Completionˣ →* w.Completionˣ).range := by
+  by_cases hw : w.IsReal
+  · let e := ringEquivRealOfIsReal hw
+    have hpos : 0 < e y := by simpa [e] using hy hw
+    -- The real `n`-th root `(e y) ^ (1 / n)` of the positive number `e y`.
+    have ht0 : e.symm (e y ^ ((n : ℝ)⁻¹)) ≠ 0 :=
+      (map_ne_zero e.symm).2 (Real.rpow_pos_of_pos hpos _).ne'
+    refine ⟨Units.mk0 _ ht0, Units.ext ?_⟩
+    rw [powMonoidHom_apply, Units.val_pow_eq_pow_val, Units.val_mk0, ← map_pow,
+      Real.rpow_inv_natCast_pow hpos.le hn, RingEquiv.symm_apply_apply]
+  · let e := ringEquivComplexOfIsComplex (not_isReal_iff_isComplex.mp hw)
+    obtain ⟨z, hz⟩ := IsAlgClosed.exists_pow_nat_eq (e y) (Nat.pos_of_ne_zero hn)
+    have hz0 : e.symm z ≠ 0 := by
+      refine (map_ne_zero e.symm).2 fun h ↦ ?_
+      rw [h, zero_pow hn] at hz
+      exact (map_ne_zero e).2 y.ne_zero hz.symm
+    refine ⟨Units.mk0 _ hz0, Units.ext ?_⟩
+    rw [powMonoidHom_apply, Units.val_pow_eq_pow_val, Units.val_mk0, ← map_pow, hz,
+      RingEquiv.symm_apply_apply]
+
+end NumberField.InfinitePlace.Completion
+
+namespace TauCeti
+
+open NumberField.InfinitePlace
+open scoped TensorProduct
+
+variable {K : Type*} [Field K] (L : Type*) [Field L] [Algebra K L] [FiniteDimensional K L]
+
+/-- **Every unit is a local norm at a complex place.** At a complex place `w` of `K` every unit of
+`K_w ≅ ℂ` is the norm of a unit of the local étale algebra `K_w ⊗[K] L`: it is an `[L : K]`-th
+power, and the `[L : K]`-th power of `b ∈ K_wˣ` is the norm of `b ⊗ 1`. -/
+theorem mem_range_normUnits_completion_of_isComplex {w : InfinitePlace K} (hw : w.IsComplex)
+    (a : w.Completionˣ) :
+    a ∈ (Algebra.normUnits w.Completion (S := w.Completion ⊗[K] L)).range := by
+  obtain ⟨b, rfl⟩ := Completion.mem_range_powMonoidHom (Module.finrank_pos (R := K) (M := L)).ne'
+    a fun hr ↦ (not_isReal_iff_isComplex.mpr hw hr).elim
+  have hb := Algebra.pow_finrank_mem_range_normUnits w.Completion (S := w.Completion ⊗[K] L) b
+  rwa [Module.finrank_baseChange] at hb
+
+end TauCeti

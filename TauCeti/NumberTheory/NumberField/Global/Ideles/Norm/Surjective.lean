@@ -8,6 +8,7 @@ module
 public import TauCeti.NumberTheory.NumberField.Global.Ideles.Norm.Range
 public import TauCeti.NumberTheory.NumberField.Global.Ideles.Ray.ClassQuotient
 import TauCeti.NumberTheory.LocalField.PowerSubgroup.Open
+import TauCeti.NumberTheory.NumberField.InfinitePlace.Completion.Norm
 import TauCeti.RingTheory.DedekindDomain.AdicValuation.ValuativeRel
 
 /-!
@@ -36,8 +37,6 @@ the Kummer-theoretic proof of the second fundamental inequality requires.
 
 ## Main results
 
-* `NumberField.InfinitePlace.Completion.mem_range_powMonoidHom`: a unit of an archimedean
-  completion that is positive at a real place is an `n`-th power.
 * `TauCeti.GlobalNumberFields.exists_unitEmbedding_mul_mem_range_powMonoidHom`: every idele is,
   up to a principal idele, an `n`-th power at the places of `S` and at the infinite places.
 * `TauCeti.GlobalNumberFields.range_normUnits_adicCompletion_eq_top_of_finrank_eq_one`: every unit
@@ -57,39 +56,6 @@ noncomputable section
 
 open IsDedekindDomain IsDedekindDomain.HeightOneSpectrum NumberField NumberField.InfinitePlace
 open scoped TensorProduct AdicCompletionExtension NumberField.LiesOver
-
-/-! ### `n`-th powers at an infinite place -/
-
-namespace NumberField.InfinitePlace.Completion
-
-variable {K : Type*} [Field K] {w : InfinitePlace K}
-
-/-- **Units of an archimedean completion that are positive at a real place are `n`-th powers.**
-At a real place this is the existence of real `n`-th roots of positive numbers; at a complex place
-every unit is an `n`-th power. -/
-theorem mem_range_powMonoidHom {n : ℕ} (hn : n ≠ 0) (y : w.Completionˣ)
-    (hy : ∀ hw : w.IsReal, 0 < extensionEmbeddingOfIsReal hw y) :
-    y ∈ (powMonoidHom n : w.Completionˣ →* w.Completionˣ).range := by
-  by_cases hw : w.IsReal
-  · let e := ringEquivRealOfIsReal hw
-    have hpos : 0 < e y := by simpa [e] using hy hw
-    -- The real `n`-th root `(e y) ^ (1 / n)` of the positive number `e y`.
-    have ht0 : e.symm (e y ^ ((n : ℝ)⁻¹)) ≠ 0 :=
-      (map_ne_zero e.symm).2 (Real.rpow_pos_of_pos hpos _).ne'
-    refine ⟨Units.mk0 _ ht0, Units.ext ?_⟩
-    rw [powMonoidHom_apply, Units.val_pow_eq_pow_val, Units.val_mk0, ← map_pow,
-      Real.rpow_inv_natCast_pow hpos.le hn, RingEquiv.symm_apply_apply]
-  · let e := ringEquivComplexOfIsComplex (not_isReal_iff_isComplex.mp hw)
-    obtain ⟨z, hz⟩ := IsAlgClosed.exists_pow_nat_eq (e y) (Nat.pos_of_ne_zero hn)
-    have hz0 : e.symm z ≠ 0 := by
-      refine (map_ne_zero e.symm).2 fun h ↦ ?_
-      rw [h, zero_pow hn] at hz
-      exact (map_ne_zero e).2 y.ne_zero hz.symm
-    refine ⟨Units.mk0 _ hz0, Units.ext ?_⟩
-    rw [powMonoidHom_apply, Units.val_pow_eq_pow_val, Units.val_mk0, ← map_pow, hz,
-      RingEquiv.symm_apply_apply]
-
-end NumberField.InfinitePlace.Completion
 
 namespace TauCeti.GlobalNumberFields
 
