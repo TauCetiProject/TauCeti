@@ -6,7 +6,7 @@ Authors: Codex
 module
 
 public import TauCeti.NumberTheory.LocalField.PowerSubgroup.Basic
-import Mathlib.GroupTheory.IndexNSmul
+import TauCeti.GroupTheory.Index.NSmul
 import TauCeti.NumberTheory.LocalField.UnitsDecomposition
 
 /-!
@@ -52,13 +52,11 @@ theorem card_integerUnitPowerClasses {n : ℕ} (hn : (n : K) ≠ 0) :
       (powMonoidHom n).prodMap (powMonoidHom n) := by
     ext x <;> simp
   have hZ : (powMonoidHom n : Multiplicative ℤ →* _).range.index = n := by
-    have hpow : (powMonoidHom n : Multiplicative ℤ →* _) =
-        AddMonoidHom.toMultiplicative (nsmulAddMonoidHom (α := ℤ) n) := by
+    have hker : (powMonoidHom n : Multiplicative ℤ →* _).ker = ⊥ := by
       ext
-      simp
-    rw [hpow, MonoidHom.coe_toMultiplicative_range, AddSubgroup.index_toSubgroup,
-      AddSubgroup.index_range_nsmul]
-    simp
+      simp [hn0]
+    simpa [hker, (AddEquiv.additiveMultiplicative ℤ).toIntLinearEquiv.finrank_eq] using
+      Subgroup.index_range_powMonoidHom_of_fg (Multiplicative ℤ) hn0
   have hcount : Nat.card (Kˣ ⧸ (powMonoidHom n : Kˣ →* Kˣ).range) =
       n * Nat.card (𝒪[K]ˣ ⧸ (powMonoidHom n : 𝒪[K]ˣ →* 𝒪[K]ˣ).range) := by
     rw [← Subgroup.index_eq_card, ← Subgroup.index_map_equiv _ e,

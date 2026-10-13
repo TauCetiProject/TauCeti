@@ -36,6 +36,32 @@ namespace IsDedekindDomain.HeightOneSpectrum
 
 variable {K : Type*} [Field K] [NumberField K]
 
+/-- For nonzero `n`, the `n`-th powers of the completed integer-ring units have finite index. -/
+theorem finiteIndex_range_powMonoidHom_adicCompletionIntegers
+    (v : HeightOneSpectrum (𝓞 K)) {n : ℕ} (hn : n ≠ 0) :
+    (powMonoidHom n : (v.adicCompletionIntegers K)ˣ →* _).range.FiniteIndex := by
+  let e := Units.mapEquiv (v.integerEquivAdicCompletionIntegers (K := K)).toMulEquiv
+  have h := TauCeti.finiteIndex_range_powMonoidHom_integerUnits
+    (K := v.adicCompletion K) (Nat.cast_ne_zero.mpr hn)
+  refine ⟨?_⟩
+  rw [← e.map_range_powMonoidHom n, Subgroup.index_map_equiv]
+  exact h.index_ne_zero
+
+/-- For nonzero `n`, the power-map range on completed integer-ring units has finite index. -/
+instance instFiniteIndexRangePowMonoidHomAdicCompletionIntegers
+    (v : HeightOneSpectrum (𝓞 K)) {n : ℕ} [NeZero n] :
+    (powMonoidHom n : (v.adicCompletionIntegers K)ˣ →* _).range.FiniteIndex :=
+  v.finiteIndex_range_powMonoidHom_adicCompletionIntegers (NeZero.ne n)
+
+/-- For nonzero `n`, the power-class quotient of the completed integer-ring units is finite. -/
+instance finite_powerClassQuotient_adicCompletionIntegers
+    (v : HeightOneSpectrum (𝓞 K)) {n : ℕ} [NeZero n] :
+    Finite (TauCeti.powerClassQuotient (v.adicCompletionIntegers K)ˣ n) :=
+  have : (TauCeti.powerSubgroup (v.adicCompletionIntegers K)ˣ n).FiniteIndex :=
+    TauCeti.powerSubgroup_eq_range_powMonoidHom (v.adicCompletionIntegers K)ˣ n ▸
+      v.finiteIndex_range_powMonoidHom_adicCompletionIntegers (NeZero.ne n)
+  Subgroup.finite_quotient_of_finiteIndex
+
 /-- At a finite place away from `n`, the completed integer-ring units have as many `n`-th
 power classes as there are `n`-th roots of unity in the completion. -/
 theorem card_unitPowerClasses_adicCompletion (v : HeightOneSpectrum (𝓞 K)) {n : ℕ}
