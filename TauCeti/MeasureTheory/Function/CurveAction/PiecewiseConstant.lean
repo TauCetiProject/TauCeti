@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.MeasureTheory.Function.CurveAction.Basic
+import TauCeti.Algebra.Order.Floor.Semifield
 import TauCeti.Topology.Instances.ENNReal
 
 /-!
@@ -68,22 +69,6 @@ section PseudoEMetricSpace
 
 variable {X : Type*} [PseudoEMetricSpace X] {p : ℝ} {τ : ℝ≥0} {U : ℕ → X}
 
-/-- The steps of the piecewise constant interpolant taken during the times `(s, t]` are those with
-indices in `[⌈s / τ⌉₊, ⌈t / τ⌉₊)`, and there are at most `(t - s) / τ + 1` of them. -/
-private lemma natCast_ceil_div_sub_ceil_div_le (hτ : 0 < τ) {s t : ℝ} (hs : 0 ≤ s) (hst : s ≤ t) :
-    ((⌈t / τ⌉₊ - ⌈s / τ⌉₊ : ℕ) : ℝ) ≤ (t - s) / τ + 1 := by
-  have hτr : (0 : ℝ) < τ := NNReal.coe_pos.2 hτ
-  have hle : ⌈s / τ⌉₊ ≤ ⌈t / τ⌉₊ := Nat.ceil_mono (div_le_div_of_nonneg_right hst hτr.le)
-  rw [Nat.cast_sub hle, sub_div]
-  linarith [Nat.ceil_lt_add_one (div_nonneg (hs.trans hst) hτr.le), Nat.le_ceil (s / τ)]
-
-/-- A step index `n` lies in `[⌈s / τ⌉₊, ⌈t / τ⌉₊)` exactly when the time `n τ` lies in
-`[s, t)`. -/
-private lemma mem_Ico_ceil_div_iff (hτ : 0 < τ) {s t : ℝ} {n : ℕ} :
-    n ∈ Finset.Ico ⌈s / τ⌉₊ ⌈t / τ⌉₊ ↔ n * (τ : ℝ) ∈ Ico s t := by
-  have hτr : (0 : ℝ) < τ := NNReal.coe_pos.2 hτ
-  rw [Finset.mem_Ico, Nat.ceil_le, Nat.lt_ceil, div_le_iff₀ hτr, lt_div_iff₀ hτr, mem_Ico]
-
 /-- **Discrete Hölder estimate** on one interval: for `0 ≤ s ≤ t`, the `p`-th power of the distance
 between the piecewise constant interpolant at times `s` and `t` is at most
 `((t - s) / τ + 1) ^ (p - 1)` times the sum of the `p`-th powers of the steps taken in between. -/
@@ -102,7 +87,8 @@ private lemma edist_ceil_div_rpow_le (hp : 1 ≤ p) (hτ : 0 < τ) {s t : ℝ} (
     _ ≤ _ := by
         gcongr
         rw [Nat.card_Ico, ← ENNReal.ofReal_natCast]
-        exact ENNReal.ofReal_le_ofReal (natCast_ceil_div_sub_ceil_div_le hτ hs hst)
+        exact ENNReal.ofReal_le_ofReal
+          (natCast_ceil_div_sub_ceil_div_le (NNReal.coe_pos.2 hτ) hs hst)
 
 /-- **Discrete Hölder estimate** for a disjoint family of intervals `(sᵢ, tᵢ]` in `[0, T]`: the
 `p`-th power of the sum of the distances between the piecewise constant interpolant at times `sᵢ`
@@ -136,7 +122,7 @@ theorem sum_edist_ceil_div_rpow_le (hp : 1 ≤ p) (hτ : 0 < τ) {T : ℝ} (hT :
   have hdisj : (Finset.range k : Set ℕ).PairwiseDisjoint J := by
     intro i hi j hj hij
     refine Finset.disjoint_left.2 fun n hni hnj ↦ ?_
-    rw [mem_Ico_ceil_div_iff hτ] at hni hnj
+    rw [mem_Ico_ceil_div_iff hτr] at hni hnj
     exact Set.disjoint_left.1 (hE.2 hi hj hij)
       ⟨lt_of_le_of_lt hni.1 (lt_min hni.2 hnj.2), min_le_left _ _⟩
       ⟨lt_of_le_of_lt hnj.1 (lt_min hni.2 hnj.2), min_le_right _ _⟩
@@ -154,7 +140,7 @@ theorem sum_edist_ceil_div_rpow_le (hp : 1 ≤ p) (hτ : 0 < τ) {T : ℝ} (hT :
     refine ENNReal.ofReal_le_ofReal ?_
     rw [Finset.card_biUnion hdisj, Nat.cast_sum, Finset.sum_div]
     have := Finset.sum_le_sum fun i hi ↦
-      natCast_ceil_div_sub_ceil_div_le hτ (hst i hi).1 (hst i hi).2.1
+      natCast_ceil_div_sub_ceil_div_le hτr (hst i hi).1 (hst i hi).2.1
     simpa [J, Finset.sum_add_distrib] using this
   have hsub : (Finset.range k).biUnion J ⊆ Finset.range ⌈T / τ⌉₊ := by
     intro n hn
@@ -209,7 +195,7 @@ private lemma edist_ceil_div_div_rpow_le (hp : 1 ≤ p) (hτ : 0 < τ) {T h t : 
         (Ioc (n * τ - h) (n * τ)).indicator (fun _ ↦ edist (U n) (U (n + 1)) ^ p) t := by
     rw [Finset.sum_indicator_eq_sum_filter]
     refine Finset.sum_congr (Finset.ext fun n ↦ ?_) fun _ _ ↦ rfl
-    rw [mem_Ico_ceil_div_iff hτ, Finset.mem_filter, Finset.mem_range, mem_Ico, mem_Ioc]
+    rw [mem_Ico_ceil_div_iff hτr, Finset.mem_filter, Finset.mem_range, mem_Ico, mem_Ioc]
     constructor
     · rintro ⟨h₁, h₂⟩
       refine ⟨?_, by linarith, h₁⟩

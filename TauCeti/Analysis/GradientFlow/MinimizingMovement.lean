@@ -728,18 +728,18 @@ Let `l y` be the filter of an auxiliary convergence `y_n ⇀ y` for which the di
 sequentially lower semicontinuous, let `φ` be coercive, `φ_{τ₀}(x₁) > -∞`, and let `U k` be
 minimizing movement sequences with time steps `τ k → 0`, whose initial points tend to `x₀` with
 energies bounded above by a real number. If the piecewise constant interpolants
-`t ↦ U k ⌈t / τ k⌉₊` converge to `u` pointwise on `[0, ∞)` for `⇀`, then `u` is absolutely
-continuous on every interval `[0, T]`. -/
+`t ↦ U k ⌈t / τ k⌉₊` converge to `u` pointwise on `[0, T]` for `⇀`, then `u` is absolutely
+continuous on `[0, T]`. -/
 theorem absolutelyContinuousOnInterval_of_forall_mem_moreauYosidaResolvent
     (hd : ∀ ⦃v w : ℕ → X⦄ ⦃y z : X⦄, Tendsto v atTop (l y) → Tendsto w atTop (l z) →
       edist y z ≤ liminf (fun n ↦ edist (v n) (w n)) atTop)
     (hτ₀ : 0 < τ₀) (h₀ : moreauYosida φ τ₀ x₁ ≠ ⊥) (hτ : ∀ k, 0 < τ k)
     (hτ0 : Tendsto τ atTop (𝓝 0)) (hU : ∀ k n, U k (n + 1) ∈ moreauYosidaResolvent φ (τ k) (U k n))
     (hU0 : Tendsto (fun k ↦ U k 0) atTop (𝓝 x₀)) (hS : ∀ k, φ (U k 0) ≤ S)
-    (hu : ∀ t : ℝ, 0 ≤ t → Tendsto (fun k ↦ U k ⌈t / τ k⌉₊) atTop (l (u t))) (hT : 0 ≤ T) :
+    (hu : ∀ t ∈ Icc 0 T, Tendsto (fun k ↦ U k ⌈t / τ k⌉₊) atTop (l (u t))) (hT : 0 ≤ T) :
     AbsolutelyContinuousOnInterval u 0 T :=
   absolutelyContinuousOnInterval_of_liminf_sum_edist_rpow_ne_top one_lt_two hτ hτ0 hT
-    (fun s hs t ht ↦ hd (hu s hs.1) (hu t ht.1))
+    (fun s hs t ht ↦ hd (hu s hs) (hu t ht))
     (liminf_sum_edist_rpow_ne_top hτ₀ h₀ hτ hτ0 hU hU0 hS hT)
 
 /-- **Energy–action inequality for limits of minimizing movements.** Under the hypotheses of
@@ -755,7 +755,7 @@ theorem apply_add_curveAction_div_le_liminf_of_forall_mem_moreauYosidaResolvent
     (hτ₀ : 0 < τ₀) (h₀ : moreauYosida φ τ₀ x₁ ≠ ⊥) (hτ : ∀ k, 0 < τ k)
     (hτ0 : Tendsto τ atTop (𝓝 0)) (hU : ∀ k n, U k (n + 1) ∈ moreauYosidaResolvent φ (τ k) (U k n))
     (hU0 : Tendsto (fun k ↦ U k 0) atTop (𝓝 x₀)) (hS : ∀ k, φ (U k 0) ≤ S)
-    (hu : ∀ t : ℝ, 0 ≤ t → Tendsto (fun k ↦ U k ⌈t / τ k⌉₊) atTop (l (u t))) (hT : 0 ≤ T) :
+    (hu : ∀ t ∈ Icc 0 T, Tendsto (fun k ↦ U k ⌈t / τ k⌉₊) atTop (l (u t))) (hT : 0 ≤ T) :
     φ (u T) + ((curveAction 2 u 0 T / 2 : ℝ≥0∞) : EReal) ≤ liminf (fun k ↦ φ (U k 0)) atTop := by
   -- The accumulated penalties `P k` up to the step `N k = ⌈T / τ k⌉₊`.
   set N : ℕ → ℕ := fun k ↦ ⌈T / τ k⌉₊
@@ -764,7 +764,7 @@ theorem apply_add_curveAction_div_le_liminf_of_forall_mem_moreauYosidaResolvent
   -- The action bound: `A₂(u) / 2 ≤ liminf P`.
   have hA : curveAction 2 u 0 T / 2 ≤ liminf P atTop := by
     have h := curveAction_le_liminf_sum_edist_rpow (l := atTop) one_lt_two hτ hτ0 hT
-      (fun s hs t ht ↦ hd (hu s hs.1) (hu t ht.1))
+      (fun s hs t ht ↦ hd (hu s hs) (hu t ht))
     simp only [edist_rpow_two_div_rpow_eq, ← Finset.mul_sum] at h
     rw [ENNReal.liminf_const_mul_of_ne_top ENNReal.ofNat_ne_top] at h
     exact ENNReal.div_le_of_le_mul' h
@@ -786,7 +786,7 @@ theorem apply_add_curveAction_div_le_liminf_of_forall_mem_moreauYosidaResolvent
     refine hφ (ne_top_of_le_ne_top (b := 2 * max M R)
       (ENNReal.mul_ne_top ENNReal.ofNat_ne_top (max_lt hM.lt_top hR.lt_top).ne)
       (Metric.ediam_le ?_))
-      (hu T hT)
+      (hu T ⟨hT, le_rfl⟩)
     rintro _ ⟨i, rfl⟩ _ ⟨j, rfl⟩
     calc edist (U i (N i)) (U j (N j)) ≤ edist x₀ (U i (N i)) + edist x₀ (U j (N j)) :=
           edist_triangle_left _ _ _
@@ -813,7 +813,7 @@ theorem IsGeneralizedMinimizingMovement.absolutelyContinuousOnInterval
     AbsolutelyContinuousOnInterval u 0 T := by
   obtain ⟨τ, U, hτ, hτ0, hU, hU0, ⟨S, hS⟩, hconv⟩ := isGeneralizedMinimizingMovement_iff.1 h
   exact absolutelyContinuousOnInterval_of_forall_mem_moreauYosidaResolvent hd hτ₀ h₀ hτ hτ0 hU
-    hU0 hS hconv hT
+    hU0 hS (fun t ht ↦ hconv t ht.1) hT
 
 /-- **Generalized minimizing movements have locally finite `2`-action.** Under the hypotheses of
 `TauCeti.IsGeneralizedMinimizingMovement.absolutelyContinuousOnInterval`, the action
