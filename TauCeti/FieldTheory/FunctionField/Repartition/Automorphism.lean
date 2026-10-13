@@ -87,6 +87,7 @@ theorem placeFamilyRepresentation_apply (a : Place k F' → F') (Q : Place k F')
 
 /-- **The action carries `A_F(D)` onto `A_F(σ • D)`**: `σ` moves the valuation at a place to the
 valuation at the moved place, where the bound imposed by `σ • D` is the one `D` imposed before. -/
+@[simp high]
 theorem placeFamilyRepresentation_mem_adeleFiltration_smul_iff {D : Divisor k F'}
     {a : Place k F' → F'} :
     placeFamilyRepresentation k F F' σ a ∈ adeleFiltration (σ • D) ↔ a ∈ adeleFiltration D := by
