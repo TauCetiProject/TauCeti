@@ -205,6 +205,7 @@ lemma matrixBilinearFormLinear_apply (A : Matrix n n ℝ) :
     simp [matrixBilinearFormLinear]
 
 /-- Matrix bilinear forms are subtractive in the coefficient matrix. -/
+@[simp]
 lemma matrixBilinearForm_sub (A B : Matrix n n ℝ) :
     matrixBilinearForm (A - B) = matrixBilinearForm A - matrixBilinearForm B := by
   simp only [← matrixBilinearFormLinear_apply, map_sub]
