@@ -77,6 +77,15 @@ def zigzagAlgebraGradedProjectiveClass (i : V) :
   LaurentK0.of.{max u w} _ ⟨zigzagAlgebraGradedProjective k G i,
     gradedFiniteProjectiveModules_zigzagAlgebraGradedProjective k G i⟩
 
+/-- The named vertex-projective class is the class of its finite graded projective object. -/
+theorem zigzagAlgebraGradedProjectiveClass_def (i : V) :
+    zigzagAlgebraGradedProjectiveClass k G i =
+      LaurentK0.of.{max u w}
+        (gradedFiniteProjectiveModulesExactStructure (zigzagAlgebraIntegerGrade k G))
+        ⟨zigzagAlgebraGradedProjective k G i,
+          gradedFiniteProjectiveModules_zigzagAlgebraGradedProjective k G i⟩ :=
+  zigzagAlgebraGradedProjectiveClass.eq_def k G i
+
 /-- Internal shift by `d` multiplies a vertex-projective class by `qᵈ`. -/
 theorem zigzagAlgebraGradedProjectiveClass_shift (i : V) (d : ℤ) :
     LaurentK0.of.{max u w}
