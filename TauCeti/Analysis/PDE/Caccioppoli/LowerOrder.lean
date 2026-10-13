@@ -42,14 +42,14 @@ integrable.
 
 All four are in the namespace `TauCeti.PDE`.
 
-* `UniformlyEllipticOn.setIntegral_sq_mul_norm_gradient_posPartAbove_sq_le_of_memLp_of_lowerOrder`:
+* `UniformlyEllipticOn.setIntegral_sq_mul_norm_gradient_posPartAbove_sq_le_lowerOrder_of_memLp`:
   Caccioppoli's inequality for `(u - k)⁺` at an arbitrary level with an `L²` hypothesis.
-* `UniformlyEllipticOn.setIntegral_sq_mul_norm_gradient_posPartAbove_sq_le_of_lowerOrder`: the
+* `UniformlyEllipticOn.setIntegral_sq_mul_norm_gradient_posPartAbove_sq_le_lowerOrder`: the
   nonnegative-level specialization, whose `L²` hypothesis is automatic.
-* `UniformlyEllipticOn.setIntegral_sq_mul_norm_gradient_posPartAbove_sq_le_of_nonpos_of_lowerOrder`:
+* `UniformlyEllipticOn.setIntegral_sq_mul_norm_gradient_posPartAbove_sq_le_lowerOrder_of_nonpos`:
   the cutoff form for subsolutions of `L u ≤ 0` with `c ≥ 0`, at a level `k ≥ 0`, where the
   forcing and mass term drop out.
-* `exists_setIntegral_ball_norm_gradient_posPartAbove_sq_le_of_lowerOrder`: the form on
+* `exists_setIntegral_ball_norm_gradient_posPartAbove_sq_le_lowerOrder`: the form on
   concentric balls for subsolutions of `L u ≤ 0` with `c ≥ 0`.
 
 ## References
@@ -118,7 +118,7 @@ smooth `ψ` compactly supported in `Ω` satisfies
 
 The bound `γ` on the mass coefficient does not enter the estimate. -/
 theorem
-    UniformlyEllipticOn.setIntegral_sq_mul_norm_gradient_posPartAbove_sq_le_of_memLp_of_lowerOrder
+    UniformlyEllipticOn.setIntegral_sq_mul_norm_gradient_posPartAbove_sq_le_lowerOrder_of_memLp
     (h : UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam)
     (ha : AEStronglyMeasurable a (mu.restrict Omega))
     (hb : AEStronglyMeasurable b (mu.restrict Omega))
@@ -256,9 +256,9 @@ theorem
 
 /-- **The Caccioppoli inequality for a nonnegative-level truncation of a weak subsolution with
 lower-order terms.** This specializes
-`UniformlyEllipticOn.setIntegral_sq_mul_norm_gradient_posPartAbove_sq_le_of_memLp_of_lowerOrder`;
+`UniformlyEllipticOn.setIntegral_sq_mul_norm_gradient_posPartAbove_sq_le_lowerOrder_of_memLp`;
 the condition `k ≥ 0` makes `(u - k)⁺ ∈ L²(Ω)` automatic even when `Ω` has infinite measure. -/
-theorem UniformlyEllipticOn.setIntegral_sq_mul_norm_gradient_posPartAbove_sq_le_of_lowerOrder
+theorem UniformlyEllipticOn.setIntegral_sq_mul_norm_gradient_posPartAbove_sq_le_lowerOrder
     (h : UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam)
     (ha : AEStronglyMeasurable a (mu.restrict Omega))
     (hb : AEStronglyMeasurable b (mu.restrict Omega))
@@ -277,7 +277,7 @@ theorem UniformlyEllipticOn.setIntegral_sq_mul_norm_gradient_posPartAbove_sq_le_
       2 * (2 * Lam / lam) ^ 2 * ∫ x in Omega, ‖∇ ψ x‖ ^ 2 * W1p.value w x ^ 2 ∂mu
         + (2 * beta / lam) ^ 2 * ∫ x in Omega, ψ x ^ 2 * W1p.value w x ^ 2 ∂mu
         + 4 / lam * ∫ x in Omega, ψ x ^ 2 * (f x - c x * W1p.value u x) * W1p.value w x ∂mu := by
-  have hgeneral := h.setIntegral_sq_mul_norm_gradient_posPartAbove_sq_le_of_memLp_of_lowerOrder
+  have hgeneral := h.setIntegral_sq_mul_norm_gradient_posPartAbove_sq_le_lowerOrder_of_memLp
     ha hb hc hb_bound hc_bound hu (W1p.memLp_posPartAbove hk u) hψ hcpt hts
   rw [W1p.posPartAboveOfMemLp_eq_posPartAbove (by norm_num) hk u
     (W1p.memLp_posPartAbove hk u)] at hgeneral
@@ -292,10 +292,10 @@ with `w = (u - k)⁺`, every smooth `ψ` compactly supported in `Ω` satisfies
 `∫_Ω ψ² ‖∇w‖² ≤ 2 (2Λ/λ)² ∫_Ω ‖∇ψ‖² w² + (2β/λ)² ∫_Ω ψ² w²`.
 
 This specializes
-`UniformlyEllipticOn.setIntegral_sq_mul_norm_gradient_posPartAbove_sq_le_of_lowerOrder`: the
+`UniformlyEllipticOn.setIntegral_sq_mul_norm_gradient_posPartAbove_sq_le_lowerOrder`: the
 mass term `c u w` is nonnegative because `w > 0` forces `u > k ≥ 0`. -/
 theorem
-    UniformlyEllipticOn.setIntegral_sq_mul_norm_gradient_posPartAbove_sq_le_of_nonpos_of_lowerOrder
+    UniformlyEllipticOn.setIntegral_sq_mul_norm_gradient_posPartAbove_sq_le_lowerOrder_of_nonpos
     (h : UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam)
     (ha : AEStronglyMeasurable a (mu.restrict Omega))
     (hb : AEStronglyMeasurable b (mu.restrict Omega))
@@ -312,7 +312,7 @@ theorem
     ∫ x in Omega, ψ x ^ 2 * ‖W1p.gradient w x‖ ^ 2 ∂mu ≤
       2 * (2 * Lam / lam) ^ 2 * ∫ x in Omega, ‖∇ ψ x‖ ^ 2 * W1p.value w x ^ 2 ∂mu
         + (2 * beta / lam) ^ 2 * ∫ x in Omega, ψ x ^ 2 * W1p.value w x ^ 2 ∂mu := by
-  have hcacc := h.setIntegral_sq_mul_norm_gradient_posPartAbove_sq_le_of_lowerOrder ha hb hc
+  have hcacc := h.setIntegral_sq_mul_norm_gradient_posPartAbove_sq_le_lowerOrder ha hb hc
     hb_bound hc_bound (f := 0) (fun v hv => (hu v hv).trans_eq (integral_eq_zero_of_ae (by
       filter_upwards [Lp.coeFn_zero ℝ 2 (mu.restrict Omega)] with x hx
       rw [hx, Pi.zero_apply, zero_mul])).symm) hk hψ hcpt hts
@@ -343,7 +343,7 @@ additive Haar measure `μ`. Let `a` be measurable and uniformly elliptic on `Ω`
 with `w = (u - k)⁺`, and for every pair of balls `B(x₀, r) ⊆ B(x₀, R) ⊆ Ω` with `0 < r < R`,
 
 `∫_{B(x₀, r)} ‖∇w‖² ≤ (2 (2Λ/λ)² (C / (R - r))² + (2β/λ)²) ∫_{B(x₀, R)} w²`. -/
-theorem exists_setIntegral_ball_norm_gradient_posPartAbove_sq_le_of_lowerOrder :
+theorem exists_setIntegral_ball_norm_gradient_posPartAbove_sq_le_lowerOrder :
     ∃ C : ℝ, 0 < C ∧ ∀ {mu : Measure (EuclideanSpace ℝ ι)} [mu.IsAddHaarMeasure]
       {Omega : Opens (EuclideanSpace ℝ ι)} {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ}
       {b : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι} {c : EuclideanSpace ℝ ι → ℝ}
@@ -372,7 +372,7 @@ theorem exists_setIntegral_ball_norm_gradient_posPartAbove_sq_le_of_lowerOrder :
   have hloc := hC (W1p.posPartAbove (by norm_num) hk u) (A := 2 * (2 * Lam / lam) ^ 2)
     (B := (2 * beta / lam) ^ 2) (by positivity) (sq_nonneg _) hr hrR hball
     fun ψ hψ hcpt hts =>
-      h.setIntegral_sq_mul_norm_gradient_posPartAbove_sq_le_of_nonpos_of_lowerOrder ha hb hc
+      h.setIntegral_sq_mul_norm_gradient_posPartAbove_sq_le_lowerOrder_of_nonpos ha hb hc
         hb_bound hc_bound hc_nonneg hu hk hψ hcpt hts
   refine hloc.trans_eq ?_
   rw [integral_congr_ae (ae_restrict_of_ae_restrict_of_subset hball (by
