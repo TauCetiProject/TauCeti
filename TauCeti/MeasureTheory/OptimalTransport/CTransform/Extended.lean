@@ -5,9 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.MeasureTheory.Function.EReal.Residuation
+public import TauCeti.Data.EReal.Quantale
 public import TauCeti.MeasureTheory.OptimalTransport.CTransform.Basic
-public import TauCeti.MeasureTheory.MeasurableSpace.Analytic
 
 /-!
 # Infimal transforms for extended costs
@@ -19,9 +18,8 @@ including when the potential is itself infinite. At finite costs this transform 
 `TauCeti.cTransform`. Extended nonnegative costs enter by coercion to `EReal`.
 
 The symmetric transform, the antitone Galois connection, double- and triple-transform laws,
-and improvement of feasible pairs need no topology. When the residual integrand is Borel on
-a product of Polish spaces, strict sublevels are analytic and the transform is measurable
-in the completion of every s-finite Borel measure. Borel measurability is not asserted.
+and improvement of feasible pairs need no topology. Analytic strict sublevels and completion
+measurability are treated in `TauCeti.MeasureTheory.OptimalTransport.CTransform.Analytic`.
 
 Two exact formulas exercise the infinite-cost convention: the everywhere-infinite cost has
 everywhere-infinite transform, and a diagonal barrier with zero diagonal has transform `-φ`.
@@ -30,7 +28,6 @@ The latter permits arbitrary extended potentials and nonconstant finite potentia
 ## References
 
 * C. Villani, *Optimal Transport: Old and New*, Springer, 2009, Chapter 5.
-* A. S. Kechris, *Classical Descriptive Set Theory*, Springer, 1995, Theorem 29.7.
 
 The safe arithmetic is Mathlib's `AddQuantale.rightAddResiduation`; the transform identities
 use its adjunction and Mathlib's `GaloisConnection` API.
@@ -39,8 +36,6 @@ use its adjunction and Mathlib's `GaloisConnection` API.
 public section
 
 noncomputable section
-
-open MeasureTheory Set
 
 namespace TauCeti
 
@@ -71,38 +66,45 @@ theorem cTransformSymmExtended_eq_cTransformExtended (c : X × Y → EReal) (ψ 
     cTransformSymmExtended c ψ = cTransformExtended (fun z : Y × X ↦ c (z.2, z.1)) ψ := (rfl)
 
 /-- A lower bound for the transform is exactly a feasible constant partner at this target point. -/
-theorem le_cTransformExtended_iff :
+theorem le_cTransformExtended_apply_iff :
     a ≤ cTransformExtended c φ y ↔ ∀ x, φ x + a ≤ c (x, y) := by
   simp only [cTransformExtended_apply, le_iInf_iff,
     AddQuantale.rightAddResiduation_le_iff_add_le]
 
 /-- A lower bound for the symmetric transform is exactly a feasible partner at this source point. -/
-theorem le_cTransformSymmExtended_iff :
+theorem le_cTransformSymmExtended_apply_iff :
     a ≤ cTransformSymmExtended c ψ x ↔ ∀ y, a + ψ y ≤ c (x, y) := by
   simp only [cTransformSymmExtended_apply, le_iInf_iff,
     AddQuantale.rightAddResiduation_le_iff_add_le, add_comm a]
 
+/-- The extended-cost transform of `φ` is the largest target potential dual feasible against `φ`. -/
+theorem le_cTransformExtended_iff :
+    ψ ≤ cTransformExtended c φ ↔ ∀ x y, φ x + ψ y ≤ c (x, y) := by
+  simp only [Pi.le_def, le_cTransformExtended_apply_iff]
+  exact forall_comm
+
+/-- The symmetric extended-cost transform of `ψ` is the largest source potential dual feasible
+against `ψ`. -/
+theorem le_cTransformSymmExtended_iff :
+    φ ≤ cTransformSymmExtended c ψ ↔ ∀ x y, φ x + ψ y ≤ c (x, y) := by
+  simp only [Pi.le_def, le_cTransformSymmExtended_apply_iff]
+
 /-- A potential and its extended-cost transform satisfy the dual constraint everywhere. -/
 theorem add_cTransformExtended_le (c : X × Y → EReal) (φ : X → EReal) (x : X) (y : Y) :
     φ x + cTransformExtended c φ y ≤ c (x, y) :=
-  le_cTransformExtended_iff.mp le_rfl x
+  le_cTransformExtended_apply_iff.mp le_rfl x
 
 /-- The symmetric transform satisfies the dual constraint everywhere. -/
 theorem cTransformSymmExtended_add_le (c : X × Y → EReal) (ψ : Y → EReal) (x : X) (y : Y) :
     cTransformSymmExtended c ψ x + ψ y ≤ c (x, y) :=
-  le_cTransformSymmExtended_iff.mp le_rfl y
+  le_cTransformSymmExtended_apply_iff.mp le_rfl y
 
 /-- The two transforms form an antitone Galois connection, including infinite costs and
 potentials, without any side conditions on extended arithmetic. -/
 theorem cTransformExtended_galoisConnection (c : X × Y → EReal) :
     GaloisConnection (fun φ : X → EReal ↦ OrderDual.toDual (cTransformExtended c φ))
-      (fun ψ : (Y → EReal)ᵒᵈ ↦ cTransformSymmExtended c (OrderDual.ofDual ψ)) := by
-  intro φ ψ
-  have hiff : OrderDual.ofDual ψ ≤ cTransformExtended c φ ↔
-      φ ≤ cTransformSymmExtended c (OrderDual.ofDual ψ) := by
-    simp only [Pi.le_def, le_cTransformExtended_iff, le_cTransformSymmExtended_iff]
-    exact forall_comm
-  exact hiff
+      (fun ψ : (Y → EReal)ᵒᵈ ↦ cTransformSymmExtended c (OrderDual.ofDual ψ)) := fun _ _ ↦
+  le_cTransformExtended_iff.trans le_cTransformSymmExtended_iff.symm
 
 /-- The extended-cost transform reverses the order of potentials. -/
 theorem cTransformExtended_antitone (c : X × Y → EReal) : Antitone (cTransformExtended c) :=
@@ -142,12 +144,12 @@ theorem cTransformSymmExtended_cTransformExtended_cTransformSymmExtended
 /-- Increasing the cost increases its transform. -/
 theorem cTransformExtended_mono_cost (h : c ≤ d) (φ : X → EReal) :
     cTransformExtended c φ ≤ cTransformExtended d φ := fun y ↦
-  le_cTransformExtended_iff.mpr fun x ↦ (add_cTransformExtended_le c φ x y).trans (h (x, y))
+  le_cTransformExtended_apply_iff.mpr fun x ↦ (add_cTransformExtended_le c φ x y).trans (h (x, y))
 
 /-- Increasing the cost increases its symmetric transform. -/
 theorem cTransformSymmExtended_mono_cost (h : c ≤ d) (ψ : Y → EReal) :
     cTransformSymmExtended c ψ ≤ cTransformSymmExtended d ψ := fun x ↦
-  le_cTransformSymmExtended_iff.mpr fun y ↦
+  le_cTransformSymmExtended_apply_iff.mpr fun y ↦
     (cTransformSymmExtended_add_le c ψ x y).trans (h (x, y))
 
 /-- Shifting a potential by a real constant shifts its extended-cost transform by the
@@ -224,47 +226,5 @@ theorem cTransformExtended_diagonal [DecidableEq X] (φ : X → EReal) :
     · subst y
       by_cases hx : φ x = ⊥ <;> simp [EReal.rightAddResiduation_eq, hx, sub_eq_add_neg]
     · simp [h]
-
-section Measurability
-
-variable [TopologicalSpace X] [PolishSpace X] [MeasurableSpace X] [BorelSpace X]
-  [TopologicalSpace Y] [PolishSpace Y] [MeasurableSpace Y] [BorelSpace Y]
-
-/-- Borel strict sublevels of the residual integrand give analytic strict sublevels of the
-extended-cost transform. -/
-theorem analyticSet_setOf_cTransformExtended_lt (a : EReal)
-    (h : MeasurableSet {z : X × Y | AddQuantale.rightAddResiduation (φ z.1) (c z) < a}) :
-    AnalyticSet {y | cTransformExtended c φ y < a} := by
-  simpa only [cTransformExtended_apply] using
-    MeasureTheory.analyticSet_setOf_iInf_lt
-      (fun z : X × Y ↦ AddQuantale.rightAddResiduation (φ z.1) (c z)) a h
-
-/-- The extended-cost transform is measurable in the completion of each s-finite Borel measure
-when the cost and potential are Borel. -/
-theorem nullMeasurable_cTransformExtended (μ : Measure Y) [SFinite μ]
-    (hc : Measurable c) (hφ : Measurable φ) :
-    NullMeasurable (cTransformExtended c φ) μ :=
-  measurable_of_Iio fun a ↦ MeasureTheory.AnalyticSet.nullMeasurableSet
-    (analyticSet_setOf_cTransformExtended_lt a
-      (((hφ.comp measurable_fst).ereal_rightAddResiduation hc) measurableSet_Iio)) μ
-
-/-- Borel strict sublevels of the symmetric residual integrand give analytic strict sublevels. -/
-theorem analyticSet_setOf_cTransformSymmExtended_lt (a : EReal)
-    (h : MeasurableSet {z : X × Y | AddQuantale.rightAddResiduation (ψ z.2) (c z) < a}) :
-    AnalyticSet {x | cTransformSymmExtended c ψ x < a} := by
-  simpa only [cTransformSymmExtended_eq_cTransformExtended] using
-    analyticSet_setOf_cTransformExtended_lt (c := fun z : Y × X ↦ c (z.2, z.1)) a
-      (h.preimage measurable_swap)
-
-/-- The symmetric extended-cost transform is measurable after completing each s-finite Borel
-measure on the source when the cost and potential are Borel. -/
-theorem nullMeasurable_cTransformSymmExtended (μ : Measure X) [SFinite μ]
-    (hc : Measurable c) (hψ : Measurable ψ) :
-    NullMeasurable (cTransformSymmExtended c ψ) μ :=
-  measurable_of_Iio fun a ↦ MeasureTheory.AnalyticSet.nullMeasurableSet
-    (analyticSet_setOf_cTransformSymmExtended_lt a
-      (((hψ.comp measurable_snd).ereal_rightAddResiduation hc) measurableSet_Iio)) μ
-
-end Measurability
 
 end TauCeti
