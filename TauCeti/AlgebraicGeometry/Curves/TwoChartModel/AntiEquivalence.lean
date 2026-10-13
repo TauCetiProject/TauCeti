@@ -67,14 +67,16 @@ namespace RegularProperCurveCat
 variable {k : Type u} [Field k]
 
 /-- The transcendental function of `F` from which the model of `F` is built. -/
-private noncomputable def modelGenerator (F : FunctionFieldCat k) : F :=
+noncomputable def modelGenerator (F : FunctionFieldCat k) : F :=
   F.isFunctionField.exists_transcendental.choose
 
-private theorem transcendental_modelGenerator (F : FunctionFieldCat k) :
+/-- The function `modelGenerator F` is transcendental over `k`. -/
+theorem transcendental_modelGenerator (F : FunctionFieldCat k) :
     Transcendental k (modelGenerator F) :=
   F.isFunctionField.exists_transcendental.choose_spec
 
-private theorem modelGenerator_ne_zero (F : FunctionFieldCat k) : modelGenerator F ≠ 0 :=
+/-- The function `modelGenerator F` is nonzero. -/
+theorem modelGenerator_ne_zero (F : FunctionFieldCat k) : modelGenerator F ≠ 0 :=
   (transcendental_modelGenerator F).ne_zero
 
 /-- The two-chart model of `F`, built from the chosen transcendental function, as a regular proper
@@ -102,9 +104,16 @@ variable (k) in
 regular proper curves over `k` sending `F` to its two-chart model (the normalization of the
 projective line in `F`) and a `k`-embedding `φ : F → F'` to the unique dominant `k`-morphism of
 models whose pullback of rational functions is `φ`. -/
-noncomputable def twoChartModelFunctor : (FunctionFieldCat k)ᵒᵖ ⥤ RegularProperCurveCat k where
-  obj F := modelObj F.unop
-  map φ := modelHom φ.unop
+@[expose] noncomputable def twoChartModelFunctor :
+    (FunctionFieldCat k)ᵒᵖ ⥤ RegularProperCurveCat k where
+  obj F :=
+    { toScheme := twoChartModel F.unop.isFunctionField (modelGenerator_ne_zero F.unop)
+      isCurveOver := twoChartModel.isCurveOver (transcendental_modelGenerator F.unop)
+      isDiscreteValuationRing_stalk :=
+        twoChartModel.isDiscreteValuationRing_stalk (transcendental_modelGenerator F.unop) }
+  map φ :=
+    ⟨twoChartModel.homOfAlgHom _ _ (modelGenerator_ne_zero _) (modelGenerator_ne_zero _)
+      (transcendental_modelGenerator _) (transcendental_modelGenerator _) φ.unop.hom⟩
   map_id F := by
     ext1
     exact twoChartModel.homOfAlgHom_id ..
@@ -112,13 +121,38 @@ noncomputable def twoChartModelFunctor : (FunctionFieldCat k)ᵒᵖ ⥤ RegularP
     ext1
     exact (twoChartModel.homOfAlgHom_comp ..).symm
 
+/-- The model functor sends `F` to the two-chart model of `F` built from `modelGenerator F`. -/
+@[simp]
+lemma twoChartModelFunctor_obj_toScheme (F : (FunctionFieldCat k)ᵒᵖ) :
+    ((twoChartModelFunctor k).obj F).toScheme =
+      twoChartModel F.unop.isFunctionField (modelGenerator_ne_zero F.unop) :=
+  (rfl)
+
+/-- The model functor sends a `k`-embedding `φ` to the morphism of two-chart models induced
+by `φ`. -/
+lemma twoChartModelFunctor_map_hom {F G : (FunctionFieldCat k)ᵒᵖ} (φ : F ⟶ G) :
+    ((twoChartModelFunctor k).map φ).hom =
+      twoChartModel.homOfAlgHom G.unop.isFunctionField F.unop.isFunctionField
+        (modelGenerator_ne_zero G.unop) (modelGenerator_ne_zero F.unop)
+        (transcendental_modelGenerator G.unop) (transcendental_modelGenerator F.unop) φ.unop.hom :=
+  (rfl)
+
 /-- The pullback of rational functions along the morphism of models induced by `φ : G → F` is
 `φ`, read through the identifications of the function fields of the models with `G` and `F`. -/
+@[simp]
+lemma functionFieldEquiv_functionFieldMap_twoChartModelFunctor_map
+    {F G : (FunctionFieldCat k)ᵒᵖ} (φ : F ⟶ G) (z : G.unop) :
+    twoChartModel.functionFieldEquiv (transcendental_modelGenerator F.unop)
+      (((twoChartModelFunctor k).map φ).hom.functionFieldMap
+        ((twoChartModel.functionFieldEquiv (transcendental_modelGenerator G.unop)).symm z)) =
+      φ.unop.hom z :=
+  twoChartModel.functionFieldEquiv_functionFieldMap_homOfAlgHom ..
+
+/-- `functionFieldEquiv_functionFieldMap_twoChartModelFunctor_map`, stated for `modelHom`. -/
 private lemma functionFieldMap_modelHom {F G : FunctionFieldCat k} (φ : F ⟶ G) (z : F) :
-    (modelHom φ).hom.functionFieldMap ((modelEquiv F).symm z) = (modelEquiv G).symm (φ.hom z) := by
-  refine (modelEquiv G).injective ?_
-  rw [AlgEquiv.apply_symm_apply]
-  exact twoChartModel.functionFieldEquiv_functionFieldMap_homOfAlgHom ..
+    (modelHom φ).hom.functionFieldMap ((modelEquiv F).symm z) = (modelEquiv G).symm (φ.hom z) :=
+  (AlgEquiv.eq_symm_apply _).mpr
+    (functionFieldEquiv_functionFieldMap_twoChartModelFunctor_map φ.op z)
 
 /-- The function field of the model of `F` is `F`. -/
 private noncomputable def modelFunctionFieldIso (F : (FunctionFieldCat k)ᵒᵖ) :
@@ -134,6 +168,32 @@ noncomputable def twoChartModelFunctorCompFunctionFieldFunctorIso :
       -- Unfolding the functors, composition in the opposite category and `isoMk`, the two sides
       -- are the two sides of `functionFieldMap_modelHom`.
       (Scheme.Hom.functionFieldAlgHom_apply k _ _).trans (functionFieldMap_modelHom φ.unop z)
+
+/-- The component at `F` of the natural isomorphism
+`twoChartModelFunctorCompFunctionFieldFunctorIso` is the identification of `F` with the function
+field of its model. -/
+@[simp]
+lemma twoChartModelFunctorCompFunctionFieldFunctorIso_hom_app (F : (FunctionFieldCat k)ᵒᵖ) :
+    (twoChartModelFunctorCompFunctionFieldFunctorIso k).hom.app F =
+      (FunctionFieldCat.ofHom
+        (twoChartModel.functionFieldEquiv (hx := modelGenerator_ne_zero F.unop)
+          (transcendental_modelGenerator F.unop)).symm.toAlgHom :
+        ((𝟭 (FunctionFieldCat k)ᵒᵖ).obj F).unop ⟶
+          ((twoChartModelFunctor k ⋙ functionFieldFunctor k).obj F).unop).op :=
+  (rfl)
+
+/-- The inverse component at `F` of the natural isomorphism
+`twoChartModelFunctorCompFunctionFieldFunctorIso` is the identification of the function field of
+the model of `F` with `F`. -/
+@[simp]
+lemma twoChartModelFunctorCompFunctionFieldFunctorIso_inv_app (F : (FunctionFieldCat k)ᵒᵖ) :
+    (twoChartModelFunctorCompFunctionFieldFunctorIso k).inv.app F =
+      (FunctionFieldCat.ofHom
+        (twoChartModel.functionFieldEquiv (hx := modelGenerator_ne_zero F.unop)
+          (transcendental_modelGenerator F.unop)).toAlgHom :
+        ((twoChartModelFunctor k ⋙ functionFieldFunctor k).obj F).unop ⟶
+          ((𝟭 (FunctionFieldCat k)ᵒᵖ).obj F).unop).op :=
+  (rfl)
 
 /-- The function field of a regular proper curve, as an object of `FunctionFieldCat k`. -/
 private noncomputable abbrev functionFieldObj (X : RegularProperCurveCat k) : FunctionFieldCat k :=
@@ -169,22 +229,55 @@ noncomputable def idIsoFunctionFieldFunctorCompTwoChartModelFunctor :
     𝟭 (RegularProperCurveCat k) ≅ functionFieldFunctor k ⋙ twoChartModelFunctor k :=
   NatIso.ofComponents isoModel fun f ↦ hom_ext (isoModel_hom_naturality f)
 
-variable (k) in
-/-- **The anti-equivalence between regular proper curves and algebraic function fields** over a
-field `k`: the function-field functor `X ↦ k(X)` is an equivalence
-`RegularProperCurveCat k ≌ (FunctionFieldCat k)ᵒᵖ` with inverse the model functor
-`F ↦ twoChartModel F`. -/
-noncomputable def equivFunctionFieldCat : RegularProperCurveCat k ≌ (FunctionFieldCat k)ᵒᵖ where
-  functor := functionFieldFunctor k
-  inverse := twoChartModelFunctor k
-  unitIso := idIsoFunctionFieldFunctorCompTwoChartModelFunctor k
-  counitIso := twoChartModelFunctorCompFunctionFieldFunctorIso k
-  functor_unitIso_comp X := Quiver.Hom.unop_inj <| FunctionFieldCat.hom_ext <| AlgHom.ext fun z ↦
+/-- The component at `X` of the natural isomorphism
+`idIsoFunctionFieldFunctorCompTwoChartModelFunctor` is the isomorphism of `X` with the two-chart
+model of its function field. -/
+@[simp]
+lemma idIsoFunctionFieldFunctorCompTwoChartModelFunctor_hom_app_hom (X : RegularProperCurveCat k) :
+    ((idIsoFunctionFieldFunctorCompTwoChartModelFunctor k).hom.app X).hom =
+      (X.toScheme.isoTwoChartModel
+        (modelGenerator_ne_zero (.of X.toScheme.functionField Scheme.IsCurveOver.isFunctionField))
+        (transcendental_modelGenerator
+          (.of X.toScheme.functionField Scheme.IsCurveOver.isFunctionField))).hom :=
+  (rfl)
+
+/-- The inverse component at `X` of the natural isomorphism
+`idIsoFunctionFieldFunctorCompTwoChartModelFunctor` is the isomorphism of the two-chart model of
+the function field of `X` with `X`. -/
+@[simp]
+lemma idIsoFunctionFieldFunctorCompTwoChartModelFunctor_inv_app_hom (X : RegularProperCurveCat k) :
+    ((idIsoFunctionFieldFunctorCompTwoChartModelFunctor k).inv.app X).hom =
+      (X.toScheme.isoTwoChartModel
+        (modelGenerator_ne_zero (.of X.toScheme.functionField Scheme.IsCurveOver.isFunctionField))
+        (transcendental_modelGenerator
+          (.of X.toScheme.functionField Scheme.IsCurveOver.isFunctionField))).inv :=
+  (rfl)
+
+/-- The triangle law for the unit `idIsoFunctionFieldFunctorCompTwoChartModelFunctor` and the
+counit `twoChartModelFunctorCompFunctionFieldFunctorIso`. -/
+lemma functionFieldFunctor_map_unit_comp_counit (X : RegularProperCurveCat k) :
+    (functionFieldFunctor k).map ((idIsoFunctionFieldFunctorCompTwoChartModelFunctor k).hom.app X) ≫
+      (twoChartModelFunctorCompFunctionFieldFunctorIso k).hom.app ((functionFieldFunctor k).obj X) =
+      𝟙 ((functionFieldFunctor k).obj X) :=
+  Quiver.Hom.unop_inj <| FunctionFieldCat.hom_ext <| AlgHom.ext fun z ↦
     -- Unfolding the functors, the unit and the counit, the left side is the pullback of rational
     -- functions along `X ≅ twoChartModel k(X)`, applied to the element of the function field of the
     -- model corresponding to `z`.
     (Scheme.Hom.functionFieldAlgHom_apply k _ _).trans
       (Scheme.functionFieldMap_isoTwoChartModel_hom X.toScheme _ _ z)
+
+variable (k) in
+/-- **The anti-equivalence between regular proper curves and algebraic function fields** over a
+field `k`: the function-field functor `X ↦ k(X)` is an equivalence
+`RegularProperCurveCat k ≌ (FunctionFieldCat k)ᵒᵖ` with inverse the model functor
+`F ↦ twoChartModel F`. -/
+@[expose] noncomputable def equivFunctionFieldCat :
+    RegularProperCurveCat k ≌ (FunctionFieldCat k)ᵒᵖ where
+  functor := functionFieldFunctor k
+  inverse := twoChartModelFunctor k
+  unitIso := idIsoFunctionFieldFunctorCompTwoChartModelFunctor k
+  counitIso := twoChartModelFunctorCompFunctionFieldFunctorIso k
+  functor_unitIso_comp := functionFieldFunctor_map_unit_comp_counit
 
 @[simp]
 lemma equivFunctionFieldCat_functor :
@@ -194,6 +287,16 @@ lemma equivFunctionFieldCat_functor :
 @[simp]
 lemma equivFunctionFieldCat_inverse :
     (equivFunctionFieldCat k).inverse = twoChartModelFunctor k :=
+  (rfl)
+
+@[simp]
+lemma equivFunctionFieldCat_unitIso :
+    (equivFunctionFieldCat k).unitIso = idIsoFunctionFieldFunctorCompTwoChartModelFunctor k :=
+  (rfl)
+
+@[simp]
+lemma equivFunctionFieldCat_counitIso :
+    (equivFunctionFieldCat k).counitIso = twoChartModelFunctorCompFunctionFieldFunctorIso k :=
   (rfl)
 
 instance : (functionFieldFunctor k).IsEquivalence :=
