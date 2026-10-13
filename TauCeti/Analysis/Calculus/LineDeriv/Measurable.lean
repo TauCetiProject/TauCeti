@@ -13,15 +13,16 @@ public import Mathlib.Topology.EMetricSpace.Lipschitz
 /-!
 # Measurability of almost-everywhere line derivatives
 
-Let `u : E → F` be continuous on an open set `s`, and suppose that at almost every `x ∈ s` it has
-a line derivative `u' x` in a fixed direction `v`. Then `u'` is a.e.-strongly measurable on `s`
-(`ContinuousOn.aestronglyMeasurable_of_ae_hasLineDerivAt`), being the almost-everywhere limit of
-the difference quotients `t⁻¹ • (u (x + t • v) - u x)`. If `u` is moreover locally Lipschitz on
-`s`, then `u'` is locally bounded there, hence locally integrable
-(`LocallyLipschitzOn.locallyIntegrableOn_of_ae_hasLineDerivAt`).
+Let `u : E → F` be a.e.-strongly measurable on an open set `s`, and suppose that at almost every
+`x ∈ s` it has a line derivative `u' x` in a fixed direction `v`. Then `u'` is a.e.-strongly
+measurable on `s` (`TauCeti.aestronglyMeasurable_of_ae_hasLineDerivAt`), being the
+almost-everywhere limit of the difference quotients `t⁻¹ • (u (x + t • v) - u x)`. If `u` is
+moreover locally Lipschitz on `s`, then `u'` is essentially locally bounded there (near each point
+it is bounded almost everywhere by `C * ‖v‖` for a local Lipschitz constant `C`), hence locally
+integrable (`LocallyLipschitzOn.locallyIntegrableOn_of_ae_hasLineDerivAt`).
 
 Mathlib's `aestronglyMeasurable_lineDeriv` covers `lineDeriv` of a globally continuous function.
-The results here only ask for continuity on `s` and for a line derivative almost everywhere, with
+The results here only ask for measurability on `s` and for a line derivative almost everywhere, with
 an arbitrary candidate `u'`; this is the form in which a.e. derivatives of locally Lipschitz
 functions (Rademacher's theorem) enter the theory of weak derivatives.
 -/
@@ -35,16 +36,19 @@ variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [MeasurableSpa
   [BorelSpace E] {μ : Measure E} [NormedAddCommGroup F] [NormedSpace ℝ F]
   {s : Set E} {v : E} {u u' : E → F}
 
-/-- An almost-everywhere line derivative of a function continuous on an open set `s` is
-a.e.-strongly measurable on `s`: it is the almost-everywhere limit of difference quotients. -/
-theorem ContinuousOn.aestronglyMeasurable_of_ae_hasLineDerivAt
-    [SecondCountableTopologyEither E F] [μ.IsAddRightInvariant] (hu : ContinuousOn u s)
-    (hs : IsOpen s) (h : ∀ᵐ x ∂μ, x ∈ s → HasLineDerivAt ℝ u (u' x) x v) :
+namespace TauCeti
+
+/-- An almost-everywhere line derivative of a function a.e.-strongly measurable on an open set `s`
+is a.e.-strongly measurable on `s`: it is the almost-everywhere limit of difference quotients. -/
+theorem aestronglyMeasurable_of_ae_hasLineDerivAt
+    [SecondCountableTopologyEither E F] [μ.IsAddRightInvariant]
+    (hu : AEStronglyMeasurable u (μ.restrict s)) (hs : IsOpen s)
+    (h : ∀ᵐ x ∂μ, x ∈ s → HasLineDerivAt ℝ u (u' x) x v) :
     AEStronglyMeasurable u' (μ.restrict s) := by
   have hsm := hs.measurableSet
   -- Extending `u` by zero off `s` makes the difference quotients measurable on all of `E`.
   have hw : AEStronglyMeasurable (s.indicator u) μ :=
-    (aestronglyMeasurable_indicator_iff hsm).2 (hu.aestronglyMeasurable hsm)
+    (aestronglyMeasurable_indicator_iff hsm).2 hu
   let t : ℕ → ℝ := fun n => ((n : ℝ) + 1)⁻¹
   have ht : Tendsto t atTop (𝓝[≠] 0) := by
     refine tendsto_nhdsWithin_iff.2 ⟨?_, Eventually.of_forall fun n => ?_⟩
@@ -67,15 +71,18 @@ theorem ContinuousOn.aestronglyMeasurable_of_ae_hasLineDerivAt
     filter_upwards [hev] with n hn
     simp [indicator_of_mem hn, indicator_of_mem hxs]
 
+end TauCeti
+
 /-- An almost-everywhere line derivative of a function locally Lipschitz on an open set `s` is
-locally integrable on `s`: it is measurable, and bounded near each point by `C * ‖v‖` for a local
-Lipschitz constant `C`. -/
+locally integrable on `s`: it is measurable, and near each point it is bounded almost everywhere by
+`C * ‖v‖` for a local Lipschitz constant `C`. -/
 theorem LocallyLipschitzOn.locallyIntegrableOn_of_ae_hasLineDerivAt
     [SecondCountableTopologyEither E F] [μ.IsAddRightInvariant] [IsLocallyFiniteMeasure μ]
     (hu : LocallyLipschitzOn s u) (hs : IsOpen s)
     (h : ∀ᵐ x ∂μ, x ∈ s → HasLineDerivAt ℝ u (u' x) x v) :
     LocallyIntegrableOn u' s μ := by
-  have hm := hu.continuousOn.aestronglyMeasurable_of_ae_hasLineDerivAt hs h
+  have hm := TauCeti.aestronglyMeasurable_of_ae_hasLineDerivAt
+    (hu.continuousOn.aestronglyMeasurable hs.measurableSet) hs h
   intro x hx
   obtain ⟨C, l, hl, hC⟩ := hu hx
   rw [hs.nhdsWithin_eq hx] at hl
