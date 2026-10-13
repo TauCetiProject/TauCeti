@@ -65,13 +65,14 @@ theorem exists_linearMap_inverse_smul_sub {A : E →ₗ.[R] E} {c : R}
       (∀ y, c • J y - A ⟨J y, hJ y⟩ = y) ∧ ∀ x : A.domain, J (c • (x : E) - A x) = x := by
   have hfun : ⇑(A.smulSub c) = fun x : A.domain => c • (x : E) - A x := funext (smulSub_apply c A)
   let e := LinearEquiv.ofBijective (A.smulSub c) (hfun ▸ h)
-  refine ⟨A.domain.subtype ∘ₗ e.symm.toLinearMap, fun y => (e.symm y).property, fun y => ?_,
-    fun x => ?_⟩
-  · change c • (e.symm y : E) - A (e.symm y) = y
-    rw [← smulSub_apply]
+  let J : E →ₗ[R] E := A.domain.subtype ∘ₗ e.symm.toLinearMap
+  have hJ (y : E) : J y = (e.symm y : E) := by
+    simp only [J, LinearMap.comp_apply, LinearEquiv.coe_toLinearMap, Submodule.subtype_apply]
+  refine ⟨J, fun y => hJ y ▸ (e.symm y).property, fun y => ?_, fun x => ?_⟩
+  · have hx : (⟨J y, hJ y ▸ (e.symm y).property⟩ : A.domain) = e.symm y := Subtype.ext (hJ y)
+    rw [hx, hJ, ← smulSub_apply]
     exact e.apply_symm_apply y
-  · change (e.symm (c • (x : E) - A x) : E) = x
-    rw [← smulSub_apply]
+  · rw [hJ, ← smulSub_apply]
     exact congrArg Subtype.val (e.symm_apply_apply x)
 
 end LinearPMap
