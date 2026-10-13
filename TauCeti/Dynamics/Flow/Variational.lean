@@ -15,21 +15,16 @@ import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 
 Let `v` be a globally Lipschitz, continuously differentiable vector field on a Banach space and
 `φ` its flow (`TauCeti.flowOfLipschitz`). The derivative `Dφₜ(x)` of the time-`t` map at `x`
-solves the linear equation along the orbit of `x`:
+describes how a perturbation of the initial condition `x` evolves along the orbit of `x`. It is
+the solution of the linear equation
 
 `Dφₜ(x) = id + ∫₀ᵗ Dv(φ_τ x) ∘ Dφ_τ(x) dτ`,
 
-equivalently `d/dt Dφₜ(x) = Dv(φₜ x) ∘ Dφₜ(x)`. The proof differentiates the integral equation
-`φₜ y = y + ∫₀ᵗ v(φ_τ y) dτ` under the integral sign, using the bound
-`‖Dφ_τ‖ ≤ exp(K|τ|)` that follows from the Lipschitz estimate on the flow, and the continuity of
-`τ ↦ Dφ_τ(x)`, which follows from the joint `C¹` regularity of the flow.
+equivalently `d/dt Dφₜ(x) = Dv(φₜ x) ∘ Dφₜ(x)`, with `Dφ₀(x) = id`. This is the equation used to
+compute the first-order dependence of the flow on parameters of the vector field.
 
 ## Main results
 
-* `TauCeti.continuous_flowOfLipschitz_orbit`, `TauCeti.flowOfLipschitz_eq_add_integral`: the
-  orbits are continuous and solve the integral equation.
-* `TauCeti.lipschitzWith_flowOfLipschitz`: the time-`t` map is `exp (K |t|)`-Lipschitz.
-* `TauCeti.norm_fderiv_flowOfLipschitz_le`: `‖Dφₜ(x)‖ ≤ exp (K |t|)`.
 * `TauCeti.differentiable_flowOfLipschitz_apply`: the time-`t` map is differentiable.
 * `TauCeti.fderiv_flowOfLipschitz_eq_id_add_integral`: the integral form.
 * `TauCeti.hasDerivAt_fderiv_flowOfLipschitz`: the differential form.
@@ -45,31 +40,6 @@ namespace TauCeti
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
   {v : E → E} {K : ℝ≥0}
-
-/-- **The time-`t` map of the flow of a `K`-Lipschitz vector field is `exp (K |t|)`-Lipschitz.** -/
-theorem lipschitzWith_flowOfLipschitz (hv : LipschitzWith K v) (t : ℝ) :
-    LipschitzWith (Real.exp (K * |t|)).toNNReal (flowOfLipschitz v hv t) :=
-  LipschitzWith.of_dist_le_mul fun a b ↦ by
-    rw [flowOfLipschitz_apply, flowOfLipschitz_apply,
-      Real.coe_toNNReal _ (Real.exp_pos _).le, mul_comm]
-    exact ODE.dist_globalSolution_le v hv a b t
-
-/-- **A bound on the derivative of the flow.** The derivative of the time-`t` map of the flow of a
-`K`-Lipschitz vector field has norm at most `exp (K |t|)`. -/
-theorem norm_fderiv_flowOfLipschitz_le (hv : LipschitzWith K v) (x : E) (t : ℝ) :
-    ‖fderiv ℝ (flowOfLipschitz v hv t) x‖ ≤ Real.exp (K * |t|) := by
-  simpa [Real.coe_toNNReal _ (Real.exp_pos _).le] using
-    norm_fderiv_le_of_lipschitz ℝ (lipschitzWith_flowOfLipschitz hv t) (x₀ := x)
-
-/-- Every orbit of the flow is continuous in time. -/
-theorem continuous_flowOfLipschitz_orbit (hv : LipschitzWith K v) (x : E) :
-    Continuous fun τ : ℝ ↦ flowOfLipschitz v hv τ x :=
-  continuous_iff_continuousAt.2 fun τ ↦ (hasDerivAt_flowOfLipschitz hv x τ).continuousAt
-
-/-- **The integral equation of the flow**: `φₜ y = y + ∫₀ᵗ v (φ_τ y) dτ`. -/
-theorem flowOfLipschitz_eq_add_integral (hv : LipschitzWith K v) (y : E) (t : ℝ) :
-    flowOfLipschitz v hv t y = y + ∫ τ in (0 : ℝ)..t, v (flowOfLipschitz v hv τ y) := by
-  simpa only [flowOfLipschitz_apply] using ODE.globalSolution_eq_integral v hv y t
 
 section Smooth
 

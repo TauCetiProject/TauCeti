@@ -33,6 +33,10 @@ the initial condition, and the joint continuity required by `Flow` is
 * `TauCeti.flowOfLipschitz_congr`: it does not depend on the chosen Lipschitz bound.
 * `TauCeti.forall_flowOfLipschitz_eq_self_iff`: the rest points of the flow are the zeros of the
   vector field.
+* `TauCeti.lipschitzWith_flowOfLipschitz`, `TauCeti.norm_fderiv_flowOfLipschitz_le`: the time-`t`
+  map is `exp (K |t|)`-Lipschitz, and its derivative has norm at most `exp (K |t|)`.
+* `TauCeti.continuous_flowOfLipschitz_orbit`, `TauCeti.flowOfLipschitz_eq_add_integral`: orbits are
+  continuous and satisfy the integral equation.
 
 ## References
 
@@ -144,5 +148,31 @@ theorem forall_flowOfLipschitz_eq_self_iff (hv : LipschitzWith K v) (x : E) :
   · have hconst : ∀ s : ℝ, HasDerivAt (fun _ : ℝ ↦ x) (v ((fun _ : ℝ ↦ x) s)) s := fun s ↦ by
       simpa [h] using hasDerivAt_const s x
     simpa using (eq_flowOfLipschitz hv hconst t).symm
+
+
+/-- **The time-`t` map of the flow of a `K`-Lipschitz vector field is `exp (K |t|)`-Lipschitz.** -/
+theorem lipschitzWith_flowOfLipschitz (hv : LipschitzWith K v) (t : ℝ) :
+    LipschitzWith (Real.exp (K * |t|)).toNNReal (flowOfLipschitz v hv t) :=
+  LipschitzWith.of_dist_le_mul fun a b ↦ by
+    rw [flowOfLipschitz_apply, flowOfLipschitz_apply,
+      Real.coe_toNNReal _ (Real.exp_pos _).le, mul_comm]
+    exact ODE.dist_globalSolution_le v hv a b t
+
+/-- **A bound on the derivative of the flow.** The derivative of the time-`t` map of the flow of a
+`K`-Lipschitz vector field has norm at most `exp (K |t|)`. -/
+theorem norm_fderiv_flowOfLipschitz_le (hv : LipschitzWith K v) (x : E) (t : ℝ) :
+    ‖fderiv ℝ (flowOfLipschitz v hv t) x‖ ≤ Real.exp (K * |t|) := by
+  simpa [Real.coe_toNNReal _ (Real.exp_pos _).le] using
+    norm_fderiv_le_of_lipschitz ℝ (lipschitzWith_flowOfLipschitz hv t) (x₀ := x)
+
+/-- Every orbit of the flow is continuous in time. -/
+theorem continuous_flowOfLipschitz_orbit (hv : LipschitzWith K v) (x : E) :
+    Continuous fun τ : ℝ ↦ flowOfLipschitz v hv τ x :=
+  continuous_iff_continuousAt.2 fun τ ↦ (hasDerivAt_flowOfLipschitz hv x τ).continuousAt
+
+/-- **The integral equation of the flow**: `φₜ y = y + ∫₀ᵗ v (φ_τ y) dτ`. -/
+theorem flowOfLipschitz_eq_add_integral (hv : LipschitzWith K v) (y : E) (t : ℝ) :
+    flowOfLipschitz v hv t y = y + ∫ τ in (0 : ℝ)..t, v (flowOfLipschitz v hv τ y) := by
+  simpa only [flowOfLipschitz_apply] using ODE.globalSolution_eq_integral v hv y t
 
 end TauCeti
