@@ -22,13 +22,15 @@ statements.
 A point `z` lies in the closure of `η_{a,r}` exactly when it is
 
 * `η_{a,r}` itself,
-* `η_{a,r⁺}`, the point just above `η_{a,r}` on the ray towards the Gauss point, or
+* `η_{a,r⁺}`, the point just above `η_{a,r}` on the ray towards the Gauss point, defined only
+  when `r < 1`, or
 * `η_{b,r⁻}` for some `b ∈ D(a, r)`, the point just below `η_{a,r}` on the ray towards `b`,
 
 where the last two cases occur only when `r = ‖c‖` for some `c ∈ K`. So `η_{a,r}` is closed
-exactly when `r` is not the norm of an element of `K`, and then `η_{a,r⁺} = η_{a,r⁻} = η_{a,r}`.
-The points `η_{a,r⁺}` and `η_{a,r⁻}` are always closed. That the classical points of type (1) are
-closed is `TauCeti.ValuationSpectrum.isClosed_singleton_classicalPoint`.
+exactly when `r` is not the norm of an element of `K`, and then `η_{a,r⁻} = η_{a,r}` and, when
+`r < 1`, also `η_{a,r⁺} = η_{a,r}`. The points `η_{a,r⁺}` and `η_{a,r⁻}` are always closed. That
+the classical points of type (1) are closed is
+`TauCeti.ValuationSpectrum.isClosed_singleton_classicalPoint`.
 
 The proof transfers comparisons along specializations. If `x ⤳ z`, every basic open
 `{v : v(f) ≤ v(g) ≠ 0}` containing `z` contains `x`. So a strict inequality `x(g) < x(f)` gives
@@ -42,16 +44,16 @@ the characterisations `TauCeti.ValuationSpectrum.eq_discPoint_iff`,
 ## Main results
 
 * `TauCeti.ValuationSpectrum.discPoint_specializes_iff`: the specializations of `η_{a,r}` are
-  `η_{a,r}`, and, when `r` is the norm of an element of `K`, `η_{a,r⁺}` and the points `η_{b,r⁻}`
-  with `‖b - a‖ ≤ r`.
+  `η_{a,r}`, and, when `r` is the norm of an element of `K`, the points `η_{b,r⁻}` with
+  `‖b - a‖ ≤ r` and, when moreover `r < 1`, `η_{a,r⁺}`.
 * `TauCeti.ValuationSpectrum.isClosed_singleton_discPoint_iff`: `η_{a,r}` is a closed point
   exactly when `r` is not the norm of an element of `K`, that is, exactly when it is of type (3).
 * `TauCeti.ValuationSpectrum.discPointAbove_eq_discPoint_iff` and
-  `TauCeti.ValuationSpectrum.discPointBelow_eq_discPoint_iff`: `η_{a,r⁺} = η_{a,r}`, respectively
-  `η_{a,r⁻} = η_{a,r}`, exactly when `r` is not the norm of an element of `K`.
+  `TauCeti.ValuationSpectrum.discPointBelow_eq_discPoint_iff`: `η_{a,r⁺} = η_{a,r}` (for `r < 1`),
+  respectively `η_{a,r⁻} = η_{a,r}`, exactly when `r` is not the norm of an element of `K`.
 * `TauCeti.ValuationSpectrum.isClosed_singleton_discPointAbove` and
-  `TauCeti.ValuationSpectrum.isClosed_singleton_discPointBelow`: the points `η_{a,r⁺}` and
-  `η_{a,r⁻}`, in particular the points of type (5), are closed.
+  `TauCeti.ValuationSpectrum.isClosed_singleton_discPointBelow`: the points `η_{a,r⁺}` (for
+  `r < 1`) and `η_{a,r⁻}`, in particular the points of type (5), are closed.
 
 ## References
 
@@ -304,7 +306,7 @@ theorem isClosed_singleton_discPointAbove {a : K} (ha : ‖a‖ ≤ 1) (hr₀ : 
   obtain ⟨d, hd₀, hdr⟩ := NormedField.exists_lt_norm_lt_of_isAlgClosed K le_rfl hr₀
   obtain ⟨hlt, hgt⟩ := forall_lt_and_forall_gt_of_specializes (specializes_iff_mem_closure.mpr hz)
     (fun c ↦ ‖c‖ ≤ r) _ ⟨d, norm_pos_iff.mp hd₀, hdr.le⟩
-    (forall_lt_and_forall_gt_of_vle_weightedC_iff hr₀
+    (forall_lt_and_forall_gt_of_vle_weightedC hr₀
       ((eq_discPointAbove_iff (discPointAbove a ha hr₀ hr₁) ha hr₀ hr₁).mp rfl))
   refine (eq_discPointAbove_iff z ha hr₀ hr₁).mpr fun c ↦ ?_
   rw [← valuation_le_iff]
@@ -317,7 +319,7 @@ theorem isClosed_singleton_discPointBelow {a : K} (ha : ‖a‖ ≤ 1) (hr₀ : 
   refine closure_subset_iff_isClosed.mp fun z hz ↦ Set.mem_singleton_iff.mpr ?_
   obtain ⟨d, hd₀, hdr⟩ := NormedField.exists_lt_norm_lt_of_isAlgClosed K le_rfl hr₀
   obtain ⟨hlt, hgt⟩ := forall_lt_and_forall_gt_of_specializes (specializes_iff_mem_closure.mpr hz)
-    (fun c ↦ ‖c‖ < r) _ ⟨d, norm_pos_iff.mp hd₀, hdr⟩ (forall_lt_and_forall_gt_of_weightedC_vle_iff
+    (fun c ↦ ‖c‖ < r) _ ⟨d, norm_pos_iff.mp hd₀, hdr⟩ (forall_lt_and_forall_gt_of_weightedC_vle
       ((eq_discPointBelow_iff (discPointBelow a ha hr₀ hr₁) ha hr₀ hr₁).mp rfl))
   refine (eq_discPointBelow_iff z ha hr₀ hr₁).mpr fun c ↦ ?_
   rw [← valuation_le_iff]
