@@ -180,6 +180,7 @@ lemma ι_cechDoubleComplex_d {p : ℕ} (s : {s : Finset ι // #s = p + 1 + 1}) :
 
 /-- The horizontal differential of the Čech double complex in singular degree `q`, on the summand
 of `s = {i₀ < ⋯ < iₚ₊₁}`: the component in degree `q` of `TauCeti.ι_cechDoubleComplex_d`. -/
+@[reassoc]
 lemma cechDoubleComplexι_f_comp_d_f {p : ℕ} (s : {s : Finset ι // #s = p + 1 + 1}) (q : ℕ) :
     (cechDoubleComplexι U R s).f q ≫ ((cechDoubleComplex U R).d (p + 1) p).f q =
       ∑ i : s.1, ((-1 : ℤ) ^ #{j ∈ s.1 | j < i.1}) •

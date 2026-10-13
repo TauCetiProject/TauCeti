@@ -50,6 +50,16 @@ noncomputable def toSSetObjCodRestrict (σ : (toSSet.obj X).obj n)
   (toSSetObjEquiv _ n).symm
     ⟨Set.codRestrict _ _ fun z ↦ h ⟨z, rfl⟩, (map_continuous _).codRestrict _⟩
 
+/-- The corestriction of a singular simplex to an open set `V` has the same underlying map,
+viewed in `X`. -/
+@[simp]
+lemma coe_toSSetObjEquiv_toSSetObjCodRestrict (σ : (toSSet.obj X).obj n)
+    (h : Set.range (X.toSSetObjEquiv n σ) ⊆ V) (z : Convexity.StdSimplex ℝ (Fin (n.unop.len + 1))) :
+    (toSSetObjEquiv _ n (toSSetObjCodRestrict σ h) z).1 = X.toSSetObjEquiv n σ z := by
+  rw [toSSetObjCodRestrict, Equiv.apply_symm_apply]
+  -- Evaluating a corestriction and coercing back to `X` evaluates the original map.
+  rfl
+
 /-- The image in `X` of a singular simplex of an open set `V` lies in `V`. -/
 lemma range_toSSetObjEquiv_toSSet_map_inclusion'_subset
     (τ : (toSSet.obj ((Opens.toTopCat X).obj V)).obj n) :
@@ -64,9 +74,9 @@ lemma toSSet_map_inclusion'_toSSetObjCodRestrict (σ : (toSSet.obj X).obj n)
     (h : Set.range (X.toSSetObjEquiv n σ) ⊆ V) :
     (toSSet.map (Opens.inclusion' V)).app n (toSSetObjCodRestrict σ h) = σ := by
   apply (X.toSSetObjEquiv n).injective
-  rw [TauCeti.TopCat.toSSetObjEquiv_toSSet_map_app, toSSetObjCodRestrict, Equiv.apply_symm_apply]
-  -- Composing a corestriction with the inclusion of `V` recovers the map.
-  rfl
+  ext z
+  rw [TauCeti.TopCat.toSSetObjEquiv_toSSet_map_app]
+  exact coe_toSSetObjEquiv_toSSetObjCodRestrict σ h z
 
 /-- The corestriction to an open set `V` of the image of a singular simplex `τ` of `V` is `τ`. -/
 lemma toSSetObjCodRestrict_eq {σ : (toSSet.obj X).obj n}
@@ -75,21 +85,24 @@ lemma toSSetObjCodRestrict_eq {σ : (toSSet.obj X).obj n}
     toSSetObjCodRestrict σ h = τ := by
   subst e
   apply (toSSetObjEquiv _ n).injective
-  rw [toSSetObjCodRestrict, Equiv.apply_symm_apply]
-  -- Corestricting the composite with the inclusion of `V` recovers the map into `V`.
+  ext z
+  apply Subtype.ext
+  rw [coe_toSSetObjEquiv_toSSetObjCodRestrict, TauCeti.TopCat.toSSetObjEquiv_toSSet_map_app]
+  -- Evaluating the composite with the inclusion of `V` is coercing the value of `τ`.
   rfl
 
 /-- Corestricting a singular simplex to an open set `V` and then including `V` in an open set
 `W ⊇ V` is corestricting it to `W`. -/
+@[simp]
 lemma toSSet_map_homOfLE_toSSetObjCodRestrict {W : Opens X} (hVW : V ≤ W)
     (σ : (toSSet.obj X).obj n) (h : Set.range (X.toSSetObjEquiv n σ) ⊆ V) :
     (toSSet.map ((Opens.toTopCat X).map (homOfLE hVW))).app n (toSSetObjCodRestrict σ h) =
       toSSetObjCodRestrict σ (h.trans hVW) := by
   apply (toSSetObjEquiv _ n).injective
-  rw [TauCeti.TopCat.toSSetObjEquiv_toSSet_map_app, toSSetObjCodRestrict, toSSetObjCodRestrict,
-    Equiv.apply_symm_apply, Equiv.apply_symm_apply]
-  -- Both sides corestrict the same map out of the standard simplex.
-  rfl
+  ext z
+  apply Subtype.ext
+  rw [TauCeti.TopCat.toSSetObjEquiv_toSSet_map_app, coe_toSSetObjEquiv_toSSetObjCodRestrict]
+  exact coe_toSSetObjEquiv_toSSetObjCodRestrict σ h z
 
 end Opens
 
