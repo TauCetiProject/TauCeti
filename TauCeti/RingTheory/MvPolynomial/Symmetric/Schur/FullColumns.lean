@@ -24,9 +24,12 @@ one-line bialternant computation: adding `c` to every row length adds `c` to eve
 `(∏ᵢ xᵢ)^c` (`TauCeti.alternant_add_const`).  Cancelling the Vandermonde alternant, which is
 nonzero because the staircase exponents are distinct, gives the identity.
 
-Both row bounds are needed.  The Schur polynomial of a shape with more than `N` rows vanishes while
-the identity's two sides do not, and the hypothesis on the row lengths only constrains the first `N`
-rows of `ν`.
+Both row bounds are needed, the hypothesis on the row lengths saying nothing about the rows past
+the first `N` of either shape.  A shape taller than `N` has vanishing Schur polynomial in `N`
+variables (`TauCeti.diagramSchurPoly_eq_zero_of_lt_colLen`), so dropping either bound lets one side
+of the identity vanish while the other does not: without the bound on `ν` the left-hand side can
+vanish and the right-hand side not, and without the bound on `μ` the right-hand side can vanish and
+the left-hand side not.
 
 This is the polynomial shadow of the determinant twist of a `GL N`-representation: a full column
 block contributes a factor of the determinant character, and

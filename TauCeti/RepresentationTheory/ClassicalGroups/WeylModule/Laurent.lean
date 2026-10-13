@@ -48,9 +48,11 @@ construction, not yet about a classified irreducible.
 * `TauCeti.char_rationalWeylRep_diagonal_eq_eval_diagramSchurPoly` and its bundled form
   `TauCeti.char_rationalWeylFDRep_diagonal_eq_eval_diagramSchurPoly`: **the torus character of a
   rational Weyl module is a determinant twist of a Schur polynomial**.
-* `TauCeti.char_rationalWeylRep_shift_diagonal`: shifting the weight by `m` multiplies the torus
+* `TauCeti.char_rationalWeylRep_shift_diagonal` and its bundled form
+  `TauCeti.char_rationalWeylFDRep_shift_diagonal`: shifting the weight by `m` multiplies the torus
   character by the `m`-th power of the determinant.
-* `TauCeti.char_rationalWeylRep_weightOfShape_diagonal`: on the weight of a Young diagram the
+* `TauCeti.char_rationalWeylRep_weightOfShape_diagonal` and its bundled form
+  `TauCeti.char_rationalWeylFDRep_weightOfShape_diagonal`: on the weight of a Young diagram the
   rational Weyl module has the character of the Weyl module of that diagram.
 * `TauCeti.char_rationalWeylRep_shift_weightOfShape_diagonal` and its bundled form
   `TauCeti.char_rationalWeylFDRep_shift_weightOfShape_diagonal`: **the Laurent character read off
@@ -111,6 +113,12 @@ theorem char_rationalWeylRep_shift_diagonal (l : DominantWeight n) (m : ℤ) (t 
     rw [DominantWeight.detShift_shift, zpow_add, Units.val_mul]
     ring
 
+/-- The determinant twist along a shift of the weight, for the bundled rational Weyl module. -/
+theorem char_rationalWeylFDRep_shift_diagonal (l : DominantWeight n) (m : ℤ) (t : Fin n → kˣ) :
+    (rationalWeylFDRep k n (l.shift m)).character (diagGL t) =
+      (((∏ i, t i) ^ m : kˣ) : k) * (rationalWeylFDRep k n l).character (diagGL t) :=
+  char_rationalWeylRep_shift_diagonal k n l m t
+
 /-- **On the weight of a Young diagram the determinant twist is invisible**: the rational Weyl
 module of `TauCeti.weightOfShape n ν` has the torus character of the Weyl module `𝕊^ν(kⁿ)`.  The
 canonical presentation of that weight strips the full column block of height `n` off `ν` and
@@ -141,6 +149,14 @@ theorem char_rationalWeylRep_weightOfShape_diagonal {ν : YoungDiagram} (hν : �
       l.colLen_zero_detShiftShape_le hν hrow,
     hc, zpow_natCast, eval_mul, eval_pow, eval_prod]
   simp only [eval_X, Units.val_pow_eq_pow_val, Units.coe_prod]
+
+/-- The absence of a determinant twist on the weight of a Young diagram, for the bundled rational
+Weyl module. -/
+theorem char_rationalWeylFDRep_weightOfShape_diagonal {ν : YoungDiagram} (hν : ν.colLen 0 ≤ n)
+    (t : Fin n → kˣ) :
+    (rationalWeylFDRep k n (weightOfShape n ν)).character (diagGL t) =
+      (weylFDRepOfShape k n ν).character (diagGL t) :=
+  char_rationalWeylRep_weightOfShape_diagonal k n hν t
 
 /-- **The Laurent character of a rational Weyl module, read off an arbitrary presentation of its
 weight**: for every Young diagram `ν` with at most `n` rows and every `m`, the torus character of
