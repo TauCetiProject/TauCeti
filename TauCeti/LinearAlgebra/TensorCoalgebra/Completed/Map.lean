@@ -14,8 +14,9 @@ A linear map on finite tensor words extends to their length completion if each o
 coordinate depends on a bounded initial segment of the input. Here the bound is uniform:
 the output of length `k` depends only on input lengths below `k + 1 + c`. The extension
 is defined by finite truncation, agrees with the original map, and sends filtration
-degree `n + c` into degree `n`. Any linear map with a uniform filtration bound and the
-same values on finite words is equal to this extension, even if its bound is different.
+degree `n + c` into degree `n`. Over a commutative semiring, any linear map with a
+uniform filtration bound and the same values on finite words is equal to this extension,
+even if its bound is different.
 
 Composition adds bounds, and square-zero endomorphisms remain square-zero after extension.
 These are the linear extension and differential-compatibility steps for completing
@@ -39,16 +40,17 @@ variable {R : Type uR} [CommSemiring R]
   [AddCommMonoid P] [Module R P]
 
 /-- A finite-word map has length bound `c` if its length-`k` output depends only on
-input lengths below `k + 1 + c`. Equivalently over a ring, it lowers the descending
+input lengths below `k + 1 + c`. Equivalently, it lowers the descending
 length filtration by at most `c`. -/
 def HasLengthBound (c : ℕ) (f : TensorWords R M →ₗ[R] TensorWords R N) : Prop :=
   ∀ k (x : TensorWords R M), f (truncate R M (k + 1 + c) x) k = f x k
 
-/-- The coordinate characterization of a length bound. -/
-theorem hasLengthBound_iff (c : ℕ) (f : TensorWords R M →ₗ[R] TensorWords R N) :
-    HasLengthBound c f ↔
-      ∀ k (x : TensorWords R M), f (truncate R M (k + 1 + c) x) k = f x k := by
-  rfl
+/-- Enlarging a length bound preserves coordinate locality. -/
+theorem HasLengthBound.mono {c d : ℕ} {f : TensorWords R M →ₗ[R] TensorWords R N}
+    (hf : HasLengthBound c f) (hcd : c ≤ d) : HasLengthBound d f := by
+  intro k x
+  have hcut : k + 1 + c ≤ k + 1 + d := Nat.add_le_add_left hcd _
+  rw [← hf k (truncate R M (k + 1 + d) x), truncate_truncate, min_eq_left hcut, hf]
 
 /-- Extend a bounded-length finite-word map to the product of tensor powers by reading
 each output coordinate from a finite truncation of the input. -/
@@ -102,7 +104,8 @@ theorem map_extend_filtration_le (c : ℕ)
 @[simp]
 theorem hasLengthBound_id (c : ℕ) : HasLengthBound c (LinearMap.id : TensorWords R M →ₗ[R] _) := by
   intro k x
-  simp [truncate_apply, show k < k + 1 + c by omega]
+  have hk : k < k + 1 + c := by omega
+  simp [truncate_apply, hk]
 
 /-- Zero has every length bound. -/
 @[simp]
@@ -116,7 +119,8 @@ theorem hasLengthBound_zero (c : ℕ) :
 theorem extend_id (c : ℕ) : extend c (LinearMap.id : TensorWords R M →ₗ[R] _)
     (hasLengthBound_id c) = LinearMap.id := by
   ext x k
-  simp [truncate_apply, show k < k + 1 + c by omega]
+  have hk : k < k + 1 + c := by omega
+  simp [truncate_apply, hk]
 
 /-- Extending zero gives zero on the completion. -/
 @[simp]
@@ -165,79 +169,81 @@ theorem extend_eq (c d : ℕ) (f : TensorWords R M →ₗ[R] TensorWords R N)
   exact (extend_apply_eq_of_le c f hc x k (k + 1 + max c d) (by omega)).trans
     (extend_apply_eq_of_le d f hd x k (k + 1 + max c d) (by omega)).symm
 
-section Uniqueness
-
-variable {S : Type uR} [CommRing S]
-  {A : Type uM} {B : Type uN}
-  [AddCommGroup A] [Module S A] [AddCommGroup B] [Module S B]
-
-/-- Over a ring, the coordinate locality condition is equivalent to lowering the
+/-- The coordinate locality condition is equivalent to lowering the
 descending length filtration by at most `c` on finite words. -/
 theorem hasLengthBound_iff_truncate_eq_zero (c : ℕ)
-    (f : TensorWords S A →ₗ[S] TensorWords S B) :
-    HasLengthBound c f ↔ ∀ n (x : TensorWords S A),
-      truncate S A (n + c) x = 0 → truncate S B n (f x) = 0 := by
+    (f : TensorWords R M →ₗ[R] TensorWords R N) :
+    HasLengthBound c f ↔ ∀ n (x : TensorWords R M),
+      truncate R M (n + c) x = 0 → truncate R N n (f x) = 0 := by
   constructor
   · intro hf n x hx
     ext k
     rw [truncate_apply, DFinsupp.zero_apply]
     by_cases hk : k < n
     · rw [ite_eq_left hk, ← hf k x]
-      have ht : truncate S A (k + 1 + c) x = 0 := by
-        rw [← min_eq_left (show k + 1 + c ≤ n + c by omega), ← truncate_truncate,
+      have ht : truncate R M (k + 1 + c) x = 0 := by
+        have hcut : k + 1 + c ≤ n + c := by omega
+        rw [← min_eq_left hcut, ← truncate_truncate,
           hx, DFinsupp.coe_zero, map_zero]
       rw [ht, map_zero, DFinsupp.zero_apply]
     · rw [ite_eq_right hk]
   · intro hf k x
-    have ht : truncate S A (k + 1 + c)
-        (x - truncate S A (k + 1 + c) x : TensorWords S A) = 0 := by
+    let t : TensorWords R M := x.filter fun j ↦ ¬j < k + 1 + c
+    have ht : truncate R M (k + 1 + c) t = 0 := by
       ext j
-      by_cases hj : j < k + 1 + c <;> simp [truncate_apply, DirectSum.sub_apply, hj]
-    have h := congrArg (fun z : TensorWords S B ↦ z k) (hf (k + 1) _ ht)
-    have heq : f x k - f (truncate S A (k + 1 + c) x) k = 0 := by
-      simpa only [truncate_apply, Nat.lt_succ_self, ite_true, map_sub,
-        DirectSum.sub_apply, DFinsupp.zero_apply] using h
-    exact (sub_eq_zero.mp heq).symm
+      by_cases hj : j < k + 1 + c <;> simp [t, truncate_apply, hj]
+    have hx : truncate R M (k + 1 + c) x + t = x := by
+      ext j
+      simp only [DirectSum.add_apply, truncate_apply, DFinsupp.filter_apply, t]
+      split_ifs <;> simp_all
+    have h := congrArg (fun z : TensorWords R N ↦ z k) (hf (k + 1) t ht)
+    have hf0 : f t k = 0 := by
+      simpa only [truncate_apply, Nat.lt_succ_self, ite_true, DFinsupp.zero_apply] using h
+    simpa only [map_add, DirectSum.add_apply, hf0, add_zero] using
+      congrArg (fun z : TensorWords R M ↦ f z k) hx
 
 /-- A linear map with a uniform filtration bound is determined by its finite-word values.
 The bounds of the two maps may differ. -/
 theorem _root_.LinearMap.eq_of_coe_eq_of_filtration_bound
-    (f g : CompletedTensorWords S A →ₗ[S] CompletedTensorWords S B) (c d : ℕ)
-    (hf : ∀ n, Submodule.map f (filtration S A (n + c)) ≤ filtration S B n)
-    (hg : ∀ n, Submodule.map g (filtration S A (n + d)) ≤ filtration S B n)
-    (hfg : ∀ x : TensorWords S A,
-      f (DFinsupp.coeFnLinearMap S x) = g (DFinsupp.coeFnLinearMap S x)) : f = g := by
+    (f g : CompletedTensorWords R M →ₗ[R] CompletedTensorWords R N) (c d : ℕ)
+    (hf : ∀ n, Submodule.map f (filtration R M (n + c)) ≤ filtration R N n)
+    (hg : ∀ n, Submodule.map g (filtration R M (n + d)) ≤ filtration R N n)
+    (hfg : ∀ x : TensorWords R M,
+      f (DFinsupp.coeFnLinearMap R x) = g (DFinsupp.coeFnLinearMap R x)) : f = g := by
   ext x k
   let n := k + 1 + max c d
-  have hx := sub_truncate_mem_filtration x n
-  have hxf : x - DFinsupp.coeFnLinearMap S (truncate S A n x) ∈
-      filtration S A (k + 1 + c) :=
-    filtration_antitone S A (by dsimp [n]; omega) hx
-  have hxg : x - DFinsupp.coeFnLinearMap S (truncate S A n x) ∈
-      filtration S A (k + 1 + d) :=
-    filtration_antitone S A (by dsimp [n]; omega) hx
-  have hf0 := (mem_filtration S B _ _).mp
-    (hf (k + 1) ⟨_, hxf, rfl⟩) k (by omega)
-  have hg0 := (mem_filtration S B _ _).mp
-    (hg (k + 1) ⟨_, hxg, rfl⟩) k (by omega)
-  simp only [map_sub, Pi.sub_apply, sub_eq_zero] at hf0 hg0
-  exact hf0.trans ((congrFun (hfg (truncate S A n x)) k).trans hg0.symm)
+  let t : CompletedTensorWords R M := fun j ↦ if j < n then 0 else x j
+  have hx : DFinsupp.coeFnLinearMap R (truncate R M n x) + t = x := by
+    funext j
+    by_cases hj : j < n <;> simp [t, truncate_apply, hj]
+  have ht : t ∈ filtration R M n := by
+    rw [mem_filtration]
+    intro j hj
+    simp [t, hj]
+  have htf : t ∈ filtration R M (k + 1 + c) :=
+    filtration_antitone R M (by dsimp [n]; omega) ht
+  have htg : t ∈ filtration R M (k + 1 + d) :=
+    filtration_antitone R M (by dsimp [n]; omega) ht
+  have hf0 := (mem_filtration R N _ _).mp
+    (hf (k + 1) ⟨_, htf, rfl⟩) k (Nat.lt_succ_self k)
+  have hg0 := (mem_filtration R N _ _).mp
+    (hg (k + 1) ⟨_, htg, rfl⟩) k (Nat.lt_succ_self k)
+  rw [← hx, map_add, map_add, Pi.add_apply, Pi.add_apply, hf0, hg0, add_zero,
+    add_zero, hfg]
 
 /-- The extension is the unique linear map agreeing on finite words and admitting a
 uniform filtration bound. -/
-theorem extend_unique (c : ℕ) (f : TensorWords S A →ₗ[S] TensorWords S B)
+theorem extend_unique (c : ℕ) (f : TensorWords R M →ₗ[R] TensorWords R N)
     (hf : HasLengthBound c f)
-    (g : CompletedTensorWords S A →ₗ[S] CompletedTensorWords S B) (d : ℕ)
-    (hg : ∀ n, Submodule.map g (filtration S A (n + d)) ≤ filtration S B n)
-    (hgf : ∀ x, g (DFinsupp.coeFnLinearMap S x) = DFinsupp.coeFnLinearMap S (f x)) :
+    (g : CompletedTensorWords R M →ₗ[R] CompletedTensorWords R N) (d : ℕ)
+    (hg : ∀ n, Submodule.map g (filtration R M (n + d)) ≤ filtration R N n)
+    (hgf : ∀ x, g (DFinsupp.coeFnLinearMap R x) = DFinsupp.coeFnLinearMap R (f x)) :
     g = extend c f hf := by
   apply LinearMap.eq_of_coe_eq_of_filtration_bound g (extend c f hf) d c hg
     (map_extend_filtration_le c f hf)
   intro x
   rw [hgf]
   simp only [DFinsupp.coeFnLinearMap_apply, extend_coe]
-
-end Uniqueness
 
 /-- A square-zero finite-word endomorphism remains square-zero on the length completion. -/
 theorem extend_comp_self_eq_zero (c : ℕ) (f : TensorWords R M →ₗ[R] TensorWords R M)
