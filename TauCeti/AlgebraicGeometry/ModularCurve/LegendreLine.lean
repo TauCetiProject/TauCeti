@@ -323,15 +323,15 @@ noncomputable def invAut : LegendreRing R ≃ₐ[R[X]] LegendreRing R :=
   AlgEquiv.ofAlgHom _ _ (invAlgHom_comp_invAlgHom R) (invAlgHom_comp_invAlgHom R)
 
 @[simp]
-theorem oneSubAut_lambda : oneSubAut R (lambda R) = 1 - lambda R :=
-  oneSubAlgHom_lambda R
+theorem oneSubAut_lambda : oneSubAut R (lambda R) = 1 - lambda R := by
+  simp [oneSubAut, oneSubAlgHom_lambda]
 
 @[simp]
-theorem invAut_lambda : invAut R (lambda R) = ↑(isUnit_lambda R).unit⁻¹ :=
-  invAlgHom_lambda R
+theorem invAut_lambda : invAut R (lambda R) = ↑(isUnit_lambda R).unit⁻¹ := by
+  simp [invAut, invAlgHom_lambda]
 
-theorem lambda_mul_invAut_lambda : lambda R * invAut R (lambda R) = 1 :=
-  lambda_mul_invAlgHom_lambda R
+theorem lambda_mul_invAut_lambda : lambda R * invAut R (lambda R) = 1 := by
+  simp
 
 @[simp]
 theorem oneSubAut_oneSubAut (a : LegendreRing R) : oneSubAut R (oneSubAut R a) = a :=

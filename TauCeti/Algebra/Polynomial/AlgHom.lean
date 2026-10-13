@@ -26,7 +26,7 @@ variable {R A B : Type*} [CommSemiring R] [Semiring A] [Semiring B] [Algebra R[X
 
 /-- An `R`-algebra map between `R[X]`-algebras that fixes the image of `X` is an
 `R[X]`-algebra map. -/
-@[expose] def toPolynomialAlgHom (φ : A →ₐ[R] B)
+def toPolynomialAlgHom (φ : A →ₐ[R] B)
     (h : φ (algebraMap R[X] A X) = algebraMap R[X] B X) : A →ₐ[R[X]] B where
   __ := φ
   commutes' p := by
@@ -37,7 +37,13 @@ variable {R A B : Type*} [CommSemiring R] [Semiring A] [Semiring B] [Algebra R[X
 @[simp]
 theorem toPolynomialAlgHom_apply (φ : A →ₐ[R] B)
     (h : φ (algebraMap R[X] A X) = algebraMap R[X] B X) (a : A) :
-    φ.toPolynomialAlgHom h a = φ a :=
+    φ.toPolynomialAlgHom h a = φ a := by
   rfl
+
+@[simp]
+theorem restrictScalars_toPolynomialAlgHom (φ : A →ₐ[R] B)
+    (h : φ (algebraMap R[X] A X) = algebraMap R[X] B X) :
+    (φ.toPolynomialAlgHom h).restrictScalars R = φ :=
+  AlgHom.ext (toPolynomialAlgHom_apply φ h)
 
 end AlgHom
