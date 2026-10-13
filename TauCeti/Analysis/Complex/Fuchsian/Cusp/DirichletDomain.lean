@@ -43,7 +43,44 @@ open scoped MatrixGroups
 
 namespace TauCeti.Subgroup.CuspDatum
 
-variable {Γ : Subgroup PSL(2, ℝ)} [DiscreteTopology Γ] (D : Γ.CuspDatum)
+variable {Γ : Subgroup PSL(2, ℝ)} (D : Γ.CuspDatum)
+
+/-- The Dirichlet domain lies in the strip of width `D.width` centred at the scaled
+Dirichlet centre. -/
+theorem abs_re_scaling_smul_sub_le {p z : ℍ} (hz : z ∈ dirichletDomain Γ p) :
+    |(D.scaling • z).re - (D.scaling • p).re| ≤ D.width / 2 := by
+  apply (dist_le_dist_vadd_and_neg_vadd_iff D.width_pos _ _).mp
+  have h (k : ℤ) := mem_dirichletDomain.mp hz (D.generator ^ k)
+  have hscaled (k : ℤ) : dist (D.scaling • z) (D.scaling • p) ≤
+      dist (D.scaling • z) ((k : ℝ) * D.width +ᵥ (D.scaling • p)) := by
+    simpa only [← D.scaling_smul_generator_zpow, dist_smul] using h k
+  constructor
+  · simpa using hscaled 1
+  · simpa using hscaled (-1)
+
+/-- The part of a Dirichlet domain between two cusp heights is bounded, provided the lower
+height is positive. The upper height is arbitrary, and the band may be empty. -/
+theorem isBounded_dirichletDomain_inter_horodisc_diff (p : ℍ) {A : ℝ} (hA : 0 < A)
+    (B : ℝ) :
+    Bornology.IsBounded (sdiff (dirichletDomain Γ p ∩ D.horodisc A) (D.horodisc B)) := by
+  let P := D.scaling • p
+  let R : Set ℍ := ((↑) : ℍ → ℂ) ⁻¹'
+    (Icc (P.re - D.width / 2) (P.re + D.width / 2) ×ℂ Icc A B)
+  have hR : IsCompact R :=
+    (isOpenEmbedding_coe.isInducing.isCompact_preimage_iff fun w hw ↦ by
+      rw [range_coe]
+      exact hA.trans_le (Complex.mem_reProdIm.mp hw).2.1).mpr
+      (isCompact_Icc.reProdIm isCompact_Icc)
+  refine ((Homeomorph.smul D.scaling).isCompact_preimage.mpr hR).isBounded.subset ?_
+  rintro z ⟨⟨hz, hzA⟩, hzB⟩
+  have hre := abs_le.mp (D.abs_re_scaling_smul_sub_le hz)
+  have him : (D.scaling • z).im ∈ Icc A B :=
+    ⟨((D.mem_horodisc).mp hzA).le, not_lt.mp (by simpa only [D.mem_horodisc] using hzB)⟩
+  simp only [Set.mem_preimage, Homeomorph.smul_apply, R, Complex.mem_reProdIm, coe_re, coe_im]
+  exact ⟨⟨by dsimp only [P]; linarith,
+    by dsimp only [P]; linarith⟩, him⟩
+
+variable [DiscreteTopology Γ]
 
 private theorem finite_setOf_scaling_smul_mem_rectangle (p : ℍ) {a b c d : ℝ} (hc : 0 < c) :
     {g : Γ | (D.scaling • g • p).re ∈ Icc a b ∧

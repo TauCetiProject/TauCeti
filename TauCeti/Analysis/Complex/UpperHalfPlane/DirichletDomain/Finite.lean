@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Complex.UpperHalfPlane.DirichletDomain.Basic
 public import TauCeti.MeasureTheory.Group.DirichletDomain.Compact
+import Mathlib.Topology.Connected.Clopen
 
 /-!
 # Finite bisector descriptions of bounded Dirichlet domains
@@ -20,6 +21,11 @@ such a finite description.
 This is the finite-constraint step in constructing compact Dirichlet polygons. It does not
 assert finite-sidedness for an unbounded finite-area domain, or enumerate the sides and vertices
 of the finite intersection.
+
+`UpperHalfPlane.dirichletDomain_eq_iInter_of_inter_eq` gives a second globalization criterion:
+inequalities agreeing with the domain on an open neighbourhood of the whole domain
+define it globally. This applies when a bounded core and finitely many cusp ends cover the
+domain. The proof uses geodesic convexity and Mathlib's `IsClopen.eq_univ` on a segment.
 
 ## References
 
@@ -38,6 +44,42 @@ open scoped MatrixGroups
 namespace TauCeti.UpperHalfPlane
 
 variable {G : Type*}
+
+/-- A family of Dirichlet inequalities which agrees with the domain on an open neighbourhood
+of the whole domain defines it globally. Geodesic convexity prevents the intersection from
+having an extra component outside that neighbourhood. -/
+theorem _root_.UpperHalfPlane.dirichletDomain_eq_iInter_of_inter_eq
+    [SMul G ℍ] (p : ℍ) (s : Set G)
+    {U : Set ℍ} (hU : IsOpen U) (hDU : dirichletDomain G p ⊆ U)
+    (heq : dirichletDomain G p ∩ U =
+      (⋂ g ∈ s, {z : ℍ | dist z p ≤ dist z (g • p)}) ∩ U) :
+    dirichletDomain G p = ⋂ g ∈ s, {z : ℍ | dist z p ≤ dist z (g • p)} := by
+  refine subset_antisymm (fun z hz ↦ mem_iInter₂.mpr fun g _ ↦
+    mem_dirichletDomain.mp hz g) ?_
+  intro z hz
+  let S := geodesicSegment p z
+  have hS : IsPreconnected S := by
+    dsimp only [S]
+    rw [geodesicSegment_def]
+    exact isPreconnected_Icc.image _ (isometry_geodesicLine _).continuous.continuousOn
+  have hSC : S ⊆ ⋂ g ∈ s, {z : ℍ | dist z p ≤ dist z (g • p)} := by
+    intro w hw
+    exact mem_iInter₂.mpr fun g hg ↦ geodesicSegment_subset_setOf_dist_le_dist
+      (by simp [dist_nonneg]) (mem_iInter₂.mp hz g hg) hw
+  let := Subtype.preconnectedSpace hS
+  have hpre : ((↑) : S → ℍ) ⁻¹' dirichletDomain G p = ((↑) : S → ℍ) ⁻¹' U := by
+    ext w
+    refine ⟨fun hw ↦ hDU hw, fun hw ↦ ?_⟩
+    have hwD : (w : ℍ) ∈ dirichletDomain G p ∩ U := by
+      rw [heq]
+      exact ⟨hSC w.property, hw⟩
+    exact hwD.1
+  have hclopen : IsClopen (((↑) : S → ℍ) ⁻¹' dirichletDomain G p) :=
+    ⟨(isClosed_dirichletDomain G p).preimage continuous_subtype_val,
+      hpre ▸ hU.preimage continuous_subtype_val⟩
+  have hall := hclopen.eq_univ
+    ⟨⟨p, left_mem_geodesicSegment p z⟩, self_mem_dirichletDomain p⟩
+  exact (Set.eq_univ_iff_forall.mp hall) ⟨z, right_mem_geodesicSegment p z⟩
 
 section
 
