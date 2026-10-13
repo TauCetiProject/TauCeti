@@ -10,6 +10,7 @@ public import TauCeti.FieldTheory.FunctionField.Place.Expansion.Laurent.Derivati
 import TauCeti.FieldTheory.FunctionField.ConstantExtension.ResidueField
 import TauCeti.FieldTheory.FunctionField.Differential.ConstantExtension
 import TauCeti.FieldTheory.FunctionField.Differential.LocalNonvanishing
+import TauCeti.FieldTheory.FunctionField.Differential.TraceResidue
 import TauCeti.FieldTheory.FunctionField.Different.Separating
 import TauCeti.FieldTheory.FunctionField.Place.Existence
 import TauCeti.FieldTheory.FunctionField.Place.Extension.PrimeElement
@@ -60,10 +61,14 @@ independence it holds for every comparison over a perfect constant field, where 
 field is separable and every prime element separating, and at rational places it reads
 `ω_P (u) = res_P (u ω)`.
 
-The abstract residue theorem `∑_P ω_P (1) = 0` (`TauCeti.finsum_repartitionDualComponent_eq_zero`)
-then becomes **the residue theorem** for Kähler differentials over a perfect field: the trace
-residues of `ω` at all places sum to zero (Stichtenoth, Corollary 4.3.3 and Remark 4.3.7(d)). Over
-an algebraically closed field every place is rational and this is `∑_P res_P (ω) = 0`.
+These are the trace-residue formulas for Weil differentials of
+`TauCeti.FieldTheory.FunctionField.Differential.TraceResidue` read through the comparison, which
+preserves coordinates (`TauCeti.coord_kaehlerDifferentialEquivWeilDifferentialOfSeparating`). The
+residue theorem with trace residues for Weil differentials
+(`TauCeti.finsum_traceResidue_coord_eq_zero`) thereby becomes **the residue theorem** for Kähler
+differentials over a perfect field: the trace residues of `ω` at all places sum to zero
+(Stichtenoth, Corollary 4.3.3 and Remark 4.3.7(d)). Over an algebraically closed field every place
+is rational and this is `∑_P res_P (ω) = 0`.
 
 ## Main results
 
@@ -86,6 +91,9 @@ an algebraically closed field every place is rational and this is `∑_P res_P (
   infinitely many rational places.
 * `TauCeti.Place.kaehlerResidueOfPerfectField_smul_eq_repartitionDualComponent`: the same over a
   perfect field, with the uniformizer-free residue.
+* `TauCeti.Place.kaehlerResidue_eq_traceResidue_coord` and
+  `TauCeti.Place.kaehlerResidueOfPerfectField_eq_traceResidue_coord`: at a rational place the
+  residue of a Kähler differential is its trace residue.
 * `TauCeti.finsum_traceResidue_kaehlerBasisOfSeparating_coord_eq_zero`: **the residue theorem**
   over a perfect field, `∑_P Tr_{F_P/k} res_{P,t_P} (ω / dt_P) = 0` for prime elements `t_P`, a
   sum with finitely many nonzero terms
@@ -285,7 +293,8 @@ end PerfectField
 field is separable over `k`, and `t` a separating prime element of `P`. For a Kähler differential
 `ω`, the trace residue `Tr_{F_P/k} res_{P,t} (u ω / dt)` is the local component at `P`, evaluated
 at `u`, of the Weil differential attached to `ω` by the comparison built from `t`. No condition on
-the constant field is needed beyond exactness. -/
+the constant field is needed beyond exactness. This is
+`TauCeti.repartitionDualComponent_eq_traceResidue_coord` read through the comparison. -/
 theorem Place.traceResidue_coord_smul_eq_repartitionDualComponent (hF : IsFunctionField k F)
     (hex : IsIntegrallyClosedIn k F) {P : Place k F} [Algebra.IsSeparable k P.ResidueField]
     {t : F} (ht : P.ord t = 1) (htr : Transcendental k t) [Algebra.IsSeparable k⟮t⟯ F]
@@ -293,21 +302,18 @@ theorem Place.traceResidue_coord_smul_eq_repartitionDualComponent (hF : IsFuncti
     P.traceResidue ht ((kaehlerBasisOfSeparating htr).coord () (u • ω)) =
       repartitionDualComponent (kaehlerDifferentialEquivWeilDifferentialOfSeparating hF hex htr ω :
         Module.Dual k ↥(repartitionSpace k F)) P u := by
-  let := weilDifferentialSpaceModule hF
-  -- Write `ω = z dt`; the comparison built from `t` sends it to `z · dt`.
-  obtain ⟨z, rfl⟩ : ∃ z : F, z • D k F t = ω :=
-    ⟨(kaehlerBasisOfSeparating htr).coord () ω, by
-      simpa using (kaehlerBasisOfSeparating htr).sum_repr ω⟩
-  -- The trace residue only depends on the uniformizer, not on the proof that it is one.
-  have ht₀ : P.ord (t - algebraMap k F 0) = 1 := by simpa using ht
-  have hres : P.traceResidue ht₀ = P.traceResidue ht := by
-    simp only [map_zero, sub_zero]
-  rw [map_smul (kaehlerDifferentialEquivWeilDifferentialOfSeparating hF hex htr),
-    kaehlerDifferentialEquivWeilDifferentialOfSeparating_D_self,
-    coe_weilDifferentialSpaceModule_smul, repartitionDualComponent_repartitionDualMul,
-    repartitionDualComponent_weilDifferentialOfSeparating_eq_traceResidue hF htr ht₀, hres,
-    smul_smul, mul_comm]
-  simp
+  rw [repartitionDualComponent_eq_traceResidue_coord hF hex ht,
+    coord_kaehlerDifferentialEquivWeilDifferentialOfSeparating, map_smul, smul_eq_mul, mul_comm]
+
+/-- At a rational place, the residue `res_P (ω)` of a Kähler differential computed with a
+separating prime element `t` is the trace residue `Tr_{F_P/k} res_{P,t} (ω / dt)`, the trace from
+`F_P = k` being the identity. -/
+theorem Place.kaehlerResidue_eq_traceResidue_coord {P : Place k F} (hP : P.degree = 1)
+    [Algebra.IsSeparable k P.ResidueField] {t : F} (ht : P.ord t = 1) (htr : Transcendental k t)
+    [Algebra.IsSeparable k⟮t⟯ F] (ω : Ω[F⁄k]) :
+    P.kaehlerResidue hP ht htr ω =
+      P.traceResidue ht ((kaehlerBasisOfSeparating htr).coord () ω) := by
+  rw [Place.kaehlerResidue_apply, P.traceResidue_eq_residue ht hP]
 
 /-- **Local components are residues** (Stichtenoth, Theorem 4.3.2(d)): over an exact constant
 field with infinitely many rational places, let `ω` be a Kähler differential and `P` a rational
@@ -327,7 +333,7 @@ theorem repartitionDualComponent_kaehlerDifferentialEquivWeilDifferentialOfSepar
   have := P.isSeparable_residueField_of_degree_eq_one hP
   rw [kaehlerDifferentialEquivWeilDifferentialOfSeparating_eq hF hex hinf hx htr,
     ← P.traceResidue_coord_smul_eq_repartitionDualComponent hF hex ht htr,
-    P.traceResidue_eq_residue ht hP, Place.kaehlerResidue_apply]
+    P.kaehlerResidue_eq_traceResidue_coord hP ht htr]
 
 section PerfectField
 
@@ -337,7 +343,7 @@ variable [PerfectField k]
 and Remark 4.3.7(d)): over a perfect exact constant field, let `ω` be a Kähler differential, `P` a
 place of any degree and `t` a prime element of `P`, which is separating
 (`TauCeti.Place.transcendental_and_isSeparable_adjoin_of_ord_eq_one`); the residue field of `P` is
-separable over `k`, being finite over a perfect field. The trace residue
+separable over `k` (`TauCeti.Place.isSeparable_residueField_of_perfectField`). The trace residue
 `Tr_{F_P/k} res_{P,t} (u ω / dt)` is the local component at `P`, evaluated at `u`, of the Weil
 differential attached to `ω` by the Kähler–Weil comparison. Neither rational places nor an
 algebraically closed constant field are needed; at a rational place the trace is the identity
@@ -352,6 +358,16 @@ theorem Place.traceResidue_coord_smul_eq_repartitionDualComponent_of_perfectFiel
         Module.Dual k ↥(repartitionSpace k F)) P u := by
   rw [kaehlerDifferentialEquivWeilDifferentialOfSeparating_eq_of_perfectField hF hex hx htr,
     P.traceResidue_coord_smul_eq_repartitionDualComponent hF hex ht htr]
+
+/-- Over a perfect field, the residue `res_P (ω)` of a Kähler differential at a rational place `P`
+is the trace residue `Tr_{F_P/k} res_{P,t} (ω / dt)` for every prime element `t` of `P`. -/
+theorem Place.kaehlerResidueOfPerfectField_eq_traceResidue_coord (hF : IsFunctionField k F)
+    {P : Place k F} (hP : P.degree = 1) [Algebra.IsSeparable k P.ResidueField] {t : F}
+    (ht : P.ord t = 1) (htr : Transcendental k t) [Algebra.IsSeparable k⟮t⟯ F] (ω : Ω[F⁄k]) :
+    P.kaehlerResidueOfPerfectField hP hF ω =
+      P.traceResidue ht ((kaehlerBasisOfSeparating htr).coord () ω) := by
+  rw [P.kaehlerResidueOfPerfectField_eq_kaehlerResidue hP ht hF htr,
+    P.kaehlerResidue_eq_traceResidue_coord hP ht htr]
 
 /-- **Local components are residues, over a perfect field** (Stichtenoth, Theorem 4.3.2(d)): over
 a perfect exact constant field, the residue `res_P (u ω)` of a Kähler differential at a rational
@@ -368,8 +384,7 @@ theorem Place.kaehlerResidueOfPerfectField_smul_eq_repartitionDualComponent
   obtain ⟨htr, hsep⟩ := P.transcendental_and_isSeparable_adjoin_of_ord_eq_one hF ht
   let := hsep
   have := P.isSeparable_residueField_of_degree_eq_one hP
-  rw [P.kaehlerResidueOfPerfectField_eq_kaehlerResidue hP ht hF htr, Place.kaehlerResidue_apply,
-    ← P.traceResidue_eq_residue ht hP,
+  rw [P.kaehlerResidueOfPerfectField_eq_traceResidue_coord hF hP ht htr,
     P.traceResidue_coord_smul_eq_repartitionDualComponent_of_perfectField hF hex hx ht htr]
 
 variable (hF : IsFunctionField k F) (hex : IsIntegrallyClosedIn k F)
@@ -380,9 +395,12 @@ variable (hF : IsFunctionField k F) (hex : IsIntegrallyClosedIn k F)
 include hF hex in
 /-- Over a perfect field, the trace residues `Tr_{F_P/k} res_{P,t_P} (ω / dt_P)` of a Kähler
 differential, computed with a prime element `t_P` at each place `P`, vanish at all but finitely
-many places. The separability of each residue field over `k` and of `F` over each `k(t_P)` holds
-automatically over a perfect field; it is assumed only so that the trace residues and the
-coordinates in `dt_P` can be stated. -/
+many places. The separability of each residue field over `k`
+(`TauCeti.Place.isSeparable_residueField_of_perfectField`) and of `F` over each `k(t_P)`
+(`TauCeti.Place.transcendental_and_isSeparable_adjoin_of_ord_eq_one`) holds automatically over a
+perfect field; it is assumed only so that the trace residues and the coordinates in `dt_P` can be
+stated. This is `TauCeti.finite_support_traceResidue_coord` for the Weil differential attached to
+`ω`, on the constant repartition `1`. -/
 theorem finite_support_traceResidue_kaehlerBasisOfSeparating_coord (ω : Ω[F⁄k]) :
     let htr : ∀ P, Transcendental k (t P) :=
       fun P ↦ P.transcendental_of_ord_ne_zero (by simp [ht P])
@@ -391,22 +409,23 @@ theorem finite_support_traceResidue_kaehlerBasisOfSeparating_coord (ω : Ω[F⁄
   intro htr
   obtain ⟨x, hx, hsep⟩ := hF.exists_transcendental_and_isSeparable_adjoin_of_perfectField
   let := hsep
-  let W := kaehlerDifferentialEquivWeilDifferentialOfSeparating hF hex hx ω
-  -- Each trace residue is the local component at `1` of the Weil differential attached to `ω`.
-  convert finite_support_repartitionDualComponent_apply (Submodule.coe_mem W)
+  -- The coordinates of `ω` in `dt_P` are those of the Weil differential attached to it.
+  convert finite_support_traceResidue_coord hF hex t ht
+    (kaehlerDifferentialEquivWeilDifferentialOfSeparating hF hex hx ω)
     ⟨_, const_mem_repartitionSpace hF 1⟩ using 3 with P
-  rw [← one_smul F ω,
-    P.traceResidue_coord_smul_eq_repartitionDualComponent_of_perfectField hF hex hx (ht P) (htr P)]
-  simp [W]
+  rw [kaehlerDifferentialEquivWeilDifferentialOfSeparating_eq_of_perfectField hF hex hx (htr P),
+    coord_kaehlerDifferentialEquivWeilDifferentialOfSeparating]
+  simp
 
 include hF hex in
 /-- **The residue theorem over a perfect field** (Stichtenoth, Corollary 4.3.3 and
 Remark 4.3.7(d)): over a perfect exact constant field, choose a prime element `t_P` at each place
 `P`. Then the trace residues of a Kähler differential `ω` sum to zero,
 `∑_P Tr_{F_P/k} res_{P,t_P} (ω / dt_P) = 0`, a sum with finitely many nonzero terms
-(`TauCeti.finite_support_traceResidue_kaehlerBasisOfSeparating_coord`). Unlike
-`TauCeti.finsum_kaehlerResidueOfPerfectField_eq_zero`, places of every degree contribute, so this
-applies over finite fields. -/
+(`TauCeti.finite_support_traceResidue_kaehlerBasisOfSeparating_coord`). This is the residue
+theorem for Weil differentials `TauCeti.finsum_traceResidue_coord_eq_zero` at `u = 1`, applied to
+the Weil differential attached to `ω`. Unlike `TauCeti.finsum_kaehlerResidueOfPerfectField_eq_zero`,
+places of every degree contribute, so this applies over finite fields. -/
 theorem finsum_traceResidue_kaehlerBasisOfSeparating_coord_eq_zero (ω : Ω[F⁄k]) :
     let htr : ∀ P, Transcendental k (t P) :=
       fun P ↦ P.transcendental_of_ord_ne_zero (by simp [ht P])
@@ -415,12 +434,11 @@ theorem finsum_traceResidue_kaehlerBasisOfSeparating_coord_eq_zero (ω : Ω[F⁄
   intro htr
   obtain ⟨x, hx, hsep⟩ := hF.exists_transcendental_and_isSeparable_adjoin_of_perfectField
   let := hsep
-  let W := kaehlerDifferentialEquivWeilDifferentialOfSeparating hF hex hx ω
-  -- The abstract residue theorem `∑_P W_P (1) = 0`, with each local component a trace residue.
-  refine Eq.trans (finsum_congr fun P ↦ ?_)
-    (finsum_repartitionDualComponent_eq_zero hF (Submodule.coe_mem W) 1)
-  rw [← one_smul F ω,
-    P.traceResidue_coord_smul_eq_repartitionDualComponent_of_perfectField hF hex hx (ht P) (htr P)]
+  -- The coordinates of `ω` in `dt_P` are those of the Weil differential attached to it.
+  refine Eq.trans (finsum_congr fun P ↦ ?_) (finsum_traceResidue_coord_eq_zero hF hex t ht
+    (kaehlerDifferentialEquivWeilDifferentialOfSeparating hF hex hx ω) 1)
+  rw [kaehlerDifferentialEquivWeilDifferentialOfSeparating_eq_of_perfectField hF hex hx (htr P),
+    coord_kaehlerDifferentialEquivWeilDifferentialOfSeparating, mul_one]
 
 end PerfectField
 
@@ -428,21 +446,36 @@ section IsAlgClosed
 
 variable [IsAlgClosed k]
 
+/-- Over an algebraically closed field, the residues of a Kähler differential have finite support
+and sum to zero: every place is rational, and its residue is the trace residue in any prime
+element. -/
+private theorem finite_support_and_finsum_kaehlerResidueOfPerfectField_eq_zero
+    (hF : IsFunctionField k F) (ω : Ω[F⁄k]) :
+    (Function.support fun P : Place k F ↦
+      P.kaehlerResidueOfPerfectField (P.degree_eq_one_of_isAlgClosed_of_isFunctionField hF) hF
+        ω).Finite ∧
+    ∑ᶠ P : Place k F,
+      P.kaehlerResidueOfPerfectField (P.degree_eq_one_of_isAlgClosed_of_isFunctionField hF) hF ω =
+        0 := by
+  choose t ht _ using fun P : Place k F ↦ P.exists_ord_eq_one_and_forall_mem_ord_eq_zero ∅
+  have := fun P : Place k F ↦ (P.transcendental_and_isSeparable_adjoin_of_ord_eq_one hF (ht P)).2
+  have := fun P : Place k F ↦ P.isSeparable_residueField_of_perfectField hF
+  have hres := funext fun P : Place k F ↦ P.kaehlerResidueOfPerfectField_eq_traceResidue_coord hF
+    (P.degree_eq_one_of_isAlgClosed_of_isFunctionField hF) (ht P)
+    (P.transcendental_of_ord_ne_zero (by simp [ht P])) ω
+  rw [hres]
+  exact ⟨finite_support_traceResidue_kaehlerBasisOfSeparating_coord hF
+    isIntegrallyClosedIn_of_isAlgClosed t ht ω,
+    finsum_traceResidue_kaehlerBasisOfSeparating_coord_eq_zero hF
+      isIntegrallyClosedIn_of_isAlgClosed t ht ω⟩
+
 /-- Over an algebraically closed field, a Kähler differential has nonzero residue at only finitely
 many places. -/
 theorem finite_support_kaehlerResidueOfPerfectField (hF : IsFunctionField k F) (ω : Ω[F⁄k]) :
     (Function.support fun P : Place k F ↦
       P.kaehlerResidueOfPerfectField (P.degree_eq_one_of_isAlgClosed_of_isFunctionField hF) hF
-        ω).Finite := by
-  -- Every place is rational, and its residue is the trace residue in any prime element.
-  choose t ht _ using fun P : Place k F ↦ P.exists_ord_eq_one_and_forall_mem_ord_eq_zero ∅
-  have := fun P : Place k F ↦ (P.transcendental_and_isSeparable_adjoin_of_ord_eq_one hF (ht P)).2
-  have := fun P : Place k F ↦ P.isSeparable_residueField_of_degree_eq_one
-    (P.degree_eq_one_of_isAlgClosed_of_isFunctionField hF)
-  convert finite_support_traceResidue_kaehlerBasisOfSeparating_coord hF
-    isIntegrallyClosedIn_of_isAlgClosed t ht ω using 3 with P
-  rw [P.kaehlerResidueOfPerfectField_eq_kaehlerResidue _ (ht P) hF, Place.kaehlerResidue_apply,
-    P.traceResidue_eq_residue (ht P) (P.degree_eq_one_of_isAlgClosed_of_isFunctionField hF)]
+        ω).Finite :=
+  (finite_support_and_finsum_kaehlerResidueOfPerfectField_eq_zero hF ω).1
 
 /-- **The residue theorem** (Stichtenoth, Corollary 4.3.3): over an algebraically closed field,
 the residues of a Kähler differential `ω` at the places of `F` sum to zero,
@@ -458,17 +491,8 @@ at the places of every degree sum to zero
 theorem finsum_kaehlerResidueOfPerfectField_eq_zero (hF : IsFunctionField k F) (ω : Ω[F⁄k]) :
     ∑ᶠ P : Place k F,
       P.kaehlerResidueOfPerfectField (P.degree_eq_one_of_isAlgClosed_of_isFunctionField hF) hF ω =
-        0 := by
-  -- Every place is rational, and its residue is the trace residue in any prime element.
-  choose t ht _ using fun P : Place k F ↦ P.exists_ord_eq_one_and_forall_mem_ord_eq_zero ∅
-  have := fun P : Place k F ↦ (P.transcendental_and_isSeparable_adjoin_of_ord_eq_one hF (ht P)).2
-  have := fun P : Place k F ↦ P.isSeparable_residueField_of_degree_eq_one
-    (P.degree_eq_one_of_isAlgClosed_of_isFunctionField hF)
-  refine Eq.trans (finsum_congr fun P ↦ ?_)
-    (finsum_traceResidue_kaehlerBasisOfSeparating_coord_eq_zero hF
-      isIntegrallyClosedIn_of_isAlgClosed t ht ω)
-  rw [P.kaehlerResidueOfPerfectField_eq_kaehlerResidue _ (ht P) hF, Place.kaehlerResidue_apply,
-    P.traceResidue_eq_residue (ht P) (P.degree_eq_one_of_isAlgClosed_of_isFunctionField hF)]
+        0 :=
+  (finite_support_and_finsum_kaehlerResidueOfPerfectField_eq_zero hF ω).2
 
 end IsAlgClosed
 
