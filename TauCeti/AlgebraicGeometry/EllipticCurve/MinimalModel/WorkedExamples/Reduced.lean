@@ -67,8 +67,8 @@ namespace TauCeti.WorkedExamples
 its `c₄ = 496` are coprime, so it is minimal at every prime, and its coefficients are
 normalised. -/
 theorem isReducedMinimal_curve11a2 : IsReducedMinimal (curve11a2.baseChange ℚ) := by
-  refine (isReducedMinimal_baseChange_iff curve11a2).2
-    ⟨isGlobalMinimal_baseChange_of_isCoprime (O := ℤ) curve11a2 ?_, by simp, by simp, by simp⟩
+  refine isReducedMinimal_iff.2
+    ⟨isGlobalMinimal_baseChange_of_isCoprime (O := ℤ) curve11a2 ?_, by simp [baseChange]⟩
   rw [Δ_curve11a2, c₄_curve11a2, Int.isCoprime_iff_gcd_eq_one]
   norm_num
 
@@ -101,8 +101,8 @@ theorem minimalDiscriminantIdeal_curve11a2 :
 /-- **`y² + y = x³ - x` is a reduced minimal equation.** Its discriminant `37` and its `c₄ = 48`
 are coprime, so it is minimal at every prime, and its coefficients are normalised. -/
 theorem isReducedMinimal_curve37a1 : IsReducedMinimal (curve37a1.baseChange ℚ) := by
-  refine (isReducedMinimal_baseChange_iff curve37a1).2
-    ⟨isGlobalMinimal_baseChange_of_isCoprime (O := ℤ) curve37a1 ?_, by simp, by simp, by simp⟩
+  refine isReducedMinimal_iff.2
+    ⟨isGlobalMinimal_baseChange_of_isCoprime (O := ℤ) curve37a1 ?_, by simp [baseChange]⟩
   rw [Δ_curve37a1, c₄_curve37a1, Int.isCoprime_iff_gcd_eq_one]
   norm_num
 
