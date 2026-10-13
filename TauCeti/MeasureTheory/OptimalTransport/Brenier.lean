@@ -74,6 +74,10 @@ are those of `‖x - y‖ ^ 2`, whose transport cost is twice as large
 * `TauCeti.IsOptimalCoupling.exists_eq_graphPlan_gradient` — for an absolutely continuous source,
   an optimal quadratic plan of finite cost is the graph plan of the gradient of such a function,
   differentiable almost everywhere;
+* `TauCeti.IsOptimalCoupling.exists_eq_graphPlan_of_absolutelyContinuous` — the graph-plan
+  conclusion of `TauCeti.IsOptimalCoupling.exists_eq_graphPlan_gradient` for the cost `edist ^ 2`
+  of the quadratic Wasserstein distance: out of an absolutely continuous source, an optimal plan to
+  a law at finite `W₂` distance is the graph plan of a measurable map;
 * `TauCeti.map_swap_eq_graphPlan_gradient_fenchelConjugate`,
   `TauCeti.IsCoupling.gradient_fenchelConjugate_comp_gradient_ae_eq_id` and
   `TauCeti.IsCoupling.gradient_comp_gradient_fenchelConjugate_ae_eq_id` — for an absolutely
@@ -92,9 +96,6 @@ are those of `‖x - y‖ ^ 2`, whose transport cost is twice as large
   laws are absolutely continuous, the Brenier potential `u` is a weak solution of its transport
   equation: its Monge–Ampère measure weighted by `ν` is `μ`, and `ν` is carried by
   the subgradient image of the interior of its effective domain;
-* `TauCeti.IsOptimalCoupling.exists_eq_graphPlan_of_absolutelyContinuous` — the same conclusion
-  for the cost `edist ^ 2` of the quadratic Wasserstein distance: out of an absolutely continuous
-  source, an optimal plan to a law at finite `W₂` distance is the graph plan of a measurable map;
 * `TauCeti.transportCost_norm_sub_sq_div_two_ne_top` — laws with finite second moment have finite
   quadratic transport cost, so Brenier's theorem applies to them;
 * `TauCeti.IsCoupling.lintegral_norm_sub_sq_div_two` — for marginals with finite second moments,
@@ -690,23 +691,15 @@ theorem IsOptimalCoupling.exists_eq_graphPlan_of_absolutelyContinuous {μ ν : M
     (h : IsOptimalCoupling (fun z : E × E ↦ edist z.1 z.2 ^ (2 : ℝ)) π μ ν)
     (hfin : wassersteinEDist 2 μ ν ≠ ∞) :
     ∃ T : E → E, Measurable T ∧ π = graphPlan T μ := by
-  -- The cost `‖x - y‖ ^ 2 / 2` of Brenier's theorem is half the cost `edist ^ 2`.
-  have hcost : (fun z : E × E ↦ ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2)) =
-      fun z ↦ 2⁻¹ * edist z.1 z.2 ^ (2 : ℝ) := by
-    funext z
-    rw [edist_dist, dist_eq_norm, ENNReal.ofReal_rpow_of_nonneg (norm_nonneg _) zero_le_two,
-      Real.rpow_two, ENNReal.ofReal_div_of_pos two_pos, ENNReal.ofReal_ofNat, div_eq_mul_inv,
-      mul_comm]
-  have hopt := h.const_mul (a := 2⁻¹) (ENNReal.inv_ne_top.2 two_ne_zero)
-  rw [← hcost] at hopt
+  -- The cost `edist ^ 2` is twice the cost `‖x - y‖ ^ 2 / 2` of Brenier's theorem.
   have hfin' : transportCost (fun z : E × E ↦ ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2)) μ ν ≠ ∞ := by
     have h2 := wassersteinEDist_rpow_eq_transportCost measurable_edist two_ne_zero
       ENNReal.ofNat_ne_top μ ν
-    rw [ENNReal.toReal_ofNat] at h2
-    rw [hcost, transportCost_const_mul (ENNReal.inv_ne_zero.2 ENNReal.ofNat_ne_top)
-      (ENNReal.inv_ne_top.2 two_ne_zero), ← h2]
-    exact ENNReal.mul_ne_top (ENNReal.inv_ne_top.2 two_ne_zero)
-      (ENNReal.rpow_ne_top_of_nonneg zero_le_two hfin)
+    rw [ENNReal.toReal_ofNat, funext edist_rpow_two_eq_two_mul_ofReal_norm_sub_sq_div_two,
+      transportCost_const_mul two_ne_zero ENNReal.ofNat_ne_top] at h2
+    refine fun htop ↦ ENNReal.rpow_ne_top_of_nonneg zero_le_two hfin ?_
+    rw [h2, htop, ENNReal.mul_top two_ne_zero]
+  have hopt := isOptimalCoupling_norm_sub_sq_div_two_of_edist_rpow_two h
   obtain ⟨u, -, -, -, -, hgraph⟩ := hopt.exists_eq_graphPlan_gradient hμ hfin'
   exact ⟨_, measurable_gradient _, hgraph⟩
 

@@ -92,6 +92,8 @@ what the gluing lemma consumes.
 * `TauCeti.exists_notMem_dist_sq_add_dist_sq_le_of_wassersteinEDist_le` — a probability measure
   `W₂`-close to two Dirac laws gives, off any null set, a point `z` with
   `d(x₀, z)² + d(z, x₁)² ≤ 2 R²`;
+* `TauCeti.HasFiniteMoment.smul_measure` and `TauCeti.HasFiniteMoment.add_measure` — finite
+  moments survive finite scalings and sums of finite measures, hence mixtures;
 * `TauCeti.HasFiniteMoment.integrable_of_lipschitzWith` — a Lipschitz real function is integrable
   against a finite measure of finite first moment;
 * `TauCeti.HasFiniteMoment.memLp_id` — on a normed additive group, a finite measure of finite
@@ -434,6 +436,12 @@ theorem hasFiniteMoment_def :
     HasFiniteMoment p ν ↔ ∃ x : X, MemLp (fun y ↦ edist x y) p ν :=
   Iff.rfl
 
+/-- Scaling a measure by a finite constant preserves finite `p`-moments. -/
+theorem HasFiniteMoment.smul_measure {ν : Measure X} (h : HasFiniteMoment p ν) {c : ℝ≥0∞}
+    (hc : c ≠ ∞) : HasFiniteMoment p (c • ν) :=
+  let ⟨x, hx⟩ := h
+  ⟨x, hx.smul_measure hc⟩
+
 /-- **The unique-coupling identity.** A Dirac source has exactly one coupling with each
 probability target, so the Wasserstein distance from `δ x` is the `L^p (ν)` seminorm of the ground
 distance to `x`. This is the identity that later identifies the finite-moment space `P_p (X)` with
@@ -677,6 +685,16 @@ theorem hasFiniteMoment_iff_lintegral_edist_rpow_ne_top [OpensMeasurableSpace X]
   rw [MemLp, eLpNorm_lt_top_iff_lintegral_rpow_enorm_lt_top hp0 hp
       measurable_edist_right.aestronglyMeasurable, lt_top_iff_ne_top]
   simp only [enorm_eq_self]
+
+/-- For a finite nonzero exponent `p`, the sum of two finite measures with finite `p`-moments has
+finite `p`-moment. -/
+theorem HasFiniteMoment.add_measure [OpensMeasurableSpace X] (hp0 : p ≠ 0) (hp : p ≠ ∞)
+    {μ ν : Measure X} [IsFiniteMeasure μ] [IsFiniteMeasure ν] (hμ : HasFiniteMoment p μ)
+    (hν : HasFiniteMoment p ν) : HasFiniteMoment p (μ + ν) := by
+  obtain ⟨x, -⟩ := id hμ
+  rw [hasFiniteMoment_iff_lintegral_edist_rpow_ne_top hp0 hp x] at hμ hν ⊢
+  rw [lintegral_add_measure]
+  exact ENNReal.add_ne_top.2 ⟨hμ, hν⟩
 
 /-- On an ordinary pseudometric space, the finite-moment condition is equivalent to finite
 Wasserstein distance from the Dirac law at any prescribed basepoint. -/

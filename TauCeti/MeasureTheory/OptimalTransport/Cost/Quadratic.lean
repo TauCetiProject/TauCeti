@@ -30,9 +30,10 @@ half-squared cost to a minimizer of squared ground distance, as used by `W₂`.
   quadratic cost is cyclical monotonicity for the inner-product pairing, with
   `TauCeti.isCyclicallyMonotone_norm_sub_sq_div_two_iff_forall_sum_inner_le` its classical
   sum form.
-* `TauCeti.edist_rpow_two_eq_two_mul_ofReal_norm_sub_sq_div_two` and
-  `TauCeti.isOptimalCoupling_edist_rpow_two_of_norm_sub_sq_div_two` — convert the half-squared
-  Brenier cost into the squared-distance cost without changing optimal couplings.
+* `TauCeti.edist_rpow_two_eq_two_mul_ofReal_norm_sub_sq_div_two`,
+  `TauCeti.isOptimalCoupling_edist_rpow_two_of_norm_sub_sq_div_two` and
+  `TauCeti.isOptimalCoupling_norm_sub_sq_div_two_of_edist_rpow_two` — convert between the
+  half-squared Brenier cost and the squared-distance cost without changing optimal couplings.
 
 ## References
 
@@ -110,6 +111,17 @@ theorem isOptimalCoupling_edist_rpow_two_of_norm_sub_sq_div_two
     IsOptimalCoupling (fun z ↦ edist z.1 z.2 ^ (2 : ℝ)) π μ ν := by
   simpa only [← edist_rpow_two_eq_two_mul_ofReal_norm_sub_sq_div_two] using
     hπ.const_mul (a := 2) ENNReal.ofNat_ne_top
+
+/-- A coupling optimal for squared distance is optimal for the half-squared-displacement cost.
+The factor of one half is positive and finite, so it preserves the minimizing plans even when the
+value is infinite. -/
+theorem isOptimalCoupling_norm_sub_sq_div_two_of_edist_rpow_two
+    {μ ν : Measure F} {π : Measure (F × F)}
+    (hπ : IsOptimalCoupling (fun z ↦ edist z.1 z.2 ^ (2 : ℝ)) π μ ν) :
+    IsOptimalCoupling (fun z ↦ ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2)) π μ ν := by
+  simpa only [edist_rpow_two_eq_two_mul_ofReal_norm_sub_sq_div_two,
+    ENNReal.inv_mul_cancel_left two_ne_zero ENNReal.ofNat_ne_top] using
+    hπ.const_mul (a := 2⁻¹) (ENNReal.inv_ne_top.2 two_ne_zero)
 
 end TauCeti
 
