@@ -31,9 +31,9 @@ public noncomputable section
 
 namespace TauCeti
 
-universe u
+universe u v
 
-variable (p : ℕ) (K L : Type u) [Field K] [Field L] [Algebra K L]
+variable (p : ℕ) (K : Type u) (L : Type v) [Field K] [Field L] [Algebra K L]
   [FiniteDimensional K L] [Normal K L] (j : L →ₐ[K] SeparableClosure K)
 
 /-- The action of `Gal(L/K)` on the pro-`p` abelianization of the subgroup fixing `L`,
@@ -70,6 +70,10 @@ theorem continuousSMul_galoisClassModuleAction :
     ContinuousSMul (L ≃ₐ[K] L)
       (abelianizationProP p (AbsoluteGaloisGroup K) (galoisSubgroup K L j).toSubgroup) :=
   MulAction.continuousSMul_compHom (quotientGaloisSubgroupEquiv K L j).symm.continuous
+
+-- Relabelling retains the total group and requires both quotient models in the same universe.
+variable (L : Type u) [Field L] [Algebra K L] [FiniteDimensional K L] [Normal K L]
+  (j : L →ₐ[K] SeparableClosure K)
 
 /-- The arithmetic pro-`p` class-module extension with quotient `Gal(L/K)` and its
 prescribed conjugation action on `Vᵃᵇ(p)`. -/
