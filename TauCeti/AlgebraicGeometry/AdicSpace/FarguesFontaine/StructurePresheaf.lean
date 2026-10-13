@@ -42,7 +42,9 @@ over `q⁻¹U`, with the subspace topology. Equalizers and pushforwards of sheav
 `𝒪_𝒳` is a sheaf as soon as `𝒪_𝒴` is one. Sheafiness of `𝒪_𝒴` is not proved here. In
 characteristic `p` with `ϖ` not a unit, `𝕎 R` is not a Tate ring, so it is not an instance of Tate
 acyclicity for `Spa(𝕎 R, 𝕎 R)`; since the sheaf condition is local and the Frobenius windows are
-rational subsets covering `𝒴`, it suffices to know that `𝒪` is a sheaf on each window.
+rational subsets covering `𝒴`, it suffices to know that `𝒪` is a sheaf on each window. This is how
+`TauCeti.FarguesFontaine.isSheaf_spaYPresheaf` proves it when `R` is the ring of integers of a
+valuation on a field.
 
 ## Main definitions
 

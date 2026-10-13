@@ -43,8 +43,9 @@ on wandering opens, such as the Frobenius windows, with the corresponding pieces
 
 The sheaf condition on `𝒪_𝒴` is a hypothesis for the window charts and the stalks of `𝒳`, for `𝒳`
 as a pre-adic space and for the universal property in `𝒱^pre`, as for `isSheaf_spaXPresheaf` and
-`isIso_spaXPresheafRestrict`; it is not proved here. Frobenius on `𝒴`, the projection `q` and its
-universal property among presheafed spaces do not need it.
+`isIso_spaXPresheafRestrict`. It is not proved here; `TauCeti.FarguesFontaine.isSheaf_spaYPresheaf`
+proves it when `R` is the ring of integers of a valuation on a field. Frobenius on `𝒴`, the
+projection `q` and its universal property among presheafed spaces do not need it.
 
 ## Main definitions
 
