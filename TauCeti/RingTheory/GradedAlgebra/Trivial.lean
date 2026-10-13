@@ -23,8 +23,6 @@ examples.
 ## Main results
 
 * `TauCeti.instGradedAlgebraTrivialGrading`: the trivial grading of an algebra is a graded algebra.
-* `TauCeti.proj_trivialGrading`: its degree projection is the identity in degree zero and zero in
-  every other degree.
 * `TauCeti.instGradedSMulTrivialGradingOpposite`: any action of the opposite of a trivially graded
   algebra on a trivially graded module is graded.
 -/
@@ -52,19 +50,6 @@ instance instGradedAlgebraTrivialGrading : GradedAlgebra (trivialGrading R A) wh
     · rcases (mem_trivialGrading_iff R A).mp hb with rfl | rfl <;> simp
     · simp
   __ := instDecompositionTrivialGrading R A
-
-/-- The homogeneous projection for the trivial grading is the identity in degree zero and the
-zero map in every other degree. -/
-@[simp]
-theorem proj_trivialGrading (p : ℤ) (a : A) :
-    ((DirectSum.decompose (trivialGrading R A) a) p : A) = if p = 0 then a else 0 := by
-  have ha : a ∈ trivialGrading R A 0 := by simp
-  by_cases hp : p = 0
-  · subst hp
-    rw [ite_eq_left rfl]
-    exact DirectSum.decompose_of_mem_same (trivialGrading R A) ha
-  · rw [DirectSum.decompose_of_mem_ne _ ha (Ne.symm hp)]
-    simp [hp]
 
 /-- Scalar multiplication by the trivially graded base ring preserves every homogeneous piece of
 an internally graded algebra. -/

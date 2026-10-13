@@ -24,6 +24,9 @@ records its membership API.  For an algebra, `TauCeti.RingTheory.GradedAlgebra.T
 ## Main results
 
 * `TauCeti.mem_trivialGrading_iff`: an element has degree `p` exactly when `p = 0` or it is zero.
+* `TauCeti.instDecompositionTrivialGrading`: the trivial grading is an internal grading.
+* `TauCeti.proj_trivialGrading`: its degree projection is the identity in degree zero and zero in
+  every other degree.
 -/
 
 public section
@@ -84,5 +87,18 @@ instance instDecompositionTrivialGrading : DirectSum.Decomposition (trivialGradi
         rw [hy]
         simp
     | add x y hx hy => simp only [map_add, hx, hy]
+
+/-- The homogeneous projection for the trivial grading is the identity in degree zero and the
+zero map in every other degree. -/
+@[simp]
+theorem proj_trivialGrading (p : ℤ) (a : A) :
+    ((DirectSum.decompose (trivialGrading R A) a) p : A) = if p = 0 then a else 0 := by
+  have ha : a ∈ trivialGrading R A 0 := by simp
+  by_cases hp : p = 0
+  · subst hp
+    rw [ite_eq_left rfl]
+    exact DirectSum.decompose_of_mem_same (trivialGrading R A) ha
+  · rw [DirectSum.decompose_of_mem_ne _ ha (Ne.symm hp)]
+    simp [hp]
 
 end TauCeti

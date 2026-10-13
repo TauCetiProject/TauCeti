@@ -140,7 +140,7 @@ variable (B : Type u) [TopologicalSpace B] (b : B) (R : Type u) [CommRing R]
 
 /-- The component of `loopChainToGroupAlgebra` in dimension `n`: the class map in dimension zero and
 zero in positive dimensions. -/
-def loopChainToGroupAlgebraComponent :
+private def loopChainToGroupAlgebraComponent :
     (n : ℕ) → NormalizedCubicalChain (MooreLoopSpace B b) R n →ₗ[R]
       MonoidAlgebra R (FundamentalGroup B b)
   | 0 => loopZeroChainToGroupAlgebra B b R
@@ -148,12 +148,11 @@ def loopChainToGroupAlgebraComponent :
 
 variable {B b R}
 
-@[simp]
-theorem loopChainToGroupAlgebraComponent_zero :
+private theorem loopChainToGroupAlgebraComponent_zero :
     loopChainToGroupAlgebraComponent B b R 0 = loopZeroChainToGroupAlgebra B b R :=
   (rfl)
 
-theorem loopChainToGroupAlgebraComponent_eq_zero {n : ℕ} (h : n ≠ 0)
+private theorem loopChainToGroupAlgebraComponent_eq_zero {n : ℕ} (h : n ≠ 0)
     (x : NormalizedCubicalChain (MooreLoopSpace B b) R n) :
     loopChainToGroupAlgebraComponent B b R n x = 0 := by
   cases n with
@@ -180,13 +179,27 @@ def loopChainToGroupAlgebra : loopChainAlgebra B b R →ₐ[R] MonoidAlgebra R (
 
 variable {B b R}
 
-/-- The degree-zero ring map on a homogeneous chain. -/
-@[simp]
-theorem loopChainToGroupAlgebra_lof (n : ℕ) (y : NormalizedCubicalChain (MooreLoopSpace B b) R n) :
+private theorem loopChainToGroupAlgebra_lof_component (n : ℕ)
+    (y : NormalizedCubicalChain (MooreLoopSpace B b) R n) :
     loopChainToGroupAlgebra B b R (cubicalChainLof (MooreLoopSpace B b) R n y) =
       loopChainToGroupAlgebraComponent B b R n y := by
   rw [loopChainToGroupAlgebra, DirectSum.toAlgebra_apply, cubicalChainLof, DirectSum.lof_eq_of]
   exact DirectSum.toSemiring_of _ _ _ n y
+
+/-- The degree-zero ring map on a `0`-chain is the projection to the group algebra. -/
+@[simp]
+theorem loopChainToGroupAlgebra_lof_zero (y : NormalizedCubicalChain (MooreLoopSpace B b) R 0) :
+    loopChainToGroupAlgebra B b R (cubicalChainLof (MooreLoopSpace B b) R 0 y) =
+      loopZeroChainToGroupAlgebra B b R y :=
+  loopChainToGroupAlgebra_lof_component 0 y
+
+/-- The degree-zero ring map kills the chains of positive dimension. -/
+@[simp]
+theorem loopChainToGroupAlgebra_lof_succ (k : ℕ)
+    (y : NormalizedCubicalChain (MooreLoopSpace B b) R (k + 1)) :
+    loopChainToGroupAlgebra B b R (cubicalChainLof (MooreLoopSpace B b) R (k + 1) y) = 0 :=
+  (loopChainToGroupAlgebra_lof_component (k + 1) y).trans
+    (loopChainToGroupAlgebraComponent_eq_zero k.succ_ne_zero y)
 
 /-- The degree-zero ring map kills boundaries. -/
 @[simp]
@@ -202,11 +215,9 @@ theorem loopChainToGroupAlgebra_differential (a : loopChainAlgebra B b R) :
       rw [← DirectSum.lof_eq_of R, cubicalChainDifferential_lof_succ]
       cases k with
       | zero =>
-        rw [loopChainToGroupAlgebra_lof]
+        rw [loopChainToGroupAlgebra_lof_zero]
         exact loopZeroChainToGroupAlgebra_boundary y
-      | succ k =>
-        rw [loopChainToGroupAlgebra_lof]
-        exact loopChainToGroupAlgebraComponent_eq_zero (by omega) _
+      | succ k => simp
   | add x y hx hy => simp [hx, hy]
 
 /-- The degree-zero ring map kills homogeneous elements of nonzero cohomological degree. -/
@@ -215,8 +226,8 @@ theorem loopChainToGroupAlgebra_eq_zero_of_mem {i : ℤ} (hi : i ≠ 0) {a : loo
     loopChainToGroupAlgebra B b R a = 0 := by
   rcases (mem_cubicalChainGrading_iff _ _).1 ha with rfl | ⟨n, y, hn, rfl⟩
   · exact map_zero _
-  · rw [loopChainToGroupAlgebra_lof]
-    exact loopChainToGroupAlgebraComponent_eq_zero (by omega) _
+  · obtain ⟨k, rfl⟩ := Nat.exists_eq_succ_of_ne_zero (by omega : n ≠ 0)
+    exact loopChainToGroupAlgebra_lof_succ k y
 
 /-- **Naturality of the degree-zero ring map**: it intertwines `C_*(Ωf)` with the map of group
 rings induced by `π₁(f)`. -/
@@ -241,8 +252,9 @@ theorem loopChainToGroupAlgebra_loopChainMap {B' : Type u} [TopologicalSpace B']
         rw [loopChainToGroupAlgebraComponent_eq_zero n.succ_ne_zero,
           loopChainToGroupAlgebraComponent_eq_zero n.succ_ne_zero, map_zero]
     rw [← DirectSum.lof_eq_of R]
-    exact ((congrArg _ (loopChainMap_lof R f hf n y)).trans (loopChainToGroupAlgebra_lof n _)).trans
-      (h.trans (congrArg _ (loopChainToGroupAlgebra_lof n y)).symm)
+    exact ((congrArg _ (loopChainMap_lof R f hf n y)).trans
+      (loopChainToGroupAlgebra_lof_component n _)).trans
+      (h.trans (congrArg _ (loopChainToGroupAlgebra_lof_component n y)).symm)
   | add x y hx hy => simp only [map_add, hx, hy]
 
 end DegreeZero
