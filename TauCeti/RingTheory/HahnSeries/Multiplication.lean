@@ -13,6 +13,9 @@ public import Mathlib.RingTheory.HahnSeries.Multiplication
 Over a domain, taking a power multiplies the order and raises the leading coefficient to that
 power. These formulas detect whether a leading pole term can be cancelled by a power.
 
+The order formula allows semiring coefficients; Mathlib's `HahnSeries.addVal` requires ring
+coefficients, so its `AddValuation.map_pow` does not cover this generality.
+
 The formulas are `TauCeti.hahnSeries_leadingCoeff_pow n` and
 `TauCeti.hahnSeries_orderTop_pow n`; both are also simplification lemmas. The exponent is
 explicit, and the series is inferred from the equality being rewritten.
