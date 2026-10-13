@@ -15,6 +15,17 @@ A self corner has its vertex vector in degree zero and its volume vector in degr
 This includes the infinitesimal at an isolated vertex. An adjacent corner is concentrated
 in degree one. The existing corner spans and the homogeneous vertex–arrow–volume basis
 determine their intersections with the signed grading.
+
+## References
+
+The vertex–arrow–volume graded-corner calculation was previously formalized in
+`TauCeti/RepresentationTheory/Quiver/Zigzag/CartanMatrix.lean` for the path-graded relation
+quotient under the no-isolated-vertex hypothesis. Here the componentwise algebra and signed
+grading retain the degree-two volume of every isolated dual-number factor.
+
+The algebra and grading conventions follow Huerfano--Khovanov, *A category for the adjoint
+representation*, Section 3, and Ehrig--Tubbenhauer, *Algebraic properties of zigzag algebras*,
+Section 2.
 -/
 
 public section
