@@ -156,16 +156,8 @@ theorem negativeGradientFlow_apply_eq_of_gradient_eq {g : E → ℝ} {K' : ℝ�
     (hfg : ∀ τ ∈ uIcc 0 t,
       ∇ g (negativeGradientFlow f hf τ y) = ∇ f (negativeGradientFlow f hf τ y)) :
     negativeGradientFlow g hg t y = negativeGradientFlow f hf t y := by
-  have hγ : IsIntegralCurveOn (fun τ ↦ negativeGradientFlow f hf τ y) (fun _ w ↦ -∇ g w)
-      (uIcc 0 t) := fun τ hτ ↦ by
-    have h := (isNegativeGradient_negativeGradientFlow f hf).isIntegralCurve y τ
-    beta_reduce at h ⊢
-    rw [hfg τ hτ]
-    exact h.hasDerivWithinAt
-  have h := eq_flowOfLipschitz_of_isIntegralCurveOn hg.neg hγ le_rfl
-  rw [Flow.map_zero_apply] at h
-  rw [negativeGradientFlow]
-  exact h.symm
+  rw [negativeGradientFlow, negativeGradientFlow]
+  exact flowOfLipschitz_apply_eq_of_eqOn hg.neg hf.neg fun τ hτ ↦ congrArg Neg.neg (hfg τ hτ)
 
 /-- Translating the negative-gradient field to displacement coordinates preserves its Lipschitz
 constant. -/

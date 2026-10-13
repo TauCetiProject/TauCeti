@@ -150,6 +150,22 @@ theorem forall_flowOfLipschitz_eq_self_iff (hv : LipschitzWith K v) (x : E) :
     simpa using (eq_flowOfLipschitz hv hconst t).symm
 
 
+/-- **Flows agree where the fields agree.** If the Lipschitz fields `v` and `w` coincide along the
+orbit segment `{ψ_τ y | τ ∈ [[0, t]]}` of the flow `ψ` of `w`, then the flow of `v` sends `y` at
+time `t` to the same point. -/
+theorem flowOfLipschitz_apply_eq_of_eqOn {w : E → E} {K' : ℝ≥0} (hv : LipschitzWith K v)
+    (hw : LipschitzWith K' w) {y : E} {t : ℝ}
+    (h : ∀ τ ∈ uIcc 0 t, v (flowOfLipschitz w hw τ y) = w (flowOfLipschitz w hw τ y)) :
+    flowOfLipschitz v hv t y = flowOfLipschitz w hw t y := by
+  have hγ : IsIntegralCurveOn (fun τ ↦ flowOfLipschitz w hw τ y) (fun _ z ↦ v z) (uIcc 0 t) :=
+    fun τ hτ ↦ by
+      beta_reduce
+      rw [h τ hτ]
+      exact (hasDerivAt_flowOfLipschitz hw y τ).hasDerivWithinAt
+  have := eq_flowOfLipschitz_of_isIntegralCurveOn hv hγ le_rfl
+  rw [Flow.map_zero_apply] at this
+  exact this.symm
+
 /-- **The time-`t` map of the flow of a `K`-Lipschitz vector field is `exp (K |t|)`-Lipschitz.** -/
 theorem lipschitzWith_flowOfLipschitz (hv : LipschitzWith K v) (t : ℝ) :
     LipschitzWith (Real.exp (K * |t|)).toNNReal (flowOfLipschitz v hv t) :=
