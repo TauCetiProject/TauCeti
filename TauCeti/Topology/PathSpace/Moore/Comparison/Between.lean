@@ -5,16 +5,18 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Topology.Homotopy.FiberHomotopyEquiv
 public import TauCeti.Topology.PathSpace.Moore.Comparison.Basic
 
 /-!
 # Comparing path spaces with constrained endpoints
 
-The space of Moore paths starting in `A` and ending in `B` is homotopy equivalent to the
+The space of Moore paths starting in `A` and ending in `B` is fibre homotopy equivalent to the
 corresponding space of paths on the unit interval, by restricting `MoorePath.toUnitPath`,
 `MoorePath.ofUnitPath`, and `MoorePath.unitHomotopy`. Both comparison maps preserve endpoints,
 and the homotopy of the Moore composite to the identity fixes each endpoint throughout.
-Thus the comparison can be used over the endpoint evaluation maps, including when `A` or `B`
+The bundled `MoorePath.fiberHomotopyEquivPathsBetween` compares the endpoint evaluation maps
+and restricts to a homotopy equivalence of each endpoint fibre, including when `A` or `B`
 is a singleton. No closedness or separation assumptions on the subsets or space are needed.
 
 Constant unit-interval paths become Moore paths of duration one, whereas the Moore constant
@@ -73,14 +75,6 @@ theorem coe_ofUnitPathBetween (p : unitPathsBetween A B) :
     (ofUnitPathBetween A B p : MoorePath X) = ofUnitPath p.val :=
   (rfl)
 
-/-- Endpoint evaluation on the Moore path space, taking values in `A × B`. -/
-def endpointsBetween : C(pathsBetween A B, A × B) where
-  toFun γ := (⟨γ.val.source, (mem_pathsBetween.mp γ.property).1⟩,
-    ⟨γ.val.target, (mem_pathsBetween.mp γ.property).2⟩)
-  continuous_toFun :=
-    ((continuous_source.comp continuous_subtype_val).subtype_mk _).prodMk
-      ((continuous_target.comp continuous_subtype_val).subtype_mk _)
-
 /-- Endpoint evaluation on the unit-interval path space, taking values in `A × B`. -/
 def unitEndpointsBetween : C(unitPathsBetween A B, A × B) where
   toFun p := (⟨p.val 0, ((mem_unitPathsBetween A B).mp p.property).1⟩,
@@ -88,12 +82,6 @@ def unitEndpointsBetween : C(unitPathsBetween A B, A × B) where
   continuous_toFun :=
     (((continuous_eval_const 0).comp continuous_subtype_val).subtype_mk _).prodMk
       (((continuous_eval_const 1).comp continuous_subtype_val).subtype_mk _)
-
-theorem endpointsBetween_apply (γ : pathsBetween A B) :
-    endpointsBetween A B γ =
-      (⟨γ.val.source, (mem_pathsBetween.mp γ.property).1⟩,
-        ⟨γ.val.target, (mem_pathsBetween.mp γ.property).2⟩) :=
-  (rfl)
 
 theorem unitEndpointsBetween_apply (p : unitPathsBetween A B) :
     unitEndpointsBetween A B p =
@@ -134,6 +122,7 @@ def unitHomotopyBetween :
   map_zero_left γ := Subtype.ext (unitHomotopy_apply_zero γ.val)
   map_one_left γ := Subtype.ext (unitHomotopy_apply_one γ.val)
   prop' s γ := by
+    simp only [endpointsBetween_apply]
     apply Prod.ext <;> apply Subtype.ext
     · exact unitHomotopy_source s γ.val
     · exact unitHomotopy_target s γ.val
@@ -149,36 +138,36 @@ theorem endpointsBetween_unitHomotopyBetween (s : I) (γ : pathsBetween A B) :
     endpointsBetween A B (unitHomotopyBetween A B (s, γ)) = endpointsBetween A B γ :=
   (unitHomotopyBetween A B).prop s γ
 
-/-- Moore paths and unit-interval paths between subsets are homotopy equivalent over endpoint
-evaluation. The comparison remains valid for arbitrary subsets, including empty subsets. -/
-def homotopyEquivPathsBetween : pathsBetween A B ≃ₕ unitPathsBetween A B where
+/-- Moore paths and unit-interval paths between subsets are fibre homotopy equivalent over
+endpoint evaluation. Restrict to any endpoint fibre with `FiberHomotopyEquiv.fiber`.
+The comparison remains valid for arbitrary subsets, including empty subsets. -/
+def fiberHomotopyEquivPathsBetween :
+    FiberHomotopyEquiv (endpointsBetween A B) (unitEndpointsBetween A B) where
   toFun := toUnitPathBetween A B
   invFun := ofUnitPathBetween A B
-  left_inv := ⟨(unitHomotopyBetween A B).toHomotopy⟩
-  right_inv := ⟨(ContinuousMap.Homotopy.refl _).cast rfl
-    (ContinuousMap.ext (toUnitPathBetween_ofUnitPathBetween A B))⟩
+  comp_toFun := ContinuousMap.ext (unitEndpointsBetween_toUnitPathBetween A B)
+  comp_invFun := ContinuousMap.ext (endpointsBetween_ofUnitPathBetween A B)
+  left_inv := ⟨{
+    toHomotopy := (unitHomotopyBetween A B).toHomotopy
+    prop' := fun s ↦ ContinuousMap.ext (endpointsBetween_unitHomotopyBetween A B s) }⟩
+  right_inv := by
+    have h : (toUnitPathBetween A B).comp (ofUnitPathBetween A B) =
+        ContinuousMap.id (unitPathsBetween A B) :=
+      ContinuousMap.ext (toUnitPathBetween_ofUnitPathBetween A B)
+    rw [h]
+    exact ContinuousMap.HomotopicWith.refl _ (ContinuousMap.comp_id _)
 
 @[simp]
-theorem homotopyEquivPathsBetween_apply (γ : pathsBetween A B) :
-    homotopyEquivPathsBetween A B γ = toUnitPathBetween A B γ :=
+theorem fiberHomotopyEquivPathsBetween_toFun :
+    (fiberHomotopyEquivPathsBetween A B).toFun = toUnitPathBetween A B :=
   (rfl)
 
 @[simp]
-theorem homotopyEquivPathsBetween_symm_apply (p : unitPathsBetween A B) :
-    (homotopyEquivPathsBetween A B).symm p = ofUnitPathBetween A B p :=
+theorem fiberHomotopyEquivPathsBetween_invFun :
+    (fiberHomotopyEquivPathsBetween A B).invFun = ofUnitPathBetween A B :=
   (rfl)
 
 /-! ### Compatibility with constant sections -/
-
-/-- The constant Moore paths of duration zero, parametrized by `A ∩ B`. -/
-def constantBetween : C(↥(A ∩ B), pathsBetween A B) where
-  toFun x := ⟨refl x.val, refl_mem_pathsBetween x.property.1 x.property.2⟩
-  continuous_toFun := (continuous_refl.comp continuous_subtype_val).subtype_mk _
-
-@[simp]
-theorem coe_constantBetween (x : ↥(A ∩ B)) :
-    (constantBetween A B x : MoorePath X) = refl x.val :=
-  (rfl)
 
 /-- The constant unit-interval paths, parametrized by `A ∩ B`. -/
 def unitConstantBetween : C(↥(A ∩ B), unitPathsBetween A B) where
