@@ -143,12 +143,12 @@ private theorem norm_unflattenL_le (hφ : ContDiff ℝ 1 φ) (hL : ∀ y, ‖fde
 private theorem unflattenL_flattenL (hφ : ContDiff ℝ 1 φ) (hL : ∀ y, ‖fderiv ℝ φ y‖ ≤ L) :
     Function.LeftInverse (unflattenL (p := p) hφ hL) (flattenL hφ hL) := fun u =>
   W1p.compMeasurePreservingL_compMeasurePreservingL _ _ _ _ _ _ _ _
-    (graphFlattening φ φ.continuous).symm_apply_apply u
+    (fun x _ => (graphFlattening φ φ.continuous).symm_apply_apply x) u
 
 private theorem flattenL_unflattenL (hφ : ContDiff ℝ 1 φ) (hL : ∀ y, ‖fderiv ℝ φ y‖ ≤ L) :
     Function.RightInverse (unflattenL (p := p) hφ hL) (flattenL hφ hL) := fun v =>
   W1p.compMeasurePreservingL_compMeasurePreservingL _ _ _ _ _ _ _ _
-    (graphFlattening φ φ.continuous).apply_symm_apply v
+    (fun x _ => (graphFlattening φ φ.continuous).apply_symm_apply x) v
 
 /-- **Flattening the region above a `C¹` graph.** If `φ` is of class `C¹` with
 `‖fderiv ℝ φ‖ ≤ L`, precomposition with inverse graph flattening is an isomorphism from

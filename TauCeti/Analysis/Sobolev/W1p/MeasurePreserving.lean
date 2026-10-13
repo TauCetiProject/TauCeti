@@ -192,21 +192,23 @@ theorem W1p.norm_compMeasurePreservingL_le (hΦ : MeasurePreserving Φ μ ν)
     ‖(W1p.compMeasurePreservingL hΦ hUV hΦd hM : W1p ν V p →L[ℝ] W1p μ U p)‖ ≤ max 1 M :=
   LinearMap.mkContinuous_norm_le _ (zero_le_one.trans (le_max_left _ _)) _
 
-/-- Precomposition with `Φ` undoes precomposition with a left inverse `Ψ` of `Φ`:
+/-- Precomposition with `Φ` undoes precomposition with a left inverse `Ψ` of `Φ` on `U`:
 `(u ∘ Ψ) ∘ Φ = u`. -/
 theorem W1p.compMeasurePreservingL_compMeasurePreservingL {Ψ : E' → E} {M' : ℝ}
     (hΦ : MeasurePreserving Φ μ ν) (hUV : (U : Set E) = Φ ⁻¹' V)
     (hΦd : ContDiffOn ℝ 1 Φ U) (hM : ∀ x ∈ (U : Set E), ‖fderiv ℝ Φ x‖ ≤ M)
     (hΨ : MeasurePreserving Ψ ν μ) (hVU : (V : Set E') = Ψ ⁻¹' U)
     (hΨd : ContDiffOn ℝ 1 Ψ V)
-    (hM' : ∀ x ∈ (V : Set E'), ‖fderiv ℝ Ψ x‖ ≤ M') (hΨΦ : ∀ x, Ψ (Φ x) = x) (u : W1p μ U p) :
+    (hM' : ∀ x ∈ (V : Set E'), ‖fderiv ℝ Ψ x‖ ≤ M') (hΨΦ : ∀ x ∈ (U : Set E), Ψ (Φ x) = x)
+    (u : W1p μ U p) :
     W1p.compMeasurePreservingL hΦ hUV hΦd hM
       (W1p.compMeasurePreservingL hΨ hVU hΨd hM' u) = u := by
   refine W1p.ext_value (Lp.ext ?_)
   filter_upwards [W1p.value_compMeasurePreservingL_ae (p := p) hΦ hUV hΦd hM _,
     (measurePreserving_restrict hΦ hUV).quasiMeasurePreserving.ae
-      (W1p.value_compMeasurePreservingL_ae hΨ hVU hΨd hM' u)] with x h1 h2
-  rw [h1, h2, hΨΦ]
+      (W1p.value_compMeasurePreservingL_ae hΨ hVU hΨd hM' u),
+    ae_restrict_mem U.isOpen.measurableSet] with x h1 h2 hx
+  rw [h1, h2, hΨΦ x hx]
 
 /-- **Zero boundary values are preserved.** For `p < ∞` and a proper map `Φ`, precomposition
 with `Φ` maps `W^{1,p}_0(V)` into `W^{1,p}_0(U)`. -/
