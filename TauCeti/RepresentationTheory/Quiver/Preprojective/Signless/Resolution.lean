@@ -25,7 +25,7 @@ is one copy of the base ring, as detected by the vertex augmentation.
 Right modules are left modules over the ordinary opposite algebra. The vertex projectives are
 principal left ideals in that opposite algebra, so their projectivity follows from
 `IsIdempotentElem.projective_span_singleton`. Products in the original algebra are
-later-factor-first: the two maps are `y ↦ (b* y)_b` and `(z_b) ↦ ∑ b z_b`.
+later-factor-first: the two maps are `y ↦ (reverse b * y)_b` and `(z_b) ↦ ∑ b z_b`.
 No bipartiteness or characteristic hypothesis is used. In particular this construction applies
 to the signless quadratic dual on odd cycles without identifying it with the signed algebra.
 The resolution here is ungraded.
@@ -107,7 +107,7 @@ private theorem arrow_mul_mem_signlessRightProjective {i j : R} (b : i ⟶ j)
   rw [mem_signlessPreprojectiveRightProjective_iff, unop_mul, unop_op, ← mul_assoc,
     ← map_mul, vertexIdempotent_mul_ofArrow, ite_eq_left rfl]
 
-/-- The reverse-arrow map of the signless Koszul complex, `y ↦ (b* y)_b`. -/
+/-- The reverse-arrow map of the signless Koszul complex, `y ↦ (reverse b * y)_b`. -/
 noncomputable def signlessPreprojectiveKoszulLeft (v : R) :
     signlessPreprojectiveRightProjective k v →ₗ[Πᵐᵒᵖ] signlessPreprojectiveKoszulMiddle k v where
   toFun y i b := ⟨(y : Πᵐᵒᵖ) * op (π (ofArrow (reverse b))),
