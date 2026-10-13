@@ -15,9 +15,10 @@ public import Mathlib.Topology.Homotopy.Equiv
 The mapping torus of a homeomorphism `φ : F ≃ₜ F` is the orbit space of the action of `ℤ` on the
 cylinder `F × ℝ` by `n +ᵥ (x, t) = (φⁿ x, t + n)`.  This action is free and every point has a
 neighbourhood, a slab of height less than one, whose translates are pairwise disjoint.  So the
-quotient map `F × ℝ → MappingTorus φ` is a covering map with deck group `ℤ`
+quotient map `F × ℝ → MappingTorus φ` is a quotient covering map for this `ℤ`-action
 (`TauCeti.MappingTorus.isAddQuotientCoveringMap_coverMap`): it is the infinite cyclic cover of the
-mapping torus.
+mapping torus.  (When `F` is disconnected the covering may have further deck transformations; only
+the `ℤ`-action is used here.)
 
 The deck transformation generating the action is `TauCeti.MappingTorus.deck φ`,
 `(x, t) ↦ (φ x, t + 1)`.  It lies over the monodromy `φ` under the projection `F × ℝ → F`, which
@@ -93,7 +94,7 @@ lemma deck_eq_vadd (p : F × ℝ) :
 
 /-- The deck transformation covers the identity of the mapping torus. -/
 lemma coverMap_deck (p : F × ℝ) : coverMap φ (deck φ p) = coverMap φ p := by
-  simpa using mk_vadd φ 1 p.1 p.2
+  simp
 
 variable (F) in
 /-- The projection of the cylinder `F × ℝ` onto `F` is a homotopy equivalence, whose homotopy
