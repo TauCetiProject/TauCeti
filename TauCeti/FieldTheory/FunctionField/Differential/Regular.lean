@@ -181,9 +181,9 @@ section PerfectField
 variable {k F : Type*} [Field k] [Field F] [Algebra k F] [PerfectField k]
   (P : Place k F) (hF : IsFunctionField k F) (hex : IsIntegrallyClosedIn k F)
 
-/-- Over a perfect field, a Kähler differential comes from the valuation ring of a rational
-place exactly when its residue pairing with every integral function vanishes. No uniformizer
-is part of the statement. -/
+/-- For a function field `F` over a perfect field `k`, a Kähler differential comes from the
+valuation ring of a rational place exactly when its residue pairing with every integral function
+vanishes. No uniformizer is part of the statement, and `k` need not be the exact constant field. -/
 theorem mem_range_map_iff_forall_kaehlerResidueOfPerfectField_smul_eq_zero (hP : P.degree = 1)
     (ω : Ω[F⁄k]) :
     ω ∈ (KaehlerDifferential.map k k P.integers F).range ↔
