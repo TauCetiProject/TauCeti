@@ -26,7 +26,9 @@ equivalently `d/dt Dφₜ(x) = Dv(φₜ x) ∘ Dφₜ(x)`. The proof differentia
 
 ## Main results
 
+* `TauCeti.lipschitzWith_flowOfLipschitz`: the time-`t` map is `exp (K |t|)`-Lipschitz.
 * `TauCeti.norm_fderiv_flowOfLipschitz_le`: `‖Dφₜ(x)‖ ≤ exp (K |t|)`.
+* `TauCeti.differentiable_flowOfLipschitz_apply`: the time-`t` map is differentiable.
 * `TauCeti.fderiv_flowOfLipschitz_eq_id_add_integral`: the integral form.
 * `TauCeti.hasDerivAt_fderiv_flowOfLipschitz`: the differential form.
 * `TauCeti.hasDerivAt_fderiv_flowOfLipschitz_apply`: the differential form applied to a vector.
@@ -42,16 +44,20 @@ namespace TauCeti
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
   {v : E → E} {K : ℝ≥0}
 
+/-- **The time-`t` map of the flow of a `K`-Lipschitz vector field is `exp (K |t|)`-Lipschitz.** -/
+theorem lipschitzWith_flowOfLipschitz (hv : LipschitzWith K v) (t : ℝ) :
+    LipschitzWith (Real.exp (K * |t|)).toNNReal (flowOfLipschitz v hv t) :=
+  LipschitzWith.of_dist_le_mul fun a b ↦ by
+    rw [flowOfLipschitz_apply, flowOfLipschitz_apply,
+      Real.coe_toNNReal _ (Real.exp_pos _).le, mul_comm]
+    exact ODE.dist_globalSolution_le v hv a b t
+
 /-- **A bound on the derivative of the flow.** The derivative of the time-`t` map of the flow of a
 `K`-Lipschitz vector field has norm at most `exp (K |t|)`. -/
 theorem norm_fderiv_flowOfLipschitz_le (hv : LipschitzWith K v) (x : E) (t : ℝ) :
     ‖fderiv ℝ (flowOfLipschitz v hv t) x‖ ≤ Real.exp (K * |t|) := by
-  have hnn : 0 ≤ Real.exp (K * |t|) := (Real.exp_pos _).le
-  have hL : LipschitzWith (Real.exp (K * |t|)).toNNReal (flowOfLipschitz v hv t) :=
-    LipschitzWith.of_dist_le_mul fun a b ↦ by
-      rw [flowOfLipschitz_apply, flowOfLipschitz_apply, Real.coe_toNNReal _ hnn, mul_comm]
-      exact ODE.dist_globalSolution_le v hv a b t
-  simpa [Real.coe_toNNReal _ hnn] using norm_fderiv_le_of_lipschitz ℝ hL (x₀ := x)
+  simpa [Real.coe_toNNReal _ (Real.exp_pos _).le] using
+    norm_fderiv_le_of_lipschitz ℝ (lipschitzWith_flowOfLipschitz hv t) (x₀ := x)
 
 section Smooth
 
@@ -62,10 +68,17 @@ private theorem contDiff_uncurry_flowOfLipschitz :
     ContDiff ℝ 1 (Function.uncurry (flowOfLipschitz v hv)) := by
   simpa using contDiff_flowOfLipschitz 0 v hv (by simpa using hvs)
 
-private theorem differentiable_flowOfLipschitz_apply (t : ℝ) :
+/-- The time-`t` map of the flow of a Lipschitz `C¹` vector field is differentiable. -/
+theorem differentiable_flowOfLipschitz_apply (t : ℝ) :
     Differentiable ℝ (flowOfLipschitz v hv t) :=
   (contDiff_flowOfLipschitz_apply 0 v hv (by simpa using hvs) t).differentiable
     (by norm_num)
+
+/-- Every orbit of the flow is continuous in time. -/
+private theorem continuous_flowOfLipschitz_orbit (x : E) :
+    Continuous fun τ : ℝ ↦ flowOfLipschitz v hv τ x :=
+  (contDiff_uncurry_flowOfLipschitz hv hvs).continuous.comp
+    (by fun_prop : Continuous fun τ : ℝ ↦ (τ, x))
 
 /-- The derivative of the time-`τ` map at a fixed point is continuous in `τ`. -/
 private theorem continuous_fderiv_flowOfLipschitz (x : E) :
@@ -84,10 +97,8 @@ private theorem continuous_fderiv_flowOfLipschitz (x : E) :
 private theorem continuous_variational_integrand (x : E) :
     Continuous fun τ : ℝ ↦
       (fderiv ℝ v (flowOfLipschitz v hv τ x)).comp (fderiv ℝ (flowOfLipschitz v hv τ) x) := by
-  have hc : Continuous fun τ : ℝ ↦ (τ, x) := by fun_prop
-  have horb : Continuous fun τ : ℝ ↦ flowOfLipschitz v hv τ x :=
-    (contDiff_uncurry_flowOfLipschitz hv hvs).continuous.comp hc
-  exact ((hvs.continuous_fderiv one_ne_zero).comp horb).clm_comp
+  exact ((hvs.continuous_fderiv one_ne_zero).comp
+    (continuous_flowOfLipschitz_orbit hv hvs x)).clm_comp
     (continuous_fderiv_flowOfLipschitz hv hvs x)
 
 /-- **The variational equation, integral form.** For a globally Lipschitz `C¹` vector field, the
@@ -102,8 +113,7 @@ theorem fderiv_flowOfLipschitz_eq_id_add_integral (x : E) (t : ℝ) :
       (∫ τ in (0 : ℝ)..t, (fderiv ℝ v (flowOfLipschitz v hv τ x)).comp
         (fderiv ℝ (flowOfLipschitz v hv τ) x)) x := by
     have hcont : ∀ y : E, Continuous fun τ : ℝ ↦ v (flowOfLipschitz v hv τ y) := fun y ↦
-      hv.continuous.comp ((contDiff_uncurry_flowOfLipschitz hv hvs).continuous.comp
-        (by fun_prop : Continuous fun τ : ℝ ↦ (τ, y)))
+      hv.continuous.comp (continuous_flowOfLipschitz_orbit hv hvs y)
     refine hasFDerivAt_integral_of_dominated_of_fderiv_le''
       (F := fun y τ ↦ v (flowOfLipschitz v hv τ y))
       (F' := fun y τ ↦ (fderiv ℝ v (flowOfLipschitz v hv τ y)).comp
@@ -115,11 +125,8 @@ theorem fderiv_flowOfLipschitz_eq_id_add_integral (x : E) (t : ℝ) :
       intervalIntegrable_const ?_
     · refine ae_restrict_of_forall_mem measurableSet_uIoc fun τ hτ y _ ↦ ?_
       have hτt : |τ| ≤ |t| := by
-        rcases Set.mem_uIoc.1 hτ with ⟨h0, h1⟩ | ⟨h0, h1⟩
-        · rw [abs_of_pos h0, abs_of_pos (h0.trans_le h1)]
-          exact h1
-        · rw [abs_of_nonpos h1, abs_of_neg (h0.trans_le h1)]
-          exact neg_le_neg h0.le
+        have := Real.dist_le_of_mem_uIcc (Set.uIoc_subset_uIcc hτ) Set.left_mem_uIcc
+        simpa [Real.dist_eq] using this
       calc _ ≤ ‖fderiv ℝ v (flowOfLipschitz v hv τ y)‖ * ‖fderiv ℝ (flowOfLipschitz v hv τ) y‖ :=
             ContinuousLinearMap.opNorm_comp_le _ _
         _ ≤ K * Real.exp (K * |t|) := by
