@@ -54,8 +54,6 @@ exponent `3 / 2`, through the Frey curve
   `a + b = c`, bounding `c`.
 * `TauCeti.abcConjecture_iff_forall_finite`: the conjecture is the statement that, for every
   `ε > 0`, only finitely many triples have `rad(a b c) ^ (1 + ε) < c`.
-* `TauCeti.abcConjecture_iff_abcConjectureWithExponent_one`: the abc conjecture is the case
-  `κ = 1` of the abc conjecture with exponent `κ`.
 * `TauCeti.AbcConjectureWithExponent.mono`: a larger exponent gives a weaker statement.
 * `TauCeti.abcConjectureWithExponent_iff_nat`: for `κ ≥ 0`, the abc conjecture with exponent `κ` is
   its form for coprime positive integers, of which `TauCeti.abcConjecture_iff_nat` is the case
@@ -105,11 +103,6 @@ theorem abcConjecture_iff : AbcConjecture ↔
     ∀ ε : ℝ, 0 < ε → ∃ C : ℝ, ∀ a b c : ℤ, IsCoprime a b → a + b = c →
       ((max (max a.natAbs b.natAbs) c.natAbs : ℕ) : ℝ) ≤
         C * ((radical (a * b * c).natAbs : ℕ) : ℝ) ^ (1 + ε) :=
-  Iff.rfl
-
-/-- The abc conjecture is the abc conjecture with exponent `1`. -/
-theorem abcConjecture_iff_abcConjectureWithExponent_one :
-    AbcConjecture ↔ AbcConjectureWithExponent 1 :=
   Iff.rfl
 
 -- The radical of a natural number is at least `1`, and so is any nonnegative power of it.
