@@ -48,7 +48,7 @@ theorem green_ac_winding {γ : ℝ → ℂ} {a b : ℝ} {U : Set ℂ} {P Q : ℂ
   have hgreen : ∀ᶠ n in atTop, (∫ t in a..b, circulationFun P' Q' (γn n) t) =
       ∫ z in U, windingWeight (γn n) a b z * curl P' Q' z := by
     filter_upwards [hdomain] with n hdom
-    exact (green_polygonal (hn n).1 (hAC n) (hcl n) hP' hQ').2.2.trans
+    exact (green_polygonal (hn n).1 (hcl n) hP' hQ').2.2.trans
       (integral_windingWeight_mul_eq_setIntegral hdom.2 (curl P' Q'))
   have heq := integral_circulationFun_eq_setIntegral_of_approximation
     hγ hAC hab.le hclosed hcl hP' hQ' hcP hcQ hu hd hwconv hindex

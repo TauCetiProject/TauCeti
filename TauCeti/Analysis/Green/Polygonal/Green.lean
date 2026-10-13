@@ -83,12 +83,13 @@ theorem green_polygon_of_subdivision {γ : ℝ → ℂ} {a b : ℝ} {N : ℕ}
 /-- Winding-weighted Green for a closed raw polygonal curve and globally `C¹` fields.
 Both integrabilities and the identity follow from the curve's finite affine subdivision. -/
 theorem green_polygonal {γ : ℝ → ℂ} {a b : ℝ}
-    (hpoly : IsPolygonalOnInterval γ a b) (hγ : AbsolutelyContinuousOnInterval γ a b)
+    (hpoly : IsPolygonalOnInterval γ a b)
     (hclosed : γ a = γ b) {P Q : ℂ → ℝ} (hP : ContDiff ℝ 1 P) (hQ : ContDiff ℝ 1 Q) :
     IntervalIntegrable (circulationFun P Q γ) volume a b ∧
       Integrable (fun z ↦ windingWeight γ a b z * curl P Q z) ∧
       (∫ t in a..b, circulationFun P Q γ t) =
         ∫ z : ℂ, windingWeight γ a b z * curl P Q z := by
+  have hγ := hpoly.absolutelyContinuousOnInterval
   obtain ⟨N, _, s, hs, ha, hb, hsegments⟩ := hpoly.exists_subdivision
   exact green_polygon_of_subdivision hs ha hb hsegments hγ hclosed 0 hP hQ
 
