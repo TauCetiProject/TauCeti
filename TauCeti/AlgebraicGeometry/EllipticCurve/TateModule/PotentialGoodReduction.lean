@@ -80,7 +80,6 @@ theorem Affine.Point.map_eq_self_of_mem_inertiaSubgroup_of_mem_fixingSubgroup
     (hσL : σ ∈ ι.fieldRange.fixingSubgroup) {P : (W⁄(AlgebraicClosure K)).toAffine.Point}
     (hP : Affine.Point.map σ.toAlgHom (n • P) = n • P) :
     Affine.Point.map σ.toAlgHom P = P := by
-  classical
   -- `P` and `ι(L)` lie in the normal closure `M` of the field they generate.
   set E := ι.fieldRange ⊔
     IntermediateField.adjoin K {Affine.Point.xCoord P, Affine.Point.yCoord P}
@@ -113,6 +112,9 @@ theorem Affine.Point.map_eq_self_of_mem_inertiaSubgroup_of_mem_fixingSubgroup
     rw [LocalFieldsRamification.mem_lowerRamificationGroup_iff] at h ⊢
     -- `τ` is `ρ` with its `L`-linearity recorded, so both act on `𝒪[M]` by the same map.
     exact h
+  -- `τ` and `ρ` have the same underlying map.
+  have hτρ (x : M) : τ x = ρ x := by
+    rw [AlgEquiv.ofRingEquiv_apply, AlgEquiv.coe_toRingEquiv]
   have hcomm : σ.toAlgHom.comp M.val = M.val.comp ρ.toAlgHom :=
     AlgHom.ext fun x ↦ (AlgEquiv.restrictNormal_commutes σ M x).symm
   obtain ⟨Q, hQP⟩ := (Affine.Point.exists_map_eq_iff P M.val).mpr
@@ -137,8 +139,7 @@ theorem Affine.Point.map_eq_self_of_mem_inertiaSubgroup_of_mem_fixingSubgroup
     · simp only [← Affine.Point.zero_def, _root_.map_zero]
     · rw [AddEquiv.cast_apply, Affine.Point.cast_some hbc, Affine.Point.map_some,
         Affine.Point.map_some, AddEquiv.cast_apply, Affine.Point.cast_some hbc]
-      -- `τ` and `ρ` have the same underlying map.
-      rfl
+      simp only [AlgEquiv.toAlgHom_apply, hτρ]
   have hn' : (n : 𝓀[L]) ≠ 0 := by
     rwa [← map_natCast (algebraMap 𝓀[K] 𝓀[L]), map_ne_zero_iff _ (algebraMap 𝓀[K] 𝓀[L]).injective]
   have hQ' := Affine.Point.map_eq_self_of_mem_lowerRamificationGroup_zero (W := C • W⁄L) hn' hτ
@@ -191,9 +192,8 @@ theorem HasPotentialGoodReduction.exists_tateModuleGaloisRepresentation_eq_one
   have := finiteExtension_isNonarchimedeanLocalField K L
   -- The minimal model of `W` over `S` is `C • W` for a change of variables `C`. As `S` lies in
   -- `𝒪[L]`, it has good reduction over `𝒪[L]` too.
-  set C := ((W⁄L).exists_isMinimal S).choose
-  have hmin : (W⁄L).minimal S = C • W⁄L := rfl
-  rw [hmin] at hgood
+  obtain ⟨C, hC⟩ := (W⁄L).exists_smul_eq_minimal S
+  rw [← hC] at hgood
   let : Algebra S 𝒪[L] := ((algebraMap S L).codRestrict 𝒪[L]
     (valuation_algebraMap_le_one_of_isLocalHom hS)).toAlgebra
   have hgood' : (C • W⁄L).HasGoodReduction 𝒪[L] := by
@@ -235,7 +235,7 @@ theorem HasPotentialGoodReduction.finite_image_tateModuleGaloisRepresentation
           (congrArg (fun τ : N ≃ₐ[K] N ↦ (τ ⟨x, hxN⟩ : AlgebraicClosure K)) hσσ')).trans
           (AlgEquiv.restrictNormal_commutes σ' N ⟨x, hxN⟩)
       rw [AlgEquiv.mul_apply, ← h, AlgEquiv.aut_inv, AlgEquiv.symm_apply_apply]
-    rw [show σ' = σ * (σ⁻¹ * σ') by rw [mul_inv_cancel_left], map_mul, hM ℓ hℓ _ hg hgM, mul_one]
+    rw [← mul_inv_cancel_left σ σ', map_mul, hM ℓ hℓ _ hg hgM, mul_one]
   -- So the image injects into the finite group `Gal(N/K)`.
   have : Finite (ρ '' (inertiaSubgroup K : Set (Field.absoluteGaloisGroup K))) := by
     refine Finite.of_injective (fun y ↦ AlgEquiv.restrictNormal y.2.choose N)

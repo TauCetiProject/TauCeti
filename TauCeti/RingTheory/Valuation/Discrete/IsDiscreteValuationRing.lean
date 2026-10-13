@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Valuation.Discrete.IsDiscreteValuationRing
+public import Mathlib.RingTheory.Valuation.ValuativeRel.Basic
 
 /-!
 # The valuation of a discrete valuation ring on its own elements
@@ -16,6 +17,10 @@ attached to the maximal ideal of `R` (`IsDiscreteValuationRing.maximalIdeal`). M
 membership in the ideal underlying that height-one prime. This file restates it with the local
 ring's maximal ideal, and with divisibility by a uniformiser.
 
+It also compares the valuation of a discrete valuation ring `S` with that of a valued field `K`
+whose valuation ring maps to `S` through a local homomorphism: the valuation of `S`, restricted
+along `K → Frac(S)`, is equivalent to the valuation of `K`.
+
 ## Main results
 
 * `TauCeti.IsDiscreteValuationRing.valuation_algebraMap_lt_one_iff_mem`: `v r < 1` exactly when
@@ -23,6 +28,8 @@ ring's maximal ideal, and with divisibility by a uniformiser.
 * `Irreducible.valuation_algebraMap_lt_one_iff_dvd` and
   `Irreducible.valuation_algebraMap_eq_one_iff_not_dvd`: for a uniformiser `ϖ`, `v r < 1` exactly
   when `ϖ ∣ r`, and `v r = 1` exactly when `ϖ ∤ r`.
+* `TauCeti.isEquiv_comap_valuation_maximalIdeal_of_isLocalHom`: a discrete valuation ring
+  dominating the valuation ring of `K` restricts to the valuation class of `K`.
 -/
 
 public section
@@ -63,3 +70,52 @@ theorem valuation_algebraMap_eq_one_iff_not_dvd (hϖ : Irreducible ϖ) (r : R) :
     (valuation_le_one (K := K) _ r).lt_iff_ne, not_not]
 
 end Irreducible
+
+namespace TauCeti
+
+variable {K : Type*} [Field K] [ValuativeRel K] {M : Type*} [Field M] [Algebra K M]
+  {S : Type*} [CommRing S] [IsDomain S] [_root_.IsDiscreteValuationRing S] [Algebra S M]
+  [IsFractionRing S M] [Algebra (ValuativeRel.valuation K).integer S]
+  [IsLocalHom (algebraMap (ValuativeRel.valuation K).integer S)]
+
+/-- The valuation of a discrete valuation ring `S` with fraction field `M`, dominating the
+valuation ring of `K`, restricts to the valuation class of `K`: an element of `K` is integral at
+`S` exactly when it lies in the valuation ring of `K`. -/
+theorem isEquiv_comap_valuation_maximalIdeal_of_isLocalHom
+    (h : (algebraMap S M).comp (algebraMap (ValuativeRel.valuation K).integer S) =
+      (algebraMap K M).comp (algebraMap (ValuativeRel.valuation K).integer K)) :
+    ((valuation M (_root_.IsDiscreteValuationRing.maximalIdeal S)).comap
+      (algebraMap K M)).IsEquiv (ValuativeRel.valuation K) := by
+  set w := valuation M (_root_.IsDiscreteValuationRing.maximalIdeal S)
+  -- An element `y` of the valuation ring of `K` has the `S`-valuation of its image in `S`.
+  have hw {y : K} (hy : y ∈ (ValuativeRel.valuation K).integer) :
+      w (algebraMap K M y) =
+        w (algebraMap S M (algebraMap (ValuativeRel.valuation K).integer S ⟨y, hy⟩)) := by
+    rw [← RingHom.comp_apply, h, RingHom.comp_apply, Algebra.algebraMap_ofSubsemiring_apply]
+  refine Valuation.isEquiv_iff_val_le_one.2 fun {x} ↦ ⟨fun hx ↦ ?_, fun hx ↦ ?_⟩
+  · -- If `x` is not integral, then `x⁻¹` lies in the maximal ideal of the valuation ring of `K`,
+    -- hence of `S`.
+    by_contra hx'
+    have hx0 : x ≠ 0 := by
+      rintro rfl
+      simp at hx'
+    have hinv : ValuativeRel.valuation K x⁻¹ < 1 := by
+      rw [map_inv₀]
+      exact inv_lt_one_of_one_lt₀ (not_le.1 hx')
+    have hr : ¬IsUnit (⟨x⁻¹, hinv.le⟩ : (ValuativeRel.valuation K).integer) :=
+      (Valuation.Integer.not_isUnit_iff_valuation_lt_one).2 hinv
+    have hrS : ¬IsUnit (algebraMap (ValuativeRel.valuation K).integer S ⟨x⁻¹, hinv.le⟩) :=
+      fun hu ↦ hr (isUnit_of_map_unit _ _ hu)
+    have hlt : w (algebraMap K M x⁻¹) < 1 := by
+      rw [hw hinv.le, IsDiscreteValuationRing.valuation_algebraMap_lt_one_iff_mem]
+      exact (IsLocalRing.mem_maximalIdeal _).2 hrS
+    rw [map_inv₀, map_inv₀] at hlt
+    have hpos : 0 < w (algebraMap K M x) := by
+      rw [zero_lt_iff, Valuation.ne_zero_iff, map_ne_zero_iff _ (algebraMap K M).injective]
+      exact hx0
+    rw [Valuation.comap_apply] at hx
+    exact ((one_le_inv₀ hpos).2 hx).not_gt hlt
+  · rw [Valuation.comap_apply, hw hx]
+    exact valuation_le_one _ _
+
+end TauCeti
