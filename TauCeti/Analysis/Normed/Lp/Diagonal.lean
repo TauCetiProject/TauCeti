@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Normed.Lp.lpHolder
 public import Mathlib.LinearAlgebra.Dimension.Constructions
 public import Mathlib.LinearAlgebra.Dimension.LinearMap
+public import Mathlib.LinearAlgebra.StdBasis
 public import TauCeti.Analysis.Normed.Operator.Compact.FiniteRank
 
 /-!
@@ -17,7 +18,7 @@ A bounded scalar family defines coordinatewise multiplication on `lp` for every 
 `1 ≤ p ≤ ∞`. The operator norm is the supremum of the coefficient norms. Finite coordinate
 truncations have rank at most the number of retained coordinates, and the discarded coefficients
 bound their error in operator norm. These estimates provide finite-rank approximations of
-diagonal operators. Over a complete locally compact scalar field, coefficients tending to
+diagonal operators. Over a locally compact scalar field, coefficients tending to
 zero along the cofinite filter give a compact diagonal operator.
 
 The construction uses Mathlib's `lp.mapCLM` for uniformly bounded families of operators.
@@ -98,6 +99,33 @@ theorem diagonalCLM_mul (d e : ℓ^∞(ι, 𝕜)) :
 
 variable [DecidableEq ι]
 
+omit [Fact (1 ≤ p)] in
+/-- The scalar coordinate vectors in `lp` are linearly independent. -/
+theorem linearIndependent_single_one :
+    LinearIndependent 𝕜 (fun i : ι ↦ lp.single p i (1 : 𝕜)) := by
+  apply LinearIndependent.of_comp (lpSubmodule 𝕜 (fun _ : ι ↦ 𝕜) p).subtype
+  have hcoe : (lpSubmodule 𝕜 (fun _ : ι ↦ 𝕜) p).subtype ∘
+      (fun i : ι ↦ lp.single p i (1 : 𝕜)) = fun i ↦ Pi.single i (1 : 𝕜) := by
+    funext i
+    exact lp.coeFn_single p i 1
+  rw [hcoe]
+  exact Pi.linearIndependent_single_one ι 𝕜
+
+omit [Fact (1 ≤ p)] in
+/-- A vector in the span of a family of coordinate vectors vanishes outside their indices. -/
+theorem apply_eq_zero_of_mem_span_single {κ : Type*} (f : κ → ι) {x : ℓ^p(ι, 𝕜)}
+    (hx : x ∈ Submodule.span 𝕜 (Set.range fun j ↦ lp.single p (f j) (1 : 𝕜)))
+    {i : ι} (hi : i ∉ Set.range f) : x i = 0 := by
+  have hle : Submodule.span 𝕜 (Set.range fun j ↦ lp.single p (f j) (1 : 𝕜)) ≤
+      LinearMap.ker (evalₗ (𝕜 := 𝕜) (fun _ : ι ↦ 𝕜) p i) := by
+    refine Submodule.span_le.mpr ?_
+    rintro _ ⟨j, rfl⟩
+    apply LinearMap.mem_ker.mpr
+    rw [evalₗ_apply]
+    exact lp.single_apply_ne (E := fun _ : ι ↦ 𝕜) p (f j) 1
+      (fun hij ↦ hi ⟨j, hij.symm⟩)
+  simpa only [evalₗ_apply] using LinearMap.mem_ker.mp (hle hx)
+
 /-- Retain the coefficients of a diagonal operator on a finite set of coordinates. -/
 noncomputable def diagonalTruncation (d : ℓ^∞(ι, 𝕜)) (s : Finset ι) :
     ℓ^p(ι, 𝕜) →L[𝕜] ℓ^p(ι, 𝕜) :=
@@ -175,10 +203,11 @@ theorem norm_diagonalCLM_sub_diagonalTruncation_le (d : ℓ^∞(ι, 𝕜)) (s : 
 
 omit [DecidableEq ι] in
 /-- A diagonal multiplier is compact if its coefficient norms tend to zero along cofinite. -/
-theorem isCompactOperator_diagonalCLM [LocallyCompactSpace 𝕜] [CompleteSpace 𝕜]
+theorem isCompactOperator_diagonalCLM [LocallyCompactSpace 𝕜]
     (d : ℓ^∞(ι, 𝕜)) (hd : Tendsto (fun i ↦ ‖d i‖) cofinite (𝓝 0)) :
     IsCompactOperator (diagonalCLM (p := p) d) := by
   classical
+  have : ProperSpace 𝕜 := .of_locallyCompactSpace 𝕜
   apply isClosed_setOfPred_isCompactOperator.closure_subset
   refine Metric.mem_closure_iff.mpr fun ε hε ↦ ?_
   have hs : {i | ¬‖d i‖ < ε / 2}.Finite :=

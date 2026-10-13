@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.Normed.Lp.Diagonal
 public import TauCeti.Analysis.OperatorIdeal.ApproximationNumber.MinMax
-public import Mathlib.LinearAlgebra.StdBasis
 
 /-!
 # Approximation numbers of infinite diagonal operators
@@ -18,7 +17,7 @@ coordinates attains the best rank-at-most-`n` approximation. The formula applies
 sequence spaces `lp` with `1 ≤ p ≤ ∞`, in particular to real and complex `ℓ²`.
 
 The general compactness theorem `lp.isCompactOperator_diagonalCLM` in the multiplier module
-shows that, over a complete locally compact scalar field, coefficients tending to zero give a
+shows that, over a locally compact scalar field, coefficients tending to zero give a
 compact diagonal operator; monotonicity is not required.
 
 ## References
@@ -28,7 +27,8 @@ compact diagonal operator; monotonicity is not required.
 
 public section
 
-open scoped lp ENNReal NNReal
+open scoped lp ENNReal NNReal Topology
+open Filter
 
 namespace lp
 
@@ -59,16 +59,15 @@ theorem singularValue_diagonalCLM (d : ℓ^∞(ℕ, 𝕜))
         (nnnorm_diagonalCLM_sub_diagonalTruncation_range_le d hd n)
   · let v : Fin (n + 1) → ℓ^p(ℕ, 𝕜) := fun i ↦ lp.single p (i : ℕ) 1
     have hv : LinearIndependent 𝕜 v := by
-      apply LinearIndependent.of_comp (lpSubmodule 𝕜 (fun _ : ℕ ↦ 𝕜) p).subtype
-      exact (Pi.linearIndependent_single_one ℕ 𝕜).comp _ Fin.val_injective
+      exact (linearIndependent_single_one (p := p) (𝕜 := 𝕜)).comp _ Fin.val_injective
     have hsupp : ∀ x ∈ Submodule.span 𝕜 (Set.range v), ∀ i, n < i → x i = 0 := by
       intro x hx i hi
-      have hle : Submodule.span 𝕜 (Set.range v) ≤
-          LinearMap.ker (evalₗ (𝕜 := 𝕜) (fun _ : ℕ ↦ 𝕜) p i) := by
-        refine Submodule.span_le.mpr ?_
-        rintro _ ⟨j, rfl⟩
-        exact lp.single_apply_ne (E := fun _ : ℕ ↦ 𝕜) p j 1 (by omega)
-      exact hle hx
+      exact apply_eq_zero_of_mem_span_single (fun j : Fin (n + 1) ↦ (j : ℕ)) hx
+        (by
+          rintro ⟨j, hj⟩
+          have hjlt := j.isLt
+          simp only at hj
+          omega)
     exact_mod_cast (diagonalCLM (p := p) d).le_singularValue_of_linearIndependent hv (fun x hx ↦ by
       calc
         ‖d n‖ * ‖x‖ = ‖d n • x‖ := (norm_smul _ _).symm
@@ -78,6 +77,14 @@ theorem singularValue_diagonalCLM (d : ℓ^∞(ℕ, 𝕜))
           · simpa [norm_mul] using
               mul_le_mul_of_nonneg_right (hd hi) (norm_nonneg (x i))
           · simp [hsupp x hx i hi])
+
+/-- The approximation numbers of a diagonal operator tend to zero when its decreasing
+coefficient magnitudes do. -/
+theorem tendsto_singularValue_diagonalCLM (d : ℓ^∞(ℕ, 𝕜))
+    (hd : Antitone fun i ↦ ‖d i‖) (h0 : Tendsto (fun i ↦ ‖d i‖) atTop (𝓝 0)) :
+    Tendsto (fun n ↦ (diagonalCLM (p := p) d).singularValue n) atTop (𝓝 0) := by
+  simpa only [singularValue_diagonalCLM d hd, ← NNReal.tendsto_coe, NNReal.coe_zero,
+    coe_nnnorm] using h0
 
 /-- For decreasing diagonal magnitudes, retaining the first `n` coordinates attains the
 approximation number at index `n`. -/
