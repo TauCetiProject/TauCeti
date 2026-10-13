@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.DedekindDomain.Ideal.UnitsAway
+public import TauCeti.RingTheory.DedekindDomain.Ideal.Away
+public import TauCeti.RingTheory.DedekindDomain.SInteger.Unit
 public import TauCeti.NumberTheory.NumberField.TotallyPositive
 
 import Mathlib.RingTheory.Ideal.Norm.AbsNorm

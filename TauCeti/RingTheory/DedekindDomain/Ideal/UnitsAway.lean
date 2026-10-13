@@ -21,8 +21,9 @@ values in `idealsAway K S`. Its range is exactly the kernel of the ordinary clas
 ideals away from `S`. This is the principal-ideal part of the ray-class exact sequence, before
 imposing multiplicative congruences or real-place signs.
 
-The valuation characterization uses `FractionalIdeal.count_toPrincipalIdeal_eq_neg_log_valuation`.
-No second carrier for local units or prime-to ideals is introduced.
+A principal fractional ideal has multiplicity zero at a prime exactly when its generator has
+valuation one there. `toPrincipalIdeal_mem_idealsAway_iff` applies this criterion at every prime
+of `S`, identifying the generators whose principal ideals lie in `idealsAway K S`.
 
 ## References
 

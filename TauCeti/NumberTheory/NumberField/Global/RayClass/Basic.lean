@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.NumberField.Global.RayClass.Modulus
+public import TauCeti.RingTheory.DedekindDomain.Ideal.UnitsAway
 
 /-!
 # The ray class group of a modulus
