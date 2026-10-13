@@ -244,8 +244,8 @@ theorem IsRefl.exists_orthogonal_basis_of_orthogonal_span_singleton {B : LinearM
   refine Fin.cases ?_ (fun i => ?_) i <;> refine Fin.cases ?_ (fun j => ?_) j <;> intro hij <;>
     simp only [Fin.cons_zero, Fin.cons_succ, Function.comp_apply]
   · exact (hij rfl).elim
-  · exact Submodule.mem_orthogonalBilin_span.1 (v j).2 (Set.mem_singleton x)
-  · exact hB.eq_zero (Submodule.mem_orthogonalBilin_span.1 (v i).2 (Set.mem_singleton x))
+  · simpa [orthogonal] using (v j).2
+  · exact hB.eq_zero (by simpa [orthogonal] using (v i).2)
   · simpa using iIsOrtho_def.1 hv i j fun h => hij (congrArg Fin.succ h)
 
 /-- A vector with unit self-pairing spans an orthogonal direct summand. -/

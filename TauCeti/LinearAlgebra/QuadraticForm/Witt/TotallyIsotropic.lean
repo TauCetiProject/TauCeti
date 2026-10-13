@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.BilinearForm.Orthogonal
 public import TauCeti.LinearAlgebra.QuadraticForm.TotallyIsotropic
 public import TauCeti.LinearAlgebra.QuadraticForm.Witt.Decomposition
 

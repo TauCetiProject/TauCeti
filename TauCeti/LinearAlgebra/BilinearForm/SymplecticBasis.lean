@@ -10,7 +10,6 @@ public import Mathlib.LinearAlgebra.Matrix.BilinearForm
 public import Mathlib.LinearAlgebra.SymplecticGroup
 import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 import TauCeti.LinearAlgebra.BilinearForm.LinearIndependent
-import TauCeti.LinearAlgebra.BilinearForm.Orthogonal
 
 /-!
 # Symplectic bases of nondegenerate alternating forms
@@ -120,8 +119,7 @@ theorem IsAlt.restrict_nondegenerate_orthogonal_span_pair (hnd : B.Nondegenerate
     rw [restrict_apply] at h ⊢
     exact hB.isRefl x y h
   refine (IsRefl.nondegenerate_iff_separatingLeft hrefl).2 fun z hz => ?_
-  have hez : B e z = 0 := Submodule.mem_orthogonalBilin_span.1 z.2 (by simp)
-  have hfz : B f z = 0 := Submodule.mem_orthogonalBilin_span.1 z.2 (by simp)
+  obtain ⟨hez, hfz⟩ : B e z = 0 ∧ B f z = 0 := by simpa [orthogonal] using z.2
   suffices key : (z : M) = 0 from Submodule.coe_eq_zero.1 key
   refine hnd.1 z fun u => ?_
   have hz' := hz ⟨_, hB.sub_smul_add_smul_mem_orthogonal_span_pair hfe u⟩
@@ -167,8 +165,7 @@ private theorem IsAlt.iSup_comap_orthogonal_span_pair_eq_top {ι : Type*} {W : �
       exact add_mem hx hy
   -- The projection fixes `Z` pointwise.
   refine eq_top_iff.2 fun z _ => ?_
-  have hez : B e z = 0 := Submodule.mem_orthogonalBilin_span.1 z.2 (by simp)
-  have hfz : B f z = 0 := Submodule.mem_orthogonalBilin_span.1 z.2 (by simp)
+  obtain ⟨hez, hfz⟩ : B e z = 0 ∧ B f z = 0 := by simpa [Z, orthogonal] using z.2
   have hz : (⟨p z, hpZ z⟩ : Z) = z := Subtype.ext (by simp [hpu, hez, hfz])
   exact hz ▸ hp z
 
@@ -218,10 +215,10 @@ theorem IsAlt.exists_basis_apply_eq_J_of_basis_orthogonal_span_pair {m : ℕ}
     ∃ b : Basis (Fin (m + 1) ⊕ Fin (m + 1)) K V,
       (∀ x y, B (b x) (b y) = Matrix.J (Fin (m + 1)) K x y) ∧
         ⇑b = Sum.elim (Fin.cons e fun a => c (Sum.inl a)) (Fin.cons f fun a => c (Sum.inr a)) := by
-  have hec : ∀ x, B e (c x) = 0 := fun x =>
-    Submodule.mem_orthogonalBilin_span.1 (c x).2 (by simp)
-  have hfc : ∀ x, B f (c x) = 0 := fun x =>
-    Submodule.mem_orthogonalBilin_span.1 (c x).2 (by simp)
+  have hecf : ∀ x, B e (c x) = 0 ∧ B f (c x) = 0 := fun x => by
+    simpa [orthogonal] using (c x).2
+  have hec : ∀ x, B e (c x) = 0 := fun x => (hecf x).1
+  have hfc : ∀ x, B f (c x) = 0 := fun x => (hecf x).2
   let d : Fin (m + 1) ⊕ Fin (m + 1) → V :=
     Sum.elim (Fin.cons e fun a => c (Sum.inl a)) (Fin.cons f fun a => c (Sum.inr a))
   have hd : ∀ x y, B (d x) (d y) = Matrix.J (Fin (m + 1)) K x y :=
