@@ -7,7 +7,8 @@ module
 
 public import TauCeti.AlgebraicGeometry.AdicSpace.PreAdicSpace.Adic
 public import TauCeti.AlgebraicGeometry.AdicSpace.PreAdicSpace.ClosedImmersion.Local
-public import TauCeti.RingTheory.Huber.LocalizationTopology.IdealQuotient
+
+import TauCeti.RingTheory.Huber.LocalizationTopology.IdealQuotient
 
 /-!
 # Restricting closed immersions over opens of the target
