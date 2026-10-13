@@ -41,6 +41,13 @@ This is the form of the theorem of Eilenberg and Mac Lane used for the compariso
 simplicial singular chains.  The coefficients `σ ↦ aσ` need not be unique: the normalized cubical
 chains are only a natural retract of the free modules on the cubes.
 
+The method is also available with several models in each degree
+(`MultiModelPresentation`, `IsAcyclicOnMulti`): the generator and the model are then indexed by
+a type `ι n` in each degree `n`, as for the tensor product of two chain complexes, where the
+models of degree `n` are indexed by the bidegrees `(p, q)` with `p + q = n`.  The single-model
+statements above are the special case of one index, and are derived from the general ones
+(`ModelPresentation.toMulti`).
+
 ## Main definitions
 
 * `TauCeti.AcyclicModels.ModelPresentation`: a functor free on models.
@@ -51,6 +58,10 @@ chains are only a natural retract of the free modules on the cubes.
   degree-zero map.
 * `TauCeti.AcyclicModels.ModelPresentation.homotopy`: the chain homotopy between two natural
   chain maps.
+* `TauCeti.AcyclicModels.MultiModelPresentation`, `TauCeti.AcyclicModels.IsAcyclicOnMulti`,
+  `TauCeti.AcyclicModels.MultiModelPresentation.chainMap`,
+  `TauCeti.AcyclicModels.MultiModelPresentation.homotopy`: the same with several models in each
+  degree.
 
 ## References
 
@@ -64,7 +75,7 @@ noncomputable section
 
 open CategoryTheory Finsupp
 
-universe u v w
+universe u v w w'
 
 namespace TauCeti
 
@@ -201,29 +212,131 @@ theorem d_extend {m m' n : ℕ} (t : (G.obj (B.model n)).X m) (R : NatLinear F G
   rw [map_smul, map_smul, R.naturality, ← ht, ← ModuleCat.comp_apply, ← ModuleCat.comp_apply,
     (G.map σ).comm]
 
+end ModelPresentation
+
+/-- A functor to chain complexes is **free on a family of models** when, in each degree `n`, there
+is a family of models `Mₙᵢ` indexed by `i : ι n`, with generators `uₙᵢ ∈ Fₙ(Mₙᵢ)`, such that every
+element of `Fₙ(X)` is a combination `Σ aσ • F(σ)(uₙᵢ)` over the pairs `(i, σ : Mₙᵢ ⟶ X)`, with
+coefficients depending linearly and naturally on the element.  With `ι n` a singleton this is
+`ModelPresentation`. -/
+structure MultiModelPresentation (F : C ⥤ ChainComplex (ModuleCat.{u} k) ℕ)
+    (ι : ℕ → Type w') where
+  /-- The models in degree `n`. -/
+  model (n : ℕ) : ι n → C
+  /-- The generators in degree `n`, chains of the models. -/
+  gen (n : ℕ) (i : ι n) : (F.obj (model n i)).X n
+  /-- The coefficients of a chain in terms of the images of the generators. -/
+  coord (X : C) (n : ℕ) : (F.obj X).X n →ₗ[k] ((Σ i : ι n, (model n i ⟶ X)) →₀ k)
+  /-- The coefficients are natural. -/
+  coord_map {X Y : C} (f : X ⟶ Y) (n : ℕ) (x : (F.obj X).X n) :
+    coord Y n ((F.map f).f n x) =
+      mapDomain (fun p : Σ i : ι n, (model n i ⟶ X) ↦
+        (⟨p.1, p.2 ≫ f⟩ : Σ i : ι n, (model n i ⟶ Y))) (coord X n x)
+  /-- Every chain is the combination of the images of the generators with its coefficients. -/
+  sum_coord (X : C) (n : ℕ) (x : (F.obj X).X n) :
+    (coord X n x).sum (fun p a ↦ a • (F.map p.2).f n (gen n p.1)) = x
+
+/-- A functor to chain complexes is **acyclic on a family of models** `M` for the augmentation
+`ε` when, on every model of every degree, its cycles of positive degree are boundaries and its
+`0`-chains of augmentation zero are boundaries. -/
+structure IsAcyclicOnMulti (G : C ⥤ ChainComplex (ModuleCat.{u} k) ℕ) {ι : ℕ → Type w'}
+    (M : ∀ n, ι n → C) (ε : ∀ X : C, (G.obj X).X 0 →ₗ[k] k) : Prop where
+  exists_d_eq_of_d_eq_zero (n : ℕ) (i : ι n) (q : ℕ) (z : (G.obj (M n i)).X (q + 1))
+    (hz : (G.obj (M n i)).d (q + 1) q z = 0) : ∃ b, (G.obj (M n i)).d (q + 2) (q + 1) b = z
+  exists_d_eq_of_augment_eq_zero (n : ℕ) (i : ι n) (z : (G.obj (M n i)).X 0)
+    (hz : ε (M n i) z = 0) : ∃ b, (G.obj (M n i)).d 1 0 b = z
+
+namespace MultiModelPresentation
+
+variable {ι : ℕ → Type w'} (B : MultiModelPresentation F ι)
+
+/-- The natural map `Fₙ(X) → Gₘ(X)` determined by elements `tᵢ ∈ Gₘ(Mₙᵢ)` of the models:
+`Σ aσ • F(σ)(uₙᵢ) ↦ Σ aσ • G(σ)(tᵢ)`. -/
+def extend {m n : ℕ} (t : ∀ i : ι n, (G.obj (B.model n i)).X m) (X : C) :
+    (F.obj X).X n →ₗ[k] (G.obj X).X m :=
+  linearCombination k
+      (fun p : Σ i : ι n, (B.model n i ⟶ X) ↦ ((G.map p.2).f m).hom (t p.1)) ∘ₗ B.coord X n
+
+theorem extend_apply {m n : ℕ} (t : ∀ i : ι n, (G.obj (B.model n i)).X m) (X : C)
+    (x : (F.obj X).X n) :
+    B.extend t X x = (B.coord X n x).sum fun p a ↦ a • (G.map p.2).f m (t p.1) := by
+  simp [extend, linearCombination_apply]
+
+/-- The map determined by elements on the models is natural. -/
+theorem extend_map {m n : ℕ} (t : ∀ i : ι n, (G.obj (B.model n i)).X m) {X Y : C} (f : X ⟶ Y)
+    (x : (F.obj X).X n) : B.extend t Y ((F.map f).f n x) = (G.map f).f m (B.extend t X x) := by
+  rw [extend_apply, extend_apply, B.coord_map,
+    sum_mapDomain_index
+      (h := fun (p : Σ i : ι n, (B.model n i ⟶ Y)) a ↦ a • (G.map p.2).f m (t p.1))
+      (fun _ ↦ zero_smul k _) (fun _ _ _ ↦ add_smul _ _ _), map_finsuppSum]
+  refine Finsupp.sum_congr fun p _ ↦ ?_
+  dsimp only
+  rw [map_smul, Functor.map_comp, HomologicalComplex.comp_f, ModuleCat.comp_apply]
+
+/-- The map determined by elements on the models, as a natural family. -/
+def extendNat {m n : ℕ} (t : ∀ i : ι n, (G.obj (B.model n i)).X m) : NatLinear F G n m where
+  app := B.extend t
+  naturality := B.extend_map t
+
+/-- A natural map is determined by its values on the generators. -/
+theorem eq_extend {m n : ℕ} (φ : NatLinear F G n m) (X : C) (x : (F.obj X).X n) :
+    φ.app X x = B.extend (fun i ↦ φ.app (B.model n i) (B.gen n i)) X x := by
+  conv_lhs => rw [← B.sum_coord X n x]
+  rw [extend_apply, map_finsuppSum]
+  refine Finsupp.sum_congr fun p _ ↦ ?_
+  rw [map_smul, φ.naturality]
+
+/-- The augmentation of the map determined by elements `tᵢ` of the models is the augmentation of
+the source, when the augmentations are natural and each `tᵢ` has the augmentation of the
+generator. -/
+theorem augment_extend {εF : ∀ X : C, (F.obj X).X 0 →ₗ[k] k}
+    {εG : ∀ X : C, (G.obj X).X 0 →ₗ[k] k}
+    (hεF : ∀ {X Y : C} (f : X ⟶ Y) x, εF Y ((F.map f).f 0 x) = εF X x)
+    (hεG : ∀ {X Y : C} (f : X ⟶ Y) x, εG Y ((G.map f).f 0 x) = εG X x)
+    (t : ∀ i : ι 0, (G.obj (B.model 0 i)).X 0)
+    (ht : ∀ i, εG (B.model 0 i) (t i) = εF (B.model 0 i) (B.gen 0 i)) (X : C)
+    (x : (F.obj X).X 0) : εG X (B.extend t X x) = εF X x := by
+  conv_rhs => rw [← B.sum_coord X 0 x]
+  rw [extend_apply, map_finsuppSum, map_finsuppSum]
+  refine Finsupp.sum_congr fun p _ ↦ ?_
+  rw [map_smul, map_smul, hεF, hεG, ht]
+
+/-- **The boundary of a map determined on the models**: if the boundary of each `tᵢ` is the value
+on the generator `uᵢ` of a natural family `R`, then the boundary of the map determined by the
+`tᵢ` is `R`. -/
+theorem d_extend {m m' n : ℕ} (t : ∀ i : ι n, (G.obj (B.model n i)).X m) (R : NatLinear F G n m')
+    (ht : ∀ i, (G.obj (B.model n i)).d m m' (t i) = R.app (B.model n i) (B.gen n i)) (X : C)
+    (x : (F.obj X).X n) : (G.obj X).d m m' (B.extend t X x) = R.app X x := by
+  conv_rhs => rw [← B.sum_coord X n x]
+  rw [extend_apply, map_finsuppSum, map_finsuppSum]
+  refine Finsupp.sum_congr fun p _ ↦ ?_
+  rw [map_smul, map_smul, R.naturality, ← ht, ← ModuleCat.comp_apply, ← ModuleCat.comp_apply,
+    (G.map p.2).comm]
+
 section ChainMap
 
 variable {εF : ∀ X : C, (F.obj X).X 0 →ₗ[k] k} {εG : ∀ X : C, (G.obj X).X 0 →ₗ[k] k}
-  (hG : IsAcyclicOn G B.model εG) (hεF : ∀ X x, εF X ((F.obj X).d 1 0 x) = 0)
-  (t₀ : (G.obj (B.model 0)).X 0) (ht₀ : ∀ X x, εG X (B.extend t₀ X x) = εF X x)
+  (hG : IsAcyclicOnMulti G B.model εG) (hεF : ∀ X x, εF X ((F.obj X).d 1 0 x) = 0)
+  (t₀ : ∀ i : ι 0, (G.obj (B.model 0 i)).X 0) (ht₀ : ∀ X x, εG X (B.extend t₀ X x) = εF X x)
 
 open Classical in
 /-- The elements of the models chosen degree by degree to define the components of the natural
-chain map extending `B.extend t₀` through `ModelPresentation.extend`. -/
-private def chainMapGen (t₀ : (G.obj (B.model 0)).X 0) : (n : ℕ) → (G.obj (B.model n)).X n
-  | 0 => t₀
-  | n + 1 =>
-    if h : ∃ b, (G.obj (B.model (n + 1))).d (n + 1) n b =
-        B.extend (chainMapGen t₀ n) (B.model (n + 1))
-          ((F.obj (B.model (n + 1))).d (n + 1) n (B.gen (n + 1)))
+chain map extending `B.extend t₀` through `MultiModelPresentation.extend`. -/
+private def chainMapGen (t₀ : ∀ i : ι 0, (G.obj (B.model 0 i)).X 0) :
+    (n : ℕ) → (i : ι n) → (G.obj (B.model n i)).X n
+  | 0, i => t₀ i
+  | n + 1, i =>
+    if h : ∃ b, (G.obj (B.model (n + 1) i)).d (n + 1) n b =
+        B.extend (chainMapGen t₀ n) (B.model (n + 1) i)
+          ((F.obj (B.model (n + 1) i)).d (n + 1) n (B.gen (n + 1) i))
     then h.choose else 0
 
 include hG hεF ht₀ in
 /-- The chosen elements have the prescribed boundaries. -/
-private theorem d_chainMapGen (n : ℕ) :
-    (G.obj (B.model (n + 1))).d (n + 1) n (B.chainMapGen t₀ (n + 1)) =
-      B.extend (B.chainMapGen t₀ n) (B.model (n + 1))
-        ((F.obj (B.model (n + 1))).d (n + 1) n (B.gen (n + 1))) := by
+private theorem d_chainMapGen (n : ℕ) (i : ι (n + 1)) :
+    (G.obj (B.model (n + 1) i)).d (n + 1) n (B.chainMapGen t₀ (n + 1) i) =
+      B.extend (B.chainMapGen t₀ n) (B.model (n + 1) i)
+        ((F.obj (B.model (n + 1) i)).d (n + 1) n (B.gen (n + 1) i)) := by
   classical
   induction n with
   | zero =>
@@ -231,14 +344,14 @@ private theorem d_chainMapGen (n : ℕ) :
     split_ifs with hex
     · exact hex.choose_spec
     refine absurd ?_ hex
-    refine hG.exists_d_eq_of_augment_eq_zero 1 _ ?_
-    rw [chainMapGen.eq_1, ht₀, hεF]
+    refine hG.exists_d_eq_of_augment_eq_zero 1 i _ ?_
+    rw [show B.chainMapGen t₀ 0 = t₀ from rfl, ht₀, hεF]
   | succ n ih =>
     rw [chainMapGen.eq_2]
     split_ifs with hex
     · exact hex.choose_spec
     refine absurd ?_ hex
-    refine hG.exists_d_eq_of_d_eq_zero (n + 2) n _ ?_
+    refine hG.exists_d_eq_of_d_eq_zero (n + 2) i n _ ?_
     rw [B.d_extend _ (B.extendNat (B.chainMapGen t₀ n)).compD ih, NatLinear.compD_app,
       HomologicalComplex.d_comp_d_apply, map_zero]
 
@@ -271,23 +384,23 @@ end ChainMap
 
 section Homotopy
 
-variable {εG : ∀ X : C, (G.obj X).X 0 →ₗ[k] k} (hG : IsAcyclicOn G B.model εG) (f g : F ⟶ G)
-  (hfg : ∀ X x, εG X ((f.app X).f 0 x) = εG X ((g.app X).f 0 x))
+variable {εG : ∀ X : C, (G.obj X).X 0 →ₗ[k] k} (hG : IsAcyclicOnMulti G B.model εG)
+  (f g : F ⟶ G) (hfg : ∀ X x, εG X ((f.app X).f 0 x) = εG X ((g.app X).f 0 x))
 
 open Classical in
 /-- The elements of the models chosen degree by degree to define the components of the chain
-homotopy between two natural chain maps through `ModelPresentation.extend`. -/
-private def homotopyGen : (n : ℕ) → (G.obj (B.model n)).X (n + 1)
-  | 0 =>
-    if h : ∃ b, (G.obj (B.model 0)).d 1 0 b =
-        (f.app (B.model 0)).f 0 (B.gen 0) - (g.app (B.model 0)).f 0 (B.gen 0)
+homotopy between two natural chain maps through `MultiModelPresentation.extend`. -/
+private def homotopyGen : (n : ℕ) → (i : ι n) → (G.obj (B.model n i)).X (n + 1)
+  | 0, i =>
+    if h : ∃ b, (G.obj (B.model 0 i)).d 1 0 b =
+        (f.app (B.model 0 i)).f 0 (B.gen 0 i) - (g.app (B.model 0 i)).f 0 (B.gen 0 i)
     then h.choose else 0
-  | n + 1 =>
-    if h : ∃ b, (G.obj (B.model (n + 1))).d (n + 2) (n + 1) b =
-        (f.app (B.model (n + 1))).f (n + 1) (B.gen (n + 1)) -
-          (g.app (B.model (n + 1))).f (n + 1) (B.gen (n + 1)) -
-          B.extend (homotopyGen n) (B.model (n + 1))
-            ((F.obj (B.model (n + 1))).d (n + 1) n (B.gen (n + 1)))
+  | n + 1, i =>
+    if h : ∃ b, (G.obj (B.model (n + 1) i)).d (n + 2) (n + 1) b =
+        (f.app (B.model (n + 1) i)).f (n + 1) (B.gen (n + 1) i) -
+          (g.app (B.model (n + 1) i)).f (n + 1) (B.gen (n + 1) i) -
+          B.extend (homotopyGen n) (B.model (n + 1) i)
+            ((F.obj (B.model (n + 1) i)).d (n + 1) n (B.gen (n + 1) i))
     then h.choose else 0
 
 include hG hfg in
@@ -297,12 +410,12 @@ private theorem d_extend_homotopyGen_zero (X : C) (x : (F.obj X).X 0) :
       (f.app X).f 0 x - (g.app X).f 0 x := by
   classical
   have h := B.d_extend (B.homotopyGen f g 0) ((NatLinear.ofHom f 0).sub (NatLinear.ofHom g 0))
-    (by
+    (fun i ↦ by
       rw [homotopyGen.eq_1]
       split_ifs with hex
       · exact hex.choose_spec
       refine absurd ?_ hex
-      refine hG.exists_d_eq_of_augment_eq_zero 0 _ ?_
+      refine hG.exists_d_eq_of_augment_eq_zero 0 i _ ?_
       simp [hfg]) X x
   simpa using h
 
@@ -312,9 +425,9 @@ private def target (n : ℕ) : NatLinear F G (n + 1) (n + 1) :=
     (B.extendNat (B.homotopyGen f g n)).compD
 
 include hG hfg in
-private theorem d_homotopyGen_succ (n : ℕ) :
-    (G.obj (B.model (n + 1))).d (n + 2) (n + 1) (B.homotopyGen f g (n + 1)) =
-      (target B f g n).app (B.model (n + 1)) (B.gen (n + 1)) := by
+private theorem d_homotopyGen_succ (n : ℕ) (i : ι (n + 1)) :
+    (G.obj (B.model (n + 1) i)).d (n + 2) (n + 1) (B.homotopyGen f g (n + 1) i) =
+      (target B f g n).app (B.model (n + 1) i) (B.gen (n + 1) i) := by
   classical
   induction n with
   | zero =>
@@ -322,7 +435,7 @@ private theorem d_homotopyGen_succ (n : ℕ) :
     split_ifs with hex
     · exact hex.choose_spec
     refine absurd ?_ hex
-    refine hG.exists_d_eq_of_d_eq_zero 1 0 _ ?_
+    refine hG.exists_d_eq_of_d_eq_zero 1 i 0 _ ?_
     rw [map_sub, map_sub, B.d_extend_homotopyGen_zero hG f g hfg,
       HomologicalComplex.Hom.comm_apply, HomologicalComplex.Hom.comm_apply, sub_self]
   | succ n ih =>
@@ -330,9 +443,9 @@ private theorem d_homotopyGen_succ (n : ℕ) :
     split_ifs with hex
     · exact hex.choose_spec
     refine absurd ?_ hex
-    refine hG.exists_d_eq_of_d_eq_zero (n + 2) (n + 1) _ ?_
-    have h := B.d_extend _ (target B f g n) ih (B.model (n + 2))
-      ((F.obj (B.model (n + 2))).d (n + 2) (n + 1) (B.gen (n + 2)))
+    refine hG.exists_d_eq_of_d_eq_zero (n + 2) i (n + 1) _ ?_
+    have h := B.d_extend _ (target B f g n) ih (B.model (n + 2) i)
+      ((F.obj (B.model (n + 2) i)).d (n + 2) (n + 1) (B.gen (n + 2) i))
     simp only [target, NatLinear.sub_app, NatLinear.ofHom_app, NatLinear.compD_app,
       extendNat] at h ⊢
     rw [map_sub, map_sub, h, HomologicalComplex.d_comp_d_apply, map_zero, sub_zero,
@@ -347,7 +460,7 @@ private theorem d_extend_homotopyGen_succ (n : ℕ) (X : C) (x : (F.obj X).X (n 
   have := B.d_extend _ (target B f g n) (d_homotopyGen_succ B hG f g hfg n) X x
   simpa [target, extendNat] using this
 
-/-- The components of the chain homotopy: `Fᵢ(X) → Gⱼ(X)`, determined on the model when
+/-- The components of the chain homotopy: `Fᵢ(X) → Gⱼ(X)`, determined on the models when
 `j = i + 1`, and zero otherwise. -/
 private def homotopyHom (X : C) (i j : ℕ) : (F.obj X).X i ⟶ (G.obj X).X j :=
   if h : i + 1 = j then
@@ -360,7 +473,7 @@ private theorem homotopyHom_succ (X : C) (i : ℕ) :
 
 /-- **Uniqueness up to homotopy of natural chain maps**: two natural chain maps `F ⟶ G` which
 agree after augmentation in degree zero are chain homotopic, if `G` is acyclic on the models of
-`F`.  The homotopy is natural (`ModelPresentation.homotopy_hom_naturality`). -/
+`F`.  The homotopy is natural (`MultiModelPresentation.homotopy_hom_naturality`). -/
 def homotopy (X : C) : Homotopy (f.app X) (g.app X) where
   hom := B.homotopyHom f g X
   zero i j hij := by
@@ -404,6 +517,97 @@ theorem homotopy_hom_naturality {X Y : C} (φ : X ⟶ Y) (i j : ℕ) :
     ext x
     exact B.extend_map _ φ x
   · simp [homotopyHom, h]
+
+end Homotopy
+
+end MultiModelPresentation
+
+namespace ModelPresentation
+
+variable (B : ModelPresentation F)
+
+/-- A presentation by one model in each degree is a presentation by a family of models indexed
+by a singleton. -/
+@[expose] def toMulti : MultiModelPresentation F (fun _ ↦ PUnit.{1}) where
+  model n _ := B.model n
+  gen n _ := B.gen n
+  coord X n := lmapDomain k k
+    (fun σ : B.model n ⟶ X ↦ (⟨PUnit.unit, σ⟩ : Σ _ : PUnit.{1}, (B.model n ⟶ X))) ∘ₗ
+      B.coord X n
+  coord_map f n x := by
+    simp only [LinearMap.coe_comp, Function.comp_apply, lmapDomain_apply, B.coord_map]
+    rw [← mapDomain_comp, ← mapDomain_comp]
+    rfl
+  sum_coord X n x := by
+    simp only [LinearMap.coe_comp, Function.comp_apply, lmapDomain_apply]
+    rw [sum_mapDomain_index
+      (h := fun (p : Σ _ : PUnit.{1}, (B.model n ⟶ X)) a ↦ a • (F.map p.2).f n (B.gen n))
+      (fun _ ↦ zero_smul k _) (fun _ _ _ ↦ add_smul _ _ _)]
+    exact B.sum_coord X n x
+
+/-- The map determined by one element on the model is the map determined by the corresponding
+family of elements. -/
+theorem toMulti_extend {m n : ℕ} (t : (G.obj (B.model n)).X m) (X : C) (x : (F.obj X).X n) :
+    B.toMulti.extend (fun _ ↦ t) X x = B.extend t X x := by
+  rw [extend_apply]
+  refine (MultiModelPresentation.extend_apply B.toMulti (fun _ ↦ t) X x).trans ?_
+  change ((mapDomain _ (B.coord X n x)).sum _) = _
+  exact sum_mapDomain_index
+    (h := fun (p : Σ _ : PUnit.{1}, (B.model n ⟶ X)) a ↦ a • (G.map p.2).f m t)
+    (fun _ ↦ zero_smul k _) (fun _ _ _ ↦ add_smul _ _ _)
+
+/-- Acyclicity on the models of a presentation by one model in each degree is acyclicity on the
+family of models of `toMulti`. -/
+theorem isAcyclicOnMulti {εG : ∀ X : C, (G.obj X).X 0 →ₗ[k] k}
+    (hG : IsAcyclicOn G B.model εG) : IsAcyclicOnMulti G B.toMulti.model εG where
+  exists_d_eq_of_d_eq_zero n _ q z hz := hG.exists_d_eq_of_d_eq_zero n q z hz
+  exists_d_eq_of_augment_eq_zero n _ z hz := hG.exists_d_eq_of_augment_eq_zero n z hz
+
+section ChainMap
+
+variable {εF : ∀ X : C, (F.obj X).X 0 →ₗ[k] k} {εG : ∀ X : C, (G.obj X).X 0 →ₗ[k] k}
+  (hG : IsAcyclicOn G B.model εG) (hεF : ∀ X x, εF X ((F.obj X).d 1 0 x) = 0)
+  (t₀ : (G.obj (B.model 0)).X 0) (ht₀ : ∀ X x, εG X (B.extend t₀ X x) = εF X x)
+
+/-- **Existence of natural chain maps**: if `G` is acyclic on the models of `F` and the augmentation
+of `F` vanishes on boundaries, the natural map `F₀ → G₀` determined by `t₀`, compatible with the
+augmentations, extends to a natural chain map `F ⟶ G`.  This is the case of one model in each
+degree of `MultiModelPresentation.chainMap`. -/
+def chainMap : F ⟶ G :=
+  B.toMulti.chainMap (isAcyclicOnMulti B hG) hεF (fun _ ↦ t₀) (fun X x ↦ by
+    rw [toMulti_extend]
+    exact ht₀ X x)
+
+/-- In degree zero the natural chain map is the map determined by `t₀`. -/
+@[simp]
+theorem chainMap_app_f_zero_apply (X : C) (x : (F.obj X).X 0) :
+    ((B.chainMap hG hεF t₀ ht₀).app X).f 0 x = B.extend t₀ X x :=
+  toMulti_extend B t₀ X x
+
+end ChainMap
+
+section Homotopy
+
+variable {εG : ∀ X : C, (G.obj X).X 0 →ₗ[k] k} (hG : IsAcyclicOn G B.model εG) (f g : F ⟶ G)
+  (hfg : ∀ X x, εG X ((f.app X).f 0 x) = εG X ((g.app X).f 0 x))
+
+/-- **Uniqueness up to homotopy of natural chain maps**: two natural chain maps `F ⟶ G` which
+agree after augmentation in degree zero are chain homotopic, if `G` is acyclic on the models of
+`F`.  The homotopy is natural (`ModelPresentation.homotopy_hom_naturality`). -/
+def homotopy (X : C) : Homotopy (f.app X) (g.app X) :=
+  B.toMulti.homotopy (isAcyclicOnMulti B hG) f g hfg X
+
+/-- The components of the chain homotopy vanish off the shape of the complexes. -/
+@[simp]
+theorem homotopy_hom_eq_zero (X : C) {i j : ℕ} (h : i + 1 ≠ j) :
+    (B.homotopy hG f g hfg X).hom i j = 0 :=
+  MultiModelPresentation.homotopy_hom_eq_zero _ _ f g hfg X h
+
+/-- The chain homotopy is natural. -/
+theorem homotopy_hom_naturality {X Y : C} (φ : X ⟶ Y) (i j : ℕ) :
+    (F.map φ).f i ≫ (B.homotopy hG f g hfg Y).hom i j =
+      (B.homotopy hG f g hfg X).hom i j ≫ (G.map φ).f j :=
+  MultiModelPresentation.homotopy_hom_naturality _ _ f g hfg φ i j
 
 end Homotopy
 
