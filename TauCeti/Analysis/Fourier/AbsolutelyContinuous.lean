@@ -37,7 +37,7 @@ variable {a b : ℝ} {f f' : ℝ → ℂ}
 /-- The Fourier coefficient of an almost-everywhere derivative of an absolutely continuous
 function, with the endpoint term retained. The identity holds at every frequency, including
 zero, and does not require equal endpoint values. -/
-theorem fourierCoeffOn_of_ae_hasDerivAt (hab : a < b)
+theorem fourierCoeffOn_ae_derivative (hab : a < b)
     (hf : AbsolutelyContinuousOnInterval f a b)
     (hff' : ∀ᵐ t, t ∈ uIoc a b → HasDerivAt f (f' t) t) (n : ℤ) :
     fourierCoeffOn hab f' n =
@@ -74,7 +74,7 @@ theorem fourierCoeffOn_ae_derivative_of_eq_endpoints (hab : a < b)
     (hff' : ∀ᵐ t, t ∈ uIoc a b → HasDerivAt f (f' t) t) (hfab : f a = f b) (n : ℤ) :
     fourierCoeffOn hab f' n =
       (2 * π * I * n / (b - a)) * fourierCoeffOn hab f n := by
-  simpa [hfab] using fourierCoeffOn_of_ae_hasDerivAt hab hf hff' n
+  simpa [hfab] using fourierCoeffOn_ae_derivative hab hf hff' n
 
 /-- **Parseval's energy identity** for an absolutely continuous closed complex curve with
 square-integrable derivative. Each frequency contributes its squared frequency times the

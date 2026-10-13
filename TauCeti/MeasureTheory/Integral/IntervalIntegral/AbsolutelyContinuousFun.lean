@@ -9,8 +9,10 @@ public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.AbsolutelyContinuousFun
 import Mathlib.Analysis.Calculus.ContDiff.RCLike
 import Mathlib.Analysis.Calculus.ContDiff.Basic
+import Mathlib.Analysis.Calculus.ContDiff.Operations
 import Mathlib.Analysis.Calculus.Deriv.Comp
 import Mathlib.MeasureTheory.SpecificCodomains.Pi
+import TauCeti.MeasureTheory.Function.AbsolutelyContinuous
 
 /-!
 # Calculus along absolutely continuous curves
@@ -93,17 +95,17 @@ theorem integral_eq_sub_of_ae_hasDerivAt [FiniteDimensional ℝ F]
   have h := hγ.integral_fderiv_apply_eq_sub hV L.contDiff
   simp only [L.fderiv] at h
   rw [L.intervalIntegral_comp_comm hVi, ← L.map_sub] at h
-  exact h
+  simpa [L] using h
 
 end AbsolutelyContinuousOnInterval
 
 namespace AbsolutelyContinuousOnInterval
 
-variable {A : Type*} [NormedField A] [NormedAlgebra ℝ A] [FiniteDimensional ℝ A]
+variable {A : Type*} [NormedRing A] [NormedAlgebra ℝ A] [FiniteDimensional ℝ A]
   {f f' g g' : ℝ → A} {a b : ℝ}
 
 /-- **Integration by parts** for absolutely continuous functions valued in a finite-dimensional
-real normed field. The derivatives may be supplied only almost everywhere. -/
+real normed ring. The derivatives may be supplied only almost everywhere. -/
 theorem integral_mul_deriv_eq_deriv_mul_of_ae_hasDerivAt
     (hf : AbsolutelyContinuousOnInterval f a b)
     (hg : AbsolutelyContinuousOnInterval g a b)
@@ -111,7 +113,12 @@ theorem integral_mul_deriv_eq_deriv_mul_of_ae_hasDerivAt
     (hgg' : ∀ᵐ t, t ∈ uIoc a b → HasDerivAt g (g' t) t) :
     ∫ t in a..b, f t * g' t = f b * g b - f a * g a - ∫ t in a..b, f' t * g t := by
   have hprod : AbsolutelyContinuousOnInterval (fun t ↦ f t * g t) a b := by
-    simpa only [smul_eq_mul] using hf.fun_smul hg
+    have hpair : AbsolutelyContinuousOnInterval (fun t ↦ (f t, g t)) a b := hf.prodMk hg
+    have hmul : ContDiff ℝ 1 (fun p : A × A ↦ p.1 * p.2) := contDiff_mul
+    obtain ⟨K, hK⟩ := hmul.locallyLipschitz.locallyLipschitzOn.exists_lipschitzOnWith_of_compact
+      (isCompact_uIcc.image_of_continuousOn hpair.continuousOn)
+    exact hK.comp_absolutelyContinuousOnInterval (g := fun t ↦ (f t, g t))
+      (mapsTo_image _ _) hpair
   have hder : ∀ᵐ t, t ∈ uIoc a b →
       HasDerivAt (fun t ↦ f t * g t) (f' t * g t + f t * g' t) t := by
     filter_upwards [hff', hgg'] with t ht hu hmem
