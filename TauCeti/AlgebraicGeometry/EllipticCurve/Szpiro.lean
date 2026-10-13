@@ -21,8 +21,9 @@ algorithmic conductor `WeierstrassCurve.algorithmicConductor`, the product of th
 `p ^ f_p` whose exponents `f_p = v_p(Δ_min) - m_p + 1` are read off Tate's algorithm.
 
 The **Szpiro ratio** of `E` is `log |Δ_min| / log N`, defined when `N > 1`, that is, when `E` has
-bad reduction at some prime. It is the exponent `σ` with `N ^ σ = |Δ_min|`, and it is at least `1`
-because `N` divides `Δ_min`. **Szpiro's conjecture** asserts `|Δ_min| ≪_ε N ^ (6 + ε)` for every
+bad reduction at some prime (`WeierstrassCurve.one_lt_absNorm_algorithmicConductor_iff`). It is
+the exponent `σ` with `N ^ σ = |Δ_min|`, and it is at least `1` because `N` divides `Δ_min`.
+**Szpiro's conjecture** asserts `|Δ_min| ≪_ε N ^ (6 + ε)` for every
 `ε > 0`, uniformly in `E`: with `|Δ_min| ≤ C N ^ (6 + ε)`, the Szpiro ratio is at most
 `6 + ε + log C / log N`.
 The **modified Szpiro conjecture** asserts the stronger bound
@@ -45,8 +46,6 @@ every exponent `f_p` is `0` or `1`, and `N` is the radical of `Δ_min`.
 
 ## Main results
 
-* `WeierstrassCurve.one_lt_absNorm_algorithmicConductor_iff`: `N > 1` exactly when `E` has bad
-  reduction at some prime.
 * `WeierstrassCurve.rpow_algorithmicSzpiroRatio`: `N ^ σ = |Δ_min|` for the Szpiro ratio `σ`, and
   `WeierstrassCurve.algorithmicSzpiroRatio_le_iff`: `σ ≤ r` exactly when `|Δ_min| ≤ N ^ r`.
 * `WeierstrassCurve.one_le_algorithmicSzpiroRatio`: the Szpiro ratio is at least `1`.
@@ -69,18 +68,6 @@ public section
 namespace WeierstrassCurve
 
 variable (E : WeierstrassCurve ℚ) [E.IsElliptic]
-
-/-- **The algorithmic conductor of a curve over `ℚ` exceeds `1` exactly when the curve has bad
-reduction at some prime.** This is the condition under which the Szpiro ratio is defined. -/
-theorem one_lt_absNorm_algorithmicConductor_iff :
-    1 < Ideal.absNorm (algorithmicConductor ℤ E) ↔ ∃ v : IsDedekindDomain.HeightOneSpectrum ℤ,
-      ¬ (E.minimal (Localization.AtPrime v.asIdeal)).HasGoodReduction
-        (Localization.AtPrime v.asIdeal) := by
-  have h0 : Ideal.absNorm (algorithmicConductor ℤ E) ≠ 0 :=
-    Ideal.absNorm_eq_zero_iff.not.2 (algorithmicConductor_ne_bot ℤ E)
-  rw [← not_iff_not, not_exists, not_lt, Nat.le_one_iff_eq_zero_or_eq_one, or_iff_right h0,
-    Ideal.absNorm_eq_one_iff, algorithmicConductor_eq_top_iff]
-  simp only [not_not]
 
 /-- **The Szpiro ratio** `log |Δ_min| / log N` of an elliptic curve over `ℚ`, where `|Δ_min|` is
 the norm of the minimal discriminant ideal over `ℤ` and `N` that of the algorithmic conductor. The
