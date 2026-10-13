@@ -70,7 +70,8 @@ def administrator(actor_id, api):
             or re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_-]*", login) is None):
         raise ValueError("approval actor unavailable")
     permission = api(f"collaborators/{login}/permission")
-    if not isinstance(permission, dict) or permission.get("user", {}).get("id") != actor_id:
+    if (not isinstance(permission, dict) or not isinstance(permission.get("user"), dict)
+            or permission["user"].get("id") != actor_id):
         raise ValueError("approval actor changed during permission lookup")
     return permission.get("permission") == "admin"
 

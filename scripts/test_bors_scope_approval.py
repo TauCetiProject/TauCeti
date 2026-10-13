@@ -89,10 +89,12 @@ class ScopeApprovalTests(unittest.TestCase):
         self.assertFalse(self.batch())
 
     def test_missing_or_malformed_roles_fail_closed(self):
-        for result in [None, dict(user=dict(id=999), permission='admin')]:
+        for result in [None, dict(user=None, permission='admin'),
+                       dict(user=[], permission='admin'),
+                       dict(user=dict(id=999), permission='admin')]:
             def api(path):
                 return result if path.startswith('collaborators/') else self.api(path)
-            with self.assertRaises((ValueError, AttributeError)):
+            with self.assertRaises(ValueError):
                 self.batch_with_api(api)
         def unavailable(path):
             raise subprocess.CalledProcessError(403, 'gh')
@@ -111,6 +113,14 @@ class ScopeApprovalTests(unittest.TestCase):
                 return dict(user=dict(id=1001), permission='admin')
             return self.api(path)
         self.assertTrue(self.batch_with_api(api))
+
+    def test_wrong_actor_or_invalid_login_cannot_resolve_authority(self):
+        for user in [None, dict(id=999, login='actor-1001'),
+                     dict(id=1001, login='../admin'), dict(id=1001, login=None)]:
+            def api(path):
+                return user if path.startswith('/user/') else self.api(path)
+            with self.subTest(user=user), self.assertRaises(ValueError):
+                self.batch_with_api(api)
 
     def test_effective_permission_is_used_without_listing_collaborators(self):
         def api(path):
