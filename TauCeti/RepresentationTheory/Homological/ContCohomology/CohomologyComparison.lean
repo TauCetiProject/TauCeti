@@ -357,6 +357,16 @@ theorem explicitH1IsoContinuousCohomology_inv_apply
       ((TopRep.homogeneousCochains (ofDiscreteModule ℤ G M)).homologyπ 1 c)) = _
   rw [explicitH1AddEquivContinuousCohomology_symm_apply]
 
+/-- **Vanishing in degree one transfers to the canonical theory.** If the explicit `H¹(G, M)` is
+trivial, then Mathlib's canonical degree-one continuous cohomology of `M` is zero. -/
+theorem isZero_continuousCohomology_one_of_subsingleton [Subsingleton (H1 G M)] :
+    Limits.IsZero (continuousCohomology 1 (ofDiscreteModule ℤ G M)) := by
+  have : Subsingleton (DiscreteH1 G M) :=
+    (discreteH1Equiv G M).toEquiv.subsingleton_congr.mpr inferInstance
+  rw [← (explicitH1IsoContinuousCohomology G M).isZero_iff, Limits.IsZero.iff_id_eq_zero]
+  ext x
+  exact Subsingleton.elim _ _
+
 /-! ### Transport in degree one -/
 
 /-- **Transport of compatible-pair pullback in degree one.** The isomorphisms of

@@ -197,15 +197,7 @@ instance subsingleton_H1_forcedDiscrete_separableClosure :
 continuous cohomology: `H¹(G_K, Kˢ) = 0`. -/
 theorem additiveHilbert90 :
     Limits.IsZero (continuousCohomology 1
-      (ofDiscreteModule ℤ (AbsoluteGaloisGroup K) (ForcedDiscrete (SeparableClosure K)))) := by
-  let h : Subsingleton
-      (DiscreteH1 (AbsoluteGaloisGroup K) (ForcedDiscrete (SeparableClosure K))) :=
-    (discreteH1Equiv (AbsoluteGaloisGroup K)
-      (ForcedDiscrete (SeparableClosure K))).toEquiv.subsingleton_congr.mpr inferInstance
-  rw [← (explicitH1IsoContinuousCohomology
-    (AbsoluteGaloisGroup K) (ForcedDiscrete (SeparableClosure K))).isZero_iff,
-    Limits.IsZero.iff_id_eq_zero]
-  ext x
-  exact h.elim _ _
+      (ofDiscreteModule ℤ (AbsoluteGaloisGroup K) (ForcedDiscrete (SeparableClosure K)))) :=
+  isZero_continuousCohomology_one_of_subsingleton _ _
 
 end TauCeti
