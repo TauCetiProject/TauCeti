@@ -8,10 +8,10 @@ module
 public import Mathlib.Topology.LocalAtTarget
 public import TauCeti.AlgebraicGeometry.AdicSpace.PreAdicSpace.Comap
 public import TauCeti.AlgebraicGeometry.AdicSpace.PreAdicSpace.Restrict
-public import TauCeti.AlgebraicGeometry.AdicSpace.PreAdicSpace.Sheaf
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.HuberPair
 public import TauCeti.RingTheory.Huber.QuotientMapping
 
+import TauCeti.AlgebraicGeometry.AdicSpace.PreAdicSpace.Sheaf
 import TauCeti.Topology.Category.TopCat.Opens
 
 /-!
