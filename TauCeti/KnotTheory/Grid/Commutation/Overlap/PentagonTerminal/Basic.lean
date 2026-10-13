@@ -122,10 +122,10 @@ noncomputable def recutTerminal (D : GridPentagonRectangleDecomposition a s x z)
     (hp : D.pentagon.IsEmpty) (hr : D.rectangle.IsEmpty) :
     GridPentagonRectangleDecomposition a s x z where
   middle := (D.terminalRecut hcommon hcol hp hr).middle
-  pentagon := GridPentagonBetween.ofRightEq (D.terminalRecut hcommon hcol hp hr).first
+  first := GridPentagonBetween.ofRightEq (D.terminalRecut hcommon hcol hp hr).first
     ((D.terminalRecut_data hcommon hcol hp hr).2.2.1.trans D.pentagon.right_eq)
     (D.terminalRecut_turn_mem hcommon hcol hp hr)
-  rectangle := (D.terminalRecut hcommon hcol hp hr).second
+  second := (D.terminalRecut hcommon hcol hp hr).second
 
 /-- Forgetting the promoted pentagon gives the generic recut of the original rectangles. -/
 private theorem recutTerminal_toRectangleDecomposition
@@ -138,9 +138,9 @@ private theorem recutTerminal_toRectangleDecomposition
         (D.underlying_first_isEmpty hp) (D.underlying_second_isEmpty hr) := by
   unfold recutTerminal
   apply GridRectangleDecomposition.ext
-  · simp only [toRectangleDecomposition_first_left, GridPentagonBetween.ofRightEq_left]
+  · simp only [pentagon, toRectangleDecomposition_first_left, GridPentagonBetween.ofRightEq_left]
     rfl
-  · simp only [toRectangleDecomposition_first_right, GridPentagonBetween.ofRightEq_right]
+  · simp only [pentagon, toRectangleDecomposition_first_right, GridPentagonBetween.ofRightEq_right]
     exact ((D.terminalRecut_data hcommon hcol hp hr).2.2.1.trans
       D.pentagon.right_eq).symm
   · simp only [toRectangleDecomposition_second_left]
@@ -187,7 +187,7 @@ theorem recutTerminal_geometry (D : GridPentagonRectangleDecomposition a s x z)
   obtain ⟨hm, hl, _, hrl, hrr⟩ := D.terminalRecut_data hcommon hcol hp hr
   obtain ⟨hb, ht⟩ := D.terminalRecut_first_rows hcommon hcol hp hr
   unfold recutTerminal
-  simp only [GridPentagonBetween.ofRightEq_left, GridPentagonBetween.ofRightEq_bottom,
+  simp only [pentagon, GridPentagonBetween.ofRightEq_left, GridPentagonBetween.ofRightEq_bottom,
     GridPentagonBetween.ofRightEq_top]
   exact ⟨hm, hl, hb, ht, hrl, hrr⟩
 
