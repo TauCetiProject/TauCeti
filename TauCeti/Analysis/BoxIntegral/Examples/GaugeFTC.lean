@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.BoxIntegral.OrientedCalculus
+public import TauCeti.Analysis.BoxIntegral.Oriented.Calculus
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.AbsolutelyContinuousFun
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Deriv
 import Mathlib.Analysis.Calculus.Deriv.Slope
@@ -18,6 +18,9 @@ import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 
 The primitive `t² sin(t⁻²)`, with value zero at zero, has Henstock–Kurzweil derivative integral
 `sin 1` on the unit interval. Its oscillations accumulate infinite total variation at zero.
+Non-Bochner-integrability follows from Mathlib's
+`IntervalIntegrable.absolutelyContinuousOnInterval_intervalIntegral`: an integrable derivative
+would force an absolutely continuous primitive, contradicting its infinite variation.
 -/
 
 public section
@@ -27,7 +30,7 @@ noncomputable section
 open MeasureTheory Set Filter
 open scoped Topology
 
-namespace TauCeti.Green.Examples
+namespace TauCeti.BoxIntegral.Examples
 
 /-- The oscillatory primitive `t² sin(t⁻²)`, including its continuous value at zero. -/
 def oscillatoryPrimitive (t : ℝ) : ℝ := t ^ 2 * Real.sin ((t ^ 2)⁻¹)
@@ -75,22 +78,22 @@ theorem hasDerivAt_oscillatoryPrimitive (t : ℝ) :
     ring
 
 /-- The derivative has Henstock–Kurzweil integral `sin 1` on the unit interval. -/
-theorem hasIntervalIntegral_deriv_oscillatoryPrimitive :
-    BoxIntegral.HasIntervalIntegral (deriv oscillatoryPrimitive) 0 1 (Real.sin 1) := by
+theorem hasHenstockIntervalIntegral_deriv_oscillatoryPrimitive :
+    BoxIntegral.HasHenstockIntervalIntegral (deriv oscillatoryPrimitive) 0 1 (Real.sin 1) := by
   have hd (t : ℝ) : HasDerivAt oscillatoryPrimitive (deriv oscillatoryPrimitive t) t :=
     (hasDerivAt_oscillatoryPrimitive t).differentiableAt.hasDerivAt
   have hc : Continuous oscillatoryPrimitive := continuous_iff_continuousAt.mpr
     (fun t ↦ (hd t).continuousAt)
   simpa only [oscillatoryPrimitive_zero, oscillatoryPrimitive_one, sub_zero] using
-    BoxIntegral.hasIntervalIntegral_of_hasDerivAt_off_countable
+    BoxIntegral.hasHenstockIntervalIntegral_of_hasDerivAt_off_countable
       (a := 0) (b := 1) (s := ∅) countable_empty hc.continuousOn (fun t _ ↦ hd t)
 
 /-- The same conditional derivative has the negative gauge value on the reversed interval. -/
-theorem hasIntervalIntegral_deriv_oscillatoryPrimitive_reverse :
-    BoxIntegral.HasIntervalIntegral (deriv oscillatoryPrimitive) 1 0 (-Real.sin 1) :=
-  hasIntervalIntegral_deriv_oscillatoryPrimitive.symm
+theorem hasHenstockIntervalIntegral_deriv_oscillatoryPrimitive_reverse :
+    BoxIntegral.HasHenstockIntervalIntegral (deriv oscillatoryPrimitive) 1 0 (-Real.sin 1) :=
+  hasHenstockIntervalIntegral_deriv_oscillatoryPrimitive.symm
 
-/-- The conditional gauge value is strictly positive. -/
+/-- The primitive is strictly positive at the endpoint one. -/
 theorem oscillatoryPrimitive_one_pos : 0 < oscillatoryPrimitive 1 := by
   rw [oscillatoryPrimitive_one]
   exact Real.sin_pos_of_pos_of_lt_pi zero_lt_one (by linarith [Real.two_le_pi])
@@ -134,8 +137,7 @@ private theorem amplitude_le_sample_increment (n : ℕ) :
       ‖oscillatoryPrimitive (sampleTime (n + 1)) - oscillatoryPrimitive (sampleTime n)‖ := by
   have heq : oscillatoryPrimitive (sampleTime (n + 1)) - oscillatoryPrimitive (sampleTime n) =
       (-1) ^ (n + 1) * -((phase (n + 1))⁻¹ + (phase n)⁻¹) := by
-    rw [oscillatoryPrimitive_sampleTime, oscillatoryPrimitive_sampleTime,
-      show n + 1 + 1 = (n + 1) + 1 from rfl, pow_succ]
+    rw [oscillatoryPrimitive_sampleTime, oscillatoryPrimitive_sampleTime, pow_succ]
     ring
   rw [heq, norm_mul, norm_pow, norm_neg, norm_one, one_pow, one_mul, norm_neg,
     Real.norm_eq_abs, abs_of_nonneg (add_nonneg (inv_nonneg.mpr (phase_pos _).le)
@@ -200,4 +202,4 @@ theorem not_intervalIntegrable_deriv_oscillatoryPrimitive :
   rw [uIcc_of_le zero_le_one] at h
   exact not_boundedVariationOn_oscillatoryPrimitive h
 
-end TauCeti.Green.Examples
+end TauCeti.BoxIntegral.Examples

@@ -27,7 +27,7 @@ namespace BoxIntegral
 /-- Substitution in the Henstock–Kurzweil integral, for a continuous parametrization
 differentiable outside a countable exceptional set. The integrand only needs to be continuous
 on a closed interval containing the image. -/
-theorem hasIntegral_Henstock_substitution {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+theorem hasIntegral_Henstock_deriv_smul_comp {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
     [CompleteSpace E] {a b c d : ℝ} (hab : a < b) {f : ℝ → E} {θ θ' : ℝ → ℝ}
     {s : Set ℝ} (hs : s.Countable) (hθ : ContinuousOn θ (Icc a b))
     (hdθ : ∀ t ∈ Ioo a b \ s, HasDerivAt θ (θ' t) t)

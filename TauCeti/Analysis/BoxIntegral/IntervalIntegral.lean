@@ -60,6 +60,36 @@ theorem ae_eq_intervalBox {E : Type*} {a b : ℝ} (hab : a < b) {f g : ℝ → E
   exact ((volume_preserving_piUnique (fun _ : Fin 1 ↦ ℝ)).restrict_preimage
     measurableSet_Ioc).quasiMeasurePreserving.ae_eq_comp h
 
+/-- Interval-box inclusion is exactly the pair of endpoint inequalities. -/
+@[simp]
+theorem intervalBox_le_intervalBox_iff {a b c d : ℝ} (hab : a < b) (hcd : c < d) :
+    intervalBox c d hcd ≤ intervalBox a b hab ↔ a ≤ c ∧ d ≤ b := by
+  simp [Box.le_iff_bounds, intervalBox, Pi.le_def]
+
+/-- Splitting at an interior point gives the lower interval box. -/
+theorem intervalBox_splitLower (hac : a < c) (hcb : c < b) :
+    (intervalBox a b (hac.trans hcb)).splitLower 0 c =
+      (intervalBox a c hac : WithBot (Box (Fin 1))) := by
+  rw [← Box.withBotCoe_inj]
+  ext x
+  simp only [Box.coe_splitLower, Box.coe_coe, mem_inter_iff, mem_ofPred_eq]
+  -- Interval-box membership unfolds to the single-coordinate inequalities.
+  change ((x ∈ intervalBox a b (hac.trans hcb)) ∧ x 0 ≤ c) ↔ x ∈ intervalBox a c hac
+  simp only [mem_intervalBox, mem_Ioc]
+  exact ⟨fun h ↦ ⟨h.1.1, h.2⟩, fun h ↦ ⟨⟨h.1, h.2.trans hcb.le⟩, h.2⟩⟩
+
+/-- Splitting at an interior point gives the upper interval box. -/
+theorem intervalBox_splitUpper (hac : a < c) (hcb : c < b) :
+    (intervalBox a b (hac.trans hcb)).splitUpper 0 c =
+      (intervalBox c b hcb : WithBot (Box (Fin 1))) := by
+  rw [← Box.withBotCoe_inj]
+  ext x
+  simp only [Box.coe_splitUpper, Box.coe_coe, mem_inter_iff, mem_ofPred_eq]
+  -- Interval-box membership unfolds to the single-coordinate inequalities.
+  change ((x ∈ intervalBox a b (hac.trans hcb)) ∧ c < x 0) ↔ x ∈ intervalBox c b hcb
+  simp only [mem_intervalBox, mem_Ioc]
+  exact ⟨fun h ↦ ⟨h.2, h.1.2⟩, fun h ↦ ⟨⟨hac.trans h.1, h.2⟩, h.1⟩⟩
+
 variable {E : Type*} [NormedAddCommGroup E]
 
 /-- Integrability on an interval is equivalent to Bochner integrability on its interval box. -/
@@ -89,24 +119,3 @@ theorem IntervalIntegrable.hasBoxIntegral {E : Type*} [NormedAddCommGroup E] [No
       BoxIntegral.BoxAdditiveMap.volume (∫ x in a..b, f x) := by
   rw [← BoxIntegral.setIntegral_intervalBox hab]
   exact ((BoxIntegral.integrableOn_intervalBox_iff hab).2 hf).hasBoxIntegral l hl
-
-namespace BoxIntegral
-
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
-
-/-- The box integral agrees with the interval integral under Bochner integrability. -/
-theorem integral_intervalBox {a b : ℝ} {f : ℝ → E} (hab : a < b)
-    (hf : IntervalIntegrable f volume a b) (l : IntegrationParams) (hl : l.bRiemann = false) :
-    integral (intervalBox a b hab) l (fun x ↦ f (x 0)) BoxAdditiveMap.volume =
-      ∫ x in a..b, f x :=
-  (hf.hasBoxIntegral hab l hl).integral_eq
-
-/-- A box-integral value is the interval-integral value whenever Bochner integrability holds. -/
-theorem HasIntegral.eq_intervalIntegral {a b : ℝ} {hab : a < b} {f : ℝ → E}
-    {l : IntegrationParams} {y : E}
-    (h : HasIntegral (intervalBox a b hab) l (fun x ↦ f (x 0)) BoxAdditiveMap.volume y)
-    (hf : IntervalIntegrable f volume a b) (hl : l.bRiemann = false) :
-    y = ∫ x in a..b, f x :=
-  h.unique (hf.hasBoxIntegral hab l hl)
-
-end BoxIntegral

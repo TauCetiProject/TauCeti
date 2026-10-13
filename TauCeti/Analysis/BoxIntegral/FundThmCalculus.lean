@@ -17,7 +17,9 @@ For a continuous Banach-valued function `f` with derivative `f'` outside a count
 set, the Henstock–Kurzweil integral of `f'` equals `f b - f a`. The derivative need not be
 Bochner integrable, and its values at the exceptions are arbitrary.
 
-The finite-exception case applies in particular to piecewise differentiable parametrizations.
+The FTC is derived from Mathlib's `BoxIntegral.hasIntegral_GP_pderiv` using the GP–Henstock
+equivalence in dimension one. The finite-exception case applies to piecewise differentiable
+parametrizations.
 -/
 
 public section
@@ -29,10 +31,11 @@ namespace BoxIntegral
 
 /-- Every nondegenerate one-dimensional box has distortion one. -/
 @[simp]
-theorem Box.distortion_fin_one (I : Box (Fin 1)) : I.distortion = 1 := by
+theorem Box.distortion_of_unique {ι : Type*} [Fintype ι] [Unique ι] (I : Box ι) :
+    I.distortion = 1 := by
   simp only [Box.distortion, Finset.univ_unique, Finset.sup_singleton]
-  have hx : nndist (I.lower 0) (I.upper 0) ≠ 0 :=
-    fun h ↦ I.lower_ne_upper 0 (eq_of_nndist_eq_zero h)
+  have hx : nndist (I.lower default) (I.upper default) ≠ 0 :=
+    fun h ↦ I.lower_ne_upper default (eq_of_nndist_eq_zero h)
   simp only [nndist_pi_def, Finset.univ_unique, Finset.sup_singleton]
   exact div_self hx
 
@@ -51,7 +54,7 @@ theorem hasIntegral_GP_iff_Henstock_fin_one {E F : Type*} [NormedAddCommGroup E]
   refine ⟨hπ.isSubordinate, hπ.isHenstock, ?_, ?_⟩
   · intro _
     exact (Prepartition.distortion_le_iff π.toPrepartition).2
-      fun J _ ↦ (Box.distortion_fin_one J).le
+      fun J _ ↦ (Box.distortion_of_unique J).le
   · intro _
     refine ⟨⊥, ?_, ?_⟩
     · rw [(TaggedPrepartition.isPartition_iff_iUnion_eq π).mp hπp]
