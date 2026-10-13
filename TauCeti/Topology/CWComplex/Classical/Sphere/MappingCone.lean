@@ -172,6 +172,7 @@ mapping cone of `f`. -/
 def sphereMappingCone : Set (F × E) :=
   (fun a ↦ (a, 0)) '' sphere (0 : F) 1 ∪ sphereMappingConeDiskMap f '' closedBall 0 1
 
+@[simp]
 theorem mem_sphereMappingCone {p : F × E} :
     p ∈ sphereMappingCone f ↔ (∃ a ∈ sphere (0 : F) 1, (a, 0) = p) ∨
       ∃ x ∈ closedBall (0 : E) 1, sphereMappingConeDiskMap f x = p :=
@@ -424,9 +425,7 @@ def sphereMappingConeCWComplex : CWComplex (sphereMappingCone f) :=
 theorem finite_sphereMappingConeCWComplex :
     letI := sphereMappingConeCWComplex h f
     RelCWComplex.Finite (sphereMappingCone f) :=
-  letI := sphereMappingConeCWComplex h f
-  { eventually_isEmpty_cell := Filter.eventually_atTop.2 ⟨n + 2, fun _ ↦ isEmpty_mappingConeCell h⟩
-    finite_cell := finite_mappingConeCell h }
+  CWComplex.finite_mkFinite _ _ _ _ _ _ _ _ _ _ _
 
 /-- The CW structure on `Sⁿ ∪_f Dⁿ⁺¹` has one cell in each of the dimensions `0`, `n` and `n + 1`
 (two `0`-cells when `n = 0`). -/
@@ -453,11 +452,23 @@ def sphereMappingConeTopCell :
 
 /-- The characteristic map of the `(n + 1)`-cell of `Sⁿ ∪_f Dⁿ⁺¹` is
 `TauCeti.sphereMappingConeTopCellMap f`. -/
+@[simp]
 theorem map_sphereMappingConeTopCell :
     letI := sphereMappingConeCWComplex h f
     map (n + 1) (sphereMappingConeTopCell h f) = sphereMappingConeTopCellMap f :=
   -- `CWComplex.mkFinite` takes the supplied characteristic maps as its `map` field.
   (rfl)
+
+/-- On the boundary sphere, read through the radial homeomorphism, the characteristic map of the
+`(n + 1)`-cell of `Sⁿ ∪_f Dⁿ⁺¹` is `x ↦ (f x, 0)`: the cell is attached along `f`. -/
+theorem map_sphereMappingConeTopCell_unitBallHomeomorph_coe_sphere
+    (x : sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) :
+    letI := sphereMappingConeCWComplex h f
+    map (n + 1) (sphereMappingConeTopCell h f)
+        ((EuclideanSpace.equiv (Fin (n + 1)) ℝ).unitBallHomeomorph x) =
+      ((f x : EuclideanSpace ℝ ι), 0) := by
+  rw [map_sphereMappingConeTopCell, sphereMappingConeTopCellMap_unitBallHomeomorph,
+    sphereMappingConeDiskMap_coe_sphere]
 
 /-- `Sⁿ ∪_f Dⁿ⁺¹` has a single cell of dimension `n + 1`. -/
 theorem eq_sphereMappingConeTopCell
@@ -476,8 +487,25 @@ def sphereMappingConeSphereCell {m : ℕ}
     cell (sphereMappingCone f) m :=
   Sum.inl i
 
+/-- Distinct cells of `Sⁿ` are distinct cells of `Sⁿ ∪_f Dⁿ⁺¹`. -/
+theorem sphereMappingConeSphereCell_injective {m : ℕ} :
+    Function.Injective (sphereMappingConeSphereCell h f (m := m)) :=
+  Sum.inl_injective
+
+/-- Every cell of `Sⁿ ∪_f Dⁿ⁺¹` of dimension other than `n + 1` is a cell of `Sⁿ`. In dimension
+`n + 1` the only cell is the top cell (`TauCeti.eq_sphereMappingConeTopCell`). -/
+theorem exists_sphereMappingConeSphereCell_eq {m : ℕ} (hm : m ≠ n + 1)
+    (j : letI := sphereMappingConeCWComplex h f; cell (sphereMappingCone f) m) :
+    ∃ i, sphereMappingConeSphereCell h f i = j := by
+  -- `CWComplex.mkFinite` takes the supplied family as its `cell` field, so `j` is a cell of `Sⁿ` or
+  -- the `(n + 1)`-cell.
+  rcases j with i | ⟨⟨⟨hm'⟩⟩⟩
+  · exact ⟨i, rfl⟩
+  · exact absurd hm' hm
+
 /-- The characteristic map of a cell of `Sⁿ`, viewed in `Sⁿ ∪_f Dⁿ⁺¹`, is that of `Sⁿ` followed by
 `a ↦ (a, 0)`. -/
+@[simp]
 theorem map_sphereMappingConeSphereCell_apply {m : ℕ}
     (i : letI := sphereCWComplex h; cell (sphere (0 : EuclideanSpace ℝ ι) 1) m)
     (y : Fin m → ℝ) :
