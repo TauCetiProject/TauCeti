@@ -12,8 +12,9 @@ public import Mathlib.Algebra.DirectSum.Decomposition
 # The trivial grading of a module
 
 Every module has an integer grading concentrated in degree zero: the whole module in degree `0`
-and the zero submodule in every other degree.  This file packages that family of submodules and
-records its membership API.  For an algebra, `TauCeti.RingTheory.GradedAlgebra.Trivial` makes it a
+and the zero submodule in every other degree.  This file packages that family of submodules,
+records its membership API, and proves that it is an internal direct-sum decomposition, computing
+its projections.  For an algebra, `TauCeti.RingTheory.GradedAlgebra.Trivial` makes it a
 `GradedAlgebra`.
 
 ## Main definitions

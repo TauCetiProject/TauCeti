@@ -134,10 +134,9 @@ theorem isDGRightModule_fiber (L : LocalCoefficientSystem.{u, u, w} R X) :
 
 variable (x) in
 /-- **The DG local system of a classical local system**: the fiber at the basepoint, concentrated
-in degree zero.
-
-Exposed because the types of `classicalDGLocalSystem_grading` and `classicalDGLocalSystemMap`
-mention its carrier and `DGRightModuleHom` between the underlying fiber modules. -/
+in degree zero. -/
+-- Exposed because the types of `classicalDGLocalSystem_grading` and `classicalDGLocalSystemMap`
+-- mention its carrier and `DGRightModuleHom` between the underlying fiber modules.
 @[expose] def classicalDGLocalSystem (L : LocalCoefficientSystem.{u, u, w} R X) :
     DGLocalSystem X x R :=
   DGRightModuleCat.of (isDGRightModule_fiber L)
@@ -205,10 +204,9 @@ theorem classicalDGLocalSystemMap_comp_apply {L L' L'' : LocalCoefficientSystem.
 
 variable (x R) in
 /-- **The functor from classical local systems to DG local systems**: a classical local system
-goes to its fiber at the basepoint, concentrated in degree zero.
-
-Exposed because the type of `classicalDGLocalSystemFunctor_map` needs `obj` to unfold to
-`classicalDGLocalSystem` for `classicalDGLocalSystemMap φ` to be a morphism. -/
+goes to its fiber at the basepoint, concentrated in degree zero. -/
+-- Exposed because the type of `classicalDGLocalSystemFunctor_map` needs `obj` to unfold to
+-- `classicalDGLocalSystem` for `classicalDGLocalSystemMap φ` to be a morphism.
 @[expose] def classicalDGLocalSystemFunctor :
     LocalCoefficientSystem.{u, u, w} R X ⥤ DGLocalSystem X x R where
   obj L := classicalDGLocalSystem x L
