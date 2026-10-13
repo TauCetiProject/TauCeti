@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Lie.E6.Minuscule.GroupScheme
+public import TauCeti.Algebra.Lie.E6.Minuscule.BaseChange
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.RootInToral
 
 /-!
@@ -186,6 +186,16 @@ theorem rootSubgroupClosedSubgroupIso_inv_comp_arrow (k : Fin 6 ⊕ Fin 6) :
     (rootSubgroupClosedSubgroupIso k).inv ≫ (rootSubgroupClosedSubgroup k).1.arrow =
       rootSubgroup k :=
   ClosedSubgroupScheme.mkIso_inv_comp_arrow (rootSubgroup k)
+
+/-- Every numbered integral root restriction is surjective, retaining the additive parameter. -/
+theorem rootSubgroupIntegralCoordinateMap_surjective (k : Fin 6 ⊕ Fin 6) :
+    Function.Surjective (rootSubgroupIntegralCoordinateMap k).hom := by
+  have hs := (rootSubgroupCoordinateMap_surjective k).comp
+    (CommHopfAlgCat.mkQuotient_surjective _ _)
+  rw [← BialgHom.coe_comp, ← CommHopfAlgCat.hom_comp,
+    TauCeti.UniversalEnvelopingAlgebra.mkQuotient_comp_kostantRootSubgroupToralCoordinateMap,
+    ← mkQuotient_comp_rootSubgroupIntegralCoordinateMap] at hs
+  exact Function.Surjective.of_comp hs
 
 end
 
