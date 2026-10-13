@@ -232,6 +232,12 @@ def ιTwistedChains (σ : (TopCat.toSSet.obj X).obj n) :
     L.obj (initialVertex σ) ⟶ (twistedChains L).obj n :=
   Sigma.ι (fun τ : (TopCat.toSSet.obj X).obj n ↦ L.obj (initialVertex τ)) σ
 
+/-- Twisted chains in a simplicial degree are the coproduct of the coefficient fibres at the
+initial vertices of its singular simplices. -/
+def isColimitTwistedChainsCofan (n : SimplexCategoryᵒᵖ) :
+    IsColimit (Cofan.mk ((twistedChains L).obj n) (ιTwistedChains L)) :=
+  coproductIsCoproduct _
+
 /-- Two maps out of a module of twisted chains agree as soon as they agree on every summand. -/
 @[ext]
 lemma twistedChains_hom_ext {A : ModuleCat.{max v w} R} {f g : (twistedChains L).obj n ⟶ A}
