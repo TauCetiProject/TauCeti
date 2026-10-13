@@ -15,12 +15,14 @@ Ideal Dirichlet convolution multiplies the local power series, in contrast to po
 multiplication of ideal coefficients. This file lifts convolution to Euler-product data and
 identifies its local series with products in `PowerSeries ℂ`. Together with the existing
 `TauCeti.normCoeff_convolution`, this also identifies the regrouped coefficients with products
-in Mathlib's Dirichlet-convolution ring `ArithmeticFunction ℂ`.
+in Mathlib's Dirichlet-convolution ring `ArithmeticFunction ℂ`. The local arithmetic factors
+also multiply in that ring, giving the algebraic input for multiplication of evaluated factors.
 
 ## References
 
 * G. Tenenbaum, *Introduction to Analytic and Probabilistic Number Theory*, Chapter I.2.
 * Mathlib's `PowerSeries.coeff_mul` and `dvd_prime_pow`.
+* Mathlib's algebra homomorphism `ArithmeticFunction.ofPowerSeries`.
 -/
 
 public section
@@ -79,6 +81,16 @@ theorem localPowerSeries_convolution (f g : IdealArithmeticFunction K)
     (convolution f g).localPowerSeries P = f.localPowerSeries P * g.localPowerSeries P := by
   ext n
   simp only [coeff_localPowerSeries, PowerSeries.coeff_mul, convolution_primeIdealPow]
+
+/-- Ideal convolution multiplies the local arithmetic factors in Mathlib's
+Dirichlet-convolution ring. -/
+@[simp]
+theorem localArithmeticFactor_convolution (f g : IdealArithmeticFunction K)
+    (P : HeightOneSpectrum (𝓞 K)) :
+    (convolution f g).localArithmeticFactor P =
+      f.localArithmeticFactor P * g.localArithmeticFactor P := by
+  simp only [localArithmeticFactor_def, localPowerSeries_convolution]
+  exact (ArithmeticFunction.ofPowerSeries _).map_mul _ _
 
 end IdealArithmeticFunction
 
@@ -140,6 +152,16 @@ theorem localPowerSeries_convolution (D E : EulerProductData K)
     PowerSeries.coeff_mul, toIdealArithmeticFunction_convolution] using
       congrArg (PowerSeries.coeff n) (IdealArithmeticFunction.localPowerSeries_convolution
         D.toIdealArithmeticFunction E.toIdealArithmeticFunction P)
+
+/-- Bundled convolution multiplies the local arithmetic factors in Mathlib's
+Dirichlet-convolution ring. -/
+@[simp]
+theorem localArithmeticFactor_convolution (D E : EulerProductData K)
+    (P : HeightOneSpectrum (𝓞 K)) :
+    (D.convolution E).localArithmeticFactor P =
+      D.localArithmeticFactor P * E.localArithmeticFactor P := by
+  simp only [localArithmeticFactor_eq, toIdealArithmeticFunction_convolution,
+    IdealArithmeticFunction.localArithmeticFactor_convolution]
 
 end EulerProductData
 
