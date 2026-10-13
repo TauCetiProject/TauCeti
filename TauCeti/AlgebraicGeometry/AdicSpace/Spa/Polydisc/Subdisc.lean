@@ -270,11 +270,9 @@ Translating by `b` turns `T - a` into `T - (a - b)`, whose Gauss norm of radius 
 `max r ‖a - b‖`. -/
 theorem discPoint_mem_closedSubdisc_iff (b : K) (hb : ‖b‖ ≤ 1) (hr₀ : 0 < r) (hr₁ : r ≤ 1)
     (a c : K) : discPoint b hb hr₀ hr₁ ∈ closedSubdisc a c ↔ ‖b - a‖ ≤ ‖c‖ ∧ r ≤ ‖c‖ := by
-  rw [mem_closedSubdisc, discPoint_vle_iff, discPoint_vle_zero_iff, map_sub, taylorHom_weightedX,
-    taylorHom_weightedC, taylorHom_weightedC,
-    show T + C b - C a = T - C (a - b) by rw [map_sub]; ring, ← NNReal.coe_le_coe,
-    coe_closedDiscGaussValuation_weightedX_sub_weightedC, closedDiscGaussValuation_weightedC,
-    coe_nnnorm, max_le_iff, norm_sub_rev,
+  rw [mem_closedSubdisc, discPoint_vle_iff, discPoint_vle_zero_iff, taylorHom_weightedC,
+    ← NNReal.coe_le_coe, coe_closedDiscGaussValuation_taylorHom_weightedX_sub_weightedC hb,
+    closedDiscGaussValuation_weightedC, coe_nnnorm, max_le_iff, norm_sub_rev,
     map_eq_zero_iff _ (weightedC_injective _ isWeightFamily_one_weight)]
   exact ⟨fun h ↦ ⟨h.1.2, h.1.1⟩, fun h ↦
     ⟨⟨h.2, h.1⟩, fun hc ↦ hr₀.not_ge (h.2.trans (by rw [hc, norm_zero]))⟩⟩

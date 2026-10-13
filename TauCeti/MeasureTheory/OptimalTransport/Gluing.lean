@@ -9,6 +9,7 @@ public import Mathlib.Probability.Kernel.Composition.MeasureComp
 public import Mathlib.Probability.Kernel.Disintegration.StandardBorel
 public import TauCeti.Probability.Kernel.Composition.MeasureCompProd
 public import TauCeti.Probability.Kernel.Disintegration.Countable
+import TauCeti.MeasureTheory.Measure.ProductKernel
 
 /-!
 # Gluing transport plans
@@ -47,6 +48,8 @@ needs, since its two carriers are arbitrary probability spaces.
   `π` over `Y` (which needs `X` standard Borel);
 * `MeasureTheory.Measure.exists_glue_of_fst_eq` — the gluing lemma for two plans out of a common
   first space, realising both on `X × Y × Z`;
+* `MeasureTheory.Measure.exists_glue_pi_of_fst_eq` — the same for finitely many plans out of a
+  common first space, realising all of them on `X × ∀ i, Y i`;
 * `TauCeti.MeasureTheory.exists_glue_of_countable_middle` — **the gluing lemma over a countable
   middle space**, which needs nothing of either outer space;
 * `TauCeti.Measure.exists_comp_of_exists_glue` — the composition of plans read off a glued measure,
@@ -288,6 +291,46 @@ theorem _root_.MeasureTheory.Measure.exists_glue_of_fst_eq [StandardBorelSpace Z
         (fun q : Y × X × Z ↦ (q.2.1, q.1, q.2.2)) = Prod.snd := rfl
     rw [MeasureTheory.Measure.map_map (measurable_id.prodMap measurable_snd) (by fun_prop), h,
       ← MeasureTheory.Measure.snd, hγρ]
+
+/-- **The gluing lemma for finitely many plans out of a common space.**
+
+Plans `π i` on `X × Y i`, indexed by a finite type and sharing their first marginal `ν`, admit a
+joint law on `X × ∀ i, Y i` with first marginal `ν` whose `(X, Y i)`-marginal is `π i` for every
+`i`. Only the spaces `Y i` are assumed standard Borel. Compare
+`MeasureTheory.Measure.exists_glue_of_fst_eq`, the case of two plans. -/
+theorem _root_.MeasureTheory.Measure.exists_glue_pi_of_fst_eq {ι : Type*} [Finite ι]
+    {Y : ι → Type*} [∀ i, MeasurableSpace (Y i)] [∀ i, StandardBorelSpace (Y i)]
+    {ν : Measure X} [IsFiniteMeasure ν] {π : ∀ i, Measure (X × Y i)} (hπ : ∀ i, (π i).fst = ν) :
+    ∃ γ : Measure (X × ∀ i, Y i),
+      γ.fst = ν ∧ ∀ i, γ.map (Prod.map id (Function.eval i)) = π i := by
+  have := Fintype.ofFinite ι
+  have _ (i : ι) : IsFiniteMeasure (π i) := ⟨by
+    rw [← MeasureTheory.Measure.fst_univ, hπ i]
+    exact measure_lt_top _ _⟩
+  by_cases hY : ∀ i, Nonempty (Y i)
+  · -- Given `x`, draw the coordinates independently from the conditional laws of the plans.
+    let κ : Kernel X (∀ i, Y i) :=
+      { toFun x := (ProbabilityMeasure.pi fun i ↦
+          (⟨(π i).condKernel x, inferInstance⟩ : ProbabilityMeasure (Y i))).toMeasure
+        measurable' := TauCeti.MeasureTheory.measurable_probabilityMeasure_pi_toMeasure _
+          fun i ↦ (π i).condKernel.measurable.subtype_mk }
+    have hκx (x : X) : κ x = Measure.pi fun i ↦ (π i).condKernel x :=
+      ProbabilityMeasure.toMeasure_pi _
+    have : IsMarkovKernel κ := ⟨fun x ↦ by rw [hκx]; infer_instance⟩
+    have hκ (i : ι) : κ.map (Function.eval i) = (π i).condKernel := by
+      ext1 x
+      rw [Kernel.map_apply _ (measurable_pi_apply i), hκx]
+      exact (measurePreserving_eval _ i).map_eq
+    refine ⟨ν ⊗ₘ κ, MeasureTheory.Measure.fst_compProd _ _, fun i ↦ ?_⟩
+    rw [← MeasureTheory.Measure.compProd_map (measurable_pi_apply i), hκ, ← hπ i,
+      MeasureTheory.Measure.disintegrate]
+  · -- An empty factor forces every plan, and hence `ν`, to vanish.
+    obtain ⟨i₀, hi₀⟩ := not_forall.1 hY
+    have : IsEmpty (Y i₀) := not_nonempty_iff.1 hi₀
+    have hν : ν = 0 := by rw [← hπ i₀, MeasureTheory.Measure.eq_zero_of_isEmpty (π i₀)]; simp
+    refine ⟨0, by simp [hν], fun i ↦ ?_⟩
+    rw [MeasureTheory.Measure.map_zero, eq_comm, ← MeasureTheory.Measure.measure_univ_eq_zero,
+      ← MeasureTheory.Measure.fst_univ, hπ i, hν, MeasureTheory.Measure.coe_zero, Pi.zero_apply]
 
 end Gluing
 

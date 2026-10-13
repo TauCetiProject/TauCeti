@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Weight.Parabolic.Basic
 import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Points.Order
-import TauCeti.CategoryTheory.Comma.Over
 
 /-!
 # Weight-Levi subgroup schemes of the general linear group
@@ -110,7 +109,7 @@ theorem weightLeviInclusion_def (w : Fin N → ℤ) :
     weightLeviInclusion R w =
       CommHopfAlgCat.quotientSpecι (coordinateHopfAlgebra R N)
           (weightLeviDefiningHopfIdeal R w) ≫
-        (eqToIso (groupScheme_def R N).symm).hom := by
+        eqToHom (groupScheme_def R N).symm := by
   rw [weightLeviInclusion, hopfIdealInclusion_def]
 
 /-- The weight-Levi inclusion into `GL_N` is a closed immersion. -/
