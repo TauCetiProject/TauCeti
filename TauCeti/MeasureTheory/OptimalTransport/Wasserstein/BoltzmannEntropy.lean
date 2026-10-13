@@ -15,9 +15,10 @@ public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Moment
 The Boltzmann entropy `Ent_m(μ) = ∫ ρ log ρ dm` against an infinite reference measure `m`, such as
 Lebesgue measure on `ℝⁿ`, is neither bounded below nor lower semicontinuous for the weak topology
 of probability measures: mass escaping to infinity can drive it to `-∞`. Moments address the two
-defects separately. Under the integrability condition below, a finite `p`-moment only makes each
-individual value finite: the entropy is never `⊥` on `P_p(X)`, although for Lebesgue measure it
-remains unbounded below there. Lower semicontinuity comes from the stronger `p`-Wasserstein
+defects separately. Under the integrability condition below, a finite `p`-moment only prevents
+each individual value from being `⊥`: the entropy may still be `⊤`, for instance for a law that is
+not absolutely continuous with respect to `m`, and for Lebesgue measure it remains unbounded below
+on `P_p(X)`. Lower semicontinuity comes from the stronger `p`-Wasserstein
 topology, in which the `p`-moment is continuous; a uniform bound on the moment is what yields
 coercivity (below).
 
