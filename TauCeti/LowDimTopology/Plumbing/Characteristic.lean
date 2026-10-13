@@ -17,9 +17,9 @@ to a plumbing graph. For a plumbing graph `P`, a covector `k : V → ℤ` is cha
 value on each basis sphere is congruent modulo two to the sphere's self-intersection, namely
 `P.weight v`.
 
-This is the first parity layer used in Némethi's lattice homology: the chain groups are indexed
-by lattice points together with characteristic covectors, and later weight functions are built
-from these covectors and the plumbing intersection form.
+This is the parity condition used in Némethi's lattice homology: the chain groups are indexed by
+lattice points together with characteristic covectors, and the weight functions are built from these
+covectors and the plumbing intersection form.
 
 ## Main definitions
 
@@ -42,9 +42,7 @@ from these covectors and the plumbing intersection form.
 
 ## References
 
-This supplies a prerequisite for `TauCetiRoadmap/CombinatorialHeegaardFloer/README.md`, Lane L
-("lattice homology"), which asks for plumbing graphs and their lattices together with lattice
-points and weight functions. The characteristic-covector convention follows Némethi,
+The characteristic-covector convention follows Némethi,
 [arXiv:0709.0841](https://arxiv.org/abs/0709.0841), after Ozsváth--Szabó,
 [arXiv:math/0203265](https://arxiv.org/abs/math/0203265).
 -/

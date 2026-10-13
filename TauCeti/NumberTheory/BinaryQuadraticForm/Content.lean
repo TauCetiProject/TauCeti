@@ -6,6 +6,7 @@ Authors: Wentao Li
 module
 
 public import TauCeti.NumberTheory.BinaryQuadraticForm.Basic
+public import Mathlib.RingTheory.Coprime.Lemmas
 import Mathlib.Data.Int.GCD
 
 /-!
@@ -16,6 +17,8 @@ coefficients. Dividing by it gives a primitive form whenever the original form i
 The content is also the gcd of all represented values, which makes it invariant under
 proper integral changes of variables. Scaling the form multiplies its content by the
 absolute value of the scalar and its discriminant by the scalar's square.
+Dividing a nonzero integer vector by its gcd gives coprime coordinates and divides
+every represented value by the square of that gcd.
 
 ## References
 
@@ -27,6 +30,24 @@ public section
 open scoped MatrixGroups
 
 namespace TauCeti.BinaryQuadraticForm
+
+/-- Dividing a nonzero integer vector by its gcd gives coprime coordinates and scales
+its represented value by the square of the gcd. -/
+theorem exists_isCoprime_eval_eq_gcd_sq_mul (f : BinaryQuadraticForm ℤ) (x y : ℤ)
+    (hxy : x ≠ 0 ∨ y ≠ 0) :
+    ∃ u v : ℤ, IsCoprime u v ∧ x = u * Int.gcd x y ∧ y = v * Int.gcd x y ∧
+      f.eval x y = (Int.gcd x y : ℤ) ^ 2 * f.eval u v := by
+  have hgcd : 0 < Int.gcd x y := by
+    rcases hxy with hx | hy
+    · exact Int.gcd_pos_of_ne_zero_left y hx
+    · exact Int.gcd_pos_of_ne_zero_right x hy
+  obtain ⟨u, v, huv, hx, hy⟩ := Int.exists_gcd_one hgcd
+  refine ⟨u, v, Int.isCoprime_iff_gcd_eq_one.mpr huv, hx, hy, ?_⟩
+  calc
+    f.eval x y = f.eval (u * Int.gcd x y) (v * Int.gcd x y) := congrArg₂ f.eval hx hy
+    _ = (Int.gcd x y : ℤ) ^ 2 * f.eval u v := by
+      simp only [eval_def]
+      ring
 
 /-- The nonnegative gcd of the three coefficients of an integral binary quadratic form. -/
 def content (f : BinaryQuadraticForm ℤ) : ℕ :=

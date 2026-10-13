@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import Mathlib.Analysis.Normed.Operator.Compact.FredholmAlternative
 public import TauCeti.Analysis.InnerProductSpace.LaxMilgram
 public import TauCeti.Analysis.Normed.Operator.Compact.RieszTheory
@@ -14,8 +13,8 @@ public import TauCeti.Analysis.Normed.Operator.Compact.RieszTheory
 # The Fredholm alternative for compact perturbations of coercive forms
 
 Let `B` be a bounded coercive bilinear form on a real Hilbert space `V`, and let
-`J : V → H` be a continuous linear map to another real Hilbert space.  Lax--Milgram turns the
-quadratic form
+`J : V → H` be a continuous linear map to a real seminormed inner-product space, which need not be
+complete. Lax--Milgram turns the quadratic form
 
 `(u, v) ↦ ⟪J u, J v⟫`
 
@@ -25,8 +24,8 @@ so is `K`.  Mathlib's Fredholm alternative for compact operators can therefore b
 or every represented forcing has a unique solution.  Its kernel is finite dimensional in either
 case.
 
-This is the abstract functional-analytic assembly used by Lane D.18 of the PDE roadmap.  In that
-application `V = H¹₀(Ω)`, `H = L²(Ω)`, and `J` is the compact Rellich inclusion.
+For elliptic boundary-value problems, `V = H¹₀(Ω)`, `H = L²(Ω)`, and `J` is the compact
+Rellich inclusion.
 
 ## Main declarations
 
@@ -38,8 +37,8 @@ application `V = H¹₀(Ω)`, `H = L²(Ω)`, and `J` is the compact Rellich incl
 * `IsCoercive.fredholmAlternative_formPerturbation`: the variational Fredholm alternative.
 
 The construction consumes Mathlib's `IsCompactOperator.hasEigenvalue_or_mem_resolventSet` and
-the Riesz--Schauder kernel theorem
-`IsCompactOperator.finiteDimensional_ker_one_sub`.
+the compact-error kernel theorem
+`ContinuousLinearMap.finiteDimensional_ker_of_compact_estimate`.
 
 ## References
 
@@ -52,40 +51,41 @@ public section
 noncomputable section
 
 open Module
-open scoped InnerProduct InnerProductSpace
+open scoped InnerProductSpace
 
 namespace IsCoercive
 
 variable {V H : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [CompleteSpace V]
-  [NormedAddCommGroup H] [InnerProductSpace ℝ H] [CompleteSpace H]
+  [SeminormedAddCommGroup H] [InnerProductSpace ℝ H]
   {B : V →L[ℝ] V →L[ℝ] ℝ}
 
 /-- The operator representing the form `(u, v) ↦ ⟪J u, J v⟫` relative to a coercive form `B`.
 It is characterized by `IsCoercive.apply_formPerturbationOperator` without unfolding. -/
 def formPerturbationOperator (hB : IsCoercive B) (J : V →L[ℝ] H) : V →L[ℝ] V :=
-  hB.continuousLinearEquivOfBilin.symm.toContinuousLinearMap.comp ((J†).comp J)
+  hB.solutionOfFunctionalCLM.comp
+    ((ContinuousLinearMap.toSesqForm J).comp J)
 
-/-- The form perturbation operator is the inverse Lax--Milgram operator applied to `J†J`. -/
+/-- The form perturbation operator solves the forcing functional `v ↦ ⟪J u, J v⟫`. -/
 theorem formPerturbationOperator_apply (hB : IsCoercive B) (J : V →L[ℝ] H) (u : V) :
-    hB.formPerturbationOperator J u = hB.solutionOfInner ((J†) (J u)) := by
-  rw [formPerturbationOperator, ContinuousLinearMap.comp_apply,
-    ContinuousLinearMap.comp_apply, solutionOfInner_def]
-  rfl
+    hB.formPerturbationOperator J u =
+      hB.solutionOfFunctional (ContinuousLinearMap.toSesqForm J (J u)) := by
+  simp only [formPerturbationOperator, ContinuousLinearMap.comp_apply,
+    solutionOfFunctionalCLM_apply]
 
 /-- Characterization of the form perturbation operator by its variational equation. -/
 @[simp]
 theorem apply_formPerturbationOperator (hB : IsCoercive B) (J : V →L[ℝ] H) (u v : V) :
     B (hB.formPerturbationOperator J u) v = ⟪J u, J v⟫_ℝ := by
-  rw [formPerturbationOperator_apply, apply_solutionOfInner_eq_inner,
-    ContinuousLinearMap.adjoint_inner_left]
+  simp only [formPerturbationOperator_apply, apply_solutionOfFunctional_eq,
+    ContinuousLinearMap.toSesqForm_apply_coe, ContinuousLinearMap.comp_apply, innerSL_apply_apply]
 
 /-- If the continuous linear map `J` is compact, so is the operator representing its
 inner-product form. -/
 theorem isCompactOperator_formPerturbationOperator (hB : IsCoercive B) {J : V →L[ℝ] H}
     (hJ : IsCompactOperator J) : IsCompactOperator (hB.formPerturbationOperator J) := by
   rw [formPerturbationOperator]
-  exact (hJ.clm_comp (J†)).clm_comp
-    hB.continuousLinearEquivOfBilin.symm.toContinuousLinearMap
+  exact (hJ.clm_comp (ContinuousLinearMap.toSesqForm J)).clm_comp
+    hB.solutionOfFunctionalCLM
 
 /-- The compactly perturbed operator equation is equivalent to its variational formulation. -/
 theorem one_sub_smul_formPerturbationOperator_apply_eq_iff (hB : IsCoercive B)
@@ -123,8 +123,11 @@ theorem finiteDimensional_ker_one_sub_smul_formPerturbationOperator (hB : IsCoer
     FiniteDimensional ℝ
       (LinearMap.ker
         ((1 - kappa • hB.formPerturbationOperator J : V →L[ℝ] V) : V →ₗ[ℝ] V)) := by
-  exact IsCompactOperator.finiteDimensional_ker_one_sub
-    ((hB.isCompactOperator_formPerturbationOperator hJ).smul kappa)
+  exact ContinuousLinearMap.finiteDimensional_ker_of_compact_estimate
+    (1 - kappa • hB.formPerturbationOperator J : V →L[ℝ] V)
+    (K := kappa • hB.formPerturbationOperator J)
+    ((hB.isCompactOperator_formPerturbationOperator hJ).smul kappa) (C := 1)
+    (fun x ↦ by simpa using norm_le_norm_sub_add x ((kappa • hB.formPerturbationOperator J) x))
 
 /-- **The variational Fredholm alternative.**  For a compact continuous linear map `J`, either the
 homogeneous perturbation of `B` by `κ ⟪J ·, J ·⟫` has a nonzero solution, or every represented

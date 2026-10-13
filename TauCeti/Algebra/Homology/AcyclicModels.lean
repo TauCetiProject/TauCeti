@@ -33,7 +33,7 @@ generator `uₙ`, and every element `t ∈ Gₘ(Mₙ)` determines one,
 `ModelPresentation.extend t`.  Its value on the generator need not be `t` itself, since the
 coefficients of `uₙ` need not be those of a single basis element; what matters is that the
 boundary of the extended map is controlled by the boundary of `t`
-(`ModelPresentation.d_extend`).  So at each step it suffices to choose an element of `G(Mₙ)`
+(`MultiModelPresentation.d_extend`).  So at each step it suffices to choose an element of `G(Mₙ)`
 whose boundary is a prescribed chain; that chain is a cycle by the previous step, hence a
 boundary by acyclicity.  The chosen elements are internal to the construction.
 
@@ -167,51 +167,6 @@ theorem extend_apply {m n : ℕ} (t : (G.obj (B.model n)).X m) (X : C) (x : (F.o
     B.extend t X x = (B.coord X n x).sum fun σ a ↦ a • (G.map σ).f m t := by
   simp [extend, linearCombination_apply]
 
-/-- The map determined by an element on the model is natural. -/
-theorem extend_map {m n : ℕ} (t : (G.obj (B.model n)).X m) {X Y : C} (f : X ⟶ Y)
-    (x : (F.obj X).X n) : B.extend t Y ((F.map f).f n x) = (G.map f).f m (B.extend t X x) := by
-  rw [extend_apply, extend_apply, B.coord_map,
-    sum_mapDomain_index (h := fun σ a ↦ a • (G.map σ).f m t) (fun _ ↦ zero_smul k _)
-      (fun _ _ _ ↦ add_smul _ _ _), map_finsuppSum]
-  refine Finsupp.sum_congr fun σ _ ↦ ?_
-  rw [map_smul, Functor.map_comp, HomologicalComplex.comp_f, ModuleCat.comp_apply]
-
-/-- The map determined by an element on the model, as a natural family. -/
-def extendNat {m n : ℕ} (t : (G.obj (B.model n)).X m) : NatLinear F G n m where
-  app := B.extend t
-  naturality := B.extend_map t
-
-/-- A natural map is determined by its value on the generator. -/
-theorem eq_extend {m n : ℕ} (φ : NatLinear F G n m) (X : C) (x : (F.obj X).X n) :
-    φ.app X x = B.extend (φ.app (B.model n) (B.gen n)) X x := by
-  conv_lhs => rw [← B.sum_coord X n x]
-  rw [extend_apply, map_finsuppSum]
-  refine Finsupp.sum_congr fun σ _ ↦ ?_
-  rw [map_smul, φ.naturality]
-
-/-- The augmentation of the map determined by an element `t` on the model is the augmentation of
-the source, when the augmentations are natural and `t` has the augmentation of the generator. -/
-theorem augment_extend {εF : ∀ X : C, (F.obj X).X 0 →ₗ[k] k} {εG : ∀ X : C, (G.obj X).X 0 →ₗ[k] k}
-    (hεF : ∀ {X Y : C} (f : X ⟶ Y) x, εF Y ((F.map f).f 0 x) = εF X x)
-    (hεG : ∀ {X Y : C} (f : X ⟶ Y) x, εG Y ((G.map f).f 0 x) = εG X x)
-    (t : (G.obj (B.model 0)).X 0) (ht : εG (B.model 0) t = εF (B.model 0) (B.gen 0)) (X : C)
-    (x : (F.obj X).X 0) : εG X (B.extend t X x) = εF X x := by
-  conv_rhs => rw [← B.sum_coord X 0 x]
-  rw [extend_apply, map_finsuppSum, map_finsuppSum]
-  refine Finsupp.sum_congr fun σ _ ↦ ?_
-  rw [map_smul, map_smul, hεF, hεG, ht]
-
-/-- **The boundary of a map determined on the model**: if the boundary of `t` is the value on
-the generator of a natural family `R`, then the boundary of the map determined by `t` is `R`. -/
-theorem d_extend {m m' n : ℕ} (t : (G.obj (B.model n)).X m) (R : NatLinear F G n m')
-    (ht : (G.obj (B.model n)).d m m' t = R.app (B.model n) (B.gen n)) (X : C)
-    (x : (F.obj X).X n) : (G.obj X).d m m' (B.extend t X x) = R.app X x := by
-  conv_rhs => rw [← B.sum_coord X n x]
-  rw [extend_apply, map_finsuppSum, map_finsuppSum]
-  refine Finsupp.sum_congr fun σ _ ↦ ?_
-  rw [map_smul, map_smul, R.naturality, ← ht, ← ModuleCat.comp_apply, ← ModuleCat.comp_apply,
-    (G.map σ).comm]
-
 end ModelPresentation
 
 /-- A functor to chain complexes is **free on a family of models** when, in each degree `n`, there
@@ -331,6 +286,11 @@ private def chainMapGen (t₀ : ∀ i : ι 0, (G.obj (B.model 0 i)).X 0) :
           ((F.obj (B.model (n + 1) i)).d (n + 1) n (B.gen (n + 1) i))
     then h.choose else 0
 
+/-- In degree zero the chosen elements are the given ones. -/
+private theorem chainMapGen_zero (t₀ : ∀ i : ι 0, (G.obj (B.model 0 i)).X 0) :
+    B.chainMapGen t₀ 0 = t₀ :=
+  funext fun i ↦ chainMapGen.eq_1 B t₀ i
+
 include hG hεF ht₀ in
 /-- The chosen elements have the prescribed boundaries. -/
 private theorem d_chainMapGen (n : ℕ) (i : ι (n + 1)) :
@@ -345,7 +305,7 @@ private theorem d_chainMapGen (n : ℕ) (i : ι (n + 1)) :
     · exact hex.choose_spec
     refine absurd ?_ hex
     refine hG.exists_d_eq_of_augment_eq_zero 1 i _ ?_
-    rw [show B.chainMapGen t₀ 0 = t₀ from rfl, ht₀, hεF]
+    rw [chainMapGen_zero, ht₀, hεF]
   | succ n ih =>
     rw [chainMapGen.eq_2]
     split_ifs with hex
@@ -527,7 +487,9 @@ namespace ModelPresentation
 variable (B : ModelPresentation F)
 
 /-- A presentation by one model in each degree is a presentation by a family of models indexed
-by a singleton. -/
+by a singleton.  The body is exposed because the type of the generator of `toMulti` mentions its
+models, so that the field lemmas `toMulti_model`, `toMulti_gen` and `toMulti_coord` can only be
+stated when the models of `toMulti` reduce to those of `B`. -/
 @[expose] def toMulti : MultiModelPresentation F (fun _ ↦ PUnit.{1}) where
   model n _ := B.model n
   gen n _ := B.gen n
@@ -537,6 +499,8 @@ by a singleton. -/
   coord_map f n x := by
     simp only [LinearMap.coe_comp, Function.comp_apply, lmapDomain_apply, B.coord_map]
     rw [← mapDomain_comp, ← mapDomain_comp]
+    -- both sides push `B.coord X n x` forward along `σ ↦ ⟨PUnit.unit, σ ≫ f⟩`, the two
+    -- compositions agreeing by the definition of the maps of sigma types
     rfl
   sum_coord X n x := by
     simp only [LinearMap.coe_comp, Function.comp_apply, lmapDomain_apply]
@@ -545,16 +509,43 @@ by a singleton. -/
       (fun _ ↦ zero_smul k _) (fun _ _ _ ↦ add_smul _ _ _)]
     exact B.sum_coord X n x
 
+/-- The models of `toMulti` are the models of the presentation. -/
+@[simp]
+theorem toMulti_model (n : ℕ) (i : PUnit.{1}) : B.toMulti.model n i = B.model n :=
+  (rfl)
+
+/-- The generators of `toMulti` are the generators of the presentation. -/
+@[simp]
+theorem toMulti_gen (n : ℕ) (i : PUnit.{1}) : B.toMulti.gen n i = B.gen n :=
+  (rfl)
+
+/-- The coefficients of `toMulti` are those of the presentation, indexed by the singleton. -/
+theorem toMulti_coord (X : C) (n : ℕ) (x : (F.obj X).X n) :
+    B.toMulti.coord X n x =
+      mapDomain (fun σ : B.model n ⟶ X ↦ (⟨PUnit.unit, σ⟩ : Σ _ : PUnit.{1}, (B.model n ⟶ X)))
+        (B.coord X n x) :=
+  (rfl)
+
 /-- The map determined by one element on the model is the map determined by the corresponding
 family of elements. -/
+@[simp]
 theorem toMulti_extend {m n : ℕ} (t : (G.obj (B.model n)).X m) (X : C) (x : (F.obj X).X n) :
     B.toMulti.extend (fun _ ↦ t) X x = B.extend t X x := by
-  rw [extend_apply]
   refine (MultiModelPresentation.extend_apply B.toMulti (fun _ ↦ t) X x).trans ?_
-  change ((mapDomain _ (B.coord X n x)).sum _) = _
+  rw [extend_apply, toMulti_coord]
   exact sum_mapDomain_index
     (h := fun (p : Σ _ : PUnit.{1}, (B.model n ⟶ X)) a ↦ a • (G.map p.2).f m t)
     (fun _ ↦ zero_smul k _) (fun _ _ _ ↦ add_smul _ _ _)
+
+/-- The augmentation of the map determined by an element `t` on the model is the augmentation of
+the source, when the augmentations are natural and `t` has the augmentation of the generator. -/
+theorem augment_extend {εF : ∀ X : C, (F.obj X).X 0 →ₗ[k] k} {εG : ∀ X : C, (G.obj X).X 0 →ₗ[k] k}
+    (hεF : ∀ {X Y : C} (f : X ⟶ Y) x, εF Y ((F.map f).f 0 x) = εF X x)
+    (hεG : ∀ {X Y : C} (f : X ⟶ Y) x, εG Y ((G.map f).f 0 x) = εG X x)
+    (t : (G.obj (B.model 0)).X 0) (ht : εG (B.model 0) t = εF (B.model 0) (B.gen 0)) (X : C)
+    (x : (F.obj X).X 0) : εG X (B.extend t X x) = εF X x := by
+  rw [← toMulti_extend]
+  exact B.toMulti.augment_extend hεF hεG (fun _ ↦ t) (fun _ ↦ ht) X x
 
 /-- Acyclicity on the models of a presentation by one model in each degree is acyclicity on the
 family of models of `toMulti`. -/

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.RootsOfUnity.PrimitiveRoots
 public import Mathlib.FieldTheory.Normal.Defs
+public import Mathlib.GroupTheory.Abelianization.Defs
 import Mathlib.FieldTheory.Minpoly.IsConjRoot
 import Mathlib.NumberTheory.Cyclotomic.PrimitiveRoots
 
@@ -38,6 +39,8 @@ Multiplying one `n`-th root of a nonzero `a` by the powers of a primitive `n`-th
   `k`-th power has cyclotomic character `k`.
 * `IsPrimitiveRoot.cast_autToPow_eq_natCast`: modulo a divisor `d` of the level, the cyclotomic
   character is read off from the action on a primitive `d`-th root of unity.
+* `AlgEquiv.apply_eq_apply_of_abelianization_of_eq`: two automorphisms with the same image in the
+  abelianization agree on every root of unity.
 * `IsPrimitiveRoot.exists_algEquiv_apply_eq_pow_of_coprime`: every coprime power of a primitive
   root in a normal extension of `ℚ` is realized by an automorphism.
 * `IsPrimitiveRoot.card_nthRootsFinset_of_pow_eq`: in the presence of a primitive `n`-th root of
@@ -141,3 +144,17 @@ theorem _root_.IsPrimitiveRoot.cast_autToPow_eq_natCast {K M : Type*} [CommRing 
   rw [ZMod.cast_eq_val, ← ht.coe_autToPow_eq_natCast (K := K) hx,
     ht.coe_autToPow_eq_natCast (K := K) (k := (hζ.autToPow K x : ZMod m).val)]
   rw [map_pow, ← hζ.autToPow_spec K x, ← pow_mul, ← pow_mul, mul_comm]
+
+/-- **Roots of unity only see the abelianization.** Two automorphisms with the same image in the
+abelianization agree on every root of unity: on the roots of unity of order `d` they act through
+the commutative group `(ZMod d)ˣ` (`IsPrimitiveRoot.autToPow`). -/
+theorem _root_.AlgEquiv.apply_eq_apply_of_abelianization_of_eq {K M : Type*} [CommRing K]
+    [CommRing M] [IsDomain M] [Algebra K M] {σ τ : M ≃ₐ[K] M}
+    (h : Abelianization.of σ = Abelianization.of τ) {n : ℕ} (hn : n ≠ 0) {μ : M}
+    (hμ : μ ^ n = 1) : σ μ = τ μ := by
+  have : NeZero (orderOf μ) :=
+    ⟨(orderOf_pos_iff.2 (isOfFinOrder_iff_pow_eq_one.2 ⟨n, Nat.pos_of_ne_zero hn, hμ⟩)).ne'⟩
+  have hμ' := IsPrimitiveRoot.orderOf μ
+  have h' := congrArg (Abelianization.lift (hμ'.autToPow K)) h
+  rw [Abelianization.lift_apply_of, Abelianization.lift_apply_of] at h'
+  rw [← hμ'.autToPow_spec K σ, ← hμ'.autToPow_spec K τ, h']

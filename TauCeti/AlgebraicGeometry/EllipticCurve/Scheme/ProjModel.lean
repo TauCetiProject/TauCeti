@@ -104,6 +104,14 @@ instance isProper_projModelOver : IsProper W.projModelOver := by
   unfold projModelOver
   infer_instance
 
+/-- The structure morphisms of equal Weierstrass curves agree through the identification of their
+projective models. -/
+@[reassoc (attr := simp)]
+theorem eqToHom_projModelOver {W₁ W₂ : WeierstrassCurve R} (h : W₁ = W₂) :
+    eqToHom (congrArg projModel h) ≫ W₂.projModelOver = W₁.projModelOver := by
+  subst h
+  simp
+
 /-- The projective Weierstrass model is quasi-compact. -/
 instance compactSpace_projModel : CompactSpace W.projModel :=
   QuasiCompact.compactSpace_of_compactSpace W.projModelOver

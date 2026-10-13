@@ -85,6 +85,12 @@ def point (x : X) : SingularCube X 0 := ContinuousMap.const _ x
 theorem point_apply (x : X) (t : Fin 0 → I) : point x t = x :=
   (rfl)
 
+/-- Every `0`-cube is the constant cube at its value. -/
+theorem eq_point (c : SingularCube X 0) : c = point (c fun i ↦ i.elim0) :=
+  ContinuousMap.ext fun t ↦ by
+    simp only [point_apply]
+    exact congrArg c (Subsingleton.elim _ _)
+
 @[simp]
 theorem cast_rfl {n : ℕ} (c : SingularCube X n) : cast rfl c = c := by
   ext x
