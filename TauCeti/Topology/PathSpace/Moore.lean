@@ -551,6 +551,7 @@ def endpointsBetween (A B : Set X) : C(pathsBetween A B, A × B) where
     ((continuous_source.comp continuous_subtype_val).subtype_mk _).prodMk
       ((continuous_target.comp continuous_subtype_val).subtype_mk _)
 
+-- Keep endpoint evaluation bundled under `simp` so endpoint-preserving comparison lemmas fire.
 theorem endpointsBetween_apply (A B : Set X) (γ : pathsBetween A B) :
     endpointsBetween A B γ =
       (⟨γ.val.source, (mem_pathsBetween.mp γ.property).1⟩,

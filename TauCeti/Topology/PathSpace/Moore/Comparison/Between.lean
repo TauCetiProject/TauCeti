@@ -83,6 +83,7 @@ def unitEndpointsBetween : C(unitPathsBetween A B, A × B) where
     (((continuous_eval_const 0).comp continuous_subtype_val).subtype_mk _).prodMk
       (((continuous_eval_const 1).comp continuous_subtype_val).subtype_mk _)
 
+-- Unfolding this with `simp` would preempt the endpoint-preserving comparison lemmas below.
 theorem unitEndpointsBetween_apply (p : unitPathsBetween A B) :
     unitEndpointsBetween A B p =
       (⟨p.val 0, ((mem_unitPathsBetween A B).mp p.property).1⟩,
