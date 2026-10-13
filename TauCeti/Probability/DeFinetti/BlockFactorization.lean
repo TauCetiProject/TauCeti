@@ -9,8 +9,8 @@ public import TauCeti.Probability.DeFinetti.DirectingMeasure.Coord
 public import TauCeti.Probability.Process.Cylinder
 public import TauCeti.Probability.Exchangeability.Contractability
 public import TauCeti.Probability.Exchangeability.MixedIID.Basic
-public import TauCeti.Probability.DeFinetti.DirectingMeasure.Basic
-public import TauCeti.Probability.DeFinetti.DirectingMeasure.Integral
+public import TauCeti.Probability.Process.Tail.ConditionalLaw.Basic
+public import TauCeti.Probability.Process.Tail.ConditionalLaw.Integral
 public import Mathlib.Probability.Independence.Conditional
 public import Mathlib.MeasureTheory.Constructions.Polish.Basic
 -- Non-public: used only inside proofs — the tail factorization
@@ -63,7 +63,7 @@ finite-block rectangle identity for `directingProbabilityMeasure μ X`, exactly 
 The `..._of_iCondIndepFun_tailProcess` theorems expose the intermediate reduction (de Finetti given
 tail conditional independence of the coordinates). All of the rectangle-mixture staging lemmas and
 the standard-Borel-`Ω` existential are `private` (proof staging); the integrability and real/`ℝ≥0∞`
-conversion facts this file runs on are `DirectingMeasure/Integral.lean`.
+conversion facts this file runs on are `TauCeti.Probability.Process.Tail.ConditionalLaw.Integral`.
 
 The reverse-martingale ("third") proof follows Kallenberg, *Probabilistic Symmetries and Invariance
 Principles*, Theorem 1.1 (pp. 26–28). Adapted from `cameronfreer/exchangeability`

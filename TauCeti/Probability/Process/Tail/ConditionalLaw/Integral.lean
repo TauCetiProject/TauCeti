@@ -5,15 +5,15 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Probability.DeFinetti.DirectingMeasure.Basic
+public import TauCeti.Probability.Process.Tail.ConditionalLaw.Basic
 public import TauCeti.MeasureTheory.Integral.ENNRealProd
 
 /-!
-# Integrating finite products of directing-measure evaluations
+# Integrating finite products of tail-conditioned-law evaluations
 
-Two facts about `∏ i, directingMeasure μ X ω (B i)`, read as a function of `ω`, that the de Finetti
-rectangle arguments need: it is integrable in its real form, and its real integral agrees with its
-`ℝ≥0∞` integral.
+Two facts about `∏ i, directingMeasure μ X ω (B i)`, read as a function of `ω`: it is integrable
+in its real form, and its real integral agrees with its `ℝ≥0∞` integral. These let rectangle
+arguments pass between real conditional expectations and measure-valued identities.
 
 ## Main results
 
@@ -34,12 +34,11 @@ consumers would otherwise repeat.
 In both, the measure in the integration slot is independent of the measure `μ` that defines the
 directing measure: `μ` is only the directing-measure parameter, and the integral is taken against a
 separate `ν`. The set-integral forms are the instances at `ν := μ.restrict A`. Neither mentions
-conditional independence, block factorization, or any cylinder: they are facts about the directing
-measure alone, which is why they live here rather than in the summit modules that consume them
-(`DeFinetti/BlockFactorization.lean` and `DeFinetti/JointRectangle.lean`).
+conditional independence, symmetry, or any cylinder: they are facts about the conditional law
+alone.
 
-This module is separate from `DirectingMeasure/Basic.lean` so that the measurability and evaluation
-API there stays free of the Bochner/Lebesgue integration dependencies these two results need.
+This module is separate from `TauCeti.Probability.Process.Tail.ConditionalLaw.Basic` so that its
+measurability and evaluation API stays free of the integration dependencies these results need.
 -/
 
 public section

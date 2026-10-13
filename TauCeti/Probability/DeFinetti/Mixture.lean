@@ -8,7 +8,7 @@ module
 -- Public: the generic mixture representation this specializes, and the directing measure whose law
 -- `deFinettiMeasure` is.
 public import TauCeti.Probability.Exchangeability.MixedIID.Mixture
-public import TauCeti.Probability.DeFinetti.DirectingMeasure.Basic
+public import TauCeti.Probability.Process.Tail.ConditionalLaw.Basic
 
 /-!
 # The de Finetti measure

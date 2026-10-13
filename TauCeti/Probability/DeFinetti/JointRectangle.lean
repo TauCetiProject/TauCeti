@@ -10,7 +10,7 @@ public import TauCeti.Probability.Exchangeability.ConditionallyIID.Basic
 -- Non-public: the prefix factorization and directing measure, the joint-rectangle common ending,
 -- the path-law transfer, and the machinery the symmetry transport runs on.
 -- Public: `directingProbabilityMeasure` names the witness in the exported statement.
-public import TauCeti.Probability.DeFinetti.DirectingMeasure.Basic
+public import TauCeti.Probability.Process.Tail.ConditionalLaw.Basic
 import TauCeti.Probability.DeFinetti.DirectingMeasure.BlockCylinder
 import TauCeti.Probability.DeFinetti.BlockFactorization
 import TauCeti.Probability.DeFinetti.ConditionalCommonEnding
@@ -44,7 +44,8 @@ supply that, all private.
 cylinder is the integral of the directing-measure product over that event. Since `ν` is
 `tailProcess`-measurable, `ν ⁻¹' S` is a tail event, so `setIntegral_condExp` may be tested against
 it and the prefix factorization replaces the conditional expectation. The real/`ℝ≥0∞` conversion it
-runs on is `DirectingMeasure/Integral.lean`, shared with `BlockFactorization`.
+runs on is `TauCeti.Probability.Process.Tail.ConditionalLaw.Integral`, shared with
+`BlockFactorization`.
 
 **Symmetry transport.** A finitely supported permutation realising an injective selection on the
 initial segment carries the prefix identity to that selection. It fixes `ν`, because tail events lie

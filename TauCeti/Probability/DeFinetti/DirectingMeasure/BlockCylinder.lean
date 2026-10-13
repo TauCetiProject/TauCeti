@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Probability.DeFinetti.DirectingMeasure.Integral
+public import TauCeti.Probability.Process.Tail.ConditionalLaw.Integral
 public import TauCeti.Probability.Process.Cylinder
 public import TauCeti.Probability.Process.Tail.Basic
 

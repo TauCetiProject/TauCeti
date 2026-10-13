@@ -7,9 +7,9 @@ module
 
 public import TauCeti.Probability.Exchangeability.CondExp
 public import TauCeti.Probability.Process.Cylinder
-public import TauCeti.Probability.DeFinetti.DirectingMeasure.Basic
+public import TauCeti.Probability.Process.Tail.ConditionalLaw.Basic
 import TauCeti.Probability.DeFinetti.ViaL2.WindowProduct
-import TauCeti.Probability.DeFinetti.DirectingMeasure.Integral
+import TauCeti.Probability.Process.Tail.ConditionalLaw.Integral
 
 /-!
 # The finite-block factorization, via `L²`

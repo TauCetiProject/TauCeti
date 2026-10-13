@@ -10,7 +10,7 @@ public import TauCeti.Probability.Process.Tail.Basic
 public import Mathlib.Probability.Kernel.CondDistrib
 
 /-!
-# The de Finetti directing measure
+# Tail-conditioned laws of a process
 
 For a process `X : ℕ → Ω → α` valued in a standard Borel space `α`, `directingMeasure μ X ω` is the
 conditional law of the initial coordinate `X 0` given the process tail σ-algebra `tailProcess X`,
@@ -24,13 +24,14 @@ directingMeasure μ X ω = condDistrib (X 0) (id) μ ω    (conditioning on tail
 Because it lives over the **value** space `α`, it needs only `[StandardBorelSpace α]` (and
 `[Nonempty α]`); the sample space `Ω` is an arbitrary measurable space.
 
-This is the tail-conditioned directing measure: the object the martingale route proves to be a
-`ConditionallyIIDWith` witness, and the one any route conditioning on `tailProcess X` will use. A
-route conditioning on a different σ-algebra builds its own conditional law — see
-`TauCeti.Probability.Process.PathLaw.InvariantConditionalLaw` for the shift-invariant one, which
-`ContractableLaw.conditionallyIIDWith_invariantConditionalProbabilityMeasure` proves is a witness in
-its own right — and whether two such objects agree a.e. is a theorem about them, not a property of
-this file.
+No symmetry assumption is needed to construct this conditional law. It becomes a directing
+measure when a separate theorem establishes that the coordinates are conditionally i.i.d. with
+this law. The construction alone does not assert that it is the conditional law of any coordinate
+other than `X 0`.
+
+Conditioning on a different σ-algebra gives a different construction: see
+`TauCeti.Probability.Process.PathLaw.InvariantConditionalLaw` for the shift-invariant one.
+Agreement of these conditional laws under suitable hypotheses is a separate theorem.
 
 This file records the basic theory: it is a probability measure
 (`isProbabilityMeasure_directingMeasure`), its set evaluations are `tailProcess X`-measurable
@@ -39,9 +40,8 @@ This file records the basic theory: it is a probability measure
 (`directingMeasure_ae_eq_condExp`). It is also bundled as the `ProbabilityMeasure`-valued
 `directingProbabilityMeasure`, measurable at the `tailProcess X` level
 (`measurable_tailProcess_directingProbabilityMeasure`, with the ambient corollary
-`measurable_directingProbabilityMeasure`) — the form `MixedIIDWith` consumes as its witness `ν`.
-The block-product factorisation (conditional independence across a whole block) is a separate
-concern and lives with the routes that establish it.
+`measurable_directingProbabilityMeasure`). Integration of finite products of its evaluations
+lives in `TauCeti.Probability.Process.Tail.ConditionalLaw.Integral`.
 
 Adapted from `cameronfreer/exchangeability` (`DeFinetti/ViaMartingale/DirectingMeasure.lean`, pin
 `e0532e59ceff23edab44dda9ab0655debbc9cc22`); that version conditions over `Ω` (needing
@@ -61,7 +61,7 @@ namespace Probability
 
 variable {Ω α : Type*} [MeasurableSpace Ω] [MeasurableSpace α] [StandardBorelSpace α] [Nonempty α]
 
-/-- The **de Finetti directing measure**: the conditional law of the initial coordinate `X 0` given
+/-- The conditional law of the initial coordinate `X 0` given
 the process tail σ-algebra `tailProcess X`, as the regular conditional distribution of `X 0` given
 that σ-algebra (Mathlib's `condDistrib`, conditioning on `tailProcess X` via the identity map). It
 lives over the value space `α`, so it needs `α` standard Borel, not `Ω`. -/
@@ -115,8 +115,7 @@ theorem directingMeasure_ae_eq_condExp {μ : Measure Ω} [IsFiniteMeasure μ] {X
   rw [MeasurableSpace.comap_id, hcomp] at h
   exact h
 
-/-- The directing measure bundled as a `ProbabilityMeasure`-valued map — the form that
-`MixedIIDWith` consumes as its witness `ν`. -/
+/-- The tail-conditioned law bundled as a `ProbabilityMeasure`-valued map. -/
 def directingProbabilityMeasure (μ : Measure Ω) [IsFiniteMeasure μ] (X : ℕ → Ω → α) (ω : Ω) :
     ProbabilityMeasure α :=
   Kernel.probabilityMeasure (mβ := tailProcess X)
@@ -134,8 +133,8 @@ theorem measurable_tailProcess_directingProbabilityMeasure {μ : Measure Ω} [Is
   Kernel.measurable_probabilityMeasure (mβ := tailProcess X)
     (@condDistrib Ω Ω α _ _ _ _ (tailProcess X) (X 0) id μ _)
 
-/-- The bundled directing measure is measurable into `ProbabilityMeasure α` — the ambient corollary
-of the `tailProcess X`-measurable form, the measurability that `MixedIIDWith` requires. -/
+/-- The bundled tail-conditioned law is ambient-measurable whenever the process tail is contained
+in the ambient measurable space. -/
 @[fun_prop]
 theorem measurable_directingProbabilityMeasure {μ : Measure Ω} [IsFiniteMeasure μ] {X : ℕ → Ω → α}
     (hTail : tailProcess X ≤ (inferInstance : MeasurableSpace Ω)) :

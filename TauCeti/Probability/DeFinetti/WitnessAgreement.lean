@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 -- Public: the statement compares these two canonical witnesses under a contractable path law.
-public import TauCeti.Probability.DeFinetti.DirectingMeasure.Basic
+public import TauCeti.Probability.Process.Tail.ConditionalLaw.Basic
 public import TauCeti.Probability.Exchangeability.PathSpace.ContractableLaw
 public import TauCeti.Probability.Process.PathLaw.InvariantConditionalLaw
 -- Non-public: the default route's named witness theorem,
