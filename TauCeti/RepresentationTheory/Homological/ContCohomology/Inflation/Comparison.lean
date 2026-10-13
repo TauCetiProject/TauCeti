@@ -63,7 +63,7 @@ compatible pair of explicit inflation: the quotient map `G → G ⧸ N` with the
 theorem ofDiscreteModulePair_quotientMk_subtype :
     ofDiscreteModulePair (ContinuousMonoidHom.quotientMk N : G →* G ⧸ N)
         (FixedPoints.addSubgroup N M).subtype.toIntLinearMap
-        (fun g m ↦ subtype_quotientMk_smul G M N g m) =
+        N.fixedPoints_subtype_quotientMk_smul =
       (TopRep.resFunctor (ContinuousMonoidHom.quotientMk N : G →* G ⧸ N)).map
           (ofDiscreteModuleQuotient G M N) ≫
         TopRep.quotientToInvariantsι (ofDiscreteModule ℤ G M) N :=
@@ -86,7 +86,7 @@ theorem coeffMap_ofDiscreteModuleQuotient_comp_infl (n : ℕ) :
       _root_.ContinuousCohomology.map.{0, u, u} (ContinuousMonoidHom.quotientMk N)
         (ofDiscreteModulePair (ContinuousMonoidHom.quotientMk N : G →* G ⧸ N)
           (FixedPoints.addSubgroup N M).subtype.toIntLinearMap
-          (fun g m ↦ subtype_quotientMk_smul G M N g m)) n := by
+          N.fixedPoints_subtype_quotientMk_smul) n := by
   rw [TauCeti.ContinuousCohomology.coeffMap_def, TauCeti.ContinuousCohomology.infl_def,
     ofDiscreteModulePair_quotientMk_subtype]
   refine (_root_.ContinuousCohomology.map_comp
@@ -119,7 +119,7 @@ theorem explicitH0Iso_infl
   simpa only [ContinuousMonoidHom.coe_quotientMk] using
     (explicitH0Iso_map (G ⧸ N) (FixedPoints.addSubgroup N M) G M
       (ContinuousMonoidHom.quotientMk N) (FixedPoints.addSubgroup N M).subtype
-      (subtype_quotientMk_smul G M N) x)
+      N.fixedPoints_subtype_quotientMk_smul x)
 
 variable [ContinuousSMul G M] [CompactSpace G]
 
@@ -139,7 +139,7 @@ theorem explicitIso_infl
     explicitInfl1_eq_explicitMap1]
   exact explicitIso_map (G ⧸ N) (FixedPoints.addSubgroup N M) G M
     (ContinuousMonoidHom.quotientMk N) (FixedPoints.addSubgroup N M).subtype
-    (subtype_quotientMk_smul G M N) x
+    N.fixedPoints_subtype_quotientMk_smul x
 
 /-- **Transport of inflation in degree two.** The degree-two comparison carries explicit
 inflation to canonical inflation, read through the dictionary morphism
@@ -157,6 +157,6 @@ theorem explicitIso_infl2
     explicitInfl2_eq_explicitMap2]
   exact explicitIso_map2 (G ⧸ N) (FixedPoints.addSubgroup N M) G M
     (ContinuousMonoidHom.quotientMk N) (FixedPoints.addSubgroup N M).subtype
-    (subtype_quotientMk_smul G M N) x
+    N.fixedPoints_subtype_quotientMk_smul x
 
 end TauCeti.ContCohomology

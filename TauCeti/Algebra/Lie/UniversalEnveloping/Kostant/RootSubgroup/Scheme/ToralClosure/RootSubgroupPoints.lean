@@ -21,11 +21,9 @@ index `i`, it supplies the intrinsic homomorphism
 𝔾ₐ(A) → kostantToralGroupScheme(A).
 ```
 
-Composing this homomorphism with the quotient-points inclusion recovers the previously constructed
-matrix-valued root subgroup. The construction is natural in `A`; in particular, iterated
-Frobenius raises its root parameter to the corresponding prime-power exponent. These are the
-point-level root-subgroup and field-endomorphism interfaces required when the generic Kostant
-carrier is specialized to a pinned Chevalley--Demazure group.
+Composing this homomorphism with the quotient-points inclusion recovers the matrix-valued root
+subgroup. The construction is natural in `A`; in particular, iterated Frobenius raises its root
+parameter to the corresponding prime-power exponent.
 
 ## Main declarations
 
@@ -42,11 +40,6 @@ carrier is specialized to a pinned Chevalley--Demazure group.
 
 * R. W. Carter, *Simple Groups of Lie Type*, §§4.4 and 7.1.
 * J. E. Humphreys, *Linear Algebraic Groups*, §26.
-
-This advances the “Chevalley--Demazure construction” and “points over an algebraically closed
-field” targets in Layer 9 of `TauCetiRoadmap/ReductiveGroups/README.md`. The resulting intrinsic
-root-subgroup map and Frobenius law are inputs to milestones L0 and L1 of the CFSGStatement
-roadmap.
 -/
 
 public section
@@ -124,7 +117,7 @@ theorem quotientPointsHom_kostantRootSubgroupToralPoints (i : I) (A : CommAlgCat
   rw [mkQuotient_comp_kostantRootSubgroupToralCoordinateMap]
 
 /-- In general-linear coordinates, the intrinsic root point is the divided-power exponential
-matrix previously attached to the represented Kostant root subgroup.
+matrix of the represented Kostant root subgroup.
 
 This is not a simp lemma because `GeneralLinear.pointsMulEquiv_apply` first normalizes its
 left-hand side to `GeneralLinear.pointToGeneralLinear`; use it explicitly when that matrix form is

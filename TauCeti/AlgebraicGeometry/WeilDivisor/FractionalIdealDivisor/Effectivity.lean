@@ -17,9 +17,7 @@ parts on both sides: a fractional ideal is contained in `R` exactly when all of 
 height-one multiplicities are nonnegative.
 
 Thus the affine Weil--Cartier dictionary restricts to an additive equivalence between integral
-invertible fractional ideals and effective Weil divisors. This directly advances the
-`Weil ≃ Cartier` divisor dictionary in Layer A of
-`TauCetiRoadmap/JacobianChallenge/README.md`.
+invertible fractional ideals and effective Weil divisors.
 
 The reverse implication uses Mathlib's factorization of a nonzero fractional ideal as the
 finite product of its height-one prime powers. No external formalization is copied.

@@ -82,7 +82,7 @@ theorem exists_boundary_levels_schwarzChristoffel_of_sum_eq_neg_one
         schwarzChristoffelPrevertexCoefficient a e p).re) (𝓝[≠] p) atBot := by
   classical
   -- Continue the logarithmic remainder, and isolate the singular prevertex.
-  obtain ⟨H, R, hR, hH, hF⟩ :=
+  obtain ⟨H, R, hR, hH, _, hF⟩ :=
     exists_analyticOnNhd_eq_schwarzChristoffelPrimitive_sub_log_of_sum_eq_neg_one a e z₀ p he
   have hsep : ∀ᶠ x in 𝓝 p, ∀ i, a i ≠ p → a i ≠ x := by
     apply eventually_all.mpr

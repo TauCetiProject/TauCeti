@@ -66,9 +66,7 @@ private lemma coeff_sum_eq_zero (N : ℕ) (s : Finset {d : ℕ // 1 < d ∧ d �
     (n : ℕ) (hn : n ≠ 0) :
     ∑ j ∈ s, g j * (-24 * ((σ 1 n : ℂ) -
       if j.val ∣ n then j.val * (σ 1 (n / j.val) : ℂ) else 0)) = 0 := by
-  have hp : (1 : ℝ) ∈ ((Gamma0 N).map (mapGL ℝ)).strictPeriods := by
-    simp [CongruenceSubgroup.strictPeriods_Gamma0]
-  let Q := ModularForm.qExpansionLinearMap one_pos hp 2
+  let Q := ModularForm.qExpansionLinearMap one_pos (one_mem_strictPeriods_Gamma0_map N) 2
   let Qcoeff : ModularForm ((Gamma0 N).map (mapGL ℝ)) 2 →ₗ[ℂ] ℂ :=
     (PowerSeries.coeff n).comp Q
   have hc := congrArg Qcoeff hsum

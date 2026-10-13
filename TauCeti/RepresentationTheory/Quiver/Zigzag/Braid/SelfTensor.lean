@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Braid.Factors
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Braid.Tensor
+public import TauCeti.RepresentationTheory.Quiver.Zigzag.Braid.TensorEvaluation
 public import Mathlib.LinearAlgebra.TensorProduct.Prod
 public import Mathlib.Algebra.Category.ModuleCat.Biproducts
 public import Mathlib.CategoryTheory.Preadditive.AdditiveFunctor
@@ -342,5 +343,55 @@ theorem zigzagBraidSelfTensorInr_hom_factors (i : V) (l : L i) (r : R i) :
           (((zigzagAlgebraBasis k G (.inr (.inr i))) • spanSingletonGenerator (e i)) ⊗ₜ[k] r)) := by
   simpa only [zigzagBraidSelfTensorInr, GradedModuleCat.hom_ofHom,
     volumeInIdeal_eq] using selfTensorInsertTwo_factors k G i l r
+
+/-- The degree-zero self-tensor insertion followed by right evaluation is the identity. -/
+@[reassoc (attr := simp)]
+theorem zigzagBraidSelfTensorInl_evaluationRight (i : V) :
+    zigzagBraidSelfTensorInl k G i ≫ zigzagBraidTensorEvaluationRight k G i i =
+      𝟙 (U i) := by
+  apply GradedModuleCat.hom_ext
+  apply LinearMap.ext
+  intro u
+  obtain ⟨t, rfl⟩ := (zigzagBraidBimoduleFactorsEquiv k G i).symm.surjective u
+  induction t using TensorProduct.inductionOn with
+  | tmul l r =>
+    have he := isIdempotentElem_zigzagAlgebraBasis_inl k G i
+    have heop : IsIdempotentElem (op (e i)) := by rw [IsIdempotentElem, ← op_mul, he.eq]
+    have hr : e i * unop (r : Zᵐᵒᵖ) = unop (r : Zᵐᵒᵖ) := by
+      simpa only [unop_mul, unop_op] using
+        congrArg unop ((mem_span_singleton_iff_mul_eq_self heop).mp r.property)
+    simp only [GradedModuleCat.hom_comp, LinearMap.comp_apply,
+      GradedModuleCat.hom_id, LinearMap.id_apply]
+    rw [zigzagBraidSelfTensorInl_hom_factors k G i l r,
+      zigzagBraidTensorEvaluationRight_tmul, hom_zigzagBraidEvaluationHom,
+      zigzagBraidEvaluation_factors]
+    simp only [coe_spanSingletonGenerator, hr, op_unop,
+      zigzagBraidBimoduleFactorsEquiv_symm_tmul_smul, one_smul,
+      smul_spanSingletonGenerator heop]
+  | add x y hx hy => simp only [map_add, hx, hy]
+
+/-- The degree-zero self-tensor insertion followed by left evaluation is the identity. -/
+@[reassoc (attr := simp)]
+theorem zigzagBraidSelfTensorInl_evaluationLeft (i : V) :
+    zigzagBraidSelfTensorInl k G i ≫ zigzagBraidTensorEvaluationLeft k G i i =
+      𝟙 (U i) := by
+  apply GradedModuleCat.hom_ext
+  apply LinearMap.ext
+  intro u
+  obtain ⟨t, rfl⟩ := (zigzagBraidBimoduleFactorsEquiv k G i).symm.surjective u
+  induction t using TensorProduct.inductionOn with
+  | tmul l r =>
+    have he := isIdempotentElem_zigzagAlgebraBasis_inl k G i
+    have hl : (l : Z) * e i = (l : Z) :=
+      (mem_span_singleton_iff_mul_eq_self he).mp l.property
+    simp only [GradedModuleCat.hom_comp, LinearMap.comp_apply,
+      GradedModuleCat.hom_id, LinearMap.id_apply]
+    rw [zigzagBraidSelfTensorInl_hom_factors k G i l r,
+      zigzagBraidTensorEvaluationLeft_tmul, hom_zigzagBraidEvaluationHom,
+      zigzagBraidEvaluation_factors]
+    simp only [coe_spanSingletonGenerator, unop_op, hl,
+      zigzagBraidBimoduleFactorsEquiv_symm_tmul_smul, one_smul,
+      smul_spanSingletonGenerator he]
+  | add x y hx hy => simp only [map_add, hx, hy]
 
 end TauCeti
