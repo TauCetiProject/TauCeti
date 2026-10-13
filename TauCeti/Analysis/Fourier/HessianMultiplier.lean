@@ -109,6 +109,18 @@ def hessianSymbolLp (v w : E) : Lp ℂ ∞ (volume : Measure E) :=
 theorem coeFn_hessianSymbolLp (v w : E) : hessianSymbolLp v w =ᵐ[volume] hessianSymbol v w :=
   (memLp_hessianSymbol v w volume).coeFn_toLp
 
+/-- The Hessian symbol is real, hence fixed by complex conjugation. -/
+@[simp]
+theorem star_hessianSymbolLp (v w : E) : star (hessianSymbolLp v w) = hessianSymbolLp v w := by
+  apply Lp.ext
+  filter_upwards [Lp.coeFn_star (hessianSymbolLp v w), coeFn_hessianSymbolLp v w]
+    with ξ hstar hξ
+  rw [hstar]
+  calc
+    star ((hessianSymbolLp v w : E → ℂ) ξ) = star (hessianSymbol v w ξ) := congrArg star hξ
+    _ = hessianSymbol v w ξ := by simp [hessianSymbol]
+    _ = (hessianSymbolLp v w : E → ℂ) ξ := hξ.symm
+
 /-- The `L^∞` norm of the symbol of `∂_v ∂_w Δ⁻¹` is at most `‖v‖ ‖w‖`. -/
 theorem norm_hessianSymbolLp_le (v w : E) : ‖hessianSymbolLp v w‖ ≤ ‖v‖ * ‖w‖ := by
   rw [Lp.norm_def, eLpNorm_exponent_top (Lp.aestronglyMeasurable _)]
