@@ -55,6 +55,10 @@ it; the subspace form here needs no such comparison.)
   closure leaves `Spa` unchanged.
 * `TauCeti.ValuationSpectrum.spa_topologicalClosure` : over a semitopological ring, replacing the
   plus ring by its topological closure leaves `Spa` unchanged.
+* `TauCeti.ValuationSpectrum.spa_bot` : with the smallest plus ring, the image of `ℤ`, the adic
+  spectrum is all of `Cont A`.
+* `TauCeti.ValuationSpectrum.spa_eq_cont_of_denseRange_intCast` : when `ℤ` has dense image in a
+  semitopological ring `A`, `Spa (A, A⁺) = Cont A` for every plus ring `A⁺`.
 * `TauCeti.ValuationSpectrum.spa_eq_empty_of_one_mem_closure_zero` : if `1 ∈ closure {0}` in a
   commutative ring `A` with separately continuous addition, then `Spa(A, A⁺) = ∅` for any plus
   ring `A⁺` (the `1 ∈ closure {0} → Spa(A, A⁺) = ∅` half of Wedhorn Proposition 7.49(1)).
@@ -151,6 +155,28 @@ theorem spa_topologicalClosure [IsSemitopologicalRing A] (S : Subring A) :
     AddSubgroup.isClosed_of_isOpen v.valuation.integer.toAddSubgroup <| by
       simpa [Valuation.integer] using hv.1.isOpen_le (b := 1)
   exact ⟨hv.1, S.topologicalClosure_minimal hv.2 hclosed⟩
+
+/-- **With the smallest plus ring the adic spectrum is the continuous locus**: every valuation is
+at most `1` on the image of `ℤ`, the smallest subring, since its integer ring is a subring. -/
+@[simp]
+theorem spa_bot : spa (⊥ : Subring A) = cont A := by
+  refine Set.Subset.antisymm (fun v hv ↦ (mem_cont_iff v).mpr ((mem_spa_iff _ v).mp hv).1)
+    fun v hv ↦ (mem_spa_iff _ v).mpr ⟨(mem_cont_iff v).mp hv, fun a ha ↦ ?_⟩
+  have := (bot_le : (⊥ : Subring A) ≤ v.valuation.integer) ha
+  rwa [Valuation.mem_integer_iff, ← map_one v.valuation, valuation_le_iff] at this
+
+/-- **If the integers are dense, the plus ring does not change the adic spectrum**: when `ℤ` has
+dense image in `A`, `Spa (A, A⁺) = Cont A` for every subring `A⁺`. A continuous valuation is at
+most `1` on the closure of the image of `ℤ`, which is all of `A`. -/
+theorem spa_eq_cont_of_denseRange_intCast [IsSemitopologicalRing A]
+    (h : DenseRange (Int.cast : ℤ → A)) (Aplus : Subring A) : spa Aplus = cont A := by
+  have htop : (⊥ : Subring A).topologicalClosure = ⊤ := by
+    refine eq_top_iff.mpr fun x _ ↦ closure_mono ?_ (h x)
+    rintro _ ⟨n, rfl⟩
+    exact intCast_mem _ n
+  refine Set.Subset.antisymm (fun v hv ↦ (mem_cont_iff v).mpr ((mem_spa_iff _ v).mp hv).1) ?_
+  rw [← spa_bot, ← spa_topologicalClosure, htop]
+  exact spa_antitone le_top
 
 /-- The trivial valuation of a prime `p` is a point of the adic spectrum exactly when `p` is open,
 for any plus ring `A⁺`: the sub-unit condition holds at every element of `A`, since a trivial

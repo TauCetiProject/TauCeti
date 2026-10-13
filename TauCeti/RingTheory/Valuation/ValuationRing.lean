@@ -8,7 +8,7 @@ module
 public import Mathlib.RingTheory.Valuation.ValuationRing
 
 /-!
-# Valuation rings: squares of the form `1 + 4c`, and integrality under domination
+# Valuation rings: squares `1 + 4c`, integrality under domination, and divisibility
 
 In a commutative ring `R` with total divisibility and regular `2`, the element `1 + 4c` is a square
 exactly when `c` has the form `t ^ 2 + t`, the witness being `1 + 2t`. One direction is an identity
@@ -25,12 +25,19 @@ containing `S`, an element of `K` whose image lies in `S` already lies in `R`. O
 valuation ring this is what lets an integrality statement proved after a ramified extension of
 the base descend to the base itself.
 
+Finally, on a ring with total divisibility, a valuation that is at most `1` everywhere, below `1`
+on the nonunits and zero only at `0` is determined by divisibility: `v x ≤ v y` exactly when
+`y ∣ x`. This describes the `𝔪`-adic valuation of a discrete valuation ring on its own elements,
+and the points with zero support of its adic spectrum.
+
 ## Main results
 
 * `TauCeti.ValuationRing.isSquare_one_add_four_mul_iff`: `1 + 4c` is a square if and only if
   `c = t ^ 2 + t` for some `t`.
 * `TauCeti.ValuationRing.isInteger_of_isInteger_algebraMap`: an element of `K` whose image in `L`
   lies in a ring `S` dominating `R` already lies in `R`.
+* `Valuation.le_iff_dvd`: a valuation at most `1`, below `1` on the nonunits and with zero
+  support compares elements by divisibility.
 
 ## References
 
@@ -100,3 +107,27 @@ end Domination
 end ValuationRing
 
 end TauCeti
+
+namespace Valuation
+
+variable {R Γ₀ : Type*} [CommRing R] [PreValuationRing R] [LinearOrderedCommGroupWithZero Γ₀]
+
+/-- **A valuation on a ring with total divisibility compares elements by divisibility** when it is
+at most `1` everywhere, strictly below `1` on the nonunits, and zero only at `0`: then
+`v x ≤ v y` exactly when `y ∣ x`. -/
+theorem le_iff_dvd (v : Valuation R Γ₀) (hle : ∀ x, v x ≤ 1) (hlt : ∀ x, ¬ IsUnit x → v x < 1)
+    (hsupp : ∀ x, v x = 0 → x = 0) {x y : R} : v x ≤ v y ↔ y ∣ x := by
+  refine ⟨fun h ↦ ?_, fun ⟨z, hz⟩ ↦ ?_⟩
+  · rcases _root_.ValuationRing.dvd_total y x with hyx | ⟨z, rfl⟩
+    · exact hyx
+    -- `y = x * z`: either `z` is a unit, or `v y = v x * v z < v x` unless `x = 0`.
+    by_cases hz : IsUnit z
+    · exact ⟨↑hz.unit⁻¹, by simp [mul_assoc]⟩
+    rcases eq_or_ne (v x) 0 with hx | hx
+    · simp [hsupp x hx]
+    rw [map_mul] at h
+    exact absurd h (mul_lt_of_lt_one_right (zero_lt_iff.mpr hx) (hlt z hz)).not_ge
+  · rw [hz, map_mul]
+    exact mul_le_of_le_one_right' (hle z)
+
+end Valuation
