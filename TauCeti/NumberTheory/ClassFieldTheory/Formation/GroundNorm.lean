@@ -212,8 +212,11 @@ theorem groundNorm_apply_coe (T : LayerRestriction small big) (F : Formation G)
 theorem groundNorm_groundInclusion (T : LayerRestriction small big) (F : Formation G)
     (x : F.level big.ground) :
     (dsimp% only (T.groundNorm F (T.groundInclusion F x))) = T.relativeDegree • x := by
-  rw [show T.groundInclusion F x = Submodule.inclusion (F.level_antitone T.ground_le) x from
-    Subtype.ext (groundInclusion_apply_coe T F x), relativeDegree_def]
+  -- `levelNorm_inclusion` is stated for `Submodule.inclusion`; both inclusions fix every element
+  -- of the ambient module, so they agree on `x`.
+  have hx : T.groundInclusion F x = Submodule.inclusion (F.level_antitone T.ground_le) x :=
+    Subtype.ext (by rw [groundInclusion_apply_coe, Submodule.coe_inclusion])
+  rw [hx, relativeDegree_def]
   exact F.levelNorm_inclusion T.ground_le x
 
 /-! ### Towers -/
