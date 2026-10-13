@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Sobolev.LipschitzDomain.Basic
-public import TauCeti.Analysis.Calculus.GraphFlattening
+public import TauCeti.Analysis.Normed.Lp.GraphDomain
 
 /-!
 # Lipschitz epigraphs are Lipschitz domains

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Calculus.GraphFlattening
+public import TauCeti.Analysis.Normed.Lp.GraphDomain
 public import TauCeti.Analysis.Sobolev.Trace.Hyperplane
 public import TauCeti.Analysis.Sobolev.W1p.Restriction
 import TauCeti.MeasureTheory.Function.Lp.Norm

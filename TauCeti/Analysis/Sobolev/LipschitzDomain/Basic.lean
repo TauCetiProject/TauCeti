@@ -142,12 +142,10 @@ theorem IsLipschitzDomainAtWith.image_affineIsometryEquiv
       simpa only [Function.comp_apply, AffineIsometryEquiv.symm_symm] using
         congrFun (AffineIsometryEquiv.coe_symm_trans g.symm e) z
     have himage : g (e.symm z) ∈ g '' Omega ↔ e.symm z ∈ Omega := by
-      constructor
-      · rintro ⟨y, hy, hgy⟩
-        rw [← g.injective hgy]
-        exact hy
-      · intro hy
-        exact ⟨e.symm z, hy, rfl⟩
+      change g.toEquiv (e.symm z) ∈ g.toEquiv '' Omega ↔ e.symm z ∈ Omega
+      rw [Set.mem_image_equiv]
+      change g.symm (g (e.symm z)) ∈ Omega ↔ e.symm z ∈ Omega
+      rw [g.symm_apply_apply]
     rw [hchart, himage]
     exact hOmega z hz
 

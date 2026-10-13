@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.Calculus.ContDiff.Operations
 public import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
-public import Mathlib.Topology.ContinuousMap.Algebra
+public import TauCeti.Analysis.Normed.Lp.GraphDomain
 import TauCeti.LinearAlgebra.Prod
 import TauCeti.Topology.Algebra.Module.ProjectionGraph
 import Mathlib.Topology.OpenPartialHomeomorph.Basic
@@ -50,49 +50,9 @@ noncomputable section
 
 namespace TauCeti
 
-open MeasureTheory Set TopologicalSpace
+open MeasureTheory Set
 
 variable {E : Type*} [NormedAddCommGroup E]
-
-/-! ### Normal half-spaces and epigraphs -/
-
-/-- The open half-space to the right of the normal coordinate `a` in the Euclidean product
-`ℝ × E`. -/
-def normalHalfSpace (a : ℝ) : Opens (WithLp 2 (ℝ × E)) :=
-  ⟨{x | a < (WithLp.ofLp x).1},
-    isOpen_lt continuous_const (WithLp.prod_continuous_ofLp 2 ℝ E).fst⟩
-
-/-- Membership in the normal-coordinate half-space is a strict inequality. -/
-@[simp]
-theorem mem_normalHalfSpace (a : ℝ) (x : WithLp 2 (ℝ × E)) :
-    x ∈ normalHalfSpace (E := E) a ↔ a < (WithLp.ofLp x).1 := Iff.rfl
-
-/-- As a set, the right normal half-space is `{x | a < x.fst}`. -/
-theorem coe_normalHalfSpace (a : ℝ) :
-    (normalHalfSpace (E := E) a : Set (WithLp 2 (ℝ × E))) =
-      {x | a < (WithLp.ofLp x).1} :=
-  Set.ext (mem_normalHalfSpace a)
-
-/-- The open region `{x | φ x.snd < x.fst}` above the graph of a continuous function
-`φ : E → ℝ` in the Euclidean product `ℝ × E`. -/
-def normalEpigraph (φ : C(E, ℝ)) : Opens (WithLp 2 (ℝ × E)) :=
-  ⟨{x | φ x.snd < x.fst}, isOpen_lt (by fun_prop) (by fun_prop)⟩
-
-@[simp]
-theorem mem_normalEpigraph (φ : C(E, ℝ)) (x : WithLp 2 (ℝ × E)) :
-    x ∈ normalEpigraph φ ↔ φ x.snd < x.fst :=
-  Iff.rfl
-
-/-- As a set, the region above the graph is `{x | φ x.snd < x.fst}`. -/
-theorem coe_normalEpigraph (φ : C(E, ℝ)) :
-    (normalEpigraph φ : Set (WithLp 2 (ℝ × E))) = {x | φ x.snd < x.fst} :=
-  Set.ext (mem_normalEpigraph φ)
-
-/-- The region above the graph of `0` is the half-space `{0 < t}`. -/
-@[simp]
-theorem normalEpigraph_zero : normalEpigraph (0 : C(E, ℝ)) = normalHalfSpace 0 := by
-  ext x
-  simp
 
 /-! ### Graph flattening -/
 
