@@ -157,7 +157,7 @@ theorem ideleLayerCorInfl_conjugateCohomologyIso (g : AbsoluteGaloisGroup K)
   rw [ideleLayerCorInfl_apply, NormalLayer.explicitInfl2_conjugateCohomologyIso,
     ideleLayerCorInfl_apply]
   exact explicitCor2_explicitMap2_of_conj L.ground.toSubgroup (L.conjugate g).ground.toSubgroup
-    (IdeleCoeff K) g _ (L.conjugateGroundHom_apply_coe g) (DistribSMul.toAddMonoidHom _ g)
+    (IdeleCoeff K) g _ (L.conjugateGroundEquiv_symm_apply_coe g) (DistribSMul.toAddMonoidHom _ g)
     (DistribSMul.toAddMonoidHom_apply _ g) (L.toSubgroup_ground_conjugate g) L.ground.isOpen
     (L.conjugate g).ground.isOpen _
 

@@ -55,9 +55,6 @@ corestriction from the ground subgroup `U` to `G`) are defined.
   `H²(U ⧸ V, M^V) → H²(U, M)`.
 * `TauCeti.ClassFieldTheory.NormalLayer.inflCocycle2 L e he c`: the continuous `2`-cocycle on `U`
   inflated from a layer cocycle `c`.
-* `TauCeti.ClassFieldTheory.NormalLayer.conjugateGroundHom L g`: inverse conjugation
-  `gUg⁻¹ → U`, as a continuous homomorphism of the ground subgroups of the conjugate layer and of
-  the layer.
 
 ## Main results
 
@@ -378,31 +375,6 @@ section Conjugation
 
 variable (g : G)
 
-/-- Inverse conjugation `v ↦ g⁻¹ v g`, from the ground subgroup `gUg⁻¹` of the conjugate layer to
-the ground subgroup `U` of the layer, as a continuous homomorphism. -/
-def conjugateGroundHom : (L.conjugate g).ground.toSubgroup →ₜ* L.ground.toSubgroup where
-  toFun v := ⟨g⁻¹ * v * g, (L.mem_ground_conjugate g).1 v.2⟩
-  map_one' := Subtype.ext (by simp)
-  map_mul' v w := Subtype.ext (by simp only [Subgroup.coe_mul]; group)
-  continuous_toFun := ((continuous_mul_const g).comp
-    ((continuous_const_mul g⁻¹).comp continuous_subtype_val)).subtype_mk _
-
-/-- Inverse conjugation on underlying elements of `G`. -/
-@[simp]
-theorem conjugateGroundHom_apply_coe (v : (L.conjugate g).ground.toSubgroup) :
-    (L.conjugateGroundHom g v : G) = g⁻¹ * v * g :=
-  (rfl)
-
-omit [TopologicalSpace M] [DiscreteTopology M] [ContinuousSMul G M] in
-/-- The action of `g` on `M` and inverse conjugation form a compatible pair. -/
-theorem conjugateGroundHom_smul (v : (L.conjugate g).ground.toSubgroup) (m : M) :
-    DistribSMul.toAddMonoidHom M g (L.conjugateGroundHom g v • m) =
-      v • DistribSMul.toAddMonoidHom M g m := by
-  rw [DistribSMul.toAddMonoidHom_apply, DistribSMul.toAddMonoidHom_apply, Subgroup.smul_def,
-    Subgroup.smul_def, conjugateGroundHom_apply_coe, smul_smul, smul_smul]
-  congr 1
-  group
-
 omit [ContinuousSMul G M] in
 /-- The inflated cocycle of a layer cocycle pulled back along a pair `(f, φ)` that acts on Galois
 groups by inverse conjugation and on coefficients by `g` is the inflated cocycle, pulled back along
@@ -440,8 +412,7 @@ theorem explicitInfl2_conjugateCohomologyIso (x : L.H F 2) :
     exact groupCohomology.H2π_comp_map_apply (L.conjugateGalEquiv g).symm.toMonoidHom _ c
   case hcocycle =>
     exact Subtype.ext (funext fun p => (inflCocycle2_mapCocycles₂ L e he g _ _
-      (fun w => (L.conjugateGalEquiv_symm_mk g w).trans (congrArg QuotientGroup.mk
-        (Subtype.ext (L.conjugateGroundEquiv_symm_apply_coe g w))))
+      (L.conjugateGalEquiv_symm_mk g)
       (fun x => L.conjugateCoefficientEquiv_apply_coe F g x) c p).trans
       (cocyclesMap2_apply _ _ _ _ _ _ _ _ _ p.1 p.2).symm)
 
