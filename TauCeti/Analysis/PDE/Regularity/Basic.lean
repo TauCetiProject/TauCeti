@@ -196,10 +196,9 @@ theorem energyFormH1_differenceQuotient_eq_neg (A : Matrix ι ι ℝ) (w : Eucli
         (W1p.differenceQuotient le_rfl w t (Set.mapsTo_univ (· + t • w) _) u) v
       = -energyFormH1 (fun _ => A) 0 0 u
         (W1p.differenceQuotient le_rfl w (-t) (Set.mapsTo_univ (· + (-t) • w) _) v) := by
-  have h := abs_energyFormH1_differenceQuotient_add_le (mu := mu) (a := fun _ => A) (K := 0)
-    (by simp) (LipschitzWith.const _) w t u v
-  simp only [NNReal.coe_zero, zero_mul, abs_nonpos_iff] at h
-  linarith
+  have h := energyFormH1_differenceQuotient_eq_neg_sub (mu := mu) (a := fun _ => A)
+    (memLp_top_const (energyIntegrand A 0 0)) w t u v
+  rwa [sub_self, mul_zero, sub_zero] at h
 
 /-- **The difference quotients of the gradient of a weak solution are uniformly bounded.** Let
 `a` be uniformly elliptic on the whole space with lower constant `λ`, and let `x ↦ a(x)` be
