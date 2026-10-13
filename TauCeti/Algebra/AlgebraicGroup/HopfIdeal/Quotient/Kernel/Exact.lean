@@ -7,8 +7,11 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Quotient.Kernel.Coinvariants
 public import TauCeti.Algebra.AlgebraicGroup.Isogeny.Basic
+public import TauCeti.Algebra.AlgebraicGroup.CommHopfAlgCat.BaseChange
 import TauCeti.Algebra.AlgebraicGroup.Hopf.KernelPoints
+import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Quotient.Kernel.BaseChange
 import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Quotient.Kernel.Finiteness
+import TauCeti.RingTheory.RingHom.FaithfullyFlat
 
 /-!
 # Short exact sequences of affine groups
@@ -40,6 +43,7 @@ smoothness, reducedness or finite-type hypotheses, and derives its basic consequ
   (`mapPointsFunctor_app_surjective_of_faithfullyFlat`).
 * The quotient map is an isogeny exactly when the subgroup is finite
   (`IsShortExact.isIsogeny_iff_moduleFinite`).
+* Short exact sequences are stable under arbitrary base change (`IsShortExact.baseChange`).
 
 ## Main declarations
 
@@ -54,6 +58,7 @@ smoothness, reducedness or finite-type hypotheses, and derives its basic consequ
 * `TauCeti.CommHopfAlgCat.IsShortExact.coinvariants_eq_range`: `O(Q) = O(G)^N`.
 * `TauCeti.CommHopfAlgCat.IsShortExact.ker_mapPointsFunctor_app_eq_range`: exactness on points.
 * `TauCeti.CommHopfAlgCat.IsShortExact.isIsogeny_iff_moduleFinite`: finite kernels and isogenies.
+* `TauCeti.CommHopfAlgCat.IsShortExact.baseChange`: base change of short exact sequences.
 
 ## References
 
@@ -143,6 +148,20 @@ theorem isIsogeny_iff_moduleFinite (h : IsShortExact p i) : IsIsogeny p ↔ Modu
     finite_iff_moduleFinite_quotient_kernelHopfIdeal p h.faithfullyFlat]
   let e := (CommHopfAlgCat.ofIso h.kernelIso).toAlgEquiv.toLinearEquiv
   exact ⟨fun _ ↦ Module.Finite.equiv e, fun _ ↦ Module.Finite.equiv e.symm⟩
+
+/-- A short exact sequence of affine groups `1 → N → G → Q → 1` remains short exact after an
+arbitrary base change `R → T`. -/
+theorem baseChange (h : IsShortExact p i) (T : Type w) [CommRing T] [Algebra R T] :
+    IsShortExact (baseChangeMap (K := T) p) (baseChangeMap (K := T) i) := by
+  -- Elaborating the three fields against the expected structure type unfolds the base changes
+  -- too eagerly; stating them first keeps unification cheap.
+  have hp := RingHom.FaithfullyFlat.lTensor (S := T) T h.faithfullyFlat
+  have hi := baseChangeMap_surjective (K := T) i h.surjective
+  have hker : RingHom.ker (baseChangeMap (K := T) i).hom.toAlgHom.toRingHom =
+      (kernelHopfIdeal (baseChangeMap (K := T) p)).toIdeal := by
+    rw [← baseChangeHopfIdeal_kernelHopfIdeal, baseChangeHopfIdeal_toIdeal, ← h.ker_eq]
+    exact Algebra.TensorProduct.lTensor_ker (A := T) i.hom.toAlgHom h.surjective
+  exact ⟨hp, hi, hker⟩
 
 end IsShortExact
 

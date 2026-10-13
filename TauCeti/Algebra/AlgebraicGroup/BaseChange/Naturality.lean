@@ -31,6 +31,7 @@ same base-change argument.
   post-composition in the value algebra.
 * `TauCeti.AlgHom.baseChangePointsMulEquiv_mapDomain`: base change of points commutes with
   pre-composition in the coordinate bialgebra.
+* `TauCeti.AlgHom.mapDomain_pointsBaseChange`: the same for base change of base-valued points.
 
 ## See also
 
@@ -141,6 +142,17 @@ lemma baseChangePointsMulEquiv_symm_mapDomain_apply (φ : A →ₐc[k] B)
       f.ofConv (1 ⊗ₜ[k] φ a) := by
   simp only [baseChangePointsMulEquiv_symm_apply, mapDomain_apply_apply,
     _root_.Bialgebra.TensorProduct.map_tmul, _root_.BialgHom.id_apply]
+
+variable (K) in
+/-- Base change of base-valued points is natural in the coordinate bialgebra: pre-composing the
+base change of a point `f` of `B` by the scalar extension of `φ : A →ₐc[k] B` gives the base change
+of `f ∘ φ`. -/
+lemma mapDomain_pointsBaseChange (φ : A →ₐc[k] B) (f : WithConv (B →ₐ[k] k)) :
+    mapDomain (A := K) (_root_.Bialgebra.TensorProduct.map (_root_.BialgHom.id K K) φ)
+        (pointsBaseChange K f) =
+      pointsBaseChange K (mapDomain φ f) := by
+  ext a
+  simp
 
 end MapDomain
 
