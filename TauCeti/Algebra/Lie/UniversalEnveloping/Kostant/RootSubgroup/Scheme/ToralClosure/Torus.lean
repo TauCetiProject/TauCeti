@@ -22,9 +22,9 @@ construction used by the toral closure and the comodule construction, which has 
 criterion. Since the inclusion of the toral closure in `GL_n` is a closed immersion, closedness
 descends from their composite to the factored torus.
 
-For Chevalley weight data this closed subgroup scheme is the candidate torus of a pinning on the
-assembled carrier; identifying it as a maximal torus and constructing the compatible Borel subgroup
-are not treated here.
+For Chevalley weight data this gives the closed embedding of the torus that a pinning on the
+assembled carrier requires; identifying it as a maximal torus and constructing the compatible Borel
+subgroup are not treated here.
 
 ## Main declarations
 

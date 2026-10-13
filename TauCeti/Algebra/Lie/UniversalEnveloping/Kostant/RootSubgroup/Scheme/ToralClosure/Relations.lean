@@ -38,9 +38,9 @@ assumption on the constructed group scheme.
 
 ## References
 
-This is the torus--root-subgroup compatibility equation of a pinning of the Chevalley--Demazure
-group scheme; see J. E. Humphreys, *Linear Algebraic Groups*, Section 26, and R. W. Carter, *Simple
-Groups of Lie Type*, Sections 4.4 and 7.1.
+This is the torus--root-subgroup compatibility equation required of a pinning of the
+Chevalley--Demazure group scheme; see J. E. Humphreys, *Linear Algebraic Groups*, Section 26, and
+R. W. Carter, *Simple Groups of Lie Type*, Sections 4.4 and 7.1.
 -/
 
 public section

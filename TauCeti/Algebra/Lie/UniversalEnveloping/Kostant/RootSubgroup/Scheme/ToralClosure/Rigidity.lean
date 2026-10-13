@@ -14,9 +14,9 @@ import TauCeti.AlgebraicGeometry.AffineGroupScheme.HopfSpec
 
 The toral Kostant carrier is the smallest closed subgroup scheme of `GLₙ` containing both the
 represented root subgroups and the represented weight torus. Consequently, a homomorphism out of
-that carrier is determined by its restrictions to those generators. This is the uniqueness part of
-the isomorphism theorem for pinned groups, with all root subgroups as determining data; constructing
-a morphism from a root-datum isomorphism is not treated here.
+that carrier is determined by its restrictions to those generators. This is the kind of uniqueness
+statement an isomorphism theorem for pinned groups requires, with all root subgroups as determining
+data; constructing a morphism from a root-datum isomorphism is not treated here.
 
 This file proves that statement first on coordinate Hopf algebras and then for affine group
 schemes. It complements
