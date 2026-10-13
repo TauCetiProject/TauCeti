@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.PDE.DirichletProblem
+public import TauCeti.Analysis.PDE.EnergyForm.Sobolev
 public import TauCeti.Analysis.PDE.Parabolic.Existence
 import Mathlib.MeasureTheory.Integral.Prod
 
@@ -33,15 +33,17 @@ for every `C¹` curve `φ : ℝ → H¹₀(Ω)` with `φ(t₁) = 0`, where `a_t`
 `H¹₀(Ω)`, so no regularity of `∂Ω` is assumed, and `Ω` need not be bounded.
 
 The proof instantiates the abstract existence theorem
-`TauCeti.exists_memLp_forall_setIntegral_eq_add_inner` for `V = H¹₀(Ω)`, `H = L²(Ω)`, with the
-value map `TauCeti.W1p0.valueL` as `V → H` and the bundled energy form
+`TauCeti.exists_memLp_forall_setIntegral_eq_add_inner`, in the form
+`TauCeti.exists_memLp_forall_setIntegral_eq_add_inner_of_ae_eq`, for `V = H¹₀(Ω)`,
+`H = L²(Ω)`, with the value map `TauCeti.W1p0.valueL` as `V → H` and the bundled energy form
 `TauCeti.PDE.energyFormH1L0` of `L(t)` as `A(t)`. Three hypotheses of that theorem have to be
 checked.
 
 * **Weak measurability in time.** For fixed `u, v ∈ H¹₀(Ω)`, the map `t ↦ a_t(u, v)` is the
   integral over `Ω` of a function of `(t, x)` that is jointly a.e. strongly measurable as soon
   as the coefficients are, so it is a.e. strongly measurable by Fubini's measurability
-  statement `MeasureTheory.AEStronglyMeasurable.integral_prod_right'`. This is why the
+  statement `MeasureTheory.AEStronglyMeasurable.integral_prod_right'`
+  (`TauCeti.PDE.aestronglyMeasurable_energyFormH1`). This is why the
   coefficients are assumed jointly measurable in `(t, x)` rather than measurable in `x` for
   each `t`; no strong measurability of `t ↦ A(t)` in operator norm is needed, and in general it
   fails for `L^∞` coefficients.
@@ -49,6 +51,7 @@ checked.
   `TauCeti.PDE.UniformlyEllipticOn.norm_energyFormH1_le`.
 * **Gårding's inequality.** With `-γ ≤ c`, the mass-floor form of Gårding's inequality,
   `TauCeti.PDE.UniformlyEllipticOn.garding_energyFormH1_self_of_mass_lower_bound`, gives
+  `TauCeti.PDE.UniformlyEllipticOn.garding_energyFormH1_self_norm_of_norm_le`:
 
   `(λ/2) ‖u‖²_{H¹} - (λ/2 + γ + β²/(2λ)) ‖u‖²_{L²} ≤ a_t(u, u)`.
 
@@ -60,8 +63,6 @@ the dual of `H¹₀(Ω)`, and the initial value any `u₀ ∈ L²(Ω)`.
 
 ## Main declarations
 
-* `TauCeti.PDE.aestronglyMeasurable_energyFormH1`: for coefficients jointly measurable in a
-  parameter and in space, the energy form is a.e. strongly measurable in the parameter.
 * `TauCeti.PDE.exists_memLp_forall_setIntegral_energyFormH1_eq_add_inner`: existence of a
   variational solution of the parabolic Dirichlet problem.
 
@@ -88,57 +89,6 @@ open scoped InnerProductSpace
 variable {ι : Type*} [Fintype ι] {mu : Measure (EuclideanSpace ℝ ι)} [mu.IsAddHaarMeasure]
   {Omega : Opens (EuclideanSpace ℝ ι)}
 
-/-- **Measurability of the energy form in time.** If the coefficients of a divergence-form
-operator depend on a parameter `t` and are jointly a.e. strongly measurable in `(t, x)`, then
-for fixed `u, v ∈ H¹(Ω)` the energy form `t ↦ a_t(u, v)` is a.e. strongly measurable in `t`. -/
-theorem aestronglyMeasurable_energyFormH1 {α : Type*} [MeasurableSpace α] {ν : Measure α}
-    {a : α → EuclideanSpace ℝ ι → Matrix ι ι ℝ} {b : α → EuclideanSpace ℝ ι → EuclideanSpace ℝ ι}
-    {c : α → EuclideanSpace ℝ ι → ℝ}
-    (ha : AEStronglyMeasurable (Function.uncurry a) (ν.prod (mu.restrict Omega)))
-    (hb : AEStronglyMeasurable (Function.uncurry b) (ν.prod (mu.restrict Omega)))
-    (hc : AEStronglyMeasurable (Function.uncurry c) (ν.prod (mu.restrict Omega)))
-    (u v : W1p mu Omega 2) :
-    AEStronglyMeasurable (fun t => energyFormH1 (a t) (b t) (c t) u v) ν := by
-  simp only [energyFormH1_def]
-  exact (aestronglyMeasurable_energyIntegrand_apply₂ ha hb hc
-    (memLp_jetField u).aestronglyMeasurable.comp_snd
-    (memLp_jetField v).aestronglyMeasurable.comp_snd).integral_prod_right'
-
-/-- The abstract existence theorem `TauCeti.exists_memLp_forall_setIntegral_eq_add_inner`, with
-the operators `A(t)` known only through a family of bilinear functionals `B(t)` that they agree
-with for almost every `t`. -/
-private theorem exists_memLp_forall_setIntegral_eq_add_inner_of_ae_eq {V H : Type*}
-    [NormedAddCommGroup V] [InnerProductSpace ℝ V] [CompleteSpace V] [NormedAddCommGroup H]
-    [InnerProductSpace ℝ H] (ι : V →L[ℝ] H) {t₀ t₁ α β Λ : ℝ} (ht : t₀ ≤ t₁)
-    {B : ℝ → V → V → ℝ} (A : ℝ → V →L[ℝ] StrongDual ℝ V)
-    (hAB : ∀ᵐ t ∂volume.restrict (Ioo t₀ t₁), ∀ u v, A t u v = B t u v)
-    (hB : ∀ u v, AEStronglyMeasurable (fun t => B t u v) (volume.restrict (Ioo t₀ t₁)))
-    (hΛ : 0 ≤ Λ)
-    (hB_bound : ∀ᵐ t ∂volume.restrict (Ioo t₀ t₁), ∀ u v, ‖B t u v‖ ≤ Λ * (‖u‖ * ‖v‖))
-    (hα : 0 < α)
-    (hB_garding : ∀ᵐ t ∂volume.restrict (Ioo t₀ t₁), ∀ v, α * ‖v‖ ^ 2 - β * ‖ι v‖ ^ 2 ≤ B t v v)
-    {f : ℝ → StrongDual ℝ V} (hf : MemLp f 2 (volume.restrict (Ioo t₀ t₁))) (u₀ : H) :
-    ∃ u : ℝ → V, MemLp u 2 (volume.restrict (Ioo t₀ t₁)) ∧
-      ∀ φ : ℝ → V, ContDiff ℝ 1 φ → φ t₁ = 0 →
-        ∫ t in Ioo t₀ t₁, (B t (u t) (φ t) - ⟪ι (u t), ι (deriv φ t)⟫_ℝ) =
-          (∫ t in Ioo t₀ t₁, f t (φ t)) + ⟪u₀, ι (φ t₀)⟫_ℝ := by
-  obtain ⟨u, hu, hueq⟩ := exists_memLp_forall_setIntegral_eq_add_inner (A := A) ht
-    (fun u v => (hB u v).congr (hAB.mono fun t ht => (ht u v).symm))
-    (by
-      filter_upwards [hAB, hB_bound] with t hABt hBt
-      refine (A t).opNorm_le_bound₂ hΛ fun u v => ?_
-      rw [hABt, mul_assoc]
-      exact hBt u v)
-    hα (by
-      filter_upwards [hAB, hB_garding] with t hABt hBt v
-      rw [hABt]
-      exact hBt v) hf u₀
-  refine ⟨u, hu, fun φ hφ hφt₁ => ?_⟩
-  rw [← hueq φ hφ hφt₁]
-  refine integral_congr_ae ?_
-  filter_upwards [hAB] with t hABt
-  rw [hABt]
-
 attribute [local instance] W1p0.instNormedAddCommGroup W1p0.instInnerProductSpace
 
 variable {a : ℝ → EuclideanSpace ℝ ι → Matrix ι ι ℝ}
@@ -157,27 +107,6 @@ private theorem exists_ae_apply_eq_energyFormH1 {ν : Measure ℝ} (hcoeff : ∀
     (mu.restrict Omega) then energyFormH1L0 h else 0, ?_⟩
   filter_upwards [hcoeff] with t h u v
   simp only [h, ↓reduceDIte, energyFormH1L0_apply]
-
-/-- Gårding's inequality on `H¹(Ω)` in the form the parabolic existence theorem consumes: for a
-mass coefficient bounded by `γ`, of either sign,
-
-`(λ/2) ‖u‖²_{H¹} - (λ/2 + γ + β²/(2λ)) ‖u‖²_{L²} ≤ a(u, u)`. -/
-private theorem UniformlyEllipticOn.garding_energyFormH1_self_norm_of_norm_le [DecidableEq ι]
-    {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {b : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι}
-    {c : EuclideanSpace ℝ ι → ℝ}
-    (h : UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam)
-    (ha : AEStronglyMeasurable a (mu.restrict Omega))
-    (hb : AEStronglyMeasurable b (mu.restrict Omega))
-    (hc : AEStronglyMeasurable c (mu.restrict Omega))
-    (hb_bound : ∀ x ∈ (Omega : Set (EuclideanSpace ℝ ι)), ‖b x‖ ≤ beta)
-    (hc_bound : ∀ x ∈ (Omega : Set (EuclideanSpace ℝ ι)), ‖c x‖ ≤ gamma) (u : W1p mu Omega 2) :
-    lam / 2 * ‖u‖ ^ 2 - (lam / 2 + gamma + beta ^ 2 / (2 * lam)) * ‖W1p.value u‖ ^ 2 ≤
-      energyFormH1 a b c u u := by
-  have key := h.garding_energyFormH1_self_of_mass_lower_bound (delta := -gamma) ha hb hc
-    hb_bound hc_bound
-    (fun x hx => neg_le_of_abs_le ((Real.norm_eq_abs _).symm.trans_le (hc_bound x hx))) u
-  rw [W1p.norm_sq_eq_norm_value_sq_add_norm_gradient_sq]
-  linarith
 
 /-- **Existence for the parabolic Dirichlet problem.** Let the coefficients `a, b, c` of
 `L(t) u = -∂ⱼ(aⁱʲ(t, ·) ∂ᵢu) + bⁱ(t, ·) ∂ᵢu + c(t, ·) u` be jointly a.e. strongly measurable on
@@ -221,12 +150,10 @@ theorem exists_memLp_forall_setIntegral_energyFormH1_eq_add_inner [DecidableEq �
       exact memLp_energyIntegrand_of_bounds hellt.upper_nonneg hat hbt hct
         (fun _x hx eta xi => hellt.upper_bound hx eta xi) hbt' hct')
   cases hA with | intro A hA_apply => ?_
-  have : (ae (volume.restrict (Ioo t₀ t₁))).NeBot := ae_neBot.2 <| by
-    rw [Ne, Measure.restrict_eq_zero, Real.volume_Ioo, ENNReal.ofReal_eq_zero, not_le, sub_pos]
-    exact ht
+  have : (ae (volume.restrict (Ioo t₀ t₁))).NeBot := ae_restrict_neBot.2 (by simpa using ht)
   have hlam : 0 < lam := hell.exists.elim fun _ h => h.pos
   have hLam : 0 ≤ Lam := hell.exists.elim fun _ h => h.upper_nonneg
-  exact exists_memLp_forall_setIntegral_eq_add_inner_of_ae_eq W1p0.valueL ht.le A hA_apply
+  exact exists_memLp_forall_setIntegral_eq_add_inner_of_ae_eq W1p0.valueL ht.le hA_apply
     (fun u v => aestronglyMeasurable_energyFormH1 ha hb hc _ _)
     (add_nonneg (add_nonneg hLam (abs_nonneg _)) (abs_nonneg _))
     (by
