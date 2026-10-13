@@ -17,28 +17,22 @@ A morphism `f : X ⟶ Y` of pre-adic spaces is locally of finite type
 point, the morphism of adic spectra induced by a morphism of Huber pairs topologically of finite
 type. This file shows how such charts behave when the target chart is shrunk.
 
-Being locally of finite type can be checked over an open cover of the target
-(`TauCeti.PreAdicSpace.LocallyOfFiniteType.of_iSup_eq_top_restrictPreimage`): a restriction
-`f⁻¹(V) → V` locally of finite type stays so after composing with the open immersion of `V`, and
-the opens `f⁻¹(V)` cover the source.
-
-In the other direction, a chart morphism restricts over rational subsets of its target. Let
+A chart morphism restricts over rational subsets of its target. Let
 `φ : (A, A⁺) → (B, B⁺)` be topologically of finite type, with `Spa(B, B⁺)` sheafy. The restriction
 of `Spa(φ) : Spa(B, B⁺) ⟶ Spa(A, A⁺)` over a rational subset `R(T/s)` is the morphism induced by
 the base change `(A⟨T/s⟩, A_U⁺) → (B⟨φ(T)/φ(s)⟩, B_V⁺)`
 (`TauCeti.ValuationSpectrum.prop_restrictPreimage_presentationLimitPreAdicSpaceComap_iff`). When
 `A` is a Tate ring, this base change is again topologically of finite type
 (`TauCeti.Huber.PairOfDefinition.isTopologicallyFiniteType_completionLocPairMap`), so the
-restriction is locally of finite type. Rational subsets form a basis of `Spa(A, A⁺)`, which gives
-the same over every open of the target. The Tate hypothesis enters only through the stability of
+restriction is locally of finite type. Rational subsets form a basis of `Spa(A, A⁺)`, and being
+locally of finite type can be checked over an open cover of the target
+(`TauCeti.PreAdicSpace.LocallyOfFiniteType.of_iSup_eq_top_restrictPreimage`), which gives the same
+over every open of the target. The Tate hypothesis enters only through the stability of
 topological finite type under the base change. The chart rings `B⟨φ(T)/φ(s)⟩` are completions, so
 `B` itself need not be complete.
 
 ## Main results
 
-* `TauCeti.PreAdicSpace.LocallyOfFiniteType.of_iSup_eq_top_restrictPreimage`: a morphism whose
-  restrictions over an open cover of the target are locally of finite type is locally of finite
-  type.
 * `locallyOfFiniteType_restrictPreimage_presentationLimitPreAdicSpaceComap_spaBasicOpen`:
   over a Tate ring `A`, the morphism induced by a morphism of Huber pairs topologically of finite
   type restricts to a morphism locally of finite type over every rational subset of `Spa(A, A⁺)`.
@@ -60,25 +54,6 @@ namespace TauCeti
 open Huber Huber.PairOfDefinition
 
 universe u
-
-namespace PreAdicSpace
-
-variable {X Y : PreAdicSpace.{u}}
-
-/-- **Being locally of finite type can be checked over an open cover of the target**: if `Y` is
-covered by opens `Vᵢ` such that every restriction `f⁻¹(Vᵢ) → Vᵢ` of `f` is locally of finite type,
-then so is `f`. -/
-theorem LocallyOfFiniteType.of_iSup_eq_top_restrictPreimage {f : X ⟶ Y} {ι : Type*}
-    (V : ι → Opens Y) (hV : iSup V = ⊤) (h : ∀ i, LocallyOfFiniteType (f.restrictPreimage (V i))) :
-    LocallyOfFiniteType f := by
-  refine LocallyOfFiniteType.of_iSup_eq_top (fun i ↦ (Opens.map f.base).obj (V i)) ?_ fun i ↦ ?_
-  · refine eq_top_iff.mpr fun x _ ↦ Opens.mem_iSup.mpr ?_
-    obtain ⟨i, hi⟩ := Opens.mem_iSup.mp (hV.symm ▸ trivial : f.base x ∈ iSup V)
-    exact ⟨i, hi⟩
-  · rw [← Hom.restrictPreimage_ofRestrict]
-    exact (h i).comp_of_isOpenImmersion _
-
-end PreAdicSpace
 
 namespace ValuationSpectrum
 
