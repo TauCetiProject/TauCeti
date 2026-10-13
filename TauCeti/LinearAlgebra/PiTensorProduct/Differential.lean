@@ -114,23 +114,24 @@ theorem differential_comp_reindex {κ : Type*} [Fintype κ] (e : ι ≃ κ)
         (_root_.PiTensorProduct.reindex R M e).toLinearMap =
       (_root_.PiTensorProduct.reindex R M e).toLinearMap ∘ₗ differential d := by
   classical
-  ext x
-  simp only [LinearMap.compMultilinearMap_apply, LinearMap.comp_apply,
-    LinearEquiv.coe_coe, _root_.PiTensorProduct.reindex_tprod, differential_tprod, map_sum]
+  apply LinearMap.ext
+  intro z
+  simp only [differential, LinearMap.comp_apply, LinearMap.sum_apply, LinearEquiv.coe_coe, map_sum]
   rw [← Equiv.sum_comp e]
   apply Finset.sum_congr rfl
   intro i _
-  congr 1
+  rw [← _root_.PiTensorProduct.map_reindex]
+  congr 2
   funext j
   by_cases hj : j = e i
   · subst j
     rw [Function.update_self]
-    -- Name the transported index before substituting in the dependent family.
-    generalize hk : e.symm (e i) = k
-    have hki : k = i := hk.symm.trans (e.symm_apply_apply i)
-    clear hk
-    subst k
-    simp
+    -- A variable index lets substitution transport both sides in the dependent family.
+    have h (k : ι) (hk : k = i) :
+        d k = Function.update (fun _ ↦ LinearMap.id) i (d i) k := by
+      subst k
+      simp
+    exact h _ (e.symm_apply_apply i)
   · have hji : e.symm j ≠ i := fun h ↦ hj (by simpa using congrArg e h)
     simp only [Function.update_of_ne hj, Function.update_of_ne hji]
 
