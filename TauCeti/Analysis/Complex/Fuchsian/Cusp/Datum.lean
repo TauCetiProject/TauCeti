@@ -231,6 +231,16 @@ theorem cuspOrbit_eq_iff (D' : Γ.CuspDatum) :
 theorem mem_stabilizer_iff {g : Γ} : g ∈ stabilizer Γ D.cusp ↔ ∃ n : ℤ, D.generator ^ n = g := by
   rw [← D.zpowers_generator, mem_zpowers_iff]
 
+/-- Every nonidentity element of the stabilizer of a normalized cusp is parabolic. -/
+theorem isParabolic_of_mem_stabilizer_of_ne_one {g : Γ}
+    (hg : g ∈ stabilizer Γ D.cusp) (h1 : g ≠ 1) : IsParabolic (g : PSL(2, ℝ)) := by
+  obtain ⟨k, rfl⟩ := D.mem_stabilizer_iff.mp hg
+  have hk0 : k ≠ 0 := by
+    intro hk0
+    exact h1 (by simp [hk0])
+  rw [Subgroup.coe_zpow]
+  exact D.isParabolic_generator.zpow hk0
+
 /-- Conjugation by the scaling sends the `n`-th power of the generator to translation by
 `n * width`. -/
 @[simp]

@@ -10,13 +10,12 @@ public import Mathlib.AlgebraicGeometry.Group.Affine
 /-!
 # The category of affine group schemes over `Spec S`
 
-This file introduces the category of affine group schemes over `Spec S` for a
-commutative ring `S` — the full subcategory of group objects in schemes over `Spec S`
-whose underlying scheme is affine — together with the `Γ`-direction endpoint of the
-reductive-groups roadmap's Layer 0 dictionary, stated for a plain-typed base ring `R`
-and an arbitrary structure morphism rather than through `Scheme.Over` instance data:
-a commutative `R`-Hopf algebra structure on the global sections of an affine group
-scheme `φ : G ⟶ Spec R` (`hopfAlgebraGamma`).
+This file introduces the category of affine group schemes over `Spec S` for a commutative ring `S` —
+the full subcategory of group objects in schemes over `Spec S` whose underlying scheme is affine —
+together with the `Γ`-direction endpoint of the dictionary between affine group schemes and
+commutative Hopf algebras, stated for a plain-typed base ring `R` and an arbitrary structure
+morphism rather than through `Scheme.Over` instance data: a commutative `R`-Hopf algebra structure
+on the global sections of an affine group scheme `φ : G ⟶ Spec R` (`hopfAlgebraGamma`).
 
 The `Spec`-direction endpoint — the group-object structure on `Spec A` over `Spec R`
 for a commutative `R`-Hopf algebra `A` — needs no declaration here: it is Mathlib's
@@ -80,12 +79,12 @@ form survives, with definitional unfolding closing the gap on application. -/
     [G.Over (Spec S)] [GrpObj (G.asOver (Spec S))] [IsAffine G] : HopfAlgebra S (Γ.obj (op G)) :=
   inferInstanceAs (HopfAlgebra S Γ(G, ⊤))
 
-/-- The global sections of an affine group scheme `φ : G ⟶ Spec R` are a commutative
-`R`-Hopf algebra. This is the `Γ`-direction endpoint of the Layer 0 dictionary, stated
-for an arbitrary structure morphism `φ` with the group structure carried by the object
-`Over.mk φ` of schemes over `Spec R` — a statement Mathlib's `Scheme.Over`-instance
-form cannot express directly. Not an instance, because `φ` is data that instance
-search cannot recover from the goal. -/
+/-- The global sections of an affine group scheme `φ : G ⟶ Spec R` are a commutative `R`-Hopf
+algebra. This is the `Γ`-direction endpoint of the dictionary between affine group schemes and
+commutative Hopf algebras, stated for an arbitrary structure morphism `φ` with the group structure
+carried by the object `Over.mk φ` of schemes over `Spec R` — a statement Mathlib's
+`Scheme.Over`-instance form cannot express directly. Not an instance, because `φ` is data that
+instance search cannot recover from the goal. -/
 @[instance_reducible] noncomputable def hopfAlgebraGamma {G : Scheme.{u}}
     (φ : G ⟶ Spec (CommRingCat.of R)) [GrpObj (Over.mk φ)] [IsAffine G] :
     HopfAlgebra R (Γ.obj (op G)) :=
