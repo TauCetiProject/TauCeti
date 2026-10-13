@@ -27,6 +27,10 @@ The valuation and prime-power dictionary is Mathlib's
 `IsDedekindDomain.HeightOneSpectrum.intValuation_le_pow_iff_mem`, and the passage
 from local membership to membership in `m` uses `Ideal.iInf_maxPowDividing_eq`.
 
+`idealCongruenceSubgroup` and its subgroup proofs generalize the former number-field
+construction `TauCeti.GlobalNumberFields.congruenceSubgroup` in
+`TauCeti.NumberTheory.NumberField.Global.RayClass.Modulus`.
+
 ## References
 
 * J. Neukirch, *Algebraic Number Theory*, Chapter VI, §1.
@@ -42,6 +46,17 @@ namespace TauCeti
 variable {R : Type*} [CommRing R] [IsDedekindDomain R]
 variable {K : Type*} [Field K] [Algebra R K] [IsFractionRing R K]
 
+private theorem valuation_eq_one_of_idealCongruence_bound {m : Ideal R} (hm : m ≠ ⊥)
+    {x : Kˣ} (hx : ∀ v : HeightOneSpectrum R, v.asIdeal ∣ m →
+      v.valuation K ((x : K) - 1) ≤
+        WithZero.exp (-((Associates.mk v.asIdeal).count (Associates.mk m).factors : ℤ)))
+    {v : HeightOneSpectrum R} (hv : v.asIdeal ∣ m) : v.valuation K (x : K) = 1 := by
+  have hpos : 0 < (Associates.mk v.asIdeal).count (Associates.mk m).factors :=
+    Nat.pos_of_ne_zero ((Associates.count_ne_zero_iff_dvd hm v.irreducible).mpr hv)
+  have hlt := (hx v hv).trans_lt
+    (WithZero.exp_lt_one_iff.mpr (neg_neg_iff_pos.mpr (Int.natCast_pos.mpr hpos)))
+  simpa only [add_sub_cancel] using Valuation.map_one_add_of_lt (v.valuation K) hlt
+
 variable (K) in
 /-- The subgroup of fraction-field units congruent to one locally modulo a nonzero
 ideal. Only primes dividing the ideal impose a condition. -/
@@ -49,13 +64,6 @@ def idealCongruenceSubgroup (m : Ideal R) (hm : m ≠ ⊥) : Subgroup Kˣ := by
   let P (x : Kˣ) := ∀ v : HeightOneSpectrum R, v.asIdeal ∣ m →
     v.valuation K ((x : K) - 1) ≤
       WithZero.exp (-((Associates.mk v.asIdeal).count (Associates.mk m).factors : ℤ))
-  have hunit {x : Kˣ} (hx : P x) {v : HeightOneSpectrum R} (hv : v.asIdeal ∣ m) :
-      v.valuation K (x : K) = 1 := by
-    have hpos : 0 < (Associates.mk v.asIdeal).count (Associates.mk m).factors :=
-      Nat.pos_of_ne_zero ((Associates.count_ne_zero_iff_dvd hm v.irreducible).mpr hv)
-    have hlt := (hx v hv).trans_lt
-      (WithZero.exp_lt_one_iff.mpr (neg_neg_iff_pos.mpr (Int.natCast_pos.mpr hpos)))
-    simpa only [add_sub_cancel] using Valuation.map_one_add_of_lt (v.valuation K) hlt
   exact {
     carrier := P
     one_mem' := by intro v hv; simp
@@ -65,7 +73,7 @@ def idealCongruenceSubgroup (m : Ideal R) (hm : m ≠ ⊥) : Subgroup Kˣ := by
         push_cast
         ring
       refine (hxy ▸ Valuation.map_add (v.valuation K) _ _).trans (max_le ?_ (hx v hv))
-      rw [map_mul, hunit hx hv, one_mul]
+      rw [map_mul, valuation_eq_one_of_idealCongruence_bound hm hx hv, one_mul]
       exact hy v hv
     inv_mem' := by
       intro x hx v hv
@@ -73,7 +81,8 @@ def idealCongruenceSubgroup (m : Ideal R) (hm : m ≠ ⊥) : Subgroup Kˣ := by
         rw [Units.val_inv_eq_inv_val]
         field_simp
         ring
-      rw [hxy, Valuation.map_neg, map_mul, map_inv₀, hunit hx hv, inv_one, mul_one]
+      rw [hxy, Valuation.map_neg, map_mul, map_inv₀,
+        valuation_eq_one_of_idealCongruence_bound hm hx hv, inv_one, mul_one]
       exact hx v hv }
 
 /-- Membership is the valuation bound at every prime divisor of the ideal. -/
@@ -88,12 +97,8 @@ theorem mem_idealCongruenceSubgroup_iff {m : Ideal R} {hm : m ≠ ⊥} {x : Kˣ}
 /-- A fraction-field unit congruent to one is a local unit at every prime dividing the ideal. -/
 theorem valuation_eq_one_of_mem_idealCongruenceSubgroup {m : Ideal R} {hm : m ≠ ⊥}
     {x : Kˣ} (hx : x ∈ idealCongruenceSubgroup K m hm) {v : HeightOneSpectrum R}
-    (hv : v.asIdeal ∣ m) : v.valuation K (x : K) = 1 := by
-  have hpos : 0 < (Associates.mk v.asIdeal).count (Associates.mk m).factors :=
-    Nat.pos_of_ne_zero ((Associates.count_ne_zero_iff_dvd hm v.irreducible).mpr hv)
-  have hlt := (mem_idealCongruenceSubgroup_iff.mp hx v hv).trans_lt
-    (WithZero.exp_lt_one_iff.mpr (neg_neg_iff_pos.mpr (Int.natCast_pos.mpr hpos)))
-  simpa only [add_sub_cancel] using Valuation.map_one_add_of_lt (v.valuation K) hlt
+    (hv : v.asIdeal ∣ m) : v.valuation K (x : K) = 1 :=
+  valuation_eq_one_of_idealCongruence_bound hm (mem_idealCongruenceSubgroup_iff.mp hx) hv
 
 /-- Congruence modulo a multiple implies congruence modulo a divisor. -/
 theorem idealCongruenceSubgroup_antitone {m n : Ideal R} {hm : m ≠ ⊥} {hn : n ≠ ⊥}

@@ -69,7 +69,7 @@ theorem isCongrOne_of_sub_one_mem {𝔪 : Modulus K} {x : Kˣ} {a : 𝓞 K} (hxa
     (hmem : a - 1 ∈ 𝔪.finitePart)
     (hpos : ∀ w ∈ 𝔪.infinitePart, 0 < InfinitePlace.embedding_of_isReal w.2 (x : K)) :
     IsCongrOne 𝔪 x := by
-  exact isCongrOne_iff_mem_idealCongruenceSubgroup.mpr
+  exact isCongrOne_iff_mem_idealCongruenceSubgroup_and_pos.mpr
     ⟨(mem_idealCongruenceSubgroup_iff_sub_one_mem hxa).mpr hmem, hpos⟩
 
 /-- **Congruence to one, read back on an algebraic integer.**  The converse of
@@ -78,7 +78,7 @@ image of `a : 𝓞 K` has `a - 1` in the finite part. -/
 theorem sub_one_mem_of_isCongrOne {𝔪 : Modulus K} {x : Kˣ} {a : 𝓞 K} (hxa : (x : K) = a)
     (h : IsCongrOne 𝔪 x) : a - 1 ∈ 𝔪.finitePart := by
   exact (mem_idealCongruenceSubgroup_iff_sub_one_mem hxa).mp
-    (isCongrOne_iff_mem_idealCongruenceSubgroup.mp h).1
+    (isCongrOne_iff_mem_idealCongruenceSubgroup_and_pos.mp h).1
 
 /-- **A generator congruent to one inside an ideal comaximal with the finite part.**  For a nonzero
 ideal `D` with `D ⊔ 𝔪₀ = ⊤` there is an algebraic integer `a ∈ D` whose image in `Kˣ` is congruent
