@@ -336,9 +336,11 @@ lemma coe_ofSlashInvariant (hc : ∀ c, IsCusp c Γ → IsCusp c Γ') (f : Modul
 
 /-- For `Γ' ≤ Γ` with every cusp of `Γ` a cusp of `Γ'`, a modular form for `Γ'` comes from a
 modular form for `Γ` exactly when it is `Γ`-slash invariant. -/
-lemma mem_range_restrictₗ_iff [Γ.HasDetOne] [Γ'.HasDetOne] (h : Γ' ≤ Γ)
+lemma mem_range_restrictₗ_iff {R : Type*} [Semiring R] [SMul R ℂ]
+    [Module R (ModularForm Γ k)] [Module R (ModularForm Γ' k)]
+    [IsSMulApply R (ModularForm Γ k) ℍ ℂ] [IsSMulApply R (ModularForm Γ' k) ℍ ℂ] (h : Γ' ≤ Γ)
     (hc : ∀ c, IsCusp c Γ → IsCusp c Γ') (f : ModularForm Γ' k) :
-    f ∈ LinearMap.range (restrictₗ k ℂ h) ↔ ∀ γ ∈ Γ, ⇑f ∣[k] γ = ⇑f :=
+    f ∈ LinearMap.range (restrictₗ k R h) ↔ ∀ γ ∈ Γ, ⇑f ∣[k] γ = ⇑f :=
   ⟨by rintro ⟨g, rfl⟩ γ hγ; exact g.slash_action_eq' γ hγ,
     fun hf ↦ ⟨ofSlashInvariant hc f hf, rfl⟩⟩
 
@@ -423,9 +425,11 @@ lemma coe_ofSlashInvariant (hc : ∀ c, IsCusp c Γ → IsCusp c Γ') (f : CuspF
 
 /-- For `Γ' ≤ Γ` with every cusp of `Γ` a cusp of `Γ'`, a cusp form for `Γ'` comes from a cusp
 form for `Γ` exactly when it is `Γ`-slash invariant. -/
-lemma mem_range_restrictₗ_iff [Γ.HasDetOne] [Γ'.HasDetOne] (h : Γ' ≤ Γ)
+lemma mem_range_restrictₗ_iff {R : Type*} [Semiring R] [SMul R ℂ]
+    [Module R (CuspForm Γ k)] [Module R (CuspForm Γ' k)]
+    [IsSMulApply R (CuspForm Γ k) ℍ ℂ] [IsSMulApply R (CuspForm Γ' k) ℍ ℂ] (h : Γ' ≤ Γ)
     (hc : ∀ c, IsCusp c Γ → IsCusp c Γ') (f : CuspForm Γ' k) :
-    f ∈ LinearMap.range (restrictₗ k ℂ h) ↔ ∀ γ ∈ Γ, ⇑f ∣[k] γ = ⇑f :=
+    f ∈ LinearMap.range (restrictₗ k R h) ↔ ∀ γ ∈ Γ, ⇑f ∣[k] γ = ⇑f :=
   ⟨by rintro ⟨g, rfl⟩ γ hγ; exact g.slash_action_eq' γ hγ,
     fun hf ↦ ⟨ofSlashInvariant hc f hf, rfl⟩⟩
 
