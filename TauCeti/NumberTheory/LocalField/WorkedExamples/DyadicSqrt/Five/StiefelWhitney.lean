@@ -8,6 +8,7 @@ module
 public import TauCeti.NumberTheory.LocalField.WorkedExamples.DyadicSqrt.Five.Basic
 public import TauCeti.FieldTheory.QuadraticForm.StiefelWhitney.QuadraticExtension
 public import TauCeti.NumberTheory.LocalField.QuadraticForm.CupPadicTwo
+import TauCeti.FieldTheory.QuadraticForm.StiefelWhitney.Evens.Kummer.Value
 import TauCeti.FieldTheory.QuadraticForm.StiefelWhitney.Transfer
 import TauCeti.Algebra.Group.Units.Basic
 
@@ -40,13 +41,6 @@ noncomputable section
 namespace TauCeti.DyadicSqrtFive
 
 open _root_.QuadraticMap
-
-private theorem sqrtFive_not_mem : sqrtFive ∉ Set.range (algebraMap ℚ_[2] DyadicSqrtFive) := by
-  rintro ⟨c, hc⟩
-  apply Padic.not_isSquare_five
-  refine ⟨c, ?_⟩
-  apply (algebraMap ℚ_[2] DyadicSqrtFive).injective
-  rw [map_mul, hc, ← _root_.sq, sqrtFive_sq, map_ofNat]
 
 private def traceEntry (ε : Fin 2) (i : Fin 4) : ℚ_[2]ˣ :=
   Units.mk0 ((-1) ^ ε.val * ![2, 4, 6, 32] i)
@@ -239,25 +233,16 @@ theorem galoisEvens_kummerClass_table
       ((if ε = 0 then ![0, 1, 0, 1] i else 1) : ZMod 2) •
         kummerCup ℚ_[2] (squareClass (-1)) (squareClass (-1)) := by
   let : Invertible (2 : DyadicSqrtFive) := invertibleOfNonzero (by norm_num)
-  have hQ : (((a : DyadicSqrtFive) • QuadraticMap.sq
-      (R := DyadicSqrtFive) (A := DyadicSqrtFive)).traceTransfer ℚ_[2]).Nondegenerate :=
-    (nondegenerate_traceTransfer_iff _).2 (nondegenerate_smul_sq a.ne_zero)
-  have h1 : ((QuadraticMap.sq (R := DyadicSqrtFive)
-      (A := DyadicSqrtFive)).traceTransfer ℚ_[2]).Nondegenerate :=
-    (nondegenerate_traceTransfer_iff _).2 (by
-      simpa using (nondegenerate_smul_sq (one_ne_zero : (1 : DyadicSqrtFive) ≠ 0)))
-  have hr := sw2Class_formClass_traceTransfer_smul_sq σ finrank_eq_two a hQ h1
-  rw [cup_sw1Class_formClass_traceTransfer_sq_galoisCor_eq_zero σ finrank_eq_two
-      (d := Units.mk0 (5 : ℚ_[2]) (by norm_num)) sqrtFive_not_mem (by simp [map_ofNat]) h1,
-    add_zero, sw2Class_formClass_traceTransfer_sq_of_sq
-      (d := Units.mk0 (5 : ℚ_[2]) (by norm_num)) finrank_eq_two sqrtFive_not_mem
-      (by simp [map_ofNat]) h1, sw2Class_traceTransfer_table ε i a ha hQ] at hr
+  have hN : Units.map (Algebra.norm ℚ_[2] : DyadicSqrtFive →* ℚ_[2]) a =
+      Algebra.normUnits ℚ_[2] a := Units.ext (by simp)
   have h2 : unitOfInvertible (2 : ℚ_[2]) = Units.mk0 2 two_ne_zero := by ext; simp
-  rw [h2, cup_kummerClass_two_five_eq_neg_one_neg_one_padicTwo,
-    ← kummerCup_squareClass_squareClass] at hr
-  apply add_left_cancel (a := kummerCup ℚ_[2] (squareClass (-1)) (squareClass (-1)))
-  rw [← hr]
-  conv_rhs => lhs; rw [← one_smul (ZMod 2)
+  rw [galoisEvens2_kummerClass σ finrank_eq_two
+      (Units.mk0 (5 : ℚ_[2]) (by norm_num)) sqrtFive_not_mem (by simp [map_ofNat])
+      a (traceEntry ε i) (trace_eq ε i a ha).symm,
+    hN, norm_eq ε i a ha, ← kummerCup_squareClass_squareClass, cup_trace_norm,
+    h2, cup_kummerClass_two_five_eq_neg_one_neg_one_padicTwo,
+    ← kummerCup_squareClass_squareClass]
+  conv_lhs => rhs; rw [← one_smul (ZMod 2)
     (kummerCup ℚ_[2] (squareClass (-1)) (squareClass (-1)))]
   rw [← add_smul]
   congr 1
