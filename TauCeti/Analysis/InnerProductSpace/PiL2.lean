@@ -142,6 +142,22 @@ theorem consEquivL_apply_succ {n : ℕ} (z : 𝕜 × EuclideanSpace 𝕜 (Fin n)
     consEquivL 𝕜 n z i.succ = z.2 i := by
   simp [consEquivL_apply]
 
+theorem consEquivL_symm_apply {n : ℕ} (x : EuclideanSpace 𝕜 (Fin (n + 1))) :
+    (consEquivL 𝕜 n).symm x = (x 0, WithLp.toLp 2 (Fin.tail (WithLp.ofLp x))) := by
+  rw [ContinuousLinearEquiv.symm_apply_eq]
+  ext i
+  refine Fin.cases ?_ (fun j => ?_) i <;> simp [Fin.tail]
+
+@[simp]
+theorem consEquivL_symm_apply_fst {n : ℕ} (x : EuclideanSpace 𝕜 (Fin (n + 1))) :
+    ((consEquivL 𝕜 n).symm x).1 = x 0 := by
+  simp [consEquivL_symm_apply]
+
+@[simp]
+theorem consEquivL_symm_apply_snd {n : ℕ} (x : EuclideanSpace 𝕜 (Fin (n + 1))) (i : Fin n) :
+    ((consEquivL 𝕜 n).symm x).2 i = x i.succ := by
+  simp [consEquivL_symm_apply, Fin.tail]
+
 end EuclideanSpace
 
 namespace PiLp
