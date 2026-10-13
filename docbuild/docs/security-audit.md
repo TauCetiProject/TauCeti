@@ -20,7 +20,7 @@ Ordinary mathematical APIs and standard Mathlib tactics/registration commands ar
 allowed. This is not an additional mathematical review or a dependency/artifact audit.
 
 Each session uses Luna or Haiku, with complete per-commit diffs and changed-file
-contents, capped at 20 commits and 128 KiB. Individual commits are inspected in
+contents, capped at 20 commits and 256 KiB. Individual commits are inspected in
 order: a later revert cannot conceal an earlier dangerous version. Candidate code
 is never executed. The model has no GitHub credential, shell or editing authority;
 trusted Worker code verifies its structured verdict and updates the ref. A finding,
