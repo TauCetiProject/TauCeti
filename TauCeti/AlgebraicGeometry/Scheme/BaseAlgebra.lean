@@ -246,7 +246,6 @@ variable (k : Type u) [CommRing k] {X Y Z : Scheme.{u}} [X.Over (Spec (.of k))]
 
 /-- The pullback of rational functions along a dominant morphism of integral schemes over
 `Spec k` is compatible with the `k`-algebra structures of the function fields. -/
-@[simp]
 theorem _root_.AlgebraicGeometry.Scheme.Hom.functionFieldMap_algebraMap (f : X ⟶ Y)
     [f.IsOver (Spec (.of k))] [IsDominant f] (c : k) :
     f.functionFieldMap (algebraMap k Y.functionField c) = algebraMap k X.functionField c := by
