@@ -99,7 +99,7 @@ theorem norm_operatorAbs_apply_sub_le (M : E →ₗ[𝕜] F) {δ : ℝ}
     exact le_of_mul_le_mul_right this hv0
   exact Real.abs_sqrt_sub_one_le_abs_sub_one.trans hμ1
 
-/-- **Sharp near-isometry polar-factor bound.** If `|‖M x‖² - ‖x‖²| ≤ δ ‖x‖²` for every `x` and
+/-- **Near-isometry polar-factor bound.** If `|‖M x‖² - ‖x‖²| ≤ δ ‖x‖²` for every `x` and
 `U` is a linear isometry with `U |M| = M`, then `‖M x - U x‖ ≤ δ ‖x‖` for every `x`. -/
 theorem norm_apply_sub_le_of_comp_operatorAbs_eq (M : E →ₗ[𝕜] F) {δ : ℝ}
     (hM : ∀ x, |‖M x‖ ^ 2 - ‖x‖ ^ 2| ≤ δ * ‖x‖ ^ 2) {U : E →ₗᵢ[𝕜] F}
