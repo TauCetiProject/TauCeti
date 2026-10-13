@@ -15,13 +15,18 @@ In a finite flat invariant extension of domains, a maximal prime is unramified e
 its inertia group has order one. This includes imperfect residue fields: the inertia group has
 order `e * fᵢ`, so its triviality forces both ramification index one and residue separability.
 
+For the integral closure of a Dedekind domain in a finite Galois extension of its fraction
+field, the compatible Galois action gives `IsGaloisGroup` by
+`IsGaloisGroup.of_isFractionRing`. Assuming this integral closure is finite over the base,
+flatness follows from torsion-freeness; no residue-field hypothesis is needed.
+
 The criterion for a prime of the base quantifies over all primes above it. It translates
 unramifiedness into an inertia condition without assuming finite or perfect residue fields,
 as needed when testing splitting in subextensions and composita over a general Dedekind base.
 The existing compositum criterion `Ideal.isUnramifiedIn_sup_iff` is for rings of integers of
 number fields. Extending that criterion to a general Dedekind base requires an
 inertia-containment criterion for intermediate integral closures; the trivial-inertia
-criterion here supplies its unramifiedness characterization without residue separability.
+criterion here supplies its unramifiedness characterization without assuming residue separability.
 
 ## References
 
