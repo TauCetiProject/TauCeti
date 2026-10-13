@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Topology.Algebra.ValuativeRel.ContinuousRingHom
 public import Mathlib.Analysis.Normed.Unbundled.SpectralNorm
 public import Mathlib.Topology.Algebra.Valued.NormedValued
 public import TauCeti.NumberTheory.LocalField.NormedField
@@ -416,24 +417,6 @@ theorem _root_.AlgEquiv.coe_integerRingEquiv_apply (e : L ≃ₐ[K] M) (x : 𝒪
   simp [AlgEquiv.integerRingEquiv]
 
 end IntegerRingEquiv
-
-/-- The algebra map of a compatible algebraic extension is continuous for the given valuative
-topologies. -/
-theorem continuous_algebraMap_of_valuativeExtension [ValuativeRel M] [ValuativeExtension K M]
-    [TopologicalSpace M] [IsValuativeTopology M] : Continuous (algebraMap K M) := by
-  have h : @Continuous K M (normalizedNormedFieldTopology K)
-      (algebraicExtensionNormedFieldTopology K M) (algebraMap K M) := by
-    let nM := algebraicExtensionNormedField K M
-    let nK := normalizedNontriviallyNormedField K
-    let _ := nM
-    let _ := nK
-    apply Isometry.continuous
-    apply (isometry_iff_dist_eq).mpr
-    intro x y
-    rw [dist_eq_norm, dist_eq_norm, ← map_sub, algebraicExtensionNormedField_norm_algebraMap,
-      normalizedNormedField_norm_def]
-  rw [normalizedNormedField_topology_eq K, algebraicExtensionNormedFieldTopology_eq K M] at h
-  exact h
 
 variable {K M} in
 /-- **Galois automorphisms are continuous.** Every `K`-algebra automorphism of an algebraic
