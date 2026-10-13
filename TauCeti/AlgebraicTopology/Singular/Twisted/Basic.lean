@@ -160,12 +160,6 @@ def vertexTransport (α : m ⟶ n) (σ : (TopCat.toSSet.obj X).obj m) :
     initialVertex σ ⟶ initialVertex ((TopCat.toSSet.obj X).map α σ) :=
   pathTransport σ (toTopInitialVertex m.unop) (toTop.map α.unop (toTopInitialVertex n.unop))
 
-/-- The transport between initial vertices is transport inside the original simplex. -/
-lemma vertexTransport_def (α : m ⟶ n) (σ : (TopCat.toSSet.obj X).obj m) :
-    vertexTransport α σ =
-      pathTransport σ (toTopInitialVertex m.unop) (toTop.map α.unop (toTopInitialVertex n.unop)) :=
-  (rfl)
-
 /-- Reindexing along an identity does not move the initial vertex, so the transport it induces is
 the `eqToHom` between the two (equal) initial vertices. -/
 lemma vertexTransport_id (σ : (TopCat.toSSet.obj X).obj n) :
@@ -229,7 +223,7 @@ lemma vertexTransport_δ_zero_heq {k : ℕ} (τ : (TopCat.toSSet.obj X) _⦋k + 
     vertexTransport (δ 0).op τ ≍
       pathTransport ((TopCat.toSSet.obj X).map (mkOfLe 0 1 (by simp)).op τ)
         (toTopInitialVertex ⦋1⦌) (toTop.map (δ 0) (toTopInitialVertex ⦋0⦌)) := by
-  rw [vertexTransport_def, pathTransport_map]
+  rw [vertexTransport, pathTransport_map]
   exact pathTransport_heq rfl (toTop_map_mkOfLe_toTopInitialVertex k).symm
     (toTop_map_mkOfLe_toTop_map_δ_zero k).symm
 
