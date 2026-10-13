@@ -59,6 +59,15 @@ def singularCrossProduct (X Y : TopCat.{u}) :
     ((AlgebraicTopology.singularChainComplexFunctor (ModuleCat.{u} k)).map
       (λ_ (𝟙_ (ModuleCat.{u} k))).hom).app (X ⊗ Y)
 
+/-- The simplicial cross product is the shuffle map followed by the coefficient change along the
+unitor. -/
+theorem singularCrossProduct_def (X Y : TopCat.{u}) :
+    singularCrossProduct k X Y =
+      TopCat.shuffle X Y (𝟙_ (ModuleCat.{u} k)) (𝟙_ (ModuleCat.{u} k)) ≫
+        ((AlgebraicTopology.singularChainComplexFunctor (ModuleCat.{u} k)).map
+          (λ_ (𝟙_ (ModuleCat.{u} k))).hom).app (X ⊗ Y) :=
+  (rfl)
+
 /-- The simplicial cross product is natural in both spaces. -/
 theorem singularCrossProduct_naturality {X X' Y Y' : TopCat.{u}} (f : X ⟶ X') (g : Y ⟶ Y') :
     HomologicalComplex.tensorHom ((singularChains k).map f) ((singularChains k).map g) ≫
@@ -85,6 +94,17 @@ def singularCrossProductOfCubicalApp :
       (singularChains k).obj (X ⊗ Y) :=
   HomologicalComplex.tensorHom ((cubicalToSingular k).app X) ((cubicalToSingular k).app Y) ≫
     singularCrossProduct k X Y
+
+theorem cubicalCrossProductToSingularApp_def (X Y : TopCat.{u}) :
+    cubicalCrossProductToSingularApp k X Y =
+      crossProductComplex k X Y ≫ (cubicalToSingular k).app (X ⊗ Y) :=
+  (rfl)
+
+theorem singularCrossProductOfCubicalApp_def (X Y : TopCat.{u}) :
+    singularCrossProductOfCubicalApp k X Y =
+      HomologicalComplex.tensorHom ((cubicalToSingular k).app X) ((cubicalToSingular k).app Y) ≫
+        singularCrossProduct k X Y :=
+  (rfl)
 
 /-- The cubical cross product followed by the comparison map to simplicial chains, as a natural
 transformation of functors on pairs of spaces. -/
