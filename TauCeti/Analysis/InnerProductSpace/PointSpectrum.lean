@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.InnerProductSpace.CourantFischer
 public import TauCeti.Analysis.InnerProductSpace.Spectrum
-public import TauCeti.Analysis.InnerProductSpace.SymmetricFunctionalCalculus
+public import TauCeti.Analysis.InnerProductSpace.SymmetricFunctionalCalculus.Basic
 
 /-!
 # Restricted point spectra and point-spectral subspaces
