@@ -21,8 +21,13 @@ successive presentations and copresentations into complete resolutions.
 
 * Charles A. Weibel, *An Introduction to Homological Algebra*, Section 2.2.
 
+## Implementation notes
+
 The constructor is an exposed abbreviation, like Mathlib's `CochainComplex.of`: its terms
-must reduce to the prescribed middle objects to type the differential and cycle comparison.
+must reduce to the prescribed middle objects for the statements of `splice_d`,
+`spliceCyclesIso_hom_iCycles`, and `spliceCyclesIso_inv_f` to typecheck. The equality
+`splice_X` does not provide this definitional equality; an unexposed constructor would require
+transporting the morphisms along that equality in these statements.
 -/
 
 public section
