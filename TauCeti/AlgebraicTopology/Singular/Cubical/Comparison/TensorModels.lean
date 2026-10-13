@@ -27,7 +27,8 @@ the input to the method of acyclic models for natural maps out of the tensor pro
 * `TauCeti.cubicalTensorModelPresentation k`: its presentation on the models `(Iᵖ, I^q)`.
 * `TauCeti.singularChainsProduct k`: the singular chains of the product, as a functor on pairs of
   spaces.
-* `TauCeti.isAcyclicOnMulti_singularChainsProduct`: it is acyclic on these models.
+* `TauCeti.isAcyclicOnMulti_singularChainsProduct`: it is acyclic on any family of models with
+  contractible products, in particular on these.
 -/
 
 public section
@@ -52,7 +53,7 @@ abbrev cubicalTensor : TopCat.{u} × TopCat.{u} ⥤ ChainComplex (ModuleCat.{u} 
 abbrev BidegreeIndex (n : ℕ) : Type := {pq : ℕ × ℕ // pq.1 + pq.2 = n}
 
 /-- The model of bidegree `(p, q)`: the pair of cubes `(Iᵖ, I^q)`. -/
-abbrev bidegreeModel (n : ℕ) (i : BidegreeIndex n) : TopCat.{u} × TopCat.{u} :=
+abbrev cubicalBidegreeModel (n : ℕ) (i : BidegreeIndex n) : TopCat.{u} × TopCat.{u} :=
   (cubeModel.{u} i.1.1, cubeModel.{u} i.1.2)
 
 variable {k}
@@ -60,47 +61,49 @@ variable {k}
 /-- The coefficients of the tensor product of a normalized cubical chain of `X` of degree `p`
 and of one of `Y` of degree `q` on the pairs of maps from the models: the product of the
 coefficients of the factors. -/
-def summandCoord (X Y : TopCat.{u}) (n p q : ℕ) (h : p + q = n) :
+def cubicalTensorSummandCoord (X Y : TopCat.{u}) (n p q : ℕ) (h : p + q = n) :
     NormalizedCubicalChain X k p ⊗[k] NormalizedCubicalChain Y k q →ₗ[k]
-      ((Σ i : BidegreeIndex n, (bidegreeModel.{u} n i ⟶ (X, Y))) →₀ k) :=
+      ((Σ i : BidegreeIndex n, (cubicalBidegreeModel.{u} n i ⟶ (X, Y))) →₀ k) :=
   lmapDomain k k (fun st : (cubeModel.{u} p ⟶ X) × (cubeModel.{u} q ⟶ Y) ↦
-      (⟨⟨(p, q), h⟩, (st.1, st.2)⟩ : Σ i : BidegreeIndex n, (bidegreeModel.{u} n i ⟶ (X, Y)))) ∘ₗ
+      (⟨⟨(p, q), h⟩, (st.1, st.2)⟩ :
+        Σ i : BidegreeIndex n, (cubicalBidegreeModel.{u} n i ⟶ (X, Y)))) ∘ₗ
     (finsuppTensorFinsupp' k _ _).toLinearMap ∘ₗ
     TensorProduct.map (cubicalCoord k X p) (cubicalCoord k Y q)
 
 variable (k) in
 /-- The coefficients of a chain of the tensor product in degree `n`, on the pairs of maps from the
 models. -/
-def tensorCoord (X : TopCat.{u} × TopCat.{u}) (n : ℕ) :
+def cubicalTensorCoord (X : TopCat.{u} × TopCat.{u}) (n : ℕ) :
     ((cubicalTensor k).obj X).X n →ₗ[k]
-      ((Σ i : BidegreeIndex n, (bidegreeModel.{u} n i ⟶ X)) →₀ k) :=
+      ((Σ i : BidegreeIndex n, (cubicalBidegreeModel.{u} n i ⟶ X)) →₀ k) :=
   (mapBifunctorDesc (A := ModuleCat.of k
-      ((Σ i : BidegreeIndex n, (bidegreeModel.{u} n i ⟶ X)) →₀ k))
+      ((Σ i : BidegreeIndex n, (cubicalBidegreeModel.{u} n i ⟶ X)) →₀ k))
     (K₁ := (normalizedCubicalChainComplex.{u} k).obj X.1)
     (K₂ := (normalizedCubicalChainComplex.{u} k).obj X.2)
-    (fun p q h ↦ ModuleCat.ofHom (summandCoord X.1 X.2 n p q h))).hom
+    (fun p q h ↦ ModuleCat.ofHom (cubicalTensorSummandCoord X.1 X.2 n p q h))).hom
 
 variable (k) in
 /-- The generator in bidegree `(p, q)`: the tensor product of the identity cubes of `Iᵖ` and
 `I^q`, in the summand of bidegree `(p, q)`. -/
-def tensorGen (n : ℕ) (i : BidegreeIndex n) :
-    ((cubicalTensor k).obj (bidegreeModel.{u} n i)).X n :=
+def cubicalTensorGen (n : ℕ) (i : BidegreeIndex n) :
+    ((cubicalTensor k).obj (cubicalBidegreeModel.{u} n i)).X n :=
   (ιTensorObj ((normalizedCubicalChainComplex.{u} k).obj (cubeModel.{u} i.1.1))
       ((normalizedCubicalChainComplex.{u} k).obj (cubeModel.{u} i.1.2)) i.1.1 i.1.2 n i.2).hom
     (NormalizedCubicalChain.ofCube (cubeModel.{u} i.1.1) k (upCube i.1.1) ⊗ₜ[k]
       NormalizedCubicalChain.ofCube (cubeModel.{u} i.1.2) k (upCube i.1.2))
 
 /-- The coefficients of a chain of a summand of the tensor product are those of the summand. -/
-theorem tensorCoord_ι (X : TopCat.{u} × TopCat.{u}) (n p q : ℕ) (h : p + q = n)
+@[simp]
+theorem cubicalTensorCoord_ι (X : TopCat.{u} × TopCat.{u}) (n p q : ℕ) (h : p + q = n)
     (z : NormalizedCubicalChain X.1 k p ⊗[k] NormalizedCubicalChain X.2 k q) :
-    tensorCoord k X n
+    cubicalTensorCoord k X n
         ((ιTensorObj ((normalizedCubicalChainComplex.{u} k).obj X.1)
           ((normalizedCubicalChainComplex.{u} k).obj X.2) p q n h).hom z) =
-      summandCoord X.1 X.2 n p q h z := by
+      cubicalTensorSummandCoord X.1 X.2 n p q h z := by
   have e := ι_mapBifunctorDesc (K₁ := (normalizedCubicalChainComplex.{u} k).obj X.1)
     (K₂ := (normalizedCubicalChainComplex.{u} k).obj X.2) (F := curriedTensor (ModuleCat.{u} k))
     (c := ComplexShape.down ℕ)
-    (f := fun p q h ↦ ModuleCat.ofHom (summandCoord X.1 X.2 n p q h)) p q h
+    (f := fun p q h ↦ ModuleCat.ofHom (cubicalTensorSummandCoord X.1 X.2 n p q h)) p q h
   exact LinearMap.congr_fun (congrArg ModuleCat.Hom.hom e) z
 
 /-- The map induced on a summand of the tensor product by a pair of maps is the tensor product of
@@ -119,66 +122,73 @@ theorem cubicalTensor_map_ι {X Y : TopCat.{u} × TopCat.{u}} (f : X ⟶ Y) (n p
       ((normalizedCubicalChainComplex.{u} k).map f.2) p q n h)) z
 
 /-- The coefficients of a tensor of two chains are the tensor product of their coefficients. -/
-theorem summandCoord_tmul (X Y : TopCat.{u}) (n p q : ℕ) (h : p + q = n)
+theorem cubicalTensorSummandCoord_tmul (X Y : TopCat.{u}) (n p q : ℕ) (h : p + q = n)
     (a : NormalizedCubicalChain X k p) (b : NormalizedCubicalChain Y k q) :
-    summandCoord X Y n p q h (a ⊗ₜ[k] b) =
+    cubicalTensorSummandCoord X Y n p q h (a ⊗ₜ[k] b) =
       mapDomain (fun st : (cubeModel.{u} p ⟶ X) × (cubeModel.{u} q ⟶ Y) ↦
-        (⟨⟨(p, q), h⟩, (st.1, st.2)⟩ : Σ i : BidegreeIndex n, (bidegreeModel.{u} n i ⟶ (X, Y))))
+        (⟨⟨(p, q), h⟩, (st.1, st.2)⟩ :
+          Σ i : BidegreeIndex n, (cubicalBidegreeModel.{u} n i ⟶ (X, Y))))
         (finsuppTensorFinsupp' k _ _ (cubicalCoord k X p a ⊗ₜ[k] cubicalCoord k Y q b)) :=
   (rfl)
 
 /-- The coefficients of the tensor of the images of two chains under maps of spaces are those of
 the chains, pushed forward by the composition with the maps. -/
-theorem summandCoord_map {X X' Y Y' : TopCat.{u}} (f₁ : X ⟶ X') (f₂ : Y ⟶ Y') (n p q : ℕ)
+theorem cubicalTensorSummandCoord_map {X X' Y Y' : TopCat.{u}} (f₁ : X ⟶ X') (f₂ : Y ⟶ Y')
+    (n p q : ℕ)
     (h : p + q = n) (a : NormalizedCubicalChain X k p) (b : NormalizedCubicalChain Y k q) :
-    summandCoord X' Y' n p q h
+    cubicalTensorSummandCoord X' Y' n p q h
         (NormalizedCubicalChain.map k f₁.hom p a ⊗ₜ[k] NormalizedCubicalChain.map k f₂.hom q b) =
-      mapDomain (fun s : Σ i : BidegreeIndex n, (bidegreeModel.{u} n i ⟶ (X, Y)) ↦
+      mapDomain (fun s : Σ i : BidegreeIndex n, (cubicalBidegreeModel.{u} n i ⟶ (X, Y)) ↦
         (⟨s.1, s.2 ≫ ((f₁, f₂) : (X, Y) ⟶ (X', Y'))⟩ :
-          Σ i : BidegreeIndex n, (bidegreeModel.{u} n i ⟶ (X', Y'))))
-        (summandCoord X Y n p q h (a ⊗ₜ[k] b)) := by
-  rw [summandCoord_tmul, summandCoord_tmul, cubicalCoord_map, cubicalCoord_map,
+          Σ i : BidegreeIndex n, (cubicalBidegreeModel.{u} n i ⟶ (X', Y'))))
+        (cubicalTensorSummandCoord X Y n p q h (a ⊗ₜ[k] b)) := by
+  rw [cubicalTensorSummandCoord_tmul, cubicalTensorSummandCoord_tmul, cubicalCoord_map,
+    cubicalCoord_map,
     finsuppTensorFinsupp'_mapDomain, ← mapDomain_comp, ← mapDomain_comp]
+  -- both sides push the coefficients forward along `(σ, τ) ↦ ⟨(p, q), (σ ≫ f₁, τ ≫ f₂)⟩`; the
+  -- composition in the product category is componentwise by definition
   rfl
 
 /-- The coefficients of the tensor product are natural. -/
-theorem tensorCoord_map {X Y : TopCat.{u} × TopCat.{u}} (f : X ⟶ Y) (n : ℕ)
+theorem cubicalTensorCoord_map {X Y : TopCat.{u} × TopCat.{u}} (f : X ⟶ Y) (n : ℕ)
     (x : ((cubicalTensor k).obj X).X n) :
-    tensorCoord k Y n (((cubicalTensor k).map f).f n x) =
-      mapDomain (fun s : Σ i : BidegreeIndex n, (bidegreeModel.{u} n i ⟶ X) ↦
-        (⟨s.1, s.2 ≫ f⟩ : Σ i : BidegreeIndex n, (bidegreeModel.{u} n i ⟶ Y)))
-        (tensorCoord k X n x) := by
-  have key : ((cubicalTensor k).map f).f n ≫ ModuleCat.ofHom (tensorCoord k Y n) =
-      ModuleCat.ofHom (tensorCoord k X n) ≫ ModuleCat.ofHom (lmapDomain k k
-        (fun s : Σ i : BidegreeIndex n, (bidegreeModel.{u} n i ⟶ X) ↦
-          (⟨s.1, s.2 ≫ f⟩ : Σ i : BidegreeIndex n, (bidegreeModel.{u} n i ⟶ Y)))) := by
+    cubicalTensorCoord k Y n (((cubicalTensor k).map f).f n x) =
+      mapDomain (fun s : Σ i : BidegreeIndex n, (cubicalBidegreeModel.{u} n i ⟶ X) ↦
+        (⟨s.1, s.2 ≫ f⟩ : Σ i : BidegreeIndex n, (cubicalBidegreeModel.{u} n i ⟶ Y)))
+        (cubicalTensorCoord k X n x) := by
+  have key : ((cubicalTensor k).map f).f n ≫ ModuleCat.ofHom (cubicalTensorCoord k Y n) =
+      ModuleCat.ofHom (cubicalTensorCoord k X n) ≫ ModuleCat.ofHom (lmapDomain k k
+        (fun s : Σ i : BidegreeIndex n, (cubicalBidegreeModel.{u} n i ⟶ X) ↦
+          (⟨s.1, s.2 ≫ f⟩ : Σ i : BidegreeIndex n, (cubicalBidegreeModel.{u} n i ⟶ Y)))) := by
     refine mapBifunctor.hom_ext fun p q (h : p + q = n) ↦ ?_
     refine ModuleCat.hom_ext (TensorProduct.ext' fun a b ↦ ?_)
     -- the goal is `coord (F f (ι (a ⊗ b))) = mapDomain _ (coord (ι (a ⊗ b)))`, a statement about
     -- the composite morphisms evaluated on `a ⊗ b`, which `exact` unfolds
-    exact (congrArg (tensorCoord k Y n) (cubicalTensor_map_ι f n p q h (a ⊗ₜ[k] b))).trans
-      ((tensorCoord_ι Y n p q h _).trans ((summandCoord_map f.1 f.2 n p q h a b).trans
-        (congrArg (lmapDomain k k _) (tensorCoord_ι X n p q h (a ⊗ₜ[k] b))).symm))
+    exact (congrArg (cubicalTensorCoord k Y n) (cubicalTensor_map_ι f n p q h (a ⊗ₜ[k] b))).trans
+      ((cubicalTensorCoord_ι Y n p q h _).trans
+        ((cubicalTensorSummandCoord_map f.1 f.2 n p q h a b).trans
+        (congrArg (lmapDomain k k _) (cubicalTensorCoord_ι X n p q h (a ⊗ₜ[k] b))).symm))
   exact LinearMap.congr_fun (congrArg ModuleCat.Hom.hom key) x
 
 /-- The image of the generator of bidegree `(p, q)` under a pair of maps is the tensor product of
 the images of the identity cubes. -/
-theorem map_tensorGen (X : TopCat.{u} × TopCat.{u}) (n p q : ℕ) (h : p + q = n)
+theorem map_cubicalTensorGen (X : TopCat.{u} × TopCat.{u}) (n p q : ℕ) (h : p + q = n)
     (σ : cubeModel.{u} p ⟶ X.1) (τ : cubeModel.{u} q ⟶ X.2) :
-    ((cubicalTensor k).map ((σ, τ) : bidegreeModel.{u} n ⟨(p, q), h⟩ ⟶ X)).f n
-        (tensorGen k n ⟨(p, q), h⟩) =
+    ((cubicalTensor k).map ((σ, τ) : cubicalBidegreeModel.{u} n ⟨(p, q), h⟩ ⟶ X)).f n
+        (cubicalTensorGen k n ⟨(p, q), h⟩) =
       (ιTensorObj ((normalizedCubicalChainComplex.{u} k).obj X.1)
           ((normalizedCubicalChainComplex.{u} k).obj X.2) p q n h).hom
         (NormalizedCubicalChain.map k σ.hom p
             (NormalizedCubicalChain.ofCube (cubeModel.{u} p) k (upCube p)) ⊗ₜ[k]
           NormalizedCubicalChain.map k τ.hom q
             (NormalizedCubicalChain.ofCube (cubeModel.{u} q) k (upCube q))) :=
-  cubicalTensor_map_ι ((σ, τ) : bidegreeModel.{u} n ⟨(p, q), h⟩ ⟶ X) n p q h _
+  cubicalTensor_map_ι ((σ, τ) : cubicalBidegreeModel.{u} n ⟨(p, q), h⟩ ⟶ X) n p q h _
 
 variable (k) in
 /-- The inclusion of the summand of bidegree `(p, q)` into the tensor product, as a linear map out
-of the tensor product of the chains. -/
-def summandInclusion (X : TopCat.{u} × TopCat.{u}) (n p q : ℕ) (h : p + q = n) :
+of the tensor product of the chains; a proof-internal name for `(ιTensorObj …).hom`, which keeps
+the instances of the tensor product of chains visible to `simp`. -/
+private def summandInclusion (X : TopCat.{u} × TopCat.{u}) (n p q : ℕ) (h : p + q = n) :
     NormalizedCubicalChain X.1 k p ⊗[k] NormalizedCubicalChain X.2 k q →ₗ[k]
       ((cubicalTensor k).obj X).X n :=
   (ιTensorObj ((normalizedCubicalChainComplex.{u} k).obj X.1)
@@ -186,12 +196,13 @@ def summandInclusion (X : TopCat.{u} × TopCat.{u}) (n p q : ℕ) (h : p + q = n
 
 /-- The combination of the images of the generators with the coefficients `c ⊗ d` is the tensor
 product of the combinations of the images of the identity cubes. -/
-theorem linearCombination_summand (X : TopCat.{u} × TopCat.{u}) (n p q : ℕ) (h : p + q = n)
+private theorem linearCombination_cubicalTensorSummand (X : TopCat.{u} × TopCat.{u})
+    (n p q : ℕ) (h : p + q = n)
     (c : (cubeModel.{u} p ⟶ X.1) →₀ k) (d : (cubeModel.{u} q ⟶ X.2) →₀ k) :
-    linearCombination k (fun s : Σ i : BidegreeIndex n, (bidegreeModel.{u} n i ⟶ X) ↦
-        ((cubicalTensor k).map s.2).f n (tensorGen k n s.1))
+    linearCombination k (fun s : Σ i : BidegreeIndex n, (cubicalBidegreeModel.{u} n i ⟶ X) ↦
+        ((cubicalTensor k).map s.2).f n (cubicalTensorGen k n s.1))
       (mapDomain (fun st : (cubeModel.{u} p ⟶ X.1) × (cubeModel.{u} q ⟶ X.2) ↦
-        (⟨⟨(p, q), h⟩, (st.1, st.2)⟩ : Σ i : BidegreeIndex n, (bidegreeModel.{u} n i ⟶ X)))
+        (⟨⟨(p, q), h⟩, (st.1, st.2)⟩ : Σ i : BidegreeIndex n, (cubicalBidegreeModel.{u} n i ⟶ X)))
         (finsuppTensorFinsupp' k _ _ (c ⊗ₜ[k] d))) =
       summandInclusion k X n p q h
         (linearCombination k (fun σ : cubeModel.{u} p ⟶ X.1 ↦ NormalizedCubicalChain.map k σ.hom p
@@ -209,43 +220,42 @@ theorem linearCombination_summand (X : TopCat.{u} × TopCat.{u}) (n p q : ℕ) (
     | single τ t =>
       rw [finsuppTensorFinsupp'_single_tmul_single, mapDomain_single, linearCombination_single,
         linearCombination_single, linearCombination_single, smul_tmul_smul, map_smul]
-      exact congrArg ((s * t) • ·) (map_tensorGen X n p q h σ τ)
+      exact congrArg ((s * t) • ·) (map_cubicalTensorGen X n p q h σ τ)
 
 /-- A summand chain is the combination of the images of the generators with its coefficients. -/
-theorem linearCombination_summandCoord (X : TopCat.{u} × TopCat.{u}) (n p q : ℕ) (h : p + q = n)
+private theorem linearCombination_cubicalTensorSummandCoord (X : TopCat.{u} × TopCat.{u})
+    (n p q : ℕ) (h : p + q = n)
     (a : NormalizedCubicalChain X.1 k p) (b : NormalizedCubicalChain X.2 k q) :
-    linearCombination k (fun s : Σ i : BidegreeIndex n, (bidegreeModel.{u} n i ⟶ X) ↦
-        ((cubicalTensor k).map s.2).f n (tensorGen k n s.1))
-      (summandCoord X.1 X.2 n p q h (a ⊗ₜ[k] b)) = summandInclusion k X n p q h (a ⊗ₜ[k] b) := by
-  have ha : linearCombination k (fun σ : cubeModel.{u} p ⟶ X.1 ↦
-      NormalizedCubicalChain.map k σ.hom p
-        (NormalizedCubicalChain.ofCube (cubeModel.{u} p) k (upCube p)))
-      (cubicalCoord k X.1 p a) = a := by
+    linearCombination k (fun s : Σ i : BidegreeIndex n, (cubicalBidegreeModel.{u} n i ⟶ X) ↦
+        ((cubicalTensor k).map s.2).f n (cubicalTensorGen k n s.1))
+      (cubicalTensorSummandCoord X.1 X.2 n p q h (a ⊗ₜ[k] b)) =
+      summandInclusion k X n p q h (a ⊗ₜ[k] b) := by
+  -- a normalized cubical chain is the combination of the images of the identity cube with its
+  -- coefficients
+  have key : ∀ (Z : TopCat.{u}) (m : ℕ) (x : NormalizedCubicalChain Z k m),
+      linearCombination k (fun σ : cubeModel.{u} m ⟶ Z ↦ NormalizedCubicalChain.map k σ.hom m
+        (NormalizedCubicalChain.ofCube (cubeModel.{u} m) k (upCube m))) (cubicalCoord k Z m x) =
+        x := fun Z m x ↦ by
     rw [linearCombination_apply]
-    exact sum_cubicalCoord a
-  have hb : linearCombination k (fun τ : cubeModel.{u} q ⟶ X.2 ↦
-      NormalizedCubicalChain.map k τ.hom q
-        (NormalizedCubicalChain.ofCube (cubeModel.{u} q) k (upCube q)))
-      (cubicalCoord k X.2 q b) = b := by
-    rw [linearCombination_apply]
-    exact sum_cubicalCoord b
-  rw [summandCoord_tmul, linearCombination_summand, ha, hb]
+    exact sum_cubicalCoord x
+  rw [cubicalTensorSummandCoord_tmul, linearCombination_cubicalTensorSummand, key, key]
 
 /-- Every chain of the tensor product is the combination of the images of the generators with its
 coefficients. -/
-theorem sum_tensorCoord (X : TopCat.{u} × TopCat.{u}) (n : ℕ) (x : ((cubicalTensor k).obj X).X n) :
-    (tensorCoord k X n x).sum (fun s a ↦
-      a • ((cubicalTensor k).map s.2).f n (tensorGen k n s.1)) = x := by
-  have key : ModuleCat.ofHom (tensorCoord k X n) ≫ ModuleCat.ofHom
-      (linearCombination k (fun s : Σ i : BidegreeIndex n, (bidegreeModel.{u} n i ⟶ X) ↦
-        ((cubicalTensor k).map s.2).f n (tensorGen k n s.1))) = 𝟙 _ := by
+theorem sum_cubicalTensorCoord (X : TopCat.{u} × TopCat.{u}) (n : ℕ)
+    (x : ((cubicalTensor k).obj X).X n) :
+    (cubicalTensorCoord k X n x).sum (fun s a ↦
+      a • ((cubicalTensor k).map s.2).f n (cubicalTensorGen k n s.1)) = x := by
+  have key : ModuleCat.ofHom (cubicalTensorCoord k X n) ≫ ModuleCat.ofHom
+      (linearCombination k (fun s : Σ i : BidegreeIndex n, (cubicalBidegreeModel.{u} n i ⟶ X) ↦
+        ((cubicalTensor k).map s.2).f n (cubicalTensorGen k n s.1))) = 𝟙 _ := by
     refine mapBifunctor.hom_ext fun p q (h : p + q = n) ↦ ?_
     refine ModuleCat.hom_ext (TensorProduct.ext' fun a b ↦ ?_)
     -- the goal is `lc (coord (ι (a ⊗ b))) = ι (a ⊗ b)`, with `ι = summandInclusion`
-    have e : tensorCoord k X n (summandInclusion k X n p q h (a ⊗ₜ[k] b)) =
-        summandCoord X.1 X.2 n p q h (a ⊗ₜ[k] b) := tensorCoord_ι X n p q h _
+    have e : cubicalTensorCoord k X n (summandInclusion k X n p q h (a ⊗ₜ[k] b)) =
+        cubicalTensorSummandCoord X.1 X.2 n p q h (a ⊗ₜ[k] b) := cubicalTensorCoord_ι X n p q h _
     exact (congrArg (linearCombination k _) e).trans
-      (linearCombination_summandCoord X n p q h a b)
+      (linearCombination_cubicalTensorSummandCoord X n p q h a b)
   exact (linearCombination_apply _ _).symm.trans
     (LinearMap.congr_fun (congrArg ModuleCat.Hom.hom key) x)
 
@@ -254,27 +264,27 @@ variable (k) in
 degree `n`, on the models `(Iᵖ, I^q)` with `p + q = n`. -/
 @[expose] def cubicalTensorModelPresentation :
     AcyclicModels.MultiModelPresentation (cubicalTensor.{u} k) BidegreeIndex where
-  model := bidegreeModel
-  gen := tensorGen k
-  coord := tensorCoord k
-  coord_map f n x := tensorCoord_map f n x
-  sum_coord X n x := sum_tensorCoord X n x
+  model := cubicalBidegreeModel
+  gen := cubicalTensorGen k
+  coord := cubicalTensorCoord k
+  coord_map f n x := cubicalTensorCoord_map f n x
+  sum_coord X n x := sum_cubicalTensorCoord X n x
 
 /-- The models of `cubicalTensorModelPresentation` are the pairs of cubes. -/
 @[simp]
 theorem cubicalTensorModelPresentation_model (n : ℕ) (i : BidegreeIndex n) :
-    (cubicalTensorModelPresentation.{u} k).model n i = bidegreeModel n i :=
+    (cubicalTensorModelPresentation.{u} k).model n i = cubicalBidegreeModel n i :=
   (rfl)
 
 /-- The generators of `cubicalTensorModelPresentation` are the tensor products of the identity
 cubes. -/
 theorem cubicalTensorModelPresentation_gen (n : ℕ) (i : BidegreeIndex n) :
-    (cubicalTensorModelPresentation.{u} k).gen n i = tensorGen k n i :=
+    (cubicalTensorModelPresentation.{u} k).gen n i = cubicalTensorGen k n i :=
   (rfl)
 
-/-- The coefficients of `cubicalTensorModelPresentation` are `tensorCoord`. -/
+/-- The coefficients of `cubicalTensorModelPresentation` are `cubicalTensorCoord`. -/
 theorem cubicalTensorModelPresentation_coord (X : TopCat.{u} × TopCat.{u}) (n : ℕ) :
-    (cubicalTensorModelPresentation.{u} k).coord X n = tensorCoord k X n :=
+    (cubicalTensorModelPresentation.{u} k).coord X n = cubicalTensorCoord k X n :=
   (rfl)
 
 variable (k) in
@@ -289,19 +299,28 @@ instance (p q : ℕ) :
       ((MonoidalCategory.tensor TopCat.{u}).obj (cubeModel.{u} p, cubeModel.{u} q)) :=
   inferInstanceAs (ContractibleSpace (cubeModel.{u} p × cubeModel.{u} q))
 
-variable (k) in
-/-- **The simplicial singular chains of the product are acyclic on the models of the tensor
-product of the normalized cubical chains**, since a product of cubes is contractible. -/
-theorem isAcyclicOnMulti_singularChainsProduct :
-    AcyclicModels.IsAcyclicOnMulti (singularChainsProduct k)
-      (cubicalTensorModelPresentation.{u} k).model
+/-- **The simplicial singular chains of the product are acyclic on any family of models whose
+products are contractible.** -/
+theorem isAcyclicOnMulti_singularChainsProduct (k : Type u) [CommRing k] {ι : ℕ → Type*}
+    (M : ∀ n, ι n → TopCat.{u} × TopCat.{u})
+    [∀ n i, ContractibleSpace ((MonoidalCategory.tensor TopCat.{u}).obj (M n i))] :
+    AcyclicModels.IsAcyclicOnMulti (singularChainsProduct k) M
       (fun X ↦ singularAugment k (X.1 ⊗ X.2)) where
   exists_d_eq_of_d_eq_zero n i q z hz :=
     singularChains_exists_d_eq_of_d_eq_zero
-      ((MonoidalCategory.tensor TopCat.{u}).obj (bidegreeModel.{u} n i)) q z hz
+      ((MonoidalCategory.tensor TopCat.{u}).obj (M n i)) q z hz
   exists_d_eq_of_augment_eq_zero n i z hz :=
     singularChains_exists_d_eq_of_augment_eq_zero
-      ((MonoidalCategory.tensor TopCat.{u}).obj (bidegreeModel.{u} n i)) z hz
+      ((MonoidalCategory.tensor TopCat.{u}).obj (M n i)) z hz
+
+variable (k) in
+/-- **The simplicial singular chains of the product are acyclic on the models of the tensor
+product of the normalized cubical chains**, since a product of cubes is contractible. -/
+theorem isAcyclicOnMulti_singularChainsProduct_cubicalTensorModelPresentation :
+    AcyclicModels.IsAcyclicOnMulti (singularChainsProduct k)
+      (cubicalTensorModelPresentation.{u} k).model
+      (fun X ↦ singularAugment k (X.1 ⊗ X.2)) :=
+  isAcyclicOnMulti_singularChainsProduct k (fun n i ↦ cubicalBidegreeModel.{u} n i)
 
 end TauCeti
 
