@@ -79,16 +79,24 @@ private theorem mem_grade_iff_equivOfEq {n : ℕ} {f : reesAlgebra I} :
       TauCeti.coeffSubalgebra.grade (fun n ↦ I ^ n) n :=
   Submodule.mem_comap
 
+/-- Transporting `f` along `reesAlgebra_eq_coeffSubalgebra` does not change the underlying
+polynomial. -/
+private theorem coe_equivOfEq (f : reesAlgebra I) :
+    ((Subalgebra.equivOfEq _ _ (reesAlgebra_eq_coeffSubalgebra I) f :
+      TauCeti.coeffSubalgebra fun n ↦ I ^ n) : R[X]) = f :=
+  congr_arg Subtype.val (Subalgebra.equivOfEq_apply _ _ (reesAlgebra_eq_coeffSubalgebra I) f)
+
 /-- The elements of degree `n` of the Rees algebra are the monomials `r Xⁿ` with `r ∈ Iⁿ`. -/
 theorem mem_grade_iff {n : ℕ} {f : reesAlgebra I} :
-    f ∈ grade I n ↔ ∃ r ∈ I ^ n, monomial n r = (f : R[X]) :=
-  mem_grade_iff_equivOfEq.trans TauCeti.coeffSubalgebra.mem_grade_iff
+    f ∈ grade I n ↔ ∃ r ∈ I ^ n, monomial n r = (f : R[X]) := by
+  rw [mem_grade_iff_equivOfEq, TauCeti.coeffSubalgebra.mem_grade_iff, coe_equivOfEq]
 
 /-- An element of the Rees algebra has degree `n` exactly when it is the monomial of degree `n`
 formed by its `n`-th coefficient. -/
 theorem mem_grade_iff_monomial_coeff {n : ℕ} {f : reesAlgebra I} :
-    f ∈ grade I n ↔ monomial n ((f : R[X]).coeff n) = f :=
-  mem_grade_iff_equivOfEq.trans TauCeti.coeffSubalgebra.mem_grade_iff_monomial_coeff
+    f ∈ grade I n ↔ monomial n ((f : R[X]).coeff n) = f := by
+  rw [mem_grade_iff_equivOfEq, TauCeti.coeffSubalgebra.mem_grade_iff_monomial_coeff,
+    coe_equivOfEq]
 
 /-- The monomial `r Xⁿ` with `r ∈ Iⁿ` lies in degree `n`. -/
 theorem monomial_mem_grade {n : ℕ} {r : R} (hr : r ∈ I ^ n) :
@@ -97,8 +105,9 @@ theorem monomial_mem_grade {n : ℕ} {r : R} (hr : r ∈ I ^ n) :
 
 /-- The coefficients of an element of degree `n` vanish away from `n`. -/
 theorem coeff_eq_zero_of_mem_grade {m n : ℕ} {f : reesAlgebra I} (hf : f ∈ grade I n)
-    (hmn : m ≠ n) : (f : R[X]).coeff m = 0 :=
-  TauCeti.coeffSubalgebra.coeff_eq_zero_of_mem_grade (mem_grade_iff_equivOfEq.mp hf) hmn
+    (hmn : m ≠ n) : (f : R[X]).coeff m = 0 := by
+  rw [← coe_equivOfEq f]
+  exact TauCeti.coeffSubalgebra.coeff_eq_zero_of_mem_grade (mem_grade_iff_equivOfEq.mp hf) hmn
 
 instance gradedMonoid : SetLike.GradedMonoid (grade I) where
   one_mem := mem_grade_iff_equivOfEq.mpr <| by
@@ -135,7 +144,7 @@ theorem coe_decompose_apply (f : reesAlgebra I) (n : ℕ) :
     { (Subalgebra.equivOfEq _ _ (reesAlgebra_eq_coeffSubalgebra I)).toRingHom with
       map_mem := mem_grade_iff_equivOfEq.mp }
   have hg (x : reesAlgebra I) : ((g x : TauCeti.coeffSubalgebra fun n ↦ I ^ n) : R[X]) = x :=
-    congr_arg Subtype.val (Subalgebra.equivOfEq_apply _ _ (reesAlgebra_eq_coeffSubalgebra I) x)
+    coe_equivOfEq x
   rw [← hg, g.map_directSumDecompose, TauCeti.coeffSubalgebra.coe_decompose_apply, hg]
 
 variable (I)
