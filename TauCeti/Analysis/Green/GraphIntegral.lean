@@ -8,8 +8,6 @@ module
 public import TauCeti.Analysis.BoxIntegral.Substitution
 public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.Analysis.Calculus.Deriv.Prod
-import Mathlib.Analysis.Calculus.Deriv.Inverse
-import Mathlib.Topology.Order.LeftRightNhds
 import TauCeti.Analysis.Calculus.Deriv.CountableLevels
 
 /-!
@@ -26,6 +24,8 @@ levels have uncountable preimages under the parametrization.
 -/
 
 public section
+
+noncomputable section
 
 open MeasureTheory Set
 
@@ -77,87 +77,59 @@ theorem hasDerivAt_horizontalGraph {graph : ℝ → ℝ} {graph' t : ℝ}
   exact Complex.equivRealProdCLM.symm.toContinuousLinearMap.hasFDerivAt.comp_hasDerivAt t
     (h.prodMk (hasDerivAt_id t))
 
-/-- Gauge `P dx` on a vertical-cell graph equals the base-interval integral. The graph may have
-unbounded speed and need not be absolutely continuous. -/
-theorem hasIntegral_verticalGraph_dx {a b : ℝ} (hab : a < b) {graph : ℝ → ℝ} {P : ℂ → ℝ}
-    {s : Set ℝ} (hs : s.Countable) (hgraph : ContinuousOn graph (Icc a b))
-    (hdgraph : ∀ t ∈ Ioo a b \ s, DifferentiableAt ℝ graph t)
-    (hP : ContinuousOn P (verticalGraph graph '' Icc a b)) :
-    BoxIntegral.HasIntegral (BoxIntegral.intervalBox a b hab) BoxIntegral.IntegrationParams.Henstock
-      (fun x ↦ P (verticalGraph graph (x 0)) * (deriv (verticalGraph graph) (x 0)).re)
-      BoxIntegral.BoxAdditiveMap.volume (∫ t in a..b, P (verticalGraph graph t)) := by
-  have hc : ContinuousOn (P ∘ verticalGraph graph) (Icc a b) :=
-    hP.comp (continuousOn_verticalGraph hgraph) (mapsTo_image _ _)
-  apply (hc.intervalIntegrable_of_Icc hab.le).hasBoxIntegral hab _ rfl |>.congr_ae ?_ rfl
-  apply BoxIntegral.ae_eq_intervalBox hab
-    (f := P ∘ verticalGraph graph)
-    (g := fun t ↦ P (verticalGraph graph t) * (deriv (verticalGraph graph) t).re)
-  filter_upwards [ae_restrict_mem measurableSet_Ioc,
-    ae_restrict_of_ae ((hs.union (Set.toFinite ({a, b} : Set ℝ)).countable).ae_notMem volume)]
-    with t ht hts
-  have htb : t ≠ b := fun h ↦ hts (Or.inr (by simp [h]))
-  have ht' : t ∈ Ioo a b \ s :=
-    ⟨⟨ht.1, lt_of_le_of_ne ht.2 htb⟩, fun h ↦ hts (Or.inl h)⟩
-  rw [(hasDerivAt_verticalGraph (hdgraph t ht').hasDerivAt).deriv]
-  simp only [Function.comp_apply, mul_one]
+/-- The coordinate used by a directional Green identity. -/
+inductive Coordinate
+  | re
+  | im
 
-/-- Gauge `Q dy` on a horizontal-cell graph equals the base-interval integral, even when the
-speed is unbounded or the graph is not absolutely continuous. -/
-theorem hasIntegral_horizontalGraph_dy {a b : ℝ} (hab : a < b) {graph : ℝ → ℝ} {Q : ℂ → ℝ}
-    {s : Set ℝ} (hs : s.Countable) (hgraph : ContinuousOn graph (Icc a b))
-    (hdgraph : ∀ t ∈ Ioo a b \ s, DifferentiableAt ℝ graph t)
-    (hQ : ContinuousOn Q (horizontalGraph graph '' Icc a b)) :
-    BoxIntegral.HasIntegral (BoxIntegral.intervalBox a b hab) BoxIntegral.IntegrationParams.Henstock
-      (fun x ↦ Q (horizontalGraph graph (x 0)) * (deriv (horizontalGraph graph) (x 0)).im)
-      BoxIntegral.BoxAdditiveMap.volume (∫ t in a..b, Q (horizontalGraph graph t)) := by
-  have hc : ContinuousOn (Q ∘ horizontalGraph graph) (Icc a b) :=
-    hQ.comp (continuousOn_horizontalGraph hgraph) (mapsTo_image _ _)
-  apply (hc.intervalIntegrable_of_Icc hab.le).hasBoxIntegral hab _ rfl |>.congr_ae ?_ rfl
-  apply BoxIntegral.ae_eq_intervalBox hab
-    (f := Q ∘ horizontalGraph graph)
-    (g := fun t ↦ Q (horizontalGraph graph t) * (deriv (horizontalGraph graph) t).im)
-  filter_upwards [ae_restrict_mem measurableSet_Ioc,
-    ae_restrict_of_ae ((hs.union (Set.toFinite ({a, b} : Set ℝ)).countable).ae_notMem volume)]
-    with t ht hts
-  have htb : t ≠ b := fun h ↦ hts (Or.inr (by simp [h]))
-  have ht' : t ∈ Ioo a b \ s :=
-    ⟨⟨ht.1, lt_of_le_of_ne ht.2 htb⟩, fun h ↦ hts (Or.inl h)⟩
-  rw [(hasDerivAt_horizontalGraph (hdgraph t ht').hasDerivAt).deriv]
-  simp only [Function.comp_apply, mul_one]
+namespace Coordinate
 
-private theorem deriv_verticalLine_re (c t : ℝ) (g : ℝ → ℝ) :
-    (deriv (fun t ↦ (⟨c, g t⟩ : ℂ)) t).re = 0 := by
-  by_cases hd : DifferentiableAt ℝ (fun t ↦ (⟨c, g t⟩ : ℂ)) t
-  · exact (Complex.reCLM.hasFDerivAt.comp_hasDerivAt t hd.hasDerivAt).unique
-      (hasDerivAt_const t c)
-  · rw [deriv_zero_of_not_differentiableAt hd]
-    rfl
+/-- The real linear coordinate projection. -/
+def proj : Coordinate → ℂ →L[ℝ] ℝ
+  | re => Complex.reCLM
+  | im => Complex.imCLM
 
-private theorem deriv_horizontalLine_im (c t : ℝ) (g : ℝ → ℝ) :
-    (deriv (fun t ↦ (⟨g t, c⟩ : ℂ)) t).im = 0 := by
-  by_cases hd : DifferentiableAt ℝ (fun t ↦ (⟨g t, c⟩ : ℂ)) t
-  · exact (Complex.imCLM.hasFDerivAt.comp_hasDerivAt t hd.hasDerivAt).unique
-      (hasDerivAt_const t c)
-  · rw [deriv_zero_of_not_differentiableAt hd]
-    rfl
+/-- A graph parametrized by the chosen coordinate. -/
+def graph (d : Coordinate) (g : ℝ → ℝ) : ℝ → ℂ :=
+  match d with
+  | re => verticalGraph g
+  | im => horizontalGraph g
 
-/-- An arbitrary arc on a vertical line contributes zero to `P dx`. -/
-theorem hasIntegral_verticalLine_dx {a b : ℝ} (hab : a < b) (c : ℝ) (g : ℝ → ℝ) (P : ℂ → ℝ) :
-    BoxIntegral.HasIntegral (BoxIntegral.intervalBox a b hab) BoxIntegral.IntegrationParams.Henstock
-      (fun x ↦ P ⟨c, g (x 0)⟩ * (deriv (fun t ↦ (⟨c, g t⟩ : ℂ)) (x 0)).re)
-      BoxIntegral.BoxAdditiveMap.volume 0 := by
-  simpa only [deriv_verticalLine_re, mul_zero] using
-    (BoxIntegral.hasIntegral_zero (I := BoxIntegral.intervalBox a b hab)
-      (l := BoxIntegral.IntegrationParams.Henstock) (vol := BoxIntegral.BoxAdditiveMap.volume))
+@[simp]
+theorem proj_re : Coordinate.re.proj = Complex.reCLM := (rfl)
 
-/-- An arbitrary arc on a horizontal line contributes zero to `Q dy`. -/
-theorem hasIntegral_horizontalLine_dy {a b : ℝ} (hab : a < b) (c : ℝ) (g : ℝ → ℝ) (Q : ℂ → ℝ) :
-    BoxIntegral.HasIntegral (BoxIntegral.intervalBox a b hab) BoxIntegral.IntegrationParams.Henstock
-      (fun x ↦ Q ⟨g (x 0), c⟩ * (deriv (fun t ↦ (⟨g t, c⟩ : ℂ)) (x 0)).im)
-      BoxIntegral.BoxAdditiveMap.volume 0 := by
-  simpa only [deriv_horizontalLine_im, mul_zero] using
-    (BoxIntegral.hasIntegral_zero (I := BoxIntegral.intervalBox a b hab)
-      (l := BoxIntegral.IntegrationParams.Henstock) (vol := BoxIntegral.BoxAdditiveMap.volume))
+@[simp]
+theorem proj_im : Coordinate.im.proj = Complex.imCLM := (rfl)
+
+@[simp]
+theorem graph_re_apply (g : ℝ → ℝ) (t : ℝ) : Coordinate.re.graph g t = ⟨t, g t⟩ := by
+  simp only [graph]
+  exact Complex.ext (verticalGraph_re g t) (verticalGraph_im g t)
+
+@[simp]
+theorem graph_im_apply (g : ℝ → ℝ) (t : ℝ) : Coordinate.im.graph g t = ⟨g t, t⟩ := by
+  simp only [graph]
+  exact Complex.ext (horizontalGraph_re g t) (horizontalGraph_im g t)
+
+@[simp]
+theorem proj_graph (d : Coordinate) (g : ℝ → ℝ) (t : ℝ) : d.proj (d.graph g t) = t := by
+  cases d <;> simp [proj, graph]
+
+/-- Continuity of a graph in either coordinate. -/
+theorem continuousOn_graph (d : Coordinate) {g : ℝ → ℝ} {s : Set ℝ}
+    (hg : ContinuousOn g s) : ContinuousOn (d.graph g) s := by
+  cases d
+  · exact continuousOn_verticalGraph hg
+  · exact continuousOn_horizontalGraph hg
+
+/-- A graph is differentiable at every differentiability point of its graph function. -/
+theorem differentiableAt_graph (d : Coordinate) {g : ℝ → ℝ} {t : ℝ}
+    (hg : DifferentiableAt ℝ g t) : DifferentiableAt ℝ (d.graph g) t := by
+  cases d
+  · exact (hasDerivAt_verticalGraph hg.hasDerivAt).differentiableAt
+  · exact (hasDerivAt_horizontalGraph hg.hasDerivAt).differentiableAt
+
+end Coordinate
 
 -- At regular curve points, uniqueness gives the projected derivative. At irregular curve points,
 -- the total derivative is zero; the parameter derivative also vanishes almost everywhere on the
@@ -169,7 +141,7 @@ private theorem ae_deriv_projection {a b : ℝ} {θ θ' : ℝ → ℝ} {γ : ℝ
     (fun t ↦ π (deriv γ t)) =ᵐ[volume.restrict (Ioc a b)] θ' := by
   filter_upwards [ae_restrict_mem measurableSet_Ioc,
     ae_restrict_of_ae ((hs.union (Set.toFinite ({a, b} : Set ℝ)).countable).ae_notMem volume),
-    ae_restrict_of_ae ((countable_preimage_nonzero_deriv θ hS).ae_notMem volume)]
+    hS.ae_deriv_eq_zero_on_preimage θ (volume.restrict (Ioc a b))]
     with t ht hts hlevel
   have htb : t ≠ b := fun h ↦ hts (Or.inr (by simp [h]))
   have ht' : t ∈ Ioo a b \ s :=
@@ -181,90 +153,77 @@ private theorem ae_deriv_projection {a b : ℝ} {θ θ' : ℝ → ℝ} {γ : ℝ
   · have hmem : θ t ∈ S := by
       by_contra h
       exact hγ (hdγ t ht' h)
-    have hzero : deriv θ t = 0 := by
-      by_contra h
-      exact hlevel ⟨hmem, h⟩
+    have hzero : deriv θ t = 0 := hlevel hmem
     rw [(hdθ t ht').deriv] at hzero
     rw [deriv_zero_of_not_differentiableAt hγ, map_zero, hzero]
 
-/-- Gauge `P dx` is invariant under continuous graph reparametrization, including backtracking
-and unbounded speed. Both the graph and parametrization may fail differentiability at countably
-many points; no hypothesis on the size of the preimages of graph exceptions is needed. -/
-theorem hasIntegral_verticalGraph_reparam_dx {a b c d : ℝ} (hab : a < b)
+/-- Gauge integration on a graph depends only on the endpoint graph coordinates. The
+parametrization may backtrack and have unbounded speed, and exceptional graph levels may have
+uncountable preimages. Both coordinate directions use this same substitution theorem. -/
+theorem hasIntegral_graph_reparam (d : Coordinate) {a b c e : ℝ} (hab : a < b)
     {graph θ θ' : ℝ → ℝ} {P : ℂ → ℝ} {s S : Set ℝ} (hs : s.Countable) (hS : S.Countable)
-    (hgraph : ContinuousOn graph (Icc c d))
-    (hdgraph : ∀ t ∈ Ioo c d \ S, DifferentiableAt ℝ graph t)
-    (hP : ContinuousOn P (verticalGraph graph '' Icc c d))
+    (hgraph : ContinuousOn graph (Icc c e))
+    (hdgraph : ∀ t ∈ Ioo c e \ S, DifferentiableAt ℝ graph t)
+    (hP : ContinuousOn P (d.graph graph '' Icc c e))
     (hθ : ContinuousOn θ (Icc a b)) (hdθ : ∀ t ∈ Ioo a b \ s, HasDerivAt θ (θ' t) t)
-    (hmap : MapsTo θ (Icc a b) (Icc c d)) :
+    (hmap : MapsTo θ (Icc a b) (Icc c e)) :
     BoxIntegral.HasIntegral (BoxIntegral.intervalBox a b hab) BoxIntegral.IntegrationParams.Henstock
-      (fun x ↦ P (verticalGraph graph (θ (x 0))) * (deriv (verticalGraph graph ∘ θ) (x 0)).re)
-      BoxIntegral.BoxAdditiveMap.volume (∫ t in θ a..θ b, P (verticalGraph graph t)) := by
-  have hc : ContinuousOn (P ∘ verticalGraph graph) (Icc c d) :=
-    hP.comp (continuousOn_verticalGraph hgraph) (mapsTo_image _ _)
-  have hdγ : ∀ t ∈ Ioo a b \ s, θ t ∉ S ∪ {c, d} →
-      DifferentiableAt ℝ (verticalGraph graph ∘ θ) t := by
+      (fun x ↦ P (d.graph graph (θ (x 0))) * d.proj (deriv (d.graph graph ∘ θ) (x 0)))
+      BoxIntegral.BoxAdditiveMap.volume (∫ t in θ a..θ b, P (d.graph graph t)) := by
+  have hc : ContinuousOn (P ∘ d.graph graph) (Icc c e) :=
+    hP.comp (d.continuousOn_graph hgraph) (mapsTo_image _ _)
+  have hdγ : ∀ t ∈ Ioo a b \ s, θ t ∉ S ∪ {c, e} →
+      DifferentiableAt ℝ (d.graph graph ∘ θ) t := by
     intro t ht havoid
     have hm := hmap (Ioo_subset_Icc_self ht.1)
     have htc : θ t ≠ c := fun h ↦ havoid (Or.inr (by simp [h]))
-    have htd : θ t ≠ d := fun h ↦ havoid (Or.inr (by simp [h]))
-    have htθ : θ t ∈ Ioo c d \ S :=
-      ⟨⟨lt_of_le_of_ne hm.1 htc.symm, lt_of_le_of_ne hm.2 htd⟩,
+    have hte : θ t ≠ e := fun h ↦ havoid (Or.inr (by simp [h]))
+    have htθ : θ t ∈ Ioo c e \ S :=
+      ⟨⟨lt_of_le_of_ne hm.1 htc.symm, lt_of_le_of_ne hm.2 hte⟩,
         fun h ↦ havoid (Or.inl h)⟩
-    exact ((hasDerivAt_verticalGraph (hdgraph (θ t) htθ).hasDerivAt).scomp t
-      (hdθ t ht)).differentiableAt
-  have hcoord : Complex.reCLM ∘ (verticalGraph graph ∘ θ) = θ := by
+    exact (d.differentiableAt_graph (hdgraph (θ t) htθ)).comp t (hdθ t ht).differentiableAt
+  have hcoord : d.proj ∘ (d.graph graph ∘ θ) = θ := by
     ext t
-    simp only [Function.comp_apply, Complex.reCLM_apply, verticalGraph_re]
-  have he := ae_deriv_projection Complex.reCLM hcoord hs
-    (hS.union (Set.toFinite ({c, d} : Set ℝ)).countable) hdθ hdγ
+    simp only [Function.comp_apply, Coordinate.proj_graph]
+  have he := ae_deriv_projection d.proj hcoord hs
+    (hS.union (Set.toFinite ({c, e} : Set ℝ)).countable) hdθ hdγ
   have h := BoxIntegral.hasIntegral_Henstock_substitution hab hs hθ hdθ hc hmap
   apply h.congr_ae ?_ rfl
   apply BoxIntegral.ae_eq_intervalBox hab
-    (f := fun t ↦ θ' t * P (verticalGraph graph (θ t)))
-    (g := fun t ↦ P (verticalGraph graph (θ t)) * (deriv (verticalGraph graph ∘ θ) t).re)
+    (f := fun t ↦ θ' t * P (d.graph graph (θ t)))
+    (g := fun t ↦ P (d.graph graph (θ t)) * d.proj (deriv (d.graph graph ∘ θ) t))
   filter_upwards [he] with t ht
-  simp only [Complex.reCLM_apply] at ht
   rw [ht, mul_comm]
 
-/-- Gauge `Q dy` is invariant under continuous graph reparametrization, including backtracking
-and unbounded speed. Both the graph and parametrization may fail differentiability at countably
-many points; no hypothesis on the size of the preimages of graph exceptions is needed. -/
-theorem hasIntegral_horizontalGraph_reparam_dy {a b c d : ℝ} (hab : a < b)
-    {graph θ θ' : ℝ → ℝ} {Q : ℂ → ℝ} {s S : Set ℝ} (hs : s.Countable) (hS : S.Countable)
-    (hgraph : ContinuousOn graph (Icc c d))
-    (hdgraph : ∀ t ∈ Ioo c d \ S, DifferentiableAt ℝ graph t)
-    (hQ : ContinuousOn Q (horizontalGraph graph '' Icc c d))
-    (hθ : ContinuousOn θ (Icc a b)) (hdθ : ∀ t ∈ Ioo a b \ s, HasDerivAt θ (θ' t) t)
-    (hmap : MapsTo θ (Icc a b) (Icc c d)) :
+/-- Gauge integration on a graph equals the ordinary integral over its base coordinate. -/
+theorem hasIntegral_graph (d : Coordinate) {a b : ℝ} (hab : a < b)
+    {graph : ℝ → ℝ} {P : ℂ → ℝ} {S : Set ℝ} (hS : S.Countable)
+    (hgraph : ContinuousOn graph (Icc a b))
+    (hdgraph : ∀ t ∈ Ioo a b \ S, DifferentiableAt ℝ graph t)
+    (hP : ContinuousOn P (d.graph graph '' Icc a b)) :
     BoxIntegral.HasIntegral (BoxIntegral.intervalBox a b hab) BoxIntegral.IntegrationParams.Henstock
-      (fun x ↦ Q (horizontalGraph graph (θ (x 0))) * (deriv (horizontalGraph graph ∘ θ) (x 0)).im)
-      BoxIntegral.BoxAdditiveMap.volume (∫ t in θ a..θ b, Q (horizontalGraph graph t)) := by
-  have hc : ContinuousOn (Q ∘ horizontalGraph graph) (Icc c d) :=
-    hQ.comp (continuousOn_horizontalGraph hgraph) (mapsTo_image _ _)
-  have hdγ : ∀ t ∈ Ioo a b \ s, θ t ∉ S ∪ {c, d} →
-      DifferentiableAt ℝ (horizontalGraph graph ∘ θ) t := by
-    intro t ht havoid
-    have hm := hmap (Ioo_subset_Icc_self ht.1)
-    have htc : θ t ≠ c := fun h ↦ havoid (Or.inr (by simp [h]))
-    have htd : θ t ≠ d := fun h ↦ havoid (Or.inr (by simp [h]))
-    have htθ : θ t ∈ Ioo c d \ S :=
-      ⟨⟨lt_of_le_of_ne hm.1 htc.symm, lt_of_le_of_ne hm.2 htd⟩,
-        fun h ↦ havoid (Or.inl h)⟩
-    exact ((hasDerivAt_horizontalGraph (hdgraph (θ t) htθ).hasDerivAt).scomp t
-      (hdθ t ht)).differentiableAt
-  have hcoord : Complex.imCLM ∘ (horizontalGraph graph ∘ θ) = θ := by
-    ext t
-    simp only [Function.comp_apply, Complex.imCLM_apply, horizontalGraph_im]
-  have he := ae_deriv_projection Complex.imCLM hcoord hs
-    (hS.union (Set.toFinite ({c, d} : Set ℝ)).countable) hdθ hdγ
-  have h := BoxIntegral.hasIntegral_Henstock_substitution hab hs hθ hdθ hc hmap
-  apply h.congr_ae ?_ rfl
-  apply BoxIntegral.ae_eq_intervalBox hab
-    (f := fun t ↦ θ' t * Q (horizontalGraph graph (θ t)))
-    (g := fun t ↦ Q (horizontalGraph graph (θ t)) * (deriv (horizontalGraph graph ∘ θ) t).im)
-  filter_upwards [he] with t ht
-  simp only [Complex.imCLM_apply] at ht
-  rw [ht, mul_comm]
+      (fun x ↦ P (d.graph graph (x 0)) * d.proj (deriv (d.graph graph) (x 0)))
+      BoxIntegral.BoxAdditiveMap.volume (∫ t in a..b, P (d.graph graph t)) := by
+  simpa only [Function.comp_id, id_eq] using
+    hasIntegral_graph_reparam d hab countable_empty hS hgraph hdgraph hP
+      (θ := id) (θ' := fun _ ↦ 1) continuousOn_id (fun t _ ↦ hasDerivAt_id t)
+      (fun _ ht ↦ ht)
+
+/-- A raw curve with constant projection contributes zero to that coordinate one-form.
+No regularity of its other coordinate or of the field is needed. -/
+theorem hasIntegral_of_projection_constant (L : ℂ →L[ℝ] ℝ) {a b c : ℝ} (hab : a < b)
+    {γ : ℝ → ℂ} (hγ : ∀ t, L (γ t) = c) (P : ℂ → ℝ) :
+    BoxIntegral.HasIntegral (BoxIntegral.intervalBox a b hab) BoxIntegral.IntegrationParams.Henstock
+      (fun t ↦ P (γ (t 0)) * L (deriv γ (t 0))) BoxIntegral.BoxAdditiveMap.volume 0 := by
+  have hc : L ∘ γ = fun _ ↦ c := funext hγ
+  have hd (t : ℝ) : L (deriv γ t) = 0 := by
+    by_cases h : DifferentiableAt ℝ γ t
+    · have hp := L.hasFDerivAt.comp_hasDerivAt t h.hasDerivAt
+      rw [hc] at hp
+      exact hp.unique (hasDerivAt_const t c)
+    · rw [deriv_zero_of_not_differentiableAt h, map_zero]
+  simpa only [hd, mul_zero] using
+    (BoxIntegral.hasIntegral_zero (I := BoxIntegral.intervalBox a b hab)
+      (l := BoxIntegral.IntegrationParams.Henstock) (vol := BoxIntegral.BoxAdditiveMap.volume))
 
 end TauCeti.Green
