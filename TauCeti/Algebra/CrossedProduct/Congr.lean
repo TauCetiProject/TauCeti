@@ -5,15 +5,15 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.CrossedProduct.BrauerClass
+public import TauCeti.Algebra.CrossedProduct.Basic
 
 /-!
 # Transport of crossed products along an algebra equivalence
 
 An equivalence `e : L ≃ₐ[K] M` identifies the automorphism groups by conjugation. If cocycles
 `c` and `d` correspond under this identification and the induced map on units, their crossed
-products are isomorphic by `x • u_σ ↦ e(x) • u_{e σ e⁻¹}`. This also identifies their Brauer
-classes when the coefficient fields are finite Galois over `K`.
+products are isomorphic by `x • u_σ ↦ e(x) • u_{e σ e⁻¹}`. The corresponding equality of Brauer
+classes over finite Galois fields is in `TauCeti.Algebra.CrossedProduct.BrauerClass`.
 
 In particular, this transports a crossed-product presentation to an isomorphic splitting field.
 The coefficient and basis formulas retain the specified field equivalence, rather than merely
@@ -111,23 +111,13 @@ theorem congr_inc (x : L) : congr c d e hc (inc c x) = inc d (e x) := by
 @[simp]
 theorem repr_congr (a : CrossedProduct c) (σ : M ≃ₐ[K] M) :
     (basis d).repr (congr c d e hc a) σ = e ((basis c).repr a (e.autCongr.symm σ)) := by
-  simp [coe_congr, congrLinearEquiv, -AlgEquiv.autCongr_apply]
+  calc
+    _ = (basis d).repr ((basis d).repr.symm
+        (Finsupp.lcongr e.autCongr.toEquiv e.toLinearEquiv ((basis c).repr a))) σ := by
+      rw [coe_congr, congrLinearEquiv, LinearEquiv.trans_apply, LinearEquiv.trans_apply,
+        LinearEquiv.restrictScalars_apply, LinearEquiv.restrictScalars_apply]
+    _ = Finsupp.lcongr e.autCongr.toEquiv e.toLinearEquiv ((basis c).repr a) σ :=
+      congrArg (fun f => f σ) ((basis d).repr.apply_symm_apply _)
+    _ = _ := Finsupp.lcongr_apply_apply _ _ _ _
 
 end TauCeti.CrossedProduct
-
-namespace TauCeti.BrauerGroup
-
-variable {K : Type u} [Field K] {L M : Type v} [Field L] [Field M] [Algebra K L] [Algebra K M]
-  [FiniteDimensional K L] [FiniteDimensional K M] [IsGalois K L] [IsGalois K M]
-
-/-- Corresponding cocycles over isomorphic finite Galois extensions have the same Brauer class.
-This permits a crossed-product presentation to be read in an isomorphic splitting field. -/
-theorem crossedProductClass_eq_of_algEquiv (c : TwoCocycle K L) (d : TwoCocycle K M)
-    (e : L ≃ₐ[K] M)
-    (hc : ∀ σ τ, Units.map e.toMonoidHom (c.toFun σ τ) =
-      d.toFun (e.autCongr σ) (e.autCongr τ)) :
-    crossedProductClass c = crossedProductClass d := by
-  rw [crossedProductClass_def, crossedProductClass_def]
-  exact mk_eq_mk_of_algEquiv (CrossedProduct.congr c d e hc)
-
-end TauCeti.BrauerGroup
