@@ -8,7 +8,6 @@ module
 public import TauCeti.Algebra.Homology.Monoidal.Homology.Kunneth.Sequence
 public import TauCeti.Algebra.Homology.PrincipalIdealRing
 public import TauCeti.AlgebraicTopology.Singular.Cubical.Comparison.CrossProduct
-public import TauCeti.AlgebraicTopology.Singular.EilenbergZilber
 public import TauCeti.AlgebraicTopology.Singular.Kunneth.Basic
 
 /-!
@@ -53,28 +52,10 @@ namespace TauCeti
 
 variable (k : Type u) [CommRing k]
 
-/-- **The simplicial cross product is a quasi-isomorphism**: the shuffle map is a homotopy
-equivalence (Eilenberg–Zilber), and the coefficient change along the unitor is an isomorphism. -/
-instance quasiIso_singularCrossProduct (X Y : TopCat.{u}) :
-    QuasiIso (singularCrossProduct k X Y) := by
-  have h1 : QuasiIso (TopCat.shuffle X Y (𝟙_ (ModuleCat.{u} k)) (𝟙_ (ModuleCat.{u} k))) := by
-    have := (TopCat.eilenbergZilberHomotopyEquiv (C := ModuleCat.{u} k) X Y
-      (𝟙_ (ModuleCat.{u} k)) (𝟙_ (ModuleCat.{u} k))).quasiIso_inv
-    simpa [TopCat.eilenbergZilberHomotopyEquiv_inv] using this
-  have h2 : IsIso (((AlgebraicTopology.singularChainComplexFunctor (ModuleCat.{u} k)).map
-      (λ_ (𝟙_ (ModuleCat.{u} k))).hom).app (X ⊗ Y)) := inferInstance
-  rw [singularCrossProduct_def]
-  have h3 : QuasiIso (((AlgebraicTopology.singularChainComplexFunctor
-      (ModuleCat.{u} k)).map (λ_ (𝟙_ (ModuleCat.{u} k))).hom).app (X ⊗ Y)) :=
-    quasiIso_of_isIso _
-  exact (quasiIso_iff_comp_left
-    (TopCat.shuffle X Y (𝟙_ (ModuleCat.{u} k)) (𝟙_ (ModuleCat.{u} k))) _).2 h3
-
 /-- The tensor product of the two comparison maps is a quasi-isomorphism: they are homotopy
 equivalences, and the tensor product preserves homotopy equivalences. -/
 instance quasiIso_tensorHom_cubicalToSingular (X Y : TopCat.{u}) :
-    QuasiIso (HomologicalComplex.tensorHom ((cubicalToSingular k).app X)
-      ((cubicalToSingular k).app Y)) := by
+    QuasiIso ((cubicalToSingular k).app X ⊗ₘ (cubicalToSingular k).app Y) := by
   have hX : (cubicalSingularHomotopyEquiv k X).symm.hom = (cubicalToSingular k).app X :=
     cubicalSingularHomotopyEquiv_inv k X
   have hY : (cubicalSingularHomotopyEquiv k Y).symm.hom = (cubicalToSingular k).app Y :=
@@ -87,6 +68,7 @@ instance quasiIso_tensorHom_cubicalToSingular (X Y : TopCat.{u}) :
       (ComplexShape.down ℕ) (cubicalSingularHomotopyEquiv k X).symm
       (cubicalSingularHomotopyEquiv k Y).symm).hom := inferInstance
   rw [e] at this
+  -- `⊗ₘ` of chain complexes is `mapBifunctorMap` by definition
   exact this
 
 /-- The cubical cross product followed by the comparison map is a quasi-isomorphism: it is
@@ -185,10 +167,12 @@ theorem tensorHom_comp_homologyKunneth_comp_homologyMap_singularCrossProduct (n 
       homologyKunneth ((singularChains k).obj X) ((singularChains k).obj Y) n ≫
         homologyMap (singularCrossProduct k X Y) n =
       cubicalHomologyKunneth k X Y n ≫ homologyMap ((cubicalToSingular k).app (X ⊗ Y)) n := by
-  rw [← Category.assoc, homologyKunneth_naturality, Category.assoc, ← homologyMap_comp,
+  -- `⊗ₘ` of chain complexes is `HomologicalComplex.tensorHom` by definition
+  erw [← Category.assoc, homologyKunneth_naturality, Category.assoc, ← homologyMap_comp,
     cubicalHomologyKunneth_def, Category.assoc, ← homologyMap_comp,
     ← cubicalCrossProductToSingularApp_def, homologyMap_cubicalCrossProductToSingular,
     singularCrossProductOfCubicalApp_def]
+  rfl
 
 /-- The same statement for the Künneth map of singular homology with coefficients in the ring
 (`TopCat.singularHomologyKunneth`, followed by the unitor `k ⊗ k ≅ k`). -/

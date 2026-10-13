@@ -293,11 +293,13 @@ theorem cubicalTensorModelPresentation_model (n : ℕ) (i : BidegreeIndex n) :
 
 /-- The generators of `cubicalTensorModelPresentation` are the tensor products of the identity
 cubes. -/
+@[simp]
 theorem cubicalTensorModelPresentation_gen (n : ℕ) (i : BidegreeIndex n) :
     (cubicalTensorModelPresentation.{u} k).gen n i = cubicalTensorGen k n i :=
   (rfl)
 
 /-- The coefficients of `cubicalTensorModelPresentation` are `cubicalTensorCoord`. -/
+@[simp]
 theorem cubicalTensorModelPresentation_coord (X : TopCat.{u} × TopCat.{u}) (n : ℕ) :
     (cubicalTensorModelPresentation.{u} k).coord X n = cubicalTensorCoord k X n :=
   (rfl)

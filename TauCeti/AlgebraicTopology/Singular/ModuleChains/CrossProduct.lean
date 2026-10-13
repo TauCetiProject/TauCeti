@@ -5,8 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Category.ModuleCat.Abelian
+public import Mathlib.Algebra.Homology.QuasiIso
+public import Mathlib.Algebra.Homology.ShortComplex.Abelian
 public import TauCeti.AlgebraicTopology.Singular.ModuleChains.Basic
-public import TauCeti.AlgebraicTopology.Singular.Shuffle
+public import TauCeti.AlgebraicTopology.Singular.EilenbergZilber
 
 /-!
 # The simplicial cross product of singular chains with coefficients in a ring
@@ -22,6 +25,8 @@ the coefficient change along the unitor `k ⊗ k ≅ k` gives the **simplicial c
 * `TauCeti.singularCrossProduct_naturality`: its naturality in both spaces.
 * `TauCeti.singularAugment_singularCrossProduct`: the augmentation of the cross product of the
   chains of two points with coefficients `a` and `b` is `a * b`.
+* `TauCeti.quasiIso_singularCrossProduct`: the simplicial cross product is a quasi-isomorphism
+  (Eilenberg–Zilber).
 
 ## References
 
@@ -101,6 +106,21 @@ theorem singularAugment_singularCrossProduct (X Y : TopCat.{u})
       (e2.trans (congrArg _ e3))
   rw [e4]
   exact singularAugment_simplexChain _ _ _
+
+/-- **The simplicial cross product is a quasi-isomorphism**: the shuffle map is a homotopy
+equivalence (Eilenberg–Zilber), and the coefficient change along the unitor is an isomorphism. -/
+instance quasiIso_singularCrossProduct (X Y : TopCat.{u}) :
+    QuasiIso (singularCrossProduct k X Y) := by
+  have h1 : QuasiIso (TopCat.shuffle X Y (𝟙_ (ModuleCat.{u} k)) (𝟙_ (ModuleCat.{u} k))) := by
+    have := (TopCat.eilenbergZilberHomotopyEquiv (C := ModuleCat.{u} k) X Y
+      (𝟙_ (ModuleCat.{u} k)) (𝟙_ (ModuleCat.{u} k))).quasiIso_inv
+    simpa [TopCat.eilenbergZilberHomotopyEquiv_inv] using this
+  rw [singularCrossProduct_def]
+  have h3 : QuasiIso (((AlgebraicTopology.singularChainComplexFunctor
+      (ModuleCat.{u} k)).map (λ_ (𝟙_ (ModuleCat.{u} k))).hom).app (X ⊗ Y)) :=
+    quasiIso_of_isIso _
+  exact (quasiIso_iff_comp_left
+    (TopCat.shuffle X Y (𝟙_ (ModuleCat.{u} k)) (𝟙_ (ModuleCat.{u} k))) _).2 h3
 
 end TauCeti
 
