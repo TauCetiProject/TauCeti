@@ -147,7 +147,7 @@ field. -/
 @[simp]
 theorem isUnramified_equivOfRingEquiv_iff (e : L ≃ₐ[F] L') (Q : Place k L) :
     IsUnramified k F (equivOfRingEquiv (RingEquiv.refl k) e.toRingEquiv
-      (algebraMap_algEquiv_compat e) Q) ↔ IsUnramified k F Q := by
+      e.toRingEquiv_algebraMap_of_isScalarTower Q) ↔ IsUnramified k F Q := by
   rw [isUnramified_iff, isUnramified_iff, ramificationIdx_equivOfRingEquiv,
     isSeparable_residueField_equivOfRingEquiv_iff]
 
@@ -156,7 +156,8 @@ to isomorphism over `F`. -/
 theorem forall_isUnramified_iff_of_algEquiv (P : Place k F) (e : L ≃ₐ[F] L') :
     (∀ Q : Place k L, Q.restrict k F = P → IsUnramified k F Q) ↔
       ∀ Q : Place k L', Q.restrict k F = P → IsUnramified k F Q := by
-  let t := equivOfRingEquiv (RingEquiv.refl k) e.toRingEquiv (algebraMap_algEquiv_compat e)
+  let t :=
+    equivOfRingEquiv (RingEquiv.refl k) e.toRingEquiv e.toRingEquiv_algebraMap_of_isScalarTower
   rw [← t.forall_congr_right]
   simp only [t, restrict_equivOfRingEquiv, isUnramified_equivOfRingEquiv_iff]
 
