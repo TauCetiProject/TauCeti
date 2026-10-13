@@ -28,12 +28,10 @@ The two labelling schemes differ on the conductor `11` isogeny class: the equati
 `y² + y = x³ - x² - 10 x - 20` is Cremona's 11a1 and the LMFDB's 11.a2, in agreement with
 `TauCeti.WorkedExamples.curve11a2`.
 
-For each curve the certificate is the same. Its discriminant and `c₄` are coprime, so the equation
-is minimal at every prime (`WeierstrassCurve.isGlobalMinimal_baseChange_of_isCoprime`), and its
-coefficients are already normalised. It is therefore its own reduced minimal model, it is the
+For each curve, the results below make the label name an equation: the displayed equation is the
 reduced minimal model of every equation isomorphic to it, and no other reduced minimal equation is
-isomorphic to it, by the generic reduced-minimal API. Being globally minimal, it also computes the
-minimal discriminant ideal of the curve, which is an invariant of the isomorphism class.
+isomorphic to it. They also compute the minimal discriminant ideal of each curve, an invariant of
+its isomorphism class.
 
 ## Main results
 
@@ -64,9 +62,10 @@ namespace TauCeti.WorkedExamples
 
 /-! ### The curve 11.a2 (Cremona 11a1) -/
 
-/-- **`y² + y = x³ - x² - 10 x - 20` is a reduced minimal equation.** Its discriminant `-11⁵` and
-its `c₄ = 496` are coprime, so it is minimal at every prime, and its coefficients are
-normalised. -/
+-- The discriminant `-11⁵` and `c₄ = 496` are coprime, so the equation is minimal at every prime
+-- (`isGlobalMinimal_baseChange_of_isCoprime`), and its coefficients are already normalised.
+/-- **`y² + y = x³ - x² - 10 x - 20` is a reduced minimal equation**: it is the canonical
+reduced-minimal representative of 11.a2. -/
 theorem isReducedMinimal_curve11a2 : IsReducedMinimal (curve11a2.baseChange ℚ) := by
   refine isReducedMinimal_iff.2
     ⟨isGlobalMinimal_baseChange_of_isCoprime (O := ℤ) curve11a2 ?_, by simp [baseChange]⟩
@@ -99,8 +98,10 @@ theorem minimalDiscriminantIdeal_curve11a2 :
 
 /-! ### The curve 37.a1 -/
 
-/-- **`y² + y = x³ - x` is a reduced minimal equation.** Its discriminant `37` and its `c₄ = 48`
-are coprime, so it is minimal at every prime, and its coefficients are normalised. -/
+-- The discriminant `37` and `c₄ = 48` are coprime, so the equation is minimal at every prime
+-- (`isGlobalMinimal_baseChange_of_isCoprime`), and its coefficients are already normalised.
+/-- **`y² + y = x³ - x` is a reduced minimal equation**: it is the canonical reduced-minimal
+representative of 37.a1. -/
 theorem isReducedMinimal_curve37a1 : IsReducedMinimal (curve37a1.baseChange ℚ) := by
   refine isReducedMinimal_iff.2
     ⟨isGlobalMinimal_baseChange_of_isCoprime (O := ℤ) curve37a1 ?_, by simp [baseChange]⟩
