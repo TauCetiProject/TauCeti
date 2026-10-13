@@ -49,15 +49,6 @@ namespace TopPair
 variable {A : Type u} [Category.{v} A] [HasCoproducts.{w} A] [Abelian A] (R : A)
   {S Y : TopCat.{w}} [T1Space S] {a : S ⟶ S} {p : S} {U : Set S}
 
-/-- Two maps of pairs induced by continuous maps compose to the map induced by any continuous map
-equal to their composite. -/
-private lemma ofSubsetMap_comp_ofSubsetMap_of_comp_eq {X Y Z : TopCat.{w}} {B : Set X}
-    {B' : Set Y} {B'' : Set Z} {g : X ⟶ Y} {g' : Y ⟶ Z} {g'' : X ⟶ Z}
-    (hB : Set.MapsTo g B B') (hB' : Set.MapsTo g' B' B'') (h : Set.MapsTo g'' B B'')
-    (hg : g ≫ g' = g'') : ofSubsetMap g hB ≫ ofSubsetMap g' hB' = ofSubsetMap g'' h := by
-  subst hg
-  exact (ofSubsetMap_comp _ _ _ _ _).symm
-
 /-- The inclusion `(U, U ∖ {p}) ⟶ (S, S ∖ {p, a p})` for a set `U` not containing `a p`. -/
 private def interPairToComplPair (hapU : a p ∉ U) :
     interPair U {p}ᶜ ⟶ ofSubset ({p}ᶜ ∩ {a p}ᶜ : Set S) :=
