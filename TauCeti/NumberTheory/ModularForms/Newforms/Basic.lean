@@ -20,7 +20,7 @@ A cusp form of level `M` produces cusp forms of level `N` for every multiple `N`
 The properness condition is imposed as `M ≠ N`, which discards exactly one pair: `d * M ∣ N`
 already forces `d = 1` when `M = N`, so the only excluded operator is the identity `V₁` at the
 level itself. Every other pair contributes, including `M ∣ N` proper with `d = 1`, the plain
-restriction of a lower-level form (`ofLe_mem_cuspFormsOld`).
+restriction of a lower-level form (`restrict_mem_cuspFormsOld`).
 
 The old subspace is stable under the diamond operators, because `V_d` intertwines them:
 `⟨u⟩` at level `N` acts on `V_d f` as `⟨u mod M⟩` acts on `f`
@@ -136,9 +136,9 @@ theorem cuspFormsOld_le [NeZero N] {V : Submodule ℂ (CuspForm ((Gamma1 N).map 
 
 /-- The restriction to level `N` of a cusp form of proper divisor level `M` is old: it is the
 level-raise `V₁`. -/
-theorem ofLe_mem_cuspFormsOld [NeZero N] (h : M ∣ N) (hM : M ≠ N) (k : ℤ)
+theorem restrict_mem_cuspFormsOld [NeZero N] (h : M ∣ N) (hM : M ≠ N) (k : ℤ)
     (f : CuspForm ((Gamma1 M).map (mapGL ℝ)) k) :
-    _root_.CuspForm.ofLe (Gamma1_map_le_Gamma1_map_of_dvd h) f ∈
+    _root_.CuspForm.restrict (Gamma1_map_le_Gamma1_map_of_dvd h) f ∈
       cuspFormsOld N k := by
   have h1 : 1 * M ∣ N := by rwa [one_mul]
   have := levelRaise_mem_cuspFormsOld h1 hM k f

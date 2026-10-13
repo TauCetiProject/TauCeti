@@ -169,7 +169,7 @@ theorem diamondOp_mem_congruenceEisensteinSubspace (hk : 3 ≤ k) (d : (ZMod N)�
     diamondOp k d f ∈ congruenceEisensteinSubspace (Gamma_le_Gamma1 N) hk := by
   obtain ⟨g, hg⟩ := Gamma0Map_toHomUnits_surjective (N := N) d
   let T : Module.End ℂ (ModularForm ((Gamma N).map (mapGL ℝ)) k) :=
-    (ModularForm.ofLeₗ (Gamma_map_inv_conjAct_eq N (g : SL(2, ℤ))).ge).comp
+    (ModularForm.restrictₗ _ ℂ (Gamma_map_inv_conjAct_eq N (g : SL(2, ℤ))).ge).comp
       (ModularForm.translateₗ (mapGL ℝ (g : SL(2, ℤ))) (by simp))
   have hle : primitiveEisensteinSubspace N hk ≤ (primitiveEisensteinSubspace N hk).comap T := by
     apply primitiveEisensteinSubspace_le hk
@@ -178,10 +178,10 @@ theorem diamondOp_mem_congruenceEisensteinSubspace (hk : 3 ≤ k) (d : (ZMod N)�
     dsimp only [T]
     rw [translateₗ_eisensteinSeriesMF]
     exact mem_primitiveEisensteinSubspace hk _
-  have hrestriction : ModularForm.ofLe (Subgroup.map_mono (Gamma_le_Gamma1 N))
-      (diamondOp k d f) = T (ModularForm.ofLe (Subgroup.map_mono (Gamma_le_Gamma1 N)) f) := by
+  have hrestriction : ModularForm.restrict (Subgroup.map_mono (Gamma_le_Gamma1 N))
+      (diamondOp k d f) = T (ModularForm.restrict (Subgroup.map_mono (Gamma_le_Gamma1 N)) f) := by
     apply DFunLike.coe_injective
-    simp only [T, LinearMap.comp_apply, ModularForm.ofLeₗ_apply, ModularForm.coe_ofLe,
+    simp only [T, LinearMap.comp_apply, ModularForm.restrictₗ_apply, ModularForm.coe_restrict,
       ModularForm.translateₗ_apply, ModularForm.coe_translate]
     exact coe_diamondOp k d g hg f
   rw [mem_congruenceEisensteinSubspace_iff, hrestriction]
