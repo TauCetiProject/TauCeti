@@ -67,6 +67,8 @@ plan with `PMF` marginals is `TauCeti.TransportMatrix`.
 
 * `Matrix.isCompact_setOf_nonneg_hasMarginals`: the nonnegative matrices with row sums `a` and
   column sums `b` form a compact set.
+* `Matrix.hasMarginals_mul_mul_inv`: the product coupling `a i * (b j * (∑ k, a k)⁻¹)` has row
+  sums `a` and column sums `b` when these have the same nonzero total mass.
 * `Matrix.exists_relEntropy_minOn`: a minimiser of `Matrix.relEntropy` against `K` among the
   nonnegative matrices with row sums `a` and column sums `b` exists, as soon as there is one such
   matrix.
@@ -296,7 +298,7 @@ theorem exists_relEntropy_minOn (K : Matrix ι κ ℝ) (a : ι → ℝ) (b : κ 
 
 /-- For row sums `a` and column sums `b` of the same nonzero total mass `A = ∑ i, a i`, the product
 coupling `a i * (b j * A⁻¹)` has row sums `a` and column sums `b`. -/
-private theorem hasMarginals_mul_mul_inv {a : ι → ℝ} {b : κ → ℝ} (hmass : (∑ i, a i) = ∑ j, b j)
+theorem hasMarginals_mul_mul_inv {a : ι → ℝ} {b : κ → ℝ} (hmass : (∑ i, a i) = ∑ j, b j)
     (hA : (∑ i, a i) ≠ 0) : HasMarginals (fun i j => a i * (b j * (∑ k, a k)⁻¹)) a b := by
   constructor
   · intro i
