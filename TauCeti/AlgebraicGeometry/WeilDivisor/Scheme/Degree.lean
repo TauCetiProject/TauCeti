@@ -15,9 +15,8 @@ This file specializes `WeilDivisor.weightedDegree` to the residue-degree weights
 scheme morphism. For a curve over a field, applied to its structure morphism, this is the divisor
 degree `Σ_x [κ(x) : k] · ord_x`.
 
-The composition formula records how these weights change through successive scheme morphisms.
-This supplies the residue-field-weighted divisor degree required in Layer A of the Jacobian
-challenge roadmap.
+The composition formula records how these weights change through successive scheme morphisms. This
+supplies the residue-field-weighted divisor degree.
 -/
 
 public section

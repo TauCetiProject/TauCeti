@@ -30,10 +30,8 @@ available without introducing a parallel quotient construction. The homology in 
 
 ## References
 
-This advances `TauCetiRoadmap/CombinatorialHeegaardFloer/README.md`, Lane L, which asks for
-Némethi's lattice homology `ℍ⁻` as a graded `ℤ[U]`-module built from lattice points and weight
-functions. This is the roadmap's characteristic-two first stage. The cubical chain complex is
-the complex of A. Némethi, [arXiv:0709.0841](https://arxiv.org/abs/0709.0841), Section 3.
+The cubical chain complex is the complex of A. Némethi,
+[arXiv:0709.0841](https://arxiv.org/abs/0709.0841), Section 3.
 -/
 
 public section

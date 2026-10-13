@@ -29,9 +29,9 @@ that is, `α^∨` is the weight `2α / ⟨α, α⟩` (`TauCeti.invForm_coroot`).
 That normalisation is what makes the form usable. The Cartan integers of
 `LieAlgebra.IsKilling.rootSystem` are the numbers `λ(α^∨)`, whereas the Casimir scalar and the Weyl
 character and dimension formulas are written with `⟨·,·⟩`; the identity above is the dictionary
-between the two, and it is what makes an expression such as `⟨λ + ρ, λ + ρ⟩ - ⟨ρ, ρ⟩` agree with
-the coroot pairings. So the form has to be pinned, with this normalisation proved, before any of
-that can be stated.
+between the two, and it is what makes an expression such as `⟨λ + ρ, λ + ρ⟩ - ⟨ρ, ρ⟩` agree with the
+coroot pairings. So the form has to be fixed, with this normalisation proved, before any of that can
+be stated.
 
 ## Main definitions
 
@@ -94,13 +94,7 @@ takes an arbitrary weight.
 
 ## References
 
-This file builds the invariant form on weights of Layer 5 of
-`TauCetiRoadmap/RepresentationTheory/LieHighestWeight/README.md` ("the induced symmetric bilinear
-form on `Module.Dual K H`, transported from the Killing form on `H` via `cartanEquivDual`", with
-"its normalization against coroots, `⟨λ, α^∨⟩ ⟨α, α⟩ = 2 ⟨λ, α⟩`" and "its compatibility with
-`rootSystem_pairing_apply` and `IsKilling.coroot`"), the prerequisite that roadmap asks for before
-the Casimir element. The material is J. E. Humphreys, *Introduction to Lie Algebras and
-Representation Theory*, GTM 9, §8.2-8.5.
+* J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*, GTM 9, §8.2-8.5.
 -/
 
 public section

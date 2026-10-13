@@ -33,14 +33,12 @@ invertible fractional ideal `I` to the ideal class of `I`, and its inverse sends
 of `I` back to the divisor class of the divisor of `I`; in particular the class of the point
 divisor `[v]` of a height-one prime `v` is the ideal class of `v`.
 
-This is the affine, scheme-free form of the Jacobian roadmap's `Cl(X) ≅ Pic X` dictionary
-(`TauCetiRoadmap/JacobianChallenge/README.md`, Layer A, "the dictionaries `Cartier ≃ line
-bundles` ... `Cl(X) ≅ Pic X`"), realized for the Dedekind model before the global Picard scheme
-exists. It reuses Tau Ceti's `fractionalIdealDivisorAddEquiv` and `OrderSystem.ofDedekindDomain`
-API, the class `IsDedekindDomain.HeightOneSpectrum.classGroupMk v` of a height one prime from
-`TauCeti.RingTheory.ClassGroup.Basic`, and Mathlib's
-`ClassGroup R`, `ClassGroup.equiv` (independence of the fraction field) and
-`QuotientAddGroup.congr`; no external mathematics is vendored.
+This is the affine, scheme-free form of the dictionary `Cl(X) ≅ Pic X`, for the Dedekind model. It
+reuses Tau Ceti's `fractionalIdealDivisorAddEquiv` and `OrderSystem.ofDedekindDomain` API, the class
+`IsDedekindDomain.HeightOneSpectrum.classGroupMk v` of a height one prime from
+`TauCeti.RingTheory.ClassGroup.Basic`, and Mathlib's `ClassGroup R`, `ClassGroup.equiv`
+(independence of the fraction field) and `QuotientAddGroup.congr`; no external mathematics is
+vendored.
 -/
 
 public section
@@ -77,9 +75,9 @@ For a Dedekind domain `R` with fraction field `K`, the Weil-divisor divisor clas
 `(OrderSystem.ofDedekindDomain R K).ClassGroup` of the height-one spectrum is isomorphic to the
 ideal class group `ClassGroup R`, via the isomorphism `fractionalIdealDivisorAddEquiv R K` of
 invertible fractional ideals with Weil divisors descended to the quotient by principal
-divisors/ideals. This is the affine `Cl(X) ≅ Pic X` of the Jacobian roadmap. See
-`classGroupAddEquiv_divisorClass_fractionalIdealDivisor` and
-`classGroupAddEquiv_symm_ofMul_mk` for the characterizing formulas. -/
+divisors/ideals. This is the affine form of `Cl(X) ≅ Pic X`. See
+`classGroupAddEquiv_divisorClass_fractionalIdealDivisor` and `classGroupAddEquiv_symm_ofMul_mk` for
+the characterizing formulas. -/
 noncomputable def classGroupAddEquiv :
     (OrderSystem.ofDedekindDomain R K).ClassGroup ≃+ Additive (ClassGroup R) :=
   (QuotientAddGroup.congr _ _ (fractionalIdealDivisorAddEquiv R K)

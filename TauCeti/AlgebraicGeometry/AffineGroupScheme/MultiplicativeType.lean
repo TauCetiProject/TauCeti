@@ -34,9 +34,8 @@ category.
 * J. S. Milne, *Algebraic Groups* (2017), Definition 12.14 and Theorem 12.23.
 * W. C. Waterhouse, *Introduction to Affine Group Schemes*, Chapter 2.
 
-This supplies the scheme-side model required by Layer 4, "Diagonalizable groups and groups of
-multiplicative type", of the ReductiveGroups roadmap. The construction follows the transport
-pattern of `TauCeti.AlgebraicGeometry.AffineGroupScheme.Torus`.
+The construction follows the transport pattern of
+`TauCeti.AlgebraicGeometry.AffineGroupScheme.Torus`.
 -/
 
 public section

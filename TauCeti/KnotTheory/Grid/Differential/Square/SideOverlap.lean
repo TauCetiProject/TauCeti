@@ -17,11 +17,11 @@ This file makes that split exact: the pairs are disjoint, have one common column
 The last case occurs exactly when the two rectangle moves return to the source state.
 
 The finite set `GridRectangleDecomposition.commonSideColumns` is the intersection of the two
-two-element side sets. Its cardinality is therefore at most two. Cardinality zero is the existing
-predicate `HasDisjointSides`; cardinality one is named `HasOneCommonSide`; and cardinality two is
-equivalent to equality of the source and target states. Consequently a nondiagonal coefficient
-of the differential square has precisely the two geometric cases used by the later pairing:
-disjoint rectangles or rectangles sharing exactly one side column.
+two-element side sets. Its cardinality is therefore at most two. Cardinality zero is the predicate
+`HasDisjointSides`; cardinality one is named `HasOneCommonSide`; and cardinality two is equivalent
+to equality of the source and target states. Consequently a nondiagonal coefficient of the
+differential square has precisely the two geometric cases of the rectangle pairing: disjoint
+rectangles or rectangles sharing exactly one side column.
 
 ## Main definitions
 
@@ -59,10 +59,8 @@ disjoint rectangles or rectangles sharing exactly one side column.
 
 ## References
 
-This supplies the side-overlap case split for
-`TauCetiRoadmap/CombinatorialHeegaardFloer/README.md`, Lane G.3, "The complexes and `∂² = 0`".
-The split is the opening bookkeeping of the juxtaposition proof in
-Ozsváth--Stipsicz--Szabó, *Grid Homology for Knots and Links*, Chapter 4.6.
+The split is the opening bookkeeping of the juxtaposition proof in Ozsváth--Stipsicz--Szabó, *Grid
+Homology for Knots and Links*, Chapter 4.6.
 -/
 
 public section

@@ -25,10 +25,9 @@ on their antipode images. Faithfulness says that these two coefficient algebras 
 coordinate Hopf algebra; hence the semisimple part is the identity, which characterizes a
 unipotent point.
 
-This is the bridge needed by Layer 5, "Unipotent groups", of the ReductiveGroups roadmap: a point
-of a group given with a faithful representation can now be tested for unipotence in that one
-representation instead of in every representation. The upper-unitriangular embedding
-characterization is still to come.
+With this bridge, a point of a group given with a faithful representation can be tested for
+unipotence in that one representation instead of in every representation. The upper-unitriangular
+embedding characterization is in `TauCeti.Algebra.AlgebraicGroup.Unipotent.Embedding`.
 
 ## Main declaration
 

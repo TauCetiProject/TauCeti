@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Algebra.Category.GradedModuleCat.Abelian
 public import Mathlib.Algebra.Category.ModuleCat.Products
+public import TauCeti.CategoryTheory.Linear.Biproduct
+public import Mathlib.CategoryTheory.Preadditive.Biproducts
 
 /-!
 # Coproducts of internally graded modules
@@ -127,5 +129,27 @@ instance : PreservesColimit (Discrete.functor M) toModuleCat := by
   exact preservesColimit_of_preserves_colimit_cocone (coproductCofanIsColimit M)
     ((Cofan.isColimitMapCoconeEquiv _ _ _).symm
       (ModuleCat.coproductCoconeIsColimit fun j ↦ toModuleCat.obj (M j)))
+
+/-- A degreewise direct sum of projective graded modules is projective, with no finiteness
+assumption on the index type. -/
+instance projective_directSumObj [∀ j, Projective (M j)] : Projective (directSumObj M) := by
+  -- Mathlib's coproduct-projectivity instance indexes in the morphism universe.
+  let e : ULift.{v} J ≃ J := Equiv.ulift
+  let hc := (Cofan.isColimitEquivOfEquiv e (coproductCofan M)) (coproductCofanIsColimit M)
+  let : HasCoproduct (M ∘ e) := HasColimit.mk ⟨_, hc⟩
+  let (j : ULift.{v} J) : Projective ((M ∘ e) j) := inferInstanceAs (Projective (M (e j)))
+  exact Projective.of_iso ((colimit.isColimit _).coconePointUniqueUpToIso hc)
+    (inferInstanceAs (Projective (∐ (M ∘ e))))
+
+/-- The dimension of graded maps from a finite degreewise direct sum is the sum of the
+Hom dimensions of its summands. The Hom modules must be finite and free over `k`. -/
+theorem finrank_hom_directSumObj [Fintype J] [StrongRankCondition k]
+    (N : GradedModuleCat.{max w v} 𝒜)
+    [∀ j, Module.Free k (M j ⟶ N)] [∀ j, Module.Finite k (M j ⟶ N)] :
+    Module.finrank k (directSumObj M ⟶ N) = ∑ j, Module.finrank k (M j ⟶ N) := by
+  let _ := HasBiproduct.of_hasCoproduct M
+  let e := (coproductCofanIsColimit M).coconePointUniqueUpToIso (biproduct.isColimit M)
+  rw [(Linear.homCongr k e (Iso.refl N)).finrank_eq]
+  exact finrank_hom_biproduct k M N
 
 end TauCeti.GradedModuleCat
