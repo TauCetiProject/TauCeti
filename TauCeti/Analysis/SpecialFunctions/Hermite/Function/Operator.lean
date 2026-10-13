@@ -27,8 +27,6 @@ functions `TauCeti.hermiteSchwartzMap n`.
 * `TauCeti.hermiteOscillatorCLM` — the harmonic oscillator operator `H = N + (1/2) • id`.
 * `TauCeti.hermiteOscillatorCLM_apply_apply` — the differential action of `H`.
 * `TauCeti.hermiteOscillatorCLM_apply_hermiteSchwartzMap` — `H ψₙ = (n + 1/2) • ψₙ`.
-
-## Reference
 -/
 
 public section

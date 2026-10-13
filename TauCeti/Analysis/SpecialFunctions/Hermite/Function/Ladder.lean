@@ -29,8 +29,8 @@ Adding and subtracting them yields the annihilation/creation identities for the 
 * `TauCeti.mul_sub_deriv_hermiteFunction` — `x·ψₙ - ψₙ' = √(2(n+1))·ψ_{n+1}` (the creation
   identity, `a† ψₙ = √(n+1) ψ_{n+1}`).
 
-All four relations are stated purely pointwise, with no integration involved. Because they are
-pointwise, they pass to the ladder operators on `𝒮(ℝ)` / `L²(ℝ)` without re-proof.
+All four relations are stated purely pointwise, with no integration involved; the Schwartz-space
+ladder operators `TauCeti.hermiteAnnihilationCLM` and `TauCeti.hermiteCreationCLM` reuse them.
 
 The `n = 0` boundary is covered by the `√(n/2) = 0` coefficient, which annihilates the (Nat-clamped)
 `ψ_{n-1}` term, so the relations hold uniformly for all `n : ℕ`.
