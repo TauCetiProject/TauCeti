@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.PDE.Regularity.Hessian.Lp
 public import TauCeti.Analysis.PDE.Ellipticity.ConstantCoefficient
+import TauCeti.Analysis.Calculus.IteratedFDeriv.CompContinuousLinearEquiv
 import TauCeti.Analysis.PDE.Ellipticity.Basic
 import TauCeti.MeasureTheory.Function.Lp.Dilation
 
@@ -79,12 +80,8 @@ theorem eLpNorm_iteratedFDeriv_two_le_eLpNorm_sum_smul_fderiv_fderiv_of_laplacia
         (EuclideanSpace.single i 1) (EuclideanSpace.single j 1)) p volume := by
   set L : EuclideanSpace ℝ ι → G := fun x => ∑ i, ∑ j, A i j • fderiv ℝ (fderiv ℝ ⇑u) x
     (EuclideanSpace.single i 1) (EuclideanSpace.single j 1)
-  -- An upper bound on the quadratic form of `A`, needed only to produce the change of variables.
-  have hA' : ∀ ξ : EuclideanSpace ℝ ι, A.toQuadraticForm' ξ ≤ ‖matrixBilinearForm A‖ * ‖ξ‖ ^ 2 :=
-    fun ξ => by
-      rw [← matrixBilinearForm_self, sq, ← mul_assoc]
-      exact (Real.le_norm_self _).trans ((matrixBilinearForm A).le_opNorm₂ ξ ξ)
-  obtain ⟨e, he, -, hΔ⟩ := exists_continuousLinearEquiv_laplacian_comp_eq (F := G) hlam hA hA'
+  obtain ⟨e, he, -, hΔ⟩ := exists_continuousLinearEquiv_laplacian_comp_eq (F := G) hlam hA
+    (toQuadraticForm'_le_norm_matrixBilinearForm_mul_sq A)
   -- The Schwartz function `v = u ∘ e`.
   set v := SchwartzMap.compCLMOfContinuousLinearEquiv ℝ e u
   have hv : ⇑v = ⇑u ∘ e := SchwartzMap.compCLMOfContinuousLinearEquiv_apply ℝ e u
@@ -100,15 +97,9 @@ theorem eLpNorm_iteratedFDeriv_two_le_eLpNorm_sum_smul_fderiv_fderiv_of_laplacia
       (by rw [← mul_inv, Real.mul_self_sqrt hlam.le])
   have hpt : ∀ y, ‖(iteratedFDeriv ℝ 2 ⇑u ∘ e) y‖ ≤ lam⁻¹ * ‖iteratedFDeriv ℝ 2 ⇑v y‖ :=
     fun y => by
-      have hcomp : ⇑u = ⇑v ∘ e.symm := by
-        funext z
-        simp [hv]
-      have h := (e.symm : EuclideanSpace ℝ ι →L[ℝ] EuclideanSpace ℝ ι).iteratedFDeriv_comp_right
-        ((v.smooth ⊤).of_le (by simp)) (e y) (i := 2) le_rfl
-      rw [ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.symm_apply_apply] at h
-      rw [Function.comp_apply, hcomp, h]
-      refine (ContinuousMultilinearMap.norm_compContinuousLinearMap_le _ _).trans ?_
-      rw [Fin.prod_univ_two, mul_comm]
+      rw [Function.comp_apply, hv]
+      refine (e.norm_iteratedFDeriv_le_pow_mul_norm_iteratedFDeriv_comp_right _ y 2).trans ?_
+      rw [sq]
       exact mul_le_mul_of_nonneg_right hes2 (norm_nonneg _)
   -- Composing with `e` scales both `Lᵖ` norms by the same nonzero finite factor `c`.
   set c := ENNReal.ofReal |(LinearMap.det (e : EuclideanSpace ℝ ι →ₗ[ℝ] EuclideanSpace ℝ ι))⁻¹| ^
