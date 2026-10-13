@@ -16,8 +16,8 @@ public import Mathlib.Algebra.Module.BigOperators
 A matrix `A : Matrix κ ι R` acts on vectors `x : ι → M` with entries in an `R`-module `M` by
 `k ↦ ∑ i, A k i • x i`. When `M` is a topological additive monoid on which each scalar acts
 continuously, this is the continuous additive map `Matrix.smulVecHom A M : (ι → M) →ₜ+ (κ → M)`,
-and it is functorial in the matrix (`Matrix.smulVecHom_one`, `Matrix.smulVecHom_mul`). For a
-square matrix it is the action of `Matrix.Module.matrixModule`; for `M = R` it is `Matrix.mulVec`.
+and it is functorial in the matrix (`Matrix.smulVecHom_one`, `Matrix.smulVecHom_mul`). For `M = R`
+it is `Matrix.mulVec` (`Matrix.smulVecHom_self_apply`).
 
 The motivating case is `R = ℤ` and `M = AddCircle p`, where an integer matrix induces a map of
 tori `(ι → AddCircle p) → (κ → AddCircle p)`.
@@ -42,6 +42,13 @@ def smulVecHom : (ι → M) →ₜ+ (κ → M) where
 @[simp]
 theorem smulVecHom_apply (x : ι → M) (k : κ) : A.smulVecHom M x k = ∑ i, A k i • x i :=
   (rfl)
+
+/-- For `M = R`, the induced map is `Matrix.mulVec`. -/
+@[simp]
+theorem smulVecHom_self_apply [TopologicalSpace R] [ContinuousAdd R] [ContinuousConstSMul R R]
+    (x : ι → R) : A.smulVecHom R x = A *ᵥ x := by
+  ext k
+  simp [mulVec, dotProduct]
 
 /-- The identity matrix induces the identity map. -/
 @[simp]
