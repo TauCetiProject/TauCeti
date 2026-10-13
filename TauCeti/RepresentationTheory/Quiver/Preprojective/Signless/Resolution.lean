@@ -150,6 +150,7 @@ noncomputable def signlessPreprojectiveVertexAugmentation (v : R) :
   (LinearMap.range (signlessPreprojectiveKoszulRight k v)).mkQ
 
 /-- The vertex augmentation is the quotient-class map. -/
+@[simp]
 theorem signlessPreprojectiveVertexAugmentation_apply (v : R)
     (x : signlessPreprojectiveRightProjective k v) :
     signlessPreprojectiveVertexAugmentation k v x = Submodule.Quotient.mk x := (rfl)
