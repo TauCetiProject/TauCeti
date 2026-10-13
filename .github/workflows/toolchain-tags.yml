@@ -28,6 +28,10 @@ on:
   push:
     branches: [main]
     paths: [lean-toolchain]
+  # Default-branch definition: the cursor can still point at a historical commit
+  # that predates this workflow. The trusted updater dispatches after advancement.
+  repository_dispatch:
+    types: [security-audit-advanced]
   workflow_dispatch:
     inputs:
       wait:
@@ -79,7 +83,7 @@ jobs:
           # bookkeeping.
           ZULIP_TOPIC: Toolchain tags
           SHA: ${{ github.sha }}
-          WAIT: ${{ github.event_name == 'push' || inputs.wait }}
+          WAIT: ${{ (github.event_name == 'push' && github.ref == 'refs/heads/main') || inputs.wait }}
         run: |
           set -euo pipefail
           if [ "$WAIT" = "true" ]; then
