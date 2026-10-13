@@ -7,11 +7,12 @@ module
 
 public import Mathlib.Algebra.Category.ModuleCat.ChangeOfRings
 public import Mathlib.RingTheory.Localization.BaseChange
+public import Mathlib.RingTheory.RingHom.Flat
 
 /-!
 # Extension of scalars
 
-This file records two facts about Mathlib's extension of scalars `ModuleCat.extendScalars`.
+This file records properties of Mathlib's extension of scalars `ModuleCat.extendScalars`.
 
 * Extension of scalars carries multiplication by a scalar to multiplication by its image
   (`TauCeti.ModuleCat.extendScalars_map_smul_id`). This transports the curvature equations of a
@@ -22,6 +23,9 @@ This file records two facts about Mathlib's extension of scalars `ModuleCat.exte
   `s ⊗ m ↦ s • m / 1` (`ModuleCat.extendScalarsLocalizationIso`). This identifies the
   restriction of the quasi-coherent sheaf `M~` on `Spec R` to a basic open `D(r)` with the sheaf
   associated with `M_r` on `Spec R_r`.
+* Extension of scalars along a flat ring map preserves monomorphisms
+  (`RingHom.preservesMonomorphisms_extendScalars_of_flat`). Together with right exactness,
+  this transports short exact sequences under flat base change.
 -/
 
 public section
@@ -51,6 +55,27 @@ variable {S : Type u} {T : Type v} [CommRing S] [CommRing T] {w : S}
 end SMul
 
 end TauCeti.ModuleCat
+
+namespace RingHom
+
+open CategoryTheory ModuleCat
+
+variable {R S : Type*} [CommRing R] [CommRing S]
+
+/-- Extension of scalars along a flat ring map preserves monomorphisms. -/
+theorem preservesMonomorphisms_extendScalars_of_flat (f : R →+* S) (hf : f.Flat) :
+    (extendScalars f).PreservesMonomorphisms where
+  preserves {M N} g _ := by
+    let : Algebra R S := f.toAlgebra
+    let T := (restrictScalars f).obj (of S S)
+    have : Module.Flat R T := hf
+    apply (ModuleCat.mono_iff_injective _).mpr
+    -- The underlying map of extension of scalars is tensoring the linear map with `S`;
+    -- the restricted scalar action is `Module.compHom` in both constructions.
+    exact Module.Flat.lTensor_preserves_injective_linearMap (M := T) g.hom
+      ((ModuleCat.mono_iff_injective g).mp inferInstance)
+
+end RingHom
 
 namespace TauCeti
 
