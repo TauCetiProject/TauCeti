@@ -8,10 +8,7 @@ module
 public import TauCeti.RingTheory.Huber.Basic
 public import TauCeti.RingTheory.Huber.WeightedEval.Completion
 public import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Completion
-public import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.PowerBounded
-
-import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.OpenIdeal
-import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.PairOfDefinition
+public import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.PairOfDefinition
 
 /-!
 # Comparing `A⟨X₁,…,X_{k+m}⟩_U` with `A⟨X₁,…,Xₖ⟩_T⟨Y₁,…,Y_m⟩_W`
@@ -61,12 +58,6 @@ the variables holds because the variables of every completed `A⟨X⟩_T` satisf
 
 ## Main results
 
-* `TauCeti.Huber.isWeightBounded_completion_weightedX`: the variables of the completion of
-  `A⟨X⟩_T` satisfy the hypothesis of Proposition 5.50 relative to the weights `T`, and
-  `TauCeti.Huber.IsBounded.image_algebraMap_completion_weightedRestrictedSubring`: the structure
-  map into it carries bounded sets to bounded sets.
-* `TauCeti.Huber.IsWeightFamily.image_algebraMap_completion`: the image in the completion of
-  `A⟨X⟩_T` of a weight family on `A` is a weight family, as the weights `W` may be taken.
 * `TauCeti.Huber.isWeightBounded_iterateVar`: the generators of the iterated algebra satisfy the
   hypothesis of Proposition 5.50 relative to the weights `U`.
 * `TauCeti.Huber.continuous_iterateSplitHom` and `TauCeti.Huber.continuous_iterateJoinHom`, with
@@ -100,65 +91,6 @@ public section
 namespace TauCeti.Huber
 
 open UniformSpace
-
-/-! ### The variables of a completed weighted algebra -/
-
-section Generators
-
-variable {k : ℕ} {A : Type*} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A]
-  [IsHuberRing A] {T : Fin k → Set A}
-
-/-- **The structure map into the completion of `A⟨X⟩_T` carries bounded sets to bounded sets**:
-it is the constant series followed by the completion map, and both preserve boundedness. -/
-theorem IsBounded.image_algebraMap_completion_weightedRestrictedSubring (hT : IsWeightFamily T)
-    {S : Set A} (hS : IsBounded S) :
-    IsBounded (algebraMap A (Completion (weightedRestrictedSubring T hT)) '' S) := by
-  have he : (algebraMap A (Completion (weightedRestrictedSubring T hT)) : A → _) =
-      ((↑) : weightedRestrictedSubring T hT → Completion (weightedRestrictedSubring T hT)) ∘
-        weightedC T hT :=
-    funext (algebraMap_completion_weightedRestrictedSubring_apply _ _ hT)
-  rw [he, Set.image_comp]
-  exact isBounded_image_completion_coe_of_isBounded (hS.image_weightedC hT)
-
-/-- **The variables of the completion of `A⟨X⟩_T` satisfy the hypothesis of Wedhorn's universal
-property** relative to the weights `T`: the weighted monomials `t Xᵛ`, `t ∈ Tᵛ`, form a bounded
-subset of the completion. They are the images of those of `A⟨X⟩_T`
-(`TauCeti.Huber.isWeightBounded_weightedX`), and the completion map of a Huber ring preserves
-boundedness. -/
-theorem isWeightBounded_completion_weightedX (hT : IsWeightFamily T) :
-    IsWeightBounded (algebraMap A (Completion (weightedRestrictedSubring T hT))) T
-      fun i ↦ ((weightedX T hT i : weightedRestrictedSubring T hT) :
-        Completion (weightedRestrictedSubring T hT)) := by
-  have h := isBounded_image_completion_coe_of_isBounded
-    ((isWeightBounded_iff _ _ _).mp (isWeightBounded_weightedX hT))
-  rw [Set.image_iUnion] at h
-  refine (isWeightBounded_iff _ _ _).mpr (h.subset (Set.iUnion_mono fun ν ↦ ?_))
-  rw [Set.image_image]
-  refine (Set.image_congr fun t _ ↦ ?_).subset
-  -- the completion map is `⇑Completion.coeRingHom` by definition, a ring homomorphism, so it
-  -- commutes with the weighted monomials
-  have hcoe : ∀ x : weightedRestrictedSubring T hT,
-      (x : Completion (weightedRestrictedSubring T hT)) = Completion.coeRingHom x := fun _ ↦ rfl
-  simp only [algebraMap_completion_weightedRestrictedSubring_apply,
-    algebraMap_weightedRestrictedSubring, hcoe, map_mul, map_prod, map_pow]
-
-/-- **A weight family on `A` has image a weight family in the completion of `A⟨X⟩_T`.** Over a Huber
-ring the weights are admissible exactly when they generate open ideals
-(`TauCeti.Huber.isWeightFamily_iff_isOpen_span`), and the structure map into the completion carries
-open ideals to ideals generating open ideals. This supplies the weights `W` of the iterated algebra
-in the case `W j = algebraMap A B '' V j`. -/
-theorem IsWeightFamily.image_algebraMap_completion (hT : IsWeightFamily T) {m : ℕ}
-    {V : Fin m → Set A} (hV : IsWeightFamily V) :
-    IsWeightFamily fun j ↦ algebraMap A (Completion (weightedRestrictedSubring T hT)) '' V j := by
-  have he : algebraMap A (Completion (weightedRestrictedSubring T hT)) =
-      Completion.coeRingHom.comp (algebraMap A (weightedRestrictedSubring T hT)) :=
-    RingHom.ext (Completion.algebraMap_def _ _)
-  refine isWeightFamily_iff_isOpen_span.mpr fun j ↦ ?_
-  rw [← Ideal.map_span, he, ← Ideal.map_map]
-  exact isOpen_map_coeRingHom
-    (isOpen_map_algebraMap_weightedRestrictedSubring (isWeightFamily_iff_isOpen_span.mp hV j))
-
-end Generators
 
 /-! ### Splitting the variables -/
 
