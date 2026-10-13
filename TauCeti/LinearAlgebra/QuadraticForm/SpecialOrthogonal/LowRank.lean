@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.QuadraticForm.OrthogonalGroup.Basic
-public import TauCeti.LinearAlgebra.Determinant
+public import TauCeti.LinearAlgebra.Determinant.Basic
 
 /-!
 # Special orthogonal groups in rank at most one

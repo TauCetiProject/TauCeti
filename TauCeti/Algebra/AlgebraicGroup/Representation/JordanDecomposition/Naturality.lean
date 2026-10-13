@@ -23,9 +23,6 @@ original `H₂`-point. The earlier point-action and semisimple-point APIs provid
 uniqueness of the commuting semisimple--unipotent factorization then identifies the images of both
 Jordan factors.
 
-This is the functoriality-under-homomorphisms part of Layer 4, "Jordan decomposition", in the
-ReductiveGroups roadmap.
-
 ## Main declarations
 
 * `TauCeti.HopfAlgebra.Point.jordanDecomposition_mapDomain`: Jordan decomposition commutes with
