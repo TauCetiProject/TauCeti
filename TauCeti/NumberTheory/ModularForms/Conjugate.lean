@@ -1,13 +1,14 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: The Tau Ceti contributors, Wentao Li
 -/
 module
 
 public import TauCeti.NumberTheory.ModularForms.HeckeSlash.Nebentypus.CoefficientFormula
 public import TauCeti.NumberTheory.ModularForms.QExpansion.Basic
 public import TauCeti.NumberTheory.MulChar.Lemmas
+public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.ConjJ
 
 /-!
 # The conjugate form `f_ρ(τ) = conj (f (-conj τ))`
@@ -134,17 +135,6 @@ theorem qExpansion_slash_J {F : Type*} [FunLike F ℍ ℂ] [ModularFormClass F �
 end TauCeti
 
 namespace Matrix.SpecialLinearGroup
-
-/-- The `J`-conjugate `!![a, -b; -c, d]` of `!![a, b; c, d] ∈ SL(2, ℤ)`. -/
-def conjJ (γ : SL(2, ℤ)) : SL(2, ℤ) :=
-  ⟨!![γ 0 0, -γ 0 1; -γ 1 0, γ 1 1], by
-    rw [Matrix.det_fin_two_of]
-    linarith [Matrix.SpecialLinearGroup.fin_two_mul_sub_mul_eq_one γ]⟩
-
-@[simp]
-lemma coe_conjJ (γ : SL(2, ℤ)) :
-    ((conjJ γ : SL(2, ℤ)) : Matrix (Fin 2) (Fin 2) ℤ) = !![γ 0 0, -γ 0 1; -γ 1 0, γ 1 1] := by
-  rw [conjJ]
 
 /-- Conjugation by `J` realizes `conjJ`. -/
 lemma J_mul_mapGL_mul_J (γ : SL(2, ℤ)) :
