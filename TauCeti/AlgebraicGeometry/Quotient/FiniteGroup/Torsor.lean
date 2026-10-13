@@ -40,42 +40,6 @@ namespace TauCeti.AffineInvariantQuotient
 
 universe u v
 
-section Monoid
-
-variable (A : Type u) (G : Type v) [CommRing A] [Monoid G] [MulSemiringAction G A]
-  [Small.{u} G]
-
-/-- The action graphs over the invariant quotient. On the component indexed by `g`, the two
-projections are the identity and `specComap A G g`, respectively. The latter is the right action
-on spectra, induced contravariantly by `a ↦ g • a`. The assumption `Small.{u} G` ensures that
-the coproduct exists in `Scheme.{u}`; it is automatic for finite `G`. -/
-noncomputable def actionMap : (∐ fun _ : G ↦ Spec (CommRingCat.of A)) ⟶
-    pullback (projection A G) (projection A G) :=
-  Sigma.desc fun g ↦ pullback.lift (𝟙 _) (specComap A G g) (by simp)
-
-/-- The restriction of the action map to one component is the graph of its action element. -/
-@[reassoc (attr := simp)]
-theorem ι_actionMap (g : G) :
-    Sigma.ι (fun _ : G ↦ Spec (CommRingCat.of A)) g ≫ actionMap A G =
-      pullback.lift (𝟙 _) (specComap A G g) (by simp) := by
-  simp [actionMap]
-
-/-- The first projection of the action relation forgets the group element. -/
-@[reassoc (attr := simp)]
-theorem actionMap_fst : actionMap A G ≫ pullback.fst _ _ =
-    Sigma.desc (fun _ : G ↦ 𝟙 (Spec (CommRingCat.of A))) := by
-  ext g
-  simp
-
-/-- The second projection of the action relation applies the action element. -/
-@[reassoc (attr := simp)]
-theorem actionMap_snd : actionMap A G ≫ pullback.snd _ _ =
-    Sigma.desc (fun g : G ↦ specComap A G g) := by
-  ext g
-  simp
-
-end Monoid
-
 section Group
 
 variable (A : Type u) (G : Type v) [CommRing A] [Group G] [MulSemiringAction G A]
