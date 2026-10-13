@@ -6,7 +6,6 @@ Authors: Codex
 module
 
 public import TauCeti.Algebra.Category.GradedModuleCat.FiniteLength
-public import TauCeti.Algebra.Category.GradedModuleCat.Shift
 public import TauCeti.Algebra.Homology.EulerCharacteristic.ExtEuler.Graded.Shift
 
 /-!
@@ -16,8 +15,9 @@ For a fixed target, graded Euler-admissibility of finite-dimensional sources can
 simple graded modules. Both internal finiteness and eventual cohomological vanishing propagate
 through graded composition series. The algebra need not itself be finite-dimensional.
 
-Admissibility also survives arbitrary internal shifts of the source. Together these results
-let an exhaustive family of simples up to shift supply the finiteness data for a q-Euler form.
+Together with the source-shift admissibility results in
+`TauCeti.Algebra.Homology.EulerCharacteristic.ExtEuler.Graded.Shift`, this criterion lets an
+exhaustive family of simples up to shift supply the finiteness data for a q-Euler form.
 
 ## References
 
@@ -69,21 +69,5 @@ theorem isGradedEulerAdmissible_of_finite_of_forall_simple
         epi_g := (GradedModuleCat.epi_iff_surjective _).mpr (Submodule.mkQ_surjective _) }
     exact (ih _ (hn ▸ hdimZ) Z rfl).of_shortExact₂' hS
       (ih _ (hn ▸ hdimQ) (GradedModuleCat.cokernelObj i) rfl)
-
-/-- Any integer internal shift of an Euler-admissible source remains Euler-admissible.
-No boundedness or positivity hypothesis on the algebra grading is needed. -/
-theorem IsGradedEulerAdmissible.shiftObj {X Y : GradedModuleCat.{v} 𝒜}
-    (h : IsGradedEulerAdmissible.{w} k (GradedModuleCat.shift 𝒜) X Y) (d : ℤ) :
-    IsGradedEulerAdmissible.{w} k (GradedModuleCat.shift 𝒜) (X.shiftObj d) Y := by
-  induction d using Int.induction_on with
-  | zero =>
-      exact h.of_iso k ((GradedModuleCat.shiftFunctorZeroIso 𝒜).app X).symm (Iso.refl Y)
-  | succ n ih =>
-      have hs := ih.shiftSource
-      exact hs.of_iso k ((GradedModuleCat.shiftFunctorAddIso 𝒜 n 1).app X) (Iso.refl Y)
-  | pred n ih =>
-      have hs := ih.shiftSourceInverse
-      exact hs.of_iso k ((GradedModuleCat.shiftFunctorAddIso 𝒜 (- (n : ℤ)) (-1)).app X)
-        (Iso.refl Y)
 
 end TauCeti

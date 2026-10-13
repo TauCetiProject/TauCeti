@@ -5,6 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Category.GradedModuleCat.Abelian
+public import TauCeti.Algebra.Category.GradedModuleCat.Shift
 public import TauCeti.Algebra.Homology.EulerCharacteristic.ExtEuler.Graded.Basic
 public import TauCeti.Algebra.Homology.Ext.Equivalence
 public import TauCeti.CategoryTheory.Equivalence.Pow
@@ -50,6 +52,8 @@ witness it needs is the one this file constructs from it.
   `TauCeti.IsGradedEulerAdmissible.shiftSource`: graded Euler-admissibility is preserved by the
   grading shift in either variable; `TauCeti.IsGradedEulerAdmissible.shiftTargetInverse` and
   `TauCeti.IsGradedEulerAdmissible.shiftSourceInverse` are the same for the inverse shift.
+* `TauCeti.IsGradedEulerAdmissible.shiftObj`: for graded modules, admissibility is preserved
+  by any integer internal shift of the source.
 * `TauCeti.gradedExtEuler_shiftTarget`: `χ_q(X, Y{1}) = q · χ_q(X, Y)`.
 * `TauCeti.gradedExtEuler_shiftSource`: `χ_q(X{1}, Y) = q⁻¹ · χ_q(X, Y)`.
 * `TauCeti.gradedExtEuler_shiftTargetInverse` and
@@ -384,5 +388,30 @@ theorem gradedExtEuler_shiftSourceInverse (h : IsGradedEulerAdmissible.{w} k e X
   simp
 
 end FieldSource
+
+section GradedModules
+
+universe uk uA
+
+variable {k : Type uk} [Field k] {A : Type uA} [Ring A] [Algebra k A]
+  {𝒜 : ℤ → Submodule k A} [HasExt.{w} (GradedModuleCat.{v} 𝒜)]
+
+/-- Any integer internal shift of an Euler-admissible source remains Euler-admissible.
+No boundedness or positivity hypothesis on the algebra grading is needed. -/
+theorem IsGradedEulerAdmissible.shiftObj {X Y : GradedModuleCat.{v} 𝒜}
+    (h : IsGradedEulerAdmissible.{w} k (GradedModuleCat.shift 𝒜) X Y) (d : ℤ) :
+    IsGradedEulerAdmissible.{w} k (GradedModuleCat.shift 𝒜) (X.shiftObj d) Y := by
+  induction d using Int.induction_on with
+  | zero =>
+      exact h.of_iso k ((GradedModuleCat.shiftFunctorZeroIso 𝒜).app X).symm (Iso.refl Y)
+  | succ n ih =>
+      have hs := ih.shiftSource
+      exact hs.of_iso k ((GradedModuleCat.shiftFunctorAddIso 𝒜 n 1).app X) (Iso.refl Y)
+  | pred n ih =>
+      have hs := ih.shiftSourceInverse
+      exact hs.of_iso k ((GradedModuleCat.shiftFunctorAddIso 𝒜 (- (n : ℤ)) (-1)).app X)
+        (Iso.refl Y)
+
+end GradedModules
 
 end TauCeti
