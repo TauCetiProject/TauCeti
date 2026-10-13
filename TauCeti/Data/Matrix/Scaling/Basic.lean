@@ -40,8 +40,8 @@ The relative entropy `Matrix.relEntropy P K` below is the formula
 `∑ i, ∑ j, (P i j * log (P i j) - P i j * log (K i j))`; for a nonnegative `P` and a strictly
 positive `K` it is the relative entropy of `P` against `K`. Existence and positivity of the
 minimiser hold for every `K`; strict positivity of `K` is needed only to identify the minimiser with
-a diagonal scaling of `K`. A kernel with zero entries constrains the support of a scaling and is
-not treated here.
+a diagonal scaling of `K`. A kernel with zero entries constrains the support of a scaling; that
+case is treated in `TauCeti.Data.Matrix.Scaling.Support`.
 
 `Matrix.IsDiagonalScaling P K u v` records the shape of the minimiser:
 `P i j = u i * K i j * v j` for row factors `u` and column factors `v`, that is a diagonal scaling
@@ -73,9 +73,11 @@ plan with `PMF` marginals is `TauCeti.TransportMatrix`.
 * `Matrix.relEntropy_nonneg` and `Matrix.relEntropy_eq_zero_iff`: Gibbs' inequality for matrices
   of equal total mass, with its equality case; `Matrix.relEntropy_nonneg_of_nonneg` allows a
   reference with zero entries, on which the other matrix vanishes.
-* `Matrix.hasDerivAt_relEntropy_add_smul` and
+* `Matrix.hasDerivAt_relEntropy_add_smul`,
+  `Matrix.sum_sum_mul_log_sub_log_eq_zero_of_relEntropy_minOn_support` and
   `Matrix.sum_sum_mul_log_sub_log_eq_zero_of_relEntropy_minOn`: the derivative of the relative
-  entropy along a direction, and the first-order condition at a positive minimiser.
+  entropy along a direction, and the first-order condition at a minimiser on its own support and at
+  a positive minimiser.
 * `Matrix.exists_isDiagonalScaling_of_relEntropy_minOn`: for a strictly positive `K`, every
   minimiser is a diagonal scaling of `K` by strictly positive factors;
   `Matrix.relEntropy_minOn_iff_exists_isDiagonalScaling` is the resulting characterisation.
@@ -852,48 +854,57 @@ theorem relEntropy_eq_zero_iff {P Q : Matrix ι κ ℝ} (hQ : ∀ i j, 0 ≤ Q i
   rw [sq_eq_zero_iff, sub_eq_zero] at hij
   rw [← Real.sq_sqrt (hQ i j), ← Real.sq_sqrt (hP i j).le, hij]
 
-/-! ### The first-order condition at a positive minimiser -/
+/-! ### The first-order condition at a minimiser -/
 
 /-- The relative entropy against `K` of the matrix `P + t • D` has derivative
-`∑ i, ∑ j, D i j * (log (P i j) + 1 - log (K i j))` in `t` at `t = 0`, as soon as no entry of `P`
-vanishes. -/
-theorem hasDerivAt_relEntropy_add_smul (K P D : Matrix ι κ ℝ) (hP : ∀ i j, P i j ≠ 0) :
+`∑ i, ∑ j, D i j * (log (P i j) + 1 - log (K i j))` in `t` at `t = 0`, as soon as `D` vanishes
+wherever `P` does. -/
+theorem hasDerivAt_relEntropy_add_smul (K P D : Matrix ι κ ℝ)
+    (hDP : ∀ i j, P i j = 0 → D i j = 0) :
     HasDerivAt (fun t : ℝ => relEntropy (P + t • D) K)
       (∑ i, ∑ j, D i j * (Real.log (P i j) + 1 - Real.log (K i j))) 0 := by
   simp only [relEntropy_def, Matrix.add_apply, Matrix.smul_apply, smul_eq_mul]
   refine HasDerivAt.fun_sum fun i _ => HasDerivAt.fun_sum fun j _ => ?_
+  by_cases hP : P i j = 0
+  · -- On a zero entry of `P` the direction vanishes too, so the entry stays `0`.
+    simpa [hP, hDP i j hP] using hasDerivAt_const (0 : ℝ) (0 : ℝ)
   have hlin : HasDerivAt (fun t : ℝ => P i j + t * D i j) (D i j) 0 := by
     simpa using ((hasDerivAt_id (0 : ℝ)).mul_const (D i j)).const_add (P i j)
   have hlog :
       HasDerivAt (fun x => x * Real.log x) (Real.log (P i j) + 1) (P i j + 0 * D i j) := by
-    simpa using Real.hasDerivAt_mul_log (hP i j)
+    simpa using Real.hasDerivAt_mul_log hP
   refine ((hlog.comp 0 hlin).sub (hlin.mul_const (Real.log (K i j)))).congr_deriv ?_
   ring
 
-/-- The first-order condition at a minimiser with positive entries: if `P` minimises the relative
-entropy against `K` among the nonnegative matrices with row sums `a` and column sums `b`, and
-every entry of `P` is positive, then the matrix `log (P i j) - log (K i j)` is orthogonal to every
-direction `D` whose row and column sums vanish. -/
-theorem sum_sum_mul_log_sub_log_eq_zero_of_relEntropy_minOn (K : Matrix ι κ ℝ) {a : ι → ℝ}
-    {b : κ → ℝ} {P D : Matrix ι κ ℝ} (hP : ∀ i j, 0 < P i j) (hPa : HasMarginals P a b)
+/-- The first-order condition at a minimiser on its own support: if `P` minimises the relative
+entropy against `K` among the nonnegative matrices with row sums `a` and column sums `b` that
+vanish wherever `P` does, then the matrix `log (P i j) - log (K i j)` is orthogonal to every
+direction `D` whose row and column sums vanish and which vanishes wherever `P` does. -/
+theorem sum_sum_mul_log_sub_log_eq_zero_of_relEntropy_minOn_support (K : Matrix ι κ ℝ)
+    {a : ι → ℝ} {b : κ → ℝ} {P D : Matrix ι κ ℝ} (hP : ∀ i j, 0 ≤ P i j)
+    (hPa : HasMarginals P a b)
     (hmin : ∀ Q : Matrix ι κ ℝ, (∀ i j, 0 ≤ Q i j) → HasMarginals Q a b →
-      relEntropy P K ≤ relEntropy Q K)
-    (hD : HasMarginals D 0 0) :
+      (∀ i j, P i j = 0 → Q i j = 0) → relEntropy P K ≤ relEntropy Q K)
+    (hD : HasMarginals D 0 0) (hDP : ∀ i j, P i j = 0 → D i j = 0) :
     ∑ i, ∑ j, D i j * (Real.log (P i j) - Real.log (K i j)) = 0 := by
-  -- For `t` near `0` the matrix `P + t • D` is still nonnegative and has the marginals of `P`, so
-  -- `t = 0` is a local minimum of its relative entropy.
+  -- For `t` near `0` the matrix `P + t • D` is still nonnegative, vanishes wherever `P` does and
+  -- has the marginals of `P`, so `t = 0` is a local minimum of its relative entropy.
+  have hzero : ∀ t : ℝ, ∀ i j, P i j = 0 → (P + t • D) i j = 0 := fun t i j h => by
+    simp [h, hDP i j h]
   have hloc : IsLocalMin (fun t : ℝ => relEntropy (P + t • D) K) 0 := by
-    have hpos : ∀ᶠ t in nhds (0 : ℝ), ∀ i j, 0 < (P + t • D) i j := by
+    have hpos : ∀ᶠ t in nhds (0 : ℝ), ∀ i j, 0 ≤ (P + t • D) i j := by
       simp only [Filter.eventually_all]
       intro i j
+      rcases (hP i j).eq_or_lt with h | h
+      · exact Filter.Eventually.of_forall fun t => (hzero t i j h.symm).ge
       have hc : Continuous fun t : ℝ => (P + t • D) i j := by
         simp only [Matrix.add_apply, Matrix.smul_apply, smul_eq_mul]
         fun_prop
-      exact continuousAt_const.eventually_lt hc.continuousAt (by simpa using hP i j)
+      exact (continuousAt_const.eventually_lt hc.continuousAt (by simpa using h)).mono
+        fun _ ht => ht.le
     refine hpos.mono fun t ht => ?_
-    simpa using hmin _ (fun i j => (ht i j).le) (by simpa using hPa.add (hD.smul t))
-  have hderiv := hloc.hasDerivAt_eq_zero
-    (hasDerivAt_relEntropy_add_smul K P D fun i j => (hP i j).ne')
+    simpa using hmin _ ht (by simpa using hPa.add (hD.smul t)) (hzero t)
+  have hderiv := hloc.hasDerivAt_eq_zero (hasDerivAt_relEntropy_add_smul K P D hDP)
   -- The constant `1` in the derivative contributes `∑ i, ∑ j, D i j`, which vanishes.
   have hsum : ∑ i, ∑ j, D i j = 0 := by simp [hD.1]
   have hsplit : ∑ i, ∑ j, D i j * (Real.log (P i j) + 1 - Real.log (K i j))
@@ -904,6 +915,19 @@ theorem sum_sum_mul_log_sub_log_eq_zero_of_relEntropy_minOn (K : Matrix ι κ �
     refine Finset.sum_congr rfl fun j _ => ?_
     ring
   linarith
+
+/-- The first-order condition at a minimiser with positive entries: if `P` minimises the relative
+entropy against `K` among the nonnegative matrices with row sums `a` and column sums `b`, and
+every entry of `P` is positive, then the matrix `log (P i j) - log (K i j)` is orthogonal to every
+direction `D` whose row and column sums vanish. -/
+theorem sum_sum_mul_log_sub_log_eq_zero_of_relEntropy_minOn (K : Matrix ι κ ℝ) {a : ι → ℝ}
+    {b : κ → ℝ} {P D : Matrix ι κ ℝ} (hP : ∀ i j, 0 < P i j) (hPa : HasMarginals P a b)
+    (hmin : ∀ Q : Matrix ι κ ℝ, (∀ i j, 0 ≤ Q i j) → HasMarginals Q a b →
+      relEntropy P K ≤ relEntropy Q K)
+    (hD : HasMarginals D 0 0) :
+    ∑ i, ∑ j, D i j * (Real.log (P i j) - Real.log (K i j)) = 0 :=
+  sum_sum_mul_log_sub_log_eq_zero_of_relEntropy_minOn_support K (fun i j => (hP i j).le) hPa
+    (fun Q hQ hQa _ => hmin Q hQ hQa) hD fun i j h => absurd h (hP i j).ne'
 
 /-! ### The minimiser is a diagonal scaling -/
 
