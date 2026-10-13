@@ -16,9 +16,9 @@ public import TauCeti.AlgebraicTopology.Singular.Kunneth.Basic
 The cubical cross product `TauCeti.cubicalCrossProduct`, `N(X; k) ⊗ N(Y; k) ⟶ N(X × Y; k)`, is a
 quasi-isomorphism (`TauCeti.quasiIso_cubicalCrossProduct`).  After the comparison with simplicial
 chains it is naturally chain homotopic to the tensor product of the two comparison maps followed
-by the simplicial cross product (`TauCeti.crossProductHomotopy`), which is a quasi-isomorphism
-since the shuffle map is a homotopy equivalence (Eilenberg–Zilber) and the comparison maps are
-homotopy equivalences.
+by the simplicial cross product (`TauCeti.cubicalSingularCrossProductHomotopy`), which is a
+quasi-isomorphism since the shuffle map is a homotopy equivalence (Eilenberg–Zilber) and the
+comparison maps are homotopy equivalences.
 
 The Künneth map of the cubical chain complexes, `⨁_{p + q = n} Hₚ(X; k) ⊗ H_q(Y; k) ⟶ Hₙ(X × Y; k)`
 with the cubical homology modules, is the algebraic Künneth map followed by the map induced by the
@@ -81,7 +81,8 @@ instance quasiIso_cubicalCrossProductToSingularApp (X Y : TopCat.{u}) :
     infer_instance
   rw [quasiIso_iff]
   intro n
-  rw [quasiIsoAt_iff_isIso_homologyMap, (crossProductHomotopy k X Y).homologyMap_eq n,
+  rw [quasiIsoAt_iff_isIso_homologyMap,
+    (cubicalSingularCrossProductHomotopy k X Y).homologyMap_eq n,
     ← quasiIsoAt_iff_isIso_homologyMap]
   infer_instance
 
