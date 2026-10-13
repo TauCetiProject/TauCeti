@@ -120,6 +120,7 @@ def ofMFDerivEquiv {f : M → X} (hf : ContMDiff I 𝓘(ℝ, X) 1 f)
 
 /-- The derivative sends the induced tangent orientation to the chosen target orientation,
 including at boundary and corner points. -/
+@[simp]
 theorem map_orientationAt_ofMFDerivEquiv {f : M → X} (hf : ContMDiff I 𝓘(ℝ, X) 1 f)
     (F : ∀ x, TangentSpace I x ≃L[ℝ] X)
     (hF : ∀ x, (F x).toContinuousLinearMap =

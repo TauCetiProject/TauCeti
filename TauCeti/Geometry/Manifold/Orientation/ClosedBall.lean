@@ -35,6 +35,7 @@ def closedBall (o : _root_.Orientation ℝ V (Fin n)) :
 
 /-- At every point of the ball, its inclusion tangent equivalence preserves the chosen
 ambient orientation. This also holds at the sphere boundary and in dimension one. -/
+@[simp]
 theorem map_orientationAt_closedBall (o : _root_.Orientation ℝ V (Fin n))
     (x : Metric.closedBall (0 : V) 1) :
     _root_.Orientation.map (Fin n)
