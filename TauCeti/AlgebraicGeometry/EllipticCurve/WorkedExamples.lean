@@ -5,13 +5,14 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.AlgebraicGeometry.EllipticCurve.Weierstrass
+public import Mathlib.AlgebraicGeometry.EllipticCurve.Affine.Basic
 
 /-!
 # Elliptic curves for worked examples
 
 This file defines integral Weierstrass equations of elliptic curves over `ℚ` that are used across
-several worked examples, together with their basic invariants:
+several worked examples, together with the affine equations of their rational points and their
+basic invariants:
 
 | LMFDB label | Cremona label | `[a₁, a₂, a₃, a₄, a₆]` | `Δ` | `c₄` |
 |---|---|---|---|---|
@@ -36,6 +37,14 @@ namespace TauCeti.WorkedExamples
 /-- The curve 11.a2, `y² + y = x³ - x² - 10 x - 20`, as an integral Weierstrass model. -/
 abbrev curve11a2 : WeierstrassCurve ℤ := ⟨0, -1, 1, -10, -20⟩
 
+/-- The rational points of 11.a2 are the solutions of `y² + y = x³ - x² - 10 x - 20`. -/
+theorem equation_curve11a2_iff (x y : ℚ) :
+    (curve11a2.baseChange ℚ).toAffine.Equation x y ↔ y ^ 2 + y = x ^ 3 - x ^ 2 - 10 * x - 20 := by
+  rw [Affine.equation_iff]
+  simp only [WeierstrassCurve.baseChange, map_a₁, map_a₂, map_a₃, map_a₄, map_a₆, map_zero,
+    map_one, map_neg, map_ofNat]
+  constructor <;> intro h <;> linear_combination h
+
 /-- The discriminant of `y² + y = x³ - x² - 10 x - 20` is `-11⁵`. -/
 @[simp]
 theorem Δ_curve11a2 : curve11a2.Δ = -11 ^ 5 := by
@@ -55,6 +64,14 @@ instance : (curve11a2.baseChange ℚ).IsElliptic := by
 
 /-- The curve 37.a1, `y² + y = x³ - x`, as an integral Weierstrass model. -/
 abbrev curve37a1 : WeierstrassCurve ℤ := ⟨0, 0, 1, -1, 0⟩
+
+/-- The rational points of 37.a1 are the solutions of `y² + y = x³ - x`. -/
+theorem equation_curve37a1_iff (x y : ℚ) :
+    (curve37a1.baseChange ℚ).toAffine.Equation x y ↔ y ^ 2 + y = x ^ 3 - x := by
+  rw [Affine.equation_iff]
+  simp only [WeierstrassCurve.baseChange, map_a₁, map_a₂, map_a₃, map_a₄, map_a₆, map_zero,
+    map_one, map_neg]
+  constructor <;> intro h <;> linear_combination h
 
 /-- The discriminant of `y² + y = x³ - x` is `37`. -/
 @[simp]

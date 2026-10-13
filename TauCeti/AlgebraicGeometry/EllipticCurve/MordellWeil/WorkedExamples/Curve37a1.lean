@@ -60,14 +60,6 @@ open WeierstrassCurve Affine IsDedekindDomain IsLocalRing
 
 namespace TauCeti.WorkedExamples
 
-/-- The rational points of 37.a1 are the solutions of `y² + y = x³ - x`. -/
-theorem equation_curve37a1_iff (x y : ℚ) :
-    (curve37a1.baseChange ℚ).toAffine.Equation x y ↔ y ^ 2 + y = x ^ 3 - x := by
-  rw [equation_iff]
-  simp only [WeierstrassCurve.baseChange, map_a₁, map_a₂, map_a₃, map_a₄, map_a₆, map_zero,
-    map_one, map_neg]
-  constructor <;> intro h <;> linear_combination h
-
 /-- Every rational solution of `y² + y = x³ - x` is a nonsingular point of 37.a1. -/
 theorem nonsingular_curve37a1 {x y : ℚ} (h : y ^ 2 + y = x ^ 3 - x) :
     (curve37a1.baseChange ℚ).toAffine.Nonsingular x y :=
