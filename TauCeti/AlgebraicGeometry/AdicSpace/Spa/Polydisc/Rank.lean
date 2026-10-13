@@ -73,6 +73,7 @@ variable {K : Type*} [NormedField K] [IsUltrametricDist K] [NonarchimedeanRing K
 
 /-- **The classical points have rank at most one**: the classical point at `a` compares `f` and
 `g` by the norms of `f(a)` and `g(a)`. This holds on the polydisc of any dimension. -/
+@[simp]
 theorem isRankLeOne_classicalPoint (x : spa (powerBoundedSubring K)) (a : Fin k → K)
     (ha : ∀ i, IsPowerBounded (a i)) :
     @ValuativeRel.IsRankLeOne _ _ (classicalPoint x a ha).1.toValuativeRel :=
@@ -92,6 +93,7 @@ variable {K : Type*} [NontriviallyNormedField K] [IsUltrametricDist K] [Nonarchi
 
 /-- **The points `η_{a,r}` have rank at most one**: they compare series by a Gauss norm, which
 takes values in `ℝ≥0`. These are the points of types (2) and (3). -/
+@[simp]
 theorem isRankLeOne_discPoint (a : K) (ha : ‖a‖ ≤ 1) (hr₀ : 0 < r) (hr₁ : r ≤ 1) :
     @ValuativeRel.IsRankLeOne _ _ (discPoint a ha hr₀ hr₁).1.toValuativeRel :=
   letI := (discPoint a ha hr₀ hr₁).1.toValuativeRel
@@ -106,6 +108,7 @@ theorem isRankLeOne_discPoint (a : K) (ha : ‖a‖ ≤ 1) (hr₀ : 0 < r) (hr�
 the infimum of the Gauss norms of the discs, which takes values in `ℝ≥0`. When `K` is
 algebraically closed and the discs have no common point in `K`, these are the points of
 type (4). -/
+@[simp]
 theorem isRankLeOne_nestedDiscPoint (a : ℕ → K) (ha : ∀ n, ‖a n‖ ≤ 1) (c : ℕ → K)
     (hc₀ : ∀ n, c n ≠ 0) (hc₁ : ∀ n, ‖c n‖ ≤ 1) (hac : ∀ n, ‖a (n + 1) - a n‖ ≤ ‖c n‖)
     (hcc : ∀ n, ‖c (n + 1)‖ ≤ ‖c n‖) :
@@ -144,6 +147,7 @@ private theorem closedDiscGaussValuation_weightedC_pow_pos (hr₀ : 0 < r) (hr�
 /-- **The points `η_{a,r⁺}` do not have rank at most one** when `r` is the norm of an element `c`
 of `K`. The value of `T - a` is larger than that of `c`, but every power `(T - a)ⁿ` is at most
 `cⁿ d` for a constant `‖d‖ > 1`. For algebraically closed `K` these are points of type (5). -/
+@[simp]
 theorem not_isRankLeOne_discPointAbove (a : K) (ha : ‖a‖ ≤ 1) (hr₀ : 0 < r) (hr₁ : r < 1)
     (hr : ∃ c : K, ‖c‖ = r) :
     ¬ @ValuativeRel.IsRankLeOne _ _ (discPointAbove a ha hr₀ hr₁).1.toValuativeRel := by
@@ -169,6 +173,7 @@ theorem not_isRankLeOne_discPointAbove (a : K) (ha : ‖a‖ ≤ 1) (hr₀ : 0 <
 of `K`. The value of `c` is larger than that of `T - a`, but every power `cⁿ` is at most
 `(T - a)ⁿ d` for a constant `‖d‖ > 1`. For algebraically closed `K` these are points of
 type (5). -/
+@[simp]
 theorem not_isRankLeOne_discPointBelow (a : K) (ha : ‖a‖ ≤ 1) (hr₀ : 0 < r) (hr₁ : r ≤ 1)
     (hr : ∃ c : K, ‖c‖ = r) :
     ¬ @ValuativeRel.IsRankLeOne _ _ (discPointBelow a ha hr₀ hr₁).1.toValuativeRel := by
