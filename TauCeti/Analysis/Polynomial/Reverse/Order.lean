@@ -25,7 +25,8 @@ Reversal is the specialization to the formal degree of the family.
 Integral normalization also preserves ambient order, once the distinguished coordinate is
 rescaled by the leading coefficient at base points where that coefficient does not vanish.
 Translating to a center `τ`, reversing and normalizing turns a family whose leading
-coefficient may vanish into a monic one; its leading coefficient becomes the value `p(τ)`.
+coefficient may vanish into a monic one: the translated reversal has leading coefficient the
+value `p(τ)`, and integral normalization then makes it monic.
 Ambient orders of the monic family at the image of a point `(t, x)` with `t ≠ τ` and
 `p(τ)(x) ≠ 0` are the ambient orders of `p` at `(t, x)`.
 
