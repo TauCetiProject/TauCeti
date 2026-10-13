@@ -75,11 +75,8 @@ same root system; `Valid` keeps only `B 2` of those two names.
 
 ## References
 
-This file implements the `DynkinType` enumeration of Layer 5 of
-`TauCetiRoadmap/RepresentationTheory/RootSystems/README.md`, following the target signatures in
-`TauCetiRoadmap/RepresentationTheory/RootSystems/Suggested.lean`. See Bourbaki, *Lie Groups and Lie
-Algebras, Chapters 4-6*, plates I-IX, and Humphreys, *Introduction to Lie Algebras and
-Representation Theory*, Chapter 11, for the standard Cartan matrices.
+See Bourbaki, *Lie Groups and Lie Algebras, Chapters 4-6*, plates I-IX, and Humphreys, *Introduction
+to Lie Algebras and Representation Theory*, Chapter 11, for the standard Cartan matrices.
 -/
 
 public section
