@@ -68,6 +68,8 @@ equal exactly when their radii agree and each centre lies in the other disc. If
   `TauCeti.ValuationSpectrum.closedSubdisc_eq_closedSubdisc_iff` and
   `TauCeti.ValuationSpectrum.disjoint_closedSubdisc`: inclusion, equality and disjointness of
   discs.
+* `TauCeti.ValuationSpectrum.exists_closedSubdisc_inter_closedSubdisc_eq`: the intersection of two
+  discs is a disc, possibly the empty disc `D(a, |0|)`.
 
 ## References
 
@@ -207,6 +209,19 @@ theorem disjoint_closedSubdisc {a b c d : K} (h : max ‖c‖ ‖d‖ < ‖a - b
     exact (h.trans_le hc).not_ge (le_max_left _ _)
   · rw [valuation_le_iff, closedPolydisc_vle_weightedC_iff] at hd
     exact (h.trans_le hd).not_ge (le_max_right _ _)
+
+/-- **The intersection of two discs is a disc**: either one of `D(a, |c|)` and `D(b, |d|)` contains
+the other, or they are disjoint and their intersection is the empty disc `D(a, |0|)`. -/
+theorem exists_closedSubdisc_inter_closedSubdisc_eq (a b c d : K) :
+    ∃ e r : K, closedSubdisc a c ∩ closedSubdisc b d = closedSubdisc e r := by
+  by_cases h : ‖a - b‖ ≤ max ‖c‖ ‖d‖
+  · rcases le_total ‖c‖ ‖d‖ with hcd | hdc
+    · exact ⟨a, c, Set.inter_eq_left.mpr
+        (closedSubdisc_subset_closedSubdisc (h.trans_eq (max_eq_right hcd)) hcd)⟩
+    · exact ⟨b, d, Set.inter_eq_right.mpr (closedSubdisc_subset_closedSubdisc
+        ((norm_sub_rev b a).trans_le (h.trans_eq (max_eq_left hdc))) hdc)⟩
+  · exact ⟨a, 0, by rw [closedSubdisc_zero_right,
+      ← Set.disjoint_iff_inter_eq_empty]; exact disjoint_closedSubdisc (not_le.mp h)⟩
 
 /-- **A classical point `x_b` lies in `D(a, |c|)` exactly when `‖b - a‖ ≤ ‖c‖` and `c ≠ 0`**,
 whichever point `x` of `Spa (K, K°)` it is built from. -/
