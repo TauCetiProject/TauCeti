@@ -12,7 +12,6 @@ public import TauCeti.FieldTheory.FunctionField.Place.Extension.Degree
 -- function field nonempty, hence its ramification index positive.
 public import TauCeti.FieldTheory.FunctionField.Place.Extension.Existence
 public import TauCeti.FieldTheory.FunctionField.Place.Extension.Fundamental
-public import TauCeti.FieldTheory.FunctionField.Place.Map
 public import TauCeti.FieldTheory.IntermediateField.ScalarTower
 public import TauCeti.RingTheory.Valuation.RamificationGroup
 

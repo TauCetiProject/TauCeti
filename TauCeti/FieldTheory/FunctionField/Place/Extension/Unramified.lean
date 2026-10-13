@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.FieldTheory.Normal.Closure
-public import TauCeti.FieldTheory.FunctionField.Place.Map
 public import TauCeti.FieldTheory.FunctionField.Place.Extension.Inertia
 
 /-!
@@ -37,8 +36,7 @@ follows the proof of `TauCeti.Place.isSplitCompletely_sup_iff` in
 
 ## Main definitions
 
-* `TauCeti.Place.IsUnramified`: a place is unramified in an extension, with
-  `TauCeti.Place.isUnramified_iff`.
+* `TauCeti.Place.IsUnramified`: a place is unramified in an extension.
 
 ## Main results
 
@@ -82,14 +80,6 @@ field is perfect). -/
 def IsUnramified (P : Place k F) : Prop :=
   ∀ P' : Place k' F', P'.restrict k F = P →
     ramificationIdx F P' = 1 ∧ Algebra.IsSeparable (P'.restrict k F).ResidueField P'.ResidueField
-
-/-- The characteristic property of an unramified place. -/
-theorem isUnramified_iff (P : Place k F) :
-    P.IsUnramified (k' := k') (F' := F') ↔
-      ∀ P' : Place k' F', P'.restrict k F = P →
-        ramificationIdx F P' = 1 ∧
-          Algebra.IsSeparable (P'.restrict k F).ResidueField P'.ResidueField :=
-  Iff.rfl
 
 end Definition
 
