@@ -9,6 +9,7 @@ public import TauCeti.NumberTheory.NumberField.InfinitePlace.Completion.Extensio
 public import TauCeti.RingTheory.Norm.Units
 import Mathlib.LinearAlgebra.Trace
 import Mathlib.RingTheory.Complex
+import TauCeti.FieldTheory.IsRealClosed.Real
 
 /-!
 # Local norms at the infinite places
@@ -181,12 +182,12 @@ theorem mem_range_powMonoidHom {n : ℕ} (hn : n ≠ 0) (y : w.Completionˣ)
   by_cases hw : w.IsReal
   · let e := ringEquivRealOfIsReal hw
     have hpos : 0 < e y := by simpa [e] using hy hw
-    -- The real `n`-th root `(e y) ^ (1 / n)` of the positive number `e y`.
-    have ht0 : e.symm (e y ^ ((n : ℝ)⁻¹)) ≠ 0 :=
-      (map_ne_zero e.symm).2 (Real.rpow_pos_of_pos hpos _).ne'
+    obtain ⟨r, hr⟩ := IsRealClosed.exists_eq_pow_of_nonneg hpos.le hn
+    have ht0 : e.symm r ≠ 0 :=
+      (map_ne_zero e.symm).2 fun h ↦ hpos.ne' (by rw [hr, h, zero_pow hn])
     refine ⟨Units.mk0 _ ht0, Units.ext ?_⟩
-    rw [powMonoidHom_apply, Units.val_pow_eq_pow_val, Units.val_mk0, ← map_pow,
-      Real.rpow_inv_natCast_pow hpos.le hn, RingEquiv.symm_apply_apply]
+    rw [powMonoidHom_apply, Units.val_pow_eq_pow_val, Units.val_mk0, ← map_pow, ← hr,
+      RingEquiv.symm_apply_apply]
   · let e := ringEquivComplexOfIsComplex (not_isReal_iff_isComplex.mp hw)
     obtain ⟨z, hz⟩ := IsAlgClosed.exists_pow_nat_eq (e y) (Nat.pos_of_ne_zero hn)
     have hz0 : e.symm z ≠ 0 := by

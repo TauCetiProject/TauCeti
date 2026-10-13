@@ -16,6 +16,9 @@ the scalar extension, rather than one completion `L_w` above `v`, keeps every pl
 `v`: by `TauCeti.mem_range_normUnits_adicCompletion_iff` the local norms are the products of norms
 from all the completions `L_w` with `w ∣ v`. This file defines
 
+* `TauCeti.GlobalNumberFields.finiteLocalNormMap` and
+  `TauCeti.GlobalNumberFields.infiniteLocalNormMap`, the norm maps of these local étale algebras
+  on units;
 * `TauCeti.GlobalNumberFields.IsFiniteLocalNorm`, the local norm condition at a finite place;
 * `TauCeti.GlobalNumberFields.IsInfiniteLocalNorm`, the local norm condition at an infinite place,
   on Mathlib's completion `w.Completion`;
@@ -48,40 +51,44 @@ namespace TauCeti.GlobalNumberFields
 
 variable (K L : Type*) [Field K] [Field L] [Algebra K L]
 
+/-- The **norm map of the local étale algebra** `K_w ⊗[K] L` at the infinite place `w`, on units,
+landing in Mathlib's completion `K_w`. Using the scalar extension, rather than one completion of `L`
+above `w`, retains every place of `L` above `w`. -/
+abbrev infiniteLocalNormMap [_hKL : FiniteDimensional K L] (w : InfinitePlace K) :
+    (w.Completion ⊗[K] L)ˣ →* w.Completionˣ :=
+  Algebra.normUnits w.Completion
+
 /-- `x ∈ Kˣ` is a **local norm at the infinite place `w`** for a finite extension `L/K`: its
 image in Mathlib's completion `K_w` is the norm of a unit of the local étale algebra
 `K_w ⊗[K] L`. -/
-def IsInfiniteLocalNorm [_hKL : FiniteDimensional K L] (w : InfinitePlace K) (x : Kˣ) : Prop :=
-  Units.map (algebraMap K w.Completion).toMonoidHom x ∈
-    (Algebra.normUnits w.Completion (S := w.Completion ⊗[K] L)).range
+@[expose] def IsInfiniteLocalNorm [FiniteDimensional K L] (w : InfinitePlace K) (x : Kˣ) : Prop :=
+  Units.map (algebraMap K w.Completion).toMonoidHom x ∈ (infiniteLocalNormMap K L w).range
 
 variable [NumberField K]
+
+/-- The **norm map of the local étale algebra** `K_v ⊗[K] L` at the finite place `v`, on units.
+Using the scalar extension, rather than one completion of `L` above `v`, retains every place of
+`L` above `v`. -/
+abbrev finiteLocalNormMap [_hKL : FiniteDimensional K L] (v : HeightOneSpectrum (𝓞 K)) :
+    (v.adicCompletion K ⊗[K] L)ˣ →* (v.adicCompletion K)ˣ :=
+  Algebra.normUnits (v.adicCompletion K)
 
 /-- `x ∈ Kˣ` is a **local norm at the finite place `v`** for a finite extension `L/K`: its image
 in `K_v` is the norm of a unit of the local étale algebra `K_v ⊗[K] L`, which accounts for every
 place of `L` above `v`. -/
-def IsFiniteLocalNorm [_hKL : FiniteDimensional K L] (v : HeightOneSpectrum (𝓞 K)) (x : Kˣ) :
+@[expose] def IsFiniteLocalNorm [FiniteDimensional K L] (v : HeightOneSpectrum (𝓞 K)) (x : Kˣ) :
     Prop :=
-  Units.map (algebraMap K (v.adicCompletion K)).toMonoidHom x ∈
-    (Algebra.normUnits (v.adicCompletion K) (S := v.adicCompletion K ⊗[K] L)).range
+  Units.map (algebraMap K (v.adicCompletion K)).toMonoidHom x ∈ (finiteLocalNormMap K L v).range
 
 /-- `x ∈ Kˣ` is a **local norm everywhere** for a finite extension `L/K`: it is a local norm at
 every finite place and at every infinite place of `K`, complex places included. -/
-def IsLocalNormEverywhere [FiniteDimensional K L] (x : Kˣ) : Prop :=
+@[expose] def IsLocalNormEverywhere [FiniteDimensional K L] (x : Kˣ) : Prop :=
   (∀ v : HeightOneSpectrum (𝓞 K), IsFiniteLocalNorm K L v x) ∧
     ∀ w : InfinitePlace K, IsInfiniteLocalNorm K L w x
 
-section Unfold
+section Complex
 
 variable {K L} [FiniteDimensional K L]
-
-omit [NumberField K] in
-/-- Unfolding `IsInfiniteLocalNorm`. -/
-theorem isInfiniteLocalNorm_iff_mem_range (w : InfinitePlace K) (x : Kˣ) :
-    IsInfiniteLocalNorm K L w x ↔
-      Units.map (algebraMap K w.Completion).toMonoidHom x ∈
-        (Algebra.normUnits w.Completion (S := w.Completion ⊗[K] L)).range :=
-  Iff.rfl
 
 omit [NumberField K] in
 /-- **The local norm condition at a complex place is automatic.** It is kept in
@@ -90,21 +97,7 @@ theorem isInfiniteLocalNorm_of_isComplex {w : InfinitePlace K} (hw : w.IsComplex
     IsInfiniteLocalNorm K L w x :=
   mem_range_normUnits_completion_of_isComplex L hw _
 
-/-- Unfolding `IsFiniteLocalNorm`. -/
-theorem isFiniteLocalNorm_iff_mem_range (v : HeightOneSpectrum (𝓞 K)) (x : Kˣ) :
-    IsFiniteLocalNorm K L v x ↔
-      Units.map (algebraMap K (v.adicCompletion K)).toMonoidHom x ∈
-        (Algebra.normUnits (v.adicCompletion K) (S := v.adicCompletion K ⊗[K] L)).range :=
-  Iff.rfl
-
-/-- Unfolding `IsLocalNormEverywhere`. -/
-theorem isLocalNormEverywhere_iff (x : Kˣ) :
-    IsLocalNormEverywhere K L x ↔
-      (∀ v : HeightOneSpectrum (𝓞 K), IsFiniteLocalNorm K L v x) ∧
-        ∀ w : InfinitePlace K, IsInfiniteLocalNorm K L w x :=
-  Iff.rfl
-
-end Unfold
+end Complex
 
 variable {K L} [NumberField L]
 

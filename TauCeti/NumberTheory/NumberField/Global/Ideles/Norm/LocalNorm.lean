@@ -43,8 +43,8 @@ theorem unitEmbedding_mem_range_ideleNormMap_iff (x : Kˣ) :
     IdeleGroup.unitEmbedding (𝓞 K) K x ∈ (ideleNormMap K L).toMonoidHom.range ↔
       IsLocalNormEverywhere K L x := by
   simp only [mem_range_ideleNormMap_iff, HeightOneSpectrum.ideleFiniteCoord_unitEmbedding,
-    InfinitePlace.ideleInfiniteCoord_unitEmbedding, isLocalNormEverywhere_iff,
-    isFiniteLocalNorm_iff_mem_range, isInfiniteLocalNorm_iff_mem_range]
+    InfinitePlace.ideleInfiniteCoord_unitEmbedding, IsLocalNormEverywhere, IsFiniteLocalNorm,
+    IsInfiniteLocalNorm]
 
 /-- **A global norm is a local norm everywhere.** This is the easy half of the Hasse norm
 principle, valid for every extension of number fields. -/
