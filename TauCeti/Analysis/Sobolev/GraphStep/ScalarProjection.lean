@@ -74,7 +74,7 @@ variable {E F X : Type*} [MeasurableSpace E] [NormedAddCommGroup E]
 
 /-- The scalar-projected field has the Riesz representative of its projected weak derivative
 as weak gradient. -/
-theorem hasWeakFDerivOn_scalarProjection (base : X →L[ℝ] Lp F p (mu.restrict Omega))
+theorem hasWeakFDerivOn_compLpL_base_prev (base : X →L[ℝ] Lp F p (mu.restrict Omega))
     (ℓ : F →L[ℝ] ℝ) (u : WeakDerivStep mu Omega p base) :
     HasWeakFDerivOn mu Omega (ℓ.compLpL p (mu.restrict Omega) (base (prev base u)))
       (fun x ↦ innerSL ℝ ((scalarGradientL ℓ).compLpL p (mu.restrict Omega)
@@ -90,7 +90,7 @@ private theorem norm_mk_scalarProjection_le (base : X →L[ℝ] Lp F p (mu.restr
     (ℓ : F →L[ℝ] ℝ) (u : WeakDerivStep mu Omega p base) :
     ‖W1p.mk (ℓ.compLpL p (mu.restrict Omega) (base (prev base u)))
       ((scalarGradientL ℓ).compLpL p (mu.restrict Omega) (weakFDeriv base u))
-      (hasWeakFDerivOn_scalarProjection base ℓ u)‖ ≤ (‖ℓ‖ * (‖base‖ + 1)) * ‖u‖ := by
+      (hasWeakFDerivOn_compLpL_base_prev base ℓ u)‖ ≤ (‖ℓ‖ * (‖base‖ + 1)) * ‖u‖ := by
   let G : (E →L[ℝ] F) →L[ℝ] E := scalarGradientL ℓ
   have hG : ‖G‖ ≤ ‖ℓ‖ := norm_scalarGradientL_le ℓ
   calc
@@ -98,7 +98,7 @@ private theorem norm_mk_scalarProjection_le (base : X →L[ℝ] Lp F p (mu.restr
         ‖G.compLpL p (mu.restrict Omega) (weakFDeriv base u)‖ := by
       simpa only [W1p.value_mk, W1p.gradient_mk] using
         W1p.norm_le_norm_value_add_norm_gradient (W1p.mk _ _
-          (hasWeakFDerivOn_scalarProjection base ℓ u))
+          (hasWeakFDerivOn_compLpL_base_prev base ℓ u))
     _ ≤ ‖ℓ‖ * (‖base‖ * ‖u‖) + ‖ℓ‖ * ‖u‖ := by
       apply add_le_add
       · refine ((ℓ.compLpL p (mu.restrict Omega)).le_opNorm _).trans ?_
@@ -120,7 +120,7 @@ def toW1pL (base : X →L[ℝ] Lp F p (mu.restrict Omega)) (ℓ : F →L[ℝ] �
   LinearMap.mkContinuous
     { toFun := fun u ↦ W1p.mk (ℓ.compLpL p (mu.restrict Omega) (base (prev base u)))
         ((scalarGradientL ℓ).compLpL p (mu.restrict Omega) (weakFDeriv base u))
-        (hasWeakFDerivOn_scalarProjection base ℓ u)
+        (hasWeakFDerivOn_compLpL_base_prev base ℓ u)
       map_add' := fun u v ↦ W1p.ext_value (by
         simp only [← W1p.valueL_apply, map_add]
         simp only [W1p.valueL_apply, W1p.value_mk, ← prevL_apply, map_add])
