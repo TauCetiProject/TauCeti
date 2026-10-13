@@ -34,7 +34,7 @@ namespace TauCeti
 namespace OddComponentGridDiagram
 
 variable {n : ℕ} (G : OddComponentGridDiagram n) (s : Fin n)
-    (R : Type*) [CommRing R] [CharP R 2]
+    (R : Type*) [CommRing R]
 
 /-- The stabilization comparison on chains preserves both gradings. -/
 theorem stabilizeXChainMap_mem_bigradedChainMinusPiece {g : ℤ × ℤ}
@@ -42,11 +42,41 @@ theorem stabilizeXChainMap_mem_bigradedChainMinusPiece {g : ℤ × ℤ}
       ⟨G.1.stabilizeX s.castSucc (G.1.X s).castSucc s,
         (G.1.componentCount_stabilizeX _ _ _).symm ▸ G.2⟩ R g) :
     G.1.stabilizeXChainMap s R c ∈ G.bigradedChainMinusPiece R g := by
+  classical
   have hG' : G.stabilizeX s = ⟨G.1.stabilizeX s.castSucc (G.1.X s).castSucc s,
       (G.1.componentCount_stabilizeX _ _ _).symm ▸ G.2⟩ := Subtype.ext (G.val_stabilizeX s)
-  rw [← hG'] at hc
-  have h := G.stabilizeXMap_mem_bigradedChainMinusPiece s R hc
-  rwa [GridDiagram.stabilizeXMap_f_apply, ← GridDiagram.stabilizeXChainMap_apply] at h
+  rw [← hG', mem_bigradedChainMinusPiece] at hc
+  rw [mem_bigradedChainMinusPiece]
+  intro x e he
+  rw [GridDiagram.stabilizeXChainMap_apply, Finsupp.mapRange_apply] at he
+  -- Trace an output monomial through renaming, the off-center projection, and a rectangle.
+  obtain ⟨u, hu, rfl⟩ : ∃ u ∈ (G.1.stabilizeXOffCenterToCenter s R
+      (G.1.stabilizeXOffCenterProjection s R c) x).support, u.mapDomain s.predAbove = e := by
+    by_contra! h
+    exact (MvPolynomial.mem_support_iff.mp he) (coeff_rename_eq_zero _ _ _ fun u hu =>
+      MvPolynomial.notMem_support_iff.mp fun hu' => h u hu' hu)
+  rw [GridDiagram.stabilizeXOffCenterToCenter_apply, Finsupp.sum] at hu
+  obtain ⟨y, -, huy⟩ := Finset.mem_biUnion.mp (MvPolynomial.support_sum hu)
+  obtain ⟨d, hd, d', hd', rfl⟩ := Finset.mem_add.mp (MvPolynomial.support_mul _ _ huy)
+  obtain ⟨r, hr, rfl⟩ :=
+    GridDiagram.exists_mem_XHomotopyRectangles_of_mem_support_XHomotopyCoefficient _ R hd'
+  rw [GridDiagram.stabilizeXOffCenterProjection_apply] at hd
+  have hM := G.1.maslovOℤ_stabilizeX_eq_of_isEmpty s x
+    ((GridDiagram.mem_XHomotopyRectangles _ _ r).mp hr).1
+  have hA := G.1.alexander_stabilizeX_eq_of_mem_XHomotopyRectangles s x hr
+  rw [← val_stabilizeX, alexander_eq_intCast, G.alexander_eq_intCast] at hA
+  have hA' : (G.stabilizeX s).alexanderℤ y.1 = G.alexanderℤ x -
+      ((G.stabilizeX s).1.OColumns r.toGridRectangle).card := by
+    exact_mod_cast hA
+  rw [val_stabilizeX] at hA'
+  rw [← hc y.1 d hd]
+  -- The rectangle grading shifts cancel the degree of its coefficient monomial.
+  refine Prod.ext ?_ ?_ <;>
+    simp only [monomialBidegree_fst, monomialBidegree_snd, Finsupp.degree_mapDomain, map_add,
+      map_sum, Finsupp.degree_single, Finset.sum_const, smul_eq_mul, mul_one, val_stabilizeX] <;>
+    push_cast <;> omega
+
+variable [CharP R 2]
 
 /-- The stabilization comparison on homology preserves both O-Maslov and Alexander degrees. -/
 theorem stabilizeXHomologyMap_mem_bigradedUnblockedHomologyPiece {g : ℤ × ℤ}
@@ -68,23 +98,25 @@ theorem stabilizeXHomologyMap_mem_bigradedUnblockedHomologyPiece_iff (g : ℤ ×
       y ∈ bigradedUnblockedHomologyPiece
         ⟨G.1.stabilizeX s.castSucc (G.1.X s).castSucc s,
           (G.1.componentCount_stabilizeX _ _ _).symm ▸ G.2⟩ R g := by
-  classical
   let G' : OddComponentGridDiagram (n + 1) := ⟨G.1.stabilizeX s.castSucc
     (G.1.X s).castSucc s, (G.1.componentCount_stabilizeX _ _ _).symm ▸ G.2⟩
-  let := (G.isInternal_bigradedUnblockedHomologyPiece R).chooseDecomposition
-  let := (G'.isInternal_bigradedUnblockedHomologyPiece R).chooseDecomposition
+  have he : LinearMap.IsHomogeneous (G.1.stabilizeXHomologyEquiv s R).toLinearMap
+      (G'.bigradedUnblockedHomologyGrading R).piece
+      (G.bigradedUnblockedHomologyGrading R).piece 0 := by
+    rw [LinearMap.isHomogeneous_def]
+    intro p z hz
+    rw [bigradedUnblockedHomologyGrading_piece] at hz
+    simpa only [add_zero, bigradedUnblockedHomologyGrading_piece,
+      LinearEquiv.coe_coe, GridDiagram.stabilizeXHomologyEquiv_apply] using
+      G.stabilizeXHomologyMap_mem_bigradedUnblockedHomologyPiece s R hz
   constructor
   · intro hy
-    have hproj := DirectSum.map_decompose_shift
-      (G'.bigradedUnblockedHomologyPiece R)
-      (G.bigradedUnblockedHomologyPiece R) (G.1.stabilizeXHomologyMap s R).toAddMonoidHom
-      id Function.injective_id (fun _ _ hz =>
-        G.stabilizeXHomologyMap_mem_bigradedUnblockedHomologyPiece s R hz) g y
-    simp only [LinearMap.toAddMonoidHom_coe, id_eq] at hproj
-    rw [DirectSum.decompose_of_mem_same _ hy] at hproj
-    have heq := (G.1.stabilizeXHomologyMap_bijective s R).injective hproj
-    rw [← heq]
-    exact SetLike.coe_mem _
+    rw [← bigradedUnblockedHomologyGrading_piece,
+      ← GridDiagram.stabilizeXHomologyEquiv_apply] at hy
+    have h := he.linearEquiv_symm.map_mem hy
+    simpa only [add_zero, bigradedUnblockedHomologyGrading_piece,
+      LinearEquiv.coe_coe, ← GridDiagram.stabilizeXHomologyEquiv_apply,
+      LinearEquiv.symm_apply_apply] using h
   · exact G.stabilizeXHomologyMap_mem_bigradedUnblockedHomologyPiece s R
 
 /-- The specified stabilization comparison identifies each homogeneous homology piece with the

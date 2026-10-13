@@ -298,12 +298,13 @@ variable {R S : Type*} {M : Type v} {N : Type w} [Semiring R] [Semiring S]
 /-- The inverse of a degree-zero homogeneous linear equivalence of internally graded modules is
 again homogeneous of degree zero. The equivalence may be linear over a ring `S` other than the
 ring `R` over which the homogeneous pieces are submodules. -/
-theorem linearEquiv_symm {G : InternalGrading R M} {H : InternalGrading R N} {e : M ≃ₗ[S] N}
+theorem linearEquiv_symm {ι : Type} [DecidableEq ι] [AddMonoid ι]
+    {G : InternalGrading R M ι} {H : InternalGrading R N ι} {e : M ≃ₗ[S] N}
     (he : IsHomogeneous e.toLinearMap G.piece H.piece 0) :
     IsHomogeneous e.symm.toLinearMap H.piece G.piece 0 := by
   -- The restrictions `ep p : G.piece p → H.piece p` assemble to a map of direct sums lying over
   -- `e`; it is surjective because `e` and both decompositions are, hence so is each `ep p`.
-  let ep : (p : ℤ) → G.piece p →+ H.piece p := fun p ↦
+  let ep : (p : ι) → G.piece p →+ H.piece p := fun p ↦
     { toFun := fun x ↦ ⟨e.toLinearMap x, by simpa only [add_zero] using he.map_mem x.2⟩
       map_zero' := Subtype.ext (map_zero e.toLinearMap)
       map_add' := fun x y ↦ Subtype.ext (map_add e.toLinearMap (x : M) (y : M)) }

@@ -80,7 +80,8 @@ theorem isInternal_bigradedUnblockedCyclesPiece :
 
 variable [CharP R 2]
 
-private noncomputable def homologyGrading :
+/-- The internal `(O-Maslov, Alexander)` grading of unblocked grid homology. -/
+noncomputable def bigradedUnblockedHomologyGrading :
     InternalGrading R (G.1.unblockedHomology R) (ℤ × ℤ) :=
   ((G.chainGrading R).homology (G.differential_homogeneous R)
     (G.1.unblockedDifferential_comp_self_eq_zero R)).map
@@ -89,7 +90,13 @@ private noncomputable def homologyGrading :
 /-- The bidegree-`g` piece of `GH⁻`: classes of cycles homogeneous of bidegree `g`. -/
 noncomputable def bigradedUnblockedHomologyPiece (g : ℤ × ℤ) :
     Submodule R (G.1.unblockedHomology R) :=
-  (G.homologyGrading R).piece g
+  (G.bigradedUnblockedHomologyGrading R).piece g
+
+/-- The pieces of the bundled homology grading are the homogeneous homology pieces. -/
+@[simp]
+theorem bigradedUnblockedHomologyGrading_piece (g : ℤ × ℤ) :
+    (G.bigradedUnblockedHomologyGrading R).piece g = G.bigradedUnblockedHomologyPiece R g := by
+  rw [bigradedUnblockedHomologyPiece]
 
 /-- A class has bidegree `g` exactly when it has a cycle representative of that bidegree. -/
 theorem mem_bigradedUnblockedHomologyPiece_iff {g : ℤ × ℤ} {y : G.1.unblockedHomology R} :
@@ -97,8 +104,8 @@ theorem mem_bigradedUnblockedHomologyPiece_iff {g : ℤ × ℤ} {y : G.1.unblock
       ∃ z : LinearMap.ker (G.1.unblockedDifferential R),
         (z : GridChainMinus R n) ∈ G.bigradedChainMinusPiece R g ∧
           G.1.unblockedHomologyClass R z = y := by
-  rw [bigradedUnblockedHomologyPiece, homologyGrading, InternalGrading.mem_map_piece_iff,
-    InternalGrading.mem_homology_piece_iff]
+  rw [bigradedUnblockedHomologyPiece, bigradedUnblockedHomologyGrading,
+    InternalGrading.mem_map_piece_iff, InternalGrading.mem_homology_piece_iff]
   constructor
   · rintro ⟨z, hz, hzy⟩
     refine ⟨z, hz, ?_⟩
@@ -118,18 +125,18 @@ theorem unblockedHomologyClass_mem_bigradedUnblockedHomologyPiece {g : ℤ × �
 /-- The bigraded homology pieces span `GH⁻`. -/
 theorem iSup_bigradedUnblockedHomologyPiece_eq_top :
     ⨆ g, G.bigradedUnblockedHomologyPiece R g = ⊤ :=
-  (G.homologyGrading R).isInternal.submodule_iSup_eq_top
+  (G.bigradedUnblockedHomologyGrading R).isInternal.submodule_iSup_eq_top
 
 /-- The bigraded homology pieces are independent: a homogeneous boundary can be detected in
 its own bidegree. -/
 theorem iSupIndep_bigradedUnblockedHomologyPiece :
     iSupIndep (G.bigradedUnblockedHomologyPiece R) :=
-  (G.homologyGrading R).isInternal.submodule_iSupIndep
+  (G.bigradedUnblockedHomologyGrading R).isInternal.submodule_iSupIndep
 
 /-- `GH⁻` is the internal direct sum of its `(O-Maslov, Alexander)` pieces. -/
 theorem isInternal_bigradedUnblockedHomologyPiece :
     DirectSum.IsInternal (G.bigradedUnblockedHomologyPiece R) :=
-  (G.homologyGrading R).isInternal
+  (G.bigradedUnblockedHomologyGrading R).isInternal
 
 /-- Multiplication by a monomial of total degree `d.degree` lowers homology bidegree by
 `(2 * d.degree, d.degree)`. -/
@@ -138,8 +145,8 @@ theorem monomial_smul_mem_bigradedUnblockedHomologyPiece (d : Fin n →₀ ℕ) 
     (hy : y ∈ G.bigradedUnblockedHomologyPiece R g) :
     (monomial d a : MvPolynomial (Fin n) R) • y ∈
       G.bigradedUnblockedHomologyPiece R (g - (2 * (d.degree : ℤ), (d.degree : ℤ))) := by
-  rw [bigradedUnblockedHomologyPiece, homologyGrading, InternalGrading.mem_map_piece_iff]
-    at hy ⊢
+  rw [bigradedUnblockedHomologyPiece, bigradedUnblockedHomologyGrading,
+    InternalGrading.mem_map_piece_iff] at hy ⊢
   -- Use the polynomial-linear quotient isomorphism to transport the monomial action.
   suffices h : (G.1.unblockedHomologyIso R).hom ((monomial d a) • y) ∈
       ((G.chainGrading R).homology (G.differential_homogeneous R)
