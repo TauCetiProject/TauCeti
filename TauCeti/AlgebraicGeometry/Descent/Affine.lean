@@ -534,8 +534,13 @@ theorem exists_isAffine_baseChange_hom_isIso {S S' : Scheme.{u}} {p : S' ⟶ S} 
     ∃ X₀ : Over S, IsAffine X₀.left ∧ ∃ f : Hom (baseChange p X₀) D, IsIso f.hom := by
   -- Present `p` as `Spec Γ(S', ⊤) ⟶ Spec Γ(S, ⊤)`, with `Γ(S', ⊤)` an algebra through `p`.
   let _ : Algebra Γ(S, ⊤) Γ(S', ⊤) := p.appTop.hom.toAlgebra
-  have : Module.Flat Γ(S, ⊤) Γ(S', ⊤) := HasRingHomProperty.iff_of_isAffine.mp ‹Flat p›
-  let e : Arrow.mk p ≅ Arrow.mk (Spec.algebraMap Γ(S, ⊤) Γ(S', ⊤)) := arrowIsoSpecΓOfIsAffine p
+  have : Module.Flat Γ(S, ⊤) Γ(S', ⊤) := by
+    rw [← RingHom.flat_algebraMap_iff, RingHom.algebraMap_toAlgebra]
+    exact HasRingHomProperty.iff_of_isAffine.mp ‹Flat p›
+  have hp : Spec.algebraMap Γ(S, ⊤) Γ(S', ⊤) = Spec.map p.appTop := by
+    rw [Spec.algebraMap, RingHom.algebraMap_toAlgebra, CommRingCat.ofHom_hom]
+  let e : Arrow.mk p ≅ Arrow.mk (Spec.algebraMap Γ(S, ⊤) Γ(S', ⊤)) :=
+    arrowIsoSpecΓOfIsAffine p ≪≫ Arrow.isoMk (Iso.refl _) (Iso.refl _) (by simp [hp])
   have : IsAffine ((Over.map e.hom.left).obj X).left := by
     rw [Over.map_obj_left]
     infer_instance
