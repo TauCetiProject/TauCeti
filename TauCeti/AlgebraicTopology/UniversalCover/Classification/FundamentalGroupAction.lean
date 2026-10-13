@@ -74,15 +74,11 @@ categorical action on the fibre is `IsCoveringMap.fundamentalGroupMulAction`, an
 
 ## References
 
-This is the `π₁(X)`-set form of the alternative lens on Stage 2, item 8 of
-`TauCetiRoadmap/UniversalCovers/README.md`, which asks to "phrase the classification of
-connected covers via transitive `π₁(X)`-sets / the monodromy functor, with disconnected covers
-as functors out of the fundamental groupoid"; see Hatcher, *Algebraic Topology*, Section 1.3. It
-consumes the fundamental-groupoid classification of
-`TauCeti.AlgebraicTopology.UniversalCover.Classification.MonodromyEquivalence`, the
-stabiliser-cover reconstruction of
-`TauCeti.AlgebraicTopology.UniversalCover.Classification.Reconstruction`, which rests on the
-based-path universal cover adapted from Kim Morrison's
+This is the `π₁(X)`-set form of the classification of covering spaces; see Hatcher, *Algebraic
+Topology*, Section 1.3. It consumes the fundamental-groupoid classification of
+`TauCeti.AlgebraicTopology.UniversalCover.Classification.MonodromyEquivalence`, the stabiliser-cover
+reconstruction of `TauCeti.AlgebraicTopology.UniversalCover.Classification.Reconstruction`, which
+rests on the based-path universal cover adapted from Kim Morrison's
 [mathlib4#38292](https://github.com/leanprover-community/mathlib4/pull/38292), and Mathlib's
 `CategoryTheory.Action.functorCategoryEquivalence`; no Mathlib proof is vendored.
 -/

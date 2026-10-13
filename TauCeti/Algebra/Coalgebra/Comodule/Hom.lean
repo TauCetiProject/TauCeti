@@ -18,11 +18,6 @@ commute with the coactions.
 
 The `IsZeroApply` and `IsAddApply` instances give pointwise finite sums via Mathlib's
 `sum_apply` and `FunLike.coe_sum`, also for categorical morphisms in `ComoduleCat`.
-
-This is basic infrastructure for the reductive-groups roadmap Layer 1 target
-"Comodules over a coalgebra/Hopf algebra": the representation category of an affine group
-scheme should have additive hom-sets before finite-dimensional, tensor, and dual structures
-are built on top.
 -/
 
 public section

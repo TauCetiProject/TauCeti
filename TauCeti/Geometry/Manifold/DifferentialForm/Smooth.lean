@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.DifferentialForm.Basic
+public import TauCeti.LinearAlgebra.BilinearForm.Multilinear
 public import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
 public import Mathlib.Topology.VectorBundle.ContinuousAlternatingMap
 
@@ -17,6 +18,9 @@ underlying rough form remains an unbundled dependent function, while `IsSmoothBu
 that its graph is a smooth section of the alternating bundle.  The corresponding `Submodule`
 provides the bundled carrier `SmoothBundleForm`; fixed coefficients are the `SmoothForm`
 specialization.  These carriers are the input for smooth wedge products and pullbacks.
+
+The degree-two adapters below evaluate smooth forms on ordered pairs and expose real-valued fibres
+as alternating bilinear forms.
 
 Smoothness is expressed through the total-space charts of the topological alternating bundle.  The
 module operations use Mathlib's smooth-section API, so this carrier does not require a chosen
@@ -139,6 +143,77 @@ abbrev SmoothForm (I : ModelWithCorners ℝ E H) (M : Type*) [TopologicalSpace M
     [ChartedSpace H M] [IsManifold I 1 M] (F : Type*)
     [NormedAddCommGroup F] [NormedSpace ℝ F] (k : ℕ) : Type _ :=
   ↥(smoothForms I M F k)
+
+namespace SmoothForm
+
+variable {I : ModelWithCorners ℝ E H} [IsManifold I 1 M]
+
+/-- Evaluate a degree-two smooth form on an ordered pair of tangent vectors.
+
+This ordered-pair view supplies the arguments for the algebraic bilinear-form conversion and
+the extensionality principle for degree-two forms. -/
+def eval₂ (φ : SmoothForm I M F 2) (x : M) (v w : TangentSpace I x) : F :=
+  φ.1 x ![v, w]
+
+@[simp]
+theorem eval₂_apply (φ : SmoothForm I M F 2) (x : M) (v w : TangentSpace I x) :
+    φ.eval₂ x v w = φ.1 x ![v, w] := by
+  simp [eval₂]
+
+/-- The algebraic bilinear form represented by the value of a real degree-two smooth form.
+
+This generalizes the corresponding `SmoothTwoForm.bilinFormAt` construction from
+`TauCeti.Geometry.Manifold.TwoForm.Basic` to the generic smooth-form carrier. -/
+def bilinFormAt (φ : SmoothForm I M ℝ 2) (x : M) :
+    LinearMap.BilinForm ℝ (TangentSpace I x) :=
+  MultilinearMap.toBilinForm (φ.1 x).toMultilinearMap
+
+@[simp]
+theorem bilinFormAt_apply (φ : SmoothForm I M ℝ 2) (x : M) (v w : TangentSpace I x) :
+    φ.bilinFormAt x v w = φ.eval₂ x v w :=
+  by simp [bilinFormAt]
+
+/-- The bilinear form represented by a degree-two smooth form is alternating. -/
+theorem isAlt_bilinFormAt (φ : SmoothForm I M ℝ 2) (x : M) :
+    (φ.bilinFormAt x).IsAlt := by
+  apply MultilinearMap.isAlt_toBilinForm
+  intro v
+  exact (φ.1 x).map_eq_zero_of_eq _ (by simp) Fin.zero_ne_one
+
+/-- Evaluation on two equal tangent vectors vanishes by alternation. -/
+theorem eval₂_self (φ : SmoothForm I M F 2) (x : M) (v : TangentSpace I x) :
+    φ.eval₂ x v v = 0 := by
+  simpa only [eval₂_apply] using (φ.1 x).map_eq_zero_of_eq ![v, v] (by simp) Fin.zero_ne_one
+
+/-- Swapping the inputs of a degree-two smooth form negates its value. -/
+theorem eval₂_swap (φ : SmoothForm I M F 2) (x : M)
+    (v w : TangentSpace I x) :
+  φ.eval₂ x v w = -φ.eval₂ x w v := by
+  have h := (φ.1 x).map_swap ![v, w] (i := 0) (j := 1) Fin.zero_ne_one
+  have htuple : ![v, w] ∘ Equiv.swap 0 1 = ![w, v] := by
+    funext i
+    fin_cases i <;> rfl
+  rw [htuple] at h
+  have h' : φ.eval₂ x w v = -φ.eval₂ x v w := by
+    simpa [eval₂] using h
+  calc
+    φ.eval₂ x v w = - -φ.eval₂ x v w := by simp
+    _ = -φ.eval₂ x w v := by rw [h']
+
+/-- A degree-two smooth form is determined by its values on ordered pairs. -/
+@[ext]
+theorem ext {φ ψ : SmoothForm I M F 2}
+    (h : ∀ x v w, φ.eval₂ x v w = ψ.eval₂ x v w) :
+    φ = ψ := by
+  apply Subtype.ext
+  funext x
+  apply ContinuousAlternatingMap.ext
+  intro v
+  have hv : v = ![v 0, v 1] := (FinVec.etaExpand_eq v).symm
+  rw [hv]
+  simpa only [eval₂_apply] using h x (v 0) (v 1)
+
+end SmoothForm
 
 end FixedCoefficients
 

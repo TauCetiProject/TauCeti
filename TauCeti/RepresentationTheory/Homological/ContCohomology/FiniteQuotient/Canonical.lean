@@ -257,7 +257,7 @@ theorem continuousFiniteQuotientComparisonApp_eq_map (U : OpenNormalSubgroup G) 
         (ofDiscreteModulePair
           (ContinuousMonoidHom.quotientMk U.toSubgroup : G →* G ⧸ U.toSubgroup)
           (FixedPoints.addSubgroup U.toSubgroup M).subtype.toIntLinearMap
-          (fun g m ↦ subtype_quotientMk_smul G M U.toSubgroup g m)) n :=
+          U.toSubgroup.fixedPoints_subtype_quotientMk_smul) n :=
   coeffMap_ofDiscreteModuleQuotient_comp_infl G M U.toSubgroup n
 
 /-- Passing from the `U`-level through a deeper `V`-level and then comparing with `Hⁿ(G, M)`
@@ -280,13 +280,13 @@ theorem continuousFiniteQuotientTransition_comp_comparisonApp (hVU : V ≤ U) (n
   change (ofDiscreteModulePair
       (ContinuousMonoidHom.quotientMk V.toSubgroup : G →* G ⧸ V.toSubgroup)
       (FixedPoints.addSubgroup V.toSubgroup M).subtype.toIntLinearMap
-      (fun g m ↦ subtype_quotientMk_smul G M V.toSubgroup g m)).hom
+      V.toSubgroup.fixedPoints_subtype_quotientMk_smul).hom
       ((continuousFiniteQuotientPair G M hVU).hom m) = (m : M)
   rw [continuousFiniteQuotientPair_hom_apply (G := G) (M := M) hVU m,
     ofDiscreteModulePair_hom_apply
       (ContinuousMonoidHom.quotientMk V.toSubgroup : G →* G ⧸ V.toSubgroup)
       (FixedPoints.addSubgroup V.toSubgroup M).subtype.toIntLinearMap
-      (fun g m ↦ subtype_quotientMk_smul G M V.toSubgroup g m) (fixedPointsInclusion hVU m)]
+      V.toSubgroup.fixedPoints_subtype_quotientMk_smul (fixedPointsInclusion hVU m)]
   exact coe_fixedPointsInclusion hVU m
 
 /-- The inflation-and-inclusion comparison maps from every level into `Hⁿ(G, M)`, assembled as a

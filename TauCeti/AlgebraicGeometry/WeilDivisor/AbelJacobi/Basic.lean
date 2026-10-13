@@ -10,23 +10,19 @@ public import TauCeti.AlgebraicGeometry.WeilDivisor.Principal.Basic
 /-!
 # The abstract Abel-Jacobi divisor class map
 
-This file adds the point-level divisor-class shadow of the Abel-Jacobi map to the formal
-Layer A divisor API.  Once the Jacobian is constructed as `Pic⁰(X)`, the Abel-Jacobi morphism
-attached to a base point `x₀` sends a point `x` to the degree-zero line bundle
-`𝒪_X(x - x₀)` over an algebraically closed field.  For closed points over a non-algebraically
-closed field, the weighted-degree-corrected divisor is `x - w(x) x₀`, when `x₀` has residue
-degree `1`.
+This file adds the point-level divisor-class shadow of the Abel-Jacobi map to the formal divisor
+API. For a smooth projective geometrically connected curve `X` over an algebraically closed field,
+the Abel-Jacobi morphism to the Jacobian `Pic⁰(X)` attached to a base point `x₀` sends a point `x`
+to the degree-zero line bundle `𝒪_X(x - x₀)`. For closed points over a non-algebraically closed
+field, the weighted-degree-corrected divisor is `x - w(x) x₀`, when `x₀` has residue degree `1`.
 
-Here the geometry is still abstracted to an `OrderSystem` and an integer-valued weight
-`w : X → ℤ`.  We define the formal divisor `[x] - w(x)[x₀]`, prove it has weighted degree zero
-when `w x₀ = 1`, and take its divisor class as an element of the abstract `Pic⁰` subgroup
-already built in `WeilDivisor.Principal`.  The unweighted specialization recovers
-`x ↦ [x] - [x₀]`.
+Here the geometry is abstracted to an `OrderSystem` and an integer-valued weight `w : X → ℤ`. We
+define the formal divisor `[x] - w(x)[x₀]`, prove it has weighted degree zero when `w x₀ = 1`, and
+take its divisor class as an element of the abstract `Pic⁰` subgroup of
+`WeilDivisor.Principal.Basic`. The unweighted specialization recovers `x ↦ [x] - [x₀]`.
 
-This advances `TauCetiRoadmap/JacobianChallenge/README.md`, Layer A (`Pic⁰ X = ker deg`) as a
-direct prerequisite for Layer F's Abel-Jacobi morphism `aj : X ⟶ Jac X`, while staying at the
-formal divisor-class level available before line bundles, the Picard scheme, or the Jacobian
-variety exist.  No external mathematics is vendored; this reuses Tau Ceti's `WeilDivisor`,
+This stays at the level of formal divisor classes, without line bundles, the Picard scheme or the
+Jacobian variety. No external mathematics is vendored; this reuses Tau Ceti's `WeilDivisor`,
 `OrderSystem.divisorClass`, and `OrderSystem.picZero` API.
 -/
 

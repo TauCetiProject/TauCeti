@@ -94,21 +94,10 @@ theorem relaxedTransportCost_eq_transportCost_of_le_split [IsFiniteMeasure μ]
     (hmass : μ univ = ν univ) (ha : AEMeasurable a μ) (hb : AEMeasurable b ν)
     (haint : ∫⁻ x, a x ∂μ ≠ ∞) (hbint : ∫⁻ y, b y ∂ν ≠ ∞)
     (hc : ∀ z, c z ≤ a z.1 + b z.2) :
-    relaxedTransportCost c μ ν = transportCost c μ ν := by
-  refine le_antisymm relaxedTransportCost_le_transportCost ?_
-  refine ENNReal.le_of_forall_pos_le_add fun η hη _ ↦ ?_
-  have hη' : 0 < (η : ℝ≥0∞) := by exact_mod_cast hη
-  obtain ⟨C, hC⟩ := exists_transportCost_le_partialTransportCost_add_of_le_split
-    hmass ha hb haint hbint hc (ENNReal.half_pos hη'.ne')
-  obtain ⟨δ, hδ, hCδ⟩ := ENNReal.exists_nnreal_pos_mul_lt (a := (C : ℝ≥0∞))
-    ENNReal.coe_ne_top (ENNReal.half_pos hη'.ne').ne'
-  have hδ' : 0 < (δ : ℝ≥0∞) := by exact_mod_cast hδ
-  calc
-    transportCost c μ ν ≤ partialTransportCost c μ ν δ + C * δ + (η : ℝ≥0∞) / 2 := hC δ
-    _ ≤ relaxedTransportCost c μ ν + (η : ℝ≥0∞) / 2 + (η : ℝ≥0∞) / 2 :=
-      add_le_add (add_le_add (partialTransportCost_le_relaxedTransportCost hδ')
-        (by simpa only [mul_comm] using hCδ.le)) le_rfl
-    _ = relaxedTransportCost c μ ν + η := by rw [add_assoc, ENNReal.add_halves]
+    relaxedTransportCost c μ ν = transportCost c μ ν :=
+  le_antisymm relaxedTransportCost_le_transportCost <|
+    le_relaxedTransportCost_of_forall_exists_le_add fun _ hη ↦
+      exists_transportCost_le_partialTransportCost_add_of_le_split hmass ha hb haint hbint hc hη
 
 /-- **Relaxation preserves bounded-cost transport.** This is the constant-envelope case of
 `relaxedTransportCost_eq_transportCost_of_le_split`: for finite equal-mass measures and a

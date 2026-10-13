@@ -21,6 +21,5 @@ Jordan curve at one or two of its points (`TauCeti.Topology.JordanCurve.Separati
 two nearby points cut off an arc of small diameter (`TauCeti.Topology.JordanCurve.SmallArc`), and
 the classification of the compact connected subsets of a curve
 (`TauCeti.Topology.JordanCurve.Subcontinuum`). It declares
-nothing of its own, and keeps the import path `TauCeti.Topology.JordanCurve` — which named the
-basic theory before it moved into the directory — working.
+nothing of its own.
 -/
