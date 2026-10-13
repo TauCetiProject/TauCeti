@@ -127,7 +127,10 @@ theorem isDGRightModule_fiber (L : LocalCoefficientSystem.{u, u, w} R X) :
 
 variable (x) in
 /-- **The DG local system of a classical local system**: the fiber at the basepoint, concentrated
-in degree zero. -/
+in degree zero.
+
+Exposed because the types of `classicalDGLocalSystem_grading` and `classicalDGLocalSystemMap`
+mention its carrier and `DGRightModuleHom` between the underlying fiber modules. -/
 @[expose] def classicalDGLocalSystem (L : LocalCoefficientSystem.{u, u, w} R X) :
     DGLocalSystem X x R :=
   DGRightModuleCat.of (isDGRightModule_fiber L)
@@ -173,11 +176,8 @@ theorem classicalAction_naturality {L L' : LocalCoefficientSystem.{u, u, w} R X}
   rw [← op_unop a, classicalAction_op_apply, classicalAction_op_apply]
   exact LocalCoefficientSystem.fiberRightAction_lift_naturality φ _ m
 
-/-- **A morphism of classical local systems induces a morphism of DG local systems.**
-
-This is exposed so that the functor laws of `classicalDGLocalSystemFunctor` hold by unfolding,
-rather than through a separate comp/id lemma for each. -/
-@[expose] def classicalDGLocalSystemMap {L L' : LocalCoefficientSystem.{u, u, w} R X} (φ : L ⟶ L') :
+/-- **A morphism of classical local systems induces a morphism of DG local systems.** -/
+def classicalDGLocalSystemMap {L L' : LocalCoefficientSystem.{u, u, w} R X} (φ : L ⟶ L') :
     DGRightModuleHom (isDGRightModule_fiber (x := x) L) (isDGRightModule_fiber (x := x) L') where
   toLinearMap :=
     { toFun := fun m ↦ (φ.app (FundamentalGroupoid.mk x)).hom m
@@ -198,17 +198,27 @@ theorem classicalDGLocalSystemMap_apply {L L' : LocalCoefficientSystem.{u, u, w}
 
 variable (x R) in
 /-- **The functor from classical local systems to DG local systems**: a classical local system
-goes to its fiber at the basepoint, concentrated in degree zero. -/
+goes to its fiber at the basepoint, concentrated in degree zero.
+
+Exposed because the type of `classicalDGLocalSystemFunctor_map` needs `obj` to unfold to
+`classicalDGLocalSystem` for `classicalDGLocalSystemMap φ` to be a morphism. -/
 @[expose] def classicalDGLocalSystemFunctor :
     LocalCoefficientSystem.{u, u, w} R X ⥤ DGLocalSystem X x R where
   obj L := classicalDGLocalSystem x L
   map φ := classicalDGLocalSystemMap φ
   map_id L := DGRightModuleHom.toLinearMap_injective
-    (LinearMap.ext fun m ↦ (DGRightModuleCat.id_apply (classicalDGLocalSystem x L) m).symm)
+    (LinearMap.ext fun m ↦
+      (classicalDGLocalSystemMap_apply (x := x) (𝟙 L) m).trans
+        (DGRightModuleCat.id_apply (classicalDGLocalSystem x L) m).symm)
   map_comp φ ψ := DGRightModuleHom.toLinearMap_injective
-    (LinearMap.ext fun m ↦ (DGRightModuleCat.comp_apply (M := classicalDGLocalSystem x _)
-      (N := classicalDGLocalSystem x _) (P := classicalDGLocalSystem x _)
-      (classicalDGLocalSystemMap φ) (classicalDGLocalSystemMap ψ) m).symm)
+    (LinearMap.ext fun m ↦
+      (classicalDGLocalSystemMap_apply (x := x) (φ ≫ ψ) m).trans
+        (((congrArg (ψ.app (FundamentalGroupoid.mk x)).hom
+            (classicalDGLocalSystemMap_apply (x := x) φ m).symm).trans
+          (classicalDGLocalSystemMap_apply (x := x) ψ _).symm).trans
+          (DGRightModuleCat.comp_apply (M := classicalDGLocalSystem x _)
+            (N := classicalDGLocalSystem x _) (P := classicalDGLocalSystem x _)
+            (classicalDGLocalSystemMap φ) (classicalDGLocalSystemMap ψ) m).symm))
 
 @[simp]
 theorem classicalDGLocalSystemFunctor_obj (L : LocalCoefficientSystem.{u, u, w} R X) :

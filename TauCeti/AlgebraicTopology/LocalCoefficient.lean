@@ -428,7 +428,7 @@ section FiberRightAction
 
 open MulOpposite
 
-variable {R : Type u} [CommRing R] {X : TopCat.{v}} {x : X}
+variable {X : TopCat.{v}} {x : X}
 
 /-- The right action of the fundamental group on the fiber of a local system: a class acts by the
 monodromy of its inverse, so that this is a homomorphism into the opposite endomorphism monoid. -/
@@ -443,6 +443,8 @@ theorem fiberRightAction_apply (L : LocalCoefficientSystem.{u, v, w} R X)
     (g : FundamentalGroup X x) :
     fiberRightAction L g = op (monodromyRepresentation L x g⁻¹) :=
   (rfl)
+
+variable {R : Type u} [CommRing R]
 
 /-- The right action of group algebra elements on fibers is natural in the local system. -/
 theorem fiberRightAction_lift_naturality {L L' : LocalCoefficientSystem.{u, v, w} R X}
