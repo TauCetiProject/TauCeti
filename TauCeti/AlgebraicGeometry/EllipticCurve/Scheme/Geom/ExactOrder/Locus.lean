@@ -60,8 +60,9 @@ order `N` exactly when the corresponding morphism `S' ⟶ E` factors through the
 ## References
 
 * N. M. Katz and B. Mazur, *Arithmetic Moduli of Elliptic Curves*, Annals of Mathematics Studies
-  108, §1.4 (points of exact order `N`), 1.6.2 (the closed locus cut out by the subgroup
-  condition) and §3.2 (`[Γ₁(N)]`-structures).
+  108, 1.3.7 (the subgroup condition on a finite locally free closed subscheme is closed), §1.4
+  (points of exact order `N`), 1.6.2 (the closed locus cut out by the subgroup condition) and §3.2
+  (`[Γ₁(N)]`-structures).
 -/
 
 public section
@@ -84,9 +85,9 @@ variable (D : E.carrier.IdealSheafData) [IsFinite (D.subschemeι ≫ E.structure
   [LocallyOfFinitePresentation (D.subschemeι ≫ E.structureMap)]
 
 /-- The ideal sheaf on `S` of the **subgroup locus** of a closed subscheme `V(D)` of `E` which is
-finite locally free over `S`: a morphism `S' ⟶ S` factors through its closed subscheme exactly
-when the base change of `V(D)` to `S'` is a subgroup scheme of the base change of `E`
-(`EllipticCurveGeom.subgroupLocus_le_ker_iff`). It is the supremum of the ideal sheaves of three
+finite locally free over `S` (Katz–Mazur, 1.3.7): a morphism `S' ⟶ S` factors through its closed
+subscheme exactly when the base change of `V(D)` to `S'` is a subgroup scheme of the base change of
+`E` (`EllipticCurveGeom.subgroupLocus_le_ker_iff`). It is the supremum of the ideal sheaves of three
 loci: where the zero section lies in `V(D)`, where the sum of two points of `V(D)` lies in `V(D)`,
 and where the negative of a point of `V(D)` lies in `V(D)`. -/
 noncomputable def subgroupLocus : S.IdealSheafData :=
@@ -101,11 +102,11 @@ noncomputable def subgroupLocus : S.IdealSheafData :=
 variable {E} {S' : Scheme.{u}} {E' : EllipticCurveGeom S'} {g : E'.carrier ⟶ E.carrier}
   {f : S' ⟶ S}
 
-/-- **The universal property of the subgroup locus.** Let `g : E' ⟶ E` be a morphism of elliptic
-curves lying over `f : S' ⟶ S`, forming a pullback square with the structure morphisms and carrying
-the zero section of `E'` to that of `E`, and let `V(D) ⊆ E` be finite locally free over `S`. Then
-the inverse image of `V(D)` in `E'` is a subgroup scheme of `E'` exactly when `f` factors through
-the closed subscheme of `E.subgroupLocus D`. -/
+/-- **The universal property of the subgroup locus** (Katz–Mazur, 1.3.7). Let `g : E' ⟶ E` be a
+morphism of elliptic curves lying over `f : S' ⟶ S`, forming a pullback square with the structure
+morphisms and carrying the zero section of `E'` to that of `E`, and let `V(D) ⊆ E` be finite
+locally free over `S`. Then the inverse image of `V(D)` in `E'` is a subgroup scheme of `E'`
+exactly when `f` factors through the closed subscheme of `E.subgroupLocus D`. -/
 theorem subgroupLocus_le_ker_iff (hg : IsPullback g E'.structureMap E.structureMap f)
     (h0 : E'.zero ≫ g = f ≫ E.zero) :
     E.subgroupLocus D ≤ f.ker ↔
@@ -158,6 +159,8 @@ theorem isOfExactOrder_pointsPullback_iff (hg : IsPullback g E'.structureMap E.s
       ∃ _ : GrpObj (Over.mk (D'.subschemeι ≫ E'.structureMap)),
         IsMonHom (Over.homMk D'.subschemeι :
           Over.mk (D'.subschemeι ≫ E'.structureMap) ⟶ Over.mk E'.structureMap) := by
+    -- `IsOfExactOrder` is not exposed outside its module, so it is unfolded through its
+    -- characterisation `isOfExactOrder_iff`, rather than by `Iff.rfl`.
     let i' : Over.mk (D'.subschemeι ≫ E'.structureMap) ⟶ Over.mk E'.structureMap :=
       Over.homMk D'.subschemeι
     have : IsClosedImmersion i'.left := inferInstanceAs (IsClosedImmersion D'.subschemeι)
@@ -177,21 +180,6 @@ theorem isOfExactOrder_iff_subgroupLocus_eq_bot (P : 𝟙_ (Over S) ⟶ Over.mk 
 /-! ### The exact-order locus in `E` -/
 
 variable (E) in
-/-- The **universal point** of `E`: the diagonal section of `E ×_S E`, viewed as a point of the
-base change of `E` to `E` itself. Every point of every base change of `E` is a base change of it,
-along the morphism to `E` that the point defines. -/
-noncomputable def universalPoint :
-    𝟙_ (Over E.carrier) ⟶ Over.mk (E.baseChange E.structureMap).structureMap :=
-  Over.homMk ((E.isPullback_baseChange E.structureMap).lift (𝟙 _) (𝟙 _) (by simp)) (by simp)
-
-/-- The universal point composed with the projection to `E` is the identity. -/
-@[reassoc (attr := simp)]
-theorem universalPoint_left_baseChangeIso_hom_fst :
-    (E.universalPoint).left ≫ (E.baseChangeIso E.structureMap).hom ≫
-      pullback.fst E.structureMap E.structureMap = 𝟙 E.carrier :=
-  (E.isPullback_baseChange E.structureMap).lift_fst _ _ _
-
-variable (E) in
 /-- The ideal sheaf of the **exact-order locus** in `E`: the closed subscheme of `E` over which the
 universal point has exact order `N`. A point of a base change of `E` has exact order `N` exactly
 when the corresponding morphism to `E` factors through it
@@ -200,61 +188,11 @@ noncomputable def exactOrderLocus (N : ℕ) : E.carrier.IdealSheafData :=
   (E.baseChange E.structureMap).subgroupLocus
     ((E.baseChange E.structureMap).multiplesDivisor E.universalPoint N)
 
-variable (hg : IsPullback g E'.structureMap E.structureMap f) (h0 : E'.zero ≫ g = f ≫ E.zero)
-
-/-- The morphism from a base change `E'` of `E` to the base change of `E` to `E` itself, lying over
-the morphism `S' ⟶ E` given by an `S'`-point `P'` of `E'`. -/
-private noncomputable def toUniversal (P' : 𝟙_ (Over S') ⟶ Over.mk E'.structureMap) :
-    E'.carrier ⟶ (E.baseChange E.structureMap).carrier :=
-  (E.isPullback_baseChange E.structureMap).lift g (E'.structureMap ≫ P'.left ≫ g)
-    (by simp [hg.w])
-
-private theorem toUniversal_fst (P' : 𝟙_ (Over S') ⟶ Over.mk E'.structureMap) :
-    toUniversal hg P' ≫ (E.baseChangeIso E.structureMap).hom ≫
-      pullback.fst E.structureMap E.structureMap = g :=
-  (E.isPullback_baseChange E.structureMap).lift_fst _ _ _
-
-private theorem toUniversal_structureMap (P' : 𝟙_ (Over S') ⟶ Over.mk E'.structureMap) :
-    toUniversal hg P' ≫ (E.baseChange E.structureMap).structureMap =
-      E'.structureMap ≫ P'.left ≫ g :=
-  (E.isPullback_baseChange E.structureMap).lift_snd _ _ _
-
-private theorem isPullback_toUniversal (P' : 𝟙_ (Over S') ⟶ Over.mk E'.structureMap) :
-    IsPullback (toUniversal hg P') E'.structureMap (E.baseChange E.structureMap).structureMap
-      (P'.left ≫ g) := by
-  -- paste with the pullback square of `E ×_S E ⟶ E` over `E ⟶ S` to recover `hg`
-  refine .of_right (h₁₂ := (E.baseChangeIso E.structureMap).hom ≫ pullback.fst _ _) ?_
-    (toUniversal_structureMap hg P') (E.isPullback_baseChange E.structureMap)
-  have hw : (P'.left ≫ g) ≫ E.structureMap = f := by simp [hg.w]
-  rwa [toUniversal_fst, hw]
-
-include h0 in
-private theorem zero_toUniversal (P' : 𝟙_ (Over S') ⟶ Over.mk E'.structureMap) :
-    E'.zero ≫ toUniversal hg P' = (P'.left ≫ g) ≫ (E.baseChange E.structureMap).zero := by
-  have hz := E.zero_baseChangeIso_hom E.structureMap
-  apply (E.isPullback_baseChange E.structureMap).hom_ext
-  · rw [Category.assoc, toUniversal_fst, h0, Category.assoc, reassoc_of% hz,
-      pullbackSection_fst]
-    simp [reassoc_of% hg.w]
-  · rw [Category.assoc, toUniversal_structureMap, zero_comp_structureMap_assoc,
-      Category.assoc, zero_comp_structureMap, Category.comp_id]
-
-include h0 in
-/-- Every point of a base change of `E` is the base change of the universal point along the
-morphism `S' ⟶ E` it defines. -/
-private theorem pointsPullback_universalPoint (P' : 𝟙_ (Over S') ⟶ Over.mk E'.structureMap) :
-    pointsPullback (isPullback_toUniversal hg P') (zero_toUniversal hg h0 P') E.universalPoint =
-      P' := by
-  refine ((eq_pointsPullback_iff _ _).mpr ?_).symm
-  apply (E.isPullback_baseChange E.structureMap).hom_ext
-  · simp [toUniversal_fst]
-  · simp [toUniversal_structureMap, universalPoint]
-
-include hg h0 in
 /-- **The universal property of the exact-order locus** (Katz–Mazur, 1.6.2). For a pullback square
 of elliptic curves `g : E' ⟶ E` over `f : S' ⟶ S`, an `S'`-point `P'` of `E'` has exact order `N`
 exactly when the morphism `S' ⟶ E` given by `P'` factors through the exact-order locus. -/
 theorem isOfExactOrder_iff_exactOrderLocus_le_ker_comp
+    (hg : IsPullback g E'.structureMap E.structureMap f) (h0 : E'.zero ≫ g = f ≫ E.zero)
     (P' : 𝟙_ (Over S') ⟶ Over.mk E'.structureMap) (N : ℕ) :
     E'.IsOfExactOrder P' N ↔ E.exactOrderLocus N ≤ (P'.left ≫ g).ker := by
   conv_lhs => rw [← pointsPullback_universalPoint hg h0 P']
