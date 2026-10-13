@@ -31,8 +31,6 @@ trivial, as it is over `𝔽₂` (`TauCeti.diagonalTorus_eq_bot`).
 
 ## References
 
-* [Classical groups roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/ClassicalGroups/README.md),
-  Layer 3.
 * W. Fulton and J. Harris, *Representation Theory: A First Course* (1991), Lecture 15.
 -/
 

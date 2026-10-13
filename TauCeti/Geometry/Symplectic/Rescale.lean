@@ -10,9 +10,9 @@ public import TauCeti.Geometry.Symplectic.Lagrangian.Basic
 /-!
 # Rescaling symplectic forms
 
-A nonzero scalar multiple of a symplectic form is again symplectic. This file records that
-pointwise linear-algebra operation and the basic interaction with the tame and compatible
-almost-complex predicates used by the analytic Heegaard Floer roadmap.
+A nonzero scalar multiple of a symplectic form is again symplectic. This file records that pointwise
+linear-algebra operation and the basic interaction with the tame and compatible almost-complex
+predicates.
 
 Positive rescalings preserve the positivity condition `0 < ω(v, J v)` and hence preserve
 tameness and compatibility. Negative rescalings do not preserve tameness for the same `J`, but

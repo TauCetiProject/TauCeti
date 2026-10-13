@@ -23,8 +23,7 @@ in those expansions.
 The theorem is stated using two Peano expansions, independently of any particular
 second-derivative API.
 
-As prescribed by the contour integration roadmap, the answer is given by an explicit coordinate
-formula.
+The answer is given by an explicit coordinate formula.
 
 ## Main results
 

@@ -48,10 +48,9 @@ ordering, so a consumer that names one must be able to pass it.
 
 ## References
 
-This is the "descent by height" milestone of the reflection induction in Layer 5, Gabriel's
-theorem, of `TauCetiRoadmap/RepresentationTheory/QuiverRepresentations/README.md`. See
-Bernstein--Gelfand--Ponomarev, *Coxeter functors and Gabriel's theorem*, and Assem--Simson--
-Skowroński, *Elements of the Representation Theory of Associative Algebras* I, VII.5.
+This is the "descent by height" step of the reflection induction for Gabriel's theorem. See
+Bernstein--Gelfand--Ponomarev, *Coxeter functors and Gabriel's theorem*, and
+Assem--Simson--Skowroński, *Elements of the Representation Theory of Associative Algebras* I, VII.5.
 -/
 
 public section

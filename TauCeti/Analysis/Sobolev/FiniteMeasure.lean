@@ -42,6 +42,8 @@ with `κ = 1/n`). The estimate then passes from test functions to their closure 
   `W^{1,p}_0(Ω)`.
 * `TauCeti.W1p.eLpNorm_value_le_mul_rpow_mul_enorm_gradient_of_eq_ball`: the scale-invariant form
   on a ball `B(x₀, R)`, with constant a multiple of `R ^ (1 - n δ)`.
+* `TauCeti.W1p.exists_forall_eLpNorm_value_le_mul_enorm_gradient_of_measure_ne_top`: some
+  exponent `q > p` and constant `S` with `‖u‖_{L^q} ≤ S ‖∇u‖_{Lᵖ}` on `W^{1,p}_0(Ω)`.
 
 ## References
 
@@ -202,6 +204,48 @@ theorem W1p.eLpNorm_value_le_mul_rpow_mul_enorm_gradient_of_eq_ball [Nontrivial 
     rw [← Real.rpow_add hω]
     ring_nf
   linear_combination (n : ℝ)⁻¹ * ((1 - δ) / ((n : ℝ)⁻¹ - δ)) ^ (1 - δ) * R ^ (1 - n * δ) * hω'
+
+/-- **A Sobolev inequality on `W^{1,p}_0(Ω)` with a gain of integrability.** If `Ω` has finite
+measure, `n ≥ 1` and `p < ∞`, there are an exponent `q > p` and a constant `S` such that
+`‖u‖_{L^q} ≤ S ‖∇u‖_{Lᵖ}` for every `u ∈ W^{1,p}_0(Ω)`. This holds in every dimension; see
+`TauCeti.W1p.eLpNorm_value_le_mul_measure_rpow_mul_enorm_gradient_of_lt` for explicit `q` and
+`S`. -/
+theorem W1p.exists_forall_eLpNorm_value_le_mul_enorm_gradient_of_measure_ne_top [Nontrivial E]
+    (hp : p ≠ ∞) (hOmega : mu Omega ≠ ∞) :
+    ∃ q : ℝ≥0∞, p < q ∧ ∃ S : ℝ≥0, ∀ u ∈ w1p0Submodule mu Omega p,
+      eLpNorm (W1p.value u : E → ℝ) q (mu.restrict Omega) ≤ S * ‖W1p.gradient u‖ₑ := by
+  -- Apply the explicit bound at `1/q = 1/p - δ` with `δ = 1/(2 n p)`.
+  set n : ℝ := (finrank ℝ E : ℝ)
+  have hn : 1 ≤ n := by
+    simp only [n, Nat.one_le_cast]
+    exact finrank_pos
+  have hp1 : 1 ≤ p.toReal := by
+    simpa using (ENNReal.toReal_le_toReal ENNReal.one_ne_top hp).2 (Fact.out : (1 : ℝ≥0∞) ≤ p)
+  set r : ℝ := p.toReal⁻¹
+  have hr : 0 < r := inv_pos.2 (by linarith)
+  have hr1 : r ≤ 1 := inv_le_one_of_one_le₀ hp1
+  set δ : ℝ := r / (2 * n)
+  have hδ : 0 < δ := by positivity
+  have hδn : δ < n⁻¹ := by
+    rw [div_lt_iff₀ (by positivity), inv_mul_eq_div, lt_div_iff₀ (by positivity)]
+    nlinarith
+  have hδr : δ < r := by
+    rw [div_lt_iff₀ (by positivity)]
+    nlinarith
+  set q : ℝ≥0 := Real.toNNReal (r - δ)⁻¹
+  have hq : (q : ℝ) = (r - δ)⁻¹ := Real.coe_toNNReal _ (inv_nonneg.2 (by linarith))
+  have hpq : p < q := by
+    refine (ENNReal.toReal_lt_toReal hp ENNReal.coe_ne_top).1 ?_
+    rw [ENNReal.coe_toReal, hq, ← inv_inv p.toReal]
+    exact inv_strictAnti₀ (by linarith) (by linarith)
+  set C : ℝ≥0∞ := ENNReal.ofReal (n⁻¹ * mu.real (ball 0 1) ^ (-n⁻¹) *
+    ((1 - δ) / (n⁻¹ - δ)) ^ (1 - δ)) * mu Omega ^ (n⁻¹ - δ)
+  have hC : C ≠ ∞ := ENNReal.mul_ne_top ENNReal.ofReal_ne_top
+    (ENNReal.rpow_ne_top_of_nonneg (by linarith) hOmega)
+  refine ⟨q, hpq, C.toNNReal, fun u hu ↦ ?_⟩
+  rw [ENNReal.coe_toNNReal hC]
+  exact W1p.eLpNorm_value_le_mul_measure_rpow_mul_enorm_gradient_of_lt hp hOmega hpq.le
+    (by rw [hq, inv_inv]; ring) hδn hu
 
 end W1p0
 
