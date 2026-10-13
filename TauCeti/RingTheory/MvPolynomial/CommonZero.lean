@@ -21,10 +21,10 @@ Let `K` be an algebraically closed field and `σ` a finite type. Fewer than `#σ
 vanish at the origin of `K^σ` have another common zero there
 (`MvPolynomial.exists_ne_zero_forall_aeval_eq_zero`). This is the dimension theorem: their zero
 set has dimension at least `#σ` minus their number, so it is not the single point `0`. In
-projective language, fewer than `n` hypersurfaces of `ℙⁿ` have a common point. The proof is
-Krull's height theorem together with the Nullstellensatz: if `0` were the only common zero, the
-maximal ideal of the origin, of height `#σ`, would be a minimal prime over the ideal the
-polynomials generate.
+projective language, with `#σ = n + 1`, at most `n` hypersurfaces of `ℙⁿ` have a common point.
+The proof is Krull's height theorem together with the Nullstellensatz: if `0` were the only
+common zero, the maximal ideal of the origin, of height `#σ`, would be a minimal prime over the
+ideal the polynomials generate.
 
 In particular two hypersurfaces of `ℙⁿ`, for `n ≥ 2`, always meet. At a common point of the
 factors of a product `a * b`, the product and all its partial derivatives vanish. So a projective
@@ -166,14 +166,11 @@ theorem irreducible_map_dehomogenize (hn : 2 ≤ n) {G : MvPolynomial (Fin (n + 
     dehomogenize_injOn i d hG' hP (by
       rw [map_mul, map_mul, map_pow, dehomogenize_X, Fin.insertNth_apply_same, one_pow, one_mul,
         hG'_def, hfg])
-  have hc {q : MvPolynomial (Fin (n + 1)) K} {m : ℕ} (hq : q.IsHomogeneous m) (hm : m ≠ 0) :
-      constantCoeff q = 0 := by
-    rw [constantCoeff_eq]
-    exact hq.coeff_eq_zero (by simpa using hm.symm)
   -- The two factors meet at a point of `ℙⁿ`, where `G'` is singular.
   obtain ⟨x, hx, hx0, hxd⟩ := exists_ne_zero_aeval_mul_eq_zero_and_aeval_pderiv_eq_zero (K := K)
-    (by simp; omega) (a := X i ^ e * F) (b := G₁)
-    (by rw [map_mul, hc hF (hdeg hf hf0), mul_zero]) (hc hG₁ (hdeg hg hg0))
+    (by rw [Nat.card_eq_fintype_card, Fintype.card_fin]; omega) (a := X i ^ e * F) (b := G₁)
+    (by rw [map_mul, hF.constantCoeff_eq_zero (hdeg hf hf0), mul_zero])
+    (hG₁.constantCoeff_eq_zero (hdeg hg hg0))
   obtain ⟨l, hl⟩ := hsm' x hx (by rw [hGP]; exact hx0)
   exact hl (by rw [hGP]; exact hxd l)
 

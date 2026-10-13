@@ -149,11 +149,8 @@ private theorem exists_ne_zero_apply_two_eq_zero_aeval_eq_zero [IsAlgClosed K]
     {C : MvPolynomial (Fin 3) k} {e : ℕ} (hC : C.IsHomogeneous e) (he : e ≠ 0) :
     ∃ b : Fin 3 → K, b ≠ 0 ∧ b 2 = 0 ∧ aeval b C = 0 := by
   classical
-  have hC0 : constantCoeff C = 0 := by
-    rw [constantCoeff_eq]
-    exact hC.coeff_eq_zero (by simpa using he.symm)
   obtain ⟨b, hb, hbs⟩ := exists_ne_zero_forall_aeval_eq_zero (K := K) (s := {C, X 2})
-    (Finset.card_le_two.trans_lt (by simp)) (by simp [hC0])
+    (Finset.card_le_two.trans_lt (by simp)) (by simp [hC.constantCoeff_eq_zero he])
   exact ⟨b, hb, by simpa using hbs (X 2) (by simp), hbs C (by simp)⟩
 
 /-- **The line at infinity is not a component of a smooth plane curve**: if `G` is homogeneous and
