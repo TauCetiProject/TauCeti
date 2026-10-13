@@ -14,10 +14,6 @@ An essentially finite type algebra is unramified at a prime exactly when its ram
 is one and its residue field extension is separable. The separability condition concerns only
 the selected prime, rather than every prime above its contraction. This distinction matters
 over imperfect residue fields, where ramification index one alone does not imply unramifiedness.
-
-The proof uses the length characterization of the ramification index from Mathlib's
-`Ideal.ramificationIdx_eq_one_iff` and the local criterion
-`Algebra.isUnramifiedAt_iff_map_eq`.
 -/
 
 public section
@@ -33,6 +29,8 @@ theorem isUnramifiedAt_iff_ramificationIdx_eq_one_and_isSeparable
     Algebra.IsUnramifiedAt R q ↔ q.ramificationIdx R = 1 ∧
       let := Localization.AtPrime.algebraOfLiesOver (q.under R) q
       Algebra.IsSeparable (q.under R).ResidueField q.ResidueField := by
+  -- The length reduction follows Mathlib's Ideal.ramificationIdx_eq_one_iff, combined with
+  -- the local criterion Algebra.isUnramifiedAt_iff_map_eq.
   let := Localization.AtPrime.algebraOfLiesOver (q.under R) q
   have he : q.ramificationIdx R = 1 ↔
       (q.under R).map (algebraMap R (Localization.AtPrime q)) =

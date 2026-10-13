@@ -23,10 +23,8 @@ flatness follows from torsion-freeness; no residue-field hypothesis is needed.
 The criterion for a prime of the base quantifies over all primes above it. It translates
 unramifiedness into an inertia condition without assuming finite or perfect residue fields,
 as needed when testing splitting in subextensions and composita over a general Dedekind base.
-The existing compositum criterion `Ideal.isUnramifiedIn_sup_iff` is for rings of integers of
-number fields. Extending that criterion to a general Dedekind base requires an
-inertia-containment criterion for intermediate integral closures; the trivial-inertia
-criterion here supplies its unramifiedness characterization without assuming residue separability.
+Inertia conditions allow unramifiedness in subextensions to be studied through their fixing
+subgroups, relating the arithmetic of composita to intersections of subgroups.
 
 ## References
 
@@ -56,6 +54,12 @@ theorem card_inertia_eq_one_iff_isUnramifiedAt (P : Ideal S) [P.IsMaximal] :
     (isSeparable_iff_finInsepDegree_eq_one (F := R ⧸ P.under R) (K := S ⧸ P)).symm.trans
       Algebra.isSeparable_residueField_iff.symm
 
+/-- A maximal prime in a finite flat invariant extension is unramified exactly when its
+inertia group is trivial. No residue-separability hypothesis is needed. -/
+theorem isUnramifiedAt_iff_inertia_eq_bot_of_isMaximal (P : Ideal S) [P.IsMaximal] :
+    Algebra.IsUnramifiedAt R P ↔ P.inertia G = ⊥ := by
+  rw [Subgroup.eq_bot_iff_card, card_inertia_eq_one_iff_isUnramifiedAt (R := R)]
+
 /-- A maximal prime of the base is unramified in a finite flat invariant extension exactly
 when every inertia group above it is trivial. No residue-separability hypothesis is needed. -/
 theorem isUnramifiedIn_iff_forall_inertia_eq_bot (p : Ideal R) [p.IsMaximal] :
@@ -65,11 +69,9 @@ theorem isUnramifiedIn_iff_forall_inertia_eq_bot (p : Ideal R) [p.IsMaximal] :
     have : P.IsPrime := hP.1
     have : P.LiesOver p := hP.2
     have : P.IsMaximal := Ideal.IsMaximal.of_liesOver_isMaximal P p
-    exact Subgroup.eq_bot_of_card_eq _
-      ((card_inertia_eq_one_iff_isUnramifiedAt (G := G) P).mpr (h P hP.1 hP.2))
+    exact (isUnramifiedAt_iff_inertia_eq_bot_of_isMaximal (G := G) P).mp (h P hP.1 hP.2)
   · intro h P hP hPp
     have : P.IsMaximal := Ideal.IsMaximal.of_liesOver_isMaximal P p
-    apply (card_inertia_eq_one_iff_isUnramifiedAt (G := G) P).mp
-    simp [h P ⟨hP, hPp⟩]
+    exact (isUnramifiedAt_iff_inertia_eq_bot_of_isMaximal (G := G) P).mpr (h P ⟨hP, hPp⟩)
 
 end Ideal
