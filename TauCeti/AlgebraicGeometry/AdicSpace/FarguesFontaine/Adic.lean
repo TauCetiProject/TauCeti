@@ -5,8 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.AlgebraicGeometry.AdicSpace.FarguesFontaine.IntervalChart
 public import TauCeti.AlgebraicGeometry.AdicSpace.FarguesFontaine.PreAdicSpace
 public import TauCeti.AlgebraicGeometry.AdicSpace.PreAdicSpace.Adic
+public import TauCeti.Analysis.SpecialFunctions.Pow.NNRat
 
 /-!
 # The Frobenius orbit space as an adic space
@@ -31,9 +33,12 @@ space `𝒳` itself. This file reduces it to windows: `𝒴` is a pre-adic space
 increasing windows `W_n = {v ∈ 𝒴 : p ^ (-n) ≤ κ(v) ≤ p ^ n}`, and every open affinoid subspace of
 `𝒴` is quasi-compact, so lies in one of them. Hence `𝒪_𝒴` is a sheaf as soon as its restriction to
 each `W_n` is (`isSheaf_spaYPresheaf_of_isSheafy_restrict`). When `R` is the ring of integers of a
-perfect nonarchimedean field, `TauCeti.FarguesFontaine.windowPreAdicSpaceIso` identifies such a
-window with `Spa(B^I, B^{I,+})` for an interval ring `B^I`, whose sheafiness Kedlaya deduces from
-the strong noetherianness of `B^I`.
+valuation `v` on a field and `0 < v(ϖ) < 1`, `TauCeti.FarguesFontaine.windowPreAdicSpaceIso`
+identifies `W_n` with `Spa(B^I, B^{I,+})` for the interval ring `B^I` of
+`I = [v(ϖ) ^ (p ^ n), v(ϖ) ^ (p ^ (-n))]`. So `𝒪_𝒴` is a sheaf, and `𝒴` and `𝒳` are adic spaces,
+as soon as every pair `(B^I, B^{I,+})` is sheafy
+(`isSheaf_spaYPresheaf_of_isSheafyForEveryPresentation_intervalRing`). Kedlaya deduces this
+sheafiness from the strong noetherianness of `B^I`.
 
 ## Main definitions
 
@@ -48,6 +53,8 @@ the strong noetherianness of `B^I`.
 * `TauCeti.FarguesFontaine.isPreAdic_spaYPreAdicSpace`: `𝒴` is a pre-adic space.
 * `TauCeti.FarguesFontaine.isSheaf_spaYPresheaf_of_isSheafy_restrict`: `𝒪_𝒴` is a sheaf if its
   restriction to every window `W_n` is.
+* `TauCeti.FarguesFontaine.isSheaf_spaYPresheaf_of_isSheafyForEveryPresentation_intervalRing`:
+  `𝒪_𝒴` is a sheaf if every interval ring `B^I` gives a sheafy pair `(B^I, B^{I,+})`.
 * `TauCeti.FarguesFontaine.isAdic_spaYPreAdicSpace_iff`: `𝒴` is an adic space exactly when `𝒪_𝒴`
   is a sheaf.
 * `TauCeti.FarguesFontaine.isLocallyAffinoid_spaXPreAdicSpace`: `𝒳` is locally affinoid.
@@ -73,6 +80,7 @@ namespace TauCeti.FarguesFontaine
 
 open _root_.CategoryTheory _root_.CategoryTheory.Limits _root_.TopologicalSpace
 open TauCeti.Huber TauCeti.ValuationSpectrum _root_.WittVector
+open scoped NNReal
 
 variable {p : ℕ} [Fact p.Prime] {R : Type v} [CommRing R] [TopologicalSpace (WittVector p R)]
   [IsTopologicalRing (WittVector p R)] {ϖ : R}
@@ -126,6 +134,51 @@ variable {P hI} in
 theorem spaYAdicSpace_obj (h : (spaYPresheaf P ϖ).IsSheaf) :
     (spaYAdicSpace P hI h).obj = spaYPreAdicSpace P hI :=
   (rfl)
+
+/-! ### Sheafiness of `𝒪_𝒴` from the interval rings -/
+
+section IntervalRing
+
+variable [CharP R p] [PerfectRing R p] {K : Type*} [Field K] [Algebra R K] {v : Valuation K ℝ≥0}
+  {P}
+
+include hI in
+/-- **`𝒪_𝒴` is a sheaf once the interval rings are sheafy**: let `R` be the ring of integers of a
+valuation `v` on a field `K` and `ϖ ∈ R` with `0 < v(ϖ) < 1`. If for all radii `0 < ρ₁ ≤ ρ₂ < 1`
+the interval ring `B^I` of `I = [ρ₁, ρ₂]`, with plus ring `B^{I,+} = (B^I)°`, is sheafy, then
+`𝒪_𝒴` is a sheaf, so `𝒴` and `𝒳` are adic spaces (`isAdic_spaYPreAdicSpace_iff`,
+`isAdic_spaXPreAdicSpace`). The window `W_n = {p ^ (-n) ≤ κ ≤ p ^ n}` is
+`Spa(B^I, B^{I,+})` for `I = [v(ϖ) ^ (p ^ n), v(ϖ) ^ (p ^ (-n))]`
+(`TauCeti.FarguesFontaine.windowPreAdicSpaceIso`), so `𝒪_𝒴` is sheafy on each window, and hence a
+sheaf (`isSheaf_spaYPresheaf_of_isSheafy_restrict`). A complete Hausdorff strongly noetherian Tate
+ring is sheafy (`TauCeti.Huber.isSheafyForEveryPresentation_of_isStronglyNoetherian`). -/
+theorem isSheaf_spaYPresheaf_of_isSheafyForEveryPresentation_intervalRing (hv : v.Integers R)
+    (hϖ : ϖ ≠ 0) (hϖ' : v (algebraMap R K ϖ) < 1)
+    (hB : ∀ ⦃ρ₁ ρ₂ : ℝ≥0⦄ (hρ₁ : ρ₁ ∈ Set.Ioo 0 1) (hρ₂ : ρ₂ ∈ Set.Ioo 0 1), ρ₁ ≤ ρ₂ →
+      IsSheafyForEveryPresentation
+        (powerBoundedSubring (WittVector.IntervalRing p hv hϖ hϖ' hρ₁ hρ₂))) :
+    (spaYPresheaf P ϖ).IsSheaf := by
+  have hϖ₀ : 0 < v (algebraMap R K ϖ) :=
+    pos_iff_ne_zero.mpr ((map_ne_zero v).mpr ((map_ne_zero_iff _ hv.hom_inj).mpr hϖ))
+  -- the radius of `κ = q` is `v(ϖ) ^ (1 / q)`, which lies in `(0, 1)` for `q ≠ 0`
+  have hρ {q : ℚ≥0} (hq : q ≠ 0) : v (algebraMap R K ϖ) ^ ((q : ℝ)⁻¹) ∈ Set.Ioo 0 1 :=
+    ⟨NNReal.rpow_pos hϖ₀,
+      NNReal.rpow_lt_one hϖ' (inv_pos.mpr (NNRat.cast_pos.mpr (pos_iff_ne_zero.mpr hq)))⟩
+  have hp : (p : ℚ≥0) ≠ 0 := Nat.cast_ne_zero.mpr (Fact.out : p.Prime).ne_zero
+  refine isSheaf_spaYPresheaf_of_isSheafy_restrict P hI fun n ↦ ?_
+  have hq : (p : ℚ≥0) ^ (-(n : ℤ)) ≠ 0 := zpow_ne_zero _ hp
+  have hq' : (p : ℚ≥0) ^ (n : ℤ) ≠ 0 := zpow_ne_zero _ hp
+  have h₁₂ : v (algebraMap R K ϖ) ^ (((p : ℚ≥0) ^ (-(n : ℤ)) : ℚ≥0) : ℝ)⁻¹ ≤
+      v (algebraMap R K ϖ) ^ (((p : ℚ≥0) ^ (n : ℤ) : ℚ≥0) : ℝ)⁻¹ := by
+    refine NNReal.rpow_le_rpow_of_exponent_ge hϖ₀ hϖ'.le (inv_anti₀ ?_ ?_)
+    · exact NNRat.cast_pos.mpr (pos_iff_ne_zero.mpr hq)
+    · have h1 : (1 : ℚ≥0) ≤ p := by exact_mod_cast (Fact.out : p.Prime).one_lt.le
+      exact_mod_cast (zpow_le_zpow_right₀ h1 (by omega : -(n : ℤ) ≤ n))
+  exact isSheafy_spaYPreAdicSpace_restrict hv hϖ hϖ' (hρ hq) (hρ hq') _ (hB _ _ h₁₂)
+    (NNReal.rpow_inv_nnratCast_pow_num _ hq) (NNReal.rpow_inv_nnratCast_pow_num _ hq') h₁₂
+    fun x ↦ (mem_spaYWindow_iff hI).mp x.2
+
+end IntervalRing
 
 /-! ### `𝒳` as an adic space -/
 

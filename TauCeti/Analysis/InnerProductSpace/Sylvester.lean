@@ -5,15 +5,27 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.InnerProductSpace.OpNormDefect
 public import TauCeti.Analysis.InnerProductSpace.PointSpectrum
 
 /-!
-# The Sylvester operator and the finite-dimensional Sylvester equation
+# The Sylvester operator: dimension-free bounds and the finite-dimensional equation
 
 For bounded operators `A : E →L[𝕜] E` and `B : F →L[𝕜] F`, the *Sylvester operator*
 `A.sylvester B` sends `X : F →L[𝕜] E` to `A ∘L X - X ∘L B`. The Sylvester equation
 `A X - X B = C` is the linear equation through which spectral gaps control the motion of spectral
 subspaces under perturbation (Davis–Kahan, Bhatia–Davis–McIntosh).
+
+Quadratic-form separation bounds solutions in operator norm, in every dimension. If
+`re ⟪A x, x⟫ ≥ α ‖x‖²` and `re ⟪B y, y⟫ ≥ β ‖y‖²`, then `(α + β) ‖X‖ ≤ ‖A X + X B‖`; this needs
+neither symmetry, completeness nor finite dimension. Taking `α = β = δ > 0` gives the Lyapunov
+bound `‖X‖ ≤ ‖A X + X B‖ / (2 δ)`. Replacing `B` by `-B` gives the separated Sylvester bound: if
+the form of `A` is at least `c + g` and that of `B` at most `c`, then `g ‖X‖ ≤ ‖A X - X B‖`. The
+reverse orientation follows in the same way. The proof evaluates the equation on unit vectors `v`
+with `‖X v‖` close to `‖X‖`. For such `v`, the Cauchy–Schwarz inequality for the positive
+semidefinite form `‖X‖² ⟪·, ·⟫ - ⟪X ·, X ·⟫`
+(`ContinuousLinearMap.sq_opNorm_sq_mul_re_inner_sub_re_inner_le`) makes `re ⟪X (B v), X v⟫` close
+to `‖X‖² re ⟪B v, v⟫`.
 
 When `A` is symmetric, the equation diagonalises on eigenvectors: if `A u = α u` and `B v = β v`
 with `α, β` real, then `⟪u, (A X - X B) v⟫ = (α - β) ⟪u, X v⟫`. In finite dimension, choosing
@@ -37,6 +49,11 @@ separation `Module.End.PointSpectraSeparated A ⊤ B ⊤ δ` with `0 < δ` suppl
 
 * `OrthonormalBasis.sum_inner_smul_rankOne`: for orthonormal bases `(uᵢ)`, `(vⱼ)`, every operator
   `C` is the sum of `⟪uᵢ, C vⱼ⟫` times the rank-one operators `rankOne 𝕜 uᵢ vⱼ`.
+* `ContinuousLinearMap.add_mul_norm_le_norm_comp_add_comp`: if the forms of `A` and `B` are
+  bounded below by `α` and `β`, then `(α + β) ‖X‖ ≤ ‖A X + X B‖`.
+* `ContinuousLinearMap.mul_norm_le_norm_sylvester_apply_of_le_re_inner_of_re_inner_le`,
+  `ContinuousLinearMap.mul_norm_le_norm_sylvester_apply_of_re_inner_le_of_le_re_inner`: if the
+  forms of `A` and `B` are separated by `g`, in either order, then `g ‖X‖ ≤ ‖A X - X B‖`.
 * `ContinuousLinearMap.inner_sylvester_apply_of_apply_eq_smul`: for symmetric `A` and eigenvectors
   `A u = α u`, `B v = β v`, `⟪u, A.sylvester B X v⟫ = (α - β) ⟪u, X v⟫`.
 * `ContinuousLinearMap.sylvester_rankOne_of_apply_eq_smul`: for symmetric `B` and eigenvectors
@@ -102,6 +119,92 @@ theorem sylvester_apply (A : E →L[𝕜] E) (B : F →L[𝕜] F) (X : F →L[�
   simp [sylvester]
 
 end Normed
+
+section Bounds
+
+variable {𝕜 E F : Type*} [RCLike 𝕜]
+  [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [NormedAddCommGroup F] [InnerProductSpace 𝕜 F]
+  {A : E →L[𝕜] E} {B : F →L[𝕜] F}
+
+/-- **The coercivity bound for `A X + X B`.** If the real parts of the quadratic forms of `A` and
+`B` are bounded below by `α` and `β`, then `(α + β) ‖X‖ ≤ ‖A X + X B‖` for every bounded operator
+`X`. Neither symmetry of `A` and `B`, completeness, nor finite dimension is assumed, and `α`, `β`
+may have any sign. For `α = β = δ > 0` this is the Lyapunov bound: every solution of
+`A X + X B = Y` satisfies `‖X‖ ≤ ‖Y‖ / (2 δ)`. -/
+theorem add_mul_norm_le_norm_comp_add_comp {α β : ℝ}
+    (hA : ∀ x, α * ‖x‖ ^ 2 ≤ RCLike.re ⟪A x, x⟫_𝕜) (hB : ∀ y, β * ‖y‖ ^ 2 ≤ RCLike.re ⟪B y, y⟫_𝕜)
+    (X : F →L[𝕜] E) : (α + β) * ‖X‖ ≤ ‖A ∘L X + X ∘L B‖ := by
+  set Y := A ∘L X + X ∘L B
+  rcases (norm_nonneg X).eq_or_lt with hX | hX
+  · rw [← hX, mul_zero]
+    exact norm_nonneg _
+  -- For a unit vector `v`, the defect `‖X‖ - ‖X v‖` controls how far the inequality can fail.
+  have key (v : F) (hv : ‖v‖ = 1) :
+      α * ‖X v‖ ^ 2 + β * ‖X‖ ^ 2 - ‖Y‖ * ‖X v‖ ≤ ‖B‖ * ‖X‖ * √(‖X‖ ^ 2 - ‖X v‖ ^ 2) := by
+    have hXv : ‖X v‖ ≤ ‖X‖ := by simpa [hv] using X.le_opNorm v
+    have hBv : ‖B v‖ ≤ ‖B‖ := by simpa [hv] using B.le_opNorm v
+    have hY : RCLike.re ⟪Y v, X v⟫_𝕜 ≤ ‖Y‖ * ‖X v‖ :=
+      (re_inner_le_norm _ _).trans (by gcongr; simpa [hv] using Y.le_opNorm v)
+    have hYv : RCLike.re ⟪Y v, X v⟫_𝕜 =
+        RCLike.re ⟪A (X v), X v⟫_𝕜 + RCLike.re ⟪X (B v), X v⟫_𝕜 := by
+      simp [Y, inner_add_left]
+    have hCS := X.sq_opNorm_sq_mul_re_inner_sub_re_inner_le (B v) v
+    rw [hv, one_pow, mul_one] at hCS
+    have hD : ‖X‖ ^ 2 * RCLike.re ⟪B v, v⟫_𝕜 - RCLike.re ⟪X (B v), X v⟫_𝕜 ≤
+        ‖B‖ * ‖X‖ * √(‖X‖ ^ 2 - ‖X v‖ ^ 2) := by
+      rw [← Real.sqrt_sq (by positivity : 0 ≤ ‖B‖ * ‖X‖), ← Real.sqrt_mul (by positivity)]
+      refine Real.le_sqrt_of_sq_le (hCS.trans (mul_le_mul_of_nonneg_right ?_ ?_))
+      · have : ‖B v‖ ^ 2 ≤ ‖B‖ ^ 2 := by gcongr
+        nlinarith [mul_le_mul_of_nonneg_left this (sq_nonneg ‖X‖), sq_nonneg ‖X (B v)‖]
+      · nlinarith [norm_nonneg (X v)]
+    have := hA (X v)
+    have := hB v
+    rw [hv] at this
+    nlinarith
+  -- `‖X‖` is a limit of values `‖X v‖` on the unit sphere, where `key` holds.
+  set S := (fun v ↦ ‖X v‖) '' Metric.sphere (0 : F) 1
+  have hSup : sSup S = ‖X‖ := X.sSup_sphere_eq_norm
+  have hne : S.Nonempty := by
+    refine Set.nonempty_iff_ne_empty.mpr fun h ↦ hX.ne ?_
+    rw [← hSup, h, Real.sSup_empty]
+  have hbdd : BddAbove S := by
+    refine ⟨‖X‖, ?_⟩
+    rintro - ⟨v, hv, rfl⟩
+    simpa [mem_sphere_zero_iff_norm.1 hv] using X.le_opNorm v
+  have hlim : ‖X‖ ∈ {r : ℝ | α * r ^ 2 + β * ‖X‖ ^ 2 - ‖Y‖ * r ≤
+      ‖B‖ * ‖X‖ * √(‖X‖ ^ 2 - r ^ 2)} := by
+    refine closure_minimal ?_ (isClosed_le (by fun_prop) (by fun_prop))
+      (hSup ▸ csSup_mem_closure hne hbdd)
+    rintro - ⟨v, hv, rfl⟩
+    exact key v (mem_sphere_zero_iff_norm.1 hv)
+  simp only [Set.mem_ofPred_eq, sub_self, Real.sqrt_zero, mul_zero] at hlim
+  exact le_of_mul_le_mul_right (by linarith) hX
+
+/-- **The separated Sylvester bound.** If the real part of the quadratic form of `A` is at least
+`c + g` and that of `B` is at most `c`, then `g ‖X‖ ≤ ‖A X - X B‖` for every bounded operator `X`.
+For `g > 0`, every solution of `A X - X B = Y` therefore satisfies `‖X‖ ≤ ‖Y‖ / g`. -/
+theorem mul_norm_le_norm_sylvester_apply_of_le_re_inner_of_re_inner_le {c g : ℝ}
+    (hA : ∀ x, (c + g) * ‖x‖ ^ 2 ≤ RCLike.re ⟪A x, x⟫_𝕜)
+    (hB : ∀ y, RCLike.re ⟪B y, y⟫_𝕜 ≤ c * ‖y‖ ^ 2) (X : F →L[𝕜] E) :
+    g * ‖X‖ ≤ ‖A.sylvester B X‖ := by
+  have hB' (y : F) : -c * ‖y‖ ^ 2 ≤ RCLike.re ⟪(-B) y, y⟫_𝕜 := by
+    simpa [inner_neg_left] using hB y
+  simpa [sub_eq_add_neg] using add_mul_norm_le_norm_comp_add_comp hA hB' X
+
+/-- **The reverse separated Sylvester bound.** If the real part of the quadratic form of `A` is at
+most `c` and that of `B` is at least `c + g`, then `g ‖X‖ ≤ ‖A X - X B‖` for every bounded operator
+`X`. For `g > 0`, every solution of `A X - X B = Y` therefore satisfies `‖X‖ ≤ ‖Y‖ / g`. -/
+theorem mul_norm_le_norm_sylvester_apply_of_re_inner_le_of_le_re_inner {c g : ℝ}
+    (hA : ∀ x, RCLike.re ⟪A x, x⟫_𝕜 ≤ c * ‖x‖ ^ 2)
+    (hB : ∀ y, (c + g) * ‖y‖ ^ 2 ≤ RCLike.re ⟪B y, y⟫_𝕜) (X : F →L[𝕜] E) :
+    g * ‖X‖ ≤ ‖A.sylvester B X‖ := by
+  have hA' (x : E) : -c * ‖x‖ ^ 2 ≤ RCLike.re ⟪(-A) x, x⟫_𝕜 := by
+    simpa [inner_neg_left] using hA x
+  have := add_mul_norm_le_norm_comp_add_comp hA' hB X
+  rwa [neg_add_cancel_left, show (-A) ∘L X + X ∘L B = -A.sylvester B X by
+    rw [sylvester_apply, neg_comp]; abel, norm_neg] at this
+
+end Bounds
 
 section InnerProduct
 

@@ -163,7 +163,7 @@ theorem geckTorusPositiveToUpperTriangular_comp_inclusion :
     t.geckTorusPositiveInclusion_comp_geckGroupSchemeι ht]
   simp only [geckTorusPositiveToUpperTriangular, GeneralLinear.UpperTriangular.inclusion,
     GeneralLinear.weightParabolicInclusion_def, kostantTorusSubsystemGroupSchemeι_def,
-    CommHopfAlgCat.quotientSpecι_def, eqToIso.hom, Category.assoc,
+    CommHopfAlgCat.quotientSpecι_def, Category.assoc,
     eqToHom_trans, eqToHom_trans_assoc, eqToHom_refl, Category.id_comp, Category.comp_id]
   apply eq_of_heq
   simp only [eqToHom_comp_heq_iff, heq_eqToHom_comp_iff]

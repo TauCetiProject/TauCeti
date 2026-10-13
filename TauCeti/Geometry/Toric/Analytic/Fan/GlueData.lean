@@ -212,6 +212,17 @@ theorem analyticAffineChartι_faceAffinePointMap {τ σ : Φ.cones} (h : τ ≤ 
     (ConcreteCategory.congr_hom
       (Φ.analyticAffineChartDiagram_map_comp_analyticAffineChartι hΦ f) x)
 
+/-- The face-localization images of a point of a common face have the same image in the
+analytic realization of the fan. -/
+theorem analyticAffineChartι_faceAffinePointMap_eq {υ σ τ : Φ.cones}
+    (hυσ : υ ≤ σ) (hυτ : υ ≤ τ) (x : (Φ.analyticAffineChartDiagram).obj υ) :
+    Φ.analyticAffineChartι hΦ σ
+        (faceAffinePointMap Φ.lattice (Φ.isFaceOf_of_le σ.2 υ.2 hυσ) x) =
+      Φ.analyticAffineChartι hΦ τ
+        (faceAffinePointMap Φ.lattice (Φ.isFaceOf_of_le τ.2 υ.2 hυτ) x) :=
+  (Φ.analyticAffineChartι_faceAffinePointMap hΦ hυσ x).trans
+    (Φ.analyticAffineChartι_faceAffinePointMap hΦ hυτ x).symm
+
 /-- The inclusion of the chart of a face factors through the analytic face map into the chart of
 the ambient cone. -/
 -- The composite is formed on the objects of the chart diagram, which is the form that

@@ -14,8 +14,9 @@ import TauCeti.RingTheory.Ideal.Extended
 # Lifting idempotents in adically complete algebras
 
 Let `R` be a commutative ring, `I` an ideal of `R`, and `S` an `R`-algebra, possibly
-noncommutative, that is `I`-adically complete as an `R`-module. Then idempotents lift along any
-ring homomorphism `f : S →+* T` whose kernel is `I • S`: every idempotent of `T` in the range of
+noncommutative, that is `I`-adically complete as an `R`-module. Every element idempotent modulo
+`I • S` is congruent modulo `I • S` to an idempotent of `S`. Consequently, idempotents lift along
+any ring homomorphism `f : S →+* T` whose kernel is `I • S`: every idempotent of `T` in the range of
 `f` is the image of an idempotent of `S`.
 
 Mathlib lifts idempotents along a ring homomorphism whose kernel is nil
@@ -35,7 +36,9 @@ plays no role.
 
 ## Main results
 
-* `TauCeti.IsAdicComplete.exists_isIdempotentElem_eq`: idempotents lift along a ring homomorphism
+* `IsAdicComplete.exists_isIdempotentElem_sub_mem`: an element idempotent modulo `I • S` is
+  congruent to an idempotent of `S`.
+* `IsAdicComplete.exists_isIdempotentElem_eq`: idempotents lift along a ring homomorphism
   with kernel `I • S` out of an `I`-adically complete `R`-algebra `S`.
 
 ## References
@@ -46,14 +49,16 @@ plays no role.
 
 public section
 
-namespace TauCeti
+namespace IsAdicComplete
 
 variable {R S : Type*} [CommRing R] [Ring S] [Algebra R S] (I : Ideal R)
 
+variable {S : Type*} [NonAssocRing S] in
 /-- One step of Newton's iteration for `X ^ 2 - X`. -/
 private def newtonIdempotent (x : S) : S :=
   x + (x * x - x) * (1 - 2 * x)
 
+variable {S : Type*} [NonAssocRing S] in
 private theorem newtonIdempotent_sub (x : S) :
     newtonIdempotent x - x = (x * x - x) * (1 - 2 * x) := by
   rw [newtonIdempotent, add_sub_cancel_left]
@@ -65,30 +70,19 @@ private theorem newtonIdempotent_mul_self_sub (x : S) :
   simp only [newtonIdempotent]
   noncomm_ring
 
-/-- **Idempotents lift modulo `I • S` in an `I`-adically complete algebra.** Let `S` be an
-`R`-algebra, possibly noncommutative, which is `I`-adically complete as an `R`-module, and let
-`f : S →+* T` be a ring homomorphism whose kernel is `I • S`. Every idempotent of `T` in the range
-of `f` is the image of an idempotent of `S`.
-
-This is the complete analogue of `exists_isIdempotentElem_eq_of_ker_isNilpotent`, which asks the
-kernel to be nil instead. -/
-theorem IsAdicComplete.exists_isIdempotentElem_eq [IsAdicComplete I S] {T : Type*} [Ring T]
-    (f : S →+* T) (hf : ∀ x, f x = 0 ↔ x ∈ I • (⊤ : Submodule R S)) {e : T} (he : e ∈ f.range)
-    (he' : IsIdempotentElem e) : ∃ e' : S, IsIdempotentElem e' ∧ f e' = e := by
-  obtain ⟨x₀, hx₀⟩ := he
-  -- The Newton iterates of a lift of `e`: all lift `e`, and the `n`-th has defect in `I ^ (n + 1)`.
+/-- An element of an `I`-adically complete, possibly noncommutative `R`-algebra that is
+idempotent modulo `I • S` is congruent modulo `I • S` to an idempotent. -/
+theorem exists_isIdempotentElem_sub_mem [IsAdicComplete I S] {x₀ : S}
+    (hx₀ : x₀ * x₀ - x₀ ∈ I • (⊤ : Submodule R S)) :
+    ∃ e : S, IsIdempotentElem e ∧ e - x₀ ∈ I • (⊤ : Submodule R S) := by
+  -- The `n`-th Newton iterate has defect in `I ^ (n + 1)`.
   let x : ℕ → S := fun n ↦ newtonIdempotent^[n] x₀
+  have hx_zero : x 0 = x₀ := rfl
   have hx_succ (n : ℕ) : x (n + 1) = newtonIdempotent (x n) :=
     Function.iterate_succ_apply' _ _ _
-  have hfx (n : ℕ) : f (x n) = e := by
-    induction n with
-    | zero => exact hx₀
-    | succ n ih =>
-      rw [hx_succ, newtonIdempotent, map_add, map_mul, map_sub, map_mul, ih, he'.eq, sub_self,
-        zero_mul, add_zero]
   have hdefect (n : ℕ) : x n * x n - x n ∈ I ^ (n + 1) • (⊤ : Submodule R S) := by
     induction n with
-    | zero => rw [zero_add, pow_one, ← hf, map_sub, map_mul, hfx 0, he'.eq, sub_self]
+    | zero => simpa only [zero_add, pow_one, hx_zero] using hx₀
     | succ n ih =>
       rw [hx_succ, newtonIdempotent_mul_self_sub]
       rw [← Ideal.mem_map_algebraMap_iff] at ih ⊢
@@ -123,9 +117,25 @@ theorem IsAdicComplete.exists_isIdempotentElem_eq [IsAdicComplete I S] {T : Type
       (Ideal.mul_mem_right _ _ hd)) hd
     exact Ideal.map_mono (Ideal.pow_le_pow_right (by omega))
       ((Ideal.mem_map_algebraMap_iff _).mpr (hdefect n))
-  · have h1 : x 1 - L ∈ I • (⊤ : Submodule R S) := by
-      simpa using SModEq.sub_mem.mp (hL 1)
-    rw [← hfx 1, ← sub_eq_zero, ← map_sub, ← neg_sub, map_neg, neg_eq_zero, hf]
-    exact h1
+  · have h1 : L - x 1 ∈ I • (⊤ : Submodule R S) := by
+      simpa only [pow_one, neg_sub] using neg_mem (SModEq.sub_mem.mp (hL 1))
+    have h01 : x 1 - x₀ ∈ I • (⊤ : Submodule R S) := by
+      simpa only [zero_add, pow_one, hx_zero] using hstep 0
+    simpa only [sub_add_sub_cancel] using add_mem h1 h01
 
-end TauCeti
+/-- **Idempotents lift modulo `I • S` in an `I`-adically complete algebra.** Let `S` be an
+`R`-algebra, possibly noncommutative, which is `I`-adically complete as an `R`-module, and let
+`f : S →+* T` be a ring homomorphism whose kernel is `I • S`. Every idempotent of `T` in the range
+of `f` is the image of an idempotent of `S`. The target `T` need not be associative.
+
+This is the complete analogue of `exists_isIdempotentElem_eq_of_ker_isNilpotent`, which asks the
+kernel to be nil instead. -/
+theorem exists_isIdempotentElem_eq [IsAdicComplete I S] {T : Type*} [NonAssocRing T]
+    (f : S →+* T) (hf : ∀ x, f x = 0 ↔ x ∈ I • (⊤ : Submodule R S)) {e : T} (he : e ∈ f.range)
+    (he' : IsIdempotentElem e) : ∃ e' : S, IsIdempotentElem e' ∧ f e' = e := by
+  obtain ⟨x, rfl⟩ := he
+  obtain ⟨e', he', hx⟩ := exists_isIdempotentElem_sub_mem I (x₀ := x)
+    ((hf _).mp (by simp [he'.eq]))
+  exact ⟨e', he', sub_eq_zero.mp (by simpa using (hf _).mpr hx)⟩
+
+end IsAdicComplete
