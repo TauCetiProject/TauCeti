@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Topology.ContinuousMap.Precomp
 public import TauCeti.Topology.MappingSpace.Based
-public import TauCeti.Topology.MappingSpace.SphereSuspension
+public import TauCeti.Topology.Sphere.Suspension
 
 /-!
 # Mapping spaces of the two-sphere as spaces of paths of free loops
@@ -97,6 +97,16 @@ theorem sphere2HomeomorphConstLoopPath_apply (f : C(Sphere2, Q)) (t : I) (z : Ci
   rw [Homeomorph.subtype_apply_coe, ContinuousMap.homeomorphFactorsThrough_apply]
   exact ContinuousMap.curry_apply (f.comp suspensionToSphere) t z
 
+/-- The inverse of `sphere2HomeomorphConstLoopPath` evaluates, at the image of `(t, z)` under the
+suspension map, to the value of the path of loops at `t` and `z`. -/
+@[simp]
+theorem sphere2HomeomorphConstLoopPath_symm_apply (p : ConstLoopPath Q) (t : I) (z : Circle) :
+    sphere2HomeomorphConstLoopPath.symm p (suspensionToSphere (t, z)) = p.1 t z := by
+  have h := sphere2HomeomorphConstLoopPath_apply
+    (sphere2HomeomorphConstLoopPath.symm p) t z
+  rw [Homeomorph.apply_symm_apply] at h
+  exact h.symm
+
 variable (Q) in
 /-- The paths in the free loop space from the constant loop at `x` to a constant loop. -/
 abbrev BasedConstLoopPath (x : Q) : Type _ :=
@@ -116,5 +126,12 @@ def basedMapSphere2HomeomorphBasedConstLoopPath (x : Q) :
       have := DFunLike.congr_fun h 1
       rwa [sphere2HomeomorphConstLoopPath_apply, ContinuousMap.const_apply,
         (suspensionToSphere_eq_north_iff (0, 1)).2 rfl] at this
+
+@[simp]
+theorem basedMapSphere2HomeomorphBasedConstLoopPath_apply (x : Q)
+    (f : BasedMap Sphere2 Q Sphere2.north x) (t : I) (z : Circle) :
+    (basedMapSphere2HomeomorphBasedConstLoopPath x f).1.1 t z =
+      f.1 (suspensionToSphere (t, z)) :=
+  sphere2HomeomorphConstLoopPath_apply f.1 t z
 
 end TauCeti
