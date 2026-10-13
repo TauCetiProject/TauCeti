@@ -52,6 +52,8 @@ that computation. For `n ≥ 1` and `f` of degree `m ≠ 0` these spaces are the
 * `TauCeti.sphereMappingConeCWComplex h f`: the CW structure, which is finite
   (`TauCeti.finite_sphereMappingConeCWComplex`) with cells in dimensions `0`, `n` and `n + 1`
   (`TauCeti.nat_card_cell_sphereMappingConeCWComplex`).
+* `TauCeti.sphereMappingConeSkeletonHomeomorph h f`: the identification of the `n`-skeleton with
+  `Sⁿ`, by `a ↦ (a, 0)`.
 
 ## References
 
@@ -469,6 +471,80 @@ theorem map_sphereMappingConeTopCell_unitBallHomeomorph_coe_sphere
       ((f x : EuclideanSpace ℝ ι), 0) := by
   rw [map_sphereMappingConeTopCell, sphereMappingConeTopCellMap_unitBallHomeomorph,
     sphereMappingConeDiskMap_coe_sphere]
+
+/-- The cells of `Sⁿ ∪_f Dⁿ⁺¹` of dimension less than `n + 1` make up `Sⁿ × {0}`. -/
+theorem coe_skeletonLT_sphereMappingCone :
+    letI := sphereMappingConeCWComplex h f
+    (skeletonLT (sphereMappingCone f) ((n + 1 : ℕ) : ℕ∞) : Set _) =
+      (fun a ↦ (a, (0 : EuclideanSpace ℝ (Fin (n + 1))))) '' sphere (0 : EuclideanSpace ℝ ι) 1 := by
+  let _ := sphereCWComplex h
+  let _ := sphereMappingConeCWComplex h f
+  rw [coe_skeletonLT, empty_union]
+  refine subset_antisymm (iUnion₂_subset fun m hm ↦ iUnion_subset fun j ↦ ?_) ?_
+  · -- `CWComplex.mkFinite` takes the supplied characteristic maps as its `map` field, so the
+    -- closed cells of dimension `m` are those of `Sⁿ` and, if `m = n + 1`, the top cell.
+    rcases j with i | ⟨⟨⟨rfl⟩⟩⟩
+    · change mappingConeCellMap h f m (.inl i) '' closedBall 0 1 ⊆ _
+      rw [image_mappingConeCellMap_inl]
+      exact image_mono (closedCell_subset_complex m i)
+    · exact absurd hm (lt_irrefl _)
+  · -- Every point of `Sⁿ` lies in a closed cell of `Sⁿ`, of dimension at most `n`.
+    rintro _ ⟨a, ha, rfl⟩
+    rw [← CWComplex.union (C := sphere (0 : EuclideanSpace ℝ ι) 1)] at ha
+    obtain ⟨k, j, hj⟩ := mem_iUnion₂.1 ha
+    have hk : k < n + 1 := by
+      by_contra hk
+      exact (isEmpty_cell_sphereCWComplex h (not_lt.1 hk)).elim j
+    refine mem_iUnion₂.2 ⟨k, by exact_mod_cast hk, mem_iUnion.2 ⟨.inl j, ?_⟩⟩
+    change _ ∈ mappingConeCellMap h f k (.inl j) '' closedBall 0 1
+    rw [image_mappingConeCellMap_inl]
+    exact ⟨_, hj, rfl⟩
+
+/-- A point lies in the `n`-skeleton of `Sⁿ ∪_f Dⁿ⁺¹` if and only if it lies in `Sⁿ × {0}`. -/
+private theorem mem_skeletonLT_sphereMappingCone_iff
+    {p : EuclideanSpace ℝ ι × EuclideanSpace ℝ (Fin (n + 1))} :
+    letI := sphereMappingConeCWComplex h f
+    p ∈ (skeletonLT (sphereMappingCone f) ((n + 1 : ℕ) : ℕ∞) :
+      Set (EuclideanSpace ℝ ι × EuclideanSpace ℝ (Fin (n + 1)))) ↔
+      p.1 ∈ sphere (0 : EuclideanSpace ℝ ι) 1 ∧ p.2 = 0 := by
+  rw [coe_skeletonLT_sphereMappingCone]
+  constructor
+  · rintro ⟨a, ha, rfl⟩
+    exact ⟨ha, rfl⟩
+  · exact fun hp ↦ ⟨p.1, hp.1, Prod.ext rfl hp.2.symm⟩
+
+/-- The `n`-skeleton of `Sⁿ ∪_f Dⁿ⁺¹`, the union of its cells of dimension less than `n + 1`, is
+`Sⁿ`, included by `a ↦ (a, 0)` (`TauCeti.coe_skeletonLT_sphereMappingCone`). -/
+def sphereMappingConeSkeletonHomeomorph :
+    letI := sphereMappingConeCWComplex h f
+    sphere (0 : EuclideanSpace ℝ ι) 1 ≃ₜ
+      (skeletonLT (sphereMappingCone f) ((n + 1 : ℕ) : ℕ∞) :
+        Set (EuclideanSpace ℝ ι × EuclideanSpace ℝ (Fin (n + 1)))) where
+  toFun a := ⟨((a : EuclideanSpace ℝ ι), 0),
+    (mem_skeletonLT_sphereMappingCone_iff h f).2 ⟨a.2, rfl⟩⟩
+  invFun p := ⟨(p : EuclideanSpace ℝ ι × EuclideanSpace ℝ (Fin (n + 1))).1,
+    ((mem_skeletonLT_sphereMappingCone_iff h f).1 p.2).1⟩
+  left_inv _ := rfl
+  right_inv p :=
+    Subtype.ext (Prod.ext rfl ((mem_skeletonLT_sphereMappingCone_iff h f).1 p.2).2.symm)
+  continuous_toFun := (continuous_subtype_val.prodMk continuous_const).subtype_mk _
+  continuous_invFun := (continuous_fst.comp continuous_subtype_val).subtype_mk _
+
+@[simp]
+theorem coe_sphereMappingConeSkeletonHomeomorph_apply (a : sphere (0 : EuclideanSpace ℝ ι) 1) :
+    (sphereMappingConeSkeletonHomeomorph h f a :
+        EuclideanSpace ℝ ι × EuclideanSpace ℝ (Fin (n + 1))) =
+      ((a : EuclideanSpace ℝ ι), 0) :=
+  (rfl)
+
+@[simp]
+theorem coe_sphereMappingConeSkeletonHomeomorph_symm_apply
+    (p : letI := sphereMappingConeCWComplex h f
+      (skeletonLT (sphereMappingCone f) ((n + 1 : ℕ) : ℕ∞) :
+        Set (EuclideanSpace ℝ ι × EuclideanSpace ℝ (Fin (n + 1))))) :
+    ((sphereMappingConeSkeletonHomeomorph h f).symm p : EuclideanSpace ℝ ι) =
+      (p : EuclideanSpace ℝ ι × EuclideanSpace ℝ (Fin (n + 1))).1 :=
+  (rfl)
 
 /-- `Sⁿ ∪_f Dⁿ⁺¹` has a single cell of dimension `n + 1`. -/
 theorem eq_sphereMappingConeTopCell
