@@ -65,8 +65,6 @@ square is unchanged, but only the signed one inverts the unsigned forward map, p
 
 ## References
 
-* [Clifford algebras, Pin and Spin, and spin representations roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SpinRepresentations/README.md),
-  Layer 7;
 * H. B. Lawson and M.-L. Michelsohn, *Spin Geometry* (1989), Chapter I, Proposition 4.2.
 -/
 

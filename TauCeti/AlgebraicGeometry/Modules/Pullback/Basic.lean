@@ -11,7 +11,9 @@ public import TauCeti.Algebra.Category.ModuleCat.Sheaf.LocalIsomorphism
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Quasicoherent.Refinement
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.TensorProduct.Pushforward
 public import TauCeti.AlgebraicGeometry.Modules.TensorProduct
+public import TauCeti.AlgebraicGeometry.Modules.Restriction
 public import TauCeti.CategoryTheory.Adjunction.Mates
+public import Mathlib.CategoryTheory.Functor.ReflectsIso.Jointly
 
 /-!
 # Pullback and restriction of modules on schemes
@@ -450,6 +452,15 @@ theorem isIso_iff_of_isOpenCover {ι : Type*} {U : ι → X.Opens}
   have : IsIso ((overEquiv (U i)).functor.map (φ.over (U i))) :=
     (NatIso.isIso_map_iff (overFunctorEquiv (U i)) φ).mpr this
   exact isIso_of_reflects_iso (φ.over (U i)) (overEquiv (U i)).functor
+
+/-- Monomorphisms of module sheaves can be checked after pullback to an open cover. -/
+theorem mono_iff_of_isOpenCover {ι : Type*} {U : ι → X.Opens}
+    (hU : TopologicalSpace.IsOpenCover U) {A B : X.Modules} (φ : A ⟶ B) :
+    Mono φ ↔ ∀ i, Mono ((pullback (U i).ι).map φ) := by
+  let F (i : ι) := pullback (U i).ι
+  have hF : JointlyReflectIsomorphisms F :=
+    ⟨fun f _ ↦ (isIso_iff_of_isOpenCover hU f).mpr fun i ↦ inferInstance⟩
+  exact hF.jointlyReflectMonomorphisms.mono_iff φ
 
 end Over
 

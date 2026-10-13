@@ -40,10 +40,9 @@ subgroup, not to compare two covers which already exist.
 
 ## References
 
-This advances `TauCetiRoadmap/UniversalCovers/README.md`, Stage 2, item 8, second bullet:
-unpointed connected covers correspond to conjugacy classes of subgroups. It proves the
-comparison-up-to-isomorphism half of that correspondence; constructing a cover from every
-subgroup is the separate existence milestone in item 7.
+Unpointed connected covers correspond to conjugacy classes of subgroups. This file proves the
+comparison-up-to-isomorphism half of that correspondence; constructing a cover from every subgroup
+is the existence half, in `TauCeti.AlgebraicTopology.UniversalCover.Classification.Existence`.
 
 The proof reuses `IsCoveringMap.exists_homeomorph_comp_eq_iff_range_eq` for pointed
 covers and `IsCoveringMap.exists_range_eq_map_conj` for change of the chosen lift.

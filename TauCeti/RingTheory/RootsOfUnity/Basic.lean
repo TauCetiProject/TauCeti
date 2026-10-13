@@ -6,7 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Module.Torsion.Basic
-public import Mathlib.RingTheory.Ideal.Quotient.Basic
+public import Mathlib.RingTheory.Ideal.Defs
+public import Mathlib.RingTheory.RootsOfUnity.CyclotomicUnits
 public import Mathlib.RingTheory.RootsOfUnity.Minpoly
 
 /-!
@@ -67,18 +68,9 @@ ideal not containing its order is equal to `1`. -/
 theorem eq_one_of_pow_eq_one_of_sub_one_mem [NoZeroDivisors R] {I : Ideal R} {n : ℕ}
     (hn : (n : R) ∉ I) {ζ : R} (hζ : ζ ^ n = 1) (hmem : ζ - 1 ∈ I) : ζ = 1 := by
   by_contra hne
-  have hgeom : ∑ i ∈ Finset.range n, ζ ^ i = 0 := by
-    have h := geom_sum_mul ζ n
-    rw [hζ, sub_self] at h
-    exact (mul_eq_zero.mp h).resolve_right (sub_ne_zero.mpr hne)
-  have hres : Ideal.Quotient.mk I ζ = 1 := by
-    have h : Ideal.Quotient.mk I (ζ - 1) = 0 := Ideal.Quotient.eq_zero_iff_mem.mpr hmem
-    rwa [map_sub, map_one, sub_eq_zero] at h
-  refine hn ?_
-  rw [← Ideal.Quotient.eq_zero_iff_mem, map_natCast]
-  have h := congrArg (Ideal.Quotient.mk I) hgeom
-  rw [map_sum, map_zero] at h
-  simpa [map_pow, hres] using h
+  have : Nontrivial R := ⟨⟨ζ, 1, hne⟩⟩
+  let : IsDomain R := NoZeroDivisors.to_isDomain R
+  exact hn (I.mem_of_dvd (sub_one_dvd_natCast_of_pow_eq_one hζ hne) hmem)
 
 /-- In a commutative ring in which `2 ≠ 0`, `-1` is a primitive square root of unity. -/
 theorem _root_.IsPrimitiveRoot.neg_one_of_two_ne_zero (h2 : (2 : R) ≠ 0) :
