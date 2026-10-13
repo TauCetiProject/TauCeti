@@ -5,7 +5,6 @@ Authors: Codex
 -/
 module
 
-public import Mathlib.RingTheory.RootsOfUnity.EnoughRootsOfUnity
 public import TauCeti.NumberTheory.LocalField.PowerSubgroup.Basic
 import Mathlib.GroupTheory.IndexNSmul
 import TauCeti.NumberTheory.LocalField.UnitsDecomposition
@@ -68,6 +67,29 @@ theorem card_integerUnitPowerClasses {n : ℕ} (hn : (n : K) ≠ 0) :
   rw [card_powerClasses hn, mul_assoc] at hcount
   exact Nat.eq_of_mul_eq_mul_left (Nat.pos_of_ne_zero hn0) hcount.symm
 
+/-- For `n` nonzero in `K`, the `n`-th powers of the integer-ring units have finite index. -/
+theorem finiteIndex_range_powMonoidHom_integerUnits {n : ℕ} (hn : (n : K) ≠ 0) :
+    (powMonoidHom n : 𝒪[K]ˣ →* 𝒪[K]ˣ).range.FiniteIndex := by
+  have : NeZero n := ⟨by
+    rintro rfl
+    simp at hn⟩
+  refine ⟨?_⟩
+  rw [Subgroup.index_eq_card, card_integerUnitPowerClasses hn]
+  exact mul_ne_zero Nat.card_pos.ne' (pow_ne_zero _ Nat.card_pos.ne')
+
+/-- For `n` nonzero in `K`, the power-map range on integer-ring units has finite index. -/
+instance instFiniteIndexRangePowMonoidHomIntegerUnits {n : ℕ} [NeZero (n : K)] :
+    (powMonoidHom n : 𝒪[K]ˣ →* 𝒪[K]ˣ).range.FiniteIndex :=
+  finiteIndex_range_powMonoidHom_integerUnits (NeZero.ne (n : K))
+
+/-- For `n` nonzero in `K`, the power-class quotient of the integer-ring units is finite. -/
+instance finite_powerClassQuotient_integerUnits {n : ℕ} [NeZero (n : K)] :
+    Finite (powerClassQuotient 𝒪[K]ˣ n) :=
+  have : (powerSubgroup 𝒪[K]ˣ n).FiniteIndex :=
+    powerSubgroup_eq_range_powMonoidHom 𝒪[K]ˣ n ▸
+      finiteIndex_range_powMonoidHom_integerUnits (NeZero.ne (n : K))
+  Subgroup.finite_quotient_of_finiteIndex
+
 /-- Away from the residue characteristic, the unit group has as many `n`-th power classes
 as there are `n`-th roots of unity in the field. -/
 theorem card_integerUnitPowerClasses_of_isUnit {n : ℕ} (hn : IsUnit (n : 𝒪[K])) :
@@ -75,16 +97,5 @@ theorem card_integerUnitPowerClasses_of_isUnit {n : ℕ} (hn : IsUnit (n : 𝒪[
       Nat.card (rootsOfUnity n K) := by
   rw [card_integerUnitPowerClasses (natCast_ne_zero_of_isUnit hn),
     natCastValuation_eq_zero_of_isUnit K _ hn, pow_zero, mul_one]
-
-/-- If `K` contains the `n`-th roots of unity and `n` is invertible in its integer ring,
-then its units have exactly `n` classes modulo `n`-th powers. -/
-theorem card_integerUnitPowerClasses_of_hasEnoughRootsOfUnity {n : ℕ}
-    [HasEnoughRootsOfUnity K n] (hn : IsUnit (n : 𝒪[K])) :
-    Nat.card (𝒪[K]ˣ ⧸ (powMonoidHom n : 𝒪[K]ˣ →* 𝒪[K]ˣ).range) = n := by
-  have : NeZero n := ⟨by
-    rintro rfl
-    simp at hn⟩
-  rw [card_integerUnitPowerClasses_of_isUnit hn,
-    HasEnoughRootsOfUnity.natCard_rootsOfUnity K n]
 
 end TauCeti
