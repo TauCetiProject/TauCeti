@@ -31,7 +31,11 @@ finiteness where the value is computed.
 
 ## Main results
 
+* `TauCeti.Algebra.pow_finrank_mem_range_normUnits`: in a free algebra, the `finrank`-th power of
+  a unit of the base is a norm; `TauCeti.Algebra.range_powMonoidHom_le_range_normUnits` does the
+  same for every `n`-th power with `n` a multiple of the rank.
 * `AlgHom.normGroup_le_normGroup`: a larger extension has a smaller norm group.
+* `TauCeti.pow_finrank_mem_normGroup`: the `[L : K]`-th power of an element of `Kˣ` is a norm.
 -/
 
 public section
@@ -49,6 +53,22 @@ noncomputable def Algebra.normUnits : Sˣ →* Rˣ :=
 @[simp]
 theorem Algebra.coe_normUnits (x : Sˣ) : (Algebra.normUnits R x : R) = Algebra.norm R (x : S) := by
   simp [Algebra.normUnits]
+
+/-- **Powers by the rank are norms.** In a free `R`-algebra `S` the norm of `a ∈ R` is
+`a ^ finrank R S`, so that power of a unit of `R` is the norm of a unit of `S`. -/
+theorem Algebra.pow_finrank_mem_range_normUnits [Module.Free R S] (a : Rˣ) :
+    a ^ Module.finrank R S ∈ (Algebra.normUnits R : Sˣ →* Rˣ).range :=
+  ⟨Units.map (algebraMap R S : R →* S) a, Units.ext <| by simp⟩
+
+/-- **Powers by a multiple of the rank are norms.** In a free `R`-algebra `S` whose rank divides
+`n`, every `n`-th power of a unit of `R` is the norm of a unit of `S`. -/
+theorem Algebra.range_powMonoidHom_le_range_normUnits [Module.Free R S] {n : ℕ}
+    (hn : Module.finrank R S ∣ n) :
+    (powMonoidHom n : Rˣ →* Rˣ).range ≤ (Algebra.normUnits R : Sˣ →* Rˣ).range := by
+  rintro _ ⟨a, rfl⟩
+  obtain ⟨k, rfl⟩ := hn
+  rw [powMonoidHom_apply, pow_mul']
+  exact Algebra.pow_finrank_mem_range_normUnits R (a ^ k)
 
 section NormGroup
 
@@ -78,6 +98,13 @@ theorem _root_.AlgHom.normGroup_le_normGroup {M : Type*} [Field M] [Algebra K M]
   have : Module.Finite M L := .of_restrictScalars_finite K M L
   rintro _ ⟨y, rfl⟩
   exact ⟨Algebra.normUnits M y, Units.ext (by simp [Algebra.norm_norm])⟩
+
+variable {K} in
+/-- **Powers to the degree are norms.** The norm of `a ∈ K` from `L` is `a ^ [L : K]`, so
+`a ^ [L : K]` lies in the norm group `N_{L/K}(Lˣ)`. -/
+theorem pow_finrank_mem_normGroup [Module.Finite K L] (a : Kˣ) :
+    a ^ Module.finrank K L ∈ normGroup K L :=
+  mem_normGroup_iff.2 ⟨Units.map (algebraMap K L).toMonoidHom a, by simp [Algebra.norm_algebraMap]⟩
 
 end NormGroup
 

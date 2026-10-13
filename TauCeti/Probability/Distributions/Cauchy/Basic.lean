@@ -72,7 +72,7 @@ parent law.
   transform;
 * `TauCeti.Probability.cauchyMeasure_map_add_const` — translation changes the location parameter;
 * `TauCeti.Probability.charFun_cauchyMeasure` — the characteristic function of `cauchyMeasure x₀ γ`;
-* `TauCeti.Probability.hasLaw_average_of_iIndepFun_cauchyMeasure` — stability of the family under
+* `ProbabilityTheory.iIndepFun.hasLaw_average_cauchyMeasure` — stability of the family under
   averaging.
 
 ## References
@@ -341,10 +341,6 @@ theorem fourier_exp_neg_mul_abs_eq_cauchyPDFReal_zero_loc (hγ : γ ≠ 0) (ξ :
     𝓕 (fun x : ℝ ↦ (Real.exp (-(2 * Real.pi * γ * |x|)) : ℂ)) ξ = (cauchyPDFReal 0 γ ξ : ℂ) := by
   have hγ' : (0 : ℝ) < (γ : ℝ) := NNReal.coe_pos.mpr (pos_iff_ne_zero.mpr hγ)
   have ha : (0 : ℝ) < 2 * Real.pi * γ := mul_pos (by positivity) hγ'
-  have h₁ : (0 : ℝ) < (2 * Real.pi * (γ : ℝ)) ^ 2 + (2 * Real.pi * ξ) ^ 2 :=
-    add_pos_of_pos_of_nonneg (pow_pos ha 2) (sq_nonneg _)
-  have h₂ : (0 : ℝ) < (ξ - 0) ^ 2 + (γ : ℝ) ^ 2 :=
-    add_pos_of_nonneg_of_pos (sq_nonneg _) (pow_pos hγ' 2)
   rw [fourier_exp_neg_mul_abs ha, Complex.ofReal_inj, cauchyPDFReal_def]
   field_simp
   ring
@@ -405,32 +401,35 @@ theorem charFun_cauchyMeasure (x₀ : ℝ) (γ : ℝ≥0) (t : ℝ) :
     push_cast
     ring
 
-/-- **The Cauchy family is stable under averaging.** The sample mean of a nonempty finite family
-of independent Cauchy variables with common location `x₀` and scale `γ` has exactly the same law. -/
-theorem hasLaw_average_of_iIndepFun_cauchyMeasure {Ω ι : Type*} [MeasurableSpace Ω]
-    [Fintype ι] [Nonempty ι] {P : Measure Ω} [IsProbabilityMeasure P] {x₀ : ℝ} {γ : ℝ≥0}
-    {X : ι → Ω → ℝ} (hindep : iIndepFun X P)
-    (hlaw : ∀ i, HasLaw (X i) (cauchyMeasure x₀ γ) P) :
-    HasLaw (fun ω ↦ (Fintype.card ι : ℝ)⁻¹ * ∑ i, X i ω) (cauchyMeasure x₀ γ) P where
-  aemeasurable :=
-    (Finset.aemeasurable_fun_sum _ fun i _ ↦ (hlaw i).aemeasurable).const_mul _
-  map_eq := by
-    have hmeas : AEMeasurable (fun ω ↦ ∑ i, X i ω) P :=
-      Finset.aemeasurable_fun_sum _ fun i _ ↦ (hlaw i).aemeasurable
-    refine Measure.ext_of_charFun (funext fun t ↦ ?_)
-    rw [charFun_map_mul_comp hmeas,
-      hindep.charFun_map_fun_sum_eq_prod (fun i ↦ (hlaw i).aemeasurable)]
-    simp only [(hlaw _).map_eq, charFun_cauchyMeasure, Finset.prod_apply, Finset.prod_const,
-      Finset.card_univ, ← Complex.exp_nat_mul]
-    congr 1
-    have hnpos : (0 : ℝ) < Fintype.card ι := Nat.cast_pos.mpr Fintype.card_pos
-    have habs : |(Fintype.card ι : ℝ)⁻¹ * t| = (Fintype.card ι : ℝ)⁻¹ * |t| := by
-      rw [abs_mul, abs_of_pos (by positivity)]
-    have hnc : (Fintype.card ι : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr Fintype.card_ne_zero
-    rw [habs]
-    push_cast
-    field_simp
-
 end CharFun
 
 end TauCeti.Probability
+
+namespace ProbabilityTheory
+
+open TauCeti.Probability
+
+/-- **The Cauchy family is stable under averaging.** The sample mean of a nonempty finite family
+of independent Cauchy variables with common location `x₀` and scale `γ` has exactly the same law. -/
+theorem iIndepFun.hasLaw_average_cauchyMeasure {Ω ι : Type*} [MeasurableSpace Ω]
+    [Fintype ι] [Nonempty ι] {P : Measure Ω} {x₀ : ℝ} {γ : ℝ≥0}
+    {X : ι → Ω → ℝ} (hindep : iIndepFun X P)
+    (hlaw : ∀ i, HasLaw (X i) (cauchyMeasure x₀ γ) P) :
+    HasLaw (fun ω ↦ (Fintype.card ι : ℝ)⁻¹ * ∑ i, X i ω) (cauchyMeasure x₀ γ) P := by
+  have := hindep.isProbabilityMeasure
+  have hmeas : AEMeasurable (fun ω ↦ ∑ i, X i ω) P :=
+    Finset.aemeasurable_fun_sum _ fun i _ ↦ (hlaw i).aemeasurable
+  refine ⟨hmeas.const_mul _, Measure.ext_of_charFun (funext fun t ↦ ?_)⟩
+  rw [charFun_map_mul_comp hmeas,
+    hindep.charFun_map_fun_sum_eq_prod (fun i ↦ (hlaw i).aemeasurable)]
+  simp only [(hlaw _).map_eq, charFun_cauchyMeasure, Finset.prod_apply, Finset.prod_const,
+    Finset.card_univ, ← Complex.exp_nat_mul]
+  congr 1
+  have habs : |(Fintype.card ι : ℝ)⁻¹ * t| = (Fintype.card ι : ℝ)⁻¹ * |t| := by
+    rw [abs_mul, abs_of_pos (by positivity)]
+  have hnc : (Fintype.card ι : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr Fintype.card_ne_zero
+  rw [habs]
+  push_cast
+  field_simp
+
+end ProbabilityTheory

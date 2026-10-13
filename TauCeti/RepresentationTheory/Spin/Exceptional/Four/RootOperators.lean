@@ -205,8 +205,8 @@ private theorem toMatrix_spinAction_typeDSimpleNegativeRootBivector_fin_two_one
       Finsupp.single_eq_same, map_one, spinFourExteriorBasis_empty, one_smul]
     obtain h | h := Int.units_eq_one_or
       (TauCeti.ExteriorAlgebra.basisEraseSign (0 : Fin 2) {0, 1})
-    · simp [h]
-    · simp [h]
+    · simp
+    · simp
 
 /-- In the oriented rank-two exterior basis, the two positive type-`D` root bivectors are the
 elementary matrices on the odd and even half-spin blocks, respectively. -/

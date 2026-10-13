@@ -107,7 +107,6 @@ theorem integrableAtFilter_inv_mul_one_add_log_sq :
   refine MeasureTheory.Integrable.mono hmaj (by fun_prop) ?_
   filter_upwards [ae_restrict_mem measurableSet_Ioi] with u hu
   have hu1 : (1 : ℝ) < u := hu
-  have hu0 : (0 : ℝ) < u := lt_trans one_pos hu1
   have hL : (0 : ℝ) ≤ Real.log u := Real.log_nonneg hu1.le
   rw [Real.norm_of_nonneg (by positivity), Real.norm_of_nonneg (by positivity)]
   gcongr

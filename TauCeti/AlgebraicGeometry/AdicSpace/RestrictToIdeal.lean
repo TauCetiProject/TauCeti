@@ -5,6 +5,7 @@ Authors: Chris Birkbeck
 -/
 module
 
+public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Basic
 public import TauCeti.AlgebraicGeometry.AdicSpace.SpvOfIdeal.Basic
 public import TauCeti.RingTheory.Valuation.CofinalIdeal.Restrict
 
@@ -50,6 +51,9 @@ compute; the retraction property is the content of the two theorems, not of the 
   `Spv (A, I)` pointwise — a point of the subspace has `cΓ_v(I) = ⊤`, so nothing is discarded.
 * `TauCeti.ValuationSpectrum.restrictToIdealCodRestrict_coe` : the retraction law itself, that
   `r_I` composed with the inclusion of the subspace is the identity.
+* `TauCeti.ValuationSpectrum.IsContinuous.restrictToIdeal` and
+  `TauCeti.ValuationSpectrum.restrictToIdeal_mem_spa` : the restriction of a continuous point is
+  continuous, so the restriction maps `Spa (A, A⁺)` into itself.
 
 ## References
 
@@ -158,5 +162,24 @@ theorem restrictToIdealCodRestrict_coe (I : Ideal A)
     (hfg : ∃ J : Ideal A, J.FG ∧ I.radical = J.radical) (v : (spvOfIdeal I hfg : Set (Spv A))) :
     restrictToIdealCodRestrict I hfg (v : Spv A) = v :=
   Subtype.ext (restrictToIdeal_eq_self_of_mem_spvOfIdeal _ I hfg v.2)
+
+/-- **The restriction of a continuous point is continuous.** This is the valuation-level
+`Valuation.IsContinuous.restrictToIdeal`, read on the canonical valuation of the point. -/
+theorem IsContinuous.restrictToIdeal [TopologicalSpace A] {v : Spv A} (hv : v.IsContinuous)
+    (I : Ideal A) (hfg : ∃ J : Ideal A, J.FG ∧ I.radical = J.radical) :
+    (restrictToIdeal v I hfg).IsContinuous := by
+  rw [restrictToIdeal_def, isContinuous_ofValuation_iff]
+  exact ((isContinuous_def v).mp hv).restrictToIdeal I hfg
+
+/-- **The restriction maps `Spa (A, A⁺)` into itself.** It preserves continuity, and it keeps the
+value `1` while it can only lower other values, so `v(a) ≤ 1` on `A⁺` survives. -/
+theorem restrictToIdeal_mem_spa [TopologicalSpace A] {Aplus : Subring A} {v : Spv A}
+    (hv : v ∈ spa Aplus) (I : Ideal A) (hfg : ∃ J : Ideal A, J.FG ∧ I.radical = J.radical) :
+    restrictToIdeal v I hfg ∈ spa Aplus := by
+  rw [mem_spa_iff] at hv ⊢
+  have h1 : 1 ≤ v.valuation.restrictToIdeal I hfg 1 :=
+    one_le_restrictToIdeal _ I hfg (map_one _).symm.le
+  refine ⟨hv.1.restrictToIdeal I hfg, fun a ha ↦ (vle_restrictToIdeal v I hfg a 1).mpr
+    (Or.inr ⟨(zero_lt_one.trans_le h1).ne', hv.2 a ha⟩)⟩
 
 end TauCeti.ValuationSpectrum

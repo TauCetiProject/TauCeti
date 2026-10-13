@@ -175,30 +175,23 @@ the one attached to `τ` conjugates `galoisSubgroup K L σ` onto `galoisSubgroup
 with the two identifications with `G_L`, and corestriction is invariant under conjugation. -/
 theorem galoisCor_embedding_independent (τ : L →ₐ[K] SeparableClosure K) (n : ℕ) :
     galoisCor K L σ n = galoisCor K L τ n := by
-  obtain ⟨γ, hγ⟩ := exists_galoisSubgroupEquiv_eq_conj K L σ τ
-  -- The identification of `galoisSubgroup K L τ` with `galoisSubgroup K L σ` through `G_L`, which
-  -- is conjugation by `γ⁻¹`.
+  obtain ⟨γ, hγ⟩ := exists_galoisSubgroupComparison_eq_conj K L σ τ
   let κ : (galoisSubgroup K L τ).toSubgroup →ₜ* (galoisSubgroup K L σ).toSubgroup :=
-    (ContinuousMonoidHom.toContinuousMonoidHom (galoisSubgroupEquiv K L σ)).comp
-      (ContinuousMonoidHom.toContinuousMonoidHom (galoisSubgroupEquiv K L τ).symm)
-  have hκ (v : (galoisSubgroup K L τ).toSubgroup) :
-      (κ v : AbsoluteGaloisGroup K) = γ⁻¹ * v * γ := by
-    have h := hγ ((galoisSubgroupEquiv K L τ).symm v)
-    rw [ContinuousMulEquiv.apply_symm_apply] at h
-    simp [κ, h, mul_assoc]
+    galoisSubgroupComparison K L σ τ
   have hVU : (galoisSubgroup K L τ).toSubgroup =
       (galoisSubgroup K L σ).toSubgroup.map (MulAut.conj γ).toMonoidHom := by
     ext x
     rw [Subgroup.mem_map_equiv, MulAut.conj_symm_apply]
-    refine ⟨fun hx => hκ ⟨x, hx⟩ ▸ (κ ⟨x, hx⟩).2, fun hx => ?_⟩
+    refine ⟨fun hx => hγ ⟨x, hx⟩ ▸ (κ ⟨x, hx⟩).2, fun hx => ?_⟩
     -- `κ` is onto: `γ⁻¹ x γ` is the image of `v`, so `x = v` lies in `galoisSubgroup K L τ`.
-    let v := galoisSubgroupEquiv K L τ ((galoisSubgroupEquiv K L σ).symm ⟨_, hx⟩)
-    have hv : (κ v : AbsoluteGaloisGroup K) = γ⁻¹ * x * γ := by simp [κ, v]
-    rw [hκ, mul_left_inj, mul_right_inj] at hv
+    let v := (galoisSubgroupComparison K L σ τ).symm ⟨_, hx⟩
+    have hv : (galoisSubgroupComparison K L σ τ v : AbsoluteGaloisGroup K) = γ⁻¹ * x * γ := by
+      simp [v]
+    rw [hγ, mul_left_inj, mul_right_inj] at hv
     exact hv ▸ v.2
   rw [galoisCor_def, galoisCor_def, galoisF2Iso_inv, galoisF2Iso_inv,
     ← trivialF2Map_comp_trivialF2CorMap_of_conj (galoisSubgroup K L σ).isOpen
-      (galoisSubgroup K L τ).isOpen γ hVU κ hκ n, ← Category.assoc, ← trivialF2Map_comp]
+      (galoisSubgroup K L τ).isOpen γ hVU κ hγ n, ← Category.assoc, ← trivialF2Map_comp]
   congr 2
   ext v : 1
   simp [κ]

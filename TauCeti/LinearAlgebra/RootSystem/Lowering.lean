@@ -26,9 +26,7 @@ while remaining positive.
 
 ## References
 
-This file implements “Simple-root lowering” in Layer 1 of
-`TauCetiRoadmap/RepresentationTheory/RootSystems/README.md`. The argument follows Bourbaki,
-*Lie Groups and Lie Algebras*, Chapters 4--6.
+The argument follows Bourbaki, *Lie Groups and Lie Algebras*, Chapters 4--6.
 
 Mathlib already carries out this height computation and lowering step inside the proof of
 `RootPairing.Base.IsPos.induction_on_reflect`, where it is packaged as a strong induction

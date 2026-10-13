@@ -10,18 +10,18 @@ import Mathlib.Tactic.NormNum
 import Mathlib.Tactic.Ring
 public import TauCeti.LowDimTopology.Plumbing.NegativeDefinite
 public import TauCeti.LowDimTopology.Plumbing.Tower
+import TauCeti.LowDimTopology.Plumbing.Weight.MinusTwo
 
 /-!
 # The negative-definite E₈ plumbing
 
-This file defines the `E₈` plumbing used as the first concrete calculation in the lattice-homology
-lane. Its eight vertices all have framing `-2`; vertices `0, ..., 6` form a chain and vertex `7`
-is attached to vertex `2`. Thus the negative of its intersection matrix is the `E₈` Cartan
-matrix.
+This file defines the negative-definite `E₈` plumbing, whose boundary is the Poincaré homology
+sphere. Its eight vertices all have framing `-2`; vertices `0, ..., 6` form a chain and vertex `7`
+is attached to vertex `2`. Thus the negative of its intersection matrix is the `E₈` Cartan matrix.
 
 The proof of negative-definiteness gives an explicit integral completion of squares. This both
 certifies the plumbing without appealing to a classification theorem and records a formula useful
-for checking later computations on this example.
+for checking computations on this example.
 
 ## Main definitions
 
@@ -33,15 +33,15 @@ for checking later computations on this example.
 * `TauCeti.e8Plumbing_neg_intersectionForm`: the completed-square identity for the negative
   intersection form.
 * `TauCeti.e8Plumbing_isNegativeDefinite`: the `E₈` plumbing is negative definite.
+* `TauCeti.e8Plumbing_sInfCharacteristicWeight_canonical_eq_zero`: the canonical characteristic
+  weight has minimum zero, attained only at the zero lattice point.
 * `TauCeti.e8Plumbing_not_isZero_latticeHomology`: its characteristic-two lattice homology is
   nonzero in every spin^c structure.
 
 ## References
 
-This advances `TauCetiRoadmap/CombinatorialHeegaardFloer/README.md`, Lane L, and specifically its
-acceptance check asking that lattice homology be computed for the negative-definite `E₈` plumbing
-of the Poincaré sphere. The plumbing convention follows Némethi,
-[arXiv:0709.0841](https://arxiv.org/abs/0709.0841), Section 2.
+The plumbing convention follows Némethi, [arXiv:0709.0841](https://arxiv.org/abs/0709.0841),
+Section 2.
 -/
 
 public section
@@ -201,16 +201,36 @@ theorem e8Plumbing_isNegativeDefinite : e8Plumbing.IsNegativeDefinite := by
   intro x hx
   have hid := e8Plumbing_neg_intersectionForm x
   by_contra hneg
-  have hform : 0 ≤ e8Plumbing.intersectionForm x x := le_of_not_gt hneg
   have hR : ∑ i, e8SquareTerm x i = 0 := by
     have : 0 ≤ ∑ i, e8SquareTerm x i :=
       Finset.sum_nonneg fun i _ => e8SquareTerm_nonneg x i
     nlinarith
   exact hx (eq_zero_of_e8SquareTerm_sum_eq_zero x hR)
 
+/-- In the canonical spin^c structure, the `E₈` characteristic weight vanishes exactly at the zero
+lattice point. -/
+@[simp]
+theorem e8Plumbing_characteristicWeight_canonical_eq_zero_iff (x : Fin 8 → ℤ) :
+    e8Plumbing.characteristicWeight
+      ⟨e8Plumbing.canonicalCharacteristic,
+        e8Plumbing.isCharacteristicVector_canonicalCharacteristic⟩ x = 0 ↔ x = 0 := by
+  exact PlumbingGraph.characteristicWeight_canonical_eq_zero_iff_of_weight_eq_neg_two
+    e8Plumbing e8Plumbing_isNegativeDefinite e8Plumbing_weight x
+
+/-- The infimum of the canonical characteristic weight of the negative-definite `E₈` plumbing is
+zero. -/
+@[simp]
+theorem e8Plumbing_sInfCharacteristicWeight_canonical_eq_zero :
+    e8Plumbing.sInfCharacteristicWeight
+      ⟨e8Plumbing.canonicalCharacteristic,
+        e8Plumbing.isCharacteristicVector_canonicalCharacteristic⟩ = 0 := by
+  exact PlumbingGraph.sInfCharacteristicWeight_canonical_eq_zero_of_weight_eq_neg_two
+    e8Plumbing (fun x => e8Plumbing_isNegativeDefinite.intersectionForm_self_nonpos x)
+    e8Plumbing_weight
+
 /-- The characteristic-two lattice homology of the `E₈` plumbing is nonzero in every spin^c
-structure. This is the roadmap's concrete negative-definite plumbing, the one whose lattice
-homology computes the Heegaard Floer homology of the Poincaré homology sphere. -/
+structure. This is the concrete negative-definite plumbing whose lattice homology computes the
+Heegaard Floer homology of the Poincaré homology sphere. -/
 theorem e8Plumbing_not_isZero_latticeHomology (k : e8Plumbing.characteristicVectors) :
     ¬ CategoryTheory.Limits.IsZero (e8Plumbing.latticeHomology k) :=
   e8Plumbing.not_isZero_latticeHomology e8Plumbing_isNegativeDefinite k

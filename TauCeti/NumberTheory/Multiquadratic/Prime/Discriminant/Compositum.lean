@@ -93,12 +93,7 @@ theorem natAbs_discr_adjoin_range_primeDiscriminantRadicands
   · exact by
       intro L _ _ D _ _ _ root _
       have hdisc := NumberField.discr_eq_discr_of_algEquiv _ (botEquiv ℚ L)
-      have hrange : Set.range root = ∅ := by
-        ext x
-        simp only [Set.mem_range, Set.mem_empty_iff_false, iff_false]
-        rintro ⟨i, _⟩
-        exact PEmpty.elim i
-      rw [hrange, adjoin_empty, hdisc, Rat.numberField_discr]
+      rw [Set.range_eq_empty root, adjoin_empty, hdisc, Rat.numberField_discr]
       simp
   · intro α _ ih
     exact by

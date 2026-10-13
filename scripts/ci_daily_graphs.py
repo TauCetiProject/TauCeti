@@ -8,7 +8,7 @@ Every chart is one point (or bar) per complete UTC day, up to the database's cov
   ci-failures.svg         failed PR builds by cause, and the share of PR builds that failed
   ci-runner-minutes.svg   runner-minutes per day on each kind of runner, and those spent on
                           builds cancelled before finishing
-  ci-merge-queue.svg      merge-queue builds by outcome, and PRs landed
+  ci-merge-queue.svg      GitHub queue and bors builds by outcome, and PR arrivals
   ci-picker.svg           the share of PR builds that ran on GitHub-hosted runners
 """
 
@@ -26,6 +26,7 @@ from chart_style import MUTED, PALETTE, TEXT, base_css, card_rect, css_px, svg_u
 UTC = dt.timezone.utc
 BUILD = "sandboxed-build"
 PR_BUILD = ".github/workflows/pr-build.yml"
+MERGE_TRIGGERS = {"merge_queue", "bors_staging"}
 
 ASSET_NAMES = [
     "ci-build-duration.svg", "ci-build-wait.svg", "ci-build-phases.svg", "ci-failures.svg",
@@ -85,18 +86,18 @@ def metrics(db: sqlite3.Connection, first: str, last: str) -> dict:
     """Per-day series for every daily chart, over complete UTC days first..last."""
     days = days_between(first, last)
     lo, hi = f"{first}T00:00:00Z", f"{last}T23:59:59Z"
-    # Every attempt's build job (jobs keeps all attempts; runs only the latest), PR and merge-queue
-    # builds only: manual dispatches are neither.
+    # Every attempt's build job (jobs keeps all attempts; runs only the latest):
+    # PR builds and both main-branch merge engines, excluding manual dispatches.
     builds = db.execute(f"""
         SELECT substr(j.created_at, 1, 10), r.trigger, j.runner_kind, j.conclusion, j.wait_s, j.run_s,
                j.failure_class, j.job_id, r.run_id
         FROM jobs j JOIN runs r USING (repo, run_id)
         WHERE r.repo = 'TauCeti' AND r.workflow = '{PR_BUILD}' AND j.name = '{BUILD}'
-          AND r.trigger IN ('pr', 'merge_queue') AND j.runner_kind IN ('github', 'namespace')
+          AND r.trigger IN ('pr', 'merge_queue', 'bors_staging') AND j.runner_kind IN ('github', 'namespace')
           AND j.created_at BETWEEN ? AND ?""", (lo, hi)).fetchall()
 
     def where(trigger, kind):
-        return "merge queue" if trigger == "merge_queue" else f"PR, {'GitHub' if kind == 'github' else 'Namespace'}"
+        return "merge validation" if trigger in MERGE_TRIGGERS else f"PR, {'GitHub' if kind == 'github' else 'Namespace'}"
 
     dur = defaultdict(list)
     wait = defaultdict(list)
@@ -185,14 +186,23 @@ def metrics(db: sqlite3.Connection, first: str, last: str) -> dict:
         if trigger == "pr" and concl == "cancelled":
             minutes[day]["cancelled PR builds"] += run_s / 60
 
-    # Merge-queue build jobs, every attempt.
+    # Main-branch validation builds for both engines, including every rerun.
+    # Pilot and unidentified bors dispatches are excluded from production totals.
     mq = defaultdict(lambda: defaultdict(int))
     for day, trigger, kind, concl, *_ in builds:
-        if trigger == "merge_queue":
+        if trigger in MERGE_TRIGGERS:
             mq[day][concl if concl in ("success", "failure", "cancelled") else "other"] += 1
     landed = defaultdict(int)
-    for day, n in db.execute("""SELECT substr(committed_at, 1, 10), COUNT(*) FROM main_commits
-                                WHERE pr IS NOT NULL AND committed_at BETWEEN ? AND ? GROUP BY 1""", (lo, hi)):
+    # A staging commit can exist hours before it is accepted onto main. Use
+    # the earliest recorded main-push evidence, never its committer timestamp.
+    # Repeated validation and duplicate commits for one PR still count once.
+    for day, n in db.execute("""
+            SELECT substr(landed_at, 1, 10), COUNT(*) FROM (
+                SELECT c.pr, MIN(l.landed_at) AS landed_at
+                FROM main_commits c JOIN main_landings l
+                  ON l.repo = 'TauCeti' AND l.head_sha = c.sha
+                WHERE c.pr IS NOT NULL GROUP BY c.pr
+            ) WHERE landed_at BETWEEN ? AND ? GROUP BY 1""", (lo, hi)):
         landed[day] = n
 
     return {"days": days, "dur": dur, "wait": wait, "fails": fails, "pr_total": pr_total,
@@ -341,7 +351,7 @@ def charts(db: sqlite3.Connection, until: float) -> dict[str, str]:
     m = metrics(db, first.isoformat(), last.isoformat())
     days = m["days"]
     span = f"UTC days {dt.date.fromisoformat(days[0]):%d %b} to {dt.date.fromisoformat(days[-1]):%d %b}"
-    places = [("PR, GitHub", PALETTE[2]), ("PR, Namespace", PALETTE[1]), ("merge queue", PALETTE[3])]
+    places = [("PR, GitHub", PALETTE[2]), ("PR, Namespace", PALETTE[1]), ("merge validation", PALETTE[3])]
     out = {}
 
     series = []
@@ -389,9 +399,9 @@ def charts(db: sqlite3.Connection, until: float) -> dict[str, str]:
     series = [(o, c, [m["mq"][d].get(o, 0) for d in days]) for o, c in outcomes]
     landed = [m["landed"].get(d, 0) for d in days]
     out["ci-merge-queue.svg"] = stacked_chart(
-        "The merge queue", f"Merge-queue builds by outcome (bars) and PRs landed (dashed, right scale); "
-        f"{span}", days, series, "merge-queue builds",
-        line=("PRs landed", TEXT, landed, max(landed + [1])))
+        "Merge validation", f"GitHub queue + bors builds (bars); PR arrivals on main (dashed, right scale); "
+        f"{span}", days, series, "merge validation builds",
+        line=("PR arrivals on main", TEXT, landed, max(landed + [1])))
 
     share = [m["picker"][d][0] / sum(m["picker"][d]) if sum(m["picker"][d]) else None for d in days]
     out["ci-picker.svg"] = lines_chart(

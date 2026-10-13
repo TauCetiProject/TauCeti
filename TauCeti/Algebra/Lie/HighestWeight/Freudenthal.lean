@@ -75,12 +75,6 @@ particular it applies to a finite-dimensional `TauCeti.irreducibleQuotient`.
 
 ## References
 
-This is the "Freudenthal's multiplicity formula" item of Layer 7 of
-`TauCetiRoadmap/RepresentationTheory/LieHighestWeight/README.md`, whose target signature
-`freudenthal_multiplicity_formula` is pinned in the accompanying `Suggested.lean`, with the
-Freudenthal double sum packaged opaquely there "so the recursion is expressible before the
-positive-root sum machinery is in place"; that machinery is in place, so the sum is written out.
-
 * H. Freudenthal, *Zur Berechnung der Charaktere der halbeinfachen Lieschen Gruppen I*,
   Indag. Math. **16** (1954), 369--376.
 * J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*, GTM 9, §22.3.
@@ -209,7 +203,7 @@ private theorem sum_Icc_eq_add_sum_range (F : ℤ → K) (N : ℕ) :
     ext i
     simp only [hs, ht, Finset.mem_inter, Finset.mem_image, Finset.mem_range, Finset.mem_singleton]
     constructor
-    · rintro ⟨⟨j, hj, rfl⟩, k, hk, hk'⟩
+    · rintro ⟨⟨j, _, rfl⟩, k, _, hk'⟩
       omega
     · rintro rfl
       exact ⟨⟨0, by omega, by simp⟩, 0, by omega, by simp⟩

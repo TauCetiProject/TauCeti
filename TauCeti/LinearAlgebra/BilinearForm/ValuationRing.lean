@@ -33,6 +33,10 @@ The hypothesis on `2` cannot be dropped: the general divisibility and hyperbolic
 in `TauCeti.LinearAlgebra.BilinearForm.Diagonalization` show that the hyperbolic plane
 `!![0, 1; 1, 0]` has an orthogonal basis only if `2` is a unit. Over `ℤ_2` it has none.
 
+For forms with unit Gram determinant, the stronger local-ring diagonalization theorem in
+`TauCeti.LinearAlgebra.BilinearForm.Diagonalization` gives unit diagonal coefficients without
+requiring a domain or a valuation ring.
+
 ## Main results
 
 * `LinearMap.BilinForm.IsSymm.exists_forall_apply_self_dvd_of_forall_dvd`: over a local ring with
@@ -63,7 +67,7 @@ form on a finite free module divides every value of the form. -/
 theorem IsSymm.exists_forall_apply_self_dvd [Free R M] [Module.Finite R M] (hB : B.IsSymm)
     (h2 : IsUnit (2 : R)) : ∃ x, ∀ y z, B x x ∣ B y z := by
   obtain rfl | hB0 := eq_or_ne B 0
-  · exact ⟨0, fun y z ↦ by simp⟩
+  · exact ⟨0, fun _ _ ↦ by simp⟩
   have : Nontrivial M := by
     by_contra hM
     rw [not_nontrivial_iff_subsingleton] at hM
@@ -103,6 +107,8 @@ theorem IsSymm.exists_orthogonal_basis_of_isUnit_two [Free R M] [Module.Finite R
       finrank_self, hd] at h
     omega
   obtain ⟨v, hv⟩ := ih (B := B.restrict N) (hB.restrict N) hN
-  exact hB.isRefl.exists_orthogonal_basis_of_orthogonal_span_singleton hxR (hx x) hv
+  obtain ⟨b, hb, -, -⟩ :=
+    hB.isRefl.exists_orthogonal_basis_of_orthogonal_span_singleton hxR (hx x) hv
+  exact ⟨b, hb⟩
 
 end LinearMap.BilinForm

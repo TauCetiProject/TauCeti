@@ -62,7 +62,6 @@ theorem log_one_add_mul_exp_div_add_exp_le {l σ : ℝ} (hl : 1 ≤ l) (hσ : 0 
         (((hasDerivAt_exp t).const_add l).log (hpos₂ t).ne'))
     exact this.congr_deriv (by ring)
   have hmono := monotone_of_hasDerivAt_nonneg hderiv fun t ↦ by
-    have hw := (exp_pos t).le
     rw [Pi.zero_apply, sub_nonneg, div_sub_div _ _ (hpos₁ t).ne' (hpos₂ t).ne',
       div_le_div_iff₀ (mul_pos (hpos₁ t) (hpos₂ t)) (by linarith)]
     nlinarith [mul_nonneg (mul_nonneg (sub_nonneg.2 hl) (zero_le_one.trans hl))
@@ -110,7 +109,7 @@ theorem log_birkhoff_cross_ratio_le {α β α' β' R l : ℝ} (hα : 0 < α) (h�
   have hnum : 0 < (R * α + β) * (α' + β') := by
     have : 0 < R := by linarith
     positivity
-  have hls : 0 < l + s := by linarith
+  have _hls : 0 < l + s := by linarith
   have hle : (R * α + β) * (α' + β') / ((α + β) * (R * α' + β')) ≤
       ((1 + l * s) / (l + s)) ^ 2 := by
     rw [div_pow, div_le_div_iff₀ hden (by positivity), ← hsR]

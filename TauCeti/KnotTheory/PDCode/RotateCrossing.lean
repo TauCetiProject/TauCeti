@@ -264,6 +264,19 @@ variable (D : OrientedPDCode n) (i : Fin n)
 @[simp] theorem rotateCrossing_crossinglessComponents :
     (D.rotateCrossing i).crossinglessComponents = D.crossinglessComponents := (rfl)
 
+/-- Mirroring commutes with changing the starting slot of an oriented crossing. -/
+@[simp] theorem mirror_rotateCrossing :
+    (D.rotateCrossing i).mirror = D.mirror.rotateCrossing i := by
+  apply OrientedPDCode.ext <;> simp
+
+/-- Reversing component directions commutes with changing the starting slot of a crossing. -/
+@[simp] theorem reverse_rotateCrossing :
+    (D.rotateCrossing i).reverse = D.reverse.rotateCrossing i := by
+  apply OrientedPDCode.ext
+  · simp
+  · funext x; simp
+  · simp
+
 /-- **The rotation keeps every crossing sign.** At the rotated crossing both the orientation
 parity of slots `0` and `1` and the over-pair indicator flip. -/
 @[simp] theorem crossingSign_rotateCrossing (j : Fin n) :

@@ -27,20 +27,22 @@ Two consequences are what the file exists for.
   of one coordinate of each factor.
 * **A pure power has no vanishing coordinate.**  The product `∏ i, b.repr (v i) (p i)` depends
   only on `TauCeti.Sym.ofFn p` when all the factors `v i` are equal, so the sum over the orderings
-  of `s` has all its terms equal and no cancellation is possible: over a domain of characteristic
-  zero, `⨂ₛ (u, …, u)` has a nonzero coordinate at *every* `s` as soon as every coordinate of `u`
-  is nonzero.  For a general pure tensor this fails, the terms attached to different orderings
-  being unrelated.
+  of `s` has all its terms equal and no cancellation is possible: over a characteristic-zero
+  commutative semiring with no zero divisors, `⨂ₛ (u, …, u)` has a nonzero coordinate at `s`
+  whenever the coordinates of `u` indexed by the members of `s` are nonzero. For a general pure
+  tensor this fails, the terms attached to different orderings being unrelated.
+
+The basis index type may be infinite in every result below.
 
 ## Main results
 
-* `SymmetricPower.repr_basis_symmetricPower_tprod`: the coordinate of a pure symmetric tensor at
+* `Module.Basis.symmetricPower_repr_tprod_apply`: the coordinate of a pure symmetric tensor at
   `s` is the sum, over the orderings of `s`, of the products of the corresponding coordinates of
   the factors.
-* `SymmetricPower.repr_basis_symmetricPower_tprod_ofFn_const`: its value at a constant unordered
+* `Module.Basis.symmetricPower_repr_tprod_apply_ofFn_const`: its value at a constant unordered
   tuple is a single product.
-* `SymmetricPower.repr_basis_symmetricPower_tprod_const_ne_zero`: a pure power of a vector with
-  nonzero coordinates has nonzero coordinates.
+* `Module.Basis.symmetricPower_repr_tprod_const_apply_ne_zero`: a pure power has a nonzero
+  coordinate at any unordered tuple of indices where the original vector has nonzero coordinates.
 
 ## References
 
@@ -62,25 +64,12 @@ section CommSemiring
 
 variable [CommSemiring R] [AddCommMonoid M] [Module R M]
 
-/-- The product of the coordinates listed by an ordered tuple depends only on the unordered tuple
-underlying it: reordering the factors permutes the terms of the product. -/
-private theorem prod_eq_of_ofFn_eq (c : κ → R) {p q : Fin n → κ}
-    (h : TauCeti.Sym.ofFn p = TauCeti.Sym.ofFn q) : ∏ i, c (p i) = ∏ i, c (q i) := by
-  obtain ⟨σ, rfl⟩ := TauCeti.Sym.ofFn_eq_ofFn_iff.1 h
-  exact (Equiv.prod_comp σ fun i => c (p i)).symm
-
-/-- Two ordered tuples underlying the same unordered tuple as a constant one are equal to it. -/
-private theorem eq_const_of_ofFn_eq_ofFn_const {p : Fin n → κ} {k : κ}
-    (h : TauCeti.Sym.ofFn p = TauCeti.Sym.ofFn fun _ => k) : p = fun _ => k := by
-  obtain ⟨σ, hσ⟩ := TauCeti.Sym.ofFn_eq_ofFn_iff.1 h
-  exact funext fun i => by simpa using congrFun hσ (σ.symm i)
-
 variable (b : Basis κ R M)
 
 /-- The single expansion step behind everything below: the coordinate at `s` of a pure symmetric
 tensor of *scaled* basis vectors is the product of the scalars when the indices order `s`, and
 zero otherwise. -/
-private theorem repr_basis_symmetricPower_tprod_smul_basis [DecidableEq κ] (c : Fin n → R)
+private theorem symmetricPower_repr_tprod_apply_smul_basis [DecidableEq κ] (c : Fin n → R)
     (p : Fin n → κ) (s : Sym κ n) :
     (b.symmetricPower n).repr (⨂ₛ[R] i, c i • b (p i)) s =
       if TauCeti.Sym.ofFn p = s then ∏ i, c i else 0 := by
@@ -95,78 +84,90 @@ they use, the coordinate at `s` is the sum, over the ordered tuples `p` underlyi
 products of the corresponding coordinates of the factors.
 
 For factors that are themselves basis vectors this recovers `Module.Basis.symmetricPower_apply`;
-the content here is the general case. -/
-theorem repr_basis_symmetricPower_tprod [Fintype κ] [DecidableEq κ] (v : Fin n → M) (s : Sym κ n) :
+the content here is the general case. The basis index type may be infinite: the sum is finite
+because a nonzero summand uses only the finite supports of the coordinates of the factors. -/
+-- The constant-index formula below should simplify directly to a product.
+@[simp low]
+theorem _root_.Module.Basis.symmetricPower_repr_tprod_apply (v : Fin n → M) (s : Sym κ n) :
     (b.symmetricPower n).repr (⨂ₛ[R] i, v i) s =
-      ∑ p ∈ {p : Fin n → κ | TauCeti.Sym.ofFn p = s}, ∏ i, b.repr (v i) (p i) := by
-  have hv : (⨂ₛ[R] i, v i) = ⨂ₛ[R] i, ∑ k, b.repr (v i) k • b k :=
-    congrArg _ (funext fun i => (b.sum_repr (v i)).symm)
-  rw [hv, (tprod R).map_sum fun (i : Fin n) (k : κ) => b.repr (v i) k • b k, map_sum,
-    Finsupp.finsetSum_apply, Finset.sum_filter]
-  exact Finset.sum_congr rfl fun p _ =>
-    repr_basis_symmetricPower_tprod_smul_basis b (fun i => b.repr (v i) (p i)) p s
+      ∑ᶠ p ∈ {p : Fin n → κ | TauCeti.Sym.ofFn p = s}, ∏ i, b.repr (v i) (p i) := by
+  classical
+  have hv : (⨂ₛ[R] i, v i) =
+      ⨂ₛ[R] i, ∑ j ∈ (b.repr (v i)).support, b.repr (v i) j • b j := by
+    congr 1
+    funext i
+    simpa only [Finsupp.linearCombination_apply, Finsupp.sum] using
+      (b.linearCombination_repr (v i)).symm
+  rw [hv, (tprod R).map_sum_finset (fun (i : Fin n) (j : κ) => b.repr (v i) j • b j)
+      fun i => (b.repr (v i)).support, map_sum, Finsupp.finsetSum_apply]
+  simp_rw [symmetricPower_repr_tprod_apply_smul_basis]
+  rw [finsum_mem_def]
+  simp only [Set.indicator_apply, Set.mem_ofPred_eq]
+  symm
+  apply finsum_eq_sum_of_support_subset
+  intro p hp
+  simp only [Function.mem_support, ne_eq, ite_eq_right_iff] at hp
+  simp only [Finset.mem_coe, Fintype.mem_piFinset, Finsupp.mem_support_iff]
+  intro i
+  by_contra hi
+  exact hp fun _ => Finset.prod_eq_zero (Finset.mem_univ i) hi
 
 /-- **The coordinates of a pure symmetric tensor at a constant unordered tuple.**  The only
 ordering of `(k, …, k)` is the constant tuple, so the sum of
-`SymmetricPower.repr_basis_symmetricPower_tprod` collapses to a single product: one coordinate of
+`Module.Basis.symmetricPower_repr_tprod_apply` collapses to a single product: one coordinate of
 each factor.
 
-The basis index type need not be finite: it is enough to expand each factor over the finitely many
-indices it uses, together with `k`. -/
+This holds for arbitrary basis index types. -/
 @[simp]
-theorem repr_basis_symmetricPower_tprod_ofFn_const (v : Fin n → M) (k : κ) :
+theorem _root_.Module.Basis.symmetricPower_repr_tprod_apply_ofFn_const (v : Fin n → M) (k : κ) :
     (b.symmetricPower n).repr (⨂ₛ[R] i, v i) (TauCeti.Sym.ofFn fun _ => k) =
       ∏ i, b.repr (v i) k := by
   classical
-  have hvi : ∀ i, ∑ j ∈ insert k (b.repr (v i)).support, b.repr (v i) j • b j = v i := fun i => by
-    conv_rhs => rw [← b.linearCombination_repr (v i), Finsupp.linearCombination_apply, Finsupp.sum]
-    exact (Finset.sum_subset (Finset.subset_insert k _)
-      fun j _ hj => by rw [Finsupp.notMem_support_iff.1 hj, zero_smul]).symm
-  have hv : (⨂ₛ[R] i, v i) =
-      ⨂ₛ[R] i, ∑ j ∈ insert k (b.repr (v i)).support, b.repr (v i) j • b j :=
-    congrArg _ (funext fun i => (hvi i).symm)
-  rw [hv, (tprod R).map_sum_finset (fun (i : Fin n) (j : κ) => b.repr (v i) j • b j)
-      fun i => insert k (b.repr (v i)).support, map_sum, Finsupp.finsetSum_apply,
-    Finset.sum_congr rfl fun p _ =>
-      repr_basis_symmetricPower_tprod_smul_basis b (fun i => b.repr (v i) (p i)) p _,
-    Finset.sum_eq_single_of_mem (fun _ => k) (by simp)]
-  · simp
-  · intro p _ hne
-    simpa using fun h => absurd (eq_const_of_ofFn_eq_ofFn_const h) hne
+  rw [Basis.symmetricPower_repr_tprod_apply]
+  have hconst {p : Fin n → κ}
+      (h : TauCeti.Sym.ofFn p = TauCeti.Sym.ofFn fun _ => k) : p = fun _ => k := by
+    obtain ⟨σ, hσ⟩ := TauCeti.Sym.ofFn_eq_ofFn_iff.1 h
+    exact funext fun i => by simpa using congrFun hσ (σ.symm i)
+  have hindex : {p : Fin n → κ | TauCeti.Sym.ofFn p = TauCeti.Sym.ofFn fun _ => k} =
+      {fun _ => k} := by
+    ext p
+    exact ⟨hconst, fun h => by simp [Set.mem_singleton_iff.mp h]⟩
+  rw [hindex, finsum_mem_singleton]
 
 end CommSemiring
 
-section Domain
+section NoZeroDivisors
 
-variable [CommSemiring R] [IsDomain R] [CharZero R] [AddCommMonoid M] [Module R M]
+variable [CommSemiring R] [NoZeroDivisors R] [CharZero R] [AddCommMonoid M] [Module R M]
 variable (b : Basis κ R M)
 
-/-- **A pure power has no vanishing coordinate.**  When all the factors are the same vector `u`,
-every term of the sum of `SymmetricPower.repr_basis_symmetricPower_tprod` is the same product of
-coordinates of `u`, so the coordinate at `s` is that product times the number of orderings of `s`,
-which is positive.  Over a domain of characteristic zero neither factor vanishes.
+/-- **Nonvanishing coordinates of a pure power.** Over a characteristic-zero commutative semiring
+with no zero divisors, the coordinate of the pure power of `u` at `s` is nonzero whenever every
+coordinate of `u` indexed by a member of `s` is nonzero. No conditions are imposed on the other
+coordinates of `u`, and the basis index type may be infinite.
 
 Nothing like this holds for a general pure tensor: the terms attached to different orderings of
 `s` can cancel. -/
-theorem repr_basis_symmetricPower_tprod_const_ne_zero {u : M}
-    (hu : ∀ k, b.repr u k ≠ 0) (s : Sym κ n) :
+theorem _root_.Module.Basis.symmetricPower_repr_tprod_const_apply_ne_zero {u : M}
+    (s : Sym κ n) (hu : ∀ k ∈ s, b.repr u k ≠ 0) :
     (b.symmetricPower n).repr (⨂ₛ[R] (_ : Fin n), u) s ≠ 0 := by
   classical
-  -- no coordinate of `u` vanishes, so the index type embeds in the finite support of `b.repr u`
-  have : Finite κ := Finite.of_injective
-    (fun k : κ => (⟨k, Finsupp.mem_support_iff.2 (hu k)⟩ : {j // j ∈ (b.repr u).support}))
-    fun _ _ h => congrArg Subtype.val h
-  have := Fintype.ofFinite κ
-  obtain ⟨p₀, hp₀⟩ := TauCeti.Sym.ofFn_surjective s
-  have hne : ({p : Fin n → κ | TauCeti.Sym.ofFn p = s} : Finset (Fin n → κ)).Nonempty :=
-    ⟨p₀, by simp [hp₀]⟩
-  rw [repr_basis_symmetricPower_tprod,
-    Finset.sum_congr rfl fun p hp => prod_eq_of_ofFn_eq (fun k => b.repr u k) (p := p) (q := p₀)
-      (by rw [(Finset.mem_filter.1 hp).2, hp₀]),
-    Finset.sum_const, nsmul_eq_mul]
-  exact mul_ne_zero (Nat.cast_ne_zero.2 (Finset.card_pos.2 hne).ne')
-    (Finset.prod_ne_zero_iff.2 fun i _ => hu _)
+  obtain ⟨p₀, rfl⟩ := TauCeti.Sym.ofFn_surjective s
+  let orderings : Finset (Fin n → κ) := Finset.univ.image fun σ : Equiv.Perm (Fin n) => p₀ ∘ σ
+  have horderings (p : Fin n → κ) : p ∈ orderings ↔ TauCeti.Sym.ofFn p = TauCeti.Sym.ofFn p₀ := by
+    simp only [orderings, Finset.mem_image, Finset.mem_univ, true_and,
+      ← TauCeti.Sym.ofFn_eq_ofFn_iff]
+    exact eq_comm
+  rw [Basis.symmetricPower_repr_tprod_apply]
+  simp only [Set.mem_ofPred_eq]
+  rw [finsum_cond_eq_sum_of_cond_iff _ (t := orderings) (fun _ => (horderings _).symm),
+    Finset.sum_congr rfl (g := fun _ => ∏ i, b.repr u (p₀ i)) fun p hp => ?_]
+  · rw [Finset.sum_const, nsmul_eq_mul]
+    exact mul_ne_zero (Nat.cast_ne_zero.2 (Finset.card_pos.2 ⟨p₀, (horderings p₀).2 rfl⟩).ne')
+      (Finset.prod_ne_zero_iff.2 fun i _ => hu _ (TauCeti.Sym.mem_ofFn.2 ⟨i, rfl⟩))
+  · obtain ⟨σ, rfl⟩ := TauCeti.Sym.ofFn_eq_ofFn_iff.1 ((horderings p).1 hp).symm
+    exact Equiv.prod_comp σ fun i => b.repr u (p₀ i)
 
-end Domain
+end NoZeroDivisors
 
 end SymmetricPower

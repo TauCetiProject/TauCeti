@@ -28,7 +28,7 @@ quasi-coherence of `I`, and the local quotients glue because `a` remains a nonze
 open subset of `U` (`AlgebraicGeometry.IsAffineOpen.isSMulRegular_map`).
 
 The converse, that a closed subscheme whose ideal sheaf is invertible is an effective Cartier
-divisor, is not proved here.
+divisor, is proved in `TauCeti.AlgebraicGeometry.EffectiveCartierDivisor.Characterization`.
 
 ## Main declarations
 

@@ -102,7 +102,6 @@ private theorem one_div_forty_two_le_hyperbolic_triangle_deficit_ordered
       linarith
     · have hb2 : b = 2 := by omega
       subst b
-      have hc : 0 ≤ (1 : ℚ) / c := by positivity
       norm_num at hhyper
       linarith
 

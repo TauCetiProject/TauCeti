@@ -69,8 +69,9 @@ theorem toSubgroup_sup [SeparatelyContinuousMul G] (U V : OpenNormalSubgroup G) 
     (U ⊔ V).toSubgroup = U.toSubgroup ⊔ V.toSubgroup :=
   (rfl)
 
-/-- The preimage of an open normal subgroup under a continuous group homomorphism. -/
-def comap (U : OpenNormalSubgroup H) (f : G →* H) (hf : Continuous f) :
+/-- The preimage of an open normal subgroup under a continuous group homomorphism.
+Its underlying subgroup is definitionally `U.toSubgroup.comap f`. -/
+@[expose] def comap (U : OpenNormalSubgroup H) (f : G →* H) (hf : Continuous f) :
     OpenNormalSubgroup G where
   toOpenSubgroup := U.toOpenSubgroup.comap f hf
   isNormal' := U.isNormal'.comap f

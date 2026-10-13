@@ -53,8 +53,8 @@ named by the label of the short row, equivariantly
 (`TauCeti.labelTabloidEquiv`, `TauCeti.labelTabloid_smul`).  Transporting `ℚ[Fin μ.card]` along
 that naming carries the standard representation of `Fin μ.card` onto the Specht module
 (`TauCeti.standardRepresentationEquivSpechtSubrepresentation`), and the dimension `μ.card - 1`
-follows.  Relabelling the labels of the diagram along `TauCeti.card_diagramOf` states both for the
-partition `(n+1, 1)` itself.
+follows.  Relabelling the labels of the diagram along `YoungDiagram.card_ofPartition` states both
+for the partition `(n+1, 1)` itself.
 
 The parallel statement one level up, `M^{(N-1,1)} = triv ⊕ standard`, is proved for the partition
 `(n+1, 1)` itself in
@@ -592,7 +592,7 @@ theorem coe_standardRepresentationEquivSpechtSubrepresentation_apply (h1 : μ.ro
 /-- The identification of the Specht module with the standard representation, read on `Fin N`
 along an identification `μ.card = N` of the labels.  This is the shape in which the
 partition-indexed `TauCeti.spechtModule`, which relabels the symmetric group along
-`TauCeti.card_diagramOf`, consumes it. -/
+`YoungDiagram.card_ofPartition`, consumes it. -/
 private noncomputable def standardRepresentationEquivSpechtSubrepresentationOfCard {N : ℕ}
     (h1 : μ.rowLen 1 = 1) (h2 : μ.rowLen 2 = 0) (hN : μ.card = N) :
     (standardRepresentation ℚ (Fin N)).Equiv
@@ -638,33 +638,35 @@ is the `(n+1)`-dimensional standard representation of `S_{n+2}`. -/
 theorem finrank_spechtModule_singletonSecondRow (n : ℕ) :
     Module.finrank ℚ (spechtModule (Nat.Partition.singletonSecondRow n)) = n + 1 := by
   exact (finrank_spechtSubrepresentation_of_rowLen
-    (rowLen_diagramOf_singletonSecondRow_one n)
-    (rowLen_diagramOf_singletonSecondRow_two n)).trans (by rw [card_diagramOf]; omega)
+    (YoungDiagram.rowLen_ofPartition_singletonSecondRow_one n)
+    (YoungDiagram.rowLen_ofPartition_singletonSecondRow_two n)).trans
+      (by rw [YoungDiagram.card_ofPartition]; omega)
 
 /-- **`S^{(n+1,1)}` is the standard representation**, for the partition-indexed Specht module
 `TauCeti.spechtModule` the classification of the irreducibles is stated in.  This is
 `TauCeti.standardRepresentationEquivSpechtSubrepresentation` for the shape `(n+1, 1)`, with the
 symmetric group on the labels of the diagram identified with `S_{n+2}` along
-`TauCeti.card_diagramOf`, the relabelling `TauCeti.spechtModule` is defined by. -/
+`YoungDiagram.card_ofPartition`, the relabelling `TauCeti.spechtModule` is defined by. -/
 noncomputable def standardRepresentationEquivSpechtModuleSingletonSecondRow (n : ℕ) :
     (standardRepresentation ℚ (Fin (n + 2))).Equiv
       (spechtModule (Nat.Partition.singletonSecondRow n)).ρ :=
   standardRepresentationEquivSpechtSubrepresentationOfCard
-    (rowLen_diagramOf_singletonSecondRow_one n) (rowLen_diagramOf_singletonSecondRow_two n)
-    (card_diagramOf _)
+    (YoungDiagram.rowLen_ofPartition_singletonSecondRow_one n)
+    (YoungDiagram.rowLen_ofPartition_singletonSecondRow_two n)
+    (YoungDiagram.card_ofPartition _)
 
 /-- The identification of `S^{(n+1,1)}` with the standard representation is the transport of the
-tabloids, read on the labels of the diagram along `TauCeti.card_diagramOf`. -/
+tabloids, read on the labels of the diagram along `YoungDiagram.card_ofPartition`. -/
 @[simp]
 theorem coe_standardRepresentationEquivSpechtModuleSingletonSecondRow_apply (n : ℕ)
     (v : (augmentationSubrepresentation ℚ (Equiv.Perm (Fin (n + 2))) (Fin (n + 2))).toSubmodule) :
     (standardRepresentationEquivSpechtModuleSingletonSecondRow n v :
         (permutationModule
-          (shapePartition (diagramOf (Nat.Partition.singletonSecondRow n)))).V) =
-      labelTabloidRepresentationEquiv (rowLen_diagramOf_singletonSecondRow_one n)
-        (rowLen_diagramOf_singletonSecondRow_two n)
+          (shapePartition (YoungDiagram.ofPartition (Nat.Partition.singletonSecondRow n)))).V) =
+      labelTabloidRepresentationEquiv (YoungDiagram.rowLen_ofPartition_singletonSecondRow_one n)
+        (YoungDiagram.rowLen_ofPartition_singletonSecondRow_two n)
         (MonoidAlgebra.mapDomainLinearEquiv ℚ ℚ
-          (finCongr (card_diagramOf (Nat.Partition.singletonSecondRow n)).symm)
+          (finCongr (YoungDiagram.card_ofPartition (Nat.Partition.singletonSecondRow n)).symm)
           (v : MonoidAlgebra ℚ (Fin (n + 2)))) :=
   coe_standardRepresentationEquivSpechtSubrepresentationOfCard_apply _ _ _ v
 
