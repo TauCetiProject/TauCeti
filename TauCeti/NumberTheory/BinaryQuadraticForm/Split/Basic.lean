@@ -27,7 +27,7 @@ and does not use a field ideal-class carrier.
 
 * `exists_isCoprime_eval_eq_zero_of_discrim_eq_sq` gives a primitive isotropic vector
   for every square discriminant.
-* `exists_smul_a_eq_zero_of_discrim_eq_one` moves it to a zero leading coefficient by a
+* `exists_smul_a_eq_zero_of_discrim_eq_sq` moves it to a zero leading coefficient by a
   proper change of variables.
 
 ## References
@@ -95,13 +95,12 @@ theorem exists_isCoprime_eval_eq_zero_of_discrim_eq_sq
       (mul_ne_zero (by decide) ha)).ne'
   exact (mul_eq_zero.mp (hscale.symm.trans hval)).resolve_left (pow_ne_zero 2 hg0)
 
-/-- Every integral form of discriminant one has a proper representative with zero leading
+/-- Every integral form of square discriminant has a proper representative with zero leading
 coefficient. -/
-theorem exists_smul_a_eq_zero_of_discrim_eq_one
-    (f : BinaryQuadraticForm ℤ) (hf : f.discrim = 1) :
+theorem exists_smul_a_eq_zero_of_discrim_eq_sq
+    (f : BinaryQuadraticForm ℤ) (d : ℤ) (hf : f.discrim = d ^ 2) :
     ∃ γ : SL(2, ℤ), (γ • f).a = 0 := by
-  obtain ⟨x, y, hxy, hzero⟩ :=
-    exists_isCoprime_eval_eq_zero_of_discrim_eq_sq f 1 (by simpa only [one_pow] using hf)
+  obtain ⟨x, y, hxy, hzero⟩ := exists_isCoprime_eval_eq_zero_of_discrim_eq_sq f d hf
   obtain ⟨γ, hγ⟩ := exists_smul_a_eq_eval f hxy
   exact ⟨γ, hγ.trans hzero⟩
 
@@ -110,7 +109,8 @@ No primitivity assumption is needed. -/
 theorem exists_smul_eq_splitPrincipalForm_of_discrim_eq_one
     (f : BinaryQuadraticForm ℤ) (hf : f.discrim = 1) :
     ∃ γ : SL(2, ℤ), γ • f = splitPrincipalForm := by
-  obtain ⟨ρ, ha⟩ := exists_smul_a_eq_zero_of_discrim_eq_one f hf
+  obtain ⟨ρ, ha⟩ := exists_smul_a_eq_zero_of_discrim_eq_sq f 1
+    (by simpa only [one_pow] using hf)
   let g := ρ • f
   have hga : g.a = 0 := ha
   have hg : g.discrim = 1 := (discrim_smul ρ f).trans hf
