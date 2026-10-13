@@ -103,9 +103,11 @@ Coefficients are an object `R` of an abelian category with coproducts.
   it.
 * `TauCeti.reducedSingularHomologyFunctor_map_sphere_neg`: the antipodal map acts on `H_redₙ(S)`
   by `(-1) ^ (n + 1)`.
-* `TauCeti.isZero_reducedSingularHomologyFunctor_topCatSphere_of_ne` and
-  `TauCeti.reducedSingularHomologyTopCatSphereIso`: the same for Mathlib's `TopCat.sphere n`, with
-  the standard generator determined by the standard basis.
+* `TauCeti.isZero_reducedSingularHomologyFunctor_topCatSphere_of_ne`,
+  `TauCeti.reducedSingularHomologyTopCatSphereIso` and
+  `TauCeti.reducedSingularHomologyFunctor_map_diskBoundaryNeg`: the same for Mathlib's
+  `TopCat.sphere n`, with the standard generator determined by the standard basis, and the action
+  of its antipodal map `TauCeti.diskBoundaryNeg`.
 * `ModuleCat.finrank_singularHomology_sphere`: with coefficients in a free module `M` of finite
   rank, `H_q(Sᵈ; M)` is free of rank `rank M` for `q = 0` and for `q = d` (of rank `2 rank M`
   when `d = q = 0`), and vanishes otherwise.
@@ -769,6 +771,43 @@ lemma reducedSingularHomologyTopCatSphereIso_hom (n : ℕ) :
   -- `rw` cannot apply `Iso.trans_hom` here; the equations are chained as terms instead.
   (Iso.trans_hom _ _).trans
     (congrArg (· ≫ _) (ContinuousMap.HomotopyEquiv.reducedSingularHomologyIso_hom R _ n))
+
+/-- **The antipodal map acts by `(-1) ^ (n + 1)` on the homology of `TopCat.sphere n`**, the
+boundary of the `(n + 1)`-disk. -/
+theorem reducedSingularHomologyFunctor_map_diskBoundaryNeg (n : ℕ) :
+    (reducedSingularHomologyFunctor R n).map (diskBoundaryNeg.{w} (n + 1)) =
+      (-1 : ℤ) ^ (n + 1) • 𝟙 _ := by
+  -- Transport `TauCeti.reducedSingularHomologyFunctor_map_sphere_neg` along the homeomorphism
+  -- `TauCeti.diskBoundaryHomeomorph`, which commutes with negation since it is linear.
+  have hneg (x : TopCat.diskBoundary.{w} (n + 1)) :
+      diskBoundaryHomeomorph (n + 1) (diskBoundaryNeg (n + 1) x) =
+      -diskBoundaryHomeomorph (n + 1) x := by
+    apply (diskBoundaryHomeomorph (n + 1)).symm.injective
+    apply ULift.ext
+    apply Subtype.ext
+    ext i
+    -- The coordinates of `x` are those of its image under `diskBoundaryHomeomorph`.
+    have hx : (x.down : EuclideanSpace ℝ (Fin (n + 1))) i =
+        (diskBoundaryHomeomorph (n + 1) x : EuclideanSpace ℝ (ULift.{w} (Fin (n + 1))))
+          (ULift.up i) :=
+      (congrArg (fun z : TopCat.diskBoundary.{w} (n + 1) ↦
+          (z.down : EuclideanSpace ℝ (Fin (n + 1))) i)
+        ((diskBoundaryHomeomorph (n + 1)).symm_apply_apply x)).symm.trans
+        (diskBoundaryHomeomorph_symm_apply_down_apply _ i)
+    refine (congrArg (fun z : TopCat.diskBoundary.{w} (n + 1) ↦
+        (z.down : EuclideanSpace ℝ (Fin (n + 1))) i)
+      ((diskBoundaryHomeomorph (n + 1)).symm_apply_apply (diskBoundaryNeg (n + 1) x))).trans
+      (Eq.trans ?_ (diskBoundaryHomeomorph_symm_apply_down_apply _ i).symm)
+    simp only [diskBoundaryNeg_apply_down, coe_neg_sphere, PiLp.neg_apply, hx]
+  let e := TopCat.isoOfHomeo (X := TopCat.diskBoundary.{w} (n + 1))
+    (Y := TopCat.of (sphere (0 : EuclideanSpace ℝ (ULift.{w} (Fin (n + 1)))) 1))
+    (diskBoundaryHomeomorph (n + 1))
+  have hcomm : diskBoundaryNeg (n + 1) ≫ e.hom = e.hom ≫ TopCat.ofHom ⟨Neg.neg, continuous_neg⟩ :=
+    TopCat.ext fun x ↦ hneg x
+  rw [← cancel_mono ((reducedSingularHomologyFunctor R n).map e.hom), ← Functor.map_comp, hcomm,
+    Functor.map_comp,
+    reducedSingularHomologyFunctor_map_sphere_neg R (finrank_euclideanSpace_ulift_fin (n + 1)),
+    Preadditive.comp_zsmul, Preadditive.zsmul_comp, Category.comp_id, Category.id_comp]
 
 end TopCatSphere
 
