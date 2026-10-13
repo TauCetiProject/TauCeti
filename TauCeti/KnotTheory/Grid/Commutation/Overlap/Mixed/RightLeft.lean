@@ -246,11 +246,13 @@ theorem recutRightEqLeft_geometry (D : GridRectanglePentagonDecomposition a s x 
   obtain ⟨hright, hptop, hrtop, hturn'⟩ :=
     D.rightLeftRecut_geometry hcommon hrectangle hpentagon hturn
   refine ⟨?_, ?_, ?_, ?_⟩
-  · simp only [recutRightEqLeft, GridPentagonBetween.ofRightEq_right]
-  · simpa only [E, recutRightEqLeft, GridPentagonBetween.ofRightEq_top] using hptop
-  · simpa only [E, recutRightEqLeft] using hrtop
-  · simpa only [E, recutRightEqLeft, GridPentagonBetween.ofRightEq_bottom,
-      GridPentagonBetween.ofRightEq_top] using hturn'
+  · simp only [recutRightEqLeft, GridPentagonRectangleDecomposition.pentagon,
+      GridPentagonBetween.ofRightEq_right]
+  · simpa only [E, recutRightEqLeft, GridPentagonRectangleDecomposition.pentagon,
+      GridPentagonBetween.ofRightEq_top] using hptop
+  · simpa only [E, recutRightEqLeft, GridPentagonRectangleDecomposition.rectangle] using hrtop
+  · simpa only [E, recutRightEqLeft, GridPentagonRectangleDecomposition.pentagon,
+      GridPentagonBetween.ofRightEq_bottom, GridPentagonBetween.ofRightEq_top] using hturn'
 
 /-- The promoted recut of a mixed `right = left` overlap covers the squares of the original domain
 with the same multiplicities, the rectangle of the commuted diagram being read in the original
