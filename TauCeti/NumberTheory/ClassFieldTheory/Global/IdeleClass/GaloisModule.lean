@@ -24,9 +24,9 @@ The coefficient module `(C_{Kˢ})^V` of the layer is the idele class group `C_E`
 action of `U ⧸ V` on the layer with the Galois action of `Gal(E/F)` on `C_E`, the module of
 `TauCeti.ClassFieldTheory.ideleClassRep F E` (`NormalLayer.ideleClassLevelEquiv_ρ`).
 Consequently the cohomology of the layer is the Galois cohomology `Hⁿ(Gal(E/F), C_E)` in every
-degree (`NormalLayer.ideleClassCohomologyEquiv`), its Tate cohomology is `Ĥⁿ(Gal(E/F), C_E)` in
-every integer degree (`NormalLayer.ideleClassTateCohomologyIso`), and its Herbrand quotient is
-`h(C_E)`, computed for the action of `Gal(E/F)`
+degree (`NormalLayer.ideleClassCohomologyEquiv`), its Tate cohomology is the Tate cohomology
+`Hⁿ_T(Gal(E/F), C_E)` in every integer degree (`NormalLayer.ideleClassTateCohomologyIso`), and
+its Herbrand quotient is `h(C_E)`, computed for the action of `Gal(E/F)`
 (`NormalLayer.herbrandQuotient_rep_globalFormation`).
 
 The reductions of `TauCeti.NumberTheory.ClassFieldTheory.Formation.PrimeDegree` derive the
@@ -46,7 +46,7 @@ quotient of the idele classes of a cyclic extension `E/F` of number fields, whic
 * `TauCeti.ClassFieldTheory.NormalLayer.ideleClassCohomologyEquiv`: the cohomology of the layer is
   `Hⁿ(Gal(E/F), C_E)`.
 * `TauCeti.ClassFieldTheory.NormalLayer.ideleClassTateCohomologyIso`: the Tate cohomology of the
-  layer is `Ĥⁿ(Gal(E/F), C_E)`.
+  layer is `Hⁿ_T(Gal(E/F), C_E)`.
 * `TauCeti.ClassFieldTheory.NormalLayer.herbrandQuotient_rep_globalFormation`: the Herbrand
   quotient of the layer is `h(C_E)`.
 
@@ -127,7 +127,7 @@ variable [NumberField F]
 /-- **The Tate cohomology of a layer of the idele-class formation is the Tate cohomology of the
 idele classes**: if `E` is the fixed field of the top subgroup of the layer and
 `e : U ⧸ V ≃* Gal(E/F)` sends the class of each `u` to its restriction to `E`, then
-`Ĥⁿ(U ⧸ V, (C_{Kˢ})^V) ≅ Ĥⁿ(Gal(E/F), C_E)` in every integer degree `n`. -/
+`Hⁿ_T(U ⧸ V, (C_{Kˢ})^V) ≅ Hⁿ_T(Gal(E/F), C_E)` in every integer degree `n`. -/
 def ideleClassTateCohomologyIso (n : ℤ) :
     L.TateH (globalFormation K) n ≅ tateCohomology (ideleClassRep F E) n :=
   (TateCohomology.mapIso (L.isIntertwiningMap_ideleClassLevelEquiv hE he) n).symm
