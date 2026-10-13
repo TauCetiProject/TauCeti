@@ -30,6 +30,7 @@ for every non-integer `z`. Evaluating at `z = i y` turns cotangents into hyperbo
 
 ## Main results
 
+* `TauCeti.cot_ofReal_mul_I`: the cotangent at an imaginary argument;
 * `TauCeti.hasSum_cotTerm_two_mul`: the odd-pole part of the cotangent expansion;
 * `TauCeti.hasSum_pi_div_two_mul_tanh`: the partial-fraction expansion of `tanh (π y / 2)`.
 -/
@@ -40,6 +41,13 @@ open Complex
 open scoped Real
 
 namespace TauCeti
+
+/-- The cotangent at an imaginary argument is a hyperbolic cotangent:
+`cot (x i) = -(cosh x / sinh x) i` for every real `x` (both sides vanish at `x = 0`). -/
+theorem cot_ofReal_mul_I (x : ℝ) : cot (x * I) = -((Real.cosh x / Real.sinh x : ℝ) : ℂ) * I := by
+  rw [cot_eq_cos_div_sin, cos_mul_I, sin_mul_I, ← div_div, div_I, ← ofReal_cosh, ← ofReal_sinh,
+    ofReal_div]
+  ring
 
 /-- Halving the argument of the cotangent term doubles the pole index:
 `cotTerm (z / 2) n = 2 cotTerm z (2 n + 1)`, both sides collecting the poles at `± (2 n + 2)`. -/
@@ -109,13 +117,13 @@ theorem hasSum_pi_div_two_mul_tanh (y : ℝ) :
     rw [hu]
     exact div_ne_zero (mul_ne_zero Real.pi_ne_zero hy) two_ne_zero
   have hc : Real.cosh u ≠ 0 := (Real.cosh_pos u).ne'
-  rw [e₁, e₂, cot_eq_cos_div_sin, cot_eq_cos_div_sin, cos_mul_I, sin_mul_I, cos_mul_I, sin_mul_I,
-    ← ofReal_cosh, ← ofReal_sinh, ← ofReal_cosh, ← ofReal_sinh, Real.cosh_two_mul,
-    Real.sinh_two_mul, Real.tanh_eq_sinh_div_cosh]
+  rw [e₁, e₂, cot_ofReal_mul_I, cot_ofReal_mul_I, Real.cosh_two_mul, Real.sinh_two_mul,
+    Real.tanh_eq_sinh_div_cosh]
   have hs' : (Real.sinh u : ℂ) ≠ 0 := ofReal_ne_zero.mpr hs
   have hc' : (Real.cosh u : ℂ) ≠ 0 := ofReal_ne_zero.mpr hc
   push_cast at hs' hc' ⊢
   field_simp
+  rw [I_sq]
   ring
 
 end TauCeti
