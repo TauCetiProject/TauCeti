@@ -8,6 +8,7 @@ module
 public import Mathlib.InformationTheory.KullbackLeibler.Basic
 public import Mathlib.MeasureTheory.Function.ContinuousMapDense
 public import Mathlib.MeasureTheory.Measure.ProbabilityMeasure
+public import Mathlib.MeasureTheory.Measure.Tight
 
 /-!
 # The Donsker–Varadhan variational formula for relative entropy
@@ -42,6 +43,9 @@ both the coupling and the reference measure move.
   formulas over bounded continuous functions, on a pseudometrizable Borel space.
 * `TauCeti.lowerSemicontinuous_klDiv_finiteMeasure` and
   `TauCeti.lowerSemicontinuous_klDiv_probabilityMeasure`: joint weak lower semicontinuity.
+* `TauCeti.ofReal_mul_measureReal_sub_le_klDiv`: the entropy inequality
+  `t μ(s) - (exp t - 1) ν(s) ≤ klDiv μ ν` for measurable sets.
+* `TauCeti.isTightMeasureSet_setOf_klDiv_le`: sublevel sets of `klDiv · ν` are tight when `ν` is.
 
 ## References
 
@@ -122,6 +126,23 @@ theorem ofReal_integral_sub_log_integral_exp_le_klDiv [IsProbabilityMeasure μ]
   rw [integral_sub hf (integrable_const _), integral_sub hef' (integrable_const _), hexp,
     integral_div, div_self hZ.ne']
   simp
+
+/-- The **entropy inequality** for a measurable set `s`: for finite measures and every real `t`,
+`t μ(s) - (exp t - 1) ν(s) ≤ klDiv μ ν`. A set of small `ν`-measure therefore has small
+`μ`-measure, uniformly over a sublevel set of `klDiv · ν`. -/
+theorem ofReal_mul_measureReal_sub_le_klDiv [IsFiniteMeasure μ] [IsFiniteMeasure ν] {s : Set α}
+    (hs : MeasurableSet s) (t : ℝ) :
+    ENNReal.ofReal (t * μ.real s - (exp t - 1) * ν.real s) ≤ klDiv μ ν := by
+  have hexp : (fun x ↦ exp (s.indicator (fun _ ↦ t) x) - 1) = s.indicator fun _ ↦ exp t - 1 := by
+    ext x
+    by_cases hx : x ∈ s <;> simp [hx]
+  have hef : Integrable (fun x ↦ exp (s.indicator (fun _ ↦ t) x)) ν :=
+    (((integrable_const (μ := ν) (exp t - 1)).indicator hs).add (integrable_const 1)).congr
+      (ae_of_all _ fun x ↦ by simp [← congrFun hexp x])
+  have h := ofReal_integral_sub_integral_exp_sub_one_le_klDiv
+    ((integrable_const (μ := μ) t).indicator hs) hef
+  rwa [hexp, integral_indicator_const _ hs, integral_indicator_const _ hs, smul_eq_mul,
+    smul_eq_mul, mul_comm (μ.real s), mul_comm (ν.real s)] at h
 
 /-- A bounded measurable function is integrable, and so is its exponential. -/
 private lemma integrable_and_integrable_exp [IsFiniteMeasure μ] (hf : Measurable f) {C : ℝ}
@@ -406,5 +427,43 @@ theorem lowerSemicontinuous_klDiv_probabilityMeasure :
       ProbabilityMeasure.toFiniteMeasure_continuous)
 
 end Topological
+
+section Tight
+
+variable [TopologicalSpace α] [OpensMeasurableSpace α] [R1Space α]
+
+/-- **Sublevel sets of relative entropy are tight.** If a finite measure `ν` is tight, then so is
+the set of finite measures `μ` with `klDiv μ ν ≤ C`, for every finite `C`. -/
+theorem isTightMeasureSet_setOf_klDiv_le [IsFiniteMeasure ν] (hν : IsTightMeasureSet {ν})
+    {C : ℝ≥0∞} (hC : C ≠ ∞) :
+    IsTightMeasureSet {μ : Measure α | IsFiniteMeasure μ ∧ klDiv μ ν ≤ C} := by
+  rw [isTightMeasureSet_iff_exists_isCompact_measure_compl_le] at hν ⊢
+  intro ε hε
+  rcases eq_or_ne ε ∞ with rfl | hε'
+  · exact ⟨∅, isCompact_empty, fun _ _ ↦ le_top⟩
+  have he : 0 < ε.toReal := ENNReal.toReal_pos hε.ne' hε'
+  -- With `t = (C + 1) / ε`, the entropy inequality gives `μ(s) ≤ ε` once `ν(s) ≤ exp (-t)`.
+  set t := (C.toReal + 1) / ε.toReal with ht_def
+  have hC1 : 0 < C.toReal + 1 := by positivity
+  have ht : 0 < t := div_pos hC1 he
+  obtain ⟨K, hK, hνK⟩ := hν (ENNReal.ofReal (exp (-t))) (ENNReal.ofReal_pos.2 (exp_pos _))
+  refine ⟨closure K, hK.closure, fun μ ⟨hμ, hkl⟩ ↦ ?_⟩
+  set s := (closure K)ᶜ
+  have hs : MeasurableSet s := isClosed_closure.measurableSet.compl
+  have hνs : ν.real s ≤ exp (-t) := ENNReal.toReal_le_of_le_ofReal (exp_pos _).le
+    ((measure_mono (compl_subset_compl.2 subset_closure)).trans (hνK ν rfl))
+  have h1 : (exp t - 1) * ν.real s ≤ 1 :=
+    calc (exp t - 1) * ν.real s ≤ exp t * exp (-t) :=
+          mul_le_mul (sub_le_self _ zero_le_one) hνs measureReal_nonneg (exp_pos _).le
+      _ = 1 := by rw [← exp_add, add_neg_cancel, exp_zero]
+  have h2 : t * μ.real s - (exp t - 1) * ν.real s ≤ C.toReal :=
+    (ENNReal.ofReal_le_iff_le_toReal hC).1 ((ofReal_mul_measureReal_sub_le_klDiv hs t).trans hkl)
+  have h3 : μ.real s ≤ ε.toReal := by
+    rw [← div_div_cancel₀ (a := C.toReal + 1) (b := ε.toReal) hC1.ne', ← ht_def, le_div_iff₀ ht]
+    linarith
+  rw [← ENNReal.ofReal_toReal hε', ← ENNReal.ofReal_toReal (measure_ne_top μ s)]
+  exact ENNReal.ofReal_le_ofReal h3
+
+end Tight
 
 end TauCeti
