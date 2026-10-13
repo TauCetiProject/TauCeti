@@ -48,8 +48,7 @@ group-scheme statement uses the same universe for them, as required by Mathlib's
 ## References
 
 This is the coordinate-algebra form of the affine-group embedding theorem; see J. S. Milne,
-*Algebraic Groups* (2017), Proposition 4.7 and Theorem 4.9. It advances Layer 1, "Embedding
-theorem (hard)", of the ReductiveGroups roadmap.
+*Algebraic Groups* (2017), Proposition 4.7 and Theorem 4.9.
 -/
 
 public section

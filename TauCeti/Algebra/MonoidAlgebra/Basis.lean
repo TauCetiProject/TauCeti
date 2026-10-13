@@ -27,6 +27,9 @@ It is all that is needed for the generic basis API -- `Module.Basis.coe_sumCoord
   standard-basis dual equivalence are evaluations on basis vectors.
 * `TauCeti.MonoidAlgebra.sumCoords_basis_surjective`: the coefficient sum is surjective when the
   index type is nonempty.
+* `MonoidAlgebra.exists_coeff_ne_of_ne_zero_of_sumCoords_eq_zero`: a nonzero vector whose
+  coefficients sum to zero has two distinct coefficients if the cardinality is nonzero in the
+  scalars and the scalars have no zero divisors.
 * `TauCeti.MonoidAlgebra.ker_sumCoords_basis_eq_span`: its kernel is spanned by differences of
   basis vectors from a fixed one.
 -/
@@ -65,6 +68,29 @@ theorem MonoidAlgebra.sumCoords_basis_surjective [Nonempty X] :
   ⟨MonoidAlgebra.single (Classical.arbitrary X) a, by simp⟩
 
 end Augmentation
+
+/-- A nonzero vector in the kernel of `sumCoords` has two different coefficients, provided
+`(Fintype.card α : k) ≠ 0`.
+
+Nonemptiness of `α` is not assumed — it follows from `(Fintype.card α : k) ≠ 0`. -/
+theorem _root_.MonoidAlgebra.exists_coeff_ne_of_ne_zero_of_sumCoords_eq_zero
+    {k : Type*} [Semiring k] [NoZeroDivisors k] {α : Type*} [Fintype α]
+    (v : MonoidAlgebra k α) (hchar : (Fintype.card α : k) ≠ 0) (hv0 : v ≠ 0)
+    (hvker : (MonoidAlgebra.basis α k).sumCoords v = 0) :
+    ∃ x y : α, x ≠ y ∧ v.coeff x ≠ v.coeff y := by
+  classical
+  by_contra! hcon
+  apply hv0
+  apply MonoidAlgebra.coeff_eq_zero.mp
+  ext x
+  -- Constant coefficients have sum `Fintype.card α` times their common value.
+  have hall : ∀ z : α, v.coeff z = v.coeff x := fun z =>
+    (eq_or_ne z x).elim (fun h => by rw [h]) fun h => hcon z x h
+  have hsum : (MonoidAlgebra.basis α k).sumCoords v = ∑ z : α, v.coeff z := by simp
+  have hmul : (Fintype.card α : k) * v.coeff x = 0 := by
+    rw [← hvker, hsum, Finset.sum_congr rfl fun z _ => hall z]
+    simp
+  exact (mul_eq_zero.mp hmul).resolve_left hchar
 
 section Span
 
