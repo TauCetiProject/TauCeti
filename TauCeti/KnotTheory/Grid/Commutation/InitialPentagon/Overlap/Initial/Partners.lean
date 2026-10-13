@@ -17,10 +17,8 @@ arc from the rectangle's top to the pentagon's top.
 This recognizes the recut image by side and row data for the partition of the commutation
 chain-map coefficient sum.
 
-In the inverse recut both rectangles start on the replaced line. Its second rectangle contains
-the turn row and promotes to an initial-side pentagon. The forward corrected-square identity
-then transports marking avoidance back to the source. The half-open convention includes a turn
-at the rectangle's top and excludes a turn at the pentagon's top.
+The half-open convention includes a turn at the rectangle's top and excludes a turn at the
+pentagon's top.
 
 ## References
 
