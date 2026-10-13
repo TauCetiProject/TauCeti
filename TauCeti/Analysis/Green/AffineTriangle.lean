@@ -8,7 +8,6 @@ module
 public import TauCeti.Analysis.Green.Affine
 public import TauCeti.Analysis.Green.Polygonal.Geometry
 public import TauCeti.Analysis.Green.Division.TriangleGreen
-import Mathlib.Analysis.Convex.Hull
 
 /-!
 # Affine coordinates on nondegenerate triangles
@@ -84,16 +83,6 @@ theorem det_triangleCoordinates (c p q : ℂ) (hdet : triangleDet c p q ≠ 0) :
     (triangleCoordinates c p q hdet).toLinearEquiv.toLinearMap.det = triangleDet c p q := by
   rw [triangleCoordinates_toLinearMap, det_triangleLinearMap]
 
-/-- An affine coordinate map carries convex hulls to the convex hulls of their images. -/
-theorem affineMap_image_convexHull (A : ℂ ≃L[ℝ] ℂ) (c : ℂ) (s : Set ℂ) :
-    affineMap A c '' convexHull ℝ s = convexHull ℝ (affineMap A c '' s) := by
-  let T : ℂ →ᵃ[ℝ] ℂ := A.toLinearEquiv.toLinearMap.toAffineMap + AffineMap.const ℝ ℂ c
-  have heq : (T : ℂ → ℂ) = affineMap A c := by
-    ext z
-    rw [affineMap_apply]
-    rfl
-  simpa only [heq] using T.image_convexHull s
-
 /-- Triangle coordinates identify the actual closed convex hulls. -/
 theorem affineMap_image_standardTriangle (c p q : ℂ) (hdet : triangleDet c p q ≠ 0) :
     affineMap (triangleCoordinates c p q hdet) c '' standardTriangle = convexHull ℝ {c, p, q} := by
@@ -101,58 +90,12 @@ theorem affineMap_image_standardTriangle (c p q : ℂ) (hdet : triangleDet c p q
   simp only [image_insert_eq, image_singleton, affineMap_apply, map_zero, zero_add,
     triangleCoordinates_one, triangleCoordinates_I, sub_add_cancel]
 
-/-- Affine coordinates commute with taking interiors. -/
-theorem affineMap_image_interior (A : ℂ ≃L[ℝ] ℂ) (c : ℂ) (s : Set ℂ) :
-    affineMap A c '' interior s = interior (affineMap A c '' s) := by
-  have heq : affineMap A c = Homeomorph.addRight c ∘ A := by
-    ext z
-    rw [affineMap_apply]
-    rfl
-  have hT : IsHomeomorph (affineMap A c) := by
-    rw [heq]
-    exact (Homeomorph.addRight c).isHomeomorph.comp A.toHomeomorph.isHomeomorph
-  exact hT.image_interior s
-
 /-- The actual open triangle is the image of the standard triangle interior. -/
 theorem affineMap_image_interior_standardTriangle (c p q : ℂ)
     (hdet : triangleDet c p q ≠ 0) :
     affineMap (triangleCoordinates c p q hdet) c '' interior standardTriangle =
       interior (convexHull ℝ {c, p, q}) := by
   rw [affineMap_image_interior, affineMap_image_standardTriangle]
-
-/-- Affine transport commutes with parameterization of straight segments. -/
-theorem affineMap_lineMap (A : ℂ ≃L[ℝ] ℂ) (c p q : ℂ) (t : ℝ) :
-    affineMap A c (AffineMap.lineMap p q t) =
-      AffineMap.lineMap (affineMap A c p) (affineMap A c q) t := by
-  simp only [affineMap_apply, AffineMap.lineMap_apply_module, map_add, map_smul, smul_add]
-  module
-
-private theorem oneForm_affineMap_lineMap (A : ℂ ≃L[ℝ] ℂ) (c p q : ℂ)
-    (P Q : ℂ → ℝ) (t : ℝ) :
-    oneForm P Q (AffineMap.lineMap (affineMap A c p) (affineMap A c q) t)
-        (affineMap A c q - affineMap A c p) =
-      oneForm (affinePullbackP A c P Q) (affinePullbackQ A c P Q)
-        (AffineMap.lineMap p q t) (q - p) := by
-  rw [oneForm_affinePullback, ContinuousLinearMap.comp_apply, affineMap_lineMap]
-  congr 1
-  simp only [affineMap_apply, map_sub, ContinuousLinearEquiv.coe_coe]
-  abel
-
-/-- Genuine segment integrability is preserved by affine pullback of the planar 1-form. -/
-theorem curveIntegrable_segment_affineMap_iff (A : ℂ ≃L[ℝ] ℂ) (c p q : ℂ) (P Q : ℂ → ℝ) :
-    CurveIntegrable (oneForm P Q) (Path.segment (affineMap A c p) (affineMap A c q)) ↔
-      CurveIntegrable (oneForm (affinePullbackP A c P Q) (affinePullbackQ A c P Q))
-        (Path.segment p q) := by
-  rw [curveIntegrable_segment, curveIntegrable_segment]
-  exact intervalIntegrable_congr fun t _ ↦ oneForm_affineMap_lineMap A c p q P Q t
-
-/-- Actual segment circulation transports to the pulled-back planar 1-form. -/
-theorem curveIntegral_segment_affineMap (A : ℂ ≃L[ℝ] ℂ) (c p q : ℂ) (P Q : ℂ → ℝ) :
-    curveIntegral (oneForm P Q) (Path.segment (affineMap A c p) (affineMap A c q)) =
-      curveIntegral (oneForm (affinePullbackP A c P Q) (affinePullbackQ A c P Q))
-        (Path.segment p q) := by
-  rw [curveIntegral_segment, curveIntegral_segment]
-  exact intervalIntegral.integral_congr fun t _ ↦ oneForm_affineMap_lineMap A c p q P Q t
 
 /-- The literal three-segment triangle chain transports its actual curve-integral sum. -/
 theorem curveIntegral_triangle_affineMap (A : ℂ ≃L[ℝ] ℂ) (c p q r : ℂ) (P Q : ℂ → ℝ) :
@@ -180,14 +123,6 @@ theorem integral_convexHull_triangle (c p q : ℂ) (hdet : triangleDet c p q ≠
   rw [← affineMap_image_standardTriangle c p q hdet,
     integral_affineMap_image _ _ isCompact_standardTriangle.measurableSet,
     det_triangleCoordinates]
-
-/-- Affine coordinate maps are real smooth. -/
-theorem contDiff_affineMap (A : ℂ ≃L[ℝ] ℂ) (c : ℂ) {n : WithTop ℕ∞} :
-    ContDiff ℝ n (affineMap A c) := by
-  convert A.toContinuousLinearMap.contDiff.add (contDiff_const (c := c)) using 1
-  ext z
-  rw [affineMap_apply]
-  rfl
 
 private theorem contDiffOn_affinePullback {A : ℂ ≃L[ℝ] ℂ} {c : ℂ} {U : Set ℂ}
     {P Q : ℂ → ℝ} (hP : ContDiffOn ℝ 1 P U) (hQ : ContDiffOn ℝ 1 Q U) :

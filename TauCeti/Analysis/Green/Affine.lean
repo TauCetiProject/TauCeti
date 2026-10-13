@@ -11,6 +11,8 @@ public import TauCeti.MeasureTheory.Integral.IntervalIntegral.AbsolutelyContinuo
 public import Mathlib.MeasureTheory.Function.Jacobian
 import Mathlib.LinearAlgebra.Matrix.Determinant.Basic
 import Mathlib.Analysis.Calculus.Deriv.Comp
+import Mathlib.Analysis.Convex.Hull
+import Mathlib.Analysis.Calculus.ContDiff.Operations
 
 /-!
 # Invertible affine changes of planar coordinates
@@ -275,5 +277,69 @@ theorem curl_coordinateSwap {P Q : ℂ → ℝ} {z : ℂ}
     (by simpa only [affineMap, coordinateSwapCLE_apply, add_zero] using hQ)
   rw [hp, hq, det_coordinateSwapCLE] at he
   simpa only [affineMap, coordinateSwapCLE_apply, add_zero, neg_one_mul] using he
+
+/-- An affine coordinate map carries convex hulls to the convex hulls of their images. -/
+theorem affineMap_image_convexHull (A : ℂ ≃L[ℝ] ℂ) (c : ℂ) (s : Set ℂ) :
+    affineMap A c '' convexHull ℝ s = convexHull ℝ (affineMap A c '' s) := by
+  let T : ℂ →ᵃ[ℝ] ℂ := A.toLinearEquiv.toLinearMap.toAffineMap + AffineMap.const ℝ ℂ c
+  have heq : (T : ℂ → ℂ) = affineMap A c := by
+    ext z
+    rw [affineMap_apply]
+    rfl
+  simpa only [heq] using T.image_convexHull s
+
+/-- Affine coordinates commute with taking interiors. -/
+theorem affineMap_image_interior (A : ℂ ≃L[ℝ] ℂ) (c : ℂ) (s : Set ℂ) :
+    affineMap A c '' interior s = interior (affineMap A c '' s) := by
+  have heq : affineMap A c = Homeomorph.addRight c ∘ A := by
+    ext z
+    rw [affineMap_apply]
+    rfl
+  have hT : IsHomeomorph (affineMap A c) := by
+    rw [heq]
+    exact (Homeomorph.addRight c).isHomeomorph.comp A.toHomeomorph.isHomeomorph
+  exact hT.image_interior s
+
+/-- Affine transport commutes with parameterization of straight segments. -/
+theorem affineMap_lineMap (A : ℂ ≃L[ℝ] ℂ) (c p q : ℂ) (t : ℝ) :
+    affineMap A c (AffineMap.lineMap p q t) =
+      AffineMap.lineMap (affineMap A c p) (affineMap A c q) t := by
+  simp only [affineMap_apply, AffineMap.lineMap_apply_module, map_add, map_smul, smul_add]
+  module
+
+private theorem oneForm_affineMap_lineMap (A : ℂ ≃L[ℝ] ℂ) (c p q : ℂ)
+    (P Q : ℂ → ℝ) (t : ℝ) :
+    oneForm P Q (AffineMap.lineMap (affineMap A c p) (affineMap A c q) t)
+        (affineMap A c q - affineMap A c p) =
+      oneForm (affinePullbackP A c P Q) (affinePullbackQ A c P Q)
+        (AffineMap.lineMap p q t) (q - p) := by
+  rw [oneForm_affinePullback, ContinuousLinearMap.comp_apply, affineMap_lineMap]
+  congr 1
+  simp only [affineMap_apply, map_sub, ContinuousLinearEquiv.coe_coe]
+  abel
+
+/-- Genuine segment integrability is preserved by affine pullback of the planar 1-form. -/
+theorem curveIntegrable_segment_affineMap_iff (A : ℂ ≃L[ℝ] ℂ) (c p q : ℂ) (P Q : ℂ → ℝ) :
+    CurveIntegrable (oneForm P Q) (Path.segment (affineMap A c p) (affineMap A c q)) ↔
+      CurveIntegrable (oneForm (affinePullbackP A c P Q) (affinePullbackQ A c P Q))
+        (Path.segment p q) := by
+  rw [curveIntegrable_segment, curveIntegrable_segment]
+  exact intervalIntegrable_congr fun t _ ↦ oneForm_affineMap_lineMap A c p q P Q t
+
+/-- Actual segment circulation transports to the pulled-back planar 1-form. -/
+theorem curveIntegral_segment_affineMap (A : ℂ ≃L[ℝ] ℂ) (c p q : ℂ) (P Q : ℂ → ℝ) :
+    curveIntegral (oneForm P Q) (Path.segment (affineMap A c p) (affineMap A c q)) =
+      curveIntegral (oneForm (affinePullbackP A c P Q) (affinePullbackQ A c P Q))
+        (Path.segment p q) := by
+  rw [curveIntegral_segment, curveIntegral_segment]
+  exact intervalIntegral.integral_congr fun t _ ↦ oneForm_affineMap_lineMap A c p q P Q t
+
+/-- Affine coordinate maps are real smooth. -/
+theorem contDiff_affineMap (A : ℂ ≃L[ℝ] ℂ) (c : ℂ) {n : WithTop ℕ∞} :
+    ContDiff ℝ n (affineMap A c) := by
+  convert A.toContinuousLinearMap.contDiff.add (contDiff_const (c := c)) using 1
+  ext z
+  rw [affineMap_apply]
+  rfl
 
 end TauCeti.Green

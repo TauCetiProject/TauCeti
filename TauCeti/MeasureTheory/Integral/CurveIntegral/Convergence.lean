@@ -33,9 +33,11 @@ theorem intervalIntegrable_oneForm_of_continuous_bounded
     {C : ℝ} (hbound : ∀ z, ‖ω z‖ ≤ C) :
     IntervalIntegrable (fun t ↦ ω (γ t) (deriv γ t)) volume a b := by
   rw [intervalIntegrable_iff]
-  exact hγ.intervalIntegrable_deriv_of_finiteDimensional.def'.clm_apply_of_bound
+  exact (ContinuousLinearMap.id ℝ (E →L[ℝ] F)).integrable_of_bilin_of_bdd_left C
     ((hω.comp_continuousOn (hγ.continuousOn.mono uIoc_subset_uIcc)).aestronglyMeasurable
       measurableSet_uIoc) (Eventually.of_forall fun t ↦ hbound (γ t))
+    hγ.intervalIntegrable_deriv_of_finiteDimensional.def'
+
 
 /-- Uniform convergence of AC curves and `L¹` convergence of their derivatives imply
 convergence of the actual integrals of any bounded continuous 1-form. -/

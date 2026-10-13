@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Integral.DominatedConvergence
+public import Mathlib.MeasureTheory.Function.Holder
 import Mathlib.MeasureTheory.Function.StronglyMeasurable.Lemmas
 
 /-!
@@ -26,15 +27,6 @@ namespace MeasureTheory
 variable {α E F : Type*} [MeasurableSpace α] [NormedAddCommGroup E] [NormedSpace ℝ E]
   [NormedAddCommGroup F] [NormedSpace ℝ F] {μ : Measure α}
 
-/-- A bounded measurable operator field maps integrable velocities to integrable values. -/
-theorem Integrable.clm_apply_of_bound {v : α → E} (hv : Integrable v μ)
-    {ω : α → E →L[ℝ] F} (hω : AEStronglyMeasurable ω μ) {C : ℝ}
-    (hbound : ∀ᵐ x ∂μ, ‖ω x‖ ≤ C) : Integrable (fun x ↦ ω x (v x)) μ := by
-  apply (hv.norm.const_mul C).mono'
-    ((ContinuousLinearMap.apply ℝ F).flip.aestronglyMeasurable_comp₂ hω hv.1)
-  filter_upwards [hbound] with x hx
-  exact (ω x).le_opNorm (v x) |>.trans (mul_le_mul_of_nonneg_right hx (norm_nonneg _))
-
 /-- Bounded operator fields converging almost everywhere can be paired with velocities
 converging in `L¹`. This gives convergence of the actual Bochner integrals. -/
 theorem tendsto_integral_clm_apply_of_integral_norm_sub
@@ -51,11 +43,13 @@ theorem tendsto_integral_clm_apply_of_integral_norm_sub
   let e : ℕ → α → F := fun n x ↦ (ωn n x - ω x) (v x)
   let d : ℕ → α → F := fun n x ↦ ωn n x (vn n x - v x)
   have heint (n) : Integrable (e n) μ := by
-    apply hv.clm_apply_of_bound (C := C + C) ((hωn n).sub hω)
+    apply (ContinuousLinearMap.id ℝ (E →L[ℝ] F)).integrable_of_bilin_of_bdd_left
+      (C + C) ((hωn n).sub hω) _ hv
     filter_upwards [hboundn n, hbound] with x hx hy
     exact norm_sub_le _ _ |>.trans (add_le_add hx hy)
   have hdint (n) : Integrable (d n) μ :=
-    (hvn n |>.sub hv).clm_apply_of_bound (hωn n) (hboundn n)
+    (ContinuousLinearMap.id ℝ (E →L[ℝ] F)).integrable_of_bilin_of_bdd_left
+      C (hωn n) (hboundn n) ((hvn n).sub hv)
   have he : Tendsto (fun n ↦ ∫ x, e n x ∂μ) atTop (nhds 0) := by
     have ht := tendsto_integral_filter_of_dominated_convergence
       (μ := μ) (l := atTop) (F := e) (f := fun _ ↦ (0 : F))
@@ -85,7 +79,8 @@ theorem tendsto_integral_clm_apply_of_integral_norm_sub
           exact ((ωn n x).le_opNorm _).trans
             (mul_le_mul_of_nonneg_right hx (norm_nonneg _)))
       _ = C * ∫ x, ‖vn n x - v x‖ ∂μ := integral_const_mul _ _
-  have hpair : Integrable (fun x ↦ ω x (v x)) μ := hv.clm_apply_of_bound hω hbound
+  have hpair : Integrable (fun x ↦ ω x (v x)) μ :=
+    (ContinuousLinearMap.id ℝ (E →L[ℝ] F)).integrable_of_bilin_of_bdd_left C hω hbound hv
   have heq (n) : (∫ x, ωn n x (vn n x) ∂μ) =
       (∫ x, ω x (v x) ∂μ) + (∫ x, e n x ∂μ) + ∫ x, d n x ∂μ := by
     rw [← integral_add hpair (heint n),
