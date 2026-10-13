@@ -18,9 +18,13 @@ Dilating the variable of a function on a finite-dimensional real normed space `E
 the factor is `1`. This is the `eLpNorm` counterpart of the lower Lebesgue integral law
 `TauCeti.lintegral_comp_inv_smul`.
 
+More generally, composing with a linear automorphism `e` multiplies the `Lᵖ` seminorm by
+`|det e|^(-1 / p)`.
+
 ## Main declarations
 
 * `TauCeti.eLpNorm_comp_inv_smul`: `‖u (r⁻¹ • ·)‖_p = r ^ (n / p) * ‖u‖_p`.
+* `TauCeti.eLpNorm_comp_continuousLinearEquiv`: `‖u ∘ e‖_p = |det e|^(-1 / p) * ‖u‖_p`.
 -/
 
 public section
@@ -46,5 +50,18 @@ theorem eLpNorm_comp_inv_smul (u : E → G) {r : ℝ} (hr : 0 < r) (p : ℝ≥0�
   congr 1
   rw [inv_pow, inv_inv, abs_of_pos (by positivity), ENNReal.ofReal_rpow_of_pos (by positivity),
     ← Real.rpow_natCast, ← Real.rpow_mul hr.le, one_div, ENNReal.toReal_inv, div_eq_mul_inv]
+
+/-- **Linear change of variables in the `Lᵖ` seminorm:** composing with a linear automorphism `e`
+multiplies the `Lᵖ` seminorm against an additive Haar measure by `|det e|^(-1 / p)`. The exponent
+`1 / p` is `(1 / p).toReal`, which is `0` at `p = 0` and `p = ∞`, where the factor is thus `1`. -/
+theorem eLpNorm_comp_continuousLinearEquiv (u : E → G) (e : E ≃L[ℝ] E) (p : ℝ≥0∞) :
+    eLpNorm (u ∘ e) p μ = ENNReal.ofReal |(LinearMap.det (e : E →ₗ[ℝ] E))⁻¹| ^ (1 / p).toReal *
+      eLpNorm u p μ := by
+  have hdet : LinearMap.det (e : E →ₗ[ℝ] E) ≠ 0 := (LinearEquiv.isUnit_det' e.toLinearEquiv).ne_zero
+  have hmap : Measure.map e μ = ENNReal.ofReal |(LinearMap.det (e : E →ₗ[ℝ] E))⁻¹| • μ :=
+    Measure.map_linearMap_addHaar_eq_smul_addHaar μ hdet
+  have he : MeasurableEmbedding e := e.toHomeomorph.measurableEmbedding
+  rw [← he.eLpNorm_map_measure, hmap, eLpNorm_smul_measure_of_ne_zero (by simpa using hdet),
+    smul_eq_mul]
 
 end TauCeti
