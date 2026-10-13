@@ -24,6 +24,8 @@ the base, stalk, and function-field algebra structures form a scalar tower.
   over the base ring.
 * `Scheme.baseRingToStalk`: the canonical map from the base ring to a stalk.
 * `Scheme.fromSpecStalk_comp_over`: the spectrum of a stalk maps to `X` over the affine base.
+* `Scheme.specMap_comp_fromSpecStalk_genericPoint_comp_over`: a `k`-algebra map of function fields
+  gives a morphism over the affine base between the spectra of the function fields.
 * `Scheme.baseStalkResidueFieldIsScalarTower`: compatibility of the base, stalk, and residue-field
   algebra structures.
 * `Scheme.baseStalkFunctionFieldIsScalarTower`: compatibility of the base, stalk, and
@@ -201,6 +203,21 @@ theorem _root_.AlgebraicGeometry.Scheme.fromSpecStalk_genericPoint_comp_over [Is
     Scheme.algebraMap_stalk_eq_baseRingToStalk,
     Scheme.algebraMap_functionField_eq_baseRingToFunctionField, Scheme.baseRingToStalk,
     Scheme.baseRingToFunctionField]
+
+/-- Through the generic points of integral schemes over `Spec k`, `Spec` of a map of function
+fields compatible with the `k`-algebra structures is compatible with the structure morphisms to
+`Spec k`. -/
+theorem _root_.AlgebraicGeometry.Scheme.specMap_comp_fromSpecStalk_genericPoint_comp_over
+    {Y Z : Scheme.{u}} [Y.Over (Spec (.of k))] [Z.Over (Spec (.of k))] [IsIntegral Y]
+    [IsIntegral Z] (f : Z.functionField ⟶ Y.functionField)
+    (hf : ∀ c : k, f (algebraMap k Z.functionField c) = algebraMap k Y.functionField c) :
+    (Spec.map f ≫ Z.fromSpecStalk _) ≫ Z ↘ Spec (.of k) =
+      Y.fromSpecStalk _ ≫ Y ↘ Spec (.of k) := by
+  rw [Category.assoc, Scheme.fromSpecStalk_genericPoint_comp_over,
+    Scheme.fromSpecStalk_genericPoint_comp_over, ← Spec.map_comp]
+  congr 1
+  ext c
+  exact hf c
 
 end CommRing
 

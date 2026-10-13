@@ -10,6 +10,7 @@ public import Mathlib.Topology.Algebra.Group.Quotient
 public import Mathlib.GroupTheory.OrderOfElement
 public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.Topology.Algebra.Group.Units
+public import TauCeti.GroupTheory.GroupAction.FixedPoints
 import Mathlib.RingTheory.RootsOfUnity.Basic
 
 /-!
@@ -23,6 +24,8 @@ provides inverse conjugation `n ↦ g⁻¹ * n * g` on a normal subgroup, togeth
 identity, and composition laws, and the continuous lift through a quotient by a normal subgroup.
 Named compatibility proofs describe subgroup inclusions and composition of scalar/coefficient maps
 for pullbacks of cochains; composition uses Mathlib's semiconjugacy API.
+`Subgroup.fixedPoints_subtype_quotientMk_smul` records compatibility of the quotient map with the
+inclusion of additive fixed points, without a continuity assumption on the action.
 A homomorphism from a topological group with open kernel is also continuous, for every topology
 on the target. The projections of a product of topological monoids onto its factors are
 packaged as `ContinuousMonoidHom.proj`, next to Mathlib's `ContinuousMonoidHom.fst` and
@@ -333,6 +336,17 @@ theorem _root_.Subgroup.inverseConjugationHom_mul [SeparatelyContinuousMul G] (N
   ext n
   simp [_root_.Subgroup.inverseConjugationHom_apply, mul_assoc]
 
+/-- The conjugation compatible-pair identity on coefficients. -/
+theorem _root_.Subgroup.inverseConjugationHom_smul [SeparatelyContinuousMul G]
+    {M : Type*} [AddMonoid M] [DistribMulAction G M] (N : Subgroup G) [N.Normal]
+    (g : G) (n : N) (m : M) :
+    (DistribSMul.toAddMonoidHom M g)
+        (Subgroup.inverseConjugationHom N g n • m) =
+      n • (DistribSMul.toAddMonoidHom M g) m := by
+  simp only [DistribSMul.toAddMonoidHom_apply, Subgroup.inverseConjugationHom_apply,
+    Subgroup.smul_def]
+  simp [smul_smul, mul_assoc]
+
 namespace ContinuousMonoidHom
 
 /-- The projection onto the quotient by a normal subgroup, carrying the quotient topology, as a
@@ -349,6 +363,15 @@ theorem coe_quotientMk (N : Subgroup G) [N.Normal] :
 @[simp]
 theorem quotientMk_apply (N : Subgroup G) [N.Normal] (g : G) : quotientMk N g = (g : G ⧸ N) :=
   (rfl)
+
+/-- The inclusion of the fixed-point additive subgroup is equivariant along the continuous
+quotient map. This is the compatible-pair form of the quotient action on fixed points. -/
+theorem _root_.Subgroup.fixedPoints_subtype_quotientMk_smul (N : Subgroup G) [N.Normal]
+    {M : Type*} [AddGroup M] [DistribMulAction G M] (g : G)
+    (m : FixedPoints.addSubgroup N M) :
+    (FixedPoints.addSubgroup N M).subtype (quotientMk N g • m) =
+      g • (FixedPoints.addSubgroup N M).subtype m := by
+  simpa only [quotientMk_apply, QuotientGroup.mk'_apply] using N.fixedPoints_subtype_mk'_smul g m
 
 /-- The continuous homomorphism induced on a quotient by a continuous homomorphism that kills
 the normal subgroup. -/

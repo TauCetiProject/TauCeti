@@ -610,7 +610,6 @@ private theorem rootSubgroup_comp_inclusion_of_coordinateMap
   simp only [Category.assoc, eqToHom_refl, Category.id_comp]
   rw [CommHopfAlgCat.quotientSpecι_def]
   rw [← coordinateMap_def, ← Functor.map_comp_assoc, ← op_comp, h]
-  simp only [eqToIso.hom]
 
 /-- The positive long-root subgroup followed by the symplectic inclusion is the corresponding
 general-linear root subgroup. -/
