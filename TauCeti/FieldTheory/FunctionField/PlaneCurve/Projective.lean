@@ -9,6 +9,7 @@ public import TauCeti.FieldTheory.FunctionField.PlaneCurve.Genus
 public import TauCeti.RingTheory.MvPolynomial.Dehomogenization
 public import TauCeti.RingTheory.MvPolynomial.LinearSubst
 
+import TauCeti.Algebra.Polynomial.Bivariate
 import Mathlib.Algebra.MvPolynomial.Funext
 import TauCeti.Algebra.MvPolynomial.Units
 import TauCeti.FieldTheory.FunctionField.ConstantExtension.Genus
@@ -604,23 +605,13 @@ theorem genus_eq_of_isHomogeneous (hG : G.IsHomogeneous d)
     genus k F = (d - 1) * (d - 2) / 2 := by
   have hirrk : Irreducible (dehomogenize 2 G) := hirr.of_map
   have h₂ : aeval ![x, y] (dehomogenize 2 G) = 0 := by rwa [aeval_dehomogenize, insertNth_two]
-  let e := Polynomial.Bivariate.equivMvPolynomial k
   let eK := Polynomial.Bivariate.equivMvPolynomial K
-  have hmap (φ : MvPolynomial (Fin 2) k) :
-      eK.symm (φ.map (algebraMap k K)) =
-        (e.symm φ).map (Polynomial.mapRingHom (algebraMap k K)) := by
-    induction φ using MvPolynomial.induction_on with
-    | C a => simp [e, eK]
-    | add p q hp hq => simp [hp, hq]
-    | mul_X p i hp => fin_cases i <;> simp [e, eK, hp]
-  have heval : (Polynomial.aevalAeval x y).comp (e.symm : MvPolynomial (Fin 2) k →ₐ[k] _) =
-      aeval ![x, y] :=
-    MvPolynomial.algHom_ext fun i ↦ by fin_cases i <;> simp [e]
   have hirr' : Irreducible (eK.symm ((dehomogenize 2 G).map (algebraMap k K))) :=
     (MulEquiv.irreducible_iff eK.symm.toMulEquiv).mpr hirr
-  rw [hmap] at hirr'
+  rw [Polynomial.Bivariate.equivMvPolynomial_symm_map] at hirr'
   have hex := isIntegrallyClosedIn_of_irreducible_map (L := K) hx hgen hirr'
-    ((AlgHom.congr_fun heval _).trans h₂)
+    ((AlgHom.congr_fun
+      (Polynomial.Bivariate.aevalAeval_comp_equivMvPolynomial_symm (R := k) x y) _).trans h₂)
   rcases finite_or_infinite k with hk | hk
   · -- Pass to a finite constant field extension `k'` with more than `d + 1` elements.
     obtain ⟨F', k', hk', hcard, hc⟩ :=

@@ -8,7 +8,7 @@ module
 public import Mathlib.Algebra.Group.Irreducible.Lemmas
 public import Mathlib.Algebra.GroupWithZero.Units.Lemmas
 public import Mathlib.Algebra.Polynomial.Bivariate
-public import Mathlib.Algebra.Polynomial.Degree.Units
+public import TauCeti.Algebra.Polynomial.Units
 
 /-!
 # Coefficient maps and evaluation of bivariate polynomials
@@ -26,8 +26,6 @@ facts about such polynomials that do not depend on the curve.
 
 ## Main results
 
-* `Polynomial.isLocalHom_mapRingHom`: `mapRingHom f` reflects units when `f` does and is
-  injective with values in a semiring without zero divisors.
 * `Polynomial.irreducible_of_irreducible_map_mapRingHom`: irreducibility of a bivariate polynomial
   descends along an injective local homomorphism, such as a homomorphism of fields.
 * `Polynomial.aevalAeval_eq_eval₂`: `φ(x, y) = eval₂ (aeval x) y φ`.
@@ -38,19 +36,6 @@ public section
 open scoped Polynomial.Bivariate
 
 namespace Polynomial
-
-/-- Mapping coefficients along an injective homomorphism `f` into a semiring without zero divisors
-reflects units of the polynomial ring when `f` itself reflects units: a polynomial whose image is a
-unit has degree zero, and its constant coefficient is sent to a unit. -/
-theorem isLocalHom_mapRingHom {R S : Type*} [Semiring R] [Semiring S] [NoZeroDivisors S]
-    {f : R →+* S} [IsLocalHom f] (hf : Function.Injective f) : IsLocalHom (mapRingHom f) where
-  map_nonunit p hp := by
-    have hdeg : p.natDegree = 0 := by
-      rw [← natDegree_map_eq_of_injective hf]
-      exact natDegree_eq_zero_of_isUnit hp
-    rw [eq_C_of_natDegree_eq_zero hdeg] at hp ⊢
-    rw [coe_mapRingHom, map_C, isUnit_C] at hp
-    exact (isUnit_of_map_unit f _ hp).map C
 
 /-- **Irreducibility of a bivariate polynomial descends along an injective local homomorphism**
 into a semiring without zero divisors, for instance along any homomorphism of fields: if the image
@@ -71,5 +56,23 @@ theorem aevalAeval_eq_eval₂ {R A : Type*} [CommSemiring R] [CommSemiring A] [A
   induction p using Polynomial.induction_on' with
   | add p q hp hq => simp only [map_add, hp, hq, eval₂_add]
   | monomial n a => simp [← C_mul_X_pow_eq_monomial]
+
+/-- The bivariate-to-multivariate equivalence commutes with coefficient maps. -/
+theorem Bivariate.equivMvPolynomial_symm_map {R S : Type*} [CommSemiring R] [CommSemiring S]
+    (f : R →+* S) (φ : MvPolynomial (Fin 2) R) :
+    (Bivariate.equivMvPolynomial S).symm (φ.map f) =
+      ((Bivariate.equivMvPolynomial R).symm φ).map (mapRingHom f) := by
+  induction φ using MvPolynomial.induction_on with
+  | C a => simp
+  | add p q hp hq => simp [hp, hq]
+  | mul_X p i hp => fin_cases i <;> simp [hp]
+
+/-- Evaluation is unchanged by converting a two-variable polynomial to bivariate form. -/
+theorem Bivariate.aevalAeval_comp_equivMvPolynomial_symm {R A : Type*}
+    [CommSemiring R] [CommSemiring A] [Algebra R A] (x y : A) :
+    (aevalAeval x y).comp
+        ((Bivariate.equivMvPolynomial R).symm : MvPolynomial (Fin 2) R →ₐ[R] R[X][Y]) =
+      MvPolynomial.aeval ![x, y] :=
+  MvPolynomial.algHom_ext fun i ↦ by fin_cases i <;> simp
 
 end Polynomial
