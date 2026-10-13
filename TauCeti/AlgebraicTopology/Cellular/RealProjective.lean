@@ -302,7 +302,7 @@ section Assembly
 
 variable {A : Type*} [Category A] [HasCoproducts.{0} A] [Abelian A] (R : A)
 
-/-- The image of the sphere generator of `H̃ᵢ(Sⁱ)` in `Hᵢ(Sⁱ, B)`. -/
+/-- The image of the sphere generator of the reduced homology `Hᵢ(Sⁱ)` in `Hᵢ(Sⁱ, B)`. -/
 private def sphereClass (B : Set (TopCat.diskBoundary.{0} (i + 1))) :
     R ⟶ (TopPair.ofSubset B).singularHomology R i :=
   (reducedSingularHomologyTopCatSphereIso R i).inv ≫
