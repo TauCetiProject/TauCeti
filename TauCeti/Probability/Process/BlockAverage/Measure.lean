@@ -18,7 +18,8 @@ arbitrary real-valued processes and arbitrary finite selections, including repea
 and the empty block. They require no invariance of the process law and no finiteness of the
 ambient measure.
 
-The prefix and following-block integrability lemmas specialize the same finite-sum argument.
+The prefix and following-block lemmas specialize these integrability and conditional-expectation
+identities.
 Together these results let averaging arguments use the process API independently of any
 probability-symmetry hypotheses.
 -/
@@ -34,7 +35,7 @@ namespace TauCeti
 
 namespace Probability
 
-variable {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω} {X : ℕ → Ω → ℝ}
+variable {Ω : Type*} [mΩ : MeasurableSpace Ω] {μ : Measure Ω} {X : ℕ → Ω → ℝ}
 
 /-- A block average of `Lᵖ` coordinates is itself `Lᵖ`. -/
 theorem memLp_blockAverage {p : ℝ≥0∞} {n : ℕ} (k : Fin n → ℕ)
@@ -60,11 +61,27 @@ theorem memLp_prefixAverage {p : ℝ≥0∞} (n : ℕ) (hX_Lp : ∀ i : Fin n, M
   rw [prefixAverage_def]
   exact memLp_blockAverage (fun i : Fin n => (i : ℕ)) hX_Lp
 
+/-- Conditional expectation commutes almost everywhere with a prefix average of integrable
+coordinates. -/
+theorem condExp_prefixAverage {m : MeasurableSpace Ω} (n : ℕ)
+    (hX : ∀ i : Fin n, Integrable (X i) μ) :
+    μ[prefixAverage X n | m] =ᵐ[μ] prefixAverage (fun i => μ[X i | m]) n := by
+  rw [prefixAverage_def, prefixAverage_def]
+  exact condExp_blockAverage (mΩ := mΩ) (fun i : Fin n => (i : ℕ)) hX
+
 /-- A following tail average of `Lᵖ` coordinates is itself `Lᵖ`. -/
 theorem memLp_followingAverage {p : ℝ≥0∞} (n : ℕ) (hX_Lp : ∀ i : Fin n, MemLp (X (n + i)) p μ) :
     MemLp (followingAverage X n) p μ := by
   rw [followingAverage_def]
   exact memLp_blockAverage (fun i : Fin n => n + (i : ℕ)) hX_Lp
+
+/-- Conditional expectation commutes almost everywhere with a following-block average of
+integrable coordinates. -/
+theorem condExp_followingAverage {m : MeasurableSpace Ω} (n : ℕ)
+    (hX : ∀ i : Fin n, Integrable (X (n + i)) μ) :
+    μ[followingAverage X n | m] =ᵐ[μ] followingAverage (fun i => μ[X i | m]) n := by
+  rw [followingAverage_def, followingAverage_def]
+  exact condExp_blockAverage (mΩ := mΩ) (fun i : Fin n => n + (i : ℕ)) hX
 
 end Probability
 
