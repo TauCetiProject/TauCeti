@@ -143,18 +143,8 @@ theorem IsAGenerator.of_isShortExact [Module.Free R Q] [Module.Finite R Q]
     (h₂ : (AlgHom.mapDomain p.hom).comp φ = φ₂.comp q) (hφ₁ : IsAGenerator φ₁)
     (hφ₂ : IsAGenerator φ₂) : IsAGenerator φ := by
   refine isAGenerator_iff.mpr <| isFullSetOfSections_iff.mpr fun T _ _ _ f ↦ ?_
-  have h₁T : (AlgHom.mapDomain (baseChangeMap (K := T) i).hom).comp
-      ((AlgHom.pointsBaseChange T).comp φ₁) = ((AlgHom.pointsBaseChange T).comp φ).comp j := by
-    ext1 a₁
-    have ha₁ := DFunLike.congr_fun h₁ a₁
-    simp only [MonoidHom.comp_apply] at ha₁ ⊢
-    rw [hom_baseChangeMap, AlgHom.mapDomain_pointsBaseChange, ha₁]
-  have h₂T : (AlgHom.mapDomain (baseChangeMap (K := T) p).hom).comp
-      ((AlgHom.pointsBaseChange T).comp φ) = ((AlgHom.pointsBaseChange T).comp φ₂).comp q := by
-    ext1 a
-    have ha := DFunLike.congr_fun h₂ a
-    simp only [MonoidHom.comp_apply] at ha ⊢
-    rw [hom_baseChangeMap, AlgHom.mapDomain_pointsBaseChange, ha]
+  have h₁T := AlgHom.mapDomain_comp_pointsBaseChange_comp T i.hom h₁
+  have h₂T := AlgHom.mapDomain_comp_pointsBaseChange_comp T p.hom h₂
   simpa [AlgHom.ofConv_pointsBaseChange] using norm_eq_prod_of_isShortExact (h.baseChange T) hj
     hq hjq h₁T h₂T (hφ₁.baseChange T) (hφ₂.baseChange T) f
 
