@@ -96,7 +96,17 @@ theorem toIntegralIdealsAway_eq_one_iff (S : Finset (HeightOneSpectrum (𝓞 K))
     apply Subtype.ext
     simp only [coe_toIntegralIdealsAway, h, Submonoid.coe_one]
 
+/-- Two integral finite ideles locally units on `S` define the same prime-to ideal exactly
+when their ratio is an everywhere-integral unit. -/
+theorem toIntegralIdealsAway_eq_iff (S : Finset (HeightOneSpectrum (𝓞 K)))
+    (x y : integralFiniteIdelesAway S) :
+    toIntegralIdealsAway S x = toIntegralIdealsAway S y ↔
+      (x.1 : 𝔸ᶠ[𝓞 K, K]ˣ) / (y.1 : 𝔸ᶠ[𝓞 K, K]ˣ) ∈ integralUnits (𝓞 K) K := by
+  simpa only [← Subtype.coe_inj, coe_toIntegralIdealsAway] using
+    toIntegralIdeal_eq_iff x.1 y.1
+
 /-- Passing to the fractional prime-to ideals agrees with the finite-idele map. -/
+@[simp]
 theorem integralIdealsAwayHom_toIntegralIdealsAway
     (S : Finset (HeightOneSpectrum (𝓞 K))) (x : integralFiniteIdelesAway S) :
     NumberFieldArithmetic.integralIdealsAwayHom S (toIntegralIdealsAway S x) =
