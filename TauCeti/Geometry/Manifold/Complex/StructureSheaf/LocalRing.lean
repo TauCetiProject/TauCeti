@@ -8,7 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Complex.StructureSheaf.Basic
 import Mathlib.Algebra.Category.Ring.FilteredColimits
 public import Mathlib.RingTheory.LocalRing.ResidueField.Basic
-public import Mathlib.RingTheory.Ideal.Quotient.Operations
+import Mathlib.RingTheory.Ideal.Quotient.Operations
 
 /-!
 # Local rings of holomorphic germs
