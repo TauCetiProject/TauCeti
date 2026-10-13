@@ -5,10 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.FieldTheory.FunctionField.ConstantExtension.FiniteDescent
+public import TauCeti.FieldTheory.FunctionField.ConstantExtension.Basic
 public import TauCeti.FieldTheory.FunctionField.Different.Derivative
 public import TauCeti.FieldTheory.FunctionField.Place.Extension.Eisenstein
 
+import TauCeti.FieldTheory.FunctionField.ConstantExtension.FiniteDescent
 import TauCeti.FieldTheory.FunctionField.Place.Extension.Tower
 
 /-!
