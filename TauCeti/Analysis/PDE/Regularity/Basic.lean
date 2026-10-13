@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.PDE.DirichletProblem
 public import TauCeti.Analysis.Sobolev.Wkp.LineDeriv
 public import TauCeti.Analysis.Sobolev.W1p.DifferenceQuotient
+public import TauCeti.Analysis.PDE.EnergyForm.DifferenceQuotient
 import TauCeti.Analysis.Sobolev.DifferenceQuotient
 import TauCeti.Analysis.Sobolev.W1p.Density
 import TauCeti.MeasureTheory.Function.Lp.Norm
@@ -179,23 +180,24 @@ private theorem memLp_energyIntegrand_comp_add
 
 omit [DecidableEq ι] in
 /-- **Translating a Lipschitz coefficient field moves the energy form by little.** If
-`x ↦ a(x)` is bounded and `K`-Lipschitz in the operator norm of its bilinear forms, then
+`x ↦ a(x)` has essentially bounded energy densities and is `K`-Lipschitz in the operator norm
+of its bilinear forms, then
 translating it by `s` changes the energy form by at most `K ‖s‖ ‖∇y‖_{L²} ‖∇z‖_{L²}`. -/
-private theorem abs_energyFormH1_comp_add_sub_le
-    (hbdd : Bornology.IsBounded (Set.range fun x => matrixBilinearForm (a x)))
+theorem norm_energyFormH1_comp_add_sub_le
+    (hcoeff : MemLp (fun x => energyIntegrand (a x) 0 0) ⊤
+      (mu.restrict ((⊤ : Opens (EuclideanSpace ℝ ι)) : Set (EuclideanSpace ℝ ι))))
     (hK : LipschitzWith K fun x => matrixBilinearForm (a x)) (s : EuclideanSpace ℝ ι)
     (y z : W1p mu ⊤ 2) :
-    |energyFormH1 (fun x => a (x + s)) 0 0 y z - energyFormH1 a 0 0 y z|
+    ‖energyFormH1 (fun x => a (x + s)) 0 0 y z - energyFormH1 a 0 0 y z‖
       ≤ K * ‖s‖ * ‖W1p.gradient y‖ * ‖W1p.gradient z‖ := by
-  have hcoeff := memLp_energyIntegrand_comp_add (mu := mu) hbdd hK.continuous 0
-  simp only [add_zero] at hcoeff
   -- The difference is the energy form of the difference of the coefficient fields.
   have hdiff : energyFormH1 (fun x => a (x + s)) 0 0 y z - energyFormH1 a 0 0 y z
       = ∫ x, (matrixBilinearForm (a (x + s)) - matrixBilinearForm (a x))
           (W1p.gradient z x) (W1p.gradient y x) ∂mu := by
-    rw [energyFormH1_def, energyFormH1_def, ← integral_sub
+    simp only [energyFormH1_def, Pi.zero_apply]
+    rw [← integral_sub
       (integrable_energyIntegrand_jetField
-        (memLp_energyIntegrand_comp_add hbdd hK.continuous s) y z)
+        (memLp_energyIntegrand_comp_add_right hcoeff s) y z)
       (integrable_energyIntegrand_jetField hcoeff y z)]
     simp
   -- The Lipschitz bound on the coefficient field, pointwise.
@@ -223,7 +225,7 @@ private theorem abs_energyFormH1_comp_add_sub_le
     have hmem' : ∀ q : W1p mu ⊤ 2, MemLp (fun x => ‖W1p.gradient q x‖) 2 mu := fun q => by
       simpa using (Lp.memLp (W1p.gradient q)).norm
     exact (hmem' z).integrable_mul (hmem' y)
-  rw [hdiff, ← Real.norm_eq_abs]
+  rw [hdiff]
   calc _ ≤ ∫ x, K * ‖s‖ * (‖W1p.gradient z x‖ * ‖W1p.gradient y x‖) ∂mu :=
         norm_integral_le_of_norm_le (hint.const_mul _) (.of_forall hpt)
     _ = K * ‖s‖ * ∫ x, ‖W1p.gradient z x‖ * ‖W1p.gradient y x‖ ∂mu := integral_const_mul _ _
@@ -252,24 +254,11 @@ theorem abs_energyFormH1_differenceQuotient_add_le
       ≤ K * ‖w‖ * ‖W1p.gradient u‖ * ‖W1p.gradient v‖ := by
   have hcoeff := memLp_energyIntegrand_comp_add (mu := mu) hbdd hK.continuous 0
   simp only [add_zero] at hcoeff
-  -- Both arguments of the energy form are linear, being those of the bundled bilinear map
-  -- `energyFormH1L hcoeff`, so a difference quotient splits.
-  have hleft : energyFormH1 a 0 0
-      (W1p.differenceQuotient le_rfl w t (Set.mapsTo_univ (· + t • w) _) u) v
-        = t⁻¹ * (energyFormH1 a 0 0 (W1p.translate (Set.mapsTo_univ (· + t • w) _) u) v
-            - energyFormH1 a 0 0 u v) := by
-    rw [W1p.differenceQuotient_def, W1p.restrictL_self, ← energyFormH1L_apply hcoeff]
-    simp only [map_smul, map_sub, smul_apply, sub_apply, energyFormH1L_apply, smul_eq_mul]
-  have hright : energyFormH1 a 0 0 u
-      (W1p.differenceQuotient le_rfl w (-t) (Set.mapsTo_univ (· + (-t) • w) _) v)
-        = (-t)⁻¹ * (energyFormH1 a 0 0 u (W1p.translate (Set.mapsTo_univ (· + (-t) • w) _) v)
-            - energyFormH1 a 0 0 u v) := by
-    rw [W1p.differenceQuotient_def, W1p.restrictL_self, ← energyFormH1L_apply hcoeff]
-    simp only [map_smul, map_sub, energyFormH1L_apply, smul_eq_mul]
   have hk : t • w + (-t) • w = 0 := by rw [← add_smul]; simp
   -- What survives is the change of the energy form under translating the coefficient field,
   -- tested against `u` and the translate `τ` of `v`.
-  rw [hleft, hright, energyFormH1_translate a hk]
+  rw [energyFormH1_differenceQuotient_left (b := 0) (c := 0) hcoeff,
+    energyFormH1_differenceQuotient_right (b := 0) (c := 0) hcoeff, energyFormH1_translate a hk]
   set τ := W1p.translate (Set.mapsTo_univ (· + (-t) • w) _) v
   rw [show ∀ X Y Z : ℝ, t⁻¹ * (X - Y) + (-t)⁻¹ * (Z - Y) = t⁻¹ * (X - Z) by
     intro X Y Z; rw [inv_neg]; ring]
@@ -289,7 +278,7 @@ theorem abs_energyFormH1_differenceQuotient_add_le
   rw [abs_mul, abs_inv]
   calc _ ≤ |t|⁻¹ * (K * ‖(-t) • w‖ * ‖W1p.gradient u‖ * ‖W1p.gradient τ‖) := by
         gcongr
-        exact abs_energyFormH1_comp_add_sub_le hbdd hK _ u τ
+        simpa only [Real.norm_eq_abs] using norm_energyFormH1_comp_add_sub_le hcoeff hK _ u τ
     _ = K * ‖w‖ * ‖W1p.gradient u‖ * ‖W1p.gradient v‖ := by
         rw [hτ, norm_smul, norm_neg, Real.norm_eq_abs]
         field_simp
@@ -334,33 +323,12 @@ theorem energyFormH1_differenceQuotient_eq_neg_sub
           (W1p.differenceQuotient le_rfl w (-t) (Set.mapsTo_univ (· + (-t) • w) _) v)
         - t⁻¹ * (energyFormH1 (fun x => a (x + t • w)) 0 0 u v - energyFormH1 a 0 0 u v) := by
   have hcoeff' := memLp_energyIntegrand_comp_add_right hcoeff (t • w)
-  -- Both arguments of the energy form are linear, being those of the bundled bilinear map
-  -- `energyFormH1L`, so a difference quotient splits.
-  have hleft : ∀ (x y : W1p mu ⊤ 2),
-      energyFormH1 (fun x => a (x + t • w)) 0 0
-          (W1p.differenceQuotient le_rfl w t (Set.mapsTo_univ (· + t • w) _) x) y
-        = t⁻¹ * (energyFormH1 (fun x => a (x + t • w)) 0 0
-            (W1p.translate (Set.mapsTo_univ (· + t • w) _) x) y
-            - energyFormH1 (fun x => a (x + t • w)) 0 0 x y) := by
-    intro x y
-    rw [W1p.differenceQuotient_def, W1p.restrictL_self,
-      ← energyFormH1L_apply (b := 0) (c := 0) hcoeff']
-    simp only [map_smul, map_sub, smul_apply, sub_apply, energyFormH1L_apply,
-      smul_eq_mul]
-  have hright : ∀ (x y : W1p mu ⊤ 2),
-      energyFormH1 a 0 0 x
-          (W1p.differenceQuotient le_rfl w (-t) (Set.mapsTo_univ (· + (-t) • w) _) y)
-        = (-t)⁻¹ * (energyFormH1 a 0 0 x (W1p.translate (Set.mapsTo_univ (· + (-t) • w) _) y)
-            - energyFormH1 a 0 0 x y) := by
-    intro x y
-    rw [W1p.differenceQuotient_def, W1p.restrictL_self,
-      ← energyFormH1L_apply (b := 0) (c := 0) hcoeff]
-    simp only [map_smul, map_sub, energyFormH1L_apply, smul_eq_mul]
   have hk : t • w + (-t) • w = 0 := by rw [← add_smul]; simp
   have htranslate := energyFormH1_translate (fun x => a (x + t • w)) hk u v
   have hcancel : (-t) • w + t • w = 0 := by rw [← add_smul]; simp
   simp only [add_assoc, hcancel, add_zero] at htranslate
-  rw [hleft, hright, htranslate, inv_neg]
+  rw [energyFormH1_differenceQuotient_left (b := 0) (c := 0) hcoeff',
+    energyFormH1_differenceQuotient_right (b := 0) (c := 0) hcoeff, htranslate, inv_neg]
   ring
 
 omit [DecidableEq ι] in
@@ -379,60 +347,17 @@ theorem norm_inv_mul_energyFormH1_comp_add_sub_le
     (u v : W1p mu ⊤ 2) :
     ‖t⁻¹ * (energyFormH1 (fun x => a (x + t • w)) 0 0 u v - energyFormH1 a 0 0 u v)‖
       ≤ K * ‖w‖ * (‖W1p.gradient v‖ * ‖W1p.gradient u‖) := by
-  have hint : ∀ b : EuclideanSpace ℝ ι → Matrix ι ι ℝ,
-      MemLp (fun x => energyIntegrand (b x) 0 0) ⊤
-        (mu.restrict ((⊤ : Opens (EuclideanSpace ℝ ι)) : Set (EuclideanSpace ℝ ι))) →
-      Integrable (fun x => matrixBilinearForm (b x) (W1p.gradient v x) (W1p.gradient u x))
-        (mu.restrict ((⊤ : Opens (EuclideanSpace ℝ ι)) : Set (EuclideanSpace ℝ ι))) :=
-    fun b hb => by simpa using integrable_energyIntegrand_jetField hb u v
-  rw [energyFormH1_zero_zero_eq_setIntegral, energyFormH1_zero_zero_eq_setIntegral,
-    ← integral_sub (hint _ (memLp_energyIntegrand_comp_add_right hcoeff (t • w))) (hint _ hcoeff),
-    ← integral_const_mul]
-  -- Pointwise, `|t⁻¹ (aₜ(x) - a(x))(η, ξ)| ≤ K ‖w‖ ‖η‖ ‖ξ‖` by the Lipschitz bound.
-  have hpoint : ∀ x, ‖t⁻¹ * (matrixBilinearForm (a (x + t • w)) (W1p.gradient v x)
-        (W1p.gradient u x) - matrixBilinearForm (a x) (W1p.gradient v x) (W1p.gradient u x))‖
-      ≤ K * ‖w‖ * (‖W1p.gradient v x‖ * ‖W1p.gradient u x‖) := by
-    intro x
-    have hdist : ‖matrixBilinearForm (a (x + t • w)) - matrixBilinearForm (a x)‖
-        ≤ K * (|t| * ‖w‖) := by
-      have := hLip.dist_le_mul (x + t • w) x
-      rwa [dist_eq_norm, dist_eq_norm, add_sub_cancel_left, norm_smul, Real.norm_eq_abs] at this
-    have hop := (matrixBilinearForm (a (x + t • w)) - matrixBilinearForm (a x)).le_opNorm₂
-      (W1p.gradient v x) (W1p.gradient u x)
-    rw [sub_apply, sub_apply] at hop
-    rw [norm_mul, norm_inv, Real.norm_eq_abs]
-    rcases eq_or_ne t 0 with rfl | ht
-    · simp only [abs_zero, inv_zero, zero_mul]
-      positivity
-    calc |t|⁻¹ * ‖matrixBilinearForm (a (x + t • w)) (W1p.gradient v x) (W1p.gradient u x)
-          - matrixBilinearForm (a x) (W1p.gradient v x) (W1p.gradient u x)‖
-        ≤ |t|⁻¹ * (K * (|t| * ‖w‖) * ‖W1p.gradient v x‖ * ‖W1p.gradient u x‖) := by
-          gcongr
-          exact hop.trans (by gcongr)
-      _ = K * ‖w‖ * (‖W1p.gradient v x‖ * ‖W1p.gradient u x‖) := by
-          field_simp [abs_ne_zero.mpr ht]
-  calc ‖∫ x in ((⊤ : Opens (EuclideanSpace ℝ ι)) : Set (EuclideanSpace ℝ ι)),
-        t⁻¹ * (matrixBilinearForm (a (x + t • w)) (W1p.gradient v x) (W1p.gradient u x)
-          - matrixBilinearForm (a x) (W1p.gradient v x) (W1p.gradient u x)) ∂mu‖
-      ≤ ∫ x in ((⊤ : Opens (EuclideanSpace ℝ ι)) : Set (EuclideanSpace ℝ ι)),
-          K * ‖w‖ * (‖W1p.gradient v x‖ * ‖W1p.gradient u x‖) ∂mu :=
-        norm_integral_le_of_norm_le
-          (((Lp.memLp (W1p.gradient v)).norm.integrable_mul
-            (Lp.memLp (W1p.gradient u)).norm).const_mul _)
-          (Filter.Eventually.of_forall hpoint)
-    _ ≤ K * ‖w‖ * (‖W1p.gradient v‖ * ‖W1p.gradient u‖) := by
-        rw [integral_const_mul]
+  rcases eq_or_ne t 0 with rfl | ht
+  · simp only [inv_zero, zero_mul, norm_zero]
+    positivity
+  rw [norm_mul, norm_inv, Real.norm_eq_abs]
+  calc |t|⁻¹ * ‖energyFormH1 (fun x => a (x + t • w)) 0 0 u v - energyFormH1 a 0 0 u v‖
+      ≤ |t|⁻¹ * (K * ‖t • w‖ * ‖W1p.gradient u‖ * ‖W1p.gradient v‖) := by
         gcongr
-        have hf : MemLp (fun x => ‖W1p.gradient v x‖) (ENNReal.ofReal 2)
-            (mu.restrict ((⊤ : Opens (EuclideanSpace ℝ ι)) : Set (EuclideanSpace ℝ ι))) := by
-          simpa using (Lp.memLp (W1p.gradient v)).norm
-        have hg : MemLp (fun x => ‖W1p.gradient u x‖) (ENNReal.ofReal 2)
-            (mu.restrict ((⊤ : Opens (EuclideanSpace ℝ ι)) : Set (EuclideanSpace ℝ ι))) := by
-          simpa using (Lp.memLp (W1p.gradient u)).norm
-        have key := integral_mul_norm_le_Lp_mul_Lq Real.HolderConjugate.two_two hf hg
-        simp only [norm_norm, Real.rpow_two, Lp.integral_norm_sq_eq_norm_sq] at key
-        rwa [← Real.sqrt_eq_rpow, ← Real.sqrt_eq_rpow, Real.sqrt_sq (norm_nonneg _),
-          Real.sqrt_sq (norm_nonneg _)] at key
+        exact norm_energyFormH1_comp_add_sub_le hcoeff hLip (t • w) u v
+    _ = K * ‖w‖ * (‖W1p.gradient v‖ * ‖W1p.gradient u‖) := by
+        rw [norm_smul, Real.norm_eq_abs]
+        field_simp [abs_ne_zero.mpr ht]
 
 /-- **The difference quotients of the gradient of a weak solution are uniformly bounded.** Let
 `a` be uniformly elliptic on the whole space with lower constant `λ`, and let `x ↦ a(x)` be
