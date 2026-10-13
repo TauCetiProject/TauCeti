@@ -38,6 +38,9 @@ plane.
 * `Submodule.projectionGap_eq_max`: the gap is the larger of the two directed gaps.
 * `Submodule.directedProjectionGap_le_iff`: the directed gap from `U` to `V` is the least
   `s ≥ 0` with `‖P_{Vᗮ} u‖ ≤ s ‖u‖` for every `u ∈ U`.
+* `Submodule.directedProjectionGap_le_directedProjectionGap_of_finrank_le`: for
+  finite-dimensional subspaces, the directed gap from the lower-dimensional one is at most the
+  directed gap from the other.
 * `Submodule.directedProjectionGap_comm_of_finrank_eq` and
   `Submodule.projectionGap_eq_directedProjectionGap_of_finrank_eq`: for finite-dimensional
   subspaces of equal dimension the two directed gaps agree, and the gap equals either of them.
@@ -206,9 +209,10 @@ theorem directedProjectionGap_le_iff {s : ℝ} (hs : 0 ≤ s) :
   · exact (h _ (U.starProjection_apply_mem x)).trans
       (mul_le_mul_of_nonneg_left (U.norm_starProjection_apply_le x) hs)
 
-/-- One half of `directedProjectionGap_comm_of_finrank_eq`. -/
-private theorem directedProjectionGap_le_of_finrank_eq [FiniteDimensional 𝕜 U]
-    [FiniteDimensional 𝕜 V] (h : Module.finrank 𝕜 U = Module.finrank 𝕜 V) :
+/-- For finite-dimensional subspaces with `dim V ≤ dim U`, the directed gap from `V` to `U` is at
+most the directed gap from `U` to `V`: `‖P_{Uᗮ} P_V‖ ≤ ‖P_{Vᗮ} P_U‖`. -/
+theorem directedProjectionGap_le_directedProjectionGap_of_finrank_le [FiniteDimensional 𝕜 U]
+    [FiniteDimensional 𝕜 V] (h : Module.finrank 𝕜 V ≤ Module.finrank 𝕜 U) :
     directedProjectionGap V U ≤ directedProjectionGap U V := by
   -- By the Pythagorean theorem, `‖P_{Vᗮ} u‖ ≤ s ‖u‖` is `(1 - s²) ‖u‖² ≤ ‖P_V u‖²`.
   set s := directedProjectionGap U V
@@ -218,7 +222,7 @@ private theorem directedProjectionGap_le_of_finrank_eq [FiniteDimensional 𝕜 U
     have h₂ := norm_sq_eq_add_norm_sq_starProjection u V
     nlinarith [norm_nonneg (Vᗮ.starProjection u), norm_nonneg u]
   refine (directedProjectionGap_le_iff V U hs).mpr fun v hv => ?_
-  have h₁ := mul_norm_sq_le_norm_starProjection_sq_of_finrank_eq U V h hU hv
+  have h₁ := mul_norm_sq_le_norm_starProjection_sq_of_finrank_le U V h hU hv
   have h₂ := norm_sq_eq_add_norm_sq_starProjection v U
   have : ‖Uᗮ.starProjection v‖ ^ 2 ≤ (s * ‖v‖) ^ 2 := by nlinarith
   exact (pow_le_pow_iff_left₀ (norm_nonneg _) (by positivity) two_ne_zero).mp this
@@ -230,8 +234,8 @@ Without the dimension hypothesis this fails: for a line `U` inside a plane `V` t
 theorem directedProjectionGap_comm_of_finrank_eq [FiniteDimensional 𝕜 U]
     [FiniteDimensional 𝕜 V] (h : Module.finrank 𝕜 U = Module.finrank 𝕜 V) :
     directedProjectionGap U V = directedProjectionGap V U :=
-  le_antisymm (directedProjectionGap_le_of_finrank_eq V U h.symm)
-    (directedProjectionGap_le_of_finrank_eq U V h)
+  le_antisymm (directedProjectionGap_le_directedProjectionGap_of_finrank_le V U h.le)
+    (directedProjectionGap_le_directedProjectionGap_of_finrank_le U V h.ge)
 
 /-- **The equal-rank sine identity**: for finite-dimensional subspaces of equal dimension, the
 gap is the directed gap, `‖P_U - P_V‖ = ‖P_{Vᗮ} P_U‖`. -/
