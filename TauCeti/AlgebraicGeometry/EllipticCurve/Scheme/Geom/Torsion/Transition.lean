@@ -48,26 +48,6 @@ theorem torsionInclusion_left_torsionι :
     (E.torsionInclusion m n).left ≫ (E.torsionι (m * n)).left = (E.torsionι m).left :=
   congrArg Over.Hom.left (E.torsionInclusion_torsionι m n)
 
-/-- The torsion transition is the base change of multiplication by `m` on `E`. -/
-theorem isPullback_torsionMulBy :
-    IsPullback (E.torsionι (m * n)).left (E.torsionMulBy m n).left
-      (E.mulBy m).left (E.torsionι n).left := by
-  refine (IsPullback.of_right ?_ ?_ (E.isPullback_torsion n).flip).flip
-  · simpa only [← Over.comp_left, ← mulBy_mul, mul_comm n m, Over.w] using
-      (E.isPullback_torsion (m * n)).flip
-  · exact congrArg Over.Hom.left (E.torsionMulBy_torsionι m n)
-
-/-- The kernel of `E[mn] ⟶ E[n]` is precisely the included `E[m]`, scheme-theoretically. -/
-theorem isPullback_torsionInclusion :
-    IsPullback (E.torsionInclusion m n).left (E.torsion m).X.hom
-      (E.torsionMulBy m n).left (1 : Over.mk (𝟙 S) ⟶ (E.torsion n).X).left := by
-  refine IsPullback.of_right ?_ ?_ (E.isPullback_torsionMulBy m n)
-  · simpa only [← Over.comp_left, torsionInclusion_torsionι, one_comp,
-      hom_one_left, Over.mk_hom, Category.id_comp, Category.id_comp E.zero] using
-      E.isPullback_torsion m
-  · rw [← Over.comp_left, torsionInclusion_torsionMulBy]
-    simp [Hom.one_def]
-
 /-- The inclusion between torsion levels is a closed immersion. -/
 instance isClosedImmersion_torsionInclusion_left :
     IsClosedImmersion (E.torsionInclusion m n).left := by

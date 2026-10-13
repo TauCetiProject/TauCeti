@@ -21,6 +21,8 @@ in any `Z` over `S` are the points of `G` killed by `n`.
 Multiplication by `m` restricts to a homomorphism `G[mn] ⟶ G[n]`, and `G[m]` includes into
 `G[mn]`. The transitions satisfy identity and composition laws, with transports between equal
 indices. These laws supply the coherence of towers of prime-power torsion.
+The transition is a base change of multiplication by `m`, and its scheme-theoretic kernel is
+the included `G[m]`.
 
 If `G` is killed by `m * n`, with `m` and `n` coprime, then addition `G[m] ×_S G[n] ⟶ G` is an
 isomorphism of group schemes over `S`. If `a * m + b * n = 1`, the projection of `G` to `G[m]` is
@@ -75,7 +77,7 @@ commutative group schemes.
 ## References
 
 * N. M. Katz and B. Mazur, *Arithmetic Moduli of Elliptic Curves*, Annals of Mathematics
-  Studies 108, Princeton University Press, 1985, 1.10.14–1.10.15.
+  Studies 108, Princeton University Press, 1985, 1.10.14–1.10.15, 2.3.1 and Chapter 5.
 -/
 
 public section
@@ -218,6 +220,23 @@ theorem torsionInclusion_torsionMulBy :
     torsionInclusion G m n ≫ torsionMulBy G m n = 1 := by
   apply torsion_hom_ext G
   simp [GrpObj.comp_zpow]
+
+/-- The torsion transition is the base change of multiplication by `m` on `G`. -/
+theorem isPullback_torsionMulBy :
+    IsPullback (torsionι G (m * n)) (torsionMulBy G m n)
+      (𝟙 G.X ^ m) (torsionι G n) := by
+  refine (IsPullback.of_right ?_ ?_ (isPullback_torsionι G n).flip).flip
+  · simpa [GrpObj.comp_zpow, ← zpow_mul, mul_comm n m] using
+      (isPullback_torsionι G (m * n)).flip
+  · simp [GrpObj.comp_zpow]
+
+/-- The scheme-theoretic kernel of `G[mn] ⟶ G[n]` is the included `G[m]`. -/
+theorem isPullback_torsionInclusion :
+    IsPullback (torsionInclusion G m n) (toUnit _)
+      (torsionMulBy G m n) η[(torsion G n).X] := by
+  refine IsPullback.of_right ?_ ?_ (isPullback_torsionMulBy G m n)
+  · simpa using isPullback_torsionι G m
+  · rw [torsionInclusion_torsionMulBy, Hom.one_def]
 
 /-- Transport between equal torsion indices preserves the underlying point of `G`. -/
 @[reassoc (attr := simp)]
