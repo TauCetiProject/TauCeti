@@ -135,8 +135,9 @@ theorem ord_wronskian_derivativeOfSeparating_basis_eq [PerfectField k]
   rw [← weilDifferentialDivisor_congr hF hex hchain (weilDifferentialOfSeparating hF htr).2
     (by simpa using weilDifferentialOfSeparating_ne_zero hF htr)] at hdx
   have hord := congrArg (fun D : Divisor k F ↦ D.coeff P) hdx
+  have := P.isSeparable_residueField_of_degree_eq_one hP
   simp only [coeff_weilDifferentialDivisor,
-    weilDifferentialOrder_weilDifferentialOfSeparating_eq_zero hF hex htr hP ht,
+    weilDifferentialOrder_weilDifferentialOfSeparating_eq_zero hF hex htr ht,
     AlgebraicGeometry.WeilDivisor.coeff_add, Divisor.coeff_principal, Units.val_mk0] at hord
   -- Assemble: `W_x(f) = (dt/dx) ^ (g choose 2) · W_t(f)`.
   have hN : n * (n - 1) / 2 = (genus k F).choose 2 := by
