@@ -180,15 +180,18 @@ private theorem mem_rightLeftOverlapPartners_of_inverse
     E ∈ G.rightLeftOverlapPartners C x z := by
   let F : GridRectanglePentagonDecomposition C.column C.turnRow x z :=
     { middle := D.middle
-      rectangle := D.first
-      pentagon := GridPentagonBetween.ofRightEq D.second hside hturn }
+      first := D.first
+      second := GridPentagonBetween.ofRightEq D.second hside hturn }
   have hFrect : F.toRectangleDecomposition = D := by
-    apply GridRectangleDecomposition.ext <;> simp [F, hside]
+    apply GridRectangleDecomposition.ext <;>
+      simp [F, GridRectanglePentagonDecomposition.pentagon, hside]
   rw [← hFrect] at hrecut
   have hFc : F.rectangle.right = F.pentagon.left := by
-    simpa [F] using hcommon
+    simpa [F, GridRectanglePentagonDecomposition.rectangle,
+      GridRectanglePentagonDecomposition.pentagon] using hcommon
   have hFt : C.turnRow ∈ Grid.cIco F.rectangle.top F.pentagon.top := by
-    simpa [F] using hcut
+    simpa [F, GridRectanglePentagonDecomposition.rectangle,
+      GridRectanglePentagonDecomposition.pentagon] using hcut
   have hr := F.isEmpty_rectangle_of_isRecut hrecut
   have hp := F.isEmpty_pentagon_of_isRecut hrecut
   have hone := F.hasOneCommonSide_of_right_eq_left hFc

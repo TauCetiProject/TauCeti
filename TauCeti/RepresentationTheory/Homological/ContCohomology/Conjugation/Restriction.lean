@@ -89,14 +89,14 @@ theorem explicitMap1_explicitRes1_of_conj (x : H1 G M) :
     explicitMap1 U M V M κ f (by exact continuous_of_eq_smul g hf)
       (inverseConjugation_smul_of_eq G M U V g κ hκ f hf)
       (explicitRes1 G M U x) = explicitRes1 G M V x := by
-  induction x using QuotientAddGroup.induction_on with
-  | _ c =>
-    rw [explicitRes1_mk, explicitMap1_mk, explicitRes1_mk, H1pi_eq_iff]
-    refine mem_B1_iff.2 ⟨(c : G → M) g, fun v => ?_⟩
-    simp only [Pi.sub_apply, cocyclesMap1_apply, AddMonoidHom.id_apply,
-      ContinuousMonoidHom.subgroupSubtype_apply, hf, hκ]
-    simpa only [d0_apply] using
-      (smul_inverseConjugation_apply_sub_eq_d0 G M V c g v).symm
+  rw [explicitRes1_eq_explicitMap1, explicitRes1_eq_explicitMap1,
+    ← AddMonoidHom.comp_apply,
+    ← explicitMap1_comp G M U M _ _ _ _ V M _ _ _ _]
+  exact congrArg (fun F => F x)
+    (explicitMap1_eq_of_conj G M V M (ContinuousMonoidHom.subgroupSubtype V)
+      ((ContinuousMonoidHom.subgroupSubtype U).comp κ) (AddMonoidHom.id M)
+      (f.comp (AddMonoidHom.id M)) continuous_id _ g
+      (fun v => by simpa using hκ v) (fun m => by simpa using hf m))
 
 include hf in
 omit [ContinuousSMul G M] [IsTopologicalGroup G] in

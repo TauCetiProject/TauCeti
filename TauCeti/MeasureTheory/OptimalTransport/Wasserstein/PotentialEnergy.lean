@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.GradientFlow.GeodesicConvex
 public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Geodesic
 public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.GeneralizedGeodesic.Convex
+import TauCeti.MeasureTheory.Measure.LowerSemicontinuousLintegral
 
 /-!
 # Potential energy and its displacement convexity
@@ -21,7 +22,10 @@ Since `V` need not be integrable, the energy takes values in `EReal`, with the c
 otherwise the integral of the positive part minus that of the negative part, which may be `⊥`. It
 agrees with the Bochner integral for integrable `V` (`TauCeti.potentialEnergy_of_integrable`), and
 a lower bound by an integrable function rules out the value `⊥`
-(`TauCeti.potentialEnergy_ne_bot_of_le`).
+(`TauCeti.potentialEnergy_ne_bot_of_le`). For a lower semicontinuous potential bounded below, the
+potential energy is a lower semicontinuous function of a probability measure for narrow
+convergence (`TauCeti.lowerSemicontinuous_potentialEnergy`), the property consumed by the direct
+method for the Jordan–Kinderlehrer–Otto step.
 
 On a real normed space `E`, convexity of `V` passes to the potential energy along every
 interpolation of measures by a plan. If `V` is `m`-strongly convex in Mathlib's sense
@@ -59,6 +63,11 @@ Jordan–Kinderlehrer–Otto step is unique.
 * `TauCeti.potentialEnergy_dirac`: the potential energy of a Dirac mass at `x` is `V x`.
 * `TauCeti.potentialEnergy_ne_bot_of_hasFiniteMoment`: a potential with at most quadratic negative
   part has potential energy `≠ ⊥` against every finite measure with finite second moment.
+* `TauCeti.potentialEnergy_eq_lintegral_add_sub`: for an almost everywhere measurable potential
+  almost everywhere bounded below by `-c`, the potential energy of a probability measure is
+  `∫⁻ (V + c) - c`.
+* `TauCeti.lowerSemicontinuous_potentialEnergy`: the potential energy of a lower semicontinuous
+  potential bounded below is narrowly lower semicontinuous on probability measures.
 * `StrongConvexOn.potentialEnergy_map_le`: the convexity inequality of the potential energy of an
   `m`-strongly convex potential along the interpolation of a plan.
 * `StrongConvexOn.geodesicallyConvex_potentialEnergy`: the potential energy of an `m`-strongly
@@ -250,6 +259,64 @@ theorem potentialEnergy_ne_bot_of_hasFiniteMoment {V : E → ℝ} {μ : Measure 
     (.of_forall hVAB)
 
 end Growth
+
+section LowerSemicontinuous
+
+variable {X : Type*} [MeasurableSpace X] {V : X → ℝ}
+
+/-- For a potential almost everywhere measurable and bounded below by `-c`, the potential energy
+of a probability measure is the integral of the almost everywhere nonnegative potential `V + c`,
+minus `c`. -/
+theorem potentialEnergy_eq_lintegral_add_sub {μ : Measure X} [IsProbabilityMeasure μ]
+    (hV : AEMeasurable V μ) {c : ℝ} (hc : ∀ᵐ x ∂μ, -c ≤ V x) :
+    potentialEnergy V μ = (∫⁻ x, ENNReal.ofReal (V x + c) ∂μ : EReal) - c := by
+  have h0 : ∀ᵐ x ∂μ, 0 ≤ V x + c := hc.mono fun x hx ↦ by linarith
+  by_cases hs : ∫⁻ x, ENNReal.ofReal (V x + c) ∂μ = ∞
+  · -- The positive part of `V` has infinite integral as well.
+    rw [hs, EReal.coe_ennreal_top, EReal.top_sub_coe, potentialEnergy_eq_top_iff]
+    have hle : ∫⁻ x, ENNReal.ofReal (V x + c) ∂μ ≤
+        ∫⁻ x, ENNReal.ofReal (V x) ∂μ + ENNReal.ofReal c := by
+      calc ∫⁻ x, ENNReal.ofReal (V x + c) ∂μ
+          ≤ ∫⁻ x, (ENNReal.ofReal (V x) + ENNReal.ofReal c) ∂μ :=
+            lintegral_mono fun x ↦ ENNReal.ofReal_add_le
+        _ = ∫⁻ x, ENNReal.ofReal (V x) ∂μ + ENNReal.ofReal c := by
+            rw [lintegral_add_right _ measurable_const, lintegral_const, measure_univ, mul_one]
+    rw [hs, top_le_iff, ENNReal.add_eq_top] at hle
+    exact hle.resolve_right ENNReal.ofReal_ne_top
+  -- Otherwise `V + c`, hence `V`, is integrable.
+  have hint : Integrable (fun x ↦ V x + c) μ :=
+    ⟨(hV.add_const c).aestronglyMeasurable,
+      (hasFiniteIntegral_iff_ofReal h0).2 (lt_top_iff_ne_top.2 hs)⟩
+  have hVint : Integrable V μ :=
+    (hint.sub (integrable_const c)).congr (.of_forall fun x ↦ by simp)
+  rw [potentialEnergy_of_integrable hVint,
+    ← ofReal_integral_eq_lintegral_ofReal hint h0, EReal.coe_ennreal_ofReal,
+    max_eq_left (integral_nonneg_of_ae h0), integral_add hVint (integrable_const c), integral_const,
+    probReal_univ, one_smul, ← EReal.coe_sub, add_sub_cancel_right]
+
+/-- **The potential energy is narrowly lower semicontinuous.** For a lower semicontinuous
+potential `V` bounded below on a pseudometric space, `μ ↦ ∫ V dμ` is lower semicontinuous on
+probability measures for the topology of narrow convergence. -/
+theorem lowerSemicontinuous_potentialEnergy [PseudoMetricSpace X] [OpensMeasurableSpace X]
+    (hV : LowerSemicontinuous V) (hb : BddBelow (range V)) :
+    LowerSemicontinuous fun μ : ProbabilityMeasure X ↦ potentialEnergy V μ := by
+  obtain ⟨c, hc⟩ : ∃ c : ℝ, ∀ x, -c ≤ V x :=
+    let ⟨b, hb⟩ := hb
+    ⟨-b, fun x ↦ by simpa using hb (mem_range_self x)⟩
+  simp_rw [potentialEnergy_eq_lintegral_add_sub hV.measurable.aemeasurable
+    (.of_forall hc), sub_eq_add_neg, ← EReal.coe_neg]
+  have hf : LowerSemicontinuous fun x ↦ ENNReal.ofReal (V x + c) :=
+    ENNReal.continuous_ofReal.comp_lowerSemicontinuous
+      (hV.add continuous_const.lowerSemicontinuous) fun _ _ h ↦ ENNReal.ofReal_le_ofReal h
+  -- Adding a real constant is a continuous monotone map `ℝ≥0∞ → EReal`.
+  have hg : Continuous fun t : ℝ≥0∞ ↦ (t : EReal) + ((-c : ℝ) : EReal) :=
+    continuous_iff_continuousAt.2 fun t ↦
+      (EReal.continuousAt_add (Or.inr (EReal.coe_ne_bot _)) (Or.inr (EReal.coe_ne_top _))).comp
+        (continuous_coe_ennreal_ereal.prodMk continuous_const).continuousAt
+  exact hg.comp_lowerSemicontinuous (lowerSemicontinuous_lintegral_probabilityMeasure hf)
+    fun _ _ h ↦ add_le_add_left (EReal.coe_ennreal_le_coe_ennreal_iff.2 h) _
+
+end LowerSemicontinuous
 
 section Convexity
 
