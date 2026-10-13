@@ -14,7 +14,7 @@ public import TauCeti.NumberTheory.LSeries.Conjugate
 Conjugating an ideal coefficient system conjugates its prime-power power series and reflects its
 local Euler factors across the real axis. Absolute convergence is preserved, both locally and
 for the norm-regrouped series. Thus the algebraic conjugation on `TauCeti.EulerProductData`
-agrees with complex conjugation of the analytic Euler product.
+agrees with complex conjugation of the evaluated local Euler factors.
 
 The identities for the totalized series hold at every complex argument, without a convergence
 hypothesis. The convergence equivalences separately specify where these identities represent
@@ -42,8 +42,8 @@ variable {K : Type*} [Field K] [NumberField K]
 theorem localPowerSeries_star (D : EulerProductData K)
     (P : HeightOneSpectrum (𝓞 K)) :
     (star D).localPowerSeries P = (D.localPowerSeries P).map (starRingEnd ℂ) := by
-  ext n
-  simp
+  simpa only [localPowerSeries_eq, toIdealArithmeticFunction_star] using
+    IdealArithmeticFunction.localPowerSeries_star D.toIdealArithmeticFunction P
 
 /-- Conjugation of bundled Euler-product data conjugates each local arithmetic coefficient. -/
 @[simp]

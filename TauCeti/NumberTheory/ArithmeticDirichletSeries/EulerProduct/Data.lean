@@ -81,6 +81,12 @@ noncomputable def localPowerSeries (D : EulerProductData K)
     (P : HeightOneSpectrum (𝓞 K)) : PowerSeries ℂ :=
   D.toIdealArithmeticFunction.localPowerSeries P
 
+/-- The bundled local power series is the canonical series of its coefficient function. -/
+theorem localPowerSeries_eq (D : EulerProductData K)
+    (P : HeightOneSpectrum (𝓞 K)) :
+    D.localPowerSeries P = D.toIdealArithmeticFunction.localPowerSeries P :=
+  (rfl)
+
 /-- Coefficients of the bundled local power series are the prime-power values of the data. -/
 @[simp]
 theorem coeff_localPowerSeries (D : EulerProductData K)
