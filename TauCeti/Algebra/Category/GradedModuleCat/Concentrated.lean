@@ -33,20 +33,6 @@ universe uk uA v
 variable {k : Type uk} [CommRing k] {A : Type uA} [Ring A] [Algebra k A]
   {𝒜 : ℤ → Submodule k A}
 
-/-- A graded surjection preserves vanishing of a homogeneous piece. In particular, a quotient
-of a module concentrated in one degree is concentrated in that degree. -/
-theorem piece_eq_bot_of_surjective {M N : GradedModuleCat.{v} 𝒜} (f : M ⟶ N)
-    (hf : Function.Surjective f.hom) (p : ℤ) (hp : M.grading.piece p = ⊥) :
-    N.grading.piece p = ⊥ := by
-  apply (Submodule.eq_bot_iff _).mpr
-  intro y hy
-  obtain ⟨x, rfl⟩ := hf y
-  have hx : (decompose M.grading.piece x p : M) = 0 := by
-    simpa only [hp, Submodule.mem_bot] using (decompose M.grading.piece x p).property
-  have h := f.isHomogeneous.map_decompose p x
-  rw [add_zero, decompose_of_mem_same N.grading.piece hy, hx, map_zero] at h
-  exact h.symm
-
 /-- Positive-degree scalars annihilate any module concentrated in one internal degree. -/
 theorem positive_smul_top_eq_bot_of_concentrated (N : GradedModuleCat.{v} 𝒜) (p : ℤ)
     (hN : ∀ q, q ≠ p → N.grading.piece q = ⊥) :

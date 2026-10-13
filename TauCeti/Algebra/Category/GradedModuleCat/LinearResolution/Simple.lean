@@ -15,7 +15,7 @@ public import TauCeti.Algebra.Category.GradedModuleCat.Shift
 public import TauCeti.Algebra.Homology.Ext.Basic
 
 /-!
-# Simple targets detect linearity of finite minimal resolutions
+# Simple targets detect linearity of minimal resolutions with finite-dimensional terms
 
 For a nonnegatively graded algebra over a field, a minimal graded projective resolution with
 finite-dimensional terms is linear exactly when Ext against finite simple objects concentrated
@@ -48,9 +48,9 @@ variable {k : Type uk} [Field k] {A : Type uA} [Ring A] [Algebra k A]
   {r : GradedProjectiveResolution.{uk, uA, v, v} 𝒜 M.grading}
   [HasExt.{w} (GradedModuleCat.{v} 𝒜)] [∀ n, Module.Finite k (r.X n)]
 
-/-- A finite-term minimal resolution is linear exactly when Ext against every finite simple
-graded module concentrated in degree `p` vanishes in cohomological degrees different from `p`.
-This includes degree zero and works over arbitrary fields. -/
+/-- A minimal resolution with finite-dimensional terms is linear exactly when Ext against every
+finite simple graded module concentrated in degree `p` vanishes in cohomological degrees
+different from `p`. This includes degree zero and works over arbitrary fields. -/
 theorem IsMinimal.isLinear_iff_subsingleton_ext_simple (hr : r.IsMinimal)
     (hneg : ∀ i < 0, 𝒜 i = ⊥) :
     r.IsLinear ↔ ∀ (n : ℕ) (p : ℤ), (n : ℤ) ≠ p →
