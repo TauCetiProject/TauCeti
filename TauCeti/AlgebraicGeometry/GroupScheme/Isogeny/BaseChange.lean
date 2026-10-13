@@ -22,10 +22,9 @@ base change is the pullback functor on the over category, lifted to group object
 ## References
 
 * J. S. Milne, *Algebraic Groups* (2017), §18.a.
-
-The base-change argument follows
-`TauCeti.AlgebraicGeometry.AbelianVariety.IsIsogeny.baseChange`.
 -/
+
+-- The base-change argument follows `TauCeti.AlgebraicGeometry.AbelianVariety.IsIsogeny.baseChange`.
 
 public section
 

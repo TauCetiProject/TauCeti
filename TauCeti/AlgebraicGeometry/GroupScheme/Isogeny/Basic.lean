@@ -24,10 +24,10 @@ and shows that isogenies contain the isomorphisms and are closed under compositi
 ## References
 
 * J. S. Milne, *Algebraic Groups* (2017), §18.a.
-
-The property-level isogeny API is adapted from
-`TauCeti.AlgebraicGeometry.AbelianVariety.Isogeny`.
 -/
+
+-- The property-level isogeny API is adapted from
+-- `TauCeti.AlgebraicGeometry.AbelianVariety.Isogeny`.
 
 public section
 
