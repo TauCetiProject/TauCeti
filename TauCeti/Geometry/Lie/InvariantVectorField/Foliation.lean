@@ -8,7 +8,6 @@ module
 public import TauCeti.Geometry.Lie.InvariantVectorField.Distribution
 public import TauCeti.Geometry.Lie.Tangent.LieEquiv
 public import TauCeti.Geometry.Manifold.Foliation.Leaf
-public import Mathlib.Algebra.Lie.Subalgebra
 
 /-!
 # The integral leaf of a Lie subalgebra
@@ -180,6 +179,7 @@ private theorem integralLeafSubgroup_carrier
   rfl
 
 /-- The carrier of the integral leaf subgroup is exactly the leaf through the identity. -/
+@[simp]
 theorem coe_integralLeafSubgroup (S : LieSubalgebra ℝ (LeftInvariantDerivation I G)) :
     (S.integralLeafSubgroup (I := I) : Set G) =
       (S.mulInvariantFoliation (I := I)).leaf 1 :=
