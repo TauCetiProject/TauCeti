@@ -167,9 +167,11 @@ lemma _root_.AlgebraicGeometry.Scheme.residueFieldBaseAlgebra_eq_compHom (x : X)
       ((X.Γevaluation x).hom.comp
         ((Scheme.ΓSpecIso (.of k)).inv ≫ (X ↘ Spec (.of k)).appTop).hom) := by
   refine Algebra.algebra_ext _ _ fun c ↦ ?_
-  change X.residue x (Scheme.baseRingToStalk k X x c) =
-    X.Γevaluation x ((X ↘ Spec (.of k)).appTop ((Scheme.ΓSpecIso (.of k)).inv c))
-  rw [Scheme.residue_baseRingToStalk, Scheme.Modules.baseRingToGlobalSections_apply]
+  rw [Scheme.algebraMap_residueField_eq_residue_comp_baseRingToStalk,
+    Algebra.compHom_algebraMap_apply, Algebra.algebraMap_self, RingHom.id_apply,
+    RingHom.comp_apply, Scheme.residue_baseRingToStalk,
+    Scheme.Modules.baseRingToGlobalSections_apply, RingHom.comp_apply, CommRingCat.hom_comp,
+    RingHom.comp_apply]
 
 /-- The canonical maps from the base ring through a stalk to the function field form a scalar
 tower. -/
