@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Calculus.ContDiff.Operations
 public import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
+public import TauCeti.Analysis.Calculus.FDeriv.Norm
 import TauCeti.LinearAlgebra.Prod
 import TauCeti.Topology.Algebra.Module.ProjectionGraph
 import Mathlib.Topology.OpenPartialHomeomorph.Basic
@@ -107,11 +108,6 @@ theorem graphFlattening_image_eq (γ : E → ℝ) (hγ : Continuous γ) :
 section Differential
 
 variable [NormedSpace ℝ E]
-
-/-- A uniform upper bound on the derivative norm is nonnegative. -/
-theorem nonneg_of_forall_norm_fderiv_le {γ : E → ℝ} {L : ℝ}
-    (hL : ∀ y, ‖fderiv ℝ γ y‖ ≤ L) : 0 ≤ L :=
-  (norm_nonneg _).trans (hL 0)
 
 private theorem coe_graphFlattening_eq_comp (γ : E → ℝ) (hγ : Continuous γ) :
     ⇑(graphFlattening γ hγ) = (WithLp.prodContinuousLinearEquiv 2 ℝ ℝ E).symm ∘
