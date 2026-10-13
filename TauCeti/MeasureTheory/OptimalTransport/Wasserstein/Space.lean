@@ -7,6 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.Measure.DiracProba
 public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Basic
+import TauCeti.MeasureTheory.Measure.ProbabilityMeasure.Convex
 
 /-!
 # Finite-distance Wasserstein spaces
@@ -420,11 +421,10 @@ theorem exists_coe_eq_smul_add_smul [OpensMeasurableSpace X] (hp0 : p ≠ 0) (hp
   obtain ⟨ha, hb⟩ := ENNReal.add_ne_top.1 (hab ▸ ENNReal.one_ne_top)
   have := Measure.smul_finite ((μ : ProbabilityMeasure X) : Measure X) ha
   have := Measure.smul_finite ((ν : ProbabilityMeasure X) : Measure X) hb
-  have hprob : IsProbabilityMeasure (a • ((μ : ProbabilityMeasure X) : Measure X) +
-      b • ((ν : ProbabilityMeasure X) : Measure X)) := ⟨by simp [hab]⟩
   have hmom := ((hasFiniteMoment μ).smul_measure ha).add_measure hp0 hp
     ((hasFiniteMoment ν).smul_measure hb)
-  exact ⟨mk ⟨_, hprob⟩ hmom, congrArg ProbabilityMeasure.toMeasure (coe_mk _ _)⟩
+  exact ⟨mk ((μ : ProbabilityMeasure X).convexComb hab ν)
+    (by rwa [ProbabilityMeasure.toMeasure_convexComb]), by simp⟩
 
 variable [StandardBorelSpace X]
 

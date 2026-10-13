@@ -23,7 +23,7 @@ their common minimal value, so the convexity inequality is an equality for `P`-a
 law. If `P` gives positive mass to input laws whose optimal plans are induced by maps, one of
 them sees a strict inequality unless `ν₀ = ν₁`. The quadratic Euclidean case, where Brenier's
 theorem supplies the maps for absolutely continuous input laws, is
-`TauCeti.MeasureTheory.OptimalTransport.Wasserstein.StrictConvexity.Euclidean`.
+`TauCeti.MeasureTheory.OptimalTransport.Wasserstein.BarycenterUniqueness.Euclidean`.
 
 ## Main statements
 
