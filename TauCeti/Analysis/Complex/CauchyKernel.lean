@@ -5,7 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.MeasureTheory.Integral.NormRpow
+public import Mathlib.MeasureTheory.Integral.Bochner.Basic
+public import Mathlib.MeasureTheory.Function.LocallyIntegrable
+public import Mathlib.MeasureTheory.Integral.IntegrableOn
+public import Mathlib.MeasureTheory.Measure.Lebesgue.Complex
+public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
+import TauCeti.MeasureTheory.Integral.NormRpow
 import Mathlib.MeasureTheory.Measure.Lebesgue.VolumeOfBalls
 import TauCeti.MeasureTheory.Function.Lp.Translation
 
@@ -26,6 +31,24 @@ open scoped Topology
 
 namespace Complex
 
+/-- The kernel `z ↦ (w - z)⁻¹` of the Cauchy transform is locally integrable on `ℂ`. -/
+theorem locallyIntegrable_sub_inv (w : ℂ) :
+    LocallyIntegrable (fun z : ℂ => (w - z)⁻¹) volume := by
+  refine (TauCeti.locallyIntegrable_norm_sub_rpow (mu := volume) (s := -1) (by simp) w).mono
+    (measurable_const.sub measurable_id).inv.aestronglyMeasurable (ae_of_all _ fun z => ?_)
+  rw [norm_inv, Real.norm_eq_abs, abs_of_nonneg (Real.rpow_nonneg (norm_nonneg _) _),
+    Real.rpow_neg_one]
+
+/-- The Cauchy kernel `z ↦ z⁻¹` is locally integrable on `ℂ`. -/
+theorem locallyIntegrable_inv : LocallyIntegrable (fun z : ℂ => z⁻¹) volume := by
+  convert (locallyIntegrable_sub_inv 0).neg using 1
+  ext z
+  simp
+
+end Complex
+
+namespace TauCeti
+
 /-- The reciprocal kernel cut off outside the closed disk of radius `R`. -/
 @[expose]
 def truncatedCauchyKernel (R : ℝ) : ℂ → ℂ := (closedBall 0 R).indicator (fun z ↦ z⁻¹)
@@ -37,7 +60,7 @@ theorem measurable_truncatedCauchyKernel (R : ℝ) : Measurable (truncatedCauchy
 /-- The truncated Cauchy kernel is integrable. -/
 theorem integrable_truncatedCauchyKernel (R : ℝ) : Integrable (truncatedCauchyKernel R) :=
   (integrable_indicator_iff isClosed_closedBall.measurableSet).mpr
-    (locallyIntegrable_inv.integrableOn_isCompact (isCompact_closedBall 0 R))
+    (Complex.locallyIntegrable_inv.integrableOn_isCompact (isCompact_closedBall 0 R))
 
 /-- The inverse-distance kernel is integrable on every closed disk, including at its pole. -/
 theorem integrableOn_norm_sub_inv_closedBall (w c : ℂ) (R : ℝ) :
@@ -46,33 +69,30 @@ theorem integrableOn_norm_sub_inv_closedBall (w c : ℂ) (R : ℝ) :
     (s := -1) (by simp) w).integrableOn_isCompact (isCompact_closedBall c R)
   simpa only [Real.rpow_neg_one, norm_sub_rev] using h
 
+private theorem closedBall_ae_eq_ball (c : ℂ) (R : ℝ) :
+    closedBall c R =ᵐ[volume] ball c R :=
+  (ae_eq_of_subset_of_measure_ge ball_subset_closedBall
+    (Measure.addHaar_closedBall_eq_addHaar_ball volume c R).le
+    measurableSet_ball.nullMeasurableSet measure_closedBall_lt_top.ne).symm
+
+private theorem real_volume_unitBall : volume.real (ball (0 : ℂ) 1) = Real.pi := by
+  simp [measureReal_def, Complex.volume_ball]
+
 /-- A pole in a disk of radius `R` contributes at most `4πR` to its inverse-distance integral. -/
 theorem integral_norm_sub_inv_closedBall_le {w c : ℂ} {R : ℝ}
     (hw : w ∈ closedBall c R) :
     (∫ z in closedBall c R, ‖z - w‖⁻¹) ≤ 4 * Real.pi * R := by
-  have hball : closedBall c R =ᵐ[volume] ball c R :=
-    (ae_eq_of_subset_of_measure_ge ball_subset_closedBall
-      (Measure.addHaar_closedBall_eq_addHaar_ball volume c R).le
-      measurableSet_ball.nullMeasurableSet measure_closedBall_lt_top.ne).symm
-  rw [Measure.restrict_congr_set hball]
+  rw [Measure.restrict_congr_set (closedBall_ae_eq_ball c R)]
   have h := TauCeti.integral_norm_sub_rpow_one_sub_finrank_le (mu := volume) w hw
-  have hv : volume.real (ball (0 : ℂ) 1) = Real.pi := by
-    simp [measureReal_def, Complex.volume_ball]
-  norm_num only [Complex.finrank_real_complex, Nat.cast_ofNat, hv] at h
+  norm_num only [Complex.finrank_real_complex, Nat.cast_ofNat, real_volume_unitBall] at h
   simpa only [Real.rpow_neg_one, norm_sub_rev] using h.trans_eq (by ring)
 
 /-- The inverse-distance integral over a disk centered at its pole is `2πR`. -/
 theorem integral_norm_sub_inv_closedBall {R : ℝ} (hR : 0 ≤ R) (w : ℂ) :
     (∫ z in closedBall w R, ‖z - w‖⁻¹) = 2 * Real.pi * R := by
-  have hball : closedBall w R =ᵐ[volume] ball w R :=
-    (ae_eq_of_subset_of_measure_ge ball_subset_closedBall
-      (Measure.addHaar_closedBall_eq_addHaar_ball volume w R).le
-      measurableSet_ball.nullMeasurableSet measure_closedBall_lt_top.ne).symm
-  rw [Measure.restrict_congr_set hball]
+  rw [Measure.restrict_congr_set (closedBall_ae_eq_ball w R)]
   have h := TauCeti.integral_norm_sub_rpow_ball (mu := volume) (s := -1) (by simp) hR w
-  have hv : volume.real (ball (0 : ℂ) 1) = Real.pi := by
-    simp [measureReal_def, Complex.volume_ball]
-  norm_num only [Complex.finrank_real_complex, Nat.cast_ofNat, hv] at h
+  norm_num only [Complex.finrank_real_complex, Nat.cast_ofNat, real_volume_unitBall] at h
   simpa only [Real.rpow_neg_one, norm_sub_rev, Real.rpow_one, div_one] using h
 
 /-- The `L¹` norm of the truncated reciprocal kernel is `2πR`. -/
@@ -118,4 +138,4 @@ theorem tendsto_integral_norm_sub_inv_sub_sub_inv_closedBall {ι : Type*} {l : F
   exact setIntegral_le_integral ((hk.comp_sub_right (wn n)).sub (hk.comp_sub_right w)).norm
     (Eventually.of_forall fun _ ↦ norm_nonneg _)
 
-end Complex
+end TauCeti

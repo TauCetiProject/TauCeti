@@ -25,7 +25,7 @@ open Filter
 open scoped Topology
 
 namespace MeasureTheory
-variable {G K : Type*} [NormedAddCommGroup G] [NormedField K] [NormedSpace ℝ K]
+variable {G K : Type*} [NormedAddCommGroup G] [NormedRing K] [NormedSpace ℝ K]
   [MeasurableSpace G] [BorelSpace G] [MeasurableSpace K] [BorelSpace K]
   [MeasurableSub₂ G] [SecondCountableTopology K]
   {ν : Measure G} [ν.IsAddRightInvariant] [SFinite ν]
@@ -38,7 +38,7 @@ variable {k : G → K}
 omit [SFinite μ] [NormedSpace ℝ K] [IsLocallyFiniteMeasure ν]
   [ν.InnerRegularCompactLTTop] in
 /-- Integrating an integrable kernel against integrable weights gives an integrable product. -/
-theorem integrable_translatedKernel_mul (hk : Integrable k ν) (hmk : Measurable k)
+theorem integrable_translated_kernel_mul (hk : Integrable k ν) (hmk : Measurable k)
     {c : α → G} {v : α → K} (hc : AEMeasurable c μ)
     (hv : Integrable v μ) :
     Integrable (fun p : α × G ↦ k (p.2 - c p.1) * v p.1) (μ.prod ν) := by
@@ -46,18 +46,19 @@ theorem integrable_translatedKernel_mul (hk : Integrable k ν) (hmk : Measurable
       (μ.prod ν) :=
     ((hmk.comp_aemeasurable (measurable_snd.aemeasurable.sub hc.comp_fst)).mul
       hv.aestronglyMeasurable.aemeasurable.comp_fst).aestronglyMeasurable
+  have hi (t : α) : Integrable (fun z ↦ k (z - c t)) ν := hk.comp_sub_right (c t)
   apply (integrable_prod_iff hm).2
   constructor
-  · exact Filter.Eventually.of_forall fun t ↦
-      (((measurePreserving_sub_right ν (c t)).integrable_comp
-        hk.aestronglyMeasurable).2 hk).mul_const (v t)
-  · have heq : (fun t ↦ ∫ z : G, ‖k (z - c t) * v t‖ ∂ν) =
-        fun t ↦ (∫ z : G, ‖k z‖ ∂ν) * ‖v t‖ := by
-      funext t
-      simp_rw [norm_mul, integral_mul_const]
-      rw [integral_sub_right_eq_self (fun z : G ↦ ‖k z‖)]
-    rw [heq]
-    exact hv.norm.const_mul _
+  · exact Filter.Eventually.of_forall fun t ↦ (hi t).mul_const (v t)
+  · apply (hv.norm.const_mul (∫ z : G, ‖k z‖ ∂ν)).mono' hm.norm.integral_prod_right'
+    filter_upwards with t
+    rw [Real.norm_eq_abs, abs_of_nonneg (integral_nonneg fun _ ↦ norm_nonneg _)]
+    calc
+      _ ≤ ∫ z : G, ‖k (z - c t)‖ * ‖v t‖ ∂ν :=
+        integral_mono ((hi t).mul_const (v t)).norm ((hi t).norm.mul_const ‖v t‖)
+          (fun z ↦ norm_mul_le _ _)
+      _ = (∫ z : G, ‖k z‖ ∂ν) * ‖v t‖ := by
+        rw [integral_mul_const, integral_sub_right_eq_self (fun z : G ↦ ‖k z‖)]
 end Potential
 
 section Weighted
@@ -68,10 +69,9 @@ omit [NormedSpace ℝ K] [SecondCountableTopology K] [MeasurableSub₂ G]
   [MeasurableSpace K] [BorelSpace K] [SFinite ν]
   [IsLocallyFiniteMeasure ν] [ν.InnerRegularCompactLTTop] in
 /-- The `L¹` distance between two translates is at most twice the kernel's `L¹` norm. -/
-theorem integral_norm_kernelTranslation_sub_le (hk : Integrable k ν) (a b : G) :
+theorem integral_norm_kernel_translation_sub_le (hk : Integrable k ν) (a b : G) :
     (∫ z : G, ‖k (z - a) - k (z - b)‖ ∂ν) ≤ 2 * ∫ z : G, ‖k z‖ ∂ν := by
-  have hi (c : G) : Integrable (fun z ↦ k (z - c)) ν :=
-    ((measurePreserving_sub_right ν c).integrable_comp hk.aestronglyMeasurable).2 hk
+  have hi (c : G) : Integrable (fun z ↦ k (z - c)) ν := hk.comp_sub_right c
   calc
     (∫ z : G, ‖k (z - a) - k (z - b)‖ ∂ν) ≤ ∫ z : G, ‖k (z - a)‖ + ‖k (z - b)‖ ∂ν :=
       integral_mono ((hi a).sub (hi b)).norm ((hi a).norm.add (hi b).norm)
@@ -82,22 +82,38 @@ theorem integral_norm_kernelTranslation_sub_le (hk : Integrable k ν) (a b : G) 
         integral_sub_right_eq_self (fun z : G ↦ ‖k z‖)]
       ring
 
+omit [SFinite μ] [NormedSpace ℝ K] [IsLocallyFiniteMeasure ν]
+  [ν.InnerRegularCompactLTTop] in
+/-- The translation error weighted by an integrable function is integrable. -/
+theorem integrable_weighted_kernel_translation_sub (hk : Integrable k ν) (hmk : Measurable k)
+    {a b : α → G} {v : α → K} (ha : AEMeasurable a μ) (hb : AEMeasurable b μ)
+    (hv : Integrable v μ) :
+    Integrable (fun t ↦ (∫ z : G, ‖k (z - a t) - k (z - b t)‖ ∂ν) * ‖v t‖) μ := by
+  have hm : AEStronglyMeasurable
+      (fun t ↦ (∫ z : G, ‖k (z - a t) - k (z - b t)‖ ∂ν) * ‖v t‖) μ := by
+    have hprod : AEStronglyMeasurable
+        (fun p : α × G ↦ ‖k (p.2 - a p.1) - k (p.2 - b p.1)‖) (μ.prod ν) :=
+      ((hmk.comp_aemeasurable (measurable_snd.aemeasurable.sub ha.comp_fst)).sub
+        (hmk.comp_aemeasurable
+          (measurable_snd.aemeasurable.sub hb.comp_fst))).norm.aestronglyMeasurable
+    exact hprod.integral_prod_right'.mul hv.aestronglyMeasurable.norm
+  apply (hv.norm.const_mul (2 * ∫ z : G, ‖k z‖ ∂ν)).mono' hm
+  filter_upwards with t
+  rw [Real.norm_eq_abs,
+    abs_of_nonneg (mul_nonneg (integral_nonneg fun _ ↦ norm_nonneg _) (norm_nonneg _))]
+  exact mul_le_mul_of_nonneg_right (integral_norm_kernel_translation_sub_le hk _ _)
+    (norm_nonneg _)
+
 omit [SFinite μ] [NormedSpace ℝ K] in
 /-- Almost everywhere convergence of shifts gives weighted `L¹` translation convergence. -/
-theorem tendsto_integral_weightedKernelTranslation_sub (hk : Integrable k ν) (hmk : Measurable k)
+theorem tendsto_integral_weighted_kernel_translation_sub (hk : Integrable k ν) (hmk : Measurable k)
     {cn : ℕ → α → G} {c : α → G} {v : α → K} (hcn : ∀ n, AEMeasurable (cn n) μ)
     (hc : AEMeasurable c μ) (hv : Integrable v μ)
     (hlim : ∀ᵐ t ∂μ, Tendsto (fun n ↦ cn n t) atTop (𝓝 (c t))) :
     Tendsto (fun n ↦ ∫ t, (∫ z : G, ‖k (z - cn n t) - k (z - c t)‖ ∂ν) * ‖v t‖ ∂μ)
       atTop (𝓝 0) := by
-  have hm (n : ℕ) : AEStronglyMeasurable
-      (fun t ↦ (∫ z : G, ‖k (z - cn n t) - k (z - c t)‖ ∂ν) * ‖v t‖) μ := by
-    have hprod : AEStronglyMeasurable
-        (fun p : α × G ↦ ‖k (p.2 - cn n p.1) - k (p.2 - c p.1)‖) (μ.prod ν) :=
-      ((hmk.comp_aemeasurable (measurable_snd.aemeasurable.sub (hcn n).comp_fst)).sub
-        (hmk.comp_aemeasurable
-          (measurable_snd.aemeasurable.sub hc.comp_fst))).norm.aestronglyMeasurable
-    exact hprod.integral_prod_right'.mul hv.aestronglyMeasurable.norm
+  have hm (n : ℕ) :=
+    (integrable_weighted_kernel_translation_sub hk hmk (hcn n) hc hv).aestronglyMeasurable
   have h := tendsto_integral_of_dominated_convergence
     (fun t ↦ (2 * ∫ z : G, ‖k z‖ ∂ν) * ‖v t‖) hm (hv.norm.const_mul _)
     (fun n ↦ Filter.Eventually.of_forall fun t ↦ ?_)
@@ -106,10 +122,42 @@ theorem tendsto_integral_weightedKernelTranslation_sub (hk : Integrable k ν) (h
   · simpa using h
   · rw [Real.norm_eq_abs,
       abs_of_nonneg (mul_nonneg (integral_nonneg (fun _ ↦ norm_nonneg _)) (norm_nonneg _))]
-    exact mul_le_mul_of_nonneg_right (integral_norm_kernelTranslation_sub_le hk _ _) (norm_nonneg _)
+    exact mul_le_mul_of_nonneg_right (integral_norm_kernel_translation_sub_le hk _ _)
+      (norm_nonneg _)
   · filter_upwards [hlim] with t ht
     simpa using (hk.tendsto_integral_norm_translate_sub ht).mul_const ‖v t‖
 end Weighted
+
+omit [NormedSpace ℝ K] [SecondCountableTopology K] [MeasurableSub₂ G]
+  [MeasurableSpace K] [BorelSpace K] [SFinite ν]
+  [IsLocallyFiniteMeasure ν] [ν.InnerRegularCompactLTTop] in
+/-- For fixed shifts and weights, split the product difference into a weight error and a
+translation error, retaining the exact `L¹` constants. -/
+theorem integral_norm_translated_kernel_mul_sub_le {k : G → K}
+    (hk : Integrable k ν) (a b : G) (u v : K) :
+    (∫ z : G, ‖k (z - a) * u - k (z - b) * v‖ ∂ν) ≤
+      (∫ z : G, ‖k z‖ ∂ν) * ‖u - v‖ +
+        (∫ z : G, ‖k (z - a) - k (z - b)‖ ∂ν) * ‖v‖ := by
+  have hi (c : G) : Integrable (fun z ↦ k (z - c)) ν := hk.comp_sub_right c
+  have hu : Integrable (fun z ↦ ‖k (z - a)‖ * ‖u - v‖) ν :=
+    (hi a).norm.mul_const ‖u - v‖
+  have hv : Integrable (fun z ↦ ‖k (z - a) - k (z - b)‖ * ‖v‖) ν := by
+    simpa only [Pi.sub_apply] using ((hi a).sub (hi b)).norm.mul_const ‖v‖
+  calc
+    _ ≤ ∫ z : G, ‖k (z - a)‖ * ‖u - v‖ + ‖k (z - a) - k (z - b)‖ * ‖v‖ ∂ν := by
+      apply integral_mono (((hi a).mul_const u).sub ((hi b).mul_const v)).norm (hu.add hv)
+      intro z
+      have he : k (z - a) * u - k (z - b) * v =
+          k (z - a) * (u - v) + (k (z - a) - k (z - b)) * v := by
+        rw [mul_sub, sub_mul]
+        abel
+      simp only [Pi.sub_apply, Pi.add_apply]
+      rw [he]
+      exact (norm_add_le _ _).trans (add_le_add (norm_mul_le _ _) (norm_mul_le _ _))
+    _ = _ := by
+      rw [integral_add hu hv]
+      simp_rw [integral_mul_const]
+      rw [integral_sub_right_eq_self (fun z : G ↦ ‖k z‖)]
 
 section Estimate
 variable {α : Type*} [MeasurableSpace α] {μ : Measure α} [SFinite μ]
@@ -117,27 +165,20 @@ variable {k : G → K}
 
 omit [IsLocallyFiniteMeasure ν] [ν.InnerRegularCompactLTTop] in
 /-- A kernel potential difference is bounded by the weight discrepancy and a translation error. -/
-theorem integral_norm_kernelPotential_sub_le (hk : Integrable k ν) (hmk : Measurable k)
+theorem integral_norm_kernel_potential_sub_le (hk : Integrable k ν) (hmk : Measurable k)
     {a b : α → G} {u v : α → K} (ha : AEMeasurable a μ) (hb : AEMeasurable b μ)
     (hu : Integrable u μ) (hv : Integrable v μ) :
     (∫ z : G, ‖(∫ t, k (z - a t) * u t ∂μ) - (∫ t, k (z - b t) * v t ∂μ)‖ ∂ν) ≤
       (∫ z : G, ‖k z‖ ∂ν) * (∫ t, ‖u t - v t‖ ∂μ) +
       ∫ t, (∫ z : G, ‖k (z - a t) - k (z - b t)‖ ∂ν) * ‖v t‖ ∂μ := by
-  have hA := integrable_translatedKernel_mul hk hmk ha hu
-  have hB := integrable_translatedKernel_mul hk hmk hb hv
+  have hA := integrable_translated_kernel_mul hk hmk ha hu
+  have hB := integrable_translated_kernel_mul hk hmk hb hv
   have hD := hA.sub hB
-  have hF := (integrable_translatedKernel_mul hk hmk ha hv).sub
-    (integrable_translatedKernel_mul hk hmk hb hv)
-  have hi (c : G) : Integrable (fun z ↦ k (z - c)) ν :=
-    ((measurePreserving_sub_right ν c).integrable_comp hk.aestronglyMeasurable).2 hk
-  have hnorm : Integrable (fun t ↦ (∫ z : G, ‖k z‖ ∂ν) * ‖u t - v t‖ +
-      (∫ z : G, ‖k (z - a t) - k (z - b t)‖ ∂ν) * ‖v t‖) μ := by
-    have hf : (fun t ↦ ∫ z : G, ‖k (z - a t) * v t - k (z - b t) * v t‖ ∂ν) =
-        fun t ↦ (∫ z : G, ‖k (z - a t) - k (z - b t)‖ ∂ν) * ‖v t‖ := by
-      funext t
-      simp_rw [← sub_mul, norm_mul, integral_mul_const]
-    exact ((hu.sub hv).norm.const_mul _).add (hf ▸ hF.integral_norm_prod_left)
+  have hweighted := integrable_weighted_kernel_translation_sub hk hmk ha hb hv
+  have hweight : Integrable (fun t ↦ (∫ z : G, ‖k z‖ ∂ν) * ‖u t - v t‖) μ := by
+    simpa only [Pi.sub_apply] using (hu.sub hv).norm.const_mul (∫ z : G, ‖k z‖ ∂ν)
   calc
+    -- Minkowski moves the norm inside the parameter integral.
     _ ≤ ∫ z : G, ∫ t, ‖k (z - a t) * u t - k (z - b t) * v t‖ ∂μ ∂ν := by
       apply integral_mono_ae
       · exact (hA.swap.integral_prod_left.sub hB.swap.integral_prod_left).norm
@@ -145,45 +186,20 @@ theorem integral_norm_kernelPotential_sub_le (hk : Integrable k ν) (hmk : Measu
       · filter_upwards [hA.prod_left_ae, hB.prod_left_ae] with z hzA hzB
         rw [← integral_sub hzA hzB]
         exact norm_integral_le_integral_norm _
+    -- Fubini makes the fixed-shift estimate available pointwise in the parameter.
     _ = ∫ t, (∫ z : G, ‖k (z - a t) * u t - k (z - b t) * v t‖ ∂ν) ∂μ :=
       integral_integral_swap hD.swap.norm
+    -- Separate the weight discrepancy from the kernel translation error.
     _ ≤ ∫ t, (∫ z : G, ‖k z‖ ∂ν) * ‖u t - v t‖ +
-        (∫ z : G, ‖k (z - a t) - k (z - b t)‖ ∂ν) * ‖v t‖ ∂μ := by
-      apply integral_mono hD.integral_norm_prod_left hnorm
-      intro t
-      calc
-        _ ≤ ∫ z : G, ‖k (z - a t) * (u t - v t)‖ +
-            ‖(k (z - a t) - k (z - b t)) * v t‖ ∂ν := by
-          apply integral_mono (((hi (a t)).mul_const (u t)).sub ((hi (b t)).mul_const (v t))).norm
-            (((hi (a t)).mul_const (u t - v t)).norm.add
-              (((hi (a t)).sub (hi (b t))).mul_const (v t)).norm)
-          intro z
-          have he : k (z - a t) * u t - k (z - b t) * v t =
-              k (z - a t) * (u t - v t) + (k (z - a t) - k (z - b t)) * v t := by ring
-          simp only [Pi.sub_apply, Pi.add_apply]
-          rw [he]
-          exact norm_add_le _ _
-        _ = _ := by
-          have hw : Integrable (fun z ↦ ‖(k (z - a t) - k (z - b t)) * v t‖) ν :=
-            (((hi (a t)).sub (hi (b t))).mul_const (v t)).norm
-          rw [integral_add (((hi (a t)).mul_const (u t - v t)).norm) hw]
-          simp_rw [norm_mul, integral_mul_const]
-          rw [integral_sub_right_eq_self (fun z : G ↦ ‖k z‖)]
-    _ = _ := by
-      have hweighted : Integrable
-          (fun t ↦ (∫ z : G, ‖k (z - a t) - k (z - b t)‖ ∂ν) * ‖v t‖) μ := by
-        convert hnorm.sub ((hu.sub hv).norm.const_mul (∫ z : G, ‖k z‖ ∂ν)) using 1
-        funext t
-        simp
-      have huv : Integrable (fun t ↦ (∫ z : G, ‖k z‖ ∂ν) * ‖u t - v t‖) μ :=
-        (hu.sub hv).norm.const_mul _
-      rw [integral_add huv hweighted]
-      rw [integral_const_mul]
+        (∫ z : G, ‖k (z - a t) - k (z - b t)‖ ∂ν) * ‖v t‖ ∂μ :=
+      integral_mono hD.integral_norm_prod_left (hweight.add hweighted)
+        (fun t ↦ integral_norm_translated_kernel_mul_sub_le hk (a t) (b t) (u t) (v t))
+    _ = _ := by rw [integral_add hweight hweighted, integral_const_mul]
 end Estimate
 
 /-- Almost everywhere convergence of shifts and `L¹` convergence of weights give `L¹`
 convergence of the corresponding kernel potentials. -/
-theorem tendsto_integral_norm_kernelPotential_sub
+theorem tendsto_integral_norm_kernel_potential_sub
     {α : Type*} [MeasurableSpace α] {μ : Measure α} [SFinite μ]
     {k : G → K} (hk : Integrable k ν) (hmk : Measurable k)
     {cn : ℕ → α → G} {vn : ℕ → α → K} {c : α → G} {v : α → K}
@@ -195,9 +211,9 @@ theorem tendsto_integral_norm_kernelPotential_sub
       ‖(∫ t, k (z - cn n t) * vn n t ∂μ) - (∫ t, k (z - c t) * v t ∂μ)‖ ∂ν)
       atTop (𝓝 0) := by
   have hbound := (hvlim.const_mul (∫ z : G, ‖k z‖ ∂ν)).add
-    (tendsto_integral_weightedKernelTranslation_sub hk hmk hcn hc hv hclim)
+    (tendsto_integral_weighted_kernel_translation_sub hk hmk hcn hc hv hclim)
   apply squeeze_zero (fun n ↦ integral_nonneg (fun _ ↦ norm_nonneg _))
-    (fun n ↦ integral_norm_kernelPotential_sub_le hk hmk (hcn n) hc (hvn n) hv)
+    (fun n ↦ integral_norm_kernel_potential_sub_le hk hmk (hcn n) hc (hvn n) hv)
   simpa using hbound
 
 end MeasureTheory

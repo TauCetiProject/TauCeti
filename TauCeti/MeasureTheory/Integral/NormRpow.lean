@@ -40,8 +40,6 @@ at most `|x - Re e| ^ s`.
 * `TauCeti.setLIntegral_closedBall_enorm_sub_rpow`: the lower integral with any centre, over a
   closed ball.
 * `TauCeti.integral_norm_sub_rpow_one_sub_finrank_le`: the translated-ball bound, for `s = 1 - d`.
-* `Complex.locallyIntegrable_sub_inv`, `Complex.locallyIntegrable_inv`: the Cauchy kernels
-  `z ↦ (w - z)⁻¹` and `z ↦ z⁻¹` on `ℂ` are locally integrable (the case `d = 2`, `s = -1`).
 * `Complex.setLIntegral_closedBall_enorm_ofReal_sub_rpow_lt_top`: for `e ∈ ℂ` and `s > -1`,
   `∫⁻ x in closedBall c R, ‖(x : ℂ) - e‖ₑ ^ s < ∞` over the real line.
 
@@ -232,20 +230,6 @@ end TauCeti
 namespace Complex
 
 open MeasureTheory
-
-/-- The kernel `z ↦ (w - z)⁻¹` of the Cauchy transform is locally integrable on `ℂ`. -/
-theorem locallyIntegrable_sub_inv (w : ℂ) :
-    LocallyIntegrable (fun z : ℂ => (w - z)⁻¹) volume := by
-  refine (TauCeti.locallyIntegrable_norm_sub_rpow (mu := volume) (s := -1) (by simp) w).mono
-    (measurable_const.sub measurable_id).inv.aestronglyMeasurable (ae_of_all _ fun z => ?_)
-  rw [norm_inv, Real.norm_eq_abs, abs_of_nonneg (Real.rpow_nonneg (norm_nonneg _) _),
-    Real.rpow_neg_one]
-
-/-- The Cauchy kernel `z ↦ z⁻¹` is locally integrable on `ℂ`. -/
-theorem locallyIntegrable_inv : LocallyIntegrable (fun z : ℂ => z⁻¹) volume := by
-  convert (locallyIntegrable_sub_inv 0).neg using 1
-  ext z
-  simp
 
 /-- For a complex point `e` and an exponent `s > -1`, the kernel `x ↦ |x - e| ^ s` on the real line
 has finite lower integral over every closed interval. For `s ≤ 0` it is at most `|x - Re e| ^ s`,
