@@ -40,7 +40,8 @@ For `ψ` smooth and compactly supported in `Ω`, the product `ψ u`, extended by
 
 whose right-hand side is again in `L²`, because every term carrying `u` or `∇u` also carries a
 bounded, compactly supported factor built from `a` and `ψ`. For a Lipschitz field the conormal
-components `⟨eᵢ, a ∇ψ⟩` of the cutoff are only Lipschitz, and `div(a ∇ψ)`
+components `⟨eᵢ, a ∇ψ⟩` of the cutoff are only Lipschitz
+(`TauCeti.PDE.exists_lipschitzWith_matrixBilinearForm_gradient`), and `div(a ∇ψ)`
 (`TauCeti.PDE.divMatrixGradient`) is the sum of their directional derivatives, which exist almost
 everywhere and are bounded. The identity is checked against test functions `φ` on `ℝⁿ`, which
 suffices by density (`TauCeti.PDE.isWeakSolutionDirichlet_iff_forall_testFunction`). The term
@@ -123,7 +124,7 @@ theorem divMatrixGradient_def (a : EuclideanSpace ℝ ι → Matrix ι ι ℝ)
 
 /-- For a bounded Lipschitz field `a` and a smooth compactly supported `ψ`, every conormal
 component `y ↦ ⟨η, a(y) ∇ψ(y)⟩` is Lipschitz. -/
-private theorem exists_lipschitzWith_matrixBilinearForm_gradient
+theorem exists_lipschitzWith_matrixBilinearForm_gradient
     (hM : ∀ x, ‖matrixBilinearForm (a x)‖ ≤ M)
     (hK : LipschitzWith K fun x => matrixBilinearForm (a x)) {ψ : EuclideanSpace ℝ ι → ℝ}
     (hψ : ContDiff ℝ ∞ ψ) (hψc : HasCompactSupport ψ) (η : EuclideanSpace ℝ ι) :
