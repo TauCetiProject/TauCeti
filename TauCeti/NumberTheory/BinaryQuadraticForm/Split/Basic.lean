@@ -10,7 +10,6 @@ public import TauCeti.NumberTheory.QuadraticOrder.Split
 public import Mathlib.GroupTheory.GroupAction.Quotient
 import TauCeti.RingTheory.NormTrace.Prod
 import Mathlib.RingTheory.Norm.Basic
-import Mathlib.RingTheory.Coprime.Lemmas
 import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Ring
 
@@ -79,17 +78,13 @@ private theorem exists_isCoprime_eval_eq_zero_of_discrim_eq_one
     have hdisc : f.b ^ 2 - 4 * f.a * f.c = 1 := hf
     rw [eval_def]
     linear_combination -f.a * hdisc
-  have hgcd : 0 < Int.gcd (1 - f.b) (2 * f.a) := by
-    apply Nat.pos_of_ne_zero
-    intro h
-    exact ha (by have := (Int.gcd_eq_zero_iff.mp h).2; omega)
-  obtain ⟨g, x, y, hg, hxy, hx, hy⟩ := Int.exists_gcd_one' hgcd
-  refine ⟨x, y, Int.isCoprime_iff_gcd_eq_one.mpr hxy, ?_⟩
-  have hscale : f.eval (1 - f.b) (2 * f.a) = (g : ℤ) ^ 2 * f.eval x y := by
-    rw [hx, hy]
-    simp only [eval_def]
-    ring
-  have hg0 : (g : ℤ) ≠ 0 := by exact_mod_cast hg.ne'
+  obtain ⟨x, y, hxy, _, _, hscale⟩ :=
+    exists_isCoprime_eval_eq_gcd_sq_mul f (1 - f.b) (2 * f.a)
+      (Or.inr (mul_ne_zero (by decide) ha))
+  refine ⟨x, y, hxy, ?_⟩
+  have hg0 : (Int.gcd (1 - f.b) (2 * f.a) : ℤ) ≠ 0 := by
+    exact_mod_cast (Int.gcd_pos_of_ne_zero_right (1 - f.b)
+      (mul_ne_zero (by decide) ha)).ne'
   exact (mul_eq_zero.mp (hscale.symm.trans hval)).resolve_left (pow_ne_zero 2 hg0)
 
 private theorem exists_smul_a_eq_zero_of_discrim_eq_one
@@ -126,8 +121,7 @@ theorem properClass_eq_splitPrincipalForm_of_discrim_eq_one
     (Quotient.mk'' f : MulAction.orbitRel.Quotient SL(2, ℤ) (BinaryQuadraticForm ℤ)) =
       Quotient.mk'' splitPrincipalForm := by
   obtain ⟨γ, hγ⟩ := exists_smul_eq_splitPrincipalForm_of_discrim_eq_one f hf
-  apply Quotient.sound
-  exact MulAction.orbitRel_apply.mpr (MulAction.mem_orbit_iff.mpr ⟨γ⁻¹, by
-    rw [← hγ, inv_smul_smul]⟩)
+  rw [← hγ]
+  exact MulAction.orbitRel.Quotient.quotient_smul_eq.symm
 
 end TauCeti.BinaryQuadraticForm
