@@ -152,24 +152,10 @@ private theorem singularAugment_singularCrossProduct_zeroCube :
             ((normalizedCubicalChainComplex.{u} k).obj (cubeModel.{u} 0)) 0 0 0 rfl).hom
             (NormalizedCubicalChain.ofCube (cubeModel.{u} 0) k (upCube 0) ⊗ₜ[k]
               NormalizedCubicalChain.ofCube (cubeModel.{u} 0) k (upCube 0))))) = 1 := by
-  -- the tensor product of chain maps on a summand is the tensor product of the components
-  have e : (HomologicalComplex.tensorHom ((cubicalToSingular k).app (cubeModel.{u} 0))
-        ((cubicalToSingular k).app (cubeModel.{u} 0))).f 0
-      ((ιTensorObj ((normalizedCubicalChainComplex.{u} k).obj (cubeModel.{u} 0))
-        ((normalizedCubicalChainComplex.{u} k).obj (cubeModel.{u} 0)) 0 0 0 rfl).hom
-        (NormalizedCubicalChain.ofCube (cubeModel.{u} 0) k (upCube 0) ⊗ₜ[k]
-          NormalizedCubicalChain.ofCube (cubeModel.{u} 0) k (upCube 0))) =
-      (ιTensorObj ((singularChains k).obj (cubeModel.{u} 0))
-        ((singularChains k).obj (cubeModel.{u} 0)) 0 0 0 rfl).hom
-        (((cubicalToSingular k).app (cubeModel.{u} 0)).f 0
-            (NormalizedCubicalChain.ofCube (cubeModel.{u} 0) k (upCube 0)) ⊗ₜ[k]
-          ((cubicalToSingular k).app (cubeModel.{u} 0)).f 0
-            (NormalizedCubicalChain.ofCube (cubeModel.{u} 0) k (upCube 0))) :=
-    LinearMap.congr_fun (congrArg ModuleCat.Hom.hom
-      (HomologicalComplex.ι_tensorHom ((cubicalToSingular k).app (cubeModel.{u} 0))
-        ((cubicalToSingular k).app (cubeModel.{u} 0)) 0 0 0 rfl))
-      (NormalizedCubicalChain.ofCube (cubeModel.{u} 0) k (upCube 0) ⊗ₜ[k]
-        NormalizedCubicalChain.ofCube (cubeModel.{u} 0) k (upCube 0))
+  have e := HomologicalComplex.ι_tensorHom_apply ((cubicalToSingular k).app (cubeModel.{u} 0))
+    ((cubicalToSingular k).app (cubeModel.{u} 0)) 0 0 0 rfl
+    (NormalizedCubicalChain.ofCube (cubeModel.{u} 0) k (upCube 0))
+    (NormalizedCubicalChain.ofCube (cubeModel.{u} 0) k (upCube 0))
   have c := cubicalToSingular_app_f_zero_ofZeroCube (k := k) (upCube.{u} 0)
   rw [c] at e
   exact (congrArg (fun z ↦ singularAugment k _ ((singularCrossProduct k _ _).f 0 z)) e).trans
@@ -194,8 +180,7 @@ theorem singularAugment_cubicalCrossProductToSingular_eq (X : TopCat.{u} × TopC
   exact (cubicalTensorModelPresentation.{u} k).augment_eq_of_gen
     (εG := fun X ↦ singularAugment k (X.1 ⊗ X.2))
     (fun f x ↦ singularAugment_map (f.1 ⊗ₘ f.2) x)
-    (AcyclicModels.NatLinear.ofHom (cubicalCrossProductToSingular k) 0)
-    (AcyclicModels.NatLinear.ofHom (singularCrossProductOfCubical k) 0)
+    (cubicalCrossProductToSingular k) (singularCrossProductOfCubical k)
     (fun i ↦ (singularAugment_cubicalCrossProductToSingular_gen k i).trans
       (singularAugment_singularCrossProductOfCubical_gen k i).symm) X x
 

@@ -188,4 +188,16 @@ lemma ι_ι_associator_inv (X Y Z : CochainComplex (ModuleCat.{v} R) ℤ)
   -- spelled `(HomologicalComplex.tensorObj (X ⊗ Y) Z).X j` rather than `((X ⊗ Y) ⊗ Z).X j`.
   erw [Category.comp_id]
 
+section ChainComplexOfModules
+
+/-- The tensor product of two morphisms of chain complexes of modules on a pure tensor in a
+homogeneous summand: the tensor product of the components. -/
+lemma ι_tensorHom_apply {R : Type v} [CommRing R] {K₁ K₂ L₁ L₂ : ChainComplex (ModuleCat.{v} R) ℕ}
+    (f₁ : K₁ ⟶ L₁) (f₂ : K₂ ⟶ L₂) (p q n : ℕ) (h : p + q = n) (a : K₁.X p) (b : K₂.X q) :
+    (tensorHom f₁ f₂).f n ((ιTensorObj K₁ K₂ p q n h).hom (a ⊗ₜ[R] b)) =
+      (ιTensorObj L₁ L₂ p q n h).hom (f₁.f p a ⊗ₜ[R] f₂.f q b) :=
+  LinearMap.congr_fun (congrArg ModuleCat.Hom.hom (ι_tensorHom f₁ f₂ p q n h)) (a ⊗ₜ[R] b)
+
+end ChainComplexOfModules
+
 end HomologicalComplex
