@@ -51,10 +51,14 @@ second-order terms differ by a quadratic form that is `o(‖x' - x‖ ^ 2)`, hen
   subdifferential is nonexpansive;
 * `TauCeti.isLittleO_of_forall_mem_subdifferential_norm_sub_le` — a first-order expansion of the
   subdifferential at `x` gives a second-order Taylor expansion of `F` at `x`;
+* `TauCeti.hasGradientAt_toReal_of_forall_mem_subdifferential_norm_sub_le` — the centre `y` of a
+  first-order expansion of the subdifferential at `x` is the gradient of `F` at `x`;
 * `TauCeti.isPositive_of_forall_mem_subdifferential_norm_sub_le` — the derivative of the
   subdifferential is a positive operator;
 * `TauCeti.eq_of_forall_mem_subdifferential_norm_sub_le` — the derivative of the subdifferential
   is unique;
+* `TauCeti.apply_sub_eq_zero_of_forall_mem_subdifferential_norm_sub_le` — the derivative of the
+  subdifferential vanishes along a segment on which a subgradient is shared;
 * `TauCeti.ae_existsUnique_isPositive_forall_mem_subdifferential_norm_sub_le` — **Alexandrov's
   theorem** for the subdifferential: it is differentiable, with a unique and positive derivative,
   almost everywhere on the effective domain;
@@ -215,6 +219,33 @@ theorem isLittleO_of_forall_mem_subdifferential_norm_sub_le {x y : E} {A : E →
   rw [Real.norm_eq_abs, norm_pow, norm_norm, real_inner_comm h (A h), real_inner_comm h y]
   linarith
 
+/-- **A first-order expansion of the subdifferential gives the gradient.** Suppose `f : E → EReal`
+has subgradients at every point near `x`, and that these follow the expansion
+`y' = y + A (x' - x) + o(‖x' - x‖)` uniformly over the subdifferential at `x'`. Then the real
+representative of `f` has gradient `y` at `x`. No convexity is needed. -/
+theorem hasGradientAt_toReal_of_forall_mem_subdifferential_norm_sub_le [CompleteSpace E]
+    {x y : E} {A : E →L[ℝ] E}
+    (hne : ∀ᶠ x' in 𝓝 x, (subdifferential (innerₗ E) f x').Nonempty)
+    (hexp : ∀ ε > 0, ∀ᶠ x' in 𝓝 x, ∀ y' ∈ subdifferential (innerₗ E) f x',
+      ‖y' - y - A (x' - x)‖ ≤ ε * ‖x' - x‖) :
+    HasGradientAt (fun x' => (f x').toReal) y x := by
+  have hT := isLittleO_of_forall_mem_subdifferential_norm_sub_le hne hexp
+  -- Both `‖x' - x‖ ^ 2` and the quadratic term of the second-order expansion are `o(x' - x)`.
+  have hsq : (fun x' => ‖x' - x‖ ^ 2) =o[𝓝 x] fun x' => x' - x :=
+    (isLittleO_norm_pow_id (E' := E) one_lt_two).comp_tendsto
+      (tendsto_sub_nhds_zero_iff.2 tendsto_id)
+  have hq : (fun x' => ⟪A (x' - x), x' - x⟫_ℝ / 2) =o[𝓝 x] fun x' => x' - x := by
+    refine (IsBigO.of_bound (‖A‖ / 2) (Eventually.of_forall fun x' => ?_)).trans_isLittleO hsq
+    rw [norm_div, Real.norm_two, norm_pow, norm_norm, div_mul_eq_mul_div, mul_comm (‖A‖) _]
+    gcongr
+    calc ‖⟪A (x' - x), x' - x⟫_ℝ‖ ≤ ‖A (x' - x)‖ * ‖x' - x‖ := norm_inner_le_norm _ _
+      _ ≤ ‖A‖ * ‖x' - x‖ * ‖x' - x‖ := by gcongr; exact A.le_opNorm _
+      _ = ‖x' - x‖ ^ 2 * ‖A‖ := by ring
+  rw [hasGradientAt_iff_hasFDerivAt]
+  refine HasFDerivAt.of_isLittleO (((hT.trans hsq).add hq).congr_left fun x' => ?_)
+  rw [InnerProductSpace.toDual_apply_apply]
+  ring
+
 /-- The comparison behind `isPositive_of_forall_mem_subdifferential_norm_sub_le`: under its
 hypotheses, `⟪A b, a⟫ - ⟪A a, b⟫ + ⟪A b, b⟫ ≥ 0` for all `a` and `b`. The second-order expansion
 of `F = toReal ∘ f` about `x`, compared with the subgradient inequality at `x + t • a` in the
@@ -326,6 +357,40 @@ theorem eq_of_forall_mem_subdifferential_norm_sub_le {x y : E} {A B : E →L[ℝ
     have h := (A - B).hasFDerivAt.comp x ((hasFDerivAt_id x).sub_const x)
     rwa [ContinuousLinearMap.comp_id] at h
   exact sub_eq_zero.1 (h₁.unique h₀)
+
+/-- **The derivative of the subdifferential kills the direction of a flat segment.** Let
+`f : E → EReal` be convex, and let `y` be a subgradient of `f` at both `x₁` and `x₂`. If the
+subgradients of `f` near `x₁` follow the expansion `y' = y + A (x' - x₁) + o(‖x' - x₁‖)`, then
+`A (x₂ - x₁) = 0`. So when `x₁ ≠ x₂` the operator `A` is singular: a point at which the
+derivative of the subdifferential is invertible shares none of its subgradients with another
+point. -/
+theorem apply_sub_eq_zero_of_forall_mem_subdifferential_norm_sub_le
+    (hf : Convex ℝ {p : E × ℝ | f p.1 ≤ p.2}) {x₁ x₂ y : E} {A : E →L[ℝ] E}
+    (h₁ : y ∈ subdifferential (innerₗ E) f x₁) (h₂ : y ∈ subdifferential (innerₗ E) f x₂)
+    (hexp : ∀ ε > 0, ∀ᶠ x' in 𝓝 x₁, ∀ y' ∈ subdifferential (innerₗ E) f x',
+      ‖y' - y - A (x' - x₁)‖ ≤ ε * ‖x' - x₁‖) :
+    A (x₂ - x₁) = 0 := by
+  set v := x₂ - x₁
+  -- `y` is a subgradient at every point `x₁ + t • v` of the segment, so the expansion at a small
+  -- `t > 0` gives `t * ‖A v‖ ≤ ε * (t * ‖v‖)`.
+  have hε : ∀ ε > 0, ‖A v‖ ≤ ε * ‖v‖ := by
+    intro ε hε
+    have hp : Tendsto (fun t : ℝ => x₁ + t • v) (𝓝[>] 0) (𝓝 x₁) := by
+      have : Continuous fun t : ℝ => x₁ + t • v := by fun_prop
+      simpa using (this.tendsto 0).mono_left nhdsWithin_le_nhds
+    obtain ⟨t, ht, ht0, ht1⟩ := ((hp.eventually (hexp ε hε)).and
+      (Ioc_mem_nhdsGT (zero_lt_one : (0 : ℝ) < 1))).exists
+    have hy := (convex_setOf_mem_subdifferential (innerₗ E) hf y).add_smul_sub_mem h₁ h₂
+      ⟨ht0.le, ht1⟩
+    have h := ht y hy
+    rw [add_sub_cancel_left, sub_self, zero_sub, norm_neg, map_smul, norm_smul, norm_smul,
+      Real.norm_of_nonneg ht0.le] at h
+    exact le_of_mul_le_mul_left (by linarith) ht0
+  refine norm_le_zero_iff.1 (le_of_forall_pos_le_add fun δ hδ => ?_)
+  calc ‖A v‖ ≤ δ / (‖v‖ + 1) * ‖v‖ := hε _ (by positivity)
+    _ ≤ 0 + δ := by
+      rw [zero_add, div_mul_eq_mul_div, div_le_iff₀ (by positivity)]
+      nlinarith [norm_nonneg v]
 
 /-- The expansion of the subdifferential at `x` obtained by inverting that of the resolvent. Let
 `g` agree with the resolvent, `g (x' + y') = x'` whenever `y' ∈ ∂f(x')`, let `y ∈ ∂f(x)`, and let
