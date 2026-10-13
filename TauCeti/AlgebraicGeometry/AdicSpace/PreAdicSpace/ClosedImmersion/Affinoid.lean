@@ -12,16 +12,20 @@ public import TauCeti.AlgebraicGeometry.AdicSpace.PreAdicSpace.ClosedImmersion.B
 # The factorisation property of closed immersions, for affinoid sources
 
 Let `(A, A⁺)` and `(B, B⁺)` be Huber pairs with `A` and `B` complete and Hausdorff, and `J ⊆ A` an
-ideal. A morphism `Spa(B, B⁺) ⟶ Spa(A, A⁺)` whose global-sections map kills `J` factors through
-the quotient morphism `Spa(A ⧸ J, (A ⧸ J)⁺) ⟶ Spa(A, A⁺)`. This is the existence half of the
-factorisation property of closed immersions, for affinoid sources: the global-sections map factors
-through `A ⧸ J`, and a morphism of affinoid pre-adic spectra is determined by its global-sections
-map (`TauCeti.ValuationSpectrum.presentationLimitPreAdicSpace_hom_ext`).
+ideal, and suppose the structure presheaves of `Spa(B, B⁺)` and `Spa(A ⧸ J, (A ⧸ J)⁺)` are
+sheaves. A morphism `Spa(B, B⁺) ⟶ Spa(A, A⁺)` whose global-sections map kills `J`, and carries
+open ideals to ideals generating open ideals, factors through the quotient morphism
+`Spa(A ⧸ J, (A ⧸ J)⁺) ⟶ Spa(A, A⁺)`. This is the existence half of the factorisation property of
+closed immersions, for affinoid sources: the global-sections map factors through `A ⧸ J`, and a
+morphism of affinoid pre-adic spectra is determined by its global-sections map
+(`TauCeti.ValuationSpectrum.presentationLimitPreAdicSpace_hom_ext`).
 
 ## Main results
 
-* `TauCeti.ValuationSpectrum.exists_comp_presentationLimitPreAdicSpaceQuotientComap_eq`: a
-  morphism whose global-sections map kills `J` factors through the quotient morphism by `J`.
+* `TauCeti.ValuationSpectrum.exists_comp_presentationLimitPreAdicSpaceQuotientComap_eq`:
+  when the structure presheaves of the source and of `Spa(A ⧸ J, (A ⧸ J)⁺)` are sheaves, a
+  morphism whose global-sections map kills `J` and carries open ideals to ideals generating open
+  ideals factors through the quotient morphism by `J`.
 
 ## References
 

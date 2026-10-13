@@ -34,7 +34,8 @@ sections.
 * `TauCeti.ValuationSpectrum.presentationLimitHomRingHom_presentationLimitPreAdicSpaceComap`: the
   global-sections map of `Spa(φ)` is `φ`.
 * `TauCeti.ValuationSpectrum.presentationLimitPreAdicSpaceComap_presentationLimitHomRingHom`: a
-  morphism is `Spa` of its global-sections map.
+  morphism is `Spa` of its global-sections map, when that map carries open ideals to ideals
+  generating open ideals.
 
 ## References
 
