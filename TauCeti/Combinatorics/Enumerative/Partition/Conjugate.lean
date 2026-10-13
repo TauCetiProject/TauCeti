@@ -16,9 +16,8 @@ transposing its Young diagram, and proves that conjugation is an involution
 (`Nat.Partition.conjugate_conjugate`).  This file records the parts and the Young diagram of the
 conjugate, and proves that conjugation reverses the dominance order.
 
-The reversal theorem is the remaining part of the “Orders on partitions” target in Layer 0 of
-the symmetric-group and Schur–Weyl roadmap.  It supplies the order duality used later for the
-row/column symmetry of Specht modules and permutation modules.
+The reversal theorem supplies the order duality behind the row/column symmetry of Specht
+modules and permutation modules.
 
 The Young diagrams of the two extreme partitions, which the duality exchanges, are recorded
 with the partition–diagram correspondence in `TauCeti/Combinatorics/Young/Partitions.lean`
@@ -161,16 +160,18 @@ end TauCeti
 /-- The Young diagram of the conjugate partition is the transposed Young diagram. -/
 @[simp]
 theorem YoungDiagram.ofPartition_conjugate {n : ℕ} (μ : n.Partition) :
-    YoungDiagram.ofPartition μ.conjugate = (YoungDiagram.ofPartition μ).transpose :=
-  YoungDiagram.ofPartition_toPartition _
+    YoungDiagram.ofPartition μ.conjugate = (YoungDiagram.ofPartition μ).transpose := by
+  rw [Nat.Partition.conjugate]
+  exact YoungDiagram.ofPartition_toPartition _
 
 namespace Nat.Partition
 
 /-- The parts of the conjugate partition are the row lengths of the transposed diagram. -/
 @[simp]
 theorem conjugate_parts {n : ℕ} (μ : n.Partition) :
-    μ.conjugate.parts = ((YoungDiagram.ofPartition μ).transpose.rowLens : Multiset ℕ) :=
-  YoungDiagram.toPartition_parts _ _
+    μ.conjugate.parts = ((YoungDiagram.ofPartition μ).transpose.rowLens : Multiset ℕ) := by
+  rw [Nat.Partition.conjugate]
+  exact YoungDiagram.toPartition_parts _ _
 
 -- Not `@[simp]`: with `conjugate_parts` in the default simp set the left-hand side is no
 -- longer in simp normal form (the parts reduce to the transposed row lengths before sorting).

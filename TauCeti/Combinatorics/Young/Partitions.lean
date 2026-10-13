@@ -17,11 +17,19 @@ Mathlib relates partitions of `n` and Young diagrams with `n` cells by
 parts of a partition, and `YoungDiagram.toPartition`, which reads the row lengths of a sized
 diagram back as a partition; these are inverse to each other (`YoungDiagram.equivPartition`).
 
-This file adds the row and column lengths of `YoungDiagram.ofPartition` (individually and for the
-special shapes `Nat.Partition.ones`, `Nat.Partition.indiscrete` and
-`Nat.Partition.singletonSecondRow`), the parts of `YoungDiagram.toPartition`, the injectivity of
-`YoungDiagram.ofPartition`, and the **shape partition** `TauCeti.shapePartition` of a Young
-diagram, a partition of `μ.card` itself rather than of a number equal to it.
+This file adds the individual row lengths and the first-column length of
+`YoungDiagram.ofPartition`, row- and column-length bounds for the special shapes
+`Nat.Partition.ones`, `Nat.Partition.indiscrete` and `Nat.Partition.singletonSecondRow`, the parts
+of `YoungDiagram.toPartition`, the injectivity of `YoungDiagram.ofPartition`, and the
+**shape partition** `TauCeti.shapePartition` of a Young diagram, a partition of `μ.card` itself
+rather than of a number equal to it.
+
+## References
+
+* [Mathlib PR #39722](https://github.com/leanprover-community/mathlib4/pull/39722)
+  (Kevin Gomez), which added `Mathlib/Combinatorics/Enumerative/Partition/YoungDiagram.lean`:
+  the `YoungDiagram.ofPartition`/`YoungDiagram.toPartition` correspondence,
+  `YoungDiagram.equivPartition` and `Nat.Partition.conjugate` that this file builds on.
 -/
 
 public section
