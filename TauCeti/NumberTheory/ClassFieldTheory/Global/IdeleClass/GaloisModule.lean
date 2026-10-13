@@ -89,14 +89,7 @@ theorem ideleClassLevelEquiv_ρ (τ : Gal(E/F)) (c : (ideleClassRep F E).V) :
     (QuotientGroup.mk_surjective (Additive.toMul c)).imp fun _ ha ↦ congrArg Additive.ofMul ha
   -- `e u` acts on the class of an idele `a` of `E` through the adele ring of `E`, which is how `u`
   -- acts on the class of `a` read as an idele of `Kˢ`.
-  have hρ : (ideleClassRep F E).ρ (e u) (Additive.ofMul (a : IdeleClassGroup (𝓞 E) E)) =
-      Additive.ofMul ((Units.map (GlobalNumberFields.adeleEquiv E E (e u).toRingEquiv).toMonoidHom
-        a : IdeleGroup (𝓞 E) E) : IdeleClassGroup (𝓞 E) E) :=
-    (Rep.ofMulDistribMulAction_ρ_apply_apply (e u) _).trans <| congrArg Additive.ofMul <|
-      (GlobalNumberFields.ideleClass_smul_mk (e u) a).trans <| congrArg QuotientGroup.mk <|
-        (GlobalNumberFields.idele_smul_def (e u) a).trans <| Units.ext <|
-          GlobalNumberFields.adeleGaloisAction_apply F E (e u) (a : AdeleRing (𝓞 E) E)
-  rw [hρ]
+  rw [ideleClassRep_ρ_mk]
   exact Subtype.ext ((ideleClassLevelEquiv_units_map_adeleEquiv hE (u : AbsoluteGaloisGroup K)
     (e u).toRingEquiv (he u) a).trans (L.rep_ρ_mk_apply_coe _ u _).symm)
 
@@ -122,6 +115,25 @@ def ideleClassCohomologyEquiv (n : ℕ) :
     (fun τ ↦ LinearMap.ext (L.ideleClassLevelEquiv_ρ hE he τ))
     n).toLinearEquiv.toAddEquiv.symm
 
+/-- `ideleClassCohomologyEquiv` is the inverse of the isomorphism `groupCohomology.mapIso` along
+`e⁻¹` and `ideleClassLevelEquiv`. -/
+@[simp]
+theorem ideleClassCohomologyEquiv_apply (n : ℕ) (x : L.H (globalFormation K) n) :
+    L.ideleClassCohomologyEquiv hE he n x =
+      (groupCohomology.mapIso e.symm (ideleClassLevelEquiv hE).toIntLinearEquiv
+        (fun τ ↦ LinearMap.ext (L.ideleClassLevelEquiv_ρ hE he τ)) n).inv x :=
+  (rfl)
+
+/-- The inverse of `ideleClassCohomologyEquiv` is the isomorphism `groupCohomology.mapIso` along
+`e⁻¹` and `ideleClassLevelEquiv`. -/
+@[simp]
+theorem ideleClassCohomologyEquiv_symm_apply (n : ℕ)
+    (x : groupCohomology (ideleClassRep F E) n) :
+    (L.ideleClassCohomologyEquiv hE he n).symm x =
+      (groupCohomology.mapIso e.symm (ideleClassLevelEquiv hE).toIntLinearEquiv
+        (fun τ ↦ LinearMap.ext (L.ideleClassLevelEquiv_ρ hE he τ)) n).hom x :=
+  (rfl)
+
 variable [NumberField F]
 
 /-- **The Tate cohomology of a layer of the idele-class formation is the Tate cohomology of the
@@ -131,6 +143,22 @@ idele classes**: if `E` is the fixed field of the top subgroup of the layer and
 def ideleClassTateCohomologyIso (n : ℤ) :
     L.TateH (globalFormation K) n ≅ tateCohomology (ideleClassRep F E) n :=
   (TateCohomology.mapIso (L.isIntertwiningMap_ideleClassLevelEquiv hE he) n).symm
+
+/-- The forward map of `ideleClassTateCohomologyIso` is the inverse of the isomorphism
+`TateCohomology.mapIso` along `e⁻¹` and `ideleClassLevelEquiv`. -/
+@[simp]
+theorem ideleClassTateCohomologyIso_hom (n : ℤ) :
+    (L.ideleClassTateCohomologyIso hE he n).hom =
+      (TateCohomology.mapIso (L.isIntertwiningMap_ideleClassLevelEquiv hE he) n).inv :=
+  (rfl)
+
+/-- The inverse of `ideleClassTateCohomologyIso` is the isomorphism `TateCohomology.mapIso` along
+`e⁻¹` and `ideleClassLevelEquiv`. -/
+@[simp]
+theorem ideleClassTateCohomologyIso_inv (n : ℤ) :
+    (L.ideleClassTateCohomologyIso hE he n).inv =
+      (TateCohomology.mapIso (L.isIntertwiningMap_ideleClassLevelEquiv hE he) n).hom :=
+  (rfl)
 
 include hE he in
 /-- **The Herbrand quotient of a layer of the idele-class formation is that of the idele
