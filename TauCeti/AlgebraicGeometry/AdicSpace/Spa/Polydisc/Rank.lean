@@ -5,8 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.NormedField
-public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Polydisc.DiscPoint
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Polydisc.NestedDiscPoint
 public import TauCeti.RingTheory.Valuation.ValuativeRel.RankLeOne
 public import Mathlib.Topology.Algebra.Valued.NormedValued
@@ -81,9 +79,9 @@ theorem isRankLeOne_classicalPoint (x : spa (powerBoundedSubring K)) (a : Fin k 
   letI := (classicalPoint x a ha).1.toValuativeRel
   haveI : ((NormedField.valuation (K := K)).comap (evalAtHom a ha)).Compatible :=
     ⟨fun f g ↦ by
-      rw [classicalPoint_vle, vle_iff_norm_le_of_mem_spa x.2, Valuation.comap_apply,
-        Valuation.comap_apply, NormedField.valuation_apply, NormedField.valuation_apply,
-        ← NNReal.coe_le_coe, coe_nnnorm, coe_nnnorm]⟩
+      simpa only [Valuation.comap_apply, NormedField.valuation_apply, ← NNReal.coe_le_coe,
+        coe_nnnorm] using (classicalPoint_vle x a ha f g).trans
+          (vle_iff_norm_le_of_mem_spa x.2 _ _)⟩
   ValuativeRel.IsRankLeOne.of_compatible_mulArchimedean
     ((NormedField.valuation (K := K)).comap (evalAtHom a ha))
 
