@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.ModularForms.EisensteinSeries.Subspace
-public import TauCeti.NumberTheory.ModularForms.EisensteinSeries.Congruence
+public import TauCeti.NumberTheory.ModularForms.EisensteinSeries.Projection
 import TauCeti.Data.ZMod.Divisibility
 
 /-!
@@ -215,17 +215,31 @@ cusp forms of the same nebentypus, in weight at least three. -/
 theorem disjoint_eisensteinSubspace_range_cuspToModFormCharSpace (hk : 3 ≤ (k : ℤ)) :
     Disjoint (eisensteinSubspace χ hk)
       (LinearMap.range (cuspToModFormCharSpace (k : ℤ) χ)) := by
-  rw [Submodule.disjoint_def]
-  intro f hfE hfS
+  exact (isCompl_congruenceEisensteinSubspace_charSpace_range_cuspToModFormCharSpace
+    hk χ).disjoint.mono_left (eisensteinSubspace_le_congruenceEisensteinSubspace χ hk)
+
+/-- The constant terms at all cusps determine an element of the prescribed-nebentypus
+Eisenstein subspace. This is the injectivity half of identifying that subspace with the
+constant-term data; the converse spanning statement is separate. -/
+theorem constantTermsOnEisensteinSubspace_injective (hk : 3 ≤ (k : ℤ)) :
+    Function.Injective fun f : eisensteinSubspace χ hk ↦
+      ModularForm.constantTerms (Γ := (Gamma1 N).map (mapGL ℝ)) (k := (k : ℤ))
+        (f : modFormCharSpace (k : ℤ) χ) := by
+  intro f g hfg
   apply Subtype.ext
-  have hfCE := eisensteinSubspace_le_congruenceEisensteinSubspace χ hk hfE
-  have hfC : (f : ModularForm ((Gamma1 N).map (mapGL ℝ)) (k : ℤ)) ∈
-      cuspFormSubmodule ((Gamma1 N).map (mapGL ℝ)) (k : ℤ) := by
-    obtain ⟨g, hg⟩ := hfS
-    rw [← hg, coe_cuspToModFormCharSpace]
-    exact CuspForm.isCuspForm_toModularFormₗ g.1
-  exact (Submodule.disjoint_def.mp
-    (disjoint_congruenceEisensteinSubspace_cuspFormSubmodule (Gamma_le_Gamma1 N) hk)) _
-      hfCE hfC
+  have hker : (f : modFormCharSpace (k : ℤ) χ) - g ∈
+      LinearMap.ker (ModularForm.constantTerms.comp (modFormCharSpace (k : ℤ) χ).subtype) := by
+    rw [LinearMap.mem_ker, LinearMap.comp_apply]
+    -- Expose the character-space coercion so linearity acts on the subtraction.
+    change ModularForm.constantTerms
+      (Γ := (Gamma1 N).map (mapGL ℝ)) (k := (k : ℤ))
+      ((f : modFormCharSpace (k : ℤ) χ) - g) = 0
+    rw [map_sub, sub_eq_zero]
+    exact hfg
+  rw [← range_cuspToModFormCharSpace_eq_ker_constantTerms] at hker
+  have hfE : (f : modFormCharSpace (k : ℤ) χ) - g ∈ eisensteinSubspace χ hk :=
+    Submodule.sub_mem _ f.2 g.2
+  exact sub_eq_zero.mp ((Submodule.disjoint_def.mp
+    (disjoint_eisensteinSubspace_range_cuspToModFormCharSpace χ hk)) _ hfE hker)
 
 end TauCeti

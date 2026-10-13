@@ -281,7 +281,7 @@ private theorem sum_range_norm_coeff_logDeriv_mul_pow_succ_le (f : ℂ⟦X⟧) (
       (∑' n : ℕ, n * ‖coeff n f‖ * r ^ n) /
         (1 - ∑' n : ℕ, ‖coeff (n + 1) f‖ * r ^ (n + 1)) := by
   set t := ∑' n : ℕ, ‖coeff (n + 1) f‖ * r ^ (n + 1)
-  set u : ℕ → ℝ := fun m ↦ ‖coeff m (logDeriv f)‖ * r ^ (m + 1) with hu
+  set u : ℕ → ℝ := fun m ↦ ‖coeff m (logDeriv f)‖ * r ^ (m + 1)
   set c : ℕ → ℝ := fun j ↦ ‖coeff j f‖ * r ^ j with hc
   have hsum' : Summable fun n : ℕ ↦ ((n + 1 : ℕ) : ℝ) * ‖coeff (n + 1) f‖ * r ^ (n + 1) :=
     (summable_nat_add_iff 1).mpr hsum

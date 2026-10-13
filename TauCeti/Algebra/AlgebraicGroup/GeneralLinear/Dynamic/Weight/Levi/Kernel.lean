@@ -58,7 +58,8 @@ variable (R : Type u) [CommRing R] {N : ℕ}
 
 /-- A represented weight-parabolic point lies in the relative weight-unipotent subgroup exactly
 when its represented dynamic limit is the identity of the weight-Levi point group. -/
-@[simp]
+-- Not `@[simp]`: the simp normal form of this membership is the ambient one given by
+-- `mem_weightUnipotentInParabolicPointsSubgroup_iff`.
 theorem mem_weightUnipotentInParabolicPointsSubgroup_iff_limit_eq_one
     (w : Fin N → ℤ) (A : CommAlgCat.{v} R)
     (g : HopfAlgebra.points (R := R) (H := weightParabolicCoordinateHopfAlgebra R w) A) :

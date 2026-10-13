@@ -109,7 +109,6 @@ theorem integral_ballPoissonKernel (hn : n ≠ 0) {x : EuclideanSpace ℝ (Fin n
     rw [mem_closedBall_zero_iff, hzθ, hθ] at hz
     exact hx.not_ge hz
   have hω := volume_real_unitBall_pos n
-  have hn' : (0 : ℝ) < n := by exact_mod_cast Nat.pos_of_ne_zero hn
   rw [integral_congr_ae (ae_of_all _ hswap), hu.integral_toSphere_eq (norm_nonneg x),
     Measure.toSphere_real_apply_univ, finrank_euclideanSpace_fin, ballPoissonKernel_def]
   simp only [norm_zero, zero_sub, norm_neg, hθ, one_pow, smul_eq_mul]

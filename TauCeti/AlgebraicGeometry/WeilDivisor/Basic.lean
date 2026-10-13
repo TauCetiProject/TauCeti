@@ -145,7 +145,7 @@ lemma isEffective_iff (D : WeilDivisor X) : IsEffective D ↔ ∀ x, 0 ≤ coeff
 
 @[simp]
 lemma isEffective_zero : IsEffective (0 : WeilDivisor X) := by
-  intro x
+  intro _
   simp
 
 lemma IsEffective.add {D E : WeilDivisor X} (hD : IsEffective D) (hE : IsEffective E) :

@@ -31,9 +31,6 @@ generation then identifies it with a finite-rank free abelian group.
 
 * J. S. Milne, *Algebraic Groups* (2017), Definitions 12.14 and 12.17.
 * W. C. Waterhouse, *Introduction to Affine Group Schemes*, Chapter 2.
-
-This completes the intrinsic characterization of tori required by Layer 4, "Tori: split and
-non-split", of the ReductiveGroups roadmap.
 -/
 
 public section

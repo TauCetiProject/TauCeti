@@ -133,7 +133,7 @@ theorem IsSuspension.taylor_eq {G : InternalGrading R A}
   intro n z
   have hn : F ∘ₗ ReducedTensorWords.of R A n =
       F' ∘ₗ ReducedTensorWords.of R A n := by
-    apply G.piTensorProduct_ext
+    apply InternalGrading.piTensorProduct_ext (fun _ ↦ G)
     intro q
     let d : ℕ → ℤ := fun i ↦ if h : i < n.1 then (q ⟨i, h⟩).1 else 0
     let x : ℕ → A := fun i ↦ if h : i < n.1 then (q ⟨i, h⟩).2 else 0
@@ -512,7 +512,7 @@ theorem IsSuspension.comp_self_eq_zero_iff_forall_stasheffSum_eq_zero {G : Inter
     change b ∘ₗ b = 0
     rw [hbSquare.eq_zero_iff_taylorComponent_eq_zero]
     intro n
-    apply G.piTensorProduct_ext
+    apply InternalGrading.piTensorProduct_ext (fun _ ↦ G)
     intro q
     let d : ℕ → ℤ := fun i ↦ if h : i < n.1 then (q ⟨i, h⟩).1 else 0
     let x : ℕ → A := fun i ↦ if h : i < n.1 then (q ⟨i, h⟩).2 else 0

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.FractionalIdeal.Operations
+public import Mathlib.RingTheory.ClassGroup.Basic
 
 /-!
 # Operations on fractional ideals
@@ -13,7 +14,12 @@ public import Mathlib.RingTheory.FractionalIdeal.Operations
 Two facts about Mathlib's `FractionalIdeal.ringEquivOfRingEquiv`, the transport of fractional
 ideals along a ring equivalence `f : R ≃+* R'` extended to fraction rings, and two facts about
 scaling a fractional ideal by a unit: the principal fractional ideal of a unit is a unit, and
-scaling by a unit is cancelled by scaling by its inverse.
+scaling by a unit is cancelled by scaling by its inverse. The principal-ideal map has the base-ring
+units as its kernel and is unchanged by negation of a generator.
+
+The principal-map kernel is adapted from Michael Stoll's elliptic-curves formalisation
+(`github.com/MichaelStollBayreuth/EllipticCurves`, `EllipticCurves/Mathlib/FractionalIdeal.lean`
+at pin `66889eada51a`, Apache 2.0, by Michael Stoll).
 
 ## Main results
 
@@ -21,6 +27,8 @@ scaling by a unit is cancelled by scaling by its inverse.
   fractional ideals of two fraction rings of `R` is transport along the identity.
 * `FractionalIdeal.ringEquivOfRingEquiv_coeIdeal`: transport sends the fractional ideal of an ideal
   `I` to that of `Ideal.map f I`.
+* `FractionalIdeal.toPrincipalIdeal_eq_one_iff`: the principal-map kernel consists of base units.
+* `FractionalIdeal.toPrincipalIdeal_neg`: negating a generator preserves its principal ideal.
 * `FractionalIdeal.isUnit_spanSingleton`: the principal fractional ideal of a unit is a unit.
 * `FractionalIdeal.spanSingleton_inv_mul_cancel_left`: scaling by a unit and then by its inverse
   returns the fractional ideal.
@@ -115,5 +123,23 @@ theorem spanSingleton_inv_mul_cancel_left (x : Pˣ) (I : FractionalIdeal S P) :
   rw [← mul_assoc, spanSingleton_mul_spanSingleton, Units.inv_mul, spanSingleton_one, one_mul]
 
 end SpanSingleton
+
+/-- The kernel of the principal-ideal map is the image of `Rˣ`: `toPrincipalIdeal R K u` is trivial
+exactly when `u` comes from a unit of `R`. This is the left end of the ideal class exact
+sequence. -/
+lemma toPrincipalIdeal_eq_one_iff {R : Type*} [CommRing R]
+    {K : Type*} [Field K] [Algebra R K] [IsFractionRing R K] (u : Kˣ) :
+    toPrincipalIdeal R K u = 1 ↔ ∃ a : Rˣ, Units.map (algebraMap R K : R →* K) a = u := by
+  rw [← Units.val_inj, coe_toPrincipalIdeal, Units.val_one, ← coeToSubmodule_inj,
+    coe_spanSingleton, coe_one, Submodule.span_singleton_eq_one_iff]
+  exact ⟨fun ⟨a, ha⟩ ↦ ⟨a, Units.ext ha.symm⟩, fun ⟨a, ha⟩ ↦ ⟨a, by rw [← ha]; rfl⟩⟩
+
+/-- Negating a generator preserves its principal ideal, because `-1` is a unit of the base ring. -/
+@[simp] theorem toPrincipalIdeal_neg {R : Type*} [CommRing R]
+    {K : Type*} [Field K] [Algebra R K] [IsFractionRing R K] (x : Kˣ) :
+    toPrincipalIdeal R K (-x) = toPrincipalIdeal R K x := by
+  have hneg : toPrincipalIdeal R K (-1 : Kˣ) = 1 :=
+    (toPrincipalIdeal_eq_one_iff _).mpr ⟨-1, Units.ext (by simp)⟩
+  rw [← neg_one_mul x, map_mul, hneg, one_mul]
 
 end FractionalIdeal

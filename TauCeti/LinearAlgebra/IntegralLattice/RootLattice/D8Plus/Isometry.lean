@@ -7,7 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.IntegralLattice.Overlattice.OrthogonalQuotient.Quadratic
 public import TauCeti.LinearAlgebra.IntegralLattice.RootLattice.D8Plus.Basic
-public import TauCeti.LinearAlgebra.IntegralLattice.RootLattice.TypeE
+public import TauCeti.LinearAlgebra.IntegralLattice.RootLattice.TypeE.Basic
 public import TauCeti.LinearAlgebra.RootSystem.E8Coordinates
 
 import Mathlib.Algebra.BigOperators.Field

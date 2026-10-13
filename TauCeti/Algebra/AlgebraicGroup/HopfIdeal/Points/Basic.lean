@@ -36,8 +36,8 @@ the point factors uniquely through the quotient algebra.
   cocommutative, the cut-out point subgroup is commutative.
 * `CommHopfAlgCat.mem_quotientPointsSubgroup_map_iff`: membership in the point subgroup cut out
   by an ideal mapped along a morphism is detected after pullback.
-* `CommHopfAlgCat.mapDomainMulEquiv_mem_quotientPointsSubgroup_comapOfSurjective_iff`: transport of
-  quotient-subgroup membership along a bialgebra equivalence.
+* `BialgHom.mapDomain_mem_quotientPointsSubgroup_comapOfSurjective_iff`: transport of
+  quotient-subgroup membership along a surjective bialgebra morphism.
 
 ## Implementation notes
 
@@ -53,7 +53,7 @@ open scoped commutatorElement
 
 namespace TauCeti
 
-universe u v w
+universe u v v' w
 
 namespace CommHopfAlgCat
 
@@ -122,7 +122,7 @@ lemma liftQuotientPoint_mk (H : _root_.CommHopfAlgCat.{v} R)
     (I : HopfIdeal R H) (A : CommAlgCat.{w} R)
     (g : HopfAlgebra.points (R := R) (H := H) A)
     (hg : ∀ h : H, h ∈ I → g.ofConv h = 0) (h : H) :
-    ((liftQuotientPoint H I A g hg).ofConv) (Ideal.Quotient.mkₐ R I.toIdeal h) =
+    ((liftQuotientPoint H I A g hg).ofConv) (Ideal.Quotient.mk I.toIdeal h) =
       g.ofConv h :=
   AlgHom.congr_fun (Ideal.Quotient.liftₐ_comp I.toIdeal g.ofConv
     fun h hh ↦ hg h ((HopfIdeal.mem_toIdeal (I := I)).mp hh)) h
@@ -138,7 +138,7 @@ lemma quotientPointsHom_liftQuotientPoint (H : _root_.CommHopfAlgCat.{v} R)
   apply WithConv.ofConv_injective
   apply AlgHom.ext
   intro h
-  rw [quotientPointsHom_apply_apply, liftQuotientPoint_mk]
+  rw [quotientPointsHom_apply_apply, Ideal.Quotient.mkₐ_eq_mk, liftQuotientPoint_mk]
 
 /-- Evaluating the commutator of two lifted quotient points on a quotient class gives
 the commutator of the original ambient points on its representative. -/
@@ -241,14 +241,15 @@ theorem mem_quotientPointsSubgroup_map_iff
       exact Ideal.mem_comap.mpr (RingHom.mem_ker.mpr hx')
     exact fun y hy ↦ RingHom.mem_ker.mp (hle (HopfIdeal.mem_toIdeal.mpr hy))
 
-/-- Precomposition by a bijective bialgebra morphism identifies the points cut out by a Hopf
+/-- Precomposition by a surjective bialgebra morphism identifies the points cut out by a Hopf
 ideal with the points cut out by its pullback. -/
-theorem mapDomainMulEquiv_mem_quotientPointsSubgroup_comapOfSurjective_iff
-    {H K : Type v} [CommRing H] [CommRing K] [HopfAlgebra R H] [HopfAlgebra R K]
-    (f : H →ₐc[R] K) (hinj : Function.Injective f) (hsurj : Function.Surjective f)
+-- Not `@[simp]`: `AlgHom.mapDomain_apply` rewrites the left-hand side first, so simpNF rejects it.
+theorem _root_.BialgHom.mapDomain_mem_quotientPointsSubgroup_comapOfSurjective_iff
+    {H : Type v} {K : Type v'} [CommRing H] [CommRing K] [HopfAlgebra R H] [HopfAlgebra R K]
+    (f : H →ₐc[R] K) (hsurj : Function.Surjective f)
     (I : HopfIdeal R K) (A : CommAlgCat.{w} R)
     (g : HopfAlgebra.points (R := R) (H := K) A) :
-    AlgHom.mapDomainMulEquiv (A := A) (BialgEquiv.ofBijective f ⟨hinj, hsurj⟩) g ∈
+    AlgHom.mapDomain (A := A) f g ∈
         quotientPointsSubgroup (_root_.CommHopfAlgCat.of R H) (I.comapOfSurjective f hsurj) A ↔
       g ∈ quotientPointsSubgroup (_root_.CommHopfAlgCat.of R K) I A := by
   rw [mem_quotientPointsSubgroup_iff, mem_quotientPointsSubgroup_iff]

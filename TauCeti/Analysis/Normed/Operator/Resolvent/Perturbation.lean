@@ -96,7 +96,7 @@ theorem _root_.ContinuousLinearMap.norm_resolvent_vadd_le
   have hden : 0 < 1 - ‖B‖ * r := by linarith
   have hp := B.mem_resolventSet_vadd h hr hB
   refine ContinuousLinearMap.opNorm_le_bound _ (div_nonneg hrnonneg hden.le) fun y => ?_
-  set x : X := ((B : X →ₗ[ℝ] X) +ᵥ A).resolvent lambda y with hxdef
+  set x : X := ((B : X →ₗ[ℝ] X) +ᵥ A).resolvent lambda y
   have hmem : x ∈ A.domain := resolvent_mem_domain hp y
   have hy : lambda • x - (B x + A ⟨x, hmem⟩) = y := by
     have := smul_sub_apply_resolvent hp y

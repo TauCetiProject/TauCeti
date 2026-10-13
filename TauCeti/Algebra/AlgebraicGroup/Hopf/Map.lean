@@ -19,14 +19,14 @@ variance needed for the functor-of-points dictionary: a bialgebra morphism
 `WithConv (H₂ →ₐ[R] A) →* WithConv (H₁ →ₐ[R] A)`.
 
 For a commutative Hopf algebra `H`, this is the contravariant functoriality of
-`A ↦ Hom_R(H, A)` in the coordinate Hopf algebra. It is one of the formal pieces needed by
-the reductive-groups roadmap Layer 0 target "R-points as a group" and its follow-up
-"the functor of points" dictionary.
+`A ↦ Hom_R(H, A)` in the coordinate Hopf algebra.
 
 ## Main declarations
 
 * `AlgHom.mapDomain`: pre-composition by a bialgebra morphism as a monoid homomorphism of
   convolution monoids.
+* `AlgHom.mapDomain_injective_of_surjective`: a surjective bialgebra morphism induces an
+  injective map on points.
 * `AlgHom.mapDomain_id` and `AlgHom.mapDomain_comp`: identity and composition laws.
 * `AlgHom.mapDomainMulEquiv`: the equiv-version of `AlgHom.mapDomain`, turning a bialgebra
   isomorphism into a multiplicative equivalence of convolution monoids.
@@ -85,6 +85,16 @@ lemma mapDomain_apply (φ : H₁ →ₐc[R] H₂) (f : WithConv (H₂ →ₐ[R] 
 /-- Pointwise form of `mapDomain_apply`. -/
 lemma mapDomain_apply_apply (φ : H₁ →ₐc[R] H₂) (f : WithConv (H₂ →ₐ[R] A)) (h : H₁) :
     mapDomain φ f h = f.ofConv (φ h) := rfl
+
+/-- Pre-composition by a surjective bialgebra morphism is injective on points. -/
+lemma mapDomain_injective_of_surjective (φ : H₁ →ₐc[R] H₂) (hφ : Function.Surjective φ) :
+    Function.Injective (mapDomain (A := A) φ) := by
+  intro f g hfg
+  apply WithConv.ofConv_injective
+  apply AlgHom.ext
+  intro k
+  obtain ⟨h, rfl⟩ := hφ k
+  rw [← mapDomain_apply_apply, ← mapDomain_apply_apply, hfg]
 
 end Bialgebra
 
