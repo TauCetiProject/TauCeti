@@ -141,7 +141,7 @@ theorem polygon_def {N : ℕ} (v : Fin (N + 1) → ℂ) : polygon v =
 theorem boundary_polygon {N : ℕ} (v : Fin (N + 1) → ℂ) :
     boundary (polygon v) = Finsupp.single (v (Fin.last N)) 1 - Finsupp.single (v 0) 1 := by
   simp only [polygon, map_sum, boundary_ofPath]
-  exact Fin.sum_sub_succ (fun j : Fin (N + 1) ↦ Finsupp.single (v j) (1 : ℤ))
+  exact Fin.sum_univ_succ_sub_castSucc (fun j : Fin (N + 1) ↦ Finsupp.single (v j) (1 : ℤ))
 
 /-- A triangle fan differs from the polygonal chain only by its two outer radial segments. -/
 theorem sum_triangle {N : ℕ} (v : Fin (N + 1) → ℂ) (c : ℂ) :
@@ -154,12 +154,8 @@ theorem sum_triangle {N : ℕ} (v : Fin (N + 1) → ℂ) (c : ℂ) :
         (ofPath (Path.segment c (v i.castSucc)) - ofPath (Path.segment c (v i.succ))) := by abel
   simp_rw [he]
   rw [Finset.sum_add_distrib]
-  have ht := Fin.sum_sub_succ (fun i : Fin (N + 1) ↦ ofPath (Path.segment c (v i)))
-  have hneg : (∑ i : Fin N, (ofPath (Path.segment c (v i.castSucc)) -
-      ofPath (Path.segment c (v i.succ)))) =
-      ofPath (Path.segment c (v 0)) - ofPath (Path.segment c (v (Fin.last N))) := by
-    simpa only [← Finset.sum_neg_distrib, neg_sub] using congrArg Neg.neg ht
-  rw [hneg]
+  rw [Fin.sum_univ_castSucc_sub_succ (fun i : Fin (N + 1) ↦
+    ofPath (Path.segment c (v i)))]
   simp only [polygon]
   abel
 

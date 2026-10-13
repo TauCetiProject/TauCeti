@@ -12,6 +12,7 @@ import TauCeti.MeasureTheory.Function.AbsolutelyContinuous.Trace
 import TauCeti.Algebra.BigOperators.Fin
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import Mathlib.Basic.Complex.BigOperators
+import TauCeti.MeasureTheory.Function.AbsolutelyContinuous.FiniteGluing
 
 /-!
 # Winding weights of polygonal triangle fans
@@ -37,10 +38,11 @@ theorem windingNumber_eq_sum_polygon_segments {γ : ℝ → ℂ} {a b : ℝ} {N 
     (hsegments : ∀ i : Fin N, ∀ t ∈ Icc (s i.castSucc) (s i.succ),
       γ t = γ (s i.castSucc) + ((t - s i.castSucc) / (s i.succ - s i.castSucc)) •
         (γ (s i.succ) - γ (s i.castSucc)))
-    (hγ : AbsolutelyContinuousOnInterval γ a b) {z : ℂ} (hz : z ∉ γ '' uIcc a b) :
+    {z : ℂ} (hz : z ∉ γ '' uIcc a b) :
     Contour.windingNumber γ a b z =
       ∑ i : Fin N, Contour.windingNumber
         (fun t : ℝ ↦ γ (s i.castSucc) + t • (γ (s i.succ) - γ (s i.castSucc))) 0 1 z := by
+  have hγ := AbsolutelyContinuousOnInterval.of_affine_subdivision hs ha hb hsegments
   have hab : a ≤ b := by rw [← ha, ← hb]; exact hs.monotone (Fin.zero_le _)
   have hmem (i : Fin (N + 1)) : s i ∈ uIcc a b := by
     rw [uIcc_of_le hab, ← ha, ← hb]
@@ -86,7 +88,7 @@ theorem windingNumber_eq_sum_polygon_segments {γ : ℝ → ℂ} {a b : ℝ} {N 
       (hint.mono_set (uIcc_subset_uIcc left_mem_uIcc (hmem i.succ)))
       (hint.mono_set (uIcc_subset_uIcc left_mem_uIcc (hmem i.castSucc)))).symm
   simp_rw [hstep]
-  rw [Fin.sum_sub_succ]
+  rw [Fin.sum_univ_succ_sub_castSucc]
   simp only [F, ha, hb, intervalIntegral.integral_same, mul_zero, sub_zero]
   exact Contour.windingNumber_eq_integral_of_absolutelyContinuousOnInterval hγ hz
 
@@ -97,9 +99,10 @@ theorem windingWeight_eq_sum_triangleCurve {γ : ℝ → ℂ} {a b : ℝ} {N : �
     (hsegments : ∀ i : Fin N, ∀ t ∈ Icc (s i.castSucc) (s i.succ),
       γ t = γ (s i.castSucc) + ((t - s i.castSucc) / (s i.succ - s i.castSucc)) •
         (γ (s i.succ) - γ (s i.castSucc)))
-    (hγ : AbsolutelyContinuousOnInterval γ a b) (hclosed : γ a = γ b) (c : ℂ) :
+    (hclosed : γ a = γ b) (c : ℂ) :
     windingWeight γ a b =ᵐ[volume] fun z ↦
       ∑ i : Fin N, windingWeight (triangleCurve c (γ (s i.castSucc)) (γ (s i.succ))) 0 3 z := by
+  have hγ := AbsolutelyContinuousOnInterval.of_affine_subdivision hs ha hb hsegments
   have htrace : ∀ᵐ z : ℂ ∂volume, z ∉ γ '' uIcc a b := by
     rw [ae_iff]
     simpa only [not_not, ofPred_mem_eq] using hγ.measure_image_uIcc_eq_zero volume
@@ -148,11 +151,10 @@ theorem windingWeight_eq_sum_triangleCurve {γ : ℝ → ℂ} {a b : ℝ} {N : �
     simp_rw [he]
     rw [Finset.sum_add_distrib]
     have hdiff : (∑ i : Fin N, (R i.castSucc - R i.succ)) = 0 := by
-      have h := congrArg Neg.neg (Fin.sum_sub_succ R)
-      simpa only [← Finset.sum_neg_distrib, neg_sub, hR, sub_self, neg_zero] using h
+      rw [Fin.sum_univ_castSucc_sub_succ, hR, sub_self]
     rw [hdiff, add_zero]
   rw [htelescope]
-  exact congrArg Complex.re (windingNumber_eq_sum_polygon_segments hs ha hb hsegments hγ hz)
+  exact congrArg Complex.re (windingNumber_eq_sum_polygon_segments hs ha hb hsegments hz)
 
 /-- The winding weight of a closed raw polygon is almost everywhere the signed indicator sum
 of the interiors of its fan triangles, including degenerate and overlapping triangles. -/
@@ -161,12 +163,12 @@ theorem windingWeight_eq_triangle_fan {γ : ℝ → ℂ} {a b : ℝ} {N : ℕ}
     (hsegments : ∀ i : Fin N, ∀ t ∈ Icc (s i.castSucc) (s i.succ),
       γ t = γ (s i.castSucc) + ((t - s i.castSucc) / (s i.succ - s i.castSucc)) •
         (γ (s i.succ) - γ (s i.castSucc)))
-    (hγ : AbsolutelyContinuousOnInterval γ a b) (hclosed : γ a = γ b) (c : ℂ) :
+    (hclosed : γ a = γ b) (c : ℂ) :
     windingWeight γ a b =ᵐ[volume] fun z ↦ ∑ i : Fin N,
       Real.sign (triangleDet c (γ (s i.castSucc)) (γ (s i.succ))) *
         (interior (convexHull ℝ {c, γ (s i.castSucc), γ (s i.succ)})).indicator
           (fun _ : ℂ ↦ (1 : ℝ)) z := by
-  apply (windingWeight_eq_sum_triangleCurve hs ha hb hsegments hγ hclosed c).trans
+  apply (windingWeight_eq_sum_triangleCurve hs ha hb hsegments hclosed c).trans
   have h : ∀ᵐ z : ℂ ∂volume, ∀ i : Fin N,
       windingWeight (triangleCurve c (γ (s i.castSucc)) (γ (s i.succ))) 0 3 z =
         Real.sign (triangleDet c (γ (s i.castSucc)) (γ (s i.succ))) *

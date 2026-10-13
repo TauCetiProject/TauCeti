@@ -277,7 +277,7 @@ theorem HasIntervalIntegral.split_fin {N : ℕ} {s : Fin (N + 1) → ℝ}
     convert hz₂ using 1
     change F i.succ - F i.castSucc = z₂
     rw [← hz, (hF i.castSucc).unique hz₁, add_sub_cancel_left]
-  · rw [Fin.sum_sub_succ, (hF (Fin.last N)).unique h,
+  · rw [Fin.sum_univ_succ_sub_castSucc, (hF (Fin.last N)).unique h,
       hasIntervalIntegral_same.mp (hF 0), sub_zero]
 
 private theorem trans_of_le (h₁ : HasIntervalIntegral f a c y)

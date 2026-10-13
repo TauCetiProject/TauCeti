@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Green.DegenerateTriangle
 public import TauCeti.Analysis.Green.Polygonal.Fan
 public import TauCeti.Analysis.Green.Polygonal.Circulation
 import Mathlib.Analysis.Convex.Measure
+import TauCeti.MeasureTheory.Function.AbsolutelyContinuous.FiniteGluing
 
 /-!
 # Winding-weighted Green for polygonal cycles
@@ -29,18 +30,20 @@ open MeasureTheory Set
 namespace TauCeti.Green
 
 /-- Global winding-weighted Green for a closed raw polygon on a nonuniform subdivision.
-Any point of the plane can serve as the fan center; no arrangement of polygon faces is used. -/
+The proof uses a triangle fan centered at the origin, without an arrangement of polygon faces. -/
 theorem green_polygon_of_subdivision {γ : ℝ → ℂ} {a b : ℝ} {N : ℕ}
     {s : Fin (N + 1) → ℝ} (hs : StrictMono s) (ha : s 0 = a) (hb : s (Fin.last N) = b)
     (hsegments : ∀ i : Fin N, ∀ t ∈ Icc (s i.castSucc) (s i.succ),
       γ t = γ (s i.castSucc) + ((t - s i.castSucc) / (s i.succ - s i.castSucc)) •
         (γ (s i.succ) - γ (s i.castSucc)))
-    (hγ : AbsolutelyContinuousOnInterval γ a b) (hclosed : γ a = γ b) (c : ℂ)
+    (hclosed : γ a = γ b)
     {P Q : ℂ → ℝ} (hP : ContDiff ℝ 1 P) (hQ : ContDiff ℝ 1 Q) :
     IntervalIntegrable (circulationFun P Q γ) volume a b ∧
       Integrable (fun z ↦ windingWeight γ a b z * curl P Q z) ∧
       (∫ t in a..b, circulationFun P Q γ t) =
         ∫ z : ℂ, windingWeight γ a b z * curl P Q z := by
+  have hγ := AbsolutelyContinuousOnInterval.of_affine_subdivision hs ha hb hsegments
+  let c : ℂ := 0
   let v : Fin (N + 1) → ℂ := γ ∘ s
   let T : Fin N → Set ℂ := fun i ↦ convexHull ℝ {c, v i.castSucc, v i.succ}
   let σ : Fin N → ℝ := fun i ↦ Real.sign (triangleDet c (v i.castSucc) (v i.succ))
@@ -49,7 +52,7 @@ theorem green_polygon_of_subdivision {γ : ℝ → ℂ} {a b : ℝ} {N : ℕ}
   have hF (i : Fin N) : Integrable (F i) :=
     ((htri i).1.mono_set interior_subset).integrable_indicator isOpen_interior.measurableSet
       |>.const_mul (σ i)
-  have hFan := windingWeight_eq_triangle_fan hs ha hb hsegments hγ hclosed c
+  have hFan := windingWeight_eq_triangle_fan hs ha hb hsegments hclosed c
   have hweight : (fun z ↦ windingWeight γ a b z * curl P Q z) =ᵐ[volume]
       fun z ↦ ∑ i : Fin N, F i z := by
     filter_upwards [hFan] with z hz
@@ -77,7 +80,7 @@ theorem green_polygon_of_subdivision {γ : ℝ → ℂ} {a b : ℝ} {N : ℕ}
   simp_rw [hFI]
   rw [← map_sum, BoundaryChain.sum_triangle_of_closed v (by
     simp only [v, Function.comp_apply, ha, hb, hclosed]) c]
-  exact integral_circulationFun_eq_polygon hs ha hb hsegments hγ
+  exact integral_circulationFun_eq_polygon hs ha hb hsegments
     hP.continuous.continuousOn hQ.continuous.continuousOn
 
 /-- Winding-weighted Green for a closed raw polygonal curve and globally `C¹` fields.
@@ -89,8 +92,7 @@ theorem green_polygonal {γ : ℝ → ℂ} {a b : ℝ}
       Integrable (fun z ↦ windingWeight γ a b z * curl P Q z) ∧
       (∫ t in a..b, circulationFun P Q γ t) =
         ∫ z : ℂ, windingWeight γ a b z * curl P Q z := by
-  have hγ := hpoly.absolutelyContinuousOnInterval
   obtain ⟨N, _, s, hs, ha, hb, hsegments⟩ := hpoly.exists_subdivision
-  exact green_polygon_of_subdivision hs ha hb hsegments hγ hclosed 0 hP hQ
+  exact green_polygon_of_subdivision hs ha hb hsegments hclosed hP hQ
 
 end TauCeti.Green

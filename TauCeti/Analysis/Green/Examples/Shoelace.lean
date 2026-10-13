@@ -55,12 +55,11 @@ theorem integral_circulationFun_area_shoelace {γ : ℝ → ℂ} {a b : ℝ} {N 
     {s : Fin (N + 1) → ℝ} (hs : StrictMono s) (ha : s 0 = a) (hb : s (Fin.last N) = b)
     (hsegments : ∀ i : Fin N, ∀ t ∈ Icc (s i.castSucc) (s i.succ),
       γ t = γ (s i.castSucc) + ((t - s i.castSucc) / (s i.succ - s i.castSucc)) •
-        (γ (s i.succ) - γ (s i.castSucc)))
-    (hγ : AbsolutelyContinuousOnInterval γ a b) :
+        (γ (s i.succ) - γ (s i.castSucc))) :
     (∫ t in a..b, circulationFun areaP areaQ γ t) =
       (∑ i : Fin N, ((γ (s i.castSucc)).re * (γ (s i.succ)).im -
         (γ (s i.succ)).re * (γ (s i.castSucc)).im)) / 2 := by
-  rw [integral_circulationFun_eq_polygon hs ha hb hsegments hγ
+  rw [integral_circulationFun_eq_polygon hs ha hb hsegments
     (contDiff_areaP (n := 1)).continuous.continuousOn
     (contDiff_areaQ (n := 1)).continuous.continuousOn, curveIntegral_area_polygon]
   rfl
@@ -72,14 +71,14 @@ theorem integral_windingWeight_shoelace {γ : ℝ → ℂ} {a b : ℝ} {N : ℕ}
     (hsegments : ∀ i : Fin N, ∀ t ∈ Icc (s i.castSucc) (s i.succ),
       γ t = γ (s i.castSucc) + ((t - s i.castSucc) / (s i.succ - s i.castSucc)) •
         (γ (s i.succ) - γ (s i.castSucc)))
-    (hγ : AbsolutelyContinuousOnInterval γ a b) (hclosed : γ a = γ b) :
+    (hclosed : γ a = γ b) :
     (∫ z : ℂ, windingWeight γ a b z) =
       (∑ i : Fin N, ((γ (s i.castSucc)).re * (γ (s i.succ)).im -
         (γ (s i.succ)).re * (γ (s i.castSucc)).im)) / 2 := by
-  have h := (green_polygon_of_subdivision hs ha hb hsegments hγ hclosed 0
+  have h := (green_polygon_of_subdivision hs ha hb hsegments hclosed
     (contDiff_areaP (n := 1)) (contDiff_areaQ (n := 1))).2.2
   simp only [curl_area, mul_one] at h
   rw [← h]
-  exact integral_circulationFun_area_shoelace hs ha hb hsegments hγ
+  exact integral_circulationFun_area_shoelace hs ha hb hsegments
 
 end TauCeti.Green.Examples

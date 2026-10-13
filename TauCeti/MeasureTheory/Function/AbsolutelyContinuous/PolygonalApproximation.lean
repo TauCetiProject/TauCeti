@@ -9,7 +9,6 @@ public import TauCeti.MeasureTheory.Integral.IntervalIntegral.AbsolutelyContinuo
 public import Mathlib.Topology.UniformSpace.UniformConvergence
 import TauCeti.MeasureTheory.Function.AbsolutelyContinuous.FiniteGluing
 import TauCeti.MeasureTheory.Function.IntervalStep
-import Mathlib.Analysis.Calculus.ContDiff.Operations
 import Mathlib.Analysis.SpecificLimits.Basic
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.LebesgueDifferentiationThm
 
@@ -69,18 +68,7 @@ theorem IsPolygonalOnInterval.exists_subdivision {F : Type*} [AddCommGroup F] [M
 theorem IsPolygonalOnInterval.absolutelyContinuousOnInterval {f : ℝ → E} {a b : ℝ}
     (h : IsPolygonalOnInterval f a b) : AbsolutelyContinuousOnInterval f a b := by
   obtain ⟨N, _, s, hs, ha, hb, hsegments⟩ := h.exists_subdivision
-  have hedge (i : Fin N) :
-      AbsolutelyContinuousOnInterval f (s i.castSucc) (s i.succ) := by
-    have hc : ContDiffOn ℝ 1
-        (fun t : ℝ ↦ f (s i.castSucc) +
-          ((t - s i.castSucc) / (s i.succ - s i.castSucc)) •
-            (f (s i.succ) - f (s i.castSucc)))
-        (uIcc (s i.castSucc) (s i.succ)) := by fun_prop
-    apply hc.absolutelyContinuousOnInterval.congr
-    intro t ht
-    rw [uIcc_of_le (hs i.castSucc_lt_succ).le] at ht
-    exact (hsegments i t ht).symm
-  simpa only [ha, hb] using AbsolutelyContinuousOnInterval.of_subdivision hedge
+  exact AbsolutelyContinuousOnInterval.of_affine_subdivision hs ha hb hsegments
 
 namespace AbsolutelyContinuousOnInterval
 

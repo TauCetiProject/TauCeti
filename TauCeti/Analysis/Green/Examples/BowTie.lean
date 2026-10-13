@@ -69,8 +69,9 @@ theorem integral_circulationFun_area_bowTieCurve :
         ((t - (i.castSucc : ℝ)) / ((i.succ : ℝ) - (i.castSucc : ℝ))) •
           (bowTieCurve (i.succ : ℝ) - bowTieCurve (i.castSucc : ℝ)) := by
     simpa using bowTieCurve_subdivision i t (by simpa using ht)
-  have h := integral_circulationFun_area_shoelace hs (by norm_num) (by norm_num)
-    hseg isPolygonalOnInterval_bowTieCurve.absolutelyContinuousOnInterval
+  have h := integral_circulationFun_area_shoelace (a := 0) (b := 4)
+    hs (by norm_num) (by norm_num)
+    hseg
   norm_num [Fin.sum_univ_succ, bowTieCurve] at h
   exact h
 

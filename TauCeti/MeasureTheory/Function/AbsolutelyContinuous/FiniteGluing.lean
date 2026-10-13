@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.MeasureTheory.Function.AbsolutelyContinuous.Gluing
+import Mathlib.Analysis.Calculus.ContDiff.Operations
 
 /-!
 # Finite gluing of absolutely continuous curves
@@ -34,5 +35,28 @@ theorem of_subdivision {N : ℕ} {s : Fin (N + 1) → ℝ}
     have hp : AbsolutelyContinuousOnInterval γ (s 0) (s (Fin.last N).castSucc) :=
       ih (s := fun j ↦ s j.castSucc) hprev
     exact hp.trans (h (Fin.last N))
+
+/-- A finite increasing subdivision with affine interpolation on every cell gives an absolutely
+continuous curve. The subdivision may have no cells. -/
+theorem of_affine_subdivision {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    {f : ℝ → E} {a b : ℝ} {N : ℕ} {s : Fin (N + 1) → ℝ}
+    (hs : StrictMono s) (ha : s 0 = a) (hb : s (Fin.last N) = b)
+    (hsegments : ∀ i : Fin N, ∀ t ∈ Set.Icc (s i.castSucc) (s i.succ),
+      f t = f (s i.castSucc) +
+        ((t - s i.castSucc) / (s i.succ - s i.castSucc)) •
+          (f (s i.succ) - f (s i.castSucc))) :
+    AbsolutelyContinuousOnInterval f a b := by
+  have hedge (i : Fin N) :
+      AbsolutelyContinuousOnInterval f (s i.castSucc) (s i.succ) := by
+    have hc : ContDiffOn ℝ 1
+        (fun t : ℝ ↦ f (s i.castSucc) +
+          ((t - s i.castSucc) / (s i.succ - s i.castSucc)) •
+            (f (s i.succ) - f (s i.castSucc)))
+        (Set.uIcc (s i.castSucc) (s i.succ)) := by fun_prop
+    apply hc.absolutelyContinuousOnInterval.congr
+    intro t ht
+    rw [Set.uIcc_of_le (hs i.castSucc_lt_succ).le] at ht
+    exact (hsegments i t ht).symm
+  simpa only [ha, hb] using of_subdivision hedge
 
 end AbsolutelyContinuousOnInterval
