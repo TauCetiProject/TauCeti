@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.ExactOrder.Naive
 public import TauCeti.AlgebraicGeometry.ModularCurve.GammaOne
 public import TauCeti.AlgebraicGeometry.ModularCurve.NaiveLevel
+import TauCeti.AlgebraicGeometry.ResidueField
 
 /-!
 # Drinfeld and naive `[Γ₁(N)]`-structures where `N` is invertible
@@ -47,15 +48,7 @@ namespace TauCeti.AlgebraicGeometry
 
 namespace ModuliProblem
 
-variable {B : Scheme.{u}} {N : ℕ}
-
-/-- If `N` is invertible on `B`, it is invertible on the base of every object of `Ell/B`. -/
-private theorem natCast_residueField_ne_zero (hN : ∀ b : B, (N : B.residueField b) ≠ 0)
-    (X : EllObj B) (s : X.base) : (N : X.base.residueField s) ≠ 0 := by
-  rw [← map_natCast (X.structureMap.residueFieldMap s).hom]
-  exact (map_ne_zero _).mpr (hN _)
-
-variable [NeZero N]
+variable {B : Scheme.{u}} {N : ℕ} [NeZero N]
 
 variable (B N) in
 /-- **Drinfeld `[Γ₁(N)]`-structures are naive where `N` is invertible.** Over a base `B` on which
@@ -71,7 +64,7 @@ noncomputable def gammaOneToGammaOneNaive (hN : ∀ b : B, (N : B.residueField b
       EllipticCurveGeom.IsOfExactOrder.isFiberwiseInjective
         (by rw [← coe_zmodMonoidHomEquiv_apply, Equiv.apply_symm_apply]
             exact (gammaOneEquiv X.unop α).2)
-        (natCast_residueField_ne_zero hN X.unop)⟩
+        fun s ↦ X.unop.structureMap.natCast_residueField_ne_zero (hN _)⟩
   naturality X Y φ := by
     ext α
     apply (naiveLevelEquiv _).injective

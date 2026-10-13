@@ -11,6 +11,7 @@ public import Mathlib.AlgebraicGeometry.Morphisms.Etale
 import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.Torsion.Etale.Locus
 import TauCeti.AlgebraicGeometry.Morphisms.Etale
 import TauCeti.AlgebraicGeometry.RationalPoint.Basic
+import TauCeti.AlgebraicGeometry.ResidueField
 
 /-!
 # Points of exact order `N` where `N` is invertible
@@ -36,8 +37,8 @@ change to the algebraic closures of the residue fields of `S`.
 
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.IsOfExactOrder.etale_multiplesDivisor`: where `N`
   is invertible, the divisor of a point of exact order `N` is finite étale over the base.
-* `TauCeti.AlgebraicGeometry.EllipticCurveGeom.IsOfExactOrder.left_apply_ne_zero`: where `N` is
-  invertible, none of `P, 2P, …, (N - 1)P` meets the zero section.
+* `TauCeti.AlgebraicGeometry.EllipticCurveGeom.IsOfExactOrder.pow_left_apply_ne_zero`: on a fibre
+  where `N` is invertible, none of `P, 2P, …, (N - 1)P` meets the zero section.
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.IsOfExactOrder.orderOf_eq`: over a field in which
   `N` is invertible, a point of exact order `N` has order `N`.
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.IsOfExactOrder.isFiberwiseInjective`: where `N` is
@@ -92,13 +93,6 @@ section Field
 variable {K : Type u} [Field K] {E : EllipticCurveGeom (Spec (.of K))}
   {P : 𝟙_ (Over (Spec (.of K))) ⟶ Over.mk E.structureMap} {N : ℕ}
 
-/-- An integer invertible in a field `K` is invertible in the residue field of `Spec K`. -/
-private theorem natCast_residueField_ne_zero (hN : (N : K) ≠ 0) (s : Spec (.of K)) :
-    (N : (Spec (.of K)).residueField s) ≠ 0 := by
-  rw [← map_natCast ((Scheme.ΓSpecIso (.of K)).inv ≫
-    (Spec (.of K)).presheaf.germ ⊤ s trivial ≫ (Spec (.of K)).residue s).hom]
-  exact (map_ne_zero _).mpr hN
-
 /-- Over a field, every point of `E` on the divisor `[P] + ⋯ + [NP]` is one of `P, 2P, …, NP`. -/
 private theorem exists_eq_pow_of_mem_support (x : 𝟙_ (Over (Spec (.of K))) ⟶ Over.mk E.structureMap)
     (p : Spec (.of K)) (hx : x.left p ∈ ((E.multiplesDivisor P N).support : Set E.carrier)) :
@@ -115,13 +109,14 @@ private theorem exists_eq_pow_of_mem_support (x : 𝟙_ (Over (Spec (.of K))) �
 `N`: its divisor `[P] + ⋯ + [NP]` is étale of rank `N`, so it has `N` points, all among
 `P, …, NP`. -/
 private theorem IsOfExactOrder.pow_ne_one_of_isSepClosed [IsSepClosed K] (h : E.IsOfExactOrder P N)
-    (hN : (N : K) ≠ 0) {k : ℕ} (hk : 0 < k) (hkN : k < N) : P ^ k ≠ 1 := by
+    (hN : ∀ s : Spec (.of K), (N : (Spec (.of K)).residueField s) ≠ 0) {k : ℕ} (hk : 0 < k)
+    (hkN : k < N) : P ^ k ≠ 1 := by
   intro hPk
   classical
   let I := E.multiplesDivisor P N
   let f := I.subschemeι ≫ E.structureMap
   obtain ⟨p⟩ : Nonempty (Spec (.of K)) := inferInstance
-  have : Etale f := h.etale_multiplesDivisor (natCast_residueField_ne_zero hN)
+  have : Etale f := h.etale_multiplesDivisor hN
   have hcard := f.natCard_eq_finrank_of_etale p
   simp only [f, I, finrank_multiplesDivisor] at hcard
   -- the points of `V(I)` with values in `K` inject into the set of the points `P, …, NP`
@@ -160,10 +155,10 @@ variable {S : Scheme.{u}} {E : EllipticCurveGeom S} {P : 𝟙_ (Over S) ⟶ Over
   {N : ℕ}
 
 /-- **A point of exact order `N` has exact order `N` on every fibre where `N` is invertible.** If
-`P` has exact order `N` in the sense of Drinfeld and `N` is invertible in every residue field of
-`S`, then none of `P, 2P, …, (N - 1)P` meets the zero section. -/
-theorem IsOfExactOrder.left_apply_ne_zero (h : E.IsOfExactOrder P N)
-    (hN : ∀ s : S, (N : S.residueField s) ≠ 0) {k : ℕ} (hk : 0 < k) (hkN : k < N) (s : S) :
+`P` has exact order `N` in the sense of Drinfeld and `N` is invertible in the residue field at
+`s`, then none of `P, 2P, …, (N - 1)P` meets the zero section at `s`. -/
+theorem IsOfExactOrder.pow_left_apply_ne_zero (h : E.IsOfExactOrder P N) {s : S}
+    (hN : (N : S.residueField s) ≠ 0) {k : ℕ} (hk : 0 < k) (hkN : k < N) :
     (P ^ k).left s ≠ E.zero s := by
   -- the base change `E'` of `E` to an algebraic closure `L` of the residue field at `s`
   let L := AlgebraicClosure (S.residueField s)
@@ -172,16 +167,14 @@ theorem IsOfExactOrder.left_apply_ne_zero (h : E.IsOfExactOrder P N)
   let E' := E.baseChange t
   have hg := E.isPullback_baseChange t
   have h0 : E'.zero ≫ (E.baseChangeIso t).hom ≫ pullback.fst _ _ = t ≫ E.zero := by simp [E']
-  have hNL : (N : L) ≠ 0 := by
-    rw [← map_natCast (algebraMap (S.residueField s) L)]
-    exact (map_ne_zero _).mpr (hN s)
-  have h' := (h.pointsPullback hg h0).pow_ne_one_of_isSepClosed hNL hk hkN
+  have htp (p : Spec (.of L)) : t p = s := Scheme.fromSpecResidueField_apply s _
+  have h' := (h.pointsPullback hg h0).pow_ne_one_of_isSepClosed
+    (fun p ↦ t.natCast_residueField_ne_zero (by rwa [htp p])) hk hkN
   obtain ⟨p⟩ : Nonempty (Spec (.of L)) := inferInstance
-  have htp : t p = s := Scheme.fromSpecResidueField_apply s _
   intro hs
   apply h'
   rw [E'.eq_one_iff_left_apply_eq_zero _ p, ← map_pow,
-    pointsPullback_left_apply_eq_zero_iff hg h0 _ p, htp]
+    pointsPullback_left_apply_eq_zero_iff hg h0 _ p, htp p]
   exact hs
 
 /-- **A point of exact order `N` gives a naive `[Γ₁(N)]`-structure where `N` is invertible.** If
@@ -191,7 +184,7 @@ theorem IsOfExactOrder.isFiberwiseInjective [NeZero N]
     {φ : Multiplicative (ZMod N) →* (𝟙_ (Over S) ⟶ Over.mk E.structureMap)}
     (h : E.IsOfExactOrder (φ (.ofAdd 1)) N) (hN : ∀ s : S, (N : S.residueField s) ≠ 0) :
     E.IsFiberwiseInjective φ :=
-  isFiberwiseInjective_zmod_iff.mpr fun _ hk hkN s ↦ h.left_apply_ne_zero hN hk hkN s
+  isFiberwiseInjective_zmod_iff.mpr fun _ hk hkN s ↦ h.pow_left_apply_ne_zero (hN s) hk hkN
 
 end Base
 
@@ -206,7 +199,7 @@ theorem IsOfExactOrder.orderOf_eq (h : E.IsOfExactOrder P N) (hN : (N : K) ≠ 0
   obtain ⟨p⟩ : Nonempty (Spec (.of K)) := inferInstance
   refine (orderOf_eq_iff (Nat.pos_of_ne_zero fun h0 ↦ hN (by simp [h0]))).mpr
     ⟨h.pow_eq_one, fun k hkN hk hPk ↦
-      h.left_apply_ne_zero (natCast_residueField_ne_zero hN) hk hkN p ?_⟩
+      h.pow_left_apply_ne_zero (Spec.natCast_residueField_ne_zero hN p) hk hkN ?_⟩
   rw [← E.eq_one_iff_left_apply_eq_zero _ p]
   exact hPk
 
