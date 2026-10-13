@@ -14,8 +14,8 @@ HEAD, BASE, STAGING, SECOND = (c * 40 for c in 'abcd')
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 
 
-def approval(pr=1, head=HEAD, base=BASE):
-    return dict(pr=pr, actor_id=477956, head_sha=head, merge_base_sha=base)
+def approval(pr=1, head=HEAD, base=BASE, actor_id=1001):
+    return dict(pr=pr, actor_id=actor_id, head_sha=head, merge_base_sha=base)
 
 
 def observation():
@@ -34,10 +34,13 @@ class ScopeApprovalTests(unittest.TestCase):
             2: dict(number=2, state='open', draft=False, head=dict(sha=SECOND),
                     base=dict(ref='main', sha=BASE), changed_files=1),
         }
+        self.admins = [dict(id=1001, permissions=dict(admin=True))]
         self.files = {1: [dict(filename='scripts/test.sh', status='modified')],
                       2: [dict(filename='TauCeti/Example.lean', status='modified')]}
 
     def api(self, path):
+        if path.startswith('collaborators?'):
+            return copy.deepcopy(self.admins)
         if path.startswith('compare/'):
             return dict(merge_base_commit=dict(sha=BASE))
         parts = path.split('/')
@@ -52,6 +55,52 @@ class ScopeApprovalTests(unittest.TestCase):
     def test_exact_pr_and_mixed_batch_are_approved(self):
         self.assertTrue(policy.verify(self.data, HEAD, BASE, pr=1, api=self.api))
         self.assertTrue(self.batch())
+
+    def test_authority_follows_current_repository_admin_role(self):
+        self.admins = [dict(id=1002, permissions=dict(admin=True))]
+        self.assertFalse(self.batch())
+        self.data['scope_approvals'] = [approval(actor_id=1002)]
+        self.assertTrue(policy.verify(self.data, HEAD, BASE, pr=1, api=self.api))
+        self.assertTrue(self.batch())
+        self.admins = []
+        self.assertFalse(self.batch())
+
+    def test_different_admins_can_approve_restricted_members_of_one_batch(self):
+        self.admins.append(dict(id=1002, permissions=dict(admin=True)))
+        self.files[2] = [dict(filename='scripts/other.sh', status='added')]
+        self.data['scope_approvals'] = [approval(), approval(2, SECOND, actor_id=1002)]
+        self.assertTrue(policy.verify(self.data, STAGING, BASE, batch_id=12,
+            combined_paths=['scripts/test.sh', 'scripts/other.sh'], api=self.api))
+
+    def test_untrusted_accounts_and_claimed_names_do_not_grant_approval(self):
+        for actor_id in [999, '1001', None, True]:
+            with self.subTest(actor_id=actor_id):
+                self.data['scope_approvals'] = [approval(actor_id=actor_id)]
+                self.assertFalse(policy.verify(self.data, HEAD, BASE, pr=1, api=self.api))
+                self.assertFalse(self.batch())
+        self.data['scope_approvals'] = [dict(approval(actor_id=999), reviewer='admin')]
+        self.assertFalse(self.batch())
+        self.data['scope_approvals'] = [approval(), approval()]
+        self.assertFalse(self.batch())
+
+    def test_missing_or_malformed_roles_fail_closed(self):
+        for admins in [None, [dict(id=1001, permissions=dict(admin=False))],
+                       [dict(id='1001', permissions=dict(admin=True))]]:
+            self.admins = admins
+            with self.assertRaises(ValueError):
+                self.batch()
+        def unavailable(path):
+            raise subprocess.CalledProcessError(403, 'gh')
+        with self.assertRaises(subprocess.CalledProcessError):
+            policy.verify(self.data, HEAD, BASE, pr=1, api=unavailable)
+
+    def test_administrator_list_is_paginated(self):
+        first = [dict(id=i, permissions=dict(admin=True)) for i in range(1, 101)]
+        def api(path):
+            if path.startswith('collaborators?'):
+                return first if path.endswith('page=1') else self.admins
+            return self.api(path)
+        self.assertTrue(policy.verify(self.data, HEAD, BASE, pr=1, api=api))
 
     def test_only_actual_maintainer_and_exact_diff_count(self):
         for change in [dict(actor_id=999), dict(head_sha=SECOND), dict(merge_base_sha=SECOND), dict(pr=2)]:
