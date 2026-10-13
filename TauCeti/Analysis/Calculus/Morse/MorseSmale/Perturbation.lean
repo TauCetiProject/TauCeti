@@ -183,10 +183,10 @@ theorem exists_pos_forall_fderiv_perturb_eq_zero_iff (hfs : ContDiff ℝ 1 f)
 
 end Differential
 
-section Flow
+section Gradient
 
-variable [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [Fintype ι]
-  {f : E → ℝ} {h : ι → E → ℝ} {K : ℝ≥0}
+variable [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteSpace E] [Fintype ι]
+  {f : E → ℝ} {h : ι → E → ℝ}
 
 /-- The gradient of a perturbation is the perturbed gradient. -/
 @[simp]
@@ -194,6 +194,13 @@ theorem gradient_perturb {x : E} (hf : DifferentiableAt ℝ f x)
     (hh : ∀ i, DifferentiableAt ℝ (h i) x) (s : EuclideanSpace ℝ ι) :
     ∇ (perturb f h s) x = ∇ f x + ∑ i, s i • ∇ (h i) x := by
   simp only [gradient, fderiv_perturb hf hh, map_add, map_sum, map_smul]
+
+end Gradient
+
+section Flow
+
+variable [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [Fintype ι]
+  {f : E → ℝ} {h : ι → E → ℝ} {K : ℝ≥0}
 
 /-- A smooth cutoff of the parameter, equal to `1` on the closed unit ball and supported in the
 closed ball of radius `2`. -/
