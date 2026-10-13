@@ -46,9 +46,10 @@ largest distance `‖γ - δ‖`, `δ ∈ Z`, below `x(T - γ)`. On the set of p
 (a holed disc), each factor `max (x(T - γ)) (x(γ - α))` of
 `TauCeti.ValuationSpectrum.valuation_eval₂RingHom_eq_of_forall_le` is either `x(T - γ)` or the
 constant `x(γ - α)`, so `x(f) = x(T - γ)ᵐ x(c)` and `x(g) = x(T - γ)ⁿ x(e)` for constants `c`, `e`.
-The inequality `x(f) ≤ x(g)` then compares `x(T - γ)` with an `|m - n|`-th root of `‖e / c‖`,
-which exists in `K` because `K` is algebraically closed, and becomes one more disc or hole about
-`γ`.
+If `m = n`, or if `n < m` and `c = 0`, the inequality `x(f) ≤ x(g)` holds on the whole cell or on
+none of it (here `e ≠ 0` as `g ≠ 0`). Otherwise it compares `x(T - γ)` with `x(ρ)` for an element
+`ρ ∈ K` with `ρ ^ (m - n) = e / c` if `n < m`, or `ρ ^ (n - m) = c / e` if `m < n`, which exists
+because `K` is algebraically closed; so it becomes one more disc or hole about `γ`.
 
 ## References
 
@@ -222,14 +223,6 @@ private theorem valuation_eval₂RingHom_eq_pow_mul_of_mem_cell {Z : Finset K} {
     mul_left_comm]
   simp only [Function.comp_def]
 
-omit [IsUltrametricDist K] [NonarchimedeanRing K] in
-/-- The constant `c` of `valuation_eval₂RingHom_eq_pow_mul_of_mem_cell` is nonzero for `p ≠ 0`. -/
-private theorem leadingCoeff_mul_prod_ne_zero {p : Polynomial K} (hp : p ≠ 0) (γ δ : K) :
-    p.leadingCoeff * ((p.roots.filter fun α ↦ ¬ ‖γ - α‖ ≤ ‖γ - δ‖).map (γ - ·)).prod ≠ 0 := by
-  refine mul_ne_zero (Polynomial.leadingCoeff_ne_zero.mpr hp) (Multiset.prod_ne_zero fun h ↦ ?_)
-  obtain ⟨α, hα, h0⟩ := Multiset.mem_map.mp h
-  exact Multiset.of_mem_filter hα (by rw [h0, norm_zero]; exact norm_nonneg _)
-
 /-- **At a point of the cell with `x(T - γ) = 0`**, `δ = γ` and `γ` is not a root of both of two
 coprime polynomials, so one of the two root counts of
 `valuation_eval₂RingHom_eq_pow_mul_of_mem_cell` vanishes. -/
@@ -286,7 +279,15 @@ private theorem isHoledDiscUnion_cell_inter [IsAlgClosed K] {Z : Finset K} {f g 
   set n := Multiset.card (g.roots.filter fun α ↦ ‖γ - α‖ ≤ ‖γ - δ‖)
   set c := f.leadingCoeff * ((f.roots.filter fun α ↦ ¬ ‖γ - α‖ ≤ ‖γ - δ‖).map (γ - ·)).prod
   set e := g.leadingCoeff * ((g.roots.filter fun α ↦ ¬ ‖γ - α‖ ≤ ‖γ - δ‖).map (γ - ·)).prod
-  have he : e ≠ 0 := leadingCoeff_mul_prod_ne_zero hg γ δ
+  have he : e ≠ 0 := by
+    refine mul_ne_zero (Polynomial.leadingCoeff_ne_zero.mpr hg) (Multiset.prod_ne_zero fun h ↦ ?_)
+    obtain ⟨α, hα, h0⟩ := Multiset.mem_map.mp h
+    exact Multiset.of_mem_filter hα (by rw [h0, norm_zero]; exact norm_nonneg _)
+  -- cancel the common factor `x(T - γ)ʲ` and a nonzero constant, then compare `k`-th powers
+  have cancel {Γ : Type _} [LinearOrderedCommGroupWithZero Γ] {b r s a : Γ} {k : ℕ} (hb : b ≠ 0)
+      (ha : a ≠ 0) (hk : k ≠ 0) : b * (r ^ k * a) ≤ b * (s ^ k * a) ↔ r ≤ s := by
+    rw [mul_le_mul_iff_right₀ (zero_lt_iff.mpr hb), mul_le_mul_iff_left₀ (zero_lt_iff.mpr ha),
+      pow_le_pow_iff_left₀ zero_le zero_le hk]
   -- it suffices to describe the inequality `x(T - γ)ᵐ x(c) ≤ x(T - γ)ⁿ x(e)` on the cell
   have key (H : Set (closedPolydisc 1 K)) (hH : IsHoledDiscUnion (cell Z γ δ ∩ H))
       (hiff : ∀ x ∈ cell Z γ δ, x.1.valuation (T - C γ) ^ m * x.1.valuation (C c) ≤
@@ -313,9 +314,8 @@ private theorem isHoledDiscUnion_cell_inter [IsAlgClosed K] {Z : Finset K} {f g 
       simp only [h0, hm, pow_zero, one_mul, zero_add, Nat.sub_zero,
         zero_pow (Nat.pos_iff_ne_zero.mp (hm ▸ hmn)), zero_mul, le_zero_iff, mul_eq_zero, he',
         or_false, pow_eq_zero_iff (Nat.pos_iff_ne_zero.mp (hm ▸ hmn))]
-    · rw [pow_add, mul_assoc, mul_le_mul_iff_right₀ (pow_pos (zero_lt_iff.mpr h0) _),
-        Nat.add_sub_cancel_left, mul_le_mul_iff_left₀ (zero_lt_iff.mpr he'),
-        pow_le_pow_iff_left₀ zero_le zero_le (by omega)]
+    · rw [pow_add, mul_assoc, Nat.add_sub_cancel_left]
+      exact cancel (pow_ne_zero _ h0) he' (by omega)
   · -- `m = n`: the inequality says `‖c‖ ≤ ‖e‖`, independently of the point
     have hiff (x) (hx : x ∈ cell Z γ δ) : x.1.valuation (T - C γ) ^ m * x.1.valuation (C c) ≤
         x.1.valuation (T - C γ) ^ n * x.1.valuation (C e) ↔ ‖c‖ ≤ ‖e‖ := by
@@ -349,9 +349,8 @@ private theorem isHoledDiscUnion_cell_inter [IsAlgClosed K] {Z : Finset K} {f g 
       ← hρc, ← Nat.add_sub_cancel' hmn.le]
     by_cases h0 : x.1.valuation (T - C γ) = 0
     · simp only [h0, zero_le, zero_pow (by omega : n + (m - n) ≠ 0), zero_mul]
-    · rw [pow_add, mul_assoc, mul_le_mul_iff_right₀ (pow_pos (zero_lt_iff.mpr h0) _),
-        Nat.add_sub_cancel_left, mul_le_mul_iff_left₀ (zero_lt_iff.mpr hc'),
-        pow_le_pow_iff_left₀ zero_le zero_le (by omega)]
+    · rw [pow_add, mul_assoc, Nat.add_sub_cancel_left]
+      exact cancel (pow_ne_zero _ h0) hc' (by omega)
 
 /-- **The domain `{x : x(f) ≤ x(g)}` of two coprime polynomials is a finite union of holed
 discs.** Let `K` be algebraically closed and `f`, `g` coprime polynomials over `K`. Then there is
