@@ -103,9 +103,9 @@ theorem not_discreteTopology_range_finiteAdelicSpinDiagonal_of_transvection
       (by exact_mod_cast n.factorial_ne_zero)] at hn
     exact hw hn
   exact U.finiteAdelicSpinDiagonal.not_discreteTopology_range_of_tendsto_one
-    U.finiteAdelicSpinDiagonal_injective
     (U.tendsto_finiteAdelicSpinDiagonal_spinTransvection_factorial hQ hu huw)
-    (Eventually.of_forall hne)
+    (Eventually.of_forall fun n ↦
+      (map_ne_one_iff _ U.finiteAdelicSpinDiagonal_injective).mpr (hne n))
 
 /-- For a nondegenerate isotropic rational quadratic space of dimension at least three, the
 rational Spin diagonal is not discrete in the finite adeles. -/

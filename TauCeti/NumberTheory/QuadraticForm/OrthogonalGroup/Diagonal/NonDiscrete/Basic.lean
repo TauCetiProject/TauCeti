@@ -118,9 +118,9 @@ theorem not_discreteTopology_range_finiteAdelicSpecialOrthogonalDiagonal_of_tran
       (by exact_mod_cast n.factorial_ne_zero)] at hmem
     exact hw hmem
   exact U.finiteAdelicSpecialOrthogonalDiagonal.not_discreteTopology_range_of_tendsto_one
-    U.finiteAdelicSpecialOrthogonalDiagonal_injective
     (U.tendsto_finiteAdelicSpecialOrthogonalDiagonal_transvection_factorial hu huw)
-    (Eventually.of_forall hne)
+    (Eventually.of_forall fun n ↦
+      (map_ne_one_iff _ U.finiteAdelicSpecialOrthogonalDiagonal_injective).mpr (hne n))
 
 /-- For a nondegenerate isotropic rational quadratic space of dimension at least three, the
 rational diagonal is not discrete in finite adelic `SO`. In dimension two the transvection
