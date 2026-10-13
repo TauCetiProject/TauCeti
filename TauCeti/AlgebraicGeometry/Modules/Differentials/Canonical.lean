@@ -20,8 +20,9 @@ codimension-one points need not be rational, so this applies over finite fields 
 fields as well as over algebraically closed fields.
 
 For a proper curve this identifies the differential line bundle with the canonical bundle
-constructed from Weil differentials, and Serre duality then holds with the differential line
-bundle as dualizing sheaf. The comparison does not provide a natural trace pairing.
+constructed from Weil differentials. Consequently, for every line bundle `L`, the dual of
+`H¹(X, L)` is linearly equivalent to `H⁰(X, Ω_{X/k} ⊗ L⁻¹)`. This is only the existence of a
+noncanonical equivalence: the comparison does not provide a natural trace pairing.
 
 ## References
 
@@ -230,9 +231,10 @@ theorem nonempty_iso_relativeDifferentials_canonicalBundle :
   exact ⟨relativeDifferentialsIsoDivisorSheaf ht hF hk hdim K hK ≪≫ e.symm⟩
 
 include hF hk hdim hex in
-/-- Serre duality for a line bundle with the differential line bundle as canonical bundle,
-over a perfect exact constant field. This asserts existence of a linear equivalence, not a
-choice of natural pairing. -/
+/-- Over a perfect exact constant field, the dual of `H¹(X, L)` is linearly equivalent to
+`H⁰(X, Ω_{X/k} ⊗ L⁻¹)`, by the identification of the differential line bundle with the canonical
+bundle. This asserts only the existence of a noncanonical linear equivalence, not a natural
+duality pairing. -/
 theorem nonempty_cohomologyOneDualEquivCohomologyZero_differentials_tensor_dual
     (L : InvertibleSheaf X) :
     Nonempty (Module.Dual k (Scheme.Modules.Cohomology L.obj 1) ≃ₗ[k]

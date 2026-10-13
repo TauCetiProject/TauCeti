@@ -31,6 +31,9 @@ smooth curve with a canonical divisor sheaf.
 
 ## Main results
 
+* `TauCeti.Place.mem_range_map_iff_coord_mem_integers_of_derivativeOfSeparating_mem`: whenever
+  differentiation by a prime element `t` preserves `𝒪_P`, a differential is regular exactly when
+  its coefficient in `dt` is.
 * `TauCeti.Place.mem_range_map_iff_coord_mem_integers`: at a rational place, a differential is
   regular exactly when its coefficient in `dt` is.
 * `TauCeti.Place.derivativeOfSeparating_mem_integers_of_perfectField`: over a perfect exact
@@ -68,7 +71,7 @@ include ht in
 /-- If differentiation by a separating prime element `t` preserves the valuation ring of `P`,
 then a Kähler differential comes from that valuation ring exactly when its coefficient in the
 basis `dt` is integral there. -/
-private theorem mem_range_map_iff_coord_mem_integers_of_forall
+theorem mem_range_map_iff_coord_mem_integers_of_derivativeOfSeparating_mem
     (hD : ∀ z ∈ P.integers, derivativeOfSeparating htr z ∈ P.integers) (ω : Ω[F⁄k]) :
     ω ∈ (KaehlerDifferential.map k k P.integers F).range ↔
       (kaehlerBasisOfSeparating htr).coord () ω ∈ P.integers := by
@@ -104,7 +107,7 @@ when its coefficient in the basis given by a separating uniformizer is integral 
 theorem mem_range_map_iff_coord_mem_integers (ω : Ω[F⁄k]) :
     ω ∈ (KaehlerDifferential.map k k P.integers F).range ↔
       (kaehlerBasisOfSeparating htr).coord () ω ∈ P.integers :=
-  P.mem_range_map_iff_coord_mem_integers_of_forall ht htr
+  P.mem_range_map_iff_coord_mem_integers_of_derivativeOfSeparating_mem ht htr
     (fun _ ↦ P.derivativeOfSeparating_mem_integers hP ht htr) ω
 
 /-- The residue pairing against integral functions detects whether the coefficient of a
@@ -245,7 +248,7 @@ theorem mem_range_map_iff_coord_mem_integers_of_perfectField {t : F} (ht : P.ord
     (htr : Transcendental k t) [Algebra.IsSeparable k⟮t⟯ F] (ω : Ω[F⁄k]) :
     ω ∈ (KaehlerDifferential.map k k P.integers F).range ↔
       (kaehlerBasisOfSeparating htr).coord () ω ∈ P.integers :=
-  P.mem_range_map_iff_coord_mem_integers_of_forall ht htr
+  P.mem_range_map_iff_coord_mem_integers_of_derivativeOfSeparating_mem ht htr
     (fun _ ↦ P.derivativeOfSeparating_mem_integers_of_perfectField hF hex ht htr) ω
 
 variable {x : F} (hx : Transcendental k x) [Algebra.IsSeparable k⟮x⟯ F]
