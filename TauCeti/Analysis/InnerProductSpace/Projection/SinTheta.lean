@@ -35,18 +35,18 @@ Sylvester bound
 
 ## Main results
 
-* `TauCeti.le_re_inner_comp_starProjection_add_smul_apply_self`,
-  `TauCeti.re_inner_comp_starProjection_add_smul_apply_self_le`: extending an operator from an
+* `Submodule.le_re_inner_comp_starProjection_add_smul_apply_self`,
+  `Submodule.re_inner_comp_starProjection_add_smul_apply_self_le`: extending an operator from an
   invariant subspace `U` by the scalar `r` on `Uᗮ` preserves a lower (upper) bound `r` on its
   quadratic form.
-* `TauCeti.mul_norm_starProjection_comp_starProjection_le_norm_sub`: the directed `sin Θ` bound
+* `Submodule.mul_norm_starProjection_comp_starProjection_le_norm_sub`: the directed `sin Θ` bound
   `g ‖P_W P_U‖ ≤ ‖B - A‖`.
-* `TauCeti.mul_directedProjectionGap_le_norm_sub`: the same bound for the directed gap
+* `Submodule.mul_directedProjectionGap_le_norm_sub`: the same bound for the directed gap
   `‖P_{Vᗮ} P_U‖` between an `A`-invariant subspace `U` and a `B`-invariant subspace `V`.
-* `TauCeti.mul_projectionGap_le_norm_sub`: under the separation hypotheses in both orientations,
+* `Submodule.mul_projectionGap_le_norm_sub`: under the separation hypotheses in both orientations,
   `g ‖P_U - P_V‖ ≤ ‖B - A‖`.
-* `TauCeti.norm_starProjection_comp_starProjection_le_norm_sub_div`,
-  `TauCeti.directedProjectionGap_le_norm_sub_div`, `TauCeti.projectionGap_le_norm_sub_div`:
+* `Submodule.norm_starProjection_comp_starProjection_le_norm_sub_div`,
+  `Submodule.directedProjectionGap_le_norm_sub_div`, `Submodule.projectionGap_le_norm_sub_div`:
   for `g > 0`, the same bounds in the form `‖·‖ ≤ ‖B - A‖ / g`.
 
 ## References
@@ -66,9 +66,9 @@ Material in the Sylvester and `sin Θ` lineage was adapted from the
 
 public section
 
-namespace TauCeti
+namespace Submodule
 
-open ContinuousLinearMap Submodule
+open ContinuousLinearMap
 open scoped InnerProductSpace
 
 variable {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
@@ -76,7 +76,7 @@ variable {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpac
 /-- If `U` is invariant under `A` and the quadratic form of `A` on `U` is bounded below by `r`, then
 the quadratic form of `A P_U + r P_{Uᗮ}` is bounded below by `r` on all of `E`. -/
 theorem le_re_inner_comp_starProjection_add_smul_apply_self {A : E →L[𝕜] E}
-    {U : Submodule 𝕜 E} [U.HasOrthogonalProjection] (hU : ∀ x ∈ U, A x ∈ U) {r : ℝ}
+    (U : Submodule 𝕜 E) [U.HasOrthogonalProjection] (hU : ∀ x ∈ U, A x ∈ U) {r : ℝ}
     (hA : ∀ x ∈ U, r * ‖x‖ ^ 2 ≤ RCLike.re ⟪A x, x⟫_𝕜) (x : E) :
     r * ‖x‖ ^ 2 ≤
       RCLike.re ⟪(A ∘L U.starProjection + (r : 𝕜) • Uᗮ.starProjection) x, x⟫_𝕜 := by
@@ -101,12 +101,12 @@ theorem le_re_inner_comp_starProjection_add_smul_apply_self {A : E →L[𝕜] E}
 /-- If `W` is invariant under `B` and the quadratic form of `B` on `W` is bounded above by `r`, then
 the quadratic form of `B P_W + r P_{Wᗮ}` is bounded above by `r` on all of `E`. -/
 theorem re_inner_comp_starProjection_add_smul_apply_self_le {B : E →L[𝕜] E}
-    {W : Submodule 𝕜 E} [W.HasOrthogonalProjection] (hW : ∀ x ∈ W, B x ∈ W) {r : ℝ}
+    (W : Submodule 𝕜 E) [W.HasOrthogonalProjection] (hW : ∀ x ∈ W, B x ∈ W) {r : ℝ}
     (hB : ∀ x ∈ W, RCLike.re ⟪B x, x⟫_𝕜 ≤ r * ‖x‖ ^ 2) (x : E) :
     RCLike.re ⟪(B ∘L W.starProjection + (r : 𝕜) • Wᗮ.starProjection) x, x⟫_𝕜 ≤
       r * ‖x‖ ^ 2 := by
   -- Apply the lower bound to `-B` and the bound `-r`.
-  have h := le_re_inner_comp_starProjection_add_smul_apply_self (A := -B) (r := -r)
+  have h := W.le_re_inner_comp_starProjection_add_smul_apply_self (A := -B) (r := -r)
     (fun x hx ↦ by simpa using W.neg_mem (hW x hx))
     (fun x hx ↦ by simpa [inner_neg_left] using hB x hx) x
   have heq : (-B) ∘L W.starProjection + ((-r : ℝ) : 𝕜) • Wᗮ.starProjection =
@@ -120,8 +120,8 @@ and `W` invariant under the symmetric operator `B`. If the quadratic form of `A`
 least `c + g` and that of `B` on `W` is at most `c`, then `g ‖P_W P_U‖ ≤ ‖B - A‖`. For `g > 0`
 this bounds `‖P_W P_U‖` by `‖B - A‖ / g`. Neither completeness nor finite dimension is assumed. -/
 theorem mul_norm_starProjection_comp_starProjection_le_norm_sub {A B : E →L[𝕜] E}
-    (hB : (B : E →ₗ[𝕜] E).IsSymmetric) {U W : Submodule 𝕜 E} [U.HasOrthogonalProjection]
-    [W.HasOrthogonalProjection] (hU : ∀ x ∈ U, A x ∈ U) (hW : ∀ x ∈ W, B x ∈ W) {c g : ℝ}
+    (U W : Submodule 𝕜 E) [U.HasOrthogonalProjection] [W.HasOrthogonalProjection]
+    (hB : (B : E →ₗ[𝕜] E).IsSymmetric) (hU : ∀ x ∈ U, A x ∈ U) (hW : ∀ x ∈ W, B x ∈ W) {c g : ℝ}
     (hAU : ∀ x ∈ U, (c + g) * ‖x‖ ^ 2 ≤ RCLike.re ⟪A x, x⟫_𝕜)
     (hBW : ∀ x ∈ W, RCLike.re ⟪B x, x⟫_𝕜 ≤ c * ‖x‖ ^ 2) :
     g * ‖W.starProjection ∘L U.starProjection‖ ≤ ‖B - A‖ := by
@@ -160,26 +160,27 @@ theorem mul_norm_starProjection_comp_starProjection_le_norm_sub {A B : E →L[�
       _ ≤ ‖B - A‖ * ‖U.starProjection x‖ := (B - A).le_opNorm _
       _ ≤ ‖B - A‖ * ‖x‖ := by gcongr; exact U.norm_starProjection_apply_le x
   exact (mul_norm_le_norm_sylvester_apply_of_re_inner_le_of_le_re_inner
-    (re_inner_comp_starProjection_add_smul_apply_self_le hW hBW)
-    (le_re_inner_comp_starProjection_add_smul_apply_self hU hAU) X).trans hbound
+    (W.re_inner_comp_starProjection_add_smul_apply_self_le hW hBW)
+    (U.le_re_inner_comp_starProjection_add_smul_apply_self hU hAU) X).trans hbound
 
 /-- The directed Davis–Kahan `sin Θ` theorem in division form: for `g > 0`, under the hypotheses
 of `mul_norm_starProjection_comp_starProjection_le_norm_sub`, `‖P_W P_U‖ ≤ ‖B - A‖ / g`. -/
 theorem norm_starProjection_comp_starProjection_le_norm_sub_div {A B : E →L[𝕜] E}
-    (hB : (B : E →ₗ[𝕜] E).IsSymmetric) {U W : Submodule 𝕜 E} [U.HasOrthogonalProjection]
-    [W.HasOrthogonalProjection] (hU : ∀ x ∈ U, A x ∈ U) (hW : ∀ x ∈ W, B x ∈ W) {c g : ℝ}
+    (U W : Submodule 𝕜 E) [U.HasOrthogonalProjection] [W.HasOrthogonalProjection]
+    (hB : (B : E →ₗ[𝕜] E).IsSymmetric) (hU : ∀ x ∈ U, A x ∈ U) (hW : ∀ x ∈ W, B x ∈ W) {c g : ℝ}
     (hg : 0 < g) (hAU : ∀ x ∈ U, (c + g) * ‖x‖ ^ 2 ≤ RCLike.re ⟪A x, x⟫_𝕜)
     (hBW : ∀ x ∈ W, RCLike.re ⟪B x, x⟫_𝕜 ≤ c * ‖x‖ ^ 2) :
     ‖W.starProjection ∘L U.starProjection‖ ≤ ‖B - A‖ / g :=
-  (le_div_iff₀' hg).mpr (mul_norm_starProjection_comp_starProjection_le_norm_sub hB hU hW hAU hBW)
+  (le_div_iff₀' hg).mpr
+    (U.mul_norm_starProjection_comp_starProjection_le_norm_sub W hB hU hW hAU hBW)
 
 /-- **The directed Davis–Kahan `sin Θ` theorem for the directed gap.** Let `U` be invariant
 under `A` and `V` invariant under the symmetric operator `B`. If the quadratic form of `A` on `U`
 is at least `c + g` and that of `B` on `Vᗮ` is at most `c`, then the directed gap
 `‖P_{Vᗮ} P_U‖` from `U` to `V` satisfies `g ‖P_{Vᗮ} P_U‖ ≤ ‖B - A‖`. -/
 theorem mul_directedProjectionGap_le_norm_sub {A B : E →L[𝕜] E}
-    (hB : (B : E →ₗ[𝕜] E).IsSymmetric) {U V : Submodule 𝕜 E} [U.HasOrthogonalProjection]
-    [V.HasOrthogonalProjection] (hU : ∀ x ∈ U, A x ∈ U) (hV : ∀ x ∈ V, B x ∈ V) {c g : ℝ}
+    (U V : Submodule 𝕜 E) [U.HasOrthogonalProjection] [V.HasOrthogonalProjection]
+    (hB : (B : E →ₗ[𝕜] E).IsSymmetric) (hU : ∀ x ∈ U, A x ∈ U) (hV : ∀ x ∈ V, B x ∈ V) {c g : ℝ}
     (hAU : ∀ x ∈ U, (c + g) * ‖x‖ ^ 2 ≤ RCLike.re ⟪A x, x⟫_𝕜)
     (hBV : ∀ x ∈ Vᗮ, RCLike.re ⟪B x, x⟫_𝕜 ≤ c * ‖x‖ ^ 2) :
     g * directedProjectionGap U V ≤ ‖B - A‖ := by
@@ -187,34 +188,35 @@ theorem mul_directedProjectionGap_le_norm_sub {A B : E →L[𝕜] E}
     LinearMap.IsSymmetric.orthogonalComplement_mem_invtSubmodule hB (p := V)
       (fun y hy ↦ hV y hy) hx
   rw [directedProjectionGap_def]
-  exact mul_norm_starProjection_comp_starProjection_le_norm_sub hB hU hV' hAU hBV
+  exact U.mul_norm_starProjection_comp_starProjection_le_norm_sub Vᗮ hB hU hV' hAU hBV
 
 /-- The directed Davis–Kahan `sin Θ` theorem for the directed gap in division form: for `g > 0`,
 under the hypotheses of `mul_directedProjectionGap_le_norm_sub`, the directed gap from `U` to `V`
 is at most `‖B - A‖ / g`. -/
 theorem directedProjectionGap_le_norm_sub_div {A B : E →L[𝕜] E}
-    (hB : (B : E →ₗ[𝕜] E).IsSymmetric) {U V : Submodule 𝕜 E} [U.HasOrthogonalProjection]
-    [V.HasOrthogonalProjection] (hU : ∀ x ∈ U, A x ∈ U) (hV : ∀ x ∈ V, B x ∈ V) {c g : ℝ}
+    (U V : Submodule 𝕜 E) [U.HasOrthogonalProjection] [V.HasOrthogonalProjection]
+    (hB : (B : E →ₗ[𝕜] E).IsSymmetric) (hU : ∀ x ∈ U, A x ∈ U) (hV : ∀ x ∈ V, B x ∈ V) {c g : ℝ}
     (hg : 0 < g) (hAU : ∀ x ∈ U, (c + g) * ‖x‖ ^ 2 ≤ RCLike.re ⟪A x, x⟫_𝕜)
     (hBV : ∀ x ∈ Vᗮ, RCLike.re ⟪B x, x⟫_𝕜 ≤ c * ‖x‖ ^ 2) :
     directedProjectionGap U V ≤ ‖B - A‖ / g :=
-  (le_div_iff₀' hg).mpr (mul_directedProjectionGap_le_norm_sub hB hU hV hAU hBV)
+  (le_div_iff₀' hg).mpr (U.mul_directedProjectionGap_le_norm_sub V hB hU hV hAU hBV)
 
 /-- **The dimension-free Davis–Kahan `sin Θ` theorem for the gap.** Let `U` be invariant under
 the symmetric operator `A` and `V` invariant under the symmetric operator `B`. Suppose that the
 quadratic form of `A` on `U` is at least `c + g` while that of `B` on `Vᗮ` is at most `c`, and
 that the quadratic form of `B` on `V` is at least `c' + g` while that of `A` on `Uᗮ` is at
 most `c'`. Then the gap between `U` and `V` satisfies `g ‖P_U - P_V‖ ≤ ‖B - A‖`. -/
-theorem mul_projectionGap_le_norm_sub {A B : E →L[𝕜] E} (hA : (A : E →ₗ[𝕜] E).IsSymmetric)
-    (hB : (B : E →ₗ[𝕜] E).IsSymmetric) {U V : Submodule 𝕜 E} [U.HasOrthogonalProjection]
-    [V.HasOrthogonalProjection] (hU : ∀ x ∈ U, A x ∈ U) (hV : ∀ x ∈ V, B x ∈ V) {c c' g : ℝ}
+theorem mul_projectionGap_le_norm_sub {A B : E →L[𝕜] E}
+    (U V : Submodule 𝕜 E) [U.HasOrthogonalProjection] [V.HasOrthogonalProjection]
+    (hA : (A : E →ₗ[𝕜] E).IsSymmetric) (hB : (B : E →ₗ[𝕜] E).IsSymmetric)
+    (hU : ∀ x ∈ U, A x ∈ U) (hV : ∀ x ∈ V, B x ∈ V) {c c' g : ℝ}
     (hAU : ∀ x ∈ U, (c + g) * ‖x‖ ^ 2 ≤ RCLike.re ⟪A x, x⟫_𝕜)
     (hBV : ∀ x ∈ Vᗮ, RCLike.re ⟪B x, x⟫_𝕜 ≤ c * ‖x‖ ^ 2)
     (hBV' : ∀ x ∈ V, (c' + g) * ‖x‖ ^ 2 ≤ RCLike.re ⟪B x, x⟫_𝕜)
     (hAU' : ∀ x ∈ Uᗮ, RCLike.re ⟪A x, x⟫_𝕜 ≤ c' * ‖x‖ ^ 2) :
     g * projectionGap U V ≤ ‖B - A‖ := by
-  have h₁ := mul_directedProjectionGap_le_norm_sub hB hU hV hAU hBV
-  have h₂ := mul_directedProjectionGap_le_norm_sub hA hV hU hBV' hAU'
+  have h₁ := U.mul_directedProjectionGap_le_norm_sub V hB hU hV hAU hBV
+  have h₂ := V.mul_directedProjectionGap_le_norm_sub U hA hV hU hBV' hAU'
   rw [norm_sub_rev] at h₂
   rw [projectionGap_eq_max]
   rcases le_total (directedProjectionGap U V) (directedProjectionGap V U) with h | h
@@ -223,14 +225,15 @@ theorem mul_projectionGap_le_norm_sub {A B : E →L[𝕜] E} (hA : (A : E →ₗ
 
 /-- The Davis–Kahan `sin Θ` theorem for the gap in division form: for `g > 0`, under the
 hypotheses of `mul_projectionGap_le_norm_sub`, `‖P_U - P_V‖ ≤ ‖B - A‖ / g`. -/
-theorem projectionGap_le_norm_sub_div {A B : E →L[𝕜] E} (hA : (A : E →ₗ[𝕜] E).IsSymmetric)
-    (hB : (B : E →ₗ[𝕜] E).IsSymmetric) {U V : Submodule 𝕜 E} [U.HasOrthogonalProjection]
-    [V.HasOrthogonalProjection] (hU : ∀ x ∈ U, A x ∈ U) (hV : ∀ x ∈ V, B x ∈ V) {c c' g : ℝ}
+theorem projectionGap_le_norm_sub_div {A B : E →L[𝕜] E}
+    (U V : Submodule 𝕜 E) [U.HasOrthogonalProjection] [V.HasOrthogonalProjection]
+    (hA : (A : E →ₗ[𝕜] E).IsSymmetric) (hB : (B : E →ₗ[𝕜] E).IsSymmetric)
+    (hU : ∀ x ∈ U, A x ∈ U) (hV : ∀ x ∈ V, B x ∈ V) {c c' g : ℝ}
     (hg : 0 < g) (hAU : ∀ x ∈ U, (c + g) * ‖x‖ ^ 2 ≤ RCLike.re ⟪A x, x⟫_𝕜)
     (hBV : ∀ x ∈ Vᗮ, RCLike.re ⟪B x, x⟫_𝕜 ≤ c * ‖x‖ ^ 2)
     (hBV' : ∀ x ∈ V, (c' + g) * ‖x‖ ^ 2 ≤ RCLike.re ⟪B x, x⟫_𝕜)
     (hAU' : ∀ x ∈ Uᗮ, RCLike.re ⟪A x, x⟫_𝕜 ≤ c' * ‖x‖ ^ 2) :
     projectionGap U V ≤ ‖B - A‖ / g :=
-  (le_div_iff₀' hg).mpr (mul_projectionGap_le_norm_sub hA hB hU hV hAU hBV hBV' hAU')
+  (le_div_iff₀' hg).mpr (U.mul_projectionGap_le_norm_sub V hA hB hU hV hAU hBV hBV' hAU')
 
-end TauCeti
+end Submodule
