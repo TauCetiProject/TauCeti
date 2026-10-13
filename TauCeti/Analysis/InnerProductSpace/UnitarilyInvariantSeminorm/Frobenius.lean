@@ -23,14 +23,11 @@ Frobenius seminorm controls the nuclear seminorm with the rank-sharp constant:
 `‖A‖₁ ≤ √(rank A) ‖A‖_F`.
 
 In finite orthonormal source and target bases, the Frobenius seminorm equals the Frobenius
-norm of the rectangular coordinate matrix. This comparison connects basis-independent
-operator estimates to entrywise matrix calculations. For a Sylvester equation `AX - XB = C`
-in orthonormal eigenbases,
-`ContinuousLinearMap.inner_sylvester_apply_eigenvectorBasis` gives the coordinate equation
-`(αᵢ - βⱼ)Xᵢⱼ = Cᵢⱼ`. A lower bound `δ ≤ |αᵢ - βⱼ|` then gives an entrywise norm bound.
-Summing its squares and using
-`LinearMap.frobenius_norm_toMatrix` for `X` and `C` converts that bound into
-`δ ‖X‖_F ≤ ‖C‖_F`.
+norm of the rectangular coordinate matrix, and its square is the sum of the squared moduli of
+the matrix coefficients. This connects basis-independent operator estimates to entrywise
+calculations: in orthonormal eigenbases, for instance, it turns the coordinate form
+`(αᵢ - βⱼ)Xᵢⱼ = Cᵢⱼ` of a Sylvester equation `AX - XB = C` into the bound
+`δ ‖X‖_F ≤ ‖C‖_F` under a spectral gap `δ ≤ |αᵢ - βⱼ|`.
 
 ## Main declarations
 
@@ -44,6 +41,9 @@ Summing its squares and using
 * `TauCeti.UnitarilyInvariantSeminorm.frobenius`: the Frobenius seminorm.
 * `TauCeti.UnitarilyInvariantSeminorm.frobenius_apply`: `‖A‖_F = √(∑ᵢ ‖A bᵢ‖²)` for every
   orthonormal basis `(bᵢ)`.
+* `TauCeti.UnitarilyInvariantSeminorm.sq_frobenius_apply_eq_sum_norm_inner_sq`:
+  `‖A‖_F² = ∑ᵢ ∑ⱼ ‖⟪cⱼ, A bᵢ⟫‖²` in orthonormal bases `(bᵢ)` of the source and `(cⱼ)` of the
+  target.
 * `TauCeti.UnitarilyInvariantSeminorm.frobenius_apply_eq_sqrt_sum_sq_singularValues`:
   `‖A‖_F = √(∑ᵢ σᵢ(A)²)`.
 * `TauCeti.UnitarilyInvariantSeminorm.nuclear_apply_le_sqrt_finrank_range_mul_frobenius_apply`:
@@ -131,6 +131,15 @@ source. -/
 theorem sq_frobenius_apply (b : OrthonormalBasis ι 𝕜 E) (A : E →ₗ[𝕜] F) :
     frobenius 𝕜 E F A ^ 2 = ∑ i, ‖A (b i)‖ ^ 2 := by
   rw [frobenius_apply b, Real.sq_sqrt (by positivity)]
+
+open scoped InnerProductSpace in
+/-- The square of the Frobenius seminorm is the sum of the squared moduli of the matrix
+coefficients `⟪cⱼ, A bᵢ⟫` in any orthonormal bases `(bᵢ)` of the source and `(cⱼ)` of the
+target. -/
+theorem sq_frobenius_apply_eq_sum_norm_inner_sq (b : OrthonormalBasis ι 𝕜 E)
+    (c : OrthonormalBasis ι' 𝕜 F) (A : E →ₗ[𝕜] F) :
+    frobenius 𝕜 E F A ^ 2 = ∑ i, ∑ j, ‖⟪c j, A (b i)⟫_𝕜‖ ^ 2 := by
+  simp_rw [sq_frobenius_apply b, c.sum_sq_norm_inner_right]
 
 end TauCeti.UnitarilyInvariantSeminorm
 

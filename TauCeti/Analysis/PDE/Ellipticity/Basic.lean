@@ -57,6 +57,10 @@ and Lax--Milgram arguments: constants are parameters, not hidden existential dat
   the bilinear form attached to a uniformly elliptic coefficient field.
 * `TauCeti.PDE.UniformlyEllipticOn.opNorm_matrixBilinearForm_le`: pointwise operator-norm
   boundedness of the bilinear form attached to a uniformly elliptic coefficient field.
+* `TauCeti.PDE.uniformlyEllipticOn_const`: a constant matrix with a lower quadratic bound is
+  uniformly elliptic.
+* `TauCeti.PDE.continuous_of_continuous_matrixBilinearForm`: a coefficient field whose
+  bilinear forms vary continuously is continuous.
 * `TauCeti.PDE.uniformlyEllipticOn_smul_one`: scalar, isotropic coefficient fields are
   uniformly elliptic when their scalar coefficient lies between the ellipticity constants.
 * `TauCeti.PDE.UniformlyEllipticOn.add_nonneg`: adding a nonnegative bounded
@@ -225,6 +229,21 @@ lemma matrixBilinearForm {s : Set X} {a : X → Matrix n n ℝ} (ha : Continuous
   continuous_matrixBilinearForm.comp_continuousOn ha
 
 end ContinuousOn
+
+/-- A coefficient field is continuous as soon as its matrix bilinear forms vary continuously:
+the entry `aⁱʲ(x)` is the value of `matrixBilinearForm (a x)` on the `i`-th and `j`-th standard
+basis vectors. -/
+lemma continuous_of_continuous_matrixBilinearForm {a : X → Matrix n n ℝ}
+    (ha : Continuous fun x => matrixBilinearForm (a x)) : Continuous a := by
+  classical
+  have hM : Continuous fun B : EuclideanSpace ℝ n →L[ℝ] EuclideanSpace ℝ n →L[ℝ] ℝ =>
+      Matrix.of fun i j => B (EuclideanSpace.single i 1) (EuclideanSpace.single j 1) :=
+    continuous_matrix fun i j =>
+      ((ContinuousLinearMap.apply ℝ ℝ (EuclideanSpace.single j (1 : ℝ))).comp
+        (ContinuousLinearMap.apply ℝ _ (EuclideanSpace.single i (1 : ℝ)))).continuous
+  refine (hM.comp ha).congr fun x => ?_
+  ext i j
+  simp
 
 end Continuity
 
@@ -745,6 +764,17 @@ lemma uniformlyEllipticOn_const_one (Ω : Set X) {lam Lam : ℝ} (hlam : 0 < lam
 lemma uniformlyEllipticOn_const_one_one (Ω : Set X) :
     UniformlyEllipticOn Ω (fun _ => (1 : Matrix n n ℝ)) 1 1 :=
   uniformlyEllipticOn_const_one Ω zero_lt_one le_rfl le_rfl
+
+/-- A constant matrix with quadratic form bounded below by `λ ‖ξ‖²` is uniformly elliptic, with
+upper constant the larger of `λ` and the operator norm of its bilinear form. -/
+lemma uniformlyEllipticOn_const (Ω : Set X) {A : Matrix n n ℝ} {lam : ℝ} (hlam : 0 < lam)
+    (hA : ∀ ξ : EuclideanSpace ℝ n, lam * ‖ξ‖ ^ 2 ≤ ξ ⬝ᵥ (A *ᵥ ξ)) :
+    UniformlyEllipticOn Ω (fun _ => A) lam (max lam ‖matrixBilinearForm A‖) :=
+  UniformlyEllipticOn.of_bounds hlam (le_max_left _ _)
+    (fun _ _ ξ => by simpa [Matrix.toQuadraticForm'_apply] using hA ξ)
+    (fun _ _ η ξ => by
+      simpa [Real.norm_eq_abs] using (matrixBilinearForm A).le_of_opNorm₂_le_of_le
+        (le_max_right lam _) le_rfl le_rfl)
 
 /-- An isotropic scalar coefficient field is uniformly elliptic when its scalar coefficient
 lies between the lower and upper constants.

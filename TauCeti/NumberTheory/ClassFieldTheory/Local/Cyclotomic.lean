@@ -17,6 +17,7 @@ import TauCeti.NumberTheory.Cyclotomic.Irreducible
 import TauCeti.NumberTheory.LocalField.Unramified.Existence
 import TauCeti.NumberTheory.LocalField.Unramified.Inertia.Basic
 import TauCeti.NumberTheory.LocalField.Unramified.Inertia.Cyclotomic
+import TauCeti.RingTheory.RootsOfUnity.PrimitiveRoots
 import TauCeti.Topology.Algebra.ValuativeRel.ContinuousRingHom
 
 /-!
@@ -172,17 +173,9 @@ theorem localArtinMap_cyclotomic_uniformizer (L : Type*) [Field L] [Algebra K L]
     rintro rfl
     exact (Finite.one_lt_card (α := 𝓀[K])).ne' (Nat.coprime_zero_right _ |>.mp hm)
   obtain ⟨τ, hτ⟩ := QuotientGroup.mk_surjective (artinMap K π)
-  set τ' := ι.restrictNormalHom (absoluteGaloisGroupRestrictEquiv K τ)
-  -- `σ` and the restriction `τ'` of `τ` represent the same Artin symbol, so they agree on `ζ`,
-  -- on which `Gal(L/K)` acts through the abelian group `(ℤ/dℤ)ˣ`.
-  have hστ : σ ζ = τ' ζ := by
-    have hζ' := IsPrimitiveRoot.orderOf ζ
-    have : NeZero (orderOf ζ) :=
-      ⟨(orderOf_pos_iff.2 (isOfFinOrder_iff_pow_eq_one.2 ⟨m, Nat.pos_of_ne_zero hm0, hζ⟩)).ne'⟩
-    have h := congrArg (Abelianization.lift (hζ'.autToPow K))
-      (Additive.ofMul.injective (hσ.symm.trans (artinMap_restrict K L ι π τ hτ)))
-    rw [Abelianization.lift_apply_of, Abelianization.lift_apply_of] at h
-    rw [← hζ'.autToPow_spec K σ, ← hζ'.autToPow_spec K τ', h]
+  -- `σ` and the restriction of `τ` represent the same Artin symbol, so they agree on `ζ`.
+  have hστ := AlgEquiv.apply_eq_apply_of_abelianization_of_eq
+    (Additive.ofMul.injective (hσ.symm.trans (artinMap_restrict K L ι π τ hτ))) hm0 hζ
   -- `τ` acts on the root of unity `ι ζ` by the `q`-th power map.
   have hιζ := absoluteGaloisGroupRestrictEquiv_apply_of_pow_natCard_pow_eq_self K hπ hτ
     (Nat.totient_pos.2 (Nat.pos_of_ne_zero hm0)).ne'

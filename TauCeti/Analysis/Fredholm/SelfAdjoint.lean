@@ -27,9 +27,8 @@ kernel-equality hypothesis, it identifies the cokernel with the original kernel.
 * `ContinuousLinearMap.index_eq_zero_of_isSymmetric`: the same result in terms of
   symmetry of the underlying linear map.
 
-This is the elementary self-adjoint index computation in the Fredholm package needed by the
-nonlinear-analysis substrate of the analytic Heegaard Floer roadmap. The convention and argument
-follow McDuff--Salamon, *J-holomorphic Curves and Symplectic Topology*, Appendix A.1.
+This is the elementary self-adjoint index computation for Fredholm operators. The convention and
+argument follow McDuff--Salamon, *J-holomorphic Curves and Symplectic Topology*, Appendix A.1.
 -/
 
 public section

@@ -23,6 +23,15 @@ public section
 
 namespace Convexity.StdSimplex
 
+/-- A point of the triangle `StdSimplex R (Fin 3)` is determined by its three weights. -/
+theorem ext_fin_three {R : Type*} [PartialOrder R] [Semiring R]
+    {x y : StdSimplex R (Fin 3)} (h0 : x.weights 0 = y.weights 0)
+    (h1 : x.weights 1 = y.weights 1) (h2 : x.weights 2 = y.weights 2) : x = y :=
+  ext <| Finsupp.ext fun
+    | ⟨0, _⟩ => h0
+    | ⟨1, _⟩ => h1
+    | ⟨2, _⟩ => h2
+
 variable {R : Type*} [PartialOrder R] [Semiring R] [IsStrictOrderedRing R] {X Y : Type*}
 
 /-- Along an injective map, the weight at the image of a point is the weight at that point. -/
@@ -60,6 +69,12 @@ theorem mem_range_map_succAbove_iff {n : ℕ} (j : Fin (n + 1)) (x : StdSimplex 
 theorem weights_map_succAbove_self {n : ℕ} (j : Fin (n + 1)) (x : StdSimplex R (Fin n)) :
     (x.map j.succAbove).weights j = 0 :=
   (mem_range_map_succAbove_iff j _).1 ⟨x, rfl⟩
+
+/-- On the facet opposite `j`, the weight at `j.succAbove i` is the `i`-th weight of the facet. -/
+theorem weights_map_succAbove_of_eq {n : ℕ} {j k : Fin (n + 1)} {i : Fin n}
+    (h : j.succAbove i = k) (x : StdSimplex R (Fin n)) :
+    (x.map j.succAbove).weights k = x.weights i :=
+  h ▸ weights_map_apply_of_injective Fin.succAbove_right_injective x i
 
 /-- A function on a standard simplex which takes the value `z` on every facet takes the value `z`
 at every point with a vanishing weight. -/

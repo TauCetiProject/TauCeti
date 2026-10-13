@@ -18,7 +18,7 @@ doubled Alexander grading by two (`GridDiagram.alexanderTwoℤ_stabilizeX_insert
 parity criterion `GridDiagram.even_alexanderTwoℤ_iff` shows that `G'` again has an odd number of
 components (`OddComponentGridDiagram.stabilizeX`, in `Stabilization/Grading.lean`). Both
 unblocked complexes `GC⁻(G')` and `GC⁻(G)` therefore carry the (`O`-Maslov, Alexander) bigrading
-of `Grading/UnblockedChain.lean`.
+of `Grading/Unblocked/Chain.lean`.
 
 This file proves that the stabilization chain map `GC⁻(G') ⟶ GC⁻(G)`
 (`GridDiagram.stabilizeXMap`) has bidegree `(0, 0)`. On a chain `c` it is `H_I^N` applied to the

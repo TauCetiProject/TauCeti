@@ -29,7 +29,7 @@ it — is then Mathlib's generic stabilizer API.
 
 The inertia group contains `N` (`TauCeti.le_inertia`), because conjugating by an element `n` of `N`
 itself is an inner twist: `A.ρ n` intertwines `{}^n A` with `A`
-(`TauCeti.conjNormalFDRepIso`).  Together with the normality of `N` inside `inertia A`, which
+(`FDRep.conjNormalIso`).  Together with the normality of `N` inside `inertia A`, which
 Mathlib's `Subgroup.normal_subgroupOf` instance supplies for any subgroup of `G`, this is what makes
 the quotient `inertia A / N` — where the Clifford-theory obstruction lives — available.
 
@@ -109,7 +109,7 @@ theorem stabilizer_le_inertia (A : FDRep k N) :
 /-- **The inertia group contains the normal subgroup**: conjugating by an element of `N` is an
 inner twist, so it fixes the isomorphism class. -/
 theorem le_inertia (A : FDRep k N) : N ≤ inertia A :=
-  fun n hn => mem_inertia_iff.2 ⟨conjNormalFDRepIso A ⟨n, hn⟩⟩
+  fun n hn => mem_inertia_iff.2 ⟨A.conjNormalIso ⟨n, hn⟩⟩
 
 /-- Isomorphic representations have the same inertia group: the inertia group depends only on the
 isomorphism class of `A`, which — once `A` is irreducible — is a point of `Irr(N)`. -/

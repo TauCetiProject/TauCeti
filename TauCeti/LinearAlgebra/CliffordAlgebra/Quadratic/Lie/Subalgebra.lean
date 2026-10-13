@@ -67,11 +67,6 @@ scope.
 * `CliffordAlgebra.adjoin_quadraticLieSubalgebra` and
   `CliffordAlgebra.adjoin_coe_preimage_quadraticLieSubalgebra_eq_top`: the quadratic elements
   generate the even subalgebra as an algebra.
-
-## References
-
-* [Clifford algebras, Pin and Spin, and spin representations roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SpinRepresentations/README.md),
-  Layer 9, "the abstract quadratic realization".
 -/
 
 public section

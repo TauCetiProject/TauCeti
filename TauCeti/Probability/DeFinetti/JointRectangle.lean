@@ -59,8 +59,6 @@ space.
 
 The joint rectangles are then fed to `conditionallyIID_of_jointRectangles`.
 
-This advances `TauCetiRoadmap/Exchangeability/README.md`, **Layer 6** — the conditional summit.
-
 ## Sources
 
 The mathematical theorem is Kallenberg, *Probabilistic Symmetries and Invariance Principles* (2005),

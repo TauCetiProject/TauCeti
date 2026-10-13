@@ -41,11 +41,10 @@ integral curves of `S` are velocity lifts of their projected curves:
 
 `t ↦ (γ t, γ' t) : ℝ → TM`
 
-The two statements are read in one direction each: the velocity lift of a `C²` curve is an integral
-curve of `S` exactly when the curve is a geodesic, and conversely every integral curve of `S` is the
-velocity lift of the curve it lies over, whose base curve is a geodesic as soon as it is `C²`. The
-`C²` hypothesis on the base curve is not yet removable: it would follow from smoothness of `S`,
-which is not proved here.
+The velocity lift of a `C²` curve is an integral curve of `S` exactly when the curve is a
+geodesic, and every integral curve of `S` is the velocity lift of its projection. The regularity
+of that projection, and hence its geodesic equation without a separate `C²` assumption, is
+established in `TauCeti.Geometry.Manifold.Riemannian.Geodesic.Smoothness`.
 
 The unpacking of a curve into `TM` into its base curve and its fibre coordinate is
 `TauCeti.Manifold.hasMFDerivWithinAt_totalSpace_curve_iff`, proved for an arbitrary fibre bundle.
@@ -63,9 +62,7 @@ The unpacking of a curve into `TM` into its base curve and its fibre coordinate 
   curve is an integral curve of the geodesic spray exactly when the curve is a geodesic**, with
   `TauCeti.Manifold.isMIntegralCurve_curveVelocityLift_iff` its all-time case.
 * `TauCeti.Manifold.eq_curveVelocityLiftWithin_of_isMIntegralCurveOn`: **an integral curve of the
-  geodesic spray is a velocity lift**, and
-  `TauCeti.Manifold.isGeodesicCurveOn_proj_of_isMIntegralCurveOn`: the curve it lies over is a
-  geodesic once it is `C²`.
+  geodesic spray is a velocity lift**.
 
 ## References
 
@@ -296,16 +293,6 @@ theorem eq_curveVelocityLiftWithin_of_isMIntegralCurveOn {z : ℝ → TangentBun
   have hvel : curveVelocityWithin I (fun r ↦ (z r).proj) s t = (z t).2 :=
     (derivWithin_extChartAt_comp_curve hproj hs).symm.trans (hd.1.derivWithin hs)
   rw [curveVelocityLiftWithin_apply, hvel]
-
-/-- **The base curve of an integral curve of the spray is a geodesic**, as soon as it is `C²` on a
-parameter set with unique derivatives. -/
-theorem isGeodesicCurveOn_proj_of_isMIntegralCurveOn {z : ℝ → TangentBundle I M}
-    (hs : UniqueDiffOn ℝ s) (h : IsMIntegralCurveOn z (geodesicSpray I M) s)
-    (hz : ContMDiffOn 𝓘(ℝ, ℝ) I 2 (fun r ↦ (z r).proj) s) :
-    IsGeodesicCurveOn I (fun r ↦ (z r).proj) s :=
-  (isMIntegralCurveOn_curveVelocityLiftWithin_iff hs hz).1
-    (h.congr fun _r hr ↦
-      (eq_curveVelocityLiftWithin_of_isMIntegralCurveOn (hs _r hr) h hr).symm)
 
 /-! ### All-time geodesics and the spray -/
 

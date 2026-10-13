@@ -23,9 +23,11 @@ detect the cohomology of the ideles:
 * a class of `H^n(G, I_L)` whose images in all the groups `H^n(G, (K_v ⊗[K] L)ˣ)` vanish is zero
   (`eq_zero_of_forall_map_semilocal_eq_zero`);
 * only finitely many of its images at the finite places are nonzero
-  (`finite_setOf_map_idelesToSemilocalUnits_ne_zero`).
+  (`finite_setOf_map_idelesToSemilocalUnits_ne_zero`);
+* its first cohomology vanishes (`isZero_tateCohomology_one_idelesRep`), by field Hilbert 90
+  and Shapiro at every finite and infinite place, without a cyclicity hypothesis.
 
-By Shapiro's lemma (`semilocalUnitsTateCohomologyIso` for cyclic `G`) the group
+By positive-degree Shapiro (`HeightOneSpectrum.semilocalUnitsTateCohomologyIsoPos`) the group
 `H^n(G, (K_v ⊗[K] L)ˣ)` is the cohomology `H^n(G_w, L_wˣ)` of the completion at a place `w ∣ v`,
 so the images of a degree-`2` cohomology class with coefficients in the ideles are its local Brauer
 classes in `Br(L_w/K_v)`. The first statement is the idelic half of the injectivity of
@@ -55,10 +57,19 @@ in `L`, have no cohomology in positive degrees
   `H^n(G, I_L)`, `n > 0`, with vanishing semi-local components is zero.
 * `TauCeti.ClassFieldTheory.finite_setOf_map_idelesToSemilocalUnits_ne_zero`: a class of
   `H^n(G, I_L)`, `n > 0`, has nonzero semi-local components at only finitely many finite places.
+* `TauCeti.ClassFieldTheory.isZero_tateCohomology_one_idelesRep`: Hilbert 90 for ideles,
+  on the Tate carrier.
+* `TauCeti.ClassFieldTheory.subsingleton_groupCohomology_one_idelesRep`: Hilbert 90 on ordinary
+  cohomology, as an instance.
+
+In the long exact cohomology sequence of `Lˣ → I_L → C_L`, idelic Hilbert 90 makes
+`H¹(Gal(L/K), C_L) → H²(Gal(L/K), Lˣ)` injective. Thus vanishing of idele-class `H¹` is
+equivalent to injectivity of the map from relative Brauer classes to idelic cohomology.
 
 ## References
 
-* J. S. Milne, *Class Field Theory*, Chapter VII, Lemma 2.4 and Proposition 2.5.
+* J. S. Milne, *Class Field Theory*, v4.03, Chapter VII, Lemma 2.4, Proposition 2.5
+  and Corollary 2.6.
 * J. Tate, *Global class field theory*, in J. W. S. Cassels and A. Fröhlich (eds.),
   *Algebraic Number Theory*, Chapter VII, §§6–7.
 -/
@@ -298,5 +309,32 @@ theorem finite_setOf_map_idelesToSemilocalUnits_ne_zero (x : tateCohomology (ide
       (sIdelesToSemilocalIntegralUnits_comp_incl L S v hvS)).symm
 
 end Cohomology
+
+section Hilbert90
+
+variable {L} [IsGalois K L]
+
+/-- **Hilbert 90 for ideles.** The first Tate cohomology of the idele module of a finite Galois
+extension of number fields vanishes. -/
+theorem isZero_tateCohomology_one_idelesRep : IsZero (tateCohomology (idelesRep K L) 1) := by
+  have h (x : tateCohomology (idelesRep K L) 1) : x = 0 := by
+    apply eq_zero_of_forall_map_semilocal_eq_zero L 1
+    · intro v
+      exact (ModuleCat.subsingleton_of_isZero
+        (v.isZero_tateCohomology_one_semilocalUnitsRep (L := L))).elim _ _
+    · intro v
+      exact (ModuleCat.subsingleton_of_isZero
+        (v.isZero_tateCohomology_one_infiniteSemilocalUnitsRep (L := L))).elim _ _
+  have : Subsingleton (tateCohomology (idelesRep K L) 1) :=
+    ⟨fun x y => (h x).trans (h y).symm⟩
+  exact ModuleCat.isZero_of_subsingleton _
+
+/-- **Hilbert 90 for ideles**, on ordinary group cohomology: `H¹(Gal(L/K), I_L) = 0`. -/
+instance subsingleton_groupCohomology_one_idelesRep :
+    Subsingleton (groupCohomology (idelesRep K L) 1) :=
+  ModuleCat.subsingleton_of_isZero <| isZero_tateCohomology_one_idelesRep.of_iso
+    ((_root_.TateCohomology.isoGroupCohomology 1).app (idelesRep K L)).symm
+
+end Hilbert90
 
 end TauCeti.ClassFieldTheory

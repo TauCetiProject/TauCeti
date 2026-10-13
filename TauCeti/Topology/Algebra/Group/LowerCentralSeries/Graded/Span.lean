@@ -246,8 +246,7 @@ theorem span_range_gradedPow_union_range_gradedBracket_eq_top {k : ℕ}
         rw [gradedPow_gradedMk, gradedPieceInclusion_gradedMk]⟩
     · refine ⟨_, subset_span (Or.inr ⟨(gradedMk p G k ⟨g, hg⟩, gradedMkZero p G h), rfl⟩), ?_⟩
       dsimp only
-      rw [← gradedMk_zero ⟨h, mem_pLowerCentralSeries_zero p h⟩, gradedBracket_gradedMk,
-        gradedPieceInclusion_gradedMk]
+      rw [gradedBracket_gradedMk_gradedMkZero, gradedPieceInclusion_gradedMk]
   rw [eq_top_iff]
   rintro y -
   obtain ⟨y, rfl⟩ := gradedMk_surjective (k + 1) y

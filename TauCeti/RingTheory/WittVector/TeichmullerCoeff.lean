@@ -25,6 +25,8 @@ These coordinates are the input to the Gauss valuations on `A_inf = W(𝒪_F)`.
 ## Main results
 
 * `WittVector.pow_dvd_sub_sum_teichmullerCoeff` : the Teichmüller expansion modulo `p ^ (n + 1)`.
+* `WittVector.exists_eq_sum_teichmullerCoeff_add_pow_mul` : the splitting
+  `x = ∑_{i < m} [xᵢ] pⁱ + pᵐ b` of the Teichmüller expansion.
 * `WittVector.teichmullerCoeff_sum_teichmuller_mul_pow` : the Teichmüller coordinates of a finite
   Teichmüller sum `∑_{j ≤ n} [aⱼ] pʲ` are the `aⱼ`.
 * `WittVector.teichmullerCoeff_sum_range_teichmuller_mul_pow` : the Teichmüller coordinates of
@@ -132,6 +134,16 @@ theorem pow_dvd_sub_sum_teichmullerCoeff (x : 𝕎 R) (n : ℕ) :
     (p : 𝕎 R) ^ (n + 1) ∣ x - ∑ i ≤ n, teichmuller p (x.teichmullerCoeff i) * (p : 𝕎 R) ^ i := by
   simpa [teichmullerCoeff, iterateFrobeniusEquiv_symm] using
     dvd_sub_sum_teichmuller_iterateFrobeniusEquiv_coeff x n
+
+/-- Splitting the Teichmüller expansion of `x` after `m` terms: `x = ∑_{i < m} [xᵢ] pⁱ + pᵐ b`. -/
+theorem exists_eq_sum_teichmullerCoeff_add_pow_mul (x : 𝕎 R) (m : ℕ) :
+    ∃ b : 𝕎 R, x = ∑ i ∈ Finset.range m, teichmuller p (x.teichmullerCoeff i) * (p : 𝕎 R) ^ i +
+      (p : 𝕎 R) ^ m * b := by
+  cases m with
+  | zero => exact ⟨x, by simp⟩
+  | succ n =>
+    obtain ⟨b, hb⟩ := pow_dvd_sub_sum_teichmullerCoeff x n
+    exact ⟨b, by rw [Nat.range_succ_eq_Iic, ← hb, add_sub_cancel]⟩
 
 /-- The first `n + 1` Teichmüller coordinates only depend on the residue modulo `p ^ (n + 1)`. -/
 theorem teichmullerCoeff_eq_of_dvd_sub {x y : 𝕎 R} {n : ℕ} (h : (p : 𝕎 R) ^ (n + 1) ∣ x - y)

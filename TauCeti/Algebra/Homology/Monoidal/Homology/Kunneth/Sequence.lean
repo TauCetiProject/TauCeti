@@ -37,6 +37,11 @@ monomorphism `HomologicalComplex.homologyTorToHomologyQuotient` into `Hₘ₊₁
 (`HomologicalComplex.homologyToTor_naturality`), as is the Künneth map, so the Künneth sequence is
 natural in `K` and `L`.
 
+If the cycles of `K` split off its terms as well, for instance when `K` is also a complex of
+projective modules over a principal ideal domain, the Künneth map is a split monomorphism and the
+sequence splits (`HomologicalComplex.homologyKunnethShortComplexSplitting`).  The splitting is
+built from chosen splittings of the cycles and need not be natural in `K` and `L`.
+
 ## Main definitions and results
 
 * `HomologicalComplex.homologyPresentation` and
@@ -51,6 +56,8 @@ natural in `K` and `L`.
 * `HomologicalComplex.homologyKunnethShortComplex_shortExact`: **the Künneth short exact sequence**.
 * `HomologicalComplex.homologyTorToHomologyQuotient_naturality` and
   `HomologicalComplex.homologyToTor_naturality`: naturality in both complexes.
+* `HomologicalComplex.homologyKunnethShortComplexSplitting`: its splitting when the cycles of `K`
+  split off as well.
 
 ## References
 
@@ -257,11 +264,6 @@ variable [∀ q, Projective (cokernel (L.iCycles q))]
 the cycles split off `L`. -/
 private lemma shortExact_tensorLeft_cycles :
     (tensorLeftShortComplex K L.cyclesComplexShortComplex).ShortExact :=
-  have (q : ℕ) : IsSplitMono (L.iCycles q) :=
-    have hS : (ShortComplex.mk (L.iCycles q) (cokernel.π (L.iCycles q))
-        (cokernel.condition _)).ShortExact :=
-      { exact := ShortComplex.exact_of_g_is_cokernel _ (cokernelIsCokernel _) }
-    .mk' ⟨hS.splittingOfProjective.r, hS.splittingOfProjective.f_r⟩
   shortExact_tensorLeftShortComplex K L.cyclesComplexShortComplex_shortExact
 
 /-- The connecting morphism of `K ⊗ Z(L) ⟶ K ⊗ L ⟶ K ⊗ (L / Z(L))`, read through the Künneth
@@ -751,6 +753,25 @@ theorem homologyKunnethShortComplex_shortExact (m : ℕ) :
     dsimp
     rw [← h]
     exact epi_comp _ _
+
+variable [∀ p, IsSplitMono (K.iCycles p)]
+
+/-- **The Künneth short exact sequence splits** when, in addition, the cycles of `K` split off its
+terms; for instance for complexes `K` and `L` of projective modules over a principal ideal domain.
+The splitting comes from a retraction of the Künneth map
+(`HomologicalComplex.isSplitMono_homologyKunneth`) built from chosen splittings of the cycles, so
+it need not be natural in `K` and `L`. -/
+def homologyKunnethShortComplexSplitting (m : ℕ) : (homologyKunnethShortComplex K L m).Splitting :=
+  have := isSplitMono_homologyKunneth K L (m + 1)
+  .ofExactOfRetraction _ (homologyKunnethShortComplex_shortExact K L m).exact
+    (retraction (homologyKunneth K L (m + 1))) (IsSplitMono.id _)
+    (homologyKunnethShortComplex_shortExact K L m).epi_g
+
+/-- The retraction of the Künneth splitting is the chosen retraction of the Künneth map. -/
+@[simp] lemma homologyKunnethShortComplexSplitting_r (m : ℕ) :
+    (homologyKunnethShortComplexSplitting K L m).r =
+      retraction (homologyKunneth K L (m + 1)) (hf := isSplitMono_homologyKunneth K L (m + 1)) :=
+  (rfl)
 
 end Kunneth
 

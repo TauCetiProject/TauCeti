@@ -48,6 +48,11 @@ twisted by the system pulled back along `f`.
   map, and `twistedHomologyMap` the resulting map on twisted homology, together with their
   identity and composition laws and their naturality in the coefficient system.
 
+Families of maps that partition the singular simplices also decompose twisted chains
+in each degree (`isColimitCofanTwistedChainComplexXOfBijective`). This criterion applies to
+disjoint unions and uses Mathlib's `sigmaSigmaIso` and `Sigma.whiskerEquiv` to reindex the
+coefficient fibres.
+
 ## References
 
 * A. Hatcher, [*Algebraic Topology*](https://pi.math.cornell.edu/~hatcher/AT/AT.pdf),
@@ -795,6 +800,54 @@ lemma twistedHomologyConstantIso_hom_space_naturality (k : ℕ) :
       (by rw [CategoryTheory.Functor.map_comp, CategoryTheory.Functor.map_comp]; rfl))
 
 end ConstantMap
+
+section Coproduct
+
+variable {ι : Type v} (X : ι → TopCat.{v})
+  {Y : TopCat.{v}} (f : ∀ i, X i ⟶ Y)
+  (L : LocalCoefficientSystem.{u, v, max v w} R Y)
+
+variable (n : ℕ) (h : Function.Bijective
+  (fun p : Σ i, (TopCat.toSSet.obj (X i)) _⦋n⦌ ↦ (TopCat.toSSet.map (f p.1)).app _ p.2))
+
+/-- Reindex the coefficient fibres by the unique source simplex in the family. -/
+private def coproductTwistedChainsIso :
+    (∐ fun i ↦ (((pullback (f i).hom).obj L).twistedChainComplex).X n) ≅
+      L.twistedChainComplex.X n :=
+  (sigmaSigmaIso (fun i ↦ (TopCat.toSSet.obj (X i)) _⦋n⦌)
+    (fun i σ ↦ ((pullback (f i).hom).obj L).obj (initialVertex σ))).trans
+    (Sigma.whiskerEquiv (g := fun σ ↦ L.obj (initialVertex σ))
+      (Equiv.ofBijective _ h)
+      (fun _ ↦ Iso.refl _))
+
+private lemma ι_coproductTwistedChainsIso_hom (i : ι) :
+    Sigma.ι (fun i ↦ (((pullback (f i).hom).obj L).twistedChainComplex).X n) i ≫
+        (coproductTwistedChainsIso X f L n h).hom =
+      (twistedChainComplexMap (f i) L).f n := by
+  apply twistedChainComplex_hom_ext
+  intro σ
+  rw [ιTwistedChainComplex_twistedChainComplexMap_f]
+  -- The pulled-back fibre and the fibre of the included simplex coincide at default
+  -- transparency; this is the coefficient identification used to construct the reindexing.
+  erw [coproductTwistedChainsIso, Iso.trans_hom, sigmaSigmaIso_hom,
+    Sigma.whiskerEquiv_hom, Sigma.ι_comp_desc_assoc, Sigma.ι_comp_desc_assoc,
+    Sigma.ι_comp_map', Category.id_comp]
+  rfl
+
+/-- If every singular `n`-simplex of `Y` comes from exactly one member of a family of maps,
+then twisted `n`-chains of `Y` are the coproduct of the twisted `n`-chains of that family,
+with coefficient systems pulled back along those maps. -/
+def isColimitCofanTwistedChainComplexXOfBijective :
+    IsColimit (Cofan.mk (L.twistedChainComplex.X n)
+      (fun i ↦ (twistedChainComplexMap (f i) L).f n) :
+      Cofan fun i ↦ (((pullback (f i).hom).obj L).twistedChainComplex).X n) :=
+  IsColimit.ofIsoColimit
+    (coproductIsCoproduct
+      (fun i ↦ (((pullback (f i).hom).obj L).twistedChainComplex).X n))
+    (Cocone.ext (coproductTwistedChainsIso X f L n h) (fun ⟨i⟩ ↦
+      ι_coproductTwistedChainsIso_hom X f L n h i))
+
+end Coproduct
 
 end LocalCoefficientSystem
 

@@ -80,18 +80,6 @@ private noncomputable def functionFieldAlgHom (hxt : Transcendental k x)
     (twoChartModel hF hx).functionField →ₐ[k] (twoChartModel hF' hx').functionField :=
   ((functionFieldEquiv hx't).symm.toAlgHom.comp φ).comp (functionFieldEquiv hxt).toAlgHom
 
-/-- The morphism `Spec k(X') ⟶ X` through which `φ : F →ₐ[k] F'` moves the generic point of `X'`
-to the generic point of `X` is a morphism over `k`. -/
-private theorem specMap_functionFieldAlgHom_fromSpecStalk_comp_over (hxt : Transcendental k x)
-    (hx't : Transcendental k x') (φ : F →ₐ[k] F') :
-    (Spec.map (CommRingCat.ofHom (functionFieldAlgHom hxt hx't φ).toRingHom) ≫
-        (twoChartModel hF hx).fromSpecStalk _) ≫ twoChartModel hF hx ↘ Spec (.of k) =
-      (twoChartModel hF' hx').fromSpecStalk _ ≫ twoChartModel hF' hx' ↘ Spec (.of k) := by
-  rw [Category.assoc, Scheme.fromSpecStalk_genericPoint_comp_over,
-    Scheme.fromSpecStalk_genericPoint_comp_over, ← Spec.map_comp, ← CommRingCat.ofHom_comp]
-  congr 2
-  exact (functionFieldAlgHom hxt hx't φ).comp_algebraMap
-
 /-- **The morphism of two-chart models induced by a `k`-embedding `φ : F →ₐ[k] F'`** of function
 fields, for transcendental `x ∈ F` and `x' ∈ F'`: the unique dominant `k`-morphism
 `twoChartModel hF' hx' ⟶ twoChartModel hF hx` whose pullback of rational functions is `φ`
@@ -102,7 +90,8 @@ noncomputable def homOfAlgHom (hxt : Transcendental k x) (hx't : Transcendental 
   Scheme.homOfFunctionField (valuationRing_stalk hx't)
     (Spec.map (CommRingCat.ofHom (functionFieldAlgHom hxt hx't φ).toRingHom) ≫
       (twoChartModel hF hx).fromSpecStalk _)
-    (specMap_functionFieldAlgHom_fromSpecStalk_comp_over hF hF' hx hx' hxt hx't φ)
+    (Scheme.specMap_comp_fromSpecStalk_genericPoint_comp_over k _
+      (functionFieldAlgHom hxt hx't φ).commutes)
 
 variable (φ : F →ₐ[k] F')
 

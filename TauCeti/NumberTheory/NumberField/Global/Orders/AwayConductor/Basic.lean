@@ -87,6 +87,12 @@ theorem conductorModulus_finitePart : O.conductorModulus.finitePart = O.conducto
 theorem conductorModulus_infinitePart : O.conductorModulus.infinitePart = ∅ :=
   (rfl)
 
+/-- The conductor modulus of the maximal order is the trivial modulus. -/
+@[simp]
+theorem conductorModulus_maximalNumberFieldOrder :
+    (maximalNumberFieldOrder K).conductorModulus = Modulus.one K :=
+  Modulus.ext (by simp) (by simp)
+
 /-- An ideal of `𝓞 K` is prime to the conductor modulus exactly when it is nonzero and coprime
 to the conductor. -/
 theorem mem_integralIdealsPrimeTo_conductorModulus_iff {J : Ideal (𝓞 K)} :

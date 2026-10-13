@@ -41,9 +41,8 @@ unipotent-radical candidate.
 * J. S. Milne, *Algebraic Groups* (2017), Proposition 6.42 and Sections 5.a, 6.a.
 * A. Borel, *Linear Algebraic Groups*, Proposition 14.4 and Section 11.21.
 
-This advances Layer 5, "The unipotent radical", of the ReductiveGroups roadmap by proving
-binary-product closure for connected normal smooth unipotent closed subgroups. This is the
-closure input in the maximal-dimension construction of the unipotent radical.
+This proves binary-product closure for connected normal smooth unipotent closed subgroups. This is
+the closure input in the maximal-dimension construction of the unipotent radical.
 -/
 
 public section
