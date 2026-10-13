@@ -29,7 +29,7 @@ This file builds that vocabulary:
 * the group `idealsPrimeTo 𝔪` of invertible fractional ideals and the monoid
   `integralIdealsPrimeTo 𝔪` of nonzero integral ideals that are prime to the finite part.
 
-The last two are *abbreviations* for `TauCeti.NumberFieldArithmetic.idealsAway 𝔪.support` and
+The last two are *abbreviations* for `TauCeti.NumberFieldArithmetic.idealsAway K 𝔪.support` and
 `TauCeti.NumberFieldArithmetic.integralIdealsAway 𝔪.support`: there is exactly one group of
 prime-to fractional ideals and one monoid of prime-to integral ideals, and both are the ones built
 away from a finite set of primes.
@@ -504,7 +504,7 @@ multiplicity vanishes at every prime dividing the finite part.  There is one suc
 built away from a finite set of primes. -/
 noncomputable abbrev idealsPrimeTo (𝔪 : Modulus K) :
     Subgroup (FractionalIdeal (𝓞 K)⁰ K)ˣ :=
-  NumberFieldArithmetic.idealsAway (K := K) 𝔪.support
+  NumberFieldArithmetic.idealsAway K 𝔪.support
 
 /-- Coprimality of a nonzero integral ideal to a modulus: it is prime to the support, that is, to
 the finite part.  This is the membership predicate of `integralIdealsPrimeTo`. -/
