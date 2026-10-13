@@ -22,7 +22,8 @@ data on Massey's normalized cubical chains.
   chains, whose image is spanned by `n`-based cubes.
 * The homotopy of `c`, with time as the first coordinate, sweeps out the cube `D.sweep c` of one
   dimension more. Its first two faces are `c` and `D.retract c`, and its other faces are the swept
-  faces of `c`. The negative of the swept cube is therefore a chain homotopy
+  faces of `c`. The negative swept-cube operator `D.prismChain R` therefore satisfies
+  `∂ P + P ∂ = ρ - id`, so the swept-cube operator `-D.prismChain R` is a chain homotopy
   `D.retractHomotopy R` from the identity to `D.retractChainMap R`.
 
 In a dimension `m` with `0 < m < n`, the only `n`-based `m`-cube is the constant cube at `x`, which
@@ -310,7 +311,7 @@ private def prismHom (m : ℕ) :
   ModuleCat.ofHom (D.prismChain R m)
 
 /-- **The chain homotopy from the identity to the retraction onto `n`-based cubes**, given in
-degree `m` by the negative swept-cube operator `D.prismChain R m`. -/
+degree `m` by the swept-cube operator `-D.prismChain R m`. -/
 def retractHomotopy : Homotopy (𝟙 _) (D.retractChainMap R) :=
   (Homotopy.equivSubZero.symm
     (Homotopy.mkChainComplex (D.retractChainMap R - 𝟙 _)

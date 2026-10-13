@@ -133,6 +133,8 @@ theorem lmapDomain_mem_degenerate {n m : ℕ} {φ : SingularCube X n → Singula
 /-- The push-forward of a degenerate chain is degenerate. -/
 theorem map_mem_degenerate (f : C(X, Y)) {n : ℕ} {g : CubicalChain X R n}
     (hg : g ∈ degenerate X R n) : map R f n g ∈ degenerate Y R n := by
+  -- `map R f n` is `lmapDomain R R f.comp` by definition, but its body is not exposed outside
+  -- its defining module, so the two are identified on single cubes.
   rw [show map R f n = lmapDomain R R f.comp from lhom_ext fun c a ↦ by simp]
   exact lmapDomain_mem_degenerate R (fun _ hc ↦ hc.comp f) hg
 
