@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Sobolev.GraphStep
+public import TauCeti.Analysis.Sobolev.GraphStep.Basic
 public import TauCeti.Analysis.Sobolev.WeakDeriv.GelfandTriple
 public import Mathlib.Topology.ContinuousMap.Compact
 import Mathlib.Analysis.Normed.Operator.Banach
