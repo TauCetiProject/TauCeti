@@ -6,9 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Polydisc.Lemniscate
+public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Polydisc.RationalSubset
+import TauCeti.Topology.Homeomorph.SetCongr
 
 /-!
-# The domain `{|f| ≤ |g|}` of two polynomials in the closed unit disc
+# The domains `{|f| ≤ |g|}` and the rational subsets of the closed unit disc
 
 Let `K` be an algebraically closed nonarchimedean normed field and `X = Spa (K⟨T⟩, K⟨T⟩°)` the
 closed unit disc. For coprime polynomials `f` and `g` this file shows that
@@ -23,11 +25,18 @@ is a finite union of *holed discs*, closed discs with finitely many open discs r
 X(f/g) = ⋃_{(a, c, H) ∈ P} D(a, |c|) ∩ ⋂_{(b, d) ∈ H} {x : x(d) ≤ x(T - b)}
 ```
 
-for a finite set `P` of triples. A rational subset `R(f₁, …, fₙ / g)` of `X` is the intersection
-of the sets `X(fᵢ/g)`, so this is the description of the elementary building blocks of rational
-subdomains of the closed disc. Classically these are the rational lemniscates
+for a finite set `P` of triples. Classically these are the rational lemniscates
 `{y : |f(y)| ≤ |g(y)|}`; here the statement holds for all points of the adic disc, including those
 of rank two. It generalises the one-polynomial case `g = c` of `Lemniscate.lean`.
+
+When `K` is moreover a Tate ring, for instance when its norm is nontrivial, it follows that every
+rational subset of `X` is a finite union of holed discs, which describes the rational subdomains of
+the closed disc. A rational subset has a presentation `R(f₁, …, fₙ / g)` by polynomials with a
+nonzero constant among the `fᵢ`
+(`TauCeti.ValuationSpectrum.mem_spaRationalFamily_iff_exists_polynomial`). The constant forces
+`x(g) ≠ 0`, so the subset is the intersection of the domains `X(fᵢ/g)`, and in each of them the
+common factor `gcd(fᵢ, g)` can be cancelled. Finite intersections of finite unions of holed discs
+are again finite unions of holed discs, since two closed discs meet in a closed disc or not at all.
 
 Coprimality cannot be dropped: for `f = T` and `g = c T` with `0 < ‖c‖ < 1`, the domain `X(f/g)`
 is the zero locus of `T`, while every nonempty holed disc contains a Gauss point, at which `T` does
@@ -37,6 +46,8 @@ not vanish.
 
 * `TauCeti.ValuationSpectrum.exists_finset_setOf_vle_eq_iUnion_closedSubdisc_inter_iInter`: for
   coprime `f` and `g`, the domain `X(f/g)` is a finite union of holed discs.
+* `exists_finset_eq_iUnion_closedSubdisc_inter_iInter_of_mem_spaRationalFamily` (in the same
+  namespace): every rational subset of `X` is a finite union of holed discs.
 
 ## Implementation notes
 
@@ -56,6 +67,8 @@ because `K` is algebraically closed; so it becomes one more disc or hole about `
 * [T. Wedhorn, *Adic Spaces*][wedhorn_adic] (arXiv:1910.05934v1), Example 7.57.
 * J. Fresnel, M. van der Put, *Rigid Analytic Geometry and Its Applications*, Chapter 2, for
   the rational subdomains of the closed disc.
+* S. Bosch, U. Güntzer, R. Remmert, *Non-Archimedean Analysis*, §7.2, for rational subdomains of
+  affinoid spaces.
 -/
 
 public section
@@ -68,6 +81,8 @@ variable {K : Type*} [NormedField K] [NonarchimedeanRing K]
 
 local notation "T" => weightedX (fun _ : Fin 1 ↦ ({1} : Set K)) isWeightFamily_one_weight 0
 local notation "C" => weightedC (fun _ : Fin 1 ↦ ({1} : Set K)) isWeightFamily_one_weight
+local notation "𝒯" K => weightedRestrictedSubring (fun _ : Fin 1 ↦ ({1} : Set K))
+  isWeightFamily_one_weight
 
 /-! ### Finite unions of holed discs -/
 
@@ -394,5 +409,116 @@ theorem exists_finset_setOf_vle_eq_iUnion_closedSubdisc_inter_iInter [IsAlgClose
   rw [hcover]
   exact isHoledDiscUnion_biUnion _ fun γ _ ↦ isHoledDiscUnion_biUnion _ fun δ _ ↦
     isHoledDiscUnion_cell_inter hfg hg hZf hZg γ δ
+
+/-! ### Rational subsets of the closed disc -/
+
+private theorem IsHoledDiscUnion.inter {S S' : Set (closedPolydisc 1 K)} (hS : IsHoledDiscUnion S)
+    (hS' : IsHoledDiscUnion S') : IsHoledDiscUnion (S ∩ S') := by
+  classical
+  obtain ⟨P, rfl⟩ := hS'
+  rw [Set.inter_iUnion₂]
+  refine isHoledDiscUnion_biUnion P fun p _ ↦ ?_
+  rw [← Set.inter_assoc]
+  exact (hS.inter_closedSubdisc p.1 p.2.1).inter_biInter_hole p.2.2 Prod.fst Prod.snd
+
+private theorem isHoledDiscUnion_biInter {ι : Type*} (s : Finset ι)
+    {S : ι → Set (closedPolydisc 1 K)} (hS : ∀ i ∈ s, IsHoledDiscUnion (S i)) :
+    IsHoledDiscUnion (⋂ i ∈ s, S i) := by
+  classical
+  induction s using Finset.induction_on with
+  | empty => simpa using isHoledDiscUnion_univ
+  | insert i s _ ih =>
+    rw [Finset.set_biInter_insert]
+    exact (hS i (Finset.mem_insert_self i s)).inter
+      (ih fun j hj ↦ hS j (Finset.mem_insert_of_mem hj))
+
+omit [IsUltrametricDist K] in
+/-- Cancelling `gcd(g, p)` does not change the inequality `x(g) ≤ x(p)` at a point where
+`x(gcd(g, p)) ≠ 0`. -/
+private theorem vle_iff_vle_div_gcd [DecidableEq K] {x : closedPolydisc 1 K} {g p : Polynomial K}
+    (hp : p ≠ 0) (hx : x.1.valuation (Polynomial.eval₂RingHom C T (gcd g p)) ≠ 0) :
+    x.1.toValuativeRel.vle (Polynomial.eval₂RingHom C T g) (Polynomial.eval₂RingHom C T p) ↔
+      x.1.toValuativeRel.vle (Polynomial.eval₂RingHom C T (g / gcd g p))
+        (Polynomial.eval₂RingHom C T (p / gcd g p)) := by
+  have hh : gcd g p ≠ 0 := fun h0 ↦ hp ((gcd_eq_zero_iff g p).mp h0).2
+  have key : x.1.valuation (Polynomial.eval₂RingHom C T (gcd g p * (g / gcd g p))) ≤
+        x.1.valuation (Polynomial.eval₂RingHom C T (gcd g p * (p / gcd g p))) ↔
+      x.1.valuation (Polynomial.eval₂RingHom C T (g / gcd g p)) ≤
+        x.1.valuation (Polynomial.eval₂RingHom C T (p / gcd g p)) := by
+    simp only [map_mul]
+    exact mul_le_mul_iff_right₀ (zero_lt_iff.mpr hx)
+  rwa [EuclideanDomain.mul_div_cancel' hh (gcd_dvd_left g p),
+    EuclideanDomain.mul_div_cancel' hh (gcd_dvd_right g p), valuation_le_iff,
+    valuation_le_iff] at key
+
+/-- Let `G` be a finite set of polynomials containing a nonzero constant `c`, and `p ≠ 0`. The
+points with `x(g) ≤ x(p)` for all `g ∈ G` and `x(p) ≠ 0` are those with `x(g') ≤ x(p')` for all
+`g ∈ G`, where `g' = g / gcd(g, p)` and `p' = p / gcd(g, p)` are coprime. The constant `c` forces
+`x(p) ≠ 0` on both sides, and there the common factor `gcd(g, p)` cancels. -/
+private theorem setOf_forall_vle_eq_iInter_div_gcd [DecidableEq K] {G : Finset (Polynomial K)}
+    {p : Polynomial K} {c : K} (hc : c ≠ 0) (hcG : Polynomial.C c ∈ G) (hp : p ≠ 0) :
+    {x : closedPolydisc 1 K | (∀ g ∈ G, x.1.toValuativeRel.vle (Polynomial.eval₂RingHom C T g)
+        (Polynomial.eval₂RingHom C T p)) ∧
+      ¬ x.1.toValuativeRel.vle (Polynomial.eval₂RingHom C T p) 0} =
+      ⋂ g ∈ G, {x : closedPolydisc 1 K | x.1.toValuativeRel.vle
+        (Polynomial.eval₂RingHom C T (g / gcd g p))
+        (Polynomial.eval₂RingHom C T (p / gcd g p))} := by
+  ext x
+  have hp0 : ¬ x.1.toValuativeRel.vle (Polynomial.eval₂RingHom C T p) 0 ↔
+      x.1.valuation (Polynomial.eval₂RingHom C T p) ≠ 0 := by
+    rw [Ne, ← le_zero_iff, ← map_zero x.1.valuation, valuation_le_iff]
+  -- a divisor of a polynomial with nonzero value has nonzero value
+  have hdvd {f h : Polynomial K} (hhf : h ∣ f)
+      (hf : x.1.valuation (Polynomial.eval₂RingHom C T f) ≠ 0) :
+      x.1.valuation (Polynomial.eval₂RingHom C T h) ≠ 0 :=
+    ne_zero_of_dvd_ne_zero hf (map_dvd _ (map_dvd _ hhf))
+  rw [Set.mem_ofPred_eq, Set.mem_iInter₂, hp0]
+  refine ⟨fun ⟨hG, hx⟩ g hg ↦
+    (vle_iff_vle_div_gcd hp (hdvd (gcd_dvd_right g p) hx)).mp (hG g hg), fun hG ↦ ?_⟩
+  -- the constant `c` has nonzero value, and `x(c) ≤ x(p)` then gives `x(p) ≠ 0`
+  have hcx : x.1.valuation (Polynomial.eval₂RingHom C T (Polynomial.C c)) ≠ 0 := by
+    rwa [Polynomial.coe_eval₂RingHom, Polynomial.eval₂_C, Ne,
+      closedPolydisc_valuation_weightedC_eq_zero_iff]
+  have hcp := (vle_iff_vle_div_gcd hp (hdvd (gcd_dvd_left _ p) hcx)).mpr (hG _ hcG)
+  have hx : x.1.valuation (Polynomial.eval₂RingHom C T p) ≠ 0 :=
+    fun h0 ↦ hcx (le_zero_iff.mp (h0 ▸ (valuation_le_iff _ _ _).mpr hcp))
+  exact ⟨fun g hg ↦ (vle_iff_vle_div_gcd hp (hdvd (gcd_dvd_right g p) hx)).mpr (hG g hg), hx⟩
+
+/-- **Every rational subset of the closed unit disc is a finite union of holed discs.** Let `K`
+be algebraically closed and a Tate ring, as is every algebraically closed field with a nontrivial
+ultrametric norm. Then for every rational subset `U` of the closed unit disc
+`Spa (K⟨T⟩, K⟨T⟩°)` there is a finite set `P` of triples `(a, c, H)`, with `H` a finite set of
+pairs `(b, d)`, such that a point lies in `U` exactly when, for some `(a, c, H) ∈ P`, it lies in the
+closed disc `D(a, |c|)` and satisfies `x(d) ≤ x(T - b)` for every `(b, d) ∈ H`, that is, lies
+outside the open disc of radius `‖d‖` about `b`. -/
+theorem exists_finset_eq_iUnion_closedSubdisc_inter_iInter_of_mem_spaRationalFamily
+    [IsTateRing K] [IsAlgClosed K] {U : Set (closedPolydisc 1 K)}
+    (hU : (Homeomorph.setCongr (closedPolydisc_def 1 K)).symm ⁻¹' U ∈
+      spaRationalFamily (powerBoundedSubring (𝒯 K))) :
+    ∃ P : Finset (K × K × Finset (K × K)), U = ⋃ p ∈ P, closedSubdisc p.1 p.2.1 ∩
+      ⋂ q ∈ p.2.2, {x : closedPolydisc 1 K | x.1.toValuativeRel.vle (C q.2) (T - C q.1)} := by
+  classical
+  suffices h : IsHoledDiscUnion U from h
+  -- present `U` by polynomials, with a unit constant `c` among the numerators
+  obtain ⟨G, p, c, hc, hcG, hV⟩ := (mem_spaRationalFamily_iff_exists_polynomial _).mp hU
+  have hU' : U = {x : closedPolydisc 1 K | (∀ g ∈ G, x.1.toValuativeRel.vle
+      (Polynomial.eval₂RingHom C T g) (Polynomial.eval₂RingHom C T p)) ∧
+      ¬ x.1.toValuativeRel.vle (Polynomial.eval₂RingHom C T p) 0} := by
+    ext x
+    have hx := Set.ext_iff.mp hV (Homeomorph.setCongr (closedPolydisc_def 1 K) x)
+    simp only [Set.mem_preimage, Homeomorph.setCongr_apply, TauCeti.Homeomorph.setCongr_symm_apply,
+      mem_rationalSubset_iff, Finset.mem_image, forall_exists_index, and_imp,
+      forall_apply_eq_imp_iff₂] at hx
+    have hv : x.1 ∈ spa (powerBoundedSubring (𝒯 K)) := closedPolydisc_def 1 K ▸ x.2
+    exact hx.trans (and_iff_right hv)
+  rcases eq_or_ne p 0 with rfl | hp
+  · -- no point has `x(0) ≠ 0`
+    convert isHoledDiscUnion_empty
+    rw [hU', map_zero]
+    exact Set.eq_empty_of_forall_notMem fun x hx ↦ hx.2 (x.1.toValuativeRel.vle_refl 0)
+  -- after cancelling common factors, each inequality is between coprime polynomials
+  rw [hU', setOf_forall_vle_eq_iInter_div_gcd hc.ne_zero hcG hp]
+  exact isHoledDiscUnion_biInter G fun g _ ↦
+    exists_finset_setOf_vle_eq_iUnion_closedSubdisc_inter_iInter (isCoprime_div_gcd_div_gcd hp)
 
 end TauCeti.ValuationSpectrum
