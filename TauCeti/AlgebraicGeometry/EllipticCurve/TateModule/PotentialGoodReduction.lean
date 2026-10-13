@@ -107,14 +107,18 @@ theorem Affine.Point.map_eq_self_of_mem_inertiaSubgroup_of_mem_fixingSubgroup
   let τ : M ≃ₐ[L] M := AlgEquiv.ofRingEquiv (f := ρ.toRingEquiv) fun x ↦ Subtype.ext <|
     (AlgEquiv.restrictNormal_commutes σ M (algebraMap L M x)).trans
       ((IntermediateField.mem_fixingSubgroup_iff _ _).1 hσL _ ⟨x, rfl⟩)
-  have hτ : τ ∈ LocalFieldsRamification.lowerRamificationGroup L M 0 := by
-    have h := restrictNormal_mem_lowerRamificationGroup_zero M hσ
-    rw [LocalFieldsRamification.mem_lowerRamificationGroup_iff] at h ⊢
-    -- `τ` is `ρ` with its `L`-linearity recorded, so both act on `𝒪[M]` by the same map.
-    exact h
   -- `τ` and `ρ` have the same underlying map.
   have hτρ (x : M) : τ x = ρ x := by
     rw [AlgEquiv.ofRingEquiv_apply, AlgEquiv.coe_toRingEquiv]
+  have hτ : τ ∈ LocalFieldsRamification.lowerRamificationGroup L M 0 := by
+    have h := restrictNormal_mem_lowerRamificationGroup_zero M hσ
+    rw [LocalFieldsRamification.mem_lowerRamificationGroup_iff] at h ⊢
+    -- Hence `τ` and `ρ` act on `𝒪[M]` by the same map.
+    intro x
+    have hx : τ • x = ρ • x := Subtype.ext <| by
+      rw [AlgEquiv.coe_smul_integerRing, AlgEquiv.coe_smul_integerRing, hτρ]
+    rw [hx]
+    exact h x
   have hcomm : σ.toAlgHom.comp M.val = M.val.comp ρ.toAlgHom :=
     AlgHom.ext fun x ↦ (AlgEquiv.restrictNormal_commutes σ M x).symm
   obtain ⟨Q, hQP⟩ := (Affine.Point.exists_map_eq_iff P M.val).mpr
