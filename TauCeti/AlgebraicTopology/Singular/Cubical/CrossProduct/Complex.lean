@@ -223,7 +223,7 @@ theorem ι_cubicalCrossProduct_f {p q n : ℕ} (h : p + q = n) :
 product map. -/
 private theorem hom_tensorHom_eq_prodMap {X X' Y Y' : TopCat.{u}} (f : X ⟶ X') (g : Y ⟶ Y') :
     (f ⊗ₘ g).hom = f.hom.prodMap g.hom :=
-  (rfl)
+  ContinuousMap.ext fun p ↦ TopCat.tensor_apply f g p
 
 /-- **Naturality** of the cross product chain map in both spaces. -/
 @[reassoc]
@@ -233,11 +233,9 @@ theorem cubicalCrossProduct_naturality {X X' Y Y' : TopCat.{u}} (f : X ⟶ X') (
       cubicalCrossProduct R X Y ≫ (normalizedCubicalChainComplex R).map (f ⊗ₘ g) := by
   refine HomologicalComplex.hom_ext _ _ fun n ↦ ?_
   refine mapBifunctor.hom_ext fun p q (h : p + q = n) ↦ ?_
-  rw [HomologicalComplex.comp_f, HomologicalComplex.comp_f]
-  -- `⊗ₘ` on chain complexes is `HomologicalComplex.tensorHom` by definition, which `rw` does not
-  -- see through the monoidal structure instance
-  erw [HomologicalComplex.ι_tensorHom_assoc]
-  rw [ι_cubicalCrossProduct_f, ι_cubicalCrossProduct_f_assoc]
+  rw [HomologicalComplex.comp_f, HomologicalComplex.comp_f,
+    HomologicalComplex.tensorHom_eq_mapBifunctorMap, HomologicalComplex.ι_tensorHom_assoc,
+    ι_cubicalCrossProduct_f, ι_cubicalCrossProduct_f_assoc]
   refine ModuleCat.hom_ext (TensorProduct.ext' fun a b ↦ ?_)
   have h₁ := cubicalCrossProductSummand_apply R X' Y' p q n h
     (((normalizedCubicalChainComplex R).map f).f p a)
