@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Green.WindingWeight.Basic
 public import TauCeti.Analysis.Complex.CauchyKernel
+public import TauCeti.MeasureTheory.Function.MetricDerivative.Variation
 import TauCeti.MeasureTheory.Function.AbsolutelyContinuous.Trace
 import TauCeti.MeasureTheory.Integral.KernelPotential
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
@@ -15,7 +16,8 @@ import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 # `L¹` bounds for winding weights
 
 The winding weight of a curve contained in a disk has `L¹` norm bounded by twice the radius
-multiplied by its integral speed. Differences of winding weights are controlled by the associated
+multiplied by its total variation, equal to its integral speed. Differences of winding weights are
+controlled by the associated
 compactly truncated Cauchy potentials.
 -/
 
@@ -101,11 +103,13 @@ theorem integral_norm_windingWeight_sub_le_cauchyPotential (hab : a ≤ b)
 
 
 /-- A closed absolutely continuous curve in a disk of radius `R` has winding-weight `L¹` norm at
-most `2R` times its integral speed. -/
+most `2R` times its total variation. -/
 theorem integral_abs_windingWeight_le (hab : a ≤ b)
     (hγ : AbsolutelyContinuousOnInterval γ a b) (hclosed : γ a = γ b)
     (hR : ∀ t ∈ uIcc a b, γ t ∈ closedBall c R) :
-    (∫ z : ℂ, |windingWeight γ a b z|) ≤ 2 * R * ∫ t in a..b, ‖deriv γ t‖ := by
+    (∫ z : ℂ, |windingWeight γ a b z|) ≤
+      2 * R * (eVariationOn γ (uIcc a b)).toReal := by
+  rw [← hγ.integral_norm_deriv_eq_eVariationOn_toReal hab]
   have hR0 : 0 ≤ R := dist_nonneg.trans (mem_closedBall.mp (hR a left_mem_uIcc))
   have hconstant : AbsolutelyContinuousOnInterval (fun _ : ℝ ↦ γ a) a b :=
     (LipschitzWith.const (α := ℝ) (γ a)).lipschitzOnWith.absolutelyContinuousOnInterval
