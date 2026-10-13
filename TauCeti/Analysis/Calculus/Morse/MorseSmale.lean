@@ -28,6 +28,7 @@ hypotheses of the statements that use it, as in the pointwise theorems it is mea
   each critical point `q` are transverse at each of their common points.
 * `TauCeti.isMorseSmale_iff`: the unfolded form of the predicate.
 * `TauCeti.IsMorseSmale.transverse`: its pointwise elimination.
+* `TauCeti.isMorseSmale_congr`: the predicate does not depend on the Lipschitz witness.
 
 ## References
 
@@ -73,5 +74,11 @@ theorem IsMorseSmale.transverse {f : E → ℝ} {K : ℝ≥0} {hf : LipschitzWit
     Submodule.span ℝ (tangentConeAt ℝ (Flow.unstableSet (negativeGradientFlow f hf) p) y) ⊔
       Submodule.span ℝ (tangentConeAt ℝ (Flow.stableSet (negativeGradientFlow f hf) q) y) = ⊤ :=
   h hp hq hyu hys
+
+/-- **Independence of the Lipschitz witness.** The Morse–Smale condition does not depend on the
+Lipschitz bound used to define the negative-gradient flow. -/
+theorem isMorseSmale_congr (f : E → ℝ) {K K' : ℝ≥0} (hf : LipschitzWith K (∇ f))
+    (hf' : LipschitzWith K' (∇ f)) : IsMorseSmale f hf ↔ IsMorseSmale f hf' := by
+  rw [isMorseSmale_iff, isMorseSmale_iff, negativeGradientFlow_congr f hf hf']
 
 end TauCeti
