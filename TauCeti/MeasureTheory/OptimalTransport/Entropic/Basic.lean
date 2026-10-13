@@ -101,9 +101,11 @@ minimizer: `log (dπ/dR)` then integrates to the same value `∫ φ dμ + ∫ ψ
 coupling, which is the hypothesis of Csiszár's Pythagorean identity
 `TauCeti.klDiv_eq_klDiv_add_klDiv`. This is the sufficiency half of the characterisation of the
 Schrödinger minimizer by its density; the converse, that the minimizer has such a density, needs
-further hypotheses and is not part of this file. The potentials are measurable functions rather
-than almost everywhere defined ones, since the density is taken against `R` and not against the
-marginals.
+further hypotheses and is not part of this file. For a reference measure with bounded log-density
+against `μ.prod ν` it is proved in
+`TauCeti/MeasureTheory/OptimalTransport/Entropic/SchroedingerSystem.lean`. The potentials are
+measurable functions rather than almost everywhere defined ones, since the density is taken
+against `R` and not against the marginals.
 
 ## References
 

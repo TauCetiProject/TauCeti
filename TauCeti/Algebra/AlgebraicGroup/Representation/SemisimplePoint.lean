@@ -50,9 +50,8 @@ invariant under conjugation.
 * J. C. Jantzen, *Representations of Algebraic Groups*, I.2.
 * T. A. Springer, *Linear Algebraic Groups*, §2.4.
 
-This supplies the intrinsic semisimple-element predicate needed by Layer 4, "Jordan
-decomposition", of the ReductiveGroups roadmap. It uses the representation--comodule dictionary
-built in Layer 1.
+This supplies the intrinsic semisimple-element predicate used for the Jordan decomposition. It uses
+the representation--comodule dictionary.
 -/
 
 public section
@@ -278,6 +277,7 @@ theorem isSemisimplePoint_pointsMulEquiv_iff
         IsSemisimplePoint (AffineGroup.Product.pointsMulEquiv g).2 := by
   constructor
   · intro hg
+    rw [AffineGroup.Product.pointsMulEquiv_apply]
     exact ⟨hg.mapDomain Bialgebra.TensorProduct.includeLeft,
       hg.mapDomain Bialgebra.TensorProduct.includeRight⟩
   · rintro ⟨hleft, hright⟩

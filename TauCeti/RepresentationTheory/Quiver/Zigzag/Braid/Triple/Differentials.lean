@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Braid.Triple.Terms
-public import TauCeti.RepresentationTheory.Quiver.Zigzag.Braid.Normal
+public import TauCeti.RepresentationTheory.Quiver.Zigzag.Braid.TensorEvaluation
 public import TauCeti.Algebra.Category.GradedModuleCat.BimoduleTensor.Coproducts
 public import Mathlib.Algebra.Homology.BifunctorAssociator
 

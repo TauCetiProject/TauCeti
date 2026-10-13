@@ -22,7 +22,9 @@ base-change facts that Galois descent runs on:
 variables does), `negVariableChange_baseChange_map` (`[-1]` is defined over the base, so a base
 automorphism fixes it) and `map_smul_baseChange_eq` (the conjugate of an isomorphism of base
 changes is again one). Comparing an isomorphism with its conjugate via the last of these is what
-produces the Galois cocycle used by the twist classification.
+produces the Galois cocycle used by the twist classification. A change of variables over an
+extension descends to the base field exactly when its four coefficients do
+(`VariableChange.mem_range_baseChange_iff`).
 
 That cocycle comparison lands on a product `C * [-1]`, whose four components are read off here as
 `mul_negVariableChange_u/_r/_s/_t` rather than by unfolding `VariableChange.mul_def` against the
@@ -269,6 +271,23 @@ lemma map_smul_baseChange_eq (σ : L →ₐ[R] L) {V W : WeierstrassCurve R}
   rwa [hρ, hV, hW] at hmv
 
 end BaseChange
+
+/-- **A change of variables descends exactly when its coefficients do.** A change of variables
+over a nontrivial `K`-algebra `L` is the base change of one over the field `K` if and only if its
+four coefficients `u, r, s, t` lie in the image of `K`. -/
+lemma VariableChange.mem_range_baseChange_iff {K L : Type*} [Field K] [CommRing L] [Nontrivial L]
+    [Algebra K L] (C : VariableChange L) :
+    C ∈ Set.range (fun D : VariableChange K ↦ D.baseChange L) ↔
+      (C.u : L) ∈ Set.range (algebraMap K L) ∧ C.r ∈ Set.range (algebraMap K L) ∧
+        C.s ∈ Set.range (algebraMap K L) ∧ C.t ∈ Set.range (algebraMap K L) := by
+  constructor
+  · rintro ⟨D, rfl⟩
+    exact ⟨⟨D.u, rfl⟩, ⟨D.r, rfl⟩, ⟨D.s, rfl⟩, ⟨D.t, rfl⟩⟩
+  · rintro ⟨⟨u, hu⟩, ⟨r, hr⟩, ⟨s, hs⟩, ⟨t, ht⟩⟩
+    have hu₀ : u ≠ 0 := by
+      rintro rfl
+      exact C.u.ne_zero (hu.symm.trans (map_zero _))
+    exact ⟨⟨Units.mk0 u hu₀, r, s, t⟩, VariableChange.ext (Units.ext hu) hr hs ht⟩
 
 end WeierstrassCurve
 

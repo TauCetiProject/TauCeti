@@ -31,8 +31,7 @@ The specialization follows the formal pattern of
 `TauCeti.Algebra.AlgebraicGroup.Unipotent.Radical.Maximal`, using the shared theorem in
 `TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Normal.Product.Maximal`.
 
-This is the maximal-dimension comparison used to construct the solvable radical in Layer 6,
-"Reductive and semisimple groups", of the ReductiveGroups roadmap.
+This is the maximal-dimension comparison used to construct the solvable radical.
 -/
 
 public section

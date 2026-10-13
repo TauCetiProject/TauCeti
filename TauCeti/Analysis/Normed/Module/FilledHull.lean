@@ -10,6 +10,7 @@ public import TauCeti.Topology.FilledHull
 public import TauCeti.Analysis.Normed.Module.Ball.Exterior
 import Mathlib.Analysis.LocallyConvex.Separation
 import Mathlib.Analysis.Normed.Operator.NNNorm
+import TauCeti.Analysis.Normed.Module.Ball
 
 /-!
 # Boundedness and diameter of filled hulls
@@ -41,6 +42,8 @@ regularity assumptions on `K`. The related frontier bound in
 ## Main results
 
 * `TauCeti.filledHull_sphere` — filling a sphere gives the closed ball.
+* `TauCeti.range_smul_coe_sphere_subset_filledHull_sdiff` — scaling the unit sphere by `r`
+  places its image strictly inside the sphere of radius `R` whenever `‖r‖ < R`.
 * `TauCeti.filledHull_subset_closedConvexHull` — the filled hull of a nonempty set lies in its
   closed convex hull.
 * `TauCeti.isBounded_filledHull` and `TauCeti.diam_filledHull` — filling preserves boundedness
@@ -96,6 +99,18 @@ theorem filledHull_sphere (x : E) {r : ℝ} (hr : 0 ≤ r) :
     · exact subset_filledHull (mem_sphere.mpr h)
     · exact subset_filledHull_of_frontier_subset isBounded_ball frontier_ball_subset_sphere
         (mem_ball.mpr h)
+
+/-- Scaling the unit sphere by any real `r` of norm less than `R` places its image in the
+filled hull of the sphere of radius `R`, away from that sphere. This includes zero and negative
+scales and requires no separation assumption on the ambient seminormed space. -/
+theorem range_smul_coe_sphere_subset_filledHull_sdiff {r R : ℝ} (hrR : ‖r‖ < R) :
+    range (fun u : sphere (0 : E) 1 => r • (u : E)) ⊆
+      filledHull (range fun u : sphere (0 : E) 1 => R • (u : E)) \
+        range fun u : sphere (0 : E) 1 => R • (u : E) := by
+  have hR : 0 < R := (norm_nonneg r).trans_lt hrR
+  rw [range_smul_coe_sphere hR, filledHull_sphere _ hR.le]
+  rintro x ⟨u, rfl⟩
+  simpa [norm_smul, norm_eq_of_mem_sphere u] using hrR
 
 /-- The filled hull of a nonempty set lies in its closed convex hull. Nonemptiness is essential:
 with the zero seminorm, `filledHull ∅ = univ`, while `closedConvexHull ℝ ∅ = ∅`. -/

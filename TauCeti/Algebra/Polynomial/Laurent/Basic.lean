@@ -10,7 +10,11 @@ public import Mathlib.Algebra.Polynomial.Laurent
 public import Mathlib.Data.Int.Cast.Lemmas
 
 /-!
-# Evaluating a Laurent polynomial at a unit of a not necessarily commutative algebra
+# Laurent polynomial maps and evaluation
+
+Coefficient maps preserve the Laurent variable and map constant Laurent polynomials through the
+coefficient homomorphism. The lemmas `LaurentPolynomial.mapAlgHom_C` and
+`LaurentPolynomial.mapAlgHom_T` record these identities for algebra homomorphisms.
 
 Mathlib's `LaurentPolynomial.eval₂` substitutes a unit of a *commutative* semiring into a Laurent
 polynomial.  The Laurent coefficient ring of graded `K`-theory has to act on abelian groups, so it
@@ -50,6 +54,25 @@ every `R[T;T⁻¹]`-module. That automorphism is what a shift-compatible invaria
 -/
 
 public section
+
+namespace LaurentPolynomial
+
+variable {R A B : Type*} [CommSemiring R] [Semiring A] [Semiring B]
+variable [Algebra R A] [Algebra R B]
+
+/-- A map of Laurent coefficient algebras maps constant Laurent polynomials coefficientwise. -/
+@[simp]
+theorem mapAlgHom_C (φ : A →ₐ[R] B) (a : A) :
+    (AddMonoidAlgebra.mapAlgHom ℤ φ) (C a) = C (φ a) :=
+  AddMonoidAlgebra.mapAlgHom_single φ (0 : ℤ) a
+
+/-- A map of Laurent coefficient algebras fixes every Laurent monomial. -/
+@[simp]
+theorem mapAlgHom_T (φ : A →ₐ[R] B) (n : ℤ) :
+    (AddMonoidAlgebra.mapAlgHom ℤ φ) (T n) = T n :=
+  (AddMonoidAlgebra.mapAlgHom_single φ n 1).trans (by rw [map_one]; rfl)
+
+end LaurentPolynomial
 
 namespace TauCeti
 

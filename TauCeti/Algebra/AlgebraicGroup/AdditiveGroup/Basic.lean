@@ -36,8 +36,7 @@ bialgebra and convolution monoid APIs.
 
 public section
 
-open _root_.Coalgebra HopfAlgebra SymmetricAlgebra WithConv
-open scoped TensorProduct
+open SymmetricAlgebra WithConv
 
 namespace TauCeti
 
@@ -55,7 +54,7 @@ variable {B : Type*} [CommSemiring B] [Algebra R B]
 the convolution monoid of `R`-algebra maps out of `SymmetricAlgebra R M` is the additive monoid
 of `R`-linear maps `M →ₗ[R] A`: a point `F` corresponds to the linear map `x ↦ F (ι x)`, and
 convolution of points corresponds to addition of linear maps. -/
-@[expose] noncomputable def pointsMulEquiv :
+@[expose] def pointsMulEquiv :
     WithConv (SymmetricAlgebra R M →ₐ[R] A) ≃* Multiplicative (M →ₗ[R] A) where
   toFun F := Multiplicative.ofAdd (SymmetricAlgebra.lift.symm F.ofConv)
   invFun φ := toConv (SymmetricAlgebra.lift (Multiplicative.toAdd φ))

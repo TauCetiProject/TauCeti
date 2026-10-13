@@ -275,7 +275,9 @@ theorem PairOfDefinition.exists_continuous_coarsened_extension_of_valuation
     exact hvrt₀ne
   · intro w₀ hw₀ y
     rw [vle_ofValuation, map_one]
-    obtain ⟨k, hk⟩ := P.exists_pow_mul_mem hsnil y
+    obtain ⟨k, hk⟩ := exists_mul_pow_mem_of_isTopologicallyNilpotent hsnil
+      P.isOpen_ringOfDefinition y
+    rw [mul_comm] at hk
     rw [hvext, P.extendValuation_apply vr hsA₀ hsnil hvrsne y hk, hinvpow k]
     have hvals : v₀ (t₀ ^ k) = w₀ ((t₀ : P.ringOfDefinition) : R) ^ k := by
       rw [map_pow, ← hw₀]
