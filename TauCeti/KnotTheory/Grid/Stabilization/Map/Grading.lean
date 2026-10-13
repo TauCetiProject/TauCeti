@@ -20,19 +20,20 @@ components (`OddComponentGridDiagram.stabilizeX`, in `Stabilization/Grading.lean
 unblocked complexes `GC⁻(G')` and `GC⁻(G)` therefore carry the (`O`-Maslov, Alexander) bigrading
 of `Grading/Unblocked/Chain.lean`.
 
-This file proves that the stabilization chain map `GC⁻(G') ⟶ GC⁻(G)`
-(`GridDiagram.stabilizeXMap`) has bidegree `(0, 0)`. On a chain `c` it is `H_I^N` applied to the
+This file proves that the coefficient formula for the stabilization comparison has bidegree
+`(0, 0)` over every commutative ring. On a chain `c` it is `H_I^N` applied to the
 off-center part of `c`, followed by the renaming `V_j ↦ V_{s.predAbove j}` that merges the two
-variables of the new block (`GridDiagram.stabilizeXMap_f_apply`). A monomial `V^e · y` of `c`, for
+variables of the new block. A monomial `V^e · y` of `c`, for
 `y` an off-center state, therefore contributes terms `V^{e + O(r)} · x` with the exponent renamed,
 one for each rectangle `r` of the `X₂`-homotopy from `y` to the state `x'` obtained by inserting the
 center of the new block into `x`. Renaming variables does not change the total degree, and each
 such term has the bigrading of `V^e · y` (`GridDiagram.maslovOℤ_stabilizeX_eq_of_isEmpty` and
 `GridDiagram.alexander_stabilizeX_eq_of_mem_XHomotopyRectangles`).
 
-The bigrading calculation holds over every commutative ring and is stated on this explicit
-coefficient formula. Identifying it with the component of `stabilizeXMap` requires
-characteristic two.
+This formula is the underlying function of `GridDiagram.stabilizeXChainMap`
+(`GridDiagram.stabilizeXChainMap_apply`). Over a commutative ring of characteristic two,
+it is also the component of `GridDiagram.stabilizeXMap` (`GridDiagram.stabilizeXMap_f_apply`),
+so that chain map has bidegree `(0, 0)`.
 
 Since `stabilizeXMap` is a quasi-isomorphism (`GridDiagram.quasiIso_stabilizeXMap`), this is the
 chain-level input for identifying the bigraded homologies `GH⁻(G')` and `GH⁻(G)`, and so the
@@ -41,9 +42,9 @@ invariants `τ` of a knot grid and of this stabilization.
 ## Main results
 
 * `TauCeti.OddComponentGridDiagram.stabilizeXMap_mem_bigradedChainMinusPiece`: the stabilization
-  chain map preserves the bigrading of `GC⁻`.
-* `TauCeti.OddComponentGridDiagram.stabilizeXMap_mem_alexanderChainMinusPiece`: it preserves the
-  Alexander grading of `GC⁻`.
+  coefficient formula preserves the bigrading of `GC⁻` over every commutative ring.
+* `TauCeti.OddComponentGridDiagram.stabilizeXMap_mem_alexanderChainMinusPiece`: the chain map
+  `stabilizeXMap` preserves the Alexander grading of `GC⁻` in characteristic two.
 
 ## References
 
@@ -106,10 +107,10 @@ private theorem exists_monomialBidegree_eq_of_mem_support {c : GridChainMinus R 
       map_sum, Finsupp.degree_single, Finset.sum_const, smul_eq_mul, mul_one, val_stabilizeX] <;>
     push_cast <;> omega
 
-/-- **The stabilization chain map preserves the bigrading.** The chain map `GC⁻(G') ⟶ GC⁻(G)` of
-the stabilization splitting the `X`-marking of column `s` sends a chain of `GC⁻(G')` that is
-homogeneous of bidegree `g` to a chain of `GC⁻(G)` homogeneous of the same bidegree. The explicit
-coefficient formula preserves bidegrees over any commutative ring. -/
+/-- **The stabilization coefficient formula preserves the bigrading.** For the stabilization
+splitting the `X`-marking of column `s`, the displayed formula sends a chain of `GC⁻(G')`
+homogeneous of bidegree `g` to a chain of `GC⁻(G)` homogeneous of the same bidegree over any
+commutative ring. In characteristic two, this is the component of `stabilizeXMap`. -/
 theorem stabilizeXMap_mem_bigradedChainMinusPiece {g : ℤ × ℤ} {c : GridChainMinus R (n + 1)}
     (hc : c ∈ (G.stabilizeX s).bigradedChainMinusPiece R g) :
     Finsupp.mapRange (rename s.predAbove) (map_zero _)
