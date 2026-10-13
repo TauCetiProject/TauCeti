@@ -407,8 +407,7 @@ theorem relabelQuotient_toGroupExtension :
 theorem relabelQuotient_rightHom_apply (x : X.E) :
     (X.relabelQuotient e hsmul).toGroupExtension.rightHom x =
       e (X.toGroupExtension.rightHom x) := by
-  rw [relabelQuotient_toGroupExtension, GroupExtension.relabelQuotient_rightHom]
-  rfl
+  simp
 
 end RelabelQuotient
 

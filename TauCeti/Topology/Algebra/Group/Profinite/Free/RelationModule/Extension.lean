@@ -92,9 +92,7 @@ theorem presentationProfiniteExtension_rightHom_mk (f : freeProfiniteGroup ι) :
     (presentationProfiniteExtension p hg).toGroupExtension.rightHom (QuotientGroup.mk f) =
       lift g f := by
   let := presentationClassModuleAction p hg
-  rw [ProfiniteGroupExtension.relabelQuotient_rightHom_apply,
-    abelianizationProPExtension_rightHom, QuotientGroup.mapOfLE_mk,
-    ContinuousMonoidHom.quotientKerEquivOfSurjective_apply_mk]
+  simp
 
 section Comparison
 
