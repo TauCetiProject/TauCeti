@@ -125,6 +125,7 @@ noncomputable def basisReflection (i : Fin (n + 1)) (a : Fin (dimension n)) :
   Fintype.equivFin (Finset (Fin (n + 1))) (DynkinType.typeBSpinReflection i (signSet n a))
 
 /-- Enumerating a reflected basis index recovers the reflected sign set. -/
+@[simp]
 theorem signSet_basisReflection (i : Fin (n + 1)) (a : Fin (dimension n)) :
     signSet n (basisReflection n i a) = DynkinType.typeBSpinReflection i (signSet n a) := by
   simp [basisReflection, signSet]

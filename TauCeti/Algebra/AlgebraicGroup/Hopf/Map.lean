@@ -19,9 +19,7 @@ variance needed for the functor-of-points dictionary: a bialgebra morphism
 `WithConv (H₂ →ₐ[R] A) →* WithConv (H₁ →ₐ[R] A)`.
 
 For a commutative Hopf algebra `H`, this is the contravariant functoriality of
-`A ↦ Hom_R(H, A)` in the coordinate Hopf algebra. It is one of the formal pieces needed by
-the reductive-groups roadmap Layer 0 target "R-points as a group" and its follow-up
-"the functor of points" dictionary.
+`A ↦ Hom_R(H, A)` in the coordinate Hopf algebra.
 
 ## Main declarations
 

@@ -66,19 +66,14 @@ section Hopf
 
 variable [Semiring H] [_root_.HopfAlgebra R H] [CommSemiring A] [Algebra R A]
 
-/-- Post-composition of an algebra homomorphism `f : H →ₐ[R] A` with the antipode `S` of
+/-- Precomposition of an algebra homomorphism `f : H →ₐ[R] A` with the antipode `S` of
 `H`, as an `R`-algebra homomorphism `H →ₐ[R] A`. Its underlying linear map is
 `f.toLinearMap ∘ₗ HopfAlgebra.antipode R`. This is well-defined even when `H` is
 noncommutative: `S` is an antihomomorphism (`HopfAlgebra.antipode_mul_antidistrib`), and `A` is
-commutative, so `f ∘ S` is a homomorphism. -/
+commutative, so `f ∘ S` is a homomorphism. The construction composes
+`HopfAlgebra.antipodeAlgHomOp` with `AlgHom.fromOpposite`. -/
 noncomputable def antipodeComp (f : H →ₐ[R] A) : H →ₐ[R] A :=
-  AlgHom.ofLinearMap (f.toLinearMap ∘ₗ antipode R)
-    (by simp only [LinearMap.coe_comp, Function.comp_apply, antipode_one, f.toLinearMap_apply,
-      map_one])
-    fun x y => by
-      simp only [LinearMap.coe_comp, Function.comp_apply, antipode_mul_antidistrib,
-        f.toLinearMap_apply, map_mul]
-      rw [mul_comm]
+  (f.fromOpposite fun x y => Commute.all (f x) (f y)).comp (HopfAlgebra.antipodeAlgHomOp R H)
 
 /-- Evaluation of `antipodeComp f` at an element `h : H` is `f (S h)`. -/
 @[simp]
