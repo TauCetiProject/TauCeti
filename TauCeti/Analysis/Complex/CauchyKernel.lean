@@ -63,13 +63,6 @@ theorem integrable_truncatedCauchyKernel (R : ℝ) : Integrable (truncatedCauchy
   (integrable_indicator_iff isClosed_closedBall.measurableSet).mpr
     (Complex.locallyIntegrable_inv.integrableOn_isCompact (isCompact_closedBall 0 R))
 
-/-- The inverse-distance kernel is integrable on every closed disk, including at its pole. -/
-theorem integrableOn_norm_sub_inv_closedBall (w c : ℂ) (R : ℝ) :
-    IntegrableOn (fun z : ℂ ↦ ‖z - w‖⁻¹) (closedBall c R) := by
-  have h := (TauCeti.locallyIntegrable_norm_sub_rpow (mu := volume)
-    (s := -1) (by simp) w).integrableOn_isCompact (isCompact_closedBall c R)
-  simpa only [Real.rpow_neg_one, norm_sub_rev] using h
-
 private theorem real_volume_unitBall : volume.real (ball (0 : ℂ) 1) = Real.pi := by
   simp [measureReal_def, Complex.volume_ball]
 
