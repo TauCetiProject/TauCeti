@@ -33,6 +33,8 @@ basis, so `[Γ(1)]` is the trivial moduli problem (`ModuliProblem.gammaLevelOneI
 
 ## Main results
 
+* `TauCeti.AlgebraicGeometry.EllObj.Hom.isDrinfeldBasis_pointsPullback`: Drinfeld bases pull back
+  along arrows of `Ell/B`.
 * `TauCeti.AlgebraicGeometry.ModuliProblem.gammaEquiv_map`: the pull-back of a `[Γ(N)]`-structure
   along an arrow of `Ell/B` is its composite with base change of points.
 * `TauCeti.AlgebraicGeometry.ModuliProblem.gammaLevelOneIso`: `[Γ(1)]` is the trivial moduli
@@ -55,6 +57,16 @@ namespace TauCeti.AlgebraicGeometry
 
 variable {B : Scheme.{u}}
 
+/-- **Drinfeld bases pull back along arrows of `Ell/B`**: an arrow `f : X ⟶ Y` exhibits `X` as a
+base change of `Y`, and a Drinfeld basis `(ℤ/Nℤ)² →* E(S)` of `E[N]` stays one after composing
+with base change of points along `f`. -/
+theorem EllObj.Hom.isDrinfeldBasis_pointsPullback {X Y : EllObj B} {N : ℕ} [NeZero N]
+    {φ : Multiplicative (ZMod N × ZMod N) →* (𝟙_ (Over Y.base) ⟶ Over.mk Y.curve.structureMap)}
+    (f : X ⟶ Y) (h : Y.curve.IsDrinfeldBasis N φ) :
+    X.curve.IsDrinfeldBasis N
+      ((EllipticCurveGeom.pointsPullback f.isPullback f.zero_total).comp φ) :=
+  h.pointsPullback f.isPullback f.zero_total
+
 namespace ModuliProblem
 
 variable (B) (N : ℕ) [NeZero N]
@@ -64,7 +76,7 @@ object `(E/S)` of `Ell/B` is a Drinfeld basis `φ : (ℤ/Nℤ)² →* E(S)` of `
 it pulls back along an arrow of `Ell/B` by base change of points (`gammaEquiv_map`). -/
 noncomputable def gamma : ModuliProblem B :=
   homLevel B (Multiplicative (ZMod N × ZMod N)) (fun X φ ↦ X.curve.IsDrinfeldBasis N φ)
-    fun f h ↦ h.pointsPullback f.isPullback f.zero_total
+    EllObj.Hom.isDrinfeldBasis_pointsPullback
 
 variable {B N}
 
@@ -74,7 +86,7 @@ noncomputable def gammaEquiv (X : EllObj B) :
     (gamma B N).obj (op X) ≃
       {φ : Multiplicative (ZMod N × ZMod N) →* (𝟙_ (Over X.base) ⟶ Over.mk X.curve.structureMap) //
         X.curve.IsDrinfeldBasis N φ} :=
-  homLevelEquiv (hp := fun f h ↦ h.pointsPullback f.isPullback f.zero_total) X
+  homLevelEquiv (hp := EllObj.Hom.isDrinfeldBasis_pointsPullback) X
 
 /-- The pull-back of a `[Γ(N)]`-structure along an arrow `φ` of `Ell/B` is its composite with base
 change of points along `φ`. -/
