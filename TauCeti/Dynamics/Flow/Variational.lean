@@ -29,6 +29,9 @@ compute the first-order dependence of the flow on parameters of the vector field
 * `TauCeti.fderiv_flowOfLipschitz_eq_id_add_integral`: the integral form.
 * `TauCeti.hasDerivAt_fderiv_flowOfLipschitz`: the differential form.
 * `TauCeti.hasDerivAt_fderiv_flowOfLipschitz_apply`: the differential form applied to a vector.
+* `TauCeti.fderiv_flow_add`, `TauCeti.fderiv_flow_neg_comp`, `TauCeti.fderiv_flow_comp_neg`: for a
+  flow with differentiable time maps, `Dϕ_{s+t}(x) = Dϕ_s(ϕ_t x) ∘ Dϕ_t(x)`, and `Dϕ_t(x)` is
+  invertible with inverse `Dϕ_{-t}(ϕ_t x)`.
 -/
 
 public section
@@ -135,5 +138,34 @@ theorem hasDerivAt_fderiv_flowOfLipschitz_apply (x w : E) (t : ℝ) :
     |>.congr_deriv (by simp)
 
 end Smooth
+
+section Composition
+
+variable {ϕ : Flow ℝ E}
+
+omit [CompleteSpace E] in
+/-- **The chain rule for the group law of a flow**: `Dϕ_{s+t}(x) = Dϕ_s(ϕ_t x) ∘ Dϕ_t(x)`. -/
+theorem fderiv_flow_add (hϕ : ∀ t, Differentiable ℝ (ϕ t)) (s t : ℝ) (x : E) :
+    fderiv ℝ (ϕ (s + t)) x = (fderiv ℝ (ϕ s) (ϕ t x)).comp (fderiv ℝ (ϕ t) x) := by
+  have e : ϕ (s + t) = ϕ s ∘ ϕ t := funext (ϕ.map_add s t)
+  rw [e]
+  exact fderiv_comp x (hϕ s _) (hϕ t x)
+
+omit [CompleteSpace E] in
+/-- The derivative of the time-`(-t)` map at `ϕ t x` is a left inverse of `Dϕ_t(x)`. -/
+theorem fderiv_flow_neg_comp (hϕ : ∀ t, Differentiable ℝ (ϕ t)) (t : ℝ) (x : E) :
+    (fderiv ℝ (ϕ (-t)) (ϕ t x)).comp (fderiv ℝ (ϕ t) x) = ContinuousLinearMap.id ℝ E := by
+  rw [← fderiv_flow_add hϕ, neg_add_cancel, Flow.map_zero, fderiv_id]
+
+omit [CompleteSpace E] in
+/-- The derivative of the time-`(-t)` map at `ϕ t x` is a right inverse of `Dϕ_t(x)`. -/
+theorem fderiv_flow_comp_neg (hϕ : ∀ t, Differentiable ℝ (ϕ t)) (t : ℝ) (x : E) :
+    (fderiv ℝ (ϕ t) x).comp (fderiv ℝ (ϕ (-t)) (ϕ t x)) = ContinuousLinearMap.id ℝ E := by
+  have hx : ϕ (-t) (ϕ t x) = x := by rw [← ϕ.map_add, neg_add_cancel, Flow.map_zero_apply]
+  have := fderiv_flow_add hϕ t (-t) (ϕ t x)
+  rw [add_neg_cancel, Flow.map_zero, fderiv_id, hx] at this
+  exact this.symm
+
+end Composition
 
 end TauCeti

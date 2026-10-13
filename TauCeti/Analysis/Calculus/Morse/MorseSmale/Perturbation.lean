@@ -44,6 +44,8 @@ for parameters in the closed unit ball.
   perturbed flow along a tangent vector `(v, e)` solves the inhomogeneous variational equation
   `u' = -D(∇f)(φₜ x) u - ∑ᵢ eᵢ ∇hᵢ(φₜ x)` along the negative-gradient orbit of `x`, with
   `TauCeti.perturbedFlow_apply_zero` and `TauCeti.snd_fderiv_perturbedFlow_apply`.
+* `TauCeti.fst_fderiv_perturbedFlow_apply_eq_neg_integral`: Duhamel's formula for the derivative
+  of the perturbed flow in a parameter direction at the parameter `0`.
 
 ## References
 
@@ -454,6 +456,105 @@ theorem hasDerivAt_fst_fderiv_perturbedFlow_apply (hfs : ContDiff ℝ 2 f)
   have hw2 : w = (w.1, q.2) := Prod.ext rfl (snd_fderiv_perturbedFlow_apply hfs hf hh t _ _)
   rw [hw2, fderiv_perturbedField_apply_zero hfs hh] at h0
   exact hasFDerivAt_fst.comp_hasDerivAt t h0
+
+/-- On the slice of parameter `0`, the derivative of the perturbed flow restricts to the derivative
+of the negative-gradient flow of `f`. -/
+private theorem fderiv_negativeGradientFlow_eq (hfs : ContDiff ℝ 2 f) (hf : LipschitzWith K (∇ f))
+    (hh : ∀ i, IsAdmissiblePerturbation f (h i)) (t : ℝ) (x : E) :
+    fderiv ℝ (negativeGradientFlow f hf t) x =
+      (ContinuousLinearMap.fst ℝ E (EuclideanSpace ℝ ι)).comp
+        ((fderiv ℝ (perturbedFlow f h hf hh t) (x, 0)).comp
+          (ContinuousLinearMap.inl ℝ E (EuclideanSpace ℝ ι))) := by
+  have e : negativeGradientFlow f hf t =
+      fun y ↦ (perturbedFlow f h hf hh t (y, (0 : EuclideanSpace ℝ ι))).1 := funext fun y ↦ by
+    rw [perturbedFlow_apply_zero (hfs.differentiable (by norm_num)) hf hh]
+  rw [e]
+  exact (hasFDerivAt_fst.comp x ((differentiableAt_perturbedFlow hfs hf hh t
+    (x, 0)).hasFDerivAt.comp x (hasFDerivAt_prodMk_left (𝕜 := ℝ) x _))).fderiv
+
+/-- **The variational equation of the negative-gradient flow**:
+`d/dt Dφₜ(x) = -D(∇f)(φₜ x) ∘ Dφₜ(x)`. -/
+private theorem hasDerivAt_fderiv_negativeGradientFlow (hfs : ContDiff ℝ 2 f)
+    (hf : LipschitzWith K (∇ f)) (x : E) (t : ℝ) :
+    HasDerivAt (fun τ ↦ fderiv ℝ (negativeGradientFlow f hf τ) x)
+      (-(fderiv ℝ (∇ f) (negativeGradientFlow f hf t x)).comp
+        (fderiv ℝ (negativeGradientFlow f hf t) x)) t := by
+  -- The empty perturbation family realizes the flow of `f` as a slice of an augmented flow.
+  let h₀ : Fin 0 → E → ℝ := fun _ _ ↦ 0
+  have hh : ∀ i, IsAdmissiblePerturbation f (h₀ i) := fun i ↦ i.elim0
+  have h0 := hasDerivAt_fderiv_flowOfLipschitz
+    (exists_lipschitzWith_perturbedField hf hh).choose_spec (contDiff_perturbedField hfs hh)
+    (x, 0) t
+  rw [← perturbedFlow_eq_flowOfLipschitz hf hh,
+    perturbedFlow_apply_zero (hfs.differentiable (by norm_num)) hf hh] at h0
+  have h1 := (hasDerivAt_const t (ContinuousLinearMap.fst ℝ E (EuclideanSpace ℝ (Fin 0)))).clm_comp
+    (h0.clm_comp (hasDerivAt_const t (ContinuousLinearMap.inl ℝ E (EuclideanSpace ℝ (Fin 0)))))
+  simp_rw [fderiv_negativeGradientFlow_eq hfs hf hh _ x]
+  refine h1.congr_deriv ?_
+  ext v
+  have hw : fderiv ℝ (perturbedFlow f h₀ hf hh t) (x, 0) (v, 0) =
+      ((fderiv ℝ (perturbedFlow f h₀ hf hh t) (x, 0) (v, 0)).1, 0) :=
+    Prod.ext rfl (snd_fderiv_perturbedFlow_apply hfs hf hh t (x, 0) (v, 0))
+  simp only [ContinuousLinearMap.zero_comp, ContinuousLinearMap.comp_zero, zero_add, add_zero,
+    ContinuousLinearMap.comp_apply, ContinuousLinearMap.inl_apply]
+  rw [hw, fderiv_perturbedField_apply_zero hfs hh]
+  simp
+
+/-- **Duhamel's formula for the parameter variation.** At the parameter `0`, the derivative of the
+perturbed flow in a parameter direction `e` is
+`-Dφ_T(x) ∫₀ᵀ Dφ_{-σ}(φ_σ x) (∑ᵢ eᵢ ∇hᵢ(φ_σ x)) dσ`, where `φ` is the negative-gradient flow of
+`f`: the perturbation `∑ᵢ eᵢ ∇hᵢ` met along the orbit is transported back to time `0`,
+integrated, and carried forward to time `T`. -/
+theorem fst_fderiv_perturbedFlow_apply_eq_neg_integral (hfs : ContDiff ℝ 2 f)
+    (hf : LipschitzWith K (∇ f)) (hh : ∀ i, IsAdmissiblePerturbation f (h i)) (x : E)
+    (e : EuclideanSpace ℝ ι) (T : ℝ) :
+    (fderiv ℝ (perturbedFlow f h hf hh T) (x, 0) (0, e)).1 =
+      -fderiv ℝ (negativeGradientFlow f hf T) x
+        (∫ σ in (0 : ℝ)..T, fderiv ℝ (negativeGradientFlow f hf (-σ))
+          (negativeGradientFlow f hf σ x)
+          (∑ i, e i • ∇ (h i) (negativeGradientFlow f hf σ x))) := by
+  set φ := negativeGradientFlow f hf
+  have hφd : ∀ t, Differentiable ℝ (φ t) := fun t ↦
+    (contDiff_negativeGradientFlow_apply f hf hfs t).differentiable one_ne_zero
+  set M : ℝ → E →L[ℝ] E := fun t ↦ fderiv ℝ (φ t) x
+  set N : ℝ → E →L[ℝ] E := fun t ↦ fderiv ℝ (φ (-t)) (φ t x)
+  set u : ℝ → E := fun t ↦ (fderiv ℝ (perturbedFlow f h hf hh t) (x, 0) (0, e)).1
+  set b : ℝ → E := fun t ↦ ∑ i, e i • ∇ (h i) (φ t x)
+  -- `Dφₜ(x)` is a unit with inverse `Dφ_{-t}(φₜ x)`.
+  let U : ℝ → (E →L[ℝ] E)ˣ := fun t ↦
+    ⟨M t, N t, fderiv_flow_comp_neg hφd t x, fderiv_flow_neg_comp hφd t x⟩
+  have hinv : ∀ t, Ring.inverse (M t) = N t := fun t ↦ Ring.inverse_unit (U t)
+  have hMN : ∀ t v, M t (N t v) = v := fun t v ↦
+    congrArg (· v) (fderiv_flow_comp_neg hφd t x)
+  have hM : ∀ t, HasDerivAt M (-(fderiv ℝ (∇ f) (φ t x)).comp (M t)) t :=
+    hasDerivAt_fderiv_negativeGradientFlow hfs hf x
+  have hu : ∀ t, HasDerivAt u (-(fderiv ℝ (∇ f) (φ t x)) (u t) - b t) t := fun t ↦ by
+    simpa using hasDerivAt_fst_fderiv_perturbedFlow_apply hfs hf hh x (0, e) t
+  -- The inverse of `Dφₜ(x)` moves with derivative `Dφ_{-t}(φₜ x) ∘ D(∇f)(φₜ x)`.
+  have hN : ∀ t, HasDerivAt (fun τ ↦ Ring.inverse (M τ))
+      (N t * (fderiv ℝ (∇ f) (φ t x)).comp (M t) * N t) t := fun t ↦ by
+    refine ((hasFDerivAt_ringInverse (𝕜 := ℝ) (U t)).comp_hasDerivAt t (hM t)).congr_deriv ?_
+    simp [U]
+  have hW : ∀ t, HasDerivAt (fun τ ↦ Ring.inverse (M τ) (u τ)) (-(N t (b t))) t := fun t ↦ by
+    refine ((hN t).clm_apply (hu t)).congr_deriv ?_
+    simp [hinv, hMN]
+    abel
+  have hcont : Continuous fun σ ↦ -(N σ (b σ)) := by
+    have hN' : Continuous fun σ ↦ N σ := by
+      simp_rw [← hinv]
+      exact continuous_iff_continuousAt.2 fun t ↦ (hN t).continuousAt
+    have horb : Continuous fun σ ↦ φ σ x :=
+      (contDiff_negativeGradientFlow f hf hfs).continuous.comp
+        (continuous_id.prodMk continuous_const)
+    have hb : Continuous b := continuous_finsetSum _ fun i _ ↦ continuous_const.smul
+      ((((hh i).contDiff.gradient_right (m := 1) (by norm_num)).continuous).comp horb)
+    exact (hN'.clm_apply hb).neg
+  have hFTC := intervalIntegral.integral_eq_sub_of_hasDerivAt (fun t _ ↦ hW t)
+    (hcont.intervalIntegrable 0 T)
+  have hu0 : u 0 = 0 := by simp [u, Flow.map_zero]
+  rw [hu0, map_zero, sub_zero, intervalIntegral.integral_neg, hinv] at hFTC
+  calc u T = M T (N T (u T)) := (hMN T _).symm
+    _ = -M T (∫ σ in (0 : ℝ)..T, N σ (b σ)) := by rw [← hFTC, map_neg]
 
 end ParameterDerivative
 
