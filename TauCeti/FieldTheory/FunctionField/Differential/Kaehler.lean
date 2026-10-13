@@ -289,8 +289,8 @@ function field `F / k` has `dim_F Ω[F⁄k] ≥ 2` exactly when no `x` transcend
 theorem two_le_finrank_kaehlerDifferential_iff :
     2 ≤ finrank F Ω[F⁄k] ↔ ∀ x : F, Transcendental k x → ¬ Algebra.IsSeparable k⟮x⟯ F := by
   have := hF.finrank_kaehlerDifferential_pos
-  rw [show 2 ≤ finrank F Ω[F⁄k] ↔ ¬ finrank F Ω[F⁄k] = 1 by omega,
-    hF.finrank_kaehlerDifferential_eq_one_iff]
+  have h2 : 2 ≤ finrank F Ω[F⁄k] ↔ ¬ finrank F Ω[F⁄k] = 1 := by omega
+  rw [h2, hF.finrank_kaehlerDifferential_eq_one_iff]
   simp only [not_exists, not_and]
 
 /-- An element `α` of `F` outside `k` with a power `α ^ q ^ n` in `k`, `q` the exponential
