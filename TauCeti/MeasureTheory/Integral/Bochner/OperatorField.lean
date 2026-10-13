@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Integral.DominatedConvergence
-public import Mathlib.MeasureTheory.Function.Holder
+import Mathlib.MeasureTheory.Function.Holder
 import Mathlib.MeasureTheory.Function.StronglyMeasurable.Lemmas
 
 /-!

@@ -16,7 +16,7 @@ For a continuously differentiable curve in a real normed space, its
 metric total variation equals the integral of the norm of its derivative.
 
 The metric derivative identity for absolutely continuous curves, together with identification
-of the derivative at interior points, gives the equality. The upper bound follows immediately.
+of the derivative at interior points, gives the equality.
 
 ## Main result
 
@@ -32,23 +32,9 @@ identity used as an analytic prerequisite by the lower-semicontinuity
 comparison; this file does not claim the broader
 Hopf--Rinow dependency path.
 
-## Provenance
-
-The original partition-comparison architecture follows
-`DoCarmoLib/Riemannian/Geodesic/HopfRinow/EVariationLePathELength.lean` in the
-Apache-2.0 `frenzymath/Poincare-Conjecture` source at revision
-`24f32e4d600878bfaac6bc2f2f9324175571c321`. That source proves the forward
-comparison with Riemannian path length. The derivative-integral equality follows from the
-generic absolutely continuous metric-speed identity. This reverse comparison is a Tau Ceti
-proof and is not asserted to be present in that source.
-
 ## References
 
 * M. P. do Carmo, *Riemannian Geometry*, Chapter 7, Section 2.
-* The source-first Lean snapshot above, revision
-  `24f32e4d600878bfaac6bc2f2f9324175571c321`, supplies the partition architecture
-  via `eVariationOn_le_pathELength`; the reverse inequality is original to this
-  module.
 -/
 
 public section
@@ -85,13 +71,6 @@ theorem eVariationOn_eq_lintegral_enorm_derivWithin {f : ℝ → F} {a b : ℝ}
       |>.differentiableAt one_ne_zero
   rw [hd.hasDerivAt.metricDerivative_eq,
     derivWithin_of_mem_nhds (Icc_mem_nhds ht.1 ht.2)]
-
-/-- For a `C¹` curve in a real normed space, metric total variation is bounded
-by the integral of the norm of its derivative. -/
-theorem eVariationOn_le_lintegral_enorm_derivWithin {f : ℝ → F} {a b : ℝ}
-    (hf : ContDiffOn ℝ 1 f (Icc a b)) :
-    eVariationOn f (Icc a b) ≤ ∫⁻ t in Icc a b, ‖derivWithin f (Icc a b) t‖ₑ :=
-  (eVariationOn_eq_lintegral_enorm_derivWithin hf).le
 
 end
 

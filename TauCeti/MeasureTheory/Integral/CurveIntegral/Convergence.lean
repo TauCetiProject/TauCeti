@@ -7,6 +7,7 @@ module
 
 public import TauCeti.MeasureTheory.Integral.IntervalIntegral.AbsolutelyContinuousFun
 public import TauCeti.MeasureTheory.Integral.Bochner.OperatorField
+import Mathlib.MeasureTheory.Function.Holder
 
 /-!
 # Convergence of integrals of bounded 1-forms
