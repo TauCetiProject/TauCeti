@@ -11,15 +11,14 @@ public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 public import Mathlib.RingTheory.Ideal.Operations
 import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 import Mathlib.LinearAlgebra.Isomorphisms
-import Mathlib.LinearAlgebra.Matrix.FiniteDimensional
 import TauCeti.RingTheory.Ideal.Operations
 
 /-!
 # Hom spaces out of a projective module
 
 Let `k` be a field and `A` a `k`-algebra. For a projective `A`-module `P` the functor
-`Hom_A(P, -)` is exact, so when `P` and the targets are finite-dimensional over `k` the dimension
-`dim_k Hom_A(P, -)` is additive across a submodule and its quotient.
+`Hom_A(P, -)` is exact, so when `Hom_A(P, M)` is finite-dimensional over `k` its dimension
+is the sum of the dimensions of the hom spaces into a submodule of `M` and its quotient.
 
 Exactness of `Hom_A(P, -)` also computes the maps from `P` into a reduction `V ⧸ x • V`, for `A`
 an algebra over a commutative ring `R` and `x : R` a non-zero-divisor on `V`: they are the
@@ -42,28 +41,36 @@ public section
 
 namespace TauCeti
 
+section Quotient
+
+variable {R A P V : Type*} [CommSemiring R] [Ring A] [Algebra R A] [AddCommGroup P]
+  [Module A P] [AddCommGroup V] [Module R V] [Module A V] [IsScalarTower R A V]
+
+variable (R P) [Module.Projective A P] in
+/-- **Maps from a projective module into a quotient lift.** For `P` projective, every map
+`P → V ⧸ N` is the reduction of a map `P → V`. -/
+theorem compRight_mkQ_surjective (N : Submodule A V) :
+    Function.Surjective (LinearMap.compRight (M := P) R N.mkQ) := fun g ↦
+  Module.projective_lifting_property N.mkQ g N.mkQ_surjective
+
+end Quotient
+
 variable {k A P M : Type*} [Field k] [Ring A] [Algebra k A]
-  [AddCommGroup P] [Module k P] [Module A P] [IsScalarTower k A P] [FiniteDimensional k P]
-  [Module.Projective A P]
-  [AddCommGroup M] [Module k M] [Module A M] [IsScalarTower k A M] [FiniteDimensional k M]
+  [AddCommGroup P] [Module A P] [Module.Projective A P]
+  [AddCommGroup M] [Module k M] [Module A M] [IsScalarTower k A M]
+  [FiniteDimensional k (P →ₗ[A] M)]
 
 variable (k P) in
-/-- **`dim_k Hom_A(P, -)` is additive**, for `P` projective and finite-dimensional over `k`: the
-functor `Hom_A(P, -)` is exact, so a submodule and its quotient split the dimension of the hom
-space out of `P`. -/
+/-- **`dim_k Hom_A(P, -)` is additive**, for `P` projective and `Hom_A(P, M)` finite-dimensional
+over `k`: a submodule and its quotient split the dimension of the hom space out of `P`. Neither
+`P` nor `M` needs to be finite-dimensional over `k`. -/
 theorem finrank_linearMap_quotient_add_finrank_linearMap (N : Submodule A M) :
     Module.finrank k (P →ₗ[A] M ⧸ N) + Module.finrank k (P →ₗ[A] N)
       = Module.finrank k (P →ₗ[A] M) := by
-  have : FiniteDimensional k N :=
-    Module.Finite.of_injective ((N.subtype).restrictScalars k) N.injective_subtype
-  have : FiniteDimensional k (M ⧸ N) :=
-    Module.Finite.of_surjective ((N.mkQ).restrictScalars k) N.mkQ_surjective
   set α : (P →ₗ[A] N) →ₗ[k] (P →ₗ[A] M) := LinearMap.compRight k N.subtype with hα
   set β : (P →ₗ[A] M) →ₗ[k] (P →ₗ[A] M ⧸ N) := LinearMap.compRight k N.mkQ with hβ
-  have hβsurj : Function.Surjective β := fun g =>
-    (Module.projective_lifting_property N.mkQ g N.mkQ_surjective).imp fun _ h => h
-  have hαinj : Function.Injective α := fun g g' h =>
-    LinearMap.ext fun p => Subtype.ext (DFunLike.congr_fun h p)
+  have hβsurj : Function.Surjective β := compRight_mkQ_surjective k P N
+  have hαinj : Function.Injective α := N.injective_subtype.injective_linearMapComp_left
   have hker : LinearMap.ker β = LinearMap.range α := by
     ext g
     refine ⟨fun hg => ?_, ?_⟩
@@ -82,8 +89,12 @@ section Reduction
 
 open Pointwise
 
-variable {R A P V : Type*} [CommRing R] [Ring A] [Algebra R A] [AddCommGroup P] [Module A P]
-  [AddCommGroup V] [Module R V] [Module A V] [IsScalarTower R A V] {x : R}
+variable {R A P V : Type*} [Ring A] [AddCommGroup P] [Module A P]
+  [AddCommGroup V] [Module A V] {x : R}
+
+section CommSemiring
+
+variable [CommSemiring R] [Algebra R A] [Module R V] [IsScalarTower R A V]
 
 variable (P) in
 /-- **Maps into `x • V` are multiples of `x`.** For `x : R` a non-zero-divisor on the `A`-module
@@ -112,14 +123,10 @@ theorem ker_compRight_mkQ_eq_smul_top (hx : IsSMulRegular V x) :
       Submodule.mkQ_apply, LinearMap.zero_apply, Submodule.Quotient.mk_eq_zero]
     exact (Submodule.mem_span_algebraMap_smul_top_iff x).mpr ⟨g p, rfl⟩
 
-variable [Module.Projective A P]
+end CommSemiring
 
-variable (R P) in
-/-- **Maps from a projective module into a quotient lift.** For `P` projective, every map
-`P → V ⧸ N` is the reduction of a map `P → V`. -/
-theorem compRight_mkQ_surjective (N : Submodule A V) :
-    Function.Surjective (LinearMap.compRight (M := P) R N.mkQ) := fun g ↦
-  Module.projective_lifting_property N.mkQ g N.mkQ_surjective
+variable [CommRing R] [Algebra R A] [Module R V] [IsScalarTower R A V]
+  [Module.Projective A P]
 
 variable (P) in
 /-- **Maps from a projective module into a reduction.** Let `A` be an algebra over a commutative
