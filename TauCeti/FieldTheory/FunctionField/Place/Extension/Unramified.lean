@@ -11,13 +11,14 @@ public import TauCeti.FieldTheory.FunctionField.Place.Extension.Inertia
 /-!
 # Unramified places in composita and Galois closures
 
-A place `P` of `F / k` is **unramified** in an algebraic extension `F' / k'` when every place
-`P'` of `F'` above it has ramification index `e(P' ∣ P) = 1` and separable residue extension
-`F'_{P'} / F_P`. Over a perfect residue field the second condition is automatic, and this is
-Stichtenoth's notion (Definition 3.1.13). In general it cannot be dropped. Over `𝔽_p(s)(t)`, the
-Artin–Schreier extensions `y^p - y = s t^{-p}` and `y^p - y = (s + t) t^{-p}` both have `e = 1`
-at `t = 0`, with residue extension `𝔽_p(s^{1/p}) / 𝔽_p(s)`. Their compositum contains a root of
-`y^p - y = -t^{1 - p}`, so it is ramified there.
+A place `P` of `F / k` is **unramified** in an algebraic extension `F' / k'` when some place of
+`F'` lies above it and every place `P'` of `F'` above it has ramification index
+`e(P' ∣ P) = 1` and separable residue extension `F'_{P'} / F_P`. Over a perfect residue field
+the separability condition is automatic, and this is Stichtenoth's notion (Definition 3.1.13).
+In general it cannot be dropped. Over `𝔽_p(s)(t)`, the Artin–Schreier extensions
+`y^p - y = s t^{-p}` and `y^p - y = (s + t) t^{-p}` both have `e = 1` at `t = 0`, with residue
+extension `𝔽_p(s^{1/p}) / 𝔽_p(s)`. Their compositum contains a root of `y^p - y = -t^{1 - p}`,
+so it is ramified there.
 
 In a finite Galois extension `M / F`, the restriction of a place `Q` of `M` to an intermediate
 field `E` is unramified over `F` exactly when `E` lies in the inertia field of `Q`
@@ -73,13 +74,16 @@ variable [Algebra k k'] [Algebra k F] [Algebra k' F'] [Algebra F F'] [Algebra k 
 variable [IsScalarTower k k' F'] [IsScalarTower k F F']
 variable [Algebra.IsIntegral F F']
 
-/-- A place `P` of `F / k` is **unramified** in `F' / k'` when every place `P'` of `F'` above it
-has ramification index `e(P' ∣ P) = 1` and a separable residue extension `F'_{P'} / F_P`
-(Stichtenoth, Definition 3.1.13, where the residue extensions are separable because the constant
-field is perfect). -/
+/-- A place `P` of `F / k` is **unramified** in `F' / k'` when it has a place `P'` of `F'`
+above it, and every such `P'` has ramification index `e(P' ∣ P) = 1` and a separable residue
+extension `F'_{P'} / F_P` (Stichtenoth, Definition 3.1.13, where the residue extensions are
+separable because the constant field is perfect). The existence clause keeps the predicate from
+holding vacuously when no place of `F' / k'` lies above `P`, for instance when `k' = F' = F`. -/
 def IsUnramified (P : Place k F) : Prop :=
-  ∀ P' : Place k' F', P'.restrict k F = P →
-    ramificationIdx F P' = 1 ∧ Algebra.IsSeparable (P'.restrict k F).ResidueField P'.ResidueField
+  (∃ P' : Place k' F', P'.restrict k F = P) ∧
+    ∀ P' : Place k' F', P'.restrict k F = P →
+      ramificationIdx F P' = 1 ∧
+        Algebra.IsSeparable (P'.restrict k F).ResidueField P'.ResidueField
 
 end Definition
 
@@ -131,10 +135,13 @@ upstairs field over the base field. This moves a finite separable extension into
 overfield without changing which places are unramified in it. -/
 theorem isUnramified_iff_of_algEquiv (P : Place k F) (e : L ≃ₐ[F] L') :
     P.IsUnramified (k' := k) (F' := L) ↔ P.IsUnramified (k' := k) (F' := L') := by
-  refine ⟨fun h R hR ↦ ?_, fun h Q hQ ↦ ?_⟩
+  refine ⟨fun ⟨⟨Q, hQ⟩, h⟩ ↦ ⟨⟨Q.map (e.restrictScalars k), ?_⟩, fun R hR ↦ ?_⟩,
+    fun ⟨⟨R, hR⟩, h⟩ ↦ ⟨⟨R.map (e.symm.restrictScalars k), ?_⟩, fun Q hQ ↦ ?_⟩⟩
+  · rwa [restrict_map_restrictScalars]
   · rw [← map_map_symm (e.restrictScalars k) R] at hR ⊢
     rw [restrict_map_restrictScalars] at hR
     exact (unramified_map_iff e _).mpr (h _ hR)
+  · rwa [restrict_map_restrictScalars]
   · exact (unramified_map_iff e Q).mp (h _ (by rw [restrict_map_restrictScalars, hQ]))
 
 end Equiv
@@ -155,7 +162,9 @@ theorem isUnramified_iff_forall_le_inertiaField
     (hF : TauCeti.IsFunctionField k F) (P : Place k F) (E : IntermediateField F M) :
     P.IsUnramified (k' := k) (F' := E) ↔
       ∀ Q : Place k M, Q.restrict k F = P → E ≤ inertiaField F Q := by
-  refine ⟨fun h Q hQ ↦ (le_inertiaField_iff F Q E).mpr (h _ ?_), fun h R hR ↦ ?_⟩
+  refine ⟨fun h Q hQ ↦ (le_inertiaField_iff F Q E).mpr (h.2 _ ?_),
+    fun h ↦ ⟨restrict_surjective_of_finiteDimensional hF (hF.finite_extension (E := E)) P,
+      fun R hR ↦ ?_⟩⟩
   · simpa only [restrict_restrict] using hQ
   · obtain ⟨Q, rfl⟩ := restrict_surjective_of_finiteDimensional
       (hF.finite_extension (E := E)) (hF.finite_extension (E := M)) R
