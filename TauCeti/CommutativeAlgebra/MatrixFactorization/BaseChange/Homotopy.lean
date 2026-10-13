@@ -63,11 +63,15 @@ theorem baseChangeToCurvedDuplex_map_mem_nullHomotopic (f : S →+* T) (hw : f w
   apply CurvedDuplex.hom_ext
   · rw [CurvedDuplex.nullHomotopicMap_f₀, baseChangeToCurvedDuplex_map_f₀,
       baseChangeToCurvedDuplex_obj_d₀, baseChangeToCurvedDuplex_obj_d₁]
+    -- The component lemmas rewrite the maps but cannot transport their dependent `Hom`
+    -- endpoints; definitional reduction to `F.map` avoids introducing `Eq.rec` casts.
     change F.map X.obj.d₀ ≫ F.map h₁ + F.map h₀ ≫ F.map Y.obj.d₁ = F.map g.hom.f₀
     have hEq₀ := congrArg F.map (congrArg CurvedDuplex.Hom.f₀ hh)
     simpa only [CurvedDuplex.nullHomotopicMap_f₀, Functor.map_add, Functor.map_comp] using hEq₀
   · rw [CurvedDuplex.nullHomotopicMap_f₁, baseChangeToCurvedDuplex_map_f₁,
       baseChangeToCurvedDuplex_obj_d₀, baseChangeToCurvedDuplex_obj_d₁]
+    -- As above, unfolding the component types definitionally is the cast-free way to expose
+    -- the scalar-extension functor on the odd component.
     change F.map X.obj.d₁ ≫ F.map h₀ + F.map h₁ ≫ F.map Y.obj.d₀ = F.map g.hom.f₁
     have hEq₁ := congrArg F.map (congrArg CurvedDuplex.Hom.f₁ hh)
     simpa only [CurvedDuplex.nullHomotopicMap_f₁, Functor.map_add, Functor.map_comp] using hEq₁
