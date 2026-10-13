@@ -5,10 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.FieldTheory.KrullTopology
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Aut
-public import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisDescent
-public import TauCeti.AlgebraicGeometry.EllipticCurve.VariableChange.Galois
-public import TauCeti.GroupTheory.GroupAction.Stabilizer
+import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisDescent
+import TauCeti.AlgebraicGeometry.EllipticCurve.VariableChange.Galois
+import TauCeti.GroupTheory.GroupAction.Stabilizer
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Nonabelian.Basic
 
 /-!
@@ -147,8 +148,9 @@ def twistCocycle : NonabelianH1.Cocycle Gal(L/K) (W.AutCoeff L) where
 theorem twistCocycle_apply (σ : Gal(L/K)) :
     twistCocycle C hC σ = W.autCoeffEquiv L
       ⟨C * (C.map (σ : L →+* L))⁻¹,
-        mul_inv_mem_stabilizer_of_smul_eq C (C.map (σ : L →+* L)) hC
-          (map_smul_baseChange_eq L σ.toAlgHom hC)⟩ := (rfl)
+        by
+          exact mul_inv_mem_stabilizer_of_smul_eq C (C.map (σ : L →+* L)) hC
+            (map_smul_baseChange_eq L σ.toAlgHom hC)⟩ := (rfl)
 
 /-- The coefficient formula for the cocycle of a trivialisation. -/
 @[simp]
