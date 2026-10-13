@@ -19,13 +19,11 @@ their maximal ideals consist of the germs vanishing at the base point, and their
 fields are canonically `ℂ` via evaluation. These are the local algebra needed for local
 equations of divisors and their invertible sheaves on complex curves.
 
-The inverse germ is represented by the pointwise reciprocal on the open nonvanishing
-locus of a representative. The construction works for any complex model with corners;
+The results hold for any complex model with corners;
 compactness, connectedness, and a manifold regularity assumption are unnecessary.
 
 The unit criterion adapts Heather Macbeth's `smoothSheafCommRing.isUnit_stalk_iff` in
 `Mathlib/Geometry/Manifold/Sheaf/LocallyRingedSpace.lean` to the analytic structure sheaf.
-The residue-field comparison uses Mathlib's quotient-by-kernel isomorphism.
 
 ## References
 
