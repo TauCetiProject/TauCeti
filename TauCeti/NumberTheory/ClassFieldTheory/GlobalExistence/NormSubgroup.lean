@@ -147,13 +147,15 @@ theorem finiteIndex_globalNormSubgroup (V : OpenNormalSubgroup (AbsoluteGaloisGr
 
 /-! ### Order properties
 
-The proofs in this section adapt those of `TauCeti.ClassFieldTheory.groundEquiv_localGroundEquiv`,
-`TauCeti.ClassFieldTheory.localNormSubgroup_mono` and
-`TauCeti.ClassFieldTheory.localNormSubgroup_top` in
-`TauCeti.NumberTheory.ClassFieldTheory.LocalExistence.NormSubgroup`, with the identification
-`localGroundEquiv` of `Kˣ` with a ground level replaced by `globalGroundEquiv` followed by
-`NormalLayer.groundEquivOfOpenNormal`.
+Shrinking the layer subgroup `V` enlarges its class field, and a norm from a larger field is a norm
+from every intermediate field, so `globalNormSubgroup K` is monotone in `V`. The top layer `G_K`
+cuts out `K` itself, whose norm subgroup is all of `C_K`.
 -/
+
+-- The proofs in this section adapt those of `groundEquiv_localGroundEquiv`,
+-- `localNormSubgroup_mono` and `localNormSubgroup_top` in
+-- `TauCeti.NumberTheory.ClassFieldTheory.LocalExistence.NormSubgroup`, with `localGroundEquiv`
+-- replaced by `globalGroundEquiv` followed by `NormalLayer.groundEquivOfOpenNormal`.
 
 /-- The ground-level identification of the refinement `V ≤ W` is compatible with the two
 identifications of `C_K` with the ground levels of the layers of `W` and `V`. -/
