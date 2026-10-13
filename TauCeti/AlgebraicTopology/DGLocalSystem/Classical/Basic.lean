@@ -57,20 +57,6 @@ open CategoryTheory
 
 variable {R : Type u} [CommRing R] {X : TopCat.{u}} {x : X}
 
-/-- The right action of the fundamental group on the fiber of a local system: a class acts by the
-monodromy of its inverse, so that this is a homomorphism into the opposite endomorphism monoid. -/
-def fiberRightAction (L : LocalCoefficientSystem.{u, u, w} R X) :
-    FundamentalGroup X x →* (Module.End R (L.obj (FundamentalGroupoid.mk x)))ᵐᵒᵖ where
-  toFun g := op (LocalCoefficientSystem.monodromyRepresentation L x g⁻¹)
-  map_one' := by rw [inv_one, map_one, op_one]
-  map_mul' g h := by rw [mul_inv_rev, map_mul, op_mul]
-
-@[simp]
-theorem fiberRightAction_apply (L : LocalCoefficientSystem.{u, u, w} R X)
-    (g : FundamentalGroup X x) :
-    fiberRightAction L g = op (LocalCoefficientSystem.monodromyRepresentation L x g⁻¹) :=
-  (rfl)
-
 /-- **The action of the chain algebra on the fiber of a local system**: the algebra map from the
 opposite of `C_*(Ω_x X; R)` to the endomorphisms of the fiber at `x`, through the degree-zero ring
 map and the monodromy representation.  A Moore loop acts by the monodromy of its class. -/
@@ -79,7 +65,8 @@ def classicalAction (L : LocalCoefficientSystem.{u, u, w} R X) :
   ((AlgEquiv.opOp R (Module.End R (L.obj (FundamentalGroupoid.mk x)))).symm :
       _ ≃ₐ[R] _).toAlgHom.comp
     ((MonoidAlgebra.lift R (Module.End R (L.obj (FundamentalGroupoid.mk x)))ᵐᵒᵖ
-      (FundamentalGroup X x) (fiberRightAction L)).comp (loopChainToGroupAlgebra X x R)).op
+      (FundamentalGroup X x) (LocalCoefficientSystem.fiberRightAction L)).comp
+      (loopChainToGroupAlgebra X x R)).op
 
 theorem classicalAction_eq_zero (L : LocalCoefficientSystem.{u, u, w} R X)
     {a : loopChainAlgebra X x R} (ha : loopChainToGroupAlgebra X x R a = 0) :
@@ -173,29 +160,16 @@ theorem classicalAction_op_apply (L : LocalCoefficientSystem.{u, u, w} R X)
     (a : loopChainAlgebra X x R) :
     classicalAction L (op a) =
       (MonoidAlgebra.lift R (Module.End R (L.obj (FundamentalGroupoid.mk x)))ᵐᵒᵖ
-        (FundamentalGroup X x) (fiberRightAction L) (loopChainToGroupAlgebra X x R a)).unop := by
+        (FundamentalGroup X x) (LocalCoefficientSystem.fiberRightAction L)
+        (loopChainToGroupAlgebra X x R a)).unop := by
   simp [classicalAction]
-
-theorem fiberRightAction_lift_naturality {L L' : LocalCoefficientSystem.{u, u, w} R X} (φ : L ⟶ L')
-    (y : MonoidAlgebra R (FundamentalGroup X x)) (m : L.obj (FundamentalGroupoid.mk x)) :
-    (φ.app (FundamentalGroupoid.mk x)).hom
-        ((MonoidAlgebra.lift R (Module.End R (L.obj (FundamentalGroupoid.mk x)))ᵐᵒᵖ
-          (FundamentalGroup X x) (fiberRightAction L) y).unop m) =
-      (MonoidAlgebra.lift R (Module.End R (L'.obj (FundamentalGroupoid.mk x)))ᵐᵒᵖ
-        (FundamentalGroup X x) (fiberRightAction L') y).unop
-        ((φ.app (FundamentalGroupoid.mk x)).hom m) := by
-  induction y using MonoidAlgebra.induction_linear with
-  | zero => simp
-  | add y z hy hz => simp [hy, hz]
-  | single g r =>
-    simp [MonoidAlgebra.lift_single, fiberRightAction]
 
 theorem classicalAction_naturality {L L' : LocalCoefficientSystem.{u, u, w} R X} (φ : L ⟶ L')
     (a : (loopChainAlgebra X x R)ᵐᵒᵖ) (m : L.obj (FundamentalGroupoid.mk x)) :
     (φ.app (FundamentalGroupoid.mk x)).hom (classicalAction L a m) =
       classicalAction L' a ((φ.app (FundamentalGroupoid.mk x)).hom m) := by
   rw [← op_unop a, classicalAction_op_apply, classicalAction_op_apply]
-  exact fiberRightAction_lift_naturality φ _ m
+  exact LocalCoefficientSystem.fiberRightAction_lift_naturality φ _ m
 
 /-- **A morphism of classical local systems induces a morphism of DG local systems.** -/
 @[expose] def classicalDGLocalSystemMap {L L' : LocalCoefficientSystem.{u, u, w} R X} (φ : L ⟶ L') :

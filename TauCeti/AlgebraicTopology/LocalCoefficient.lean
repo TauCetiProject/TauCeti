@@ -424,6 +424,44 @@ theorem basepointChangeEquiv_apply (L : LocalCoefficientSystem.{u, v, w} R X) {x
     basepointChangeEquiv L p a = transport L ⟦p⟧ a :=
   rfl
 
+section FiberRightAction
+
+open MulOpposite
+
+variable {R : Type u} [CommRing R] {X : TopCat.{v}} {x : X}
+
+/-- The right action of the fundamental group on the fiber of a local system: a class acts by the
+monodromy of its inverse, so that this is a homomorphism into the opposite endomorphism monoid. -/
+@[expose] def fiberRightAction (L : LocalCoefficientSystem.{u, v, w} R X) :
+    FundamentalGroup X x →* (Module.End R (L.obj (FundamentalGroupoid.mk x)))ᵐᵒᵖ where
+  toFun g := op (monodromyRepresentation L x g⁻¹)
+  map_one' := by rw [inv_one, map_one, op_one]
+  map_mul' g h := by rw [mul_inv_rev, map_mul, op_mul]
+
+@[simp]
+theorem fiberRightAction_apply (L : LocalCoefficientSystem.{u, v, w} R X)
+    (g : FundamentalGroup X x) :
+    fiberRightAction L g = op (monodromyRepresentation L x g⁻¹) :=
+  rfl
+
+/-- The right action of group algebra elements on fibers is natural in the local system. -/
+theorem fiberRightAction_lift_naturality {L L' : LocalCoefficientSystem.{u, v, w} R X}
+    (φ : L ⟶ L')
+    (y : MonoidAlgebra R (FundamentalGroup X x)) (m : L.obj (FundamentalGroupoid.mk x)) :
+    (φ.app (FundamentalGroupoid.mk x)).hom
+        ((MonoidAlgebra.lift R (Module.End R (L.obj (FundamentalGroupoid.mk x)))ᵐᵒᵖ
+          (FundamentalGroup X x) (fiberRightAction L) y).unop m) =
+      (MonoidAlgebra.lift R (Module.End R (L'.obj (FundamentalGroupoid.mk x)))ᵐᵒᵖ
+        (FundamentalGroup X x) (fiberRightAction L') y).unop
+        ((φ.app (FundamentalGroupoid.mk x)).hom m) := by
+  induction y using MonoidAlgebra.induction_linear with
+  | zero => simp
+  | add y z hy hz => simp [hy, hz]
+  | single g r =>
+    simp [MonoidAlgebra.lift_single]
+
+end FiberRightAction
+
 end LocalCoefficientSystem
 
 end TauCeti
