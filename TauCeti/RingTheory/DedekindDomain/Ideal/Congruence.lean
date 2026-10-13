@@ -10,7 +10,7 @@ public import TauCeti.RingTheory.DedekindDomain.Factorization
 /-!
 # Multiplicative congruence modulo an ideal
 
-For a Dedekind domain `R` with fraction field `K`, `idealCongruenceSubgroup K m hm`
+For a Dedekind domain `R` with fraction field `K`, `TauCeti.Ideal.congruenceSubgroup m K hm`
 consists of the elements of `Kˣ` congruent to one locally modulo the nonzero ideal `m`.
 At a prime dividing `m`, the valuation of `x - 1` must be at most the negative
 exponential of the multiplicity of that prime in `m`. Such an `x` is a local unit.
@@ -27,7 +27,7 @@ The valuation and prime-power dictionary is Mathlib's
 `IsDedekindDomain.HeightOneSpectrum.intValuation_le_pow_iff_mem`, and the passage
 from local membership to membership in `m` uses `Ideal.iInf_maxPowDividing_eq`.
 
-`idealCongruenceSubgroup` and its subgroup proofs generalize the former number-field
+`TauCeti.Ideal.congruenceSubgroup` and its subgroup proofs generalize the former number-field
 construction `TauCeti.GlobalNumberFields.congruenceSubgroup` in
 `TauCeti.NumberTheory.NumberField.Global.RayClass.Modulus`.
 
@@ -41,12 +41,12 @@ public section
 
 open IsDedekindDomain IsDedekindDomain.HeightOneSpectrum
 
-namespace TauCeti
+namespace TauCeti.Ideal
 
 variable {R : Type*} [CommRing R] [IsDedekindDomain R]
 variable {K : Type*} [Field K] [Algebra R K] [IsFractionRing R K]
 
-private theorem valuation_eq_one_of_idealCongruence_bound {m : Ideal R} (hm : m ≠ ⊥)
+private theorem valuation_eq_one_of_congruence_bound {m : Ideal R} (hm : m ≠ ⊥)
     {x : Kˣ} (hx : ∀ v : HeightOneSpectrum R, v.asIdeal ∣ m →
       v.valuation K ((x : K) - 1) ≤
         WithZero.exp (-((Associates.mk v.asIdeal).count (Associates.mk m).factors : ℤ)))
@@ -57,10 +57,10 @@ private theorem valuation_eq_one_of_idealCongruence_bound {m : Ideal R} (hm : m 
     (WithZero.exp_lt_one_iff.mpr (neg_neg_iff_pos.mpr (Int.natCast_pos.mpr hpos)))
   simpa only [add_sub_cancel] using Valuation.map_one_add_of_lt (v.valuation K) hlt
 
-variable (K) in
 /-- The subgroup of fraction-field units congruent to one locally modulo a nonzero
 ideal. Only primes dividing the ideal impose a condition. -/
-def idealCongruenceSubgroup (m : Ideal R) (hm : m ≠ ⊥) : Subgroup Kˣ := by
+def congruenceSubgroup (m : Ideal R) (K : Type*) [Field K] [Algebra R K]
+    [IsFractionRing R K] (hm : m ≠ ⊥) : Subgroup Kˣ := by
   let P (x : Kˣ) := ∀ v : HeightOneSpectrum R, v.asIdeal ∣ m →
     v.valuation K ((x : K) - 1) ≤
       WithZero.exp (-((Associates.mk v.asIdeal).count (Associates.mk m).factors : ℤ))
@@ -73,7 +73,7 @@ def idealCongruenceSubgroup (m : Ideal R) (hm : m ≠ ⊥) : Subgroup Kˣ := by
         push_cast
         ring
       refine (hxy ▸ Valuation.map_add (v.valuation K) _ _).trans (max_le ?_ (hx v hv))
-      rw [map_mul, valuation_eq_one_of_idealCongruence_bound hm hx hv, one_mul]
+      rw [map_mul, valuation_eq_one_of_congruence_bound hm hx hv, one_mul]
       exact hy v hv
     inv_mem' := by
       intro x hx v hv
@@ -82,51 +82,51 @@ def idealCongruenceSubgroup (m : Ideal R) (hm : m ≠ ⊥) : Subgroup Kˣ := by
         field_simp
         ring
       rw [hxy, Valuation.map_neg, map_mul, map_inv₀,
-        valuation_eq_one_of_idealCongruence_bound hm hx hv, inv_one, mul_one]
+        valuation_eq_one_of_congruence_bound hm hx hv, inv_one, mul_one]
       exact hx v hv }
 
 /-- Membership is the valuation bound at every prime divisor of the ideal. -/
 @[simp]
-theorem mem_idealCongruenceSubgroup_iff {m : Ideal R} {hm : m ≠ ⊥} {x : Kˣ} :
-    x ∈ idealCongruenceSubgroup K m hm ↔
+theorem mem_congruenceSubgroup_iff {m : Ideal R} {hm : m ≠ ⊥} {x : Kˣ} :
+    x ∈ congruenceSubgroup m K hm ↔
       ∀ v : HeightOneSpectrum R, v.asIdeal ∣ m →
         v.valuation K ((x : K) - 1) ≤
           WithZero.exp (-((Associates.mk v.asIdeal).count (Associates.mk m).factors : ℤ)) :=
   Iff.rfl
 
 /-- A fraction-field unit congruent to one is a local unit at every prime dividing the ideal. -/
-theorem valuation_eq_one_of_mem_idealCongruenceSubgroup {m : Ideal R} {hm : m ≠ ⊥}
-    {x : Kˣ} (hx : x ∈ idealCongruenceSubgroup K m hm) {v : HeightOneSpectrum R}
+theorem valuation_eq_one_of_mem_congruenceSubgroup {m : Ideal R} {hm : m ≠ ⊥}
+    {x : Kˣ} (hx : x ∈ congruenceSubgroup m K hm) {v : HeightOneSpectrum R}
     (hv : v.asIdeal ∣ m) : v.valuation K (x : K) = 1 :=
-  valuation_eq_one_of_idealCongruence_bound hm (mem_idealCongruenceSubgroup_iff.mp hx) hv
+  valuation_eq_one_of_congruence_bound hm (mem_congruenceSubgroup_iff.mp hx) hv
 
 /-- Congruence modulo a multiple implies congruence modulo a divisor. -/
-theorem idealCongruenceSubgroup_antitone {m n : Ideal R} {hm : m ≠ ⊥} {hn : n ≠ ⊥}
-    (h : m ∣ n) : idealCongruenceSubgroup K n hn ≤ idealCongruenceSubgroup K m hm := by
+theorem congruenceSubgroup_antitone {m n : Ideal R} {hm : m ≠ ⊥} {hn : n ≠ ⊥}
+    (h : m ∣ n) : congruenceSubgroup n K hn ≤ congruenceSubgroup m K hm := by
   intro x hx
-  refine mem_idealCongruenceSubgroup_iff.mpr fun v hv ↦ ?_
-  refine (mem_idealCongruenceSubgroup_iff.mp hx v (hv.trans h)).trans
+  refine mem_congruenceSubgroup_iff.mpr fun v hv ↦ ?_
+  refine (mem_congruenceSubgroup_iff.mp hx v (hv.trans h)).trans
     (WithZero.exp_le_exp.mpr (neg_le_neg (Int.ofNat_le.mpr ?_)))
   exact Associates.count_le_count_of_le (Associates.mk_ne_zero.mpr hn)
     (Associates.irreducible_mk.mpr v.irreducible) (Associates.mk_le_mk_of_dvd h)
 
 /-- The unit ideal imposes no multiplicative congruence condition. -/
 @[simp]
-theorem idealCongruenceSubgroup_top :
-    idealCongruenceSubgroup K (⊤ : Ideal R) top_ne_bot = ⊤ := by
+theorem congruenceSubgroup_top :
+    congruenceSubgroup (⊤ : Ideal R) K top_ne_bot = ⊤ := by
   apply (Subgroup.eq_top_iff' _).mpr
   intro x
-  exact mem_idealCongruenceSubgroup_iff.mpr fun v hv ↦
+  exact mem_congruenceSubgroup_iff.mpr fun v hv ↦
     (v.isPrime.ne_top (top_le_iff.mp (Ideal.dvd_iff_le.mp hv))).elim
 
 /-- For a unit represented by an element of the base ring, local congruence is ordinary
 congruence: its representative minus one belongs to the ideal. -/
-theorem mem_idealCongruenceSubgroup_iff_sub_one_mem {m : Ideal R} {hm : m ≠ ⊥}
+theorem mem_congruenceSubgroup_iff_sub_one_mem {m : Ideal R} {hm : m ≠ ⊥}
     {x : Kˣ} {a : R} (hxa : (x : K) = algebraMap R K a) :
-    x ∈ idealCongruenceSubgroup K m hm ↔ a - 1 ∈ m := by
+    x ∈ congruenceSubgroup m K hm ↔ a - 1 ∈ m := by
   have hsub : (x : K) - 1 = algebraMap R K (a - 1) := by
     rw [map_sub, map_one, hxa]
-  rw [mem_idealCongruenceSubgroup_iff]
+  rw [mem_congruenceSubgroup_iff]
   simp only [hsub, valuation_of_algebraMap, intValuation_le_pow_iff_mem]
   constructor
   · intro h
@@ -143,17 +143,17 @@ theorem mem_idealCongruenceSubgroup_iff_sub_one_mem {m : Ideal R} {hm : m ≠ �
   · intro h v _
     exact ((le_count_associates_iff_le_pow v hm _).mp le_rfl) h
 
-variable (K) in
 /-- On base-ring units, finite multiplicative congruence is the kernel of reduction
 to the units of the quotient ring. -/
 @[simp]
-theorem comap_idealCongruenceSubgroup_eq_ker (m : Ideal R) (hm : m ≠ ⊥) :
-    (idealCongruenceSubgroup K m hm).comap (Units.map (algebraMap R K)) =
+theorem comap_congruenceSubgroup_eq_ker (m : Ideal R) (K : Type*) [Field K]
+    [Algebra R K] [IsFractionRing R K] (hm : m ≠ ⊥) :
+    (congruenceSubgroup m K hm).comap (Units.map (algebraMap R K)) =
       (Units.map (Ideal.Quotient.mk m).toMonoidHom).ker := by
   ext u
   rw [Subgroup.mem_comap,
-    mem_idealCongruenceSubgroup_iff_sub_one_mem (a := (u : R)) (by simp),
+    mem_congruenceSubgroup_iff_sub_one_mem (a := (u : R)) (by simp),
     MonoidHom.mem_ker, Units.ext_iff, Units.coe_map, Units.val_one]
   exact (Ideal.Quotient.mk_eq_one_iff_sub_mem (I := m) (u : R)).symm
 
-end TauCeti
+end TauCeti.Ideal
