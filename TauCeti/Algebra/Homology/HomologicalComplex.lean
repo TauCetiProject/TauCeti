@@ -153,18 +153,12 @@ variable (K) in
 following `i`: the cycles in degree `i` are the kernel of the differential. -/
 lemma exact_iCycles_toCycles [CategoryWithHomology C] (i j : ι) (hij : c.next i = j) :
     (ShortComplex.mk _ _ (K.iCycles_toCycles i j)).Exact := by
-  refine (ShortComplex.exact_iff_of_epi_of_isIso_of_mono
-    (S₁ := ShortComplex.mk _ _ (K.iCycles_toCycles i j))
-    (S₂ := ShortComplex.mk _ _ (K.iCycles_d i j))
-    { τ₁ := 𝟙 _
-      τ₂ := 𝟙 _
-      τ₃ := K.iCycles j
-      comm₁₂ := by simp
-      comm₂₃ := (Category.id_comp _).trans (toCycles_i _ _ _).symm }).2 ?_
-  let S := ShortComplex.mk _ _ (K.iCycles_d i j)
+  let S := ShortComplex.mk _ _ (K.iCycles_toCycles i j)
+  have hS := isKernelOfComp (K.iCycles j) (K.d i j) (K.cyclesIsKernel i j hij)
+    (K.iCycles_toCycles i j) (K.toCycles_i i j)
   rw [S.exact_iff_iCycles_pOpcycles_zero]
-  have h : (K.cyclesIsKernel i j hij).lift (KernelFork.ofι S.iCycles S.iCycles_g) ≫
-      S.f = S.iCycles := Fork.IsLimit.lift_ι _
+  have h : hS.lift (KernelFork.ofι S.iCycles S.iCycles_g) ≫ S.f = S.iCycles :=
+    Fork.IsLimit.lift_ι _
   rw [← h, Category.assoc, S.f_pOpcycles, comp_zero]
 
 end HomologicalComplex
