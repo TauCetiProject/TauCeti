@@ -41,7 +41,7 @@ term `2ζu ⟨a ∇u, ∇ζ⟩`.
 
 * `TauCeti.PDE.W1p.setIntegral_sq_mul_norm_gradient_sq_le_of_pointwise`: the common
   integration and absorption step for Caccioppoli inequalities.
-* `TauCeti.PDE.W1p.exists_setIntegral_ball_norm_gradient_sq_le_of_cutoff`: the common
+* `TauCeti.PDE.exists_setIntegral_ball_norm_gradient_sq_le_of_cutoff`: the common
   localization of a cutoff Caccioppoli inequality to concentric balls.
 * `TauCeti.PDE.UniformlyEllipticOn.setIntegral_sq_mul_norm_gradient_sq_le`: the Caccioppoli
   inequality.
@@ -182,7 +182,7 @@ Then for every pair of balls `B(x₀, r) ⊆ B(x₀, R) ⊆ Ω` with `0 < r < R`
 
 The cutoff is one on `B(x₀, r)`, takes values in `[0, 1]`, is supported in `B(x₀, R)`, and has
 gradient at most `C / (R - r)`. -/
-theorem W1p.exists_setIntegral_ball_norm_gradient_sq_le_of_cutoff :
+theorem exists_setIntegral_ball_norm_gradient_sq_le_of_cutoff :
     ∃ C : ℝ, 0 < C ∧ ∀ {mu : Measure (EuclideanSpace ℝ ι)} [mu.IsAddHaarMeasure]
       {Omega : Opens (EuclideanSpace ℝ ι)} (w : W1p mu Omega 2) {A B : ℝ}
       {x₀ : EuclideanSpace ℝ ι} {r R : ℝ},

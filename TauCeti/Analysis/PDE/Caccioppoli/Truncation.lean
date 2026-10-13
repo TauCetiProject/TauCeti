@@ -238,7 +238,7 @@ theorem exists_setIntegral_ball_norm_gradient_posPartAbove_sq_le :
           ‖W1p.gradient (W1p.posPartAboveOfMemLp (by norm_num) k u hwLp) x‖ ^ 2 ∂mu ≤
         (2 * Lam / lam) ^ 2 * (c / (R - r)) ^ 2 *
           ∫ x in ball x₀ R, max (W1p.value u x - k) 0 ^ 2 ∂mu := by
-  obtain ⟨c, hc0, hc⟩ := W1p.exists_setIntegral_ball_norm_gradient_sq_le_of_cutoff (ι := ι)
+  obtain ⟨c, hc0, hc⟩ := exists_setIntegral_ball_norm_gradient_sq_le_of_cutoff (ι := ι)
   refine ⟨c, hc0, ?_⟩
   intro mu _ Omega a lam Lam u k hwLp x₀ r R h ha hu hr hrR hball
   set w := W1p.posPartAboveOfMemLp (by norm_num) k u hwLp

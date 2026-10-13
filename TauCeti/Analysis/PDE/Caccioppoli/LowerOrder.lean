@@ -363,7 +363,7 @@ theorem exists_setIntegral_ball_norm_gradient_posPartAbove_sq_le_of_lowerOrder :
       ∫ x in ball x₀ r, ‖W1p.gradient (W1p.posPartAbove (by norm_num) hk u) x‖ ^ 2 ∂mu ≤
         (2 * (2 * Lam / lam) ^ 2 * (C / (R - r)) ^ 2 + (2 * beta / lam) ^ 2) *
           ∫ x in ball x₀ R, max (W1p.value u x - k) 0 ^ 2 ∂mu := by
-  obtain ⟨C, hC0, hC⟩ := W1p.exists_setIntegral_ball_norm_gradient_sq_le_of_cutoff (ι := ι)
+  obtain ⟨C, hC0, hC⟩ := exists_setIntegral_ball_norm_gradient_sq_le_of_cutoff (ι := ι)
   refine ⟨C, hC0, ?_⟩
   intro mu _ Omega a b c lam Lam beta gamma u k hk x₀ r R h ha hb hc hb_bound hc_bound hc_nonneg
     hu hr hrR hball
