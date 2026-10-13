@@ -33,6 +33,8 @@ so that `ℓ` depends only on the linear equivalence class of a divisor.  It is 
   `ℓ(D) = ℓ(0)` contains at most one effective divisor (Remark 1.4.5).
 * `TauCeti.riemannRochSpace_ne_bot_iff`: `L(D) ≠ 0` exactly when `D` is linearly equivalent to
   an effective divisor (Remark 1.4.5(b)).
+* `TauCeti.poles_le_iff_mem_riemannRochSpace`: for effective `D`, `z ∈ L(D)` exactly when the pole
+  divisor of `z` is at most `D`.
 
 None of this needs the product formula `deg (div z) = 0` (Stichtenoth, Theorem 1.4.11), which is
 separate work; every statement here is independent of it.
@@ -210,6 +212,19 @@ theorem mem_riemannRochSpace_poles (hF : IsFunctionField k F) (z : Fˣ) :
     (z : F) ∈ riemannRochSpace (Divisor.poles hF z) := by
   rw [mem_riemannRochSpace_units_iff hF, ← Divisor.zeros_sub_poles, sub_add_cancel]
   exact (Divisor.isEffective_zeros hF z).zero_le
+
+/-- **The poles of `z` are bounded by an effective divisor `D` exactly when `z ∈ L(D)`**. -/
+theorem poles_le_iff_mem_riemannRochSpace (hF : IsFunctionField k F) {D : Divisor k F}
+    (hD : WeilDivisor.IsEffective D) (z : Fˣ) :
+    Divisor.poles hF z ≤ D ↔ (z : F) ∈ riemannRochSpace D := by
+  refine ⟨fun h ↦ riemannRochSpace_mono h (mem_riemannRochSpace_poles hF z), fun h ↦ ?_⟩
+  rw [mem_riemannRochSpace_units_iff hF, WeilDivisor.le_iff] at h
+  refine WeilDivisor.le_iff.mpr fun P ↦ ?_
+  have hP := h P
+  rw [WeilDivisor.coeff_zero, WeilDivisor.coeff_add, Divisor.coeff_principal] at hP
+  rw [Divisor.coeff_poles]
+  have := (WeilDivisor.isEffective_iff D).mp hD P
+  omega
 
 /-- The `n`-th power of a nonzero function has poles bounded by `n` times its pole divisor. -/
 theorem pow_mem_riemannRochSpace_zsmul_poles (hF : IsFunctionField k F) (z : Fˣ) (n : ℕ) :
