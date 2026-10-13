@@ -99,35 +99,35 @@ noncomputable def curveSqrt65 : WeierstrassCurve QSqrt65 :=
 
 /-- The coefficient `a₁` of `curveSqrt65` is `0`. -/
 @[simp]
-theorem a₁_curveSqrt65 : curveSqrt65.a₁ = 0 := (rfl)
+theorem curveSqrt65_a₁ : curveSqrt65.a₁ = 0 := (rfl)
 
 /-- The coefficient `a₂` of `curveSqrt65` is `0`. -/
 @[simp]
-theorem a₂_curveSqrt65 : curveSqrt65.a₂ = 0 := (rfl)
+theorem curveSqrt65_a₂ : curveSqrt65.a₂ = 0 := (rfl)
 
 /-- The coefficient `a₃` of `curveSqrt65` is `0`. -/
 @[simp]
-theorem a₃_curveSqrt65 : curveSqrt65.a₃ = 0 := (rfl)
+theorem curveSqrt65_a₃ : curveSqrt65.a₃ = 0 := (rfl)
 
 /-- The coefficient `a₄` of `curveSqrt65` is `-15221331 θ - 53748576`. -/
 @[simp]
-theorem a₄_curveSqrt65 :
+theorem curveSqrt65_a₄ :
     curveSqrt65.a₄ = -15221331 * (sqrt65Theta : QSqrt65) - 53748576 := (rfl)
 
 /-- The coefficient `a₆` of `curveSqrt65` is `-79617688290 θ - 281140318368`. -/
 @[simp]
-theorem a₆_curveSqrt65 :
+theorem curveSqrt65_a₆ :
     curveSqrt65.a₆ = -79617688290 * (sqrt65Theta : QSqrt65) - 281140318368 := (rfl)
 
 /-- The discriminant of `curveSqrt65` in the basis `1, √65`. Its norm is `-2³⁶ 3²⁴`. -/
-theorem Δ_curveSqrt65 :
+theorem curveSqrt65_Δ :
     curveSqrt65.Δ = ⟨-29859555657159315059116032, -3703622060887453530261504⟩ := by
   simp only [curveSqrt65, Δ, b₂, b₄, b₆, b₈, coe_sqrt65Theta]
   ext <;> simp [pow_succ] <;> norm_num
 
 /-- `curveSqrt65` is an elliptic curve: its discriminant is nonzero. -/
 instance : curveSqrt65.IsElliptic := by
-  rw [isElliptic_iff, Δ_curveSqrt65, isUnit_iff_ne_zero]
+  rw [isElliptic_iff, curveSqrt65_Δ, isUnit_iff_ne_zero]
   intro h
   have := congrArg QuadraticAlgebra.re h
   norm_num at this
@@ -289,7 +289,7 @@ theorem not_isUnit_Δ_of_smul_curveSqrt65_eq_baseChange {C : VariableChange QSqr
   have hN : |(algebraMap (𝓞 QSqrt65) QSqrt65 W.Δ).norm| = 1 := by
     simpa [RingOfIntegers.coe_eq_algebraMap] using NumberField.isUnit_iff_norm.mp hu
   have hNΔ : curveSqrt65.Δ.norm = -72 ^ 12 := by
-    rw [Δ_curveSqrt65, norm_def]
+    rw [curveSqrt65_Δ, norm_def]
     norm_num
   rw [hΔ, map_mul, map_pow, hNΔ] at hN
   set x := ((C.u⁻¹ : QSqrt65ˣ) : QSqrt65).norm
