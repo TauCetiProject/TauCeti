@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Contour.Winding.Number.Basic
 public import TauCeti.Analysis.Contour.PiecewiseC1On
 public import Mathlib.Analysis.Convex.Segment
+import TauCeti.Analysis.Complex.Proximity
 import TauCeti.Analysis.Contour.Winding.UnboundedComponent
 import Mathlib.Analysis.Calculus.Deriv.Add
 import Mathlib.Analysis.Calculus.Deriv.Inv
@@ -66,52 +67,30 @@ variable {γ₀ γ₁ : ℝ → ℂ} {a b : ℝ} {w : ℂ}
 /-- The comparison quotient `t ↦ (γ₁ t - w) / (γ₀ t - w)` of two curves relative to the point `w`.
 The whole proximity argument is the observation that the leash hypothesis confines this quotient to
 the disc of radius `1` about `1`. -/
-def compRatio (γ₀ γ₁ : ℝ → ℂ) (w : ℂ) : ℝ → ℂ := fun t => (γ₁ t - w) / (γ₀ t - w)
+private def compRatio (γ₀ γ₁ : ℝ → ℂ) (w : ℂ) : ℝ → ℂ := fun t => (γ₁ t - w) / (γ₀ t - w)
 
 /-- The comparison quotient evaluated at a parameter. -/
-theorem compRatio_apply (γ₀ γ₁ : ℝ → ℂ) (w : ℂ) (t : ℝ) :
+private theorem compRatio_apply (γ₀ γ₁ : ℝ → ℂ) (w : ℂ) (t : ℝ) :
     compRatio γ₀ γ₁ w t = (γ₁ t - w) / (γ₀ t - w) := (rfl)
 
 /-- Under the leash hypothesis at `t`, the base curve misses `w` there. -/
-theorem ne_of_dist_lt_dist {t : ℝ} (h : dist (γ₁ t) (γ₀ t) < dist (γ₀ t) w) :
+private theorem ne_of_dist_lt_dist {t : ℝ} (h : dist (γ₁ t) (γ₀ t) < dist (γ₀ t) w) :
     γ₀ t ≠ w := fun heq => absurd ((dist_eq_zero.mpr heq) ▸ h) (by simp [dist_nonneg])
-
-/-- The leash hypothesis says exactly that the comparison quotient stays within distance `1`
-of `1`. -/
-private theorem dist_compRatio_one {t : ℝ} (h : dist (γ₁ t) (γ₀ t) < dist (γ₀ t) w) :
-    dist (compRatio γ₀ γ₁ w t) 1 < 1 := by
-  have hne : γ₀ t - w ≠ 0 := sub_ne_zero.mpr (ne_of_dist_lt_dist h)
-  have hsub : compRatio γ₀ γ₁ w t - 1 = (γ₁ t - γ₀ t) / (γ₀ t - w) := by
-    rw [compRatio_apply]
-    field_simp
-    ring
-  rw [dist_eq_norm, hsub, norm_div, div_lt_one (by positivity)]
-  simpa [dist_eq_norm] using h
 
 /-- The comparison quotient has positive real part: it lies in the disc of radius `1` about `1`,
 which is contained in the open right half-plane. -/
 private theorem re_compRatio_pos {t : ℝ} (h : dist (γ₁ t) (γ₀ t) < dist (γ₀ t) w) :
     0 < (compRatio γ₀ γ₁ w t).re := by
-  have hd := dist_compRatio_one h
-  rw [dist_eq_norm] at hd
-  have hre : (1 - compRatio γ₀ γ₁ w t).re ≤ ‖1 - compRatio γ₀ γ₁ w t‖ :=
-    Complex.re_le_norm _
-  rw [norm_sub_rev] at hre
-  simp only [Complex.sub_re, Complex.one_re] at hre
-  linarith
+  rw [compRatio_apply]
+  exact Complex.re_div_sub_pos_of_dist_lt_dist h
 
 /-- Under the leash hypothesis at `t`, the comparison curve also misses `w` there: otherwise the
 quotient would be `0`, contradicting the positivity of its real part. -/
-theorem ne_of_dist_lt_dist' {t : ℝ} (h : dist (γ₁ t) (γ₀ t) < dist (γ₀ t) w) :
+private theorem ne_of_dist_lt_dist' {t : ℝ} (h : dist (γ₁ t) (γ₀ t) < dist (γ₀ t) w) :
     γ₁ t ≠ w := by
   intro heq
   have hzero : compRatio γ₀ γ₁ w t = 0 := by rw [compRatio_apply, heq, sub_self, zero_div]
   simpa [hzero] using re_compRatio_pos h
-
-/-- Under the leash hypothesis the comparison quotient lies in the slit plane. -/
-theorem compRatio_mem_slitPlane {t : ℝ} (h : dist (γ₁ t) (γ₀ t) < dist (γ₀ t) w) :
-    compRatio γ₀ γ₁ w t ∈ Complex.slitPlane :=
-  Complex.mem_slitPlane_iff.mpr (Or.inl (re_compRatio_pos h))
 
 /-- **A set contained in the open right half-plane has `0` in an unbounded component of its
 complement**: the closed left half-plane is convex, hence connected, contains `0`, is unbounded,
