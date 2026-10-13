@@ -33,6 +33,10 @@ open scoped Topology
 
 namespace BasedTopologicalSpace
 
+/-- Shifting the degree by one more loop reindexes `m + 1 + 1 + k` as `m + 1 + (k + 1)`. -/
+theorem add_succ_add_succ_eq (m k : ℕ) : m + 1 + 1 + k = m + 1 + (k + 1) := by
+  omega
+
 /-- **The homotopy groups of the `k`-fold loop space are the homotopy groups of the space,
 shifted by `k`**: `π_(m + 1)(Ω^[k] X) ≃* π_(m + 1 + k)(X)`. -/
 noncomputable def piIteratedLoopSpaceMulEquiv (X : BasedTopologicalSpace.{u}) :
@@ -44,7 +48,7 @@ noncomputable def piIteratedLoopSpaceMulEquiv (X : BasedTopologicalSpace.{u}) :
     (pathLoopSpaceMulEquiv (X := (X.iteratedLoopSpace k).carrier)
         (x := (X.iteratedLoopSpace k).basepoint) m).trans
       ((X.piIteratedLoopSpaceMulEquiv k (m + 1)).trans
-        (congrMulEquiv (finCongr (show m + 1 + 1 + k = m + 1 + (k + 1) by omega))))
+        (congrMulEquiv (finCongr (add_succ_add_succ_eq m k))))
 
 /-- In degree `k = 0` the shift is the identity. -/
 @[simp]
@@ -60,7 +64,7 @@ theorem piIteratedLoopSpaceMulEquiv_succ (X : BasedTopologicalSpace.{u}) (k m : 
       (pathLoopSpaceMulEquiv (X := (X.iteratedLoopSpace k).carrier)
           (x := (X.iteratedLoopSpace k).basepoint) m).trans
         ((X.piIteratedLoopSpaceMulEquiv k (m + 1)).trans
-          (congrMulEquiv (finCongr (show m + 1 + 1 + k = m + 1 + (k + 1) by omega)))) := by
+          (congrMulEquiv (finCongr (add_succ_add_succ_eq m k)))) := by
   rw [piIteratedLoopSpaceMulEquiv.eq_2]
 
 end BasedTopologicalSpace
