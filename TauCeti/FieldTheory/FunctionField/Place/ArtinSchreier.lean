@@ -203,11 +203,11 @@ theorem not_exists_reduced_artinSchreier_representative_of_forall_pow_ne_residue
     ¬∃ w : F, u - (w ^ n - w) ∈ P.integers ∨
       (P.ord (u - (w ^ n - w)) < 0 ∧ ¬(n : ℤ) ∣ P.ord (u - (w ^ n - w))) := by
   rintro ⟨w, hw⟩
-  have hord (f : F) : P.valuation.ord f = P.ord f := by rw [Valuation.ord_def, P.ord_def]
   obtain ⟨hneg, hdvd'⟩ := ord_sub_pow_sub_self_neg_and_dvd (v := P.valuation) hn
-    (by rwa [hord]) (by rwa [hord])
-    (by simpa only [hord] using P.ord_sub_pow_le_of_forall_pow_ne_residue (by omega) hs hres) w
-  rw [hord] at hneg hdvd'
+    (by rwa [ord_valuation]) (by rwa [ord_valuation])
+    (by simpa only [ord_valuation] using
+      P.ord_sub_pow_le_of_forall_pow_ne_residue (by omega) hs hres) w
+  rw [ord_valuation] at hneg hdvd'
   rcases hw with hint | ⟨-, hndvd⟩
   · rw [P.mem_integers_iff_ord_nonneg] at hint
     exact hneg.not_ge hint
