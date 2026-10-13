@@ -106,20 +106,19 @@ theorem cubicalTensorCoord_ι (X : TopCat.{u} × TopCat.{u}) (n p q : ℕ) (h : 
     (f := fun p q h ↦ ModuleCat.ofHom (cubicalTensorSummandCoord X.1 X.2 n p q h)) p q h
   exact LinearMap.congr_fun (congrArg ModuleCat.Hom.hom e) z
 
-/-- The map induced on a summand of the tensor product by a pair of maps is the tensor product of
-the maps of the components. -/
+/-- The map induced on a pure tensor of a summand of the tensor product by a pair of maps is the
+tensor product of the images of the factors. -/
 theorem cubicalTensor_map_ι {X Y : TopCat.{u} × TopCat.{u}} (f : X ⟶ Y) (n p q : ℕ) (h : p + q = n)
-    (z : NormalizedCubicalChain X.1 k p ⊗[k] NormalizedCubicalChain X.2 k q) :
+    (a : NormalizedCubicalChain X.1 k p) (b : NormalizedCubicalChain X.2 k q) :
     ((cubicalTensor k).map f).f n
         ((ιTensorObj ((normalizedCubicalChainComplex.{u} k).obj X.1)
-          ((normalizedCubicalChainComplex.{u} k).obj X.2) p q n h).hom z) =
+          ((normalizedCubicalChainComplex.{u} k).obj X.2) p q n h).hom (a ⊗ₜ[k] b)) =
       (ιTensorObj ((normalizedCubicalChainComplex.{u} k).obj Y.1)
           ((normalizedCubicalChainComplex.{u} k).obj Y.2) p q n h).hom
-        ((((normalizedCubicalChainComplex.{u} k).map f.1).f p ⊗ₘ
-          ((normalizedCubicalChainComplex.{u} k).map f.2).f q).hom z) :=
-  LinearMap.congr_fun (congrArg ModuleCat.Hom.hom
-    (HomologicalComplex.ι_tensorHom ((normalizedCubicalChainComplex.{u} k).map f.1)
-      ((normalizedCubicalChainComplex.{u} k).map f.2) p q n h)) z
+        ((((normalizedCubicalChainComplex.{u} k).map f.1).f p a) ⊗ₜ[k]
+          (((normalizedCubicalChainComplex.{u} k).map f.2).f q b)) :=
+  HomologicalComplex.ι_tensorHom_apply ((normalizedCubicalChainComplex.{u} k).map f.1)
+    ((normalizedCubicalChainComplex.{u} k).map f.2) p q n h a b
 
 /-- The coefficients of a tensor of two chains are the tensor product of their coefficients. -/
 theorem cubicalTensorSummandCoord_tmul (X Y : TopCat.{u}) (n p q : ℕ) (h : p + q = n)
@@ -164,7 +163,7 @@ theorem cubicalTensorCoord_map {X Y : TopCat.{u} × TopCat.{u}} (f : X ⟶ Y) (n
     refine ModuleCat.hom_ext (TensorProduct.ext' fun a b ↦ ?_)
     -- the goal is `coord (F f (ι (a ⊗ b))) = mapDomain _ (coord (ι (a ⊗ b)))`, a statement about
     -- the composite morphisms evaluated on `a ⊗ b`, which `exact` unfolds
-    exact (congrArg (cubicalTensorCoord k Y n) (cubicalTensor_map_ι f n p q h (a ⊗ₜ[k] b))).trans
+    exact (congrArg (cubicalTensorCoord k Y n) (cubicalTensor_map_ι f n p q h a b)).trans
       ((cubicalTensorCoord_ι Y n p q h _).trans
         ((cubicalTensorSummandCoord_map f.1 f.2 n p q h a b).trans
         (congrArg (lmapDomain k k _) (cubicalTensorCoord_ι X n p q h (a ⊗ₜ[k] b))).symm))
@@ -182,7 +181,7 @@ theorem map_cubicalTensorGen (X : TopCat.{u} × TopCat.{u}) (n p q : ℕ) (h : p
             (NormalizedCubicalChain.ofCube (cubeModel.{u} p) k (upCube p)) ⊗ₜ[k]
           NormalizedCubicalChain.map k τ.hom q
             (NormalizedCubicalChain.ofCube (cubeModel.{u} q) k (upCube q))) :=
-  cubicalTensor_map_ι ((σ, τ) : cubicalBidegreeModel.{u} n ⟨(p, q), h⟩ ⟶ X) n p q h _
+  cubicalTensor_map_ι ((σ, τ) : cubicalBidegreeModel.{u} n ⟨(p, q), h⟩ ⟶ X) n p q h _ _
 
 variable (k) in
 /-- The inclusion of the summand of bidegree `(p, q)` into the tensor product, as a linear map out
