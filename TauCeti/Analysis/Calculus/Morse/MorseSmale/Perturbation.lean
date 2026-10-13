@@ -87,6 +87,7 @@ variable [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ
 
 omit [FiniteDimensional ℝ E] in
 /-- The differential of a perturbation is the perturbed differential. -/
+@[simp]
 theorem fderiv_perturb (hf : Differentiable ℝ f) (hh : ∀ i, Differentiable ℝ (h i))
     (s : EuclideanSpace ℝ ι) (x : E) :
     fderiv ℝ (perturb f h s) x = fderiv ℝ f x + ∑ i, s i • fderiv ℝ (h i) x := by
@@ -98,6 +99,7 @@ theorem fderiv_perturb (hf : Differentiable ℝ f) (hh : ∀ i, Differentiable �
   exact ((hf x).hasFDerivAt.add hs).fderiv
 
 /-- The gradient of a perturbation is the perturbed gradient. -/
+@[simp]
 theorem gradient_perturb (hf : Differentiable ℝ f) (hh : ∀ i, Differentiable ℝ (h i))
     (s : EuclideanSpace ℝ ι) (x : E) :
     ∇ (perturb f h s) x = ∇ f x + ∑ i, s i • ∇ (h i) x := by
@@ -206,6 +208,7 @@ theorem contDiff_perturbationCutoff : ContDiff ℝ 1 (perturbationCutoff (ι := 
 theorem hasCompactSupport_perturbationCutoff : HasCompactSupport (perturbationCutoff (ι := ι)) :=
   perturbationBump.hasCompactSupport.smul_right
 
+@[simp]
 theorem perturbationCutoff_eq_self_of_norm_le {s : EuclideanSpace ℝ ι} (hs : ‖s‖ ≤ 1) :
     perturbationCutoff s = s := by
   have hr : (perturbationBump (ι := ι)).rIn = 1 := (rfl)
@@ -251,6 +254,7 @@ noncomputable def perturbedField (f : E → ℝ) (h : ι → E → ℝ)
     (p : E × EuclideanSpace ℝ ι) : E × EuclideanSpace ℝ ι :=
   (-∇ f p.1 - ∑ i, perturbationCutoff p.2 i • ∇ (h i) p.1, 0)
 
+@[simp]
 theorem perturbedField_apply (x : E) (s : EuclideanSpace ℝ ι) :
     perturbedField f h (x, s) = (-∇ f x - ∑ i, perturbationCutoff s i • ∇ (h i) x, 0) :=
   (rfl)
@@ -318,6 +322,7 @@ theorem contDiff_perturbedFlow (hfs : ContDiff ℝ 2 f) (hf : LipschitzWith K (�
     (exists_lipschitzWith_perturbedField hf hh).choose_spec hc
 
 /-- **The parameter is constant along the perturbed flow.** -/
+@[simp]
 theorem snd_perturbedFlow_apply (hf : LipschitzWith K (∇ f))
     (hh : ∀ i, IsAdmissiblePerturbation f (h i)) (t : ℝ) (p : E × EuclideanSpace ℝ ι) :
     (perturbedFlow f h hf hh t p).2 = p.2 := by
