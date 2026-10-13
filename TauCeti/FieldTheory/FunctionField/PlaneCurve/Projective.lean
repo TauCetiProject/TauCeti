@@ -699,35 +699,33 @@ variable {F : Type*} [Field F] [Algebra k F]
 variable {K : Type*} [Field K] [IsAlgClosed K] [Algebra k K] {G : MvPolynomial (Fin 3) k} {d : ℕ}
 
 /-- The degree `d` is positive, the monomials `x ^ i y ^ j` with `i + j < d` are linearly
-independent, and the line at infinity cuts out a divisor `(x)_∞ ⊔ (y)_∞` of degree `d`, provided
-`k` has more than `d + 1` elements. All three are read off in the coordinates `(u, y)` of a
-projection from a centre `(c : 1 : 0)` off the curve, with `u = x - c y`: there `F / k(u)` has
-degree `d`, `y` has degree `d` over `k(u)`, and `(x)_∞ ⊔ (y)_∞ = (u)_∞`. -/
+independent, and, when `x` and `y` are nonzero, the line at infinity cuts out a divisor
+`(x)_∞ ⊔ (y)_∞` of degree `d`, provided `k` has more than `d + 1` elements. All three are read
+off in the coordinates `(u, y)` of a projection from a centre `(c : 1 : 0)` off the curve, with
+`u = x - c y`: there `F / k(u)` has degree `d`, `y` has degree `d` over `k(u)`, and
+`(x)_∞ ⊔ (y)_∞ = (u)_∞`. -/
 private theorem pos_and_linearIndepOn_and_degree_sup_poles_of_lt_card (hF : IsFunctionField k F)
     (hG : G.IsHomogeneous d)
     (hsm : ∀ b : Fin 3 → K, b ≠ 0 → aeval b G = 0 → ∃ l, aeval b (pderiv l G) ≠ 0)
     (hcard : ((d + 1 : ℕ) : ℕ∞) < ENat.card k)
-    {x y : Fˣ} (hx : Transcendental k (x : F)) (hgen : k⟮(x : F), (y : F)⟯ = ⊤)
-    (h : aeval ![(x : F), y, 1] G = 0) :
-    0 < d ∧ LinearIndepOn k (fun p : ℕ × ℕ ↦ (x : F) ^ p.1 * (y : F) ^ p.2) {p | p.1 + p.2 < d} ∧
-      Divisor.degree (Divisor.poles hF x ⊔ Divisor.poles hF y) = d := by
+    {x y : F} (hx : Transcendental k x) (hgen : k⟮x, y⟯ = ⊤) (h : aeval ![x, y, 1] G = 0) :
+    0 < d ∧ LinearIndepOn k (fun p : ℕ × ℕ ↦ x ^ p.1 * y ^ p.2) {p | p.1 + p.2 < d} ∧
+      ∀ x' y' : Fˣ, (x' : F) = x → (y' : F) = y →
+        Divisor.degree (Divisor.poles hF x' ⊔ Divisor.poles hF y') = d := by
   classical
   obtain ⟨c, g', -, hu, hirr', hlead, hdeg', -, -, hy', -⟩ :=
     exists_aeval_sub_mul_eq_zero hG hsm hcard hx h
-  set u := (x : F) - algebraMap k F c * y with hu_def
+  set u := x - algebraMap k F c * y with hu_def
   let _ := ratFuncAlgebraOfTranscendental hu
   have := isScalarTower_ratFuncAlgebraOfTranscendental hu
   have hX : algebraMap (RatFunc k) F RatFunc.X = u := algebraMap_ratFuncAlgebraOfTranscendental_X hu
   have hgen' := adjoin_simple_eq_top_of_algebraMap_X_eq hX hgen
   rw [← hX] at hy'
-  -- The line at infinity cuts out the poles of `u`.
   set U : Fˣ := Units.map (algebraMap (RatFunc k) F : RatFunc k →* F)
     (Units.mk0 RatFunc.X RatFunc.X_ne_zero)
   have hU : (U : F) = algebraMap (RatFunc k) F RatFunc.X := by simp [U]
-  have hH := poles_eq_sup_poles_of_mem_riemannRochSpace hF (x := x) (c := c)
-    (by rw [hU, hX, hu_def, Algebra.smul_def])
-    (mem_riemannRochSpace_poles_of_aeval_eq_zero hF hlead hy')
-  refine ⟨hdeg' ▸ MvPolynomial.totalDegree_pos_of_aeval_eq_zero hlead hy', ?_, ?_⟩
+  refine ⟨hdeg' ▸ MvPolynomial.totalDegree_pos_of_aeval_eq_zero hlead hy', ?_,
+    fun x₀ y₀ hx₀ hy₀ ↦ ?_⟩
   · -- The monomials in `u` and `y` of degree less than `d` are independent, since `y` has degree
     -- `d` over `k(u)`, and they span what the monomials in `x = u + c y` and `y` span.
     have hli := linearIndepOn_pow_mul_pow_of_aeval_eq_zero hirr' hlead hy'
@@ -737,19 +735,22 @@ private theorem pos_and_linearIndepOn_and_degree_sup_poles_of_lt_card (hF : IsFu
       ext p
       simp [S]
     rw [← hS] at hli
-    have hxu : u + c • (y : F) = x := by
+    have hxu : u + c • y = x := by
       rw [hu_def, Algebra.smul_def]
       ring
-    have hspan := span_add_smul_pow_mul_pow u (y : F) c d
+    have hspan := span_add_smul_pow_mul_pow u y c d
     rw [hxu, ← hS] at hspan
     have hfin : Module.finrank k (Submodule.span k
-        ((fun p : ℕ × ℕ ↦ (x : F) ^ p.1 * (y : F) ^ p.2) '' (S : Set (ℕ × ℕ)))) = S.card := by
+        ((fun p : ℕ × ℕ ↦ x ^ p.1 * y ^ p.2) '' (S : Set (ℕ × ℕ)))) = S.card := by
       rw [hspan, Set.image_eq_range, finrank_span_eq_card hli]
       simp
     rw [Set.image_eq_range] at hfin
     rw [← hS, LinearIndepOn, linearIndependent_iff_card_eq_finrank_span, Set.finrank, hfin]
     simp
-  · -- `deg (u)_∞ = [F : k(u)] = d`.
+  · -- The line at infinity cuts out the poles of `u`, and `deg (u)_∞ = [F : k(u)] = d`.
+    have hH := poles_eq_sup_poles_of_mem_riemannRochSpace hF (x := x₀) (y := y₀) (u := U) (c := c)
+      (by rw [hU, hX, hu_def, Algebra.smul_def, hx₀, hy₀])
+      (hy₀ ▸ mem_riemannRochSpace_poles_of_aeval_eq_zero hF hlead hy')
     rw [← hH, Divisor.degree_poles hF U (by rw [hU, hX]; exact hu), hU,
       finrank_adjoin_algebraMap_X, finrank_ratFunc_eq_totalDegree_of_aeval_eq_zero hirr' hlead hgen'
         hy', hdeg']
@@ -762,10 +763,10 @@ extension is unramified. -/
 private theorem pos_and_linearIndepOn_and_degree_sup_poles (hF : IsFunctionField k F)
     (hG : G.IsHomogeneous d)
     (hsm : ∀ b : Fin 3 → K, b ≠ 0 → aeval b G = 0 → ∃ l, aeval b (pderiv l G) ≠ 0)
-    {x y : Fˣ} (hx : Transcendental k (x : F)) (hgen : k⟮(x : F), (y : F)⟯ = ⊤)
-    (h : aeval ![(x : F), y, 1] G = 0) :
-    0 < d ∧ LinearIndepOn k (fun p : ℕ × ℕ ↦ (x : F) ^ p.1 * (y : F) ^ p.2) {p | p.1 + p.2 < d} ∧
-      Divisor.degree (Divisor.poles hF x ⊔ Divisor.poles hF y) = d := by
+    {x y : F} (hx : Transcendental k x) (hgen : k⟮x, y⟯ = ⊤) (h : aeval ![x, y, 1] G = 0) :
+    0 < d ∧ LinearIndepOn k (fun p : ℕ × ℕ ↦ x ^ p.1 * y ^ p.2) {p | p.1 + p.2 < d} ∧
+      ∀ x' y' : Fˣ, (x' : F) = x → (y' : F) = y →
+        Divisor.degree (Divisor.poles hF x' ⊔ Divisor.poles hF y') = d := by
   rcases finite_or_infinite k with hk | hk
   · -- Pass to a finite constant field extension `k'` with more than `d + 1` elements.
     have hex := isIntegrallyClosedIn_of_isHomogeneous hG hsm hx hgen h
@@ -778,30 +779,30 @@ private theorem pos_and_linearIndepOn_and_degree_sup_poles (hF : IsFunctionField
     let _ : Algebra k' K := (IsAlgClosed.lift : k' →ₐ[k] K).toRingHom.toAlgebra
     have : IsScalarTower k k' K :=
       .of_algebraMap_eq fun c ↦ ((IsAlgClosed.lift : k' →ₐ[k] K).commutes c).symm
-    set x' : F'ˣ := Units.map (algebraMap F F' : F →* F') x
-    set y' : F'ˣ := Units.map (algebraMap F F' : F →* F') y
     obtain ⟨hsm', hx', hgen', h'⟩ := nonsingular_map_of_constantCompositum_eq_top hc hsm hx hgen h
     obtain ⟨hd, hli', hdeg'⟩ := pos_and_linearIndepOn_and_degree_sup_poles_of_lt_card (K := K) hF'
-      (x := x') (y := y') (hG.map _) hsm' hcard hx' hgen' h'
-    refine ⟨hd, ?_, ?_⟩
+      (hG.map _) hsm' hcard hx' hgen' h'
+    refine ⟨hd, ?_, fun x₀ y₀ hx₀ hy₀ ↦ ?_⟩
     · -- Independence over `k'` in `F'` restricts to independence over `k` in `F`.
       refine LinearIndepOn.of_comp (IsScalarTower.toAlgHom k F F').toLinearMap ?_
       have hfun : (IsScalarTower.toAlgHom k F F').toLinearMap ∘
-          (fun p : ℕ × ℕ ↦ (x : F) ^ p.1 * (y : F) ^ p.2) =
-          fun p : ℕ × ℕ ↦ (x' : F') ^ p.1 * (y' : F') ^ p.2 := by
+          (fun p : ℕ × ℕ ↦ x ^ p.1 * y ^ p.2) =
+          fun p : ℕ × ℕ ↦ algebraMap F F' x ^ p.1 * algebraMap F F' y ^ p.2 := by
         ext p
-        simp [x', y']
+        simp
       rw [hfun]
       exact LinearIndependent.restrict_scalars' k hli'
-    · -- The conorm of `(x)_∞ ⊔ (y)_∞` is `(x')_∞ ⊔ (y')_∞`, of the same degree.
-      have hcon : Divisor.conorm k' F' (Divisor.poles hF x ⊔ Divisor.poles hF y) =
-          Divisor.poles hF' x' ⊔ Divisor.poles hF' y' := by
+    · -- The conorm of `(x)_∞ ⊔ (y)_∞` is the corresponding divisor of `F'`, of the same degree.
+      have hcon : Divisor.conorm k' F' (Divisor.poles hF x₀ ⊔ Divisor.poles hF y₀) =
+          Divisor.poles hF' (Units.map (algebraMap F F' : F →* F') x₀) ⊔
+            Divisor.poles hF' (Units.map (algebraMap F F' : F →* F') y₀) := by
         rw [← Divisor.conorm_poles k' F' hF hF', ← Divisor.conorm_poles k' F' hF hF']
         refine WeilDivisor.ext fun P' ↦ ?_
         simp only [Divisor.coeff_conorm, WeilDivisor.coeff_sup,
           Place.ramificationIdx_eq_one_of_constantCompositum_eq_top (k := k) hc P', Nat.cast_one,
           one_mul]
-      rw [← Divisor.degree_conorm_of_constantCompositum_eq_top hex hc, hcon, hdeg']
+      rw [← Divisor.degree_conorm_of_constantCompositum_eq_top hex hc, hcon,
+        hdeg' _ _ (by simp [hx₀]) (by simp [hy₀])]
   · exact pos_and_linearIndepOn_and_degree_sup_poles_of_lt_card hF hG hsm (by simp) hx hgen h
 
 /-- **The line at infinity meets a smooth projective plane curve of degree `d` in `d` points**,
@@ -815,18 +816,18 @@ theorem degree_sup_poles_of_isHomogeneous (hF : IsFunctionField k F) (hG : G.IsH
     {x y : Fˣ} (hx : Transcendental k (x : F)) (hgen : k⟮(x : F), (y : F)⟯ = ⊤)
     (h : aeval ![(x : F), y, 1] G = 0) :
     Divisor.degree (Divisor.poles hF x ⊔ Divisor.poles hF y) = d :=
-  (pos_and_linearIndepOn_and_degree_sup_poles hF hG hsm hx hgen h).2.2
+  (pos_and_linearIndepOn_and_degree_sup_poles hF hG hsm hx hgen h).2.2 x y rfl rfl
 
 /-- **The monomials of degree less than `d` on a smooth projective plane curve are linearly
-independent**: under the hypotheses of `TauCeti.degree_sup_poles_of_isHomogeneous`, the products
+independent**: under the hypotheses of `TauCeti.genus_eq_of_isHomogeneous`, the products
 `x ^ i y ^ j` with `i + j < d` are linearly independent over `k`. -/
-theorem linearIndepOn_pow_mul_pow_of_isHomogeneous (hF : IsFunctionField k F)
-    (hG : G.IsHomogeneous d)
+theorem linearIndepOn_pow_mul_pow_of_isHomogeneous (hG : G.IsHomogeneous d)
     (hsm : ∀ b : Fin 3 → K, b ≠ 0 → aeval b G = 0 → ∃ l, aeval b (pderiv l G) ≠ 0)
-    {x y : Fˣ} (hx : Transcendental k (x : F)) (hgen : k⟮(x : F), (y : F)⟯ = ⊤)
-    (h : aeval ![(x : F), y, 1] G = 0) :
-    LinearIndepOn k (fun p : ℕ × ℕ ↦ (x : F) ^ p.1 * (y : F) ^ p.2) {p | p.1 + p.2 < d} :=
-  (pos_and_linearIndepOn_and_degree_sup_poles hF hG hsm hx hgen h).2.1
+    {x y : F} (hx : Transcendental k x) (hgen : k⟮x, y⟯ = ⊤) (h : aeval ![x, y, 1] G = 0) :
+    LinearIndepOn k (fun p : ℕ × ℕ ↦ x ^ p.1 * y ^ p.2) {p | p.1 + p.2 < d} :=
+  (pos_and_linearIndepOn_and_degree_sup_poles
+    (isFunctionField_of_aeval_eq_zero (irreducible_map_dehomogenize_two hG hsm h).of_map.ne_zero hx
+      hgen (by rwa [aeval_dehomogenize, insertNth_two])) hG hsm hx hgen h).2.1
 
 /-- The monomials `x ^ i y ^ j` with `i + j ≤ d - 3` lie in `L((d - 3) ((x)_∞ ⊔ (y)_∞))`. -/
 private theorem span_pow_mul_pow_le_riemannRochSpace (hF : IsFunctionField k F) (x y : Fˣ) :
@@ -845,13 +846,11 @@ private theorem span_pow_mul_pow_le_riemannRochSpace (hF : IsFunctionField k F) 
     hmem
 
 /-- The monomials `x ^ i y ^ j` with `i + j ≤ d - 3` are linearly independent. -/
-private theorem linearIndepOn_pow_mul_pow_add_three_le (hF : IsFunctionField k F)
-    (hG : G.IsHomogeneous d)
+private theorem linearIndepOn_pow_mul_pow_add_three_le (hG : G.IsHomogeneous d)
     (hsm : ∀ b : Fin 3 → K, b ≠ 0 → aeval b G = 0 → ∃ l, aeval b (pderiv l G) ≠ 0)
-    {x y : Fˣ} (hx : Transcendental k (x : F)) (hgen : k⟮(x : F), (y : F)⟯ = ⊤)
-    (h : aeval ![(x : F), y, 1] G = 0) :
-    LinearIndepOn k (fun p : ℕ × ℕ ↦ (x : F) ^ p.1 * (y : F) ^ p.2) {p | p.1 + p.2 + 3 ≤ d} :=
-  (linearIndepOn_pow_mul_pow_of_isHomogeneous hF hG hsm hx hgen h).mono fun p hp ↦ by
+    {x y : F} (hx : Transcendental k x) (hgen : k⟮x, y⟯ = ⊤) (h : aeval ![x, y, 1] G = 0) :
+    LinearIndepOn k (fun p : ℕ × ℕ ↦ x ^ p.1 * y ^ p.2) {p | p.1 + p.2 + 3 ≤ d} :=
+  (linearIndepOn_pow_mul_pow_of_isHomogeneous hG hsm hx hgen h).mono fun p hp ↦ by
     simp only [Set.mem_ofPred_eq] at hp ⊢
     omega
 
@@ -871,13 +870,14 @@ theorem divisorClass_sub_three_zsmul_sup_poles_eq_canonicalClass_of_isHomogeneou
         (((d : ℤ) - 3) • (Divisor.poles hF x ⊔ Divisor.poles hF y)) =
       canonicalClass hF hex := by
   obtain ⟨hd, -, hdeg⟩ := pos_and_linearIndepOn_and_degree_sup_poles hF hG hsm hx hgen h
+  replace hdeg := hdeg x y rfl rfl
   have := finiteDimensional_riemannRochSpace hF
     (((d : ℤ) - 3) • (Divisor.poles hF x ⊔ Divisor.poles hF y))
   have hg := two_mul_genus_eq_of_isHomogeneous hG hsm hx hgen h hd
   rw [divisorClass_eq_canonicalClass_iff hF hex, Divisor.degree_zsmul, hdeg]
   refine ⟨by linear_combination -hg, ?_⟩
   rw [Divisor.dim_def, ← finrank_span_pow_mul_pow_eq_genus
-    (linearIndepOn_pow_mul_pow_add_three_le hF hG hsm hx hgen h) hd hg]
+    (linearIndepOn_pow_mul_pow_add_three_le hG hsm hx hgen h) hd hg]
   exact Submodule.finrank_mono (span_pow_mul_pow_le_riemannRochSpace hF x y)
 
 /-- **The Riemann–Roch space of the canonical divisor of a smooth projective plane curve**: under
@@ -899,7 +899,7 @@ theorem riemannRochSpace_sub_three_zsmul_sup_poles_eq_span_of_isHomogeneous
   exact riemannRochSpace_eq_span_pow_mul_pow_of_divisorClass_eq_canonicalClass hF hex
     (divisorClass_sub_three_zsmul_sup_poles_eq_canonicalClass_of_isHomogeneous hF hex hG hsm hx
       hgen h)
-    (linearIndepOn_pow_mul_pow_add_three_le hF hG hsm hx hgen h) hd
+    (linearIndepOn_pow_mul_pow_add_three_le hG hsm hx hgen h) hd
     (two_mul_genus_eq_of_isHomogeneous hG hsm hx hgen h hd)
     (span_pow_mul_pow_le_riemannRochSpace hF x y)
 
