@@ -16,7 +16,7 @@ products are isomorphic by `x • u_σ ↦ e(x) • u_{e σ e⁻¹}`. The corres
 classes over finite Galois fields is in `TauCeti.Algebra.CrossedProduct.BrauerClass`.
 
 In particular, this transports a crossed-product presentation to an isomorphic splitting field.
-The coefficient and basis formulas retain the specified field equivalence, rather than merely
+The coefficient and basis formulas retain the specified algebra equivalence, rather than merely
 asserting the existence of an isomorphism of algebras.
 
 The construction uses Mathlib's `AlgEquiv.autCongr` and `Finsupp.lcongr`, and Tau Ceti's
