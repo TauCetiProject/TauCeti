@@ -296,13 +296,11 @@ theorem W1p0.gradient_extendByZeroL (hsub : Omega ≤ Omega') (u : W1p0 mu Omega
     Sobolev1JetLp.gradient_extendByZeroₗᵢ]
 
 /-- Extension by zero preserves the `Lᵖ` norm of the value component. -/
-@[simp]
 theorem W1p0.norm_value_extendByZeroL (hsub : Omega ≤ Omega') (u : W1p0 mu Omega p) :
     ‖W1p.value (W1p0.extendByZeroL hsub u : W1p mu Omega' p)‖ = ‖W1p.value (u : W1p mu Omega p)‖ :=
   by rw [W1p0.value_extendByZeroL, LinearIsometry.norm_map]
 
 /-- Extension by zero preserves the `Lᵖ` norm of the weak gradient. -/
-@[simp]
 theorem W1p0.norm_gradient_extendByZeroL (hsub : Omega ≤ Omega') (u : W1p0 mu Omega p) :
     ‖W1p.gradient (W1p0.extendByZeroL hsub u : W1p mu Omega' p)‖ =
       ‖W1p.gradient (u : W1p mu Omega p)‖ := by
