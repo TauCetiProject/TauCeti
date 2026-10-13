@@ -20,6 +20,14 @@ These identities supply the permutation-compatible differential for tensor induc
 complexes. The ground ring need not have characteristic two for equivariance or preservation of
 degree; that hypothesis enters only the square-zero law without Koszul signs.
 
+## Main definitions and lemmas
+
+* `TauCeti.wreathTensorDifferential d ι`: the equivariant differential on a finite tensor power.
+* `TauCeti.tensorInducedDifferential d s`: its restriction along a transversal's monomial map.
+* `TauCeti.wreathTensor_mem_degreePiece ρ ι`: preservation of total degree by the wreath action.
+* `TauCeti.tensorInducedRepresentation_mem_degreePiece U s τ`: preservation of total degree
+  by tensor induction.
+
 ## References
 
 * L. Evens, "A generalization of the transfer map in the cohomology of groups",
