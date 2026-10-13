@@ -7,7 +7,7 @@ module
 
 public import TauCeti.NumberTheory.QuadraticForm.OrthogonalGroup.Diagonal.NonDiscrete.Basic
 import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.Transvection
-import TauCeti.Topology.Algebra.Group.Subgroup
+import TauCeti.Topology.DiscreteSubset
 import TauCeti.Topology.Algebra.RestrictedProduct.ContinuousRng
 import TauCeti.NumberTheory.Padics.Factorial
 
@@ -104,14 +104,11 @@ theorem not_discreteTopology_range_finiteAdelicSpinDiagonal_of_transvection
       (by exact_mod_cast n.factorial_ne_zero)] at hn
     exact hw hn
   intro hD
-  have heq := tendsto_nhdsWithin_of_tendsto_nhds_of_eventually_within _
-    (U.tendsto_finiteAdelicSpinDiagonal_spinTransvection_factorial hQ hu huw)
-    (Eventually.of_forall fun n ↦ Set.mem_range_self (g ^ n.factorial))
-  rw [← MonoidHom.coe_range,
-    nhdsWithin_of_mem_discrete ⟨hD⟩ U.finiteAdelicSpinDiagonal.range.one_mem,
-    tendsto_pure] at heq
-  exact heq.frequently (Eventually.of_forall fun n ↦
-    (map_ne_one_iff _ U.finiteAdelicSpinDiagonal_injective).mpr (hne n))
+  exact (U.tendsto_finiteAdelicSpinDiagonal_spinTransvection_factorial hQ hu huw).not_isDiscrete
+    U.finiteAdelicSpinDiagonal.range.one_mem
+    (Eventually.of_forall fun n ↦ MonoidHom.mem_range.mpr ⟨g ^ n.factorial, rfl⟩)
+    (Frequently.of_forall fun n ↦
+      (map_ne_one_iff _ U.finiteAdelicSpinDiagonal_injective).mpr (hne n)) ⟨hD⟩
 
 /-- For a nondegenerate isotropic rational quadratic space of dimension at least three, the
 rational Spin diagonal is not discrete in the finite adeles. -/
