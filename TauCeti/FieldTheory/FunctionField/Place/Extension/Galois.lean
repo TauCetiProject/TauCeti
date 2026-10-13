@@ -53,6 +53,8 @@ decomposition group, and is identified with Mathlib's `ValuationSubring.decompos
 * `TauCeti.Place.valuation_apply_sub_lt_one_of_smul_eq_of_degree_eq_one`: an automorphism fixing
   a rational place has the same residue on every regular function at that place.
 * `TauCeti.Place.degree_smul`: the action preserves the degree of a place over the constants.
+* `TauCeti.Place.restrict_map_restrictScalars`: transport along an isomorphism over `F`
+  preserves the place below.
 * `TauCeti.Place.restrict_smul`, `TauCeti.Place.ramificationIdx_smul` and
   `TauCeti.Place.relativeDegree_smul`: the action preserves the fibres of
   `TauCeti.Place.restrict` and the two invariants attached to a place of a fibre.
@@ -235,15 +237,27 @@ end Action
 
 section Restrict
 
-variable [Algebra.IsIntegral F F'] (σ : F' ≃ₐ[F] F') (P : Place k F')
+variable [Algebra.IsIntegral F F']
+
+/-- **Transport along an isomorphism over `F` preserves the place below**: for `e : F' ≃ F''`
+over `F`, the place `P.map e` of `F''` lies over the same place of `F / k` as `P` does, because
+`e` fixes `F` pointwise. -/
+@[simp]
+theorem restrict_map_restrictScalars {F'' : Type*} [Field F''] [Algebra k F''] [Algebra F F'']
+    [IsScalarTower k F F''] [Algebra.IsIntegral F F''] (e : F' ≃ₐ[F] F'') (P : Place k F') :
+    (P.map (e.restrictScalars k)).restrict k F = P.restrict k F := by
+  apply integers_injective
+  ext x
+  rw [mem_integers_restrict_iff, mem_integers_restrict_iff, mem_integers_map_iff]
+  exact Iff.of_eq (congrArg (· ∈ P.integers) (e.symm.commutes x))
+
+variable (σ : F' ≃ₐ[F] F') (P : Place k F')
 
 /-- **The action preserves the fibres of restriction**: `σ • P` lies over the same place of
 `F / k` as `P` does, because `σ` fixes `F` pointwise. -/
 @[simp]
-theorem restrict_smul : (σ • P).restrict k F = P.restrict k F := by
-  rw [restrict_eq_iff_exists_ord_eq]
-  refine ⟨ramificationIdx F P, ramificationIdx_pos F P, fun f ↦ ?_⟩
-  rw [ord_smul, AlgEquiv.commutes, ord_algebraMap_restrict k F P f]
+theorem restrict_smul : (σ • P).restrict k F = P.restrict k F :=
+  restrict_map_restrictScalars σ P
 
 /-- The ramification index is invariant under the action. -/
 @[simp]

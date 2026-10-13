@@ -107,14 +107,6 @@ private theorem cast_residue {Q₁ Q₂ : Place k F} (hQ : Q₁ = Q₂) (x : Q�
   obtain rfl : y = x := Subtype.ext hy
   rfl
 
-/-- Transport along an isomorphism `e : L ≃ L'` over `F` does not change the place below. -/
-private theorem restrict_map_restrictScalars (e : L ≃ₐ[F] L') (Q : Place k L) :
-    (Q.map (e.restrictScalars k)).restrict k F = Q.restrict k F := by
-  apply integers_injective
-  ext x
-  rw [mem_integers_restrict_iff, mem_integers_restrict_iff, mem_integers_map_iff]
-  exact Iff.of_eq (congrArg (· ∈ Q.integers) (e.symm.commutes x))
-
 /-- Transport along an isomorphism `e : L ≃ L'` over `F` preserves both conditions defining an
 unramified place, place by place. -/
 private theorem unramified_map_iff (e : L ≃ₐ[F] L') (Q : Place k L) :
