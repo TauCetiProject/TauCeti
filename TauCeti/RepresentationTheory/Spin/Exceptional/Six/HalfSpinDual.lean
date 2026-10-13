@@ -8,6 +8,7 @@ module
 public import TauCeti.RepresentationTheory.Spin.Structure
 public import Mathlib.Algebra.Field.Defs
 public import Mathlib.RepresentationTheory.Intertwining
+import TauCeti.Algebra.Algebra.Prod
 import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.LowRank.Six.GeneralLinear
 import TauCeti.LinearAlgebra.Dual.End
 import Mathlib.LinearAlgebra.GeneralLinearGroup.AlgEquiv
@@ -111,102 +112,44 @@ private theorem evenCliffordEquivProdEnd_reverse_one_zero_of_finrank_eq_six
   · apply (Algebra.endAlgEquivMatrix K (spinMinus Q P) hminus).injective
     simpa [hem] using hminusMatrix
 
-private theorem reverseEvenProdEquiv_first_fst_eq_zero
-    (e : even Q ≃ₐ[K] Module.End K M × Module.End K N)
-    (hswap : reverseEvenProdEquiv e (MulOpposite.op (1, 0)) = (0, 1))
-    (f : Module.End K M) :
-    (reverseEvenProdEquiv e (MulOpposite.op (f, 0))).1 = 0 := by
-  calc
-    (reverseEvenProdEquiv e (MulOpposite.op (f, 0))).1 =
-        (reverseEvenProdEquiv e
-          (MulOpposite.op (f, 0) * MulOpposite.op (1, 0))).1 := by
-            congr 2
-    _ = ((reverseEvenProdEquiv e (MulOpposite.op (f, 0))) *
-        reverseEvenProdEquiv e (MulOpposite.op (1, 0))).1 := by rw [map_mul]
-    _ = 0 := by rw [hswap]; simp
+private def endProdMulOppositeEquiv :
+    (Module.End K M × Module.End K N)ᵐᵒᵖ ≃ₐ[K]
+      (Module.End K M)ᵐᵒᵖ × (Module.End K N)ᵐᵒᵖ where
+  toFun x := (MulOpposite.op x.unop.1, MulOpposite.op x.unop.2)
+  invFun x := MulOpposite.op (x.1.unop, x.2.unop)
+  left_inv x := by cases x; rfl
+  right_inv x := by rcases x with ⟨x, y⟩; cases x; cases y; rfl
+  map_mul' x y := by ext <;> simp
+  map_add' x y := by ext <;> simp
+  commutes' r := by ext <;> rfl
 
-private theorem reverseEvenProdEquiv_second_snd_eq_zero
+private noncomputable def reverseEvenToSecondAlgHom
+    (e : even Q ≃ₐ[K] Module.End K M × Module.End K N) :
+    (Module.End K M)ᵐᵒᵖ × (Module.End K N)ᵐᵒᵖ →ₐ[K] Module.End K N :=
+  (AlgHom.snd K _ _).comp
+    ((endProdMulOppositeEquiv (K := K) (M := M) (N := N)).symm.trans
+      (reverseEvenProdEquiv e)).toAlgHom
+
+private theorem reverseEvenToSecondAlgHom_apply
     (e : even Q ≃ₐ[K] Module.End K M × Module.End K N)
-    (hswap : reverseEvenProdEquiv e (MulOpposite.op (1, 0)) = (0, 1))
-    (g : Module.End K N) :
-    (reverseEvenProdEquiv e (MulOpposite.op (0, g))).2 = 0 := by
-  have hzeroOne : reverseEvenProdEquiv e (MulOpposite.op (0, 1)) = (1, 0) := by
-    have hop : MulOpposite.op (0, (1 : Module.End K N)) =
-        1 - MulOpposite.op ((1 : Module.End K M), 0) := by
-      apply MulOpposite.unop_injective
-      ext <;> simp
-    rw [hop]
-    rw [map_sub, map_one, hswap]
-    ext <;> simp
-  calc
-    (reverseEvenProdEquiv e (MulOpposite.op (0, g))).2 =
-        (reverseEvenProdEquiv e
-          (MulOpposite.op (0, g) * MulOpposite.op (0, 1))).2 := by
-            congr 2
-    _ = ((reverseEvenProdEquiv e (MulOpposite.op (0, g))) *
-        reverseEvenProdEquiv e (MulOpposite.op (0, 1))).2 := by rw [map_mul]
-    _ = 0 := by rw [hzeroOne]; simp
+    (f : Module.End K M) (g : Module.End K N) :
+    reverseEvenToSecondAlgHom e (MulOpposite.op f, MulOpposite.op g) =
+      (reverseEvenProdEquiv e (MulOpposite.op (f, g))).2 :=
+  rfl
+
+private theorem reverseEvenToSecondAlgHom_one_zero
+    (e : even Q ≃ₐ[K] Module.End K M × Module.End K N)
+    (hswap : reverseEvenProdEquiv e (MulOpposite.op (1, 0)) = (0, 1)) :
+    reverseEvenToSecondAlgHom e (1, 0) = 1 := by
+  have happ := reverseEvenToSecondAlgHom_apply e (1 : Module.End K M) (0 : Module.End K N)
+  have hsnd := congrArg Prod.snd hswap
+  exact happ.trans hsnd
 
 private noncomputable def reverseEvenFirstToSecondAlgHom
     (e : even Q ≃ₐ[K] Module.End K M × Module.End K N)
     (hswap : reverseEvenProdEquiv e (MulOpposite.op (1, 0)) = (0, 1)) :
-    (Module.End K M)ᵐᵒᵖ →ₐ[K] Module.End K N where
-  toFun f := (reverseEvenProdEquiv e (MulOpposite.op (f.unop, 0))).2
-  map_one' := by simpa using congrArg Prod.snd hswap
-  map_mul' f g := by
-    have hsource : MulOpposite.op (g.unop * f.unop, (0 : Module.End K N)) =
-        MulOpposite.op (f.unop, 0) * MulOpposite.op (g.unop, 0) := by
-      apply MulOpposite.unop_injective
-      simp
-    -- Normalize multiplication in the opposite product algebra before applying multiplicativity.
-    change (reverseEvenProdEquiv e
-      (MulOpposite.op (g.unop * f.unop, 0))).2 = _
-    rw [hsource, map_mul]
-    rfl
-  map_zero' := by
-    have hsource : MulOpposite.op ((0 : Module.End K M), (0 : Module.End K N)) = 0 := rfl
-    -- Normalize zero in the opposite product algebra before applying preservation of zero.
-    change (reverseEvenProdEquiv e (MulOpposite.op (0, 0))).2 = 0
-    rw [hsource, map_zero]
-    rfl
-  map_add' f g := by
-    have hsource : MulOpposite.op (f.unop + g.unop, (0 : Module.End K N)) =
-        MulOpposite.op (f.unop, 0) + MulOpposite.op (g.unop, 0) := by
-      apply MulOpposite.unop_injective
-      simp
-    -- Normalize addition in the opposite product algebra before applying additivity.
-    change (reverseEvenProdEquiv e
-      (MulOpposite.op (f.unop + g.unop, 0))).2 = _
-    rw [hsource, map_add]
-    rfl
-  commutes' r := by
-    have hunop : MulOpposite.unop (algebraMap K (Module.End K M)ᵐᵒᵖ r) =
-        algebraMap K (Module.End K M) r := by simp
-    rw [hunop]
-    have hop : MulOpposite.op (algebraMap K (Module.End K M) r, 0) =
-        r • MulOpposite.op ((1 : Module.End K M), (0 : Module.End K N)) := by
-      apply MulOpposite.unop_injective
-      ext <;> simp [Algebra.smul_def]
-    rw [hop]
-    have h := congrArg Prod.snd <|
-      (reverseEvenProdEquiv e).toLinearEquiv.map_smul r
-        (MulOpposite.op ((1 : Module.End K M), (0 : Module.End K N)))
-    simpa [hswap, Algebra.smul_def] using h
-
-private theorem reverseEvenFirstToSecondAlgHom_injective
-    (e : even Q ≃ₐ[K] Module.End K M × Module.End K N)
-    (hswap : reverseEvenProdEquiv e (MulOpposite.op (1, 0)) = (0, 1)) :
-    Function.Injective (reverseEvenFirstToSecondAlgHom e hswap) := by
-  intro f g hfg
-  apply MulOpposite.unop_injective
-  have hr : reverseEvenProdEquiv e (MulOpposite.op (f.unop, 0)) =
-      reverseEvenProdEquiv e (MulOpposite.op (g.unop, 0)) := by
-    apply Prod.ext
-    · rw [reverseEvenProdEquiv_first_fst_eq_zero e hswap,
-        reverseEvenProdEquiv_first_fst_eq_zero e hswap]
-    · exact hfg
-  have hpairs := MulOpposite.op_injective ((reverseEvenProdEquiv e).injective hr)
-  exact congrArg Prod.fst hpairs
+    (Module.End K M)ᵐᵒᵖ →ₐ[K] Module.End K N :=
+  AlgHom.prodFirst (reverseEvenToSecondAlgHom e) (reverseEvenToSecondAlgHom_one_zero e hswap)
 
 private noncomputable def reverseEvenFirstToSecondAlgEquiv
     [FiniteDimensional K M] [FiniteDimensional K N]
@@ -215,8 +158,12 @@ private noncomputable def reverseEvenFirstToSecondAlgEquiv
     (hdim : finrank K M = finrank K N) :
     (Module.End K M)ᵐᵒᵖ ≃ₐ[K] Module.End K N := by
   let f := reverseEvenFirstToSecondAlgHom e hswap
-  have hinj : Function.Injective f := reverseEvenFirstToSecondAlgHom_injective e hswap
-  refine AlgEquiv.ofBijective f ⟨hinj, ?_⟩
+  have hunit := reverseEvenToSecondAlgHom_one_zero e hswap
+  have hsurj : Function.Surjective f := AlgHom.prodFirst_surjective _ hunit <|
+    Prod.snd_surjective.comp <|
+      ((endProdMulOppositeEquiv (K := K) (M := M) (N := N)).symm.trans
+        (reverseEvenProdEquiv e)).surjective
+  refine AlgEquiv.ofBijective f ⟨?_, hsurj⟩
   have hrank : finrank K ((Module.End K M)ᵐᵒᵖ) =
       finrank K (Module.End K N) := by
     calc
@@ -224,10 +171,10 @@ private noncomputable def reverseEvenFirstToSecondAlgEquiv
         (MulOpposite.opLinearEquiv K).symm.finrank_eq
       _ = finrank K (Module.End K N) := by
         rw [Module.finrank_linearMap, Module.finrank_linearMap, hdim]
-  have hinj' : Function.Injective f.toLinearMap := hinj
+  have hsurj' : Function.Surjective f.toLinearMap := hsurj
   exact (LinearMap.injective_iff_surjective_of_finrank_eq_finrank
     (K := K) (V := (Module.End K M)ᵐᵒᵖ)
-      (V₂ := Module.End K N) (f := f.toLinearMap) hrank).mp hinj'
+      (V₂ := Module.End K N) (f := f.toLinearMap) hrank).mpr hsurj'
 
 private theorem reverseEvenFirstToSecondAlgEquiv_apply
     [FiniteDimensional K M] [FiniteDimensional K N]
@@ -247,18 +194,19 @@ private theorem reverseEvenFirstToSecondAlgEquiv_action
     reverseEvenFirstToSecondAlgEquiv e hswap hdim (MulOpposite.op (e x).1) =
       (e (reverseEven Q x)).2 := by
   rw [reverseEvenFirstToSecondAlgEquiv_apply]
-  -- Expose the product-algebra component selected by the restricted equivalence.
-  change (reverseEvenProdEquiv e (MulOpposite.op ((e x).1, 0))).2 = _
-  have hfull : reverseEvenProdEquiv e (MulOpposite.op (e x)) = e (reverseEven Q x) := by
-    simpa using reverseEvenProdEquiv_apply e (e x)
-  rw [← congrArg Prod.snd hfull]
-  have hsource : MulOpposite.op (e x) =
-      MulOpposite.op ((e x).1, 0) + MulOpposite.op (0, (e x).2) := by
-    apply MulOpposite.unop_injective
-    ext <;> simp
-  rw [hsource, map_add]
-  simp only [Prod.snd_add]
-  rw [reverseEvenProdEquiv_second_snd_eq_zero e hswap, add_zero]
+  rw [reverseEvenFirstToSecondAlgHom, AlgHom.prodFirst_apply]
+  have hfull : reverseEvenToSecondAlgHom e
+      (MulOpposite.op (e x).1, MulOpposite.op (e x).2) =
+        (e (reverseEven Q x)).2 := by
+    rw [reverseEvenToSecondAlgHom_apply]
+    simpa only [e.symm_apply_apply] using
+      congrArg Prod.snd (reverseEvenProdEquiv_apply e (e x))
+  rw [← hfull]
+  exact (AlgHom.map_eq_map_fst
+    (F := K) (A := (Module.End K M)ᵐᵒᵖ) (C := (Module.End K N)ᵐᵒᵖ)
+    (B := Module.End K N) (reverseEvenToSecondAlgHom e)
+    (reverseEvenToSecondAlgHom_one_zero e hswap)
+    (MulOpposite.op (e x).1, MulOpposite.op (e x).2)).symm
 
 /-- In a polarized six-dimensional quadratic space, the odd half-spin representation is
 equivalent to the dual of the even half-spin representation. The equivalence is noncanonical:
@@ -291,6 +239,20 @@ theorem exists_spinMinusSubrep_equiv_dual_spinPlusSubrep_of_finrank_eq_six
   let a : (Module.End K (spinPlus Q P))ᵐᵒᵖ ≃ₐ[K]
       Module.End K (spinMinus Q P) :=
     reverseEvenFirstToSecondAlgEquiv ep hswap (hplus.trans hminus.symm)
+  have hep (x : even Q) : ep x =
+      (spinPlusAction Q P hline x, spinMinusAction Q P hline x) := by
+    simpa only [ep, evenSpinActionProd_apply] using
+      P.evenCliffordEquivProdEnd_apply hline x
+  have hep_fst (x : even Q) : (ep x).1 = spinPlusAction Q P hline x := by
+    exact congrArg Prod.fst (hep x)
+  have hep_snd (x : even Q) : (ep x).2 = spinMinusAction Q P hline x := by
+    exact congrArg Prod.snd (hep x)
+  have ha (x : even Q) :
+      a (MulOpposite.op (spinPlusAction Q P hline x)) =
+        spinMinusAction Q P hline (reverseEven Q x) := by
+    rw [← hep_fst x, ← hep_snd (reverseEven Q x)]
+    exact reverseEvenFirstToSecondAlgEquiv_action ep hswap
+      (hplus.trans hminus.symm) x
   -- Scalar duality turns that anti-isomorphism into an isomorphism of endomorphism algebras;
   -- Skolem--Noether then realizes it as conjugation by a linear equivalence.
   let c : Module.End K (Module.Dual K (spinPlus Q P)) ≃ₐ[K]
@@ -312,8 +274,6 @@ theorem exists_spinMinusSubrep_equiv_dual_spinPlusSubrep_of_finrank_eq_six
   apply eplus.dualMap.injective
   apply LinearMap.ext
   intro p
-  have hactionInv := reverseEvenFirstToSecondAlgEquiv_action ep hswap
-    (hplus.trans hminus.symm) (spinGroupToEven Q g⁻¹)
   -- Reversal converts the inverse even-half-spin action into the odd-half-spin action.
   have hcInv : c ((spinPlusAction Q P hline (spinGroupToEven Q g⁻¹)).dualMap) =
       spinMinusAction Q P hline (spinGroupToEven Q g) := by
@@ -331,8 +291,7 @@ theorem exists_spinMinusSubrep_equiv_dual_spinPlusSubrep_of_finrank_eq_six
               (CliffordAlgebra Q)ˣ)⁻¹ : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) :=
           evenUnitaryGroup.reverse_eq_inv Q (spinGroupToEvenUnitary Q g⁻¹)
         _ = (g : CliffordAlgebra Q) := by simp
-    simpa [a, ep, P.evenCliffordEquivProdEnd_apply, evenSpinActionProd_apply, hrevInv]
-      using hactionInv
+    rw [ha, hrevInv]
   have hconjInv := AlgEquiv.congr_fun hT
     ((spinPlusAction Q P hline (spinGroupToEven Q g⁻¹)).dualMap)
   rw [hcInv] at hconjInv
