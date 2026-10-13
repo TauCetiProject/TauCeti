@@ -83,9 +83,6 @@ theorem exists_map_IccExtend_eq_lintegral_curveAction_le (hp : p ≠ ∞)
     rw [h_def]
     field_simp
     ring
-  have hgrid {k : ℕ} (hk : k ≤ N) : a + k * h ∈ Icc a b := by
-    have : (k : ℝ) * h ≤ N * h := mul_le_mul_of_nonneg_right (by exact_mod_cast hk) hh.le
-    exact ⟨by nlinarith [(Nat.cast_nonneg k : (0 : ℝ) ≤ k)], by linarith⟩
   -- Optimal couplings of the laws at consecutive grid times, glued into a law on sequences.
   have hcoup (k : ℕ) := exists_isCoupling_eLpNorm_eq_wassersteinEDist hp0 hp
     ((μ (a + k * h) : ProbabilityMeasure E) : Measure E)
@@ -112,14 +109,15 @@ theorem exists_map_IccExtend_eq_lintegral_curveAction_le (hp : p ≠ ∞)
     refine (ae_map_iff hΦ.aemeasurable
       (measurableSet_absolutelyContinuousOnInterval_IccExtend hab.le a b)).2 (ae_of_all _ ?_)
     intro x
-    have := absolutelyContinuousOnInterval_of_eqOn_polygonalInterpolation hh (hΦeq x)
+    have := (isPolygonalOnInterval_of_eqOn_polygonalInterpolation hN hh
+      (hΦeq x)).absolutelyContinuousOnInterval
     rwa [hNh] at this
   · -- At a grid time the polygonal path passes through the corresponding point.
     have heval : (fun γ : C(Icc a b, E) ↦ IccExtend hab.le γ (a + k * h)) ∘ Φ =
         fun x : ℕ → E ↦ x k := by
       funext x
       simp only [Function.comp_apply]
-      rw [hΦeq x (by rw [hNh]; exact hgrid hk), polygonalInterpolation_grid x hh hk]
+      rw [hΦeq x (add_natCast_mul_mem_Icc a hh.le hk), polygonalInterpolation_apply_grid x hh hk]
     rw [Measure.map_map (measurable_IccExtend_apply hab.le _) hΦ, heval,
       Measure.map_eval_chainMeasure π k fun j _ ↦ hmatch j, (hπ k).fst_eq]
   · -- The expected action is the expected discrete action, bounded cell by cell by Hölder.
@@ -135,7 +133,8 @@ theorem exists_map_IccExtend_eq_lintegral_curveAction_le (hp : p ≠ ∞)
             edist (x k) (x (k + 1)) ^ p.toReal * ENNReal.ofReal h ^ (1 - p.toReal) ∂P := by
           rw [lintegral_map (measurable_curveAction_IccExtend hab.le _ _ _) hΦ]
           refine lintegral_congr fun x ↦ ?_
-          rw [← curveAction_of_eqOn_polygonalInterpolation hh (by linarith) (hΦeq x), hNh]
+          rw [← curveAction_eq_sum_edist_rpow_mul_rpow_one_sub_of_eqOn_polygonalInterpolation hh
+            (by linarith) (hΦeq x), hNh]
       _ = ∑ k ∈ Finset.range N,
             edist (μ (a + k * h)) (μ (a + (k + 1) * h)) ^ p.toReal *
               ENNReal.ofReal h ^ (1 - p.toReal) := by
