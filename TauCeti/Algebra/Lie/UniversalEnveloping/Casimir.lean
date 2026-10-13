@@ -156,7 +156,7 @@ on `∑ᵢ xᵢ ⊗ yᵢ`, which vanishes. -/
 theorem ι_mul_casimirElement (z : L) :
     ι K z * casimirElement K L = casimirElement K L * ι K z := by
   classical
-  set b := Module.finBasis K L with hb
+  set b := Module.finBasis K L
   rw [← sub_eq_zero, casimirElement_eq_sum b, Finset.mul_sum, Finset.sum_mul,
     ← Finset.sum_sub_distrib]
   have hcomm : ∀ x y : L, ι K x * ι K y - ι K y * ι K x = ι K (⁅x, y⁆ : L) := fun x y ↦ by

@@ -131,7 +131,7 @@ theorem formalPoint_add
   suffices h : formalPointMap (S := S) I E (P + Q) =
       formalPointMap (S := S) I E P + formalPointMap (S := S) I E Q by
     simpa only [formalPointMap] using h
-  rcases eq_or_ne P 0 with rfl | hP0
+  rcases eq_or_ne P 0 with rfl | _
   · simp [formalPointMap]
   rcases eq_or_ne Q 0 with rfl | hQ0
   · simp [formalPointMap]

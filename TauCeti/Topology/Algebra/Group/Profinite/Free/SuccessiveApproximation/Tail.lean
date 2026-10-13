@@ -105,7 +105,7 @@ theorem exists_continuousMonoidHom_inv_mul_apply_mem_of_range_sup_gradedPowIterS
   induction k with
   | zero =>
     refine ⟨ContinuousMonoidHom.id _, fun _ ↦ 1, fun g ↦ by simp, fun i ↦ one_mem _,
-      fun i ↦ one_mem _, ?_⟩
+      fun _ ↦ one_mem _, ?_⟩
     have h1 : ∀ l : List X, (l.map fun _ : X ↦ (1 : freeProP p X)).prod = 1 := fun l ↦
       List.prod_eq_one fun x hx ↦ by
         obtain ⟨_, -, rfl⟩ := List.mem_map.mp hx
@@ -248,17 +248,17 @@ theorem exists_continuousMonoidHom_inv_mul_apply_mem_of_range_sup_gradedPowIterS
       simp only [hT, QuotientGroup.mk_mul, QuotientGroup.mk_inv, List.map_append,
         List.prod_append] at hkey'
       set A := ((φ r : freeProP p X) :
-        freeProP p X ⧸ pLowerCentralSeries p (freeProP p X) (k + 1 + 1 + 1)) with hA
+        freeProP p X ⧸ pLowerCentralSeries p (freeProP p X) (k + 1 + 1 + 1))
       set W := ((w : freeProP p X) :
-        freeProP p X ⧸ pLowerCentralSeries p (freeProP p X) (k + 1 + 1 + 1)) with hW
+        freeProP p X ⧸ pLowerCentralSeries p (freeProP p X) (k + 1 + 1 + 1))
       set P₁ := (((l₁.map t).prod : freeProP p X) :
-        freeProP p X ⧸ pLowerCentralSeries p (freeProP p X) (k + 1 + 1 + 1)) with hP₁
+        freeProP p X ⧸ pLowerCentralSeries p (freeProP p X) (k + 1 + 1 + 1))
       set P₂ := (((l₂.map t).prod : freeProP p X) :
-        freeProP p X ⧸ pLowerCentralSeries p (freeProP p X) (k + 1 + 1 + 1)) with hP₂
+        freeProP p X ⧸ pLowerCentralSeries p (freeProP p X) (k + 1 + 1 + 1))
       set U₁ := (((l₁.map u).prod : freeProP p X) :
-        freeProP p X ⧸ pLowerCentralSeries p (freeProP p X) (k + 1 + 1 + 1)) with hU₁
+        freeProP p X ⧸ pLowerCentralSeries p (freeProP p X) (k + 1 + 1 + 1))
       set U₂ := (((l₂.map u).prod : freeProP p X) :
-        freeProP p X ⧸ pLowerCentralSeries p (freeProP p X) (k + 1 + 1 + 1)) with hU₂
+        freeProP p X ⧸ pLowerCentralSeries p (freeProP p X) (k + 1 + 1 + 1))
       -- The class of the moved relator `θ (φ r)`, from the key identity.
       have hD : ((basisModification ω (φ r) : freeProP p X) :
           freeProP p X ⧸ pLowerCentralSeries p (freeProP p X) (k + 1 + 1 + 1)) =

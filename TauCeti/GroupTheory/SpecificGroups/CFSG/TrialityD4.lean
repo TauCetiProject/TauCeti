@@ -317,8 +317,8 @@ theorem graphAut_pow_twistOrder :
 points induced by a ring endomorphism of the closure. -/
 theorem graphAut_comp_frobenius :
     d.graphAut.toMonoidHom.comp d.frobenius = d.frobenius.comp d.graphAut.toMonoidHom := by
-  rw [graphAut_def, frobenius_def, D4Tripled.frobenius_eq_pointsMap]
-  exact (D4Tripled.pointsMap_comp_trialityPoints _).symm
+  rw [graphAut_def, frobenius_def, D4Tripled.frobenius_eq_map]
+  exact (D4Tripled.map_comp_trialityPoints _).symm
 
 /-! ## The Steinberg endomorphism -/
 

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.InnerProductSpace.Calculus
+public import Mathlib.Analysis.InnerProductSpace.Harmonic.Basic
 public import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
 public import TauCeti.Analysis.InnerProductSpace.Laplacian.MaximumPrinciple
 
@@ -29,6 +30,8 @@ actually uses is the **weak maximum principle**, which relaxes `0 < Δ f` to the
   `TauCeti.exists_mem_frontier_isMinOn_of_laplacian_nonpos`: on a nonempty compact set in a
   nontrivial finite-dimensional real inner product space, a subharmonic (resp. superharmonic)
   function attains a maximum (resp. minimum) on the frontier.
+* `InnerProductSpace.HarmonicOnNhd.eq_zero_of_tendsto_cocompact`: a harmonic function on a
+  nontrivial finite-dimensional space that tends to zero at infinity vanishes identically.
 -/
 
 public section
@@ -182,6 +185,49 @@ theorem exists_mem_frontier_isMinOn_of_laplacian_nonpos {K : Set E} (hK : IsComp
   refine ⟨z, hzfr, isMinOn_iff.mpr fun y hyK => ?_⟩
   have := isMaxOn_iff.mp hzmax y hyK
   simpa using neg_le_neg this
+
+/-- **A harmonic function on the whole space that vanishes at infinity is zero.** If `f` is
+harmonic on a nontrivial finite-dimensional real inner product space and `f x → 0` as `x → ∞`,
+then `f = 0`. -/
+theorem _root_.InnerProductSpace.HarmonicOnNhd.eq_zero_of_tendsto_cocompact {F : Type*}
+    [NormedAddCommGroup F] [NormedSpace ℝ F] {f : E → F} (hf : HarmonicOnNhd f Set.univ)
+    (h : Filter.Tendsto f (Filter.cocompact E) (𝓝 0)) : f = 0 := by
+  funext x
+  refine (SeparatingDual.eq_iff_forall_dual_eq (R := ℝ)).2 fun φ => ?_
+  rw [Pi.zero_apply, map_zero]
+  have hu : HarmonicOnNhd (φ ∘ f) Set.univ := hf.comp_CLM φ
+  have hut : Filter.Tendsto (φ ∘ f) (Filter.cocompact E) (𝓝 0) := by
+    simpa using (φ.continuous.tendsto 0).comp h
+  -- By the weak maximum and minimum principles on a large ball, `|φ (f x)| ≤ ε` for every `ε > 0`.
+  refine eq_of_forall_dist_le fun ε hε => ?_
+  -- Off a compact set `K`, `|φ ∘ f| < ε`; take a ball around the origin containing `K` and `x`.
+  obtain ⟨K, hK, hKε⟩ := Filter.mem_cocompact.1 (hut (Metric.ball_mem_nhds 0 hε))
+  obtain ⟨R, hR⟩ := (hK.insert x).isBounded.subset_ball 0
+  have hxR : x ∈ Metric.ball (0 : E) R := hR (Set.mem_insert x K)
+  have hR0 : R ≠ 0 := by
+    rintro rfl
+    simp at hxR
+  have hfr : ∀ ⦃y⦄, y ∈ frontier (Metric.closedBall (0 : E) R) → |(φ ∘ f) y| < ε := by
+    intro y hy
+    rw [frontier_closedBall (0 : E) hR0, mem_sphere_iff_norm, sub_zero] at hy
+    have hyK : y ∉ K := fun hyK => by
+      have := hR (Set.mem_insert_of_mem x hyK)
+      rw [mem_ball_zero_iff, hy] at this
+      exact lt_irrefl R this
+    simpa [Real.dist_eq] using hKε hyK
+  have hcb : IsCompact (Metric.closedBall (0 : E) R) := isCompact_closedBall 0 R
+  have hcont : ContinuousOn (φ ∘ f) (Metric.closedBall (0 : E) R) :=
+    hu.continuousOn.mono (Set.subset_univ _)
+  have hcd : ∀ ⦃y⦄, y ∈ interior (Metric.closedBall (0 : E) R) → ContDiffAt ℝ 2 (φ ∘ f) y :=
+    fun y _ => (hu y trivial).1
+  have hΔ : ∀ y, Δ (φ ∘ f) y = 0 := fun y => (hu y trivial).2.self_of_nhds
+  have hxB := Metric.ball_subset_closedBall hxR
+  have hle := le_of_laplacian_nonneg_le_frontier hcb hcont hcd (fun y _ => (hΔ y).ge)
+    (fun y hy => (abs_lt.1 (hfr hy)).2.le) hxB
+  have hge := ge_of_laplacian_nonpos_ge_frontier hcb hcont hcd (fun y _ => (hΔ y).le)
+    (fun y hy => (abs_lt.1 (hfr hy)).1.le) hxB
+  rw [Real.dist_eq, sub_zero]
+  exact abs_le.2 ⟨hge, hle⟩
 
 end Nontrivial
 

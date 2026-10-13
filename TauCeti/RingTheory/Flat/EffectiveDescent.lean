@@ -35,11 +35,14 @@ Forgetting the multiplication, a descent datum is in particular a coalgebra for 
 
 Since `Spec` is an anti-equivalence between commutative `R`-algebras and affine schemes over
 `Spec R`, the results below are effective descent for affine schemes along a faithfully flat
-morphism `Spec S → Spec R` of affine schemes:
+morphism `Spec S → Spec R` of affine schemes (the scheme-theoretic statements are in
+`TauCeti.AlgebraicGeometry.Descent.Affine`):
 
 * `TauCeti.Algebra.DescentDatum.baseChangeEquiv` (effectivity): if `S` is flat over `R`, the
   descended algebra `D.descended = {b | θ b = 1 ⊗ b}` satisfies `S ⊗[R] D.descended ≃ B`, and
   `coaction_baseChangeEquiv` identifies `θ` with the canonical datum on `S ⊗[R] D.descended`.
+* `TauCeti.Algebra.DescentDatum.toBaseChangeDescended`: the inverse of `baseChangeEquiv` as a
+  morphism from `D` to the canonical descent datum on `S ⊗[R] D.descended`.
 * `TauCeti.Algebra.DescentDatum.descended_baseChange`: if `S` is faithfully flat over `R`, the
   canonical datum on `S ⊗[R] A` descends to (the image of) `A`.
 * `TauCeti.Algebra.DescentDatum.equivDescended` (uniqueness): if `S` is faithfully flat over `R`,
@@ -147,6 +150,8 @@ structure DescentDatum where
 
 namespace DescentDatum
 
+attribute [simp] counit_coaction
+
 variable {R S B} (D : DescentDatum R S B)
 
 /-- The coaction of a descent datum is injective, being a section of the multiplication map. -/
@@ -164,8 +169,7 @@ theorem mem_descended_iff {b : B} : b ∈ D.descended ↔ D.coaction b = 1 ⊗�
 
 /-- The comparison map `S ⊗[R] D.descended → B`, `s ⊗ a ↦ s • a`. -/
 private noncomputable def baseChangeHom : S ⊗[R] D.descended →ₐ[S] B :=
-  Algebra.TensorProduct.lift (Algebra.ofId S B) D.descended.val fun s a ↦ by
-    rw [Algebra.ofId_apply]; exact Algebra.commute_algebraMap_left s _
+  AlgHom.liftEquiv R S D.descended B D.descended.val
 
 private theorem coaction_baseChangeHom (x : S ⊗[R] D.descended) :
     D.coaction (D.baseChangeHom x) =
@@ -173,8 +177,9 @@ private theorem coaction_baseChangeHom (x : S ⊗[R] D.descended) :
   induction x using TensorProduct.inductionOn with
   | tmul s a =>
     have ha : D.coaction a = 1 ⊗ₜ (a : B) := a.2
-    rw [baseChangeHom, Algebra.TensorProduct.lift_tmul]
-    simp [ha, Algebra.TensorProduct.algebraMap_apply, Algebra.TensorProduct.tmul_mul_tmul]
+    rw [baseChangeHom, AlgHom.liftEquiv_tmul]
+    simp [ha, Algebra.smul_def, Algebra.TensorProduct.algebraMap_apply,
+      Algebra.TensorProduct.tmul_mul_tmul]
   | add x y hx hy => simp [hx, hy]
 
 private theorem baseChangeHom_bijective [Module.Flat R S] :
@@ -259,10 +264,8 @@ noncomputable def equivDescended [Module.FaithfullyFlat R S] {A : Type*} [Ring A
       fun a ↦ by simpa using he a)
     (by
       refine ⟨fun a a' h ↦ ?_, fun ⟨b, hb⟩ ↦ ?_⟩
-      · have h' : (1 : S) ⊗ₜ[R] (a - a') = 0 := by
-          rw [tmul_sub, sub_eq_zero]
-          exact e.injective congr($h.1)
-        simpa [sub_eq_zero] using h'
+      · refine Module.FaithfullyFlat.tensorProduct_mk_injective (A := R) (B := S) A ?_
+        simpa using e.injective congr($h.1)
       -- The coaction of `D` is the transport of the canonical coaction along `e`.
       have hcompat : ∀ x, D.coaction (e x) =
           Algebra.TensorProduct.map (AlgHom.id R S) (e.toAlgHom.restrictScalars R)
@@ -456,7 +459,7 @@ private theorem coe_equivDescendedBaseChange_apply [Module.FaithfullyFlat R S] (
     (equivDescendedBaseChange (R := R) (S := S) a : S ⊗[R] A) = 1 ⊗ₜ a :=
   (rfl)
 
-/-- **Descent of morphisms of affine schemes.** If `S` is faithfully flat over `R`, the
+/-- **Full faithfulness of base change.** If `S` is faithfully flat over `R`, the
 `R`-algebra maps `A → A'` are exactly the morphisms between the canonical descent data on
 `S ⊗[R] A` and `S ⊗[R] A'`, via `f ↦ id ⊗ f`. -/
 noncomputable def baseChangeHomEquiv [Module.FaithfullyFlat R S] :
@@ -491,6 +494,24 @@ theorem tmul_baseChangeHomEquiv_symm_apply [Module.FaithfullyFlat R S]
   simp
 
 end BaseChange
+
+/-- The effectivity isomorphism `baseChangeEquiv`, inverted, as a morphism of descent data from
+`D` to the canonical descent datum on `S ⊗[R] D.descended`. -/
+noncomputable def toBaseChangeDescended [Module.Flat R S] (D : DescentDatum R S B) :
+    Hom D (baseChange R S D.descended) where
+  toAlgHom := D.baseChangeEquiv.symm
+  coaction_toAlgHom b := by
+    obtain ⟨x, rfl⟩ := D.baseChangeEquiv.surjective b
+    rw [coaction_baseChangeEquiv]
+    simp only [AlgEquiv.coe_toAlgHom, AlgEquiv.symm_apply_apply]
+    induction x using TensorProduct.inductionOn with
+    | tmul s a => simp
+    | add x y hx hy => simp only [map_add, hx, hy]
+
+@[simp]
+theorem toBaseChangeDescended_toAlgHom [Module.Flat R S] (D : DescentDatum R S B) :
+    D.toBaseChangeDescended.toAlgHom = D.baseChangeEquiv.symm :=
+  (rfl)
 
 /-! ### Change of the base ring
 
@@ -571,12 +592,11 @@ private theorem mem_descended_of_coaction_comp (a : D.descended) : ψ a ∈ D'.d
 
 /-- The comparison map `R' ⊗[R] D.descended → D'.descended`, `r ⊗ a ↦ r • ψ a`. -/
 private noncomputable def tensorDescendedHom : R' ⊗[R] D.descended →ₐ[R'] D'.descended :=
-  (Algebra.TensorProduct.lift (Algebra.ofId R' B') (ψ.comp D.descended.val) fun r a ↦ by
-    rw [Algebra.ofId_apply]; exact Algebra.commute_algebraMap_left r _).codRestrict
+  (AlgHom.liftEquiv R R' D.descended B' (ψ.comp D.descended.val)).codRestrict
     D'.descended fun x ↦ by
     induction x using TensorProduct.inductionOn with
     | tmul r a =>
-      rw [Algebra.TensorProduct.lift_tmul, Algebra.ofId_apply, ← Algebra.smul_def]
+      rw [AlgHom.liftEquiv_tmul]
       exact Subalgebra.smul_mem _ (D.mem_descended_of_coaction_comp hθ a) r
     | add x y hx hy => rw [map_add]; exact add_mem hx hy
 
@@ -706,14 +726,13 @@ private theorem isoHom_tmul (b : B) (t : S) :
 /-- The inverse gluing map `S ⊗[R] B → B ⊗[R] S`, `s ⊗ b ↦ (s ⊗ 1) * τ (coaction b)`, where
 `τ` swaps the two factors. -/
 private noncomputable def isoInv : S ⊗[R] B →ₐ[S] B ⊗[R] S :=
-  Algebra.TensorProduct.lift (Algebra.ofId S (B ⊗[R] S))
+  AlgHom.liftEquiv R S B (B ⊗[R] S)
     ((Algebra.TensorProduct.comm R S B).toAlgHom.comp (D.coaction.restrictScalars R))
-    (fun s x ↦ by rw [Algebra.ofId_apply]; exact Algebra.commute_algebraMap_left s _)
 
 private theorem isoInv_tmul (s : S) (b : B) :
     D.isoInv (s ⊗ₜ b) =
       algebraMap S B s ⊗ₜ 1 * Algebra.TensorProduct.comm R S B (D.coaction b) := by
-  simp [isoInv, Algebra.TensorProduct.algebraMap_apply]
+  simp [isoInv, Algebra.smul_def, Algebra.TensorProduct.algebraMap_apply]
 
 private theorem isoHom_comm (x : S ⊗[R] B) :
     D.isoHom (Algebra.TensorProduct.comm R S B x) =
@@ -854,24 +873,8 @@ private theorem mulLeft_iso_tmul_one (b : B) : mulLeft (E.iso (b ⊗ₜ 1)) = b 
       simpa using congr($hmul.symm (E.iso.symm (1 ⊗ₜ b)))⟩
   -- `c` is idempotent, by the cocycle condition.
   have hidem : ∀ a, c (c a) = c a := fun a ↦ by
-    have hθ (θ : B →ₐ[S] S ⊗[R] B) (y : S ⊗[R] B) :
-        mulLeft (Algebra.TensorProduct.map (AlgHom.id R S) (mulLeft.restrictScalars R)
-          (Algebra.TensorProduct.map (AlgHom.id R S) (θ.restrictScalars R) y)) =
-          mulLeft (θ (mulLeft y)) := by
-      induction y using TensorProduct.inductionOn with
-      | tmul s b => simp [Algebra.TensorProduct.algebraMap_apply]
-      | add x y hx hy => simp only [map_add, hx, hy]
-    have hR (y : S ⊗[R] B) :
-        mulLeft (Algebra.TensorProduct.map (AlgHom.id R S)
-          ((mulLeft : S ⊗[R] B →ₐ[S] B).restrictScalars R)
-          (Algebra.TensorProduct.map (AlgHom.id R S) Algebra.TensorProduct.includeRight y)) =
-          mulLeft y := by
-      induction y using TensorProduct.inductionOn with
-      | tmul s b => simp
-      | add x y hx hy => simp only [map_add, hx, hy]
     have h := congr(mulLeft (Algebra.TensorProduct.map (AlgHom.id R S)
       (mulLeft.restrictScalars R) $(E.coassoc a)))
-    rw [hθ, hR] at h
     simpa [hc] using h
   obtain ⟨a, rfl⟩ := hsurj b
   simpa [hc] using hidem a

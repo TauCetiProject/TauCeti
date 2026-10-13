@@ -6,6 +6,7 @@ Authors: Codex
 module
 
 public import Mathlib.Algebra.DualNumber
+public import Mathlib.Algebra.Exact.Basic
 public import Mathlib.RingTheory.Artinian.Module
 
 /-!
@@ -14,6 +15,7 @@ public import Mathlib.RingTheory.Artinian.Module
 The coordinatewise scalar action on dual numbers commutes with multiplication. These
 instances make bilinear multiplication and convolution available with that module structure.
 Dual numbers over an Artinian ring are also Artinian, using their product module structure.
+Multiplication by `ε` is exact over a commutative ring.
 -/
 
 public section
@@ -40,5 +42,23 @@ instance dualNumberIsArtinianRing {R : Type*} [Ring R] [IsArtinianRing R] :
       simpa only [smul_eq_mul, ← TrivSqZeroExt.inl_mul_eq_smul] using
         mul_assoc (TrivSqZeroExt.inl r) x y⟩
   exact isArtinian_of_tower R (inferInstanceAs (IsArtinian R (R × R)))
+
+/-- Multiplication by `ε` on the dual numbers is exact. -/
+theorem dualNumber_mul_eps_exact {R : Type*} [CommRing R] :
+    Function.Exact
+      (LinearMap.toSpanSingleton (DualNumber R) (DualNumber R) DualNumber.eps)
+      (LinearMap.toSpanSingleton (DualNumber R) (DualNumber R) DualNumber.eps) := by
+  intro x
+  constructor
+  · intro hx
+    have hx' : x.fst = 0 := by
+      have h := congrArg TrivSqZeroExt.snd hx
+      simpa [LinearMap.toSpanSingleton_apply] using h
+    refine ⟨TrivSqZeroExt.inl x.snd, ?_⟩
+    rw [← TrivSqZeroExt.inl_fst_add_inr_snd_eq x, hx']
+    simp [LinearMap.toSpanSingleton_apply, DualNumber.inr_eq_smul_eps,
+      ← TrivSqZeroExt.inl_mul_eq_smul]
+  · rintro ⟨y, rfl⟩
+    simp [LinearMap.toSpanSingleton_apply, smul_eq_mul, mul_assoc]
 
 end TauCeti

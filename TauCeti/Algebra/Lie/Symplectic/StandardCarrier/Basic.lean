@@ -274,6 +274,21 @@ def rootTarget : Fin (n + 1) ⊕ Fin (n + 1) → Fin (n + 1) ⊕ Fin (n + 1)
 def rootGeneratorWeight (k : Fin (n + 1) ⊕ Fin (n + 1)) (j : Fin (n + 1)) : ℤ :=
   weight n (rootTarget n k) j - weight n (rootSource n k) j
 
+/-- The roots of the raising generators are the rows of the type-`C` Cartan matrix. -/
+@[simp] theorem rootGeneratorWeight_inl (i j : Fin (n + 1)) :
+    rootGeneratorWeight n (.inl i) j = CartanMatrix.C (n + 1) i j := by
+  by_cases hi : i = Fin.last n
+  · subst hi
+    simp only [rootGeneratorWeight, rootTarget_inl, rootSource_inl_last, weight_inl, weight_inr,
+      Pi.neg_apply, DynkinType.TypeC.weight_apply, CartanMatrix.C, of_apply, Fin.ext_iff,
+      Fin.val_last, Nat.add_sub_cancel]
+    split_ifs <;> omega
+  · have hinext : i.val + 1 = (Order.succ i).val :=
+      (Fin.val_orderSucc_of_lt (by have := Fin.val_lt_last hi; omega)).symm
+    simp only [rootGeneratorWeight, rootTarget_inl, rootSource_inl_of_ne_last n i hi, weight_inl,
+      DynkinType.TypeC.weight_apply, CartanMatrix.C, of_apply, Fin.ext_iff]
+    split_ifs <;> omega
+
 /-- The weight difference across a raising generator is the corresponding simple root in the
 canonical simply connected type-`C` root datum. -/
 theorem rootGeneratorWeight_inl_eq_root (i : Fin (n + 1)) :
@@ -282,22 +297,7 @@ theorem rootGeneratorWeight_inl_eq_root (i : Fin (n + 1)) :
         (DynkinType.typeCSimpleIndex (n + 1) i) := by
   rw [DynkinType.root_typeCSimpleIndex]
   funext j
-  by_cases hi : i = Fin.last n
-  · subst hi
-    rw [rootGeneratorWeight, rootTarget_inl, rootSource_inl_last]
-    simp only [weight_inl, weight_inr, Pi.neg_apply, DynkinType.TypeC.weight_apply,
-      CartanMatrix.C, of_apply, Fin.val_last, Nat.add_sub_cancel]
-    split_ifs <;> simp only [Fin.ext_iff, Fin.val_last] at * <;> omega
-  · rw [rootGeneratorWeight, rootTarget_inl, rootSource_inl_of_ne_last n i hi]
-    simp only [weight_inl, DynkinType.TypeC.weight_apply, CartanMatrix.C, of_apply]
-    have hinext : i.val + 1 = (Order.succ i).val :=
-      (Fin.val_orderSucc_of_lt (by have := Fin.val_lt_last hi; omega)).symm
-    split_ifs <;> simp only [Fin.ext_iff] at * <;> omega
-
-/-- The roots of the raising generators are the rows of the type-`C` Cartan matrix. -/
-@[simp] theorem rootGeneratorWeight_inl (i j : Fin (n + 1)) :
-    rootGeneratorWeight n (.inl i) j = CartanMatrix.C (n + 1) i j := by
-  rw [rootGeneratorWeight_inl_eq_root, DynkinType.root_typeCSimpleIndex]
+  exact rootGeneratorWeight_inl n i j
 
 /-- The roots of the lowering generators are the negatives of the rows of the type-`C` Cartan
 matrix. -/

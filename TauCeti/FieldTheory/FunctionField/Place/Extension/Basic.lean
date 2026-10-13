@@ -33,8 +33,8 @@ that are independent over `F_P`, multiplied by the powers `t^j` of a prime eleme
 `0 ≤ j < e`, are independent over `F`, because the orders of the resulting blocks are pairwise
 distinct modulo `e`.
 
-The file also records the action of the valuation ring `𝒪_P` of a place `P` of `F / k` on the
-extension field `F'`, through `F`.  That action is not a global instance — for `F' = F` it would
+The file also records the action of the valuation ring `𝒪_P` of a place `P` of `F / k` on any
+`F`-algebra `F'`, through `F`. That action is not a global instance — for `F' = F` it would
 compete with the action of a valuation subring on its own field — so it, and the scalar tower it
 sits in, are provided to be reinstalled by consumers with `attribute [local instance 10]`.
 For a finite extension, it also records the standard local integral-closure model
@@ -47,7 +47,7 @@ to the canonical fraction fields used by Mathlib's different API.
 * `TauCeti.Place.constantsEquiv`: the places of `F' / k` are the places of `F' / k'`, for `k'`
   integral over `k`; enlarging the constants by an algebraic extension changes nothing.
 * `TauCeti.Place.algebraIntegersExtension` and `TauCeti.Place.isScalarTowerIntegersExtension`: the
-  action of the valuation ring of a place of `F / k` on an extension field `F'`, to be installed
+  action of the valuation ring of a place of `F / k` on an `F`-algebra `F'`, to be installed
   with `attribute [local instance 10]`.
 * `TauCeti.Place.restrict`: the place of `F / k` that a place of `F' / k'` lies over.
 * `TauCeti.Place.ramificationIdx`: the ramification index `e(P' | P)`.
@@ -56,6 +56,8 @@ to the canonical fraction fields used by Mathlib's different API.
 ## Main results
 
 * `TauCeti.Place.ord_algebraMap_restrict`: the defining property `ord_{P'} = e · ord_P` on `F`.
+* `TauCeti.Place.ramificationIdx_eq_of_ringEquiv`: the ramification index is unchanged when the
+  field below is replaced by an isomorphic copy with the same image in `F'`.
 * `TauCeti.Place.restrict_eq_iff_integers_le`, `TauCeti.Place.restrict_eq_iff_forall_ord_pos`
   and `TauCeti.Place.restrict_eq_iff_exists_ord_eq`: the three characterizations of `P' ∣ P`
   (Stichtenoth, Proposition 3.1.4), by the containment of valuation rings, by the containment of
@@ -116,18 +118,17 @@ namespace Place
 universe u u' v v'
 
 variable {k : Type u} {k' : Type u'} {F : Type v} {F' : Type v'}
-variable [Field k] [Field k'] [Field F] [Field F']
-variable [Algebra k k'] [Algebra k F] [Algebra k' F'] [Algebra F F'] [Algebra k F']
-variable [IsScalarTower k k' F'] [IsScalarTower k F F']
+variable [Field k] [Field F] [Algebra k F]
 
 section LocalModel
 
-omit [Field k'] [Algebra k k'] [Algebra k' F'] [Algebra k F'] [IsScalarTower k k' F']
-  [IsScalarTower k F F']
-
 variable (F') (P : Place k F)
 
-/-- **The valuation ring of a place of `F / k` acts on an extension field `F'`**, through `F`.
+section
+
+variable [Semiring F'] [Algebra F F']
+
+/-- **The valuation ring of a place of `F / k` acts on any `F`-algebra `F'`**, through `F`.
 
 This is not a global instance: for `F' = F` it would compete with the action of a valuation
 subring on its own field.  Install it, together with
@@ -137,24 +138,34 @@ that works with the local model of the extension at `P` — at low priority, so 
 expect. -/
 @[instance_reducible]
 noncomputable def algebraIntegersExtension : Algebra (P.integers) F' :=
-  ((algebraMap F F').comp (algebraMap (P.integers) F)).toAlgebra
+  Algebra.compHom F' (algebraMap (P.integers) F)
 
 attribute [local instance 10] algebraIntegersExtension
 
 /-- The action of `TauCeti.Place.algebraIntegersExtension` on `F'` factors through `F`. -/
 theorem isScalarTowerIntegersExtension : IsScalarTower (P.integers) F F' :=
-  .of_algebraMap_eq fun _ ↦ rfl
+  .of_compHom (P.integers) F F'
 
 attribute [local instance 10] isScalarTowerIntegersExtension
 
-theorem algebraMap_integersExtension_injective :
+/-- An `F`-algebra is torsion-free over the valuation ring of a place of `F / k`. -/
+instance isTorsionFree_integersExtension : Module.IsTorsionFree (P.integers) F' :=
+  Module.IsTorsionFree.trans F
+
+theorem algebraMap_integersExtension_injective [Nontrivial F'] :
     Function.Injective (algebraMap (P.integers) F') := by
   rw [IsScalarTower.algebraMap_eq (P.integers) F F', RingHom.coe_comp]
   exact (algebraMap F F').injective.comp (FaithfulSMul.algebraMap_injective (P.integers) F)
 
-/-- **`𝒪'_P` contracts to `𝒪_P`**: a function of `F` is integral over `𝒪_P` in the extension `F'`
-exactly when it is regular at `P`. So enlarging the field does not enlarge the ring of functions
-of `F` integral over `𝒪_P`, and `𝒪'_P ∩ F = 𝒪_P`. -/
+end
+
+variable [Ring F'] [Algebra F F'] [Nontrivial F']
+
+attribute [local instance 10] algebraIntegersExtension isScalarTowerIntegersExtension
+
+/-- **Integrality of functions of `F` is reflected by a nontrivial ring algebra `F'`**: the image
+of a function of `F` is integral over `𝒪_P` exactly when it is regular at `P`. In particular,
+the local integral closure in a field extension contracts to `𝒪_P`. -/
 @[simp]
 theorem isIntegral_algebraMap_iff_mem_integers {x : F} :
     IsIntegral ↥P.integers (algebraMap F F' x) ↔ x ∈ P.integers :=
@@ -163,11 +174,11 @@ theorem isIntegral_algebraMap_iff_mem_integers {x : F} :
     ⟨fun hx ↦ P.mem_integers_of_isIntegral (fun r ↦ r.2) hx,
       fun hx ↦ isIntegral_algebraMap (x := (⟨x, hx⟩ : P.integers))⟩
 
-instance isTorsionFree_integersExtension : Module.IsTorsionFree (P.integers) F' :=
-  Module.isTorsionFree_iff_algebraMap_injective.mpr
-    (algebraMap_integersExtension_injective F' P)
-
 end LocalModel
+
+variable [Field k'] [Field F']
+variable [Algebra k k'] [Algebra k' F'] [Algebra F F'] [Algebra k F']
+variable [IsScalarTower k k' F'] [IsScalarTower k F F']
 
 section LocalIntegralClosure
 
@@ -321,6 +332,18 @@ lemma ramificationIdx_def :
     ramificationIdx F P' = Valuation.ordIndex (P'.valuation.comap (algebraMap F F')) := by
   rw [ramificationIdx]
 
+omit [Algebra.IsIntegral F F'] in
+/-- **The ramification index does not depend on how the field below is presented**: if
+`σ : F₀ ≃+* F` is compatible with the two maps into `F'`, then `P'` has the same ramification
+index over `F₀` as over `F`. -/
+theorem ramificationIdx_eq_of_ringEquiv {F₀ : Type*} [Field F₀] [Algebra F₀ F'] (σ : F₀ ≃+* F)
+    (hσ : ∀ c, algebraMap F F' (σ c) = algebraMap F₀ F' c) :
+    ramificationIdx F₀ P' = ramificationIdx F P' := by
+  have h : algebraMap F₀ F' = (algebraMap F F').comp σ.toRingHom :=
+    RingHom.ext fun c ↦ (hσ c).symm
+  rw [ramificationIdx_def, ramificationIdx_def, h, Valuation.comap_comp,
+    Valuation.ordIndex_comap_of_surjective _ σ.surjective]
+
 /-- The ramification index of a restricted place is positive. -/
 theorem ramificationIdx_pos : 0 < ramificationIdx F P' :=
   Nat.pos_of_ne_zero (ordIndex_comap_ne_zero F P')
@@ -387,7 +410,7 @@ theorem restrict_eq_iff_forall_ord_pos (P : Place k F) :
   refine P'.mem_integers_iff_ord_nonneg.mpr ?_
   by_contra hneg
   rw [not_le] at hneg
-  set m := (P'.ord (algebraMap F F' t)).toNat with hm
+  set m := (P'.ord (algebraMap F F' t)).toNat
   have hpos := h (f ^ m * t) (by
     rw [P.ord_mul (pow_ne_zero _ hf0) ht0, P.ord_pow, ht]
     have := P.mem_integers_iff_ord_nonneg.mp hf
@@ -677,7 +700,7 @@ private theorem linearIndependent_mul_pow_of_linearIndependent_residue_finite {�
   classical
   have _ : Fintype ι := Fintype.ofFinite ι
   have ht0 : t ≠ 0 := by rintro rfl; simp at ht
-  set e := ramificationIdx F P' with he
+  set e := ramificationIdx F P'
   rw [Fintype.linearIndependent_iff]
   intro c hc
   by_contra hex

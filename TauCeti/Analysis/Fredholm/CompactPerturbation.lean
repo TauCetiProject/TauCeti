@@ -13,10 +13,9 @@ public import TauCeti.Analysis.Normed.Operator.Compact.RieszTheory
 # Compact perturbations of Fredholm operators
 
 A compact perturbation of a Fredholm operator between Banach spaces is Fredholm, with the same
-index. This is the last of the three classical stability statements for the Fredholm index --
-after finite-rank perturbations (`TauCeti.Analysis.Fredholm.FiniteRank`) and small perturbations
-(`TauCeti.Analysis.Fredholm.SmallPerturbation`) -- and completes the linear half of Lane F0 of the
-analytic Heegaard Floer roadmap.
+index. This is the last of the three classical stability statements for the Fredholm index, after
+finite-rank perturbations (`TauCeti.Analysis.Fredholm.FiniteRank`) and small perturbations
+(`TauCeti.Analysis.Fredholm.SmallPerturbation`).
 
 The starting point is the Riesz--Schauder theory of
 `TauCeti.Analysis.Normed.Operator.Compact.RieszTheory`: for a compact operator `K` the kernel of

@@ -17,7 +17,8 @@ one. Unlike the barycentric simplex, it is full dimensional: the missing mass is
 coordinate of its vertex at the origin. Its frontier consists of the points with a zero
 coordinate or total mass one. This identifies the proper barycentric faces with a geometric
 boundary, and allows Mathlib's convex-body rescaling theorem to identify that boundary with
-a round sphere.
+a round sphere. Affine vertex swaps transport the neighbourhood of the origin to the
+neighbourhoods of the other vertices.
 
 Reference: C. P. Rourke, B. J. Sanderson, *Introduction to Piecewise-Linear Topology*,
 Chapter 2. The sphere identification uses Mathlib's
@@ -39,6 +40,142 @@ def coordinateSimplex : Set (ι → ℝ) := {x | (∀ i, 0 ≤ x i) ∧ ∑ i, x
 @[simp]
 theorem mem_coordinateSimplex (x : ι → ℝ) :
     x ∈ coordinateSimplex ι ↔ (∀ i, 0 ≤ x i) ∧ ∑ i, x i ≤ 1 := (Iff.rfl)
+
+/-- A simplex point has either positive missing mass or a positive coordinate. -/
+theorem sum_lt_one_or_exists_pos_of_mem_coordinateSimplex {x : ι → ℝ}
+    (hx : x ∈ coordinateSimplex ι) : ∑ i, x i < 1 ∨ ∃ j, 0 < x j := by
+  by_cases h : ∑ i, x i < 1
+  · exact Or.inl h
+  · have hp : 0 < ∑ i, x i := by linarith
+    obtain ⟨j, _, hj⟩ := (Finset.sum_pos_iff_of_nonneg (fun i _ => hx.1 i)).mp hp
+    exact Or.inr ⟨j, hj⟩
+
+section VertexSwap
+
+variable {ι}
+
+/-- The affine involution exchanging the origin vertex with the `j`th coordinate vertex
+of the coordinate simplex. It replaces coordinate `j` by the missing barycentric mass. -/
+noncomputable def coordinateSimplexVertexSwap (j : ι) : (ι → ℝ) →ᴬ[ℝ] (ι → ℝ) := by
+  classical
+  exact ContinuousAffineMap.const ℝ (ι → ℝ) (Pi.single j (1 : ℝ) : ι → ℝ) +
+    (ContinuousLinearMap.pi fun i => if i = j then
+      -(∑ k, (ContinuousLinearMap.proj k : (ι → ℝ) →L[ℝ] ℝ))
+      else ContinuousLinearMap.proj i).toContinuousAffineMap
+
+/-- The swapped coordinate is the missing mass; all other coordinates are unchanged. -/
+theorem coordinateSimplexVertexSwap_apply [DecidableEq ι] (j : ι) (x : ι → ℝ) (i : ι) :
+    coordinateSimplexVertexSwap j x i = if i = j then 1 - ∑ k, x k else x i := by
+  classical
+  by_cases h : i = j <;> simp [coordinateSimplexVertexSwap, h, sub_eq_add_neg]
+
+/-- The total mass after a vertex swap is one minus the original swapped coordinate. -/
+@[simp] theorem sum_coordinateSimplexVertexSwap (j : ι) (x : ι → ℝ) :
+    ∑ i, coordinateSimplexVertexSwap j x i = 1 - x j := by
+  classical
+  have heq : coordinateSimplexVertexSwap j x = Function.update x j (1 - ∑ k, x k) := by
+    ext i
+    simp [coordinateSimplexVertexSwap_apply, Function.update_apply]
+  rw [heq, Finset.sum_update_of_mem (Finset.mem_univ j)]
+  rw [Finset.sdiff_singleton_eq_erase, ← Finset.sum_erase_add _ _ (Finset.mem_univ j)]
+  ring
+
+/-- Swapping a vertex with the origin twice is the identity on the ambient space. -/
+@[simp] theorem coordinateSimplexVertexSwap_coordinateSimplexVertexSwap (j : ι) (x : ι → ℝ) :
+    coordinateSimplexVertexSwap j (coordinateSimplexVertexSwap j x) = x := by
+  classical
+  ext i
+  rw [coordinateSimplexVertexSwap_apply, sum_coordinateSimplexVertexSwap]
+  by_cases h : i = j <;> simp [coordinateSimplexVertexSwap_apply, h]
+
+/-- The vertex swap sends the origin to the chosen coordinate vertex. -/
+@[simp] theorem coordinateSimplexVertexSwap_zero [DecidableEq ι] (j : ι) :
+    coordinateSimplexVertexSwap j 0 = Pi.single j 1 := by
+  ext i
+  simp [coordinateSimplexVertexSwap_apply, Pi.single_apply]
+
+/-- The vertex swap sends the chosen coordinate vertex to the origin. -/
+@[simp] theorem coordinateSimplexVertexSwap_single [DecidableEq ι] (j : ι) :
+    coordinateSimplexVertexSwap j (Pi.single j 1) = 0 := by
+  rw [← coordinateSimplexVertexSwap_zero j,
+    coordinateSimplexVertexSwap_coordinateSimplexVertexSwap]
+
+/-- Vertex swapping preserves and reflects membership in the full coordinate simplex. -/
+theorem coordinateSimplexVertexSwap_mem_iff (j : ι) (x : ι → ℝ) :
+    coordinateSimplexVertexSwap j x ∈ coordinateSimplex ι ↔ x ∈ coordinateSimplex ι := by
+  classical
+  have hmap (y : ι → ℝ) (hy : y ∈ coordinateSimplex ι) :
+      coordinateSimplexVertexSwap j y ∈ coordinateSimplex ι := by
+    refine ⟨fun i => ?_, ?_⟩
+    · by_cases hi : i = j
+      · simp only [coordinateSimplexVertexSwap_apply, hi, ite_true]
+        linarith [hy.2]
+      · simpa [coordinateSimplexVertexSwap_apply, hi] using hy.1 i
+    · rw [sum_coordinateSimplexVertexSwap]
+      linarith [hy.1 j]
+  exact ⟨fun h => by simpa using hmap _ h, hmap x⟩
+
+/-- The ambient homeomorphism exchanging the origin and a coordinate vertex. -/
+noncomputable def coordinateSimplexVertexSwapHomeomorph (j : ι) : (ι → ℝ) ≃ₜ (ι → ℝ) where
+  toFun := coordinateSimplexVertexSwap j
+  invFun := coordinateSimplexVertexSwap j
+  left_inv := coordinateSimplexVertexSwap_coordinateSimplexVertexSwap j
+  right_inv := coordinateSimplexVertexSwap_coordinateSimplexVertexSwap j
+  continuous_toFun := (coordinateSimplexVertexSwap j).continuous
+  continuous_invFun := (coordinateSimplexVertexSwap j).continuous
+
+/-- Both directions of the vertex homeomorphism use the same affine involution. -/
+@[simp] theorem coordinateSimplexVertexSwapHomeomorph_apply (j : ι) (x : ι → ℝ) :
+    coordinateSimplexVertexSwapHomeomorph j x = coordinateSimplexVertexSwap j x := (rfl)
+
+/-- The inverse vertex homeomorphism uses the same affine involution. -/
+@[simp] theorem coordinateSimplexVertexSwapHomeomorph_symm_apply (j : ι) (x : ι → ℝ) :
+    (coordinateSimplexVertexSwapHomeomorph j).symm x = coordinateSimplexVertexSwap j x := (rfl)
+
+/-- A vertex swap preserves the geometric boundary of the coordinate simplex. -/
+theorem coordinateSimplexVertexSwap_mem_frontier_iff (j : ι) (x : ι → ℝ) :
+    coordinateSimplexVertexSwap j x ∈ frontier (coordinateSimplex ι) ↔
+      x ∈ frontier (coordinateSimplex ι) := by
+  have hs : (coordinateSimplexVertexSwapHomeomorph j) ⁻¹' coordinateSimplex ι =
+      coordinateSimplex ι := Set.ext (coordinateSimplexVertexSwap_mem_iff j)
+  have hf := (coordinateSimplexVertexSwapHomeomorph j).preimage_frontier (coordinateSimplex ι)
+  rw [hs] at hf
+  exact Set.ext_iff.mp hf x
+
+/-- Move a chart's vertex to the origin: `none` denotes the origin and `some j`
+denotes the `j`th coordinate vertex. -/
+noncomputable def coordinateSimplexChartSwap (v : Option ι) : (ι → ℝ) →ᴬ[ℝ] (ι → ℝ) :=
+  v.elim (ContinuousAffineMap.id ℝ _) coordinateSimplexVertexSwap
+
+/-- The origin chart leaves the ambient coordinates unchanged. -/
+@[simp] theorem coordinateSimplexChartSwap_none (x : ι → ℝ) :
+    coordinateSimplexChartSwap none x = x := (rfl)
+
+/-- A coordinate-vertex chart swaps that vertex with the origin. -/
+@[simp] theorem coordinateSimplexChartSwap_some (j : ι) (x : ι → ℝ) :
+    coordinateSimplexChartSwap (some j) x = coordinateSimplexVertexSwap j x := (rfl)
+
+/-- The chart vertex swap is an involution. -/
+@[simp] theorem coordinateSimplexChartSwap_involutive (v : Option ι) (x : ι → ℝ) :
+    coordinateSimplexChartSwap v (coordinateSimplexChartSwap v x) = x := by
+  cases v <;> simp [coordinateSimplexChartSwap]
+
+/-- A chart vertex swap preserves the coordinate simplex. -/
+theorem coordinateSimplexChartSwap_mem_iff (v : Option ι) (x : ι → ℝ) :
+    coordinateSimplexChartSwap v x ∈ coordinateSimplex ι ↔ x ∈ coordinateSimplex ι := by
+  cases v with
+  | none => rfl
+  | some j => exact coordinateSimplexVertexSwap_mem_iff j x
+
+/-- A chart vertex swap preserves the geometric boundary of the coordinate simplex. -/
+theorem coordinateSimplexChartSwap_mem_frontier_iff (v : Option ι) (x : ι → ℝ) :
+    coordinateSimplexChartSwap v x ∈ frontier (coordinateSimplex ι) ↔
+      x ∈ frontier (coordinateSimplex ι) := by
+  cases v with
+  | none => rfl
+  | some j => exact coordinateSimplexVertexSwap_mem_frontier_iff j x
+
+end VertexSwap
 
 /-- The coordinate simplex is convex. -/
 theorem convex_coordinateSimplex : Convex ℝ (coordinateSimplex ι) := by
@@ -108,6 +245,14 @@ theorem interior_coordinateSimplex : interior (coordinateSimplex ι) =
     rw [hsum]
     ext x
     simp
+
+/-- The points of the coordinate simplex whose coordinate sum is less than one form an open
+set in its subtype topology. -/
+theorem isOpen_setOf_sum_lt_one_coordinateSimplex :
+    IsOpen {y : coordinateSimplex ι | ∑ i, y.1 i < 1} := by
+  exact isOpen_lt
+    (continuous_finsetSum _ fun i _ => (continuous_apply i).comp continuous_subtype_val)
+    continuous_const
 
 /-- A point lies on the frontier exactly when it is in the simplex and at least one of its
 barycentric coordinates, including the missing mass, vanishes. -/

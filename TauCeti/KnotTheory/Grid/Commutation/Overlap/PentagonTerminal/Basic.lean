@@ -231,7 +231,6 @@ theorem coveredSquares_val_add_recutTerminal
         (D.rectangle.toGridRectangle.coveredSquares.map
           ((Equiv.swap a (finRotate n a)).prodCongr (Equiv.refl (Fin n))).toEmbedding).val := by
   classical
-  let E := D.recutTerminal hcommon hcol hp hr
   obtain ⟨_, _, hb, ht, _, _⟩ := D.recutTerminal_geometry hcommon hcol hp hr
   obtain ⟨haE, hbE⟩ := D.recutTerminal_rectangle_notMem_columns hcommon hcol hp hr
   have hrow := D.terminal_row_order hcommon hcol hp hr

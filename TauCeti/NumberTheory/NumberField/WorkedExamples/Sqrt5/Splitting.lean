@@ -18,17 +18,17 @@ import TauCeti.NumberTheory.NumberField.WorkedExamples.Sqrt5.Invariants
 
 For `K` generated over `ℚ` by an algebraic integer `θ` with `minpoly ℤ θ = X² − X − 1`, the
 element `2θ − 1` is a square root of `5`, so the quadratic splitting law applies: an odd prime
-`p` splits in `K` if and only if `legendreSym p 5 = 1`, that is, if and only if `5` is a nonzero
-square modulo `p`, which by quadratic reciprocity is the congruence `p ≡ ±1 (mod 5)`. The
-ramified prime `5` has a single prime above it and Legendre symbol `0`, so both sides of each
-equivalence are false there.
+`p` splits in `K` if and only if `legendreSym p 5 = 1`, which by quadratic reciprocity is the
+congruence `p ≡ ±1 (mod 5)`. The congruence criterion also holds at `p = 2`, which is inert.
+The prime `5` ramifies and does not satisfy the congruence. The Legendre-symbol criterion must
+remain restricted to odd primes: `5` is a square modulo `2`, although `2` is inert.
 
 ## Main results
 
 * `TauCeti.NumberField.Sqrt5.minpoly_two_mul_sub_one`: `minpoly ℤ (2θ − 1) = X² − 5`.
 * `TauCeti.NumberField.Sqrt5.ncard_primesOver_eq_two_iff_legendreSym`: for an odd prime `p`,
   there are two primes above `p` if and only if `legendreSym p 5 = 1`.
-* `TauCeti.NumberField.Sqrt5.ncard_primesOver_eq_two_iff_mod_five`: for an odd prime `p`, there
+* `TauCeti.NumberField.Sqrt5.ncard_primesOver_eq_two_iff_mod_five`: for any prime `p`, there
   are two primes above `p` if and only if `p % 5 = 1 ∨ p % 5 = 4`.
 -/
 
@@ -76,11 +76,16 @@ theorem ncard_primesOver_eq_two_iff_legendreSym (hmin : minpoly ℤ θ = X ^ 2 -
   rw [← finrank_eq_two hmin hgen]
   exact ncard_primesOver_quadratic_iff (minpoly_two_mul_sub_one hmin) hgen' hodd hcop
 
-/-- **The splitting law of `ℚ(√5)` at odd primes, congruence form.** An odd prime `p` splits in
-`ℚ(√5)` if and only if `p ≡ ±1 (mod 5)`. -/
+/-- **The splitting law of `ℚ(√5)` at every prime, in congruence form.** A prime `p` splits in
+`ℚ(√5)` if and only if `p ≡ ±1 (mod 5)`. This includes `p = 2`, which is inert. -/
 theorem ncard_primesOver_eq_two_iff_mod_five (hmin : minpoly ℤ θ = X ^ 2 - X - 1)
-    (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤) {p : ℕ} [Fact p.Prime] (hodd : p ≠ 2) :
-    (Ideal.primesOver (Ideal.span {(p : ℤ)}) (𝓞 K)).ncard = 2 ↔ p % 5 = 1 ∨ p % 5 = 4 :=
-  (ncard_primesOver_eq_two_iff_legendreSym hmin hgen hodd).trans (legendreSym_five_eq_one_iff hodd)
+    (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤) {p : ℕ} [Fact p.Prime] :
+    (Ideal.primesOver (Ideal.span {(p : ℤ)}) (𝓞 K)).ncard = 2 ↔ p % 5 = 1 ∨ p % 5 = 4 := by
+  by_cases hodd : p ≠ 2
+  · exact (ncard_primesOver_eq_two_iff_legendreSym hmin hgen hodd).trans
+      (legendreSym_five_eq_one_iff hodd)
+  · have hp : p = 2 := by simpa only [ne_eq, not_not] using hodd
+    subst p
+    norm_num [ncard_primesOver_two_eq_one hmin hgen]
 
 end TauCeti.NumberField.Sqrt5

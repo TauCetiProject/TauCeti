@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Completion.Basic
-public import TauCeti.RingTheory.Huber.Completion
+public import TauCeti.RingTheory.Huber.Completion.Basic
 import TauCeti.AlgebraicGeometry.AdicSpace.Spa.RationalSubset.DenseRange
 
 /-!

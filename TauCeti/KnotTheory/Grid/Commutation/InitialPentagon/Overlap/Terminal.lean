@@ -166,7 +166,7 @@ theorem coveredSquares_val_add_val_recutRightEqRight :
         ((D.recutRightEqRight hcommon hone hfirst hsecond).second.toGridRectangle.coveredSquares.map
           ((Equiv.swap a (finRotate n a)).prodCongr (Equiv.refl (Fin n))).toEmbedding).val =
       D.first.toGridRectangle.coveredSquares.val + D.pentagon.coveredSquares.val := by
-  set E := D.recutRightEqRight hcommon hone hfirst hsecond with hE
+  set E := D.recutRightEqRight hcommon hone hfirst hsecond
   have hdata : D.toGridRectangleDecomposition.IsRecutOfRightEqRight
       E.toGridRectangleDecomposition :=
     D.toGridRectangleDecomposition.isRecutOfRightEqRight_recut hcommon hone hfirst hsecond

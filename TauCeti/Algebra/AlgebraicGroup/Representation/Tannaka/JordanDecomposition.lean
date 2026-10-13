@@ -25,9 +25,8 @@ in the automorphism group of the scalar-extension functor.
 
 The final section combines this naturality with tensor-product compatibility of multiplicative
 Jordan decomposition. Thus both factors are tensor automorphisms. In the commutative
-coordinate-Hopf-algebra setting of the roadmap, Tannakian reconstruction can now lift them from
-compatible actions on representations to points of the original affine group. This is the
-representation-theoretic bridge in Layer 4 of the ReductiveGroups roadmap.
+coordinate-Hopf-algebra setting, Tannakian reconstruction can therefore lift them from compatible
+actions on representations to points of the original affine group.
 
 ## Main declarations
 

@@ -123,7 +123,7 @@ theorem isBigO_sum_Icc_norm_of_boundary (ha : 0 ≤ a)
       G (sigma : ℂ) = LSeries a (sigma : ℂ) - A / ((sigma : ℂ) - 1))
     (hsum : ∀ sigma : ℝ, 1 < sigma → sigma ≤ 2 → LSeriesSummable a (sigma : ℂ)) :
     (fun t : ℝ ↦ ∑ k ∈ Finset.Icc 1 ⌊t⌋₊, ‖a k‖) =O[atTop] fun t : ℝ ↦ t * Real.log t := by
-  obtain ⟨B, hB0, hB⟩ := tsum_norm_term_le_of_boundary ha hG hG' hsum
+  obtain ⟨B, _, hB⟩ := tsum_norm_term_le_of_boundary ha hG hG' hsum
   refine .of_bound (Real.exp 1 * B) ?_
   filter_upwards [eventually_ge_atTop (Real.exp 1)] with t ht
   have ht0 : (0 : ℝ) < t := lt_of_lt_of_le (Real.exp_pos 1) ht
@@ -152,7 +152,6 @@ theorem isBigO_sum_Icc_norm_of_boundary (ha : 0 ≤ a)
         refine Finset.sum_le_sum fun k hk ↦ ?_
         obtain ⟨hk1, hk2⟩ := Finset.mem_Icc.mp hk
         have hk0 : k ≠ 0 := by omega
-        have hkpos : (0 : ℝ) < (k : ℝ) := by positivity
         have hknorm : ‖_root_.LSeries.term a (sigma : ℂ) k‖ = ‖a k‖ / (k : ℝ) ^ sigma := by
           rw [_root_.LSeries.term_of_ne_zero hk0, norm_div, ← Complex.ofReal_natCast,
             ← Complex.ofReal_cpow (Nat.cast_nonneg k), Complex.norm_real,
@@ -188,7 +187,7 @@ theorem LSeriesSummable_mul_fourier_of_nonneg (ha : 0 ≤ a)
     (hsum : ∀ sigma : ℝ, 1 < sigma → sigma ≤ 2 → LSeriesSummable a (sigma : ℂ))
     (hpsi : ContDiff ℝ ∞ psi) (hsupp : HasCompactSupport psi) (hx : 0 < x) :
     LSeriesSummable (fun n : ℕ ↦ a n * 𝓕 psi (1 / (2 * π) * Real.log (n / x))) 1 := by
-  obtain ⟨C, hC0, hC⟩ := TauCeti.exists_norm_pow_mul_norm_fourier_le hpsi hsupp 3
+  obtain ⟨C, _, hC⟩ := TauCeti.exists_norm_pow_mul_norm_fourier_le hpsi hsupp 3
   have hpi : (0 : ℝ) < π := Real.pi_pos
   refine LSeriesSummable_mul_of_norm_le (D := 8 * C * (4 * π) ^ 3)
     (isBigO_sum_Icc_norm_of_boundary ha hG hG' hsum) ?_

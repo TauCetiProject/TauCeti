@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.FieldTheory.FunctionField.Differential.Kaehler
+public import TauCeti.FieldTheory.FunctionField.Frobenius
+public import TauCeti.FieldTheory.FunctionField.Place.Approximation
 public import TauCeti.RingTheory.LaurentSeries.Derivative
 public import TauCeti.FieldTheory.FunctionField.Place.Expansion.Laurent.ChangeOfUniformizer
 
@@ -29,10 +31,22 @@ The formula makes the residue of a Kähler differential well defined (Definition
 `t`, since `z dt = (z · dt/ds) ds`. An exact differential `dy` has residue zero, because the formal
 derivative of a Laurent series has no `T⁻¹` term.
 
+Over a perfect field every prime element of a place is separating
+(`TauCeti.Place.transcendental_and_isSeparable_adjoin_of_ord_eq_one`), so the residue of a
+differential at a rational place needs no choice of uniformizer at all:
+`TauCeti.Place.kaehlerResidueOfPerfectField` computes it with any prime element.
+
+The compatibility with expansions also gives the order of a derivative:
+if `z` vanishes to order at least `m` at `P`, then `dz/dt ≡ m z / t` modulo functions vanishing to
+order at least `m`, and iterating, `dⁱz/dtⁱ` is congruent to `m (m - 1) ⋯ (m - i + 1) z / tⁱ`.
+This is the local input for computing orders of Wronskians at rational places.
+
 ## Main definitions
 
 * `TauCeti.Place.kaehlerResidue`: the residue `res_P(ω)` of a Kähler differential `ω` at a
   rational place, computed with a separating uniformizer.
+* `TauCeti.Place.kaehlerResidueOfPerfectField`: the residue `res_P(ω)` at a rational place of a
+  function field over a perfect field, with no uniformizer in its signature.
 
 ## Main results
 
@@ -41,9 +55,13 @@ derivative of a Laurent series has no `T⁻¹` term.
 * `TauCeti.Place.residue_eq_residue_mul_derivativeOfSeparating`: **the transformation formula**
   `res_{P,s}(z) = res_{P,t}(z · ds/dt)`.
 * `TauCeti.Place.residue_derivativeOfSeparating`: `res_{P,t}(dy/dt) = 0`.
+* `TauCeti.Place.iterate_derivativeOfSeparating_sub_zsmul_mem_filtration`: if `z` vanishes to
+  order at least `m`, then `dⁱz/dtⁱ ≡ m (m - 1) ⋯ (m - i + 1) z / tⁱ` modulo order `m - i + 1`.
 * `TauCeti.Place.kaehlerResidue_eq_kaehlerResidue`: the residue of a differential is independent
   of the uniformizer used to compute it.
 * `TauCeti.Place.kaehlerResidue_D`: exact differentials have residue zero.
+* `TauCeti.Place.kaehlerResidueOfPerfectField_smul_D`: over a perfect field, `res_P(z dt)` is
+  `res_{P,t}(z)` for every prime element `t`.
 
 ## References
 
@@ -117,6 +135,90 @@ theorem residue_derivativeOfSeparating (y : F) :
     LaurentSeries.hasseDeriv_coeff]
   simp
 
+/-! ### Orders of derivatives -/
+
+include hP ht in
+/-- **The leading term of a derivative.** If `z` vanishes to order at least `m` at `P`, then
+`dz/dt ≡ m z / t` modulo functions vanishing to order at least `m`. This holds in every
+characteristic. -/
+theorem derivativeOfSeparating_sub_zsmul_mem_filtration {m : ℤ} {z : F}
+    (hz : z ∈ P.filtration m) :
+    derivativeOfSeparating htr z - m • (t⁻¹ * z) ∈ P.filtration m := by
+  have hinv : (HahnSeries.single (1 : ℤ) (1 : k))⁻¹ = HahnSeries.single (-1) 1 :=
+    inv_eq_of_mul_eq_one_right (by simp [HahnSeries.single_mul_single])
+  rw [mem_filtration_iff, ← P.valuation_laurentSeriesExpansion hP ht, map_sub, map_zsmul,
+    map_mul, map_inv₀, laurentSeriesExpansion_uniformizer,
+    laurentSeriesExpansion_derivativeOfSeparating, hinv]
+  apply LaurentSeries.valuation_derivative_sub_zsmul_single_mul_le
+  rw [valuation_laurentSeriesExpansion]
+  exact (P.mem_filtration_iff).mp hz
+
+include hP ht in
+/-- Differentiation with respect to a separating uniformizer preserves the valuation ring
+at a rational place, in every characteristic. -/
+theorem derivativeOfSeparating_mem_integers {z : F} (hz : z ∈ P.integers) :
+    derivativeOfSeparating htr z ∈ P.integers := by
+  have hz' : z ∈ P.filtration 0 := by
+    simpa [P.mem_filtration_iff, P.mem_integers_iff] using hz
+  have h := P.derivativeOfSeparating_sub_zsmul_mem_filtration hP ht htr hz'
+  simpa [P.mem_filtration_iff, P.mem_integers_iff] using h
+
+include hP ht in
+/-- Differentiation with respect to a prime element lowers the order at `P` by at most one. -/
+theorem derivativeOfSeparating_mem_filtration {m : ℤ} {z : F} (hz : z ∈ P.filtration m) :
+    derivativeOfSeparating htr z ∈ P.filtration (m - 1) := by
+  have ht' : t⁻¹ ∈ P.filtration (-1) := by
+    simpa [ht] using P.mem_filtration_ord t⁻¹
+  have h : m • (t⁻¹ * z) ∈ P.filtration (m - 1) :=
+    zsmul_mem (by simpa [neg_add_eq_sub] using P.mul_mem_filtration ht' hz) m
+  simpa using add_mem (P.filtration_antitone (by omega)
+    (P.derivativeOfSeparating_sub_zsmul_mem_filtration hP ht htr hz)) h
+
+include hP ht in
+/-- The `i`-th derivative with respect to a prime element lowers the order at `P` by at most
+`i`. -/
+theorem iterate_derivativeOfSeparating_mem_filtration {m : ℤ} {z : F}
+    (hz : z ∈ P.filtration m) (i : ℕ) :
+    (⇑(derivativeOfSeparating htr))^[i] z ∈ P.filtration (m - i) := by
+  induction i with
+  | zero => simpa using hz
+  | succ i ih =>
+    rw [Function.iterate_succ_apply']
+    simpa [sub_sub] using P.derivativeOfSeparating_mem_filtration hP ht htr ih
+
+include hP ht in
+/-- **The leading term of an iterated derivative.** If `z` vanishes to order at least `m` at `P`,
+then `dⁱz/dtⁱ ≡ m (m - 1) ⋯ (m - i + 1) z / tⁱ` modulo functions vanishing to order at least
+`m - i + 1`. The coefficient is the descending Pochhammer symbol evaluated at `m`. -/
+theorem iterate_derivativeOfSeparating_sub_zsmul_mem_filtration {m : ℤ} {z : F}
+    (hz : z ∈ P.filtration m) (i : ℕ) :
+    (⇑(derivativeOfSeparating htr))^[i] z - (descPochhammer ℤ i).eval m • (t⁻¹ ^ i * z) ∈
+      P.filtration (m - i + 1) := by
+  induction i with
+  | zero => simp
+  | succ i ih =>
+    have hti : t⁻¹ ^ i ∈ P.filtration (-i) := by
+      simpa [ht] using P.mem_filtration_ord (t⁻¹ ^ i)
+    have hw : t⁻¹ ^ i * z ∈ P.filtration (m - i) := by
+      convert P.mul_mem_filtration hti hz using 2
+      ring
+    have h1 := P.derivativeOfSeparating_mem_filtration hP ht htr ih
+    have h2 := zsmul_mem (P.derivativeOfSeparating_sub_zsmul_mem_filtration hP ht htr hw)
+      ((descPochhammer ℤ i).eval m)
+    -- Differentiate the `i`-th congruence, and use the leading term of `d(t⁻ⁱ z)/dt`.
+    have key : (⇑(derivativeOfSeparating htr))^[i + 1] z -
+          (descPochhammer ℤ (i + 1)).eval m • (t⁻¹ ^ (i + 1) * z) =
+        derivativeOfSeparating htr ((⇑(derivativeOfSeparating htr))^[i] z -
+            (descPochhammer ℤ i).eval m • (t⁻¹ ^ i * z)) +
+          (descPochhammer ℤ i).eval m • (derivativeOfSeparating htr (t⁻¹ ^ i * z) -
+            (m - i : ℤ) • (t⁻¹ * (t⁻¹ ^ i * z))) := by
+      rw [Function.iterate_succ_apply', descPochhammer_succ_eval, map_sub, map_zsmul]
+      simp only [zsmul_eq_mul]
+      push_cast
+      ring
+    rw [key]
+    refine add_mem (P.filtration_antitone ?_ h1) (P.filtration_antitone ?_ h2) <;> omega
+
 end Expansion
 
 /-! ### Residues of Kähler differentials -/
@@ -164,5 +266,53 @@ theorem kaehlerResidue_eq_kaehlerResidue (hs : P.ord s = 1) (hstr : Transcendent
     kaehlerResidue_smul_D, P.residue_eq_residue_mul_derivativeOfSeparating hP ht htr hs]
 
 end Kaehler
+
+/-! ### Residues of Kähler differentials over a perfect field -/
+
+section PerfectField
+
+variable [PerfectField k] (hF : IsFunctionField k F)
+
+/-- The **residue** `res_P(ω)` of a Kähler differential `ω` at a rational place `P` of a function
+field over a perfect field (Stichtenoth, Definition 4.2.10). Over a perfect field every prime
+element of `P` is separating
+(`TauCeti.Place.transcendental_and_isSeparable_adjoin_of_ord_eq_one`), so this is
+`TauCeti.Place.kaehlerResidue` computed with some prime element; it does not depend on the choice
+(`TauCeti.Place.kaehlerResidueOfPerfectField_eq_kaehlerResidue`). -/
+noncomputable def kaehlerResidueOfPerfectField : Ω[F⁄k] →ₗ[k] k :=
+  have ht := (P.exists_ord_eq_one_and_forall_mem_ord_eq_zero ∅).choose_spec.1
+  have hsep := P.transcendental_and_isSeparable_adjoin_of_ord_eq_one hF ht
+  letI := hsep.2
+  P.kaehlerResidue hP ht hsep.1
+
+/-- Over a perfect field, the residue of a differential is `TauCeti.Place.kaehlerResidue` computed
+with any separating uniformizer. -/
+theorem kaehlerResidueOfPerfectField_eq_kaehlerResidue (htr : Transcendental k t)
+    [Algebra.IsSeparable k⟮t⟯ F] :
+    P.kaehlerResidueOfPerfectField hP hF = P.kaehlerResidue hP ht htr :=
+  -- The left side unfolds to `kaehlerResidue` at the prime element chosen in the definition.
+  have ht' := (P.exists_ord_eq_one_and_forall_mem_ord_eq_zero ∅).choose_spec.1
+  have hsep := P.transcendental_and_isSeparable_adjoin_of_ord_eq_one hF ht'
+  letI := hsep.2
+  P.kaehlerResidue_eq_kaehlerResidue hP ht htr ht' hsep.1
+
+/-- Over a perfect field, the residue of `z dt` is `res_{P,t}(z)` for every prime element `t`
+of `P`. -/
+theorem kaehlerResidueOfPerfectField_smul_D (z : F) :
+    P.kaehlerResidueOfPerfectField hP hF (z • D k F t) = P.residue hP ht z := by
+  have hsep := P.transcendental_and_isSeparable_adjoin_of_ord_eq_one hF ht
+  let := hsep.2
+  rw [P.kaehlerResidueOfPerfectField_eq_kaehlerResidue hP ht hF hsep.1, kaehlerResidue_smul_D]
+
+/-- **Exact differentials have residue zero**: `res_P(dy) = 0`. -/
+@[simp]
+theorem kaehlerResidueOfPerfectField_D (y : F) :
+    P.kaehlerResidueOfPerfectField hP hF (D k F y) = 0 := by
+  obtain ⟨t, ht, -⟩ := P.exists_ord_eq_one_and_forall_mem_ord_eq_zero ∅
+  have hsep := P.transcendental_and_isSeparable_adjoin_of_ord_eq_one hF ht
+  let := hsep.2
+  rw [P.kaehlerResidueOfPerfectField_eq_kaehlerResidue hP ht hF hsep.1, kaehlerResidue_D]
+
+end PerfectField
 
 end TauCeti.Place
