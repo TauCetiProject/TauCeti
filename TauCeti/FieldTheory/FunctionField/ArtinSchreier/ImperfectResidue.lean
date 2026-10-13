@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.LaurentSeries.ArtinSchreier
+public import TauCeti.RingTheory.LaurentSeries.PowerSubSelf
 public import TauCeti.FieldTheory.RatFunc.Valuation
 public import Mathlib.Algebra.Field.ZMod
 

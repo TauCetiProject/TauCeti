@@ -8,7 +8,7 @@ module
 public import TauCeti.RingTheory.LaurentSeries.Multiplication
 
 /-!
-# An obstruction to reducing an Artin–Schreier pole
+# Orders and leading coefficients of power-sub-self Laurent series
 
 If `a` is not an `n`-th power in `k` and `n > 1`, the pole `a T⁻ⁿ` cannot be improved by
 subtracting `wⁿ - w` in `k((T))`. Every such representative still has a negative order divisible
