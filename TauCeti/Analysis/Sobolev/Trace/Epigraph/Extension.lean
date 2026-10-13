@@ -57,7 +57,7 @@ private theorem norm_unflattenWholeL_le (hφ : ContDiff ℝ 1 φ)
     ‖unflattenWholeL hφ hL u‖ ≤ (1 + L) * ‖u‖ := by
   have hop : ‖unflattenWholeL (p := p) hφ hL‖ ≤ 1 + L :=
     (W1p.norm_compMeasurePreservingL_le _ _ _ _).trans_eq
-      (max_eq_right (one_le_one_add hL))
+      (max_eq_right (le_add_of_nonneg_right (nonneg_of_forall_norm_fderiv_le hL)))
   exact ((unflattenWholeL (p := p) hφ hL).le_opNorm u).trans
     (mul_le_mul_of_nonneg_right hop (norm_nonneg u))
 
@@ -158,7 +158,7 @@ theorem W1p.norm_normalEpigraphExtensionL_le (hφ : ContDiff ℝ 1 φ)
       mul_le_mul_of_nonneg_left
         ((W1p.norm_extendByReflectionL_le 0 _).trans
           (mul_le_mul_of_nonneg_left (W1p.norm_normalEpigraphEquivL_le hφ hL u) zero_le_two))
-        (zero_le_one.trans (one_le_one_add hL))
+        (add_nonneg zero_le_one (nonneg_of_forall_norm_fderiv_le hL))
     _ = (2 * (1 + L) ^ 2) * ‖u‖ := by ring
 
 /-- The graph-domain extension has operator norm at most `2 * (1 + L)²`. -/

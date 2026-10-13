@@ -108,6 +108,11 @@ section Differential
 
 variable [NormedSpace ℝ E]
 
+/-- A uniform upper bound on the derivative norm is nonnegative. -/
+theorem nonneg_of_forall_norm_fderiv_le {γ : E → ℝ} {L : ℝ}
+    (hL : ∀ y, ‖fderiv ℝ γ y‖ ≤ L) : 0 ≤ L :=
+  (norm_nonneg _).trans (hL 0)
+
 private theorem coe_graphFlattening_eq_comp (γ : E → ℝ) (hγ : Continuous γ) :
     ⇑(graphFlattening γ hγ) = (WithLp.prodContinuousLinearEquiv 2 ℝ ℝ E).symm ∘
       (fun x : WithLp 2 (ℝ × E) => (x.fst - γ x.snd, x.snd)) := by
@@ -194,6 +199,14 @@ theorem norm_fderiv_graphFlattening_le {γ : E → ℝ} (hγ : Continuous γ)
     ‖fderiv ℝ (graphFlattening γ hγ) x‖ ≤ 1 + ‖fderiv ℝ γ x.snd‖ := by
   rw [fderiv_graphFlattening hγ hx]
   exact norm_graphFlatteningL_le _
+
+/-- Graph flattening has derivative norm at most `1 + L` when the graph function
+has derivative norm bounded by `L`. -/
+theorem norm_fderiv_graphFlattening_le_one_add {γ : E → ℝ} {L : ℝ}
+    (hγ : ContDiff ℝ 1 γ) (hL : ∀ y, ‖fderiv ℝ γ y‖ ≤ L) (x : WithLp 2 (ℝ × E)) :
+    ‖fderiv ℝ (graphFlattening γ hγ.continuous) x‖ ≤ 1 + L :=
+  (norm_fderiv_graphFlattening_le hγ.continuous
+    (hγ.differentiable one_ne_zero _)).trans (add_le_add le_rfl (hL x.snd))
 
 /-- The derivative of inverse graph flattening has norm at most `1 + ‖Dγ(y)‖` at a
 differentiability point of the height. -/
