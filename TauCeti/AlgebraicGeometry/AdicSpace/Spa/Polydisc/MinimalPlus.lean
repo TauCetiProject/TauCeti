@@ -51,7 +51,7 @@ Neither completeness nor algebraic closedness of `K` is needed, although Wedhorn
   `TauCeti.ValuationSpectrum.closedDiscMinimalPlus_le`: it is the smallest ring of integral
   elements containing `K°`; it does not contain `T`
   (`TauCeti.ValuationSpectrum.weightedX_notMem_closedDiscMinimalPlus`).
-* `TauCeti.ValuationSpectrum.mem_closedPolydisc_iff_vle_weightedX`: a point of
+* `TauCeti.ValuationSpectrum.mem_closedPolydisc_iff_weightedX_vle_one`: a point of
   `Spa(K⟨T⟩, K⟨T⟩⁺)` lies in the closed disc exactly when `v(T) ≤ 1`.
 * `TauCeti.ValuationSpectrum.gaussPointAboveOne_mem_spa_closedDiscMinimalPlus` and
   `TauCeti.ValuationSpectrum.gaussPointAboveOne_notMem_closedPolydisc`.
@@ -140,6 +140,20 @@ private theorem exists_polynomial_approx {v : Spv 𝒯} (hv : v.IsContinuous) (f
 /-! ### Values of a point of `Spa(K⟨T⟩, K⟨T⟩⁺)` -/
 
 variable [IsUltrametricDist K]
+
+omit [NonarchimedeanRing K] in
+/-- The ultrametric bound `‖b‖ ≤ max ‖a‖ ‖a - b‖`, used to compare the coefficients of a series
+with those of an approximating polynomial. -/
+private theorem norm_le_max_norm_sub (a b : K) : ‖b‖ ≤ max ‖a‖ ‖a - b‖ := by
+  simpa [norm_sub_rev] using IsUltrametricDist.norm_add_le_max a (b - a)
+
+/-- The leading coefficient `aₛ` of a series that is distinguished of degree `s` at the unit
+radius is nonzero. -/
+private theorem coeff_ne_zero_of_isDistinguished {f : 𝒯} {s : ℕ}
+    (hs : TauCeti.PowerSeries.IsDistinguished 1 s
+      (weightedRestrictedSubringOneEquiv f : PowerSeries K)) :
+    MvPowerSeries.coeff (Finsupp.single 0 s) (f : MvPowerSeries (Fin 1) K) ≠ 0 :=
+  coeff_weightedRestrictedSubringOneEquiv f s ▸ hs.coeff_ne_zero
 
 /-- `closedDiscMinimalPlus K` is a ring of integral elements of `K⟨T⟩`. -/
 theorem isRingOfIntegralElements_closedDiscMinimalPlus :
@@ -230,7 +244,7 @@ private theorem valuation_eq_of_isDistinguished {v : Spv 𝒯}
   have hcoeff (n : ℕ) : PowerSeries.coeff n
       (weightedRestrictedSubringOneEquiv f : PowerSeries K) = a n :=
     coeff_weightedRestrictedSubringOneEquiv f n
-  have has : a s ≠ 0 := hcoeff s ▸ hs.coeff_ne_zero
+  have has : a s ≠ 0 := coeff_ne_zero_of_isDistinguished hs
   have hle (n : ℕ) : ‖a n‖ ≤ ‖a s‖ := by
     simpa [hcoeff, ← hs.norm_coeff_mul_pow_eq] using
       PowerSeries.le_gaussNorm norm 1 _ hs.hasGaussNorm n
@@ -243,12 +257,10 @@ private theorem valuation_eq_of_isDistinguished {v : Spv 𝒯}
   have hps : ‖p.coeff s‖ = ‖a s‖ := by
     rw [← add_sub_cancel (a s) (p.coeff s),
       IsUltrametricDist.norm_add_eq_max_of_norm_ne_norm (hpa' s).ne', max_eq_left (hpa' s).le]
-  have hpn (n : ℕ) : ‖p.coeff n‖ ≤ max ‖a n‖ ‖p.coeff n - a n‖ := by
-    simpa using IsUltrametricDist.norm_add_le_max (a n) (p.coeff n - a n)
   have hp0 : p.coeff s ≠ 0 := norm_ne_zero_iff.mp (hps ▸ norm_ne_zero_iff.mpr has)
   have hvp := valuation_eval₂_eq hv hT hp0
-    (fun n ↦ hps ▸ (hpn n).trans (max_le (hle n) (hpa' n).le))
-    fun n hn ↦ hps ▸ (hpn n).trans_lt (max_lt (hlt n hn) (hpa' n))
+    (fun n ↦ hps ▸ (norm_le_max_norm_sub _ _).trans (max_le (hle n) (hpa n).le))
+    fun n hn ↦ hps ▸ (norm_le_max_norm_sub _ _).trans_lt (max_lt (hlt n hn) (hpa n))
   have hC : v.valuation (C (p.coeff s)) = v.valuation (C (a s)) :=
     le_antisymm ((valuation_weightedC_le_iff hv _ _).mpr hps.le)
       ((valuation_weightedC_le_iff hv _ _).mpr hps.ge)
@@ -300,8 +312,7 @@ private theorem eq_of_one_lt_valuation_weightedX {v w : Spv 𝒯}
       {f : 𝒯} (hf : f ≠ 0) : u.valuation f ≠ 0 := by
     obtain ⟨s, hs⟩ := hdist hf
     rw [valuation_eq_of_isDistinguished hu huT hs]
-    exact mul_ne_zero (valuation_weightedC_ne_zero hu
-      (coeff_weightedRestrictedSubringOneEquiv f s ▸ hs.coeff_ne_zero))
+    exact mul_ne_zero (valuation_weightedC_ne_zero hu (coeff_ne_zero_of_isDistinguished hs))
       (pow_ne_zero _ (zero_lt_one.trans huT).ne')
   -- both points compare `f` and `g` through the dominant monomials of `f` and `g`
   refine ext' fun f g ↦ ?_
@@ -312,8 +323,8 @@ private theorem eq_of_one_lt_valuation_weightedX {v w : Spv 𝒯}
   · simp [hne hv hvT hf, hne hw hwT hf]
   obtain ⟨s, hs⟩ := hdist hf
   obtain ⟨t, ht⟩ := hdist hg
-  have has := coeff_weightedRestrictedSubringOneEquiv f s ▸ hs.coeff_ne_zero
-  have hat := coeff_weightedRestrictedSubringOneEquiv g t ▸ ht.coeff_ne_zero
+  have has := coeff_ne_zero_of_isDistinguished hs
+  have hat := coeff_ne_zero_of_isDistinguished ht
   rw [valuation_eq_of_isDistinguished hv hvT hs, valuation_eq_of_isDistinguished hv hvT ht,
     valuation_eq_of_isDistinguished hw hwT hs, valuation_eq_of_isDistinguished hw hwT ht,
     valuation_mul_pow_le_iff hv hvT has hat, valuation_mul_pow_le_iff hw hwT has hat]
@@ -339,16 +350,12 @@ private theorem valuation_le_one_of_isPowerBounded {v : Spv 𝒯}
   refine mul_le_one' (valuation_le_one_of_mem_spa hv (weightedC_mem_closedDiscMinimalPlus ?_))
     (pow_le_one' hT n)
   -- `p.coeff n` is within distance `1` of the coefficient `aₙ` of `f`, which has norm `≤ 1`
-  have h := IsUltrametricDist.norm_add_le_max
-    (MvPowerSeries.coeff (Finsupp.single 0 n) (f : MvPowerSeries (Fin 1) K))
-    (p.coeff n - MvPowerSeries.coeff (Finsupp.single 0 n) (f : MvPowerSeries (Fin 1) K))
-  rw [add_sub_cancel, norm_sub_rev] at h
-  exact h.trans (max_le (hcoeff n) (hpa n).le)
+  exact (norm_le_max_norm_sub _ _).trans (max_le (hcoeff n) (hpa n).le)
 
 /-! ### The closed disc and the point `x_{>1}` -/
 
 /-- **A point of `Spa(K⟨T⟩, K⟨T⟩⁺)` lies in the closed unit disc exactly when `v(T) ≤ 1`.** -/
-theorem mem_closedPolydisc_iff_vle_weightedX {v : Spv 𝒯}
+theorem mem_closedPolydisc_iff_weightedX_vle_one {v : Spv 𝒯}
     (hv : v ∈ spa (closedDiscMinimalPlus K)) :
     v ∈ closedPolydisc 1 K ↔ v.toValuativeRel.vle T 1 := by
   refine ⟨fun h ↦ ((mem_closedPolydisc_iff 1 K v).mp h).2 T
@@ -393,7 +400,7 @@ theorem gaussPointAboveOne_mem_spa_closedDiscMinimalPlus :
 /-- `x_{>1}` is not a point of the closed unit disc: it gives the power-bounded variable `T` a
 value larger than `1`. -/
 theorem gaussPointAboveOne_notMem_closedPolydisc : gaussPointAboveOne K ∉ closedPolydisc 1 K := by
-  rw [mem_closedPolydisc_iff_vle_weightedX gaussPointAboveOne_mem_spa_closedDiscMinimalPlus,
+  rw [mem_closedPolydisc_iff_weightedX_vle_one gaussPointAboveOne_mem_spa_closedDiscMinimalPlus,
     gaussPointAboveOne_vle_iff, ← map_one C]
   exact not_closedDiscGaussValuationAbove_weightedX_le one_pos le_rfl norm_one
 
@@ -401,7 +408,7 @@ theorem gaussPointAboveOne_notMem_closedPolydisc : gaussPointAboveOne K ∉ clos
 smaller than `K⟨T⟩°`: the point `x_{>1}` gives `T` a value larger than `1`. -/
 theorem weightedX_notMem_closedDiscMinimalPlus : T ∉ closedDiscMinimalPlus K := fun h ↦
   gaussPointAboveOne_notMem_closedPolydisc <|
-    (mem_closedPolydisc_iff_vle_weightedX gaussPointAboveOne_mem_spa_closedDiscMinimalPlus).mpr
+    (mem_closedPolydisc_iff_weightedX_vle_one gaussPointAboveOne_mem_spa_closedDiscMinimalPlus).mpr
       (((mem_spa_iff _ _).mp gaussPointAboveOne_mem_spa_closedDiscMinimalPlus).2 T h)
 
 /-- **Wedhorn's Example 7.57**: the adic spectrum of `K⟨T⟩` with the smallest plus ring
@@ -417,7 +424,7 @@ theorem spa_closedDiscMinimalPlus :
     closedPolydisc_subset_spa_closedDiscMinimalPlus).antisymm' fun v hv ↦ ?_
   have hone {u : Spv 𝒯} (hu : u ∈ spa (closedDiscMinimalPlus K)) (hu' : u ∉ closedPolydisc 1 K) :
       1 < u.valuation T := by
-    rw [mem_closedPolydisc_iff_vle_weightedX hu, ← valuation_le_iff, map_one, not_le] at hu'
+    rw [mem_closedPolydisc_iff_weightedX_vle_one hu, ← valuation_le_iff, map_one, not_le] at hu'
     exact hu'
   by_cases h : v ∈ closedPolydisc 1 K
   · exact Or.inr h

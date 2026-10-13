@@ -887,9 +887,8 @@ theorem closedDiscGaussValuationAbove_weightedC_le_weightedC_iff (hr₀ : 0 < r)
   have hG (c : K) : TauCeti.PowerSeries.gaussValuation hr₀ (toRestrictedSubring hr
       (weightedC (fun _ : Fin 1 ↦ ({1} : Set K)) isWeightFamily_one_weight c)) = ‖c‖₊ :=
     closedDiscGaussValuation_weightedC hr₀ hr₁ c
-  rw [hG, hG, ← NNReal.coe_lt_coe, ← NNReal.coe_inj, coe_nnnorm, coe_nnnorm]
-  simp only [le_refl, and_true]
-  exact le_iff_lt_or_eq.symm
+  rw [hG, hG]
+  simp [← le_iff_lt_or_eq, ← NNReal.coe_le_coe]
 
 /-- **`η_{r⁺}` is not the Gauss point `η_r`** when `r` is the norm of an element of `K`: the two
 points compare `T` with a constant of norm `r` differently. -/
