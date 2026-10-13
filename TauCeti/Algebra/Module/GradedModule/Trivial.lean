@@ -34,7 +34,7 @@ variable (R A : Type*) [Semiring R] [AddCommMonoid A] [Module R A]
 
 /-- The trivial integer grading of an `R`-module: all elements have degree zero and every other
 homogeneous piece is zero. -/
-@[expose] def trivialGrading (p : ℤ) : Submodule R A :=
+def trivialGrading (p : ℤ) : Submodule R A :=
   if p = 0 then ⊤ else ⊥
 
 /-- The degree-zero piece of the trivial grading is the whole module. -/

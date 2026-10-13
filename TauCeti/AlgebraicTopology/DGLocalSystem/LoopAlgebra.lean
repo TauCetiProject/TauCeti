@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.Singular.Cubical.MonoidAlgebra.Hom
+public import TauCeti.AlgebraicTopology.Singular.Cubical.MonoidAlgebra.HomologyZero
 public import TauCeti.Topology.PathSpace.Moore
 
 /-!
@@ -34,6 +35,10 @@ A based map `f : (B, b) → (B', b')` induces the continuous monoid homomorphism
   `TauCeti.loopChainAugmentation_lof_succ`: the values on chains of a given dimension.
 * `TauCeti.loopChainMap_id`, `TauCeti.loopChainMap_comp`: functoriality.
 * `TauCeti.loopChainAugmentation_comp_loopChainMap`: compatibility with the augmentations.
+* `TauCeti.loopChainDegreeZero`: the algebra map to the group algebra `R[π₁(B, b)]` of the
+  fundamental group, which is the zeroth-homology projection `loopZeroChainToGroupAlgebra` in
+  degree zero; it kills boundaries and positive degrees, and is natural in based maps
+  (`TauCeti.loopChainDegreeZero_loopChainMap`).
 
 ## References
 
@@ -126,6 +131,118 @@ theorem loopChainAugmentation_comp_loopChainMap (f : C(B, B')) (hf : f b = b') :
   cubicalChainAugmentation_comp_dgAlgHom _
 
 end Map
+
+section DegreeZero
+
+universe u
+
+variable (B : Type u) [TopologicalSpace B] (b : B) (R : Type u) [CommRing R]
+
+/-- The component of `loopChainDegreeZero` in dimension `n`: the class map in dimension zero and
+zero in positive dimensions. -/
+def loopChainDegreeZeroComponent :
+    (n : ℕ) → NormalizedCubicalChain (MooreLoopSpace B b) R n →ₗ[R]
+      MonoidAlgebra R (FundamentalGroup B b)
+  | 0 => loopZeroChainToGroupAlgebra B b R
+  | _ + 1 => 0
+
+variable {B b R}
+
+@[simp]
+theorem loopChainDegreeZeroComponent_zero :
+    loopChainDegreeZeroComponent B b R 0 = loopZeroChainToGroupAlgebra B b R :=
+  (rfl)
+
+theorem loopChainDegreeZeroComponent_eq_zero {n : ℕ} (h : n ≠ 0)
+    (x : NormalizedCubicalChain (MooreLoopSpace B b) R n) :
+    loopChainDegreeZeroComponent B b R n x = 0 := by
+  cases n with
+  | zero => exact absurd rfl h
+  | succ n => rfl
+
+variable (B b R)
+
+/-- **The degree-zero ring map**: the algebra map from the chains on the Moore loop space to the
+group ring of the fundamental group, which is `loopZeroChainToGroupAlgebra` on `0`-chains and zero
+on chains of positive dimension. -/
+def loopChainDegreeZero : loopChainAlgebra B b R →ₐ[R] MonoidAlgebra R (FundamentalGroup B b) :=
+  DirectSum.toAlgebra R _ (loopChainDegreeZeroComponent B b R)
+    (by simp [loopChainDegreeZeroComponent])
+    (fun {i j} x y ↦ by
+      by_cases hi : i = 0
+      · by_cases hj : j = 0
+        · subst hi hj
+          simp [loopChainDegreeZeroComponent]
+        · rw [loopChainDegreeZeroComponent_eq_zero (by omega),
+            loopChainDegreeZeroComponent_eq_zero hj, mul_zero]
+      · rw [loopChainDegreeZeroComponent_eq_zero (by omega),
+          loopChainDegreeZeroComponent_eq_zero hi, zero_mul])
+
+variable {B b R}
+
+/-- The degree-zero ring map on a homogeneous chain. -/
+theorem loopChainDegreeZero_lof (n : ℕ) (y : NormalizedCubicalChain (MooreLoopSpace B b) R n) :
+    loopChainDegreeZero B b R (cubicalChainLof (MooreLoopSpace B b) R n y) =
+      loopChainDegreeZeroComponent B b R n y := by
+  rw [loopChainDegreeZero, DirectSum.toAlgebra_apply, cubicalChainLof, DirectSum.lof_eq_of]
+  exact DirectSum.toSemiring_of _ _ _ n y
+
+/-- The degree-zero ring map kills boundaries. -/
+theorem loopChainDegreeZero_differential (a : loopChainAlgebra B b R) :
+    loopChainDegreeZero B b R (cubicalChainDifferential (MooreLoopSpace B b) R a) = 0 := by
+  induction a using DirectSum.induction_on with
+  | zero => simp
+  | of n y =>
+    cases n with
+    | zero =>
+      rw [← DirectSum.lof_eq_of R, cubicalChainDifferential_lof_zero, map_zero]
+    | succ k =>
+      rw [← DirectSum.lof_eq_of R, cubicalChainDifferential_lof_succ]
+      cases k with
+      | zero =>
+        rw [loopChainDegreeZero_lof]
+        exact loopZeroChainToGroupAlgebra_boundary y
+      | succ k =>
+        rw [loopChainDegreeZero_lof]
+        exact loopChainDegreeZeroComponent_eq_zero (by omega) _
+  | add x y hx hy => simp [hx, hy]
+
+/-- The degree-zero ring map kills homogeneous elements of nonzero cohomological degree. -/
+theorem loopChainDegreeZero_eq_zero_of_mem {i : ℤ} (hi : i ≠ 0) {a : loopChainAlgebra B b R}
+    (ha : a ∈ cubicalChainGrading (MooreLoopSpace B b) R i) :
+    loopChainDegreeZero B b R a = 0 := by
+  rcases (mem_cubicalChainGrading_iff _ _).1 ha with rfl | ⟨n, y, hn, rfl⟩
+  · exact map_zero _
+  · rw [loopChainDegreeZero_lof]
+    exact loopChainDegreeZeroComponent_eq_zero (by omega) _
+
+/-- **Naturality of the degree-zero ring map**: it intertwines `C_*(Ωf)` with the map of group
+rings induced by `π₁(f)`. -/
+theorem loopChainDegreeZero_loopChainMap {B' : Type u} [TopologicalSpace B'] {b' : B'}
+    (f : C(B, B')) (hf : f b = b') (a : loopChainAlgebra B b R) :
+    loopChainDegreeZero B' b' R (loopChainMap R f hf a) =
+      MonoidAlgebra.mapDomainRingHom R (FundamentalGroup.mapOfEq f hf)
+        (loopChainDegreeZero B b R a) := by
+  induction a using DirectSum.induction_on with
+  | zero => simp
+  | of n y =>
+    have h : loopChainDegreeZeroComponent B' b' R n
+        (NormalizedCubicalChain.map R (MooreLoopSpace.map f hf : C(_, _)) n y) =
+        MonoidAlgebra.mapDomainRingHom R (FundamentalGroup.mapOfEq f hf)
+          (loopChainDegreeZeroComponent B b R n y) := by
+      cases n with
+      | zero =>
+        rw [loopChainDegreeZeroComponent_zero, loopChainDegreeZeroComponent_zero]
+        exact loopZeroChainToGroupAlgebra_map f hf y
+      | succ n =>
+        rw [loopChainDegreeZeroComponent_eq_zero n.succ_ne_zero,
+          loopChainDegreeZeroComponent_eq_zero n.succ_ne_zero, map_zero]
+    rw [← DirectSum.lof_eq_of R]
+    exact ((congrArg _ (loopChainMap_lof R f hf n y)).trans (loopChainDegreeZero_lof n _)).trans
+      (h.trans (congrArg _ (loopChainDegreeZero_lof n y)).symm)
+  | add x y hx hy => simp only [map_add, hx, hy]
+
+end DegreeZero
 
 end TauCeti
 

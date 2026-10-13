@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicTopology.Singular.Cubical.MonoidAlgebra.HomologyZero
 public import TauCeti.AlgebraicTopology.DGLocalSystem.Basic
 public import TauCeti.AlgebraicTopology.LocalCoefficient
 public import TauCeti.RingTheory.GradedAlgebra.Trivial
@@ -17,14 +16,13 @@ public import TauCeti.CategoryTheory.Groupoid.ConnectedFunctor
 A classical local system on a pointed space `(B, b)` is a functor from the fundamental groupoid to
 `R`-modules.  Its fiber at `b` is a representation of `π₁(B, b)`, hence a module over the group
 ring `R[π₁(B, b)]`, and the chain algebra `C_*(Ω_b B; R)` acts on it from the right through the
-ring homomorphism `loopChainDegreeZero`, which keeps the degree-zero component and sends it to the
-group ring by `loopZeroChainToGroupAlgebra`.  With the trivial grading and the zero differential,
-the fiber is a DG local system concentrated in degree zero (the source's Definition 1.8 in degree
-zero).
+ring homomorphism `loopChainDegreeZero` of the loop algebra, which keeps the degree-zero component
+and sends it to the group ring by `loopZeroChainToGroupAlgebra`.  With the trivial grading and
+the zero differential, the fiber is a DG local system concentrated in degree zero (the source's
+Definition 1.8 in degree zero).
 
 ## Main definitions
 
-* `TauCeti.loopChainDegreeZero`: the algebra map `C_*(Ω_b B; R) → R[π₁(B, b)]`.
 * `TauCeti.classicalAction`: the resulting action of the chain algebra on the fiber of a local
   system.
 * `TauCeti.classicalDGLocalSystem`: the DG local system of a classical local system.
@@ -32,9 +30,6 @@ zero).
 
 ## Main results
 
-* `TauCeti.loopChainDegreeZero_lof`, `TauCeti.loopChainDegreeZero_differential`: the values on
-  homogeneous chains, and compatibility with the differential.
-* `TauCeti.loopChainDegreeZero_loopChainMap`: naturality in based maps.
 * `TauCeti.isDGRightModule_fiber`: the fiber is a DG right module, with the trivial grading and
   zero differential.
 * `TauCeti.classicalDGLocalSystemMap_injective`: on a path-connected space, a morphism of local
@@ -54,113 +49,7 @@ open MulOpposite DirectSum
 
 namespace TauCeti
 
-section DegreeZero
-
-universe u v w
-
-variable (B : Type u) [TopologicalSpace B] (b : B) (R : Type u) [CommRing R]
-
-/-- The component of `loopChainDegreeZero` in dimension `n`: the class map in dimension zero and
-zero in positive dimensions. -/
-def zerothComponent :
-    (n : ℕ) → NormalizedCubicalChain (MooreLoopSpace B b) R n →ₗ[R]
-      MonoidAlgebra R (FundamentalGroup B b)
-  | 0 => loopZeroChainToGroupAlgebra B b R
-  | _ + 1 => 0
-
-variable {B b R}
-
-@[simp]
-theorem zerothComponent_zero : zerothComponent B b R 0 = loopZeroChainToGroupAlgebra B b R :=
-  (rfl)
-
-theorem zerothComponent_eq_zero {n : ℕ} (h : n ≠ 0)
-    (x : NormalizedCubicalChain (MooreLoopSpace B b) R n) : zerothComponent B b R n x = 0 := by
-  cases n with
-  | zero => exact absurd rfl h
-  | succ n => rfl
-
-variable (B b R)
-
-/-- **The degree-zero ring map**: the algebra map from the chains on the Moore loop space to the
-group ring of the fundamental group, which is `loopZeroChainToGroupAlgebra` on `0`-chains and zero
-on chains of positive dimension. -/
-def loopChainDegreeZero : loopChainAlgebra B b R →ₐ[R] MonoidAlgebra R (FundamentalGroup B b) :=
-  DirectSum.toAlgebra R _ (zerothComponent B b R)
-    (by simp [zerothComponent])
-    (fun {i j} x y ↦ by
-      by_cases hi : i = 0
-      · by_cases hj : j = 0
-        · subst hi hj
-          simp [zerothComponent]
-        · rw [zerothComponent_eq_zero (by omega), zerothComponent_eq_zero hj, mul_zero]
-      · rw [zerothComponent_eq_zero (by omega), zerothComponent_eq_zero hi, zero_mul])
-
-variable {B b R}
-
-/-- The degree-zero ring map on a homogeneous chain. -/
-theorem loopChainDegreeZero_lof (n : ℕ) (y : NormalizedCubicalChain (MooreLoopSpace B b) R n) :
-    loopChainDegreeZero B b R (cubicalChainLof (MooreLoopSpace B b) R n y) =
-      zerothComponent B b R n y := by
-  rw [loopChainDegreeZero, DirectSum.toAlgebra_apply, cubicalChainLof, DirectSum.lof_eq_of]
-  exact DirectSum.toSemiring_of _ _ _ n y
-
-/-- The degree-zero ring map kills boundaries. -/
-theorem loopChainDegreeZero_differential (a : loopChainAlgebra B b R) :
-    loopChainDegreeZero B b R (cubicalChainDifferential (MooreLoopSpace B b) R a) = 0 := by
-  induction a using DirectSum.induction_on with
-  | zero => simp
-  | of n y =>
-    cases n with
-    | zero =>
-      rw [← DirectSum.lof_eq_of R, cubicalChainDifferential_lof_zero, map_zero]
-    | succ k =>
-      rw [← DirectSum.lof_eq_of R, cubicalChainDifferential_lof_succ]
-      cases k with
-      | zero =>
-        rw [loopChainDegreeZero_lof]
-        exact loopZeroChainToGroupAlgebra_boundary y
-      | succ k =>
-        rw [loopChainDegreeZero_lof]
-        exact zerothComponent_eq_zero (by omega) _
-  | add x y hx hy => simp [hx, hy]
-
-/-- The degree-zero ring map kills homogeneous elements of nonzero cohomological degree. -/
-theorem loopChainDegreeZero_eq_zero_of_mem {i : ℤ} (hi : i ≠ 0) {a : loopChainAlgebra B b R}
-    (ha : a ∈ cubicalChainGrading (MooreLoopSpace B b) R i) :
-    loopChainDegreeZero B b R a = 0 := by
-  rcases (mem_cubicalChainGrading_iff _ _).1 ha with rfl | ⟨n, y, hn, rfl⟩
-  · exact map_zero _
-  · rw [loopChainDegreeZero_lof]
-    exact zerothComponent_eq_zero (by omega) _
-
-/-- **Naturality of the degree-zero ring map**: it intertwines `C_*(Ωf)` with the map of group
-rings induced by `π₁(f)`. -/
-theorem loopChainDegreeZero_loopChainMap {B' : Type u} [TopologicalSpace B'] {b' : B'}
-    (f : C(B, B')) (hf : f b = b') (a : loopChainAlgebra B b R) :
-    loopChainDegreeZero B' b' R (loopChainMap R f hf a) =
-      MonoidAlgebra.mapDomainRingHom R (FundamentalGroup.mapOfEq f hf)
-        (loopChainDegreeZero B b R a) := by
-  induction a using DirectSum.induction_on with
-  | zero => simp
-  | of n y =>
-    have h : zerothComponent B' b' R n
-        (NormalizedCubicalChain.map R (MooreLoopSpace.map f hf : C(_, _)) n y) =
-        MonoidAlgebra.mapDomainRingHom R (FundamentalGroup.mapOfEq f hf)
-          (zerothComponent B b R n y) := by
-      cases n with
-      | zero =>
-        rw [zerothComponent_zero, zerothComponent_zero]
-        exact loopZeroChainToGroupAlgebra_map f hf y
-      | succ n =>
-        rw [zerothComponent_eq_zero n.succ_ne_zero, zerothComponent_eq_zero n.succ_ne_zero,
-          map_zero]
-    rw [← DirectSum.lof_eq_of R]
-    exact ((congrArg _ (loopChainMap_lof R f hf n y)).trans (loopChainDegreeZero_lof n _)).trans
-      (h.trans (congrArg _ (loopChainDegreeZero_lof n y)).symm)
-  | add x y hx hy => simp only [map_add, hx, hy]
-
-end DegreeZero
+universe u w
 
 section Action
 
@@ -247,6 +136,21 @@ in degree zero. -/
     DGLocalSystem X x R :=
   DGRightModuleCat.of (isDGRightModule_fiber L)
 
+@[simp]
+theorem classicalDGLocalSystem_carrier (L : LocalCoefficientSystem.{u, u, w} R X) :
+    (classicalDGLocalSystem x L).carrier = L.obj (FundamentalGroupoid.mk x) :=
+  (rfl)
+
+@[simp]
+theorem classicalDGLocalSystem_grading (L : LocalCoefficientSystem.{u, u, w} R X) :
+    (classicalDGLocalSystem x L).grading = trivialGrading R (L.obj (FundamentalGroupoid.mk x)) :=
+  (rfl)
+
+@[simp]
+theorem classicalDGLocalSystem_differential (L : LocalCoefficientSystem.{u, u, w} R X) :
+    (classicalDGLocalSystem x L).differential = 0 :=
+  (rfl)
+
 theorem classicalAction_op_apply (L : LocalCoefficientSystem.{u, u, w} R X)
     (a : loopChainAlgebra X x R) :
     classicalAction L (op a) =
@@ -254,7 +158,7 @@ theorem classicalAction_op_apply (L : LocalCoefficientSystem.{u, u, w} R X)
         (FundamentalGroup X x) (fiberRightAction L) (loopChainDegreeZero X x R a)).unop := by
   simp [classicalAction]
 
-theorem fiberAct_naturality {L L' : LocalCoefficientSystem.{u, u, w} R X} (φ : L ⟶ L')
+theorem fiberRightAction_lift_naturality {L L' : LocalCoefficientSystem.{u, u, w} R X} (φ : L ⟶ L')
     (y : MonoidAlgebra R (FundamentalGroup X x)) (m : L.obj (FundamentalGroupoid.mk x)) :
     (φ.app (FundamentalGroupoid.mk x)).hom
         ((MonoidAlgebra.lift R (Module.End R (L.obj (FundamentalGroupoid.mk x)))ᵐᵒᵖ
@@ -273,10 +177,10 @@ theorem classicalAction_naturality {L L' : LocalCoefficientSystem.{u, u, w} R X}
     (φ.app (FundamentalGroupoid.mk x)).hom (classicalAction L a m) =
       classicalAction L' a ((φ.app (FundamentalGroupoid.mk x)).hom m) := by
   rw [← op_unop a, classicalAction_op_apply, classicalAction_op_apply]
-  exact fiberAct_naturality φ _ m
+  exact fiberRightAction_lift_naturality φ _ m
 
 /-- **A morphism of classical local systems induces a morphism of DG local systems.** -/
-def classicalDGLocalSystemMap {L L' : LocalCoefficientSystem.{u, u, w} R X} (φ : L ⟶ L') :
+@[expose] def classicalDGLocalSystemMap {L L' : LocalCoefficientSystem.{u, u, w} R X} (φ : L ⟶ L') :
     DGRightModuleHom (isDGRightModule_fiber (x := x) L) (isDGRightModule_fiber (x := x) L') where
   toLinearMap :=
     { toFun := fun m ↦ (φ.app (FundamentalGroupoid.mk x)).hom m
@@ -298,7 +202,8 @@ theorem classicalDGLocalSystemMap_apply {L L' : LocalCoefficientSystem.{u, u, w}
 variable (x R) in
 /-- **The functor from classical local systems to DG local systems**: a classical local system
 goes to its fiber at the basepoint, concentrated in degree zero. -/
-def classicalDGLocalSystemFunctor : LocalCoefficientSystem.{u, u, w} R X ⥤ DGLocalSystem X x R where
+@[expose] def classicalDGLocalSystemFunctor :
+    LocalCoefficientSystem.{u, u, w} R X ⥤ DGLocalSystem X x R where
   obj L := classicalDGLocalSystem x L
   map φ := classicalDGLocalSystemMap φ
   map_id L := DGRightModuleHom.toLinearMap_injective
@@ -311,6 +216,12 @@ def classicalDGLocalSystemFunctor : LocalCoefficientSystem.{u, u, w} R X ⥤ DGL
 @[simp]
 theorem classicalDGLocalSystemFunctor_obj (L : LocalCoefficientSystem.{u, u, w} R X) :
     (classicalDGLocalSystemFunctor R x).obj L = classicalDGLocalSystem x L :=
+  (rfl)
+
+@[simp]
+theorem classicalDGLocalSystemFunctor_map {L L' : LocalCoefficientSystem.{u, u, w} R X}
+    (φ : L ⟶ L') :
+    (classicalDGLocalSystemFunctor R x).map φ = classicalDGLocalSystemMap φ :=
   (rfl)
 
 /-- **A morphism of local systems on a path-connected space is determined by the induced morphism of
