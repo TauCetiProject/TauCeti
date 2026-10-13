@@ -12,8 +12,6 @@ import TauCeti.AlgebraicGeometry.EllipticCurve.MinimalModel.Basic
 import TauCeti.Data.Nat.Prime.IntCast
 -- Proof-only: `norm_num` decides primality of the small primes.
 import Mathlib.Tactic.NormNum.Prime
--- Proof-only: good reduction at the primes not dividing the discriminant.
-import TauCeti.AlgebraicGeometry.EllipticCurve.IntegralReduction
 
 /-!
 # Worked examples: Tate's algorithm on curves over `ℚ`, one for each reduction symbol

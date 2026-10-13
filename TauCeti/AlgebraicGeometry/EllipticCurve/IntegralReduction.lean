@@ -6,8 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.IntegralModel
-public import TauCeti.AlgebraicGeometry.EllipticCurve.MinimalModel.Basic
-public import TauCeti.RingTheory.DedekindDomain.LocalizationAtPrime
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.GoodReduction
 public import TauCeti.RingTheory.DedekindDomain.AdicValuation.Basic
 public import Mathlib.Algebra.Field.ZMod
@@ -17,13 +15,10 @@ import Mathlib.Data.ZMod.QuotientRing
 # Reduction of integral equations at primes
 
 An integral Weierstrass equation has good reduction at a height-one prime when its discriminant
-lies outside that prime, both for its integral model over the valuation subring
-(`WeierstrassCurve.isElliptic_integralModel_baseChange`) and for Mathlib's chosen minimal
-equation over the localisation
-(`WeierstrassCurve.hasGoodReduction_minimal_baseChange_of_Δ_notMem`). For equations over `ℤ`, the
-valuation residue field at `(p)` is `ZMod p`. Thus counting points on the equation over `ZMod p`
-gives the order of the reduced point group, and that order annihilates every reduced rational
-point. These comparisons let finite point counts supply torsion certificates for rational curves.
+lies outside that prime. For equations over `ℤ`, the valuation residue field at `(p)` is `ZMod p`.
+Thus counting points on the equation over `ZMod p` gives the order of the reduced point group,
+and that order annihilates every reduced rational point. These comparisons let finite point
+counts supply torsion certificates for rational curves.
 -/
 
 public section
@@ -40,22 +35,6 @@ theorem isElliptic_integralModel_baseChange {R K : Type*} [CommRing R] [IsDedeki
     (integralModel (v.valuation K).valuationSubring (E.baseChange K)).IsElliptic := by
   rwa [integralModel_baseChange_eq_map, isElliptic_iff, map_Δ,
     ← notMem_maximalIdeal, v.algebraMap_mem_maximalIdeal_valuationSubring_iff]
-
-/-- **An equation over `O` has good reduction at every height-one prime not containing its
-discriminant**: read over the localisation at such a prime, its discriminant is a unit. -/
-theorem hasGoodReduction_minimal_baseChange_of_Δ_notMem {O F : Type*} [CommRing O]
-    [IsDedekindDomain O] [Field F] [Algebra O F] [IsFractionRing O F] (W : WeierstrassCurve O)
-    {v : HeightOneSpectrum O} (hv : W.Δ ∉ v.asIdeal) :
-    ((W.baseChange F).minimal (Localization.AtPrime v.asIdeal)).HasGoodReduction
-      (Localization.AtPrime v.asIdeal) := by
-  set W₀ := W.map (algebraMap O (Localization.AtPrime v.asIdeal))
-  have : IsIntegral (Localization.AtPrime v.asIdeal) (W₀.baseChange F) := ⟨⟨W₀, rfl⟩⟩
-  have h : (W₀.baseChange F).HasGoodReduction (Localization.AtPrime v.asIdeal) := by
-    rw [hasGoodReduction_iff_isUnit_integralModel_Δ, integralModel_baseChange_self, map_Δ]
-    exact (IsLocalization.AtPrime.isUnit_to_map_iff _ v.asIdeal W.Δ).2 hv
-  have hW₀ : W₀.baseChange F = W.baseChange F :=
-    W.map_baseChange (IsScalarTower.toAlgHom O (Localization.AtPrime v.asIdeal) F)
-  exact hW₀ ▸ h.hasGoodReduction_minimal
 
 /-- Reducing the integral model of an equation over `ℤ` agrees with mapping its reduction over
 `ZMod p` along any homomorphism into the valuation residue field. -/
