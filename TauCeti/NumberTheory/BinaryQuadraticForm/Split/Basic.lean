@@ -11,7 +11,6 @@ public import Mathlib.GroupTheory.GroupAction.Quotient
 import TauCeti.RingTheory.NormTrace.Prod
 import Mathlib.RingTheory.Norm.Basic
 import Mathlib.Tactic.LinearCombination
-import Mathlib.Tactic.Ring
 
 /-!
 # The principal split proper class at discriminant one
@@ -75,7 +74,8 @@ private theorem exists_isCoprime_eval_eq_zero_of_discrim_eq_one
   by_cases ha : f.a = 0
   · exact ⟨1, 0, isCoprime_one_left, by simpa using ha⟩
   have hval : f.eval (1 - f.b) (2 * f.a) = 0 := by
-    have hdisc : f.b ^ 2 - 4 * f.a * f.c = 1 := hf
+    have hdisc : f.b ^ 2 - 4 * f.a * f.c = 1 := by
+      simpa only [discrim_def, _root_.discrim] using hf
     rw [eval_def]
     linear_combination -f.a * hdisc
   obtain ⟨x, y, hxy, _, _, hscale⟩ :=
