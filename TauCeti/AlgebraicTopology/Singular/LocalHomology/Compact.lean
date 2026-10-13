@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.AlgebraicTopology.Singular.LocalHomology.MayerVietoris
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.Neighborhood
-public import TauCeti.AlgebraicTopology.Singular.MayerVietoris.Relative
 
 /-!
 # Local homology of a compact subset of a manifold
@@ -44,10 +44,6 @@ The proof is an induction on the shape of `A`, carried by the relative Mayer–V
 
 ## Main results
 
-* `TauCeti.isZero_localHomology_empty`: `Hₖ(M, M) = 0`.
-* `TauCeti.localHomology_hom_ext_of_union`: for closed `A` and `B` with
-  `Hₖ₊₁(M, M ∖ (A ∩ B)) = 0`, maps into `Hₖ(M, M ∖ (A ∪ B))` are determined by their
-  restrictions to `A` and to `B`.
 * `TauCeti.isZero_localHomology_of_isCompact`: `Hₖ(M, M ∖ A) = 0` for compact `A` and `k > n`.
 * `TauCeti.eq_zero_of_forall_localHomologyRestriction_eq_zero`: a class of `Hₙ(M, M ∖ A)` whose
   restriction to every point of `A` vanishes is zero.
@@ -70,58 +66,6 @@ open CategoryTheory Limits Metric Module Set Topology
 universe w v u
 
 namespace TauCeti
-
-section MayerVietoris
-
-variable {A : Type u} [Category.{v} A] [HasCoproducts.{w} A] [Abelian A] (R : A)
-  {M : Type w} [TopologicalSpace M]
-
-/-- **Local homology along the empty set vanishes**: `Hₖ(M, M) = 0`, because the identity of the
-pair `(M, M)` factors through its subspace. -/
-theorem isZero_localHomology_empty (k : ℕ) : IsZero (localHomology R (∅ : Set M) k) := by
-  rw [IsZero.iff_id_eq_zero, ← TopPair.singularHomologyMap_id]
-  exact TopPair.singularHomologyMap_eq_zero_of_fac _ R
-    (TopCat.ofHom (⟨fun x ↦ ⟨x, by simp⟩, by fun_prop⟩ : C(M, ((∅ : Set M)ᶜ : Set M)))) rfl k
-
-variable {R}
-
-/-- **Maps into local homology of a union are detected on the pieces.** Let `S` and `T` be closed
-and let `Hₖ₊₁(M, M ∖ (S ∩ T))` vanish. Two maps into `Hₖ(M, M ∖ (S ∪ T))` that agree after
-restriction to `S` and to `T` are equal: by the relative Mayer–Vietoris sequence of the open sets
-`M ∖ S` and `M ∖ T`, the map `Hₖ(M, M ∖ (S ∪ T)) ⟶ Hₖ(M, M ∖ S) ⊞ Hₖ(M, M ∖ T)` is a
-monomorphism. -/
-theorem localHomology_hom_ext_of_union {S T : Set M} (hS : IsClosed S) (hT : IsClosed T) {k : ℕ}
-    (h : IsZero (localHomology R (S ∩ T) (k + 1))) {Z : A}
-    {f g : Z ⟶ localHomology R (S ∪ T) k}
-    (hfS : f ≫ localHomologyRestriction R subset_union_left k =
-      g ≫ localHomologyRestriction R subset_union_left k)
-    (hfT : f ≫ localHomologyRestriction R subset_union_right k =
-      g ≫ localHomologyRestriction R subset_union_right k) :
-    f = g := by
-  have h' : IsZero ((TopPair.ofSubset (Sᶜ ∪ Tᶜ : Set (TopCat.of M))).singularHomology R
-      (k + 1)) := by
-    rw [← compl_inter]
-    exact h
-  have : Mono (TopCat.relativeMayerVietorisToBiprod R (X := TopCat.of M) Sᶜ Tᶜ k) :=
-    (TopCat.relativeMayerVietoris_exact₁ R hS.isOpen_compl hT.isOpen_compl (k + 1) k).mono_g
-      (h'.eq_of_src _ _)
-  rw [localHomologyRestriction_def] at hfS hfT
-  -- The sequence is stated for `(M ∖ S) ∩ (M ∖ T)`, which is `M ∖ (S ∪ T)` only propositionally,
-  -- so generalize the subspace before comparing with the first map of the sequence.
-  suffices key : ∀ (W : Set (TopCat.of M)) (_ : W = Sᶜ ∩ Tᶜ) (hWS : W ⊆ Sᶜ) (hWT : W ⊆ Tᶜ)
-      (f g : Z ⟶ (TopPair.ofSubset W).singularHomology R k),
-      f ≫ TopPair.singularHomologyMap (TopPair.ofSubsetMap (𝟙 _) hWS) R k =
-          g ≫ TopPair.singularHomologyMap (TopPair.ofSubsetMap (𝟙 _) hWS) R k →
-        f ≫ TopPair.singularHomologyMap (TopPair.ofSubsetMap (𝟙 _) hWT) R k =
-          g ≫ TopPair.singularHomologyMap (TopPair.ofSubsetMap (𝟙 _) hWT) R k → f = g from
-    key _ (compl_union S T) _ _ f g hfS hfT
-  rintro W rfl hWS hWT f g hS hT
-  rw [← cancel_mono (TopCat.relativeMayerVietorisToBiprod R (X := TopCat.of M) Sᶜ Tᶜ k)]
-  ext
-  · simpa using hS
-  · simpa using hT
-
-end MayerVietoris
 
 section Module
 
