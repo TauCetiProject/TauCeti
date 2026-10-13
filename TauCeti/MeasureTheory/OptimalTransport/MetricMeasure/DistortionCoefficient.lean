@@ -26,9 +26,11 @@ a distance `θ`, put `D = K θ² / N`. Then
 
 and, for `N > 1`, `τ_{K,N}^{(t)}(θ) = ∞` if `(N - 1) π² ≤ K θ²` (exactly when
 `σ_{K,N-1}^{(t)}(θ) = ∞`) and `τ_{K,N}^{(t)}(θ) = t ^ (1 / N) σ_{K,N-1}^{(t)}(θ) ^ (1 - 1 / N)`
-otherwise, with `τ_{K,1}^{(t)}(θ) = ∞` for `K θ² > 0` and `τ_{K,1}^{(t)}(θ) = t` for `K θ² ≤ 0`,
-as in Sturm. In particular `τ_{K,1}^{(t)}(0) = t`, the limit of `τ_{K,N}^{(t)}(0) = t` as
-`N ↓ 1`. For `0 < D < π²` and `θ ≥ 0`, `√D = θ √(K / N)`, so the second case of `σ` is the familiar
+otherwise, with `τ_{K,1}^{(t)}(θ) = ∞` for `K θ² > 0` and `τ_{K,1}^{(t)}(θ) = t` for `K θ² ≤ 0`.
+This `N = 1` case deviates from Sturm at distance zero: Sturm puts `τ_{K,1}^{(t)}(θ) = ∞` for
+every `K > 0`, including `θ = 0`, whereas here `τ_{K,1}^{(t)}(0) = t`, the limit of
+`τ_{K,N}^{(t)}(0) = t` as `N ↓ 1`. The two conventions agree whenever `θ ≠ 0` or `K ≤ 0`.
+For `0 < D < π²` and `θ ≥ 0`, `√D = θ √(K / N)`, so the second case of `σ` is the familiar
 `sin (t θ √(K / N)) / sin (θ √(K / N))`.
 
 Both families take values in `[0, ∞]` for `t ∈ [0, 1]`, so they are `ℝ≥0∞`-valued here. The value
@@ -99,7 +101,9 @@ noncomputable def distortionSigma (K N t θ : ℝ) : ℝ≥0∞ :=
 /-- The **distortion coefficient** `τ_{K,N}^{(t)}(θ)` of the curvature-dimension condition
 `CD(K, N)`. For `N > 1` it is `∞` if `(N - 1) π² ≤ K θ²` and
 `t ^ (1 / N) σ_{K,N-1}^{(t)}(θ) ^ (1 - 1 / N)` otherwise, while `τ_{K,1}^{(t)}(θ)` is `∞` for
-`K θ² > 0` and `t` for `K θ² ≤ 0`. It is meaningful for `N ≥ 1` and `t ∈ [0, 1]`. -/
+`K θ² > 0` and `t` for `K θ² ≤ 0`; unlike Sturm, who puts `τ_{K,1}^{(t)}(θ) = ∞` for every
+`K > 0`, this gives `τ_{K,1}^{(t)}(0) = t`, the limit of `τ_{K,N}^{(t)}(0)` as `N ↓ 1`. It is
+meaningful for `N ≥ 1` and `t ∈ [0, 1]`. -/
 noncomputable def distortionTau (K N t θ : ℝ) : ℝ≥0∞ :=
   if 1 < N then
     if (N - 1) * π ^ 2 ≤ K * θ ^ 2 then ⊤
