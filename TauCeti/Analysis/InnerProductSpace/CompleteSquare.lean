@@ -36,9 +36,16 @@ spherical inversion.
   distances.
 * `TauCeti.norm_sq_norm_smul_sub_inv_norm_smul`: the squared norm of the normalized reflection
   vector as a polynomial.
+* `Finset.sum_mul_norm_sub_sq_eq` and `Finset.sum_mul_edist_sq_eq`: for finitely many points
+  `x i` and weights `w i` summing to `1`, the weighted sum of the squared distances from `y` is
+  the squared distance from `y` to the weighted mean `m = ∑ i, w i • x i` plus the weighted sum
+  of the squared distances from `m`. This is the weighted variance decomposition in a real inner
+  product space, of which the two-point identity above is the case of two points.
 -/
 
 public section
+
+open scoped ENNReal NNReal
 
 namespace TauCeti
 
@@ -100,3 +107,52 @@ theorem edist_smul_add_smul_sq_add {t : ℝ} (ht : t ∈ Set.Icc (0 : ℝ) 1) (x
   linarith
 
 end TauCeti
+
+namespace Finset
+
+open scoped RealInnerProductSpace
+
+variable {ι F : Type*} [SeminormedAddCommGroup F] [InnerProductSpace ℝ F]
+
+/-- **The weighted variance decomposition** in a real inner product space. If the weights `w i`
+sum to `1` over `s`, then for every `y` the weighted sum `∑ i ∈ s, w i * ‖y - x i‖ ^ 2` equals
+`‖y - m‖ ^ 2 + ∑ i ∈ s, w i * ‖m - x i‖ ^ 2`, where `m = ∑ i ∈ s, w i • x i` is the weighted
+mean of the `x i`. The weights may be negative. -/
+theorem sum_mul_norm_sub_sq_eq (s : Finset ι) {w : ι → ℝ} (hw : ∑ i ∈ s, w i = 1) (y : F)
+    (x : ι → F) :
+    ∑ i ∈ s, w i * ‖y - x i‖ ^ 2 =
+      ‖y - ∑ i ∈ s, w i • x i‖ ^ 2 + ∑ i ∈ s, w i * ‖∑ j ∈ s, w j • x j - x i‖ ^ 2 := by
+  set m := ∑ i ∈ s, w i • x i
+  -- The deviations from the weighted mean have weighted sum zero.
+  have hdev : ∑ i ∈ s, w i • (m - x i) = 0 := by
+    simp only [smul_sub, sum_sub_distrib, ← sum_smul, hw, one_smul, m, sub_self]
+  have hexpand (i : ι) : w i * ‖y - x i‖ ^ 2 =
+      w i * ‖y - m‖ ^ 2 + 2 * ⟪y - m, w i • (m - x i)⟫ + w i * ‖m - x i‖ ^ 2 := by
+    rw [← sub_add_sub_cancel y m (x i), norm_add_sq_real, real_inner_smul_right]
+    ring
+  rw [sum_congr rfl fun i _ ↦ hexpand i, sum_add_distrib, sum_add_distrib, ← sum_mul, hw,
+    ← mul_sum, ← inner_sum, hdev, inner_zero_right]
+  ring
+
+/-- **The weighted variance decomposition** for extended distances. If the nonnegative weights
+`w i` sum to `1` over `s`, then for every `y`,
+`∑ i ∈ s, w i * d(y, x i) ^ 2 = d(y, m) ^ 2 + ∑ i ∈ s, w i * d(m, x i) ^ 2`, where
+`m = ∑ i ∈ s, w i • x i` is the weighted mean of the `x i`. This is the form in which the
+identity enters lower Lebesgue integrals. -/
+theorem sum_mul_edist_sq_eq (s : Finset ι) {w : ι → ℝ≥0} (hw : ∑ i ∈ s, w i = 1) (y : F)
+    (x : ι → F) :
+    ∑ i ∈ s, (w i : ℝ≥0∞) * edist y (x i) ^ 2 =
+      edist y (∑ i ∈ s, (w i : ℝ) • x i) ^ 2 +
+        ∑ i ∈ s, (w i : ℝ≥0∞) * edist (∑ j ∈ s, (w j : ℝ) • x j) (x i) ^ 2 := by
+  have hmul (c : ℝ≥0) (a b : F) :
+      (c : ℝ≥0∞) * edist a b ^ 2 = ENNReal.ofReal (c * ‖a - b‖ ^ 2) := by
+    rw [edist_dist, dist_eq_norm, ← ENNReal.ofReal_pow (norm_nonneg _),
+      ← ENNReal.ofReal_coe_nnreal, ← ENNReal.ofReal_mul c.coe_nonneg]
+  simp only [hmul]
+  simp only [edist_dist, dist_eq_norm, ← ENNReal.ofReal_pow (norm_nonneg _)]
+  rw [← ENNReal.ofReal_sum_of_nonneg fun i _ ↦ by positivity,
+    ← ENNReal.ofReal_sum_of_nonneg fun i _ ↦ by positivity,
+    ← ENNReal.ofReal_add (by positivity) (sum_nonneg fun i _ ↦ by positivity),
+    sum_mul_norm_sub_sq_eq s (w := fun i ↦ (w i : ℝ)) (by exact_mod_cast hw)]
+
+end Finset

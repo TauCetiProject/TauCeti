@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Field.Basic
+public import Mathlib.FieldTheory.IsAlgClosed.Basic
 
 import Mathlib.Algebra.Order.Archimedean.Basic
 import Mathlib.Analysis.Normed.Module.Seminorm.Norm
@@ -17,6 +18,8 @@ In a nontrivially normed field `𝕜` the norms need not be dense, so two radii 
 be separated by the norm of an element of `𝕜`. They are separated after raising to a power:
 `NormedField.exists_pow_lt_norm_lt_pow` gives `m : ℕ` and `c : 𝕜` with `rᵐ < ‖c‖ < sᵐ`. Compare
 `NormedField.exists_lt_norm_lt`, which separates the radii themselves in a densely normed field.
+Over an algebraically closed field `m`-th roots exist, so the radii themselves are separated:
+`NormedField.exists_lt_norm_lt_of_isAlgClosed`.
 -/
 
 public section
@@ -38,5 +41,22 @@ theorem exists_pow_lt_norm_lt_pow {r s : ℝ} (hr₀ : 0 < r) (hlt : r < s) :
   refine ⟨m, c, lt_of_lt_of_le ?_ hcr, hcs⟩
   rw [lt_div_iff₀ (one_pos.trans hk), ← lt_div_iff₀' (pow_pos hr₀ m), ← div_pow]
   exact hm
+
+/-- **The norms of an algebraically closed nontrivially normed field are dense**: two radii
+`0 ≤ r < s` are separated by the norm of an element. This is the conclusion of
+`NormedField.exists_lt_norm_lt` without a `DenselyNormedField` instance. -/
+theorem exists_lt_norm_lt_of_isAlgClosed [IsAlgClosed 𝕜] {r s : ℝ} (hr₀ : 0 ≤ r) (hlt : r < s) :
+    ∃ c : 𝕜, r < ‖c‖ ∧ ‖c‖ < s := by
+  -- separate a positive radius `r' ≥ r` from `s`, so that `r = 0` needs no special case
+  have hr' : 0 < max r (s / 2) := lt_max_of_lt_right (by linarith)
+  have hlt' : max r (s / 2) < s := max_lt hlt (by linarith)
+  obtain ⟨m, c, hm, hc⟩ := exists_pow_lt_norm_lt_pow 𝕜 hr' hlt'
+  have hm₀ : m ≠ 0 := by
+    rintro rfl
+    exact (hm.trans hc).ne (by simp)
+  obtain ⟨d, rfl⟩ := IsAlgClosed.exists_pow_nat_eq c (Nat.pos_of_ne_zero hm₀)
+  rw [norm_pow] at hm hc
+  exact ⟨d, (le_max_left _ _).trans_lt ((pow_lt_pow_iff_left₀ hr'.le (norm_nonneg d) hm₀).mp hm),
+    (pow_lt_pow_iff_left₀ (norm_nonneg d) (hr'.trans hlt').le hm₀).mp hc⟩
 
 end NormedField

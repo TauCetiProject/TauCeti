@@ -63,6 +63,8 @@ range, so the value is a `dite` rather than a plain application.
   counterpart of Mathlib's `Fin.predAbove_succAbove` for `p.castSucc.succAbove`.
 * `Fin.val_succAbove`: the value of `p.succAbove i`, read off the comparison of `i` with `p`.
 * `Fin.val_predAbove`: the value of `p.predAbove i`, read off the comparison of `i` with `p`.
+* `Fin.natAdd_succAbove_castAdd` and `Fin.natAdd_succAbove_natAdd`: skipping a point of the
+  second block of `Fin (n + (m + 1))`, on either block.
 * `Fin.finRotate_succ_eq_succ_succAbove` and `Fin.finRotate_succ_succAbove_of_ne`: the cyclic
   successor of `Fin (n + 1)` against the embeddings `Fin.succ` and `i.succ.succAbove` of `Fin n`,
   as used when a new entry is inserted into a cyclic sequence.
@@ -223,6 +225,23 @@ theorem val_predAbove {n : ℕ} (p : Fin n) (i : Fin (n + 1)) :
   · rw [predAbove_of_le_castSucc _ _ h]
     rw [le_def, val_castSucc] at h
     simp [h]
+
+/-- Skipping a point of the second block of `Fin (n + (m + 1))` fixes the first block. -/
+@[simp]
+theorem natAdd_succAbove_castAdd {n m : ℕ} (j : Fin (m + 1)) (k : Fin n) :
+    (natAdd n j).succAbove (castAdd m k) = castAdd (m + 1) k := by
+  ext
+  simp only [val_succAbove, val_castAdd, val_natAdd]
+  have := k.isLt
+  split_ifs <;> omega
+
+/-- Skipping a point of the second block of `Fin (n + (m + 1))` is skipping it in that block. -/
+@[simp]
+theorem natAdd_succAbove_natAdd {n m : ℕ} (j : Fin (m + 1)) (i : Fin m) :
+    (natAdd n j).succAbove (natAdd n i) = natAdd n (j.succAbove i) := by
+  ext
+  simp only [val_succAbove, val_natAdd]
+  split_ifs <;> omega
 
 /-- The cyclic successor of `i.succ` in `Fin (n + 1)` is the cyclic successor of `i` in `Fin n`,
 read through the embedding `i.succ.succAbove` that skips `i.succ`. -/
@@ -419,19 +438,8 @@ theorem insertNth_append_natAdd {n m : ℕ} {β : Sort*} (i : Fin (m + 1)) (a : 
   refine ⟨by simp, ?_⟩
   funext k
   induction k using Fin.addCases with
-  | left k =>
-      have hk : (i.natAdd n).succAbove (k.castAdd m) = k.castAdd (m + 1) := by
-        apply Fin.ext
-        simp only [val_succAbove, val_castAdd, val_natAdd]
-        have := k.isLt
-        split_ifs <;> omega
-      simp [removeNth, hk]
-  | right k =>
-      have hk : (i.natAdd n).succAbove (k.natAdd n) = (i.succAbove k).natAdd n := by
-        apply Fin.ext
-        simp only [val_succAbove, val_natAdd]
-        split_ifs <;> omega
-      simp [removeNth, hk]
+  | left k => simp [removeNth, natAdd_succAbove_castAdd]
+  | right k => simp [removeNth, natAdd_succAbove_natAdd]
 
 /-! ### Inserting an entry into a tuple indexed by a sum of two blocks -/
 
