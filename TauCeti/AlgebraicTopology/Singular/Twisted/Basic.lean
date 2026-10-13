@@ -202,21 +202,6 @@ lemma vertexTransport_eq_eqToHom (α : m ⟶ n) (σ : (TopCat.toSSet.obj X).obj 
   rw [pathTransport_self]
   exact (eqToHom_heq_id_dom _ _ _).symm
 
-/-- Transport between initial vertices along a coface map other than the zeroth one is an
-identity. -/
-lemma vertexTransport_δ_eq_eqToHom {k : ℕ} {i : Fin (k + 2)} (hi : i ≠ 0)
-    (σ : (TopCat.toSSet.obj X) _⦋k + 1⦌) :
-    vertexTransport (δ i).op σ =
-      eqToHom (initialVertex_eq_initialVertex_map (δ i).op σ (δ_toOrderHom_zero hi)) :=
-  vertexTransport_eq_eqToHom (δ i).op σ (δ_toOrderHom_zero hi)
-
-/-- Transport between initial vertices along a codegeneracy map is an identity. -/
-@[simp]
-lemma vertexTransport_σ_eq_eqToHom {k : ℕ} (i : Fin (k + 1)) (τ : (TopCat.toSSet.obj X) _⦋k⦌) :
-    vertexTransport (σ i).op τ =
-      eqToHom (initialVertex_eq_initialVertex_map (σ i).op τ (σ_toOrderHom_zero i)) :=
-  vertexTransport_eq_eqToHom (σ i).op τ (σ_toOrderHom_zero i)
-
 /-- Transport between initial vertices along the zeroth face is transport along the first edge of
 the simplex. -/
 lemma vertexTransport_δ_zero_heq {k : ℕ} (τ : (TopCat.toSSet.obj X) _⦋k + 1⦌) :
