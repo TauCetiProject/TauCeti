@@ -25,9 +25,6 @@ comodules equals the original point-action automorphism exactly when `g` is semi
 
 * J. C. Jantzen, *Representations of Algebraic Groups*, I.2.
 * T. A. Springer, *Linear Algebraic Groups*, §2.4.
-
-This is a representation-theoretic step toward the Jordan decomposition of group elements in
-Layer 4 of the ReductiveGroups roadmap.
 -/
 
 public section

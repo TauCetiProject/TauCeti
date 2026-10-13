@@ -39,8 +39,9 @@ graded algebras are formed in this category with this shift.
 
 ## Main results
 
-* `TauCeti.GradedModuleCat.mem_shift_functor_obj_piece_iff` and
-  `TauCeti.GradedModuleCat.mem_shift_inverse_obj_piece_iff`: `(M{1})ₚ = M_{p-1}` and
+* `TauCeti.GradedModuleCat.shift_functor_obj`: the shift autoequivalence sends `M` to `M{1}`.
+* `TauCeti.GradedModuleCat.mem_shiftObj_piece_iff` and
+  `TauCeti.GradedModuleCat.mem_shift_inverse_obj_piece_iff`: `(M{n})ₚ = M_{p-n}` and
   `(M{-1})ₚ = M_{p+1}`.
 -/
 
@@ -292,10 +293,10 @@ def shift : GradedModuleCat.{v} 𝒜 ≌ GradedModuleCat.{v} 𝒜 where
     fun _ ↦ by ext; rfl
   functor_unitIso_comp _ := by ext; rfl
 
+/-- The grading-shift autoequivalence sends a module to its shift by one. -/
 @[simp]
-theorem mem_shift_functor_obj_piece_iff (p : ℤ) (x : M) :
-    x ∈ ((shift 𝒜).functor.obj M).grading.piece p ↔ x ∈ M.grading.piece (p - 1) :=
-  M.mem_shiftObj_piece_iff 1 p x
+theorem shift_functor_obj : (shift 𝒜).functor.obj M = M.shiftObj 1 :=
+  rfl
 
 @[simp]
 theorem mem_shift_inverse_obj_piece_iff (p : ℤ) (x : M) :

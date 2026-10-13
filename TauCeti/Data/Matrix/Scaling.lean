@@ -60,6 +60,8 @@ plan with `PMF` marginals is `TauCeti.TransportMatrix`.
 
 ## Main results
 
+* `Matrix.isCompact_setOf_nonneg_hasMarginals`: the nonnegative matrices with row sums `a` and
+  column sums `b` form a compact set.
 * `Matrix.exists_relEntropy_minOn`: a minimiser of `Matrix.relEntropy` against `K` among the
   nonnegative matrices with row sums `a` and column sums `b` exists, as soon as there is one such
   matrix.
@@ -206,17 +208,12 @@ theorem continuous_relEntropy (K : Matrix ι κ ℝ) : Continuous (relEntropy ·
 
 /-! ### A minimiser of the relative entropy -/
 
-/-- The relative entropy against `K` attains a minimum on the nonnegative matrices with row sums `a`
-and column sums `b`, as soon as there is one such matrix.
+/-- The nonnegative matrices with row sums `a` and column sums `b` form a compact set.
 
-The set of these matrices is closed, every entry of such a matrix is at most `∑ i, a i`, and the
-relative entropy is continuous, so the minimum is attained on a closed subset of a compact box. -/
-theorem exists_relEntropy_minOn (K : Matrix ι κ ℝ) (a : ι → ℝ) (b : κ → ℝ)
-    (hfeas : ∃ P : Matrix ι κ ℝ, (∀ i j, 0 ≤ P i j) ∧ HasMarginals P a b) :
-    ∃ P : Matrix ι κ ℝ, (∀ i j, 0 ≤ P i j) ∧ HasMarginals P a b ∧
-      ∀ Q : Matrix ι κ ℝ, (∀ i j, 0 ≤ Q i j) → HasMarginals Q a b →
-        relEntropy P K ≤ relEntropy Q K := by
-  obtain ⟨Pfeas, hPfeas0, hPfeasa⟩ := hfeas
+The set is closed, and every entry of such a matrix is at most `∑ i, a i`, so it is a closed subset
+of a compact box. -/
+theorem isCompact_setOf_nonneg_hasMarginals (a : ι → ℝ) (b : κ → ℝ) :
+    IsCompact {P : Matrix ι κ ℝ | (∀ i j, 0 ≤ P i j) ∧ HasMarginals P a b} := by
   set A : ℝ := ∑ i, a i with hA
   have hnonneg : IsClosed {P : Matrix ι κ ℝ | ∀ i j, 0 ≤ P i j} := by
     have key : {P : Matrix ι κ ℝ | ∀ i j, 0 ≤ P i j}
@@ -261,13 +258,23 @@ theorem exists_relEntropy_minOn (K : Matrix ι κ ℝ) (a : ι → ℝ) (b : κ 
       _ = A := hA.symm
   have hbox : IsCompact {P : Matrix ι κ ℝ | ∀ i j, P i j ∈ Set.Icc 0 A} :=
     IsCompact.matrix (isCompact_Icc (α := ℝ))
-  have hcompact : IsCompact S :=
-    IsCompact.of_isClosed_subset hbox hclosed
-      fun P hP => fun i j => ⟨hP.1 i j, hbound P hP.1 hP.2 i j⟩
-  obtain ⟨P, hPmem, hPmin⟩ := hcompact.exists_isMinOn (f := fun P => relEntropy P K)
-    ⟨Pfeas, hPfeas0, hPfeasa⟩ (continuous_relEntropy K).continuousOn
-  rw [hS, Set.mem_ofPred] at hPmem
-  exact ⟨P, hPmem.1, hPmem.2, fun Q hQ0 hQa => (isMinOn_iff.mp hPmin) Q ⟨hQ0, hQa⟩⟩
+  exact IsCompact.of_isClosed_subset hbox hclosed
+    fun P hP => fun i j => ⟨hP.1 i j, hbound P hP.1 hP.2 i j⟩
+
+/-- The relative entropy against `K` attains a minimum on the nonnegative matrices with row sums `a`
+and column sums `b`, as soon as there is one such matrix.
+
+The set of these matrices is compact by `Matrix.isCompact_setOf_nonneg_hasMarginals`, and the
+relative entropy is continuous. -/
+theorem exists_relEntropy_minOn (K : Matrix ι κ ℝ) (a : ι → ℝ) (b : κ → ℝ)
+    (hfeas : ∃ P : Matrix ι κ ℝ, (∀ i j, 0 ≤ P i j) ∧ HasMarginals P a b) :
+    ∃ P : Matrix ι κ ℝ, (∀ i j, 0 ≤ P i j) ∧ HasMarginals P a b ∧
+      ∀ Q : Matrix ι κ ℝ, (∀ i j, 0 ≤ Q i j) → HasMarginals Q a b →
+        relEntropy P K ≤ relEntropy Q K := by
+  obtain ⟨P, ⟨hP0, hPa⟩, hPmin⟩ :=
+    (isCompact_setOf_nonneg_hasMarginals a b).exists_isMinOn (f := fun P => relEntropy P K)
+      hfeas (continuous_relEntropy K).continuousOn
+  exact ⟨P, hP0, hPa, fun Q hQ0 hQa => (isMinOn_iff.mp hPmin) Q ⟨hQ0, hQa⟩⟩
 
 /-- The relative entropy against `K` attains a minimum on the nonnegative matrices with row sums
 `a` and column sums `b` whenever `a` and `b` are nonnegative and of equal total mass.

@@ -48,9 +48,12 @@ cannot sum to a root at all, which
 `TauCeti.IsSl2System.rootSpace_add_eq_bot_of_rootSpace_add_eq_bot` reads off as a statement about
 the root system.
 
-Nothing here normalises the structure constants: the relation holds for every normalised family,
-and the choice of a family whose constants are the Chevalley integers `±(p + 1)` is exactly what
-it is an input to.
+Nothing here normalises the structure constants: the relation holds for every normalised family, and
+the choice of a family whose constants are the Chevalley integers `±(p + 1)` is exactly what it is
+an input to. A normalised family with these constants is exactly one that extends to a Chevalley
+system (`TauCeti.IsSl2System.isChevalleyNormalized_iff_exists_isChevalleySystem`); Carter (§4.2)
+chooses one by a recursion over the extraspecial pairs enumerated in
+`TauCeti/LinearAlgebra/RootSystem/ExtraspecialPair.lean`.
 
 ## Main results
 
@@ -70,18 +73,6 @@ it is an input to.
 
 * R. W. Carter, *Simple Groups of Lie Type*, §4.1, Proposition 4.1.2.
 * J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*, §25.1.
-
-## Roadmap
-
-Layer 9 of `TauCetiRoadmap/ReductiveGroups/README.md` builds the split reductive group scheme over
-`ℤ` "via a Chevalley basis and the Kostant `ℤ`-form of the enveloping algebra", and
-`TauCeti.IsChevalleySystem` is that Chevalley basis. Producing one reduces, by
-`TauCeti.IsSl2System.isChevalleyNormalized_iff_exists_isChevalleySystem`, to normalising the
-structure constants of some family to `±(p + 1)`, which Carter performs in §4.2 by a recursion over
-the extraspecial pairs enumerated in `TauCeti/LinearAlgebra/RootSystem/ExtraspecialPair.lean`. The
-relation proved here is the identity that recursion propagates. Milestone L0 of
-`TauCetiRoadmap/CFSGStatement/README.md` is the downstream consumer of the assembled pinned group
-scheme.
 -/
 
 public section
