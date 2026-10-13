@@ -38,6 +38,8 @@ regulator is defined.
 * `WeierstrassCurve.Affine.neronTatePairingModTorsion_self_eq_zero_iff`: the descended pairing is
   positive definite, given the `Northcott` hypothesis. This is what dividing by the torsion buys;
   on `W.Point` itself the pairing is only semidefinite.
+* `WeierstrassCurve.Affine.northcott_neronTatePairingModTorsion`: bounded diagonal values give
+  finite subsets of the quotient, as needed for nondegeneracy of its real Gram matrix.
 * `WeierstrassCurve.Affine.isSymm_neronTateGramMatrix`: the Gram matrix is symmetric. The
   regulator is the determinant of this matrix in a basis of the quotient, and is defined
   separately.
@@ -116,6 +118,19 @@ theorem neronTatePairingModTorsion_self_eq_zero_iff [W.toAffine.IsElliptic]
       Point.canonicalHeight_eq_zero_iff_isOfFinAddOrder, Submodule.Quotient.mk_eq_zero,
       ← AddCommGroup.mem_torsion, ← Submodule.torsion_int]
     exact Iff.rfl
+
+/-- Northcott finiteness descends to the diagonal of the pairing on points modulo torsion.
+In particular, bounded-height subsets of the free quotient are finite. -/
+instance northcott_neronTatePairingModTorsion [W.toAffine.IsElliptic]
+    [Northcott (Point.canonicalHeight (W := W))] :
+    Northcott (fun x : PointModTorsion W ↦ neronTatePairingModTorsion W x x) where
+  finite_le C := by
+    refine ((Northcott.finite_le (h := Point.canonicalHeight (W := W)) C).image
+      (Submodule.Quotient.mk (p := Submodule.torsion ℤ W.Point))).subset ?_
+    intro x hx
+    induction x using Submodule.Quotient.induction_on with
+    | _ P =>
+      exact ⟨P, by simpa using hx, rfl⟩
 
 /-! ### The Gram matrix -/
 

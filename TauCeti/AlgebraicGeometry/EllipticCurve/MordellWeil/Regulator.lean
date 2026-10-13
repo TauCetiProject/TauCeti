@@ -9,6 +9,7 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.MordellWeil.PointModTorsio
 -- The Gram-congruence lemmas are used only inside the proofs below, so the import is private:
 -- nothing in this module's exported statements mentions `toMatrix₂Aux`.
 import TauCeti.LinearAlgebra.BilinearMap.GramCongruence
+import TauCeti.LinearAlgebra.Matrix.Northcott
 
 /-!
 # The regulator of an elliptic curve
@@ -35,6 +36,7 @@ types of two bases of the same module are equivalent.
   by any basis whatsoever.
 * `WeierstrassCurve.Affine.regulator_eq_one_of_finrank_eq_zero`: the rank-zero convention.
 * `WeierstrassCurve.Affine.regulator_nonneg`: the regulator is non-negative.
+* `WeierstrassCurve.Affine.regulator_pos`: under Northcott finiteness, the regulator is positive.
 
 ## References
 
@@ -112,5 +114,37 @@ theorem regulator_eq_one_of_finrank_eq_zero [W.toAffine.IsElliptic]
 theorem regulator_nonneg [W.toAffine.IsElliptic] [Module.Finite ℤ (PointModTorsion W)] :
     0 ≤ regulator W :=
   abs_nonneg _
+
+/-- The Gram matrix of the Néron–Tate pairing has nonzero determinant under Northcott finiteness.
+This gives nondegeneracy of the height pairing over `ℝ`. -/
+theorem det_neronTateGramMatrix_ne_zero [W.toAffine.IsElliptic]
+    [Northcott (Point.canonicalHeight (W := W))] {ι : Type*} [Fintype ι] [DecidableEq ι]
+    (b : Module.Basis ι ℤ (PointModTorsion W)) : (neronTateGramMatrix W b).det ≠ 0 := by
+  have heval (z : ι → ℤ) :
+      (fun i ↦ (z i : ℝ)) ⬝ᵥ neronTateGramMatrix W b *ᵥ (fun i ↦ (z i : ℝ)) =
+        neronTatePairingModTorsion W (b.equivFun.symm z) (b.equivFun.symm z) := by
+    rw [← LinearMap.sum_repr_mul_repr_mul b b (b.equivFun.symm z) (b.equivFun.symm z)]
+    have hz (i : ι) : b.repr (b.equivFun.symm z) i = z i := by
+      simpa only [Module.Basis.equivFun_apply] using congrFun (b.equivFun.apply_symm_apply z) i
+    rw [Finsupp.sum_fintype _ _ (fun _ ↦ by simp)]
+    simp only [dotProduct, Matrix.mulVec, neronTateGramMatrix_apply, Finset.mul_sum]
+    refine Finset.sum_congr rfl fun i _ ↦ ?_
+    rw [Finsupp.sum_fintype _ _ (fun _ ↦ by simp)]
+    simp only [hz, zsmul_eq_mul]
+    exact Finset.sum_congr rfl fun j _ ↦ by ring
+  let : Northcott (fun z : ι → ℤ ↦
+      (fun i ↦ (z i : ℝ)) ⬝ᵥ neronTateGramMatrix W b *ᵥ (fun i ↦ (z i : ℝ))) := by
+    refine ⟨fun C ↦ ?_⟩
+    simp_rw [heval]
+    exact (Northcott.finite_le (h := fun x : PointModTorsion W ↦
+      neronTatePairingModTorsion W x x) C).preimage b.equivFun.symm.injective.injOn
+  exact (isSymm_neronTateGramMatrix b).det_ne_zero_of_northcott
+
+/-- The regulator is strictly positive under Northcott finiteness, including in rank zero,
+where it equals `1`. In particular this applies to elliptic curves over number fields. -/
+theorem regulator_pos [W.toAffine.IsElliptic] [Module.Finite ℤ (PointModTorsion W)]
+    [Northcott (Point.canonicalHeight (W := W))] : 0 < regulator W := by
+  rw [regulator_eq_abs_det_neronTateGramMatrix W (Module.finBasis ℤ (PointModTorsion W))]
+  exact abs_pos.mpr (det_neronTateGramMatrix_ne_zero W _)
 
 end WeierstrassCurve.Affine
