@@ -334,6 +334,12 @@ theorem invAut_lambda : invAut R (lambda R) = ↑(isUnit_lambda R).unit⁻¹ := 
 theorem lambda_mul_invAut_lambda : lambda R * invAut R (lambda R) = 1 := by
   simp
 
+/-- The substitution `λ ↦ 1 / (1 - λ)` sends `λ` to an inverse of `1 - λ`. -/
+theorem oneSubAut_invAut_lambda_mul_one_sub_lambda :
+    oneSubAut R (invAut R (lambda R)) * (1 - lambda R) = 1 := by
+  have := congrArg (oneSubAut R) ((mul_comm _ _).trans (lambda_mul_invAut_lambda R))
+  rwa [map_mul, map_one, oneSubAut_lambda] at this
+
 @[simp]
 theorem oneSubAut_oneSubAut (a : LegendreRing R) : oneSubAut R (oneSubAut R a) = a :=
   congr($(oneSubAlgHom_comp_oneSubAlgHom R) a)
@@ -365,8 +371,7 @@ theorem oneSubAut_mul_invAut_mul_oneSubAut :
   set i := invAut R l
   set m := oneSubAut R i
   have hi : l * i = 1 := lambda_mul_invAut_lambda R
-  have hm : m * (1 - l) = 1 := by
-    simpa [l, m] using congrArg (oneSubAut R) ((mul_comm _ _).trans hi)
+  have hm : m * (1 - l) = 1 := oneSubAut_invAut_lambda_mul_one_sub_lambda R
   have hτm : invAut R m * (1 - i) = 1 := by
     simpa [i, invAut_invAut] using congrArg (invAut R) hm
   refine (isUnit_lambda_mul_lambda_sub_one R).mul_right_cancel ?_
@@ -429,8 +434,7 @@ private theorem sum_and_sum_sq_eq :
       (l * (1 - l)) ^ 2 + (i * (1 - i)) ^ 2 + (m * (1 - m)) ^ 2 = u ^ 2 - 6 * u + 3 := by
   intro l i m u
   have hi : l * i = 1 := lambda_mul_invAut_lambda R
-  have hm : m * (1 - l) = 1 := by
-    simpa [l, m] using congrArg (oneSubAut R) ((mul_comm _ _).trans hi)
+  have hm : m * (1 - l) = 1 := oneSubAut_invAut_lambda_mul_one_sub_lambda R
   have rel : (l ^ 2 - l + 1) ^ 3 = u * (l * (l - 1)) ^ 2 := lambda_sq_sub_lambda_add_one_pow_three R
   have h₂ : i * (1 - i) * (l * (l - 1)) ^ 2 = (l - 1) ^ 3 := by
     linear_combination (l - 1) ^ 2 * (l - l * i - 1) * hi
@@ -478,7 +482,8 @@ theorem isInvariant_anharmonicGroup (h6 : (6 : R) ∈ nonZeroDivisors R) :
   · have := Module.subsingleton R (LegendreRing R)
     exact ⟨0, Subsingleton.elim _ _⟩
   let pb : PowerBasis R[X] (LegendreRing R) := AdjoinRoot.powerBasis' (monic_legendreRelation R)
-  have hdim : pb.dim = 6 := natDegree_legendreRelation R
+  have hdim : pb.dim = 6 := (AdjoinRoot.powerBasis'_dim _).trans (natDegree_legendreRelation R)
+  have hgen : pb.gen = lambda R := AdjoinRoot.powerBasis'_gen _
   -- The orbit sum of `a` is `6 a`, and it lies in `R[u]`.
   obtain ⟨c, hc⟩ : ∃ c, algebraMap R[X] (LegendreRing R) c = (6 : R[X]) • a := by
     refine Submodule.mem_one.mp ?_
@@ -488,7 +493,7 @@ theorem isInvariant_anharmonicGroup (h6 : (6 : R) ∈ nonZeroDivisors R) :
       ring
     rw [← this, ← pb.basis.sum_repr a, map_sum]
     refine Submodule.sum_mem _ fun j _ => ?_
-    rw [map_smul, pb.basis_eq_pow]
+    rw [map_smul, pb.basis_eq_pow, hgen]
     exact Submodule.smul_mem _ _ (orbitSum_lambda_pow_mem R (hdim ▸ j.2))
   -- Comparing coordinates in the basis `1, λ, …, λ⁵`, `a` is its constant coordinate.
   set j₀ : Fin pb.dim := ⟨0, hdim ▸ by norm_num⟩
