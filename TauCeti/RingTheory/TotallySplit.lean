@@ -51,7 +51,8 @@ theorem Algebra.IsFiniteSplit.pi_id_bijective {K A : Type*} [Field K] [CommRing 
     [Algebra K A] [Algebra.IsFiniteSplit K A] :
     Function.Bijective (AlgHom.pi fun χ : A →ₐ[K] K ↦ χ) := by
   obtain ⟨n, ⟨e⟩⟩ := Algebra.IsFiniteSplit.nonempty_algEquiv_fun K A
-  refine TauCeti.AlgHom.pi_id_bijective_of_finrank_le_card (le_of_eq ?_)
-  rw [e.toLinearEquiv.finrank_eq, Module.finrank_fin_fun,
-    Nat.card_congr (e.arrowCongr AlgEquiv.refl), ← Nat.card_congr (Pi.evalAlgHomEquiv K (Fin n)),
-    Nat.card_eq_fintype_card, Fintype.card_fin]
+  have hA : Module.finrank K A = n := by simp [e.toLinearEquiv.finrank_eq]
+  have hχ : Nat.card (A →ₐ[K] K) = n := by
+    rw [Nat.card_congr (e.arrowCongr AlgEquiv.refl), ← Nat.card_congr (Pi.evalAlgHomEquiv K _)]
+    simp
+  exact TauCeti.AlgHom.pi_id_bijective_of_finrank_le_card (hA.trans hχ.symm).le
