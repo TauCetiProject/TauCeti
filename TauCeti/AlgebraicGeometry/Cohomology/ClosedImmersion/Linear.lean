@@ -24,10 +24,10 @@ or properness assumptions on the schemes or coefficient sheaves.
 ## References
 
 * R. Hartshorne, *Algebraic Geometry*, III, Lemma 2.10 and Theorem 5.2.
-
-The underlying additive comparison is `cohomologyPushforwardIso`; scalar compatibility
-uses its naturality and `Scheme.Modules.pushforward_map_globalSectionsSmul`.
 -/
+
+-- The underlying additive comparison is `cohomologyPushforwardIso`; scalar compatibility
+-- uses its naturality and `Scheme.Modules.pushforward_map_globalSectionsSmul`.
 
 public section
 
