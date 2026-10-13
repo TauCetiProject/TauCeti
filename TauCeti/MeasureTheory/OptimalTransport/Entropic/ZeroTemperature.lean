@@ -248,7 +248,7 @@ approximated in cost, up to any positive error, by a coupling of finite relative
 respect to `μ ⊗ ν`, then as `ε → 0⁺` the regularised transport cost converges to the transport
 cost. -/
 theorem tendsto_entropicTransportCost_transportCost_of_forall_exists
-    (h : ∀ π, IsCoupling π μ ν → ∀ δ : ℝ≥0∞, δ ≠ 0 → ∃ σ, IsCoupling σ μ ν ∧
+    (h : ∀ π, IsCoupling π μ ν → ∀ δ : ℝ≥0, 0 < δ → ∃ σ, IsCoupling σ μ ν ∧
       klDiv σ (μ.prod ν) ≠ ∞ ∧ ∫⁻ z, c z ∂σ ≤ ∫⁻ z, c z ∂π + δ) :
     Tendsto (fun ε ↦ entropicTransportCost c ε μ ν) (𝓝[>] 0) (𝓝 (transportCost c μ ν)) := by
   convert tendsto_entropicTransportCost_nhdsGT_zero c μ ν using 2
@@ -257,7 +257,7 @@ theorem tendsto_entropicTransportCost_transportCost_of_forall_exists
     exact iInf₂_mono fun π hπ ↦ le_iInf fun _ ↦ le_rfl
   · rw [transportCost_def]
     refine le_iInf₂ fun π hπ ↦ ENNReal.le_of_forall_pos_le_add fun δ hδ _ ↦ ?_
-    obtain ⟨σ, hσ, hkl, hle⟩ := h π hπ δ (ENNReal.coe_ne_zero.2 hδ.ne')
+    obtain ⟨σ, hσ, hkl, hle⟩ := h π hπ δ hδ
     exact ((iInf₂_le σ hσ).trans (iInf_le _ hkl)).trans hle
 
 /-- **Convergence to the transport cost.** If for every `η > 0` the cost varies by at most `η` on
@@ -269,7 +269,8 @@ theorem tendsto_entropicTransportCost_transportCost [IsFiniteMeasure μ]
         ∀ x x' y y', p x = p x' → q y = q y' → c (x, y) ≤ c (x', y') + η) :
     Tendsto (fun ε ↦ entropicTransportCost c ε μ ν) (𝓝[>] 0) (𝓝 (transportCost c μ ν)) := by
   refine tendsto_entropicTransportCost_transportCost_of_forall_exists fun π hπ δ hδ ↦ ?_
-  obtain ⟨η, hη, hηδ⟩ := ENNReal.exists_nnreal_pos_mul_lt (measure_ne_top μ univ) hδ
+  obtain ⟨η, hη, hηδ⟩ :=
+    ENNReal.exists_nnreal_pos_mul_lt (measure_ne_top μ univ) (ENNReal.coe_ne_zero.2 hδ.ne')
   obtain ⟨n, m, p, q, hp, hq, hpq⟩ := hc η hη
   obtain ⟨σ, hσ, hkl, hle⟩ := hπ.exists_isCoupling_klDiv_ne_top_lintegral_le hp hq hpq
   exact ⟨σ, hσ, hkl, hle.trans (add_le_add le_rfl hηδ.le)⟩
@@ -455,12 +456,8 @@ theorem IsCoupling.exists_isCoupling_klDiv_ne_top_lintegral_le_of_le_add {π : M
     _ ≤ ∫⁻ z, c z ∂π + δ / 4 + δ / 4 + (δ / 4 + δ / 4) := by
       gcongr
       exact hσc.trans (add_le_add (add_le_add le_rfl hmass) hημ.le)
-    _ = ∫⁻ z, c z ∂π + δ := by
-      have h4 : δ / 4 + (δ / 4 + (δ / 4 + δ / 4)) = δ := by
-        simp only [ENNReal.div_add_div_same]
-        rw [show δ + (δ + (δ + δ)) = δ * 4 by ring,
-          ENNReal.mul_div_cancel_right (by norm_num) (by norm_num)]
-      rw [add_assoc (∫⁻ z, c z ∂π + δ / 4), add_assoc, h4]
+    _ = ∫⁻ z, c z ∂π + δ / 4 * 4 := by ring
+    _ = ∫⁻ z, c z ∂π + δ := by rw [ENNReal.div_mul_cancel (by norm_num) (by norm_num)]
 
 /-- **The zero-temperature limit under an integrable split upper bound.** Let `c` be a continuous
 real cost on pseudometric spaces, bounded above by `cX x + cY y` for almost everywhere measurable
@@ -481,7 +478,8 @@ theorem tendsto_entropicTransportCost_transportCost_of_le_add {μ : Measure X} {
     Tendsto (fun ε ↦ entropicTransportCost (fun z ↦ c z) ε μ ν) (𝓝[>] 0)
       (𝓝 (transportCost (fun z ↦ c z) μ ν)) :=
   tendsto_entropicTransportCost_transportCost_of_forall_exists fun _ hπ _ hδ ↦
-    hπ.exists_isCoupling_klDiv_ne_top_lintegral_le_of_le_add hμ hν hc hcX hcXi hcY hcYi hle hδ
+    hπ.exists_isCoupling_klDiv_ne_top_lintegral_le_of_le_add hμ hν hc hcX hcXi hcY hcYi hle
+      (ENNReal.coe_ne_zero.2 hδ.ne')
 
 end Metric
 
