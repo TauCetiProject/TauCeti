@@ -136,8 +136,7 @@ private lemma cellAttachingMap_pole_mem_openCell (hi : i + 1 ≤ N)
   rw [Topology.RelCWComplex.openCell, map_cwComplex ⟨i, by omega⟩ c, image_cellMap_ball,
     cellAttachingMap_apply_eq_mk hi, mk_mem_openCell_iff]
   refine ⟨?_, fun j hj ↦ ?_⟩
-  · rw [sphereIncl, hemispherePoint_apply_of_lt _ (show ((⟨i, by omega⟩ : Fin (N + 1)) : ℕ) < i + 1
-      from Nat.lt_succ_self i)]
+  · rw [sphereIncl, hemispherePoint_apply_of_lt _ (j := ⟨i, by omega⟩) (Nat.lt_succ_self i)]
     exact (coe_pole_down_last i).trans_ne one_ne_zero
   · rcases (Nat.succ_le_of_lt (Fin.lt_def.1 hj)).lt_or_eq with h | h
     · exact hemispherePoint_apply_of_gt _ h
@@ -194,8 +193,8 @@ private lemma isEmbedding_cellAttachingMap_restrict (hi : i + 1 ≤ N)
       (hemispherePoint_injective (by omega) (congrArg Subtype.val h)))).isEmbedding
   have hV' (u : upperHemisphere i) : sphereIncl hi u ∈ V := by
     have hu := mem_upperHemisphere_iff.1 u.2
-    rwa [mem_ofPred_eq, sphereIncl, hemispherePoint_apply_of_lt _
-      (show ((⟨i, by omega⟩ : Fin (N + 1)) : ℕ) < i + 1 from Nat.lt_succ_self i)]
+    rwa [mem_ofPred_eq, sphereIncl,
+      hemispherePoint_apply_of_lt _ (j := ⟨i, by omega⟩) (Nat.lt_succ_self i)]
   convert hmk.comp ((hincl.comp IsEmbedding.subtypeVal).codRestrict V hV') using 1
   funext u
   exact cellAttachingMap_apply_eq_mk hi c u
@@ -475,6 +474,7 @@ theorem exists_cellularIncidence_cwComplex_eq_one_add_neg_one_pow_mul
 
 /-- For even `i`, the `i`-cell does not occur in the cellular boundary of the `(i + 1)`-cell of
 `RPᴺ`. -/
+@[simp]
 theorem cellularIncidence_cwComplex_eq_zero_of_even (he : Even i)
     (c : cell (univ : Set (RealProjectiveSpace N)) i)
     (c' : cell (univ : Set (RealProjectiveSpace N)) (i + 1)) :

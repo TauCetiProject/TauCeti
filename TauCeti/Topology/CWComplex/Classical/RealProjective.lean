@@ -110,6 +110,7 @@ theorem norm_hemispherePoint {k : ℕ} {v : EuclideanSpace ℝ (Fin k)} (hk : k 
 
 /-- On unit vectors `hemispherePoint n` is odd: since `√(1 - ‖v‖²) = 0` there, every coordinate of
 `hemispherePoint n v` is either a coordinate of `v` or zero. -/
+@[simp]
 theorem hemispherePoint_neg {k : ℕ} {v : EuclideanSpace ℝ (Fin k)} (hv : ‖v‖ = 1) :
     hemispherePoint n (-v) = -hemispherePoint n v := by
   ext j
@@ -132,6 +133,7 @@ theorem hemispherePoint_injective {k : ℕ} (hk : k ≤ n + 1) :
 `hemispherePoint n` into `ℝⁿ⁺¹` agrees with embedding it directly via `hemispherePoint n`. For
 `k + 1 ≤ n` this says the point of the upper hemisphere of `Sᵏ⁺¹ ⊆ Sⁿ` over the point
 `hemispherePoint k v` of `Sᵏ` is the point of the upper hemisphere of `Sᵏ ⊆ Sⁿ` over `v`. -/
+@[simp]
 theorem hemispherePoint_hemispherePoint {k : ℕ} {v : EuclideanSpace ℝ (Fin k)} (hv : ‖v‖ ≤ 1) :
     hemispherePoint n (hemispherePoint k v) = hemispherePoint n v := by
   ext j
