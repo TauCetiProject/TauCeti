@@ -55,10 +55,12 @@ Brauer diagrams and its middle-loop count.
 
 The generator and all five relations need no subtraction and no inverses, so they are stated over a
 commutative semiring; only the orthogonal group itself, and hence the closing commutation theorem,
-needs a commutative ring. Everything here is the symmetric (orthogonal) form: the arc is an
-unordered pair of strands (`TauCeti.orthogonalCupCapAt_comm`), which is exactly what fails for an
-alternating form, so the symplectic mirror is not a relabelling of this file but needs a chosen
-ordering of each arc.
+needs a commutative ring. Everything here is the symmetric (orthogonal) form: the cap and the cup
+are each unchanged by exchanging their two endpoints, and so is the arc
+(`TauCeti.orthogonalCupCapAt_comm`). For an alternating form the cap and the cup each change sign
+instead, so the symplectic mirror is not a relabelling of this file; it is
+`TauCeti/RepresentationTheory/ClassicalGroups/BrauerGenerators/Symplectic/TensorPower.lean`, where
+the two sign changes cancel on a single arc and the arc is again an unordered pair of strands.
 
 ## Implementation notes
 

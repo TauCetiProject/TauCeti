@@ -37,7 +37,10 @@ cap and with the cup (`TauCeti.symplecticCap_comp_symplecticFlip` and
 `TauCeti.symplecticFlip_comp_symplecticCup`), and the relations `s * e = e = e * s` fail for it.
 The Brauer crossing is therefore taken to be **minus** the flip,
 `TauCeti.symplecticCrossing`, and with that choice all three relations hold. This is the sign that
-has to be fixed before a Brauer action on `V^{⊗k}` is well defined.
+has to be fixed before a Brauer action on `V^{⊗k}` is well defined. The single arc on two of `k`
+strands is built in
+`TauCeti/RepresentationTheory/ClassicalGroups/BrauerGenerators/Symplectic/TensorPower.lean`, where
+the two sign changes turn out to cancel.
 
 The sign is forced, not chosen. The two anti-invariances give `flip * e = -e`, so if the bare flip
 were the crossing then `s * e = e` would force `2 • e = 0`, which is false over `ℂ` for `n ≥ 1`
