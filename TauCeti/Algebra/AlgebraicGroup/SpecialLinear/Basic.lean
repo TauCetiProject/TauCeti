@@ -7,11 +7,12 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Determinant
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.HopfIdealPoints.Functor
-public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Points.Kernel
+public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Quotient.Kernel.Basic
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Points.Naturality
 public import TauCeti.Algebra.AlgebraicGroup.Hopf.PointConjugation
 import TauCeti.Algebra.Bialgebra.MonoidAlgebra.Augmentation
 import TauCeti.Algebra.MonoidAlgebra.Exactness
+import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
 
 /-!
 # The special linear group coordinate Hopf algebra
@@ -54,8 +55,8 @@ reductivity, or base-change theorem is asserted here.
 
 ## References
 
-* J. S. Milne, *Basic Theory of Affine Group Schemes*, Part I, §1.7, pp. 49–50.
-* The Stacks Project, Tag 022X, "The general linear group scheme".
+* J. S. Milne, *Basic Theory of Affine Group Schemes*, Chapter IV, 1.7, p. 50.
+* The Stacks Project, Tag 022X, "The determinant morphism `det : GLₙ → 𝔾ₘ`".
 
 The ideal calculation below goes through Tau Ceti's kernel-Hopf-ideal and group-algebra
 augmentation API; it is not adapted from either reference.
@@ -134,10 +135,8 @@ theorem coordinateMap_apply (h : GeneralLinear.coordinateHopfAlgebra R n) :
 @[simp↓]
 theorem coordinateMap_determinantGroupLike :
     (coordinateMap R n).hom (GeneralLinear.determinantGroupLike R n) = 1 := by
-  rw [coordinateMap_apply]
-  apply sub_eq_zero.mp
-  rw [← map_one (Ideal.Quotient.mkₐ R (definingHopfIdeal R n).toIdeal), ← map_sub,
-    Ideal.Quotient.mkₐ_eq_mk, Ideal.Quotient.eq_zero_iff_mem, definingHopfIdeal_toIdeal]
+  rw [coordinateMap_apply, Ideal.Quotient.mkₐ_eq_mk, Ideal.Quotient.mk_eq_one_iff_sub_mem,
+    definingHopfIdeal_toIdeal]
   exact Ideal.mem_span_singleton_self _
 
 /-- The kernel of the special-linear coordinate morphism is the principal determinant-one
@@ -196,9 +195,8 @@ theorem adjoin_range_map_genericMatrix :
 /-- The special-linear coordinate Hopf algebra bundled with its finite-type algebra property. -/
 noncomputable def finiteTypeCoordinateHopfAlgebra : FiniteTypeCommHopfAlgCat R :=
   FiniteTypeCommHopfAlgCat.quotient
-    (⟨GeneralLinear.coordinateHopfAlgebra R n, by
-      rw [← GeneralLinear.finiteTypeCoordinateHopfAlgebra_obj]
-      exact (GeneralLinear.finiteTypeCoordinateHopfAlgebra R n).property⟩ :
+    (⟨GeneralLinear.coordinateHopfAlgebra R n,
+      inferInstanceAs (Algebra.FiniteType R (GeneralLinear.coordinateHopfAlgebra R n))⟩ :
       FiniteTypeCommHopfAlgCat R)
     (definingHopfIdeal R n)
 
@@ -207,7 +205,7 @@ quotient. -/
 @[simp]
 theorem finiteTypeCoordinateHopfAlgebra_obj :
     (finiteTypeCoordinateHopfAlgebra R n).obj = coordinateHopfAlgebra R n :=
-  by rw [finiteTypeCoordinateHopfAlgebra]
+  (rfl)
 
 /-! ### Algebra-valued points -/
 
@@ -271,7 +269,7 @@ theorem pointsMulEquiv_toGL
 
 /-- The ambient point attached to a special-linear matrix is the general-linear point attached to
 its canonical inclusion. -/
-@[simp]
+@[simp↓]
 theorem quotientPointsHom_pointsMulEquiv_symm
     (s : Matrix.SpecialLinearGroup (Fin n) A) :
     CommHopfAlgCat.quotientPointsHom
@@ -295,10 +293,8 @@ theorem pointsMulEquiv_mapValue (phi : A →ₐ[R] B)
         ((pointsMulEquiv (R := R) (A := A) n) f) := by
   apply Matrix.SpecialLinearGroup.toGL_injective
   rw [← pointsMulEquiv_toGL, ← CommHopfAlgCat.mapValue_quotientPointsHom]
-  rw [GeneralLinear.pointsMulEquiv_mapValue, pointsMulEquiv_toGL]
-  apply Matrix.GeneralLinearGroup.ext
-  intro i j
-  rfl
+  rw [GeneralLinear.pointsMulEquiv_mapValue, pointsMulEquiv_toGL,
+    Matrix.SpecialLinearGroup.toGL_map, AlgHom.toRingHom_eq_coe]
 
 /-- Conjugating an `SLₙ` point by the point attached to the inverse of `s` becomes ordinary
 matrix conjugation after extension of scalars and inclusion into `GLₙ`. -/
@@ -338,8 +334,9 @@ theorem pointsMulEquiv_comp_pointConjugationAlgHom_symm
         map_mul, map_mul, map_inv, hg]
     _ = _ := by rw [hπ, map_inv, inv_inv]
 
-/-- Conjugation by a determinant-one general-linear matrix, expressed through its corresponding
-special-linear point. -/
+/-- Conjugating an `SLₙ` point by the point attached to the inverse of a determinant-one
+general-linear matrix `P` becomes conjugation by `P` after extension of scalars and inclusion into
+`GLₙ`. -/
 theorem pointsMulEquiv_comp_pointConjugationAlgHom_symm_toGLKerEquiv_symm
     (P : Matrix.GeneralLinearGroup (Fin n) R)
     (hdet : Matrix.GeneralLinearGroup.det P = 1)
@@ -372,7 +369,7 @@ section Functor
 /-- The group-valued functor sending an `R`-algebra to its special linear group and an algebra
 morphism to entrywise matrix mapping. Values are universe-lifted to match the Hopf-points
 functor. -/
-noncomputable def specialLinearFunctor :
+def specialLinearFunctor :
     CommAlgCat.{w} R ⥤ GrpCat.{max u w} :=
   ({
     obj A := GrpCat.of (Matrix.SpecialLinearGroup (Fin n) (A : Type w))

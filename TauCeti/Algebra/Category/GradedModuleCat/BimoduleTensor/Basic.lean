@@ -31,6 +31,10 @@ Taking all three algebras and gradings equal gives tensor composition of
 endobimodules; heterogeneous composition also supplies the tensors needed for
 transfer through a supplied Morita equivalence.
 
+`bimoduleModuleTensor` gives the corresponding action on graded left modules:
+an `(A,B)`-bimodule tensored over `B` with a left `B`-module is a left `A`-module.
+Both constructions are linear in each variable.
+
 ## References
 
 * B. Keller, *Deriving DG categories*, Section 6.1.
@@ -92,6 +96,324 @@ local instance rightGradedSMul [DirectSum.Decomposition Δ.piece]
     have h := Γ.tmul_mem_tensorProduct Δ.opposite (SetLike.one_mem_graded Γ.piece) ha'
     rw [zero_add] at h
     exact SetLike.GradedSMul.smul_mem h hm
+
+section ModuleTensor
+
+variable [GradedAlgebra Γ.piece] [GradedAlgebra Δ.piece]
+  (M : GradedModuleCat.{vM} (Γ.tensorProduct Δ.opposite).piece)
+  (N : GradedModuleCat.{vN} Δ.piece)
+
+local notation "T" => BalancedTensorProduct k B M N
+
+/-- The output left action is induced from the bimodule's first factor. -/
+local instance : Module A T := BalancedTensorProduct.leftModule A
+local instance : IsScalarTower k A T := BalancedTensorProduct.leftIsScalarTower A
+local instance : SetLike.GradedSMul Γ.piece
+    (BalancedTensorProduct.grading (𝒜 := Δ.piece) M.grading N.grading).piece :=
+  BalancedTensorProduct.gradedSMul_left (𝒜 := Δ.piece) M.grading N.grading A Γ.piece
+
+/-- An internally graded bimodule acts on a graded left module by balanced tensor product. -/
+noncomputable def bimoduleModuleTensorObj : GradedModuleCat.{max vM vN} Γ.piece where
+  carrier := T
+  grading := BalancedTensorProduct.grading (𝒜 := Δ.piece) M.grading N.grading
+
+/-- The pure tensor of a bimodule element and a left-module element. -/
+def bimoduleModuleTensorTmul (m : M) (n : N) : bimoduleModuleTensorObj Γ Δ M N :=
+  BalancedTensorProduct.tmul k B m n
+
+/-- The pure tensor as a bilinear map over the ground ring. -/
+noncomputable def bimoduleModuleTensorMk :
+    M →ₗ[k] N →ₗ[k] bimoduleModuleTensorObj Γ Δ M N :=
+  BalancedTensorProduct.mk k B
+
+@[simp]
+theorem bimoduleModuleTensorMk_apply (m : M) (n : N) :
+    bimoduleModuleTensorMk Γ Δ M N m n = bimoduleModuleTensorTmul Γ Δ M N m n :=
+  BalancedTensorProduct.mk_apply k B m n
+
+/-- Balancing transfers the right action on the bimodule to the left module. -/
+theorem bimoduleModuleTensorTmul_balance (b : B) (m : M) (n : N) :
+    bimoduleModuleTensorTmul Γ Δ M N (((1 : A) ⊗ₜ[k] op b) • m) n =
+      bimoduleModuleTensorTmul Γ Δ M N m (b • n) :=
+  BalancedTensorProduct.balance k B b m n
+
+/-- The output left action acts on the first tensor factor. -/
+@[simp]
+theorem smul_bimoduleModuleTensorTmul (a : A) (m : M) (n : N) :
+    a • bimoduleModuleTensorTmul Γ Δ M N m n =
+      bimoduleModuleTensorTmul Γ Δ M N ((a ⊗ₜ[k] (1 : Bᵐᵒᵖ)) • m) n :=
+  BalancedTensorProduct.smul_tmul_left A a m n
+
+/-- The internal degrees of the two factors add. -/
+theorem bimoduleModuleTensorTmul_mem {p q : ℤ} {m : M} {n : N}
+    (hm : m ∈ M.grading.piece p) (hn : n ∈ N.grading.piece q) :
+    bimoduleModuleTensorTmul Γ Δ M N m n ∈
+      (bimoduleModuleTensorObj Γ Δ M N).grading.piece (p + q) :=
+  BalancedTensorProduct.tmul_mem_grading (𝒜 := Δ.piece) M.grading N.grading hm hn
+
+/-- The quotient map from the ground-ring tensor product to the left-module tensor product. -/
+noncomputable def bimoduleModuleTensorMkQ : M ⊗[k] N →ₗ[k] bimoduleModuleTensorObj Γ Δ M N :=
+  BalancedTensorProduct.mkQ k B
+
+@[simp]
+theorem bimoduleModuleTensorMkQ_tmul (m : M) (n : N) :
+    bimoduleModuleTensorMkQ Γ Δ M N (m ⊗ₜ[k] n) =
+      bimoduleModuleTensorTmul Γ Δ M N m n :=
+  BalancedTensorProduct.mkQ_tmul k B m n
+
+/-- The internal degree piece is the image of the ground-ring tensor degree piece. -/
+theorem bimoduleModuleTensorObj_grading_piece (p : ℤ) :
+    (bimoduleModuleTensorObj Γ Δ M N).grading.piece p =
+      ((M.grading.tensorProduct N.grading).piece p).map (bimoduleModuleTensorMkQ Γ Δ M N) :=
+  BalancedTensorProduct.grading_piece M.grading N.grading p
+
+/-- Membership in a degree piece has a homogeneous ground-ring tensor representative. -/
+theorem mem_bimoduleModuleTensorObj_piece_iff {p : ℤ} {z : bimoduleModuleTensorObj Γ Δ M N} :
+    z ∈ (bimoduleModuleTensorObj Γ Δ M N).grading.piece p ↔
+      ∃ x ∈ (M.grading.tensorProduct N.grading).piece p, bimoduleModuleTensorMkQ Γ Δ M N x = z :=
+  BalancedTensorProduct.mem_grading_piece_iff M.grading N.grading
+
+/-- A linear map shifts internal degrees if it does so on homogeneous pure left-module tensors. -/
+theorem bimoduleModuleTensorObj_map_mem_of_tmul {Q : Type*} [AddCommGroup Q] [Module k Q]
+    (H : InternalGrading k Q) (f : bimoduleModuleTensorObj Γ Δ M N →ₗ[k] Q) (s : ℤ)
+    (hf : ∀ {p q : ℤ} {m : M} {n : N},
+      m ∈ M.grading.piece p → n ∈ N.grading.piece q →
+        f (bimoduleModuleTensorTmul Γ Δ M N m n) ∈ H.piece (p + q + s))
+    {p : ℤ} {z : bimoduleModuleTensorObj Γ Δ M N}
+    (hz : z ∈ (bimoduleModuleTensorObj Γ Δ M N).grading.piece p) : f z ∈ H.piece (p + s) :=
+  BalancedTensorProduct.map_mem_of_tmul (𝒜 := Δ.piece) M.grading N.grading H.piece f s hf hz
+
+variable {M N}
+  {M' M'' : GradedModuleCat.{vM} (Γ.tensorProduct Δ.opposite).piece}
+  {N' N'' : GradedModuleCat.{vN} Δ.piece}
+
+private def moduleTensorMapBase (f : M ⟶ M') (g : N ⟶ N') :
+    BalancedTensorProduct k B M N →ₗ[k] BalancedTensorProduct k B M' N' :=
+  BalancedTensorProduct.map (f.hom.restrictScalars k) (g.hom.restrictScalars k)
+    (fun b m ↦ f.hom.map_smul ((1 : A) ⊗ₜ[k] op b) m) (fun b n ↦ g.hom.map_smul b n)
+
+private def moduleTensorMapLinear (f : M ⟶ M') (g : N ⟶ N') :
+    BalancedTensorProduct k B M N →ₗ[A] BalancedTensorProduct k B M' N' where
+  toAddHom := (moduleTensorMapBase Γ Δ f g).toAddHom
+  map_smul' a z := BalancedTensorProduct.map_smul_left A
+    (f.hom.restrictScalars k) (g.hom.restrictScalars k)
+    (fun b m ↦ f.hom.map_smul ((1 : A) ⊗ₜ[k] op b) m) (fun b n ↦ g.hom.map_smul b n)
+    (fun a m ↦ f.hom.map_smul (a ⊗ₜ[k] (1 : Bᵐᵒᵖ)) m) a z
+
+/-- Tensor a graded bimodule map with a graded left-module map. -/
+noncomputable def bimoduleModuleTensorMap (f : M ⟶ M') (g : N ⟶ N') :
+    bimoduleModuleTensorObj Γ Δ M N ⟶ bimoduleModuleTensorObj Γ Δ M' N' :=
+  ofHom (moduleTensorMapLinear Γ Δ f g) (LinearMap.isHomogeneous_def.2 fun _ _ hz ↦
+    bimoduleModuleTensorObj_map_mem_of_tmul Γ Δ M N
+      (bimoduleModuleTensorObj Γ Δ M' N').grading
+      ((moduleTensorMapLinear Γ Δ f g).restrictScalars k) 0
+      (fun {p q} {m n} hm hn ↦ by
+        -- Normalize the object carriers before computing the raw balanced tensor map.
+        change moduleTensorMapLinear Γ Δ f g (BalancedTensorProduct.tmul k B m n) ∈
+          (BalancedTensorProduct.grading (𝒜 := Δ.piece) M'.grading N'.grading).piece (p + q + 0)
+        have hmap : moduleTensorMapLinear Γ Δ f g (BalancedTensorProduct.tmul k B m n) =
+            BalancedTensorProduct.tmul k B (f.hom m) (g.hom n) :=
+          BalancedTensorProduct.map_tmul _ _ _ _ _ _
+        rw [hmap]
+        simpa only [add_zero] using
+          BalancedTensorProduct.tmul_mem_grading (𝒜 := Δ.piece) M'.grading N'.grading
+            (map_mem f hm) (map_mem g hn)) hz)
+
+@[simp]
+theorem bimoduleModuleTensorMap_tmul (f : M ⟶ M') (g : N ⟶ N') (m : M) (n : N) :
+    (bimoduleModuleTensorMap Γ Δ f g).hom (bimoduleModuleTensorTmul Γ Δ M N m n) =
+      bimoduleModuleTensorTmul Γ Δ M' N' (f.hom m) (g.hom n) :=
+  BalancedTensorProduct.map_tmul _ _ _ _ _ _
+
+/-- Maps from a bimodule-module tensor are determined by their values on pure tensors. -/
+@[ext]
+theorem bimoduleModuleTensor_hom_ext {P : GradedModuleCat.{max vM vN} Γ.piece}
+    {f g : bimoduleModuleTensorObj Γ Δ M N ⟶ P}
+    (h : ∀ m n, f.hom (bimoduleModuleTensorTmul Γ Δ M N m n) =
+      g.hom (bimoduleModuleTensorTmul Γ Δ M N m n)) : f = g := by
+  apply hom_ext
+  apply LinearMap.restrictScalars_injective k
+  exact BalancedTensorProduct.hom_ext h
+
+section Lift
+
+variable {P : GradedModuleCat.{max vM vN} Γ.piece}
+  (f : M →ₗ[k] N →ₗ[k] P)
+  (hbalance : ∀ (b : B) (m : M) (n : N),
+    f (((1 : A) ⊗ₜ[k] op b) • m) n = f m (b • n))
+  (hleft : ∀ (a : A) (m : M) (n : N),
+    f ((a ⊗ₜ[k] (1 : Bᵐᵒᵖ)) • m) n = a • f m n)
+
+private noncomputable def moduleTensorLiftLinear :
+    bimoduleModuleTensorObj Γ Δ M N →ₗ[A] P where
+  toAddHom := (BalancedTensorProduct.lift f hbalance).toAddHom
+  map_smul' a z := BalancedTensorProduct.lift_smul_left A f hbalance hleft a z
+
+private theorem moduleTensorLiftLinear_tmul (m : M) (n : N) :
+    moduleTensorLiftLinear Γ Δ f hbalance hleft (bimoduleModuleTensorTmul Γ Δ M N m n) =
+      f m n :=
+  BalancedTensorProduct.lift_tmul f hbalance m n
+
+variable (hdegree : ∀ {p q : ℤ} {m : M} {n : N},
+  m ∈ M.grading.piece p → n ∈ N.grading.piece q → f m n ∈ P.grading.piece (p + q))
+
+/-- Lift a balanced bilinear map respecting the left action and total internal degree. -/
+noncomputable def bimoduleModuleTensorLift : bimoduleModuleTensorObj Γ Δ M N ⟶ P :=
+  ofHom (moduleTensorLiftLinear Γ Δ f hbalance hleft)
+    (LinearMap.isHomogeneous_def.2 fun _ _ hz ↦
+      bimoduleModuleTensorObj_map_mem_of_tmul Γ Δ M N P.grading
+        ((moduleTensorLiftLinear Γ Δ f hbalance hleft).restrictScalars k) 0
+        (fun {p q} {m n} hm hn ↦ by
+          rw [LinearMap.restrictScalars_apply, moduleTensorLiftLinear_tmul, add_zero]
+          exact hdegree hm hn) hz)
+
+@[simp]
+theorem bimoduleModuleTensorLift_tmul (m : M) (n : N) :
+    (bimoduleModuleTensorLift Γ Δ f hbalance hleft hdegree).hom
+      (bimoduleModuleTensorTmul Γ Δ M N m n) = f m n := by
+  simp only [bimoduleModuleTensorLift, hom_ofHom, moduleTensorLiftLinear_tmul]
+
+/-- A homogeneous balanced left-module lift is determined by its pure-tensor values. -/
+theorem bimoduleModuleTensorLift_unique (g : bimoduleModuleTensorObj Γ Δ M N ⟶ P)
+    (h : ∀ m n, g.hom (bimoduleModuleTensorTmul Γ Δ M N m n) = f m n) :
+    g = bimoduleModuleTensorLift Γ Δ f hbalance hleft hdegree := by
+  apply bimoduleModuleTensor_hom_ext Γ Δ
+  intro m n
+  rw [bimoduleModuleTensorLift_tmul]
+  exact h m n
+
+end Lift
+
+@[simp]
+theorem bimoduleModuleTensorMap_id :
+    bimoduleModuleTensorMap Γ Δ (𝟙 M) (𝟙 N) = 𝟙 (bimoduleModuleTensorObj Γ Δ M N) := by
+  apply bimoduleModuleTensor_hom_ext Γ Δ
+  intro m n
+  simp
+
+@[simp]
+theorem bimoduleModuleTensorMap_comp (f : M ⟶ M') (g : N ⟶ N')
+    (f' : M' ⟶ M'') (g' : N' ⟶ N'') :
+    bimoduleModuleTensorMap Γ Δ (f ≫ f') (g ≫ g') =
+      bimoduleModuleTensorMap Γ Δ f g ≫ bimoduleModuleTensorMap Γ Δ f' g' := by
+  apply bimoduleModuleTensor_hom_ext Γ Δ
+  intro m n
+  simp
+
+@[simp]
+theorem bimoduleModuleTensorMap_add_left (f f' : M ⟶ M') (g : N ⟶ N') :
+    bimoduleModuleTensorMap Γ Δ (f + f') g =
+      bimoduleModuleTensorMap Γ Δ f g + bimoduleModuleTensorMap Γ Δ f' g := by
+  apply bimoduleModuleTensor_hom_ext Γ Δ
+  intro m n
+  simp only [hom_add, LinearMap.add_apply, bimoduleModuleTensorMap_tmul]
+  exact BalancedTensorProduct.add_tmul k B _ _ _
+
+@[simp]
+theorem bimoduleModuleTensorMap_add_right (f : M ⟶ M') (g g' : N ⟶ N') :
+    bimoduleModuleTensorMap Γ Δ f (g + g') =
+      bimoduleModuleTensorMap Γ Δ f g + bimoduleModuleTensorMap Γ Δ f g' := by
+  apply bimoduleModuleTensor_hom_ext Γ Δ
+  intro m n
+  simp only [hom_add, LinearMap.add_apply, bimoduleModuleTensorMap_tmul]
+  exact BalancedTensorProduct.tmul_add k B _ _ _
+
+@[simp]
+theorem bimoduleModuleTensorMap_smul_left (c : k) (f : M ⟶ M') (g : N ⟶ N') :
+    bimoduleModuleTensorMap Γ Δ (c • f) g = c • bimoduleModuleTensorMap Γ Δ f g := by
+  apply bimoduleModuleTensor_hom_ext Γ Δ
+  intro m n
+  simp only [hom_smul, LinearMap.smul_apply, bimoduleModuleTensorMap_tmul]
+  exact BalancedTensorProduct.smul_tmul k B _ _ _
+
+@[simp]
+theorem bimoduleModuleTensorMap_smul_right (c : k) (f : M ⟶ M') (g : N ⟶ N') :
+    bimoduleModuleTensorMap Γ Δ f (c • g) = c • bimoduleModuleTensorMap Γ Δ f g := by
+  apply bimoduleModuleTensor_hom_ext Γ Δ
+  intro m n
+  simp only [hom_smul, LinearMap.smul_apply, bimoduleModuleTensorMap_tmul]
+  exact BalancedTensorProduct.tmul_smul k B _ _ _
+
+/-- Balanced tensor action of graded bimodules on graded left modules. -/
+@[implicit_reducible]
+noncomputable def bimoduleModuleTensor :
+    GradedModuleCat.{vM} (Γ.tensorProduct Δ.opposite).piece ⥤
+      GradedModuleCat.{vN} Δ.piece ⥤ GradedModuleCat.{max vM vN} Γ.piece where
+  obj M :=
+    { obj N := bimoduleModuleTensorObj Γ Δ M N
+      map g := bimoduleModuleTensorMap Γ Δ (𝟙 M) g
+      map_id N := bimoduleModuleTensorMap_id Γ Δ
+      map_comp g g' := by rw [← bimoduleModuleTensorMap_comp, Category.id_comp] }
+  map f :=
+    { app N := bimoduleModuleTensorMap Γ Δ f (𝟙 N)
+      naturality N N' g := by
+        dsimp only
+        simp only [← bimoduleModuleTensorMap_comp, Category.id_comp, Category.comp_id] }
+  map_id M := by
+    apply NatTrans.ext
+    funext N
+    exact bimoduleModuleTensorMap_id Γ Δ
+  map_comp f f' := by
+    apply NatTrans.ext
+    funext N
+    simp only [NatTrans.comp_app]
+    rw [← bimoduleModuleTensorMap_comp, Category.id_comp]
+
+@[simp]
+theorem bimoduleModuleTensor_obj_obj : ((bimoduleModuleTensor Γ Δ).obj M).obj N =
+    bimoduleModuleTensorObj Γ Δ M N := (rfl)
+
+@[simp, reassoc]
+theorem bimoduleModuleTensor_obj_map (g : N ⟶ N') :
+    ((bimoduleModuleTensor Γ Δ).obj M).map g =
+      eqToHom (bimoduleModuleTensor_obj_obj Γ Δ (M := M) (N := N)) ≫
+        bimoduleModuleTensorMap Γ Δ (𝟙 M) g ≫
+        eqToHom (bimoduleModuleTensor_obj_obj Γ Δ (M := M) (N := N')).symm := (rfl)
+
+@[simp, reassoc]
+theorem bimoduleModuleTensor_map_app (f : M ⟶ M') :
+    ((bimoduleModuleTensor Γ Δ).map f).app N =
+      eqToHom (bimoduleModuleTensor_obj_obj Γ Δ (M := M) (N := N)) ≫
+        bimoduleModuleTensorMap Γ Δ f (𝟙 N) ≫
+        eqToHom (bimoduleModuleTensor_obj_obj Γ Δ (M := M') (N := N)).symm := (rfl)
+
+instance : ((bimoduleModuleTensor Γ Δ).obj M).Additive where
+  map_add := bimoduleModuleTensorMap_add_right Γ Δ (𝟙 M) _ _
+
+instance : ((bimoduleModuleTensor Γ Δ).flip.obj N).Additive where
+  map_add := bimoduleModuleTensorMap_add_left Γ Δ _ _ (𝟙 N)
+
+instance : (bimoduleModuleTensor Γ Δ).Additive where
+  map_add {X Y f g} := by
+    apply NatTrans.ext
+    funext N
+    exact bimoduleModuleTensorMap_add_left Γ Δ f g (𝟙 N)
+
+instance : (bimoduleModuleTensor Γ Δ).flip.Additive where
+  map_add {X Y f g} := by
+    apply NatTrans.ext
+    funext M
+    exact bimoduleModuleTensorMap_add_right Γ Δ (𝟙 M) f g
+
+instance : ((bimoduleModuleTensor Γ Δ).obj M).Linear k where
+  map_smul f c := bimoduleModuleTensorMap_smul_right Γ Δ c (𝟙 M) f
+
+instance : ((bimoduleModuleTensor Γ Δ).flip.obj N).Linear k where
+  map_smul f c := bimoduleModuleTensorMap_smul_left Γ Δ c f (𝟙 N)
+
+instance : (bimoduleModuleTensor Γ Δ).Linear k where
+  map_smul f c := by
+    apply NatTrans.ext
+    funext N
+    exact bimoduleModuleTensorMap_smul_left Γ Δ c f (𝟙 N)
+
+instance : (bimoduleModuleTensor Γ Δ).flip.Linear k where
+  map_smul f c := by
+    apply NatTrans.ext
+    funext M
+    exact bimoduleModuleTensorMap_smul_right Γ Δ c (𝟙 M) f
+
+end ModuleTensor
 
 variable {C : Type uC} [Ring C] [Algebra k C] (Θ : InternalGrading k C)
 
@@ -247,14 +569,8 @@ theorem bimoduleTensorObj_map_mem_of_tmul {Q : Type*} [AddCommGroup Q] [Module k
       m ∈ M.grading.piece p → n ∈ N.grading.piece q →
         f (bimoduleTensorTmul Γ Δ Θ M N m n) ∈ H.piece (p + q + s))
     {p : ℤ} {z : bimoduleTensorObj Γ Δ Θ M N}
-    (hz : z ∈ (bimoduleTensorObj Γ Δ Θ M N).grading.piece p) : f z ∈ H.piece (p + s) := by
-  obtain ⟨x, hx, rfl⟩ := (mem_bimoduleTensorObj_piece_iff Γ Δ Θ M N).1 hz
-  rw [InternalGrading.tensorProduct_piece_eq_iSup] at hx
-  refine (iSup_le fun q ↦ Submodule.map₂_le.mpr fun m hm n hn ↦ ?_ :
-    _ ≤ (H.piece (p + s)).comap (f.comp (bimoduleTensorMkQ Γ Δ Θ M N))) hx
-  rw [Submodule.mem_comap, TensorProduct.mk_apply, LinearMap.comp_apply,
-    bimoduleTensorMkQ_tmul]
-  simpa only [show q + (p - q) = p by omega] using hf hm hn
+    (hz : z ∈ (bimoduleTensorObj Γ Δ Θ M N).grading.piece p) : f z ∈ H.piece (p + s) :=
+  BalancedTensorProduct.map_mem_of_tmul (𝒜 := Δ.piece) M.grading N.grading H.piece f s hf hz
 
 /-- Balancing moves the right `B`-action to the left `B`-action. -/
 theorem bimoduleTensorTmul_balance (b : B) (m : M) (n : N) :
@@ -430,20 +746,12 @@ variable (hdegree : ∀ {p q : ℤ} {m : M} {n : N},
 /-- Lift a balanced bilinear map that respects the two outer actions and internal degrees. -/
 noncomputable def bimoduleTensorLift : bimoduleTensorObj Γ Δ Θ M N ⟶ P :=
   ofHom (tensorLiftLinear Γ Δ Θ f hbalance hleft hright)
-    (LinearMap.isHomogeneous_def.2 fun p z hz ↦ by
-      rw [add_zero]
-      -- Use the quotient grading's span of homogeneous pure tensors.
-      change z ∈ (BalancedTensorProduct.grading (𝒜 := Δ.piece) M.grading N.grading).piece p
-        at hz
-      rw [BalancedTensorProduct.grading_piece_eq_iSup] at hz
-      refine (iSup_le fun q ↦ Submodule.map₂_le.mpr fun m hm n hn ↦ ?_ :
-        _ ≤ (P.grading.piece p).comap
-          ((tensorLiftLinear Γ Δ Θ f hbalance hleft hright).restrictScalars k)) hz
-      rw [Submodule.mem_comap, BalancedTensorProduct.mk_apply,
-        LinearMap.restrictScalars_apply, tensorLiftLinear_tmul]
-      have h := hdegree hm hn
-      -- The two input degrees q and p - q add to the output degree p.
-      simpa only [show q + (p - q) = p by omega] using h)
+    (LinearMap.isHomogeneous_def.2 fun _ _ hz ↦
+      (BalancedTensorProduct.isHomogeneous_of_tmul (𝒜 := Δ.piece) M.grading N.grading
+        P.grading.piece ((tensorLiftLinear Γ Δ Θ f hbalance hleft hright).restrictScalars k) 0
+        (fun hm hn ↦ by
+          rw [LinearMap.restrictScalars_apply, tensorLiftLinear_tmul]
+          simpa only [add_zero] using hdegree hm hn)).map_mem hz)
 
 @[simp]
 theorem bimoduleTensorLift_tmul (m : M) (n : N) :

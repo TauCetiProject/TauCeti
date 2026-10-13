@@ -7,7 +7,7 @@ module
 
 public import TauCeti.CategoryTheory.Sites.SheafCohomology.Cech.Basic
 public import Mathlib.CategoryTheory.Abelian.GrothendieckAxioms.Basic
-public import TauCeti.Algebra.Homology.HomologicalComplex
+public import TauCeti.Algebra.Homology.Functor.Resolution
 public import TauCeti.Algebra.Homology.HomologySequenceLemmas
 
 /-!
@@ -16,22 +16,23 @@ public import TauCeti.Algebra.Homology.HomologySequenceLemmas
 The Čech complex preserves short exact sequences of presheaves when the coefficient category
 has products and its products of the required sizes are exact. The exactness requirement is
 automatic for finite families in an abelian category, and for arbitrary families of abelian
-groups. Exactness here is objectwise exactness of presheaves, not exactness only after
-sheafification. For finite families, the exact-product hypothesis is supplied by locally
-enabling `Abelian.hasFiniteBiproducts`.
+groups. Exactness is tested in the presheaf values before sheafification, only at the
+objects specified below. For finite families, the exact-product hypothesis is supplied by
+locally enabling `Abelian.hasFiniteBiproducts`.
 
 Only the values at finite products of members matter: a sequence of presheaves that is short
 exact after evaluation at each such product has a short exact sequence of Čech complexes
 (`shortExact_map_cechComplexFunctor`). For an open cover, this asks for exactness only on the
 finite intersections of members.
 
-For a short exact coefficient sequence, acyclicity of its middle and right terms implies
-acyclicity of its left term. This is the coefficient-sequence descent used when iterating
+For a coefficient sequence that is short exact at the terminal object and at the finite
+products of members, acyclicity of its middle and right terms implies acyclicity of its left term.
+This is the coefficient-sequence descent used when iterating
 Mayer-Vietoris sequences for Laurent covers: the middle term is the pair of restrictions and
 the right term is the restriction to the intersection.
 
-The comparison uses Mathlib's `HomologicalComplex.HomologySequence.quasiIso_τ₃`, applied to
-opposite complexes, rather than a separate five-lemma argument.
+The comparison uses `HomologicalComplex.HomologySequence.quasiIso_τ₁` for the morphism of
+short exact sequences induced by the augmentations.
 
 Shifting dimension along such sequences gives Čech acyclicity from a resolution. If
 `0 ⟶ P ⟶ K⁰ ⟶ K¹ ⟶ ⋯` is a sequence of presheaves which is exact at the terminal object and at the
@@ -48,8 +49,9 @@ left and right terms agree up to a shift of one degree, by the degreewise lemmas
   preserves every limit that exists in the coefficient category.
 * `TauCeti.CategoryTheory.shortExact_map_cechComplexFunctor`: a sequence of presheaves short exact
   at the finite products of members has a short exact sequence of Čech complexes.
-* `TauCeti.CategoryTheory.quasiIso_cechAugmentation_of_shortExact`: acyclicity of the middle and
-  right terms of a short exact coefficient sequence implies acyclicity of the left term.
+* `TauCeti.CategoryTheory.quasiIso_cechAugmentation_of_shortExact`: for a coefficient sequence
+  short exact at the terminal object and at finite products of members, acyclicity of the middle
+  and right terms implies acyclicity of the left term.
 * `TauCeti.CategoryTheory.quasiIso_cechAugmentation_of_resolution`: a presheaf with a resolution by
   acyclic presheaves, exact at the terminal object and at the finite products of members, is
   acyclic.
@@ -134,100 +136,6 @@ end FiniteColimits
 
 end Preservation
 
-/-! ### Resolutions and their cycles
-
-A morphism `ε : P ⋙ single₀ ⟶ K` from a presheaf `P`, placed in degree `0`, to a presheaf of
-cochain complexes `K` resolves `P` at an object `Y` when `ε.app Y` is a quasi-isomorphism, that is,
-when `0 ⟶ P(Y) ⟶ K⁰(Y) ⟶ K¹(Y) ⟶ ⋯` is exact. The resolution splits into the sequences
-`0 ⟶ P ⟶ K⁰ ⟶ Z¹ ⟶ 0` (`augmentationSC`) and `0 ⟶ Zᵏ ⟶ Kᵏ ⟶ Zᵏ⁺¹ ⟶ 0` (`cyclesSC`) of
-presheaves of cycles `Zᵏ`, which are short exact at every object where `ε` is a
-quasi-isomorphism. -/
-
-section Resolution
-
-variable {C : Type u} [Category.{v} C] {A : Type u'} [Category.{v'} A] [Abelian A]
-
-variable (K : Cᵒᵖ ⥤ CochainComplex A ℕ)
-
-/-- The inclusion `Zᵏ ⟶ Kᵏ` of the presheaf of cycles. -/
-private def cyclesι (k : ℕ) :
-    K ⋙ HomologicalComplex.cyclesFunctor A _ k ⟶ K ⋙ HomologicalComplex.eval A _ k where
-  app Y := (K.obj Y).iCycles k
-  naturality _ _ f := HomologicalComplex.cyclesMap_i (K.map f) k
-
-/-- The map `Kᵏ ⟶ Zᵏ⁺¹` onto the presheaf of cycles of the next degree. -/
-private def cyclesπ (k : ℕ) :
-    K ⋙ HomologicalComplex.eval A _ k ⟶ K ⋙ HomologicalComplex.cyclesFunctor A _ (k + 1) where
-  app Y := (K.obj Y).toCycles k (k + 1)
-  naturality _ _ f := ((K.obj _).toCycles_cyclesMap (K.map f) k (k + 1)).symm
-
-/-- The sequence `0 ⟶ Zᵏ ⟶ Kᵏ ⟶ Zᵏ⁺¹ ⟶ 0` of presheaves of cycles. -/
-private def cyclesSC (k : ℕ) : ShortComplex (Cᵒᵖ ⥤ A) :=
-  ShortComplex.mk (cyclesι K k) (cyclesπ K k) <|
-    NatTrans.ext <| funext fun Y ↦ (K.obj Y).iCycles_toCycles k (k + 1)
-
-/-- The sequence of cycles in degree `k` is short exact at every object `Y` at which `K` is exact
-in degree `k + 1`. -/
-private lemma cyclesSC_shortExact (k : ℕ) {Y : Cᵒᵖ} (hY : (K.obj Y).ExactAt (k + 1)) :
-    ((cyclesSC K k).map ((evaluation Cᵒᵖ A).obj Y)).ShortExact :=
-  have : Epi ((K.obj Y).toCycles k (k + 1)) :=
-    HomologicalComplex.epi_toCycles_of_exactAt hY (by simp)
-  { exact := (K.obj Y).exact_iCycles_toCycles k (k + 1) (by simp)
-    mono_f := inferInstanceAs (Mono ((K.obj Y).iCycles k))
-    epi_g := inferInstanceAs (Epi ((K.obj Y).toCycles k (k + 1))) }
-
-variable {P : Cᵒᵖ ⥤ A} {K} (ε : P ⋙ CochainComplex.single₀ A ⟶ K)
-
-/-- The augmentation `P ⟶ K⁰` of the resolution. -/
-private def augmentationι : P ⟶ K ⋙ HomologicalComplex.eval A _ 0 where
-  app Y := (HomologicalComplex.singleObjXSelf (ComplexShape.up ℕ) 0 (P.obj Y)).inv ≫ (ε.app Y).f 0
-  naturality Y Y' f := by
-    have h := congr_arg (fun g ↦ HomologicalComplex.Hom.f g 0) (ε.naturality f)
-    simp only [Functor.comp_map, HomologicalComplex.comp_f,
-      HomologicalComplex.single_map_f_self] at h
-    simp only [Functor.comp_map, HomologicalComplex.eval_map, Category.assoc, ← h,
-      Iso.inv_hom_id_assoc]
-
-/-- The sequence `0 ⟶ P ⟶ K⁰ ⟶ Z¹ ⟶ 0` of the augmented resolution. -/
-private def augmentationSC : ShortComplex (Cᵒᵖ ⥤ A) :=
-  ShortComplex.mk (augmentationι ε) (cyclesπ K 0) <|
-    NatTrans.ext <| funext fun Y ↦ (Category.assoc _ _ _).trans <|
-      (congrArg (_ ≫ ·) (HomologicalComplex.single_f_toCycles (ε.app Y) 1)).trans comp_zero
-
-/-- The augmented sequence is short exact at every object `Y` at which `ε` is a
-quasi-isomorphism. -/
-private lemma augmentationSC_shortExact {Y : Cᵒᵖ} (hY : QuasiIso (ε.app Y)) :
-    ((augmentationSC ε).map ((evaluation Cᵒᵖ A).obj Y)).ShortExact := by
-  let e := HomologicalComplex.singleObjXSelf (ComplexShape.up ℕ) 0 (P.obj Y)
-  -- in degree `0`, `ε.app Y` identifies `P(Y)` with the kernel of `K⁰(Y) ⟶ K¹(Y)`
-  obtain ⟨hexact, hmono⟩ := (ShortComplex.quasiIso_iff_of_zeros _
-    (HomologicalComplex.single_obj_d (ComplexShape.up ℕ) _ _ _ _)
-    (HomologicalComplex.single_obj_d (ComplexShape.up ℕ) _ _ _ _)
-    ((K.obj Y).shape 0 0 (by simp))).1
-      ((CochainComplex.quasiIsoAt₀_iff (ε.app Y)).1 (hY.quasiIsoAt 0))
-  have h₁ : (K.obj Y).ExactAt 1 := (quasiIsoAt_iff_exactAt (ε.app Y) 1
-    (CochainComplex.exactAt_succ_single_obj _ 0)).1 (hY.quasiIsoAt 1)
-  have : Epi ((K.obj Y).toCycles 0 1) :=
-    HomologicalComplex.epi_toCycles_of_exactAt h₁ (by simp)
-  -- compare with the sequence `P(Y) ⟶ K⁰(Y) ⟶ K¹(Y)` whose exactness is `hexact`
-  let φ : (augmentationSC ε).map ((evaluation Cᵒᵖ A).obj Y) ⟶ ShortComplex.mk ((ε.app Y).f 0)
-      ((K.obj Y).d 0 1) (HomologicalComplex.single_f_d (ε.app Y) 1) :=
-    { τ₁ := e.inv
-      τ₂ := 𝟙 _
-      τ₃ := (K.obj Y).iCycles 1
-      comm₁₂ := (Category.comp_id _).symm
-      comm₂₃ := (Category.id_comp _).trans (HomologicalComplex.toCycles_i _ _ _).symm }
-  -- the instances are passed explicitly: the degree `0` term of `single₀ (P(Y))` is `P(Y)` only up
-  -- to unfolding, so instance search cannot match the components of `φ`
-  exact
-    { exact := (@ShortComplex.exact_iff_of_epi_of_isIso_of_mono _ _ _ _ _ φ
-        (inferInstanceAs (Epi e.inv)) (inferInstanceAs (IsIso (𝟙 _)))
-        (inferInstanceAs (Mono ((K.obj Y).iCycles 1)))).2 hexact
-      mono_f := @mono_comp _ _ _ _ _ e.inv inferInstance ((ε.app Y).f 0) hmono
-      epi_g := inferInstanceAs (Epi ((K.obj Y).toCycles 0 1)) }
-
-end Resolution
-
 variable {C : Type u} [Category.{v} C] [HasFiniteProducts C]
   {A : Type u'} [Category.{v'} A] [Abelian A] [HasProducts.{w} A]
   {ι : Type w} (U : ι → C)
@@ -263,28 +171,20 @@ private def cechAugmentationShortComplexHom (S : ShortComplex (Cᵒᵖ ⥤ A)) :
   comm₁₂ := cechAugmentation_naturality U hT S.X₁ S.f
   comm₂₃ := cechAugmentation_naturality U hT S.X₂ S.g
 
-/-- **Čech acyclicity descends to the kernel of an objectwise short exact coefficient
-sequence.** If a family is acyclic for the middle and right presheaves of a short exact
-sequence, then it is acyclic for the left presheaf as well. -/
+/-- **Čech acyclicity descends to the kernel of a locally short exact coefficient sequence.**
+If a sequence of presheaves is short exact at the terminal object and at every finite product of
+members of `U`, and `U` is acyclic for the middle and right presheaves, then `U` is acyclic for the
+left presheaf as well. Exactness at other objects is not required. -/
 theorem quasiIso_cechAugmentation_of_shortExact (S : ShortComplex (Cᵒᵖ ⥤ A))
-    (hS : S.ShortExact) (h₂ : QuasiIso (cechAugmentation U hT S.X₂))
+    (hST : (S.map ((evaluation Cᵒᵖ A).obj (op T))).ShortExact)
+    (hSU : ∀ (n : ℕ) (a : Fin (n + 1) → ι),
+      (S.map ((evaluation Cᵒᵖ A).obj (op (∏ᶜ fun j ↦ U (a j))))).ShortExact)
+    (h₂ : QuasiIso (cechAugmentation U hT S.X₂))
     (h₃ : QuasiIso (cechAugmentation U hT S.X₃)) :
-    QuasiIso (cechAugmentation U hT S.X₁) := by
-  let φ := cechAugmentationShortComplexHom U hT S
-  let F := HomologicalComplex.opFunctor A (ComplexShape.up ℕ)
-  have hsource := hS.map_of_exact ((evaluation Cᵒᵖ A).obj (op T) ⋙
-    HomologicalComplex.single A (ComplexShape.up ℕ) 0)
-  have htarget := hS.map_of_exact (cechComplexFunctor U)
-  have h₂' : QuasiIso φ.τ₂ := h₂
-  have h₃' : QuasiIso φ.τ₃ := h₃
-  -- Opposite complexes reverse the coefficient sequence, so Mathlib's right-term
-  -- comparison proves the required left-term comparison.
-  have h := HomologicalComplex.HomologySequence.quasiIso_τ₃
-    (F.mapShortComplex.map (ShortComplex.opMap φ))
-    (htarget.op.map_of_exact F) (hsource.op.map_of_exact F)
-    ((HomologicalComplex.quasiIso_opFunctor_map_iff φ.τ₃).mpr h₃')
-    ((HomologicalComplex.quasiIso_opFunctor_map_iff φ.τ₂).mpr h₂')
-  exact (HomologicalComplex.quasiIso_opFunctor_map_iff φ.τ₁).mp h
+    QuasiIso (cechAugmentation U hT S.X₁) :=
+  HomologicalComplex.HomologySequence.quasiIso_τ₁ (cechAugmentationShortComplexHom U hT S)
+    (hST.map_of_exact (HomologicalComplex.single A (ComplexShape.up ℕ) 0))
+    (shortExact_map_cechComplexFunctor U S hSU) h₂ h₃
 
 /-! ### Acyclic resolutions
 
@@ -374,24 +274,54 @@ theorem quasiIso_cechAugmentation_of_resolution {P : Cᵒᵖ ⥤ A} {K : Cᵒᵖ
   have hexact {Y : Cᵒᵖ} (hY : QuasiIso (ε.app Y)) (k : ℕ) : (K.obj Y).ExactAt (k + 1) :=
     (quasiIsoAt_iff_exactAt (ε.app Y) (k + 1) (CochainComplex.exactAt_succ_single_obj _ k)).1
       (hY.quasiIsoAt (k + 1))
-  have hcT (k : ℕ) := cyclesSC_shortExact K k (hexact hεT k)
-  have hcU (k n : ℕ) (a : Fin (n + 1) → ι) := cyclesSC_shortExact K k (hexact (hεU n a) k)
-  have haT := augmentationSC_shortExact ε hεT
-  have haU (n : ℕ) (a : Fin (n + 1) → ι) := augmentationSC_shortExact ε (hεU n a)
+  have hcT (k : ℕ) :=
+    K.shortExact_map_cyclesShortComplex k (k + 1) (by simp) (hexact hεT k)
+  have hcU (k n : ℕ) (a : Fin (n + 1) → ι) :=
+    K.shortExact_map_cyclesShortComplex k (k + 1) (by simp) (hexact (hεU n a) k)
+  have haT :=
+    ε.shortExact_map_augmentationShortComplex (hεT.quasiIsoAt 0) (hεT.quasiIsoAt 1)
+  have haU (n : ℕ) (a : Fin (n + 1) → ι) :=
+    ε.shortExact_map_augmentationShortComplex ((hεU n a).quasiIsoAt 0) ((hεU n a).quasiIsoAt 1)
+  have hKC (k : ℕ) :
+      QuasiIso (cechAugmentation U hT (K.cyclesShortComplex k (k + 1)).X₂) := by
+    rw [Functor.cyclesShortComplex_X₂]
+    exact hK k
+  have hKA : QuasiIso (cechAugmentation U hT ε.augmentationShortComplex.X₂) := by
+    rw [NatTrans.augmentationShortComplex_X₂]
+    exact hK 0
   -- dimension shifting: in each degree, `P` and every presheaf of cycles are acyclic
   have key (n : ℕ) : QuasiIsoAt (cechAugmentation U hT P) n ∧ ∀ k,
       QuasiIsoAt (cechAugmentation U hT (K ⋙ HomologicalComplex.cyclesFunctor A _ (k + 1))) n := by
     induction n with
     | zero =>
-      have hmono (k : ℕ) := mono_homologyMap_cechAugmentation_X₁_zero U hT (hcT (k + 1))
-        (hcU (k + 1)) ((hK (k + 1)).quasiIsoAt 0)
-      exact ⟨quasiIsoAt_cechAugmentation_X₁_zero U hT haT haU ((hK 0).quasiIsoAt 0) (hmono 0),
-        fun k ↦ quasiIsoAt_cechAugmentation_X₁_zero U hT (hcT (k + 1)) (hcU (k + 1))
-          ((hK (k + 1)).quasiIsoAt 0) (hmono (k + 1))⟩
+      have hmono (k : ℕ) : Mono (HomologicalComplex.homologyMap
+          (cechAugmentation U hT (K ⋙ HomologicalComplex.cyclesFunctor A _ (k + 1))) 0) := by
+        have h := mono_homologyMap_cechAugmentation_X₁_zero U hT (hcT (k + 1))
+          (hcU (k + 1)) ((hKC (k + 1)).quasiIsoAt 0)
+        rw [Functor.cyclesShortComplex_X₁] at h
+        exact h
+      constructor
+      · have h := quasiIsoAt_cechAugmentation_X₁_zero U hT haT haU (hKA.quasiIsoAt 0)
+          (by rw [NatTrans.augmentationShortComplex_X₃]; exact hmono 0)
+        rw [NatTrans.augmentationShortComplex_X₁] at h
+        exact h
+      · intro k
+        have h := quasiIsoAt_cechAugmentation_X₁_zero U hT (hcT (k + 1)) (hcU (k + 1))
+          ((hKC (k + 1)).quasiIsoAt 0)
+          (by rw [Functor.cyclesShortComplex_X₃]; exact hmono (k + 1))
+        rw [Functor.cyclesShortComplex_X₁] at h
+        exact h
     | succ n ih =>
-      exact ⟨quasiIsoAt_cechAugmentation_X₁_succ U hT haT haU (hK 0) (ih.2 0),
-        fun k ↦ quasiIsoAt_cechAugmentation_X₁_succ U hT (hcT (k + 1)) (hcU (k + 1)) (hK (k + 1))
-          (ih.2 (k + 1))⟩
+      constructor
+      · have h := quasiIsoAt_cechAugmentation_X₁_succ U hT haT haU hKA
+          (by rw [NatTrans.augmentationShortComplex_X₃]; exact ih.2 0)
+        rw [NatTrans.augmentationShortComplex_X₁] at h
+        exact h
+      · intro k
+        have h := quasiIsoAt_cechAugmentation_X₁_succ U hT (hcT (k + 1)) (hcU (k + 1)) (hKC (k + 1))
+          (by rw [Functor.cyclesShortComplex_X₃]; exact ih.2 (k + 1))
+        rw [Functor.cyclesShortComplex_X₁] at h
+        exact h
   rw [quasiIso_iff]
   exact fun n ↦ (key n).1
 

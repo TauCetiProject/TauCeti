@@ -107,6 +107,8 @@ theorem IsSymm.exists_orthogonal_basis_of_isUnit_two [Free R M] [Module.Finite R
       finrank_self, hd] at h
     omega
   obtain ⟨v, hv⟩ := ih (B := B.restrict N) (hB.restrict N) hN
-  exact hB.isRefl.exists_orthogonal_basis_of_orthogonal_span_singleton hxR (hx x) hv
+  obtain ⟨b, hb, -, -⟩ :=
+    hB.isRefl.exists_orthogonal_basis_of_orthogonal_span_singleton hxR (hx x) hv
+  exact ⟨b, hb⟩
 
 end LinearMap.BilinForm

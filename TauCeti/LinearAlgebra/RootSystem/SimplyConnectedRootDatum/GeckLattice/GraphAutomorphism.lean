@@ -89,12 +89,6 @@ reductivity, maximality of the weight torus, or any finiteness or simplicity sta
   Proc. Amer. Math. Soc. **145** (2017), 3233--3247.
 * R. W. Carter, *Finite Groups of Lie Type: Conjugacy Classes and Complex Characters*, §1.15.
 * J. E. Humphreys, *Linear Algebraic Groups*, §27.
-
-This is the pinned instance of the graph-automorphism half of "Pinnings ... This is what makes
-'the' graph automorphism well defined" in Layer 9 of
-`TauCetiRoadmap/ReductiveGroups/README.md`. Its consumer is milestone L1, ordinary and
-graph-twisted Steinberg maps, of `TauCetiRoadmap/CFSGStatement/README.md`, whose twisted branches
-compose such a `γ` with the field Frobenius.
 -/
 
 public section
@@ -279,19 +273,6 @@ theorem geckGraphAutMatrix_pow_eq_one (hsigma : sigma ∈ t.diagramSymmetry) (A 
   -- matrix of the inverse permutation; that is the matrix `coe_geckGraphAutMatrix` produces.
   rw [Units.val_pow_eq_pow_val, Units.val_one, coe_geckGraphAutMatrix,
     ← Matrix.permMatrixHom_apply, ← map_pow, geckDiagramFinPerm_pow_eq_one ht hsigma hm, map_one]
-
-/-- The points of the pinned Geck carrier are the points of the Kostant toral closure of the
-pinned Geck data. -/
-private theorem geckPoints_eq_kostantToralPointsSubgroup (A : Type v) [CommRing A] :
-    t.geckPoints ht A =
-      TauCeti.UniversalEnvelopingAlgebra.kostantToralPointsSubgroup
-        (t.lieBasis ht).rootGenerator (t.lieBasis ht).h (t.geckRepresentation ht)
-        (t.geckCoordinateLattice ht).toAddSubgroup
-        (t.geckRepresentation_kostantForm_mem_geckCoordinateLattice ht)
-        (t.isNilpotent_geckRepresentation_rootGenerator ht)
-        (t.geckCoordinateBasisFin ht) (t.geckWeightFin ht) A := by
-  rw [t.geckPoints_def ht A,
-    TauCeti.UniversalEnvelopingAlgebra.kostantToralPointsSubgroup_def, t.geckDefiningIdeal_def ht]
 
 /-- **The matrix of the pinned coordinate permutation normalizes the points of the Geck
 carrier.** -/

@@ -17,13 +17,11 @@ For a kernel `K : α → α → 𝕜` and finitely supported coefficient vectors
 `∑ a ∈ x.support, ∑ b ∈ y.support, conj (x a) * y b * K a b`.
 
 The diagonal nonnegativity of this form is exactly the quadratic-form content of
-`Matrix.PosSemidef`, but a named finitely supported form is the object needed by the later
-GNS/Kolmogorov construction: its null space is quotiented, then completed.
+`Matrix.PosSemidef`, but a named finitely supported form is the object needed by the GNS/Kolmogorov
+construction: its null space is quotiented, then completed.
 
-This advances `TauCetiRoadmap/OneParameterSemigroups/README.md`, Part C ("Positive-definite
-functions and Bochner's theorem"), specifically the positive-definite-kernel / GNS-Kolmogorov API
-prerequisite. No Mathlib code is vendored; kernels are passed directly to Mathlib's
-positive-semidefinite matrix API via `Matrix.of`.
+No Mathlib code is vendored; kernels are passed directly to Mathlib's positive-semidefinite matrix
+API via `Matrix.of`.
 
 ## Main declarations
 

@@ -335,6 +335,13 @@ noncomputable def finiteChartSectionsEquiv :
       holomorphyRing {P : Place k F | x ∈ P.integers} :=
   ((ιFinite hF hx).appIso ⊤ ≪≫ Scheme.ΓSpecIso _).commRingCatIsoToRingEquiv
 
+/-- `TauCeti.AlgebraicGeometry.twoChartModel.finiteChartSectionsEquiv` restricts a function on the
+finite chart along the chart and reads it as an element of `𝒪_x`. -/
+theorem finiteChartSectionsEquiv_apply (a : Γ(twoChartModel hF hx, ιFinite hF hx ''ᵁ ⊤)) :
+    finiteChartSectionsEquiv hF hx a =
+      (Scheme.ΓSpecIso _).hom (((ιFinite hF hx).appIso ⊤).hom a) :=
+  (rfl)
+
 /-- On the finite chart, the functions on `Spec k` pulled back along the structure morphism are
 the constants of `𝒪_x`. -/
 @[simp]

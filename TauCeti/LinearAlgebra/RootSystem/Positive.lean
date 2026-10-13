@@ -82,14 +82,12 @@ for the sum, which need not be unique for a non-reduced pairing.
 
 ## References
 
-This file implements the “Positive and negative roots” item in Layer 1 of
-`TauCetiRoadmap/RepresentationTheory/RootSystems/README.md`, following the target signatures in
-`TauCetiRoadmap/RepresentationTheory/RootSystems/Suggested.lean`. The coroot-side positivity at the
-end of the file is the prerequisite that the fundamental-domain item of Layer 4 consumes; that
-argument is the one in J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*,
-GTM 9, Ch. III, §10. The decomposition half of `TauCeti.mem_support_iff_isPos_and_forall_ne_add` is
-the step that Mathlib currently performs only inside the proof of
-`RootPairing.Base.IsPos.induction_on_add`, isolated here as a statement of its own.
+The coroot-side positivity at the end of the file is the prerequisite of the fundamental-domain
+argument; that argument is the one in J. E. Humphreys, *Introduction to Lie Algebras and
+Representation Theory*, GTM 9, Ch. III, §10. The decomposition half of
+`TauCeti.mem_support_iff_isPos_and_forall_ne_add` is the step that Mathlib currently performs only
+inside the proof of `RootPairing.Base.IsPos.induction_on_add`, isolated here as a statement of its
+own.
 -/
 
 public section

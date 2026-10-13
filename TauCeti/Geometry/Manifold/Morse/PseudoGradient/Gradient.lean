@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Morse.PseudoGradient.Existence
-public import TauCeti.Geometry.Manifold.Riemannian.Gradient
+public import TauCeti.Geometry.Manifold.Riemannian.Gradient.Basic
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 
 /-!

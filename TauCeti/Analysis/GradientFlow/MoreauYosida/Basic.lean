@@ -51,6 +51,9 @@ take energies with values in `(-∞, ∞]`; here `φ` may take the value `⊥`, 
   `|∂φ|(y) ≤ d(x, y) / τ` for `y ∈ J_τ x`.
 * `TauCeti.apply_add_sum_le_of_forall_mem_moreauYosidaResolvent`: the discrete energy estimate
   `φ (u N) + ∑_{n < N} d(u n, u (n + 1))² / (2τ) ≤ φ (u 0)` along a minimizing movement sequence.
+* `TauCeti.moreauYosida_eq_iInf` and `TauCeti.mem_moreauYosidaResolvent_iff_isMinOn`: on a
+  pseudometric space, `φ_τ(x)` is the infimum of the penalized energy over all points and `J_τ x`
+  is its set of global minimizers.
 * `TauCeti.moreauYosidaResolvent_half_norm_sq` and `TauCeti.moreauYosida_half_norm_sq`: on a real
   inner product space, the resolvent of `‖·‖² / 2` is `x ↦ x / (1 + τ)` and its Moreau–Yosida
   approximation is `‖x‖² / (2 (1 + τ))`.
@@ -302,6 +305,35 @@ theorem toENNReal_sub_le_of_mem_moreauYosidaResolvent (hτ : 0 < τ)
         ring
 
 end PseudoEMetricSpace
+
+section PseudoMetricSpace
+
+variable {X : Type*} [PseudoMetricSpace X] {φ : X → EReal} {τ : ℝ≥0} {x y : X}
+
+/-- On a pseudometric space with a time step `τ > 0`, the penalty `d(x, y)² / (2τ)` is the real
+number `dist x y ^ 2 / (2τ)`. -/
+theorem coe_edist_sq_div_eq_coe_dist_sq_div (hτ : 0 < τ) (x y : X) :
+    ((edist x y ^ 2 / (2 * τ) : ℝ≥0∞) : EReal) = ((dist x y ^ 2 / (2 * τ) : ℝ) : EReal) := by
+  rw [← EReal.coe_ennreal_toReal (ENNReal.div_ne_top (by finiteness) (by simp [hτ.ne'])),
+    EReal.coe_eq_coe_iff]
+  simp only [ENNReal.toReal_div, ENNReal.toReal_pow, ENNReal.toReal_mul, ← dist_edist,
+    ENNReal.toReal_ofNat, ENNReal.coe_toReal]
+
+/-- On a pseudometric space every point is at finite distance from `x`, so the Moreau–Yosida
+approximation is the infimum of the penalized energy over all points. -/
+theorem moreauYosida_eq_iInf (φ : X → EReal) (τ : ℝ≥0) (x : X) :
+    moreauYosida φ τ x = ⨅ y, φ y + (edist x y ^ 2 / (2 * τ) : ℝ≥0∞) := by
+  simp only [moreauYosida_def, ne_eq, edist_ne_top, not_false_eq_true, iInf_pos]
+
+/-- On a pseudometric space, the resolvent `J_τ x` is the set of global minimizers of the
+penalized energy `y ↦ φ y + d(x, y)² / (2τ)`. -/
+theorem mem_moreauYosidaResolvent_iff_isMinOn :
+    y ∈ moreauYosidaResolvent φ τ x ↔
+      IsMinOn (fun z ↦ φ z + (edist x z ^ 2 / (2 * τ) : ℝ≥0∞)) univ y := by
+  simp only [mem_moreauYosidaResolvent_iff, ne_eq, edist_ne_top, not_false_eq_true,
+    forall_const, true_and, isMinOn_univ_iff]
+
+end PseudoMetricSpace
 
 section EMetricSpace
 

@@ -60,6 +60,8 @@ plan with `PMF` marginals is `TauCeti.TransportMatrix`.
 
 ## Main results
 
+* `Matrix.isCompact_setOf_nonneg_hasMarginals`: the nonnegative matrices with row sums `a` and
+  column sums `b` form a compact set.
 * `Matrix.exists_relEntropy_minOn`: a minimiser of `Matrix.relEntropy` against `K` among the
   nonnegative matrices with row sums `a` and column sums `b` exists, as soon as there is one such
   matrix.
@@ -69,7 +71,8 @@ plan with `PMF` marginals is `TauCeti.TransportMatrix`.
 * `Matrix.HasMarginals.add_vecMulVec_of_sum_eq_zero`: the row and column sums of a matrix are
   preserved by an outer product of a row weight and a column weight, each of total sum `0`.
 * `Matrix.relEntropy_nonneg` and `Matrix.relEntropy_eq_zero_iff`: Gibbs' inequality for matrices
-  of equal total mass, with its equality case.
+  of equal total mass, with its equality case; `Matrix.relEntropy_nonneg_of_nonneg` allows a
+  reference with zero entries, on which the other matrix vanishes.
 * `Matrix.hasDerivAt_relEntropy_add_smul` and
   `Matrix.sum_sum_mul_log_sub_log_eq_zero_of_relEntropy_minOn`: the derivative of the relative
   entropy along a direction, and the first-order condition at a positive minimiser.
@@ -205,17 +208,12 @@ theorem continuous_relEntropy (K : Matrix ι κ ℝ) : Continuous (relEntropy ·
 
 /-! ### A minimiser of the relative entropy -/
 
-/-- The relative entropy against `K` attains a minimum on the nonnegative matrices with row sums `a`
-and column sums `b`, as soon as there is one such matrix.
+/-- The nonnegative matrices with row sums `a` and column sums `b` form a compact set.
 
-The set of these matrices is closed, every entry of such a matrix is at most `∑ i, a i`, and the
-relative entropy is continuous, so the minimum is attained on a closed subset of a compact box. -/
-theorem exists_relEntropy_minOn (K : Matrix ι κ ℝ) (a : ι → ℝ) (b : κ → ℝ)
-    (hfeas : ∃ P : Matrix ι κ ℝ, (∀ i j, 0 ≤ P i j) ∧ HasMarginals P a b) :
-    ∃ P : Matrix ι κ ℝ, (∀ i j, 0 ≤ P i j) ∧ HasMarginals P a b ∧
-      ∀ Q : Matrix ι κ ℝ, (∀ i j, 0 ≤ Q i j) → HasMarginals Q a b →
-        relEntropy P K ≤ relEntropy Q K := by
-  obtain ⟨Pfeas, hPfeas0, hPfeasa⟩ := hfeas
+The set is closed, and every entry of such a matrix is at most `∑ i, a i`, so it is a closed subset
+of a compact box. -/
+theorem isCompact_setOf_nonneg_hasMarginals (a : ι → ℝ) (b : κ → ℝ) :
+    IsCompact {P : Matrix ι κ ℝ | (∀ i j, 0 ≤ P i j) ∧ HasMarginals P a b} := by
   set A : ℝ := ∑ i, a i with hA
   have hnonneg : IsClosed {P : Matrix ι κ ℝ | ∀ i j, 0 ≤ P i j} := by
     have key : {P : Matrix ι κ ℝ | ∀ i j, 0 ≤ P i j}
@@ -260,13 +258,23 @@ theorem exists_relEntropy_minOn (K : Matrix ι κ ℝ) (a : ι → ℝ) (b : κ 
       _ = A := hA.symm
   have hbox : IsCompact {P : Matrix ι κ ℝ | ∀ i j, P i j ∈ Set.Icc 0 A} :=
     IsCompact.matrix (isCompact_Icc (α := ℝ))
-  have hcompact : IsCompact S :=
-    IsCompact.of_isClosed_subset hbox hclosed
-      fun P hP => fun i j => ⟨hP.1 i j, hbound P hP.1 hP.2 i j⟩
-  obtain ⟨P, hPmem, hPmin⟩ := hcompact.exists_isMinOn (f := fun P => relEntropy P K)
-    ⟨Pfeas, hPfeas0, hPfeasa⟩ (continuous_relEntropy K).continuousOn
-  rw [hS, Set.mem_ofPred] at hPmem
-  exact ⟨P, hPmem.1, hPmem.2, fun Q hQ0 hQa => (isMinOn_iff.mp hPmin) Q ⟨hQ0, hQa⟩⟩
+  exact IsCompact.of_isClosed_subset hbox hclosed
+    fun P hP => fun i j => ⟨hP.1 i j, hbound P hP.1 hP.2 i j⟩
+
+/-- The relative entropy against `K` attains a minimum on the nonnegative matrices with row sums `a`
+and column sums `b`, as soon as there is one such matrix.
+
+The set of these matrices is compact by `Matrix.isCompact_setOf_nonneg_hasMarginals`, and the
+relative entropy is continuous. -/
+theorem exists_relEntropy_minOn (K : Matrix ι κ ℝ) (a : ι → ℝ) (b : κ → ℝ)
+    (hfeas : ∃ P : Matrix ι κ ℝ, (∀ i j, 0 ≤ P i j) ∧ HasMarginals P a b) :
+    ∃ P : Matrix ι κ ℝ, (∀ i j, 0 ≤ P i j) ∧ HasMarginals P a b ∧
+      ∀ Q : Matrix ι κ ℝ, (∀ i j, 0 ≤ Q i j) → HasMarginals Q a b →
+        relEntropy P K ≤ relEntropy Q K := by
+  obtain ⟨P, ⟨hP0, hPa⟩, hPmin⟩ :=
+    (isCompact_setOf_nonneg_hasMarginals a b).exists_isMinOn (f := fun P => relEntropy P K)
+      hfeas (continuous_relEntropy K).continuousOn
+  exact ⟨P, hP0, hPa, fun Q hQ0 hQa => (isMinOn_iff.mp hPmin) Q ⟨hQ0, hQa⟩⟩
 
 /-- The relative entropy against `K` attains a minimum on the nonnegative matrices with row sums
 `a` and column sums `b` whenever `a` and `b` are nonnegative and of equal total mass.
@@ -802,12 +810,29 @@ theorem sum_sum_sq_sqrt_sub_sqrt_le_relEntropy {P Q : Matrix ι κ ℝ} (hQ : �
   exact Finset.sum_le_sum fun i _ => Finset.sum_le_sum fun j _ =>
     TauCeti.sq_sqrt_sub_sqrt_le_mul_log_sub_mul_log_sub (hP i j) (hQ i j)
 
+/-- Gibbs' inequality against a reference with zero entries: the relative entropy of a nonnegative
+matrix `Q` against a nonnegative matrix `P` of the same total mass is nonnegative, provided `Q`
+vanishes wherever `P` does. -/
+theorem relEntropy_nonneg_of_nonneg {P Q : Matrix ι κ ℝ} (hQ : ∀ i j, 0 ≤ Q i j)
+    (hP : ∀ i j, 0 ≤ P i j) (hQP : ∀ i j, P i j = 0 → Q i j = 0)
+    (hmass : ∑ i, ∑ j, Q i j = ∑ i, ∑ j, P i j) : 0 ≤ relEntropy Q P := by
+  -- Each cell satisfies `Q - P ≤ Q * log Q - Q * log P`, and the left sides add up to `0`.
+  have hcell : ∀ i j, Q i j - P i j ≤ Q i j * Real.log (Q i j) - Q i j * Real.log (P i j) := by
+    intro i j
+    rcases (hP i j).eq_or_lt with h | h
+    · simp [hQP i j h.symm, ← h]
+    · linarith [Real.mul_log_sub_mul_log_ge (P i j) (Q i j) h (hQ i j)]
+  calc (0 : ℝ) = ∑ i, ∑ j, (Q i j - P i j) := by simp [Finset.sum_sub_distrib, hmass]
+    _ ≤ relEntropy Q P := by
+      rw [relEntropy_def]
+      exact Finset.sum_le_sum fun i _ => Finset.sum_le_sum fun j _ => hcell i j
+
 /-- Gibbs' inequality: the relative entropy of a nonnegative matrix `Q` against a strictly positive
 matrix `P` of the same total mass is nonnegative. -/
 theorem relEntropy_nonneg {P Q : Matrix ι κ ℝ} (hQ : ∀ i j, 0 ≤ Q i j) (hP : ∀ i j, 0 < P i j)
     (hmass : ∑ i, ∑ j, Q i j = ∑ i, ∑ j, P i j) : 0 ≤ relEntropy Q P :=
-  le_trans (Finset.sum_nonneg fun _ _ => Finset.sum_nonneg fun _ _ => sq_nonneg _)
-    (sum_sum_sq_sqrt_sub_sqrt_le_relEntropy hQ hP hmass)
+  relEntropy_nonneg_of_nonneg hQ (fun i j => (hP i j).le) (fun i j h => absurd h (hP i j).ne')
+    hmass
 
 /-- The equality case of Gibbs' inequality: the relative entropy of a nonnegative matrix `Q` against
 a strictly positive matrix `P` of the same total mass vanishes exactly when `Q = P`. -/

@@ -40,10 +40,6 @@ universe u v w t
 variable {k : Type u} {Q : Type v} [Field k] [Quiver.{w} Q]
   [Finite (Quiver.TotalPath Q)]
 
-local instance : Finite Q :=
-  Finite.of_injective (fun q : Q ↦ (⟨q, q, Quiver.Path.nil⟩ : Quiver.TotalPath Q))
-    (fun _ _ h ↦ congrArg Sigma.fst h)
-
 variable [Small.{t} (pathAlgebra k Q)]
 
 namespace TauCeti.QuiverRep

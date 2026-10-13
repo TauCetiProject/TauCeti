@@ -6,8 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.GroupScheme.ClosedSubgroup.Basic
-public import TauCeti.AlgebraicGeometry.Morphisms.ClosedImmersion
+public import TauCeti.AlgebraicGeometry.Morphisms.ClosedImmersion.Basic
 public import TauCeti.CategoryTheory.Monoidal.Grp.Subobject
+public import TauCeti.CategoryTheory.Monoidal.Grp.Translation
+public import Mathlib.AlgebraicGeometry.IdealSheaf.Functorial
 public import Mathlib.CategoryTheory.Monoidal.Cartesian.Over
 
 /-!
@@ -22,7 +24,8 @@ geometric points.
 `grpObjOfClosedImmersion` constructs the group law from these three conditions, and
 `exists_grpObj_isMonHom_iff_ker_le` proves the converse. The compatible group structure is unique,
 and is commutative if the ambient group scheme is commutative. The resulting inclusion
-can be used with `ClosedSubgroupScheme.mk`.
+can be used with `ClosedSubgroupScheme.mk`. A subgroup scheme is stable under translation by its
+own points (`ker_comap_leftTranslation_le`).
 
 The criterion applies to arbitrary closed subschemes, in particular to the finite locally
 free divisors used to define Drinfeld structures. No Cartier, flatness, finiteness, or
@@ -144,5 +147,15 @@ theorem isCommMonObj_grpObjOfClosedImmersion [IsCommMonObj G]
   have : Mono i := Over.mono_of_mono_left i
   have := isMonHom_grpObjOfClosedImmersion i he hm hj
   exact isCommMonObj_of_mono i
+
+/-- **A subgroup scheme is stable under translation by its points.** Let `i : H ⟶ G` be a
+homomorphism of group schemes over `S` and `x` an `S`-point of `H`. Then left translation by
+`x ≫ i` on `G` carries the closed subscheme cut out by the ideal sheaf of `i` into itself: the
+inverse image of that ideal sheaf under the translation is contained in it. -/
+theorem ker_comap_leftTranslation_le [GrpObj H] (i : H ⟶ G) [IsMonHom i]
+    (x : 𝟙_ (Over S) ⟶ H) : i.left.ker.comap (leftTranslation (x ≫ i)).hom.left ≤ i.left.ker := by
+  rw [← Scheme.IdealSheafData.le_map_iff_comap_le, Scheme.IdealSheafData.map_ker,
+    ← Over.comp_left, ← leftTranslation_hom_comp, Over.comp_left]
+  exact Scheme.Hom.le_ker_comp _ _
 
 end TauCeti.GroupScheme

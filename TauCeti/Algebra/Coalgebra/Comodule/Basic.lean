@@ -15,11 +15,9 @@ This file defines right comodules over an `R`-coalgebra `C` and their morphisms.
 comodule is an `R`-module `M` equipped with a coaction `ρ : M →ₗ[R] M ⊗[R] C` satisfying
 the usual coassociativity and counit identities.
 
-This is a first Layer 1 prerequisite for the reductive-groups roadmap: representations of an
-affine group scheme represented by a Hopf algebra are comodules over its coordinate Hopf
-algebra, and the roadmap explicitly calls for comodules, comodule morphisms, tensor products,
-duals, and the regular representation. The file starts with the core definition, the regular
-right comodule of a coalgebra over itself, and the basic morphism API.
+Representations of an affine group scheme represented by a Hopf algebra are comodules over its
+coordinate Hopf algebra. The file provides the core definition, the regular right comodule of a
+coalgebra over itself, and the basic morphism API.
 
 ## Main definitions
 
@@ -31,9 +29,8 @@ right comodule of a coalgebra over itself, and the basic morphism API.
 
 ## References
 
-This follows the standard definition of a right comodule over a coalgebra; see for example
-Sweedler, *Hopf Algebras*, Chapter 2. It is added for the "Comodules over a coalgebra/Hopf
-algebra" target in Layer 1 of the Tau Ceti reductive-groups roadmap.
+This follows the standard definition of a right comodule over a coalgebra; see for example Sweedler,
+*Hopf Algebras*, Chapter 2.
 -/
 
 public section
@@ -272,7 +269,7 @@ theorem map_coact_apply (f : Hom R C M N) (m : M) :
 
 variable (R C M) in
 /-- The identity morphism of a right comodule. -/
-@[expose, simps!] def id : Hom R C M M where
+@[expose, simps! -isSimp] def id : Hom R C M M where
   toLinearMap := LinearMap.id
   map_coact := by
     ext m
@@ -304,15 +301,15 @@ maps. -/
 theorem comp_toLinearMap (g : Hom R C N P) (f : Hom R C M N) :
     (g.comp f).toLinearMap = g.toLinearMap ∘ₗ f.toLinearMap := rfl
 
-@[simp]
+/-- The identity morphism is a left identity for composition of comodule morphisms. -/
 theorem id_comp (f : Hom R C M N) : comp (id R C N) f = f := by
   ext m
-  simp
+  simp only [comp_apply, id_apply]
 
-@[simp]
+/-- The identity morphism is a right identity for composition of comodule morphisms. -/
 theorem comp_id (f : Hom R C M N) : comp f (id R C M) = f := by
   ext m
-  simp
+  simp only [comp_apply, id_apply]
 
 @[simp]
 theorem comp_assoc (h : Hom R C P Q) (g : Hom R C N P) (f : Hom R C M N) :

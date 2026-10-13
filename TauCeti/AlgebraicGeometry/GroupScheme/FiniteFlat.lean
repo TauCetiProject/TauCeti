@@ -6,13 +6,15 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicGeometry.Morphisms.FlatRank
+public import TauCeti.AlgebraicGeometry.GroupScheme.Kernel
 
 /-!
 # Finite flat commutative group schemes
 
 This file defines finite locally free commutative group schemes over a base scheme `S`: schemes
 finite, flat and locally of finite presentation over `S`, with a commutative group-object
-structure in `Over S`, together with their homomorphisms, isomorphisms and base change. Over an
+structure in `Over S`, together with their homomorphisms, isomorphisms and base change, and the
+kernels of finite locally free homomorphisms of commutative group schemes. Over an
 affine base, see `TauCeti.FiniteLocallyFreeCommAffineGroupSchemeCat`.
 
 ## Main definitions
@@ -30,6 +32,10 @@ affine base, see `TauCeti.FiniteLocallyFreeCommAffineGroupSchemeCat`.
   of schemes, with `grpMk_baseChange` identifying its group object with the image of that of `G`
   under `(Over.pullback f).mapGrp`, and `Hom.baseChange`: base change of homomorphisms, with
   `Hom.baseChange_eq`, `Hom.baseChange_id` and `Hom.baseChange_comp`.
+* `TauCeti.AlgebraicGeometry.FiniteFlatCommGroupScheme.ofKernel`: the scheme-theoretic kernel of a
+  finite locally free homomorphism out of a commutative group scheme, with `grpMk_ofKernel`
+  identifying its group object with the categorical kernel, and its inclusion `ofKernelι`, a kernel
+  of the homomorphism (`isLimitOfKernelι`).
 
 ## References
 
@@ -152,6 +158,52 @@ theorem Hom.baseChange_comp {S T : Scheme.{u}} {G H K : FiniteFlatCommGroupSchem
     (φ : G.Hom H) (ψ : H.Hom K) (f : T ⟶ S) :
     Hom.baseChange (φ ≫ ψ) f = φ.baseChange f ≫ ψ.baseChange f := by
   simp [Hom.baseChange_eq]
+
+section Kernel
+
+variable {S : Scheme.{u}} {G H : Grp (Over S)} (f : G ⟶ H) [IsCommMonObj G.X]
+  [IsFinite f.hom.hom.left] [Flat f.hom.hom.left] [LocallyOfFinitePresentation f.hom.hom.left]
+
+/-- **The kernel of a finite locally free homomorphism of group schemes** out of a commutative group
+scheme, as a finite locally free commutative group scheme over the base. Its group object is the
+categorical kernel `Limits.kernel f` (`grpMk_ofKernel`). -/
+noncomputable def ofKernel : FiniteFlatCommGroupScheme S where
+  carrier := (kernel f).X.left
+  structureMap := (kernel f).X.hom
+  grp := inferInstanceAs (GrpObj (kernel f).X)
+  comm := inferInstanceAs (IsCommMonObj (kernel f).X)
+  finite := inferInstanceAs (IsFinite (kernel f).X.hom)
+  flat := inferInstanceAs (Flat (kernel f).X.hom)
+  locallyOfFinitePresentation := inferInstanceAs (LocallyOfFinitePresentation (kernel f).X.hom)
+
+/-- The underlying scheme of `ofKernel f` is that of the categorical kernel of `f`. -/
+theorem ofKernel_carrier : (ofKernel f).carrier = (kernel f).X.left :=
+  (rfl)
+
+/-- The scheme over `S` underlying `ofKernel f` is that of the categorical kernel of `f`. -/
+theorem ofKernel_toOver : (ofKernel f).toOver = (kernel f).X :=
+  (rfl)
+
+/-- The group object underlying `ofKernel f` is the categorical kernel of `f` in `Grp (Over S)`. -/
+theorem grpMk_ofKernel : Grp.mk (ofKernel f).toOver = kernel f :=
+  (rfl)
+
+/-- The inclusion of `ofKernel f` into the source of `f`, the inclusion `Limits.kernel.ι f` of the
+categorical kernel. -/
+noncomputable def ofKernelι : Grp.mk (ofKernel f).toOver ⟶ G :=
+  kernel.ι f
+
+/-- The inclusion of `ofKernel f` is killed by `f`. -/
+@[reassoc (attr := simp)]
+theorem ofKernelι_comp : ofKernelι f ≫ f = 0 :=
+  kernel.condition f
+
+/-- `ofKernelι f` is a kernel of `f` in `Grp (Over S)`. -/
+noncomputable def isLimitOfKernelι :
+    IsLimit (KernelFork.ofι (ofKernelι f) (ofKernelι_comp f)) :=
+  kernelIsKernel f
+
+end Kernel
 
 end FiniteFlatCommGroupScheme
 

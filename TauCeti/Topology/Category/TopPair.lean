@@ -52,6 +52,10 @@ abbrev ofInclusion {X : TopCat.{u}} {s t : Set X} (h : s ⊆ t) : TopPair.{u} :=
 variable {X Y Z : TopCat.{u}} (g : X ⟶ Y) (g' : Y ⟶ Z) {B : Set X} {B' : Set Y} {B'' : Set Z}
   (hB : Set.MapsTo g B B') (hB' : Set.MapsTo g' B' B'')
 
+/-- The embedding of the pair `(X, B)` has range `B`. -/
+lemma range_ofSubset_map : Set.range (ofSubset B).map = B :=
+  Subtype.range_coe
+
 /-- A continuous map `g : X ⟶ Y` carrying `B` into `B'` induces a map of pairs
 `(X, B) ⟶ (Y, B')`. -/
 def ofSubsetMap : ofSubset B ⟶ ofSubset B' :=
@@ -171,6 +175,14 @@ lemma hom_ext_of_fst {g : P ⟶ Q} (h : Hom.fst f = Hom.fst g) : f = g := by
   ext a : 2
   · exact Q.isEmbedding_map.injective (by rw [Hom.w_apply, Hom.w_apply, h])
   · exact ConcreteCategory.congr_hom h a
+
+/-- A map of topological pairs which is an embedding of the ambient spaces is an embedding of the
+subspaces, because the subspaces are embedded in the ambient spaces. -/
+lemma isEmbedding_snd_of_isEmbedding_fst (h : Topology.IsEmbedding (Hom.fst f)) :
+    Topology.IsEmbedding (Hom.snd f) := by
+  have hw : ⇑Q.map ∘ ⇑(Hom.snd f) = ⇑(Hom.fst f) ∘ ⇑P.map := funext (Hom.w_apply f)
+  rw [← Q.isEmbedding_map.of_comp_iff, hw]
+  exact h.comp P.isEmbedding_map
 
 /-- A map of topological pairs which is an isomorphism of the ambient spaces and is surjective
 on the subspaces is an isomorphism of pairs.  The inverse on the subspaces is continuous because
