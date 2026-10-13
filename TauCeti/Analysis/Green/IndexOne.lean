@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.Green.Basic
 public import TauCeti.Analysis.Green.WindingWeight.Basic
-import TauCeti.Analysis.Green.Main
+import TauCeti.Analysis.Green.Winding
 import Mathlib.Analysis.Calculus.FDeriv.Add
 import Mathlib.Analysis.Calculus.ContDiff.Operations
 

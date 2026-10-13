@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Green.Main
+public import TauCeti.Analysis.Green.Winding
 public import TauCeti.Analysis.Green.FiniteSum
 public import TauCeti.Analysis.Green.Examples.CurveArea.Ellipse
 public import TauCeti.Analysis.Green.Examples.CurveArea.DoubleTraversal
