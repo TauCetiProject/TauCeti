@@ -5,8 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Topology.MetricSpace.Holder
 public import TauCeti.Analysis.PDE.Regularity.HarmonicReplacement
+public import TauCeti.Analysis.Sobolev.W1p.Restriction
+public import TauCeti.Topology.MetricSpace.Holder
+import TauCeti.Analysis.PDE.EnergyForm.Restriction
+import TauCeti.MeasureTheory.Function.Lp.Norm
 
 /-!
 # Comparison with the frozen-coefficient problem
@@ -196,16 +199,15 @@ theorem UniformlyEllipticOn.exists_sub_mem_w1p0Submodule_mul_norm_gradient_sub_l
   have hA :
       UniformlyEllipticOn (B : Set (EuclideanSpace ℝ (Fin (n + 1)))) (fun _ => a x₀) lam Lam :=
     uniformlyEllipticOn_iff.2 ⟨h.pos, h.le, fun _ _ => ⟨h.lower_bound hx₀, h.upper_bound hx₀⟩⟩
+  have hBfin : volume (B : Set (EuclideanSpace ℝ (Fin (n + 1)))) ≠ ⊤ :=
+    ne_top_of_le_ne_top measure_ball_lt_top.ne (measure_mono hBr)
   have : IsFiniteMeasure (volume.restrict (B : Set (EuclideanSpace ℝ (Fin (n + 1))))) :=
-    isFiniteMeasure_restrict.2 (ne_top_of_le_ne_top measure_ball_lt_top.ne (measure_mono hBr))
-  -- On `B`, the oscillations of `a` and `G` about their values at `x₀` are at most `K r^α`.
-  have hosc : ∀ {F : Type} [PseudoMetricSpace F] {f : EuclideanSpace ℝ (Fin (n + 1)) → F}
-      {K : ℝ≥0}, HolderOnWith K α f (ball x₀ r) → ∀ x ∈ (B : Set (EuclideanSpace ℝ (Fin (n + 1)))),
-        dist (f x) (f x₀) ≤ K * r ^ (α : ℝ) := fun hf x hx => by
-    have hxr := hBr hx
-    have hr : 0 < r := dist_nonneg.trans_lt (mem_ball.1 hxr)
-    calc _ ≤ _ * dist x x₀ ^ (α : ℝ) := hf.dist_le hxr (mem_ball_self hr)
-      _ ≤ _ := by gcongr; exact (mem_ball.1 hxr).le
+    isFiniteMeasure_restrict.2 hBfin
+  -- On `B`, the oscillation of `G` about its value at `x₀` is at most `K_G r^α`.
+  have hGbd : ∀ x ∈ (B : Set (EuclideanSpace ℝ (Fin (n + 1)))),
+      ‖G x - G x₀‖ ≤ KG * r ^ (α : ℝ) := fun x hx => by
+    rw [← dist_eq_norm]
+    exact hGK.dist_le_mul_rpow_of_mem_ball (hBr hx)
   -- A matrix is a function of its entries, and the entries of `a` are continuous on the ball.
   have ha :
       AEStronglyMeasurable a (volume.restrict (B : Set (EuclideanSpace ℝ (Fin (n + 1))))) :=
@@ -215,9 +217,7 @@ theorem UniformlyEllipticOn.exists_sub_mem_w1p0Submodule_mul_norm_gradient_sub_l
       (volume.restrict (B : Set (EuclideanSpace ℝ (Fin (n + 1))))) :=
     MemLp.of_bound ((((hGK.continuousOn hα).mono hBr).aestronglyMeasurable hBm).sub
       aestronglyMeasurable_const) (KG * r ^ (α : ℝ))
-      ((ae_restrict_iff' hBm).2 (ae_of_all _ fun x hx => by
-        rw [← dist_eq_norm]
-        exact hosc hGK x hx))
+      ((ae_restrict_iff' hBm).2 (ae_of_all _ hGbd))
   -- The replacement frozen at `x₀`.
   obtain ⟨w, ⟨huw, hw⟩, -⟩ :=
     UniformlyEllipticOn.existsUnique_sub_mem_w1p0Submodule_forall_energyFormH1_eq_of_subset_ball
@@ -236,29 +236,12 @@ theorem UniformlyEllipticOn.exists_sub_mem_w1p0Submodule_mul_norm_gradient_sub_l
   refine ⟨w, hsub, hw0, ?_⟩
   have hest := hA.mul_norm_gradient_restrictL_sub_le hB ha (ε := Ka * r ^ (α : ℝ))
     (fun x hx => by
-      have := hosc haK x hx
+      have := haK.dist_le_mul_rpow_of_mem_ball (hBr hx)
       rwa [dist_eq_norm] at this) hu hGc hsub hw0
-  -- The `L²(B)` norm of `G - G x₀` is at most `|B|^{1/2} K_G r^α`; for `B = ∅` both sides
-  -- vanish.
-  have hGn : ‖hGc.toLp‖ ≤
-      √(volume.real (B : Set (EuclideanSpace ℝ (Fin (n + 1))))) * (KG * r ^ (α : ℝ)) := by
-    rcases (B : Set (EuclideanSpace ℝ (Fin (n + 1)))).eq_empty_or_nonempty with hBe | ⟨y, hy⟩
-    · have := Lp.norm_le_of_ae_bound le_rfl (f := hGc.toLp)
-        ((ae_restrict_iff' hBm).2 (ae_of_all _ fun x hx => by simp [hBe] at hx))
-      have h0 : volume.real (B : Set (EuclideanSpace ℝ (Fin (n + 1)))) = 0 := by
-        rw [hBe, measureReal_empty]
-      rw [h0, Real.sqrt_zero, zero_mul]
-      simpa using this
-    · have hr : 0 ≤ r := dist_nonneg.trans (mem_ball.1 (hBr hy)).le
-      have := Lp.norm_le_of_ae_bound (by positivity) (C := KG * r ^ (α : ℝ)) (f := hGc.toLp)
-        (by
-          filter_upwards [hGc.coeFn_toLp, ae_restrict_mem hBm] with x hx hxB
-          have h := hosc hGK x hxB
-          rw [dist_eq_norm] at h
-          rwa [hx])
-      refine this.trans_eq ?_
-      rw [Real.sqrt_eq_rpow]
-      simp [measureUnivNNReal, Measure.real, ENNReal.coe_toNNReal_eq_toReal]
+  -- The `L²(B)` norm of `G - G x₀` is at most `|B|^{1/2} K_G r^α`.
+  have hGn := hGc.norm_toLp_le_measureReal_rpow_mul (by norm_num) hBfin
+    ((ae_restrict_iff' hBm).2 (ae_of_all _ hGbd))
+  rw [ENNReal.toReal_ofNat, ← one_div, ← Real.sqrt_eq_rpow] at hGn
   calc lam * ‖W1p.gradient (W1p.restrictL hB u - w)‖
       ≤ Ka * r ^ (α : ℝ) * ‖W1p.gradient (W1p.restrictL hB u)‖ + ‖hGc.toLp‖ := hest
     _ ≤ Ka * r ^ (α : ℝ) * ‖W1p.gradient (W1p.restrictL hB u)‖ +
