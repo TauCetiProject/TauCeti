@@ -51,6 +51,15 @@ theorem coe_intervalBox (a b : ℝ) (hab : a < b) :
   ext x
   simp [MeasurableEquiv.piUnique]
 
+/-- Almost-everywhere equality on a real interval pulls back to its one-dimensional box. -/
+theorem ae_eq_intervalBox {E : Type*} {a b : ℝ} (hab : a < b) {f g : ℝ → E}
+    (h : f =ᵐ[volume.restrict (Ioc a b)] g) :
+    (fun x : Fin 1 → ℝ ↦ f (x 0)) =ᵐ[volume.restrict (intervalBox a b hab)]
+      (fun x ↦ g (x 0)) := by
+  rw [coe_intervalBox]
+  exact ((volume_preserving_piUnique (fun _ : Fin 1 ↦ ℝ)).restrict_preimage
+    measurableSet_Ioc).quasiMeasurePreserving.ae_eq_comp h
+
 variable {E : Type*} [NormedAddCommGroup E]
 
 /-- Integrability on an interval is equivalent to Bochner integrability on its interval box. -/

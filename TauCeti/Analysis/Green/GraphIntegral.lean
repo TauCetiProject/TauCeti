@@ -10,6 +10,7 @@ public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.Analysis.Calculus.Deriv.Prod
 import Mathlib.Analysis.Calculus.Deriv.Inverse
 import Mathlib.Topology.Order.LeftRightNhds
+import TauCeti.Analysis.Calculus.Deriv.CountableLevels
 
 /-!
 # Gauge integrals along graph arcs
@@ -76,14 +77,6 @@ theorem hasDerivAt_horizontalGraph {graph : ℝ → ℝ} {graph' t : ℝ}
   exact Complex.equivRealProdCLM.symm.toContinuousLinearMap.hasFDerivAt.comp_hasDerivAt t
     (h.prodMk (hasDerivAt_id t))
 
-private theorem ae_eq_intervalBox {a b : ℝ} (hab : a < b) {f g : ℝ → ℝ}
-    (h : f =ᵐ[volume.restrict (Ioc a b)] g) :
-    (fun x : Fin 1 → ℝ ↦ f (x 0)) =ᵐ[
-      volume.restrict (BoxIntegral.intervalBox a b hab)] (fun x ↦ g (x 0)) := by
-  rw [BoxIntegral.coe_intervalBox]
-  exact ((volume_preserving_piUnique (fun _ : Fin 1 ↦ ℝ)).restrict_preimage
-    measurableSet_Ioc).quasiMeasurePreserving.ae_eq_comp h
-
 /-- Gauge `P dx` on a vertical-cell graph equals the base-interval integral. The graph may have
 unbounded speed and need not be absolutely continuous. -/
 theorem hasIntegral_verticalGraph_dx {a b : ℝ} (hab : a < b) {graph : ℝ → ℝ} {P : ℂ → ℝ}
@@ -96,7 +89,7 @@ theorem hasIntegral_verticalGraph_dx {a b : ℝ} (hab : a < b) {graph : ℝ → 
   have hc : ContinuousOn (P ∘ verticalGraph graph) (Icc a b) :=
     hP.comp (continuousOn_verticalGraph hgraph) (mapsTo_image _ _)
   apply (hc.intervalIntegrable_of_Icc hab.le).hasBoxIntegral hab _ rfl |>.congr_ae ?_ rfl
-  apply ae_eq_intervalBox hab
+  apply BoxIntegral.ae_eq_intervalBox hab
     (f := P ∘ verticalGraph graph)
     (g := fun t ↦ P (verticalGraph graph t) * (deriv (verticalGraph graph) t).re)
   filter_upwards [ae_restrict_mem measurableSet_Ioc,
@@ -120,7 +113,7 @@ theorem hasIntegral_horizontalGraph_dy {a b : ℝ} (hab : a < b) {graph : ℝ �
   have hc : ContinuousOn (Q ∘ horizontalGraph graph) (Icc a b) :=
     hQ.comp (continuousOn_horizontalGraph hgraph) (mapsTo_image _ _)
   apply (hc.intervalIntegrable_of_Icc hab.le).hasBoxIntegral hab _ rfl |>.congr_ae ?_ rfl
-  apply ae_eq_intervalBox hab
+  apply BoxIntegral.ae_eq_intervalBox hab
     (f := Q ∘ horizontalGraph graph)
     (g := fun t ↦ Q (horizontalGraph graph t) * (deriv (horizontalGraph graph) t).im)
   filter_upwards [ae_restrict_mem measurableSet_Ioc,
@@ -165,28 +158,6 @@ theorem hasIntegral_horizontalLine_dy {a b : ℝ} (hab : a < b) (c : ℝ) (g : �
   simpa only [deriv_horizontalLine_im, mul_zero] using
     (BoxIntegral.hasIntegral_zero (I := BoxIntegral.intervalBox a b hab)
       (l := BoxIntegral.IntegrationParams.Henstock) (vol := BoxIntegral.BoxAdditiveMap.volume))
-
--- A nonzero derivative makes a point isolated in its level set, and isolated points are countable.
-private theorem countable_level_nonzero_deriv (θ : ℝ → ℝ) (c : ℝ) :
-    {t | θ t = c ∧ deriv θ t ≠ 0}.Countable := by
-  apply (countable_setOfPred_isolated_right_within (s := {t | θ t = c})).mono
-  intro t ht
-  refine ⟨ht.1, ?_⟩
-  apply Filter.eventually_false_iff_eq_bot.mp
-  have he : ∀ᶠ u in nhdsWithin t {t}ᶜ, θ u ≠ c :=
-    (differentiableAt_of_deriv_ne_zero ht.2).hasDerivAt.eventually_ne ht.2
-  have hm : nhdsWithin t ({u | θ u = c} ∩ Ioi t) ≤ nhdsWithin t {t}ᶜ := by
-    apply nhdsWithin_mono
-    intro u hu
-    exact hu.2.ne'
-  filter_upwards [he.filter_mono hm, self_mem_nhdsWithin] with u hne hu
-  exact hne hu.1
-
-private theorem countable_preimage_nonzero_deriv (θ : ℝ → ℝ) {S : Set ℝ} (hS : S.Countable) :
-    {t | θ t ∈ S ∧ deriv θ t ≠ 0}.Countable := by
-  apply (hS.biUnion (fun c _ ↦ countable_level_nonzero_deriv θ c)).mono
-  intro t ht
-  exact mem_iUnion.mpr ⟨θ t, mem_iUnion.mpr ⟨ht.1, ⟨rfl, ht.2⟩⟩⟩
 
 -- At regular curve points, uniqueness gives the projected derivative. At irregular curve points,
 -- the total derivative is zero; the parameter derivative also vanishes almost everywhere on the
@@ -249,7 +220,7 @@ theorem hasIntegral_verticalGraph_reparam_dx {a b c d : ℝ} (hab : a < b)
     (hS.union (Set.toFinite ({c, d} : Set ℝ)).countable) hdθ hdγ
   have h := BoxIntegral.hasIntegral_Henstock_substitution hab hs hθ hdθ hc hmap
   apply h.congr_ae ?_ rfl
-  apply ae_eq_intervalBox hab
+  apply BoxIntegral.ae_eq_intervalBox hab
     (f := fun t ↦ θ' t * P (verticalGraph graph (θ t)))
     (g := fun t ↦ P (verticalGraph graph (θ t)) * (deriv (verticalGraph graph ∘ θ) t).re)
   filter_upwards [he] with t ht
@@ -289,7 +260,7 @@ theorem hasIntegral_horizontalGraph_reparam_dy {a b c d : ℝ} (hab : a < b)
     (hS.union (Set.toFinite ({c, d} : Set ℝ)).countable) hdθ hdγ
   have h := BoxIntegral.hasIntegral_Henstock_substitution hab hs hθ hdθ hc hmap
   apply h.congr_ae ?_ rfl
-  apply ae_eq_intervalBox hab
+  apply BoxIntegral.ae_eq_intervalBox hab
     (f := fun t ↦ θ' t * Q (horizontalGraph graph (θ t)))
     (g := fun t ↦ Q (horizontalGraph graph (θ t)) * (deriv (horizontalGraph graph ∘ θ) t).im)
   filter_upwards [he] with t ht
