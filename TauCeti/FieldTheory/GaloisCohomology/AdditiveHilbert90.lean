@@ -12,6 +12,7 @@ public import TauCeti.FieldTheory.KrullTopology
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.FiniteQuotient.Colimit
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.SmoothDiscrete.Basic
 public import TauCeti.Topology.Algebra.GroupAction.ForcedDiscrete
+import TauCeti.Algebra.GroupAction.Equiv
 import TauCeti.RepresentationTheory.Homological.ContCohomology.CohomologyComparison
 
 /-!
@@ -160,7 +161,8 @@ theorem isCoboundary₁_of_isCocycle₁_of_quotient_to_fixedPoints_forcedDiscret
     obtain ⟨σ₁, rfl⟩ := QuotientGroup.mk_surjective q₁
     refine Subtype.ext ?_
     rw [← map_mul, hg_apply, hf]
-    simp [AlgEquiv.smul_def, hg_apply, he]
+    simp [AlgEquiv.smul_def, hg_apply, he, AddEquiv.symm_map_smul_of_map_smul
+      (ForcedDiscrete.addEquiv L) (fun g x => (ForcedDiscrete.smul_addEquiv g x).symm)]
   -- The finite additive Hilbert 90 for `F/K` gives `β`, which read in `L` is the `U`-invariant.
   obtain ⟨β, hβ⟩ := isCoboundary₁_of_isCocycle₁_of_aut g hg
   refine ⟨⟨ForcedDiscrete.addEquiv L (β : L), fun σ => ?_⟩, fun q => ?_⟩
