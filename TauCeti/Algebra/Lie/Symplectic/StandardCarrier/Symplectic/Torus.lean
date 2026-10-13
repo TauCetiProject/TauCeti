@@ -6,8 +6,7 @@ Authors: Codex
 module
 
 public import TauCeti.Algebra.Lie.Symplectic.StandardCarrier.Symplectic.Integral
-public import TauCeti.Algebra.AlgebraicGroup.Symplectic.DiagonalTorus.Basic
-public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.C.Classical
+public import TauCeti.Algebra.AlgebraicGroup.Symplectic.DiagonalTorus.RootDatum
 
 /-!
 # The integral type-C weight torus in symplectic coordinates
@@ -18,10 +17,10 @@ change of coordinates identifies these parametrized tori, and the carrier--sympl
 isomorphism intertwines their embeddings. Thus the comparison preserves the chosen torus
 as a group-scheme morphism, including its parameters over rings with nilpotents.
 
-The character change uses `DynkinType.TypeC.classicalWeightEquiv`, and the represented
+The character change uses `Symplectic.characterEquiv`, and the represented
 morphisms use `GeneralLinear.weightCharacterMap` and `Symplectic.diagonalTorus`.
-The ambient comparison follows the coordinate-map method of the numbered root comparison
-in [TauCetiProject/TauCeti#15715](https://github.com/TauCetiProject/TauCeti/pull/15715) (Codex).
+The ambient comparison identifies the coordinate maps on matrix entries, then cancels
+the closed symplectic inclusion.
 
 ## References
 
@@ -41,18 +40,14 @@ variable (n : ℕ)
 
 private def symplecticCharacterEquiv :
     (ULift (Fin (n + 1)) →₀ ℤ) ≃ₗ[ℤ] (Fin (n + 1) →₀ ℤ) :=
-  (Finsupp.domLCongr Equiv.ulift).trans
-    ((Finsupp.linearEquivFunOnFinite ℤ ℤ _).trans
-      ((DynkinType.TypeC.classicalWeightEquiv (n + 1)).symm.trans
-        (Finsupp.linearEquivFunOnFinite ℤ ℤ _).symm))
+  (Symplectic.characterEquiv (n + 1)).symm.trans
+    (Finsupp.linearEquivFunOnFinite ℤ ℤ _).symm
 
 private theorem symplecticCharacterEquiv_single (i : Fin (n + 1)) :
     symplecticCharacterEquiv n (Finsupp.single (ULift.up i) 1) =
       Finsupp.equivFunOnFinite.symm (DynkinType.TypeC.weight (n + 1) i) := by
-  simp only [symplecticCharacterEquiv, LinearEquiv.trans_apply,
-    Finsupp.domLCongr_apply, Finsupp.domCongr_apply, Finsupp.equivMapDomain_single,
-    Equiv.ulift_apply, Finsupp.linearEquivFunOnFinite_single,
-    DynkinType.TypeC.classicalWeightEquiv_symm_single]
+  rw [symplecticCharacterEquiv, LinearEquiv.trans_apply,
+    ← Symplectic.characterEquiv_weight, LinearEquiv.symm_apply_apply]
   rfl
 
 private theorem weightCharacterMap_eq_symplecticCharacterEquiv :
@@ -146,6 +141,8 @@ theorem schemePointsMulEquiv_symplecticTorusIso
   rw [hweight, SplitTorus.apply_weightCharacter,
     ← SplitTorus.schemePointsMulEquiv_eq_freeAbelianCharEquiv]
 
+/- Coordinate-map argument adapted from TauCetiProject/TauCeti#15715 (Codex):
+https://github.com/TauCetiProject/TauCeti/pull/15715 -/
 private theorem diagonalTorusCoordinateMap_comp_symplecticCharacters :
     Symplectic.coordinateMap ℤ (n + 1) ≫
         Symplectic.diagonalTorusCoordinateMap ≫
@@ -184,7 +181,7 @@ private theorem diagonalTorusCoordinateMap_comp_symplecticCharacters :
 /-- The integral carrier--symplectic isomorphism identifies the parametrized weight torus
 with the standard diagonal torus, after the integral change of torus coordinates. -/
 @[reassoc (attr := simp)]
-theorem weightTorus_comp_symplecticIso :
+theorem weightTorus_comp_symplecticIso_hom :
     weightTorus n ≫ (symplecticIso n).hom =
       (symplecticTorusIso n ℤ).hom ≫ Symplectic.diagonalTorus := by
   apply (cancel_mono (Symplectic.inclusion ℤ (n + 1))).mp
