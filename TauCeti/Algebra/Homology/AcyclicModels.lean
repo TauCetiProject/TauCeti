@@ -570,6 +570,16 @@ theorem augment_extend {εF : ∀ X : C, (F.obj X).X 0 →ₗ[k] k} {εG : ∀ X
   rw [← toMulti_extend]
   exact B.toMulti.augment_extend hεF hεG (fun _ ↦ t) (fun _ ↦ ht) X x
 
+/-- Two natural chain maps `f, g : F ⟶ G` have the same augmentation in degree zero as soon as they
+have the same augmentation on the generator of the model of degree zero, when the augmentation of
+`G` is natural. -/
+theorem augment_eq_of_gen {εG : ∀ X : C, (G.obj X).X 0 →ₗ[k] k}
+    (hεG : ∀ {X Y : C} (f : X ⟶ Y) x, εG Y ((G.map f).f 0 x) = εG X x) (f g : F ⟶ G)
+    (h : εG (B.model 0) ((f.app (B.model 0)).f 0 (B.gen 0)) =
+      εG (B.model 0) ((g.app (B.model 0)).f 0 (B.gen 0))) (X : C) (x : (F.obj X).X 0) :
+    εG X ((f.app X).f 0 x) = εG X ((g.app X).f 0 x) :=
+  B.toMulti.augment_eq_of_gen hεG f g (fun _ ↦ h) X x
+
 /-- The map determined by an element on the model is natural. -/
 theorem extend_map {m n : ℕ} (t : (G.obj (B.model n)).X m) {X Y : C} (f : X ⟶ Y)
     (x : (F.obj X).X n) : B.extend t Y ((F.map f).f n x) = (G.map f).f m (B.extend t X x) := by
