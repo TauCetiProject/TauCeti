@@ -56,6 +56,11 @@ namespace TauCeti
 noncomputable def cosAddHalfSq (z : EuclideanSpace ℝ (Fin 2)) : ℝ :=
   Real.cos (z 0) + z 1 ^ 2 / 2
 
+@[simp]
+theorem cosAddHalfSq_apply (z : EuclideanSpace ℝ (Fin 2)) :
+    cosAddHalfSq z = Real.cos (z 0) + z 1 ^ 2 / 2 :=
+  (rfl)
+
 /-- The gradient field `(-sin x, y)`. -/
 private noncomputable def gradField (z : EuclideanSpace ℝ (Fin 2)) : EuclideanSpace ℝ (Fin 2) :=
   WithLp.toLp 2 ![-Real.sin (z 0), z 1]
@@ -93,6 +98,18 @@ private theorem hasGradientAt_cosAddHalfSq (z : EuclideanSpace ℝ (Fin 2)) :
 /-- The gradient of `cos x + y² / 2` is `(-sin x, y)`. -/
 private theorem gradient_cosAddHalfSq : ∇ cosAddHalfSq = gradField :=
   funext fun z ↦ (hasGradientAt_cosAddHalfSq z).gradient
+
+/-- The first coordinate of the gradient is `-sin x`. -/
+@[simp]
+theorem gradient_cosAddHalfSq_apply_zero (z : EuclideanSpace ℝ (Fin 2)) :
+    ∇ cosAddHalfSq z 0 = -Real.sin (z 0) := by
+  rw [gradient_cosAddHalfSq, gradField_apply_zero]
+
+/-- The second coordinate of the gradient is `y`. -/
+@[simp]
+theorem gradient_cosAddHalfSq_apply_one (z : EuclideanSpace ℝ (Fin 2)) :
+    ∇ cosAddHalfSq z 1 = z 1 := by
+  rw [gradient_cosAddHalfSq, gradField_apply_one]
 
 /-- **The gradient is `1`-Lipschitz.** -/
 theorem lipschitzWith_gradient_cosAddHalfSq : LipschitzWith 1 (∇ cosAddHalfSq) := by
@@ -141,14 +158,13 @@ private theorem hessianOperator_cosAddHalfSq (z : EuclideanSpace ℝ (Fin 2)) :
   have hG : HasFDerivAt gradField (hessField z) z := by
     convert h0.add h1 using 1
     · funext w
-      rw [gradField_eq]
-      rfl
+      simp [gradField_eq]
     · ext u i
       fin_cases i <;> simp [hessField]
   exact hG.fderiv
 
 /-- The value of the Hessian quadratic form: `-cos x · u₀² + u₁²`. -/
-private theorem hessianQuadraticForm_cosAddHalfSq (z u : EuclideanSpace ℝ (Fin 2)) :
+theorem hessianQuadraticForm_cosAddHalfSq (z u : EuclideanSpace ℝ (Fin 2)) :
     hessianQuadraticForm cosAddHalfSq z u = -Real.cos (z 0) * u 0 ^ 2 + u 1 ^ 2 := by
   rw [hessianQuadraticForm_apply, ← inner_hessianOperator_left, hessianOperator_cosAddHalfSq,
     hessField_apply]
@@ -185,8 +201,7 @@ theorem isNondegenerateCriticalPoint_cosAddHalfSq {z : EuclideanSpace ℝ (Fin 2
   have hB : fderiv ℝ (fderiv ℝ cosAddHalfSq) z (v - w) = 0 := by rw [map_sub, hvw, sub_self]
   have hD : hessField z (v - w) = 0 := by
     have h2 : fderiv ℝ (fderiv ℝ cosAddHalfSq) z (v - w) (hessField z (v - w)) = 0 := by
-      rw [hB]
-      rfl
+      simp [hB]
     rw [← inner_hessianOperator_left, hessianOperator_cosAddHalfSq] at h2
     exact inner_self_eq_zero.1 h2
   have h0 := congrArg (fun v : EuclideanSpace ℝ (Fin 2) ↦ v 0) hD
@@ -394,15 +409,15 @@ private theorem span_sup_span_eq_top_of_saddle {q : EuclideanSpace ℝ (Fin 2)}
     have hmem : ∀ s : ℝ, q 0 • e₀ + s • e₁ ∈ Flow.stableSet Φ q := fun s ↦ by
       rw [Flow.mem_stableSet]
       simp only [orbit_vertical hqc.1]
-      conv => arg 3; rw [hq']
-      refine tendsto_const_nhds.add (Tendsto.smul_const ?_ e₁)
-      simpa using Real.tendsto_exp_neg_atTop_nhds_zero.const_mul s
+      have h := (tendsto_const_nhds (x := q 0 • e₀)).add
+        ((Real.tendsto_exp_neg_atTop_nhds_zero.const_mul s).smul_const e₁)
+      rwa [mul_zero, ← hq'] at h
     have hγ : HasDerivAt (fun s : ℝ ↦ q 0 • e₀ + s • e₁) e₁ 0 := by
       simpa using ((hasDerivAt_id (0 : ℝ)).smul_const e₁).const_add (q 0 • e₀)
     have := hγ.mem_tangentConeAt (S := Flow.stableSet Φ q) (Eventually.of_forall hmem)
-    simp only [zero_smul, add_zero] at this
-    rw [hq'] at this ⊢
-    simpa using Submodule.subset_span this
+    beta_reduce at this
+    rw [← hq'] at this
+    exact Submodule.subset_span this
   -- `U` and the vertical line together span the plane.
   have hinf : U ⊓ ℝ ∙ e₁ = ⊥ := by
     refine (Submodule.eq_bot_iff _).2 fun v ⟨hvU, hv₁⟩ ↦ ?_
@@ -461,7 +476,7 @@ private theorem fderiv_cosAddHalfSq_single_pi :
 /-- **The trajectories from the saddle `(0, 0)` to the minimum `(π, 0)` form a manifold of
 dimension `1`**: the Morse indices are `1` and `0`. -/
 theorem exists_isManifold_cosAddHalfSq_saddle_min
-    {L N : Submodule ℝ (EuclideanSpace ℝ (Fin 2))} (hLN : Submodule.IsTopCompl L N)
+    {L : Submodule ℝ (EuclideanSpace ℝ (Fin 2))}
     (hL : Module.finrank ℝ L = 1) :
     ∃ C : ChartedSpace L ↥(Flow.unstableSet Φ 0 ∩
         Flow.stableSet Φ (EuclideanSpace.single 0 Real.pi)), letI := C
@@ -472,14 +487,14 @@ theorem exists_isManifold_cosAddHalfSq_saddle_min
           Flow.stableSet Φ (EuclideanSpace.single 0 Real.pi)) → EuclideanSpace ℝ (Fin 2)) := by
   refine isMorseSmale_cosAddHalfSq.exists_isManifold_unstableSet_inter_stableSet
     contDiff_cosAddHalfSq (isNondegenerateCriticalPoint_cosAddHalfSq fderiv_cosAddHalfSq_zero)
-    (isNondegenerateCriticalPoint_cosAddHalfSq fderiv_cosAddHalfSq_single_pi) hLN ?_
+    (isNondegenerateCriticalPoint_cosAddHalfSq fderiv_cosAddHalfSq_single_pi) ?_
   rw [hL, morseIndex_cosAddHalfSq_of_cos_eq_one fderiv_cosAddHalfSq_zero (by simp),
     morseIndex_cosAddHalfSq_of_cos_eq_neg_one fderiv_cosAddHalfSq_single_pi (by simp)]
 
 /-- **The unparametrized trajectories from the saddle `(0, 0)` to the minimum `(π, 0)`, on each
 level, form a manifold of dimension `0`.** -/
 theorem exists_isManifold_cosAddHalfSq_saddle_min_level
-    {L N : Submodule ℝ (EuclideanSpace ℝ (Fin 2))} (hLN : Submodule.IsTopCompl L N)
+    {L : Submodule ℝ (EuclideanSpace ℝ (Fin 2))}
     (hL : Module.finrank ℝ L = 0) (c : ℝ) :
     ∃ C : ChartedSpace L ↥(Flow.unstableSet Φ 0 ∩
         Flow.stableSet Φ (EuclideanSpace.single 0 Real.pi) ∩ {x | cosAddHalfSq x = c}), letI := C
@@ -491,7 +506,7 @@ theorem exists_isManifold_cosAddHalfSq_saddle_min_level
             EuclideanSpace ℝ (Fin 2)) := by
   refine isMorseSmale_cosAddHalfSq.exists_isManifold_unstableSet_inter_stableSet_level
     contDiff_cosAddHalfSq (isNondegenerateCriticalPoint_cosAddHalfSq fderiv_cosAddHalfSq_zero)
-    (isNondegenerateCriticalPoint_cosAddHalfSq fderiv_cosAddHalfSq_single_pi) hLN ?_
+    (isNondegenerateCriticalPoint_cosAddHalfSq fderiv_cosAddHalfSq_single_pi) ?_
   rw [hL, morseIndex_cosAddHalfSq_of_cos_eq_one fderiv_cosAddHalfSq_zero (by simp),
     morseIndex_cosAddHalfSq_of_cos_eq_neg_one fderiv_cosAddHalfSq_single_pi (by simp)]
 
