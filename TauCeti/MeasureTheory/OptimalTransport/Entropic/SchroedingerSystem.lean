@@ -541,17 +541,17 @@ theorem exists_isCoupling_withDensity_exp_add [IsFiniteMeasure μ] [IsFiniteMeas
   ext t ht
   rw [hsnd t ht, hc, one_mul]
 
-/-- A reference measure with bounded log-density against the product of two finite measures is
-finite. -/
+/-- A reference measure with log-density bounded above almost everywhere against the product of
+two finite measures is finite. -/
 theorem isFiniteMeasure_of_eq_withDensity_exp [IsFiniteMeasure μ] [IsFiniteMeasure ν]
-    {R : Measure (X × Y)} (hg : Measurable g) (hgM : ∀ z, |g z| ≤ M)
+    {R : Measure (X × Y)} (hg : AEMeasurable g (μ.prod ν)) (hgM : ∀ᵐ z ∂μ.prod ν, g z ≤ M)
     (hR : R = (μ.prod ν).withDensity fun z ↦ ENNReal.ofReal (Real.exp (g z))) :
     IsFiniteMeasure R := by
   rw [hR]
-  refine isFiniteMeasure_withDensity_ofReal (Integrable.of_bound (by fun_prop) (Real.exp M)
-    (ae_of_all _ fun z ↦ ?_)).2
-  rw [Real.norm_eq_abs, abs_of_pos (Real.exp_pos _), Real.exp_le_exp]
-  exact (abs_le.1 (hgM z)).2
+  refine isFiniteMeasure_withDensity_ofReal (Integrable.of_bound
+    (Real.measurable_exp.comp_aemeasurable hg).aestronglyMeasurable (Real.exp M)
+    (hgM.mono fun z hz ↦ ?_)).2
+  rwa [Function.comp_apply, Real.norm_eq_abs, abs_of_pos (Real.exp_pos _), Real.exp_le_exp]
 
 /-- **The Schrödinger system against a reference measure with bounded log-density.** Let `μ` and
 `ν` be finite measures of equal mass, and let the reference measure `R` have density `exp g`
@@ -591,7 +591,8 @@ theorem IsCoupling.exists_eq_withDensity_exp_add_of_klDiv_eq_schroedingerValue
   have : IsFiniteMeasure ν := hπ.snd_eq ▸ inferInstance
   obtain ⟨φ, ψ, C, hφ, hψ, hφC, hψC, hσ⟩ :=
     exists_isCoupling_withDensity_exp_add_of_eq_withDensity hπ.measure_univ_eq hg hgM hR
-  have := isFiniteMeasure_of_eq_withDensity_exp hg hgM hR
+  have := isFiniteMeasure_of_eq_withDensity_exp hg.aemeasurable
+    (ae_of_all _ fun z ↦ (abs_le.1 (hgM z)).2) hR
   have hφi : Integrable φ μ :=
     Integrable.of_bound hφ.aestronglyMeasurable C (ae_of_all _ fun x ↦ hφC x)
   have hψi : Integrable ψ ν :=

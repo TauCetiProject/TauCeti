@@ -24,15 +24,18 @@ Nothing here uses this structure of `Ω`: only the endpoint map enters.
 
 The dynamic problem reduces to the static Schrödinger problem `TauCeti.schroedingerValue` for the
 endpoint law `R.map e` of the reference measure. For every `P`, the data processing inequality
-gives `klDiv (P.map e) (R.map e) ≤ klDiv P R`, and for every coupling `π`, reweighting `R` along
-`e` by the density `dπ/d(e₊R)` gives the measure `R.fitLaw e π`, which has endpoint law `π` and
-relative entropy `klDiv π (R.map e)`. So the two values agree, and the dynamic minimiser is the
-reweighting of `R` by the static minimiser `π`: its density against `R` is
-`dπ/d(e₊R) (e ω)`, a function of the endpoints alone. On path space this says that the optimal
-process is the mixture, under the optimal endpoint coupling, of the bridges of the reference
-process. When `π` has the product density `exp (φ(x) + ψ(y))` against `R.map e`, the dynamic
-minimiser factorises as `exp (φ(X₀)) exp (ψ(X₁)) R`, a product of functions of the initial and of
-the final point.
+gives `klDiv (P.map e) (R.map e) ≤ klDiv P R`. Conversely, for every coupling `π` with
+`π ≪ R.map e`, reweighting `R` along `e` by the density `dπ/d(e₊R)` gives the measure
+`R.fitLaw e π`, which has endpoint law `π` and relative entropy `klDiv π (R.map e)`; a coupling
+that is not absolutely continuous with respect to `R.map e` has infinite relative entropy and so
+only contributes the trivial bound `∞`. So the two values agree, and the dynamic minimiser is the
+reweighting of `R` by the static minimiser `π`: its density against `R` is `dπ/d(e₊R) (e ω)`, a
+function of the endpoints alone. Informally, on a path space where the reference process admits
+regular conditional laws given its endpoints, this says that the optimal process is the mixture,
+under the optimal endpoint coupling, of the bridges of the reference process; no such
+disintegration is formalised here. When `π` has the product density `exp (φ(x) + ψ(y))` against
+`R.map e`, the dynamic minimiser factorises as `exp (φ(X₀)) exp (ψ(X₁)) R`, a product of functions
+of the initial and of the final point.
 
 ## Main definitions
 
@@ -164,8 +167,7 @@ theorem IsCoupling.klDiv_fitLaw_eq_dynamicSchroedingerValue [IsFiniteMeasure μ]
 /-- **Characterisation of the dynamic minimiser.** Let the dynamic value be finite. A measure `P`
 whose endpoint law couples `μ` and `ν` attains it exactly when its endpoint law attains the static
 Schrödinger value of `R.map e` and `P` is the reweighting `R.fitLaw e (P.map e)` of `R` by
-`d(e₊P)/d(e₊R) ∘ e`. On path space, the second condition says that, given its endpoints, `P`
-follows the bridges of the reference measure. -/
+`d(e₊P)/d(e₊R) ∘ e`, so that the density of `P` against `R` depends only on the endpoints. -/
 theorem klDiv_eq_dynamicSchroedingerValue_iff [IsFiniteMeasure μ] [IsFiniteMeasure R]
     (he : Measurable e) (hP : IsCoupling (P.map e) μ ν) (h : dynamicSchroedingerValue R e μ ν ≠ ∞) :
     klDiv P R = dynamicSchroedingerValue R e μ ν ↔
@@ -263,7 +265,8 @@ theorem exists_klDiv_withDensity_exp_add_comp_eq_dynamicSchroedingerValue [IsFin
   obtain ⟨φ, ψ, C, hφ, hψ, hφC, hψC, hσ⟩ :=
     exists_isCoupling_withDensity_exp_add_of_eq_withDensity hμν hg hgM hR
   -- The reference measure is finite, since its endpoint law has a bounded density.
-  have := isFiniteMeasure_of_eq_withDensity_exp hg hgM hR
+  have := isFiniteMeasure_of_eq_withDensity_exp hg.aemeasurable
+    (ae_of_all _ fun z ↦ (abs_le.1 (hgM z)).2) hR
   have : IsFiniteMeasure R := Measure.isFiniteMeasure_of_map he.aemeasurable
   have hφi : Integrable φ μ :=
     Integrable.of_bound hφ.aestronglyMeasurable C (ae_of_all _ fun x ↦ hφC x)
