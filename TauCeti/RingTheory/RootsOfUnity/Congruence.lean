@@ -6,12 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.GroupTheory.OrderOfElement
-import Mathlib.Algebra.Ring.GeomSum
 import Mathlib.Data.Nat.Choose.Dvd
 import Mathlib.RingTheory.Coprime.Lemmas
-import Mathlib.Tactic.Abel
+import Mathlib.RingTheory.Multiplicity
 import Mathlib.Tactic.IntervalCases
 import Mathlib.Tactic.NoncommRing
+import TauCeti.Algebra.Ring.GeomSum
 
 /-!
 # Elements of finite order congruent to `1` modulo `p ^ k`
@@ -56,48 +56,6 @@ namespace TauCeti
 
 variable {A : Type*} [Ring A]
 
-/-- `(1 + x) ^ r = 1 + r x + x² v` and `∑_{i < r} (1 + x) ^ i = r + C(r, 2) x + x² w` for some
-`v` and `w`. -/
-private theorem exists_one_add_pow_eq_and_geom_sum_eq (x : A) (r : ℕ) :
-    ∃ v w : A, (1 + x) ^ r = 1 + r * x + x ^ 2 * v ∧
-      ∑ i ∈ Finset.range r, (1 + x) ^ i = r + (r.choose 2 : ℕ) * x + x ^ 2 * w := by
-  induction r with
-  | zero => exact ⟨0, 0, by simp, by simp⟩
-  | succ r ih =>
-    obtain ⟨v, w, hv, hw⟩ := ih
-    refine ⟨r + v + v * x, w + v, ?_, ?_⟩
-    · rw [pow_succ, hv]
-      have h : (r : A) * x * x = x ^ 2 * r := by rw [mul_assoc, ← sq, Nat.cast_comm]
-      push_cast
-      simp only [mul_add, add_mul, mul_one, one_mul, h, ← mul_assoc]
-      rw [sq]
-      abel
-    · rw [Finset.sum_range_succ, hw, hv, Nat.choose_succ_succ', Nat.choose_one_right]
-      push_cast
-      simp only [mul_add, add_mul]
-      abel
-
-/-- In a ring where only `0` is divisible by every power of `p`, a nonzero `x` divisible by `p ^ k`
-is `p ^ j c` for some `j ≥ k` and some `c` not divisible by `p`. -/
-private theorem exists_eq_pow_mul_of_pow_dvd {p : ℕ}
-    (hsep : ∀ x : A, (∀ j, (p : A) ^ j ∣ x) → x = 0) {x : A} (hx : x ≠ 0) {k : ℕ}
-    (hdvd : (p : A) ^ k ∣ x) : ∃ j c, k ≤ j ∧ x = (p : A) ^ j * c ∧ ¬ (p : A) ∣ c := by
-  classical
-  have hex : ∃ J, ¬ (p : A) ^ J ∣ x := by
-    by_contra h
-    push Not at h
-    exact hx (hsep _ h)
-  -- `Nat.find hex = j + 1`, where `p ^ j` is the exact power of `p` dividing `x`.
-  have hJk : k < Nat.find hex := by
-    by_contra h
-    exact Nat.find_spec hex ((pow_dvd_pow _ (not_lt.mp h)).trans hdvd)
-  obtain ⟨j, hj⟩ : ∃ j, Nat.find hex = j + 1 := ⟨Nat.find hex - 1, by omega⟩
-  obtain ⟨c, hc⟩ : (p : A) ^ j ∣ x := not_not.mp (Nat.find_min hex (by omega))
-  refine ⟨j, c, by omega, hc, fun ⟨d, hd⟩ ↦ ?_⟩
-  have := Nat.find_spec hex
-  rw [hj] at this
-  exact this ⟨d, by rw [hc, hd, pow_succ, mul_assoc]⟩
-
 /-- If `bʳ = 1` and `b - 1 = pʲ c`, then `r c + C(r, 2) pʲ c² + p²ʲ c³ w = 0` for some `w`: expand
 `0 = bʳ - 1 = (b - 1) ∑_{i < r} bⁱ` and cancel `pʲ`. -/
 private theorem exists_mul_add_eq_zero_of_pow_eq_one {p : ℕ} (hreg : IsLeftRegular (p : A))
@@ -122,7 +80,13 @@ private theorem eq_one_of_pow_prime_eq_one_of_pow_dvd_sub_one {p : ℕ} (hp : p.
     (hk : 3 ≤ p ^ k) {r : ℕ} (hr : r.Prime) {b : A} (hb : b ^ r = 1)
     (hdvd : (p : A) ^ k ∣ b - 1) : b = 1 := by
   by_contra hne
-  obtain ⟨j, c, hjk, hc, hpc⟩ := exists_eq_pow_mul_of_pow_dvd hsep (sub_ne_zero.mpr hne) hdvd
+  -- Write `b - 1 = p ^ j * c` with `j` the multiplicity of `p` in `b - 1`.
+  have hfin : FiniteMultiplicity (p : A) (b - 1) := by
+    by_contra h
+    exact sub_ne_zero.mpr hne (hsep _ (FiniteMultiplicity.not_iff_forall.mp h))
+  obtain ⟨c, hc, hpc⟩ := hfin.exists_eq_pow_mul_and_not_dvd
+  have hjk := hfin.le_multiplicity_of_pow_dvd hdvd
+  set j := multiplicity (p : A) (b - 1)
   have hk1 : 1 ≤ k := Nat.one_le_iff_ne_zero.mpr fun h ↦ by simp [h] at hk
   have hj0 : j ≠ 0 := by omega
   obtain ⟨w, hcS⟩ := exists_mul_add_eq_zero_of_pow_eq_one hreg hb hc
