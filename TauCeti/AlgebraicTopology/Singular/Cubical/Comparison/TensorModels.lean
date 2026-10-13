@@ -17,9 +17,9 @@ the models `(Iᵖ, I^q)`, one for each pair of degrees `p + q = n`, in degree `n
 (`TauCeti.AcyclicModels.MultiModelPresentation`): a chain of the summand `Nₚ(X) ⊗ N_q(Y)` is
 a combination of the images of the generator `[Iᵖ] ⊗ [I^q]` under the pairs of maps
 `(Iᵖ, I^q) ⟶ (X, Y)`, with the coefficients of the two factors
-(`TauCeti.cubicalModelPresentation`).  Any functor of the form `N(X × Y)`, or the singular chains
-of the product, is acyclic on these models, since a product of cubes is contractible.  This is
-the input to the method of acyclic models for natural maps out of the tensor product.
+(`TauCeti.cubicalModelPresentation`).  The simplicial singular chains of the product are acyclic
+on these models, since a product of cubes is contractible.  This is the input to the method of
+acyclic models for natural maps out of the tensor product.
 
 ## Main definitions
 
