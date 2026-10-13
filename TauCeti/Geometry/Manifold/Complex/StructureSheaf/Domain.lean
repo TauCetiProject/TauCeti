@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Complex.StructureSheaf.Basic
+public import TauCeti.Topology.Sheaves.NoZeroDivisors
 import TauCeti.Analysis.Complex.RiemannSurface.IdentityTheorem
 import Mathlib.Algebra.Category.Ring.FilteredColimits
 
@@ -24,8 +25,7 @@ sectionwise statement needs connectedness of its domain. Compactness is not need
 
 * Otto Forster, *Lectures on Riemann Surfaces*, §§1, 6 and 16.
 * The section argument uses `TauCeti.RiemannSurface.apply_eq_of_eventuallyConst`;
-  the passage to stalks uses Mathlib's `TopCat.Presheaf.germ_eq` and
-  `TopCat.Presheaf.exists_germ_eq`.
+  the passage to stalks uses `TopCat.Presheaf.stalk_noZeroDivisors_of_hasBasis`.
 -/
 
 public noncomputable section
@@ -62,37 +62,14 @@ instance stalkIsDomain (x : X) :
     IsDomain ((holomorphicStructureSheaf 𝓘(ℂ) X).presheaf.stalk x) := by
   let F := (holomorphicStructureSheaf 𝓘(ℂ) X).presheaf
   have : LocallyConnectedSpace X := ChartedSpace.locallyConnectedSpace ℂ X
-  have : NoZeroDivisors (F.stalk x) := ⟨by
-    intro a b hab
-    obtain ⟨U, hxU, s, rfl⟩ := F.exists_germ_eq a
-    obtain ⟨V, hxV, t, rfl⟩ := F.exists_germ_eq b
-    let P : Opens X := U ⊓ V
-    have hxP : x ∈ P := ⟨hxU, hxV⟩
-    let s' := F.map (homOfLE (inf_le_left : P ≤ U)).op s
-    let t' := F.map (homOfLE (inf_le_right : P ≤ V)).op t
-    have hprod : F.germ P x hxP (s' * t') = F.germ P x hxP 0 := by
-      rw [map_mul, map_zero, F.germ_res_apply, F.germ_res_apply]
-      exact hab
-    obtain ⟨W, hxW, iP, jP, hW⟩ := F.germ_eq x hxP hxP (s' * t') 0 hprod
-    obtain ⟨C, hC, hCW⟩ := (LocallyConnectedSpace.open_connected_basis x).mem_iff.mp
-      (W.isOpen.mem_nhds hxW)
-    let Q : Opens X := ⟨C, hC.1⟩
-    have hxQ : x ∈ Q := hC.2.1
-    have : PreconnectedSpace Q := isPreconnected_iff_preconnectedSpace.mp
-      hC.2.2.isPreconnected
-    let j : Q ⟶ W := homOfLE hCW
-    let k : Q ⟶ P := j ≫ iP
-    have hQ : F.map k.op s' * F.map k.op t' = 0 := by
-      rw [← map_mul]
-      simp only [k, op_comp, F.map_comp, ConcreteCategory.comp_apply, hW, map_zero]
-    rcases eq_zero_or_eq_zero_of_mul_eq_zero hQ with hs | ht
-    · left
-      rw [← F.germ_res_apply (homOfLE inf_le_left) x hxP s,
-        ← F.germ_res_apply k x hxQ s', hs, map_zero]
-    · right
-      rw [← F.germ_res_apply (homOfLE inf_le_right) x hxP t,
-        ← F.germ_res_apply k x hxQ t', ht, map_zero]⟩
-  exact (isDomain_iff_noZeroDivisors_and_nontrivial (α := F.stalk x)).mpr
-    ⟨inferInstance, inferInstance⟩
+  have hB : (𝓝 x).HasBasis
+      (fun U : Opens X ↦ x ∈ U ∧ IsConnected (U : Set X)) (fun U ↦ (U : Set X)) :=
+    (LocallyConnectedSpace.open_connected_basis x).to_hasBasis
+      (fun C hC ↦ ⟨⟨C, hC.1⟩, hC.2, Subset.rfl⟩)
+      (fun U hU ↦ ⟨U, ⟨U.isOpen, hU⟩, Subset.rfl⟩)
+  have : NoZeroDivisors (F.stalk x) := F.stalk_noZeroDivisors_of_hasBasis x hB fun U hU ↦ by
+    have : PreconnectedSpace U := isPreconnected_iff_preconnectedSpace.mp hU.2.isPreconnected
+    infer_instance
+  exact NoZeroDivisors.to_isDomain _
 
 end TauCeti.holomorphicStructureSheaf
