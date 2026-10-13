@@ -5,53 +5,59 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.MeasureTheory.Integral.IntervalIntegral.AbsolutelyContinuousFun
+public import TauCeti.MeasureTheory.Function.MetricDerivative.Basic
 
 /-!
 # Gluing absolutely continuous curves
 
-In a finite-dimensional real normed space, absolute continuity on adjacent intervals implies
-absolute continuity on their union. This permits splitting and reassembling raw curves without
-introducing a new curve carrier. The proof reconstructs the curve from its integrable derivative.
+Absolute continuity on adjacent intervals implies absolute continuity on their union in a
+pseudometric space. This permits splitting and reassembling raw curves with either orientation.
 -/
 
 public section
 
-open MeasureTheory Set
+open MeasureTheory Set TauCeti
 
 namespace AbsolutelyContinuousOnInterval
 
-variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
-  {γ : ℝ → F} {a b c : ℝ}
+variable {X : Type*} [PseudoMetricSpace X] {γ : ℝ → X} {a b c : ℝ}
 
-/-- Absolute continuity glues across the common endpoint of two ordered intervals. -/
-theorem of_adjacent (h₁ : AbsolutelyContinuousOnInterval γ a c)
+private theorem of_adjacent (h₁ : AbsolutelyContinuousOnInterval γ a c)
     (h₂ : AbsolutelyContinuousOnInterval γ c b) (hac : a ≤ c) (hcb : c ≤ b) :
     AbsolutelyContinuousOnInterval γ a b := by
-  have hd₁ := h₁.intervalIntegrable_deriv_of_finiteDimensional
-  have hd₂ := h₂.intervalIntegrable_deriv_of_finiteDimensional
-  have hd : IntervalIntegrable (deriv γ) volume a b := hd₁.trans hd₂
-  have hI := hd.absolutelyContinuousOnInterval_intervalIntegral_of_finiteDimensional
-    left_mem_uIcc
-  have hconst : AbsolutelyContinuousOnInterval (fun _ : ℝ ↦ γ a) a b :=
-    (LipschitzWith.const (γ a)).lipschitzOnWith.absolutelyContinuousOnInterval
-  apply (hconst.fun_add hI).congr
-  intro t ht
-  dsimp only
-  rw [uIcc_of_le (hac.trans hcb)] at ht
-  by_cases htc : t ≤ c
-  · have hsub : uIcc a t ⊆ uIcc a c := by
-      rw [uIcc_of_le ht.1, uIcc_of_le hac]
-      exact Icc_subset_Icc le_rfl htc
-    rw [(h₁.mono hsub).integral_deriv_eq_sub_of_finiteDimensional]
-    abel
-  · have hsub : uIcc c t ⊆ uIcc c b := by
-      rw [uIcc_of_le (le_of_not_ge htc), uIcc_of_le hcb]
-      exact Icc_subset_Icc le_rfl ht.2
-    rw [← intervalIntegral.integral_add_adjacent_intervals hd₁
-      (hd₂.mono_set hsub), h₁.integral_deriv_eq_sub_of_finiteDimensional,
-      (h₂.mono hsub).integral_deriv_eq_sub_of_finiteDimensional]
-    abel
+  have hadd {s u : ℝ} (hsc : s ≤ c) (hcu : c ≤ u) :
+      (∫⁻ r in Ioc s u, metricDerivative γ r) =
+        (∫⁻ r in Ioc s c, metricDerivative γ r) +
+          ∫⁻ r in Ioc c u, metricDerivative γ r := by
+    rw [← Ioc_union_Ioc_eq_Ioc hsc hcu]
+    exact lintegral_union measurableSet_Ioc (Ioc_disjoint_Ioc_of_le le_rfl)
+  apply absolutelyContinuousOnInterval_of_edist_le_lintegral
+  · rw [uIoc_of_le (hac.trans hcb), hadd hac hcb]
+    exact (ENNReal.add_lt_top.mpr ⟨by simpa [uIoc_of_le hac] using
+      h₁.lintegral_metricDerivative_lt_top, by simpa [uIoc_of_le hcb] using
+      h₂.lintegral_metricDerivative_lt_top⟩).ne
+  · intro s hs u hu
+    wlog hsu : s ≤ u generalizing s u
+    · simpa only [edist_comm, uIoc_comm] using this u hu s hs (le_of_not_ge hsu)
+    rw [uIcc_of_le (hac.trans hcb)] at hs hu
+    by_cases huc : u ≤ c
+    · exact h₁.edist_le_lintegral_metricDerivative
+        (by simpa [uIcc_of_le hac] using And.intro hs.1 (hsu.trans huc))
+        (by simpa [uIcc_of_le hac] using And.intro hu.1 huc)
+    by_cases hcs : c ≤ s
+    · exact h₂.edist_le_lintegral_metricDerivative
+        (by simpa [uIcc_of_le hcb] using And.intro hcs hs.2)
+        (by simpa [uIcc_of_le hcb] using And.intro (hcs.trans hsu) hu.2)
+    have hsc : s ≤ c := (le_of_not_ge hcs)
+    have hcu : c ≤ u := (le_of_not_ge huc)
+    rw [uIoc_of_le hsu, hadd hsc hcu]
+    refine (edist_triangle (γ s) (γ c) (γ u)).trans (add_le_add ?_ ?_)
+    · have hs₁ : s ∈ uIcc a c := by simpa [uIcc_of_le hac] using And.intro hs.1 hsc
+      have h := h₁.edist_le_lintegral_metricDerivative (s := s) (u := c) hs₁ right_mem_uIcc
+      rwa [uIoc_of_le hsc] at h
+    · have hu₂ : u ∈ uIcc c b := by simpa [uIcc_of_le hcb] using And.intro hcu hu.2
+      have h := h₂.edist_le_lintegral_metricDerivative (s := c) (u := u) left_mem_uIcc hu₂
+      rwa [uIoc_of_le hcu] at h
 
 /-- Absolute continuity on two intervals sharing an endpoint implies absolute continuity
 between their other endpoints, in either orientation. -/
@@ -62,7 +68,7 @@ theorem trans (h₁ : AbsolutelyContinuousOnInterval γ a c)
   · exact (this h₂.symm h₁.symm (le_of_not_ge hab)).symm
   by_cases hac : a ≤ c
   · by_cases hcb : c ≤ b
-    · exact h₁.of_adjacent h₂ hac hcb
+    · exact of_adjacent h₁ h₂ hac hcb
     · apply h₁.mono
       rw [uIcc_of_le hab, uIcc_of_le hac]
       exact Icc_subset_Icc le_rfl (le_of_not_ge hcb)
@@ -71,7 +77,7 @@ theorem trans (h₁ : AbsolutelyContinuousOnInterval γ a c)
     exact Icc_subset_Icc (le_of_not_ge hac) le_rfl
 
 /-- Absolute continuity can be checked on the two pieces of a parameter interval. -/
-theorem iff_split (hc : c ∈ uIcc a b) :
+theorem _root_.absolutelyContinuousOnInterval_iff_and (hc : c ∈ uIcc a b) :
     AbsolutelyContinuousOnInterval γ a b ↔
       AbsolutelyContinuousOnInterval γ a c ∧ AbsolutelyContinuousOnInterval γ c b :=
   ⟨fun h ↦ ⟨h.mono (uIcc_subset_uIcc left_mem_uIcc hc),
