@@ -25,13 +25,14 @@ H¹(Gal(L/K), L) = 0.
 ```
 
 For a separable closure this is `H¹(G_K, Kˢ) = 0`. It is the additive companion of Hilbert 90,
-`H¹(G_K, (Kˢ)ˣ) = 0` (`TauCeti/FieldTheory/GaloisCohomology/Hilbert90.lean`). A group built from
-copies of `(Kˢ)ˣ` and of `Kˢ` by successive extensions has trivial first Galois cohomology once
-each of its pieces does, so the two vanishing theorems are the inputs for such groups. The
-admissible changes of variables `(u, r, s, t)` of Weierstrass equations over `Kˢ` are one: the
-scaling `u` lies in `(Kˢ)ˣ`, and the changes with `u = 1` are built from three copies of `Kˢ`, one
-for each of `r`, `s` and `t`. Triviality of their first cohomology is what lets a Galois cocycle of
-changes of variables descend a Weierstrass equation from `Kˢ` to `K`.
+`H¹(G_K, (Kˢ)ˣ) = 0` (`TauCeti/FieldTheory/GaloisCohomology/Hilbert90.lean`). The two vanishing
+theorems are inputs toward the first Galois cohomology of the admissible changes of variables
+`(u, r, s, t)` of Weierstrass equations over `Kˢ`: the scaling `u` lies in `(Kˢ)ˣ`, and the changes
+with `u = 1` are built from three copies of `Kˢ`, one for each of `r`, `s` and `t`. Deducing the
+vanishing for the changes of variables from these inputs still needs a dévissage along the
+nonabelian exact sequences of pointed sets, including the vanishing for the twisted forms of the
+kernels, which remains to be established. That vanishing is what lets a Galois cocycle of changes
+of variables descend a Weierstrass equation from `Kˢ` to `K`.
 
 The finite case is Noether's argument with the trace in place of a norm. For a finite extension
 `L/K` the automorphisms of `L/K` are linearly independent over `L` (Dedekind), so their sum is not
@@ -121,13 +122,6 @@ end FiniteExtension
 section Galois
 
 variable {K L : Type*} [Field K] [Field L] [Algebra K L]
-
-/-- **`L` is a discrete `Gal(L/K)`-module for an algebraic extension `L/K`**: every element of `L`
-is integral over `K`, so its stabilizer is open for the Krull topology. -/
-instance continuousSMul_forcedDiscrete [Algebra.IsIntegral K L] :
-    ContinuousSMul Gal(L/K) (ForcedDiscrete L) :=
-  (ForcedDiscrete.continuousSMul_iff L).2 fun x =>
-    (Algebra.IsIntegral.isIntegral (R := K) x).isLocallyConstant_apply.isOpen_fiber x
 
 variable [IsGalois K L]
 
