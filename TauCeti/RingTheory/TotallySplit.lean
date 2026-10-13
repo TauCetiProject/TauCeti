@@ -16,7 +16,8 @@ A finite-dimensional commutative algebra `A` over a field `K` has at most `finra
 `A →ₐ[K] K` (Mathlib's `card_algHom_le_finrank`). When it has that many, evaluation at the
 characters identifies `A` with the algebra of `K`-valued functions on them
 (`TauCeti.AlgHom.pi_id_bijective_of_finrank_le_card`), so `A` is totally split
-(`Algebra.IsFiniteSplit`), and in particular étale over `K`.
+(`Algebra.IsFiniteSplit`), and in particular étale over `K`. Conversely, a totally split algebra
+is the algebra of functions on its characters (`Algebra.IsFiniteSplit.pi_id_bijective`).
 
 Geometrically: a finite scheme over a field with as many rational points as its degree is a
 disjoint union of copies of the base. This is the criterion used to show that the `n`-torsion of an
@@ -26,6 +27,8 @@ elliptic curve over a separably closed field in which `n` is invertible is étal
 
 * `Algebra.IsFiniteSplit.of_finrank_le_card_algHom`: a finite-dimensional commutative algebra over
   a field with at least `finrank K A` characters is totally split.
+* `Algebra.IsFiniteSplit.pi_id_bijective`: evaluation at all characters identifies a totally split
+  algebra over a field with the algebra of functions on its characters.
 -/
 
 public section
@@ -40,3 +43,15 @@ theorem Algebra.IsFiniteSplit.of_finrank_le_card_algHom {K A : Type*} [Field K] 
   have := Finite.algHom K A K
   exact .of_algEquiv
     (AlgEquiv.ofBijective _ (TauCeti.AlgHom.pi_id_bijective_of_finrank_le_card h)).symm
+
+/-- **A totally split algebra is the algebra of functions on its characters.** If `A` is
+isomorphic to a finite product of copies of the field `K`, then evaluation at all characters
+`A →ₐ[K] K` is an isomorphism from `A` onto the algebra of `K`-valued functions on them. -/
+theorem Algebra.IsFiniteSplit.pi_id_bijective {K A : Type*} [Field K] [CommRing A]
+    [Algebra K A] [Algebra.IsFiniteSplit K A] :
+    Function.Bijective (AlgHom.pi fun χ : A →ₐ[K] K ↦ χ) := by
+  obtain ⟨n, ⟨e⟩⟩ := Algebra.IsFiniteSplit.nonempty_algEquiv_fun K A
+  refine TauCeti.AlgHom.pi_id_bijective_of_finrank_le_card (le_of_eq ?_)
+  rw [e.toLinearEquiv.finrank_eq, Module.finrank_fin_fun,
+    Nat.card_congr (e.arrowCongr AlgEquiv.refl), ← Nat.card_congr (Pi.evalAlgHomEquiv K (Fin n)),
+    Nat.card_eq_fintype_card, Fintype.card_fin]
