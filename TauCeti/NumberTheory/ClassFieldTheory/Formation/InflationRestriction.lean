@@ -86,13 +86,6 @@ private theorem injective_repHom (T : LayerRefinement old new) (F : Formation G)
   Subtype.ext ((T.repHom_hom_apply_coe F x).symm.trans
     ((congrArg Subtype.val h).trans (T.repHom_hom_apply_coe F y)))
 
-/-- The identification of the coefficient modules of a restriction of layers is bijective. -/
-private theorem bijective_repIso_inv {small big : NormalLayer G} (R : LayerRestriction small big)
-    (F : Formation G) : Function.Bijective (R.repIso F).inv.hom :=
-  Function.bijective_iff_has_inverse.2 ⟨(R.repIso F).hom.hom,
-    fun x => Subtype.ext ((R.repIso_hom_apply_coe F _).trans (R.repIso_inv_apply_coe F x)),
-    fun x => Subtype.ext ((R.repIso_inv_apply_coe F _).trans (R.repIso_hom_apply_coe F x))⟩
-
 /-- **The inflation-restriction sequence of a refinement of layers.** For a refinement
 `T : LayerRefinement old new`, the tower `F ⊆ K ⊆ L` with Galois groups `U/V` and `U/V'`, if
 `Hⁱ(V/V', A^{V'})` vanishes for `0 < i ≤ n`, then a class of `Hⁿ⁺¹(U/V', A^{V'})` is inflated from
@@ -105,7 +98,9 @@ theorem range_cohomologyInfl_eq_ker_cohomologyRes (T : LayerRefinement old new)
   rw [cohomologyInfl_def, LayerRestriction.cohomologyRes_def]
   exact groupCohomology.range_map_succ_eq_ker_map_succ T.galHom_surjective (injective_repHom T F)
     (range_repHom T F) (new.subgroupRestriction T.galHom.ker).galHom_injective
-    (new.range_galHom_subgroupRestriction T.galHom.ker) (bijective_repIso_inv _ F) n
+    (new.range_galHom_subgroupRestriction T.galHom.ker)
+    (CategoryTheory.ConcreteCategory.bijective_of_isIso
+      ((new.subgroupRestriction T.galHom.ker).repIso F).inv) n
     fun i hi => have := hH i hi; ModuleCat.isZero_of_subsingleton _
 
 /-- **Inflation along a refinement of layers is injective** when the layer of the kernel has no
@@ -120,7 +115,9 @@ theorem cohomologyInfl_injective (T : LayerRefinement old new) (F : Formation G)
   exact groupCohomology.map_succ_injective_of_extension T.galHom_surjective
     (injective_repHom T F) (range_repHom T F)
     (new.subgroupRestriction T.galHom.ker).galHom_injective
-    (new.range_galHom_subgroupRestriction T.galHom.ker) (bijective_repIso_inv _ F) n
+    (new.range_galHom_subgroupRestriction T.galHom.ker)
+    (CategoryTheory.ConcreteCategory.bijective_of_isIso
+      ((new.subgroupRestriction T.galHom.ker).repIso F).inv) n
     fun i hi => have := hH i hi; ModuleCat.isZero_of_subsingleton _
 
 end LayerRefinement
