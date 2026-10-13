@@ -174,7 +174,8 @@ private theorem singularAugment_singularCrossProductOfCubical_gen (i : BidegreeI
 
 /-- The two natural chain maps from the tensor product of the cubical chains to the singular chains
 of the product agree after augmentation in degree zero. -/
-theorem singularAugment_cubicalCrossProductToSingular_eq (X : TopCat.{u} × TopCat.{u})
+theorem singularAugment_cubicalCrossProductToSingular_eq_singularCrossProductOfCubical
+    (X : TopCat.{u} × TopCat.{u})
     (x : ((cubicalTensor k).obj X).X 0) :
     singularAugment k (X.1 ⊗ X.2) (((cubicalCrossProductToSingular k).app X).f 0 x) =
       singularAugment k (X.1 ⊗ X.2) (((singularCrossProductOfCubical k).app X).f 0 x) := by
@@ -194,7 +195,7 @@ def cubicalSingularCrossProductHomotopy (X Y : TopCat.{u}) :
   (cubicalTensorModelPresentation.{u} k).homotopy
     (isAcyclicOnMulti_singularChainsProduct_cubicalTensorModelPresentation k)
     (cubicalCrossProductToSingular k) (singularCrossProductOfCubical k)
-    (singularAugment_cubicalCrossProductToSingular_eq k) (X, Y)
+    (singularAugment_cubicalCrossProductToSingular_eq_singularCrossProductOfCubical k) (X, Y)
 
 /-- The homotopy between the two cross products is natural in both spaces. -/
 theorem cubicalSingularCrossProductHomotopy_hom_naturality {X X' Y Y' : TopCat.{u}}
@@ -206,7 +207,8 @@ theorem cubicalSingularCrossProductHomotopy_hom_naturality {X X' Y Y' : TopCat.{
         ((singularChains k).map (f ⊗ₘ g)).f j :=
   AcyclicModels.MultiModelPresentation.homotopy_hom_naturality _ _
     (cubicalCrossProductToSingular k) (singularCrossProductOfCubical k)
-    (singularAugment_cubicalCrossProductToSingular_eq k) ((f, g) : (X, Y) ⟶ (X', Y')) i j
+    (singularAugment_cubicalCrossProductToSingular_eq_singularCrossProductOfCubical k)
+    ((f, g) : (X, Y) ⟶ (X', Y')) i j
 
 /-- **The cubical cross product is the simplicial cross product on homology**: the cubical cross
 product followed by the comparison map and the tensor product of the two comparison maps followed by

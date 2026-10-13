@@ -33,7 +33,7 @@ generator `uₙ`, and every element `t ∈ Gₘ(Mₙ)` determines one,
 `ModelPresentation.extend t`.  Its value on the generator need not be `t` itself, since the
 coefficients of `uₙ` need not be those of a single basis element; what matters is that the
 boundary of the extended map is controlled by the boundary of `t`
-(`MultiModelPresentation.d_extend`).  So at each step it suffices to choose an element of `G(Mₙ)`
+(`ModelPresentation.d_extend`).  So at each step it suffices to choose an element of `G(Mₙ)`
 whose boundary is a prescribed chain; that chain is a cycle by the previous step, hence a
 boundary by acyclicity.  The chosen elements are internal to the construction.
 
@@ -510,9 +510,9 @@ namespace ModelPresentation
 variable (B : ModelPresentation F)
 
 /-- A presentation by one model in each degree is a presentation by a family of models indexed
-by a singleton.  The body is exposed because the statements of `toMulti_gen`, `toMulti_coord` and
-`toMulti_extend` mention `B.toMulti.model n i`, which must reduce to `B.model n` for them to
-typecheck (without the attribute, each fails with a type mismatch on `B.gen n`, resp. `t`). -/
+by a singleton. -/
+-- The body is exposed so that `B.toMulti.model n i` reduces to `B.model n` in the statements of
+-- `toMulti_gen`, `toMulti_coord` and `toMulti_extend`.
 @[expose] def toMulti : MultiModelPresentation F (fun _ ↦ PUnit.{1}) where
   model n _ := B.model n
   gen n _ := B.gen n
