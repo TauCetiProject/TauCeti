@@ -514,10 +514,11 @@ instance isAlgebraic_residueField_restrict :
     · exact ⟨0, by simp [coeff_eq_zero_of_natDegree_lt hn]⟩
   obtain ⟨q, hq⟩ := hlift
   rw [coe_mapRingHom] at hq
-  refine ⟨q.map (IsLocalRing.residue _), fun h ↦ ?_, ?_⟩
+  refine ⟨q.map (algebraMap _ (P'.restrict k F).ResidueField), fun h ↦ ?_, ?_⟩
   · have hc := congrArg (coeff · i₀) h
     have hc' := congrArg (coeff · i₀) hq
-    simp only [coeff_map, coeff_zero, IsLocalRing.residue_eq_zero_iff] at hc
+    simp only [coeff_map, coeff_zero, IsLocalRing.ResidueField.algebraMap_eq,
+      IsLocalRing.residue_eq_zero_iff] at hc
     simp only [coeff_map, coeff_C_mul, inv_mul_cancel₀ hi₀] at hc'
     have h1 : q.coeff i₀ = 1 := Subtype.ext hc'
     rw [h1] at hc
@@ -525,12 +526,13 @@ instance isAlgebraic_residueField_restrict :
   · have hy : aeval y q = 0 := by
       apply Subtype.ext
       have := hom_eval₂ q (algebraMap (P'.restrict k F).integers P'.integers) P'.integers.subtype y
+      -- Both composites are `algebraMap F F'` on the elements of `𝒪_P`: the algebra structure
+      -- of `𝒪_{P'}` over `𝒪_P` is the restriction of `algebraMap F F'`.
       rw [show P'.integers.subtype.comp (algebraMap (P'.restrict k F).integers P'.integers) =
         (algebraMap F F').comp (algebraMap (P'.restrict k F).integers F) from
           RingHom.ext fun _ ↦ rfl, ← eval₂_map, hq] at this
       rw [ZeroMemClass.coe_zero, aeval_def]
       exact this.trans (by simp [eval₂_mul, ← aeval_def, p])
-    change aeval _ (q.map (algebraMap _ (P'.restrict k F).ResidueField)) = 0
     rw [aeval_map_algebraMap, ← IsLocalRing.ResidueField.algebraMap_eq, aeval_algebraMap_apply,
       hy, map_zero]
 

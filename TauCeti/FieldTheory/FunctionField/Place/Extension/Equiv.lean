@@ -26,14 +26,20 @@ variable {k F L L' : Type*} [Field k] [Field F] [Field L] [Field L']
 variable [Algebra k F] [Algebra k L] [Algebra k L'] [Algebra F L] [Algebra F L']
 variable [IsScalarTower k F L] [IsScalarTower k F L']
 
+/-- An isomorphism `e : L ≃ₐ[F] L'` over the base field fixes the constants `k` of the tower
+`k → F → L`. This is the compatibility hypothesis needed to transport places of `L` to places of
+`L'` along `e` with `equivOfRingEquiv`. -/
+theorem algebraMap_algEquiv_compat (e : L ≃ₐ[F] L') (c : k) :
+    e.toRingEquiv (algebraMap k L c) = algebraMap k L' (RingEquiv.refl k c) :=
+  (e.restrictScalars k).commutes c
+
 /-- **The ramification index is invariant under an isomorphism of the upstairs field** over the
 base field: transporting a place of `L` along `e : L ≃ₐ[F] L'` does not change its ramification
 index over `F`. -/
 @[simp]
 theorem ramificationIdx_equivOfRingEquiv (e : L ≃ₐ[F] L') (Q : Place k L) :
     ramificationIdx F (equivOfRingEquiv (RingEquiv.refl k) e.toRingEquiv
-      (fun c ↦ by simp [IsScalarTower.algebraMap_apply k F L,
-        IsScalarTower.algebraMap_apply k F L']) Q) = ramificationIdx F Q := by
+      (algebraMap_algEquiv_compat e) Q) = ramificationIdx F Q := by
   rw [ramificationIdx_def, ramificationIdx_def]
   congr 1
   ext c
@@ -46,9 +52,8 @@ variable [Algebra.IsIntegral F L] [Algebra.IsIntegral F L']
 it. -/
 @[simp]
 theorem restrict_equivOfRingEquiv (e : L ≃ₐ[F] L') (Q : Place k L) :
-    (equivOfRingEquiv (RingEquiv.refl k) e.toRingEquiv (fun c ↦ by
-      simp [IsScalarTower.algebraMap_apply k F L,
-        IsScalarTower.algebraMap_apply k F L']) Q).restrict k F = Q.restrict k F := by
+    (equivOfRingEquiv (RingEquiv.refl k) e.toRingEquiv (algebraMap_algEquiv_compat e)
+      Q).restrict k F = Q.restrict k F := by
   apply integers_injective
   ext x
   rw [mem_integers_restrict_iff, mem_integers_restrict_iff, mem_integers_iff,
@@ -60,15 +65,12 @@ field** over the base field: transporting a place of `L` along `e : L ≃ₐ[F] 
 whether its residue extension over the place below it in `F` is separable. -/
 theorem isSeparable_residueField_equivOfRingEquiv_iff (e : L ≃ₐ[F] L') (Q : Place k L) :
     Algebra.IsSeparable
-        ((equivOfRingEquiv (RingEquiv.refl k) e.toRingEquiv (fun c ↦ by
-          simp [IsScalarTower.algebraMap_apply k F L,
-            IsScalarTower.algebraMap_apply k F L']) Q).restrict k F).ResidueField
-        (equivOfRingEquiv (RingEquiv.refl k) e.toRingEquiv (fun c ↦ by
-          simp [IsScalarTower.algebraMap_apply k F L,
-            IsScalarTower.algebraMap_apply k F L']) Q).ResidueField ↔
+        ((equivOfRingEquiv (RingEquiv.refl k) e.toRingEquiv (algebraMap_algEquiv_compat e)
+          Q).restrict k F).ResidueField
+        (equivOfRingEquiv (RingEquiv.refl k) e.toRingEquiv (algebraMap_algEquiv_compat e)
+          Q).ResidueField ↔
       Algebra.IsSeparable (Q.restrict k F).ResidueField Q.ResidueField := by
-  set h : ∀ c, e.toRingEquiv (algebraMap k L c) = algebraMap k L' (RingEquiv.refl k c) :=
-    fun c ↦ by simp [IsScalarTower.algebraMap_apply k F L, IsScalarTower.algebraMap_apply k F L']
+  set h := algebraMap_algEquiv_compat (k := k) e
   set Q' := equivOfRingEquiv (RingEquiv.refl k) e.toRingEquiv h Q
   have hres : Q.restrict k F = Q'.restrict k F := (restrict_equivOfRingEquiv e Q).symm
   -- Identify the residue fields below by the equality of places, and those above by `e`.
