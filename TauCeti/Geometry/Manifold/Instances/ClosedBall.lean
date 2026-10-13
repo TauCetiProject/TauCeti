@@ -401,15 +401,16 @@ private theorem orientationPreservingOn_closedBallChart_symm_trans
 coordinate change between two of them is a composite of two inversions, each reversing
 orientation, and a linear isometry of positive determinant.
 
-The hypothesis `2 ≤ n` cannot be dropped: a chart of `D¹ = [-1, 1]` at either endpoint takes values
-in the half-line `[0, ∞)`, so it is increasing at `-1` and decreasing at `1`, and no atlas of `D¹`
-modelled on the half-line has all its coordinate changes orientation preserving. -/
-theorem orientable_closedBall (hn : 2 ≤ n) {k : ℕ∞ω} [NeZero k] :
-    Orientable (𝓡∂ n) k (closedBall (0 : E) 1) := by
+This positive-atlas construction uses `2 ≤ n`: the half-line charts at the two endpoints of
+`D¹ = [-1, 1]` have opposite signs. Canonical orientability permits those signs, so this limitation
+belongs to the construction rather than the definition of orientability. -/
+theorem orientable_closedBall (hn : 2 ≤ n) :
+    Orientable (𝓡∂ n) (closedBall (0 : E) 1) := by
   let φ₀ : E ≃ₗᵢ[ℝ] EuclideanSpace ℝ (Fin n) := closedBallIsometry
   let S := {φ : E ≃ₗᵢ[ℝ] EuclideanSpace ℝ (Fin n) |
     0 < (LinearEquiv.det (φ₀.symm.trans φ).toLinearEquiv : ℝ)}
-  refine ⟨⟨closedBallChart '' S, ?_, ?_, ?_⟩⟩
+  apply IsOrientedAtlas.orientable (n := ∞) (A := closedBallChart '' S)
+  refine ⟨?_, ?_, ?_⟩
   · rintro _ ⟨φ, -, rfl⟩
     exact IsManifold.maximalAtlas_subset_of_le le_top
       (IsManifold.subset_maximalAtlas (atlas_closedBall (E := E) (n := n) ▸ mem_range_self φ))

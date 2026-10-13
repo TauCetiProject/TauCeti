@@ -112,10 +112,10 @@ noncomputable section
 
 open scoped EuclideanSpace
 
-namespace TauCeti
-
 open Manifold Metric Module Set
 open scoped Manifold ContDiff
+
+namespace TauCeti
 
 attribute [local instance] Complex.finrank_real_complex_fact
 

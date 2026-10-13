@@ -28,8 +28,8 @@ As for sliceness (`TauCeti.IsSmoothlySlice`), the knot is a smooth circle embedd
 (`TauCeti.SmoothSliceSurface K`) bundles
 
 * a compact, connected, orientable smooth surface `S` with boundary, modelled on the half-plane
-  `EuclideanHalfSpace 2` (orientability is `TauCeti.Orientable`, the existence of an atlas whose
-  coordinate changes have derivatives of positive determinant);
+  `EuclideanHalfSpace 2` (orientability is `TauCeti.Orientable`, the existence of a canonical
+  tangent orientation, including at boundary points);
 * a smooth embedding `Φ : S → Dⁿ⁺¹` of manifolds with boundary, properly embedded (the preimage
   of the boundary sphere is the boundary of `S`), which carries the boundary of `S` onto the image
   of `K`.
@@ -85,10 +85,10 @@ public section
 
 noncomputable section
 
-namespace TauCeti
-
 open CategoryTheory AlgebraicTopology Manifold Metric Module Set
 open scoped EuclideanSpace Manifold ContDiff
+
+namespace TauCeti
 
 attribute [local instance] Complex.finrank_real_complex_fact
 
@@ -114,7 +114,7 @@ structure SmoothSliceSurface (K : SmoothCircleEmbedding (𝓡 n) (sphere (0 : E)
   /-- The surface is connected. -/
   [connectedSpace : ConnectedSpace carrier]
   /-- The surface is orientable. -/
-  [orientable : Orientable (𝓡∂ 2) ∞ carrier]
+  [orientable : Orientable (𝓡∂ 2) carrier]
   /-- The embedding of the surface into the closed unit ball. -/
   toFun : carrier → closedBall (0 : E) 1
   /-- The surface is smoothly embedded, as a manifold with boundary. -/
