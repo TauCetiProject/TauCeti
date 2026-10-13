@@ -162,8 +162,7 @@ theorem eval₂_apply (φ : SmoothForm I M F 2) (x : M) (v w : TangentSpace I x)
 
 /-- The algebraic bilinear form represented by the value of a real degree-two smooth form.
 
-This generalizes the corresponding `SmoothTwoForm.bilinFormAt` construction from
-`TauCeti.Geometry.Manifold.TwoForm.Basic` to the generic smooth-form carrier. -/
+This is the generic algebraic view used by the degree-two migration and by symplectic consumers. -/
 def bilinFormAt (φ : SmoothForm I M ℝ 2) (x : M) :
     LinearMap.BilinForm ℝ (TangentSpace I x) :=
   MultilinearMap.toBilinForm (φ.1 x).toMultilinearMap
@@ -212,6 +211,34 @@ theorem ext {φ ψ : SmoothForm I M F 2}
   have hv : v = ![v 0, v 1] := (FinVec.etaExpand_eq v).symm
   rw [hv]
   simpa only [eval₂_apply] using h x (v 0) (v 1)
+
+section SectionView
+
+variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
+  {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
+  [IsManifold I ∞ M] {k : ℕ}
+
+/-- The smooth section underlying a fixed-coefficient smooth form of degree `k`. -/
+def toContMDiffSection (φ : SmoothForm I M F k) :
+    ContMDiffSection I (E [⋀^Fin k]→L[ℝ] F) ∞
+      (fun x : M ↦ TangentSpace I x [⋀^Fin k]→L[ℝ] F) :=
+  ⟨φ.1, φ.2⟩
+
+@[simp] theorem toContMDiffSection_apply (φ : SmoothForm I M F k) (x : M) :
+    φ.toContMDiffSection x = φ.1 x := by
+  change φ.1 x = φ.1 x
+  rfl
+
+/-- The value of a degree-two form as a continuous alternating map on the model fibre. -/
+def altAt (φ : SmoothForm I M F 2) (x : M) : E [⋀^Fin 2]→L[ℝ] F := φ.1 x
+
+@[simp] theorem altAt_apply (φ : SmoothForm I M F 2) (x : M) (v : Fin 2 → E) :
+    φ.altAt x v = φ.eval₂ x (v 0) (v 1) := by
+  have hv : v = ![v 0, v 1] := (FinVec.etaExpand_eq v).symm
+  rw [hv]
+  rfl
+
+end SectionView
 
 end SmoothForm
 
