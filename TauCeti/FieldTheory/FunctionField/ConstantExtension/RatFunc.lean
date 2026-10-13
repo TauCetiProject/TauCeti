@@ -54,6 +54,7 @@ variable [Algebra (RatFunc k) (RatFunc k')] [IsScalarTower k (RatFunc k) (RatFun
 
 /-- **The place at infinity of `k'(X)` is the only place over the place at infinity of `k(X)`**,
 for a finite extension `k' / k` and any `k(X)`-algebra structure on `k'(X)` sending `X` to `X`. -/
+@[simp]
 theorem restrict_ratFunc_eq_infty_iff
     (hX : algebraMap (RatFunc k) (RatFunc k') RatFunc.X = RatFunc.X)
     (P' : Place k' (RatFunc k')) :

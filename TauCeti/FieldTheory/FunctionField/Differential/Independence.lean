@@ -175,9 +175,7 @@ variable {k' F' : Type*} [Field k'] [Field F'] [Algebra k k'] [Algebra k F'] [Al
 
 /-- The descent step of the chain rule: if a finite separable constant field extension `F' = F · k'`
 has a rational place `P'` lying over a place at which `q(x)` and `r(y)` are prime elements, then
-`dy = (dy/dx) · dx` in `F`. The chain rule holds in `F'` at `P'`, the cotrace from `F` to `F'` is
-injective and carries `dx` and `dy` to their counterparts in `F'`, and the algebra map carries
-`dy/dx` to its counterpart in `F'`. -/
+`dy = (dy/dx) · dx` in `F`. -/
 private theorem weilDifferentialOfSeparating_eq_derivativeOfSeparating_smul_of_constantCompositum
     [PerfectField k] [FiniteDimensional k k'] [Algebra.IsSeparable k k'] [FiniteDimensional F F']
     (h : constantCompositum F k' F' = ⊤) (hF : IsFunctionField k F)

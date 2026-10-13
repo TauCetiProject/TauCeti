@@ -176,10 +176,7 @@ omit [Field k'] [Field F'] [Algebra k k'] [Algebra k F'] [Algebra k' F'] [Algebr
 /-- **A place becomes rational after a finite separable extension of constants**: if the residue
 field of a place `P` of `F / k`, with `k` exact, is separable over `k`, then some finite separable
 constant field extension `F' = F · k'`, formed inside an algebraic closure of `F`, has only places
-of degree one over `P`.
-
-The constants `k'` are the splitting field of the minimal polynomial of a primitive element of
-`F_P / k`, which is normal over `k` and receives `F_P`. -/
+of degree one over `P`. -/
 theorem exists_constantCompositum_eq_top_and_forall_degree_eq_one (hF : IsFunctionField k F)
     (hex : IsIntegrallyClosedIn k F) (P : Place k F) [Algebra.IsSeparable k P.ResidueField] :
     ∃ (F' : IntermediateField F (AlgebraicClosure F)) (k' : IntermediateField k F'),
