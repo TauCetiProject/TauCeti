@@ -67,7 +67,7 @@ theorem intervalBox_le_intervalBox_iff {a b c d : ℝ} (hab : a < b) (hcd : c < 
   simp [Box.le_iff_bounds, intervalBox, Pi.le_def]
 
 /-- Splitting at an interior point gives the lower interval box. -/
-theorem intervalBox_splitLower (hac : a < c) (hcb : c < b) :
+theorem splitLower_intervalBox (hac : a < c) (hcb : c < b) :
     (intervalBox a b (hac.trans hcb)).splitLower 0 c =
       (intervalBox a c hac : WithBot (Box (Fin 1))) := by
   rw [← Box.withBotCoe_inj]
@@ -79,7 +79,7 @@ theorem intervalBox_splitLower (hac : a < c) (hcb : c < b) :
   exact ⟨fun h ↦ ⟨h.1.1, h.2⟩, fun h ↦ ⟨⟨h.1, h.2.trans hcb.le⟩, h.2⟩⟩
 
 /-- Splitting at an interior point gives the upper interval box. -/
-theorem intervalBox_splitUpper (hac : a < c) (hcb : c < b) :
+theorem splitUpper_intervalBox (hac : a < c) (hcb : c < b) :
     (intervalBox a b (hac.trans hcb)).splitUpper 0 c =
       (intervalBox c b hcb : WithBot (Box (Fin 1))) := by
   rw [← Box.withBotCoe_inj]

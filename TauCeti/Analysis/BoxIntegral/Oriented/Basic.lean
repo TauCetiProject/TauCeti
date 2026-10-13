@@ -288,8 +288,8 @@ private theorem integral_intervalBox_split (hac : a < c) (hcb : c < b)
       integral (intervalBox a b (hac.trans hcb)) IntegrationParams.Henstock
         (fun x ↦ f (x 0)) BoxAdditiveMap.volume := by
   let I := intervalBox a b (hac.trans hcb)
-  have hL := intervalBox_splitLower hac hcb
-  have hR := intervalBox_splitUpper hac hcb
+  have hL := splitLower_intervalBox hac hcb
+  have hR := splitUpper_intervalBox hac hcb
   have hadd := h.toBoxAdditive.map_split_add (I := I) le_rfl 0 c
   rw [hL, hR] at hadd
   exact hadd
@@ -345,8 +345,8 @@ private theorem trans_of_le (h₁ : HasHenstockIntervalIntegral f a c y)
   · rw [hasHenstockIntervalIntegral_same] at h₂
     simpa only [h₂, add_zero] using h₁
   let I := intervalBox a b (hac.trans hcb)
-  have hL := intervalBox_splitLower hac hcb
-  have hR := intervalBox_splitUpper hac hcb
+  have hL := splitLower_intervalBox hac hcb
+  have hR := splitUpper_intervalBox hac hcb
   have hi : ∀ J ∈ Prepartition.split I 0 c,
       Integrable J IntegrationParams.Henstock (fun x ↦ f (x 0)) BoxAdditiveMap.volume := by
     intro J hJ
