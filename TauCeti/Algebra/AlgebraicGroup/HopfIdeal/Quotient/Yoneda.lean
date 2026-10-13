@@ -22,9 +22,8 @@ Hopf-ideal quotient with the usual precomposition map on algebra-valued points.
 
 ## References
 
-This is the generalized-point form of the Layer 3 Hopf-ideal/closed-subgroup dictionary in the
-ReductiveGroups roadmap. It combines the represented group-object Yoneda equivalence with the
-point-level quotient API.
+This is the generalized-point form of the Hopf-ideal/closed-subgroup dictionary. It combines the
+represented group-object Yoneda equivalence with the point-level quotient API.
 -/
 
 public section

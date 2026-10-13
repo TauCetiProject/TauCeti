@@ -97,23 +97,18 @@ section Selmer
 
 variable [W.IsElliptic] [W.IsCharNeTwoNF]
 
-/-- The image of the generic `x - T` representative in the field factor `K[X] ⧸ (p)` is `x - θ`.
-
-`private`, and deliberately a named lemma rather than an inlined rewrite chain at its one use
-site: `AdjoinRoot.projFactor` is not `@[expose]`, so the chain
-`projFactor_mk, map_sub, mk_X, mk_C, algebraMap_eq` cannot be run underneath the `IsUnit.unit`
-that the use site presents — `rw` reports `motive is not type correct` together with
-`definitions were not unfolded ...: AdjoinRoot.projFactor`. Stated at the top level the equation
-elaborates here, where `projFactor` is visible, and applies at the use site by `exact`. -/
-private lemma projFactor_mk_C_sub_X (x : K) (p : W.f.Factors) :
+/-- The image of the generic `x - T` representative in the field factor `K[X] ⧸ (p)` is `x - θ`. -/
+-- A named lemma rather than an inlined rewrite chain at its use sites: `AdjoinRoot.projFactor` is
+-- not `@[expose]`, so the chain `projFactor_mk, map_sub, mk_X, mk_C, algebraMap_eq` cannot be run
+-- underneath the `IsUnit.unit` that the use sites present (`motive is not type correct`).
+lemma projFactor_mk_C_sub_X (x : K) (p : W.f.Factors) :
     AdjoinRoot.projFactor W.f_ne_zero W.squarefree_f p (AdjoinRoot.mk W.f (C x - X)) =
       ι p x - θ p := by
   rw [AdjoinRoot.projFactor_mk, map_sub, AdjoinRoot.mk_X, AdjoinRoot.mk_C,
     AdjoinRoot.algebraMap_eq]
 
-/-- The image of the `2`-torsion `x - T` representative in the field factor `K[X] ⧸ (p)`.
-`private`, for the same reason as `projFactor_mk_C_sub_X`. -/
-private lemma projFactor_mk_C_sub_X_add_fCofactor (x : K) (p : W.f.Factors) :
+/-- The image of the `2`-torsion `x - T` representative in the field factor `K[X] ⧸ (p)`. -/
+lemma projFactor_mk_C_sub_X_add_fCofactor (x : K) (p : W.f.Factors) :
     AdjoinRoot.projFactor W.f_ne_zero W.squarefree_f p
         (AdjoinRoot.mk W.f (C x - X + W.fCofactor x)) =
       ι p x - θ p + AdjoinRoot.mk (p : K[X]) (W.fCofactor x) := by
@@ -200,8 +195,9 @@ variable {S}
   (ha₂ : ∀ v ∉ S, v.valuation K W.a₂ ≤ 1) (ha₄ : ∀ v ∉ S, v.valuation K W.a₄ ≤ 1)
   (ha₆ : ∀ v ∉ S, v.valuation K W.a₆ ≤ 1) (hd : ∀ v ∉ S, v.valuation K W.f.discr = 1)
 
-include ha₂ ha₄ ha₆ hd
+include ha₂ ha₄ ha₆
 
+include hd in
 /-- Generic case of the arithmetic input: `f x ≠ 0`, so the `p`-component of `μX x` is the class
 of `x - θ`. -/
 lemma mem_selmerGroupFactor_of_eval_f_ne_zero {x y : K} (h : W.Equation x y)
@@ -217,12 +213,14 @@ lemma mem_selmerGroupFactor_of_eval_f_ne_zero {x y : K} (h : W.Equation x y)
     (ha₂ _ hw) (ha₄ _ hw) (ha₆ _ hw)
     (W.valuation_deriv_root_eq_one R p (ha₂ _ hw) (ha₄ _ hw) (ha₆ _ hw) (hd _ hw))
 
-/-- `2`-torsion case of the arithmetic input: `f x = 0`.
+/-- `2`-torsion case of the arithmetic input: `f x = 0`, and `f' x = 3x² + 2a₂x + a₄` is a unit at
+every prime outside `S`, as it is when `disc f` is.
 
 Projecting the corrected representative to the factor gives `x - θ + fCofactor x`, which by
 `valuation_projFactor_torsion_eq_one` is a unit at every prime `w` not lying above `S`. Its
 valuation is therefore `0`, in particular even. -/
-lemma mem_selmerGroupFactor_of_eval_f_eq_zero {x : K} (hx : W.f.eval x = 0) (p : W.f.Factors) :
+lemma mem_selmerGroupFactor_of_eval_f_eq_zero {x : K} (hx : W.f.eval x = 0)
+    (hdx : ∀ v ∉ S, v.valuation K (3 * x ^ 2 + 2 * W.a₂ * x + W.a₄) = 1) (p : W.f.Factors) :
     (QuotientGroup.mk ((isUnit_mk_sub_X_add_fCofactor_of_eval_f_eq_zero hx).map
       (AdjoinRoot.projFactor W.f_ne_zero W.squarefree_f p)).unit :
         (𝕃 p)ˣ ⧸ (powMonoidHom 2 : (𝕃 p)ˣ →* (𝕃 p)ˣ).range) ∈
@@ -234,14 +232,10 @@ lemma mem_selmerGroupFactor_of_eval_f_eq_zero {x : K} (hx : W.f.eval x = 0) (p :
     (AdjoinRoot.projFactor W.f_ne_zero W.squarefree_f p)).unit with hudef
   have hval : w.valuation (𝕃 p) (u : 𝕃 p) = 1 := by
     rw [hudef, IsUnit.unit_spec, W.projFactor_mk_C_sub_X_add_fCofactor x p]
-    refine W.valuation_projFactor_torsion_eq_one R p (ha₂ _ hw) (ha₄ _ hw) (ha₆ _ hw) hx ?_
-    -- `x` is a root of `f`, so `f' x` divides `disc f` with an integral cofactor
-    refine Valuation.map_cubic_deriv_eq_one _ (ha₂ _ hw) (ha₄ _ hw) (ha₆ _ hw) ?_ ?_
-    · simpa only [eval_f] using hx
-    · rw [← W.discr_f]
-      exact hd _ hw
+    exact W.valuation_projFactor_torsion_eq_one R p (ha₂ _ hw) (ha₄ _ hw) (ha₆ _ hw) hx (hdx _ hw)
   simpa using w.dvd_toAdd_valuationOfNeZero (n := 2) (z := 1) (by simp [hval])
 
+include hd in
 /-- The heart of Step 6: for a point `(x, y)` of `W` and a field factor `K[X] ⧸ (p)` of `W.A`,
 the square class of the image of the `x - T` map lies in the `2`-Selmer group of that factor. -/
 lemma μX_component_mem_selmerGroupFactor {x y : K} (h : W.Equation x y) (p : W.f.Factors) :
@@ -249,12 +243,18 @@ lemma μX_component_mem_selmerGroupFactor {x y : K} (h : W.Equation x y) (p : W.
       W.selmerGroupFactor R S p := by
   rcases eq_or_ne (W.f.eval x) 0 with hx | hx
   · rw [μX_of_eval_f_eq_zero hx, AdjoinRoot.modPowEquivPiFactors_unit]
-    exact W.mem_selmerGroupFactor_of_eval_f_eq_zero R ha₂ ha₄ ha₆ hd hx p
+    -- `x` is a root of `f`, so `f' x` divides `disc f` with an integral cofactor
+    refine W.mem_selmerGroupFactor_of_eval_f_eq_zero R ha₂ ha₄ ha₆ hx (fun v hv ↦ ?_) p
+    refine Valuation.map_cubic_deriv_eq_one _ (ha₂ _ hv) (ha₄ _ hv) (ha₆ _ hv) ?_ ?_
+    · simpa only [eval_f] using hx
+    · rw [← W.discr_f]
+      exact hd _ hv
   · rw [μX_of_eval_f_ne_zero hx, AdjoinRoot.modPowEquivPiFactors_unit]
     exact W.mem_selmerGroupFactor_of_eval_f_ne_zero R ha₂ ha₄ ha₆ hd h hx p
 
 variable [DecidableEq K]
 
+include hd in
 /-- **Step 6 of the weak Mordell–Weil theorem**: the image of the descent map `μ` is contained in
 `A(S,2)` for every set `S` of primes of `R` outside which `a₂`, `a₄` and `a₆` are integral and
 `disc f` is a unit. The bad primes of `W` form such a set

@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.EllipticCurve.MinimalModel.LocalDiscriminant
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Valuation
 public import TauCeti.RingTheory.DedekindDomain.LocalizationAtPrime
+import TauCeti.AlgebraicGeometry.EllipticCurve.IntegralModel
 
 /-!
 # The valuation of the local minimal discriminant
@@ -34,6 +35,8 @@ measured.
   minimal equation is nonzero.
 * `WeierstrassCurve.localMinimalDiscriminantValuation_eq_addVal_of_isMinimal_smul`: any minimal
   equation in the orbit computes the valuation.
+* `WeierstrassCurve.localMinimalDiscriminantValuation_eq_addVal_of_isMinimal_baseChange`: the
+  same for a minimal equation given over `R`.
 * `WeierstrassCurve.valuation_Δ_eq_exp_neg_of_isMinimal_smul`: the multiplicative valuation of the
   discriminant of such an equation is `exp (-v (Δ_min))`.
 * `WeierstrassCurve.localMinimalDiscriminant_eq_maximalIdeal_pow`: the local minimal discriminant
@@ -100,6 +103,16 @@ theorem localMinimalDiscriminantValuation_eq_addVal_of_isMinimal_smul
   rw [localMinimalDiscriminantValuation_eq_addVal]
   exact (addVal_eq_iff_associated _ _).mpr
     (associated_integralModel_Δ_of_isMinimal_smul R _ hminimal)
+
+/-- **A minimal equation over `R` in the variable-change orbit computes the local minimal
+discriminant valuation.** This is `localMinimalDiscriminantValuation_eq_addVal_of_isMinimal_smul`
+for an equation given over `R` rather than as an integral equation over `K`. -/
+theorem localMinimalDiscriminantValuation_eq_addVal_of_isMinimal_baseChange
+    (W : WeierstrassCurve K) [W.IsElliptic] {W' : WeierstrassCurve R}
+    [IsMinimal R (W'.baseChange K)] (D : VariableChange K) (hD : D • W = W'.baseChange K) :
+    (W.localMinimalDiscriminantValuation R : ENat) = addVal R W'.Δ := by
+  rw [W.localMinimalDiscriminantValuation_eq_addVal_of_isMinimal_smul R D hD,
+    integralModel_baseChange_self]
 
 /-- **A minimal model has discriminant of valuation `exp (-v (Δ_min))`.** This reads the
 local minimal discriminant valuation off the multiplicative valuation that Mathlib's minimality

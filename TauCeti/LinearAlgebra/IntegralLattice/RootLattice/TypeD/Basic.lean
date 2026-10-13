@@ -291,9 +291,7 @@ theorem isEven_checkerboardLattice : (checkerboardLattice n).IsEven := by
       exact Finset.sum_congr rfl fun i _ ↦ by ring
     rw [hsplit]
     refine Even.add (Finset.even_sum _ fun i _ ↦ ?_) ⟨m, by omega⟩
-    have : z i ^ 2 - z i = (z i - 1) * ((z i - 1) + 1) := by ring
-    rw [this]
-    exact Int.even_mul_succ_self _
+    simp [Int.even_sub, Int.even_pow]
   obtain ⟨k, hk⟩ := heven
   refine ⟨k, ?_⟩
   rw [norm_apply, checkerboardLattice_form_apply]
@@ -661,11 +659,9 @@ theorem checkerboardCospinor_sub_checkerboardVector_notMem_checkerboardCarrier :
 
 /-- The spinor and cospinor representatives differ by a vector of odd coordinate sum. -/
 theorem checkerboardSpinor_sub_checkerboardCospinor_notMem_checkerboardCarrier :
-    checkerboardSpinor n - checkerboardCospinor n ∉ checkerboardCarrier n :=
-  notMem_checkerboardCarrier_of_sum_odd 0 (by
-    simp only [Pi.sub_apply]
-    rw [Finset.sum_sub_distrib, sum_checkerboardSpinor, sum_checkerboardCospinor]
-    norm_num)
+    checkerboardSpinor n - checkerboardCospinor n ∉ checkerboardCarrier n := by
+  rw [checkerboardCospinor, sub_sub_cancel]
+  exact checkerboardVector_notMem_checkerboardCarrier n
 
 /-- The vector class is nonzero. -/
 theorem checkerboardVectorClass_ne_zero : checkerboardVectorClass n ≠ 0 := by
@@ -790,12 +786,9 @@ theorem two_zsmul_checkerboardVectorClass [NeZero n] :
     (2 : ℤ) • checkerboardVectorClass n = 0 := by
   rw [checkerboardVectorClass, ← Submodule.Quotient.mk_smul, discriminantGroup_mk_eq_zero_iff,
     checkerboardLattice_carrier]
-  refine mem_checkerboardCarrier_of (fun i ↦ if i = checkerboardLastIndex n then 2 else 0)
-    (fun i ↦ ?_) ⟨1, ?_⟩
-  · simp only [Submodule.coe_smul, Pi.smul_apply, checkerboardVector_apply, zsmul_eq_mul]
-    push_cast
-    split_ifs <;> ring
-  · simp
+  convert single_two_mem_checkerboardCarrier n (checkerboardLastIndex n) using 1
+  ext i
+  simp [checkerboardVector, Pi.single_apply]
 
 /-- **For even `n` twice the spinor class vanishes**: the all-ones vector `2 s` has even
 coordinate sum. -/
@@ -1098,14 +1091,9 @@ noncomputable def checkerboardDiscriminantQuadraticIsometry (hn : Even n) :
         discriminantQuadraticMap_checkerboardSpinorClass,
         FiniteQuadraticModule.kleinFourMap_apply_zero_one])
     (by
-      have hhalf :
-          (((1 : ℚ) / 2 : ℚ) : AddCircle (1 : ℚ)) +
-              (((1 : ℚ) / 2 : ℚ) : AddCircle (1 : ℚ)) = 0 := by
-        rw [← AddCircle.coe_add, AddCircle.coe_eq_zero_iff]
-        exact ⟨1, by norm_num⟩
       rw [zmodTwoProdAddEquivCheckerboardDiscriminantGroup_apply_one_one,
-        discriminantQuadraticMap_checkerboardCospinorClass,
-        FiniteQuadraticModule.kleinFourMap_apply_one_one, add_right_comm, hhalf, zero_add])
+        discriminantQuadraticMap_checkerboardCospinorClass]
+      exact (checkerboardStandardQuadraticModule_quadratic_one_one n hn).symm)
 
 /-- The even-rank quadratic isometry acts through the discriminant-group equivalence. -/
 @[simp]

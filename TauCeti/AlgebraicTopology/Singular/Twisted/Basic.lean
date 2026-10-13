@@ -392,7 +392,9 @@ def twistedChainsConstantIso (M : ModuleCat.{max v w} R) :
 variable (X) in
 /-- In each degree, the comparison of twisted chains with ordinary singular chains carries the
 summand of a simplex `σ` onto the summand of `σ`. -/
-@[reassoc (attr := simp)]
+-- Not `@[simp]`: `simp` first rewrites the composite's source object to `M`, after which this
+-- left-hand side never matches; use `rw` or apply it as a term.
+@[reassoc]
 lemma ιTwistedChains_twistedChainsConstantIso_hom_app (M : ModuleCat.{max v w} R)
     (n : SimplexCategoryᵒᵖ) (σ : (TopCat.toSSet.obj X).obj n) :
     ιTwistedChains ((constantFunctor X).obj M) σ ≫ (twistedChainsConstantIso X M).hom.app n =
@@ -440,7 +442,9 @@ def twistedChainComplexConstantIso (M : ModuleCat.{max v w} R) :
 variable (X) in
 /-- In each degree, the comparison of the twisted chain complex with the ordinary singular chain
 complex carries the summand of a simplex `σ` onto the summand of `σ`. -/
-@[reassoc (attr := simp)]
+-- Not `@[simp]`: `simp` first rewrites the composite's source object to `M`, after which this
+-- left-hand side never matches; use `rw` or apply it as a term.
+@[reassoc]
 lemma ιTwistedChainComplex_twistedChainComplexConstantIso_hom_f (M : ModuleCat.{max v w} R) (k : ℕ)
     (σ : (TopCat.toSSet.obj X) _⦋k⦌) :
     ιTwistedChainComplex ((constantFunctor X).obj M) k σ ≫

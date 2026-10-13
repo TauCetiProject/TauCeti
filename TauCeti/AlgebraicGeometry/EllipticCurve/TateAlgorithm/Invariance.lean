@@ -6,43 +6,51 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.TateAlgorithm.Terminal
+import TauCeti.Algebra.Ring.Divisibility
 import TauCeti.AlgebraicGeometry.EllipticCurve.IntegralModel
-import TauCeti.AlgebraicGeometry.EllipticCurve.TateAlgorithm.Discriminant
 import TauCeti.AlgebraicGeometry.EllipticCurve.MinimalModel.Basic
+import TauCeti.AlgebraicGeometry.EllipticCurve.TateAlgorithm.Additive
+import TauCeti.AlgebraicGeometry.EllipticCurve.TateAlgorithm.Discriminant
+import TauCeti.AlgebraicGeometry.EllipticCurve.VariableChange
 import TauCeti.RingTheory.DiscreteValuationRing.Basic
 import TauCeti.RingTheory.Multiplicity
 
 /-!
-# Tate's algorithm: the output does not depend on the choices
+# Tate's algorithm: the output does not depend on the choices, and certifies minimality
 
 Tate's algorithm reads the reduction symbol of a Weierstrass equation over a discrete valuation
 ring `R` with uniformiser `ϖ` by alternating changes of variables over `R` with divisibility tests
 (`WeierstrassCurve.IsTateTerminal`, `WeierstrassCurve.exists_isTateTerminal`). The changes of
 variables are not unique: at each step any one moving the singular point, or the multiple root of
 the residue polynomial, to the origin will do. This file proves that the symbol does not depend on
-these choices, nor on the uniformiser, except possibly for the index `n` of a symbol `Iₙ*` with
-`n ≥ 1`. If `W` and `C • W` are equations over `R`, related by a change of variables `C` over `R`,
-on which the algorithm stops with symbols `s` and `s'`, then `s = s'`, or both are of the form
-`Iₙ*` with `n ≥ 1`. Since two minimal equations of one elliptic curve over the fraction field are
-related by a change of variables over `R`, the symbol at which the algorithm stops on a minimal
-equation is an invariant of the curve, up to the same proviso. No minimality is needed for the
-first statement.
+these choices, nor on the uniformiser. If `W` and `C • W` are equations over `R`, related by a
+change of variables `C` over `R`, on which the algorithm stops with symbols `s` and `s'`, then
+`s = s'`. Since two minimal equations of one elliptic curve over the fraction field are related by
+a change of variables over `R`, the symbol at which the algorithm stops on a minimal equation is an
+invariant of the curve. No minimality is needed for the first statement.
+
+The same invariance shows that the algorithm stops only on minimal equations. A change of
+variables over `R` carries a non-minimal equation to one with `ϖⁱ ∣ aᵢ` for `i = 1, 2, 3, 4, 6`
+(`WeierstrassCurve.exists_variableChange_pow_dvd_a₁_a₂_a₃_a₄_a₆_of_not_isMinimal`). That equation
+passes every test of the algorithm, Step 10's `ϖ⁶ ∣ a₆` included, so the algorithm cannot have
+stopped on the original equation. Together with termination this says that Tate's algorithm
+decides minimality.
 
 ## Main results
 
 * `WeierstrassCurve.dvd_r_and_dvd_t_of_dvd_a₃_a₄_a₆`: a change of variables between two
   equations whose reductions modulo a prime are singular at the origin fixes the origin modulo
   that prime.
-* `WeierstrassCurve.IsTateTerminal.eq_of_smul`: if the algorithm stops on `W` with a symbol `s`
-  other than `Iₙ*` with `n ≥ 1`, and on `C • W`, for `C` over `R`, with a symbol `s'`, then
-  `s' = s`.
-* `WeierstrassCurve.IsTateTerminal.exists_eq_IStar_of_smul`: if it stops on `W` with `Iₙ*`,
-  `n ≥ 1`, and on `C • W` with a symbol `s'`, then `s'` is some `Iₘ*` with `m ≥ 1`.
+* `WeierstrassCurve.IsTateTerminal.eq_of_smul`: if the algorithm stops on `W` with a symbol `s`,
+  and on `C • W`, for `C` over `R`, with a symbol `s'`, then `s' = s`.
 * `WeierstrassCurve.isTateTerminal_iff_of_associated`: the stopping conditions do not depend on
   the uniformiser.
-* `WeierstrassCurve.IsTateTerminal.eq_of_isMinimal_smul` and
-  `WeierstrassCurve.IsTateTerminal.exists_eq_IStar_of_isMinimal_smul`: the same statements for
-  two minimal equations of one elliptic curve over the fraction field, with any uniformisers.
+* `WeierstrassCurve.IsTateTerminal.eq_of_isMinimal_smul`: the same statement for two minimal
+  equations of one elliptic curve over the fraction field, with any uniformisers.
+* `WeierstrassCurve.IsTateTerminal.isMinimal_baseChange`: an equation on which the algorithm stops
+  is minimal over the fraction field.
+* `WeierstrassCurve.isMinimal_baseChange_iff_exists_isTateTerminal`: with perfect residue field, an
+  equation with nonzero discriminant is minimal exactly when the algorithm, run on it, stops.
 
 ## Implementation notes
 
@@ -64,12 +72,18 @@ test is read on:
   branch;
 * if both equations are in the normal form of Step 8, so that both residue cubics are `T³`, then
   `ρ = 0`. This makes `b₆` modulo `ϖ⁵` invariant, which is the test of `IV*`, and on the normal
-  form of Step 9 also `ϖ³ ∣ t`, which makes `a₄` modulo `ϖ⁴` invariant, the test of `III*`.
+  form of Step 9 also `ϖ³ ∣ t`, which makes `a₄` modulo `ϖ⁴` invariant, the test of `III*`, and
+  `a₆` modulo `ϖ⁶` invariant, the test of `II*`.
 
 If the algorithm stopped on `W` at an earlier test than on `C • W`, then `W` would fail a test
 that `C • W` passes, which invariance rules out. So it stops on both at the same test, and the
 symbol is determined by the test, except for the index of `Iₙ`, which is the valuation of `Δ`, and
-the index of `Iₙ*`, which is read off the subprocedure of Step 7 and is not treated here.
+the index of `Iₙ*`, which is the stage at which the subprocedure of Step 7 stops. The same
+argument applies to that subprocedure: each stage implies the previous one and passes its test,
+and between two equations at the same stage a change of variables is close enough to the identity
+(`ϖ^(k+2) ∣ r`, `ϖ ∣ s` and `ϖ^(k+2) ∣ t` at the odd stage `k`, and `ϖ^(k+3) ∣ t` at the even
+stage `k`) that the test of the stage, `ϖ^(2k+5) ∣ b₆` or `ϖ^(2k+7) ∣ a₄² - 4 a₂ a₆`, is
+invariant. The bounds are proved stage by stage from the equations for `a₄` and `a₆`.
 
 ## References
 
@@ -128,6 +142,7 @@ private def tateTest (ϖ : R) (W : WeierstrassCurve R) : ℕ → Prop
   | 6 => ϖ ^ 3 ∣ W.a₂ ^ 2 - 3 * W.a₄
   | 7 => ϖ ^ 5 ∣ W.b₆
   | 8 => ϖ ^ 4 ∣ W.a₄
+  | 9 => ϖ ^ 6 ∣ W.a₆
   | _ => False
 
 /-- The test at which Tate's algorithm stops with a given symbol. -/
@@ -192,6 +207,131 @@ theorem isTateTerminal_iff_of_associated {W : WeierstrassCurve R} {ϖ' : R} (hϖ
       isTateTerminal_III, isTateTerminal_IV, isTateTerminal_IStar_zero,
       isTateTerminal_IStar_add_one, isTateTerminal_IVStar, isTateTerminal_IIIStar,
       isTateTerminal_IIStar, isTateOddStage_iff, isTateEvenStage_iff, h, h₁]
+
+variable {W : WeierstrassCurve R}
+
+/-! ### The index of `Iₙ*`
+
+The subprocedure of Step 7 runs through the stages of `IsTateOddStage` and `IsTateEvenStage` and
+stops at the first one whose test fails. Counting the stages from `0`, as the index of `Iₙ*` minus
+one does, stage `2k` is the odd stage `k`, with test `ϖ^(2k+5) ∣ b₆`, and stage `2k + 1` is the even
+stage `k`, with test `ϖ^(2k+7) ∣ a₄² - 4 a₂ a₆`. Each stage implies the previous one and passes its
+test. Between two equations at the same stage, a change of variables satisfies
+`ϖ^(k+2) ∣ r`, `ϖ ∣ s` and `ϖ^(k+2) ∣ t` at the odd stage `k`, and moreover `ϖ^(k+3) ∣ t` at the
+even stage `k`; these bounds make the test of the stage invariant. -/
+
+/-- The property `P k` when `n = 2k`, and `Q k` when `n = 2k + 1`. -/
+private def ByParity (P Q : ℕ → Prop) (n : ℕ) : Prop :=
+  ∀ k, (n = 2 * k → P k) ∧ (n = 2 * k + 1 → Q k)
+
+private theorem byParity_two_mul {P Q : ℕ → Prop} {k : ℕ} : ByParity P Q (2 * k) ↔ P k := by
+  refine ⟨fun h ↦ (h k).1 rfl, fun h j ↦ ⟨fun hj ↦ ?_, fun hj ↦ by omega⟩⟩
+  obtain rfl : k = j := by omega
+  exact h
+
+private theorem byParity_two_mul_add_one {P Q : ℕ → Prop} {k : ℕ} :
+    ByParity P Q (2 * k + 1) ↔ Q k := by
+  refine ⟨fun h ↦ (h k).2 rfl, fun h j ↦ ⟨fun hj ↦ by omega, fun hj ↦ ?_⟩⟩
+  obtain rfl : k = j := by omega
+  exact h
+
+/-- The equation is at stage `n` of the `Iₙ*` subprocedure, counting from `0`. -/
+private def StarStage (ϖ : R) (n : ℕ) (W : WeierstrassCurve R) : Prop :=
+  ByParity (IsTateOddStage ϖ · W) (IsTateEvenStage ϖ · W) n
+
+/-- The equation passes the test of stage `n` of the `Iₙ*` subprocedure, counting from `0`. -/
+private def StarTest (ϖ : R) (n : ℕ) (W : WeierstrassCurve R) : Prop :=
+  ByParity (fun k ↦ ϖ ^ (2 * k + 5) ∣ W.b₆) (fun k ↦ ϖ ^ (2 * k + 7) ∣ discrim W.a₂ W.a₄ W.a₆) n
+
+private theorem starStage_two_mul {k : ℕ} : StarStage ϖ (2 * k) W ↔ IsTateOddStage ϖ k W :=
+  byParity_two_mul
+
+private theorem starStage_two_mul_add_one {k : ℕ} :
+    StarStage ϖ (2 * k + 1) W ↔ IsTateEvenStage ϖ k W :=
+  byParity_two_mul_add_one
+
+private theorem starTest_two_mul {k : ℕ} : StarTest ϖ (2 * k) W ↔ ϖ ^ (2 * k + 5) ∣ W.b₆ :=
+  byParity_two_mul
+
+private theorem starTest_two_mul_add_one {k : ℕ} :
+    StarTest ϖ (2 * k + 1) W ↔ ϖ ^ (2 * k + 7) ∣ discrim W.a₂ W.a₄ W.a₆ :=
+  byParity_two_mul_add_one
+
+/-- The even stage `k` implies the odd stage `k` and passes its test `ϖ^(2k+5) ∣ b₆`. -/
+private theorem IsTateEvenStage.isTateOddStage_and_pow_dvd_b₆ {k : ℕ}
+    (h : IsTateEvenStage ϖ k W) : IsTateOddStage ϖ k W ∧ ϖ ^ (2 * k + 5) ∣ W.b₆ := by
+  obtain ⟨h₁, h₂, h₂', ⟨x₃, hx₃⟩, h₄, ⟨x₆, hx₆⟩⟩ := isTateEvenStage_iff.1 h
+  exact ⟨isTateOddStage_iff.2
+    ⟨h₁, h₂, h₂', ⟨ϖ * x₃, by rw [hx₃]; ring⟩, h₄, ⟨ϖ * x₆, by rw [hx₆]; ring⟩⟩,
+    ⟨ϖ * x₃ ^ 2 + 4 * x₆, by rw [b₆, hx₃, hx₆]; ring⟩⟩
+
+/-- The odd stage `k + 1` implies the even stage `k` and passes its test
+`ϖ^(2k+7) ∣ a₄² - 4 a₂ a₆`. -/
+private theorem IsTateOddStage.isTateEvenStage_and_pow_dvd_discrim {k : ℕ}
+    (h : IsTateOddStage ϖ (k + 1) W) :
+    IsTateEvenStage ϖ k W ∧ ϖ ^ (2 * k + 7) ∣ discrim W.a₂ W.a₄ W.a₆ := by
+  obtain ⟨h₁, ⟨x₂, hx₂⟩, h₂', h₃, ⟨x₄, hx₄⟩, ⟨x₆, hx₆⟩⟩ := isTateOddStage_iff.1 h
+  exact ⟨isTateEvenStage_iff.2
+    ⟨h₁, ⟨x₂, hx₂⟩, h₂', h₃, ⟨ϖ * x₄, by rw [hx₄]; ring⟩, ⟨ϖ * x₆, by rw [hx₆]; ring⟩⟩,
+    ⟨ϖ * x₄ ^ 2 - 4 * x₂ * x₆, by rw [discrim, hx₂, hx₄, hx₆]; ring⟩⟩
+
+/-- Stage `n + 1` implies stage `n` and passes its test. -/
+private theorem StarStage.succ {n : ℕ} (h : StarStage ϖ (n + 1) W) :
+    StarStage ϖ n W ∧ StarTest ϖ n W := by
+  obtain ⟨k, rfl | rfl⟩ := n.even_or_odd'
+  · obtain ⟨h, ht⟩ := (starStage_two_mul_add_one.1 h).isTateOddStage_and_pow_dvd_b₆
+    exact ⟨starStage_two_mul.2 h, starTest_two_mul.2 ht⟩
+  · obtain ⟨h, ht⟩ := (starStage_two_mul (k := k + 1)).1 h |>.isTateEvenStage_and_pow_dvd_discrim
+    exact ⟨starStage_two_mul_add_one.2 h, starTest_two_mul_add_one.2 ht⟩
+
+/-- Stage `m` implies every earlier stage. -/
+private theorem StarStage.mono {m n : ℕ} (h : StarStage ϖ m W) (hnm : n ≤ m) :
+    StarStage ϖ n W := by
+  induction m, hnm using Nat.le_induction with
+  | base => exact h
+  | succ m _ ih => exact ih h.succ.1
+
+/-- At the odd stage `k`, a change of variables with `ϖ^(k+2) ∣ r` preserves the test
+`ϖ^(2k+5) ∣ b₆`. -/
+private theorem pow_dvd_b₆_smul_iff {k : ℕ} {C : VariableChange R} (h : IsTateOddStage ϖ k W)
+    (hr : ϖ ^ (k + 2) ∣ C.r) : ϖ ^ (2 * k + 5) ∣ (C • W).b₆ ↔ ϖ ^ (2 * k + 5) ∣ W.b₆ := by
+  obtain ⟨⟨x₁, hx₁⟩, ⟨x₂, hx₂⟩, -, ⟨x₃, hx₃⟩, ⟨x₄, hx₄⟩, -⟩ := isTateOddStage_iff.1 h
+  obtain ⟨r₁, hr₁⟩ := hr
+  refine (C.u⁻¹.isUnit.pow 6).dvd_iff_of_eq_mul_add (2 * r₁ * (x₁ * x₃ + 2 * x₄) +
+    r₁ ^ 2 * (ϖ * x₁ ^ 2 + 4 * x₂) + 4 * ϖ ^ (k + 1) * r₁ ^ 3) ?_
+  rw [variableChange_b₆, b₄, b₂, hr₁, hx₁, hx₂, hx₃, hx₄]
+  ring
+
+/-- At the even stage `k`, a change of variables with `ϖ^(k+2) ∣ r`, `ϖ ∣ s` and `ϖ^(k+3) ∣ t`
+preserves the test `ϖ^(2k+7) ∣ a₄² - 4 a₂ a₆`. -/
+private theorem pow_dvd_discrim_smul_iff {k : ℕ} {C : VariableChange R}
+    (h : IsTateEvenStage ϖ k W) (hr : ϖ ^ (k + 2) ∣ C.r) (hs : ϖ ∣ C.s)
+    (ht : ϖ ^ (k + 3) ∣ C.t) :
+    ϖ ^ (2 * k + 7) ∣ discrim (C • W).a₂ (C • W).a₄ (C • W).a₆ ↔
+      ϖ ^ (2 * k + 7) ∣ discrim W.a₂ W.a₄ W.a₆ := by
+  obtain ⟨⟨x₁, hx₁⟩, ⟨x₂, hx₂⟩, -, ⟨x₃, hx₃⟩, ⟨x₄, hx₄⟩, ⟨x₆, hx₆⟩⟩ := isTateEvenStage_iff.1 h
+  obtain ⟨ρ, hρ⟩ := hr
+  obtain ⟨σ, hσ⟩ := hs
+  obtain ⟨τ, hτ⟩ := ht
+  -- Up to units, `C • W` has `a₂ = ϖ (x₂ + ϖ e₂)`, `a₄ = ϖ^(k+3) (x₄ + 2 ρ x₂ + ϖ e₄)` and
+  -- `a₆ = ϖ^(2k+5) (x₆ + ρ x₄ + ρ² x₂ + ϖ e₆)`, where `e₂`, `e₄` and `e₆` are the factors below.
+  obtain ⟨e₂, he₂⟩ : ∃ e, e = -(σ * x₁) + 3 * ϖ ^ k * ρ - σ ^ 2 := ⟨_, rfl⟩
+  obtain ⟨e₄, he₄⟩ : ∃ e, e = -(σ * x₃) - (τ + ρ * σ) * x₁ + 3 * ϖ ^ k * ρ ^ 2 - 2 * σ * τ :=
+    ⟨_, rfl⟩
+  obtain ⟨e₆, he₆⟩ : ∃ e, e = ϖ ^ k * ρ ^ 3 - τ * x₃ - τ ^ 2 - ρ * τ * x₁ := ⟨_, rfl⟩
+  refine (C.u⁻¹.isUnit.pow 8).dvd_iff_of_eq_mul_add (2 * (x₄ + 2 * ρ * x₂) * e₄ + ϖ * e₄ ^ 2 -
+    4 * x₂ * e₆ - 4 * e₂ * (x₆ + ρ * x₄ + ρ ^ 2 * x₂) - 4 * ϖ * e₂ * e₆) ?_
+  rw [discrim, discrim, variableChange_a₂, variableChange_a₄, variableChange_a₆, hx₁, hx₂, hx₃, hx₄,
+    hx₆, hρ, hσ, hτ, he₂, he₄, he₆]
+  ring
+
+/-- If Tate's algorithm stops on `W` with `Iₙ*`, `n ≥ 1`, the subprocedure of Step 7 reaches its
+stage `n - 1` on `W` and fails the test of that stage. -/
+private theorem IsTateTerminal.starStage {n : ℕ} (h : W.IsTateTerminal ϖ (.IStar (n + 1))) :
+    StarStage ϖ n W ∧ ¬ StarTest ϖ n W := by
+  rcases isTateTerminal_IStar_add_one.1 h with ⟨k, rfl, hk, ht⟩ | ⟨k, rfl, hk, ht⟩
+  · exact ⟨starStage_two_mul.2 hk, starTest_two_mul.not.2 ht⟩
+  · exact ⟨starStage_two_mul_add_one.2 hk, starTest_two_mul_add_one.not.2 ht⟩
 
 end CommRing
 
@@ -319,6 +459,25 @@ private theorem tateContext_six_of_doubleRoot (hϖ : Irreducible ϖ) (h₁ : ϖ 
       exact h₂' ⟨B, by rw [hA₂]; ring⟩
     simpa [hres] using this
 
+/-- An equation with `ϖ ∣ a₁`, `ϖ² ∣ a₂`, `ϖ³ ∣ a₃`, `ϖ⁴ ∣ a₄` and `ϖ⁵ ∣ a₆`, the normal form of
+Step 10, reaches the test of `II*`. -/
+private theorem tateContext_nine_of_pow_dvd (hϖ : Irreducible ϖ) (h₁ : ϖ ∣ W.a₁)
+    (h₂ : ϖ ^ 2 ∣ W.a₂) (h₃ : ϖ ^ 3 ∣ W.a₃) (h₄ : ϖ ^ 4 ∣ W.a₄) (h₆ : ϖ ^ 5 ∣ W.a₆) :
+    TateContext ϖ 9 W := by
+  have hp (n : ℕ) {x : R} (h : ϖ ^ (n + 1) ∣ x) : ϖ ∣ x := (dvd_pow_self ϖ n.succ_ne_zero).trans h
+  have hle {m n : ℕ} (hmn : m ≤ n) {x : R} (h : ϖ ^ n ∣ x) : ϖ ^ m ∣ x :=
+    (pow_dvd_pow ϖ hmn).trans h
+  have ht := tateTest_of_stepSix h₁ (hp 1 h₂) (hle (by omega) h₃) (hle (by omega) h₄)
+    (hle (by omega) h₆)
+  have ht' := tateTest_five_six_of_stepEight hϖ h₂ (hle (by omega) h₄) (hle (by omega) h₆)
+  refine ⟨fun k hk ↦ ?_, fun _ ↦ ⟨hp 2 h₃, hp 3 h₄, hp 4 h₆⟩,
+    fun _ ↦ ⟨h₁, hp 1 h₂, hle (by omega) h₃, hle (by omega) h₄, hle (by omega) h₆⟩,
+    fun _ ↦ ⟨h₂, hle (by omega) h₄, hle (by omega) h₆⟩, fun _ ↦ ⟨h₃, h₆⟩⟩
+  rcases lt_or_ge k 5 with hk5 | hk5
+  · exact ht k hk5
+  · interval_cases k
+    exacts [ht'.1, ht'.2, tateTest_seven_of_stepNine h₃ h₆, h₄]
+
 /-- **The test at which Tate's algorithm stops.** On an equation on which the algorithm stops with
 symbol `s`, it reaches the test `chainIndex s` and fails it. -/
 private theorem IsTateTerminal.tateContext (hϖ : Irreducible ϖ) {s : ReductionSymbol}
@@ -397,19 +556,8 @@ private theorem IsTateTerminal.tateContext (hϖ : Irreducible ϖ) {s : Reduction
     · interval_cases k
       exacts [ht'.1, ht'.2, tateTest_seven_of_stepNine h₃ h₆]
   | .IIStar, h =>
-    obtain ⟨h₁, h₂, h₃, h₄, h₆, -⟩ := isTateTerminal_IIStar.1 h
-    have ht := tateTest_of_stepSix h₁ (hp 1 h₂) (hle (by omega) h₃) (hle (by omega) h₄)
-      (hle (by omega) h₆)
-    have ht' := tateTest_five_six_of_stepEight hϖ h₂ (hle (by omega) h₄) (hle (by omega) h₆)
-    refine ⟨⟨fun k hk ↦ ?_, fun _ ↦ ⟨hp 2 h₃, hp 3 h₄, hp 4 h₆⟩,
-      fun _ ↦ ⟨h₁, hp 1 h₂, hle (by omega) h₃, hle (by omega) h₄, hle (by omega) h₆⟩,
-      fun _ ↦ ⟨h₂, hle (by omega) h₄, hle (by omega) h₆⟩, fun _ ↦ ⟨h₃, h₆⟩⟩, by
-        simp [chainIndex, tateTest]⟩
-    simp only [chainIndex] at hk
-    rcases lt_or_ge k 5 with hk5 | hk5
-    · exact ht k hk5
-    · interval_cases k
-      exacts [ht'.1, ht'.2, tateTest_seven_of_stepNine h₃ h₆, h₄]
+    obtain ⟨h₁, h₂, h₃, h₄, h₆, h₆'⟩ := isTateTerminal_IIStar.1 h
+    exact ⟨tateContext_nine_of_pow_dvd hϖ h₁ h₂ h₃ h₄ h₆, h₆'⟩
 
 /-- **Each test of Tate's algorithm is invariant under changes of variables over `R`** between
 equations on which the algorithm reaches it. -/
@@ -417,10 +565,6 @@ private theorem tateTest_smul (hϖ : Irreducible ϖ) (C : VariableChange R) {i :
     (h : TateContext ϖ i W) (h' : TateContext ϖ i (C • W)) (ht : tateTest ϖ W i) :
     tateTest ϖ (C • W) i := by
   have hv (n : ℕ) : IsUnit ((↑C.u⁻¹ : R) ^ n) := C.u⁻¹.isUnit.pow n
-  -- Divisibility by `a` is unchanged by adding a multiple of `a` and multiplying by a unit.
-  have dvd_iff_of_eq_mul_add {a x y v : R} (hv : IsUnit v) (z : R)
-      (h : y = v * (x + a * z)) : a ∣ y ↔ a ∣ x := by
-    rw [h, hv.dvd_mul_left, dvd_add_left (dvd_mul_right a z)]
   -- From the test of Step 2 on, both equations reduce to curves singular at the origin.
   have hrt (hi : 1 ≤ i) : ϖ ∣ C.r ∧ ϖ ∣ C.t := by
     obtain ⟨h₃, h₄, h₆⟩ := h.2.1 hi
@@ -467,6 +611,21 @@ private theorem tateTest_smul (hϖ : Irreducible ϖ) (C : VariableChange R) {i :
       rw [← hϖ.residue_eq_zero_iff_dvd]
       simpa [(C.u⁻¹.isUnit.map (residue R)).ne_zero] using e₆.symm
     exact ⟨r₂, by rw [hr]; ring⟩
+  -- From the test of `III*` on, both equations are in the normal form of Step 9, so `ϖ³ ∣ t`.
+  have ht₃ (hi : 8 ≤ i) : ϖ ^ 3 ∣ C.t := by
+    obtain ⟨r₂, hr₂⟩ := hr (by omega)
+    obtain ⟨-, -, ⟨t₁, ht₁⟩⟩ := hst (by omega)
+    obtain ⟨⟨x₁, hx₁⟩, -, -, -, -⟩ := h.2.2.1 (by omega)
+    obtain ⟨⟨y₂, hy₂⟩, ⟨y₄, hy₄⟩, -⟩ := h.2.2.2.1 (by omega)
+    obtain ⟨⟨z₃, hz₃⟩, ⟨z₆, hz₆⟩⟩ := h.2.2.2.2 hi
+    obtain ⟨-, h₆'⟩ := h'.2.2.2.2 hi
+    rw [variableChange_a₆, (hv 6).dvd_mul_left] at h₆'
+    obtain ⟨e₆, he₆⟩ := h₆'
+    refine hϖ.prime.pow_succ_dvd_of_pow_mul_add_one_dvd_pow (n := 2) (k := 2)
+      ⟨z₆ + r₂ * y₄ + ϖ * r₂ ^ 2 * y₂ + ϖ * r₂ ^ 3 - t₁ * z₃ - r₂ * t₁ * x₁ - e₆, ?_⟩
+    rw [hr₂, hx₁, hy₂, hy₄, hz₃, hz₆, ht₁] at he₆
+    rw [ht₁]
+    linear_combination -he₆
   match i, h, h', ht with
   | 0, _, _, ht =>
     simp only [tateTest] at ht ⊢
@@ -474,11 +633,11 @@ private theorem tateTest_smul (hϖ : Irreducible ϖ) (C : VariableChange R) {i :
     exact dvd_mul_of_dvd_right ht _
   | 1, _, _, ht =>
     obtain ⟨⟨r₁, hr₁⟩, -⟩ := hrt le_rfl
-    exact (dvd_iff_of_eq_mul_add (hv 2) (12 * r₁) (by rw [variableChange_b₂, hr₁]; ring)).2 ht
+    exact ((hv 2).dvd_iff_of_eq_mul_add (12 * r₁) (by rw [variableChange_b₂, hr₁]; ring)).2 ht
   | 2, h, _, ht =>
     obtain ⟨⟨r₁, hr₁⟩, ⟨t₁, ht₁⟩⟩ := hrt (by norm_num)
     obtain ⟨⟨x₃, hx₃⟩, ⟨x₄, hx₄⟩, -⟩ := h.2.1 (by norm_num)
-    refine (dvd_iff_of_eq_mul_add (hv 6) (r₁ * x₄ + r₁ ^ 2 * W.a₂ + ϖ * r₁ ^ 3 - t₁ * x₃ -
+    refine ((hv 6).dvd_iff_of_eq_mul_add (r₁ * x₄ + r₁ ^ 2 * W.a₂ + ϖ * r₁ ^ 3 - t₁ * x₃ -
       t₁ ^ 2 - r₁ * t₁ * W.a₁) ?_).2 ht
     rw [variableChange_a₆, hr₁, ht₁, hx₃, hx₄]
     ring
@@ -487,7 +646,7 @@ private theorem tateTest_smul (hϖ : Irreducible ϖ) (C : VariableChange R) {i :
     obtain ⟨⟨x₃, hx₃⟩, ⟨x₄, hx₄⟩, -⟩ := h.2.1 (by norm_num)
     obtain ⟨β₂, hβ₂⟩ : ϖ ∣ W.b₂ := h.1 1 (by norm_num)
     obtain ⟨y₆, hy₆⟩ : ϖ ^ 2 ∣ W.a₆ := h.1 2 (by norm_num)
-    refine (dvd_iff_of_eq_mul_add (hv 8) (3 * r₁ * (x₃ ^ 2 + 4 * y₆) +
+    refine ((hv 8).dvd_iff_of_eq_mul_add (3 * r₁ * (x₃ ^ 2 + 4 * y₆) +
       3 * r₁ ^ 2 * (W.a₁ * x₃ + 2 * x₄) + ϖ * r₁ ^ 3 * β₂ + 3 * ϖ * r₁ ^ 4) ?_).2 ht
     rw [variableChange_b₈, hr₁, hβ₂, b₆, b₄, hx₃, hx₄, hy₆]
     ring
@@ -504,7 +663,7 @@ private theorem tateTest_smul (hϖ : Irreducible ϖ) (C : VariableChange R) {i :
         ⟨β₂ * (x₃ ^ 2 + 4 * y₆) - 4 * β₈, by
           linear_combination W.b_relation + W.b₂ * hb₆ + ϖ ^ 2 * (x₃ ^ 2 + 4 * y₆) * hβ₂ -
             4 * hβ₈⟩
-    refine (dvd_iff_of_eq_mul_add (hv 6) (2 * r₁ * β₄ + r₁ ^ 2 * β₂ + 4 * r₁ ^ 3) ?_).2 ht
+    refine ((hv 6).dvd_iff_of_eq_mul_add (2 * r₁ * β₄ + r₁ ^ 2 * β₂ + 4 * r₁ ^ 3) ?_).2 ht
     rw [variableChange_b₆, hr₁, hβ₂, hβ₄]
     ring
   | 5, _, _, ht =>
@@ -529,31 +688,33 @@ private theorem tateTest_smul (hϖ : Irreducible ϖ) (C : VariableChange R) {i :
     obtain ⟨r₂, hr₂⟩ := hr (by norm_num)
     obtain ⟨⟨x₁, hx₁⟩, -, ⟨x₃, hx₃⟩, -, -⟩ := h.2.2.1 (by norm_num)
     obtain ⟨⟨y₂, hy₂⟩, ⟨y₄, hy₄⟩, -⟩ := h.2.2.2.1 le_rfl
-    refine (dvd_iff_of_eq_mul_add (hv 6) (2 * r₂ * (x₁ * x₃ + 2 * y₄) +
+    refine ((hv 6).dvd_iff_of_eq_mul_add (2 * r₂ * (x₁ * x₃ + 2 * y₄) +
       ϖ * r₂ ^ 2 * (x₁ ^ 2 + 4 * y₂) + 4 * ϖ * r₂ ^ 3) ?_).2 ht
     rw [variableChange_b₆, hr₂, b₄, b₂, hx₁, hx₃, hy₂, hy₄]
     ring
-  | 8, h, h', ht =>
+  | 8, h, _, ht =>
     obtain ⟨r₂, hr₂⟩ := hr (by norm_num)
-    obtain ⟨-, ⟨s₁, hs₁⟩, ⟨t₁, ht₁⟩⟩ := hst (by norm_num)
+    obtain ⟨-, ⟨s₁, hs₁⟩, -⟩ := hst (by norm_num)
+    obtain ⟨t₃, ht₃⟩ := ht₃ le_rfl
     obtain ⟨⟨x₁, hx₁⟩, -, -, -, -⟩ := h.2.2.1 (by norm_num)
-    obtain ⟨⟨y₂, hy₂⟩, ⟨y₄, hy₄⟩, -⟩ := h.2.2.2.1 (by norm_num)
-    obtain ⟨⟨z₃, hz₃⟩, ⟨z₆, hz₆⟩⟩ := h.2.2.2.2 le_rfl
-    obtain ⟨-, h₆'⟩ := h'.2.2.2.2 le_rfl
-    -- On the normal form of Step 9 also `ϖ³ ∣ t`.
-    rw [variableChange_a₆, (hv 6).dvd_mul_left] at h₆'
-    obtain ⟨e₆, he₆⟩ := h₆'
-    obtain ⟨t₃, ht₃⟩ : ϖ ^ 3 ∣ C.t := by
-      refine hϖ.prime.pow_succ_dvd_of_pow_mul_add_one_dvd_pow (n := 2) (k := 2)
-        ⟨z₆ + r₂ * y₄ + ϖ * r₂ ^ 2 * y₂ + ϖ * r₂ ^ 3 - t₁ * z₃ - r₂ * t₁ * x₁ - e₆, ?_⟩
-      rw [hr₂, hx₁, hy₂, hy₄, hz₃, hz₆, ht₁] at he₆
-      rw [ht₁]
-      linear_combination -he₆
-    refine (dvd_iff_of_eq_mul_add (hv 4) (-(s₁ * z₃) + 2 * r₂ * y₂ - (t₃ + r₂ * s₁) * x₁ +
+    obtain ⟨⟨y₂, hy₂⟩, -, -⟩ := h.2.2.2.1 (by norm_num)
+    obtain ⟨⟨z₃, hz₃⟩, -⟩ := h.2.2.2.2 le_rfl
+    refine ((hv 4).dvd_iff_of_eq_mul_add (-(s₁ * z₃) + 2 * r₂ * y₂ - (t₃ + r₂ * s₁) * x₁ +
       3 * r₂ ^ 2 - 2 * s₁ * t₃) ?_).2 ht
     rw [variableChange_a₄, hr₂, hs₁, ht₃, hx₁, hy₂, hz₃]
     ring
-  | i + 9, _, _, ht => exact ht.elim
+  | 9, h, _, ht =>
+    obtain ⟨r₂, hr₂⟩ := hr (by norm_num)
+    obtain ⟨t₃, ht₃⟩ := ht₃ (by norm_num)
+    obtain ⟨⟨x₁, hx₁⟩, -, -, -, -⟩ := h.2.2.1 (by norm_num)
+    obtain ⟨⟨y₂, hy₂⟩, -, -⟩ := h.2.2.2.1 (by norm_num)
+    obtain ⟨⟨z₃, hz₃⟩, -⟩ := h.2.2.2.2 (by norm_num)
+    obtain ⟨y₄, hy₄⟩ : ϖ ^ 4 ∣ W.a₄ := h.1 8 (by norm_num)
+    refine ((hv 6).dvd_iff_of_eq_mul_add (r₂ * y₄ + r₂ ^ 2 * y₂ + r₂ ^ 3 - t₃ * z₃ - t₃ ^ 2 -
+      r₂ * t₃ * x₁) ?_).2 ht
+    rw [variableChange_a₆, hr₂, ht₃, hx₁, hy₂, hy₄, hz₃]
+    ring
+  | i + 10, _, _, ht => exact ht.elim
 
 /-- Tate's algorithm stops on `W` and on `C • W` at the same test: if it stopped on one at an
 earlier test, that equation would fail a test which the other passes. -/
@@ -570,12 +731,141 @@ private theorem IsTateTerminal.chainIndex_eq (hϖ : Irreducible ϖ) {C : Variabl
   · exact heq
   · exact absurd (tateTest_smul hϖ C (hc.mono hlt.le) hc' (hc.1 _ hlt)) hn'
 
+/-- Between two equations at the odd stage `0`, a change of variables has `ϖ² ∣ r`, `ϖ ∣ s` and
+`ϖ² ∣ t`. Both residue cubics are `T² (T + c)`, so the shift `r / ϖ` of `T` reduces to `0`. -/
+private theorem dvd_r_s_t_of_isTateOddStage_zero (hϖ : Irreducible ϖ) {C : VariableChange R}
+    (h : IsTateOddStage ϖ 0 W) (h' : IsTateOddStage ϖ 0 (C • W)) :
+    ϖ ^ 2 ∣ C.r ∧ ϖ ∣ C.s ∧ ϖ ^ 2 ∣ C.t := by
+  obtain ⟨h₁, h₂, -, h₃, h₄, h₆⟩ := isTateOddStage_iff.1 h
+  obtain ⟨-, h₂', -, h₃', h₄', h₆'⟩ := isTateOddStage_iff.1 h'
+  have hle {m n : ℕ} (hmn : m ≤ n) {x : R} (h : ϖ ^ n ∣ x) : ϖ ^ m ∣ x :=
+    (pow_dvd_pow ϖ hmn).trans h
+  obtain ⟨⟨r₁, hr₁⟩, ⟨s₁, hs₁⟩, ⟨t₁, ht₁⟩⟩ := dvd_r_s_t_of_stepSix hϖ h₁ h₂ h₃
+    (hle (by omega) h₄) (hle (by omega) h₆) h₂' h₃' (hle (by omega) h₄') (hle (by omega) h₆')
+  rw [variableChange_a₄, (C.u⁻¹.isUnit.pow 4).dvd_mul_left] at h₄'
+  rw [variableChange_a₆, (C.u⁻¹.isUnit.pow 6).dvd_mul_left] at h₆'
+  obtain ⟨x₁, hx₁⟩ := h₁
+  obtain ⟨x₂, hx₂⟩ := h₂
+  obtain ⟨x₃, hx₃⟩ := h₃
+  obtain ⟨x₄, hx₄⟩ := h₄
+  obtain ⟨x₆, hx₆⟩ := h₆
+  obtain ⟨e₄, he₄⟩ := h₄'
+  obtain ⟨e₆, he₆⟩ := h₆'
+  rw [hx₁, hx₂, hx₃, hx₄, hr₁, hs₁, ht₁] at he₄
+  rw [hx₁, hx₂, hx₃, hx₄, hx₆, hr₁, ht₁] at he₆
+  have hϖ0 := hϖ.ne_zero
+  -- The coefficients of `T` and `1` in the residue cubic of `C • W`, up to units.
+  have k₄ : ϖ ∣ r₁ * (2 * x₂ + 3 * r₁) :=
+    ⟨e₄ - x₄ + s₁ * x₃ + (t₁ + r₁ * s₁) * x₁ + 2 * s₁ * t₁,
+      mul_left_cancel₀ (pow_ne_zero 2 hϖ0) (by linear_combination he₄)⟩
+  have k₆ : ϖ ∣ r₁ ^ 2 * (x₂ + r₁) :=
+    ⟨e₆ - x₆ - r₁ * x₄ + t₁ * x₃ + t₁ ^ 2 + r₁ * t₁ * x₁,
+      mul_left_cancel₀ (pow_ne_zero 3 hϖ0) (by linear_combination he₆)⟩
+  obtain ⟨r₂, rfl⟩ : ϖ ∣ r₁ := by
+    by_contra hr
+    have a := (hϖ.prime.dvd_or_dvd k₄).resolve_left hr
+    have b := (hϖ.prime.dvd_or_dvd k₆).resolve_left fun h ↦ hr (hϖ.prime.dvd_of_dvd_pow h)
+    exact hr (by convert dvd_sub a (dvd_mul_of_dvd_right b 2) using 1; ring)
+  exact ⟨⟨r₂, by rw [hr₁]; ring⟩, ⟨s₁, hs₁⟩, ⟨t₁, ht₁⟩⟩
+
+/-- Between two equations at the even stage `k`, a change of variables with `ϖ^(k+2) ∣ r` and
+`ϖ^(k+2) ∣ t` has `ϖ^(k+3) ∣ t`: the equations for `a₆` give `ϖ^(2k+5) ∣ t²`. -/
+private theorem pow_dvd_t_of_isTateEvenStage (hϖ : Irreducible ϖ) {k : ℕ}
+    {C : VariableChange R} (h : IsTateEvenStage ϖ k W) (h' : IsTateEvenStage ϖ k (C • W))
+    (hr : ϖ ^ (k + 2) ∣ C.r) (ht : ϖ ^ (k + 2) ∣ C.t) : ϖ ^ (k + 3) ∣ C.t := by
+  obtain ⟨⟨x₁, hx₁⟩, ⟨x₂, hx₂⟩, -, ⟨x₃, hx₃⟩, ⟨x₄, hx₄⟩, ⟨x₆, hx₆⟩⟩ := isTateEvenStage_iff.1 h
+  obtain ⟨-, -, -, -, -, h₆'⟩ := isTateEvenStage_iff.1 h'
+  obtain ⟨r₁, hr₁⟩ := hr
+  obtain ⟨t₁, ht₁⟩ := ht
+  rw [variableChange_a₆, (C.u⁻¹.isUnit.pow 6).dvd_mul_left] at h₆'
+  obtain ⟨e₆, he₆⟩ := h₆'
+  rw [hx₁, hx₂, hx₃, hx₄, hx₆, hr₁, ht₁] at he₆
+  refine hϖ.prime.pow_succ_dvd_of_pow_mul_add_one_dvd_pow (n := 2) (k := k + 2)
+    ⟨x₆ + r₁ * x₄ + r₁ ^ 2 * x₂ + ϖ ^ (k + 1) * r₁ ^ 3 - t₁ * x₃ - r₁ * t₁ * x₁ - e₆, ?_⟩
+  rw [ht₁]
+  linear_combination -he₆
+
+/-- Between two equations at the odd stage `k + 1`, a change of variables with `ϖ^(k+2) ∣ r` and
+`ϖ^(k+3) ∣ t` has `ϖ^(k+3) ∣ r`: the equations for `a₆` give `ϖ^(2k+6) ∣ r² a₂`, and `ϖ ∥ a₂`. -/
+private theorem pow_dvd_r_of_isTateOddStage_succ (hϖ : Irreducible ϖ) {k : ℕ}
+    {C : VariableChange R} (h : IsTateOddStage ϖ (k + 1) W)
+    (h' : IsTateOddStage ϖ (k + 1) (C • W)) (hr : ϖ ^ (k + 2) ∣ C.r)
+    (ht : ϖ ^ (k + 3) ∣ C.t) : ϖ ^ (k + 3) ∣ C.r := by
+  obtain ⟨⟨x₁, hx₁⟩, ⟨x₂, hx₂⟩, h₂', ⟨x₃, hx₃⟩, ⟨x₄, hx₄⟩, ⟨x₆, hx₆⟩⟩ := isTateOddStage_iff.1 h
+  obtain ⟨-, -, -, -, -, h₆'⟩ := isTateOddStage_iff.1 h'
+  obtain ⟨r₁, hr₁⟩ := hr
+  obtain ⟨t₁, ht₁⟩ := ht
+  rw [variableChange_a₆, (C.u⁻¹.isUnit.pow 6).dvd_mul_left] at h₆'
+  obtain ⟨e₆, he₆⟩ := h₆'
+  rw [hx₁, hx₂, hx₃, hx₄, hx₆, hr₁, ht₁] at he₆
+  have hx₂' : ¬ ϖ ∣ x₂ := fun ⟨y, hy⟩ ↦ h₂' ⟨y, by rw [hx₂, hy]; ring⟩
+  refine hϖ.prime.pow_succ_dvd_of_pow_mul_add_one_dvd_pow (n := 2) (k := k + 2)
+    (hϖ.prime.pow_dvd_of_dvd_mul_right _ hx₂'
+      ⟨e₆ - x₆ - r₁ * x₄ - ϖ ^ k * r₁ ^ 3 + t₁ * x₃ + t₁ ^ 2 + r₁ * t₁ * x₁, ?_⟩)
+  apply mul_left_cancel₀ hϖ.ne_zero
+  rw [hr₁]
+  linear_combination he₆
+
+/-- **The bounds on a change of variables between two equations at the same stage.** At the odd
+stage `k` it has `ϖ^(k+2) ∣ r`, `ϖ ∣ s` and `ϖ^(k+2) ∣ t`; at the even stage `k` moreover
+`ϖ^(k+3) ∣ t`. -/
+private theorem dvd_r_s_t_of_isTateStage (hϖ : Irreducible ϖ) {C : VariableChange R} (k : ℕ) :
+    (IsTateOddStage ϖ k W → IsTateOddStage ϖ k (C • W) →
+      ϖ ^ (k + 2) ∣ C.r ∧ ϖ ∣ C.s ∧ ϖ ^ (k + 2) ∣ C.t) ∧
+    (IsTateEvenStage ϖ k W → IsTateEvenStage ϖ k (C • W) →
+      ϖ ^ (k + 2) ∣ C.r ∧ ϖ ∣ C.s ∧ ϖ ^ (k + 3) ∣ C.t) := by
+  -- The even stage `k` lies inside the odd stage `k`.
+  have heven (k : ℕ) (hodd : IsTateOddStage ϖ k W → IsTateOddStage ϖ k (C • W) →
+      ϖ ^ (k + 2) ∣ C.r ∧ ϖ ∣ C.s ∧ ϖ ^ (k + 2) ∣ C.t) (h : IsTateEvenStage ϖ k W)
+      (h' : IsTateEvenStage ϖ k (C • W)) :
+      ϖ ^ (k + 2) ∣ C.r ∧ ϖ ∣ C.s ∧ ϖ ^ (k + 3) ∣ C.t := by
+    obtain ⟨hr, hs, ht⟩ :=
+      hodd h.isTateOddStage_and_pow_dvd_b₆.1 h'.isTateOddStage_and_pow_dvd_b₆.1
+    exact ⟨hr, hs, pow_dvd_t_of_isTateEvenStage hϖ h h' hr ht⟩
+  induction k with
+  | zero =>
+    have hodd := dvd_r_s_t_of_isTateOddStage_zero (W := W) (C := C) hϖ
+    exact ⟨hodd, heven 0 hodd⟩
+  | succ k ih =>
+    -- The odd stage `k + 1` lies inside the even stage `k`.
+    have hodd (h : IsTateOddStage ϖ (k + 1) W) (h' : IsTateOddStage ϖ (k + 1) (C • W)) :
+        ϖ ^ (k + 1 + 2) ∣ C.r ∧ ϖ ∣ C.s ∧ ϖ ^ (k + 1 + 2) ∣ C.t := by
+      obtain ⟨hr, hs, ht⟩ := ih.2 h.isTateEvenStage_and_pow_dvd_discrim.1
+        h'.isTateEvenStage_and_pow_dvd_discrim.1
+      exact ⟨pow_dvd_r_of_isTateOddStage_succ hϖ h h' hr ht, hs, ht⟩
+    exact ⟨hodd, heven (k + 1) hodd⟩
+
+/-- Between two equations at stage `n` of the `Iₙ*` subprocedure, a change of variables preserves
+the test of that stage. -/
+private theorem starTest_smul_iff (hϖ : Irreducible ϖ) {C : VariableChange R} {n : ℕ}
+    (h : StarStage ϖ n W) (h' : StarStage ϖ n (C • W)) :
+    StarTest ϖ n (C • W) ↔ StarTest ϖ n W := by
+  obtain ⟨k, rfl | rfl⟩ := n.even_or_odd'
+  · rw [starStage_two_mul] at h h'
+    rw [starTest_two_mul, starTest_two_mul]
+    exact pow_dvd_b₆_smul_iff h ((dvd_r_s_t_of_isTateStage hϖ k).1 h h').1
+  · rw [starStage_two_mul_add_one] at h h'
+    rw [starTest_two_mul_add_one, starTest_two_mul_add_one]
+    obtain ⟨hr, hs, ht⟩ := (dvd_r_s_t_of_isTateStage hϖ k).2 h h'
+    exact pow_dvd_discrim_smul_iff h hr hs ht
+
+/-- If Tate's algorithm stops on `W` with `Iₙ*` and on `C • W` with `Iₘ*`, `n, m ≥ 1`, then
+`m ≤ n`: otherwise `C • W` would reach stage `n` of the subprocedure of Step 7 and pass its test,
+which `W` fails. -/
+private theorem IsTateTerminal.le_of_IStar_of_smul (hϖ : Irreducible ϖ) {C : VariableChange R}
+    {n m : ℕ} (h : W.IsTateTerminal ϖ (.IStar (n + 1)))
+    (h' : (C • W).IsTateTerminal ϖ (.IStar (m + 1))) : m ≤ n := by
+  by_contra! hnm
+  obtain ⟨hs, ht⟩ := h.starStage
+  obtain ⟨hs', ht'⟩ := (h'.starStage.1.mono (Nat.succ_le_of_lt hnm)).succ
+  exact ht ((starTest_smul_iff hϖ hs hs').1 ht')
+
 /-- **The output of Tate's algorithm does not depend on the changes of variables.** If the
-algorithm stops on `W` with a symbol `s` other than `Iₙ*` with `n ≥ 1`, and on `C • W`, for a
-change of variables `C` over `R`, with a symbol `s'`, then `s' = s`. -/
+algorithm stops on `W` with a symbol `s`, and on `C • W`, for a change of variables `C` over `R`,
+with a symbol `s'`, then `s' = s`. -/
 theorem IsTateTerminal.eq_of_smul (hϖ : Irreducible ϖ) {C : VariableChange R}
-    {s s' : ReductionSymbol} (h : W.IsTateTerminal ϖ s) (h' : (C • W).IsTateTerminal ϖ s')
-    (hs : ∀ n, s ≠ .IStar (n + 1)) : s' = s := by
+    {s s' : ReductionSymbol} (h : W.IsTateTerminal ϖ s) (h' : (C • W).IsTateTerminal ϖ s') :
+    s' = s := by
   have hj := h.chainIndex_eq hϖ h'
   -- The test determines the symbol, except for the indices of `Iₙ` and `Iₙ*`.
   rcases s with (_ | n) | _ | _ | _ | (_ | n) | _ | _ | _ <;>
@@ -586,17 +876,67 @@ theorem IsTateTerminal.eq_of_smul (hϖ : Irreducible ϖ) {C : VariableChange R}
     have e := h'.addVal_Δ_eq hϖ
     rw [variableChange_Δ, addVal_mul, hu, zero_add, h.addVal_Δ_eq hϖ] at e
     have : m + 1 = n + 1 := by exact_mod_cast e.symm
-    rw [show m = n by omega]
-  · exact absurd rfl (hs _)
+    obtain rfl : m = n := by omega
+    rfl
+  · -- At `Iₙ*` the index is the stage at which the subprocedure of Step 7 stops.
+    have h₀ : (C⁻¹ • C • W).IsTateTerminal ϖ (.IStar (n + 1)) := by rwa [inv_smul_smul]
+    rw [le_antisymm (h.le_of_IStar_of_smul hϖ h') (h'.le_of_IStar_of_smul hϖ h₀)]
 
-/-- **The `Iₙ*` branch of Tate's algorithm does not depend on the changes of variables.** If the
-algorithm stops on `W` with a symbol `Iₙ*` with `n ≥ 1`, and on `C • W`, for a change of variables
-`C` over `R`, with a symbol `s'`, then `s'` is a symbol `Iₘ*` with `m ≥ 1`. -/
-theorem IsTateTerminal.exists_eq_IStar_of_smul (hϖ : Irreducible ϖ) {C : VariableChange R}
-    {n : ℕ} {s' : ReductionSymbol} (h : W.IsTateTerminal ϖ (.IStar (n + 1)))
-    (h' : (C • W).IsTateTerminal ϖ s') : ∃ m, s' = .IStar (m + 1) := by
-  have hj := h.chainIndex_eq hϖ h'
-  rcases s' with (_ | m) | _ | _ | _ | (_ | m) | _ | _ | _ <;> simp [chainIndex] at hj ⊢
+/-- An equation with `ϖ ∣ a₁`, `ϖ² ∣ a₂`, `ϖ³ ∣ a₃`, `ϖ⁴ ∣ a₄` and `ϖ⁶ ∣ a₆`, on which Tate's
+algorithm would go on to Step 11, passes every test. -/
+private theorem tateContext_ten_of_pow_dvd (hϖ : Irreducible ϖ) (h₁ : ϖ ∣ W.a₁)
+    (h₂ : ϖ ^ 2 ∣ W.a₂) (h₃ : ϖ ^ 3 ∣ W.a₃) (h₄ : ϖ ^ 4 ∣ W.a₄) (h₆ : ϖ ^ 6 ∣ W.a₆) :
+    TateContext ϖ 10 W := by
+  have hc := tateContext_nine_of_pow_dvd hϖ h₁ h₂ h₃ h₄ ((pow_dvd_pow ϖ (by omega)).trans h₆)
+  refine ⟨fun k hk ↦ ?_, fun _ ↦ hc.2.1 (by omega), fun _ ↦ hc.2.2.1 (by omega),
+    fun _ ↦ hc.2.2.2.1 (by omega), fun _ ↦ hc.2.2.2.2 (by omega)⟩
+  rcases lt_or_ge k 9 with hk9 | hk9
+  · exact hc.1 k hk9
+  · obtain rfl : k = 9 := by omega
+    exact h₆
+
+/-- If Tate's algorithm stops on `W`, no change of variables over `R` carries `W` to an equation
+on which it would go on to Step 11. -/
+private theorem IsTateTerminal.not_pow_dvd_smul (hϖ : Irreducible ϖ) {s : ReductionSymbol}
+    (h : W.IsTateTerminal ϖ s) (C : VariableChange R) :
+    ¬ (ϖ ∣ (C • W).a₁ ∧ ϖ ^ 2 ∣ (C • W).a₂ ∧ ϖ ^ 3 ∣ (C • W).a₃ ∧ ϖ ^ 4 ∣ (C • W).a₄ ∧
+      ϖ ^ 6 ∣ (C • W).a₆) := by
+  rintro ⟨h₁, h₂, h₃, h₄, h₆⟩
+  obtain ⟨hc, hn⟩ := h.tateContext hϖ
+  have hc' := tateContext_ten_of_pow_dvd hϖ h₁ h₂ h₃ h₄ h₆
+  have hlt : chainIndex s < 10 := by
+    rcases s with (_ | _) | _ | _ | _ | (_ | _) | _ | _ | _ <;> simp [chainIndex]
+  have hc₀ : TateContext ϖ (chainIndex s) (C⁻¹ • C • W) := by rwa [inv_smul_smul]
+  have ht := tateTest_smul hϖ C⁻¹ (hc'.mono hlt.le) hc₀ (hc'.1 _ hlt)
+  rw [inv_smul_smul] at ht
+  exact hn ht
+
+section Minimality
+
+variable {K : Type*} [Field K] [Algebra R K] [IsFractionRing R K]
+
+/-- **Tate's algorithm only stops on minimal equations.** If the algorithm stops on an equation
+`W` over `R`, with any symbol, then the base change of `W` to the fraction field is minimal over
+`R`. -/
+theorem IsTateTerminal.isMinimal_baseChange (hϖ : Irreducible ϖ) {s : ReductionSymbol}
+    (h : W.IsTateTerminal ϖ s) : IsMinimal R (W.baseChange K) := by
+  by_contra hmin
+  obtain ⟨r, s', t, hC⟩ := exists_variableChange_pow_dvd_a₁_a₂_a₃_a₄_a₆_of_not_isMinimal hϖ W hmin
+  exact h.not_pow_dvd_smul hϖ _ hC
+
+/-- **Tate's algorithm decides minimality.** Over a discrete valuation ring with perfect residue
+field, an equation over `R` with nonzero discriminant is minimal over the fraction field exactly
+when some change of variables over `R` carries it to an equation on which the algorithm stops. -/
+theorem isMinimal_baseChange_iff_exists_isTateTerminal [PerfectField (ResidueField R)]
+    (hϖ : Irreducible ϖ) (hΔ : W.Δ ≠ 0) :
+    IsMinimal R (W.baseChange K) ↔
+      ∃ (C : VariableChange R) (s : ReductionSymbol), (C • W).IsTateTerminal ϖ s := by
+  refine ⟨fun _ ↦ exists_isTateTerminal (K := K) hϖ W hΔ, fun ⟨C, s, h⟩ ↦ ?_⟩
+  have := h.isMinimal_baseChange (K := K) hϖ
+  rw [← inv_smul_smul C W, ← baseChange_smul_baseChange]
+  infer_instance
+
+end Minimality
 
 section MinimalModel
 
@@ -615,24 +955,12 @@ private theorem exists_smul_eq_of_isMinimal_smul (D : VariableChange K)
 
 /-- **The output of Tate's algorithm is an invariant of the curve.** If the algorithm stops on two
 minimal equations of one elliptic curve over `K`, with any uniformisers, then it stops with the same
-symbol, unless that symbol is `Iₙ*` with `n ≥ 1`. -/
+symbol. -/
 theorem IsTateTerminal.eq_of_isMinimal_smul (hϖ : Irreducible ϖ) (hϖ' : Irreducible ϖ')
     (D : VariableChange K) (hD : D • W₁.baseChange K = W₂.baseChange K) {s₁ s₂ : ReductionSymbol}
-    (h₁ : W₁.IsTateTerminal ϖ s₁) (h₂ : W₂.IsTateTerminal ϖ' s₂)
-    (hs : ∀ n, s₁ ≠ .IStar (n + 1)) : s₂ = s₁ := by
+    (h₁ : W₁.IsTateTerminal ϖ s₁) (h₂ : W₂.IsTateTerminal ϖ' s₂) : s₂ = s₁ := by
   obtain ⟨C, rfl⟩ := exists_smul_eq_of_isMinimal_smul D hD
   exact h₁.eq_of_smul hϖ
-    ((isTateTerminal_iff_of_associated (associated_of_irreducible R hϖ hϖ')).2 h₂) hs
-
-/-- If Tate's algorithm stops on a minimal equation of an elliptic curve over `K` with a symbol
-`Iₙ*` with `n ≥ 1`, and on a second minimal equation of the same curve, with any uniformiser, with
-a symbol `s₂`, then `s₂` is a symbol `Iₘ*` with `m ≥ 1`. -/
-theorem IsTateTerminal.exists_eq_IStar_of_isMinimal_smul (hϖ : Irreducible ϖ)
-    (hϖ' : Irreducible ϖ') (D : VariableChange K) (hD : D • W₁.baseChange K = W₂.baseChange K)
-    {n : ℕ} {s₂ : ReductionSymbol} (h₁ : W₁.IsTateTerminal ϖ (.IStar (n + 1)))
-    (h₂ : W₂.IsTateTerminal ϖ' s₂) : ∃ m, s₂ = .IStar (m + 1) := by
-  obtain ⟨C, rfl⟩ := exists_smul_eq_of_isMinimal_smul D hD
-  exact h₁.exists_eq_IStar_of_smul hϖ
     ((isTateTerminal_iff_of_associated (associated_of_irreducible R hϖ hϖ')).2 h₂)
 
 end MinimalModel

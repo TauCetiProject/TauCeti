@@ -341,7 +341,6 @@ theorem map_top_toSubmodule (f : Comodule.Hom R C M N) :
   rw [map_toSubmodule, top_toSubmodule, Submodule.map_top]
 
 /-- The identity comodule morphism leaves a subcomodule unchanged. -/
-@[simp]
 theorem map_id (A : Subcomodule R C M) : A.map (Comodule.Hom.id R C M) = A := by
   ext n
   simp only [← mem_toSubmodule, map_toSubmodule, Comodule.Hom.id_toLinearMap,
