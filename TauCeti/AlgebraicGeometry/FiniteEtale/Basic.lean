@@ -37,9 +37,14 @@ universe u
 namespace TauCeti
 
 /-- The property of a scheme over `S` being finite and étale over `S`. -/
-@[expose]
 def finiteEtaleSchemeProperty (S : Scheme.{u}) : ObjectProperty (Over S) :=
   (@IsFinite ⊓ @Etale : MorphismProperty Scheme).overObj
+
+/-- A scheme over `S` is finite étale exactly when its structure morphism is finite and étale. -/
+@[simp]
+theorem finiteEtaleSchemeProperty_iff {S : Scheme.{u}} (X : Over S) :
+    finiteEtaleSchemeProperty S X ↔ IsFinite X.hom ∧ Etale X.hom :=
+  (Iff.rfl)
 
 /-- Finite étale schemes over `S`, with all morphisms over `S`. -/
 abbrev FiniteEtaleScheme (S : Scheme.{u}) :=
@@ -78,6 +83,14 @@ noncomputable def spec : (CommAlgCat.FiniteEtale.{u} R)ᵒᵖ ⥤ FiniteEtaleSch
         (HasRingHomProperty.Spec_iff (P := @Etale)).mpr
           (RingHom.etale_algebraMap.mpr inferInstance)
       exact ⟨hf, he⟩
+
+/-- Forgetting the finite étale properties of `spec` gives Mathlib's algebraic spectrum
+functor, on both objects and morphisms. -/
+@[simp]
+theorem spec_comp_ι :
+    spec R ⋙ (finiteEtaleSchemeProperty (Spec R)).ι =
+      (CommAlgCat.finiteEtale R).ι.op ⋙ algSpec R :=
+  (rfl)
 
 /-- The object over the base underlying a finite étale spectrum is Mathlib's algebraic
 spectrum of its coordinate algebra. -/
@@ -143,7 +156,6 @@ noncomputable def specEquivalenceInverseCompInclusionIso :
 
 /-- Over a separably closed field, finite étale schemes are equivalent to finite sets.
 The inverse constructs the spectrum of the algebra of functions on the finite set. -/
-@[expose]
 noncomputable def equivOfIsSepClosed (K : Type u) [Field K] [IsSepClosed K] :
     FiniteEtaleScheme (Spec (.of K)) ≌ FintypeCat.{u} :=
   (specEquivalence (.of K)).symm.trans (CommAlgCat.FiniteEtale.equivOfIsSepClosed K)
@@ -159,6 +171,15 @@ theorem equivOfIsSepClosed_functor (K : Type u) [Field K] [IsSepClosed K] :
   simp only [equivOfIsSepClosed, Equivalence.trans_functor, Equivalence.symm_functor,
     CommAlgCat.FiniteEtale.equivOfIsSepClosed_functor]
 
+/-- The inverse finite-set classification forms the function algebra and then takes its
+spectrum. Mathlib's inverse object and map lemmas compute the function-algebra functor. -/
+@[simp]
+theorem equivOfIsSepClosed_inverse (K : Type u) [Field K] [IsSepClosed K] :
+    (equivOfIsSepClosed K).inverse =
+      (CommAlgCat.FiniteEtale.equivOfIsSepClosed K).inverse ⋙ spec (.of K) := by
+  simp only [equivOfIsSepClosed, Equivalence.trans_inverse, Equivalence.symm_inverse,
+    specEquivalence_functor]
+
 /-- The finite-set classification is naturally isomorphic to the geometric fibre of the
 coordinate algebra: algebra homomorphisms to the separably closed base field, with
 precomposition as the action on morphisms. -/
@@ -167,17 +188,6 @@ noncomputable def equivOfIsSepClosedFunctorIsoFiber (K : Type u) [Field K] [IsSe
       (specEquivalence (.of K)).inverse ⋙ CommAlgCat.FiniteEtale.fiber K K :=
   eqToIso (equivOfIsSepClosed_functor K) ≪≫
     Functor.isoWhiskerLeft _ (CommAlgCat.FiniteEtale.fiberIsoFiniteSpec K).symm
-
-/-- The inverse of the finite-set classification is the spectrum of the function algebra.
-This identifies its underlying object over the field, including its structure morphism. -/
-@[simp]
-theorem equivOfIsSepClosed_inverse_obj_obj (K : Type u) [Field K] [IsSepClosed K]
-    (I : FintypeCat.{u}) :
-    ((equivOfIsSepClosed K).inverse.obj I).obj =
-      (algSpec (.of K)).obj (op (CommAlgCat.of K (I → K))) := by
-  simp only [equivOfIsSepClosed, Equivalence.trans_inverse, Equivalence.symm_inverse,
-    Functor.comp_obj, specEquivalence_functor,
-    CommAlgCat.FiniteEtale.equivOfIsSepClosed_inverse_obj, spec_obj_obj]
 
 end FiniteEtaleScheme
 
