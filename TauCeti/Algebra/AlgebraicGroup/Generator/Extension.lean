@@ -171,7 +171,7 @@ groups. Let `φ₁ : A₁ →* G₁(R)`, `φ : A →* G(R)` and `φ₂ : A₂ �
 maps: `i ∘ φ₁ = φ ∘ j` and `p ∘ φ = φ₂ ∘ q` on points. If `φ₁` is an `A₁`-generator of `G₁` and
 `φ₂` is an `A₂`-generator of `G₂`, then `φ` is an `A`-generator of `G`. -/
 theorem IsAGenerator.of_isShortExact [Module.Free R Q] [Module.Finite R Q]
-    [Module.Free R G] [Module.Finite R G] [Module.Free R N] [Module.Finite R N]
+    [Module.Finite R G] [Module.Free R N] [Module.Finite R N]
     (h : IsShortExact p i) (hj : Function.Injective j) (hq : Function.Surjective q)
     (hjq : q.ker = j.range) (h₁ : (AlgHom.mapDomain i.hom).comp φ₁ = φ.comp j)
     (h₂ : (AlgHom.mapDomain p.hom).comp φ = φ₂.comp q) (hφ₁ : IsAGenerator φ₁)
