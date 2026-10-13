@@ -12,6 +12,7 @@ import Mathlib.Algebra.Order.Chebyshev
 import TauCeti.Data.EReal.Operations
 import Mathlib.Analysis.SpecialFunctions.Pow.NNReal
 import TauCeti.Analysis.SpecificLimits.DiscreteGronwall
+public import TauCeti.MeasureTheory.Function.CurveAction.PiecewiseConstant
 
 /-!
 # Generalized minimizing movements
@@ -47,6 +48,15 @@ interpolants are uniformly bounded, have energy at most `E`, and are asymptotica
 The refined Arzelà–Ascoli theorem `TauCeti.tendsto_subseq_of_limsup_edist_le` then extracts a
 pointwise convergent subsequence.
 
+On a pseudometric space, the limit curves are more regular than Hölder continuous. The discrete
+energy estimate `φ (u N) + ∑_{n < N} d(u n, u (n + 1))² / (2τ) ≤ φ (u 0)` bounds the discrete
+`2`-action of the minimizing movement sequences, uniformly in the time step once their energies are
+bounded below up to time `T`, which coercivity guarantees even when the initial points vary. By the
+lower semicontinuity of the action along piecewise constant interpolants
+(`TauCeti.curveAction_le_liminf_sum_edist_rpow`), every limit curve `u` is absolutely continuous
+with finite `2`-action on each interval `[0, T]`, and the energy estimate passes to the limit:
+`φ (u T) + (1/2) ∫₀ᵀ |u'|² ≤ liminf_k φ (U k 0)`.
+
 The time steps are uniform, and the existence theorem starts every minimizing movement sequence
 at `x₀` itself. Ambrosio–Gigli–Savaré also allow nonuniform partitions of the time axis; the
 definition here allows approximating initial data, but not nonuniform partitions.
@@ -71,6 +81,16 @@ definition here allows approximating initial data, but not nonuniform partitions
   at its initial point.
 * `TauCeti.exists_isGeneralizedMinimizingMovement`: existence of generalized minimizing
   movements, with `1/2`-Hölder continuity on bounded time intervals.
+* `TauCeti.exists_eventually_forall_le_apply_and_edist_le_of_forall_mem_moreauYosidaResolvent`:
+  a priori bounds on energies and distances, uniform along minimizing movement sequences whose
+  initial points converge.
+* `TauCeti.absolutelyContinuousOnInterval_of_forall_mem_moreauYosidaResolvent` and
+  `TauCeti.apply_add_curveAction_div_le_liminf_of_forall_mem_moreauYosidaResolvent`: a limit of
+  piecewise constant interpolants of minimizing movements is absolutely continuous, and satisfies
+  the energy–action inequality.
+* `TauCeti.IsGeneralizedMinimizingMovement.absolutelyContinuousOnInterval` and
+  `TauCeti.IsGeneralizedMinimizingMovement.curveAction_ne_top`: generalized minimizing movements
+  are absolutely continuous with locally finite `2`-action.
 
 ## References
 
@@ -295,6 +315,130 @@ theorem edist_ceil_sq_le_of_forall_mem_moreauYosidaResolvent
   calc 2 * (((n - m : ℕ) : ℝ) * τ) * (em - en) ≤ 2 * (t - s + τ) * (em - en) := by gcongr
     _ ≤ 2 * (t - s + τ) * ((E - A) * (1 + Real.exp (8 * (t + τ) / τ'))) := by gcongr
     _ = _ := by ring
+
+/-- The a priori bounds for one minimizing movement sequence, in the form needed for
+`TauCeti.exists_eventually_forall_le_apply_and_edist_le_of_forall_mem_moreauYosidaResolvent`: if
+`A ≤ φ_{τ'}(u 0)` and `φ (u 0) ≤ S` for real numbers `A` and `S`, then up to the step `⌈T / τ⌉₊`
+the energy is at least `A - (S - A) B` and the distance from `u 0` is at most
+`(2τ' (S - A) B) ^ (1 / 2)`, where `B = exp (8 (T + τ') / τ')` does not depend on `τ`. -/
+private theorem le_apply_and_edist_le_of_forall_mem_moreauYosidaResolvent
+    (hu : ∀ n, u (n + 1) ∈ moreauYosidaResolvent φ τ (u n)) (hτ : 0 < τ) (hττ' : 4 * τ ≤ τ')
+    {A S : ℝ} (hA : (A : EReal) ≤ moreauYosida φ τ' (u 0)) (hS : φ (u 0) ≤ S) {T : ℝ}
+    (hT : 0 ≤ T) {n : ℕ} (hn : n ≤ ⌈T / τ⌉₊) :
+    ((A - (S - A) * Real.exp (8 * (T + τ') / τ') : ℝ) : EReal) ≤ φ (u n) ∧
+      edist (u 0) (u n) ≤
+        ENNReal.ofReal (2 * τ' * (S - A) * Real.exp (8 * (T + τ') / τ')) ^ (2⁻¹ : ℝ) := by
+  have hτr : (0 : ℝ) < τ := NNReal.coe_pos.2 hτ
+  have hττ'r : (4 : ℝ) * τ ≤ τ' := by exact_mod_cast hττ'
+  have hτ'r : (0 : ℝ) < τ' := by linarith
+  have hττ'' : (τ : ℝ) ≤ τ' := by linarith
+  set B := Real.exp (8 * (T + τ') / τ')
+  -- The real coercivity constant `a` and initial energy `e`.
+  have hAtop : moreauYosida φ τ' (u 0) ≠ ⊤ :=
+    ne_top_of_le_ne_top (EReal.coe_ne_top S) ((moreauYosida_le_self _ _ _).trans hS)
+  have hAbot : moreauYosida φ τ' (u 0) ≠ ⊥ := ne_bot_of_le_ne_bot (EReal.coe_ne_bot A) hA
+  set a := (moreauYosida φ τ' (u 0)).toReal
+  have ha : moreauYosida φ τ' (u 0) = a := (EReal.coe_toReal hAtop hAbot).symm
+  have hEtop : φ (u 0) ≠ ⊤ := ne_top_of_le_ne_top (EReal.coe_ne_top S) hS
+  have hEbot : φ (u 0) ≠ ⊥ := ne_bot_of_le_ne_bot hAbot (moreauYosida_le_self _ _ _)
+  set e := (φ (u 0)).toReal
+  have he : φ (u 0) = e := (EReal.coe_toReal hEtop hEbot).symm
+  have hae : a ≤ e := by exact_mod_cast ha ▸ he ▸ moreauYosida_le_self φ τ' (u 0)
+  have heS : e ≤ S := by exact_mod_cast he ▸ hS
+  have hAa : A ≤ a := by exact_mod_cast ha ▸ hA
+  -- The growth factor `(1 + 8 τ / τ') ^ n` lies between `1` and `B`.
+  have hP : (1 + 8 * (τ : ℝ) / τ') ^ n ≤ B := by
+    calc (1 + 8 * (τ : ℝ) / τ') ^ n ≤ (1 + 8 / τ' * τ) ^ ⌈T / τ⌉₊ := by
+          rw [div_mul_eq_mul_div]
+          exact pow_le_pow_right₀ (le_add_of_nonneg_right (by positivity)) hn
+      _ ≤ Real.exp (8 / τ' * (T + τ)) := one_add_mul_pow_ceil_div_le_exp (by positivity) hτr hT
+      _ ≤ B := Real.exp_le_exp.2 (by rw [div_mul_eq_mul_div]; gcongr)
+  have hP1 : 1 ≤ (1 + 8 * (τ : ℝ) / τ') ^ n :=
+    one_le_pow₀ (le_add_of_nonneg_right (by positivity))
+  refine ⟨le_trans ?_ (le_apply_of_forall_mem_moreauYosidaResolvent hu hτ hττ' ha he n), ?_⟩
+  · rw [EReal.coe_le_coe_iff]
+    nlinarith
+  · refine (ENNReal.le_rpow_inv_iff two_pos).2 ?_
+    rw [ENNReal.rpow_two]
+    refine (edist_sq_le_of_forall_mem_moreauYosidaResolvent hu hτ hττ' ha he n).trans
+      (ENNReal.ofReal_le_ofReal ?_)
+    have h₂ : (e - a) * (1 + 8 * (τ : ℝ) / τ') ^ n ≤ (S - A) * B :=
+      mul_le_mul (by linarith) hP (by positivity) (by linarith)
+    have : 0 ≤ 2 * (τ' : ℝ) := by positivity
+    nlinarith
+
+/-- **Uniform a priori bounds for minimizing movements.** Let `φ` be coercive, `φ_{τ₀}(x₁) > -∞`,
+and let `U k` be minimizing movement sequences with time steps `τ k → 0`, whose initial points tend
+to a point `x₀` at finite distance from `x₁` with energies at most a real number `S`. Then for all
+but finitely many `k`, up to the step `⌈T / τ k⌉₊` the energies along `U k` are bounded below by
+one real number `L`, and the points of `U k` lie within one finite distance `R` of `x₀`. -/
+theorem exists_eventually_forall_le_apply_and_edist_le_of_forall_mem_moreauYosidaResolvent
+    {τ₀ : ℝ≥0} (hτ₀ : 0 < τ₀) {x₁ : X} (h₀ : moreauYosida φ τ₀ x₁ ≠ ⊥) {x₀ : X}
+    (hx₀ : edist x₀ x₁ ≠ ⊤) {τ : ℕ → ℝ≥0} (hτ : ∀ k, 0 < τ k) (hτ0 : Tendsto τ atTop (𝓝 0))
+    {U : ℕ → ℕ → X} (hU : ∀ k n, U k (n + 1) ∈ moreauYosidaResolvent φ (τ k) (U k n))
+    (hU0 : Tendsto (fun k ↦ U k 0) atTop (𝓝 x₀)) {S : ℝ} (hS : ∀ k, φ (U k 0) ≤ S) {T : ℝ}
+    (hT : 0 ≤ T) :
+    ∃ (L : ℝ) (R : ℝ≥0∞), R ≠ ⊤ ∧ ∀ᶠ k in atTop, ∀ n ≤ ⌈T / τ k⌉₊,
+      (L : EReal) ≤ φ (U k n) ∧ edist x₀ (U k n) ≤ R := by
+  set τ' : ℝ≥0 := τ₀ / 2 with hτ'_def
+  have hτ' : 0 < τ' := by positivity
+  have hτ'τ₀ : τ' < τ₀ := half_lt_self hτ₀
+  have hτ₀τ'r : (0 : ℝ) < τ₀ - τ' := sub_pos.2 (NNReal.coe_lt_coe.2 hτ'τ₀)
+  -- Eventually the initial point is within distance `1` of `x₀`, hence within `D` of `x₁`, and
+  -- `4 τ k ≤ τ'`.
+  set D : ℝ := (edist x₀ x₁).toReal + 1
+  have hev : ∀ᶠ k in atTop,
+      edist (U k 0) x₀ ≤ 1 ∧ edist (U k 0) x₁ ≤ ENNReal.ofReal D ∧ 4 * τ k ≤ τ' := by
+    filter_upwards [hU0.eventually (Metric.eball_mem_nhds x₀ one_pos),
+      hτ0.eventually (ge_mem_nhds (by positivity : (0 : ℝ≥0) < τ' / 4))] with k hk hτk
+    refine ⟨(Metric.mem_eball.1 hk).le, ?_, ?_⟩
+    · calc edist (U k 0) x₁ ≤ edist (U k 0) x₀ + edist x₀ x₁ := edist_triangle _ _ _
+        _ ≤ 1 + edist x₀ x₁ := by gcongr
+        _ = ENNReal.ofReal D := by
+          rw [ENNReal.ofReal_add ENNReal.toReal_nonneg zero_le_one, ENNReal.ofReal_toReal hx₀,
+            ENNReal.ofReal_one, add_comm]
+    · calc 4 * τ k ≤ 4 * (τ' / 4) := by gcongr
+        _ = τ' := mul_div_cancel₀ _ (by norm_num)
+  -- The value `m = φ_{τ₀}(x₁)` is finite.
+  obtain ⟨k₀, hk₀⟩ := hev.exists
+  have hm_top : moreauYosida φ τ₀ x₁ ≠ ⊤ := by
+    have hfin : edist x₁ (U k₀ 0) ≠ ⊤ := by
+      rw [edist_comm]
+      exact ne_top_of_le_ne_top ENNReal.ofReal_ne_top hk₀.2.1
+    refine ne_top_of_le_ne_top ?_
+      ((moreauYosida_le φ τ₀ hfin).trans (add_le_add (hS k₀) le_rfl))
+    exact EReal.add_ne_top (EReal.coe_ne_top S) (mt EReal.coe_ennreal_eq_top_iff.1
+      (ENNReal.div_ne_top (ENNReal.pow_ne_top hfin) (by simp [hτ₀.ne'])))
+  set m := (moreauYosida φ τ₀ x₁).toReal
+  have hm : moreauYosida φ τ₀ x₁ = m := (EReal.coe_toReal hm_top h₀).symm
+  -- By the propagation of coercivity, `Amin` bounds the constants `φ_{τ'}(U k 0)` from below.
+  set Amin : ℝ := m - D ^ 2 / (2 * (τ₀ - τ'))
+  set B : ℝ := Real.exp (8 * (T + τ') / τ')
+  refine ⟨Amin - (S - Amin) * B, 1 + ENNReal.ofReal (2 * τ' * (S - Amin) * B) ^ (2⁻¹ : ℝ),
+    by finiteness, ?_⟩
+  filter_upwards [hev] with k ⟨hk1, hkD, hk4⟩ n hn
+  have hxk : edist (U k 0) x₁ ≠ ⊤ := ne_top_of_le_ne_top ENNReal.ofReal_ne_top hkD
+  have hA : (Amin : EReal) ≤ moreauYosida φ τ' (U k 0) := by
+    have hQ : edist (U k 0) x₁ ^ 2 / (2 * ((τ₀ : ℝ≥0∞) - τ')) ≠ ⊤ :=
+      ENNReal.div_ne_top (ENNReal.pow_ne_top hxk)
+        (by simp [(tsub_pos_of_lt (ENNReal.coe_lt_coe.2 hτ'τ₀)).ne'])
+    have hQD : (edist (U k 0) x₁ ^ 2 / (2 * ((τ₀ : ℝ≥0∞) - τ'))).toReal ≤
+        D ^ 2 / (2 * (τ₀ - τ')) := by
+      simp only [ENNReal.toReal_div, ENNReal.toReal_pow, ENNReal.toReal_mul, ENNReal.toReal_ofNat,
+        ENNReal.toReal_sub_of_le (ENNReal.coe_le_coe.2 hτ'τ₀.le) ENNReal.coe_ne_top,
+        ENNReal.coe_toReal]
+      gcongr
+      exact ENNReal.toReal_le_of_le_ofReal (by positivity) hkD
+    have hcoer := moreauYosida_le_moreauYosida_add (φ := φ) hτ'τ₀ hxk
+    rw [hm, ← EReal.coe_ennreal_toReal hQ] at hcoer
+    rw [EReal.coe_sub, EReal.sub_le_iff_le_add (.inl (EReal.coe_ne_bot _))
+      (.inl (EReal.coe_ne_top _))]
+    exact hcoer.trans (add_le_add le_rfl (EReal.coe_le_coe_iff.2 hQD))
+  obtain ⟨h₁, h₂⟩ :=
+    le_apply_and_edist_le_of_forall_mem_moreauYosidaResolvent (hU k) (hτ k) hk4 hA (hS k) hT hn
+  refine ⟨h₁, (edist_triangle _ _ _).trans (add_le_add ?_ h₂)⟩
+  rw [edist_comm]
+  exact hk1
 
 end PseudoEMetricSpace
 
@@ -534,5 +678,157 @@ theorem exists_isGeneralizedMinimizingMovement (hl : ∀ y, pure y ≤ l y)
       ENNReal.mul_rpow_of_nonneg _ _ (by norm_num)]
 
 end EMetricSpace
+
+/-! ### Regularity of limits of minimizing movements -/
+
+section PseudoMetricSpace
+
+variable {X : Type*} [PseudoMetricSpace X] {φ : X → EReal} {l : X → Filter X} {τ₀ : ℝ≥0}
+  {x₁ x₀ : X}
+  {τ : ℕ → ℝ≥0} {U : ℕ → ℕ → X} {S : ℝ} {u : ℝ → X} {T : ℝ}
+
+/-- The discrete `2`-action of a minimizing movement step is twice its penalty. -/
+private lemma edist_rpow_two_div_rpow_eq (d : ℝ≥0∞) (τ : ℝ≥0) :
+    d ^ (2 : ℝ) / (τ : ℝ≥0∞) ^ ((2 : ℝ) - 1) = 2 * (d ^ 2 / (2 * τ)) := by
+  rw [ENNReal.rpow_two, show (2 : ℝ) - 1 = 1 by norm_num, ENNReal.rpow_one, ← mul_div_assoc,
+    ENNReal.mul_div_mul_left _ _ two_ne_zero ENNReal.ofNat_ne_top]
+
+/-- Under the hypotheses of
+`TauCeti.exists_eventually_forall_le_apply_and_edist_le_of_forall_mem_moreauYosidaResolvent`, the
+discrete `2`-actions of the minimizing movement sequences up to time `T` have finite lower limit.
+-/
+private lemma liminf_sum_edist_rpow_ne_top (hτ₀ : 0 < τ₀) (h₀ : moreauYosida φ τ₀ x₁ ≠ ⊥)
+    (hτ : ∀ k, 0 < τ k) (hτ0 : Tendsto τ atTop (𝓝 0))
+    (hU : ∀ k n, U k (n + 1) ∈ moreauYosidaResolvent φ (τ k) (U k n))
+    (hU0 : Tendsto (fun k ↦ U k 0) atTop (𝓝 x₀)) (hS : ∀ k, φ (U k 0) ≤ S) (hT : 0 ≤ T) :
+    liminf (fun k ↦ ∑ n ∈ Finset.range ⌈T / τ k⌉₊,
+      edist (U k n) (U k (n + 1)) ^ (2 : ℝ) / (τ k : ℝ≥0∞) ^ ((2 : ℝ) - 1)) atTop ≠ ⊤ := by
+  obtain ⟨L, R, hR, hev⟩ :=
+    exists_eventually_forall_le_apply_and_edist_le_of_forall_mem_moreauYosidaResolvent hτ₀ h₀
+      (edist_ne_top x₀ x₁) hτ hτ0 hU hU0 hS hT
+  refine ne_top_of_le_ne_top (b := 2 * ENNReal.ofReal (S - L)) (by finiteness)
+    (liminf_le_of_frequently_le' (Eventually.frequently ?_))
+  filter_upwards [hev] with k hk
+  simp only [edist_rpow_two_div_rpow_eq, ← Finset.mul_sum]
+  gcongr
+  -- The discrete energy estimate bounds the accumulated penalties by `S - L`.
+  have h := (add_le_add (hk _ le_rfl).1 le_rfl).trans
+    ((apply_add_sum_le_of_forall_mem_moreauYosidaResolvent (hU k) ⌈T / τ k⌉₊).trans (hS k))
+  set P := ∑ n ∈ Finset.range ⌈T / τ k⌉₊, edist (U k n) (U k (n + 1)) ^ 2 / (2 * τ k)
+  have hP : P ≠ ⊤ := by
+    rintro hP
+    rw [hP, EReal.coe_ennreal_top, EReal.coe_add_top, top_le_iff] at h
+    exact EReal.coe_ne_top S h
+  rw [← EReal.coe_ennreal_toReal hP, ← EReal.coe_add, EReal.coe_le_coe_iff] at h
+  rw [← ENNReal.ofReal_toReal hP]
+  exact ENNReal.ofReal_le_ofReal (by linarith)
+
+/-- **Absolute continuity of limits of minimizing movements** (Ambrosio–Gigli–Savaré, Section 3.3).
+Let `l y` be the filter of an auxiliary convergence `y_n ⇀ y` for which the distance is jointly
+sequentially lower semicontinuous, let `φ` be coercive, `φ_{τ₀}(x₁) > -∞`, and let `U k` be
+minimizing movement sequences with time steps `τ k → 0`, whose initial points tend to `x₀` with
+energies bounded above by a real number. If the piecewise constant interpolants
+`t ↦ U k ⌈t / τ k⌉₊` converge to `u` pointwise on `[0, ∞)` for `⇀`, then `u` is absolutely
+continuous on every interval `[0, T]`. -/
+theorem absolutelyContinuousOnInterval_of_forall_mem_moreauYosidaResolvent
+    (hd : ∀ ⦃v w : ℕ → X⦄ ⦃y z : X⦄, Tendsto v atTop (l y) → Tendsto w atTop (l z) →
+      edist y z ≤ liminf (fun n ↦ edist (v n) (w n)) atTop)
+    (hτ₀ : 0 < τ₀) (h₀ : moreauYosida φ τ₀ x₁ ≠ ⊥) (hτ : ∀ k, 0 < τ k)
+    (hτ0 : Tendsto τ atTop (𝓝 0)) (hU : ∀ k n, U k (n + 1) ∈ moreauYosidaResolvent φ (τ k) (U k n))
+    (hU0 : Tendsto (fun k ↦ U k 0) atTop (𝓝 x₀)) (hS : ∀ k, φ (U k 0) ≤ S)
+    (hu : ∀ t : ℝ, 0 ≤ t → Tendsto (fun k ↦ U k ⌈t / τ k⌉₊) atTop (l (u t))) (hT : 0 ≤ T) :
+    AbsolutelyContinuousOnInterval u 0 T :=
+  absolutelyContinuousOnInterval_of_liminf_sum_edist_rpow_ne_top one_lt_two hτ hτ0 hT
+    (fun s hs t ht ↦ hd (hu s hs.1) (hu t ht.1))
+    (liminf_sum_edist_rpow_ne_top hτ₀ h₀ hτ hτ0 hU hU0 hS hT)
+
+/-- **Energy–action inequality for limits of minimizing movements.** Under the hypotheses of
+`TauCeti.absolutelyContinuousOnInterval_of_forall_mem_moreauYosidaResolvent`, if moreover `φ` is
+sequentially lower semicontinuous for `⇀` along sequences of finite diameter, then the limit curve
+`u` satisfies `φ (u T) + (1/2) ∫₀ᵀ |u'|² ≤ liminf_k φ (U k 0)`, the continuous counterpart of the
+discrete energy estimate `φ (U k N) + ∑_{n < N} d(U k n, U k (n + 1))² / (2 τ k) ≤ φ (U k 0)`. -/
+theorem apply_add_curveAction_div_le_liminf_of_forall_mem_moreauYosidaResolvent
+    (hd : ∀ ⦃v w : ℕ → X⦄ ⦃y z : X⦄, Tendsto v atTop (l y) → Tendsto w atTop (l z) →
+      edist y z ≤ liminf (fun n ↦ edist (v n) (w n)) atTop)
+    (hφ : ∀ ⦃v : ℕ → X⦄ ⦃y : X⦄, Metric.ediam (range v) ≠ ⊤ → Tendsto v atTop (l y) →
+      φ y ≤ liminf (fun n ↦ φ (v n)) atTop)
+    (hτ₀ : 0 < τ₀) (h₀ : moreauYosida φ τ₀ x₁ ≠ ⊥) (hτ : ∀ k, 0 < τ k)
+    (hτ0 : Tendsto τ atTop (𝓝 0)) (hU : ∀ k n, U k (n + 1) ∈ moreauYosidaResolvent φ (τ k) (U k n))
+    (hU0 : Tendsto (fun k ↦ U k 0) atTop (𝓝 x₀)) (hS : ∀ k, φ (U k 0) ≤ S)
+    (hu : ∀ t : ℝ, 0 ≤ t → Tendsto (fun k ↦ U k ⌈t / τ k⌉₊) atTop (l (u t))) (hT : 0 ≤ T) :
+    φ (u T) + ((curveAction 2 u 0 T / 2 : ℝ≥0∞) : EReal) ≤ liminf (fun k ↦ φ (U k 0)) atTop := by
+  -- The accumulated penalties `P k` up to the step `N k = ⌈T / τ k⌉₊`.
+  set N : ℕ → ℕ := fun k ↦ ⌈T / τ k⌉₊
+  set P : ℕ → ℝ≥0∞ := fun k ↦
+    ∑ n ∈ Finset.range (N k), edist (U k n) (U k (n + 1)) ^ 2 / (2 * τ k)
+  -- The action bound: `A₂(u) / 2 ≤ liminf P`.
+  have hA : curveAction 2 u 0 T / 2 ≤ liminf P atTop := by
+    have h := curveAction_le_liminf_sum_edist_rpow (l := atTop) one_lt_two hτ hτ0 hT
+      (fun s hs t ht ↦ hd (hu s hs.1) (hu t ht.1))
+    simp only [edist_rpow_two_div_rpow_eq, ← Finset.mul_sum] at h
+    rw [ENNReal.liminf_const_mul_of_ne_top ENNReal.ofNat_ne_top] at h
+    exact ENNReal.div_le_of_le_mul' h
+  -- The energy bound: `φ (u T) ≤ liminf φ (U k (N k))`, since the points `U k (N k)` stay within a
+  -- bounded set.
+  have hE : φ (u T) ≤ liminf (fun k ↦ φ (U k (N k))) atTop := by
+    obtain ⟨L, R, hR, hev⟩ :=
+      exists_eventually_forall_le_apply_and_edist_le_of_forall_mem_moreauYosidaResolvent hτ₀ h₀
+        (edist_ne_top x₀ x₁) hτ hτ0 hU hU0 hS hT
+    obtain ⟨k₀, hk₀⟩ := eventually_atTop.1 hev
+    set M := (Finset.range k₀).sup fun k ↦ edist x₀ (U k (N k))
+    have hM : M ≠ ⊤ := by
+      simp [M, Finset.sup_eq_top_iff]
+    have hbound k : edist x₀ (U k (N k)) ≤ max M R := by
+      rcases lt_or_ge k k₀ with hk | hk
+      · exact le_max_of_le_left (Finset.le_sup (f := fun k ↦ edist x₀ (U k (N k)))
+          (Finset.mem_range.2 hk))
+      · exact le_max_of_le_right (hk₀ k hk _ le_rfl).2
+    refine hφ (ne_top_of_le_ne_top (b := 2 * max M R)
+      (ENNReal.mul_ne_top ENNReal.ofNat_ne_top (max_lt hM.lt_top hR.lt_top).ne)
+      (Metric.ediam_le ?_))
+      (hu T hT)
+    rintro _ ⟨i, rfl⟩ _ ⟨j, rfl⟩
+    calc edist (U i (N i)) (U j (N j)) ≤ edist x₀ (U i (N i)) + edist x₀ (U j (N j)) :=
+          edist_triangle_left _ _ _
+      _ ≤ max M R + max M R := add_le_add (hbound i) (hbound j)
+      _ = 2 * max M R := (two_mul _).symm
+  calc φ (u T) + ((curveAction 2 u 0 T / 2 : ℝ≥0∞) : EReal)
+      ≤ liminf (fun k ↦ φ (U k (N k))) atTop + liminf (fun k ↦ (P k : EReal)) atTop := by
+        refine add_le_add hE ((EReal.coe_ennreal_le_coe_ennreal_iff.2 hA).trans_eq ?_)
+        exact (EReal.coe_ennreal_strictMono.monotone).map_liminf_of_continuousAt _
+          continuous_coe_ennreal_ereal.continuousAt
+    _ ≤ liminf (fun k ↦ φ (U k (N k)) + (P k : EReal)) atTop := EReal.le_liminf_add
+    _ ≤ liminf (fun k ↦ φ (U k 0)) atTop := liminf_le_liminf (Eventually.of_forall fun k ↦
+        apply_add_sum_le_of_forall_mem_moreauYosidaResolvent (hU k) (N k))
+
+/-- **Generalized minimizing movements are absolutely continuous.** If the distance is jointly
+sequentially lower semicontinuous for the auxiliary convergence `⇀` and `φ` is coercive,
+`φ_{τ₀}(x₁) > -∞`, then every generalized minimizing movement `u` is absolutely continuous on every
+interval `[0, T]`. -/
+theorem IsGeneralizedMinimizingMovement.absolutelyContinuousOnInterval
+    (hd : ∀ ⦃v w : ℕ → X⦄ ⦃y z : X⦄, Tendsto v atTop (l y) → Tendsto w atTop (l z) →
+      edist y z ≤ liminf (fun n ↦ edist (v n) (w n)) atTop)
+    (hτ₀ : 0 < τ₀) (h₀ : moreauYosida φ τ₀ x₁ ≠ ⊥)
+    (h : IsGeneralizedMinimizingMovement l φ x₀ u) (hT : 0 ≤ T) :
+    AbsolutelyContinuousOnInterval u 0 T := by
+  obtain ⟨τ, U, hτ, hτ0, hU, hU0, ⟨S, hS⟩, hconv⟩ := isGeneralizedMinimizingMovement_iff.1 h
+  exact absolutelyContinuousOnInterval_of_forall_mem_moreauYosidaResolvent hd hτ₀ h₀ hτ hτ0 hU
+    hU0 hS hconv hT
+
+/-- **Generalized minimizing movements have locally finite `2`-action.** Under the hypotheses of
+`TauCeti.IsGeneralizedMinimizingMovement.absolutelyContinuousOnInterval`, the action
+`∫₀ᵀ |u'|²` of a generalized minimizing movement `u` is finite for every `T`. -/
+theorem IsGeneralizedMinimizingMovement.curveAction_ne_top
+    (hd : ∀ ⦃v w : ℕ → X⦄ ⦃y z : X⦄, Tendsto v atTop (l y) → Tendsto w atTop (l z) →
+      edist y z ≤ liminf (fun n ↦ edist (v n) (w n)) atTop)
+    (hτ₀ : 0 < τ₀) (h₀ : moreauYosida φ τ₀ x₁ ≠ ⊥)
+    (h : IsGeneralizedMinimizingMovement l φ x₀ u) (hT : 0 ≤ T) :
+    curveAction 2 u 0 T ≠ ⊤ := by
+  obtain ⟨τ, U, hτ, hτ0, hU, hU0, ⟨S, hS⟩, hconv⟩ := isGeneralizedMinimizingMovement_iff.1 h
+  exact ne_top_of_le_ne_top (liminf_sum_edist_rpow_ne_top hτ₀ h₀ hτ hτ0 hU hU0 hS hT)
+    (curveAction_le_liminf_sum_edist_rpow one_lt_two hτ hτ0 hT
+      fun s hs t ht ↦ hd (hconv s hs.1) (hconv t ht.1))
+
+end PseudoMetricSpace
 
 end TauCeti
