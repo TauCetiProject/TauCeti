@@ -346,7 +346,8 @@ quotient is the coboundary of the difference of the sections, which is continuou
 theorem isContCohomologous_factorSet (hσc : Continuous ⇑σ) (hσ'c : Continuous ⇑σ') :
     FactorSet.IsContCohomologous (factorSet σ hσ hact) (factorSet σ' hσ' hact) :=
   (FactorSet.isContCohomologous_iff _ _).2 ⟨sectionDiff σ σ', continuous_sectionDiff hinl hσc hσ'c,
-    fun g h => (factorSet_div_factorSet σ σ' hσ hσ' hact g h).symm⟩
+    fun g h => by
+      simpa only [coe_factorSet] using (σ.factorSetFun_div_factorSetFun σ' hact g h).symm⟩
 
 /-- **The class of the factor set of a continuous normalized section does not depend on the
 section**, so it is an invariant of the extension. -/

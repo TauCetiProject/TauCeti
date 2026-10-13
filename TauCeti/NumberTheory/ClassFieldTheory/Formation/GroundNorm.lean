@@ -37,7 +37,7 @@ The ground-level norm of a restriction is its instance `W = U`, `W' = U'`.
 * `TauCeti.ClassFieldTheory.Formation.levelNorm_top_apply_coe`: the norm to the level of `G` is
   the sum of the translates by representatives of the cosets in `G`.
 * `TauCeti.ClassFieldTheory.Formation.levelNorm_inclusion`: the norm of an element of the larger
-  level is its multiple by the index.
+  level `A^W` is its multiple by the index `[W : W']`.
 * `TauCeti.ClassFieldTheory.Formation.levelNorm_trans`: norms between levels compose along a
   tower of open subgroups.
 * `TauCeti.ClassFieldTheory.NormalLayer.toAddMonoidHom_norm`: the norm of a layer is the norm
@@ -143,13 +143,12 @@ theorem levelNorm_self (h : W ≤ W) : F.levelNorm h = AddMonoidHom.id (F.level 
   -- Every coset representative lies in `W`, so it fixes an element of the level `A^W`.
   simp [finsum_eq_sum_of_fintype, F.mem_level.1 x.2, ← Nat.card_eq_fintype_card]
 
-/-- **The norm of an element of the larger level `A^W` is its multiple by the index** `[W : W']`. -/
-@[simp]
+/-- **The norm of an element of the larger level `A^W` is its multiple by the index `[W : W']`.** -/
 theorem levelNorm_inclusion (h : W' ≤ W) (x : F.level W) :
-    (dsimp% only (F.levelNorm h (Submodule.inclusion (F.level_antitone h) x))) =
+    F.levelNorm h (Submodule.inclusion (F.level_antitone h) x) =
       W'.toSubgroup.relIndex W.toSubgroup • x := by
   ext
-  rw [levelNorm_apply_coe, Submodule.coe_inclusion]
+  rw [levelNorm_apply_coe]
   -- Every coset representative lies in `W`, so it fixes an element of the level `A^W`.
   simp [finsum_eq_sum_of_fintype, F.mem_level.1 x.2, Subgroup.relIndex, Subgroup.index_eq_card]
 
@@ -220,12 +219,9 @@ theorem groundNorm_apply_coe (T : LayerRestriction small big) (F : Formation G)
 theorem groundNorm_groundInclusion (T : LayerRestriction small big) (F : Formation G)
     (x : F.level big.ground) :
     (dsimp% only (T.groundNorm F (T.groundInclusion F x))) = T.relativeDegree • x := by
-  -- `levelNorm_inclusion` is stated for `Submodule.inclusion`; both inclusions fix every element
-  -- of the ambient module, so they agree on `x`.
   have hx : T.groundInclusion F x = Submodule.inclusion (F.level_antitone T.ground_le) x :=
-    Subtype.ext (by rw [groundInclusion_apply_coe, Submodule.coe_inclusion])
-  rw [hx, relativeDegree_def]
-  exact F.levelNorm_inclusion T.ground_le x
+    Subtype.ext (groundInclusion_apply_coe T F x)
+  rw [hx, groundNorm, F.levelNorm_inclusion, relativeDegree_def]
 
 /-! ### Towers -/
 

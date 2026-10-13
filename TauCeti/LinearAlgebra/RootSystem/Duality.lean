@@ -53,12 +53,8 @@ diagonal and at most two indices is itself a simultaneous relabelling.
 
 ## References
 
-This file supplies the duality half of the `DynkinType` layer of
-`TauCetiRoadmap/RepresentationTheory/RootSystems/README.md`: Layer 5 records that
-`DynkinType.cartanMatrix (.B n)` is the transpose of `DynkinType.cartanMatrix (.C n)` and that the
-two types are "identified only after `flip` (duality)", and Layer 6 asks for the adjoint root datum
-to be `RootPairing.flip` of the dual type's datum. See Bourbaki, *Lie Groups and Lie Algebras,
-Chapters 4-6*, plates I-IX, for the standard Cartan matrices and their duals.
+See Bourbaki, *Lie Groups and Lie Algebras, Chapters 4-6*, plates I-IX, for the standard Cartan
+matrices and their duals.
 -/
 
 public section

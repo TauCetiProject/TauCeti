@@ -666,6 +666,18 @@ variable {V : Type uM} [AddCommGroup V] [Module K V]
 
 namespace QuadraticForm
 
+/-- Nondegeneracy of a finite-dimensional quadratic form descends from a field extension. -/
+theorem Nondegenerate.of_baseChange [Invertible (2 : K)]
+    [FiniteDimensional K V] {Q : _root_.QuadraticForm K V}
+    (hQ : (Q.baseChange L).Nondegenerate) : Q.Nondegenerate := by
+  let : Invertible (2 : L) :=
+    (Invertible.map (algebraMap K L) 2).copy 2 (map_ofNat _ _).symm
+  apply QuadraticMap.nondegenerate_associated_iff.mp
+  have h := QuadraticMap.nondegenerate_associated_iff.mpr hQ
+  rw [_root_.QuadraticForm.associated_baseChange] at h
+  exact TauCeti.nondegenerate_of_nondegenerate_baseChange L
+    (QuadraticMap.associated Q) (Module.Free.chooseBasis K V) h
+
 /-- A finite-dimensional nondegenerate quadratic form stays nondegenerate after extending its
 base field. -/
 theorem Nondegenerate.baseChange [Invertible (2 : K)]

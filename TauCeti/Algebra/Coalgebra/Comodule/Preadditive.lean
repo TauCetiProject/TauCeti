@@ -16,12 +16,10 @@ This file records the additive-group structure on morphisms of right comodules o
 coalgebra over a commutative ring, and uses it to make the bundled comodule category
 preadditive. It also provides the faithful additive forgetful functor to `ModuleCat R`.
 
-The semiring-level files already show that comodule morphisms are closed under zero,
-addition, scalar multiplication, and finite sums. Over a ring, every semimodule is an
-additive group by `Module.addCommMonoidToAddCommGroup`; the same pointwise operations also
-give negatives and subtraction of comodule morphisms. This is the categorical additive
-infrastructure needed before the reductive-groups roadmap's finite-dimensional comodule
-representation category can be developed.
+The semiring-level files already show that comodule morphisms are closed under zero, addition,
+scalar multiplication, and finite sums. Over a ring, every semimodule is an additive group by
+`Module.addCommMonoidToAddCommGroup`; the same pointwise operations also give negatives and
+subtraction of comodule morphisms.
 
 ## Main declarations
 
@@ -31,13 +29,6 @@ representation category can be developed.
   morphisms over a commutative ring.
 * `TauCeti.ComoduleCat.preadditive`: `ComoduleCat R C` is preadditive over a commutative
   ring `R`.
-
-## References
-
-This supplies a prerequisite for
-`ReductiveGroups/README.md` in TauCetiRoadmap, Layer 1 target "Comodules over a coalgebra/Hopf
-algebra": the finite-dimensional comodule representation category should be an additive
-category before tensor products, duals, and Tannakian structure are built on top.
 -/
 
 public section

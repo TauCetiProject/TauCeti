@@ -53,13 +53,15 @@ from the decomposition group.
   `NumberField.InfinitePlace.eq_completionCongr_of_continuous`: `completionCongr` extends `σ`,
   uniquely among continuous maps.
 * `NumberField.InfinitePlace.decompositionHom_injective`: the decomposition group embeds into
-  `Aut(L_w/K_v)`.
+  `Aut(L_w/K_v)`, and `restrictNormalHom_restrictScalarsHom_decompositionHom` says that restricting
+  its action back to `L` recovers the automorphism.
 * `NumberField.InfinitePlace.card_stabilizer_eq_finrank_completion`: for `L/K` Galois the
   decomposition group has `[L_w : K_v]` elements.
 * `NumberField.InfinitePlace.finrank_completion_eq_ite`: for `L/K` Galois, `[L_w : K_v]` is `1`
   or `2` according as `v` is unramified in `L` or not.
 * `NumberField.InfinitePlace.decompositionHom_surjective`: for `L/K` Galois every
   `K_v`-automorphism of `L_w` comes from the decomposition group.
+* `NumberField.InfinitePlace.isGalois_completion`: `L_w/K_v` is Galois.
 
 ## References
 
@@ -230,6 +232,20 @@ theorem decompositionHom_algebraMap (τ : MulAction.stabilizer (L ≃ₐ[K] L) w
     decompositionHom v w τ (x : w.Completion) = ((τ : L ≃ₐ[K] L) x : w.Completion) := by
   rw [decompositionHom_apply, completionCongr_algebraMap]
 
+/-- Restricting the action of an element of the decomposition group on `L_w` back to `L` recovers
+the element: composing `decompositionHom` with restriction `Aut(L_w/K_v) → Aut(L/K)` recovers the
+inclusion of the decomposition subgroup into `Aut(L/K)`. -/
+@[simp]
+theorem restrictNormalHom_restrictScalarsHom_decompositionHom [Normal K L]
+    (τ : MulAction.stabilizer (L ≃ₐ[K] L) w) :
+    (AlgEquiv.restrictNormalHom L).comp (AlgEquiv.restrictScalarsHom K) (decompositionHom v w τ) =
+      τ := by
+  ext x
+  refine (algebraMap L w.Completion).injective <|
+    (AlgEquiv.restrictNormal_commutes ((decompositionHom v w τ).restrictScalars K) L x).trans ?_
+  rw [AlgEquiv.restrictScalars_apply, Completion.algebraMap_apply, Completion.algebraMap_apply,
+    decompositionHom_algebraMap]
+
 variable (v w) in
 /-- The decomposition group of `w` acts faithfully on `L_w`. -/
 theorem decompositionHom_injective : Function.Injective (decompositionHom v w) := by
@@ -240,6 +256,20 @@ theorem decompositionHom_injective : Function.Injective (decompositionHom v w) :
   rw [decompositionHom_algebraMap, AlgEquiv.one_apply, ← Completion.algebraMap_apply,
     ← Completion.algebraMap_apply] at this
   exact (algebraMap L w.Completion).injective this
+
+variable (v w) in
+/-- **A completion at an infinite place is Galois.** The local extension `L_w/K_v` at an infinite
+place `w` of `L` is a Galois extension. -/
+-- `L_w/K_v` is `ℝ/ℝ`, `ℂ/ℂ` or `ℂ/ℝ`: of degree one, or quadratic in characteristic zero.
+theorem isGalois_completion : IsGalois v.Completion w.Completion := by
+  rcases w.isUnramified_or_isRamified K with hw | hw
+  · exact (AlgEquiv.ofBijective (Algebra.ofId v.Completion w.Completion)
+      (Module.Free.bijective_algebraMap_of_finrank_eq_one
+        (IsUnramified.finrank_eq_one v hw))).transfer_galois.mp (IsGalois.self _)
+  · have : Algebra.IsQuadraticExtension v.Completion w.Completion :=
+      ⟨IsRamified.finrank_eq_two v hw⟩
+    have : CharZero v.Completion := RingHom.charZero (Completion.extensionEmbedding v)
+    infer_instance
 
 /-! ### The decomposition group is the local Galois group -/
 

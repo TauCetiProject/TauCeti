@@ -122,7 +122,7 @@ lemma liftQuotientPoint_mk (H : _root_.CommHopfAlgCat.{v} R)
     (I : HopfIdeal R H) (A : CommAlgCat.{w} R)
     (g : HopfAlgebra.points (R := R) (H := H) A)
     (hg : ∀ h : H, h ∈ I → g.ofConv h = 0) (h : H) :
-    ((liftQuotientPoint H I A g hg).ofConv) (Ideal.Quotient.mkₐ R I.toIdeal h) =
+    ((liftQuotientPoint H I A g hg).ofConv) (Ideal.Quotient.mk I.toIdeal h) =
       g.ofConv h :=
   AlgHom.congr_fun (Ideal.Quotient.liftₐ_comp I.toIdeal g.ofConv
     fun h hh ↦ hg h ((HopfIdeal.mem_toIdeal (I := I)).mp hh)) h
@@ -138,7 +138,7 @@ lemma quotientPointsHom_liftQuotientPoint (H : _root_.CommHopfAlgCat.{v} R)
   apply WithConv.ofConv_injective
   apply AlgHom.ext
   intro h
-  rw [quotientPointsHom_apply_apply, liftQuotientPoint_mk]
+  rw [quotientPointsHom_apply_apply, Ideal.Quotient.mkₐ_eq_mk, liftQuotientPoint_mk]
 
 /-- Evaluating the commutator of two lifted quotient points on a quotient class gives
 the commutator of the original ambient points on its representative. -/

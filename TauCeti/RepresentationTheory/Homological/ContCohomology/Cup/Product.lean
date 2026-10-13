@@ -5,14 +5,16 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Group.Hom.Instances
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.ExplicitFunctoriality
+public import TauCeti.Topology.Algebra.Group.Hom
 
 /-!
 # Cup products in low degrees on the explicit model
 
-A cup product on continuous cochains is relative to a `G`-equivariant biadditive pairing
-`μ : M →+ N →+ P`, that is one with `μ (g • m) (g • n) = g • μ m n`, which is furthermore
-jointly continuous. This file builds the six low-degree shapes
+For a monoid `G`, a cup product on continuous cochains is relative to a `G`-equivariant
+biadditive pairing `μ : M →+ N →+ P` with `μ (g • m) (g • n) = g • μ m n` that is jointly
+continuous. This file builds the six low-degree shapes
 
 ```text
 (p, q) ∈ {(0,0), (0,1), (1,0), (0,2), (1,1), (2,0)},   p + q ≤ 2,
@@ -67,8 +69,8 @@ of the general inhomogeneous formula
 The translation factor `g •` in the `(1,0)`, `(1,1)` and `(2,0)` formulas is the one the general
 inhomogeneous formula carries, and it is kept in the statements even though a degree-`0` class is
 invariant and the factor is therefore invisible in the `(1,0)` and `(2,0)` shapes. Keeping it is
-what makes those two shapes the specializations of the general formula that the roadmap's
-associativity instances need, rather than the `(0,1)` and `(0,2)` shapes read backwards.
+what makes those two shapes the specializations of the general formula needed in the
+associativity identities.
 
 The `(1,1)` shape is the only one that is not a coefficient map, and the only one whose descent
 through coboundaries needs a homotopy. Its two primitives are
@@ -89,10 +91,8 @@ it: for continuous `1`-cocycles `a` and `b`,
 
 which is `TauCeti.ContCohomology.cup11_add_cup11_flip_eq_d1`.
 
-Each cocycle proof opens with a `change`. It only beta-reduces: `groupCohomology.IsCocycle₁` and
-`IsCocycle₂` are predicates on a function, so with the cup cochain supplied as a lambda the goal
-is stated with a redex and the identity to be proved is unreadable until it is contracted. No
-`change` below alters the goal by more than beta.
+The `(1,1)` cocycle and coboundary proofs use `change` only to beta-reduce the cup cochains
+inside the predicates `groupCohomology.IsCocycle₁` and `IsCocycle₂`.
 
 Continuity of the cup cochains is where joint continuity of `μ` is used. It is automatic when `M`
 and `N` are discrete, which is the case in every arithmetic application, but it is carried as a
@@ -105,13 +105,6 @@ what it takes to type the two composites, and the coefficient identity
 `μ₂ (μ₁ a b) c = ν₂ a (ν₁ b c)` is the hypothesis that identifies them. The
 `(1,0)` and `(0,0)` shapes are in the family because the instances `explicitCup_assoc110` and
 `explicitCup_assoc100` need them on their right-hand sides.
-
-This implements the "six low-degree shapes", "graded commutativity" and "associativity"
-milestones of Layer 8 of the human-authored roadmap at
-`TauCetiRoadmap/ProfiniteCohomology/README.md`, whose §3 fixes the six formulas, whose Layer 8
-fixes the ten associativity instances and the `G`-ring specialization, and whose
-`Suggested.lean` fixes the names `explicitCup00`, `explicitCup01`, `explicitCup10`,
-`explicitCup02`, `explicitCup11` and `explicitCup20`.
 
 ## References
 
@@ -189,15 +182,6 @@ theorem pairingRight_smul (n : H0 G N) (g : G) (m : M) :
     μ (g • m) (n : N) = g • μ m (n : N) :=
   (pairingRight μ hequiv n).map_smul g m
 
-include hequiv in
-/-- **The opposite pairing `μᵒᵖ n m = μ m n` is equivariant.** Mathlib's `AddMonoidHom.flip` is
-the `μᵒᵖ` of the graded-commutativity statements below, and this is the hypothesis it has to be
-fed to be cupped against. -/
-theorem equivariant_flip (g : G) (x : N) (m : M) :
-    μ.flip (g • x) (g • m) = g • μ.flip x m := by
-  simp only [AddMonoidHom.flip_apply]
-  exact hequiv g m x
-
 variable [TopologicalSpace M] [TopologicalSpace N] [TopologicalSpace P]
   (hμ : Continuous fun p : M × N => μ p.1 p.2)
 
@@ -211,16 +195,11 @@ theorem continuous_pairingLeft (m : H0 G M) : Continuous (pairingLeft μ hequiv 
 theorem continuous_pairingRight (n : H0 G N) : Continuous (pairingRight μ hequiv n) :=
   hμ.comp (continuous_id.prodMk continuous_const)
 
-/-- **The opposite pairing of a jointly continuous pairing is jointly continuous**, being its
-composite with the swap homeomorphism. -/
-theorem continuous_flip : Continuous fun p : N × M => μ.flip p.1 p.2 :=
-  hμ.comp continuous_swap
-
 end Pairing
 
 section CupZeroZero
 
-variable (G : Type uG) [Group G]
+variable (G : Type uG) [Monoid G]
   (M : Type uM) [AddCommGroup M] [DistribMulAction G M]
   (N : Type uN) [AddCommGroup N] [DistribMulAction G N]
   (P : Type uP) [AddCommGroup P] [DistribMulAction G P]
@@ -244,7 +223,7 @@ end CupZeroZero
 
 section CupZeroOne
 
-variable (G : Type uG) [Group G] [TopologicalSpace G]
+variable (G : Type uG) [Monoid G] [TopologicalSpace G]
   (M : Type uM) [AddCommGroup M] [TopologicalSpace M] [DistribMulAction G M]
   (N : Type uN) [AddCommGroup N] [TopologicalSpace N] [IsTopologicalAddGroup N]
     [DistribMulAction G N]
@@ -259,11 +238,11 @@ include hμ hequiv
 `1`-cocycle.** -/
 theorem cup01_mem_Z1 (m : H0 G M) {b : G → N} (hb : b ∈ Z1 G N) :
     (fun g => μ (m : M) (b g)) ∈ Z1 G P := by
-  refine mem_Z1_iff.2 ⟨(continuous_pairingLeft μ hequiv hμ m).comp (mem_Z1_iff.1 hb).1,
-    fun g h => ?_⟩
-  -- beta-reduce the cup cochain; see the implementation notes.
-  change μ (m : M) (b (g * h)) = g • μ (m : M) (b h) + μ (m : M) (b g)
-  rw [(mem_Z1_iff.1 hb).2 g h, map_add, pairingLeft_smul μ hequiv m g (b h)]
+  convert cochainsMap1_mem_Z1 G N G P (ContinuousMonoidHom.id G)
+    (pairingLeft μ hequiv m).toAddMonoidHom (continuous_pairingLeft μ hequiv hμ m)
+    (fun g x => (pairingLeft μ hequiv m).map_smul g x) hb using 1
+  ext g
+  simp
 
 variable [ContinuousSMul G N] [ContinuousSMul G P]
 
@@ -300,7 +279,7 @@ end CupZeroOne
 
 section CupOneZero
 
-variable (G : Type uG) [Group G] [TopologicalSpace G]
+variable (G : Type uG) [Monoid G] [TopologicalSpace G]
   (M : Type uM) [AddCommGroup M] [TopologicalSpace M] [IsTopologicalAddGroup M]
     [DistribMulAction G M]
   (N : Type uN) [AddCommGroup N] [TopologicalSpace N] [DistribMulAction G N]
@@ -317,13 +296,11 @@ it disappears only because `n` is invariant. -/
 theorem cup10_mem_Z1 {a : G → M} (ha : a ∈ Z1 G M) (n : H0 G N) :
     (fun g => μ (a g) (g • (n : N))) ∈ Z1 G P := by
   have hn : ∀ g : G, g • (n : N) = (n : N) := n.2
-  have hadd : ∀ x y : M, μ (x + y) (n : N) = μ x (n : N) + μ y (n : N) := fun x y => by simp
-  simp only [hn]
-  refine mem_Z1_iff.2 ⟨(continuous_pairingRight μ hequiv hμ n).comp (mem_Z1_iff.1 ha).1,
-    fun g h => ?_⟩
-  -- beta-reduce the cup cochain; see the implementation notes.
-  change μ (a (g * h)) (n : N) = g • μ (a h) (n : N) + μ (a g) (n : N)
-  rw [(mem_Z1_iff.1 ha).2 g h, hadd, pairingRight_smul μ hequiv n g (a h)]
+  convert cochainsMap1_mem_Z1 G M G P (ContinuousMonoidHom.id G)
+    (pairingRight μ hequiv n).toAddMonoidHom (continuous_pairingRight μ hequiv hμ n)
+    (fun g x => (pairingRight μ hequiv n).map_smul g x) ha using 1
+  ext g
+  simp [hn]
 
 variable [ContinuousSMul G M] [ContinuousSMul G P]
 
@@ -361,7 +338,7 @@ end CupOneZero
 
 section CupZeroTwo
 
-variable (G : Type uG) [Group G] [TopologicalSpace G]
+variable (G : Type uG) [Monoid G] [TopologicalSpace G]
   (M : Type uM) [AddCommGroup M] [TopologicalSpace M] [DistribMulAction G M]
   (N : Type uN) [AddCommGroup N] [TopologicalSpace N] [IsTopologicalAddGroup N]
     [DistribMulAction G N]
@@ -376,13 +353,11 @@ include hμ hequiv
 `2`-cocycle.** -/
 theorem cup02_mem_Z2 (m : H0 G M) {b : G × G → N} (hb : b ∈ Z2 G N) :
     (fun q : G × G => μ (m : M) (b q)) ∈ Z2 G P := by
-  refine mem_Z2_iff.2 ⟨(continuous_pairingLeft μ hequiv hμ m).comp (mem_Z2_iff.1 hb).1,
-    fun g h j => ?_⟩
-  -- beta-reduce the cup cochain; see the implementation notes.
-  change μ (m : M) (b (g * h, j)) + μ (m : M) (b (g, h)) =
-    g • μ (m : M) (b (h, j)) + μ (m : M) (b (g, h * j))
-  rw [← pairingLeft_smul μ hequiv m g (b (h, j)), ← map_add, ← map_add,
-    (mem_Z2_iff.1 hb).2 g h j]
+  convert cochainsMap2_mem_Z2 G N G P (ContinuousMonoidHom.id G)
+    (pairingLeft μ hequiv m).toAddMonoidHom (continuous_pairingLeft μ hequiv hμ m)
+    (fun g x => (pairingLeft μ hequiv m).map_smul g x) hb using 1
+  ext ⟨g, h⟩
+  simp
 
 variable [ContinuousMul G] [ContinuousSMul G N] [ContinuousSMul G P]
 
@@ -418,7 +393,7 @@ end CupZeroTwo
 
 section CupTwoZero
 
-variable (G : Type uG) [Group G] [TopologicalSpace G]
+variable (G : Type uG) [Monoid G] [TopologicalSpace G]
   (M : Type uM) [AddCommGroup M] [TopologicalSpace M] [IsTopologicalAddGroup M]
     [DistribMulAction G M]
   (N : Type uN) [AddCommGroup N] [TopologicalSpace N] [DistribMulAction G N]
@@ -434,14 +409,11 @@ include hμ hequiv
 theorem cup20_mem_Z2 {a : G × G → M} (ha : a ∈ Z2 G M) (n : H0 G N) :
     (fun q : G × G => μ (a q) ((q.1 * q.2) • (n : N))) ∈ Z2 G P := by
   have hn : ∀ g : G, g • (n : N) = (n : N) := n.2
-  have hadd : ∀ x y : M, μ (x + y) (n : N) = μ x (n : N) + μ y (n : N) := fun x y => by simp
-  simp only [hn]
-  refine mem_Z2_iff.2 ⟨(continuous_pairingRight μ hequiv hμ n).comp (mem_Z2_iff.1 ha).1,
-    fun g h j => ?_⟩
-  -- beta-reduce the cup cochain; see the implementation notes.
-  change μ (a (g * h, j)) (n : N) + μ (a (g, h)) (n : N) =
-    g • μ (a (h, j)) (n : N) + μ (a (g, h * j)) (n : N)
-  rw [← pairingRight_smul μ hequiv n g (a (h, j)), ← hadd, ← hadd, (mem_Z2_iff.1 ha).2 g h j]
+  convert cochainsMap2_mem_Z2 G M G P (ContinuousMonoidHom.id G)
+    (pairingRight μ hequiv n).toAddMonoidHom (continuous_pairingRight μ hequiv hμ n)
+    (fun g x => (pairingRight μ hequiv n).map_smul g x) ha using 1
+  ext ⟨g, h⟩
+  simp [hn]
 
 variable [ContinuousMul G] [ContinuousSMul G M] [ContinuousSMul G P]
 
@@ -480,7 +452,7 @@ end CupTwoZero
 
 section CupOneOne
 
-variable (G : Type uG) [Group G] [TopologicalSpace G]
+variable (G : Type uG) [Monoid G] [TopologicalSpace G]
   (M : Type uM) [AddCommGroup M] [TopologicalSpace M] [DistribMulAction G M]
   (N : Type uN) [AddCommGroup N] [TopologicalSpace N] [DistribMulAction G N]
   (P : Type uP) [AddCommGroup P] [TopologicalSpace P] [IsTopologicalAddGroup P]
@@ -630,7 +602,7 @@ end CupOneOne
 
 section CommZeroZero
 
-variable (G : Type uG) [Group G]
+variable (G : Type uG) [Monoid G]
   (M : Type uM) [AddCommGroup M] [DistribMulAction G M]
   (N : Type uN) [AddCommGroup N] [DistribMulAction G N]
   (P : Type uP) [AddCommGroup P] [DistribMulAction G P]
@@ -641,19 +613,20 @@ variable (G : Type uG) [Group G]
 cochains, here two elements of `P`, are literally equal. -/
 theorem explicitCup00_comm (m : H0 G M) (n : H0 G N) :
     explicitCup00 G M N P μ hequiv m n =
-      explicitCup00 G N M P μ.flip (equivariant_flip μ hequiv) n m :=
+      explicitCup00 G N M P μ.flip
+        (μ.flip_map_smul hequiv) n m :=
   Subtype.ext (by simp)
 
 end CommZeroZero
 
 section CommCochain
 
-/-! The three shapes with a degree-`0` factor commute already on cochains, because a degree-`0`
-class is invariant. Neither statement mentions a topology or an action on the second factor. -/
+/-! The two cochain identities below require no topology or action on the second factor: a
+degree-`0` class is invariant. -/
 
-variable (G : Type uG) [Group G]
+variable (G : Type uG) [Monoid G]
   (M : Type uM) [AddCommGroup M] [DistribMulAction G M]
-  (N : Type uN) [AddCommMonoid N]
+  (N : Type uN) [AddZeroClass N]
   (P : Type uP) [AddCommMonoid P]
   (μ : M →+ N →+ P)
 
@@ -679,7 +652,7 @@ end CommCochain
 
 section CommZeroOne
 
-variable (G : Type uG) [Group G] [TopologicalSpace G]
+variable (G : Type uG) [Monoid G] [TopologicalSpace G]
   (M : Type uM) [AddCommGroup M] [TopologicalSpace M] [DistribMulAction G M]
   (N : Type uN) [AddCommGroup N] [TopologicalSpace N] [IsTopologicalAddGroup N]
     [DistribMulAction G N] [ContinuousSMul G N]
@@ -693,7 +666,9 @@ include hμ hequiv in
 `TauCeti.ContCohomology.cup01_eq_cup10_flip` the identity already holds on cochains. -/
 theorem explicitCup01_eq_cup10_flip (m : H0 G M) (b : H1 G N) :
     explicitCup01 G M N P μ hμ hequiv m b =
-      explicitCup10 G N M P μ.flip (continuous_flip μ hμ) (equivariant_flip μ hequiv) b m := by
+      explicitCup10 G N M P μ.flip
+        (μ.continuous_flip hμ)
+        (μ.flip_map_smul hequiv) b m := by
   induction b using QuotientAddGroup.induction_on with
   | _ c =>
     rw [explicitCup01_mk, explicitCup10_mk]
@@ -704,7 +679,7 @@ end CommZeroOne
 
 section CommZeroTwo
 
-variable (G : Type uG) [Group G] [TopologicalSpace G] [ContinuousMul G]
+variable (G : Type uG) [Monoid G] [TopologicalSpace G] [ContinuousMul G]
   (M : Type uM) [AddCommGroup M] [TopologicalSpace M] [DistribMulAction G M]
   (N : Type uN) [AddCommGroup N] [TopologicalSpace N] [IsTopologicalAddGroup N]
     [DistribMulAction G N] [ContinuousSMul G N]
@@ -718,7 +693,9 @@ include hμ hequiv in
 `TauCeti.ContCohomology.cup02_eq_cup20_flip` the identity already holds on cochains. -/
 theorem explicitCup02_eq_cup20_flip (m : H0 G M) (b : H2 G N) :
     explicitCup02 G M N P μ hμ hequiv m b =
-      explicitCup20 G N M P μ.flip (continuous_flip μ hμ) (equivariant_flip μ hequiv) b m := by
+      explicitCup20 G N M P μ.flip
+        (μ.continuous_flip hμ)
+        (μ.flip_map_smul hequiv) b m := by
   induction b using QuotientAddGroup.induction_on with
   | _ c =>
     rw [explicitCup02_mk, explicitCup20_mk]
@@ -729,7 +706,7 @@ end CommZeroTwo
 
 section Homotopy
 
-variable (G : Type uG) [Group G] [TopologicalSpace G]
+variable (G : Type uG) [Monoid G] [TopologicalSpace G]
   (M : Type uM) [AddCommGroup M] [TopologicalSpace M] [IsTopologicalAddGroup M]
     [DistribMulAction G M]
   (N : Type uN) [AddCommGroup N] [TopologicalSpace N] [IsTopologicalAddGroup N]
@@ -758,7 +735,7 @@ end Homotopy
 
 section CommOneOne
 
-variable (G : Type uG) [Group G] [TopologicalSpace G]
+variable (G : Type uG) [Monoid G] [TopologicalSpace G]
   (M : Type uM) [AddCommGroup M] [TopologicalSpace M] [IsTopologicalAddGroup M]
     [DistribMulAction G M]
   (N : Type uN) [AddCommGroup N] [TopologicalSpace N] [IsTopologicalAddGroup N]
@@ -789,7 +766,9 @@ differ by the coboundary exhibited in
 `TauCeti.ContCohomology.cup11_add_cup11_flip_eq_d1`. -/
 theorem explicitCup11_eq_neg_flip (a : H1 G M) (b : H1 G N) :
     explicitCup11 G M N P μ hμ hequiv a b =
-      -explicitCup11 G N M P μ.flip (continuous_flip μ hμ) (equivariant_flip μ hequiv) b a := by
+      -explicitCup11 G N M P μ.flip
+        (μ.continuous_flip hμ)
+        (μ.flip_map_smul hequiv) b a := by
   induction a using QuotientAddGroup.induction_on with
   | _ x =>
     induction b using QuotientAddGroup.induction_on with
@@ -804,7 +783,9 @@ of `P` is its own negative the `(1,1)` cup is symmetric on classes. This is the 
 `𝔽₂`-valued arithmetic applications use, where every sign is `1`. -/
 theorem explicitCup11_comm_of_neg_eq_self (hP : ∀ x : P, -x = x) (a : H1 G M) (b : H1 G N) :
     explicitCup11 G M N P μ hμ hequiv a b =
-      explicitCup11 G N M P μ.flip (continuous_flip μ hμ) (equivariant_flip μ hequiv) b a := by
+      explicitCup11 G N M P μ.flip
+        (μ.continuous_flip hμ)
+        (μ.flip_map_smul hequiv) b a := by
   have hneg : ∀ y : H2 G P, -y = y := fun y => by
     induction y using QuotientAddGroup.induction_on with
     | _ z =>
@@ -835,7 +816,7 @@ universe uA uB uC uD uE uF
 
 section AssocZero
 
-variable (G : Type uG) [Group G]
+variable (G : Type uG) [Monoid G]
   (A : Type uA) [AddCommGroup A] [DistribMulAction G A]
   (B : Type uB) [AddCommGroup B] [DistribMulAction G B]
   (C : Type uC) [AddCommGroup C] [DistribMulAction G C]
@@ -863,7 +844,7 @@ section AssocFirstZero
 /-! The tridegrees `(0,0,r)`: the first two factors are invariant, so `μ₁` is used only through
 the `(0,0)` cup and no continuity of it is needed. -/
 
-variable (G : Type uG) [Group G] [TopologicalSpace G]
+variable (G : Type uG) [Monoid G] [TopologicalSpace G]
   (A : Type uA) [AddCommGroup A] [TopologicalSpace A] [DistribMulAction G A]
   (B : Type uB) [AddCommGroup B] [TopologicalSpace B] [DistribMulAction G B]
   (C : Type uC) [AddCommGroup C] [TopologicalSpace C] [IsTopologicalAddGroup C]
@@ -913,7 +894,7 @@ section AssocMiddle
 
 /-! The tridegrees `(0,q,0)`: the outer factors are invariant. -/
 
-variable (G : Type uG) [Group G] [TopologicalSpace G]
+variable (G : Type uG) [Monoid G] [TopologicalSpace G]
   (A : Type uA) [AddCommGroup A] [TopologicalSpace A] [DistribMulAction G A]
   (B : Type uB) [AddCommGroup B] [TopologicalSpace B] [IsTopologicalAddGroup B]
     [DistribMulAction G B] [ContinuousSMul G B]
@@ -967,7 +948,7 @@ section AssocLastZero
 `(0,0)` cup. The translation factor of the general formula sits on `ν₁ b c`, and it is
 `hequiv₃` that moves it onto the two factors separately. -/
 
-variable (G : Type uG) [Group G] [TopologicalSpace G]
+variable (G : Type uG) [Monoid G] [TopologicalSpace G]
   (A : Type uA) [AddCommGroup A] [TopologicalSpace A] [IsTopologicalAddGroup A]
     [DistribMulAction G A] [ContinuousSMul G A]
   (B : Type uB) [AddCommGroup B] [TopologicalSpace B] [DistribMulAction G B]
@@ -1015,7 +996,7 @@ end AssocLastZero
 
 section AssocZeroOneOne
 
-variable (G : Type uG) [Group G] [TopologicalSpace G] [ContinuousMul G]
+variable (G : Type uG) [Monoid G] [TopologicalSpace G] [ContinuousMul G]
   (A : Type uA) [AddCommGroup A] [TopologicalSpace A] [DistribMulAction G A]
   (B : Type uB) [AddCommGroup B] [TopologicalSpace B] [IsTopologicalAddGroup B]
     [DistribMulAction G B] [ContinuousSMul G B]
@@ -1056,7 +1037,7 @@ end AssocZeroOneOne
 
 section AssocOneOneZero
 
-variable (G : Type uG) [Group G] [TopologicalSpace G] [ContinuousMul G]
+variable (G : Type uG) [Monoid G] [TopologicalSpace G] [ContinuousMul G]
   (A : Type uA) [AddCommGroup A] [TopologicalSpace A] [IsTopologicalAddGroup A]
     [DistribMulAction G A] [ContinuousSMul G A]
   (B : Type uB) [AddCommGroup B] [TopologicalSpace B] [IsTopologicalAddGroup B]
@@ -1098,7 +1079,7 @@ end AssocOneOneZero
 
 section AssocOneZeroOne
 
-variable (G : Type uG) [Group G] [TopologicalSpace G] [ContinuousMul G]
+variable (G : Type uG) [Monoid G] [TopologicalSpace G] [ContinuousMul G]
   (A : Type uA) [AddCommGroup A] [TopologicalSpace A] [IsTopologicalAddGroup A]
     [DistribMulAction G A] [ContinuousSMul G A]
   (B : Type uB) [AddCommGroup B] [TopologicalSpace B] [DistribMulAction G B]
@@ -1140,15 +1121,15 @@ section AssocRing
 
 /-! ### Associativity for a topological `G`-ring
 
-The specialization the applications use: one coefficient ring `R` acted on by ring
-automorphisms, all four pairings its multiplication `AddMonoidHom.mul`, and the coefficient
+One coefficient ring `R` acted on by ring
+endomorphisms, all four pairings its multiplication `AddMonoidHom.mul`, and the coefficient
 identity `mul_assoc`. The continuity and equivariance a pairing has to come with are
 `continuous_mul` and `smul_mul'`, which apply to `AddMonoidHom.mul` as they stand. Each of the
 ten statements below is the corresponding general statement instantiated there. -/
 
 universe uR
 
-variable (G : Type uG) [Group G]
+variable (G : Type uG) [Monoid G]
   (R : Type uR) [Ring R] [MulSemiringAction G R]
 
 /-- **Associativity of the ring cup product in tridegree `(0,0,0)`.** -/

@@ -8,7 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Dual.WeilPairing
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Hom.Torsion
 public import TauCeti.RingTheory.RootsOfUnity.ZMod
-import TauCeti.LinearAlgebra.Determinant
+import TauCeti.LinearAlgebra.Determinant.Basic
 
 /-!
 # The determinant of an endomorphism on torsion

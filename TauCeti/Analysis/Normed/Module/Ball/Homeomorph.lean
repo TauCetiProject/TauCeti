@@ -36,6 +36,8 @@ valued in the closed unit ball.
   `ContinuousLinearEquiv.image_unitBallHomeomorph_ball` and
   `ContinuousLinearEquiv.image_unitBallHomeomorph_sphere`: it matches the closed unit balls, the
   open unit balls and the unit spheres.
+* `ContinuousLinearEquiv.norm_unitBallHomeomorph_le_one_iff` and its variants: the same
+  statements read pointwise on norms, for the homeomorphism and its inverse.
 * `TauCeti.isOpenEmbedding_inclusion_comp_unitBall`: `E` embeds openly in its closed unit ball.
 * `Homeomorph.unitBall_symm_apply_coe`: the inverse radial map in explicit coordinates.
 * `TauCeti.cubeHomeomorphClosedBall`: the cube `I^N` is the closed unit ball of the sup norm on
@@ -118,6 +120,48 @@ theorem image_unitBallHomeomorph_sphere :
     L.unitBallHomeomorph '' sphere 0 1 = sphere 0 1 := by
   simpa only [frontier_closedBall _ one_ne_zero, image_unitBallHomeomorph_closedBall] using
     L.unitBallHomeomorph.image_frontier (closedBall 0 1)
+
+/-- `ContinuousLinearEquiv.unitBallHomeomorph L` preserves the condition `‖x‖ ≤ 1`. -/
+@[simp]
+theorem norm_unitBallHomeomorph_le_one_iff {x : E} :
+    ‖L.unitBallHomeomorph x‖ ≤ 1 ↔ ‖x‖ ≤ 1 := by
+  simpa using (L.unitBallHomeomorph.injective.mem_set_image.symm.trans
+    (Set.ext_iff.1 L.image_unitBallHomeomorph_closedBall (L.unitBallHomeomorph x))).symm
+
+/-- `ContinuousLinearEquiv.unitBallHomeomorph L` preserves the condition `‖x‖ < 1`. -/
+@[simp]
+theorem norm_unitBallHomeomorph_lt_one_iff {x : E} :
+    ‖L.unitBallHomeomorph x‖ < 1 ↔ ‖x‖ < 1 := by
+  simpa using (L.unitBallHomeomorph.injective.mem_set_image.symm.trans
+    (Set.ext_iff.1 L.image_unitBallHomeomorph_ball (L.unitBallHomeomorph x))).symm
+
+/-- `ContinuousLinearEquiv.unitBallHomeomorph L` preserves the condition `‖x‖ = 1`. -/
+@[simp]
+theorem norm_unitBallHomeomorph_eq_one_iff {x : E} :
+    ‖L.unitBallHomeomorph x‖ = 1 ↔ ‖x‖ = 1 := by
+  simpa using (L.unitBallHomeomorph.injective.mem_set_image.symm.trans
+    (Set.ext_iff.1 L.image_unitBallHomeomorph_sphere (L.unitBallHomeomorph x))).symm
+
+/-- The inverse of `ContinuousLinearEquiv.unitBallHomeomorph L` preserves the condition
+`‖y‖ ≤ 1`. -/
+@[simp]
+theorem norm_unitBallHomeomorph_symm_le_one_iff {y : F} :
+    ‖L.unitBallHomeomorph.symm y‖ ≤ 1 ↔ ‖y‖ ≤ 1 := by
+  simpa using (L.norm_unitBallHomeomorph_le_one_iff (x := L.unitBallHomeomorph.symm y)).symm
+
+/-- The inverse of `ContinuousLinearEquiv.unitBallHomeomorph L` preserves the condition
+`‖y‖ < 1`. -/
+@[simp]
+theorem norm_unitBallHomeomorph_symm_lt_one_iff {y : F} :
+    ‖L.unitBallHomeomorph.symm y‖ < 1 ↔ ‖y‖ < 1 := by
+  simpa using (L.norm_unitBallHomeomorph_lt_one_iff (x := L.unitBallHomeomorph.symm y)).symm
+
+/-- The inverse of `ContinuousLinearEquiv.unitBallHomeomorph L` preserves the condition
+`‖y‖ = 1`. -/
+@[simp]
+theorem norm_unitBallHomeomorph_symm_eq_one_iff {y : F} :
+    ‖L.unitBallHomeomorph.symm y‖ = 1 ↔ ‖y‖ = 1 := by
+  simpa using (L.norm_unitBallHomeomorph_eq_one_iff (x := L.unitBallHomeomorph.symm y)).symm
 
 end ContinuousLinearEquiv
 
