@@ -5,9 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RepresentationTheory.Intertwining
 public import TauCeti.RepresentationTheory.Spin.Structure
+public import Mathlib.Algebra.Field.Defs
+public import Mathlib.RepresentationTheory.Intertwining
 import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.LowRank.Six.GeneralLinear
+import TauCeti.LinearAlgebra.Dual.End
 import Mathlib.LinearAlgebra.GeneralLinearGroup.AlgEquiv
 
 /-!
@@ -24,9 +26,9 @@ equivalence. Restriction to the Spin group then supplies the desired intertwiner
 
 ## Main result
 
-* `TauCeti.nonempty_spinMinusSubrep_equiv_dual_spinPlusSubrep_of_finrank_eq_six`: in dimension
-  six, the odd half-spin representation is equivalent to the dual of the even half-spin
-  representation.
+* `TauCeti.exists_spinMinusSubrep_equiv_dual_spinPlusSubrep_of_finrank_eq_six`: in dimension six,
+  a polarization line vanishes and the odd half-spin representation is equivalent to the dual of
+  the even half-spin representation.
 
 ## References
 
@@ -48,32 +50,17 @@ variable {K : Type u} [Field K] {V : Type v} [AddCommGroup V] [Module K V]
 variable {M : Type w} {N : Type z} [AddCommGroup M] [Module K M]
   [AddCommGroup N] [Module K N]
 
-private noncomputable def reverseEvenOpEquiv :
-    (even Q)ᵐᵒᵖ ≃ₐ[K] even Q :=
-  AlgEquiv.ofBijective
-    { toFun := fun x => reverseEven Q x.unop
-      map_one' := by simp
-      map_mul' := by intro x y; simp
-      map_zero' := by simp
-      map_add' := by intro x y; simp
-      commutes' := by intro r; simp }
-    ⟨fun x y h => MulOpposite.unop_injective <| by
-        change reverseEven Q x.unop = reverseEven Q y.unop at h
-        rw [← reverseEven_reverseEven x.unop, ← reverseEven_reverseEven y.unop]
-        exact congrArg (reverseEven Q) h,
-      fun x => ⟨MulOpposite.op (reverseEven Q x), by simp⟩⟩
-
 private noncomputable def reverseEvenProdEquiv
     (e : even Q ≃ₐ[K] Module.End K M × Module.End K N) :
     (Module.End K M × Module.End K N)ᵐᵒᵖ ≃ₐ[K]
       Module.End K M × Module.End K N :=
-  (AlgEquiv.op e.symm).trans ((reverseEvenOpEquiv (K := K) (Q := Q)).trans e)
+  (AlgEquiv.op e.symm).trans ((CliffordAlgebra.reverseEvenOpEquiv Q).trans e)
 
 private theorem reverseEvenProdEquiv_apply
     (e : even Q ≃ₐ[K] Module.End K M × Module.End K N)
     (x : Module.End K M × Module.End K N) :
     reverseEvenProdEquiv e (MulOpposite.op x) = e (reverseEven Q (e.symm x)) :=
-  rfl
+  by simp [reverseEvenProdEquiv]
 
 private theorem evenCliffordEquivProdEnd_reverse_one_zero_of_finrank_eq_six
     [Invertible (2 : K)] [FiniteDimensional K V] (P : SpinPolarizationData Q)
@@ -144,10 +131,11 @@ private theorem reverseEvenProdEquiv_second_snd_eq_zero
     (g : Module.End K N) :
     (reverseEvenProdEquiv e (MulOpposite.op (0, g))).2 = 0 := by
   have hzeroOne : reverseEvenProdEquiv e (MulOpposite.op (0, 1)) = (1, 0) := by
-    rw [show MulOpposite.op (0, (1 : Module.End K N)) =
-        1 - MulOpposite.op ((1 : Module.End K M), 0) by
+    have hop : MulOpposite.op (0, (1 : Module.End K N)) =
+        1 - MulOpposite.op ((1 : Module.End K M), 0) := by
       apply MulOpposite.unop_injective
-      ext <;> simp]
+      ext <;> simp
+    rw [hop]
     rw [map_sub, map_one, hswap]
     ext <;> simp
   calc
@@ -170,12 +158,14 @@ private noncomputable def reverseEvenFirstToSecondAlgHom
         MulOpposite.op (f.unop, 0) * MulOpposite.op (g.unop, 0) := by
       apply MulOpposite.unop_injective
       simp
+    -- Normalize multiplication in the opposite product algebra before applying multiplicativity.
     change (reverseEvenProdEquiv e
       (MulOpposite.op (g.unop * f.unop, 0))).2 = _
     rw [hsource, map_mul]
     rfl
   map_zero' := by
     have hsource : MulOpposite.op ((0 : Module.End K M), (0 : Module.End K N)) = 0 := rfl
+    -- Normalize zero in the opposite product algebra before applying preservation of zero.
     change (reverseEvenProdEquiv e (MulOpposite.op (0, 0))).2 = 0
     rw [hsource, map_zero]
     rfl
@@ -184,17 +174,20 @@ private noncomputable def reverseEvenFirstToSecondAlgHom
         MulOpposite.op (f.unop, 0) + MulOpposite.op (g.unop, 0) := by
       apply MulOpposite.unop_injective
       simp
+    -- Normalize addition in the opposite product algebra before applying additivity.
     change (reverseEvenProdEquiv e
       (MulOpposite.op (f.unop + g.unop, 0))).2 = _
     rw [hsource, map_add]
     rfl
   commutes' r := by
-    rw [show MulOpposite.unop (algebraMap K (Module.End K M)ᵐᵒᵖ r) =
-        algebraMap K (Module.End K M) r by simp]
-    rw [show MulOpposite.op (algebraMap K (Module.End K M) r, 0) =
-        r • MulOpposite.op ((1 : Module.End K M), (0 : Module.End K N)) by
+    have hunop : MulOpposite.unop (algebraMap K (Module.End K M)ᵐᵒᵖ r) =
+        algebraMap K (Module.End K M) r := by simp
+    rw [hunop]
+    have hop : MulOpposite.op (algebraMap K (Module.End K M) r, 0) =
+        r • MulOpposite.op ((1 : Module.End K M), (0 : Module.End K N)) := by
       apply MulOpposite.unop_injective
-      ext <;> simp [Algebra.smul_def]]
+      ext <;> simp [Algebra.smul_def]
+    rw [hop]
     have h := congrArg Prod.snd <|
       (reverseEvenProdEquiv e).toLinearEquiv.map_smul r
         (MulOpposite.op ((1 : Module.End K M), (0 : Module.End K N)))
@@ -254,6 +247,7 @@ private theorem reverseEvenFirstToSecondAlgEquiv_action
     reverseEvenFirstToSecondAlgEquiv e hswap hdim (MulOpposite.op (e x).1) =
       (e (reverseEven Q x)).2 := by
   rw [reverseEvenFirstToSecondAlgEquiv_apply]
+  -- Expose the product-algebra component selected by the restricted equivalence.
   change (reverseEvenProdEquiv e (MulOpposite.op ((e x).1, 0))).2 = _
   have hfull : reverseEvenProdEquiv e (MulOpposite.op (e x)) = e (reverseEven Q x) := by
     simpa using reverseEvenProdEquiv_apply e (e x)
@@ -266,61 +260,19 @@ private theorem reverseEvenFirstToSecondAlgEquiv_action
   simp only [Prod.snd_add]
   rw [reverseEvenProdEquiv_second_snd_eq_zero e hswap, add_zero]
 
-private noncomputable def dualEndAlgEquiv (M : Type*) [AddCommGroup M] [Module K M]
-    [FiniteDimensional K M] :
-    (Module.End K M)ᵐᵒᵖ ≃ₐ[K] Module.End K (Module.Dual K M) := by
-  let f : (Module.End K M)ᵐᵒᵖ →ₐ[K] Module.End K (Module.Dual K M) :=
-    { toFun := fun g => g.unop.dualMap
-      map_one' := by ext; simp
-      map_mul' := by intro g h; ext; simp [Module.End.mul_apply]
-      map_zero' := by ext; simp
-      map_add' := by intro g h; ext; simp
-      commutes' := by intro r; ext; simp }
-  have hinj : Function.Injective f := by
-    intro g h hgh
-    apply MulOpposite.unop_injective
-    apply LinearMap.ext
-    intro x
-    apply (Module.bijective_dual_eval K M).injective
-    apply LinearMap.ext
-    intro φ
-    exact congrArg (fun F : Module.End K (Module.Dual K M) => F φ x) hgh
-  refine AlgEquiv.ofBijective f ⟨hinj, ?_⟩
-  have hrank : finrank K ((Module.End K M)ᵐᵒᵖ) =
-      finrank K (Module.End K (Module.Dual K M)) := by
-    calc
-      finrank K ((Module.End K M)ᵐᵒᵖ) = finrank K (Module.End K M) :=
-        (MulOpposite.opLinearEquiv K).symm.finrank_eq
-      _ = finrank K (Module.End K (Module.Dual K M)) := by
-        rw [Module.finrank_linearMap, Module.finrank_linearMap, Subspace.dual_finrank_eq]
-  have hinj' : Function.Injective f.toLinearMap := hinj
-  exact (LinearMap.injective_iff_surjective_of_finrank_eq_finrank
-    (K := K) (V := (Module.End K M)ᵐᵒᵖ)
-      (V₂ := Module.End K (Module.Dual K M)) (f := f.toLinearMap) hrank).mp hinj'
-
-private theorem dualEndAlgEquiv_apply (M : Type*) [AddCommGroup M] [Module K M]
-    [FiniteDimensional K M] (f : Module.End K M) :
-    dualEndAlgEquiv (K := K) M (MulOpposite.op f) = f.dualMap := by
-  rw [dualEndAlgEquiv]
-  rfl
-
-private theorem dualEndAlgEquiv_symm_dualMap (M : Type*) [AddCommGroup M] [Module K M]
-    [FiniteDimensional K M] (f : Module.End K M) :
-    (dualEndAlgEquiv (K := K) M).symm f.dualMap = MulOpposite.op f := by
-  apply (dualEndAlgEquiv (K := K) M).injective
-  rw [AlgEquiv.apply_symm_apply, dualEndAlgEquiv_apply]
-
 /-- In a polarized six-dimensional quadratic space, the odd half-spin representation is
 equivalent to the dual of the even half-spin representation. The equivalence is noncanonical:
 it is obtained from the anti-isomorphism between the two simple factors of the even Clifford
-algebra induced by reversal. -/
-theorem nonempty_spinMinusSubrep_equiv_dual_spinPlusSubrep_of_finrank_eq_six
-    [NeZero (2 : K)] (P : SpinPolarizationData Q) (hline : P.line = ⊥)
-    (hV : finrank K V = 6) :
-    Nonempty ((spinMinusSubrep P hline).toRepresentation.Equiv
+algebra induced by reversal. The vanishing of the polarization line is included in the result
+because it follows from the dimension hypothesis. -/
+theorem exists_spinMinusSubrep_equiv_dual_spinPlusSubrep_of_finrank_eq_six
+    [NeZero (2 : K)] (P : SpinPolarizationData Q) (hV : finrank K V = 6) :
+    ∃ hline : P.line = ⊥, Nonempty ((spinMinusSubrep P hline).toRepresentation.Equiv
       (spinPlusSubrep P hline).toRepresentation.dual) := by
   let _ : FiniteDimensional K V := Module.finite_of_finrank_pos (by omega)
   let _ : Invertible (2 : K) := invertibleOfNonzero (NeZero.ne (2 : K))
+  have hline : P.line = ⊥ := P.line_eq_bot_of_even_finrank (hV ▸ by decide)
+  refine ⟨hline, ?_⟩
   have hWfin : finrank K P.W = 3 :=
     P.finrank_W_eq_of_finrank_eq_two_mul (l := 3) (by omega)
   have hW : P.W ≠ ⊥ := Submodule.finrank_eq_zero.not.1 (by omega)
@@ -339,7 +291,7 @@ theorem nonempty_spinMinusSubrep_equiv_dual_spinPlusSubrep_of_finrank_eq_six
     reverseEvenFirstToSecondAlgEquiv ep hswap (hplus.trans hminus.symm)
   let c : Module.End K (Module.Dual K (spinPlus Q P)) ≃ₐ[K]
       Module.End K (spinMinus Q P) :=
-    (dualEndAlgEquiv (K := K) (spinPlus Q P)).symm.trans a
+    (Module.dualEndAlgEquiv K (spinPlus Q P)).symm.trans a
   obtain ⟨T, hT⟩ := c.eq_linearEquivConjAlgEquiv
   let eplus : spinPlus Q P ≃ₗ[K] (spinPlusSubrep P hline).toSubmodule :=
     LinearEquiv.ofEq _ _ (toSubmodule_spinPlusSubrep P hline).symm
@@ -359,7 +311,7 @@ theorem nonempty_spinMinusSubrep_equiv_dual_spinPlusSubrep_of_finrank_eq_six
     (hplus.trans hminus.symm) (spinGroupToEven Q g⁻¹)
   have hcInv : c ((spinPlusAction Q P hline (spinGroupToEven Q g⁻¹)).dualMap) =
       spinMinusAction Q P hline (spinGroupToEven Q g) := by
-    simp only [c, AlgEquiv.trans_apply, dualEndAlgEquiv_symm_dualMap]
+    simp only [c, AlgEquiv.trans_apply, Module.dualEndAlgEquiv_symm_dualMap]
     have hrevInv : reverseEven Q (spinGroupToEven Q g⁻¹) = spinGroupToEven Q g := by
       apply Subtype.ext
       rw [coe_reverseEven_apply, coe_spinGroupToEven_apply, coe_spinGroupToEven_apply]
@@ -389,11 +341,14 @@ theorem nonempty_spinMinusSubrep_equiv_dual_spinPlusSubrep_of_finrank_eq_six
       eplus.symm ((spinPlusSubrep P hline).toRepresentation g⁻¹ (eplus p)) =
         spinPlusAction Q P hline (spinGroupToEven Q g⁻¹) p := by
     apply Subtype.ext
+    -- Expose the exterior-algebra carriers so the established Spin action formula applies.
     change (((spinPlusSubrep P hline).toRepresentation g⁻¹ (eplus p) :
       (spinPlusSubrep P hline).toSubmodule) : ExteriorAlgebra K P.W) =
         (spinPlusAction Q P hline (spinGroupToEven Q g⁻¹) p : ExteriorAlgebra K P.W)
-    rw [show eplus p =
-        ⟨p, (mem_spinPlusSubrep P hline).2 p.2⟩ by apply Subtype.ext; rfl]
+    have heplus : eplus p = ⟨p, (mem_spinPlusSubrep P hline).2 p.2⟩ := by
+      apply Subtype.ext
+      rfl
+    rw [heplus]
     have heven : spinGroupToEven Q g⁻¹ =
         ⟨(g⁻¹ : spinGroup Q), spinGroup.mem_even (g⁻¹ : spinGroup Q).2⟩ :=
       Subtype.ext (coe_spinGroupToEven_apply Q g⁻¹)
@@ -409,6 +364,7 @@ theorem nonempty_spinMinusSubrep_equiv_dual_spinPlusSubrep_of_finrank_eq_six
   rw [hminusAction, hintertwine]
   simp only [LinearMap.dualMap_apply]
   rw [eplus.symm_apply_apply]
+  -- Expand the dual evaluation after transporting through the subtype equivalence.
   change (T.symm (eminus.symm s))
       (spinPlusAction Q P hline (spinGroupToEven Q g⁻¹) p) =
     (eplus.symm.dualMap (T.symm (eminus.symm s)))

@@ -74,6 +74,27 @@ def reverseEven (Q : QuadraticForm R M) : ↥(even Q) →ₗ[R] ↥(even Q) :=
   apply Subtype.ext
   simpa only [coe_reverseEven_apply] using (reverse_reverse (Q := Q) (x : CliffordAlgebra Q))
 
+/-- Reversal identifies the opposite of the even Clifford algebra with the even Clifford
+algebra. -/
+noncomputable def reverseEvenOpEquiv (Q : QuadraticForm R M) :
+    (even Q)ᵐᵒᵖ ≃ₐ[R] even Q :=
+  AlgEquiv.ofBijective
+    { toFun := fun x => reverseEven Q x.unop
+      map_one' := by simp
+      map_mul' := by intro x y; simp
+      map_zero' := by simp
+      map_add' := by intro x y; simp
+      commutes' := by intro r; simp }
+    ⟨fun x y h => MulOpposite.unop_injective <| by
+        have h' : reverseEven Q x.unop = reverseEven Q y.unop := h
+        simpa only [reverseEven_reverseEven] using congrArg (reverseEven Q) h',
+      fun x => ⟨MulOpposite.op (reverseEven Q x), by simp⟩⟩
+
+/-- The reversal equivalence from the opposite even Clifford algebra acts by reversal. -/
+@[simp] theorem reverseEvenOpEquiv_apply (x : (even Q)ᵐᵒᵖ) :
+    reverseEvenOpEquiv Q x = reverseEven Q x.unop := by
+  rfl
+
 /-! ### Naturality -/
 
 /-- An isometry-induced equivalence of even Clifford algebras commutes with reversal. -/
