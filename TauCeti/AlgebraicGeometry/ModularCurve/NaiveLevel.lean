@@ -400,9 +400,8 @@ variable (B N) in
 /-- **The naive moduli problem `[Γ₁(N)]` is relatively representable.** For an object
 `X = (E/S)` of `Ell/B`, the functor `T ↦ [Γ₁(N)](E_T/T)` on schemes over `S` is represented by the
 open subscheme `E[N]^×` of `E[N]` of points of exact order `N` in every fibre
-(`EllipticCurveGeom.primitiveTorsion`), through `gammaOneNaiveBaseChangeEquiv`. The body is
-exposed so that morphisms into the representing scheme are morphisms into `E[N]^×`. -/
-@[expose]
+(`EllipticCurveGeom.primitiveTorsion`), through `gammaOneNaiveBaseChangeEquiv`
+(`gammaOneNaiveRelRepData_rep`, `gammaOneNaiveRelRepData_homEquiv`). -/
 noncomputable def gammaOneNaiveRelRepData : (gammaOneNaive B N).RelRepData where
   rep X := X.curve.primitiveTorsion N
   representableBy X :=
@@ -419,13 +418,14 @@ theorem gammaOneNaiveRelRepData_rep (X : EllObj B) :
   (rfl)
 
 /-- The naive `[Γ₁(N)]`-structure on `E_T` of a morphism `T ⟶ E[N]^×` is the one given by
-`gammaOneNaiveBaseChangeEquiv`. -/
+`gammaOneNaiveBaseChangeEquiv`, after identifying the representing scheme with `E[N]^×` through
+`gammaOneNaiveRelRepData_rep`. -/
 @[simp]
 theorem gammaOneNaiveRelRepData_homEquiv (X : EllObj B) {T : Over X.base}
-    (a : T ⟶ X.curve.primitiveTorsion N) :
+    (a : T ⟶ (gammaOneNaiveRelRepData B N).rep X) :
     ((gammaOneNaiveRelRepData B N).representableBy X).homEquiv a =
-      (gammaOneNaiveBaseChangeEquiv X T).symm a :=
-  (rfl)
+      (gammaOneNaiveBaseChangeEquiv X T).symm (a ≫ eqToHom (gammaOneNaiveRelRepData_rep X)) :=
+  congrArg (gammaOneNaiveBaseChangeEquiv X T).symm (Category.comp_id a).symm
 
 /-- **The naive moduli problem `[Γ₁(N)]` is étale over `Ell/B` when `N` is invertible on `B`**:
 if `N` is invertible in every residue field of `B`, every representing scheme `E[N]^×` is étale over
