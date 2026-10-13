@@ -124,9 +124,9 @@ theorem LinearMap.projectiveDet_restrictScalars {M : Type*} [AddCommGroup M] [Mo
   have hR : π.restrictScalars R ∘ₗ σ.restrictScalars R = LinearMap.id := by
     rw [← restrictScalars_comp, h, restrictScalars_id]
   rw [projectiveDet_eq_det_of_comp_eq_id π σ h, projectiveDet_eq_det_of_comp_eq_id _ _ hR,
-    ← det_restrictScalars]
-  -- restricting scalars does not change the underlying maps
-  rfl
+    ← det_restrictScalars, restrictScalars_add, sub_eq_add_neg, sub_eq_add_neg,
+    restrictScalars_add, restrictScalars_neg, restrictScalars_comp, restrictScalars_comp,
+    restrictScalars_comp, Module.End.one_eq_id, Module.End.one_eq_id, restrictScalars_id]
 
 /-- **Transitivity of the norm** for a finite projective algebra over a finite free algebra: if
 `S` is finite free over `R` and `C` is a finite projective `S`-algebra, then

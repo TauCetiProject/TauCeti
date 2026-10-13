@@ -7,9 +7,9 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.Generator.Basic
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Quotient.Kernel.Exact
-import Mathlib.RingTheory.Flat.EquationalCriterion
 import TauCeti.Algebra.AlgebraicGroup.BaseChange.Naturality
 import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Quotient.Kernel.Tensor
+import TauCeti.GroupTheory.Coset.Fiber
 import TauCeti.RingTheory.Norm.Projective
 
 /-!
@@ -35,7 +35,8 @@ The converse is false in general (Katz–Mazur 1.11.4–1.11.5,
 ## Implementation notes
 
 The proof is transitivity of the norm. The quotient map `G → G₂` is finite and faithfully flat,
-hence finite locally free, and `Norm_{G/R} = Norm_{G₂/R} ∘ Norm_{G/G₂}`
+hence finite locally free (`TauCeti.CommHopfAlgCat.IsShortExact.moduleProjective`), and
+`Norm_{G/R} = Norm_{G₂/R} ∘ Norm_{G/G₂}`
 (`Algebra.norm_projectiveNorm`). The full set of sections `φ₂` evaluates `Norm_{G₂/R}`. Pulled
 back to `G`, the norm `Norm_{G/G₂}(b)` is the norm along the first projection of the kernel pair
 `G ×_{G₂} G ≅ G × G₁` (`TauCeti.CommHopfAlgCat.kernelPairTensorEquiv`) of the pullback of `b` by
@@ -62,24 +63,6 @@ universe u v
 
 variable {R : Type u} [CommRing R] {Q G N : _root_.CommHopfAlgCat.{v} R} {p : Q ⟶ G} {i : G ⟶ N}
 
-/-- The quotient map of a short exact sequence of finite free group schemes is finite locally free:
-`O(G)` is a finite projective `O(G₂)`-module. -/
-private theorem finite_and_projective_of_isShortExact [Module.Finite R Q] [Module.Free R G]
-    [Module.Finite R G] (h : IsShortExact p i) :
-    letI := p.hom.toAlgHom.toAlgebra
-    Module.Finite Q G ∧ Module.Projective Q G := by
-  let := p.hom.toAlgHom.toAlgebra
-  have : IsScalarTower R Q G :=
-    IsScalarTower.of_algebraMap_eq fun r ↦ (p.hom.toAlgHom.commutes r).symm
-  have : Module.Finite Q G := Module.Finite.of_restrictScalars_finite R Q G
-  have : Module.Flat Q G := h.faithfullyFlat.flat
-  have : Module.FinitePresentation R G := Module.finitePresentation_of_projective R G
-  have : Algebra.FinitePresentation Q G :=
-    Algebra.FinitePresentation.of_restrict_scalars_finitePresentation R Q G
-  have : Module.FinitePresentation Q G :=
-    Module.FinitePresentation.of_finite_of_finitePresentation Q G
-  exact ⟨inferInstance, Module.Flat.projective_of_finitePresentation⟩
-
 /-- The value of a point `f` of `G` at the translate of `b` by the point `s ∘ i` of `G` coming from
 a point `s` of `N` is the value of the convolution `f * (s ∘ i)` at `b`. -/
 private theorem apply_sectionBaseChange_map_comul (f : G →ₐ[R] R) (s : N →ₐ[R] R) (b : G) :
@@ -95,24 +78,6 @@ variable {A₁ A A₂ : Type*} [Group A₁] [Group A] [Group A₂] [Fintype A₁
   {j : A₁ →* A} {q : A →* A₂} {φ₁ : A₁ →* WithConv (N →ₐ[R] R)} {φ : A →* WithConv (G →ₐ[R] R)}
   {φ₂ : A₂ →* WithConv (Q →ₐ[R] R)}
 
-omit [Fintype A₁] [Fintype A] [Fintype A₂] in
-/-- For an exact sequence `1 → A₁ → A → A₂ → 1` of groups and a section `s` of `q`, the map
-`(a₂, a₁) ↦ s a₂ * j a₁` is a bijection `A₂ × A₁ → A`. -/
-private theorem bijective_surjInv_mul (hj : Function.Injective j) (hq : Function.Surjective q)
-    (hjq : q.ker = j.range) :
-    Function.Bijective fun x : A₂ × A₁ ↦ Function.surjInv hq x.1 * j x.2 := by
-  have hqs (a₂ : A₂) : q (Function.surjInv hq a₂) = a₂ := Function.surjInv_eq hq a₂
-  have hqj (a₁ : A₁) : q (j a₁) = 1 := by
-    rw [← MonoidHom.mem_ker, hjq]
-    exact ⟨a₁, rfl⟩
-  refine ⟨fun ⟨a₂, a₁⟩ ⟨a₂', a₁'⟩ hx ↦ ?_, fun a ↦ ?_⟩
-  · have h₂ : a₂ = a₂' := by simpa [hqs, hqj] using congrArg q hx
-    subst h₂
-    simpa [hj.eq_iff] using hx
-  · obtain ⟨a₁, ha₁⟩ : (Function.surjInv hq (q a))⁻¹ * a ∈ j.range := by
-      rw [← hjq, MonoidHom.mem_ker, map_mul, map_inv, hqs, inv_mul_cancel]
-    exact ⟨(q a, a₁), by simp [ha₁]⟩
-
 /-- Katz–Mazur 1.11.3 without base change: the norm of a function `b` on `G` over `R` is the
 product of its values at the points `φ a`. -/
 private theorem norm_eq_prod_of_isShortExact [Module.Free R Q] [Module.Finite R Q]
@@ -125,7 +90,8 @@ private theorem norm_eq_prod_of_isShortExact [Module.Free R Q] [Module.Finite R 
   let := p.hom.toAlgHom.toAlgebra
   have : IsScalarTower R Q G :=
     IsScalarTower.of_algebraMap_eq fun r ↦ (p.hom.toAlgHom.commutes r).symm
-  obtain ⟨_, _⟩ := finite_and_projective_of_isShortExact h
+  have : Module.Finite Q G := Module.Finite.of_restrictScalars_finite R Q G
+  have := h.moduleProjective
   -- the kernel pair `G ×_{G₂} G` of `G → G₂` is `G × G₁`, by `(g, n) ↦ (g, g n)`
   let e : G ⊗[Q] G ≃ₐ[G] G ⊗[R] N := (kernelPairTensorEquiv p).trans
     (Algebra.TensorProduct.congr AlgEquiv.refl (_root_.CommHopfAlgCat.ofIso h.kernelIso).toAlgEquiv)
@@ -155,14 +121,14 @@ private theorem norm_eq_prod_of_isShortExact [Module.Free R Q] [Module.Finite R 
       DFunLike.congr_fun h₁ a₁
     rw [apply_sectionBaseChange_map_comul, map_mul, ha₁, toConv_ofConv]
   -- sum over `A` as a double sum over `A₂` and the cosets of `A₁`
-  set s := Function.surjInv hq
+  classical
   rw [← Algebra.projectiveNorm_eq_norm, ← Algebra.norm_projectiveNorm (S := Q),
-    (isAGenerator_iff.mp hφ₂).norm_eq_prod,
-    ← Fintype.prod_bijective _ (bijective_surjInv_mul hj hq hjq)
-      (fun x ↦ (φ (s x.1 * j x.2)).ofConv b) _ fun _ ↦ rfl,
-    Fintype.prod_prod_type]
+    (isAGenerator_iff.mp hφ₂).norm_eq_prod, ← Fintype.prod_fiberwise q]
   refine Finset.prod_congr rfl fun a₂ _ ↦ ?_
-  rw [← hnorm (s a₂), Function.surjInv_eq hq]
+  obtain ⟨a, rfl⟩ := hq a₂
+  rw [hnorm, q.prod_fiber_eq_prod_ker_mul_left rfl fun x ↦ (φ x).ofConv b]
+  exact Fintype.prod_equiv
+    ((MonoidHom.ofInjective hj).trans (MulEquiv.subgroupCongr hjq.symm)).toEquiv _ _ fun _ ↦ rfl
 
 /-- **Generators of an extension** (Katz–Mazur 1.11.3). Let `p : O(G₂) ⟶ O(G)` and
 `i : O(G) ⟶ O(G₁)` be a short exact sequence `1 → G₁ → G → G₂ → 1` of finite free affine group

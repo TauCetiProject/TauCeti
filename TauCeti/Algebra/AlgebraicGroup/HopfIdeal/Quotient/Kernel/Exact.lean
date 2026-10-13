@@ -8,6 +8,8 @@ module
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Quotient.Kernel.Coinvariants
 public import TauCeti.Algebra.AlgebraicGroup.Isogeny.Basic
 public import TauCeti.Algebra.AlgebraicGroup.CommHopfAlgCat.BaseChange
+import Mathlib.RingTheory.Finiteness.ModuleFinitePresentation
+import Mathlib.RingTheory.Flat.EquationalCriterion
 import TauCeti.Algebra.AlgebraicGroup.Hopf.KernelPoints
 import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Quotient.Kernel.BaseChange
 import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Quotient.Kernel.Finiteness
@@ -43,6 +45,8 @@ smoothness, reducedness or finite-type hypotheses, and derives its basic consequ
   (`mapPointsFunctor_app_surjective_of_faithfullyFlat`).
 * The quotient map is an isogeny exactly when the subgroup is finite
   (`IsShortExact.isIsogeny_iff_moduleFinite`).
+* When `G` is finite projective over the base and `Q` is of finite type, the quotient map
+  `G → Q` is finite locally free (`IsShortExact.moduleProjective`).
 * Short exact sequences are stable under arbitrary base change (`IsShortExact.baseChange`).
 
 ## Main declarations
@@ -58,6 +62,8 @@ smoothness, reducedness or finite-type hypotheses, and derives its basic consequ
 * `TauCeti.CommHopfAlgCat.IsShortExact.coinvariants_eq_range`: `O(Q) = O(G)^N`.
 * `TauCeti.CommHopfAlgCat.IsShortExact.ker_mapPointsFunctor_app_eq_range`: exactness on points.
 * `TauCeti.CommHopfAlgCat.IsShortExact.isIsogeny_iff_moduleFinite`: finite kernels and isogenies.
+* `TauCeti.CommHopfAlgCat.IsShortExact.moduleProjective`: the quotient map of finite projective
+  groups is finite locally free.
 * `TauCeti.CommHopfAlgCat.IsShortExact.baseChange`: base change of short exact sequences.
 
 ## References
@@ -148,6 +154,24 @@ theorem isIsogeny_iff_moduleFinite (h : IsShortExact p i) : IsIsogeny p ↔ Modu
     finite_iff_moduleFinite_quotient_kernelHopfIdeal p h.faithfullyFlat]
   let e := (CommHopfAlgCat.ofIso h.kernelIso).toAlgEquiv.toLinearEquiv
   exact ⟨fun _ ↦ Module.Finite.equiv e, fun _ ↦ Module.Finite.equiv e.symm⟩
+
+/-- The quotient map `G → Q` of a short exact sequence is finite locally free when `G` is finite
+projective over the base and `Q` is of finite type: `O(G)` is a projective `O(Q)`-module. -/
+theorem moduleProjective [Algebra.FiniteType R Q] [Module.Projective R G] [Module.Finite R G]
+    (h : IsShortExact p i) :
+    letI := p.hom.toAlgHom.toAlgebra
+    Module.Projective Q G := by
+  let := p.hom.toAlgHom.toAlgebra
+  have : IsScalarTower R Q G :=
+    IsScalarTower.of_algebraMap_eq fun r ↦ (p.hom.toAlgHom.commutes r).symm
+  have : Module.Finite Q G := Module.Finite.of_restrictScalars_finite R Q G
+  have : Module.Flat Q G := h.faithfullyFlat.flat
+  have : Module.FinitePresentation R G := Module.finitePresentation_of_projective R G
+  have : Algebra.FinitePresentation Q G :=
+    Algebra.FinitePresentation.of_restrict_scalars_finitePresentation R Q G
+  have : Module.FinitePresentation Q G :=
+    Module.FinitePresentation.of_finite_of_finitePresentation Q G
+  exact Module.Flat.projective_of_finitePresentation
 
 /-- A short exact sequence of affine groups `1 → N → G → Q → 1` remains short exact after an
 arbitrary base change `R → T`. -/
