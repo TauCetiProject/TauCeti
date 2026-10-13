@@ -1,0 +1,297 @@
+/-
+Copyright (c) 2026 Wentao Li. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Wentao Li
+-/
+module
+
+public import TauCeti.LinearAlgebra.IntegralLattice.ConstructionA.Golay
+public import TauCeti.LinearAlgebra.IntegralLattice.ConstructionA.CoordinateDiscriminant
+public import TauCeti.LinearAlgebra.IntegralLattice.ConstructionA.Discriminant
+public import TauCeti.LinearAlgebra.IntegralLattice.CoordinatePower
+public import TauCeti.LinearAlgebra.IntegralLattice.Examples
+public import TauCeti.LinearAlgebra.IntegralLattice.PosDef.Minimum
+public import TauCeti.LinearAlgebra.IntegralLattice.Unit
+
+/-!
+# Roots of the Golay Construction A lattice
+
+The norm-two vectors of `TauCeti.BinaryGolay.constructionALattice` are precisely the
+forty-eight vectors `±2 eᵢ`. Its twenty-four positive coordinate roots have Gram matrix `2 I`,
+so these roots form twenty-four mutually orthogonal copies of `A₁`. In particular its
+minimum is two and its kissing number is forty-eight.
+
+The proof uses the already computed weight distribution of the extended binary Golay code:
+a nonzero reduction has weight at least eight, whereas a norm-two integer lift has sum of
+squares four. Its reduction must therefore vanish, and dividing the lift by two leaves an
+integer vector with sum of squares one.
+
+## References
+
+* G. Nebe,
+  [*Extremal lattices*](https://www.math.rwth-aachen.de/homes/Gabriele.Nebe/talks/OW12.pdf),
+  slides 10–11, for the Golay code lattice and its minimal vectors.
+* `TauCetiRoadmap/IntegralLattices/README.md`, milestone 6E, the `A₁²⁴` row.
+-/
+
+public section
+
+namespace TauCeti.BinaryGolay
+
+open Finset Matrix
+
+private theorem golay_carrier :
+    constructionALattice.carrier = ConstructionA.lattice 2 code.toAddSubgroup :=
+  (congrArg IntegralLattice.carrier constructionALattice_eq_integralLattice).trans
+    (ConstructionA.integralLattice_carrier 2 code.toAddSubgroup
+      (TwoPowCode.isTypeII_one_iff.mpr isTypeII_code).le_euclideanDual)
+
+private theorem golay_form : constructionALattice.form = ConstructionA.form 2 :=
+  (congrArg IntegralLattice.form constructionALattice_eq_integralLattice).trans
+    (ConstructionA.integralLattice_form 2 code.toAddSubgroup
+      (TwoPowCode.isTypeII_one_iff.mpr isTypeII_code).le_euclideanDual)
+
+private theorem golay_norm_intCast (z : Fin 24 → ℤ) :
+    constructionALattice.norm (fun i ↦ (z i : ℚ)) = ((∑ i, z i ^ 2 : ℤ) : ℚ) / 2 := by
+  rw [constructionALattice_eq_integralLattice]
+  exact ConstructionA.integralLattice_norm_intCast 2 code.toAddSubgroup _ z
+
+/-- The positive coordinate root `2 eᵢ` of the Golay Construction A lattice. -/
+def coordinateRoot (i : Fin 24) : constructionALattice :=
+  ⟨Pi.single i 2, by
+    rw [golay_carrier]
+    exact ConstructionA.single_mem_lattice 2 code.toAddSubgroup i⟩
+
+/-- The coordinates of a positive Golay lattice root. -/
+@[simp]
+theorem coe_coordinateRoot (i : Fin 24) :
+    (coordinateRoot i : Fin 24 → ℚ) = Pi.single i 2 := by rw [coordinateRoot]
+
+/-- The positive coordinate roots have Gram matrix `2 I`: different coordinates give
+orthogonal copies of the root system `A₁`. -/
+theorem form_coordinateRoot_coordinateRoot (i j : Fin 24) :
+    constructionALattice.form (coordinateRoot i) (coordinateRoot j) =
+      if i = j then 2 else 0 := by
+  rw [coe_coordinateRoot, coe_coordinateRoot, golay_form, ConstructionA.form_apply]
+  by_cases h : i = j <;> simp [h, dotProduct_single]
+
+/-- Every positive coordinate root has norm two. -/
+theorem norm_coordinateRoot (i : Fin 24) :
+    constructionALattice.norm (coordinateRoot i) = 2 := by
+  rw [IntegralLattice.norm_apply, form_coordinateRoot_coordinateRoot]
+  simp
+
+/-- Every positive coordinate root has integral norm two. -/
+@[simp]
+theorem integralNorm_coordinateRoot (i : Fin 24) :
+    constructionALattice.integralNorm (coordinateRoot i) = 2 := by
+  exact_mod_cast (constructionALattice.integralNorm_cast (coordinateRoot i)).trans
+    (norm_coordinateRoot i)
+
+private theorem hammingNorm_intCast_le_sum_sq (z : Fin 24 → ℤ) :
+    (hammingNorm (fun i ↦ (z i : ZMod 2)) : ℤ) ≤ ∑ i, z i ^ 2 := by
+  have hsum : ∑ i, (if (z i : ZMod 2) ≠ 0 then (1 : ℤ) else 0) ≤ ∑ i, z i ^ 2 := by
+    apply sum_le_sum
+    intro i _
+    split_ifs with hi
+    · have hz : z i ≠ 0 := by
+        rintro h
+        simp [h] at hi
+      have := sq_pos_of_ne_zero hz
+      omega
+    · exact sq_nonneg _
+  simpa only [sum_boole, hammingNorm] using hsum
+
+/-- **Classification of the Golay lattice roots.** With the halved dot product, an ambient
+vector in the Golay lattice has norm two exactly when it is `2 eᵢ` or `-2 eᵢ`. -/
+theorem norm_eq_two_iff {x : Fin 24 → ℚ} (hx : x ∈ constructionALattice.carrier) :
+    constructionALattice.norm x = 2 ↔
+      ∃ i : Fin 24, x = Pi.single i 2 ∨ x = -Pi.single i 2 := by
+  constructor
+  · intro hnorm
+    have hx' : x ∈ ConstructionA.lattice 2 code.toAddSubgroup := golay_carrier ▸ hx
+    obtain ⟨z, hz, rfl⟩ := (ConstructionA.mem_lattice 2).mp hx'
+    have hsum : ∑ i, z i ^ 2 = 4 := by
+      rw [golay_norm_intCast] at hnorm
+      have hq : ((∑ i, z i ^ 2 : ℤ) : ℚ) = 4 := by linarith
+      exact_mod_cast hq
+    have hw : hammingNorm (fun i ↦ (z i : ZMod 2)) ∈
+        ({0, 8, 12, 16, 24} : Finset ℕ) := hammingNorm_mem hz
+    have hle := hammingNorm_intCast_le_sum_sq z
+    simp only [mem_insert, mem_singleton] at hw
+    have hzero : hammingNorm (fun i ↦ (z i : ZMod 2)) = 0 := by omega
+    have hcast := hammingNorm_eq_zero.mp hzero
+    have heven (i : Fin 24) : (2 : ℤ) ∣ z i := by
+      exact (ZMod.intCast_zmod_eq_zero_iff_dvd _ _).mp (congrFun hcast i)
+    choose w hw using heven
+    have hsumw : ∑ i, w i ^ 2 = 1 := by
+      have h : ∑ i, z i ^ 2 = 4 * ∑ i, w i ^ 2 := by
+        simp_rw [hw, mul_pow]
+        simp [mul_sum]
+      omega
+    obtain ⟨i, hi⟩ : ∃ i, w i ≠ 0 := by
+      by_contra! h
+      simp [h] at hsumw
+    have hile : w i ^ 2 ≤ ∑ j, w j ^ 2 :=
+      single_le_sum (fun j _ ↦ sq_nonneg (w j)) (mem_univ i)
+    have hieq : w i ^ 2 = 1 := by
+      have := sq_pos_of_ne_zero hi
+      omega
+    have hsign := sq_eq_one_iff.mp hieq
+    have hrest : ∑ j ∈ univ.erase i, w j ^ 2 = 0 := by
+      have h := sum_erase_add (s := univ) (fun j ↦ w j ^ 2) (mem_univ i)
+      omega
+    have hother {j : Fin 24} (hj : j ≠ i) : w j = 0 := by
+      have := (sum_eq_zero_iff_of_nonneg (fun j _ ↦ sq_nonneg (w j))).mp hrest j
+        (mem_erase.mpr ⟨hj, mem_univ j⟩)
+      exact sq_eq_zero_iff.mp this
+    refine ⟨i, hsign.imp (fun h ↦ ?_) (fun h ↦ ?_)⟩ <;>
+      funext j <;> by_cases hj : j = i
+    · subst j
+      simp [hw, h]
+    · simp [hw, hother hj, Pi.single_eq_of_ne hj]
+    · subst j
+      simp [hw, h]
+    · simp [hw, hother hj, Pi.single_eq_of_ne hj]
+  · rintro ⟨i, rfl | rfl⟩
+    · exact norm_coordinateRoot i
+    · rw [IntegralLattice.norm_neg]
+      exact norm_coordinateRoot i
+
+/-- The norm-two shell consists of the positive coordinate roots and their negatives. -/
+theorem mem_vectorsOfNorm_two_iff (x : constructionALattice) :
+    x ∈ constructionALattice.vectorsOfNorm 2 ↔
+      ∃ i : Fin 24, x = coordinateRoot i ∨ x = -coordinateRoot i := by
+  rw [IntegralLattice.mem_vectorsOfNorm, norm_eq_two_iff x.2]
+  simp only [← coe_coordinateRoot, ← Submodule.coe_neg, Subtype.ext_iff]
+
+/-- The roots generate exactly the zero-code sublattice `2 ℤ²⁴`. Thus the root lattice has
+no additional glue coming from nonzero Golay codewords. -/
+theorem span_vectorsOfNorm_two :
+    Submodule.span ℤ
+      ((fun x : constructionALattice ↦ (x : Fin 24 → ℚ)) ''
+        constructionALattice.vectorsOfNorm 2) =
+      (ConstructionA.zeroLattice 2 (Fin 24)).carrier := by
+  refine le_antisymm (Submodule.span_le.mpr ?_) ?_
+  · rintro _ ⟨x, hx, rfl⟩
+    obtain ⟨i, rfl | rfl⟩ := (mem_vectorsOfNorm_two_iff x).mp hx
+    · change (coordinateRoot i : Fin 24 → ℚ) ∈ (ConstructionA.zeroLattice 2 (Fin 24)).carrier
+      rw [coe_coordinateRoot, ConstructionA.zeroLattice_carrier]
+      exact ConstructionA.single_mem_lattice 2 ⊥ i
+    · change -((coordinateRoot i : constructionALattice) : Fin 24 → ℚ) ∈
+        (ConstructionA.zeroLattice 2 (Fin 24)).carrier
+      rw [coe_coordinateRoot, ConstructionA.zeroLattice_carrier]
+      exact Submodule.neg_mem _ (ConstructionA.single_mem_lattice 2 ⊥ i)
+  · intro x hx
+    rw [ConstructionA.zeroLattice_carrier] at hx
+    obtain ⟨z, hz, rfl⟩ := (ConstructionA.mem_lattice 2).mp hx
+    have heven (i : Fin 24) : (2 : ℤ) ∣ z i := by
+      have hzero : (fun i ↦ (z i : ZMod 2)) = 0 := AddSubgroup.mem_bot.mp hz
+      exact (ZMod.intCast_zmod_eq_zero_iff_dvd _ _).mp (congrFun hzero i)
+    choose w hw using heven
+    have hsum : (fun i ↦ (z i : ℚ)) =
+        ∑ i, w i • (coordinateRoot i : Fin 24 → ℚ) := by
+      funext j
+      simp [Pi.single_apply, hw, mul_comm]
+    rw [hsum]
+    exact Submodule.sum_mem _ fun i _ ↦ Submodule.smul_mem _ (w i)
+      (Submodule.subset_span ⟨coordinateRoot i,
+        IntegralLattice.mem_vectorsOfNorm.mpr (norm_coordinateRoot i), rfl⟩)
+
+private theorem coordinatePower_a1_eq_scaledUnit :
+    IntegralLattice.a1.coordinatePower (Fin 24) =
+      ((2 : ℕ+) : ℤ) • IntegralLattice.unitLattice (Fin 24) := by
+  apply IntegralLattice.ext
+  · ext x
+    simp only [IntegralLattice.mem_coordinatePower_carrier_iff,
+      IntegralLattice.smul_carrier, IntegralLattice.mem_unitLattice_carrier_iff,
+      IntegralLattice.mem_a1_carrier_iff]
+  · apply LinearMap.ext
+    intro x
+    apply LinearMap.ext
+    intro y
+    simp only [IntegralLattice.coordinatePower_form,
+      IntegralLattice.coordinatePowerForm_apply, IntegralLattice.a1_form_apply,
+      IntegralLattice.smul_form, LinearMap.smul_apply, IntegralLattice.unitLattice_form_apply,
+      PNat.val_ofNat, smul_eq_mul, mul_assoc, mul_sum]
+    norm_num
+
+/-- **The Golay root lattice is `A₁²⁴`.** The zero-code lattice generated by all Golay roots
+is isometric to the orthogonal sum of twenty-four copies of the existing `A₁` lattice.
+The ambient isometry doubles every coordinate. -/
+noncomputable def rootLatticeIsometry :
+    IntegralLattice.Isometry (IntegralLattice.a1.coordinatePower (Fin 24))
+      (ConstructionA.zeroLattice 2 (Fin 24)) := by
+  have hzero : ConstructionA.integralLattice 2 (⊥ : AddSubgroup (Fin 24 → ZMod (2 : ℕ+)))
+      (by rw [(AddSubgroup.toZModSubmodule ((2 : ℕ+) : ℕ)).map_bot]; exact bot_le) =
+      ConstructionA.zeroLattice 2 (Fin 24) := by
+    apply IntegralLattice.ext
+    · rw [ConstructionA.integralLattice_carrier, ConstructionA.zeroLattice_carrier]
+    · rw [ConstructionA.integralLattice_form, ConstructionA.zeroLattice_form]
+  exact (IntegralLattice.Isometry.ofEq coordinatePower_a1_eq_scaledUnit).trans
+    ((ConstructionA.scaledStandardIsometry 2).trans (IntegralLattice.Isometry.ofEq hzero))
+
+/-- The `A₁²⁴` root-lattice identification doubles the standard coordinates. -/
+@[simp]
+theorem rootLatticeIsometry_apply (x : Fin 24 → ℚ) : rootLatticeIsometry x = (2 : ℚ) • x := by
+  rw [rootLatticeIsometry]
+  simp only [IntegralLattice.Isometry.trans_apply, IntegralLattice.Isometry.ofEq_apply,
+    ConstructionA.scaledStandardIsometry_apply]
+  rfl
+
+/-- The forty-eight roots, indexed by a coordinate and a sign. The Boolean value `false`
+selects `2 eᵢ`, and `true` selects `-2 eᵢ`. -/
+noncomputable def rootsEquiv :
+    Fin 24 × Bool ≃ constructionALattice.vectorsOfNorm 2 :=
+  Equiv.ofBijective
+    (fun p ↦ ⟨if p.2 then -coordinateRoot p.1 else coordinateRoot p.1, by
+      rw [IntegralLattice.mem_vectorsOfNorm]
+      cases p.2
+      · exact norm_coordinateRoot p.1
+      · simpa only [ite_true, Submodule.coe_neg, IntegralLattice.norm_neg] using
+          norm_coordinateRoot p.1⟩) (by
+    constructor
+    · rintro ⟨i, b⟩ ⟨j, c⟩ h
+      have hi := congrArg (fun x : constructionALattice.vectorsOfNorm 2 ↦
+        (x.1 : Fin 24 → ℚ) i) h
+      cases b <;> cases c <;> by_cases hij : i = j
+      all_goals first
+        | subst j
+          norm_num only [Bool.false_eq_true, ite_false, ite_true,
+            Submodule.coe_neg, coe_coordinateRoot, Pi.neg_apply, Pi.single_eq_same] at hi <;>
+            rfl
+        | norm_num only [Bool.false_eq_true, ite_false, ite_true,
+            Submodule.coe_neg, coe_coordinateRoot, Pi.neg_apply, Pi.single_eq_same,
+            Pi.single_eq_of_ne hij] at hi
+    · rintro ⟨x, hx⟩
+      obtain ⟨i, h | h⟩ := (mem_vectorsOfNorm_two_iff x).mp hx
+      · exact ⟨(i, false), Subtype.ext h.symm⟩
+      · exact ⟨(i, true), Subtype.ext h.symm⟩)
+
+/-- The explicit root indexing recovers the chosen signed coordinate root. -/
+@[simp]
+theorem rootsEquiv_apply (i : Fin 24) (b : Bool) :
+    (rootsEquiv (i, b)).1 = if b then -coordinateRoot i else coordinateRoot i := by
+  rw [rootsEquiv]
+  rfl
+
+/-- The Golay lattice has forty-eight norm-two vectors. -/
+theorem representationNumber_constructionALattice_two :
+    constructionALattice.representationNumber 2 = 48 := by
+  rw [IntegralLattice.representationNumber_def, ← Nat.card_coe_set_eq,
+    ← Nat.card_congr rootsEquiv]
+  simp [Nat.card_eq_fintype_card]
+
+/-- The Golay lattice has minimum two. -/
+theorem minimum_constructionALattice : constructionALattice.minimum = 2 :=
+  isPosDef_constructionALattice.minimum_eq_two isEven_constructionALattice
+    (integralNorm_coordinateRoot 0)
+
+/-- The forty-eight coordinate roots are precisely the shortest nonzero Golay lattice
+vectors, so its kissing number is forty-eight. -/
+theorem kissingNumber_constructionALattice : constructionALattice.kissingNumber = 48 := by
+  rw [IntegralLattice.kissingNumber_eq_representationNumber
+    (by rw [minimum_constructionALattice]; decide), minimum_constructionALattice]
+  exact representationNumber_constructionALattice_two
+
+end TauCeti.BinaryGolay
