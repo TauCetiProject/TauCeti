@@ -140,6 +140,7 @@ theorem prodSMul_smul {𝕜 : Type*} [NormedField 𝕜] [NormedSpace 𝕜 F] [SM
 
 /-- **Derivatives of a tensor product.** The directional derivative of `ψ ⊗ u` in the direction
 `(s, a)` is `(∂_s ψ) ⊗ u + ψ ⊗ ∂_a u`. -/
+@[simp]
 theorem lineDerivOp_prodSMul (ψ : 𝓢(D, ℝ)) (u : 𝓢(E, F)) (s : D) (a : E) :
     ∂_{(s, a)} (prodSMul ψ u) = prodSMul (∂_{s} ψ) u + prodSMul ψ (∂_{a} u) := by
   ext z

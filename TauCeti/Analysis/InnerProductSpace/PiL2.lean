@@ -133,13 +133,13 @@ theorem consEquivL_apply {n : ℕ} (z : 𝕜 × EuclideanSpace 𝕜 (Fin n)) :
 
 @[simp]
 theorem consEquivL_apply_zero {n : ℕ} (z : 𝕜 × EuclideanSpace 𝕜 (Fin n)) :
-    consEquivL 𝕜 n z 0 = z.1 :=
-  (rfl)
+    consEquivL 𝕜 n z 0 = z.1 := by
+  simp [consEquivL_apply]
 
 @[simp]
 theorem consEquivL_apply_succ {n : ℕ} (z : 𝕜 × EuclideanSpace 𝕜 (Fin n)) (i : Fin n) :
-    consEquivL 𝕜 n z i.succ = z.2 i :=
-  (rfl)
+    consEquivL 𝕜 n z i.succ = z.2 i := by
+  simp [consEquivL_apply]
 
 end EuclideanSpace
 
