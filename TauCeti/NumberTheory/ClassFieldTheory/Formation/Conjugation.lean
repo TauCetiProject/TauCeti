@@ -301,7 +301,7 @@ theorem conjugateGroundHom_apply_coe (v : (L.conjugate g).ground.toSubgroup) :
     (L.conjugateGroundHom g v : G) = g⁻¹ * v * g :=
   L.conjugateGroundEquiv_symm_apply_coe g v
 
-variable {M : Type} [AddCommGroup M] [DistribMulAction G M] in
+variable {M : Type} [AddMonoid M] [DistribMulAction G M] in
 /-- The action of `g` on `M` and inverse conjugation form a compatible pair. -/
 theorem conjugateGroundHom_smul (v : (L.conjugate g).ground.toSubgroup) (m : M) :
     DistribSMul.toAddMonoidHom M g (L.conjugateGroundHom g v • m) =
