@@ -7,13 +7,13 @@ module
 
 public import TauCeti.Analysis.Green.Basic
 public import TauCeti.MeasureTheory.Integral.IntervalIntegral.AbsolutelyContinuousFun
+public import TauCeti.MeasureTheory.Integral.CurveIntegral.Basic
 
 /-!
 # Circulation along absolutely continuous curves
 
 Continuous planar fields have integrable circulation along an absolutely continuous curve.
-Absolute continuity, rather than a countable exceptional set of differentiability, supplies
-the integrable velocity. The orientation is that of the existing `intervalIntegral`.
+The orientation is that of the existing `intervalIntegral`.
 
 These results supply boundary integrability for Green's theorem along absolutely continuous curves.
 -/
@@ -25,8 +25,8 @@ open MeasureTheory Set
 namespace TauCeti.Green
 
 /-- A continuous planar field has interval-integrable circulation along an absolutely
-continuous curve. Boundary integrability follows from these hypotheses. -/
-theorem circulationFun_intervalIntegrable {γ : ℝ → ℂ} {a b : ℝ} {P Q : ℂ → ℝ}
+continuous curve. -/
+theorem intervalIntegrable_circulationFun {γ : ℝ → ℂ} {a b : ℝ} {P Q : ℂ → ℝ}
     (hγ : AbsolutelyContinuousOnInterval γ a b)
     (hP : ContinuousOn P (γ '' uIcc a b)) (hQ : ContinuousOn Q (γ '' uIcc a b)) :
     IntervalIntegrable (circulationFun P Q γ) volume a b := by
@@ -47,12 +47,8 @@ theorem curveIntegrable_oneForm {p q : ℂ} {γ : Path p q} {P Q : ℂ → ℝ}
     (hP : ContinuousOn P (γ.extend '' Icc 0 1))
     (hQ : ContinuousOn Q (γ.extend '' Icc 0 1)) :
     CurveIntegrable (oneForm P Q) γ := by
-  have hc := circulationFun_intervalIntegrable hγ
-    (by simpa using hP) (by simpa using hQ)
-  apply hc.congr_ae
-  rw [Filter.EventuallyEq, uIoc_of_le zero_le_one, ← restrict_Ioo_eq_restrict_Ioc]
-  filter_upwards [ae_restrict_mem measurableSet_Ioo] with t ht
-  rw [curveIntegralFun_def, derivWithin_of_mem_nhds (Icc_mem_nhds ht.1 ht.2)]
-  exact circulationFun_eq_oneForm P Q γ.extend t
+  rw [curveIntegrable_iff_intervalIntegrable_deriv]
+  simpa only [← circulationFun_eq_oneForm] using
+    intervalIntegrable_circulationFun hγ (by simpa using hP) (by simpa using hQ)
 
 end TauCeti.Green
