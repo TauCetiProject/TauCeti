@@ -114,7 +114,7 @@ variable {X}
 
 /-- For `X a ⊆ X b`, the inclusion of the singular chains of `X a` into those of `Y` factors
 through the inclusion of the pair `(X b, X a)`. -/
-@[reassoc (attr := simp)]
+@[simp, reassoc]
 lemma extendMap_comp_singularChainFiltrationι {a b : ℤ} (hab : X a ⊆ X b) :
     extendMap (SSet.chainComplexMap (TopCat.toSSet.map (TopPair.ofInclusion hab).map) R)
         ComplexShape.embeddingDownNat ≫ singularChainFiltrationι R X b =
