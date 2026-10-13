@@ -22,6 +22,8 @@ circle `{0} × S¹` to the north pole `(1, 0, 0)` and the circle `{1} × S¹` to
 
 * `TauCeti.suspensionToSphere`: the continuous map `I × S¹ → S²`.
 * `TauCeti.suspensionToSphere_surjective`: it is surjective.
+* `TauCeti.cos_pi_mul_injOn`, `TauCeti.sin_pi_mul_pos`: the trigonometric facts about `t ↦ π t`
+  on `I` behind these.
 * `TauCeti.suspensionToSphere_eq_north_iff` and `TauCeti.suspensionToSphere_eq_south_iff`: it
   collapses exactly the two ends to the poles.
 * `TauCeti.eq_or_of_suspensionToSphere_eq`: its other fibres are single points.
@@ -47,7 +49,7 @@ def Sphere2.north : Sphere2 :=
 def Sphere2.south : Sphere2 :=
   ⟨!₂[-1, 0, 0], by simp [EuclideanSpace.norm_eq, Fin.sum_univ_three]⟩
 
-private theorem Circle.re_sq_add_im_sq (z : Circle) : (z : ℂ).re ^ 2 + (z : ℂ).im ^ 2 = 1 := by
+theorem _root_.Circle.re_sq_add_im_sq (z : Circle) : (z : ℂ).re ^ 2 + (z : ℂ).im ^ 2 = 1 := by
   have := Circle.normSq_coe z
   rwa [Complex.normSq_apply, ← sq, ← sq] at this
 
@@ -58,7 +60,8 @@ def suspensionToSphere : C(I × Circle, Sphere2) where
       have h := Circle.re_sq_add_im_sq p.2
       rw [mem_sphere_zero_iff_norm, EuclideanSpace.norm_eq, Real.sqrt_eq_one]
       simp only [Fin.sum_univ_three, Real.norm_eq_abs, sq_abs]
-      simp
+      simp only [Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_two,
+        Matrix.tail_cons, Matrix.head_cons]
       nlinarith [sin_sq_add_cos_sq (π * (p.1 : ℝ))]⟩
   continuous_toFun := by
     refine Continuous.subtype_mk ?_ _
@@ -89,13 +92,15 @@ theorem suspensionToSphere_apply_two (p : I × Circle) :
   rw [suspensionToSphere]
   rfl
 
-private theorem cos_pi_mul_injOn : Set.InjOn (fun t : I => cos (π * t)) Set.univ := by
+/-- `t ↦ cos (π t)` is injective on the unit interval. -/
+theorem cos_pi_mul_injOn : Set.InjOn (fun t : I => cos (π * t)) Set.univ := by
   intro a _ b _ h
   refine Subtype.ext (mul_left_cancel₀ pi_ne_zero (Real.injOn_cos ?_ ?_ h))
   · exact ⟨by positivity [a.2.1], mul_le_of_le_one_right pi_pos.le a.2.2⟩
   · exact ⟨by positivity [b.2.1], mul_le_of_le_one_right pi_pos.le b.2.2⟩
 
-private theorem sin_pi_mul_pos {t : I} (h0 : t ≠ 0) (h1 : t ≠ 1) : 0 < sin (π * t) := by
+/-- `sin (π t)` is positive on the open unit interval. -/
+theorem sin_pi_mul_pos {t : I} (h0 : t ≠ 0) (h1 : t ≠ 1) : 0 < sin (π * t) := by
   have ht0 : 0 < (t : ℝ) := lt_of_le_of_ne t.2.1 fun h => h0 (Subtype.ext h.symm)
   have ht1 : (t : ℝ) < 1 := lt_of_le_of_ne t.2.2 fun h => h1 (Subtype.ext h)
   exact sin_pos_of_pos_of_lt_pi (by positivity) (by nlinarith [pi_pos])
