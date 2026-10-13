@@ -12,8 +12,7 @@ public import TauCeti.MeasureTheory.Integral.IntervalIntegral.AbsolutelyContinuo
 # The winding integral for absolutely continuous curves
 
 Off the compact trace of an absolutely continuous curve, the existing generalized winding
-number is its ordinary winding integral. Integrability follows from absolute continuity;
-there is no countable-exception differentiability assumption and no replacement index.
+number is its ordinary winding integral, and the winding integrand is interval integrable.
 
 These results extend the contour index API beyond piecewise `C¹` curves.
 -/

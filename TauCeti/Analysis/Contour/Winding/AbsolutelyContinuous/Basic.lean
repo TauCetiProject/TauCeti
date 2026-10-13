@@ -14,8 +14,7 @@ import Mathlib.MeasureTheory.Integral.IntervalIntegral.LebesgueDifferentiationTh
 
 For an absolutely continuous curve avoiding a point, exponentiating its winding integral gives
 the endpoint ratio. Consequently the winding number of a closed absolutely continuous curve is
-an integer. The proof uses an absolutely continuous integrating factor with derivative zero
-almost everywhere, so it does not require differentiability outside a countable exceptional set.
+an integer.
 -/
 
 public section
@@ -36,7 +35,7 @@ theorem exp_two_pi_I_mul_windingNumber_of_absolutelyContinuousOnInterval
   have hf : IntervalIntegrable f volume a b :=
     intervalIntegrable_inv_sub_mul_deriv_of_absolutelyContinuousOnInterval hγ hz
   have hA : AbsolutelyContinuousOnInterval A a b :=
-    hf.absolutelyContinuousOnInterval_intervalIntegral_of_finiteDimensional left_mem_uIcc
+    hf.absolutelyContinuousOnInterval_intervalIntegral' left_mem_uIcc
   have hloc : LocallyLipschitzOn ((fun t ↦ -A t) '' uIcc a b) Complex.exp :=
     (Complex.contDiff_exp (𝕜 := ℝ) (n := 1)).locallyLipschitz.locallyLipschitzOn
   obtain ⟨K, hK⟩ := hloc.exists_lipschitzOnWith_of_compact

@@ -35,9 +35,8 @@ fundamental-theorem results to curves.
 * `AbsolutelyContinuousOnInterval.intervalIntegrable_deriv_of_finiteDimensional` and
   `AbsolutelyContinuousOnInterval.integral_deriv_eq_sub_of_finiteDimensional`: integrability and
   the fundamental theorem for the canonical derivative of such a curve.
-* `IntervalIntegrable.absolutelyContinuousOnInterval_intervalIntegral_of_finiteDimensional`:
-  indefinite integrals of interval-integrable functions in finite dimension are absolutely
-  continuous.
+* `IntervalIntegrable.absolutelyContinuousOnInterval_intervalIntegral'`: indefinite integrals
+  with base point in the integrability interval are absolutely continuous in any real normed space.
 -/
 
 public section
@@ -112,30 +111,24 @@ theorem integral_deriv_eq_sub_of_finiteDimensional [FiniteDimensional ℝ F]
 
 end AbsolutelyContinuousOnInterval
 
-/-- An indefinite interval integral with values in a finite-dimensional real normed space is
-absolutely continuous on every interval on which its integrand is interval integrable. -/
-theorem IntervalIntegrable.absolutelyContinuousOnInterval_intervalIntegral_of_finiteDimensional
-    {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
+/-- An indefinite interval integral in a real normed space is absolutely continuous on its
+integrability interval, provided its base point belongs to that interval. -/
+theorem IntervalIntegrable.absolutelyContinuousOnInterval_intervalIntegral'
+    {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
     {f : ℝ → F} {a b c : ℝ} (hf : IntervalIntegrable f volume a b) (hc : c ∈ uIcc a b) :
     AbsolutelyContinuousOnInterval (fun t ↦ ∫ v in c..t, f v) a b := by
-  let B := Module.finBasis ℝ F
-  let e := B.equivFun.toContinuousLinearEquiv
-  let L (i : Fin (Module.finrank ℝ F)) : F →L[ℝ] ℝ :=
-    (ContinuousLinearMap.proj (R := ℝ) (φ := fun _ ↦ ℝ) i).comp (e : F →L[ℝ] _)
-  have hcoord (i) : AbsolutelyContinuousOnInterval
-      (fun t ↦ (∫ v in c..t, L i (f v)) • B i) a b := by
-    have hi : IntervalIntegrable (fun t ↦ L i (f t)) volume a b :=
-      ⟨(L i).integrable_comp hf.1, (L i).integrable_comp hf.2⟩
-    exact hi.absolutelyContinuousOnInterval_intervalIntegral hc |>.smul
-      (LipschitzOnWith.absolutelyContinuousOnInterval (LipschitzWith.const (B i)).lipschitzOnWith)
-  have hsum (s : Finset (Fin (Module.finrank ℝ F))) : AbsolutelyContinuousOnInterval
-      (fun t ↦ ∑ i ∈ s, (∫ v in c..t, L i (f v)) • B i) a b := by
-    induction s using Finset.induction_on with
-    | empty =>
-      simpa using LipschitzOnWith.absolutelyContinuousOnInterval
-        (LipschitzWith.const (α := ℝ) (0 : F)).lipschitzOnWith
-    | @insert i s hi ih => simpa [Finset.sum_insert hi] using (hcoord i).fun_add ih
-  apply (hsum Finset.univ).congr
-  intro t ht
-  simp_rw [(L _).intervalIntegral_comp_comm (hf.mono_set (uIcc_subset_uIcc hc ht))]
-  exact B.sum_equivFun _
+  have hn := hf.norm.absolutelyContinuousOnInterval_intervalIntegral hc
+  refine squeeze_zero' (Filter.Eventually.of_forall fun _ ↦
+    Finset.sum_nonneg fun _ _ ↦ dist_nonneg) ?_ hn
+  have he : ∀ᶠ E in AbsolutelyContinuousOnInterval.totalLengthFilter ⊓
+      Filter.principal (AbsolutelyContinuousOnInterval.disjWithin a b),
+      E ∈ AbsolutelyContinuousOnInterval.disjWithin a b :=
+    Filter.eventually_inf_principal.mpr (by simp)
+  filter_upwards [he] with E hE
+  apply Finset.sum_le_sum
+  intro i hi
+  have hx := hf.mono_set (uIcc_subset_uIcc hc (hE.1 i hi).1)
+  have hy := hf.mono_set (uIcc_subset_uIcc hc (hE.1 i hi).2)
+  rw [dist_eq_norm, intervalIntegral.integral_interval_sub_left hx hy,
+    Real.dist_eq, intervalIntegral.integral_interval_sub_left hx.norm hy.norm]
+  exact intervalIntegral.norm_integral_le_abs_integral_norm
