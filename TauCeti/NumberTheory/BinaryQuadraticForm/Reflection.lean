@@ -6,6 +6,7 @@ Authors: Wentao Li
 module
 
 public import TauCeti.NumberTheory.BinaryQuadraticForm.Content
+public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.ConjJ
 
 /-!
 # Reflection of binary quadratic forms
@@ -41,10 +42,9 @@ def reflected [Neg R] (f : BinaryQuadraticForm R) : BinaryQuadraticForm R :=
   ext <;> simp
 
 /-- Reflection is substitution of the negative second variable. -/
-@[simp] theorem eval_reflected [CommRing R] (f : BinaryQuadraticForm R) (x y : R) :
+@[simp] theorem eval_reflected [Ring R] (f : BinaryQuadraticForm R) (x y : R) :
     f.reflected.eval x y = f.eval x (-y) := by
-  simp only [eval_def, reflected_a, reflected_b, reflected_c]
-  ring
+  simp only [eval_def, reflected_a, reflected_b, reflected_c, neg_mul, mul_neg, neg_sq]
 
 /-- Reflection preserves the discriminant. -/
 @[simp] theorem discrim_reflected [CommRing R] (f : BinaryQuadraticForm R) :
@@ -52,7 +52,7 @@ def reflected [Neg R] (f : BinaryQuadraticForm R) : BinaryQuadraticForm R :=
   simp [discrim_def, _root_.discrim]
 
 /-- Multiplying all coefficients commutes with reflection. -/
-@[simp] theorem reflected_smul' [CommRing R] (r : R) (f : BinaryQuadraticForm R) :
+@[simp] theorem reflected_smul' [Ring R] (r : R) (f : BinaryQuadraticForm R) :
     (r • f).reflected = r • f.reflected := by
   ext <;> simp
 
@@ -60,6 +60,11 @@ def reflected [Neg R] (f : BinaryQuadraticForm R) : BinaryQuadraticForm R :=
 @[simp] theorem content_reflected (f : BinaryQuadraticForm ℤ) :
     f.reflected.content = f.content := by
   simp [content_def, reflected]
+
+/-- Reflection preserves primitivity of an integral binary form. -/
+@[simp] theorem isPrimitive_reflected_iff (f : BinaryQuadraticForm ℤ) :
+    f.reflected.IsPrimitive ↔ f.IsPrimitive := by
+  rw [isPrimitive_iff, isPrimitive_iff, content_reflected]
 
 /-- Primitive normalization commutes with reflection, including for the zero form. -/
 @[simp] theorem primPart_reflected (f : BinaryQuadraticForm ℤ) :
@@ -74,13 +79,11 @@ def reflected [Neg R] (f : BinaryQuadraticForm R) : BinaryQuadraticForm R :=
 transported matrix is conjugated by `diag(1, -1)`, so its determinant is still one. -/
 theorem exists_reflected_smul [CommRing R] (γ : SL(2, R)) :
     ∃ δ : SL(2, R), ∀ f : BinaryQuadraticForm R, (γ • f).reflected = δ • f.reflected := by
-  let δ : SL(2, R) := ⟨!![γ 0 0, -γ 0 1; -γ 1 0, γ 1 1], by
-    simpa only [det_fin_two, Matrix.of_apply, Matrix.cons_val_zero,
-      Matrix.cons_val_one, neg_mul_neg] using γ.det_coe⟩
-  refine ⟨δ, fun f ↦ ?_⟩
+  refine ⟨SpecialLinearGroup.conjJ γ, fun f ↦ ?_⟩
   ext
   all_goals simp only [reflected_a, reflected_b, reflected_c, smul_a, smul_b, smul_c]
-  all_goals simp only [δ, Matrix.of_apply, Matrix.cons_val_zero, Matrix.cons_val_one]
+  all_goals simp only [SpecialLinearGroup.coe_conjJ, Matrix.of_apply,
+    Matrix.cons_val_zero, Matrix.cons_val_one]
   all_goals ring
 
 end TauCeti.BinaryQuadraticForm
