@@ -31,7 +31,9 @@ unramified in every conjugate of `E`, hence in the Galois closure of `E`, which 
 generate. Every finite separable extension of `F` embeds into a finite Galois one, and
 unramifiedness is invariant under isomorphism over `F`
 (`TauCeti.Place.isUnramified_iff_of_algEquiv`), so these statements cover the composita and
-Galois closures of finite separable extensions.
+Galois closures of finite separable extensions. This transport through a finite Galois overfield
+follows the proof of `TauCeti.Place.isSplitCompletely_sup_iff` in
+`TauCeti/FieldTheory/FunctionField/Place/Extension/Splitting/Compositum.lean`.
 
 ## Main definitions
 
@@ -44,8 +46,8 @@ Galois closures of finite separable extensions.
   of the upstairs field over the base field.
 * `TauCeti.Place.isUnramified_iff_forall_le_inertiaField`: a place is unramified in `E` exactly
   when `E` lies in the inertia field of every place of `M` above it.
-* `TauCeti.Place.isUnramified_sup_iff`: **a place is unramified in a compositum of intermediate
-  fields of a finite separable extension exactly when it is unramified in both constituents**.
+* `TauCeti.Place.isUnramified_sup_iff`: **a place is unramified in a compositum of finite
+  separable extensions exactly when it is unramified in both constituents**.
 * `TauCeti.Place.isUnramified_normalClosure_iff`: **a place is unramified in the Galois closure
   of `E` exactly when it is unramified in `E`**.
 
@@ -151,7 +153,11 @@ universe u v w
 
 variable {k : Type u} {F : Type v} {M : Type w}
 variable [Field k] [Field F] [Field M] [Algebra k F] [Algebra k M] [Algebra F M]
-variable [IsScalarTower k F M] [FiniteDimensional F M] [IsGalois F M]
+variable [IsScalarTower k F M] [FiniteDimensional F M]
+
+section Galois
+
+variable [IsGalois F M]
 
 /-- A place is unramified in an intermediate field `E` of a finite Galois extension `M` exactly
 when `E` lies in the inertia field of every place of `M` above it. -/
@@ -173,12 +179,11 @@ private theorem isUnramified_sup_iff_of_isGalois
       P.IsUnramified (k' := k) (F' := E₁) ∧ P.IsUnramified (k' := k) (F' := E₂) := by
   simp only [isUnramified_iff_forall_le_inertiaField hF, sup_le_iff, ← forall_and]
 
-omit [IsGalois F M] in
-/-- **Unramifiedness in a compositum** (Stichtenoth, Corollary 3.9.3): a place is unramified in
-the compositum of two intermediate fields of a finite separable extension exactly when it is
-unramified in each of them. -/
-@[simp]
-theorem isUnramified_sup_iff [Algebra.IsSeparable F M]
+end Galois
+
+/-- A place is unramified in the compositum of two intermediate fields of a finite separable
+extension exactly when it is unramified in each of them. -/
+private theorem isUnramified_sup_iff_of_isSeparable [Algebra.IsSeparable F M]
     (hF : TauCeti.IsFunctionField k F) (P : Place k F) (E₁ E₂ : IntermediateField F M) :
     P.IsUnramified (k' := k) (F' := ↥(E₁ ⊔ E₂)) ↔
       P.IsUnramified (k' := k) (F' := E₁) ∧ P.IsUnramified (k' := k) (F' := E₂) := by
@@ -201,6 +206,30 @@ theorem isUnramified_sup_iff [Algebra.IsSeparable F M]
     isUnramified_iff_of_algEquiv P (E₂.equivMap g), IntermediateField.map_sup]
   exact isUnramified_sup_iff_of_isGalois hF P (E₁.map g) (E₂.map g)
 
+/-- **Unramifiedness in a compositum** (Stichtenoth, Corollary 3.9.3): a place is unramified in
+the compositum of two finite separable intermediate fields of `M / F` exactly when it is
+unramified in each of them. The ambient extension `M / F` need not be separable. -/
+@[simp]
+theorem isUnramified_sup_iff
+    (hF : TauCeti.IsFunctionField k F) (P : Place k F) (E₁ E₂ : IntermediateField F M)
+    [Algebra.IsSeparable F E₁] [Algebra.IsSeparable F E₂] :
+    P.IsUnramified (k' := k) (F' := ↥(E₁ ⊔ E₂)) ↔
+      P.IsUnramified (k' := k) (F' := E₁) ∧ P.IsUnramified (k' := k) (F' := E₂) := by
+  -- Pass to the separable compositum `L = E₁ ⊔ E₂`, viewing `E₁` and `E₂` as intermediate
+  -- fields of `L`; there they generate all of `L`.
+  set L := E₁ ⊔ E₂
+  have h₁ : E₁ ≤ L := le_sup_left
+  have h₂ : E₂ ≤ L := le_sup_right
+  have hsup : E₁.restrict h₁ ⊔ E₂.restrict h₂ = ⊤ := by
+    apply IntermediateField.lift_injective L
+    rw [IntermediateField.lift_sup, IntermediateField.lift_restrict,
+      IntermediateField.lift_restrict, IntermediateField.lift_top]
+  rw [isUnramified_iff_of_algEquiv P (IntermediateField.restrictAlgEquiv h₁),
+    isUnramified_iff_of_algEquiv P (IntermediateField.restrictAlgEquiv h₂),
+    ← isUnramified_iff_of_algEquiv P (IntermediateField.topEquiv (F := F) (E := L)), ← hsup]
+  exact isUnramified_sup_iff_of_isSeparable hF P _ _
+
+variable [IsGalois F M] in
 /-- **Unramifiedness in a Galois closure** (Stichtenoth, Corollary 3.9.3): a place is unramified
 in the normal closure of an intermediate field `E` of a finite Galois extension `M / F` exactly
 when it is unramified in `E`. -/
