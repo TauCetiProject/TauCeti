@@ -43,9 +43,10 @@ an end of the closure of the edge, so these are the incidences of the embedded g
 * `TauCeti.ThricePuncturedSphere.unitSegment`: the open real segment `(0, 1)`.
 * `IsCoveringMap.finEquivConnectedComponentsUnitSegment`: the sheets are the connected components
   of `p ⁻¹' (0, 1)`, the sheet `i` going to the component of the point it numbers.
-* `IsCoveringMap.exists_mk_eq_and_mk_eq_iff_σ0`, `IsCoveringMap.exists_mk_eq_and_mk_eq_iff_σ1`:
-  the edge of the sheet `i` meets a component over `D₀*` (respectively `D₁*`) exactly when that
-  component is the cycle of `i` under `σ0` (respectively `σ1`).
+* `IsCoveringMap.exists_common_point_iff_eq_sameCycleQuotientσ0`,
+  `IsCoveringMap.exists_common_point_iff_eq_sameCycleQuotientσ1`: the edge of the sheet `i`
+  meets a component over `D₀*` (respectively `D₁*`) exactly when that component is the cycle of
+  `i` under `σ0` (respectively `σ1`).
 
 ## References
 
@@ -69,25 +70,30 @@ namespace ThricePuncturedSphere
 /-! ### The open segment `(0, 1)` -/
 
 /-- The open real segment `(0, 1)` in the thrice-punctured sphere, along which the edges of the
-dessin of a cover are drawn. -/
+dessin of a cover are drawn: the preimage of the open segment `openSegment ℝ 0 1` of `ℂ`. -/
 def unitSegment : Set ThricePuncturedSphere :=
-  {z | (z : ℂ).im = 0 ∧ 0 < (z : ℂ).re ∧ (z : ℂ).re < 1}
+  ((↑) : ThricePuncturedSphere → ℂ) ⁻¹' openSegment ℝ 0 1
+
+/-- A point of `ℂ` lies on the open segment from `0` to `1` exactly when it is real and strictly
+between `0` and `1`. -/
+private theorem mem_openSegment_zero_one {w : ℂ} :
+    w ∈ openSegment ℝ (0 : ℂ) 1 ↔ w.im = 0 ∧ 0 < w.re ∧ w.re < 1 := by
+  rw [openSegment_eq_image]
+  constructor
+  · rintro ⟨θ, ⟨h0, h1⟩, rfl⟩
+    simp [h0, h1]
+  · rintro ⟨him, h0, h1⟩
+    refine ⟨w.re, ⟨h0, h1⟩, Complex.ext ?_ ?_⟩ <;> simp [him]
 
 @[simp]
 theorem mem_unitSegment {z : ThricePuncturedSphere} :
     z ∈ unitSegment ↔ (z : ℂ).im = 0 ∧ 0 < (z : ℂ).re ∧ (z : ℂ).re < 1 :=
-  Iff.rfl
+  mem_openSegment_zero_one
 
 /-- The basepoint `1/2` lies on the segment `(0, 1)`. -/
 theorem basePt_mem_unitSegment : basePt ∈ unitSegment := by
   simp only [mem_unitSegment, coe_basePt]
   norm_num
-
-/-- The segment `(0, 1)` of `ℂ`, which avoids both punctures. -/
-private theorem convex_setOf_im_eq_zero_and_re_mem :
-    Convex ℝ {w : ℂ | w.im = 0 ∧ 0 < w.re ∧ w.re < 1} :=
-  (convex_hyperplane Complex.imLm.isLinear 0).inter
-    ((convex_halfSpace_re_gt 0).inter (convex_halfSpace_re_lt 1))
 
 /-- A set of `ℂ` lying in the strip `0 < re z < 1` contains neither puncture, so it is the image
 of its preimage in the thrice-punctured sphere. -/
@@ -112,20 +118,20 @@ private theorem isSimplyConnected_preimage_coe {T : Set ℂ} (hT : Convex ℝ T)
 
 /-- The segment `(0, 1)` is simply connected. -/
 theorem isSimplyConnected_unitSegment : IsSimplyConnected unitSegment :=
-  isSimplyConnected_preimage_coe convex_setOf_im_eq_zero_and_re_mem
-    ⟨1 / 2, by norm_num, by norm_num, by norm_num⟩ fun _ hw => hw.2
+  isSimplyConnected_preimage_coe (convex_openSegment 0 1)
+    ⟨1 / 2, mem_openSegment_zero_one.2 ⟨by norm_num, by norm_num, by norm_num⟩⟩
+    fun _ hw => (mem_openSegment_zero_one.1 hw).2
 
 /-- The segment `(0, 1)` is locally path connected, being homeomorphic to a convex set of `ℂ`. -/
 instance : LocallyPathConnectedSpace unitSegment := by
-  have := convex_setOf_im_eq_zero_and_re_mem.locallyPathConnectedSpace
+  have := (convex_openSegment (𝕜 := ℝ) (0 : ℂ) 1).locallyPathConnectedSpace
   have hf : IsEmbedding fun z : unitSegment => ((z : ThricePuncturedSphere) : ℂ) :=
     isOpenEmbedding_coe.isEmbedding.comp IsEmbedding.subtypeVal
   have hrange : range (fun z : unitSegment => ((z : ThricePuncturedSphere) : ℂ)) =
-      {w : ℂ | w.im = 0 ∧ 0 < w.re ∧ w.re < 1} := by
+      openSegment ℝ 0 1 := by
     refine (range_comp ((↑) : ThricePuncturedSphere → ℂ) ((↑) : unitSegment → _)).trans ?_
     rw [Subtype.range_coe]
-    exact image_coe_preimage_coe (T := {w : ℂ | w.im = 0 ∧ 0 < w.re ∧ w.re < 1})
-      fun _ hw => hw.2
+    exact image_coe_preimage_coe fun _ hw => (mem_openSegment_zero_one.1 hw).2
   exact (hf.toHomeomorph.trans (Homeomorph.setCongr hrange)).symm.locallyPathConnectedSpace
 
 /-- The part `(0, 1/2)` of the segment inside the punctured neighborhood of `0` is simply
@@ -136,15 +142,15 @@ private theorem isSimplyConnected_unitSegment_inter_puncturedNeighborhoodZero :
     ext
     simp
   have hset : unitSegment ∩ puncturedNeighborhoodZero = (↑) ⁻¹'
-      ({w : ℂ | w.im = 0 ∧ 0 < w.re ∧ w.re < 1} ∩ {w : ℂ | ‖w‖ < 1 / 2}) := by
+      (openSegment ℝ 0 1 ∩ {w : ℂ | ‖w‖ < 1 / 2}) := by
     ext z
     rw [mem_inter_iff, mem_puncturedNeighborhoodZero]
     rfl
   rw [hset]
-  refine isSimplyConnected_preimage_coe (T := {w : ℂ | w.im = 0 ∧ 0 < w.re ∧ w.re < 1} ∩
-    {w : ℂ | ‖w‖ < 1 / 2}) (convex_setOf_im_eq_zero_and_re_mem.inter
-      (hball ▸ convex_ball 0 (1 / 2))) ⟨1 / 4, ⟨by norm_num, by norm_num, by norm_num⟩, ?_⟩
-    fun _ hw => hw.1.2
+  refine isSimplyConnected_preimage_coe ((convex_openSegment 0 1).inter
+      (hball ▸ convex_ball 0 (1 / 2)))
+    ⟨1 / 4, mem_openSegment_zero_one.2 ⟨by norm_num, by norm_num, by norm_num⟩, ?_⟩
+    fun _ hw => (mem_openSegment_zero_one.1 hw.1).2
   rw [mem_ofPred_eq]
   norm_num [Complex.norm_div]
 
@@ -156,16 +162,17 @@ private theorem isSimplyConnected_unitSegment_inter_puncturedNeighborhoodOne :
     ext
     simp [dist_eq_norm]
   have hset : unitSegment ∩ puncturedNeighborhoodOne = (↑) ⁻¹'
-      ({w : ℂ | w.im = 0 ∧ 0 < w.re ∧ w.re < 1} ∩ {w : ℂ | ‖w - 1‖ < 1 / 2}) := by
+      (openSegment ℝ 0 1 ∩ {w : ℂ | ‖w - 1‖ < 1 / 2}) := by
     ext z
     rw [mem_inter_iff, mem_puncturedNeighborhoodOne]
     rfl
   rw [hset]
-  refine isSimplyConnected_preimage_coe (T := {w : ℂ | w.im = 0 ∧ 0 < w.re ∧ w.re < 1} ∩
-    {w : ℂ | ‖w - 1‖ < 1 / 2}) (convex_setOf_im_eq_zero_and_re_mem.inter
-      (hball ▸ convex_ball 1 (1 / 2))) ⟨3 / 4, ⟨by norm_num, by norm_num, by norm_num⟩, ?_⟩
-    fun _ hw => hw.1.2
-  rw [mem_ofPred_eq, show (3 / 4 : ℂ) - 1 = -(1 / 4) by norm_num, norm_neg]
+  refine isSimplyConnected_preimage_coe ((convex_openSegment 0 1).inter
+      (hball ▸ convex_ball 1 (1 / 2)))
+    ⟨3 / 4, mem_openSegment_zero_one.2 ⟨by norm_num, by norm_num, by norm_num⟩, ?_⟩
+    fun _ hw => (mem_openSegment_zero_one.1 hw.1).2
+  have h : (3 / 4 : ℂ) - 1 = -(1 / 4) := by norm_num
+  rw [mem_ofPred_eq, h, norm_neg]
   norm_num [Complex.norm_div]
 
 end ThricePuncturedSphere
@@ -192,6 +199,7 @@ def _root_.IsCoveringMap.finEquivConnectedComponentsUnitSegment :
     basePt_mem_unitSegment)).trans connectedComponentsEquivZerothHomotopy.symm
 
 /-- The edge of the sheet `i` is the component of the point of the fibre that `i` numbers. -/
+@[simp]
 theorem _root_.IsCoveringMap.finEquivConnectedComponentsUnitSegment_apply (i : Fin n) :
     hp.finEquivConnectedComponentsUnitSegment ν i =
       ConnectedComponents.mk ⟨ν.symm i, by
@@ -233,8 +241,7 @@ private theorem mk_eq_mk_monodromy (hyS : y ∈ unitSegment ∩ S)
   set i := (hp.finEquivConnectedComponentsUnitSegment ν).symm (ConnectedComponents.mk ⟨x, hx⟩)
   have hseg : unitSegment ∩ S ⊆ unitSegment := inter_subset_left
   -- Join `x` inside `p ⁻¹' ((0, 1) ∩ S)` to a point `x'` of the fibre over `y`.
-  obtain ⟨x', hxx'⟩ := hp.exists_joinedIn_preimage hS.isPathConnected hyS
-    (show p x ∈ unitSegment ∩ S from ⟨hx, hxS⟩)
+  obtain ⟨x', hxx'⟩ := hp.exists_joinedIn_preimage hS.isPathConnected hyS ⟨hx, hxS⟩
   -- The point `x'` is the endpoint of the lift of `α`: both lie over `y` and are joined to
   -- `ν.symm i` inside `p ⁻¹' (0, 1)`, and `(0, 1)` is simply connected.
   have hbase : (ν.symm i : E) ∈ p ⁻¹' unitSegment := by
@@ -250,8 +257,8 @@ private theorem mk_eq_mk_monodromy (hyS : y ∈ unitSegment ∩ S)
       (hp.monodromy (.mk α) (ν.symm i) : E) :=
     ((hxx'.mono (preimage_mono hseg)).symm.trans hi).trans
       (hp.joinedIn_preimage_monodromy α hα (ν.symm i))
-  have hx' : x' = hp.monodromy (.mk α) (ν.symm i) :=
-    hp.eq_of_joinedIn_preimage isSimplyConnected_unitSegment hyS.1 hjoin
+  have := isSimplyConnected_unitSegment.simplyConnectedSpace
+  have hx' : x' = hp.monodromy (.mk α) (ν.symm i) := hp.eq_of_joinedIn_preimage hyS.1 hjoin
   subst hx'
   rw [ConnectedComponents.coe_eq_coe']
   exact pathComponent_subset_component _
@@ -296,7 +303,7 @@ theorem _root_.IsCoveringMap.finEquivConnectedComponentsUnitSegment_eq_mk_monodr
 /-- **The black incidences of the dessin.** The edge of the sheet `i` meets a component `b` of the
 preimage of the punctured neighborhood `D₀*` of `0` exactly when `b` is the component of the cycle
 of `i` under `σ0`, the black end of the sheet `i` in `TauCeti.PermutationTriple.ribbonGraph`. -/
-theorem _root_.IsCoveringMap.exists_mk_eq_and_mk_eq_iff_σ0 (i : Fin n)
+theorem _root_.IsCoveringMap.exists_common_point_iff_eq_sameCycleQuotientσ0 (i : Fin n)
     (b : ConnectedComponents (p ⁻¹' puncturedNeighborhoodZero)) :
     (∃ (x : E) (hx : p x ∈ unitSegment) (hx0 : p x ∈ puncturedNeighborhoodZero),
         ConnectedComponents.mk ⟨x, hx⟩ = hp.finEquivConnectedComponentsUnitSegment ν i ∧
@@ -349,7 +356,7 @@ theorem _root_.IsCoveringMap.finEquivConnectedComponentsUnitSegment_eq_mk_monodr
 /-- **The white incidences of the dessin.** The edge of the sheet `i` meets a component `w` of the
 preimage of the punctured neighborhood `D₁*` of `1` exactly when `w` is the component of the cycle
 of `i` under `σ1`, the white end of the sheet `i` in `TauCeti.PermutationTriple.ribbonGraph`. -/
-theorem _root_.IsCoveringMap.exists_mk_eq_and_mk_eq_iff_σ1 (i : Fin n)
+theorem _root_.IsCoveringMap.exists_common_point_iff_eq_sameCycleQuotientσ1 (i : Fin n)
     (w : ConnectedComponents (p ⁻¹' puncturedNeighborhoodOne)) :
     (∃ (x : E) (hx : p x ∈ unitSegment) (hx1 : p x ∈ puncturedNeighborhoodOne),
         ConnectedComponents.mk ⟨x, hx⟩ = hp.finEquivConnectedComponentsUnitSegment ν i ∧
