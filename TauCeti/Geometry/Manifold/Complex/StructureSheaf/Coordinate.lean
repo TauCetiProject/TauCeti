@@ -40,17 +40,19 @@ variable {X : Type} [TopologicalSpace X] [ChartedSpace ℂ X] [IsManifold 𝓘(�
   (e : OpenPartialHomeomorph X ℂ) (he : e ∈ maximalAtlas 𝓘(ℂ) 1 X) (x : X)
 
 /-- The chart coordinate centered at `x`, as a holomorphic section on the chart source. -/
-def holomorphicCoordinateSection :
+def holomorphicCoordinateSection (_hx : x ∈ e.source) :
     (holomorphicStructureSheaf 𝓘(ℂ) X).obj.obj (op ⟨e.source, e.open_source⟩) :=
   ofMDifferentiable (fun y => e y - e x) fun y =>
     ((mdifferentiableAt_of_mem_maximalAtlas he y.2).comp y
       (contMDiff_subtype_val (n := 1).mdifferentiable one_ne_zero y)).sub mdifferentiableAt_const
 
+/-- The centered coordinate section evaluates at `y` to `e y - e x`. -/
 -- Index on evaluation rather than the unexposed section carrier and its dependent open set.
 @[simp]
-theorem holomorphicCoordinateSection_apply (y : (⟨e.source, e.open_source⟩ : Opens X)) :
+theorem holomorphicCoordinateSection_apply (hx : x ∈ e.source)
+    (y : (⟨e.source, e.open_source⟩ : Opens X)) :
     toFun 𝓘(ℂ) X (no_index (op ⟨e.source, e.open_source⟩))
-      (no_index (holomorphicCoordinateSection e he x)) y = e y - e x := (by
+      (no_index (holomorphicCoordinateSection e he x hx)) y = e y - e x := (by
   rw [holomorphicCoordinateSection]
   exact ofMDifferentiable_apply (U := ⟨e.source, e.open_source⟩) _ _ y)
 
@@ -58,19 +60,14 @@ theorem holomorphicCoordinateSection_apply (y : (⟨e.source, e.open_source⟩ :
 def holomorphicCoordinateGerm (hx : x ∈ e.source) :
     (holomorphicStructureSheaf 𝓘(ℂ) X).presheaf.stalk x :=
   (holomorphicStructureSheaf 𝓘(ℂ) X).presheaf.germ ⟨e.source, e.open_source⟩ x hx
-    (holomorphicCoordinateSection e he x)
+    (holomorphicCoordinateSection e he x hx)
 
-/-- The coordinate germ is the germ of the centered coordinate section. -/
-theorem holomorphicCoordinateGerm_def (hx : x ∈ e.source) :
-    holomorphicCoordinateGerm e he x hx =
-      (holomorphicStructureSheaf 𝓘(ℂ) X).presheaf.germ ⟨e.source, e.open_source⟩ x hx
-        (holomorphicCoordinateSection e he x) := (rfl)
-
+/-- The germ of a centered chart coordinate evaluates to zero at its center. -/
 @[simp]
 theorem eval_holomorphicCoordinateGerm (hx : x ∈ e.source) :
     eval 𝓘(ℂ) X x (holomorphicCoordinateGerm e he x hx) = 0 := by
-  rw [holomorphicCoordinateGerm_def, eval_germ]
-  exact (holomorphicCoordinateSection_apply e he x ⟨x, hx⟩).trans (sub_self _)
+  rw [holomorphicCoordinateGerm, eval_germ]
+  exact (holomorphicCoordinateSection_apply e he x hx ⟨x, hx⟩).trans (sub_self _)
 
 /-- A centered coordinate has a nonzero germ: a chart cannot be constant on a neighborhood
 of its center. -/
@@ -78,14 +75,14 @@ of its center. -/
 theorem holomorphicCoordinateGerm_ne_zero (hx : x ∈ e.source) :
     holomorphicCoordinateGerm e he x hx ≠ 0 := by
   intro h
-  rw [holomorphicCoordinateGerm_def, ← map_zero
+  rw [holomorphicCoordinateGerm, ← map_zero
     ((holomorphicStructureSheaf 𝓘(ℂ) X).presheaf.germ ⟨e.source, e.open_source⟩ x hx).hom] at h
   obtain ⟨V, hxV, i, j, hij⟩ :=
     (holomorphicStructureSheaf 𝓘(ℂ) X).presheaf.germ_eq x hx hx _ _ h
   have heq (y : V) : e y = e x := by
     have hy := congrArg (fun s => toFun 𝓘(ℂ) X (op V) s y) hij
     simp only [map_apply, holomorphicStructureSheaf.zero_apply] at hy
-    rw [holomorphicCoordinateSection_apply e he x (Opens.inclusion (leOfHom i) y)] at hy
+    rw [holomorphicCoordinateSection_apply e he x hx (Opens.inclusion (leOfHom i) y)] at hy
     exact sub_eq_zero.mp hy
   have hconst : ∀ᶠ z in 𝓝 (e x), z = e x := by
     filter_upwards [(e.tendsto_symm hx).eventually (V.isOpen.mem_nhds hxV),
@@ -98,7 +95,7 @@ theorem holomorphicCoordinateGerm_ne_zero (hx : x ∈ e.source) :
 /-- A holomorphic germ is divisible by a centered chart coordinate exactly when it vanishes
 at the center. The quotient is holomorphic also at the coordinate's zero. -/
 @[simp]
-theorem holomorphicCoordinateGerm_dvd_iff (hx : x ∈ e.source)
+theorem holomorphicCoordinateGerm_dvd_iff_eval_eq_zero (hx : x ∈ e.source)
     (f : (holomorphicStructureSheaf 𝓘(ℂ) X).presheaf.stalk x) :
     holomorphicCoordinateGerm e he x hx ∣ f ↔ eval 𝓘(ℂ) X x f = 0 := by
   constructor
@@ -145,13 +142,13 @@ theorem holomorphicCoordinateGerm_dvd_iff (hx : x ∈ e.source)
       ((mdifferentiableAt_of_mem_maximalAtlas he (hWe y.2)).comp y
         (contMDiff_subtype_val (n := 1).mdifferentiable one_ne_zero y)))
   -- The division identity on this neighborhood passes through the ring germ map.
-  have hmul : S.map (homOfLE hWe).op (holomorphicCoordinateSection e he x) * q =
+  have hmul : S.map (homOfLE hWe).op (holomorphicCoordinateSection e he x hx) * q =
       S.map (homOfLE hWU).op s := by
     dsimp only [S]
     apply holomorphicStructureSheaf.ext
     intro y
     simp only [mul_apply, map_apply]
-    rw [holomorphicCoordinateSection_apply e he x (Opens.inclusion hWe y)]
+    rw [holomorphicCoordinateSection_apply e he x hx (Opens.inclusion hWe y)]
     have hq : q y = dslope A (e x) (e y) :=
       ofMDifferentiable_apply (U := W) _ _ y
     rw [hq]
@@ -164,7 +161,7 @@ theorem holomorphicCoordinateGerm_dvd_iff (hx : x ∈ e.source)
       exact hF (Opens.inclusion hWU y)
     simpa only [smul_eq_mul, hAx, hAy, sub_zero] using sub_smul_dslope A (e x) (e y)
   refine ⟨S.germ W x hxV q, ?_⟩
-  rw [holomorphicCoordinateGerm_def, ← S.germ_res_apply (homOfLE hWe) x hxV,
+  rw [holomorphicCoordinateGerm, ← S.germ_res_apply (homOfLE hWe) x hxV,
     ← map_mul, hmul, S.germ_res_apply]
 
 /-- The ideal of holomorphic germs vanishing at `x` is generated by any centered local chart
@@ -174,7 +171,7 @@ theorem ker_eval_eq_span_holomorphicCoordinateGerm (hx : x ∈ e.source) :
   apply le_antisymm
   · intro f hf
     exact Ideal.mem_span_singleton.mpr
-      ((holomorphicCoordinateGerm_dvd_iff e he x hx f).mpr (RingHom.mem_ker.mp hf))
+      ((holomorphicCoordinateGerm_dvd_iff_eval_eq_zero e he x hx f).mpr (RingHom.mem_ker.mp hf))
   · exact (Ideal.span_singleton_le_iff_mem _).mpr
       (RingHom.mem_ker.mpr (eval_holomorphicCoordinateGerm e he x hx))
 
