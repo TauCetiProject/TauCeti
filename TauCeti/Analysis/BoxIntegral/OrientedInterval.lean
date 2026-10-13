@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.BoxIntegral.IntervalIntegral
+public import TauCeti.Analysis.BoxIntegral.HenstockPartition
 public import TauCeti.Algebra.BigOperators.Fin
 
 /-!
@@ -180,6 +181,26 @@ theorem IntegrableOnInterval.mono (h : IntegrableOnInterval f a b)
   obtain ⟨y, hy⟩ := h
   exact hy.restrict hcd
 
+private theorem intervalBox_splitLower (hac : a < c) (hcb : c < b) :
+    (intervalBox a b (hac.trans hcb)).splitLower 0 c =
+      (intervalBox a c hac : WithBot (Box (Fin 1))) := by
+  rw [← Box.withBotCoe_inj]
+  ext x
+  simp only [Box.coe_splitLower, Box.coe_coe, mem_inter_iff, mem_ofPred_eq]
+  change ((x ∈ intervalBox a b (hac.trans hcb)) ∧ x 0 ≤ c) ↔ x ∈ intervalBox a c hac
+  simp only [mem_intervalBox, mem_Ioc]
+  exact ⟨fun h ↦ ⟨h.1.1, h.2⟩, fun h ↦ ⟨⟨h.1, h.2.trans hcb.le⟩, h.2⟩⟩
+
+private theorem intervalBox_splitUpper (hac : a < c) (hcb : c < b) :
+    (intervalBox a b (hac.trans hcb)).splitUpper 0 c =
+      (intervalBox c b hcb : WithBot (Box (Fin 1))) := by
+  rw [← Box.withBotCoe_inj]
+  ext x
+  simp only [Box.coe_splitUpper, Box.coe_coe, mem_inter_iff, mem_ofPred_eq]
+  change ((x ∈ intervalBox a b (hac.trans hcb)) ∧ c < x 0) ↔ x ∈ intervalBox c b hcb
+  simp only [mem_intervalBox, mem_Ioc]
+  exact ⟨fun h ↦ ⟨h.2, h.1.2⟩, fun h ↦ ⟨⟨hac.trans h.1, h.2⟩, h.1⟩⟩
+
 private theorem integral_intervalBox_split (hac : a < c) (hcb : c < b)
     (h : Integrable (intervalBox a b (hac.trans hcb)) IntegrationParams.Henstock
       (fun x ↦ f (x 0)) BoxAdditiveMap.volume) :
@@ -190,20 +211,8 @@ private theorem integral_intervalBox_split (hac : a < c) (hcb : c < b)
       integral (intervalBox a b (hac.trans hcb)) IntegrationParams.Henstock
         (fun x ↦ f (x 0)) BoxAdditiveMap.volume := by
   let I := intervalBox a b (hac.trans hcb)
-  have hL : I.splitLower 0 c = (intervalBox a c hac : WithBot (Box (Fin 1))) := by
-    rw [← Box.withBotCoe_inj]
-    ext x
-    simp only [Box.coe_splitLower, Box.coe_coe, mem_inter_iff, mem_ofPred_eq]
-    change ((x ∈ I) ∧ x 0 ≤ c) ↔ x ∈ intervalBox a c hac
-    simp only [I, mem_intervalBox, mem_Ioc]
-    exact ⟨fun h ↦ ⟨h.1.1, h.2⟩, fun h ↦ ⟨⟨h.1, h.2.trans hcb.le⟩, h.2⟩⟩
-  have hR : I.splitUpper 0 c = (intervalBox c b hcb : WithBot (Box (Fin 1))) := by
-    rw [← Box.withBotCoe_inj]
-    ext x
-    simp only [Box.coe_splitUpper, Box.coe_coe, mem_inter_iff, mem_ofPred_eq]
-    change ((x ∈ I) ∧ c < x 0) ↔ x ∈ intervalBox c b hcb
-    simp only [I, mem_intervalBox, mem_Ioc]
-    exact ⟨fun h ↦ ⟨h.2, h.1.2⟩, fun h ↦ ⟨⟨hac.trans h.1, h.2⟩, h.1⟩⟩
+  have hL := intervalBox_splitLower hac hcb
+  have hR := intervalBox_splitUpper hac hcb
   have hadd := h.toBoxAdditive.map_split_add (I := I) le_rfl 0 c
   rw [hL, hR] at hadd
   exact hadd
@@ -270,5 +279,69 @@ theorem HasIntervalIntegral.split_fin {N : ℕ} {s : Fin (N + 1) → ℝ}
     rw [← hz, (hF i.castSucc).unique hz₁, add_sub_cancel_left]
   · rw [Fin.sum_sub_succ, (hF (Fin.last N)).unique h,
       hasIntervalIntegral_same.mp (hF 0), sub_zero]
+
+private theorem trans_of_le (h₁ : HasIntervalIntegral f a c y)
+    (h₂ : HasIntervalIntegral f c b z) (hac : a ≤ c) (hcb : c ≤ b) :
+    HasIntervalIntegral f a b (y + z) := by
+  rcases hac.eq_or_lt with rfl | hac
+  · rw [hasIntervalIntegral_same] at h₁
+    simpa only [h₁, zero_add] using h₂
+  rcases hcb.eq_or_lt with rfl | hcb
+  · rw [hasIntervalIntegral_same] at h₂
+    simpa only [h₂, add_zero] using h₁
+  let I := intervalBox a b (hac.trans hcb)
+  have hL := intervalBox_splitLower hac hcb
+  have hR := intervalBox_splitUpper hac hcb
+  have hi : ∀ J ∈ Prepartition.split I 0 c,
+      Integrable J IntegrationParams.Henstock (fun x ↦ f (x 0)) BoxAdditiveMap.volume := by
+    intro J hJ
+    rw [Prepartition.mem_split_iff, hL, hR] at hJ
+    rcases hJ with hJ | hJ
+    · cases WithBot.coe_injective hJ
+      exact ((hasIntervalIntegral_iff_of_lt hac).mp h₁).integrable
+    · cases WithBot.coe_injective hJ
+      exact ((hasIntervalIntegral_iff_of_lt hcb).mp h₂).integrable
+  have hg := hasIntegral_Henstock_of_partition (Prepartition.split I 0 c)
+    (Prepartition.isPartitionSplit I 0 c)
+    (fun J ↦ integral J IntegrationParams.Henstock (fun x ↦ f (x 0)) BoxAdditiveMap.volume)
+    (fun J hJ ↦ (hi J hJ).hasIntegral)
+  have hg' := (hasIntervalIntegral_iff_of_lt (hac.trans hcb)).mpr hg
+  rwa [← hg'.eq_add (by rw [uIcc_of_le (hac.trans hcb).le]; exact ⟨hac.le, hcb.le⟩) h₁ h₂]
+    at hg'
+
+/-- Local conditional Henstock integrals glue across a point of the oriented interval.
+This is the converse of subdivision and does not assume integrability on the whole interval. -/
+theorem HasIntervalIntegral.trans (h₁ : HasIntervalIntegral f a c y)
+    (h₂ : HasIntervalIntegral f c b z) (hc : c ∈ uIcc a b) :
+    HasIntervalIntegral f a b (y + z) := by
+  rcases le_total a b with hab | hba
+  · rw [uIcc_of_le hab] at hc
+    exact trans_of_le h₁ h₂ hc.1 hc.2
+  · rw [uIcc_of_ge hba] at hc
+    simpa only [neg_add, neg_neg, add_comm] using
+      (trans_of_le h₂.symm h₁.symm hc.1 hc.2).symm
+
+/-- The conditional Henstock integrals on any finite ordered subdivision glue to an integral
+of their sum. Repeated nodes and either orientation are allowed. -/
+theorem hasIntervalIntegral_of_subdivision {N : ℕ} {s : Fin (N + 1) → ℝ} {v : Fin N → E}
+    (hs : Monotone s ∨ Antitone s)
+    (hv : ∀ i, HasIntervalIntegral f (s i.castSucc) (s i.succ) (v i)) :
+    HasIntervalIntegral f (s 0) (s (Fin.last N)) (∑ i, v i) := by
+  induction N with
+  | zero => simp
+  | succ N ih =>
+    have htail : Monotone (fun i : Fin (N + 1) ↦ s i.succ) ∨
+        Antitone (fun i : Fin (N + 1) ↦ s i.succ) := by
+      rcases hs with hs | hs
+      · exact Or.inl (fun i j hij ↦ hs (Fin.succ_le_succ_iff.mpr hij))
+      · exact Or.inr (fun i j hij ↦ hs (Fin.succ_le_succ_iff.mpr hij))
+    have ht := ih htail (fun i ↦ hv i.succ)
+    have hc : s (0 : Fin (N + 1)).succ ∈ uIcc (s 0) (s (Fin.last (N + 1))) := by
+      rcases hs with hs | hs
+      · rw [uIcc_of_le (hs (Fin.zero_le _))]
+        exact ⟨hs (Fin.zero_le _), hs (Fin.le_last _)⟩
+      · rw [uIcc_of_ge (hs (Fin.zero_le _))]
+        exact ⟨hs (Fin.le_last _), hs (Fin.zero_le _)⟩
+    simpa only [Fin.sum_univ_succ, Fin.castSucc_zero, Fin.succ_last] using (hv 0).trans ht hc
 
 end BoxIntegral
