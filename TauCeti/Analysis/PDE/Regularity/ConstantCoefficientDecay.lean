@@ -65,6 +65,16 @@ classically, whose gradient is the weak gradient almost everywhere
   mass with exponent `n`.
 * `TauCeti.PDE.setIntegral_ball_norm_sub_setAverage_sq_le_of_sum_smul_fderiv_fderiv_eq_zero`:
   decay of the `L²` mean oscillation with exponent `n + 2`.
+* `TauCeti.PDE.setIntegral_ball_norm_gradient_sq_le_of_sum_smul_fderiv_fderiv_eq_zero`: decay of
+  the `L²` mass of the gradient of a scalar classical solution, with exponent `n`.
+* `PDE.setIntegral_ball_norm_gradient_sub_setAverage_sq_le_of_sum_smul_fderiv_fderiv_eq_zero`:
+  decay of the `L²` mean oscillation of the gradient of a scalar classical solution, with
+  exponent `n + 2`.
+* `TauCeti.PDE.setIntegral_ball_norm_gradient_sq_le_of_forall_energyFormH1_eq_zero`: decay of the
+  `L²` mass of the weak gradient of a weak solution in `H¹(Ω)`, with exponent `n`.
+* `TauCeti.PDE.setIntegral_ball_norm_gradient_sub_setAverage_sq_le_of_forall_energyFormH1_eq_zero`:
+  decay of the `L²` mean oscillation of the weak gradient of a weak solution in `H¹(Ω)`, with
+  exponent `n + 2`.
 
 ## References
 
