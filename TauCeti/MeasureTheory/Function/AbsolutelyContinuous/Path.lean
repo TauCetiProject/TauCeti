@@ -53,7 +53,7 @@ theorem absolutelyContinuousOnInterval_extend {γ : Path x y}
     exact ⟨le_max_left _ _, max_le zero_le_one (min_le_left _ _)⟩
   apply (hγ.comp_monotoneOn hθ (hm.monotoneOn _) hmap).congr
   intro t _
-  change γ.extend (θ t) = γ.extend t
+  simp only [Function.comp_apply]
   by_cases ht₀ : t ≤ 0
   · have hθt : θ t = 0 := by simp [θ, min_eq_right (ht₀.trans zero_le_one), max_eq_left ht₀]
     rw [hθt, extend_zero, extend_of_le_zero γ ht₀]

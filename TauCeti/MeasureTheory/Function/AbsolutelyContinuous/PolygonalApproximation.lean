@@ -122,7 +122,7 @@ private theorem ae_deriv_const_add_integral {v : ℝ → E} (hv : IntervalIntegr
 omit [CompleteSpace E] in
 private theorem exists_polygonal_error_le [FiniteDimensional ℝ E] {γ : ℝ → E}
     (hγ : AbsolutelyContinuousOnInterval γ a b) (hab : a < b) {ε : ℝ} (hε : 0 < ε) :
-    ∃ p : ℝ → E, TauCeti.IsPolygonalOnInterval p a b ∧ AbsolutelyContinuousOnInterval p a b ∧
+    ∃ p : ℝ → E, TauCeti.IsPolygonalOnInterval p a b ∧
       p a = γ a ∧ p b = γ b ∧ (∀ t ∈ Icc a b, ‖p t - γ t‖ ≤ 2 * ε) ∧
       (∫ t in a..b, ‖deriv p t - deriv γ t‖) ≤ 2 * ε := by
   have hγi := hγ.intervalIntegrable_deriv_of_finiteDimensional
@@ -152,9 +152,8 @@ private theorem exists_polygonal_error_le [FiniteDimensional ℝ E] {γ : ℝ �
     rw [smul_smul, mul_inv_cancel₀ (sub_pos.mpr hab).ne', one_smul]
     dsimp [D]
     abel
-  have hpAC : AbsolutelyContinuousOnInterval p a b := by
-    exact (LipschitzWith.const (α := ℝ) (γ a)).lipschitzOnWith.absolutelyContinuousOnInterval.add
-      (hvi.absolutelyContinuousOnInterval_intervalIntegral' left_mem_uIcc)
+  have hpPoly : TauCeti.IsPolygonalOnInterval p a b := polygonal_primitive hab N hN g (γ a) c
+  have hpAC := hpPoly.absolutelyContinuousOnInterval
   have hpderiv : deriv p =ᵐ[volume.restrict (Ioc a b)] v :=
     ae_deriv_const_add_integral hvi hab.le (γ a)
   -- The mean correction costs at most the original velocity approximation error.
@@ -191,7 +190,7 @@ private theorem exists_polygonal_error_le [FiniteDimensional ℝ E] {γ : ℝ �
     apply le_trans (integral_congr_ae (hpderiv.mono fun t ht ↦ by rw [ht])).le herror
   have hunif : ∀ t ∈ Icc a b, ‖p t - γ t‖ ≤ 2 * ε := fun t ht ↦
     (hpAC.norm_sub_le_integral_norm_deriv_sub hγ hpa ht).trans hderiv
-  exact ⟨p, polygonal_primitive hab N hN g (γ a) c, hpAC, hpa, hpb, hunif, hderiv⟩
+  exact ⟨p, hpPoly, hpa, hpb, hunif, hderiv⟩
 
 omit [CompleteSpace E] in
 /-- Every absolutely continuous curve in a finite-dimensional real normed space admits polygonal
@@ -199,16 +198,15 @@ approximations with the same endpoints, converging uniformly and with their deri
 theorem exists_polygonal_approximation [FiniteDimensional ℝ E] {γ : ℝ → E}
     (hγ : AbsolutelyContinuousOnInterval γ a b) (hab : a < b) :
     ∃ γn : ℕ → ℝ → E,
-      (∀ n, TauCeti.IsPolygonalOnInterval (γn n) a b ∧
-        AbsolutelyContinuousOnInterval (γn n) a b ∧ γn n a = γ a ∧ γn n b = γ b) ∧
+      (∀ n, TauCeti.IsPolygonalOnInterval (γn n) a b ∧ γn n a = γ a ∧ γn n b = γ b) ∧
       TendstoUniformlyOn γn γ atTop (Icc a b) ∧
       Tendsto (fun n ↦ ∫ t in a..b, ‖deriv (γn n) t - deriv γ t‖) atTop (𝓝 0) := by
   have hex (n : ℕ) := exists_polygonal_error_le hγ hab
     (ε := 1 / ((n : ℝ) + 1)) (by positivity)
-  choose p hp hAC ha hb hu hd using hex
+  choose p hp ha hb hu hd using hex
   have hlim : Tendsto (fun n : ℕ ↦ 2 * (1 / ((n : ℝ) + 1))) atTop (𝓝 (0 : ℝ)) := by
     simpa using (tendsto_one_div_add_atTop_nhds_zero_nat (𝕜 := ℝ)).const_mul 2
-  refine ⟨p, fun n ↦ ⟨hp n, hAC n, ha n, hb n⟩, ?_, ?_⟩
+  refine ⟨p, fun n ↦ ⟨hp n, ha n, hb n⟩, ?_, ?_⟩
   · apply Metric.tendstoUniformlyOn_iff.mpr
     intro ε hε
     filter_upwards [hlim.eventually (gt_mem_nhds hε)] with n hn
