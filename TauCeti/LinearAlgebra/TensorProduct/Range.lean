@@ -6,23 +6,15 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Flat.FaithfullyFlat.Algebra
-public import TauCeti.LinearAlgebra.TensorProduct.Submodule
 
 /-!
-# Images and ranges after extension of scalars
+# Ranges after extension of scalars
 
-Extending scalars along an algebra `A` turns a linear map `f` into `f.baseChange A` and a submodule
-`p` into `p.baseChange A`.  A containment of the image of a submodule in another submodule ascends
-to the extensions, with no hypothesis on `A` at all.
+If the coefficient algebra is faithfully flat, membership of a vector in the range of a linear map
+can be checked after extension of scalars.  This is the linear-algebraic descent step used when an
+equation acquires a solution after passing to a larger field.
 
-If the coefficient algebra is moreover faithfully flat, all of this is reversible: membership of a
-vector in a submodule or in the range of a linear map, a containment of the image of a submodule in
-another, and a containment of a range in a submodule may each be checked after extension of
-scalars.  This is the linear-algebraic descent step used when an equation acquires a solution, or a
-structural statement becomes available, after passing to a larger field.
-
-This builds on `Submodule.baseChange`, `Submodule.baseChange_eq_span` and
-`Submodule.tmul_mem_baseChange_of_mem` from
+This builds on `Submodule.baseChange` from
 `Mathlib/LinearAlgebra/TensorProduct/Tower.lean` and
 `lTensor_mkQ` and `LinearMap.lTensor_range` from
 `Mathlib/LinearAlgebra/TensorProduct/RightExactness.lean`, as well as
@@ -31,13 +23,8 @@ This builds on `Submodule.baseChange`, `Submodule.baseChange_eq_span` and
 
 ## Main results
 
-* `LinearMap.range_baseChange_le_baseChange_iff`: over a faithfully flat coefficient algebra,
-  a containment of the whole range in a submodule may be checked after extension of scalars.
 * `LinearMap.one_tmul_mem_range_baseChange_iff`: a vector belongs to a range exactly when its
   canonical image belongs to the extended range, for a faithfully flat coefficient algebra.
-
-Image containment for a submodule is recorded as `LinearMap.mapsTo_baseChange_iff` in
-`TauCeti/LinearAlgebra/TensorProduct/Submodule.lean`, alongside `Submodule.baseChange_map`.
 -/
 
 public section
@@ -81,19 +68,15 @@ universe u v w x
 
 variable {R : Type u} {A : Type v} {M : Type w} {N : Type x}
 
+section Descent
+
 variable [CommRing R] [Ring A] [Algebra R A]
 variable [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
-variable [Module.FaithfullyFlat R A]
-
-/-- **A containment of the range of a linear map in a submodule may be checked after extending
-scalars.** -/
-theorem range_baseChange_le_baseChange_iff (f : M →ₗ[R] N) (q : Submodule R N) :
-    range (f.baseChange A) ≤ q.baseChange A ↔ range f ≤ q := by
-  rw [← LinearMap.baseChange_range, Submodule.baseChange_le_iff]
 
 /-- Over a faithfully flat coefficient algebra, a vector belongs to the range of a linear map if
 and only if its canonical image belongs to the range after extension of scalars. -/
-theorem one_tmul_mem_range_baseChange_iff (f : M →ₗ[R] N) (y : N) :
+theorem one_tmul_mem_range_baseChange_iff [Module.FaithfullyFlat R A]
+    (f : M →ₗ[R] N) (y : N) :
     (1 : A) ⊗ₜ[R] y ∈ range (f.baseChange A) ↔ y ∈ range f := by
   calc
     _ ↔ (1 : A) ⊗ₜ[R] y ∈ range ((range f).subtype.baseChange A) := by
@@ -101,5 +84,7 @@ theorem one_tmul_mem_range_baseChange_iff (f : M →ₗ[R] N) (y : N) :
         SetLike.ext_iff.mp (lTensor_range (Q := A) (g := f)) ((1 : A) ⊗ₜ[R] y)
     _ ↔ y ∈ range f := by
       rw [← Submodule.baseChange, Submodule.one_tmul_mem_baseChange_iff]
+
+end Descent
 
 end LinearMap

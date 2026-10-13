@@ -58,13 +58,12 @@ Mathlib's Lie theorem applies, and then descended.
 function, recorded as `LieDerivation.coe_ofLieDerivation`; only the ring over which each is
 registered as linear differs.
 
-The descent is not specific to derivations, so it lives one level down:
-`LinearMap.mapsTo_baseChange_iff` in `TauCeti/LinearAlgebra/TensorProduct/Submodule.lean` and
-`LinearMap.range_baseChange_le_baseChange_iff` in
-`TauCeti/LinearAlgebra/TensorProduct/Range.lean`, `LinearMap.baseChange_injective` and
-`LinearMap.isNilpotent_baseChange_iff` in
-`TauCeti/LinearAlgebra/TensorProduct/BaseChange.lean`.  These are the statements for a bare linear
-map, and reach a derivation through `LieDerivation.baseChange_toLinearMap`.
+The containment descent reuses the canonical `Submodule.baseChange_map`,
+`Submodule.baseChange_le_iff` and `Submodule.map_le_iff_le_comap` directly, specialized to the
+submodules underlying the Lie ideals. No separate generic containment wrappers are introduced.
+`LinearMap.baseChange_injective` and `LinearMap.isNilpotent_baseChange_iff` in
+`TauCeti/LinearAlgebra/TensorProduct/BaseChange.lean` reach a derivation through
+`LieDerivation.baseChange_toLinearMap`.
 
 Mathlib provides the extension for a derivation of `L` into `L` and not for one into a general
 Lie module `M`, so that is the generality available by reuse and the generality used here; it is
@@ -130,6 +129,8 @@ def baseChangeHom : LieDerivation R L L →ₗ⁅R⁆
   map_smul' r D := by
     apply LieDerivation.ext
     intro z
+    -- The scalar-restriction alias defines this action through `algebraMap`. Expose that
+    -- defining action beneath function coercion before applying `algebraMap_smul` below.
     change (r • D).baseChange A z = algebraMap R A r • D.baseChange A z
     have h := congrFun (coe_ofLieDerivation (A := A) (r • D)) z
     rw [map_smul] at h
@@ -166,6 +167,8 @@ theorem baseChange_smul (r : R) (D : LieDerivation R L L) :
   intro z
   have h := congrArg (fun E : LieDerivation A (A ⊗[R] L) (A ⊗[R] L) => E z)
     (map_smul (baseChangeHom A) r D)
+  -- Evaluation hides the restricted scalar action inside the derivation function coercion.
+  -- Expose its defining action so `algebraMap_smul` can identify it with the existing `R` action.
   change (r • D).baseChange A z = algebraMap R A r • D.baseChange A z at h
   simpa only [LieDerivation.smul_apply, algebraMap_smul] using h
 
@@ -205,8 +208,13 @@ This is the form in which the descent is used: a structural statement proved ove
 closure, where it is available, descends to the original coefficient field. -/
 theorem mapsTo_baseChange_lieIdeal_iff (I J : LieIdeal R L) :
     (∀ z ∈ I.baseChange A, D.baseChange A z ∈ J.baseChange A) ↔ ∀ x ∈ I, D x ∈ J := by
+  have h := Submodule.baseChange_le_iff (A := A)
+    (p := I.toSubmodule.map D.toLinearMap) (q := J.toSubmodule)
+  rw [Submodule.baseChange_map, Submodule.map_le_iff_le_comap,
+    Submodule.map_le_iff_le_comap] at h
   simp only [← LieSubmodule.mem_toSubmodule, LieSubmodule.coe_baseChange]
-  exact LinearMap.mapsTo_baseChange_iff D.toLinearMap _ _
+  exact ⟨fun hD x hx => h.mp (fun z hz => hD z hz) hx,
+    fun hD z hz => h.mpr (fun x hx => hD x hx) hz⟩
 
 end FaithfullyFlat
 

@@ -7,9 +7,6 @@ module
 
 public import TauCeti.Geometry.Toric.Algebraic.Examples.AffinePlane
 public import TauCeti.Geometry.Toric.Analytic.Examples.AffineRay
-public import TauCeti.Geometry.Toric.Analytic.Fan.Boundary.Basic
-public import TauCeti.Geometry.Toric.Analytic.Fan.Map.Orbit
-public import TauCeti.Geometry.Toric.Analytic.Fan.Map.Subdivision
 public import TauCeti.Geometry.Toric.Analytic.Fan.Product.Manifold
 
 /-!
@@ -19,23 +16,14 @@ The standard product fan of two positive rays realizes as the ordinary complex a
 The equivalence is the fan product comparison followed by the standard coordinate on each
 affine-line factor, so both coordinates retain their interpretation as toric characters.
 
-The star subdivision of the affine-plane fan along the diagonal ray gives the blow-up of the
-affine plane at the origin. Its analytic toric map to the affine plane is proper, since the two
-fans have the same support. The fibre over the origin, the orbit of the positive quadrant, is the
-exceptional divisor: the boundary component of the diagonal ray, the closure of its orbit.
-
 ## Main declarations
 
 * `TauCeti.Toric.affinePlaneDiffeomorph`: the analytic affine plane is biholomorphic to `ℂ × ℂ`.
-* `TauCeti.Toric.isProperMap_analyticMap_affinePlaneBlowUpFan`: the blow-up map is proper.
-* `TauCeti.Toric.preimage_analyticMap_analyticConeOrbit_affinePlaneBlowUpFan`: the fibre of the
-  blow-up map over the origin is the boundary component of the diagonal ray.
 
 ## References
 
-* W. Fulton, *Introduction to Toric Varieties*, §1.4, and §2.4 for the blow-up of the plane.
-* D. Cox, J. Little and H. Schenck, *Toric Varieties*, §3.1, and §3.3 for star subdivisions and
-  the blow-up of the plane.
+* W. Fulton, *Introduction to Toric Varieties*, §1.4.
+* D. Cox, J. Little and H. Schenck, *Toric Varieties*, §3.1.
 -/
 
 public section
@@ -85,47 +73,27 @@ theorem affinePlaneDiffeomorph_apply (n : ℕ∞ω)
     Fan.coe_analyticProdDiffeomorph]
   rfl
 
-/-- On the maximal product chart, the two affine-plane coordinates are the standard character
-evaluations of the two affine-ray chart points. -/
+/-- On the maximal product chart, the affine-plane coordinates evaluate the standard
+characters of the two lattice factors. -/
 theorem affinePlaneDiffeomorph_analyticAffineChartι (n : ℕ∞ω)
-    (x y : AffineSemigroupComplexPoint
-      (dualSemigroup (isIntegralLattice_intCast 1) affineRayCone)) :
-    let z := (affineRayFan.analyticAffineChartProdHomeomorph affineRayFan
-      affineRayFanMaxCone affineRayFanMaxCone).symm (x, y)
+    (z : affinePlaneFan.analyticAffineChartDiagram.obj
+      (affineRayFan.prodCone affineRayFan affineRayFanMaxCone affineRayFanMaxCone)) :
+    let z' : AffineSemigroupComplexPoint
+      (dualSemigroup affinePlaneFan.lattice (affineRayCone.prod affineRayCone)) := z
     affinePlaneDiffeomorph n
       (affinePlaneFan.analyticAffineChartι isRegular_affinePlaneFan
         (affineRayFan.prodCone affineRayFan affineRayFanMaxCone affineRayFanMaxCone) z) =
-      (x (MonoidAlgebra.single (ofAdd affineRayCharacter) 1),
-        y (MonoidAlgebra.single (ofAdd affineRayCharacter) 1)) := by
-  dsimp only
-  rw [affinePlaneDiffeomorph_apply,
-    Fan.analyticProdHomeomorph_analyticAffineChartι]
-  simp only [Homeomorph.apply_symm_apply, Prod.map_apply,
-    affineRayFanDiffeomorph_analyticAffineChartι]
-
-/-! ### The blow-up of the affine plane at the origin -/
-
-/-- The analytic toric map from the blow-up of the affine plane at the origin, the star
-subdivision of the affine-plane fan along the diagonal, to the affine plane is proper. -/
-theorem isProperMap_analyticMap_affinePlaneBlowUpFan :
-    IsProperMap (affinePlaneBlowUpFan_isSubdivision.toFanHom.analyticMap
-      isRegular_affinePlaneBlowUpFan isRegular_affinePlaneFan) :=
-  affinePlaneBlowUpFan_isSubdivision.isProperMap_analyticMap isRegular_affinePlaneBlowUpFan
-    isRegular_affinePlaneFan
-
-/-- The exceptional fibre of the blow-up of the affine plane at the origin. The preimage of the
-origin, the orbit of the positive quadrant, is the boundary component of the diagonal ray. -/
-theorem preimage_analyticMap_analyticConeOrbit_affinePlaneBlowUpFan :
-    affinePlaneBlowUpFan_isSubdivision.toFanHom.analyticMap isRegular_affinePlaneBlowUpFan
-        isRegular_affinePlaneFan ⁻¹'
-      affinePlaneFan.analyticConeOrbit isRegular_affinePlaneFan
-        (affineRayFan.prodCone affineRayFan affineRayFanMaxCone affineRayFanMaxCone) =
-      affinePlaneBlowUpFan.analyticBoundaryComponent isRegular_affinePlaneBlowUpFan
-        affinePlaneBlowUpDiagonalRay := by
-  rw [FanHom.preimage_analyticMap_analyticConeOrbit, Fan.analyticBoundaryComponent_eq_iUnion]
-  ext x
-  simp only [Set.mem_iUnion, Set.mem_Ici, exists_prop, ← Subtype.coe_le_coe,
-    coe_toCone_affinePlaneBlowUpDiagonalRay]
-  exact exists_congr fun σ ↦ and_congr_left fun _ ↦ leastCone_affinePlaneBlowUpFan_eq_iff σ.2
+      (z' (MonoidAlgebra.single (ofAdd ((dualSemigroupProdEquiv
+          affineRayFan.lattice affineRayFan.lattice affineRayCone affineRayCone).symm
+          (affineRayCharacter, 0))) 1),
+        z' (MonoidAlgebra.single (ofAdd ((dualSemigroupProdEquiv
+          affineRayFan.lattice affineRayFan.lattice affineRayCone affineRayCone).symm
+          (0, affineRayCharacter))) 1)) := by
+  rw [affinePlaneDiffeomorph_apply, Fan.analyticProdHomeomorph_analyticAffineChartι]
+  simp only [Prod.map_apply, affineRayFanDiffeomorph_analyticAffineChartι,
+    Fan.coe_analyticAffineChartProdHomeomorph]
+  -- The product comparison is expressed on the raw complex-point carrier.
+  erw [AffineSemigroupComplexPoint.prodEquiv_fst_apply_single,
+    AffineSemigroupComplexPoint.prodEquiv_snd_apply_single]
 
 end TauCeti.Toric
