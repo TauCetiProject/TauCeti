@@ -56,7 +56,9 @@ theorem Box.mem_Icc_of_coe_eq_inf {A B C : Box ι} {x : ι → ℝ}
   rw [Box.Icc_def, mem_Icc, ← hh.1, ← hh.2]
   exact ⟨sup_le hxA.1 hxB.1, le_inf hxA.2 hxB.2⟩
 
-private theorem refinement_tag_mem (p : Prepartition I) {π : TaggedPrepartition I}
+/-- Refinement tags remain in the fixed piece when its gauge prevents face crossing. -/
+theorem Prepartition.infPrepartition_tag_mem_Icc_of_gauge (p : Prepartition I)
+    {π : TaggedPrepartition I}
     {r : (ι → ℝ) → Ioi (0 : ℝ)}
     (hr : ∀ x z, z ∈ closedBall x (r x) → ∀ J ∈ p,
       z ∈ Box.Icc J → x ∈ Box.Icc J)
@@ -94,7 +96,7 @@ theorem Prepartition.isHenstock_infPrepartition_of_gauge (p : Prepartition I)
     change π.tag (π.toPrepartition.biUnionIndex (fun A ↦ p.restrict A) K) = _
     rw [π.toPrepartition.biUnionIndex_of_mem hA hKA]
   exact Box.mem_Icc_of_coe_eq_inf hKJ (by simpa only [htag] using hH A hA)
-    (refinement_tag_mem p hr hπ hJ hK')
+    (p.infPrepartition_tag_mem_Icc_of_gauge hr hπ hJ hK')
 
 omit [Fintype ι] in
 open scoped Classical in
@@ -158,7 +160,7 @@ theorem hasIntegral_Henstock_of_partition {f : (ι → ℝ) → E} {vol : ι →
   intro c π hπ hπp
   have hsub₀ := hπ.isSubordinate.mono' (fun K _ ↦ hR₀ (π.tag K))
   have htag (J) (hJ : J ∈ p) (K) (hK : K ∈ π.toPrepartition.restrict J) :=
-    refinement_tag_mem p hr₀ hsub₀ hJ hK
+    p.infPrepartition_tag_mem_Icc_of_gauge hr₀ hsub₀ hJ hK
   -- Refine an arbitrary test partition and restrict its tags to each fixed piece.
   let πi (J : Box ι) : TaggedPrepartition J :=
     if hJ : J ∈ p then taggedPiece p π J (htag J hJ)

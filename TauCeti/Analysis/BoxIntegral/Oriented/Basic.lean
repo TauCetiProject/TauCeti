@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.BoxIntegral.IntervalIntegral
 public import TauCeti.Analysis.BoxIntegral.HenstockPartition
-public import TauCeti.Algebra.BigOperators.Fin
+public import Mathlib.Algebra.BigOperators.Intervals
 
 /-!
 # Oriented Henstock integrals on real intervals
@@ -107,7 +107,8 @@ theorem HasHenstockIntervalIntegral.unique (h : HasHenstockIntervalIntegral f a 
       ((hasHenstockIntervalIntegral_iff_of_gt hba).mp h'))
 
 /-- Existence of a gauge interval value supplies genuine integrability. -/
-theorem HasHenstockIntervalIntegral.integrable (h : HasHenstockIntervalIntegral f a b y) :
+theorem HasHenstockIntervalIntegral.henstockIntervalIntegrable
+    (h : HasHenstockIntervalIntegral f a b y) :
     HenstockIntervalIntegrable f a b := ⟨y, h⟩
 
 /-- Changing a raw integrand outside the unoriented interval changes no Henstock value. -/
@@ -173,7 +174,7 @@ theorem HasHenstockIntervalIntegral.sub (hf : HasHenstockIntervalIntegral f a b 
 theorem HenstockIntervalIntegrable.symm (h : HenstockIntervalIntegrable f a b) :
     HenstockIntervalIntegrable f b a := by
   obtain ⟨y, hy⟩ := henstockIntervalIntegrable_iff.mp h
-  exact hy.symm.integrable
+  exact hy.symm.henstockIntervalIntegrable
 
 /-- Addition preserves existence of oriented gauge integrals. -/
 theorem HenstockIntervalIntegrable.add (hf : HenstockIntervalIntegrable f a b)
@@ -181,13 +182,28 @@ theorem HenstockIntervalIntegrable.add (hf : HenstockIntervalIntegrable f a b)
       := by
   obtain ⟨y, hy⟩ := henstockIntervalIntegrable_iff.mp hf
   obtain ⟨z, hz⟩ := henstockIntervalIntegrable_iff.mp hg
-  exact (hy.add hz).integrable
+  exact (hy.add hz).henstockIntervalIntegrable
 
 /-- Scalar multiplication preserves existence of an oriented gauge integral. -/
 theorem HenstockIntervalIntegrable.smul (hf : HenstockIntervalIntegrable f a b) (r : ℝ) :
     HenstockIntervalIntegrable (fun t ↦ r • f t) a b := by
   obtain ⟨y, hy⟩ := henstockIntervalIntegrable_iff.mp hf
-  exact (hy.smul r).integrable
+  exact (hy.smul r).henstockIntervalIntegrable
+
+
+/-- Negation preserves existence of an oriented Henstock integral. -/
+theorem HenstockIntervalIntegrable.neg (hf : HenstockIntervalIntegrable f a b) :
+    HenstockIntervalIntegrable (fun t ↦ -f t) a b := by
+  obtain ⟨y, hy⟩ := henstockIntervalIntegrable_iff.mp hf
+  exact hy.neg.henstockIntervalIntegrable
+
+/-- Subtraction preserves existence of oriented Henstock integrals. -/
+theorem HenstockIntervalIntegrable.sub (hf : HenstockIntervalIntegrable f a b)
+    (hg : HenstockIntervalIntegrable g a b) :
+    HenstockIntervalIntegrable (fun t ↦ f t - g t) a b := by
+  obtain ⟨y, hy⟩ := henstockIntervalIntegrable_iff.mp hf
+  obtain ⟨z, hz⟩ := henstockIntervalIntegrable_iff.mp hg
+  exact (hy.sub hz).henstockIntervalIntegrable
 
 variable [CompleteSpace E]
 
@@ -223,7 +239,7 @@ private theorem restrict_of_lt (hab : a < b) (h : HasHenstockIntervalIntegral f 
     obtain ⟨z, hz⟩ := hbox.integrable.to_subbox
       ((intervalBox_le_intervalBox_iff hab hlt).mpr ⟨hc.1, hd.2⟩)
     exact ⟨z, (hasHenstockIntervalIntegral_iff_of_lt hlt).mpr hz⟩
-  · exact (hasHenstockIntervalIntegral_refl f c).integrable
+  · exact (hasHenstockIntervalIntegral_refl f c).henstockIntervalIntegrable
   · have hc := hcd left_mem_uIcc
     have hd := hcd right_mem_uIcc
     obtain ⟨z, hz⟩ := hbox.integrable.to_subbox
@@ -240,7 +256,7 @@ theorem HasHenstockIntervalIntegral.henstockIntervalIntegrable_of_subset (h :
     have hd : d = a := by simpa using hcd right_mem_uIcc
     subst c
     subst d
-    exact (hasHenstockIntervalIntegral_refl f a).integrable
+    exact (hasHenstockIntervalIntegral_refl f a).henstockIntervalIntegrable
   · exact restrict_of_lt hba h.symm (by simpa only [uIcc_of_ge hba.le] using hcd)
 
 
@@ -332,8 +348,13 @@ theorem HasHenstockIntervalIntegral.split_fin {N : ℕ} {s : Fin (N + 1) → ℝ
     -- The chosen subdivision value is definitionally the difference of the prefix values.
     change F i.succ - F i.castSucc = z₂
     rw [← hz, (hF i.castSucc).unique hz₁, add_sub_cancel_left]
-  · rw [Fin.sum_univ_succ_sub_castSucc, (hF (Fin.last N)).unique h,
-      hasHenstockIntervalIntegral_same.mp (hF 0), sub_zero]
+  · have htel : ∑ i : Fin N, (F i.succ - F i.castSucc) = F (Fin.last N) - F 0 := by
+      cases N with
+      | zero => simp
+      | succ n =>
+        have hIic : Finset.Iic (Fin.last n) = Finset.univ := Finset.Iic_top
+        simpa only [hIic, Fin.succ_last] using Fin.sum_Iic_sub (Fin.last n) F
+    rw [htel, (hF (Fin.last N)).unique h, hasHenstockIntervalIntegral_same.mp (hF 0), sub_zero]
 
 private theorem trans_of_le (h₁ : HasHenstockIntervalIntegral f a c y)
     (h₂ : HasHenstockIntervalIntegral f c b z) (hac : a ≤ c) (hcb : c ≤ b) :
@@ -396,7 +417,7 @@ theorem HenstockIntervalIntegrable.trans (h₁ : HenstockIntervalIntegrable f a 
     (h₂ : HenstockIntervalIntegrable f c b) : HenstockIntervalIntegrable f a b := by
   obtain ⟨y, hy⟩ := henstockIntervalIntegrable_iff.mp h₁
   obtain ⟨z, hz⟩ := henstockIntervalIntegrable_iff.mp h₂
-  exact (hy.trans hz).integrable
+  exact (hy.trans hz).henstockIntervalIntegrable
 
 /-- The oriented additivity identity holds at any intermediate parameter, including backtracking. -/
 theorem HasHenstockIntervalIntegral.add_eq (h : HasHenstockIntervalIntegral f a b y)
