@@ -20,7 +20,7 @@ H¹(G, I_L) → H¹(G, C_L) → H²(G, Lˣ) → H²(G, I_L).
 
 Its first term vanishes by Hilbert 90 for ideles (`subsingleton_groupCohomology_one_idelesRep`), so
 the connecting map `ideleClassToUnitsH2 K L : H¹(G, C_L) → H²(G, Lˣ)` is injective
-(`injective_ideleClassToUnitsH2`), and its image is the kernel of the map induced by the principal
+(`ideleClassToUnitsH2_injective`), and its image is the kernel of the map induced by the principal
 ideles (`mem_range_ideleClassToUnitsH2_iff`). A class `x ∈ H²(G, Lˣ)` dies in `H²(G, I_L)` exactly
 when every localization of its Brauer class `relBrInfl K L σ x` vanishes
 (`map_unitsToIdeles_eq_zero_iff_brLocalization_eq_zero`). Hence the split Brauer classes with
@@ -43,7 +43,7 @@ the injectivity of `Br K → ⨁_v Br K_v` (Albert–Brauer–Hasse–Noether), 
 
 ## Main results
 
-* `TauCeti.ClassFieldTheory.injective_ideleClassToUnitsH2`: the connecting map is injective.
+* `TauCeti.ClassFieldTheory.ideleClassToUnitsH2_injective`: the connecting map is injective.
 * `TauCeti.ClassFieldTheory.mem_range_ideleClassToUnitsH2_iff`: its image is the kernel of
   `H²(G, Lˣ) → H²(G, I_L)`.
 * `TauCeti.ClassFieldTheory.brLocalization_relBrInfl_eq_zero_iff_mem_range_ideleClassToUnitsH2`:
@@ -76,14 +76,6 @@ def ideleClassToUnitsH2 :
       groupCohomology (Rep.ofMulDistribMulAction (L ≃ₐ[K] L) Lˣ) 2 :=
   (groupCohomology.δ (principalIdeleShortComplex_shortExact K L) 1 2 rfl).hom.toAddMonoidHom
 
-omit [NumberField K] in
-/-- `ideleClassToUnitsH2 K L` is Mathlib's connecting homomorphism `groupCohomology.δ` of the
-exact sequence `0 → Lˣ → I_L → C_L → 0`. -/
-theorem ideleClassToUnitsH2_def :
-    ideleClassToUnitsH2 K L =
-      (groupCohomology.δ (principalIdeleShortComplex_shortExact K L) 1 2 rfl).hom.toAddMonoidHom :=
-  (rfl)
-
 variable {K L}
 
 omit [NumberField K] in
@@ -101,7 +93,7 @@ variable [IsGalois K L]
 
 /-- **The connecting map `H¹(Gal(L/K), C_L) → H²(Gal(L/K), Lˣ)` is injective**, since
 `H¹(Gal(L/K), I_L)` vanishes by Hilbert 90 for ideles. -/
-theorem injective_ideleClassToUnitsH2 : Function.Injective (ideleClassToUnitsH2 K L) :=
+theorem ideleClassToUnitsH2_injective : Function.Injective (ideleClassToUnitsH2 K L) :=
   (ModuleCat.mono_iff_injective _).1 <| groupCohomology.mono_δ_of_isZero _ 1 <|
     ModuleCat.isZero_of_subsingleton (groupCohomology (idelesRep K L) 1)
 
@@ -126,7 +118,7 @@ theorem subsingleton_groupCohomology_one_ideleClassRep_iff (σ : L →ₐ[K] Sep
         brLocalization K (relBrInfl K L σ x) = 0 → x = 0 := by
   simp_rw [brLocalization_relBrInfl_eq_zero_iff_mem_range_ideleClassToUnitsH2 σ,
     AddMonoidHom.mem_range]
-  refine ⟨fun _ x ⟨c, hc⟩ ↦ ?_, fun h ↦ ⟨fun c d ↦ injective_ideleClassToUnitsH2 ?_⟩⟩
+  refine ⟨fun _ x ⟨c, hc⟩ ↦ ?_, fun h ↦ ⟨fun c d ↦ ideleClassToUnitsH2_injective ?_⟩⟩
   · rw [← hc, Subsingleton.elim c 0, map_zero]
   · rw [h _ ⟨c, rfl⟩, h _ ⟨d, rfl⟩]
 
