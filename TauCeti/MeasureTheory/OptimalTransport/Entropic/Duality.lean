@@ -110,12 +110,14 @@ theorem entropicGibbsFactor_def :
 
 omit [MeasurableSpace X] [MeasurableSpace Y] in
 /-- Where the cost is finite, the Gibbs factor is the real exponential of the Gibbs exponent. -/
+@[simp]
 theorem entropicGibbsFactor_of_ne_top {z : X × Y} (hz : c z ≠ ∞) :
     entropicGibbsFactor c ε φ ψ z = Real.exp ((φ z.1 + ψ z.2 - (c z).toReal) / ε) :=
   Set.indicator_of_mem hz _
 
 omit [MeasurableSpace X] [MeasurableSpace Y] in
 /-- Where the cost is infinite, the Gibbs factor vanishes. -/
+@[simp]
 theorem entropicGibbsFactor_of_eq_top {z : X × Y} (hz : c z = ∞) :
     entropicGibbsFactor c ε φ ψ z = 0 :=
   Set.indicator_of_notMem (not_not.2 hz) _
