@@ -7,6 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.IntegralLattice.Overlattice.Index
 public import TauCeti.LinearAlgebra.IntegralLattice.Overlattice.Dual
+public import TauCeti.LinearAlgebra.IntegralLattice.Restriction
 
 import Mathlib.Tactic.FinCases
 
@@ -85,46 +86,41 @@ private theorem isLattice_twoNeighborKernel (v : L) :
     have hcancel : (1 / 2 : ℚ) * 2 = 1 := by norm_num
     simpa only [SetLike.mem_coe, smul_smul, hcancel, one_smul] using h
 
+attribute [local instance] isLattice_twoNeighborKernel
+
 /-- The even-pairing kernel, with the original ambient rational form. -/
-noncomputable def twoNeighborKernelLattice (v : L) : IntegralLattice V where
-  carrier := L.twoNeighborKernel v
-  form := L.form
-  isLattice := isLattice_twoNeighborKernel L v
-  isSymm := L.isSymm
-  le_dual := L.le_dualSubmodule_of_le_carrier (L.twoNeighborKernel_le v)
+noncomputable def twoNeighborKernelLattice (v : L) : IntegralLattice V :=
+  L.restrictFull (L.twoNeighborKernel v) (L.twoNeighborKernel_le v)
 
 /-- The kernel lattice has the even-pairing carrier. -/
 @[simp]
 theorem twoNeighborKernelLattice_carrier (v : L) :
     (L.twoNeighborKernelLattice v).carrier = L.twoNeighborKernel v := by
-  rw [twoNeighborKernelLattice]
+  unfold twoNeighborKernelLattice
+  exact restrictFull_carrier ..
 
 /-- Passing to the neighbor kernel keeps the ambient form. -/
 @[simp]
 theorem twoNeighborKernelLattice_form (v : L) : (L.twoNeighborKernelLattice v).form = L.form := by
-  rw [twoNeighborKernelLattice]
+  unfold twoNeighborKernelLattice
+  exact restrictFull_form ..
 
 /-- The neighbor kernel of a nondegenerate lattice is nondegenerate. -/
 instance instIsNondegenerateTwoNeighborKernelLattice [L.IsNondegenerate] (v : L) :
     (L.twoNeighborKernelLattice v).IsNondegenerate := by
-  constructor
-  rw [twoNeighborKernelLattice_form]
-  exact L.form_nondegenerate
+  unfold twoNeighborKernelLattice
+  infer_instance
 
 /-- The even-pairing kernel of an even lattice is even. -/
 theorem IsEven.twoNeighborKernelLattice {L : IntegralLattice V} (hL : L.IsEven) (v : L) :
     (L.twoNeighborKernelLattice v).IsEven := by
-  rw [isEven_iff_forall_norm]
-  intro x
-  obtain ⟨n, hn⟩ := hL.exists_norm_eq_two_mul
-    ⟨(x : V), L.twoNeighborKernel_le v ((L.twoNeighborKernelLattice_carrier v) ▸ x.2)⟩
-  refine ⟨n, ?_⟩
-  simpa only [norm_apply, twoNeighborKernelLattice_form] using hn
+  unfold IntegralLattice.twoNeighborKernelLattice
+  exact isEven_restrictFull hL _ _
 
-/-- The even-pairing kernel of a positive definite lattice is positive definite. -/
-theorem IsPosDef.twoNeighborKernelLattice {L : IntegralLattice V} (hL : L.IsPosDef) (v : L) :
-    (L.twoNeighborKernelLattice v).IsPosDef := by
-  simpa only [IsPosDef, twoNeighborKernelLattice_form] using hL
+/-- The even-pairing kernel is positive definite exactly when the original lattice is. -/
+theorem isPosDef_twoNeighborKernelLattice_iff (v : L) :
+    (L.twoNeighborKernelLattice v).IsPosDef ↔ L.IsPosDef := by
+  simp only [IsPosDef, twoNeighborKernelLattice_form]
 
 private theorem half_mem_twoNeighborKernelLattice_dualCarrier (v : L) :
     (1 / 2 : ℚ) • (v : V) ∈ (L.twoNeighborKernelLattice v).dualCarrier := by
@@ -271,13 +267,15 @@ instance instIsNondegenerateTwoNeighbor (hL : L.IsEven) (v : L)
   rw [twoNeighbor_form]
   exact L.form_nondegenerate
 
-/-- A two-neighbor of a positive definite lattice is positive definite. -/
-theorem IsPosDef.twoNeighbor {L : IntegralLattice V} (hL : L.IsPosDef)
-    (he : L.IsEven) (v : L) (hv : (8 : ℤ) ∣ L.integralNorm v) :
-    letI : L.IsNondegenerate := ⟨(L.isPosDef_iff_isPosSemidef_and_nondegenerate.mp hL).2⟩
-    (L.twoNeighbor he v hv).IsPosDef := by
-  let : L.IsNondegenerate := ⟨(L.isPosDef_iff_isPosSemidef_and_nondegenerate.mp hL).2⟩
-  simpa only [IsPosDef, twoNeighbor_form] using hL
+/-- A two-neighbor is positive definite exactly when the original lattice is. -/
+theorem isPosDef_twoNeighbor_iff (he : L.IsEven) (v : L)
+    (hv : (8 : ℤ) ∣ L.integralNorm v) :
+    (L.twoNeighbor he v hv).IsPosDef ↔ L.IsPosDef := by
+  rw [twoNeighbor]
+  exact ((L.twoNeighborKernelLattice v).isPosDef_ofIsotropicSubgroup_iff
+    (he.twoNeighborKernelLattice v) (L.twoNeighborGlueSubgroup v)
+    (L.isIsotropic_twoNeighborGlueSubgroup he v hv)).trans
+      (L.isPosDef_twoNeighborKernelLattice_iff v)
 
 /-- The rank is preserved because the two-neighbor is a full lattice in the same ambient space. -/
 theorem finrank_twoNeighbor (hL : L.IsEven) (v : L) (hv : (8 : ℤ) ∣ L.integralNorm v) :
