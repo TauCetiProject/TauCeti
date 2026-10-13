@@ -103,7 +103,7 @@ theorem exists_orthonormal_span_eq_sum_inner_eq {u v : ι → E} (hu : Orthonorm
     have := FiniteDimensional.span_of_finite 𝕜 (Set.finite_range v)
     exact Submodule.eq_of_le_of_finrank_eq hle <| by
       rw [finrank_span_eq_card hw.linearIndependent, finrank_span_eq_card hv.linearIndependent]
-  · rw [finrank_euclideanSpace, LinearMap.kyFanSum_def, ← cosPrincipalAngles_def hu hv,
+  · rw [finrank_euclideanSpace, ← sum_range_cosPrincipalAngles_eq_kyFanSum hu hv,
       LinearMap.trace_eq_sum_inner _ e] at hQ
     rw [← hQ]
     refine Finset.sum_congr rfl fun j _ ↦ ?_
@@ -144,7 +144,7 @@ theorem two_mul_sum_one_sub_cosPrincipalAngles_le_sum_norm_sub_sq {u v w : ι �
     hv.synthesisMapIsometry.orthonormal_comp_iff.mp (by simpa [Function.comp_def, hwc] using hw)
   have hle := (overlapOperator 𝕜 u v).norm_sum_inner_le_kyFanSum
     (EuclideanSpace.basisFun ι 𝕜).orthonormal hc'
-  rw [LinearMap.kyFanSum_def, ← cosPrincipalAngles_def hu hv] at hle
+  rw [← sum_range_cosPrincipalAngles_eq_kyFanSum hu hv] at hle
   have hsum : ∑ j, ⟪u j, w j⟫_𝕜 =
       ∑ j, ⟪EuclideanSpace.basisFun ι 𝕜 j, overlapOperator 𝕜 u v (c' j)⟫_𝕜 := by
     refine Finset.sum_congr rfl fun j _ ↦ ?_
