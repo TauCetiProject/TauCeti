@@ -9,6 +9,8 @@ public import Mathlib.Analysis.InnerProductSpace.NormDet
 public import Mathlib.MeasureTheory.Function.Jacobian
 import Mathlib.Analysis.Calculus.FDeriv.Measurable
 import Mathlib.MeasureTheory.Constructions.Polish.Basic
+import TauCeti.Analysis.InnerProductSpace.NormDet
+import TauCeti.MeasureTheory.Measure.Haar.Lipschitz
 
 /-!
 # The area formula for injective maps with injective derivative
@@ -53,9 +55,6 @@ the two inequalities up to `τ³`, and `τ → 1` gives the formula.
 
 ## Main declarations
 
-* `LipschitzOnWith.euclideanHausdorffMeasure_image_le`: an `L`-Lipschitz map increases `μHE[d]`
-  by at most `Lᵈ`.
-* `ContinuousLinearMap.continuous_normDet`: the Jacobian `normDet` is continuous.
 * `ApproximatesLinearOn.euclideanHausdorffMeasure_image_le`,
   `ApproximatesLinearOn.ofReal_normDet_mul_volume_le`: the area formula up to a controlled factor
   for a map approximated by an injective linear map.
@@ -74,41 +73,10 @@ public section
 open MeasureTheory Measure Set Filter Metric Module Function
 open scoped NNReal ENNReal Topology
 
-section Lipschitz
-
-variable {X Y : Type*} [EMetricSpace X] [MeasurableSpace X] [BorelSpace X]
-  [EMetricSpace Y] [MeasurableSpace Y] [BorelSpace Y]
-
-/-- A map that is `K`-Lipschitz on `s` increases the `d`-dimensional Euclidean Hausdorff measure
-of `s` by at most the factor `K ^ d`. -/
-theorem LipschitzOnWith.euclideanHausdorffMeasure_image_le {K : ℝ≥0} {f : X → Y} {s : Set X}
-    (hf : LipschitzOnWith K f s) (d : ℕ) :
-    μHE[d] (f '' s) ≤ (K : ℝ≥0∞) ^ d * μHE[d] s := by
-  simp_rw [euclideanHausdorffMeasure_def, Measure.smul_apply, nnreal_smul_coe_apply]
-  calc _ ≤ (addHaarScalarFactor (volume : Measure (EuclideanSpace ℝ (Fin d))) μH[d] : ℝ≥0∞) *
-        ((K : ℝ≥0∞) ^ (d : ℝ) * μH[d] s) := by
-        gcongr
-        exact hf.hausdorffMeasure_image_le d.cast_nonneg
-    _ = _ := by
-        rw [ENNReal.rpow_natCast]
-        exact mul_left_comm _ _ _
-
-end Lipschitz
-
 section InnerProduct
 
 variable {U V : Type*} [NormedAddCommGroup U] [InnerProductSpace ℝ U] [FiniteDimensional ℝ U]
   [NormedAddCommGroup V] [InnerProductSpace ℝ V]
-
-/-- The `m`-dimensional Jacobian `normDet` of a linear map `U →L[ℝ] V`, `m = dim U`, depends
-continuously on the map. -/
-theorem ContinuousLinearMap.continuous_normDet [FiniteDimensional ℝ V] :
-    Continuous fun A : U →L[ℝ] V => A.normDet := by
-  have h (A : U →L[ℝ] V) : A.normDet = √((ContinuousLinearMap.adjoint A ∘L A).det) := by
-    rw [← A.normDet_sq, RCLike.ofReal_real_eq_id, id, Real.sqrt_sq A.normDet_nonneg]
-  simp_rw [h]
-  exact (ContinuousLinearMap.continuous_det.comp
-    (ContinuousLinearMap.adjoint.continuous.clm_comp continuous_id)).sqrt
 
 /-- Around an injective linear map `B` there is a ball on which the antilipschitz constant is
 uniform and the Jacobian varies by a factor at most `τ`. -/
@@ -375,8 +343,10 @@ private theorem exists_partition_le_and_le (hs : MeasurableSet s)
     · simp [h]
     obtain ⟨y, hy, hAy⟩ := ht_A k ⟨x₁, hx₁.1⟩ n
     obtain ⟨hAanti, hA₁, hA₂⟩ := hK k (A k n) (by rw [hAy]; exact (hDS k hy).2)
-    rw [show τ ^ 3 = τ * τ ^ 2 by ring]
-    nth_rewrite 2 [show τ * τ ^ 2 = τ ^ 2 * τ by ring]
+    -- The helper below states its two bounds with the factors `τ * σ` and `σ * τ`, for `σ = τ²`.
+    have hτ3 : τ ^ 3 = τ * τ ^ 2 := by ring
+    rw [hτ3]
+    nth_rewrite 2 [mul_comm τ]
     refine euclideanHausdorffMeasure_image_le_and_lintegral_le
       ((MeasurableSet.disjointed hSm k).inter (ht_meas k n)) (sq_nonneg τ) (ht_approx k n) hAanti
       (hδ k).2.1 (hδ k).2.2.1 (hδ k).2.2.2 fun x hx => ?_
