@@ -6,8 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.BumpFunction.FiniteDimension
-import TauCeti.Analysis.Calculus.ContDiff.Support
-import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 
 /-!
 # Extending finite-dimensional smooth germs
@@ -33,22 +31,6 @@ public section
 variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [NormedAddCommGroup F] [NormedSpace ℝ F]
 
-/-- A function smooth on an open set has a globally smooth, compactly supported representative
-agreeing with it near every point of any prescribed compact subset of that set. -/
-theorem ContDiffOn.exists_contDiff_eventuallyEq_on_isCompact [FiniteDimensional ℝ E]
-    {n : ℕ∞} {f : E → F} {K U : Set E} (hf : ContDiffOn ℝ n f U)
-    (hK : IsCompact K) (hU : IsOpen U) (hKU : K ⊆ U) :
-    ∃ g : E → F, ContDiff ℝ n g ∧ HasCompactSupport g ∧ tsupport g ⊆ U ∧
-      ∀ x ∈ K, g =ᶠ[nhds x] f := by
-  obtain ⟨ψ, hψ, -, hψone, hψcpt, hψsupp⟩ := hK.exists_contDiff_cutoff hU hKU
-  refine ⟨fun x ↦ ψ x • f x, (hψ.of_le (by simp)).smul_of_tsupport_subset hf hU hψsupp,
-    hψcpt.smul_right, (tsupport_smul_subset_left ψ f).trans hψsupp, ?_⟩
-  intro x hx
-  filter_upwards [isOpen_interior.mem_nhds (hψone hx)] with y hy
-  have hone : ψ y = 1 := by
-    simpa only [Set.mem_preimage, Set.mem_singleton_iff] using interior_subset hy
-  simp only [hone, one_smul]
-
 /-- A function which is smooth on a neighbourhood of a point of a finite-dimensional real normed
 space agrees near that point with a compactly supported globally smooth function of the same
 order. -/
@@ -62,12 +44,23 @@ theorem ContDiffOn.exists_contDiff_eventuallyEq_of_finiteDimensional
   let g : E → F := fun y ↦ b y • f y
   have hball : ContDiffOn ℝ n f (Metric.ball x ε) :=
     hfs.mono hεs
-  have hg : ContDiff ℝ n g := b.contDiff.smul_of_tsupport_subset hball
-    Metric.isOpen_ball (by
-      intro y hy
-      have hyClosed : y ∈ Metric.closedBall x (ε / 2) := by
+  have hg : ContDiff ℝ n g := by
+    rw [contDiff_iff_contDiffAt]
+    intro y
+    by_cases hy : y ∈ tsupport b
+    · have hyClosed : y ∈ Metric.closedBall x (ε / 2) := by
         simpa only [b, ContDiffBump.tsupport_eq] using hy
-      exact Metric.mem_ball.mpr ((Metric.mem_closedBall.mp hyClosed).trans_lt (by linarith)))
+      have hyBall : y ∈ Metric.ball x ε := by
+        rw [Metric.mem_ball]
+        exact hyClosed.trans_lt (by linarith)
+      exact b.contDiffAt.smul
+        ((hball y hyBall).contDiffAt (Metric.isOpen_ball.mem_nhds hyBall))
+    · have hbzero : (b : E → ℝ) =ᶠ[nhds y] fun _ ↦ 0 :=
+        notMem_tsupport_iff_eventuallyEq.mp hy
+      have hgeq : g =ᶠ[nhds y] fun _ ↦ (0 : F) := by
+        filter_upwards [hbzero] with z hz
+        simp only [g, hz, zero_smul]
+      exact contDiffAt_const.congr_of_eventuallyEq hgeq
   refine ⟨g, hg, b.hasCompactSupport.smul_right, ?_⟩
   filter_upwards [b.eventuallyEq_one] with y hy
   have hone : (fun _ : E ↦ (1 : ℝ)) y = 1 := by
