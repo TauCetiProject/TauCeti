@@ -172,7 +172,10 @@ theorem classicalAction_naturality {L L' : LocalCoefficientSystem.{u, u, w} R X}
   rw [← op_unop a, classicalAction_op_apply, classicalAction_op_apply]
   exact LocalCoefficientSystem.fiberRightAction_lift_naturality φ _ m
 
-/-- **A morphism of classical local systems induces a morphism of DG local systems.** -/
+/-- **A morphism of classical local systems induces a morphism of DG local systems.**
+
+This is exposed so that the functor laws of `classicalDGLocalSystemFunctor` hold by unfolding,
+rather than through a separate comp/id lemma for each. -/
 @[expose] def classicalDGLocalSystemMap {L L' : LocalCoefficientSystem.{u, u, w} R X} (φ : L ⟶ L') :
     DGRightModuleHom (isDGRightModule_fiber (x := x) L) (isDGRightModule_fiber (x := x) L') where
   toLinearMap :=
