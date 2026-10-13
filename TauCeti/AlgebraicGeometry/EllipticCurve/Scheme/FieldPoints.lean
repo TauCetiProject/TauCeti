@@ -9,6 +9,7 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.Torsion
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.OfWeierstrass
 import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.MulByInt.IsSepClosed
 import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.MulByInt.Torsion.Structure
+import TauCeti.AlgebraicGeometry.RationalPoint.Basic
 
 /-!
 # Field points of the elliptic curve of a Weierstrass equation
@@ -63,6 +64,8 @@ over a separably closed field in which `n` is invertible.
 * `WeierstrassCurve.nonempty_toEllipticCurveGeom_torsion_mulEquiv_prod`: over a separably closed
   field in which `N` is invertible, the group of points of `E[N]` with values in `Spec K` is
   isomorphic to `(ℤ/Nℤ)²`.
+* `TauCeti.AlgebraicGeometry.EllipticCurveGeom.eq_one_iff_left_apply_eq_zero`: a point of an
+  elliptic curve over `Spec K` is zero exactly when it meets the zero section.
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.finite_comp_mulBy_eq_one`: for `n ≠ 0`, finitely
   many points of any elliptic curve over `Spec K` are killed by `[n]`.
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.natCard_torsion`: over a separably closed field in
@@ -256,6 +259,17 @@ end WeierstrassCurve
 namespace TauCeti.AlgebraicGeometry.EllipticCurveGeom
 
 variable {K : Type u} [Field K] (E : EllipticCurveGeom (Spec (.of K)))
+
+/-- A point of an elliptic curve over a field `K` with values in `Spec K` is the zero point
+exactly when it meets the zero section at the point `p` of `Spec K`. -/
+theorem eq_one_iff_left_apply_eq_zero (x : 𝟙_ (Over (Spec (.of K))) ⟶ Over.mk E.structureMap)
+    (p : Spec (.of K)) : x = 1 ↔ x.left p = E.zero p := by
+  refine Iff.trans ?_
+    (comp_eq_comp_iff_of_section (by simpa using Over.w x) E.zero_comp_structureMap (𝟙 _) p)
+  simp only [Category.id_comp]
+  refine ⟨fun hx ↦ by simp [hx], fun hx ↦ ?_⟩
+  ext1
+  simpa using hx
 
 /-- **An elliptic curve over a field has finitely many `n`-torsion points.** For an elliptic curve
 `E` over `Spec K` and a nonzero integer `n`, only finitely many points of `E` with values in
