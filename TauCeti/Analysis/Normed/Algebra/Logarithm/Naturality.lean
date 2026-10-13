@@ -110,6 +110,16 @@ theorem map_log_germ {F : Type*} [FunLike F A B] [RingHomClass F A B]
   filter_upwards [eventually_map_log f hf] with x hx
   exact hx
 
+/- The logarithm germ equation for `ContinuousMapClass` homomorphisms is the simplifier
+boundary. The generic theorem above remains explicit because it takes a continuity proof. -/
+@[simp]
+private theorem map_log_germ_continuousMapClass {F : Type*} [FunLike F A B]
+    [ContinuousMapClass F A B] [RingHomClass F A B] (f : F) :
+    (↑(f ∘ log) : Germ (𝓝 (1 : A)) B) =
+      (↑(log : B → B) : Germ (𝓝 (1 : B)) B).compTendsto f (by
+        exact (map_continuous f).tendsto' 1 1 (map_one f)) :=
+  map_log_germ f (map_continuous f)
+
 end Normed
 
 end NormedSpace

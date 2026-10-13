@@ -13,13 +13,13 @@ public import TauCeti.Analysis.Normed.Algebra.Logarithm.Naturality
 # The local Baker--Campbell--Hausdorff map
 
 This file defines the germ at `(0, 0)` represented by
-`log (exp x * exp y)` in a complete real normed algebra. Using a germ records
+`log (exp x * exp y)` in a complete normed `ℚ`-algebra. Using a germ records
 that this expression is a local logarithm; its values away from the origin
 have no mathematical role.
 
 The exponential of this germ is the product of the two exponentials. Its
-restrictions to either coordinate axis are the identity germ, and its chosen
-representative is analytic at the origin.
+restrictions to either coordinate axis are the identity germ, and over a real
+algebra its chosen representative is analytic at the origin.
 
 ## Main declarations
 
@@ -54,13 +54,13 @@ variable (A : Type*) [NormedRing A]
 
 /-- The germ at `(0, 0)` represented by the local logarithm
 `fun p ↦ log (exp p.1 * exp p.2)` of `exp p.1 * exp p.2`. -/
-def localBCH [hR : NormedAlgebra ℝ A] [hA : CompleteSpace A] : Germ (𝓝 ((0, 0) : A × A)) A :=
+def localBCH [hR : NormedAlgebra ℚ A] [hA : CompleteSpace A] : Germ (𝓝 ((0, 0) : A × A)) A :=
   let _ := hR
   let _ := hA
   (fun p : A × A ↦ log (exp p.1 * exp p.2) : A × A → A)
 
 /-- `localBCH` is the germ of `fun p ↦ log (exp p.1 * exp p.2)`. -/
-theorem localBCH_def [NormedAlgebra ℝ A] [CompleteSpace A] :
+theorem localBCH_def [NormedAlgebra ℚ A] [CompleteSpace A] :
     localBCH A =
       (↑(fun p : A × A ↦ log (exp p.1 * exp p.2)) :
         Germ (𝓝 ((0, 0) : A × A)) A) :=
@@ -68,17 +68,29 @@ theorem localBCH_def [NormedAlgebra ℝ A] [CompleteSpace A] :
 
 /-- The local Baker--Campbell--Hausdorff germ takes the value zero at the origin. -/
 @[simp]
-theorem localBCH_value [NormedAlgebra ℝ A] [CompleteSpace A] : (localBCH A).value = 0 := by
+theorem localBCH_value [NormedAlgebra ℚ A] [CompleteSpace A] : (localBCH A).value = 0 := by
   simp [localBCH]
 
+section Real
+
 variable [NormedAlgebra ℝ A] [CompleteSpace A]
+
+/-- The representative defining `localBCH` is analytic at the origin. -/
+theorem analyticAt_localBCH_representative :
+    AnalyticAt ℝ (fun p : A × A ↦ log (exp p.1 * exp p.2)) (0, 0) := by
+  simpa [Function.comp_def] using (analyticAt_log_one ℝ A).comp_of_eq
+    (((exp_analytic (𝕂 := ℝ) 0).comp (x := (0, 0)) analyticAt_fst).mul
+      ((exp_analytic (𝕂 := ℝ) 0).comp (x := (0, 0)) analyticAt_snd)) (by simp)
+
+end Real
+
+variable [NormedAlgebra ℚ A] [CompleteSpace A]
 
 /-- Restricting the local Baker--Campbell--Hausdorff germ to the first coordinate axis gives the
 identity germ. -/
 @[simp]
 theorem localBCH_sliceLeft :
     (localBCH A).sliceLeft = (↑(fun x : A ↦ x) : Germ (𝓝 (0 : A)) A) := by
-  let _ : NormedAlgebra ℚ A := NormedAlgebra.restrictScalars ℚ ℝ A
   rw [localBCH_def, Germ.sliceLeft_coe, Germ.coe_eq]
   filter_upwards [eventually_log_exp A] with x hx
   simpa using hx
@@ -88,7 +100,6 @@ identity germ. -/
 @[simp]
 theorem localBCH_sliceRight :
     (localBCH A).sliceRight = (↑(fun y : A ↦ y) : Germ (𝓝 (0 : A)) A) := by
-  let _ : NormedAlgebra ℚ A := NormedAlgebra.restrictScalars ℚ ℝ A
   rw [localBCH_def, Germ.sliceRight_coe, Germ.coe_eq]
   filter_upwards [eventually_log_exp A] with y hy
   simpa using hy
@@ -99,7 +110,6 @@ of the two exponentials. -/
 theorem localBCH_map_exp :
     (localBCH A).map exp =
       (↑(fun p : A × A ↦ exp p.1 * exp p.2) : Germ (𝓝 ((0, 0) : A × A)) A) := by
-  let _ : NormedAlgebra ℚ A := NormedAlgebra.restrictScalars ℚ ℝ A
   have h : Tendsto (fun p : A × A ↦ exp p.1 * exp p.2) (𝓝 (0, 0)) (𝓝 1) := by
     simpa only [exp_zero, mul_one] using
       ((continuous_fst.tendsto ((0, 0) : A × A)).exp.mul (continuous_snd.tendsto (0, 0)).exp)
@@ -107,23 +117,17 @@ theorem localBCH_map_exp :
   filter_upwards [h.eventually (eventually_exp_log A)] with p hp
   simpa [Function.comp_def] using hp
 
-/-- The representative defining `localBCH` is analytic at the origin. -/
-theorem analyticAt_localBCH_representative :
-    AnalyticAt ℝ (fun p : A × A ↦ log (exp p.1 * exp p.2)) (0, 0) := by
-  simpa [Function.comp_def] using (analyticAt_log_one ℝ A).comp_of_eq
-    (((exp_analytic (𝕂 := ℝ) 0).comp (x := (0, 0)) analyticAt_fst).mul
-      ((exp_analytic (𝕂 := ℝ) 0).comp (x := (0, 0)) analyticAt_snd)) (by simp)
-
 /-- The local Baker--Campbell--Hausdorff germ tends to zero at the origin. -/
 theorem localBCH_tendsto : (localBCH A).Tendsto (𝓝 0) := by
   rw [localBCH_def, Germ.coe_tendsto]
-  simpa only [exp_zero, mul_one, log_one] using
-    (analyticAt_localBCH_representative A).continuousAt.tendsto
+  have h : Tendsto (fun p : A × A ↦ exp p.1 * exp p.2) (𝓝 (0, 0)) (𝓝 1) := by
+    simpa only [exp_zero, mul_one] using
+      ((continuous_fst.tendsto ((0, 0) : A × A)).exp.mul (continuous_snd.tendsto (0, 0)).exp)
+  simpa only [log_one, Function.comp_def] using (analyticAt_log_one ℚ A).continuousAt.tendsto.comp h
 
 /-- A germ tending to zero with the same exponential image as `localBCH` equals `localBCH`. -/
 theorem eq_localBCH_of_tendsto_of_map_exp_eq (f : Germ (𝓝 ((0, 0) : A × A)) A)
     (hf : f.Tendsto (𝓝 0)) (hmap : f.map exp = (localBCH A).map exp) : f = localBCH A := by
-  let _ : NormedAlgebra ℚ A := NormedAlgebra.restrictScalars ℚ ℝ A
   induction f using Germ.inductionOn with
   | _ g =>
       rw [Germ.coe_tendsto] at hf
@@ -140,7 +144,7 @@ theorem eq_localBCH_of_tendsto_of_map_exp_eq (f : Germ (𝓝 ((0, 0) : A × A)) 
 
 section Naturality
 
-variable {B : Type*} [NormedRing B] [NormedAlgebra ℝ B] [CompleteSpace B]
+variable {B : Type*} [NormedRing B] [NormedAlgebra ℚ B] [CompleteSpace B]
 
 /-- Continuous ring homomorphisms commute with the local
 Baker--Campbell--Hausdorff germ. -/
@@ -151,8 +155,6 @@ theorem map_localBCH {F : Type*} [FunLike F A B] [RingHomClass F A B]
       (localBCH B).compTendsto (Prod.map f f) (by
         exact (hf.prodMap hf).tendsto'
           (0, 0) (0, 0) (by simp)) := by
-  let _ : NormedAlgebra ℚ A := NormedAlgebra.restrictScalars ℚ ℝ A
-  let _ : NormedAlgebra ℚ B := NormedAlgebra.restrictScalars ℚ ℝ B
   rw [localBCH_def, Germ.map_coe, localBCH_def, Germ.coe_compTendsto, Germ.coe_eq]
   have h : Tendsto (fun p : A × A ↦ exp p.1 * exp p.2) (𝓝 (0, 0)) (𝓝 1) := by
     simpa only [exp_zero, mul_one] using

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Asymptotics.Lemmas
+public import TauCeti.Analysis.Normed.Algebra.Basic
 public import TauCeti.Analysis.Normed.Algebra.BCH.Local
 public import TauCeti.Analysis.Normed.Algebra.Exponential
 
@@ -57,6 +58,8 @@ noncomputable section
 namespace NormedSpace
 
 variable (A : Type*) [NormedRing A] [NormedAlgebra ℝ A] [CompleteSpace A]
+
+attribute [local instance] TauCeti.normedAlgebraRatOfReal
 
 /-! ### The quadratic Taylor estimate for a product of two exponentials -/
 
