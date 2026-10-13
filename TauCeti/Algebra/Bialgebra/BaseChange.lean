@@ -10,7 +10,11 @@ public import Mathlib.RingTheory.Bialgebra.TensorProduct
 public import TauCeti.Algebra.TensorProduct.BaseChange
 
 /-!
-# Base change of bialgebras in stages
+# Base change of bialgebras
+
+Scalar extension preserves the bialgebra operations. Algebra homomorphisms between scalar
+extensions preserve the counit and comultiplication exactly when their restrictions to the
+original algebras do, with the scalar factors multiplied for the comultiplication.
 
 For a tower of commutative semirings `k → L → K` and a `k`-bialgebra `H`, extending `H` to `L`
 and then to `K` agrees with extending it to `K` in one step. This file upgrades the algebra
@@ -26,6 +30,12 @@ algebra — may be computed through an intermediate field: it is what lets a gro
 Galois extension be recognised over an algebraic closure.
 
 ## Main declarations
+
+* `TensorProduct.comulAlgHom_baseChange`: the comultiplication on a scalar extension.
+* `AlgHom.map_comp_comulAlgHom_baseChange_iff`: test preservation of comultiplication on the
+  original algebra.
+* `AlgHom.counitAlgHom_comp_baseChange_iff`: test preservation of the counit on the original
+  algebra.
 
 * `TauCeti.Bialgebra.TensorProduct.baseChangeTowerBialgEquiv`: the tower comparison as a
   bialgebra equivalence.
@@ -45,6 +55,66 @@ Galois extension be recognised over an algebraic closure.
 public section
 
 open scoped TensorProduct
+
+open Algebra.TensorProduct (map mulBaseChange)
+
+section ScalarExtension
+
+variable {R T H G : Type*} [CommSemiring R] [CommSemiring T] [Algebra R T]
+  [Semiring H] [Semiring G] [_root_.Bialgebra R H] [_root_.Bialgebra R G]
+
+/-- The comultiplication on a scalar extension is the extended comultiplication followed by
+the distribution of scalar extension over the tensor product. -/
+theorem _root_.TensorProduct.comulAlgHom_baseChange (z : T ⊗[R] G) :
+    Bialgebra.comulAlgHom T (T ⊗[R] G) z =
+      TensorProduct.AlgebraTensorModule.distribBaseChange R T G G
+        (map (AlgHom.id R T) (Bialgebra.comulAlgHom R G) z) := by
+  rw [Bialgebra.comulAlgHom_apply, TauCeti.Coalgebra.baseChange_comul, LinearMap.comp_apply]
+  induction z using TensorProduct.inductionOn with
+  | add z z' hz hz' => simp only [map_add, hz, hz']
+  | tmul a x => simp
+
+/-- An algebra homomorphism between scalar extensions preserves comultiplication if and only
+if its restriction to the original algebra does, after multiplying the scalar factors. -/
+theorem _root_.AlgHom.map_comp_comulAlgHom_baseChange_iff (F : T ⊗[R] H →ₐ[T] T ⊗[R] G) :
+    (map F F).comp (Bialgebra.comulAlgHom T (T ⊗[R] H)) =
+        (Bialgebra.comulAlgHom T (T ⊗[R] G)).comp F ↔
+      ((mulBaseChange R T G G).restrictScalars R).comp ((map ((AlgHom.liftEquiv R T H _).symm F)
+          ((AlgHom.liftEquiv R T H _).symm F)).comp (Bialgebra.comulAlgHom R H)) =
+        (map (AlgHom.id R T) (Bialgebra.comulAlgHom R G)).comp
+          ((AlgHom.liftEquiv R T H _).symm F) := by
+  set f := (AlgHom.liftEquiv R T H (T ⊗[R] G)).symm F
+  have key (y : H ⊗[R] H) :
+      map F F (TensorProduct.AlgebraTensorModule.distribBaseChange R T H H (1 ⊗ₜ y)) =
+        TensorProduct.AlgebraTensorModule.distribBaseChange R T G G
+          (mulBaseChange R T G G (map f f y)) := by
+    induction y using TensorProduct.inductionOn with
+    | add y y' hy hy' => simp only [TensorProduct.tmul_add, map_add, hy, hy']
+    | tmul x y =>
+      rw [Algebra.TensorProduct.map_tmul, ← TensorProduct.distribBaseChange_symm_tmul,
+        LinearEquiv.apply_symm_apply]
+      simp [f]
+  -- both sides are determined by their values on `1 ⊗ h`, computed by `key` and
+  -- `comulAlgHom_baseChange`
+  rw [← (AlgHom.liftEquiv R T H _).symm.injective.eq_iff, AlgHom.ext_iff, AlgHom.ext_iff]
+  refine forall_congr' fun h ↦ ?_
+  simp only [AlgHom.liftEquiv_symm_apply, AlgHom.comp_apply, TensorProduct.comulAlgHom_baseChange]
+  rw [Algebra.TensorProduct.map_tmul, AlgHom.id_apply, key,
+    (TensorProduct.AlgebraTensorModule.distribBaseChange R T G G).injective.eq_iff]
+  simp only [f, AlgHom.liftEquiv_symm_apply, AlgHom.restrictScalars_apply]
+
+/-- An algebra homomorphism between scalar extensions preserves the counit if and only if
+its restriction to the original algebra does. -/
+theorem _root_.AlgHom.counitAlgHom_comp_baseChange_iff (F : T ⊗[R] H →ₐ[T] T ⊗[R] G) :
+    (Bialgebra.counitAlgHom T (T ⊗[R] G)).comp F =
+        Bialgebra.counitAlgHom T (T ⊗[R] H) ↔
+      ((Bialgebra.counitAlgHom T (T ⊗[R] G)).restrictScalars R).comp
+          ((AlgHom.liftEquiv R T H _).symm F) =
+        (Algebra.ofId R T).comp (Bialgebra.counitAlgHom R H) := by
+  rw [← (AlgHom.liftEquiv R T H T).symm.injective.eq_iff, AlgHom.ext_iff, AlgHom.ext_iff]
+  simp [Algebra.algebraMap_eq_smul_one]
+
+end ScalarExtension
 
 namespace TauCeti.Bialgebra.TensorProduct
 

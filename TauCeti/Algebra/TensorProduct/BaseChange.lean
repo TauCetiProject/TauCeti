@@ -28,6 +28,8 @@ with passing to the opposite algebra, and composes in stages:
   distributing scalar extension over a tensor product.
 * `TauCeti.Algebra.TensorProduct.baseChangeTensorAlgEquiv`:
   `L ⊗[K] (A ⊗[K] B) ≃ₐ[L] (L ⊗[K] A) ⊗[L] (L ⊗[K] B)`;
+* `Algebra.TensorProduct.mulBaseChange`: the map
+  `(L ⊗[K] A) ⊗[K] (L ⊗[K] B) →ₐ[L] L ⊗[K] (A ⊗[K] B)` multiplying the scalar factors;
 * `TauCeti.Algebra.TensorProduct.baseChangeOpAlgEquiv`: `L ⊗[K] Aᵐᵒᵖ ≃ₐ[L] (L ⊗[K] A)ᵐᵒᵖ`;
 * `TauCeti.Algebra.TensorProduct.baseChangeTowerAlgEquiv`:
   `M ⊗[L] (L ⊗[K] A) ≃ₐ[M] M ⊗[K] A` for a tower `K → L → M`.
@@ -132,6 +134,45 @@ of scalar extension over a tensor product. -/
 theorem baseChangeTensorAlgEquiv_toLinearEquiv :
     (baseChangeTensorAlgEquiv K L A B).toLinearEquiv =
       _root_.TensorProduct.AlgebraTensorModule.distribBaseChange K L A B := (rfl)
+
+/-- Tensoring two scalar extensions over the original base and multiplying their scalar
+factors. This factors through the tensor product over `L`, followed by the inverse of
+`baseChangeTensorAlgEquiv`. The algebras `A` and `B` need not be commutative. -/
+noncomputable def _root_.Algebra.TensorProduct.mulBaseChange :
+    (L ⊗[K] A) ⊗[K] (L ⊗[K] B) →ₐ[L] L ⊗[K] (A ⊗[K] B) :=
+  (baseChangeTensorAlgEquiv K L A B).symm.toAlgHom.comp
+    (Algebra.TensorProduct.mapOfCompatibleSMul L K L _ _)
+
+open _root_.Algebra.TensorProduct (mulBaseChange)
+
+/-- Multiplying the scalar factors of a pure tensor. -/
+@[simp]
+theorem _root_.Algebra.TensorProduct.mulBaseChange_tmul (l₁ l₂ : L) (a : A) (b : B) :
+    mulBaseChange K L A B ((l₁ ⊗ₜ a) ⊗ₜ (l₂ ⊗ₜ b)) = (l₁ * l₂) ⊗ₜ (a ⊗ₜ b) := by
+  simp [mulBaseChange]
+
+variable {K L A B} in
+/-- Multiplying scalar factors agrees with the inverse distribution of scalar extension,
+after changing the tensor-product base from `K` to `L`. -/
+theorem _root_.TensorProduct.distribBaseChange_symm_tmul
+    (u : L ⊗[K] A) (v : L ⊗[K] B) :
+    (TensorProduct.AlgebraTensorModule.distribBaseChange K L A B).symm (u ⊗ₜ[L] v) =
+      mulBaseChange K L A B (u ⊗ₜ[K] v) := by
+  simp only [mulBaseChange, AlgHom.comp_apply,
+    Algebra.TensorProduct.mapOfCompatibleSMul_tmul, AlgEquiv.coe_toAlgHom,
+    ← baseChangeTensorAlgEquiv_toLinearEquiv, ← AlgEquiv.toLinearEquiv_symm,
+    AlgEquiv.coe_toLinearEquiv]
+
+variable {K L A B} in
+/-- Multiplying scalar factors is natural in the scalar algebra. -/
+theorem _root_.AlgHom.map_comp_mulBaseChange {L' : Type*} [CommSemiring L'] [Algebra K L']
+    (f : L →ₐ[K] L') :
+    (Algebra.TensorProduct.map f (AlgHom.id K (A ⊗[K] B))).comp
+        ((mulBaseChange K L A B).restrictScalars K) =
+      ((mulBaseChange K L' A B).restrictScalars K).comp
+        (Algebra.TensorProduct.map (Algebra.TensorProduct.map f (AlgHom.id K A))
+          (Algebra.TensorProduct.map f (AlgHom.id K B))) := by
+  ext <;> simp [Algebra.TensorProduct.one_def]
 
 /-- Distributing scalar extension in both tensor factors commutes with interchanging the
 middle two factors of a fourfold tensor product, as an equality of algebra maps. -/
