@@ -42,9 +42,11 @@ open CategoryTheory Limits MonoidalCategory MulOpposite
 
 namespace TauCeti
 
-universe u
+universe u uR uA uM uN uP uQ
 
-variable {R A M N P : Type u}
+section cochains
+
+variable {R : Type uR} {A : Type uA} {M : Type uM} {N : Type uN} {P : Type uP}
   [CommRing R] [Ring A] [Algebra R A]
   [AddCommGroup M] [Module R M] [Module Aᵐᵒᵖ M] [IsScalarTower R Aᵐᵒᵖ M]
   [AddCommGroup N] [Module R N] [Module Aᵐᵒᵖ N] [IsScalarTower R Aᵐᵒᵖ N]
@@ -173,7 +175,7 @@ theorem id_comp {p : ℤ}
 
 /-- Composition of homogeneous right-module cochains is associative. -/
 @[simp]
-theorem comp_assoc {Q : Type u} [AddCommGroup Q] [Module R Q] [Module Aᵐᵒᵖ Q]
+theorem comp_assoc {Q : Type uQ} [AddCommGroup Q] [Module R Q] [Module Aᵐᵒᵖ Q]
     [IsScalarTower R Aᵐᵒᵖ Q]
     {ℳQ : ℤ → Submodule R Q}
     {r p q j : ℤ}
@@ -272,6 +274,28 @@ theorem differential_id (hM : IsDGRightModule h ℳ dM) :
     LinearMap.congr_fun (congrArg Subtype.val (gradedCommutator_id hM.isHomogeneous hM.leibniz)) x
 
 end dgRightModuleCochains
+
+end cochains
+
+-- Tensor products of Hom complexes below use a single module universe.
+variable {R A M N P : Type u}
+  [CommRing R] [Ring A] [Algebra R A]
+  [AddCommGroup M] [Module R M] [Module Aᵐᵒᵖ M] [IsScalarTower R Aᵐᵒᵖ M]
+  [AddCommGroup N] [Module R N] [Module Aᵐᵒᵖ N] [IsScalarTower R Aᵐᵒᵖ N]
+  [AddCommGroup P] [Module R P] [Module Aᵐᵒᵖ P] [IsScalarTower R Aᵐᵒᵖ P]
+  {𝒜 : ℤ → Submodule R A} [GradedAlgebra 𝒜] {d : A →ₗ[R] A}
+  {h : IsDGAlgebra 𝒜 d}
+  {ℳ : ℤ → Submodule R M}
+    [SetLike.GradedSMul (InternalGrading.ofDecomposition 𝒜).opposite.piece ℳ]
+    [DirectSum.Decomposition ℳ] {dM : M →ₗ[R] M}
+  {ℳN : ℤ → Submodule R N}
+    [SetLike.GradedSMul (InternalGrading.ofDecomposition 𝒜).opposite.piece ℳN]
+    [DirectSum.Decomposition ℳN] {dN : N →ₗ[R] N}
+  {ℳP : ℤ → Submodule R P}
+    [SetLike.GradedSMul (InternalGrading.ofDecomposition 𝒜).opposite.piece ℳP]
+    [DirectSum.Decomposition ℳP] {dP : P →ₗ[R] P}
+  {hM : IsDGRightModule h ℳ dM} {hN : IsDGRightModule h ℳN dN}
+  {hP : IsDGRightModule h ℳP dP}
 
 /-- Composition on a pair of homogeneous degrees, as a map out of the tensor product of the two
 cochain modules. -/

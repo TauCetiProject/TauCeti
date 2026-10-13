@@ -15,11 +15,11 @@ This file records bare-polynomial moment, `L¹`, and `L²` consequences of compa
 Mathlib's Chebyshev orthogonality measure `Polynomial.Chebyshev.measureT`.
 
 The normalized Chebyshev modes and their orthonormality live in
-`TauCeti.Analysis.SpecialFunctions.Trigonometric.Chebyshev.Measure`.  The lemmas here are the
-un-normalized consumer forms needed on the way to the roadmap's Chebyshev Hilbert-basis target:
-every real polynomial moment is finite, every real polynomial evaluation is integrable and square
-integrable, and these statements are available after casting real-valued functions to any
-`[RCLike 𝕜]` scalar field.
+`TauCeti.Analysis.SpecialFunctions.Trigonometric.Chebyshev.Measure`. The lemmas here are the
+un-normalized consumer forms used by the Chebyshev Hilbert basis
+(`TauCeti.Analysis.SpecialFunctions.Trigonometric.Chebyshev.HilbertBasis`): every real polynomial
+moment is finite, every real polynomial evaluation is integrable and square integrable, and these
+statements are available after casting real-valued functions to any `[RCLike 𝕜]` scalar field.
 -/
 
 public section

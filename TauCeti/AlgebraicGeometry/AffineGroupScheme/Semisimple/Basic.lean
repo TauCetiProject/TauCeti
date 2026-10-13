@@ -45,10 +45,9 @@ instances.
 * J. S. Milne, *Algebraic Groups* (2017), §§6.46 and 21.10.
 * T. A. Springer, *Linear Algebraic Groups*, Chapter 8.
 
-The formal organization follows `TauCeti.AlgebraicGeometry.AffineGroupScheme.Unipotent`. This
-advances Layer 6, "Reductive and semisimple groups", of the ReductiveGroups roadmap by keeping
-the coordinate-Hopf and affine-group-scheme models synchronized. Construction of the geometric
-radical and identification of this predicate with its triviality remain downstream.
+The formal organization follows `TauCeti.AlgebraicGeometry.AffineGroupScheme.Unipotent`. The
+geometric radical, and the identification of this predicate with its triviality, are not treated
+here.
 -/
 
 public section

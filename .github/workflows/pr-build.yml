@@ -574,13 +574,10 @@ jobs:
             exit 1
           fi
 
-      - name: No-set_option guard (TauCeti/ and TauCeti.lean use no set_option)
+      - name: Reject option overrides and heartbeat instrumentation
         if: ${{ env.INFRA != '1' }}
         run: |
-          if grep -rIn '^set_option ' pr/TauCeti/ pr/TauCeti.lean; then
-            echo "::error::TauCeti/ may not use set_option (it can weaken maxHeartbeats, linters, maxRecDepth, ...); remove it"
-            exit 1
-          fi
+          python3 gate/scripts/check_source_options.py pr/TauCeti/ pr/TauCeti.lean
 
       # The trusted checker requires each source-only PR that declares a new temporary Mathlib shim
       # to record a concrete expiry target in TauCeti's AI-owned registry. Keeping the registry under
@@ -853,6 +850,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           REPO: ${{ github.repository }}
           EVENT: ${{ github.event_name }}
+          IS_BATCH: ${{ env.IS_BATCH }}
           NUM: ${{ steps.pr.outputs.num }}
           # The immutable commits being built: the batch's base, or the PR's base commit
           # (a three-dot compare diffs from the merge base), and the exact head.
@@ -1295,9 +1293,9 @@ jobs:
               approval_args+=(--batch-id "$SCOPE_BATCH" --paths-file "$RUNNER_TEMP/scope-files")
             fi
             if python3 gate/scripts/bors_scope_approval.py "${approval_args[@]}"; then
-              sc_state=success; sc_desc="restricted paths approved by kim-em through bors; other scope guards passed"
+              sc_state=success; sc_desc="restricted paths approved by a repository admin through bors; other scope guards passed"
             else
-              sc_state=failure; sc_desc="changes outside TauCeti/ — kim-em can approve with bors r+ or bors merge"
+              sc_state=failure; sc_desc="changes outside TauCeti/ — a repository admin can approve with bors r+ or bors merge"
             fi
           else
             sc_state=success; sc_desc="changes are in scope (TauCeti/, the allowed root files, and the bibliography only)"

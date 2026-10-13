@@ -27,9 +27,6 @@ Mathlib's scheme-theoretic `GeometricallyReduced` predicate on its Hopf spectrum
 The comparison follows
 `TauCeti.AlgebraicGeometry.AffineGroupScheme.Connected`, especially its Hopf-spectrum
 comparison between the coordinate and scheme models.
-
-This advances Layer 2, "Smoothness and dimension tools via `Lie(G)`", of the ReductiveGroups
-roadmap.
 -/
 
 public section

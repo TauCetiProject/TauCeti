@@ -54,7 +54,8 @@ rings determined by `j(y)` and by `y` (`comap_presentationLimitLocIso_rationalLo
   induced by the structure map `A → A⟨T/s⟩` is `presentationLimitPreAdicSpaceLocIso` followed by
   the inclusion of the restriction of `X` along `j`.
 * `TauCeti.ValuationSpectrum.isOpenImmersion_presentationLimitPreAdicSpaceComap_toCompletionLoc`:
-  that morphism is an open immersion.
+  that morphism is an open immersion, with image `R(T/s)`
+  (`TauCeti.ValuationSpectrum.range_presentationLimitPreAdicSpaceComap_toCompletionLoc_base`).
 * `TauCeti.ValuationSpectrum.isAffinoid_restrict_spaComapLocHom`: the restriction of `Spa(A, A⁺)`
   along `j` is an affinoid pre-adic space.
 * `TauCeti.ValuationSpectrum.spaBasicOpen_mem_affinoidOpens`,
@@ -721,6 +722,37 @@ theorem isOpenImmersion_presentationLimitPreAdicSpaceComap_toCompletionLoc
   have := PreAdicSpace.IsOpenImmersion.ofRestrict (presentationLimitPreAdicSpace P Aplus hAplus hP)
     (isOpenEmbedding_spaComapLocHom P Aplus hP T s S hden)
   exact PreAdicSpace.IsOpenImmersion.comp _ _
+
+
+/-- **The image of the morphism induced by the structure map `A → A⟨T/s⟩` is `R(T/s)`**: on
+points, the morphism `Spa(A⟨T/s⟩, A_U⁺) ⟶ Spa(A, A⁺)` is `j`, whose image is the rational subset
+(`TauCeti.ValuationSpectrum.range_spaComapLoc`). -/
+theorem range_presentationLimitPreAdicSpaceComap_toCompletionLoc_base
+    (hsheaf : letI := locUniformSpace P T s S hden
+      letI := isUniformAddGroup_locUniformSpace P T s S hden
+      letI := isTopologicalRing_locUniformSpace P T s S hden
+      Presheaf.IsSheaf (Opens.grothendieckTopology ↥(spa (completedPlusSubring P Aplus T s S hden)))
+        (presentationLimitPresheaf (completionLocalization P T s S hden)
+          (completedPlusSubring P Aplus T s S hden))) :
+    letI := locUniformSpace P T s S hden
+    letI := isUniformAddGroup_locUniformSpace P T s S hden
+    letI := isTopologicalRing_locUniformSpace P T s S hden
+    Set.range (presentationLimitPreAdicSpaceComap (toCompletionLoc P T s S hden)
+      (continuous_toCompletionLoc P T s S hden)
+      (fun _ hJ ↦ isOpen_map_toCompletionLoc P T s S hden hJ)
+      (fun _ ha ↦ toCompletionLoc_mem_completedPlusSubring P Aplus T s S hden ha) hAplus
+      (isPowerBounded_of_mem_completedPlusSubring P Aplus hAplus T s S hden) hP
+      (completionLocalization_ringOfDefinition_le_completedPlusSubring P Aplus hP T s S hden)
+      hsheaf).base = (spaBasicOpen Aplus T s : Set (spa Aplus)) := by
+  let _ := locUniformSpace P T s S hden
+  have _ := isUniformAddGroup_locUniformSpace P T s S hden
+  have _ := isTopologicalRing_locUniformSpace P T s S hden
+  rw [presentationLimitPreAdicSpaceComap_toHom, presentationLimitPresheafedSpaceComap_base,
+    spaComapTopHom_toCompletionLoc]
+  -- the source of `spaComapLocHom` is `Spa(A⟨T/s⟩, A_U⁺)` only up to unfolding, so the remaining
+  -- rewrites are applied as terms
+  exact (congrArg Set.range (coe_spaComapLocHom P Aplus T s S hden)).trans
+    (range_spaComapLoc P Aplus hP T s S hden)
 
 end TauCeti.ValuationSpectrum
 
