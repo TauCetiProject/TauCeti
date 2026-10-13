@@ -276,7 +276,11 @@ theorem sum_cubicalTensorCoord (X : TopCat.{u} × TopCat.{u}) (n : ℕ)
 
 variable (k) in
 /-- **The tensor product of the normalized cubical chains is free on the pairs of cubes**: in
-degree `n`, on the models `(Iᵖ, I^q)` with `p + q = n`. -/
+degree `n`, on the models `(Iᵖ, I^q)` with `p + q = n`.
+The body is exposed because the statements of `cubicalTensorModelPresentation_gen` and
+`cubicalTensorModelPresentation_coord` (and the use of `.model`, `.gen` in
+`singularAugment_cubicalCrossProductToSingular_eq`) need `.model n i` to reduce to
+`cubicalBidegreeModel n i`. -/
 @[expose] def cubicalTensorModelPresentation :
     AcyclicModels.MultiModelPresentation (cubicalTensor.{u} k) BidegreeIndex where
   model := cubicalBidegreeModel

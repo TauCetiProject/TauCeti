@@ -510,9 +510,9 @@ namespace ModelPresentation
 variable (B : ModelPresentation F)
 
 /-- A presentation by one model in each degree is a presentation by a family of models indexed
-by a singleton.  The body is exposed because the type of the generator of `toMulti` mentions its
-models, so that the field lemmas `toMulti_model`, `toMulti_gen` and `toMulti_coord` can only be
-stated when the models of `toMulti` reduce to those of `B`. -/
+by a singleton.  The body is exposed because the statements of `toMulti_gen`, `toMulti_coord` and
+`toMulti_extend` mention `B.toMulti.model n i`, which must reduce to `B.model n` for them to
+typecheck (without the attribute, each fails with a type mismatch on `B.gen n`, resp. `t`). -/
 @[expose] def toMulti : MultiModelPresentation F (fun _ ↦ PUnit.{1}) where
   model n _ := B.model n
   gen n _ := B.gen n
@@ -543,6 +543,7 @@ theorem toMulti_gen (n : ℕ) (i : PUnit.{1}) : B.toMulti.gen n i = B.gen n :=
   (rfl)
 
 /-- The coefficients of `toMulti` are those of the presentation, indexed by the singleton. -/
+@[simp]
 theorem toMulti_coord (X : C) (n : ℕ) (x : (F.obj X).X n) :
     B.toMulti.coord X n x =
       mapDomain (fun σ : B.model n ⟶ X ↦ (⟨PUnit.unit, σ⟩ : Σ _ : PUnit.{1}, (B.model n ⟶ X)))
