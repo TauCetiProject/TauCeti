@@ -130,10 +130,12 @@ jobs:
           python3 scripts/test_structure_nudge.py
           python3 scripts/test_workflow_pins.py
           python3 scripts/test_queue_release.py
+          python3 scripts/test_pick_runner.py
           python3 scripts/test_bwrap_pin.py
           PYTHONPATH=scripts python3 scripts/test_bump_manifest.py
           python3 scripts/test_bump_report.py
           python3 scripts/test_lint_scope.py
+          python3 scripts/test_bors_scope_approval.py
           python3 scripts/test_build_lint_driver.py
           python3 scripts/test_elan_pin.py
           python3 scripts/test_duplicate_audit_workflow.py

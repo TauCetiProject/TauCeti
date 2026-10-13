@@ -81,11 +81,7 @@ theorem IsNormal.isCentral_of_multiplicativeType
     apply BialgHom.isCentral_kerOfSurjective_of_isNormal
     rw [hker]
     exact CommHopfAlgCat.isNormal_baseChangeHopfIdeal hI
-  apply (CommHopfAlgCat.centerDefiningIdeal_le_iff H.obj I).mp
-  apply (CommHopfAlgCat.baseChangeHopfIdeal_le_iff_of_faithfullyFlat
-    (K := K) _ _).mp
-  rw [CommHopfAlgCat.baseChangeHopfIdeal_centerDefiningIdeal]
-  exact (CommHopfAlgCat.centerDefiningIdeal_le_iff H'.obj I').mpr hcentral
+  exact (CommHopfAlgCat.isCentral_baseChangeHopfIdeal_iff (K := K) I).mp hcentral
 
 end
 
