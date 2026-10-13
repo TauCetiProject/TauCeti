@@ -26,8 +26,8 @@ without it the inertia order is the ramification index times the inseparable res
 
 * J. Neukirch, *Algebraic Number Theory*, Chapter I, §9.
 * G. J. Janusz, *Algebraic Number Fields*, Chapter I.
-* The cardinality input is `Ideal.card_inertia_eq_ramificationIdx_of_isSeparable`;
-  the subgroup restriction is Mathlib's `AddSubgroup.inertia_map_subtype`.
+* These results generalize Tau Ceti's `NumberField.ramificationIdx_under_eq_one_iff_inertia_le`
+  in `TauCeti/NumberTheory/NumberField/Inertia.lean` to intermediate invariant rings.
 -/
 
 public section
