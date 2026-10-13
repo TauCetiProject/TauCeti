@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.SheetCount
+public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.MultipleEnds.SheetCount
 
 /-!
 # Single-sheet univalence for Schwarz--Christoffel maps with several ends
@@ -16,8 +16,8 @@ and avoiding the trace is mapped onto bijectively exactly when the fiber over on
 has cardinality one. This criterion needs neither simple connectivity of that region nor
 injectivity of the sphere-valued boundary, which identifies all logarithmic ends with infinity.
 
-The criterion separates global degree from local end geometry: a single-sheet calculation near
-one end suffices once the image has been placed in the complement of the finite boundary trace.
+The criterion requires a globally singleton fiber. One can establish this near an end by combining
+local end geometry with exclusion of all other preimages in the upper half-plane.
 Boundary avoidance remains a genuine hypothesis, not a consequence of local univalence.
 
 ## References
