@@ -84,6 +84,17 @@ inductive Coordinate
 
 namespace Coordinate
 
+/-- The sign of the ordered base and fiber coordinates relative to the positive plane. -/
+def orientation : Coordinate → ℤ
+  | .re => 1
+  | .im => -1
+
+@[simp]
+theorem orientation_re : Coordinate.re.orientation = 1 := (rfl)
+
+@[simp]
+theorem orientation_im : Coordinate.im.orientation = -1 := (rfl)
+
 /-- The real linear coordinate projection. -/
 def proj : Coordinate → ℂ →L[ℝ] ℝ
   | re => Complex.reCLM

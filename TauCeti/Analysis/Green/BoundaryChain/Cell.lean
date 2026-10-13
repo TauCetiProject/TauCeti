@@ -25,11 +25,6 @@ open MeasureTheory Set
 
 namespace TauCeti.Green
 
-/-- The sign of the ordered base and fiber coordinates relative to the positive plane. -/
-def Coordinate.orientation : Coordinate → ℤ
-  | .re => 1
-  | .im => -1
-
 namespace BoundaryChain
 
 /-- The signed four-edge boundary of a graph cell, positive when `a ≤ b` and `lower ≤ upper`.
@@ -123,7 +118,7 @@ theorem integral_cellBoundary_re {a b : ℝ} {lower upper : ℝ → ℝ} (hab : 
     (mapsTo_image _ _)).intervalIntegrable_of_Icc (μ := volume) hab
   have hiU := (hPu.comp (Coordinate.re.continuousOn_graph hu)
     (mapsTo_image _ _)).intervalIntegrable_of_Icc (μ := volume) hab
-  simp only [Coordinate.orientation, one_zsmul]
+  simp only [Coordinate.orientation_re, one_zsmul]
   simp only [Function.comp_def] at hiL hiU
   rw [← intervalIntegral.integral_sub hiL hiU]
   simpa only [Coordinate.graph_re_apply] using
@@ -159,7 +154,7 @@ theorem integral_cellBoundary_im {a b : ℝ} {lower upper : ℝ → ℝ} (hab : 
     (mapsTo_image _ _)).intervalIntegrable_of_Icc (μ := volume) hab
   have hiU := (hQu.comp (Coordinate.im.continuousOn_graph hu)
     (mapsTo_image _ _)).intervalIntegrable_of_Icc (μ := volume) hab
-  simp only [Coordinate.orientation, neg_smul, one_smul, neg_sub]
+  simp only [Coordinate.orientation_im, neg_smul, one_smul, neg_sub]
   simp only [Function.comp_def] at hiL hiU
   rw [← intervalIntegral.integral_sub hiU hiL]
   simpa only [Coordinate.graph_im_apply] using
@@ -174,7 +169,8 @@ theorem cellBoundary_rectangle_re_eq_im (a b c e : ℝ) :
     funext (Coordinate.graph_re_apply g)
   have him (g : ℝ → ℝ) : Coordinate.im.graph g = fun y ↦ (⟨g y, y⟩ : ℂ) :=
     funext (Coordinate.graph_im_apply g)
-  simp only [cellBoundary_def, graphPath_const, Coordinate.orientation, one_smul,
+  simp only [cellBoundary_def, graphPath_const, Coordinate.orientation_re,
+    Coordinate.orientation_im, one_smul,
     neg_smul, quadrilateral_def]
   rw [hre (fun _ ↦ c), hre (fun _ ↦ e), him (fun _ ↦ a), him (fun _ ↦ b)]
   abel
@@ -192,7 +188,7 @@ theorem integral_cellBoundary_unitSquare :
     (continuousOn_const (c := (0 : ℝ))) (continuousOn_const (c := (1 : ℝ)))
     (hd 0) (hd 1) (P := fun z : ℂ ↦ z.im)
     Complex.continuous_im.continuousOn Complex.continuous_im.continuousOn
-  simpa [Coordinate.orientation] using h.2
+  simpa using h.2
 
 end BoundaryChain
 end TauCeti.Green

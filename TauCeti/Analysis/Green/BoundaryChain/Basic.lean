@@ -41,6 +41,16 @@ def ofPath {p q : ℂ} (γ : Path p q) : BoundaryChain := Finsupp.single ⟨p, q
 theorem ofPath_def {p q : ℂ} (γ : Path p q) :
     ofPath γ = Finsupp.single ⟨p, q, γ⟩ 1 := (rfl)
 
+/-- Pointwise equal paths give the same generator, even when their endpoint indices differ. -/
+theorem ofPath_congr {p q p' q' : ℂ} (γ : Path p q) (δ : Path p' q')
+    (h : ∀ t, γ t = δ t) : ofPath γ = ofPath δ := by
+  have hp : p = p' := by simpa using h 0
+  have hq : q = q' := by simpa using h 1
+  subst p'
+  subst q'
+  congr 1
+  exact Path.ext (funext h)
+
 @[simp]
 theorem support_ofPath {p q : ℂ} (γ : Path p q) :
     (ofPath γ).support = {⟨p, q, γ⟩} := by
