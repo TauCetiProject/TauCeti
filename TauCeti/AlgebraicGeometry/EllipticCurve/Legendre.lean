@@ -52,7 +52,8 @@ differential `ω = u·ω_W`. The ring `ℤ[1/2][λ, 1/λ(λ - 1)]` with the curv
 (`WeierstrassCurve.UniversalLegendre.curve`) classifies such data at the level of equations: an
 elliptic Weierstrass curve with two such points and such a unit `u` determines exactly one ring
 homomorphism out of it and one change of variables with scaling `u` to the base change of the
-universal curve (`WeierstrassCurve.UniversalLegendre.existsUnique_legendre`). The parameter `λ`
+universal curve carrying `(x₁, y₁)` to `(0, 0)` and `(x₂, y₂)` to `(1, 0)`
+(`WeierstrassCurve.UniversalLegendre.existsUnique_legendre`). The parameter `λ`
 depends on `u` only through `u²`. This is not yet the representability of the Legendre structures
 of Katz and Mazur, an ordered basis of `E[2]` together with a nowhere-vanishing differential: it
 models them only once the two points are identified with a basis of the `2`-torsion and `ω` with
@@ -411,9 +412,11 @@ abbrev Ring : Type := Localization.Away (2 * X * (X - 1) : ℤ[X])
 noncomputable abbrev param : Ring := algebraMap ℤ[X] Ring X
 
 /-- The **universal Legendre curve** `y² = x (x - 1) (x - λ)`, over `ℤ[1/2][λ, 1/λ(λ - 1)]`, with
-its points `(0, 0)` and `(1, 0)` of order two. Every elliptic Weierstrass curve with two points
-of order two whose `x`-coordinates differ by the square of a unit is a change of variables away
-from its base change along exactly one ring homomorphism (`existsUnique_legendre`). -/
+its points `(0, 0)` and `(1, 0)` of order two. Let `W` be an elliptic Weierstrass curve with
+points `(x₁, y₁)` and `(x₂, y₂)` of order two, and `u` a unit with `x₂ - x₁ = u²`. Then there is
+exactly one pair of a ring homomorphism and a change of variables with scaling `u` carrying `W` to
+the base change of this curve along it, `(x₁, y₁)` to `(0, 0)` and `(x₂, y₂)` to `(1, 0)`
+(`existsUnique_legendre`). -/
 -- A `def` rather than an `abbrev`, so that `map_lift` rather than `TauCeti.map_freyCurve` is the
 -- simp normal form of its base changes.
 noncomputable def curve : WeierstrassCurve Ring := freyCurve 1 (-param)
