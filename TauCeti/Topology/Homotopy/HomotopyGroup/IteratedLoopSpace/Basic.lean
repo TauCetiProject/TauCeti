@@ -33,24 +33,6 @@ namespace TauCeti
 open HomotopyGroup
 open scoped Topology Topology.Homotopy
 
-namespace HomotopyGroup
-
-variable {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y] {x : X} {y : Y}
-
-/-- The shift `pathLoopSpaceMulEquiv` is natural: it commutes with the maps induced on homotopy
-groups by a based map `f` and by any map `F` of loop spaces that postcomposes loops with `f`. -/
-theorem pathLoopSpaceMulEquiv_map (f : C(X, Y)) (hf : f x = y) (F : C(Ω X x, Ω Y y))
-    (hF : F (Path.refl x) = Path.refl y) (hFf : ∀ γ t, F γ t = f (γ t)) (m : ℕ)
-    (a : π_ (m + 1) (Ω X x) (Path.refl x)) :
-    pathLoopSpaceMulEquiv m (map F hF a) = map f hf (pathLoopSpaceMulEquiv m a) := by
-  induction a using Quotient.inductionOn with
-  | h p =>
-    rw [map_mk, pathLoopSpaceMulEquiv_mk, pathLoopSpaceMulEquiv_mk, map_mk]
-    refine congrArg _ (GenLoop.ext _ _ fun t => ?_)
-    simp [hFf]
-
-end HomotopyGroup
-
 namespace BasedTopologicalSpace
 
 /-- **The homotopy groups of the `k`-fold loop space are the homotopy groups of the space,
@@ -97,21 +79,26 @@ theorem piIteratedLoopSpaceMulEquiv_map :
           (f.iteratedLoopSpace k).map_basepoint a) =
         HomotopyGroup.map f.toContinuousMap f.map_basepoint
           (X.piIteratedLoopSpaceMulEquiv k m a)
+  -- The `k = 0` case is the identity on both sides, since `Ω^[0] f` is `f`.
   | 0, _, _, _, _, _ => by
     rw [piIteratedLoopSpaceMulEquiv_zero, piIteratedLoopSpaceMulEquiv_zero]
     rfl
-  | k + 1, X, Y, f, m, a =>
-    (DFunLike.congr_fun (piIteratedLoopSpaceMulEquiv_succ Y k m) _).trans <|
-      (congrArg (fun b => congrMulEquiv (finCongr (by omega : m + k + 2 = m + 1 + (k + 1)))
+  | k + 1, X, Y, f, m, a => by
+    -- Four commuting squares: the induction hypothesis for `Ω f`, then `map_congrMulEquiv` for
+    -- the first reindexing, `pathLoopSpaceMulEquiv_map` for the one-loop shift, and
+    -- `map_congrMulEquiv` for the last reindexing.
+    calc _ = _ := DFunLike.congr_fun (piIteratedLoopSpaceMulEquiv_succ Y k m) _
+      _ = _ := congrArg (fun b => congrMulEquiv (finCongr (by omega : m + k + 2 =
+            m + 1 + (k + 1)))
           (pathLoopSpaceMulEquiv (X := Y.carrier) (x := Y.basepoint) (m + k)
             (congrMulEquiv (finCongr (by omega : m + 1 + k = m + k + 1)) b)))
-        (piIteratedLoopSpaceMulEquiv_map k f.loopSpace m a)).trans <|
-      (congrArg (fun b => congrMulEquiv (finCongr (by omega : m + k + 2 = m + 1 + (k + 1))) b)
+        (piIteratedLoopSpaceMulEquiv_map k f.loopSpace m a)
+      _ = _ := congrArg (congrMulEquiv (finCongr (by omega : m + k + 2 = m + 1 + (k + 1))))
         ((congrArg (pathLoopSpaceMulEquiv (X := Y.carrier) (x := Y.basepoint) (m + k))
           (HomotopyGroup.map_congrMulEquiv _ _ _ _).symm).trans
           (HomotopyGroup.pathLoopSpaceMulEquiv_map _ _ _ _
-            (fun γ t => Hom.loopSpace_apply f γ t) _ _))).trans
-        (HomotopyGroup.map_congrMulEquiv _ _ _ _).symm
+            (fun γ t => Hom.loopSpace_apply f γ t) _ _))
+      _ = _ := (HomotopyGroup.map_congrMulEquiv _ _ _ _).symm
 
 end BasedTopologicalSpace
 

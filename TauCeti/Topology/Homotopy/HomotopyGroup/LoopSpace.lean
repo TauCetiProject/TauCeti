@@ -155,10 +155,9 @@ theorem genLoopLoopHomeomorph_apply (k : ℕ) (p : Ω^ (Fin k) (Ω X x) (Path.re
     (t : I^(Fin (k + 1))) :
     genLoopLoopHomeomorph x k p t = p (fun i => t i.castSucc) (t (Fin.last k)) := by
   rw [genLoopLoopHomeomorph, Homeomorph.trans_apply, Homeomorph.trans_apply]
-  -- the final `rfl` identifies `finSumFinEquiv (Sum.inr 0)` with `Fin.last k` and
-  -- `Sum.inl i` with `i.castSucc`, which hold by `Fin` value reduction
-  simp
-  rfl
+  have h : Fin.natAdd k (0 : Fin 1) = Fin.last k := Fin.ext (by simp)
+  have h' (i : Fin k) : Fin.castAdd 1 i = i.castSucc := Fin.ext (by simp)
+  simp [finSumFinEquiv_apply_left, finSumFinEquiv_apply_right, h, h']
 
 variable (x) in
 /-- The homeomorphism `genLoopLoopHomeomorph` is based: it carries the constant cube loop to
@@ -492,5 +491,23 @@ theorem pathLoopSpaceMulEquiv_symm_mk (m : ℕ) (q : Ω^ (Fin (m + 2)) X x) :
           (GenLoop.homeomorphOfUnique_const (Fin 1)) a)
       (piLoopSpaceMulEquiv_symm_mk m 1 q)).trans <|
       (homeomorphMulEquivOfEq_apply _ _ _).trans (map_mk _ _ _)
+
+section Natural
+
+variable {Y : Type*} [TopologicalSpace Y] {y : Y}
+
+/-- The shift `pathLoopSpaceMulEquiv` is natural: it commutes with the maps induced on homotopy
+groups by a based map `f` and by any map `F` of loop spaces that postcomposes loops with `f`. -/
+theorem pathLoopSpaceMulEquiv_map (f : C(X, Y)) (hf : f x = y) (F : C(Ω X x, Ω Y y))
+    (hF : F (Path.refl x) = Path.refl y) (hFf : ∀ γ t, F γ t = f (γ t)) (m : ℕ)
+    (a : π_ (m + 1) (Ω X x) (Path.refl x)) :
+    pathLoopSpaceMulEquiv m (map F hF a) = map f hf (pathLoopSpaceMulEquiv m a) := by
+  induction a using Quotient.inductionOn with
+  | h p =>
+    rw [map_mk, pathLoopSpaceMulEquiv_mk, pathLoopSpaceMulEquiv_mk, map_mk]
+    refine congrArg _ (GenLoop.ext _ _ fun t => ?_)
+    simp [hFf]
+
+end Natural
 
 end HomotopyGroup

@@ -51,17 +51,17 @@ namespace BasedTopologicalSpace
 theorem iteratedLoopSpace_zero (X : BasedTopologicalSpace.{u}) : X.iteratedLoopSpace 0 = X :=
   Function.iterate_zero_apply _ _
 
-/-- The `(k + 1)`-fold iterated loop space is the loop space of the `k`-fold one. -/
-@[simp]
-theorem iteratedLoopSpace_succ (X : BasedTopologicalSpace.{u}) (k : ℕ) :
-    X.iteratedLoopSpace (k + 1) = (X.iteratedLoopSpace k).loopSpace :=
-  Function.iterate_succ_apply' _ _ _
-
 /-- The `(k + 1)`-fold iterated loop space is the `k`-fold iterated loop space of the loop space,
 the form in which the iterate unfolds. -/
-theorem iteratedLoopSpace_succ' (X : BasedTopologicalSpace.{u}) (k : ℕ) :
+@[simp]
+theorem iteratedLoopSpace_succ (X : BasedTopologicalSpace.{u}) (k : ℕ) :
     X.iteratedLoopSpace (k + 1) = X.loopSpace.iteratedLoopSpace k :=
   Function.iterate_succ_apply _ _ _
+
+/-- The `(k + 1)`-fold iterated loop space is the loop space of the `k`-fold one. -/
+theorem iteratedLoopSpace_succ' (X : BasedTopologicalSpace.{u}) (k : ℕ) :
+    X.iteratedLoopSpace (k + 1) = (X.iteratedLoopSpace k).loopSpace :=
+  Function.iterate_succ_apply' _ _ _
 
 /-- A loop in the loop space is a function on the unit interval. -/
 instance (X : BasedTopologicalSpace.{u}) :
@@ -127,13 +127,17 @@ theorem iteratedLoopSpace_succ (f : Hom X Y) (k : ℕ) :
 @[simp]
 theorem iteratedLoopSpace_id (X : BasedTopologicalSpace.{u}) :
     ∀ k : ℕ, (Hom.id X).iteratedLoopSpace k = Hom.id (X.iteratedLoopSpace k)
+  -- the sides differ only by the definitional unfolding of `iteratedLoopSpace` at `k = 0`
   | 0 => by rw [iteratedLoopSpace_zero]; rfl
+  -- the sides differ only by the definitional unfolding `Ω^[k + 1] X = Ω^[k] (Ω X)`
   | k + 1 => by
     rw [iteratedLoopSpace_succ, loopSpace_id, iteratedLoopSpace_id X.loopSpace k]; rfl
 
 @[simp]
 theorem iteratedLoopSpace_comp (g : Hom Y Z) (f : Hom X Y) (k : ℕ) :
     (g.comp f).iteratedLoopSpace k = (g.iteratedLoopSpace k).comp (f.iteratedLoopSpace k) := by
+  -- in each case the sides differ only by the definitional unfolding of the iterate,
+  -- `Ω^[0] X = X` and `Ω^[k + 1] X = Ω^[k] (Ω X)`
   induction k generalizing X Y Z with
   | zero => rw [iteratedLoopSpace_zero, iteratedLoopSpace_zero, iteratedLoopSpace_zero]; rfl
   | succ k ih =>

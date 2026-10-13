@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.CategoryTheory.Category.Basic
 public import Mathlib.Topology.ContinuousMap.Basic
 
 /-!
@@ -19,12 +20,14 @@ continuous maps preserving the basepoint.
 
 * `TauCeti.BasedTopologicalSpace`: a topological space with a basepoint.
 * `TauCeti.BasedTopologicalSpace.Hom`: basepoint-preserving continuous maps, with `Hom.id` and
-  `Hom.comp`.
+  `Hom.comp`, forming a category.
 -/
 
 public section
 
 universe u
+
+open CategoryTheory
 
 namespace TauCeti
 
@@ -92,7 +95,42 @@ theorem coe_comp (g : Hom Y Z) (f : Hom X Y) : ⇑(g.comp f) = g ∘ f := by
 theorem comp_apply (g : Hom Y Z) (f : Hom X Y) (x : X.carrier) : g.comp f x = g (f x) := by
   rw [Hom.comp]; rfl
 
+@[simp]
+theorem coe_mk (f : C(X.carrier, Y.carrier)) (h : f X.basepoint = Y.basepoint) :
+    ⇑(Hom.mk f h) = f :=
+  rfl
+
+@[simp]
+theorem toContinuousMap_id (X : BasedTopologicalSpace.{u}) :
+    (Hom.id X).toContinuousMap = ContinuousMap.id X.carrier := by
+  rw [Hom.id]
+
+@[simp]
+theorem toContinuousMap_comp (g : Hom Y Z) (f : Hom X Y) :
+    (g.comp f).toContinuousMap = g.toContinuousMap.comp f.toContinuousMap := by
+  rw [Hom.comp]
+
+@[simp]
+theorem id_comp (f : Hom X Y) : (Hom.id Y).comp f = f :=
+  DFunLike.ext _ _ fun x => by rw [comp_apply, id_apply]
+
+@[simp]
+theorem comp_id (f : Hom X Y) : f.comp (Hom.id X) = f :=
+  DFunLike.ext _ _ fun x => by rw [comp_apply, id_apply]
+
+theorem comp_assoc {W : BasedTopologicalSpace.{u}} (h : Hom Z W) (g : Hom Y Z) (f : Hom X Y) :
+    (h.comp g).comp f = h.comp (g.comp f) :=
+  DFunLike.ext _ _ fun x => by simp only [comp_apply]
+
 end Hom
+
+instance : Category BasedTopologicalSpace.{u} where
+  Hom := Hom
+  id := Hom.id
+  comp f g := g.comp f
+  id_comp := Hom.comp_id
+  comp_id := Hom.id_comp
+  assoc f g h := (Hom.comp_assoc h g f).symm
 
 end BasedTopologicalSpace
 
