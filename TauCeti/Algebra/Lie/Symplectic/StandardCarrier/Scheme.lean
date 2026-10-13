@@ -118,7 +118,7 @@ theorem carrierι_eq_eqToHom_comp_hopfIdealInclusion :
         GeneralLinear.hopfIdealInclusion ℤ ((n + 1) + (n + 1)) (definingIdeal n) := by
   rw [carrierι_def, TauCeti.UniversalEnvelopingAlgebra.kostantToralGroupSchemeι_def,
     GeneralLinear.hopfIdealInclusion_def, ← Category.assoc,
-    CommHopfAlgCat.eqToHom_comp_quotientSpecι _ (definingIdeal_def n).symm, eqToIso.hom]
+    CommHopfAlgCat.eqToHom_comp_quotientSpecι _ (definingIdeal_def n).symm]
 
 /-- The type-`C_(n+1)` carrier is a closed subgroup scheme of its ambient general linear group. -/
 instance isClosedImmersion_carrierι : IsClosedImmersion (carrierι n).hom.hom.left := by

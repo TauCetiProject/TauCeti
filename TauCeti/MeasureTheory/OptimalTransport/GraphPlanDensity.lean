@@ -79,8 +79,6 @@ theorem exists_graphPlan_levyProkhorovEDist_lt (hπ : IsCoupling π μ ν)
         rw [hqmap]
       _ = (graphPlan T μ).map F := by
         rw [Measure.map_map hu' (hq.prodMap measurable_id), hcomp]
-  let : IsProbabilityMeasure (graphPlan T μ) :=
-    (isCoupling_graphPlan hT.hasLaw).isProbabilityMeasure
   have hleft : wassersteinEDist 1 π (π.map F) ≤ ENNReal.ofReal r :=
     wassersteinEDist_map_le_of_edist_le π hF.aemeasurable (Filter.Eventually.of_forall hdist)
   have hright : wassersteinEDist 1 (graphPlan T μ) ((graphPlan T μ).map F) ≤
@@ -134,8 +132,6 @@ theorem Coupling.mem_closure_graphPlans {μ₀ : ProbabilityMeasure X}
     intro ε hε
     obtain ⟨T, hT, hdist⟩ :=
       exists_graphPlan_levyProkhorovEDist_lt π₀.2 hε
-    let : IsProbabilityMeasure (graphPlan T (μ₀ : Measure X)) :=
-      (isCoupling_graphPlan hT.hasLaw).isProbabilityMeasure
     let ρ : ProbabilityMeasure (X × Y) := ⟨graphPlan T (μ₀ : Measure X), inferInstance⟩
     refine ⟨e ρ, ⟨ρ, ⟨T, hT, rfl⟩, rfl⟩, ?_⟩
     rw [LevyProkhorov.dist_probabilityMeasure_def, levyProkhorovDist]
