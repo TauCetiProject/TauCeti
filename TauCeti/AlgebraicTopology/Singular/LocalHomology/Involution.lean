@@ -165,21 +165,28 @@ T₁ space `S`, `p` a point with `a p ≠ p`, and `U` a set not containing `a p`
 satisfy `f ∘ a = f` and send `S ∖ {p, a p}` into `Y ∖ {y}`. If `a` acts by `ε` on a class `s` of
 `Hₙ(S, S ∖ {p, a p})`, and `t` is a class of `Hₙ(U, U ∖ {p})` with the same image as `s` in
 `Hₙ(S, S ∖ {p})`, then `f` sends `s` to `(1 + ε)` times the image of `t` in `Hₙ(Y, Y ∖ {y})`.
-The inclusions `haP`, `hfP` and `hfU` are arguments, so that the maps of pairs match those of the
-caller. -/
+The inclusion `hfP` is an argument, so that the maps of pairs match those of the caller. -/
 theorem comp_singularHomologyMap_ofSubsetMap_eq_one_add_smul (ha : Function.Involutive a)
     (hp : a p ≠ p) (hapU : a p ∉ U) {y : Y} (f : S ⟶ Y) (hf : ∀ s, f (a s) = f s)
-    (haP : Set.MapsTo a ({p}ᶜ ∩ {a p}ᶜ) ({p}ᶜ ∩ {a p}ᶜ))
     (hfP : Set.MapsTo f ({p}ᶜ ∩ {a p}ᶜ) {y}ᶜ)
-    (hfU : Set.MapsTo (TopCat.ofHom ⟨Subtype.val, continuous_subtype_val⟩ ≫ f)
-      (Subtype.val ⁻¹' {p}ᶜ : Set U) {y}ᶜ)
     (n : ℕ) (ε : ℤ) {M : A} (s : M ⟶ (ofSubset ({p}ᶜ ∩ {a p}ᶜ : Set S)).singularHomology R n)
-    (hs : s ≫ TopPair.singularHomologyMap (ofSubsetMap a haP) R n = ε • s)
+    (hs : s ≫ TopPair.singularHomologyMap (ofSubsetMap a (B := {p}ᶜ ∩ {a p}ᶜ)
+      (B' := {p}ᶜ ∩ {a p}ᶜ) fun x hx ↦
+        ⟨fun h ↦ hx.2 ((ha x).symm.trans (congrArg a h)), fun h ↦ hx.1 (ha.injective h)⟩) R n =
+          ε • s)
     (t : M ⟶ (interPair U {p}ᶜ).singularHomology R n)
     (ht : t ≫ TopPair.singularHomologyMap (excisionMap U {p}ᶜ) R n =
       s ≫ TopPair.singularHomologyMap (ofSubsetMap (𝟙 S) fun _ h ↦ h.1) R n) :
     s ≫ TopPair.singularHomologyMap (ofSubsetMap f hfP) R n =
-      (1 + ε) • (t ≫ TopPair.singularHomologyMap (ofSubsetMap _ hfU) R n) := by
+      (1 + ε) • (t ≫ TopPair.singularHomologyMap
+        (ofSubsetMap (TopCat.ofHom ⟨Subtype.val, continuous_subtype_val⟩ ≫ f)
+          (B := (Subtype.val ⁻¹' {p}ᶜ : Set U)) (B' := {y}ᶜ) fun u hu ↦
+            hfP ⟨hu, fun h ↦ hapU (Set.mem_singleton_iff.1 h ▸ u.2)⟩) R n) := by
+  have haP : Set.MapsTo a ({p}ᶜ ∩ {a p}ᶜ) ({p}ᶜ ∩ {a p}ᶜ) := fun x hx ↦
+    ⟨fun h ↦ hx.2 ((ha x).symm.trans (congrArg a h)), fun h ↦ hx.1 (ha.injective h)⟩
+  have hfU : Set.MapsTo (TopCat.ofHom ⟨Subtype.val, continuous_subtype_val⟩ ≫ f)
+      (Subtype.val ⁻¹' {p}ᶜ : Set U) {y}ᶜ := fun u hu ↦
+    hfP ⟨hu, fun h ↦ hapU (Set.mem_singleton_iff.1 h ▸ u.2)⟩
   have hcov : interior ({p}ᶜ : Set S) ∪ interior {a p}ᶜ = Set.univ := by
     rw [isOpen_compl_singleton.interior_eq, isOpen_compl_singleton.interior_eq,
       ← Set.compl_inter, Set.singleton_inter_eq_empty.2 (Set.mem_singleton_iff.not.2 hp.symm),

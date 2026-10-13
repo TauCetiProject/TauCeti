@@ -423,7 +423,7 @@ private lemma exists_cellularIncidence_cwComplex_eq_mul (hi : i + 1 ≤ N)
         (TopPair.excisionMap (upperHemisphere i) {pole i}ᶜ) (ModuleCat.of R R) i) := ⟨_, rfl⟩
   have hmain := TopPair.comp_singularHomologyMap_ofSubsetMap_eq_one_add_smul (ModuleCat.of R R) ha
     (diskBoundaryNeg_pole_ne i) hapU (cellAttachingMap univ c')
-    (cellAttachingMap_diskBoundaryNeg hi c') haP hfP hfU i ((-1) ^ (i + 1)) s
+    (cellAttachingMap_diskBoundaryNeg hi c') hfP i ((-1) ^ (i + 1)) s
     (hs ▸ sphereClass_comp_singularHomologyMap_diskBoundaryNeg (ModuleCat.of R R) haP) t
     (by rw [ht, Category.assoc, Category.assoc, IsIso.inv_hom_id, Category.comp_id])
   -- The image of `s` under the attaching map is the image of the sphere generator in the local
