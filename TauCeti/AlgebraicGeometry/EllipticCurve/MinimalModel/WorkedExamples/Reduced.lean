@@ -39,6 +39,12 @@ minimal discriminant ideal of the curve, which is an invariant of the isomorphis
 
 * `TauCeti.WorkedExamples.isReducedMinimal_curve11a2` and
   `TauCeti.WorkedExamples.isReducedMinimal_curve37a1`: both equations are reduced minimal.
+* `TauCeti.WorkedExamples.reducedMinimalModel_eq_curve11a2` and
+  `TauCeti.WorkedExamples.reducedMinimalModel_eq_curve37a1`: each is the reduced minimal model of
+  every curve isomorphic to it.
+* `TauCeti.WorkedExamples.isReducedMinimal_and_exists_smul_eq_curve11a2_iff` and
+  `TauCeti.WorkedExamples.isReducedMinimal_and_exists_smul_eq_curve37a1_iff`: each is the only
+  reduced minimal equation in its isomorphism class.
 * `TauCeti.WorkedExamples.minimalDiscriminantIdeal_curve11a2` and
   `TauCeti.WorkedExamples.minimalDiscriminantIdeal_curve37a1`: the minimal discriminant ideals are
   `(11⁵)` and `(37)`.
@@ -72,6 +78,22 @@ theorem isReducedMinimal_curve11a2 : IsReducedMinimal (curve11a2.baseChange ℚ)
   rw [Δ_curve11a2, c₄_curve11a2, Int.isCoprime_iff_gcd_eq_one]
   norm_num
 
+/-- **The reduced minimal model of any curve isomorphic to 11.a2 is
+`y² + y = x³ - x² - 10 x - 20`**, so the label names this equation. -/
+theorem reducedMinimalModel_eq_curve11a2 {E : WeierstrassCurve ℚ} [E.IsElliptic]
+    (C : VariableChange ℚ) (hC : C • E = curve11a2.baseChange ℚ) :
+    reducedMinimalModel E = curve11a2.baseChange ℚ :=
+  (eq_reducedMinimalModel isReducedMinimal_curve11a2 C hC).symm
+
+/-- **`y² + y = x³ - x² - 10 x - 20` is the only reduced minimal equation of 11.a2**: an equation is
+reduced minimal and isomorphic to it exactly when it is this equation. -/
+theorem isReducedMinimal_and_exists_smul_eq_curve11a2_iff {W : WeierstrassCurve ℚ} [W.IsElliptic] :
+    (IsReducedMinimal W ∧ ∃ C : VariableChange ℚ, C • W = curve11a2.baseChange ℚ) ↔
+      W = curve11a2.baseChange ℚ := by
+  refine ⟨fun ⟨hW, C, hC⟩ ↦ hW.eq_of_smul_eq isReducedMinimal_curve11a2 C hC, ?_⟩
+  rintro rfl
+  exact ⟨isReducedMinimal_curve11a2, 1, one_smul _ _⟩
+
 /-- **The minimal discriminant ideal of 11.a2 is `(11⁵)`.** -/
 @[simp]
 theorem minimalDiscriminantIdeal_curve11a2 :
@@ -94,6 +116,22 @@ theorem isReducedMinimal_curve37a1 : IsReducedMinimal (curve37a1.baseChange ℚ)
     ⟨isGlobalMinimal_baseChange_of_isCoprime (O := ℤ) curve37a1 ?_, by simp, by simp, by simp⟩
   rw [Δ_curve37a1, c₄_curve37a1, Int.isCoprime_iff_gcd_eq_one]
   norm_num
+
+/-- **The reduced minimal model of any curve isomorphic to 37.a1 is `y² + y = x³ - x`**, so the
+label names this equation. -/
+theorem reducedMinimalModel_eq_curve37a1 {E : WeierstrassCurve ℚ} [E.IsElliptic]
+    (C : VariableChange ℚ) (hC : C • E = curve37a1.baseChange ℚ) :
+    reducedMinimalModel E = curve37a1.baseChange ℚ :=
+  (eq_reducedMinimalModel isReducedMinimal_curve37a1 C hC).symm
+
+/-- **`y² + y = x³ - x` is the only reduced minimal equation of 37.a1**: an equation is
+reduced minimal and isomorphic to it exactly when it is this equation. -/
+theorem isReducedMinimal_and_exists_smul_eq_curve37a1_iff {W : WeierstrassCurve ℚ} [W.IsElliptic] :
+    (IsReducedMinimal W ∧ ∃ C : VariableChange ℚ, C • W = curve37a1.baseChange ℚ) ↔
+      W = curve37a1.baseChange ℚ := by
+  refine ⟨fun ⟨hW, C, hC⟩ ↦ hW.eq_of_smul_eq isReducedMinimal_curve37a1 C hC, ?_⟩
+  rintro rfl
+  exact ⟨isReducedMinimal_curve37a1, 1, one_smul _ _⟩
 
 /-- **The minimal discriminant ideal of 37.a1 is `(37)`.** -/
 @[simp]

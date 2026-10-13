@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.AlgebraicGeometry.EllipticCurve.Reduction
+public import Mathlib.AlgebraicGeometry.EllipticCurve.Weierstrass
 
 /-!
 # The elliptic curve 11.a2

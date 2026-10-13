@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.AlgebraicGeometry.EllipticCurve.Reduction
+public import Mathlib.AlgebraicGeometry.EllipticCurve.Weierstrass
 
 /-!
 # The elliptic curve 37.a1
@@ -29,6 +29,7 @@ namespace TauCeti.WorkedExamples
 abbrev curve37a1 : WeierstrassCurve ℤ := ⟨0, 0, 1, -1, 0⟩
 
 /-- The discriminant of `y² + y = x³ - x` is `37`. -/
+@[simp]
 theorem Δ_curve37a1 : curve37a1.Δ = 37 := by
   simp [Δ, b₂, b₄, b₆, b₈]
 
