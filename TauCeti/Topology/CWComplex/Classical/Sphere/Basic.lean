@@ -250,6 +250,12 @@ theorem nat_card_cell_sphereCWComplex (m : ℕ) :
   rw [Nat.card_ulift, Nat.card_sum]
   congr 1 <;> split_ifs with h' <;> simp [h']
 
+/-- The CW structure on `Sⁿ` has no cells of dimension greater than `n`. -/
+theorem isEmpty_cell_sphereCWComplex {m : ℕ} (hm : n + 1 ≤ m) :
+    letI := sphereCWComplex h
+    IsEmpty (cell (sphere (0 : EuclideanSpace ℝ ι) 1) m) :=
+  isEmpty_sphereCell hm
+
 /-- The unit sphere of a finite-dimensional real normed space has finite CW type: it is
 homeomorphic to the unit sphere of `EuclideanSpace ℝ (ULift (Fin (n + 1)))` for `n + 1` the
 dimension, or empty in dimension zero. -/
