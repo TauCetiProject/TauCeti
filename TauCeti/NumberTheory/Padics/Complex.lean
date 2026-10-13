@@ -26,6 +26,11 @@ over `ℂ_p` has points of type (4).
 
 * `PadicComplex.dense_setOf_isAlgebraic`: the algebraic numbers are dense in `ℂ_[p]`.
 * `PadicComplex.separableSpace`: `ℂ_[p]` is a separable space.
+
+## References
+
+* A. M. Robert, *A Course in p-adic Analysis*, Graduate Texts in Mathematics 198, Springer, 2000,
+  Chapter 3, for the density of the algebraic numbers in `ℂ_p` and the separability of `ℂ_p`.
 -/
 
 public section

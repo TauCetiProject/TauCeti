@@ -28,6 +28,11 @@ separable.
 
 * `IsAlgebraic.mem_closure_setOf_isAlgebraic`: an element of `L` algebraic over `K` lies in the
   closure of the elements algebraic over `k`.
+
+## References
+
+* A. M. Robert, *A Course in p-adic Analysis*, Graduate Texts in Mathematics 198, Springer, 2000,
+  Chapter 3, for the density of the algebraic numbers in `ℂ_p` and the separability of `ℂ_p`.
 -/
 
 public section

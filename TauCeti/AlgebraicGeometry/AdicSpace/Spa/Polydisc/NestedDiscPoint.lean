@@ -75,8 +75,9 @@ disc into Wedhorn's five types.
   point in `K`, `η` is none of the points of types (1), (2), (3), or (5).
 * `TauCeti.ValuationSpectrum.exists_seq_forall_exists_lt_norm_sub`: over an algebraically closed
   separable `K`, such as `ℂ_p`, there is a decreasing sequence of discs with no common point.
-* `exists_forall_ne_classicalPoint_discPoint_discPointAbove_discPointBelow`: hence the closed
-  unit disc over such `K` has a point of type (4), one that is not of types (1), (2), (3), or (5).
+* `exists_forall_ne_classicalPoint_discPoint_discPointAbove_discPointBelow`, in the namespace
+  `TauCeti.ValuationSpectrum`: hence the closed unit disc over such `K` has a point of type (4),
+  one that is not of types (1), (2), (3), or (5).
 
 ## References
 
@@ -367,9 +368,8 @@ variable (K) in
 /-- **Decreasing sequences of discs with no common point exist** over an algebraically closed
 separable field `K`, such as `ℂ_p` (`PadicComplex.separableSpace`): there are discs
 `D(aₙ, |cₙ|)` in the closed unit disc satisfying the hypotheses of `nestedDiscPoint` such that
-every `b ∈ K` lies outside one of them. In other words, `K` is not spherically complete. The radii
-decrease strictly to a positive limit, and the discs avoid a dense sequence one point at a time
-(`IsUltrametricDist.exists_antitone_closedBall_iInter_eq_empty`). -/
+every `b ∈ K` lies outside one of them. In other words, `K` is not spherically complete. This
+specialises `IsUltrametricDist.exists_antitone_closedBall_iInter_eq_empty` to the unit disc. -/
 theorem exists_seq_forall_exists_lt_norm_sub [IsAlgClosed K]
     [TopologicalSpace.SeparableSpace K] :
     ∃ a c : ℕ → K, (∀ n, ‖a n‖ ≤ 1) ∧ (∀ n, c n ≠ 0) ∧ (∀ n, ‖c n‖ ≤ 1) ∧
