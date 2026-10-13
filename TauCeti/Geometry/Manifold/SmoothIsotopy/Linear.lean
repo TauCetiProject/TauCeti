@@ -14,6 +14,8 @@ public import TauCeti.Geometry.Manifold.SmoothEmbedding.Diffeomorph
 
 A real linear map with positive determinant on a finite-dimensional normed space is smoothly
 isotopic to the identity through linear automorphisms. The motion fixes the origin at every time.
+More generally, two linear equivalences with orientation-preserving relative map are
+smoothly isotopic, even when their source and target are different normed spaces.
 This is the linear step in the disc theorem, before transporting and extending the isotopy in
 an ambient manifold.
 
@@ -69,5 +71,32 @@ theorem exists_smoothIsotopy_id (L : E ≃L[ℝ] E) (hL : 0 < L.toContinuousLine
     · intro x
       dsimp only [F]
       exact (ContinuousLinearMap.toContinuousLinearEquivOfDetNeZero_apply _ _ x).symm
+
+variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+
+/-- Linear equivalences with orientation-preserving relative map are smoothly isotopic,
+fixing the origin. The source is finite-dimensional; the target need not be given an orientation. -/
+theorem exists_smoothIsotopy (L₀ L₁ : E ≃L[ℝ] F)
+    (hL : 0 < (L₀.trans L₁.symm).toContinuousLinearMap.det) :
+    ∃ G : TauCeti.SmoothIsotopy
+        (TauCeti.SmoothEmbedding.ofContinuousLinearEquiv (n := ∞) L₀).toContMDiffMap
+        (TauCeti.SmoothEmbedding.ofContinuousLinearEquiv L₁).toContMDiffMap,
+      ∀ t : unitInterval, G (t, 0) = 0 := by
+  obtain ⟨G, hG, hlinear⟩ := (L₀.trans L₁.symm).exists_smoothIsotopy_id hL
+  let K : TauCeti.SmoothIsotopy
+      (TauCeti.SmoothEmbedding.ofContinuousLinearEquiv L₁).toContMDiffMap
+      (TauCeti.SmoothEmbedding.ofContinuousLinearEquiv L₀).toContMDiffMap :=
+    { toContMDiffMap := ⟨fun p => L₁ (G p), L₁.contDiff.contMDiff.comp G.contMDiff⟩
+      map_zero_left := fun x => (congrArg L₁ (G.apply_zero x)).trans (by simp [ContMDiffMap.id])
+      map_one_left := fun x => by simp
+      isSmoothEmbedding := fun t => by
+        obtain ⟨A, -, hA⟩ := hlinear t
+        convert TauCeti.isSmoothEmbedding_continuousLinearEquiv (n := ∞) (A.trans L₁) using 1
+        funext x
+        simp only [ContMDiffMap.coeFn_mk, ContinuousLinearEquiv.trans_apply, hA] }
+  refine ⟨K.symm, fun t => ?_⟩
+  simp only [TauCeti.SmoothIsotopy.symm_apply]
+  -- Evaluate the locally constructed postcomposition, then use the fixed-origin equation.
+  exact (congrArg L₁ (hG _)).trans L₁.map_zero
 
 end ContinuousLinearEquiv
