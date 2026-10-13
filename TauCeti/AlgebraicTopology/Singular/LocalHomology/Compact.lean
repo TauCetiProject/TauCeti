@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.MayerVietoris
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.Neighborhood
+public import TauCeti.Topology.OpenPartialHomeomorph.ClosedBall
 
 /-!
 # Local homology of a compact subset of a manifold
@@ -173,32 +174,6 @@ private lemma detects_symm_image_biUnion (hn : finrank ℝ E = n) (φ : OpenPart
         (hLc j (s.mem_insert_self j)).isClosed)
       fun i hi ↦ inter_subset_left.trans (hLφ i (Finset.mem_insert_of_mem hi))).isZero
 
-omit [NormedSpace ℝ E] [FiniteDimensional ℝ E] [T2Space M] in
-/-- A compact subset `A` of the source of a chart `φ` is covered by finitely many closed balls of
-`φ`, centred at points of `A`, whose images lie in a given neighbourhood `U` of `A`. -/
-private lemma exists_finset_closedBall_cover (φ : OpenPartialHomeomorph M E) {A U : Set M}
-    (hA : IsCompact A) (hAφ : A ⊆ φ.source) (hU : U ∈ 𝓝ˢ A) :
-    ∃ (t : Finset M) (r : M → ℝ), (∀ a ∈ t, a ∈ A ∧ 0 < r a ∧
-      closedBall (φ a) (r a) ⊆ φ.target ∧ φ.symm '' closedBall (φ a) (r a) ⊆ U) ∧
-      A ⊆ φ.symm '' ⋃ a ∈ t, closedBall (φ a) (r a) := by
-  have h (a : M) (ha : a ∈ A) : ∃ r > 0, closedBall (φ a) r ⊆ φ.target ∩ φ.symm ⁻¹' U := by
-    have ha' := φ.map_source (hAφ ha)
-    refine nhds_basis_closedBall.mem_iff.1 (Filter.inter_mem (φ.open_target.mem_nhds ha') ?_)
-    refine (φ.continuousAt_symm ha').preimage_mem_nhds ?_
-    rw [φ.left_inv (hAφ ha)]
-    exact mem_nhdsSet_iff_forall.1 hU a ha
-  choose! r hr hrU using h
-  obtain ⟨t, htA, hAt⟩ := hA.elim_nhds_subcover (fun a ↦ φ.source ∩ φ ⁻¹' ball (φ a) (r a))
-    fun a ha ↦ Filter.inter_mem (φ.open_source.mem_nhds (hAφ ha))
-      ((φ.continuousAt (hAφ ha)).preimage_mem_nhds (ball_mem_nhds _ (hr a ha)))
-  refine ⟨t, r, fun a ha ↦ ⟨htA a ha, hr a (htA a ha), fun z hz ↦ (hrU a (htA a ha) hz).1, ?_⟩,
-    fun x hx ↦ ?_⟩
-  · rintro _ ⟨z, hz, rfl⟩
-    exact (hrU a (htA a ha) hz).2
-  · obtain ⟨hxs, a, ha, hxb⟩ : x ∈ φ.source ∧ ∃ a ∈ t, φ x ∈ ball (φ a) (r a) := by
-      simpa using hAt hx
-    exact ⟨φ x, mem_biUnion ha (ball_subset_closedBall hxb), φ.left_inv hxs⟩
-
 /-- **The compactness step.** The conclusion holds for a compact subset of the source of a chart.
 A class along `A` is restricted from a finite union `K` of closed balls of the chart centred at
 points of `A`, and restriction from each ball to its centre is an isomorphism. -/
@@ -211,7 +186,7 @@ private lemma detects_of_subset_source (hn : finrank ℝ E = n) (φ : OpenPartia
           (β : (localHomology N (φ.symm '' ⋃ a ∈ t, closedBall (φ a) (r a)) k :
             ModuleCat.{w} Λ)), localHomologyRestriction N hAK k β = α := by
     obtain ⟨U, hU, β, rfl⟩ := exists_mem_nhdsSet_localHomologyRestriction_eq N k α
-    obtain ⟨t, r, ht, hAt⟩ := exists_finset_closedBall_cover φ hA hAφ hU
+    obtain ⟨t, r, ht, hAt⟩ := φ.exists_finset_closedBall_cover hA hAφ hU
     have hKU : φ.symm '' ⋃ a ∈ t, closedBall (φ a) (r a) ⊆ U := by
       rw [image_iUnion₂]
       exact iUnion₂_subset fun a ha ↦ (ht a ha).2.2.2
