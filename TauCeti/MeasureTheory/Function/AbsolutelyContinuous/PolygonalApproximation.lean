@@ -30,7 +30,7 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
 /-- A raw curve is polygonal on an interval if a finite increasing subdivision expresses it as
 the affine interpolation of its successive vertex values on every closed cell. -/
-@[expose] def IsPolygonalOnInterval {F : Type*} [AddCommGroup F] [Module ℝ F]
+def IsPolygonalOnInterval {F : Type*} [AddCommGroup F] [Module ℝ F]
     (f : ℝ → F) (a b : ℝ) : Prop :=
   ∃ N : ℕ, 0 < N ∧ ∃ s : Fin (N + 1) → ℝ,
     StrictMono s ∧ s 0 = a ∧ s (Fin.last N) = b ∧
@@ -38,6 +38,30 @@ the affine interpolation of its successive vertex values on every closed cell. -
         f t = f (s i.castSucc) +
           ((t - s i.castSucc) / (s i.succ - s i.castSucc)) •
             (f (s i.succ) - f (s i.castSucc))
+
+/-- A finite increasing subdivision with affine interpolation on each cell defines a polygonal
+curve. -/
+theorem IsPolygonalOnInterval.of_subdivision {F : Type*} [AddCommGroup F] [Module ℝ F]
+    {f : ℝ → F} {a b : ℝ} {N : ℕ}
+    (hN : 0 < N) {s : Fin (N + 1) → ℝ} (hs : StrictMono s) (ha : s 0 = a)
+    (hb : s (Fin.last N) = b)
+    (hsegments : ∀ i : Fin N, ∀ t ∈ Icc (s i.castSucc) (s i.succ),
+      f t = f (s i.castSucc) +
+        ((t - s i.castSucc) / (s i.succ - s i.castSucc)) •
+          (f (s i.succ) - f (s i.castSucc))) :
+    IsPolygonalOnInterval f a b := ⟨N, hN, s, hs, ha, hb, hsegments⟩
+
+/-- A polygonal curve admits a finite increasing subdivision and its explicit affine interpolation
+formula on each cell. -/
+theorem IsPolygonalOnInterval.exists_subdivision {F : Type*} [AddCommGroup F] [Module ℝ F]
+    {f : ℝ → F} {a b : ℝ}
+    (h : IsPolygonalOnInterval f a b) :
+    ∃ N : ℕ, 0 < N ∧ ∃ s : Fin (N + 1) → ℝ,
+      StrictMono s ∧ s 0 = a ∧ s (Fin.last N) = b ∧
+        ∀ i : Fin N, ∀ t ∈ Icc (s i.castSucc) (s i.succ),
+          f t = f (s i.castSucc) +
+            ((t - s i.castSucc) / (s i.succ - s i.castSucc)) •
+              (f (s i.succ) - f (s i.castSucc)) := h
 
 namespace AbsolutelyContinuousOnInterval
 
