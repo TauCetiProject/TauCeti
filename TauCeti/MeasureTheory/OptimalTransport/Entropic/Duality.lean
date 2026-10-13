@@ -140,6 +140,16 @@ theorem entropicGibbsFactor_add_const_sub_const (a : ℝ) :
     entropicGibbsFactor c ε (fun x ↦ φ x + a) (fun y ↦ ψ y - a) = entropicGibbsFactor c ε φ ψ := by
   simp only [entropicGibbsFactor_def, add_add_sub_cancel]
 
+/-- For an s-finite second marginal, replacing the potentials by `μ`- and `ν`-almost everywhere
+equal ones changes the Gibbs factor only on a `μ ⊗ ν`-null set. -/
+theorem entropicGibbsFactor_congr_ae [SFinite ν] (hφ : φ =ᵐ[μ] φ') (hψ : ψ =ᵐ[ν] ψ') :
+    entropicGibbsFactor c ε φ ψ =ᵐ[μ.prod ν] entropicGibbsFactor c ε φ' ψ' := by
+  filter_upwards [Measure.quasiMeasurePreserving_fst.ae hφ,
+    Measure.quasiMeasurePreserving_snd.ae hψ] with z h₁ h₂
+  by_cases hz : c z = ∞
+  · simp only [entropicGibbsFactor_of_eq_top hz]
+  · simp only [entropicGibbsFactor_of_ne_top hz, h₁, h₂]
+
 /-- The Gibbs factor of measurable potentials for a measurable cost is measurable. -/
 theorem measurable_entropicGibbsFactor (hc : Measurable c) (hφ : Measurable φ)
     (hψ : Measurable ψ) : Measurable (entropicGibbsFactor c ε φ ψ) :=
@@ -179,6 +189,15 @@ theorem entropicDualValue_def :
     entropicDualValue c ε μ ν φ ψ =
       kantorovichDualValue μ ν φ ψ - ε * ∫ z, (entropicGibbsFactor c ε φ ψ z - 1) ∂μ.prod ν :=
   (rfl)
+
+/-- For an s-finite second marginal, the entropic dual value only depends on the `μ`- and
+`ν`-almost everywhere classes of the potentials. -/
+theorem entropicDualValue_congr_ae [SFinite ν] (hφ : φ =ᵐ[μ] φ') (hψ : ψ =ᵐ[ν] ψ') :
+    entropicDualValue c ε μ ν φ ψ = entropicDualValue c ε μ ν φ' ψ' := by
+  rw [entropicDualValue_def, entropicDualValue_def, kantorovichDualValue_def,
+    kantorovichDualValue_def, integral_congr_ae hφ, integral_congr_ae hψ,
+    integral_congr_ae <| (entropicGibbsFactor_congr_ae (c := c) (ε := ε) hφ hψ).mono
+      fun _ hz ↦ congrArg (· - 1) hz]
 
 /-- Opposite additive shifts of the potentials do not change the entropic dual value when the
 first marginal is finite and the two marginals have the same mass. -/
