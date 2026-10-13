@@ -10,6 +10,7 @@ public import Mathlib.FieldTheory.Separable
 public import Mathlib.RingTheory.Localization.Away.Basic
 public import TauCeti.AlgebraicGeometry.EllipticCurve.FreyCurve
 import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Formula.VariableChange
+import TauCeti.AlgebraicGeometry.EllipticCurve.DivisionPolynomial.Discriminant
 import Mathlib.FieldTheory.Galois.Basic
 import Mathlib.FieldTheory.SeparableDegree
 import Mathlib.FieldTheory.SplittingField.Construction
@@ -46,13 +47,17 @@ this already forces `2` to be a unit (`WeierstrassCurve.isUnit_two_of_evalEval_�
 Exactly one change of variables with scaling `u` then carries `W` to a Legendre form, `(x₁, y₁)`
 to `(0, 0)` and `(x₂, y₂)` to `(1, 0)` (`WeierstrassCurve.existsUnique_variableChange_legendre`). It
 is `WeierstrassCurve.toLegendre`, with `r = x₁`, `s = -a₁/2` and `t = y₁`. A change of variables
-with scaling `u` multiplies the invariant differential by `u`, so fixing `u` amounts to fixing a
-nowhere-vanishing differential `ω`. The triple of an ordered basis of the `2`-torsion and `ω`
-is the Legendre structure of Katz and Mazur, and the theorem says that the ring
-`ℤ[1/2][λ, 1/λ(λ - 1)]` with the curve `y² = x (x - 1) (x - λ)`
-(`WeierstrassCurve.UniversalLegendre.curve`) is universal for elliptic Weierstrass curves carrying
-one (`WeierstrassCurve.UniversalLegendre.existsUnique_legendre`). The parameter `λ` depends on `u`
-only through `u²`.
+with scaling `u` multiplies the invariant differential by `u`, so fixing `u` amounts to fixing the
+differential `ω = u·ω_W`. The ring `ℤ[1/2][λ, 1/λ(λ - 1)]` with the curve `y² = x (x - 1) (x - λ)`
+(`WeierstrassCurve.UniversalLegendre.curve`) classifies such data at the level of equations: an
+elliptic Weierstrass curve with two such points and such a unit `u` determines exactly one ring
+homomorphism out of it and one change of variables with scaling `u` to the base change of the
+universal curve (`WeierstrassCurve.UniversalLegendre.existsUnique_legendre`). The parameter `λ`
+depends on `u` only through `u²`. This is not yet the representability of the Legendre structures
+of Katz and Mazur, an ordered basis of `E[2]` together with a nowhere-vanishing differential: it
+models them only once the two points are identified with a basis of the `2`-torsion and `ω` with
+the corresponding differential, which needs the `2`-torsion subgroup and invariant differential of
+an elliptic curve over a general base.
 
 ## Main definitions
 
@@ -61,7 +66,9 @@ only through `u²`.
 * `WeierstrassCurve.UniversalLegendre.Ring`, `WeierstrassCurve.UniversalLegendre.curve`: the ring
   `ℤ[1/2][λ, 1/λ(λ - 1)]` and the universal Legendre curve over it.
 * `WeierstrassCurve.UniversalLegendre.lift`: the classifying homomorphism
-  `ℤ[1/2][λ, 1/λ(λ - 1)] →+* R` of an element `l` with `2l(l - 1)` a unit.
+  `ℤ[1/2][λ, 1/λ(λ - 1)] →+* R` of an element `l` with `2l(l - 1)` a unit, along which the
+  universal curve becomes `y² = x (x - 1) (x - l)` (`WeierstrassCurve.UniversalLegendre.map_lift`),
+  naturally in `R` (`WeierstrassCurve.UniversalLegendre.comp_lift`).
 
 ## Main results
 
@@ -78,8 +85,8 @@ only through `u²`.
 * `WeierstrassCurve.existsUnique_variableChange_legendre` and
   `WeierstrassCurve.exists_variableChange_legendre_iff`: existence and uniqueness together, and,
   for elliptic `W`, the converse.
-* `WeierstrassCurve.UniversalLegendre.existsUnique_legendre`: the universal property of the
-  universal Legendre curve.
+* `WeierstrassCurve.UniversalLegendre.existsUnique_legendre`: the equation-level universal
+  property of the universal Legendre curve.
 
 ## References
 
@@ -208,7 +215,7 @@ variable {R : Type*} [CommRing R] (W : WeierstrassCurve R) {x₁ y₁ x₂ y₂ 
 theorem isElliptic_freyCurve_one_neg_iff {l : R} :
     (freyCurve 1 (-l)).IsElliptic ↔ IsUnit (2 * l * (l - 1)) := by
   rw [isElliptic_freyCurve_iff, IsUnit.mul_iff, IsUnit.mul_iff, IsUnit.neg_iff,
-    show (1 : R) + -l = -(l - 1) by ring, IsUnit.neg_iff]
+    ← sub_eq_add_neg, ← neg_sub l, IsUnit.neg_iff]
   simp only [isUnit_one, true_and, and_assoc]
 
 /-- **Two points of order two force `2` to be a unit.** If `W` is elliptic and `ψ₂` vanishes at
@@ -262,6 +269,11 @@ theorem toLegendre_smul (h₁ : W.toAffine.Equation x₁ y₁) (h₂ : W.toAffin
     (hψ₁ : W.ψ₂.evalEval x₁ y₁ = 0) (hψ₂ : W.ψ₂.evalEval x₂ y₂ = 0) (hu : x₂ - x₁ = u ^ 2) :
     W.toLegendre h2 u x₁ y₁ • W =
       freyCurve 1 ((W.b₂ * ↑h2.unit⁻¹ ^ 2 + 2 * x₁ + x₂) * ↑u⁻¹ ^ 2) := by
+  -- `x₁` and `x₂` are roots of `Ψ₂Sq = 4X³ + b₂X² + 2b₄X + b₆`, since `ψ₂² = Ψ₂Sq` on the curve
+  have f₁ : 4 * x₁ ^ 3 + W.b₂ * x₁ ^ 2 + 2 * W.b₄ * x₁ + W.b₆ = 0 := by
+    simpa [Ψ₂Sq, hψ₁] using (W.evalEval_ψ₂_sq h₁).symm
+  have f₂ : 4 * x₂ ^ 3 + W.b₂ * x₂ ^ 2 + 2 * W.b₄ * x₂ + W.b₆ = 0 := by
+    simpa [Ψ₂Sq, hψ₂] using (W.evalEval_ψ₂_sq h₂).symm
   rw [ψ₂, Affine.evalEval_polynomialY] at hψ₁ hψ₂
   rw [Affine.equation_iff] at h₁ h₂
   have hi : 2 * (↑h2.unit⁻¹ : R) = 1 := h2.mul_val_inv
@@ -270,16 +282,8 @@ theorem toLegendre_smul (h₁ : W.toAffine.Equation x₁ y₁) (h₂ : W.toAffin
     linear_combination (↑u⁻¹ : R) ^ 2 * hu + ((u : R) * ↑u⁻¹ + 1) * hv
   have hb₂ : W.b₂ = W.a₁ ^ 2 + 4 * W.a₂ := (rfl)
   have hb₄ : W.b₄ = 2 * W.a₄ + W.a₁ * W.a₃ := (rfl)
-  have hb₆ : W.b₆ = W.a₃ ^ 2 + 4 * W.a₆ := (rfl)
-  -- `x₁` and `x₂` are roots of `4X³ + b₂X² + 2b₄X + b₆`, so the sum of the other two roots is
-  -- determined by each of them
-  have f₁ : 4 * x₁ ^ 3 + W.b₂ * x₁ ^ 2 + 2 * W.b₄ * x₁ + W.b₆ = 0 := by
-    linear_combination (2 * y₁ + W.a₁ * x₁ + W.a₃) * hψ₁ - 4 * h₁ + x₁ ^ 2 * hb₂ +
-      2 * x₁ * hb₄ + hb₆
-  have f₂ : 4 * x₂ ^ 3 + W.b₂ * x₂ ^ 2 + 2 * W.b₄ * x₂ + W.b₆ = 0 := by
-    linear_combination (2 * y₂ + W.a₁ * x₂ + W.a₃) * hψ₂ - 4 * h₂ + x₂ ^ 2 * hb₂ +
-      2 * x₂ * hb₄ + hb₆
   have hx : IsUnit (x₁ - x₂) := IsUnit.of_mul_eq_one (-(↑u⁻¹ : R) ^ 2) (by linear_combination hv2)
+  -- so the sum of the other two roots is determined by each of them
   have hG : 4 * (x₁ ^ 2 + x₁ * x₂ + x₂ ^ 2) + W.b₂ * (x₁ + x₂) + 2 * W.b₄ = 0 :=
     hx.mul_right_eq_zero.mp (by linear_combination f₁ - f₂)
   ext
@@ -418,9 +422,36 @@ noncomputable def lift {l : R} (h : IsUnit (2 * l * (l - 1))) : Ring →+* R :=
   IsLocalization.Away.lift (2 * X * (X - 1) : ℤ[X])
     (g := Polynomial.eval₂RingHom (Int.castRingHom R) l) (by simpa using h)
 
+/-- Restricted to the polynomial ring `ℤ[λ]`, the classifying homomorphism substitutes `l` for
+`λ`. Use this shape when composing ring maps and `lift_algebraMap` when rewriting underneath an
+application. -/
+theorem lift_comp_algebraMap {l : R} (h : IsUnit (2 * l * (l - 1))) :
+    (lift h).comp (algebraMap ℤ[X] Ring) = Polynomial.eval₂RingHom (Int.castRingHom R) l :=
+  IsLocalization.Away.lift_comp ..
+
+/-- The pointwise form of `lift_comp_algebraMap`. -/
+theorem lift_algebraMap {l : R} (h : IsUnit (2 * l * (l - 1))) (p : ℤ[X]) :
+    lift h (algebraMap ℤ[X] Ring p) = Polynomial.eval₂RingHom (Int.castRingHom R) l p :=
+  IsLocalization.Away.lift_eq ..
+
 @[simp]
 theorem lift_param {l : R} (h : IsUnit (2 * l * (l - 1))) : lift h param = l := by
   simp [lift]
+
+/-- Every Legendre form `y² = x (x - 1) (x - l)` with `2l(l - 1)` a unit is the base change of the
+universal Legendre curve along its classifying homomorphism. Not `@[simp]`: `simp` already proves
+it from `map_freyCurve` and `lift_param`. -/
+theorem map_lift {l : R} (h : IsUnit (2 * l * (l - 1))) :
+    curve.map (lift h) = freyCurve 1 (-l) := by
+  simp
+
+/-- The classifying homomorphism is natural in the base ring: followed by a ring homomorphism
+`φ : R →+* S`, the classifying homomorphism of `l` is that of `φ l`. -/
+theorem comp_lift {S : Type*} [CommRing S] (φ : R →+* S) {l : R} (h : IsUnit (2 * l * (l - 1))) :
+    φ.comp (lift h) = lift (l := φ l)
+      (by rw [← map_ofNat φ 2, ← map_one φ, ← map_sub, ← map_mul, ← map_mul]; exact h.map φ) := by
+  ext
+  simp
 
 /-- The classifying homomorphism is unique: a ring homomorphism out of `ℤ[1/2][λ, 1/λ(λ - 1)]`
 sending `λ` to `l` is `lift`. -/
@@ -431,12 +462,14 @@ theorem eq_lift {l : R} (h : IsUnit (2 * l * (l - 1))) {f : Ring →+* R} (hf : 
 
 variable {W : WeierstrassCurve R} {x₁ y₁ x₂ y₂ : R} (u : Rˣ)
 
-/-- **The universal Legendre curve represents Legendre structures.** Let `W` be an elliptic
+/-- **The universal Legendre curve classifies Legendre normalisations.** Let `W` be an elliptic
 Weierstrass curve, `(x₁, y₁)` and `(x₂, y₂)` points of `W` at which `ψ₂` vanishes, and `u` a unit
 with `x₂ - x₁ = u²`. Then there is exactly one pair of a ring homomorphism
 `f : ℤ[1/2][λ, 1/λ(λ - 1)] →+* R` and a change of variables `C` with scaling `u` such that `C`
 carries `W` to the base change of the universal Legendre curve along `f`, `(x₁, y₁)` to `(0, 0)`
-and `(x₂, y₂)` to `(1, 0)`. -/
+and `(x₂, y₂)` to `(1, 0)`. This is an equation-level statement: it models the Legendre structures
+of Katz and Mazur only after identifying the two points with a basis of `E[2]` and `u` with the
+differential `u` times the invariant differential of `W`. -/
 theorem existsUnique_legendre [W.IsElliptic] (h₁ : W.toAffine.Equation x₁ y₁)
     (h₂ : W.toAffine.Equation x₂ y₂) (hψ₁ : W.ψ₂.evalEval x₁ y₁ = 0)
     (hψ₂ : W.ψ₂.evalEval x₂ y₂ = 0) (hu : x₂ - x₁ = u ^ 2) :
