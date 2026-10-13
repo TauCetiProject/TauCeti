@@ -7,7 +7,7 @@ module
 
 public import TauCeti.KnotTheory.Grid.Grading.UnblockedChain
 public import TauCeti.KnotTheory.Grid.Homology.Unblocked
-import TauCeti.Algebra.DirectSum.Internal
+public import TauCeti.Algebra.Module.GradedModule.Homology
 
 /-!
 # The bigrading of unblocked grid homology
@@ -56,46 +56,40 @@ end Cycles
 
 variable [CommRing R]
 
-private noncomputable instance chainDecomposition :
-    DirectSum.Decomposition (G.bigradedChainMinusPiece R) :=
-  (G.isInternal_bigradedChainMinusPiece R).chooseDecomposition
+private noncomputable def chainGrading : InternalGrading R (GridChainMinus R n) (ℤ × ℤ) :=
+  ⟨G.bigradedChainMinusPiece R, G.isInternal_bigradedChainMinusPiece R⟩
 
-private theorem differential_decompose (g : ℤ × ℤ) (c : GridChainMinus R n) :
-    G.1.unblockedDifferential R (DirectSum.decompose (G.bigradedChainMinusPiece R) c g) =
-      (DirectSum.decompose (G.bigradedChainMinusPiece R)
-        (G.1.unblockedDifferential R c) (g - (1, 0)) : GridChainMinus R n) :=
-  DirectSum.map_decompose_shift _ _ (G.1.unblockedDifferential R).toAddMonoidHom
-    (· - (1, 0)) (fun _ _ h => sub_left_injective h) (fun _ _ hc =>
-      G.unblockedDifferential_mem_bigradedChainMinusPiece hc) g c
+private theorem differential_homogeneous :
+    LinearMap.IsHomogeneous (G.1.unblockedDifferential R)
+      (G.chainGrading R).piece (G.chainGrading R).piece (-(1, 0)) := by
+  rw [LinearMap.isHomogeneous_def]
+  intro g c hc
+  simp only [chainGrading] at hc ⊢
+  simpa only [sub_eq_add_neg] using G.unblockedDifferential_mem_bigradedChainMinusPiece hc
 
 /-- The homogeneous cycle modules form an internal direct sum. -/
 theorem isInternal_bigradedUnblockedCyclesPiece :
     DirectSum.IsInternal (G.bigradedUnblockedCyclesPiece R) := by
-  refine DirectSum.isInternal_comap (G.bigradedChainMinusPiece R) _
-    ((LinearMap.ker (G.1.unblockedDifferential R)).subtype.restrictScalars R)
-    Subtype.val_injective (fun _ _ => Iff.rfl) ?_
-  intro g z
-  refine ⟨⟨_, ?_⟩, rfl⟩
-  rw [LinearMap.mem_ker, G.differential_decompose]
-  simp only [LinearMap.restrictScalars_apply, Submodule.subtype_apply,
-    LinearMap.mem_ker.mp z.2, DirectSum.decompose_zero, DirectSum.zero_apply,
-    ZeroMemClass.coe_zero]
-
-private theorem decompose_boundary {c : GridChainMinus R n}
-    (hc : c ∈ LinearMap.range (G.1.unblockedDifferential R)) (g : ℤ × ℤ) :
-    (DirectSum.decompose (G.bigradedChainMinusPiece R) c g : GridChainMinus R n) ∈
-      LinearMap.range (G.1.unblockedDifferential R) := by
-  obtain ⟨b, rfl⟩ := hc
-  exact ⟨_, (G.differential_decompose R (g + (1, 0)) b).trans
-    (by rw [add_sub_cancel_right])⟩
+  have hpieces : ((G.chainGrading R).ker (G.differential_homogeneous R)).piece =
+      G.bigradedUnblockedCyclesPiece R := by
+    funext g
+    ext z
+    exact (G.chainGrading R).mem_ker_piece (G.differential_homogeneous R)
+  rw [← hpieces]
+  exact ((G.chainGrading R).ker (G.differential_homogeneous R)).isInternal
 
 variable [CharP R 2]
+
+private noncomputable def homologyGrading :
+    InternalGrading R (G.1.unblockedHomology R) (ℤ × ℤ) :=
+  ((G.chainGrading R).homology (G.differential_homogeneous R)
+    (G.1.unblockedDifferential_comp_self_eq_zero R)).map
+      ((G.1.unblockedHomologyIso R).symm.toLinearEquiv.restrictScalars R)
 
 /-- The bidegree-`g` piece of `GH⁻`: classes of cycles homogeneous of bidegree `g`. -/
 noncomputable def bigradedUnblockedHomologyPiece (g : ℤ × ℤ) :
     Submodule R (G.1.unblockedHomology R) :=
-  (G.bigradedUnblockedCyclesPiece R g).map
-    ((G.1.unblockedHomologyClass R).restrictScalars R)
+  (G.homologyGrading R).piece g
 
 /-- A class has bidegree `g` exactly when it has a cycle representative of that bidegree. -/
 theorem mem_bigradedUnblockedHomologyPiece_iff {g : ℤ × ℤ} {y : G.1.unblockedHomology R} :
@@ -103,8 +97,16 @@ theorem mem_bigradedUnblockedHomologyPiece_iff {g : ℤ × ℤ} {y : G.1.unblock
       ∃ z : LinearMap.ker (G.1.unblockedDifferential R),
         (z : GridChainMinus R n) ∈ G.bigradedChainMinusPiece R g ∧
           G.1.unblockedHomologyClass R z = y := by
-  simp only [bigradedUnblockedHomologyPiece, Submodule.mem_map,
-    mem_bigradedUnblockedCyclesPiece, LinearMap.restrictScalars_apply]
+  rw [bigradedUnblockedHomologyPiece, homologyGrading, InternalGrading.mem_map_piece_iff,
+    InternalGrading.mem_homology_piece_iff]
+  constructor
+  · rintro ⟨z, hz, hzy⟩
+    refine ⟨z, hz, ?_⟩
+    apply (ModuleCat.mono_iff_injective (G.1.unblockedHomologyIso R).hom).mp inferInstance
+    rw [GridDiagram.unblockedHomologyIso_hom_unblockedHomologyClass]
+    exact hzy
+  · rintro ⟨z, hz, rfl⟩
+    exact ⟨z, hz, (G.1.unblockedHomologyIso_hom_unblockedHomologyClass R z).symm⟩
 
 /-- The class of a homogeneous cycle lies in the homology piece of the same bidegree. -/
 theorem unblockedHomologyClass_mem_bigradedUnblockedHomologyPiece {g : ℤ × ℤ}
@@ -115,58 +117,45 @@ theorem unblockedHomologyClass_mem_bigradedUnblockedHomologyPiece {g : ℤ × �
 
 /-- The bigraded homology pieces span `GH⁻`. -/
 theorem iSup_bigradedUnblockedHomologyPiece_eq_top :
-    ⨆ g, G.bigradedUnblockedHomologyPiece R g = ⊤ := by
-  simp only [bigradedUnblockedHomologyPiece]
-  rw [← Submodule.map_iSup,
-    (G.isInternal_bigradedUnblockedCyclesPiece R).submodule_iSup_eq_top,
-    Submodule.map_top, LinearMap.range_eq_top]
-  exact G.1.unblockedHomologyClass_surjective R
+    ⨆ g, G.bigradedUnblockedHomologyPiece R g = ⊤ :=
+  (G.homologyGrading R).isInternal.submodule_iSup_eq_top
 
 /-- The bigraded homology pieces are independent: a homogeneous boundary can be detected in
 its own bidegree. -/
 theorem iSupIndep_bigradedUnblockedHomologyPiece :
-    iSupIndep (G.bigradedUnblockedHomologyPiece R) := by
-  classical
-  rw [iSupIndep_iff_finsetSum_eq_zero_imp_eq_zero]
-  intro s v hv hv0 g hg
-  have hlift : ∀ i : s, ∃ z : LinearMap.ker (G.1.unblockedDifferential R),
-      (z : GridChainMinus R n) ∈ G.bigradedChainMinusPiece R i ∧
-        G.1.unblockedHomologyClass R z = v i := fun i =>
-    (G.mem_bigradedUnblockedHomologyPiece_iff R).mp (hv i i.2)
-  choose z hz hzv using hlift
-  have hb : ((∑ i : s, z i : LinearMap.ker (G.1.unblockedDifferential R)) :
-      GridChainMinus R n) ∈ LinearMap.range (G.1.unblockedDifferential R) := by
-    rw [← GridDiagram.unblockedHomologyClass_eq_zero_iff, map_sum]
-    simpa only [hzv, Finset.sum_coe_sort] using hv0
-  have hproj : (DirectSum.decompose (G.bigradedChainMinusPiece R)
-      (((∑ i : s, z i : LinearMap.ker (G.1.unblockedDifferential R))) : GridChainMinus R n) g :
-        GridChainMinus R n) = z ⟨g, hg⟩ := by
-    calc
-      _ = ∑ i : s, (DirectSum.decompose (G.bigradedChainMinusPiece R)
-          (z i : GridChainMinus R n) g : GridChainMinus R n) := by
-        simp only [Submodule.coe_sum, DirectSum.decompose_sum, DirectSum.sum_apply]
-      _ = z ⟨g, hg⟩ := by
-        rw [Finset.sum_eq_single (⟨g, hg⟩ : s)
-          (fun i _ hi => DirectSum.decompose_of_mem_ne _ (hz i)
-            (fun h => hi (Subtype.ext h))) (by simp)]
-        exact DirectSum.decompose_of_mem_same _ (hz ⟨g, hg⟩)
-  rw [← hzv ⟨g, hg⟩, GridDiagram.unblockedHomologyClass_eq_zero_iff]
-  exact hproj ▸ G.decompose_boundary R hb g
+    iSupIndep (G.bigradedUnblockedHomologyPiece R) :=
+  (G.homologyGrading R).isInternal.submodule_iSupIndep
 
 /-- `GH⁻` is the internal direct sum of its `(O-Maslov, Alexander)` pieces. -/
 theorem isInternal_bigradedUnblockedHomologyPiece :
     DirectSum.IsInternal (G.bigradedUnblockedHomologyPiece R) :=
-  DirectSum.isInternal_submodule_of_iSupIndep_of_iSup_eq_top
-    (G.iSupIndep_bigradedUnblockedHomologyPiece R)
-    (G.iSup_bigradedUnblockedHomologyPiece_eq_top R)
+  (G.homologyGrading R).isInternal
+
+/-- Multiplication by a monomial of total degree `d.degree` lowers homology bidegree by
+`(2 * d.degree, d.degree)`. -/
+theorem monomial_smul_mem_bigradedUnblockedHomologyPiece (d : Fin n →₀ ℕ) (a : R)
+    {g : ℤ × ℤ} {y : G.1.unblockedHomology R}
+    (hy : y ∈ G.bigradedUnblockedHomologyPiece R g) :
+    (monomial d a : MvPolynomial (Fin n) R) • y ∈
+      G.bigradedUnblockedHomologyPiece R (g - (2 * (d.degree : ℤ), (d.degree : ℤ))) := by
+  rw [bigradedUnblockedHomologyPiece, homologyGrading, InternalGrading.mem_map_piece_iff]
+    at hy ⊢
+  -- Use the polynomial-linear quotient isomorphism to transport the monomial action.
+  suffices h : (G.1.unblockedHomologyIso R).hom ((monomial d a) • y) ∈
+      ((G.chainGrading R).homology (G.differential_homogeneous R)
+        (G.1.unblockedDifferential_comp_self_eq_zero R)).piece
+          (g - (2 * (d.degree : ℤ), (d.degree : ℤ))) by exact h
+  rw [map_smul, sub_eq_add_neg]
+  refine (G.chainGrading R).smul_mem_homology_piece (G.differential_homogeneous R)
+    (G.1.unblockedDifferential_comp_self_eq_zero R) (fun p c hc ↦ ?_) hy
+  simp only [chainGrading] at hc ⊢
+  simpa only [sub_eq_add_neg] using G.monomial_smul_mem_bigradedChainMinusPiece d a hc
 
 /-- Multiplication by a grid variable lowers homology bidegree by `(2, 1)`. -/
 theorem X_smul_mem_bigradedUnblockedHomologyPiece (i : Fin n) {g : ℤ × ℤ}
     {y : G.1.unblockedHomology R} (hy : y ∈ G.bigradedUnblockedHomologyPiece R g) :
     (X i : MvPolynomial (Fin n) R) • y ∈ G.bigradedUnblockedHomologyPiece R (g - (2, 1)) := by
-  obtain ⟨z, hz, rfl⟩ := (G.mem_bigradedUnblockedHomologyPiece_iff R).mp hy
-  rw [← map_smul]
-  exact G.unblockedHomologyClass_mem_bigradedUnblockedHomologyPiece R
-    (G.X_smul_mem_bigradedChainMinusPiece i hz)
+  have h := G.monomial_smul_mem_bigradedUnblockedHomologyPiece R (Finsupp.single i 1) (1 : R) hy
+  rwa [Finsupp.degree_single, Nat.cast_one, mul_one, ← X] at h
 
 end TauCeti.OddComponentGridDiagram

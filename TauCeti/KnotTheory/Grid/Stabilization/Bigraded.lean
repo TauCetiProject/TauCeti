@@ -31,32 +31,6 @@ open MvPolynomial
 
 namespace TauCeti
 
-namespace GridDiagram
-
-variable {n : ℕ} (G : GridDiagram n) (s : Fin n) (R : Type*) [CommRing R] [CharP R 2]
-
-/-- The specified `X`-stabilization comparison on `GH⁻`, as an equivalence over the ground ring.
-Its forward map is the existing semilinear stabilization homology map. -/
-noncomputable def stabilizeXHomologyEquiv :
-    (G.stabilizeX s.castSucc (G.X s).castSucc s).unblockedHomology R ≃ₗ[R]
-      G.unblockedHomology R :=
-  LinearEquiv.ofBijective
-    { toFun := G.stabilizeXHomologyMap s R
-      map_add' := map_add _
-      map_smul' := fun r y => by
-        rw [← algebraMap_smul (MvPolynomial (Fin (n + 1)) R), algebraMap_eq,
-          (G.stabilizeXHomologyMap s R).map_smulₛₗ, AlgHom.coe_toRingHom, rename_C,
-          ← algebraMap_eq, algebraMap_smul, RingHom.id_apply] }
-    (G.stabilizeXHomologyMap_bijective s R)
-
-/-- The forward equivalence is the semilinear homology comparison. -/
-@[simp]
-theorem stabilizeXHomologyEquiv_apply
-    (y : (G.stabilizeX s.castSucc (G.X s).castSucc s).unblockedHomology R) :
-    G.stabilizeXHomologyEquiv s R y = G.stabilizeXHomologyMap s R y := (rfl)
-
-end GridDiagram
-
 namespace OddComponentGridDiagram
 
 variable {n : ℕ} (G : OddComponentGridDiagram n) (s : Fin n)

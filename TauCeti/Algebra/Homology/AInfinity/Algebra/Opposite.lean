@@ -451,7 +451,7 @@ namespace IsDGAlgebra
 -- The decomposition of a graded algebra on `G.piece` is the one of its `GradedAlgebra` structure,
 -- under which `IsDGAlgebra.toIsNonUnitalDGAlgebra` is stated; disable the competing instance
 -- attached to the internal grading `G`.
-attribute [-instance] InternalGrading.instDecompositionIntSubmodulePiece
+attribute [-instance] InternalGrading.instDecompositionSubmodulePiece
 
 variable {R : Type uR} {A : Type uA} [CommRing R] [Ring A] [Algebra R A]
   {G : InternalGrading R A} [GradedAlgebra G.piece] {d : A →ₗ[R] A}
