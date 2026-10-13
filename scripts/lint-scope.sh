@@ -12,11 +12,12 @@
 # Inputs (environment):
 #   GH_TOKEN, REPO   GitHub API access and the repository
 #   EVENT            pull_request_target | workflow_dispatch | merge_group | repository_dispatch | push
-#   DISPATCH_ACTION  repository_dispatch action; approved PRs use ordinary PR scope
-#   NUM              the PR number (pull_request_target, workflow_dispatch)
+#   IS_BATCH         trusted workflow's canonical batch classification; false selects PR scope
+#                    for repository_dispatch, otherwise dispatches keep the batch fallback
+#   NUM              the PR number (pull_request_target, workflow_dispatch, non-batch dispatch)
 #   BASE, HEAD       commit SHAs whose three-dot diff is the change: for a PR its base commit and
 #                    the exact head being built, so the scope is bound to that immutable commit
-#   HEAD_REPO        for a PR, the head repository (owner/name), which may be a fork
+#   HEAD_REPO        for any PR build above, its head repository (owner/name), possibly a fork
 #   SCOPE_REPO       exact candidate checkout, with its .git/objects available locally
 # Output: if scoped, OUT_DIR/modules.txt lists the changed TauCeti modules (possibly none) and
 # `LINT_ONLY_MODULES=OUT_DIR/modules.txt` is appended to $GITHUB_ENV; if not,
@@ -43,8 +44,7 @@ full() {
 # Human approval dispatches CI for one PR, not a staging batch. Ordinary PR commit
 # titles need not contain squash-style (#N) suffixes; requiring those here would
 # incorrectly fall back to whole-library lint and report unrelated inherited errors.
-if [ "$EVENT" = "repository_dispatch" ] \
-    && [ "${DISPATCH_ACTION:-}" = "tauceti-bors-pr-approved" ]; then
+if [ "$EVENT" = "repository_dispatch" ] && [ "${IS_BATCH:-}" = "false" ]; then
   EVENT=workflow_dispatch
 fi
 
