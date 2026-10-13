@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.QuotientMapping
+public import TauCeti.RingTheory.Huber.TopologicallyFiniteType.Pair
 
 import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Iterate
 import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.OpenQuotient
