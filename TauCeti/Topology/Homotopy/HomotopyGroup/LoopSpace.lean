@@ -137,6 +137,51 @@ theorem genLoopGenLoopEquiv_transAt (i : M) (p q : Ω^ M (Ω^ N X x) _root_.GenL
 
 end Sum
 
+section Loop
+
+variable (x) in
+/-- Currying the last cube direction: cube loops in `k` directions of the loop space `Ω X x`,
+based at the constant loop, are cube loops of `X` in `k + 1` directions. -/
+def genLoopLoopHomeomorph (k : ℕ) :
+    Ω^ (Fin k) (Ω X x) (Path.refl x) ≃ₜ Ω^ (Fin (k + 1)) X x :=
+  (mapHomeomorph (homeomorphOfUnique (Fin 1)).symm
+      ((Homeomorph.symm_apply_eq _).mpr (homeomorphOfUnique_const (Fin 1)).symm)).trans
+    ((genLoopGenLoopEquiv x).trans (GenLoop.congr x finSumFinEquiv))
+
+variable (x) in
+/-- The homeomorphism `genLoopLoopHomeomorph` is based: it carries the constant cube loop to
+the constant cube loop. -/
+@[simp]
+theorem genLoopLoopHomeomorph_const (k : ℕ) :
+    genLoopLoopHomeomorph x k (GenLoop.const : Ω^ (Fin k) (Ω X x) (Path.refl x)) =
+      GenLoop.const := by
+  rw [genLoopLoopHomeomorph, Homeomorph.trans_apply, Homeomorph.trans_apply]
+  refine _root_.GenLoop.ext _ _ fun t => ?_
+  simp
+
+variable (x) in
+/-- The last cube direction of `genLoopLoopHomeomorph` is the path parameter. -/
+@[simp]
+theorem genLoopLoopHomeomorph_apply (k : ℕ) (p : Ω^ (Fin k) (Ω X x) (Path.refl x))
+    (t : I^(Fin (k + 1))) :
+    genLoopLoopHomeomorph x k p t = p (fun i => t i.castSucc) (t (Fin.last k)) := by
+  rw [genLoopLoopHomeomorph, Homeomorph.trans_apply, Homeomorph.trans_apply]
+  simp
+  rfl
+
+variable (x) in
+/-- The inverse of `genLoopLoopHomeomorph` evaluated at the first `k` coordinates `s` and the
+path parameter `u`. -/
+@[simp]
+theorem genLoopLoopHomeomorph_symm_apply (k : ℕ) (q : Ω^ (Fin (k + 1)) X x)
+    (s : I^(Fin k)) (u : I) :
+    (genLoopLoopHomeomorph x k).symm q s u = q (Fin.snoc s u) := by
+  have h := genLoopLoopHomeomorph_apply x k ((genLoopLoopHomeomorph x k).symm q) (Fin.snoc s u)
+  rw [Homeomorph.apply_symm_apply] at h
+  simpa using h.symm
+
+end Loop
+
 end GenLoop
 
 namespace HomotopyGroup
