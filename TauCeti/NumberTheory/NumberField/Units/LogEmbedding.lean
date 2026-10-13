@@ -172,6 +172,9 @@ theorem logSpaceExtend_logSpaceRep (σ : L ≃ₐ[K] L) (y : logSpace L) :
 @[simp]
 theorem logEmbedding_smul (σ : L ≃ₐ[K] L) (x : Additive (𝓞 L)ˣ) :
     logEmbedding L (σ • x) = logSpaceRep K L σ (logEmbedding L x) := by
+  -- The action on the additive tag is defined through `ofMul (σ • x.toMul)`.
+  -- Expose that defining equality so the unit-coordinate lemmas can rewrite before
+  -- simplification folds `ofMul` back into the additive action.
   change logEmbedding L (Additive.ofMul (σ • x.toMul)) =
     logSpaceRep K L σ (logEmbedding L (Additive.ofMul x.toMul))
   ext w
