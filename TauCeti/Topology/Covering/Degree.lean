@@ -30,7 +30,7 @@ variable {E B : Type*} [TopologicalSpace E] [TopologicalSpace B] {p : E → B}
 
 /-- Fibre cardinality is locally constant for a covering, without connectedness or
 surjectivity assumptions. Infinite fibres have `Nat.card` equal to zero. -/
-theorem isLocallyConstant_nat_card_fiber (hp : IsCoveringMap p) :
+theorem isLocallyConstant_natCard_fiber (hp : IsCoveringMap p) :
     IsLocallyConstant (fun b ↦ Nat.card (p ⁻¹' {b})) := by
   refine (IsLocallyConstant.iff_exists_open _).2 fun b ↦ ?_
   obtain ⟨hdisc, U, hb, hU, hpU, H, hH⟩ := hp b
@@ -42,7 +42,7 @@ theorem isLocallyConstant_nat_card_fiber (hp : IsCoveringMap p) :
 /-- The locally constant fibre cardinality of a covering. For a finite covering this is its
 number of sheets on each connected component of the base. -/
 noncomputable def degree (hp : IsCoveringMap p) : LocallyConstant B ℕ :=
-  ⟨fun b ↦ Nat.card (p ⁻¹' {b}), hp.isLocallyConstant_nat_card_fiber⟩
+  ⟨fun b ↦ Nat.card (p ⁻¹' {b}), hp.isLocallyConstant_natCard_fiber⟩
 
 /-- The degree at a point is the cardinality of its fibre. -/
 @[simp]
