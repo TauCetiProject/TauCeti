@@ -94,6 +94,10 @@ class Headings(unittest.TestCase):
         text = "## Part A — Hermite\n### A1: orthogonality\n### A2: the basis\n## Part B — Chebyshev\n### B1: x\n"
         self.assertEqual(rp.layer_headings(text), ["Part A — Hermite", "Part B — Chebyshev"])
 
+    def test_a_repeated_id_is_a_later_mention_of_its_layer(self):
+        text = "### Part A — Hermite\n### Part B — Chebyshev\n## Worked examples\n### Part A\n### Part B — Chebyshev\n"
+        self.assertEqual(rp.layer_headings_with_lines(text), [("Part A — Hermite", 1), ("Part B — Chebyshev", 2)])
+
     def test_bold_bullets_are_the_fallback(self):
         text = "## Layers\n- **L0 — the engine** (consumes X). Stuff.\n- **L1 — Montel.** More.\n"
         self.assertEqual(rp.layer_headings(text), ["L0 — the engine", "L1 — Montel"])
@@ -596,12 +600,14 @@ class Board(unittest.TestCase):
         """Change a sub-roadmap's requirements after its report, keeping its layer ids."""
         (self.widgets / child / "README.md").write_text(self.SUB + "\nA new requirement.\n")
 
-    def board(self, search="", since=None):
+    def board(self, search="", since=None, tamper=None):
         rows = rp.read_roadmaps(self.dir, {})
         for r in rows:
             r["topic"] = "Widgetry"
             n = (since or {}).get(r["name"], 0)
             r["activity"] = None if r["parent"] else {"weekly": [n], "total": n, "recent": n, "last": None, "since_report": n, "open": 0}
+        if tamper:
+            tamper({r["name"]: r for r in rows})
         # The envelope `build` writes, with activity set directly: pull requests since the report
         # are an input here, not what is under test.
         data = {"schema_version": 3, "exported_at": "2026-09-17T00:00:00Z", "collected_at": None,
@@ -678,6 +684,27 @@ class Board(unittest.TestCase):
         (self.widgets / "README.md").write_text(README)
         rows = self.board("?sort=due&group=none", since={"Widgets": 1, "Gadgets": 0})["rows"]
         self.assertLess(rows.index('id="rm-TauCetiRoadmap-Widgets"'), rows.index('id="rm-TauCetiRoadmap-Gadgets"'))
+
+    def test_a_malformed_row_is_named_and_the_rest_of_the_board_is_shown(self):
+        def repeat(rows):
+            rows["Gadgets"]["layer_ids"][1] = rows["Gadgets"]["layer_ids"][0]
+        page = self.board(tamper=repeat)
+        self.assertIn("1 roadmap not shown", page["page"])
+        self.assertIn("<code>TauCetiRoadmap/Gadgets</code> (repeated layer id)", page["page"])
+        self.assertIsNone(self.row(page["rows"], "TauCetiRoadmap/Gadgets"))
+        self.assertIsNotNone(self.row(page["rows"], "TauCetiRoadmap/Widgets"))
+        self.assertTrue(page["count"].endswith(" of 3"), page["count"])
+        self.assertNotIn("pb-left-out", self.board()["page"])
+
+    def test_a_left_out_umbrella_takes_its_sub_roadmaps_with_it(self):
+        def unalign(rows):
+            rows["Widgets"]["states"].pop()
+        page = self.board(tamper=unalign)
+        self.assertIn("3 roadmaps not shown", page["page"])
+        self.assertIn("<code>TauCetiRoadmap/Widgets</code> (layers, ids, lines and states do not align)", page["page"])
+        self.assertIn("<code>TauCetiRoadmap/Widgets/Sub</code> (its umbrella roadmap is left out)", page["page"])
+        self.assertIsNotNone(self.row(page["rows"], "TauCetiRoadmap/Gadgets"))
+        self.assertEqual(page["count"], "1 roadmap shown of 1")
 
 
 if __name__ == "__main__":
