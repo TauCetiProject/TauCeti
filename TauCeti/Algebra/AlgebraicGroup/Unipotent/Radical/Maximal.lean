@@ -30,9 +30,8 @@ contains every candidate.
 * J. S. Milne, *Algebraic Groups* (2017), Proposition 6.42 and Sections 5.a, 6.a, 10.a.
 * A. Borel, *Linear Algebraic Groups*, Section 11.21.
 
-This completes the maximal-dimension step in Layer 5, "The unipotent radical", of the
-ReductiveGroups roadmap. The shared argument also supplies the corresponding comparison step
-for the solvable radical in Layer 6.
+This supplies the maximal-dimension step for the unipotent radical. The shared argument also
+supplies the corresponding comparison step for the solvable radical.
 -/
 
 public section

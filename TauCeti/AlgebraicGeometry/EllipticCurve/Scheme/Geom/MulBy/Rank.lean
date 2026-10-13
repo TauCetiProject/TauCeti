@@ -174,7 +174,7 @@ theorem degree_ofHom_mulBy {n : ℤ} (hn : n ≠ 0) (s : S) :
   -- `E[n]` is the kernel of `[n]`, read through `CommGrp.forget₂Grp`.
   have h := congrArg (fun φ ↦ GroupScheme.degree φ s) (E.forget₂Grp_map_intCast n)
   refine h.symm.trans ?_
-  rw [← GroupScheme.finrank_kernel_hom, ← torsion_eq_kernel]
+  rw [GroupScheme.degree_apply, ← torsion_eq_kernel]
   exact E.finrank_torsion_hom hn s
 
 /-- **Multiplication by a nonzero integer is surjective** (Katz–Mazur 2.3.1), over any base `S`:

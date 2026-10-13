@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Combinatorics.Quiver.Star
 public import TauCeti.RepresentationTheory.Quiver.PathAlgebra.BacktrackRelator
 public import TauCeti.RepresentationTheory.Quiver.Preprojective.Signless
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Basic
@@ -151,11 +152,8 @@ theorem signlessPreprojectiveMk_ofArrow_mul_eq_zero_iff_of_ne_reverse
     {y : signlessPreprojectiveAlgebra k R}
     (hy : signlessPreprojectiveMk k R (vertexIdempotent k v) * y = y) :
     signlessPreprojectiveMk k R (ofArrow (σ v).2) * y = 0 ↔ y = 0 := by
-  -- The sums over arrows in the relators need finitely many vertices and arrows; the arrows
-  -- `i ⟶ j` embed in the finite star at `i`.
+  -- Choose enumerations for the sums; the finite-star instance supplies finite arrow types.
   let := Fintype.ofFinite R
-  have (i j : R) : Finite (i ⟶ j) :=
-    Finite.of_injective (fun e : i ⟶ j => (Quiver.Star.mk e : Quiver.Star i)) sigma_mk_injective
   let (i j : R) : Fintype (i ⟶ j) := Fintype.ofFinite _
   exact map_ofArrow_mul_eq_zero_iff_of_ne_reverse k (ε := fun _ _ _ => 1) hσ
     (fun _ => isUnit_one) (signlessPreprojectiveRelator_eq_sum_ofArrow_mul_smul k)

@@ -9,9 +9,9 @@ public import Mathlib.AlgebraicGeometry.Morphisms.FlatRank
 public import TauCeti.AlgebraicGeometry.GroupScheme.FiniteFlat
 public import TauCeti.AlgebraicGeometry.GroupScheme.Isogeny.BaseChange
 public import TauCeti.AlgebraicGeometry.GroupScheme.Kernel
+public import TauCeti.AlgebraicGeometry.GroupScheme.Rank
 import TauCeti.AlgebraicGeometry.GroupScheme.KilledByRank
 import TauCeti.AlgebraicGeometry.Morphisms.Flat.Rank
-import TauCeti.CategoryTheory.Monoidal.Grp.KernelPair
 
 /-!
 # The degree of a finite locally free homomorphism of group schemes
@@ -26,13 +26,13 @@ flat and surjective homomorphism, this is its degree.
 
 The degree of `f` controls the rank of `f` itself. If `f` is moreover surjective, then the rank of
 `f` at a point `x` of `H` is the degree of `f` at the image of `x` in `S`
-(`GroupScheme.finrank_hom_hom_left`): the base change of `f` along itself is the projection
-`ker f ×_S G ⟶ G`, by the kernel-pair identity `TauCeti.isPullback_mul_of_isPullback_one`. Hence the
-degree is multiplicative under composition, and `f` is an isomorphism exactly when its degree is
-`1`.
+(`GroupScheme.finrank_hom_hom_left`), by translation invariance of the rank
+(`TauCeti.GroupScheme.finrank_left_eq`). Hence the degree is multiplicative under composition, and
+`f` is an isomorphism exactly when its degree is `1`.
 
 If `G` is commutative and `f` is locally of finite presentation, the kernel is a finite locally
-free commutative group scheme (`GroupScheme.finiteFlatKernel`). By Deligne's theorem
+free commutative group scheme (`TauCeti.AlgebraicGeometry.FiniteFlatCommGroupScheme.ofKernel`),
+whose rank is the degree. By Deligne's theorem
 (`TauCeti.AlgebraicGeometry.FiniteFlatCommGroupScheme.pow_eq_one_of_finrank`), if `f` has
 constant degree `n` then its kernel is killed by `n`. For an isogeny of elliptic curves this says
 that its kernel lies in the `n`-torsion, which is what makes the dual isogeny of a degree-`n`
@@ -45,8 +45,6 @@ disconnected base this constant-degree case is the one in which a single integer
 ## Main definitions
 
 * `TauCeti.GroupScheme.degree f`: the rank of the kernel of `f`, a function on the base.
-* `TauCeti.GroupScheme.finiteFlatKernel f`: the kernel of a finite locally free homomorphism out of
-  a commutative group scheme, as a finite locally free commutative group scheme.
 * `TauCeti.GroupScheme.IsogenyOfDegree f n`: `f` is an isogeny of constant degree `n`.
 
 ## Main results
@@ -93,9 +91,8 @@ flat, so that its kernel is finite and flat over `S`. -/
 noncomputable def degree : S → ℕ :=
   (kernel f).X.hom.finrank
 
-/-- The rank of the kernel of `f` is the degree of `f`. -/
-@[simp]
-theorem finrank_kernel_hom : (kernel f).X.hom.finrank = degree f :=
+/-- The degree of `f` at `s` is the rank of the kernel of `f` at `s`. -/
+theorem degree_apply (s : S) : degree f s = (kernel f).X.hom.finrank s :=
   (rfl)
 
 section FiniteFlat
@@ -105,7 +102,7 @@ variable [IsFinite f.hom.hom.left] [Flat f.hom.hom.left]
 /-- **The degree is the rank over the unit section.** For a finite flat homomorphism `f : G ⟶ H`,
 the degree of `f` at `s` is the rank of `f` at the image of `s` under the unit section of `H`. -/
 theorem degree_eq_finrank (s : S) : degree f s = f.hom.hom.left.finrank (η[H.X].left s) :=
-  Scheme.Hom.finrank_of_isPullback _ _ _ _ (isPullback_kernel_scheme f) s
+  finrank_kernel_hom f s
 
 /-- **The degree is locally constant** for a finite locally free homomorphism of group schemes. -/
 theorem isLocallyConstant_degree [LocallyOfFinitePresentation f.hom.hom.left] :
@@ -144,13 +141,7 @@ flat and surjective homomorphism `f : G ⟶ H` of group schemes over `S`, the ra
 `x` of `H` is the degree of `f` at the image of `x` in `S`. -/
 theorem finrank_hom_hom_left (x : H.X.left) :
     f.hom.hom.left.finrank x = degree f (H.X.hom x) := by
-  obtain ⟨y, rfl⟩ := f.hom.hom.left.surjective x
-  -- The base change of `f` along itself is the projection `ker f ×_S G ⟶ G`.
-  have h := (isPullback_mul_of_isPullback_one f.hom.hom (kernel.ι f).hom.hom
-    (isPullback_kernel_hom f)).map (Over.forget S)
-  simp only [Over.forget_map, Over.snd_left] at h
-  rw [← Scheme.Hom.finrank_of_isPullback _ _ _ _ h y, Scheme.Hom.finrank_pullback_snd,
-    ← Scheme.Hom.comp_apply, Over.w f.hom.hom, finrank_kernel_hom]
+  rw [finrank_left_eq f.hom.hom x, degree_eq_finrank]
 
 /-- **The degree is multiplicative.** If `f : G ⟶ H` is finite, flat and surjective and
 `g : H ⟶ K` is finite and flat, the degree of `f ≫ g` at `s` is the product of the degrees of `f`
@@ -199,27 +190,13 @@ section Commutative
 variable [IsCommMonObj G.X] [IsFinite f.hom.hom.left] [Flat f.hom.hom.left]
   [LocallyOfFinitePresentation f.hom.hom.left]
 
-/-- The kernel of a finite locally free homomorphism `f` out of a commutative group scheme, as a
-finite locally free commutative group scheme over `S`. -/
-noncomputable def finiteFlatKernel : AlgebraicGeometry.FiniteFlatCommGroupScheme S where
-  carrier := (kernel f).X.left
-  structureMap := (kernel f).X.hom
-  grp := inferInstanceAs (GrpObj (kernel f).X)
-  comm := inferInstanceAs (IsCommMonObj (kernel f).X)
-  finite := inferInstance
-  flat := inferInstance
-  locallyOfFinitePresentation := inferInstance
-
-/-- The rank of `finiteFlatKernel f` is the degree of `f`. -/
+/-- The rank of the kernel of `f`, as a finite locally free commutative group scheme, is the degree
+of `f`. -/
 @[simp]
-theorem finrank_finiteFlatKernel_structureMap :
-    (finiteFlatKernel f).structureMap.finrank = degree f :=
-  (rfl)
-
-/-- The group object underlying `finiteFlatKernel f` is the kernel of `f`. -/
-@[simp]
-theorem grpMk_finiteFlatKernel : Grp.mk (finiteFlatKernel f).toOver = kernel f :=
-  (rfl)
+theorem finrank_ofKernel_structureMap :
+    (AlgebraicGeometry.FiniteFlatCommGroupScheme.ofKernel f).structureMap.finrank = degree f :=
+  congrArg (fun X : Over S ↦ X.hom.finrank)
+    (AlgebraicGeometry.FiniteFlatCommGroupScheme.ofKernel_toOver f)
 
 /-- **The kernel of a homomorphism of degree `n` is killed by `n`.** Let `f : G ⟶ H` be a finite
 locally free homomorphism of group schemes over `S`, with `G` commutative, whose degree is `n` at
@@ -227,11 +204,15 @@ every point of `S`. Then the kernel inclusion, as a point of `G` with values in 
 killed by `n`. -/
 theorem kernel_ι_pow_eq_one {n : ℕ} (hn : ∀ s, degree f s = n) :
     (kernel.ι f).hom.hom ^ n = 1 := by
-  -- Deligne's theorem for `finiteFlatKernel f`, whose underlying object of `Over S` is
-  -- `(kernel f).X` (`grpMk_finiteFlatKernel`).
+  -- transport Deligne's theorem from `ofKernel f` to `kernel f` along `grpMk_ofKernel`
+  have key : ∀ K : Grp (Over S),
+      Grp.mk (AlgebraicGeometry.FiniteFlatCommGroupScheme.ofKernel f).toOver = K →
+        (𝟙 K.X) ^ n = 1 := by
+    rintro _ rfl
+    exact (AlgebraicGeometry.FiniteFlatCommGroupScheme.ofKernel f).pow_eq_one_of_finrank
+      (fun s ↦ by rw [finrank_ofKernel_structureMap, hn]) (𝟙 _)
   have h : (𝟙 (kernel f).X) ^ n = 1 :=
-    (finiteFlatKernel f).pow_eq_one_of_finrank
-      (fun s ↦ by rw [finrank_finiteFlatKernel_structureMap, hn]) (𝟙 _)
+    key _ (AlgebraicGeometry.FiniteFlatCommGroupScheme.grpMk_ofKernel f)
   rw [← Category.id_comp (kernel.ι f).hom.hom, ← MonObj.pow_comp, h, MonObj.one_comp]
 
 end Commutative

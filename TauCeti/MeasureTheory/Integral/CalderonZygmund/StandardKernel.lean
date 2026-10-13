@@ -37,11 +37,19 @@ The proof integrates the pointwise estimate against the tail bound
 (`TauCeti.setLIntegral_ofReal_dist_rpow_neg_le`). Taking `R = 2 dist y y'` and `s = n + δ` gives
 Hörmander's condition, with a bound independent of `y` and `y'`.
 
+The smoothness estimate is sometimes only available when `dist x y' > c dist y y'` for some
+`c > 2`, for instance after comparing two equivalent distances. Together with the **size
+estimate** `‖K x y‖ ≤ C₀ dist x y ^ (-n)` it then holds with the factor `2` and a larger constant
+(`TauCeti.norm_sub_le_mul_rpow_of_norm_le_mul_rpow`), since for
+`2 dist y y' < dist x y' ≤ c dist y y'` both terms are bounded by the size estimate.
+
 ## Main declarations
 
 * `TauCeti.setLIntegral_enorm_sub_le_of_norm_sub_le_mul_rpow`: the standard smoothness estimate
   implies Hörmander's condition.
 * `TauCeti.setLIntegral_enorm_sub_le_of_norm_sub_le_mul_rpow_pi`: the same on `ℝⁿ`.
+* `TauCeti.norm_sub_le_mul_rpow_of_norm_le_mul_rpow`: the size estimate lowers the factor in the
+  smoothness estimate to `2`.
 * `ContinuousLinearMap.mul_volume_lt_enorm_le_of_norm_sub_le_mul_rpow`: an operator bounded on
   `L²(ℝⁿ)` with a kernel satisfying the standard smoothness estimate is of weak type `(1, 1)`.
 
@@ -57,6 +65,66 @@ namespace TauCeti
 
 open MeasureTheory Metric Set
 open scoped ENNReal NNReal
+
+section Size
+
+variable {X G : Type*} [PseudoMetricSpace X] [SeminormedAddGroup G]
+
+/-- **The size estimate lowers the factor in the smoothness estimate.** Let `K` satisfy the size
+estimate `‖K x y‖ ≤ C₀ dist x y ^ (-n)` with `0 ≤ n` and, for some `c ≥ 2` and some `δ` with
+`0 ≤ n + δ`, the smoothness estimate
+
+`‖K x y - K x y'‖ ≤ C dist y y' ^ δ dist x y' ^ (-(n + δ))` whenever `dist x y' > c dist y y'`.
+
+Then the smoothness estimate holds whenever `dist x y' > 2 dist y y'`, with the constant
+`C + 2 C₀ c ^ (n + δ)`. -/
+theorem norm_sub_le_mul_rpow_of_norm_le_mul_rpow {K : X → X → G} {n δ : ℝ} (hn : 0 ≤ n)
+    (hnδ : 0 ≤ n + δ) {c C₀ C : ℝ≥0} (hc : 2 ≤ c)
+    (hsize : ∀ x y, 0 < dist x y → ‖K x y‖ ≤ C₀ * dist x y ^ (-n))
+    (hK : ∀ x y y', c * dist y y' < dist x y' →
+      ‖K x y - K x y'‖ ≤ C * (dist y y' ^ δ * dist x y' ^ (-(n + δ))))
+    {x y y' : X} (h : 2 * dist y y' < dist x y') :
+    ‖K x y - K x y'‖ ≤
+      (C + 2 * C₀ * c ^ (n + δ) : ℝ≥0) * (dist y y' ^ δ * dist x y' ^ (-(n + δ))) := by
+  set d := dist y y'
+  set t := dist x y'
+  have ht : 0 < t := lt_of_le_of_lt (by positivity) h
+  have hR : 0 ≤ d ^ δ * t ^ (-(n + δ)) := by positivity
+  push_cast
+  rcases lt_or_ge (c * d) t with hct | htc
+  · calc ‖K x y - K x y'‖ ≤ C * (d ^ δ * t ^ (-(n + δ))) := hK x y y' hct
+      _ ≤ _ := by gcongr; exact le_add_of_nonneg_right (by positivity)
+  -- For `2 d < t ≤ c d` both terms are bounded by the size estimate at distance at least `d`.
+  have hc0 : (0 : ℝ) < c := lt_of_lt_of_le two_pos (by exact_mod_cast hc)
+  have hd : 0 < d := by
+    by_contra! hd
+    have : c * d ≤ 0 := mul_nonpos_of_nonneg_of_nonpos c.coe_nonneg hd
+    linarith
+  have hxy : d < dist x y := by linarith [dist_triangle x y y']
+  have hsize' : ∀ z, d ≤ dist x z → ‖K x z‖ ≤ C₀ * d ^ (-n) := fun z hz =>
+    (hsize x z (hd.trans_le hz)).trans <|
+      mul_le_mul_of_nonneg_left (Real.rpow_le_rpow_of_nonpos hd hz (by linarith)) C₀.coe_nonneg
+  have hdn : d ^ (-n) ≤ (c : ℝ) ^ (n + δ) * (d ^ δ * t ^ (-(n + δ))) := by
+    have htd : t / c ≤ d := div_le_of_le_mul₀ hc0.le hd.le (by linarith)
+    have h₁ : d ^ (-(n + δ)) ≤ (t / c) ^ (-(n + δ)) :=
+      Real.rpow_le_rpow_of_nonpos (by positivity) htd (by linarith)
+    calc d ^ (-n) = d ^ δ * d ^ (-(n + δ)) := by
+          rw [← Real.rpow_add hd]
+          ring_nf
+      _ ≤ d ^ δ * (t / c) ^ (-(n + δ)) := by gcongr
+      _ = (c : ℝ) ^ (n + δ) * (d ^ δ * t ^ (-(n + δ))) := by
+          rw [Real.div_rpow ht.le hc0.le, Real.rpow_neg hc0.le]
+          field_simp
+  calc ‖K x y - K x y'‖ ≤ ‖K x y‖ + ‖K x y'‖ := norm_sub_le _ _
+    _ ≤ C₀ * d ^ (-n) + C₀ * d ^ (-n) := add_le_add (hsize' y hxy.le) (hsize' y' (by linarith))
+    _ ≤ 2 * C₀ * ((c : ℝ) ^ (n + δ) * (d ^ δ * t ^ (-(n + δ)))) := by
+        rw [← two_mul, mul_assoc]
+        gcongr
+    _ ≤ _ := by
+        rw [add_mul]
+        nlinarith [mul_nonneg C.coe_nonneg hR]
+
+end Size
 
 section Metric
 
