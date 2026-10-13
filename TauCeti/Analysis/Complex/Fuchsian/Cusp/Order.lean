@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.Fuchsian.Cusp.Laurent
+public import TauCeti.Analysis.Complex.UpperHalfPlane.QExpansion.Order
 
 /-!
 # Cusp orders from Laurent q-expansions
@@ -16,8 +17,8 @@ growth of a function holomorphic sufficiently high ensures this analyticity. Bot
 are infinite for the zero germ. Thus vanishing of the coefficients below an integer characterizes
 an order bound, and the first nonzero coefficient gives the exact order, for poles and zeros alike.
 
-The comparison uses Mathlib's derivative characterization of analytic order and the existing
-Taylor coefficients of the twisted q-extension. It connects the formal Laurent series to local
+The comparison uses the q-expansion order comparison for the twisted q-extension and
+Mathlib's Hahn-series order API. It connects the formal Laurent series to local
 orders of descended meromorphic functions, rather than defining another notion of cusp order.
 
 ## References
@@ -43,38 +44,34 @@ theorem meromorphicOrderAt_cuspExtension_eq_orderTop_laurentQExpansion
     (hf : ∀ (g : stabilizer Γ D.cusp) (z : ℍ), f (g • z) = f z)
     (han : AnalyticAt ℂ (twistedExtension D k f) 0) :
     meromorphicOrderAt (cuspExtension D f) 0 = (laurentQExpansion D k f).orderTop := by
-  rw [meromorphicOrderAt_cuspExtension_eq_neg_add D k f hf han]
-  cases ho : analyticOrderAt (twistedExtension D k f) 0 with
+  have hord : (twistedQExpansion D k f).order =
+      analyticOrderAt (twistedExtension D k f) 0 := by
+    rw [twistedQExpansion_def, twistedExtension_def, cuspExtension_def]
+    rw [twistedExtension_def, cuspExtension_def] at han
+    exact TauCeti.qExpansion_order_eq_analyticOrderAt_cuspFunction han
+  rw [meromorphicOrderAt_cuspExtension_eq_neg_add D k f hf han,
+    laurentQExpansion_def, HahnSeries.orderTop_mul, HahnSeries.orderTop_single one_ne_zero,
+    ← hord]
+  congr 1
+  cases ho : (twistedQExpansion D k f).order with
   | top =>
-    have hzero : laurentQExpansion D k f = 0 := by
-      apply HahnSeries.ext
-      funext j
-      by_cases hj : j < -k
-      · simp [laurentQExpansion_coeff_eq_zero_of_lt_neg D k f hj]
-      · have hderiv : iteratedDeriv (j + k).toNat (twistedExtension D k f) 0 = 0 :=
-          (natCast_le_analyticOrderAt_iff_iteratedDeriv_eq_zero han).mp
-            (ho ▸ le_top (a := (((j + k).toNat + 1 : ℕ) : ℕ∞))) _ (Nat.lt_succ_self _)
-        have hjk : 0 ≤ j + k := by omega
-        simp [laurentQExpansion_coeff, hjk, twistedQExpansion_coeff, hderiv]
+    have hzero := PowerSeries.order_eq_top.mp ho
     simp [hzero]
   | coe n =>
-    obtain ⟨hvanish, hnonzero⟩ := (analyticOrderAt_eq_nat_iff_iteratedDeriv_eq_zero han).mp ho
-    have hcoeff : (laurentQExpansion D k f).coeff ((n : ℤ) - k) ≠ 0 := by
-      rw [laurentQExpansion_coeff_natCast_sub]
-      simpa [twistedQExpansion_coeff, Nat.factorial_ne_zero] using hnonzero
-    have hlower : ∀ j : ℤ, j < (n : ℤ) - k → (laurentQExpansion D k f).coeff j = 0 := by
+    obtain ⟨hnonzero, hvanish⟩ := PowerSeries.order_eq_nat.mp ho
+    simp only [ENat.map_natCast]
+    symm
+    apply le_antisymm
+    · exact HahnSeries.orderTop_le_of_coeff_ne_zero
+        (by simpa only [LaurentSeries.coeff_coe_powerSeries] using hnonzero)
+    · apply HahnSeries.le_orderTop_iff_forall.mpr
       intro j hj
-      by_cases hjk : j < -k
-      · exact laurentQExpansion_coeff_eq_zero_of_lt_neg D k f hjk
-      · rw [laurentQExpansion_coeff, ite_eq_left (by omega)]
-        simpa [twistedQExpansion_coeff, Nat.factorial_ne_zero] using
-          hvanish (j + k).toNat (by omega)
-    have hord : (laurentQExpansion D k f).orderTop = ((n : ℤ) - k : ℤ) :=
-      le_antisymm (HahnSeries.orderTop_le_of_coeff_ne_zero hcoeff)
-        (HahnSeries.le_orderTop_iff_forall.mpr fun j hj ↦
-          hlower j (WithTop.coe_lt_coe.mp hj))
-    rw [hord]
-    simp [sub_eq_add_neg, add_comm]
+      rw [PowerSeries.coeff_coe]
+      split_ifs with hjneg
+      · rfl
+      · exact hvanish j.natAbs (by
+          have := WithTop.coe_lt_coe.mp hj
+          omega)
 
 /-- A meromorphic cusp order is at least `m` exactly when every Laurent coefficient of exponent
 less than `m` vanishes. The bound may be positive, zero, or negative. -/
