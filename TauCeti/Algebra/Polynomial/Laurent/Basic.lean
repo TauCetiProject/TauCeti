@@ -298,7 +298,9 @@ namespace LaurentPolynomial
 open TauCeti
 open scoped LaurentPolynomial
 
-variable (A : Type*) [CommSemiring A]
+section GenericUnit
+
+variable (A : Type*) [Semiring A]
 
 /-- The Laurent variable `T`, as a unit of `A[T;T⁻¹]`. -/
 noncomputable def genericUnit : (LaurentPolynomial A)ˣ :=
@@ -320,8 +322,17 @@ theorem genericUnit_inv : (((genericUnit A)⁻¹ : (LaurentPolynomial A)ˣ) :
 theorem genericUnit_zpow_val (n : ℤ) :
     ((genericUnit A ^ n : (LaurentPolynomial A)ˣ) : LaurentPolynomial A) =
       LaurentPolynomial.T n := by
-  have h := laurentEval_unique (genericUnit A) (AlgHom.id A _) (by simp)
-  simpa using (DFunLike.congr_fun h (LaurentPolynomial.T n)).symm
+  induction n using Int.induction_on with
+  | zero => simp
+  | succ n ih =>
+      rw [zpow_add_one, Units.val_mul, ih, genericUnit_val, ← LaurentPolynomial.T_add]
+  | pred n ih =>
+      rw [sub_eq_add_neg, zpow_add, zpow_neg_one, Units.val_mul, ih, genericUnit_inv,
+        ← LaurentPolynomial.T_add]
+
+end GenericUnit
+
+variable (A : Type*) [CommSemiring A]
 
 /-- Mapping the generic unit along a Laurent-polynomial algebra map gives the unit represented
 by that map. -/
