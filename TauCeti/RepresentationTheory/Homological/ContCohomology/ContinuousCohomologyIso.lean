@@ -73,7 +73,7 @@ to degree one. Degrees one and two of the comparison need the passage between th
 homogeneous cochains `C(G, C(G, …))` and functions on `Gⁿ`, hence the compact-open exponential law
 and profiniteness of `G`, and are not in this file.
 
-The sibling file `GroupCohomologyIso.lean` compares the same explicit model with Mathlib's
+The sibling file `GroupCohomologyIso/Basic.lean` compares the same explicit model with Mathlib's
 *discrete* `groupCohomology`; this file compares it with the *continuous* carrier, which is the
 canonical object the roadmap fixes.
 
