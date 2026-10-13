@@ -106,108 +106,6 @@ open Polynomial TauCeti
 
 namespace WeierstrassCurve
 
-variable {F : Type*} [Field F] {W : WeierstrassCurve F}
-
-/-- **Legendre form.** If `2 ≠ 0`, the `2`-division polynomial of `W` factors as
-`4 (X - e₁) (X - e₂) (X - e₃)` with `e₁ ≠ e₂`, and `e₂ - e₁ = u²`, then a change of variables takes
-`W` to the Legendre form `y² = x (x - 1) (x - λ)` with `λ = (e₃ - e₁) / (e₂ - e₁)`, that is to
-`freyCurve 1 (-λ)`. It completes the square in `y`, moves `e₁` to the origin and scales `x` by
-`u²`. -/
-theorem exists_variableChange_smul_eq_freyCurve_one (h2 : (2 : F) ≠ 0) {e₁ e₂ e₃ u : F}
-    (h : W.twoTorsionPolynomial.toPoly = C 4 * (X - C e₁) * (X - C e₂) * (X - C e₃))
-    (he : e₂ ≠ e₁) (hu : u ^ 2 = e₂ - e₁) :
-    ∃ C : VariableChange F, C • W = freyCurve 1 ((e₁ - e₃) / (e₂ - e₁)) := by
-  -- the coefficients of the `2`-division polynomial are the elementary symmetric functions
-  rw [Cubic.C_mul_prod_X_sub_C_eq, Cubic.toPoly_injective, twoTorsionPolynomial] at h
-  simp only [Cubic.mk.injEq, true_and] at h
-  obtain ⟨hb₂, hb₄, hb₆⟩ := h
-  simp only [b₂, b₄, b₆] at hb₂ hb₄ hb₆
-  have hb₄' : 2 * W.a₄ + W.a₁ * W.a₃ = 2 * (e₁ * e₂ + e₁ * e₃ + e₂ * e₃) :=
-    mul_left_cancel₀ h2 (by linear_combination hb₄)
-  have hα : e₂ - e₁ ≠ 0 := sub_ne_zero.mpr he
-  have hu0 : u ≠ 0 := by rintro rfl; exact hα (by rw [← hu]; ring)
-  refine ⟨⟨Units.mk0 u hu0, e₁, -W.a₁ / 2, -(W.a₁ * e₁ + W.a₃) / 2⟩, ?_⟩
-  have hu4 : u ^ 4 = (e₂ - e₁) ^ 2 := by rw [← hu]; ring
-  have hu6 : u ^ 6 = (e₂ - e₁) ^ 3 := by rw [← hu]; ring
-  ext
-  · rw [variableChange_a₁, freyCurve_a₁]
-    field_simp
-    ring
-  · rw [variableChange_a₂, freyCurve_a₂, Units.val_inv_eq_inv_val, Units.val_mk0, inv_pow, hu]
-    field_simp
-    linear_combination hb₂
-  · rw [variableChange_a₃, freyCurve_a₃]
-    field_simp
-    ring
-  · rw [variableChange_a₄, freyCurve_a₄, Units.val_inv_eq_inv_val, Units.val_mk0, inv_pow, hu4]
-    field_simp
-    linear_combination hb₄' + e₁ * hb₂
-  · rw [variableChange_a₆, freyCurve_a₆, Units.val_inv_eq_inv_val, Units.val_mk0, inv_pow, hu6]
-    field_simp
-    linear_combination hb₆ + e₁ * hb₄ + e₁ ^ 2 * hb₂
-
-/-- **Legendre form over a finite separable extension.** Away from characteristic `2`, an
-elliptic curve over `K` becomes isomorphic to a curve `y² = x (x - 1) (x + B)` over a finite
-separable extension `L` of `K`: one obtained by adjoining the roots `e₁, e₂, e₃` of its
-`2`-division polynomial and a square root of `e₂ - e₁`. -/
-theorem exists_variableChange_smul_baseChange_eq_freyCurve_one {K : Type u} [Field K]
-    (W : WeierstrassCurve K) [W.IsElliptic] (h2 : (2 : K) ≠ 0) :
-    ∃ (L : Type u) (_ : Field L) (_ : Algebra K L) (_ : FiniteDimensional K L)
-      (_ : Algebra.IsSeparable K L) (C : VariableChange L) (B : L),
-      C • W.baseChange L = freyCurve 1 B := by
-  set P := W.twoTorsionPolynomial
-  have hPa : P.a = 4 := by simp only [P, twoTorsionPolynomial]
-  have ha : P.a ≠ 0 := by
-    rw [hPa, show (4 : K) = 2 * 2 by norm_num]
-    exact mul_ne_zero h2 h2
-  -- the roots of the `2`-division polynomial, in its splitting field `L₁`
-  let L₁ := SplittingField P.toPoly
-  have hsplit : (P.toPoly.map (algebraMap K L₁)).Splits := SplittingField.splits P.toPoly
-  obtain ⟨e₁, e₂, e₃, h3⟩ := (Cubic.splits_iff_roots_eq_three ha).mp hsplit
-  have hdisc : P.discr ≠ 0 := by
-    rw [twoTorsionPolynomial_discr]
-    exact mul_ne_zero (by rw [show (16 : K) = 2 ^ 4 by norm_num]; exact pow_ne_zero 4 h2)
-      W.isUnit_Δ.ne_zero
-  obtain ⟨h12, -, -⟩ := (Cubic.discr_ne_zero_iff_roots_ne ha h3).mp hdisc
-  have hsep₁ : P.toPoly.Separable := by
-    have hnd := (Cubic.discr_ne_zero_iff_roots_nodup ha hsplit).mp hdisc
-    rw [Cubic.roots, Cubic.map_toPoly, nodup_roots_iff_of_splits
-      ((Polynomial.map_ne_zero_iff (algebraMap K L₁).injective).mpr
-        (Cubic.ne_zero_of_a_ne_zero ha)) hsplit] at hnd
-    exact (separable_map _).mp hnd
-  have : IsGalois K L₁ := IsGalois.of_separable_splitting_field hsep₁
-  -- a square root of `e₂ - e₁`, in the splitting field `L` of `X² - (e₂ - e₁)` over `L₁`
-  have h2₁ : ((2 : ℕ) : L₁) ≠ 0 := by
-    rw [Nat.cast_ofNat, ← map_ofNat (algebraMap K L₁)]
-    exact (_root_.map_ne_zero _).mpr h2
-  let L := SplittingField (X ^ 2 - C (e₂ - e₁) : L₁[X])
-  have : IsGalois L₁ L := IsGalois.of_separable_splitting_field
-    (separable_X_pow_sub_C _ h2₁ (sub_ne_zero.mpr (Ne.symm h12)))
-  have : Algebra.IsSeparable K L := Algebra.IsSeparable.trans K L₁ L
-  have : FiniteDimensional K L := Module.Finite.trans L₁ L
-  obtain ⟨u, hu⟩ := (SplittingField.splits (X ^ 2 - C (e₂ - e₁) : L₁[X])).exists_eval_eq_zero
-    (by rw [degree_map, degree_X_pow_sub_C two_pos]; norm_num)
-  simp only [Polynomial.map_sub, Polynomial.map_pow, map_X, map_C, eval_sub, eval_pow, eval_X,
-    eval_C, sub_eq_zero] at hu
-  -- the factorisation of the `2`-division polynomial of the base change to `L`
-  set ψ := algebraMap L₁ L
-  have hfac : (W.baseChange L).twoTorsionPolynomial.toPoly =
-      C 4 * (X - C (ψ e₁)) * (X - C (ψ e₂)) * (X - C (ψ e₃)) := by
-    have h := congrArg (Polynomial.map ψ) (Cubic.eq_prod_three_roots ha h3)
-    rw [Cubic.map_toPoly, Polynomial.map_map, ← IsScalarTower.algebraMap_eq] at h
-    simp only [Polynomial.map_mul, Polynomial.map_sub, map_X, map_C] at h
-    rw [hPa, map_ofNat, map_ofNat] at h
-    have hmap : (W.baseChange L).twoTorsionPolynomial = Cubic.map (algebraMap K L) P := by
-      simp only [twoTorsionPolynomial, Cubic.map, baseChange, map_b₂, map_b₄, map_b₆, map_mul,
-        map_ofNat, P]
-    rw [hmap, Cubic.map_toPoly, h]
-  have he : ψ e₂ ≠ ψ e₁ := fun h ↦ h12 (ψ.injective h).symm
-  have h2L : (2 : L) ≠ 0 := by
-    rw [← map_ofNat (algebraMap K L) 2]
-    exact (_root_.map_ne_zero _).mpr h2
-  obtain ⟨C, hC⟩ := exists_variableChange_smul_eq_freyCurve_one h2L hfac he (by rw [hu, map_sub])
-  exact ⟨L, _, _, ‹_›, ‹_›, C, _, hC⟩
-
 /-! ### Legendre form over a ring -/
 
 section CommRing
@@ -399,6 +297,112 @@ theorem exists_variableChange_legendre_iff [W.IsElliptic] :
     exact (existsUnique_variableChange_legendre h2 u h₁ h₂ hψ₁ hψ₂ hu).exists
 
 end CommRing
+
+/-! ### Legendre form over a field -/
+
+section Field
+
+variable {F : Type*} [Field F] {W : WeierstrassCurve F}
+
+/-- **Legendre form.** If `2 ≠ 0`, the `2`-division polynomial of `W` factors as
+`4 (X - e₁) (X - e₂) (X - e₃)` with `e₁ ≠ e₂`, and `e₂ - e₁ = u²`, then a change of variables takes
+`W` to the Legendre form `y² = x (x - 1) (x - λ)` with `λ = (e₃ - e₁) / (e₂ - e₁)`, that is to
+`freyCurve 1 (-λ)`. It completes the square in `y`, moves `e₁` to the origin and scales `x` by
+`u²`: it is `toLegendre` centred at the point `(e₁, -(a₁e₁ + a₃)/2)` of order two. -/
+theorem exists_variableChange_smul_eq_freyCurve_one (h2 : (2 : F) ≠ 0) {e₁ e₂ e₃ u : F}
+    (h : W.twoTorsionPolynomial.toPoly = C 4 * (X - C e₁) * (X - C e₂) * (X - C e₃))
+    (he : e₂ ≠ e₁) (hu : u ^ 2 = e₂ - e₁) :
+    ∃ C : VariableChange F, C • W = freyCurve 1 ((e₁ - e₃) / (e₂ - e₁)) := by
+  -- the coefficients of the `2`-division polynomial are the elementary symmetric functions
+  rw [Cubic.C_mul_prod_X_sub_C_eq, Cubic.toPoly_injective, twoTorsionPolynomial] at h
+  simp only [Cubic.mk.injEq, true_and] at h
+  obtain ⟨hb₂, hb₄, hb₆⟩ := h
+  have hα : e₂ - e₁ ≠ 0 := sub_ne_zero.mpr he
+  have hu0 : u ≠ 0 := by rintro rfl; exact hα (by rw [← hu]; ring)
+  -- `(eᵢ, -(a₁eᵢ + a₃)/2)` is a point of `W` at which `ψ₂` vanishes
+  have hψ (e : F) : W.ψ₂.evalEval e (-(W.a₁ * e + W.a₃) / 2) = 0 := by
+    rw [ψ₂, Affine.evalEval_polynomialY]
+    field_simp
+    ring
+  have heq (e : F) (he : (e - e₁) * (e - e₂) * (e - e₃) = 0) :
+      W.toAffine.Equation e (-(W.a₁ * e + W.a₃) / 2) := by
+    rw [Affine.equation_iff]
+    field_simp
+    have hb₂' : W.b₂ = W.a₁ ^ 2 + 4 * W.a₂ := (rfl)
+    have hb₄' : W.b₄ = 2 * W.a₄ + W.a₁ * W.a₃ := (rfl)
+    have hb₆' : W.b₆ = W.a₃ ^ 2 + 4 * W.a₆ := (rfl)
+    linear_combination -(e ^ 2 * (hb₂ - hb₂') + e * (hb₄ - 2 * hb₄') + hb₆ - hb₆') - 4 * he
+  refine ⟨W.toLegendre h2.isUnit (Units.mk0 u hu0) e₁ (-(W.a₁ * e₁ + W.a₃) / 2), ?_⟩
+  rw [toLegendre_smul h2.isUnit _ (heq e₁ (by ring)) (heq e₂ (by ring)) (hψ e₁) (hψ e₂)
+    (by rw [Units.val_mk0, hu])]
+  congr 1
+  simp only [hb₂, Units.val_inv_eq_inv_val, Units.val_mk0, IsUnit.unit_spec, inv_pow, hu]
+  field_simp
+  ring
+
+/-- **Legendre form over a finite separable extension.** Away from characteristic `2`, an
+elliptic curve over `K` becomes isomorphic to a curve `y² = x (x - 1) (x + B)` over a finite
+separable extension `L` of `K`: one obtained by adjoining the roots `e₁, e₂, e₃` of its
+`2`-division polynomial and a square root of `e₂ - e₁`. -/
+theorem exists_variableChange_smul_baseChange_eq_freyCurve_one {K : Type u} [Field K]
+    (W : WeierstrassCurve K) [W.IsElliptic] (h2 : (2 : K) ≠ 0) :
+    ∃ (L : Type u) (_ : Field L) (_ : Algebra K L) (_ : FiniteDimensional K L)
+      (_ : Algebra.IsSeparable K L) (C : VariableChange L) (B : L),
+      C • W.baseChange L = freyCurve 1 B := by
+  set P := W.twoTorsionPolynomial
+  have hPa : P.a = 4 := by simp only [P, twoTorsionPolynomial]
+  have ha : P.a ≠ 0 := by
+    rw [hPa, show (4 : K) = 2 * 2 by norm_num]
+    exact mul_ne_zero h2 h2
+  -- the roots of the `2`-division polynomial, in its splitting field `L₁`
+  let L₁ := SplittingField P.toPoly
+  have hsplit : (P.toPoly.map (algebraMap K L₁)).Splits := SplittingField.splits P.toPoly
+  obtain ⟨e₁, e₂, e₃, h3⟩ := (Cubic.splits_iff_roots_eq_three ha).mp hsplit
+  have hdisc : P.discr ≠ 0 := by
+    rw [twoTorsionPolynomial_discr]
+    exact mul_ne_zero (by rw [show (16 : K) = 2 ^ 4 by norm_num]; exact pow_ne_zero 4 h2)
+      W.isUnit_Δ.ne_zero
+  obtain ⟨h12, -, -⟩ := (Cubic.discr_ne_zero_iff_roots_ne ha h3).mp hdisc
+  have hsep₁ : P.toPoly.Separable := by
+    have hnd := (Cubic.discr_ne_zero_iff_roots_nodup ha hsplit).mp hdisc
+    rw [Cubic.roots, Cubic.map_toPoly, nodup_roots_iff_of_splits
+      ((Polynomial.map_ne_zero_iff (algebraMap K L₁).injective).mpr
+        (Cubic.ne_zero_of_a_ne_zero ha)) hsplit] at hnd
+    exact (separable_map _).mp hnd
+  have : IsGalois K L₁ := IsGalois.of_separable_splitting_field hsep₁
+  -- a square root of `e₂ - e₁`, in the splitting field `L` of `X² - (e₂ - e₁)` over `L₁`
+  have h2₁ : ((2 : ℕ) : L₁) ≠ 0 := by
+    rw [Nat.cast_ofNat, ← map_ofNat (algebraMap K L₁)]
+    exact (_root_.map_ne_zero _).mpr h2
+  let L := SplittingField (X ^ 2 - C (e₂ - e₁) : L₁[X])
+  have : IsGalois L₁ L := IsGalois.of_separable_splitting_field
+    (separable_X_pow_sub_C _ h2₁ (sub_ne_zero.mpr (Ne.symm h12)))
+  have : Algebra.IsSeparable K L := Algebra.IsSeparable.trans K L₁ L
+  have : FiniteDimensional K L := Module.Finite.trans L₁ L
+  obtain ⟨u, hu⟩ := (SplittingField.splits (X ^ 2 - C (e₂ - e₁) : L₁[X])).exists_eval_eq_zero
+    (by rw [degree_map, degree_X_pow_sub_C two_pos]; norm_num)
+  simp only [Polynomial.map_sub, Polynomial.map_pow, map_X, map_C, eval_sub, eval_pow, eval_X,
+    eval_C, sub_eq_zero] at hu
+  -- the factorisation of the `2`-division polynomial of the base change to `L`
+  set ψ := algebraMap L₁ L
+  have hfac : (W.baseChange L).twoTorsionPolynomial.toPoly =
+      C 4 * (X - C (ψ e₁)) * (X - C (ψ e₂)) * (X - C (ψ e₃)) := by
+    have h := congrArg (Polynomial.map ψ) (Cubic.eq_prod_three_roots ha h3)
+    rw [Cubic.map_toPoly, Polynomial.map_map, ← IsScalarTower.algebraMap_eq] at h
+    simp only [Polynomial.map_mul, Polynomial.map_sub, map_X, map_C] at h
+    rw [hPa, map_ofNat, map_ofNat] at h
+    have hmap : (W.baseChange L).twoTorsionPolynomial = Cubic.map (algebraMap K L) P := by
+      simp only [twoTorsionPolynomial, Cubic.map, baseChange, map_b₂, map_b₄, map_b₆, map_mul,
+        map_ofNat, P]
+    rw [hmap, Cubic.map_toPoly, h]
+  have he : ψ e₂ ≠ ψ e₁ := fun h ↦ h12 (ψ.injective h).symm
+  have h2L : (2 : L) ≠ 0 := by
+    rw [← map_ofNat (algebraMap K L) 2]
+    exact (_root_.map_ne_zero _).mpr h2
+  obtain ⟨C, hC⟩ := exists_variableChange_smul_eq_freyCurve_one h2L hfac he (by rw [hu, map_sub])
+  exact ⟨L, _, _, ‹_›, ‹_›, C, _, hC⟩
+
+end Field
 
 /-! ### The universal Legendre curve over `ℤ[1/2][λ, 1/λ(λ - 1)]` -/
 
