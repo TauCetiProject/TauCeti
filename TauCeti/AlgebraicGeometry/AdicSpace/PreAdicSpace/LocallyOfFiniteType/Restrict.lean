@@ -165,35 +165,18 @@ theorem locallyOfFiniteType_restrictPreimage_presentationLimitPreAdicSpaceComap
     (fun _ hJ ↦ hφ.isTopologicallyFiniteType_toRingHom.isOpen_map hJ) φ.map_mem_plus
     U.isRingOfIntegralElements.isPowerBounded_of_mem
     U'.isRingOfIntegralElements.isPowerBounded_of_mem hP hP' hsheaf
-  let Y :=
-    presentationLimitPreAdicSpace P U.plus U.isRingOfIntegralElements.isPowerBounded_of_mem hP
+  refine Hom.prop_restrictPreimage_of_forall_exists_le f (@LocallyOfFiniteType.{u})
+    (fun _ ↦ LocallyOfFiniteType.of_iSup_eq_top_restrictPreimage) W fun y ↦ ?_
   -- every point of `W` lies in a rational subset `R(T/s)` contained in `W`
-  have hR (y : Y.restrict W.isOpenEmbedding) : ∃ (T : Finset A) (s : A),
-      IsOpen (Ideal.span (T : Set A) : Set A) ∧ y.1 ∈ spaBasicOpen U.plus T s ∧
-        spaBasicOpen U.plus T s ≤ W := by
-    obtain ⟨R, hR, hyR, hRW⟩ := Opens.isBasis_iff_nbhd.mp (isBasis_spaRationalOpens U.plus) y.2
-    obtain ⟨T, s, hT, rfl⟩ := mem_spaRationalOpens_iff_exists_spaBasicOpen.mp hR
-    exact ⟨T, s, hT, hyR, hRW⟩
-  choose T s hT hyR hRW using hR
-  -- the rational subsets, read as opens of `Y|_W`, cover it
-  let O (y : Y.restrict W.isOpenEmbedding) : Opens (Y.restrict W.isOpenEmbedding) :=
-    (Opens.map (Y.ofRestrict W.isOpenEmbedding).base).obj (spaBasicOpen U.plus (T y) (s y))
-  refine LocallyOfFiniteType.of_iSup_eq_top_restrictPreimage O
-    (eq_top_iff.mpr fun y _ ↦ Opens.mem_iSup.mpr ⟨y, Opens.mem_map.mpr (hyR y)⟩) fun y ↦ ?_
-  have hO : W.isOpenEmbedding.isOpenMap.functor.obj (O y) = spaBasicOpen U.plus (T y) (s y) := by
-    ext x
-    constructor
-    · rintro ⟨z, hz, rfl⟩
-      exact hz
-    · intro hx
-      exact ⟨⟨x, hRW y hx⟩, hx, rfl⟩
-  rw [Hom.prop_restrictPreimage_restrictPreimage_iff f (@LocallyOfFiniteType.{u}), hO]
-  have hden := P.hasDenominatorPower_of_isOpen_span (T y) (s y) (Localization.Away (s y)) (hT y)
+  obtain ⟨R, hR, hyR, hRW⟩ := Opens.isBasis_iff_nbhd.mp (isBasis_spaRationalOpens U.plus) y.2
+  obtain ⟨T, s, hT, rfl⟩ := mem_spaRationalOpens_iff_exists_spaBasicOpen.mp hR
+  refine ⟨_, hyR, hRW, ?_⟩
+  have hden := P.hasDenominatorPower_of_isOpen_span T s (Localization.Away s) hT
   refine locallyOfFiniteType_restrictPreimage_presentationLimitPreAdicSpaceComap_spaBasicOpen P P'
-    hP hP' φ hφ hsheaf (hT y) _ hden ?_
+    hP hP' φ hφ hsheaf hT _ hden ?_
   rw [rationalLocalizationPair_plus]
   exact isSheaf_presentationLimitPresheaf_completionLocalization P U.plus
-    U.isRingOfIntegralElements.isPowerBounded_of_mem hP _ _ _ hden (hT y) hsheafA
+    U.isRingOfIntegralElements.isPowerBounded_of_mem hP _ _ _ hden hT hsheafA
 
 end ValuationSpectrum
 

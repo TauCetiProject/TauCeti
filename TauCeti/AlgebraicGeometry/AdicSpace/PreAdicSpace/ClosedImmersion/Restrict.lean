@@ -270,22 +270,10 @@ sheaf, then `f⁻¹(W) → W` is a closed immersion for every open `W` of `Y`. S
 models of `f` exist over every open of `Y`, not only over the neighbourhoods chosen in the
 definition. -/
 theorem IsClosedImmersion.restrictPreimage {f : X ⟶ Y} (hf : IsClosedImmersion f)
-    (hY : isSheafy Y) (W : Opens Y) : IsClosedImmersion (f.restrictPreimage W) := by
-  choose V' hyV' hV'W hV' using hf.exists_le_isClosedImmersion_restrictPreimage hY W
-  -- the opens `V' y`, read as opens of `Y|_W`, cover it
-  let O (y : Y.restrict W.isOpenEmbedding) : Opens (Y.restrict W.isOpenEmbedding) :=
-    (Opens.map (Y.ofRestrict W.isOpenEmbedding).base).obj (V' y)
-  refine IsClosedImmersion.of_iSup_eq_top O
-    (eq_top_iff.mpr fun y _ ↦ Opens.mem_iSup.mpr ⟨y, Opens.mem_map.mpr (hyV' y)⟩) fun y ↦ ?_
-  have hO : W.isOpenEmbedding.isOpenMap.functor.obj (O y) = V' y := by
-    ext x
-    constructor
-    · rintro ⟨z, hz, rfl⟩
-      exact hz
-    · intro hx
-      exact ⟨⟨x, hV'W y hx⟩, hx, rfl⟩
-  rw [Hom.prop_restrictPreimage_restrictPreimage_iff f (@IsClosedImmersion.{u}), hO]
-  exact hV' y
+    (hY : isSheafy Y) (W : Opens Y) : IsClosedImmersion (f.restrictPreimage W) :=
+  Hom.prop_restrictPreimage_of_forall_exists_le f (@IsClosedImmersion.{u})
+    (fun _ ↦ IsClosedImmersion.of_iSup_eq_top) W
+    (hf.exists_le_isClosedImmersion_restrictPreimage hY W)
 
 /-- **Being a closed immersion is local on a sheafy target**: for a morphism `f : X ⟶ Y` into a
 pre-adic space with sheaf structure presheaf and an open cover `V` of `Y`, `f` is a closed immersion
