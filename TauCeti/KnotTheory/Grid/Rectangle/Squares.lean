@@ -203,4 +203,38 @@ theorem X_not_mem_coveredRows_of_disjoint (R : GridRectangle n) {b : Fin n}
 
 end GridDiagram
 
+namespace GridRectangleBetween
+
+variable {n : ℕ} {x y : GridState n} (R : GridRectangleBetween x y)
+
+/-- The source-state points in the covered squares are its interior points together with the
+lower-left corner. This distinguishes occupied grid points from marking-square centers. -/
+theorem pointSet_inter_coveredSquares_eq_insert :
+    x.pointSet ∩ R.toGridRectangle.coveredSquares =
+      insert (R.left, R.bottom) (x.pointSet ∩ R.toGridRectangle.interior) := by
+  classical
+  ext p
+  simp only [Finset.mem_inter, Finset.mem_insert]
+  constructor
+  · rintro ⟨hx, hsq⟩
+    by_cases hp : p = (R.left, R.bottom)
+    · exact Or.inl hp
+    have hxp := (GridState.mem_pointSet x p).mp hx
+    have hc : p.1 ≠ R.left := by
+      intro h
+      exact hp (Prod.ext h (by simpa only [h, ← R.bottom_def] using hxp.symm))
+    have hr : p.2 ≠ R.bottom := fun h ↦
+      hc (x.toPerm.injective (hxp.trans (h.trans R.bottom_def)))
+    rw [GridRectangle.mem_coveredSquares, GridRectangle.mem_coveredColumns,
+      GridRectangle.mem_coveredRows] at hsq
+    exact Or.inr ⟨hx, (R.toGridRectangle.mem_interior p).mpr
+      ⟨Grid.mem_cIoo_of_mem_cIco hsq.1 hc, Grid.mem_cIoo_of_mem_cIco hsq.2 hr⟩⟩
+  · rintro (rfl | ⟨hx, hp⟩)
+    · exact ⟨R.left_bottom_mem_source,
+        (R.toGridRectangle.mem_coveredSquares _).mpr
+          ⟨Grid.left_mem_cIco R.left_ne_right, Grid.left_mem_cIco R.bottom_ne_top⟩⟩
+    · exact ⟨hx, R.toGridRectangle.interior_subset_coveredSquares hp⟩
+
+end GridRectangleBetween
+
 end TauCeti
