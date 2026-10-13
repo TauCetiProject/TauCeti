@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Convex.MongeAmpere.Basic
 public import TauCeti.Analysis.Convex.Alexandrov
 import TauCeti.Analysis.Convex.Extrema
+import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 import Mathlib.MeasureTheory.Covering.BesicovitchVectorSpace
 
 /-!
@@ -214,18 +215,6 @@ private theorem eventually_image_subset_subgradientImage_closedBall
 
 variable [MeasurableSpace E] [BorelSpace E] (μ : Measure E) [μ.IsAddHaarMeasure]
 
-/-- The measure of `y + r • S`, relative to that of a ball of radius `r`, is the measure of `S`
-relative to that of the unit ball. -/
-private theorem addHaar_image_add_smul_div_addHaar_closedBall (x y : E) {r : ℝ} (hr : 0 < r)
-    (S : Set E) :
-    μ ((fun w => y + r • w) '' S) / μ (closedBall x r) = μ S / μ (closedBall 0 1) := by
-  have himage : (fun w => y + r • w) '' S = y +ᵥ r • S := by
-    rw [← image_smul, ← image_vadd, image_image]
-    rfl
-  rw [himage, measure_vadd, addHaar_smul, addHaar_closedBall' μ x hr.le,
-    abs_of_pos (pow_pos hr _)]
-  exact ENNReal.mul_div_mul_left _ _ (by simpa using pow_pos hr _) ENNReal.ofReal_ne_top
-
 /-- **The density of the Monge–Ampère measure at a point of second-order differentiability.** Let
 `f : E → EReal` be convex (convex real epigraph, never `⊥`) and `x` an interior point of its
 effective domain at which the subdifferential has the first-order expansion
@@ -307,7 +296,7 @@ private theorem ae_rnDeriv_mongeAmpereMeasure_eq_of_closedBall_subset
       (mongeAmpereMeasure μ f).rnDeriv μ x = ENNReal.ofReal (H x).det := by
   -- The derivative is that of the finite measure `MA_f` restricted to the closed ball, which is
   -- computed by Lebesgue's differentiation theorem.
-  have := sigmaFinite_mongeAmpereMeasure μ hf hbot AbsolutelyContinuous.rfl
+  have := sigmaFinite_mongeAmpereMeasure μ f
   have : IsFiniteMeasure ((mongeAmpereMeasure μ f).restrict (closedBall p ρ)) :=
     ⟨by
       rw [restrict_apply_univ]
@@ -343,7 +332,7 @@ theorem rnDeriv_mongeAmpereMeasure_ae_eq (hf : Convex ℝ {p : E × ℝ | f p.1 
       ∀ y' ∈ subdifferential (innerₗ E) f x', ‖y' - y - H x (x' - x)‖ ≤ ε * ‖x' - x‖) :
     (mongeAmpereMeasure μ f).rnDeriv μ =ᵐ[μ]
       (interior {x | f x ≠ ⊤}).indicator fun x => ENNReal.ofReal (H x).det := by
-  have := sigmaFinite_mongeAmpereMeasure μ hf hbot AbsolutelyContinuous.rfl
+  have := sigmaFinite_mongeAmpereMeasure μ f
   set D := interior {x | f x ≠ ⊤}
   -- Off `D` the derivative vanishes, since `MA_f` does not charge `Dᶜ`.
   have hoff : ∀ᵐ x ∂μ, x ∉ D → (mongeAmpereMeasure μ f).rnDeriv μ x = 0 := by
@@ -388,7 +377,7 @@ theorem mongeAmpereMeasure_eq_singularPart_add_withDensity
       ∀ y' ∈ subdifferential (innerₗ E) f x', ‖y' - y - H x (x' - x)‖ ≤ ε * ‖x' - x‖) :
     mongeAmpereMeasure μ f = (mongeAmpereMeasure μ f).singularPart μ +
       (μ.restrict (interior {x | f x ≠ ⊤})).withDensity fun x => ENNReal.ofReal (H x).det := by
-  have := sigmaFinite_mongeAmpereMeasure μ hf hbot AbsolutelyContinuous.rfl
+  have := sigmaFinite_mongeAmpereMeasure μ f
   rw [← withDensity_indicator measurableSet_interior,
     ← withDensity_congr_ae (rnDeriv_mongeAmpereMeasure_ae_eq μ hf hbot hH)]
   exact haveLebesgueDecomposition_add _ _
