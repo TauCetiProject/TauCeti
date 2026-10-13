@@ -10,6 +10,7 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.GroupLaw
 import TauCeti.AlgebraicGeometry.GroupScheme.ClosedSubgroup.Criterion
 import TauCeti.AlgebraicGeometry.IdealSheaf.BaseChange
 import TauCeti.AlgebraicGeometry.IdealSheaf.Section
+import TauCeti.AlgebraicGeometry.RationalPoint.Basic
 
 /-!
 # Base change of points of an elliptic curve
@@ -41,6 +42,9 @@ through divisors of points, such as points of exact order `N`, pull back along b
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.pointsPullback_id` and
   `TauCeti.AlgebraicGeometry.EllipticCurveGeom.pointsPullback_comp`: base change of points along
   the identity square is the identity, and along a pasted square it is the composite.
+* `TauCeti.AlgebraicGeometry.EllipticCurveGeom.pointsPullback_left_apply_eq_zero_iff`: the base
+  change `P'` of `P` meets the zero section at a point `s'` of `S'` exactly when `P` meets the
+  zero section at `f s'`.
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.ker_pointsPullback_left`: the ideal sheaf of `P'`
   is the inverse image of the ideal sheaf of `P` along `g`.
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.exists_grpObj_isMonHom_comap`: the inverse image of
@@ -65,9 +69,9 @@ variable {S S' : Scheme.{u}} {E : EllipticCurveGeom S} {E' : EllipticCurveGeom S
   {g : E'.carrier ⟶ E.carrier} {f : S' ⟶ S} (hg : IsPullback g E'.structureMap E.structureMap f)
   (h0 : E'.zero ≫ g = f ≫ E.zero)
 
--- An `S`-point of an elliptic curve over `S` is a section of its structure morphism.
+/-- An `S`-point of an elliptic curve over `S` is a section of its structure morphism. -/
 @[reassoc (attr := simp)]
-private theorem left_comp_structureMap {T : Scheme.{u}} {C : EllipticCurveGeom T}
+theorem left_comp_structureMap {T : Scheme.{u}} {C : EllipticCurveGeom T}
     (P : 𝟙_ (Over T) ⟶ Over.mk C.structureMap) : P.left ≫ C.structureMap = 𝟙 T := by
   simpa using Over.w P
 
@@ -156,6 +160,35 @@ theorem pointsPullback_comp {S'' : Scheme.{u}} {E'' : EllipticCurveGeom S''}
     pointsPullback (hg'.paste_horiz hg) (by simp [reassoc_of% h0', h0]) P =
       pointsPullback hg' h0' (pointsPullback hg h0 P) :=
   ((eq_pointsPullback_iff _ _).mpr (by simp)).symm
+
+/-- Along a morphism `t : T ⟶ S'`, the base change `P'` of an `S`-point `P` of `E` agrees with the
+zero section of `E'` exactly when `P` agrees with the zero section of `E` along `t ≫ f`. -/
+theorem comp_pointsPullback_left_eq_comp_zero_iff (P : 𝟙_ (Over S) ⟶ Over.mk E.structureMap)
+    {T : Scheme.{u}} (t : T ⟶ S') :
+    t ≫ (pointsPullback hg h0 P).left = t ≫ E'.zero ↔ (t ≫ f) ≫ P.left = (t ≫ f) ≫ E.zero :=
+  ⟨fun h ↦ by simpa [h0] using congr($h ≫ g),
+    fun h ↦ hg.hom_ext (by simpa [h0] using h) (by simp)⟩
+
+/-- **A base-changed point meets the zero section exactly over the points where the original
+point does.** For a pullback square of elliptic curves over `f : S' ⟶ S` and an `S`-point `P` of
+`E`, the base change `P'` of `P` agrees with the zero section of `E'` at a point `s'` of `S'` if and
+only if `P` agrees with the zero section of `E` at `f s'`. -/
+theorem pointsPullback_left_apply_eq_zero_iff (P : 𝟙_ (Over S) ⟶ Over.mk E.structureMap)
+    (s' : S') :
+    (pointsPullback hg h0 P).left s' = E'.zero s' ↔ P.left (f s') = E.zero (f s') := by
+  -- both sides are read at the point `t : Spec κ(s') ⟶ S'`, where they become equalities of
+  -- morphisms; they are chained with `Iff.trans` since the point `p` of `Spec κ(s')` is typed in
+  -- `Spec (.of _)` by `comp_eq_comp_iff_of_section`, which blocks `rw`
+  obtain ⟨p⟩ : Nonempty (Spec (S'.residueField s')) := inferInstance
+  have key {T : Scheme.{u}} {X : Scheme.{u}} (a b : T ⟶ X) (z y : T) (hz : z = y) :
+      a z = b z ↔ a y = b y := by
+    rw [hz]
+  refine (key _ _ _ _ (Scheme.fromSpecResidueField_apply s' p)).symm.trans
+    ((comp_eq_comp_iff_of_section (left_comp_structureMap _) E'.zero_comp_structureMap
+      (S'.fromSpecResidueField s') p).symm.trans
+        ((comp_pointsPullback_left_eq_comp_zero_iff hg h0 P _).trans ((comp_eq_comp_iff_of_section
+          (left_comp_structureMap P) E.zero_comp_structureMap (S'.fromSpecResidueField s' ≫ f)
+            p).trans (key _ _ _ _ (congrArg f (Scheme.fromSpecResidueField_apply s' p))))))
 
 /-- **The divisor of a base-changed point.** The ideal sheaf of the base change `P'` of an
 `S`-point `P` of `E`, which cuts out the divisor `[P']` on `E'`, is the inverse image along `g` of
