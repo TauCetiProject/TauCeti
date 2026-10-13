@@ -153,8 +153,9 @@ variable {K L : Type*} [Field K] [NumberField K] [Field L] [NumberField L] [Alge
 omit [NumberField K] [NumberField L] in
 variable (K L) in
 /-- **Powers by the degree are norms after base change.** For a field extension `L/K` and any
-nontrivial commutative `K`-algebra `F`, an `[L : K]`-th power in `Fˣ` is the norm of a unit of
-`F ⊗[K] L`, a free `F`-algebra of rank `[L : K]`. -/
+nontrivial commutative `K`-algebra `F`, a `Module.finrank K L`-th power in `Fˣ` is the norm of a
+unit of `F ⊗[K] L`. When `L/K` is finite, `F ⊗[K] L` is a free `F`-algebra of rank `[L : K]`; for
+an infinite extension the exponent is `0` and the statement is trivial. -/
 theorem range_powMonoidHom_le_range_normUnits_baseChange (F : Type*) [CommRing F] [Nontrivial F]
     [Algebra K F] :
     (powMonoidHom (Module.finrank K L) : Fˣ →* Fˣ).range ≤
