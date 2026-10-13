@@ -14,15 +14,16 @@ public import Mathlib.CategoryTheory.Preadditive.LeftExact
 # The closed category of curved right modules is abelian
 
 Kernels and cokernels carry their inherited differentials. The faithful graded forgetful
-functor preserves these constructions and reflects isomorphisms. Since the graded module
-category is abelian, its coimage-to-image comparison is an isomorphism, and reflection gives
-the same result in the closed category of curved modules. This supplies its abelian structure.
+functor preserves these constructions and reflects isomorphisms. The coimage-to-image
+comparison in the closed category is an isomorphism, as detected in the abelian graded module
+category. This characterizes the abelian structure on the closed category of curved modules.
+
+The graded forgetful functor preserves finite limits and colimits. This ambient abelian
+category and its forgetful functor support the graded-split exact structure on curved modules.
 
 ## References
 
-* The Tau Ceti contributors, `TauCeti.Algebra.Category.GradedModuleCat.Abelian`: this proof
-  follows its transfer of the coimage-to-image comparison, using Mathlib's
-  `Abelian.PreservesCoimage.hom_coimageImageComparison`.
+* The Tau Ceti contributors, `TauCeti.Algebra.Category.GradedModuleCat.Abelian`.
 * L. Positselski, *Differential graded Koszul duality: an introductory survey*, Section 7.6.
 -/
 

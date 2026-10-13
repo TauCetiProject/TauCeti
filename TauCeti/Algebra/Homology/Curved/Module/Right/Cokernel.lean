@@ -16,9 +16,12 @@ induced differential. The image is stable under the differential because the map
 The Leibniz and curvature laws descend to the quotient, and its projection is a cokernel in
 the existing closed category.
 
-The quotient grading reuses `TauCeti.GradedModuleCat.cokernelObj`. The factorization proof
-adapts `TauCeti.GradedModuleCat.cokernelIsColimit`, adding differential compatibility. These
-cokernels are a prerequisite for the graded-split exact structure.
+`cokernelEquiv` identifies the carrier of `cokernelObj` with the range quotient and provides its
+inherited right action. Its homogeneous elements are classes of homogeneous target elements,
+and its differential sends the class of an element to the class of its differential.
+`cokernelIsColimit` gives the universal property of the projection `cokernelπ`, and
+`forgetDifferentialCokernelIso` gives the graded comparison. These cokernels and their
+preservation are used by the graded-split exact structure.
 
 ## References
 

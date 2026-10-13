@@ -15,9 +15,11 @@ The kernel of a closed map has the inherited grading and the restricted differen
 closedness of the map makes its kernel stable under the differential; the Leibniz and curvature
 laws restrict to this submodule. Its inclusion is a kernel in the existing closed category.
 
-The underlying grading reuses `TauCeti.GradedModuleCat.kernelObj`, and the universal-property
-proof follows `TauCeti.GradedModuleCat.kernelIsLimit`, adding the differential compatibility
-of the factorization. This is a prerequisite for the graded-split exact structure.
+`kernelEquiv` identifies the carrier of `kernelObj` with the kernel submodule and provides its
+inherited right action. The grading and differential equations characterize this curved
+object, and `kernelIsLimit` gives the universal property of its inclusion `kernelι`.
+`forgetDifferentialKernelIso` identifies its underlying graded object with the graded kernel.
+These kernels and their preservation are used by the graded-split exact structure.
 
 ## References
 
