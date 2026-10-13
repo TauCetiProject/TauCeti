@@ -9,6 +9,7 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.MinimalModel.DiscriminantI
 public import TauCeti.AlgebraicGeometry.EllipticCurve.TateAlgorithm.Reduction.Curve
 public import Mathlib.RingTheory.Ideal.Norm.AbsNorm
 public import Mathlib.RingTheory.Radical.Basic
+import TauCeti.AlgebraicGeometry.EllipticCurve.Weierstrass
 import TauCeti.RingTheory.DedekindDomain.Factorization
 
 /-!
@@ -227,9 +228,9 @@ there. -/
 theorem IsGlobalMinimal.dvd_algorithmicConductor_iff {W : WeierstrassCurve K} [W.IsElliptic]
     (h : IsGlobalMinimal O W) {W₀ : WeierstrassCurve O} (hW₀ : W₀.baseChange K = W)
     (v : HeightOneSpectrum O) : v.asIdeal ∣ algorithmicConductor O W ↔ W₀.Δ ∈ v.asIdeal := by
-  have hΔ : algebraMap O K W₀.Δ = W.Δ := by rw [← hW₀, baseChange, map_Δ]
   rw [dvd_algorithmicConductor_iff_dvd_minimalDiscriminantIdeal,
-    minimalDiscriminantIdeal_eq_span_of_isGlobalMinimal h hΔ, Ideal.dvd_span_singleton]
+    minimalDiscriminantIdeal_eq_span_of_isGlobalMinimal h (algebraMap_Δ_of_baseChange_eq hW₀),
+    Ideal.dvd_span_singleton]
 
 /-- **The square of a prime divides the algorithmic conductor of a globally minimal equation
 exactly when the prime contains both the discriminant and `c₄`** of its integral model, that is,
@@ -270,15 +271,19 @@ theorem pow_dvd_absNorm_algorithmicConductor_iff {p : ℕ} {v : HeightOneSpectru
     ← Int.natCast_dvd_natCast, Nat.cast_pow, ← Ideal.span_singleton_dvd_span_singleton_iff_dvd,
     Int.ideal_span_absNorm_eq_self]
 
+/-- A rational prime `p` gives the height-one prime `(p)` of `ℤ`. -/
+private theorem exists_heightOneSpectrum_asIdeal_eq_span {p : ℕ} (hp : p.Prime) :
+    ∃ v : HeightOneSpectrum ℤ, v.asIdeal = Ideal.span {(p : ℤ)} :=
+  ⟨.ofPrime (Ideal.prime_span_singleton_iff.2 (Nat.prime_iff_prime_int.1 hp)),
+    HeightOneSpectrum.ofPrime_asIdeal _⟩
+
 /-- **A prime divides the conductor of a globally minimal equation over `ℚ` exactly when it
 divides the discriminant** of its integral model, that is, when the curve has bad reduction
 there. -/
 theorem IsGlobalMinimal.dvd_absNorm_algorithmicConductor_iff (h : IsGlobalMinimal ℤ E)
     {W₀ : WeierstrassCurve ℤ} (hW₀ : W₀.baseChange ℚ = E) {p : ℕ} (hp : p.Prime) :
     p ∣ Ideal.absNorm (algorithmicConductor ℤ E) ↔ (p : ℤ) ∣ W₀.Δ := by
-  obtain ⟨v, hv⟩ : ∃ v : HeightOneSpectrum ℤ, v.asIdeal = Ideal.span {(p : ℤ)} :=
-    ⟨⟨_, (Ideal.span_singleton_prime (by exact_mod_cast hp.ne_zero)).2
-      (Nat.prime_iff_prime_int.1 hp), by simpa using hp.ne_zero⟩, rfl⟩
+  obtain ⟨v, hv⟩ := exists_heightOneSpectrum_asIdeal_eq_span hp
   rw [← pow_one p, pow_dvd_absNorm_algorithmicConductor_iff hv, ← pow_dvd_algorithmicConductor_iff,
     pow_one, h.dvd_algorithmicConductor_iff hW₀, hv, Ideal.mem_span_singleton, pow_one]
 
@@ -288,9 +293,7 @@ when the curve has additive reduction there. -/
 theorem IsGlobalMinimal.sq_dvd_absNorm_algorithmicConductor_iff (h : IsGlobalMinimal ℤ E)
     {W₀ : WeierstrassCurve ℤ} (hW₀ : W₀.baseChange ℚ = E) {p : ℕ} (hp : p.Prime) :
     p ^ 2 ∣ Ideal.absNorm (algorithmicConductor ℤ E) ↔ (p : ℤ) ∣ W₀.Δ ∧ (p : ℤ) ∣ W₀.c₄ := by
-  obtain ⟨v, hv⟩ : ∃ v : HeightOneSpectrum ℤ, v.asIdeal = Ideal.span {(p : ℤ)} :=
-    ⟨⟨_, (Ideal.span_singleton_prime (by exact_mod_cast hp.ne_zero)).2
-      (Nat.prime_iff_prime_int.1 hp), by simpa using hp.ne_zero⟩, rfl⟩
+  obtain ⟨v, hv⟩ := exists_heightOneSpectrum_asIdeal_eq_span hp
   rw [pow_dvd_absNorm_algorithmicConductor_iff hv, ← pow_dvd_algorithmicConductor_iff,
     h.sq_dvd_algorithmicConductor_iff hW₀, hv, Ideal.mem_span_singleton, Ideal.mem_span_singleton]
 

@@ -10,6 +10,7 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.GlobalMinimalModel
 public import TauCeti.AlgebraicGeometry.EllipticCurve.MinimalModel.Valuation
 import TauCeti.AlgebraicGeometry.EllipticCurve.IntegralModel
 import TauCeti.AlgebraicGeometry.EllipticCurve.ShortWeierstrass
+import TauCeti.AlgebraicGeometry.EllipticCurve.Weierstrass
 import TauCeti.RingTheory.DedekindDomain.Factorization
 
 /-!
@@ -307,8 +308,8 @@ theorem IsGlobalMinimal.hasAdditiveReduction_minimal_iff {W : WeierstrassCurve K
     (v : HeightOneSpectrum O) :
     (W.minimal (Localization.AtPrime v.asIdeal)).HasAdditiveReduction
         (Localization.AtPrime v.asIdeal) ↔ W₀.Δ ∈ v.asIdeal ∧ W₀.c₄ ∈ v.asIdeal := by
-  have hΔ : algebraMap O K W₀.Δ = W.Δ := by rw [← hW₀, baseChange, map_Δ]
-  have hc₄ : algebraMap O K W₀.c₄ = W.c₄ := by rw [← hW₀, baseChange, map_c₄]
+  have hΔ := algebraMap_Δ_of_baseChange_eq hW₀
+  have hc₄ := algebraMap_c₄_of_baseChange_eq hW₀
   have := h.isMinimal v
   obtain ⟨C, hC⟩ := W.exists_smul_eq_minimal (Localization.AtPrime v.asIdeal)
   rw [hasAdditiveReduction_iff_of_isMinimal_smul _ C hC, hasAdditiveReduction_iff]
@@ -334,7 +335,7 @@ theorem IsGlobalMinimal.dvd_six_of_pow_dvd {W : WeierstrassCurve K} [W.IsEllipti
     rw [map_ofNat, map_zero, show (6 : K) = 3 * 2 by norm_num, h0, zero_mul]
   let := invertibleOfNonzero h2
   let := invertibleOfNonzero h3
-  have hΔ : algebraMap O K W₀.Δ = W.Δ := by rw [← hW₀, baseChange, map_Δ]
+  have hΔ := algebraMap_Δ_of_baseChange_eq hW₀
   have hΔ₀ : W₀.Δ ≠ 0 := fun h0 ↦ W.isUnit_Δ.ne_zero (by rw [← hΔ, h0, map_zero])
   -- the rescaled short equation `y² = x³ - A x - B` over `O`, with `u¹² Δ' = 6¹² Δ`
   set W' : WeierstrassCurve O := shortCurve (-A) (-B)
@@ -352,8 +353,8 @@ theorem IsGlobalMinimal.dvd_six_of_pow_dvd {W : WeierstrassCurve K} [W.IsEllipti
     have huK : algebraMap O K u ≠ 0 := (map_ne_zero_iff _ (IsFractionRing.injective O K)).2 hu
     let w : Kˣ := Units.mk0 (algebraMap O K u / 6) (div_ne_zero huK (by
       rw [show (6 : K) = 2 * 3 by norm_num]; exact mul_ne_zero h2 h3))
-    have hc₄ : algebraMap O K W₀.c₄ = W.c₄ := by rw [← hW₀, baseChange, map_c₄]
-    have hc₆ : algebraMap O K W₀.c₆ = W.c₆ := by rw [← hW₀, baseChange, map_c₆]
+    have hc₄ := algebraMap_c₄_of_baseChange_eq hW₀
+    have hc₆ := algebraMap_c₆_of_baseChange_eq hW₀
     have hA' := congrArg (algebraMap O K) hA
     have hB' := congrArg (algebraMap O K) hB
     simp only [map_mul, map_pow, map_ofNat, hc₄, hc₆] at hA' hB'

@@ -10,6 +10,7 @@ public import Mathlib.RingTheory.Ideal.Norm.AbsNorm
 public import TauCeti.AlgebraicGeometry.EllipticCurve.MinimalModel.Reduced
 public import TauCeti.AlgebraicGeometry.EllipticCurve.TateAlgorithm.Reduction.Conductor
 public import TauCeti.NumberTheory.AbcConjecture
+import TauCeti.AlgebraicGeometry.EllipticCurve.Weierstrass
 import TauCeti.Data.Nat.Prime.Basic
 import TauCeti.RingTheory.Radical.NatInt
 
@@ -576,10 +577,12 @@ theorem AbcConjecture.algorithmicModifiedSzpiroConjecture (h : AbcConjecture) :
     have := algorithmicConductor_smul ℤ D E
     simp only [hD] at this
     exact this.symm
-  have hc₄ : W.c₄ = W₀.c₄ := by rw [← hW₀, baseChange, map_c₄]; rfl
-  have hc₆ : W.c₆ = W₀.c₆ := by rw [← hW₀, baseChange, map_c₆]; rfl
+  have hc₄ : W.c₄ = W₀.c₄ := by
+    rw [← algebraMap_c₄_of_baseChange_eq hW₀, algebraMap_int_eq, eq_intCast]
+  have hc₆ : W.c₆ = W₀.c₆ := by
+    rw [← algebraMap_c₆_of_baseChange_eq hW₀, algebraMap_int_eq, eq_intCast]
   have hΔ : W₀.Δ ≠ 0 := fun h0 =>
-    W.isUnit_Δ.ne_zero (by rw [← hW₀, baseChange, map_Δ, h0, map_zero])
+    W.isUnit_Δ.ne_zero (by rw [← algebraMap_Δ_of_baseChange_eq hW₀, h0, map_zero])
   have key := hC W₀.c₄ W₀.c₆ W₀.Δ (Ideal.absNorm (algorithmicConductor ℤ W)) W₀.c_relation hΔ
     (Ideal.absNorm_eq_zero_iff.not.2 (algorithmicConductor_ne_bot ℤ W))
     (fun _ => hmin.dvd_six_of_pow_dvd hW₀)
