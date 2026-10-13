@@ -24,6 +24,14 @@ belong to `R`, its local congruences are equivalent to ordinary membership of
 reduction to `(R ⧸ m)ˣ`. This finite congruence condition can be combined with positivity
 at real places to define the congruence subgroup of a number-field modulus.
 
+## Usage
+
+With `open TauCeti`, write `DedekindDomain.congruenceSubgroup m K hm` for an ideal
+`m : Ideal R` and a proof `hm : m ≠ ⊥`. The residue-unit kernel formula is
+`DedekindDomain.comap_congruenceSubgroup_eq_ker m K hm`; it is also a simp lemma.
+
+## Dependencies and provenance
+
 The valuation and prime-power dictionary is Mathlib's
 `IsDedekindDomain.HeightOneSpectrum.intValuation_le_pow_iff_mem`, and the passage
 from local membership to membership in `m` uses `Ideal.iInf_maxPowDividing_eq`.
