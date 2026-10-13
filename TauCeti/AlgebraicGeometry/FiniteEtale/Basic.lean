@@ -86,19 +86,6 @@ theorem spec_obj_obj (A : (CommAlgCat.FiniteEtale.{u} R)ᵒᵖ) :
     ((spec R).obj A).obj = (algSpec R).obj (op A.unop.obj) :=
   (rfl)
 
-/-- Forgetting finiteness and étaleness in the spectrum functor gives Mathlib's algebraic
-spectrum functor after forgetting the properties of the algebra. -/
-noncomputable def specCompInclusionIso :
-    spec R ⋙ (finiteEtaleSchemeProperty (Spec R)).ι ≅
-      (CommAlgCat.finiteEtale R).ι.op ⋙ algSpec R :=
-  Iso.refl _
-
-instance : (spec R).Full :=
-  Functor.Full.of_comp_faithful_iso (specCompInclusionIso R)
-
-instance : (spec R).Faithful :=
-  Functor.Faithful.of_comp_iso (specCompInclusionIso R)
-
 private theorem exists_spec_iso (X : FiniteEtaleScheme (Spec R)) :
     ∃ A : (CommAlgCat.FiniteEtale.{u} R)ᵒᵖ, Nonempty ((spec R).obj A ≅ X) := by
   have : IsAffine X.obj.left := isAffine_of_isAffineHom X.obj.hom
@@ -126,6 +113,8 @@ instance : (spec R).EssSurj where
   mem_essImage X := exists_spec_iso R X
 
 instance : (spec R).IsEquivalence where
+  faithful := ObjectProperty.instFaithfulFullSubcategoryLift _ _ _
+  full := ObjectProperty.instFullFullSubcategoryLift _ _ _
 
 /-- Finite étale algebras over a commutative ring are anti-equivalent to finite étale schemes
 over its spectrum. The forward functor is `spec`. -/
@@ -148,7 +137,8 @@ noncomputable def specEquivalenceInverseCompInclusionIso :
     ((Functor.rightUnitor _).symm ≪≫
       Functor.isoWhiskerLeft _ (asIso (algΓAlgSpecAdjunction R).counit).symm ≪≫
       (Functor.associator _ _ _).symm ≪≫
-      Functor.isoWhiskerRight (specCompInclusionIso R).symm (algΓ R) ≪≫
+      Functor.isoWhiskerRight
+        ((finiteEtaleSchemeProperty (Spec R)).liftCompιIso _ _).symm (algΓ R) ≪≫
       Functor.associator _ _ _)
 
 /-- Over a separably closed field, finite étale schemes are equivalent to finite sets.
