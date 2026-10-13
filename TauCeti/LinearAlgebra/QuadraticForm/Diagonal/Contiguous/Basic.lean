@@ -19,8 +19,9 @@ this to a diagonal chain that keeps the common line fixed throughout.
 `Module.Basis.diagonalChain_tail_of_isOrtho_of_apply_eq` gives this comparison with the common
 vector specified by its two indices. The coefficient families are supplied as units with their
 evaluation equations, so the statement needs no separate nondegeneracy hypothesis. The theorem
-compares a contiguous step with diagonal chains; it does not assert Serre's theorem that any two
-orthogonal bases of a regular form of rank at least three are connected by contiguous steps.
+compares a contiguous step with diagonal chains. The connectivity theorem for orthogonal bases
+of a regular form in rank at least three is in
+`TauCeti.LinearAlgebra.QuadraticForm.Diagonal.Contiguous.Connected`.
 
 The rank bound matters even for contiguous bases: rescaling the other vector of a rank-two
 basis changes its coefficient by a square, whereas a rank-one diagonal chain requires equality.
@@ -38,6 +39,30 @@ public section
 namespace Module.Basis
 
 open QuadraticMap TauCeti
+
+section Semiring
+
+variable {R M ι ι' : Type*} [Semiring R] [AddCommMonoid M] [Module R M]
+
+/-- Two bases are contiguous in Serre's sense when they have a vector in common. -/
+def IsContiguous (b : Basis ι R M) (b' : Basis ι' R M) : Prop :=
+  ∃ i j, b i = b' j
+
+/-- Contiguity is exactly the existence of a shared basis vector. -/
+@[simp] theorem isContiguous_iff (b : Basis ι R M) (b' : Basis ι' R M) :
+    b.IsContiguous b' ↔ ∃ i j, b i = b' j := Iff.rfl
+
+/-- A basis with a nonempty index type is contiguous to itself. -/
+@[refl] theorem IsContiguous.refl [Nonempty ι] (b : Basis ι R M) : b.IsContiguous b :=
+  ⟨Classical.arbitrary ι, Classical.arbitrary ι, rfl⟩
+
+/-- Contiguity of bases is symmetric. -/
+@[symm] theorem IsContiguous.symm {b : Basis ι R M} {b' : Basis ι' R M}
+    (h : b.IsContiguous b') : b'.IsContiguous b := by
+  obtain ⟨i, j, hij⟩ := h
+  exact ⟨j, i, hij.symm⟩
+
+end Semiring
 
 variable {K V : Type*} [Field K] [Invertible (2 : K)] [AddCommGroup V] [Module K V]
   {Q : QuadraticForm K V}

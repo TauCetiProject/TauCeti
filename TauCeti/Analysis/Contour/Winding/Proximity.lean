@@ -27,12 +27,12 @@ winding number about `0` therefore vanishes, because the closed left half-plane 
 connected subset of the complement of its image. Since the index integrands satisfy
 `σ' / σ = γ₁' / (γ₁ - w) - γ₀' / (γ₀ - w)` pointwise, that vanishing is the asserted equality.
 
-The Layer 0 item this serves is homotopy invariance of the winding number off the curve.
-`Contour.IsPiecewiseC1On.windingNumber_eq_of_notMem_segment` deduces invariance
-along the straight-line homotopy `s ↦ (1 - s) • γ₀ + s • γ₁` from the purely geometric hypothesis
-that the segment `[γ₀ t, γ₁ t]` misses `w` for every parameter `t`: the intermediate curves are
-piecewise `C¹` because that predicate is stable under affine combinations, and a compactness
-estimate lets finitely many of them be chained together by the leash lemma.
+The application is homotopy invariance of the winding number off the curve.
+`Contour.IsPiecewiseC1On.windingNumber_eq_of_notMem_segment` deduces invariance along the
+straight-line homotopy `s ↦ (1 - s) • γ₀ + s • γ₁` from the purely geometric hypothesis that the
+segment `[γ₀ t, γ₁ t]` misses `w` for every parameter `t`: the intermediate curves are piecewise
+`C¹` because that predicate is stable under affine combinations, and a compactness estimate lets
+finitely many of them be chained together by the leash lemma.
 
 ## Main results
 
@@ -49,8 +49,8 @@ estimate lets finitely many of them be chained together by the leash lemma.
 ## Provenance
 
 The comparison-quotient argument is the standard proof of the "dog on a leash" lemma (equivalently,
-the homotopy form of Rouché's theorem); see the references in the Contour Integration roadmap,
-e.g. L. Ahlfors, *Complex Analysis*, Ch. 4. No formal source is vendored.
+the homotopy form of Rouché's theorem); see, e.g., L. Ahlfors, *Complex Analysis*, Ch. 4. No formal
+source is vendored.
 -/
 
 public section
