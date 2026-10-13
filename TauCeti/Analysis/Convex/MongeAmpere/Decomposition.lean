@@ -27,8 +27,8 @@ measurable density `g`, `MA_{f, g μ}(s) = ∫_{∂f(s ∩ D)} g dμ`:
   `MA_{f, g μ} = (MA_{f, g μ})ˢ + g (∇F x) det (H x) dx` on `D`,
 
 where `(MA_{f, g μ})ˢ` is singular with respect to `μ`. For `g = 1` this is the decomposition
-`MA_f = (MA_f)ˢ + det (H x) dx` of the Aleksandrov measure. So `MA_f = g dx` gives `det (H x) = g x`
-almost everywhere: an Aleksandrov solution of the Monge–Ampère equation `det D²f = g` solves it
+`MA_f = (MA_f)ˢ + det (H x) dx` of the Aleksandrov measure. So `MA_f = h dx` gives `det (H x) = h x`
+almost everywhere: an Aleksandrov solution of the Monge–Ampère equation `det D²f = h` solves it
 almost everywhere. The converse fails, because the singular part is invisible to the Alexandrov
 Hessian: a cone has Alexandrov Hessian determinant `0` almost everywhere, yet its Monge–Ampère
 measure is a positive multiple of a Dirac mass (`TauCeti.mongeAmpereMeasure_mul_norm_sub`).
@@ -45,7 +45,8 @@ subdifferential of `f` at `x` is the single gradient `∇F x`, and the gradient 
 subgradient along the segment between them, so `H x₁ (x₂ - x₁) = 0`
 (`TauCeti.apply_sub_eq_zero_of_forall_mem_subdifferential_norm_sub_le`). So the gradient is
 injective where `det (H x) ≠ 0`, where Mathlib's change of variables formula computes the weighted
-measure of its image, and it maps the set where `det (H x) = 0` to a null set. The remaining part
+measure of its image, and it maps the set where `det (H x) = 0` to a null set
+(`TauCeti.withDensity_image_gradient_eq_setLIntegral`). The remaining part
 of `MA_{f, g μ}` lives on a `μ`-null subset of `D`, hence is singular.
 
 Separately, the density is identified pointwise: `MA_f(closedBall x r) / μ(closedBall x r) → det A`
@@ -239,37 +240,6 @@ private theorem eventually_image_subset_subgradientImage_closedBall
   exact mem_subgradientImage_closedBall_of_forall_lt hf hbot hKD
     (mem_closedBall.2 (by rw [dist_eq_norm, add_sub_cancel_left]; exact hz.trans hsr)) hlt
 
-/-- At an interior point `x` of the effective domain where the subdifferential has a first-order
-expansion `y' = y + A (x' - x) + o(‖x' - x‖)`, the subdifferential is the single gradient
-`∇F x`, the expansion is centred at `∇F x`, and `A` is positive. -/
-private theorem subdifferential_eq_singleton_gradient_and_isPositive
-    (hf : Convex ℝ {p : E × ℝ | f p.1 ≤ p.2}) (hbot : ∀ x, f x ≠ ⊥) {x y : E} {A : E →L[ℝ] E}
-    (hx : x ∈ interior {x | f x ≠ ⊤})
-    (hexp : ∀ ε > 0, ∀ᶠ x' in 𝓝 x, ∀ y' ∈ subdifferential (innerₗ E) f x',
-      ‖y' - y - A (x' - x)‖ ≤ ε * ‖x' - x‖) :
-    subdifferential (innerₗ E) f x = {(∇ fun x' => (f x').toReal) x} ∧ A.IsPositive ∧
-      ∀ ε > 0, ∀ᶠ x' in 𝓝 x, ∀ y' ∈ subdifferential (innerₗ E) f x',
-        ‖y' - (∇ fun x' => (f x').toReal) x - A (x' - x)‖ ≤ ε * ‖x' - x‖ := by
-  have hne := eventually_nonempty_subdifferential hf hbot (mem_interior_iff_mem_nhds.1 hx)
-  have hG : (∇ fun x' => (f x').toReal) x = y :=
-    (hasGradientAt_toReal_of_forall_mem_subdifferential_norm_sub_le hne hexp).gradient
-  rw [hG]
-  refine ⟨eq_singleton_iff_nonempty_unique_mem.2 ⟨hne.self_of_nhds, fun y' hy' => ?_⟩,
-    isPositive_of_forall_mem_subdifferential_norm_sub_le hne hexp, hexp⟩
-  simpa [sub_eq_zero] using (hexp 1 one_pos).self_of_nhds y' hy'
-
-/-- On a set `t` at each point of which the subdifferential is the single gradient `∇F x`, with
-the expansion `y' = ∇F x + H x (x' - x) + o(‖x' - x‖)`, the gradient has derivative `H x` within
-`t`. -/
-private theorem hasFDerivWithinAt_gradient {H : E → E →L[ℝ] E} {t : Set E}
-    (hP : ∀ x ∈ t, subdifferential (innerₗ E) f x = {(∇ fun x' => (f x').toReal) x} ∧
-      ∀ ε > 0, ∀ᶠ x' in 𝓝 x, ∀ y' ∈ subdifferential (innerₗ E) f x',
-        ‖y' - (∇ fun x' => (f x').toReal) x - H x (x' - x)‖ ≤ ε * ‖x' - x‖) {x : E}
-    (hx : x ∈ t) : HasFDerivWithinAt (∇ fun x' => (f x').toReal) (H x) t x := by
-  refine HasFDerivWithinAt.of_isLittleO (IsLittleO.of_bound fun ε hε => ?_)
-  filter_upwards [nhdsWithin_le_nhds ((hP x hx).2 ε hε), self_mem_nhdsWithin] with x' hx' hx't
-  exact hx' _ (by rw [(hP x' hx't).1]; exact mem_singleton _)
-
 variable [MeasurableSpace E] [BorelSpace E] (μ : Measure E) [μ.IsAddHaarMeasure]
 
 /-- **The density of the Monge–Ampère measure at a point of second-order differentiability.** Let
@@ -342,58 +312,6 @@ theorem tendsto_mongeAmpereMeasure_closedBall_div (hf : Convex ℝ {p : E × ℝ
           addHaar_image_add_smul_div_addHaar_closedBall μ x y hr.1 _
       _ < b := hεb
 
-/-- **Change of variables along the gradient of a convex function.** Let `t` be a measurable set
-at each point of which the subdifferential of the convex `f` is the single gradient `∇F x`, with
-the expansion `y' = ∇F x + H x (x' - x) + o(‖x' - x‖)` for a positive `H x`, and suppose the part
-of `t` where `det (H x) ≠ 0` is measurable. Then `∫_{∇F(t)} g dμ = ∫_t det (H x) g (∇F x) dμ` for
-every additive Haar measure `μ`. The gradient is injective on the nondegenerate part of `t`, by
-`apply_sub_eq_zero_of_forall_mem_subdifferential_norm_sub_le`, and maps the degenerate part to a
-null set. -/
-private theorem withDensity_image_gradient_eq_setLIntegral
-    (hf : Convex ℝ {p : E × ℝ | f p.1 ≤ p.2}) {H : E → E →L[ℝ] E} {t : Set E}
-    (ht : MeasurableSet t) (htZ : MeasurableSet (t ∩ {x | (H x).det ≠ 0}))
-    (hP : ∀ x ∈ t, subdifferential (innerₗ E) f x = {(∇ fun x' => (f x').toReal) x} ∧
-      (H x).IsPositive ∧ ∀ ε > 0, ∀ᶠ x' in 𝓝 x, ∀ y' ∈ subdifferential (innerₗ E) f x',
-        ‖y' - (∇ fun x' => (f x').toReal) x - H x (x' - x)‖ ≤ ε * ‖x' - x‖)
-    (g : E → ℝ≥0∞) :
-    μ.withDensity g ((∇ fun x' => (f x').toReal) '' t) =
-      ∫⁻ x in t, ENNReal.ofReal (H x).det * g ((∇ fun x' => (f x').toReal) x) ∂μ := by
-  set G := ∇ fun x' => (f x').toReal
-  set Z := t ∩ {x | (H x).det ≠ 0}
-  have hder : ∀ s ⊆ t, ∀ x ∈ s, HasFDerivWithinAt G (H x) s x := fun s hs x hx =>
-    hasFDerivWithinAt_gradient (fun x hx => ⟨(hP x (hs hx)).1, (hP x (hs hx)).2.2⟩) hx
-  have hinj : InjOn G Z := by
-    intro x₁ hx₁ x₂ hx₂ hg
-    by_contra hne
-    have hy₁ : G x₁ ∈ subdifferential (innerₗ E) f x₁ := by
-      rw [(hP x₁ hx₁.1).1]; exact mem_singleton _
-    have hy₂ : G x₁ ∈ subdifferential (innerₗ E) f x₂ := by
-      rw [hg, (hP x₂ hx₂.1).1]; exact mem_singleton _
-    refine hx₁.2 (LinearMap.det_eq_zero_iff_ker_ne_bot.2 ((Submodule.ne_bot_iff _).2
-      ⟨x₂ - x₁, LinearMap.mem_ker.2 ?_, sub_ne_zero.2 (Ne.symm hne)⟩))
-    exact apply_sub_eq_zero_of_forall_mem_subdifferential_norm_sub_le hf hy₁ hy₂ (hP x₁ hx₁.1).2.2
-  have hdeg : ∀ x ∈ t \ Z, (H x).det = 0 := fun x hx => not_not.1 fun h => hx.2 ⟨hx.1, h⟩
-  have hZ0 : μ.withDensity g (G '' (t \ Z)) = 0 :=
-    withDensity_absolutelyContinuous μ g
-      (addHaar_image_eq_zero_of_det_fderivWithin_eq_zero μ (hder _ sdiff_subset) hdeg)
-  calc μ.withDensity g (G '' t) = μ.withDensity g (G '' Z) := by
-        refine le_antisymm ?_ (measure_mono (image_mono inter_subset_left))
-        calc μ.withDensity g (G '' t) = μ.withDensity g (G '' Z ∪ G '' (t \ Z)) := by
-              rw [← image_union, union_sdiff_cancel inter_subset_left]
-          _ ≤ _ := measure_union_le _ _
-          _ = _ := by rw [hZ0, add_zero]
-    _ = ∫⁻ x in Z, ENNReal.ofReal |(H x).det| * g (G x) ∂μ := by
-        rw [withDensity_apply']
-        exact lintegral_image_eq_lintegral_abs_det_fderiv_mul μ htZ (hder _ inter_subset_left)
-          hinj g
-    _ = ∫⁻ x in t, ENNReal.ofReal (H x).det * g (G x) ∂μ := by
-        rw [← lintegral_inter_add_sdiff _ t htZ, inter_eq_right.2 inter_subset_left,
-          setLIntegral_congr_fun (ht.diff htZ) (g := fun _ => 0)
-            fun x hx => by simp [hdeg x hx], lintegral_zero, add_zero]
-        refine setLIntegral_congr_fun htZ fun x hx => ?_
-        rw [abs_of_nonneg ((ContinuousLinearMap.isPositive_toLinearMap_iff _).2
-          (hP x hx.1).2.1).det_nonneg]
-
 /-- If almost every point `x` of the interior `D` of the effective domain has a first-order
 expansion of the subdifferential with derivative `H x`, then there is a measurable `S ⊆ D` of full
 measure in `D` on which the subdifferential is the single gradient, with the expansion centred at
@@ -421,11 +339,15 @@ private theorem exists_measurableSet_ae_eq_interior (hf : Convex ℝ {p : E × �
         ‖y' - (∇ fun x' => (f x').toReal) x - H x (x' - x)‖ ≤ ε * ‖x' - x‖ := fun x hx => by
     obtain ⟨-, y, hy⟩ : x ∈ P :=
       by_contra fun h => hx.2 (subset_toMeasurable _ _ ⟨hx.1, h⟩)
-    exact subdifferential_eq_singleton_gradient_and_isPositive hf hbot hx.1 hy
+    have hne := eventually_nonempty_subdifferential hf hbot (mem_interior_iff_mem_nhds.1 hx.1)
+    obtain rfl := (hasGradientAt_toReal_of_forall_mem_subdifferential_norm_sub_le hne hy).gradient
+    exact ⟨subdifferential_eq_singleton_gradient_of_forall_mem_subdifferential_norm_sub_le hne hy,
+      isPositive_of_forall_mem_subdifferential_norm_sub_le hne hy, hy⟩
   -- `H` is the derivative of the gradient within `D \ N`, so it is a.e.-measurable there; remove
   -- a further measurable null set `M` off which it agrees with a measurable map `H'`.
   have hHm := aemeasurable_fderivWithin μ hS₀m fun x hx =>
-    hasFDerivWithinAt_gradient (fun x hx => ⟨(hS₀ x hx).1, (hS₀ x hx).2.2⟩) hx
+    hasFDerivWithinAt_gradient_toReal_of_forall_mem_subdifferential_norm_sub_le
+      (fun x' hx' => by rw [(hS₀ x' hx').1]; exact mem_singleton _) (hS₀ x hx).2.2
   set M := toMeasurable μ {x | x ∈ D \ N ∧ H x ≠ hHm.mk H x}
   have hM : μ M = 0 := by
     rw [measure_toMeasurable]
