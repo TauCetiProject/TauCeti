@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Category.ModuleCat.Basic
 public import Mathlib.Algebra.Homology.HomologicalComplex
 public import Mathlib.Topology.Category.TopCat.Basic
+public import TauCeti.AlgebraicTopology.Singular.Cubical.Normalization
 public import TauCeti.AlgebraicTopology.Singular.Cubical.Normalized
 
 /-!
@@ -79,5 +80,10 @@ theorem normalizedCubicalChainComplex_map_f_apply {X Y : TopCat.{u}} (f : X ⟶ 
     (x : NormalizedCubicalChain X R n) :
     ((normalizedCubicalChainComplex R).map f).f n x = NormalizedCubicalChain.map R f.hom n x :=
   (rfl)
+
+/-- The terms of the normalized cubical chain complex are projective modules. -/
+instance (X : TopCat.{u}) (n : ℕ) :
+    Module.Projective R (((normalizedCubicalChainComplex R).obj X).X n) :=
+  inferInstanceAs (Module.Projective R (NormalizedCubicalChain X R n))
 
 end TauCeti

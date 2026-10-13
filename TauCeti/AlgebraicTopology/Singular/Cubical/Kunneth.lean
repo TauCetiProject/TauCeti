@@ -14,8 +14,8 @@ public import TauCeti.AlgebraicTopology.Singular.Kunneth.Basic
 /-!
 # The cubical Eilenberg–Zilber theorem and the Künneth theorem for cubical homology
 
-The cubical cross product `TauCeti.crossProductComplex`, `N(X; k) ⊗ N(Y; k) ⟶ N(X × Y; k)`, is a
-quasi-isomorphism (`TauCeti.quasiIso_crossProductComplex`).  After the comparison with simplicial
+The cubical cross product `TauCeti.cubicalCrossProduct`, `N(X; k) ⊗ N(Y; k) ⟶ N(X × Y; k)`, is a
+quasi-isomorphism (`TauCeti.quasiIso_cubicalCrossProduct`).  After the comparison with simplicial
 chains it is naturally chain homotopic to the tensor product of the two comparison maps followed
 by the simplicial cross product (`TauCeti.crossProductHomotopy`), which is a quasi-isomorphism
 since the shuffle map is a homotopy equivalence (Eilenberg–Zilber) and the comparison maps are
@@ -28,11 +28,11 @@ Künneth theorem for the chain complexes `N(X; k)` and `N(Y; k)`, transported al
 product: when the cycles split off and the homology splits off the cycles, for instance over a
 semisimple ring, it is an isomorphism, and over a principal ideal domain the Künneth sequence is
 exact.  The normalized cubical chains are projective, being a retract of the free module on the
-cubes.
+cubes (an instance in `Cubical/Normalization.lean`).
 
 ## Main definitions and results
 
-* `TauCeti.quasiIso_crossProductComplex`: the cubical cross product is a quasi-isomorphism.
+* `TauCeti.quasiIso_cubicalCrossProduct`: the cubical cross product is a quasi-isomorphism.
 * `TauCeti.cubicalHomologyKunneth`: the Künneth map of cubical homology.
 * `TauCeti.isIso_cubicalHomologyKunneth`: the Künneth theorem for cubical homology.
 * `TauCeti.cubicalHomologyKunnethShortComplex_shortExact`: the Künneth sequence over a principal
@@ -52,12 +52,6 @@ universe u
 namespace TauCeti
 
 variable (k : Type u) [CommRing k]
-
-/-- The normalized cubical chains are projective: they are a retract of the free module on the
-cubes. -/
-instance (X : TopCat.{u}) (n : ℕ) : Module.Projective k (NormalizedCubicalChain X k n) :=
-  Module.Projective.of_split (NormalizedCubicalChain.toCubicalChain X k n)
-    (Submodule.mkQ _) (LinearMap.ext fun x ↦ NormalizedCubicalChain.mk_toCubicalChain k x)
 
 /-- **The simplicial cross product is a quasi-isomorphism**: the shuffle map is a homotopy
 equivalence (Eilenberg–Zilber), and the coefficient change along the unitor is an isomorphism. -/
@@ -111,17 +105,12 @@ instance quasiIso_cubicalCrossProductToSingularApp (X Y : TopCat.{u}) :
 
 /-- **The cubical Eilenberg–Zilber theorem**: the cross product of normalized cubical chains
 `N(X; k) ⊗ N(Y; k) ⟶ N(X × Y; k)` is a quasi-isomorphism. -/
-instance quasiIso_crossProductComplex (X Y : TopCat.{u}) :
-    QuasiIso (crossProductComplex k X Y) :=
-  have : QuasiIso (crossProductComplex k X Y ≫ (cubicalToSingular k).app (X ⊗ Y)) := by
+instance quasiIso_cubicalCrossProduct (X Y : TopCat.{u}) :
+    QuasiIso (cubicalCrossProduct k X Y) :=
+  have : QuasiIso (cubicalCrossProduct k X Y ≫ (cubicalToSingular k).app (X ⊗ Y)) := by
     rw [← cubicalCrossProductToSingularApp_def]
     infer_instance
-  quasiIso_of_comp_right (crossProductComplex k X Y) ((cubicalToSingular k).app (X ⊗ Y))
-
-/-- The terms of the normalized cubical chain complex are projective. -/
-instance (X : TopCat.{u}) (n : ℕ) :
-    Module.Projective k (((normalizedCubicalChainComplex k).obj X).X n) :=
-  inferInstanceAs (Module.Projective k (NormalizedCubicalChain X k n))
+  quasiIso_of_comp_right (cubicalCrossProduct k X Y) ((cubicalToSingular k).app (X ⊗ Y))
 
 variable (X Y : TopCat.{u})
 
@@ -136,11 +125,20 @@ def cubicalHomologyKunneth (n : ℕ) :
       ((normalizedCubicalChainComplex k).obj (X ⊗ Y)).homology n :=
   homologyKunneth ((normalizedCubicalChainComplex k).obj X)
       ((normalizedCubicalChainComplex k).obj Y) n ≫
-    homologyMap (crossProductComplex k X Y) n
+    homologyMap (cubicalCrossProduct k X Y) n
+
+/-- The cubical Künneth map is the algebraic Künneth map of the chain complexes followed by the
+map induced by the cubical cross product. -/
+theorem cubicalHomologyKunneth_def (n : ℕ) :
+    cubicalHomologyKunneth k X Y n =
+      homologyKunneth ((normalizedCubicalChainComplex k).obj X)
+          ((normalizedCubicalChainComplex k).obj Y) n ≫
+        homologyMap (cubicalCrossProduct k X Y) n :=
+  (rfl)
 
 /-- The cubical cross product induces an isomorphism on homology. -/
-instance isIso_homologyMap_crossProductComplex (n : ℕ) :
-    IsIso (homologyMap (crossProductComplex k X Y) n) :=
+instance isIso_homologyMap_cubicalCrossProduct (n : ℕ) :
+    IsIso (homologyMap (cubicalCrossProduct k X Y) n) :=
   (quasiIsoAt_iff_isIso_homologyMap _ _).1 inferInstance
 
 /-- **The Künneth theorem for cubical homology**: if the cycles of the normalized cubical chain
@@ -156,7 +154,7 @@ theorem isIso_cubicalHomologyKunneth
     IsIso (cubicalHomologyKunneth k X Y n) := by
   have := isIso_homologyKunneth_of_isSplitMono_of_isSplitEpi
     ((normalizedCubicalChainComplex k).obj X) ((normalizedCubicalChainComplex k).obj Y) n
-  rw [cubicalHomologyKunneth]
+  rw [cubicalHomologyKunneth_def]
   infer_instance
 
 /-- **The Künneth theorem for cubical homology over a semisimple ring**, for instance a field:
@@ -188,7 +186,7 @@ theorem tensorHom_comp_homologyKunneth_comp_homologyMap_singularCrossProduct (n 
         homologyMap (singularCrossProduct k X Y) n =
       cubicalHomologyKunneth k X Y n ≫ homologyMap ((cubicalToSingular k).app (X ⊗ Y)) n := by
   rw [← Category.assoc, homologyKunneth_naturality, Category.assoc, ← homologyMap_comp,
-    cubicalHomologyKunneth, Category.assoc, ← homologyMap_comp,
+    cubicalHomologyKunneth_def, Category.assoc, ← homologyMap_comp,
     ← cubicalCrossProductToSingularApp_def, homologyMap_cubicalCrossProductToSingular,
     singularCrossProductOfCubicalApp_def]
 
@@ -223,11 +221,11 @@ formed by the cubical Künneth map and the map to `Tor₁` of the algebraic Kün
 the isomorphism induced on homology by the cross product. -/
 abbrev cubicalHomologyKunnethShortComplex (m : ℕ) : ShortComplex (ModuleCat.{u} k) :=
   ShortComplex.mk (cubicalHomologyKunneth k X Y (m + 1))
-    (inv (homologyMap (crossProductComplex k X Y) (m + 1)) ≫
+    (inv (homologyMap (cubicalCrossProduct k X Y) (m + 1)) ≫
       homologyToTor ((normalizedCubicalChainComplex k).obj X)
         ((normalizedCubicalChainComplex k).obj Y) m)
     (by
-      rw [cubicalHomologyKunneth, Category.assoc, IsIso.hom_inv_id_assoc]
+      rw [cubicalHomologyKunneth_def, Category.assoc, IsIso.hom_inv_id_assoc]
       exact homologyKunneth_comp_homologyToTor _ _ m)
 
 /-- **The Künneth short exact sequence for cubical homology over a principal ideal domain**:
@@ -243,7 +241,7 @@ theorem cubicalHomologyKunnethShortComplex_shortExact (m : ℕ) :
     (homologyKunnethShortComplex_shortExact ((normalizedCubicalChainComplex k).obj X)
       ((normalizedCubicalChainComplex k).obj Y) m)
   exact ShortComplex.isoMk (Iso.refl _)
-    (asIso (homologyMap (crossProductComplex k X Y) (m + 1))) (Iso.refl _)
+    (asIso (homologyMap (cubicalCrossProduct k X Y) (m + 1))) (Iso.refl _)
     (Category.id_comp _).symm (by simp)
 
 end TauCeti
