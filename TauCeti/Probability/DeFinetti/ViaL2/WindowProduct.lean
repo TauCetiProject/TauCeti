@@ -38,11 +38,6 @@ measure.
 *The product follows.* `tendsto_integral_norm_prod_sub_prod` turns finitely many `L¹`
 convergences into convergence of the product, and indicators supply the unit-ball bounds it needs
 on both sides.
-
-## References
-
-* Roadmap: `TauCetiRoadmap/Exchangeability/README.md`, **Layer 3** — the simultaneous
-  disjoint-window product convergence that the finite-block conditional factorization consumes.
 -/
 
 public section

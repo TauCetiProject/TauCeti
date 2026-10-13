@@ -77,7 +77,7 @@ theorem exists_contMDiffAt_localGeodesicFlow (z : TangentBundle I M) :
   intro w hw
   obtain ⟨hΦ0, hΦcurve, hΦadd⟩ := hΦ w hw
   refine ⟨hΦ0, hΦcurve, hΦadd, ?_⟩
-  exact hΦcurve.isGeodesicCurveOnFrom_proj hsopen (mem_of_mem_nhds hs) hΦ0
+  exact hΦcurve.isGeodesicCurveOnFrom_proj hsopen.uniqueDiffOn (mem_of_mem_nhds hs) hΦ0
 
 /-! ### The maximal geodesic flow -/
 

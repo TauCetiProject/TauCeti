@@ -91,7 +91,7 @@ hypothesis is carried explicitly, and the interior estimates do not see the boun
 
 * `TauCeti.PDE.jetField`: the value-gradient jet field of a Sobolev function.
 * `TauCeti.PDE.energyFormH1`: the divergence-form energy form on `H¹(Ω) = W^{1,2}(Ω)`.
-* `TauCeti.PDE.energyFormH1_principal_eq_setIntegral` and
+* `TauCeti.PDE.energyFormH1_zero_zero_eq_setIntegral` and
   `TauCeti.PDE.energyFormH1_const_eq_setIntegral`: the energy form with no lower-order terms is
   the integral of `⟨a ∇u, ∇v⟩`.
 * `TauCeti.PDE.energyFormH1_comm_of_isSymm_ae`: symmetry of the drift-free energy form under an
@@ -400,9 +400,25 @@ theorem energyFormH1_def (a : EuclideanSpace ℝ ι → Matrix ι ι ℝ)
       ∫ x in Omega, energyIntegrand (a x) (b x) (c x) (jetField u x) (jetField v x) ∂mu :=
   energyFormIntegral_def _ _ _ _ _ _
 
-/-- **The principal part of the energy form.** With no drift or mass term, the energy form on
-`H¹(Ω)` is the integral of `⟨a ∇u, ∇v⟩` over `Ω`. -/
-theorem energyFormH1_principal_eq_setIntegral (a : EuclideanSpace ℝ ι → Matrix ι ι ℝ)
+/-- Essential boundedness of the drift- and mass-free energy densities is invariant under
+translating the coefficients, by translation invariance of the Haar measure. -/
+theorem memLp_energyIntegrand_comp_add_right
+    {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ}
+    (hcoeff : MemLp (fun x => energyIntegrand (a x) 0 0) ⊤
+      (mu.restrict ((⊤ : Opens (EuclideanSpace ℝ ι)) : Set (EuclideanSpace ℝ ι))))
+    (h : EuclideanSpace ℝ ι) :
+    MemLp (fun x => energyIntegrand (a (x + h)) 0 0) ⊤
+      (mu.restrict ((⊤ : Opens (EuclideanSpace ℝ ι)) : Set (EuclideanSpace ℝ ι))) := by
+  -- Name the normed structure on bilinear forms so that `MemLp` can be transported.
+  let : NormedAddCommGroup
+      ((ℝ × EuclideanSpace ℝ ι) →L[ℝ] (ℝ × EuclideanSpace ℝ ι) →L[ℝ] ℝ) := inferInstance
+  simp only [Opens.coe_top, Measure.restrict_univ] at hcoeff ⊢
+  exact hcoeff.comp_measurePreserving (measurePreserving_add_right mu h)
+
+/-- **The drift- and mass-free energy form.** With no drift or mass term, the energy form on
+`H¹(Ω)` is the integral of `⟨a ∇u, ∇v⟩` over `Ω`. This is the shape the difference-quotient
+arguments of elliptic regularity work with. -/
+theorem energyFormH1_zero_zero_eq_setIntegral (a : EuclideanSpace ℝ ι → Matrix ι ι ℝ)
     (u v : W1p mu Omega 2) :
     energyFormH1 a 0 0 u v
       = ∫ x in Omega, matrixBilinearForm (a x) (W1p.gradient v x) (W1p.gradient u x) ∂mu := by
@@ -411,12 +427,11 @@ theorem energyFormH1_principal_eq_setIntegral (a : EuclideanSpace ℝ ι → Mat
 
 /-- **The constant-coefficient Dirichlet energy form.** With a constant principal coefficient
 matrix and no drift or mass term, the energy form on `H¹(Ω)` is the integral of `⟨A ∇u, ∇v⟩`
-over `Ω`. This is the shape the difference-quotient arguments of elliptic regularity work
-with. -/
+over `Ω`. -/
 theorem energyFormH1_const_eq_setIntegral (A : Matrix ι ι ℝ) (u v : W1p mu Omega 2) :
     energyFormH1 (fun _ => A) 0 0 u v
       = ∫ x in Omega, matrixBilinearForm A (W1p.gradient v x) (W1p.gradient u x) ∂mu :=
-  energyFormH1_principal_eq_setIntegral _ u v
+  energyFormH1_zero_zero_eq_setIntegral _ u v
 
 /-- The Sobolev energy form vanishes at zero in its left argument. -/
 @[simp]

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.Torsion.Etale
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.Torsion.Etale.Basic
 import Mathlib.AlgebraicGeometry.Morphisms.LocalFlatDescent
 import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.MulBy.Rank
 import TauCeti.CategoryTheory.Monoidal.Grp.KernelPair

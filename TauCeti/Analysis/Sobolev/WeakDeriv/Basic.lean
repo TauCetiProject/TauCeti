@@ -123,6 +123,8 @@ weaken them for no gain.
   `TauCeti.HasWeakLineDerivOn.locallyIntegrableOn_deriv` and
   `TauCeti.HasWeakLineDerivOn.integral_lineDeriv_smul_eq_neg_integral_smul`: the components of the
   definition.
+* `TauCeti.HasWeakFDerivOn.locallyIntegrableOn_deriv`: in finite dimension, a weak Fréchet
+  derivative is locally integrable as an operator-valued function.
 * `TauCeti.hasWeakLineDerivOn_iff`: the unbundled restatement of the defining identity.
 * `TauCeti.integrable_smul_of_locallyIntegrableOn` and
   `TauCeti.integrable_lineDeriv_smul_of_locallyIntegrableOn`: the two integrability facts that
@@ -291,6 +293,29 @@ theorem HasWeakFDerivOn.mono {U : E → E →L[ℝ] F} {Ω' : Opens E} (h : HasW
 /-- Every direction of a weak Fréchet derivative is a weak directional derivative. -/
 theorem HasWeakFDerivOn.hasWeakLineDerivOn {U : E → E →L[ℝ] F} (h : HasWeakFDerivOn μ Ω u U)
     (v : E) : HasWeakLineDerivOn μ Ω u (fun x => U x v) v := h v
+
+/-- In finite dimension, a weak derivative `U` of `u` on `Ω` is locally integrable on `Ω` as an
+operator-valued function: it is a finite sum of its values on a basis, each locally integrable by
+definition. -/
+theorem HasWeakFDerivOn.locallyIntegrableOn_deriv [FiniteDimensional ℝ E] {U : E → E →L[ℝ] F}
+    (h : HasWeakFDerivOn μ Ω u U) : LocallyIntegrableOn U Ω μ := by
+  obtain ⟨n, b, -⟩ : ∃ n, ∃ b : Module.Basis (Fin n) ℝ E, True :=
+    ⟨_, Module.finBasis ℝ E, trivial⟩
+  -- The `i`-th term `x ↦ (b.coord i).smulRight (U x (b i))` of the expansion of `U` in `b`.
+  let g : Fin n → E → E →L[ℝ] F := fun i x =>
+    ContinuousLinearMap.smulRightL ℝ E F (LinearMap.toContinuousLinearMap (b.coord i)) (U x (b i))
+  have hU : U = fun x => ∑ i, g i x := by
+    funext x
+    ext v
+    calc U x v = U x (∑ i, b.repr v i • b i) := by rw [b.sum_repr]
+      _ = _ := by rw [map_sum]; simp [g]
+  have hg : ∀ i, LocallyIntegrableOn (g i) Ω μ := fun i =>
+    (ContinuousLinearMap.smulRightL ℝ E F _).locallyIntegrableOn_comp
+      (h.hasWeakLineDerivOn (b i)).locallyIntegrableOn_deriv
+  have hsum : LocallyIntegrableOn (fun x => ∑ i, g i x) Ω μ :=
+    (locallyIntegrableOn_iff Ω.isOpen.isLocallyClosed).2 fun k hk hkc =>
+      integrable_finsetSum (f := g) _ fun i _ => (hg i).integrableOn_compact_subset hk hkc
+  rwa [hU]
 
 /-- Integration by parts on the whole space against every `C¹` function with compact support
 makes `U` a weak derivative of `u` on every open set. This is how a function with an integrable

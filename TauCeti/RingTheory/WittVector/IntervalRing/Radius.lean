@@ -17,8 +17,8 @@ the interval ring with norm `max(λ_{ρ₁}, λ_{ρ₂})`. On Witt vectors, and 
 `[ϖ]`, the maximum is `λ_{ρ₂}`. Completing therefore gives a closed coefficient ring in
 the interval ring. Adjoining the inverse of `p` to this coefficient ring gives a dense subring.
 These maps are the coefficient maps used in restricted-series presentations of interval rings.
-If `v(ϖ)^n ≤ ρ₁`, evaluation at `[ϖ]^n/p` defines a continuous map from the one-variable
-restricted series ring over the radius ring with dense image in the interval ring.
+If `v(ϖ)^b ≤ ρ₁^a` with `a ≠ 0`, evaluation at `[ϖ]^b/p^a` defines a continuous map from the
+one-variable restricted series ring over the radius ring with dense image in the interval ring.
 The constructions use Mathlib’s `UniformSpace.Completion.mapRingHom` and
 `TauCeti.Huber.existsUnique_continuous_ringHom_weightedRestrictedSubring`.
 
@@ -172,31 +172,33 @@ theorem dense_setOf_exists_mul_natCast_pow_eq_toIntervalRing (hρ : ρ₁ ≤ ρ
   exact exists_coe_mul_natCast_pow_eq_toIntervalRing p hv hϖ hϖ' hρ₁ hρ₂ hρ x
 
 open TauCeti.Huber in
-/-- Evaluation at `[ϖ]^n/p` gives a unique continuous map with dense image from the one-variable
-restricted series ring over the radius ring to the interval ring, whenever the variable
-has norm at most one at both endpoints. Uniqueness requires only continuity and the
-coefficient and variable equations. -/
+/-- Evaluation at `[ϖ]^b/p^a`, for `a ≠ 0`, gives a unique continuous map with dense image from
+the one-variable restricted series ring over the radius ring to the interval ring, whenever the
+variable has norm at most one at both endpoints, that is, `v(ϖ)^b ≤ ρ₁^a`. Uniqueness requires
+only continuity and the coefficient and variable equations. -/
 theorem existsUnique_continuous_denseRange_restrictedSeries_toIntervalRing (hρ : ρ₁ ≤ ρ₂)
-    (n : ℕ) (hn : v (algebraMap O K ϖ) ^ n ≤ ρ₁) :
+    {a b : ℕ} (ha : a ≠ 0) (hab : v (algebraMap O K ϖ) ^ b ≤ ρ₁ ^ a) :
     ∃ ψ : weightedRestrictedSubring (fun _ : Fin 1 ↦ ({1} : Set A))
         isWeightFamily_one_weight →+* B,
       Continuous ψ ∧ DenseRange ψ ∧
-      (∀ a, ψ (weightedC _ isWeightFamily_one_weight a) =
-        toIntervalRing p hv hϖ hϖ' hρ₁ hρ₂ hρ a) ∧
-      ψ (weightedX _ isWeightFamily_one_weight 0) * (p : B) =
-        algebraMap (𝕎 O) B (teichmuller p ϖ ^ n) ∧
+      (∀ c, ψ (weightedC _ isWeightFamily_one_weight c) =
+        toIntervalRing p hv hϖ hϖ' hρ₁ hρ₂ hρ c) ∧
+      ψ (weightedX _ isWeightFamily_one_weight 0) * (p : B) ^ a =
+        algebraMap (𝕎 O) B (teichmuller p ϖ ^ b) ∧
       ∀ g : weightedRestrictedSubring (fun _ : Fin 1 ↦ ({1} : Set A))
           isWeightFamily_one_weight →+* B,
         Continuous g →
-        (∀ a, g (weightedC _ isWeightFamily_one_weight a) =
-          toIntervalRing p hv hϖ hϖ' hρ₁ hρ₂ hρ a) →
-        g (weightedX _ isWeightFamily_one_weight 0) * (p : B) =
-          algebraMap (𝕎 O) B (teichmuller p ϖ ^ n) → g = ψ := by
+        (∀ c, g (weightedC _ isWeightFamily_one_weight c) =
+          toIntervalRing p hv hϖ hϖ' hρ₁ hρ₂ hρ c) →
+        g (weightedX _ isWeightFamily_one_weight 0) * (p : B) ^ a =
+          algebraMap (𝕎 O) B (teichmuller p ϖ ^ b) → g = ψ := by
   let f := toIntervalRing p hv hϖ hϖ' hρ₁ hρ₂ hρ
+  have hpa : IsUnit ((p : B) ^ a) :=
+    (isPseudoUniformizer_natCast_intervalRing p hv hϖ hϖ' hρ₁ hρ₂).isUnit.pow a
   obtain ⟨z, hz, hzp⟩ := exists_norm_le_one_algebraMap_eq_mul_intervalRing p hv hϖ hϖ' hρ₁ hρ₂
-    (y := (p : 𝕎 O)) (x := teichmuller p ϖ ^ n)
-    (by simpa using IntervalLocalization.isUnit_natCast p hv hϖ hϖ' hρ₁ hρ₂)
-    (by simpa using hn) (by simpa using hn.trans hρ)
+    (y := (p : 𝕎 O) ^ a) (x := teichmuller p ϖ ^ b)
+    (by simpa using (IntervalLocalization.isUnit_natCast p hv hϖ hϖ' hρ₁ hρ₂).pow a)
+    (by simpa using hab) (by simpa using hab.trans (pow_le_pow_left₀ zero_le hρ a))
   have hz' : IsPowerBounded z :=
     (isPowerBounded_iff_norm_le_one_intervalRing p hv hϖ hϖ' hρ₁ hρ₂).mpr hz
   obtain ⟨ψ, ⟨hψ, hC, hX⟩, huniq⟩ := existsUnique_continuous_ringHom_weightedRestrictedSubring
@@ -204,39 +206,45 @@ theorem existsUnique_continuous_denseRange_restrictedSeries_toIntervalRing (hρ 
     (isometry_toIntervalRing p hv hϖ hϖ' hρ₁ hρ₂ hρ).continuous.continuousAt
     ((isWeightBounded_one_weight_iff_forall_isPowerBounded f (fun _ : Fin 1 ↦ z)).mpr
       (fun _ ↦ hz'))
-  have hzp' : z * (p : B) = algebraMap (𝕎 O) B (teichmuller p ϖ ^ n) := by
+  have hzp' : z * (p : B) ^ a = algebraMap (𝕎 O) B (teichmuller p ϖ ^ b) := by
     simpa using hzp.symm
-  refine ⟨ψ, hψ, ?_, hC, (congrArg (fun x : B ↦ x * (p : B)) (hX 0)).trans hzp', ?_⟩
+  refine ⟨ψ, hψ, ?_, hC, (congrArg (fun x : B ↦ x * (p : B) ^ a) (hX 0)).trans hzp', ?_⟩
   · -- The image contains every coefficient divided by a power of `p`.
     apply Dense.mono _ (dense_setOf_exists_mul_natCast_pow_eq_toIntervalRing
       p hv hϖ hϖ' hρ₁ hρ₂ hρ)
-    rintro x ⟨m, a, ha⟩
-    have hu : IsUnit (algebraMap (𝕎 O) A (teichmuller p ϖ ^ n)) := by
+    rintro x ⟨m, c, hc⟩
+    have hu : IsUnit (algebraMap (𝕎 O) A (teichmuller p ϖ ^ b)) := by
       rw [Completion.algebraMap_def, map_pow]
       -- Relate the completion coercion to its bundled ring homomorphism.
-      convert ((RadiusLocalization.isUnit_algebraMap_teichmuller p hv hϖ hϖ' hρ₂).pow n).map
+      convert ((RadiusLocalization.isUnit_algebraMap_teichmuller p hv hϖ hϖ' hρ₂).pow b).map
         (Completion.coeRingHom : A₀ →+* A) using 1
       rfl
     let u := hu.unit
-    refine ⟨weightedC _ isWeightFamily_one_weight (a * (↑u⁻¹ : A) ^ m) *
-      weightedX _ isWeightFamily_one_weight 0 ^ m, ?_⟩
+    -- `c / p ^ m = c p ^ ((a - 1) m) [ϖ] ^ (-b m) z ^ m`, since `z p ^ a = [ϖ] ^ b`.
+    refine ⟨weightedC _ isWeightFamily_one_weight
+      (c * (p : A) ^ ((a - 1) * m) * (↑u⁻¹ : A) ^ m) *
+        weightedX _ isWeightFamily_one_weight 0 ^ m, ?_⟩
     apply ((isPseudoUniformizer_natCast_intervalRing
       p hv hϖ hϖ' hρ₁ hρ₂).isUnit.pow m).mul_right_cancel
-    rw [ha]
-    simp only [map_mul, map_pow, hC, hX]
-    rw [mul_assoc, ← mul_pow, hzp',
-      ← toIntervalRing_algebraMap p hv hϖ hϖ' hρ₁ hρ₂ hρ (teichmuller p ϖ ^ n)]
-    have hc : (a * (↑u⁻¹ : A) ^ m) *
-        algebraMap (𝕎 O) A (teichmuller p ϖ ^ n) ^ m = a := by
+    rw [hc]
+    simp only [map_mul, map_pow, map_natCast, hC, hX]
+    have hm : (p : B) ^ ((a - 1) * m) * (p : B) ^ m = ((p : B) ^ a) ^ m := by
+      rw [← pow_add, ← pow_mul, ← Nat.succ_mul, Nat.succ_eq_add_one, Nat.sub_add_cancel
+        (Nat.one_le_iff_ne_zero.mpr ha)]
+    have hc' : c * (↑u⁻¹ : A) ^ m * algebraMap (𝕎 O) A (teichmuller p ϖ ^ b) ^ m = c := by
       rw [mul_assoc, ← mul_pow]
       simp only [u, hu.val_inv_mul, one_pow, mul_one]
-    simpa only [map_mul, map_pow] using congrArg f hc
+    calc f c * (p : B) ^ ((a - 1) * m) * f ↑u⁻¹ ^ m * z ^ m * (p : B) ^ m
+        = f c * f ↑u⁻¹ ^ m * (z * (p : B) ^ a) ^ m := by
+          rw [mul_pow z, ← hm]; ring
+      _ = f c := by
+          rw [hzp', ← toIntervalRing_algebraMap p hv hϖ hϖ' hρ₁ hρ₂ hρ (teichmuller p ϖ ^ b)]
+          simpa only [map_mul, map_pow] using congrArg f hc'
   · intro g hg hgC hgX
     apply huniq g
     refine ⟨hg, hgC, fun i ↦ ?_⟩
     rw [Subsingleton.elim i 0]
-    exact (isPseudoUniformizer_natCast_intervalRing p hv hϖ hϖ' hρ₁ hρ₂).isUnit.mul_right_cancel
-      (hgX.trans hzp'.symm)
+    exact hpa.mul_right_cancel (hgX.trans hzp'.symm)
 
 end RadiusRing
 

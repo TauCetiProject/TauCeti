@@ -44,6 +44,8 @@ holds at every ideal vertex of a locally finite fundamental polygon.
   not the identity.
 * `ConvexPolygon.SidePairing.isParabolic_cycleMap_of_locallyFinite`: an ideal cycle
   transformation is parabolic when a group containing it has locally finite translates of `P`.
+* `ConvexPolygon.SidePairing.exists_pos_conj_cycleMap_eq_upperRightHom`: the parabolic cycle
+  transformation is a positive translation in every scaling sending its vertex to infinity.
 * `ConvexPolygon.SidePairing.exists_setOf_lt_im_smul_subset_iUnion_smul_carrier`: at an ideal
   vertex with parabolic cycle transformation, the tiles of the cycle and their translates by
   powers of the cycle transformation cover a horodisc.
@@ -103,6 +105,39 @@ theorem isParabolic_cycleMap_of_locallyFinite {j : Fin n} {ξ : OnePoint ℝ}
   P.isParabolic_of_smul_eq_self_of_locallyFinite hj hlf hT
     (σ.cycleMap_smul_eq_self_of_vertex_eq_inr hj) (σ.cycleMap_ne_one_of_vertex_eq_inr hj)
 
+/-- If the conjugated cycle transformation is translation by `w`, the inverse full cycle
+shifts the real part of the preceding vertex by `-w`. -/
+private theorem re_toComplex_inv_partialCycleMap_cycleLength_smul_vertex_sub_one {j : Fin n}
+    {ξ : OnePoint ℝ} (hj : P.vertex j = .inr ξ) {g : PSL(2, ℝ)} (hg : g • ξ = ∞)
+    {w : ℝ} (hw : g * σ.cycleMap j * g⁻¹ = upperRightHom w) :
+    (toComplex ((g * (σ.partialCycleMap j (σ.cycleLength j))⁻¹) • P.vertex (j - 1))).re =
+      -w + (toComplex (g • P.vertex (j - 1))).re := by
+  have hmove : g * (σ.cycleMap j)⁻¹ = upperRightHom (-w) * g := by
+    rw [AddChar.map_neg_eq_inv, ← hw]
+    group
+  have hne : g • P.vertex (j - 1) ≠ .inr ∞ := by
+    rw [← hg, ← Sum.smul_inr, ← hj]
+    exact (MulAction.injective g).ne (P.vertex_ne_vertex_sub_one j).symm
+  rw [← cycleMap_def, hmove, mul_smul, toComplex_upperRightHom_smul _ hne,
+    Complex.add_re, Complex.ofReal_re]
+
+/-- In any scaling sending an ideal vertex to infinity, its parabolic cycle transformation is
+translation by a strictly positive amount. The sign is fixed by the side-pairing cycle order. -/
+theorem exists_pos_conj_cycleMap_eq_upperRightHom {j : Fin n} {ξ : OnePoint ℝ}
+    (hj : P.vertex j = .inr ξ) (hpar : IsParabolic (σ.cycleMap j)) {g : PSL(2, ℝ)}
+    (hg : g • ξ = ∞) :
+    ∃ w : ℝ, 0 < w ∧ g * σ.cycleMap j * g⁻¹ = upperRightHom w := by
+  have hfix : (g * σ.cycleMap j * g⁻¹) • (∞ : OnePoint ℝ) = ∞ := by
+    rw [mul_smul, mul_smul, ← hg, inv_smul_smul, σ.cycleMap_smul_eq_self_of_vertex_eq_inr hj]
+  obtain ⟨w, -, hw⟩ := (isParabolic_iff_exists_eq_upperRightHom hfix).1
+    ((isParabolic_conj_iff g _).2 hpar)
+  -- The inverse cycle moves the right edge of its strip strictly left, so `w` is positive.
+  have hlt := σ.strictAnti_re_toComplex_smul_vertex_sub_one hj hg (σ.cycleLength_pos j)
+  simp only [σ.next_iterate_cycleLength, Function.iterate_zero_apply,
+    partialCycleMap_zero, inv_one, mul_one,
+    σ.re_toComplex_inv_partialCycleMap_cycleLength_smul_vertex_sub_one hj hg hw] at hlt
+  exact ⟨w, by linarith, hw⟩
+
 /-- **The local tiling at a parabolic ideal vertex.** Let `vertex j = ξ` be ideal with parabolic
 cycle transformation `T`, and let `g` carry `ξ` to `∞`. Then above some height in the coordinate
 `g`, every point lies in a tile `(T ^ k * (partialCycleMap j m)⁻¹) • P` with `k ∈ ℤ` and `m`
@@ -113,11 +148,8 @@ theorem exists_setOf_lt_im_smul_subset_iUnion_smul_carrier {j : Fin n} {ξ : One
     ∃ A : ℝ, {z : ℍ | A < (g • z).im} ⊆
       ⋃ k : ℤ, ⋃ m ∈ Finset.range (σ.cycleLength j),
         (σ.cycleMap j ^ k * (σ.partialCycleMap j m)⁻¹) • P.carrier := by
-  -- in the coordinate `g`, the cycle transformation is a translation by some `x ≠ 0`
-  have hfix : (g * σ.cycleMap j * g⁻¹) • (∞ : OnePoint ℝ) = ∞ := by
-    rw [mul_smul, mul_smul, ← hg, inv_smul_smul, σ.cycleMap_smul_eq_self_of_vertex_eq_inr hj]
-  obtain ⟨x, -, hx⟩ := (isParabolic_iff_exists_eq_upperRightHom hfix).1
-    ((isParabolic_conj_iff g _).2 hpar)
+  -- in the coordinate `g`, the cycle transformation is translation by some `x > 0`
+  obtain ⟨x, hx0, hx⟩ := σ.exists_pos_conj_cycleMap_eq_upperRightHom hj hpar hg
   -- the `m`-th tile in the coordinate `g` has its vertex `next^[m] j` at `∞`, with sector the
   -- strip `u m ≤ Re ≤ v m`
   let Q (m : ℕ) : ConvexPolygon n := (g * (σ.partialCycleMap j m)⁻¹) • P
@@ -130,21 +162,9 @@ theorem exists_setOf_lt_im_smul_subset_iUnion_smul_carrier {j : Fin n} {ξ : One
     simp only [v, u, Q, vertex_smul, mul_smul, σ.inv_partialCycleMap_succ_smul_vertex_sub_one]
   -- after a full cycle the strip has moved by `-x`
   have hvr : v (σ.cycleLength j) = -x + v 0 := by
-    have hQr : g * (σ.partialCycleMap j (σ.cycleLength j))⁻¹ = upperRightHom (-x) * g := by
-      rw [AddChar.map_neg_eq_inv, ← hx, ← cycleMap_def]
-      group
-    have hne : g • P.vertex (j - 1) ≠ .inr ∞ := by
-      rw [← hg, ← Sum.smul_inr, ← hj]
-      exact (MulAction.injective g).ne (P.vertex_ne_vertex_sub_one j).symm
-    simp only [v, Q]
-    rw [hQr, σ.next_iterate_cycleLength, Function.iterate_zero_apply, partialCycleMap_zero,
-      inv_one, mul_one, vertex_smul, vertex_smul, mul_smul, toComplex_upperRightHom_smul _ hne,
-      Complex.add_re, Complex.ofReal_re]
-  have hanti : StrictAnti v := by
-    simpa only [v, Q, vertex_smul] using σ.strictAnti_re_toComplex_smul_vertex_sub_one hj hg
-  have hx0 : 0 < x := by
-    have := hanti (σ.cycleLength_pos j)
-    linarith
+    simpa only [v, Q, vertex_smul, σ.next_iterate_cycleLength,
+      Function.iterate_zero_apply, partialCycleMap_zero, inv_one, mul_one] using
+      σ.re_toComplex_inv_partialCycleMap_cycleLength_smul_vertex_sub_one hj hg hx
   -- above a common height every tile agrees with its strip
   obtain ⟨A, hA⟩ := (atImInfty_mem _).1 ((Finset.range (σ.cycleLength j)).eventually_all.2
     fun m _ ↦ ((Q m).eventuallyEq_carrier_vertexSector_atImInfty (hQ m)).mem_iff)

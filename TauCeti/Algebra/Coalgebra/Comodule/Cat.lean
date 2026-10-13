@@ -17,10 +17,7 @@ category. For a fixed coalgebra `C` over a commutative semiring `R`, objects are
 `R`-semimodules with a right `C`-coaction and morphisms are the comodule morphisms already
 defined by `Comodule.Hom`.
 
-The reductive-groups roadmap asks for the category of finite-dimensional comodules over a
-Hopf algebra as the representation category of an affine group scheme. This file supplies the
-underlying bundled category and its forgetful functor to `SemimoduleCat`; finiteness, tensor
-products, duals, and the Hopf-algebra specialization can be added on top.
+The file also supplies the forgetful functor to `SemimoduleCat`.
 
 ## Main definitions
 
@@ -31,9 +28,8 @@ products, duals, and the Hopf-algebra specialization can be added on top.
 
 ## References
 
-This is the categorical packaging of the standard right-comodule definition, added for
-Layer 1 of the Tau Ceti reductive-groups roadmap: "Comodules over a coalgebra/Hopf algebra".
-The bundled-category API follows the pattern of `Mathlib.Algebra.Category.CoalgCat.Basic` and
+This is the categorical packaging of the standard right-comodule definition. The bundled-category
+API follows the pattern of `Mathlib.Algebra.Category.CoalgCat.Basic` and
 `Mathlib.LinearAlgebra.QuadraticForm.QuadraticModuleCat`.
 -/
 

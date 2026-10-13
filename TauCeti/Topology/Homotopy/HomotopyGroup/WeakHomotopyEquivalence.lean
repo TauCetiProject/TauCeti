@@ -19,7 +19,7 @@ closure properties: homotopy equivalences are weak homotopy equivalences, the pr
 only on the homotopy class of the map, and it is closed under composition and under left and
 right cancellation.
 
-Whitehead's theorem, that a weak homotopy equivalence between CW complexes is a homotopy
+Whitehead's theorem, that a weak homotopy equivalence between spaces of CW type is a homotopy
 equivalence, is `ContinuousMap.IsWeakHomotopyEquivalence.homotopyEquiv` in
 `TauCeti.AlgebraicTopology.Homotopy.Whitehead`.
 

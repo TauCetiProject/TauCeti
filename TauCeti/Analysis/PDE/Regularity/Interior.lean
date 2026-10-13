@@ -71,6 +71,9 @@ restriction of `u` solves the equation with the extended field.
   interior `H²` regularity for locally Lipschitz principal coefficients.
 * `TauCeti.PDE.UniformlyEllipticOn.exists_lowerOrder_eq_restrictL`: its case of a constant
   principal coefficient.
+* `TauCeti.PDE.divMatrixGradient_eq_sum_fderiv_fderiv_apply`: the classical Hessian contraction.
+* `ContDiffOn.integral_matrixBilinearForm_gradient_eq_neg_integral_divMatrixGradient`:
+  integration by parts against the conormal gradient of a `C²` function.
 
 ## References
 
@@ -84,7 +87,7 @@ public section
 
 noncomputable section
 
-open MeasureTheory Set TopologicalSpace Filter
+open InnerProductSpace MeasureTheory Set TopologicalSpace Filter
 open scoped ContDiff Distributions ENNReal NNReal Gradient InnerProductSpace Topology
 
 namespace TauCeti
@@ -138,6 +141,111 @@ theorem exists_lipschitzWith_matrixBilinearForm_gradient
     |>.holderWith_comp₂ (holderWith_one.2 hK) (holderWith_one.2 hLg) (Mf := M.toNNReal)
       (Mg := N.toNNReal) (fun x => (hM x).trans (Real.le_coe_toNNReal _))
       (fun x => (hN x).trans (Real.le_coe_toNNReal _)))⟩
+
+section ClassicalOperator
+
+variable {A : Matrix ι ι ℝ} {g : EuclideanSpace ℝ ι → ℝ}
+
+/-- For a `C²` function, the divergence of its constant-matrix conormal gradient is the
+contraction of the matrix against the classical Hessian. -/
+theorem divMatrixGradient_eq_sum_fderiv_fderiv_apply
+    (hg : ContDiffOn ℝ 2 g Omega) {x : EuclideanSpace ℝ ι} (hx : x ∈ Omega) :
+    divMatrixGradient (fun _ => A) g x = ∑ j, ∑ i, A j i *
+      fderiv ℝ (fun y => fderiv ℝ g y (EuclideanSpace.basisFun ι ℝ i)) x
+        (EuclideanSpace.basisFun ι ℝ j) := by
+  classical
+  let b := EuclideanSpace.basisFun ι ℝ
+  have hgder : ContDiffOn ℝ 1 (fderiv ℝ g) Omega :=
+    hg.fderiv_of_isOpen Omega.isOpen (by norm_num)
+  have hd : ∀ i, DifferentiableAt ℝ (fun y => fderiv ℝ g y (b i)) x := fun i =>
+    ((hgder.clm_apply contDiffOn_const).differentiableOn one_ne_zero).differentiableAt
+      (Omega.isOpen.mem_nhds hx)
+  have hcoord : ∀ i y, (∇ g y) i = fderiv ℝ g y (b i) := fun i y => by
+    rw [← EuclideanSpace.inner_basisFun_real, inner_gradient_left]
+  have hflux : ∀ j, (fun y => matrixBilinearForm A (b j) (∇ g y)) =
+      fun y => ∑ i, A j i * fderiv ℝ g y (b i) := fun j => by
+    funext y
+    simp [matrixBilinearForm_apply, b, EuclideanSpace.basisFun_apply, Matrix.mulVec,
+      dotProduct, hcoord]
+  rw [divMatrixGradient]
+  refine Finset.sum_congr rfl fun j _ => ?_
+  rw [hflux, ((DifferentiableAt.fun_sum fun i _ => (hd i).const_mul _)).lineDeriv_eq_fderiv,
+    fderiv_fun_sum fun i _ => (hd i).const_mul _]
+  simp only [sum_apply]
+  refine Finset.sum_congr rfl fun i _ => ?_
+  rw [fderiv_const_mul (hd i)]
+  rfl
+
+/-- The constant-coefficient operator applied to a `C²` function is continuous inside the
+domain. -/
+theorem continuousOn_divMatrixGradient (hg : ContDiffOn ℝ 2 g Omega) :
+    ContinuousOn (divMatrixGradient (fun _ => A) g) Omega := by
+  have hgrad : ContDiffOn ℝ 1 (∇ g) Omega :=
+    (toDual ℝ (EuclideanSpace ℝ ι)).symm.contDiff.comp_contDiffOn
+      (hg.fderiv_of_isOpen Omega.isOpen (by norm_num))
+  unfold divMatrixGradient
+  refine continuousOn_finsetSum _ fun i _ => ?_
+  have hi : ContDiffOn ℝ 1
+      (fun y => matrixBilinearForm A (EuclideanSpace.basisFun ι ℝ i) (∇ g y)) Omega :=
+    (matrixBilinearForm A _).contDiff.comp_contDiffOn hgrad
+  exact ((hi.continuousOn_fderiv_of_isOpen Omega.isOpen le_rfl).clm_apply
+    (continuousOn_const (c := EuclideanSpace.basisFun ι ℝ i))).congr fun x hx =>
+      ((hi.differentiableOn one_ne_zero).differentiableAt
+        (Omega.isOpen.mem_nhds hx)).lineDeriv_eq_fderiv
+
+/-- `div(A ∇ψ)` is continuous for smooth `ψ`. -/
+theorem continuous_divMatrixGradient {ψ : EuclideanSpace ℝ ι → ℝ}
+    (hψ : ContDiff ℝ ∞ ψ) : Continuous (divMatrixGradient (fun _ => A) ψ) := by
+  simpa only [Opens.coe_top, continuousOn_univ] using
+    continuousOn_divMatrixGradient (A := A) (Omega := ⊤) (hψ.of_le (by simp)).contDiffOn
+
+/-- Integration by parts for the constant-matrix conormal gradient of a `C²` function.
+The test function is compactly supported in the open domain, so no boundary term occurs. -/
+theorem _root_.ContDiffOn.integral_matrixBilinearForm_gradient_eq_neg_integral_divMatrixGradient
+    {g : EuclideanSpace ℝ ι → ℝ} (hg : ContDiffOn ℝ 2 g Omega) (φ : 𝓓(Omega, ℝ)) :
+    ∫ x, matrixBilinearForm A (∇ (φ : EuclideanSpace ℝ ι → ℝ) x) (∇ g x) ∂mu =
+      -∫ x, φ x * divMatrixGradient (fun _ => A) g x ∂mu := by
+  let b := EuclideanSpace.basisFun ι ℝ
+  let q : ι → EuclideanSpace ℝ ι → ℝ := fun i y => matrixBilinearForm A (b i) (∇ g y)
+  have hg1 : ContDiffOn ℝ 1 (∇ g) Omega :=
+    (toDual ℝ (EuclideanSpace ℝ ι)).symm.contDiff.comp_contDiffOn
+      (hg.fderiv_of_isOpen Omega.isOpen (by norm_num))
+  have hq : ∀ i, ContDiffOn ℝ 1 (q i) Omega := fun i =>
+    (matrixBilinearForm A (b i)).contDiff.comp_contDiffOn hg1
+  have hqd : ∀ i, LocallyIntegrableOn (fun x => lineDeriv ℝ (q i) x (b i)) Omega mu :=
+    fun i => (((hq i).continuousOn_fderiv_of_isOpen Omega.isOpen le_rfl).clm_apply
+      continuousOn_const).congr (fun x hx =>
+        ((hq i).differentiableOn one_ne_zero |>.differentiableAt
+          (Omega.isOpen.mem_nhds hx)).lineDeriv_eq_fderiv)
+      |>.locallyIntegrableOn Omega.isOpen.measurableSet
+  have hqweak : ∀ i, HasWeakLineDerivOn mu Omega (q i)
+      (fun x => lineDeriv ℝ (q i) x (b i)) (b i) := fun i =>
+    hasWeakLineDerivOn_of_hasLineDerivAt
+      ((hq i).continuousOn.locallyIntegrableOn Omega.isOpen.measurableSet) (hqd i)
+      (fun x hx => ((hq i).differentiableOn one_ne_zero |>.differentiableAt
+        (Omega.isOpen.mem_nhds hx)).lineDifferentiableAt.hasLineDerivAt)
+  -- Expand the test gradient in the standard basis and integrate each conormal component.
+  calc
+    ∫ x, matrixBilinearForm A (∇ (φ : EuclideanSpace ℝ ι → ℝ) x) (∇ g x) ∂mu
+      = ∑ i, ∫ x, lineDeriv ℝ (φ : EuclideanSpace ℝ ι → ℝ) x (b i) * q i x ∂mu := by
+      have hint : ∀ i, Integrable
+          (fun x => lineDeriv ℝ (φ : EuclideanSpace ℝ ι → ℝ) x (b i) * q i x) mu := fun i => by
+        simpa only [smul_eq_mul] using
+          integrable_lineDeriv_smul_of_locallyIntegrableOn (hqweak i).locallyIntegrableOn φ (b i)
+      rw [← integral_finsetSum _ (fun i _ => hint i)]
+      refine integral_congr_ae (ae_of_all _ fun x => ?_)
+      have hφd : ∀ v, lineDeriv ℝ (φ : EuclideanSpace ℝ ι → ℝ) x v =
+          fderiv ℝ (φ : EuclideanSpace ℝ ι → ℝ) x v := fun v =>
+        (φ.contDiff.differentiable (by simp) x).lineDeriv_eq_fderiv
+      simpa only [hφd, ← inner_gradient_left] using
+        (sum_inner_mul_matrixBilinearForm (A := A) (∇ (φ : EuclideanSpace ℝ ι → ℝ) x) (∇ g x)).symm
+    _ = -∫ x, φ x * divMatrixGradient (fun _ => A) g x ∂mu := by
+      simp_rw [← smul_eq_mul, (hqweak _).integral_lineDeriv_smul_eq_neg_integral_smul φ]
+      rw [Finset.sum_neg_distrib, ← integral_finsetSum _
+        (fun i _ => integrable_smul_of_locallyIntegrableOn (hqd i) φ)]
+      simp only [Finset.mul_sum, divMatrixGradient, b, q, smul_eq_mul]
+
+end ClassicalOperator
 
 /-- `div(a ∇ψ)` is bounded, for a bounded Lipschitz field `a` and a smooth compactly supported
 `ψ`. -/
@@ -343,7 +451,7 @@ private theorem setIntegral_matrixBilinearForm_smul_add_eq {f : Lp ℝ 2 (mu.res
       hψc hts φΩ
   have h := hu ⟨v, hv⟩
   simp only at h
-  rw [energyFormH1_principal_eq_setIntegral] at h
+  rw [energyFormH1_zero_zero_eq_setIntegral] at h
   calc _ = ∫ x in Omega, matrixBilinearForm (a x) (W1p.gradient v x) (W1p.gradient u x) ∂mu := by
         refine integral_congr_ae ?_
         filter_upwards [W1p.gradient_contDiffSMul_ae hψ hN hψN' hgradN' φΩ, hφv, hφg]
@@ -517,7 +625,7 @@ private theorem energyFormH1_ofTestFunctionₗ_eq_of_ae_eq_indicator
       ∫ x in ((⊤ : Opens (EuclideanSpace ℝ ι)) : Set (EuclideanSpace ℝ ι)), F x ∂mu =
         ∫ x, F x ∂mu := fun F => by rw [htop]
   have hφg := (gradientTestFunctionLp_apply_ae (mu := mu) 2 φ).filter_mono (ae_mono htop.ge)
-  rw [energyFormH1_principal_eq_setIntegral, hint_top, hint_top]
+  rw [energyFormH1_zero_zero_eq_setIntegral, hint_top, hint_top]
   calc ∫ x, matrixBilinearForm (a x) (W1p.gradient (W1p.ofTestFunctionₗ mu ⊤ 2 φ) x)
           (W1p.gradient w x) ∂mu
       = ∫ x, (Omega : Set (EuclideanSpace ℝ ι)).indicator (fun y => matrixBilinearForm (a y)
