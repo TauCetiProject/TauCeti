@@ -213,7 +213,8 @@ noncomputable def cokernelIsColimit : IsColimit (cokernelCocone f) :=
         have hs := congrArg (fun l ↦ closedHom l y) hm
         simp only [closedHom_comp, LinearMap.comp_apply] at hs
         simpa only [closedHom_closedHomOf, LinearMap.comp_apply, LinearEquiv.coe_coe,
-          LinearEquiv.apply_symm_apply, Submodule.liftQ_apply, cokernelEquiv_symm_mk, cokernelEquiv_cokernelπ]
+          LinearEquiv.apply_symm_apply, Submodule.liftQ_apply, cokernelEquiv_symm_mk,
+          cokernelEquiv_cokernelπ]
           using hs)
 
 /-- The closed category of curved right modules has cokernels. -/
