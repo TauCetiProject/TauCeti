@@ -302,68 +302,70 @@ section Assembly
 
 variable {A : Type*} [Category A] [HasCoproducts.{0} A] [Abelian A] (R : A)
 
+/-- The image of the sphere generator of `H̃ᵢ(Sⁱ)` in `Hᵢ(Sⁱ, B)`. -/
+private def sphereClass (B : Set (TopCat.diskBoundary.{0} (i + 1))) :
+    R ⟶ (TopPair.ofSubset B).singularHomology R i :=
+  (reducedSingularHomologyTopCatSphereIso R i).inv ≫
+    (reducedSingularHomologyι R i).app (TopCat.diskBoundary.{0} (i + 1)) ≫
+      (TopPair.ofSubset B).singularHomologyπ R i
+
+/-- The image of `sphereClass R B` under the map of pairs induced by `g` is the image of the
+sphere generator under `g`, read in `Hᵢ(Y, B')`. -/
+private lemma sphereClass_comp_singularHomologyMap_ofSubsetMap
+    {B : Set (TopCat.diskBoundary.{0} (i + 1))} {Y : TopCat.{0}} {B' : Set Y}
+    (g : TopCat.diskBoundary.{0} (i + 1) ⟶ Y) (h : MapsTo g B B') :
+    sphereClass R B ≫ TopPair.singularHomologyMap (TopPair.ofSubsetMap g h) R i =
+      (reducedSingularHomologyTopCatSphereIso R i).inv ≫
+        (reducedSingularHomologyι R i).app (TopCat.diskBoundary.{0} (i + 1)) ≫
+          SSet.homologyMap (TopCat.toSSet.map g) R i ≫
+            (TopPair.ofSubset B').singularHomologyπ R i := by
+  have hπ := SSetPair.homologyπ_naturality (TopPair.toSSetPair.map (TopPair.ofSubsetMap g h)) R i
+  rw [TopPair.toSSetPair_map_right, TopPair.ofSubsetMap_fst] at hπ
+  -- Ambient singular homology appears both as the target of `reducedSingularHomologyι` and as the
+  -- source of `singularHomologyπ`; the two presentations agree only up to unfolding, so the
+  -- rewrite across them uses `erw`.
+  rw [sphereClass, Category.assoc]
+  erw [Category.assoc, ← hπ]
+  rfl
+
 /-- The antipodal map acts by `(-1) ^ (i + 1)` on the image of the sphere generator in
 `Hᵢ(Sⁱ, Sⁱ ∖ {p, -p})`. -/
 private lemma sphereClass_comp_singularHomologyMap_diskBoundaryNeg
     (haP : MapsTo (diskBoundaryNeg.{0} (i + 1))
       ({pole i}ᶜ ∩ {diskBoundaryNeg (i + 1) (pole i)}ᶜ)
       ({pole i}ᶜ ∩ {diskBoundaryNeg (i + 1) (pole i)}ᶜ)) :
-    ((reducedSingularHomologyTopCatSphereIso R i).inv ≫
-        (reducedSingularHomologyι R i).app (TopCat.diskBoundary.{0} (i + 1)) ≫
-          (TopPair.ofSubset ({pole i}ᶜ ∩ {diskBoundaryNeg (i + 1) (pole i)}ᶜ :
-            Set (TopCat.diskBoundary.{0} (i + 1)))).singularHomologyπ R i) ≫
+    sphereClass R ({pole i}ᶜ ∩ {diskBoundaryNeg (i + 1) (pole i)}ᶜ) ≫
       TopPair.singularHomologyMap (TopPair.ofSubsetMap _ haP) R i =
-    ((-1 : ℤ) ^ (i + 1)) • ((reducedSingularHomologyTopCatSphereIso R i).inv ≫
-        (reducedSingularHomologyι R i).app (TopCat.diskBoundary.{0} (i + 1)) ≫
-          (TopPair.ofSubset ({pole i}ᶜ ∩ {diskBoundaryNeg (i + 1) (pole i)}ᶜ :
-            Set (TopCat.diskBoundary.{0} (i + 1)))).singularHomologyπ R i) := by
+    ((-1 : ℤ) ^ (i + 1)) • sphereClass R ({pole i}ᶜ ∩ {diskBoundaryNeg (i + 1) (pole i)}ᶜ) := by
   have hι := (reducedSingularHomologyι R i).naturality (diskBoundaryNeg.{0} (i + 1))
   rw [reducedSingularHomologyFunctor_map_diskBoundaryNeg, Preadditive.zsmul_comp,
     Category.id_comp] at hι
   have hF : ((AlgebraicTopology.singularHomologyFunctor A i).obj R).map
       (diskBoundaryNeg.{0} (i + 1)) =
       SSet.homologyMap (TopCat.toSSet.map (diskBoundaryNeg.{0} (i + 1))) R i := rfl
-  have hπ := SSetPair.homologyπ_naturality (TopPair.toSSetPair.map (TopPair.ofSubsetMap _ haP)) R i
-  rw [TopPair.toSSetPair_map_right, TopPair.ofSubsetMap_fst] at hπ
-  -- Ambient singular homology appears both as the target of `reducedSingularHomologyι` and as the
-  -- source of `singularHomologyπ`; the two presentations agree only up to unfolding, so the
-  -- rewrites across them use `erw`.
-  rw [Category.assoc]
-  erw [Category.assoc, ← hπ, ← Category.assoc ((reducedSingularHomologyι R i).app _),
-    ← hι.trans (congrArg _ hF), Preadditive.zsmul_comp, Preadditive.comp_zsmul]
+  rw [sphereClass_comp_singularHomologyMap_ofSubsetMap]
+  -- As in `sphereClass_comp_singularHomologyMap_ofSubsetMap`, the rewrite crosses the two
+  -- presentations of ambient singular homology.
+  erw [← Category.assoc ((reducedSingularHomologyι R i).app _), ← hι.trans (congrArg _ hF),
+    Preadditive.zsmul_comp, Preadditive.comp_zsmul]
   rfl
 
 /-- The image of the sphere generator in `Hᵢ(Sⁱ, Sⁱ ∖ {p, -p})`, followed by the restriction to
 `Hᵢ(Sⁱ, Sⁱ ∖ {p})`, is the image of the sphere generator in `Hᵢ(Sⁱ, Sⁱ ∖ {p})`. -/
 private lemma sphereClass_comp_singularHomologyMap_ofSubsetMap_id :
-    ((reducedSingularHomologyTopCatSphereIso R i).inv ≫
-        (reducedSingularHomologyι R i).app (TopCat.diskBoundary.{0} (i + 1)) ≫
-          (TopPair.ofSubset ({pole i}ᶜ ∩ {diskBoundaryNeg (i + 1) (pole i)}ᶜ :
-            Set (TopCat.diskBoundary.{0} (i + 1)))).singularHomologyπ R i) ≫
+    sphereClass R ({pole i}ᶜ ∩ {diskBoundaryNeg (i + 1) (pole i)}ᶜ) ≫
       TopPair.singularHomologyMap (TopPair.ofSubsetMap (𝟙 _) fun _ h ↦ h.1) R i =
-    (reducedSingularHomologyTopCatSphereIso R i).inv ≫
-        (reducedSingularHomologyι R i).app (TopCat.diskBoundary.{0} (i + 1)) ≫
-          (TopPair.ofSubset ({pole i}ᶜ : Set (TopCat.diskBoundary.{0} (i + 1)))).singularHomologyπ
-            R i := by
-  have hπ := SSetPair.homologyπ_naturality
-    (TopPair.toSSetPair.map (TopPair.ofSubsetMap (𝟙 (TopCat.diskBoundary.{0} (i + 1)))
-      (B := ({pole i}ᶜ ∩ {diskBoundaryNeg (i + 1) (pole i)}ᶜ :
-        Set (TopCat.diskBoundary.{0} (i + 1)))) fun _ h ↦ h.1)) R i
-  rw [TopPair.toSSetPair_map_right] at hπ
-  erw [TopPair.ofSubsetMap_fst, CategoryTheory.Functor.map_id, SSet.homologyMap_id,
-    Category.id_comp] at hπ
-  -- As in `sphereClass_comp_singularHomologyMap_diskBoundaryNeg`, the rewrites cross the two
-  -- presentations of ambient singular homology.
-  rw [Category.assoc]
-  erw [Category.assoc, ← hπ]
+    sphereClass R {pole i}ᶜ := by
+  refine (sphereClass_comp_singularHomologyMap_ofSubsetMap R _ _).trans ?_
+  rw [CategoryTheory.Functor.map_id, SSet.homologyMap_id]
+  -- The identity sits between the two presentations of ambient singular homology.
+  erw [Category.id_comp]
+  rfl
 
 /-- In positive degrees, the image of the sphere generator in `Hᵢ(Sⁱ, Sⁱ ∖ {p})` generates it,
 since `Sⁱ ∖ {p}` is contractible. -/
-private lemma isIso_sphereClass_singularHomologyπ_compl_pole (k : ℕ) :
-    IsIso ((reducedSingularHomologyTopCatSphereIso R (k + 1)).inv ≫
-        (reducedSingularHomologyι R (k + 1)).app (TopCat.diskBoundary.{0} (k + 1 + 1)) ≫
-          (TopPair.ofSubset ({pole (k + 1)}ᶜ :
-            Set (TopCat.diskBoundary.{0} (k + 1 + 1)))).singularHomologyπ R (k + 1)) := by
+private lemma isIso_sphereClass_compl_pole (k : ℕ) :
+    IsIso (sphereClass R (i := k + 1) {pole (k + 1)}ᶜ) := by
   let e : (TopCat.diskBoundary.{0} (k + 1 + 1) : Type) ≃ₜ
       sphere (0 : EuclideanSpace ℝ (Fin (k + 1 + 1))) 1 := Homeomorph.ulift
   have : ContractibleSpace (TopPair.ofSubset ({pole (k + 1)}ᶜ :
@@ -413,11 +415,8 @@ private lemma exists_cellularIncidence_cwComplex_eq_mul (hi : i + 1 ≤ N)
     (singleton_subset_iff.2 (pole_mem_upperHemisphere i)) i
   have := isIso_singularHomologyMap_upperHemisphere (ModuleCat.of R R) hi c c' hfU i
   -- The sphere generator in `Hᵢ(Sⁱ, Sⁱ ∖ {p, -p})`, and its contribution near the pole.
-  obtain ⟨s, hs⟩ : ∃ s, s = (reducedSingularHomologyTopCatSphereIso (ModuleCat.of R R) i).inv ≫
-      (reducedSingularHomologyι (ModuleCat.of R R) i).app (TopCat.diskBoundary.{0} (i + 1)) ≫
-        (TopPair.ofSubset ({pole i}ᶜ ∩ {diskBoundaryNeg (i + 1) (pole i)}ᶜ :
-          Set (TopCat.diskBoundary.{0} (i + 1)))).singularHomologyπ (ModuleCat.of R R) i :=
-    ⟨_, rfl⟩
+  obtain ⟨s, hs⟩ : ∃ s, s = sphereClass (ModuleCat.of R R)
+      ({pole i}ᶜ ∩ {diskBoundaryNeg (i + 1) (pole i)}ᶜ) := ⟨_, rfl⟩
   obtain ⟨t, ht⟩ : ∃ t, t = s ≫ TopPair.singularHomologyMap (TopPair.ofSubsetMap (𝟙 _)
       fun _ h ↦ h.1) (ModuleCat.of R R) i ≫ inv (TopPair.singularHomologyMap
         (TopPair.excisionMap (upperHemisphere i) {pole i}ᶜ) (ModuleCat.of R R) i) := ⟨_, rfl⟩
@@ -428,19 +427,13 @@ private lemma exists_cellularIncidence_cwComplex_eq_mul (hi : i + 1 ≤ N)
     (by rw [ht, Category.assoc, Category.assoc, IsIso.inv_hom_id, Category.comp_id])
   -- The image of `s` under the attaching map is the image of the sphere generator in the local
   -- homology of the skeleton at the class of the pole.
-  have hπ := SSetPair.homologyπ_naturality (TopPair.toSSetPair.map (TopPair.ofSubsetMap _ hfP))
-    (ModuleCat.of R R) i
-  rw [TopPair.toSSetPair_map_right, TopPair.ofSubsetMap_fst] at hπ
   have hloc := singularHomologyπ_cellAttachingMap_eq_cellularIncidence_smul univ R
     (cellAttachingMap univ c' (pole i)) hx c'
   have hs1 : (s ≫ TopPair.singularHomologyMap (TopPair.ofSubsetMap _ hfP) (ModuleCat.of R R) i) 1 =
       cellularIncidence univ R i c c' • cellLocalClass univ (ModuleCat.of R R)
         (cellAttachingMap univ c' (pole i)) hx 1 := by
-    refine Eq.trans ?_ hloc
-    rw [hs]
-    -- The rewrites cross the two presentations of ambient singular homology.
-    erw [Category.assoc, Category.assoc, ← hπ]
-    rfl
+    rw [hs, sphereClass_comp_singularHomologyMap_ofSubsetMap]
+    exact hloc
   set μ := inv (cellLocalClass univ (ModuleCat.of R R) (cellAttachingMap univ c' (pole i)) hx)
     ((t ≫ TopPair.singularHomologyMap (TopPair.ofSubsetMap _ hfU) (ModuleCat.of R R) i) 1)
     with hμ
@@ -455,7 +448,7 @@ private lemma exists_cellularIncidence_cwComplex_eq_mul (hi : i + 1 ≤ N)
     push_cast
     rfl
   · obtain ⟨k, rfl⟩ : ∃ k, i = k + 1 := ⟨i - 1, by omega⟩
-    have := isIso_sphereClass_singularHomologyπ_compl_pole (ModuleCat.of R R) k
+    have := isIso_sphereClass_compl_pole (ModuleCat.of R R) k
     have : IsIso t := by
       rw [ht, ← Category.assoc, hs, sphereClass_comp_singularHomologyMap_ofSubsetMap_id]
       infer_instance
@@ -465,16 +458,6 @@ private lemma exists_cellularIncidence_cwComplex_eq_mul (hi : i + 1 ≤ N)
         (ModuleCat.of R R) (cellAttachingMap univ c' (pole _)) hx))
     exact (((Module.End.isUnit_iff _).2 hbij).map (RingEquiv.moduleEndSelf R).symm).unop
 
-/-- A cell of dimension `m` of `RPᴺ` exists only for `m ≤ N`. -/
-private lemma le_of_cell {m : ℕ} (c : cell (univ : Set (RealProjectiveSpace N)) m) : m ≤ N := by
-  have := finite_cwComplex (n := N)
-  have hpos : 0 < Nat.card (cell (univ : Set (RealProjectiveSpace N)) m) :=
-    Nat.card_pos_iff.2 ⟨⟨c⟩, RelCWComplex.FiniteType.finite_cell m⟩
-  rw [nat_card_cell_cwComplex] at hpos
-  split_ifs at hpos with h
-  · exact h
-  · exact absurd hpos (lt_irrefl 0)
-
 /-- **The cellular incidence numbers of real projective space.** The incidence coefficient of the
 `i`-cell in the cellular boundary of the `(i + 1)`-cell of `RPᴺ`, with coefficients in a ring `R`,
 is `1 + (-1) ^ (i + 1)` times a unit of `R`. -/
@@ -482,7 +465,8 @@ theorem exists_cellularIncidence_cwComplex_eq_one_add_neg_one_pow_mul
     (c : cell (univ : Set (RealProjectiveSpace N)) i)
     (c' : cell (univ : Set (RealProjectiveSpace N)) (i + 1)) :
     ∃ u : Rˣ, cellularIncidence univ R i c c' = (1 + (-1) ^ (i + 1)) * u := by
-  obtain ⟨μ, hμ, hunit⟩ := exists_cellularIncidence_cwComplex_eq_mul R (le_of_cell c') c c'
+  obtain ⟨μ, hμ, hunit⟩ :=
+    exists_cellularIncidence_cwComplex_eq_mul R (le_of_cell_cwComplex c') c c'
   rcases Nat.even_or_odd i with he | ho
   · refine ⟨1, ?_⟩
     rw [hμ, he.add_one.neg_one_pow, add_neg_cancel, zero_mul, zero_mul]

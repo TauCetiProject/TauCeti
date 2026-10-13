@@ -49,6 +49,15 @@ namespace TopPair
 variable {A : Type u} [Category.{v} A] [HasCoproducts.{w} A] [Abelian A] (R : A)
   {S Y : TopCat.{w}} [T1Space S] {a : S ⟶ S} {p : S} {U : Set S}
 
+/-- Two maps of pairs induced by continuous maps compose to the map induced by any continuous map
+equal to their composite. -/
+private lemma ofSubsetMap_comp_ofSubsetMap_of_comp_eq {X Y Z : TopCat.{w}} {B : Set X}
+    {B' : Set Y} {B'' : Set Z} {g : X ⟶ Y} {g' : Y ⟶ Z} {g'' : X ⟶ Z}
+    (hB : Set.MapsTo g B B') (hB' : Set.MapsTo g' B' B'') (h : Set.MapsTo g'' B B'')
+    (hg : g ≫ g' = g'') : ofSubsetMap g hB ≫ ofSubsetMap g' hB' = ofSubsetMap g'' h := by
+  subst hg
+  exact (ofSubsetMap_comp _ _ _ _ _).symm
+
 /-- The inclusion `(U, U ∖ {p}) ⟶ (S, S ∖ {p, a p})` for a set `U` not containing `a p`. -/
 private def interPairToComplPair (hapU : a p ∉ U) :
     interPair U {p}ᶜ ⟶ ofSubset ({p}ᶜ ∩ {a p}ᶜ : Set S) :=
@@ -56,36 +65,26 @@ private def interPairToComplPair (hapU : a p ∉ U) :
     fun u hu ↦ ⟨hu, fun h ↦ hapU (Set.mem_singleton_iff.1 h ▸ u.2)⟩
 
 omit [T1Space S] in
-private lemma interPairToComplPair_fst_apply (hapU : a p ∉ U) (u : (interPair U {p}ᶜ).fst) :
-    Hom.fst (interPairToComplPair hapU) u = u.1 :=
-  ofSubsetMap_fst_apply _ _ u
-
-omit [T1Space S] in
 /-- Followed by the inclusion `(S, S ∖ {p, a p}) ⟶ (S, S ∖ {p})`, the inclusion of
 `(U, U ∖ {p})` is the excision map. -/
 private lemma interPairToComplPair_comp_ofSubsetMap_id (hapU : a p ∉ U) :
-    interPairToComplPair hapU ≫ ofSubsetMap (𝟙 S) (fun _ h ↦ h.1) = excisionMap U {p}ᶜ := by
-  refine hom_ext_of_fst _ ?_
-  ext u
-  -- The ambient spaces of the pairs are `S` and `U` only up to unfolding `TopPair.ofSubset`.
-  erw [Hom.fst_comp, ConcreteCategory.comp_apply, interPairToComplPair_fst_apply,
-    ofSubsetMap_fst_apply, excisionMap_fst_apply]
-  rfl
+    interPairToComplPair hapU ≫ ofSubsetMap (𝟙 S) (fun _ h ↦ h.1) = excisionMap U {p}ᶜ :=
+  (ofSubsetMap_comp_ofSubsetMap_of_comp_eq _ _ (fun _ h ↦ h) (Category.comp_id _)).trans
+    (hom_ext_of_fst _ (TopCat.ext fun u ↦
+      (ofSubsetMap_fst_apply _ _ u).trans (excisionMap_fst_apply _ _ u).symm))
 
 omit [T1Space S] in
 /-- Since `U` misses `a p`, the inclusion `(U, U ∖ {p}) ⟶ (S, S ∖ {a p})` is zero on homology. -/
 private lemma singularHomologyMap_interPairToComplPair_comp_eq_zero (hapU : a p ∉ U) (n : ℕ) :
     TopPair.singularHomologyMap
       (interPairToComplPair hapU ≫ ofSubsetMap (𝟙 S) (B' := ({a p}ᶜ : Set S)) fun _ h ↦ h.2)
-      R n = 0 :=
-  singularHomologyMap_eq_zero_of_fac _ R (TopCat.ofHom (⟨fun u ↦ ⟨u.1, fun h ↦
-      hapU (Set.mem_singleton_iff.1 h ▸ u.2)⟩, continuous_subtype_val.subtype_mk _⟩ :
-      C(U, ({a p}ᶜ : Set S)))) (by
-    ext u
-    -- The ambient spaces of the pairs are `S` and `U` only up to unfolding `TopPair.ofSubset`.
-    erw [Hom.fst_comp, ConcreteCategory.comp_apply, ConcreteCategory.comp_apply,
-      interPairToComplPair_fst_apply, ofSubsetMap_fst_apply]
-    rfl) n
+      R n = 0 := by
+  have hU (u : U) : u.1 ∈ ({a p}ᶜ : Set S) := fun (h : u.1 = a p) ↦ hapU (h ▸ u.2)
+  refine (congrArg (TopPair.singularHomologyMap · R n)
+    (ofSubsetMap_comp_ofSubsetMap_of_comp_eq _ _ (fun u _ ↦ hU u) rfl)).trans ?_
+  exact singularHomologyMap_eq_zero_of_fac _ R
+    (TopCat.ofHom (⟨fun u ↦ ⟨u.1, hU u⟩, continuous_subtype_val.subtype_mk _⟩ :
+      C(U, ({a p}ᶜ : Set S)))) (TopCat.ext fun u ↦ (ofSubsetMap_fst_apply _ _ u).symm) n
 
 omit [T1Space S] in
 /-- Since `a` carries `U` into the complement of `p`, the map `(U, U ∖ {p}) ⟶ (S, S ∖ {p})`
@@ -94,17 +93,16 @@ private lemma singularHomologyMap_interPairToComplPair_comp_ofSubsetMap_comp_eq_
     (ha : Function.Involutive a) (hapU : a p ∉ U)
     (haP : Set.MapsTo a ({p}ᶜ ∩ {a p}ᶜ) ({p}ᶜ ∩ {a p}ᶜ)) (n : ℕ) :
     TopPair.singularHomologyMap (interPairToComplPair hapU ≫ ofSubsetMap a haP ≫
-      ofSubsetMap (𝟙 S) (fun _ h ↦ h.1)) R n = 0 :=
-  singularHomologyMap_eq_zero_of_fac _ R (TopCat.ofHom (⟨fun u ↦ ⟨a u.1, fun h ↦
-      hapU ((ha u.1).symm.trans (congrArg a (Set.mem_singleton_iff.1 h)) ▸ u.2)⟩,
-      (a.hom.continuous.comp continuous_subtype_val).subtype_mk _⟩ :
-      C(U, ({p}ᶜ : Set S)))) (by
-    ext u
-    -- The ambient spaces of the pairs are `S` and `U` only up to unfolding `TopPair.ofSubset`.
-    erw [Hom.fst_comp, Hom.fst_comp, ConcreteCategory.comp_apply, ConcreteCategory.comp_apply,
-      ConcreteCategory.comp_apply, interPairToComplPair_fst_apply, ofSubsetMap_fst_apply,
-      ofSubsetMap_fst_apply]
-    rfl) n
+      ofSubsetMap (𝟙 S) (fun _ h ↦ h.1)) R n = 0 := by
+  have hU (u : U) : a u.1 ∈ ({p}ᶜ : Set S) := fun (h : a u.1 = p) ↦
+    hapU ((ha u.1).symm.trans (congrArg a h) ▸ u.2)
+  refine (congrArg (TopPair.singularHomologyMap · R n) ((whisker_eq _
+    (ofSubsetMap_comp_ofSubsetMap_of_comp_eq haP _ (fun _ h ↦ (haP h).1)
+      (Category.comp_id _))).trans
+    (ofSubsetMap_comp_ofSubsetMap_of_comp_eq _ _ (fun u _ ↦ hU u) rfl))).trans ?_
+  exact singularHomologyMap_eq_zero_of_fac _ R (TopCat.ofHom (⟨fun u ↦ ⟨a u.1, hU u⟩,
+      (a.hom.continuous.comp continuous_subtype_val).subtype_mk _⟩ : C(U, ({p}ᶜ : Set S))))
+    (TopCat.ext fun u ↦ (ofSubsetMap_fst_apply _ _ u).symm) n
 
 /-- The map `(S, S ∖ {p}) ⟶ (S, S ∖ {a p})` induced by an involution `a`. -/
 private def complSingletonMap (ha : Function.Involutive a) :
@@ -115,36 +113,26 @@ omit [T1Space S] in
 private lemma ofSubsetMap_comp_ofSubsetMap_id_eq (ha : Function.Involutive a)
     (haP : Set.MapsTo a ({p}ᶜ ∩ {a p}ᶜ) ({p}ᶜ ∩ {a p}ᶜ)) :
     ofSubsetMap a haP ≫ ofSubsetMap (𝟙 S) (B' := ({a p}ᶜ : Set S)) (fun _ h ↦ h.2) =
-      ofSubsetMap (𝟙 S) (fun _ h ↦ h.1) ≫ complSingletonMap ha := by
-  refine hom_ext_of_fst _ ?_
-  ext s
-  -- The ambient spaces of the pairs are `S` only up to unfolding `TopPair.ofSubset`.
-  erw [Hom.fst_comp, Hom.fst_comp, ConcreteCategory.comp_apply, ConcreteCategory.comp_apply,
-    ofSubsetMap_fst_apply, ofSubsetMap_fst_apply, ofSubsetMap_fst_apply, ofSubsetMap_fst_apply]
-  rfl
+      ofSubsetMap (𝟙 S) (fun _ h ↦ h.1) ≫ complSingletonMap ha :=
+  (ofSubsetMap_comp_ofSubsetMap_of_comp_eq _ _ (fun _ h ↦ (haP h).2) (Category.comp_id _)).trans
+    (ofSubsetMap_comp_ofSubsetMap_of_comp_eq _ _ _ (Category.id_comp _)).symm
 
 omit [T1Space S] in
 private lemma ofSubsetMap_comp_ofSubsetMap_id_comp_complSingletonMap (ha : Function.Involutive a)
     (haP : Set.MapsTo a ({p}ᶜ ∩ {a p}ᶜ) ({p}ᶜ ∩ {a p}ᶜ)) :
     ofSubsetMap a haP ≫ ofSubsetMap (𝟙 S) (fun _ h ↦ h.1) ≫ complSingletonMap ha =
-      ofSubsetMap (𝟙 S) (fun _ h ↦ h.2) := by
-  refine hom_ext_of_fst _ ?_
-  ext s
-  erw [Hom.fst_comp, Hom.fst_comp, ConcreteCategory.comp_apply, ConcreteCategory.comp_apply,
-    ofSubsetMap_fst_apply, ofSubsetMap_fst_apply, ofSubsetMap_fst_apply, ofSubsetMap_fst_apply]
-  exact ha s
+      ofSubsetMap (𝟙 S) (fun _ h ↦ h.2) :=
+  (whisker_eq _ (ofSubsetMap_comp_ofSubsetMap_of_comp_eq _ _ (fun _ h ↦ (haP h).2)
+    (Category.id_comp _))).trans
+    (ofSubsetMap_comp_ofSubsetMap_of_comp_eq _ _ _ (TopCat.ext ha))
 
 omit [T1Space S] in
 private lemma interPairToComplPair_comp_ofSubsetMap (hapU : a p ∉ U) {y : Y} (f : S ⟶ Y)
     (hfP : Set.MapsTo f ({p}ᶜ ∩ {a p}ᶜ) {y}ᶜ)
     (hfU : Set.MapsTo (TopCat.ofHom ⟨Subtype.val, continuous_subtype_val⟩ ≫ f)
       (Subtype.val ⁻¹' {p}ᶜ : Set U) {y}ᶜ) :
-    interPairToComplPair hapU ≫ ofSubsetMap f hfP = ofSubsetMap _ hfU := by
-  refine hom_ext_of_fst _ ?_
-  ext u
-  erw [Hom.fst_comp, ConcreteCategory.comp_apply, interPairToComplPair_fst_apply,
-    ofSubsetMap_fst_apply, ofSubsetMap_fst_apply]
-  rfl
+    interPairToComplPair hapU ≫ ofSubsetMap f hfP = ofSubsetMap _ hfU :=
+  ofSubsetMap_comp_ofSubsetMap_of_comp_eq _ _ _ rfl
 
 omit [T1Space S] in
 private lemma interPairToComplPair_comp_ofSubsetMap_comp_ofSubsetMap (hapU : a p ∉ U) {y : Y}
@@ -152,13 +140,9 @@ private lemma interPairToComplPair_comp_ofSubsetMap_comp_ofSubsetMap (hapU : a p
     (hfP : Set.MapsTo f ({p}ᶜ ∩ {a p}ᶜ) {y}ᶜ)
     (hfU : Set.MapsTo (TopCat.ofHom ⟨Subtype.val, continuous_subtype_val⟩ ≫ f)
       (Subtype.val ⁻¹' {p}ᶜ : Set U) {y}ᶜ) :
-    interPairToComplPair hapU ≫ ofSubsetMap a haP ≫ ofSubsetMap f hfP = ofSubsetMap _ hfU := by
-  refine hom_ext_of_fst _ ?_
-  ext u
-  erw [Hom.fst_comp, Hom.fst_comp, ConcreteCategory.comp_apply, ConcreteCategory.comp_apply,
-    interPairToComplPair_fst_apply, ofSubsetMap_fst_apply, ofSubsetMap_fst_apply,
-    ofSubsetMap_fst_apply]
-  exact hf u.1
+    interPairToComplPair hapU ≫ ofSubsetMap a haP ≫ ofSubsetMap f hfP = ofSubsetMap _ hfU :=
+  (whisker_eq _ (ofSubsetMap_comp_ofSubsetMap_of_comp_eq haP hfP hfP (TopCat.ext hf))).trans
+    (ofSubsetMap_comp_ofSubsetMap_of_comp_eq _ _ _ rfl)
 
 /-- **The local degree of a map invariant under an involution.** Let `a` be an involution of a
 T₁ space `S`, `p` a point with `a p ≠ p`, and `U` a set not containing `a p`. Let `f : S ⟶ Y`

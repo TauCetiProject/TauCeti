@@ -40,7 +40,8 @@ homeomorphism `ContinuousLinearEquiv.unitBallHomeomorph`.
 * `TauCeti.RealProjectiveSpace.cwComplex`: the CW structure on `RPⁿ`, with characteristic maps
   `cellMap` (`TauCeti.RealProjectiveSpace.map_cwComplex`); it is finite
   (`TauCeti.RealProjectiveSpace.finite_cwComplex`) with one cell in each dimension `m ≤ n`
-  (`TauCeti.RealProjectiveSpace.nat_card_cell_cwComplex`).
+  (`TauCeti.RealProjectiveSpace.nat_card_cell_cwComplex`) and none above
+  (`TauCeti.RealProjectiveSpace.le_of_cell_cwComplex`).
 * `TauCeti.RealProjectiveSpace.finiteCWType`: `RPⁿ` has finite CW type.
 
 ## References
@@ -453,6 +454,18 @@ theorem nat_card_cell_cwComplex (m : ℕ) :
     exact Nat.card_unique
   · have : IsEmpty (Cell n m) := ⟨fun c => h (by have := c.down; omega)⟩
     exact Nat.card_of_isEmpty
+
+/-- A cell of dimension `m` of the CW structure on `RPⁿ` exists only for `m ≤ n`. -/
+theorem le_of_cell_cwComplex {m : ℕ}
+    (c : letI := cwComplex n; cell (univ : Set (RealProjectiveSpace n)) m) : m ≤ n := by
+  let := cwComplex n
+  have := finite_cwComplex (n := n)
+  have hpos : 0 < Nat.card (cell (univ : Set (RealProjectiveSpace n)) m) :=
+    Nat.card_pos_iff.2 ⟨⟨c⟩, RelCWComplex.FiniteType.finite_cell m⟩
+  rw [nat_card_cell_cwComplex] at hpos
+  split_ifs at hpos with h
+  · exact h
+  · exact absurd hpos (lt_irrefl 0)
 
 /-- Real projective space has finite CW type. -/
 instance finiteCWType : FiniteCWType (RealProjectiveSpace n) :=
