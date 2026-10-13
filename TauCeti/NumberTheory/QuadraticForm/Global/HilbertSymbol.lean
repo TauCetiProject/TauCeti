@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.Padics.HeightOneSpectrum
+public import TauCeti.Data.Nat.Prime.Basic
 public import TauCeti.NumberTheory.HilbertSymbol.Basic
 public import TauCeti.NumberTheory.QuadraticForm.Global.Localization
 import TauCeti.NumberTheory.HilbertSymbol.Henselian
@@ -128,9 +129,6 @@ theorem hasFiniteMulSupport_hilbertSymbol_unitAtFinitePlace (a b : Kˣ) :
       fun v hv ↦ by rwa [Set.mem_ofPred_eq, valued_unitAtFinitePlace] at hv)) b
 
 section Rat
-
-/-- The prime `ℓ`, as a `Fact`, so that `ℚ_[ℓ]` can be written for `ℓ : Nat.Primes`. -/
-local instance (ℓ : Nat.Primes) : Fact ℓ.1.Prime := ⟨ℓ.2⟩
 
 /-- **The Hilbert symbol at a finite place of `ℚ` is the Hilbert symbol over `ℚ_ℓ`.** For a prime
 `ℓ` and `a, b ∈ ℚˣ`, the Hilbert symbol of the images of `a` and `b` in the completion of `ℚ` at

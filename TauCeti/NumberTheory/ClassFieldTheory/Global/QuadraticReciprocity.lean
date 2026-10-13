@@ -59,9 +59,6 @@ open IsDedekindDomain IsDedekindDomain.HeightOneSpectrum NumberField Rat.HeightO
 
 namespace TauCeti.ClassFieldTheory
 
-/-- The prime `ℓ`, as a `Fact`, so that `ℚ_[ℓ]` can be written for `ℓ : Nat.Primes`. -/
-local instance (ℓ : Nat.Primes) : Fact ℓ.1.Prime := ⟨ℓ.2⟩
-
 variable {p q : ℕ} [Fact p.Prime] [Fact q.Prime] {a b : ℚˣ}
 
 /-- The Hilbert symbol over `ℚ_ℓ` of two global units that are the primes `p` and `q`. -/
