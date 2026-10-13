@@ -149,11 +149,9 @@ variable (k F F') in
 /-- **The automorphism group acting on the repartition space** `A_F` of `F' / k`: the restriction
 of `TauCeti.placeFamilyRepresentation` to the stable subspace `A_F`. -/
 noncomputable def repartitionRepresentation :
-    Representation k (F' ≃ₐ[F] F') ↥(repartitionSpace k F') where
-  toFun σ := (placeFamilyRepresentation k F F' σ).restrict fun _ ha ↦
+    Representation k (F' ≃ₐ[F] F') ↥(repartitionSpace k F') :=
+  (placeFamilyRepresentation k F F').subrepresentation (repartitionSpace k F') fun σ _ ha ↦
     (placeFamilyRepresentation_mem_repartitionSpace_iff σ).mpr ha
-  map_one' := LinearMap.ext fun _ ↦ Subtype.ext (by simp)
-  map_mul' _ _ := LinearMap.ext fun _ ↦ Subtype.ext (by simp)
 
 /-- The action on repartitions is the action on the underlying families. -/
 @[simp]
