@@ -234,6 +234,13 @@ private noncomputable def reducedConeIso :
         (LinearMap.congr_fun (G.reduced_D_i s) c).trans (add_comm _ _))
     (congrArg ModuleCat.ofHom (G.reduced_D_j s))).symm
 
+private theorem reducedConeIso_hom_f :
+    (G.reducedConeIso s).hom.f () =
+      ModuleCat.ofHom P ≫
+        homotopyCofiber.inlX (G.reducedConnectingHom s) () () (ComplexShape.refl_rel ()) +
+      ModuleCat.ofHom Q ≫ homotopyCofiber.inrX (G.reducedConnectingHom s) () :=
+  homotopyCofiber.isoOfSplitting_inv_f _ _ _ _
+
 private noncomputable def reducedProductSplitting :
     (ShortComplex.mk (ModuleCat.ofHom (LinearMap.inr F C C))
       (ModuleCat.ofHom (LinearMap.fst F C C)) (by ext c; simp)).Splitting where
@@ -258,6 +265,14 @@ private noncomputable def reducedZeroConeIso :
       refine ModuleCat.hom_ext (LinearMap.ext fun c => ?_)
       simp)
 
+private theorem reducedZeroConeIso_hom_f :
+    G.reducedZeroConeIso.hom.f () =
+      homotopyCofiber.fstX (0 : G.reducedCenterComplex ⟶ G.reducedCenterComplex)
+          () () (ComplexShape.refl_rel ()) ≫ ModuleCat.ofHom (LinearMap.inl F C C) +
+      homotopyCofiber.sndX (0 : G.reducedCenterComplex ⟶ G.reducedCenterComplex) () ≫
+        ModuleCat.ofHom (LinearMap.inr F C C) :=
+  homotopyCofiber.isoOfSplitting_hom_f _ _ _ _
+
 private noncomputable def reducedArrowHom :
     Arrow.mk (G.reducedConnectingHom s) ⟶
       Arrow.mk (0 : G.reducedCenterComplex ⟶ G.reducedCenterComplex) :=
@@ -273,6 +288,17 @@ private noncomputable def reducedConeMap :
       homotopyCofiber (0 : G.reducedCenterComplex ⟶ G.reducedCenterComplex) :=
   homotopyCofiber.mapArrowHom _ _ (fun x => ⟨x, ComplexShape.refl_rel x⟩)
     (G.reducedArrowHom s)
+
+private theorem reducedConeMap_f :
+    (G.reducedConeMap s).f () =
+      homotopyCofiber.fstX (G.reducedConnectingHom s) () () (ComplexShape.refl_rel ()) ≫
+        homotopyCofiber.inlX (0 : G.reducedCenterComplex ⟶ G.reducedCenterComplex)
+          () () (ComplexShape.refl_rel ()) +
+      homotopyCofiber.sndX (G.reducedConnectingHom s) () ≫ ModuleCat.ofHom H ≫
+        homotopyCofiber.inrX (0 : G.reducedCenterComplex ⟶ G.reducedCenterComplex) () := by
+  apply homotopyCofiber.ext_from_X (G.reducedConnectingHom s)
+    () () (ComplexShape.refl_rel ()) <;>
+    simp [reducedConeMap, reducedArrowHom, reducedComparisonHom]
 
 private instance quasiIso_reducedConeMap : QuasiIso (G.reducedConeMap s) := by
   have : QuasiIso (G.reducedArrowHom s).left := inferInstanceAs (QuasiIso (𝟙 _))
@@ -292,11 +318,13 @@ private theorem reducedStabilizationHom_eq :
       (G.reducedConeIso s).hom ≫ G.reducedConeMap s ≫ G.reducedZeroConeIso.hom := by
   refine HomologicalComplex.hom_ext _ _ fun x => ?_
   cases x
-  suffices ModuleCat.ofHom (G.fullyBlockedStabilizeXMap s) =
-      ModuleCat.ofHom P ≫ ModuleCat.ofHom (LinearMap.inl F C C) +
-        ModuleCat.ofHom Q ≫ ModuleCat.ofHom H ≫ ModuleCat.ofHom (LinearMap.inr F C C) by
-    simpa [reducedStabilizationHom, reducedConeIso, reducedConeMap, reducedZeroConeIso,
-      reducedSplitting, reducedProductSplitting, reducedArrowHom, reducedComparisonHom]
+  simp only [reducedStabilizationHom, HomologicalComplex.comp_f,
+    reducedConeIso_hom_f, reducedConeMap_f, reducedZeroConeIso_hom_f]
+  simp only [Preadditive.add_comp, Preadditive.comp_add, Category.assoc,
+    homotopyCofiber.inlX_fstX_assoc, homotopyCofiber.inlX_sndX_assoc,
+    homotopyCofiber.inrX_fstX_assoc, homotopyCofiber.inrX_sndX_assoc,
+    Limits.zero_comp, Limits.comp_zero,
+    zero_add, add_zero]
   ext c <;> simp [fullyBlockedStabilizeXMap]
 
 private instance quasiIso_reducedStabilizationHom : QuasiIso (G.reducedStabilizationHom s) := by
@@ -349,14 +377,26 @@ noncomputable def fullyBlockedStabilizeXCycles :
 /-- The first cycle representative is the center part of the stabilized cycle. -/
 @[simp]
 theorem fullyBlockedStabilizeXCycles_fst (z : (G').fullyBlockedCycles) :
-    ((G.fullyBlockedStabilizeXCycles s z).1 : C) = P z :=
-  (rfl)
+    ((G.fullyBlockedStabilizeXCycles s z).1 : C) = P z := by
+  dsimp only [fullyBlockedStabilizeXCycles]
+  rw [LinearMap.comp_apply, LinearEquiv.coe_toLinearMap, Submodule.prodEquiv_apply]
+  dsimp only
+  -- Matching the restriction witness needs product membership to unfold.
+  erw [LinearMap.codRestrict_apply (G.fullyBlockedCycles.prod G.fullyBlockedCycles)
+    (G.fullyBlockedStabilizeXMap s ∘ₗ (G').fullyBlockedCycles.subtype)]
+  exact G.fullyBlockedStabilizeXMap_fst s z
 
 /-- The second cycle representative is the reduced `X₂`-homotopy of its off-center part. -/
 @[simp]
 theorem fullyBlockedStabilizeXCycles_snd (z : (G').fullyBlockedCycles) :
-    ((G.fullyBlockedStabilizeXCycles s z).2 : C) = H (Q z) :=
-  (rfl)
+    ((G.fullyBlockedStabilizeXCycles s z).2 : C) = H (Q z) := by
+  dsimp only [fullyBlockedStabilizeXCycles]
+  rw [LinearMap.comp_apply, LinearEquiv.coe_toLinearMap, Submodule.prodEquiv_apply]
+  dsimp only
+  -- Matching the restriction witness needs product membership to unfold.
+  erw [LinearMap.codRestrict_apply (G.fullyBlockedCycles.prod G.fullyBlockedCycles)
+    (G.fullyBlockedStabilizeXMap s ∘ₗ (G').fullyBlockedCycles.subtype)]
+  exact G.fullyBlockedStabilizeXMap_snd s z
 
 /-- The stabilization equivalence sends the class of a cycle to the classes of the two
 specified comparison cycles. -/
