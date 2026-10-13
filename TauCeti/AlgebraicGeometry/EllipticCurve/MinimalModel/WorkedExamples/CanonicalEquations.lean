@@ -5,9 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.EllipticCurve.MinimalModel.Reduced
+public import TauCeti.AlgebraicGeometry.EllipticCurve.MinimalModel.WorkedExamples.Reduced
 public import TauCeti.AlgebraicGeometry.EllipticCurve.MinimalPairModel
-public import TauCeti.AlgebraicGeometry.EllipticCurve.MordellWeil.WorkedExamples.Curve37a1
 public import TauCeti.AlgebraicGeometry.EllipticCurve.TateAlgorithm.WorkedExamples
 -- Proof-only: `norm_num` evaluates the integer `gcd`s.
 import Mathlib.Tactic.NormNum.GCD
@@ -32,8 +31,10 @@ minimal at every prime (`WeierstrassCurve.isGlobalMinimal_baseChange_of_isCoprim
 coefficients `a₁, a₃ ∈ {0, 1}`, `a₂ ∈ {-1, 0, 1}` are in reduced form. By uniqueness of the reduced
 minimal equation (`WeierstrassCurve.existsUnique_reducedMinimal`), it is the only reduced minimal
 equation in its `ℚ`-isomorphism class: every curve isomorphic to it has it as its
-`WeierstrassCurve.reducedMinimalModel`. This is what lets a label name an equation. The minimal
-discriminant `|Δ_min|` is then read off it.
+`WeierstrassCurve.reducedMinimalModel`. This is what lets a label name an equation. For 11.a2 and
+37.a1 this is proved in
+`TauCeti/AlgebraicGeometry/EllipticCurve/MinimalModel/WorkedExamples/Reduced.lean`; this file adds
+11.a1. The minimal discriminant `|Δ_min|` is then read off it.
 
 **The minimal-pair equations.** Completing the square and the cube carries an equation with
 invariants `c₄, c₆` to `y² = x³ - 27c₄x - 54c₆`. For 11.a1 and 11.a2 this pair is already a minimal
@@ -51,16 +52,15 @@ discriminant is `2¹² ⋅ 37`.
 
 The LMFDB and Cremona labels of the two curves of conductor `11` are swapped: the equation
 `y² + y = x³ - x² - 10x - 20` is Cremona's 11a1 and the LMFDB's 11.a2. Both curves are certified,
-with the LMFDB names `curve11a1` and `curve11a2` of
-`TauCeti/AlgebraicGeometry/EllipticCurve/TateAlgorithm/WorkedExamples.lean`.
+with the LMFDB names `curve11a1` of
+`TauCeti/AlgebraicGeometry/EllipticCurve/TateAlgorithm/WorkedExamples.lean` and `curve11a2` of
+`TauCeti/AlgebraicGeometry/EllipticCurve/WorkedExamples.lean`.
 
 ## Main results
 
-* `TauCeti.WorkedExamples.isReducedMinimal_curve11a1`, `isReducedMinimal_curve11a2` and
-  `isReducedMinimal_curve37a1`: the three equations are reduced minimal.
-* `TauCeti.WorkedExamples.reducedMinimalModel_eq_curve11a1`, `reducedMinimalModel_eq_curve11a2`
-  and `reducedMinimalModel_eq_curve37a1`: each is the reduced minimal model of every curve
-  isomorphic to it.
+* `TauCeti.WorkedExamples.isReducedMinimal_curve11a1`: the equation of 11.a1 is reduced minimal.
+* `TauCeti.WorkedExamples.reducedMinimalModel_eq_curve11a1`: it is the reduced minimal model of
+  every curve isomorphic to it.
 * `TauCeti.WorkedExamples.absNorm_minimalDiscriminantIdeal_curve11a1` and its two companions:
   `|Δ_min|` is `11`, `11⁵` and `37`.
 * `TauCeti.WorkedExamples.minimalPairModel_model_curve11a1` and its two companions: the
@@ -85,27 +85,13 @@ open WeierstrassCurve
 
 namespace TauCeti.WorkedExamples
 
-/-! ### Reduced minimal equations -/
+/-! ### The reduced minimal equation of 11.a1 -/
 
 /-- **11.a1 is reduced minimal**: its discriminant `-11` is coprime to its `c₄`, and its
 coefficients are in reduced form. -/
 theorem isReducedMinimal_curve11a1 : IsReducedMinimal (curve11a1.baseChange ℚ) :=
   (isReducedMinimal_baseChange_iff _).2 ⟨isGlobalMinimal_baseChange_of_isCoprime _ <| by
     rw [Δ_curve11a1, c₄_curve11a1, Int.isCoprime_iff_gcd_eq_one]
-    norm_num, by norm_num, by norm_num, by norm_num⟩
-
-/-- **11.a2 is reduced minimal**: its discriminant `-11⁵` is coprime to its `c₄`, and its
-coefficients are in reduced form. -/
-theorem isReducedMinimal_curve11a2 : IsReducedMinimal (curve11a2.baseChange ℚ) :=
-  (isReducedMinimal_baseChange_iff _).2 ⟨isGlobalMinimal_baseChange_of_isCoprime _ <| by
-    rw [Δ_curve11a2, c₄_curve11a2, Int.isCoprime_iff_gcd_eq_one]
-    norm_num, by norm_num, by norm_num, by norm_num⟩
-
-/-- **37.a1 is reduced minimal**: its discriminant `37` is coprime to its `c₄`, and its
-coefficients are in reduced form. -/
-theorem isReducedMinimal_curve37a1 : IsReducedMinimal (curve37a1.baseChange ℚ) :=
-  (isReducedMinimal_baseChange_iff _).2 ⟨isGlobalMinimal_baseChange_of_isCoprime _ <| by
-    rw [Δ_curve37a1, c₄_curve37a1, Int.isCoprime_iff_gcd_eq_one]
     norm_num, by norm_num, by norm_num, by norm_num⟩
 
 /-- **The label 11.a1 names an equation**: every elliptic curve over `ℚ` isomorphic to 11.a1 has
@@ -115,19 +101,7 @@ theorem reducedMinimalModel_eq_curve11a1 {E : WeierstrassCurve ℚ} [E.IsEllipti
     reducedMinimalModel E = curve11a1.baseChange ℚ :=
   (eq_reducedMinimalModel isReducedMinimal_curve11a1 C hC).symm
 
-/-- **The label 11.a2 names an equation**: every elliptic curve over `ℚ` isomorphic to 11.a2 has
-`y² + y = x³ - x² - 10x - 20` as its reduced minimal model. -/
-theorem reducedMinimalModel_eq_curve11a2 {E : WeierstrassCurve ℚ} [E.IsElliptic]
-    (C : VariableChange ℚ) (hC : C • E = curve11a2.baseChange ℚ) :
-    reducedMinimalModel E = curve11a2.baseChange ℚ :=
-  (eq_reducedMinimalModel isReducedMinimal_curve11a2 C hC).symm
-
-/-- **The label 37.a1 names an equation**: every elliptic curve over `ℚ` isomorphic to 37.a1 has
-`y² + y = x³ - x` as its reduced minimal model. -/
-theorem reducedMinimalModel_eq_curve37a1 {E : WeierstrassCurve ℚ} [E.IsElliptic]
-    (C : VariableChange ℚ) (hC : C • E = curve37a1.baseChange ℚ) :
-    reducedMinimalModel E = curve37a1.baseChange ℚ :=
-  (eq_reducedMinimalModel isReducedMinimal_curve37a1 C hC).symm
+/-! ### Minimal discriminants -/
 
 /-- **The minimal discriminant of 11.a1 is `-11`**, of absolute value `11`. -/
 @[simp]

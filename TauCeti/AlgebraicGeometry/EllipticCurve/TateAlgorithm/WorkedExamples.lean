@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.TateAlgorithm.Reduction.Type
+public import TauCeti.AlgebraicGeometry.EllipticCurve.WorkedExamples
 -- Proof-only: divisibility of integers by powers of `p` is read in `ℤ`.
 import TauCeti.Data.Nat.Prime.IntCast
 -- Proof-only: `norm_num` decides primality of the small primes.
@@ -137,9 +138,6 @@ theorem isMinimal_and_exists_isTateTerminal_curve11a1_2 (h : Irreducible (2 : R)
       ∃ C : VariableChange R, (C • curve11a1.map (Int.castRingHom R)).IsTateTerminal 2 (.I 0) :=
   isMinimal_and_exists_isTateTerminal K (p := 2) (by norm_num) (by norm_num) h curve11a1
     (by simp [Δ, b₂, b₄, b₆, b₈]) 1 (by simp [Δ, b₂, b₄, b₆, b₈])
-
-/-- The curve 11.a2, `y² + y = x³ - x² - 10 x - 20`, of discriminant `-11⁵`. -/
-abbrev curve11a2 : WeierstrassCurve ℤ := ⟨0, -1, 1, -10, -20⟩
 
 /-- **Tate's algorithm stops at `I₅` on 11.a2 at `11`**, and the equation is
 minimal there. -/
@@ -306,21 +304,6 @@ theorem Δ_curve11a1 : curve11a1.Δ = -11 := by
 instance : (curve11a1.baseChange ℚ).IsElliptic := by
   rw [isElliptic_iff, WeierstrassCurve.baseChange, map_Δ, Δ_curve11a1]
   norm_num
-
-/-- The discriminant of 11.a2 is `-11⁵`. -/
-@[simp]
-theorem Δ_curve11a2 : curve11a2.Δ = -161051 := by
-  simp [Δ, b₂, b₄, b₆, b₈]
-
-/-- 11.a2 is an elliptic curve over `ℚ`. -/
-instance : (curve11a2.baseChange ℚ).IsElliptic := by
-  rw [isElliptic_iff, WeierstrassCurve.baseChange, map_Δ, Δ_curve11a2]
-  norm_num
-
-/-- The `c₄` invariant of 11.a2 is `496 = 2⁴ ⋅ 31`. -/
-@[simp]
-theorem c₄_curve11a2 : curve11a2.c₄ = 496 := by
-  simp [c₄, b₂, b₄]
 
 /-- The discriminant of 27.a4 is `-3³`. -/
 theorem Δ_curve27a4 : curve27a4.Δ = -27 := by
