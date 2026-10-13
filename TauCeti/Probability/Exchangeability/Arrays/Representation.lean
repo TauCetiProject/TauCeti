@@ -72,7 +72,7 @@ theorem separatelyExchangeable_rowCodingArrayLaw
 law. This identifies the parameter law from the array law. -/
 @[simp]
 theorem map_curry_rowCodingArrayLaw (π : Measure (ProbabilityMeasure (ℕ → α))) :
-    (rowCodingArrayLaw π).map (MeasurableEquiv.curry ℕ ℕ α) = deFinettiBarycenter π := by
+    (rowCodingArrayLaw π).map (MeasurableEquiv.curry ℕ ℕ α) = Measure.deFinettiBarycenter π := by
   rw [rowCodingArrayLaw_eq_map_snd, map_snd_arrayRowCodingLaw,
     Measure.map_map (MeasurableEquiv.measurable _) measurable_uncurry]
   have h : (MeasurableEquiv.curry ℕ ℕ α) ∘ Function.uncurry = id := by
@@ -87,7 +87,7 @@ theorem eq_of_rowCodingArrayLaw_eq {π₁ π₂ : Measure (ProbabilityMeasure (�
   apply TauCeti.MeasureTheory.Measure.ext_of_bind_infinitePi_eq
   have h' := congrArg (fun ρ : Measure (ℕ × ℕ → α) ↦
     ρ.map (MeasurableEquiv.curry ℕ ℕ α)) h
-  simpa only [map_curry_rowCodingArrayLaw, deFinettiBarycenter_def] using h'
+  simpa only [map_curry_rowCodingArrayLaw, Measure.deFinettiBarycenter_def] using h'
 
 /-- Equality of finite mixing laws is equivalent to equality of their row-coding array laws. -/
 @[simp]

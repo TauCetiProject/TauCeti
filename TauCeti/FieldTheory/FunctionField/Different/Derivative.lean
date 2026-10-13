@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.FieldTheory.FunctionField.Different.Complementary
+public import TauCeti.RingTheory.DedekindDomain.Different.Derivative
 public import TauCeti.RingTheory.DedekindDomain.Different.Monogenic
 import TauCeti.FieldTheory.FunctionField.Different.Localization
 
@@ -91,13 +92,8 @@ theorem differentExponent_le_ord_aeval_derivative {y : F'} (hgen : F⟮y⟯ = �
   have hinj : Function.Injective (algebraMap (integralClosure A F') F') :=
     FaithfulSMul.algebraMap_injective _ _
   have hqx : aeval x q = 0 := hinj (by rw [← aeval_algebraMap_apply, hx, hqy, map_zero])
-  -- The minimal polynomial of `x` over the integrally closed `𝒪_P` divides `q`, so `q'(x)` is a
-  -- multiple of the element `φ'(x)` of the different ideal.
-  obtain ⟨h, hh⟩ := minpoly.isIntegrallyClosed_dvd (integralClosure.isIntegral x) hqx
-  have hmem : aeval x (derivative q) ∈
-      differentIdeal A (integralClosure A F') := by
-    rw [hh, derivative_mul, map_add, map_mul, map_mul, minpoly.aeval, zero_mul, add_zero]
-    exact Ideal.mul_mem_right _ _ (aeval_derivative_mem_differentIdeal A F F' x hgen')
+  have hmem : aeval x (derivative q) ∈ differentIdeal A (integralClosure A F') :=
+    aeval_derivative_mem_differentIdeal_of_aeval_eq_zero (K := F) (L := F') hgen' hqx
   have hval : algebraMap (integralClosure A F') F' (aeval x (derivative q)) =
       aeval y (derivative ψ) := by
     rw [← aeval_algebraMap_apply, hx, ← hq, derivative_map, aeval_map_algebraMap]

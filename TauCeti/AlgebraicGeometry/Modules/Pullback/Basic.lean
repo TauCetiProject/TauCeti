@@ -60,6 +60,9 @@ local data on the preimage cover.
 * `AlgebraicGeometry.Scheme.Modules.isMonoidal_pushforwardComp_hom` and
   `AlgebraicGeometry.Scheme.Modules.pullback_comp_δ`: the composition isomorphisms of pushforward
   and pullback respect the lax and oplax monoidal structures;
+* `TauCeti.AlgebraicGeometry.pullbackComp_hom_app_comp_δ`: the tensor compatibility of
+  `AlgebraicGeometry.Scheme.Modules.pullbackComp` with the composition isomorphism on the left,
+  without its inverse;
 * `AlgebraicGeometry.Scheme.Modules.restrictPullbackObjIso` identifies these two restricted
   pullbacks;
 * `AlgebraicGeometry.Scheme.Modules.isIso_iff_of_isOpenCover`: a morphism of modules is an
@@ -374,6 +377,18 @@ lemma pullback_comp_δ (M N : Z.Modules) :
   have : (SheafOfModules.pushforward f.toRingCatSheafHom).IsRightAdjoint :=
     inferInstanceAs (pushforward f).IsRightAdjoint
   TauCeti.SheafOfModules.pullback_comp_δ g.toRingCatSheafHom f.toRingCatSheafHom M N
+
+/-- The composition isomorphism followed by the tensor comparison for a composite pullback
+agrees with the successive tensor comparisons followed by the composition isomorphisms on
+both factors. This form does not involve the inverse composition isomorphism. -/
+@[reassoc]
+lemma _root_.TauCeti.AlgebraicGeometry.pullbackComp_hom_app_comp_δ (M N : Z.Modules) :
+    (pullbackComp f g).hom.app (M ⊗ N) ≫
+        Functor.OplaxMonoidal.δ (pullback (f ≫ g)) M N =
+      (pullback f).map (Functor.OplaxMonoidal.δ (pullback g) M N) ≫
+        Functor.OplaxMonoidal.δ (pullback f) _ _ ≫
+        ((pullbackComp f g).hom.app M ⊗ₘ (pullbackComp f g).hom.app N) := by
+  rw [pullback_comp_δ, Iso.hom_inv_id_app_assoc]
 
 end Monoidal
 
