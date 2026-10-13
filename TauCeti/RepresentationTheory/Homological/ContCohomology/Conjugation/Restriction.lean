@@ -95,7 +95,7 @@ theorem explicitMap1_explicitRes1_of_conj (x : H1 G M) :
   exact congrArg (fun F => F x)
     (explicitMap1_eq_of_conj G M V M (ContinuousMonoidHom.subgroupSubtype V)
       ((ContinuousMonoidHom.subgroupSubtype U).comp κ) (AddMonoidHom.id M)
-      (f.comp (AddMonoidHom.id M)) continuous_id _ _ _ g
+      (f.comp (AddMonoidHom.id M)) continuous_id _ g
       (fun v => by simpa using hκ v) (fun m => by simpa using hf m))
 
 include hf in

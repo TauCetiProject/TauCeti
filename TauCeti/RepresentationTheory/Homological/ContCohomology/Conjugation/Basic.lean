@@ -51,12 +51,20 @@ same group element's action leaves the map on explicit `H¹` unchanged. This is 
 compatible-pair form of the conjugation invariance in Neukirch, Schmidt and Wingberg,
 *Cohomology of Number Fields*, Chapter I, §5. -/
 theorem explicitMap1_eq_of_conj
-    (φ ψ : H →ₜ* G) (f q : M →+ N) (hf : Continuous f) (hq : Continuous q)
+    (φ ψ : H →ₜ* G) (f q : M →+ N) (hf : Continuous f)
     (hφ : ∀ (h : H) (m : M), f (φ h • m) = h • f m)
-    (hψ : ∀ (h : H) (m : M), q (ψ h • m) = h • q m)
     (g : G) (hconj : ∀ h, ψ h = g⁻¹ * φ h * g)
     (hqf : ∀ m, q m = f (g • m)) :
-    explicitMap1 G M H N ψ q hq hψ = explicitMap1 G M H N φ f hf hφ := by
+    explicitMap1 G M H N ψ q
+      ((hf.comp (continuous_const.smul continuous_id)).congr fun m => (hqf m).symm)
+      (fun h m => by
+        calc
+          q (ψ h • m) = f (g • (ψ h • m)) := hqf _
+          _ = f (φ h • (g • m)) := by
+            rw [hconj, mul_smul, mul_smul, smul_inv_smul]
+          _ = h • f (g • m) := hφ _ _
+          _ = h • q m := congrArg (h • ·) (hqf m).symm) =
+      explicitMap1 G M H N φ f hf hφ := by
   apply AddMonoidHom.ext
   intro x
   induction x using QuotientAddGroup.induction_on with

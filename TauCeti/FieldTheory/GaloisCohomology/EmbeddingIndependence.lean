@@ -48,7 +48,7 @@ theorem explicitMap1_absoluteGaloisGroupMap_eq
       explicitMap1 (AbsoluteGaloisGroup K) M (AbsoluteGaloisGroup L) N
         (absoluteGaloisGroupMap τ') (F τ') continuous_of_discreteTopology (hF τ') := by
   obtain ⟨h, rfl⟩ := τ.exists_comp_eq_of_normal τ'
-  exact (explicitMap1_eq_of_conj _ _ _ _ _ _ _ _ _ _ _ _ h
+  exact (explicitMap1_eq_of_conj _ _ _ _ _ _ _ _ _ _ h
     (absoluteGaloisGroupMap_comp τ h) (hFcomp τ h)).symm
 
 end TauCeti.ContCohomology
