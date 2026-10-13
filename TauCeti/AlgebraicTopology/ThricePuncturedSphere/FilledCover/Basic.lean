@@ -79,37 +79,6 @@ local notation "𝔻*" => Set.Elem (ball (0 : ℂ) 1 \ {0})
 
 variable {E : Type*} [TopologicalSpace E] (p : E → ThricePuncturedSphere)
 
-namespace FilledPoint
-
-/-- The added points as pairs `⟨q, c⟩` of a puncture `q` and a connected component `c` of
-`p ⁻¹' D_q*`, so that the three punctures can be handled by one argument. -/
-def sigmaEquiv : FilledPoint p ≃ Σ q : Puncture, ConnectedComponents (p ⁻¹' q.neighborhood) :=
-  (equivSum p).trans
-    { toFun
-        | .inl c => ⟨.zero, c⟩
-        | .inr (.inl c) => ⟨.one, c⟩
-        | .inr (.inr c) => ⟨.inf, c⟩
-      invFun
-        | ⟨.zero, c⟩ => .inl c
-        | ⟨.one, c⟩ => .inr (.inl c)
-        | ⟨.inf, c⟩ => .inr (.inr c)
-      left_inv := by rintro (c | c | c) <;> rfl
-      right_inv := by rintro ⟨_ | _ | _, c⟩ <;> rfl }
-
-@[simp]
-theorem sigmaEquiv_overZero (c) : sigmaEquiv p (overZero p c) = ⟨.zero, c⟩ := by
-  simp [sigmaEquiv]
-
-@[simp]
-theorem sigmaEquiv_overOne (c) : sigmaEquiv p (overOne p c) = ⟨.one, c⟩ := by
-  simp [sigmaEquiv]
-
-@[simp]
-theorem sigmaEquiv_overInf (c) : sigmaEquiv p (overInf p c) = ⟨.inf, c⟩ := by
-  simp [sigmaEquiv]
-
-end FilledPoint
-
 open FilledPoint
 
 namespace FilledCover
@@ -133,6 +102,14 @@ def degree (i : FilledPoint p) : ℕ :=
   Nat.card ((component p i).domRestrict
     ((sigmaEquiv p i).1.coord ∘ (sigmaEquiv p i).1.neighborhood.restrictPreimage p) ⁻¹'
       {puncturedDiscBasepoint})
+
+/-- The local degree is the cardinality of the component fibre over the standard basepoint of
+the punctured disc. -/
+theorem degree_def (i : FilledPoint p) :
+    degree p i = Nat.card ((component p i).domRestrict
+      ((sigmaEquiv p i).1.coord ∘ (sigmaEquiv p i).1.neighborhood.restrictPreimage p) ⁻¹'
+        {puncturedDiscBasepoint}) :=
+  (rfl)
 
 /-- `φ` parametrises the component `i` of `p ⁻¹' D_q*` by `𝔻*`, with `p` becoming the power map
 `w ↦ w ^ degree p i` in the standard coordinate of `D_q*`. -/
@@ -312,61 +289,6 @@ theorem t2Space : T2Space (FilledCover p) := by
       range_mem_map
 
 omit hfin in
-/-- **The added points are the cycles of the monodromy.** For a cover whose fibre over `1/2` is
-numbered by `ν`, the components of `p ⁻¹' D_q*` over the punctures `0`, `1` and `∞`, which are
-the points added in `FilledCover p`, are the cycles of `σ0`, `σ1` and `σinf` respectively
-(`IsCoveringMap.sameCycleQuotientσ0EquivConnectedComponents` and its analogues). -/
-def indexEquiv {n : ℕ} (ν : p ⁻¹' {basePt} ≃ Fin n) :
-    FilledPoint p ≃ Quotient (SameCycle.setoid (hp.monodromyTriple ν).σ0) ⊕
-      Quotient (SameCycle.setoid (hp.monodromyTriple ν).σ1) ⊕
-        Quotient (SameCycle.setoid (hp.monodromyTriple ν).σinf) :=
-  (equivSum p).trans <| (hp.sameCycleQuotientσ0EquivConnectedComponents ν).symm.sumCongr <|
-    (hp.sameCycleQuotientσ1EquivConnectedComponents ν).symm.sumCongr
-      (hp.sameCycleQuotientσinfEquivConnectedComponents ν).symm
-
-omit hfin in
-@[simp]
-theorem indexEquiv_overZero {n : ℕ} (ν : p ⁻¹' {basePt} ≃ Fin n) (c) :
-    indexEquiv hp ν (overZero p c) =
-      .inl ((hp.sameCycleQuotientσ0EquivConnectedComponents ν).symm c) := by
-  simp [indexEquiv]
-
-omit hfin in
-@[simp]
-theorem indexEquiv_overOne {n : ℕ} (ν : p ⁻¹' {basePt} ≃ Fin n) (c) :
-    indexEquiv hp ν (overOne p c) =
-      .inr (.inl ((hp.sameCycleQuotientσ1EquivConnectedComponents ν).symm c)) := by
-  simp [indexEquiv]
-
-omit hfin in
-@[simp]
-theorem indexEquiv_overInf {n : ℕ} (ν : p ⁻¹' {basePt} ≃ Fin n) (c) :
-    indexEquiv hp ν (overInf p c) =
-      .inr (.inr ((hp.sameCycleQuotientσinfEquivConnectedComponents ν).symm c)) := by
-  simp [indexEquiv]
-
-omit hfin in
-@[simp]
-theorem indexEquiv_symm_inl {n : ℕ} (ν : p ⁻¹' {basePt} ≃ Fin n) (a) :
-    (indexEquiv hp ν).symm (.inl a) =
-      overZero p (hp.sameCycleQuotientσ0EquivConnectedComponents ν a) := by
-  rw [Equiv.symm_apply_eq, indexEquiv_overZero, Equiv.symm_apply_apply]
-
-omit hfin in
-@[simp]
-theorem indexEquiv_symm_inr_inl {n : ℕ} (ν : p ⁻¹' {basePt} ≃ Fin n) (a) :
-    (indexEquiv hp ν).symm (.inr (.inl a)) =
-      overOne p (hp.sameCycleQuotientσ1EquivConnectedComponents ν a) := by
-  rw [Equiv.symm_apply_eq, indexEquiv_overOne, Equiv.symm_apply_apply]
-
-omit hfin in
-@[simp]
-theorem indexEquiv_symm_inr_inr {n : ℕ} (ν : p ⁻¹' {basePt} ≃ Fin n) (a) :
-    (indexEquiv hp ν).symm (.inr (.inr a)) =
-      overInf p (hp.sameCycleQuotientσinfEquivConnectedComponents ν a) := by
-  rw [Equiv.symm_apply_eq, indexEquiv_overInf, Equiv.symm_apply_apply]
-
-omit hfin in
 /-- **The local degree over `0` is the cycle length.** The component of `p ⁻¹' D₀*` labelled by
 the cycle of the sheet `j` under `σ0` has local degree the length of that cycle. -/
 theorem degree_indexEquiv_symm_inl {n : ℕ} (ν : p ⁻¹' {basePt} ≃ Fin n) (j : Fin n) :
@@ -413,12 +335,6 @@ theorem degree_indexEquiv_symm_inr_inr {n : ℕ} (ν : p ⁻¹' {basePt} ≃ Fin
     (degree_ne_zero hp hfin _)).1 ?_).symm
   rw [← connectedComponents_preimage_singleton, ← Puncture.coord_inf]
   exact key
-
-/-- **A finite cover has finitely many added points.** This is `FilledPoint.finite`, applied to a
-numbering of the fibre over `1/2`, which is finite as soon as one fibre is. -/
-theorem finite_filledPoint : Finite (FilledPoint p) :=
-  have := finite_fiber_of_finite_fiber hp hfin basePt
-  FilledPoint.finite p hp (Finite.equivFin _)
 
 /-- **The filled cover is compact**: outside the images of the discs of radius `1 / 2` under the
 filling charts, a finite cover lies over a compact core of `ℂ ∖ {0, 1}`. -/
