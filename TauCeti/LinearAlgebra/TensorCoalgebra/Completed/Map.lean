@@ -45,6 +45,30 @@ length filtration by at most `c`. -/
 def HasLengthBound (c : ℕ) (f : TensorWords R M →ₗ[R] TensorWords R N) : Prop :=
   ∀ k (x : TensorWords R M), f (truncate R M (k + 1 + c) x) k = f x k
 
+/-- A length bound can be checked on individual tensor powers: an input of length at least
+`k + 1 + c` contributes nothing to the output of length `k`. -/
+theorem hasLengthBound_iff_component_of_eq_zero (c : ℕ)
+    (f : TensorWords R M →ₗ[R] TensorWords R N) :
+    HasLengthBound c f ↔ ∀ k n, k + 1 + c ≤ n →
+      ∀ z : TensorPower R n M, TensorWords.component R N k (f (TensorWords.of R M n z)) = 0 := by
+  constructor
+  · intro hf k n hn z
+    have h := hf k (TensorWords.of R M n z)
+    rw [truncate_of, ite_eq_right (by omega), map_zero, DFinsupp.zero_apply] at h
+    exact (TensorWords.component_apply R N k _).trans h.symm
+  · intro hf k x
+    have h : TensorWords.component R N k ∘ₗ f ∘ₗ truncate R M (k + 1 + c) ∘ₗ
+        DFinsupp.coeFnLinearMap R = TensorWords.component R N k ∘ₗ f := by
+      apply TensorWords.linearMap_ext R M
+      intro n y
+      simp only [LinearMap.comp_apply]
+      rw [DFinsupp.coeFnLinearMap_apply, truncate_of]
+      split_ifs with hn
+      · rfl
+      · rw [map_zero, map_zero, hf k n (by omega)]
+    exact (TensorWords.component_apply R N k _).symm.trans
+      ((LinearMap.congr_fun h x).trans (TensorWords.component_apply R N k _))
+
 /-- Enlarging a length bound preserves coordinate locality. -/
 theorem HasLengthBound.mono {c d : ℕ} {f : TensorWords R M →ₗ[R] TensorWords R N}
     (hf : HasLengthBound c f) (hcd : c ≤ d) : HasLengthBound d f := by
