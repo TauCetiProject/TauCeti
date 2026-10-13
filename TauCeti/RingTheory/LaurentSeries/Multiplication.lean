@@ -11,8 +11,9 @@ public import TauCeti.RingTheory.HahnSeries.Multiplication
 /-!
 # Orders of powers of Laurent series
 
-Over a domain, the order of a power of a nonzero Laurent series is the exponent times its
-integer order. In particular, a power greater than one strictly lowers a negative order.
+Over a nontrivial semiring without zero divisors, the order of a power of a nonzero Laurent
+series is the exponent times its integer order. In particular, a power greater than one
+strictly lowers a negative order.
 These formulas compare poles of a Laurent series and its powers.
 -/
 
@@ -24,7 +25,7 @@ namespace TauCeti
 
 open _root_.HahnSeries
 
-variable {k : Type*} [Semiring k] [IsDomain k] {n : ℕ}
+variable {k : Type*} [Semiring k] [NoZeroDivisors k] [Nontrivial k] {n : ℕ}
 
 /-- The order of a power of a nonzero Laurent series is the corresponding multiple of its
 integer order. -/
