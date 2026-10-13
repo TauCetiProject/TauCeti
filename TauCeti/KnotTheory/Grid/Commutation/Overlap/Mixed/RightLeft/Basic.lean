@@ -177,11 +177,11 @@ noncomputable def recutRightEqLeft (D : GridRectanglePentagonDecomposition a s x
     (hturn : s ∈ Grid.cIco D.rectangle.top D.pentagon.top) :
     GridPentagonRectangleDecomposition a s x z where
   middle := (D.rightLeftRecut hcommon hrectangle hpentagon hturn).middle
-  pentagon := GridPentagonBetween.ofRightEq
+  first := GridPentagonBetween.ofRightEq
     (D.rightLeftRecut hcommon hrectangle hpentagon hturn).first
     (D.rightLeftRecut_geometry hcommon hrectangle hpentagon hturn).1
     (D.rightLeftRecut_geometry hcommon hrectangle hpentagon hturn).2.2.2
-  rectangle := (D.rightLeftRecut hcommon hrectangle hpentagon hturn).second
+  second := (D.rightLeftRecut hcommon hrectangle hpentagon hturn).second
 
 /-- Forgetting the turn row of the promoted decomposition recovers the generic recut. -/
 @[simp]
@@ -200,7 +200,7 @@ theorem recutRightEqLeft_toRectangleDecomposition
     exact GridPentagonBetween.ofRightEq_left _ _ _
   · simp only [recutRightEqLeft,
       GridPentagonRectangleDecomposition.toRectangleDecomposition_first_right,
-      GridPentagonBetween.ofRightEq_right]
+      GridPentagonRectangleDecomposition.pentagon, GridPentagonBetween.ofRightEq_right]
     exact (D.rightLeftRecut_geometry hcommon hrectangle hpentagon hturn).1.symm
   · simp only [recutRightEqLeft,
       GridPentagonRectangleDecomposition.toRectangleDecomposition_second_left, rightLeftRecut]
@@ -227,8 +227,10 @@ theorem recutRightEqLeft_top (D : GridRectanglePentagonDecomposition a s x z)
       (D.recutRightEqLeft hcommon hrectangle hpentagon hturn).rectangle.top =
         D.rectangle.top := by
   obtain ⟨-, htop, hsecondTop, -⟩ := D.rightLeftRecut_geometry hcommon hrectangle hpentagon hturn
-  exact ⟨by simpa only [recutRightEqLeft, GridPentagonBetween.ofRightEq_top] using htop,
-    by simpa only [recutRightEqLeft] using hsecondTop⟩
+  exact ⟨by simpa only [recutRightEqLeft, GridPentagonRectangleDecomposition.pentagon,
+      GridPentagonBetween.ofRightEq_top] using htop,
+    by simpa only [recutRightEqLeft, GridPentagonRectangleDecomposition.rectangle] using
+      hsecondTop⟩
 
 /-- The promoted pentagon--rectangle recut has its pentagon on the replaced grid line, preserves
 the two outer top rows, and places the turn row inside the promoted pentagon. -/
@@ -244,11 +246,13 @@ theorem recutRightEqLeft_geometry (D : GridRectanglePentagonDecomposition a s x 
   obtain ⟨hright, hptop, hrtop, hturn'⟩ :=
     D.rightLeftRecut_geometry hcommon hrectangle hpentagon hturn
   refine ⟨?_, ?_, ?_, ?_⟩
-  · simp only [recutRightEqLeft, GridPentagonBetween.ofRightEq_right]
-  · simpa only [E, recutRightEqLeft, GridPentagonBetween.ofRightEq_top] using hptop
-  · simpa only [E, recutRightEqLeft] using hrtop
-  · simpa only [E, recutRightEqLeft, GridPentagonBetween.ofRightEq_bottom,
-      GridPentagonBetween.ofRightEq_top] using hturn'
+  · simp only [recutRightEqLeft, GridPentagonRectangleDecomposition.pentagon,
+      GridPentagonBetween.ofRightEq_right]
+  · simpa only [E, recutRightEqLeft, GridPentagonRectangleDecomposition.pentagon,
+      GridPentagonBetween.ofRightEq_top] using hptop
+  · simpa only [E, recutRightEqLeft, GridPentagonRectangleDecomposition.rectangle] using hrtop
+  · simpa only [E, recutRightEqLeft, GridPentagonRectangleDecomposition.pentagon,
+      GridPentagonBetween.ofRightEq_bottom, GridPentagonBetween.ofRightEq_top] using hturn'
 
 /-- The promoted recut of a mixed `right = left` overlap covers the squares of the original domain
 with the same multiplicities, the rectangle of the commuted diagram being read in the original
