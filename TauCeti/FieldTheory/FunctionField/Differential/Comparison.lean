@@ -200,7 +200,6 @@ theorem kaehlerDifferentialEquivWeilDifferentialOfSeparating_D
 
 /-- The Kähler–Weil comparison determined by `x` preserves coordinates: the coordinate in `dx` of
 the Weil differential attached to `ω` is the coordinate of `ω` in `dx`. -/
-@[simp]
 theorem coord_kaehlerDifferentialEquivWeilDifferentialOfSeparating
     (hF : IsFunctionField k F) (hex : IsIntegrallyClosedIn k F)
     (hx : Transcendental k x) [Algebra.IsSeparable k⟮x⟯ F] (ω : Ω[F⁄k]) :
