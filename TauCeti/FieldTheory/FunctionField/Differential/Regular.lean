@@ -15,11 +15,11 @@ At a rational place `P`, a separating uniformizer `t` identifies the image of
 coefficient in the basis `dt`, without assuming that the map from local differentials is
 injective.
 
-When the Kähler–Weil comparison is independent of the separating element, this lattice
-is exactly the annihilator of `𝒪_P` under the local residue pairing. For nonzero
-differentials it is therefore exactly the nonnegative-order lattice of Weil differentials.
-This is the local comparison needed to identify the differential sheaf on a smooth curve
-with a canonical divisor sheaf. The results concern rational places; over an algebraically
+When the Kähler–Weil comparison is independent of the separating element, as it is over a
+perfect constant field, this lattice is exactly the annihilator of `𝒪_P` under the local residue
+pairing. For nonzero differentials it is therefore exactly the nonnegative-order lattice of Weil
+differentials. This is the local comparison needed to identify the differential sheaf on a smooth
+curve with a canonical divisor sheaf. The results concern rational places; over an algebraically
 closed constant field every place of a function field is rational.
 
 ## References
@@ -28,8 +28,9 @@ closed constant field every place of a function field is rational.
 * R. Hartshorne, *Algebraic Geometry*, II, Section 8, and IV, Section 1.
 
 The Kähler–Weil comparison and its residue formula are those of
-`kaehlerDifferentialEquivWeilDifferentialOfSeparating` and
-`repartitionDualComponent_kaehlerDifferentialEquivWeilDifferentialOfSeparating`.
+`kaehlerDifferentialEquivWeilDifferentialOfSeparating`,
+`repartitionDualComponent_kaehlerDifferentialEquivWeilDifferentialOfSeparating` and, over a
+perfect constant field, `Place.kaehlerResidueOfPerfectField_smul_eq_repartitionDualComponent`.
 -/
 
 public section
@@ -146,7 +147,7 @@ end WithUniformizer
 
 variable {k F : Type*} [Field k] [Field F] [Algebra k F] [PerfectField k]
   (P : Place k F) (hP : P.degree = 1) (hF : IsFunctionField k F)
-  (hex : IsIntegrallyClosedIn k F) (hinf : {Q : Place k F | Q.degree = 1}.Infinite)
+  (hex : IsIntegrallyClosedIn k F)
   {x : F} (hx : Transcendental k x) [Algebra.IsSeparable k⟮x⟯ F]
 
 /-- Over a perfect field, a Kähler differential comes from the valuation ring of a rational
@@ -162,10 +163,10 @@ theorem mem_range_map_iff_forall_kaehlerResidueOfPerfectField_smul_eq_zero (ω :
     P.coord_mem_integers_iff_forall_kaehlerResidue_smul_eq_zero hP ht htr,
     P.kaehlerResidueOfPerfectField_eq_kaehlerResidue hP ht hF htr]
 
-include hP hinf in
-/-- Over a perfect exact constant field with infinitely many rational places, the image of
-local Kähler differentials at a rational place is the annihilator of its valuation ring for the
-local component of the Kähler–Weil comparison, without choosing a uniformizer. -/
+include hP in
+/-- Over a perfect exact constant field, the image of local Kähler differentials at a rational
+place is the annihilator of its valuation ring for the local component of the Kähler–Weil
+comparison, without choosing a uniformizer. -/
 theorem mem_range_map_iff_forall_repartitionDualComponent_eq_zero (ω : Ω[F⁄k]) :
     ω ∈ (KaehlerDifferential.map k k P.integers F).range ↔
       ∀ u ∈ P.integers,
@@ -173,22 +174,20 @@ theorem mem_range_map_iff_forall_repartitionDualComponent_eq_zero (ω : Ω[F⁄k
           (kaehlerDifferentialEquivWeilDifferentialOfSeparating hF hex hx ω :
             Module.Dual k ↥(repartitionSpace k F)) P u = 0 := by
   rw [P.mem_range_map_iff_forall_kaehlerResidueOfPerfectField_smul_eq_zero hP hF]
-  simp_rw [P.kaehlerResidueOfPerfectField_smul_eq_repartitionDualComponent hF hex hinf hx hP]
+  simp_rw [P.kaehlerResidueOfPerfectField_smul_eq_repartitionDualComponent hF hex hx hP]
 
-include hP hinf in
-/-- Over a perfect exact constant field with infinitely many rational places, a nonzero Weil
-differential has nonnegative order at a rational place exactly when its corresponding Kähler
-differential comes from that place's valuation ring. No uniformizer is part of the statement. -/
+include hP in
+/-- Over a perfect exact constant field, a nonzero Weil differential has nonnegative order at a
+rational place exactly when its corresponding Kähler differential comes from that place's
+valuation ring. No uniformizer is part of the statement. -/
 theorem mem_range_map_iff_weilDifferentialOrder_nonneg
     (ω : weilDifferentialSpace k F)
     (hω : (ω : Module.Dual k ↥(repartitionSpace k F)) ≠ 0) :
     (kaehlerDifferentialEquivWeilDifferentialOfSeparating hF hex hx).symm ω ∈
         (KaehlerDifferential.map k k P.integers F).range ↔
       0 ≤ weilDifferentialOrder hF hex ω.2 hω P := by
-  obtain ⟨t, ht, -⟩ := P.exists_ord_eq_one_and_forall_mem_ord_eq_zero ∅
-  obtain ⟨htr, hsep⟩ := P.transcendental_and_isSeparable_adjoin_of_ord_eq_one hF ht
-  let := hsep
-  exact P.mem_range_map_iff_weilDifferentialOrder_nonneg_of_uniformizer
-    hP ht htr hF hex hinf hx ω hω
+  rw [P.mem_range_map_iff_forall_repartitionDualComponent_eq_zero hP hF hex hx,
+    LinearEquiv.apply_symm_apply, le_weilDifferentialOrder_iff hF hex ω.2 hω P 0]
+  simp only [WithZero.exp_zero, ← P.mem_integers_iff]
 
 end TauCeti.Place

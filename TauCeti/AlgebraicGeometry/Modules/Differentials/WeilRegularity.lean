@@ -18,13 +18,12 @@ the Kähler differentials of its associated place's valuation ring. This compari
 an arbitrary field and does not require that the place be rational.
 
 For an invertible differential sheaf on an open subset of dimension at most one, regularity is
-detected at its codimension-one points. At rational places over a perfect exact constant field
-with infinitely many rational places, the Kähler–Weil comparison identifies this condition
-with nonnegative Weil order. Over an algebraically closed field all places are rational and
-the infinitude and exact-constant-field conditions are automatic. Thus a nonzero Weil
-differential corresponds to a regular section on the open subset exactly when it has no poles
-there. This supplies the local-lattice comparison for identifying the differential line bundle
-with a canonical divisor sheaf.
+detected at its codimension-one points. At rational places over a perfect exact constant field,
+the Kähler–Weil comparison identifies this condition with nonnegative Weil order. Over an
+algebraically closed field all places are rational and the constant field is exact. Thus a
+nonzero Weil differential corresponds to a regular section on the open subset exactly when it has
+no poles there. This supplies the local-lattice comparison for identifying the differential line
+bundle with a canonical divisor sheaf.
 
 ## References
 
@@ -89,14 +88,12 @@ variable [SheafOfModules.isInvertible X (X.relativeDifferentials k)]
 
 variable [PerfectField k]
   (hF : IsFunctionField k X.functionField) (hk : IsIntegrallyClosedIn k X.functionField)
-  (hinf : {P : Place k X.functionField | P.degree = 1}.Infinite)
   {t : X.functionField} (ht : Transcendental k t) [Algebra.IsSeparable k⟮t⟯ X.functionField]
 
-include hinf in
-/-- Over a perfect exact constant field with infinitely many rational places, a nonzero Weil
-differential corresponds to a regular differential on a curve open exactly when its order is
-nonnegative at every codimension-one point there. The degree-one hypothesis specifies the
-places for which the local Kähler–Weil regularity comparison is available. -/
+/-- Over a perfect exact constant field, a nonzero Weil differential corresponds to a regular
+differential on a curve open exactly when its order is nonnegative at every codimension-one point
+there. The degree-one hypothesis specifies the places for which the local Kähler–Weil regularity
+comparison is available. -/
 theorem mem_range_rationalDifferential_iff_weilDifferentialOrder_nonneg
     (U : X.Opens) [Nonempty U] (hU : ∀ y ∈ U, coheight y ≤ 1)
     (hDVR : ∀ y : CodimensionOnePoint X, (y : X) ∈ U →
@@ -119,15 +116,14 @@ theorem mem_range_rationalDifferential_iff_weilDifferentialOrder_nonneg
   let := hDVR y hy
   rw [mem_range_rationalDifferentialStalk_iff_mem_range_map]
   exact (X.toPlace (k := k) (y : X)).mem_range_map_iff_weilDifferentialOrder_nonneg
-    (hdeg y hy) hF hk hinf ht ω hω
+    (hdeg y hy) hF hk ht ω hω
 
 variable [IsLocallyNoetherian X]
 
-include hinf in
 /-- The rational differential `f dt` is regular on `U` exactly when `f` satisfies the
 order bounds of the divisor of the Weil differential `dt`. Only codimension-one stalks
 on `U` are required to be discrete valuation rings with rational associated places. The
-constant field is perfect and exact, and has infinitely many rational places. -/
+constant field is perfect and exact. -/
 theorem smul_D_mem_range_rationalDifferential_iff (U : X.Opens) [Nonempty U]
     (hU : ∀ y ∈ U, coheight y ≤ 1)
     (hDVR : ∀ y : CodimensionOnePoint X, (y : X) ∈ U →
@@ -155,7 +151,7 @@ theorem smul_D_mem_range_rationalDifferential_iff (U : X.Opens) [Nonempty U]
       f • KaehlerDifferential.D k X.functionField t := by
     simp [ω]
   rw [← he, mem_range_rationalDifferential_iff_weilDifferentialOrder_nonneg
-    hF hk hinf ht U hU hDVR hdeg ω hω]
+    hF hk ht U hU hDVR hdeg ω hω]
   simp only [hf, false_or]
   apply forall_congr'
   intro y
@@ -181,8 +177,7 @@ variable [IsAlgClosed k] [SheafOfModules.isInvertible X (X.relativeDifferentials
 
 /-- Over an algebraically closed field, a nonzero Weil differential corresponds to a regular
 differential on a curve open exactly when it has nonnegative order at all codimension-one
-points there. Algebraic closure supplies exact constants, rationality of every place, and
-infinitely many rational places. -/
+points there. Algebraic closure supplies exact constants and rationality of every place. -/
 theorem mem_range_rationalDifferential_iff_weilDifferentialOrder_nonneg_of_isAlgClosed
     (U : X.Opens) [Nonempty U] (hU : ∀ y ∈ U, coheight y ≤ 1)
     (hDVR : ∀ y : CodimensionOnePoint X, (y : X) ∈ U →
@@ -196,7 +191,7 @@ theorem mem_range_rationalDifferential_iff_weilDifferentialOrder_nonneg_of_isAlg
         0 ≤ weilDifferentialOrder hF isIntegrallyClosedIn_of_isAlgClosed ω.2 hω
           (X.toPlace (k := k) (y : X)) := by
   apply mem_range_rationalDifferential_iff_weilDifferentialOrder_nonneg hF
-    isIntegrallyClosedIn_of_isAlgClosed (Place.infinite_setOf_degree_eq_one hF) ht U hU hDVR
+    isIntegrallyClosedIn_of_isAlgClosed ht U hU hDVR
   intro y hy
   let := hDVR y hy
   exact (X.toPlace (k := k) (y : X)).degree_eq_one_of_isAlgClosed_of_isFunctionField hF
@@ -218,7 +213,7 @@ theorem smul_D_mem_range_rationalDifferential_iff_of_isAlgClosed (U : X.Opens) [
           (coe_weilDifferentialOfSeparating_ne_zero hF ht) (X.toPlace (k := k) (y : X)) ≤
             X.ord f y := by
   apply smul_D_mem_range_rationalDifferential_iff hF isIntegrallyClosedIn_of_isAlgClosed
-    (Place.infinite_setOf_degree_eq_one hF) ht U hU hDVR
+    ht U hU hDVR
   intro y hy
   let := hDVR y hy
   exact (X.toPlace (k := k) (y : X)).degree_eq_one_of_isAlgClosed_of_isFunctionField hF
