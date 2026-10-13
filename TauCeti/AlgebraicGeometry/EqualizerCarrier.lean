@@ -8,6 +8,7 @@ module
 public import Mathlib.AlgebraicGeometry.Morphisms.Separated
 public import Mathlib.AlgebraicGeometry.PullbackCarrier
 public import Mathlib.CategoryTheory.Monoidal.Cartesian.Over
+import TauCeti.AlgebraicGeometry.RationalPoint.Basic
 
 /-!
 # Underlying points of equalizers of schemes over a base
@@ -20,8 +21,11 @@ the image of the equalizer of `a` and `b`. It is the tool for describing the poi
 in a scheme `Z` that avoid a locus cut out by equalizers, such as the locus where a point of a
 group scheme meets the identity section.
 
-Over a field `K`, the equalizer of two `K`-points of a separated `K`-scheme is a closed subscheme
-of the one-point reduced scheme `Spec K`, so it is empty exactly when the two points differ.
+For two sections `Q` and `R` of a scheme `X` over `S`, the image of their equalizer is the set of
+points of `S` at which `Q` and `R` take the same value: a section induces an isomorphism on
+residue fields, so two sections that agree at a point agree on its residue field. Over a field
+`K`, the base `Spec K` has a single point, so two `K`-points have empty equalizer exactly when
+they differ.
 
 ## Main results
 
@@ -29,8 +33,12 @@ of the one-point reduced scheme `Spec K`, so it is empty exactly when the two po
   `y ≫ b` is the preimage under `y` of the image of the equalizer of `a` and `b`.
 * `AlgebraicGeometry.isEmpty_equalizer_comp_iff`: the equalizer of `y ≫ a` and `y ≫ b` is empty
   exactly when the image of `y` misses the equalizer of `a` and `b`.
-* `AlgebraicGeometry.isEmpty_equalizer_iff_ne`: over a field, two points of a separated scheme
-  have empty equalizer exactly when they are distinct.
+* `AlgebraicGeometry.range_equalizer_ι_left_of_section`: the image of the equalizer of two
+  sections is the set of points of the base at which they agree.
+* `AlgebraicGeometry.isEmpty_equalizer_iff_forall_ne`: two sections have empty equalizer exactly
+  when they agree at no point of the base.
+* `AlgebraicGeometry.isEmpty_equalizer_iff_ne`: over a field, two points of a scheme have empty
+  equalizer exactly when they are distinct.
 -/
 
 public section
@@ -91,23 +99,50 @@ theorem isEmpty_equalizer_comp_iff (y : Z ⟶ Y) (a b : Y ⟶ W) :
   rw [← Set.range_eq_empty_iff, range_equalizer_ι_left_comp, Set.preimage_eq_empty_iff,
     disjoint_comm]
 
-/-- **Equalizers of points over a field.** Over a field `K`, two `K`-points of a separated scheme
-over `Spec K` have empty equalizer exactly when they are distinct: a nonempty equalizer is a
-surjective closed immersion into the reduced scheme `Spec K`, hence an isomorphism. -/
+/-- **Where two sections agree.** For sections `Q` and `R` of a scheme `X` over `S`, the image of
+their equalizer is the set of points of `S` at which `Q` and `R` take the same value. -/
+theorem range_equalizer_ι_left_of_section {X : Over S} (Q R : 𝟙_ (Over S) ⟶ X) :
+    Set.range (equalizer.ι Q R).left = {s | Q.left s = R.left s} := by
+  ext s
+  refine ⟨?_, fun hs ↦ ?_⟩
+  · rintro ⟨w, rfl⟩
+    have h := congrArg (fun k ↦ k.left w) (equalizer.condition Q R)
+    simp only [Over.comp_left, Scheme.Hom.comp_apply] at h
+    exact h
+  · -- the point `t : Spec κ(s) ⟶ S` factors through the equalizer
+    let t := S.fromSpecResidueField s
+    obtain ⟨p⟩ : Nonempty (Spec (S.residueField s)) := inferInstance
+    have hp : t p = s := Scheme.fromSpecResidueField_apply s p
+    have ht : t ≫ Q.left = t ≫ R.left :=
+      (TauCeti.AlgebraicGeometry.comp_eq_comp_iff_of_section (f := X.hom)
+        (by simp) (by simp) t p).mpr
+        ((congrArg Q.left hp).trans (hs.trans (congrArg R.left hp).symm))
+    have hy : CartesianMonoidalCategory.toUnit (Over.mk t) ≫ Q =
+        CartesianMonoidalCategory.toUnit (Over.mk t) ≫ R := by
+      ext1
+      simpa using ht
+    refine ⟨(equalizer.lift _ hy).left p, ?_⟩
+    rw [← Scheme.Hom.comp_apply, ← Over.comp_left, equalizer.lift_ι]
+    exact hp
+
+/-- Two sections `Q` and `R` of a scheme `X` over `S` have empty equalizer exactly when they agree
+at no point of `S`. -/
+theorem isEmpty_equalizer_iff_forall_ne {X : Over S} (Q R : 𝟙_ (Over S) ⟶ X) :
+    IsEmpty (equalizer Q R).left ↔ ∀ s, Q.left s ≠ R.left s := by
+  rw [← Set.range_eq_empty_iff, range_equalizer_ι_left_of_section, Set.eq_empty_iff_forall_notMem]
+  rfl
+
+/-- **Equalizers of points over a field.** Over a field `K`, two `K`-points of a scheme over
+`Spec K` have empty equalizer exactly when they are distinct: `Spec K` has a single point, and
+two sections agreeing there are equal. -/
 theorem isEmpty_equalizer_iff_ne {K : Type u} [Field K] {X : Over (Spec (.of K))}
-    [IsSeparated X.hom] (P Q : 𝟙_ (Over (Spec (.of K))) ⟶ X) :
+    (P Q : 𝟙_ (Over (Spec (.of K))) ⟶ X) :
     IsEmpty (equalizer P Q).left ↔ P ≠ Q := by
   obtain ⟨s⟩ : Nonempty (Spec (.of K)) := inferInstance
-  refine ⟨fun h hPQ ↦ ?_, fun hPQ ↦ ?_⟩
-  · subst hPQ
-    exact h.elim ((equalizer.lift (𝟙 (𝟙_ (Over (Spec (.of K))))) rfl : _ ⟶ equalizer P P).left s)
-  · refine not_nonempty_iff.mp fun ⟨e⟩ ↦ hPQ ?_
-    have : Surjective (equalizer.ι P Q).left :=
-      ⟨fun t ↦ ⟨e, Subsingleton.elim (α := Spec (.of K)) _ _⟩⟩
-    have : IsIso (equalizer.ι P Q).left :=
-      isIso_of_isClosedImmersion_of_surjective (Y := Spec (.of K)) _
-    have : IsIso ((Over.forget _).map (equalizer.ι P Q)) := this
-    have : IsIso (equalizer.ι P Q) := isIso_of_reflects_iso _ (Over.forget _)
-    exact (cancel_epi (equalizer.ι P Q)).mp (equalizer.condition P Q)
+  rw [isEmpty_equalizer_iff_forall_ne]
+  refine ⟨fun h hPQ ↦ h s (by rw [hPQ]), fun hPQ t ht ↦ hPQ ?_⟩
+  ext1
+  simpa using (TauCeti.AlgebraicGeometry.comp_eq_comp_iff_of_section (f := X.hom)
+    (by simp) (by simp) (𝟙 _) t).mpr ht
 
 end AlgebraicGeometry

@@ -160,8 +160,6 @@ exact order `N` exactly when its order in the group of `K`-points is `N`. -/
 theorem isOfNaiveExactOrder_iff_orderOf_eq
     {P : 𝟙_ (Over (Spec (.of K))) ⟶ Over.mk E.structureMap} :
     E.IsOfNaiveExactOrder P N ↔ orderOf P = N := by
-  -- instance search does not unfold `(Over.mk E.structureMap).hom` to `E.structureMap`
-  have : IsSeparated (Over.mk E.structureMap).hom := inferInstanceAs (IsSeparated E.structureMap)
   simp only [isOfNaiveExactOrder_iff, isEmpty_equalizer_iff_ne]
   refine ⟨fun ⟨h₁, h₂⟩ ↦ ?_, ?_⟩
   · by_contra hne
@@ -209,34 +207,16 @@ end BaseChange
 /-- **Where an `S`-point meets the zero section.** For an `S`-point `Q` of `E`, the image of the
 equalizer of `Q` and the zero section is the set of points of `S` at which `Q` meets the zero
 section. -/
-theorem range_equalizer_ι_one_left (Q : 𝟙_ (Over S) ⟶ Over.mk E.structureMap) :
+theorem range_equalizer_ι_left_one (Q : 𝟙_ (Over S) ⟶ Over.mk E.structureMap) :
     Set.range (equalizer.ι Q 1).left = {s | Q.left s = E.zero s} := by
-  ext s
-  refine ⟨?_, fun hs ↦ ?_⟩
-  · rintro ⟨w, rfl⟩
-    have h := congrArg (fun k ↦ k.left w) (equalizer.condition Q 1)
-    simp only [Over.comp_left, hom_one_left, Scheme.Hom.comp_apply] at h
-    exact h
-  · -- the point `t : Spec κ(s) ⟶ S` factors through the equalizer
-    let t := S.fromSpecResidueField s
-    obtain ⟨p⟩ : Nonempty (Spec (S.residueField s)) := inferInstance
-    have hp : t p = s := Scheme.fromSpecResidueField_apply s p
-    have ht : t ≫ Q.left = t ≫ E.zero :=
-      (comp_eq_comp_iff_of_section (left_comp_structureMap Q) E.zero_comp_structureMap t p).mpr
-        ((congrArg Q.left hp).trans (hs.trans (congrArg E.zero hp).symm))
-    have hy : toUnit (Over.mk t) ≫ Q = toUnit (Over.mk t) ≫ 1 := by
-      ext1
-      simpa [hom_one_left] using ht
-    refine ⟨(equalizer.lift _ hy).left p, ?_⟩
-    rw [← Scheme.Hom.comp_apply, ← Over.comp_left, equalizer.lift_ι]
-    exact hp
+  rw [range_equalizer_ι_left_of_section, hom_one_left]
+  rfl
 
 /-- An `S`-point `Q` of `E` has empty equalizer with the zero section exactly when it meets the
 zero section at no point of `S`. -/
 theorem isEmpty_equalizer_one_iff (Q : 𝟙_ (Over S) ⟶ Over.mk E.structureMap) :
     IsEmpty (equalizer Q 1).left ↔ ∀ s, Q.left s ≠ E.zero s := by
-  rw [← Set.range_eq_empty_iff, range_equalizer_ι_one_left, Set.eq_empty_iff_forall_notMem]
-  rfl
+  simp [isEmpty_equalizer_iff_forall_ne, hom_one_left]
 
 /-- **Naive `[Γ₁(N)]`-structures are the `S`-points of naive exact order `N`.** A homomorphism
 `φ : ℤ/Nℤ →* E(S)` is injective on every fibre, that is, it is a naive `[Γ₁(N)]`-structure
