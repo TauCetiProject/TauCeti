@@ -23,9 +23,9 @@ Euler's identity recovers the omitted partial derivative. No invertibility of th
 degree is needed, so the criterion also applies when the characteristic divides the degree.
 
 Combined with the weak Nullstellensatz, the pointwise criterion gives an identity of ideals:
-if every point of a projective hypersurface over an algebraically closed extension `K` of `k` is
-nonsingular, then in each standard affine chart the equation and its partial derivatives generate
-the unit ideal of the polynomial ring over `k`
+if every point of a projective hypersurface over an algebraically closed extension `K` of `k`
+lying in a standard affine chart is nonsingular, then in that chart the equation and its partial
+derivatives generate the unit ideal of the polynomial ring over `k`
 (`TauCeti.span_insert_range_pderiv_dehomogenize_eq_top`).
 
 ## References
@@ -273,19 +273,19 @@ section Field
 variable {k K : Type*} [Field k] [Field K] [Algebra k K] [IsAlgClosed K]
 
 /-- **Nonsingularity of a projective hypersurface, chart by chart**: let `p` be homogeneous over
-`k`, and suppose that at every nonzero zero of `p` in `K^(n + 1)`, for an algebraically closed
-extension `K` of `k`, some partial derivative of `p` is nonzero. Then in every standard affine
-chart the equation and its partial derivatives generate the unit ideal of `k[X₁, …, Xₙ]`. -/
+`k`, and suppose that at every zero of `p` in `K^(n + 1)` with `i`-th coordinate `1`, for an
+algebraically closed extension `K` of `k`, some partial derivative of `p` is nonzero. Then in the
+`i`-th standard affine chart the equation and its partial derivatives generate the unit ideal of
+`k[X₁, …, Xₙ]`. -/
 theorem span_insert_range_pderiv_dehomogenize_eq_top {p : MvPolynomial (Fin (n + 1)) k} {d : ℕ}
-    (hp : p.IsHomogeneous d)
-    (hsm : ∀ b : Fin (n + 1) → K, b ≠ 0 → aeval b p = 0 → ∃ l, aeval b (pderiv l p) ≠ 0)
-    (i : Fin (n + 1)) :
+    (hp : p.IsHomogeneous d) (i : Fin (n + 1))
+    (hsm : ∀ a : Fin n → K, aeval (i.insertNth 1 a) p = 0 →
+      ∃ l, aeval (i.insertNth 1 a) (pderiv l p) ≠ 0) :
     Ideal.span (insert (dehomogenize i p) (Set.range fun j ↦ pderiv j (dehomogenize i p))) =
       ⊤ := by
   refine (span_eq_top_iff_forall_exists_aeval_ne_zero (K := K)).mpr fun a ↦ ?_
   by_cases ha : aeval a (dehomogenize i p) = 0
-  · obtain ⟨l, hl⟩ := hsm (i.insertNth 1 a) (fun h ↦ by simpa using congrFun h i)
-      (by rwa [← aeval_dehomogenize])
+  · obtain ⟨l, hl⟩ := hsm a (by rwa [← aeval_dehomogenize])
     -- Transport the affine gradient criterion to the coefficients `K`.
     have hK : ∀ q : MvPolynomial (Fin (n + 1)) k, ∀ b : Fin (n + 1) → K,
         eval b (map (algebraMap k K) q) = aeval b q := fun q b ↦ by

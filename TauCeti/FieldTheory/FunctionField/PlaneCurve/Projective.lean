@@ -361,7 +361,8 @@ private theorem span_dehomogenize_two_pderiv_eq_top {K : Type*} [Field K] [IsAlg
     (hsm : ∀ b : Fin 3 → K, b ≠ 0 → aeval b G = 0 → ∃ l, aeval b (pderiv l G) ≠ 0) :
     Ideal.span {dehomogenize 2 G, pderiv 0 (dehomogenize 2 G), pderiv 1 (dehomogenize 2 G)} =
       ⊤ := by
-  have h := span_insert_range_pderiv_dehomogenize_eq_top hG hsm 2
+  have h := span_insert_range_pderiv_dehomogenize_eq_top hG 2
+    fun a ↦ hsm _ fun h ↦ by simpa using congrFun h 2
   rwa [insert_range_fin_two] at h
 
 /-- The chart at infinity `X₀ ≠ 0` of a nonsingular projective plane curve is smooth, in the
@@ -372,7 +373,8 @@ private theorem span_inftyChart_pderiv_eq_top {K : Type*} [Field K] [IsAlgClosed
     Ideal.span {(dehomogenize 2 G).inftyChart d, pderiv 0 ((dehomogenize 2 G).inftyChart d),
       pderiv 1 ((dehomogenize 2 G).inftyChart d)} = ⊤ := by
   rw [inftyChart_dehomogenize hG]
-  have h0 := span_insert_range_pderiv_dehomogenize_eq_top hG hsm 0
+  have h0 := span_insert_range_pderiv_dehomogenize_eq_top hG 0
+    fun a ↦ hsm _ fun h ↦ by simpa using congrFun h 0
   rw [insert_range_fin_two] at h0
   set h₀ := dehomogenize 0 G
   -- Swapping the two coordinates permutes the partial derivatives.
