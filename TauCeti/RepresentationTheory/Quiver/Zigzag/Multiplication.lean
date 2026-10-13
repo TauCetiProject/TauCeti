@@ -50,10 +50,8 @@ and each identity below degenerates to a true statement about `0` there.
 
 ## References
 
-This is the multiplication table asked for by the first clause of Layer 2 of
-`TauCetiRoadmap/ZigzagPreprojective/README.md`. See Huerfano--Khovanov, *A category for the adjoint
-representation*, Section 3, and Ehrig--Tubbenhauer, *Algebraic properties of zigzag algebras*,
-Section 2.
+See Huerfano--Khovanov, *A category for the adjoint representation*, Section 3, and
+Ehrig--Tubbenhauer, *Algebraic properties of zigzag algebras*, Section 2.
 -/
 
 public section
