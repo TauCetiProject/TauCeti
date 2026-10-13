@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.InnerProductSpace.Semisimple
+public import TauCeti.Analysis.InnerProductSpace.Projection.Block
 public import TauCeti.Analysis.InnerProductSpace.Projection.Gap
 public import TauCeti.Analysis.InnerProductSpace.Sylvester
 
@@ -35,10 +36,6 @@ Sylvester bound
 
 ## Main results
 
-* `Submodule.le_re_inner_comp_starProjection_add_smul_apply_self`,
-  `Submodule.re_inner_comp_starProjection_add_smul_apply_self_le`: extending an operator from an
-  invariant subspace `U` by the scalar `r` on `Uᗮ` preserves a lower (upper) bound `r` on its
-  quadratic form.
 * `Submodule.mul_norm_starProjection_comp_starProjection_le_norm_sub`: the directed `sin Θ` bound
   `g ‖P_W P_U‖ ≤ ‖B - A‖`.
 * `Submodule.mul_directedProjectionGap_le_norm_sub`: the same bound for the directed gap
@@ -72,48 +69,6 @@ open ContinuousLinearMap
 open scoped InnerProductSpace
 
 variable {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
-
-/-- If `U` is invariant under `A` and the quadratic form of `A` on `U` is bounded below by `r`, then
-the quadratic form of `A P_U + r P_{Uᗮ}` is bounded below by `r` on all of `E`. -/
-theorem le_re_inner_comp_starProjection_add_smul_apply_self {A : E →L[𝕜] E}
-    (U : Submodule 𝕜 E) [U.HasOrthogonalProjection] (hU : ∀ x ∈ U, A x ∈ U) {r : ℝ}
-    (hA : ∀ x ∈ U, r * ‖x‖ ^ 2 ≤ RCLike.re ⟪A x, x⟫_𝕜) (x : E) :
-    r * ‖x‖ ^ 2 ≤
-      RCLike.re ⟪(A ∘L U.starProjection + (r : 𝕜) • Uᗮ.starProjection) x, x⟫_𝕜 := by
-  set u := U.starProjection x
-  set v := Uᗮ.starProjection x
-  have hu : u ∈ U := U.starProjection_apply_mem x
-  have hv : v ∈ Uᗮ := Uᗮ.starProjection_apply_mem x
-  -- Split `x = u + v` along `U ⊕ Uᗮ`; the cross terms vanish because `A u ∈ U`.
-  have hx : x = u + v := (U.starProjection_add_starProjection_orthogonal x).symm
-  have hAuv : ⟪A u, v⟫_𝕜 = 0 := inner_right_of_mem_orthogonal (hU u hu) hv
-  have hvu : ⟪v, u⟫_𝕜 = 0 := inner_left_of_mem_orthogonal hu hv
-  have hre : RCLike.re ⟪(A ∘L U.starProjection + (r : 𝕜) • Uᗮ.starProjection) x, x⟫_𝕜 =
-      RCLike.re ⟪A u, u⟫_𝕜 + r * ‖v‖ ^ 2 := by
-    have happ : (A ∘L U.starProjection + (r : 𝕜) • Uᗮ.starProjection) x = A u + (r : 𝕜) • v := by
-      simp only [add_apply, comp_apply, smul_apply, u, v]
-    rw [happ]
-    conv_lhs => rw [hx]
-    simp [inner_add_left, inner_add_right, inner_smul_left, hAuv, hvu, inner_self_eq_norm_sq_to_K]
-  rw [hre, norm_sq_eq_add_norm_sq_starProjection x U, mul_add]
-  exact add_le_add_left (hA u hu) _
-
-/-- If `W` is invariant under `B` and the quadratic form of `B` on `W` is bounded above by `r`, then
-the quadratic form of `B P_W + r P_{Wᗮ}` is bounded above by `r` on all of `E`. -/
-theorem re_inner_comp_starProjection_add_smul_apply_self_le {B : E →L[𝕜] E}
-    (W : Submodule 𝕜 E) [W.HasOrthogonalProjection] (hW : ∀ x ∈ W, B x ∈ W) {r : ℝ}
-    (hB : ∀ x ∈ W, RCLike.re ⟪B x, x⟫_𝕜 ≤ r * ‖x‖ ^ 2) (x : E) :
-    RCLike.re ⟪(B ∘L W.starProjection + (r : 𝕜) • Wᗮ.starProjection) x, x⟫_𝕜 ≤
-      r * ‖x‖ ^ 2 := by
-  -- Apply the lower bound to `-B` and the bound `-r`.
-  have h := W.le_re_inner_comp_starProjection_add_smul_apply_self (A := -B) (r := -r)
-    (fun x hx ↦ by simpa using W.neg_mem (hW x hx))
-    (fun x hx ↦ by simpa [inner_neg_left] using hB x hx) x
-  have heq : (-B) ∘L W.starProjection + ((-r : ℝ) : 𝕜) • Wᗮ.starProjection =
-      -(B ∘L W.starProjection + (r : 𝕜) • Wᗮ.starProjection) := by
-    rw [neg_comp, RCLike.ofReal_neg, neg_smul, neg_add]
-  rw [heq, neg_apply, inner_neg_left, map_neg] at h
-  linarith
 
 /-- **The dimension-free directed Davis–Kahan `sin Θ` theorem.** Let `U` be invariant under `A`
 and `W` invariant under the symmetric operator `B`. If the quadratic form of `A` on `U` is at
