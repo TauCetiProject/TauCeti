@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.KnotTheory.Grid.Grading.UnblockedChain
+public import TauCeti.KnotTheory.Grid.Grading.Unblocked.Chain
 public import TauCeti.KnotTheory.Grid.Stabilization.Basic
 public import TauCeti.KnotTheory.Grid.XHomotopy.Basic
 import TauCeti.Data.Fin.Basic

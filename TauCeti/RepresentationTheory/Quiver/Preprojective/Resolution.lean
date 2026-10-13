@@ -208,21 +208,42 @@ theorem preprojectiveVertexAugmentation_surjective (v : Q) :
     Function.Surjective (preprojectiveVertexAugmentation k v) :=
   Submodule.mkQ_surjective _
 
+/-- The left Koszul differential is injective exactly when no nonzero element of `e_v Π`
+is annihilated by every doubled arrow leaving `v`. The signs in the differential are units,
+including in characteristic two. -/
+theorem preprojectiveKoszulLeft_injective_iff (v : Q) :
+    Function.Injective (preprojectiveKoszulLeft k v) ↔
+      ∀ y : Π, π (doubledVertexIdempotent k v) * y = y →
+        (∀ (i : Symmetrify Q) (b : i ⟶ Symmetrify.of.obj v),
+          π (ofArrow (Quiver.reverse b)) * y = 0) → y = 0 := by
+  rw [← LinearMap.ker_eq_bot, LinearMap.ker_eq_bot']
+  constructor
+  · intro h y hy hb
+    have hy' : y ∈ preprojectiveRightProjective k (Symmetrify.of.obj v) := by
+      rw [doubledVertexIdempotent_def] at hy
+      exact (mem_preprojectiveRightProjective_iff k _ y).2 hy
+    have hz : preprojectiveKoszulLeft k v ⟨y, hy'⟩ = 0 := by
+      ext i b
+      simp only [coe_preprojectiveKoszulLeft_apply, hb, smul_zero,
+        Pi.zero_apply, Submodule.coe_zero]
+    exact congrArg Subtype.val (h ⟨y, hy'⟩ hz)
+  · intro h y hy
+    apply Subtype.ext
+    have hv : π (doubledVertexIdempotent k v) * (y : Π) = y := by
+      simpa only [doubledVertexIdempotent_def] using
+        (mem_preprojectiveRightProjective_iff k _ _).1 y.property
+    apply h y hv
+    intro i b
+    have hb : doubledArrowSign k b • (π (ofArrow (Quiver.reverse b)) * (y : Π)) = 0 :=
+      congrArg (fun z => (z i b : Π)) hy
+    have hh := congrArg (doubledArrowSign k b • ·) hb
+    simpa only [smul_smul, doubledArrowSign_mul_self, one_smul, smul_zero] using hh
+
 /-- For a quiver without sinks, the left Koszul differential is injective. -/
 theorem preprojectiveKoszulLeft_injective (hQ : ∀ u : Q, ∃ w, Nonempty (u ⟶ w)) (v : Q) :
-    Function.Injective (preprojectiveKoszulLeft k v) := by
-  rw [← LinearMap.ker_eq_bot, LinearMap.ker_eq_bot']
-  intro y hy
-  apply Subtype.ext
-  have hv : π (doubledVertexIdempotent k v) * (y : Π) = y := by
-    simpa only [doubledVertexIdempotent_def] using
-      (mem_preprojectiveRightProjective_iff k _ _).1 y.property
-  apply (forall_preprojectiveMk_ofArrow_reverse_mul_eq_zero_iff k hQ v hv).1
-  intro i b
-  have hb : doubledArrowSign k b • (π (ofArrow (Quiver.reverse b)) * (y : Π)) = 0 :=
-    congrArg (fun z => (z i b : Π)) hy
-  have hh := congrArg (doubledArrowSign k b • ·) hb
-  simpa only [smul_smul, doubledArrowSign_mul_self, one_smul, smul_zero] using hh
+    Function.Injective (preprojectiveKoszulLeft k v) :=
+  (preprojectiveKoszulLeft_injective_iff k v).2 fun _ hy =>
+    (forall_preprojectiveMk_ofArrow_reverse_mul_eq_zero_iff k hQ v hy).1
 
 /-! ### The augmented chain complex -/
 
