@@ -135,17 +135,20 @@ private theorem sigmaOf_of_neg {D : ℝ} (h : D < 0) :
     ite_eq_right h.ne]
 
 /-- At or beyond the critical distance, `N π² ≤ K θ²`, the coefficient is infinite. -/
+@[simp]
 theorem distortionSigma_eq_top_of_le (hN : 0 < N) (h : N * π ^ 2 ≤ K * θ ^ 2) :
     distortionSigma K N t θ = ⊤ :=
   sigmaOf_of_le ((le_div_iff₀' hN).2 h)
 
 /-- The spherical formula, for `0 < K θ² < N π²`. -/
+@[simp]
 theorem distortionSigma_of_pos (hN : 0 < N) (h₀ : 0 < K * θ ^ 2) (h : K * θ ^ 2 < N * π ^ 2) :
     distortionSigma K N t θ =
       ENNReal.ofReal (sin (t * √(K * θ ^ 2 / N)) / sin √(K * θ ^ 2 / N)) :=
   sigmaOf_of_pos (div_pos h₀ hN) ((div_lt_iff₀' hN).2 h)
 
 /-- The hyperbolic formula, for `K θ² < 0`. -/
+@[simp]
 theorem distortionSigma_of_neg (hN : 0 < N) (h : K * θ ^ 2 < 0) :
     distortionSigma K N t θ =
       ENNReal.ofReal (sinh (t * √(-(K * θ ^ 2 / N))) / sinh √(-(K * θ ^ 2 / N))) :=
@@ -254,6 +257,7 @@ theorem distortionSigma_eq_top_iff (hN : 0 < N) :
   · simp [sigmaOf_of_pos hD hπ] at h
 
 /-- Below the critical distance, `σ_{K,N}^{(1)}(θ) = 1`. -/
+@[simp]
 theorem distortionSigma_time_one (hN : 0 < N) (h : K * θ ^ 2 < N * π ^ 2) :
     distortionSigma K N 1 θ = 1 := by
   rw [distortionSigma_eq_sigmaOf]
@@ -266,6 +270,7 @@ theorem distortionSigma_time_one (hN : 0 < N) (h : K * θ ^ 2 < N * π ^ 2) :
       ((sqrt_lt' pi_pos).2 hπ)).ne', ENNReal.ofReal_one]
 
 /-- Below the critical distance, `σ_{K,N}^{(0)}(θ) = 0`. -/
+@[simp]
 theorem distortionSigma_time_zero (hN : 0 < N) (h : K * θ ^ 2 < N * π ^ 2) :
     distortionSigma K N 0 θ = 0 := by
   rw [distortionSigma_eq_sigmaOf]
@@ -284,16 +289,19 @@ section Tau
 variable {K N t θ : ℝ}
 
 /-- For `N > 1`, `τ_{K,N}^{(t)}(θ) = t ^ (1 / N) σ_{K,N-1}^{(t)}(θ) ^ (1 - 1 / N)`. -/
+@[simp]
 theorem distortionTau_of_one_lt (hN : 1 < N) :
     distortionTau K N t θ =
       ENNReal.ofReal t ^ (1 / N) * distortionSigma K (N - 1) t θ ^ (1 - 1 / N) :=
   ite_eq_left hN
 
 /-- For `N = 1` and `K θ² > 0`, the coefficient `τ_{K,1}^{(t)}(θ)` is infinite. -/
+@[simp]
 theorem distortionTau_one_eq_top_of_pos (h : 0 < K * θ ^ 2) : distortionTau K 1 t θ = ⊤ := by
   rw [distortionTau, ite_eq_right (lt_irrefl 1), ite_eq_left h]
 
 /-- For `N = 1` and `K θ² ≤ 0`, the coefficient `τ_{K,1}^{(t)}(θ)` is `t`. -/
+@[simp]
 theorem distortionTau_one_of_nonpos (h : K * θ ^ 2 ≤ 0) :
     distortionTau K 1 t θ = ENNReal.ofReal t := by
   rw [distortionTau, ite_eq_right (lt_irrefl 1), ite_eq_right h.not_gt]
@@ -355,6 +363,7 @@ theorem distortionTau_eq_top_iff (hN : 1 < N) (ht : 0 < t) :
   simp [ENNReal.rpow_eq_top_iff, ENNReal.rpow_eq_zero_iff, hN₀, ht.not_ge, hNi, hNi.not_gt]
 
 /-- Below the critical distance, `τ_{K,N}^{(1)}(θ) = 1`. -/
+@[simp]
 theorem distortionTau_time_one (hN : 1 ≤ N) (h : K * θ ^ 2 < (N - 1) * π ^ 2) :
     distortionTau K N 1 θ = 1 := by
   rcases hN.lt_or_eq with hN | rfl
