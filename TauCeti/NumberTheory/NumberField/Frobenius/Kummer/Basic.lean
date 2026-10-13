@@ -94,9 +94,6 @@ theorem exists_mem_intermediateField_pow_eq_iff_forall_exists_pow_eq_mk [NeZero 
   have : HasEnoughRootsOfUnity K n :=
     ⟨⟨_, hζ.map_of_injective (FaithfulSMul.algebraMap_injective (𝓞 K) K)⟩,
       rootsOfUnity.isCyclic K n⟩
-  refine ⟨fun ⟨β, hβL, hβ⟩ ↦ ?_, fun h ↦ ⟨α, h, hαM⟩⟩
-  obtain ⟨c, hc⟩ := TauCeti.exists_eq_algebraMap_mul_of_pow_eq (K := K) (hαM.trans hβ.symm)
-  rw [hc]
-  exact L.mul_mem (L.algebraMap_mem c) hβL
+  exact L.exists_mem_pow_eq_iff_of_pow_eq hαM
 
 end TauCeti.NumberField
