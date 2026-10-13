@@ -37,7 +37,9 @@ follows the proof of `TauCeti.Place.isSplitCompletely_sup_iff` in
 
 ## Main definitions
 
-* `TauCeti.Place.IsUnramified`: a place is unramified in an extension.
+* `TauCeti.Place.IsUnramified`: a place is unramified in an extension, with the projections
+  `IsUnramified.exists_restrict_eq`, `IsUnramified.ramificationIdx_eq_one` and
+  `IsUnramified.isSeparable`.
 
 ## Main results
 
@@ -84,6 +86,26 @@ def IsUnramified (P : Place k F) : Prop :=
     ∀ P' : Place k' F', P'.restrict k F = P →
       ramificationIdx F P' = 1 ∧
         Algebra.IsSeparable (P'.restrict k F).ResidueField P'.ResidueField
+
+/-- An unramified place has a place above it. -/
+theorem IsUnramified.exists_restrict_eq {P : Place k F}
+    (hP : P.IsUnramified (k' := k') (F' := F')) :
+    ∃ P' : Place k' F', P'.restrict k F = P :=
+  hP.1
+
+/-- A place above an unramified place has ramification index one. -/
+theorem IsUnramified.ramificationIdx_eq_one {P : Place k F}
+    (hP : P.IsUnramified (k' := k') (F' := F')) {P' : Place k' F'}
+    (hP' : P'.restrict k F = P) :
+    ramificationIdx F P' = 1 :=
+  (hP.2 P' hP').1
+
+/-- A place above an unramified place has a separable residue extension. -/
+theorem IsUnramified.isSeparable {P : Place k F}
+    (hP : P.IsUnramified (k' := k') (F' := F')) {P' : Place k' F'}
+    (hP' : P'.restrict k F = P) :
+    Algebra.IsSeparable (P'.restrict k F).ResidueField P'.ResidueField :=
+  (hP.2 P' hP').2
 
 end Definition
 
