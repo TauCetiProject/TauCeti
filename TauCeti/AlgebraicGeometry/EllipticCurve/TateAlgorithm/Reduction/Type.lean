@@ -10,6 +10,7 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.MinimalModel.Valuation
 public import TauCeti.AlgebraicGeometry.EllipticCurve.TateAlgorithm.Terminal
 import TauCeti.AlgebraicGeometry.EllipticCurve.IntegralModel
 import TauCeti.AlgebraicGeometry.EllipticCurve.TateAlgorithm.Invariance
+import TauCeti.AlgebraicGeometry.EllipticCurve.VariableChange
 import TauCeti.RingTheory.Valuation.Discrete.IsDiscreteValuationRing
 
 /-!
@@ -221,15 +222,6 @@ when a change of variables over `R` carries it to an equation on which the algor
 
 variable {A : Type*} [CommRing A] [Algebra A K] {φ : A →+* R} {W₀ : WeierstrassCurve A}
 
-omit [IsDomain R] [IsDiscreteValuationRing R] [IsFractionRing R K] in
-/-- A change of variables `C` over `R` applied to the image of `W₀` in `R` is, read over `K`, the
-change of variables `C` applied to `W₀` read over `K`. -/
-private theorem smul_baseChange_eq_baseChange_smul_map
-    (hφ : (algebraMap R K).comp φ = algebraMap A K) (C : VariableChange R) :
-    C.baseChange K • W₀.baseChange K = (C • W₀.map φ).baseChange K := by
-  have hW₀ : W₀.baseChange K = (W₀.map φ).baseChange K := congrArg W₀.map hφ.symm
-  exact hW₀ ▸ map_variableChange ..
-
 /-- **Tate's algorithm, run on an equation over a ring mapping into `R`, detects
 good reduction of its chosen minimal equation.** Let `W₀` be an equation over `A`,
 mapped into `R` by `φ` compatibly with `K`. If a change of variables `C` over `R` carries it to
@@ -239,7 +231,7 @@ theorem IsTateTerminal.hasGoodReduction_minimal_baseChange_iff
     (hφ : (algebraMap R K).comp φ = algebraMap A K) (C : VariableChange R) (hϖ : Irreducible ϖ)
     (h : (C • W₀.map φ).IsTateTerminal ϖ s) :
     ((W₀.baseChange K).minimal R).HasGoodReduction R ↔ s = .I 0 :=
-  h.hasGoodReduction_minimal_iff _ (smul_baseChange_eq_baseChange_smul_map hφ C) hϖ
+  h.hasGoodReduction_minimal_iff _ (smul_baseChange_eq_baseChange_smul_map hφ C W₀) hϖ
 
 /-- **Tate's algorithm, run on an equation over a ring mapping into `R`, detects
 multiplicative reduction of its chosen minimal equation.** Let `W₀` be an equation over `A`,
@@ -250,7 +242,7 @@ theorem IsTateTerminal.hasMultiplicativeReduction_minimal_baseChange_iff
     [(W₀.baseChange K).IsElliptic] (hφ : (algebraMap R K).comp φ = algebraMap A K)
     (C : VariableChange R) (hϖ : Irreducible ϖ) (h : (C • W₀.map φ).IsTateTerminal ϖ s) :
     ((W₀.baseChange K).minimal R).HasMultiplicativeReduction R ↔ ∃ n, s = .I (n + 1) :=
-  h.hasMultiplicativeReduction_minimal_iff _ (smul_baseChange_eq_baseChange_smul_map hφ C) hϖ
+  h.hasMultiplicativeReduction_minimal_iff _ (smul_baseChange_eq_baseChange_smul_map hφ C W₀) hϖ
 
 /-- **Tate's algorithm, run on an equation over a ring mapping into `R`, detects
 additive reduction of its chosen minimal equation.** Let `W₀` be an equation over `A`,
@@ -261,7 +253,7 @@ theorem IsTateTerminal.hasAdditiveReduction_minimal_baseChange_iff
     [(W₀.baseChange K).IsElliptic] (hφ : (algebraMap R K).comp φ = algebraMap A K)
     (C : VariableChange R) (hϖ : Irreducible ϖ) (h : (C • W₀.map φ).IsTateTerminal ϖ s) :
     ((W₀.baseChange K).minimal R).HasAdditiveReduction R ↔ ∀ n, s ≠ .I n :=
-  h.hasAdditiveReduction_minimal_iff _ (smul_baseChange_eq_baseChange_smul_map hφ C) hϖ
+  h.hasAdditiveReduction_minimal_iff _ (smul_baseChange_eq_baseChange_smul_map hφ C W₀) hϖ
 
 /-- **At `Iₙ`, the index is the valuation of the minimal discriminant.** -/
 theorem IsTateTerminal.localMinimalDiscriminantValuation_eq [(W.baseChange K).IsElliptic]
