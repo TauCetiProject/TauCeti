@@ -76,17 +76,6 @@ variable {E : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [InnerProductSpa
   [FiniteDimensional ℝ E] [BorelSpace E] {mu : Measure E} [mu.IsAddHaarMeasure]
   {p : ℝ≥0∞} [Fact (1 ≤ p)]
 
-omit [FiniteDimensional ℝ E] in
-/-- The `Lᵖ` norm of the weak gradient on subsets of `Ω` is monotone in the subset. -/
-private theorem W1p.toReal_eLpNorm_gradient_mono {Omega : Opens E} (u : W1p mu Omega p)
-    {s t : Set E} (hst : s ⊆ t) (ht : t ⊆ (Omega : Set E)) :
-    (eLpNorm (W1p.gradient u) p (mu.restrict s)).toReal ≤
-      (eLpNorm (W1p.gradient u) p (mu.restrict t)).toReal :=
-  ENNReal.toReal_mono
-    ((eLpNorm_mono_measure _ (Measure.restrict_mono ht le_rfl)).trans_lt
-      (Lp.eLpNorm_lt_top _)).ne
-    (eLpNorm_mono_measure _ (Measure.restrict_mono hst le_rfl))
-
 /-- **The gradient of a `W^{1,p}` function grows like a power of the radius.** If `B(z, r) ⊆ Ω`,
 then by Hölder's inequality
 
